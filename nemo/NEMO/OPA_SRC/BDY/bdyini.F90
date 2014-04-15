@@ -33,7 +33,7 @@ MODULE bdyini
 
    !!----------------------------------------------------------------------
    !! NEMO/OPA 4.0 , NEMO Consortium (2011)
-   !! $Id: bdyini.F90 3298 2012-02-07 17:12:09Z cbricaud $ 
+   !! $Id: bdyini.F90 3424 2012-07-05 09:35:12Z davestorkey $ 
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -772,7 +772,7 @@ CONTAINS
          DO ib_bdy = 1, nb_bdy
             DO ib = 1, idx_bdy(ib_bdy)%nblenrim(igrd)
                nbi => idx_bdy(ib_bdy)%nbi(ib,igrd)
-               nbj => idx_bdy(ib_bdy)%nbi(ib,igrd)
+               nbj => idx_bdy(ib_bdy)%nbj(ib,igrd)
                flagu => idx_bdy(ib_bdy)%flagu(ib)
                bdysurftot = bdysurftot + hu     (nbi  , nbj)                           &
                   &                    * e2u    (nbi  , nbj) * ABS( flagu ) &
@@ -785,7 +785,7 @@ CONTAINS
          DO ib_bdy = 1, nb_bdy
             DO ib = 1, idx_bdy(ib_bdy)%nblenrim(igrd)
                nbi => idx_bdy(ib_bdy)%nbi(ib,igrd)
-               nbj => idx_bdy(ib_bdy)%nbi(ib,igrd)
+               nbj => idx_bdy(ib_bdy)%nbj(ib,igrd)
                flagv => idx_bdy(ib_bdy)%flagv(ib)
                bdysurftot = bdysurftot + hv     (nbi, nbj  )                           &
                   &                    * e1v    (nbi, nbj  ) * ABS( flagv ) &

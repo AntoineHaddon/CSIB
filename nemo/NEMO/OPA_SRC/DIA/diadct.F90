@@ -37,8 +37,11 @@ MODULE diadct
   USE daymod          ! calendar
   USE dianam          ! build name of file
   USE lib_mpp         ! distributed memory computing library
-#if defined key_lim2 || defined key_lim3
-  USE ice
+#if defined key_lim2
+  USE ice_2
+#endif
+#if defined key_lim3
+  USE ice_3
 #endif
   USE domvvl
   USE timing          ! preformance summary
@@ -361,7 +364,7 @@ CONTAINS
            IF( lwp .AND. ( jsec==nn_secdebug .OR. nn_secdebug==-1 ) )THEN
               WRITE(numout,*)"      List of points in global domain:"
               DO jpt=1,iptglo
-                 WRITE(numout,*)'        # I J ',jpt,coordtemp(jpt)
+                 WRITE(numout,*)'        # I J ',jpt,coordtemp(jpt),directemp(jpt)
               ENDDO                  
            ENDIF
  
@@ -402,11 +405,9 @@ CONTAINS
            ENDIF
 
               IF(jsec==nn_secdebug .AND. secs(jsec)%nb_point .NE. 0)THEN
-              WRITE(narea+200,*)'avant secs(jsec)%nb_point iptloc ',secs(jsec)%nb_point,iptloc
               DO jpt = 1,iptloc
                  iiglo = secs(jsec)%listPoint(jpt)%I + jpizoom - 1 + nimpp - 1
                  ijglo = secs(jsec)%listPoint(jpt)%J + jpjzoom - 1 + njmpp - 1
-                 WRITE(narea+200,*)'avant # I J : ',iiglo,ijglo
               ENDDO
               ENDIF
 
@@ -420,11 +421,9 @@ CONTAINS
               CALL removepoints(secs(jsec),'J','bot_list',lldebug)
            ENDIF
            IF(jsec==nn_secdebug .AND. secs(jsec)%nb_point .NE. 0)THEN
-              WRITE(narea+200,*)'apres secs(jsec)%nb_point iptloc ',secs(jsec)%nb_point,iptloc
               DO jpt = 1,secs(jsec)%nb_point
                  iiglo = secs(jsec)%listPoint(jpt)%I + jpizoom - 1 + nimpp - 1
                  ijglo = secs(jsec)%listPoint(jpt)%J + jpjzoom - 1 + njmpp - 1
-                 WRITE(narea+200,*)'apres # I J : ',iiglo,ijglo
               ENDDO
            ENDIF
 
@@ -625,8 +624,9 @@ CONTAINS
         IF( sec%slopeSection .GT. 0 ) THEN  ; isgnv = -1 
         ELSE                                ; isgnv =  1
         ENDIF
+        IF( sec%slopeSection .GE. 9999. )     isgnv =  1
 
-        IF( ld_debug )write(numout,*)"isgnu isgnv ",isgnu,isgnv
+        IF( ld_debug )write(numout,*)"sec%slopeSection isgnu isgnv ",sec%slopeSection,isgnu,isgnv
 
         !--------------------------------------!
         ! LOOP ON THE SEGMENT BETWEEN 2 NODES  !

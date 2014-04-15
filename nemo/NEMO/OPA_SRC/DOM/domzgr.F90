@@ -14,7 +14,8 @@ MODULE domzgr
    !!            3.0  ! 2008-06  (G. Madec)  insertion of domzgr_zps.h90 & conding style
    !!            3.2  ! 2009-07  (R. Benshila) Suppression of rigid-lid option
    !!            3.3  ! 2010-11  (G. Madec) add mbk. arrays associated to the deepest ocean level
-   !!----------------------------------------------------------------------
+   !!            3.4  ! 2012-12  (R. Bourdalle-Badie and G. Reffray)  modify C1D case  
+  !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
    !!   dom_zgr          : defined the ocean vertical coordinate system
@@ -37,8 +38,8 @@ MODULE domzgr
    USE iom               ! I/O library
    USE lbclnk            ! ocean lateral boundary conditions (or mpp link)
    USE lib_mpp           ! distributed memory computing library
-   USE wrk_nemo        ! Memory allocation
-   USE timing          ! Timing
+   USE wrk_nemo          ! Memory allocation
+   USE timing            ! Timing
 
    IMPLICIT NONE
    PRIVATE
@@ -61,7 +62,7 @@ MODULE domzgr
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 3.3.1 , NEMO Consortium (2011)
-   !! $Id: domzgr.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: domzgr.F90 3720 2012-12-04 10:10:08Z cbricaud $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS       
@@ -70,8 +71,8 @@ CONTAINS
       !!----------------------------------------------------------------------
       !!                ***  ROUTINE dom_zgr  ***
       !!                   
-      !! ** Purpose :  set the depth of model levels and the resulting 
-      !!      vertical scale factors.
+      !! ** Purpose :   set the depth of model levels and the resulting 
+      !!              vertical scale factors.
       !!
       !! ** Method  : - reference 1D vertical coordinate (gdep._0, e3._0)
       !!              - read/set ocean depth and ocean levels (bathy, mbathy)
@@ -83,12 +84,12 @@ CONTAINS
       !!
       !! ** Action  :   define gdep., e3., mbathy and bathy
       !!----------------------------------------------------------------------
-      INTEGER ::   ioptio = 0   ! temporary integer
+      INTEGER ::   ioptio, ibat   ! local integer
       !
       NAMELIST/namzgr/ ln_zco, ln_zps, ln_sco
       !!----------------------------------------------------------------------
       !
-      IF( nn_timing == 1 )  CALL timing_start('dom_zgr')
+      IF( nn_timing == 1 )   CALL timing_start('dom_zgr')
       !
       REWIND( numnam )                 ! Read Namelist namzgr : vertical coordinate'
       READ  ( numnam, namzgr )
@@ -104,27 +105,32 @@ CONTAINS
       ENDIF
 
       ioptio = 0                       ! Check Vertical coordinate options
-      IF( ln_zco ) ioptio = ioptio + 1
-      IF( ln_zps ) ioptio = ioptio + 1
-      IF( ln_sco ) ioptio = ioptio + 1
+      IF( ln_zco      )   ioptio = ioptio + 1
+      IF( ln_zps      )   ioptio = ioptio + 1
+      IF( ln_sco      )   ioptio = ioptio + 1
       IF( ioptio /= 1 )   CALL ctl_stop( ' none or several vertical coordinate options used' )
       !
       ! Build the vertical coordinate system
       ! ------------------------------------
                           CALL zgr_z            ! Reference z-coordinate system (always called)
                           CALL zgr_bat          ! Bathymetry fields (levels and meters)
+      IF( lk_c1d      )   CALL lbc_lnk( bathy , 'T', 1._wp )   ! 1D config.: same bathy value over the 3x3 domain
       IF( ln_zco      )   CALL zgr_zco          ! z-coordinate
       IF( ln_zps      )   CALL zgr_zps          ! Partial step z-coordinate
       IF( ln_sco      )   CALL zgr_sco          ! s-coordinate or hybrid z-s coordinate
       !
+      !
       ! final adjustment of mbathy & check 
       ! -----------------------------------
       IF( lzoom       )   CALL zgr_bat_zoom     ! correct mbathy in case of zoom subdomain
-      IF( .NOT.lk_c1d )   CALL zgr_bat_ctl      ! check bathymetry (mbathy) and suppress isoated ocean points
+      IF( .NOT.lk_c1d )   CALL zgr_bat_ctl      ! check bathymetry (mbathy) and suppress isolated ocean points
                           CALL zgr_bot_level    ! deepest ocean level for t-, u- and v-points
       !
+      IF( lk_c1d ) THEN                         ! 1D config.: same mbathy value over the 3x3 domain
+         ibat = mbathy(2,2)
+         mbathy(:,:) = ibat
+      END IF
       !
-
       IF( nprint == 1 .AND. lwp )   THEN
          WRITE(numout,*) ' MIN val mbathy ', MINVAL( mbathy(:,:) ), ' MAX ', MAXVAL( mbathy(:,:) )
          WRITE(numout,*) ' MIN val depth t ', MINVAL( fsdept(:,:,:) ),   &
@@ -421,9 +427,9 @@ CONTAINS
             CALL iom_get  ( inum, jpdom_data, 'Bathy_level', bathy )
             CALL iom_close( inum )
             mbathy(:,:) = INT( bathy(:,:) )
-            !                                                ! =====================
+            !
             IF( cp_cfg == "orca" .AND. jp_cfg == 2 ) THEN    ! ORCA R2 configuration
-               !                                             ! =====================
+               !
                IF( nn_cla == 0 ) THEN
                   ii0 = 140   ;   ii1 = 140                  ! Gibraltar Strait open 
                   ij0 = 102   ;   ij1 = 102                  ! (Thomson, Ocean Modelling, 1995)
@@ -453,9 +459,9 @@ CONTAINS
             CALL iom_open ( 'bathy_meter.nc', inum ) 
             CALL iom_get  ( inum, jpdom_data, 'Bathymetry', bathy )
             CALL iom_close( inum )
-            !                                                ! =====================
+            !                                                
             IF( cp_cfg == "orca" .AND. jp_cfg == 2 ) THEN    ! ORCA R2 configuration
-               !                                             ! =====================
+               !
               IF( nn_cla == 0 ) THEN
                  ii0 = 140   ;   ii1 = 140                   ! Gibraltar Strait open 
                  ij0 = 102   ;   ij1 = 102                   ! (Thomson, Ocean Modelling, 1995)
@@ -464,7 +470,7 @@ CONTAINS
                        bathy(ji,jj) = 284._wp
                     END DO
                  END DO
-                 IF(lwp) WRITE(numout,*)
+                 IF(lwp) WRITE(numout,*)     
                  IF(lwp) WRITE(numout,*) '      orca_r2: Gibraltar strait open at i=',ii0,' j=',ij0
                  !
                  ii0 = 160   ;   ii1 = 160                   ! Bab el mandeb Strait open
@@ -488,22 +494,9 @@ CONTAINS
          CALL ctl_stop( '    zgr_bat : '//trim(ctmp1) )
       ENDIF
       !
-      !                                               ! =========================== !
-      IF( nclosea == 0 ) THEN                         !   NO closed seas or lakes   !
-         DO jl = 1, jpncs                             ! =========================== !
-            DO jj = ncsj1(jl), ncsj2(jl)
-               DO ji = ncsi1(jl), ncsi2(jl)
-                  mbathy(ji,jj) = 0                   ! suppress closed seas and lakes from bathymetry
-                  bathy (ji,jj) = 0._wp               
-               END DO
-            END DO
-         END DO
-      ENDIF
-      !
-      !                                               ! =========================== !
-      !                                               !     set a minimum depth     !
-      !                                               ! =========================== !
-      IF ( .not. ln_sco ) THEN
+      IF( nn_closea == 0 )   CALL clo_bat( bathy, mbathy )    !==  NO closed seas or lakes  ==!
+      !                       
+      IF ( .not. ln_sco ) THEN                                !==  set a minimum depth  ==!
          IF( rn_hmin < 0._wp ) THEN    ;   ik = - INT( rn_hmin )                                      ! from a nb of level
          ELSE                          ;   ik = MINLOC( gdepw_0, mask = gdepw_0 > rn_hmin, dim = 1 )  ! from a depth
          ENDIF
@@ -514,6 +507,7 @@ CONTAINS
          IF(lwp) write(numout,*) 'Minimum ocean depth: ', zhmin, ' minimum number of ocean levels : ', ik
       ENDIF
       !
+      ! 
       CALL wrk_dealloc( jpidta, jpjdta, idta )
       CALL wrk_dealloc( jpidta, jpjdta, zdta )
       !
@@ -741,6 +735,7 @@ CONTAINS
       IF(lwp) WRITE(numout,*) '    ~~~~~~~~~~~~~'
       !
       mbkt(:,:) = MAX( mbathy(:,:) , 1 )    ! bottom k-index of T-level (=1 over land)
+ 
       !                                     ! bottom k-index of W-level = mbkt+1
       DO jj = 1, jpjm1                      ! bottom k-index of u- (v-) level
          DO ji = 1, jpim1
@@ -1257,7 +1252,7 @@ CONTAINS
             END DO
          END DO
          !
-         ! Apply lateral boundary condition   CAUTION: kept the value when the lbc field is zero
+         ! Apply lateral boundary condition   CAUTION: keep the value when the lbc field is zero
          ztmp(:,:) = zenv(:,:)   ;   CALL lbc_lnk( zenv, 'T', 1._wp )
          DO jj = 1, nlcj
             DO ji = 1, nlci
@@ -1268,7 +1263,16 @@ CONTAINS
       END DO                                                !     End loop     !
       !                                                     ! ================ !
       !
-      !                                        ! envelop bathymetry saved in hbatt
+      ! Fill ghost rows with appropriate values to avoid undefined e3 values with some mpp decompositions
+      DO ji = nlci+1, jpi 
+         zenv(ji,1:nlcj) = zenv(nlci,1:nlcj)
+      END DO
+      !
+      DO jj = nlcj+1, jpj
+         zenv(:,jj) = zenv(:,nlcj)
+      END DO
+      !
+      ! Envelope bathymetry saved in hbatt
       hbatt(:,:) = zenv(:,:) 
       IF( MINVAL( gphit(:,:) ) * MAXVAL( gphit(:,:) ) <= 0._wp ) THEN
          CALL ctl_warn( ' s-coordinates are tapered in vicinity of the Equator' )

@@ -120,7 +120,7 @@ set -o posix
 # EVOLUTIONS
 # ==========
 #
-# $Id: sette.sh 3294 2012-01-28 16:44:18Z rblod $
+# $Id:$
 #
 #   * creation
 #
@@ -128,10 +128,11 @@ set -o posix
 #
 #-
 # Compiler among those in NEMOGCM/ARCH
-COMPILER=PW6_CALYPSO
-export BATCH_COMMAND_PAR="bsub < "
+COMPILER=PW6_VARGAS
+export BATCH_COMMAND_PAR="llsubmit"
 export BATCH_COMMAND_SEQ=$BATCH_COMMAND_PAR
-
+export INTERACT_FLAG="no"
+export MPIRUN_FLAG="yes"
 
 # Directory to run the tests
 SETTE_DIR=$(cd $(dirname "$0"); pwd)
@@ -153,15 +154,14 @@ if [ ${config} -eq 1 ] ;  then
     ## Restartability tests for GYRE_LOBSTER
     export TEST_NAME="LONG"
     cd ${SETTE_DIR}
-    . ../CONFIG/makenemo -m ${CMP_NAM} -n GYRELOB_LONG -r GYRE_LOBSTER -j 8  
+    . ../CONFIG/makenemo -m ${CMP_NAM} -n GYRELOB_LONG -r GYRE_LOBSTER add_key "key_mpp_mpi"
     cd ${SETTE_DIR}
     . param.cfg
     . all_functions.sh
     . prepare_exe_dir.sh
     JOB_FILE=${EXE_DIR}/run_job.sh
-    MPIRUN_FLAG="yes"
-    NPROC=1
-    rm $JOB_FILE
+    NPROC=4
+    \rm ${JOB_FILE}
     cd ${EXE_DIR}
     set_namelist namelist cn_exp \"GYRELOB_LONG\"
     set_namelist namelist nn_it000 1
@@ -170,8 +170,11 @@ if [ ${config} -eq 1 ] ;  then
     set_namelist namelist ln_clobber .true.
     set_namelist namelist nn_solv 2
     set_namelist namelist_top ln_diatrc .false.
+    set_namelist namelist jpni 2
+    set_namelist namelist jpnj 2
+    set_namelist namelist jpnij 4
     cd ${SETTE_DIR}
-    . ./prepare_job.sh input_GYRE.cfg $NPROC ${TEST_NAME} $MPIRUN_FLAG $JOB_FILE
+    . ./prepare_job.sh input_GYRE.cfg $NPROC ${TEST_NAME} ${MPIRUN_FLAG} ${JOB_FILE}
 
     cd ${SETTE_DIR}
     export TEST_NAME="SHORT"
@@ -185,32 +188,38 @@ if [ ${config} -eq 1 ] ;  then
     set_namelist namelist nn_rstctl 2
     set_namelist namelist ln_clobber .true.
     set_namelist namelist nn_solv 2
-    ln -s -f ..\/LONG\/GYRELOB_LONG_00000060_restart.nc
-    ln -s -f ..\/LONG\/GYRELOB_LONG_00000060_restart_trc.nc
+    set_namelist namelist jpni 2
+    set_namelist namelist jpnj 2
+    set_namelist namelist jpnij 4
     set_namelist namelist cn_ocerst_in \"GYRELOB_LONG_00000060_restart\"
+    set_namelist namelist_top cn_trcrst_in \"GYRELOB_LONG_00000060_restart_trc\"
     set_namelist namelist_top ln_diatrc .false.
     set_namelist namelist_top ln_rsttr .true.
     set_namelist namelist_top nn_rsttr 2
-    set_namelist namelist_top cn_trcrst_in \"GYRELOB_LONG_00000060_restart_trc\"
+    for (( i=1; i<=$NPROC; i++)) ; do
+        L_NPROC=$(( $i - 1 ))
+        L_NPROC=`printf "%04d\n" ${L_NPROC}`
+        ln -sf ../LONG/GYRELOB_LONG_00000060_restart_${L_NPROC}.nc .
+        ln -sf ../LONG/GYRELOB_LONG_00000060_restart_trc_${L_NPROC}.nc .
+    done
     cd ${SETTE_DIR}
-    . ./prepare_job.sh input_GYRE.cfg $NPROC ${TEST_NAME} $MPIRUN_FLAG $JOB_FILE
+    . ./prepare_job.sh input_GYRE.cfg $NPROC ${TEST_NAME} ${MPIRUN_FLAG} ${JOB_FILE}
     cd ${SETTE_DIR}
-    . ./fcm_job.sh $NPROC $JOB_FILE
+    . ./fcm_job.sh $NPROC ${JOB_FILE} ${INTERACT_FLAG} ${MPIRUN_FLAG}
 fi
 
 if [ ${config} -eq 2 ] ;  then
-    ## Reproducibility tests for GYRE_LOBSTER
+    ## Repropducibility tests for GYRE_LOBSTER
     export TEST_NAME="REPRO_1_4"
     cd ${SETTE_DIR}
-    . ../CONFIG/makenemo -m ${CMP_NAM} -n GYRELOB_4 -r GYRE_LOBSTER -j 8 add_key "key_mpp_rep key_mpp_mpi"
+    . ../CONFIG/makenemo -m ${CMP_NAM} -n GYRELOB_4 -r GYRE_LOBSTER add_key "key_mpp_mpi key_mpp_rep"
     cd ${SETTE_DIR}
     . param.cfg
     . all_functions.sh
     . prepare_exe_dir.sh
     JOB_FILE=${EXE_DIR}/run_job.sh
-    MPIRUN_FLAG="yes"
     NPROC=4
-    rm $JOB_FILE
+    \rm ${JOB_FILE}
     cd ${EXE_DIR}
     set_namelist namelist cn_exp \"GYRELOB_14\"
     set_namelist namelist nn_it000 1
@@ -226,17 +235,13 @@ if [ ${config} -eq 2 ] ;  then
     set_namelist namelist jpnj 4
     set_namelist namelist jpnij 4
     cd ${SETTE_DIR}
-    . ./prepare_job.sh input_GYRE.cfg $NPROC ${TEST_NAME} $MPIRUN_FLAG $JOB_FILE
+    . ./prepare_job.sh input_GYRE.cfg $NPROC ${TEST_NAME} ${MPIRUN_FLAG} ${JOB_FILE}
     cd ${SETTE_DIR}
-    . ./fcm_job.sh $NPROC $JOB_FILE
+    . ./fcm_job.sh $NPROC ${JOB_FILE} ${INTERACT_FLAG} ${MPIRUN_FLAG}
 
     cd ${SETTE_DIR}
     export TEST_NAME="REPRO_2_2"
     . prepare_exe_dir.sh
-    JOB_FILE=${EXE_DIR}/run_job.sh
-    MPIRUN_FLAG="yes"
-    NPROC=4
-    rm $JOB_FILE
     cd ${EXE_DIR}
     set_namelist namelist cn_exp \"GYRELOB_22\"
     set_namelist namelist nn_it000 1
@@ -251,9 +256,10 @@ if [ ${config} -eq 2 ] ;  then
     set_namelist namelist jpnj 2
     set_namelist namelist jpnij 4
     cd ${SETTE_DIR}
-    . ./prepare_job.sh input_GYRE.cfg $NPROC ${TEST_NAME} $MPIRUN_FLAG $JOB_FILE
+    . ./prepare_job.sh input_GYRE.cfg $NPROC ${TEST_NAME} ${MPIRUN_FLAG} ${JOB_FILE}
     cd ${SETTE_DIR}
-    . ./fcm_job.sh $NPROC $JOB_FILE
+    . ./fcm_job.sh $NPROC ${JOB_FILE} ${INTERACT_FLAG} ${MPIRUN_FLAG}
+
 fi
 
 # TESTS FOR ORCA2_LIM_PISCES CONFIGURATION
@@ -261,21 +267,23 @@ if [ ${config} -eq 3 ] ;  then
     ## Restartability tests for ORCA2_LIM_PISCES
     export TEST_NAME="LONG"
     cd ${SETTE_DIR}
-    . ../CONFIG/makenemo -m ${CMP_NAM} -n ORCA2LIMPIS_LONG -r ORCA2_LIM_PISCES -j 8
+    . ../CONFIG/makenemo -m ${CMP_NAM} -n ORCA2LIMPIS_LONG -r ORCA2_LIM_PISCES -j 8 add_key "key_mpp_mpi" 
     cd ${SETTE_DIR}
     . param.cfg
     . all_functions.sh
     . prepare_exe_dir.sh
     JOB_FILE=${EXE_DIR}/run_job.sh
-    MPIRUN_FLAG="yes"
-    NPROC=1
-    rm $JOB_FILE
+    NPROC=4
+    \rm ${JOB_FILE}
     cd ${EXE_DIR}
     set_namelist namelist cn_exp \"O2LP_LONG\"
     set_namelist namelist nn_it000 1
     set_namelist namelist nn_itend 150
     set_namelist namelist nn_stock 75
     set_namelist namelist ln_clobber .true.
+    set_namelist namelist jpni 2
+    set_namelist namelist jpnj 2
+    set_namelist namelist jpnij 4
     set_namelist namelist nn_solv 2
     set_namelist namelist_top ln_trcdta .false.
     set_namelist namelist_top ln_diatrc .false.
@@ -287,7 +295,7 @@ if [ ${config} -eq 3 ] ;  then
     set_namelist namelist_pisces ln_dust .false.
     set_namelist namelist_pisces ln_presatm .false.
     cd ${SETTE_DIR}
-    . ./prepare_job.sh input_ORCA2_LIM_PISCES.cfg $NPROC ${TEST_NAME} $MPIRUN_FLAG $JOB_FILE
+    . ./prepare_job.sh input_ORCA2_LIM_PISCES.cfg $NPROC ${TEST_NAME} ${MPIRUN_FLAG} ${JOB_FILE}
     
     cd ${SETTE_DIR}
     export TEST_NAME="SHORT"
@@ -300,16 +308,16 @@ if [ ${config} -eq 3 ] ;  then
     set_namelist namelist ln_rstart .true.
     set_namelist namelist nn_rstctl 2
     set_namelist namelist ln_clobber .true.
+    set_namelist namelist jpni 2
+    set_namelist namelist jpnj 2
+    set_namelist namelist jpnij 4
     set_namelist namelist nn_solv 2
-    ln -s -f ../LONG/O2LP_LONG_00000075_restart.nc
-    ln -s -f ../LONG/O2LP_LONG_00000075_restart_ice.nc
-    ln -s -f ../LONG/O2LP_LONG_00000075_restart_trc.nc
     set_namelist namelist cn_ocerst_in \"O2LP_LONG_00000075_restart\"
     set_namelist namelist_ice cn_icerst_in \"O2LP_LONG_00000075_restart_ice\"
+    set_namelist namelist_top cn_trcrst_in \"O2LP_LONG_00000075_restart_trc\"
     set_namelist namelist_top ln_diatrc .false.
     set_namelist namelist_top ln_rsttr .true.
     set_namelist namelist_top nn_rsttr 2
-    set_namelist namelist_top cn_trcrst_in \"O2LP_LONG_00000075_restart_trc\"
     # put ln_ironsed, ln_river, ln_ndepo, ln_dust
     # if not you need input files, and for tests is not necessary
     set_namelist namelist_pisces ln_ironsed .false.
@@ -317,14 +325,21 @@ if [ ${config} -eq 3 ] ;  then
     set_namelist namelist_pisces ln_ndepo .false.
     set_namelist namelist_pisces ln_dust .false.
     set_namelist namelist_pisces ln_presatm .false.
+    for (( i=1; i<=$NPROC; i++)) ; do
+        L_NPROC=$(( $i - 1 ))
+        L_NPROC=`printf "%04d\n" ${L_NPROC}`
+        ln -sf ../LONG/O2LP_LONG_00000075_restart_${L_NPROC}.nc .
+        ln -sf ../LONG/O2LP_LONG_00000075_restart_trc_${L_NPROC}.nc .
+        ln -sf ../LONG/O2LP_LONG_00000075_restart_ice_${L_NPROC}.nc .
+    done
     cd ${SETTE_DIR}
-    . ./prepare_job.sh input_ORCA2_LIM_PISCES.cfg $NPROC ${TEST_NAME} $MPIRUN_FLAG $JOB_FILE
+    . ./prepare_job.sh input_ORCA2_LIM_PISCES.cfg $NPROC ${TEST_NAME} ${MPIRUN_FLAG} ${JOB_FILE}
     cd ${SETTE_DIR}
-    . ./fcm_job.sh $NPROC $JOB_FILE
+    . ./fcm_job.sh $NPROC ${JOB_FILE} ${INTERACT_FLAG} ${MPIRUN_FLAG}
 fi
 
 if [ ${config} -eq 4 ] ;  then
-    ## Reproducibility tests for ORCA2_LIM_PISCES
+    ## Repropducibility tests for ORCA2_LIM_PISCES
     export TEST_NAME="REPRO_4_4"
     cd ${SETTE_DIR}
     . ../CONFIG/makenemo -m ${CMP_NAM} -n ORCA2LIMPIS_16 -r ORCA2_LIM_PISCES -j 8 add_key "key_mpp_rep key_mpp_mpi"
@@ -333,13 +348,13 @@ if [ ${config} -eq 4 ] ;  then
     . all_functions.sh
     . prepare_exe_dir.sh
     JOB_FILE=${EXE_DIR}/run_job.sh
-    MPIRUN_FLAG="yes"
     NPROC=16
-    rm $JOB_FILE
+    \rm $JOB_FILE
     cd ${EXE_DIR}
     set_namelist namelist nn_it000 1
     set_namelist namelist nn_itend 75
     set_namelist namelist nn_fwb 0
+    set_namelist namelist ln_ctl .false.
     set_namelist namelist ln_clobber .true.
     set_namelist namelist jpni 4
     set_namelist namelist jpnj 4
@@ -355,21 +370,18 @@ if [ ${config} -eq 4 ] ;  then
     set_namelist namelist_pisces ln_dust .false.
     set_namelist namelist_pisces ln_presatm .false.
     cd ${SETTE_DIR}
-    . ./prepare_job.sh input_ORCA2_LIM_PISCES.cfg $NPROC ${TEST_NAME} $MPIRUN_FLAG $JOB_FILE
+    . ./prepare_job.sh input_ORCA2_LIM_PISCES.cfg $NPROC ${TEST_NAME} ${MPIRUN_FLAG} ${JOB_FILE}
     cd ${SETTE_DIR}
-    . ./fcm_job.sh $NPROC $JOB_FILE
+    . ./fcm_job.sh $NPROC ${JOB_FILE} ${INTERACT_FLAG} ${MPIRUN_FLAG}
 
     cd ${SETTE_DIR}
     export TEST_NAME="REPRO_2_8"
     . prepare_exe_dir.sh
-    JOB_FILE=${EXE_DIR}/run_job.sh
-    MPIRUN_FLAG="yes"
-    NPROC=16
-    rm $JOB_FILE
     cd ${EXE_DIR}
     set_namelist namelist nn_it000 1
     set_namelist namelist nn_itend 75
     set_namelist namelist nn_fwb 0
+    set_namelist namelist ln_ctl .false.
     set_namelist namelist ln_clobber .true.
     set_namelist namelist jpni 2
     set_namelist namelist jpnj 8
@@ -385,9 +397,9 @@ if [ ${config} -eq 4 ] ;  then
     set_namelist namelist_pisces ln_dust .false.
     set_namelist namelist_pisces ln_presatm .false.
     cd ${SETTE_DIR}
-    . ./prepare_job.sh input_ORCA2_LIM_PISCES.cfg $NPROC ${TEST_NAME} $MPIRUN_FLAG $JOB_FILE
+    . ./prepare_job.sh input_ORCA2_LIM_PISCES.cfg $NPROC ${TEST_NAME} ${MPIRUN_FLAG} ${JOB_FILE}
     cd ${SETTE_DIR}
-    . ./fcm_job.sh $NPROC $JOB_FILE
+    . ./fcm_job.sh $NPROC ${JOB_FILE} ${INTERACT_FLAG} ${MPIRUN_FLAG}
 fi
 
 # TESTS FOR ORCA2_OFF_PISCES CONFIGURATION
@@ -395,21 +407,23 @@ if [ ${config} -eq 5 ] ;  then
     ## Restartability tests for ORCA2_OFF_PISCES
     export TEST_NAME="LONG"
     cd ${SETTE_DIR}
-    . ../CONFIG/makenemo -m ${CMP_NAM} -n ORCA2OFFPIS_LONG -r ORCA2_OFF_PISCES -j 8 
+    . ../CONFIG/makenemo -m ${CMP_NAM} -n ORCA2OFFPIS_LONG -r ORCA2_OFF_PISCES -j 8 add_key "key_mpp_mpi key_mpp_rep"
     cd ${SETTE_DIR}
     . param.cfg
     . all_functions.sh
     . prepare_exe_dir.sh
     JOB_FILE=${EXE_DIR}/run_job.sh
-    MPIRUN_FLAG="yes"
-    NPROC=1
-    rm $JOB_FILE
+    NPROC=4
+    \rm $JOB_FILE
     cd ${EXE_DIR}
     set_namelist namelist cn_exp \"OFFP_LONG\"
     set_namelist namelist nn_it000 1
     set_namelist namelist nn_itend 40
     set_namelist namelist nn_stock 20
     set_namelist namelist ln_clobber .true.
+    set_namelist namelist jpni 2
+    set_namelist namelist jpnj 2
+    set_namelist namelist jpnij 4
     set_namelist namelist_top ln_trcdta .false.
     set_namelist namelist_top ln_diatrc .false.
     # put ln_ironsed, ln_river, ln_ndepo, ln_dust to false
@@ -420,7 +434,7 @@ if [ ${config} -eq 5 ] ;  then
     set_namelist namelist_pisces ln_dust .false.
     set_namelist namelist_pisces ln_presatm .false.
     cd ${SETTE_DIR}
-    . ./prepare_job.sh input_ORCA2_OFF_PISCES.cfg $NPROC ${TEST_NAME} $MPIRUN_FLAG $JOB_FILE
+    . ./prepare_job.sh input_ORCA2_OFF_PISCES.cfg $NPROC ${TEST_NAME} ${MPIRUN_FLAG} ${JOB_FILE}
     
     cd ${SETTE_DIR}
     export TEST_NAME="SHORT"
@@ -431,11 +445,18 @@ if [ ${config} -eq 5 ] ;  then
     set_namelist namelist nn_itend 40
     set_namelist namelist nn_stock 20
     set_namelist namelist ln_clobber .true.
-    ln -s ../LONG/OFFP_LONG_00000020_restart_trc.nc .
+    set_namelist namelist jpni 2
+    set_namelist namelist jpnj 2
+    set_namelist namelist jpnij 4
     set_namelist namelist_top ln_diatrc .false.
     set_namelist namelist_top ln_rsttr .true.
     set_namelist namelist_top nn_rsttr 2
     set_namelist namelist_top cn_trcrst_in \"OFFP_LONG_00000020_restart_trc\"
+    for (( i=1; i<=$NPROC; i++)) ; do
+        L_NPROC=$(( $i - 1 ))
+        L_NPROC=`printf "%04d\n" ${L_NPROC}`
+        ln -sf ../LONG/OFFP_LONG_00000020_restart_trc_${L_NPROC}.nc .
+    done
     # put ln_ironsed, ln_river, ln_ndepo, ln_dust
     # if not you need input files, and for tests is not necessary
     set_namelist namelist_pisces ln_ironsed .false.
@@ -444,13 +465,13 @@ if [ ${config} -eq 5 ] ;  then
     set_namelist namelist_pisces ln_dust .false.
     set_namelist namelist_pisces ln_presatm .false.
     cd ${SETTE_DIR}
-    . ./prepare_job.sh input_ORCA2_OFF_PISCES.cfg $NPROC ${TEST_NAME} $MPIRUN_FLAG $JOB_FILE
+    . ./prepare_job.sh input_ORCA2_OFF_PISCES.cfg $NPROC ${TEST_NAME}  ${MPIRUN_FLAG} ${JOB_FILE}
     cd ${SETTE_DIR}
-    . ./fcm_job.sh $NPROC $JOB_FILE
+    . ./fcm_job.sh $NPROC  ${JOB_FILE} ${INTERACT_FLAG} ${MPIRUN_FLAG}
 fi
 
 if [ ${config} -eq 6 ] ;  then
-    ## Reproducibility tests for ORCA2_OFF_PISCES
+    ## Repropducibility tests for ORCA2_OFF_PISCES
     export TEST_NAME="REPRO_4_4"
     cd ${SETTE_DIR}
     . ../CONFIG/makenemo -m ${CMP_NAM} -n ORCA2OFFPIS_16 -r ORCA2_OFF_PISCES -j 8 add_key "key_mpp_rep key_mpp_mpi"
@@ -459,12 +480,12 @@ if [ ${config} -eq 6 ] ;  then
     . all_functions.sh
     . prepare_exe_dir.sh
     JOB_FILE=${EXE_DIR}/run_job.sh
-    MPIRUN_FLAG="yes"
     NPROC=16
-    rm $JOB_FILE
+    \rm $JOB_FILE
     cd ${EXE_DIR}
     set_namelist namelist nn_it000 1
     set_namelist namelist nn_itend 40
+    set_namelist namelist ln_ctl .false.
     set_namelist namelist ln_clobber .true.
     set_namelist namelist jpni 4
     set_namelist namelist jpnj 4
@@ -479,20 +500,17 @@ if [ ${config} -eq 6 ] ;  then
     set_namelist namelist_pisces ln_dust .false.
     set_namelist namelist_pisces ln_presatm .false.
     cd ${SETTE_DIR}
-    . ./prepare_job.sh input_ORCA2_OFF_PISCES.cfg $NPROC ${TEST_NAME} $MPIRUN_FLAG $JOB_FILE
+    . ./prepare_job.sh input_ORCA2_OFF_PISCES.cfg $NPROC ${TEST_NAME} ${MPIRUN_FLAG} ${JOB_FILE}
     cd ${SETTE_DIR}
-    . ./fcm_job.sh $NPROC $JOB_FILE
+    . ./fcm_job.sh $NPROC ${JOB_FILE} ${INTERACT_FLAG} ${MPIRUN_FLAG}
 
     cd ${SETTE_DIR}
     export TEST_NAME="REPRO_2_8"
     . prepare_exe_dir.sh
-    JOB_FILE=${EXE_DIR}/run_job.sh
-    MPIRUN_FLAG="yes"
-    NPROC=16
-    rm $JOB_FILE
     cd ${EXE_DIR}
     set_namelist namelist nn_it000 1
     set_namelist namelist nn_itend 40
+    set_namelist namelist ln_ctl .false.
     set_namelist namelist ln_clobber .true.
     set_namelist namelist jpni 2
     set_namelist namelist jpnj 8
@@ -507,78 +525,23 @@ if [ ${config} -eq 6 ] ;  then
     set_namelist namelist_pisces ln_dust .false.
     set_namelist namelist_pisces ln_presatm .false.
     cd ${SETTE_DIR}
-    . ./prepare_job.sh input_ORCA2_OFF_PISCES.cfg $NPROC ${TEST_NAME} $MPIRUN_FLAG $JOB_FILE
+    . ./prepare_job.sh input_ORCA2_OFF_PISCES.cfg $NPROC ${TEST_NAME} ${MPIRUN_FLAG} ${JOB_FILE}
     cd ${SETTE_DIR}
-    . ./fcm_job.sh $NPROC $JOB_FILE
+    . ./fcm_job.sh $NPROC  ${JOB_FILE} ${INTERACT_FLAG} ${MPIRUN_FLAG}
 fi
 
-# TESTS FOR AMM12 CONFIGURATION
 if [ ${config} -eq 7 ] ;  then
-    ## Reproducibility tests for AMM12
-    export TEST_NAME="REPRO_8_4"
-    cd ${SETTE_DIR}
-    . ../CONFIG/makenemo -m ${CMP_NAM} -n AMM12_32 -r AMM12 -j 8 add_key "key_mpp_rep"
-    cd ${SETTE_DIR}
-    . param.cfg
-    . all_functions.sh
-    . prepare_exe_dir.sh
-    JOB_FILE=${EXE_DIR}/run_job.sh
-    MPIRUN_FLAG="yes"
-    NPROC=32
-    rm $JOB_FILE
-    cd ${EXE_DIR}
-    set_namelist namelist nn_it000 1
-    set_namelist namelist nn_itend 576
-    set_namelist namelist nn_fwb 0
-    set_namelist namelist ln_ctl .false.
-    set_namelist namelist ln_clobber .true.
-    set_namelist namelist nn_dyn2d 2
-    set_namelist namelist nn_tra_dta 0
-    set_namelist namelist jpni 8
-    set_namelist namelist jpnj 4
-    set_namelist namelist jpnij 32
-    cd ${SETTE_DIR}
-    . ./prepare_job.sh input_AMM12.cfg $NPROC ${TEST_NAME} $MPIRUN_FLAG $JOB_FILE
-    cd ${SETTE_DIR}
-    . ./fcm_job.sh $NPROC $JOB_FILE
-
-    cd ${SETTE_DIR}
-    export TEST_NAME="REPRO_4_8"
-    . prepare_exe_dir.sh
-    JOB_FILE=${EXE_DIR}/run_job.sh
-    MPIRUN_FLAG="yes"
-    NPROC=32
-    rm $JOB_FILE
-    cd ${EXE_DIR}
-    set_namelist namelist nn_it000 1
-    set_namelist namelist nn_itend 576
-    set_namelist namelist nn_fwb 0
-    set_namelist namelist ln_ctl .false.
-    set_namelist namelist nn_dyn2d 2
-    set_namelist namelist nn_tra_dta 0
-    set_namelist namelist ln_clobber .true.
-    set_namelist namelist jpni 4
-    set_namelist namelist jpnj 8
-    set_namelist namelist jpnij 32
-    cd ${SETTE_DIR}
-    . ./prepare_job.sh input_AMM12.cfg $NPROC ${TEST_NAME} $MPIRUN_FLAG $JOB_FILE
-    cd ${SETTE_DIR}
-    . ./fcm_job.sh $NPROC $JOB_FILE
-fi
-
-if [ ${config} -eq 8 ] ;  then
     ## Restartability tests for AMM12
     export TEST_NAME="LONG"
     cd ${SETTE_DIR}
-    . ../CONFIG/makenemo -m ${CMP_NAM} -n AMM12_LONG -r AMM12 -j 8 add_key "key_mpp_rep"
+    . ../CONFIG/makenemo -m ${CMP_NAM} -n AMM12_LONG -r AMM12 
     cd ${SETTE_DIR}
     . param.cfg
     . all_functions.sh
     . prepare_exe_dir.sh
     JOB_FILE=${EXE_DIR}/run_job.sh
-    MPIRUN_FLAG="yes"
     NPROC=32
-    rm $JOB_FILE
+    \rm $JOB_FILE
     cd ${EXE_DIR}
     set_namelist namelist nn_it000 1
     set_namelist namelist nn_itend 12
@@ -592,7 +555,7 @@ if [ ${config} -eq 8 ] ;  then
     set_namelist namelist jpnj 4
     set_namelist namelist jpnij 32
     cd ${SETTE_DIR}
-    . ./prepare_job.sh input_AMM12.cfg $NPROC ${TEST_NAME} $MPIRUN_FLAG $JOB_FILE
+    . ./prepare_job.sh input_AMM12.cfg $NPROC ${TEST_NAME} ${MPIRUN_FLAG} ${JOB_FILE}
 
     cd ${SETTE_DIR}
     export TEST_NAME="SHORT"
@@ -610,11 +573,64 @@ if [ ${config} -eq 8 ] ;  then
     set_namelist namelist jpnij 32
     set_namelist namelist ln_rstart .true.
     set_namelist namelist nn_rstctl 2
-    set_namelist namelist cn_ocerst_in \"../LONG/AMM12_00000006_restart\"
+    set_namelist namelist cn_ocerst_in \"AMM12_00000006_restart\"
+    for (( i=1; i<=$NPROC; i++)) ; do
+        L_NPROC=$(( $i - 1 ))
+        L_NPROC=`printf "%04d\n" ${L_NPROC}`
+        ln -sf ../LONG/AMM12_00000006_restart_${L_NPROC}.nc .
+    done
     cd ${SETTE_DIR}
-    . ./prepare_job.sh input_AMM12.cfg $NPROC ${TEST_NAME} $MPIRUN_FLAG $JOB_FILE
+    . ./prepare_job.sh input_AMM12.cfg $NPROC ${TEST_NAME} ${MPIRUN_FLAG} ${JOB_FILE}
     cd ${SETTE_DIR}
-    . ./fcm_job.sh $NPROC $JOB_FILE
+    . ./fcm_job.sh $NPROC ${JOB_FILE} ${INTERACT_FLAG} ${MPIRUN_FLAG}
+fi
+
+if [ ${config} -eq 8 ] ;  then
+    ## Reproducibility tests for AMM12
+    export TEST_NAME="REPO_8_4"
+    cd ${SETTE_DIR}
+    . ../CONFIG/makenemo -m ${CMP_NAM} -n AMM12_32 -r AMM12 add_key "key_mpp_rep"
+    cd ${SETTE_DIR}
+    . param.cfg
+    . all_functions.sh
+    . prepare_exe_dir.sh
+    JOB_FILE=${EXE_DIR}/run_job.sh
+    NPROC=32
+    \rm ${JOB_FILE}
+    cd ${EXE_DIR}
+    set_namelist namelist nn_it000 1
+    set_namelist namelist nn_itend 576
+    set_namelist namelist nn_fwb 0
+    set_namelist namelist ln_ctl .false.
+    set_namelist namelist ln_clobber .true.
+    set_namelist namelist nn_dyn2d 2
+    set_namelist namelist nn_tra_dta 0
+    set_namelist namelist jpni 8
+    set_namelist namelist jpnj 4
+    set_namelist namelist jpnij 32
+    cd ${SETTE_DIR}
+    . ./prepare_job.sh input_AMM12.cfg $NPROC ${TEST_NAME} ${MPIRUN_FLAG} ${JOB_FILE}
+    cd ${SETTE_DIR}
+    . ./fcm_job.sh $NPROC ${JOB_FILE} ${INTERACT_FLAG} ${MPIRUN_FLAG}
+
+    cd ${SETTE_DIR}
+    export TEST_NAME="REPO_4_8"
+    . prepare_exe_dir.sh
+    cd ${EXE_DIR}
+    set_namelist namelist nn_it000 1
+    set_namelist namelist nn_itend 576
+    set_namelist namelist nn_fwb 0
+    set_namelist namelist ln_ctl .false.
+    set_namelist namelist nn_dyn2d 2
+    set_namelist namelist nn_tra_dta 0
+    set_namelist namelist ln_clobber .true.
+    set_namelist namelist jpni 4
+    set_namelist namelist jpnj 8
+    set_namelist namelist jpnij 32
+    cd ${SETTE_DIR}
+    . ./prepare_job.sh input_AMM12.cfg $NPROC ${TEST_NAME} ${MPIRUN_FLAG} ${JOB_FILE}
+    cd ${SETTE_DIR}
+    . ./fcm_job.sh $NPROC ${JOB_FILE} ${INTERACT_FLAG} ${MPIRUN_FLAG}
 fi
 
 # TEST FOR ORCA2_LIM_AGRIF : simple test of running AGRIF (no restartability neither reproducibility tests)
@@ -628,9 +644,8 @@ if [ ${config} -eq 9 ] ;  then
     . all_functions.sh
     . prepare_exe_dir.sh
     JOB_FILE=${EXE_DIR}/run_job.sh
-    MPIRUN_FLAG="yes"
     NPROC=2
-    rm $JOB_FILE
+    \rm ${JOB_FILE}
     cd ${EXE_DIR}
     set_namelist namelist nn_it000 1
     set_namelist namelist nn_itend 75
@@ -644,9 +659,9 @@ if [ ${config} -eq 9 ] ;  then
     set_namelist 1_namelist ln_ctl .false.
     set_namelist 1_namelist ln_clobber .true.
     cd ${SETTE_DIR}
-    . ./prepare_job.sh input_ORCA2_LIM_AGRIF.cfg $NPROC ${TEST_NAME} $MPIRUN_FLAG $JOB_FILE
+    . ./prepare_job.sh input_ORCA2_LIM_AGRIF.cfg $NPROC ${TEST_NAME} ${MPIRUN_FLAG} ${JOB_FILE}
     cd ${SETTE_DIR}
-    . ./fcm_job.sh $NPROC $JOB_FILE
+    . ./fcm_job.sh $NPROC ${JOB_FILE} ${INTERACT_FLAG} ${MPIRUN_FLAG}
 fi
 
 done

@@ -27,6 +27,7 @@ MODULE limtrp_2
    USE lbclnk          ! lateral boundary conditions -- MPP exchanges
    USE lib_mpp         ! MPP library
    USE wrk_nemo        ! work arrays
+   USE lib_fortran     ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
 
    IMPLICIT NONE
    PRIVATE
@@ -45,7 +46,7 @@ MODULE limtrp_2
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/LIM2 3.3 , UCL - NEMO Consortium (2010)
-   !! $Id: limtrp_2.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: limtrp_2.F90 3558 2012-11-14 19:15:05Z rblod $
    !! Software governed by the CeCILL licence (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 

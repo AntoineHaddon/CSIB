@@ -1,4 +1,4 @@
-PRO std_ts_read, var_name, dt1, dt2, prefix, suffix, ts, ts_z $
+PRO std_ts_read, var_name, dt1, dt2, prefix, suffix, ts, ts_z, masknp $
                  , WITHSSH = withssh, SSHPREFIX = sshprefix, SSHSUFFIX = sshsuffix, LEVZ = levz
 
   compile_opt idl2, strictarrsubs

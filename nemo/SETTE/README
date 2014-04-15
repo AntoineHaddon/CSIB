@@ -10,10 +10,12 @@ USER MODIFICATIONS
  in sette.sh script :
                COMPILER    : compiler among those available in NEMOGCM/ARCH, needed for makenemo (see below)
                              can also be pass as an argument, e.g. ./sette.sh ifort_osx
-	       BATCH_COMMAND : command for job submission in batch mode
-	       MPI_INTERACT : "yes" if you want to run in interactive mode for MPI run
-	       		      "no" if you want to run in batch mode for MPI run
-			      NOTE : every job using only 1 proc is run in interactive mode
+	       BATCH_COMMAND_PAR : command for job submission in batch mode parallel (MMIÂ)
+	       BATCH_COMMAND_SEQ : command for job submission in batch mode sequential (NB_PROC = 1)
+	       INTERACT_FLAG : "yes" if you want to run in interactive mode 
+	       		       "no" if you want to run in batch mode
+	       MPIRUN_FLAG   : "yes" if you want to run in parallel (MPI)
+			       "no" if you want to run in sequential mode (NB_PROC = 1)
 
                makenemo -m : machine (compilator); see ./makenemo -m help (in NEMOGCM/CONFIG directory)
                         -n : config name (in examples config_name_nproci_nprocj), see ./makenemo -n help
@@ -31,9 +33,12 @@ USER MODIFICATIONS
 				    TEST_NAME variable gives name to execution directory (created in prepare_exe_dir.sh)
 				    IT is mandatory to have different TEST_NAME for each job run if not existing files are re-written (for example namelist)
 
-               fcm_job.sh needs input: input_CONFIG_NAME TOTAL_NUMBER_OF_PROCS_used TEST_NAME
-			(for example if you compile ORCA2_LIM with key_mpp_mpi 
-			and only run short test ===> ./fcm_job input_ORCA2_LIM.cfg 4 SHORT)
+               prepare_job.sh generates the script to be executed 
+			input: INPUT_FILE_CONFIG_NAME NUMBER_PROC TEST_NAME MPIRUN_FLAG JOB_FILE
+
+               fcm_job.sh needs input: TOTAL_NUMBER_OF_PROCS_used JOB_FILE_NAME INTERACT_FLAG MPIRUN_FLAG 
+			(for example if you run with 4 procs JOB_FILE batch parallel 
+			and only run short test ===> ./fcm_job 4 SHORT no    yes   )
 
  in param.cfg :
                FORCING_DIR 	   : directory in which will be found input.tar file (same name in input_CONFIG_NAME.cfg)
@@ -45,8 +50,8 @@ USER MODIFICATIONS
                IMPORTANT : control that name of tar file in FORCING directory
                is the same of that in input_REF_CONFIG.cfg, if not change one.
 
-               change in "RUN OPA" if [ ${MPI_INTERACT} == "yes" ] mpirun command line (some examples are already written)
-	       NOTE: if MPI_INTERACT="no" it is neede a batch_file (see below to create a new one)
+               change in "RUN OPA" if [ ${INTERACT_FLAG} == "yes" ] mpirun command line (some examples are already written)
+	       NOTE: if INTERACT_FLAG="no" it is needed a batch_file (see below to create a new one)
 
 NOTE:
 in case of error you can remove you NEW_CONF directory and all files doing :
@@ -73,4 +78,4 @@ TO ADD NEW MACHINE:
 TO ADD NEW BATCH-FILE:
 1. see in SETTE/BATCH_TEMPLATE directory existing examples
 2. create you own batch file like: batch-${COMPILER}
-(note: sette.sh will copy it in job_batch_template if you run tests in MPI_INTERACT="no")
+(note: sette.sh will copy it in job_batch_template if you run tests in INTERACT_FLAG="no")

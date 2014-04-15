@@ -58,7 +58,7 @@ MODULE p4zprod
 #  include "top_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 3.3 , NEMO Consortium (2010)
-   !! $Id: p4zprod.F90 3295 2012-01-30 15:49:07Z cetlod $ 
+   !! $Id: p4zprod.F90 3773 2013-02-07 11:06:58Z cbricaud $ 
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -340,12 +340,14 @@ CONTAINS
                      znanotot = enano(ji,jj,jk) * zstrn(ji,jj)
                      zprod    = rday * zprorca(ji,jj,jk) * zprnch(ji,jj,jk) * xlimphy(ji,jj,jk)
                      zprochln(ji,jj,jk) = chlcmin * 12. * zprorca (ji,jj,jk)
-                     zprochln(ji,jj,jk) = zprochln(ji,jj,jk) + chlcnm * 12. * zprod / (  zpislopead(ji,jj,jk) * znanotot +rtrn)
+                     zprochln(ji,jj,jk) = zprochln(ji,jj,jk) + chlcnm * 12. * zprod /  &
+                                        & (  zpislopead(ji,jj,jk) * znanotot +rtrn)
                      !  production terms for diatomees ( chlorophyll )
                      zdiattot = ediat(ji,jj,jk) * zstrn(ji,jj)
                      zprod = rday * zprorcad(ji,jj,jk) * zprdch(ji,jj,jk) * xlimdia(ji,jj,jk)
                      zprochld(ji,jj,jk) = chlcmin * 12. * zprorcad(ji,jj,jk)
-                     zprochld(ji,jj,jk) = zprochld(ji,jj,jk) + chlcdm * 12. * zprod / ( zpislopead2(ji,jj,jk) * zdiattot +rtrn )
+                     zprochld(ji,jj,jk) = zprochld(ji,jj,jk) + chlcdm * 12. * zprod /  &
+                                        & ( zpislopead2(ji,jj,jk) * zdiattot +rtrn )
                   ENDIF
                END DO
             END DO
@@ -361,11 +363,13 @@ CONTAINS
                      !  production terms for nanophyto. ( chlorophyll )
                      znanotot = enano(ji,jj,jk) * zstrn(ji,jj)
                      zprod = rday * zprorca(ji,jj,jk) * zprnch(ji,jj,jk) * trn(ji,jj,jk,jpphy) * xlimphy(ji,jj,jk)
-                     zprochln(ji,jj,jk) = chlcnm * 144. * zprod / (  zpislopead(ji,jj,jk) * trn(ji,jj,jk,jpnch) * znanotot +rtrn)
+                     zprochln(ji,jj,jk) = chlcnm * 144. * zprod / &
+                                        & (  zpislopead(ji,jj,jk) * trn(ji,jj,jk,jpnch) * znanotot +rtrn)
                      !  production terms for diatomees ( chlorophyll )
                      zdiattot = ediat(ji,jj,jk) * zstrn(ji,jj)
                      zprod = rday * zprorcad(ji,jj,jk) * zprdch(ji,jj,jk) * trn(ji,jj,jk,jpdia) * xlimdia(ji,jj,jk)
-                     zprochld(ji,jj,jk) = chlcdm * 144. * zprod / ( zpislopead2(ji,jj,jk) * trn(ji,jj,jk,jpdch) * zdiattot +rtrn )
+                     zprochld(ji,jj,jk) = chlcdm * 144. * zprod / &
+                                        & ( zpislopead2(ji,jj,jk) * trn(ji,jj,jk,jpdch) * zdiattot +rtrn )
                   ENDIF
                END DO
             END DO

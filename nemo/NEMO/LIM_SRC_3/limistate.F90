@@ -48,7 +48,7 @@ MODULE limistate
 
    !!----------------------------------------------------------------------
    !! NEMO/LIM3 4.0 , UCL - NEMO Consortium (2011)
-   !! $Id: limistate.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: limistate.F90 3349 2012-04-11 08:31:17Z rblod $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -459,6 +459,12 @@ CONTAINS
       !--------------------------------------------------------------------
       ! 4) Moments for advection
       !--------------------------------------------------------------------
+
+      sxopw (:,:) = 0.e0 
+      syopw (:,:) = 0.e0 
+      sxxopw(:,:) = 0.e0 
+      syyopw(:,:) = 0.e0 
+      sxyopw(:,:) = 0.e0
 
       sxice (:,:,:)  = 0.e0   ;   sxsn (:,:,:)  = 0.e0   ;   sxa  (:,:,:)  = 0.e0
       syice (:,:,:)  = 0.e0   ;   sysn (:,:,:)  = 0.e0   ;   sya  (:,:,:)  = 0.e0

@@ -6,7 +6,6 @@ MODULE zdfddm
    !! History :  OPA  ! 2000-08  (G. Madec)  double diffusive mixing
    !!   NEMO     1.0  ! 2002-06  (G. Madec)  F90: Free form and module
    !!            3.3  !  2010-10  (C. Ethe, G. Madec) reorganisation of initialisation phase
-   !!            3.4  ! 2012-10  (D. Yang) nemo_ticket #934, changeset:3348
    !!----------------------------------------------------------------------
 #if defined key_zdfddm   ||   defined key_esopa
    !!----------------------------------------------------------------------
@@ -45,7 +44,7 @@ MODULE zdfddm
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 4.0 , NEMO Consortium (2011)
-   !! $Id: zdfddm.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: zdfddm.F90 3348 2012-04-11 08:25:58Z rblod $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -229,8 +228,8 @@ CONTAINS
       !
       !                               ! allocate zdfddm arrays
       IF( zdf_ddm_alloc() /= 0 )   CALL ctl_stop( 'STOP', 'zdf_ddm_init : unable to allocate arrays' )
-      !
-      avs(:,:,:) = rn_avt0 * tmask(:,:,:)
+      !                               ! initialization to masked Kz
+      avs(:,:,:) = rn_avt0 * tmask(:,:,:) 
       !
    END SUBROUTINE zdf_ddm_init
 

@@ -24,6 +24,7 @@ MODULE traadv_muscl2
    USE trc_oce         ! share passive tracers/Ocean variables
    USE wrk_nemo        ! Memory Allocation
    USE timing          ! Timing
+   USE lib_fortran     ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
 
 
    IMPLICIT NONE
@@ -38,7 +39,7 @@ MODULE traadv_muscl2
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 3.3 , NEMO Consortium (2010)
-   !! $Id: traadv_muscl2.F90 3294 2012-01-28 16:44:18Z rblod $ 
+   !! $Id: traadv_muscl2.F90 3558 2012-11-14 19:15:05Z rblod $ 
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS

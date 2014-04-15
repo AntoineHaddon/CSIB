@@ -44,7 +44,7 @@ MODULE dynspg
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 3.2 , LODYC-IPSL  (2009)
-   !! $Id: dynspg.F90 3294 2012-01-28 16:44:18Z rblod $ 
+   !! $Id: dynspg.F90 3322 2012-03-06 16:44:02Z rfurner $ 
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -105,7 +105,7 @@ CONTAINS
                spgu(ji,jj) =  zg_2 * (  ssh_ib (ji+1,jj) - ssh_ib (ji,jj)    &
                   &                   + ssh_ibb(ji+1,jj) - ssh_ibb(ji,jj)  ) /e1u(ji,jj)
                spgv(ji,jj) =  zg_2 * (  ssh_ib (ji,jj+1) - ssh_ib (ji,jj)    &
-                  &                   + ssh_ibb(ji,jj+1) - ssh_ib (ji,jj)  ) /e2v(ji,jj)
+                  &                   + ssh_ibb(ji,jj+1) - ssh_ibb(ji,jj)  ) /e2v(ji,jj)
             END DO
          END DO
          DO jk = 1, jpkm1                          ! Add the apg to the general trend

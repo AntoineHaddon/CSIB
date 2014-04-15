@@ -39,7 +39,7 @@ MODULE trcsms_pisces
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 3.3 , NEMO Consortium (2010)
-   !! $Id: trcsms_pisces.F90 3295 2012-01-30 15:49:07Z cetlod $ 
+   !! $Id: trcsms_pisces.F90 3320 2012-03-05 16:37:52Z cetlod $ 
    !! Software governed by the CeCILL licence (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 
@@ -59,14 +59,22 @@ CONTAINS
       !
       INTEGER, INTENT( in ) ::   kt      ! ocean time-step index      
       !!
-      INTEGER ::   jnt, jn
+      INTEGER ::   jnt, jn, jl
       CHARACTER (len=25) :: charout
+      REAL(wp), POINTER, DIMENSION(:,:,:,:)  :: ztrdpis
       !!---------------------------------------------------------------------
       !
       IF( nn_timing == 1 )  CALL timing_start('trc_sms_pisces')
       !
       IF( ln_pisdmp .AND. MOD( kt - nn_dttrc, nn_pisdmp ) == 0 )   CALL trc_sms_pisces_dmp( kt )  ! Relaxation of some tracers
                                                                    CALL trc_sms_pisces_mass_conserv( kt ) ! Mass conservation checking
+      IF( l_trdtrc )  THEN
+         CALL wrk_alloc( jpi, jpj, jpk, jp_pisces, ztrdpis ) 
+         DO jn = 1, jp_pisces
+            jl = jn + jp_pcs0 - 1
+            ztrdpis(:,:,:,jn) = trn(:,:,:,jl)
+         ENDDO
+      ENDIF
 
       IF( ndayflxtr /= nday_year ) THEN      ! New days
          !
@@ -81,14 +89,24 @@ CONTAINS
          !
       ENDIF
 
+
       DO jnt = 1, nrdttrc          ! Potential time splitting if requested
          !
          CALL p4z_bio (kt, jnt)    ! Compute soft tissue production (POC)
          CALL p4z_sed (kt, jnt)    ! compute soft tissue remineralisation
          !
-         trb(:,:,:,:) = trn(:,:,:,:)
+         DO jn = jp_pcs0, jp_pcs1
+            trb(:,:,:,jn) = trn(:,:,:,jn)
+         ENDDO
          !
       END DO
+
+      IF( l_trdtrc )  THEN
+         DO jn = 1, jp_pisces
+            jl = jn + jp_pcs0 - 1
+            ztrdpis(:,:,:,jn) = ( ztrdpis(:,:,:,jn) - trn(:,:,:,jl) ) * rfact2r
+         ENDDO
+      ENDIF
 
       CALL p4z_lys( kt )             ! Compute CaCO3 saturation
       CALL p4z_flx( kt )             ! Compute surface fluxes
@@ -100,9 +118,12 @@ CONTAINS
       END DO
 
       IF( l_trdtrc ) THEN
-          DO jn = jp_pcs0, jp_pcs1
-            CALL trd_mod_trc( tra(:,:,:,jn), jn, jptra_trd_sms, kt )   ! save trends
+         DO jn = 1, jp_pisces
+            jl = jn + jp_pcs0 - 1
+             ztrdpis(:,:,:,jn) = ztrdpis(:,:,:,jn) + tra(:,:,:,jl)
+             CALL trd_mod_trc( ztrdpis(:,:,:,jn), jn, jptra_trd_sms, kt )   ! save trends
           END DO
+          CALL wrk_dealloc( jpi, jpj, jpk, jp_pisces, ztrdpis ) 
       END IF
 
       IF( lk_sed ) THEN 

@@ -170,7 +170,7 @@ CONTAINS
       IF( lk_diaar5 ) THEN
          z3d(:,:,jpk) = 0.e0
          DO jk = 1, jpkm1
-            z3d(:,:,jk) = rau0 * un(:,:,jk) * e1u(:,:) * fse3u(:,:,jk)
+            z3d(:,:,jk) = rau0 * un(:,:,jk) * e2u(:,:) * fse3u(:,:,jk)
          END DO
          CALL iom_put( "u_masstr", z3d )                  ! mass transport in i-direction
          zztmp = 0.5 * rcp
@@ -185,7 +185,7 @@ CONTAINS
          CALL lbc_lnk( z2d, 'U', -1. )
          CALL iom_put( "u_heattr", z2d )                  ! heat transport in i-direction
          DO jk = 1, jpkm1
-            z3d(:,:,jk) = rau0 * vn(:,:,jk) * e2v(:,:) * fse3v(:,:,jk)
+            z3d(:,:,jk) = rau0 * vn(:,:,jk) * e1v(:,:) * fse3v(:,:,jk)
          END DO
          CALL iom_put( "v_masstr", z3d )                  ! mass transport in j-direction
          z2d(:,:) = 0.e0 
@@ -400,36 +400,29 @@ CONTAINS
             &          jpi, jpj, nh_T, 1  , 1, 1  , -99 , 32, clop, zsto, zout )
          CALL histdef( nid_T, "sowindsp", "wind speed at 10m"                  , "m/s"    ,   &  ! wndm
             &          jpi, jpj, nh_T, 1  , 1, 1  , -99 , 32, clop, zsto, zout )
-#if ! defined key_coupled 
-         CALL histdef( nid_T, "sohefldp", "Surface Heat Flux: Damping"         , "W/m2"   ,   &  ! qrp
-            &          jpi, jpj, nh_T, 1  , 1, 1  , -99 , 32, clop, zsto, zout )
-         CALL histdef( nid_T, "sowafldp", "Surface Water Flux: Damping"        , "Kg/m2/s",   &  ! erp
-            &          jpi, jpj, nh_T, 1  , 1, 1  , -99 , 32, clop, zsto, zout )
-         CALL histdef( nid_T, "sosafldp", "Surface salt flux: damping"         , "Kg/m2/s",   &  ! erp * sn
-            &          jpi, jpj, nh_T, 1  , 1, 1  , -99 , 32, clop, zsto, zout )
-#endif
-
-
-
-#if ( defined key_coupled && ! defined key_lim3 && ! defined key_lim2 ) 
-         CALL histdef( nid_T, "sohefldp", "Surface Heat Flux: Damping"         , "W/m2"   ,   &  ! qrp
-            &          jpi, jpj, nh_T, 1  , 1, 1  , -99 , 32, clop, zsto, zout )
-         CALL histdef( nid_T, "sowafldp", "Surface Water Flux: Damping"        , "Kg/m2/s",   &  ! erp
-            &          jpi, jpj, nh_T, 1  , 1, 1  , -99 , 32, clop, zsto, zout )
-         CALL histdef( nid_T, "sosafldp", "Surface salt flux: Damping"         , "Kg/m2/s",   &  ! erp * sn
-            &          jpi, jpj, nh_T, 1  , 1, 1  , -99 , 32, clop, zsto, zout )
-#endif
+         IF( ln_ssr ) THEN
+            IF( nn_sstr /= 0 ) THEN
+               CALL histdef( nid_T, "sohefldp", "Surface Heat Flux: Damping", "W/m2"      ,   &  ! qrp
+                  &          jpi, jpj, nh_T, 1  , 1, 1  , -99 , 32, clop, zsto, zout )
+            ENDIF
+            IF( nn_sssr /= 0 ) THEN
+               CALL histdef( nid_T, "sowafldp", "Surface Water Flux: Damping"  , "Kg/m2/s",   &  ! erp
+                  &          jpi, jpj, nh_T, 1  , 1, 1  , -99 , 32, clop, zsto, zout )
+               CALL histdef( nid_T, "sosafldp", "Surface salt flux: damping"   , "Kg/m2/s",   &  ! erp * sn
+                  &          jpi, jpj, nh_T, 1  , 1, 1  , -99 , 32, clop, zsto, zout )
+            ENDIF
+         ENDIF
          clmx ="l_max(only(x))"    ! max index on a period
          CALL histdef( nid_T, "sobowlin", "Bowl Index"                         , "W-point",   &  ! bowl INDEX 
             &          jpi, jpj, nh_T, 1  , 1, 1  , -99 , 32, clmx, zsto, zout )
 #if defined key_diahth
-         CALL histdef( nid_T, "sothedep", "Thermocline Depth"                  , "m"      ,   & ! hth
+         CALL histdef( nid_T, "sothedep", "Thermocline Depth"                  , "m"      ,   &  ! hth
             &          jpi, jpj, nh_T, 1  , 1, 1  , -99 , 32, clop, zsto, zout )
-         CALL histdef( nid_T, "so20chgt", "Depth of 20C isotherm"              , "m"      ,   & ! hd20
+         CALL histdef( nid_T, "so20chgt", "Depth of 20C isotherm"              , "m"      ,   &  ! hd20
             &          jpi, jpj, nh_T, 1  , 1, 1  , -99 , 32, clop, zsto, zout )
-         CALL histdef( nid_T, "so28chgt", "Depth of 28C isotherm"              , "m"      ,   & ! hd28
+         CALL histdef( nid_T, "so28chgt", "Depth of 28C isotherm"              , "m"      ,   &  ! hd28
             &          jpi, jpj, nh_T, 1  , 1, 1  , -99 , 32, clop, zsto, zout )
-         CALL histdef( nid_T, "sohtc300", "Heat content 300 m"                 , "W"      ,   & ! htc3
+         CALL histdef( nid_T, "sohtc300", "Heat content 300 m"                 , "W"      ,   &  ! htc3
             &          jpi, jpj, nh_T, 1  , 1, 1  , -99 , 32, clop, zsto, zout )
 #endif
 
@@ -554,18 +547,16 @@ CONTAINS
       CALL histwrite( nid_T, "somxl010", it, hmlp          , ndim_hT, ndex_hT )   ! mixed layer depth
       CALL histwrite( nid_T, "soicecov", it, fr_i          , ndim_hT, ndex_hT )   ! ice fraction   
       CALL histwrite( nid_T, "sowindsp", it, wndm          , ndim_hT, ndex_hT )   ! wind speed   
-#if ! defined key_coupled
-      CALL histwrite( nid_T, "sohefldp", it, qrp           , ndim_hT, ndex_hT )   ! heat flux damping
-      CALL histwrite( nid_T, "sowafldp", it, erp           , ndim_hT, ndex_hT )   ! freshwater flux damping
-      IF( ln_ssr ) zw2d(:,:) = erp(:,:) * tsn(:,:,1,jp_sal) * tmask(:,:,1)
-      CALL histwrite( nid_T, "sosafldp", it, zw2d          , ndim_hT, ndex_hT )   ! salt flux damping
-#endif
-#if ( defined key_coupled && ! defined key_lim3 && ! defined key_lim2 ) 
-      CALL histwrite( nid_T, "sohefldp", it, qrp           , ndim_hT, ndex_hT )   ! heat flux damping
-      CALL histwrite( nid_T, "sowafldp", it, erp           , ndim_hT, ndex_hT )   ! freshwater flux damping
-         IF( ln_ssr ) zw2d(:,:) = erp(:,:) * tsn(:,:,1,jp_sal) * tmask(:,:,1)
-      CALL histwrite( nid_T, "sosafldp", it, zw2d          , ndim_hT, ndex_hT )   ! salt flux damping
-#endif
+      IF( ln_ssr ) THEN
+         IF( nn_sstr /= 0 ) THEN
+            CALL histwrite( nid_T, "sohefldp", it, qrp     , ndim_hT, ndex_hT )   ! heat flux damping
+         ENDIF
+         IF( nn_sssr /= 0 ) THEN
+            CALL histwrite( nid_T, "sowafldp", it, erp     , ndim_hT, ndex_hT )   ! freshwater flux damping
+            zw2d(:,:) = erp(:,:) * tsn(:,:,1,jp_sal) * tmask(:,:,1)
+            CALL histwrite( nid_T, "sosafldp", it, zw2d    , ndim_hT, ndex_hT )   ! salt flux damping
+         ENDIF
+      ENDIF
       zw2d(:,:) = FLOAT( nmln(:,:) ) * tmask(:,:,1)
       CALL histwrite( nid_T, "sobowlin", it, zw2d          , ndim_hT, ndex_hT )   ! ???
 
@@ -695,8 +686,6 @@ CONTAINS
       REAL(wp) ::   zsto, zout, zmax, zjulian, zdt
       !!----------------------------------------------------------------------
       ! 
-      IF( nn_timing == 1 )   CALL timing_start('dia_wri_state')
-
       ! 0. Initialisation
       ! -----------------
 
@@ -791,8 +780,6 @@ CONTAINS
          CALL histclo( nid_W )
       ENDIF
 #endif
-       
-      IF( nn_timing == 1 )   CALL timing_stop('dia_wri_state')
       ! 
 
    END SUBROUTINE dia_wri_state

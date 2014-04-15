@@ -18,6 +18,7 @@ MODULE zdfevd
    USE dom_oce         ! ocean space and time domain variables
    USE zdf_oce         ! ocean vertical physics variables
    USE zdfkpp          ! KPP vertical mixing
+   USE zdfgls          ! GLS vertical mixing
    USE in_out_manager  ! I/O manager
    USE iom             ! for iom_put
    USE lbclnk          ! ocean lateral boundary conditions (or mpp link)
@@ -32,7 +33,7 @@ MODULE zdfevd
 #  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 4.0 , NEMO Consortium (2011)
-   !! $Id: zdfevd.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: zdfevd.F90 3804 2013-02-12 13:16:51Z cbricaud $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -66,6 +67,9 @@ CONTAINS
          IF(lwp) WRITE(numout,*) 'zdf_evd : Enhanced Vertical Diffusion (evd)'
          IF(lwp) WRITE(numout,*) '~~~~~~~ '
          IF(lwp) WRITE(numout,*)
+         !
+         IF(lwp .AND. lk_zdfgls )   CALL ctl_warn(' No need zdf_evd with GLS closures ')
+         !
       ENDIF
 
       zavt_evd(:,:,:) = avt(:,:,:)           ! set avt prior to evd application

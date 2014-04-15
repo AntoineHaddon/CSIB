@@ -20,6 +20,7 @@ MODULE sbcice_if
    USE iom             ! I/O manager library
    USE in_out_manager  ! I/O manager
    USE lib_mpp         ! MPP library
+   USE lib_fortran     ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
 
    IMPLICIT NONE
    PRIVATE
@@ -32,7 +33,7 @@ MODULE sbcice_if
 #  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 3.3 , NEMO Consortium (2010)
-   !! $Id: sbcice_if.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: sbcice_if.F90 3558 2012-11-14 19:15:05Z rblod $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS

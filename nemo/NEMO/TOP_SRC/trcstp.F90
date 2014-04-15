@@ -32,7 +32,7 @@ MODULE trcstp
 #  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 3.3 , NEMO Consortium (2010)
-   !! $Id: trcstp.F90 3294 2012-01-28 16:44:18Z rblod $ 
+   !! $Id: trcstp.F90 3319 2012-03-05 16:03:27Z cetlod $ 
    !! Software governed by the CeCILL licence (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -55,16 +55,13 @@ CONTAINS
       !
       IF( nn_timing == 1 )   CALL timing_start('trc_stp')
       !
-      IF( kt == nittrc000 ) THEN
-                               CALL iom_close( numrtr )     ! close input  passive tracers restart file
-         IF( lk_trdmld_trc  )  CALL trd_mld_trc_init        ! trends: Mixed-layer
-      ENDIF
+      IF( kt == nittrc000 .AND. lk_trdmld_trc )  CALL trd_mld_trc_init    ! trends: Mixed-layer
       !
-      IF( lk_vvl ) THEN                              ! update ocean volume due to ssh temporal evolution
+      IF( lk_vvl ) THEN                                                   ! update ocean volume due to ssh temporal evolution
          DO jk = 1, jpk
             cvol(:,:,jk) = e1e2t(:,:) * fse3t(:,:,jk) * tmask(:,:,jk)
          END DO
-         IF( lk_degrad )  cvol(:,:,:) = cvol(:,:,:) * facvol(:,:,:)      ! degrad option: reduction by facvol
+         IF( lk_degrad )  cvol(:,:,:) = cvol(:,:,:) * facvol(:,:,:)       ! degrad option: reduction by facvol
          areatot         = glob_sum( cvol(:,:,:) )
       ENDIF
       !    

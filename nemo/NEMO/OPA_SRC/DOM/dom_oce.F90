@@ -51,7 +51,6 @@ MODULE dom_oce
    REAL(wp), PUBLIC ::   rdtmin          !: minimum time step on tracers
    REAL(wp), PUBLIC ::   rdtmax          !: maximum time step on tracers
    REAL(wp), PUBLIC ::   rdth            !: depth variation of tracer step
-   INTEGER , PUBLIC ::   nclosea         !: =0 suppress closed sea/lake from the ORCA domain or not (=1)
 
    !                                                  !!! associated variables
    INTEGER , PUBLIC                 ::   neuler  = 0   !: restart euler forward option (0=Euler)
@@ -236,7 +235,7 @@ MODULE dom_oce
 
    !!----------------------------------------------------------------------
    !! NEMO/OPA 4.0 , NEMO Consortium (2011)
-   !! $Id: dom_oce.F90 3294 2012-01-28 16:44:18Z rblod $ 
+   !! $Id: dom_oce.F90 3421 2012-07-02 14:44:12Z charris $ 
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS

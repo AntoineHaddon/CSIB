@@ -45,7 +45,7 @@ MODULE traldf_iso
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 3.3 , NEMO Consortium (2010)
-   !! $Id: traldf_iso.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: traldf_iso.F90 3806 2013-02-12 17:55:59Z acc $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -211,14 +211,16 @@ CONTAINS
          !
          ! "Poleward" diffusive heat or salt transports (T-S case only)
          IF( cdtype == 'TRA' .AND. ln_diaptr .AND. ( MOD( kt, nn_fptr ) == 0 ) ) THEN
-            IF( jn == jp_tem)   htr_ldf(:) = ptr_vj( zftv(:,:,:) )
-            IF( jn == jp_sal)   str_ldf(:) = ptr_vj( zftv(:,:,:) )
+            ! note sign is reversed to give down-gradient diffusive transports (#1043)
+            IF( jn == jp_tem)   htr_ldf(:) = ptr_vj( -zftv(:,:,:) )
+            IF( jn == jp_sal)   str_ldf(:) = ptr_vj( -zftv(:,:,:) )
          ENDIF
  
 #if defined key_diaar5
          IF( cdtype == 'TRA' .AND. jn == jp_tem  ) THEN
             z2d(:,:) = 0._wp 
-            zztmp = rau0 * rcp 
+            ! note sign is reversed to give down-gradient diffusive transports (#1043)
+            zztmp = -1.0_wp * rau0 * rcp 
             DO jk = 1, jpkm1
                DO jj = 2, jpjm1
                   DO ji = fs_2, fs_jpim1   ! vector opt.

@@ -16,7 +16,7 @@ MODULE lib_mpp
    !!             -   !  2005  (R. Benshila, G. Madec)  add extra halo case
    !!             -   !  2008  (R. Benshila) add mpp_ini_ice
    !!            3.2  !  2009  (R. Benshila) SHMEM suppression, north fold in lbc_nfd
-   !!            3.2  !  2009  (O. Marti)    add mpp_ini_znl 
+   !!            3.2  !  2009  (O. Marti)    add mpp_ini_znl
    !!            4.0  !  2011  (G. Madec)  move ctl_ routines from in_out_manager
    !!----------------------------------------------------------------------
 
@@ -26,7 +26,7 @@ MODULE lib_mpp
    !!   ctl_opn    : Open file and check if required file is available.
    !!   get_unit    : give the index of an unused logical unit
    !!----------------------------------------------------------------------
-#if   defined key_mpp_mpi  
+#if   defined key_mpp_mpi
    !!----------------------------------------------------------------------
    !!   'key_mpp_mpi'             MPI massively parallel processing library
    !!----------------------------------------------------------------------
@@ -51,13 +51,13 @@ MODULE lib_mpp
    !!   mpp_lbc_north : north fold processors gathering
    !!   mpp_lbc_north_e : variant of mpp_lbc_north for extra outer halo
    !!----------------------------------------------------------------------
-   USE dom_oce        ! ocean space and time domain 
+   USE dom_oce        ! ocean space and time domain
    USE lbcnfd         ! north fold treatment
    USE in_out_manager ! I/O manager
 
    IMPLICIT NONE
    PRIVATE
-   
+
    PUBLIC   ctl_stop, ctl_warn, get_unit, ctl_opn
    PUBLIC   mynode, mppstop, mppsync, mpp_comm_free
    PUBLIC   mpp_ini_north, mpp_lbc_north, mpp_lbc_north_e
@@ -66,7 +66,8 @@ MODULE lib_mpp
    PUBLIC   mppscatter, mppgather
    PUBLIC   mppobc, mpp_ini_ice, mpp_ini_znl
    PUBLIC   mppsize
-   PUBLIC   lib_mpp_alloc   ! Called in nemogcm.F90
+   PUBLIC   lib_mpp_alloc    ! Called in nemogcm.F90
+   PUBLIC   mppsend, mpprecv ! (PUBLIC for TAM)
 
    !! * Interfaces
    !! define generic interface for these routine as they are called sometimes
@@ -79,15 +80,11 @@ MODULE lib_mpp
       MODULE PROCEDURE mppmax_a_int, mppmax_int, mppmax_a_real, mppmax_real
    END INTERFACE
    INTERFACE mpp_sum
-# if defined key_mpp_rep
       MODULE PROCEDURE mppsum_a_int, mppsum_int, mppsum_a_real, mppsum_real, &
                        mppsum_realdd, mppsum_a_realdd
-# else
-      MODULE PROCEDURE mppsum_a_int, mppsum_int, mppsum_a_real, mppsum_real
-# endif
    END INTERFACE
    INTERFACE mpp_lbc_north
-      MODULE PROCEDURE mpp_lbc_north_3d, mpp_lbc_north_2d 
+      MODULE PROCEDURE mpp_lbc_north_3d, mpp_lbc_north_2d
    END INTERFACE
    INTERFACE mpp_minloc
       MODULE PROCEDURE mpp_minloc2d ,mpp_minloc3d
@@ -95,30 +92,29 @@ MODULE lib_mpp
    INTERFACE mpp_maxloc
       MODULE PROCEDURE mpp_maxloc2d ,mpp_maxloc3d
    END INTERFACE
-   
+
    !! ========================= !!
    !!  MPI  variable definition !!
    !! ========================= !!
 !$AGRIF_DO_NOT_TREAT
    INCLUDE 'mpif.h'
 !$AGRIF_END_DO_NOT_TREAT
-   
+
    LOGICAL, PUBLIC, PARAMETER ::   lk_mpp = .TRUE.    !: mpp flag
 
    INTEGER, PARAMETER         ::   nprocmax = 2**10   ! maximun dimension (required to be a power of 2)
-   
+
    INTEGER ::   mppsize        ! number of process
    INTEGER ::   mpprank        ! process number  [ 0 - size-1 ]
 !$AGRIF_DO_NOT_TREAT
    INTEGER, PUBLIC ::   mpi_comm_opa   ! opa local communicator
 !$AGRIF_END_DO_NOT_TREAT
 
-# if defined key_mpp_rep
    INTEGER :: MPI_SUMDD
-# endif
 
    ! variables used in case of sea-ice
-   INTEGER, PUBLIC ::   ncomm_ice       !: communicator made by the processors with sea-ice
+   INTEGER, PUBLIC ::   ncomm_ice       !: communicator made by the processors with sea-ice (public so that it can be freed in limthd)
+   INTEGER ::   ngrp_iworld     !  group ID for the world processors (for rheology)
    INTEGER ::   ngrp_ice        !  group ID for the ice processors (for rheology)
    INTEGER ::   ndim_rank_ice   !  number of 'ice' processors
    INTEGER ::   n_ice_root      !  number (in the comm_ice) of proc 0 in the ice comm
@@ -130,22 +126,22 @@ MODULE lib_mpp
    INTEGER ::   ngrp_znl        ! group ID for the znl processors
    INTEGER ::   ndim_rank_znl   ! number of processors on the same zonal average
    INTEGER, DIMENSION(:), ALLOCATABLE, SAVE ::   nrank_znl  ! dimension ndim_rank_znl, number of the procs into the same znl domain
-   
-   ! North fold condition in mpp_mpi with jpni > 1
-   INTEGER ::   ngrp_world        ! group ID for the world processors
-   INTEGER ::   ngrp_opa          ! group ID for the opa processors
-   INTEGER ::   ngrp_north        ! group ID for the northern processors (to be fold)
-   INTEGER ::   ncomm_north       ! communicator made by the processors belonging to ngrp_north
-   INTEGER ::   ndim_rank_north   ! number of 'sea' processor in the northern line (can be /= jpni !)
-   INTEGER ::   njmppmax          ! value of njmpp for the processors of the northern line
-   INTEGER ::   north_root        ! number (in the comm_opa) of proc 0 in the northern comm
-   INTEGER, DIMENSION(:), ALLOCATABLE, SAVE ::   nrank_north   ! dimension ndim_rank_north
+
+   ! North fold condition in mpp_mpi with jpni > 1 (PUBLIC for TAM)
+   INTEGER, PUBLIC ::   ngrp_world        ! group ID for the world processors
+   INTEGER, PUBLIC ::   ngrp_opa          ! group ID for the opa processors
+   INTEGER, PUBLIC ::   ngrp_north        ! group ID for the northern processors (to be fold)
+   INTEGER, PUBLIC ::   ncomm_north       ! communicator made by the processors belonging to ngrp_north
+   INTEGER, PUBLIC ::   ndim_rank_north   ! number of 'sea' processor in the northern line (can be /= jpni !)
+   INTEGER, PUBLIC ::   njmppmax          ! value of njmpp for the processors of the northern line
+   INTEGER, PUBLIC ::   north_root        ! number (in the comm_opa) of proc 0 in the northern comm
+   INTEGER, DIMENSION(:), ALLOCATABLE, SAVE, PUBLIC ::   nrank_north   ! dimension ndim_rank_north
 
    ! Type of send : standard, buffered, immediate
-   CHARACTER(len=1) ::   cn_mpi_send = 'S'    ! type od mpi send/recieve (S=standard, B=bsend, I=isend)
-   LOGICAL          ::   l_isend = .FALSE.   ! isend use indicator (T if cn_mpi_send='I')
-   INTEGER          ::   nn_buffer = 0       ! size of the buffer in case of mpi_bsend 
-      
+   CHARACTER(len=1), PUBLIC ::   cn_mpi_send = 'S'    ! type od mpi send/recieve (S=standard, B=bsend, I=isend)
+   LOGICAL, PUBLIC          ::   l_isend = .FALSE.   ! isend use indicator (T if cn_mpi_send='I')
+   INTEGER, PUBLIC          ::   nn_buffer = 0       ! size of the buffer in case of mpi_bsend
+
    REAL(wp), DIMENSION(:), ALLOCATABLE, SAVE :: tampon  ! buffer in case of bsend
 
    ! message passing arrays
@@ -177,7 +173,7 @@ MODULE lib_mpp
 
    ! North fold arrays used to minimise the use of allgather operations. Set in nemo_northcomms (nemogcm) so need to be public
    INTEGER, PUBLIC,  PARAMETER :: jpmaxngh = 8                 ! Assumed maximum number of active neighbours
-   INTEGER, PUBLIC,  PARAMETER :: jptyps   = 5                 ! Number of different neighbour lists to be used for northfold exchanges 
+   INTEGER, PUBLIC,  PARAMETER :: jptyps   = 5                 ! Number of different neighbour lists to be used for northfold exchanges
    INTEGER, PUBLIC,  DIMENSION (jpmaxngh,jptyps)    ::   isendto
    INTEGER, PUBLIC,  DIMENSION (jptyps)             ::   nsndto
    LOGICAL, PUBLIC                                  ::   ln_nnogather     = .FALSE.  ! namelist control of northfold comms
@@ -185,7 +181,7 @@ MODULE lib_mpp
    INTEGER, PUBLIC                                  ::   ityp
    !!----------------------------------------------------------------------
    !! NEMO/OPA 3.3 , NEMO Consortium (2010)
-   !! $Id: lib_mpp.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: lib_mpp.F90 3800 2013-02-12 04:56:41Z gm $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -233,12 +229,12 @@ CONTAINS
    FUNCTION mynode( ldtxt, kumnam, kstop, localComm )
       !!----------------------------------------------------------------------
       !!                  ***  routine mynode  ***
-      !!                    
+      !!
       !! ** Purpose :   Find processor unit
       !!----------------------------------------------------------------------
-      CHARACTER(len=*),DIMENSION(:), INTENT(  out) ::   ldtxt 
-      INTEGER                      , INTENT(in   ) ::   kumnam       ! namelist logical unit 
-      INTEGER                      , INTENT(inout) ::   kstop        ! stop indicator 
+      CHARACTER(len=*),DIMENSION(:), INTENT(  out) ::   ldtxt
+      INTEGER                      , INTENT(in   ) ::   kumnam       ! namelist logical unit
+      INTEGER                      , INTENT(inout) ::   kstop        ! stop indicator
       INTEGER, OPTIONAL            , INTENT(in   ) ::   localComm
       !
       INTEGER ::   mynode, ierr, code, ji, ii
@@ -262,7 +258,7 @@ CONTAINS
 
 #if defined key_agrif
       IF( .NOT. Agrif_Root() ) THEN
-         jpni  = Agrif_Parent(jpni ) 
+         jpni  = Agrif_Parent(jpni )
          jpnj  = Agrif_Parent(jpnj )
          jpnij = Agrif_Parent(jpnij)
       ENDIF
@@ -286,9 +282,9 @@ CONTAINS
 
       CALL mpi_initialized ( mpi_was_called, code )
       IF( code /= MPI_SUCCESS ) THEN
-         DO ji = 1, SIZE(ldtxt) 
+         DO ji = 1, SIZE(ldtxt)
             IF( TRIM(ldtxt(ji)) /= '' )   WRITE(*,*) ldtxt(ji)      ! control print of mynode
-         END DO         
+         END DO
          WRITE(*, cform_err)
          WRITE(*, *) 'lib_mpp: Error in routine mpi_initialized'
          CALL mpi_abort( mpi_comm_world, code, ierr )
@@ -301,7 +297,7 @@ CONTAINS
             WRITE(ldtxt(ii),*) '           Standard blocking mpi send (send)'                     ;   ii = ii + 1
          CASE ( 'B' )                ! Buffer mpi send (blocking)
             WRITE(ldtxt(ii),*) '           Buffer blocking mpi send (bsend)'                      ;   ii = ii + 1
-            IF( Agrif_Root() )   CALL mpi_init_opa( ldtxt, ii, ierr ) 
+            IF( Agrif_Root() )   CALL mpi_init_opa( ldtxt, ii, ierr )
          CASE ( 'I' )                ! Immediate mpi send (non-blocking send)
             WRITE(ldtxt(ii),*) '           Immediate non-blocking send (isend)'                   ;   ii = ii + 1
             l_isend = .TRUE.
@@ -334,29 +330,27 @@ CONTAINS
          !
       ENDIF
 
-      IF( PRESENT(localComm) ) THEN 
+      IF( PRESENT(localComm) ) THEN
          IF( Agrif_Root() ) THEN
             mpi_comm_opa = localComm
          ENDIF
       ELSE
          CALL mpi_comm_dup( mpi_comm_world, mpi_comm_opa, code)
          IF( code /= MPI_SUCCESS ) THEN
-            DO ji = 1, SIZE(ldtxt) 
+            DO ji = 1, SIZE(ldtxt)
                IF( TRIM(ldtxt(ji)) /= '' )   WRITE(*,*) ldtxt(ji)      ! control print of mynode
             END DO
             WRITE(*, cform_err)
             WRITE(*, *) ' lib_mpp: Error in routine mpi_comm_dup'
             CALL mpi_abort( mpi_comm_world, code, ierr )
          ENDIF
-      ENDIF 
+      ENDIF
 
       CALL mpi_comm_rank( mpi_comm_opa, mpprank, ierr )
       CALL mpi_comm_size( mpi_comm_opa, mppsize, ierr )
       mynode = mpprank
-      ! 
-#if defined key_mpp_rep
+      !
       CALL MPI_OP_CREATE(DDPDD_MPI, .TRUE., MPI_SUMDD, ierr)
-#endif
       !
    END FUNCTION mynode
 
@@ -367,14 +361,14 @@ CONTAINS
       !!
       !! ** Purpose :   Message passing manadgement
       !!
-      !! ** Method  :   Use mppsend and mpprecv function for passing mask 
+      !! ** Method  :   Use mppsend and mpprecv function for passing mask
       !!      between processors following neighboring subdomains.
       !!            domain parameters
       !!                    nlci   : first dimension of the local subdomain
       !!                    nlcj   : second dimension of the local subdomain
       !!                    nbondi : mark for "east-west local boundary"
       !!                    nbondj : mark for "north-south local boundary"
-      !!                    noea   : number for local neighboring processors 
+      !!                    noea   : number for local neighboring processors
       !!                    nowe   : number for local neighboring processors
       !!                    noso   : number for local neighboring processors
       !!                    nono   : number for local neighboring processors
@@ -387,7 +381,7 @@ CONTAINS
       !                                                             ! = T , U , V , F , W points
       REAL(wp)                        , INTENT(in   ) ::   psgn     ! =-1 the sign change across the north fold boundary
       !                                                             ! =  1. , the sign is kept
-      CHARACTER(len=3), OPTIONAL      , INTENT(in   ) ::   cd_mpp   ! fill the overlap area only 
+      CHARACTER(len=3), OPTIONAL      , INTENT(in   ) ::   cd_mpp   ! fill the overlap area only
       REAL(wp)        , OPTIONAL      , INTENT(in   ) ::   pval     ! background value (used at closed boundaries)
       !!
       INTEGER  ::   ji, jj, jk, jl             ! dummy loop indices
@@ -408,7 +402,7 @@ CONTAINS
          ! WARNING ptab is defined only between nld and nle
          DO jk = 1, jpk
             DO jj = nlcj+1, jpj                 ! added line(s)   (inner only)
-               ptab(nldi  :nlei  , jj          ,jk) = ptab(nldi:nlei,     nlej,jk)   
+               ptab(nldi  :nlei  , jj          ,jk) = ptab(nldi:nlei,     nlej,jk)
                ptab(1     :nldi-1, jj          ,jk) = ptab(nldi     ,     nlej,jk)
                ptab(nlei+1:nlci  , jj          ,jk) = ptab(     nlei,     nlej,jk)
             END DO
@@ -419,7 +413,7 @@ CONTAINS
             END DO
          END DO
          !
-      ELSE                              ! standard close or cyclic treatment 
+      ELSE                              ! standard close or cyclic treatment
          !
          !                                   ! East-West boundaries
          !                                        !* Cyclic east-west
@@ -438,7 +432,7 @@ CONTAINS
 
       ! 2. East and west directions exchange
       ! ------------------------------------
-      ! we play with the neigbours AND the row number because of the periodicity 
+      ! we play with the neigbours AND the row number because of the periodicity
       !
       SELECT CASE ( nbondi )      ! Read Dirichlet lateral conditions
       CASE ( -1, 0, 1 )                ! all exept 2 (i.e. close case)
@@ -447,12 +441,12 @@ CONTAINS
             t3ew(:,jl,:,1) = ptab(jpreci+jl,:,:)
             t3we(:,jl,:,1) = ptab(iihom +jl,:,:)
          END DO
-      END SELECT  
+      END SELECT
       !
       !                           ! Migrations
       imigr = jpreci * jpj * jpk
       !
-      SELECT CASE ( nbondi ) 
+      SELECT CASE ( nbondi )
       CASE ( -1 )
          CALL mppsend( 2, t3we(1,1,1,1), imigr, noea, ml_req1 )
          CALL mpprecv( 1, t3ew(1,1,1,2), imigr, noea )
@@ -478,7 +472,7 @@ CONTAINS
          DO jl = 1, jpreci
             ptab(iihom+jl,:,:) = t3ew(:,jl,:,2)
          END DO
-      CASE ( 0 ) 
+      CASE ( 0 )
          DO jl = 1, jpreci
             ptab(jl      ,:,:) = t3we(:,jl,:,2)
             ptab(iihom+jl,:,:) = t3ew(:,jl,:,2)
@@ -505,7 +499,7 @@ CONTAINS
       !                           ! Migrations
       imigr = jprecj * jpi * jpk
       !
-      SELECT CASE ( nbondj )     
+      SELECT CASE ( nbondj )
       CASE ( -1 )
          CALL mppsend( 4, t3sn(1,1,1,1), imigr, nono, ml_req1 )
          CALL mpprecv( 3, t3ns(1,1,1,2), imigr, nono )
@@ -517,7 +511,7 @@ CONTAINS
          CALL mpprecv( 4, t3sn(1,1,1,2), imigr, noso )
          IF(l_isend) CALL mpi_wait(ml_req1, ml_stat, ml_err)
          IF(l_isend) CALL mpi_wait(ml_req2, ml_stat, ml_err)
-      CASE ( 1 ) 
+      CASE ( 1 )
          CALL mppsend( 3, t3ns(1,1,1,1), imigr, noso, ml_req1 )
          CALL mpprecv( 4, t3sn(1,1,1,2), imigr, noso )
          IF(l_isend) CALL mpi_wait(ml_req1, ml_stat, ml_err)
@@ -531,7 +525,7 @@ CONTAINS
          DO jl = 1, jprecj
             ptab(:,ijhom+jl,:) = t3ns(:,jl,:,2)
          END DO
-      CASE ( 0 ) 
+      CASE ( 0 )
          DO jl = 1, jprecj
             ptab(:,jl      ,:) = t3sn(:,jl,:,2)
             ptab(:,ijhom+jl,:) = t3ns(:,jl,:,2)
@@ -561,17 +555,17 @@ CONTAINS
    SUBROUTINE mpp_lnk_2d( pt2d, cd_type, psgn, cd_mpp, pval )
       !!----------------------------------------------------------------------
       !!                  ***  routine mpp_lnk_2d  ***
-      !!                  
+      !!
       !! ** Purpose :   Message passing manadgement for 2d array
       !!
-      !! ** Method  :   Use mppsend and mpprecv function for passing mask 
+      !! ** Method  :   Use mppsend and mpprecv function for passing mask
       !!      between processors following neighboring subdomains.
       !!            domain parameters
       !!                    nlci   : first dimension of the local subdomain
       !!                    nlcj   : second dimension of the local subdomain
       !!                    nbondi : mark for "east-west local boundary"
       !!                    nbondj : mark for "north-south local boundary"
-      !!                    noea   : number for local neighboring processors 
+      !!                    noea   : number for local neighboring processors
       !!                    nowe   : number for local neighboring processors
       !!                    noso   : number for local neighboring processors
       !!                    nono   : number for local neighboring processors
@@ -582,7 +576,7 @@ CONTAINS
       !                                                         ! = T , U , V , F , W and I points
       REAL(wp)                    , INTENT(in   ) ::   psgn     ! =-1 the sign change across the north fold boundary
       !                                                         ! =  1. , the sign is kept
-      CHARACTER(len=3), OPTIONAL  , INTENT(in   ) ::   cd_mpp   ! fill the overlap area only 
+      CHARACTER(len=3), OPTIONAL  , INTENT(in   ) ::   cd_mpp   ! fill the overlap area only
       REAL(wp)        , OPTIONAL  , INTENT(in   ) ::   pval     ! background value (used at closed boundaries)
       !!
       INTEGER  ::   ji, jj, jl   ! dummy loop indices
@@ -603,7 +597,7 @@ CONTAINS
          !
          ! WARNING pt2d is defined only between nld and nle
          DO jj = nlcj+1, jpj                 ! added line(s)   (inner only)
-            pt2d(nldi  :nlei  , jj          ) = pt2d(nldi:nlei,     nlej)   
+            pt2d(nldi  :nlei  , jj          ) = pt2d(nldi:nlei,     nlej)
             pt2d(1     :nldi-1, jj          ) = pt2d(nldi     ,     nlej)
             pt2d(nlei+1:nlci  , jj          ) = pt2d(     nlei,     nlej)
          END DO
@@ -613,7 +607,7 @@ CONTAINS
             pt2d(ji           ,nlej+1:jpj   ) = pt2d(     nlei,     nlej)
          END DO
          !
-      ELSE                              ! standard close or cyclic treatment 
+      ELSE                              ! standard close or cyclic treatment
          !
          !                                   ! East-West boundaries
          IF( nbondi == 2 .AND.   &                ! Cyclic east-west
@@ -632,7 +626,7 @@ CONTAINS
 
       ! 2. East and west directions exchange
       ! ------------------------------------
-      ! we play with the neigbours AND the row number because of the periodicity 
+      ! we play with the neigbours AND the row number because of the periodicity
       !
       SELECT CASE ( nbondi )      ! Read Dirichlet lateral conditions
       CASE ( -1, 0, 1 )                ! all exept 2 (i.e. close case)
@@ -730,7 +724,7 @@ CONTAINS
             pt2d(:,jl      ) = t2sn(:,jl,2)
             pt2d(:,ijhom+jl) = t2ns(:,jl,2)
          END DO
-      CASE ( 1 ) 
+      CASE ( 1 )
          DO jl = 1, jprecj
             pt2d(:,jl      ) = t2sn(:,jl,2)
          END DO
@@ -758,14 +752,14 @@ CONTAINS
       !!
       !! ** Purpose :   Message passing manadgement for two 3D arrays
       !!
-      !! ** Method  :   Use mppsend and mpprecv function for passing mask 
+      !! ** Method  :   Use mppsend and mpprecv function for passing mask
       !!      between processors following neighboring subdomains.
       !!            domain parameters
       !!                    nlci   : first dimension of the local subdomain
       !!                    nlcj   : second dimension of the local subdomain
       !!                    nbondi : mark for "east-west local boundary"
       !!                    nbondj : mark for "north-south local boundary"
-      !!                    noea   : number for local neighboring processors 
+      !!                    noea   : number for local neighboring processors
       !!                    nowe   : number for local neighboring processors
       !!                    noso   : number for local neighboring processors
       !!                    nono   : number for local neighboring processors
@@ -773,9 +767,9 @@ CONTAINS
       !! ** Action  :   ptab1 and ptab2  with update value at its periphery
       !!
       !!----------------------------------------------------------------------
-      REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(inout) ::   ptab1     ! first and second 3D array on which 
+      REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(inout) ::   ptab1     ! first and second 3D array on which
       REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(inout) ::   ptab2     ! the boundary condition is applied
-      CHARACTER(len=1)                , INTENT(in   ) ::   cd_type1  ! nature of ptab1 and ptab2 arrays 
+      CHARACTER(len=1)                , INTENT(in   ) ::   cd_type1  ! nature of ptab1 and ptab2 arrays
       CHARACTER(len=1)                , INTENT(in   ) ::   cd_type2  ! i.e. grid-points = T , U , V , F or W points
       REAL(wp)                        , INTENT(in   ) ::   psgn      ! =-1 the sign change across the north fold boundary
       !!                                                             ! =  1. , the sign is kept
@@ -801,7 +795,7 @@ CONTAINS
                                        ptab2(nlci-jpreci+1:jpi   ,:,:) = 0.e0
       ENDIF
 
-      
+
       !                                      ! North-South boundaries
       IF( .NOT. cd_type1 == 'F' )   ptab1(:,     1       :jprecj,:) = 0.e0    ! south except at F-point
       IF( .NOT. cd_type2 == 'F' )   ptab2(:,     1       :jprecj,:) = 0.e0
@@ -811,7 +805,7 @@ CONTAINS
 
       ! 2. East and west directions exchange
       ! ------------------------------------
-      ! we play with the neigbours AND the row number because of the periodicity 
+      ! we play with the neigbours AND the row number because of the periodicity
       !
       SELECT CASE ( nbondi )      ! Read Dirichlet lateral conditions
       CASE ( -1, 0, 1 )                ! all exept 2 (i.e. close case)
@@ -827,7 +821,7 @@ CONTAINS
       !                           ! Migrations
       imigr = jpreci * jpj * jpk *2
       !
-      SELECT CASE ( nbondi ) 
+      SELECT CASE ( nbondi )
       CASE ( -1 )
          CALL mppsend( 2, t4we(1,1,1,1,1), imigr, noea, ml_req1 )
          CALL mpprecv( 1, t4ew(1,1,1,1,2), imigr, noea )
@@ -854,7 +848,7 @@ CONTAINS
             ptab1(iihom+jl,:,:) = t4ew(:,jl,:,1,2)
             ptab2(iihom+jl,:,:) = t4ew(:,jl,:,2,2)
          END DO
-      CASE ( 0 ) 
+      CASE ( 0 )
          DO jl = 1, jpreci
             ptab1(jl      ,:,:) = t4we(:,jl,:,1,2)
             ptab1(iihom+jl,:,:) = t4ew(:,jl,:,1,2)
@@ -886,7 +880,7 @@ CONTAINS
       !                           ! Migrations
       imigr = jprecj * jpi * jpk * 2
       !
-      SELECT CASE ( nbondj )     
+      SELECT CASE ( nbondj )
       CASE ( -1 )
          CALL mppsend( 4, t4sn(1,1,1,1,1), imigr, nono, ml_req1 )
          CALL mpprecv( 3, t4ns(1,1,1,1,2), imigr, nono )
@@ -898,7 +892,7 @@ CONTAINS
          CALL mpprecv( 4, t4sn(1,1,1,1,2), imigr, noso )
          IF(l_isend) CALL mpi_wait(ml_req1, ml_stat, ml_err)
          IF(l_isend) CALL mpi_wait(ml_req2, ml_stat, ml_err)
-      CASE ( 1 ) 
+      CASE ( 1 )
          CALL mppsend( 3, t4ns(1,1,1,1,1), imigr, noso, ml_req1 )
          CALL mpprecv( 4, t4sn(1,1,1,1,2), imigr, noso )
          IF(l_isend) CALL mpi_wait(ml_req1, ml_stat, ml_err)
@@ -913,7 +907,7 @@ CONTAINS
             ptab1(:,ijhom+jl,:) = t4ns(:,jl,:,1,2)
             ptab2(:,ijhom+jl,:) = t4ns(:,jl,:,2,2)
          END DO
-      CASE ( 0 ) 
+      CASE ( 0 )
          DO jl = 1, jprecj
             ptab1(:,jl      ,:) = t4sn(:,jl,:,1,2)
             ptab1(:,ijhom+jl,:) = t4ns(:,jl,:,1,2)
@@ -933,13 +927,13 @@ CONTAINS
       IF( npolj /= 0 ) THEN
          !
          SELECT CASE ( jpni )
-         CASE ( 1 )                                           
+         CASE ( 1 )
             CALL lbc_nfd      ( ptab1, cd_type1, psgn )   ! only for northern procs.
             CALL lbc_nfd      ( ptab2, cd_type2, psgn )
          CASE DEFAULT
             CALL mpp_lbc_north( ptab1, cd_type1, psgn )   ! for all northern procs.
             CALL mpp_lbc_north (ptab2, cd_type2, psgn)
-         END SELECT 
+         END SELECT
          !
       ENDIF
       !
@@ -949,10 +943,10 @@ CONTAINS
    SUBROUTINE mpp_lnk_2d_e( pt2d, cd_type, psgn )
       !!----------------------------------------------------------------------
       !!                  ***  routine mpp_lnk_2d_e  ***
-      !!                  
+      !!
       !! ** Purpose :   Message passing manadgement for 2d array (with halo)
       !!
-      !! ** Method  :   Use mppsend and mpprecv function for passing mask 
+      !! ** Method  :   Use mppsend and mpprecv function for passing mask
       !!      between processors following neighboring subdomains.
       !!            domain parameters
       !!                    nlci   : first dimension of the local subdomain
@@ -961,7 +955,7 @@ CONTAINS
       !!                    jpr2dj : number of columns for extra outer halo
       !!                    nbondi : mark for "east-west local boundary"
       !!                    nbondj : mark for "north-south local boundary"
-      !!                    noea   : number for local neighboring processors 
+      !!                    noea   : number for local neighboring processors
       !!                    nowe   : number for local neighboring processors
       !!                    noso   : number for local neighboring processors
       !!                    nono   : number for local neighboring processors
@@ -990,7 +984,7 @@ CONTAINS
       !                                      !* North-South boundaries (always colsed)
       IF( .NOT. cd_type == 'F' )   pt2d(:,  1-jpr2dj   :  jprecj  ) = 0.e0    ! south except at F-point
                                    pt2d(:,nlcj-jprecj+1:jpj+jpr2dj) = 0.e0    ! north
-                                
+
       !                                      ! East-West boundaries
       !                                           !* Cyclic east-west
       IF( nbondi == 2 .AND. (nperio == 1 .OR. nperio == 4 .OR. nperio == 6) ) THEN
@@ -1010,13 +1004,13 @@ CONTAINS
          SELECT CASE ( jpni )
          CASE ( 1 )     ;   CALL lbc_nfd        ( pt2d(1:jpi,1:jpj+jpr2dj), cd_type, psgn, pr2dj=jpr2dj )
          CASE DEFAULT   ;   CALL mpp_lbc_north_e( pt2d                    , cd_type, psgn               )
-         END SELECT 
+         END SELECT
          !
       ENDIF
 
       ! 2. East and west directions exchange
       ! ------------------------------------
-      ! we play with the neigbours AND the row number because of the periodicity 
+      ! we play with the neigbours AND the row number because of the periodicity
       !
       SELECT CASE ( nbondi )      ! Read Dirichlet lateral conditions
       CASE ( -1, 0, 1 )                ! all exept 2 (i.e. close case)
@@ -1102,7 +1096,7 @@ CONTAINS
       END SELECT
       !
       !                           ! Write Dirichlet lateral conditions
-      ijhom = nlcj - jprecj  
+      ijhom = nlcj - jprecj
       !
       SELECT CASE ( nbondj )
       CASE ( -1 )
@@ -1114,7 +1108,7 @@ CONTAINS
             pt2d(:,jl-jpr2dj) = tr2sn(:,jl,2)
             pt2d(:,ijhom+jl ) = tr2ns(:,jl,2)
          END DO
-      CASE ( 1 ) 
+      CASE ( 1 )
          DO jl = 1, iprecj
             pt2d(:,jl-jpr2dj) = tr2sn(:,jl,2)
          END DO
@@ -1126,7 +1120,7 @@ CONTAINS
    SUBROUTINE mppsend( ktyp, pmess, kbytes, kdest, md_req )
       !!----------------------------------------------------------------------
       !!                  ***  routine mppsend  ***
-      !!                   
+      !!
       !! ** Purpose :   Send messag passing array
       !!
       !!----------------------------------------------------------------------
@@ -1162,7 +1156,7 @@ CONTAINS
       REAL(wp), INTENT(inout) ::   pmess(*)   ! array of real
       INTEGER , INTENT(in   ) ::   kbytes     ! suze of the array pmess
       INTEGER , INTENT(in   ) ::   ktyp       ! Tag of the recevied message
-      INTEGER, OPTIONAL, INTENT(in) :: ksource    ! source process number 
+      INTEGER, OPTIONAL, INTENT(in) :: ksource    ! source process number
       !!
       INTEGER :: istatus(mpi_status_size)
       INTEGER :: iflag
@@ -1170,7 +1164,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       !
 
-      ! If a specific process number has been passed to the receive call, 
+      ! If a specific process number has been passed to the receive call,
       ! use that one. Default is to use mpi_any_source
       use_source=mpi_any_source
       if(present(ksource)) then
@@ -1185,8 +1179,8 @@ CONTAINS
    SUBROUTINE mppgather( ptab, kp, pio )
       !!----------------------------------------------------------------------
       !!                   ***  routine mppgather  ***
-      !!                   
-      !! ** Purpose :   Transfert between a local subdomain array and a work 
+      !!
+      !! ** Purpose :   Transfert between a local subdomain array and a work
       !!     array which is distributed following the vertical level.
       !!
       !!----------------------------------------------------------------------
@@ -1199,7 +1193,7 @@ CONTAINS
       !
       itaille = jpi * jpj
       CALL mpi_gather( ptab, itaille, mpi_double_precision, pio, itaille     ,   &
-         &                            mpi_double_precision, kp , mpi_comm_opa, ierror ) 
+         &                            mpi_double_precision, kp , mpi_comm_opa, ierror )
       !
    END SUBROUTINE mppgather
 
@@ -1208,7 +1202,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       !!                  ***  routine mppscatter  ***
       !!
-      !! ** Purpose :   Transfert between awork array which is distributed 
+      !! ** Purpose :   Transfert between awork array which is distributed
       !!      following the vertical level and the local subdomain array.
       !!
       !!----------------------------------------------------------------------
@@ -1230,13 +1224,13 @@ CONTAINS
    SUBROUTINE mppmax_a_int( ktab, kdim, kcom )
       !!----------------------------------------------------------------------
       !!                  ***  routine mppmax_a_int  ***
-      !! 
+      !!
       !! ** Purpose :   Find maximum value in an integer layout array
       !!
       !!----------------------------------------------------------------------
       INTEGER , INTENT(in   )                  ::   kdim   ! size of array
       INTEGER , INTENT(inout), DIMENSION(kdim) ::   ktab   ! input array
-      INTEGER , INTENT(in   ), OPTIONAL        ::   kcom   ! 
+      INTEGER , INTENT(in   ), OPTIONAL        ::   kcom   !
       !!
       INTEGER :: ierror, localcomm   ! temporary integer
       INTEGER, DIMENSION(kdim) ::   iwork
@@ -1261,11 +1255,11 @@ CONTAINS
       !!----------------------------------------------------------------------
       INTEGER, INTENT(inout)           ::   ktab      ! ???
       INTEGER, INTENT(in   ), OPTIONAL ::   kcom      ! ???
-      !! 
+      !!
       INTEGER ::   ierror, iwork, localcomm   ! temporary integer
       !!----------------------------------------------------------------------
       !
-      localcomm = mpi_comm_opa 
+      localcomm = mpi_comm_opa
       IF( PRESENT(kcom) )   localcomm = kcom
       !
       CALL mpi_allreduce( ktab, iwork, 1, mpi_integer, mpi_max, localcomm, ierror)
@@ -1278,7 +1272,7 @@ CONTAINS
    SUBROUTINE mppmin_a_int( ktab, kdim, kcom )
       !!----------------------------------------------------------------------
       !!                  ***  routine mppmin_a_int  ***
-      !! 
+      !!
       !! ** Purpose :   Find minimum value in an integer layout array
       !!
       !!----------------------------------------------------------------------
@@ -1326,7 +1320,7 @@ CONTAINS
    SUBROUTINE mppsum_a_int( ktab, kdim )
       !!----------------------------------------------------------------------
       !!                  ***  routine mppsum_a_int  ***
-      !!                    
+      !!
       !! ** Purpose :   Global integer sum, 1D array case
       !!
       !!----------------------------------------------------------------------
@@ -1347,12 +1341,12 @@ CONTAINS
    SUBROUTINE mppsum_int( ktab )
       !!----------------------------------------------------------------------
       !!                 ***  routine mppsum_int  ***
-      !!                  
+      !!
       !! ** Purpose :   Global integer sum
       !!
       !!----------------------------------------------------------------------
       INTEGER, INTENT(inout) ::   ktab
-      !! 
+      !!
       INTEGER :: ierror, iwork
       !!----------------------------------------------------------------------
       !
@@ -1366,7 +1360,7 @@ CONTAINS
    SUBROUTINE mppmax_a_real( ptab, kdim, kcom )
       !!----------------------------------------------------------------------
       !!                 ***  routine mppmax_a_real  ***
-      !!                  
+      !!
       !! ** Purpose :   Maximum
       !!
       !!----------------------------------------------------------------------
@@ -1390,7 +1384,7 @@ CONTAINS
    SUBROUTINE mppmax_real( ptab, kcom )
       !!----------------------------------------------------------------------
       !!                  ***  routine mppmax_real  ***
-      !!                    
+      !!
       !! ** Purpose :   Maximum
       !!
       !!----------------------------------------------------------------------
@@ -1401,7 +1395,7 @@ CONTAINS
       REAL(wp) ::   zwork
       !!----------------------------------------------------------------------
       !
-      localcomm = mpi_comm_opa 
+      localcomm = mpi_comm_opa
       IF( PRESENT(kcom) )   localcomm = kcom
       !
       CALL mpi_allreduce( ptab, zwork, 1, mpi_double_precision, mpi_max, localcomm, ierror )
@@ -1413,7 +1407,7 @@ CONTAINS
    SUBROUTINE mppmin_a_real( ptab, kdim, kcom )
       !!----------------------------------------------------------------------
       !!                 ***  routine mppmin_a_real  ***
-      !!                  
+      !!
       !! ** Purpose :   Minimum of REAL, array case
       !!
       !!-----------------------------------------------------------------------
@@ -1425,7 +1419,7 @@ CONTAINS
       REAL(wp), DIMENSION(kdim) ::   zwork
       !!-----------------------------------------------------------------------
       !
-      localcomm = mpi_comm_opa 
+      localcomm = mpi_comm_opa
       IF( PRESENT(kcom) ) localcomm = kcom
       !
       CALL mpi_allreduce( ptab, zwork, kdim, mpi_double_precision, mpi_min, localcomm, ierror )
@@ -1437,11 +1431,11 @@ CONTAINS
    SUBROUTINE mppmin_real( ptab, kcom )
       !!----------------------------------------------------------------------
       !!                  ***  routine mppmin_real  ***
-      !! 
+      !!
       !! ** Purpose :   minimum of REAL, scalar case
       !!
       !!-----------------------------------------------------------------------
-      REAL(wp), INTENT(inout)           ::   ptab        ! 
+      REAL(wp), INTENT(inout)           ::   ptab        !
       INTEGER , INTENT(in   ), OPTIONAL :: kcom
       !!
       INTEGER  ::   ierror
@@ -1449,7 +1443,7 @@ CONTAINS
       INTEGER :: localcomm
       !!-----------------------------------------------------------------------
       !
-      localcomm = mpi_comm_opa 
+      localcomm = mpi_comm_opa
       IF( PRESENT(kcom) )   localcomm = kcom
       !
       CALL mpi_allreduce( ptab, zwork, 1, mpi_double_precision, mpi_min, localcomm, ierror )
@@ -1461,7 +1455,7 @@ CONTAINS
    SUBROUTINE mppsum_a_real( ptab, kdim, kcom )
       !!----------------------------------------------------------------------
       !!                  ***  routine mppsum_a_real  ***
-      !! 
+      !!
       !! ** Purpose :   global sum, REAL ARRAY argument case
       !!
       !!-----------------------------------------------------------------------
@@ -1470,11 +1464,11 @@ CONTAINS
       INTEGER , INTENT( in ), OPTIONAL           :: kcom
       !!
       INTEGER                   ::   ierror    ! temporary integer
-      INTEGER                   ::   localcomm 
-      REAL(wp), DIMENSION(kdim) ::   zwork     ! temporary workspace 
+      INTEGER                   ::   localcomm
+      REAL(wp), DIMENSION(kdim) ::   zwork     ! temporary workspace
       !!-----------------------------------------------------------------------
       !
-      localcomm = mpi_comm_opa 
+      localcomm = mpi_comm_opa
       IF( PRESENT(kcom) )   localcomm = kcom
       !
       CALL mpi_allreduce( ptab, zwork, kdim, mpi_double_precision, mpi_sum, localcomm, ierror )
@@ -1486,18 +1480,18 @@ CONTAINS
    SUBROUTINE mppsum_real( ptab, kcom )
       !!----------------------------------------------------------------------
       !!                  ***  routine mppsum_real  ***
-      !!              
+      !!
       !! ** Purpose :   global sum, SCALAR argument case
       !!
       !!-----------------------------------------------------------------------
       REAL(wp), INTENT(inout)           ::   ptab   ! input scalar
       INTEGER , INTENT(in   ), OPTIONAL ::   kcom
       !!
-      INTEGER  ::   ierror, localcomm 
+      INTEGER  ::   ierror, localcomm
       REAL(wp) ::   zwork
       !!-----------------------------------------------------------------------
       !
-      localcomm = mpi_comm_opa 
+      localcomm = mpi_comm_opa
       IF( PRESENT(kcom) ) localcomm = kcom
       !
       CALL mpi_allreduce( ptab, zwork, 1, mpi_double_precision, mpi_sum, localcomm, ierror )
@@ -1505,7 +1499,6 @@ CONTAINS
       !
    END SUBROUTINE mppsum_real
 
-# if defined key_mpp_rep
    SUBROUTINE mppsum_realdd( ytab, kcom )
       !!----------------------------------------------------------------------
       !!                  ***  routine mppsum_realdd ***
@@ -1531,8 +1524,8 @@ CONTAINS
       ytab = zwork
 
    END SUBROUTINE mppsum_realdd
-  
-  
+
+
    SUBROUTINE mppsum_a_realdd( ytab, kdim, kcom )
       !!----------------------------------------------------------------------
       !!                  ***  routine mppsum_a_realdd  ***
@@ -1558,8 +1551,7 @@ CONTAINS
       ytab(:) = zwork(:)
 
    END SUBROUTINE mppsum_a_realdd
-# endif   
-   
+
    SUBROUTINE mpp_minloc2d( ptab, pmask, pmin, ki,kj )
       !!------------------------------------------------------------------------
       !!             ***  routine mpp_minloc  ***
@@ -1654,7 +1646,7 @@ CONTAINS
       REAL(wp), DIMENSION (jpi,jpj), INTENT(in   ) ::   pmask    ! Local mask
       REAL(wp)                     , INTENT(  out) ::   pmax     ! Global maximum of ptab
       INTEGER                      , INTENT(  out) ::   ki, kj   ! index of maximum in global frame
-      !!  
+      !!
       INTEGER  :: ierror
       INTEGER, DIMENSION (2)   ::   ilocs
       REAL(wp) :: zmax   ! local maximum
@@ -1693,7 +1685,7 @@ CONTAINS
       REAL(wp), DIMENSION (jpi,jpj,jpk), INTENT(in   ) ::   pmask        ! Local mask
       REAL(wp)                         , INTENT(  out) ::   pmax         ! Global maximum of ptab
       INTEGER                          , INTENT(  out) ::   ki, kj, kk   ! index of maximum in global frame
-      !!   
+      !!
       REAL(wp) :: zmax   ! local maximum
       REAL(wp), DIMENSION(2,1) ::   zain, zaout
       INTEGER , DIMENSION(3)   ::   ilocs
@@ -1723,7 +1715,7 @@ CONTAINS
    SUBROUTINE mppsync()
       !!----------------------------------------------------------------------
       !!                  ***  routine mppsync  ***
-      !!                   
+      !!
       !! ** Purpose :   Massively parallel processors, synchroneous
       !!
       !!-----------------------------------------------------------------------
@@ -1738,7 +1730,7 @@ CONTAINS
    SUBROUTINE mppstop
       !!----------------------------------------------------------------------
       !!                  ***  routine mppstop  ***
-      !!                   
+      !!
       !! ** purpose :   Stop massively parallel processors method
       !!
       !!----------------------------------------------------------------------
@@ -1754,7 +1746,7 @@ CONTAINS
    SUBROUTINE mppobc( ptab, kd1, kd2, kl, kk, ktype, kij , kumout)
       !!----------------------------------------------------------------------
       !!                  ***  routine mppobc  ***
-      !! 
+      !!
       !! ** Purpose :   Message passing manadgement for open boundary
       !!     conditions array
       !!
@@ -1765,7 +1757,7 @@ CONTAINS
       !!                    nlcj   : second dimension of the local subdomain
       !!                    nbondi : mark for "east-west local boundary"
       !!                    nbondj : mark for "north-south local boundary"
-      !!                    noea   : number for local neighboring processors 
+      !!                    noea   : number for local neighboring processors
       !!                    nowe   : number for local neighboring processors
       !!                    noso   : number for local neighboring processors
       !!                    nono   : number for local neighboring processors
@@ -1814,7 +1806,7 @@ CONTAINS
          WRITE(kumout,*) 'mppobc : bad ktype'
          CALL mppstop
       ENDIF
-      
+
       ! Communication level by level
       ! ----------------------------
 !!gm Remark : this is very time consumming!!!
@@ -1929,13 +1921,13 @@ CONTAINS
          IF( ktype==1 .AND. kd1 <= jpi+nimpp-1 .AND. nimpp <= kd2 ) THEN
             DO jj = ijpt0, ijpt1            ! north/south boundaries
                DO ji = iipt0,ilpt1
-                  ptab(ji,jk) = ztab(ji,jj)  
+                  ptab(ji,jk) = ztab(ji,jj)
                END DO
             END DO
          ELSEIF( ktype==2 .AND. kd1 <= jpj+njmpp-1 .AND. njmpp <= kd2 ) THEN
             DO jj = ijpt0, ilpt1            ! east/west boundaries
                DO ji = iipt0,iipt1
-                  ptab(jj,jk) = ztab(ji,jj) 
+                  ptab(jj,jk) = ztab(ji,jj)
                END DO
             END DO
          ENDIF
@@ -1945,7 +1937,7 @@ CONTAINS
       CALL wrk_dealloc( jpi,jpj, ztab )
       !
    END SUBROUTINE mppobc
-   
+
 
    SUBROUTINE mpp_comm_free( kcom )
       !!----------------------------------------------------------------------
@@ -1976,7 +1968,7 @@ CONTAINS
       !!      njmppmax = njmpp for northern procs
       !!      ndim_rank_ice = number of processors with ice
       !!      nrank_ice (ndim_rank_ice) = ice processors
-      !!      ngrp_world = group ID for the world processors
+      !!      ngrp_iworld = group ID for the world processors
       !!      ngrp_ice = group ID for the ice processors
       !!      ncomm_ice = communicator for the ice procs.
       !!      n_ice_root = number (in the world) of proc 0 in the ice comm.
@@ -2004,39 +1996,42 @@ CONTAINS
       !
       kice = 0
       DO jjproc = 1, jpnij
-         IF( jjproc == narea .AND. pindic .GT. 0 )   kice(jjproc) = 1    
+         IF( jjproc == narea .AND. pindic .GT. 0 )   kice(jjproc) = 1
       END DO
       !
       zwork = 0
       CALL MPI_ALLREDUCE( kice, zwork, jpnij, mpi_integer, mpi_sum, mpi_comm_opa, ierr )
-      ndim_rank_ice = SUM( zwork )          
+      ndim_rank_ice = SUM( zwork )
 
       ! Allocate the right size to nrank_north
       IF( ALLOCATED ( nrank_ice ) )   DEALLOCATE( nrank_ice )
       ALLOCATE( nrank_ice(ndim_rank_ice) )
       !
-      ii = 0     
+      ii = 0
       nrank_ice = 0
       DO jjproc = 1, jpnij
          IF( zwork(jjproc) == 1) THEN
             ii = ii + 1
-            nrank_ice(ii) = jjproc -1 
+            nrank_ice(ii) = jjproc -1
          ENDIF
       END DO
 
       ! Create the world group
-      CALL MPI_COMM_GROUP( mpi_comm_opa, ngrp_world, ierr )
+      CALL MPI_COMM_GROUP( mpi_comm_opa, ngrp_iworld, ierr )
 
       ! Create the ice group from the world group
-      CALL MPI_GROUP_INCL( ngrp_world, ndim_rank_ice, nrank_ice, ngrp_ice, ierr )
+      CALL MPI_GROUP_INCL( ngrp_iworld, ndim_rank_ice, nrank_ice, ngrp_ice, ierr )
 
       ! Create the ice communicator , ie the pool of procs with sea-ice
       CALL MPI_COMM_CREATE( mpi_comm_opa, ngrp_ice, ncomm_ice, ierr )
 
       ! Find proc number in the world of proc 0 in the north
       ! The following line seems to be useless, we just comment & keep it as reminder
-      ! CALL MPI_GROUP_TRANSLATE_RANKS(ngrp_ice,1,0,ngrp_world,n_ice_root,ierr)
+      ! CALL MPI_GROUP_TRANSLATE_RANKS(ngrp_ice,1,0,ngrp_iworld,n_ice_root,ierr)
       !
+      CALL MPI_GROUP_FREE(ngrp_ice, ierr)
+      CALL MPI_GROUP_FREE(ngrp_iworld, ierr)
+
       DEALLOCATE(kice, zwork)
       !
    END SUBROUTINE mpp_ini_ice
@@ -2099,12 +2094,12 @@ CONTAINS
          ! Allocate the right size to nrank_znl
          IF (ALLOCATED (nrank_znl)) DEALLOCATE(nrank_znl)
          ALLOCATE(nrank_znl(ndim_rank_znl))
-         ii = 0     
+         ii = 0
          nrank_znl (:) = 0
          DO jproc=1,jpnij
             IF ( kwork(jproc) == njmpp) THEN
                ii = ii + 1
-               nrank_znl(ii) = jproc -1 
+               nrank_znl(ii) = jproc -1
             ENDIF
          END DO
          !-$$        WRITE (numout,*) 'mpp_ini_znl ', nproc, ' - nrank_znl : ', nrank_znl
@@ -2128,7 +2123,7 @@ CONTAINS
       END IF
 
       ! Determines if processor if the first (starting from i=1) on the row
-      IF ( jpni == 1 ) THEN 
+      IF ( jpni == 1 ) THEN
          l_znl_root = .TRUE.
       ELSE
          l_znl_root = .FALSE.
@@ -2146,7 +2141,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       !!               ***  routine mpp_ini_north  ***
       !!
-      !! ** Purpose :   Initialize special communicator for north folding 
+      !! ** Purpose :   Initialize special communicator for north folding
       !!      condition together with global variables needed in the mpp folding
       !!
       !! ** Method  : - Look for northern processors
@@ -2207,11 +2202,11 @@ CONTAINS
       !!---------------------------------------------------------------------
       !!                   ***  routine mpp_lbc_north_3d  ***
       !!
-      !! ** Purpose :   Ensure proper north fold horizontal bondary condition 
+      !! ** Purpose :   Ensure proper north fold horizontal bondary condition
       !!              in mpp configuration in case of jpn1 > 1
       !!
       !! ** Method  :   North fold condition and mpp with more than one proc
-      !!              in i-direction require a specific treatment. We gather 
+      !!              in i-direction require a specific treatment. We gather
       !!              the 4 northern lines of the global domain on 1 processor
       !!              and apply lbc north-fold on this sub array. Then we
       !!              scatter the north fold array back to the processors.
@@ -2220,7 +2215,7 @@ CONTAINS
       REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(inout) ::   pt3d      ! 3D array on which the b.c. is applied
       CHARACTER(len=1)                , INTENT(in   ) ::   cd_type   ! nature of pt3d grid-points
       !                                                              !   = T ,  U , V , F or W  gridpoints
-      REAL(wp)                        , INTENT(in   ) ::   psgn      ! = -1. the sign change across the north fold 
+      REAL(wp)                        , INTENT(in   ) ::   psgn      ! = -1. the sign change across the north fold
       !!                                                             ! =  1. , the sign is kept
       INTEGER ::   ji, jj, jr
       INTEGER ::   ierr, itaille, ildi, ilei, iilb
@@ -2229,7 +2224,7 @@ CONTAINS
       INTEGER                                ::   ml_err             ! for mpi_isend when avoiding mpi_allgather
       INTEGER, DIMENSION(MPI_STATUS_SIZE)    ::   ml_stat            ! for mpi_isend when avoiding mpi_allgather
       !!----------------------------------------------------------------------
-      !   
+      !
       ijpj   = 4
       ityp = -1
       ijpjm1 = 3
@@ -2244,7 +2239,7 @@ CONTAINS
       itaille = jpi * jpk * ijpj
       IF ( l_north_nogather ) THEN
          !
-         ! Avoid the use of mpi_allgather by exchanging only with the processes already identified 
+         ! Avoid the use of mpi_allgather by exchanging only with the processes already identified
          ! (in nemo_northcomms) as being  involved in this process' northern boundary exchange
          !
          DO jj = nlcj-ijpj+1, nlcj          ! First put local values into the global array
@@ -2269,7 +2264,7 @@ CONTAINS
             CASE ( 'I' )
                ityp = 5
             CASE DEFAULT
-               ityp = -1                    ! Set a default value for unsupported types which 
+               ityp = -1                    ! Set a default value for unsupported types which
                                             ! will cause a fallback to the mpi_allgather method
          END SELECT
          IF ( ityp .gt. 0 ) THEN
@@ -2318,9 +2313,9 @@ CONTAINS
       !
       ! The ztab array has been either:
       !  a. Fully populated by the mpi_allgather operation or
-      !  b. Had the active points for this domain and northern neighbours populated 
+      !  b. Had the active points for this domain and northern neighbours populated
       !     by peer to peer exchanges
-      ! Either way the array may be folded by lbc_nfd and the result for the span of 
+      ! Either way the array may be folded by lbc_nfd and the result for the span of
       ! this domain will be identical.
       !
       CALL lbc_nfd( ztab, cd_type, psgn )   ! North fold boundary condition
@@ -2339,11 +2334,11 @@ CONTAINS
       !!---------------------------------------------------------------------
       !!                   ***  routine mpp_lbc_north_2d  ***
       !!
-      !! ** Purpose :   Ensure proper north fold horizontal bondary condition 
+      !! ** Purpose :   Ensure proper north fold horizontal bondary condition
       !!              in mpp configuration in case of jpn1 > 1 (for 2d array )
       !!
       !! ** Method  :   North fold condition and mpp with more than one proc
-      !!              in i-direction require a specific treatment. We gather 
+      !!              in i-direction require a specific treatment. We gather
       !!              the 4 northern lines of the global domain on 1 processor
       !!              and apply lbc north-fold on this sub array. Then we
       !!              scatter the north fold array back to the processors.
@@ -2352,7 +2347,7 @@ CONTAINS
       REAL(wp), DIMENSION(jpi,jpj), INTENT(inout) ::   pt2d      ! 3D array on which the b.c. is applied
       CHARACTER(len=1)            , INTENT(in   ) ::   cd_type   ! nature of pt3d grid-points
       !                                                          !   = T ,  U , V , F or W  gridpoints
-      REAL(wp)                    , INTENT(in   ) ::   psgn      ! = -1. the sign change across the north fold 
+      REAL(wp)                    , INTENT(in   ) ::   psgn      ! = -1. the sign change across the north fold
       !!                                                             ! =  1. , the sign is kept
       INTEGER ::   ji, jj, jr
       INTEGER ::   ierr, itaille, ildi, ilei, iilb
@@ -2376,7 +2371,7 @@ CONTAINS
       itaille = jpi * ijpj
       IF ( l_north_nogather ) THEN
          !
-         ! Avoid the use of mpi_allgather by exchanging only with the processes already identified 
+         ! Avoid the use of mpi_allgather by exchanging only with the processes already identified
          ! (in nemo_northcomms) as being  involved in this process' northern boundary exchange
          !
          DO jj = nlcj-ijpj+1, nlcj          ! First put local values into the global array
@@ -2401,7 +2396,7 @@ CONTAINS
             CASE ( 'I' )
                ityp = 5
             CASE DEFAULT
-               ityp = -1                    ! Set a default value for unsupported types which 
+               ityp = -1                    ! Set a default value for unsupported types which
                                             ! will cause a fallback to the mpi_allgather method
          END SELECT
 
@@ -2451,9 +2446,9 @@ CONTAINS
       !
       ! The ztab array has been either:
       !  a. Fully populated by the mpi_allgather operation or
-      !  b. Had the active points for this domain and northern neighbours populated 
+      !  b. Had the active points for this domain and northern neighbours populated
       !     by peer to peer exchanges
-      ! Either way the array may be folded by lbc_nfd and the result for the span of 
+      ! Either way the array may be folded by lbc_nfd and the result for the span of
       ! this domain will be identical.
       !
       CALL lbc_nfd( ztab_2d, cd_type, psgn )   ! North fold boundary condition
@@ -2473,21 +2468,21 @@ CONTAINS
       !!---------------------------------------------------------------------
       !!                   ***  routine mpp_lbc_north_2d  ***
       !!
-      !! ** Purpose :   Ensure proper north fold horizontal bondary condition 
-      !!              in mpp configuration in case of jpn1 > 1 and for 2d 
+      !! ** Purpose :   Ensure proper north fold horizontal bondary condition
+      !!              in mpp configuration in case of jpn1 > 1 and for 2d
       !!              array with outer extra halo
       !!
       !! ** Method  :   North fold condition and mpp with more than one proc
-      !!              in i-direction require a specific treatment. We gather 
-      !!              the 4+2*jpr2dj northern lines of the global domain on 1 
-      !!              processor and apply lbc north-fold on this sub array. 
+      !!              in i-direction require a specific treatment. We gather
+      !!              the 4+2*jpr2dj northern lines of the global domain on 1
+      !!              processor and apply lbc north-fold on this sub array.
       !!              Then we scatter the north fold array back to the processors.
       !!
       !!----------------------------------------------------------------------
       REAL(wp), DIMENSION(1-jpr2di:jpi+jpr2di,1-jpr2dj:jpj+jpr2dj), INTENT(inout) ::   pt2d     ! 2D array with extra halo
       CHARACTER(len=1)                                            , INTENT(in   ) ::   cd_type  ! nature of pt3d grid-points
       !                                                                                         !   = T ,  U , V , F or W -points
-      REAL(wp)                                                    , INTENT(in   ) ::   psgn     ! = -1. the sign change across the  
+      REAL(wp)                                                    , INTENT(in   ) ::   psgn     ! = -1. the sign change across the
       !!                                                                                        ! north fold, =  1. otherwise
       INTEGER ::   ji, jj, jr
       INTEGER ::   ierr, itaille, ildi, ilei, iilb
@@ -2530,7 +2525,7 @@ CONTAINS
       ij = jpr2dj
       !! Scatter back to pt2d
       DO jj = nlcj - ijpj + 1 , nlcj +jpr2dj
-      ij  = ij +1 
+      ij  = ij +1
          DO ji= 1, nlci
             pt2d(ji,jj) = ztab_e(ji+nimpp-1,ij)
          END DO
@@ -2547,11 +2542,11 @@ CONTAINS
       !!
       !! ** Method  :: define buffer size in namelist, if 0 no buffer attachment
       !!            but classical mpi_init
-      !! 
-      !! History :: 01/11 :: IDRIS initial version for IBM only  
+      !!
+      !! History :: 01/11 :: IDRIS initial version for IBM only
       !!            08/04 :: R. Benshila, generalisation
       !!---------------------------------------------------------------------
-      CHARACTER(len=*),DIMENSION(:), INTENT(  out) ::   ldtxt 
+      CHARACTER(len=*),DIMENSION(:), INTENT(  out) ::   ldtxt
       INTEGER                      , INTENT(inout) ::   ksft
       INTEGER                      , INTENT(  out) ::   code
       INTEGER                                      ::   ierr, ji
@@ -2560,9 +2555,9 @@ CONTAINS
       !
       CALL mpi_initialized( mpi_was_called, code )      ! MPI initialization
       IF ( code /= MPI_SUCCESS ) THEN
-         DO ji = 1, SIZE(ldtxt) 
+         DO ji = 1, SIZE(ldtxt)
             IF( TRIM(ldtxt(ji)) /= '' )   WRITE(*,*) ldtxt(ji)      ! control print of mynode
-         END DO         
+         END DO
          WRITE(*, cform_err)
          WRITE(*, *) ' lib_mpp: Error in routine mpi_initialized'
          CALL mpi_abort( mpi_comm_world, code, ierr )
@@ -2572,7 +2567,7 @@ CONTAINS
          CALL mpi_init( code )
          CALL mpi_comm_dup( mpi_comm_world, mpi_comm_opa, code )
          IF ( code /= MPI_SUCCESS ) THEN
-            DO ji = 1, SIZE(ldtxt) 
+            DO ji = 1, SIZE(ldtxt)
                IF( TRIM(ldtxt(ji)) /= '' )   WRITE(*,*) ldtxt(ji)      ! control print of mynode
             END DO
             WRITE(*, cform_err)
@@ -2585,8 +2580,8 @@ CONTAINS
          WRITE(ldtxt(ksft),*) 'mpi_bsend, buffer allocation of  : ', nn_buffer   ;   ksft = ksft + 1
          ! Buffer allocation and attachment
          ALLOCATE( tampon(nn_buffer), stat = ierr )
-         IF( ierr /= 0 ) THEN 
-            DO ji = 1, SIZE(ldtxt) 
+         IF( ierr /= 0 ) THEN
+            DO ji = 1, SIZE(ldtxt)
                IF( TRIM(ldtxt(ji)) /= '' )   WRITE(*,*) ldtxt(ji)      ! control print of mynode
             END DO
             WRITE(*, cform_err)
@@ -2598,7 +2593,6 @@ CONTAINS
       !
    END SUBROUTINE mpi_init_opa
 
-#if defined key_mpp_rep
    SUBROUTINE DDPDD_MPI (ydda, yddb, ilen, itype)
       !!---------------------------------------------------------------------
       !!   Routine DDPDD_MPI: used by reduction operator MPI_SUMDD
@@ -2627,7 +2621,6 @@ CONTAINS
       END DO
 
    END SUBROUTINE DDPDD_MPI
-#endif
 
 #else
    !!----------------------------------------------------------------------
@@ -2667,7 +2660,7 @@ CONTAINS
 
    FUNCTION mynode( ldtxt, kumnam, kstop, localComm ) RESULT (function_value)
       INTEGER, OPTIONAL            , INTENT(in   ) ::   localComm
-      CHARACTER(len=*),DIMENSION(:) ::   ldtxt 
+      CHARACTER(len=*),DIMENSION(:) ::   ldtxt
       INTEGER ::   kumnam, kstop
       IF( PRESENT( localComm ) .OR. .NOT.PRESENT( localComm ) )   function_value = 0
       IF( .FALSE. )   ldtxt(:) = 'never done'
@@ -2679,33 +2672,33 @@ CONTAINS
    SUBROUTINE mpp_sum_as( parr, kdim, kcom )      ! Dummy routine
       REAL   , DIMENSION(:) :: parr
       INTEGER               :: kdim
-      INTEGER, OPTIONAL     :: kcom 
+      INTEGER, OPTIONAL     :: kcom
       WRITE(*,*) 'mpp_sum_as: You should not have seen this print! error?', kdim, parr(1), kcom
    END SUBROUTINE mpp_sum_as
 
    SUBROUTINE mpp_sum_a2s( parr, kdim, kcom )      ! Dummy routine
       REAL   , DIMENSION(:,:) :: parr
       INTEGER               :: kdim
-      INTEGER, OPTIONAL     :: kcom 
+      INTEGER, OPTIONAL     :: kcom
       WRITE(*,*) 'mpp_sum_a2s: You should not have seen this print! error?', kdim, parr(1,1), kcom
    END SUBROUTINE mpp_sum_a2s
 
    SUBROUTINE mpp_sum_ai( karr, kdim, kcom )      ! Dummy routine
       INTEGER, DIMENSION(:) :: karr
       INTEGER               :: kdim
-      INTEGER, OPTIONAL     :: kcom 
+      INTEGER, OPTIONAL     :: kcom
       WRITE(*,*) 'mpp_sum_ai: You should not have seen this print! error?', kdim, karr(1), kcom
    END SUBROUTINE mpp_sum_ai
 
    SUBROUTINE mpp_sum_s( psca, kcom )            ! Dummy routine
       REAL                  :: psca
-      INTEGER, OPTIONAL     :: kcom 
+      INTEGER, OPTIONAL     :: kcom
       WRITE(*,*) 'mpp_sum_s: You should not have seen this print! error?', psca, kcom
    END SUBROUTINE mpp_sum_s
 
    SUBROUTINE mpp_sum_i( kint, kcom )            ! Dummy routine
       integer               :: kint
-      INTEGER, OPTIONAL     :: kcom 
+      INTEGER, OPTIONAL     :: kcom
       WRITE(*,*) 'mpp_sum_i: You should not have seen this print! error?', kint, kcom
    END SUBROUTINE mpp_sum_i
 
@@ -2714,7 +2707,7 @@ CONTAINS
       INTEGER , INTENT( in  ), OPTIONAL :: kcom
       WRITE(*,*) 'mppsum_realdd: You should not have seen this print! error?', ytab
    END SUBROUTINE mppsum_realdd
- 
+
    SUBROUTINE mppsum_a_realdd( ytab, kdim, kcom )
       INTEGER , INTENT( in )                        ::   kdim      ! size of ytab
       COMPLEX(wp), DIMENSION(kdim), INTENT( inout ) ::   ytab      ! input array
@@ -2725,52 +2718,52 @@ CONTAINS
    SUBROUTINE mppmax_a_real( parr, kdim, kcom )
       REAL   , DIMENSION(:) :: parr
       INTEGER               :: kdim
-      INTEGER, OPTIONAL     :: kcom 
+      INTEGER, OPTIONAL     :: kcom
       WRITE(*,*) 'mppmax_a_real: You should not have seen this print! error?', kdim, parr(1), kcom
    END SUBROUTINE mppmax_a_real
 
    SUBROUTINE mppmax_real( psca, kcom )
       REAL                  :: psca
-      INTEGER, OPTIONAL     :: kcom 
+      INTEGER, OPTIONAL     :: kcom
       WRITE(*,*) 'mppmax_real: You should not have seen this print! error?', psca, kcom
    END SUBROUTINE mppmax_real
 
    SUBROUTINE mppmin_a_real( parr, kdim, kcom )
       REAL   , DIMENSION(:) :: parr
       INTEGER               :: kdim
-      INTEGER, OPTIONAL     :: kcom 
+      INTEGER, OPTIONAL     :: kcom
       WRITE(*,*) 'mppmin_a_real: You should not have seen this print! error?', kdim, parr(1), kcom
    END SUBROUTINE mppmin_a_real
 
    SUBROUTINE mppmin_real( psca, kcom )
       REAL                  :: psca
-      INTEGER, OPTIONAL     :: kcom 
+      INTEGER, OPTIONAL     :: kcom
       WRITE(*,*) 'mppmin_real: You should not have seen this print! error?', psca, kcom
    END SUBROUTINE mppmin_real
 
    SUBROUTINE mppmax_a_int( karr, kdim ,kcom)
       INTEGER, DIMENSION(:) :: karr
       INTEGER               :: kdim
-      INTEGER, OPTIONAL     :: kcom 
+      INTEGER, OPTIONAL     :: kcom
       WRITE(*,*) 'mppmax_a_int: You should not have seen this print! error?', kdim, karr(1), kcom
    END SUBROUTINE mppmax_a_int
 
    SUBROUTINE mppmax_int( kint, kcom)
       INTEGER               :: kint
-      INTEGER, OPTIONAL     :: kcom 
+      INTEGER, OPTIONAL     :: kcom
       WRITE(*,*) 'mppmax_int: You should not have seen this print! error?', kint, kcom
    END SUBROUTINE mppmax_int
 
    SUBROUTINE mppmin_a_int( karr, kdim, kcom )
       INTEGER, DIMENSION(:) :: karr
       INTEGER               :: kdim
-      INTEGER, OPTIONAL     :: kcom 
+      INTEGER, OPTIONAL     :: kcom
       WRITE(*,*) 'mppmin_a_int: You should not have seen this print! error?', kdim, karr(1), kcom
    END SUBROUTINE mppmin_a_int
 
    SUBROUTINE mppmin_int( kint, kcom )
       INTEGER               :: kint
-      INTEGER, OPTIONAL     :: kcom 
+      INTEGER, OPTIONAL     :: kcom
       WRITE(*,*) 'mppmin_int: You should not have seen this print! error?', kint, kcom
    END SUBROUTINE mppmin_int
 
@@ -2827,9 +2820,7 @@ CONTAINS
    END SUBROUTINE mpp_maxloc3d
 
    SUBROUTINE mppstop
-      WRITE(*,*) 'mppstop: You should not have seen this print if running in mpp mode! error?...'
-      WRITE(*,*) 'mppstop: ..otherwise this is a stop condition raised by ctl_stop in single processor mode'
-      STOP
+      STOP      ! non MPP case, just stop the run
    END SUBROUTINE mppstop
 
    SUBROUTINE mpp_ini_ice( kcom, knum )
@@ -2857,14 +2848,14 @@ CONTAINS
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE  stop_opa  ***
       !!
-      !! ** Purpose :   print in ocean.outpput file a error message and 
+      !! ** Purpose :   print in ocean.outpput file a error message and
       !!                increment the error number (nstop) by one.
       !!----------------------------------------------------------------------
       CHARACTER(len=*), INTENT(in), OPTIONAL ::  cd1, cd2, cd3, cd4, cd5
       CHARACTER(len=*), INTENT(in), OPTIONAL ::  cd6, cd7, cd8, cd9, cd10
       !!----------------------------------------------------------------------
       !
-      nstop = nstop + 1 
+      nstop = nstop + 1
       IF(lwp) THEN
          WRITE(numout,cform_err)
          IF( PRESENT(cd1 ) )   WRITE(numout,*) cd1
@@ -2896,14 +2887,14 @@ CONTAINS
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE  stop_warn  ***
       !!
-      !! ** Purpose :   print in ocean.outpput file a error message and 
+      !! ** Purpose :   print in ocean.outpput file a error message and
       !!                increment the warning number (nwarn) by one.
       !!----------------------------------------------------------------------
       CHARACTER(len=*), INTENT(in), OPTIONAL ::  cd1, cd2, cd3, cd4, cd5
       CHARACTER(len=*), INTENT(in), OPTIONAL ::  cd6, cd7, cd8, cd9, cd10
       !!----------------------------------------------------------------------
-      ! 
-      nwarn = nwarn + 1 
+      !
+      nwarn = nwarn + 1
       IF(lwp) THEN
          WRITE(numout,cform_war)
          IF( PRESENT(cd1 ) ) WRITE(numout,*) cd1
@@ -2989,7 +2980,7 @@ CONTAINS
          ENDIF
          STOP 'ctl_opn bad opening'
       ENDIF
-      
+
    END SUBROUTINE ctl_opn
 
 
@@ -2999,7 +2990,7 @@ CONTAINS
       !!
       !! ** Purpose :   return the index of an unused logical unit
       !!----------------------------------------------------------------------
-      LOGICAL :: llopn 
+      LOGICAL :: llopn
       !!----------------------------------------------------------------------
       !
       get_unit = 15   ! choose a unit that is big enough then it is not already used in NEMO

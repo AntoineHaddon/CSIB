@@ -44,6 +44,7 @@ MODULE nemogcm
 #endif 
    USE prtctl          ! Print control                    (prt_ctl_init routine)
    USE timing          ! Timing
+   USE lib_fortran     ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
 
    IMPLICIT NONE
    PRIVATE
@@ -334,6 +335,10 @@ CONTAINS
       IF( lk_c1d .AND. .NOT.lk_iomput )   CALL ctl_stop( 'nemo_ctl: The 1D configuration must be used ',   &
          &                                               'with the IOM Input/Output manager. '        ,   &
          &                                               'Compile with key_iomput enabled' )
+      !
+      IF( 1_wp /= SIGN(1._wp,-0._wp)  )   CALL ctl_stop( 'nemo_ctl: The intrinsec SIGN function follows ',  &
+         &                                               'f2003 standard. '                              ,  &
+         &                                               'Compile with key_nosignedzero enabled' )
       !
    END SUBROUTINE nemo_ctl
 

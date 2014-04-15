@@ -60,7 +60,7 @@ MODULE dynvor
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 3.3 , NEMO Consortium (2010)
-   !! $Id: dynvor.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: dynvor.F90 3803 2013-02-12 08:23:32Z flavoni $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -594,11 +594,13 @@ CONTAINS
          IF(lwp) WRITE(numout,*)
          IF(lwp) WRITE(numout,*) 'dyn:vor_een : vorticity term: energy and enstrophy conserving scheme'
          IF(lwp) WRITE(numout,*) '~~~~~~~~~~~'
-         IF( .NOT.lk_vvl ) THEN
+#if ! defined key_vvl
+         IF( .NOT.ALLOCATED(ze3f) ) THEN
             ALLOCATE( ze3f(jpi,jpj,jpk) , STAT=ierr )
             IF( lk_mpp    )   CALL mpp_sum ( ierr )
             IF( ierr /= 0 )   CALL ctl_stop( 'STOP', 'dyn:vor_een : unable to allocate arrays' )
          ENDIF
+#endif
       ENDIF
 
       IF( kt == nit000 .OR. lk_vvl ) THEN      ! reciprocal of e3 at F-point (masked averaging of e3t)

@@ -22,6 +22,7 @@ MODULE limdia
    USE phycst          ! physical constant
    USE in_out_manager  ! I/O manager
    USE lib_mpp         ! MPP library
+   USE lib_fortran     ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
    
    IMPLICIT NONE
    PRIVATE
@@ -57,7 +58,7 @@ MODULE limdia
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/LIM3 3.3 , UCL - NEMO Consortium (2010)
-   !! $Id: limdia.F90 2715 2011-03-30 15:58:35Z rblod $
+   !! $Id: limdia.F90 3558 2012-11-14 19:15:05Z rblod $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS

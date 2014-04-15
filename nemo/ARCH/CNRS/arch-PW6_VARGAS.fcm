@@ -17,8 +17,8 @@
 %NCDF_INC            -I/usr/local/pub/NetCDF/3.6.2/include
 %NCDF_LIB            -L /usr/local/pub/NetCDF/3.6.2/lib -lnetcdf
 %FC                  mpxlf90_r
-%FCFLAGS             -qfree=f90 -O3 -qrealsize=8 -qextname -qsource -q64 -qlargepage -qmaxmem=-1 -qsource
-%FFLAGS              -qfixed -O3 -qrealsize=8 -qextname -qsource -q64 -qlargepage -qmaxmem=-1 -qsource
+%FCFLAGS             -qfree=f90 -O3 -qstrict -qrealsize=8 -qextname=flush -qsource -q64 -qlargepage -qmaxmem=-1 -qsource
+%FFLAGS              -qfixed -O3 -qstrict -qrealsize=8 -qextname=flush -qsource -q64 -qlargepage -qmaxmem=-1 -qsource
 %LD                  mpxlf90_r
 %LDFLAGS    
 %FPPFLAGS            -P -C

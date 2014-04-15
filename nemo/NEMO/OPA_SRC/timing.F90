@@ -75,10 +75,9 @@ MODULE timing
    ! From of ouput file (1/proc or one global)   !RB to put in nammpp or namctl
    LOGICAL :: ln_onefile = .TRUE. 
    LOGICAL :: lwriter
-
    !!----------------------------------------------------------------------
    !! NEMO/OPA 4.0 , NEMO Consortium (2011)
-   !! $Id: timing.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: timing.F90 3352 2012-04-11 12:56:01Z rblod $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -321,8 +320,8 @@ CONTAINS
       ! write output file
       IF( lwriter ) WRITE(numtime,*) 'Total timing (sum) :'
       IF( lwriter ) WRITE(numtime,*) '--------------------'
-      IF( lwriter ) WRITE(numtime,*) 'Elapsed Time (s)  ','CPU Time (s)'
-      IF( lwriter ) WRITE(numtime,'(5x,f12.3,2x,f12.3)')  tot_etime, tot_ctime
+      IF( lwriter ) WRITE(numtime,"('Elapsed Time (s)  CPU Time (s)')")
+      IF( lwriter ) WRITE(numtime,'(5x,f12.3,1x,f12.3)')  tot_etime, tot_ctime
       IF( lwriter ) WRITE(numtime,*) 
 #if defined key_mpp_mpi
       IF( ll_averep ) CALL waver_info
@@ -405,26 +404,38 @@ CONTAINS
       TYPE(timer), POINTER :: sl_timer_ave_root => NULL()
       TYPE(timer), POINTER :: sl_timer_ave      => NULL()
       INTEGER :: icode
+      INTEGER :: ierr
       LOGICAL :: ll_ord           
       CHARACTER(len=200) :: clfmt              
                  
       ! Initialised the global strucutre   
-      ALLOCATE(sl_timer_glob_root)
-      ALLOCATE(sl_timer_glob_root%cname     (jpnij))
-      ALLOCATE(sl_timer_glob_root%tsum_cpu  (jpnij))
-      ALLOCATE(sl_timer_glob_root%tsum_clock(jpnij))
-      ALLOCATE(sl_timer_glob_root%niter     (jpnij))
+      ALLOCATE(sl_timer_glob_root, Stat=ierr)
+      IF(ierr /= 0)THEN
+         WRITE(numtime,*) 'Failed to allocate global timing structure in waver_info'
+         RETURN
+      END IF
+
+      ALLOCATE(sl_timer_glob_root%cname     (jpnij), &
+               sl_timer_glob_root%tsum_cpu  (jpnij), &
+               sl_timer_glob_root%tsum_clock(jpnij), &
+               sl_timer_glob_root%niter     (jpnij), Stat=ierr)
+      IF(ierr /= 0)THEN
+         WRITE(numtime,*) 'Failed to allocate global timing structure in waver_info'
+         RETURN
+      END IF
       sl_timer_glob_root%cname(:)       = ''
       sl_timer_glob_root%tsum_cpu(:)   = 0._wp
       sl_timer_glob_root%tsum_clock(:) = 0._wp
       sl_timer_glob_root%niter(:)      = 0
       sl_timer_glob_root%next => NULL()
       sl_timer_glob_root%prev => NULL()
-      ALLOCATE(sl_timer_glob)
-      ALLOCATE(sl_timer_glob%cname     (jpnij))
-      ALLOCATE(sl_timer_glob%tsum_cpu  (jpnij))
-      ALLOCATE(sl_timer_glob%tsum_clock(jpnij))
-      ALLOCATE(sl_timer_glob%niter     (jpnij))
+      !ARPDBG - don't need to allocate a pointer that's immediately then
+      !         set to point to some other object.
+      !ALLOCATE(sl_timer_glob)
+      !ALLOCATE(sl_timer_glob%cname     (jpnij))
+      !ALLOCATE(sl_timer_glob%tsum_cpu  (jpnij))
+      !ALLOCATE(sl_timer_glob%tsum_clock(jpnij))
+      !ALLOCATE(sl_timer_glob%niter     (jpnij))
       sl_timer_glob => sl_timer_glob_root
       !
       IF( narea .EQ. 1 ) THEN
@@ -450,7 +461,7 @@ CONTAINS
          ALLOCATE(sl_timer_ave)
          sl_timer_ave => sl_timer_ave_root            
       ENDIF 
-      
+
       ! Gather info from all processors
       s_timer => s_timer_root
       DO WHILE ( ASSOCIATED(s_timer) )
@@ -466,6 +477,7 @@ CONTAINS
          CALL MPI_GATHER(s_timer%niter     , 1, MPI_INTEGER,   &
                          sl_timer_glob%niter, 1, MPI_INTEGER,   &
                          0, MPI_COMM_OPA, icode)
+
          IF( narea == 1 .AND. ASSOCIATED(s_timer%next) ) THEN
             ALLOCATE(sl_timer_glob%next)
             ALLOCATE(sl_timer_glob%next%cname     (jpnij))
@@ -478,6 +490,8 @@ CONTAINS
          ENDIF              
          s_timer => s_timer%next
       END DO      
+
+         WRITE(*,*) 'ARPDBG: timing: done gathers'
       
       IF( narea == 1 ) THEN    
          ! Compute some stats
@@ -499,41 +513,47 @@ CONTAINS
                sl_timer_ave           => sl_timer_ave%next
             ENDIF
             sl_timer_glob => sl_timer_glob%next                                
-         END DO         
+         END DO
+
+         WRITE(*,*) 'ARPDBG: timing: done computing stats'
       
-         ! reorder the avearged list by CPU time      
+         ! reorder the averaged list by CPU time      
          s_wrk => NULL()
          sl_timer_ave => sl_timer_ave_root
          DO
             ll_ord = .TRUE.
             sl_timer_ave => sl_timer_ave_root
             DO WHILE( ASSOCIATED( sl_timer_ave%next ) )
-            IF( .NOT. ASSOCIATED(sl_timer_ave%next) ) EXIT
+
+               IF( .NOT. ASSOCIATED(sl_timer_ave%next) ) EXIT
+
                IF ( sl_timer_ave%tsum_clock < sl_timer_ave%next%tsum_clock ) THEN 
                   ALLOCATE(s_wrk)
+                  ! Copy data into the new object pointed to by s_wrk
                   s_wrk = sl_timer_ave%next
+                  ! Insert this new timer object before our current position
                   CALL insert  (sl_timer_ave, sl_timer_ave_root, s_wrk)
+                  ! Remove the old object from the list
                   CALL suppress(sl_timer_ave%next)            
                   ll_ord = .FALSE.
                   CYCLE            
                ENDIF           
-            IF( ASSOCIATED(sl_timer_ave%next) ) sl_timer_ave => sl_timer_ave%next
+               IF( ASSOCIATED(sl_timer_ave%next) ) sl_timer_ave => sl_timer_ave%next
             END DO         
-           IF( ll_ord ) EXIT
+            IF( ll_ord ) EXIT
          END DO
 
          ! write averaged info
-         WRITE(numtime,*) 'Averaged timing on all processors :'
-         WRITE(numtime,*) '-----------------------------------'
-         WRITE(numtime,*) 'Section             ',                &
-         &   'Elapsed Time (s)  ','Elapsed Time (%)  ',          &
-         &   'CPU Time(s)  ','CPU Time (%)  ','CPU/Elapsed  ',   &
-         &   'Max Elapsed (%)  ','Min elapsed (%)  ',            &           
-         &   'Frequency' 
+         WRITE(numtime,"('Averaged timing on all processors :')")
+         WRITE(numtime,"('-----------------------------------')")
+         WRITE(numtime,"('Section',13x,'Elap. Time(s)',2x,'Elap. Time(%)',2x, &
+         &   'CPU Time(s)',2x,'CPU Time(%)',2x,'CPU/Elap',1x,   &
+         &   'Max elap(%)',2x,'Min elap(%)',2x,            &           
+         &   'Freq')")
          sl_timer_ave => sl_timer_ave_root  
-         clfmt = '(1x,a,4x,f12.3,6x,f12.3,x,f12.3,2x,f12.3,6x,f7.3,5x,f12.3,5x,f12.3,2x,f9.2)'
+         clfmt = '((A),E15.7,2x,f6.2,5x,f12.2,5x,f6.2,5x,f7.2,2x,f12.2,4x,f6.2,2x,f9.2)'
          DO WHILE ( ASSOCIATED(sl_timer_ave) )
-            WRITE(numtime,TRIM(clfmt))   sl_timer_ave%cname,                            &
+            WRITE(numtime,TRIM(clfmt))   sl_timer_ave%cname(1:18),                            &
             &   sl_timer_ave%tsum_clock,sl_timer_ave%tsum_clock*100.*jpnij/tot_etime,   &
             &   sl_timer_ave%tsum_cpu  ,sl_timer_ave%tsum_cpu*100.*jpnij/tot_ctime  ,   &
             &   sl_timer_ave%tsum_cpu/sl_timer_ave%tsum_clock,                          &
@@ -711,11 +731,11 @@ CONTAINS
       !! ** Purpose :   go to root of timing tree 
       !!----------------------------------------------------------------------
       l_initdone = .TRUE. 
-      IF(lwp) WRITE(numout,*)
-      IF(lwp) WRITE(numout,*) 'timing_reset : instrumented routines for timing'
-      IF(lwp) WRITE(numout,*) '~~~~~~~~~~~~'
-      CALL timing_list(s_timer_root)
-      WRITE(numout,*)
+!      IF(lwp) WRITE(numout,*)
+!      IF(lwp) WRITE(numout,*) 'timing_reset : instrumented routines for timing'
+!      IF(lwp) WRITE(numout,*) '~~~~~~~~~~~~'
+!      CALL timing_list(s_timer_root)
+!      WRITE(numout,*)
       !
    END SUBROUTINE timing_reset
 
@@ -733,12 +753,14 @@ CONTAINS
    SUBROUTINE insert(sd_current, sd_root ,sd_ptr)
       !!----------------------------------------------------------------------
       !!               ***  ROUTINE insert  ***
-      !! ** Purpose :   insert an element in  imer structure
+      !! ** Purpose :   insert an element in timer structure
       !!----------------------------------------------------------------------
       TYPE(timer), POINTER, INTENT(inout) :: sd_current, sd_root, sd_ptr
       !
      
       IF( ASSOCIATED( sd_current, sd_root ) ) THEN
+         ! If our current element is the root element then
+         ! replace it with the one being inserted
          sd_root => sd_ptr
       ELSE
          sd_current%prev%next => sd_ptr
@@ -746,6 +768,10 @@ CONTAINS
       sd_ptr%next     => sd_current
       sd_ptr%prev     => sd_current%prev
       sd_current%prev => sd_ptr
+      ! Nullify the pointer to the new element now that it is held
+      ! within the list. If we don't do this then a subsequent call
+      ! to ALLOCATE memory to this pointer will fail.
+      sd_ptr => NULL()
       !    
    END SUBROUTINE insert
   
@@ -763,6 +789,7 @@ CONTAINS
       sd_ptr => sd_ptr%next    
       IF ( ASSOCIATED(sl_temp%next) ) sl_temp%next%prev => sl_temp%prev
       DEALLOCATE(sl_temp)
+      sl_temp => NULL()
       !
     END SUBROUTINE suppress
 

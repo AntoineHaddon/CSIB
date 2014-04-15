@@ -10,7 +10,7 @@
 # Number of procs 
 # @ total_tasks = NPROCS
 # time
-# @ wall_clock_limit = 0:30:00
+# @ wall_clock_limit = 1:30:00
 # @ queue
 
 #

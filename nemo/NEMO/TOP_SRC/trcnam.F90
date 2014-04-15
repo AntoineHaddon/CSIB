@@ -38,7 +38,7 @@ MODULE trcnam
 #  include "top_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 3.3 , NEMO Consortium (2010)
-   !! $Id: trcnam.F90 3294 2012-01-28 16:44:18Z rblod $ 
+   !! $Id: trcnam.F90 3319 2012-03-05 16:03:27Z cetlod $ 
    !! Software governed by the CeCILL licence (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 
@@ -59,7 +59,7 @@ CONTAINS
       TYPE(PTRACER), DIMENSION(jptra) :: sn_tracer  ! type of tracer for saving if not key_iomput
       !!
       NAMELIST/namtrc/ nn_dttrc, nn_writetrc, ln_rsttr, nn_rsttr, &
-         &             cn_trcrst_in, cn_trcrst_out, sn_tracer, ln_trcdta
+         &             cn_trcrst_in, cn_trcrst_out, sn_tracer, ln_trcdta, ln_trcdmp
 #if defined key_trdmld_trc  || defined key_trdtrc
       NAMELIST/namtrc_trd/ nn_trd_trc, nn_ctls_trc, rn_ucf_trc, &
          &                ln_trdmld_trc_restart, ln_trdmld_trc_instant, &
@@ -91,6 +91,7 @@ CONTAINS
          sn_tracer(jn)%llsave  = .TRUE.
       END DO
       ln_trcdta = .FALSE.
+      ln_trcdmp = .FALSE.
 
 
       REWIND( numnat )               ! read nattrc
@@ -114,9 +115,10 @@ CONTAINS
          WRITE(numout,*) '   time step freq. for passive tracer           nn_dttrc      = ', nn_dttrc
          WRITE(numout,*) '   restart  for passive tracer                  ln_rsttr      = ', ln_rsttr
          WRITE(numout,*) '   control of time step for passive tracer      nn_rsttr      = ', nn_rsttr
-         WRITE(numout,*) '    first time step for pass. trac.             nittrc000     = ', nittrc000
-         WRITE(numout,*) '    frequency of outputs for passive tracers    nn_writetrc   = ', nn_writetrc  
-         WRITE(numout,*) '   Read inputs data from file                   ln_trcdta     = ', ln_trcdta
+         WRITE(numout,*) '   first time step for pass. trac.              nittrc000     = ', nittrc000
+         WRITE(numout,*) '   frequency of outputs for passive tracers     nn_writetrc   = ', nn_writetrc  
+         WRITE(numout,*) '   Read inputs data from file (y/n)             ln_trcdta     = ', ln_trcdta
+         WRITE(numout,*) '   Damping of passive tracer (y/n)              ln_trcdmp     = ', ln_trcdmp
          WRITE(numout,*) ' '
          DO jn = 1, jptra
             WRITE(numout,*) '  tracer nb : ', jn, '    short name : ', ctrcnm(jn)
@@ -264,7 +266,7 @@ CONTAINS
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 3.3 , NEMO Consortium (2010)
-   !! $Id: trcnam.F90 3294 2012-01-28 16:44:18Z rblod $ 
+   !! $Id: trcnam.F90 3319 2012-03-05 16:03:27Z cetlod $ 
    !! Software governed by the CeCILL licence (NEMOGCM/NEMO_CeCILL.txt)
    !!======================================================================
 END MODULE  trcnam

@@ -30,6 +30,7 @@ MODULE zdfgls
    USE in_out_manager ! I/O manager
    USE iom            ! I/O manager library
    USE timing         ! Timing
+   USE lib_fortran    ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
 
    IMPLICIT NONE
    PRIVATE
@@ -43,6 +44,10 @@ MODULE zdfgls
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   en      !: now turbulent kinetic energy
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   mxln    !: now mixing length
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   zwall   !: wall function
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   avt_k   ! not enhanced Kz
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   avm_k   ! not enhanced Kz
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   avmu_k  ! not enhanced Kz
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   avmv_k  ! not enhanced Kz
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   ustars2 !: Squared surface velocity scale at T-points
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   ustarb2 !: Squared bottom  velocity scale at T-points
 
@@ -108,7 +113,7 @@ MODULE zdfgls
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 3.3 , NEMO Consortium (2010)
-   !! $Id: zdfgls.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: zdfgls.F90 3804 2013-02-12 13:16:51Z cbricaud $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -118,6 +123,8 @@ CONTAINS
       !!                ***  FUNCTION zdf_gls_alloc  ***
       !!----------------------------------------------------------------------
       ALLOCATE( en(jpi,jpj,jpk),  mxln(jpi,jpj,jpk), zwall(jpi,jpj,jpk) ,     &
+         &      avt_k (jpi,jpj,jpk) , avm_k (jpi,jpj,jpk),                    &
+         &      avmu_k(jpi,jpj,jpk) , avmv_k(jpi,jpj,jpk),                    &
          &      ustars2(jpi,jpj), ustarb2(jpi,jpj)                      , STAT= zdf_gls_alloc )
          !
       IF( lk_mpp             )   CALL mpp_sum ( zdf_gls_alloc )
@@ -158,6 +165,13 @@ CONTAINS
       ! Preliminary computing
 
       ustars2 = 0._wp   ;   ustarb2 = 0._wp   ;   psi  = 0._wp   ;   zwall_psi = 0._wp
+
+      IF( kt /= nit000 ) THEN   ! restore before value to compute tke
+         avt (:,:,:) = avt_k (:,:,:)
+         avm (:,:,:) = avm_k (:,:,:)
+         avmu(:,:,:) = avmu_k(:,:,:)
+         avmv(:,:,:) = avmv_k(:,:,:) 
+      ENDIF
 
       ! Compute surface and bottom friction at T-points
 !CDIR NOVERRCHK
@@ -881,6 +895,11 @@ CONTAINS
             &          tab3d_2=avmv, clinfo2=       ' v: ', mask2=vmask, ovlap=1, kdim=jpk )
       ENDIF
       !
+      avt_k (:,:,:) = avt (:,:,:)
+      avm_k (:,:,:) = avm (:,:,:)
+      avmu_k(:,:,:) = avmu(:,:,:)
+      avmv_k(:,:,:) = avmv(:,:,:)
+      !
       CALL wrk_dealloc( jpi,jpj, zdep, zflxs, zhsro )
       CALL wrk_dealloc( jpi,jpj,jpk, eb, mxlb, shear, eps, zwall_psi, z_elem_a, z_elem_b, z_elem_c, psi )
       !
@@ -1244,10 +1263,10 @@ CONTAINS
          !                                   ! -------------------
          IF(lwp) WRITE(numout,*) '---- gls-rst ----'
          CALL iom_rstput( kt, nitrst, numrow, 'en'   , en    )
-         CALL iom_rstput( kt, nitrst, numrow, 'avt'  , avt   )
-         CALL iom_rstput( kt, nitrst, numrow, 'avm'  , avm   )
-         CALL iom_rstput( kt, nitrst, numrow, 'avmu' , avmu  )
-         CALL iom_rstput( kt, nitrst, numrow, 'avmv' , avmv  )
+         CALL iom_rstput( kt, nitrst, numrow, 'avt'  , avt_k  )
+         CALL iom_rstput( kt, nitrst, numrow, 'avm'  , avm_k  )
+         CALL iom_rstput( kt, nitrst, numrow, 'avmu' , avmu_k )
+         CALL iom_rstput( kt, nitrst, numrow, 'avmv' , avmv_k )
          CALL iom_rstput( kt, nitrst, numrow, 'mxln' , mxln  )
          !
       ENDIF

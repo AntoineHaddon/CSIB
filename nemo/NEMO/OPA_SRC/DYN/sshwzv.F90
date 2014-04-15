@@ -52,7 +52,7 @@ MODULE sshwzv
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 3.3 , NEMO Consortium (2010)
-   !! $Id: sshwzv.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: sshwzv.F90 3689 2012-11-27 16:19:49Z gm $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -181,9 +181,15 @@ CONTAINS
 #endif
 #if defined key_bdy
       ssha(:,:) = ssha(:,:) * bdytmask(:,:)
-      CALL lbc_lnk( ssha, 'T', 1. )                 ! absolutly compulsory !! (jmm)
+      CALL lbc_lnk( ssha, 'T', 1. )                    ! absolutly compulsory !! (jmm)
 #endif
-
+#if defined key_asminc
+      !                                                ! Include the IAU weighted SSH increment
+      IF( lk_asminc .AND. ln_sshinc .AND. ln_asmiau ) THEN
+         CALL ssh_asm_inc( kt )
+         ssha(:,:) = ssha(:,:) + z2dt * ssh_iau(:,:)
+      ENDIF
+#endif
       !                                                ! Sea Surface Height at u-,v- and f-points (vvl case only)
       IF( lk_vvl ) THEN                                ! (required only in key_vvl case)
          DO jj = 1, jpjm1
@@ -198,14 +204,6 @@ CONTAINS
          END DO
          CALL lbc_lnk( sshu_a, 'U', 1. )   ;   CALL lbc_lnk( sshv_a, 'V', 1. )      ! Boundaries conditions
       ENDIF
-      
-#if defined key_asminc
-      !                                                ! Include the IAU weighted SSH increment
-      IF( lk_asminc .AND. ln_sshinc .AND. ln_asmiau ) THEN
-         CALL ssh_asm_inc( kt )
-         ssha(:,:) = ssha(:,:) + z2dt * ssh_iau(:,:)
-      ENDIF
-#endif
 
       !                                           !------------------------------!
       !                                           !     Now Vertical Velocity    !

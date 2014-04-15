@@ -30,7 +30,7 @@ pro std_ts_T, masknp, s_iodir_data, POSTSCRIPT = postscript, _extra = ex
 ;
 
 ; read exp1 data
-  std_ts_read, vtemp, date1, date2, prefix, suffix, ts_Temp, ts_z $
+  std_ts_read, vtemp, date1, date2, prefix, suffix, ts_Temp, ts_z, masknp $
                , WITHSSH = vssh, SSHPREFIX = sshprefix, SSHSUFFIX = sshsuffix, LEVZ = levz
 
   title = prefix+' '+d1_d2+'!C'+blabla
@@ -61,7 +61,7 @@ pro std_ts_T, masknp, s_iodir_data, POSTSCRIPT = postscript, _extra = ex
     d1_d2_2 = '('+strtrim(date1_2, 1)+' - '+strtrim(date2_2, 1)+')'
 ; read exp2 data
     tsave = time
-    std_ts_read, vtemp2, date1_2, date2_2, prefix2, suffix2, ts_Temp2, ts_z2 $
+    std_ts_read, vtemp2, date1_2, date2_2, prefix2, suffix2, ts_Temp2, ts_z2, masknp $
                  , WITHSSH = vssh2, SSHPREFIX = sshprefix2, SSHSUFFIX = sshsuffix2, LEVZ = levz
     time = tsave   &   IF n_elements(time) NE jpt THEN stop
 

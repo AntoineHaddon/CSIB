@@ -38,6 +38,7 @@ MODULE limthd
    USE wrk_nemo        ! work arrays
    USE in_out_manager  ! I/O manager
    USE prtctl          ! Print control
+   USE lib_fortran    ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
 
    IMPLICIT NONE
    PRIVATE
@@ -58,7 +59,7 @@ MODULE limthd
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/LIM3 3.3 , UCL - NEMO Consortium (2010)
-   !! $Id: limthd.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: limthd.F90 3558 2012-11-14 19:15:05Z rblod $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS

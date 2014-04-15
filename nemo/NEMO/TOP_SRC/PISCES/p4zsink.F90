@@ -18,6 +18,7 @@ MODULE p4zsink
    USE sms_pisces      !  PISCES Source Minus Sink variables
    USE prtctl_trc      !  print control for debugging
    USE iom             !  I/O manager
+   USE lib_fortran     ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
 
    IMPLICIT NONE
    PRIVATE
@@ -64,7 +65,7 @@ MODULE p4zsink
 #  include "top_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 3.3 , NEMO Consortium (2010)
-   !! $Id: p4zsink.F90 3295 2012-01-30 15:49:07Z cetlod $ 
+   !! $Id: p4zsink.F90 3685 2012-11-27 15:39:02Z cetlod $ 
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -294,7 +295,7 @@ CONTAINS
          CALL prt_ctl_trc(tab4d=tra, mask=tmask, clinfo=ctrcnm)
       ENDIF
       !
-      CALL wrk_alloc( jpi, jpj, jpk, znum3d )
+      CALL wrk_dealloc( jpi, jpj, jpk, znum3d )
       !
       IF( nn_timing == 1 )  CALL timing_stop('p4z_sink')
       !
@@ -613,18 +614,19 @@ iflag:   DO jn = 1, kiter
       !!
       INTEGER  ::   ji, jj, jk, jn
       REAL(wp) ::   zigma,zew,zign, zflx, zstep
-      REAL(wp), POINTER, DIMENSION(:,:,:) :: ztraz, zakz, zwsink2 
+      REAL(wp), POINTER, DIMENSION(:,:,:) :: ztraz, zakz, zwsink2, ztrb 
       !!---------------------------------------------------------------------
       !
       IF( nn_timing == 1 )  CALL timing_start('p4z_sink2')
       !
       ! Allocate temporary workspace
-      CALL wrk_alloc( jpi, jpj, jpk, ztraz, zakz, zwsink2 )
+      CALL wrk_alloc( jpi, jpj, jpk, ztraz, zakz, zwsink2, ztrb )
 
       zstep = rfact2 / 2.
 
       ztraz(:,:,:) = 0.e0
       zakz (:,:,:) = 0.e0
+      ztrb (:,:,:) = trn(:,:,:,jp_tra)
 
       DO jk = 1, jpkm1
          zwsink2(:,:,jk+1) = -pwsink(:,:,jk) / rday * tmask(:,:,jk+1) 
@@ -694,15 +696,15 @@ iflag:   DO jn = 1, kiter
          DO jj = 1,jpj
             DO ji = 1, jpi
                zflx = ( psinkflx(ji,jj,jk) - psinkflx(ji,jj,jk+1) ) / fse3t(ji,jj,jk)
-               trb(ji,jj,jk,jp_tra) = trb(ji,jj,jk,jp_tra) + 2. * zflx
+               ztrb(ji,jj,jk) = ztrb(ji,jj,jk) + 2. * zflx
             END DO
          END DO
       END DO
 
-      trn     (:,:,:,jp_tra) = trb(:,:,:,jp_tra)
+      trn     (:,:,:,jp_tra) = ztrb(:,:,:)
       psinkflx(:,:,:)        = 2. * psinkflx(:,:,:)
       !
-      CALL wrk_dealloc( jpi, jpj, jpk, ztraz, zakz, zwsink2 )
+      CALL wrk_dealloc( jpi, jpj, jpk, ztraz, zakz, zwsink2, ztrb )
       !
       IF( nn_timing == 1 )  CALL timing_stop('p4z_sink2')
       !

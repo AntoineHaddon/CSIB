@@ -32,6 +32,7 @@ MODULE sbcblk_clio
 
    USE albedo
    USE prtctl          ! Print control
+   USE lib_fortran     ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
 #if defined key_lim3
    USE ice
    USE sbc_ice         ! Surface boundary condition: ice fields
@@ -84,7 +85,7 @@ MODULE sbcblk_clio
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 4.0 , NEMO Consortium (2011)
-   !! $Id: sbcblk_clio.F90 3294 2012-01-28 16:44:18Z rblod $ 
+   !! $Id: sbcblk_clio.F90 3558 2012-11-14 19:15:05Z rblod $ 
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS

@@ -52,6 +52,7 @@ MODULE limvar
    USE in_out_manager   ! I/O manager
    USE lib_mpp          ! MPP library
    USE wrk_nemo         ! work arrays
+   USE lib_fortran      ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
 
    IMPLICIT NONE
    PRIVATE
@@ -73,7 +74,7 @@ MODULE limvar
 
    !!----------------------------------------------------------------------
    !! NEMO/LIM3 4.0 , UCL - NEMO Consortium (2011)
-   !! $Id: limvar.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: limvar.F90 3558 2012-11-14 19:15:05Z rblod $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS

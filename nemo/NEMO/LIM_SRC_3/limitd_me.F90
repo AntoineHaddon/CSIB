@@ -27,6 +27,7 @@ MODULE limitd_me
    USE lib_mpp          ! MPP library
    USE wrk_nemo         ! work arrays
    USE prtctl           ! Print control
+   USE lib_fortran      ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
 
    IMPLICIT NONE
    PRIVATE
@@ -71,7 +72,7 @@ MODULE limitd_me
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:) ::   opening    ! rate of opening due to divergence/shear (1/s)
    !!----------------------------------------------------------------------
    !! NEMO/LIM3 3.3 , UCL - NEMO Consortium (2010)
-   !! $Id: limitd_me.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: limitd_me.F90 3558 2012-11-14 19:15:05Z rblod $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS

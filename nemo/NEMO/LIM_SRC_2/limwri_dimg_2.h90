@@ -1,7 +1,7 @@
     SUBROUTINE lim_wri_2(kt)
    !!----------------------------------------------------------------------
    !! NEMO/LIM2 3.3 , UCL - NEMO Consortium (2010)
-   !! $Id: limwri_dimg_2.h90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: limwri_dimg_2.h90 3564 2012-11-15 17:42:30Z rblod $
    !! Software governed by the CeCILL licence (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
     !!-------------------------------------------------------------------
@@ -19,7 +19,7 @@
 
     INTEGER , SAVE ::   nmoyice   !: counter for averaging
     INTEGER , SAVE ::   nwf       !: number of fields to write on disk
-    INTEGER , SAVE, DIMENSION(:), ALLOCATABLE  :: nsubindex   !: subindex to be saved
+    INTEGER, SAVE,DIMENSION (:), ALLOCATABLE  :: nsubindex   !: subindex to be saved
     INTEGER , SAVE ::   nice, nhorid, ndim, niter, ndepid
     REAL(wp), SAVE, DIMENSION(:,:,:), ALLOCATABLE :: rcmoy
 
@@ -29,9 +29,8 @@
     CHARACTER(LEN=80) :: clname, cltext, clmode
     REAL(wp), DIMENSION(1) ::   zdept
     REAL(wp) ::   zsto, zsec, zjulian,zout
-    REAL(wp) ::   zindh,zinda,zindb, ztmu
-    REAL(wp), DIMENSION(jpi,jpj,jpnoumax) ::   zcmo   !ARPDBGWORK
-    REAL(wp), DIMENSION(jpi,jpj)          ::   zfield
+    REAL(wp) ::   zindh, zinda, zindb, ztmu
+    REAL(wp), POINTER, DIMENSION(:,:)     ::   zfield
 
 #if ! defined key_diainstant
     LOGICAL, PARAMETER :: ll_dia_inst=.false.      ! local logical variable 
@@ -44,17 +43,18 @@
        !
        IF( lk_mpp      )   CALL mpp_sum ( ialloc  )
        IF( ialloc /= 0 )   CALL ctl_warn('lim_wri_2 (limwri_dimg_2.h90) : failed to allocate arrays')
-       rcmoy(:,:,:) = 0._wp
     ENDIF
 
-    IF( kt == nit000 ) THEN 
+    CALL wrk_alloc( jpi, jpj, zfield )
+
+    IF ( kt == nit000 ) THEN 
        !
        CALL lim_wri_init_2 
 
        nwf = 0 
        ii  = 0
 
-       IF(lwp ) THEN
+       IF (lwp ) THEN
           WRITE(numout,*) 'lim_wri_2 : Write ice outputs in dimg'
           WRITE(numout,*) '~~~~~~~~'
           WRITE(numout,*) '   According to namelist_ice, following fields saved:'
@@ -78,6 +78,7 @@
           END IF
        END DO
 
+       rcmoy(:,:,:) = 0.0_wp
        zsto     = rdt_ice
        zout     = nwrite * rdt_ice / nn_fsbc
        zsec     = 0.
@@ -88,28 +89,34 @@
     ENDIF
 
 #if ! defined key_diainstant 
-    !-- calculs des valeurs instantanees
+    !-- Compute mean values
 
     zcmo(:,:, 1:jpnoumax ) = 0.e0 
     DO jj = 2 , jpjm1
-       DO ji = 2 , jpim1   ! NO vector opt.
+       DO ji = 2 , jpim1
           zindh  = MAX( zzero , SIGN( zone , hicif(ji,jj) * (1.0 - frld(ji,jj) ) - 0.10 ) )
           zinda  = MAX( zzero , SIGN( zone , ( 1.0 - frld(ji,jj) ) - 0.10 ) )
           zindb  = zindh * zinda
-          ztmu   = MAX( 0.5 * zone , ( tmu(ji,jj) + tmu(ji+1,jj) + tmu(ji,jj+1) + tmu(ji+1,jj+1) ) ) 
           zcmo(ji,jj,1)  = hsnif (ji,jj)
           zcmo(ji,jj,2)  = hicif (ji,jj)
           zcmo(ji,jj,3)  = hicifp(ji,jj)
           zcmo(ji,jj,4)  = frld  (ji,jj)
           zcmo(ji,jj,5)  = sist  (ji,jj)
           zcmo(ji,jj,6)  = fbif  (ji,jj)
-          zcmo(ji,jj,7)  = zindb * (  u_ice(ji,jj  ) * tmu(ji,jj  ) + u_ice(ji+1,jj  ) * tmu(ji+1,jj  )   &
+          IF (lk_lim2_vp) THEN
+            ztmu   = MAX( 0.5 * zone , ( tmu(ji,jj) + tmu(ji+1,jj) + tmu(ji,jj+1) + tmu(ji+1,jj+1) ) ) 
+            zcmo(ji,jj,7)  = zindb * (  u_ice(ji,jj  ) * tmu(ji,jj  ) + u_ice(ji+1,jj  ) * tmu(ji+1,jj  )   &
              &                      + u_ice(ji,jj+1) * tmu(ji,jj+1) + u_ice(ji+1,jj+1) * tmu(ji+1,jj+1) ) &
                / ztmu 
 
-          zcmo(ji,jj,8)  = zindb * (  v_ice(ji,jj  ) * tmu(ji,jj  ) + v_ice(ji+1,jj  ) * tmu(ji+1,jj  )   &
+            zcmo(ji,jj,8)  = zindb * (  v_ice(ji,jj  ) * tmu(ji,jj  ) + v_ice(ji+1,jj  ) * tmu(ji+1,jj  )   &
              &                      + v_ice(ji,jj+1) * tmu(ji,jj+1) + v_ice(ji+1,jj+1) * tmu(ji+1,jj+1) ) &
                / ztmu
+           ELSE
+            zcmo(ji,jj,7)  = zindb * (  u_ice(ji,jj  ) * tmu(ji,jj) + u_ice(ji-1,jj) * tmu(ji-1,jj) )/ 2.0
+            zcmo(ji,jj,8)  = zindb * (  v_ice(ji,jj  ) * tmv(ji,jj) + v_ice(ji,jj-1) * tmv(ji,jj-1) )/ 2.0
+           ENDIF
+
           zcmo(ji,jj,9)  = sst_m(ji,jj)
           zcmo(ji,jj,10) = sss_m(ji,jj)
 
@@ -135,24 +142,29 @@
        IF ( MOD(kt-nn_fsbc-1-nit000+1,nwrite) == 0 ) THEN 
           !  case of instantaneaous output rcmoy(:,:, 1:jpnoumax ) = 0.e0
           DO jj = 2 , jpjm1
-             DO ji = 2 , jpim1   ! NO vector opt.
+             DO ji = 2 , jpim1
                 zindh  = MAX( zzero , SIGN( zone , hicif(ji,jj) * (1.0 - frld(ji,jj) ) - 0.10 ) )
                 zinda  = MAX( zzero , SIGN( zone , ( 1.0 - frld(ji,jj) ) - 0.10 ) )
                 zindb  = zindh * zinda
-                ztmu   = MAX( 0.5 * zone , ( tmu(ji,jj) + tmu(ji+1,jj) + tmu(ji,jj+1) + tmu(ji+1,jj+1) ) )
                 rcmoy(ji,jj,1)  = hsnif (ji,jj)
                 rcmoy(ji,jj,2)  = hicif (ji,jj)
                 rcmoy(ji,jj,3)  = hicifp(ji,jj)
                 rcmoy(ji,jj,4)  = frld  (ji,jj)
                 rcmoy(ji,jj,5)  = sist  (ji,jj)
                 rcmoy(ji,jj,6)  = fbif  (ji,jj)
-                rcmoy(ji,jj,7)  = zindb * (  u_ice(ji,jj  ) * tmu(ji,jj  ) + u_ice(ji+1,jj  ) * tmu(ji+1,jj  )   &
-                   &                       + u_ice(ji,jj+1) * tmu(ji,jj+1) + u_ice(ji+1,jj+1) * tmu(ji+1,jj+1) ) &
-                     / ztmu
+                IF (lk_lim2_vp) THEN
+                   ztmu   = MAX( 0.5 * zone , ( tmu(ji,jj) + tmu(ji+1,jj) + tmu(ji,jj+1) + tmu(ji+1,jj+1) ) )
+                   rcmoy(ji,jj,7)  = zindb * (  u_ice(ji,jj  ) * tmu(ji,jj  ) + u_ice(ji+1,jj  ) * tmu(ji+1,jj  )   &
+                      &                      + u_ice(ji,jj+1) * tmu(ji,jj+1) + u_ice(ji+1,jj+1) * tmu(ji+1,jj+1) ) &
+                        / ztmu
 
-                rcmoy(ji,jj,8)  = zindb * (  v_ice(ji,jj  ) * tmu(ji,jj  ) + v_ice(ji+1,jj  ) * tmu(ji+1,jj  )   &
-                   &                       + v_ice(ji,jj+1) * tmu(ji,jj+1) + v_ice(ji+1,jj+1) * tmu(ji+1,jj+1) ) &
-                     / ztmu
+                   rcmoy(ji,jj,8)  = zindb * (  v_ice(ji,jj  ) * tmu(ji,jj  ) + v_ice(ji+1,jj  ) * tmu(ji+1,jj  )   &
+                      &                      + v_ice(ji,jj+1) * tmu(ji,jj+1) + v_ice(ji+1,jj+1) * tmu(ji+1,jj+1) ) &
+                       / ztmu
+                ELSE
+                   rcmoy(ji,jj,7)  = zindb * (  u_ice(ji,jj  ) * tmu(ji,jj) + u_ice(ji-1,jj) * tmu(ji-1,jj) )/ 2.0
+                   rcmoy(ji,jj,8)  = zindb * (  v_ice(ji,jj  ) * tmv(ji,jj) + v_ice(ji,jj-1) * tmv(ji,jj-1) )/ 2.0
+                ENDIF
                 rcmoy(ji,jj,9)  = sst_m(ji,jj)
                 rcmoy(ji,jj,10) = sss_m(ji,jj)
 
@@ -175,11 +187,12 @@
           DO jf = 1 , noumef
              zfield(:,:) = (rcmoy(:,:,jf) * cmulti(jf) + cadd(jf)) * tmask(:,:,1)
 
-             IF ( jf == 7  .OR. jf == 8  .OR. jf == 15 .OR. jf == 16 ) THEN 
+             SELECT CASE (jf) 
+             CASE ( 7, 8, 15, 16 ) ! velocity or stress fields (vectors)
                 CALL lbc_lnk( zfield, 'T', -1. )
-             ELSE 
+             CASE DEFAULT          ! scalar fields
                 CALL lbc_lnk( zfield, 'T',  1. )
-             ENDIF
+             END SELECT
              rcmoy(:,:,jf) = zfield(:,:)
           END DO
 
@@ -199,5 +212,6 @@
           rcmoy(:,:,:) = 0.0
           nmoyice = 0 
        END IF     !  MOD(kt+nn_fsbc-1-nit000+1, nwrite == 0 ) !
+       CALL wrk_dealloc( jpi,jpj, zfield )
 
      END SUBROUTINE lim_wri_2

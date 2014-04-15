@@ -32,7 +32,7 @@ MODULE prtctl
 
    !!----------------------------------------------------------------------
    !! NEMO/OPA 3.3 , NEMO Consortium (2010)
-   !! $Id: prtctl.F90 3294 2012-01-28 16:44:18Z rblod $ 
+   !! $Id: prtctl.F90 3332 2012-03-20 09:27:17Z sga $ 
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -117,8 +117,8 @@ CONTAINS
       IF( PRESENT(kdim)    )   kdir                 = kdim
       IF( PRESENT(tab2d_1) )   ztab2d_1(:,:)        = tab2d_1(:,:)
       IF( PRESENT(tab2d_2) )   ztab2d_2(:,:)        = tab2d_2(:,:)
-      IF( PRESENT(tab3d_1) )   ztab3d_1(:,:,1:kdir) = tab3d_1(:,:,:)
-      IF( PRESENT(tab3d_2) )   ztab3d_2(:,:,1:kdir) = tab3d_2(:,:,:)
+      IF( PRESENT(tab3d_1) )   ztab3d_1(:,:,1:kdir) = tab3d_1(:,:,1:kdir)
+      IF( PRESENT(tab3d_2) )   ztab3d_2(:,:,1:kdir) = tab3d_2(:,:,1:kdir)
       IF( PRESENT(mask1)   )   zmask1  (:,:,:)      = mask1  (:,:,:)
       IF( PRESENT(mask2)   )   zmask2  (:,:,:)      = mask2  (:,:,:)
 

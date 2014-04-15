@@ -41,7 +41,7 @@ MODULE p4zlys
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 3.3 , NEMO Consortium (2010)
-   !! $Id: p4zlys.F90 3295 2012-01-30 15:49:07Z cetlod $ 
+   !! $Id: p4zlys.F90 3321 2012-03-05 17:10:55Z cetlod $ 
    !! Software governed by the CeCILL licence (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 
@@ -149,14 +149,14 @@ CONTAINS
          !
          IF( lk_iomput ) THEN
             zrfact2 = 1.e3 * rfact2r
-            CALL iom_put( "PH"    , hi      (:,:,:)                  * tmask(:,:,:) )
-            CALL iom_put( "CO3"   , zco3    (:,:,:) * 1e+3           * tmask(:,:,:) )
-            CALL iom_put( "CO3sat", aksp    (:,:,:) * 1e+3 / calcon  * tmask(:,:,:) )
-            CALL iom_put( "DCAL"  , zcaldiss(:,:,:) * zrfact2 * tmask(:,:,:) )
+            CALL iom_put( "PH"    , -1. * LOG10( hi(:,:,:) )                * tmask(:,:,:) )
+            CALL iom_put( "CO3"   ,        zco3    (:,:,:) * 1e+3           * tmask(:,:,:) )
+            CALL iom_put( "CO3sat",        aksp    (:,:,:) * 1e+3 / calcon  * tmask(:,:,:) )
+            CALL iom_put( "DCAL"  ,        zcaldiss(:,:,:) * zrfact2        * tmask(:,:,:) )
          ELSE
-            trc3d(:,:,:,jp_pcs0_3d    ) = hi  (:,:,:)          * tmask(:,:,:)
-            trc3d(:,:,:,jp_pcs0_3d + 1) = zco3(:,:,:)          * tmask(:,:,:)
-            trc3d(:,:,:,jp_pcs0_3d + 2) = aksp(:,:,:) / calcon * tmask(:,:,:)
+            trc3d(:,:,:,jp_pcs0_3d    ) = -1. * LOG10( hi(:,:,:) ) * tmask(:,:,:)
+            trc3d(:,:,:,jp_pcs0_3d + 1) = zco3(:,:,:)              * tmask(:,:,:)
+            trc3d(:,:,:,jp_pcs0_3d + 2) = aksp(:,:,:) / calcon     * tmask(:,:,:)
          ENDIF
          !
       ENDIF

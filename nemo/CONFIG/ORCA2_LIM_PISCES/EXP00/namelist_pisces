@@ -15,7 +15,7 @@
 &nampisext     !   air-sea exchange
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
    ln_co2int  =  .false. ! read atm pco2 from a file (T) or constant (F)
-   atcco2     =  287.    ! Constant value atmospheric pCO2 - ln_co2int = F
+   atcco2     =  280.    ! Constant value atmospheric pCO2 - ln_co2int = F
    clname     =  'atcco2.txt'  ! Name of atm pCO2 file - ln_co2int = T
    nn_offset  =  0       ! Offset model-data start year - ln_co2int = T
 !                        ! If your model year is iyy, nn_offset=(years(1)-iyy) 
@@ -34,29 +34,29 @@
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &nampisbio     !   biological parameters
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-   nrdttrc    =  1        ! time step frequency for biology
+   nrdttrc    =  4        ! time step frequency for biology
    wsbio      =  2.       ! POC sinking speed
-   xkmort     =  1.E-7    ! half saturation constant for mortality
+   xkmort     =  2.E-7    ! half saturation constant for mortality
    ferat3     =  10.E-6   ! Fe/C in zooplankton 
    wsbio2     =  30.      ! Big particles sinking speed
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &nampislim     !   parameters for nutrient limitations
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-   conc0      =  2.e-6    ! Phosphate half saturation
+   conc0      =  1.e-6    ! Phosphate half saturation
    conc1      =  8E-6     ! Phosphate half saturation for diatoms
-   conc2      =  2E-9     ! Iron half saturation for phyto
-   conc2m     =  4E-9     ! Max iron half saturation for phyto
+   conc2      =  1E-9     ! Iron half saturation for phyto
+   conc2m     =  3E-9     ! Max iron half saturation for phyto
    conc3      =  3E-9     ! Iron half saturation for diatoms
-   conc3m     =  9E-9     ! Maxi iron half saturation for diatoms
-   xsizedia   =  5.E-7    ! Minimum size criteria for diatoms
+   conc3m     =  8E-9     ! Maxi iron half saturation for diatoms
+   xsizedia   =  1.E-6    ! Minimum size criteria for diatoms
    xsizephy   =  1.E-6    ! Minimum size criteria for phyto
    concnnh4   =  1.E-7    ! NH4 half saturation for phyto
-   concdnh4   =  4.E-7    ! NH4 half saturation for diatoms
+   concdnh4   =  8.E-7    ! NH4 half saturation for diatoms
    xksi1      =  2.E-6    ! half saturation constant for Si uptake
    xksi2      =  3.33E-6  ! half saturation constant for Si/C
    xkdoc      =  417.E-6  ! half-saturation constant of DOC remineralization
-   concfebac  =  3.E-11   ! Half-saturation for Fe limitation of Bacteria
+   concfebac  =  1.E-11   ! Half-saturation for Fe limitation of Bacteria
    qnfelim    =  7.E-6    ! Optimal quota of phyto
    qdfelim    =  7.E-6    ! Optimal quota of diatoms
    caco3r     =  0.16     ! mean rain ratio
@@ -64,14 +64,14 @@
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &nampisprod     !   parameters for phytoplankton growth
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-   pislope    =  3.       ! P-I slope
+   pislope    =  2.       ! P-I slope
    pislope2   =  2.       ! P-I slope  for diatoms
    excret     =  0.05     ! excretion ratio of phytoplankton
    excret2    =  0.05     ! excretion ratio of diatoms
-   ln_newprod =  .false.  ! Enable new parame. of production (T/F) 
+   ln_newprod =  .true.  ! Enable new parame. of production (T/F) 
    bresp      =  0.00333  ! Basal respiration rate
    chlcnm     =  0.033    ! Minimum Chl/C in nanophytoplankton
-   chlcdm     =  0.04     ! Minimum Chl/C in diatoms
+   chlcdm     =  0.05     ! Minimum Chl/C in diatoms
    chlcmin    =  0.0033   ! Maximum Chl/c in phytoplankton
    fecnm      =  40E-6    ! Maximum Fe/C in nanophytoplankton
    fecdm      =  40E-6    ! Minimum Fe/C in diatoms
@@ -99,14 +99,14 @@
    xprefpoc   =  0.3      ! zoo preference for poc
    xthresh2zoo = 1E-8     ! zoo feeding threshold for mesozooplankton 
    xthresh2dia = 1E-8     ! diatoms feeding threshold for mesozooplankton 
-   xthresh2phy = 2E-7     ! nanophyto feeding threshold for mesozooplankton 
+   xthresh2phy = 1E-8     ! nanophyto feeding threshold for mesozooplankton 
    xthresh2poc = 1E-8     ! poc feeding threshold for mesozooplankton 
-   xthresh2   =  0.       ! Food threshold for grazing
+   xthresh2   =  2E-7    ! Food threshold for grazing
    xkgraz2    =  20.E-6   ! half sturation constant for meso grazing
-   epsher2    =  0.33     ! Efficicency of Mesozoo growth
+   epsher2    =  0.3      ! Efficicency of Mesozoo growth
    sigma2     =  0.6      ! Fraction of mesozoo excretion as DOM
    unass2     =  0.3      ! non assimilated fraction of P by mesozoo
-   grazflux   =  3.e3     ! flux-feeding rate
+   grazflux   =  2.e3     ! flux-feeding rate
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &nampiszoo     !   parameters for microzooplankton
@@ -114,16 +114,16 @@
    part       =  0.5      ! part of calcite not dissolved in microzoo gutsa
    grazrat    =  3.0      ! maximal zoo grazing rate
    resrat     =  0.03     ! exsudation rate of zooplankton
-   mzrat      =  0.0      ! zooplankton mortality rate
+   mzrat      =  0.001    ! zooplankton mortality rate
    xpref2c    =  0.1      ! Microzoo preference for POM
    xpref2p    =  1.       ! Microzoo preference for Nanophyto
-   xpref2d    =  0.6      ! Microzoo preference for Diatoms
+   xpref2d    =  0.5      ! Microzoo preference for Diatoms
    xthreshdia =  1.E-8    ! Diatoms feeding threshold for microzooplankton 
-   xthreshphy =  2.E-7    ! Nanophyto feeding threshold for microzooplankton 
+   xthreshphy =  1.E-8    ! Nanophyto feeding threshold for microzooplankton 
    xthreshpoc =  1.E-8    ! POC feeding threshold for microzooplankton 
-   xthresh    =  0.       ! Food threshold for feeding
+   xthresh    =  2.E-7    ! Food threshold for feeding
    xkgraz     =  20.E-6   ! half sturation constant for grazing
-   epsher     =  0.33     ! Efficiency of microzoo growth
+   epsher     =  0.3      ! Efficiency of microzoo growth
    sigma1     =  0.6      ! Fraction of microzoo excretion as DOM
    unass      =  0.3      ! non assimilated fraction of phyto by zoo
 /
@@ -159,7 +159,7 @@
 !
    cn_dir      = './'      !  root directory for the location of the dynamical files
    ln_dust     =  .true.   ! boolean for dust input from the atmosphere
-   ln_river    =  .true.   ! boolean for river input of nutrients
+   ln_river    =  .false.   ! boolean for river input of nutrients
    ln_ndepo    =  .true.   ! boolean for atmospheric deposition of N
    ln_ironsed  =  .true.   ! boolean for Fe input from sediments
    sedfeinput  =  1E-9     ! Coastal release of Iron

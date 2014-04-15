@@ -34,6 +34,7 @@ MODULE trdmld_trc
    USE prtctl            ! print control
    USE sms_pisces        ! PISCES bio-model
    USE sms_lobster       ! LOBSTER bio-model
+   USE wrk_nemo          ! Memory allocation
 
    IMPLICIT NONE
    PRIVATE
@@ -66,6 +67,7 @@ MODULE trdmld_trc
 
    !! * Substitutions
 #  include "top_substitute.h90"
+#  include "zdfddm_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 3.3 , NEMO Consortium (2010)
    !! $Header:  $ 
@@ -370,7 +372,6 @@ CONTAINS
       !!       - Vialard & al.
       !!       - See NEMO documentation (in preparation)
       !!----------------------------------------------------------------------
-      !
       INTEGER, INTENT(in) ::   kt   ! ocean time-step index
       !
       INTEGER ::   ji, jj, jk, jl, ik, it, itmod, jn
@@ -387,7 +388,7 @@ CONTAINS
       REAL(wp), POINTER, DIMENSION(:,:,:) ::   ztmlatf2            !  | passive tracers
       REAL(wp), POINTER, DIMENSION(:,:,:) ::   ztmlrad2            !  | (-> for trb<0 corr in trcrad)
       !
-      CHARACTER (LEN= 5) ::   clvar
+      CHARACTER (LEN=10) ::   clvar
 #if defined key_dimgout
       INTEGER ::   iyear,imon,iday
       CHARACTER(LEN=80) ::   cltext, clmode
@@ -800,19 +801,19 @@ CONTAINS
                CALL histwrite( nidtrd(jn), "mxl_depth", it, rmld_trc(:,:), ndimtrd1, ndextrd1 )
                !-- Output the fields
                clvar = trim(ctrcnm(jn))//"ml"                        ! e.g. detml, zooml, nh4ml, etc.
-               CALL histwrite( nidtrd(jn), clvar         , it, tml_trc(:,:,jn), ndimtrd1, ndextrd1 ) 
-               CALL histwrite( nidtrd(jn), clvar//"_tot" , it, ztmltot(:,:,jn), ndimtrd1, ndextrd1 ) 
-               CALL histwrite( nidtrd(jn), clvar//"_res" , it, ztmlres(:,:,jn), ndimtrd1, ndextrd1 ) 
+               CALL histwrite( nidtrd(jn), trim(clvar)         , it, tml_trc(:,:,jn), ndimtrd1, ndextrd1 ) 
+               CALL histwrite( nidtrd(jn), trim(clvar)//"_tot" , it, ztmltot(:,:,jn), ndimtrd1, ndextrd1 ) 
+               CALL histwrite( nidtrd(jn), trim(clvar)//"_res" , it, ztmlres(:,:,jn), ndimtrd1, ndextrd1 ) 
            
                DO jl = 1, jpltrd_trc - 2
-                  CALL histwrite( nidtrd(jn), trim(clvar//ctrd_trc(jl,2)),             &
+                  CALL histwrite( nidtrd(jn), trim(clvar)//trim(ctrd_trc(jl,2)),             &
                     &          it, tmltrd_trc(:,:,jl,jn), ndimtrd1, ndextrd1 )
                END DO
 
-               CALL histwrite( nidtrd(jn), trim(clvar//ctrd_trc(jpmld_trc_radb,2)),    &  ! now trcrad    : jpltrd_trc - 1
+               CALL histwrite( nidtrd(jn), trim(clvar)//trim(ctrd_trc(jpmld_trc_radb,2)),    &  ! now trcrad    : jpltrd_trc - 1
                     &          it, ztmlrad(:,:,jn), ndimtrd1, ndextrd1 )
 
-               CALL histwrite( nidtrd(jn), trim(clvar//ctrd_trc(jpmld_trc_atf,2)),     &  ! now Asselin   : jpltrd_trc
+               CALL histwrite( nidtrd(jn), trim(clvar)//trim(ctrd_trc(jpmld_trc_atf,2)),     &  ! now Asselin   : jpltrd_trc
                     &          it, ztmlatf(:,:,jn), ndimtrd1, ndextrd1 )
                      
             ENDIF
@@ -826,7 +827,6 @@ CONTAINS
 
       ELSE                                                        ! <<< write the trends for passive tracer mean diagnostics
          
-                 
          DO jn = 1, jptra
             !
             IF( ln_trdtrc(jn) ) THEN
@@ -834,19 +834,19 @@ CONTAINS
                !-- Output the fields
                clvar = trim(ctrcnm(jn))//"ml"                        ! e.g. detml, zooml, nh4ml, etc.
 
-               CALL histwrite( nidtrd(jn), clvar         , it, tml_sum_trc(:,:,jn), ndimtrd1, ndextrd1 )
-               CALL histwrite( nidtrd(jn), clvar//"_tot" , it,    ztmltot2(:,:,jn), ndimtrd1, ndextrd1 ) 
-               CALL histwrite( nidtrd(jn), clvar//"_res" , it,    ztmlres2(:,:,jn), ndimtrd1, ndextrd1 ) 
+               CALL histwrite( nidtrd(jn), trim(clvar)         , it, tml_sum_trc(:,:,jn), ndimtrd1, ndextrd1 )
+               CALL histwrite( nidtrd(jn), trim(clvar)//"_tot" , it,    ztmltot2(:,:,jn), ndimtrd1, ndextrd1 ) 
+               CALL histwrite( nidtrd(jn), trim(clvar)//"_res" , it,    ztmlres2(:,:,jn), ndimtrd1, ndextrd1 ) 
 
                DO jl = 1, jpltrd_trc - 2
-                  CALL histwrite( nidtrd(jn), trim(clvar//ctrd_trc(jl,2)),           &
+                  CALL histwrite( nidtrd(jn), trim(clvar)//trim(ctrd_trc(jl,2)),           &
                     &          it, ztmltrd2(:,:,jl,jn), ndimtrd1, ndextrd1 )
                END DO
             
-               CALL histwrite( nidtrd(jn), trim(clvar//ctrd_trc(jpmld_trc_radb,2)),   &  ! now trcrad    : jpltrd_trc - 1
+               CALL histwrite( nidtrd(jn), trim(clvar)//trim(ctrd_trc(jpmld_trc_radb,2)),   &  ! now trcrad    : jpltrd_trc - 1
                  &          it, ztmlrad2(:,:,jn), ndimtrd1, ndextrd1 )
 
-               CALL histwrite( nidtrd(jn), trim(clvar//ctrd_trc(jpmld_trc_atf,2)),    &  ! now Asselin   : jpltrd_trc
+               CALL histwrite( nidtrd(jn), trim(clvar)//trim(ctrd_trc(jpmld_trc_atf,2)),    &  ! now Asselin   : jpltrd_trc
                  &          it, ztmlatf2(:,:,jn), ndimtrd1, ndextrd1 )
 
             ENDIF 
@@ -1147,13 +1147,13 @@ CONTAINS
       !!
       !!----------------------------------------------------------------------
       INTEGER :: inum   ! logical unit
-      INTEGER :: ilseq, jl, jn
+      INTEGER :: ilseq, jl, jn, iiter
       REAL(wp) ::   zjulian, zsto, zout
       CHARACTER (LEN=40) ::   clop
       CHARACTER (LEN=15) ::   csuff
       CHARACTER (LEN=12) ::   clmxl
       CHARACTER (LEN=16) ::   cltrcu
-      CHARACTER (LEN= 5) ::   clvar
+      CHARACTER (LEN=10) ::   clvar
 
       !!----------------------------------------------------------------------
 
@@ -1172,7 +1172,7 @@ CONTAINS
       ! I.1 Check consistency of user defined preferences
       ! -------------------------------------------------
 
-      IF( ( lk_trdmld_trc ) .AND. ( MOD( nitend, nn_trd_trc ) /= 0 ) ) THEN
+      IF( ( lk_trdmld_trc ) .AND. ( MOD( nitend-nittrc000+1, nn_trd_trc ) /= 0 ) ) THEN
          WRITE(numout,cform_err)
          WRITE(numout,*) '                Your nitend parameter, nitend = ', nitend
          WRITE(numout,*) '                is no multiple of the trends diagnostics frequency        '
@@ -1191,22 +1191,9 @@ CONTAINS
          WRITE(numout,*) '               ln_trdmld_trc_instant = ', ln_trdmld_trc_instant
       ENDIF
 
-      IF( ln_trcadv_muscl .AND. .NOT. ln_trdmld_trc_instant ) THEN
+      IF( ( ln_trcadv_muscl .OR. ln_trcadv_muscl2 ) .AND. .NOT. ln_trdmld_trc_instant ) THEN
          WRITE(numout,cform_err)
          WRITE(numout,*) '                Currently, you can NOT use simultaneously tracer MUSCL    '
-         WRITE(numout,*) '                advection and window averaged diagnostics of ML trends.   '
-         WRITE(numout,*) '                WHY? Everything in trdmld_trc is coded for leap-frog, and '
-         WRITE(numout,*) '                MUSCL scheme is Euler forward for passive tracers (note   '
-         WRITE(numout,*) '                that MUSCL is leap-frog for active tracers T/S).          '
-         WRITE(numout,*) '                In particuliar, entrainment trend would be FALSE. However '
-         WRITE(numout,*) '                this residual is correct for instantaneous ML diagnostics.'
-         WRITE(numout,*) 
-         nstop = nstop + 1
-      ENDIF
-
-      IF( ln_trcadv_muscl2 .AND. .NOT. ln_trdmld_trc_instant ) THEN
-         WRITE(numout,cform_err)
-         WRITE(numout,*) '                Currently, you can NOT use simultaneously tracer MUSCL2    '
          WRITE(numout,*) '                advection and window averaged diagnostics of ML trends.   '
          WRITE(numout,*) '                WHY? Everything in trdmld_trc is coded for leap-frog, and '
          WRITE(numout,*) '                MUSCL scheme is Euler forward for passive tracers (note   '
@@ -1301,6 +1288,7 @@ CONTAINS
       clop = "ave("//TRIM(clop)//")"
 #  endif
       zout = nn_trd_trc * rdt
+      iiter = ( nittrc000 - 1 ) / nn_dttrc
 
       IF(lwp) WRITE (numout,*) '                netCDF initialization'
 
@@ -1338,7 +1326,7 @@ CONTAINS
             csuff="ML_"//ctrcnm(jn)
             CALL dia_nam( clhstnam, nn_trd_trc, csuff )
             CALL histbeg( clhstnam, jpi, glamt, jpj, gphit,                                            &
-               &        1, jpi, 1, jpj, nittrc000, zjulian, rdt, nh_t(jn), nidtrd(jn), domain_id=nidom, snc4chunks=snc4set )
+               &        1, jpi, 1, jpj, iiter, zjulian, rdt, nh_t(jn), nidtrd(jn), domain_id=nidom, snc4chunks=snc4set )
       
             !-- Define the ML depth variable
             CALL histdef(nidtrd(jn), "mxl_depth", clmxl//" Mixed Layer Depth", "m",                        &
@@ -1351,7 +1339,7 @@ CONTAINS
           !-- Create a NetCDF file and enter the define mode
           CALL dia_nam( clhstnam, nn_trd_trc, 'trdbio' )
           CALL histbeg( clhstnam, jpi, glamt, jpj, gphit,                                            &
-             &             1, jpi, 1, jpj, nittrc000, zjulian, rdt, nh_tb, nidtrdbio, domain_id=nidom, snc4chunks=snc4set )
+             &             1, jpi, 1, jpj, iiter, zjulian, rdt, nh_tb, nidtrdbio, domain_id=nidom, snc4chunks=snc4set )
 #endif
 
       !-- Define physical units
@@ -1372,22 +1360,22 @@ CONTAINS
          !
          IF( ln_trdtrc(jn) ) THEN
             clvar = trim(ctrcnm(jn))//"ml"                           ! e.g. detml, zooml, no3ml, etc.
-            CALL histdef(nidtrd(jn), clvar,           clmxl//" "//trim(ctrcnm(jn))//" Mixed Layer ",                         &
+            CALL histdef(nidtrd(jn), trim(clvar),           clmxl//" "//trim(ctrcnm(jn))//" Mixed Layer ",                         &
               & "mmole-N/m3", jpi, jpj, nh_t(jn), 1  , 1, 1  , -99 , 32, clop, zsto, zout )           
-            CALL histdef(nidtrd(jn), clvar//"_tot"  , clmxl//" "//trim(ctrcnm(jn))//" Total trend ",                         & 
+            CALL histdef(nidtrd(jn), trim(clvar)//"_tot"  , clmxl//" "//trim(ctrcnm(jn))//" Total trend ",                         & 
               &       cltrcu, jpi, jpj, nh_t(jn), 1  , 1, 1  , -99 , 32, clop, zout, zout ) 
-            CALL histdef(nidtrd(jn), clvar//"_res"  , clmxl//" "//trim(ctrcnm(jn))//" dh/dt Entrainment (Resid.)",           & 
+            CALL histdef(nidtrd(jn), trim(clvar)//"_res"  , clmxl//" "//trim(ctrcnm(jn))//" dh/dt Entrainment (Resid.)",           & 
               &       cltrcu, jpi, jpj, nh_t(jn), 1  , 1, 1  , -99 , 32, clop, zout, zout )                   
          
             DO jl = 1, jpltrd_trc - 2                                ! <== only true if jpltrd_trc == jpmld_trc_atf
-               CALL histdef(nidtrd(jn), trim(clvar//ctrd_trc(jl,2)), clmxl//" "//clvar//ctrd_trc(jl,1),                      & 
+               CALL histdef(nidtrd(jn), trim(clvar)//trim(ctrd_trc(jl,2)), clmxl//" "//clvar//ctrd_trc(jl,1),                      & 
                  &    cltrcu, jpi, jpj, nh_t(jn), 1  , 1, 1  , -99 , 32, clop, zsto, zout ) ! IOIPSL: time mean
             END DO                                                                         ! if zsto=rdt above
          
-            CALL histdef(nidtrd(jn), trim(clvar//ctrd_trc(jpmld_trc_radb,2)), clmxl//" "//clvar//ctrd_trc(jpmld_trc_radb,1), & 
+            CALL histdef(nidtrd(jn), trim(clvar)//trim(ctrd_trc(jpmld_trc_radb,2)), clmxl//" "//clvar//ctrd_trc(jpmld_trc_radb,1), & 
               &       cltrcu, jpi, jpj, nh_t(jn), 1  , 1, 1  , -99 , 32, clop, zout, zout ) ! IOIPSL: NO time mean
          
-            CALL histdef(nidtrd(jn), trim(clvar//ctrd_trc(jpmld_trc_atf,2)), clmxl//" "//clvar//ctrd_trc(jpmld_trc_atf,1),   & 
+            CALL histdef(nidtrd(jn), trim(clvar)//trim(ctrd_trc(jpmld_trc_atf,2)), clmxl//" "//clvar//ctrd_trc(jpmld_trc_atf,1),   & 
               &       cltrcu, jpi, jpj, nh_t(jn), 1  , 1, 1  , -99 , 32, clop, zout, zout ) ! IOIPSL: NO time mean
          !
          ENDIF

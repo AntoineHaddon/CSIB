@@ -23,6 +23,7 @@ MODULE limthd_dh
    USE in_out_manager   ! I/O manager
    USE lib_mpp          ! MPP library
    USE wrk_nemo         ! work arrays
+   USE lib_fortran      ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
 
    IMPLICIT NONE
    PRIVATE
@@ -36,8 +37,8 @@ MODULE limthd_dh
    REAL(wp) ::   zone   = 1.e0    !
 
    !!----------------------------------------------------------------------
-   !! NEMO/LIM3 4.0 , UCL - NEMO Consortium (2010)
-   !! $Id: limthd_dh.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! NEMO/LIM3 3.4 , UCL - NEMO Consortium (2010)
+   !! $Id: limthd_dh.F90 3807 2013-02-13 06:29:43Z gm $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -242,7 +243,7 @@ CONTAINS
          zhn            =  1.0 - MAX( zzero , SIGN( zone , - zhsnew ) )
          ht_s_b(ji)     =  MAX( zzero , zhsnew )
          ! Volume and mass variations of snow
-         dvsbq_1d  (ji) =  a_i_b(ji) * ( ht_s_b(ji) - zhsold(ji) - zdh_s_mel(ji) )
+         dvsbq_1d  (ji) =  a_i_b(ji) * ( ht_s_b(ji) - zhsold(ji) - zdh_s_pre(ji) )
          dvsbq_1d  (ji) =  MIN( zzero, dvsbq_1d(ji) )
          rdmsnif_1d(ji) =  rdmsnif_1d(ji) + rhosn * dvsbq_1d(ji)
       END DO ! ji
@@ -315,9 +316,13 @@ CONTAINS
       !----------------------
 
       DO ji = kideb, kiut
-         ! if qla is positive (upwards), heat goes to the atmosphere, therefore
-         ! snow sublimates, if qla is negative (downwards), snow condensates
+         ! qla_ice is always >=0 (upwards), heat goes to the atmosphere, therefore snow sublimates
+#if defined key_coupled
+         zdh_s_sub(ji)    =  0._wp      ! coupled mode: sublimation already included in emp_ice (to do in limsbc_ice)
+#else
+         !                              ! forced  mode: snow thickness change due to sublimation
          zdh_s_sub(ji)    =  - parsub * qla_ice_1d(ji) / ( rhosn * lsub ) * rdt_ice
+#endif
          dh_s_tot (ji)    =  dh_s_tot(ji) + zdh_s_sub(ji)
          zdhcf            =  ht_s_b(ji) + zdh_s_sub(ji) 
          ht_s_b   (ji)    =  MAX( zzero , zdhcf )

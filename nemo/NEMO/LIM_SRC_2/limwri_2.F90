@@ -65,7 +65,7 @@ MODULE limwri_2
 #   include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/LIM2 3.3 , UCL - NEMO Consortium (2010)
-   !! $Id: limwri_2.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: limwri_2.F90 3564 2012-11-15 17:42:30Z rblod $
    !! Software governed by the CeCILL licence (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -103,7 +103,7 @@ CONTAINS
       INTEGER, INTENT(in) ::   kt     ! number of iteration
       !!
       INTEGER  ::   ji, jj, jf                      ! dummy loop indices
-      CHARACTER(len = 40)  ::   clhstnam, clop
+      CHARACTER(len = 80)  ::   clhstnam, clop
       REAL(wp) ::   zsto, zjulian, zout,   &  ! temporary scalars
          &          zindh, zinda, zindb, ztmu
       REAL(wp), DIMENSION(1)                ::   zdept
@@ -159,6 +159,7 @@ CONTAINS
             zcmo(ji,jj,4)  = frld  (ji,jj)
             zcmo(ji,jj,5)  = sist  (ji,jj)
             zcmo(ji,jj,6)  = fbif  (ji,jj)
+           IF (lk_lim2_vp) THEN
             zcmo(ji,jj,7)  = zindb * (  u_ice(ji,jj  ) * tmu(ji,jj  ) + u_ice(ji+1,jj  ) * tmu(ji+1,jj  )   &
                                       + u_ice(ji,jj+1) * tmu(ji,jj+1) + u_ice(ji+1,jj+1) * tmu(ji+1,jj+1) ) &
                                   / ztmu 
@@ -166,6 +167,16 @@ CONTAINS
             zcmo(ji,jj,8)  = zindb * (  v_ice(ji,jj  ) * tmu(ji,jj  ) + v_ice(ji+1,jj  ) * tmu(ji+1,jj  )   &
                                       + v_ice(ji,jj+1) * tmu(ji,jj+1) + v_ice(ji+1,jj+1) * tmu(ji+1,jj+1) ) &
                                   / ztmu
+           ELSE
+
+            zcmo(ji,jj,7)  = zindb * (  u_ice(ji,jj  ) * tmu(ji,jj)                       &
+             &                        + u_ice(ji-1,jj) * tmu(ji-1,jj) )                   &
+             &                    / 2.0
+            zcmo(ji,jj,8)  = zindb * (  v_ice(ji,jj  ) * tmv(ji,jj)                       &
+             &                        + v_ice(ji,jj-1) * tmv(ji,jj-1) )                   &
+             &                    / 2.0
+
+           ENDIF
             zcmo(ji,jj,9)  = sst_m(ji,jj)
             zcmo(ji,jj,10) = sss_m(ji,jj)
             zcmo(ji,jj,11) = qns(ji,jj) + qsr(ji,jj)
@@ -185,29 +196,25 @@ CONTAINS
       !
       niter = niter + 1
       DO jf = 1 , noumef
-         DO jj = 1 , jpj
-            DO ji = 1 , jpi
-               zfield(ji,jj) = zcmo(ji,jj,jf) * cmulti(jf) + cadd(jf)
-            END DO
-         END DO
-         
-         IF( jf == 7  .OR. jf == 8  .OR. jf == 15 .OR. jf == 16 ) THEN
+         zfield(:,:) = zcmo(:,:,jf) * cmulti(jf) + cadd(jf) * tmask(:,:,1)
+         SELECT CASE ( jf )
+         CASE ( 7, 8, 15, 16, 20, 21 )  ! velocity or stress fields (vectors)
             CALL lbc_lnk( zfield, 'T', -1. )
-         ELSE 
+         CASE DEFAULT                   ! scalar fields
             CALL lbc_lnk( zfield, 'T',  1. )
-         ENDIF
-         
+         END SELECT
+
          IF( nc(jf) == 1 )   CALL histwrite( nice, nam(jf), niter, zfield, ndim, ndex51 )
-         
+
       END DO
-      
+
       IF( ( nn_fsbc * niter ) >= nitend )   CALL histclo( nice ) 
 
       CALL wrk_dealloc( jpi, jpj, zfield )
       !
    END SUBROUTINE lim_wri_2
      
-# endif
+#endif     
 
    SUBROUTINE lim_wri_init_2
       !!-------------------------------------------------------------------
