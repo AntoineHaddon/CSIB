@@ -1,0 +1,223 @@
+#!/bin/bash
+#
+#   Usage: get-ocn-src [options] ver=tag out=dir [src=path]
+#          Quantities in square brackets are optional
+#
+# Purpose: Extract a partiular version of ocean source code from a repository
+#
+# Options:
+# All options begin with a dash (-) and must appear before any other command line arg
+# Single letter options may be combined, as in "get-ocn-src -vv ..."
+#   -t   ...list all tags and exit
+#   -v   ...increase verbosity (additive)
+#   -h   ...show this usage message
+#   -x   ...echo shell commands to stdout (used for debugging)
+#
+# Definitions:
+#   ver=tag   ...the source version to be extracted (use -t to list possible tags)
+#   out=dir   ...the dir into which the source will be copied
+#   src=dir   ...a white space separated list of dirs or file names
+#                If src=dir is present then only these files/dirs will be copied
+#
+# Examples:
+#  To list all tags in the repository use
+#    get-ocn-src -t
+#
+#  To get all source files associated with nemo 3.4 in dir mydir use
+#    get-ocn-src ver=nemo_v3.4 out=mydir
+#
+#  To extract only the ARCH and CONFIG subdirs from nemo 3.4.1 use
+#    get-ocn-src ver=nemo_v3.4.1 out=mydir src="ARCH CONFIG"
+#
+########################################################################
+#
+# Larry Solheim Sep 2012
+
+FULLPATH=`type $0|awk '{print $3}'` # pathname of this script
+Runame=`basename $FULLPATH`
+usage() {
+  err_exit=0
+  while getopts e opt; do
+    case $opt in
+      e) err_exit=1 ;;
+    esac
+  done
+  shift `expr $OPTIND - 1`
+
+  [ -n "$1" ] && echo >&2 "${Runame}:" "$@"
+  echo >&2 " "
+  sed >&2 -n '/^###/q; s/^#$/# /; s/^ *$/# /; 3,$s/^# //p;' "$FULLPATH"
+  if [ $err_exit -eq 0 ]; then
+    exit
+  else
+    exit 1
+  fi
+}
+
+# Create time stamp to be used in file names etc
+stamp=`date "+%j%H%M%S"$$`
+
+# Identify, by name, the machine this script is running on
+this_host=`hostname|cut -d'.' -f1`
+
+bail(){
+echo "${Runame}: *** ERROR *** $1"
+exit 1
+}
+
+add2path(){
+  if echo $PATH|/bin/grep -Evq "'(^|:)'$1'($|:)'" ; then
+     if [ "$2" = "atend" ] ; then
+        PATH=$PATH:$1
+     else
+        PATH=$1:$PATH
+     fi
+  fi
+}
+
+# echo without return (ie: emulate -n if not recognized by echo)
+if [ "X`echo -n`" = "X-n" ]; then
+  echo_n() { echo ${1+"$@"}'\c'; }
+else
+  echo_n() { echo -n ${1+"$@"}; }
+fi
+
+# Set defaults
+
+# The version of code to extract and compile
+version=''
+
+# CCRNSRC must be defined
+CCRNSRC=${CCRNSRC:=/home/acrnsrc}
+[   -z "$CCRNSRC" ] && bail "CCRNSRC must be defined"
+[ ! -d "$CCRNSRC" ] && bail "$CCRNSRC is not a directory"
+
+# The default location of the repository containing nemo source code
+source_repo=$CCRNSRC/ocean_dir/ocn-mirror.git
+
+# show_tags = 1 means the program should list all tags in the repo and then exit
+show_tags=0
+
+# A subdir or pathname relative to the repository root dir
+# This will identify the subset of the source tree that is to be extracted
+extract_root=''
+extract_path=''
+usr_src=''
+
+# Verbosity flag
+verbose=0
+
+# The name of a directory in which the extracted source will go
+out_dir=''
+
+# process command line options
+while getopts htvx opt
+do
+  case $opt in
+    t) show_tags=1 ;;
+    v) verbose=`expr $verbose + 1` ;;
+    x) set -x ;;
+    h) usage ;;
+    -) shift; break ;; # end of options
+    ?) usage -e $USAGE   ;;
+  esac
+done
+shift `expr $OPTIND - 1`
+
+# Process the remaining command line args
+for arg in "$@"; do
+  case $arg in
+    *=*) var=`echo $arg|awk -F\= '{printf "%s",$1}' -`
+         val=`echo "$arg"|awk '{i=index($0,"=")+1;printf "%s",substr($0,i)}' -`
+         # add this variable definition to the current environment
+         [ -n "$var" ] && eval ${var}=\"\$val\"  # preserve quoted assignments
+         val=`echo $val|sed 's/^ *//; s/ *$//'`  # remove leading and trailing space
+         [ -z "$val" ] && bail "Invalid command line arg --> $arg <-- Empty value."
+         case $var in
+           ver)  version="$val" ;;           # git version, tag or branch
+           out)  out_dir="$val" ;;           # output directory name
+           src) usr_src="$usr_src $val" ;;   # extract a subset of the repo src
+           repo) source_repo="$val" ;;       # location of git repository
+           *) bail "Invalid command line arg --> $arg <-- Unknown variable." ;;
+         esac
+         ;;
+    *) bail "Invalid command line arg --> $arg <-- Expecting variable assignment." ;;
+  esac
+done
+
+[ -z "$source_repo" ] && usage -e "The source repository name is missing."
+[ ! -d "$source_repo" ] && usage -e "Repository is not a directory --> $source_repo <--"
+
+if [ $show_tags -eq 1 ]; then
+  # Simply list all tags in the repository and exit
+  cd $source_repo
+  git tag
+  exit
+fi
+
+[ -z "$version" ] && usage -e "A version number, tag or branch is required on the command line."
+
+[ -z "$out_dir" ] && usage -e "The output directory name is missing."
+[ ! -d "$out_dir" ] && usage -e "Output directory name is not a directory --> $out_dir <--"
+
+# Set up env to use git when running on the back end
+# Assume git is available elsewhere
+case $this_host in
+  c1*|c2*) # This is spica or hadar
+    GIT_PATH=/users/tor/acrn/rls/local/aix64/bin
+    [ ! -d "$GIT_PATH" ] && bail "$GIT_PATH is not a directory"
+    [ ! -s "$GIT_PATH/git" ] && bail "$GIT_PATH/git is missing"
+    [ ! -x "$GIT_PATH/git" ] && bail "You require execute permission for $GIT_PATH/git"
+    add2path $GIT_PATH
+    ;;
+esac
+
+out_subdir="src_$version"
+if [ -n "$out_subdir" ]; then
+  PREFIX="--prefix=${out_subdir}/"
+else
+  PREFIX=''
+fi
+
+# Get a full pathname for the output dir
+out_dir_full=$(cd $out_dir; pwd)
+
+# Set extract_root according to the version supplied by the user
+# extract_root is the highest (in the dir tree) common subdir containing the source
+# to be extracted (relative to the repository root dir)
+case $version in
+  nemo_v3.4)   extract_root="src/nemo" ;;
+  nemo_v3.4.1) extract_root="src/ocean/nemo" ;;
+  canesm1_ocn|canesm2_v1_ocn|canesm2_v2_ocn|canesm2_v3_ocn|canesm2_v4_ocn|canesm2_v5_ocn|CanESM4.1)
+               extract_root="src/ocean/canesm" ;;
+  *) extract_root="src" ;;
+esac
+
+if [ -n "$usr_src" ]; then
+  # If the user has supplied an explicit list of source dirs (or files)
+  # to extract then set extract_path accordingly
+  # Note, these files are always relative to extract_root
+  extract_path=$(for p in $usr_src; do echo -n "$extract_root/$p "; done)
+else
+  # Otherwise extract_path is the same as extract_root
+  extract_path="$extract_root"
+fi
+
+# Extract the requested files from the repository
+git archive --remote=$source_repo --format=tar $PREFIX $version $extract_path | \
+  (cd $out_dir_full && tar xf -) ||
+  bail "Unable to extract revision --> $version <-- from repository $source_repo"
+
+# Eliminate extra dirs in path
+if [ -n "$extract_root" ]; then
+  cd $out_dir_full/$out_subdir
+  if [ -d $extract_root ]; then
+    top_dir=$(echo $extract_root|sed 's/\/.*$//')
+    [ -z "$top_dir" ] && bail "Invalid path segment --> $extract_root <-- cannot be absolute"
+    [ ! -d "$top_dir" ] &&
+      bail "Problem removing extraneous directories in $out_dir_full/$out_subdir/$extract_root"
+    cp -fr $extract_root/* . && rm -fr $top_dir || bail "Problem with mv"
+  fi
+fi
+
+echo "Source for version $version is in ${out_dir}"

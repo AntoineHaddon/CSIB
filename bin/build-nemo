@@ -1,0 +1,366 @@
+#!/bin/bash
+#
+#   Usage: build-nemo [options] ver=tag exec=name cfg=cfgdir \
+#                     [refcfg=cfgdir] \
+#                     [arch=fname] \
+#                     [repo=dirpath] \
+#                     [src=dirpath] \
+#                     [add_key=keys] \
+#                     [del_key=keys]
+#          Quantities in square brackets are optional
+#
+# Purpose: Create a nemo executable or build nemo specifc tools
+#
+# Options:
+# All options begin with a dash (-) and must appear before any other command line arg
+# Single letter options may be combined, as in "build-nemo -vv ..."
+#   -m arch   ...Arch specific include file (arch=... will override -m)
+#   -n cfg    ...Configuration dir (cfg=... will override -n)
+#   -r refcfg ...Reference configuration dir (refcfg=... will override -r)
+#   ### Incomplete ### -t   ...compile a set of nemo tools rather than the ocean model
+#   -v   ...increase verbosity (additive)
+#   -h   ...show this usage message
+#   -k   ...do not delete the tmp dir after compilation is complete (used for debugging)
+#
+# Variable definitions:
+#   ver=tag       ...tag is the version number/tag or branch to extract from
+#                    the git repository (e.g. nemo_v3.4)
+#   exec=name     ...name is the name of the nemo executable to be created
+#                    On successful compilation, a file by this name will be saved on RUNPATH
+#   cfg=name      ...name is the name of a subdir under the CONFIG dir in the repository
+#                    which will contain details of the model configuration (e.g. ORCA2_LIM)
+#   refcfg=name   ...name is the name of a subdir under the CONFIG dir in the repository
+#                    which will contain a reference configuration
+#   arch=name     ...name is the name of an arch specific make include file found in the ARCH
+#                    subdir that is used to define compiler switches and libs etc
+#   repo=dirpath  ...dirpath is the pathname to the git repository
+#   src=dirpath   ...dirpath is the pathname to a user supplied set of modifications
+#                    This dir will contain repository files (dir structure intact) that
+#                    have been changed by the user or are new to the repo
+#   add_key=keys  ...A whitespace separated list of cpp preprocessor keys to be added
+#                    for this complie. If there is more than one then keys will need
+#                    to be quoted. (e.g. add_keys="key_mpp_mpi key_nproci=8 key_nprocj=4")
+#   del_key=keys  ...A whitespace separated list of cpp preprocessor keys to be removed
+#                    for this complie. If there is more than one then keys will need
+#                    to be quoted. (e.g. del_keys="key_nproci key_nprocj")
+#
+# Examples:
+#   build-nemo ver=nemo_v3.4 exec=nemo_v3.4_orca2_lim_exe cfg=ORCA2_LIM
+#     -- Build an "out of the box" ORCA2_LIM configuration
+#
+#   build-nemo ver=nemo_v3.4 exec=nemo_v3.4_orca2_lim_exe cfg=ORCA2_LIM src=/my/mods/to/orca2
+#     -- Build an ORCA2_LIM configuration that uses mods from the /my/mods/to/orca2 directory
+#
+########################################################################
+#
+# Larry Solheim Sep 2012
+
+FULLPATH=`type $0|awk '{print $3}'` # pathname of this script
+Runame=`basename $FULLPATH`
+usage() {
+  err_exit=0
+  while getopts e opt; do
+    case $opt in
+      e) err_exit=1 ;;
+    esac
+  done
+  shift `expr $OPTIND - 1`
+
+  [ -n "$1" ] && echo >&2 "${Runame}:" "$@"
+  echo >&2 " "
+  sed >&2 -n '/^###/q; s/^#$/# /; s/^ *$/# /; 3,$s/^# //p;' "$FULLPATH"
+  if [ $err_exit -eq 0 ]; then
+    exit
+  else
+    exit 1
+  fi
+}
+
+# Create time stamp to be used in file names etc
+stamp=`date "+%j%H%M%S"$$`
+
+# Identify, by name, the machine this script is running on
+this_host=`hostname|cut -d'.' -f1`
+
+bail(){
+echo "${Runame}: *** ERROR *** $1"
+exit 1
+}
+
+add2path(){
+  if echo $PATH|/bin/grep -Evq "'(^|:)'$1'($|:)'" ; then
+     if [ "$2" = "atend" ] ; then
+        PATH=$PATH:$1
+     else
+        PATH=$1:$PATH
+     fi
+  fi
+}
+
+# echo without return (ie: emulate -n if not recognized by echo)
+if [ "X`echo -n`" = "X-n" ]; then
+  echo_n() { echo ${1+"$@"}'\c'; }
+else
+  echo_n() { echo -n ${1+"$@"}; }
+fi
+
+# Set defaults
+
+# The version of code to extract and compile
+nemo_version=''
+
+# The default location of the repository containing nemo source code
+[ -z "$CCRNSRC" ] && bail "CCRNSRC must be set"
+[ ! -d "$CCRNSRC" ] && bail "CCRNSRC=$CCRNSRC is not a directory"
+nemo_source_repo=$CCRNSRC/ocean_dir/ocn-mirror.git
+
+# The location of a dir containing user supplied source files that will
+# replace, or add to, existing files in the repository
+nemo_source_mods=''
+
+# The name of the executable created by this script
+nemo_exe=''
+
+# Nemo preprocessing keys to be added or removed at compile time
+nemo_add_cpp_keys='key_mpp_mpi key_nproci=8 key_nprocj=4'
+nemo_del_cpp_keys=''
+
+# A boolean flag used to build (or not build) the nemo executable
+build_nemo_exe=1
+
+# The particular configuration of nemo to be built will be defined by files
+# in a subdir of the nemo source tree. nemo_config is the name of that subdir
+nemo_config=''
+
+# The reference configuration to be used with nemo_config
+nemo_ref_config=''
+
+# The name of a make include file used to determine compiler name and flags
+nemo_arch=''
+
+# Boolean flags used to build (or not build) particular nemo tools
+build_rebuild_tool=0
+build_rebuild_nemo_tool=0
+build_weights_tool=0
+
+# Verbosity flag
+verbose=0
+
+# Flag to remove, or not remove, temporary dir created below
+keep_tmpd=0
+
+# CCRNSRC must be defined
+CCRNSRC=${CCRNSRC:=/home/acrnsrc}
+[   -z "$CCRNSRC" ] && bail "CCRNSRC must be defined"
+[ ! -d "$CCRNSRC" ] && bail "$CCRNSRC is not a directory"
+
+# CCRNTMP must be defined
+CCRNTMP=${CCRNTMP:=/tmp}
+[   -z "$CCRNTMP" ] && bail "CCRNTMP must be defined"
+[ ! -d "$CCRNTMP" ] && bail "$CCRNTMP is not a directory"
+
+# process command line options
+while getopts n:m:r:hktvx opt
+do
+  case $opt in
+    m) nemo_arch="$OPTARG" ;;
+    n) nemo_config="$OPTARG" ;;
+    r) nemo_ref_config="$OPTARG" ;;
+    v) verbose=`expr $verbose + 1` ;;
+    k) keep_tmpd=1 ;;
+    x) set -x ;;
+    t) build_nemo_exe=0
+       build_rebuild_tool=1
+       build_rebuild_nemo_tool=1
+       build_weights_tool=1
+       ;;
+    h) usage ;;
+    -) shift; break ;; # end of options
+    ?) usage -e $USAGE   ;;
+  esac
+done
+shift `expr $OPTIND - 1`
+
+# Process the remaining command line args
+for arg in "$@"; do
+  case $arg in
+    *=*) var=`echo $arg|awk -F\= '{printf "%s",$1}' -`
+         val=`echo "$arg"|awk '{i=index($0,"=")+1;printf "%s",substr($0,i)}' -`
+         # add this variable definition to the current environment
+         [ -n "$var" ] && eval ${var}=\"\$val\" # preserve quoted assignments
+         case $var in
+           ver)  nemo_version="$val" ;;       # git version, tag or branch
+           repo) nemo_source_repo="$val" ;;   # location of git repository
+           src) nemo_source_mods="$val" ;;   # location of user supplied modification
+           exec) nemo_exe="$val" ;;           # name for the executable created here
+           cfg)  nemo_config="$val" ;;        # name of subdir in which config lives
+           refcfg) nemo_ref_config="$val" ;;  # name of subdir in which ref config lives
+           arch) nemo_arch="$val" ;;          # name of file with arch specific make defs
+                     # a list of cpp keys to add before compiling nemo
+           add_key) nemo_add_cpp_keys="$val" ;;
+                     # a list of cpp keys to remove before compiling nemo
+           del_key) nemo_del_cpp_keys="$val" ;;
+           *) bail "Invalid command line arg --> $arg <--" ;;
+         esac
+         ;;
+    *) bail "Invalid command line arg --> $arg <--" ;;
+  esac
+done
+
+[ -z "$nemo_version" ] && usage -e "A version number/tag or branch is required on the command line."
+if [ $build_nemo_exe -eq 1 ]; then
+  # The name of the executable is not required unless it is to be built
+  [ -z "$nemo_exe" ] &&
+    usage -e "A name for the output executable is required on the command line ...exec=name"
+  # The config name is not required unless nemo is to be built
+  [ -z "$nemo_config" ] &&
+    usage -e "The name of the configuration is required on the command line ...cfg=cfgname"
+fi
+
+[ -z "$nemo_source_repo" ] && usage -e "The source repository name is missing."
+[ ! -d "$nemo_source_repo" ] && usage -e "Repository is not a directory --> $nemo_source_repo <--"
+# Ensure this is a full pathname
+nemo_source_repo=$(cd $nemo_source_repo; pwd)
+
+if [ -n "$nemo_source_mods" ]; then
+  # The user has supplied a source directory containing mods to nemo_source_repo
+  [ ! -d "$nemo_source_mods" ] &&
+    usage -e "User supplied source path is not a valid directory --> $nemo_source_mods <--"
+  # Ensure this is a full pathname
+  nemo_source_mods=$(cd $nemo_source_mods; pwd)
+fi
+
+# This script is intended to be run on the back end
+case $this_host in
+  c1*|c2*) ;; # This is spica or hadar  ...OK
+        *) bail "This should be run on a back end machine" ;;
+esac
+
+# Set up env to use git
+GIT_PATH=/users/tor/acrn/rls/local/aix64/bin
+[ ! -d "$GIT_PATH" ] && bail "$GIT_PATH is not a directory"
+[ ! -s "$GIT_PATH/git" ] && bail "$GIT_PATH/git is missing"
+[ ! -x "$GIT_PATH/git" ] && bail "You require execute permission for $GIT_PATH/git"
+add2path $GIT_PATH
+
+# Create a temporary directory and change to it
+CWD=`pwd`
+tmpd=$CCRNTMP/tmp_build_nemo_${this_host}_$stamp
+mkdir $tmpd || bail "Cannot create temporary dir $tmpd"
+
+# Change to the git repository and extract the desired version
+# Put it into a subdirectory ($local_src) of the tmp dir
+local_src="src_$nemo_version"
+
+# path_to_nemo is the dir path (relative to the top git source dir) in which nemo code
+# lives and is used by git archive to extract the nemo subset of the repository source
+# NOTE: As of version 34c08e39 (canesm1_ocn) this dir has been moved to src/ocean/nemo
+case $nemo_version in
+  nemo_v3.4)   path_to_nemo="src/nemo" ;;
+  nemo_v3.4.1) path_to_nemo="src/ocean/nemo" ;;
+  *) bail "Invalid nemo version ->> " ;;
+esac
+
+# nemo_root is the location in the temporary dir (as a full pathname) to which
+# the nemo code extracted from the git repository will be copied
+nemo_root="$tmpd/$local_src/$path_to_nemo"
+
+# cd $nemo_source_repo
+git archive --remote=$nemo_source_repo --format=tar --prefix=${local_src}/ $nemo_version $path_to_nemo | \
+  (cd $tmpd && tar xf -) ||
+  bail "Unable to extract revision --> $nemo_version <-- from repository $nemo_source_repo"
+
+# Change to the tmp dir and build the executable
+cd $tmpd
+
+# Make everything user writeable so that an overwrite will clobber existing files
+chmod -R u+w $local_src
+
+if [ -n "$nemo_source_mods" ]; then
+  # Copy anything in this user suppled dir into the local source dir
+  # Existing files in $nemo_root will be overwritten and new files will be added
+  cp -r $nemo_source_mods/* $nemo_root
+fi
+
+if [ $build_nemo_exe -eq 1 ]; then
+  # Build the nemo executable
+  cd $nemo_root/CONFIG
+  if [ -z "$nemo_arch" ]; then
+    NARCH="-m xlf_aix-cccma"
+  else
+    NARCH="-m $nemo_arch"
+  fi
+  if [ -z "$nemo_ref_config" ]; then
+    REFCFG=''
+  else
+    REFCFG="-r $nemo_ref_config"
+  fi
+  if [ -z "$nemo_add_cpp_keys" ]; then
+    add_key=''
+    ADDKEY=''
+  else
+    add_key='add_key'
+    ADDKEY="$nemo_add_cpp_keys"
+  fi
+  if [ -z "$nemo_del_cpp_keys" ]; then
+    del_key=''
+    DELKEY=''
+  else
+    del_key='del_key'
+    DELKEY="$nemo_del_cpp_keys"
+  fi
+  echo "makenemo -n $nemo_config $NARCH $REFCFG $add_key \"$ADDKEY\" $del_key \"$DELKEY\""
+  makenemo -n $nemo_config $NARCH $REFCFG $add_key "$ADDKEY" $del_key "$DELKEY"
+  [ $? -ne 0 ] && bail "Problem building nemo executable"
+  # Copy the executable to the tmp dir
+  cp $nemo_config/BLD/bin/nemo.exe $tmpd/$nemo_exe
+  cd $tmpd
+  [ ! -s "$nemo_exe" ] && bail "Unable to create nemo executable $nemo_exe"
+  # Save the nemo executable to RUNPATH/DATAPATH
+  save $nemo_exe $nemo_exe || bail "Problem while saving $nemo_exe"
+  release $nemo_exe
+  echo "Saved $nemo_exe on RUNPATH $RUNPATH"
+fi
+
+if [ $build_rebuild_tool -eq 1 ]; then
+  # Build nemo rebuild tool
+  cd $nemo_root/TOOLS
+  maketools -n REBUILD -m xlf_aix_noMP-cccma
+  [ $? -ne 0 ] && bail "Problem building tool REBUILD"
+  # This will build a binary named "flio_rbld.exe" in TOOLS/REBUILD/BLD/bin
+  cp REBUILD/BLD/bin/*.exe $tmpd
+  # There is also a script in REBUILD/rebuild
+  cp REBUILD/rebuild $tmpd
+  cd $tmpd
+fi
+
+if [ $build_rebuild_nemo_tool -eq 1 ]; then
+  # Build nemo rebuild_nemo tool
+  cd $nemo_root/TOOLS
+  maketools -n REBUILD_NEMO -m xlf_aix_noMP-cccma
+  [ $? -ne 0 ] && bail "Problem building tool REBUILD_NEMO"
+  # This will build a binary named "rebuild_nemo.exe" in TOOLS/REBUILD_NEMO/BLD/bin
+  cp REBUILD_NEMO/BLD/bin/*.exe $tmpd
+  # There is also a script in REBUILD/rebuild_nemo
+  cp REBUILD/rebuild_nemo $tmpd
+  cd $tmpd
+fi
+
+if [ $build_weights_tool -eq 1 ]; then
+  # Build nemo weights tool
+  cd $nemo_root/TOOLS
+  maketools -n WEIGHTS -m xlf_aix_noMP-cccma
+  [ $? -ne 0 ] && bail "Problem building tool WEIGHTS"
+  # This will build a binaries named scrip.exe, scripgrid.exe, scripinterp.exe
+  # and scripshape.exe in TOOLS/WEIGHTS/BLD/bin
+  cp WEIGHTS/BLD/bin/*.exe $tmpd
+  cd $tmpd
+fi
+
+# Return to the original dir and clean up
+cd $CWD
+if [ $keep_tmpd -eq 1 ]; then
+  echo "Temporary directory remains in $tmpd"
+else
+  rm -fr $tmpd
+fi
