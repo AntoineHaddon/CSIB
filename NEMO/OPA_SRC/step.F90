@@ -28,7 +28,7 @@ MODULE step
    !!----------------------------------------------------------------------
    !!   stp             : OPA system time-stepping
    !!----------------------------------------------------------------------
-   USE step_oce         ! time stepping definition modules 
+   USE step_oce         ! time stepping definition modules
 #if defined key_top
    USE trcstp           ! passive tracer time-stepping      (trc_stp routine)
 #endif
@@ -46,7 +46,7 @@ MODULE step
 #  include "zdfddm_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 3.3 , NEMO Consortium (2010)
-   !! $Id: step.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: step.F90 3604 2012-11-19 14:21:34Z rblod $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -60,15 +60,15 @@ CONTAINS
 #endif
       !!----------------------------------------------------------------------
       !!                     ***  ROUTINE stp  ***
-      !!                      
+      !!
       !! ** Purpose : - Time stepping of OPA (momentum and active tracer eqs.)
       !!              - Time stepping of LIM (dynamic and thermodynamic eqs.)
       !!              - Tme stepping  of TRC (passive tracer eqs.)
-      !! 
-      !! ** Method  : -1- Update forcings and data  
-      !!              -2- Update ocean physics 
-      !!              -3- Compute the t and s trends 
-      !!              -4- Update t and s 
+      !!
+      !! ** Method  : -1- Update forcings and data
+      !!              -2- Update ocean physics
+      !!              -3- Compute the t and s trends
+      !!              -4- Update t and s
       !!              -5- Compute the momentum trends
       !!              -6- Update the horizontal velocity
       !!              -7- Compute the diagnostics variables (rd,N2, div,cur,w)
@@ -84,8 +84,8 @@ CONTAINS
 !      IF (lwp) Write(*,*) 'Grid Number',Agrif_Fixed(),' time step ',kstp
 # if defined key_iomput
       IF( Agrif_Nbstepint() == 0 )   CALL iom_swap
-# endif   
-#endif   
+# endif
+#endif
                              indic = 0                ! reset to no error condition
       IF( kstp /= nit000 )   CALL day( kstp )         ! Calendar (day was already called at nit000 in day_init)
                              CALL iom_setkt( kstp )   ! say to iom that we are at time step kstp
@@ -110,9 +110,9 @@ CONTAINS
                          CALL bn2( tsb, rn2b )        ! before Brunt-Vaisala frequency
                          CALL bn2( tsn, rn2  )        ! now    Brunt-Vaisala frequency
       !
-      !  VERTICAL PHYSICS   
+      !  VERTICAL PHYSICS
                          CALL zdf_bfr( kstp )         ! bottom friction
-                         
+
       !                                               ! Vertical eddy viscosity and diffusivity coefficients
       IF( lk_zdfric  )   CALL zdf_ric( kstp )            ! Richardson number dependent Kz
       IF( lk_zdftke  )   CALL zdf_tke( kstp )            ! TKE closure scheme for Kz
@@ -132,14 +132,14 @@ CONTAINS
 
       IF( lk_zdfddm .AND. .NOT. lk_zdfkpp )   &
          &               CALL zdf_ddm( kstp )         ! double diffusive mixing
-         
+
                          CALL zdf_mxl( kstp )         ! mixed layer depth
 
                                                       ! write TKE or GLS information in the restart file
       IF( lrst_oce .AND. lk_zdftke )   CALL tke_rst( kstp, 'WRITE' )
       IF( lrst_oce .AND. lk_zdfgls )   CALL gls_rst( kstp, 'WRITE' )
       !
-      !  LATERAL  PHYSICS 
+      !  LATERAL  PHYSICS
       !
       IF( lk_ldfslp ) THEN                            ! slope of lateral mixing
                          CALL eos( tsb, rhd )                ! before in situ density
@@ -178,6 +178,9 @@ CONTAINS
       ! Active tracers                              (ua, va used as workspace)
       !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
                              tsa(:,:,:,:) = 0.e0            ! set tracer trends to zero
+      ! Saving non-linear trajectory at restart state
+      ! May not be exact for sbc and zdf parameters
+      IF( ( ln_trjhand ) .AND. ( kstp == nit000 ) ) CALL tam_trj_wri( kstp - 1 )
 
       IF(  ln_asmiau .AND. &
          & ln_trainc     )   CALL tra_asm_inc( kstp )       ! apply tracer assimilation increment
@@ -200,14 +203,14 @@ CONTAINS
                              CALL eos    ( tsa, rhd, rhop )      ! Time-filtered in situ density for hpg computation
          IF( ln_zps      )   CALL zps_hde( kstp, jpts, tsa, gtsu, gtsv,  &    ! zps: time filtered hor. derivative
             &                                          rhd, gru , grv  )      ! of t, s, rd at the last ocean level
-         
+
       ELSE                                                  ! centered hpg  (eos then time stepping)
                              CALL eos    ( tsn, rhd, rhop )      ! now in situ density for hpg computation
          IF( ln_zps      )   CALL zps_hde( kstp, jpts, tsn, gtsu, gtsv,  &    ! zps: now hor. derivative
             &                                          rhd, gru , grv  )      ! of t, s, rd at the last ocean level
          IF( ln_zdfnpc   )   CALL tra_npc( kstp )                ! update after fields by non-penetrative convection
                              CALL tra_nxt( kstp )                ! tracer fields at next time step
-      ENDIF 
+      ENDIF
 
       !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
       ! Dynamics                                    (tsa used as workspace)
@@ -217,6 +220,7 @@ CONTAINS
 
       IF(  ln_asmiau .AND. &
          & ln_dyninc       )   CALL dyn_asm_inc( kstp )     ! apply dynamics assimilation increment
+      IF( ln_bkgwri )          CALL asm_bkg_wri( kstp )     ! output background fields
       IF( ln_neptsimp )        CALL dyn_nept_cor( kstp )    ! subtract Neptune velocities (simplified)
                                CALL dyn_adv( kstp )         ! advection (vector or flux form)
                                CALL dyn_vor( kstp )         ! vorticity term including Coriolis
@@ -226,7 +230,7 @@ CONTAINS
       IF(.NOT. Agrif_Root())   CALL Agrif_Sponge_dyn        ! momemtum sponge
 #endif
                                CALL dyn_hpg( kstp )         ! horizontal gradient of Hydrostatic pressure
-                               CALL dyn_bfr( kstp )         ! bottom friction   
+                               CALL dyn_bfr( kstp )         ! bottom friction
                                CALL dyn_zdf( kstp )         ! vertical diffusion
                                CALL dyn_spg( kstp, indic )  ! surface pressure gradient
                                CALL dyn_nxt( kstp )         ! lateral velocity at next time step
@@ -251,12 +255,18 @@ CONTAINS
       !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
       ! Trends                              (ua, va, tsa used as workspace)
       !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-      IF( nstop == 0 ) THEN                         
-         IF( lk_trddyn     )   CALL trd_dwr( kstp )         ! trends: dynamics 
+      IF( nstop == 0 ) THEN
+         IF( lk_trddyn     )   CALL trd_dwr( kstp )         ! trends: dynamics
          IF( lk_trdtra     )   CALL trd_twr( kstp )         ! trends: active tracers
-         IF( lk_trdmld     )   CALL trd_mld( kstp )         ! trends: Mixed-layer 
+         IF( lk_trdmld     )   CALL trd_mld( kstp )         ! trends: Mixed-layer
          IF( lk_trdvor     )   CALL trd_vor( kstp )         ! trends: vorticity budget
       ENDIF
+
+      !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+      ! Trajectory for TAM
+      !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+      IF( ln_trjhand ) CALL tam_trj_wri( kstp )          ! Output trajectory fields
 
       !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
       ! Coupled mode

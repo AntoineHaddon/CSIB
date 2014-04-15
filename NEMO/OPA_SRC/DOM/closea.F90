@@ -6,7 +6,7 @@ MODULE closea
    !! History :   8.2  !  00-05  (O. Marti)  Original code
    !!             8.5  !  02-06  (E. Durand, G. Madec)  F90
    !!             9.0  !  06-07  (G. Madec)  add clo_rnf, clo_ups, clo_bat
-   !!             3.4  !  13-11  (D. Yang) defined Caspian Sea
+   !!        NEMO 3.4  !  03-12  (P.G. Fogli) sbc_clo bug fix & mpp reproducibility
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -20,8 +20,10 @@ MODULE closea
    USE dom_oce         ! ocean space and time domain
    USE in_out_manager  ! I/O manager
    USE sbc_oce         ! ocean surface boundary conditions
-   USE lib_mpp         ! distributed memory computing library
-   USE lbclnk          ! ???
+   USE lib_fortran,    ONLY: glob_sum, DDPDD
+   USE lbclnk          ! lateral boundary condition - MPP exchanges
+   USE lib_mpp         ! MPP library
+   USE timing
 
    IMPLICIT NONE
    PRIVATE
@@ -45,7 +47,7 @@ MODULE closea
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 3.3 , NEMO Consortium (2010)
-   !! $Id: closea.F90 2715 2011-03-30 15:58:35Z rblod $
+   !! $Id: closea.F90 3442 2012-08-07 11:15:44Z beppe $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -85,6 +87,14 @@ CONTAINS
          !
          SELECT CASE ( jp_cfg )
          !                                           ! =======================
+         CASE ( 1 )                                  ! ORCA_R1 configuration
+            !                                        ! =======================
+            ncsnr(1)   = 1    ; ncstt(1)   = 0           ! Caspian Sea
+            ncsi1(1)   = 332  ; ncsj1(1)   = 203
+            ncsi2(1)   = 344  ; ncsj2(1)   = 235
+            ncsir(1,1) = 1    ; ncsjr(1,1) = 1
+            !                                        
+            !                                        ! =======================
          CASE ( 2 )                                  !  ORCA_R2 configuration
             !                                        ! =======================
             !                                            ! Caspian Sea
@@ -134,14 +144,6 @@ CONTAINS
             ncsi2(4)   = 76  ;  ncsj2(4)   = 61
             ncsir(4,1) = 84  ;  ncsjr(4,1) = 59 
             !                                        ! =======================
-         CASE ( 1 )                                  !  ORCA_R1 configuration
-            !                                        ! =======================
-            !                                            ! Caspian Sea
-            ncsnr(1)   =  1  ;  ncstt(1)   =  0
-            ncsi1(1)   = 333 ;  ncsj1(1)   = 204
-            ncsi2(1)   = 342 ;  ncsj2(1)   = 234
-            ncsir(1,1) =  1  ;  ncsjr(1,1) =  1         
-            !                                        ! =======================
          CASE ( 025 )                                ! ORCA_R025 configuration
             !                                        ! =======================
             ncsnr(1)   = 1    ; ncstt(1)   = 0               ! Caspian + Aral sea
@@ -185,11 +187,14 @@ CONTAINS
       !!----------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt   ! ocean model time step
       !
-      INTEGER                     ::   ji, jj, jc, jn   ! dummy loop indices
-      REAL(wp)                    ::   zze2
-      REAL(wp), DIMENSION (jpncs) ::   zfwf 
+      INTEGER             ::   ji, jj, jc, jn   ! dummy loop indices
+      REAL(wp), PARAMETER ::   rsmall = 1.e-20_wp    ! Closed sea correction epsilon
+      REAL(wp)            ::   zze2, ztmp, zcorr     ! 
+      COMPLEX(wp)         ::   ctmp 
+      REAL(wp), DIMENSION(jpncs) ::   zfwf   ! 1D workspace
       !!----------------------------------------------------------------------
       !
+      IF( nn_timing == 1 )  CALL timing_start('sbc_clo')
       !                                                   !------------------!
       IF( kt == nit000 ) THEN                             !  Initialisation  !
          !                                                !------------------!
@@ -197,18 +202,33 @@ CONTAINS
          IF(lwp) WRITE(numout,*)'sbc_clo : closed seas '
          IF(lwp) WRITE(numout,*)'~~~~~~~'
 
-         ! Total surface of ocean
-         surf(jpncs+1) = SUM( e1t(:,:) * e2t(:,:) * tmask_i(:,:) )
-
-         DO jc = 1, jpncs
-            surf(jc) =0.e0
-            DO jj = ncsj1(jc), ncsj2(jc)
-               DO ji = ncsi1(jc), ncsi2(jc)
-                  surf(jc) = surf(jc) + e1t(ji,jj) * e2t(ji,jj) * tmask_i(ji,jj)      ! surface of closed seas
+         surf(:) = 0.e0_wp
+         !
+         surf(jpncs+1) = glob_sum( e1e2t(:,:) )   ! surface of the global ocean
+         !
+         !                                        ! surface of closed seas 
+         IF( lk_mpp_rep ) THEN                         ! MPP reproductible calculation
+            DO jc = 1, jpncs
+               ctmp = CMPLX( 0.e0, 0.e0, wp )
+               DO jj = ncsj1(jc), ncsj2(jc)
+                  DO ji = ncsi1(jc), ncsi2(jc)
+                     ztmp = e1e2t(ji,jj) * tmask_i(ji,jj)
+                     CALL DDPDD( CMPLX( ztmp, 0.e0, wp ), ctmp )
+                  END DO 
+               END DO 
+               IF( lk_mpp )   CALL mpp_sum( ctmp )
+               surf(jc) = REAL(ctmp,wp)
+            END DO
+         ELSE                                          ! Standard calculation           
+            DO jc = 1, jpncs
+               DO jj = ncsj1(jc), ncsj2(jc)
+                  DO ji = ncsi1(jc), ncsi2(jc)
+                     surf(jc) = surf(jc) + e1e2t(ji,jj) * tmask_i(ji,jj)      ! surface of closed seas
+                  END DO 
                END DO 
             END DO 
-         END DO 
-         IF( lk_mpp )   CALL mpp_sum ( surf, jpncs+1 )       ! mpp: sum over all the global domain
+            IF( lk_mpp )   CALL mpp_sum ( surf, jpncs )       ! mpp: sum over all the global domain
+         ENDIF
 
          IF(lwp) WRITE(numout,*)'     Closed sea surfaces'
          DO jc = 1, jpncs
@@ -223,76 +243,110 @@ CONTAINS
       ENDIF
       !                                                   !--------------------!
       !                                                   !  update emp, emps  !
-      zfwf = 0.e0                                         !--------------------!
-      DO jc = 1, jpncs
-         DO jj = ncsj1(jc), ncsj2(jc)
-            DO ji = ncsi1(jc), ncsi2(jc)
-               zfwf(jc) = zfwf(jc) + e1t(ji,jj) * e2t(ji,jj) * ( emp(ji,jj)-rnf(ji,jj) ) * tmask_i(ji,jj) 
-            END DO  
-         END DO 
-      END DO
-      IF( lk_mpp )   CALL mpp_sum ( zfwf(:) , jpncs )       ! mpp: sum over all the global domain
+      zfwf = 0.e0_wp                                      !--------------------!
+      IF( lk_mpp_rep ) THEN                         ! MPP reproductible calculation
+         DO jc = 1, jpncs
+            ctmp = CMPLX( 0.e0, 0.e0, wp )
+            DO jj = ncsj1(jc), ncsj2(jc)
+               DO ji = ncsi1(jc), ncsi2(jc)
+                  ztmp = e1e2t(ji,jj) * ( emp(ji,jj)-rnf(ji,jj) ) * tmask_i(ji,jj)
+                  CALL DDPDD( CMPLX( ztmp, 0.e0, wp ), ctmp )
+               END DO  
+            END DO 
+            IF( lk_mpp )   CALL mpp_sum( ctmp )
+            zfwf(jc) = REAL(ctmp,wp)
+         END DO
+      ELSE                                          ! Standard calculation           
+         DO jc = 1, jpncs
+            DO jj = ncsj1(jc), ncsj2(jc)
+               DO ji = ncsi1(jc), ncsi2(jc)
+                  zfwf(jc) = zfwf(jc) + e1e2t(ji,jj) * ( emp(ji,jj)-rnf(ji,jj) ) * tmask_i(ji,jj) 
+               END DO  
+            END DO 
+         END DO
+         IF( lk_mpp )   CALL mpp_sum ( zfwf(:) , jpncs )       ! mpp: sum over all the global domain
+      ENDIF
 
       IF( cp_cfg == "orca" .AND. jp_cfg == 2 ) THEN      ! Black Sea case for ORCA_R2 configuration
-         zze2    = ( zfwf(3) + zfwf(4) ) / 2.
+         zze2    = ( zfwf(3) + zfwf(4) ) * 0.5_wp
          zfwf(3) = zze2
          zfwf(4) = zze2
       ENDIF
 
+      zcorr = 0._wp
+
       DO jc = 1, jpncs
          !
-         IF( ncstt(jc) == 0 ) THEN 
-            ! water/evap excess is shared by all open ocean
-            emp (:,:) = emp (:,:) + zfwf(jc) / surf(jpncs+1)
-            emps(:,:) = emps(:,:) + zfwf(jc) / surf(jpncs+1)
-         ELSEIF( ncstt(jc) == 1 ) THEN 
-            ! Excess water in open sea, at outflow location, excess evap shared
-            IF ( zfwf(jc) <= 0.e0 ) THEN 
-                DO jn = 1, ncsnr(jc)
+         ! The following if avoids the redistribution of the round off
+         IF ( ABS(zfwf(jc) / surf(jpncs+1) ) > rsmall) THEN
+            !
+            IF( ncstt(jc) == 0 ) THEN           ! water/evap excess is shared by all open ocean
+               emp (:,:) = emp (:,:) + zfwf(jc) / surf(jpncs+1)
+               emps(:,:) = emps(:,:) + zfwf(jc) / surf(jpncs+1)
+               ! accumulate closed seas correction
+               zcorr     = zcorr     + zfwf(jc) / surf(jpncs+1)
+               !
+            ELSEIF( ncstt(jc) == 1 ) THEN       ! Excess water in open sea, at outflow location, excess evap shared
+               IF ( zfwf(jc) <= 0.e0_wp ) THEN 
+                   DO jn = 1, ncsnr(jc)
+                     ji = mi0(ncsir(jc,jn))
+                     jj = mj0(ncsjr(jc,jn)) ! Location of outflow in open ocean
+                     IF (      ji > 1 .AND. ji < jpi   &
+                         .AND. jj > 1 .AND. jj < jpj ) THEN 
+                         emp (ji,jj) = emp (ji,jj) + zfwf(jc) / ( REAL(ncsnr(jc)) * e1e2t(ji,jj) )
+                         emps(ji,jj) = emps(ji,jj) + zfwf(jc) / ( REAL(ncsnr(jc)) * e1e2t(ji,jj) )
+                     ENDIF 
+                   END DO 
+               ELSE 
+                   emp (:,:) = emp (:,:) + zfwf(jc) / surf(jpncs+1)
+                   emps(:,:) = emps(:,:) + zfwf(jc) / surf(jpncs+1)
+                   ! accumulate closed seas correction
+                   zcorr     = zcorr     + zfwf(jc) / surf(jpncs+1)
+               ENDIF
+            ELSEIF( ncstt(jc) == 2 ) THEN       ! Excess e-p-r (either sign) goes to open ocean, at outflow location
+               DO jn = 1, ncsnr(jc)
                   ji = mi0(ncsir(jc,jn))
                   jj = mj0(ncsjr(jc,jn)) ! Location of outflow in open ocean
-                  IF (      ji > 1 .AND. ji < jpi   &
-                      .AND. jj > 1 .AND. jj < jpj ) THEN 
-                      emp (ji,jj) = emp (ji,jj) + zfwf(jc) /   &
-                         (FLOAT(ncsnr(jc)) * e1t(ji,jj) * e2t(ji,jj))
-                      emps(ji,jj) = emps(ji,jj) + zfwf(jc) /   &
-                          (FLOAT(ncsnr(jc)) * e1t(ji,jj) * e2t(ji,jj))
-                  END IF 
-                END DO 
-            ELSE 
-                emp (:,:) = emp (:,:) + zfwf(jc) / surf(jpncs+1)
-                emps(:,:) = emps(:,:) + zfwf(jc) / surf(jpncs+1)
-            ENDIF
-         ELSEIF( ncstt(jc) == 2 ) THEN 
-            ! Excess e-p+r (either sign) goes to open ocean, at outflow location
-            IF(      ji > 1 .AND. ji < jpi    &
-               .AND. jj > 1 .AND. jj < jpj ) THEN 
-                DO jn = 1, ncsnr(jc)
-                  ji = mi0(ncsir(jc,jn))
-                  jj = mj0(ncsjr(jc,jn)) ! Location of outflow in open ocean
-                  emp (ji,jj) = emp (ji,jj) + zfwf(jc)   &
-                      / (FLOAT(ncsnr(jc)) *  e1t(ji,jj) * e2t(ji,jj) )
-                  emps(ji,jj) = emps(ji,jj) + zfwf(jc)   &
-                      / (FLOAT(ncsnr(jc)) *  e1t(ji,jj) * e2t(ji,jj) )
-                END DO 
+                  IF(      ji > 1 .AND. ji < jpi    &
+                     .AND. jj > 1 .AND. jj < jpj ) THEN 
+                     emp (ji,jj) = emp (ji,jj) + zfwf(jc) / ( REAL(ncsnr(jc)) *  e1e2t(ji,jj) )
+                     emps(ji,jj) = emps(ji,jj) + zfwf(jc) / ( REAL(ncsnr(jc)) *  e1e2t(ji,jj) )
+                  ENDIF 
+               END DO 
             ENDIF 
-         ENDIF 
-         !
-         DO jj = ncsj1(jc), ncsj2(jc)
-            DO ji = ncsi1(jc), ncsi2(jc)
-               emp (ji,jj) = emp (ji,jj) - zfwf(jc) / surf(jc)
-               emps(ji,jj) = emps(ji,jj) - zfwf(jc) / surf(jc)
-            END DO  
-         END DO 
-         !
+            !
+            DO jj = ncsj1(jc), ncsj2(jc)
+               DO ji = ncsi1(jc), ncsi2(jc)
+                  emp (ji,jj) = emp (ji,jj) - zfwf(jc) / surf(jc)
+                  emps(ji,jj) = emps(ji,jj) - zfwf(jc) / surf(jc)
+               END DO  
+            END DO 
+            !
+         END IF
       END DO 
+
+      IF ( ABS(zcorr) > rsmall ) THEN      ! remove the global correction from the closed seas
+         DO jc = 1, jpncs                  ! only if it is large enough
+            DO jj = ncsj1(jc), ncsj2(jc)
+               DO ji = ncsi1(jc), ncsi2(jc)
+                  emp (ji,jj) = emp (ji,jj) - zcorr
+                  emps(ji,jj) = emps(ji,jj) - zcorr
+               END DO  
+             END DO 
+          END DO
+      ENDIF
       !
-      CALL lbc_lnk( emp , 'T', 1. )
-      CALL lbc_lnk( emps, 'T', 1. )
+      emp (:,:) = emp (:,:) * tmask(:,:,1)
+      emps(:,:) = emps(:,:) * tmask(:,:,1)
+      !
+      CALL lbc_lnk( emp , 'T', 1._wp )
+      CALL lbc_lnk( emps, 'T', 1._wp )
+      !
+      IF( nn_timing == 1 )  CALL timing_stop('sbc_clo')
       !
    END SUBROUTINE sbc_clo
-   
-   
+
+
    SUBROUTINE clo_rnf( p_rnfmsk )
       !!---------------------------------------------------------------------
       !!                  ***  ROUTINE sbc_rnf  ***
@@ -316,7 +370,7 @@ CONTAINS
              DO jn = 1, 4
                ii = mi0( ncsir(jc,jn) )
                ij = mj0( ncsjr(jc,jn) )
-               p_rnfmsk(ii,ij) = MAX( p_rnfmsk(ii,ij), 1.0 )
+               p_rnfmsk(ii,ij) = MAX( p_rnfmsk(ii,ij), 1.0_wp )
             END DO 
          ENDIF 
       END DO 
@@ -344,7 +398,7 @@ CONTAINS
       DO jc = 1, jpncs
          DO jj = ncsj1(jc), ncsj2(jc)
             DO ji = ncsi1(jc), ncsi2(jc)
-               p_upsmsk(ji,jj) = 0.5            ! mixed upstream/centered scheme over closed seas
+               p_upsmsk(ji,jj) = 0.5_wp         ! mixed upstream/centered scheme over closed seas
             END DO 
          END DO 
        END DO 
@@ -382,3 +436,4 @@ CONTAINS
 
    !!======================================================================
 END MODULE closea
+

@@ -265,8 +265,10 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 !              !           !  (if <0  months)  !   name   !    (logical)   !  (T/F)  ! 'monthly' ! filename ! pairing  !
    sn_apr      = 'patm'    ,         -1        ,'somslpre',    .true.      , .true.  , 'yearly'  ,  ''      ,   ''
 
-   cn_dir      = './'      !  root directory for the location of the bulk files
-   ln_ref_apr  = .false.   !  ref. pressure: global mean Patm (T) or a constant (F)
+   cn_dir      = './'       !  root directory for the location of the bulk files
+   rn_pref     = 101000._wp !  reference atmospheric pressure   [N/m2]/
+   ln_ref_apr  = .false.    !  ref. pressure: global mean Patm (T) or a constant (F)
+   ln_apr_obc  = .false.    !  inverse barometer added to OBC ssh data
 /
 !-----------------------------------------------------------------------
 &namsbc_ssr    !   surface boundary condition : sea surface restoring
@@ -543,8 +545,8 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
 &namdyn_vor    !   option of physics/algorithm (not control by CPP keys)
 !-----------------------------------------------------------------------
-   ln_dynvor_ene = .false. !  enstrophy conserving scheme  
-   ln_dynvor_ens = .false. !  energy conserving scheme    
+   ln_dynvor_ene = .false. !  energy    conserving scheme  
+   ln_dynvor_ens = .false. !  enstrophy conserving scheme    
    ln_dynvor_mix = .false. !  mixed scheme               
    ln_dynvor_een = .true.  !  energy & enstrophy scheme  
 /
@@ -919,4 +921,12 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
    ln_neptramp       = .true.   ! ramp down Neptune velocity in shallow water
    rn_htrmin         =  100.0   ! min. depth of transition range
    rn_htrmax         =  200.0   ! max. depth of transition range
+/
+!-----------------------------------------------------------------------
+&namtrj ! Handling non-linear trajectory for TAM (output for direct model, input for TAM)
+!-----------------------------------------------------------------------
+    cn_dirtrj   = 'tam_trajectory'   ! prefix for input/ouput files
+    ln_trjhand  = .false.            ! Handling non linear trajectory
+    nn_ittrjfrq = 20                 ! Output/input frequency
+    ln_trj_spl = .false.             ! Handling trajectory at simple precision
 /

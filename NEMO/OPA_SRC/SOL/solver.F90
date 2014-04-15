@@ -31,7 +31,7 @@ MODULE solver
 
    !!----------------------------------------------------------------------
    !! NEMO/OPA 3.3 , NEMO Consortium (2010)
-   !! $Id: solver.F90 3294 2012-01-28 16:44:18Z rblod $ 
+   !! $Id: solver.F90 3693 2012-11-28 08:06:00Z rblod $ 
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -82,7 +82,9 @@ CONTAINS
       eps = rn_eps
 
       !                              ! allocate solver arrays
-      IF( sol_oce_alloc() /= 0 )   CALL ctl_stop( 'STOP', 'solver_init : unable to allocate sol_oce arrays' )
+      IF( .NOT. lk_agrif .OR. .NOT. ln_rstart) THEN
+         IF( sol_oce_alloc() /= 0 )   CALL ctl_stop( 'STOP', 'solver_init : unable to allocate sol_oce arrays' )
+      ENDIF
 
       SELECT CASE( nn_solv )          !* parameter check
       !

@@ -39,7 +39,7 @@ MODULE trczdf
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 3.3 , NEMO Consortium (2010)
-   !! $Id: trczdf.F90 3294 2012-01-28 16:44:18Z rblod $ 
+   !! $Id: trczdf.F90 3425 2012-07-05 11:33:22Z cetlod $ 
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -100,7 +100,7 @@ CONTAINS
 
       END SELECT
 
-      IF( l_trdtra )   THEN                      ! save the vertical diffusive trends for further diagnostics
+      IF( l_trdtrc )   THEN                      ! save the vertical diffusive trends for further diagnostics
          DO jn = 1, jptra
             DO jk = 1, jpkm1
                ztrtrd(:,:,jk,jn) = ( ( tra(:,:,jk,jn) - trb(:,:,jk,jn) ) / r2dt(jk) ) - ztrtrd(:,:,jk,jn)

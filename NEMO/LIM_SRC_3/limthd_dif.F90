@@ -22,6 +22,7 @@ MODULE limthd_dif
    USE in_out_manager   ! I/O manager
    USE lib_mpp          ! MPP library
    USE wrk_nemo         ! work arrays
+   USE lib_fortran      ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
 
    IMPLICIT NONE
    PRIVATE
@@ -32,8 +33,8 @@ MODULE limthd_dif
    REAL(wp) ::   epsi13 = 1e-13     ! constant values
 
    !!----------------------------------------------------------------------
-   !! NEMO/LIM3 4.0 , UCL - NEMO Consortium (2011)
-   !! $Id: limthd_dif.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! NEMO/LIM3 3.4 , UCL - NEMO Consortium (2011)
+   !! $Id: limthd_dif.F90 3807 2013-02-13 06:29:43Z gm $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -101,46 +102,9 @@ CONTAINS
       INTEGER ::   layer       ! vertical dummy loop index 
       INTEGER ::   nconv       ! number of iterations in iterative procedure
       INTEGER ::   minnumeqmin, maxnumeqmax
-
-      INTEGER , POINTER, DIMENSION(:) ::   numeqmin   ! reference number of top equation
-      INTEGER , POINTER, DIMENSION(:) ::   numeqmax   ! reference number of bottom equation
-      INTEGER , POINTER, DIMENSION(:) ::   isnow      ! switch for presence (1) or absence (0) of snow
-
-      !! * New local variables       
-      REAL(wp), POINTER, DIMENSION(:,:) ::   ztcond_i   !Ice thermal conductivity
-      REAL(wp), POINTER, DIMENSION(:,:) ::   zradtr_i   !Radiation transmitted through the ice
-      REAL(wp), POINTER, DIMENSION(:,:) ::   zradab_i   !Radiation absorbed in the ice
-      REAL(wp), POINTER, DIMENSION(:,:) ::   zkappa_i   !Kappa factor in the ice
-
-      REAL(wp), POINTER, DIMENSION(:,:) ::   zradtr_s   !Radiation transmited through the snow
-      REAL(wp), POINTER, DIMENSION(:,:) ::   zradab_s   !Radiation absorbed in the snow
-      REAL(wp), POINTER, DIMENSION(:,:) ::   zkappa_s   !Kappa factor in the snow
-
-      REAL(wp), POINTER, DIMENSION(:,:) ::   ztiold      !Old temperature in the ice
-      REAL(wp), POINTER, DIMENSION(:,:) ::   zeta_i      !Eta factor in the ice 
-      REAL(wp), POINTER, DIMENSION(:,:) ::   ztitemp     !Temporary temperature in the ice to check the convergence
-      REAL(wp), POINTER, DIMENSION(:,:) ::   zspeche_i   !Ice specific heat
-      REAL(wp), POINTER, DIMENSION(:,:) ::   z_i         !Vertical cotes of the layers in the ice
-
-      REAL(wp), POINTER, DIMENSION(:,:) ::   zeta_s      !Eta factor in the snow
-      REAL(wp), POINTER, DIMENSION(:,:) ::   ztstemp     !Temporary temperature in the snow to check the convergence
-      REAL(wp), POINTER, DIMENSION(:,:) ::   ztsold      !Temporary temperature in the snow
-      REAL(wp), POINTER, DIMENSION(:,:) ::   z_s         !Vertical cotes of the layers in the snow
-
-      REAL(wp), POINTER, DIMENSION(:,:)   ::   zindterm    ! Independent term
-      REAL(wp), POINTER, DIMENSION(:,:)   ::   zindtbis    ! temporary independent term
-      REAL(wp), POINTER, DIMENSION(:,:)   ::   zdiagbis
-      REAL(wp), POINTER, DIMENSION(:,:,:) ::   ztrid       ! tridiagonal system terms
-
-      REAL(wp), POINTER, DIMENSION(:) ::   ztfs        ! ice melting point
-      REAL(wp), POINTER, DIMENSION(:) ::   ztsuold     ! old surface temperature (before the iterative procedure )
-      REAL(wp), POINTER, DIMENSION(:) ::   ztsuoldit   ! surface temperature at previous iteration
-      REAL(wp), POINTER, DIMENSION(:) ::   zh_i        ! ice layer thickness
-      REAL(wp), POINTER, DIMENSION(:) ::   zh_s        ! snow layer thickness
-      REAL(wp), POINTER, DIMENSION(:) ::   zfsw        ! solar radiation absorbed at the surface
-      REAL(wp), POINTER, DIMENSION(:) ::   zf          ! surface flux function
-      REAL(wp), POINTER, DIMENSION(:) ::   dzf         ! derivative of the surface flux function
-
+      INTEGER, DIMENSION(kiut) ::   numeqmin   ! reference number of top equation
+      INTEGER, DIMENSION(kiut) ::   numeqmax   ! reference number of bottom equation
+      INTEGER, DIMENSION(kiut) ::   isnow      ! switch for presence (1) or absence (0) of snow
       REAL(wp) ::   zeps      =  1.e-10_wp    !
       REAL(wp) ::   zg1s      =  2._wp        ! for the tridiagonal system
       REAL(wp) ::   zg1       =  2._wp        !
@@ -149,23 +113,43 @@ CONTAINS
       REAL(wp) ::   zraext_s  =  1.e+8_wp     ! extinction coefficient of radiation in the snow
       REAL(wp) ::   zkimin    =  0.10_wp      ! minimum ice thermal conductivity
       REAL(wp) ::   zht_smin  =  1.e-4_wp     ! minimum snow depth
-
       REAL(wp) ::   ztmelt_i    ! ice melting temperature
       REAL(wp) ::   zerritmax   ! current maximal error on temperature 
-      REAL(wp), POINTER, DIMENSION(:) ::   zerrit       ! current error on temperature 
-      REAL(wp), POINTER, DIMENSION(:) ::   zdifcase     ! case of the equation resolution (1->4)
-      REAL(wp), POINTER, DIMENSION(:) ::   zftrice      ! solar radiation transmitted through the ice
-      REAL(wp), POINTER, DIMENSION(:) ::   zihic, zhsu
+      REAL(wp), DIMENSION(kiut) ::   ztfs        ! ice melting point
+      REAL(wp), DIMENSION(kiut) ::   ztsuold     ! old surface temperature (before the iterative procedure )
+      REAL(wp), DIMENSION(kiut) ::   ztsuoldit   ! surface temperature at previous iteration
+      REAL(wp), DIMENSION(kiut) ::   zh_i        ! ice layer thickness
+      REAL(wp), DIMENSION(kiut) ::   zh_s        ! snow layer thickness
+      REAL(wp), DIMENSION(kiut) ::   zfsw        ! solar radiation absorbed at the surface
+      REAL(wp), DIMENSION(kiut) ::   zf          ! surface flux function
+      REAL(wp), DIMENSION(kiut) ::   dzf         ! derivative of the surface flux function
+      REAL(wp), DIMENSION(kiut) ::   zerrit      ! current error on temperature
+      REAL(wp), DIMENSION(kiut) ::   zdifcase    ! case of the equation resolution (1->4)
+      REAL(wp), DIMENSION(kiut) ::   zftrice     ! solar radiation transmitted through the ice
+      REAL(wp), DIMENSION(kiut) ::   zihic, zhsu
+      REAL(wp), DIMENSION(kiut,0:nlay_i) ::   ztcond_i    ! Ice thermal conductivity
+      REAL(wp), DIMENSION(kiut,0:nlay_i) ::   zradtr_i    ! Radiation transmitted through the ice
+      REAL(wp), DIMENSION(kiut,0:nlay_i) ::   zradab_i    ! Radiation absorbed in the ice
+      REAL(wp), DIMENSION(kiut,0:nlay_i) ::   zkappa_i    ! Kappa factor in the ice
+      REAL(wp), DIMENSION(kiut,0:nlay_i) ::   ztiold      ! Old temperature in the ice
+      REAL(wp), DIMENSION(kiut,0:nlay_i) ::   zeta_i      ! Eta factor in the ice
+      REAL(wp), DIMENSION(kiut,0:nlay_i) ::   ztitemp     ! Temporary temperature in the ice to check the convergence
+      REAL(wp), DIMENSION(kiut,0:nlay_i) ::   zspeche_i   ! Ice specific heat
+      REAL(wp), DIMENSION(kiut,0:nlay_i) ::   z_i         ! Vertical cotes of the layers in the ice
+      REAL(wp), DIMENSION(kiut,0:nlay_s) ::   zradtr_s    ! Radiation transmited through the snow
+      REAL(wp), DIMENSION(kiut,0:nlay_s) ::   zradab_s    ! Radiation absorbed in the snow
+      REAL(wp), DIMENSION(kiut,0:nlay_s) ::   zkappa_s    ! Kappa factor in the snow
+      REAL(wp), DIMENSION(kiut,0:nlay_s) ::   zeta_s       ! Eta factor in the snow
+      REAL(wp), DIMENSION(kiut,0:nlay_s) ::   ztstemp      ! Temporary temperature in the snow to check the convergence
+      REAL(wp), DIMENSION(kiut,0:nlay_s) ::   ztsold       ! Temporary temperature in the snow
+      REAL(wp), DIMENSION(kiut,0:nlay_s) ::   z_s          ! Vertical cotes of the layers in the snow
+      REAL(wp), DIMENSION(kiut,jkmax+2) ::   zindterm   ! Independent term
+      REAL(wp), DIMENSION(kiut,jkmax+2) ::   zindtbis   ! temporary independent term
+      REAL(wp), DIMENSION(kiut,jkmax+2) ::   zdiagbis
+      REAL(wp), DIMENSION(kiut,jkmax+2,3) ::   ztrid   ! tridiagonal system terms
       !!------------------------------------------------------------------
-      !
-      CALL wrk_alloc( kiut, numeqmin, numeqmax, isnow )   ! integer
-      CALL wrk_alloc( kiut,nlay_i+1, ztcond_i, zradtr_i, zradab_i, zkappa_i, ztiold, zeta_i, ztitemp, zspeche_i, z_i, kjstart=0 )
-      CALL wrk_alloc( kiut,nlay_s+1, zradtr_s, zradab_s, zkappa_s, zeta_s, ztstemp, ztsold, z_s, kjstart=0 )
-      CALL wrk_alloc( kiut,jkmax+2, zindterm, zindtbis, zdiagbis )
-      CALL wrk_alloc( kiut,jkmax+2,3, ztrid )
-      CALL wrk_alloc( kiut, ztfs, ztsuold, ztsuoldit, zh_i, zh_s, zfsw, zf, dzf )
-      CALL wrk_alloc( kiut, zerrit, zdifcase, zftrice, zihic, zhsu )
-
+      
+      ! 
       !------------------------------------------------------------------------------!
       ! 1) Initialization                                                            !
       !------------------------------------------------------------------------------!
@@ -732,9 +716,12 @@ CONTAINS
       !-------------------------------------------------------------------------!
       !   11) Fluxes at the interfaces                                          !
       !-------------------------------------------------------------------------!
+         ! duplicate the loop for performances issues
       DO ji = kideb, kiut
-         !                                ! update of latent heat fluxes
-         qla_ice_1d (ji) = qla_ice_1d (ji) + dqla_ice_1d(ji) * ( t_su_b(ji) - ztsuold(ji) )
+#if ! defined key_coupled
+         ! forced mode only : update of latent heat fluxes (sublimation) (always >=0, upward flux) 
+         qla_ice_1d (ji) = MAX( 0._wp, qla_ice_1d (ji) + dqla_ice_1d(ji) * ( t_su_b(ji) - ztsuold(ji) ) )
+#endif
          !                                ! surface ice conduction flux
          isnow(ji)       = INT(  1._wp - MAX( 0._wp, SIGN( 1._wp, -ht_s_b(ji) ) )  )
          fc_su(ji)       =  -           isnow(ji)   * zkappa_s(ji,0) * zg1s * (t_s_b(ji,1) - t_su_b(ji))   &
@@ -771,14 +758,6 @@ CONTAINS
          END DO
       ENDIF
       !
-      CALL wrk_dealloc( kiut, numeqmin, numeqmax, isnow )   ! integer
-      CALL wrk_dealloc( kiut,nlay_i+1, ztcond_i, zradtr_i, zradab_i, zkappa_i, ztiold, zeta_i, ztitemp, zspeche_i, z_i, kjstart=0 )
-      CALL wrk_dealloc( kiut,nlay_s+1, zradtr_s, zradab_s, zkappa_s, zeta_s, ztstemp, ztsold, z_s, kjstart=0 )
-      CALL wrk_dealloc( kiut,jkmax+2, zindterm, zindtbis, zdiagbis )
-      CALL wrk_dealloc( kiut,jkmax+2,3, ztrid )
-      CALL wrk_dealloc( kiut, ztfs, ztsuold, ztsuoldit, zh_i, zh_s, zfsw, zf, dzf )
-      CALL wrk_dealloc( kiut, zerrit, zdifcase, zftrice, zihic, zhsu )
-
    END SUBROUTINE lim_thd_dif
 
 #else

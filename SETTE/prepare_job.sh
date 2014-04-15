@@ -1,58 +1,52 @@
 #####################################################
-# Author : Italo Epicoco for NEMO
-# Contact : italo.epicoco@unisalento.it
+# Author : Simona Flavoni for NEMO
+# Contact : sflod@locean-ipsl.upmc.fr
 #
-# Some scripts called by sette.sh 
-# prepare_job.sh   : create the job script for running job 
+# ----------------------------------------------------------------------
+# NEMO/SETTE , NEMO Consortium (2010)
+# Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
+# ----------------------------------------------------------------------
+#
+# Some scripts called by sette.sh
+# prepare_job.sh   : creates the job script for running job 
 ######################################################
-#set -x
+#set -vx
 set -o posix
 #set -u
 #set -e
-#
+#+
 #
 # ================
 # prepare_job.sh
 # ================
 #
-# --------------------------
-# create the job script for NEMO tests 
-# --------------------------
+# -------------------------------------------------
+# script that creates the job script for NEMO tests 
+# -------------------------------------------------
 #
 # SYNOPSIS
 # ========
 #
 # ::
 #
-#  $ ./prepare_job.sh INPUT_FILE_CONFIG_NAME NUMBER_PROC TEST_NAME MPI_INTERACT MPI_FLAG
+#  $ ./prepare_job.sh INPUT_FILE_CONFIG_NAME NUMBER_PROC TEST_NAME MPI_FLAG JOB_FILE
 #
 #
 # DESCRIPTION
 # ===========
 #
-# Simple job for SET TESTS for NEMO (SETTE)
+# Part of the SETTE package to run tests for NEMO
 # 
-#   get input files (if needed) : tar file  
-#  (note this job needs to have an input_CONFIG.cfg in which can be found input tar file name)
-#
-#   runs job in interactive or batch mode : all jobs using 1 process are run interactive, and all MPP jobs are
-#
-#   run in batch (MPI_INTERACT="no") or interactive (MPI_INTERACT="yes") see sette.sh and BATCH_TEMPLATE directory
-#
-#   and call post_test_tidyup function (that moves in NEMO_VALIDATION_DIR solver.stat, tracer.stat (for LOBSTER & PISCES) & ocean.output)
+# prepare the script $JOB_FILE to run the tests 
 #
 # EXAMPLES
 # ========
 #
 # ::
 #
-#  $ ./fcm_job.sh INPUT_FILE_CONFIG_NAME NUMBER_PROC TEST_NAME MPI_INTERACT MPI_FLAG
+#  $ ./prepare_job.sh INPUT_FILE_CONFIG_NAME NUMBER_PROC TEST_NAME MPI_FLAG $JOB_FILE
 #
-#  run a job of config GYRE with 1 processor SHORT test ( 5 days ) using an interactive run without mpirun
-#  $ ./fcm_job.sh input_GYRE.cfg 1 SHORT yes no
-#
-#  run a job of config ORCA2_LIM_PISCES	with 8 processors test RESTARTABILITY submitting the job to the batch queue system and using mpirun
-#  $ ./fcm_job.sh input_ORCA2_LIM_PISCES.cfg 8 LONG no yes
+# prepare the $JOB_FILE for execution 
 #
 #
 # TODO
@@ -64,7 +58,7 @@ set -o posix
 # EVOLUTIONS
 # ==========
 #
-# $Id: fcm_job.sh 3050 2011-11-07 14:11:34Z acc $
+# $Id: prepare_job.sh 3050 2011-11-07 14:11:34Z acc $
 #
 #
 #
@@ -73,15 +67,15 @@ set -o posix
 #-
 #
 
-usage=" Usage : ./fcm_job.sh input_CONFIG_NAME.cfg  NUMBER_OF_PROCS TEST_NAME INTERACT MPI_FLAG"
-usage=" example : ./fcm_job.sh input_ORCA2_LIM_PISCES.cfg 8 SHORT no/yes no/yes"
+usage=" Usage : ./prepare_job.sh INPUT_FILE_CONFIG_NAME NUMBER_PROC TEST_NAME MPI_FLAG JOB_FILE"
+usage=" example : ./prepare_job.sh input_ORCA2_LIM_PISCES.cfg 8 SHORT no/yes $JOB_FILE"
 
 
 minargcount=5
         if [ ${#} -lt ${minargcount} ]
         then
-                echo "not enought arguments for fcm_job.sh script"
-                echo "control number of argument of fcm_job.sh in sette.sh"
+                echo "not enough arguments for prepare_job.sh script"
+                echo "control number of argument of prepare_job.sh in sette.sh"
                 echo "${usage}"
         exit 1
         fi
@@ -164,33 +158,10 @@ if [ ! -r ${EXE_DIR}/opa ]
     echo "executable opa does not exist, exit"  >> ${SETTE_DIR}/output.sette
     exit 1
 fi
-#if [ ${NB_PROC} == 1 ] ; then
-#    echo "running opa" >> ${SETTE_DIR}/output.sette
-#    echo "            " >> ${SETTE_DIR}/output.sette
-#    ./opa
-#
-# Tidy out output from this test and populate the NEMO_VALIDATION_DIR tree
-#
-#    post_test_tidyup
-#else
-#    echo "running opa in MPI" >> ${SETTE_DIR}/output.sette
-#    echo "            " >> ${SETTE_DIR}/output.sette
 
-#    if [ ${MPI_INTERACT} == "yes" ] ; then
-#	#
-#	# example for brodie (NEC SX8) machine
-#	#	mpirun -np ${NB_PROC} opa
-#	# example for dedale machine
-#	#	mpirun --mca btl self,tcp -np ${NB_PROC} opa
-#	# example for vargas (IBM Power6) machine
-#	mpiexec -n ${NB_PROC} opa
-#	#
-#	post_test_tidyup
-#    fi
-#
 # example for NOCS Altix system using PBS batch submission (requires ${SETTE_DIR}/sette_batch_template file)
 #
-  #  if [ ${MPI_INTERACT} == "no" ] ; then
+  #  if [ ${MPI_FLAG} == "no" ] ; then
 		case ${COMPILER} in 
 			ALTIX_NAUTILUS_MPT)
                                 NB_REM=$( echo $NB_PROC | awk '{print $1 % 4}')
@@ -238,6 +209,6 @@ fi
 	    tail -$t run_sette_test.job >> $JOB_FILE
 	fi
 	
-	chmod a+x $JOB_FILE
+	chmod a+x $JOB_FILE ; echo "$JOB_FILE is ready"
 
 #fi

@@ -26,6 +26,7 @@ MODULE limtrp
    USE lib_mpp         ! MPP library
    USE wrk_nemo        ! work arrays
    USE prtctl          ! Print control
+   USE lib_fortran     ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
 
    IMPLICIT NONE
    PRIVATE
@@ -45,7 +46,7 @@ MODULE limtrp
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/LIM3 4.0 , UCL - NEMO Consortium (2011)
-   !! $Id: limtrp.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: limtrp.F90 3558 2012-11-14 19:15:05Z rblod $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -173,41 +174,41 @@ CONTAINS
             END DO
          ELSE
             DO jk = 1, initad
-               CALL lim_adv_y( zusnit, v_ice, rzero, zsm, zs0ow (:,:), sxopw(:,:),   &             !--- ice open water area
+               CALL lim_adv_y( zusnit, v_ice, rone , zsm, zs0ow (:,:), sxopw(:,:),   &             !--- ice open water area
                   &                                       sxxopw(:,:), syopw(:,:), syyopw(:,:), sxyopw(:,:)  )
-               CALL lim_adv_x( zusnit, u_ice, rone , zsm, zs0ow (:,:), sxopw(:,:),   &
+               CALL lim_adv_x( zusnit, u_ice, rzero, zsm, zs0ow (:,:), sxopw(:,:),   &
                   &                                       sxxopw(:,:), syopw(:,:), syyopw(:,:), sxyopw(:,:)  )
                DO jl = 1, jpl
-                  CALL lim_adv_y( zusnit, v_ice, rzero, zsm, zs0ice(:,:,jl), sxice(:,:,jl),   &    !--- ice volume  ---
+                  CALL lim_adv_y( zusnit, v_ice, rone , zsm, zs0ice(:,:,jl), sxice(:,:,jl),   &    !--- ice volume  ---
                      &                                       sxxice(:,:,jl), syice(:,:,jl), syyice(:,:,jl), sxyice(:,:,jl)  )
-                  CALL lim_adv_x( zusnit, u_ice, rone , zsm, zs0ice(:,:,jl), sxice(:,:,jl),   &
+                  CALL lim_adv_x( zusnit, u_ice, rzero, zsm, zs0ice(:,:,jl), sxice(:,:,jl),   &
                      &                                       sxxice(:,:,jl), syice(:,:,jl), syyice(:,:,jl), sxyice(:,:,jl)  )
-                  CALL lim_adv_y( zusnit, v_ice, rzero, zsm, zs0sn (:,:,jl), sxsn (:,:,jl),   &    !--- snow volume  ---
+                  CALL lim_adv_y( zusnit, v_ice, rone , zsm, zs0sn (:,:,jl), sxsn (:,:,jl),   &    !--- snow volume  ---
                      &                                       sxxsn (:,:,jl), sysn (:,:,jl), syysn (:,:,jl), sxysn (:,:,jl)  )
-                  CALL lim_adv_x( zusnit, u_ice, rone , zsm, zs0sn (:,:,jl), sxsn (:,:,jl),   &
+                  CALL lim_adv_x( zusnit, u_ice, rzero, zsm, zs0sn (:,:,jl), sxsn (:,:,jl),   &
                      &                                       sxxsn (:,:,jl), sysn (:,:,jl), syysn (:,:,jl), sxysn (:,:,jl)  )
-                  CALL lim_adv_y( zusnit, v_ice, rzero, zsm, zs0sm (:,:,jl), sxsal(:,:,jl),   &    !--- ice salinity ---
+                  CALL lim_adv_y( zusnit, v_ice, rone , zsm, zs0sm (:,:,jl), sxsal(:,:,jl),   &    !--- ice salinity ---
                      &                                       sxxsal(:,:,jl), sysal(:,:,jl), syysal(:,:,jl), sxysal(:,:,jl)  )
-                  CALL lim_adv_x( zusnit, u_ice, rone , zsm, zs0sm (:,:,jl), sxsal(:,:,jl),   &
+                  CALL lim_adv_x( zusnit, u_ice, rzero, zsm, zs0sm (:,:,jl), sxsal(:,:,jl),   &
                      &                                       sxxsal(:,:,jl), sysal(:,:,jl), syysal(:,:,jl), sxysal(:,:,jl)  )
 
-                  CALL lim_adv_y( zusnit, v_ice, rzero, zsm, zs0oi (:,:,jl), sxage(:,:,jl),   &   !--- ice age      ---
+                  CALL lim_adv_y( zusnit, v_ice, rone , zsm, zs0oi (:,:,jl), sxage(:,:,jl),   &   !--- ice age      ---
                      &                                       sxxage(:,:,jl), syage(:,:,jl), syyage(:,:,jl), sxyage(:,:,jl)  )
-                  CALL lim_adv_x( zusnit, u_ice, rone , zsm, zs0oi (:,:,jl), sxage(:,:,jl),   &
+                  CALL lim_adv_x( zusnit, u_ice, rzero, zsm, zs0oi (:,:,jl), sxage(:,:,jl),   &
                      &                                       sxxage(:,:,jl), syage(:,:,jl), syyage(:,:,jl), sxyage(:,:,jl)  )
-                  CALL lim_adv_y( zusnit, v_ice, rzero, zsm, zs0a  (:,:,jl), sxa  (:,:,jl),   &   !--- ice concentrations ---
+                  CALL lim_adv_y( zusnit, v_ice, rone , zsm, zs0a  (:,:,jl), sxa  (:,:,jl),   &   !--- ice concentrations ---
                      &                                       sxxa  (:,:,jl), sya  (:,:,jl), syya  (:,:,jl), sxya  (:,:,jl)  )
-                  CALL lim_adv_x( zusnit, u_ice, rone , zsm, zs0a  (:,:,jl), sxa  (:,:,jl),   &
+                  CALL lim_adv_x( zusnit, u_ice, rzero, zsm, zs0a  (:,:,jl), sxa  (:,:,jl),   &
                      &                                       sxxa  (:,:,jl), sya  (:,:,jl), syya  (:,:,jl), sxya  (:,:,jl)  )
-                  CALL lim_adv_y( zusnit, v_ice, rzero, zsm, zs0c0 (:,:,jl), sxc0 (:,:,jl),   &  !--- snow heat contents ---
+                  CALL lim_adv_y( zusnit, v_ice, rone , zsm, zs0c0 (:,:,jl), sxc0 (:,:,jl),   &  !--- snow heat contents ---
                      &                                       sxxc0 (:,:,jl), syc0 (:,:,jl), syyc0 (:,:,jl), sxyc0 (:,:,jl)  )
-                  CALL lim_adv_x( zusnit, u_ice, rone , zsm, zs0c0 (:,:,jl), sxc0 (:,:,jl),   &
+                  CALL lim_adv_x( zusnit, u_ice, rzero, zsm, zs0c0 (:,:,jl), sxc0 (:,:,jl),   &
                      &                                       sxxc0 (:,:,jl), syc0 (:,:,jl), syyc0 (:,:,jl), sxyc0 (:,:,jl)  )
                   DO layer = 1, nlay_i                                                           !--- ice heat contents ---
-                     CALL lim_adv_y( zusnit, v_ice, rzero, zsm, zs0e(:,:,layer,jl), sxe (:,:,layer,jl),   & 
+                     CALL lim_adv_y( zusnit, v_ice, rone , zsm, zs0e(:,:,layer,jl), sxe (:,:,layer,jl),   & 
                         &                                       sxxe(:,:,layer,jl), sye (:,:,layer,jl),   &
                         &                                       syye(:,:,layer,jl), sxye(:,:,layer,jl) )
-                     CALL lim_adv_x( zusnit, u_ice, rone , zsm, zs0e(:,:,layer,jl), sxe (:,:,layer,jl),   & 
+                     CALL lim_adv_x( zusnit, u_ice, rzero, zsm, zs0e(:,:,layer,jl), sxe (:,:,layer,jl),   & 
                         &                                       sxxe(:,:,layer,jl), sye (:,:,layer,jl),   &
                         &                                       syye(:,:,layer,jl), sxye(:,:,layer,jl) )
                   END DO

@@ -59,7 +59,7 @@ MODULE trdmld
 #  include "zdfddm_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 3.3 , NEMO Consortium (2010)
-   !! $Id: trdmld.F90 3294 2012-01-28 16:44:18Z rblod $ 
+   !! $Id: trdmld.F90 3793 2013-02-10 19:11:06Z gm $ 
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -760,7 +760,7 @@ CONTAINS
       ! I.1 Check consistency of user defined preferences
       ! -------------------------------------------------
 
-      IF( ( lk_trdmld ) .AND. ( MOD( nitend, nn_trd ) /= 0 ) ) THEN
+      IF( ( lk_trdmld ) .AND. ( MOD( nitend-nit000+1, nn_trd ) /= 0 ) ) THEN
          WRITE(numout,cform_err)
          WRITE(numout,*) '                Your nitend parameter, nitend = ', nitend
          WRITE(numout,*) '                is no multiple of the trends diagnostics frequency        '

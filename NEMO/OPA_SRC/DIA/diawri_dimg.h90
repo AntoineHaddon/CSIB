@@ -163,8 +163,10 @@
        !        fsel(:,:,5 ) = fsel(:,:,5 ) + tsb(:,:,1,jp_tem)  !RB not used
        fsel(:,:,6 ) = fsel(:,:,6 ) + sshn(:,:) 
        fsel(:,:,7 ) = fsel(:,:,7 ) + qsr(:,:)
-       fsel(:,:,8 ) = fsel(:,:,8 ) + qrp (:,:)
-       fsel(:,:,9 ) = fsel(:,:,9 ) + erp (:,:)
+       IF( ln_ssr ) THEN
+          IF( nn_sstr /= 0 )   fsel(:,:,8 ) = fsel(:,:,8 ) + qrp (:,:)
+          IF( nn_sssr /= 0 )   fsel(:,:,9 ) = fsel(:,:,9 ) + erp (:,:)
+       ENDIF
        fsel(:,:,10) = fsel(:,:,10) + hmld(:,:)
        fsel(:,:,11) = fsel(:,:,11) + hmlp(:,:)
        fsel(:,:,12) = fsel(:,:,12) + fr_i(:,:)
@@ -231,8 +233,10 @@
 
           fsel(:,:,6 ) = sshn(:,:)
           fsel(:,:,7 ) = qsr (:,:) * tmask(:,:,1)
-          fsel(:,:,8 ) = qrp (:,:) * tmask(:,:,1)
-          fsel(:,:,9 ) = erp (:,:) * tmask(:,:,1)
+          IF( ln_ssr ) THEN
+             IF( nn_sstr /= 0 )   fsel(:,:,8 ) = qrp (:,:) * tmask(:,:,1)
+             IF( nn_sssr /= 0 )   fsel(:,:,9 ) = erp (:,:) * tmask(:,:,1)
+          ENDIF
           fsel(:,:,10) = hmld(:,:) * tmask(:,:,1)
           fsel(:,:,11) = hmlp(:,:) * tmask(:,:,1)
           fsel(:,:,12) = fr_i(:,:) * tmask(:,:,1)

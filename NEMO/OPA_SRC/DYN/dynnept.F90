@@ -114,49 +114,40 @@ MODULE dynnept
       NAMELIST/namdyn_nept/ ln_neptsimp, ln_smooth_neptvel, rn_tslse, rn_tslsp,      &
                             ln_neptramp, rn_htrmin, rn_htrmax
       !!----------------------------------------------------------------------
-      !                                                           ! Dynamically allocate local work arrays
-      CALL wrk_alloc( jpi, jpj     , ht, htn, tscale, tsp, hur_n, hvr_n, hu_n, hv_n  ) 
-      CALL wrk_alloc( jpi, jpj, jpk, znmask                                          ) 
-      !
       ! Define the (simplified) Neptune parameters
       ! ==========================================
 
-!!    WRITE(numout,*) ' start dynnept namelist'
-!!    CALL FLUSH(numout)
       REWIND( numnam )                  ! Read Namelist namdyn_nept:  Simplified Neptune
       READ  ( numnam, namdyn_nept )
-!!    WRITE(numout,*) ' dynnept namelist done'
-!!    CALL FLUSH(numout)
 
       IF(lwp) THEN                      ! Control print
          WRITE(numout,*)
-         WRITE(numout,*) 'dyn_nept_init : Simplified Neptune module enabled'
+         WRITE(numout,*) 'dyn_nept_init : Simplified Neptune module'
          WRITE(numout,*) '~~~~~~~~~~~~~'
          WRITE(numout,*) ' -->   Reading namelist namdyn_nept parameters:'
          WRITE(numout,*) '       ln_neptsimp          = ', ln_neptsimp
          WRITE(numout,*)
-         WRITE(numout,*) '       ln_smooth_neptvel    = ', ln_smooth_neptvel
-         WRITE(numout,*) '       rn_tslse             = ', rn_tslse
-         WRITE(numout,*) '       rn_tslsp             = ', rn_tslsp
-         WRITE(numout,*)
-         WRITE(numout,*) '       ln_neptramp          = ', ln_neptramp
-         WRITE(numout,*) '       rn_htrmin            = ', rn_htrmin
-         WRITE(numout,*) '       rn_htrmax            = ', rn_htrmax
-         WRITE(numout,*)
-         CALL FLUSH(numout)
+         IF( ln_neptsimp ) THEN
+            WRITE(numout,*) '       ln_smooth_neptvel    = ', ln_smooth_neptvel
+            WRITE(numout,*) '       rn_tslse             = ', rn_tslse
+            WRITE(numout,*) '       rn_tslsp             = ', rn_tslsp
+            WRITE(numout,*)
+            WRITE(numout,*) '       ln_neptramp          = ', ln_neptramp
+            WRITE(numout,*) '       rn_htrmin            = ', rn_htrmin
+            WRITE(numout,*) '       rn_htrmax            = ', rn_htrmax
+            WRITE(numout,*)
+         ENDIF
       ENDIF
+      !
+      IF( .NOT. ln_neptsimp ) RETURN
+      !                                 ! Dynamically allocate local work arrays
+      CALL wrk_alloc( jpi, jpj     , ht, htn, tscale, tsp, hur_n, hvr_n, hu_n, hv_n  ) 
+      CALL wrk_alloc( jpi, jpj, jpk, znmask                                          ) 
 
       IF( ln_smooth_neptvel ) THEN
          IF(lwp) WRITE(numout,*) ' -->   neptune velocities will be smoothed'
       ELSE
          IF(lwp) WRITE(numout,*) ' -->   neptune velocities will not be smoothed'
-      ENDIF
-
-      IF( ln_neptsimp ) THEN
-          IF(lwp) WRITE(numout,*) ' -->   ln_neptsimp enabled, solving for U-UN'
-      ELSE
-          IF(lwp) WRITE(numout,*) ' -->   ln_neptsimp disabled'
-          RETURN
       ENDIF
 
       IF( ln_neptramp ) THEN

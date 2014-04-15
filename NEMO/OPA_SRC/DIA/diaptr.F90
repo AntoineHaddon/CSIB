@@ -7,10 +7,6 @@ MODULE diaptr
    !!            2.0  ! 2006-01  (A. Biastoch)  Allow sub-basins computation
    !!            3.2  ! 2010-03  (O. Marti, S. Flavoni) Add fields
    !!            3.3  ! 2010-10  (G. Madec)  dynamical allocation
-   !!            3.4  ! 2013-12  (D. Yang) 1. nemo_ticket #1109
-   !!                                      2. nemo_ticket #1084
-   !!                                      3. nemo_ticket #873
-   !!                                      4. nemo_ticket #947
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -90,7 +86,7 @@ MODULE diaptr
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 3.3 , NEMO Consortium (2010)
-   !! $Id: diaptr.F90 3294 2012-01-28 16:44:18Z rblod $ 
+   !! $Id: diaptr.F90 3643 2012-11-23 18:25:00Z rblod $ 
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -335,7 +331,7 @@ CONTAINS
       !!                  ***  ROUTINE dia_ptr  ***
       !!----------------------------------------------------------------------
       USE oce,     vt  =>   ua   ! use ua as workspace
-      USE oce,     vs  =>   va   ! use ua as workspace
+      USE oce,     vs  =>   va   ! use va as workspace
       IMPLICIT none
       !!
       INTEGER, INTENT(in) ::   kt   ! ocean time step index
@@ -353,7 +349,6 @@ CONTAINS
             IF( ln_diaznl ) THEN               ! i-mean temperature and salinity
                DO jn = 1, nptr
                   tn_jk(:,:,jn) = ptr_tjk( tsn(:,:,:,jp_tem), btmsk(:,:,jn) ) * r1_sjk(:,:,jn)
-                  sn_jk(:,:,jn) = ptr_tjk( tsn(:,:,:,jp_sal), btmsk(:,:,jn) ) * r1_sjk(:,:,jn)
                END DO
             ENDIF
             !
@@ -459,7 +454,6 @@ CONTAINS
       !!
       NAMELIST/namptr/ ln_diaptr, ln_diaznl, ln_subbas, ln_ptrcomp, nn_fptr, nn_fwri
       !!----------------------------------------------------------------------
-      IF( nn_timing == 1 )   CALL timing_start('dia_ptr_init')
 
       REWIND( numnam )                 ! Read Namelist namptr : poleward transport parameters
       READ  ( numnam, namptr )
@@ -478,6 +472,8 @@ CONTAINS
       ENDIF
       
       IF( ln_diaptr) THEN  
+     
+         IF( nn_timing == 1 )   CALL timing_start('dia_ptr_init')
       
          IF( ln_subbas ) THEN   ;   nptr = 5       ! Global, Atlantic, Pacific, Indian, Indo-Pacific
          ELSE                   ;   nptr = 1       ! Global only
@@ -532,9 +528,9 @@ CONTAINS
 #else
          nidom_ptr = FLIO_DOM_NONE
 #endif
-      ENDIF 
-      ! 
       IF( nn_timing == 1 )   CALL timing_stop('dia_ptr_init')
+      !
+      ENDIF 
       ! 
    END SUBROUTINE dia_ptr_init
 
@@ -566,8 +562,8 @@ CONTAINS
       REAL(wp), POINTER, DIMENSION(:,:) ::   z_1           ! 2D workspace
       !!-------------------------------------------------------------------- 
       !
-      CALL wrk_alloc( jpj      , zphi , zfoo )
-      CALL wrk_alloc( jpj , jpk, z_1 )
+      CALL wrk_alloc( jpi      , zphi , zfoo )
+      CALL wrk_alloc( jpi , jpk, z_1 )
 
       ! define time axis
       it    = kt / nn_fptr
@@ -881,8 +877,8 @@ CONTAINS
          !
       ENDIF
       !
-      CALL wrk_dealloc( jpj      , zphi , zfoo )
-      CALL wrk_dealloc( jpj , jpk, z_1 )
+      CALL wrk_dealloc( jpi      , zphi , zfoo )
+      CALL wrk_dealloc( jpi , jpk, z_1 )
       !
   END SUBROUTINE dia_ptr_wri
 

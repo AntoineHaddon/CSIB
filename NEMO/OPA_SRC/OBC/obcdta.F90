@@ -73,7 +73,7 @@ MODULE obcdta
 #  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 3.3 , NEMO Consortium (2010)
-   !! $Id: obcdta.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: obcdta.F90 3565 2012-11-15 18:05:12Z rblod $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -120,8 +120,8 @@ CONTAINS
 
       ALLOCATE( ltemsk(jpj,jpk) , luemsk(jpj,jpk) , lvemsk(jpj,jpk) ,     &
          &      ltwmsk(jpj,jpk) , luwmsk(jpj,jpk) , lvwmsk(jpj,jpk) ,     &
-         &      ltnmsk(jpj,jpk) , lunmsk(jpj,jpk) , lvnmsk(jpj,jpk) ,     &
-         &      ltsmsk(jpj,jpk) , lusmsk(jpj,jpk) , lvsmsk(jpj,jpk) , STAT=ierr(2) )
+         &      ltnmsk(jpi,jpk) , lunmsk(jpi,jpk) , lvnmsk(jpi,jpk) ,     &
+         &      ltsmsk(jpi,jpk) , lusmsk(jpi,jpk) , lvsmsk(jpi,jpk) , STAT=ierr(2) )
 
       obc_dta_alloc = MAXVAL( ierr )
       IF( lk_mpp )   CALL mpp_sum( obc_dta_alloc )

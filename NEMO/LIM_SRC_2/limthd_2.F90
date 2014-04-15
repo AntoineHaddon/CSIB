@@ -32,6 +32,7 @@ MODULE limthd_2
    USE limthd_lac_2
    USE limtab_2
    USE prtctl          ! Print control
+   USE lib_fortran     ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
    USE cpl_oasis3, ONLY : lk_cpl
    USE diaar5, ONLY :   lk_diaar5
       
@@ -51,7 +52,7 @@ MODULE limthd_2
 #  include "vectopt_loop_substitute.h90"
    !!-------- -------------------------------------------------------------
    !! NEMO/LIM2 3.3 , UCL - NEMO Consortium (2010)
-   !! $Id: limthd_2.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: limthd_2.F90 3558 2012-11-14 19:15:05Z rblod $
    !! Software governed by the CeCILL licence (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 

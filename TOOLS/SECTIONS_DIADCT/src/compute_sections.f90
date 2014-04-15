@@ -369,7 +369,7 @@ CONTAINS
 
         DO WHILE ( (  sec%listPoint(jseg)%I .NE.  endingPoint%I    &
                  .OR. sec%listPoint(jseg)%J .NE. endingPoint%J   ) &
-                 .AND. jseg .LT. nb_inmesh + 1 .AND. sec%listPoint(jseg)%I .GT. 0  )         
+                 .AND. jseg .LT. nb_inmesh + 10 .AND. sec%listPoint(jseg)%I .GT. 0  )         
    
            ! a. find the 4 adjacent points (North, South, East, West)
            !---------------------------------------------------------
@@ -428,13 +428,13 @@ CONTAINS
            !Either we are at an end-point
            !--------------------
            IF(      SouthPoint%I==endingPoint%I .AND. SouthPoint%J==endingPoint%J )THEN 
-               jseg = jseg+1 ; sec%listPoint(jseg) = SouthPoint
+               sec%direction(jseg)=2 ; jseg = jseg+1 ; sec%listPoint(jseg) = SouthPoint
            ELSE IF( NorthPoint%I==endingPoint%I .AND. NorthPoint%J==endingPoint%J )THEN
-               jseg = jseg+1 ; sec%listPoint(jseg) = NorthPoint
+               sec%direction(jseg)=3 ; jseg = jseg+1 ; sec%listPoint(jseg) = NorthPoint
            ELSE IF(  WestPoint%I==endingPoint%I .AND.  WestPoint%J==endingPoint%J )THEN
-               jseg = jseg+1 ; sec%listPoint(jseg) = WestPoint
+               sec%direction(jseg)=0 ; jseg = jseg+1 ; sec%listPoint(jseg) = WestPoint
            ELSE IF(   EstPoint%I==endingPoint%I .AND.   EstPoint%J==endingPoint%J )THEN
-               jseg = jseg+1 ; sec%listPoint(jseg) = EstPoint
+               sec%direction(jseg)=1 ; jseg = jseg+1 ; sec%listPoint(jseg) = EstPoint
 
            ELSE
            !Else we are NOT on end-point

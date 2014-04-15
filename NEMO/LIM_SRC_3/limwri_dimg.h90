@@ -1,7 +1,7 @@
 SUBROUTINE lim_wri
    !!----------------------------------------------------------------------
    !! NEMO/LIM3 3.3 , UCL - NEMO Consortium (2010)
-   !! $Id: limwri_dimg.h90 2715 2011-03-30 15:58:35Z rblod $
+   !! $Id: limwri_dimg.h90 3558 2012-11-14 19:15:05Z rblod $
    !! Software governed by the CeCILL licence (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
    !!-------------------------------------------------------------------
@@ -14,6 +14,8 @@ SUBROUTINE lim_wri
    !!  modif : 03/06/98
    !!-------------------------------------------------------------------
    USE  diawri, ONLY : dia_wri_dimg
+   USE lib_fortran    ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
+
    REAL(wp),DIMENSION(1) ::   zdept
 
    REAL(wp) ::   zsto, zsec, zjulian,zout, &

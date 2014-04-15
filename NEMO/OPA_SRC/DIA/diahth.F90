@@ -41,7 +41,7 @@ MODULE diahth
 #  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 4.0 , NEMO Consortium (2011)
-   !! $Id: diahth.F90 3294 2012-01-28 16:44:18Z rblod $ 
+   !! $Id: diahth.F90 3721 2012-12-05 06:23:56Z gm $ 
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -312,7 +312,7 @@ CONTAINS
       END DO
       ! surface boundary condition
       IF( lk_vvl ) THEN   ;   zthick(:,:) = 0._wp       ;   htc3(:,:) = 0._wp                                   
-      ELSE                ;   zthick(:,:) = sshn(:,:)   ;   htc3(:,:) = tsn(:,:,jk,jp_tem) * sshn(:,:) * tmask(:,:,jk)   
+      ELSE                ;   zthick(:,:) = sshn(:,:)   ;   htc3(:,:) = tsn(:,:,1,jp_tem) * sshn(:,:) * tmask(:,:,1)   
       ENDIF
       ! integration down to ilevel
       DO jk = 1, ilevel

@@ -6,7 +6,7 @@ MODULE step_oce
    !! History :   3.3  ! 2010-08  (C. Ethe)  Original code - reorganisation of the initial phase
    !!----------------------------------------------------------------------
    USE oce              ! ocean dynamics and tracers variables
-   USE dom_oce          ! ocean space and time domain variables 
+   USE dom_oce          ! ocean space and time domain variables
    USE zdf_oce          ! ocean vertical physics variables
    USE ldftra_oce       ! ocean tracer   - trends
    USE ldfdyn_oce       ! ocean dynamics - trends
@@ -78,7 +78,7 @@ MODULE step_oce
    USE trdmld           ! mixed-layer trends               (trd_mld routine)
    USE trdmld_rst       ! restart for mixed-layer trends
    USE trdmod_oce       ! ocean momentum/tracers trends
-   USE trdmod           ! momentum/tracers trends   
+   USE trdmod           ! momentum/tracers trends
    USE trdvor           ! vorticity budget                 (trd_vor routine)
    USE diaptr           ! poleward transports              (dia_ptr routine)
    USE diadct           ! sections transports              (dia_dct routine)
@@ -92,21 +92,22 @@ MODULE step_oce
 
    USE asminc           ! assimilation increments      (tra_asm_inc routine)
    !                                                   (dyn_asm_inc routine)
-
+   USE asmbkg
    USE stpctl           ! time stepping control            (stp_ctl routine)
    USE restart          ! ocean restart                    (rst_wri routine)
    USE prtctl           ! Print control                    (prt_ctl routine)
 
    USE diaobs           ! Observation operator
 
-   USE timing           ! Timing            
+   USE timing           ! Timing
+   USE tamtrj           ! Needed by TAM
 
 #if defined key_agrif
    USE agrif_opa_sponge ! Momemtum and tracers sponges
 #endif
    !!----------------------------------------------------------------------
    !! NEMO/OPA 3.3 , NEMO Consortium (2010)
-   !! $Id: step_oce.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: step_oce.F90 3604 2012-11-19 14:21:34Z rblod $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!======================================================================
 END MODULE step_oce

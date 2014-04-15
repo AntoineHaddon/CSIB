@@ -1,7 +1,7 @@
 #!/bin/bash
 #set -x
 set -o posix
-#set -u 
+#set -u
 #set -e
 #+
 #
@@ -28,7 +28,7 @@ set -o posix
 # This script aims :
 #
 # - to choose MYCONFIG
-# - to choose compiler options  
+# - to choose compiler options
 # - to create the CONFIG/MYCONFIG/WORK directory
 # - to compile this configuration
 #
@@ -37,18 +37,18 @@ set -o posix
 #  From user input
 #
 # - NEW_CONF    : configuration to be created
-# - REF_CONF    : reference configuration to build the new one 
-# - CMP_NAM     : compiler name 
-# - NBR_PRC     : number of processes used to compile  
+# - REF_CONF    : reference configuration to build the new one
+# - CMP_NAM     : compiler name
+# - NBR_PRC     : number of processes used to compile
 # - NEM_SUBDIR  : NEMO subdirectory used (specified)
 #
 #  Locally defined :
 #
-# - TAB         : NEMO subdirectory used (read)  
+# - TAB         : NEMO subdirectory used (read)
 # - MAIN_DIR    : self explaining
-# - CONFIG_DIR  :   "    "    "   
-# - MODELES_DIR :   "    "    " 
-# - TOOLS_DIR   :   "    "    " 
+# - CONFIG_DIR  :   "    "    "
+# - MODELES_DIR :   "    "    "
+# - TOOLS_DIR   :   "    "    "
 # - NEMO_DIR    :   "    "    "
 #
 # EXAMPLES
@@ -68,7 +68,7 @@ set -o posix
 # EVOLUTIONS
 # ==========
 #
-# $Id: makenemo 3294 2012-01-28 16:44:18Z rblod $
+# $Id: makenemo 3722 2012-12-06 16:05:00Z rblod $
 #
 #
 #
@@ -133,7 +133,7 @@ do
 	echo "with OPA_SRC and LIM_SRC_2 ";
 	echo "makenemo -n MY_CONFIG -d \"OPA_SRC LIM_SRC_2\"";
 	echo "";
-	echo "Available configurations :"; cat ${CONFIG_DIR}/cfg.txt; 
+	echo "Available configurations :"; cat ${CONFIG_DIR}/cfg.txt;
 	echo "";
 	echo "Example to remove bad configuration ";
 	echo "./makenemo -n MY_CONFIG clean_config";
@@ -189,10 +189,10 @@ do
 	    shift
 	    ;;
 	*)
-	    echo " \"$1\" BAD OPTION" 
+	    echo " \"$1\" BAD OPTION"
 	    exit
 	    ;;
-	
+
     esac
     shift
 done
@@ -215,7 +215,7 @@ export NEMO_DIR=${MAIN_DIR}/${x_s}
 
 #- Check if the tool or the compiler exist or list it
 if [ "${NEW_CONF}" == help ] ; then
-    echo "Available configurations :" 
+    echo "Available configurations :"
     cat ${CONFIG_DIR}/cfg.txt
     exit
 fi
@@ -227,19 +227,20 @@ fi
 #-
 #- Choose a default configuration if needed ---
 #- ORCA2_LIM or last one used ---
-. ${COMPIL_DIR}/Fcheck_config.sh cfg.txt ${NEW_CONF} || exit 
+. ${COMPIL_DIR}/Fcheck_config.sh cfg.txt ${NEW_CONF} || exit
 
 
 if [ ${#NEW_CONF} -eq 0 ] ; then
     if [ ${#NEM_SUBDIR} -eq 0 -a ${#REF_CONF} -eq 0 ]; then
 	echo "You are  installing a new configuration"
 	ind=0
-	. ${COMPIL_DIR}/Fread_dir.sh OPA_SRC	 YES 
-	. ${COMPIL_DIR}/Fread_dir.sh LIM_SRC_2   YES 
-	. ${COMPIL_DIR}/Fread_dir.sh LIM_SRC_3   NO  
-	. ${COMPIL_DIR}/Fread_dir.sh TOP_SRC	 NO  
-	. ${COMPIL_DIR}/Fread_dir.sh NST_SRC	 YES 
-	. ${COMPIL_DIR}/Fread_dir.sh OFF_SRC	 NO  
+	. ${COMPIL_DIR}/Fread_dir.sh OPA_SRC	 YES
+	. ${COMPIL_DIR}/Fread_dir.sh LIM_SRC_2   YES
+	. ${COMPIL_DIR}/Fread_dir.sh LIM_SRC_3   NO
+	. ${COMPIL_DIR}/Fread_dir.sh TOP_SRC	 NO
+	. ${COMPIL_DIR}/Fread_dir.sh NST_SRC	 YES
+	. ${COMPIL_DIR}/Fread_dir.sh OFF_SRC	 NO
+	. ${COMPIL_DIR}/Fread_dir.sh OPATAM_SRC	 NO
 	REF_CONF=ORCA2_LIM
     elif [ ${#NEM_SUBDIR} -gt 0 ] && [ ${#REF_CONF} -eq 0 ]; then
 	echo "You are  installing a new configuration"
@@ -247,7 +248,7 @@ if [ ${#NEW_CONF} -eq 0 ] ; then
 	REF_CONF=ORCA2_LIM
     elif [ ${#NEM_SUBDIR} -eq 0 ] && [ ${#REF_CONF} -gt 0 ]; then
 	echo "You are  installing a new configuration based on ${REF_CONF}"
-	. ${COMPIL_DIR}/Fcopy_dir.sh ${REF_CONF}  
+	. ${COMPIL_DIR}/Fcopy_dir.sh ${REF_CONF}
     fi
     NEW_CONF=${x_n}
     . ${COMPIL_DIR}/Fmake_config.sh ${NEW_CONF} ${REF_CONF}
@@ -271,7 +272,7 @@ echo ${NEW_CONF} ${TAB[*]} >> ${CONFIG_DIR}/cfg.txt
 #- At this stage new configuration has been added,
 #- We add or remove keys
 if [ ${#list_add_key} -ne 0 ] ; then
-    . ${COMPIL_DIR}/Fadd_keys.sh ${NEW_CONF} add_key ${list_add_key} 
+    . ${COMPIL_DIR}/Fadd_keys.sh ${NEW_CONF} add_key ${list_add_key}
 fi
 
 if [ ${#list_del_key} -ne 0 ] ; then
@@ -288,6 +289,7 @@ grep key_agrif ${COMPIL_DIR}/cpp.fcm && export AGRIFUSE=1 && export USEBLD=${USE
 
 #- and test whether we need to build the ioserver
 grep key_iomput ${COMPIL_DIR}/cpp.fcm && export USEBLD=${USEBLD/xio/}
+grep key_tam ${COMPIL_DIR}/cpp.fcm && export USEBLD=${USEBLD/xioxag/tam}
 
 #-
 #_ END OF CONFIGURATION PHASE

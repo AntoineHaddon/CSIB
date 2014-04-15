@@ -10,30 +10,29 @@ MODULE limdmp_2
    !!----------------------------------------------------------------------
    !!   'key_lim2'                                    LIM 2.0 sea-ice model
    !!----------------------------------------------------------------------
-   !!   lim_dmp_2      : ice model damping
+   !!   lim_dmp_2     : ice model damping
    !!----------------------------------------------------------------------
-   USE ice_2           ! ice variables 
+   USE ice_2          ! ice variables 
    USE sbc_oce, ONLY : nn_fsbc ! for fldread
-   USE dom_oce         ! for mi0; mi1 etc ...
-   USE fldread         ! read input fields
-   USE in_out_manager  ! I/O manager
-   USE lib_mpp         ! MPP library
+   USE dom_oce        ! for mi0; mi1 etc ...
+   USE fldread        ! read input fields
+   USE in_out_manager ! I/O manager
+   USE lib_mpp        ! MPP library
 
    IMPLICIT NONE
    PRIVATE
 
    PUBLIC   lim_dmp_2     ! called by sbc_ice_lim2
 
-   REAL(wp), DIMENSION(:,:,:), ALLOCATABLE ::   resto_ice   ! restoring coeff. on ICE   [s-1]
-
-   INTEGER, PARAMETER :: jp_hicif = 1 , jp_frld = 2
-   TYPE(FLD), ALLOCATABLE, DIMENSION(:) :: sf_icedmp    ! structure of ice damping input
+   INTEGER  , PARAMETER :: jp_hicif = 1 , jp_frld = 2
+   REAL(wp) , ALLOCATABLE, DIMENSION(:,:,:) ::   resto_ice   ! restoring coeff. on ICE   [s-1]
+   TYPE(FLD), ALLOCATABLE, DIMENSION(:)     ::   sf_icedmp   ! structure of ice damping input
    
    !! * Substitution
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/LIM 3.3 , UCL-NEMO-consortium (2010) 
-   !! $Id: limdmp_2.F90 2715 2011-03-30 15:58:35Z rblod $
+   !! $Id: limdmp_2.F90 3551 2012-11-14 11:00:10Z gm $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -42,9 +41,13 @@ CONTAINS
       !!-------------------------------------------------------------------
       !!                   ***  ROUTINE lim_dmp_2  ***
       !!
-      !! ** purpose : ice model damping : restoring ice thickness and fraction leads
+      !! ** purpose :   restore ice thickness and lead fraction
       !!
-      !! ** method  : the key_tradmp must be used to compute resto(:,:,1) coef.
+      !! ** method  :   restore ice thickness and lead fraction using a restoring
+      !!              coefficient defined by the user in lim_dmp_init
+      !!
+      !! ** Action  : - update hicif and frld  
+      !!
       !!---------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt   ! ocean time-step
       !
@@ -52,7 +55,7 @@ CONTAINS
       REAL(wp) ::   zfrld, zhice   ! local scalars
       !!---------------------------------------------------------------------
       !
-      IF (kt == nit000)  THEN 
+      IF( kt == nit000 ) THEN 
          IF(lwp) WRITE(numout,*)
          IF(lwp) WRITE(numout,*) 'lim_dmp_2 : Ice thickness and ice concentration restoring'
          IF(lwp) WRITE(numout,*) '~~~~~~~~~~'
@@ -70,7 +73,7 @@ CONTAINS
          hicif(:,:) = MAX( 0._wp,                     &        ! h >= 0         avoid spurious out of physical range
             &         hicif(:,:) - rdt_ice * resto_ice(:,:,1) * ( hicif(:,:) - sf_icedmp(jp_hicif)%fnow(:,:,1) )  ) 
 !CDIR COLLAPSE
-         hicif(:,:) = MAX( 0._wp, MIN( 1._wp,         &        ! 0<= frld<=1    values which blow the run up
+         frld (:,:) = MAX( 0._wp, MIN( 1._wp,         &        ! 0<= frld<=1    values which blow the run up
             &         frld (:,:) - rdt_ice * resto_ice(:,:,1) * ( frld (:,:) - sf_icedmp(jp_frld )%fnow(:,:,1) )  )  )
          !
       ENDIF
@@ -82,12 +85,11 @@ CONTAINS
       !!----------------------------------------------------------------------
       !!                   ***  ROUTINE lim_dmp_init  ***
       !!
-      !! ** Purpose :   Initialization for the ice thickness and concentration 
-      !!                restoring
-      !!              restoring will be used. It is used to mimic ice open
-      !!              boundaries.
+      !! ** Purpose :   set the coefficient for the ice thickness and lead fraction restoring
       !!
-      !! ** Method  :  ?????
+      !! ** Method  :   restoring is used to mimic ice open boundaries.
+      !!              the restoring coef. (a 2D array) has to be defined by the user.
+      !!              here is given as an example a restoring along north and south boundaries
       !!      
       !! ** Action  :   define resto_ice(:,:,1)
       !!----------------------------------------------------------------------

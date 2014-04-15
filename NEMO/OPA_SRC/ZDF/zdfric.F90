@@ -28,6 +28,7 @@ MODULE zdfric
    USE lib_mpp               ! MPP library
    USE wrk_nemo              ! work arrays
    USE timing                ! Timing
+   USE lib_fortran           ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
 
    USE eosbn2, ONLY : nn_eos
 
@@ -56,7 +57,7 @@ MODULE zdfric
 #  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 4.0 , NEMO Consortium (2011)
-   !! $Id: zdfric.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: zdfric.F90 3558 2012-11-14 19:15:05Z rblod $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS

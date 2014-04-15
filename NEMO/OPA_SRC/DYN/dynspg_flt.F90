@@ -62,7 +62,7 @@ MODULE dynspg_flt
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 3.3 , NEMO Consortium (2010)
-   !! $Id: dynspg_flt.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: dynspg_flt.F90 3766 2013-01-24 11:03:21Z smasson $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -187,12 +187,12 @@ CONTAINS
       ENDIF
 
 #if defined key_obc
-      CALL obc_dyn( kt )      ! Update velocities on each open boundary with the radiation algorithm
-      CALL obc_vol( kt )      ! Correction of the barotropic componant velocity to control the volume of the system
+      IF( lk_obc ) CALL obc_dyn( kt )   ! Update velocities on each open boundary with the radiation algorithm
+      IF( lk_obc)  CALL obc_vol( kt )   ! Correction of the barotropic componant velocity to control the volume of the system
 #endif
 #if defined key_bdy
-      CALL bdy_dyn( kt )      ! Update velocities on each open boundary
-      CALL bdy_vol( kt )      ! Correction of the barotropic component velocity to control the volume of the system
+      IF( lk_bdy ) CALL bdy_dyn( kt )   ! Update velocities on each open boundary
+      IF( lk_bdy ) CALL bdy_vol( kt )   ! Correction of the barotropic component velocity to control the volume of the system
 #endif
 #if defined key_agrif
       CALL Agrif_dyn( kt )    ! Update velocities on each coarse/fine interfaces 
@@ -307,15 +307,25 @@ CONTAINS
             ztdgv = z2dtg * (gcx(ji  ,jj+1) - gcx(ji,jj) ) / e2v(ji,jj)
             ! multiplied by z2dt
 #if defined key_obc
+            IF(lk_obc) THEN
             ! caution : grad D = 0 along open boundaries
             ! Remark: The filtering force could be reduced here in the FRS zone
             !         by multiplying spgu/spgv by (1-alpha) ??  
-            spgu(ji,jj) = z2dt * ztdgu * obcumask(ji,jj)
-            spgv(ji,jj) = z2dt * ztdgv * obcvmask(ji,jj)
+               spgu(ji,jj) = z2dt * ztdgu * obcumask(ji,jj)
+               spgv(ji,jj) = z2dt * ztdgv * obcvmask(ji,jj)
+            ELSE
+               spgu(ji,jj) = z2dt * ztdgu
+               spgv(ji,jj) = z2dt * ztdgv
+            ENDIF
 #elif defined key_bdy
+            IF(lk_bdy) THEN
             ! caution : grad D = 0 along open boundaries
-            spgu(ji,jj) = z2dt * ztdgu * bdyumask(ji,jj)
-            spgv(ji,jj) = z2dt * ztdgv * bdyvmask(ji,jj)
+               spgu(ji,jj) = z2dt * ztdgu * bdyumask(ji,jj)
+               spgv(ji,jj) = z2dt * ztdgv * bdyvmask(ji,jj)
+            ELSE
+               spgu(ji,jj) = z2dt * ztdgu
+               spgv(ji,jj) = z2dt * ztdgv
+            ENDIF
 #else
             spgu(ji,jj) = z2dt * ztdgu
             spgv(ji,jj) = z2dt * ztdgv

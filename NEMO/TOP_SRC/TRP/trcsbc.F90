@@ -30,7 +30,7 @@ MODULE trcsbc
 #  include "top_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 3.3 , NEMO Consortium (2010)
-   !! $Id: trcsbc.F90 3294 2012-01-28 16:44:18Z rblod $ 
+   !! $Id: trcsbc.F90 3580 2012-11-16 14:49:18Z cetlod $ 
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -49,7 +49,7 @@ CONTAINS
       !!         and thus the concentration of a tracer as :
       !!            tra = tra + emp * trn / e3t   for k=1
       !!         where emp, the surface freshwater budget (evaporation minus
-      !!         precipitation minus runoff) given in kg/m2/s is divided
+      !!         precipitation ) given in kg/m2/s is divided
       !!         by 1035 kg/m3 (density of ocean water) to obtain m/s.
       !!
       !! ** Action  : - Update the 1st level of tra with the trend associated
@@ -78,18 +78,15 @@ CONTAINS
          IF(lwp) WRITE(numout,*) '~~~~~~~ '
       ENDIF
 
+      ! Coupling online : river runoff is added to the horizontal divergence (hdivn) in the subroutine sbc_rnf_div 
+      ! one only consider the concentration/dilution effect due to evaporation minus precipitation + freezing/melting of sea-ice
 
-      IF( lk_offline ) THEN          ! emps in dynamical files contains emps - rnf
-         zemps(:,:) = emps(:,:)  
-      ELSE                           ! Concentration dilution effect on tracer due to evaporation, precipitation, and river runoff
-         IF( lk_vvl ) THEN                      ! volume variable
-            zemps(:,:) = emps(:,:) - emp(:,:)   
-!!ch         zemps(:,:) = 0.
-         ELSE                                   ! linear free surface
-            IF( ln_rnf ) THEN  ;  zemps(:,:) = emps(:,:) - rnf(:,:)   !  E-P-R
-            ELSE               ;  zemps(:,:) = emps(:,:)
-            ENDIF 
-         ENDIF 
+      ! Coupling in offline, hdivn is computed from ocean horizontal velocities only ; the runoff are not included.
+      ! emps in dynamical files contains (emps - rnf)
+      IF( .NOT. lk_offline .AND. lk_vvl ) THEN  ! online coupling + volume variable 
+         zemps(:,:) = emps(:,:) - emp(:,:)   
+      ELSE
+         zemps(:,:) = emps(:,:)
       ENDIF 
 
       ! 0. initialization

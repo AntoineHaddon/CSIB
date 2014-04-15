@@ -35,6 +35,7 @@ MODULE limupdate
    USE prtctl           ! Print control
    USE lbclnk           ! lateral boundary condition - MPP exchanges
    USE wrk_nemo         ! work arrays
+   USE lib_fortran      ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
 
    IMPLICIT NONE
    PRIVATE
@@ -54,7 +55,7 @@ MODULE limupdate
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/LIM3 4.0 , UCL - NEMO Consortium (2011)
-   !! $Id: limupdate.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: limupdate.F90 3816 2013-02-20 15:30:12Z clevy $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -79,7 +80,7 @@ CONTAINS
       INTEGER ::   jbnd1, jbnd2
       INTEGER ::   i_ice_switch
       INTEGER ::   ind_im, layer      ! indices for internal melt
-      REAL(wp) ::   zweight, zesum, zhimax, z_da_i, z_dv_i
+      REAL(wp) ::   zweight, zesum, zhimax, z_da_i
       REAL(wp) ::   zindb, zindsn, zindic, zacrith
       REAL(wp) ::   zrtt, zindg, zh, zdvres, zviold
       REAL(wp) ::   zbigvalue, zvsold, z_da_ex, zamax
@@ -821,9 +822,7 @@ CONTAINS
                zindb   =  MAX( rzero, SIGN( rone, v_i(ji,jj,jl) - epsi03 ) ) 
                zindb   =  MAX( rzero, SIGN( rone, v_i(ji,jj,jl) ) ) 
                z_da_i = a_i(ji,jj,jl) * z_da_ex / MAX( at_i(ji,jj), epsi06 ) * zindb
-               z_dv_i = v_i(ji,jj,jl) * z_da_i  / MAX( at_i(ji,jj), epsi06 )
                a_i(ji,jj,jl) = a_i(ji,jj,jl) - z_da_i
-               v_i(ji,jj,jl) = v_i(ji,jj,jl) + z_dv_i
             END DO
 
          END DO !ji

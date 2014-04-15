@@ -55,7 +55,7 @@ MODULE dynnxt
 #  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 3.3 , NEMO Consortium (2010)
-   !! $Id: dynnxt.F90 3294 2012-01-28 16:44:18Z rblod $ 
+   !! $Id: dynnxt.F90 3692 2012-11-28 07:54:04Z rblod $ 
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -155,27 +155,27 @@ CONTAINS
       !
 # if defined key_obc
       !                                !* OBC open boundaries
-      CALL obc_dyn( kt )
+      IF( lk_obc ) CALL obc_dyn( kt )
       !
       IF( .NOT. lk_dynspg_flt ) THEN
          ! Flather boundary condition : - Update sea surface height on each open boundary
          !                                       sshn   (= after ssh   ) for explicit case (lk_dynspg_exp=T)
          !                                       sshn_b (= after ssha_b) for time-splitting case (lk_dynspg_ts=T)
          !                              - Correct the barotropic velocities
-         CALL obc_dyn_bt( kt )
+         IF( lk_obc ) CALL obc_dyn_bt( kt )
          !
 !!gm ERROR - potential BUG: sshn should not be modified at this stage !!   ssh_nxt not alrady called
          CALL lbc_lnk( sshn, 'T', 1. )         ! Boundary conditions on sshn
          !
-         IF( ln_vol_cst )   CALL obc_vol( kt )
+         IF( lk_obc .AND. ln_vol_cst )   CALL obc_vol( kt )
          !
          IF(ln_ctl)   CALL prt_ctl( tab2d_1=sshn, clinfo1=' ssh      : ', mask1=tmask )
       ENDIF
       !
 # elif defined key_bdy
       !                                !* BDY open boundaries
-      IF( lk_dynspg_exp ) CALL bdy_dyn( kt )
-      IF( lk_dynspg_ts )  CALL bdy_dyn( kt, dyn3d_only=.true. )
+      IF( lk_bdy .AND. lk_dynspg_exp ) CALL bdy_dyn( kt )
+      IF( lk_bdy .AND. lk_dynspg_ts  ) CALL bdy_dyn( kt, dyn3d_only=.true. )
 
 !!$   Do we need a call to bdy_vol here??
       !
@@ -247,7 +247,7 @@ CONTAINS
                !
                DO jk = 1, jpkm1                       ! Leap-Frog - Asselin filter and swap: 
                   DO jj = 1, jpj                      !                   applied on thickness weighted velocity
-                     DO ji = 1, jpim1                 !                              ---------------------------
+                     DO ji = 1, jpi                   !                              ---------------------------
                         zue3a = ua(ji,jj,jk) * fse3u_a(ji,jj,jk)
                         zve3a = va(ji,jj,jk) * fse3v_a(ji,jj,jk)
                         zue3n = un(ji,jj,jk) * fse3u_n(ji,jj,jk)
@@ -267,8 +267,6 @@ CONTAINS
                END DO
                fse3u_b(:,:,1:jpkm1) = ze3u_f(:,:,1:jpkm1)      ! e3u_b <-- filtered scale factor
                fse3v_b(:,:,1:jpkm1) = ze3v_f(:,:,1:jpkm1)
-               CALL lbc_lnk( ub, 'U', -1. )                    ! lateral boundary conditions
-               CALL lbc_lnk( vb, 'V', -1. )
             ENDIF
             !
          ENDIF

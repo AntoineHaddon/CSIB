@@ -20,7 +20,7 @@ MODULE tide_mod
   INTEGER,PUBLIC, PARAMETER ::   &
        jpmax_harmo = 19             ! maximum number of harmonic
 
-  TYPE tide
+  TYPE,PUBLIC:: tide
      CHARACTER(LEN=4)  :: cname_tide
      REAL(wp) :: equitide
      INTEGER  :: nutide

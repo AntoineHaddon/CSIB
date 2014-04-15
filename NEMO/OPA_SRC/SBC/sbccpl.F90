@@ -169,7 +169,7 @@ MODULE sbccpl
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 3.3 , NEMO Consortium (2010)
-   !! $Id: sbccpl.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: sbccpl.F90 3413 2012-06-14 16:44:52Z smasson $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 
@@ -720,12 +720,12 @@ CONTAINS
             IF( TRIM( sn_rcv_tau%clvor ) == 'eastward-northward' ) THEN   ! 2 components oriented along the local grid
                !                                                       ! (geographical to local grid -> rotate the components)
                CALL rot_rep( frcv(jpr_otx1)%z3(:,:,1), frcv(jpr_oty1)%z3(:,:,1), srcv(jpr_otx1)%clgrid, 'en->i', ztx )   
-               frcv(jpr_otx1)%z3(:,:,1) = ztx(:,:)      ! overwrite 1st component on the 1st grid
                IF( srcv(jpr_otx2)%laction ) THEN
                   CALL rot_rep( frcv(jpr_otx2)%z3(:,:,1), frcv(jpr_oty2)%z3(:,:,1), srcv(jpr_otx2)%clgrid, 'en->j', zty )   
                ELSE	
                   CALL rot_rep( frcv(jpr_otx1)%z3(:,:,1), frcv(jpr_oty1)%z3(:,:,1), srcv(jpr_otx1)%clgrid, 'en->j', zty )  
                ENDIF
+               frcv(jpr_otx1)%z3(:,:,1) = ztx(:,:)      ! overwrite 1st component on the 1st grid
                frcv(jpr_oty1)%z3(:,:,1) = zty(:,:)      ! overwrite 2nd component on the 2nd grid
             ENDIF
             !                              
@@ -948,12 +948,12 @@ CONTAINS
             IF( TRIM( sn_rcv_tau%clvor ) == 'eastward-northward' ) THEN   ! 2 components oriented along the local grid
                !                                                       ! (geographical to local grid -> rotate the components)
                CALL rot_rep( frcv(jpr_itx1)%z3(:,:,1), frcv(jpr_ity1)%z3(:,:,1), srcv(jpr_itx1)%clgrid, 'en->i', ztx )   
-               frcv(jpr_itx1)%z3(:,:,1) = ztx(:,:)      ! overwrite 1st component on the 1st grid
                IF( srcv(jpr_itx2)%laction ) THEN
                   CALL rot_rep( frcv(jpr_itx2)%z3(:,:,1), frcv(jpr_ity2)%z3(:,:,1), srcv(jpr_itx2)%clgrid, 'en->j', zty )   
                ELSE
                   CALL rot_rep( frcv(jpr_itx1)%z3(:,:,1), frcv(jpr_ity1)%z3(:,:,1), srcv(jpr_itx1)%clgrid, 'en->j', zty )  
                ENDIF
+               frcv(jpr_itx1)%z3(:,:,1) = ztx(:,:)      ! overwrite 1st component on the 1st grid
                frcv(jpr_ity1)%z3(:,:,1) = zty(:,:)      ! overwrite 2nd component on the 1st grid
             ENDIF
             !                                                   ! ======================= !

@@ -32,6 +32,7 @@ MODULE limsbc
    USE lib_mpp          ! MPP library
    USE wrk_nemo         ! work arrays
    USE prtctl           ! Print control
+   USE lib_fortran      ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
    USE cpl_oasis3, ONLY : lk_cpl
 
    IMPLICIT NONE
@@ -54,7 +55,7 @@ MODULE limsbc
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/LIM3 4.0 , UCL - NEMO Consortium (2011)
-   !! $Id: limsbc.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: limsbc.F90 3558 2012-11-14 19:15:05Z rblod $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS

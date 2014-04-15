@@ -52,7 +52,7 @@ CONTAINS
          CASE(jp_none)
             CYCLE
          CASE(jp_frs)
-            CALL bdy_ice_frs( idx_bdy(ib_bdy), dta_idx(ib_bdy) )
+            CALL bdy_ice_frs( idx_bdy(ib_bdy), dta_bdy(ib_bdy) )
          CASE DEFAULT
             CALL ctl_stop( 'bdy_ice_lim_2 : unrecognised option for open boundaries for ice fields' )
          END SELECT

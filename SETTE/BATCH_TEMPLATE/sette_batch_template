@@ -63,12 +63,11 @@ cd ${EXE_DIR}
 # 
 #  Run the parallel MPI executable 
 #
-  echo "Running time ${MPIRUN} ./opa"
-#
-
   if [ MPI_FLAG == "yes" ]; then
+  echo "Running time ${MPIRUN} ./opa"
      time ${MPIRUN} ./opa
   else
+  echo "Running time./opa"
      time ./opa
   fi
 

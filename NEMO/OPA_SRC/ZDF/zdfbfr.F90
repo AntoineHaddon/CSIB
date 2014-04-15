@@ -15,7 +15,7 @@ MODULE zdfbfr
    !!   zdf_bfr_2d   : read in namelist and control the bottom friction parameters.
    !!----------------------------------------------------------------------
    USE oce             ! ocean dynamics and tracers variables
-   USE dom_oce         ! ocean space and time domain variables 
+   USE dom_oce         ! ocean space and time domain variables
    USE zdf_oce         ! ocean vertical physics variables
    USE in_out_manager  ! I/O manager
    USE lbclnk          ! ocean lateral boundary conditions (or mpp link)
@@ -30,21 +30,21 @@ MODULE zdfbfr
    PUBLIC   zdf_bfr_init    ! called by opa.F90
 
    !                                    !!* Namelist nambfr: bottom friction namelist *
-   INTEGER  ::   nn_bfr    = 0           ! = 0/1/2/3 type of bottom friction 
-   REAL(wp) ::   rn_bfri1  = 4.0e-4_wp   ! bottom drag coefficient (linear case) 
-   REAL(wp) ::   rn_bfri2  = 1.0e-3_wp   ! bottom drag coefficient (non linear case)
-   REAL(wp) ::   rn_bfeb2  = 2.5e-3_wp   ! background bottom turbulent kinetic energy  [m2/s2]
-   REAL(wp) ::   rn_bfrien = 30._wp      ! local factor to enhance coefficient bfri
-   LOGICAL  ::   ln_bfr2d  = .false.     ! logical switch for 2D enhancement
-   LOGICAL , PUBLIC                            ::  ln_bfrimp = .false.  ! logical switch for implicit bottom friction
-   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:) ::  bfrcoef2d            ! 2D bottom drag coefficient
+   INTEGER , PUBLIC ::   nn_bfr    = 0           ! = 0/1/2/3 type of bottom friction  (PUBLIC for TAM)
+   REAL(wp), PUBLIC ::   rn_bfri1  = 4.0e-4_wp   ! bottom drag coefficient (linear case)  (PUBLIC for TAM)
+   REAL(wp), PUBLIC ::   rn_bfri2  = 1.0e-3_wp   ! bottom drag coefficient (non linear case) (PUBLIC for TAM)
+   REAL(wp), PUBLIC ::   rn_bfeb2  = 2.5e-3_wp   ! background bottom turbulent kinetic energy  [m2/s2] (PUBLIC for TAM)
+   REAL(wp), PUBLIC ::   rn_bfrien = 30._wp      ! local factor to enhance coefficient bfri (PUBLIC for TAM)
+   LOGICAL , PUBLIC ::   ln_bfr2d  = .false.     ! logical switch for 2D enhancement (PUBLIC for TAM)
+   LOGICAL , PUBLIC                                    ::  ln_bfrimp = .false.  ! logical switch for implicit bottom friction
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:), PUBLIC ::  bfrcoef2d            ! 2D bottom drag coefficient (PUBLIC for TAM)
 
    !! * Substitutions
 #  include "vectopt_loop_substitute.h90"
 #  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 4.0 , NEMO Consortium (2011)
-   !! $Id: zdfbfr.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: zdfbfr.F90 3598 2012-11-19 13:35:09Z rblod $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -63,11 +63,11 @@ CONTAINS
    SUBROUTINE zdf_bfr( kt )
       !!----------------------------------------------------------------------
       !!                   ***  ROUTINE zdf_bfr  ***
-      !!                 
+      !!
       !! ** Purpose :   compute the bottom friction coefficient.
       !!
-      !! ** Method  :   Calculate and store part of the momentum trend due    
-      !!              to bottom friction following the chosen friction type 
+      !! ** Method  :   Calculate and store part of the momentum trend due
+      !!              to bottom friction following the chosen friction type
       !!              (free-slip, linear, or quadratic). The component
       !!              calculated here is multiplied by the bottom velocity in
       !!              dyn_bfr to provide the trend term.
@@ -101,7 +101,7 @@ CONTAINS
 !CDIR NOVERRCHK
             DO ji = 2, jpim1
 # endif
-               ikbu = mbku(ji,jj)         ! ocean bottom level at u- and v-points 
+               ikbu = mbku(ji,jj)         ! ocean bottom level at u- and v-points
                ikbv = mbkv(ji,jj)         ! (deepest ocean u- and v-points)
                !
                zvu  = 0.25 * (  vn(ji,jj  ,ikbu) + vn(ji+1,jj  ,ikbu)     &
@@ -112,7 +112,7 @@ CONTAINS
                zecu = SQRT(  un(ji,jj,ikbu) * un(ji,jj,ikbu) + zvu*zvu + rn_bfeb2  )
                zecv = SQRT(  vn(ji,jj,ikbv) * vn(ji,jj,ikbv) + zuv*zuv + rn_bfeb2  )
                !
-               bfrua(ji,jj) = - 0.5_wp * ( bfrcoef2d(ji,jj) + bfrcoef2d(ji+1,jj  ) ) * zecu 
+               bfrua(ji,jj) = - 0.5_wp * ( bfrcoef2d(ji,jj) + bfrcoef2d(ji+1,jj  ) ) * zecu
                bfrva(ji,jj) = - 0.5_wp * ( bfrcoef2d(ji,jj) + bfrcoef2d(ji  ,jj+1) ) * zecv
             END DO
          END DO
@@ -132,7 +132,7 @@ CONTAINS
    SUBROUTINE zdf_bfr_init
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE zdf_bfr_init  ***
-      !!                    
+      !!
       !! ** Purpose :   Initialization of the bottom friction
       !!
       !! ** Method  :   Read the nammbf namelist and check their consistency
@@ -192,7 +192,7 @@ CONTAINS
          !
          bfrcoef2d(:,:) = rn_bfri1  ! initialize bfrcoef2d to the namelist variable
          !
-         IF(ln_bfr2d) THEN 
+         IF(ln_bfr2d) THEN
             ! bfr_coef is a coefficient in [0,1] giving the mask where to apply the bfr enhancement
             CALL iom_open('bfr_coef.nc',inum)
             CALL iom_get (inum, jpdom_data, 'bfr_coef',bfrcoef2d,1) ! bfrcoef2d is used as tmp array
@@ -212,7 +212,7 @@ CONTAINS
          ENDIF
          bfrcoef2d(:,:) = rn_bfri2  ! initialize bfrcoef2d to the namelist variable
          !
-         IF(ln_bfr2d) THEN 
+         IF(ln_bfr2d) THEN
             ! bfr_coef is a coefficient in [0,1] giving the mask where to apply the bfr enhancement
             CALL iom_open('bfr_coef.nc',inum)
             CALL iom_get (inum, jpdom_data, 'bfr_coef',bfrcoef2d,1) ! bfrcoef2d is used as tmp array

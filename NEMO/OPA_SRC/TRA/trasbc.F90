@@ -40,7 +40,7 @@ MODULE trasbc
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 3.3 , NEMO Consortium (2010)
-   !! $Id: trasbc.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: trasbc.F90 3691 2012-11-27 17:20:52Z gm $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -205,15 +205,12 @@ CONTAINS
       !        River Runoff effects
       !----------------------------------------
       !
-      zfact = 0.5e0
-
-      ! Effect on (t,s) due to river runoff (dilution effect automatically applied via vertical tracer advection) 
-      IF( ln_rnf ) THEN  
+      IF( ln_rnf ) THEN         ! input of heat and salt due to river runoff 
+         zfact = 0.5_wp
          DO jj = 2, jpj 
             DO ji = fs_2, fs_jpim1
-               zdep = 1. / h_rnf(ji,jj)
-               zdep = zfact * zdep  
-               IF ( rnf(ji,jj) /= 0._wp ) THEN
+               IF( rnf(ji,jj) /= 0._wp ) THEN
+                  zdep = zfact / h_rnf(ji,jj)
                   DO jk = 1, nk_rnf(ji,jj)
                                         tsa(ji,jj,jk,jp_tem) = tsa(ji,jj,jk,jp_tem)   &
                                           &               +  ( rnf_tsc_b(ji,jj,jp_tem) + rnf_tsc(ji,jj,jp_tem) ) * zdep
@@ -223,10 +220,8 @@ CONTAINS
                ENDIF
             END DO  
          END DO  
-      ENDIF  
-!!gm  It should be useless
-      CALL lbc_lnk( tsa(:,:,:,jp_tem), 'T', 1. )    ;    CALL lbc_lnk( tsa(:,:,:,jp_sal), 'T', 1. )
-
+      ENDIF
+ 
       IF( l_trdtra )   THEN                      ! save the horizontal diffusive trends for further diagnostics
          ztrdt(:,:,:) = tsa(:,:,:,jp_tem) - ztrdt(:,:,:)
          ztrds(:,:,:) = tsa(:,:,:,jp_sal) - ztrds(:,:,:)

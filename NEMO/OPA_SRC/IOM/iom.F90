@@ -3,11 +3,11 @@ MODULE iom
    !!                    ***  MODULE  iom ***
    !! Input/Output manager :  Library to read input files
    !!====================================================================
-   !! History :  9.0  ! 05 12  (J. Belier) Original code
-   !!            9.0  ! 06 02  (S. Masson) Adaptation to NEMO
-   !!             "   ! 07 07  (D. Storkey) Changes to iom_gettime
+   !! History :  2.0  ! 2005-12  (J. Belier) Original code
+   !!            2.0  ! 2006-02  (S. Masson) Adaptation to NEMO
+   !!            3.0  ! 2007-07  (D. Storkey) Changes to iom_gettime
+   !!            3.4  ! 2012-12  (R. Bourdalle-Badie and G. Reffray)  add C1D case  
    !!--------------------------------------------------------------------
-   !!gm  caution add !DIR nec: improved performance to be checked as well as no result changes
 
    !!--------------------------------------------------------------------
    !!   iom_open       : open a file read only
@@ -18,6 +18,7 @@ MODULE iom
    !!   iom_rstput     : write a field in a restart file (interfaced to several routines)
    !!--------------------------------------------------------------------
    USE dom_oce         ! ocean space and time domain
+   USE c1d             ! 1D vertical configuration
    USE flo_oce         ! floats module declarations
    USE lbclnk          ! lateal boundary condition / mpp exchanges
    USE iom_def         ! iom variables definitions
@@ -73,7 +74,7 @@ MODULE iom
 
    !!----------------------------------------------------------------------
    !! NEMO/OPA 3.3 , NEMO Consortium (2010)
-   !! $Id: iom.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: iom.F90 3720 2012-12-04 10:10:08Z cbricaud $
    !! Software governed by the CeCILL licence (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 
@@ -750,6 +751,10 @@ CONTAINS
                ENDIF
             ENDIF
             
+            ! C1D case : always call lbc_lnk to replicate the central value over the whole 3X3 domain
+            IF( lk_c1d .AND. PRESENT(pv_r2d) )   CALL lbc_lnk( pv_r2d,'Z',1. )
+            IF( lk_c1d .AND. PRESENT(pv_r3d) )   CALL lbc_lnk( pv_r3d,'Z',1. )
+    
             !--- Apply scale_factor and offset
             zscf = iom_file(kiomid)%scf(idvar)      ! scale factor
             zofs = iom_file(kiomid)%ofs(idvar)      ! offset

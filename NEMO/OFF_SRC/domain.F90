@@ -30,7 +30,7 @@ MODULE domain
 #  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OFF 3.3 , NEMO Consortium (2010)
-   !! $Id: domain.F90 2574 2011-02-02 14:10:08Z cetlod $
+   !! $Id: domain.F90 3433 2012-07-19 07:29:05Z cetlod $
    !! Software governed by the CeCILL licence (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 
@@ -204,7 +204,6 @@ CONTAINS
       rdtmin    = rn_rdtmin
       rdtmax    = rn_rdtmin
       rdth      = rn_rdth
-      nclosea   = nn_closea
 
       REWIND( numnam )             ! Namelist cross land advection
       READ  ( numnam, namcla )

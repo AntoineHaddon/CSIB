@@ -9,7 +9,6 @@ MODULE zdfkpp
    !!            8.2  ! 2003-10 (Chanut J.) re-writting
    !!   NEMO     1.0  ! 2005-01 (C. Ethe, G. Madec) Free form, F90 + creation of tra_kpp routine
    !!            3.3  ! 2010-10 (C. Ethe, G. Madec) reorganisation of initialisation phase + merge TRC-TRA
-   !!            3.4  ! 2012-12 (D. Yang) nemo_ticket #1038, Changeset ​3733
    !!----------------------------------------------------------------------
 #if defined key_zdfkpp   ||   defined key_esopa
    !!----------------------------------------------------------------------
@@ -35,6 +34,7 @@ MODULE zdfkpp
    USE trdmod_oce      ! ocean trends definition
    USE trdtra          ! tracers trends
    USE timing          ! Timing
+   USE lib_fortran     ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
 
    IMPLICIT NONE
    PRIVATE
@@ -147,7 +147,7 @@ MODULE zdfkpp
 #  include  "zdfddm_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 4.0 , NEMO Consortium (2011)
-   !! $Id: zdfkpp.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: zdfkpp.F90 3793 2013-02-10 19:11:06Z gm $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -246,10 +246,10 @@ CONTAINS
       REAL(wp) ::   zdelta, zdelta2, zdzup, zdzdn, zdzh, zvath, zgat1, zdat1, zkm1m, zkm1t
 #if defined key_zdfddm
       REAL(wp) ::   zrrau, zds, zavdds, zavddt,zinr   ! double diffusion mixing
-      REAL(wp), POINTER, DIMENSION(:,:) ::     zdifs
-      REAL(wp), POINTER, DIMENSION(:)   ::   za2s, za3s, zkmps
+      REAL(wp), POINTER, DIMENSION(:,:)   ::     zdifs
+      REAL(wp), POINTER, DIMENSION(:)     ::   za2s, za3s, zkmps
       REAL(wp) ::                            zkm1s
-      REAL(wp), POINTER, DIMENSION(:,:) ::   zblcs
+      REAL(wp), POINTER, DIMENSION(:,:)   ::   zblcs
       REAL(wp), POINTER, DIMENSION(:,:,:) ::   zdiffus
 #endif
       REAL(wp), POINTER, DIMENSION(:,:) ::   zBo, zBosol, zustar         ! Surface buoyancy forcing, friction velocity
@@ -1078,10 +1078,9 @@ CONTAINS
                        
                zdiffut(ji,jj,jk) = zdiffut(ji,jj,jk) * tmask(ji,jj,jk) 
 #if defined key_zdfddm
-               zdiffus(ji,jj,jk) = ( 1.0 - zmask(ji,jk) )          * avs (ji,jj,jk) & ! interior diffusivities 
+               zdiffus(ji,jj,jk) = ( 1.0 - zmask(ji,jk) )         * avs (ji,jj,jk) & ! interior diffusivities 
                   &              +                        zflag   * zblcs(ji,jk   ) & ! boundary layer diffusivities
                   &              + zmask(ji,jk) * ( 1.0 - zflag ) * zkmps(ji      )   ! diffusivity enhancement at W_level near zhbl
-                       
                zdiffus(ji,jj,jk) = zdiffus(ji,jj,jk) * tmask(ji,jj,jk) 
 #endif               
                ! Non local flux in the boundary layer only
@@ -1304,6 +1303,7 @@ CONTAINS
       INTEGER, INTENT(in) ::   kt   ! ocean time-step index
       !
       INTEGER  ::   ji, jj, jk, jn      ! Dummy loop indices
+      CHARACTER (len=35) :: charout
       REAL(wp) ::   ztra, zflx
       REAL(wp), DIMENSION(:,:,:), ALLOCATABLE ::   ztrtrd
       !!----------------------------------------------------------------------
@@ -1333,15 +1333,17 @@ CONTAINS
                END DO
             END DO
          END DO
-         ! save the non-local tracer flux trends for diagnostic
-         IF( l_trdtrc )  ztrtrd(:,:,:)  = tra(:,:,:,jn) - ztrtrd(:,:,:)
-         CALL trd_tra( kt, 'TRC', jn, jptra_trd_zdf, ztrtrd(:,:,:,jn) )
+         !
+         IF( l_trdtrc ) THEN         ! save the non-local tracer flux trends for diagnostic
+            ztrtrd(:,:,:) = tra(:,:,:,jn) - ztrtrd(:,:,:)
+            CALL trd_tra( kt, 'TRC', jn, jptra_trd_zdf, ztrtrd(:,:,:) )
+         ENDIF
          !
       END DO
       IF( l_trdtrc )  DEALLOCATE( ztrtrd )
       IF( ln_ctl )   THEN
          WRITE(charout, FMT="(' kpp')")  ;  CALL prt_ctl_trc_info(charout)
-         CALL prt_ctl_trc( tab4d=tra, mask=tmask, clinfo=clname, clinfo2='trd' )
+         CALL prt_ctl_trc( tab4d=tra, mask=tmask, clinfo=ctrcnm, clinfo2='trd' )
       ENDIF
       !
    END SUBROUTINE trc_kpp

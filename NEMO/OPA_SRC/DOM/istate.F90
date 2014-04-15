@@ -41,6 +41,7 @@ MODULE istate
    USE dynspg_flt      ! pressure gradient schemes
    USE dynspg_exp      ! pressure gradient schemes
    USE dynspg_ts       ! pressure gradient schemes
+   USE sol_oce         ! ocean solver variables
    USE lib_mpp         ! MPP library
    USE wrk_nemo        ! Memory allocation
    USE timing          ! Timing
@@ -55,7 +56,7 @@ MODULE istate
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 3.3 , NEMO Consortium (2010)
-   !! $Id: istate.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: istate.F90 3711 2012-11-28 12:02:09Z flavoni $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -105,9 +106,6 @@ CONTAINS
          rotb (:,:,:) = 0._wp   ;   rotn (:,:,:) = 0._wp
          hdivb(:,:,:) = 0._wp   ;   hdivn(:,:,:) = 0._wp
          !
-         !                                       ! define e3u_b, e3v_b from e3t_b initialized in domzgr
-         CALL dom_vvl_2( nit000, fse3u_b(:,:,:), fse3v_b(:,:,:) )
-         !
          IF( cp_cfg == 'eel' ) THEN
             CALL istate_eel                      ! EEL   configuration : start from pre-defined U,V T-S fields
          ELSEIF( cp_cfg == 'gyre' ) THEN         
@@ -132,14 +130,19 @@ CONTAINS
                fse3t_b(:,:,jk) = fse3t_n(:,:,jk)
             ENDDO
          ENDIF
+         !                                       ! define e3u_b, e3v_b from e3t_b initialized in domzgr
+         CALL dom_vvl_2( nit000, fse3u_b(:,:,:), fse3v_b(:,:,:) )
          ! 
       ENDIF
       !
       IF( lk_agrif ) THEN                  ! read free surface arrays in restart file
          IF( ln_rstart ) THEN
-            IF( lk_dynspg_flt )   CALL flt_rst( nit000, 'READ' )      ! read or initialize the following fields
-            !                                                         ! gcx, gcxb for agrif_opa_init
-         ENDIF                                                        ! explicit case not coded yet with AGRIF
+            IF( lk_dynspg_flt )  THEN      ! read or initialize the following fields
+               !                           ! gcx, gcxb for agrif_opa_init
+               IF( sol_oce_alloc()  > 0 )   CALL ctl_stop('agrif sol_oce_alloc: allocation of arrays failed')
+               CALL flt_rst( nit000, 'READ' )
+            ENDIF
+         ENDIF                             ! explicit case not coded yet with AGRIF
       ENDIF
       !
       IF( nn_timing == 1 )  CALL timing_stop('istate_init')

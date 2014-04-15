@@ -7,7 +7,7 @@ MODULE trdtra
    !!            2.0  !  2005-04  (C. Deltel)    Add Asselin trend in the ML budget
    !!            3.3  !  2010-06  (C. Ethe) merge TRA-TRC 
    !!----------------------------------------------------------------------
-#if  defined key_trdtra || defined key_trdmld || defined key_trdmld_trc 
+#if  defined key_trdtra || defined key_trdtrc || defined key_trdmld || defined key_trdmld_trc 
    !!----------------------------------------------------------------------
    !!   trd_tra      : Call the trend to be computed
    !!----------------------------------------------------------------------
@@ -32,7 +32,7 @@ MODULE trdtra
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 4.0 , NEMO Consortium (2011)
-   !! $Id: trdtra.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: trdtra.F90 3425 2012-07-05 11:33:22Z cetlod $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS

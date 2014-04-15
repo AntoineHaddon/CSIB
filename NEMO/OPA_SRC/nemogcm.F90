@@ -5,15 +5,15 @@ MODULE nemogcm
    !!======================================================================
    !! History :  OPA  ! 1990-10  (C. Levy, G. Madec)  Original code
    !!            7.0  ! 1991-11  (M. Imbard, C. Levy, G. Madec)
-   !!            7.1  ! 1993-03  (M. Imbard, C. Levy, G. Madec, O. Marti, M. Guyon, A. Lazar, 
-   !!                             P. Delecluse, C. Perigaud, G. Caniaux, B. Colot, C. Maes) release 7.1 
+   !!            7.1  ! 1993-03  (M. Imbard, C. Levy, G. Madec, O. Marti, M. Guyon, A. Lazar,
+   !!                             P. Delecluse, C. Perigaud, G. Caniaux, B. Colot, C. Maes) release 7.1
    !!             -   ! 1992-06  (L.Terray)  coupling implementation
-   !!             -   ! 1993-11  (M.A. Filiberti) IGLOO sea-ice 
-   !!            8.0  ! 1996-03  (M. Imbard, C. Levy, G. Madec, O. Marti, M. Guyon, A. Lazar, 
+   !!             -   ! 1993-11  (M.A. Filiberti) IGLOO sea-ice
+   !!            8.0  ! 1996-03  (M. Imbard, C. Levy, G. Madec, O. Marti, M. Guyon, A. Lazar,
    !!                             P. Delecluse, L.Terray, M.A. Filiberti, J. Vialar, A.M. Treguier, M. Levy) release 8.0
    !!            8.1  ! 1997-06  (M. Imbard, G. Madec)
-   !!            8.2  ! 1999-11  (M. Imbard, H. Goosse)  LIM sea-ice model 
-   !!                 ! 1999-12  (V. Thierry, A-M. Treguier, M. Imbard, M-A. Foujols)  OPEN-MP 
+   !!            8.2  ! 1999-11  (M. Imbard, H. Goosse)  LIM sea-ice model
+   !!                 ! 1999-12  (V. Thierry, A-M. Treguier, M. Imbard, M-A. Foujols)  OPEN-MP
    !!                 ! 2000-07  (J-M Molines, M. Imbard)  Open Boundary Conditions  (CLIPPER)
    !!   NEMO     1.0  ! 2002-08  (G. Madec)  F90: Free form and modules
    !!             -   ! 2004-06  (R. Redler, NEC CCRLE, Germany) add OASIS[3/4] coupled interfaces
@@ -24,7 +24,7 @@ MODULE nemogcm
    !!             -   ! 2006-04  (G. Madec, R. Benshila)  Step reorganization
    !!             -   ! 2007-07  (J. Chanut, A. Sellar) Unstructured open boundaries (BDY)
    !!            3.2  ! 2009-08  (S. Masson)  open/write in the listing file in mpp
-   !!            3.3  ! 2010-05  (K. Mogensen, A. Weaver, M. Martin, D. Lea) Assimilation interface 
+   !!            3.3  ! 2010-05  (K. Mogensen, A. Weaver, M. Martin, D. Lea) Assimilation interface
    !!             -   ! 2010-10  (C. Ethe, G. Madec) reorganisation of initialisation phase
    !!            3.3.1! 2011-01  (A. R. Porter, STFC Daresbury) dynamical allocation
    !!            3.4  ! 2011-11  (C. Harris) decomposition changes for running with CICE
@@ -33,7 +33,7 @@ MODULE nemogcm
    !!----------------------------------------------------------------------
    !!   nemo_gcm       : solve ocean dynamics, tracer, biogeochemistry and/or sea-ice
    !!   nemo_init      : initialization of the NEMO system
-   !!   nemo_ctl       : initialisation of the contol print 
+   !!   nemo_ctl       : initialisation of the contol print
    !!   nemo_closefile : close remaining open files
    !!   nemo_alloc     : dynamical allocation
    !!   nemo_partition : calculate MPP domain decomposition
@@ -55,10 +55,11 @@ MODULE nemogcm
    USE zdfini          ! vertical physics setting          (zdf_init routine)
    USE phycst          ! physical constant                  (par_cst routine)
    USE trdmod          ! momentum/tracers trends       (trd_mod_init routine)
-   USE asmtrj          ! writing out state trajectory
+   USE asmbkg          ! writing out state trajectory
    USE diaptr          ! poleward transports           (dia_ptr_init routine)
    USE diadct          ! sections transports           (dia_dct_init routine)
    USE diaobs          ! Observation diagnostics       (dia_obs_init routine)
+   USE lib_fortran     ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
    USE step            ! NEMO time-stepping                 (stp     routine)
 #if defined key_oasis3
    USE cpl_oasis3      ! OASIS3 coupling
@@ -74,18 +75,20 @@ MODULE nemogcm
 #if defined key_iomput
    USE mod_ioclient
 #endif
+   USE tamtrj          ! Output trajectory, needed for TAM
 
    IMPLICIT NONE
    PRIVATE
 
    PUBLIC   nemo_gcm    ! called by model.F90
    PUBLIC   nemo_init   ! needed by AGRIF
+   PUBLIC   nemo_alloc  ! needed by TAM
 
    CHARACTER(lc) ::   cform_aaa="( /, 'AAAAAAAA', / ) "     ! flag for output listing
 
    !!----------------------------------------------------------------------
    !! NEMO/OPA 4.0 , NEMO Consortium (2011)
-   !! $Id: nemogcm.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: nemogcm.F90 3604 2012-11-19 14:21:34Z rblod $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -94,7 +97,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       !!                     ***  ROUTINE nemo_gcm  ***
       !!
-      !! ** Purpose :   NEMO solves the primitive equations on an orthogonal 
+      !! ** Purpose :   NEMO solves the primitive equations on an orthogonal
       !!              curvilinear mesh on the sphere.
       !!
       !! ** Method  : - model general initialization
@@ -138,17 +141,13 @@ CONTAINS
 #else
           IF( lk_asminc ) THEN
              IF( ln_bkgwri ) CALL asm_bkg_wri( nit000 - 1 )    ! Output background fields
-             IF( ln_trjwri ) CALL asm_trj_wri( nit000 - 1 )    ! Output trajectory fields
              IF( ln_asmdin ) THEN                        ! Direct initialization
                 IF( ln_trainc ) CALL tra_asm_inc( nit000 - 1 )    ! Tracers
-                IF( ln_dyninc ) THEN 
-                   CALL dyn_asm_inc( nit000 - 1 )    ! Dynamics
-                   IF ( ln_asmdin ) CALL ssh_wzv ( nit000 - 1 )      ! update vertical velocity 
-                ENDIF
+                IF( ln_dyninc ) CALL dyn_asm_inc( nit000 - 1 )    ! Dynamics
                 IF( ln_sshinc ) CALL ssh_asm_inc( nit000 - 1 )    ! SSH
              ENDIF
           ENDIF
-        
+
          DO WHILE ( istp <= nitend .AND. nstop == 0 )
 #if defined key_agrif
             CALL Agrif_Step( stp )           ! AGRIF: time stepping
@@ -161,7 +160,7 @@ CONTAINS
 #endif
 
       IF( lk_diaobs ) CALL dia_obs_wri
-       
+
       !                            !------------------------!
       !                            !==  finalize the run  ==!
       !                            !------------------------!
@@ -169,7 +168,7 @@ CONTAINS
       !
       IF( nstop /= 0 .AND. lwp ) THEN   ! error print
          WRITE(numout,cform_err)
-         WRITE(numout,*) nstop, ' error have been found' 
+         WRITE(numout,*) nstop, ' error have been found'
       ENDIF
       !
 #if defined key_agrif
@@ -238,7 +237,7 @@ CONTAINS
 
       lwp = (narea == 1) .OR. ln_ctl                        ! control of all listing output print
 
-      ! If dimensions of processor grid weren't specified in the namelist file 
+      ! If dimensions of processor grid weren't specified in the namelist file
       ! then we calculate them here now that we have our communicator size
       IF( (jpni < 1) .OR. (jpnj < 1) )THEN
 #if   defined key_mpp_mpi
@@ -256,7 +255,7 @@ CONTAINS
       IF( Agrif_Root() ) THEN
          jpi = ( jpiglo-2*jpreci + (jpni-1) ) / jpni + 2*jpreci   ! first  dim.
 #if defined key_nemocice_decomp
-         jpj = ( jpjglo+1-2*jprecj + (jpnj-1) ) / jpnj + 2*jprecj ! second dim. 
+         jpj = ( jpjglo+1-2*jprecj + (jpnj-1) ) / jpnj + 2*jprecj ! second dim.
 #else
          jpj = ( jpjglo-2*jprecj + (jpnj-1) ) / jpnj + 2*jprecj   ! second dim.
 #endif
@@ -278,14 +277,14 @@ CONTAINS
          WRITE(numout,*) '                  version 3.4  (2011) '
          WRITE(numout,*)
          WRITE(numout,*)
-         DO ji = 1, SIZE(cltxt) 
+         DO ji = 1, SIZE(cltxt)
             IF( TRIM(cltxt(ji)) /= '' )   WRITE(numout,*) cltxt(ji)      ! control print of mynode
          END DO
          WRITE(numout,cform_aaa)                                         ! Flag AAAAAAA
          !
       ENDIF
 
-      ! Now we know the dimensions of the grid and numout has been set we can 
+      ! Now we know the dimensions of the grid and numout has been set we can
       ! allocate arrays
       CALL nemo_alloc()
 
@@ -312,7 +311,7 @@ CONTAINS
 
       IF( ln_ctl        )   CALL prt_ctl_init   ! Print control
 
-      IF( lk_obc        )   CALL     obc_init   ! Open boundaries 
+      IF( lk_obc        )   CALL     obc_init   ! Open boundaries
       IF( lk_bdy        )   CALL     bdy_init       ! Open boundaries initialisation
       IF( lk_bdy        )   CALL     bdy_dta_init   ! Open boundaries initialisation of external data arrays
       IF( lk_bdy        )   CALL     tide_init      ! Open boundaries initialisation of tidal harmonic forcing
@@ -324,7 +323,7 @@ CONTAINS
                             CALL  istate_init   ! ocean initial state (Dynamics and tracers)
 
       !                                     ! Ocean physics
-                            CALL     sbc_init   ! Forcings : surface module 
+                            CALL     sbc_init   ! Forcings : surface module
       !                                         ! Vertical physics
                             CALL     zdf_init      ! namelist read
                             CALL zdf_bfr_init      ! bottom friction
@@ -333,7 +332,7 @@ CONTAINS
       IF( lk_zdfgls     )   CALL zdf_gls_init      ! GLS closure scheme
       IF( lk_zdfkpp     )   CALL zdf_kpp_init      ! KPP closure scheme
       IF( lk_zdftmx     )   CALL zdf_tmx_init      ! tidal vertical mixing
-      IF( lk_zdfddm .AND. .NOT. lk_zdfkpp )   & 
+      IF( lk_zdfddm .AND. .NOT. lk_zdfkpp )   &
          &                  CALL zdf_ddm_init      ! double diffusive mixing
       !                                         ! Lateral physics
                             CALL ldf_tra_init      ! Lateral ocean tracer physics
@@ -356,10 +355,10 @@ CONTAINS
                             CALL dyn_hpg_init   ! horizontal gradient of Hydrostatic pressure
                             CALL dyn_zdf_init   ! vertical diffusion
                             CALL dyn_spg_init   ! surface pressure gradient
-                            
+
       !                                     ! Misc. options
       IF( nn_cla == 1   )   CALL cla_init       ! Cross Land Advection
-      
+
 #if defined key_top
       !                                     ! Passive tracers
                             CALL     trc_init
@@ -375,10 +374,11 @@ CONTAINS
       IF( lk_diaobs     ) THEN                  ! Observation & model comparison
                             CALL dia_obs_init            ! Initialize observational data
                             CALL dia_obs( nit000 - 1 )   ! Observation operator for restart
-      ENDIF      
+      ENDIF
       !                                     ! Assimilation increments
       IF( lk_asminc     )   CALL asm_inc_init   ! Initialize assimilation increments
       IF(lwp) WRITE(numout,*) 'Euler time step switch is ', neuler
+                            CALL tam_trj_init ! Trajectory handling
       !
    END SUBROUTINE nemo_init
 
@@ -387,7 +387,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       !!                     ***  ROUTINE nemo_ctl  ***
       !!
-      !! ** Purpose :   control print setting 
+      !! ** Purpose :   control print setting
       !!
       !! ** Method  : - print namctl information and check some consistencies
       !!----------------------------------------------------------------------
@@ -406,6 +406,7 @@ CONTAINS
          WRITE(numout,*) '      number of proc. following i     nn_isplt   = ', nn_isplt
          WRITE(numout,*) '      number of proc. following j     nn_jsplt   = ', nn_jsplt
          WRITE(numout,*) '      benchmark parameter (0/1)       nn_bench   = ', nn_bench
+         WRITE(numout,*) '      timing activated    (0/1)       nn_timing  = ', nn_timing
       ENDIF
       !
       nprint    = nn_print          ! convert DOCTOR namelist names into OLD names
@@ -433,7 +434,7 @@ CONTAINS
          !
          !                              ! indices used for the SUM control
          IF( nictls+nictle+njctls+njctle == 0 )   THEN    ! print control done over the default area
-            lsp_area = .FALSE.                        
+            lsp_area = .FALSE.
          ELSE                                             ! print control done over a specific  area
             lsp_area = .TRUE.
             IF( nictls < 1 .OR. nictls > jpiglo )   THEN
@@ -455,7 +456,7 @@ CONTAINS
          ENDIF
       ENDIF
       !
-      IF( nbench == 1 ) THEN              ! Benchmark 
+      IF( nbench == 1 ) THEN              ! Benchmark
          SELECT CASE ( cp_cfg )
          CASE ( 'gyre' )   ;   CALL ctl_warn( ' The Benchmark is activated ' )
          CASE DEFAULT      ;   CALL ctl_stop( ' The Benchmark is based on the GYRE configuration:',   &
@@ -466,6 +467,10 @@ CONTAINS
       IF( lk_c1d .AND. .NOT.lk_iomput )   CALL ctl_stop( 'nemo_ctl: The 1D configuration must be used ',   &
          &                                               'with the IOM Input/Output manager. '         ,   &
          &                                               'Compile with key_iomput enabled' )
+      !
+      IF( 1_wp /= SIGN(1._wp,-0._wp)  )   CALL ctl_stop( 'nemo_ctl: The intrinsec SIGN function follows ',  &
+         &                                               'f2003 standard. '                              ,  &
+         &                                               'Compile with key_nosignedzero enabled' )
       !
    END SUBROUTINE nemo_ctl
 
@@ -514,7 +519,7 @@ CONTAINS
       INTEGER :: ierr
       !!----------------------------------------------------------------------
       !
-      ierr =        oce_alloc       ()          ! ocean 
+      ierr =        oce_alloc       ()          ! ocean
       ierr = ierr + dia_wri_alloc   ()
       ierr = ierr + dom_oce_alloc   ()          ! ocean domain
       ierr = ierr + ldfdyn_oce_alloc()          ! ocean lateral  physics : dynamics
@@ -534,7 +539,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       !!                 ***  ROUTINE nemo_partition  ***
       !!
-      !! ** Purpose :   
+      !! ** Purpose :
       !!
       !! ** Method  :
       !!----------------------------------------------------------------------
@@ -582,7 +587,7 @@ CONTAINS
       !!                     ***  ROUTINE factorise  ***
       !!
       !! ** Purpose :   return the prime factors of n.
-      !!                knfax factors are returned in array kfax which is of 
+      !!                knfax factors are returned in array kfax which is of
       !!                maximum dimension kmaxfax.
       !! ** Method  :
       !!----------------------------------------------------------------------
@@ -650,10 +655,10 @@ CONTAINS
       !! nemo_northcomms    :  Setup for north fold exchanges with explicit peer to peer messaging
       !!=====================================================================
       !!----------------------------------------------------------------------
-      !! 
+      !!
       !! ** Purpose :   Initialization of the northern neighbours lists.
       !!----------------------------------------------------------------------
-      !!    1.0  ! 2011-10  (A. C. Coward, NOCS & J. Donners, PRACE) 
+      !!    1.0  ! 2011-10  (A. C. Coward, NOCS & J. Donners, PRACE)
       !!----------------------------------------------------------------------
 
       INTEGER ::   ji, jj, jk, ij, jtyp    ! dummy loop indices
@@ -735,7 +740,7 @@ CONTAINS
 
       jtyp = 5
       lrankset = .FALSE.
-      znnbrs = narea 
+      znnbrs = narea
       CALL lbc_lnk( znnbrs, 'J', 1. ) ! first ice U-V point
 
       IF ( njmppt(narea) .EQ. MAXVAL( njmppt ) ) THEN
@@ -748,7 +753,7 @@ CONTAINS
         END DO
       ENDIF
 
-      znnbrs = narea 
+      znnbrs = narea
       CALL lbc_lnk( znnbrs, 'K', 1. ) ! second ice U-V point
 
       IF ( njmppt(narea) .EQ. MAXVAL( njmppt )) THEN
@@ -771,7 +776,7 @@ CONTAINS
             ENDIF
          END DO
          !
-         ! For northern row areas, set l_north_nogather so that all subsequent exchanges 
+         ! For northern row areas, set l_north_nogather so that all subsequent exchanges
          ! can use peer to peer communications at the north fold
          !
          l_north_nogather = .TRUE.

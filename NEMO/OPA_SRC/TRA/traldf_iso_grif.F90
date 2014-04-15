@@ -45,7 +45,7 @@ MODULE traldf_iso_grif
 #  include "ldfeiv_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 3.3 , NEMO Consortium (2010)
-   !! $Id: traldf_iso_grif.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: traldf_iso_grif.F90 3389 2012-05-14 14:52:22Z agn $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -224,8 +224,8 @@ CONTAINS
          DO jk=1,jpk-1
             DO jj = 2, jpjm1
                DO ji = fs_2, fs_jpim1  ! vector opt.
-                  zw3d(ji,jj,jk) = (psiy_eiv(ji,jj,jk) - psiy_eiv(ji,jj-1,jk))/e2v(ji,jj) + &
-                       &    (psix_eiv(ji,jj,jk) - psix_eiv(ji-1,jj,jk))/e1u(ji,jj) ! w_eiv = dpsiy/dy + dpsiy/dx
+                  zw3d(ji,jj,jk) = (psiy_eiv(ji,jj,jk) - psiy_eiv(ji,jj-1,jk))/e2t(ji,jj) + &
+                       &    (psix_eiv(ji,jj,jk) - psix_eiv(ji-1,jj,jk))/e1t(ji,jj) ! w_eiv = dpsiy/dy + dpsiy/dx
                END DO
             END DO
          END DO

@@ -7,7 +7,7 @@ MODULE limrhg
    !!            3.0  !  2008-03  (M. Vancoppenolle) LIM3
    !!             -   !  2008-11  (M. Vancoppenolle, S. Bouillon, Y. Aksenov) add surface tilt in ice rheolohy 
    !!            3.3  !  2009-05  (G.Garric) addition of the lim2_evp cas
-   !!            4.0  !  2011-01  (A Porter)  dynamical allocation 
+   !!            3.4  !  2011-01  (A Porter)  dynamical allocation 
    !!----------------------------------------------------------------------
 #if defined key_lim3 || (  defined key_lim2 && ! defined key_lim2_vp )
    !!----------------------------------------------------------------------
@@ -26,6 +26,7 @@ MODULE limrhg
    USE wrk_nemo         ! work arrays
    USE in_out_manager   ! I/O manager
    USE prtctl           ! Print control
+   USE lib_fortran      ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
 #if defined key_lim3
    USE ice              ! LIM-3: ice variables
    USE dom_ice          ! LIM-3: ice domain
@@ -46,8 +47,8 @@ MODULE limrhg
    !! * Substitutions
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
-   !! NEMO/LIM3 4.0 , UCL - NEMO Consortium (2011)
-   !! $Id: limrhg.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! NEMO/LIM3 3.4 , UCL - NEMO Consortium (2011)
+   !! $Id: limrhg.F90 3789 2013-02-10 13:11:44Z gm $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -116,7 +117,7 @@ CONTAINS
       REAL(wp) ::   dtotel, ecc2       ! square of yield ellipse eccenticity
       REAL(wp) ::   z0, zr, zcca, zccb ! temporary scalars
       REAL(wp) ::   zu_ice2, zv_ice1   !
-      REAL(wp) ::   zddc, zdtc, zdst   ! delta on corners and on centre
+      REAL(wp) ::   zddc, zdtc, zzdst   ! delta on corners and on centre
       REAL(wp) ::   zdsshx, zdsshy     ! term for the gradient of ocean surface
       REAL(wp) ::   sigma1, sigma2     ! internal ice stress
 
@@ -139,16 +140,16 @@ CONTAINS
       
       REAL(wp), POINTER, DIMENSION(:,:) ::   zdd   , zdt      ! Divergence and tension at centre of grid cells
       REAL(wp), POINTER, DIMENSION(:,:) ::   zds              ! Shear on northeast corner of grid cells
+      REAL(wp), POINTER, DIMENSION(:,:) ::   zdst             ! Shear on centre of grid cells
       REAL(wp), POINTER, DIMENSION(:,:) ::   deltat, deltac   ! Delta at centre and corners of grid cells
       REAL(wp), POINTER, DIMENSION(:,:) ::   zs1   , zs2      ! Diagonal stress tensor components zs1 and zs2 
       REAL(wp), POINTER, DIMENSION(:,:) ::   zs12             ! Non-diagonal stress tensor component zs12
       REAL(wp), POINTER, DIMENSION(:,:) ::   zu_ice, zv_ice, zresr   ! Local error on velocity
-      
       !!-------------------------------------------------------------------
 
       CALL wrk_alloc( jpi,jpj, zpresh, zfrld1, zmass1, zcorl1, za1ct , zpreshc, zfrld2, zmass2, zcorl2, za2ct )
       CALL wrk_alloc( jpi,jpj, zc1   , u_oce1, u_oce2, u_ice2, zusw  , v_oce1 , v_oce2, v_ice1                )
-      CALL wrk_alloc( jpi,jpj, zf1   , deltat, zu_ice, zf2   , deltac, zv_ice , zdd   , zdt    , zds          )
+      CALL wrk_alloc( jpi,jpj, zf1   , deltat, zu_ice, zf2   , deltac, zv_ice , zdd   , zdt    , zds  , zdst  )
       CALL wrk_alloc( jpi,jpj, zdd   , zdt   , zds   , zs1   , zs2   , zs12   , zresr                         )
 
 #if  defined key_lim2 && ! defined key_lim2_vp
@@ -375,15 +376,18 @@ CONTAINS
             DO ji = fs_2, fs_jpim1
 
                !- Calculate Delta at centre of grid cells
-               zdst       = (  e2u(ji  , jj) * v_ice1(ji  ,jj)          &
+               zzdst      = (  e2u(ji  , jj) * v_ice1(ji  ,jj)          &
                   &          - e2u(ji-1, jj) * v_ice1(ji-1,jj)          &
                   &          + e1v(ji, jj  ) * u_ice2(ji,jj  )          &
                   &          - e1v(ji, jj-1) * u_ice2(ji,jj-1)          &
                   &          )                                          &
                   &         / area(ji,jj)
 
-               delta = SQRT( zdd(ji,jj)*zdd(ji,jj) + ( zdt(ji,jj)*zdt(ji,jj) + zdst*zdst ) * usecc2 )  
-               deltat(ji,jj) = MAX( SQRT(zdd(ji,jj)**2 + (zdt(ji,jj)**2 + zdst**2)*usecc2), creepl )
+               delta = SQRT( zdd(ji,jj)*zdd(ji,jj) + ( zdt(ji,jj)*zdt(ji,jj) + zzdst*zzdst ) * usecc2 )  
+               deltat(ji,jj) = MAX( SQRT(zdd(ji,jj)**2 + (zdt(ji,jj)**2 + zzdst**2)*usecc2), creepl )
+!!gm faster to replace the line above with simply:
+!!                deltat(ji,jj) = MAX( delta, creepl )
+!!gm end 
 
                !-Calculate stress tensor components zs1 and zs2 
                !-at centre of grid cells (see section 3.5 of CICE user's guide).
@@ -665,15 +669,13 @@ CONTAINS
                   &        * tmi(ji,jj) * tmi(ji,jj+1)                     &
                   &        * tmi(ji+1,jj) * tmi(ji+1,jj+1)
 
-               zdst       = (  e2u( ji  , jj   ) * v_ice1(ji,jj)          &
-                  &          - e2u( ji-1, jj   ) * v_ice1(ji-1,jj)         &
-                  &          + e1v( ji  , jj   ) * u_ice2(ji,jj)           &
-                  &          - e1v( ji  , jj-1 ) * u_ice2(ji,jj-1)         & 
-                  &          )                                             &
-                  &         / area(ji,jj)
+               zdst(ji,jj) = (  e2u( ji  , jj   ) * v_ice1(ji  ,jj  )    &
+                  &           - e2u( ji-1, jj   ) * v_ice1(ji-1,jj  )    &
+                  &           + e1v( ji  , jj   ) * u_ice2(ji  ,jj  )    &
+                  &           - e1v( ji  , jj-1 ) * u_ice2(ji  ,jj-1)  ) / area(ji,jj)
 
-               deltat(ji,jj) = SQRT( zdd(ji,jj)*zdd(ji,jj) + & 
-                  &                          ( zdt(ji,jj)*zdt(ji,jj) + zdst*zdst ) * usecc2 & 
+               deltat(ji,jj) = SQRT(    zdd(ji,jj)*zdd(ji,jj)   & 
+                  &                 + ( zdt(ji,jj)*zdt(ji,jj) + zdst(ji,jj)*zdst(ji,jj) ) * usecc2 & 
                   &                          ) + creepl
 
             ENDIF ! zdummy
@@ -686,19 +688,17 @@ CONTAINS
       !------------------------------------------------------------------------------!
       !
       ! * Invariants of the stress tensor are required for limitd_me
-      ! accelerates convergence and improves stability
+      !   (accelerates convergence and improves stability)
       DO jj = k_j1+1, k_jpj-1
          DO ji = fs_2, fs_jpim1
             divu_i (ji,jj) = zdd   (ji,jj)
             delta_i(ji,jj) = deltat(ji,jj)
-            shear_i(ji,jj) = zds   (ji,jj)
+            shear_i(ji,jj) = SQRT( zdt(ji,jj) * zdt(ji,jj) + zdst(ji,jj) * zdst(ji,jj) )
          END DO
       END DO
-
-      ! Lateral boundary condition
-      CALL lbc_lnk( divu_i (:,:), 'T', 1. )
+      CALL lbc_lnk( divu_i (:,:), 'T', 1. )      ! Lateral boundary condition
       CALL lbc_lnk( delta_i(:,:), 'T', 1. )
-      CALL lbc_lnk( shear_i(:,:), 'F', 1. )
+      CALL lbc_lnk( shear_i(:,:), 'T', 1. )
 
       ! * Store the stress tensor for the next time step
       stress1_i (:,:) = zs1 (:,:)
@@ -744,7 +744,7 @@ CONTAINS
       !
       CALL wrk_dealloc( jpi,jpj, zpresh, zfrld1, zmass1, zcorl1, za1ct , zpreshc, zfrld2, zmass2, zcorl2, za2ct )
       CALL wrk_dealloc( jpi,jpj, zc1   , u_oce1, u_oce2, u_ice2, zusw  , v_oce1 , v_oce2, v_ice1                )
-      CALL wrk_dealloc( jpi,jpj, zf1   , deltat, zu_ice, zf2   , deltac, zv_ice , zdd   , zdt    , zds          )
+      CALL wrk_dealloc( jpi,jpj, zf1   , deltat, zu_ice, zf2   , deltac, zv_ice , zdd   , zdt    , zds  , zdst  )
       CALL wrk_dealloc( jpi,jpj, zdd   , zdt   , zds   , zs1   , zs2   , zs12   , zresr                         )
 
    END SUBROUTINE lim_rhg

@@ -41,7 +41,7 @@ MODULE traadv_eiv
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 3.3 , NEMO Consortium (2010)
-   !! $Id: traadv_eiv.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: traadv_eiv.F90 3788 2013-02-10 12:14:59Z gm $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -167,7 +167,7 @@ CONTAINS
                DO jj = 2, jpjm1
                   DO ji = fs_2, fs_jpim1   ! vector opt.
                      z2d(ji,jj) = z2d(ji,jj) + zztmp * u_eiv(ji,jj,jk) &
-                       &         * (tsn(ji,jj,jk,jp_tem)+tsn(ji+1,jj,jk,jp_tem)) * e1u(ji,jj) * fse3u(ji,jj,jk) 
+                       &         * (tsn(ji,jj,jk,jp_tem)+tsn(ji+1,jj,jk,jp_tem)) * e2u(ji,jj) * fse3u(ji,jj,jk) 
                   END DO
                END DO
             END DO
@@ -178,7 +178,7 @@ CONTAINS
                DO jj = 2, jpjm1
                   DO ji = fs_2, fs_jpim1   ! vector opt.
                      z2d(ji,jj) = z2d(ji,jj) + zztmp * v_eiv(ji,jj,jk) &
-                     &           * (tsn(ji,jj,jk,jp_tem)+tsn(ji,jj+1,jk,jp_tem)) * e2v(ji,jj) * fse3v(ji,jj,jk) 
+                     &           * (tsn(ji,jj,jk,jp_tem)+tsn(ji,jj+1,jk,jp_tem)) * e1v(ji,jj) * fse3v(ji,jj,jk) 
                   END DO
                END DO
             END DO

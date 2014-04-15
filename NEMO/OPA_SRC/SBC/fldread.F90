@@ -99,7 +99,7 @@ MODULE fldread
 
    !!----------------------------------------------------------------------
    !! NEMO/OPA 3.3 , NEMO Consortium (2010)
-   !! $Id: fldread.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: fldread.F90 3578 2012-11-16 11:51:42Z smasson $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -830,6 +830,7 @@ CONTAINS
          sdf(jf)%wgtname = " "
          IF( LEN( TRIM(sdf_n(jf)%wname) ) > 0 )   sdf(jf)%wgtname = TRIM( cdir )//TRIM( sdf_n(jf)%wname )
          sdf(jf)%vcomp   = sdf_n(jf)%vcomp
+         sdf(jf)%rotn    = .TRUE.
       END DO
 
       IF(lwp) THEN      ! control print

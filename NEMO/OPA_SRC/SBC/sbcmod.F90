@@ -63,7 +63,7 @@ MODULE sbcmod
 #  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 4.0 , NEMO-consortium (2011) 
-   !! $Id: sbcmod.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: sbcmod.F90 3690 2012-11-27 16:51:05Z gm $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -198,8 +198,10 @@ CONTAINS
          IF( nsbc ==  5 )   WRITE(numout,*) '              coupled formulation'
          IF( nsbc ==  6 )   WRITE(numout,*) '              MFS Bulk formulation'
       ENDIF
-
-      IF( nn_ice == 4 )   CALL cice_sbc_init (nsbc)
+      !
+      IF( ln_ssr      )   CALL sbc_ssr_init               ! Sea-Surface Restoring initialisation
+      !
+      IF( nn_ice == 4 )   CALL cice_sbc_init( nsbc )      ! CICE initialisation
       !
    END SUBROUTINE sbc_init
 
@@ -271,25 +273,22 @@ CONTAINS
 
       !                                            !==  Misc. Options  ==!
       
-      SELECT CASE( nn_ice )                                     ! Update heat and freshwater fluxes over sea-ice areas
-      CASE(  1 )   ;       CALL sbc_ice_if   ( kt )                  ! Ice-cover climatology ("Ice-if" model)
-         !                                                      
-      CASE(  2 )   ;       CALL sbc_ice_lim_2( kt, nsbc )            ! LIM-2 ice model
-         IF( lk_bdy )      CALL bdy_ice_lim_2( kt )                  ! BDY boundary condition
-         !                                                     
-      CASE(  3 )   ;       CALL sbc_ice_lim  ( kt, nsbc )            ! LIM-3 ice model
-         !
-      CASE(  4 )   ;       CALL sbc_ice_cice ( kt, nsbc )            ! CICE ice model
+      SELECT CASE( nn_ice )                                       ! Update heat and freshwater fluxes over sea-ice areas
+      CASE(  1 )   ;         CALL sbc_ice_if   ( kt )                ! Ice-cover climatology ("Ice-if" model)
+      CASE(  2 )   ;         CALL sbc_ice_lim_2( kt, nsbc )          ! LIM-2 ice model
+              IF( lk_bdy )   CALL bdy_ice_lim_2( kt )                ! BDY boundary condition
+      CASE(  3 )   ;         CALL sbc_ice_lim  ( kt, nsbc )          ! LIM-3 ice model
+      CASE(  4 )   ;         CALL sbc_ice_cice ( kt, nsbc )          ! CICE ice model
       END SELECT                                              
 
-      IF( ln_rnf       )   CALL sbc_rnf( kt )                   ! add runoffs to fresh water fluxes
+      IF( ln_rnf         )   CALL sbc_rnf( kt )                   ! add runoffs to fresh water fluxes
  
-      IF( ln_ssr       )   CALL sbc_ssr( kt )                   ! add SST/SSS damping term
+      IF( ln_ssr         )   CALL sbc_ssr( kt )                   ! add SST/SSS damping term
 
-      IF( nn_fwb  /= 0 )   CALL sbc_fwb( kt, nn_fwb, nn_fsbc )  ! control the freshwater budget
+      IF( nn_fwb    /= 0 )   CALL sbc_fwb( kt, nn_fwb, nn_fsbc )  ! control the freshwater budget
 
-      IF( nclosea == 1 )   CALL sbc_clo( kt )                   ! treatment of closed sea in the model domain 
-      !                                                         ! (update freshwater fluxes)
+      IF( nn_closea == 1 )   CALL sbc_clo( kt )                   ! treatment of closed sea in the model domain 
+      !                                                           ! (update freshwater fluxes)
 !RBbug do not understand why see ticket 667
       CALL lbc_lnk( emp, 'T', 1. )
       !
@@ -369,15 +368,14 @@ CONTAINS
       !
    END SUBROUTINE sbc
 
+
    SUBROUTINE sbc_final
       !!---------------------------------------------------------------------
       !!                    ***  ROUTINE sbc_final  ***
+      !!
+      !! ** Purpose :   Finalize CICE (if used)
       !!---------------------------------------------------------------------
-
-      !-----------------------------------------------------------------
-      ! Finalize CICE (if used)
-      !-----------------------------------------------------------------
-
+      !
       IF( nn_ice == 4 )   CALL cice_sbc_final
       !
    END SUBROUTINE sbc_final

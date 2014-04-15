@@ -25,6 +25,7 @@ MODULE p4zrem
    USE p4zmeso         !  Sources and sinks of mesozooplankton
    USE p4zint          !  interpolation and computation of various fields
    USE prtctl_trc      !  print control for debugging
+   USE lib_fortran     ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
 
    IMPLICIT NONE
    PRIVATE
@@ -53,7 +54,7 @@ MODULE p4zrem
 #  include "top_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 3.3 , NEMO Consortium (2010)
-   !! $Id: p4zrem.F90 3295 2012-01-30 15:49:07Z cetlod $ 
+   !! $Id: p4zrem.F90 3558 2012-11-14 19:15:05Z rblod $ 
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS

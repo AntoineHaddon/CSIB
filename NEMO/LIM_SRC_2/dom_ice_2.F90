@@ -11,7 +11,7 @@ MODULE dom_ice_2
    !!   'key_lim2'                                       LIM2 sea-ice model
    !!----------------------------------------------------------------------
    !! NEMO/LIM2 3.3 , UCL - NEMO Consortium (2010)
-   !! $Id: dom_ice_2.F90 2715 2011-03-30 15:58:35Z rblod $
+   !! $Id: dom_ice_2.F90 3564 2012-11-15 17:42:30Z rblod $
    !! Software governed by the CeCILL licence (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
    USE par_ice_2   ! LIM parameters
@@ -31,15 +31,12 @@ MODULE dom_ice_2
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)         ::   area              !: surface of grid cell 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)         ::   tms    , tmu      !: temperature and velocity points masks
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)     ::   wght              !: weight of the 4 neighbours to compute averages
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)         ::   tmv               !: y-velocity mask used for evp rheology 
 
-
-# if defined key_lim2_vp
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)     ::   akappa , bkappa   !: first and third group of metric coefficients
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:,:,:) ::   alambd            !: second group of metric coefficients
-# else
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)         ::   tmv    , tmf      !: y-velocity and F-points masks
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)         ::   tmf               !: F-points masks
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)         ::   tmi               !: ice mask: =1 if ice thick > 0
-# endif
    !!----------------------------------------------------------------------
    CONTAINS
 

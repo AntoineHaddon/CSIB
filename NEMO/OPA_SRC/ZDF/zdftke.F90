@@ -51,6 +51,7 @@ MODULE zdftke
    USE lib_mpp        ! MPP library
    USE wrk_nemo       ! work arrays
    USE timing         ! Timing
+   USE lib_fortran    ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
 
    IMPLICIT NONE
    PRIVATE
@@ -86,6 +87,8 @@ MODULE zdftke
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   en             !: now turbulent kinetic energy   [m2/s2]
    REAL(wp)        , ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   htau           ! depth of tke penetration (nn_htau)
    REAL(wp)        , ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   dissl          ! now mixing lenght of dissipation
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   avt_k , avm_k  ! not enhanced Kz
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   avmu_k, avmv_k ! not enhanced Kz
 #if defined key_c1d
    !                                                                        !!** 1D cfg only  **   ('key_c1d')
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   e_dis, e_mix   !: dissipation and mixing turbulent lengh scales
@@ -97,7 +100,7 @@ MODULE zdftke
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 4.0 , NEMO Consortium (2011)
-   !! $Id: zdftke.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: zdftke.F90 3558 2012-11-14 19:15:05Z rblod $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -111,7 +114,9 @@ CONTAINS
          &      e_dis(jpi,jpj,jpk) , e_mix(jpi,jpj,jpk) ,                          &
          &      e_pdl(jpi,jpj,jpk) , e_ric(jpi,jpj,jpk) ,                          &
 #endif
-         &      en   (jpi,jpj,jpk) , htau (jpi,jpj)     , dissl(jpi,jpj,jpk) , STAT= zdf_tke_alloc )
+         &      en    (jpi,jpj,jpk) , htau  (jpi,jpj)    , dissl(jpi,jpj,jpk) ,     & 
+         &      avt_k (jpi,jpj,jpk) , avm_k (jpi,jpj,jpk),                          &
+         &      avmu_k(jpi,jpj,jpk) , avmv_k(jpi,jpj,jpk), STAT= zdf_tke_alloc      )
          !
       IF( lk_mpp             )   CALL mpp_sum ( zdf_tke_alloc )
       IF( zdf_tke_alloc /= 0 )   CALL ctl_warn('zdf_tke_alloc: failed to allocate arrays')
@@ -167,9 +172,21 @@ CONTAINS
       INTEGER, INTENT(in) ::   kt   ! ocean time step
       !!----------------------------------------------------------------------
       !
+      IF( kt /= nit000 ) THEN   ! restore before value to compute tke
+         avt (:,:,:) = avt_k (:,:,:) 
+         avm (:,:,:) = avm_k (:,:,:) 
+         avmu(:,:,:) = avmu_k(:,:,:) 
+         avmv(:,:,:) = avmv_k(:,:,:) 
+      ENDIF 
+      !
       CALL tke_tke      ! now tke (en)
       !
       CALL tke_avn      ! now avt, avm, avmu, avmv
+      !
+      avt_k (:,:,:) = avt (:,:,:) 
+      avm_k (:,:,:) = avm (:,:,:) 
+      avmu_k(:,:,:) = avmu(:,:,:) 
+      avmv_k(:,:,:) = avmv(:,:,:) 
       !
    END SUBROUTINE zdf_tke
 
@@ -810,12 +827,12 @@ CONTAINS
      ELSEIF( TRIM(cdrw) == 'WRITE' ) THEN   ! Create restart file
         !                                   ! -------------------
         IF(lwp) WRITE(numout,*) '---- tke-rst ----'
-        CALL iom_rstput( kt, nitrst, numrow, 'en'   , en    )
-        CALL iom_rstput( kt, nitrst, numrow, 'avt'  , avt   )
-        CALL iom_rstput( kt, nitrst, numrow, 'avm'  , avm   )
-        CALL iom_rstput( kt, nitrst, numrow, 'avmu' , avmu  )
-        CALL iom_rstput( kt, nitrst, numrow, 'avmv' , avmv  )
-        CALL iom_rstput( kt, nitrst, numrow, 'dissl', dissl )
+        CALL iom_rstput( kt, nitrst, numrow, 'en'   , en     )
+        CALL iom_rstput( kt, nitrst, numrow, 'avt'  , avt_k  )
+        CALL iom_rstput( kt, nitrst, numrow, 'avm'  , avm_k  )
+        CALL iom_rstput( kt, nitrst, numrow, 'avmu' , avmu_k )
+        CALL iom_rstput( kt, nitrst, numrow, 'avmv' , avmv_k )
+        CALL iom_rstput( kt, nitrst, numrow, 'dissl', dissl  )
         !
      ENDIF
      !

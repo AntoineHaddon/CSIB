@@ -23,6 +23,7 @@ MODULE traadv_ubs
    USE trc_oce         ! share passive tracers/Ocean variables
    USE wrk_nemo        ! Memory Allocation
    USE timing          ! Timing
+   USE lib_fortran     ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
 
    IMPLICIT NONE
    PRIVATE
@@ -36,7 +37,7 @@ MODULE traadv_ubs
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 3.3 , NEMO Consortium (2010)
-   !! $Id: traadv_ubs.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: traadv_ubs.F90 3788 2013-02-10 12:14:59Z gm $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -49,13 +50,13 @@ CONTAINS
       !! ** Purpose :   Compute the now trend due to the advection of tracers
       !!      and add it to the general trend of passive tracer equations.
       !!
-      !! ** Method  :   The upstream biased third (UBS) is order scheme based 
-      !!      on an upstream-biased parabolic interpolation (Shchepetkin and McWilliams 2005)
+      !! ** Method  :   The upstream biased 3rd order scheme (UBS) is based on an 
+      !!      upstream-biased parabolic interpolation (Shchepetkin and McWilliams 2005)
       !!      It is only used in the horizontal direction.
       !!      For example the i-component of the advective fluxes are given by :
-      !!                !  e1u e3u un ( mi(Tn) - zltu(i  ) )   if un(i) >= 0
+      !!                !  e2u e3u un ( mi(Tn) - zltu(i  ) )   if un(i) >= 0
       !!          zwx = !  or 
-      !!                !  e1u e3u un ( mi(Tn) - zltu(i+1) )   if un(i) < 0
+      !!                !  e2u e3u un ( mi(Tn) - zltu(i+1) )   if un(i) < 0
       !!      where zltu is the second derivative of the before temperature field:
       !!          zltu = 1/e3t di[ e2u e3u / e1u di[Tb] ]
       !!      This results in a dissipatively dominant (i.e. hyper-diffusive) 
@@ -66,8 +67,8 @@ CONTAINS
       !!      (centered in time) while the second term which is the diffusive part 
       !!      of the scheme, is evaluated using the before velocity (forward in time). 
       !!      Note that UBS is not positive. Do not use it on passive tracers.
-      !!      On the vertical, the advection is evaluated using a TVD scheme, as
-      !!      the UBS have been found to be too diffusive.
+      !!                On the vertical, the advection is evaluated using a TVD scheme,
+      !!      as the UBS have been found to be too diffusive.
       !!
       !! ** Action : - update (pta) with the now advective tracer trends
       !!
@@ -81,7 +82,7 @@ CONTAINS
       CHARACTER(len=3)                     , INTENT(in   ) ::   cdtype          ! =TRA or TRC (tracer indicator)
       INTEGER                              , INTENT(in   ) ::   kjpt            ! number of tracers
       REAL(wp), DIMENSION(        jpk     ), INTENT(in   ) ::   p2dt            ! vertical profile of tracer time-step
-      REAL(wp), DIMENSION(jpi,jpj,jpk     ), INTENT(in   ) ::   pun, pvn, pwn   ! 3 ocean velocity components
+      REAL(wp), DIMENSION(jpi,jpj,jpk     ), INTENT(in   ) ::   pun, pvn, pwn   ! 3 ocean transport components
       REAL(wp), DIMENSION(jpi,jpj,jpk,kjpt), INTENT(in   ) ::   ptb, ptn        ! before and now tracer fields
       REAL(wp), DIMENSION(jpi,jpj,jpk,kjpt), INTENT(inout) ::   pta             ! tracer trend 
       !
@@ -140,17 +141,17 @@ CONTAINS
          DO jk = 1, jpkm1                                 ! Horizontal slab
             DO jj = 1, jpjm1
                DO ji = 1, fs_jpim1   ! vector opt.
-                  ! upstream transport
+                  ! upstream transport (x2)
                   zfp_ui = pun(ji,jj,jk) + ABS( pun(ji,jj,jk) )
                   zfm_ui = pun(ji,jj,jk) - ABS( pun(ji,jj,jk) )
                   zfp_vj = pvn(ji,jj,jk) + ABS( pvn(ji,jj,jk) )
                   zfm_vj = pvn(ji,jj,jk) - ABS( pvn(ji,jj,jk) )
-                  ! centered scheme
-                  zcenut = 0.5 * pun(ji,jj,jk) * ( ptn(ji,jj,jk,jn) + ptn(ji+1,jj  ,jk,jn) )
-                  zcenvt = 0.5 * pvn(ji,jj,jk) * ( ptn(ji,jj,jk,jn) + ptn(ji  ,jj+1,jk,jn) )
-                  ! UBS scheme
-                  zwx(ji,jj,jk) =  zcenut - zfp_ui * zltu(ji,jj,jk) - zfm_ui * zltu(ji+1,jj,jk) 
-                  zwy(ji,jj,jk) =  zcenvt - zfp_vj * zltv(ji,jj,jk) - zfm_vj * zltv(ji,jj+1,jk) 
+                  ! 2nd order centered advective fluxes (x2)
+                  zcenut = pun(ji,jj,jk) * ( ptn(ji,jj,jk,jn) + ptn(ji+1,jj  ,jk,jn) )
+                  zcenvt = pvn(ji,jj,jk) * ( ptn(ji,jj,jk,jn) + ptn(ji  ,jj+1,jk,jn) )
+                  ! UBS advective fluxes
+                  zwx(ji,jj,jk) = 0.5 * ( zcenut - zfp_ui * zltu(ji,jj,jk) - zfm_ui * zltu(ji+1,jj,jk) )
+                  zwy(ji,jj,jk) = 0.5 * ( zcenvt - zfp_vj * zltv(ji,jj,jk) - zfm_vj * zltv(ji,jj+1,jk) )
                END DO
             END DO
          END DO                                           ! End of slab         
@@ -197,8 +198,8 @@ CONTAINS
          ztw(:,:,jpk) = 0.e0   ;   zti(:,:,jpk) = 0.e0
 
          ! Surface value
-         IF( lk_vvl ) THEN   ;   ztw(:,:,1) = 0.e0                      ! variable volume : flux set to zero
-         ELSE                ;   ztw(:,:,1) = pwn(:,:,1) * ptb(:,:,1,jn)   ! free constant surface 
+         IF( lk_vvl ) THEN   ;   ztw(:,:,1) = 0.e0                         ! variable volume : flux set to zero
+         ELSE                ;   ztw(:,:,1) = pwn(:,:,1) * ptb(:,:,1,jn)   ! constant volume : non zero flux though z=0 
          ENDIF
          !  upstream advection with initial mass fluxes & intermediate update
          ! -------------------------------------------------------------------

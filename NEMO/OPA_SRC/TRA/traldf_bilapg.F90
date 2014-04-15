@@ -38,7 +38,7 @@ MODULE traldf_bilapg
 #  include "ldfeiv_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 3.3 , NEMO Consortium (2010)
-   !! $Id: traldf_bilapg.F90 3294 2012-01-28 16:44:18Z rblod $
+   !! $Id: traldf_bilapg.F90 3806 2013-02-12 17:55:59Z acc $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -247,8 +247,9 @@ CONTAINS
          !                                                ! ===============
          ! "Poleward" diffusive heat or salt transport
          IF( cdtype == 'TRA' .AND. ln_diaptr .AND. ( kaht == 2 ) .AND. ( MOD( kt, nn_fptr ) == 0 ) ) THEN
-            IF( jn == jp_tem)   htr_ldf(:) = ptr_vj( zftv(:,:,:) )
-            IF( jn == jp_sal)   str_ldf(:) = ptr_vj( zftv(:,:,:) )
+            ! note sign is reversed to give down-gradient diffusive transports (#1043)
+            IF( jn == jp_tem)   htr_ldf(:) = ptr_vj( -zftv(:,:,:) )
+            IF( jn == jp_sal)   str_ldf(:) = ptr_vj( -zftv(:,:,:) )
          ENDIF
 
          !                             ! ************ !   ! ===============
