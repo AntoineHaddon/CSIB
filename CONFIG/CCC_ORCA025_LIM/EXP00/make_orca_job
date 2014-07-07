@@ -1,0 +1,525 @@
+#!/bin/sh
+#
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+# Create a job string that will run NEMO
+# Larry Solheim ...Mar 2012
+# $Id: make_nemo_job 673 2012-06-05 20:39:40Z acrnrls $
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+# Commonly changed parameters
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+
+# runid is assigned to the namelist variable cn_exp
+runid=abc
+
+# Output file names will begin with ${uxxx}_${runid}_
+uxxx=mc
+
+# Set the start and stop dates of the current run segment
+# The values for start and stop must be of the form
+#      Year
+#   or Year:Month
+# where Year and Month are integers. Month will default
+# to 1 for start and 12 for stop if it is not present.
+start=001
+stop=005
+
+# The name of a tar file containing the NEMO restart files
+# This must be set for the first job of a run unless nemo_from_rest = on
+# Restart files created by the submission job will have names of the form
+#     ${uxxx}_${runid}_YYYYMMDD_restart.tar
+nemo_restart=''
+
+# nemo_from_rest is used to flag starting nemo from rest rather than a restart
+# If this is set "on" then the user must also supply namelist files via the
+# variables nemo_namelist and nemo_namelist_ice.
+# Either define nemo_restart or set nemo_from_rest = on but not both.
+nemo_from_rest=on
+
+# nemo_exec identifies the nemo executable
+# This can be a file that is "save"d on DATAPATH or a full pathname to a user supplied binary.
+# If it is a full path name then this path must be available from the execution machine.
+# This file is saved in the reastart archive.
+# If nemo_exec is not defined then the executable found in the restart will be used.
+nemo_exec=${runid}_ccc_nemo_v01_ccc_orca025_lim_exe
+
+# Wall clock limit
+time=4800
+
+# nemo_freq is the number of years (or months) nemo will run for each job in the string
+# History files and restarts will be deleted after each job in the string.
+# nemo_freq will be assigned a value of the form Ny or Nm where N is a positive integer.
+nemo_freq=1m
+
+# The frequency at which the history files will be saved to cfs
+# This should be an integer multiple of nemo_freq
+# save_freq will be assigned a value of the form Ny or Nm where N is a positive integer.
+save_freq=1m
+
+# This assumes that individual nemo jobs will always run for an integer number of years
+# If run in sub year chunks then the value of months must be changed accordingly
+months=1
+
+# cfs related variables
+shortermdir=off
+masterdir=on
+
+# Return stdout to $HOME/.queue when noprint = off
+noprint=on
+
+# Include dump and/or delete jobs in the output job string
+with_dump=off
+with_delete=off
+
+# Delete monthly restarts except DEC
+nemo_del_rs=on
+
+# Dump from backend
+dump_sublist_besc=on
+
+# nn_ice = 0 or 1: with_ice=off; nn_ice=2,3,4: with_ice=on (in xnemo).
+# nn_ice = 0 no ice boundary condition
+#          1 use observed ice-cover;
+#          2 LIM2
+#          3 LIM3
+#          4 CICE
+nn_ice=2
+
+# Any command line args of the form var=val will be added to the current environment.
+# These values will override that of any of the variables that are set above.
+# All command line args that are not of the form var=val are ignored.
+for arg in "$@"; do
+  case $arg in
+    *=*) var=`echo $arg|awk -F\= '{printf "%s",$1}' -`
+         val=`echo "$arg"|awk '{i=index($0,"=")+1;printf "%s",substr($0,i)}' -`
+         [ -n "$var" ] && eval ${var}=\"\$val\" # preserve quoted assignments
+         ;;
+  esac
+done
+
+# Ensure that we have compatible nemo_from_rest and nemo_restart definitions
+if [ x"$nemo_from_rest" = xon -a -n "$nemo_restart" ]; then
+  echo "You cannot set nemo_from_rest=on and also define nemo_restart."
+  exit 1
+fi
+
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+# End of commonly changed parameters
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+# Other parameters that may also be changed
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+
+this_usr=`whoami`
+case $this_usr in
+    acrnocn) runpath=/data/cava_ccrnj01/data ;;
+    acrncbn) runpath=/data/cava_ccrnj03/data ;;
+    acrngcm) runpath=/data/cava_ccrnj13/data ;;
+    acrnesm) runpath=/data/cava_ccrnj10/data ;;
+    acrncc2) runpath=/data/cava_ccrnj05/data ;;
+    acrnrwl) runpath=/data/cava_ccrnj13/data ;;
+    acrnice) runpath=/data/cava_ccrnj13/data ;;
+    acrnxxx) runpath=/my/alt/run/path ;;  # This could be you
+          *) runpath='' ;;
+esac
+if [ -z "$runpath" ]; then
+    echo "Using default front end RUNPATH"
+    opt_RUNPATH=''
+    opt_CCRNTMP=''
+else
+    # mdump_RUNPATH and mdump_CCRNTMP are the RUNPATH and CCRNTMP
+    # used on the front end for the dumping/diagnostics/pooling/etc.
+    opt_RUNPATH=mdump_RUNPATH=$runpath
+    opt_CCRNTMP=mdump_CCRNTMP=$runpath/utmp
+fi
+
+# start_year, start_mon, stop_year and stop_mon are calculated here from start and stop
+# Do not modify these definitions
+start_year=`echo $start|awk -F':' '{printf "%3.3d",$1}' -`
+start_mon=`echo $start|awk -F':' '{if ($2~/^[0-9][0-9]*$/) printf "%2.2d",$2; else print "01"}' -`
+stop_year=`echo $stop|awk -F':' '{printf "%3.3d",$1}' -`
+stop_mon=`echo $stop|awk -F':' '{if ($2~/^[0-9][0-9]*$/) printf "%2.2d",$2; else print "12"}' -`
+
+# All variable definitions in the following here document will be passed to the
+# cccjob command below and used to modify the job string for the current run.
+job_defs=job_defs$$
+cat <<end_job_defs >$job_defs
+# Output file names will begin with ${uxxx}_${runid}_
+  uxxx=$uxxx
+  runid=$runid
+
+# time step for the dynamics (and tracer if nn_acc=0)
+  rn_rdt=1440.
+
+# Define the nemo domain (implies node geometry for MPI)
+  nemo_jpni=7
+  nemo_jpnj=32
+  nemo_jpnij=224
+
+# Number of physical nodes used by this job
+  phys_nodex=4
+
+# Machine where dump jobs are running
+  dump_sublist_besc=${dump_sublist_besc}
+
+# nemo_from_rest is used to flag starting nemo from rest rather than a restart
+# If this is set "on" then the user must also supply namelist files via the
+# variables nemo_namelist and nemo_namelist_ice
+  nemo_from_rest=$nemo_from_rest
+
+# The name of a tar file containing the NEMO restart files
+# This must be set for the first job of a run unless nemo_from_rest = on
+  nemo_restart=$nemo_restart
+
+# nemo_exec identifies the nemo executable
+# This can be a file that is "save"d on DATAPATH or a full pathname to a user supplied binary.
+# If it is a full path name then this path must be available from the execution machine.
+# This file is saved in the reastart archive.
+# If nemo_exec is not defined then the executable found in the restart will be used.
+  nemo_exec=$nemo_exec
+
+# Wall clock limit
+  time=${time}
+
+# Delete monthly restarts except DEC
+  nemo_del_rs=${nemo_del_rs}
+
+# Identify files containing namelist input for NEMO (namelist) and LIM (namelist_ice)
+# These namelist files are only used when starting from rest or when nemo_force_namelist = on
+# These can be a files that are "save"d on DATAPATH or full pathnames to any location.
+# If they are full path names then these paths must be available from the execution machine.
+  nemo_namelist=${runid}_ccc_nemo_v01_ccc_orca025_lim_namelist
+  nemo_namelist_ice=${runid}_ccc_nemo_v01_ccc_orca025_lim_namelist_ice
+
+# nn_ice = 0 no ice boundary condition
+#          1 use observed ice-cover;
+#          2 LIM2
+#          3 LIM3
+#          4 CICE
+  nn_ice=${nn_ice}
+
+# Normally user suppled namelist files are only required when starting the model
+# from rest. Otherwise the namelist files are stored in the restart archive and
+# read from the archive at each restart. Setting nemo_force_namelist = on will
+# over ride this behaviour and allow the namelists defined by the variables
+# nemo_namelist and nemo_namelist_ice to be used at the start of each new string.
+  nemo_force_namelist=off
+
+# Define execution dir (CCRNTMP) and data dir (RUNPATH) used on the front end
+  $opt_RUNPATH
+  $opt_CCRNTMP
+
+  shortermdir=$shortermdir
+  masterdir=$masterdir
+  with_lsarc=off
+  nolist=on
+  noprint=$noprint
+
+# This assumes that individual nemo jobs will always run for an integer number of years
+# If run in sub year chunks then the value of months must be changed accordingly
+  months=$months
+
+# run_start_year is the first year of the run, which is normally start_year
+# but can be reset by the user if required
+  run_start_year=$start_year
+
+# nemo_nn_it000 is the initial time step of the current run
+# This is normally read from the previous restart but may be set here.
+# If defined, nemo_nn_it000 must always be set to an integer greater than zero.
+  nemo_nn_it000=''
+
+# Access or copy files required to run NEMO
+  orca_meshmask_file="nemo3.4.1_orca1_mesh_mask_ngr.nc"
+  nemo_iodef=${runid}_ccc_nemo_v01_ccc_orca025_lim_iodef.xml
+  nemo_xmlio_server_def=${runid}_ccc_nemo_v01_ccc_orca025_lim_xmlio_server.def
+  nemo_ahmcoef=nemo_3.4_orca1_ahmcoef
+  nemo_coordinates=nemo_3.4_orca025_coordinates_cmc.nc
+  nemo_bathy_meter=nemo_3.4_orca025_bathy_meter_cmc.nc
+  nemo_mask_itf=nemo_3.4_orca1_mask_itf_orca1_new.nc
+  nemo_M2rowdrg=nemo_3.4.1_orca025_m2rowdrg_orca1_inter.nc
+  nemo_K1rowdrg=nemo_3.4.1_orca025_k1rowdrg_orca1_inter.nc
+  nemo_geothermal_heating=nemo_3.3_orca2_geothermal_heating.nc
+  nemo_runoff_core_monthly=nemo_3.4.1_orca025_rout_socoefr_month_r1i1p1_1979-2005-mean2.nc
+  nemo_sss_data=nemo_3.4_orca025_sss_1m.nc
+  nemo_chlorophyll=nemo_3.4.1_orca025_chlorophyll_1m_orca1.nc
+  nemo_subbains=nemo_3.4_orca1_basinmask_050308_ukmo.nc
+
+  nemo_data_1m_potential_temperature_nomask=nemo_3.4_orca025_potemp_1m_z46_nomask_orca1jan.nc
+  nemo_data_1m_salinity_nomask=nemo_3.4_orca025_salin_1m_z46_nomask_orca1jan.nc
+
+  nemo_t=nemo_3.4_orca1_tas_day_r1i1p1_1979-2005-mean.nc
+  nemo_u=nemo_3.4_orca1_uas_day_r1i1p1_1979-2005-mean.nc
+  nemo_v=nemo_3.4_orca1_vas_day_r1i1p1_1979-2005-mean.nc
+  nemo_q=nemo_3.4_orca1_huss_day_r1i1p1_1979-2005-mean.nc
+  nemo_qsw=nemo_3.4_orca1_rsds_day_r1i1p1_1979-2005-mean.nc
+  nemo_qlw=nemo_3.4_orca1_rlds_day_r1i1p1_1979-2005-mean.nc
+  nemo_precip=nemo_3.4_orca1_pr_day_r1i1p1_1979-2005-mean.nc
+  nemo_snow=nemo_3.4_orca1_prsn_day_r1i1p1_1979-2005-mean.nc
+  nemo_weights_bicubic1=nemo_3.4_weights_Levitus_bicubic_orca025.nc
+  nemo_weights_bilinear1=nemo_3.4_weights_Levitus_bilinear_orca025.nc
+  nemo_weights_bicubic2=nemo_3.4_weights_CanAM4grid_bicubic_orca025.nc
+  nemo_weights_bilinear2=nemo_3.4_weights_CanAM4grid_bilinear_orca025.nc
+
+# These are for flux forcing. If don't use flux forcing, provide any
+# forcing data files existing on the disk.
+  nemo_utau=nemo_3.4_orca1_t_10.15june2009.nc
+  nemo_vtau=nemo_3.4_orca1_t_10.15june2009.nc
+  nemo_qtot=nemo_3.4_orca1_t_10.15june2009.nc
+  nemo_qsr=nemo_3.4_orca1_t_10.15june2009.nc
+  nemo_emp=nemo_3.4_orca1_t_10.15june2009.nc
+  nemo_weights_bicubic3=nemo_3.4_weights_grid03_bicubic_orca1.nc
+  nemo_weights_bilinear3=nemo_3.4_weights_grid03_bilinear_orca1.nc
+
+# The boolean variable nemo_write_stdout can be used to control echoing of the
+# file ocean.output (created by nemo as stdout) at runtime. When nemo_write_stdout
+# is "on" this info will appear in the submission job output that is returned
+# to a user's ~/.queue directory.
+  nemo_write_stdout=on
+
+# Nemo outputs data saved at different frequencies to different files.
+# It will also distinguish output data by creating files with specific suffixes.
+# The following variables will determine what subset of this data gets saved to
+# DATAPATH after each run.
+# 
+# Saved nemo history files will have file names similar to
+#     ${uxxx}_${runid}_${frq}_${start_date}_${stop_date}_${sfx}
+# frq is the save frequency, one of "1y", "1m", "1d", "5d" (y=year, m=month, d=day)
+# start_date and stop_date are determined at run time
+# sfx is one of the suffixes shown below
+# 
+# By adding or removing suffixes from these lists or modifying the boolean variables
+# nemo_save_*_data that are assigned below, the user can control nemo output.
+# Note, case is significant for the suffixes in these lists.
+# Any matching files that do not exist at run time will be silently ignored.
+  nemo_1y_suffix_list="grid_T"
+  nemo_1m_suffix_list="grid_T"
+  nemo_1d_suffix_list="grid_T grid_T_0n180w diaptr"
+  nemo_5d_suffix_list="icemod grid_T grid_U grid_V grid_W"
+
+# The following boolean variables will determine if any nemo output files with a
+# particular save frequencies are saved to DATAPATH.
+# If any of these are "off" then that set of files will not be saved regardless of
+# the value of the corresponding nemo_*_suffix_list variable that is set above.
+  nemo_save_1y_data=off
+  nemo_save_1m_data=off
+  nemo_save_1d_data=off
+  nemo_save_5d_data=on
+
+# If all above are "off", nemo_save_hist should be off. Otherwise, the model crashes.
+  nemo_save_hist=on
+
+# The following variables determine which run time diagnostics files will be created
+# If nemo_with_rtd is set false (ie not "on") then no rtd files will be created
+# regardless of the value of the other switches.
+  nemo_with_rtd=off
+  nemo_with_rtd_1y=on
+  nemo_with_rtd_1m=on
+  nemo_with_rtd_1d=on
+  nemo_with_rtd_5d=on
+
+# The following variables determine the names of rtd files that may be created
+# Note, these file names should always begin with "sc_" and end with "_rtd.nc"
+  nemo_rtd_file_1y=sc_${runid}_1y_rtd.nc
+  nemo_rtd_file_1m=sc_${runid}_1m_rtd.nc
+  nemo_rtd_file_1d=sc_${runid}_1d_rtd.nc
+  nemo_rtd_file_5d=sc_${runid}_5d_rtd.nc
+end_job_defs
+
+# The following here document will be passed to dump_sublist and used to identify files
+# that will be dumped on each instance of dump_sublist appearing in the job string
+dump_sublist_defs=dump_sublist_defs$$
+cat <<'end_dump_sublist_defs' >$dump_sublist_defs
+
+  # Reset arclabel
+  arclabel=${dump_sublist_uxxx}_${runid}_$ym_range
+
+  # Determine the number of days in the last month of the run
+  case $stop_mon in
+    1|01) stop_day=31 ;;
+    2|02) stop_day=28 ;;
+    3|03) stop_day=31 ;;
+    4|04) stop_day=30 ;;
+    5|05) stop_day=31 ;;
+    6|06) stop_day=30 ;;
+    7|07) stop_day=31 ;;
+    8|08) stop_day=31 ;;
+    9|09) stop_day=30 ;;
+      10) stop_day=31 ;;
+      11) stop_day=30 ;;
+      12) stop_day=31 ;;
+       *) bail "stop_mon=$stop_mon is out of range" ;;
+  esac
+
+  # Calendar date (YYYYMMDD) at the end of the current year/month (stop_year/stop_mon)
+  stop_date=`echo $stop_year $stop_mon $stop_day|awk '{printf "%4.4d%2.2d%2.2d",$1,$2,$3}' -`
+
+  # Restart file name
+  rsfile=${dump_sublist_uxxx}_${runid}_${stop_date}_restart.tar
+  file1=$rsfile
+  join=1
+
+  eval fnpatt=${rsfile}\.\[0-9\]\[0-9\]\[0-9\]
+  full_path=`(ls -1 $DATAPATH/$fnpatt || : ) 2>/dev/null | tail -1`
+  [ -z "$full_path" ] &&
+      bail "Unable to determine full pathname for restart file $rsfile"
+
+  tar xf $full_path rs_saved_history_file_names ||
+      bail "${this_host}:`pwd`\n  Cannot retrive rs_saved_history_file_names from restart file $full_path"
+
+  # A list of history files that was saved at the same time
+  # as the restart is available in the restart archive
+  [ ! -s rs_saved_history_file_names ] &&
+      bail "${this_host}:`pwd` rs_saved_history_file_names is missing or empty."
+  for fname in `cat rs_saved_history_file_names`; do
+    join=`expr $join + 1`
+    eval file$join\=$fname
+  done
+
+end_dump_sublist_defs
+
+# The following here document will be passed to del_list and used to identify files
+# that will be deleted on each instance of del_list appearing in the job string
+del_list_defs=del_list_defs$$
+cat <<'end_del_list_defs' >$del_list_defs
+
+  # determine the year and month of the previous restart
+  if [ $start_mon -eq 1 ]; then
+    rs_mon=12
+    rs_year=`expr $start_year - 1`
+  else
+    rs_mon=`expr $start_mon - 1`
+    rs_year=$start_year
+  fi
+
+  # Determine the number of days in the last month of the previous restart
+  case $rs_mon in
+    1|01) rs_day=31 ;;
+    2|02) rs_day=28 ;;
+    3|03) rs_day=31 ;;
+    4|04) rs_day=30 ;;
+    5|05) rs_day=31 ;;
+    6|06) rs_day=30 ;;
+    7|07) rs_day=31 ;;
+    8|08) rs_day=31 ;;
+    9|09) rs_day=30 ;;
+      10) rs_day=31 ;;
+      11) rs_day=30 ;;
+      12) rs_day=31 ;;
+       *) bail "rs_mon=$rs_mon is out of range" ;;
+  esac
+
+  # Calendar date (YYYYMMDD) for the previous restart
+  rs_date=`echo $rs_year $rs_mon $rs_day|awk '{printf "%4.4d%2.2d%2.2d",$1,$2,$3}' -`
+
+  # Restart file name
+  rsfile=${del_list_uxxx}_${runid}_${rs_date}_restart.tar
+  file1=$rsfile
+  join=1
+
+  eval fnpatt=${rsfile}\.\[0-9\]\[0-9\]\[0-9\]
+  full_path=`(ls -1 $DATAPATH/$fnpatt || : ) 2>/dev/null | tail -1`
+  if [ -n "$full_path" ]; then
+    # If the restart file exists then extract the list of saved history file
+    # that are to be deleted and add them to the list of files to be deleted.
+    # Otherwise simply call delet.dk with join = 1, as set above, which will
+    # then fail gracefully and the string will continue.
+
+    this_dir=`pwd`
+    tmp_dir="tmp_del_${runid}_${this_host}_$stamp"
+    mkdir $tmp_dir
+    cd $tmp_dir
+
+    # Check for existence of rs_saved_history_file_names
+    present=`(tar tvf $full_path || : ) 2>/dev/null | grep rs_saved_history_file_names`
+    [ -z "$present" ] && bail "rs_saved_history_file_names is missing from $full_path"
+
+    tar xf $full_path rs_saved_history_file_names ||
+        bail "Cannot retrive rs_saved_history_file_names from restart file $full_path"
+
+    # A list of history files that was saved at the same time
+    # as the restart is available in the restart archive
+    [ ! -s rs_saved_history_file_names ] &&
+        bail "${this_host}:`pwd` rs_saved_history_file_names is empty."
+    for fname in `cat rs_saved_history_file_names`; do
+      join=`expr $join + 1`
+      eval file$join\=$fname
+    done
+
+    cd $this_dir
+    rm -fr $tmp_dir
+  fi
+
+end_del_list_defs
+
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+# Create the job string from the template
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+
+outpfx=${runid}_${start_year}m${start_mon}_${stop_year}m$stop_mon
+
+# Ensure save frequecy and nemo frequency have units "m"
+sfq=`echo $save_freq | awk '
+       /^ *[0-9]*y *$/ {sub(/y *$/,""); if ($0~/^ *$/){print "1y"}else{printf "%dm",$0*12}; exit}
+       /^ *[0-9]*m *$/ {sub(/m *$/,""); if ($0~/^ *$/){print "1m"}else{printf "%dm",$0}; exit}' -`
+[ -z "$sfq" ] &&
+    echo "Invalid save_freq=${save_freq}. Should be an integer followed by y or m." && exit 1
+nfq=`echo $nemo_freq | awk '
+       /^ *[0-9]*y *$/ {sub(/y *$/,""); if ($0~/^ *$/){print "1y"}else{printf "%dm",$0*12}; exit}
+       /^ *[0-9]*m *$/ {sub(/m *$/,""); if ($0~/^ *$/){print "1m"}else{printf "%dm",$0}; exit}' -`
+[ -z "$nfq" ] &&
+    echo "Invalid nemo_freq=${nemo_freq}. Should be an integer followed by y or m." && exit 1
+
+if   [ "x$with_dump" = 'xon'  ]; then
+  eval with_dump\=1
+elif [ "x$with_dump" = 'xoff' ]; then
+  eval with_dump\=0
+elif [ "x$with_dump" = 'xyes' ]; then
+  eval with_dump\=1
+elif [ "x$with_dump" = 'xno'  ]; then
+  eval with_dump\=0
+else
+  eval with_dump\=0
+fi
+if [ $with_dump -eq 1 ]; then
+  DUMPJOB="dump_sublist=${dump_sublist_defs}:$sfq"
+else
+  DUMPJOB=''
+fi
+
+if   [ "x$with_delete" = 'xon'  ]; then
+  eval with_delete\=1
+elif [ "x$with_delete" = 'xoff' ]; then
+  eval with_delete\=0
+elif [ "x$with_delete" = 'xyes' ]; then
+  eval with_delete\=1
+elif [ "x$with_delete" = 'xno'  ]; then
+  eval with_delete\=0
+else
+  eval with_delete\=0
+fi
+if [ $with_delete -eq 1 ]; then
+  # Ensure the delete frequency (same as nemo frequency) has units "y"
+
+  dfq=`echo $nfq | awk '
+         /^ *[0-9]*m *$/ {sub(/m *$/,""); if($0%12==0){printf "%dy",$0/12; exit}}' -`
+  [ -z "$dfq" ] &&
+      echo "Invalid nemo_freq=${nemo_freq}. Should be an integer number of years." && exit 1
+  DELJOB="del_list=${del_list_defs}:$dfq"
+else
+  DELJOB=''
+fi
+joindir=/users/tor/acrn/ncs/time_joining
+physicalrtdbase_dir=/users/tor/acrn/ncs/physical_rtd_v02b
+JOBDESC="base:$nfq ${joindir}/nemo_pre-rtd_join:1y ${physicalrtdbase_dir}/nemo_physical_rtd_base:1y ${physicalrtdbase_dir}/delete_files_for_physical_rtd_base:1y $DUMPJOB $DELJOB"
+
+if [ -z "$CCCJOB_ROOT" ]; then
+    CCCJOB_ENV=''
+else
+    eval CCCJOB_ENV=\'env CCCJOB_ROOT\=$CCCJOB_ROOT\'
+fi
+$CCCJOB_ENV cccjob --out=${outpfx}_job --job="$JOBDESC" --start="$start" --stop="$stop" $job_defs
+
+rm -f $job_defs $dump_sublist_defs $del_list_defs
+
