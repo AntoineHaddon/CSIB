@@ -1,0 +1,1 @@
+build-nemo -k ver=nemo_v3.4.1 exec=runid_ccc_nemo_v01_ccc_orca1_lim_exe arch=xlf_aix-cccma refcfg=ORCA2_LIM cfg=ORCA1_LIM_2_v3.4.1 del_key="key_orca_r2" add_key="key_iomput key_mpp_mpi key_orca_r1 key_mpp_rep"
