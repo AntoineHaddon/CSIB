@@ -592,6 +592,7 @@ cat > Execute_Script <<'end_of_script'
   # Access or copy files required to run NEMO
 
   if [ $nemo_carbon -eq 1 ]; then
+    # PISCES I/O
     nemo_iodef=nemo_3.4.1_orca2_lim_pisces_iodef.xml
   else
     nemo_iodef=nemo_3.4_orca2_lim_iodef_xml
@@ -693,6 +694,7 @@ cat > Execute_Script <<'end_of_script'
 #  acc_cp ncar_precip.15JUNE2009_orca2.nc  nemo_3.3_orca2_ncar_precip.15june2009_orca2.nc
 
   if [ $nemo_carbon -eq 1 ]; then
+    # Access PISCES files
     nemo_presatm=nemo_3.4_orca2_presatm.nc
     nemo_dust_orca=nemo_3.4_orca2_dust.orca.nc
     nemo_river_orca=nemo_3.4_orca2_river.orca.nc
@@ -893,12 +895,15 @@ cat > Execute_Script <<'end_of_script'
   fi
 
   #=#=#=# Concatenate history files annually and optionally dump/delete them
-  #=#=#=# Generate run time diagnostics from these annual history files
+  #=#=#=# Optionally generate run time diagnostics from these annual history files
 
   nemo_ann_cat=on
   ToF nemo_ann_cat
 
-  if [ $nemo_ann_cat -a $nemo_save_hist -eq 1 -a $stop_mon -eq 12 ]; then
+  if [ $nemo_ann_cat -eq 1 -a $stop_mon -eq 12 ]; then
+    if [ $nemo_save_hist -ne 1 ]; then
+      bail "Annual processing for history files was requested but history files are not saved."
+    fi
     # This is the end of Dec and history files exist on disk for the current year
     # History file are saved with names of the form
     #    ${uxxx}_${runid}_${freq}_${start_date}_${stop_date}_${sfx}.nc
@@ -918,10 +923,12 @@ cat > Execute_Script <<'end_of_script'
     # to only concatenate a subset of the history files
     nemo_ann_cat_freq_list='1y 1m 1d 5d'
     nemo_ann_cat_suffix_list='icemod, grid_t grid_u grid_v grid_w ptrc_t diad_t'
-    # Keep track of any yearly history file created below in the file ann_cat_file_list
+
+    # Keep track of any yearly history file created here in the file ann_cat_file_list
     ann_cat_file_list=ann_cat_file_list_$$
     rm -f $ann_cat_file_list
     touch $ann_cat_file_list
+
     for freq in $nemo_ann_cat_freq_list; do
       for sfx in $nemo_ann_cat_suffix_list; do
         pfx="${uxxx}_${cn_exp}_${freq}_${stop_year}????_${stop_year}????_$sfx"
@@ -932,13 +939,13 @@ cat > Execute_Script <<'end_of_script'
           # Identify a list of unique matching file names to be accessed
           acclist=''
           for full_path in $found_file; do
-            echo "full_path = $full_path"
+            # echo "full_path = $full_path"
             bname=`basename $full_path|sed 's/\.[0-9][0-9][0-9]$//'`
             acclist="$acclist $bname"
           done
 
           # Ensure all file names are unique
-          # Copies are created when multiple edition numbers exist for the same file
+          # Copies will be created when multiple edition numbers exist for the same file
           acclist=`echo $acclist|awk '{for(i=1;i<=NF;i++){printf "%s\n",$i}}'|sort -u|xargs`
           nfile=0
           echo $acclist | while read curr_fname; do
@@ -949,6 +956,8 @@ cat > Execute_Script <<'end_of_script'
           # Save the concatenated annual history file for this freq and sfx
           ann_name="${uxxx}_${cn_exp}_${freq}_${stop_year}0101_${stop_year}1231_${sfx}.nc"
           if [ $nfile -eq 1 ]; then
+            # If there is only 1 sub-annual file then assume it already includes data
+            # for the entire year and we should, therefore, not resave the same file
             # Verify that the file found on disk is the full year file
             # Remove any spaces around the single file name in acclist
             acclist=`echo $acclist|sed 's/ *//g'`
@@ -958,8 +967,6 @@ cat > Execute_Script <<'end_of_script'
             echo $ann_name >> $ann_cat_file_list
           elif [ $nfile -gt 1 ]; then
             # This is only done if there is more than 1 sub-annual file
-            # If there is only 1 sub-annual file then assume it already includes
-            # the entire year and we should therefore not resave the same file
             $NCRCAT -h $acclist $ann_name ||
               bail "Problem executing $NCRCAT -h $acclist $ann_name"
             # Delete the sub-annual files
@@ -978,7 +985,113 @@ cat > Execute_Script <<'end_of_script'
       done
     done
 
-# ??? Add files in $ann_cat_file_list to saved_history_file_names ???
+    # If nemo_ann_rtd is true then execute the nemo run time diagnostics
+    nemo_ann_rtd=on
+    ToF nemo_ann_rtd
+
+    if [ $nemo_ann_rtd -eq 1 ]; then
+      # Invoke the nemo run time diagnostics
+
+      # This currently requires certain yearly history files, which may or may not have
+      # been created above. Verify that they exist by attempting to access them
+      # These files could be modified so create local copies with write access
+      rtd_hist1="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_grid_t.nc"
+      rtd_hist2="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_grid_u.nc"
+      rtd_hist3="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_grid_v.nc"
+      rtd_hist4="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_grid_w.nc"
+      access grid_t $rtd_hist1 nocp=off
+      access grid_u $rtd_hist2 nocp=off
+      access grid_v $rtd_hist3 nocp=off
+      access grid_w $rtd_hist4 nocp=off
+      chmod u+rw grid_t grid_u grid_v grid_w
+
+      # This also requires a file containing grid information
+      # This file could be modified so create a local copy with write access
+      orca_grid_info=nemo3.4.1_orca1_mesh_mask_ngr.nc
+      access orca1_mesh_mask $orca_grid_info nocp=off
+      chmod u+rw orca1_mesh_mask
+
+      # The user must define year_rtdiag_start
+      year_rtdiag_start=''
+      [ -z "$year_rtdiag_start" ] &&
+        bail "Run time diagnostics was requested but year_rtdiag_start is not defined."
+
+      # Access the rtd executable
+      physical_rtd_exe=nemo_orca_physical_rtd_v02b
+      [ -z "$physical_rtd_exe" ] && bail "physical_rtd_exe is not defined."
+      access $physical_rtd_exe $physical_rtd_exe
+      chmod u+x $physical_rtd_exe
+
+      # Access an existing rtd file containing data up to the previous year
+      # Create a local copy with write access
+      stop_year_prev=`echo $stop_year|awk '{printf "%4.4d",$1-1}' -`
+      curr_rtd_file=sc_${runid}_${year_rtdiag_start}_${stop_year_prev}_nemo_physical_rtd.nc
+      access nemo_physical_rtd.nc $curr_rtd_file nocp=off
+      chmod u+rw nemo_physical_rtd.nc
+
+      # Create run time diagnostics for physical ocean variables
+      $physical_rtd_exe $stop_year
+
+      # Save the rtd file created by physical_rtd_exe
+      new_rtd_file=sc_${runid}_${year_rtdiag_start}_${stop_year}_nemo_physical_rtd.nc
+      save nemo_physical_rtd.nc $new_rtd_file
+
+      # Copy the new physical rtd file to Victoria
+      scp_rtd_to_Victoria nemo_physical_rtd.nc sc_${runid}_nemo_physical_rtd.nc
+
+      if [ $nemo_carbon -eq 1 ]; then
+        # Also generate PISCES run time diagnostics
+
+        # Access additional annual history files containing PISCES related variables
+        rtd_hist5="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_ptrc_t.nc"
+        rtd_hist6="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_diad_t.nc"
+        access ptrc_t $rtd_hist5 nocp=off
+        access diad_t $rtd_hist6 nocp=off
+        chmod u+rw ptrc_t diad_t
+
+        # The same grid info file as used for physical variables is required
+        # but the name hardcoded into the carbon rtd executable is different
+        orca_grid_info=nemo3.4.1_orca1_mesh_mask_ngr.nc
+        access orca_mesh_mask $orca_grid_info nocp=off
+        chmod u+rw orca_mesh_mask
+
+        # Access the rtd executable
+        carbon_rtd_exe=nemo_orca1_carbon_rtd_v02c
+        [ -z "$carbon_rtd_exe" ] && bail "carbon_rtd_exe is not defined."
+        access $carbon_rtd_exe $carbon_rtd_exe
+        chmod u+x $carbon_rtd_exe
+
+        # Access an existing rtd file containing data up to the previous year
+        stop_year_prev=`echo $stop_year|awk '{printf "%4.4d",$1-1}' -`
+        curr_rtd_file=sc_${runid}_${year_rtdiag_start}_${stop_year_prev}_nemo_carbon_rtd.nc
+        access nemo_carbon_rtd.nc $curr_rtd_file nocp=off
+        chmod u+rw nemo_carbon_rtd.nc
+
+        # Create run time diagnostics for carbon variables
+        $carbon_rtd_exe $stop_year
+
+        # Save the rtd file created by carbon_rtd_exe
+        new_rtd_file=sc_${runid}_${year_rtdiag_start}_${stop_year}_nemo_carbon_rtd.nc
+        save nemo_carbon_rtd.nc $new_rtd_file
+
+        # Copy the new carbon rtd file to Victoria
+        scp_rtd_to_Victoria nemo_carbon_rtd.nc sc_${runid}_nemo_carbon_rtd.nc
+      fi
+
+      # Clean up
+      release grid_t
+      release grid_u
+      release grid_v
+      release grid_w
+      release orca1_mesh_mask
+      if [ $nemo_carbon -eq 1 ]; then
+        # PISCES related files
+        release ptrc_t
+        release diad_t
+        release orca_mesh_mask
+      fi
+
+    fi
 
     # If nemo_ann_dump is true then dump all yearly history files that
     # were created and saved above
@@ -1012,11 +1125,10 @@ cat > Execute_Script <<'end_of_script'
       masterdir=on
       sv=off
       besc=on
-      cfsuser=''
       with_lsarc=off
 
       varlist="dump_sublist_arclabel uxxx runid shortermdir masterdir sv bemach
-               cfsuser besc with_lsarc"
+               besc with_lsarc"
       rm -f dump_del_defs
       touch dump_del_defs
       for var in $varlist; do
@@ -1040,357 +1152,7 @@ cat > Execute_Script <<'end_of_script'
       rm -f $dump_del_job
     fi
 
-    # If nemo_ann_rtd is true then execute the nemo run time diagnostics
-    nemo_ann_rtd=on
-    ToF nemo_ann_rtd
-
-    if [ $nemo_ann_rtd -eq 1 ]; then
-      # Invoke the nemo run time diagnostics
-
-      # This currently requires certain yearly history files, which may or may not have
-      # been created above. Verify that they exist by attempting to access them
-      rtd_hist1="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_grid_t.nc"
-      rtd_hist2="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_grid_u.nc"
-      rtd_hist3="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_grid_v.nc"
-      rtd_hist4="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_grid_w.nc"
-      access grid_t $rtd_hist1
-      access grid_u $rtd_hist2
-      access grid_v $rtd_hist3
-      access grid_w $rtd_hist4
-
-      # This also requires a file containing grid information
-      rtd_grid_info=nemo3.4.1_orca1_mesh_mask_ngr.nc
-      access orca1_mesh_mask $rtd_grid_info
-
-      # The user must define year_rtdiag_start
-      year_rtdiag_start=''
-      [ -z "$year_rtdiag_start" ] &&
-        bail "Run time diagnostics was requested but year_rtdiag_start is not defined."
-
-      # Access the rtd executable
-      physical_rtd_exe=nemo_orca_physical_rtd_v02
-      access physical_rtd_exe ${physical_rtd_exe}
-
-      # Access any existing rtd file (up to the previous year)
-      stop_year_prev=`echo $stop_year|awk '{printf "%4.4d",$1-1}' -`
-      curr_rtd_file=sc_${runid}_${year_rtdiag_start}_${stop_year_prev}_nemo_physical_rtd.nc nocp=off
-      access nemo_physical_rtd.nc $curr_rtd_file
-      chmod +w nemo_physical_rtd.nc
-
-      # Execute the run time diagnostics
-      physical_rtd_exe $stop_year
-
-      # Save the newly created rtd file
-      save nemo_physical_rtd.nc sc_${runid}_${year_rtdiag_start}_${stop_year}_nemo_physical_rtd.nc
-
-      # Copy the new rtd file to Victoria 
-      rem_rtdfile=sc_${runid}_nemo_physical_rtd.nc
-
-      # Do not abort if transfer fails
-      # It is not critical to finish transfer since it can be done next time
-      set +e
-
-      # Default location for plots
-      rtd_dest_dir=${rtd_dest_dir:="/misc/pubplots/CanESM_run_plots/rtdfiles_nemo"}
-
-# Clean this mess up
-      HOSTID=${HOSTID-`hostname | cut -d'.' -f1`}
-      HOSTIDf=`echo $HOSTID | cut -c 1-3`
-      TTrnsfr=${HOSTID:=`hostname`}
-      if [ "$HOSTIDf" = 'ib3' -o "$HOSTIDf" = 'erg' -o "$HOSTIDf" = 'jou' ] ; then
-        #TTrnsfr='pollux'
-        TTrnsfr='joule'
-      elif [ "$HOSTIDf" = 'c1f' -o "$HOSTIDf" = 'c1h' -o "$HOSTIDf" = 'c1r' -o "$HOSTIDf" = 'c1s' ] ; then
-        TTrnsfr='spica'
-      elif [ "$HOSTIDf" = 'c2f' -o "$HOSTIDf" = 'c2h' -o "$HOSTIDf" = 'c2r' -o "$HOSTIDf" = 'c2s' ] ; then
-        TTrnsfr='hadar'
-      fi
-      Cwd=`pwd`
-      ssh $TTrnsfr "cd $Cwd; scp -p -o NoneSwitch=yes nemo_physical_rtd.nc ftp1.cccma.ec.gc.ca:$rtd_dest_dir/$rem_rtdfile "
-      ssh $TTrnsfr "ssh ftp1.cccma.ec.gc.ca chmod ug+rw $rtd_dest_dir/$rem_rtdfile"
-
-      set -e
-
-    fi
-
   fi
-
-#xxx  #=#=#=# Run time diagnostics
-#xxx
-#xxx  rm -f archived_rtd_files
-#xxx  touch archived_rtd_files
-#xxx  if [ $nemo_save_hist -eq 1 ]; then
-#xxx    # Run time diagnostics can only be created when history files have been
-#xxx    # recombined, which is done in the "if nemo_save_hist -eq 1" block above
-#xxx    # We do the run time diags here so that the restart file gets created
-#xxx    # and saved even if there is a failure during the rtd calculation.
-#xxx
-#xxx    # Determine the name of the rtd file
-#xxx    nemo_with_rtd=on
-#xxx    ToF nemo_with_rtd
-#xxx    if [ $nemo_with_rtd -eq 1 ]; then
-#xxx
-#xxx      # Specify the location of some NCO tools
-#xxx      # These are required for manipulation of the netcdf files
-#xxx      NCOBIN=/users/tor/acrn/rls/local/aix64/bin
-#xxx      NCRCAT="$NCOBIN/ncrcat"
-#xxx      test -x "$NCRCAT" || bail "$NCRCAT does not have execute permission"
-#xxx      NCWA="$NCOBIN/ncwa"
-#xxx      test -x "$NCWA" || bail "$NCWA does not have execute permission"
-#xxx      NCKS="$NCOBIN/ncks"
-#xxx      test -x "$NCKS" || bail "$NCKS does not have execute permission"
-#xxx
-#xxx      #=#=#  Yearly data  #=#=#
-#xxx      nemo_rtd_file_1y=sc_${runid}_1y_rtd.nc
-#xxx      nemo_with_rtd_1y=on
-#xxx      ToF nemo_with_rtd_1y
-#xxx      if [ $nemo_with_rtd_1y -eq 1 ]; then
-#xxx        # Loop over all rebuilt files looking for yearly data
-#xxx        test -z "$nemo_rtd_file_1y" &&
-#xxx          bail "nemo_with_rtd is on but nemo_rtd_file_1y is undefined"
-#xxx
-#xxx        rm -f TMP_RTDFILE.nc
-#xxx        # Use the version of the saved history file list that does not have all
-#xxx        # characters transposed to lower case
-#xxx        cat saved_history_FILE_NAMES | while read fname; do
-#xxx          [ -z "$fname" ] && continue
-#xxx          case $fname in
-#xxx            *_1y_*.nc) ;; # Allow
-#xxx            *) continue ;;      # Disallow anything else
-#xxx          esac
-#xxx
-#xxx          # Spatially average this file and remove nav_lon and nav_lat
-#xxx          $NCWA -O -h -a x,y -x -v nav_lon,nav_lat $fname XXX.nc
-#xxx
-#xxx          # Append any variables in the current file to the tmp file
-#xxx          $NCKS -A -h XXX.nc TMP_RTDFILE.nc
-#xxx          rm -f XXX.nc
-#xxx        done
-#xxx
-#xxx        if test -s TMP_RTDFILE.nc; then
-#xxx          # Get a local copy if a saved version exists
-#xxx          rm -f RTDFILE
-#xxx          access RTDFILE $nemo_rtd_file_1y nocp=no na
-#xxx
-#xxx          rm -f NEW_RTDFILE
-#xxx          if [ -s RTDFILE ]; then
-#xxx            # Append to an existing file
-#xxx            $NCRCAT -h RTDFILE TMP_RTDFILE.nc NEW_RTDFILE
-#xxx          else
-#xxx            # Create a new file
-#xxx            cp TMP_RTDFILE.nc NEW_RTDFILE
-#xxx          fi
-#xxx          test ! -s NEW_RTDFILE &&
-#xxx            bail "Unable to create run time diagnostics file."
-#xxx          rm -f TMP_RTDFILE.nc
-#xxx
-#xxx          if [ $is_last_job -eq 1 ]; then
-#xxx            # This is the last job in the current string... archive the rtd file
-#xxx            saved_name=`echo $nemo_rtd_file_1y | tr '[A-Z]' '[a-z]'`
-#xxx            new_name=`echo $saved_name | sed 's/^\(.*\)_rtd.nc.*$/\1_'${run_stop_date}'_rtd.nc/'`
-#xxx            cp NEW_RTDFILE $new_name
-#xxx            save $new_name $new_name && echo "$new_name" >> archived_rtd_files
-#xxx          fi
-#xxx
-#xxx          # Save the rtd file, deleting any previous version
-#xxx          test -s RTDFILE && delete RTDFILE
-#xxx          save NEW_RTDFILE $nemo_rtd_file_1y
-#xxx        else
-#xxx          echo "Unable to find annual data to create run time diagnostics."
-#xxx        fi
-#xxx      fi
-#xxx
-#xxx      #=#=#  Monthly data  #=#=#
-#xxx      nemo_rtd_file_1m=sc_${runid}_1m_rtd.nc
-#xxx      nemo_with_rtd_1m=on
-#xxx      ToF nemo_with_rtd_1m
-#xxx      if [ $nemo_with_rtd_1m -eq 1 ]; then
-#xxx        # Loop over all rebuilt files looking for monthly data
-#xxx        test -z "$nemo_rtd_file_1m" &&
-#xxx          bail "nemo_with_rtd is on but nemo_rtd_file_1m is undefined"
-#xxx
-#xxx        rm -f TMP_RTDFILE.nc
-#xxx        # Use the version of the saved history file list that does not have all
-#xxx        # characters transposed to lower case
-#xxx        cat saved_history_FILE_NAMES | while read fname; do
-#xxx          [ -z "$fname" ] && continue
-#xxx          case $fname in
-#xxx            *_1m_*.nc) ;; # Allow
-#xxx            *) continue ;;      # Disallow anything else
-#xxx          esac
-#xxx
-#xxx          # Spatially average this file and remove nav_lon and nav_lat
-#xxx          $NCWA -O -h -a x,y -x -v nav_lon,nav_lat $fname XXX.nc
-#xxx
-#xxx          # Append any variables in the current file to the tmp file
-#xxx          $NCKS -A -h XXX.nc TMP_RTDFILE.nc
-#xxx          rm -f XXX.nc
-#xxx        done
-#xxx
-#xxx        if test -s TMP_RTDFILE.nc; then
-#xxx          # Get a local copy if a saved version exists
-#xxx          rm -f RTDFILE
-#xxx          access RTDFILE $nemo_rtd_file_1m nocp=no na
-#xxx
-#xxx          rm -f NEW_RTDFILE
-#xxx          if [ -s RTDFILE ]; then
-#xxx            # Append to an existing file
-#xxx            $NCRCAT -h RTDFILE TMP_RTDFILE.nc NEW_RTDFILE
-#xxx          else
-#xxx            # Create a new file
-#xxx            cp TMP_RTDFILE.nc NEW_RTDFILE
-#xxx          fi
-#xxx          test ! -s NEW_RTDFILE &&
-#xxx            bail "Unable to create run time diagnostics file."
-#xxx          rm -f TMP_RTDFILE.nc
-#xxx
-#xxx          if [ $is_last_job -eq 1 ]; then
-#xxx            # This is the last job in the current string... archive the rtd file
-#xxx            saved_name=`echo $nemo_rtd_file_1m | tr '[A-Z]' '[a-z]'`
-#xxx            new_name=`echo $saved_name | sed 's/^\(.*\)_rtd.nc.*$/\1_'${run_stop_date}'_rtd.nc/'`
-#xxx            cp NEW_RTDFILE $new_name
-#xxx            save $new_name $new_name && echo "$new_name" >> archived_rtd_files
-#xxx          fi
-#xxx
-#xxx          # Save the rtd file, deleting any previous version
-#xxx          test -s RTDFILE && delete RTDFILE
-#xxx          save NEW_RTDFILE $nemo_rtd_file_1m
-#xxx        else
-#xxx          echo "Unable to find monthly data to create run time diagnostics."
-#xxx        fi
-#xxx      fi
-#xxx
-#xxx      #=#=#  Daily data  #=#=#
-#xxx      nemo_rtd_file_1d=sc_${runid}_1d_rtd.nc
-#xxx      nemo_with_rtd_1d=on
-#xxx      ToF nemo_with_rtd_1d
-#xxx      if [ $nemo_with_rtd_1d -eq 1 ]; then
-#xxx        # Loop over all rebuilt files looking for daily data
-#xxx        test -z "$nemo_rtd_file_1d" &&
-#xxx          bail "nemo_with_rtd is on but nemo_rtd_file_1d is undefined"
-#xxx
-#xxx        rm -f TMP_RTDFILE.nc
-#xxx        # Use the version of the saved history file list that does not have all
-#xxx        # characters transposed to lower case
-#xxx        cat saved_history_FILE_NAMES | while read fname; do
-#xxx          [ -z "$fname" ] && continue
-#xxx          case $fname in
-#xxx            *_1d_*_grid_T_0n180w.nc) continue ;; # Disallow
-#xxx            *_1d_*.nc) ;;                         # Allow
-#xxx            *) continue ;;                       # Disallow anything else
-#xxx          esac
-#xxx
-#xxx          # Spatially average this file and remove nav_lon and nav_lat
-#xxx          $NCWA -O -h -a x,y -x -v nav_lon,nav_lat $fname XXX.nc
-#xxx
-#xxx          # Append any variables in the current file to the tmp file
-#xxx          $NCKS -A -h XXX.nc TMP_RTDFILE.nc
-#xxx          rm -f XXX.nc
-#xxx        done
-#xxx
-#xxx        if test -s TMP_RTDFILE.nc; then
-#xxx          # Get a local copy if a saved version exists
-#xxx          rm -f RTDFILE
-#xxx          access RTDFILE $nemo_rtd_file_1d nocp=no na
-#xxx
-#xxx          rm -f NEW_RTDFILE
-#xxx          if [ -s RTDFILE ]; then
-#xxx            # Append to an existing file
-#xxx            $NCRCAT -h RTDFILE TMP_RTDFILE.nc NEW_RTDFILE
-#xxx          else
-#xxx            # Create a new file
-#xxx            cp TMP_RTDFILE.nc NEW_RTDFILE
-#xxx          fi
-#xxx          test ! -s NEW_RTDFILE &&
-#xxx            bail "Unable to create run time diagnostics file."
-#xxx          rm -f TMP_RTDFILE.nc
-#xxx
-#xxx          if [ $is_last_job -eq 1 ]; then
-#xxx            # This is the last job in the current string... archive the rtd file
-#xxx            saved_name=`echo $nemo_rtd_file_1d | tr '[A-Z]' '[a-z]'`
-#xxx            new_name=`echo $saved_name | sed 's/^\(.*\)_rtd.nc.*$/\1_'${run_stop_date}'_rtd.nc/'`
-#xxx            cp NEW_RTDFILE $new_name
-#xxx            save $new_name $new_name && echo "$new_name" >> archived_rtd_files
-#xxx          fi
-#xxx
-#xxx          # Save the rtd file, deleting any previous version
-#xxx          test -s RTDFILE && delete RTDFILE
-#xxx          save NEW_RTDFILE $nemo_rtd_file_1d
-#xxx        else
-#xxx          echo "Unable to find daily data to create run time diagnostics."
-#xxx        fi
-#xxx      fi
-#xxx
-#xxx      #=#=#  5 day data  #=#=#
-#xxx      nemo_rtd_file_5d=sc_${runid}_5d_rtd.nc
-#xxx      nemo_with_rtd_5d=on
-#xxx      ToF nemo_with_rtd_5d
-#xxx      if [ $nemo_with_rtd_5d -eq 1 ]; then
-#xxx        # Loop over all rebuilt files looking for 5 day data
-#xxx        test -z "$nemo_rtd_file_5d" &&
-#xxx          bail "nemo_with_rtd is on but nemo_rtd_file_5d is undefined"
-#xxx
-#xxx        rm -f TMP_RTDFILE.nc
-#xxx        # Use the version of the saved history file list that does not have all
-#xxx        # characters transposed to lower case
-#xxx        cat saved_history_FILE_NAMES | while read fname; do
-#xxx          [ -z "$fname" ] && continue
-#xxx          case $fname in
-#xxx            *_5d_*.nc) ;; # Allow
-#xxx            *) continue ;;      # Disallow anything else
-#xxx          esac
-#xxx
-#xxx          # Spatially average this file and remove nav_lon and nav_lat
-#xxx          $NCWA -O -h -a x,y -x -v nav_lon,nav_lat $fname XXX.nc
-#xxx
-#xxx          # Append any variables in the current file to the tmp file
-#xxx          $NCKS -A -h XXX.nc TMP_RTDFILE.nc
-#xxx          rm -f XXX.nc
-#xxx        done
-#xxx
-#xxx        if test -s TMP_RTDFILE.nc; then
-#xxx          # Get a local copy if a saved version exists
-#xxx          rm -f RTDFILE
-#xxx          access RTDFILE $nemo_rtd_file_5d nocp=no na
-#xxx
-#xxx          rm -f NEW_RTDFILE
-#xxx          if [ -s RTDFILE ]; then
-#xxx            # Append to an existing file
-#xxx            $NCRCAT -h RTDFILE TMP_RTDFILE.nc NEW_RTDFILE
-#xxx          else
-#xxx            # Create a new file
-#xxx            cp TMP_RTDFILE.nc NEW_RTDFILE
-#xxx          fi
-#xxx          test ! -s NEW_RTDFILE &&
-#xxx            bail "Unable to create run time diagnostics file."
-#xxx          rm -f TMP_RTDFILE.nc
-#xxx
-#xxx          if [ $is_last_job -eq 1 ]; then
-#xxx            # This is the last job in the current string... archive the rtd file
-#xxx            saved_name=`echo $nemo_rtd_file_5d | tr '[A-Z]' '[a-z]'`
-#xxx            new_name=`echo $saved_name | sed 's/^\(.*\)_rtd.nc.*$/\1_'${run_stop_date}'_rtd.nc/'`
-#xxx            cp NEW_RTDFILE $new_name
-#xxx            save $new_name $new_name && echo "$new_name" >> archived_rtd_files
-#xxx          fi
-#xxx
-#xxx          # Save the rtd file, deleting any previous version
-#xxx          test -s RTDFILE && delete RTDFILE
-#xxx          save NEW_RTDFILE $nemo_rtd_file_5d
-#xxx        else
-#xxx          echo "Unable to find 5 day data used to create run time diagnostics."
-#xxx        fi
-#xxx      fi
-#xxx    fi
-#xxx  fi
-#xxx
-#xxx  if [ -s archived_rtd_files ]; then
-#xxx    # Prepend the list of rtd files to be archived to the list of saved history files
-#xxx    # Do this for both copies of the history file (lower case and mixed case)
-#xxx    cat archived_rtd_files saved_history_file_names > XXX
-#xxx    mv XXX saved_history_file_names
-#xxx    cat archived_rtd_files saved_history_FILE_NAMES > XXX
-#xxx    mv XXX saved_history_FILE_NAMES
-#xxx  fi
 
   if [ -s saved_history_file_names -a -s saved_history_FILE_NAMES ]; then
     # Reorder the list of files that were saved so that
@@ -1464,8 +1226,7 @@ cat > Execute_Script <<'end_of_script'
     cp -f namelist_ice    rs_namelist_ice    || :
     [ -s rs_namelist ]         && tarlist="$tarlist rs_namelist"
     [ -s rs_namelist_ice ]     && tarlist="$tarlist rs_namelist_ice"
-    if [ $nemo_carbon
-     -eq 1 ]; then
+    if [ $nemo_carbon -eq 1 ]; then
       cp -f namelist_pisces rs_namelist_pisces || :
       cp -f namelist_top    rs_namelist_top    || :
       [ -s rs_namelist_pisces ]  && tarlist="$tarlist rs_namelist_pisces"
@@ -1553,7 +1314,7 @@ cat >local_defs << 'end_local_defs'
       c1*) this_mach=spica;  ROUTE_SSH='ssh spica'  ;;
       c2*) this_mach=hadar;  ROUTE_SSH='ssh hadar'  ;;
      ib3*) this_mach=pollux; ROUTE_SSH='ssh pollux' ;;
-   joule*) this_mach=joule  ;;
+   joule*) this_mach=joule;  ROUTE_SSH='ssh joule'  ;;
   esac
 
   # bail is a simple error exit routine
@@ -1697,6 +1458,44 @@ cat >local_defs << 'end_local_defs'
          *) days_this_month=0
             bail "month = $1 is out of range" ;;
     esac
+  }
+
+  scp_rtd_to_Victoria() {
+    # Copy a single rtd file to Victoria
+    # Usage: scp_rtd_to_Victoria local_rtd_file remote_rtd_file
+    [ -z "$1" ] &&
+      bail "scp_rtd_to_Victoria requires a file name as the first arg."
+    [ -z "$2" ] &&
+      bail "scp_rtd_to_Victoria requires a file name as the second arg."
+    [ -e $1 ] || bail "scp_rtd_to_Victoria: File --> $1 <-- is missing."
+
+    # Do not abort if the transfer (or any part of the following) fails
+    set +e
+
+    # The local file specification
+    if [ x`echo $1|sed -n '/^\//p'` = x ]; then
+      # This must be an absolute pathname, assume the file is in pwd
+      locfspec=`pwd`/$1
+    else
+      locfspec=$1
+    fi
+
+    # Any or all of the variables rtd_dest_file, rtd_dest_dir or rtd_dest_mach
+    # may be set by the invoking process to override the following defaults
+    remfile=${rtd_dest_file:=$2}
+    remdir=${rtd_dest_dir:=/misc/pubplots/CanESM_run_plots/rtdfiles_nemo}
+    remmach=${rtd_dest_mach:=ftp1.cccma.ec.gc.ca}
+    rempath=$remdir/$remfile
+
+    if [ -n "$ROUTE_SSH" ]; then
+      $ROUTE_SSH "scp -p -o NoneSwitch=yes $locfspec ${remmach}:$rempath"
+      $ROUTE_SSH "ssh $remmach chmod ug+rw $rempath"
+    else
+      scp -p -o NoneSwitch=yes $locfspec ${remmach}:$rempath
+      ssh $remmach chmod ug+rw $rempath
+    fi
+
+    set -e
   }
 
   # ---Stop_submit_ignore_code----
