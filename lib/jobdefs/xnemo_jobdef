@@ -162,6 +162,10 @@ cat > Execute_Script <<'end_of_script'
     fi
   fi
 
+  # Reformat start_year and stop_year to match nemo's 4 digits.
+  start_year=`echo $start_year|awk -F':' '{printf "%4.4d",$1}' -`
+  stop_year=`echo $stop_year|awk -F':' '{printf "%4.4d",$1}' -`
+
   # Determine run start and stop dates
   run_start_day=1
   run_start_date=`echo $run_start_year $run_start_month $run_start_day|\
@@ -580,8 +584,9 @@ cat > Execute_Script <<'end_of_script'
   mod_nl namelist_ice cn_icerst_in cn_icerst_out
 
   # Modify the input top namelist
-  mod_nl namelist_top ln_rsttr cn_trcrst_in cn_trcrst_out
-
+  if [ $nemo_carbon -eq 1 ]; then
+      mod_nl namelist_top ln_rsttr cn_trcrst_in cn_trcrst_out
+  fi
   # Write selected namelists from the namelist file
   #  sed -n '/^&namrun/,/^\//p' namelist
   #  sed -n '/^&nammpp/,/^\//p' namelist
@@ -607,7 +612,7 @@ cat > Execute_Script <<'end_of_script'
   nemo_geothermal_heating=nemo_3.3_orca2_geothermal_heating.nc
   nemo_runoff_core_monthly=nemo_3.3_orca2_runoff_core_monthly.nc
   nemo_sss_data=nemo_3.3_orca2_sss_data.nc
-  # nemo_sst_data=nemo_3.3_orca2_sst_data.nc
+  nemo_sst_data=nemo_3.3_orca2_sst_data.nc
   nemo_chlorophyll=nemo_3.3_orca2_chlorophyll.nc
   nemo_subbasins=nemo_3.4_orca2_lim_subbasins.nc
 
@@ -621,7 +626,7 @@ cat > Execute_Script <<'end_of_script'
   acc_cp K1rowdrg.nc            $nemo_K1rowdrg
   acc_cp geothermal_heating.nc  $nemo_geothermal_heating
   acc_cp runoff_core_monthly.nc $nemo_runoff_core_monthly
-  # acc_cp sss_data.nc            $nemo_sss_data
+  acc_cp sss_data.nc            $nemo_sss_data
   acc_cp sst_data.nc            $nemo_sst_data
   acc_cp chlorophyll.nc         $nemo_chlorophyll
   acc_cp subbasins.nc           $nemo_subbasins
@@ -916,7 +921,10 @@ cat > Execute_Script <<'end_of_script'
     # These are required for manipulation of the netcdf files
     NCOBIN=/users/tor/acrn/rls/local/aix64/bin
     NCRCAT="$NCOBIN/ncrcat"
+    NCATTED="$NCOBIN/ncatted"
+
     test -x "$NCRCAT" || bail "$NCRCAT does not have execute permission"
+    test -x "$NCATTED" || bail "$NCATTED does not have execute permission"
 
     # Concatenate sub-annual history files into yearly files
     # The user can redefine nemo_ann_cat_freq_list and nemo_ann_cat_suffix_list
@@ -948,11 +956,10 @@ cat > Execute_Script <<'end_of_script'
           # Copies will be created when multiple edition numbers exist for the same file
           acclist=`echo $acclist|awk '{for(i=1;i<=NF;i++){printf "%s\n",$i}}'|sort -u|xargs`
           nfile=0
-          echo $acclist | while read curr_fname; do
+          for curr_fname in $acclist; do 
             nfile=`expr $nfile + 1`
             access $curr_fname $curr_fname
           done
-
           # Save the concatenated annual history file for this freq and sfx
           ann_name="${uxxx}_${cn_exp}_${freq}_${stop_year}0101_${stop_year}1231_${sfx}.nc"
           if [ $nfile -eq 1 ]; then
@@ -978,7 +985,7 @@ cat > Execute_Script <<'end_of_script'
             release $ann_name
             echo $ann_name >> $ann_cat_file_list
           else
-            bail "Problem concatenating annual histiry file(s) $acclist"
+            bail "Problem concatenating annual history file(s) $acclist"
           fi
 
         fi
@@ -1022,15 +1029,20 @@ cat > Execute_Script <<'end_of_script'
       access $physical_rtd_exe $physical_rtd_exe
       chmod u+x $physical_rtd_exe
 
-      # Access an existing rtd file containing data up to the previous year
+      # Access an existing rtd file containing data up to the previous year, if year > year_rtdiag_start
       # Create a local copy with write access
-      stop_year_prev=`echo $stop_year|awk '{printf "%4.4d",$1-1}' -`
-      curr_rtd_file=sc_${runid}_${year_rtdiag_start}_${stop_year_prev}_nemo_physical_rtd.nc
-      access nemo_physical_rtd.nc $curr_rtd_file nocp=off
-      chmod u+rw nemo_physical_rtd.nc
-
-      # Create run time diagnostics for physical ocean variables
-      $physical_rtd_exe $stop_year
+      if [ ${year_rtdiag_start} -lt ${stop_year} ] ; then
+          stop_year_prev=`echo $stop_year|awk '{printf "%4.4d",$1-1}' -`
+          curr_rtd_file=sc_${runid}_${year_rtdiag_start}_${stop_year_prev}_nemo_physical_rtd.nc
+          access nemo_physical_rtd.nc $curr_rtd_file nocp=off
+          chmod u+rw nemo_physical_rtd.nc      
+          # Create run time diagnostics for physical ocean variables
+          $physical_rtd_exe $stop_year
+      else
+          # Create run time diagnostics for physical ocean variables
+          $physical_rtd_exe $stop_year
+          ${NCATTED} -O -a RTD_version,global,a,c,"${physical_rtd_exe}" nemo_physical_rtd.nc
+      fi
 
       # Save the rtd file created by physical_rtd_exe
       new_rtd_file=sc_${runid}_${year_rtdiag_start}_${stop_year}_nemo_physical_rtd.nc
@@ -1061,14 +1073,20 @@ cat > Execute_Script <<'end_of_script'
         access $carbon_rtd_exe $carbon_rtd_exe
         chmod u+x $carbon_rtd_exe
 
-        # Access an existing rtd file containing data up to the previous year
-        stop_year_prev=`echo $stop_year|awk '{printf "%4.4d",$1-1}' -`
-        curr_rtd_file=sc_${runid}_${year_rtdiag_start}_${stop_year_prev}_nemo_carbon_rtd.nc
-        access nemo_carbon_rtd.nc $curr_rtd_file nocp=off
-        chmod u+rw nemo_carbon_rtd.nc
-
-        # Create run time diagnostics for carbon variables
-        $carbon_rtd_exe $stop_year
+        # Access an existing rtd file containing data up to the previous year, if 
+        # year > year_rtdiag_start
+        if [ ${year_rtdiag_start} -lt ${stop_year} ] ; then
+            stop_year_prev=`echo $stop_year|awk '{printf "%4.4d",$1-1}' -`
+            curr_rtd_file=sc_${runid}_${year_rtdiag_start}_${stop_year_prev}_nemo_carbon_rtd.nc
+            access nemo_carbon_rtd.nc $curr_rtd_file nocp=off
+            chmod u+rw nemo_carbon_rtd.nc
+            # Create run time diagnostics for carbon variables
+            $carbon_rtd_exe $stop_year
+        else
+            # Create run time diagnostics for carbon variables
+            $carbon_rtd_exe $stop_year
+            ${NCATTED} -O -a RTD_version,global,a,c,"${carbon_rtd_exe}" nemo_carbon_rtd.nc
+        fi
 
         # Save the rtd file created by carbon_rtd_exe
         new_rtd_file=sc_${runid}_${year_rtdiag_start}_${stop_year}_nemo_carbon_rtd.nc
