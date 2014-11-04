@@ -2,6 +2,9 @@
 #
 #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
 # Create a job string that will run NEMO
+#
+# Neil Swart Jul 2014 : update to new xnemo.
+#
 # Larry Solheim ...Mar 2012
 # $Id: make_nemo_job 673 2012-06-05 20:39:40Z acrnrls $
 #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
@@ -23,7 +26,7 @@ uxxx=mc
 # where Year and Month are integers. Month will default
 # to 1 for start and 12 for stop if it is not present.
 start=001
-stop=0010
+stop=010
 
 # Set start year for rtd
 year_rtdiag_start=001
@@ -52,14 +55,45 @@ nemo_exec=${runid}_ccc_nemo_v01_ccc_orca1_lim_exe
 # nemo_freq will be assigned a value of the form Ny or Nm where N is a positive integer.
 nemo_freq=1y
 
-# The frequency at which the history files will be saved to cfs
-# This should be an integer multiple of nemo_freq
-# save_freq will be assigned a value of the form Ny or Nm where N is a positive integer.
-save_freq=1y
+# If do_nemo_run=on then access all the required files and do the run, else the model
+# itself is not run.  Using do_nemo_run=off can be used, for example, to process 
+# RTD for a run that has already been done and has files of RUNPATH, or to delete
+# history files after a run has been done.
+do_nemo_run=on
 
-# This assumes that individual nemo jobs will always run for an integer number of years
-# If run in sub year chunks then the value of months must be changed accordingly
-months=12
+# nemo_forcing identifies the type of forcing to use
+# Currenlty the only valid values are "bulk" or "flux"
+nemo_forcing=bulk
+
+# nemo_carbon = off means use physical ocean only
+# nemo_carbon = on  means include PISCES
+nemo_carbon=off
+
+# Concatenate history files into one file per year
+# (Required for RTD). The sub-annual files will be deleted.
+nemo_ann_cat=on
+
+# RTD switch. If nemo_carbon=on, both physical and carbon RTD will be done,
+# otherwise only physical. User can specify rtd exectuables below. 
+nemo_ann_rtd=on
+
+# Dump history files saved on DATAPATH to cfs
+# The user can redefine nemo_dump_hist_freq_list and nemo_dump_hist_suffix_list
+# to only dump a subset of the history files
+nemo_dump_hist=off
+
+# Dump restart archives saved on DATAPATH to cfs
+# The user can redefine nemo_dump_rs_month_list. Restarts will
+# only be dumped for those months listed in nemo_dump_rs_month_list.
+nemo_dump_rs=off
+
+# Delete history files saved on DATAPATH.
+# The user can redefine nemo_del_hist_freq_list and nemo_del_hist_suffix_list
+# to only delete a subset of the history files
+nemo_del_hist=off
+
+# If nemo_del_rs=on, then delete the previous restart tar archive from DATAPATH.
+nemo_del_rs=off
 
 # cfs related variables
 shortermdir=off
@@ -67,13 +101,6 @@ masterdir=on
 
 # Return stdout to $HOME/.queue when noprint = off
 noprint=on
-
-# Include dump and/or delete jobs in the output job string
-with_dump=off
-with_delete=off
-
-# Dump from backend
-dump_sublist_besc=on
 
 # nn_ice = 0 or 1: with_ice=off; nn_ice=2,3,4: with_ice=on (in xnemo).
 # nn_ice = 0 no ice boundary condition
@@ -84,7 +111,12 @@ dump_sublist_besc=on
 nn_ice=2
 
 # time limit
-time=5400
+# try to make sure we go to the single Q if not running the model.
+if [ "x$do_nemo_run" = "xoff" ]; then
+  time=1799
+else
+  time=5400
+fi
 
 # Any command line args of the form var=val will be added to the current environment.
 # These values will override that of any of the variables that are set above.
@@ -194,6 +226,9 @@ cat <<end_job_defs >$job_defs
 #          4 CICE
   nn_ice=${nn_ice}
 
+# debug
+debug=off
+
 # time limit
   time=${time}
 
@@ -214,10 +249,6 @@ cat <<end_job_defs >$job_defs
   nolist=on
   noprint=$noprint
 
-# This assumes that individual nemo jobs will always run for an integer number of years
-# If run in sub year chunks then the value of months must be changed accordingly
-  months=$months
-
 # run_start_year is the first year of the run, which is normally start_year
 # but can be reset by the user if required
   run_start_year=$start_year
@@ -231,7 +262,7 @@ cat <<end_job_defs >$job_defs
   nemo_nn_it000=''
 
 # Access or copy files required to run NEMO
-  orca_meshmask_file="nemo3.4.1_orca1_mesh_mask_ngr.nc"
+  orca_grid_info="nemo3.4.1_orca1_mesh_mask_ngr.nc"
   nemo_iodef=${runid}_ccc_nemo_v01_ccc_orca1_lim_iodef.xml
   nemo_xmlio_server_def=${runid}_ccc_nemo_v01_ccc_orca1_lim_xmlio_server.def
   nemo_ahmcoef=nemo_3.4_orca1_ahmcoef
@@ -312,148 +343,54 @@ cat <<end_job_defs >$job_defs
   nemo_save_1d_data=off
   nemo_save_5d_data=off
 
-# The following variables determine which run time diagnostics files will be created
-# If nemo_with_rtd is set false (ie not "on") then no rtd files will be created
-# regardless of the value of the other switches.
-  nemo_with_rtd=off
-  nemo_with_rtd_1y=on
-  nemo_with_rtd_1m=on
-  nemo_with_rtd_1d=on
-  nemo_with_rtd_5d=on
+# If do_nemo_run=on then access all the required files and do the run, else the model
+# itself is not run.  Using do_nemo_run=off can be used, for example, to process 
+# RTD for a run that has already been done and has files of RUNPATH, or to delete
+# history files after a run has been done.
+  do_nemo_run=${do_nemo_run}
 
-# The following variables determine the names of rtd files that may be created
-# Note, these file names should always begin with "sc_" and end with "_rtd.nc"
-  nemo_rtd_file_1y=sc_${runid}_1y_rtd.nc
-  nemo_rtd_file_1m=sc_${runid}_1m_rtd.nc
-  nemo_rtd_file_1d=sc_${runid}_1d_rtd.nc
-  nemo_rtd_file_5d=sc_${runid}_5d_rtd.nc
+# The following determines if the bulk or flux formulation is being used:
+  nemo_forcing=${nemo_forcing}
+
+# The following determines if carbon is on or not:
+  nemo_carbon=${nemo_carbon}
+
+# The following determines if history files are concatenated into yearly files.
+# The user can redefine nemo_ann_cat_freq_list and nemo_ann_cat_suffix_list
+# to only concatenate a subset of the history files
+  nemo_ann_cat=${nemo_ann_cat}
+  nemo_ann_cat_freq_list='1y 1m 1d 5d'
+  nemo_ann_cat_suffix_list='icemod grid_t grid_u grid_v grid_w ptrc_t diad_t'
+
+# Determines if RTD is done, and specifies the RTD executables
+  nemo_ann_rtd=${nemo_ann_rtd}
+  physical_rtd_exe="nemo_orca_physical_rtd_v02c"
+  carbon_rtd_exe="nemo_orca_carbon_rtd_v02c"
+
+# Dump history files saved on DATAPATH to cfs
+# The user can redefine nemo_dump_hist_freq_list and nemo_dump_hist_suffix_list
+# to only dump a subset of the history files
+  nemo_dump_hist=${nemo_dump_hist}
+  nemo_dump_hist_freq_list='1y 1m 1d 5d'
+  nemo_dump_hist_suffix_list='icemod grid_t grid_u grid_v grid_w ptrc_t diad_t'
+
+# Dump restart archives saved on DATAPATH to cfs
+# The user can redefine nemo_dump_rs_month_list. Restarts will
+# only be dumped for those months listed in nemo_dump_rs_month_list.
+  nemo_dump_rs=${nemo_dump_rs}
+  nemo_dump_rs_month_list='01 02 03 04 05 06 07 08 09 10 11 12'
+
+# Delete history files saved on DATAPATH.
+# The user can redefine nemo_del_hist_freq_list and nemo_del_hist_suffix_list
+# to only delete a subset of the history files
+  nemo_del_hist=${nemo_del_hist}
+  nemo_del_hist_freq_list='1y 1m 1d 5d'
+  nemo_del_hist_suffix_list='icemod grid_t grid_u grid_v grid_w ptrc_t diad_t'
+
+# delete the previous restart.
+  nemo_del_rs=$nemo_del_rs
+
 end_job_defs
-
-# The following here document will be passed to dump_sublist and used to identify files
-# that will be dumped on each instance of dump_sublist appearing in the job string
-dump_sublist_defs=dump_sublist_defs$$
-cat <<'end_dump_sublist_defs' >$dump_sublist_defs
-
-  # Reset arclabel
-  arclabel=${dump_sublist_uxxx}_${runid}_$ym_range
-
-  # Determine the number of days in the last month of the run
-  case $stop_mon in
-    1|01) stop_day=31 ;;
-    2|02) stop_day=28 ;;
-    3|03) stop_day=31 ;;
-    4|04) stop_day=30 ;;
-    5|05) stop_day=31 ;;
-    6|06) stop_day=30 ;;
-    7|07) stop_day=31 ;;
-    8|08) stop_day=31 ;;
-    9|09) stop_day=30 ;;
-      10) stop_day=31 ;;
-      11) stop_day=30 ;;
-      12) stop_day=31 ;;
-       *) bail "stop_mon=$stop_mon is out of range" ;;
-  esac
-
-  # Calendar date (YYYYMMDD) at the end of the current year/month (stop_year/stop_mon)
-  stop_date=`echo $stop_year $stop_mon $stop_day|awk '{printf "%4.4d%2.2d%2.2d",$1,$2,$3}' -`
-
-  # Restart file name
-  rsfile=${dump_sublist_uxxx}_${runid}_${stop_date}_restart.tar
-  file1=$rsfile
-  join=1
-
-  eval fnpatt=${rsfile}\.\[0-9\]\[0-9\]\[0-9\]
-  full_path=`(ls -1 $DATAPATH/$fnpatt || : ) 2>/dev/null | tail -1`
-  [ -z "$full_path" ] &&
-      bail "Unable to determine full pathname for restart file $rsfile"
-
-  tar xf $full_path rs_saved_history_file_names ||
-      bail "${this_host}:`pwd`\n  Cannot retrive rs_saved_history_file_names from restart file $full_path"
-
-  # A list of history files that was saved at the same time
-  # as the restart is available in the restart archive
-  [ ! -s rs_saved_history_file_names ] &&
-      bail "${this_host}:`pwd` rs_saved_history_file_names is missing or empty."
-  for fname in `cat rs_saved_history_file_names`; do
-    join=`expr $join + 1`
-    eval file$join\=$fname
-  done
-
-end_dump_sublist_defs
-
-# The following here document will be passed to del_list and used to identify files
-# that will be deleted on each instance of del_list appearing in the job string
-del_list_defs=del_list_defs$$
-cat <<'end_del_list_defs' >$del_list_defs
-
-  # determine the year and month of the previous restart
-  if [ $start_mon -eq 1 ]; then
-    rs_mon=12
-    rs_year=`expr $start_year - 1`
-  else
-    rs_mon=`expr $start_mon - 1`
-    rs_year=$start_year
-  fi
-
-  # Determine the number of days in the last month of the previous restart
-  case $rs_mon in
-    1|01) rs_day=31 ;;
-    2|02) rs_day=28 ;;
-    3|03) rs_day=31 ;;
-    4|04) rs_day=30 ;;
-    5|05) rs_day=31 ;;
-    6|06) rs_day=30 ;;
-    7|07) rs_day=31 ;;
-    8|08) rs_day=31 ;;
-    9|09) rs_day=30 ;;
-      10) rs_day=31 ;;
-      11) rs_day=30 ;;
-      12) rs_day=31 ;;
-       *) bail "rs_mon=$rs_mon is out of range" ;;
-  esac
-
-  # Calendar date (YYYYMMDD) for the previous restart
-  rs_date=`echo $rs_year $rs_mon $rs_day|awk '{printf "%4.4d%2.2d%2.2d",$1,$2,$3}' -`
-
-  # Restart file name
-  rsfile=${del_list_uxxx}_${runid}_${rs_date}_restart.tar
-  file1=$rsfile
-  join=1
-
-  eval fnpatt=${rsfile}\.\[0-9\]\[0-9\]\[0-9\]
-  full_path=`(ls -1 $DATAPATH/$fnpatt || : ) 2>/dev/null | tail -1`
-  if [ -n "$full_path" ]; then
-    # If the restart file exists then extract the list of saved history file
-    # that are to be deleted and add them to the list of files to be deleted.
-    # Otherwise simply call delet.dk with join = 1, as set above, which will
-    # then fail gracefully and the string will continue.
-
-    this_dir=`pwd`
-    tmp_dir="tmp_del_${runid}_${this_host}_$stamp"
-    mkdir $tmp_dir
-    cd $tmp_dir
-
-    # Check for existence of rs_saved_history_file_names
-    present=`(tar tvf $full_path || : ) 2>/dev/null | grep rs_saved_history_file_names`
-    [ -z "$present" ] && bail "rs_saved_history_file_names is missing from $full_path"
-
-    tar xf $full_path rs_saved_history_file_names ||
-        bail "Cannot retrive rs_saved_history_file_names from restart file $full_path"
-
-    # A list of history files that was saved at the same time
-    # as the restart is available in the restart archive
-    [ ! -s rs_saved_history_file_names ] &&
-        bail "${this_host}:`pwd` rs_saved_history_file_names is empty."
-    for fname in `cat rs_saved_history_file_names`; do
-      join=`expr $join + 1`
-      eval file$join\=$fname
-    done
-
-    cd $this_dir
-    rm -fr $tmp_dir
-  fi
-
-end_del_list_defs
 
 #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
 # Create the job string from the template
@@ -462,65 +399,21 @@ end_del_list_defs
 outpfx=${runid}_${start_year}m${start_mon}_${stop_year}m$stop_mon
 
 # Ensure save frequecy and nemo frequency have units "m"
-sfq=`echo $save_freq | awk '
-       /^ *[0-9]*y *$/ {sub(/y *$/,""); if ($0~/^ *$/){print "1y"}else{printf "%dm",$0*12}; exit}
-       /^ *[0-9]*m *$/ {sub(/m *$/,""); if ($0~/^ *$/){print "1m"}else{printf "%dm",$0}; exit}' -`
-[ -z "$sfq" ] &&
-    echo "Invalid save_freq=${save_freq}. Should be an integer followed by y or m." && exit 1
 nfq=`echo $nemo_freq | awk '
        /^ *[0-9]*y *$/ {sub(/y *$/,""); if ($0~/^ *$/){print "1y"}else{printf "%dm",$0*12}; exit}
        /^ *[0-9]*m *$/ {sub(/m *$/,""); if ($0~/^ *$/){print "1m"}else{printf "%dm",$0}; exit}' -`
 [ -z "$nfq" ] &&
     echo "Invalid nemo_freq=${nemo_freq}. Should be an integer followed by y or m." && exit 1
 
-if   [ "x$with_dump" = 'xon'  ]; then
-  eval with_dump\=1
-elif [ "x$with_dump" = 'xoff' ]; then
-  eval with_dump\=0
-elif [ "x$with_dump" = 'xyes' ]; then
-  eval with_dump\=1
-elif [ "x$with_dump" = 'xno'  ]; then
-  eval with_dump\=0
-else
-  eval with_dump\=0
-fi
-if [ $with_dump -eq 1 ]; then
-  DUMPJOB="dump_sublist=${dump_sublist_defs}:$sfq"
-else
-  DUMPJOB=''
-fi
-
-if   [ "x$with_delete" = 'xon'  ]; then
-  eval with_delete\=1
-elif [ "x$with_delete" = 'xoff' ]; then
-  eval with_delete\=0
-elif [ "x$with_delete" = 'xyes' ]; then
-  eval with_delete\=1
-elif [ "x$with_delete" = 'xno'  ]; then
-  eval with_delete\=0
-else
-  eval with_delete\=0
-fi
-if [ $with_delete -eq 1 ]; then
-  # Ensure the delete frequency (same as nemo frequency) has units "y"
-  dfq=`echo $nfq | awk '
-         /^ *[0-9]*m *$/ {sub(/m *$/,""); if($0%12==0){printf "%dy",$0/12; exit}}' -`
-  [ -z "$dfq" ] &&
-      echo "Invalid nemo_freq=${nemo_freq}. Should be an integer number of years." && exit 1
-  DELJOB="del_list=${del_list_defs}:$dfq"
-else
-  DELJOB=''
-fi
-
-physicalrtdbase_dir=/users/tor/acrn/ncs/physical_rtd_v02b
-JOBDESC="base:$nfq ${physicalrtdbase_dir}/nemo_physical_rtd_base:1y ${physicalrtdbase_dir}/delete_files_for_physical_rtd_base:1y $DUMPJOB $DELJOB"
+JOBDESC="xnemo:$nfq"
 
 if [ -z "$CCCJOB_ROOT" ]; then
     CCCJOB_ENV=''
 else
     eval CCCJOB_ENV=\'env CCCJOB_ROOT\=$CCCJOB_ROOT\'
 fi
-$CCCJOB_ENV cccjob --out=${outpfx}_job --job="$JOBDESC" --start="$start" --stop="$stop" $job_defs
+$CCCJOB_ENV cccjob --jdef-repo=/users/tor/acrn/ncs/nemo_repo_2 --jdef-rev=testing --out=${outpfx}_job --job="$JOBDESC" --start="$start" --stop="$stop" $job_defs
+
 
 rm -f $job_defs $dump_sublist_defs $del_list_defs
 
