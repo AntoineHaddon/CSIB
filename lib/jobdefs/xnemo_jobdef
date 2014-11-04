@@ -62,8 +62,12 @@
  nemo_exec=''
 
  # nemo_carbon = off means use physical ocean only
- # nemo_carbon = on  means include PISCES
+ # nemo_carbon = on  means include PISCES/CMOC
  nemo_carbon=off
+
+# nemo_cmoc = off means use PISCES
+# nemo_cmoc = on means use CMOC
+  nemo_cmoc=off
 
  # Identify files containing namelist input
  if [ "x$nemo_carbon" = "xoff" ]; then
@@ -77,6 +81,9 @@
    nemo_namelist_ice=mc_nsa_nemo_3.4.1_orca2_lim_namelist_ice_lim2
    nemo_namelist_top=mc_nsa_nemo_3.4.1_orca2_namelist_top
    nemo_namelist_pisces=mc_nsa_nemo_3.4.1_orca2_namelist_pisces
+   if [ "x$nemo_cmoc" = "xon" ]; then
+     nemo_namelist_cmoc=uror_nqd_namelist_cmoc
+   fi
  fi
 
  # Normally user suppled namelist files are only required when starting the model
@@ -304,6 +311,11 @@ cat > Execute_Script <<'end_of_script'
   nemo_carbon=${nemo_carbon:-off}
   ToF nemo_carbon
 
+  # nemo_cmoc = off means use PISCES
+  # nemo_cmoc = on means use CMOC
+  nemo_cmoc=${nemo_cmoc:-off}
+  ToF nemo_cmoc
+
   # Identify the type of forcing to use
   nemo_forcing=${nemo_forcing:-bulk}
 
@@ -415,6 +427,12 @@ cat > Execute_Script <<'end_of_script'
 	# The input pisces namelist is hard coded as "namelist_pisces" in nemo source
 	[ -z "$nemo_namelist_pisces" ] && bail "nemo_namelist_pisces is not defined"
 	acc_cp namelist_pisces $nemo_namelist_pisces
+        
+        if [ $nemo_cmoc -eq 1 ]; then
+          # The input cmoc namelist is hard coded as "namelist_pisces" in nemo source
+          [ -z "$nemo_namelist_cmoc" ] && bail "nemo_namelist_cmoc is not defined"
+          acc_cp namelist_cmoc $nemo_namelist_cmoc 
+        fi
       fi
 
       # Get a local copy of the NEMO executable
@@ -517,6 +535,12 @@ cat > Execute_Script <<'end_of_script'
 	  # The input pisces namelist is hard coded as "namelist_pisces" in nemo source
 	  [ -z "$nemo_namelist_pisces" ] && bail "nemo_namelist_pisces is not defined"
 	  acc_cp namelist_pisces $nemo_namelist_pisces nocp=no
+        
+          if [ $nemo_cmoc -eq 1 ]; then
+	    # The input cmoc namelist is hard coded as "namelist_cmoc" in nemo source
+	    [ -z "$nemo_namelist_cmoc" ] && bail "nemo_namelist_cmoc is not defined"
+	    acc_cp namelist_cmoc $nemo_namelist_cmoc nocp=no
+          fi
 	fi
       else
 	# Use the namelist files found in the restart archive
@@ -526,6 +550,10 @@ cat > Execute_Script <<'end_of_script'
 	if [ $nemo_carbon -eq 1 ]; then
 	  [ ! -s rs_namelist_top ]    && bail "Missing rs_namelist_top from $nemo_rs"
 	  [ ! -s rs_namelist_pisces ] && bail "Missing rs_namelist_pisces from $nemo_rs"
+
+          if [ $nemo_cmoc -eq 1 ]; then
+	    [ ! -s rs_namelist_cmoc ] && bail "Missing rs_namelist_cmoc from $nemo_rs"
+          fi
 	fi
 
 	# The input ocean namelist is hard coded as "namelist" in nemo source
@@ -540,6 +568,11 @@ cat > Execute_Script <<'end_of_script'
 
 	  # The input pisces namelist is hard coded as "namelist_pisces" in nemo source
 	  cp -f rs_namelist_pisces namelist_pisces
+
+          if [ $nemo_cmoc -eq 1 ]; then
+    	    # The input cmoc namelist is hard coded as "namelist_cmoc" in nemo source
+	    cp -f rs_namelist_cmoc namelist_cmoc
+          fi
 	fi
       fi
 
@@ -753,6 +786,11 @@ cat > Execute_Script <<'end_of_script'
       acc_cp river.orca.nc        $nemo_river_orca
       acc_cp ndeposition.orca.nc  $nemo_ndeposition_orca
       acc_cp bathy.orca.nc        $nemo_bathy_orca
+
+      if [ $nemo_cmoc -eq 1 ]; then
+        nemo_fermask_orca=nemo_3.4_orca2_femask.orca.nc
+        acc_cp fermask.orca.nc $nemo_fermask_orca
+      fi
 
       nemo_data_dic_nomask=nemo_3.4_orca2_data_dic_nomask.nc
       nemo_data_alkalini_nomask=nemo_3.4_orca2_data_alkalini_nomask.nc
@@ -1019,6 +1057,11 @@ cat > Execute_Script <<'end_of_script'
 	cp -f namelist_top    rs_namelist_top    || :
 	[ -s rs_namelist_pisces ]  && tarlist="$tarlist rs_namelist_pisces"
 	[ -s rs_namelist_top ]     && tarlist="$tarlist rs_namelist_top"
+
+        if [ $nemo_cmoc -eq 1 ]; then
+	  cp -f namelist_cmoc rs_namelist_cmoc || :
+	  [ -s rs_namelist_cmoc ]  && tarlist="$tarlist rs_namelist_cmoc"
+        fi
       fi
 
       # Save a copy of the executable that was just run to the restart archive
@@ -1730,9 +1773,9 @@ cat >local_defs << 'end_local_defs'
 
     # Any or all of the variables rtd_dest_file, rtd_dest_dir or rtd_dest_mach
     # may be set by the invoking process to override the following defaults
-    remfile=${rtd_dest_file:=$2}
-    remdir=${rtd_dest_dir:=/misc/pubplots/CanESM_run_plots/rtdfiles_nemo}
-    remmach=${rtd_dest_mach:=ftp1.cccma.ec.gc.ca}
+    remfile=$2
+    remdir=${rtd_dest_dir:-/misc/pubplots/CanESM_run_plots/rtdfiles_nemo}
+    remmach=${rtd_dest_mach:-ftp1.cccma.ec.gc.ca}
     rempath=$remdir/$remfile
 
     if [ -n "$ROUTE_SSH" ]; then
