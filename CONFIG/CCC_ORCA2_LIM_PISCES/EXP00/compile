@@ -1,1 +1,2 @@
- build-nemo -k ver=nemo_v3.4.1 exec=runid_ccc_nemo_v01_ccc_orca2_lim_pisces_exe arch=xlf_aix-cccma cfg=ORCA2_LIM_PISCES src=my_src  add_key="key_iomput key_mpp_mpi key_mpp_rep"
+build-nemo ver=master repo=$CCRNSRC/ocean_dir/nemo-CCCma.git exec=runid_ccc_nemo_v01_ccc_orca2_lim_pisces_exe arch=xlf_aix-cccma refcfg=CCC_ORCA2_LIM_PISCES cfg=CCC_ORCA2_LIM_PISCES
+

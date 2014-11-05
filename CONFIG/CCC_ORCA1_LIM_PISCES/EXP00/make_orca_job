@@ -428,7 +428,7 @@ if [ -z "$CCCJOB_ROOT" ]; then
 else
     eval CCCJOB_ENV=\'env CCCJOB_ROOT\=$CCCJOB_ROOT\'
 fi
-$CCCJOB_ENV cccjob --jdef-repo=/users/tor/acrn/ncs/nemo_repo_2 --jdef-rev=testing --out=${outpfx}_job --job="$JOBDESC" --start="$start" --stop="$stop" $job_defs
+$CCCJOB_ENV cccjob --jdef-repo=$CCRNSRC/ocean_dir/nemo-CCCma.git --jdef-rev=master --out=${outpfx}_job --job="$JOBDESC" --start="$start" --stop="$stop" $job_defs
 
 
 rm -f $job_defs $dump_sublist_defs $del_list_defs
