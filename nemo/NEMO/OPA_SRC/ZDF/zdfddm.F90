@@ -6,6 +6,7 @@ MODULE zdfddm
    !! History :  OPA  ! 2000-08  (G. Madec)  double diffusive mixing
    !!   NEMO     1.0  ! 2002-06  (G. Madec)  F90: Free form and module
    !!            3.3  !  2010-10  (C. Ethe, G. Madec) reorganisation of initialisation phase
+   !!            3.4  ! 2012-10  (D. Yang) nemo_ticket #934, changeset:3348
    !!----------------------------------------------------------------------
 #if defined key_zdfddm   ||   defined key_esopa
    !!----------------------------------------------------------------------
@@ -226,8 +227,10 @@ CONTAINS
          WRITE(numout,*) '      heat/salt buoyancy flux ratio  rn_hsbfr  = ', rn_hsbfr
       ENDIF
       !
-      !                              ! allocate zdfddm arrays
+      !                               ! allocate zdfddm arrays
       IF( zdf_ddm_alloc() /= 0 )   CALL ctl_stop( 'STOP', 'zdf_ddm_init : unable to allocate arrays' )
+      !
+      avs(:,:,:) = rn_avt0 * tmask(:,:,:)
       !
    END SUBROUTINE zdf_ddm_init
 

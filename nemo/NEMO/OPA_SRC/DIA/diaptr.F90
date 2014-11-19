@@ -7,6 +7,10 @@ MODULE diaptr
    !!            2.0  ! 2006-01  (A. Biastoch)  Allow sub-basins computation
    !!            3.2  ! 2010-03  (O. Marti, S. Flavoni) Add fields
    !!            3.3  ! 2010-10  (G. Madec)  dynamical allocation
+   !!            3.4  ! 2013-12  (D. Yang) 1. nemo_ticket #1109
+   !!                                      2. nemo_ticket #1084
+   !!                                      3. nemo_ticket #873
+   !!                                      4. nemo_ticket #947
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -331,7 +335,7 @@ CONTAINS
       !!                  ***  ROUTINE dia_ptr  ***
       !!----------------------------------------------------------------------
       USE oce,     vt  =>   ua   ! use ua as workspace
-      USE oce,     vs  =>   ua   ! use ua as workspace
+      USE oce,     vs  =>   va   ! use ua as workspace
       IMPLICIT none
       !!
       INTEGER, INTENT(in) ::   kt   ! ocean time step index
@@ -349,6 +353,7 @@ CONTAINS
             IF( ln_diaznl ) THEN               ! i-mean temperature and salinity
                DO jn = 1, nptr
                   tn_jk(:,:,jn) = ptr_tjk( tsn(:,:,:,jp_tem), btmsk(:,:,jn) ) * r1_sjk(:,:,jn)
+                  sn_jk(:,:,jn) = ptr_tjk( tsn(:,:,:,jp_sal), btmsk(:,:,jn) ) * r1_sjk(:,:,jn)
                END DO
             ENDIF
             !
@@ -377,8 +382,8 @@ CONTAINS
 #else
                      zv = ( vn(ji,jj,jk) + vn(ji,jj-1,jk) ) * 0.5_wp
 #endif 
-                     vt(:,jj,jk) = zv * tsn(:,jj,jk,jp_tem)
-                     vs(:,jj,jk) = zv * tsn(:,jj,jk,jp_sal)
+                     vt(ji,jj,jk) = zv * tsn(ji,jj,jk,jp_tem)
+                     vs(ji,jj,jk) = zv * tsn(ji,jj,jk,jp_sal)
                   END DO
                END DO
             END DO
@@ -561,8 +566,8 @@ CONTAINS
       REAL(wp), POINTER, DIMENSION(:,:) ::   z_1           ! 2D workspace
       !!-------------------------------------------------------------------- 
       !
-      CALL wrk_alloc( jpi      , zphi , zfoo )
-      CALL wrk_alloc( jpi , jpk, z_1 )
+      CALL wrk_alloc( jpj      , zphi , zfoo )
+      CALL wrk_alloc( jpj , jpk, z_1 )
 
       ! define time axis
       it    = kt / nn_fptr
@@ -876,8 +881,8 @@ CONTAINS
          !
       ENDIF
       !
-      CALL wrk_dealloc( jpi      , zphi , zfoo )
-      CALL wrk_dealloc( jpi , jpk, z_1 )
+      CALL wrk_dealloc( jpj      , zphi , zfoo )
+      CALL wrk_dealloc( jpj , jpk, z_1 )
       !
   END SUBROUTINE dia_ptr_wri
 

@@ -6,6 +6,7 @@ MODULE closea
    !! History :   8.2  !  00-05  (O. Marti)  Original code
    !!             8.5  !  02-06  (E. Durand, G. Madec)  F90
    !!             9.0  !  06-07  (G. Madec)  add clo_rnf, clo_ups, clo_bat
+   !!             3.4  !  13-11  (D. Yang) defined Caspian Sea
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -132,6 +133,14 @@ CONTAINS
             ncsi1(4)   = 75  ;  ncsj1(4)   = 59
             ncsi2(4)   = 76  ;  ncsj2(4)   = 61
             ncsir(4,1) = 84  ;  ncsjr(4,1) = 59 
+            !                                        ! =======================
+         CASE ( 1 )                                  !  ORCA_R1 configuration
+            !                                        ! =======================
+            !                                            ! Caspian Sea
+            ncsnr(1)   =  1  ;  ncstt(1)   =  0
+            ncsi1(1)   = 333 ;  ncsj1(1)   = 204
+            ncsi2(1)   = 342 ;  ncsj2(1)   = 234
+            ncsir(1,1) =  1  ;  ncsjr(1,1) =  1         
             !                                        ! =======================
          CASE ( 025 )                                ! ORCA_R025 configuration
             !                                        ! =======================
