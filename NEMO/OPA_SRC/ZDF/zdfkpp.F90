@@ -9,6 +9,7 @@ MODULE zdfkpp
    !!            8.2  ! 2003-10 (Chanut J.) re-writting
    !!   NEMO     1.0  ! 2005-01 (C. Ethe, G. Madec) Free form, F90 + creation of tra_kpp routine
    !!            3.3  ! 2010-10 (C. Ethe, G. Madec) reorganisation of initialisation phase + merge TRC-TRA
+   !!            3.4  ! 2012-12 (D. Yang) nemo_ticket #1038, Changeset ​3733
    !!----------------------------------------------------------------------
 #if defined key_zdfkpp   ||   defined key_esopa
    !!----------------------------------------------------------------------
@@ -264,7 +265,7 @@ CONTAINS
       CALL wrk_alloc( jpi,3, zdept )
       CALL wrk_alloc( jpi,4, zdepw, zdift, zvisc )
       CALL wrk_alloc( jpi,jpj, zBo, zBosol, zustar )
-      CALL wrk_alloc( jpi,jpk, zmask, zblcm, zblct, zblcs )
+      CALL wrk_alloc( jpi,jpk, zmask, zblcm, zblct )
 #if defined key_zdfddm
       CALL wrk_alloc( jpi,4, zdifs )
       CALL wrk_alloc( jpi, zmoa, za2s, za3s, zkmps )
@@ -1208,7 +1209,7 @@ CONTAINS
       CALL wrk_dealloc( jpi,3, zdept )
       CALL wrk_dealloc( jpi,4, zdepw, zdift, zvisc )
       CALL wrk_dealloc( jpi,jpj, zBo, zBosol, zustar )
-      CALL wrk_dealloc( jpi,jpk, zmask, zblcm, zblct, zblcs )
+      CALL wrk_dealloc( jpi,jpk, zmask, zblcm, zblct )
 #if defined key_zdfddm
       CALL wrk_dealloc( jpi,4, zdifs )
       CALL wrk_dealloc( jpi, zmoa, za2s, za3s, zkmps )
