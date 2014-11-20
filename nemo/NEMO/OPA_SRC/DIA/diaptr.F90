@@ -7,6 +7,8 @@ MODULE diaptr
    !!            2.0  ! 2006-01  (A. Biastoch)  Allow sub-basins computation
    !!            3.2  ! 2010-03  (O. Marti, S. Flavoni) Add fields
    !!            3.3  ! 2010-10  (G. Madec)  dynamical allocation
+   !!            3.4.1! 2013-12  (D. Yang) 1. nemo_ticket #1109
+   !!                                      2. nemo_ticket #1084
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -349,6 +351,7 @@ CONTAINS
             IF( ln_diaznl ) THEN               ! i-mean temperature and salinity
                DO jn = 1, nptr
                   tn_jk(:,:,jn) = ptr_tjk( tsn(:,:,:,jp_tem), btmsk(:,:,jn) ) * r1_sjk(:,:,jn)
+                  sn_jk(:,:,jn) = ptr_tjk( tsn(:,:,:,jp_sal), btmsk(:,:,jn) ) * r1_sjk(:,:,jn)
                END DO
             ENDIF
             !
@@ -562,8 +565,8 @@ CONTAINS
       REAL(wp), POINTER, DIMENSION(:,:) ::   z_1           ! 2D workspace
       !!-------------------------------------------------------------------- 
       !
-      CALL wrk_alloc( jpi      , zphi , zfoo )
-      CALL wrk_alloc( jpi , jpk, z_1 )
+      CALL wrk_alloc( jpj      , zphi , zfoo )
+      CALL wrk_alloc( jpj , jpk, z_1 )
 
       ! define time axis
       it    = kt / nn_fptr
@@ -877,8 +880,8 @@ CONTAINS
          !
       ENDIF
       !
-      CALL wrk_dealloc( jpi      , zphi , zfoo )
-      CALL wrk_dealloc( jpi , jpk, z_1 )
+      CALL wrk_dealloc( jpj      , zphi , zfoo )
+      CALL wrk_dealloc( jpj , jpk, z_1 )
       !
   END SUBROUTINE dia_ptr_wri
 

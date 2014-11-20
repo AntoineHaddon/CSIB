@@ -6,6 +6,8 @@ MODULE zdftmx
    !! History :  1.0  !  2004-04  (L. Bessieres, G. Madec)  Original code
    !!             -   !  2006-08  (A. Koch-Larrouy) Indonesian strait
    !!            3.3  !  2010-10  (C. Ethe, G. Madec) reorganisation of initialisation phase
+   !!            3.4.1!  2014-09  (D. Yang) Added constraint to tidal energy to make sure 
+   !!                                       that it is always positive in the code.
    !!----------------------------------------------------------------------
 #if defined key_zdftmx   ||   defined key_esopa
    !!----------------------------------------------------------------------
@@ -406,7 +408,7 @@ CONTAINS
       ! Total tidal energy ( M2, S2 and K1  with S2=(1/2)^2 * M2 )
       ! only the energy available for mixing is taken into account,
       ! (mixing efficiency tidal dissipation efficiency)
-      en_tmx(:,:) = - rn_tfe * rn_me * ( zem2(:,:) * 1.25 + zek1(:,:) ) * tmask(:,:,1)
+      en_tmx(:,:) = - rn_tfe * rn_me * ( min(0.,zem2(:,:)) * 1.25 + min(0.,zek1(:,:)) ) * tmask(:,:,1)
 
       ! Vertical structure (az_tmx)
       DO jj = 1, jpj                ! part independent of the level
