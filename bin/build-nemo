@@ -112,7 +112,7 @@ nemo_version=''
 # The default location of the repository containing nemo source code
 [ -z "$CCRNSRC" ] && bail "CCRNSRC must be set"
 [ ! -d "$CCRNSRC" ] && bail "CCRNSRC=$CCRNSRC is not a directory"
-nemo_source_repo=$CCRNSRC/ocean_dir/ocn-mirror.git
+nemo_source_repo=$CCRNSRC/ocean_dir/nemo-CCCma.git
 
 # The location of a dir containing user supplied source files that will
 # replace, or add to, existing files in the repository
@@ -189,18 +189,18 @@ for arg in "$@"; do
          # add this variable definition to the current environment
          [ -n "$var" ] && eval ${var}=\"\$val\" # preserve quoted assignments
          case $var in
-           ver)  nemo_version="$val" ;;       # git version, tag or branch
-           repo) nemo_source_repo="$val" ;;   # location of git repository
-           src) nemo_source_mods="$val" ;;   # location of user supplied modification
-           exec) nemo_exe="$val" ;;           # name for the executable created here
-           cfg)  nemo_config="$val" ;;        # name of subdir in which config lives
-           refcfg) nemo_ref_config="$val" ;;  # name of subdir in which ref config lives
-           arch) nemo_arch="$val" ;;          # name of file with arch specific make defs
+               ver) nemo_version="$val" ;;     # git version, tag or branch
+              repo) nemo_source_repo="$val" ;; # location of git repository
+               src) nemo_source_mods="$val" ;; # location of user supplied modification
+              exec) nemo_exe="$val" ;;         # name for the executable created here
+               cfg) nemo_config="$val" ;;      # name of subdir in which config lives
+            refcfg) nemo_ref_config="$val" ;;  # name of subdir in which ref config lives
+              arch) nemo_arch="$val" ;;        # name of file with arch specific make defs
                      # a list of cpp keys to add before compiling nemo
            add_key) nemo_add_cpp_keys="$val" ;;
                      # a list of cpp keys to remove before compiling nemo
            del_key) nemo_del_cpp_keys="$val" ;;
-           *) bail "Invalid command line arg --> $arg <--" ;;
+                 *) bail "Invalid command line arg --> $arg <--" ;;
          esac
          ;;
     *) bail "Invalid command line arg --> $arg <--" ;;
@@ -254,12 +254,7 @@ local_src="src_$nemo_version"
 
 # path_to_nemo is the dir path (relative to the top git source dir) in which nemo code
 # lives and is used by git archive to extract the nemo subset of the repository source
-# NOTE: As of version 34c08e39 (canesm1_ocn) this dir has been moved to src/ocean/nemo
-case $nemo_version in
-  nemo_v3.4)   path_to_nemo="src/nemo" ;;
-  nemo_v3.4.1) path_to_nemo="src/ocean/nemo" ;;
-  *) bail "Invalid nemo version ->> " ;;
-esac
+path_to_nemo=nemo
 
 # nemo_root is the location in the temporary dir (as a full pathname) to which
 # the nemo code extracted from the git repository will be copied
