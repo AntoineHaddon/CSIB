@@ -226,3 +226,11 @@ if [ $build_nemo_rtd_exe -eq 1 ]; then
   echo "Saved $nemo_rtd_exe on RUNPATH $RUNPATH"
 fi
 
+cd $CWD
+if [ $keep_tmpd -eq 1 ]; then
+    echo "Temporary directory remains in $tmpd"
+else
+    rm -fr $tmpd
+fi 
+
+
