@@ -37,7 +37,7 @@
    nrdttrc    =  4        ! time step frequency for biology
 !   wsbio      =  8.       ! POC sinking speed <CMOC OR 11/06/2013> Settling speed for detritus in CMOC
    xkmort     =  2.E-7    ! half saturation constant for mortality
-   ferat3     =  10.E-6   ! Fe/C in zooplankton 
+! <CMOC OR 07/17/2014> !   ferat3     =  10.E-6   ! Fe/C in zooplankton 
    wsbio2     =  30.      ! Big particles sinking speed
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -89,21 +89,21 @@
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &nampiszoo     !   parameters for microzooplankton
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-   part       =  0.5      ! part of calcite not dissolved in microzoo gutsa
-   grazrat    =  3.0      ! maximal zoo grazing rate
-   resrat     =  0.03     ! exsudation rate of zooplankton
-   mzrat      =  0.001    ! zooplankton mortality rate
-   xpref2c    =  0.1      ! Microzoo preference for POM
-   xpref2p    =  1.       ! Microzoo preference for Nanophyto
-   xpref2d    =  0.5      ! Microzoo preference for Diatoms
-   xthreshdia =  1.E-8    ! Diatoms feeding threshold for microzooplankton 
-   xthreshphy =  1.E-8    ! Nanophyto feeding threshold for microzooplankton 
-   xthreshpoc =  1.E-8    ! POC feeding threshold for microzooplankton 
-   xthresh    =  2.E-7    ! Food threshold for feeding
-   xkgraz     =  20.E-6   ! half sturation constant for grazing
-   epsher     =  0.3      ! Efficiency of microzoo growth
-   sigma1     =  0.6      ! Fraction of microzoo excretion as DOM
-   unass      =  0.3      ! non assimilated fraction of phyto by zoo
+! <CMOC OR 07/15/2014> ! Removal of all the tracers !     part       =  0.5      ! part of calcite not dissolved in microzoo gutsa
+! <CMOC OR 07/15/2014> ! Removal of all the tracers !     grazrat    =  3.0      ! maximal zoo grazing rate
+! <CMOC OR 07/15/2014> ! Removal of all the tracers !     resrat     =  0.03     ! exsudation rate of zooplankton
+! <CMOC OR 07/15/2014> ! Removal of all the tracers !     mzrat      =  0.001    ! zooplankton mortality rate
+! <CMOC OR 07/15/2014> ! Removal of all the tracers !     xpref2c    =  0.1      ! Microzoo preference for POM
+! <CMOC OR 07/15/2014> ! Removal of all the tracers !     xpref2p    =  1.       ! Microzoo preference for Nanophyto
+! <CMOC OR 07/15/2014> ! Removal of all the tracers !     xpref2d    =  0.5      ! Microzoo preference for Diatoms
+! <CMOC OR 07/15/2014> ! Removal of all the tracers !     xthreshdia =  1.E-8    ! Diatoms feeding threshold for microzooplankton 
+     xthreshphy =  1.E-8    ! Nanophyto feeding threshold for microzooplankton 
+! <CMOC OR 07/15/2014> ! Removal of all the tracers !     xthreshpoc =  1.E-8    ! POC feeding threshold for microzooplankton 
+! <CMOC OR 07/15/2014> ! Removal of all the tracers !     xthresh    =  2.E-7    ! Food threshold for feeding
+! <CMOC OR 07/15/2014> ! Removal of all the tracers !     xkgraz     =  20.E-6   ! half sturation constant for grazing
+! <CMOC OR 07/15/2014> ! Removal of all the tracers !     epsher     =  0.3      ! Efficiency of microzoo growth
+! <CMOC OR 07/15/2014> ! Removal of all the tracers !     sigma1     =  0.6      ! Fraction of microzoo excretion as DOM
+! <CMOC OR 07/15/2014> ! Removal of all the tracers !     unass      =  0.3      ! non assimilated fraction of phyto by zoo
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &nampisrem     !   parameters for remineralization
@@ -129,24 +129,24 @@
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 !              !  file name        ! frequency (hours) ! variable   ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation !
 !              !                   !  (if <0  months)  !   name     !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  !
-   sn_dust     = 'dust.orca'       ,     -1            , 'dust'     ,  .true.      , .true. ,   'yearly'  , ''       , ''
+!  sn_dust     = 'dust.orca'       ,     -1            , 'dust'     ,  .true.      , .true. ,   'yearly'  , ''       , ''
    sn_riverdic = 'river.orca'      ,    -12            , 'riverdic' ,  .false.     , .true. ,   'yearly'  , ''       , ''
    sn_riverdoc = 'river.orca'      ,    -12            , 'riverdoc' ,  .false.     , .true. ,   'yearly'  , ''       , ''
-   sn_ndepo    = 'ndeposition.orca',    -12            , 'ndep'     ,  .false.     , .true. ,   'yearly'  , ''       , ''
-   sn_ironsed  = 'bathy.orca'      ,    -12            , 'bathy'    ,  .false.     , .true. ,   'yearly'  , ''       , ''
+!  sn_ndepo    = 'ndeposition.orca',    -12            , 'ndep'     ,  .false.     , .true. ,   'yearly'  , ''       , ''
+!  sn_ironsed  = 'bathy.orca'      ,    -12            , 'bathy'    ,  .false.     , .true. ,   'yearly'  , ''       , ''
    sn_fmsk     = 'fermask.orca'    ,    -12            , 'femask'   ,  .false.     , .true. ,   'yearly'  , ''       , ''     ! <CMOC OR 01/21/2014> Iron limitation mask 
 !
    cn_dir      = './'      !  root directory for the location of the dynamical files
-   ln_dust     =  .false.  ! boolean for dust input from the atmosphere
+!  ln_dust     =  .false.  ! boolean for dust input from the atmosphere
    ln_river    =  .false.  ! boolean for river input of nutrients
-   ln_ndepo    =  .false.  ! boolean for atmospheric deposition of N
-   ln_ironsed  =  .true.   ! boolean for Fe input from sediments
-   sedfeinput  =  1E-9     ! Coastal release of Iron
-   dustsolub   =  0.02     ! Solubility of the dust
-   wdust       =  2.0      ! Dust sinking speed
-   nitrfix     =  1E-7     ! Nitrogen fixation rate
-   diazolight  =  50.      ! Diazotrophs sensitivity to light (W/m2)
-   concfediaz  =  1.E-10   ! Diazotrophs half-saturation Cste for Iron
+!  ln_ndepo    =  .false.  ! boolean for atmospheric deposition of N
+!  ln_ironsed  =  .true.   ! boolean for Fe input from sediments
+!  sedfeinput  =  1E-9     ! Coastal release of Iron
+!  dustsolub   =  0.02     ! Solubility of the dust
+!  wdust       =  2.0      ! Dust sinking speed
+!  nitrfix     =  1E-7     ! Nitrogen fixation rate
+!  diazolight  =  50.      ! Diazotrophs sensitivity to light (W/m2)
+!  concfediaz  =  1.E-10   ! Diazotrophs half-saturation Cste for Iron
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &nampiskrp     !   Kriest parameterization : parameters     "key_kriest"

@@ -38,8 +38,8 @@ CONTAINS
       DO jn = 1, jptra
 
          zrfact = 1.0e+6_wp ! <CMOC OR 03/14/2014> 
-         IF( jn == jpnh4 )                                                                     zrfact = 1.0e+6 / 7.6 ! IF( jn == jpno3 .OR. jn == jpnh4 ) zrfact = 1.0e+6 / 7.6 <CMOC OR 10/28/2013> 
-         IF( jn == jppo4  )                                                                    zrfact = 1.0e+6 / 122.
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpnh4) !          IF( jn == jpnh4 )                                                                     zrfact = 1.0e+6 / 7.6 ! IF( jn == jpno3 .OR. jn == jpnh4 ) zrfact = 1.0e+6 / 7.6 <CMOC OR 10/28/2013> 
+! <CMOC OR 06/27/2014> Trimming code, tracers (jppo4) !           IF( jn == jppo4  )                                                                    zrfact = 1.0e+6 / 122.
          IF( jn == jpoxy  )                                                                    zrfact = 1.0e+6 / 106._wp * 138._wp  ! <CMOC OR 11/30/2013> convert back to uM of O2 with the Redfield ratio
          IF( jn == jpno3 .OR. jn == jpphy .OR. jn == jpzoo .OR. jn == jppoc )                  zrfact = 1.0e+6 / 106._wp * 16._wp   ! <CMOC OR 10/29/2013> change the chemical currency from carbon to nitrogen
 

@@ -18,7 +18,7 @@ MODULE p4zbio
    USE sms_pisces      !  PISCES Source Minus Sink variables
    USE p4zsink         !  vertical flux of particulate matter due to sinking
    USE p4zopt          !  optical model
-   USE p4zlim          !  Co-limitations of differents nutrients
+! <CMOC OR 07/15/2014> ! Removal of all the tracers !     USE p4zlim          !  Co-limitations of differents nutrients
    USE p4zprod         !  Growth rate of the 2 phyto groups
    USE p4zmort         !  Mortality terms for phytoplankton
    USE p4zmicro        !  Sources and sinks of microzooplankton
@@ -55,9 +55,9 @@ CONTAINS
       INTEGER, INTENT(in) :: kt, jnt
       INTEGER  ::  ji, jj, jk, jn
       REAL(wp) ::  ztra
-#if defined key_kriest
-      REAL(wp) ::  zcoef1, zcoef2
-#endif
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   #if defined key_kriest
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !         REAL(wp) ::  zcoef1, zcoef2
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   #endif
       CHARACTER (len=25) :: charout
 
       !!---------------------------------------------------------------------
@@ -79,7 +79,7 @@ CONTAINS
           
       CALL p4z_sink ( kt, jnt )     ! vertical flux of particulate organic matter
       CALL p4z_opt  ( kt, jnt )     ! Optic: PAR in the water column
-      CALL p4z_lim  ( kt      )     ! co-limitations by the various nutrients
+! <CMOC OR 06/13/2014> Code trimming !        CALL p4z_lim  ( kt      )     ! co-limitations by the various nutrients
       CALL p4z_prod ( kt, jnt )     ! phytoplankton growth rate over the global ocean. 
       !                             ! (for each element : C, Si, Fe, Chl )
       CALL p4z_rem  ( kt, jnt )     ! <CMOC OR 01/20/2014) iom_put must be called only once, so jnt is to be passed to p4z_rem when saving Nfix ! remineralization terms of organic matter+scavenging of Fe
@@ -126,15 +126,15 @@ CONTAINS
          ENDIF
        ENDIF 
 
-#if defined key_kriest
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   #if defined key_kriest
       ! 
-      zcoef1 = 1.e0 / xkr_massp 
-      zcoef2 = 1.e0 / xkr_massp / 1.1
-      DO jk = 1,jpkm1
-         trn(:,:,jk,jpnum) = MAX(  trn(:,:,jk,jpnum), trn(:,:,jk,jppoc) * zcoef1 / xnumm(jk)  )
-         trn(:,:,jk,jpnum) = MIN(  trn(:,:,jk,jpnum), trn(:,:,jk,jppoc) * zcoef2              )
-      END DO
-#endif
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !         zcoef1 = 1.e0 / xkr_massp 
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !         zcoef2 = 1.e0 / xkr_massp / 1.1
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !         DO jk = 1,jpkm1
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !            trn(:,:,jk,jpnum) = MAX(  trn(:,:,jk,jpnum), trn(:,:,jk,jppoc) * zcoef1 / xnumm(jk)  )
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !            trn(:,:,jk,jpnum) = MIN(  trn(:,:,jk,jpnum), trn(:,:,jk,jppoc) * zcoef2              )
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !         END DO
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   #endif
 
       !
       IF(ln_ctl)   THEN  ! print mean trends (used for debugging)

@@ -129,7 +129,7 @@ CONTAINS
                ! AMOUNT CACO3 (12C) THAT RE-ENTERS SOLUTION
                !       (ACCORDING TO THIS FORMULATION ALSO SOME PARTICULATE
                !       CACO3 GETS DISSOLVED EVEN IN THE CASE OF OVERSATURATION)
-               zdispot = kdca * zexcess * trn(ji,jj,jk,jpcal)
+               zdispot = kdca * zexcess * 0. ! <CMOC OR 07/15/2014> ! Removal of all the tracers !  trn(ji,jj,jk,jpcal)
 # if defined key_degrad
                zdispot = zdispot * facvol(ji,jj,jk)
 # endif
@@ -138,9 +138,9 @@ CONTAINS
               zcaldiss(ji,jj,jk)  = zdispot / rmtss  ! calcite dissolution
               zco3(ji,jj,jk)      = zco3(ji,jj,jk) + zcaldiss(ji,jj,jk) * rfact
               !
-              tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) !+ 2. * zcaldiss(ji,jj,jk) <CMOC OR 11/29/2013>
-              tra(ji,jj,jk,jpcal) = tra(ji,jj,jk,jpcal) -      zcaldiss(ji,jj,jk)
-              tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) !+      zcaldiss(ji,jj,jk) <CMOC OR 11/29/2013>
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !                 tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) !+ 2. * zcaldiss(ji,jj,jk) <CMOC OR 11/29/2013>
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !                 tra(ji,jj,jk,jpcal) = tra(ji,jj,jk,jpcal) -      zcaldiss(ji,jj,jk)
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !                 tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) !+      zcaldiss(ji,jj,jk) <CMOC OR 11/29/2013>
             END DO
          END DO
       END DO

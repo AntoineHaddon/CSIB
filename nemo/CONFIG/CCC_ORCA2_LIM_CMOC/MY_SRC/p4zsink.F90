@@ -33,11 +33,11 @@ MODULE p4zsink
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   sinking ! <CMOC OR 05/06/2014> Removal of GOC tracer ! , sinking2  !: POC sinking fluxes 
    !                                                          !  (different meanings depending on the parameterization)
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   sinkcal, sinksil   !: CaCO3 and BSi sinking fluxes
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   sinkfer            !: Small BFe sinking fluxes
-#if ! defined key_kriest
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   sinkfer2           !: Big iron sinking fluxes
-#endif
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !      REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   sinkcal, sinksil   !: CaCO3 and BSi sinking fluxes
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !      REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   sinkfer            !: Small BFe sinking fluxes
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   #if ! defined key_kriest
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !      REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   sinkfer2           !: Big iron sinking fluxes
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   #endif
 
    INTEGER  :: iksed  = 10
 
@@ -88,8 +88,8 @@ CONTAINS
       INTEGER, INTENT(in) :: kt, jnt
       !
       INTEGER  :: ji, jj, jk
-      REAL(wp) :: zagg1, zagg4, zagg5, zaggsi, zaggsh ! <CMOC OR 05/06/2014> Removal of GOC tracer !  zagg2, zagg3, zagg4, zagg5, zaggsi, zaggsh
-      REAL(wp) :: zagg , zaggdoc, znumdoc
+      ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   REAL(wp) :: zagg1, zagg4, zagg5, zaggsi, zaggsh ! <CMOC OR 05/06/2014> Removal of GOC tracer !  zagg2, zagg3, zagg4, zagg5, zaggsi, zaggsh
+      ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   REAL(wp) :: zagg ! <CMOC OR 06/30/2014> Trimming code, tracers (jpdoc) !  , zaggdoc, znumdoc
       REAL(wp) :: znum , zeps, zfm, zgm, zsm
       REAL(wp) :: zdiv , zdiv1, zdiv2, zdiv3, zdiv4, zdiv5
       REAL(wp) :: zval1, zval2, zval3, zval4
@@ -146,18 +146,18 @@ CONTAINS
 
       sinking (:,:,:) = 0.e0
       ! <CMOC OR 05/06/2014> Removal of GOC tracer ! sinking2(:,:,:) = 0.e0
-      sinkcal (:,:,:) = 0.e0
-      sinkfer (:,:,:) = 0.e0
-      sinksil (:,:,:) = 0.e0
+      ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   sinkcal (:,:,:) = 0.e0
+      ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   sinkfer (:,:,:) = 0.e0
+      ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   sinksil (:,:,:) = 0.e0
 
      !   Compute the sedimentation term using p4zsink2 for all the sinking particles
      !   -----------------------------------------------------
 
       CALL p4z_sink2( wsbio3, sinking , jppoc )
       ! <CMOC OR 05/06/2014> Removal of GOC tracer ! CALL p4z_sink2( wsbio4, sinking2, jpnum )
-      CALL p4z_sink2( wsbio3, sinkfer , jpsfe )
-      CALL p4z_sink2( wscal , sinksil , jpgsi )
-      CALL p4z_sink2( wscal , sinkcal , jpcal )
+      ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   CALL p4z_sink2( wsbio3, sinkfer , jpsfe )
+      ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   CALL p4z_sink2( wscal , sinksil , jpgsi )
+      ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   CALL p4z_sink2( wscal , sinkcal , jpcal )
 
      !  Exchange between organic matter compartments due to coagulation/disaggregation
      !  ---------------------------------------------------
@@ -190,11 +190,11 @@ CONTAINS
                   !    Part I : Coagulation dependant on turbulence
                   !    ----------------------------------------------
 
-                  zagg1 = ( 0.163 * trn(ji,jj,jk,jpnum)**2               &
-                     &            * 2.*( (zfm-1.)*(zfm*xkr_mass_max**3-xkr_mass_min**3)    &
-                     &            * (zeps-1)/zdiv1 + 3.*(zfm*xkr_mass_max-xkr_mass_min)    &
-                     &            * (zfm*xkr_mass_max**2-xkr_mass_min**2)                  &
-                     &            * (zeps-1.)**2/(zdiv2*zdiv3)) 
+                  ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   zagg1 = ( 0.163 * trn(ji,jj,jk,jpnum)**2               &
+                  ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !      &            * 2.*( (zfm-1.)*(zfm*xkr_mass_max**3-xkr_mass_min**3)    &
+                  ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !      &            * (zeps-1)/zdiv1 + 3.*(zfm*xkr_mass_max-xkr_mass_min)    &
+                  ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !      &            * (zfm*xkr_mass_max**2-xkr_mass_min**2)                  &
+                  ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !      &            * (zeps-1.)**2/(zdiv2*zdiv3)) 
                   ! <CMOC OR 05/06/2014> Removal of GOC tracer ! zagg2 =  2*0.163*trn(ji,jj,jk,jpnum)**2*zfm*                       &
                   ! <CMOC OR 05/06/2014> Removal of GOC tracer !    &                   ((xkr_mass_max**3+3.*(xkr_mass_max**2          &
                   ! <CMOC OR 05/06/2014> Removal of GOC tracer !    &                    *xkr_mass_min*(zeps-1.)/zdiv2                 &
@@ -209,45 +209,45 @@ CONTAINS
                  !    Part II : Differential settling
                  !    ----------------------------------------------
 
-                  zagg4 =  2.*3.141*0.125*trn(ji,jj,jk,jpnum)**2*                       &
-                     &                 xkr_wsbio_min*(zeps-1.)**2                         &
-                     &                 *(xkr_mass_min**2*((1.-zsm*zfm)/(zdiv3*zdiv4)      &
-                     &                 -(1.-zfm)/(zdiv*(zeps-1.)))-                       &
-                     &                 ((zfm*zfm*xkr_mass_max**2*zsm-xkr_mass_min**2)     &
-                     &                 *xkr_eta)/(zdiv*zdiv3*zdiv5) )   
+                  ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   zagg4 =  2.*3.141*0.125*trn(ji,jj,jk,jpnum)**2*                       &
+                  ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !      &                 xkr_wsbio_min*(zeps-1.)**2                         &
+                  ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !      &                 *(xkr_mass_min**2*((1.-zsm*zfm)/(zdiv3*zdiv4)      &
+                  ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !      &                 -(1.-zfm)/(zdiv*(zeps-1.)))-                       &
+                  ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !      &                 ((zfm*zfm*xkr_mass_max**2*zsm-xkr_mass_min**2)     &
+                  ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !     &                 *xkr_eta)/(zdiv*zdiv3*zdiv5) )   
 
-                  zagg5 =   2.*3.141*0.125*trn(ji,jj,jk,jpnum)**2                         &
-                     &                 *(zeps-1.)*zfm*xkr_wsbio_min                        &
-                     &                 *(zsm*(xkr_mass_min**2-zfm*xkr_mass_max**2)         &
-                     &                 /zdiv3-(xkr_mass_min**2-zfm*zsm*xkr_mass_max**2)    &
-                     &                 /zdiv)  
-                  zaggsi = ( zagg4 + zagg5 ) * xstep / 10.
+                  ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   zagg5 =   2.*3.141*0.125*trn(ji,jj,jk,jpnum)**2                         &
+                  ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !      &                 *(zeps-1.)*zfm*xkr_wsbio_min                        &
+                  ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !      &                 *(zsm*(xkr_mass_min**2-zfm*xkr_mass_max**2)         &
+                  ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !      &                 /zdiv3-(xkr_mass_min**2-zfm*zsm*xkr_mass_max**2)    &
+                  ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !      &                 /zdiv)  
+                  ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   zaggsi = ( zagg4 + zagg5 ) * xstep / 10.
 
-                  zagg = 0.5 * xkr_stick * ( zaggsh + zaggsi )
+                  ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   zagg = 0.5 * xkr_stick * ( zaggsh + zaggsi )
 
                   !     Aggregation of DOC to small particles
                   !     --------------------------------------
 
-                  zaggdoc = ( 0.4 * trn(ji,jj,jk,jpdoc)               &
-                     &        + 1018.  * trn(ji,jj,jk,jppoc)  ) * xstep    &
-                     &        * xdiss(ji,jj,jk) * trn(ji,jj,jk,jpdoc)
+                  ! <CMOC OR 06/30/2014> Trimming code, tracers (jpdoc) !  zaggdoc = ( 0.4 * trn(ji,jj,jk,jpdoc)               &
+                  ! <CMOC OR 06/30/2014> Trimming code, tracers (jpdoc) !     &        + 1018.  * trn(ji,jj,jk,jppoc)  ) * xstep    &
+                  ! <CMOC OR 06/30/2014> Trimming code, tracers (jpdoc) !     &        * xdiss(ji,jj,jk) * trn(ji,jj,jk,jpdoc)
 
-# if defined key_degrad
-                   zagg1   = zagg1   * facvol(ji,jj,jk)                 
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   # if defined key_degrad
+                   ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   zagg1   = zagg1   * facvol(ji,jj,jk)                 
                    ! <CMOC OR 05/06/2014> Removal of GOC tracer ! zagg2   = zagg2   * facvol(ji,jj,jk)                 
                    ! <CMOC OR 05/06/2014> Removal of GOC tracer ! zagg3   = zagg3   * facvol(ji,jj,jk)                 
-                   zagg4   = zagg4   * facvol(ji,jj,jk)                 
-                   zagg5   = zagg5   * facvol(ji,jj,jk)                 
-                   zaggdoc = zaggdoc * facvol(ji,jj,jk)                 
-# endif
-                  zaggsh =   zagg1   * rfact2 * xdiss(ji,jj,jk) / 1000. ! <CMOC OR 05/06/2014> Removal of GOC tracer ! ( zagg1 + zagg2 + zagg3 ) * rfact2 * xdiss(ji,jj,jk) / 1000.
-                  zaggsi = ( zagg4 + zagg5 ) * xstep / 10.
-                  zagg = 0.5 * xkr_stick * ( zaggsh + zaggsi )
+                   ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   zagg4   = zagg4   * facvol(ji,jj,jk)                 
+                   ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   zagg5   = zagg5   * facvol(ji,jj,jk)                 
+                   ! <CMOC OR 06/30/2014> Trimming code, tracers (jpdoc) !  zaggdoc = zaggdoc * facvol(ji,jj,jk)                 
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   # endif
+                  ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   zaggsh =   zagg1   * rfact2 * xdiss(ji,jj,jk) / 1000. ! <CMOC OR 05/06/2014> Removal of GOC tracer ! ( zagg1 + zagg2 + zagg3 ) * rfact2 * xdiss(ji,jj,jk) / 1000.
+                  ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   zaggsi = ( zagg4 + zagg5 ) * xstep / 10.
+                  ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   zagg = 0.5 * xkr_stick * ( zaggsh + zaggsi )
                   !
-                  znumdoc = trn(ji,jj,jk,jpnum) / ( trn(ji,jj,jk,jppoc) + rtrn )
-                  tra(ji,jj,jk,jppoc) = tra(ji,jj,jk,jppoc) + zaggdoc
-                  tra(ji,jj,jk,jpnum) = tra(ji,jj,jk,jpnum) + zaggdoc * znumdoc - zagg
-                  tra(ji,jj,jk,jpdoc) = tra(ji,jj,jk,jpdoc) - zaggdoc
+                  ! <CMOC OR 06/30/2014> Trimming code, tracers (jpdoc) !  znumdoc = trn(ji,jj,jk,jpnum) / ( trn(ji,jj,jk,jppoc) + rtrn )
+                  ! <CMOC OR 06/30/2014> Trimming code, tracers (jpdoc) !  tra(ji,jj,jk,jppoc) = tra(ji,jj,jk,jppoc) + zaggdoc
+                  ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   tra(ji,jj,jk,jpnum) = tra(ji,jj,jk,jpnum) - zagg ! <CMOC OR 06/30/2014> Trimming code, tracers (jpdoc) !  + zaggdoc * znumdoc - zagg
+                  ! <CMOC OR 06/30/2014> Trimming code, tracers (jpdoc) !  tra(ji,jj,jk,jpdoc) = tra(ji,jj,jk,jpdoc) - zaggdoc
 
                ENDIF
             END DO
@@ -261,27 +261,27 @@ CONTAINS
          IF( jnt == nrdttrc ) THEN
            CALL iom_put( "POCFlx"  , sinking (:,:,:)      * zrfact2 * tmask(:,:,:) )  ! POC export
            ! <CMOC OR 05/06/2014> Removal of GOC tracer ! CALL iom_put( "NumFlx"  , sinking2 (:,:,:)     * zrfact2 * tmask(:,:,:) )  ! Num export
-           CALL iom_put( "SiFlx"   , sinksil (:,:,:)      * zrfact2 * tmask(:,:,:) )  ! Silica export
-           CALL iom_put( "CaCO3Flx", sinkcal (:,:,:)      * zrfact2 * tmask(:,:,:) )  ! Calcite export
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !              CALL iom_put( "SiFlx"   , sinksil (:,:,:)      * zrfact2 * tmask(:,:,:) )  ! Silica export
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !              CALL iom_put( "CaCO3Flx", sinkcal (:,:,:)      * zrfact2 * tmask(:,:,:) )  ! Calcite export
            CALL iom_put( "xnum"    , znum3d  (:,:,:)                * tmask(:,:,:) )  ! Number of particles in aggregats
            CALL iom_put( "W1"      , wsbio3  (:,:,:)                * tmask(:,:,:) )  ! sinking speed of POC
            CALL iom_put( "W2"      , wsbio4  (:,:,:)                * tmask(:,:,:) )  ! sinking speed of aggregats
            CALL iom_put( "PMO"     , sinking (:,:,ik1)    * zrfact2 * tmask(:,:,1) )  ! POC export at 100m
            ! <CMOC OR 05/06/2014> Removal of GOC tracer ! CALL iom_put( "PMO2"    , sinking2(:,:,ik1)    * zrfact2 * tmask(:,:,1) )  ! Num export at 100m
-           CALL iom_put( "ExpFe1"  , sinkfer (:,:,ik1)    * zrfact2 * tmask(:,:,1) )  ! Export of iron at 100m
-           CALL iom_put( "ExpSi"   , sinksil (:,:,ik1)    * zrfact2 * tmask(:,:,1) )  ! export of silica at 100m
-           CALL iom_put( "ExpCaCO3", sinkcal (:,:,ik1)    * zrfact2 * tmask(:,:,1) )  ! export of calcite at 100m
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !              CALL iom_put( "ExpFe1"  , sinkfer (:,:,ik1)    * zrfact2 * tmask(:,:,1) )  ! Export of iron at 100m
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !              CALL iom_put( "ExpSi"   , sinksil (:,:,ik1)    * zrfact2 * tmask(:,:,1) )  ! export of silica at 100m
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !              CALL iom_put( "ExpCaCO3", sinkcal (:,:,ik1)    * zrfact2 * tmask(:,:,1) )  ! export of calcite at 100m
          ENDIF
 # if ! defined key_iomput
          trc2d(:,:  ,jp_pcs0_2d + 4)  = sinking (:,:,ik1)    * zrfact2 * tmask(:,:,1)
          ! <CMOC OR 05/06/2014> Removal of GOC tracer ! trc2d(:,:  ,jp_pcs0_2d + 5)  = sinking2(:,:,ik1)    * zrfact2 * tmask(:,:,1)
-         trc2d(:,:  ,jp_pcs0_2d + 6)  = sinkfer (:,:,ik1)    * zrfact2 * tmask(:,:,1)
-         trc2d(:,:  ,jp_pcs0_2d + 7)  = sinksil (:,:,ik1)    * zrfact2 * tmask(:,:,1)
-         trc2d(:,:  ,jp_pcs0_2d + 8)  = sinkcal (:,:,ik1)    * zrfact2 * tmask(:,:,1)
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !            trc2d(:,:  ,jp_pcs0_2d + 6)  = sinkfer (:,:,ik1)    * zrfact2 * tmask(:,:,1)
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !            trc2d(:,:  ,jp_pcs0_2d + 7)  = sinksil (:,:,ik1)    * zrfact2 * tmask(:,:,1)
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !            trc2d(:,:  ,jp_pcs0_2d + 8)  = sinkcal (:,:,ik1)    * zrfact2 * tmask(:,:,1)
          trc3d(:,:,:,jp_pcs0_3d + 11) = sinking (:,:,:)      * zrfact2 * tmask(:,:,:)
          ! <CMOC OR 05/06/2014> Removal of GOC tracer ! trc3d(:,:,:,jp_pcs0_3d + 12) = sinking2(:,:,:)      * zrfact2 * tmask(:,:,:)
-         trc3d(:,:,:,jp_pcs0_3d + 13) = sinksil (:,:,:)      * zrfact2 * tmask(:,:,:)
-         trc3d(:,:,:,jp_pcs0_3d + 14) = sinkcal (:,:,:)      * zrfact2 * tmask(:,:,:)
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !            trc3d(:,:,:,jp_pcs0_3d + 13) = sinksil (:,:,:)      * zrfact2 * tmask(:,:,:)
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !            trc3d(:,:,:,jp_pcs0_3d + 14) = sinkcal (:,:,:)      * zrfact2 * tmask(:,:,:)
          trc3d(:,:,:,jp_pcs0_3d + 15) = znum3d  (:,:,:)                * tmask(:,:,:)
          trc3d(:,:,:,jp_pcs0_3d + 16) = wsbio3  (:,:,:)                * tmask(:,:,:)
          trc3d(:,:,:,jp_pcs0_3d + 17) = wsbio4  (:,:,:)                * tmask(:,:,:)
@@ -448,8 +448,8 @@ iflag:   DO jn = 1, kiter
       !!---------------------------------------------------------------------
       INTEGER, INTENT(in) :: kt, jnt
       INTEGER  ::   ji, jj, jk
-      REAL(wp) ::   zagg1, zagg4 ! <CMOC OR 05/05/2014> Removal of GOC tracer ! zagg2, zagg3, zagg4
-      REAL(wp) ::   zagg , zaggfe, zaggdoc, zaggdoc3 ! <CMOC OR 05/05/2014> Removal of GOC tracer ! zaggdoc2, zaggdoc3
+      ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   REAL(wp) ::   zagg1, zagg4 ! <CMOC OR 05/05/2014> Removal of GOC tracer ! zagg2, zagg3, zagg4
+      ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   REAL(wp) ::   zagg , zaggfe ! <CMOC OR 06/30/2014> Trimming code, tracers (jpdoc) !  , zaggdoc, zaggdoc3 ! <CMOC OR 05/05/2014> Removal of GOC tracer ! zaggdoc2, zaggdoc3
       REAL(wp) ::   zfact, zwsmax, zmax, zstep
       REAL(wp) ::   zrfact2
       INTEGER  ::   ik1
@@ -461,17 +461,17 @@ iflag:   DO jn = 1, kiter
       !    Sinking speeds of detritus is increased with depth as shown
       !    by data and from the coagulation theory
       !    -----------------------------------------------------------
-      DO jk = 1, jpkm1
-         DO jj = 1, jpj
-            DO ji = 1,jpi
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !         DO jk = 1, jpkm1
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !            DO jj = 1, jpj
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !               DO ji = 1,jpi
       !         zmax  = MAX( heup(ji,jj), hmld(ji,jj) )
       !         zfact = MAX( 0., fsdepw(ji,jj,jk+1) - zmax ) / 5000._wp
-               zmax = hmld(ji,jj)
-               zfact = MAX( 0., fsdepw(ji,jj,jk+1) - zmax ) / 4000._wp
-               wsbio4(ji,jj,jk) = wsbio2 + ( 200.- wsbio2 ) * zfact
-            END DO
-         END DO
-      END DO
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !                  zmax = hmld(ji,jj)
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !                  zfact = MAX( 0., fsdepw(ji,jj,jk+1) - zmax ) / 4000._wp
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !                  wsbio4(ji,jj,jk) = wsbio2 + ( 200.- wsbio2 ) * zfact
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !               END DO
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !            END DO
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !         END DO
 
       ! limit the values of the sinking speeds to avoid numerical instabilities  
       wsbio3(:,:,:) = wsbio
@@ -487,74 +487,73 @@ iflag:   DO jn = 1, kiter
          DO jj = 1, jpj
             DO ji = 1, jpi
                zwsmax = 0.8 * fse3t(ji,jj,jk) / xstep
-               wsbio4(ji,jj,jk) = MIN( wsbio4(ji,jj,jk), zwsmax )
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !                  wsbio4(ji,jj,jk) = MIN( wsbio4(ji,jj,jk), zwsmax )
                wsbio3(ji,jj,jk) = MIN( wsbio3(ji,jj,jk), zwsmax )
             END DO
          END DO
       END DO
 
-      wscal(:,:,:) = wsbio4(:,:,:)
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !         wscal(:,:,:) = wsbio4(:,:,:)
 
       !  Initializa to zero all the sinking arrays 
       !   -----------------------------------------
 
       sinking (:,:,:) = 0.e0
       ! <CMOC OR 05/06/2014> Removal of GOC tracer ! sinking2(:,:,:) = 0.e0
-      sinkcal (:,:,:) = 0.e0
-      sinkfer (:,:,:) = 0.e0
-      sinksil (:,:,:) = 0.e0
-      sinkfer2(:,:,:) = 0.e0
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !         sinkcal (:,:,:) = 0.e0
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !         sinkfer (:,:,:) = 0.e0
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !         sinksil (:,:,:) = 0.e0
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !         sinkfer2(:,:,:) = 0.e0
 
       !   Compute the sedimentation term using p4zsink2 for all the sinking particles
       !   -----------------------------------------------------
 
       CALL p4z_sink2( wsbio3, sinking , jppoc )
-      CALL p4z_sink2( wsbio3, sinkfer , jpsfe )
-      ! <CMOC OR 05/05/2014> Removal of GOC tracer ! CALL p4z_sink2( wsbio4, sinking2, jpgoc )
-      CALL p4z_sink2( wsbio4, sinkfer2, jpbfe )
-      CALL p4z_sink2( wsbio4, sinksil , jpgsi )
-      CALL p4z_sink2( wscal , sinkcal , jpcal )
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !         ! <CMOC OR 05/05/2014> Removal of GOC tracer ! CALL p4z_sink2( wsbio4, sinking2, jpgoc )
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !         CALL p4z_sink2( wsbio4, sinkfer2, jpbfe )
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !         CALL p4z_sink2( wsbio4, sinksil , jpgsi )
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !         CALL p4z_sink2( wscal , sinkcal , jpcal )
 
       !  Exchange between organic matter compartments due to coagulation/disaggregation
       !  ---------------------------------------------------
 
-      DO jk = 1, jpkm1
-         DO jj = 1, jpj
-            DO ji = 1, jpi
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !         DO jk = 1, jpkm1
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !            DO jj = 1, jpj
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !               DO ji = 1, jpi
                !
-               zstep = xstep 
-# if defined key_degrad
-               zstep = zstep * facvol(ji,jj,jk)
-# endif
-               zfact = zstep * xdiss(ji,jj,jk)
+               ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   zstep = xstep 
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   # if defined key_degrad
+               ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   zstep = zstep * facvol(ji,jj,jk)
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   # endif
+               ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   zfact = zstep * xdiss(ji,jj,jk)
                !  Part I : Coagulation dependent on turbulence
-               zagg1 = 354.  * zfact * trn(ji,jj,jk,jppoc) * trn(ji,jj,jk,jppoc)
+               ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   zagg1 = 354.  * zfact * trn(ji,jj,jk,jppoc) * trn(ji,jj,jk,jppoc)
                ! <CMOC OR 05/05/2014> Removal of GOC tracer ! zagg2 = 4452. * zfact * trn(ji,jj,jk,jppoc) * trn(ji,jj,jk,jpgoc)
 
                ! Part II : Differential settling
 
                !  Aggregation of small into large particles
                ! <CMOC OR 05/05/2014> Removal of GOC tracer ! zagg3 =  4.7 * zstep * trn(ji,jj,jk,jppoc) * trn(ji,jj,jk,jpgoc)
-               zagg4 =  0.4 * zstep * trn(ji,jj,jk,jppoc) * trn(ji,jj,jk,jppoc)
+               ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   zagg4 =  0.4 * zstep * trn(ji,jj,jk,jppoc) * trn(ji,jj,jk,jppoc)
 
-               zagg   = zagg1 + zagg4 ! <CMOC OR 05/05/2014> Removal of GOC tracer ! + zagg2 + zagg3 + zagg4
-               zaggfe = zagg * trn(ji,jj,jk,jpsfe) / ( trn(ji,jj,jk,jppoc) + rtrn )
+               ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   zagg   = zagg1 + zagg4 ! <CMOC OR 05/05/2014> Removal of GOC tracer ! + zagg2 + zagg3 + zagg4
+               ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   zaggfe = zagg * trn(ji,jj,jk,jpsfe) / ( trn(ji,jj,jk,jppoc) + rtrn )
 
                ! Aggregation of DOC to small particles
-               zaggdoc  = ( 0.83 * trn(ji,jj,jk,jpdoc) + 271. * trn(ji,jj,jk,jppoc) ) * zfact * trn(ji,jj,jk,jpdoc)
+               ! <CMOC OR 06/30/2014> Trimming code, tracers (jpdoc) !  zaggdoc  = ( 0.83 * trn(ji,jj,jk,jpdoc) + 271. * trn(ji,jj,jk,jppoc) ) * zfact * trn(ji,jj,jk,jpdoc)
                ! <CMOC OR 05/05/2014> Removal of GOC tracer ! zaggdoc2 = 1.07e4 * zfact * trn(ji,jj,jk,jpgoc) * trn(ji,jj,jk,jpdoc)
-               zaggdoc3 =   0.02 * ( 16706. * trn(ji,jj,jk,jppoc) + 231. * trn(ji,jj,jk,jpdoc) ) * zstep * trn(ji,jj,jk,jpdoc)
+               ! <CMOC OR 06/30/2014> Trimming code, tracers (jpdoc) !  zaggdoc3 =   0.02 * ( 16706. * trn(ji,jj,jk,jppoc) + 231. * trn(ji,jj,jk,jpdoc) ) * zstep * trn(ji,jj,jk,jpdoc)
 
                !  Update the trends
-               tra(ji,jj,jk,jppoc) = tra(ji,jj,jk,jppoc) !- zagg + zaggdoc + zaggdoc3 <CMOC OR 11/06/2013> No aggregation allowed in the CMOC experiment
+               ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   tra(ji,jj,jk,jppoc) = tra(ji,jj,jk,jppoc) !- zagg + zaggdoc + zaggdoc3 <CMOC OR 11/06/2013> No aggregation allowed in the CMOC experiment
                ! <CMOC OR 05/05/2014> Removal of GOC tracer ! tra(ji,jj,jk,jpgoc) = tra(ji,jj,jk,jpgoc) + zagg + zaggdoc2
-               tra(ji,jj,jk,jpsfe) = tra(ji,jj,jk,jpsfe) - zaggfe
-               tra(ji,jj,jk,jpbfe) = tra(ji,jj,jk,jpbfe) + zaggfe
-               tra(ji,jj,jk,jpdoc) = tra(ji,jj,jk,jpdoc) - zaggdoc - zaggdoc3 ! <CMOC OR 05/05/2014> Removal of GOC tracer ! - zaggdoc2 - zaggdoc3
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !                  tra(ji,jj,jk,jpsfe) = tra(ji,jj,jk,jpsfe) - zaggfe
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !                  tra(ji,jj,jk,jpbfe) = tra(ji,jj,jk,jpbfe) + zaggfe
+               ! <CMOC OR 06/30/2014> Trimming code, tracers (jpdoc) !  tra(ji,jj,jk,jpdoc) = tra(ji,jj,jk,jpdoc) - zaggdoc - zaggdoc3 ! <CMOC OR 05/05/2014> Removal of GOC tracer ! - zaggdoc2 - zaggdoc3
                !
-            END DO
-         END DO
-      END DO
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !               END DO
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !            END DO
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !         END DO
 
       IF( ln_diatrc ) THEN
          zrfact2 = 1.e3 * rfact2r
@@ -569,10 +568,10 @@ iflag:   DO jn = 1, kiter
          ELSE
            trc2d(:,:,jp_pcs0_2d + 4) = sinking (:,:,ik1) * zrfact2 * tmask(:,:,1)
            ! <CMOC OR 05/06/2014> Removal of GOC tracer ! trc2d(:,:,jp_pcs0_2d + 5) = sinking2(:,:,ik1) * zrfact2 * tmask(:,:,1)
-           trc2d(:,:,jp_pcs0_2d + 6) = sinkfer (:,:,ik1) * zrfact2 * tmask(:,:,1)
-           trc2d(:,:,jp_pcs0_2d + 7) = sinkfer2(:,:,ik1) * zrfact2 * tmask(:,:,1)
-           trc2d(:,:,jp_pcs0_2d + 8) = sinksil (:,:,ik1) * zrfact2 * tmask(:,:,1)
-           trc2d(:,:,jp_pcs0_2d + 9) = sinkcal (:,:,ik1) * zrfact2 * tmask(:,:,1)
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !              trc2d(:,:,jp_pcs0_2d + 6) = sinkfer (:,:,ik1) * zrfact2 * tmask(:,:,1)
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !              trc2d(:,:,jp_pcs0_2d + 7) = sinkfer2(:,:,ik1) * zrfact2 * tmask(:,:,1)
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !              trc2d(:,:,jp_pcs0_2d + 8) = sinksil (:,:,ik1) * zrfact2 * tmask(:,:,1)
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !              trc2d(:,:,jp_pcs0_2d + 9) = sinkcal (:,:,ik1) * zrfact2 * tmask(:,:,1)
          ENDIF
       ENDIF
       !
@@ -592,7 +591,7 @@ iflag:   DO jn = 1, kiter
       !!----------------------------------------------------------------------
 
        ! <CMOC OR 01/28/2014> Initialize xfracal to 0 everywhere to avoid NaN values when calculating PIC export
-      INTEGER :: ji, jj, jk
+! <CMOC OR 06/13/2014> Code trimming !        INTEGER :: ji, jj, jk
  
             ! <CMOC OR 03/08/2014> CMOC namelist
       NAMELIST/namcmocrr/  cnrr_cmoc, ncrr_cmoc
@@ -600,15 +599,15 @@ iflag:   DO jn = 1, kiter
       !!----------------------------------------------------------------------
 
        ! <CMOC OR 01/28/2014> Initialize xfracal to 0 everywhere to avoid NaN values when calculating PIC export
-      DO jk = 1, jpk
-         DO ji = 1, jpi
-           DO jj = 1, jpj
+! <CMOC OR 06/13/2014> Code trimming !      DO jk = 1, jpk
+! <CMOC OR 06/13/2014> Code trimming !           DO ji = 1, jpi
+! <CMOC OR 06/13/2014> Code trimming !             DO jj = 1, jpj
  
-              xfracal(ji,jj,jk) = 0._wp
+! <CMOC OR 06/13/2014> Code trimming !  ! <CMOC OR 06/13/2014> Code trimming !                xfracal(ji,jj,jk) = 0._wp
  
-           ENDDO
-         ENDDO
-       ENDDO
+! <CMOC OR 06/13/2014> Code trimming !             ENDDO
+! <CMOC OR 06/13/2014> Code trimming !           ENDDO
+! <CMOC OR 06/13/2014> Code trimming !         ENDDO
        ! <CMOC OR 01/28/2014>
 
       REWIND( numcmoc )                     ! <CMOC OR 03/10/2014> ! read numcmoc, cmocrr
@@ -749,13 +748,13 @@ iflag:   DO jn = 1, kiter
       !!----------------------------------------------------------------------
       ALLOCATE( wsbio3 (jpi,jpj,jpk) , wsbio4  (jpi,jpj,jpk) , wscal(jpi,jpj,jpk) ,     &
          &      sinking(jpi,jpj,jpk) ,                                                  & ! <CMOC OR 05/06/2014> Removal of GOC tracer ! sinking2(jpi,jpj,jpk)                      ,     &                
-         &      sinkcal(jpi,jpj,jpk) , sinksil (jpi,jpj,jpk)                      ,     &                
+ ! <CMOC OR 07/15/2014> Revert for consistency !          &      sinkcal(jpi,jpj,jpk) , sinksil (jpi,jpj,jpk)                      ,     &                
 #if defined key_kriest
          &      xnumm(jpk)                                                        ,     &                
-#else
-         &      sinkfer2(jpi,jpj,jpk)                                             ,     &                
+! <CMOC OR 07/15/2014> ! Removal of all the tracers !  #else
+! <CMOC OR 07/15/2014> ! Removal of all the tracers !           &      sinkfer2(jpi,jpj,jpk)                                             ,     &                
 #endif
-         &      sinkfer(jpi,jpj,jpk)                                              , STAT=p4z_sink_alloc )                
+         &                                                                          STAT=p4z_sink_alloc )    ! sinkfer(jpi,jpj,jpk)            ! <CMOC OR 07/15/2014> ! Removal of all the tracers !  
          !
       IF( p4z_sink_alloc /= 0 ) CALL ctl_warn('p4z_sink_alloc : failed to allocate arrays.')
       !

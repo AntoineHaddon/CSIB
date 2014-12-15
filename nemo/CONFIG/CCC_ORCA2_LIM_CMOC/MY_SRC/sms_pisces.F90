@@ -35,7 +35,7 @@ MODULE sms_pisces
    REAL(wp) ::   o2nit             !: ???
    REAL(wp) ::   wsbio, wsbio2     !: ???
    REAL(wp) ::   xkmort            !: ???
-   REAL(wp) ::   ferat3            !: ???
+   ! <CMOC OR 06/17/2014> Code trimming !  REAL(wp) ::   ferat3            !: ???
 
    !!* Damping 
    LOGICAL  ::   ln_pisdmp         !: relaxation or not of nutrients to a mean value
@@ -48,22 +48,22 @@ MODULE sms_pisces
    REAL(wp), ALLOCATABLE, SAVE,   DIMENSION(:,:)  ::  heup       !: euphotic layer depth
 
    !!*  Biological fluxes for primary production
-   REAL(wp), ALLOCATABLE, SAVE,   DIMENSION(:,:)  ::   xksi       !: ???
-   REAL(wp), ALLOCATABLE, SAVE,   DIMENSION(:,:)  ::   xksimax    !: ???
-   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)  ::   xnanono3   !: ???
-   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)  ::   xdiatno3   !: ???
-   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)  ::   xnanonh4   !: ???
-   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)  ::   xdiatnh4   !: ???
-   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)  ::   xlimphy    !: ???
-   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)  ::   xlimdia    !: ???
+! <CMOC OR 06/13/2014> Code trimming !     REAL(wp), ALLOCATABLE, SAVE,   DIMENSION(:,:)  ::   xksi       !: ???
+! <CMOC OR 06/13/2014> Code trimming !     REAL(wp), ALLOCATABLE, SAVE,   DIMENSION(:,:)  ::   xksimax    !: ???
+! <CMOC OR 06/13/2014> Code trimming !     REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)  ::   xnanono3   !: ???
+! <CMOC OR 06/13/2014> Code trimming !     REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)  ::   xdiatno3   !: ???
+! <CMOC OR 06/13/2014> Code trimming !     REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)  ::   xnanonh4   !: ???
+! <CMOC OR 06/13/2014> Code trimming !     REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)  ::   xdiatnh4   !: ???
+! <CMOC OR 06/13/2014> Code trimming !     REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)  ::   xlimphy    !: ???
+! <CMOC OR 06/13/2014> Code trimming !     REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)  ::   xlimdia    !: ???
    REAL(wp), ALLOCATABLE, SAVE,   DIMENSION(:,:)  ::   xlimnfecmoc!: <CMOC OR 01/22/2014> iron limitation mask
    REAL(wp), ALLOCATABLE, SAVE,   DIMENSION(:,:)  ::   xrcico     !: <CMOC OR 03/13/2014> reverse to 2D xrcico <CMOC OR 02/19/2014> rain ratio 
    REAL(wp), ALLOCATABLE, SAVE,   DIMENSION(:,:)  ::   xn2fixdia  !: <CMOC OR 04/28/2014> fix for the N2-fixation diagnostics
-   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)  ::   concdfe    !: ???
-   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)  ::   concnfe    !: ???
-   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)  ::   xlimnfe    !: ???
-   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)  ::   xlimdfe    !: ???
-   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)  ::   xlimsi     !: ???
+! <CMOC OR 06/13/2014> Code trimming !     REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)  ::   concdfe    !: ???
+! <CMOC OR 06/13/2014> Code trimming !     REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)  ::   concnfe    !: ???
+! <CMOC OR 06/13/2014> Code trimming !     REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)  ::   xlimnfe    !: ???
+! <CMOC OR 06/13/2014> Code trimming !     REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)  ::   xlimdfe    !: ???
+! <CMOC OR 06/13/2014> Code trimming !     REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)  ::   xlimsi     !: ???
 
    ! <CMOC OR 03/08/2014> CMOC block start
    !!*  CMOC model parameters
@@ -115,12 +115,12 @@ MODULE sms_pisces
 
 
    !!*  SMS for the organic matter
-   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   xfracal    !: ??
-   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   nitrfac    !: ??
-   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   xlimbac    !: ??
+! <CMOC OR 06/13/2014> Code trimming !     REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   xfracal    !: ??
+   ! <CMOC OR 06/17/2014> Code trimming !  REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   nitrfac    !: ??
+! <CMOC OR 06/13/2014> Code trimming !     REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   xlimbac    !: ??
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   xdiss      !: ??
-    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   prodcal    !: Calcite production
-    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   grazing    !: Total zooplankton grazing
+! <CMOC OR 06/17/2014> Code trimming !      REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   prodcal    !: Calcite production
+! <CMOC OR 06/13/2014> Code trimming !      REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   grazing    !: Total zooplankton grazing
 
    !!* Variable for chemistry of the CO2 cycle
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   akb3       !: ???
@@ -133,19 +133,19 @@ MODULE sms_pisces
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   excess     !: ???
 
    !!* Temperature dependancy of SMS terms
-   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   tgfunc    !: Temp. dependancy of various biological rates
-   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   tgfunc2   !: Temp. dependancy of mesozooplankton rates
+! <CMOC OR 06/13/2014> Code trimming !     REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   tgfunc    !: Temp. dependancy of various biological rates
+! <CMOC OR 06/13/2014> Code trimming !     REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   tgfunc2   !: Temp. dependancy of mesozooplankton rates
 
    !!* Array used to indicate negative tracer values
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   xnegtr     !: ???
 
-#if defined key_kriest
+! <CMOC OR 06/13/2014> Code trimming !  #if defined key_kriest
    !!*  Kriest parameter for aggregation
-   REAL(wp) ::   xkr_eta                            !: ???
-   REAL(wp) ::   xkr_zeta                           !: ???
-   REAL(wp) ::   xkr_massp                          !: ???
-   REAL(wp) ::   xkr_mass_min, xkr_mass_max         !: ???
-#endif
+! <CMOC OR 06/13/2014> Code trimming !     REAL(wp) ::   xkr_eta                            !: ???
+! <CMOC OR 06/13/2014> Code trimming !     REAL(wp) ::   xkr_zeta                           !: ???
+! <CMOC OR 06/13/2014> Code trimming !     REAL(wp) ::   xkr_massp                          !: ???
+! <CMOC OR 06/13/2014> Code trimming !     REAL(wp) ::   xkr_mass_min, xkr_mass_max         !: ???
+! <CMOC OR 06/13/2014> Code trimming !  #endif
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 3.3 , NEMO Consortium (2010)
@@ -166,18 +166,23 @@ CONTAINS
       ALLOCATE( neln(jpi,jpj), heup(jpi,jpj),                   STAT=ierr(1) )
       !
       !*  Biological fluxes for primary production
-      ALLOCATE( xksimax(jpi,jpj)     , xksi(jpi,jpj)        ,       &
-         &      xnanono3(jpi,jpj,jpk), xdiatno3(jpi,jpj,jpk),       &
-         &      xnanonh4(jpi,jpj,jpk), xdiatnh4(jpi,jpj,jpk),       &
-         &      xlimphy (jpi,jpj,jpk), xlimdia (jpi,jpj,jpk),       &
-         &      xlimnfe (jpi,jpj,jpk), xlimdfe (jpi,jpj,jpk),       &
-         &      xlimsi  (jpi,jpj,jpk), concdfe (jpi,jpj,jpk),       &
-         &      concnfe (jpi,jpj,jpk), xlimnfecmoc(jpi,jpj),    STAT=ierr(2) ) ! <CMOC OR 01/22/2014> iron limitation mask
+! <CMOC OR 06/13/2014> Code trimming !        ALLOCATE( xksimax(jpi,jpj)     , xksi(jpi,jpj)        ,       &
+! <CMOC OR 06/13/2014> Code trimming !           &      xnanono3(jpi,jpj,jpk), xdiatno3(jpi,jpj,jpk),       &
+! <CMOC OR 06/13/2014> Code trimming !           &      xnanonh4(jpi,jpj,jpk), xdiatnh4(jpi,jpj,jpk),       &
+! <CMOC OR 06/13/2014> Code trimming !           &      xlimphy (jpi,jpj,jpk), xlimdia (jpi,jpj,jpk),       &
+! <CMOC OR 06/13/2014> Code trimming !           &      xlimnfe (jpi,jpj,jpk), xlimdfe (jpi,jpj,jpk),       &
+! <CMOC OR 06/13/2014> Code trimming !           &      xlimsi  (jpi,jpj,jpk), concdfe (jpi,jpj,jpk),       &
+! <CMOC OR 06/13/2014> Code trimming !           &      concnfe (jpi,jpj,jpk), xlimnfecmoc(jpi,jpj),    STAT=ierr(2) ) ! <CMOC OR 01/22/2014> iron limitation mask
+      ALLOCATE( xlimnfecmoc(jpi,jpj),    STAT=ierr(2) ) ! <CMOC OR 01/22/2014> iron limitation mask
          !
       !*  SMS for the organic matter
-      ALLOCATE( xfracal (jpi,jpj,jpk), nitrfac(jpi,jpj,jpk),       &
-         &      prodcal(jpi,jpj,jpk) , grazing(jpi,jpj,jpk),       &
-         &      xlimbac (jpi,jpj,jpk), xdiss  (jpi,jpj,jpk),       &
+! <CMOC OR 06/13/2014> Code trimming !        ALLOCATE( xfracal (jpi,jpj,jpk), nitrfac(jpi,jpj,jpk),       &
+! <CMOC OR 06/17/2014> Code trimming !        ALLOCATE( nitrfac (jpi,jpj,jpk),        &
+        ALLOCATE(                           &
+! <CMOC OR 06/13/2014> Code trimming !           &      prodcal(jpi,jpj,jpk) , grazing(jpi,jpj,jpk),       &
+! <CMOC OR 06/17/2014> Code trimming !           &      prodcal(jpi,jpj,jpk) ,        &
+! <CMOC OR 06/13/2014> Code trimming !           &      xlimbac (jpi,jpj,jpk), xdiss  (jpi,jpj,jpk),       &
+         &      xdiss  (jpi,jpj,jpk),       &
          &      xrcico  (jpi,jpj),                             STAT=ierr(3) ) ! <CMOC OR 03/13/2014> reverse to 2D xrcico ! <CMOC OR 02/19/2014> rain ratio 
          !
       !* Variable for chemistry of the CO2 cycle
@@ -187,7 +192,7 @@ CONTAINS
          &      hi  (jpi,jpj,jpk)    , excess(jpi,jpj,jpk) ,   STAT=ierr(4) )
          !
       !* Temperature dependancy of SMS terms
-      ALLOCATE( tgfunc(jpi,jpj,jpk)  , tgfunc2(jpi,jpj,jpk) ,   STAT=ierr(5) )
+! <CMOC OR 06/13/2014> Code trimming !        ALLOCATE( tgfunc(jpi,jpj,jpk)  , tgfunc2(jpi,jpj,jpk) ,   STAT=ierr(5) )
          !
       !* Array used to indicate negative tracer values  
       ALLOCATE( xnegtr(jpi,jpj,jpk)  ,                          STAT=ierr(6) )
