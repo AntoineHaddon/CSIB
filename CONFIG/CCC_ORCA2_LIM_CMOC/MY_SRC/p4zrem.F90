@@ -20,10 +20,10 @@ MODULE p4zrem
    USE trc             !  passive tracers common variables 
    USE sms_pisces      !  PISCES Source Minus Sink variables
    USE p4zopt          !  optical model
-   USE p4zche          !  chemical model
-   USE p4zprod         !  Growth rate of the 2 phyto groups
+   ! <CMOC OR 06/08/2014> Code trimming ! USE p4zche          !  chemical model
+   ! <CMOC OR 06/08/2014> Code trimming ! USE p4zprod         !  Growth rate of the 2 phyto groups
 ! <CMOC OR 05/21/2014> Removal of p4zmeso module    USE p4zmeso         !  Sources and sinks of mesozooplankton
-   USE p4zint          !  interpolation and computation of various fields
+   ! <CMOC OR 06/08/2014> Code trimming ! USE p4zint          !  interpolation and computation of various fields
    USE prtctl_trc      !  print control for debugging
    USE lib_fortran     ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
    USE iom             ! <CMOC OR 01/16/2014> iom input used by diagnostic file, in particular to import total N2-fixation
@@ -34,22 +34,22 @@ MODULE p4zrem
 
    PUBLIC   p4z_rem         ! called in p4zbio.F90
    PUBLIC   p4z_rem_init    ! called in trcsms_pisces.F90
-   PUBLIC   p4z_rem_alloc
+   ! <CMOC OR 06/08/2014> Code trimming PUBLIC   p4z_rem_alloc
 
    !! * Shared module variables
-   REAL(wp), PUBLIC ::  xremik    = 0.3_wp     !: remineralisation rate of POC 
-   REAL(wp), PUBLIC ::  xremip    = 0.025_wp   !: remineralisation rate of DOC
-   REAL(wp), PUBLIC ::  nitrif    = 0.05_wp    !: NH4 nitrification rate 
-   REAL(wp), PUBLIC ::  xsirem    = 0.003_wp   !: remineralisation rate of POC 
-   REAL(wp), PUBLIC ::  xsiremlab = 0.025_wp   !: fast remineralisation rate of POC 
-   REAL(wp), PUBLIC ::  xsilab    = 0.31_wp    !: fraction of labile biogenic silica 
-   REAL(wp), PUBLIC ::  xlam1     = 0.005_wp   !: scavenging rate of Iron 
-   REAL(wp), PUBLIC ::  oxymin    = 1.e-6_wp   !: halk saturation constant for anoxia 
-   REAL(wp), PUBLIC ::  ligand    = 0.6E-9_wp  !: ligand concentration in the ocean 
+   ! <CMOC OR 06/08/2014> Code trimming REAL(wp), PUBLIC ::  xremik    = 0.3_wp     !: remineralisation rate of POC 
+   ! <CMOC OR 06/08/2014> Code trimming REAL(wp), PUBLIC ::  xremip    = 0.025_wp   !: remineralisation rate of DOC
+   ! <CMOC OR 06/08/2014> Code trimming REAL(wp), PUBLIC ::  nitrif    = 0.05_wp    !: NH4 nitrification rate 
+   ! <CMOC OR 06/08/2014> Code trimming REAL(wp), PUBLIC ::  xsirem    = 0.003_wp   !: remineralisation rate of POC 
+   ! <CMOC OR 06/08/2014> Code trimming REAL(wp), PUBLIC ::  xsiremlab = 0.025_wp   !: fast remineralisation rate of POC 
+   ! <CMOC OR 06/08/2014> Code trimming REAL(wp), PUBLIC ::  xsilab    = 0.31_wp    !: fraction of labile biogenic silica 
+   ! <CMOC OR 06/08/2014> Code trimming REAL(wp), PUBLIC ::  xlam1     = 0.005_wp   !: scavenging rate of Iron 
+   ! <CMOC OR 06/08/2014> Code trimming REAL(wp), PUBLIC ::  oxymin    = 1.e-6_wp   !: halk saturation constant for anoxia 
+   ! <CMOC OR 06/08/2014> Code trimming REAL(wp), PUBLIC ::  ligand    = 0.6E-9_wp  !: ligand concentration in the ocean 
 
 
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   denitr     !: denitrification array
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   denitnh4   !: -    -    -    -   -
+   ! <CMOC OR 06/08/2014> Code trimming REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   denitr     !: denitrification array
+   ! <CMOC OR 06/08/2014> Code trimming REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   denitnh4   !: -    -    -    -   -
 
 
    !!* Substitution
@@ -73,31 +73,35 @@ CONTAINS
       INTEGER, INTENT(in) ::   kt, jnt ! <CMOC OR 01/20/2014> add the time splitting index jnt ! ocean time step
       !
       INTEGER  ::   ji, jj, jk
-      REAL(wp) ::   zremip, zremik , zlam1b, zdepbac2
-      REAL(wp) ::   zkeq  , zfeequi, zsiremin, zfesatur
-      REAL(wp) ::   zsatur, zsatur2, znusil, zdep, zfactdep
-      REAL(wp) ::   zbactfer, zorem, zofer ! <CMOC OR 05/05/2014> Removal of GOC tracer ! zorem2, zofer
-      REAL(wp) ::   zosil, zdenom1, zscave, zaggdfe, zcoag
-#if ! defined key_kriest
-      REAL(wp) ::   zofer2, zdenom ! <CMOC OR 05/05/2014> Removal of GOC tracer ! , zdenom2
-#endif
-      REAL(wp) ::   zlamfac, zonitr, zstep
+      ! <CMOC OR 06/08/2014> Code trimming REAL(wp) ::   zremip, zremik , zlam1b, zdepbac2
+      ! <CMOC OR 06/08/2014> Code trimming REAL(wp) ::   zkeq  , zfeequi, zsiremin, zfesatur
+      ! <CMOC OR 06/08/2014> Code trimming REAL(wp) ::   zsatur, zsatur2, znusil, zdep, zfactdep
+      ! <CMOC OR 06/08/2014> Code trimming REAL(wp) ::   zbactfer, zorem, zofer ! <CMOC OR 05/05/2014> Removal of GOC tracer ! zorem2, zofer
+      ! <CMOC OR 06/08/2014> Code trimming REAL(wp) ::   zosil, zdenom1, zscave, zaggdfe, zcoag
+! <CMOC OR 06/08/2014> Code trimming #if ! defined key_kriest
+! <CMOC OR 06/08/2014> Code trimming       REAL(wp) ::   zofer2, zdenom ! <CMOC OR 05/05/2014> Removal of GOC tracer ! , zdenom2
+! <CMOC OR 06/08/2014> Code trimming #endif
+! <CMOC OR 06/08/2014> Code trimming       REAL(wp) ::   zlamfac, zonitr, zstep
+      REAL(wp) ::   zstep
       CHARACTER (len=25) :: charout
-      REAL(wp), POINTER, DIMENSION(:,:  ) :: ztempbac, zredettot, zn2fixtot, zwork, zfpon, zbpon, zbpoc   ! <CMOC OR 03/14/2014> Bottom POC ! <CMOC OR 03/13/2014> add Burial of PIC ! <CMOC OR 02/25/2014> zfpon euphotic zone botton POC flux ! <CMOC OR 01/15/2014> zwork added for N2 fixation diagnosis ! <CMOC OR 12/11/2013> total water column nitrogen fixation and detritus remineralization 
-      REAL(wp), POINTER, DIMENSION(:,:,:) :: zdepbac, zolimi, zolimi2, zredet,    zn2fix,   zJNd          ! <CMOC OR 12/11/2013> zn2fix rate of nitrogen fixation ! <CMOC OR 10/02/2013> zredet rate of remineralization of detritus
+      ! <CMOC OR 06/08/2014> Code trimming ! REAL(wp), POINTER, DIMENSION(:,:  ) :: ztempbac, zredettot, zn2fixtot, zwork, zfpon, zbpon, zbpoc   ! <CMOC OR 03/14/2014> Bottom POC ! <CMOC OR 03/13/2014> add Burial of PIC ! <CMOC OR 02/25/2014> zfpon euphotic zone botton POC flux ! <CMOC OR 01/15/2014> zwork added for N2 fixation diagnosis ! <CMOC OR 12/11/2013> total water column nitrogen fixation and detritus remineralization 
+      REAL(wp), POINTER, DIMENSION(:,:  ) :: zredettot, zn2fixtot, zwork, zfpon, zbpon, zbpoc   ! <CMOC OR 03/14/2014> Bottom POC ! <CMOC OR 03/13/2014> add Burial of PIC ! <CMOC OR 02/25/2014> zfpon euphotic zone botton POC flux ! <CMOC OR 01/15/2014> zwork added for N2 fixation diagnosis ! <CMOC OR 12/11/2013> total water column nitrogen fixation and detritus remineralization 
+      ! <CMOC OR 06/08/2014> Code trimming ! REAL(wp), POINTER, DIMENSION(:,:,:) :: zdepbac, zolimi, zolimi2, zredet,    zn2fix,   zJNd          ! <CMOC OR 12/11/2013> zn2fix rate of nitrogen fixation ! <CMOC OR 10/02/2013> zredet rate of remineralization of detritus
+      REAL(wp), POINTER, DIMENSION(:,:,:) :: zredet,    zn2fix,   zJNd          ! <CMOC OR 12/11/2013> zn2fix rate of nitrogen fixation ! <CMOC OR 10/02/2013> zredet rate of remineralization of detritus
       !!---------------------------------------------------------------------
       !
       IF( nn_timing == 1 )  CALL timing_start('p4z_rem')
       !
       ! Allocate temporary workspace
-      CALL wrk_alloc( jpi, jpj,      ztempbac, zredettot, zn2fixtot, zwork , zfpon, zbpon, zbpoc   )        ! <CMOC OR 03/14/2014> Bottom POC ! <CMOC OR 02/25/2014> ! <CMOC OR 01/15/2014> ! <CMOC OR 12/11/2013> ! <CMOC OR 10/02/2013>
-      CALL wrk_alloc( jpi, jpj, jpk, zdepbac, zolimi, zolimi2, zredet,    zn2fix,    zJNd          )        ! <CMOC OR 12/11/2013> zJNd: N2-fixation flux ! <CMOC OR 10/02/2013> zredet rate of remineralization of detritus
-
+      ! <CMOC OR 06/08/2014> Code trimming ! CALL wrk_alloc( jpi, jpj,      ztempbac, zredettot, zn2fixtot, zwork , zfpon, zbpon, zbpoc   )        ! <CMOC OR 03/14/2014> Bottom POC ! <CMOC OR 02/25/2014> ! <CMOC OR 01/15/2014> ! <CMOC OR 12/11/2013> ! <CMOC OR 10/02/2013>
+      ! <CMOC OR 06/08/2014> Code trimming ! CALL wrk_alloc( jpi, jpj, jpk, zdepbac, zolimi, zolimi2, zredet,    zn2fix,    zJNd          )        ! <CMOC OR 12/11/2013> zJNd: N2-fixation flux ! <CMOC OR 10/02/2013> zredet rate of remineralization of detritus
+      CALL wrk_alloc( jpi, jpj,      zredettot, zn2fixtot, zwork , zfpon, zbpon, zbpoc   )        ! <CMOC OR 03/14/2014> Bottom POC ! <CMOC OR 02/25/2014> ! <CMOC OR 01/15/2014> ! <CMOC OR 12/11/2013> ! <CMOC OR 10/02/2013>
+      CALL wrk_alloc( jpi, jpj, jpk, zredet,    zn2fix,    zJNd          )        ! <CMOC OR 12/11/2013> zJNd: N2-fixation flux ! <CMOC OR 10/02/2013> zredet rate of remineralization of detritus
        ! Initialisation of temprary arrys
-       zdepbac  (:,:,:) = 0._wp
-       zolimi   (:,:,:) = 0._wp
-       zolimi2  (:,:,:) = 0._wp
-       ztempbac (:,:)   = 0._wp
+       ! <CMOC OR 06/08/2014> Code trimming ! zdepbac  (:,:,:) = 0._wp
+       ! <CMOC OR 06/08/2014> Code trimming ! zolimi   (:,:,:) = 0._wp
+       ! <CMOC OR 06/08/2014> Code trimming ! zolimi2  (:,:,:) = 0._wp
+       ! <CMOC OR 06/08/2014> Code trimming ! ztempbac (:,:)   = 0._wp
        zredet   (:,:,:) = 0._wp !<CMOC OR 11/30/2013> zredet is initialized to zero 
        zredettot(:,:)   = 0._wp !<CMOC OR 12/11/2013> zredettot initialized to zero
        zn2fix   (:,:,:) = 0._wp !<CMOC OR 12/11/2013> zn2fix    initialized to zero
@@ -113,31 +117,31 @@ CONTAINS
       !  Computation of the mean phytoplankton concentration as
       !  a crude estimate of the bacterial biomass
       !   --------------------------------------------------
-      DO jk = 1, jpkm1
-         DO jj = 1, jpj
-            DO ji = 1, jpi
-               zdep = MAX( hmld(ji,jj), heup(ji,jj) )
-               IF( fsdept(ji,jj,jk) < zdep ) THEN
+      ! <CMOC OR 06/08/2014> Code trimming ! DO jk = 1, jpkm1
+      ! <CMOC OR 06/08/2014> Code trimming !    DO jj = 1, jpj
+      ! <CMOC OR 06/08/2014> Code trimming !       DO ji = 1, jpi
+      ! <CMOC OR 06/08/2014> Code trimming !          zdep = MAX( hmld(ji,jj), heup(ji,jj) )
+      ! <CMOC OR 06/08/2014> Code trimming !          IF( fsdept(ji,jj,jk) < zdep ) THEN
 ! <CMOC OR 05/21/2014> Removal of p4zmeso module                   zdepbac(ji,jj,jk) = MIN( 0.7 * ( trn(ji,jj,jk,jpzoo) + 2.* trn(ji,jj,jk,jpmes) ), 4.e-6 )
-                  zdepbac(ji,jj,jk) = MIN( 0.7 * trn(ji,jj,jk,jpzoo) , 4.e-6 )
-                  ztempbac(ji,jj)   = zdepbac(ji,jj,jk)
-               ELSE
-                  zdepbac(ji,jj,jk) = MIN( 1., zdep / fsdept(ji,jj,jk) ) * ztempbac(ji,jj)
-               ENDIF
-            END DO
-         END DO
-      END DO
+      ! <CMOC OR 06/08/2014> Code trimming !             zdepbac(ji,jj,jk) = MIN( 0.7 * trn(ji,jj,jk,jpzoo) , 4.e-6 )
+      ! <CMOC OR 06/08/2014> Code trimming !             ztempbac(ji,jj)   = zdepbac(ji,jj,jk)
+      ! <CMOC OR 06/08/2014> Code trimming !          ELSE
+      ! <CMOC OR 06/08/2014> Code trimming !             zdepbac(ji,jj,jk) = MIN( 1., zdep / fsdept(ji,jj,jk) ) * ztempbac(ji,jj)
+      ! <CMOC OR 06/08/2014> Code trimming !          ENDIF
+      ! <CMOC OR 06/08/2014> Code trimming !       END DO
+      ! <CMOC OR 06/08/2014> Code trimming !    END DO
+      ! <CMOC OR 06/08/2014> Code trimming ! END DO
 
-      DO jk = 1, jpkm1
-         DO jj = 1, jpj
-            DO ji = 1, jpi
-               ! denitrification factor computed from O2 levels
-               nitrfac(ji,jj,jk) = MAX(  0.e0, 0.4 * ( 6.e-6  - trn(ji,jj,jk,jpoxy) )    &
-                  &                                / ( oxymin + trn(ji,jj,jk,jpoxy) )  )
-               nitrfac(ji,jj,jk) = MIN( 1., nitrfac(ji,jj,jk) )
-            END DO
-         END DO
-      END DO
+      ! <CMOC OR 06/08/2014> Code trimming ! DO jk = 1, jpkm1
+      ! <CMOC OR 06/08/2014> Code trimming !    DO jj = 1, jpj
+      ! <CMOC OR 06/08/2014> Code trimming !       DO ji = 1, jpi
+      ! <CMOC OR 06/08/2014> Code trimming !          ! denitrification factor computed from O2 levels
+      ! <CMOC OR 06/08/2014> Code trimming !          nitrfac(ji,jj,jk) = MAX(  0.e0, 0.4 * ( 6.e-6  - trn(ji,jj,jk,jpoxy) )    &
+      ! <CMOC OR 06/08/2014> Code trimming !             &                                / ( oxymin + trn(ji,jj,jk,jpoxy) )  )
+      ! <CMOC OR 06/08/2014> Code trimming !          nitrfac(ji,jj,jk) = MIN( 1., nitrfac(ji,jj,jk) )
+      ! <CMOC OR 06/08/2014> Code trimming !       END DO
+      ! <CMOC OR 06/08/2014> Code trimming !    END DO
+      ! <CMOC OR 06/08/2014> Code trimming ! END DO
 
       DO jk = 1, jpkm1
          DO jj = 1, jpj
@@ -149,20 +153,20 @@ CONTAINS
                ! DOC ammonification. Depends on depth, phytoplankton biomass
                !     and a limitation term which is supposed to be a parameterization
                !     of the bacterial activity. 
-               zremik = xremik * zstep / 1.e-6 * xlimbac(ji,jj,jk) * zdepbac(ji,jj,jk) 
-               zremik = MAX( zremik, 2.e-4 * xstep )
+               ! <CMOC OR 06/08/2014> Code trimming ! zremik = xremik * zstep / 1.e-6 * xlimbac(ji,jj,jk) * zdepbac(ji,jj,jk) 
+               ! <CMOC OR 06/08/2014> Code trimming ! zremik = MAX( zremik, 2.e-4 * xstep )
                !     Ammonification in oxic waters with oxygen consumption
                !     -----------------------------------------------------
-               zolimi (ji,jj,jk) = zremik * ( 1.- nitrfac(ji,jj,jk) ) * trn(ji,jj,jk,jpdoc) 
-               zolimi2(ji,jj,jk) = MIN( ( trn(ji,jj,jk,jpoxy) - rtrn ) / o2ut, zolimi(ji,jj,jk) ) 
+               ! <CMOC OR 06/08/2014> Code trimming ! zolimi (ji,jj,jk) = zremik * ( 1.- nitrfac(ji,jj,jk) ) * trn(ji,jj,jk,jpdoc) 
+               ! <CMOC OR 06/08/2014> Code trimming ! zolimi2(ji,jj,jk) = MIN( ( trn(ji,jj,jk,jpoxy) - rtrn ) / o2ut, zolimi(ji,jj,jk) ) 
                !     Ammonification in suboxic waters with denitrification
                !     -------------------------------------------------------
-               denitr(ji,jj,jk)  = MIN(  ( trn(ji,jj,jk,jpno3) - rtrn ) / rdenit,   &
-                  &                     zremik * nitrfac(ji,jj,jk) * trn(ji,jj,jk,jpdoc)  )
+               ! <CMOC OR 06/08/2014> Code trimming ! denitr(ji,jj,jk)  = MIN(  ( trn(ji,jj,jk,jpno3) - rtrn ) / rdenit,   &
+               ! <CMOC OR 06/08/2014> Code trimming !    &                     zremik * nitrfac(ji,jj,jk) * trn(ji,jj,jk,jpdoc)  )
                !
-               zolimi (ji,jj,jk) = MAX( 0.e0, zolimi (ji,jj,jk) )
-               zolimi2(ji,jj,jk) = MAX( 0.e0, zolimi2(ji,jj,jk) )
-               denitr (ji,jj,jk) = MAX( 0.e0, denitr (ji,jj,jk) )
+               ! <CMOC OR 06/08/2014> Code trimming ! zolimi (ji,jj,jk) = MAX( 0.e0, zolimi (ji,jj,jk) )
+               ! <CMOC OR 06/08/2014> Code trimming ! zolimi2(ji,jj,jk) = MAX( 0.e0, zolimi2(ji,jj,jk) )
+               ! <CMOC OR 06/08/2014> Code trimming ! denitr (ji,jj,jk) = MAX( 0.e0, denitr (ji,jj,jk) )
                !
                zredet (ji,jj,jk) = reref_cmoc * zstep * exp ( -ed_cmoc * 1e3_wp / 8.31_wp * ( 1._wp / ( tsn(ji,jj,jk,jp_tem) + 273.15_wp + rtrn ) - 1._wp / ( tvm_cmoc + 273.15_wp ) ) ) ! <CMOC OR 03/10/2014> "softwired" parameters replace hardwired ones ! <CMOC OR 10/03/2013> CMOC remineralisation rate of detritus remineralization
                !
@@ -174,7 +178,7 @@ CONTAINS
 
       DO jk = 12, jpkm1 ! <CMOC OR 12/11/2013> remineralization integration over the water column, from 100 m (k level = 11), excluded, down to the bottom.
    
-                zredettot(:,:) = zredettot(:,:) + zredet(:,:,jk) * trn(:,:,jk,jppoc) * fse3t(:,:,jk) ! <CMOC OR 12/11/2013> compute the total remineralization over the water column below 100 m, i.e. k>=11
+                zredettot(:,:) = zredettot(:,:) + zredet(:,:,jk) * trn(:,:,jk,jppoc)  * fse3t(:,:,jk) ! <CMOC OR 07/15/2014> Revert for consistency ! * (fsdepw(:,:,jk+1)-fsdepw(:,:,jk))! <CMOC OR 06/12/2014> replace fse3t by the actual depth levels difference, at this point I am not sure what exactly are fse3t and fse3w ! * fse3t(:,:,jk) ! <CMOC OR 12/11/2013> compute the total remineralization over the water column below 100 m, i.e. k>=11
             
       END DO
 
@@ -192,7 +196,7 @@ CONTAINS
                 !
                 &                 * ( phinf_cmoc * exp( 1._wp ) * anf_cmoc * fsdept(:,:,jk) * exp ( -anf_cmoc * fsdept(:,:,jk) ) + phi0_cmoc ) ! <CMOC OR 03/10/2014> "softwired" parameters replace hardwired ones ! <CMOC OR 12/11/2013> trichomes concentration ! <CMOC OR 12/11/2013> CMOC nitrogen fixation rate 
                 !
-                zn2fixtot(:,:) = zn2fixtot(:,:) + zn2fix(:,:,jk) * fse3t(:,:,jk) ! <CMOC OR 12/11/2013> compute the total nitrogen fixation rate over the water column down to 100 m, i.e. k<=10
+                zn2fixtot(:,:) = zn2fixtot(:,:) + zn2fix(:,:,jk) * fse3t(:,:,jk) ! <CMOC OR 07/15/2014> Revert for consistency ! * (fsdepw(:,:,jk+1)-fsdepw(:,:,jk)) ! <CMOC OR 06/12/2014> replace fse3t by the difference of depth levels for w grid, to get dz for the mid-point fsdept(:,:,jk), at this point I can't tell what fse3t and fse3w are exactly  * fse3t(:,:,jk) ! <CMOC OR 12/11/2013> compute the total nitrogen fixation rate over the water column down to 100 m, i.e. k<=10
  
       END DO 
 
@@ -211,27 +215,27 @@ CONTAINS
       END DO
 
 
-      DO jk = 1, jpkm1
-         DO jj = 1, jpj
-            DO ji = 1, jpi
-               zstep   = xstep
-# if defined key_degrad
-               zstep = zstep * facvol(ji,jj,jk)
-# endif
+      ! <CMOC OR 06/08/2014> Code trimming ! DO jk = 1, jpkm1
+      ! <CMOC OR 06/08/2014> Code trimming !    DO jj = 1, jpj
+      ! <CMOC OR 06/08/2014> Code trimming !       DO ji = 1, jpi
+      ! <CMOC OR 06/08/2014> Code trimming !          zstep   = xstep
+! <CMOC OR 06/08/2014> Code trimming ! # if defined key_degrad
+      ! <CMOC OR 06/08/2014> Code trimming !          zstep = zstep * facvol(ji,jj,jk)
+! <CMOC OR 06/08/2014> Code trimming ! # endif
                !    NH4 nitrification to NO3. Ceased for oxygen concentrations
                !    below 2 umol/L. Inhibited at strong light 
                !    ----------------------------------------------------------
-               zonitr  =nitrif * zstep * trn(ji,jj,jk,jpnh4) / ( 1.+ emoy(ji,jj,jk) ) * ( 1.- nitrfac(ji,jj,jk) ) 
-               denitnh4(ji,jj,jk) = nitrif * zstep * trn(ji,jj,jk,jpnh4) * nitrfac(ji,jj,jk) 
+               ! <CMOC OR 06/08/2014> Code trimming zonitr  =nitrif * zstep * trn(ji,jj,jk,jpnh4) / ( 1.+ emoy(ji,jj,jk) ) * ( 1.- nitrfac(ji,jj,jk) ) 
+               ! <CMOC OR 06/08/2014> Code trimming denitnh4(ji,jj,jk) = nitrif * zstep * trn(ji,jj,jk,jpnh4) * nitrfac(ji,jj,jk) 
                !   Update of the tracers trends
                !   ----------------------------
-               tra(ji,jj,jk,jpnh4) = tra(ji,jj,jk,jpnh4) !- zonitr - denitnh4(ji,jj,jk) <CMOC OR 11/08/2013> Testing if the source of NO3 is linked to NH4
-               tra(ji,jj,jk,jpno3) = tra(ji,jj,jk,jpno3) ! + zonitr - rdenita * denitnh4(ji,jj,jk) <CMOC OR 10/02/2013> There is no nitrification nor anammox reaction in CMOC
-               tra(ji,jj,jk,jpoxy) = tra(ji,jj,jk,jpoxy) !- o2nit * zonitr <CMOC OR 10/04/2013> No nitrification in CMOC for the moment
-               tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) !- 2 * rno3 * zonitr + rno3 * ( rdenita - 1. ) * denitnh4(ji,jj,jk) <CMOC OR 10/02/2013> TA is part of CMOC chemistry component 
-            END DO
-         END DO
-      END DO
+               ! <CMOC OR 06/08/2014> Code trimming ! tra(ji,jj,jk,jpnh4) = tra(ji,jj,jk,jpnh4) !- zonitr - denitnh4(ji,jj,jk) <CMOC OR 11/08/2013> Testing if the source of NO3 is linked to NH4
+      ! <CMOC OR 06/08/2014> Code trimming !          tra(ji,jj,jk,jpno3) = tra(ji,jj,jk,jpno3) ! + zonitr - rdenita * denitnh4(ji,jj,jk) <CMOC OR 10/02/2013> There is no nitrification nor anammox reaction in CMOC
+      ! <CMOC OR 06/08/2014> Code trimming !          tra(ji,jj,jk,jpoxy) = tra(ji,jj,jk,jpoxy) !- o2nit * zonitr <CMOC OR 10/04/2013> No nitrification in CMOC for the moment
+      ! <CMOC OR 06/08/2014> Code trimming !          tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) !- 2 * rno3 * zonitr + rno3 * ( rdenita - 1. ) * denitnh4(ji,jj,jk) <CMOC OR 10/02/2013> TA is part of CMOC chemistry component 
+      ! <CMOC OR 06/08/2014> Code trimming !       END DO
+      ! <CMOC OR 06/08/2014> Code trimming !    END DO
+      ! <CMOC OR 06/08/2014> Code trimming ! END DO
 
        IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('rem1')")
@@ -239,36 +243,36 @@ CONTAINS
          CALL prt_ctl_trc(tab4d=tra, mask=tmask, clinfo=ctrcnm)
        ENDIF
 
-      DO jk = 1, jpkm1
-         DO jj = 1, jpj
-            DO ji = 1, jpi
+      ! <CMOC OR 06/08/2014> Code trimming DO jk = 1, jpkm1
+         ! <CMOC OR 06/08/2014> Code trimming DO jj = 1, jpj
+            ! <CMOC OR 06/08/2014> Code trimming DO ji = 1, jpi
 
                !    Bacterial uptake of iron. No iron is available in DOC. So
                !    Bacteries are obliged to take up iron from the water. Some
                !    studies (especially at Papa) have shown this uptake to be significant
                !    ----------------------------------------------------------
-               zdepbac2 = zdepbac(ji,jj,jk) * zdepbac(ji,jj,jk)
+               ! <CMOC OR 06/08/2014> Code trimming zdepbac2 = zdepbac(ji,jj,jk) * zdepbac(ji,jj,jk)
 ! <CMOC OR 05/26/2014> trimming PISCES code in p4zprod.F90                 zbactfer = 20.e-6 * rfact2 * prmax(ji,jj,jk)                                 &
 ! <CMOC OR 05/26/2014> trimming PISCES code in p4zprod.F90     &              * trn(ji,jj,jk,jpfer) / ( 5E-10 + trn(ji,jj,jk,jpfer) )    &
 ! <CMOC OR 05/21/2014>  Removal of p4zmeso !              &              * zdepbac2 / ( xkgraz2 + zdepbac(ji,jj,jk) )               &
 ! <CMOC OR 05/26/2014> trimming PISCES code in p4zprod.F90     &              * zdepbac2 / (  zdepbac(ji,jj,jk) )               &
 ! <CMOC OR 05/26/2014> trimming PISCES code in p4zprod.F90     &              * ( 0.5 + SIGN( 0.5, trn(ji,jj,jk,jpfer) -2.e-11 )  )
 
-               tra(ji,jj,jk,jpfer) = tra(ji,jj,jk,jpfer) ! <CMOC OR 05/26/2014> trimming PISCES code in p4zprod.F90 - zbactfer
-#if defined key_kriest
-               tra(ji,jj,jk,jpsfe) = tra(ji,jj,jk,jpsfe) ! <CMOC OR 05/26/2014> trimming PISCES code in p4zprod.F90+ zbactfer
-#else
-               tra(ji,jj,jk,jpbfe) = tra(ji,jj,jk,jpbfe) ! <CMOC OR 05/26/2014> trimming PISCES code in p4zprod.F90 + zbactfer
-#endif
-            END DO
-         END DO
-      END DO
+               ! <CMOC OR 06/08/2014> Code trimming tra(ji,jj,jk,jpfer) = tra(ji,jj,jk,jpfer) ! <CMOC OR 05/26/2014> trimming PISCES code in p4zprod.F90 - zbactfer
+! <CMOC OR 06/08/2014> Code trimming #if defined key_kriest
+               ! <CMOC OR 06/08/2014> Code trimming tra(ji,jj,jk,jpsfe) = tra(ji,jj,jk,jpsfe) ! <CMOC OR 05/26/2014> trimming PISCES code in p4zprod.F90+ zbactfer
+! <CMOC OR 06/08/2014> Code trimming #else
+               ! <CMOC OR 06/08/2014> Code trimming tra(ji,jj,jk,jpbfe) = tra(ji,jj,jk,jpbfe) ! <CMOC OR 05/26/2014> trimming PISCES code in p4zprod.F90 + zbactfer
+! <CMOC OR 06/08/2014> Code trimming #endif
+            ! <CMOC OR 06/08/2014> Code trimming END DO
+         ! <CMOC OR 06/08/2014> Code trimming END DO
+      ! <CMOC OR 06/08/2014> Code trimming END DO
 
-       IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
-         WRITE(charout, FMT="('rem2')")
-         CALL prt_ctl_trc_info(charout)
-         CALL prt_ctl_trc(tab4d=tra, mask=tmask, clinfo=ctrcnm)
-       ENDIF
+       ! <CMOC OR 06/08/2014> Code trimming IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
+       ! <CMOC OR 06/08/2014> Code trimming   WRITE(charout, FMT="('rem2')")
+       ! <CMOC OR 06/08/2014> Code trimming   CALL prt_ctl_trc_info(charout)
+       ! <CMOC OR 06/08/2014> Code trimming   CALL prt_ctl_trc(tab4d=tra, mask=tmask, clinfo=ctrcnm)
+       ! <CMOC OR 06/08/2014> Code trimming ENDIF
 
       DO jk = 1, jpkm1
          DO jj = 1, jpj
@@ -279,37 +283,37 @@ CONTAINS
 # endif
                !    POC disaggregation by turbulence and bacterial activity. 
                !    -------------------------------------------------------------
-               zremip = xremip * zstep * tgfunc(ji,jj,jk) * ( 1.- 0.7 * nitrfac(ji,jj,jk) ) 
+               ! <CMOC OR 06/08/2014> Code trimming zremip = xremip * zstep * tgfunc(ji,jj,jk) * ( 1.- 0.7 * nitrfac(ji,jj,jk) ) 
 
                !    POC disaggregation rate is reduced in anoxic zone as shown by
                !    sediment traps data. In oxic area, the exponent of the martin s
                !    law is around -0.87. In anoxic zone, it is around -0.35. This
                !    means a disaggregation constant about 0.5 the value in oxic zones
                !    -----------------------------------------------------------------
-               zorem  = zremip * trn(ji,jj,jk,jppoc)
-               zofer  = zremip * trn(ji,jj,jk,jpsfe)
-#if ! defined key_kriest
+               ! <CMOC OR 06/08/2014> Code trimming zorem  = zremip * trn(ji,jj,jk,jppoc)
+               ! <CMOC OR 06/08/2014> Code trimming zofer  = zremip * trn(ji,jj,jk,jpsfe)
+! <CMOC OR 06/08/2014> Code trimming #if ! defined key_kriest
                ! <CMOC OR 05/05/2014> Removal of GOC tracer ! zorem2 = zremip * trn(ji,jj,jk,jpgoc)
-               zofer2 = zremip * trn(ji,jj,jk,jpbfe)
-! <CMOC OR 05/05/2014> Removal of GOC tracer ! #else
+               ! <CMOC OR 06/08/2014> Code trimming zofer2 = zremip * trn(ji,jj,jk,jpbfe)
+! <CMOC OR 06/08/2014> Code trimming ! <CMOC OR 05/05/2014> Removal of GOC tracer ! #else
                ! <CMOC OR 05/05/2014> Removal of GOC tracer ! zorem2 = zremip * trn(ji,jj,jk,jpnum)
-#endif
+! <CMOC OR 06/08/2014> Code trimming ! #endif
 
                !  Update the appropriate tracers trends
                !  -------------------------------------
 
-               tra(ji,jj,jk,jpdoc) = tra(ji,jj,jk,jpdoc) + zorem
-               tra(ji,jj,jk,jpfer) = tra(ji,jj,jk,jpfer) + zofer
-#if defined key_kriest
-               tra(ji,jj,jk,jppoc) = tra(ji,jj,jk,jppoc) - zorem
+               ! <CMOC OR 06/08/2014> Code trimming tra(ji,jj,jk,jpdoc) = tra(ji,jj,jk,jpdoc) + zorem
+               ! <CMOC OR 06/08/2014> Code trimming tra(ji,jj,jk,jpfer) = tra(ji,jj,jk,jpfer) + zofer
+! <CMOC OR 06/08/2014> Code trimming #if defined key_kriest
+               ! <CMOC OR 06/08/2014> Code trimming tra(ji,jj,jk,jppoc) = tra(ji,jj,jk,jppoc) - zorem
                ! <CMOC OR 05/05/2014> Removal of GOC tracer ! tra(ji,jj,jk,jpnum) = tra(ji,jj,jk,jpnum) - zorem2
-               tra(ji,jj,jk,jpsfe) = tra(ji,jj,jk,jpsfe) - zofer
-#else
+               ! <CMOC OR 06/08/2014> Code trimming tra(ji,jj,jk,jpsfe) = tra(ji,jj,jk,jpsfe) - zofer
+! <CMOC OR 06/08/2014> Code trimming #else
                tra(ji,jj,jk,jppoc) = tra(ji,jj,jk,jppoc) - zredet (ji,jj,jk) *  trn(ji,jj,jk,jppoc) ! <CMOC OR 12/10/2013> ! missing POC removal found by Neil + zorem2 - zorem <CMOC OR 10/02/2013> POC is D, detritus, in CMOC
                ! <CMOC OR 05/05/2014> Removal of GOC tracer ! tra(ji,jj,jk,jpgoc) = tra(ji,jj,jk,jpgoc) - zorem2
-               tra(ji,jj,jk,jpsfe) = tra(ji,jj,jk,jpsfe) + zofer2 - zofer
-               tra(ji,jj,jk,jpbfe) = tra(ji,jj,jk,jpbfe) - zofer2
-#endif
+               ! <CMOC OR 06/08/2014> Code trimming tra(ji,jj,jk,jpsfe) = tra(ji,jj,jk,jpsfe) + zofer2 - zofer
+               ! <CMOC OR 06/08/2014> Code trimming tra(ji,jj,jk,jpbfe) = tra(ji,jj,jk,jpbfe) - zofer2
+! <CMOC OR 06/08/2014> Code trimming ! #endif
 
             END DO
          END DO
@@ -321,114 +325,114 @@ CONTAINS
          CALL prt_ctl_trc(tab4d=tra, mask=tmask, clinfo=ctrcnm)
        ENDIF
 
-      DO jk = 1, jpkm1
-         DO jj = 1, jpj
-            DO ji = 1, jpi
-               zstep   = xstep
-# if defined key_degrad
-               zstep = zstep * facvol(ji,jj,jk)
-# endif
+      ! <CMOC OR 06/08/2014> Code trimming DO jk = 1, jpkm1
+         ! <CMOC OR 06/08/2014> Code trimming DO jj = 1, jpj
+            ! <CMOC OR 06/08/2014> Code trimming DO ji = 1, jpi
+               ! <CMOC OR 06/08/2014> Code trimming zstep   = xstep
+! <CMOC OR 06/08/2014> Code trimming # if defined key_degrad
+               ! <CMOC OR 06/08/2014> Code trimming zstep = zstep * facvol(ji,jj,jk)
+! <CMOC OR 06/08/2014> Code trimming # endif
                !     Remineralization rate of BSi depedant on T and saturation
                !     ---------------------------------------------------------
-               zsatur   = ( sio3eq(ji,jj,jk) - trn(ji,jj,jk,jpsil) ) / ( sio3eq(ji,jj,jk) + rtrn )
-               zsatur   = MAX( rtrn, zsatur )
-               zsatur2  = zsatur * ( 1. + tsn(ji,jj,jk,jp_tem) / 400.)**4
-               znusil   = 0.225  * ( 1. + tsn(ji,jj,jk,jp_tem) / 15.) * zsatur + 0.775 * zsatur2**9.25
-               zdep     = MAX( hmld(ji,jj), heup(ji,jj) ) 
-               zdep     = MAX( 0., fsdept(ji,jj,jk) - zdep )
-               zfactdep = xsilab * EXP(-( xsiremlab - xsirem ) * zdep / wsbio2 )
-               zsiremin = ( xsiremlab * zfactdep + xsirem * ( 1. - zfactdep ) ) * zstep * znusil
-               zosil    = zsiremin * trn(ji,jj,jk,jpgsi)
+               ! <CMOC OR 06/08/2014> Code trimming zsatur   = ( sio3eq(ji,jj,jk) - trn(ji,jj,jk,jpsil) ) / ( sio3eq(ji,jj,jk) + rtrn )
+               ! <CMOC OR 06/08/2014> Code trimming zsatur   = MAX( rtrn, zsatur )
+               ! <CMOC OR 06/08/2014> Code trimming zsatur2  = zsatur * ( 1. + tsn(ji,jj,jk,jp_tem) / 400.)**4
+               ! <CMOC OR 06/08/2014> Code trimming znusil   = 0.225  * ( 1. + tsn(ji,jj,jk,jp_tem) / 15.) * zsatur + 0.775 * zsatur2**9.25
+               ! <CMOC OR 06/08/2014> Code trimming zdep     = MAX( hmld(ji,jj), heup(ji,jj) ) 
+               ! <CMOC OR 06/08/2014> Code trimming zdep     = MAX( 0., fsdept(ji,jj,jk) - zdep )
+               ! <CMOC OR 06/08/2014> Code trimming zfactdep = xsilab * EXP(-( xsiremlab - xsirem ) * zdep / wsbio2 )
+               ! <CMOC OR 06/08/2014> Code trimming zsiremin = ( xsiremlab * zfactdep + xsirem * ( 1. - zfactdep ) ) * zstep * znusil
+               ! <CMOC OR 06/08/2014> Code trimming zosil    = zsiremin * trn(ji,jj,jk,jpgsi)
                !
-               tra(ji,jj,jk,jpgsi) = tra(ji,jj,jk,jpgsi) - zosil
-               tra(ji,jj,jk,jpsil) = tra(ji,jj,jk,jpsil) + zosil
+               ! <CMOC OR 06/08/2014> Code trimming tra(ji,jj,jk,jpgsi) = tra(ji,jj,jk,jpgsi) - zosil
+               ! <CMOC OR 06/08/2014> Code trimming tra(ji,jj,jk,jpsil) = tra(ji,jj,jk,jpsil) + zosil
                !
-            END DO
-         END DO
-      END DO
+            ! <CMOC OR 06/08/2014> Code trimming END DO
+         ! <CMOC OR 06/08/2014> Code trimming END DO
+      ! <CMOC OR 06/08/2014> Code trimming END DO
 
-      IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
-         WRITE(charout, FMT="('rem4')")
-         CALL prt_ctl_trc_info(charout)
-         CALL prt_ctl_trc(tab4d=tra, mask=tmask, clinfo=ctrcnm)
-       ENDIF
+      ! <CMOC OR 06/08/2014> Code trimming IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
+         ! <CMOC OR 06/08/2014> Code trimming WRITE(charout, FMT="('rem4')")
+         ! <CMOC OR 06/08/2014> Code trimming CALL prt_ctl_trc_info(charout)
+         ! <CMOC OR 06/08/2014> Code trimming CALL prt_ctl_trc(tab4d=tra, mask=tmask, clinfo=ctrcnm)
+       ! <CMOC OR 06/08/2014> Code trimming ENDIF
 
-      zfesatur = ligand
+      ! <CMOC OR 06/08/2014> Code trimming zfesatur = ligand
 !CDIR NOVERRCHK
-      DO jk = 1, jpkm1
+! <CMOC OR 06/08/2014> Code trimming       DO jk = 1, jpkm1
 !CDIR NOVERRCHK
-         DO jj = 1, jpj
+! <CMOC OR 06/08/2014> Code trimming          DO jj = 1, jpj
 !CDIR NOVERRCHK
-            DO ji = 1, jpi
-               zstep   = xstep
-# if defined key_degrad
-               zstep = zstep * facvol(ji,jj,jk)
-# endif
+! <CMOC OR 06/08/2014> Code trimming             DO ji = 1, jpi
+! <CMOC OR 06/08/2014> Code trimming                zstep   = xstep
+! <CMOC OR 06/08/2014> Code trimming # if defined key_degrad
+! <CMOC OR 06/08/2014> Code trimming                zstep = zstep * facvol(ji,jj,jk)
+! <CMOC OR 06/08/2014> Code trimming # endif
                !  Compute de different ratios for scavenging of iron
                !  --------------------------------------------------
 
-#if  defined key_kriest
-               zdenom1 = trn(ji,jj,jk,jppoc) / &
-           &           ( trn(ji,jj,jk,jppoc) + trn(ji,jj,jk,jpgsi) + trn(ji,jj,jk,jpcal) + rtrn )
-#else
+! <CMOC OR 06/08/2014> Code trimming #if  defined key_kriest
+! <CMOC OR 06/08/2014> Code trimming                zdenom1 = trn(ji,jj,jk,jppoc) / &
+! <CMOC OR 06/08/2014> Code trimming            &           ( trn(ji,jj,jk,jppoc) + trn(ji,jj,jk,jpgsi) + trn(ji,jj,jk,jpcal) + rtrn )
+! <CMOC OR 06/08/2014> Code trimming #else
                ! <CMOC OR 05/05/2014> Removal of GOC tracer ! zdenom = 1. / ( trn(ji,jj,jk,jppoc) + trn(ji,jj,jk,jpgoc) + trn(ji,jj,jk,jpgsi) + trn(ji,jj,jk,jpcal) + rtrn )
-               zdenom = 1. / ( trn(ji,jj,jk,jppoc) + trn(ji,jj,jk,jpgsi) + trn(ji,jj,jk,jpcal) + rtrn ) ! <CMOC OR 05/05/2014> Removal of GOC tracer ! 
-               zdenom1 = trn(ji,jj,jk,jppoc) * zdenom
+! <CMOC OR 06/08/2014> Code trimming                zdenom = 1. / ( trn(ji,jj,jk,jppoc) + trn(ji,jj,jk,jpgsi) + trn(ji,jj,jk,jpcal) + rtrn ) ! <CMOC OR 05/05/2014> Removal of GOC tracer ! 
+! <CMOC OR 06/08/2014> Code trimming                zdenom1 = trn(ji,jj,jk,jppoc) * zdenom
                ! <CMOC OR 05/05/2014> Removal of GOC tracer ! zdenom2 = trn(ji,jj,jk,jpgoc) * zdenom
-#endif
+! <CMOC OR 06/08/2014> Code trimming #endif
                !  scavenging rate of iron. this scavenging rate depends on the load in particles
                !  on which they are adsorbed. The  parameterization has been taken from studies on Th
                !     ------------------------------------------------------------
-               zkeq = fekeq(ji,jj,jk)
-               zfeequi = ( -( 1. + zfesatur * zkeq - zkeq * trn(ji,jj,jk,jpfer) )               &
-                  &        + SQRT( ( 1. + zfesatur * zkeq - zkeq * trn(ji,jj,jk,jpfer) )**2       &
-                  &               + 4. * trn(ji,jj,jk,jpfer) * zkeq) ) / ( 2. * zkeq )
+! <CMOC OR 06/08/2014> Code trimming                zkeq = fekeq(ji,jj,jk)
+! <CMOC OR 06/08/2014> Code trimming                zfeequi = ( -( 1. + zfesatur * zkeq - zkeq * trn(ji,jj,jk,jpfer) )               &
+! <CMOC OR 06/08/2014> Code trimming                   &        + SQRT( ( 1. + zfesatur * zkeq - zkeq * trn(ji,jj,jk,jpfer) )**2       &
+! <CMOC OR 06/08/2014> Code trimming                   &               + 4. * trn(ji,jj,jk,jpfer) * zkeq) ) / ( 2. * zkeq )
 
-#if defined key_kriest
-               zlam1b = 3.e-5 + xlam1 * (  trn(ji,jj,jk,jppoc)                   &
-                  &                      + trn(ji,jj,jk,jpcal) + trn(ji,jj,jk,jpgsi)  ) * 1.e6
-#else
-               zlam1b = 3.e-5 + xlam1 * (  trn(ji,jj,jk,jppoc) & ! <CMOC OR 05/05/2014> Removal of GOC tracer ! + trn(ji,jj,jk,jpgoc)   &
-                  &                      + trn(ji,jj,jk,jpcal) + trn(ji,jj,jk,jpgsi)  ) * 1.e6
-#endif
-               zscave = zfeequi * zlam1b * zstep
+! <CMOC OR 06/08/2014> Code trimming #if defined key_kriest
+! <CMOC OR 06/08/2014> Code trimming                zlam1b = 3.e-5 + xlam1 * (  trn(ji,jj,jk,jppoc)                   &
+! <CMOC OR 06/08/2014> Code trimming                   &                      + trn(ji,jj,jk,jpcal) + trn(ji,jj,jk,jpgsi)  ) * 1.e6
+! <CMOC OR 06/08/2014> Code trimming #else
+! <CMOC OR 06/08/2014> Code trimming                zlam1b = 3.e-5 + xlam1 * (  trn(ji,jj,jk,jppoc) & ! <CMOC OR 05/05/2014> Removal of GOC tracer ! + trn(ji,jj,jk,jpgoc)   &
+! <CMOC OR 06/08/2014> Code trimming                   &                      + trn(ji,jj,jk,jpcal) + trn(ji,jj,jk,jpgsi)  ) * 1.e6
+! <CMOC OR 06/08/2014> Code trimming #endif
+! <CMOC OR 06/08/2014> Code trimming                zscave = zfeequi * zlam1b * zstep
 
                !  Increased scavenging for very high iron concentrations
                !  found near the coasts due to increased lithogenic particles
                !  and let say it is unknown processes (precipitation, ...)
                !  -----------------------------------------------------------
-               zlam1b  = xlam1 * MAX( 0.e0, ( trn(ji,jj,jk,jpfer) * 1.e9 - 1. ) )
-               zcoag   = zfeequi * zlam1b * zstep
-               zlamfac = MAX( 0.e0, ( gphit(ji,jj) + 55.) / 30. )
-               zlamfac = MIN( 1.  , zlamfac )
-               zdep    =  MIN(1., 1000. / fsdept(ji,jj,jk) )
-#if ! defined key_kriest
-               zlam1b = (  80.* ( trn(ji,jj,jk,jpdoc) + 35.e-6 )                           &
-                  &     + 698.*   trn(ji,jj,jk,jppoc) ) & ! <CMOC OR 05/05/2014> Removal of GOC tracer ! + 1.05e4 * trn(ji,jj,jk,jpgoc)  )    &
-                  &   * xdiss(ji,jj,jk) + 1E-4 * ( 1. - zlamfac ) * zdep
-#else
-               zlam1b = (  80.* (trn(ji,jj,jk,jpdoc) + 35E-6)              &
-                  &     + 698.*  trn(ji,jj,jk,jppoc)  )                    &
-                  &   * xdiss(ji,jj,jk) + 1E-4 * ( 1. - zlamfac ) * zdep
-#endif
-               zaggdfe = zlam1b * zstep * 0.5 * ( trn(ji,jj,jk,jpfer) - zfeequi )
-               tra(ji,jj,jk,jpfer) = tra(ji,jj,jk,jpfer) - zscave - zaggdfe - zcoag
-#if defined key_kriest
-               tra(ji,jj,jk,jpsfe) = tra(ji,jj,jk,jpsfe) + zscave * zdenom1
-#else
-               tra(ji,jj,jk,jpsfe) = tra(ji,jj,jk,jpsfe) + zscave * zdenom1
+! <CMOC OR 06/08/2014> Code trimming                zlam1b  = xlam1 * MAX( 0.e0, ( trn(ji,jj,jk,jpfer) * 1.e9 - 1. ) )
+! <CMOC OR 06/08/2014> Code trimming                zcoag   = zfeequi * zlam1b * zstep
+! <CMOC OR 06/08/2014> Code trimming                zlamfac = MAX( 0.e0, ( gphit(ji,jj) + 55.) / 30. )
+! <CMOC OR 06/08/2014> Code trimming                zlamfac = MIN( 1.  , zlamfac )
+! <CMOC OR 06/08/2014> Code trimming                zdep    =  MIN(1., 1000. / fsdept(ji,jj,jk) )
+! <CMOC OR 06/08/2014> Code trimming #if ! defined key_kriest
+! <CMOC OR 06/08/2014> Code trimming                zlam1b = (  80.* ( trn(ji,jj,jk,jpdoc) + 35.e-6 )                           &
+! <CMOC OR 06/08/2014> Code trimming                   &     + 698.*   trn(ji,jj,jk,jppoc) ) & ! <CMOC OR 05/05/2014> Removal of GOC tracer ! + 1.05e4 * trn(ji,jj,jk,jpgoc)  )    &
+! <CMOC OR 06/08/2014> Code trimming                   &   * xdiss(ji,jj,jk) + 1E-4 * ( 1. - zlamfac ) * zdep
+! <CMOC OR 06/08/2014> Code trimming #else
+! <CMOC OR 06/08/2014> Code trimming                zlam1b = (  80.* (trn(ji,jj,jk,jpdoc) + 35E-6)              &
+! <CMOC OR 06/08/2014> Code trimming                   &     + 698.*  trn(ji,jj,jk,jppoc)  )                    &
+! <CMOC OR 06/08/2014> Code trimming                   &   * xdiss(ji,jj,jk) + 1E-4 * ( 1. - zlamfac ) * zdep
+! <CMOC OR 06/08/2014> Code trimming #endif
+! <CMOC OR 06/08/2014> Code trimming                zaggdfe = zlam1b * zstep * 0.5 * ( trn(ji,jj,jk,jpfer) - zfeequi )
+! <CMOC OR 06/08/2014> Code trimming                tra(ji,jj,jk,jpfer) = tra(ji,jj,jk,jpfer) - zscave - zaggdfe - zcoag
+! <CMOC OR 06/08/2014> Code trimming #if defined key_kriest
+! <CMOC OR 06/08/2014> Code trimming                tra(ji,jj,jk,jpsfe) = tra(ji,jj,jk,jpsfe) + zscave * zdenom1
+! <CMOC OR 06/08/2014> Code trimming #else
+! <CMOC OR 06/08/2014> Code trimming                tra(ji,jj,jk,jpsfe) = tra(ji,jj,jk,jpsfe) + zscave * zdenom1
                ! <CMOC OR 05/05/2014> Removal of GOC tracer ! tra(ji,jj,jk,jpbfe) = tra(ji,jj,jk,jpbfe) + zscave * zdenom2
-#endif
-            END DO
-         END DO
-      END DO
+! <CMOC OR 06/08/2014> Code trimming #endif
+! <CMOC OR 06/08/2014> Code trimming             END DO
+! <CMOC OR 06/08/2014> Code trimming          END DO
+! <CMOC OR 06/08/2014> Code trimming       END DO
       !
 
-      IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
-         WRITE(charout, FMT="('rem5')")
-         CALL prt_ctl_trc_info(charout)
-         CALL prt_ctl_trc(tab4d=tra, mask=tmask, clinfo=ctrcnm)
-      ENDIF
+! <CMOC OR 06/08/2014> Code trimming       IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
+! <CMOC OR 06/08/2014> Code trimming          WRITE(charout, FMT="('rem5')")
+! <CMOC OR 06/08/2014> Code trimming          CALL prt_ctl_trc_info(charout)
+! <CMOC OR 06/08/2014> Code trimming          CALL prt_ctl_trc(tab4d=tra, mask=tmask, clinfo=ctrcnm)
+! <CMOC OR 06/08/2014> Code trimming       ENDIF
 
       !     Calcite flux <CMOC OR 02/19/2014>
       !     --------------------------------------------------------------------
@@ -439,11 +443,11 @@ CONTAINS
       !     --------------------------------------------------------------------
       !     Update the arrays TRA which contain the biological sources and sinks
       !     --------------------------------------------------------------------
-         tra(:,:,jk,jppo4) = tra(:,:,jk,jppo4) + zolimi (:,:,jk) + denitr(:,:,jk)
-         tra(:,:,jk,jpnh4) = tra(:,:,jk,jpnh4) ! + zolimi (:,:,jk) + denitr(:,:,jk) <CMOC OR 11/08/2013> Testing if NH4 terms are the sources of the high concentrations of NO3/DIN in CMOC
+         ! <CMOC OR 06/08/2014> Code trimming tra(:,:,jk,jppo4) = tra(:,:,jk,jppo4) + zolimi (:,:,jk) + denitr(:,:,jk)
+         ! <CMOC OR 06/08/2014> Code trimming tra(:,:,jk,jpnh4) = tra(:,:,jk,jpnh4) ! + zolimi (:,:,jk) + denitr(:,:,jk) <CMOC OR 11/08/2013> Testing if NH4 terms are the sources of the high concentrations of NO3/DIN in CMOC
          tra(:,:,jk,jpno3) = tra(:,:,jk,jpno3) + zredet (:,:,jk) *    trn(:,:,jk,jppoc) & !- denitr (:,:,jk) * rdenit <CMOC OR 10/02/2013> + re x D
          &                + zJNd(:,:,jk) ! <CMOC OR 12/11/2013> CMOC N2-fixation/denitrification rate
-         tra(:,:,jk,jpdoc) = tra(:,:,jk,jpdoc) - zolimi (:,:,jk) - denitr(:,:,jk)
+         ! <CMOC OR 06/08/2014> Code trimming tra(:,:,jk,jpdoc) = tra(:,:,jk,jpdoc) - zolimi (:,:,jk) - denitr(:,:,jk)
          tra(:,:,jk,jpoxy) = tra(:,:,jk,jpoxy) - zredet (:,:,jk) *    trn(:,:,jk,jppoc) !* 1.3_wp !- zolimi2(:,:,jk) * o2ut <CMOC OR 11/14/2013> remineralization used up oxygen in CMOC
          tra(:,:,jk,jpdic) = tra(:,:,jk,jpdic) + zredet (:,:,jk) *    trn(:,:,jk,jppoc)          !+ zolimi (:,:,jk) + denitr(:,:,jk) <CMOC OR 10/29/2013>
          tra(:,:,jk,jptal) = tra(:,:,jk,jptal) - zredet (:,:,jk) *    trn(:,:,jk,jppoc) * ncrr_cmoc !+ rno3 * ( zolimi(:,:,jk) + ( rdenit + 1.) * denitr(:,:,jk) ) <CMOC OR 10/29/2013>
@@ -474,8 +478,8 @@ CONTAINS
          DO jk = 12, mbkt(ji,jj)          ! <CMOC OR 03/12/2014> ! below the euphotic zone
          ! <CMOC OR 02/19/2014> Calcite Dissolution, Source of Alkalinity/DIC 
          ! <CMOC OR 03/13/2014> Burial of PIC 
-         tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) +     zfpon(ji,jj) * ( exp(-1._wp*(fsdepw(ji,jj,jk)-fsdepw(ji,jj,11))/dci_cmoc) - exp(-1._wp*(fsdepw(ji,jj,jk+1)-fsdepw(ji,jj,11))/dci_cmoc) ) / fse3w(ji,jj    ,jk)
-         tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) + 2 * zfpon(ji,jj) * ( exp(-1._wp*(fsdepw(ji,jj,jk)-fsdepw(ji,jj,11))/dci_cmoc) - exp(-1._wp*(fsdepw(ji,jj,jk+1)-fsdepw(ji,jj,11))/dci_cmoc) ) / fse3w(ji,jj    ,jk)
+         tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) +     zfpon(ji,jj) * ( exp(-1._wp*(fsdepw(ji,jj,jk)-fsdepw(ji,jj,11))/dci_cmoc) - exp(-1._wp*(fsdepw(ji,jj,jk+1)-fsdepw(ji,jj,11))/dci_cmoc) ) / fse3w(ji,jj,jk) ! <CMOC OR 07/15/2014> Revert for consistency ! / (fsdepw(ji,jj,jk+1)-fsdepw(ji,jj,jk)) ! <CMOC OR 06/12/2014> replace fse3w, which I am not quite sure what it is (examine Table 4.2 in Nemo Book 3.4) by the difference between depth levels on w grid ! fse3w(ji,jj,jk)
+         tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) + 2 * zfpon(ji,jj) * ( exp(-1._wp*(fsdepw(ji,jj,jk)-fsdepw(ji,jj,11))/dci_cmoc) - exp(-1._wp*(fsdepw(ji,jj,jk+1)-fsdepw(ji,jj,11))/dci_cmoc) ) / fse3w(ji,jj,jk) ! <CMOC OR 07/15/2014> Revert for consistency ! / (fsdepw(ji,jj,jk+1)-fsdepw(ji,jj,jk)) ! <CMOC OR 06/12/2014> see above, same comment fse3w(ji,jj,jk) 
          ! <CMOC OR 02/19/2014>                          Particulate Inorganic Carbon Export at 100 m         / 100 m   *      dz       * below-euphotic-layer thickness 
          ! <CMOC OR 02/25/2014> Below the euphotic zone calcite dissolution dominates; the POC flux varies as zfpon*exp(-(z-105)/2700), zfpon being the flux at the bottom of the euphotic zone 
          END DO
@@ -508,8 +512,10 @@ CONTAINS
 
 
       !
-      CALL wrk_dealloc( jpi, jpj,      ztempbac, zredettot, zn2fixtot, zwork, zfpon, zbpon, zbpoc  ) ! <CMOC OR 03/14/2014> Bottom POC ! <CMOC OR 03/13/2014> add Burial of PIC ! <CMOC OR 02/25/2014> ! <CMOC OR 01/15/2014> !<CMOC OR 12/11/2013> !<CMOC OR 10/02/2013> 
-      CALL wrk_dealloc( jpi, jpj, jpk, zdepbac, zolimi, zolimi2, zredet,    zn2fix,   zJNd         ) ! <CMOC OR 12/11/2013> !<CMOC OR 10/02/2013> remineralization rate of detritus
+      ! <CMOC OR 06/08/2014> Code trimming ! CALL wrk_dealloc( jpi, jpj,      ztempbac, zredettot, zn2fixtot, zwork, zfpon, zbpon, zbpoc  ) ! <CMOC OR 03/14/2014> Bottom POC ! <CMOC OR 03/13/2014> add Burial of PIC ! <CMOC OR 02/25/2014> ! <CMOC OR 01/15/2014> !<CMOC OR 12/11/2013> !<CMOC OR 10/02/2013> 
+      CALL wrk_dealloc( jpi, jpj,      zredettot, zn2fixtot, zwork, zfpon, zbpon, zbpoc  ) ! <CMOC OR 03/14/2014> Bottom POC ! <CMOC OR 03/13/2014> add Burial of PIC ! <CMOC OR 02/25/2014> ! <CMOC OR 01/15/2014> !<CMOC OR 12/11/2013> !<CMOC OR 10/02/2013> 
+      ! <CMOC OR 06/08/2014> Code trimming ! CALL wrk_dealloc( jpi, jpj, jpk, zdepbac, zolimi, zolimi2, zredet,    zn2fix,   zJNd         ) ! <CMOC OR 12/11/2013> !<CMOC OR 10/02/2013> remineralization rate of detritus
+      CALL wrk_dealloc( jpi, jpj, jpk, zredet,    zn2fix,   zJNd         ) ! <CMOC OR 12/11/2013> !<CMOC OR 10/02/2013> remineralization rate of detritus
       !
       IF( nn_timing == 1 )  CALL timing_stop('p4z_rem')
       !
@@ -528,8 +534,8 @@ CONTAINS
       !! ** input   :   Namelist nampisrem
       !!
       !!----------------------------------------------------------------------
-      NAMELIST/nampisrem/ xremik, xremip, nitrif, xsirem, xsiremlab, xsilab,   &
-      &                   xlam1, oxymin, ligand 
+      ! <CMOC OR 06/08/2014> Code trimming NAMELIST/nampisrem/ xremik, xremip, nitrif, xsirem, xsiremlab, xsilab,   &
+      ! <CMOC OR 06/08/2014> Code trimming &                   xlam1, oxymin, ligand 
 
       ! <CMOC OR 03/08/2014> CMOC namelist
       NAMELIST/namcmocpoc/ ed_cmoc, reref_cmoc
@@ -539,8 +545,8 @@ CONTAINS
       ! <CMOC OR 03/08/2014> CMOC namelist end 
       !!----------------------------------------------------------------------
 
-      REWIND( numnatp )                     ! read numnatp
-      READ  ( numnatp, nampisrem )
+      ! <CMOC OR 06/08/2014> Code trimming REWIND( numnatp )                     ! read numnatp
+      ! <CMOC OR 06/08/2014> Code trimming READ  ( numnatp, nampisrem )
 
       REWIND( numcmoc )                     ! <CMOC OR 03/10/2014>  ! read numcmoc, cmocpoc
       READ  ( numcmoc, namcmocpoc )
@@ -556,19 +562,19 @@ CONTAINS
       
       
       IF(lwp) THEN                         ! control print
-         WRITE(numout,*) ' '
-         WRITE(numout,*) ' Namelist parameters for remineralization, nampisrem'
-         WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-         WRITE(numout,*) '    remineralisation rate of POC              xremip    =', xremip
-         WRITE(numout,*) '    remineralization rate of DOC              xremik    =', xremik
-         WRITE(numout,*) '    remineralization rate of Si               xsirem    =', xsirem
-         WRITE(numout,*) '    fast remineralization rate of Si          xsiremlab =', xsiremlab
-         WRITE(numout,*) '    fraction of labile biogenic silica        xsilab    =', xsilab
-         WRITE(numout,*) '    scavenging rate of Iron                   xlam1     =', xlam1
-         WRITE(numout,*) '    NH4 nitrification rate                    nitrif    =', nitrif
-         WRITE(numout,*) '    halk saturation constant for anoxia       oxymin    =', oxymin
-         WRITE(numout,*) '    ligand concentration in the ocean         ligand    =', ligand
-         WRITE(numout,*) ' '
+      ! <CMOC OR 06/08/2014> Code trimming    WRITE(numout,*) ' '
+      ! <CMOC OR 06/08/2014> Code trimming    WRITE(numout,*) ' Namelist parameters for remineralization, nampisrem'
+      ! <CMOC OR 06/08/2014> Code trimming    WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+      ! <CMOC OR 06/08/2014> Code trimming    WRITE(numout,*) '    remineralisation rate of POC              xremip    =', xremip
+      ! <CMOC OR 06/08/2014> Code trimming    WRITE(numout,*) '    remineralization rate of DOC              xremik    =', xremik
+      ! <CMOC OR 06/08/2014> Code trimming    WRITE(numout,*) '    remineralization rate of Si               xsirem    =', xsirem
+      ! <CMOC OR 06/08/2014> Code trimming    WRITE(numout,*) '    fast remineralization rate of Si          xsiremlab =', xsiremlab
+      ! <CMOC OR 06/08/2014> Code trimming    WRITE(numout,*) '    fraction of labile biogenic silica        xsilab    =', xsilab
+      ! <CMOC OR 06/08/2014> Code trimming    WRITE(numout,*) '    scavenging rate of Iron                   xlam1     =', xlam1
+      ! <CMOC OR 06/08/2014> Code trimming    WRITE(numout,*) '    NH4 nitrification rate                    nitrif    =', nitrif
+      ! <CMOC OR 06/08/2014> Code trimming    WRITE(numout,*) '    halk saturation constant for anoxia       oxymin    =', oxymin
+      ! <CMOC OR 06/08/2014> Code trimming    WRITE(numout,*) '    ligand concentration in the ocean         ligand    =', ligand
+      ! <CMOC OR 06/08/2014> Code trimming    WRITE(numout,*) ' '
          WRITE(numout,*) ' Namelist parameters for remineralization, namcmocpoc'
          WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
          WRITE(numout,*) '    Remineralisation rate of POC              reref_cmoc=', reref_cmoc
@@ -597,22 +603,22 @@ CONTAINS
          WRITE(numout,*) '    Inverse of the depth of euphotic zone    ideup_cmoc =',  ideup_cmoc
       ENDIF
       !
-      nitrfac (:,:,:) = 0._wp
-      denitr  (:,:,:) = 0._wp
-      denitnh4(:,:,:) = 0._wp
+      ! <CMOC OR 06/08/2014> Code trimming nitrfac (:,:,:) = 0._wp
+      ! <CMOC OR 06/08/2014> Code trimming denitr  (:,:,:) = 0._wp
+      ! <CMOC OR 06/08/2014> Code trimming denitnh4(:,:,:) = 0._wp
       !
    END SUBROUTINE p4z_rem_init
 
 
-   INTEGER FUNCTION p4z_rem_alloc()
+   ! <CMOC OR 06/08/2014> Code trimming INTEGER FUNCTION p4z_rem_alloc()
       !!----------------------------------------------------------------------
       !!                     ***  ROUTINE p4z_rem_alloc  ***
       !!----------------------------------------------------------------------
-      ALLOCATE( denitr(jpi,jpj,jpk), denitnh4(jpi,jpj,jpk), STAT=p4z_rem_alloc )
+   ! <CMOC OR 06/08/2014> Code trimming    ALLOCATE( denitr(jpi,jpj,jpk), denitnh4(jpi,jpj,jpk), STAT=p4z_rem_alloc )
       !
-      IF( p4z_rem_alloc /= 0 )   CALL ctl_warn('p4z_rem_alloc: failed to allocate arrays')
+   ! <CMOC OR 06/08/2014> Code trimming    IF( p4z_rem_alloc /= 0 )   CALL ctl_warn('p4z_rem_alloc: failed to allocate arrays')
       !
-   END FUNCTION p4z_rem_alloc
+   ! <CMOC OR 06/08/2014> Code trimming END FUNCTION p4z_rem_alloc
 
 #else
    !!======================================================================

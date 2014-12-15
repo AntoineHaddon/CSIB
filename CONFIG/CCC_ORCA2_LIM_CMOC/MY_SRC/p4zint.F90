@@ -1,22 +1,22 @@
-mODULE p4zlim
+MODULE p4zint
    !!======================================================================
-   !!                         ***  MODULE p4zlim  ***
-   !! TOP :   PISCES 
+   !!                         ***  MODULE p4zint  ***
+   !! TOP :   PISCES interpolation and computation of various accessory fields
    !!======================================================================
-   !! History :   1.0  !  2004     (O. Aumont) Original code
+   !! History :   1.0  !  2004-03 (O. Aumont) Original code
    !!             2.0  !  2007-12  (C. Ethe, G. Madec)  F90
-   !!             3.4  !  2011-04  (O. Aumont, C. Ethe) Limitation for iron modelled in quota 
    !!----------------------------------------------------------------------
 #if defined key_pisces
-! <CMOC OR 06/13/2014> Code trimming !  
+
 #else
    !!======================================================================
    !!  Dummy module :                                   No PISCES bio-model
    !!======================================================================
 CONTAINS
-   SUBROUTINE p4z_lim                   ! Empty routine
-   END SUBROUTINE p4z_lim
+   SUBROUTINE p4z_int                   ! Empty routine
+      WRITE(*,*) 'p4z_int: You should not have seen this print! error?'
+   END SUBROUTINE p4z_int
 #endif 
 
    !!======================================================================
-END MODULE  p4zlim
+END MODULE  p4zint

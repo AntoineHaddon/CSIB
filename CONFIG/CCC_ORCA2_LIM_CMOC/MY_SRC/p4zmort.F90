@@ -16,7 +16,7 @@ MODULE p4zmort
    USE oce_trc         !  shared variables between ocean and passive tracers
    USE trc             !  passive tracers common variables 
    USE sms_pisces      !  PISCES Source Minus Sink variables
-   USE p4zsink         !  vertical flux of particulate matter due to sinking
+   ! <CMOC OR 06/13/2014> Code trimming !  USE p4zsink         !  vertical flux of particulate matter due to sinking
    USE prtctl_trc      !  print control for debugging
 
    IMPLICIT NONE
@@ -26,11 +26,11 @@ MODULE p4zmort
    PUBLIC   p4z_mort_init    
 
    !! * Shared module variables
-   REAL(wp), PUBLIC :: wchl   = 0.001_wp  !:
-   REAL(wp), PUBLIC :: wchld  = 0.02_wp   !:
-   REAL(wp), PUBLIC :: mprat  = 0.01_wp   !:
-   REAL(wp), PUBLIC :: mprat2 = 0.01_wp   !:
-   REAL(wp), PUBLIC :: mpratm = 0.01_wp   !:
+! <CMOC OR 06/13/2014> Code trimming !    REAL(wp), PUBLIC :: wchl   = 0.001_wp  !:
+! <CMOC OR 06/13/2014> Code trimming !    REAL(wp), PUBLIC :: wchld  = 0.02_wp   !:
+! <CMOC OR 06/13/2014> Code trimming !    REAL(wp), PUBLIC :: mprat  = 0.01_wp   !:
+! <CMOC OR 06/13/2014> Code trimming !    REAL(wp), PUBLIC :: mprat2 = 0.01_wp   !:
+! <CMOC OR 06/13/2014> Code trimming !    REAL(wp), PUBLIC :: mpratm = 0.01_wp   !:
 
 
    !!* Substitution
@@ -55,14 +55,14 @@ CONTAINS
       INTEGER, INTENT(in) ::   kt ! ocean time step
       !!---------------------------------------------------------------------
 
-      CALL p4z_nano            ! nanophytoplankton
+! <CMOC OR 06/13/2014> Code trimming !       CALL p4z_nano            ! nanophytoplankton
 
-      CALL p4z_diat            ! diatoms
+! <CMOC OR 06/13/2014> Code trimming !       CALL p4z_diat            ! diatoms
 
-   END SUBROUTINE p4z_mort
+! <CMOC OR 06/13/2014> Code trimming !    END SUBROUTINE p4z_mort
 
 
-   SUBROUTINE p4z_nano
+! <CMOC OR 06/13/2014> Code trimming !    SUBROUTINE p4z_nano
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE p4z_nano  ***
       !!
@@ -72,14 +72,14 @@ CONTAINS
       !!---------------------------------------------------------------------
       INTEGER  :: ji, jj, jk
       REAL(wp) :: zcompaph
-      REAL(wp) :: zfactfe, zfactch, zprcaca, zfracal
-      REAL(wp) :: ztortp , zrespp , zmortp , zstep
+      ! <CMOC OR 06/13/2014> Code trimming !  REAL(wp) :: zfactfe, zfactch, zprcaca, zfracal
+      REAL(wp) :: ztortp , zrespp , zmortp , zstep, zfactch
       CHARACTER (len=25) :: charout
       !!---------------------------------------------------------------------
       !
-      IF( nn_timing == 1 )  CALL timing_start('p4z_nano')
+      IF( nn_timing == 1 )  CALL timing_start('p4z_mort')! <CMOC OR 06/13/2014> Code trimming !  'p4z_nano')
       !
-      prodcal(:,:,:) = 0.  !: calcite production variable set to zero
+      ! <CMOC OR 06/13/2014> Code trimming !  prodcal(:,:,:) = 0.  !: calcite production variable set to zero
       DO jk = 1, jpkm1
          DO jj = 1, jpj
             DO ji = 1, jpi
@@ -101,125 +101,126 @@ CONTAINS
 
                !   Update the arrays TRA which contains the biological sources and sinks
 
-               zfactfe = trn(ji,jj,jk,jpnfe)/(trn(ji,jj,jk,jpphy)+rtrn)
-               zfactch = trn(ji,jj,jk,jpnch)/(trn(ji,jj,jk,jpphy)+rtrn)
+! <CMOC OR 06/13/2014> Code trimming !                 zfactfe = trn(ji,jj,jk,jpnfe)/(trn(ji,jj,jk,jpphy)+rtrn)
+                 zfactch = trn(ji,jj,jk,jpnch)/(trn(ji,jj,jk,jpphy)+rtrn)
 
                tra(ji,jj,jk,jpphy) = tra(ji,jj,jk,jpphy) - zmortp
                tra(ji,jj,jk,jpnch) = tra(ji,jj,jk,jpnch) - zmortp * zfactch
-               tra(ji,jj,jk,jpnfe) = tra(ji,jj,jk,jpnfe) - zmortp * zfactfe
-               zprcaca = xfracal(ji,jj,jk) * zmortp
+! <CMOC OR 06/13/2014> Code trimming !                 tra(ji,jj,jk,jpnfe) = tra(ji,jj,jk,jpnfe) - zmortp * zfactfe
+! <CMOC OR 06/13/2014> Code trimming !                 zprcaca = xfracal(ji,jj,jk) * zmortp
                !
-               prodcal(ji,jj,jk) = prodcal(ji,jj,jk) + zprcaca  ! prodcal=prodcal(nanophy)+prodcal(microzoo)+prodcal(mesozoo)
+! <CMOC OR 06/13/2014> Code trimming !                 prodcal(ji,jj,jk) = prodcal(ji,jj,jk) + zprcaca  ! prodcal=prodcal(nanophy)+prodcal(microzoo)+prodcal(mesozoo)
                !
-               zfracal = 0.5 * xfracal(ji,jj,jk)
+! <CMOC OR 06/13/2014> Code trimming !                 zfracal = 0.5 * xfracal(ji,jj,jk)
                ! <CMOC OR 05/05/2014> Removal of GOC tracer ! tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) ! <CMOC OR 02/19/2014> - zprcaca       ! <CMOC OR 01/07/2014> PISCES calcification
                ! <CMOC OR 05/05/2014> Removal of GOC tracer ! tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) ! <CMOC OR 02/19/2014> - 2. * zprcaca  ! <CMOC OR 01/07/2014> PISCES calcification
-               tra(ji,jj,jk,jpcal) = tra(ji,jj,jk,jpcal) + zprcaca
-#if defined key_kriest
-               tra(ji,jj,jk,jppoc) = tra(ji,jj,jk,jppoc) + zmortp
-               tra(ji,jj,jk,jpnum) = tra(ji,jj,jk,jpnum) + ztortp * xkr_dnano + zrespp * xkr_ddiat
-               tra(ji,jj,jk,jpsfe) = tra(ji,jj,jk,jpsfe) + zmortp * zfactfe
-#else
+! <CMOC OR 06/13/2014> Code trimming !                 tra(ji,jj,jk,jpcal) = tra(ji,jj,jk,jpcal) + zprcaca
+! <CMOC OR 06/13/2014> Code trimming !  #if defined key_kriest
+! <CMOC OR 06/13/2014> Code trimming !                 tra(ji,jj,jk,jppoc) = tra(ji,jj,jk,jppoc) + zmortp
+! <CMOC OR 06/13/2014> Code trimming !                 tra(ji,jj,jk,jpnum) = tra(ji,jj,jk,jpnum) + ztortp * xkr_dnano + zrespp * xkr_ddiat
+! <CMOC OR 06/13/2014> Code trimming !                 tra(ji,jj,jk,jpsfe) = tra(ji,jj,jk,jpsfe) + zmortp * zfactfe
+! <CMOC OR 06/13/2014> Code trimming !  #else
                ! <CMOC OR 05/05/2014> Removal of GOC tracer ! tra(ji,jj,jk,jpgoc) = tra(ji,jj,jk,jpgoc) +  zfracal * zmortp 
                tra(ji,jj,jk,jppoc) = tra(ji,jj,jk,jppoc) + zmortp! + ( 1. - zfracal ) * zmortp <CMOC OR 10/04/2013> in CMOC all decaying phytoplankton goes to detritus
-               tra(ji,jj,jk,jpsfe) = tra(ji,jj,jk,jpsfe) + ( 1. - zfracal ) * zmortp * zfactfe
-               tra(ji,jj,jk,jpbfe) = tra(ji,jj,jk,jpbfe) + zfracal * zmortp * zfactfe
-#endif
+! <CMOC OR 06/13/2014> Code trimming !                 tra(ji,jj,jk,jpsfe) = tra(ji,jj,jk,jpsfe) + ( 1. - zfracal ) * zmortp * zfactfe
+! <CMOC OR 06/13/2014> Code trimming !                 tra(ji,jj,jk,jpbfe) = tra(ji,jj,jk,jpbfe) + zfracal * zmortp * zfactfe
+! <CMOC OR 06/13/2014> Code trimming !  #endif
             END DO
          END DO
       END DO
       !
        IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
-         WRITE(charout, FMT="('nano')")
+         WRITE(charout, FMT="('mort')") ! <CMOC OR 06/13/2014> Code trimming !  nano')")
          CALL prt_ctl_trc_info(charout)
          CALL prt_ctl_trc(tab4d=tra, mask=tmask, clinfo=ctrcnm)
        ENDIF
       !
-      IF( nn_timing == 1 )  CALL timing_stop('p4z_nano')
+      IF( nn_timing == 1 )  CALL timing_stop('p4z_mort') ! <CMOC OR 06/13/2014> Code trimming !  p4z_nano')
       !
-   END SUBROUTINE p4z_nano
+! <CMOC OR 06/13/2014> Code trimming !    END SUBROUTINE p4z_nano
+   END SUBROUTINE p4z_mort
 
-   SUBROUTINE p4z_diat
-      !!---------------------------------------------------------------------
-      !!                     ***  ROUTINE p4z_diat  ***
-      !!
-      !! ** Purpose :   Compute the mortality terms for diatoms
-      !!
-      !! ** Method  : - ???
-      !!---------------------------------------------------------------------
-      INTEGER  ::  ji, jj, jk
-      REAL(wp) ::  zfactfe,zfactsi,zfactch, zcompadi
-      REAL(wp) ::  zrespp2, ztortp2, zmortp2, zstep
-      CHARACTER (len=25) :: charout
-      !!---------------------------------------------------------------------
-      !
-      IF( nn_timing == 1 )  CALL timing_start('p4z_diat')
-      !
-
-      !    Aggregation term for diatoms is increased in case of nutrient
-      !    stress as observed in reality. The stressed cells become more
-      !    sticky and coagulate to sink quickly out of the euphotic zone
-      !     ------------------------------------------------------------
-
-      DO jk = 1, jpkm1
-         DO jj = 1, jpj
-            DO ji = 1, jpi
-
-               zcompadi = MAX( ( trn(ji,jj,jk,jpdia) - 1e-8), 0. )
-
-               !    Aggregation term for diatoms is increased in case of nutrient
-               !    stress as observed in reality. The stressed cells become more
-               !    sticky and coagulate to sink quickly out of the euphotic zone
-               !     ------------------------------------------------------------
-               zstep   = xstep
-# if defined key_degrad
-               zstep = zstep * facvol(ji,jj,jk)
-# endif
-               !  Phytoplankton respiration 
-               !     ------------------------
-               zrespp2  = 1.e6 * zstep * (  wchl + wchld * ( 1.- xlimdia(ji,jj,jk) )  )    &
-                  &       * xdiss(ji,jj,jk) * zcompadi * trn(ji,jj,jk,jpdia)
-
-               !     Phytoplankton mortality. 
-               !     ------------------------
-               ztortp2  = mprat2 * zstep * trn(ji,jj,jk,jpdia)  / ( xkmort + trn(ji,jj,jk,jpdia) ) * zcompadi 
-
-               zmortp2 = zrespp2 + ztortp2
-
-               !   Update the arrays tra which contains the biological sources and sinks
-               !   ---------------------------------------------------------------------
-               zfactch = trn(ji,jj,jk,jpdch) / ( trn(ji,jj,jk,jpdia) + rtrn )
-               zfactfe = trn(ji,jj,jk,jpdfe) / ( trn(ji,jj,jk,jpdia) + rtrn )
-               zfactsi = trn(ji,jj,jk,jpdsi) / ( trn(ji,jj,jk,jpdia) + rtrn )
-
-               tra(ji,jj,jk,jpdia) = tra(ji,jj,jk,jpdia) - zmortp2 
-               tra(ji,jj,jk,jpdch) = tra(ji,jj,jk,jpdch) - zmortp2 * zfactch
-               tra(ji,jj,jk,jpdfe) = tra(ji,jj,jk,jpdfe) - zmortp2 * zfactfe
-               tra(ji,jj,jk,jpdsi) = tra(ji,jj,jk,jpdsi) - zmortp2 * zfactsi
-               tra(ji,jj,jk,jpgsi) = tra(ji,jj,jk,jpgsi) + zmortp2 * zfactsi
-#if defined key_kriest
-               ! <CMOC OR 05/05/2014> Removal of GOC tracer ! tra(ji,jj,jk,jppoc) = tra(ji,jj,jk,jppoc) !+ zmortp2 <CMOC OR 11/13/2013> 
-               tra(ji,jj,jk,jpnum) = tra(ji,jj,jk,jpnum) + ztortp2 * xkr_ddiat + zrespp2 * xkr_daggr
-               tra(ji,jj,jk,jpsfe) = tra(ji,jj,jk,jpsfe) + zmortp2 * zfactfe
-#else
-               ! <CMOC OR 05/05/2014> Removal of GOC tracer ! tra(ji,jj,jk,jpgoc) = tra(ji,jj,jk,jpgoc) + zrespp2 + 0.5 * ztortp2
-               ! <CMOC OR 05/05/2014> Removal of GOC tracer ! tra(ji,jj,jk,jppoc) = tra(ji,jj,jk,jppoc) !+ 0.5 * ztortp2 <CMOC OR 11/13/2013>
-               tra(ji,jj,jk,jpsfe) = tra(ji,jj,jk,jpsfe) + 0.5 * ztortp2 * zfactfe
-               tra(ji,jj,jk,jpbfe) = tra(ji,jj,jk,jpbfe) + ( zrespp2 + 0.5 * ztortp2 ) * zfactfe
-#endif
-            END DO
-         END DO
-      END DO
-      !
-      IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
-         WRITE(charout, FMT="('diat')")
-         CALL prt_ctl_trc_info(charout)
-         CALL prt_ctl_trc(tab4d=tra, mask=tmask, clinfo=ctrcnm)
-      ENDIF
-      !
-      IF( nn_timing == 1 )  CALL timing_stop('p4z_diat')
-      !
-   END SUBROUTINE p4z_diat
+! <CMOC OR 06/13/2014> Code trimming !    SUBROUTINE p4z_diat
+!      !!---------------------------------------------------------------------
+!      !!                     ***  ROUTINE p4z_diat  ***
+!      !!
+!      !! ** Purpose :   Compute the mortality terms for diatoms
+!      !!
+!      !! ** Method  : - ???
+!      !!---------------------------------------------------------------------
+!      INTEGER  ::  ji, jj, jk
+!      REAL(wp) ::  zfactfe,zfactsi,zfactch, zcompadi
+!      REAL(wp) ::  zrespp2, ztortp2, zmortp2, zstep
+!      CHARACTER (len=25) :: charout
+!      !!---------------------------------------------------------------------
+!      !
+!      IF( nn_timing == 1 )  CALL timing_start('p4z_diat')
+!      !
+!
+!      !    Aggregation term for diatoms is increased in case of nutrient
+!      !    stress as observed in reality. The stressed cells become more
+!      !    sticky and coagulate to sink quickly out of the euphotic zone
+!      !     ------------------------------------------------------------
+!
+!      DO jk = 1, jpkm1
+!         DO jj = 1, jpj
+!            DO ji = 1, jpi
+!
+!               zcompadi = MAX( ( trn(ji,jj,jk,jpdia) - 1e-8), 0. )
+!
+!               !    Aggregation term for diatoms is increased in case of nutrient
+!               !    stress as observed in reality. The stressed cells become more
+!               !    sticky and coagulate to sink quickly out of the euphotic zone
+!               !     ------------------------------------------------------------
+!               zstep   = xstep
+!# if defined key_degrad
+!               zstep = zstep * facvol(ji,jj,jk)
+!# endif
+!               !  Phytoplankton respiration 
+!               !     ------------------------
+!               zrespp2  = 1.e6 * zstep * (  wchl + wchld * ( 1.- xlimdia(ji,jj,jk) )  )    &
+!                  &       * xdiss(ji,jj,jk) * zcompadi * trn(ji,jj,jk,jpdia)
+!
+!               !     Phytoplankton mortality. 
+!               !     ------------------------
+!               ztortp2  = mprat2 * zstep * trn(ji,jj,jk,jpdia)  / ( xkmort + trn(ji,jj,jk,jpdia) ) * zcompadi 
+!
+!               zmortp2 = zrespp2 + ztortp2
+!
+!               !   Update the arrays tra which contains the biological sources and sinks
+!               !   ---------------------------------------------------------------------
+!               zfactch = trn(ji,jj,jk,jpdch) / ( trn(ji,jj,jk,jpdia) + rtrn )
+!               zfactfe = trn(ji,jj,jk,jpdfe) / ( trn(ji,jj,jk,jpdia) + rtrn )
+!               zfactsi = trn(ji,jj,jk,jpdsi) / ( trn(ji,jj,jk,jpdia) + rtrn )
+!
+!               tra(ji,jj,jk,jpdia) = tra(ji,jj,jk,jpdia) - zmortp2 
+!               tra(ji,jj,jk,jpdch) = tra(ji,jj,jk,jpdch) - zmortp2 * zfactch
+!               tra(ji,jj,jk,jpdfe) = tra(ji,jj,jk,jpdfe) - zmortp2 * zfactfe
+!               tra(ji,jj,jk,jpdsi) = tra(ji,jj,jk,jpdsi) - zmortp2 * zfactsi
+!               tra(ji,jj,jk,jpgsi) = tra(ji,jj,jk,jpgsi) + zmortp2 * zfactsi
+!#if defined key_kriest
+!               ! <CMOC OR 05/05/2014> Removal of GOC tracer ! tra(ji,jj,jk,jppoc) = tra(ji,jj,jk,jppoc) !+ zmortp2 <CMOC OR 11/13/2013> 
+!               tra(ji,jj,jk,jpnum) = tra(ji,jj,jk,jpnum) + ztortp2 * xkr_ddiat + zrespp2 * xkr_daggr
+!               tra(ji,jj,jk,jpsfe) = tra(ji,jj,jk,jpsfe) + zmortp2 * zfactfe
+!#else
+!               ! <CMOC OR 05/05/2014> Removal of GOC tracer ! tra(ji,jj,jk,jpgoc) = tra(ji,jj,jk,jpgoc) + zrespp2 + 0.5 * ztortp2
+!               ! <CMOC OR 05/05/2014> Removal of GOC tracer ! tra(ji,jj,jk,jppoc) = tra(ji,jj,jk,jppoc) !+ 0.5 * ztortp2 <CMOC OR 11/13/2013>
+!               tra(ji,jj,jk,jpsfe) = tra(ji,jj,jk,jpsfe) + 0.5 * ztortp2 * zfactfe
+!               tra(ji,jj,jk,jpbfe) = tra(ji,jj,jk,jpbfe) + ( zrespp2 + 0.5 * ztortp2 ) * zfactfe
+!#endif
+!            END DO
+!         END DO
+!      END DO
+!      !
+!      IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
+!         WRITE(charout, FMT="('diat')")
+!         CALL prt_ctl_trc_info(charout)
+!         CALL prt_ctl_trc(tab4d=tra, mask=tmask, clinfo=ctrcnm)
+!      ENDIF
+!      !
+!      IF( nn_timing == 1 )  CALL timing_stop('p4z_diat')
+!      !
+! <CMOC OR 06/13/2014> Code trimming !     END SUBROUTINE p4z_diat
 
    SUBROUTINE p4z_mort_init
 
@@ -235,15 +236,15 @@ CONTAINS
       !!
       !!----------------------------------------------------------------------
 
-      NAMELIST/nampismort/ wchl, wchld, mprat, mprat2, mpratm
+! <CMOC OR 06/13/2014> Code trimming !       NAMELIST/nampismort/ wchl, wchld, mprat, mprat2, mpratm
 
       ! <CMOC OR 03/08/2014> CMOC namelist
       NAMELIST/namcmocmor/ mpd_cmoc, mpd2_cmoc
       ! <CMOC OR 03/08/2014> CMOC namelist end 
       !!----------------------------------------------------------------------
 
-      REWIND( numnatp )                     ! read numnatp
-      READ  ( numnatp, nampismort )
+! <CMOC OR 06/13/2014> Code trimming !       REWIND( numnatp )                     ! read numnatp
+! <CMOC OR 06/13/2014> Code trimming !       READ  ( numnatp, nampismort )
 
       REWIND( numcmoc )                    ! <CMOC OR 03/10/2014> ! read numcmoc, cmocphy
       READ  ( numcmoc, namcmocmor )
@@ -251,14 +252,14 @@ CONTAINS
       
       IF(lwp) THEN                         ! control print
          WRITE(numout,*) ' '
-         WRITE(numout,*) ' Namelist parameters for phytoplankton mortality, nampismort'
-         WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-         WRITE(numout,*) '    quadratic mortality of phytoplankton      wchl      =', wchl
-         WRITE(numout,*) '    maximum quadratic mortality of diatoms    wchld     =', wchld
-         WRITE(numout,*) '    phytoplankton mortality rate              mprat     =', mprat
-         WRITE(numout,*) '    Diatoms mortality rate                    mprat2    =', mprat2
-         WRITE(numout,*) '    Phytoplankton minimum mortality rate      mpratm    =', mpratm
-         WRITE(numout,*) ' '
+! <CMOC OR 06/13/2014> Code trimming !          WRITE(numout,*) ' Namelist parameters for phytoplankton mortality, nampismort'
+! <CMOC OR 06/13/2014> Code trimming !          WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+! <CMOC OR 06/13/2014> Code trimming !          WRITE(numout,*) '    quadratic mortality of phytoplankton      wchl      =', wchl
+! <CMOC OR 06/13/2014> Code trimming !          WRITE(numout,*) '    maximum quadratic mortality of diatoms    wchld     =', wchld
+! <CMOC OR 06/13/2014> Code trimming !          WRITE(numout,*) '    phytoplankton mortality rate              mprat     =', mprat
+! <CMOC OR 06/13/2014> Code trimming ! WRITE(numout,*) '    Diatoms mortality rate                    mprat2    =', mprat2
+! <CMOC OR 06/13/2014> Code trimming !          WRITE(numout,*) '    Phytoplankton minimum mortality rate      mpratm    =', mpratm
+! <CMOC OR 06/13/2014> Code trimming !          WRITE(numout,*) ' '
          WRITE(numout,*) ' Namelist parameters for phytoplankton mortality, namcmocmor'
          WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
          WRITE(numout,*) '    Phytoplankton mortality to detritus       mpd_cmoc  =', mpd_cmoc

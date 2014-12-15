@@ -20,7 +20,7 @@ MODULE trcsms_pisces
    USE p4zlys          !  Calcite saturation
    USE p4zflx          !  Gas exchange
    USE p4zsed          !  Sedimentation
-   USE p4zint          !  time interpolation
+   ! <CMOC OR 06/17/2014> ! Code trimming !  USE p4zint          !  time interpolation
    USE trdmod_oce      !  Ocean trends variables
    USE trdmod_trc      !  TOP trends variables
    USE sedmodel        !  Sediment model
@@ -58,6 +58,7 @@ CONTAINS
       !!---------------------------------------------------------------------
       !
        INTEGER, INTENT( in ) ::   kt               ! ocean time-step index      
+      ! <CMOC OR 06/12/2014> Trimming code, tracers (jpdia, jpdoc, jppo4, jpnh4)  ! INTEGER               ::   jk_test, kt_test ! <cmoc prog var OR 03/19/2014> loop index and lower index to start supplying tracers values   ! ocean time-step index      
        !!
        INTEGER ::   jnt, jn, jl
        CHARACTER (len=25) :: charout
@@ -67,7 +68,7 @@ CONTAINS
        IF( nn_timing == 1 )  CALL timing_start('trc_sms_pisces')
        !
        IF( ln_pisdmp .AND. MOD( kt - nn_dttrc, nn_pisdmp ) == 0 )   CALL trc_sms_pisces_dmp( kt )  ! Relaxation of some tracers
-                                                                    CALL trc_sms_pisces_mass_conserv( kt ) ! Mass conservation checking
+       ! <CMOC OR 06/12/2014> Trimming code, tracers (jpdia, jpdoc, jppo4, jpnh4)  !   CALL trc_sms_pisces_mass_conserv( kt ) ! Mass conservation checking
        IF( l_trdtrc )  THEN
           CALL wrk_alloc( jpi, jpj, jpk, jp_pisces, ztrdpis )
           DO jn = 1, jp_pisces
@@ -85,7 +86,7 @@ CONTAINS
           IF(lwp) write(numout,*) '~~~~~~'
  
          CALL p4z_che              ! computation of chemical constants
-         CALL p4z_int              ! computation of various rates for biogeochemistry
+! <CMOC OR 06/17/2014> ! Code trimming !           CALL p4z_int              ! computation of various rates for biogeochemistry
          !
       ENDIF
 
@@ -168,81 +169,81 @@ CONTAINS
          zarea          = 1._wp / glob_sum( cvol(:,:,:) ) * 1e6              
 
          zalksum = glob_sum( trn(:,:,:,jptal) * cvol(:,:,:)  ) * zarea
-         zpo4sum = glob_sum( trn(:,:,:,jppo4) * cvol(:,:,:)  ) * zarea / 122.
+         ! <CMOC OR 06/12/2014> Trimming code, tracers (jpdia, jpdoc, jppo4, jpnh4)  ! zpo4sum = glob_sum( trn(:,:,:,jppo4) * cvol(:,:,:)  ) * zarea / 122.
          zno3sum = glob_sum( trn(:,:,:,jpno3) * cvol(:,:,:)  ) * zarea / 7.6
-         zsilsum = glob_sum( trn(:,:,:,jpsil) * cvol(:,:,:)  ) * zarea
+         ! <CMOC OR 06/12/2014> Trimming code, tracers (jpdia, jpdoc, jppo4, jpnh4)  ! zsilsum = glob_sum( trn(:,:,:,jpsil) * cvol(:,:,:)  ) * zarea
  
          IF(lwp) WRITE(numout,*) '       TALK mean : ', zalksum
          trn(:,:,:,jptal) = trn(:,:,:,jptal) * alkmean / zalksum
 
-         IF(lwp) WRITE(numout,*) '       PO4  mean : ', zpo4sum
-         trn(:,:,:,jppo4) = trn(:,:,:,jppo4) * po4mean / zpo4sum
+         ! <CMOC OR 06/12/2014> Trimming code, tracers (jpdia, jpdoc, jppo4, jpnh4)  ! IF(lwp) WRITE(numout,*) '       PO4  mean : ', zpo4sum
+         ! <CMOC OR 06/12/2014> Trimming code, tracers (jpdia, jpdoc, jppo4, jpnh4)  ! trn(:,:,:,jppo4) = trn(:,:,:,jppo4) * po4mean / zpo4sum
 
          IF(lwp) WRITE(numout,*) '       NO3  mean : ', zno3sum
          trn(:,:,:,jpno3) = trn(:,:,:,jpno3) * no3mean / zno3sum
 
-         IF(lwp) WRITE(numout,*) '       SiO3 mean : ', zsilsum
-         trn(:,:,:,jpsil) = MIN( 400.e-6,trn(:,:,:,jpsil) * silmean / zsilsum )
+         ! <CMOC OR 06/12/2014> Trimming code, tracers (jpdia, jpdoc, jppo4, jpnh4)  ! IF(lwp) WRITE(numout,*) '       SiO3 mean : ', zsilsum
+         ! <CMOC OR 06/12/2014> Trimming code, tracers (jpdia, jpdoc, jppo4, jpnh4)  ! trn(:,:,:,jpsil) = MIN( 400.e-6,trn(:,:,:,jpsil) * silmean / zsilsum )
          !
       ENDIF
 
    END SUBROUTINE trc_sms_pisces_dmp
 
-   SUBROUTINE trc_sms_pisces_mass_conserv ( kt )
-      !!----------------------------------------------------------------------
-      !!                  ***  ROUTINE trc_sms_pisces_mass_conserv  ***
-      !!
-      !! ** Purpose :  Mass conservation check 
-      !!
-      !!---------------------------------------------------------------------
-      !
-      INTEGER, INTENT( in ) ::   kt      ! ocean time-step index      
-      !!
-      REAL(wp) :: zalkbudget, zno3budget, zsilbudget
-      !
-      NAMELIST/nampismass/ ln_check_mass
-      !!---------------------------------------------------------------------
-
-      IF( kt == nittrc000 ) THEN 
-         REWIND( numnatp )       
-         READ  ( numnatp, nampismass )
-         IF(lwp) THEN                         ! control print
-            WRITE(numout,*) ' '
-            WRITE(numout,*) ' Namelist parameter for mass conservation checking'
-            WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-            WRITE(numout,*) '    Flag to check mass conservation of NO3/Si/TALK ln_check_mass = ', ln_check_mass
-         ENDIF
-
-         IF( ln_check_mass .AND. lwp) THEN      !   Open budget file of NO3, ALK, Si
-            CALL ctl_opn( numno3, 'no3.budget' , 'REPLACE', 'FORMATTED', 'SEQUENTIAL', -1, 6, .FALSE., narea )
-            CALL ctl_opn( numsil, 'sil.budget' , 'REPLACE', 'FORMATTED', 'SEQUENTIAL', -1, 6, .FALSE., narea )
-            CALL ctl_opn( numalk, 'talk.budget', 'REPLACE', 'FORMATTED', 'SEQUENTIAL', -1, 6, .FALSE., narea )
-         ENDIF
-      ENDIF
-
-      IF( ln_check_mass ) THEN      !   Compute the budget of NO3, ALK, Si
-         zno3budget = glob_sum( (   trn(:,:,:,jpno3) + trn(:,:,:,jpnh4)  &
-            &                     + trn(:,:,:,jpphy) + trn(:,:,:,jpdia)  &
-            &                     + trn(:,:,:,jpzoo) & ! <CMOC OR 05/21/2014> Removal of p4zmeso module + trn(:,:,:,jpmes)  &
-            &                     + trn(:,:,:,jppoc) & ! <CMOC OR 05/05/2014> Removal of GOC tracer ! + trn(:,:,:,jpgoc)  &
-            &                     + trn(:,:,:,jpdoc)                     ) * cvol(:,:,:)  ) 
-         ! 
-         zsilbudget = glob_sum( (   trn(:,:,:,jpsil) + trn(:,:,:,jpgsi)  &
-            &                     + trn(:,:,:,jpdsi)                     ) * cvol(:,:,:)  )
-         ! 
-         zalkbudget = glob_sum( (   trn(:,:,:,jpno3) * rno3              &
-            &                     + trn(:,:,:,jptal)                     &
-            &                     + trn(:,:,:,jpcal) * 2.                ) * cvol(:,:,:)  )
-
-         IF( lwp ) THEN
-            WRITE(numno3,9500) kt,  zno3budget / areatot
-            WRITE(numsil,9500) kt,  zsilbudget / areatot
-            WRITE(numalk,9500) kt,  zalkbudget / areatot
-         ENDIF
-       ENDIF
- 9500  FORMAT(i10,e18.10)     
-       !
-   END SUBROUTINE trc_sms_pisces_mass_conserv
+! <CMOC OR 06/12/2014> Trimming code, tracers (jpdia, jpdoc, jppo4, jpnh4)  !    SUBROUTINE trc_sms_pisces_mass_conserv ( kt )
+!      !!----------------------------------------------------------------------
+!      !!                  ***  ROUTINE trc_sms_pisces_mass_conserv  ***
+!      !!
+!      !! ** Purpose :  Mass conservation check 
+!      !!
+!      !!---------------------------------------------------------------------
+!      !
+!      INTEGER, INTENT( in ) ::   kt      ! ocean time-step index      
+!      !!
+!      REAL(wp) :: zalkbudget, zno3budget, zsilbudget
+!      !
+!      NAMELIST/nampismass/ ln_check_mass
+!      !!---------------------------------------------------------------------
+!
+!      IF( kt == nittrc000 ) THEN 
+!         REWIND( numnatp )       
+!         READ  ( numnatp, nampismass )
+!         IF(lwp) THEN                         ! control print
+!            WRITE(numout,*) ' '
+!            WRITE(numout,*) ' Namelist parameter for mass conservation checking'
+!            WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+!            WRITE(numout,*) '    Flag to check mass conservation of NO3/Si/TALK ln_check_mass = ', ln_check_mass
+!         ENDIF
+!
+!         IF( ln_check_mass .AND. lwp) THEN      !   Open budget file of NO3, ALK, Si
+!            CALL ctl_opn( numno3, 'no3.budget' , 'REPLACE', 'FORMATTED', 'SEQUENTIAL', -1, 6, .FALSE., narea )
+!            CALL ctl_opn( numsil, 'sil.budget' , 'REPLACE', 'FORMATTED', 'SEQUENTIAL', -1, 6, .FALSE., narea )
+!            CALL ctl_opn( numalk, 'talk.budget', 'REPLACE', 'FORMATTED', 'SEQUENTIAL', -1, 6, .FALSE., narea )
+!         ENDIF
+!      ENDIF
+!
+!      IF( ln_check_mass ) THEN      !   Compute the budget of NO3, ALK, Si
+!         zno3budget = glob_sum( (   trn(:,:,:,jpno3) + trn(:,:,:,jpnh4)  &
+!            &                     + trn(:,:,:,jpphy) + trn(:,:,:,jpdia)  &
+!            &                     + trn(:,:,:,jpzoo) & ! <CMOC OR 05/21/2014> Removal of p4zmeso module + trn(:,:,:,jpmes)  &
+!            &                     + trn(:,:,:,jppoc) & ! <CMOC OR 05/05/2014> Removal of GOC tracer ! + trn(:,:,:,jpgoc)  &
+!            &                     + trn(:,:,:,jpdoc)                     ) * cvol(:,:,:)  ) 
+!         ! 
+!         zsilbudget = glob_sum( (   trn(:,:,:,jpsil) + trn(:,:,:,jpgsi)  &
+!            &                     + trn(:,:,:,jpdsi)                     ) * cvol(:,:,:)  )
+!         ! 
+!         zalkbudget = glob_sum( (   trn(:,:,:,jpno3) * rno3              &
+!            &                     + trn(:,:,:,jptal)                     &
+!            &                     + trn(:,:,:,jpcal) * 2.                ) * cvol(:,:,:)  )
+!
+!         IF( lwp ) THEN
+!            WRITE(numno3,9500) kt,  zno3budget / areatot
+!            WRITE(numsil,9500) kt,  zsilbudget / areatot
+!            WRITE(numalk,9500) kt,  zalkbudget / areatot
+!         ENDIF
+!       ENDIF
+! 9500  FORMAT(i10,e18.10)     
+!       !
+! <CMOC OR 06/12/2014> Trimming code, tracers (jpdia, jpdoc, jppo4, jpnh4)  !    END SUBROUTINE trc_sms_pisces_mass_conserv
 
 #else
    !!======================================================================

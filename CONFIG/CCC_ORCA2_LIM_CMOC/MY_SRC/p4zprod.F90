@@ -19,7 +19,7 @@ MODULE p4zprod
    USE trc             !  passive tracers common variables 
    USE sms_pisces      !  PISCES Source Minus Sink variables
    USE p4zopt          !  optical model
-   USE p4zlim          !  Co-limitations of differents nutrients
+! <CMOC OR 07/15/2014> ! Removal of all the tracers !     USE p4zlim          !  Co-limitations of differents nutrients
    USE prtctl_trc      !  print control for debugging
    USE iom             !  I/O manager
 
