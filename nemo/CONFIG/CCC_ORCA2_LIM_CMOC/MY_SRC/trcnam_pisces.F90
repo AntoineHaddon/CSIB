@@ -50,7 +50,8 @@ CONTAINS
       TYPE(DIAG), DIMENSION(jp_pisces_2d) :: pisdia2d
       TYPE(DIAG), DIMENSION(jp_pisces_3d) :: pisdia3d
       !!
-      NAMELIST/nampisbio/ nrdttrc, xkmort, ferat3, wsbio2 ! <CMOC OR 03/10/2014> remove wsbio from the list
+      !NAMELIST/nampisbio/ nrdttrc, xkmort, ferat3, wsbio2 ! <CMOC OR 03/10/2014> remove wsbio from the list
+      NAMELIST/nampisbio/ nrdttrc, xkmort, wsbio2 ! <CMOC OR 03/10/2014> remove wsbio from the list
 #if defined key_kriest
       NAMELIST/nampiskrp/ xkr_eta, xkr_zeta, xkr_mass_min, xkr_mass_max
 #endif
@@ -76,7 +77,6 @@ CONTAINS
          WRITE(numout,*) '    frequence pour la biologie                nrdttrc   =', nrdttrc
          ! <CMOC OR 03/10/2014> WRITE(numout,*) '    POC sinking speed                         wsbio     =', wsbio
          WRITE(numout,*) '    half saturation constant for mortality    xkmort    =', xkmort
-         WRITE(numout,*) '    Fe/C in zooplankton                       ferat3    =', ferat3
          WRITE(numout,*) '    Big particles sinking speed               wsbio2    =', wsbio2
       ENDIF
 

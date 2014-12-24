@@ -25,7 +25,7 @@ MODULE trcini_pisces
    USE p4zrem          !  Remineralisation of organic matter
    USE p4zflx          !  Gas exchange
    USE p4zsed          !  Sedimentation
-   USE p4zlim          !  Co-limitations of differents nutrients
+! <CMOC OR 07/15/2014> Removal of all tracers !   USE p4zlim          !  Co-limitations of differents nutrients
    USE p4zprod         !  Growth rate of the 2 phyto groups
    USE p4zmicro        !  Sources and sinks of microzooplankton
 ! <CMOC OR 05/21/2014> Removal of p4zmeso module    USE p4zmeso         !  Sources and sinks of mesozooplankton
@@ -41,9 +41,9 @@ MODULE trcini_pisces
    REAL(wp) :: sco2   =  2.312e-3_wp
    REAL(wp) :: alka0  =  2.423e-3_wp
    REAL(wp) :: oxyg0  =  177.6e-6_wp 
-   REAL(wp) :: po4    =  2.174e-6_wp 
+   ! <CMOC OR 06/27/2014> Trimming code, tracers (jppo4) !  REAL(wp) :: po4    =  2.174e-6_wp 
    REAL(wp) :: bioma0 =  1.000e-8_wp  
-   REAL(wp) :: silic1 =  91.65e-6_wp  
+   ! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   REAL(wp) :: silic1 =  91.65e-6_wp  
    REAL(wp) :: no3    =  31.04e-6_wp * 7.625_wp
 
 #  include "top_substitute.h90"
@@ -85,7 +85,7 @@ CONTAINS
       ! Set biological ratios
       ! ---------------------
       rno3    =  16._wp / 122._wp
-      po4r    =   1._wp / 122._wp
+! <CMOC OR 06/27/2014> Trimming code, tracers (jppo4) !        po4r    =   1._wp / 122._wp
       o2nit   =  32._wp / 122._wp
       rdenit  = 105._wp /  16._wp
       rdenita =   3._wp /  5._wp
@@ -98,38 +98,38 @@ CONTAINS
       IF( .NOT. ln_rsttr ) THEN  
          
          trn(:,:,:,jpdic) = sco2
-         trn(:,:,:,jpdoc) = bioma0
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpdoc) !          trn(:,:,:,jpdoc) = bioma0
          trn(:,:,:,jptal) = alka0
          trn(:,:,:,jpoxy) = oxyg0
-         trn(:,:,:,jpcal) = bioma0
-         trn(:,:,:,jppo4) = po4 / po4r
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !            trn(:,:,:,jpcal) = bioma0
+! <CMOC OR 06/27/2014> Trimming code, tracers (jppo4) !           trn(:,:,:,jppo4) = po4 / po4r
          trn(:,:,:,jppoc) = bioma0
-#  if ! defined key_kriest
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   #  if ! defined key_kriest
          ! <CMOC OR 05/05/2014> Removal of GOC tracer ! trn(:,:,:,jpgoc) = bioma0
-         trn(:,:,:,jpbfe) = bioma0 * 5.e-6
-#  else
-         trn(:,:,:,jpnum) = bioma0 / ( 6. * xkr_massp )
-#  endif
-         trn(:,:,:,jpsil) = silic1
-         trn(:,:,:,jpdsi) = bioma0 * 0.15
-         trn(:,:,:,jpgsi) = bioma0 * 5.e-6
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !            trn(:,:,:,jpbfe) = bioma0 * 5.e-6
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   #  else
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !            trn(:,:,:,jpnum) = bioma0 / ( 6. * xkr_massp )
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   #  endif
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !            trn(:,:,:,jpsil) = silic1
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !            trn(:,:,:,jpdsi) = bioma0 * 0.15
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !            trn(:,:,:,jpgsi) = bioma0 * 5.e-6
          trn(:,:,:,jpphy) = bioma0
-         trn(:,:,:,jpdia) = bioma0
+! <CMOC OR 06/17/2014> Code trimming !           trn(:,:,:,jpdia) = bioma0
          trn(:,:,:,jpzoo) = bioma0
 ! <CMOC OR 05/21/2014> Removal of p4zmeso module          trn(:,:,:,jpmes) = bioma0
-         trn(:,:,:,jpfer) = 0.6E-9
-         trn(:,:,:,jpsfe) = bioma0 * 5.e-6
-         trn(:,:,:,jpdfe) = bioma0 * 5.e-6
-         trn(:,:,:,jpnfe) = bioma0 * 5.e-6
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !            trn(:,:,:,jpfer) = 0.6E-9
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !            trn(:,:,:,jpsfe) = bioma0 * 5.e-6
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !           trn(:,:,:,jpdfe) = bioma0 * 5.e-6
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !           trn(:,:,:,jpnfe) = bioma0 * 5.e-6
          trn(:,:,:,jpnch) = bioma0 * 12. / 55.
-         trn(:,:,:,jpdch) = bioma0 * 12. / 55.
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !           trn(:,:,:,jpdch) = bioma0 * 12. / 55.
          trn(:,:,:,jpno3) = no3
-         trn(:,:,:,jpnh4) = bioma0
+! <CMOC OR 06/30/2014> Trimming code, tracers (jpnh4) !           trn(:,:,:,jpnh4) = bioma0
 
          ! initialize the half saturation constant for silicate
          ! ----------------------------------------------------
-         xksi(:,:)    = 2.e-6
-         xksimax(:,:) = xksi(:,:)
+! <CMOC OR 06/17/2014> Code trimming !         xksi(:,:)    = 2.e-6
+! <CMOC OR 06/17/2014> Code trimming !           xksimax(:,:) = xksi(:,:)
 
       ENDIF
 
@@ -156,7 +156,7 @@ CONTAINS
 
       CALL p4z_sink_init      !  vertical flux of particulate organic matter
       CALL p4z_opt_init       !  Optic: PAR in the water column
-      CALL p4z_lim_init       !  co-limitations by the various nutrients
+! <CMOC OR 06/13/2014> Code trimming !        CALL p4z_lim_init       !  co-limitations by the various nutrients
       CALL p4z_prod_init      !  phytoplankton growth rate over the global ocean.
       CALL p4z_rem_init       !  remineralisation
       CALL p4z_mort_init      !  phytoplankton mortality 
@@ -190,7 +190,7 @@ CONTAINS
       ierr = ierr +  p4z_sink_alloc()
       ierr = ierr +  p4z_opt_alloc()
 ! <CMOC OR 05/26/2014> trimming PISCES code in p4zprod.F90        ierr = ierr +  p4z_prod_alloc()
-      ierr = ierr +  p4z_rem_alloc()
+! <CMOC OR 06/10/2014> trimming PISCES code in p4zrem.F90     ierr = ierr +  p4z_rem_alloc()
       ierr = ierr +  p4z_sed_alloc()
       ierr = ierr +  p4z_flx_alloc()
       !

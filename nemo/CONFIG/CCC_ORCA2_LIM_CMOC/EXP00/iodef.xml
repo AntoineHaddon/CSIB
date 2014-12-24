@@ -257,7 +257,6 @@
        <field id="Dpco2"       description="Delta CO2"                                unit="uatm"                         />
        <field id="Dpo2"        description="Delta O2"                                 unit="uatm"                         />
        <field id="Heup"        description="Euphotic layer depth"                     unit="m"                            />
-       <field id="Irondep"     description="Iron deposition"                          unit="mol/m2/s"                     />
      </group>
        
     </field_definition>
@@ -314,6 +313,8 @@
           <field ref="empmr"        name="sowaflup"  />
           <field ref="qt"           name="sohefldo"  />
           <field ref="mldr10_1"     name="somxl010"  />
+          <field ref="qns"           />
+          <field ref="qsr"           />
         </file>
 
         <file id="1m_grid_U" name="auto" description="ocean U grid variables" >
