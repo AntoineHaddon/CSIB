@@ -80,20 +80,20 @@ nemo_ann_rtd=off
 # Dump history files saved on DATAPATH to cfs
 # The user can redefine nemo_dump_hist_freq_list and nemo_dump_hist_suffix_list
 # to only dump a subset of the history files
-nemo_dump_hist=off
+nemo_dump_hist=on
 
 # Dump restart archives saved on DATAPATH to cfs
 # The user can redefine nemo_dump_rs_month_list. Restarts will
 # only be dumped for those months listed in nemo_dump_rs_month_list.
-nemo_dump_rs=off
+nemo_dump_rs=on
 
 # Delete history files saved on DATAPATH.
 # The user can redefine nemo_del_hist_freq_list and nemo_del_hist_suffix_list
 # to only delete a subset of the history files
-nemo_del_hist=off
+nemo_del_hist=on
 
 # If nemo_del_rs=on, then delete the previous restart tar archive from DATAPATH.
-nemo_del_rs=off
+nemo_del_rs=on
 
 # cfs related variables
 shortermdir=off
