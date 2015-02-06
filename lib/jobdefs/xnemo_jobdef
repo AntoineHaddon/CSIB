@@ -1242,7 +1242,7 @@ cat > Execute_Script <<'end_of_script'
       # Access the rtd executable
       physical_rtd_exe=nemo_orca_physical_rtd_v02c
       [ -z "$physical_rtd_exe" ] && bail "physical_rtd_exe is not defined."
-      access $physical_rtd_exe $physical_rtd_exe
+      access $physical_rtd_exe $physical_rtd_exe nocp=off
       chmod u+x $physical_rtd_exe
 
       # Access an existing rtd file containing data up to the previous year, if year > year_rtdiag_start
@@ -1288,7 +1288,7 @@ cat > Execute_Script <<'end_of_script'
         # Access the rtd executable
         carbon_rtd_exe=nemo_orca1_carbon_rtd_v02c
         [ -z "$carbon_rtd_exe" ] && bail "carbon_rtd_exe is not defined."
-        access $carbon_rtd_exe $carbon_rtd_exe
+        access $carbon_rtd_exe $carbon_rtd_exe nocp=off
         chmod u+x $carbon_rtd_exe
 
         # Access an existing rtd file containing data up to the previous year, if 
