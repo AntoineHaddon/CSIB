@@ -271,6 +271,7 @@ debug=off
   nemo_mask_itf=nemo_3.4_orca1_mask_itf_orca1_new.nc
   nemo_M2rowdrg=nemo_3.4_orca1_m2rowdrg_r1_modif.nc
   nemo_K1rowdrg=nemo_3.4_orca1_k1rowdrg_r1_modif.nc
+  nemo_Eddyengf=nemo_3.4_orca1_eddy_mix.nc
   nemo_geothermal_heating=nemo_3.3_orca2_geothermal_heating.nc
   nemo_runoff_core_monthly=nemo_3.4_orca1_runoff_1m_orca1.nc
   nemo_sss_data=nemo_3.4_orca1_sss_1m_orca1.nc

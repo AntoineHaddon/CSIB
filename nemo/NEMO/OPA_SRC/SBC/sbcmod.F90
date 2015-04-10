@@ -11,6 +11,8 @@ MODULE sbcmod
    !!             -   ! 2010-11  (G. Madec) ice-ocean stress always computed at each ocean time-step
    !!             -   ! 2010-10  (J. Chanut, C. Bricaud, G. Madec)  add the surface pressure forcing
    !!            3.4  ! 2011-11  (C. Harris) CICE added as an option
+   !!            3.4.1! 2013-08  (D. Yang) added option preventing SST from dropping below freezing when no sea ice
+   !!                                      point when no sea ice.
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -30,6 +32,7 @@ MODULE sbcmod
    USE sbcblk_clio      ! surface boundary condition: bulk formulation : CLIO
    USE sbcblk_core      ! surface boundary condition: bulk formulation : CORE
    USE sbcblk_mfs       ! surface boundary condition: bulk formulation : MFS
+   USE sbcice_none      ! surface boundary condition: no sea-ice model
    USE sbcice_if        ! surface boundary condition: ice-if sea-ice model
    USE sbcice_lim       ! surface boundary condition: LIM 3.0 sea-ice model
    USE sbcice_lim_2     ! surface boundary condition: LIM 2.0 sea-ice model
@@ -274,6 +277,7 @@ CONTAINS
       !                                            !==  Misc. Options  ==!
       
       SELECT CASE( nn_ice )                                       ! Update heat and freshwater fluxes over sea-ice areas
+      CASE(  0 )   ;         CALL sbc_ice_none ( kt )                ! no-ice, SST not dropping below freezing point
       CASE(  1 )   ;         CALL sbc_ice_if   ( kt )                ! Ice-cover climatology ("Ice-if" model)
       CASE(  2 )   ;         CALL sbc_ice_lim_2( kt, nsbc )          ! LIM-2 ice model
               IF( lk_bdy )   CALL bdy_ice_lim_2( kt )                ! BDY boundary condition
