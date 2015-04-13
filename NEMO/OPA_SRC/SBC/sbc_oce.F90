@@ -73,8 +73,8 @@ MODULE sbc_oce
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   fr_i              !: ice fraction = 1 - lead fraction      (between 0 to 1)
 #if defined key_cpl_carbon_cycle
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   atm_co2           !: atmospheric pCO2                             [ppm]
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   zeef, zem2, zek1  !: eddy, M2 and K1 energy fluxes
 #endif
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   zeef, zem2, zek1  !: eddy, M2 and K1 energy fluxes
 
    !!----------------------------------------------------------------------
    !!                     Sea Surface Mean fields
