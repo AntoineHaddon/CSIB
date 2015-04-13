@@ -417,7 +417,7 @@ CONTAINS
       ! Total tidal energy ( M2, S2 and K1  with S2=(1/2)^2 * M2 )
       ! only the energy available for mixing is taken into account,
       ! (mixing efficiency tidal dissipation efficiency)
-      en_tmx(:,:) = - rn_tfe * rn_me * ( min(0.,zem2(:,:)) * 1.25 + min(0.,zek1(:,:)) + 1.5*zeef(:,:) ) * tmask(:,:,1)
+      en_tmx(:,:) = - rn_tfe * rn_me * ( min(0.,zem2(:,:)) * 1.25 + min(0.,zek1(:,:)) + zeef(:,:) ) * tmask(:,:,1)
 
       ! Vertical structure (az_tmx)
       DO jj = 1, jpj                ! part independent of the level
