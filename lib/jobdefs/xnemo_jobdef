@@ -4,6 +4,7 @@
 #=======================================================================
 #     keyword :: xnemo
 # description :: Run NEMO
+# D. Yang Apr 2015: added eddy energy flux.
 
  set -a
  . betapath2
