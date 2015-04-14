@@ -3,6 +3,8 @@
 #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
 # Create a job string that will run NEMO
 #
+# Duo Yang Apr 2015 : added eddy energy flux.
+#
 # Neil Swart Jul 2014 : update to new xnemo.
 #
 # Larry Solheim ...Mar 2012
