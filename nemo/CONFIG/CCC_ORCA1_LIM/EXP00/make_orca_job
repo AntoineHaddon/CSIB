@@ -3,7 +3,8 @@
 #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
 # Create a job string that will run NEMO
 #
-# Duo Yang Apr 2015 : added eddy energy flux.
+# Duo Yang Apr 2015 : switched to flux forcing and 
+#                     added eddy energy flux.
 #
 # Neil Swart Jul 2014 : update to new xnemo.
 #
@@ -65,7 +66,7 @@ do_nemo_run=on
 
 # nemo_forcing identifies the type of forcing to use
 # Currenlty the only valid values are "bulk" or "flux"
-nemo_forcing=bulk
+nemo_forcing=flux
 
 # nemo_carbon = off means use physical ocean only
 # nemo_carbon = on  means include PISCES
@@ -110,7 +111,7 @@ noprint=on
 #          2 LIM2
 #          3 LIM3
 #          4 CICE
-nn_ice=2
+nn_ice=0
 
 # time limit
 # try to make sure we go to the single Q if not running the model.
@@ -278,7 +279,7 @@ debug=off
   nemo_runoff_core_monthly=nemo_3.4_orca1_runoff_1m_orca1.nc
   nemo_sss_data=nemo_3.4_orca1_sss_1m_orca1.nc
   nemo_chlorophyll=nemo_3.4_orca1_chlorophyll-orca1_1m.nc
-  nemo_subbains=nemo_3.4_orca1_basinmask_050308_ukmo.nc
+  nemo_subbains=nemo_3.4_orca1_basinmask_050308_ukmo_modified.nc
 
   nemo_data_1m_potential_temperature_nomask=nemo_3.4_orca1_potemp_1m_z46_nomask.nc
   nemo_data_1m_salinity_nomask=nemo_3.4_orca1_salin_1m_z46_nomask.nc
@@ -303,13 +304,13 @@ debug=off
 
 # These are for flux forcing. If don't use flux forcing, provide any
 # forcing data files existing on the disk.
-  nemo_utau=nemo_3.4_orca1_t_10.15june2009.nc
-  nemo_vtau=nemo_3.4_orca1_t_10.15june2009.nc
-  nemo_qtot=nemo_3.4_orca1_t_10.15june2009.nc
-  nemo_qsr=nemo_3.4_orca1_t_10.15june2009.nc
-  nemo_emp=nemo_3.4_orca1_t_10.15june2009.nc
-  nemo_weights_bicubic3=nemo_3.4_weights_grid03_bicubic_orca1.nc
-  nemo_weights_bilinear3=nemo_3.4_weights_grid03_bilinear_orca1.nc
+  nemo_utau=sa_gcm16_05_w_2005_oufs_signchg.nc
+  nemo_vtau=sa_gcm16_05_w_2005_ovfs_signchg.nc
+  nemo_qtot=sa_gcm16_05_w_2005_obeg.nc
+  nemo_qsr=sa_gcm16_05_w_2005_ofsg.nc
+  nemo_emp=sa_gcm16_05_w_2005_obwg_signchg.nc
+  nemo_weights_bicubic3=nemo_3.4_weights_canam4grid_bicubic_orca1.nc
+  nemo_weights_bilinear3=nemo_3.4_weights_canam4grid_bilinear_orca1.nc
 
 # The boolean variable nemo_write_stdout can be used to control echoing of the
 # file ocean.output (created by nemo as stdout) at runtime. When nemo_write_stdout
