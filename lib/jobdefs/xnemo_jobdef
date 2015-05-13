@@ -43,7 +43,7 @@
  fi
 
  # nemo_forcing identifies the type of forcing to use
- # Currenlty the only valid values are "bulk", "bulk_iaf" or "flux"
+ # Currenlty the only valid values are "bulk", "bulk_iaf", "flux" or "flux_iaf"
  nemo_forcing=bulk_iaf
 
  # For interannual forcing, iaf_year_offset gives the offset between
@@ -333,7 +333,7 @@ cat > Execute_Script <<'end_of_script'
 
   # Currently the only valid values for nemo_forcing are "bulk" or "flux"
   case $nemo_forcing in
-    bulk|bulk_iaf|flux) ;; # These are valid values
+    bulk|bulk_iaf|flux|flux_iaf) ;; # These are valid values
     *) bail "Invalid value for nemo_forcing = $nemo_forcing" ;;
   esac
 
@@ -792,6 +792,30 @@ cat > Execute_Script <<'end_of_script'
       acc_cp qtot.nc             $nemo_qtot
       acc_cp qsr.nc              $nemo_qsr
       acc_cp emp.nc              $nemo_emp
+      acc_cp weights_bic3.nc     $nemo_weights_bicubic3
+      acc_cp weights_bil3.nc     $nemo_weights_bilinear3
+
+    elif [ x"$nemo_forcing" = "xflux_iaf" ]; then
+      # Flux forcing
+      nemo_utau=uncs_oufs_iga
+      nemo_vtau=uncs_ovfs_iga
+      nemo_qtot=uncs_obeg_iga
+      nemo_qsr=uncs_ofsg_iga
+      nemo_emp=uncs_obwg_iga
+      nemo_weights_bicubic3=nemo_3.4_weights_grid03_bicubic_orca1.nc
+      nemo_weights_bilinear3=nemo_3.4_weights_grid03_bilinear_orca1.nc
+
+      yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
+      fy=`expr ${yearc} + ${iaf_year_offset} | awk  '{printf "%04d",$1}'`
+      yd=`expr ${iaf_loop_year} - ${iaf_year_offset}`
+      fyl=`expr ${fy} - '(' '(' ${yearc} - 1 ')' / ${yd} ')' \* ${yd}`           
+      forcing_year=`expr ${fyl} | awk  '{printf "%04d",$1}'`
+
+      acc_cp utau_y${yearc}.nc             ${nemo_utau}_y${forcing_year}.nc
+      acc_cp vtau_y${yearc}.nc             ${nemo_vtau}_y${forcing_year}.nc
+      acc_cp qtot_y${yearc}.nc             ${nemo_qtot}_y${forcing_year}.nc
+      acc_cp qsr_y${yearc}.nc              ${nemo_qsr}_y${forcing_year}.nc
+      acc_cp emp_y${yearc}.nc              ${nemo_emp}_y${forcing_year}.nc
       acc_cp weights_bic3.nc     $nemo_weights_bicubic3
       acc_cp weights_bil3.nc     $nemo_weights_bilinear3
     fi
