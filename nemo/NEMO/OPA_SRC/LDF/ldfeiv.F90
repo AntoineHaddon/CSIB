@@ -173,7 +173,7 @@ CONTAINS
             ! Rossby radius at w-point taken < 40km and  > 2km
             !zross(ji,jj) = MAX( MIN( .4 * zn(ji,jj) / zfw, 40.e3 ), 2.e3 )
             ! Rossby radius at w-point taken < 4000km and > 2km
-            zross(ji,jj) = MAX( MIN( .32 * zn(ji,jj) / zfw, 40.e5 ), 2.e3 )
+            zross(ji,jj) = MAX( MIN( .32 * zn(ji,jj) / zfw, 200.e3 ), 2.e3 )
             ! Compute aeiw by multiplying Ro^2 and T^-1
             !aeiw(ji,jj) = zross(ji,jj) * zross(ji,jj) * SQRT( zah(ji,jj) / zhw(ji,jj) ) * tmask(ji,jj,1)
             aeiw(ji,jj) = zross(ji,jj) * zross(ji,jj) * ( zah(ji,jj) / zhw(ji,jj) ) * tmask(ji,jj,1)
