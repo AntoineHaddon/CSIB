@@ -296,8 +296,8 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
 !              !  file name  ! frequency (hours) ! variable  ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation !
 !              !             !  (if <0  months)  !   name    !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  !
-   sn_sst      = 'sst_data'  ,        -1         ,  'votemper'    ,    .false.   , .true., 'yearly'  , ''       , ''
-   sn_sss      = 'sss_data'  ,        -1         ,  'vosaline'    ,    .true.    , .true. , 'yearly'  , ''       , ''
+   sn_sst      = 'sst_data'  ,        -1         ,  'votemper'    ,    .false.  , .true., 'yearly'  , ''       , ''
+   sn_sss      = 'sss_data'  ,        -1         ,  'vosaline'    ,    .false.  , .true. , 'yearly'  , ''       , ''
 
    cn_dir      = './'      !  root directory for the location of the runoff files
    nn_sstr     =     1     !  add a retroaction term in the surface heat       flux (=1) or not (=0)
