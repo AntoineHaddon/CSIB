@@ -176,7 +176,8 @@ CONTAINS
             zross(ji,jj) = MAX( MIN( .32 * zn(ji,jj) / zfw, 200.e3 ), 2.e3 )
             ! Compute aeiw by multiplying Ro^2 and T^-1
             !aeiw(ji,jj) = zross(ji,jj) * zross(ji,jj) * SQRT( zah(ji,jj) / zhw(ji,jj) ) * tmask(ji,jj,1)
-            aeiw(ji,jj) = zross(ji,jj) * zross(ji,jj) * ( zah(ji,jj) / zhw(ji,jj) ) * tmask(ji,jj,1)
+            !aeiw(ji,jj) = zross(ji,jj) * zross(ji,jj) * ( zah(ji,jj) / zhw(ji,jj) ) * tmask(ji,jj,1)
+            aeiw(ji,jj) = 50000. * zross(ji,jj) * ( zah(ji,jj) / zhw(ji,jj) ) * tmask(ji,jj,1)
             ! DY, 08/MAY/2015
          END DO
       END DO
