@@ -48,12 +48,12 @@ nemo_from_rest=on
 # If it is a full path name then this path must be available from the execution machine.
 # This file is saved in the reastart archive.
 # If nemo_exec is not defined then the executable found in the restart will be used.
-nemo_exec=${runid}_ccc_orca1_lim_exe
+nemo_exec=${runid}_ccc_orca1_lim_pisces_exe
 
 # nemo_freq is the number of years (or months) nemo will run for each job in the string
 # History files and restarts will be deleted after each job in the string.
 # nemo_freq will be assigned a value of the form Ny or Nm where N is a positive integer.
-nemo_freq=1y
+nemo_freq=3m
 
 # If do_nemo_run=on then access all the required files and do the run, else the model
 # itself is not run.  Using do_nemo_run=off can be used, for example, to process 
@@ -75,11 +75,11 @@ iaf_year_offset=2199
 # forcing will loop back to the first specified year of forcing. 
 # The number is given in terms of "forcing_year" as opposed to
 # nemo "current_year": forcing_year = current_year + iaf_year_offset
-iaf_loop_year=2299     
+iaf_loop_year=2299   
 
 # nemo_carbon = off means use physical ocean only
 # nemo_carbon = on  means include PISCES
-nemo_carbon=off
+nemo_carbon=on
 
 # Concatenate history files into one file per year
 # (Required for RTD). The sub-annual files will be deleted.
@@ -127,7 +127,7 @@ nn_ice=0
 if [ "x$do_nemo_run" = "xoff" ]; then
   time=1799
 else
-  time=5400
+  time=10799
 fi
 
 # Any command line args of the form var=val will be added to the current environment.
@@ -228,9 +228,10 @@ cat <<end_job_defs >$job_defs
 # These namelist files are only used when starting from rest or when nemo_force_namelist = on
 # These can be a files that are "save"d on DATAPATH or full pathnames to any location.
 # If they are full path names then these paths must be available from the execution machine.
-  nemo_namelist=${runid}_ccc_orca1_lim_namelist
-  nemo_namelist_ice=${runid}_ccc_orca1_lim_namelist_ice
-
+  nemo_namelist=${runid}_ccc_orca1_lim_pisces_namelist
+  nemo_namelist_ice=${runid}_ccc_orca1_lim_pisces_namelist_ice
+  nemo_namelist_pisces=${runid}_ccc_orca1_lim_pisces_namelist_pisces
+  nemo_namelist_top=${runid}_ccc_orca1_lim_pisces_namelist_top
 # nn_ice = 0 no ice boundary condition
 #          1 use observed ice-cover;
 #          2 LIM2
@@ -275,8 +276,8 @@ debug=off
 
 # Access or copy files required to run NEMO
   orca_grid_info="nemo3.4.1_orca1_mesh_mask_ngr.nc"
-  nemo_iodef=${runid}_ccc_orca1_lim_iodef.xml
-  nemo_xmlio_server_def=${runid}_ccc_orca1_lim_xmlio_server.def
+  nemo_iodef=${runid}_ccc_orca1_lim_pisces_iodef.xml
+  nemo_xmlio_server_def=${runid}_ccc_orca1_lim_pisces_xmlio_server.def
   nemo_ahmcoef=nemo_3.4_orca1_ahmcoef
   nemo_coordinates=nemo_3.4_orca1_coordinates_ukorca1.nc
   nemo_bathy_meter=nemo_3.4_orca1_bathy_meter_050308_ukmo.nc
@@ -290,6 +291,22 @@ debug=off
 
   nemo_sst_data=nemo_3.4_orca1_sst_1m_orca1.nc
   nemo_sss_data=nemo_3.4_orca1_sss_1m_orca1.nc
+
+# Access or copy files required to run PISCES
+  nemo_bathy_orca=uncs_orca1_bathy.orca.nc
+  nemo_data_alkalini_nomask=uncs_orca1_data_alkalini_nomask.nc
+  nemo_data_dic_nomask=uncs_orca1_data_dic_nomask.nc  
+  nemo_data_doc_nomask=uncs_orca1_data_doc_nomask.nc 
+  nemo_data_fer_nomask=uncs_orca1_data_fer_nomask.nc
+  nemo_data_no3_nomask=uncs_orca1_data_no3_nomask.nc
+  nemo_data_o2_nomask=uncs_orca1_data_o2_nomask.nc 
+  nemo_data_po4_nomask=uncs_orca1_data_po4_nomask.nc   
+  nemo_data_si_nomask=uncs_orca1_data_si_nomask.nc
+  nemo_dust_orca=uncs_orca1_dust.orca.nc
+  nemo_ndeposition_orca=uncs_orca1_ndeposition.orca.nc
+  nemo_presatm=uncs_orca1_presatm.nc
+  nemo_river_orca=nemo_3.4_orca2_river.orca.nc   
+
 
   nemo_data_1m_potential_temperature_nomask=nemo_3.4_orca1_potemp_1m_z46_nomask.nc
   nemo_data_1m_salinity_nomask=nemo_3.4_orca1_salin_1m_z46_nomask.nc
@@ -325,8 +342,8 @@ debug=off
 # nemo_save_*_data that are assigned below, the user can control nemo output.
 # Note, case is significant for the suffixes in these lists.
 # Any matching files that do not exist at run time will be silently ignored.
-  nemo_1y_suffix_list="grid_T"
-  nemo_1m_suffix_list="icemod grid_T grid_U grid_V grid_W"
+  nemo_1y_suffix_list="grid_T ptrc_T diad_T"
+  nemo_1m_suffix_list="icemod grid_T grid_U grid_V grid_W ptrc_T diad_T"
   nemo_1d_suffix_list="grid_T grid_T_0n180w diaptr"
   nemo_5d_suffix_list="icemod grid_T grid_U grid_V grid_W"
 
@@ -348,11 +365,11 @@ debug=off
 # The following determines if the bulk or flux formulation is being used:
   nemo_forcing=${nemo_forcing}
 
-# The offset between the "nemo year" and forcing data year.     
-   iaf_year_offset=${iaf_year_offset}        
+# The offset between the "nemo year" and forcing data year.
+  iaf_year_offset=${iaf_year_offset}
 
 # The forcing year at which forcing data is looped back to start.
-   iaf_loop_year=${iaf_loop_year}            
+  iaf_loop_year=${iaf_loop_year}
 
 # The following determines if carbon is on or not:
   nemo_carbon=${nemo_carbon}
