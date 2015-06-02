@@ -205,7 +205,11 @@ CONTAINS
       ! Limit the coefficient to 200 - 3000 m^2 /s
       DO jj = 2, jpjm1
          DO ji = fs_2, fs_jpim1   ! vector opt.
-            aeiw(ji,jj) = MIN( MAX( aeiw(ji,jj) , 200.) , 3000. ) * tmask(ji,jj,1)
+      ! DY, 02/JUN/2015
+      ! Limit the coefficient to 100 - 3000 m^2 /s
+      !     aeiw(ji,jj) = MIN( MAX( aeiw(ji,jj) , 200.) , 3000. ) * tmask(ji,jj,1)
+            aeiw(ji,jj) = MIN( MAX( aeiw(ji,jj) , 100.) , 3000. ) * tmask(ji,jj,1)
+      ! DY, 02/JUN/2015
          END DO
       END DO
       ! DY, 08/MAY/2015
