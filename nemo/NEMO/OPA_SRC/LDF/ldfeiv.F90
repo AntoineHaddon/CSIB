@@ -208,7 +208,11 @@ CONTAINS
       ! DY, 02/JUN/2015
       ! Limit the coefficient to 100 - 3000 m^2 /s
       !     aeiw(ji,jj) = MIN( MAX( aeiw(ji,jj) , 200.) , 3000. ) * tmask(ji,jj,1)
-            aeiw(ji,jj) = MIN( MAX( aeiw(ji,jj) , 100.) , 3000. ) * tmask(ji,jj,1)
+      ! DY, 11/JUN/2015
+      ! Limit the coefficient to 100 - 2000 m^2 /s
+      !     aeiw(ji,jj) = MIN( MAX( aeiw(ji,jj) , 100.) , 3000. ) * tmask(ji,jj,1)
+           aeiw(ji,jj) = MIN( MAX( aeiw(ji,jj) , 100.) , 2000. ) * tmask(ji,jj,1)
+      ! DY, 11/JUN/2015
       ! DY, 02/JUN/2015
          END DO
       END DO
