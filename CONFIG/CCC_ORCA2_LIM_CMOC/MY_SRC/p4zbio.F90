@@ -88,7 +88,9 @@ CONTAINS
       CALL p4z_micro( kt      )           ! microzooplankton
 ! <CMOC OR 05/21/2014> Removal of p4zmeso module       CALL p4z_meso ( kt, jnt )           ! mesozooplankton
       !                             ! test if tracers concentrations fall below 0.
-      ! xnegtr(:,:,:) = 1.e0        ! <CMOC OR 04/25/2014> this is not useful with the following modifications, this is part of a bug that affects the correction xnegtr to trn
+      ! <CMOC OR 05/04/2015> Revert the bug fix, it is actually not a bug, the code replace the time step by a shorter time step to prevent the model to overshoot
+
+      xnegtr(:,:,:) = 1.e0        !<CMOC OR 05/04/2015> Revert the bug fix ! <CMOC OR 04/25/2014> this is not useful with the following modifications, this is part of a bug that affects the correction xnegtr to trn
       DO jn = jp_pcs0, jp_pcs1
          DO jk = 1, jpk
             DO jj = 1, jpj
@@ -96,10 +98,10 @@ CONTAINS
                   IF( ( trn(ji,jj,jk,jn) + tra(ji,jj,jk,jn) ) < 0.e0 ) THEN 
                      ztra             = ABS(  ( trn(ji,jj,jk,jn) - rtrn ) &
                                             / ( tra(ji,jj,jk,jn) + rtrn ) )
-                    ! xnegtr(ji,jj,jk) = MIN( xnegtr(ji,jj,jk),  ztra ) ! <CMOC OR 04/25/2014> this is not useful as it is
-                    trn(ji,jj,jk,jn) = trn(ji,jj,jk,jn) + ztra * tra(ji,jj,jk,jn)
-                  ELSE
-                    trn(ji,jj,jk,jn) = trn(ji,jj,jk,jn) +        tra(ji,jj,jk,jn)
+                     xnegtr(ji,jj,jk) = MIN( xnegtr(ji,jj,jk),  ztra )  !<CMOC OR 05/04/2015> Revert the bug fix ! <CMOC OR 04/25/2014> this is not useful as it is
+                  !  trn(ji,jj,jk,jn) = trn(ji,jj,jk,jn) + ztra * tra(ji,jj,jk,jn)  !<CMOC OR 05/04/2015> Revert the bug fix
+                  ! ELSE  !<CMOC OR 05/04/2015> Revert the bug fix
+                  !  trn(ji,jj,jk,jn) = trn(ji,jj,jk,jn) +        tra(ji,jj,jk,jn)  !<CMOC OR 05/04/2015> Revert the bug fix
                   ENDIF
               END DO
             END DO
@@ -107,9 +109,9 @@ CONTAINS
       END DO
       !                                ! where at least 1 tracer concentration becomes negative
       !                                ! 
-!      DO jn = jp_pcs0, jp_pcs1 ! <CMOC OR 04/25/2014> Move this up
-!         trn(:,:,:,jn) = trn(:,:,:,jn) + xnegtr(:,:,:) * tra(:,:,:,jn)
-!      END DO
+      DO jn = jp_pcs0, jp_pcs1 !<CMOC OR 05/04/2015> Revert the bug fix  ! <CMOC OR 04/25/2014> Move this up
+         trn(:,:,:,jn) = trn(:,:,:,jn) + xnegtr(:,:,:) * tra(:,:,:,jn) !<CMOC OR 05/04/2015> Revert the bug fix 
+      END DO
 
 
       tra(:,:,:,:) = 0.e0
