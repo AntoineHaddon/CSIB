@@ -94,11 +94,11 @@ CONTAINS
             CASE( jptra_trd_yad )  ;  CALL trd_tra_adv( ptrd, pun, ptra, 'Y', trdty ) 
             CASE( jptra_trd_zad )  ;  CALL trd_tra_adv( ptrd, pun, ptra, 'Z', trdt  ) 
             CASE( jptra_trd_bbc,   &       ! qsr, bbc: on temperature only, send to trd_tra_mng
-               &  jptra_trd_qsr )  ;  trdt(:,:,:) = ptrd(:,:,:) 
+               &  jptra_trd_qsr )  ;  trdt(:,:,:) = ptrd(:,:,:) * tmask(:,:,:)
                                       ztrds(:,:,:) = 0.
                                       CALL trd_mod( trdt, ztrds, ktrd, ctype, kt )
             CASE DEFAULT
-               trdt(:,:,:) = ptrd(:,:,:)
+               trdt(:,:,:) = ptrd(:,:,:) * tmask(:,:,:)
             END SELECT
       !   ELSE
       !   END IF
@@ -121,7 +121,7 @@ CONTAINS
                                 CALL trd_mod( trdt , ztrds, ktrd, ctype, kt   )
             CASE DEFAULT                 ! other trends: mask and send T & S trends to trd_tra_mng
        !  ELSE
-            ztrds(:,:,:) = ptrd(:,:,:)
+            ztrds(:,:,:) = ptrd(:,:,:) * tmask(:,:,:)
             !IF( ktrd == jptra_trd_ldf .OR. ktrd == jptra_trd_zdf ) THEN
               CALL trd_tra_mng( trdt , ztrds, ktrd, kt   )
             !END IF
@@ -194,7 +194,8 @@ CONTAINS
             DO ji = fs_2, fs_jpim1   ! vector opt.
                zbtr    = 1.e0/ ( e1t(ji,jj) * e2t(ji,jj) * fse3t(ji,jj,jk) )
                ptrd(ji,jj,jk) = - zbtr * (      pf (ji,jj,jk) - pf (ji-ii,jj-ij,jk-ik)                    &
-                 &                          - ( pun(ji,jj,jk) - pun(ji-ii,jj-ij,jk-ik) ) * ptn(ji,jj,jk)  )
+                 &                          - ( pun(ji,jj,jk) - pun(ji-ii,jj-ij,jk-ik) ) * ptn(ji,jj,jk)  )&
+                 &                     * tmask(ji,jj,jk)
             END DO
          END DO
       END DO
