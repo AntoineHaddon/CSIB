@@ -144,7 +144,7 @@ CONTAINS
                   zfp_wk = pwn(ji,jj,jk) + ABS( pwn(ji,jj,jk) )
                   zfm_wk = pwn(ji,jj,jk) - ABS( pwn(ji,jj,jk) )
                   zwz(ji,jj,jk) = 0.5 * ( zfp_wk * ptb(ji,jj,jk,jn) + zfm_wk * ptb(ji,jj,jk-1,jn) )  &
-                     & * tmask(ji,jj,jk)
+                     & * wmask(ji,jj,jk)
                END DO
             END DO
          END DO
