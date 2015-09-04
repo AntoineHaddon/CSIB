@@ -12,7 +12,8 @@ MODULE traadv_tvd
    !!    NEMO    1.0  !  2004-01  (A. de Miranda, G. Madec, J.M. Molines ): advective bbl
    !!            2.0  !  2008-04  (S. Cravatte) add the i-, j- & k- trends computation
    !!             -   !  2009-11  (V. Garnier) Surface pressure gradient organization
-   !!            3.3  !  2010-05  (C. Ethe, G. Madec)  merge TRC-TRA + switch from velocity to transport
+   !!            3.3  !  2010-05  (C. Ethe, G. Madec)  merge TRC-TRA + switch from velocity to transport     
+   !!            3.4.1!  2015-09  (D. Yang) Masked a few fields following v3.6_stable
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -142,7 +143,8 @@ CONTAINS
                DO ji = 1, jpi
                   zfp_wk = pwn(ji,jj,jk) + ABS( pwn(ji,jj,jk) )
                   zfm_wk = pwn(ji,jj,jk) - ABS( pwn(ji,jj,jk) )
-                  zwz(ji,jj,jk) = 0.5 * ( zfp_wk * ptb(ji,jj,jk,jn) + zfm_wk * ptb(ji,jj,jk-1,jn) )
+                  zwz(ji,jj,jk) = 0.5 * ( zfp_wk * ptb(ji,jj,jk,jn) + zfm_wk * ptb(ji,jj,jk-1,jn) )  &
+                     & * wmask(ji,jj,jk)
                END DO
             END DO
          END DO
@@ -158,7 +160,7 @@ CONTAINS
                      &             + zwy(ji,jj,jk) - zwy(ji  ,jj-1,jk  )   &
                      &             + zwz(ji,jj,jk) - zwz(ji  ,jj  ,jk+1) )
                   ! update and guess with monotonic sheme
-                  pta(ji,jj,jk,jn) =   pta(ji,jj,jk,jn)         + ztra
+                  pta(ji,jj,jk,jn) =   pta(ji,jj,jk,jn)         + ztra * tmask(ji,jj,jk)
                   zwi(ji,jj,jk)    = ( ptb(ji,jj,jk,jn) + z2dtt * ztra ) * tmask(ji,jj,jk)
                END DO
             END DO
@@ -218,7 +220,7 @@ CONTAINS
                      &             + zwy(ji,jj,jk) - zwy(ji  ,jj-1,jk  )   &
                      &             + zwz(ji,jj,jk) - zwz(ji  ,jj  ,jk+1) )
                   ! add them to the general tracer trends
-                  pta(ji,jj,jk,jn) = pta(ji,jj,jk,jn) + ztra
+                  pta(ji,jj,jk,jn) = pta(ji,jj,jk,jn) + ztra * tmask(ji,jj,jk)
                END DO
             END DO
          END DO
