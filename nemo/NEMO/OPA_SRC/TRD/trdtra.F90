@@ -23,7 +23,7 @@ MODULE trdtra
    USE trdmod_oce       ! ocean active mixed layer tracers trends 
    USE trdmod           ! ocean active mixed layer tracers trends 
    USE trdmod_trc       ! ocean passive mixed layer tracers trends 
-   USE ln_traldf_iso    ! ocean active tracers lateral physics
+   USE ldftra_oce       ! ocean active tracers lateral physics
    USE zdfddm           ! vertical physics: double diffusion
    USE phycst           ! physical constants
    USE in_out_manager   ! I/O manager
