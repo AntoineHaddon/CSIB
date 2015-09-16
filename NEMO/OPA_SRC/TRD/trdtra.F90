@@ -81,6 +81,7 @@ CONTAINS
       REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(in), OPTIONAL ::  pun     ! velocity 
       REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(in), OPTIONAL ::  ptra    ! Tracer variablea
       !
+      INTEGER  ::   jk   ! loop indices
       REAL(wp), POINTER, DIMENSION(:,:,:)  :: zwt, zws, ztrdt, ztrds     ! 3D workspace
       !!----------------------------------------------------------------------
 
