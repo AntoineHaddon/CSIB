@@ -40,6 +40,7 @@ MODULE trdtra
    !! * Substitutions
 #  include "domzgr_substitute.h90"
 #  include "vectopt_loop_substitute.h90"
+#  include "zdfddm_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 4.0 , NEMO Consortium (2011)
    !! $Id: trdtra.F90 3425 2012-07-05 11:33:22Z cetlod $
