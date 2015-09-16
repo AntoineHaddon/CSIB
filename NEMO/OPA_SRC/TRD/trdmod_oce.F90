@@ -4,6 +4,7 @@ MODULE trdmod_oce
    !! Ocean trends :   set tracer and momentum trend variables
    !!======================================================================
    !! History :  1.0  !  2004-08  (C. Talandier) Original code
+   !!            3.4.1!  2015-09  (D. Yang) Added a new active tracer trend index (jptra_trd_zdfp)
    !!----------------------------------------------------------------------
    USE trdicp_oce              ! ocean momentum/tracers bassin properties trends variables
    USE trdmld_oce              ! ocean active mixed layer tracers trends variables
@@ -43,6 +44,7 @@ MODULE trdmod_oce
    INTEGER, PUBLIC, PARAMETER ::   jptra_trd_zad =  3     !: z- vertical   advection
    INTEGER, PUBLIC, PARAMETER ::   jptra_trd_ldf =  4     !: lateral       diffusion
    INTEGER, PUBLIC, PARAMETER ::   jptra_trd_zdf =  5     !: vertical diffusion (Kz)
+   INTEGER, PUBLIC, PARAMETER ::   jptra_trd_zdfp= 16     !: "PURE" vert.  diffusion (ln_traldf_iso=T)
    INTEGER, PUBLIC, PARAMETER ::   jptra_trd_bbc =  6     !: Bottom Boundary Condition (geoth. flux) 
    INTEGER, PUBLIC, PARAMETER ::   jptra_trd_bbl =  7     !: Bottom Boundary Layer (diffusive/convective)
    INTEGER, PUBLIC, PARAMETER ::   jptra_trd_npc =  8     !: static instability mixing

@@ -7,6 +7,8 @@ MODULE trdtra
    !!            2.0  !  2005-04  (C. Deltel)    Add Asselin trend in the ML budget
    !!            3.3  !  2010-06  (C. Ethe) merge TRA-TRC 
    !!            3.4.1!  2015-08  (D. Yang) output 3D tracer trends
+   !!            3.4.1!  2015-09  (D. Yang) added diagnostics for the "PURE" Kz trend
+   !!                                       in case of iso-neutral diffusion
    !!----------------------------------------------------------------------
 #if  defined key_trdtra || defined key_trdtrc || defined key_trdmld || defined key_trdmld_trc 
    !!----------------------------------------------------------------------
@@ -17,9 +19,11 @@ MODULE trdtra
    !!----------------------------------------------------------------------
    USE oce              ! ocean dynamics and tracers variables
    USE dom_oce          ! ocean domain 
+   USE zdf_oce          ! ocean vertical physics
    USE trdmod_oce       ! ocean active mixed layer tracers trends 
    USE trdmod           ! ocean active mixed layer tracers trends 
    USE trdmod_trc       ! ocean passive mixed layer tracers trends 
+   USE zdfddm           ! vertical physics: double diffusion
    USE in_out_manager   ! I/O manager
    USE iom              ! I/O manager library
    USE lib_mpp          ! MPP library
@@ -77,7 +81,7 @@ CONTAINS
       REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(in), OPTIONAL ::  pun     ! velocity 
       REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(in), OPTIONAL ::  ptra    ! Tracer variablea
       !
-      REAL(wp), POINTER, DIMENSION(:,:,:)  ::  ztrds                     ! 3D workspace
+      REAL(wp), POINTER, DIMENSION(:,:,:)  :: zwt, zws, ztrdt, ztrds     ! 3D workspace
       !!----------------------------------------------------------------------
 
       CALL wrk_alloc( jpi, jpj, jpk, ztrds )
@@ -96,6 +100,7 @@ CONTAINS
             CASE( jptra_trd_bbc,   &       ! qsr, bbc: on temperature only, send to trd_tra_mng
                &  jptra_trd_qsr )  ;  trdt(:,:,:) = ptrd(:,:,:) * tmask(:,:,:)
                                       ztrds(:,:,:) = 0.
+                                      CALL trd_tra_mng( trdt, ztrds, ktrd, kt   )
                                       CALL trd_mod( trdt, ztrds, ktrd, ctype, kt )
             CASE DEFAULT
                trdt(:,:,:) = ptrd(:,:,:) * tmask(:,:,:)
@@ -106,7 +111,9 @@ CONTAINS
 
       IF( ctype == 'TRA' .AND. ktra == jp_sal ) THEN 
       !   IF( PRESENT( ptra ) ) THEN    
-            SELECT CASE( ktrd )            ! shift depending on the direction
+            SELECT CASE( ktrd )       ! shift depending on the direction
+            !                         ! advection: transform the advective flux into a trend
+            !                         !            and send T & S trends to trd_tra_mng
             CASE( jptra_trd_xad )  
                                 CALL trd_tra_adv( ptrd, pun, ptra, 'X', ztrds ) 
                                 CALL trd_tra_mng( trdtx, ztrds, ktrd, kt   )
@@ -119,6 +126,26 @@ CONTAINS
                                 CALL trd_tra_adv( ptrd, pun, ptra, 'Z', ztrds ) 
                                 CALL trd_tra_mng( trdt , ztrds, ktrd, kt   )
                                 CALL trd_mod( trdt , ztrds, ktrd, ctype, kt   )
+            CASE( jptra_trd_zdfp )       ! diagnose the "PURE" Kz trend (here: just before the swap)
+               !                         ! iso-neutral diffusion case otherwise jptra_zdf is "PURE"
+               CALL wrk_alloc( jpi, jpj, jpk, zwt, zws, ztrdt )
+               !
+               zwt(:,:, 1 ) = 0._wp   ;   zws(:,:, 1 ) = 0._wp            ! vertical diffusive fluxes
+               zwt(:,:,jpk) = 0._wp   ;   zws(:,:,jpk) = 0._wp
+               DO jk = 2, jpk
+                  zwt(:,:,jk) =   avt(:,:,jk) * ( tsa(:,:,jk-1,jp_tem) - tsa(:,:,jk,jp_tem) ) / fse3w(:,:,jk) * tmask(:,:,jk)
+                  zws(:,:,jk) = fsavs(:,:,jk) * ( tsa(:,:,jk-1,jp_sal) - tsa(:,:,jk,jp_sal) ) / fse3w(:,:,jk) * tmask(:,:,jk)
+               END DO
+               !
+               ztrdt(:,:,jpk) = 0._wp   ;   ztrds(:,:,jpk) = 0._wp
+               DO jk = 1, jpkm1
+                  ztrdt(:,:,jk) = ( zwt(:,:,jk) - zwt(:,:,jk+1) ) / fse3t(:,:,jk)
+                  ztrds(:,:,jk) = ( zws(:,:,jk) - zws(:,:,jk+1) ) / fse3t(:,:,jk) 
+               END DO
+               CALL trd_tra_mng( ztrdt, ztrds, jptra_trd_zdfp, kt )  
+               !
+               CALL wrk_dealloc( jpi, jpj, jpk, zwt, zws, ztrdt )
+               !
             CASE DEFAULT                 ! other trends: mask and send T & S trends to trd_tra_mng
        !  ELSE
             ztrds(:,:,:) = ptrd(:,:,:) * tmask(:,:,:)
