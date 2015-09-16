@@ -16,6 +16,8 @@ MODULE tranxt
    !!            3.1  !  2009-02  (G. Madec, R. Benshila)  re-introduce the vvl option
    !!            3.3  !  2010-04  (M. Leclair, G. Madec)  semi-implicit hpg with asselin filter + modified LF-RA
    !!             -   !  2010-05  (C. Ethe, G. Madec)  merge TRC-TRA
+   !!            3.4.1!  2015-09  (D. Yang) Added diagnostics for the "pure" Kz diffusive trend
+   !!                                       in case of ln_traldf_iso
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -131,6 +133,10 @@ CONTAINS
          CALL wrk_alloc( jpi, jpj, jpk, ztrdt, ztrds )
          ztrdt(:,:,:) = tsn(:,:,:,jp_tem) 
          ztrds(:,:,:) = tsn(:,:,:,jp_sal)
+         IF( ln_traldf_iso ) THEN              ! diagnose the "pure" Kz diffusive trend 
+            CALL trd_tra( kt, 'TRA', jp_tem, jptra_trd_zdfp, ztrdt )
+            CALL trd_tra( kt, 'TRA', jp_sal, jptra_trd_zdfp, ztrds )
+         ENDIF
       ENDIF
 
       IF( neuler == 0 .AND. kt == nit000 ) THEN       ! Euler time-stepping at first time-step (only swap)
