@@ -23,7 +23,9 @@ MODULE trdtra
    USE trdmod_oce       ! ocean active mixed layer tracers trends 
    USE trdmod           ! ocean active mixed layer tracers trends 
    USE trdmod_trc       ! ocean passive mixed layer tracers trends 
+   USE ln_traldf_iso    ! ocean active tracers lateral physics
    USE zdfddm           ! vertical physics: double diffusion
+   USE phycst           ! physical constants
    USE in_out_manager   ! I/O manager
    USE iom              ! I/O manager library
    USE lib_mpp          ! MPP library
@@ -334,8 +336,8 @@ CONTAINS
                                    CALL iom_put( "strd_ldf" , ptrdy )
       CASE( jptra_trd_zdf  )   ;   CALL iom_put( "ttrd_zdf" , ptrdx )        ! vertical diffusion (including Kz contribution)
                                    CALL iom_put( "strd_zdf" , ptrdy )
-      !CASE( jptra_trd_zdfp )   ;   CALL iom_put( "ttrd_zdfp", ptrdx )        ! PURE vertical diffusion (no isoneutral contribution)
-      !                             CALL iom_put( "strd_zdfp", ptrdy )
+      CASE( jptra_trd_zdfp )   ;   CALL iom_put( "ttrd_zdfp", ptrdx )        ! PURE vertical diffusion (no isoneutral contribution)
+                                   CALL iom_put( "strd_zdfp", ptrdy )
       CASE( jptra_trd_dmp  )   ;   CALL iom_put( "ttrd_dmp" , ptrdx )        ! internal restoring (damping)
                                    CALL iom_put( "strd_dmp" , ptrdy )
       CASE( jptra_trd_bbl  )   ;   CALL iom_put( "ttrd_bbl" , ptrdx )        ! bottom boundary layer
