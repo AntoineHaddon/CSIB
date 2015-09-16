@@ -28,13 +28,14 @@ MODULE tranxt
    USE oce             ! ocean dynamics and tracers variables
    USE dom_oce         ! ocean space and time domain variables 
    USE sbc_oce         ! surface boundary condition: ocean
-   USE zdf_oce         ! ???
+   USE zdf_oce         ! ocean vertical mixing
    USE domvvl          ! variable volume
    USE dynspg_oce      ! surface     pressure gradient variables
    USE dynhpg          ! hydrostatic pressure gradient 
    USE trdmod_oce      ! ocean space and time domain variables 
    USE trdtra          ! ocean active tracers trends 
    USE phycst
+   USE ldftra_oce      ! lateral physics on tracers
    USE obc_oce
    USE obctra          ! open boundary condition (obc_tra routine)
    USE bdy_oce
