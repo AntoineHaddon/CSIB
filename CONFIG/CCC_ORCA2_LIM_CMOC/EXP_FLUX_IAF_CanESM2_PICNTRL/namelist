@@ -129,7 +129,7 @@
    ln_ana      = .false.   !  analytical formulation                    (T => fill namsbc_ana ) 
    ln_flx      = .true.    !  flux formulation                          (T => fill namsbc_flx )
    ln_blk_clio = .false.   !  CLIO bulk formulation                     (T => fill namsbc_clio) 
-   ln_blk_core = .true.    !  CORE bulk formulation                     (T => fill namsbc_core) 
+   ln_blk_core = .false.    !  CORE bulk formulation                     (T => fill namsbc_core) 
    ln_blk_mfs  = .false.   !  MFS bulk formulation                      (T => fill namsbc_mfs )
    ln_cpl      = .false.   !  Coupled formulation                       (T => fill namsbc_cpl )
    ln_apr_dyn  = .false.   !  Patm gradient added in ocean & ice Eqs.   (T => fill namsbc_apr )
