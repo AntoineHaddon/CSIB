@@ -91,7 +91,7 @@ SUBROUTINE calc (imt, jmt, km, ll)
 
 !    2D variables
       REAL, DIMENSION(imt, jmt) ::  epc100_ann, epcal100_ann
-     REAL, DIMENSION(imt, jmt) ::   cflux_ann, oflux_ann, nfix_ann, irondep_ann
+      REAL, DIMENSION(imt, jmt) ::   cflux_ann, oflux_ann, nfix_ann, irondep_ann
 
 !     weight for annual mean calculations, DY, 2/OCT/2013
       INTEGER DIM(12)
@@ -264,7 +264,7 @@ SUBROUTINE calc (imt, jmt, km, ll)
 
 !            2-D :  EPCAL100, DIC flux, Oflux, Nfix, Irondep
              CALL getvara ('EPC100',   iou6, imt*jmt, (/1,1,mon/), (/imt,jmt,ll/),   epc100, 1., 0.)    
-!             CALL getvara ('EPCAL100', iou6, imt*jmt, (/1,1,mon/), (/imt,jmt,ll/), epcal100, 1., 0.)    
+             CALL getvara ('EPCAL100', iou6, imt*jmt, (/1,1,mon/), (/imt,jmt,ll/), epcal100, 1., 0.)    
              CALL getvara ('Cflx',     iou6, imt*jmt, (/1,1,mon/), (/imt,jmt,ll/),    cflux, 1., 0.)    
              CALL getvara ('Oflx',     iou6, imt*jmt, (/1,1,mon/), (/imt,jmt,ll/),    oflux, 1., 0.)    
              CALL getvara ('Nfix',     iou6, imt*jmt, (/1,1,mon/), (/imt,jmt,ll/),     nfix, 1., 0.)    
@@ -304,7 +304,7 @@ SUBROUTINE calc (imt, jmt, km, ll)
 
 !             2D data: 
               epc100_ann    = epc100_ann   + epc100*DIM(mon)/365. 
-!              epcal100_ann  = epcal100_ann + epcal100*DIM(mon)/365.
+              epcal100_ann  = epcal100_ann + epcal100*DIM(mon)/365.
 
               cflux_ann    = cflux_ann   + cflux*DIM(mon)/365. 
               oflux_ann    = oflux_ann   + oflux*DIM(mon)/365. 
@@ -489,7 +489,7 @@ SUBROUTINE calc (imt, jmt, km, ll)
       if (exists) then 
 !        EPC100, EPCAL100  
          CALL area_ave_flx (e1t, e2t, g_mask, epc100_ann,   imt, jmt,   epc100glo, dum) 
-!         CALL area_ave_flx (e1t, e2t, g_mask, epcal100_ann, imt, jmt, epcal100glo, dum) 
+         CALL area_ave_flx (e1t, e2t, g_mask, epcal100_ann, imt, jmt, epcal100glo, dum) 
 
 !        Cflux, Oflux, Nfix, Irondep  
          CALL area_ave_flx (e1t, e2t, g_mask, cflux_ann,   imt, jmt, cglo,       dum) 
@@ -500,7 +500,7 @@ SUBROUTINE calc (imt, jmt, km, ll)
 !       <PISCES OR 01/15/2014> convert into PgC/yr 
          cglo         = cglo        * dum * 12.e-15 * 86400 * 365
          epc100glo    = epc100glo   * dum * 12.e-15 * 86400 * 365
-!         epcal100glo  = epcal100glo * dum * 12.e-15 * 86400 * 365
+         epcal100glo  = epcal100glo * dum * 12.e-15 * 86400 * 365
 
 !        convert to TgN/yr (assuming this is N not N2)
          nfixglo      = nfixglo  * dum * 14.007e-12 * 86400 * 365
@@ -685,9 +685,9 @@ SUBROUTINE calc (imt, jmt, km, ll)
      &            , 'EPC100', 'PgC/yr')
 
 !             EPCAL100
-!              CALL defvar ('EPCAL100', iou, 1, (/id_time/), -1.e4                &  
-!     &            , 1.e4,' ', 'F', 'Export of Calcite at 100m'                   &
-!     &            , 'EPCAL100', 'PgC/yr')
+              CALL defvar ('EPCAL100', iou, 1, (/id_time/), -1.e4                &  
+     &            , 1.e4,' ', 'F', 'Export of Calcite at 100m'                   &
+     &            , 'EPCAL100', 'PgC/yr')
 
 !             Cflux
               CALL defvar ('CFLX', iou, 1, (/id_time/), -1.e4                    &
@@ -789,7 +789,7 @@ SUBROUTINE calc (imt, jmt, km, ll)
             CALL putvars ('EPC100', iou, ntrec, epc100glo, 1., 0.)
 
 !           EPCAL100
-!            CALL putvars ('EPCAL100', iou, ntrec, epcal100glo, 1., 0.)
+            CALL putvars ('EPCAL100', iou, ntrec, epcal100glo, 1., 0.)
 
 !           Cflux
             CALL putvars ('CFLX', iou, ntrec, cglo, 1., 0.)
