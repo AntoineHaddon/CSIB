@@ -288,11 +288,13 @@ debug=off
   nemo_K1rowdrg=nemo_3.3_orca2_k1rowdrg.nc
   nemo_geothermal_heating=nemo_3.3_orca2_geothermal_heating.nc
   nemo_runoff_core_monthly=nemo_3.3_orca2_runoff_core_monthly.nc
-  nemo_sss_data=nemo_3.3_orca2_sss_data.nc
-  nemo_sst_data=nemo_3.3_orca2_sst_data.nc
   nemo_chlorophyll=nemo_3.3_orca2_chlorophyll.nc
   nemo_subbasins=nemo_3.4_orca2_lim_subbasins.nc
 
+  nemo_sss_data=uncs_canesm2_iga_to_orca2_data_sos_nomask.nc
+  nemo_sst_data=uncs_canesm2_iga_to_orca2_data_tos_nomask.nc
+  nemo_data_1m_potential_temperature_nomask=uncs_canesm2_iga_to_orca2_data_thetao_nomask.nc
+  nemo_data_1m_salinity_nomask=uncs_canesm2_iga_to_orca2_data_so_nomask.nc
 
 # Access or copy files required to run PISCES
   nemo_bathy_orca=nemo_3.4_orca2_bathy.orca.nc
@@ -310,10 +312,6 @@ debug=off
   nemo_presatm=nemo_3.4_orca2_presatm.nc
   nemo_river_orca=nemo_3.4_orca2_river.orca.nc
   nemo_fermask_orca=nemo_3.4_orca2_femask.orca.nc
-
-
-  nemo_data_1m_potential_temperature_nomask=nemo_3.3_orca2_data_1m_potential_temperature_nomask.nc
-  nemo_data_1m_salinity_nomask=nemo_3.3_orca2_data_1m_salinity_nomask.nc
 
   # In the case of interannual forcing, just give the file prefix. The ${prefix}_yYYYY.nc will be added
   # by xnemo.
