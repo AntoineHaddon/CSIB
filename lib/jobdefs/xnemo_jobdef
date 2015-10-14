@@ -669,7 +669,9 @@ cat > Execute_Script <<'end_of_script'
       ln_ctl nn_print nn_ice
 
     # Modify specified parameter values in the input ice namelist
-    mod_nl namelist_ice cn_icerst_in cn_icerst_out
+    if [ $pisces_offline -ne 1 ]; then
+      mod_nl namelist_ice cn_icerst_in cn_icerst_out
+    fi
 
     # Modify the input top namelist
     if [ $nemo_carbon -eq 1 ]; then
