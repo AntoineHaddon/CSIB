@@ -613,20 +613,20 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
 !            !  file name  ! frequency (hours) ! variable  ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation !
 !            !             !  (if <0  months)  !   name    !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  !
-   sn_tem  = 'dyna_grid_T' ,    120            , 'votemper' ,  .true.    , .true. ,   'yearly'  , ''       , ''
-   sn_sal  = 'dyna_grid_T' ,    120            , 'vosaline' ,  .true.    , .true. ,   'yearly'  , ''       , ''
-   sn_mld  = 'dyna_grid_T' ,    120            , 'somixhgt' ,  .true.    , .true. ,   'yearly'  , ''       , ''
-   sn_emp  = 'dyna_grid_T' ,    120            , 'sowaflcd' ,  .true.    , .true. ,   'yearly'  , ''       , ''
-   sn_ice  = 'dyna_grid_T' ,    120            , 'soicecov' ,  .true.    , .true. ,   'yearly'  , ''       , ''
-   sn_qsr  = 'dyna_grid_T' ,    120            , 'soshfldo' ,  .true.    , .true. ,   'yearly'  , ''       , ''
-   sn_wnd  = 'dyna_grid_T' ,    120            , 'sowindsp' ,  .true.    , .true. ,   'yearly'  , ''       , ''
-   sn_uwd  = 'dyna_grid_U' ,    120            , 'vozocrtx' ,  .true.    , .true. ,   'yearly'  , ''       , ''
-   sn_vwd  = 'dyna_grid_V' ,    120            , 'vomecrty' ,  .true.    , .true. ,   'yearly'  , ''       , ''
-   sn_wwd  = 'dyna_grid_W' ,    120            , 'vovecrtz' ,  .true.    , .true. ,   'yearly'  , ''       , ''
-   sn_avt  = 'dyna_grid_W' ,    120            , 'voddmavs' ,  .true.    , .true. ,   'yearly'  , ''       , ''
-   sn_ubl  = 'dyna_grid_U' ,    120            , 'sobblcox' ,  .true.    , .true. ,   'yearly'  , ''       , ''
-   sn_vbl  = 'dyna_grid_V' ,    120            , 'sobblcoy' ,  .true.    , .true. ,   'yearly'  , ''       , ''
-   sn_eiw  = 'dyna_grid_W' ,    120            , 'soleaeiw' ,  .true.    , .true. ,   'yearly'  , ''       , ''
+   sn_tem  = 'dyna_grid_t' ,    120            , 'votemper' ,  .true.    , .true. ,   'yearly'  , ''       , ''
+   sn_sal  = 'dyna_grid_t' ,    120            , 'vosaline' ,  .true.    , .true. ,   'yearly'  , ''       , ''
+   sn_mld  = 'dyna_grid_t' ,    120            , 'somixhgt' ,  .true.    , .true. ,   'yearly'  , ''       , ''
+   sn_emp  = 'dyna_grid_t' ,    120            , 'sowaflcd' ,  .true.    , .true. ,   'yearly'  , ''       , ''
+   sn_ice  = 'dyna_grid_t' ,    120            , 'soicecov' ,  .true.    , .true. ,   'yearly'  , ''       , ''
+   sn_qsr  = 'dyna_grid_t' ,    120            , 'soshfldo' ,  .true.    , .true. ,   'yearly'  , ''       , ''
+   sn_wnd  = 'dyna_grid_t' ,    120            , 'sowindsp' ,  .true.    , .true. ,   'yearly'  , ''       , ''
+   sn_uwd  = 'dyna_grid_u' ,    120            , 'vozocrtx' ,  .true.    , .true. ,   'yearly'  , ''       , ''
+   sn_vwd  = 'dyna_grid_v' ,    120            , 'vomecrty' ,  .true.    , .true. ,   'yearly'  , ''       , ''
+   sn_wwd  = 'dyna_grid_w' ,    120            , 'vovecrtz' ,  .true.    , .true. ,   'yearly'  , ''       , ''
+   sn_avt  = 'dyna_grid_w' ,    120            , 'voddmavs' ,  .true.    , .true. ,   'yearly'  , ''       , ''
+   sn_ubl  = 'dyna_grid_u' ,    120            , 'sobblcox' ,  .true.    , .true. ,   'yearly'  , ''       , ''
+   sn_vbl  = 'dyna_grid_v' ,    120            , 'sobblcoy' ,  .true.    , .true. ,   'yearly'  , ''       , ''
+   sn_eiw  = 'dyna_grid_w' ,    120            , 'soleaeiw' ,  .true.    , .true. ,   'yearly'  , ''       , ''
 !
    cn_dir      = './'      !  root directory for the location of the dynamical files
    ln_degrad   =  .false.  !  flag for degradation -                requires ("key_degrad")
