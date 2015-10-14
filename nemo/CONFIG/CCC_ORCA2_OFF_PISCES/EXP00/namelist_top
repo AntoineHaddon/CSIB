@@ -56,14 +56,14 @@
 !
 !                !  file name               ! frequency (hours) ! variable   ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation !
 !                !                          !  (if <0  months)  !   name     !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  !
-   sn_trcdta(1)  = 'data_DIC_nomask'        ,        -12        ,  'DIC'     ,    .false.   , .true. , 'yearly'  , ''       , ''
-   sn_trcdta(2)  = 'data_Alkalini_nomask'   ,        -12        ,  'Alkalini',    .false.   , .true. , 'yearly'  , ''       , ''
-   sn_trcdta(3)  = 'data_O2_nomask'         ,        -1         ,  'O2'      ,    .true.    , .true. , 'yearly'  , ''       , ''
-   sn_trcdta(5)  = 'data_PO4_nomask'        ,        -1         ,  'PO4'     ,    .true.    , .true. , 'yearly'  , ''       , ''
-   sn_trcdta(7)  = 'data_Si_nomask'         ,        -1         ,  'Si'      ,    .true.    , .true. , 'yearly'  , ''       , ''
-   sn_trcdta(10) = 'data_DOC_nomask'        ,        -12        ,  'DOC'     ,    .false.   , .true. , 'yearly'  , ''       , ''
-   sn_trcdta(14) = 'data_Fer_nomask'        ,        -12        ,  'Fer'     ,    .false.   , .true. , 'yearly'  , ''       , ''
-   sn_trcdta(23) = 'data_NO3_nomask'        ,        -1         ,  'NO3'     ,    .true.    , .true. , 'yearly'  , ''       , ''
+   sn_trcdta(1)  = 'data_dic_nomask'        ,        -12        ,  'DIC'     ,    .false.   , .true. , 'yearly'  , ''       , ''
+   sn_trcdta(2)  = 'data_alkalini_nomask'   ,        -12        ,  'Alkalini',    .false.   , .true. , 'yearly'  , ''       , ''
+   sn_trcdta(3)  = 'data_22_nomask'         ,        -1         ,  'O2'      ,    .true.    , .true. , 'yearly'  , ''       , ''
+   sn_trcdta(5)  = 'data_po4_nomask'        ,        -1         ,  'PO4'     ,    .true.    , .true. , 'yearly'  , ''       , ''
+   sn_trcdta(7)  = 'data_si_nomask'         ,        -1         ,  'Si'      ,    .true.    , .true. , 'yearly'  , ''       , ''
+   sn_trcdta(10) = 'data_doc_nomask'        ,        -12        ,  'DOC'     ,    .false.   , .true. , 'yearly'  , ''       , ''
+   sn_trcdta(14) = 'data_fer_nomask'        ,        -12        ,  'Fer'     ,    .false.   , .true. , 'yearly'  , ''       , ''
+   sn_trcdta(23) = 'data_no3_nomask'        ,        -1         ,  'NO3'     ,    .true.    , .true. , 'yearly'  , ''       , ''
 !
    cn_dir        =  './'      !  root directory for the location of the data files
    rn_trfac(1)   =   1.0e-06  !  multiplicative factor
