@@ -23,7 +23,7 @@
 #                    make_orca_job file are set by default to point to the files on DATAPATH.
 #
 # Examples:
-#    setup-nemo ver=ccc_nemo_v01 runid=nta config=CCC_ORCA1_LIM_PISCES 
+#    setup-nemo ver=ccc_nemo_v0.1 runid=nta config=CCC_ORCA1_LIM_PISCES 
 #     -- setup an "out of the box" CCC_ORCA1_LIM_PISCES configuration in the current directory. 
 #     
 #     -- the above command will result in a compile and make_orca_job_nta file in the current directory.

@@ -37,9 +37,9 @@
 
  # try to make sure we go to the single Q if not running the model.
  if [ "x$do_nemo_run" = "xoff" ]; then
-   nprocx=1
-   phys_nodex=1 
-   nnodex=1
+   eval nprocx\=1
+   eval phys_nodex\=1 
+   eval nnodex\=1
  fi
 
  # nemo_forcing identifies the type of forcing to use
@@ -1272,7 +1272,7 @@ cat > Execute_Script <<'end_of_script'
        
        if [ ${yearcm2} -ge ${year_rtdiag_start} ] ; then
            access  old_rtd  na  nocp  sc_${runid}_${year_rtdiag_start}_${yearcm2}_nemo_physical_rtd.nc
-           delete  old_rtd
+           delete  old_rtd na 
        fi
 
       if [ $nemo_carbon -eq 1 ]; then
@@ -1316,7 +1316,7 @@ cat > Execute_Script <<'end_of_script'
         # delete RTD files from 2 years ago from RUNPATH (if we are 2+ years from rtd starting).
         if [ ${yearcm2} -ge ${year_rtdiag_start} ] ; then
           access  old_rtd  na  nocp  sc_${runid}_${year_rtdiag_start}_${yearcm2}_nemo_carbon_rtd.nc
-          delete  old_rtd
+          delete  old_rtd na
         fi
       fi
 
@@ -1333,11 +1333,11 @@ cat > Execute_Script <<'end_of_script'
         release orca_mesh_mask
       fi
        
-    fi
-  fi
+    fi # if [ $nemo_ann_rtd -eq 1 ]; then 1215
+  fi # if [ $nemo_ann_cat -eq 1 -a $stop_mon -eq 12 ]; then 1124
 
-  ####################################################################
-  #  DUMPING and DELETING
+  echo '####################################################################'
+  echo '  DUMPING and DELETING'
 
   # Optionally dump history files saved on DATAPATH to cfs
   nemo_dump_hist=on
@@ -1352,16 +1352,14 @@ cat > Execute_Script <<'end_of_script'
   ToF nemo_del_hist
 
   # If nemo_del_rs=on, then delete the previous restart tar archive from DATAPATH.
-  nemo_del_rs=${nemo_del_rs:=off}
+  nemo_del_rs=${nemo_del_rs}
   ToF nemo_del_rs
-
+  
+  # IF any dumps or deletes
   if [ $nemo_dump_hist -eq 1 -o $nemo_dump_rs -eq 1 -o $nemo_del_hist -eq 1 -o $nemo_del_rs -eq 1 ]; then
     # If nemo_ann_cat=on, only dump/delete in December. Else do it every step.
     if [ $nemo_ann_cat -eq 1 -a $stop_mon -eq 12 ] || [ $nemo_ann_cat -ne 1 ]; then
-
-      # DUMPING SECTION #
       if [ $nemo_dump_hist -eq 1 -o $nemo_dump_rs -eq 1 ]; then
-
         # The user can redefine nemo_dump_hist_freq_list and nemo_dump_hist_suffix_list
         # to only dump a subset of the history files
         nemo_dump_hist_freq_list='1y 1m 1d 5d'
@@ -1377,9 +1375,11 @@ cat > Execute_Script <<'end_of_script'
 	touch $hist_file_dump_list
 
 	# For the history files
-	if [ $nemo_dump_hist -eq 1 ]; then
+        echo '###### hist file dumping ################'
+
+        if [ $nemo_dump_hist -eq 1 ]; then
 	  if [ $nemo_save_hist -ne 1 -a $do_nemo_run -eq 1 ]; then
-	    bail "Dumping for history files was requested but nemo_save_hist=off"
+	    bail "Dumping for history files was requested but nemo_save_hist = off"
 	  fi
 
 	  for freq in $nemo_dump_hist_freq_list; do
@@ -1390,14 +1390,12 @@ cat > Execute_Script <<'end_of_script'
 		pfx="${uxxx}_${cn_exp}_${freq}_${stop_year}${start_mon}01_${stop_year}${stop_mon}${stop_day}_$sfx"
 	      fi
 	      eval fnpatt=${pfx}.nc.\[0-9\]\[0-9\]\[0-9\]
-	      echo ${fnpatt}
 	      found_file=`(ls -1 $DATAPATH/$fnpatt || : ) 2>/dev/null`
 	      if [ -n "$found_file" ]; then
 		# At least 1 matching file name was found on DATAPATH
 		# Identify a list of unique matching file names to be accessed
 		acclist=''
 		for full_path in $found_file; do
-		  # echo "full_path = $full_path"
 		  bname=`basename $full_path|sed 's/\.[0-9][0-9][0-9]$//'`
 		  acclist="$acclist $bname"
 		 done
@@ -1410,7 +1408,8 @@ cat > Execute_Script <<'end_of_script'
 	      fi  
 	    done
 	  done
-	  [ -s ${hist_file_dump_list} ] || bail "Could not create a list of history files to dump"  
+	  [ -s ${hist_file_dump_list} ] || 
+            echo " WARNING: nemo_dump_hist=on but could not create a list of history files to dump"  
 	fi
 
 	# For the restart files
@@ -1429,29 +1428,34 @@ cat > Execute_Script <<'end_of_script'
 	    found_rs_file=`(ls -1 $DATAPATH/$fnpatt || : ) 2>/dev/null`
 	    [ -n "$found_rs_file" ] || bail "nemo_dump_rs=on but cannot find ${rs_out} on DATAPATH"
 	    echo ${rs_out} >> ${hist_file_dump_list}
-	    [ -s ${hist_file_dump_list} ] || bail "Could not create a list of restart files to dump"  
+	    [ -s ${hist_file_dump_list} ] || 
+              echo "WARNING: nemo_dump_rs=on but could not create a list of restart files to dump"  
 	  fi
 	fi
-
+        
         if [ $nemo_dump_hist -ne 1 -a ${dump_this_rs} -ne 1 ]; then
             DUMPHIST=''
         else
      	  # Create DUMPHIST variable to pass to cccjob.
-	  [ -s ${hist_file_dump_list} ] || bail "Could not create list of files to dump"  
-	  DUMPHIST="dump_sublist=${hist_file_dump_list}:s"
+	  if [ -s ${hist_file_dump_list} ]; then
+	    DUMPHIST="dump_sublist=${hist_file_dump_list}:s"
+          else
+            DUMPHIST=""
+          fi
         fi
-      fi
+
+      fi  # if [ $nemo_dump_hist -eq 1 -o $nemo_dump_rs -eq 1 ]; then
 
       ####################################################################
-      # DELETE SECTION #
+      echo '# DELETE SECTION #'
 
       # The user can redefine nemo_del_hist_freq_list and nemo_del_hist_suffix_list
       # to only delete a subset of the history files
       nemo_del_hist_freq_list='1y 1m 1d 5d'
       nemo_del_hist_suffix_list='icemod grid_t grid_u grid_v grid_w ptrc_t diad_t'
 
+      # if [ $nemo_del_hist -eq 1 -o $nemo_del_rs -eq 1 ]
       if [ $nemo_del_hist -eq 1 -o $nemo_del_rs -eq 1 ]; then
-
 	# Keep track of history files to delete in hist_file_del_list
 	hist_file_del_list=hist_file_del_list_$$
 	rm -f $hist_file_del_list
@@ -1459,7 +1463,7 @@ cat > Execute_Script <<'end_of_script'
 
 	if [ $nemo_del_hist -eq 1 ]; then
 	  if [ $nemo_save_hist -ne 1 -a $do_nemo_run -eq 1 ]; then
-	    bail "Deleting for history files was requested but nemo_save_hist=off"
+	    bail "Deleting for history files was requested but nemo_save_hist = off"
 	  fi
 
 	  for freq in $nemo_del_hist_freq_list; do
@@ -1477,7 +1481,6 @@ cat > Execute_Script <<'end_of_script'
 		# Identify a list of unique matching file names to be accessed
 		acclist=''
 		for full_path in $found_file; do
-		  # echo "full_path = $full_path"
 		  bname=`basename $full_path|sed 's/\.[0-9][0-9][0-9]$//'`
 		  acclist="$acclist $bname"
 		 done
@@ -1490,7 +1493,8 @@ cat > Execute_Script <<'end_of_script'
 	      fi  
 	    done
 	  done
-	  [ -s ${hist_file_del_list} ] || bail "Could not create a list of history files to delete"  
+	  [ -s ${hist_file_del_list} ] || 
+             echo "WARNING nemo_del_hist=on but could not create a list of history files to delete"  
 	fi
 
 	if [ $nemo_del_rs -eq 1 ]; then
@@ -1499,14 +1503,12 @@ cat > Execute_Script <<'end_of_script'
             rsy=`echo $rs_year |awk '{printf "%4.4d",$1}'`
 	    rspfx="${uxxx}_${runid}_${rsy}????_restart.tar"
 	    eval rsfnpatt=${rspfx}.\[0-9\]\[0-9\]\[0-9\]
-	    echo ${rsfnpatt}
 	    found_file=`(ls -1 $DATAPATH/$rsfnpatt || : ) 2>/dev/null`
 	    if [ -n "$found_file" ]; then
 	      # At least 1 matching file name was found on DATAPATH
 	      # Identify a list of unique matching file names to be accessed
 	      acclist=''
 	      for full_path in $found_file; do
-		# echo "full_path = $full_path"
 		bname=`basename $full_path|sed 's/\.[0-9][0-9][0-9]$//'`
 		acclist="$acclist $bname"
 	       done
@@ -1514,19 +1516,30 @@ cat > Execute_Script <<'end_of_script'
 	      # Copies will be created when multiple edition numbers exist for the
 	      #same file
 	      acclist=`echo $acclist|awk '{for(i=1;i<=NF;i++){printf "%s\n",$i}}' |sort -u|xargs`
+	      # echo the files to hist_file_dump_list
+	      echo ${acclist} >> ${hist_file_del_list}
 	    fi  
-	    # echo the files to hist_file_dump_list
-	    echo ${acclist} >> ${hist_file_del_list}
 	  else
-	    # we just want to delete the last restart
-	    echo ${nemo_rs} >> ${hist_file_del_list}
+            rsfnpatt=${nemo_rs}.\[0-9\]\[0-9\]\[0-9\]
+            found_file=`(ls -1 $DATAPATH/${rsfnpatt} || : ) 2>/dev/null`  
+            if [ -n "$found_file" ]; then
+	        # we just want to delete the last restart
+                echo "${nemo_rs} to be deleted..."
+	        echo ${nemo_rs} >> ${hist_file_del_list}
+            fi
 	  fi
-	  [ -s ${hist_file_del_list} ] || bail "Could not create a list of restart files to delete"  
+          
+	  [ -s ${hist_file_del_list} ] || 
+            echo "WARNING: nemo_del_rs=on but could not create a list of restart files to delete
+                  (ignore if this is the first run step)."  
 	fi
 	
 	# Creat DELHIST variable to pass to cccjob.
-	[ -s ${hist_file_del_list} ] || bail "Could not create list of files to delete"  
-	DELHIST="del_list=${hist_file_del_list}:s"
+        if [ -s ${hist_file_del_list} ]; then
+	  DELHIST="del_list=${hist_file_del_list}:s"
+        else
+          DELHIST=""
+        fi
       fi
 
       # make the dump_del_job with the lists from above and run it.
@@ -1573,9 +1586,11 @@ cat > Execute_Script <<'end_of_script'
 
 	# Clean up
 	rm -f $dump_del_job
-      fi
-    fi
-  fi
+      fi # if [ $nemo_del_hist -eq 1 -o $nemo_del_rs -eq 1 ]
+
+    fi # If nemo_ann_cat=on, only dump/delete in December. Else do it every step.
+  fi # IF any dumps or deletes
+
     # ---Stop_submit_ignore_code----
 
 end_of_script
