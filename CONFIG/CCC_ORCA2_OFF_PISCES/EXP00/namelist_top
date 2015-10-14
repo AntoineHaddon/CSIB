@@ -58,7 +58,7 @@
 !                !                          !  (if <0  months)  !   name     !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  !
    sn_trcdta(1)  = 'data_dic_nomask'        ,        -12        ,  'DIC'     ,    .false.   , .true. , 'yearly'  , ''       , ''
    sn_trcdta(2)  = 'data_alkalini_nomask'   ,        -12        ,  'Alkalini',    .false.   , .true. , 'yearly'  , ''       , ''
-   sn_trcdta(3)  = 'data_22_nomask'         ,        -1         ,  'O2'      ,    .true.    , .true. , 'yearly'  , ''       , ''
+   sn_trcdta(3)  = 'data_o2_nomask'         ,        -1         ,  'O2'      ,    .true.    , .true. , 'yearly'  , ''       , ''
    sn_trcdta(5)  = 'data_po4_nomask'        ,        -1         ,  'PO4'     ,    .true.    , .true. , 'yearly'  , ''       , ''
    sn_trcdta(7)  = 'data_si_nomask'         ,        -1         ,  'Si'      ,    .true.    , .true. , 'yearly'  , ''       , ''
    sn_trcdta(10) = 'data_doc_nomask'        ,        -12        ,  'DOC'     ,    .false.   , .true. , 'yearly'  , ''       , ''
