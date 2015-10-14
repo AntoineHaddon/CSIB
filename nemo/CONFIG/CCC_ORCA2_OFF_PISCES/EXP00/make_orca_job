@@ -48,7 +48,7 @@ nemo_from_rest=on
 # If it is a full path name then this path must be available from the execution machine.
 # This file is saved in the reastart archive.
 # If nemo_exec is not defined then the executable found in the restart will be used.
-nemo_exec=${runid}_ccc_orca2_lim_pisces_exe
+nemo_exec=${runid}_ccc_orca2_off_pisces_exe
 
 # nemo_freq is the number of years (or months) nemo will run for each job in the string
 # History files and restarts will be deleted after each job in the string.
@@ -220,10 +220,10 @@ cat <<end_job_defs >$job_defs
 # These namelist files are only used when starting from rest or when nemo_force_namelist = on
 # These can be a files that are "save"d on DATAPATH or full pathnames to any location.
 # If they are full path names then these paths must be available from the execution machine.
-  nemo_namelist=${runid}_ccc_orca2_lim_pisces_namelist
-  nemo_namelist_ice=${runid}_ccc_orca2_lim_pisces_namelist_ice
-  nemo_namelist_pisces=${runid}_ccc_orca2_lim_pisces_namelist_pisces
-  nemo_namelist_top=${runid}_ccc_orca2_lim_pisces_namelist_top
+  nemo_namelist=${runid}_ccc_orca2_off_pisces_namelist
+  nemo_namelist_ice=${runid}_ccc_orca2_off_pisces_namelist_ice
+  nemo_namelist_pisces=${runid}_ccc_orca2_off_pisces_namelist_pisces
+  nemo_namelist_top=${runid}_ccc_orca2_off_pisces_namelist_top
 # nn_ice = 0 no ice boundary condition
 #          1 use observed ice-cover;
 #          2 LIM2
@@ -268,8 +268,8 @@ debug=off
 
 # Access or copy files required to run NEMO
   orca_grid_info="nemo_3.4_orca2_mesh_mask.nc"
-  nemo_iodef=${runid}_ccc_orca2_lim_pisces_iodef.xml
-  nemo_xmlio_server_def=${runid}_ccc_orca2_lim_pisces_xmlio_server.def
+  nemo_iodef=${runid}_ccc_orca2_off_pisces_iodef.xml
+  nemo_xmlio_server_def=${runid}_ccc_orca2_off_pisces_xmlio_server.def
   nemo_ahmcoef=nemo_3.3_orca2_ahmcoef
   nemo_coordinates=nemo_3.3_orca2_coordinates.nc
   nemo_bathy_meter=nemo_3.3_orca2_bathy_meter.nc
