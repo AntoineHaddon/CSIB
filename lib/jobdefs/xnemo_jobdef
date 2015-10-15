@@ -477,7 +477,7 @@ cat > Execute_Script <<'end_of_script'
       # Ocean restart files
       if [ $pisces_offline -ne 1 ]; then
         found_rs=`(ls -1 *_${cn_ocerst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
-        [ -z "$found_rs" ] && bail "No ocean restart files were found in $nemo_rs"
+        [ -z "$found_rs" ] && bail "No ocean restart files were found in $nemo_rs "
         rm -f input_ocn_restart_file_names
         touch input_ocn_restart_file_names
         for rsfile in $found_rs; do
@@ -491,7 +491,7 @@ cat > Execute_Script <<'end_of_script'
         touch input_ice_restart_file_names
         found_rs=`(ls -1 *_${cn_icerst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
         if [ -z "$found_rs" ]; then
-	  [ $nn_ice -ge 2 ] && bail "No ice restart files were found in $nemo_rs"
+	  [ $nn_ice -ge 2 ] && bail "No ice restart files were found in $nemo_rs "
 	  with_ice=off
         else
 	  for rsfile in $found_rs; do
