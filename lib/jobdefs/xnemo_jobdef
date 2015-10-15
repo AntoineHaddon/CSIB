@@ -1253,6 +1253,12 @@ cat > Execute_Script <<'end_of_script'
       [ -z "$year_rtdiag_start" ] &&
       bail "Run time diagnostics was requested but year_rtdiag_start is not defined."
 
+      # This also requires a file containing grid information
+      # This file could be modified so create a local copy with write access
+      orca_grid_info=nemo3.4.1_orca1_mesh_mask_ngr.nc
+      access orca_mesh_mask $orca_grid_info nocp=off
+      chmod u+rw orca_mesh_mask
+
       if [ $pisces_offline -eq 0 ]; then
         # Invoke the nemo run time diagnostics
 
@@ -1268,13 +1274,6 @@ cat > Execute_Script <<'end_of_script'
         access grid_v $rtd_hist3 nocp=off
         access grid_w $rtd_hist4 nocp=off
         chmod u+rw grid_t grid_u grid_v grid_w
-
-        # This also requires a file containing grid information
-        # This file could be modified so create a local copy with write access
-        orca_grid_info=nemo3.4.1_orca1_mesh_mask_ngr.nc
-        access orca_mesh_mask $orca_grid_info nocp=off
-        chmod u+rw orca_mesh_mask
-
 
         # Access the rtd executable
         physical_rtd_exe=nemo_orca_physical_rtd_v02c
