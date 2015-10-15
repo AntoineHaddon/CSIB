@@ -475,7 +475,7 @@ cat > Execute_Script <<'end_of_script'
       # in the previous run.
 
       # Ocean restart files
-      if [ $pisces_offline -eq 0 ]; then
+      if [ $pisces_offline -ne 1 ]; then
         found_rs=`(ls -1 *_${cn_ocerst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
         [ -z "$found_rs" ] && bail "No ocean restart files were found in $nemo_rs"
         rm -f input_ocn_restart_file_names
