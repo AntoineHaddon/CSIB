@@ -1248,6 +1248,11 @@ cat > Execute_Script <<'end_of_script'
     ToF nemo_ann_rtd
 
     if [ $nemo_ann_rtd -eq 1 ]; then
+      # The user must define year_rtdiag_start
+      year_rtdiag_start=''
+      [ -z "$year_rtdiag_start" ] &&
+      bail "Run time diagnostics was requested but year_rtdiag_start is not defined."
+
       if [ $pisces_offline -eq 0 ]; then
         # Invoke the nemo run time diagnostics
 
@@ -1270,10 +1275,6 @@ cat > Execute_Script <<'end_of_script'
         access orca_mesh_mask $orca_grid_info nocp=off
         chmod u+rw orca_mesh_mask
 
-        # The user must define year_rtdiag_start
-        year_rtdiag_start=''
-        [ -z "$year_rtdiag_start" ] &&
-          bail "Run time diagnostics was requested but year_rtdiag_start is not defined."
 
         # Access the rtd executable
         physical_rtd_exe=nemo_orca_physical_rtd_v02c
