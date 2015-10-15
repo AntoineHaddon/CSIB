@@ -597,7 +597,7 @@ cat > Execute_Script <<'end_of_script'
       # Current beginning time step
       # get this from the time.step file that was saved in the restart
       prev_itend=`cat rs_time.step`
-      nn_it000=`expr $prev_itend + 1`
+      nn_it00=`expr $prev_itend + 1`
 
       # Date stamp from the previous restart
       # Increment the job number from the previous namelist file
@@ -1259,6 +1259,10 @@ cat > Execute_Script <<'end_of_script'
       access orca_mesh_mask $orca_grid_info nocp=off
       chmod u+rw orca_mesh_mask
 
+      # delete RTD files from 2 years ago from RUNPATH (if we are 2+ years from rtd starting).
+      yearcm2=`expr ${current_year} - 2 | awk  '{printf "%04d",$1}'`        
+       
+
       if [ $pisces_offline -eq 0 ]; then
         # Invoke the nemo run time diagnostics
 
@@ -1303,9 +1307,7 @@ cat > Execute_Script <<'end_of_script'
         # Copy the new physical rtd file to Victoria
         scp_rtd_to_Victoria nemo_physical_rtd.nc sc_${runid}_nemo_physical_rtd.nc
 
-        # delete RTD files from 2 years ago from RUNPATH (if we are 2+ years from rtd starting).
-         yearcm2=`expr ${current_year} - 2 | awk  '{printf "%04d",$1}'`        
-       
+         # delete RTD files from 2 years ago from RUNPATH (if we are 2+ years from rtd starting).
          if [ ${yearcm2} -ge ${year_rtdiag_start} ] ; then
              access  old_rtd  na  nocp  sc_${runid}_${year_rtdiag_start}_${yearcm2}_nemo_physical_rtd.nc
              delete  old_rtd na 
