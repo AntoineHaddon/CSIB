@@ -558,7 +558,10 @@ cat > Execute_Script <<'end_of_script'
       else
 	# Use the namelist files found in the restart archive
 	[ ! -s rs_namelist ]     && bail "Missing rs_namelist from $nemo_rs"
-	[ ! -s rs_namelist_ice ] && bail "Missing rs_namelist_ice from $nemo_rs"
+
+	if [ $pisces_offline -ne 1 ]; then
+	  [ ! -s rs_namelist_ice ] && bail "Missing rs_namelist_ice from $nemo_rs"
+        fi
 
 	if [ $nemo_carbon -eq 1 ]; then
 	  [ ! -s rs_namelist_top ]    && bail "Missing rs_namelist_top from $nemo_rs"
@@ -573,8 +576,10 @@ cat > Execute_Script <<'end_of_script'
 	cp -f rs_namelist namelist
 
 	# The input ice namelist is hard coded as "namelist_ice" in nemo source
-	cp -f rs_namelist_ice namelist_ice
-
+	if [ $pisces_offline -ne 1 ]; then
+	  cp -f rs_namelist_ice namelist_ice
+        fi
+ 
 	if [ $nemo_carbon -eq 1 ]; then
 	  # The input top namelist is hard coded as "namelist_top" in nemo source
 	  cp -f rs_namelist_top namelist_top
