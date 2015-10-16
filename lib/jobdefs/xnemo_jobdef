@@ -603,6 +603,7 @@ cat > Execute_Script <<'end_of_script'
       # get this from the time.step file that was saved in the restart
       prev_itend=`cat rs_time.step`
       nn_it00=`expr $prev_itend + 1`
+      echo "nn_it00 " : ${nn_it00}
 
       # Date stamp from the previous restart
       # Increment the job number from the previous namelist file
