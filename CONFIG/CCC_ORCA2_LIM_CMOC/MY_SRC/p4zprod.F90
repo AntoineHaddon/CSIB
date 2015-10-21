@@ -215,7 +215,7 @@ CONTAINS
       ! <CMOC code OR 10/20/2015> CMOC namelist end 
          !!----------------------------------------------------------------------
 
-!       REWIND( numcmoc )
+      REWIND( numcmoc )
       READ  ( numcmoc, namcmocphy )
       
       IF(lwp) THEN                         ! control print
