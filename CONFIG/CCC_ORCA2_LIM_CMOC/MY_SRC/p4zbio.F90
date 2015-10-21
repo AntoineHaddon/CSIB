@@ -5,6 +5,7 @@ MODULE p4zbio
    !!======================================================================
    !! History :   1.0  !  2004     (O. Aumont) Original code
    !!             2.0  !  2007-12  (C. Ethe, G. Madec)  F90
+   !!          CMOC 1  !  2013-2015(O. Riche) calls to ecosystem procedures and some extra diagnostics
    !!----------------------------------------------------------------------
 #if defined key_pisces
    !!----------------------------------------------------------------------
@@ -18,11 +19,9 @@ MODULE p4zbio
    USE sms_pisces      !  PISCES Source Minus Sink variables
    USE p4zsink         !  vertical flux of particulate matter due to sinking
    USE p4zopt          !  optical model
-! <CMOC OR 07/15/2014> ! Removal of all the tracers !     USE p4zlim          !  Co-limitations of differents nutrients
    USE p4zprod         !  Growth rate of the 2 phyto groups
    USE p4zmort         !  Mortality terms for phytoplankton
    USE p4zmicro        !  Sources and sinks of microzooplankton
-! <CMOC OR 05/21/2014> Removal of p4zmeso module !   USE p4zmeso         !  Sources and sinks of mesozooplankton 
    USE p4zrem          !  Remineralisation of organic matter
    USE prtctl_trc      !  print control for debugging
    USE iom             !  I/O manager
@@ -55,9 +54,6 @@ CONTAINS
       INTEGER, INTENT(in) :: kt, jnt
       INTEGER  ::  ji, jj, jk, jn
       REAL(wp) ::  ztra
-! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   #if defined key_kriest
-! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !         REAL(wp) ::  zcoef1, zcoef2
-! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   #endif
       CHARACTER (len=25) :: charout
 
       !!---------------------------------------------------------------------
@@ -68,7 +64,7 @@ CONTAINS
       !     OF PHYTOPLANKTON AND DETRITUS
 
       xdiss(:,:,:) = 1.
-!!gm the use of nmld should be better here?
+
       DO jk = 2, jpkm1
          DO jj = 1, jpj
             DO ji = 1, jpi
@@ -79,18 +75,16 @@ CONTAINS
           
       CALL p4z_sink ( kt, jnt )     ! vertical flux of particulate organic matter
       CALL p4z_opt  ( kt, jnt )     ! Optic: PAR in the water column
-! <CMOC OR 06/13/2014> Code trimming !        CALL p4z_lim  ( kt      )     ! co-limitations by the various nutrients
       CALL p4z_prod ( kt, jnt )     ! phytoplankton growth rate over the global ocean. 
       !                             ! (for each element : C, Si, Fe, Chl )
-      CALL p4z_rem  ( kt, jnt )     ! <CMOC OR 01/20/2014) iom_put must be called only once, so jnt is to be passed to p4z_rem when saving Nfix ! remineralization terms of organic matter+scavenging of Fe
+      ! <CMOC code OR 10/19/2015) iom_put (in p4z_rem) must be called only once (over the physics time step), so jnt is to be passed to p4z_rem when saving Nfix if the diagnostics to be made on a complete physics time step.
+      CALL p4z_rem  ( kt, jnt )     
       CALL p4z_mort ( kt      )     ! phytoplankton mortality
       !                             ! zooplankton sources/sinks routines 
       CALL p4z_micro( kt      )           ! microzooplankton
-! <CMOC OR 05/21/2014> Removal of p4zmeso module       CALL p4z_meso ( kt, jnt )           ! mesozooplankton
-      !                             ! test if tracers concentrations fall below 0.
-      ! <CMOC OR 05/04/2015> Revert the bug fix, it is actually not a bug, the code replace the time step by a shorter time step to prevent the model to overshoot
 
-      xnegtr(:,:,:) = 1.e0        !<CMOC OR 05/04/2015> Revert the bug fix ! <CMOC OR 04/25/2014> this is not useful with the following modifications, this is part of a bug that affects the correction xnegtr to trn
+      xnegtr(:,:,:) = 1.e0
+      
       DO jn = jp_pcs0, jp_pcs1
          DO jk = 1, jpk
             DO jj = 1, jpj
@@ -98,10 +92,8 @@ CONTAINS
                   IF( ( trn(ji,jj,jk,jn) + tra(ji,jj,jk,jn) ) < 0.e0 ) THEN 
                      ztra             = ABS(  ( trn(ji,jj,jk,jn) - rtrn ) &
                                             / ( tra(ji,jj,jk,jn) + rtrn ) )
-                     xnegtr(ji,jj,jk) = MIN( xnegtr(ji,jj,jk),  ztra )  !<CMOC OR 05/04/2015> Revert the bug fix ! <CMOC OR 04/25/2014> this is not useful as it is
-                  !  trn(ji,jj,jk,jn) = trn(ji,jj,jk,jn) + ztra * tra(ji,jj,jk,jn)  !<CMOC OR 05/04/2015> Revert the bug fix
-                  ! ELSE  !<CMOC OR 05/04/2015> Revert the bug fix
-                  !  trn(ji,jj,jk,jn) = trn(ji,jj,jk,jn) +        tra(ji,jj,jk,jn)  !<CMOC OR 05/04/2015> Revert the bug fix
+                     xnegtr(ji,jj,jk) = MIN( xnegtr(ji,jj,jk),  ztra )
+                     
                   ENDIF
               END DO
             END DO
@@ -109,34 +101,24 @@ CONTAINS
       END DO
       !                                ! where at least 1 tracer concentration becomes negative
       !                                ! 
-      DO jn = jp_pcs0, jp_pcs1 !<CMOC OR 05/04/2015> Revert the bug fix  ! <CMOC OR 04/25/2014> Move this up
-         trn(:,:,:,jn) = trn(:,:,:,jn) + xnegtr(:,:,:) * tra(:,:,:,jn) !<CMOC OR 05/04/2015> Revert the bug fix 
+      DO jn = jp_pcs0, jp_pcs1
+         trn(:,:,:,jn) = trn(:,:,:,jn) + xnegtr(:,:,:) * tra(:,:,:,jn)
       END DO
 
 
       tra(:,:,:,:) = 0.e0
 
-      ! <CMOC OR 04/25/2014> Diagnostics of Normalized Alkalinity and DIC
+      ! <CMOC code OR 10/19/2015> Diagnostics of Normalized Alkalinity and DIC
        IF( ln_diatrc ) THEN                      
          IF( lk_iomput ) THEN
           IF( jnt == nrdttrc ) THEN             
 
-               CALL iom_put( "sDIC"   , trn(:,:,:,jpdic) / tsn(:,:,:,jp_sal) * 35 * 1e+3_wp * tmask(:,:,:) )  ! <CMOC OR 03/11/2014> add normalized DIC diagnostic ( scaled by salinity / 35 )
-               CALL iom_put( "sAlk"   , trn(:,:,:,jptal) / tsn(:,:,:,jp_sal) * 35 * 1e+3_wp * tmask(:,:,:) )  ! <CMOC OR 03/11/2014> add normalized Alkalinity diagnostic ( scaled by salinity / 35 ) 
+               CALL iom_put( "sDIC"   , trn(:,:,:,jpdic) / tsn(:,:,:,jp_sal) * 35 * 1e+3_wp * tmask(:,:,:) )
+               CALL iom_put( "sAlk"   , trn(:,:,:,jptal) / tsn(:,:,:,jp_sal) * 35 * 1e+3_wp * tmask(:,:,:) )
 
           ENDIF
          ENDIF
        ENDIF 
-
-! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   #if defined key_kriest
-      ! 
-! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !         zcoef1 = 1.e0 / xkr_massp 
-! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !         zcoef2 = 1.e0 / xkr_massp / 1.1
-! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !         DO jk = 1,jpkm1
-! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !            trn(:,:,jk,jpnum) = MAX(  trn(:,:,jk,jpnum), trn(:,:,jk,jppoc) * zcoef1 / xnumm(jk)  )
-! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !            trn(:,:,jk,jpnum) = MIN(  trn(:,:,jk,jpnum), trn(:,:,jk,jppoc) * zcoef2              )
-! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !         END DO
-! <CMOC OR 06/30/2014> Trimming code, tracers (jpsil .. jpgsi, jpdch, jpcal, jpfer .. jpdfe .. jpdfe, jpnum) !   #endif
 
       !
       IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
