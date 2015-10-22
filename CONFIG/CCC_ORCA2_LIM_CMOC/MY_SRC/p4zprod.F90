@@ -67,8 +67,9 @@ CONTAINS
       IF( nn_timing == 1 )  CALL timing_start('p4z_prod')
       !
       !  Allocate temporary workspace
-      CALL wrk_alloc( jpi, jpj, jpk, zprorca, zprochln )
-      CALL wrk_alloc( jpi, jpj, jpk, zlimn, zliml      )
+      CALL wrk_alloc( jpi, jpj, jpk, zpislopead, zprbio, zprnch )
+      CALL wrk_alloc( jpi, jpj, jpk, zprorca, zprochln          )
+      CALL wrk_alloc( jpi, jpj, jpk, zlimn, zliml               )
       !
       zprorca (:,:,:) = 0._wp
       zprochln(:,:,:) = 0._wp
