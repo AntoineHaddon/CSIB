@@ -191,19 +191,19 @@ CONTAINS
          ! <CMOC code OR 10/15/2015> Calcification in the euphotic zone
          ! PIC export below the euphotic zone is balanced by calcification and the associated loss of DIC and alkalinity at the surface, evenly distributed over the euphotic zone
          DO jk =1, 11
-         tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) -     zfpon(ji,jj) * ( 1 - zbpon(ji,jj) ) * ideup_cmoc
-         tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) - 2 * zfpon(ji,jj) * ( 1 - zbpon(ji,jj) ) * ideup_cmoc
+	    tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) -     zfpon(ji,jj) * ( 1 - zbpon(ji,jj) ) * ideup_cmoc
+	    tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) - 2 * zfpon(ji,jj) * ( 1 - zbpon(ji,jj) ) * ideup_cmoc
          END DO
          ! <CMOC code OR 10/15/2015> ( 1 - zbpon ) is the fraction of PIC export that went into the water column below the euphotic zone
          ! the extra term - exp(), which is in fact + zfpon * exp(), is a balance term to enforce long-term equilibrium between surface and bottom conditions of DIC and Akalinity  
 
          ! <CMOC code OR 10/15/2015> below the euphotic zone
          DO jk = 12, mbkt(ji,jj)
-         ! <CMOC code OR 10/15/2015> Calcite Dissolution, source of Alkalinity/DIC
-         ! source/sink is calculated as the finite difference between 2 consecutive depth levels
-         tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) +     zfpon(ji,jj) * ( exp(-1._wp*(fsdepw(ji,jj,jk)-fsdepw(ji,jj,11))/dci_cmoc) - exp(-1._wp*(fsdepw(ji,jj,jk+1)-fsdepw(ji,jj,11))/dci_cmoc) ) / fse3w(ji,jj,jk)
-         tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) + 2 * zfpon(ji,jj) * ( exp(-1._wp*(fsdepw(ji,jj,jk)-fsdepw(ji,jj,11))/dci_cmoc) - exp(-1._wp*(fsdepw(ji,jj,jk+1)-fsdepw(ji,jj,11))/dci_cmoc) ) / fse3w(ji,jj,jk)
-         ! <CMOC code OR 10/15/2015> Below the euphotic zone calcite dissolution dominates; the POC flux varies as zfpon*exp(-(z-110)/2700), zfpon being the flux at the bottom of the euphotic zone 
+	    ! <CMOC code OR 10/15/2015> Calcite Dissolution, source of Alkalinity/DIC
+	    ! source/sink is calculated as the finite difference between 2 consecutive depth levels
+	    tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) +     zfpon(ji,jj) * ( exp(-1._wp*(fsdepw(ji,jj,jk)-fsdepw(ji,jj,11))/dci_cmoc) - exp(-1._wp*(fsdepw(ji,jj,jk+1)-fsdepw(ji,jj,11))/dci_cmoc) ) / fse3w(ji,jj,jk)
+	    tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) + 2 * zfpon(ji,jj) * ( exp(-1._wp*(fsdepw(ji,jj,jk)-fsdepw(ji,jj,11))/dci_cmoc) - exp(-1._wp*(fsdepw(ji,jj,jk+1)-fsdepw(ji,jj,11))/dci_cmoc) ) / fse3w(ji,jj,jk)
+	    ! <CMOC code OR 10/15/2015> Below the euphotic zone calcite dissolution dominates; the POC flux varies as zfpon*exp(-(z-110)/2700), zfpon being the flux at the bottom of the euphotic zone 
          END DO
 
         ENDIF
