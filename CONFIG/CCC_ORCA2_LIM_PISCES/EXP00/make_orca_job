@@ -385,6 +385,7 @@ debug=off
   nemo_ann_rtd=${nemo_ann_rtd}
   physical_rtd_exe="nemo_orca_physical_rtd_v02c"
   carbon_rtd_exe="nemo_orca_carbon_rtd_v02c"
+  ice_rtd_exe="nemo_orca_ice_rtd_v02c"
 
 # Dump history files saved on DATAPATH to cfs
 # The user can redefine nemo_dump_hist_freq_list and nemo_dump_hist_suffix_list

@@ -199,7 +199,7 @@
 	<field id="sshtot"     description="global mean ssh"                            unit="m"    />
 	<field id="sshsteric"  description="global mean ssh steric"                     unit="m"    />
 	<field id="sshthster"  description="global mean ssh thermosteric"               unit="m"    />
-odef.xml	<field id="masstot"    description="global mean mass"                           unit="kg"   />
+	<field id="masstot"    description="global mean mass"                           unit="kg"   />
 	<field id="temptot"    description="global mean temperature"                    unit="degC" />
 	<field id="saltot"     description="global mean salinity"                       unit="psu"  />
 	<field id="fram_trans" description="Sea Ice Mass Transport Through Fram Strait" unit="kg/s" />
@@ -388,6 +388,7 @@ odef.xml	<field id="masstot"    description="global mean mass"                  
 
         <file id="1m_icemod" name="auto" description="ice variables" >
           <field ref="ice_pres"                     />
+          <field ref="ice_cover"    name="soicecov" />
           <field ref="snowthic_cea" name="isnowthi" />
           <field ref="icethic_cea"  name="iicethic" />
           <field ref="iceprod_cea"  name="iiceprod" />
