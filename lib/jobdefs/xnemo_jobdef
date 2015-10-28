@@ -1319,6 +1319,47 @@ cat > Execute_Script <<'end_of_script'
           delete  old_rtd na
         fi
       fi
+      if [ $nn_ice -ne 0 ]; then
+        # Also generate ICE run time diagnostics
+
+        # Access additional annual history files containing PISCES related variables
+        rtd_hist7="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_icemod.nc"
+        access icemod $rtd_hist7 #nocp=off
+
+        # Access the rtd executable
+        ice_rtd_exe=nemo_ice_rtd_v02c
+        [ -z "$ice_rtd_exe" ] && bail "ice_rtd_exe is not defined."
+        access $ice_rtd_exe $ice_rtd_exe nocp=off
+        chmod u+x $ice_rtd_exe
+
+        # Access an existing rtd file containing data up to the previous year, if 
+        # year > year_rtdiag_start
+        if [ ${year_rtdiag_start} -lt ${stop_year} ] ; then
+            stop_year_prev=`echo $stop_year|awk '{printf "%4.4d",$1-1}' -`
+            curr_rtd_file=sc_${runid}_${year_rtdiag_start}_${stop_year_prev}_nemo_ice_rtd.nc
+            access nemo_ice_rtd.nc $curr_rtd_file nocp=off
+            chmod u+rw nemo_ice_rtd.nc
+            # Create run time diagnostics for carbon variables
+            $ice_rtd_exe $stop_year $start_mon
+        else
+            # Create run time diagnostics for carbon variables
+            $ice_rtd_exe $stop_year $start_mon
+            ${NCATTED} -O -a RTD_version,global,a,c,"${ice_rtd_exe}" nemo_ice_rtd.nc
+        fi
+
+        # Save the rtd file created by carbon_rtd_exe
+        new_rtd_file=sc_${runid}_${year_rtdiag_start}_${stop_year}_nemo_ice_rtd.nc
+        save nemo_ice_rtd.nc $new_rtd_file
+
+        # Copy the new carbon rtd file to Victoria
+        scp_rtd_to_Victoria nemo_ice_rtd.nc sc_${runid}_nemo_ice_rtd.nc
+
+        # delete RTD files from 2 years ago from RUNPATH (if we are 2+ years from rtd starting).
+        if [ ${yearcm2} -ge ${year_rtdiag_start} ] ; then
+          access  old_rtd  na  nocp  sc_${runid}_${year_rtdiag_start}_${yearcm2}_nemo_ice_rtd.nc
+          delete  old_rtd na
+        fi
+      fi
 
       # Clean up
       release grid_t
@@ -1326,6 +1367,7 @@ cat > Execute_Script <<'end_of_script'
       release grid_v
       release grid_w
       release orca1_mesh_mask
+      release icemod
       if [ $nemo_carbon -eq 1 ]; then
         # PISCES related files
         release ptrc_t

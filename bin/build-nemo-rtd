@@ -206,8 +206,10 @@ if [ $build_nemo_rtd_exe -eq 1 ]; then
    input_f90='ccc_nemo_carbon-cmoc_rtd.F90'
   elif [ $type = 'physical' ]; then
    input_f90='ccc_nemo_physical_rtd.F90'
+  elif [ $type = 'ice' ]; then
+   input_f90='ccc_nemo_ice_rtd.F90'
   else
-    bail "type must be one of 'carbon-pisces', 'carbon-cmoc' or 'physical'"
+    bail "type must be one of 'carbon-pisces', 'carbon-cmoc', 'physical' or 'ice'"
   fi
 
   # Build the nemo-rtd executable
