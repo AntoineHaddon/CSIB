@@ -6,7 +6,7 @@ MODULE p4zsink
    !! History :   1.0  !  2004     (O. Aumont) Original code
    !!             2.0  !  2007-12  (C. Ethe, G. Madec)  F90
    !!             3.4  !  2011-06  (O. Aumont, C. Ethe) Change aggregation formula
-   !!           CMOC1  !  2013-15  (O. Riche) POC sinking
+   !!           CMOC1  !  2013-15  (O. Riche) POC sinking, Oct 28th 2015 simplified sink scheme according to Jim's own modifications for CMOC2
    !!----------------------------------------------------------------------
 #if defined key_pisces
    !!----------------------------------------------------------------------
@@ -54,7 +54,9 @@ CONTAINS
       !!---------------------------------------------------------------------
       INTEGER, INTENT(in) :: kt, jnt
       INTEGER  ::   ji, jj, jk
-      REAL(wp) ::   zfact, zwsmax, zmax, zstep
+      ! <CMOC code OR Oct 28th 2015> Simple sinking scheme
+      !REAL(wp) ::   zfact, zwsmax, zmax, zstep
+      REAL(wp) ::   zwsmax, zmax
       REAL(wp) ::   zrfact2
       INTEGER  ::   ik1
       CHARACTER (len=25) :: charout
@@ -156,19 +158,27 @@ CONTAINS
       REAL(wp), INTENT(inout), DIMENSION(jpi,jpj,jpk) ::   psinkflx  ! sinking fluxe
       !!
       INTEGER  ::   ji, jj, jk, jn
-      REAL(wp) ::   zigma,zew,zign, zflx, zstep
-      REAL(wp), POINTER, DIMENSION(:,:,:) :: ztraz, zakz, zwsink2, ztrb 
+      ! <CMOC code OR Oct 28th 2015> Simple sinking scheme
+      !REAL(wp) ::   zigma,zew,zign, zflx, zstep
+      REAL(wp) ::   zew, zflx
+      ! <CMOC code OR Oct 28th 2015> Simple sinking scheme
+      !REAL(wp), POINTER, DIMENSION(:,:,:) :: ztraz, zakz, zwsink2, ztrb
+      REAL(wp), POINTER, DIMENSION(:,:,:) :: zwsink2, ztrb 
       !!---------------------------------------------------------------------
       !
       IF( nn_timing == 1 )  CALL timing_start('p4z_sink2')
       !
       ! Allocate temporary workspace
-      CALL wrk_alloc( jpi, jpj, jpk, ztraz, zakz, zwsink2, ztrb )
+      ! <CMOC code OR Oct 28th 2015> Simple sinking scheme
+      !CALL wrk_alloc( jpi, jpj, jpk, ztraz, zakz, zwsink2, ztrb )
+      CALL wrk_alloc( jpi, jpj, jpk, zwsink2, ztrb )
+      
+      ! <CMOC code OR Oct 28th 2015> Simple sinking scheme
+      !zstep = rfact2 / 2.
 
-      zstep = rfact2 / 2.
-
-      ztraz(:,:,:) = 0.e0
-      zakz (:,:,:) = 0.e0
+      ! <CMOC code OR Oct 28th 2015> Simple sinking scheme      
+!       ztraz(:,:,:) = 0.e0
+!       zakz (:,:,:) = 0.e0
       ztrb (:,:,:) = trn(:,:,:,jp_tra)
 
       DO jk = 1, jpkm1
@@ -178,73 +188,82 @@ CONTAINS
 
 
       ! Vertical advective flux
-      DO jn = 1, 2
+      ! <CMOC code OR Oct 28th 2015> Simple sinking scheme
+      !DO jn = 1, 2
          !  first guess of the slopes interior values
-         DO jk = 2, jpkm1
-            ztraz(:,:,jk) = ( trn(:,:,jk-1,jp_tra) - trn(:,:,jk,jp_tra) ) * tmask(:,:,jk)
-         END DO
-         ztraz(:,:,1  ) = 0.0
-         ztraz(:,:,jpk) = 0.0
-
-         ! slopes
-         DO jk = 2, jpkm1
-            DO jj = 1,jpj
-               DO ji = 1, jpi
-                  zign = 0.25 + SIGN( 0.25, ztraz(ji,jj,jk) * ztraz(ji,jj,jk+1) )
-                  zakz(ji,jj,jk) = ( ztraz(ji,jj,jk) + ztraz(ji,jj,jk+1) ) * zign
-               END DO
-            END DO
-         END DO
-         
-         ! Slopes limitation
-         DO jk = 2, jpkm1
-            DO jj = 1, jpj
-               DO ji = 1, jpi
-                  zakz(ji,jj,jk) = SIGN( 1., zakz(ji,jj,jk) ) *        &
-                     &             MIN( ABS( zakz(ji,jj,jk) ), 2. * ABS(ztraz(ji,jj,jk+1)), 2. * ABS(ztraz(ji,jj,jk) ) )
-               END DO
-            END DO
-         END DO
+!          DO jk = 2, jpkm1
+!             ztraz(:,:,jk) = ( trn(:,:,jk-1,jp_tra) - trn(:,:,jk,jp_tra) ) * tmask(:,:,jk)
+!          END DO
+!          ztraz(:,:,1  ) = 0.0
+!          ztraz(:,:,jpk) = 0.0
+! 
+!          ! slopes
+!          DO jk = 2, jpkm1
+!             DO jj = 1,jpj
+!                DO ji = 1, jpi
+!                   zign = 0.25 + SIGN( 0.25, ztraz(ji,jj,jk) * ztraz(ji,jj,jk+1) )
+!                   zakz(ji,jj,jk) = ( ztraz(ji,jj,jk) + ztraz(ji,jj,jk+1) ) * zign
+!                END DO
+!             END DO
+!          END DO
+!          
+!          ! Slopes limitation
+!          DO jk = 2, jpkm1
+!             DO jj = 1, jpj
+!                DO ji = 1, jpi
+!                   zakz(ji,jj,jk) = SIGN( 1., zakz(ji,jj,jk) ) *        &
+!                      &             MIN( ABS( zakz(ji,jj,jk) ), 2. * ABS(ztraz(ji,jj,jk+1)), 2. * ABS(ztraz(ji,jj,jk) ) )
+!                END DO
+!             END DO
+!          END DO
          
          ! vertical advective flux
-         DO jk = 1, jpkm1
-            DO jj = 1, jpj      
-               DO ji = 1, jpi    
-                  zigma = zwsink2(ji,jj,jk+1) * zstep / fse3w(ji,jj,jk+1)
-                  zew   = zwsink2(ji,jj,jk+1)
-                  psinkflx(ji,jj,jk+1) = -zew * ( trn(ji,jj,jk,jp_tra) - 0.5 * ( 1 + zigma ) * zakz(ji,jj,jk) ) * zstep
-               END DO
-            END DO
-         END DO
-         !
-         ! Boundary conditions
-         psinkflx(:,:,1  ) = 0.e0
-         psinkflx(:,:,jpk) = 0.e0
+      DO jk = 1, jpkm1
+	DO jj = 1, jpj      
+	    DO ji = 1, jpi    
+	      ! <CMOC code OR Oct 28th 2015> Simple sinking scheme
+	      !zigma = zwsink2(ji,jj,jk+1) * zstep / fse3w(ji,jj,jk+1)
+	      zew   = zwsink2(ji,jj,jk+1)
+	      ! <CMOC code OR Oct 28th 2015> Simple sinking scheme
+	      !psinkflx(ji,jj,jk+1) = -zew * ( trn(ji,jj,jk,jp_tra) - 0.5 * ( 1 + zigma ) * zakz(ji,jj,jk) ) * zstep
+	      psinkflx(ji,jj,jk+1) = -zew * trn(ji,jj,jk,jp_tra) * rfact2
+	    END DO
+	END DO
+      END DO
+      !
+      ! Boundary conditions
+      psinkflx(:,:,1  ) = 0.e0
+      psinkflx(:,:,jpk) = 0.e0
          
-         DO jk=1,jpkm1
-            DO jj = 1,jpj
-               DO ji = 1, jpi
-                  zflx = ( psinkflx(ji,jj,jk) - psinkflx(ji,jj,jk+1) ) / fse3t(ji,jj,jk)
-                  trn(ji,jj,jk,jp_tra) = trn(ji,jj,jk,jp_tra) + zflx
-               END DO
-            END DO
-         END DO
+         ! <CMOC code OR Oct 28th 2015> Simple sinking scheme
+!          DO jk=1,jpkm1
+!             DO jj = 1,jpj
+!                DO ji = 1, jpi
+!                   zflx = ( psinkflx(ji,jj,jk) - psinkflx(ji,jj,jk+1) ) / fse3t(ji,jj,jk)
+!                   trn(ji,jj,jk,jp_tra) = trn(ji,jj,jk,jp_tra) + zflx
+!                END DO
+!             END DO
+!          END DO
 
-      ENDDO
+      !ENDDO
 
       DO jk=1,jpkm1
          DO jj = 1,jpj
             DO ji = 1, jpi
                zflx = ( psinkflx(ji,jj,jk) - psinkflx(ji,jj,jk+1) ) / fse3t(ji,jj,jk)
-               ztrb(ji,jj,jk) = ztrb(ji,jj,jk) + 2. * zflx
+	       ! <CMOC code OR Oct 28th 2015> Simple sinking scheme
+               !ztrb(ji,jj,jk) = ztrb(ji,jj,jk) + 2. * zflx
+               ztrb(ji,jj,jk) = ztrb(ji,jj,jk) + zflx
             END DO
          END DO
       END DO
 
       trn     (:,:,:,jp_tra) = ztrb(:,:,:)
-      psinkflx(:,:,:)        = 2. * psinkflx(:,:,:)
+      ! <CMOC code OR Oct 28th 2015> Simple sinking scheme      
+      ! psinkflx(:,:,:)        = 2. * psinkflx(:,:,:)
       !
-      CALL wrk_dealloc( jpi, jpj, jpk, ztraz, zakz, zwsink2, ztrb )
+      !CALL wrk_dealloc( jpi, jpj, jpk, ztraz, zakz, zwsink2, ztrb )
+      CALL wrk_dealloc( jpi, jpj, jpk, zwsink2, ztrb )      
       !
       IF( nn_timing == 1 )  CALL timing_stop('p4z_sink2')
       !
