@@ -62,6 +62,8 @@ CONTAINS
       REAL(wp), POINTER, DIMENSION(:,:,:) :: zprorca, zprochln
       ! <CMOC code OR 10/20/2015> nitrogen and light limitation functions
       REAL(wp), POINTER, DIMENSION(:,:,:) :: zlimn,zliml
+      ! <CMOC code OR 10/30/2015> etot is replaced by zetot = qsr * 0.43 and CMOC light attenuation
+      REAL(wp), POINTER, DIMENSION(:,:,:) :: zetot
       !!---------------------------------------------------------------------
       !
       IF( nn_timing == 1 )  CALL timing_start('p4z_prod')
@@ -71,6 +73,10 @@ CONTAINS
       CALL wrk_alloc( jpi, jpj, jpk, zprorca, zprochln )
       CALL wrk_alloc( jpi, jpj, jpk, zlimn, zliml      )
       !
+      ! <CMOC code OR 10/30/2015> etot is replaced by zetot = qsr * 0.43 and CMOC light attenuation
+      CALL wrk_alloc( jpi, jpj, jpk, zetot             )
+      !
+      zetot   (:,:,:) = 0._wp
       zprorca (:,:,:) = 0._wp
       zprochln(:,:,:) = 0._wp
       zprbio  (:,:,:) = 0._wp
@@ -85,12 +91,18 @@ CONTAINS
 !CDIR NOVERRCHK
                DO ji = 1, jpi
 
+		  ! <CMOC code OR 10/30/2015> etot is replaced by zetot = qsr * 0.43 and CMOC light attenuation
+		  zetot(ji,jj,jk) = qsr(ji,jj) * 0.43_wp & 
+		  !
+		  &               * exp ( - ( (0.04 + 0.03 * trn(ji,jj,1,jpnch) * 1e6_wp) * fsdept(ji,jj,jk) ) )
+		  !
+		  !
                   ! <CMOC code OR 10/20/2015>
                   ! photosynthetic phytoplankton growth rate
                   ! -------------------------
                   
                   ! original PISCES condition for PAR
-                  IF( etot(ji,jj,jk) > 1.E-3 ) THEN
+                  IF( zetot(ji,jj,jk) > 1.E-3 ) THEN
                       ztn    = tsn(ji,jj,jk,jp_tem) + 273.15_wp
                       ! ep_cmoc is in kJ mol^-1 and 8.31 is the ideal gas constant in J mol^-1 K^-1
                       zadap  = ep_cmoc * 1e+3_wp / 8.31_wp * ( 1._wp / ( ztn + rtrn ) - 1._wp / ( tvm_cmoc + 273.15_wp) )
@@ -109,7 +121,7 @@ CONTAINS
                       ! limitation functions
                       ! --------------------
                       ! light
-                      zliml (ji,jj,jk) = 1.- EXP( -zpislopen  * etot(ji,jj,jk) )
+                      zliml (ji,jj,jk) = 1.- EXP( -zpislopen  * zetot(ji,jj,jk) )
                       ! DIN
                       zlimn (ji,jj,jk) = trn(ji,jj,jk,jpno3) / ( kn_cmoc * 1e-6_wp * cnrr_cmoc + trn(ji,jj,jk,jpno3)+ rtrn )
                       ! iron is a constant and prescribed mask (xlimnfecmoc) see Zahariev et al 2008
@@ -121,7 +133,7 @@ CONTAINS
                       !  p.40 Eq. 4.65 (note that in the report phytoplankton currency is N not C).
                       !  12._wp (gC molC^-1) to convert trn(...,jpphy) from moles to grams in the tra(...,jpchn) equations.
                       !  zprnch must be in gchl L^-1 per molC L^-1.
-                      zprnch(ji,jj,jk) = 12._wp * thm_cmoc  * 2._wp  * zpislopead(ji,jj,jk)  /  ( 2._wp * zpislopead(ji,jj,jk)  +  achl_cmoc * thm_cmoc  * etot(ji,jj,jk) * r1_rday + rtrn )
+                      zprnch(ji,jj,jk) = 12._wp * thm_cmoc  * 2._wp  * zpislopead(ji,jj,jk)  /  ( 2._wp * zpislopead(ji,jj,jk)  +  achl_cmoc * thm_cmoc  * zetot(ji,jj,jk) * r1_rday + rtrn )
 
                   ENDIF
                END DO
@@ -134,7 +146,7 @@ CONTAINS
          DO jj = 1, jpj
 !CDIR NOVERRCHK
             DO ji = 1, jpi
-               IF( etot(ji,jj,jk) > 1.E-3 ) THEN
+               IF( zetot(ji,jj,jk) > 1.E-3 ) THEN
                
                   ! Prognostic phytoplankton and chlorophyll tendencies
                   ! ---------------------------------------------------
@@ -192,6 +204,8 @@ CONTAINS
       CALL wrk_dealloc( jpi, jpj, jpk, zpislopead, zprbio, zprnch )
       CALL wrk_dealloc( jpi, jpj, jpk, zprorca, zprochln          )
       CALL wrk_dealloc( jpi, jpj, jpk, zlimn, zliml               )
+      ! <CMOC code OR 10/30/2015> etot is replaced by zetot = qsr * 0.43 and CMOC light attenuation
+      CALL wrk_dealloc( jpi, jpj, jpk, zetot                      )
       !
       IF( nn_timing == 1 )  CALL timing_stop('p4z_prod')
       !
