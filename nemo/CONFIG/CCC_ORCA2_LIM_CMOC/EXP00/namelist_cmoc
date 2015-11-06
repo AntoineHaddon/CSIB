@@ -37,7 +37,7 @@
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &namcmoczoo    !  Zooplankton
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-   rm_cmoc    =  1.25          ! Zooplankton maximum grazing rate         (d^-1)
+   rm_cmoc    =  0.875         ! Zooplankton maximum grazing rate         (d^-1)
    kp_cmoc    =  0.2           ! Zooplankton grazing half-sat. constant   (mmolN m^-3)
    ga_cmoc    =  0.7           ! Zooplankton grazing efficiency
    mzn_cmoc   =  0.2           ! Zooplankton loss to nitrogen             (d^-1)
