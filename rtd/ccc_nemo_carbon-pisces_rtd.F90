@@ -26,75 +26,58 @@ IMPLICIT NONE
 !   pgf90 -m64 -O -D_LARGE_FILES -DpgiFortran -o nemo_ocean_diag nemo_ocean_diag.f uvic_netcdf.f -I/usr/local/netcdf-4.2.1_PG/include -L/usr/local/netcdf-4.2.1_PG/lib/ -lnetcdff -lnetcdf -lhdf5_hl -lhdf5 -lz
 
 ! ======================================================================
-      INTEGER :: imt, jmt, km, ll, iou
+      INTEGER :: imt, jmt, km, lm, iou
 
 !         establish the size of the grid from the input file.
           CALL openfile ("ptrc_t", iou)
           CALL getdimlen ('x', iou, imt)
           CALL getdimlen ('y', iou, jmt)
           CALL getdimlen ('deptht', iou, km)
+          CALL getdimlen ('time_counter', iou, lm) 
       
-          ll = 1
-
 !         do the calculations and save the output netcdf   
-          CALL calc (imt, jmt, km, ll)
+          CALL calc (imt, jmt, km, lm)
 
 END PROGRAM nemo_ocean_diag
 
-SUBROUTINE calc (imt, jmt, km, ll)
+SUBROUTINE calc (imt, jmt, km, lm)
 !     Does the required calculations and saves the output to netcdf
 
       IMPLICIT NONE
 
+
 ! ======================================================================
 !     Input data 
 ! ======================================================================
-      INTEGER imt, jmt, km, ll
-      INTEGER i, j, k, mon
+      INTEGER imt, jmt, km, lm
+      INTEGER i, j, k, l
 
 !     Grid-related arrays
       REAL, DIMENSION(imt, jmt)     :: lon2d, lat2d, e1t, e2t
       REAL, DIMENSION(km)           :: deptht
-      REAL, DIMENSION(imt, jmt, km) :: e3t(imt,jmt,km) 
+      REAL, DIMENSION(imt, jmt, km) :: e3t(imt,jmt,km), t_mask
 
 !     Monthly DIC, CaCO3, TA, PH, O2
-      REAL, DIMENSION(imt, jmt, km) :: dic, caco3, tal, ph, oxy
+      REAL, DIMENSION(imt, jmt, km, lm) :: dic, caco3, tal, ph, oxy
 
 !     Monthly POC, GOC, DOC
-      REAL, DIMENSION(imt, jmt, km) :: poc, goc, doc
+      REAL, DIMENSION(imt, jmt, km, lm) :: poc, goc, doc
 
 !     Monthly NO3, NH4, PO4, Si
-      REAL, DIMENSION(imt, jmt, km) :: no3, nh4, po4, si
+      REAL, DIMENSION(imt, jmt, km, lm) :: no3, nh4, po4, si
 
 !     Monthly PHY and Zoo
-      REAL, DIMENSION(imt, jmt, km) :: phy, phy2, zoo, zoo2
+      REAL, DIMENSION(imt, jmt, km, lm) :: phy, phy2, zoo, zoo2
 
 !     Monthly primary production: PPPHY, PPPHY2 
-      REAL, DIMENSION(imt, jmt, km) :: ppphy, ppphy2
+      REAL, DIMENSION(imt, jmt, km, lm) :: ppphy, ppphy2
 
 !     Monthly export fluxes of C (EPC100), CaCO3 (EPCAL100)
-      REAL, DIMENSION(imt, jmt)     :: epc100, epcal100
+      REAL, DIMENSION(imt, jmt, lm)     :: epc100, epcal100
 
 !     Monthly surface fluxes of DIC, O2, N2, Fe
-      REAL, DIMENSION(imt, jmt)     :: cflux, oflux, nfix, irondep
+      REAL, DIMENSION(imt, jmt, lm)     :: cflux, oflux, nfix, irondep
 
-! ======================================================================
-!     Pre-computed data  
-! ======================================================================
-
-!     3D variables
-      REAL, DIMENSION(imt, jmt, km) :: t_mask, dic_ann, caco3_ann
-      REAL, DIMENSION(imt, jmt, km) :: tal_ann, ph_ann, oxy_ann, poc_ann, goc_ann, doc_ann, no3_ann
-      REAL, DIMENSION(imt, jmt, km) :: nh4_ann, po4_ann, si_ann, phy_ann, phy2_ann, zoo_ann
-      REAL, DIMENSION(imt, jmt, km) :: zoo2_ann, ppphy_ann, ppphy2_ann  
-
-!    2D variables
-      REAL, DIMENSION(imt, jmt) ::  epc100_ann, epcal100_ann
-     REAL, DIMENSION(imt, jmt) ::   cflux_ann, oflux_ann, nfix_ann, irondep_ann
-
-!     weight for annual mean calculations, DY, 2/OCT/2013
-      INTEGER DIM(12)
-      DATA DIM/31,28,31,30,31,30,31,31,30,31,30,31/
 ! ======================================================================
 !     Working arrays / variables  
 ! ======================================================================
@@ -103,7 +86,7 @@ SUBROUTINE calc (imt, jmt, km, ll)
       REAL :: po4z, siz, phyz, phy2z, zooz, zoo2z, ppphyz, ppphy2z
 
 !     total ocean carbon, nitrogen      
-      REAL, DIMENSION(imt, jmt, km) :: toc, ton
+      REAL, DIMENSION(lm) :: toc, ton
  
 ! g_mask
       REAL, DIMENSION(imt, jmt) :: g_mask
@@ -113,25 +96,24 @@ SUBROUTINE calc (imt, jmt, km, ll)
 ! ======================================================================
 ! (1) Global-mean profiles for 3D data:
 
-      REAL, DIMENSION(km) :: dic_z, caco3_z, tal_z, ph_z, oxy_z, poc_z
-      REAL, DIMENSION(km) :: goc_z, doc_z, no3_z, nh4_z, po4_z, si_z, phy_z, phy2_z
-      REAL, DIMENSION(km) :: zoo_z, zoo2_z, ppphy_z, ppphy2_z
+      REAL, DIMENSION(km, lm) :: dic_z, caco3_z, tal_z, ph_z, oxy_z, poc_z
+      REAL, DIMENSION(km, lm) :: goc_z, doc_z, no3_z, nh4_z, po4_z, si_z, phy_z, phy2_z
+      REAL, DIMENSION(km, lm) :: zoo_z, zoo2_z, ppphy_z, ppphy2_z
 
 ! (2) Global-mean (volume weighted) or integral
 
 !     DIC, CaCO3 TA, PH, O2
-      REAL :: dicvol, caco3vol, talvol, phvol, oxyvol, pocvol, gocvol
-      REAL :: docvol, no3vol, nh4vol, po4vol, sivol, phyvol, phy2vol
-      REAL :: zoovol, zoo2vol, ppphyvol, ppphy2vol
-
-      REAL epc100glo, epcal100glo, cglo, ofluxglo, nfixglo, irondepglo
+      REAL, DIMENSION(lm) :: dicvol, caco3vol, talvol, phvol, oxyvol, pocvol, gocvol
+      REAL, DIMENSION(lm) :: docvol, no3vol, nh4vol, po4vol, sivol, phyvol, phy2vol
+      REAL, DIMENSION(lm) :: zoovol, zoo2vol, ppphyvol, ppphy2vol
+      REAL, DIMENSION(lm) :: epc100glo, epcal100glo, cglo, ofluxglo, nfixglo, irondepglo
 
 !----------------
 !  NetCDF-output specific
-      integer id_time, id_z, iou, ntrec, iyear
+      integer id_time, id_z, iou, ntrec, ntrec2, iyear, imon, days_elapsed
       logical exists, exists1, notopen
-      real tyear
-      CHARACTER(len=32) :: year_arg_in
+      real tyear, tdays_elapsed
+      CHARACTER(len=32) :: year_arg_in, mon_arg_in
 
 !----------------
 !     input file stuff
@@ -173,49 +155,7 @@ SUBROUTINE calc (imt, jmt, km, ll)
       CALL closefile (iou5)
 
 !---------------------------------------------------
-!    Set to zero arrays for annual accumulation   
-!---------------------------------------------------
-
-!     3D fields
-!     DIC, TA, PH, O2
-      dic_ann(:, :, :)       = 0.
-      caco3_ann(:, :, :)     = 0.
-      tal_ann(:, :, :)       = 0.
-      ph_ann(:, :, :)        = 0.    
-      oxy_ann(:, :, :)       = 0.
-!     POC, GOC, DOC
-      poc_ann(:, :, :)       = 0.
-      goc_ann(:, :, :)       = 0.
-      doc_ann(:, :, :)       = 0.
-!     NO3, NH4, PO4, Si 
-      no3_ann(:, :, :)       = 0. 
-      nh4_ann(:, :, :)       = 0.
-      po4_ann(:, :, :)       = 0. 
-      si_ann(:, :, :)        = 0.
-!     PHY, PHY2, ZOO, ZOO2
-      phy_ann(:, :, :)       = 0.    
-      phy2_ann(:, :, :)      = 0
-      zoo_ann(:, :, :)       = 0.
-      zoo2_ann(:, :, :)      = 0.
-!     PPPHY, PPPHY2
-      ppphy_ann(:, :, :)     = 0.    
-      ppphy2_ann(:, :, :)    = 0.    
-
-!     2D fields
-!     EPC100, EPCAL100
-      epc100_ann(:, :)       = 0.    
-      epcal100_ann(:, :)     = 0.    
-!     DIC flux 
-      cflux_ann(:, :)        = 0.         
-      oflux_ann(:, :)        = 0.         
-      nfix_ann(:, :)         = 0.         
-      irondep_ann(:, :)      = 0.         
-
-!---------------------------------------------------
-! reading time-dependent (monthly) data and compute 
-! annual-mean (the latter does not take into consideration 
-! the different number of days in each month; has to be 
-! corrected at some point...)
+! Read from NetCDF
 !---------------------------------------------------
 
 !     read prognostic variables from the prtc_t file        
@@ -227,90 +167,47 @@ SUBROUTINE calc (imt, jmt, km, ll)
           CALL openfile (fname07,iou6)
       endif
 
-      do mon=1, nrecon !  12         
 !        DIC, TA, O2 
-         CALL getvara ('DIC',      iou5, imt*jmt*km, (/1,1,1,mon/), (/imt,jmt,km,ll/),   dic, 1., 0.)                                 
-         CALL getvara ('CaCO3',    iou5, imt*jmt*km, (/1,1,1,mon/), (/imt,jmt,km,ll/), caco3, 1., 0.)  
-         CALL getvara ('Alkalini', iou5, imt*jmt*km, (/1,1,1,mon/), (/imt,jmt,km,ll/),   tal, 1., 0.)   
+         CALL getvara ('DIC',      iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),   dic, 1., 0.)                                 
+         CALL getvara ('CaCO3',    iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), caco3, 1., 0.)  
+         CALL getvara ('Alkalini', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),   tal, 1., 0.)   
 
 !        PH moved below for reading with other diat_t input
 
-         CALL getvara ('O2', iou5, imt*jmt*km, (/1,1,1,mon/), (/imt,jmt,km,ll/), oxy, 1., 0.)   
+         CALL getvara ('O2', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), oxy, 1., 0.)   
 
 !        POC, GOC, DOC
-         CALL getvara ('POC', iou5, imt*jmt*km, (/1,1,1,mon/), (/imt,jmt,km,ll/), poc, 1., 0.)   
-         CALL getvara ('GOC', iou5, imt*jmt*km, (/1,1,1,mon/), (/imt,jmt,km,ll/), goc, 1., 0.)   
-         CALL getvara ('DOC', iou5, imt*jmt*km, (/1,1,1,mon/), (/imt,jmt,km,ll/), doc, 1., 0.)   
+         CALL getvara ('POC', iou5, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,lm/), poc, 1., 0.)   
+         CALL getvara ('GOC', iou5, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,lm/), goc, 1., 0.)   
+         CALL getvara ('DOC', iou5, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,lm/), doc, 1., 0.)   
 
 !        NO3, NH4, PO4, Si 
-         CALL getvara ('NO3', iou5, imt*jmt*km, (/1,1,1,mon/), (/imt,jmt,km,ll/), no3, 1., 0.)
-         CALL getvara ('NH4', iou5, imt*jmt*km, (/1,1,1,mon/), (/imt,jmt,km,ll/), nh4, 1., 0.)    
-         CALL getvara ('PO4', iou5, imt*jmt*km, (/1,1,1,mon/), (/imt,jmt,km,ll/), po4, 1., 0.)    
-         CALL getvara ('Si' , iou5, imt*jmt*km, (/1,1,1,mon/), (/imt,jmt,km,ll/),  si, 1., 0.)      
+         CALL getvara ('NO3', iou5, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,lm/), no3, 1., 0.)
+         CALL getvara ('NH4', iou5, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,lm/), nh4, 1., 0.)    
+         CALL getvara ('PO4', iou5, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,lm/), po4, 1., 0.)    
+         CALL getvara ('Si' , iou5, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,lm/),  si, 1., 0.)      
 
 !        PHY, PHY2, ZOO, ZOO2
-         CALL getvara ('PHY',  iou5, imt*jmt*km, (/1,1,1,mon/), (/imt,jmt,km,ll/),  phy, 1., 0.)  
-         CALL getvara ('PHY2', iou5, imt*jmt*km, (/1,1,1,mon/), (/imt,jmt,km,ll/), phy2, 1., 0.)    
-         CALL getvara ('ZOO' , iou5, imt*jmt*km, (/1,1,1,mon/), (/imt,jmt,km,ll/),  zoo, 1., 0.)    
-         CALL getvara ('ZOO2', iou5, imt*jmt*km, (/1,1,1,mon/), (/imt,jmt,km,ll/), zoo2, 1., 0.)    
+         CALL getvara ('PHY',  iou5, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,lm/),  phy, 1., 0.)  
+         CALL getvara ('PHY2', iou5, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,lm/), phy2, 1., 0.)    
+         CALL getvara ('ZOO' , iou5, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,lm/),  zoo, 1., 0.)    
+         CALL getvara ('ZOO2', iou5, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,lm/), zoo2, 1., 0.)    
       
 !        Diagnostic variables
          if (exists) then 
 !            3-D: PH, PPPHY, PPPHY2, EPC100,
-             CALL getvara ('PH',       iou6, imt*jmt*km, (/1,1,1,mon/), (/imt,jmt,km,ll/),     ph, 1., 0.)   
-             CALL getvara ('PPPHY',    iou6, imt*jmt*km, (/1,1,1,mon/), (/imt,jmt,km,ll/),  ppphy, 1., 0.)   
-             CALL getvara ('PPPHY2',   iou6, imt*jmt*km, (/1,1,1,mon/), (/imt,jmt,km,ll/), ppphy2, 1., 0.)   
+             CALL getvara ('PH',       iou6, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,lm/),     ph, 1., 0.)   
+             CALL getvara ('PPPHY',    iou6, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,lm/),  ppphy, 1., 0.)   
+             CALL getvara ('PPPHY2',   iou6, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,lm/), ppphy2, 1., 0.)   
 
 !            2-D :  EPCAL100, DIC flux, Oflux, Nfix, Irondep
-             CALL getvara ('EPC100',   iou6, imt*jmt, (/1,1,mon/), (/imt,jmt,ll/),   epc100, 1., 0.)    
-             CALL getvara ('EPCAL100', iou6, imt*jmt, (/1,1,mon/), (/imt,jmt,ll/), epcal100, 1., 0.)    
-             CALL getvara ('Cflx',     iou6, imt*jmt, (/1,1,mon/), (/imt,jmt,ll/),    cflux, 1., 0.)    
-             CALL getvara ('Oflx',     iou6, imt*jmt, (/1,1,mon/), (/imt,jmt,ll/),    oflux, 1., 0.)    
-             CALL getvara ('Nfix',     iou6, imt*jmt, (/1,1,mon/), (/imt,jmt,ll/),     nfix, 1., 0.)    
-             CALL getvara ('Irondep',  iou6, imt*jmt, (/1,1,mon/), (/imt,jmt,ll/),  irondep, 1., 0.)    
+             CALL getvara ('EPC100',   iou6, imt*jmt, (/1,1,1/), (/imt,jmt,lm/),   epc100, 1., 0.)    
+             CALL getvara ('EPCAL100', iou6, imt*jmt, (/1,1,1/), (/imt,jmt,lm/), epcal100, 1., 0.)    
+             CALL getvara ('Cflx',     iou6, imt*jmt, (/1,1,1/), (/imt,jmt,lm/),    cflux, 1., 0.)    
+             CALL getvara ('Oflx',     iou6, imt*jmt, (/1,1,1/), (/imt,jmt,lm/),    oflux, 1., 0.)    
+             CALL getvara ('Nfix',     iou6, imt*jmt, (/1,1,1/), (/imt,jmt,lm/),     nfix, 1., 0.)    
+             CALL getvara ('Irondep',  iou6, imt*jmt, (/1,1,1/), (/imt,jmt,lm/),  irondep, 1., 0.)    
          endif 
-
-!        calculate the annual mean from the monthly data.
-!         3D data
-!         DIC, TA, PH, O2 
-          dic_ann   = dic_ann  + dic*DIM(mon)/365.
-          caco3_ann = caco3_ann+ caco3*DIM(mon)/365.
-          tal_ann   = tal_ann  + tal*DIM(mon)/365. 
-          oxy_ann   = oxy_ann  + oxy*DIM(mon)/365.
-
-!         POC, GOC, DOC
-          poc_ann   = poc_ann  + poc*DIM(mon)/365.
-          goc_ann   = goc_ann  + goc*DIM(mon)/365.
-          doc_ann   = doc_ann  + doc*DIM(mon)/365.
-
-!         NO3, NH4, PO4, Si 
-          no3_ann   = no3_ann + no3*DIM(mon)/365. 
-          nh4_ann   = nh4_ann + nh4*DIM(mon)/365. 
-          po4_ann   = po4_ann + po4*DIM(mon)/365.  
-          si_ann    =  si_ann + si*DIM(mon)/365. 
-
-!         PHY, PHY2, ZOO, ZOO2
-          phy_ann   = phy_ann  + phy*DIM(mon)/365.  
-          phy2_ann  = phy2_ann + phy2*DIM(mon)/365. 
-          zoo_ann   = zoo_ann  + zoo*DIM(mon)/365. 
-          zoo2_ann  = zoo2_ann + zoo2*DIM(mon)/365. 
-
-!         Diagnostic variables
-          if (exists) then   
-              ph_ann    = ph_ann   + ph*DIM(mon)/365. 
-              ppphy_ann = ppphy_ann  + ppphy*DIM(mon)/365.
-              ppphy2_ann= ppphy2_ann + ppphy2*DIM(mon)/365.
-
-!             2D data: 
-              epc100_ann    = epc100_ann   + epc100*DIM(mon)/365. 
-              epcal100_ann  = epcal100_ann + epcal100*DIM(mon)/365.
-
-              cflux_ann    = cflux_ann   + cflux*DIM(mon)/365. 
-              oflux_ann    = oflux_ann   + oflux*DIM(mon)/365. 
-              nfix_ann     = nfix_ann    + nfix*DIM(mon)/365. 
-              irondep_ann  = irondep_ann + irondep*DIM(mon)/365. 
-          endif 
-      enddo  ! time  (month) 
       CALL closeall ! close all open netcdf files
 
 ! ********** Do some basic calculations ************
@@ -318,212 +215,215 @@ SUBROUTINE calc (imt, jmt, km, ll)
 !---------------------------------------------------
 ! (1) Global annual mean T(z) and S(z)  
 !---------------------------------------------------
+
+! DIC, TA, PH, O2 
+      dicvol(:)   = 0.
+      caco3vol(:) = 0.
+      talvol(:)   = 0.
+      phvol(:)    = 0.
+      oxyvol(:)   = 0.
+! POC, GOC, DOC
+      pocvol(:)   = 0.
+      gocvol(:)   = 0.
+      docvol(:)   = 0.
+! NO3, NH4, PO4, Si 
+      no3vol(:)   = 0.
+      nh4vol(:)   = 0.  
+      po4vol(:)   = 0.  
+      sivol(:)    = 0. 
+! PHY, PHY2, ZOO, ZOO2
+      phyvol(:)   = 0. 
+      phy2vol(:)  = 0. 
+      zoovol(:)   = 0. 
+      zoo2vol(:)  = 0. 
+! PPPHY, PPPHY2      
+      ppphyvol(:) = 0.
+      ppphy2vol(:) = 0.
+
+      do l = 1, lm                             
           vol =0.
+          do k=1, km   
+             g_mask(:, :)  = t_mask(:, :, k) 
 
-!         DIC, TA, PH, O2 
-          dicvol   = 0.
-          caco3vol = 0.
-          talvol   = 0.
-          phvol    = 0.
-          oxyvol   = 0.
-!         POC, GOC, DOC
-          pocvol   = 0.
-          gocvol   = 0.
-          docvol   = 0.
-!         NO3, NH4, PO4, Si 
-          no3vol   = 0.
-          nh4vol   = 0.  
-          po4vol   = 0.  
-          sivol    = 0. 
-!         PHY, PHY2, ZOO, ZOO2
-          phyvol   = 0. 
-          phy2vol  = 0. 
-          zoovol   = 0. 
-          zoo2vol  = 0. 
-!         PPPHY, PPPHY2      
-          ppphyvol = 0.
-          ppphy2vol = 0.
-                         
-      do k=1, km   
-         g_mask(:, :)  = t_mask(:, :, k) 
+    !        DIC, TA, PH, O2 
+             CALL area_ave (e1t, e2t, e3t, g_mask, dic(: , : , k, l),   imt, jmt, km, dicz,   dvol, k)  
+             CALL area_ave (e1t, e2t, e3t, g_mask, caco3(: , : , k, l), imt, jmt, km, caco3z, dvol, k)  
+             CALL area_ave (e1t, e2t, e3t, g_mask, tal(:, :, k, l),     imt, jmt, km, talz,   dvol, k)  
+             CALL area_ave (e1t, e2t, e3t, g_mask, oxy(:, :, k, l),     imt, jmt, km, oxyz,   dvol, k)
 
-!        DIC, TA, PH, O2 
-         CALL area_ave (e1t, e2t, e3t, g_mask, dic_ann(: , : , k),   imt, jmt, km, dicz,   dvol, k)  
-         CALL area_ave (e1t, e2t, e3t, g_mask, caco3_ann(: , : , k), imt, jmt, km, caco3z, dvol, k)  
-         CALL area_ave (e1t, e2t, e3t, g_mask, tal_ann(:, :, k),     imt, jmt, km, talz,   dvol, k)  
-         CALL area_ave (e1t, e2t, e3t, g_mask, oxy_ann(:, :, k),     imt, jmt, km, oxyz,   dvol, k)
+    !        POC, GOC, DOC
+             CALL area_ave (e1t, e2t, e3t, g_mask, poc(:, :, k, l), imt, jmt, km, pocz, dvol, k)
+             CALL area_ave (e1t, e2t, e3t, g_mask, goc(:, :, k, l), imt, jmt, km, gocz, dvol, k)
+             CALL area_ave (e1t, e2t, e3t, g_mask, doc(:, :, k, l), imt, jmt, km, docz, dvol, k)
 
-!        POC, GOC, DOC
-         CALL area_ave (e1t, e2t, e3t, g_mask, poc_ann(:, :, k), imt, jmt, km, pocz, dvol, k)
-         CALL area_ave (e1t, e2t, e3t, g_mask, goc_ann(:, :, k), imt, jmt, km, gocz, dvol, k)
-         CALL area_ave (e1t, e2t, e3t, g_mask, doc_ann(:, :, k), imt, jmt, km, docz, dvol, k)
+    !        NO3, NH4, PO4, Si 
+             CALL area_ave (e1t, e2t, e3t, g_mask, no3(:, :, k, l), imt, jmt, km, no3z, dvol, k)
+             CALL area_ave (e1t, e2t, e3t, g_mask, nh4(:, :, k, l), imt, jmt, km, nh4z, dvol, k)
+             CALL area_ave (e1t, e2t, e3t, g_mask, po4(:, :, k, l), imt, jmt, km, po4z, dvol, k)  
+             CALL area_ave (e1t, e2t, e3t, g_mask, si(:, :, k, l),  imt, jmt, km, siz,  dvol, k)
 
-!        NO3, NH4, PO4, Si 
-         CALL area_ave (e1t, e2t, e3t, g_mask, no3_ann(:, :, k), imt, jmt, km, no3z, dvol, k)
-         CALL area_ave (e1t, e2t, e3t, g_mask, nh4_ann(:, :, k), imt, jmt, km, nh4z, dvol, k)
-         CALL area_ave (e1t, e2t, e3t, g_mask, po4_ann(:, :, k), imt, jmt, km, po4z, dvol, k)  
-         CALL area_ave (e1t, e2t, e3t, g_mask, si_ann(:, :, k),  imt, jmt, km, siz,  dvol, k)
+    !        PHY, PHY2, ZOO, ZOO2
+             CALL area_ave (e1t, e2t, e3t, g_mask, phy(:, :, k, l),  imt, jmt, km, phyz,  dvol, k)  
+             CALL area_ave (e1t, e2t, e3t, g_mask, phy2(:, :, k, l), imt, jmt, km, phy2z, dvol, k)  
+             CALL area_ave (e1t, e2t, e3t, g_mask, zoo(:, :, k, l),  imt, jmt, km, zooz,  dvol, k)  
+             CALL area_ave (e1t, e2t, e3t, g_mask, zoo2(:, :, k, l), imt, jmt, km, zoo2z, dvol, k) 
 
-!        PHY, PHY2, ZOO, ZOO2
-         CALL area_ave (e1t, e2t, e3t, g_mask, phy_ann(:, :, k),  imt, jmt, km, phyz,  dvol, k)  
-         CALL area_ave (e1t, e2t, e3t, g_mask, phy2_ann(:, :, k), imt, jmt, km, phy2z, dvol, k)  
-         CALL area_ave (e1t, e2t, e3t, g_mask, zoo_ann(:, :, k),  imt, jmt, km, zooz,  dvol, k)  
-         CALL area_ave (e1t, e2t, e3t, g_mask, zoo2_ann(:, :, k), imt, jmt, km, zoo2z, dvol, k) 
+             if (exists) then
+    !            PPPHY, PPPHY2      
+                 CALL area_ave (e1t, e2t, e3t, g_mask, ph(:, :, k, l),     imt, jmt, km, phz,     dvol, k)  
+                 CALL area_ave (e1t, e2t, e3t, g_mask, ppphy(:, :, k, l),  imt, jmt, km, ppphyz,  dvol, k) 
+                 CALL area_ave (e1t, e2t, e3t, g_mask, ppphy2(:, :, k, l), imt, jmt, km, ppphy2z, dvol, k) 
+             endif 
+    !================================================================
+    !        Assign outputs
+    !================================================================
+    !        DIC, TA, PH, O2 
+             dic_z(k, l)   = dicz     
+             caco3_z(k, l) = caco3z     
+             tal_z(k, l)   = talz     
+             oxy_z(k, l)   = oxyz    
 
-         if (exists) then
-!            PPPHY, PPPHY2      
-             CALL area_ave (e1t, e2t, e3t, g_mask, ph_ann(:, :, k),     imt, jmt, km, phz,     dvol, k)  
-             CALL area_ave (e1t, e2t, e3t, g_mask, ppphy_ann(:, :, k),  imt, jmt, km, ppphyz,  dvol, k) 
-             CALL area_ave (e1t, e2t, e3t, g_mask, ppphy2_ann(:, :, k), imt, jmt, km, ppphy2z, dvol, k) 
-         endif 
-!================================================================
-!        Assign outputs
-!================================================================
-!        DIC, TA, PH, O2 
-         dic_z(k)   = dicz     
-         caco3_z(k) = caco3z     
-         tal_z(k)   = talz     
-         oxy_z(k)   = oxyz    
+    !        POC, GOC, DOC
+             poc_z(k, l)    = pocz       
+             goc_z(k, l)    = gocz       
+             doc_z(k, l)    = docz       
 
-!        POC, GOC, DOC
-         poc_z(k)    = pocz       
-         goc_z(k)    = gocz       
-         doc_z(k)    = docz       
+    !        NO3, NH4, PO4, Si 
+             no3_z(k, l)   = no3z  
+             nh4_z(k, l)   = nh4z   
+             po4_z(k, l)   = po4z  
+             si_z(k, l)    = siz       
 
-!        NO3, NH4, PO4, Si 
-         no3_z(k)   = no3z  
-         nh4_z(k)   = nh4z   
-         po4_z(k)   = po4z  
-         si_z(k)    = siz       
+    !        PHY, PHY2, ZOO, ZOO2
+             phy_z(k, l)   = phyz
+             phy2_z(k, l)  = phy2z
+             zoo_z(k, l)   = zooz
+             zoo2_z(k, l)  = zoo2z
+         
+             if (exists) then
+                 ph_z(k, l)    = phz  
+                 ppphy_z(k, l) = ppphyz
+                 ppphy2_z(k, l)= ppphy2z
+             endif 
 
-!        PHY, PHY2, ZOO, ZOO2
-         phy_z(k)   = phyz
-         phy2_z(k)  = phy2z
-         zoo_z(k)   = zooz
-         zoo2_z(k)  = zoo2z
-     
-         if (exists) then
-             ph_z(k)    = phz  
-             ppphy_z(k) = ppphyz
-             ppphy2_z(k)= ppphy2z
-         endif 
+    !        DIC, TA, PH, O2 
+             dicvol(l)   = dicvol(l)  + dicz*dvol  
+             caco3vol(l)  = caco3vol(l)  + caco3z*dvol  
+             talvol(l)  = talvol(l)  + talz*dvol  
+             oxyvol(l)  = oxyvol(l)  + oxyz*dvol  
 
-!        DIC, TA, PH, O2 
-         dicvol   = dicvol + dicz*dvol  
-         caco3vol = caco3vol + caco3z*dvol  
-         talvol = talvol + talz*dvol  
-         oxyvol = oxyvol + oxyz*dvol  
+    !        POC, GOC, DOC
+             pocvol(l)  = pocvol(l)  + pocz*dvol  
+             gocvol(l)  = gocvol(l)  + gocz*dvol  
+             docvol(l)  = docvol(l)  + docz*dvol  
 
-!        POC, GOC, DOC
-         pocvol = pocvol + pocz*dvol  
-         gocvol = gocvol + gocz*dvol  
-         docvol = docvol + docz*dvol  
-
-!        NO3, NH4, PO4, Si 
-         no3vol = no3vol + no3z*dvol  
-         nh4vol = nh4vol + nh4z*dvol  
-         po4vol = po4vol + po4z*dvol  
-         sivol  = sivol  + siz*dvol  
+    !        NO3, NH4, PO4, Si 
+             no3vol(l)  = no3vol(l)  + no3z*dvol  
+             nh4vol(l)  = nh4vol(l)  + nh4z*dvol  
+             po4vol(l)  = po4vol(l)  + po4z*dvol  
+             sivol(l)   = sivol(l)   + siz*dvol  
 
 
-!        PHY, PHY2, ZOO, ZOO2
-         phyvol    = phyvol  + phyz*dvol
-         phy2vol   = phy2vol + phy2z*dvol 
-         zoovol    = zoovol  + zooz*dvol
-         zoo2vol   = zoo2vol + zoo2z*dvol 
+    !        PHY, PHY2, ZOO, ZOO2
+             phyvol(l)     = phyvol(l)   + phyz*dvol
+             phy2vol(l)    = phy2vol(l)  + phy2z*dvol 
+             zoovol(l)     = zoovol(l)   + zooz*dvol
+             zoo2vol(l)    = zoo2vol(l)  + zoo2z*dvol 
 
-         if (exists) then 
-             phvol     =     phvol + phz*dvol    
-             ppphyvol  =  ppphyvol + ppphyz*dvol  
-             ppphy2vol = ppphy2vol + ppphy2z*dvol  
-         endif
-                   
-          vol = vol + dvol
-      enddo  ! depth, k        
+             if (exists) then 
+                 phvol(l)      =     phvol(l)  + phz*dvol    
+                 ppphyvol(l)   =  ppphyvol(l)  + ppphyz*dvol  
+                 ppphy2vol(l)  = ppphy2vol(l)  + ppphy2z*dvol  
+             endif
+                       
+              vol = vol + dvol
+          enddo  ! depth, k        
 
-!     compute toc and ton
-      toc = dicvol + caco3vol + pocvol + gocvol + docvol                       &
-     &      + phyvol + phy2vol + zoovol + zoo2vol
-!     convert from mmol C to Pg C      
-      toc = toc * 12.0e-18
-      ton = no3vol + nh4vol + 16./122. *                                       &                           
-     &      (phyvol + phy2vol + zoovol + zoo2vol                               &
-     &      + pocvol + gocvol + docvol ) 
-!     convert to Pg      
-      ton = ton * 14.007e-18
+    !     compute toc and ton
+          toc(l)  = dicvol(l)  + caco3vol(l)  + pocvol(l)  + gocvol(l)  + docvol(l)                        &
+         &      + phyvol(l)  + phy2vol(l)  + zoovol(l)  + zoo2vol(l) 
+    !     convert from mmol C to Pg C      
+          toc(l)  = toc(l)  * 12.0e-18
+          ton(l)  = no3vol(l)  + nh4vol(l)  + 16./122. *                                       &                           
+         &      (phyvol(l)  + phy2vol(l)  + zoovol(l)  + zoo2vol(l)                                &
+         &      + pocvol(l)  + gocvol(l)  + docvol(l)  ) 
+    !     convert to Pg      
+          ton(l)  = ton(l)  * 14.007e-18
 
-      if (vol.ne.0.) then         
-!        DIC, TA, PH, O2 
-         dicvol = dicvol/vol 
-         caco3vol = caco3vol/vol 
-         talvol = talvol/vol 
-         oxyvol = oxyvol/vol  
-!        POC, GOC, DOC  
-         pocvol = pocvol/vol  
-         gocvol = gocvol/vol  
-         docvol = docvol/vol  
-!        NO3, NH4, PO4, Si 
-         no3vol = no3vol/vol  
-         nh4vol = nh4vol/vol 
-         po4vol = po4vol/vol
-         sivol  = sivol/vol 
+          if (vol.ne.0.) then         
+    !        DIC, TA, PH, O2 
+             dicvol(l)  = dicvol(l) /vol 
+             caco3vol(l)  = caco3vol(l) /vol 
+             talvol(l)  = talvol(l) /vol 
+             oxyvol(l)  = oxyvol(l) /vol  
+    !        POC, GOC, DOC  
+             pocvol(l)  = pocvol(l) /vol  
+             gocvol(l)  = gocvol(l) /vol  
+             docvol(l)  = docvol(l) /vol  
+    !        NO3, NH4, PO4, Si 
+             no3vol(l)  = no3vol(l) /vol  
+             nh4vol(l)  = nh4vol(l) /vol 
+             po4vol(l)  = po4vol(l) /vol
+             sivol(l)   = sivol(l) /vol 
 
-         if (exists) then   
-             phvol  = phvol/vol 
-!            convert to PgC/yr
-             ppphyvol  = ppphyvol * 12.e-15 * 86400 * 365
-             ppphy2vol = ppphy2vol * 12.e-15 * 86400 * 365
-         endif
-      endif
+             if (exists) then   
+                 phvol(l)   = phvol(l) /vol 
+    !            convert to PgC/yr
+                 ppphyvol(l)   = ppphyvol(l)  * 12.e-15 * 86400 * 365
+                 ppphy2vol(l)  = ppphy2vol(l)  * 12.e-15 * 86400 * 365
+             endif
+          endif
 
 
-!---------------------------------------------------
-! (2) Global surface fields (fluxes, etc...)  
-!---------------------------------------------------
-      do i=1,imt
-          do j=1,jmt
-              g_mask(i,j) = t_mask(i,j,1)
+    !---------------------------------------------------
+    ! (2) Global surface fields (fluxes, etc...)  
+    !---------------------------------------------------
+          do i=1,imt
+              do j=1,jmt
+                  g_mask(i,j) = t_mask(i,j,1)
+              enddo
           enddo
-      enddo
 
-      if (exists) then 
-!        EPC100, EPCAL100  
-         CALL area_ave_flx (e1t, e2t, g_mask, epc100_ann,   imt, jmt,   epc100glo, dum) 
-         CALL area_ave_flx (e1t, e2t, g_mask, epcal100_ann, imt, jmt, epcal100glo, dum) 
+          if (exists) then 
+    !        EPC100, EPCAL100  
+             CALL area_ave_flx (e1t, e2t, g_mask, epc100(:,:,l),   imt, jmt,   epc100glo(l), dum) 
+             CALL area_ave_flx (e1t, e2t, g_mask, epcal100(:,:,l), imt, jmt, epcal100glo(l), dum) 
 
-!        Cflux, Oflux, Nfix, Irondep  
-         CALL area_ave_flx (e1t, e2t, g_mask, cflux_ann,   imt, jmt, cglo,       dum) 
-         CALL area_ave_flx (e1t, e2t, g_mask, oflux_ann,   imt, jmt, ofluxglo,   dum) 
-         CALL area_ave_flx (e1t, e2t, g_mask, nfix_ann,    imt, jmt, nfixglo ,   dum) 
-         CALL area_ave_flx (e1t, e2t, g_mask, irondep_ann, imt, jmt, irondepglo, dum) 
+    !        Cflux, Oflux, Nfix, Irondep  
+             CALL area_ave_flx (e1t, e2t, g_mask, cflux(:,:,l),   imt, jmt, cglo(l),       dum) 
+             CALL area_ave_flx (e1t, e2t, g_mask, oflux(:,:,l),   imt, jmt, ofluxglo(l),   dum) 
+             CALL area_ave_flx (e1t, e2t, g_mask, nfix(:,:,l),    imt, jmt, nfixglo(l),   dum) 
+             CALL area_ave_flx (e1t, e2t, g_mask, irondep(:,:,l), imt, jmt, irondepglo(l), dum) 
 
-!       <PISCES OR 01/15/2014> convert into PgC/yr 
-         cglo         = cglo        * dum * 12.e-15 * 86400 * 365
-         epc100glo    = epc100glo   * dum * 12.e-15 * 86400 * 365
-         epcal100glo  = epcal100glo * dum * 12.e-15 * 86400 * 365
+    !       <PISCES OR 01/15/2014> convert into PgC/yr 
+             cglo(l)          = cglo(l)         * dum * 12.e-15 * 86400 * 365
+             epc100glo(l)     = epc100glo(l)    * dum * 12.e-15 * 86400 * 365
+             epcal100glo(l)   = epcal100glo(l)  * dum * 12.e-15 * 86400 * 365
 
-!        convert to TgN/yr (assuming this is N not N2)
-         nfixglo      = nfixglo  * dum * 14.007e-12 * 86400 * 365
+    !        convert to TgN/yr (assuming this is N not N2)
+             nfixglo(l)       = nfixglo(l)   * dum * 14.007e-12 * 86400 * 365
 
-!        convert to mol O2/yr
-         ofluxglo     = ofluxglo * dum *  86400 * 365
+    !        convert to mol O2/yr
+             ofluxglo(l)      = ofluxglo(l)  * dum *  86400 * 365
 
-!        convert to mol Fe/yr 
-         irondepglo   = irondepglo  * dum * 86400 * 365
-      endif
-
-!     Read in the year which is the first command line argument
-      CALL getarg(1, year_arg_in )
-      read (year_arg_in,'(I10)') iyear
-
-      tyear = float( iyear )
-      print*," --- "
-      print*," Tyear is:", tyear
-      print*," --- "
+    !        convert to mol Fe/yr 
+             irondepglo(l)    = irondepglo(l)   * dum * 86400 * 365
+          endif
+      enddo !main time loop
 
 !---------------------------------------------------------
 !     NETCDF RTD output: Time series information section
 !---------------------------------------------------------
+!     Read in the year which is the first command line argument
+      CALL getarg(1, year_arg_in )
+      read (year_arg_in,'(I10)') iyear
+!     Read in the 1st month which is the second command line argument
+      CALL getarg(2, mon_arg_in )
+      read (mon_arg_in,'(I10)') imon
+      print*," --- "
+      print*," iyear, imon are:", iyear, imon
+      print*," --- "
+
       iou = 0
       id_time = 0
       id_z = 0
@@ -532,16 +432,18 @@ SUBROUTINE calc (imt, jmt, km, ll)
       inquire (file="nemo_carbon_rtd.nc", exist=exists1)
       if (.not. exists1) then
       print*,"output file not found...creating a new file..."
-      CALL flush(6)
+      !CALL flush(6)
       CALL opennew ("nemo_carbon_rtd.nc", iou)
       ntrec = 1
         CALL redef (iou)
 !         basic grid specification
           CALL defdim ('time', iou, 0, id_time)
           CALL defdim ('depth', iou, km, id_z)
-          CALL defvar ('time', iou, 1, (/id_time/), 0., 0., 'T', 'D'             &
-     &        , 'time', 'time', 'common_year since 1-1-0 00:00:0.0')
-          CALL putatttext (iou, 'time', 'calendar', 'noleap')
+          CALL defvar ('time', iou, 1, (/id_time/), 0., 0., 'T', 'F'   &
+            &        , 'time', 'time', 'days since 0000-01-01 00:00:00')
+
+          call putatttext (iou, 'time', 'calendar', '365_day')
+
 
           CALL defvar ('depth', iou, 1, (/id_z/), 0., 0., 'Y', 'F'               &
      &       , 'depth of the t grid', 'depth', 'm')
@@ -716,95 +618,103 @@ SUBROUTINE calc (imt, jmt, km, ll)
 
 !      if the file does exist then open it for writing at the next record
        print*,"output file found...opening existing file for appending"
-       CALL flush(6)
+       !CALL flush(6)
        CALL opennext ("nemo_carbon_rtd.nc", tyear, ntrec, iou)
       endif
 
 !       append variables
 !--------------------------------------------------------------------------
+      do l = 1, lm
+!       Convert the date into days since 01-01-0001        
+        CALL noleap_days(iyear, imon+l-1, 1, days_elapsed)
+        tdays_elapsed = float(days_elapsed)
+
 !       time
-        CALL putvars ('time', iou, ntrec, tyear, 1., 0.)
+        ntrec2 = ntrec + l - 1
+        call putvars ('time', iou, ntrec2, tdays_elapsed, 1., 0.)
 
 !       DIC
-        CALL putvars ('DIC', iou, ntrec, dicvol, 1., 0.)
-        CALL putvara ('DICz', iou, km, (/1, ntrec/), (/km, 1/), dic_z, 1., 0.) 
+        CALL putvars ('DIC', iou, ntrec2, dicvol(l), 1., 0.)
+        CALL putvara ('DICz', iou, km, (/1, ntrec2/), (/km, 1/), dic_z(:, l), 1., 0.) 
 
 !       CaCO3
-        CALL putvars ('CaCO3', iou, ntrec, caco3vol, 1., 0.)
-        CALL putvara ('CaCO3z', iou, km, (/1, ntrec/), (/km, 1/), caco3_z, 1., 0.) 
+        CALL putvars ('CaCO3', iou, ntrec2, caco3vol(l), 1., 0.)
+        CALL putvara ('CaCO3z', iou, km, (/1, ntrec2/), (/km, 1/), caco3_z(:, l), 1., 0.) 
 
 !       ALK
-        CALL putvars ('TAL', iou, ntrec, talvol, 1., 0.)
-        CALL putvara ('TALz', iou, km, (/1, ntrec/), (/km, 1/), tal_z, 1., 0.)
+        CALL putvars ('TAL', iou, ntrec2, talvol(l), 1., 0.)
+        CALL putvara ('TALz', iou, km, (/1, ntrec2/), (/km, 1/), tal_z(:, l), 1., 0.)
 
 !       OXY
-        CALL putvars ('O2', iou, ntrec, oxyvol, 1., 0.)
-        CALL putvara ('O2z', iou, km, (/1, ntrec/), (/km, 1/), oxy_z, 1., 0.)
+        CALL putvars ('O2', iou, ntrec2, oxyvol(l), 1., 0.)
+        CALL putvara ('O2z', iou, km, (/1, ntrec2/), (/km, 1/), oxy_z(:, l), 1., 0.)
 
 !       POC
-        CALL putvars ('POC', iou, ntrec, pocvol, 1., 0.)
-        CALL putvara ('POCz', iou, km, (/1, ntrec/), (/km, 1/), poc_z, 1., 0.)
+        CALL putvars ('POC', iou, ntrec2, pocvol(l), 1., 0.)
+        CALL putvara ('POCz', iou, km, (/1, ntrec2/), (/km, 1/), poc_z(:, l), 1., 0.)
 !       GOC
-        CALL putvars ('GOC', iou, ntrec, gocvol, 1., 0.)
-        CALL putvara ('GOCz', iou, km, (/1, ntrec/), (/km, 1/), goc_z, 1., 0.)
+        CALL putvars ('GOC', iou, ntrec2, gocvol(l), 1., 0.)
+        CALL putvara ('GOCz', iou, km, (/1, ntrec2/), (/km, 1/), goc_z(:, l), 1., 0.)
 !       DOC
-        CALL putvars ('DOC', iou, ntrec, docvol, 1., 0.)
-        CALL putvara ('DOCz', iou, km, (/1, ntrec/), (/km, 1/), doc_z, 1., 0.)
+        CALL putvars ('DOC', iou, ntrec2, docvol(l), 1., 0.)
+        CALL putvara ('DOCz', iou, km, (/1, ntrec2/), (/km, 1/), doc_z(:, l), 1., 0.)
 
 !       NO3
-        CALL putvars ('NO3', iou, ntrec, no3vol, 1., 0.)
-        CALL putvara ('NO3z', iou, km, (/1, ntrec/), (/km, 1/), no3_z, 1., 0.)
+        CALL putvars ('NO3', iou, ntrec2, no3vol(l), 1., 0.)
+        CALL putvara ('NO3z', iou, km, (/1, ntrec2/), (/km, 1/), no3_z(:, l), 1., 0.)
 
 !       NH4
-        CALL putvars ('NH4', iou, ntrec, nh4vol, 1., 0.)
-        CALL putvara ('NH4z', iou, km, (/1, ntrec/), (/km, 1/), nh4_z, 1., 0.)
+        CALL putvars ('NH4', iou, ntrec2, nh4vol(l), 1., 0.)
+        CALL putvara ('NH4z', iou, km, (/1, ntrec2/), (/km, 1/), nh4_z(:, l), 1., 0.)
 
 !       PO4
-        CALL putvars ('PO4', iou, ntrec, po4vol, 1., 0.)
-        CALL putvara ('PO4z', iou, km, (/1, ntrec/), (/km, 1/), po4_z, 1., 0.)
+        CALL putvars ('PO4', iou, ntrec2, po4vol(l), 1., 0.)
+        CALL putvara ('PO4z', iou, km, (/1, ntrec2/), (/km, 1/), po4_z(:, l), 1., 0.)
 
 !       SI
-        CALL putvars ('SI', iou, ntrec, sivol, 1., 0.)
-        CALL putvara ('SIz', iou, km, (/1, ntrec/), (/km, 1/), si_z, 1., 0.)
+        CALL putvars ('SI', iou, ntrec2, sivol(l), 1., 0.)
+        CALL putvara ('SIz', iou, km, (/1, ntrec2/), (/km, 1/), si_z(:, l), 1., 0.)
 
 !       Total C
-        CALL putvars ('TC', iou, ntrec, toc, 1., 0.)
+        CALL putvars ('TC', iou, ntrec2, toc(l), 1., 0.)
 
 !       Total N
-        CALL putvars ('TN', iou, ntrec, ton, 1., 0.)
+        CALL putvars ('TN', iou, ntrec2, ton(l), 1., 0.)
 
 !       Diagnostic variables
         if (exists) then 
 !           PH
-            CALL putvars ('PH', iou, ntrec, phvol, 1., 0.)
-            CALL putvara ('PHz', iou, km, (/1, ntrec/), (/km, 1/), ph_z, 1., 0.)
+            CALL putvars ('PH', iou, ntrec2, phvol(l), 1., 0.)
+            CALL putvara ('PHz', iou, km, (/1, ntrec2/), (/km, 1/), ph_z(:, l), 1., 0.)
 
 !           PHY
-            CALL putvars ('PPPHY', iou, ntrec, ppphyvol, 1., 0.)
+            CALL putvars ('PPPHY', iou, ntrec2, ppphyvol(l), 1., 0.)
 
 !           PHY2
-            CALL putvars ('PPPHY2', iou, ntrec, ppphy2vol, 1., 0.)
+            CALL putvars ('PPPHY2', iou, ntrec2, ppphy2vol(l), 1., 0.)
 
 !           EPC100
-            CALL putvars ('EPC100', iou, ntrec, epc100glo, 1., 0.)
+            CALL putvars ('EPC100', iou, ntrec2, epc100glo(l), 1., 0.)
 
 !           EPCAL100
-            CALL putvars ('EPCAL100', iou, ntrec, epcal100glo, 1., 0.)
+            CALL putvars ('EPCAL100', iou, ntrec2, epcal100glo(l), 1., 0.)
 
 !           Cflux
-            CALL putvars ('CFLX', iou, ntrec, cglo, 1., 0.)
+            CALL putvars ('CFLX', iou, ntrec2, cglo(l), 1., 0.)
 
 !           Oflux
-            CALL putvars ('OFLX', iou, ntrec, ofluxglo, 1., 0.)
+            CALL putvars ('OFLX', iou, ntrec2, ofluxglo(l), 1., 0.)
 
 !           Nfix
-            CALL putvars ('NFIX', iou, ntrec, nfixglo, 1., 0.)
+            CALL putvars ('NFIX', iou, ntrec2, nfixglo(l), 1., 0.)
 
 !           Irondep
-            CALL putvars ('Irondep', iou, ntrec, irondepglo, 1., 0.)
+            CALL putvars ('Irondep', iou, ntrec2, irondepglo(l), 1., 0.)
         endif
+      enddo ! time loop
+
       print*, 'closing netcdf'
-      CALL flush(6)
+      !CALL flush(6)
 
       CALL closefile (iou)
       
@@ -867,3 +777,37 @@ SUBROUTINE area_ave_flx (e1,e2, mask, a, imt, jmt,a_mean,ss)
 
       return
 END SUBROUTINE area_ave_flx
+
+SUBROUTINE noleap_days(year, mon, day, days_elapsed)
+!    Given a year, mon, day, returns the number of days elapsed
+!    since 01-01-0000 (using a noleap/365_day calendar)
+    IMPLICIT NONE
+    INTEGER, INTENT(IN)  :: year, mon, day
+    INTEGER, INTENT(OUT) :: days_elapsed
+    INTEGER              :: doy, dpy, mmon, myear
+
+    ! Adjust if mon > 12. This is a potential here. No correction
+    ! for days being off. I'm assuming day will mostly be 1 anyway.
+
+    IF (mon > 12) THEN
+        myear = year + mon/12
+        mmon = MOD(mon, 12)
+    ELSE
+       myear = year
+       mmon = mon
+    ENDIF
+
+    ! In a given (noleap) year, compute the day of year    
+    ! http://www.davidgsimpson.com/software/greg2doy_f90.txt
+    !
+    doy = ((275*mmon)/9) - ((mmon+9)/6) + day - 30
+
+    ! Compute the number of days in the preceeding years
+    dpy = 365 * year
+
+    ! Tally for the final result
+    days_elapsed = dpy + doy
+    return
+END SUBROUTINE noleap_days
+
+

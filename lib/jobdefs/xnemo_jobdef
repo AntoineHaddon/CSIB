@@ -1222,16 +1222,16 @@ cat > Execute_Script <<'end_of_script'
       rtd_hist2="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_grid_u.nc"
       rtd_hist3="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_grid_v.nc"
       rtd_hist4="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_grid_w.nc"
-      access grid_t $rtd_hist1 nocp=off
-      access grid_u $rtd_hist2 nocp=off
-      access grid_v $rtd_hist3 nocp=off
-      access grid_w $rtd_hist4 nocp=off
+      access grid_t $rtd_hist1 
+      access grid_u $rtd_hist2 
+      access grid_v $rtd_hist3 
+      access grid_w $rtd_hist4 
       chmod u+rw grid_t grid_u grid_v grid_w
 
       # This also requires a file containing grid information
       # This file could be modified so create a local copy with write access
       orca_grid_info=nemo3.4.1_orca1_mesh_mask_ngr.nc
-      access orca_mesh_mask $orca_grid_info nocp=off
+      access orca_mesh_mask $orca_grid_info 
       chmod u+rw orca_mesh_mask
 
       # The user must define year_rtdiag_start
@@ -1281,8 +1281,8 @@ cat > Execute_Script <<'end_of_script'
         # Access additional annual history files containing PISCES related variables
         rtd_hist5="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_ptrc_t.nc"
         rtd_hist6="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_diad_t.nc"
-        access ptrc_t $rtd_hist5 nocp=off
-        access diad_t $rtd_hist6 nocp=off
+        access ptrc_t $rtd_hist5 
+        access diad_t $rtd_hist6 
         chmod u+rw ptrc_t diad_t
 
         # Access the rtd executable
@@ -1299,10 +1299,10 @@ cat > Execute_Script <<'end_of_script'
             access nemo_carbon_rtd.nc $curr_rtd_file nocp=off
             chmod u+rw nemo_carbon_rtd.nc
             # Create run time diagnostics for carbon variables
-            $carbon_rtd_exe $stop_year
+            $carbon_rtd_exe $stop_year $start_mon
         else
             # Create run time diagnostics for carbon variables
-            $carbon_rtd_exe $stop_year
+            $carbon_rtd_exe $stop_year $start_mon
             ${NCATTED} -O -a RTD_version,global,a,c,"${carbon_rtd_exe}" nemo_carbon_rtd.nc
         fi
 
