@@ -1222,7 +1222,7 @@ cat > Execute_Script <<'end_of_script'
         fi
 
         # Save the rtd file created by carbon_rtd_exe
-        new_rtd_file=sc_${runid}_${year_rtdiag_start}_${stop_year}_nemo_carbon_rtd.nc
+        new_rtd_file=sc_${runid}_${stop_date}_nemo_carbon_rtd.nc
         save nemo_carbon_rtd.nc $new_rtd_file
         echo $new_rtd_file >> rtd_file_dump_list
 
