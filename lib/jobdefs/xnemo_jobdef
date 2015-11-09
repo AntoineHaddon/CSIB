@@ -1160,8 +1160,9 @@ cat > Execute_Script <<'end_of_script'
 
       # Access an existing rtd file containing data up to the previous year, if year > year_rtdiag_start
       # Create a local copy with write access
-      if [ ${year_rtdiag_start} -lt ${stop_year} ] ; then
-          curr_rtd_file=sc_${runid}_${rs_date}_nemo_physical_rtd.nc
+      curr_rtd_file=sc_${runid}_${rs_date}_nemo_physical_rtd.nc
+      found_file=`(ls -1 $DATAPATH/$curr_rtd_file* || : ) 2>/dev/null`
+      if [ -n "$curr_rtd_file" ]; then 
           access nemo_physical_rtd.nc $curr_rtd_file nocp=off
           chmod u+rw nemo_physical_rtd.nc      
           # Create run time diagnostics for physical ocean variables
@@ -1198,7 +1199,6 @@ cat > Execute_Script <<'end_of_script'
         rtd_hist6="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_diad_t.nc"
         access ptrc_t $rtd_hist5 
         access diad_t $rtd_hist6 
-        chmod u+rw ptrc_t diad_t
 
         # Access the rtd executable
         carbon_rtd_exe=nemo_orca1_carbon_rtd_v02c
@@ -1208,8 +1208,9 @@ cat > Execute_Script <<'end_of_script'
 
         # Access an existing rtd file containing data up to the previous year, if 
         # year > year_rtdiag_start
-        if [ ${year_rtdiag_start} -lt ${stop_year} ] ; then
-            curr_rtd_file=sc_${runid}_${rs_date}_nemo_carbon_rtd.nc
+        curr_rtd_file=sc_${runid}_${rs_date}_nemo_carbon_rtd.nc
+        found_file=`(ls -1 $DATAPATH/$curr_rtd_file* || : ) 2>/dev/null`
+        if [ -n "$curr_rtd_file" ]; then 
             access nemo_carbon_rtd.nc $curr_rtd_file nocp=off
             chmod u+rw nemo_carbon_rtd.nc
             # Create run time diagnostics for carbon variables
@@ -1250,8 +1251,9 @@ cat > Execute_Script <<'end_of_script'
 
         # Access an existing rtd file containing data up to the previous year, if 
         # year > year_rtdiag_start
-        if [ ${year_rtdiag_start} -lt ${stop_year} ] ; then
-            curr_rtd_file=sc_${runid}_${rs_date}_nemo_ice_rtd.nc
+        curr_rtd_file=sc_${runid}_${rs_date}_nemo_ice_rtd.nc
+        found_file=`(ls -1 $DATAPATH/$curr_rtd_file* || : ) 2>/dev/null`
+        if [ -n "$curr_rtd_file" ]; then 
             access nemo_ice_rtd.nc $curr_rtd_file nocp=off
             chmod u+rw nemo_ice_rtd.nc
             # Create run time diagnostics for carbon variables
