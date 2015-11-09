@@ -800,6 +800,7 @@ cat > Execute_Script <<'end_of_script'
       nemo_data_doc_nomask=nemo_3.4_orca2_data_doc_nomask.nc
       nemo_data_fer_nomask=nemo_3.4_orca2_data_fer_nomask.nc
       nemo_data_no3_nomask=nemo_3.4_orca2_data_no3_nomask.nc
+      nemo_data_atcco2=nemo_atcco2_1850-2005.txt
 
       acc_cp data_dic_nomask.nc        $nemo_data_dic_nomask
       acc_cp data_alkalini_nomask.nc   $nemo_data_alkalini_nomask
@@ -809,6 +810,7 @@ cat > Execute_Script <<'end_of_script'
       acc_cp data_doc_nomask.nc        $nemo_data_doc_nomask
       acc_cp data_fer_nomask.nc        $nemo_data_fer_nomask
       acc_cp data_no3_nomask.nc        $nemo_data_no3_nomask
+      acc_cp atcco2.txt                $nemo_data_atcco2
     fi 
 
     #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
