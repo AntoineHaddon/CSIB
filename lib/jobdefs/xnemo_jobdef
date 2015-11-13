@@ -1593,6 +1593,7 @@ cat > Execute_Script <<'end_of_script'
 	  # For the RTD files
   	  if [ $nemo_ann_rtd -eq 1 ]; then
               echo ${rtd_file_del_list} >> ${hist_file_del_list}
+              echo 'deleting...' ${hist_file_del_list}
 	  fi
           
 	  [ -s ${hist_file_del_list} ] || 

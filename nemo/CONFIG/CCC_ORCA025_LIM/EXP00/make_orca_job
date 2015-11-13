@@ -75,7 +75,7 @@ nemo_ann_cat=off
 
 # RTD switch. If nemo_carbon=on, both physical and carbon RTD will be done,
 # otherwise only physical. User can specify rtd exectuables below. 
-nemo_ann_rtd=off
+nemo_ann_rtd=on
 
 # Dump history files saved on DATAPATH to cfs
 # The user can redefine nemo_dump_hist_freq_list and nemo_dump_hist_suffix_list
@@ -359,9 +359,9 @@ debug=off
 
 # Determines if RTD is done, and specifies the RTD executables
   nemo_ann_rtd=${nemo_ann_rtd}
-  physical_rtd_exe="nemo_orca_physical_rtd_v02c"
-  carbon_rtd_exe="nemo_orca_carbon_rtd_v02c"
-  ice_rtd_exe="nemo_orca_ice_rtd_v02c"
+  physical_rtd_exe="nemo_orca_physical_rtd_v03_testing"
+  carbon_rtd_exe="nemo_cmoc_carbon_rtd_v03_testing"
+  ice_rtd_exe="nemo_orca_ice_rtd_v03_testing"
 
 # Dump history files saved on DATAPATH to cfs
 # The user can redefine nemo_dump_hist_freq_list ('1y 1m 1d 5d') and 

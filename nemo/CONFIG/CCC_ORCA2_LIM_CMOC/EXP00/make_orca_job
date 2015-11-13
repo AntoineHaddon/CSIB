@@ -75,7 +75,7 @@ nemo_cmoc=on
 
 # Concatenate history files into one file per year
 # (Required for RTD). The sub-annual files will be deleted.
-nemo_ann_cat=on
+nemo_ann_cat=off
 
 # RTD switch. If nemo_carbon=on, both physical and carbon RTD will be done,
 # otherwise only physical. User can specify rtd exectuables below. 
@@ -393,9 +393,10 @@ debug=off
 
 # Determines if RTD is done, and specifies the RTD executables
   nemo_ann_rtd=${nemo_ann_rtd}
-  physical_rtd_exe="nemo_orca_physical_rtd_v02c"
-  carbon_rtd_exe="nemo_cmoc_carbon_rtd_v02c"
-  ice_rtd_exe="nemo_orca_ice_rtd_v02c"
+  physical_rtd_exe="nemo_orca_physical_rtd_v03_testing"
+  carbon_rtd_exe="nemo_cmoc_carbon_rtd_v03_testing"
+  ice_rtd_exe="nemo_orca_ice_rtd_v03_testing"
+
 
 # Dump history files saved on DATAPATH to cfs
 # The user can redefine nemo_dump_hist_freq_list and nemo_dump_hist_suffix_list
