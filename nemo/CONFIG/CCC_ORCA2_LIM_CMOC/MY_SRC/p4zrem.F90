@@ -69,11 +69,7 @@ CONTAINS
        zredettot(:,:)   = 0._wp
        zn2fix   (:,:,:) = 0._wp
        zn2fixtot(:,:)   = 0._wp
-       
-       ! <CMOC code OR 10/15/2015> to diagnose nitrogen fixation over a time step instead of 1/4 of the time step because of the time split. The diagnostics is only initialized when jnt == 1
-       IF(jnt == 1 ) THEN
-          xn2fixdia(:,:)   = 0._wp
-       ENDIF
+
        zJNd     (:,:,:) = 0._wp
        zwork    (:,:)   = 0._wp
        zfpon    (:,:)   = 0._wp
@@ -125,7 +121,7 @@ CONTAINS
             zJNd(:,:,jk) =  zn2fix(:,:,jk)
       !
       END DO 
-      
+
       DO jk = 12, jpkm1
       !
             zJNd(:,:,jk) = -zredet(:,:,jk) * trn(:,:,jk,jppoc) * zn2fixtot(:,:) / (zredettot(:,:) + rtrn)
@@ -218,15 +214,12 @@ CONTAINS
          CALL prt_ctl_trc(tab4d=tra, mask=tmask, clinfo=ctrcnm)
       ENDIF
 
-      ! <CMOC code OR 10/15/2015> fix N2-fixation diagnostics
-      xn2fixdia(:,:) = xn2fixdia(:,:) + zn2fixtot(:,:) ! add the intermediate time-split steps to get the N2-fixation rate over a time step
-
       IF( ln_diatrc ) THEN  
         IF( lk_iomput ) THEN
         
 	! <CMOC code OR 10/15/2015>
          IF( jnt == nrdttrc ) THEN
-              zwork(:,:)  =  xn2fixdia(:,:) * ncrr_cmoc * 1.e+3_wp * rfact2r / 4 * tmask(:,:,1) ! <CMOC code OR 10/15/2015> 1.e+3_wp is to convert from L^-1 to m^-3 (left in the sum line #119); the sum occurs on each 1/4 of the time step so the diagnostics is 'integrated' over a 1/4 of a time step too. The resulting xn2fixdia is DNF over one entire time step, but the diagnostics has to be rescaled to per second by dividing by rfact2.
+              zwork(:,:)  =  zn2fixtot(:,:) * ncrr_cmoc * 1.e+3_wp * rfact2r * tmask(:,:,1) ! <CMOC code OR 10/15/2015> 1.e+3_wp is to convert from L^-1 to m^-3 (left in the sum line #119); the diagnostics has to be rescaled to per second by dividing by rfact2.
               CALL iom_put( "Nfix"   , zwork )                                         ! nitrogen fixation in molN m^-2 s^-1 
               CALL iom_put( "BUPOC"  , wsbio3(:,:,11) /rday * zbpoc(:,:) * 1e+3_wp  )  ! POC burial flux
               CALL iom_put( "BUCALC" , zfpon(:,:) * 1e+3_wp / rfact2 * zbpon(:,:)  )   ! PIC burial flux

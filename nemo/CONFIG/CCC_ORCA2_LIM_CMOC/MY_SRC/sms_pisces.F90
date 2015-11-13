@@ -53,9 +53,6 @@ MODULE sms_pisces
    REAL(wp), ALLOCATABLE, SAVE,   DIMENSION(:,:)  ::   xlimnfecmoc!:
    ! <CMOC code OR 10/21/2015>  rain ratio 
    REAL(wp), ALLOCATABLE, SAVE,   DIMENSION(:,:)  ::   xrcico     !:
-   ! <CMOC code OR 10/21/2015>  N2-fixation diagnostics
-   REAL(wp), ALLOCATABLE, SAVE,   DIMENSION(:,:)  ::   xn2fixdia  !:
-
 
    ! <CMOC code OR 10/21/2015> CMOC block start
    !!*  CMOC model parameters
@@ -134,7 +131,8 @@ CONTAINS
       !!        *** ROUTINE sms_pisces_alloc ***
       !!----------------------------------------------------------------------
       USE lib_mpp , ONLY: ctl_warn
-      INTEGER ::   ierr(7)                    ! error handling ! ierr(6)            ! Local variables
+      ! <CMOC code OR 11/13/2015> removing user-defined DNF diagnostics, revert to PISCES diagnostics
+      INTEGER ::   ierr(6)                    ! error handling ! ierr(6)            ! Local variables
       !!----------------------------------------------------------------------
       ierr(:) = 0
       !*  Biological fluxes for light
@@ -153,9 +151,6 @@ CONTAINS
          !
       !* Array used to indicate negative tracer values  
       ALLOCATE( xnegtr(jpi,jpj,jpk)  ,            STAT=ierr(6) )
-      !
-      ! N2-fixation diagnostics
-      ALLOCATE( xn2fixdia(jpi,jpj),               STAT=ierr(7) )
       !
       sms_pisces_alloc = MAXVAL( ierr )
       !
