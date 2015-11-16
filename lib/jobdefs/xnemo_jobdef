@@ -1121,8 +1121,13 @@ cat > Execute_Script <<'end_of_script'
     ToF nemo_ann_rtd
 
     if [ $nemo_ann_rtd -eq 1 ]; then
-      rtd_file_dump_list=""
-      rtd_file_del_list=""
+      rtd_file_dump_list=rtd_file_dump_list_$$
+      rtd_file_del_list=rtd_file_del_list_$$
+    rm -f $rtd_file_dump_list
+    rm -f $rtd_file_del_list
+    touch $rtd_file_dump_list
+    touch $rtd_file_del_list
+
     # Specify the location of some NCO tools
     # These are required for manipulation of the netcdf files
     NCOBIN=/users/tor/acrn/rls/local/aix64/bin
@@ -1169,7 +1174,7 @@ cat > Execute_Script <<'end_of_script'
           chmod u+rw nemo_physical_rtd.nc      
           # Create run time diagnostics for physical ocean variables
           $physical_rtd_exe $stop_year $start_mon
-          echo $cur_rtd_file >> rtd_file_del_list
+          echo $cur_rtd_file >> $rtd_file_del_list
       else
           # Create run time diagnostics for physical ocean variables
           $physical_rtd_exe $stop_year $start_mon
@@ -1179,7 +1184,7 @@ cat > Execute_Script <<'end_of_script'
       # Save the rtd file created by physical_rtd_exe
       new_rtd_file=sc_${runid}_${stop_date}_nemo_physical_rtd.nc
       save nemo_physical_rtd.nc $new_rtd_file
-      echo $new_rtd_file >> rtd_file_dump_list
+      echo $new_rtd_file >> $rtd_file_dump_list
 
       # Copy the new physical rtd file to Victoria
       scp_rtd_to_Victoria nemo_physical_rtd.nc sc_${runid}_nemo_physical_rtd.nc
@@ -1217,7 +1222,7 @@ cat > Execute_Script <<'end_of_script'
             chmod u+rw nemo_carbon_rtd.nc
             # Create run time diagnostics for carbon variables
             $carbon_rtd_exe $stop_year $start_mon
-            echo $cur_rtd_file >> rtd_file_del_list
+            echo $cur_rtd_file >> $rtd_file_del_list
         else
             # Create run time diagnostics for carbon variables
             $carbon_rtd_exe $stop_year $start_mon
@@ -1227,7 +1232,7 @@ cat > Execute_Script <<'end_of_script'
         # Save the rtd file created by carbon_rtd_exe
         new_rtd_file=sc_${runid}_${stop_date}_nemo_carbon_rtd.nc
         save nemo_carbon_rtd.nc $new_rtd_file
-        echo $new_rtd_file >> rtd_file_dump_list
+        echo $new_rtd_file >> $rtd_file_dump_list
 
         # Copy the new carbon rtd file to Victoria
         scp_rtd_to_Victoria nemo_carbon_rtd.nc sc_${runid}_nemo_carbon_rtd.nc
@@ -1260,7 +1265,7 @@ cat > Execute_Script <<'end_of_script'
             chmod u+rw nemo_ice_rtd.nc
             # Create run time diagnostics for carbon variables
             $ice_rtd_exe $stop_year $start_mon
-            echo $cur_rtd_file >> rtd_file_del_list
+            echo $cur_rtd_file >> $rtd_file_del_list
         else
             # Create run time diagnostics for carbon variables
             $ice_rtd_exe $stop_year $start_mon
@@ -1270,7 +1275,7 @@ cat > Execute_Script <<'end_of_script'
         # Save the rtd file created by carbon_rtd_exe
         new_rtd_file=sc_${runid}_${stop_date}_nemo_ice_rtd.nc
         save nemo_ice_rtd.nc $new_rtd_file
-        echo $new_rtd_file >> rtd_file_dump_list
+        echo $new_rtd_file >> $rtd_file_dump_list
 
         # Copy the new carbon rtd file to Victoria
         scp_rtd_to_Victoria nemo_ice_rtd.nc sc_${runid}_nemo_ice_rtd.nc
@@ -1491,7 +1496,7 @@ cat > Execute_Script <<'end_of_script'
 
 	# For the RTD files
 	if [ $nemo_ann_rtd -eq 1 ]; then
-            echo ${rtd_file_dump_list} >> ${hist_file_dump_list}
+            cat ${rtd_file_dump_list} >> ${hist_file_dump_list}
 	fi
         
         if [ $nemo_dump_hist -ne 1 -a ${dump_this_rs} -ne 1 ]; then
@@ -1592,8 +1597,8 @@ cat > Execute_Script <<'end_of_script'
 
 	  # For the RTD files
   	  if [ $nemo_ann_rtd -eq 1 ]; then
-              echo ${rtd_file_del_list} >> ${hist_file_del_list}
-              echo 'deleting...' ${hist_file_del_list}
+              cat ${rtd_file_del_list} >> ${hist_file_del_list}
+              echo "deleting... `cat ${hist_file_del_list}`"
 	  fi
           
 	  [ -s ${hist_file_del_list} ] || 
