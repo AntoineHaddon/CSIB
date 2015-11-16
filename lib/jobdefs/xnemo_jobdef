@@ -1123,16 +1123,16 @@ cat > Execute_Script <<'end_of_script'
     if [ $nemo_ann_rtd -eq 1 ]; then
       rtd_file_dump_list=rtd_file_dump_list_$$
       rtd_file_del_list=rtd_file_del_list_$$
-    rm -f $rtd_file_dump_list
-    rm -f $rtd_file_del_list
-    touch $rtd_file_dump_list
-    touch $rtd_file_del_list
+      rm -f $rtd_file_dump_list
+      rm -f $rtd_file_del_list
+      touch $rtd_file_dump_list
+      touch $rtd_file_del_list
 
-    # Specify the location of some NCO tools
-    # These are required for manipulation of the netcdf files
-    NCOBIN=/users/tor/acrn/rls/local/aix64/bin
-    NCRCAT="$NCOBIN/ncrcat"
-    NCATTED="$NCOBIN/ncatted"
+      # Specify the location of some NCO tools
+      # These are required for manipulation of the netcdf files
+      NCOBIN=/users/tor/acrn/rls/local/aix64/bin
+      NCRCAT="$NCOBIN/ncrcat"
+      NCATTED="$NCOBIN/ncatted"
 
       # Invoke the nemo run time diagnostics
 
@@ -1287,6 +1287,8 @@ cat > Execute_Script <<'end_of_script'
         #fi
       fi
 
+      echo "RTD FILE dump list: `cat $rtd_file_dump_list`"
+      echo "RTD FILE del list: `cat $rtd_file_del_list`"
       # Clean up
       release grid_t
       release grid_u
