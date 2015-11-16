@@ -1174,7 +1174,7 @@ cat > Execute_Script <<'end_of_script'
           chmod u+rw nemo_physical_rtd.nc      
           # Create run time diagnostics for physical ocean variables
           $physical_rtd_exe $stop_year $start_mon
-          echo $cur_rtd_file >> $rtd_file_del_list
+          echo $curr_rtd_file >> $rtd_file_del_list
       else
           # Create run time diagnostics for physical ocean variables
           $physical_rtd_exe $stop_year $start_mon
@@ -1222,7 +1222,7 @@ cat > Execute_Script <<'end_of_script'
             chmod u+rw nemo_carbon_rtd.nc
             # Create run time diagnostics for carbon variables
             $carbon_rtd_exe $stop_year $start_mon
-            echo $cur_rtd_file >> $rtd_file_del_list
+            echo $curr_rtd_file >> $rtd_file_del_list
         else
             # Create run time diagnostics for carbon variables
             $carbon_rtd_exe $stop_year $start_mon
@@ -1265,7 +1265,7 @@ cat > Execute_Script <<'end_of_script'
             chmod u+rw nemo_ice_rtd.nc
             # Create run time diagnostics for carbon variables
             $ice_rtd_exe $stop_year $start_mon
-            echo $cur_rtd_file >> $rtd_file_del_list
+            echo $curr_rtd_file >> $rtd_file_del_list
         else
             # Create run time diagnostics for carbon variables
             $ice_rtd_exe $stop_year $start_mon
