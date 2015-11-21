@@ -40,9 +40,27 @@ PROGRAM nemo_ocean_diag
 !
 ! PURPOSE - Run-time diagnostics for NEMO (ORCA1)
 !
+! USAGE
+! -----
+! 
+! nemo_ocean_diag.exe YYYY, MM
+!
+! where the first command line arg, YYYY, is the RTD year, and MM is the FIRST month in this RTD sequence.
+!
 ! INPUT FILES
+! -----------
+! NEMO_PISCES NetCDF files, with the names:
+!
+!    - orca_mesh_mask
+!    - grid_t : monthly frequency (_1m_)
+!    - grid_u : monthly frequency (_1m_)
+!    - grid_v : monthly frequency (_1m_)
+!    - grid_w : monthly frequency (_1m_)
 !
 ! OUTPUT FILES
+! ------------
+! nemo_physical_rtd.nc - NetCDF output file with monthly timeseries for physics variables.
+!
 ! ======================================================================
 ! to compile:
 !

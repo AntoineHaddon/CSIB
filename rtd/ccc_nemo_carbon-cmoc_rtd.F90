@@ -3,6 +3,18 @@ IMPLICIT NONE
       
 ! ======================================================================
 !  Purpose: Run-time diagnostics for NEMO (ORCA2) 
+!
+! HISTORY:
+! -------
+!
+! N. Swart    Nov     2015 1. Remove annual mean calculation and rewrite
+!                             all code to operate on monthly data.
+!                          2. Remove North Fold point from computions.
+!                            (i.e. sum to jmt -1)
+!                          3. Rewrite of functions and code to freefrom. 
+!                          4. Improve time axis in output NetCDF, include
+!                            noleap_days subroutine.
+!
 !  N. Swart   Jul 15  2014 Update to CMOC only variables (exclude PISCES vars).
 !  N. Swart   May 07  2014 Update to standard CMOC/CanESM2 RTD variable set. Major style revision to F90.
 !  N. Swart   May 02  2014 Made resolution independent.
@@ -16,16 +28,33 @@ IMPLICIT NONE
 !  O. Saenko (Sept 25, 2013)
 !  O. Saenko (May 22, 2013)
 !
+! USAGE
+! -----
+! 
+! nemo_ocean_diag.exe YYYY, MM
+!
+! where the first command line arg, YYYY, is the RTD year, and MM is the FIRST month in this RTD sequence.
+!
+! INPUT FILES
+! -----------
+! NEMO_PISCES NetCDF files, with the names:
+!
+!    - orca_mesh_mask
+!    - diat_t : monthly frequency (_1m_)
+!    - ptrc_t : monthly frequency (_1m_)
+!
+! OUTPUT FILES
+! ------------
+! nemo_carbon_rtd.nc - NetCDF output file with monthly timeseries for carbon variables.
+!
+!
 ! ======================================================================
-! to compile loCALLy:
 ! to compile:
-!   $F77 -o nemo_ocean_diag nemo_ocean_diag.f uvic_netcdf.f $LINK -L/home/rls/wrk/AR5/CMOR/lib -lnetcdf -I/home/rls/wrk/AR5/CMOR/include/
-!   
-! UPDATE - 2013Feb20 - MB
-!   gfortran -o nemo_ocean_diag nemo_ocean_diag.f uvic_netcdf.f -I/usr/local/netcdf-4.2.1_GF/include -L/usr/local/netcdf-4.2.1_GF/lib/ -lnetcdff -lnetcdf -lhdf5_hl -lhdf5 -lz
-! OR
-!   pgf90 -m64 -O -D_LARGE_FILES -DpgiFortran -o nemo_ocean_diag nemo_ocean_diag.f uvic_netcdf.f -I/usr/local/netcdf-4.2.1_PG/include -L/usr/local/netcdf-4.2.1_PG/lib/ -lnetcdff -lnetcdf -lhdf5_hl -lhdf5 -lz
-
+!
+! 1. Use build-nemo-rtd
+!
+! 2. xlf90_r -o nemo_physical_rtd.exe \
+!   ccc_nemo_physical_rtd.F90 uvic_netcdf.f `nf-config --fflags --flibs`
 ! ======================================================================
       INTEGER :: imt, jmt, km, lm, iou
 
@@ -605,7 +634,7 @@ SUBROUTINE area_ave (e1,e2,e3, mask,a, imt,jmt,km,a_mean,ss,kk)
           s1=0.
           ss=0.
           do i=1,imt-2  ! not to double count the cyclic boundary
-              do j=1,jmt
+              do j=1,jmt-1
                   if (mask(i,j).gt.0.5) then  ! mask the region of interst
                       vol = e1(i,j)*e2(i,j)*e3(i,j,kk)
                       ss=ss+vol 
@@ -634,7 +663,7 @@ SUBROUTINE area_ave_flx(e1,e2, mask, a, imt, jmt,a_mean,ss)
           s1=0.
           ss=0.
           do i=1,imt-2  ! not to double count the cyclic boundary
-              do j=1,jmt
+              do j=1,jmt-1
                   if (mask(i,j).gt.0.5) then  ! mask the region of interst
                       arc = e1(i,j)*e2(i,j)
                       ss=ss+arc 
