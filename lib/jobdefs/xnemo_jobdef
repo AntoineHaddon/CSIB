@@ -38,9 +38,9 @@
 
  # try to make sure we go to the single Q if not running the model.
  if [ "x$do_nemo_run" = "xoff" ]; then
-   nprocx=1
-   phys_nodex=1 
-   nnodex=1
+   eval nprocx\=1
+   eval phys_nodex\=1 
+   eval nnodex\=1
  fi
 
  # nemo_forcing identifies the type of forcing to use
