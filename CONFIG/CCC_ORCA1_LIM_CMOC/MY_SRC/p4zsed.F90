@@ -698,6 +698,9 @@ CONTAINS
       !
       IF( nn_timing == 1 )  CALL timing_stop('p4z_sed_init')
       !
+         IF(lwp) WRITE(numout,*) '    p4z_sed_init : done'
+         IF(lwp) WRITE(numout,*) '    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+         CALL flush(numout)  
    END SUBROUTINE p4z_sed_init
 
      INTEGER FUNCTION p4z_sed_alloc()
