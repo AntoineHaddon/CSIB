@@ -8,6 +8,7 @@ MODULE sbc_oce
    !!            3.3  ! 2010-04  (M. Leclair, G. Madec)  Forcing averaged over 2 time steps
    !!             -   ! 2010-11  (G. Madec) ice-ocean stress always computed at each ocean time-step
    !!            3.3  ! 2010-10  (J. Chanut, C. Bricaud)  add the surface pressure forcing
+   !!            3.4.1! 2014-09  (D. Yang) declare and allocate eddy and tidal energy variables
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -73,6 +74,7 @@ MODULE sbc_oce
 #if defined key_cpl_carbon_cycle
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   atm_co2           !: atmospheric pCO2                             [ppm]
 #endif
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   zeef, zem2, zek1  !: eddy, M2 and K1 energy fluxes
 
    !!----------------------------------------------------------------------
    !!                     Sea Surface Mean fields
@@ -118,6 +120,7 @@ CONTAINS
 #endif
          &      ssu_m  (jpi,jpj) , sst_m(jpi,jpj) ,                       &
          &      ssv_m  (jpi,jpj) , sss_m  (jpi,jpj), ssh_m(jpi,jpj) , STAT=ierr(4) )
+      ALLOCATE( zeef   (jpi,jpj) , zem2 (jpi,jpj) ,  zek1 (jpi,jpj) , STAT=ierr(5) )
          !
       sbc_oce_alloc = MAXVAL( ierr )
       IF( lk_mpp            )   CALL mpp_sum ( sbc_oce_alloc )
