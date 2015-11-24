@@ -16,6 +16,8 @@ MODULE diawri
    !!             -   ! 2002-12  (G. Madec)  merge of diabort and diainit, F90
    !!                 ! 2005-11  (V. Garnier) Surface pressure gradient organization
    !!            3.2  ! 2008-11  (B. Lemaire) creation from old diawri
+   !!            3.4.1! 2014-09  (D. Yang) output eddyengf (new variable "Eddy Energy Flux"),
+   !!                 !                    M2rowdrg and K1rowdrg at initial time step.
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -49,6 +51,7 @@ MODULE diawri
    USE lib_mpp         ! MPP library
    USE timing          ! preformance summary
    USE wrk_nemo        ! working array
+   USE zdftmx
 
    IMPLICIT NONE
    PRIVATE
@@ -741,6 +744,13 @@ CONTAINS
          &          jpi, jpj, nh_i, 1  , 1, 1  , -99 , 32, clop, zsto, zout )
       CALL histdef( id_i, "sometauy", "Meridional Wind Stress", "N/m2"   ,   &   ! j-wind stress
          &          jpi, jpj, nh_i, 1  , 1, 1  , -99 , 32, clop, zsto, zout )
+      CALL histdef( id_i, "eddyengf", "Eddy Energy FLUX"      , "W/m2"   ,   &   ! eddy energy fLUX
+         &          jpi, jpj, nh_i, 1  , 1, 1  , -99 , 32, clop, zsto, zout )
+      CALL histdef( id_i, "M2rowdrg", "M2 Tidal Energy"       , "W/m2"   ,   &   ! M2 tidal energy
+         &          jpi, jpj, nh_i, 1  , 1, 1  , -99 , 32, clop, zsto, zout )
+      CALL histdef( id_i, "K1rowdrg", "K1 Tidal Energy"       , "W/m2"   ,   &   ! K1 tidal energy
+         &          jpi, jpj, nh_i, 1  , 1, 1  , -99 , 32, clop, zsto, zout )
+
 
 #if defined key_lim2
       CALL lim_wri_state_2( kt, id_i, nh_i )
@@ -768,6 +778,9 @@ CONTAINS
       CALL histwrite( id_i, "soicecov", kt, fr_i             , jpi*jpj    , idex )    ! ice fraction
       CALL histwrite( id_i, "sozotaux", kt, utau             , jpi*jpj    , idex )    ! i-wind stress
       CALL histwrite( id_i, "sometauy", kt, vtau             , jpi*jpj    , idex )    ! j-wind stress
+      CALL histwrite( id_i, "eddyengf", kt, zeef             , jpi*jpj    , idex )    ! eddy energy fLUX
+      CALL histwrite( id_i, "M2rowdrg", kt, zem2             , jpi*jpj    , idex )    ! M2 tidal energy
+      CALL histwrite( id_i, "K1rowdrg", kt, zek1             , jpi*jpj    , idex )    ! K1 tidal energy
 
       ! 3. Close the file
       ! -----------------

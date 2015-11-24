@@ -8,6 +8,8 @@ MODULE zdftmx
    !!            3.3  !  2010-10  (C. Ethe, G. Madec) reorganisation of initialisation phase
    !!            3.4.1!  2014-09  (D. Yang) Added constraint to tidal energy to make sure 
    !!                                       that it is always positive in the code.
+   !!            3.4.1!  2014-09  (D. Yang) Input eddy energy flux from a file and included it
+   !!                                       in the energy for mixing.
    !!----------------------------------------------------------------------
 #if defined key_zdftmx   ||   defined key_esopa
    !!----------------------------------------------------------------------
@@ -19,6 +21,7 @@ MODULE zdftmx
    USE oce             ! ocean dynamics and tracers variables
    USE dom_oce         ! ocean space and time domain variables
    USE zdf_oce         ! ocean vertical physics variables
+   USE sbc_oce         ! variables defined in core memory
    USE lbclnk          ! ocean lateral boundary conditions (or mpp link)
    USE eosbn2          ! ocean equation of state
    USE phycst          ! physical constants
@@ -356,7 +359,7 @@ CONTAINS
       INTEGER  ::   ji, jj, jk   ! dummy loop indices
       INTEGER  ::   inum         ! local integer
       REAL(wp) ::   ztpc, ze_z   ! local scalars
-      REAL(wp), DIMENSION(:,:)  , POINTER ::  zem2, zek1   ! read M2 and K1 tidal energy
+      !REAL(wp), DIMENSION(:,:)  , POINTER ::  zem2, zek1   ! read M2 and K1 tidal energy
       REAL(wp), DIMENSION(:,:)  , POINTER ::  zkz          ! total M2, K1 and S2 tidal energy
       REAL(wp), DIMENSION(:,:)  , POINTER ::  zfact        ! used for vertical structure function
       REAL(wp), DIMENSION(:,:)  , POINTER ::  zhdep        ! Ocean depth 
@@ -367,7 +370,8 @@ CONTAINS
       !
       IF( nn_timing == 1 )  CALL timing_start('zdf_tmx_init')
       !
-      CALL wrk_alloc( jpi,jpj, zem2, zek1, zkz, zfact, zhdep )
+      !CALL wrk_alloc( jpi,jpj, zem2, zek1, zkz, zfact, zhdep ) 
+      CALL wrk_alloc( jpi,jpj, zkz, zfact, zhdep )
       CALL wrk_alloc( jpi,jpj,jpk, zpc )
       
       REWIND( numnam )               ! Read Namelist namtmx : Tidal Mixing
@@ -404,11 +408,16 @@ CONTAINS
       CALL iom_open('K1rowdrg',inum)
       CALL iom_get (inum, jpdom_data, 'field',zek1,1) ! 
       CALL iom_close(inum)
+
+      ! read mesoscale eddy energy flux : W/m2  ( zeef < 0 )
+      CALL iom_open('Eddyengf',inum)
+      CALL iom_get (inum, jpdom_data, 'field',zeef,1) !
+      CALL iom_close(inum)
  
       ! Total tidal energy ( M2, S2 and K1  with S2=(1/2)^2 * M2 )
       ! only the energy available for mixing is taken into account,
       ! (mixing efficiency tidal dissipation efficiency)
-      en_tmx(:,:) = - rn_tfe * rn_me * ( min(0.,zem2(:,:)) * 1.25 + min(0.,zek1(:,:)) ) * tmask(:,:,1)
+      en_tmx(:,:) = - rn_tfe * rn_me * ( min(0.,zem2(:,:)) * 1.25 + min(0.,zek1(:,:)) + zeef(:,:) ) * tmask(:,:,1)
 
       ! Vertical structure (az_tmx)
       DO jj = 1, jpj                ! part independent of the level
@@ -530,8 +539,9 @@ CONTAINS
          !
       ENDIF
       !
-      CALL wrk_dealloc( jpi,jpj, zem2, zek1, zkz, zfact, zhdep )
-      CALL wrk_dealloc( jpi,jpj,jpk, zpc )
+      !CALL wrk_dealloc( jpi,jpj, zem2, zek1, zkz, zfact, zhdep )
+      CALL wrk_dealloc( jpi,jpj, zkz, zfact, zhdep )
+      !CALL wrk_dealloc( jpi,jpj,jpk, zpc )
       !
       IF( nn_timing == 1 )  CALL timing_stop('zdf_tmx_init')
       !
