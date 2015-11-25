@@ -119,7 +119,7 @@ nn_ice=2
 if [ "x$do_nemo_run" = "xoff" ]; then
   time=1799
 else
-  time=10800
+  time=3600
 fi
 
 # Any command line args of the form var=val will be added to the current environment.
@@ -332,10 +332,10 @@ debug=off
   nemo_weights_bilinear3=nemo_3.4_weights_grid03_bilinear_orca1.nc
 
 # Dynamics files for running offline
-  dyna_grid_t=uncs_dyna_grid_t.nc
-  dyna_grid_u=uncs_dyna_grid_u.nc
-  dyna_grid_v=uncs_dyna_grid_v.nc
-  dyna_grid_w=uncs_dyna_grid_w.nc
+  dyna_grid_t=mc_nhr_1d_40010101_40011231_grid_t.nc
+  dyna_grid_u=mc_nhr_1d_40010101_40011231_grid_u.nc
+  dyna_grid_v=mc_nhr_1d_40010101_40011231_grid_v.nc
+  dyna_grid_w=mc_nhr_1d_40010101_40011231_grid_w.nc
   offline_mesh_mask=uncs_mesh_mask.nc
 
 # The boolean variable nemo_write_stdout can be used to control echoing of the
