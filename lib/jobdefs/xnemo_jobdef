@@ -1501,8 +1501,8 @@ cat > Execute_Script <<'end_of_script'
 
 	# For the RTD files
 	if [ $nemo_ann_rtd -eq 1 ]; then
-            if [ -n "$CURR_RTD_TAR" ]; then
-                echo $CURR_RTD_TAR >> ${hist_file_dump_list}
+            if [ -n "$curr_rtd_tar" ]; then
+                echo $curr_rtd_tar >> ${hist_file_dump_list}
             fi
 	fi
         
