@@ -1040,7 +1040,7 @@ cat > Execute_Script <<'end_of_script'
 	found_rs=`(ls -1 $ifnpatt || : ) 2>/dev/null`
 	if [ -z "$found_rs" ]; then
 	  # No ice restart files exist
-	  bail "Attempting to save restarts but no ice restart files exist."
+	  bail "Attempting to save restarts but no   ice restart files exist."
 	fi
       else
 	ifnpatt=''
@@ -1301,7 +1301,10 @@ cat > Execute_Script <<'end_of_script'
         release diad_t
         release orca_mesh_mask
       fi
-       
+      
+        
+    curr_rtd_tar=mc_${runid}_nemo-rtd_${stop_date}.tar 
+    tar cf $curr_rtd_tar `cat $rtd_file_dump_list`
     fi # if [ $nemo_ann_rtd -eq 1 ]; then 1215
 
   #=#=#=# Optionally concatenate history files annually.
@@ -1498,7 +1501,9 @@ cat > Execute_Script <<'end_of_script'
 
 	# For the RTD files
 	if [ $nemo_ann_rtd -eq 1 ]; then
-            cat ${rtd_file_dump_list} >> ${hist_file_dump_list}
+            if [ -n "$CURR_RTD_TAR" ]; then
+                echo $CURR_RTD_TAR >> ${hist_file_dump_list}
+            fi
 	fi
         
         if [ $nemo_dump_hist -ne 1 -a ${dump_this_rs} -ne 1 ]; then
