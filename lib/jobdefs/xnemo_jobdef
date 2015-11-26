@@ -1305,7 +1305,7 @@ cat > Execute_Script <<'end_of_script'
      
     curr_rtd_tar=mc_${runid}_nemo-rtd_${stop_date}.tar 
     for f in `cat $rtd_file_dump_list`; do
-        access f f na
+        access $f $f na
     done
     tar cf $curr_rtd_tar `cat $rtd_file_dump_list`
     fi # if [ $nemo_ann_rtd -eq 1 ]; then 1215
