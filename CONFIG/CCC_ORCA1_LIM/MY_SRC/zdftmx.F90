@@ -387,7 +387,7 @@ CONTAINS
          WRITE(numout,*) '      Mixing efficiency                     = ', rn_me
          WRITE(numout,*) '      ITF specific parameterisation         = ', ln_tmx_itf
          WRITE(numout,*) '      ITF tidal dissipation efficiency      = ', rn_tfe_itf
-         WRITE(numout,*) '      Lee wave mixing                       = ', ln_ln_leewmx
+         WRITE(numout,*) '      Lee wave mixing                       = ', ln_leewmx
       ENDIF
 
       !                              ! allocate tmx arrays
@@ -409,7 +409,7 @@ CONTAINS
       CALL iom_get (inum, jpdom_data, 'field',zek1,1) ! 
       CALL iom_close(inum)
 
-      IF( ln_ln_leewmx ) THEN ! read mesoscale eddy energy flux : W/m2  ( zeef < 0 )
+      IF( ln_leewmx ) THEN ! read mesoscale eddy energy flux : W/m2  ( zeef < 0 )
          CALL iom_open('Eddyengf',inum)
          CALL iom_get (inum, jpdom_data, 'field',zeef,1) !
          CALL iom_close(inum)
@@ -418,7 +418,7 @@ CONTAINS
       ! Total tidal energy ( M2, S2 and K1  with S2=(1/2)^2 * M2 )
       ! only the energy available for mixing is taken into account,
       ! (mixing efficiency tidal dissipation efficiency)
-      IF( ln_ln_leewmx ) THEN ! include eddy energy flux (zeef) in en_tmx
+      IF( ln_leewmx ) THEN ! include eddy energy flux (zeef) in en_tmx
          en_tmx(:,:) = - rn_tfe * rn_me * ( min(0.,zem2(:,:)) * 1.25 + min(0.,zek1(:,:)) + zeef(:,:) ) * tmask(:,:,1)
       ELSE
          en_tmx(:,:) = - rn_tfe * rn_me * ( min(0.,zem2(:,:)) * 1.25 + min(0.,zek1(:,:)) ) * tmask(:,:,1)
