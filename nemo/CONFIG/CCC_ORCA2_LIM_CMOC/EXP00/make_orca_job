@@ -314,25 +314,9 @@ debug=off
   nemo_qlw=nemo_3.3_orca2_ncar_rad.15june2009_orca2.nc
   nemo_precip=nemo_3.3_orca2_ncar_precip.15june2009_orca2.nc
   nemo_snow=nemo_3.3_orca2_ncar_precip.15june2009_orca2.nc
-# weights_grid02_* are weights for ECMWF data
-  nemo_weights_bicubic1=nemo_3.4_weights_grid02_bicubic_orca1.nc
-  nemo_weights_bilinear1=nemo_3.4_weights_grid02_bilinear_orca1.nc
 # weights_grid03_* are weights for CORE data
-  nemo_weights_bicubic2=nemo_3.4_weights_grid03_bicubic_orca1.nc
-  nemo_weights_bilinear2=nemo_3.4_weights_grid03_bilinear_orca1.nc
-# weights_canam4grid_* are weights for CanAM4
-# nemo_weights_bicubic2=nemo_3.4_weights_canam4grid_bicubic_orca1.nc
-# nemo_weights_bilinear2=nemo_3.4_weights_canam4grid_bilinear_orca1.nc
-
-# These are for flux forcing. If don't use flux forcing, provide any
-# forcing data files existing on the disk. Only used in nemo_forcing=flux
-  nemo_utau=nemo_3.4_orca1_t_10.15june2009.nc
-  nemo_vtau=nemo_3.4_orca1_t_10.15june2009.nc
-  nemo_qtot=nemo_3.4_orca1_t_10.15june2009.nc
-  nemo_qsr=nemo_3.4_orca1_t_10.15june2009.nc
-  nemo_emp=nemo_3.4_orca1_t_10.15june2009.nc
-  nemo_weights_bicubic3=nemo_3.4_weights_grid03_bicubic_orca1.nc
-  nemo_weights_bilinear3=nemo_3.4_weights_grid03_bilinear_orca1.nc
+  nemo_weights_bicubic2=uncs_orca2_corev2_weights_bicubic.nc
+  nemo_weights_bilinear2=uncs_orca2_corev2_weights_bilin.nc
 
 # The boolean variable nemo_write_stdout can be used to control echoing of the
 # file ocean.output (created by nemo as stdout) at runtime. When nemo_write_stdout
