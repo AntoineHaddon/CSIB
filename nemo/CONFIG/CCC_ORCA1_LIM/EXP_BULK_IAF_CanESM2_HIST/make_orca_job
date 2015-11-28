@@ -25,11 +25,11 @@ uxxx=mc
 #   or Year:Month
 # where Year and Month are integers. Month will default
 # to 1 for start and 12 for stop if it is not present.
-start=001
-stop=0156
+start=1850
+stop=2005
 
 # Set start year for rtd
-year_rtdiag_start=001
+year_rtdiag_start=1850
 
 # The name of a tar file containing the NEMO restart files
 # This must be set for the first job of a run unless nemo_from_rest = on
@@ -62,20 +62,20 @@ nemo_freq=1y
 do_nemo_run=on
 
 # nemo_forcing identifies the type of forcing to use
-# Currenlty the only valid values are "bulk", "bulk_iaf", "flux" or "flux_iaf"
-nemo_forcing=flux_iaf
+# Currenlty the only valid values are "bulk", "bulk_iaf" or "flux"
+nemo_forcing=bulk_iaf
 
 # For interannual forcing, iaf_year_offset gives the offset between
 # the current nemo year and the desired year in the forcing dataset
 # such that forcing_year = current_year + iaf_year_offset.
 # The data to be used will end in _y${forcing_year}.nc
-iaf_year_offset=1849  
+iaf_year_offset=0
 
 # For interannual forcing, iaf_loop_year gives the year at which the
 # forcing will loop back to the first specified year of forcing. 
 # The number is given in terms of "forcing_year" as opposed to
 # nemo "current_year": forcing_year = current_year + iaf_year_offset
-iaf_loop_year=2005     
+iaf_loop_year=2005
 
 # nemo_carbon = off means use physical ocean only
 # nemo_carbon = on  means include PISCES
@@ -120,14 +120,14 @@ noprint=on
 #          2 LIM2
 #          3 LIM3
 #          4 CICE
-nn_ice=0
+nn_ice=2
 
 # time limit
 # try to make sure we go to the single Q if not running the model.
 if [ "x$do_nemo_run" = "xoff" ]; then
   time=1799
 else
-  time=5400
+  time=5399
 fi
 
 # Any command line args of the form var=val will be added to the current environment.
@@ -289,21 +289,22 @@ debug=off
   nemo_chlorophyll=nemo_3.4_orca1_chlorophyll-orca1_1m.nc
   nemo_subbains=nemo_3.4_orca1_basinmask_050308_ukmo.nc
 
-  nemo_sst_data=nemo_3.4_orca1_sst_1m_orca1.nc
-  nemo_sss_data=nemo_3.4_orca1_sss_1m_orca1.nc
-
   nemo_data_1m_potential_temperature_nomask=nemo_3.4_orca1_potemp_1m_z46_nomask.nc
   nemo_data_1m_salinity_nomask=nemo_3.4_orca1_salin_1m_z46_nomask.nc
 
   # In the case of interannual forcing, just give the file prefix. The ${prefix}_yYYYY.nc will be added
   # by xnemo.
-  nemo_utau=uncs_oufs_igm
-  nemo_vtau=uncs_ovfs_igm
-  nemo_qtot=uncs_obeg_igm
-  nemo_qsr=uncs_ofsg_igm
-  nemo_emp=uncs_obwg_igm
-  nemo_weights_bicubic3=nemo_3.4_weights_canam4grid_bicubic_orca1.nc
-  nemo_weights_bilinear3=nemo_3.4_weights_canam4grid_bilinear_orca1.nc
+  nemo_t=uncs_tas_canesm2-igm
+  nemo_u=uncs_uas_canesm2-igm
+  nemo_v=uncs_vas_canesm2-igm
+  nemo_q=uncs_huss_canesm2-igm
+  nemo_qsw=uncs_rsds_canesm2-igm
+  nemo_qlw=uncs_rlds_canesm2-igm_
+  nemo_precip=uncs_pr_canesm2-igm
+  nemo_snow=uncs_prsn_canesm2-igm
+# weights_grid03_* are weights for CORE data
+  nemo_weights_bicubic2=uncs_orca1_canesm2_weights_bicubic.nc
+  nemo_weights_bilinear2=uncs_orca1_canesm2_weights_bilin.nc
 
 # The boolean variable nemo_write_stdout can be used to control echoing of the
 # file ocean.output (created by nemo as stdout) at runtime. When nemo_write_stdout
