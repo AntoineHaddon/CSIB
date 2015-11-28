@@ -25,11 +25,11 @@ uxxx=mc
 #   or Year:Month
 # where Year and Month are integers. Month will default
 # to 1 for start and 12 for stop if it is not present.
-start=1850
-stop=2005
+start=1948
+stop=2009
 
 # Set start year for rtd
-year_rtdiag_start=1850
+year_rtdiag_start=001
 
 # The name of a tar file containing the NEMO restart files
 # This must be set for the first job of a run unless nemo_from_rest = on
@@ -48,12 +48,12 @@ nemo_from_rest=on
 # If it is a full path name then this path must be available from the execution machine.
 # This file is saved in the reastart archive.
 # If nemo_exec is not defined then the executable found in the restart will be used.
-nemo_exec=${runid}_ccc_orca2_lim_pisces_exe
+nemo_exec=${runid}_ccc_orca1_lim_cmoc_exe
 
 # nemo_freq is the number of years (or months) nemo will run for each job in the string
 # History files and restarts will be deleted after each job in the string.
 # nemo_freq will be assigned a value of the form Ny or Nm where N is a positive integer.
-nemo_freq=1y
+nemo_freq=3m
 
 # If do_nemo_run=on then access all the required files and do the run, else the model
 # itself is not run.  Using do_nemo_run=off can be used, for example, to process 
@@ -62,7 +62,7 @@ nemo_freq=1y
 do_nemo_run=on
 
 # nemo_forcing identifies the type of forcing to use
-# Currenlty the only valid values are "bulk", "bulk_iaf", "flux" or "flux_iaf"
+# Currenlty the only valid values are "bulk", "bulk_iaf" or "flux"
 nemo_forcing=bulk_iaf
 
 # For interannual forcing, iaf_year_offset gives the offset between
@@ -75,11 +75,13 @@ iaf_year_offset=0
 # forcing will loop back to the first specified year of forcing. 
 # The number is given in terms of "forcing_year" as opposed to
 # nemo "current_year": forcing_year = current_year + iaf_year_offset
-iaf_loop_year=2005
+iaf_loop_year=2009
 
 # nemo_carbon = off means use physical ocean only
 # nemo_carbon = on  means include PISCES
 nemo_carbon=on
+
+nemo_cmoc=on
 
 # Concatenate history files into one file per year
 # (Required for RTD). The sub-annual files will be deleted.
@@ -127,7 +129,7 @@ nn_ice=2
 if [ "x$do_nemo_run" = "xoff" ]; then
   time=1799
 else
-  time=10800
+  time=10799
 fi
 
 # Any command line args of the form var=val will be added to the current environment.
@@ -195,12 +197,12 @@ cat <<end_job_defs >$job_defs
   runid=$runid
 
 # time step for the dynamics (and tracer if nn_acc=0)
-  rn_rdt=5760.
+  rn_rdt=3600.
 
 # Define the nemo domain (implies node geometry for MPI)
   nemo_jpni=8
-  nemo_jpnj=4
-  nemo_jpnij=32
+  nemo_jpnj=6
+  nemo_jpnij=48
 
 # Number of physical nodes used by this job
   phys_nodex=1
@@ -220,7 +222,7 @@ cat <<end_job_defs >$job_defs
 # nemo_exec identifies the nemo executable
 # This can be a file that is "save"d on DATAPATH or a full pathname to a user supplied binary.
 # If it is a full path name then this path must be available from the execution machine.
-# This file is saved in the restart archive.
+# This file is saved in the reastart archive.
 # If nemo_exec is not defined then the executable found in the restart will be used.
   nemo_exec=$nemo_exec
 
@@ -228,10 +230,11 @@ cat <<end_job_defs >$job_defs
 # These namelist files are only used when starting from rest or when nemo_force_namelist = on
 # These can be a files that are "save"d on DATAPATH or full pathnames to any location.
 # If they are full path names then these paths must be available from the execution machine.
-  nemo_namelist=${runid}_ccc_orca2_lim_pisces_namelist
-  nemo_namelist_ice=${runid}_ccc_orca2_lim_pisces_namelist_ice
-  nemo_namelist_pisces=${runid}_ccc_orca2_lim_pisces_namelist_pisces
-  nemo_namelist_top=${runid}_ccc_orca2_lim_pisces_namelist_top
+  nemo_namelist=${runid}_ccc_orca1_lim_cmoc_namelist
+  nemo_namelist_ice=${runid}_ccc_orca1_lim_cmoc_namelist_ice
+  nemo_namelist_pisces=${runid}_ccc_orca1_lim_cmoc_namelist_pisces
+  nemo_namelist_cmoc=${runid}_ccc_orca1_lim_cmoc_namelist_cmoc
+  nemo_namelist_top=${runid}_ccc_orca1_lim_cmoc_namelist_top
 # nn_ice = 0 no ice boundary condition
 #          1 use observed ice-cover;
 #          2 LIM2
@@ -275,55 +278,53 @@ debug=off
   nemo_nn_it000=''
 
 # Access or copy files required to run NEMO
-  orca_grid_info="nemo_3.4_orca2_mesh_mask.nc"
-  nemo_iodef=${runid}_ccc_orca2_lim_pisces_iodef.xml
-  nemo_xmlio_server_def=${runid}_ccc_orca2_lim_pisces_xmlio_server.def
-  nemo_ahmcoef=nemo_3.3_orca2_ahmcoef
-  nemo_coordinates=nemo_3.3_orca2_coordinates.nc
-  nemo_bathy_meter=nemo_3.3_orca2_bathy_meter.nc
-  nemo_mask_itf=nemo_3.3_orca2_mask_itf.nc
-  nemo_M2rowdrg=nemo_3.3_orca2_m2rowdrg.nc
-  nemo_K1rowdrg=nemo_3.3_orca2_k1rowdrg.nc
+  orca_grid_info="nemo3.4.1_orca1_mesh_mask_ngr.nc"
+  nemo_iodef=${runid}_ccc_orca1_lim_cmoc_iodef.xml
+  nemo_xmlio_server_def=${runid}_ccc_orca1_lim_cmoc_xmlio_server.def
+  nemo_ahmcoef=nemo_3.4_orca1_ahmcoef
+  nemo_coordinates=nemo_3.4_orca1_coordinates_ukorca1.nc
+  nemo_bathy_meter=nemo_3.4_orca1_bathy_meter_050308_ukmo.nc
+  nemo_mask_itf=nemo_3.4_orca1_mask_itf_orca1_new.nc
+  nemo_M2rowdrg=nemo_3.4_orca1_m2rowdrg_r1_modif.nc
+  nemo_K1rowdrg=nemo_3.4_orca1_k1rowdrg_r1_modif.nc
   nemo_geothermal_heating=nemo_3.3_orca2_geothermal_heating.nc
-  nemo_runoff_core_monthly=nemo_3.3_orca2_runoff_core_monthly.nc
-  nemo_sss_data=nemo_3.3_orca2_sss_data.nc
-  nemo_chlorophyll=nemo_3.3_orca2_chlorophyll.nc
-  nemo_subbasins=nemo_3.4_orca2_lim_subbasins.nc
-
+  nemo_runoff_core_monthly=nemo_3.4_orca1_runoff_1m_orca1.nc
+  nemo_sss_data=nemo_3.4_orca1_sss_1m_orca1.nc
+  nemo_chlorophyll=nemo_3.4_orca1_chlorophyll-orca1_1m.nc
+  nemo_subbains=nemo_3.4_orca1_basinmask_050308_ukmo.nc
 
 # Access or copy files required to run PISCES
-  nemo_bathy_orca=nemo_3.4_orca2_bathy.orca.nc
-  nemo_data_alkalini_nomask=nemo_3.4_orca2_data_alkalini_nomask.nc
-  nemo_data_dic_nomask=nemo_3.4_orca2_data_dic_nomask.nc
-  nemo_data_doc_nomask=nemo_3.4_orca2_data_doc_nomask.nc
-  nemo_data_fer_nomask=nemo_3.4_orca2_data_fer_nomask.nc
-  nemo_data_no3_nomask=nemo_3.4_orca2_data_no3_nomask.nc 
-  nemo_data_ori_nomask=uror_data_oriche_nomask.nc
-  nemo_data_o2_nomask=nemo_3.4_orca2_data_o2_nomask.nc
-  nemo_data_po4_nomask=nemo_3.4_orca2_data_po4_nomask.nc
-  nemo_data_si_nomask=nemo_3.4_orca2_data_si_nomask.nc
-  nemo_dust_orca=nemo_3.4_orca2_dust.orca.nc #cvu_1986_2005_fe_clim_nemo.nc
-  nemo_ndeposition_orca=nemo_3.4_orca2_ndeposition.orca.nc
-  nemo_presatm=nemo_3.4_orca2_presatm.nc
-  nemo_river_orca=nemo_3.4_orca2_river.orca.nc
+  nemo_bathy_orca=uncs_orca1_bathy.orca.nc
+  nemo_data_alkalini_nomask=uncs_orca1_data_alkalini_nomask.nc
+  nemo_data_dic_nomask=uncs_orca1_data_dic_nomask.nc  
+  nemo_data_doc_nomask=uncs_orca1_data_doc_nomask.nc 
+  nemo_data_fer_nomask=uncs_orca1_data_fer_nomask.nc
+  nemo_data_no3_nomask=uncs_orca1_data_no3_nomask.nc
+  nemo_data_o2_nomask=uncs_orca1_data_o2_nomask.nc 
+  nemo_data_po4_nomask=uncs_orca1_data_po4_nomask.nc   
+  nemo_data_si_nomask=uncs_orca1_data_si_nomask.nc
+  nemo_dust_orca=uncs_orca1_dust.orca.nc
+  nemo_ndeposition_orca=uncs_orca1_ndeposition.orca.nc
+  nemo_presatm=uncs_orca1_presatm.nc
+  nemo_river_orca=nemo_3.4_orca2_river.orca.nc   
   nemo_data_atcco2=nemo_atcco2_1850-2005.txt
 
-  nemo_data_1m_potential_temperature_nomask=nemo_3.3_orca2_data_1m_potential_temperature_nomask.nc
-  nemo_data_1m_salinity_nomask=nemo_3.3_orca2_data_1m_salinity_nomask.nc
+  nemo_data_1m_potential_temperature_nomask=nemo_3.4_orca1_potemp_1m_z46_nomask.nc
+  nemo_data_1m_salinity_nomask=nemo_3.4_orca1_salin_1m_z46_nomask.nc
 
   # In the case of interannual forcing, just give the file prefix. The ${prefix}_yYYYY.nc will be added
   # by xnemo.
-  nemo_t=uncs_tas_canesm2-igm
-  nemo_u=uncs_uas_canesm2-igm
-  nemo_v=uncs_vas_canesm2-igm
-  nemo_q=uncs_huss_canesm2-igm
-  nemo_qsw=uncs_rsds_canesm2-igm
-  nemo_qlw=uncs_rlds_canesm2-igm_
-  nemo_precip=uncs_pr_canesm2-igm
-  nemo_snow=uncs_prsn_canesm2-igm
+  nemo_t=uncs_corev2_t_10
+  nemo_u=uncs_corev2_u_10
+  nemo_v=uncs_corev2_v_10
+  nemo_q=uncs_corev2_q_10
+  nemo_qsw=uncs_corev2_ncar_rad
+  nemo_qlw=uncs_corev2_ncar_rad
+  nemo_precip=uncs_corev2_ncar_precip
+  nemo_snow=uncs_corev2_ncar_precip
 # weights_grid03_* are weights for CORE data
-  nemo_weights_bicubic2=uncs_orca2_canesm2_weights_bicubic.nc
-  nemo_weights_bilinear2=uncs_orca2_canesm2_weights_bilin.nc
+  nemo_weights_bicubic2=uncs_orca1_corev2_weights_bicubic.nc
+  nemo_weights_bilinear2=uncs_orca1_corev2_weights_bilin.nc
 
 # The boolean variable nemo_write_stdout can be used to control echoing of the
 # file ocean.output (created by nemo as stdout) at runtime. When nemo_write_stdout
@@ -388,13 +389,12 @@ debug=off
 # Determines if RTD is done, and specifies the RTD executables
   nemo_ann_rtd=${nemo_ann_rtd}
   physical_rtd_exe="nemo_orca_physical_rtd_v02c"
-  carbon_rtd_exe="nemo_orca_carbon_rtd_v02c"
+  carbon_rtd_exe="nemo_cmoc_carbon_rtd_v02c"
 
 # Dump history files saved on DATAPATH to cfs
 # The user can redefine nemo_dump_hist_freq_list and nemo_dump_hist_suffix_list
 # to only dump a subset of the history files
   nemo_dump_hist=${nemo_dump_hist}
-#  nemo_dump_hist_freq_list='1y 1m 1d 5d'
   nemo_dump_hist_freq_list='1m'
   nemo_dump_hist_suffix_list='icemod grid_t grid_u grid_v grid_w ptrc_t diad_t'
 
@@ -408,7 +408,6 @@ debug=off
 # The user can redefine nemo_del_hist_freq_list and nemo_del_hist_suffix_list
 # to only delete a subset of the history files
   nemo_del_hist=${nemo_del_hist}
-#  nemo_del_hist_freq_list='1y 1m 1d 5d'
   nemo_del_hist_freq_list='1m'
   nemo_del_hist_suffix_list='icemod grid_t grid_u grid_v grid_w ptrc_t diad_t'
 
