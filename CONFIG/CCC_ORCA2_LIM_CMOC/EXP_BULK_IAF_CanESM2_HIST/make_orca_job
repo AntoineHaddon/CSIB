@@ -312,6 +312,7 @@ debug=off
   nemo_presatm=nemo_3.4_orca2_presatm.nc
   nemo_river_orca=nemo_3.4_orca2_river.orca.nc
   nemo_fermask_orca=nemo_3.4_orca2_femask.orca.nc
+  nemo_data_atcco2=nemo_atcco2_1850-2005.txt
 
   nemo_data_1m_potential_temperature_nomask=nemo_3.3_orca2_data_1m_potential_temperature_nomask.nc
   nemo_data_1m_salinity_nomask=nemo_3.3_orca2_data_1m_salinity_nomask.nc

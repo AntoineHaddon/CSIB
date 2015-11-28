@@ -25,8 +25,8 @@ uxxx=mc
 #   or Year:Month
 # where Year and Month are integers. Month will default
 # to 1 for start and 12 for stop if it is not present.
-start=001
-stop=062
+start=1948
+stop=2009
 
 # Set start year for rtd
 year_rtdiag_start=001
@@ -67,7 +67,7 @@ nemo_forcing=bulk_iaf
 
 # For interannual forcing, iaf_year_offset gives the offset between
 # the current nemo year and the desired year in the forcing dataset
-iaf_year_offset=1947
+iaf_year_offset=0
 iaf_loop_year=2009
 # nemo_carbon = off means use physical ocean only
 # nemo_carbon = on  means include PISCES
