@@ -536,9 +536,11 @@ cat > Execute_Script <<'end_of_script'
 	[ -z "$nemo_namelist" ] && bail "nemo_namelist is not defined"
 	acc_cp namelist $nemo_namelist nocp=no
 
-	# The input ice namelist is hard coded as "namelist_ice" in nemo source
-	[ -z "$nemo_namelist_ice" ] && bail "nemo_namelist_ice is not defined"
-	acc_cp namelist_ice $nemo_namelist_ice nocp=no
+	if [ $pisces_offline -ne 1 ]; then
+	  # The input ice namelist is hard coded as "namelist_ice" in nemo source
+	  [ -z "$nemo_namelist_ice" ] && bail "nemo_namelist_ice is not defined"
+	  acc_cp namelist_ice $nemo_namelist_ice nocp=no
+        fi
 
 	if [ $nemo_carbon -eq 1 ]; then
 	  # The input top namelist is hard coded as "namelist_top" in nemo source
