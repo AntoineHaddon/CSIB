@@ -319,7 +319,7 @@ debug=off
   nemo_v=uncs_vas_iga
   nemo_q=uncs_huss_iga
   nemo_qsw=uncs_rsds_iga
-  nemo_qlw=uncs_rlds_iga_
+  nemo_qlw=uncs_rlds_iga
   nemo_precip=uncs_pr_iga
   nemo_snow=uncs_prsn_iga
 # weights_grid03_* are weights for CORE data

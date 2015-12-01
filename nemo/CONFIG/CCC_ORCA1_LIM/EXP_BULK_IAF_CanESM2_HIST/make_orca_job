@@ -299,7 +299,7 @@ debug=off
   nemo_v=uncs_vas_canesm2-igm
   nemo_q=uncs_huss_canesm2-igm
   nemo_qsw=uncs_rsds_canesm2-igm
-  nemo_qlw=uncs_rlds_canesm2-igm_
+  nemo_qlw=uncs_rlds_canesm2-igm
   nemo_precip=uncs_pr_canesm2-igm
   nemo_snow=uncs_prsn_canesm2-igm
 # weights_grid03_* are weights for CORE data
