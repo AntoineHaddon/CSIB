@@ -8,6 +8,8 @@ MODULE zdftmx
    !!            3.3  !  2010-10  (C. Ethe, G. Madec) reorganisation of initialisation phase
    !!            3.4.1!  2014-09  (D. Yang) Added constraint to tidal energy to make sure 
    !!                                       that it is always positive in the code.
+   !!            3.4.1!  2014-09  (D. Yang) Input eddy energy flux from a file and included it
+   !!                                       in the energy for mixing.
    !!----------------------------------------------------------------------
 #if defined key_zdftmx   ||   defined key_esopa
    !!----------------------------------------------------------------------
@@ -46,6 +48,7 @@ MODULE zdftmx
    REAL(wp) ::  rn_me      = 0.2       ! mixing efficiency (Osborn 1980)
    LOGICAL  ::  ln_tmx_itf = .TRUE.    ! Indonesian Through Flow (ITF): Koch-Larrouy et al. (2007) parameterization
    REAL(wp) ::  rn_tfe_itf = 1.        ! ITF tidal dissipation efficiency (St Laurent et al. 2002)
+   LOGICAL  ::  ln_leewmx  = .FALSE.   ! add (.TRUE. + key_zdftmx) lee wave mixing or not (.FALSE.).
 
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   en_tmx     ! energy available for tidal mixing (W/m2)
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   mask_itf   ! mask to use over Indonesian area
@@ -356,18 +359,18 @@ CONTAINS
       INTEGER  ::   ji, jj, jk   ! dummy loop indices
       INTEGER  ::   inum         ! local integer
       REAL(wp) ::   ztpc, ze_z   ! local scalars
-      REAL(wp), DIMENSION(:,:)  , POINTER ::  zem2, zek1   ! read M2 and K1 tidal energy
+      REAL(wp), DIMENSION(:,:)  , POINTER ::  zem2, zek1, zeef ! read M2 and K1 tidal and eddy energy
       REAL(wp), DIMENSION(:,:)  , POINTER ::  zkz          ! total M2, K1 and S2 tidal energy
       REAL(wp), DIMENSION(:,:)  , POINTER ::  zfact        ! used for vertical structure function
       REAL(wp), DIMENSION(:,:)  , POINTER ::  zhdep        ! Ocean depth 
       REAL(wp), DIMENSION(:,:,:), POINTER ::  zpc      ! power consumption
       !!
-      NAMELIST/namzdf_tmx/ rn_htmx, rn_n2min, rn_tfe, rn_me, ln_tmx_itf, rn_tfe_itf
+      NAMELIST/namzdf_tmx/ rn_htmx, rn_n2min, rn_tfe, rn_me, ln_tmx_itf, rn_tfe_itf, ln_leewmx
       !!----------------------------------------------------------------------
       !
       IF( nn_timing == 1 )  CALL timing_start('zdf_tmx_init')
       !
-      CALL wrk_alloc( jpi,jpj, zem2, zek1, zkz, zfact, zhdep )
+      CALL wrk_alloc( jpi,jpj, zem2, zek1, zeef, zkz, zfact, zhdep ) 
       CALL wrk_alloc( jpi,jpj,jpk, zpc )
       
       REWIND( numnam )               ! Read Namelist namtmx : Tidal Mixing
@@ -384,6 +387,7 @@ CONTAINS
          WRITE(numout,*) '      Mixing efficiency                     = ', rn_me
          WRITE(numout,*) '      ITF specific parameterisation         = ', ln_tmx_itf
          WRITE(numout,*) '      ITF tidal dissipation efficiency      = ', rn_tfe_itf
+         WRITE(numout,*) '      Lee wave mixing                       = ', ln_leewmx
       ENDIF
 
       !                              ! allocate tmx arrays
@@ -404,11 +408,21 @@ CONTAINS
       CALL iom_open('K1rowdrg',inum)
       CALL iom_get (inum, jpdom_data, 'field',zek1,1) ! 
       CALL iom_close(inum)
+
+      IF( ln_leewmx ) THEN ! read mesoscale eddy energy flux : W/m2  ( zeef < 0 )
+         CALL iom_open('Eddyengf',inum)
+         CALL iom_get (inum, jpdom_data, 'field',zeef,1) !
+         CALL iom_close(inum)
+      ENDIF
  
       ! Total tidal energy ( M2, S2 and K1  with S2=(1/2)^2 * M2 )
       ! only the energy available for mixing is taken into account,
       ! (mixing efficiency tidal dissipation efficiency)
-      en_tmx(:,:) = - rn_tfe * rn_me * ( min(0.,zem2(:,:)) * 1.25 + min(0.,zek1(:,:)) ) * tmask(:,:,1)
+      IF( ln_leewmx ) THEN ! include eddy energy flux (zeef) in en_tmx
+         en_tmx(:,:) = - rn_tfe * rn_me * ( min(0.,zem2(:,:)) * 1.25 + min(0.,zek1(:,:)) + zeef(:,:) ) * tmask(:,:,1)
+      ELSE
+         en_tmx(:,:) = - rn_tfe * rn_me * ( min(0.,zem2(:,:)) * 1.25 + min(0.,zek1(:,:)) ) * tmask(:,:,1)
+      ENDIF
 
       ! Vertical structure (az_tmx)
       DO jj = 1, jpj                ! part independent of the level
@@ -530,7 +544,7 @@ CONTAINS
          !
       ENDIF
       !
-      CALL wrk_dealloc( jpi,jpj, zem2, zek1, zkz, zfact, zhdep )
+      CALL wrk_dealloc( jpi,jpj, zem2, zek1, zeef, zkz, zfact, zhdep )
       CALL wrk_dealloc( jpi,jpj,jpk, zpc )
       !
       IF( nn_timing == 1 )  CALL timing_stop('zdf_tmx_init')
