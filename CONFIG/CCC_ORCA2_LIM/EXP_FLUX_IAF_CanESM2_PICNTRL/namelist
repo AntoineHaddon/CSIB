@@ -102,7 +102,7 @@
    !
    cn_dir        = './'     !  root directory for the location of the runoff files
    ln_tsd_init   = .true.   !  Initialisation of ocean T & S with T &S input data (T) or not (F)
-   ln_tsd_tradmp = .true.   !  damping of ocean T & S toward T &S input data (T) or not (F)
+   ln_tsd_tradmp = .false.  !  damping of ocean T & S toward T &S input data (T) or not (F)
 /
 !!======================================================================
 !!            ***  Surface Boundary Condition namelists  ***
@@ -129,7 +129,7 @@
    ln_ana      = .false.   !  analytical formulation                    (T => fill namsbc_ana ) 
    ln_flx      = .true.    !  flux formulation                          (T => fill namsbc_flx )
    ln_blk_clio = .false.   !  CLIO bulk formulation                     (T => fill namsbc_clio) 
-   ln_blk_core = .true.    !  CORE bulk formulation                     (T => fill namsbc_core) 
+   ln_blk_core = .false.    !  CORE bulk formulation                     (T => fill namsbc_core) 
    ln_blk_mfs  = .false.   !  MFS bulk formulation                      (T => fill namsbc_mfs )
    ln_cpl      = .false.   !  Coupled formulation                       (T => fill namsbc_cpl )
    ln_apr_dyn  = .false.   !  Patm gradient added in ocean & ice Eqs.   (T => fill namsbc_apr )
@@ -288,7 +288,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 
    cn_dir      = './'      !  root directory for the location of the bulk files
    rn_pref     = 101000._wp !  reference atmospheric pressure   [N/m2]/
-   ln_ref_apr  = .false.    !  ref. pressure: global mean Patm (T) or a constant (F)
+   ln_ref_apr  = .false.   !  ref. pressure: global mean Patm (T) or a constant (F)
    ln_apr_obc  = .false.    !  inverse barometer added to OBC ssh data
 /
 !-----------------------------------------------------------------------
@@ -296,8 +296,8 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
 !              !  file name  ! frequency (hours) ! variable  ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation !
 !              !             !  (if <0  months)  !   name    !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  !
-   sn_sst      = 'sst_data'  ,        -1         ,  'sst'    ,    .false.   , .true., 'yearly'  , ''       , ''
-   sn_sss      = 'sss_data'  ,        -1         ,  'sss'    ,    .false.   , .true. , 'yearly'  , ''       , ''
+   sn_sst      = 'sst_data'  ,        -1         ,  'votemper'    ,    .false.   , .true., 'yearly'  , ''       , ''
+   sn_sss      = 'sss_data'  ,        -1         ,  'vosaline'    ,    .false.   , .true. , 'yearly'  , ''       , ''
 
    cn_dir      = './'      !  root directory for the location of the runoff files
    nn_sstr     =     1     !  add a retroaction term in the surface heat       flux (=1) or not (=0)
@@ -555,7 +555,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
 &namtra_dmp    !   tracer: T & S newtonian damping                  
 !-----------------------------------------------------------------------
-   ln_tradmp   =  .true.   !  add a damping termn (T) or not (F)
+   ln_tradmp   =  .false.  !  add a damping termn (T) or not (F)
    nn_hdmp     =   -1      !  horizontal shape =-1, damping in Med and Red Seas only
                            !                   =XX, damping poleward of XX degrees (XX>0)
                            !                      + F(distance-to-coast) + Red and Med Seas
