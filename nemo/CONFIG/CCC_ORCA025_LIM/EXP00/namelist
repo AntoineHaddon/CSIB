@@ -740,6 +740,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
    rn_me       = 0.2       !  mixing efficiency 
    ln_tmx_itf  = .false.   !  ITF specific parameterisation
    rn_tfe_itf  = 1.        !  ITF tidal dissipation efficiency
+   ln_leewmx   = .false.    !  addition of Lee Wave mixing (.true.) or not (.false., default in the code)
 /
 
 !!======================================================================
