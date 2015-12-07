@@ -213,7 +213,10 @@ if [ $build_nemo_rtd_exe -eq 1 ]; then
   fi
 
   # Build the nemo-rtd executable
-  xlf90 -O3 -qmaxmem=-1 -qdbg -qfullpath -qwarn64 -qstrict -qfloat=nans:rrm:norsqrt:nofold -qreport -qflttrap=ov:zero:inv:imp:enable -qsigtrap -qsuppress=1501-245 -qalias=intptr -qextname -qautodbl=dbl4 -qarch=pwr7 -qtune=pwr7 -qnocheck -qspillsize=3000 -qnoescape -qxflag=ngenstub -bmaxstack:0xF0000000 -qnoundef -qnosave -qtbtable=full -qxref -qattr -bnoquiet -qinitauto=7FF7FFFF -bnoquiet -o  nemo_rtd_exe  ${input_f90} uvic_netcdf.f -I ${netcdf_include}  -L ${netcdf_lib}  -lnetcdf $LINK
+#  xlf90 -O3 -qmaxmem=-1 -qdbg -qfullpath -qwarn64 -qstrict -qfloat=nans:rrm:norsqrt:nofold -qreport -qflttrap=ov:zero:inv:imp:enable -qsigtrap -qsuppress=1501-245 -qalias=intptr -qextname -qautodbl=dbl4 -qarch=pwr7 -qtune=pwr7 -qnocheck -qspillsize=3000 -qnoescape -qxflag=ngenstub -bmaxstack:0xF0000000 -qnoundef -qnosave -qtbtable=full -qxref -qattr -bnoquiet -qinitauto=7FF7FFFF -bnoquiet -o  nemo_rtd_exe  ${input_f90} uvic_netcdf.f -I ${netcdf_include}  -L ${netcdf_lib}  -lnetcdf $LINK
+
+# Compile using new NetCDF libs
+  xlf90_r -o nemo_rtd_exe ${input_f90} uvic_netcdf.f `nf-config --fflags --flibs`
 
   chmod g+rx nemo_rtd_exe  
 
