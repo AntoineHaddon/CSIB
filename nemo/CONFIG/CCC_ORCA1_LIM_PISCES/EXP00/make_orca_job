@@ -380,10 +380,9 @@ debug=off
 
 # Determines if RTD is done, and specifies the RTD executables
   nemo_ann_rtd=${nemo_ann_rtd}
-  physical_rtd_exe="nemo_orca_physical_rtd_v03_testing"
-  carbon_rtd_exe="nemo_cmoc_carbon_rtd_v03_testing"
-  ice_rtd_exe="nemo_orca_ice_rtd_v03_testing"
-
+  physical_rtd_exe="nemo_physical_rtd_v03_exe"
+  carbon_rtd_exe="nemo_carbon-cmoc_rtd_v03_exe"
+  ice_rtd_exe="nemo_ice_rtd_v03_exe"
 
 # Dump history files saved on DATAPATH to cfs
 # The user can redefine nemo_dump_hist_freq_list and nemo_dump_hist_suffix_list
