@@ -17,7 +17,7 @@
 #                    the git repository (e.g. nemo_v3.4)
 #   exec=name     ...name is the name of the nemo executable to be created
 #                    On successful compilation, a file by this name will be saved on RUNPATH
-#   type=rtdtype  ...either 'carbon-pisces', 'carbon-cmoc' or 'physical', depending on which 
+#   type=rtdtype  ...either 'carbon-pisces', 'carbon-cmoc', 'ice' or 'physical', depending on which 
 #                    type or rtd is to be built.
 #
 #   repo=dirpath  ...dirpath is the pathname to the git repository
