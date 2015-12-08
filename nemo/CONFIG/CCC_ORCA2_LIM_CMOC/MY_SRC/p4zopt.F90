@@ -7,6 +7,7 @@ MODULE p4zopt
    !!             2.0  !  2007-12  (C. Ethe, G. Madec)  F90
    !!             3.2  !  2009-04  (C. Ethe, G. Madec)  optimisation
    !!             3.4  !  2011-06  (O. Aumont, C. Ethe) Improve light availability of nano & diat
+   !!           CMOC1  !  2013-15  (O. Riche) change total chlorophyll (l.#84), bug fix euph. zone bottom (l.#172), NEMO list
    !!----------------------------------------------------------------------
 #if defined  key_pisces
    !!----------------------------------------------------------------------
@@ -81,7 +82,7 @@ CONTAINS
          DO jj = 1, jpj
 !CDIR NOVERRCHK
             DO ji = 1, jpi
-               zchl = ( trn(ji,jj,jk,jpnch) + rtrn ) * 1.e6 ! <CMOC OR 11/26/2013> ( trn(ji,jj,jk,jpnch) + trn(ji,jj,jk,jpdch) + rtrn ) * 1.e6
+               zchl = ( trn(ji,jj,jk,jpnch) + rtrn ) * 1.e6 ! <CMOC code OR 11/26/2013> ( trn(ji,jj,jk,jpnch) + trn(ji,jj,jk,jpdch) + rtrn ) * 1.e6
                zchl = MIN(  10. , MAX( 0.05, zchl )  )
                irgb = NINT( 41 + 20.* LOG10( zchl ) + rtrn )
                !                                                         
@@ -169,7 +170,7 @@ CONTAINS
       DO jk = 2, nksrp
          DO jj = 1, jpj
            DO ji = 1, jpi
-              IF( etot(ji,jj,jk)* tmask(ji,jj,jk) >= 0.0043 * qsr(ji,jj) )  THEN ! <NEMO BUG OR 02/18/2014> [nemo_ticket] [nemo] [4360] v3.4alpha: bugfix to properly calculate the euphotic layer in depth in PISCES, see ticket #1199
+              IF( etot(ji,jj,jk)* tmask(ji,jj,jk) >= 0.0043 * qsr(ji,jj) )  THEN ! <NEMO Bug Fix OR 02/18/2014> [nemo_ticket] [nemo] [4360] v3.4alpha: bugfix to properly calculate the euphotic layer in depth in PISCES, see ticket #1199
                  neln(ji,jj) = jk+1                    ! Euphotic level : 1rst T-level strictly below Euphotic layer
                  !                                     ! nb: ensure the compatibility with nmld_trc definition in trd_mld_trc_zint
                  heup(ji,jj) = fsdepw(ji,jj,jk+1)      ! Euphotic layer depth
