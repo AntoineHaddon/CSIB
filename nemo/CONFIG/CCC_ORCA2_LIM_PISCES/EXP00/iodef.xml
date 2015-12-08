@@ -402,7 +402,23 @@
           <field ref="woce_eiv"     name="voveeivw" />
         </file>
 
- 
+        <file id="1m_icemod" name="auto" description="ice variables" >
+          <field ref="ice_pres"                     />
+          <field ref="ice_cover"    name="soicecov" />
+          <field ref="snowthic_cea" name="isnowthi" />
+          <field ref="icethic_cea"  name="iicethic" />
+          <field ref="iceprod_cea"  name="iiceprod" />
+          <field ref="ist_ipa"      name="iicetemp" />
+          <field ref="ioceflxb"     name="ioceflxb" />
+          <field ref="uice_ipa"     name="iicevelu" />
+          <field ref="vice_ipa"     name="iicevelv" />
+          <field ref="utau_ice"     name="iicestru" />
+          <field ref="vtau_ice"     name="iicestrv" />
+          <field ref="qsr_io_cea"   name="iicesflx" />
+          <field ref="qns_io_cea"   name="iicenflx" />
+          <field ref="snowpre"      name="isnowpre" />
+        </file>
+
         <file id="1m_ptrc_T" name="auto" description="pisces sms variables" >
           <field ref="DIC"      />
           <field ref="Alkalini" />

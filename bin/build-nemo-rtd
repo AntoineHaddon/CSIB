@@ -17,7 +17,7 @@
 #                    the git repository (e.g. nemo_v3.4)
 #   exec=name     ...name is the name of the nemo executable to be created
 #                    On successful compilation, a file by this name will be saved on RUNPATH
-#   type=rtdtype  ...either 'carbon-pisces', 'carbon-cmoc' or 'physical', depending on which 
+#   type=rtdtype  ...either 'carbon-pisces', 'carbon-cmoc', 'ice' or 'physical', depending on which 
 #                    type or rtd is to be built.
 #
 #   repo=dirpath  ...dirpath is the pathname to the git repository
@@ -206,12 +206,17 @@ if [ $build_nemo_rtd_exe -eq 1 ]; then
    input_f90='ccc_nemo_carbon-cmoc_rtd.F90'
   elif [ $type = 'physical' ]; then
    input_f90='ccc_nemo_physical_rtd.F90'
+  elif [ $type = 'ice' ]; then
+   input_f90='ccc_nemo_ice_rtd.F90'
   else
-    bail "type must be one of 'carbon-pisces', 'carbon-cmoc' or 'physical'"
+    bail "type must be one of 'carbon-pisces', 'carbon-cmoc', 'physical' or 'ice'"
   fi
 
   # Build the nemo-rtd executable
-  xlf90 -O3 -qmaxmem=-1 -qdbg -qfullpath -qwarn64 -qstrict -qfloat=nans:rrm:norsqrt:nofold -qreport -qflttrap=ov:zero:inv:imp:enable -qsigtrap -qsuppress=1501-245 -qalias=intptr -qextname -qautodbl=dbl4 -qarch=pwr7 -qtune=pwr7 -qnocheck -qspillsize=3000 -qnoescape -qxflag=ngenstub -bmaxstack:0xF0000000 -qnoundef -qnosave -qtbtable=full -qxref -qattr -bnoquiet -qinitauto=7FF7FFFF -bnoquiet -o  nemo_rtd_exe  ${input_f90} uvic_netcdf.f -I ${netcdf_include}  -L ${netcdf_lib}  -lnetcdf $LINK
+#  xlf90 -O3 -qmaxmem=-1 -qdbg -qfullpath -qwarn64 -qstrict -qfloat=nans:rrm:norsqrt:nofold -qreport -qflttrap=ov:zero:inv:imp:enable -qsigtrap -qsuppress=1501-245 -qalias=intptr -qextname -qautodbl=dbl4 -qarch=pwr7 -qtune=pwr7 -qnocheck -qspillsize=3000 -qnoescape -qxflag=ngenstub -bmaxstack:0xF0000000 -qnoundef -qnosave -qtbtable=full -qxref -qattr -bnoquiet -qinitauto=7FF7FFFF -bnoquiet -o  nemo_rtd_exe  ${input_f90} uvic_netcdf.f -I ${netcdf_include}  -L ${netcdf_lib}  -lnetcdf $LINK
+
+# Compile using new NetCDF libs
+  xlf90_r -o nemo_rtd_exe ${input_f90} uvic_netcdf.f `nf-config --fflags --flibs`
 
   chmod g+rx nemo_rtd_exe  
 

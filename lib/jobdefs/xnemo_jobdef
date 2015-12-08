@@ -113,7 +113,7 @@
 
  # RTD switch. If nemo_carbon=on, both physical and carbon RTD will be done,
  # otherwise only physical. User can specify rtd exectuables below. 
- nemo_ann_rtd=on
+ nemo_rtd=on
 
  # If nemo_dump is true then dump history files and restart arhives to CFS. 
  # Only files that were saved to DATAPATH are dumped. If nemo_ann_cat=on, 
@@ -803,6 +803,7 @@ cat > Execute_Script <<'end_of_script'
       nemo_data_doc_nomask=nemo_3.4_orca2_data_doc_nomask.nc
       nemo_data_fer_nomask=nemo_3.4_orca2_data_fer_nomask.nc
       nemo_data_no3_nomask=nemo_3.4_orca2_data_no3_nomask.nc
+      nemo_data_atcco2=nemo_atcco2_1850-2005.txt
 
       acc_cp data_dic_nomask.nc        $nemo_data_dic_nomask
       acc_cp data_alkalini_nomask.nc   $nemo_data_alkalini_nomask
@@ -812,6 +813,7 @@ cat > Execute_Script <<'end_of_script'
       acc_cp data_doc_nomask.nc        $nemo_data_doc_nomask
       acc_cp data_fer_nomask.nc        $nemo_data_fer_nomask
       acc_cp data_no3_nomask.nc        $nemo_data_no3_nomask
+      acc_cp atcco2.txt                $nemo_data_atcco2
     fi 
 
     #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
@@ -1041,7 +1043,7 @@ cat > Execute_Script <<'end_of_script'
 	found_rs=`(ls -1 $ifnpatt || : ) 2>/dev/null`
 	if [ -z "$found_rs" ]; then
 	  # No ice restart files exist
-	  bail "Attempting to save restarts but no ice restart files exist."
+	  bail "Attempting to save restarts but no   ice restart files exist."
 	fi
       else
 	ifnpatt=''
@@ -1117,6 +1119,204 @@ cat > Execute_Script <<'end_of_script'
     #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
     #=#=#=#     Post processing     #=#=#=#
     #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+    # If nemo_rtd is true then execute the nemo run time diagnostics
+    nemo_rtd=on
+    ToF nemo_rtd
+
+    if [ $nemo_rtd -eq 1 ]; then
+      rtd_file_dump_list=rtd_file_dump_list_$$
+      rtd_file_del_list=rtd_file_del_list_$$
+      rm -f $rtd_file_dump_list
+      rm -f $rtd_file_del_list
+      touch $rtd_file_dump_list
+      touch $rtd_file_del_list
+
+      # Specify the location of some NCO tools
+      # These are required for manipulation of the netcdf files
+      NCOBIN=/users/tor/acrn/rls/local/aix64/bin
+      NCRCAT="$NCOBIN/ncrcat"
+      NCATTED="$NCOBIN/ncatted"
+
+      # Invoke the nemo run time diagnostics
+
+      # This currently requires certain yearly history files, which may or may not have
+      # been created above. Verify that they exist by attempting to access them
+      # These files could be modified so create local copies with write access
+
+      rtd_hist1="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_grid_t.nc"
+      rtd_hist2="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_grid_u.nc"
+      rtd_hist3="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_grid_v.nc"
+      rtd_hist4="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_grid_w.nc"
+      access grid_t $rtd_hist1 
+      access grid_u $rtd_hist2 
+      access grid_v $rtd_hist3 
+      access grid_w $rtd_hist4 
+
+      # This also requires a file containing grid information
+      # This file could be modified so create a local copy with write access
+      orca_grid_info=nemo3.4.1_orca1_mesh_mask_ngr.nc
+      access orca_mesh_mask $orca_grid_info 
+
+      # The user must define year_rtdiag_start
+      year_rtdiag_start=''
+      [ -z "$year_rtdiag_start" ] &&
+        bail "Run time diagnostics was requested but year_rtdiag_start is not defined."
+
+      # Access the rtd executable
+      physical_rtd_exe=nemo_orca_physical_rtd_v02c
+      [ -z "$physical_rtd_exe" ] && bail "physical_rtd_exe is not defined."
+      access $physical_rtd_exe $physical_rtd_exe nocp=off
+      chmod u+x $physical_rtd_exe
+
+      # Access an existing rtd file containing data up to the previous year, if year > year_rtdiag_start
+      # Create a local copy with write access
+      curr_rtd_file=sc_${runid}_${rs_date}_nemo_physical_rtd.nc
+      found_file=`(ls -1 $DATAPATH/$curr_rtd_file* || : ) 2>/dev/null`
+      if [ -n "$found_file" ]; then 
+          access nemo_physical_rtd.nc $curr_rtd_file nocp=off
+          chmod u+rw nemo_physical_rtd.nc      
+          # Create run time diagnostics for physical ocean variables
+          $physical_rtd_exe $stop_year $start_mon
+          echo $curr_rtd_file >> $rtd_file_del_list
+      else
+          # Create run time diagnostics for physical ocean variables
+          $physical_rtd_exe $stop_year $start_mon
+          ${NCATTED} -O -a RTD_version,global,a,c,"${physical_rtd_exe}" nemo_physical_rtd.nc
+      fi
+
+      # Save the rtd file created by physical_rtd_exe
+      new_rtd_file=sc_${runid}_${stop_date}_nemo_physical_rtd.nc
+      save nemo_physical_rtd.nc $new_rtd_file
+      echo $new_rtd_file >> $rtd_file_dump_list
+
+      # Copy the new physical rtd file to Victoria
+      scp_rtd_to_Victoria nemo_physical_rtd.nc sc_${runid}_nemo_physical_rtd.nc
+
+      # Move deleting to the delete part
+      # delete RTD files from 2 years ago from RUNPATH (if we are 2+ years from rtd starting).
+      # yearcm2=`expr ${current_year} - 2 | awk  '{printf "%04d",$1}'`        
+      # 
+      # if [ ${yearcm2} -ge ${year_rtdiag_start} ] ; then
+      #     access  old_rtd  na  nocp  sc_${runid}_${year_rtdiag_start}_${yearcm2}_nemo_physical_rtd.nc
+      #     delete  old_rtd na 
+      # fi
+
+      if [ $nemo_carbon -eq 1 ]; then
+        # Also generate PISCES run time diagnostics
+
+        # Access additional annual history files containing PISCES related variables
+        rtd_hist5="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_ptrc_t.nc"
+        rtd_hist6="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_diad_t.nc"
+        access ptrc_t $rtd_hist5 
+        access diad_t $rtd_hist6 
+
+        # Access the rtd executable
+        carbon_rtd_exe=nemo_orca1_carbon_rtd_v02c
+        [ -z "$carbon_rtd_exe" ] && bail "carbon_rtd_exe is not defined."
+        access $carbon_rtd_exe $carbon_rtd_exe nocp=off
+        chmod u+x $carbon_rtd_exe
+
+        # Access an existing rtd file containing data up to the previous year, if 
+        # year > year_rtdiag_start
+        curr_rtd_file=sc_${runid}_${rs_date}_nemo_carbon_rtd.nc
+        found_file=`(ls -1 $DATAPATH/$curr_rtd_file* || : ) 2>/dev/null`
+        if [ -n "$found_file" ]; then 
+            access nemo_carbon_rtd.nc $curr_rtd_file nocp=off
+            chmod u+rw nemo_carbon_rtd.nc
+            # Create run time diagnostics for carbon variables
+            $carbon_rtd_exe $stop_year $start_mon
+            echo $curr_rtd_file >> $rtd_file_del_list
+        else
+            # Create run time diagnostics for carbon variables
+            $carbon_rtd_exe $stop_year $start_mon
+            ${NCATTED} -O -a RTD_version,global,a,c,"${carbon_rtd_exe}" nemo_carbon_rtd.nc
+        fi
+
+        # Save the rtd file created by carbon_rtd_exe
+        new_rtd_file=sc_${runid}_${stop_date}_nemo_carbon_rtd.nc
+        save nemo_carbon_rtd.nc $new_rtd_file
+        echo $new_rtd_file >> $rtd_file_dump_list
+
+        # Copy the new carbon rtd file to Victoria
+        scp_rtd_to_Victoria nemo_carbon_rtd.nc sc_${runid}_nemo_carbon_rtd.nc
+
+        # delete RTD files from 2 years ago from RUNPATH (if we are 2+ years from rtd starting).
+        #if [ ${yearcm2} -ge ${year_rtdiag_start} ] ; then
+        #  access  old_rtd  na  nocp  sc_${runid}_${year_rtdiag_start}_${yearcm2}_nemo_carbon_rtd.nc
+        #  delete  old_rtd na
+        #fi
+      fi
+      if [ $nn_ice -ne 0 ]; then
+        # Also generate ICE run time diagnostics
+
+        # Access additional annual history files containing PISCES related variables
+        rtd_hist7="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_icemod.nc"
+        access icemod $rtd_hist7 #nocp=off
+
+        # Access the rtd executable
+        ice_rtd_exe=nemo_ice_rtd_v02c
+        [ -z "$ice_rtd_exe" ] && bail "ice_rtd_exe is not defined."
+        access $ice_rtd_exe $ice_rtd_exe nocp=off
+        chmod u+x $ice_rtd_exe
+
+        # Access an existing rtd file containing data up to the previous year, if 
+        # year > year_rtdiag_start
+        curr_rtd_file=sc_${runid}_${rs_date}_nemo_ice_rtd.nc
+        found_file=`(ls -1 $DATAPATH/$curr_rtd_file* || : ) 2>/dev/null`
+        if [ -n "$found_file" ]; then 
+            access nemo_ice_rtd.nc $curr_rtd_file nocp=off
+            chmod u+rw nemo_ice_rtd.nc
+            # Create run time diagnostics for carbon variables
+            $ice_rtd_exe $stop_year $start_mon
+            echo $curr_rtd_file >> $rtd_file_del_list
+        else
+            # Create run time diagnostics for carbon variables
+            $ice_rtd_exe $stop_year $start_mon
+            ${NCATTED} -O -a RTD_version,global,a,c,"${ice_rtd_exe}" nemo_ice_rtd.nc
+        fi
+
+        # Save the rtd file created by carbon_rtd_exe
+        new_rtd_file=sc_${runid}_${stop_date}_nemo_ice_rtd.nc
+        save nemo_ice_rtd.nc $new_rtd_file
+        echo $new_rtd_file >> $rtd_file_dump_list
+
+        # Copy the new carbon rtd file to Victoria
+        scp_rtd_to_Victoria nemo_ice_rtd.nc sc_${runid}_nemo_ice_rtd.nc
+
+        # delete RTD files from 2 years ago from RUNPATH (if we are 2+ years from rtd starting).
+        #if [ ${yearcm2} -ge ${year_rtdiag_start} ] ; then
+        #  access  old_rtd  na  nocp  sc_${runid}_${year_rtdiag_start}_${yearcm2}_nemo_ice_rtd.nc
+        #  delete  old_rtd na
+        #fi
+      fi
+
+      echo "RTD FILE dump list: `cat $rtd_file_dump_list`"
+      echo "RTD FILE del list: `cat $rtd_file_del_list`"
+      # Clean up
+      release grid_t
+      release grid_u
+      release grid_v
+      release grid_w
+      release icemod
+      if [ $nemo_carbon -eq 1 ]; then
+        # PISCES related files
+        release ptrc_t
+        release diad_t
+        release orca_mesh_mask
+      fi
+      
+    # Save RTDs in a tar file to runpath for later dumping     
+    curr_rtd_tar=mc_${runid}_${stop_date}_rtd.tar 
+    for f in `cat $rtd_file_dump_list`; do
+        access $f $f na
+    done
+
+    tar cf $curr_rtd_tar `cat $rtd_file_dump_list` ||
+         bail "Could not create a tar archive of the RTD"
+    save $curr_rtd_tar $curr_rtd_tar na
+    echo $curr_rtd_tar >> $rtd_file_del_list
+
+    fi # if [ $nemo_rtd -eq 1 ]; then 1215
 
   #=#=#=# Optionally concatenate history files annually.
   #=#=#=# Optionally generate run time diagnostics from these annual history files
@@ -1211,132 +1411,6 @@ cat > Execute_Script <<'end_of_script'
       done
     done
 
-    # If nemo_ann_rtd is true then execute the nemo run time diagnostics
-    nemo_ann_rtd=on
-    ToF nemo_ann_rtd
-
-    if [ $nemo_ann_rtd -eq 1 ]; then
-      # Invoke the nemo run time diagnostics
-
-      # This currently requires certain yearly history files, which may or may not have
-      # been created above. Verify that they exist by attempting to access them
-      # These files could be modified so create local copies with write access
-      rtd_hist1="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_grid_t.nc"
-      rtd_hist2="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_grid_u.nc"
-      rtd_hist3="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_grid_v.nc"
-      rtd_hist4="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_grid_w.nc"
-      access grid_t $rtd_hist1 nocp=off
-      access grid_u $rtd_hist2 nocp=off
-      access grid_v $rtd_hist3 nocp=off
-      access grid_w $rtd_hist4 nocp=off
-      chmod u+rw grid_t grid_u grid_v grid_w
-
-      # This also requires a file containing grid information
-      # This file could be modified so create a local copy with write access
-      orca_grid_info=nemo3.4.1_orca1_mesh_mask_ngr.nc
-      access orca_mesh_mask $orca_grid_info nocp=off
-      chmod u+rw orca_mesh_mask
-
-      # The user must define year_rtdiag_start
-      year_rtdiag_start=''
-      [ -z "$year_rtdiag_start" ] &&
-        bail "Run time diagnostics was requested but year_rtdiag_start is not defined."
-
-      # Access the rtd executable
-      physical_rtd_exe=nemo_orca_physical_rtd_v02c
-      [ -z "$physical_rtd_exe" ] && bail "physical_rtd_exe is not defined."
-      access $physical_rtd_exe $physical_rtd_exe nocp=off
-      chmod u+x $physical_rtd_exe
-
-      # Access an existing rtd file containing data up to the previous year, if year > year_rtdiag_start
-      # Create a local copy with write access
-      if [ ${year_rtdiag_start} -lt ${stop_year} ] ; then
-          stop_year_prev=`echo $stop_year|awk '{printf "%4.4d",$1-1}' -`
-          curr_rtd_file=sc_${runid}_${year_rtdiag_start}_${stop_year_prev}_nemo_physical_rtd.nc
-          access nemo_physical_rtd.nc $curr_rtd_file nocp=off
-          chmod u+rw nemo_physical_rtd.nc      
-          # Create run time diagnostics for physical ocean variables
-          $physical_rtd_exe $stop_year
-      else
-          # Create run time diagnostics for physical ocean variables
-          $physical_rtd_exe $stop_year
-          ${NCATTED} -O -a RTD_version,global,a,c,"${physical_rtd_exe}" nemo_physical_rtd.nc
-      fi
-
-      # Save the rtd file created by physical_rtd_exe
-      new_rtd_file=sc_${runid}_${year_rtdiag_start}_${stop_year}_nemo_physical_rtd.nc
-      save nemo_physical_rtd.nc $new_rtd_file
-
-      # Copy the new physical rtd file to Victoria
-      scp_rtd_to_Victoria nemo_physical_rtd.nc sc_${runid}_nemo_physical_rtd.nc
-
-      # delete RTD files from 2 years ago from RUNPATH (if we are 2+ years from rtd starting).
-       yearcm2=`expr ${current_year} - 2 | awk  '{printf "%04d",$1}'`        
-       
-       if [ ${yearcm2} -ge ${year_rtdiag_start} ] ; then
-           access  old_rtd  na  nocp  sc_${runid}_${year_rtdiag_start}_${yearcm2}_nemo_physical_rtd.nc
-           delete  old_rtd na 
-       fi
-
-      if [ $nemo_carbon -eq 1 ]; then
-        # Also generate PISCES run time diagnostics
-
-        # Access additional annual history files containing PISCES related variables
-        rtd_hist5="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_ptrc_t.nc"
-        rtd_hist6="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_diad_t.nc"
-        access ptrc_t $rtd_hist5 nocp=off
-        access diad_t $rtd_hist6 nocp=off
-        chmod u+rw ptrc_t diad_t
-
-        # Access the rtd executable
-        carbon_rtd_exe=nemo_orca1_carbon_rtd_v02c
-        [ -z "$carbon_rtd_exe" ] && bail "carbon_rtd_exe is not defined."
-        access $carbon_rtd_exe $carbon_rtd_exe nocp=off
-        chmod u+x $carbon_rtd_exe
-
-        # Access an existing rtd file containing data up to the previous year, if 
-        # year > year_rtdiag_start
-        if [ ${year_rtdiag_start} -lt ${stop_year} ] ; then
-            stop_year_prev=`echo $stop_year|awk '{printf "%4.4d",$1-1}' -`
-            curr_rtd_file=sc_${runid}_${year_rtdiag_start}_${stop_year_prev}_nemo_carbon_rtd.nc
-            access nemo_carbon_rtd.nc $curr_rtd_file nocp=off
-            chmod u+rw nemo_carbon_rtd.nc
-            # Create run time diagnostics for carbon variables
-            $carbon_rtd_exe $stop_year
-        else
-            # Create run time diagnostics for carbon variables
-            $carbon_rtd_exe $stop_year
-            ${NCATTED} -O -a RTD_version,global,a,c,"${carbon_rtd_exe}" nemo_carbon_rtd.nc
-        fi
-
-        # Save the rtd file created by carbon_rtd_exe
-        new_rtd_file=sc_${runid}_${year_rtdiag_start}_${stop_year}_nemo_carbon_rtd.nc
-        save nemo_carbon_rtd.nc $new_rtd_file
-
-        # Copy the new carbon rtd file to Victoria
-        scp_rtd_to_Victoria nemo_carbon_rtd.nc sc_${runid}_nemo_carbon_rtd.nc
-
-        # delete RTD files from 2 years ago from RUNPATH (if we are 2+ years from rtd starting).
-        if [ ${yearcm2} -ge ${year_rtdiag_start} ] ; then
-          access  old_rtd  na  nocp  sc_${runid}_${year_rtdiag_start}_${yearcm2}_nemo_carbon_rtd.nc
-          delete  old_rtd na
-        fi
-      fi
-
-      # Clean up
-      release grid_t
-      release grid_u
-      release grid_v
-      release grid_w
-      release orca1_mesh_mask
-      if [ $nemo_carbon -eq 1 ]; then
-        # PISCES related files
-        release ptrc_t
-        release diad_t
-        release orca_mesh_mask
-      fi
-       
-    fi # if [ $nemo_ann_rtd -eq 1 ]; then 1215
   fi # if [ $nemo_ann_cat -eq 1 -a $stop_mon -eq 12 ]; then 1124
 
   echo '####################################################################'
@@ -1435,6 +1509,13 @@ cat > Execute_Script <<'end_of_script'
               echo "WARNING: nemo_dump_rs=on but could not create a list of restart files to dump"  
 	  fi
 	fi
+
+	# For the RTD files
+	if [ $nemo_rtd -eq 1 ]; then
+            if [ -n "$curr_rtd_tar" ]; then
+                echo $curr_rtd_tar >> ${hist_file_dump_list}
+            fi
+	fi
         
         if [ $nemo_dump_hist -ne 1 -a ${dump_this_rs} -ne 1 ]; then
             DUMPHIST=''
@@ -1530,6 +1611,12 @@ cat > Execute_Script <<'end_of_script'
                 echo "${nemo_rs} to be deleted..."
 	        echo ${nemo_rs} >> ${hist_file_del_list}
             fi
+	  fi
+
+	  # For the RTD files
+  	  if [ $nemo_rtd -eq 1 ]; then
+              cat ${rtd_file_del_list} >> ${hist_file_del_list}
+              echo "deleting... `cat ${hist_file_del_list}`"
 	  fi
           
 	  [ -s ${hist_file_del_list} ] || 
