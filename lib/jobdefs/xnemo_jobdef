@@ -112,7 +112,7 @@
 
  # RTD switch. If nemo_carbon=on, both physical and carbon RTD will be done,
  # otherwise only physical. User can specify rtd exectuables below. 
- nemo_ann_rtd=on
+ nemo_rtd=on
 
  # If nemo_dump is true then dump history files and restart arhives to CFS. 
  # Only files that were saved to DATAPATH are dumped. If nemo_ann_cat=on, 
@@ -1116,11 +1116,11 @@ cat > Execute_Script <<'end_of_script'
     #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
     #=#=#=#     Post processing     #=#=#=#
     #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
-    # If nemo_ann_rtd is true then execute the nemo run time diagnostics
-    nemo_ann_rtd=on
-    ToF nemo_ann_rtd
+    # If nemo_rtd is true then execute the nemo run time diagnostics
+    nemo_rtd=on
+    ToF nemo_rtd
 
-    if [ $nemo_ann_rtd -eq 1 ]; then
+    if [ $nemo_rtd -eq 1 ]; then
       rtd_file_dump_list=rtd_file_dump_list_$$
       rtd_file_del_list=rtd_file_del_list_$$
       rm -f $rtd_file_dump_list
@@ -1313,7 +1313,7 @@ cat > Execute_Script <<'end_of_script'
     save $curr_rtd_tar $curr_rtd_tar na
     echo $curr_rtd_tar >> $rtd_file_del_list
 
-    fi # if [ $nemo_ann_rtd -eq 1 ]; then 1215
+    fi # if [ $nemo_rtd -eq 1 ]; then 1215
 
   #=#=#=# Optionally concatenate history files annually.
   #=#=#=# Optionally generate run time diagnostics from these annual history files
@@ -1508,7 +1508,7 @@ cat > Execute_Script <<'end_of_script'
 	fi
 
 	# For the RTD files
-	if [ $nemo_ann_rtd -eq 1 ]; then
+	if [ $nemo_rtd -eq 1 ]; then
             if [ -n "$curr_rtd_tar" ]; then
                 echo $curr_rtd_tar >> ${hist_file_dump_list}
             fi
@@ -1611,7 +1611,7 @@ cat > Execute_Script <<'end_of_script'
 	  fi
 
 	  # For the RTD files
-  	  if [ $nemo_ann_rtd -eq 1 ]; then
+  	  if [ $nemo_rtd -eq 1 ]; then
               cat ${rtd_file_del_list} >> ${hist_file_del_list}
               echo "deleting... `cat ${hist_file_del_list}`"
 	  fi
