@@ -4,6 +4,7 @@ MODULE trcrst_pisces
    !! TOP :   create, write, read the restart files of PISCES tracer
    !!======================================================================
    !! History :   1.0  !  2010-01 (C. Ethe) Original
+   !!           CMOC1  !  2013-15 (O. Riche) code editing for consistency of CMOC adaptation
    !!----------------------------------------------------------------------
 #if defined key_pisces
    !!----------------------------------------------------------------------
@@ -67,12 +68,6 @@ CONTAINS
             END DO
          END DO
       ENDIF
-! <CMOC OR 06/17/2014> Code trimming !        CALL iom_get( knum, jpdom_autoglo, 'Silicalim', xksi(:,:) ) 
-! <CMOC OR 06/17/2014> Code trimming !        IF( iom_varid( knum, 'Silicamax', ldstop = .FALSE. ) > 0 ) THEN
-! <CMOC OR 06/17/2014> Code trimming !           CALL iom_get( knum, jpdom_autoglo, 'Silicamax' , xksimax(:,:)  )
-! <CMOC OR 06/17/2014> Code trimming !        ELSE
-! <CMOC OR 06/17/2014> Code trimming !           xksimax(:,:) = xksi(:,:)
-! <CMOC OR 06/17/2014> Code trimming !        ENDIF
 
    END SUBROUTINE trc_rst_read_pisces
 
@@ -93,8 +88,6 @@ CONTAINS
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~'
 
       CALL iom_rstput( kt, kitrst, knum, 'PH', hi(:,:,:) )
-! <CMOC OR 06/17/2014> Code trimming !        CALL iom_rstput( kt, kitrst, knum, 'Silicalim', xksi(:,:) ) 
-! <CMOC OR 06/17/2014> Code trimming !        CALL iom_rstput( kt, kitrst, knum, 'Silicamax', xksimax(:,:) )
 
    END SUBROUTINE trc_rst_wri_pisces
 

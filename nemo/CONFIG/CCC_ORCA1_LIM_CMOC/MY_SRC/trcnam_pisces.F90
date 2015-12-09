@@ -7,6 +7,7 @@ MODULE trcnam_pisces
    !!              -   !  2000-01 (L. Bopp) hamocc3, p3zd
    !!             1.0  !  2003-08 (C. Ethe)  module F90
    !!             2.0  !  2007-12  (C. Ethe, G. Madec) from trcnam.pisces.h90
+   !!           CMOC1  !  2013-15 (O. Riche) include CMOC variables and CMOC namelist + NEMO list bug fix
    !!----------------------------------------------------------------------
 #if defined key_pisces
    !!----------------------------------------------------------------------
@@ -50,15 +51,11 @@ CONTAINS
       TYPE(DIAG), DIMENSION(jp_pisces_2d) :: pisdia2d
       TYPE(DIAG), DIMENSION(jp_pisces_3d) :: pisdia3d
       !!
-      !NAMELIST/nampisbio/ nrdttrc, xkmort, ferat3, wsbio2 ! <CMOC OR 03/10/2014> remove wsbio from the list
-      NAMELIST/nampisbio/ nrdttrc, xkmort, wsbio2 ! <CMOC OR 03/10/2014> remove wsbio from the list
-#if defined key_kriest
-      NAMELIST/nampiskrp/ xkr_eta, xkr_zeta, xkr_mass_min, xkr_mass_max
-#endif
+      NAMELIST/nampisbio/ nrdttrc, xkmort, wsbio2
       NAMELIST/nampisdia/ pisdia3d, pisdia2d     ! additional diagnostics
       NAMELIST/nampisdmp/ ln_pisdmp, nn_pisdmp, ln_pisclo
 ! 
-      NAMELIST/namcmocws/ ws_cmoc ! <CMOC OR 03/10/2014> read poc sinking speed
+      NAMELIST/namcmocws/ ws_cmoc ! <CMOC code OR 10/23/2015> read poc sinking speed
             
       IF(lwp) WRITE(numout,*)
       IF(lwp) WRITE(numout,*) ' trc_nam_pisces : read PISCES namelists'
@@ -75,39 +72,10 @@ CONTAINS
       IF(lwp) THEN                         ! control print
          WRITE(numout,*) ' Namelist : nampisbio'
          WRITE(numout,*) '    frequence pour la biologie                nrdttrc   =', nrdttrc
-         ! <CMOC OR 03/10/2014> WRITE(numout,*) '    POC sinking speed                         wsbio     =', wsbio
          WRITE(numout,*) '    half saturation constant for mortality    xkmort    =', xkmort
          WRITE(numout,*) '    Big particles sinking speed               wsbio2    =', wsbio2
       ENDIF
 
-
-#if defined key_kriest
-
-      !                               ! nampiskrp : kriest parameters
-      !                               ! -----------------------------
-      xkr_eta      = 0.62        
-      xkr_zeta     = 1.62        
-      xkr_mass_min = 0.0002     
-      xkr_mass_max = 1.      
-
-      REWIND( numnatp )                     ! read natkriest
-      READ  ( numnatp, nampiskrp )
-
-      IF(lwp) THEN
-         WRITE(numout,*)
-         WRITE(numout,*) ' Namelist : nampiskrp'
-         WRITE(numout,*) '    Sinking  exponent                        xkr_eta      = ', xkr_eta
-         WRITE(numout,*) '    N content exponent                       xkr_zeta     = ', xkr_zeta
-         WRITE(numout,*) '    Minimum mass for Aggregates              xkr_mass_min = ', xkr_mass_min
-         WRITE(numout,*) '    Maximum mass for Aggregates              xkr_mass_max = ', xkr_mass_max
-         WRITE(numout,*)
-     ENDIF
-
-
-     ! Computation of some variables
-     xkr_massp = 5.7E-6 * 7.6 * xkr_mass_min**xkr_zeta
-
-#endif
       !
       IF( .NOT.lk_iomput .AND. ln_diatrc ) THEN
          !
@@ -175,22 +143,20 @@ CONTAINS
       ENDIF
 
 
-      ! <CMOC OR 03/08/2014> Open the CMOC namelist
+      ! <CMOC code OR 10/23/2015>  Open the CMOC namelist
       CALL ctl_opn( numcmoc, 'namelist_cmoc', 'OLD', 'FORMATTED', 'SEQUENTIAL', -1, numout, .FALSE. )
 
       REWIND( numcmoc )
       READ  ( numcmoc, namcmocws )  
       
-      wsbio = ws_cmoc ! <CMOC OR 03/10/2014> 
+      wsbio = ws_cmoc ! <CMOC code OR 10/23/2015> 
       
-      ! <CMOC OR 03/10/2014> 
       IF(lwp) THEN                         ! control print
          WRITE(numout,*) ' Namelist : namcmocpoc'
          WRITE(numout,*) '    CMOC namelist parameter                   ws_cmoc   =', ws_cmoc
          WRITE(numout,*) '    POC sinking speed                         wsbio     =', wsbio
          WRITE(numout,*) ' '
       ENDIF
-      ! <CMOC OR 03/10/2014> 
 
    END SUBROUTINE trc_nam_pisces
 
