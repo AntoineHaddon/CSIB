@@ -62,8 +62,21 @@ nemo_freq=3m
 do_nemo_run=on
 
 # nemo_forcing identifies the type of forcing to use
-# Currenlty the only valid values are "bulk" or "flux"
+# Currenlty the only valid values are "bulk", "bulk_iaf", "flux" or "flux_iaf"
 nemo_forcing=bulk
+
+# For interannual forcing, iaf_year_offset gives the offset between
+# the current nemo year and the desired year in the forcing dataset
+# such that forcing_year = current_year + iaf_year_offset.
+# The data to be used will end in _y${forcing_year}.nc
+iaf_year_offset=0
+
+# For interannual forcing, iaf_loop_year gives the year at which the
+# forcing will loop back to the first specified year of forcing. 
+# The number is given in terms of "forcing_year" as opposed to
+# nemo "current_year": forcing_year = current_year + iaf_year_offset
+iaf_loop_year=0 
+
 
 # nemo_carbon = off means use physical ocean only
 # nemo_carbon = on  means include PISCES
@@ -375,6 +388,18 @@ debug=off
 
 # The following determines if the bulk or flux formulation is being used:
   nemo_forcing=${nemo_forcing}
+
+# For interannual forcing, iaf_year_offset gives the offset between
+# the current nemo year and the desired year in the forcing dataset
+# such that forcing_year = current_year + iaf_year_offset.
+# The data to be used will end in _y${forcing_year}.nc
+  iaf_year_offset=${iaf_year_offset}
+
+# For interannual forcing, iaf_loop_year gives the year at which the
+# forcing will loop back to the first specified year of forcing. 
+# The number is given in terms of "forcing_year" as opposed to
+# nemo "current_year": forcing_year = current_year + iaf_year_offset
+  iaf_loop_year=${iaf_loop_year}
 
 # The following determines if carbon is on or not:
   nemo_carbon=${nemo_carbon}
