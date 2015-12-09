@@ -820,6 +820,46 @@ cat > Execute_Script <<'end_of_script'
       acc_cp weights_bil3.nc     $nemo_weights_bilinear3
     fi
 
+    # Modify the namelists to suite the forcing, as specified in the makefile
+    # Bulk forcing
+    if [ x"$nemo_forcing" = "xbulk" ] || [ x"$nemo_forcing" = "xbulk_iaf" ] ; then
+      ln_ana=".false.   !  analytical formulation                    (T => fill namsbc_ana )"
+      ln_flx=".false.   !  flux formulation                          (T => fill namsbc_flx )"
+      ln_blk_clio=".false.   !  CLIO bulk formulation                     (T => fill namsbc_clio)"
+      ln_blk_core=".true.    !  CORE bulk formulation                     (T => fill namsbc_core)"
+      ln_blk_mfs=".false.   !  MFS bulk formulation                      (T => fill namsbc_mfs )"
+      ln_cpl=".false.   !  Coupled formulation                       (T => fill namsbc_cpl )"
+
+      sn_wndi=" 'uwnd10m'     ,         6         , 'U_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bic2' , 'Uwnd' "
+      sn_wndj=" 'vwnd10m'     ,         6         , 'V_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bic2' , 'Vwnd' "
+      sn_qsr=" 'qsw'         ,        24         , 'SWDN_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
+      sn_qlw=" 'qlw'         ,        24         , 'LWDN_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
+      sn_tair=" 'tair10m'     ,         6         , 'T_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
+      sn_humi=" 'humi10m'     ,         6         , 'Q_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
+      sn_prec=" 'precip'      ,        -1         , 'PRC_MOD1',   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
+      sn_snow=" 'snow'        ,        -1         , 'SNOW'    ,   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
+      sn_tdif=" 'taudif_core' ,        24         , 'taudif'  ,   .false.    , .true. , 'yearly'  , ''             , '' "
+
+      mod_nl namelist ln_ana ln_flx ln_blk_clio ln_blk_core ln_blk_mfs ln_cpl sn_wndi sn_wndj sn_qsr sn_qlw sn_tair sn_humi \
+                      sn_prec sn_snow sn_tdif
+    
+    elif [ x"$nemo_forcing" = "xflux" ] || [ x"$nemo_forcing" = "xflux_iaf" ] ; then
+      ln_ana=".false.   !  analytical formulation                    (T => fill namsbc_ana )"
+      ln_flx=".true.    !  flux formulation                          (T => fill namsbc_flx )"
+      ln_blk_clio=".false.   !  CLIO bulk formulation                     (T => fill namsbc_clio)" 
+      ln_blk_core=".false.    !  CORE bulk formulation                     (T => fill namsbc_core)" 
+      ln_blk_mfs=".false.   !  MFS bulk formulation                      (T => fill namsbc_mfs )"
+      ln_cpl=".false.   !  Coupled formulation                       (T => fill namsbc_cpl )"
+
+      sn_utau=" 'utau'      ,        24         , 'OUFS'    , .false.      , .false., 'yearly'  , 'weights_bic3', 'Uwnd' "
+      sn_vtau=" 'vtau'      ,        24         , 'OVFS'    , .false.      , .false., 'yearly'  , 'weights_bic3', 'Vwnd' "
+      sn_qtot=" 'qtot'      ,        24         , 'OBEG'    , .false.      , .false., 'yearly'  , 'weights_bil3', '' "
+      sn_qsr=" 'qsr'       ,        24         , 'OFSG'    , .false.      , .false., 'yearly'  , 'weights_bil3', '' "
+      sn_emp=" 'emp'       ,        24         , 'OBWG'    , .false.      , .false., 'yearly'  , 'weights_bil3', '' "
+ 
+      mod_nl namelist ln_ana ln_flx ln_blk_clio ln_blk_core ln_blk_mfs ln_cpl sn_utau sn_vtau sn_qtot sn_qsr sn_emp
+    fi
+
     if [ $nemo_carbon -eq 1 ]; then
       # Access PISCES files
       nemo_presatm=nemo_3.4_orca2_presatm.nc
