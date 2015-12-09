@@ -338,7 +338,7 @@ debug=off
 # Note, case is significant for the suffixes in these lists.
 # Any matching files that do not exist at run time will be silently ignored.
   nemo_1y_suffix_list=""
-  nemo_1m_suffix_list=""
+  nemo_1m_suffix_list="icemod grid_T grid_U grid_V grid_W"
   nemo_1d_suffix_list=""
   nemo_5d_suffix_list="icemod grid_T grid_U grid_V grid_W"
 
@@ -347,7 +347,7 @@ debug=off
 # If any of these are "off" then that set of files will not be saved regardless of
 # the value of the corresponding nemo_*_suffix_list variable that is set above.
   nemo_save_1y_data=off
-  nemo_save_1m_data=off
+  nemo_save_1m_data=on
   nemo_save_1d_data=off
   nemo_save_5d_data=on
 
@@ -394,7 +394,7 @@ debug=off
 # nemo_dump_hist_suffix_list ('icemod grid_t grid_u grid_v grid_w'
 # to only dump a subset of the history files
   nemo_dump_hist=${nemo_dump_hist}
-  nemo_dump_hist_freq_list='5d'
+  nemo_dump_hist_freq_list='5d 1m'
   nemo_dump_hist_suffix_list='icemod grid_t grid_u grid_v grid_w'
 
 # Dump restart archives saved on DATAPATH to cfs
@@ -407,7 +407,7 @@ debug=off
 # The user can redefine nemo_del_hist_freq_list and nemo_del_hist_suffix_list
 # to only delete a subset of the history files
   nemo_del_hist=${nemo_del_hist}
-  nemo_del_hist_freq_list='5d'
+  nemo_del_hist_freq_list='5d 1m'
   nemo_del_hist_suffix_list='icemod grid_t grid_u grid_v grid_w'
 
 # delete the previous restart.
