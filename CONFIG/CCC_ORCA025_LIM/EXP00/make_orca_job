@@ -275,7 +275,7 @@ debug=off
   nemo_nn_it000=''
 
 # Access or copy files required to run NEMO
-  orca_grid_info="nemo3.4.1_orca1_mesh_mask_ngr.nc"
+  orca_grid_info=nemo3.4.1_orca025_mesh_mask_ngb.nc
   nemo_iodef=${runid}_ccc_orca025_lim_iodef.xml
   nemo_xmlio_server_def=${runid}_ccc_orca025_lim_xmlio_server.def
   nemo_ahmcoef=nemo_3.4_orca1_ahmcoef
