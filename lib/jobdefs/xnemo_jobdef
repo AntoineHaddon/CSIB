@@ -44,8 +44,21 @@
  fi
 
  # nemo_forcing identifies the type of forcing to use
- # Currenlty the only valid values are "bulk" or "flux"
- nemo_forcing=bulk
+ # Currenlty the only valid values are "bulk", "bulk_iaf", "flux" or "flux_iaf"
+ nemo_forcing=bulk_iaf
+
+ # For interannual forcing, iaf_year_offset gives the offset between
+ # the current nemo year and the desired year in the forcing dataset
+ # such that forcing_year = current_year + iaf_year_offset.
+ # The data to be used will end in _y${forcing_year}.nc
+ iaf_year_offset=0
+
+ # For interannual forcing, iaf_loop_year gives the year at which the
+ # forcing will loop back to the first specified year of forcing. 
+ # The number is given in terms of "forcing_year" as opposed to
+ # nemo "current_year": forcing_year = current_year + iaf_year_offset
+ iaf_loop_year=0 
+
 
  # The name of a tar file containing the NEMO restart files
  # This must be set for the first job of a run unless nemo_from_rest = on
@@ -331,7 +344,7 @@ cat > Execute_Script <<'end_of_script'
 
   # Currently the only valid values for nemo_forcing are "bulk" or "flux"
   case $nemo_forcing in
-    bulk|flux) ;; # These are valid values
+    bulk|bulk_iaf|flux|flux_iaf) ;; # These are valid values
     *) bail "Invalid value for nemo_forcing = $nemo_forcing" ;;
   esac
 
@@ -738,41 +751,59 @@ cat > Execute_Script <<'end_of_script'
     acc_cp data_1m_potential_temperature_nomask.nc $nemo_data_1m_potential_temperature_nomask
     acc_cp data_1m_salinity_nomask.nc              $nemo_data_1m_salinity_nomask
 
-    nemo_t=nemo_3.3_orca2_t_10.15june2009_orca2.nc
-    nemo_u=nemo_3.3_orca2_u_10.15june2009_orca2.nc
-    nemo_v=nemo_3.3_orca2_v_10.15june2009_orca2.nc
-    nemo_q=nemo_3.3_orca2_q_10.15june2009_orca2.nc
-    nemo_qsw=nemo_3.3_orca2_ncar_rad.15june2009_orca2.nc
-    nemo_qlw=nemo_3.3_orca2_ncar_rad.15june2009_orca2.nc
-    nemo_precip=nemo_3.3_orca2_ncar_precip.15june2009_orca2.nc
-    nemo_snow=nemo_3.3_orca2_ncar_precip.15june2009_orca2.nc
-    nemo_weights_bicubic1=nemo_3.4_weights_grid02_bicubic_orca1.nc
-    nemo_weights_bilinear1=nemo_3.4_weights_grid02_bilinear_orca1.nc
-    nemo_weights_bicubic2=nemo_3.4_weights_grid03_bicubic_orca1.nc
-    nemo_weights_bilinear2=nemo_3.4_weights_grid03_bilinear_orca1.nc
-
-    acc_cp tair10m.nc          $nemo_t
-    acc_cp uwnd10m.nc          $nemo_u
-    acc_cp vwnd10m.nc          $nemo_v
-    acc_cp humi10m.nc          $nemo_q
-    acc_cp qsw.nc              $nemo_qsw
-    acc_cp qlw.nc              $nemo_qlw
-    acc_cp precip.nc           $nemo_precip
-    acc_cp snow.nc             $nemo_snow
-    acc_cp weights_bic1.nc     $nemo_weights_bicubic1
-    acc_cp weights_bil1.nc     $nemo_weights_bilinear1 
-    acc_cp weights_bic2.nc     $nemo_weights_bicubic2
-    acc_cp weights_bil2.nc     $nemo_weights_bilinear2
-
     if [ x"$nemo_forcing" = "xbulk" ]; then
       # Bulk forcing
-      nemo_utau=mc_ncq_5d_06360101_06361231_grid_ufl_mean.nc
-      nemo_vtau=mc_ncq_5d_06360101_06361231_grid_vfl_mean.nc
-      nemo_qtot=mc_ncq_5d_06360101_06361231_grid_hfl_mean.nc
-      nemo_qsr=mc_ncq_5d_06360101_06361231_grid_hfl_mean.nc
-      nemo_emp=mc_ncq_5d_06360101_06361231_grid_hfl_mean.nc
-      nemo_weights_bicubic3=nemo_3.4_weights_grid02_bicubic_orca2.nc
-      nemo_weights_bilinear3=nemo_3.4_weights_grid02_bilinear_orca2.nc
+      nemo_t=nemo_3.3_orca2_t_10.15june2009_orca2.nc
+      nemo_u=nemo_3.3_orca2_u_10.15june2009_orca2.nc
+      nemo_v=nemo_3.3_orca2_v_10.15june2009_orca2.nc
+      nemo_q=nemo_3.3_orca2_q_10.15june2009_orca2.nc
+      nemo_qsw=nemo_3.3_orca2_ncar_rad.15june2009_orca2.nc
+      nemo_qlw=nemo_3.3_orca2_ncar_rad.15june2009_orca2.nc
+      nemo_precip=nemo_3.3_orca2_ncar_precip.15june2009_orca2.nc
+      nemo_snow=nemo_3.3_orca2_ncar_precip.15june2009_orca2.nc
+      nemo_weights_bicubic2=nemo_3.4_weights_grid03_bicubic_orca1.nc
+      nemo_weights_bilinear2=nemo_3.4_weights_grid03_bilinear_orca1.nc
+
+      acc_cp tair10m.nc          $nemo_t
+      acc_cp uwnd10m.nc          $nemo_u
+      acc_cp vwnd10m.nc          $nemo_v
+      acc_cp humi10m.nc          $nemo_q
+      acc_cp qsw.nc              $nemo_qsw
+      acc_cp qlw.nc              $nemo_qlw
+      acc_cp precip.nc           $nemo_precip
+      acc_cp snow.nc             $nemo_snow
+      acc_cp weights_bic2.nc     $nemo_weights_bicubic2
+      acc_cp weights_bil2.nc     $nemo_weights_bilinear2
+
+    elif [ x"$nemo_forcing" = "xbulk_iaf" ]; then
+      nemo_t=uncs_corev2_t_10
+      nemo_u=uncs_corev2_u_10
+      nemo_v=uncs_corev2_v_10
+      nemo_q=uncs_corev2_q_10
+      nemo_qsw=uncs_corev2_ncar_rad
+      nemo_qlw=uncs_corev2_ncar_rad
+      nemo_precip=uncs_corev2_ncar_precip
+      nemo_snow=uncs_corev2_ncar_precip
+      nemo_weights_bicubic2=nemo_3.4_weights_grid03_bicubic_orca1.nc
+      nemo_weights_bilinear2=nemo_3.4_weights_grid03_bilinear_orca1.nc
+
+      yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
+      fy=`expr ${yearc} + ${iaf_year_offset} | awk  '{printf "%04d",$1}'`
+      yd=`expr ${iaf_loop_year} - ${iaf_year_offset}`
+      fyl=`expr ${fy} - '(' '(' ${yearc} - 1 ')' / ${yd} ')' \* ${yd}`           
+      forcing_year=`expr ${fyl} | awk  '{printf "%04d",$1}'`
+      
+      acc_cp tair10m_y${yearc}.nc          ${nemo_t}_y${forcing_year}.nc
+      acc_cp uwnd10m_y${yearc}.nc          ${nemo_u}_y${forcing_year}.nc
+      acc_cp vwnd10m_y${yearc}.nc          ${nemo_v}_y${forcing_year}.nc
+      acc_cp humi10m_y${yearc}.nc          ${nemo_q}_y${forcing_year}.nc
+      acc_cp qsw_y${yearc}.nc              ${nemo_qsw}_y${forcing_year}.nc
+      acc_cp qlw_y${yearc}.nc              ${nemo_qlw}_y${forcing_year}.nc
+      acc_cp precip_y${yearc}.nc           ${nemo_precip}_y${forcing_year}.nc
+      acc_cp snow_y${yearc}.nc             ${nemo_snow}_y${forcing_year}.nc
+      acc_cp weights_bic2.nc     $nemo_weights_bicubic2
+      acc_cp weights_bil2.nc     $nemo_weights_bilinear2
+
     elif [ x"$nemo_forcing" = "xflux" ]; then
       # Flux forcing
       nemo_utau=nemo_3.4_orca1_t_10.15june2009.nc
@@ -782,22 +813,40 @@ cat > Execute_Script <<'end_of_script'
       nemo_emp=nemo_3.4_orca1_t_10.15june2009.nc
       nemo_weights_bicubic3=nemo_3.4_weights_grid03_bicubic_orca1.nc
       nemo_weights_bilinear3=nemo_3.4_weights_grid03_bilinear_orca1.nc
+
+      acc_cp utau.nc             $nemo_utau
+      acc_cp vtau.nc             $nemo_vtau
+      acc_cp qtot.nc             $nemo_qtot
+      acc_cp qsr.nc              $nemo_qsr
+      acc_cp emp.nc              $nemo_emp
+      acc_cp weights_bic3.nc     $nemo_weights_bicubic3
+      acc_cp weights_bil3.nc     $nemo_weights_bilinear3
+
+    elif [ x"$nemo_forcing" = "xflux_iaf" ]; then
+      # Flux forcing
+      nemo_utau=uncs_oufs_iga
+      nemo_vtau=uncs_ovfs_iga
+      nemo_qtot=uncs_obeg_iga
+      nemo_qsr=uncs_ofsg_iga
+      nemo_emp=uncs_obwg_iga
+      nemo_weights_bicubic3=nemo_3.4_weights_grid03_bicubic_orca1.nc
+      nemo_weights_bilinear3=nemo_3.4_weights_grid03_bilinear_orca1.nc
+
+      yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
+      fy=`expr ${yearc} + ${iaf_year_offset} | awk  '{printf "%04d",$1}'`
+      yd=`expr ${iaf_loop_year} - ${iaf_year_offset}`
+      fyl=`expr ${fy} - '(' '(' ${yearc} - 1 ')' / ${yd} ')' \* ${yd}`           
+      forcing_year=`expr ${fyl} | awk  '{printf "%04d",$1}'`
+
+      acc_cp utau_y${yearc}.nc             ${nemo_utau}_y${forcing_year}.nc
+      acc_cp vtau_y${yearc}.nc             ${nemo_vtau}_y${forcing_year}.nc
+      acc_cp qtot_y${yearc}.nc             ${nemo_qtot}_y${forcing_year}.nc
+      acc_cp qsr_y${yearc}.nc              ${nemo_qsr}_y${forcing_year}.nc
+      acc_cp emp_y${yearc}.nc              ${nemo_emp}_y${forcing_year}.nc
+      acc_cp weights_bic3.nc     $nemo_weights_bicubic3
+      acc_cp weights_bil3.nc     $nemo_weights_bilinear3
     fi
 
-    acc_cp utau.nc             $nemo_utau
-    acc_cp vtau.nc             $nemo_vtau
-    acc_cp qtot.nc             $nemo_qtot
-    acc_cp qsr.nc              $nemo_qsr
-    acc_cp emp.nc              $nemo_emp
-    acc_cp weights_bic3.nc     $nemo_weights_bicubic3
-    acc_cp weights_bil3.nc     $nemo_weights_bilinear3
-
-  #  acc_cp t_10.15JUNE2009_orca2.nc         nemo_3.3_orca2_t_10.15june2009_orca2.nc
-  #  acc_cp u_10.15JUNE2009_orca2.nc         nemo_3.3_orca2_u_10.15june2009_orca2.nc
-  #  acc_cp v_10.15JUNE2009_orca2.nc         nemo_3.3_orca2_v_10.15june2009_orca2.nc
-  #  acc_cp q_10.15JUNE2009_orca2.nc         nemo_3.3_orca2_q_10.15june2009_orca2.nc
-  #  acc_cp ncar_rad.15JUNE2009_orca2.nc     nemo_3.3_orca2_ncar_rad.15june2009_orca2.nc
-  #  acc_cp ncar_precip.15JUNE2009_orca2.nc  nemo_3.3_orca2_ncar_precip.15june2009_orca2.nc
 
     if [ $pisces_offline -eq 1 ]; then
       # Dynamics files for running offline
