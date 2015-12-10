@@ -3,6 +3,8 @@ IMPLICIT NONE
       
 ! ======================================================================
 !  Purpose: Run-time diagnostics for NEMO (ORCA2) 
+!  O. Riche   Dec 07  2015 Fix ton and toc; assume all tracers are in nitrogen currency
+!                          and convert accordingly with classic Redfield ratios (ll 448 and 452)
 !  N. Swart   Jul 15  2014 Update to CMOC only variables (exclude PISCES vars).
 !  N. Swart   May 07  2014 Update to standard CMOC/CanESM2 RTD variable set. Major style revision to F90.
 !  N. Swart   May 02  2014 Made resolution independent.
@@ -443,11 +445,11 @@ SUBROUTINE calc (imt, jmt, km, ll)
       enddo  ! depth, k        
 
 !     compute toc and ton
-      toc = dicvol  + pocvol + phyvol + zoovol                                                          ! &
+      toc = dicvol  + 106./16. * ( pocvol + phyvol + zoovol )                                                       ! &
 !    &               + gocvol + docvol + caco3vol + phy2vol  + zoo2vol
 !     convert from mmol C to Pg C      
       toc = toc * 12.0e-18
-      ton = no3vol + 16./122.*(phyvol + zoovol  + pocvol  )                                             ! &
+      ton = no3vol + phyvol + zoovol  + pocvol                                                                      ! &
 !    &              + nh4vol + 16./122.*( phy2vol + zoo2vol + gocvol + docvol )   
 !     convert to Pg      
       ton = ton * 14.007e-18
