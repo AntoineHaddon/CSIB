@@ -66,26 +66,9 @@ PROGRAM nemo_ocean_diag
 !
 ! 1. Use build-nemo-rtd
 !
-! 2. xlf90_r -o nemo_physical_rtd.exe \
-!   ccc_nemo_physical_rtd.F90 uvic_netcdf.f `nf-config --fflags --flibs`
+! 2. xlf90_r -o nemo_physical_rtd.exe ccc_nemo_physical_rtd.F90 ccc_nemo_rtd_utils.F90 uvic_netcdf.f `nf-config --fflags --flibs`
 ! ======================================================================
-      IMPLICIT NONE
-      INTEGER :: imt, jmt, km, lm, iou
-
-!         establish the size of the grid from the input file.
-          call openfile ("grid_t", iou)
-          call getdimlen ('x', iou, imt)
-          call getdimlen ('y', iou, jmt)
-          call getdimlen ('deptht', iou, km)
-          call getdimlen ('time_counter', iou, lm)
-
-!         do the calculations and save the output netcdf   
-          call calc (imt, jmt, km, lm)
-
-END PROGRAM nemo_ocean_diag
-
-SUBROUTINE calc (imt, jmt, km, lm)
-!     Does the required calculations and saves the output to netcdf
+      USE ccc_nemo_rtd_utils, only: area_ave, area_ave_flx, moc, noleap_days
       IMPLICIT NONE
       integer, parameter:: dp=kind(0.d0) ! double precision
       INTEGER :: i, j, k, l, imt, jmt, km, lm, year, mon, nrecon
@@ -99,84 +82,84 @@ SUBROUTINE calc (imt, jmt, km, lm)
 !     Input data 
 ! ======================================================================
 !     Grid-related arrays
-      REAL, DIMENSION(imt, jmt)         :: lon2d, lat2d
-      REAL, DIMENSION(imt, jmt)         :: e1t, e2t, e1u, e2u, e1v, e2v
-      REAL, DIMENSION(imt, jmt, km)     :: e3t, e3u, e3v
-      REAL, DIMENSION(km)               :: depthw, deptht
+      REAL, DIMENSION(:, :), ALLOCATABLE    :: lon2d, lat2d
+      REAL, DIMENSION(:, :), ALLOCATABLE    :: e1t, e2t, e1u, e2u, e1v, e2v
+      REAL, DIMENSION(:, :, :), ALLOCATABLE :: e3t, e3u, e3v
+      REAL, DIMENSION(:), ALLOCATABLE       :: depthw, deptht
 !     Monthly T,S,u,v,w, eddy-induced u,v,w
-      REAL, DIMENSION(imt, jmt, km, lm) :: theta, salt, u, v, w
-      REAL, DIMENSION(imt, jmt, km, lm) :: gmu, gmv, gmw
+      REAL, DIMENSION(:, :, :, :), ALLOCATABLE :: theta, salt, u, v, w
+      REAL, DIMENSION(:, :, :, :), ALLOCATABLE :: gmu, gmv, gmw
 !     Monthly fluxes of heat, water, and momentum, sea surface height, 
 !     and mixed layer depth (MLD) 
-      REAL, DIMENSION(imt, jmt, lm)     :: hflux, wflux, tau_x, tau_y
-      REAL, DIMENSION(imt, jmt, lm)     :: mld10, ssh
+      REAL, DIMENSION(:, :, :), ALLOCATABLE  :: hflux, wflux, tau_x, tau_y
+      REAL, DIMENSION(:, :, :), ALLOCATABLE  :: mld10, ssh
 ! ======================================================================
 !     Pre-computed data  
 ! ======================================================================
 !     t,u,v masks 
-      REAL, DIMENSION(imt, jmt, km)     :: t_mask, u_mask, v_mask 
+      REAL, DIMENSION(:, :, :), ALLOCATABLE  :: t_mask, u_mask, v_mask 
 !     Winter and summer MLD
-      REAL, DIMENSION(imt, jmt, lm) ::  mld10_win, mld10_sum
+      REAL, DIMENSION(:, :, :), ALLOCATABLE ::  mld10_win, mld10_sum
 !     Wind energy input 
-      REAL, DIMENSION(imt, jmt, lm) ::  wind_x, wind_y
+      REAL, DIMENSION(:, :, :), ALLOCATABLE ::  wind_x, wind_y
 !     Global meridional overturning circulation (MOC)
 !     (Note: meaningful values are only south of 20N)
-      REAL, DIMENSION(jmt, km, lm) :: over_psi, over_psi_eddy
+      REAL, DIMENSION(:, :, :), ALLOCATABLE :: over_psi, over_psi_eddy
 !     Masks for some regions 
-      REAL, DIMENSION(imt, jmt) :: trop_up_mask ! for tropical Pacific upwelling 
-      REAL, DIMENSION(imt, jmt) :: g_mask, g_mask1, g_mask2
-      REAL, DIMENSION(imt, jmt) :: nino3_mask, nino34_mask, nino4_mask
+      REAL, DIMENSION(:, :), ALLOCATABLE :: trop_up_mask ! for tropical Pacific upwelling 
+      REAL, DIMENSION(:, :), ALLOCATABLE :: g_mask, g_mask1, g_mask2
+      REAL, DIMENSION(:, :), ALLOCATABLE :: nino3_mask, nino34_mask, nino4_mask
 ! ======================================================================
 !     Working arrays / variables  
 ! ======================================================================
-      REAL, DIMENSION(imt, jmt) :: arr2d1, arr2d2, tarea, zarea_ssh
+      REAL, DIMENSION(:, :), ALLOCATABLE :: arr2d1, arr2d2, tarea, zarea_ssh
       REAL                      :: dum, dvol, volssh, volt
       REAL                      :: area_tot, vol0, zztmp, vol
 ! ======================================================================
 !     Output data 
 ! ======================================================================
 ! (1) Global-mean profiles of T(z) and S(z) (C, g/kg)
-      REAL, DIMENSION(km, lm) :: theta_z, salt_z
+      REAL, DIMENSION(:, :), ALLOCATABLE :: theta_z, salt_z
 !     Global-mean T and S  (C, g/kg)) 
-      REAL, DIMENSION(lm)     :: tvol, svol 
+      REAL, DIMENSION(:), ALLOCATABLE     :: tvol, svol 
 ! (2) Global surface fields 
-      REAL, DIMENSION(lm) :: hglo    ! heat flux (W/m2) 
-      REAL, DIMENSION(lm) :: wglo    ! water flux (1.e+7 kg/m2/s) 
-      REAL, DIMENSION(lm) :: sshglo  ! sea level (cm) 
+      REAL, DIMENSION(:), ALLOCATABLE :: hglo    ! heat flux (W/m2) 
+      REAL, DIMENSION(:), ALLOCATABLE :: wglo    ! water flux (1.e+7 kg/m2/s) 
+      REAL, DIMENSION(:), ALLOCATABLE :: sshglo  ! sea level (cm) 
 ! (3) Energetics
-      REAL, DIMENSION(lm) :: wind_work_glb ! net wind energy input to the ocean (TW)
-      REAL, DIMENSION(lm) :: wind_work_so  ! wind energy input south of 40S     (TW)
+      REAL, DIMENSION(:), ALLOCATABLE :: wind_work_glb ! net wind energy input to the ocean (TW)
+      REAL, DIMENSION(:), ALLOCATABLE :: wind_work_so  ! wind energy input south of 40S     (TW)
 ! (4) Tropical Pacific dynamics/therodynamics 
-      REAL, DIMENSION(lm) :: trp_up  ! Upwelling across 60m (Sv), 150E - 75W,  2S - 2N
-      REAL, DIMENSION(lm) :: t_nino3 ! Nino3   SST,  150W - 90W,  5S - 5N 
-      REAL, DIMENSION(lm) :: t_nino34! Nino3.4 SST,  170W - 120W, 5S - 5N 
-      REAL, DIMENSION(lm) :: t_nino4 ! Nino4   SST,  160E - 150W, 5S - 5N 
-      REAL, DIMENSION(lm) :: euc_max ! Max speed of EUC    (m/s)
+      REAL, DIMENSION(:), ALLOCATABLE :: trp_up  ! Upwelling across 60m (Sv), 150E - 75W,  2S - 2N
+      REAL, DIMENSION(:), ALLOCATABLE :: t_nino3 ! Nino3   SST,  150W - 90W,  5S - 5N 
+      REAL, DIMENSION(:), ALLOCATABLE :: t_nino34! Nino3.4 SST,  170W - 120W, 5S - 5N 
+      REAL, DIMENSION(:), ALLOCATABLE :: t_nino4 ! Nino4   SST,  160E - 150W, 5S - 5N 
+      REAL, DIMENSION(:), ALLOCATABLE :: euc_max ! Max speed of EUC    (m/s)
 ! (5) Transports through key passages 
-      REAL, DIMENSION(lm) :: dp_tran  ! Drake Passage (Sv)
-      REAL, DIMENSION(lm) :: pi_tran  ! Indonesian Passage (Sv)
-      REAL, DIMENSION(lm) :: be_tran  ! Net transport across 20N in Atlantic
-      REAL, DIMENSION(lm) :: be_tran2 ! Net transport across 20N in Pacific
+      REAL, DIMENSION(:), ALLOCATABLE :: dp_tran  ! Drake Passage (Sv)
+      REAL, DIMENSION(:), ALLOCATABLE :: pi_tran  ! Indonesian Passage (Sv)
+      REAL, DIMENSION(:), ALLOCATABLE :: be_tran  ! Net transport across 20N in Atlantic
+      REAL, DIMENSION(:), ALLOCATABLE :: be_tran2 ! Net transport across 20N in Pacific
                     ! (can be used as proxies to Bering Strait tran.)                  
 ! (6) Mixed layer depth ( for values > 200m) 
-      REAL, DIMENSION(lm) :: win_mld      ! mean February MLD (m)     
-      REAL, DIMENSION(lm) :: sum_mld      ! mean August MLD (m)
-      REAL, DIMENSION(lm) :: win_mld_max  ! max. February MLD (m)  
-      REAL, DIMENSION(lm) :: sum_mld_max  ! max. August MLD (m)      
-      REAL, DIMENSION(lm) :: win_area     ! area of February MLD (1.e+14 m2)
-      REAL, DIMENSION(lm) :: sum_area     ! area of February MLD (1.e+14 m2)
+      REAL, DIMENSION(:), ALLOCATABLE :: win_mld      ! mean February MLD (m)     
+      REAL, DIMENSION(:), ALLOCATABLE :: sum_mld      ! mean August MLD (m)
+      REAL, DIMENSION(:), ALLOCATABLE :: win_mld_max  ! max. February MLD (m)  
+      REAL, DIMENSION(:), ALLOCATABLE :: sum_mld_max  ! max. August MLD (m)      
+      REAL, DIMENSION(:), ALLOCATABLE :: win_area     ! area of February MLD (1.e+14 m2)
+      REAL, DIMENSION(:), ALLOCATABLE :: sum_area     ! area of February MLD (1.e+14 m2)
 ! (7) Meridional overturning circulation (MOC)   
 !     Maximum upper ocean MOC at 20N and 20S (Sv)
-      REAL, DIMENSION(lm) :: over_max_20N, over_max_20S
+      REAL, DIMENSION(:), ALLOCATABLE :: over_max_20N, over_max_20S
 !     Minimum lower ocean MOC at 20N and 20S (Sv) 
-      REAL, DIMENSION(lm) :: over_min_20N, over_min_20S
+      REAL, DIMENSION(:), ALLOCATABLE :: over_min_20N, over_min_20S
 !     Upper Southern Ocean MOC, net and eddy-induced (Sv, south of 40S) 
-      REAL, DIMENSION(lm) :: over_max_SO_net, over_min_SO_eddy  
+      REAL, DIMENSION(:), ALLOCATABLE :: over_max_SO_net, over_min_SO_eddy  
 ! (8) Heat transport  (PW)   
 !     across 20N, global ocean and Atlantic 
-      REAL, DIMENSION(lm) :: h_tran_20N, h_tran_20NA
+      REAL, DIMENSION(:), ALLOCATABLE :: h_tran_20N, h_tran_20NA
 !     across 20S, global ocean and Atlantic
-      REAL, DIMENSION(lm) :: h_tran_20S, h_tran_20SA
+      REAL, DIMENSION(:), ALLOCATABLE :: h_tran_20S, h_tran_20SA
 !----------------
 !  NetCDF-output specific
       INTEGER :: id_time, id_z, iou, ntrec, ntrec2, iyear, imon
@@ -186,9 +169,48 @@ SUBROUTINE calc (imt, jmt, km, lm)
       CHARACTER :: fname01*100,fname02*100, fname03*100
       CHARACTER :: fname04*100, fname05*100
       CHARACTER(len=32) :: year_arg_in, mon_arg_in
+      integer, dimension(8) :: ierr
 
 !----------------
-           print*,'Reading data on NEMO grid...'
+! Allocate Arrays
+!     establish the size of the grid from the input file.
+      call openfile ("grid_t", iou)
+      call getdimlen ('x', iou, imt)
+      call getdimlen ('y', iou, jmt)
+      call getdimlen ('deptht', iou, km)
+      call getdimlen ('time_counter', iou, lm)
+
+      ALLOCATE( lon2d(imt,jmt), lat2d(imt,jmt), e1t(imt,jmt), e2t(imt,jmt),     &
+         &      e1u(imt,jmt), e2u(imt,jmt), e1v(imt,jmt), e2v(imt,jmt),         &
+         &      trop_up_mask(imt,jmt), g_mask(imt,jmt), g_mask1(imt,jmt),       &
+         &      nino3_mask(imt,jmt), nino34_mask(imt,jmt), nino4_mask(imt,jmt), &  
+         &      g_mask2(imt,jmt), arr2d1(imt,jmt), arr2d2(imt,jmt),             &
+         &      tarea(imt,jmt), zarea_ssh(imt,jmt), STAT=ierr(1) ) 
+      ALLOCATE( e3t(imt,jmt,km), e3u(imt,jmt,km), e3v(imt,jmt,km),              &
+         &      t_mask(imt,jmt,km), u_mask(imt,jmt,km), v_mask(imt,jmt,km), STAT=ierr(2) )    
+      ALLOCATE( depthw(km), deptht(km), STAT=ierr(3) )
+      ALLOCATE( theta(imt,jmt,km,lm), salt(imt,jmt,km,lm), u(imt,jmt,km,lm),    &
+         &      v(imt,jmt,km,lm), w(imt,jmt,km,lm), gmu(imt,jmt,km,lm),         &
+         &      gmv(imt,jmt,km,lm), gmw(imt,jmt,km,lm), STAT=ierr(4) )
+      ALLOCATE( hflux(imt,jmt,lm), wflux(imt,jmt,lm), tau_x(imt,jmt,lm),        &
+         &      tau_y(imt,jmt,lm), mld10(imt,jmt,lm), ssh(imt,jmt,lm),          &
+         &      mld10_win(imt,jmt,lm), mld10_sum(imt,jmt,lm),                   &
+         &      wind_x(imt,jmt,lm), wind_y(imt,jmt,lm), STAT=ierr(5) )
+      ALLOCATE( over_psi(jmt,km,lm), over_psi_eddy(jmt,km,lm), STAT=ierr(6) )
+      ALLOCATE( theta_z(lm, lm), salt_z(km, lm), STAT=ierr(7) )
+      ALLOCATE( tvol(lm), svol(lm), hglo(lm), wglo(lm), sshglo(lm),             &
+         &      wind_work_glb(lm), wind_work_so(lm), trp_up(lm), t_nino3(lm),   &
+         &      t_nino34(lm), t_nino4(lm), euc_max(lm), dp_tran(lm),            &
+         &      pi_tran(lm), be_tran(lm), be_tran2(lm), win_mld(lm),            &
+         &      sum_mld(lm), win_mld_max(lm), sum_mld_max(lm), win_area(lm),    &
+         &      sum_area(lm), over_max_20N(lm), over_max_20S(lm),               &
+         &      over_min_20N(lm), over_min_20S(lm), over_max_SO_net(lm),        &
+         &      over_min_SO_eddy(lm), h_tran_20N(lm), h_tran_20NA(lm),          &
+         &      h_tran_20S(lm), h_tran_20SA(lm), STAT=ierr(8))
+
+         IF (MAXVAL(ierr) /=0) THEN
+           STOP 'Memory allocation error in Physical RTD'
+         ENDIF
 
          year =0
          ntrec=0
@@ -246,6 +268,7 @@ SUBROUTINE calc (imt, jmt, km, lm)
 !---------------------------------------------------
 !    Define NetCDF files   
 !---------------------------------------------------
+        print*,'Reading data on NEMO grid...'
         fname01='grid_t'
         fname02='grid_u'
         fname03='grid_v'
@@ -317,7 +340,8 @@ SUBROUTINE calc (imt, jmt, km, lm)
                    nino4_mask(i,j) = 1. 
                  endif
                endif           
-             endif  
+             endif 
+             
           enddo
       enddo
 
@@ -1060,139 +1084,4 @@ SUBROUTINE calc (imt, jmt, km, lm)
         print*, 'closing netcdf'
         !call flush(6)
         call closefile (iou)
-END SUBROUTINE  calc
-
-!=========================================================
-! Area averaging of 3d field over the selected regions 
-!=========================================================
-SUBROUTINE area_ave(e1,e2,e3, mask, a, imt,jmt,km,a_mean,ss,kk)
-      implicit none
-      integer imt, jmt, km, i, j, kk
-      real e1(imt,jmt),e2(imt,jmt), e3(imt,jmt,km)
-      real a(imt,jmt), mask(imt,jmt)
-      real a_mean, ss, s1, vol
-
-          s1=0.
-          ss=0.
-          do i=1,imt-2  ! not to double count the cyclic boundary
-              do j=1,jmt-1 !avoid north fold
-                  if (mask(i,j).gt.0.5) then  ! mask the region of interst
-                      vol = e1(i,j)*e2(i,j)*e3(i,j,kk)
-                      ss=ss+vol
-                      s1=s1+a(i,j)*vol
-                  endif
-              enddo
-          enddo
-
-          a_mean = 0.
-          if (ss.ne.0.) then
-              a_mean =s1/ss
-          endif
-
-      return
-END SUBROUTINE area_ave
-
-!=========================================================
-! Area averaging of 2d field over the selected regions 
-!=========================================================
-SUBROUTINE area_ave_flx(e1,e2, mask, a, imt, jmt,a_mean,ss)
-      implicit none
-      integer imt, jmt, i, j
-      real e1(imt,jmt),e2(imt,jmt)
-      real a(imt,jmt), mask(imt,jmt)
-      real a_mean, ss, s1, arc
-
-          s1=0.
-          ss=0.
-          do i=1,imt-2  ! not to double count the cyclic boundary
-              do j=1,jmt-1 ! north fold
-                  if (mask(i,j).gt.0.5) then  ! mask the region of interst
-                      arc = e1(i,j)*e2(i,j)
-                      ss=ss+arc
-                      s1=s1+a(i,j)*arc
-                  endif
-              enddo
-          enddo
-
-          a_mean = 0.
-          if (ss.ne.0.) then
-              a_mean =s1/ss
-          endif
-
-      return
-END SUBROUTINE area_ave_flx
-
-!=========================================================
-! Global meridional overturning (Sv) (valid only south of 20N)  
-!=========================================================
-SUBROUTINE moc(e1v, e3v, v, imt, jmt, km, over_psi)
-      implicit none
-      integer imt, jmt, km, i, j, k
-      REAL, DIMENSION(imt, jmt) :: e1v 
-      REAL, DIMENSION(imt, jmt, km) :: e3v, v
-      REAL, DIMENSION(jmt, km) :: over_tran, over_psi
-      REAL s
-
-
-      do j = 1, jmt-1 ! north fold
-          do k = km, 1, -1
-              s=0.
-              do i = 1, imt - 2  ! not to double count the cyclic boundary
-                  s = s + v(i, j, k)*e1v(i, j)*e3v(i, j, k)   
-              enddo
-              over_tran(j, k) = s 
-              over_psi(j, k)  = 0.
-          enddo     
-      enddo
-
-      do j = 1, jmt-1 !north fold
-          do k = km, 1, -1
-              if (k.eq.km) then 
-                  over_psi(j,k) = -over_tran(j,k)
-              else
-                  over_psi(j,k) = over_psi(j, k + 1) - over_tran(j,k)
-              endif
-          enddo
-      enddo
-
-      do j = 1, jmt-1 !north fold
-          do k = 1, km
-              over_psi(j, k)  =  over_psi(j, k)*1.e-6 ! to Sv                      
-          enddo
-      enddo
-
-      return
-END SUBROUTINE moc
-
-SUBROUTINE noleap_days(year, mon, day, days_elapsed)
-!    Given a year, mon, day, returns the number of days elapsed
-!    since 01-01-0000 (using a noleap/365_day calendar)
-    IMPLICIT NONE
-    INTEGER, INTENT(IN)  :: year, mon, day
-    INTEGER, INTENT(OUT) :: days_elapsed
-    INTEGER              :: doy, dpy, mmon, myear
-
-    ! Adjust if mon > 12. This is a potential here. No correction
-    ! for days being off. I'm assuming day will mostly be 1 anyway.
-
-    IF (mon > 12) THEN
-        myear = year + mon/12
-        mmon = MOD(mon, 12)
-    ELSE
-       myear = year
-       mmon = mon
-    ENDIF
-
-    ! In a given (noleap) year, compute the day of year    
-    ! http://www.davidgsimpson.com/software/greg2doy_f90.txt
-    !
-    doy = ((275*mmon)/9) - ((mmon+9)/6) + day - 30
-
-    ! Compute the number of days in the preceeding years
-    dpy = 365 * year
-
-    ! Tally for the final result
-    days_elapsed = dpy + doy
-    return
-END SUBROUTINE noleap_days
-
+END program nemo_ocean_diag
