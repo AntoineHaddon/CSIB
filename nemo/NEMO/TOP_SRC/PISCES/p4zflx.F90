@@ -111,8 +111,8 @@ CONTAINS
          ! For nn_offset, if your model year is iyy, nn_offset=(years(1)-iyy) 
          ! then the first atmospheric CO2 record read is at years(1)
          zyr_dec = REAL( nyear + nn_offset, wp ) + REAL( nday_year, wp ) / REAL( nyear_len(1), wp )
-         jm = 2
-         DO WHILE( jm <= nmaxrec .AND. years(jm-1) < zyr_dec .AND. years(jm) >= zyr_dec ) ;  jm = jm + 1 ;  END DO
+         jm = 1
+         DO WHILE( jm <= nmaxrec .AND. years(jm) < zyr_dec ) ;  jm = jm + 1 ;  END DO
          iind = jm  ;   iindm1 = jm - 1
          zdco2dt = ( atcco2h(iind) - atcco2h(iindm1) ) / ( years(iind) - years(iindm1) + rtrn )
          atcco2  = zdco2dt * ( zyr_dec - years(iindm1) ) + atcco2h(iindm1)
