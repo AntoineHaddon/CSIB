@@ -373,14 +373,14 @@ debug=off
       sn_tdif=" 'taudif_core' ,        24         , 'taudif'  ,   .false.    , .true. , 'yearly'  , ''             , '' "
       
       # Forcing files to be accessed
-      nemo_t=nemo_3.3_orca2_t_10.15june2009_orca2.nc
-      nemo_u=nemo_3.3_orca2_u_10.15june2009_orca2.nc
-      nemo_v=nemo_3.3_orca2_v_10.15june2009_orca2.nc
-      nemo_q=nemo_3.3_orca2_q_10.15june2009_orca2.nc
-      nemo_qsw=nemo_3.3_orca2_ncar_rad.15june2009_orca2.nc
-      nemo_qlw=nemo_3.3_orca2_ncar_rad.15june2009_orca2.nc
-      nemo_precip=nemo_3.3_orca2_ncar_precip.15june2009_orca2.nc
-      nemo_snow=nemo_3.3_orca2_ncar_precip.15june2009_orca2.nc
+      nemo_t=uncs_corev2-ny_t_10.15JUNE2009.nc
+      nemo_u=uncs_corev2-ny_u_10.15JUNE2009.nc
+      nemo_v=uncs_corev2-ny_v_10.15JUNE2009.nc
+      nemo_q=uncs_corev2-ny_q_10.15JUNE2009.nc
+      nemo_qsw=uncs_corev2-ny_ncar_rad.15JUNE2009.nc
+      nemo_qlw=uncs_corev2-ny_ncar_rad.15JUNE2009.nc
+      nemo_precip=uncs_corev2-ny_ncar_precip.15JUNE2009.nc
+      nemo_snow=uncs_corev2-ny_ncar_precip.15JUNE2009.nc
 
       # WEIGHTS file for this resolution
       nemo_weights_bicubic2=uncs_orca2_corev2_weights_bicubic.nc
