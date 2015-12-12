@@ -202,8 +202,8 @@ cat <<end_job_defs >$job_defs
   rn_rdt=5760.
 
 # Define the nemo domain (implies node geometry for MPI)
-  nemo_jpni=8
-  nemo_jpnj=4
+  nemo_jpni=4
+  nemo_jpnj=8
   nemo_jpnij=32
 
 # Number of physical nodes used by this job
@@ -354,8 +354,6 @@ debug=off
 ##########################################################################################################################
 
 #      # Sensible variable options (see definitions at top)
-#      start=001
-#      stop=0100
 #      nemo_forcing=bulk
 #      year_rtdiag_start=001
 #      iaf_year_offset=0     
@@ -390,23 +388,22 @@ debug=off
 ##    COREv2 interannual forcing (1949-2009)
 ###########################################################################################################################
 #      # Sensible variable options (see definitions at top)
-#      start=1
-#      stop=310 # 5 cycles of core forcing. 
+##      The below setting correspond to a "start" (above) of 1. Adjust iaf_year_offset accordingly for a different start.
 #      nemo_forcing=bulk_iaf
 #      year_rtdiag_start=001
 #      iaf_year_offset=1948     
 #      iaf_loop_year=2009
 #
 #      # namelist paramters to be changed by XNEMO
-#      sn_wndi=" 'uwnd10m'     ,         6         , 'U_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bic2' , 'Uwnd' "
-#      sn_wndj=" 'vwnd10m'     ,         6         , 'V_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bic2' , 'Vwnd' "
-#      sn_qsr=" 'qsw'         ,        24         , 'SWDN_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
-#      sn_qlw=" 'qlw'         ,        24         , 'LWDN_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
-#      sn_tair=" 'tair10m'     ,         6         , 'T_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
-#      sn_humi=" 'humi10m'     ,         6         , 'Q_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
-#      sn_prec=" 'precip'      ,        -1         , 'RAIN'    ,   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
-#      sn_snow=" 'snow'        ,        -1         , 'SNOW'    ,   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
-#      sn_tdif=" 'taudif_core' ,        24         , 'taudif'  ,   .false.    , .true. , 'yearly'  , ''             , '' "
+#      sn_wndi=" 'uwnd10m'     ,         6         , 'U_10_MOD',   .false.    , .false. , 'yearly'  , 'weights_bic2' , 'Uwnd' "
+#      sn_wndj=" 'vwnd10m'     ,         6         , 'V_10_MOD',   .false.    , .false. , 'yearly'  , 'weights_bic2' , 'Vwnd' "
+#      sn_qsr=" 'qsw'         ,        24         , 'SWDN_MOD',   .false.    , .false. , 'yearly'  , 'weights_bil2' , '' "
+#      sn_qlw=" 'qlw'         ,        24         , 'LWDN_MOD',   .false.    , .false. , 'yearly'  , 'weights_bil2' , '' "
+#      sn_tair=" 'tair10m'     ,         6         , 'T_10_MOD',   .false.    , .false. , 'yearly'  , 'weights_bil2' , '' "
+#      sn_humi=" 'humi10m'     ,         6         , 'Q_10_MOD',   .false.    , .false. , 'yearly'  , 'weights_bil2' , '' "
+#      sn_prec=" 'precip'      ,        -1         , 'RAIN'    ,   .false.    , .false. , 'yearly'  , 'weights_bil2' , '' "
+#      sn_snow=" 'snow'        ,        -1         , 'SNOW'    ,   .false.    , .false. , 'yearly'  , 'weights_bil2' , '' "
+#      sn_tdif=" 'taudif_core' ,        24         , 'taudif'  ,   .false.    , .false. , 'yearly'  , ''             , '' "
 #
 #      # Forcing files to be accessed
 #      # In the case of interannual forcing, just give the file prefix. The ${prefix}_yYYYY.nc will be added
@@ -439,11 +436,11 @@ debug=off
 #      nn_ice=0 # no sea-ice for flux mode
 #
 #      # namelist paramters to be changed by XNEMO
-#      sn_utau=" 'utau'      ,        24         , 'OUFS'    , .false.      , .false., 'yearly'  , 'weights_bic3', 'Uwnd' "
-#      sn_vtau=" 'vtau'      ,        24         , 'OVFS'    , .false.      , .false., 'yearly'  , 'weights_bic3', 'Vwnd' "
-#      sn_qtot=" 'qtot'      ,        24         , 'OBEG'    , .false.      , .false., 'yearly'  , 'weights_bil3', '' "
-#      sn_qsr=" 'qsr'       ,        24         , 'OFSG'    , .false.      , .false., 'yearly'  , 'weights_bil3', '' "
-#      sn_emp=" 'emp'       ,        24         , 'OBWG'    , .false.      , .false., 'yearly'  , 'weights_bil3', '' "
+#      sn_utau=" 'utau'      ,        24         , 'OUFS'    , .false.      , .true., 'yearly'  , 'weights_bic3', 'Uwnd' "
+#      sn_vtau=" 'vtau'      ,        24         , 'OVFS'    , .false.      , .true., 'yearly'  , 'weights_bic3', 'Vwnd' "
+#      sn_qtot=" 'qtot'      ,        24         , 'OBEG'    , .false.      , .true., 'yearly'  , 'weights_bil3', '' "
+#      sn_qsr=" 'qsr'       ,        24         , 'OFSG'    , .false.      , .true., 'yearly'  , 'weights_bil3', '' "
+#      sn_emp=" 'emp'       ,        24         , 'OBWG'    , .false.      , .true., 'yearly'  , 'weights_bil3', '' "
 #
 #      nemo_utau=uncs_oufs_iga_y2201.nc
 #      nemo_vtau=uncs_ovfs_iga_y2201.nc
@@ -461,8 +458,7 @@ debug=off
 #     NOTE: must use del_key="key_lim2" when compiling the code
 ###########################################################################################################################
 #      # Sensible variable options (see definitions at top)
-#      start=1
-#      stop=100
+##      The below setting correspond to a "start" (above) of 1. Adjust iaf_year_offset accordingly for a different start.
 #      nemo_forcing=flux_iaf
 #      year_rtdiag_start=001
 #      iaf_year_offset=2199    
@@ -493,9 +489,8 @@ debug=off
 ##    CanESM2 interannual bulk forcing, from pre-industriual control run "iga" years 2201-2299
 ###########################################################################################################################
 #      # Sensible variable options (see definitions at top)
-#      start=1
-#      stop=100
 #      nemo_forcing=bulk_iaf
+##      The below setting correspond to a "start" (above) of 1. Adjust iaf_year_offset accordingly for a different start.
 #      year_rtdiag_start=001
 #      iaf_year_offset=2199     
 #      iaf_loop_year=2299
@@ -530,9 +525,8 @@ debug=off
 ##    CanESM2 interannual bulk forcing, from historical run "igm" years 1850-2005
 ###########################################################################################################################
 #      # Sensible variable options (see definitions at top)
-#      start=1850
-#      stop=2005
 #      nemo_forcing=bulk_iaf
+##      The below setting correspond to a "start" (above) of 1850. Adjust iaf_year_offset accordingly for a different start.
 #      year_rtdiag_start=1850
 #      iaf_year_offset=0   
 #      iaf_loop_year=2005
