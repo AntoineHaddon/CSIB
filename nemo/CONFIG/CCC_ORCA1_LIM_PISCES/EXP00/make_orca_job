@@ -266,9 +266,6 @@ debug=off
 # but can be reset by the user if required
   run_start_year=$start_year
 
-# Set start year for rtd
-  year_rtdiag_start=${year_rtdiag_start}
-
 # nemo_nn_it000 is the initial time step of the current run
 # This is normally read from the previous restart but may be set here.
 # If defined, nemo_nn_it000 must always be set to an integer greater than zero.
@@ -637,6 +634,9 @@ debug=off
   nemo_ann_rtd=${nemo_ann_rtd}
   physical_rtd_exe="nemo_orca_physical_rtd_v02c"
   carbon_rtd_exe="nemo_orca_carbon_rtd_v02c"
+
+# Set start year for rtd
+  year_rtdiag_start=${year_rtdiag_start}
 
 # Dump history files saved on DATAPATH to cfs
 # The user can redefine nemo_dump_hist_freq_list and nemo_dump_hist_suffix_list
