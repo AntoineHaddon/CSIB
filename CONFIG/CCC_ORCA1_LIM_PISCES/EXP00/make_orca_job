@@ -349,12 +349,10 @@ debug=off
 ##########################################################################################################################
 
 #      # Sensible variable options (see definitions at top)
-#      start=001
-#      stop=0100
-#      nemo_forcing=bulk
-#      year_rtdiag_start=001
-#      iaf_year_offset=0     
-#      iaf_loop_year=0
+      nemo_forcing=bulk
+      year_rtdiag_start=001
+      iaf_year_offset=0     
+      iaf_loop_year=0
 
       # namelist paramters to be changed by XNEMO
       sn_wndi=" 'uwnd10m'     ,         6         , 'U_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bic2' , 'Uwnd' "
@@ -385,9 +383,8 @@ debug=off
 ##    COREv2 interannual forcing (1949-2009)
 ###########################################################################################################################
 #      # Sensible variable options (see definitions at top)
-#      start=1
-#      stop=310 # 5 cycles of core forcing. 
 #      nemo_forcing=bulk_iaf
+##      The below setting correspond to a "start" (above) of 1. Adjust iaf_year_offset accordingly for a different start.
 #      year_rtdiag_start=001
 #      iaf_year_offset=1948     
 #      iaf_loop_year=2009
@@ -425,9 +422,8 @@ debug=off
 #     NOTE: must use del_key="key_lim2" when compiling the code
 ###########################################################################################################################
 #      # Sensible variable options (see definitions at top)
-#      start=1
-#      stop=100
 #      nemo_forcing=flux
+##      The below setting correspond to a "start" (above) of 1. Adjust iaf_year_offset accordingly for a different start.
 #      year_rtdiag_start=001
 #      iaf_year_offset=0
 #      iaf_loop_year=0
@@ -456,9 +452,8 @@ debug=off
 #     NOTE: must use del_key="key_lim2" when compiling the code
 ###########################################################################################################################
 #      # Sensible variable options (see definitions at top)
-#      start=1
-#      stop=100
 #      nemo_forcing=flux_iaf
+##      The below setting correspond to a "start" (above) of 1. Adjust iaf_year_offset accordingly for a different start.
 #      year_rtdiag_start=001
 #      iaf_year_offset=2199    
 #      iaf_loop_year=2299
@@ -488,9 +483,8 @@ debug=off
 ##    CanESM2 interannual bulk forcing, from pre-industriual control run "iga" years 2201-2299
 ###########################################################################################################################
 #      # Sensible variable options (see definitions at top)
-#      start=1
-#      stop=100
 #      nemo_forcing=bulk_iaf
+##      The below setting correspond to a "start" (above) of 1. Adjust iaf_year_offset accordingly for a different start.
 #      year_rtdiag_start=001
 #      iaf_year_offset=2199     
 #      iaf_loop_year=2299
@@ -525,9 +519,8 @@ debug=off
 ##    CanESM2 interannual bulk forcing, from historical run "igm" years 1850-2005
 ###########################################################################################################################
 #      # Sensible variable options (see definitions at top)
-#      start=1850
-#      stop=2005
 #      nemo_forcing=bulk_iaf
+##      The below setting correspond to a "start" (above) of 1850. Adjust iaf_year_offset accordingly for a different start.
 #      year_rtdiag_start=1850
 #      iaf_year_offset=0   
 #      iaf_loop_year=2005

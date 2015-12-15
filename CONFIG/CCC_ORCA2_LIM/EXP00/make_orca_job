@@ -351,10 +351,10 @@ debug=off
 ##########################################################################################################################
 
 #      # Sensible variable options (see definitions at top)
-#      nemo_forcing=bulk
-#      year_rtdiag_start=001
-#      iaf_year_offset=0     
-#      iaf_loop_year=0
+      nemo_forcing=bulk
+      year_rtdiag_start=001
+      iaf_year_offset=0     
+      iaf_loop_year=0
 
       # namelist paramters to be changed by XNEMO
       sn_wndi=" 'uwnd10m'     ,         6         , 'U_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bic2' , 'Uwnd' "
@@ -424,9 +424,8 @@ debug=off
 #     NOTE: must use del_key="key_lim2" when compiling the code
 ###########################################################################################################################
 #      # Sensible variable options (see definitions at top)
-#      start=1
-#      stop=100
 #      nemo_forcing=flux
+##      The below setting correspond to a "start" (above) of 1. Adjust iaf_year_offset accordingly for a different start.
 #      year_rtdiag_start=001
 #      iaf_year_offset=0
 #      iaf_loop_year=0
