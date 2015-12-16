@@ -1,11 +1,14 @@
 PROGRAM nemo_ocean_diag
 IMPLICIT NONE 
+USE ccc_nemo_rtd_utils, only: area_ave, area_ave_flx, noleap_days
       
 ! ======================================================================
 !  Purpose: Run-time diagnostics for NEMO (ORCA2) 
 !
 ! HISTORY:
 ! -------
+! N. Swart    Dec    2015   Abstract all calculations to ccc_nemo_rtd_utils
+!                           module, which is shared between all rtd.
 !
 ! N. Swart    Nov     2015 1. Remove annual mean calculation and rewrite
 !                             all code to operate on monthly data.
@@ -621,94 +624,3 @@ SUBROUTINE calc (imt, jmt, km, lm)
       CALL closefile (iou)
       
 END SUBROUTINE calc
-!=========================================================
-! Area averaging of 3d field over the selected regions 
-!=========================================================
-SUBROUTINE area_ave (e1,e2,e3, mask,a, imt,jmt,km,a_mean,ss,kk)
-      implicit none
-      integer imt, jmt, km, i, j, kk
-      real e1(imt,jmt),e2(imt,jmt), e3(imt,jmt,km) 
-      real a(imt,jmt), mask(imt,jmt) 
-      real a_mean, ss, s1, vol
-
-          s1=0.
-          ss=0.
-          do i=1,imt-2  ! not to double count the cyclic boundary
-              do j=1,jmt-1
-                  if (mask(i,j).gt.0.5) then  ! mask the region of interst
-                      vol = e1(i,j)*e2(i,j)*e3(i,j,kk)
-                      ss=ss+vol 
-                      s1=s1+a(i,j)*vol  
-                  endif
-              enddo
-          enddo
-
-          a_mean = 0.
-          if (ss.ne.0.) then 
-              a_mean =s1/ss
-          endif
-
-      return
-END SUBROUTINE area_ave
-!=========================================================
-! Area averaging of 2d field over the selected regions 
-!=========================================================
-SUBROUTINE area_ave_flx(e1,e2, mask, a, imt, jmt,a_mean,ss)
-      implicit none
-      integer imt, jmt, i, j
-      real e1(imt,jmt),e2(imt,jmt) 
-      real a(imt,jmt), mask(imt,jmt) 
-      real a_mean, ss, s1, arc
-
-          s1=0.
-          ss=0.
-          do i=1,imt-2  ! not to double count the cyclic boundary
-              do j=1,jmt-1
-                  if (mask(i,j).gt.0.5) then  ! mask the region of interst
-                      arc = e1(i,j)*e2(i,j)
-                      ss=ss+arc 
-                      s1=s1+a(i,j)*arc  
-                  endif
-              enddo
-          enddo
-
-          a_mean = 0.
-          if (ss.ne.0.) then 
-              a_mean =s1/ss
-          endif
-
-      return
-END SUBROUTINE area_ave_flx
-
-SUBROUTINE noleap_days(year, mon, day, days_elapsed)
-!    Given a year, mon, day, returns the number of days elapsed
-!    since 01-01-0000 (using a noleap/365_day calendar)
-    IMPLICIT NONE
-    INTEGER, INTENT(IN)  :: year, mon, day
-    INTEGER, INTENT(OUT) :: days_elapsed
-    INTEGER              :: doy, dpy, mmon, myear
-
-    ! Adjust if mon > 12. This is a potential here. No correction
-    ! for days being off. I'm assuming day will mostly be 1 anyway.
-
-    IF (mon > 12) THEN
-        myear = year + mon/12
-        mmon = MOD(mon, 12)
-    ELSE
-       myear = year
-       mmon = mon
-    ENDIF
-
-    ! In a given (noleap) year, compute the day of year    
-    ! http://www.davidgsimpson.com/software/greg2doy_f90.txt
-    !
-    doy = ((275*mmon)/9) - ((mmon+9)/6) + day - 30
-
-    ! Compute the number of days in the preceeding years
-    dpy = 365 * year
-
-    ! Tally for the final result
-    days_elapsed = dpy + doy
-    return
-END SUBROUTINE noleap_days
-

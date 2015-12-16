@@ -5,6 +5,8 @@ PROGRAM nemo_ocean_diag
 !
 ! HISTORY
 !--------
+! N. Swart    Dec    2015   Abstract all calculations to ccc_nemo_rtd_utils
+!                           module, which is shared between all rtd.
 !
 ! Nov 5/15  - N. Swart    1. Remove annual mean calculation and rewrite
 !                            all code to operate on monthly data.
@@ -66,7 +68,7 @@ PROGRAM nemo_ocean_diag
 !
 ! 1. Use build-nemo-rtd
 !
-! 2. xlf90_r -o nemo_physical_rtd.exe ccc_nemo_physical_rtd.F90 ccc_nemo_rtd_utils.F90 uvic_netcdf.f `nf-config --fflags --flibs`
+! 2. xlf90_r -o nemo_physical_rtd.exe ccc_nemo_rtd_utils.F90 ccc_nemo_physical_rtd.F90 uvic_netcdf.f `nf-config --fflags --flibs`
 ! ======================================================================
       USE ccc_nemo_rtd_utils, only: area_ave, area_ave_flx, moc, noleap_days
       IMPLICIT NONE
@@ -197,7 +199,7 @@ PROGRAM nemo_ocean_diag
          &      mld10_win(imt,jmt,lm), mld10_sum(imt,jmt,lm),                   &
          &      wind_x(imt,jmt,lm), wind_y(imt,jmt,lm), STAT=ierr(5) )
       ALLOCATE( over_psi(jmt,km,lm), over_psi_eddy(jmt,km,lm), STAT=ierr(6) )
-      ALLOCATE( theta_z(lm, lm), salt_z(km, lm), STAT=ierr(7) )
+      ALLOCATE( theta_z(km, lm), salt_z(km, lm), STAT=ierr(7) )
       ALLOCATE( tvol(lm), svol(lm), hglo(lm), wglo(lm), sshglo(lm),             &
          &      wind_work_glb(lm), wind_work_so(lm), trp_up(lm), t_nino3(lm),   &
          &      t_nino34(lm), t_nino4(lm), euc_max(lm), dp_tran(lm),            &
@@ -381,6 +383,8 @@ PROGRAM nemo_ocean_diag
 ! ********** Do calculations ************
       tvol(:)          = 0.0_dp
       svol(:)          = 0.0_dp
+      theta_z(:,:)     = 0.0_dp
+      salt_z(:,:)      = 0.0_dp
       euc_max(:)       = 0.0_dp 
       dp_tran(:)       = 0.0_dp
       pi_tran(:)       = 0.0_dp 
