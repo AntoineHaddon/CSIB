@@ -244,7 +244,7 @@ SUBROUTINE calc (imt, jmt, lm)
 !          area_nh(cur_mon) = SUM(soicecov(1:imt-2, :, cur_mon)*e1t(1:imt-2,:)*e2t(1:imt-2,:)*nh_mask(1:imt-2,:))
           area_nh(cur_mon) = SUM(soicecov(:,:,cur_mon)*nh_mask*tarea)
 ! calculate sea-ice area differently to test the calc
-!          CALL area_ave_2d(e1t, e2t, nh_mask                           &
+!          CALL area_ave_flx(e1t, e2t, nh_mask                           &
 !              &            , soicecov(:, :, cur_mon)                   & 
 !              &            , imt, jmt, test_calc(cur_mon), ss)
 !          print*, area_nh(cur_mon), test_calc(cur_mon)*ss    
@@ -266,59 +266,59 @@ SUBROUTINE calc (imt, jmt, lm)
           ipres_mask_sh = ipres_mask(:, :, cur_mon) * sh_mask * t_mask
 
 ! calculate sea-ice thickness 
-          CALL area_ave_2d(e1t, e2t, ipres_mask_nh                     &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_nh                     &
               &            , thick_over_ice(:, :, cur_mon)             & 
               &            , imt, jmt, thick_nh(cur_mon), ss)
-          CALL area_ave_2d(e1t, e2t, ipres_mask_sh   &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_sh   &
               &            , thick_over_ice(:, :, cur_mon)             & 
               &            , imt, jmt, thick_sh(cur_mon), ss)
 ! calculate surface temp 
-          CALL area_ave_2d(e1t, e2t, ipres_mask_nh,                    &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_nh,                    &
               &  iicetemp(:, :, cur_mon), imt, jmt         &
               &            , surf_temp_nh(cur_mon), ss)
-          CALL area_ave_2d(e1t, e2t, ipres_mask_sh,                    &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_sh,                    &
               & iicetemp(:, :, cur_mon), imt, jmt,         &
               & surf_temp_sh(cur_mon), ss)
 ! calculate ice u velocities 
-          CALL area_ave_2d(e1t, e2t, ipres_mask_nh,                    &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_nh,                    &
               &  iicevelu(:, :, cur_mon), imt, jmt                     &
               &            , ivelu_nh(cur_mon), ss)
-          CALL area_ave_2d(e1t, e2t, ipres_mask_sh,                    &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_sh,                    &
               & iicevelu(:, :, cur_mon), imt, jmt,                     &
               & ivelu_sh(cur_mon), ss)
 ! calculate ice v velocities 
-          CALL area_ave_2d(e1t, e2t, ipres_mask_nh,                    &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_nh,                    &
               &  iicevelv(:, :, cur_mon), imt, jmt                     &
               &            , ivelv_nh(cur_mon), ss)
-          CALL area_ave_2d(e1t, e2t, ipres_mask_sh,                    &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_sh,                    &
               & iicevelv(:, :, cur_mon), imt, jmt,                     &
               & ivelv_sh(cur_mon), ss)
 ! calculate ice u wind stress
-          CALL area_ave_2d(e1t, e2t, ipres_mask_nh,                    &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_nh,                    &
               &  iicestru(:, :, cur_mon), imt, jmt                     &
               &            , itauu_nh(cur_mon), ss)
-          CALL area_ave_2d(e1t, e2t, ipres_mask_sh,                    &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_sh,                    &
               & iicestru(:, :, cur_mon), imt, jmt,                     &
               & itauu_sh(cur_mon), ss)
 ! calculate ice v wind stress
-          CALL area_ave_2d(e1t, e2t, ipres_mask_nh,                    &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_nh,                    &
               &  iicestrv(:, :, cur_mon), imt, jmt                     &
               &            , itauv_nh(cur_mon), ss)
-          CALL area_ave_2d(e1t, e2t, ipres_mask_sh,                    &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_sh,                    &
               & iicestrv(:, :, cur_mon), imt, jmt,                     &
               & itauv_sh(cur_mon), ss)
 ! calculate oceanic heat flux at ice base
-          CALL area_ave_2d(e1t, e2t, ipres_mask_nh,                    &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_nh,                    &
               &  ioceflxb(:, :, cur_mon), imt, jmt                     &
               &            , iohflx_nh(cur_mon), ss)
-          CALL area_ave_2d(e1t, e2t, ipres_mask_sh,                    &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_sh,                    &
               & ioceflxb(:, :, cur_mon), imt, jmt,                     &
               & iohflx_sh(cur_mon), ss)
 ! Snow thickness
-          CALL area_ave_2d(e1t, e2t, ipres_mask_nh,                    &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_nh,                    &
               & isnowthi(:, :, cur_mon), imt, jmt                      &
               &            , isnowthick_nh(cur_mon), ss)
-          CALL area_ave_2d(e1t, e2t, ipres_mask_sh,                    &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_sh,                    &
               & isnowthi(:, :, cur_mon), imt, jmt,                     &
               & isnowthick_nh(cur_mon), ss)
       enddo 
