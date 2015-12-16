@@ -178,6 +178,10 @@ cat > Execute_Script <<'end_of_script'
   # Add job specific functions, definitions etc
   : ; . local_defs
 
+  # Create a log file to record the sha1 of all accessed files
+  rm -f xnemo_access_log
+  touch xnemo_access_log
+
   # These variables are set when the job string is created
   previous_year=NotSet
   previous_month=NotSet
@@ -1175,6 +1179,8 @@ cat > Execute_Script <<'end_of_script'
       cp -f saved_history_file_names rs_saved_history_file_names || :
       [ -s rs_saved_history_file_names ] && tarlist="$tarlist rs_saved_history_file_names"
 
+      cp -f xnemo_access_log rs_xnemo_access_log || :
+      [ -s rs_xnemo_access_log ] && tarlist="$tarlist rs_xnemo_access_log"
 
       rm -f NEXT_RESTART_ARC
       tar cf NEXT_RESTART_ARC $tarlist $ofnpatt $ifnpatt $pfnpatt ||
@@ -1836,6 +1842,8 @@ cat >local_defs << 'end_local_defs'
     access $local_file $remote_file $* ||
       cp $remote_file $local_file ||
       bail "--> acc_cp $local_file $remote_file $* <-- Unable to locate $remote_file"
+
+    sha1sum $local_file >> xnemo_access_log
   }
 
   days_in_month() {
