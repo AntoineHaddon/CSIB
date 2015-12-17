@@ -30,6 +30,9 @@ PROGRAM nemo_ice_diag
 !
 ! Version    Date         Comment
 ! -------    ----         -------
+!            Dec 15/15   Abstract all calculations to ccc_nemo_rtd_utils
+!                        module, which is shared between all rtd.
+!
 !            OCT 29/15    Initial implementation based on physical RTD
 !                         <Neil Swart>
 !
@@ -50,6 +53,7 @@ END PROGRAM nemo_ice_diag
 
 SUBROUTINE calc (imt, jmt, lm)
 !     Does the required calculations and saves the output to netcdf
+      USE ccc_nemo_rtd_utils, only: area_ave, area_ave_flx, noleap_days
       IMPLICIT NONE 
       integer, parameter:: dp=kind(0.d0) ! double precision
       INTEGER :: i, j, k, imt, jmt, lm, cur_mon
@@ -240,7 +244,7 @@ SUBROUTINE calc (imt, jmt, lm)
 !          area_nh(cur_mon) = SUM(soicecov(1:imt-2, :, cur_mon)*e1t(1:imt-2,:)*e2t(1:imt-2,:)*nh_mask(1:imt-2,:))
           area_nh(cur_mon) = SUM(soicecov(:,:,cur_mon)*nh_mask*tarea)
 ! calculate sea-ice area differently to test the calc
-!          CALL area_ave_2d(e1t, e2t, nh_mask                           &
+!          CALL area_ave_flx(e1t, e2t, nh_mask                           &
 !              &            , soicecov(:, :, cur_mon)                   & 
 !              &            , imt, jmt, test_calc(cur_mon), ss)
 !          print*, area_nh(cur_mon), test_calc(cur_mon)*ss    
@@ -262,59 +266,59 @@ SUBROUTINE calc (imt, jmt, lm)
           ipres_mask_sh = ipres_mask(:, :, cur_mon) * sh_mask * t_mask
 
 ! calculate sea-ice thickness 
-          CALL area_ave_2d(e1t, e2t, ipres_mask_nh                     &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_nh                     &
               &            , thick_over_ice(:, :, cur_mon)             & 
               &            , imt, jmt, thick_nh(cur_mon), ss)
-          CALL area_ave_2d(e1t, e2t, ipres_mask_sh   &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_sh   &
               &            , thick_over_ice(:, :, cur_mon)             & 
               &            , imt, jmt, thick_sh(cur_mon), ss)
 ! calculate surface temp 
-          CALL area_ave_2d(e1t, e2t, ipres_mask_nh,                    &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_nh,                    &
               &  iicetemp(:, :, cur_mon), imt, jmt         &
               &            , surf_temp_nh(cur_mon), ss)
-          CALL area_ave_2d(e1t, e2t, ipres_mask_sh,                    &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_sh,                    &
               & iicetemp(:, :, cur_mon), imt, jmt,         &
               & surf_temp_sh(cur_mon), ss)
 ! calculate ice u velocities 
-          CALL area_ave_2d(e1t, e2t, ipres_mask_nh,                    &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_nh,                    &
               &  iicevelu(:, :, cur_mon), imt, jmt                     &
               &            , ivelu_nh(cur_mon), ss)
-          CALL area_ave_2d(e1t, e2t, ipres_mask_sh,                    &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_sh,                    &
               & iicevelu(:, :, cur_mon), imt, jmt,                     &
               & ivelu_sh(cur_mon), ss)
 ! calculate ice v velocities 
-          CALL area_ave_2d(e1t, e2t, ipres_mask_nh,                    &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_nh,                    &
               &  iicevelv(:, :, cur_mon), imt, jmt                     &
               &            , ivelv_nh(cur_mon), ss)
-          CALL area_ave_2d(e1t, e2t, ipres_mask_sh,                    &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_sh,                    &
               & iicevelv(:, :, cur_mon), imt, jmt,                     &
               & ivelv_sh(cur_mon), ss)
 ! calculate ice u wind stress
-          CALL area_ave_2d(e1t, e2t, ipres_mask_nh,                    &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_nh,                    &
               &  iicestru(:, :, cur_mon), imt, jmt                     &
               &            , itauu_nh(cur_mon), ss)
-          CALL area_ave_2d(e1t, e2t, ipres_mask_sh,                    &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_sh,                    &
               & iicestru(:, :, cur_mon), imt, jmt,                     &
               & itauu_sh(cur_mon), ss)
 ! calculate ice v wind stress
-          CALL area_ave_2d(e1t, e2t, ipres_mask_nh,                    &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_nh,                    &
               &  iicestrv(:, :, cur_mon), imt, jmt                     &
               &            , itauv_nh(cur_mon), ss)
-          CALL area_ave_2d(e1t, e2t, ipres_mask_sh,                    &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_sh,                    &
               & iicestrv(:, :, cur_mon), imt, jmt,                     &
               & itauv_sh(cur_mon), ss)
 ! calculate oceanic heat flux at ice base
-          CALL area_ave_2d(e1t, e2t, ipres_mask_nh,                    &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_nh,                    &
               &  ioceflxb(:, :, cur_mon), imt, jmt                     &
               &            , iohflx_nh(cur_mon), ss)
-          CALL area_ave_2d(e1t, e2t, ipres_mask_sh,                    &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_sh,                    &
               & ioceflxb(:, :, cur_mon), imt, jmt,                     &
               & iohflx_sh(cur_mon), ss)
 ! Snow thickness
-          CALL area_ave_2d(e1t, e2t, ipres_mask_nh,                    &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_nh,                    &
               & isnowthi(:, :, cur_mon), imt, jmt                      &
               &            , isnowthick_nh(cur_mon), ss)
-          CALL area_ave_2d(e1t, e2t, ipres_mask_sh,                    &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_sh,                    &
               & isnowthi(:, :, cur_mon), imt, jmt,                     &
               & isnowthick_nh(cur_mon), ss)
       enddo 
@@ -501,66 +505,4 @@ SUBROUTINE calc (imt, jmt, lm)
       call closeall
 
 END SUBROUTINE calc
-
-SUBROUTINE noleap_days(year, mon, day, days_elapsed)
-!    Given a year, mon, day, returns the number of days elapsed
-!    since 01-01-0000 (using a noleap/365_day calendar)
-    IMPLICIT NONE
-    INTEGER, INTENT(IN)  :: year, mon, day
-    INTEGER, INTENT(OUT) :: days_elapsed
-    INTEGER              :: doy, dpy, mmon, myear 
-
-    ! Adjust if mon > 12. This is a potential here. No correction
-    ! for days being off. I'm assuming day will mostly be 1 anyway.
-
-    IF (mon > 12) THEN
-        myear = year + mon/12
-        mmon = MOD(mon, 12)
-    ELSE
-       myear = year
-       mmon = mon
-    ENDIF    
-   
-    ! In a given (noleap) year, compute the day of year    
-    ! http://www.davidgsimpson.com/software/greg2doy_f90.txt
-    !
-    doy = ((275*mmon)/9) - ((mmon+9)/6) + day - 30 
-
-    ! Compute the number of days in the preceeding years
-    dpy = 365 * year
-
-    ! Tally for the final result
-    days_elapsed = dpy + doy
-    return
-END SUBROUTINE noleap_days    
-
-!=========================================================
-! Area averaging of 2d field over the selected regions 
-!=========================================================
-SUBROUTINE area_ave_2d(e1, e2, mask, a, imt, jmt, a_mean, ss)
-      implicit none
-      integer imt, jmt, i, j
-      real e1(imt,jmt),e2(imt,jmt)
-      real a(imt,jmt), mask(imt,jmt)
-      real a_mean, ss, s1, arc
-
-          s1=0.
-          ss=0.
-          do i=1,imt-2  ! not to double count the cyclic boundary
-              do j=1,jmt-1 ! avoid repeat at north fold
-                  if (mask(i,j).gt.0.5) then  ! mask the region of interst
-                      arc = e1(i,j)*e2(i,j)
-                      ss=ss+arc
-                      s1=s1+a(i,j)*arc
-                  endif
-              enddo
-          enddo
-
-          a_mean = 0.
-          if (ss.ne.0.) then
-              a_mean =s1/ss
-          endif
-
-      return
-END SUBROUTINE area_ave_2d
 
