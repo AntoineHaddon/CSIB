@@ -397,15 +397,15 @@ debug=off
 #      iaf_loop_year=2009
 #
 #      # namelist paramters to be changed by XNEMO
-#      sn_wndi=" 'uwnd10m'     ,         6         , 'U_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bic2' , 'Uwnd' "
-#      sn_wndj=" 'vwnd10m'     ,         6         , 'V_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bic2' , 'Vwnd' "
-#      sn_qsr=" 'qsw'         ,        24         , 'SWDN_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
-#      sn_qlw=" 'qlw'         ,        24         , 'LWDN_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
-#      sn_tair=" 'tair10m'     ,         6         , 'T_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
-#      sn_humi=" 'humi10m'     ,         6         , 'Q_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
-#      sn_prec=" 'precip'      ,        -1         , 'PRC_MOD1'    ,   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
-#      sn_snow=" 'snow'        ,        -1         , 'SNOW'    ,   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
-#      sn_tdif=" 'taudif_core' ,        24         , 'taudif'  ,   .false.    , .true. , 'yearly'  , ''             , '' "
+#      sn_wndi=" 'uwnd10m'     ,         6         , 'U_10_MOD',   .false.    , .false. , 'yearly'  , 'weights_bic2' , 'Uwnd' "
+#      sn_wndj=" 'vwnd10m'     ,         6         , 'V_10_MOD',   .false.    , .false. , 'yearly'  , 'weights_bic2' , 'Vwnd' "
+#      sn_qsr=" 'qsw'         ,        24         , 'SWDN_MOD',   .false.    , .false. , 'yearly'  , 'weights_bil2' , '' "
+#      sn_qlw=" 'qlw'         ,        24         , 'LWDN_MOD',   .false.    , .false. , 'yearly'  , 'weights_bil2' , '' "
+#      sn_tair=" 'tair10m'     ,         6         , 'T_10_MOD',   .false.    , .false. , 'yearly'  , 'weights_bil2' , '' "
+#      sn_humi=" 'humi10m'     ,         6         , 'Q_10_MOD',   .false.    , .false. , 'yearly'  , 'weights_bil2' , '' "
+#      sn_prec=" 'precip'      ,        -1         , 'PRC_MOD1'    ,   .false.    , .false. , 'yearly'  , 'weights_bil2' , '' "
+#      sn_snow=" 'snow'        ,        -1         , 'SNOW'    ,   .false.    , .false. , 'yearly'  , 'weights_bil2' , '' "
+#      sn_tdif=" 'taudif_core' ,        24         , 'taudif'  ,   .false.    , .false. , 'yearly'  , ''             , '' "
 #
 #      # Forcing files to be accessed
 #      # In the case of interannual forcing, just give the file prefix. The ${prefix}_yYYYY.nc will be added
