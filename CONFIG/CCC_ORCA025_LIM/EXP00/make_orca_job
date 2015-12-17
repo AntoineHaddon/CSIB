@@ -609,9 +609,9 @@ debug=off
 
 # Determines if RTD is done, and specifies the RTD executables
   nemo_rtd=${nemo_rtd}
-  physical_rtd_exe="nemo_physical_rtd_v03_exe"
-  carbon_rtd_exe="nemo_carbon-cmoc_rtd_v03_exe"
-  ice_rtd_exe="nemo_ice_rtd_v03_exe"
+  physical_rtd_exe="nemo_physical_rtd_v03c_exe"
+  carbon_rtd_exe="nemo_carbon-cmoc_rtd_v03c_exe"
+  ice_rtd_exe="nemo_ice_rtd_v03c_exe"
 
 # Set start year for rtd
   year_rtdiag_start=${year_rtdiag_start}
