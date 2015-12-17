@@ -12,8 +12,8 @@
 !-----------------------------------------------------------------------
 &namicerun     !   Share parameters for dynamics/advection/thermo
 !-----------------------------------------------------------------------
-  cn_icerst_in = "restart_ice_in"
-  cn_icerst_out = "restart_ice"
+   cn_icerst_in  = "restart_ice_in"   !  suffix of ice restart name (input)
+   cn_icerst_out = "restart_ice"      !  suffix of ice restart name (output)
    ln_limdyn     = .true.             !  ice dynamics (T) or thermodynamics only (F)
    ln_limdmp     = .false.            !  restoring ice thickness and fraction leads   (T => fill  namice_dmp)
    acrit         = 1.0e-06 , 1.0e-06  !  minimum lead fraction in the Northern & Southern Hemispheres
@@ -39,19 +39,19 @@
    alpha       =   0.5     !  coefficient for semi-implicit coriolis
    dm          =   0.6e+03 !  diffusion constant for dynamics
    nbiter      =   1       !  number of sub-time steps for relaxation
-   nbitdr      = 250       !  maximum number of iterations for relaxation
+   nbitdr      = 100       !  maximum number of iterations for relaxation
    om          =   0.5     !  relaxation constant 
    resl        =   5.0e-05 !  maximum value for the residual of relaxation
-   cw          =   4.0e-03 !  drag coefficient for oceanic stress
+   cw          =   5.0e-03 !  drag coefficient for oceanic stress
    angvg       =   0.0     !  turning angle for oceanic stress
-   pstar       =  2.75e+04 !  1st bulk-rheology parameter
+   pstar       =   1.0e+04 !  1st bulk-rheology parameter
    c_rhg       =  20.0     !  2nd bulk-rhelogy parameter
    etamn       =   0.0e+07 !  minimun value for viscosity
-   creepl      =   2.0e-08 !  creep limit
+   creepl      =   1.0e-08 !  creep limit
    ecc         =   2.0     !  eccentricity of the elliptical yield curve
-   ahi0        = 250.e0    !  horizontal eddy diffusivity coefficient for sea-ice [m2/s]
-   nevp        =   240     !  number of EVP subcycling iterations
-   telast      =   360     !  timescale for EVP elastic waves
+   ahi0        = 350.e0    !  horizontal eddy diffusivity coefficient for sea-ice [m2/s]
+   nevp        =   120     !  number of EVP subcycling iterations
+   telast      =   9600    !  timescale for EVP elastic waves
    alphaevp    =   1.0     !  coefficient for the solution of EVP int. stresses
 /
 !-----------------------------------------------------------------------
@@ -63,7 +63,7 @@
 &namicethd     !   ice thermodynamic
 !-----------------------------------------------------------------------
    hmelt       = -0.15     !  maximum melting at the bottom
-   hiccrit     = 1.0 , 1.0 !  ice thickness for lateral accretion in the Northern (Southern) Hemisphere
+   hiccrit     = 0.3 , 0.3 !  ice thickness for lateral accretion in the Northern (Southern) Hemisphere
    !                       !  (caution 1.0, 1.0 best value to be used!!! (gilles G.))
    hicmin      = 0.2       !  ice thickness corr. to max. energy stored in brine pocket
    hiclim      = 0.05      !  minimum ice thickness

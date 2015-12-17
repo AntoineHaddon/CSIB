@@ -126,6 +126,7 @@
 	<field id="empsmr"       description="concentration/dilution water flux"                            unit="kg/m2/s"  />
 	<field id="snowpre"      description="Snow precipitation"                                           unit="kg/m2/s"  />
 	<field id="runoffs"      description="River Runoffs"                                                unit="Kg/m2/s"  />
+
 	<field id="qt"           description="Net Downward Heat Flux"                                       unit="W/m2"     />
 	<field id="qns"          description="non solar Downward Heat Flux"                                 unit="W/m2"     />
 	<field id="qsr"          description="Shortwave Radiation"                                          unit="W/m2"     />
@@ -312,103 +313,18 @@
       </group>
       
       <group id="1d" output_freq="86400"  output_level="10" enabled=".TRUE.">                      <!-- 1d files -->
-
-    <!-- 
-............................................................................................................
-           example of 3 types of 1d files
-............................................................................................................
-    -->
-	<!-- automatic definition of the name based on id="1d_grid_T" 
-	     => this name is used as the radical for all file names of this group
-	     => add a suffix to be sure that all files names of this group are different   -->
-	<group id="1d_grid_T" name="auto" description="ocean T grid variables" >
-	  <!-- mooring: automatic definition of the file name suffix based on id="0n180wT"  -->
-	  <file id="0n180wT" name_suffix="auto" >
-	    <group id="0n180wT" zoom_ref="0n180wT" >    <!-- group of variables sharing the same zoom -->
-	      <field ref="toce" name="votemper"  />
-	      <field ref="uoce" name="vozocrtx"  />     <!-- include a U-grid variable in the list => switch to T-grid -->
-	    </group>
-	  </file>
-	  <!-- Equatorial section: automatic definition of the file name suffix based on id="EqT" -->
-	  <file id="EqT" name_suffix="auto" >
-	    <group id="EqT" zoom_ref="EqT" >
-	      <field ref="toce" name="votemper"  />
-	    </group>
-	  </file>
-	  <!-- global file with different operations on data   -->
-	  <file id="global" >
-	    <field ref="sst"    name="sst_1d_ave"                       />     <!-- mean -->
-	    <field ref="sst"    name="sst_1d_max"  operation="t_max(X)" />     <!-- max -->
-            <field ref="M2x"     name="M2_x_elev"  />
-            <field ref="M2y"     name="M2_y_elev"  />
-	  </file>
-	</group>
-
-        <!-- variables available with key_float, instantaneous fields -->
-<!--
-        <file id="floats"  description="floats variables">
-            <field ref="traj_lon"   name="floats_longitude"   freq_op="86400" />
-            <field ref="traj_lat"   name="floats_latitude"    freq_op="86400" />
-            <field ref="traj_dep"   name="floats_depth"       freq_op="86400" />
-            <field ref="traj_temp"  name="floats_temperature" freq_op="86400" />
-            <field ref="traj_salt"  name="floats_salinity"    freq_op="86400" />
-            <field ref="traj_dens"  name="floats_density"     freq_op="86400" />
-            <field ref="traj_group" name="floats_group"       freq_op="86400" />
-        </file>
--->
       </group>
+
       
       <group id="3d" output_freq="259200" output_level="10" enabled=".TRUE.">                      <!-- 3d files -->
       </group>
       
       <group id="5d" output_freq="432000" output_level="10" enabled=".TRUE.">                      <!-- 5d files -->
-
-	<file id="5d_grid_T" name="auto" description="ocean T grid variables" >
-	  <field ref="toce"         name="votemper"  />
-	  <field ref="soce"         name="vosaline"  />
-	  <field ref="ssh"          name="sossheig"  />
-	  <field ref="empmr"        name="sowaflup"  />
-	  <field ref="qt"           name="sohefldo"  />
-	  <field ref="mldr10_1"     name="somxl010"  />
-	  <field ref="mldkz5"       name="somixhgt"  />
-	  <field ref="ice_cover"    name="soicecov"  />
-	</file>
-	
-	<file id="5d_grid_U" name="auto" description="ocean U grid variables" >
-	  <field ref="uoce"         name="vozocrtx"  />
-	  <field ref="utau"         name="sozotaux"  />
-	</file>
-	
-	<file id="5d_grid_V" name="auto" description="ocean V grid variables" >
-	  <field ref="voce"         name="vomecrty"  />
-	  <field ref="vtau"         name="sometauy"  />
-	</file>
-	
-	<file id="5d_grid_W" name="auto" description="ocean W grid variables" >
-	  <field ref="woce"         name="vovecrtz" />
-	  <field ref="avt"          name="votkeavt" />
-	</file>
-	
-	<file id="5d_icemod" name="auto" description="ice variables" >
-	  <field ref="ice_pres"                     />
-          <field ref="ice_cover"    name="soicecov" />
-	  <field ref="snowthic_cea" name="isnowthi" />
-	  <field ref="icethic_cea"  name="iicethic" />
-	  <field ref="iceprod_cea"  name="iiceprod" />
-	  <field ref="ist_ipa"      name="iicetemp" />
-	  <field ref="ioceflxb"     name="ioceflxb" />
-	  <field ref="uice_ipa"     name="iicevelu" />
-	  <field ref="vice_ipa"     name="iicevelv" />
-	  <field ref="utau_ice"     name="iicestru" />
-	  <field ref="vtau_ice"     name="iicestrv" />
-	  <field ref="qsr_io_cea"   name="iicesflx" />
-	  <field ref="qns_io_cea"   name="iicenflx" />
-	  <field ref="snowpre"      name="isnowpre" />
-	</file>
       </group>
       
       <group id="1m" output_freq="-1"     output_level="10" enabled=".TRUE.">                      <!-- real monthly files -->
-        <file id="1m_grid_T" name="auto" description="ocean T grid variables" >
+
+	<file id="1m_grid_T" name="auto" description="ocean T grid variables" >
           <field ref="toce"         name="votemper"  /> 
           <field ref="soce"         name="vosaline"  />
           <field ref="ssh"          name="sossheig"  />
@@ -418,7 +334,7 @@
           <field ref="ice_cover"    name="soicecov"  />
           <field ref="erp"          name="sowafldp"  />
           <field ref="mlddzt"       name="sothedep"  />
-        </file>   
+	</file>   
 
         <file id="1m_grid_U" name="auto" description="ocean U grid variables" >
           <field ref="uoce"         name="vozocrtx"  />
@@ -441,7 +357,6 @@
 
         <file id="1m_icemod" name="auto" description="ice variables" >
           <field ref="ice_pres"                     />
-          <field ref="ice_cover"    name="soicecov" />
           <field ref="snowthic_cea" name="isnowthi" />
           <field ref="icethic_cea"  name="iicethic" />
           <field ref="iceprod_cea"  name="iiceprod" />
@@ -455,8 +370,8 @@
           <field ref="qns_io_cea"   name="iicenflx" />
           <field ref="snowpre"      name="isnowpre" />
         </file>
-      </group>
 
+      </group>
 
       <group id="2m" output_freq="-2"     output_level="10" enabled=".TRUE.">                      <!-- real 2m files -->
       </group>
@@ -471,11 +386,6 @@
       </group>
 
       <group id="1y" output_freq="-12"    output_level="10" enabled=".TRUE.">                      <!-- real yearly files -->
-
-	<file id="1y_grid_T" name="auto" description="ocean T grid variables" >
-	  <field ref="mldr10_1"     name="sobowlin"  operation="t_max(X)" />
-	</file>
-
       </group>
 
       <group id="2y"  output_freq="-24"   output_level="10" enabled=".TRUE.">                      <!-- real 2y files -->
@@ -675,5 +585,8 @@
       </grid>
 
     </grid_definition>    
+    
   </context>
+
 </simulation>
+
