@@ -435,8 +435,6 @@
         <file id="1m_grid_W" name="auto" description="ocean W grid variables" >
           <field ref="woce"         name="vovecrtz" />
           <field ref="woce_eiv"     name="voveeivw" />
-          <field ref="aht2d"        name="soleahtw" />
-          <field ref="aht2d_eiv"    name="soleaeiw" />
         </file>
 
         <file id="1m_icemod" name="auto" description="ice variables" >
