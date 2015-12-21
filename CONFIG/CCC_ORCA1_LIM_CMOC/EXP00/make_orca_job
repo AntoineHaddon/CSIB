@@ -235,7 +235,7 @@ cat <<end_job_defs >$job_defs
 # nemo_exec identifies the nemo executable
 # This can be a file that is "save"d on DATAPATH or a full pathname to a user supplied binary.
 # If it is a full path name then this path must be available from the execution machine.
-# This file is saved in the reastart archive.
+# This file is saved in the restart archive.
 # If nemo_exec is not defined then the executable found in the restart will be used.
   nemo_exec=$nemo_exec
 
@@ -282,6 +282,8 @@ debug=off
 # but can be reset by the user if required
   run_start_year=$start_year
 
+# Set start year for rtd
+  year_rtdiag_start=${year_rtdiag_start}
 # nemo_nn_it000 is the initial time step of the current run
 # This is normally read from the previous restart but may be set here.
 # If defined, nemo_nn_it000 must always be set to an integer greater than zero.
@@ -318,6 +320,7 @@ debug=off
   nemo_ndeposition_orca=uncs_orca1_ndeposition.orca.nc
   nemo_presatm=uncs_orca1_presatm.nc
   nemo_river_orca=nemo_3.4_orca2_river.orca.nc   
+  nemo_fermask_orca=nemo_3.4_orca1_femask.orca.nc 
   nemo_data_atcco2=nemo_atcco2_1850-2005.txt
 
   nemo_data_1m_potential_temperature_nomask=nemo_3.4_orca1_potemp_1m_z46_nomask.nc
@@ -627,6 +630,8 @@ debug=off
 # The following determines if carbon is on or not:
   nemo_carbon=${nemo_carbon}
 
+# The following determines if carbon code is CMOC or PISCES:
+  nemo_cmoc=${nemo_cmoc}
 # The following determines if history files are concatenated into yearly files.
 # The user can redefine nemo_ann_cat_freq_list and nemo_ann_cat_suffix_list
 # to only concatenate a subset of the history files
@@ -639,9 +644,6 @@ debug=off
   physical_rtd_exe="nemo_physical_rtd_v03c_exe"
   carbon_rtd_exe="nemo_carbon-cmoc_rtd_v03c_exe"
   ice_rtd_exe="nemo_ice_rtd_v03c_exe"
-
-# Set start year for rtd
-  year_rtdiag_start=${year_rtdiag_start}
 
 # Dump history files saved on DATAPATH to cfs
 # The user can redefine nemo_dump_hist_freq_list and nemo_dump_hist_suffix_list
