@@ -362,7 +362,7 @@ debug=off
       sn_qlw=" 'qlw'         ,        24         , 'LWDN_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
       sn_tair=" 'tair10m'     ,         6         , 'T_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
       sn_humi=" 'humi10m'     ,         6         , 'Q_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
-      sn_prec=" 'precip'      ,        -1         , 'PRC_MOD1'    ,   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
+      sn_prec=" 'precip'      ,        -1         , 'PRC_MOD'    ,   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
       sn_snow=" 'snow'        ,        -1         , 'SNOW'    ,   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
       sn_tdif=" 'taudif_core' ,        24         , 'taudif'  ,   .false.    , .true. , 'yearly'  , ''             , '' "
       
@@ -397,7 +397,7 @@ debug=off
 #      sn_qlw=" 'qlw'         ,        24         , 'LWDN_MOD',   .false.    , .false. , 'yearly'  , 'weights_bil2' , '' "
 #      sn_tair=" 'tair10m'     ,         6         , 'T_10_MOD',   .false.    , .false. , 'yearly'  , 'weights_bil2' , '' "
 #      sn_humi=" 'humi10m'     ,         6         , 'Q_10_MOD',   .false.    , .false. , 'yearly'  , 'weights_bil2' , '' "
-#      sn_prec=" 'precip'      ,        -1         , 'PRC_MOD1'    ,   .false.    , .false. , 'yearly'  , 'weights_bil2' , '' "
+#      sn_prec=" 'precip'      ,        -1         , 'PRC_MOD'    ,   .false.    , .false. , 'yearly'  , 'weights_bil2' , '' "
 #      sn_snow=" 'snow'        ,        -1         , 'SNOW'    ,   .false.    , .false. , 'yearly'  , 'weights_bil2' , '' "
 #      sn_tdif=" 'taudif_core' ,        24         , 'taudif'  ,   .false.    , .false. , 'yearly'  , ''             , '' "
 #
