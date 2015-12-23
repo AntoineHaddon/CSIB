@@ -12,8 +12,8 @@
 !-----------------------------------------------------------------------
 &namicerun     !   Share parameters for dynamics/advection/thermo
 !-----------------------------------------------------------------------
-   cn_icerst_in  = "restart_ice_in"   !  suffix of ice restart name (input)
-   cn_icerst_out = "restart_ice"      !  suffix of ice restart name (output)
+  cn_icerst_in = "restart_ice_in"
+  cn_icerst_out = "restart_ice"
    ln_limdyn     = .true.             !  ice dynamics (T) or thermodynamics only (F)
    ln_limdmp     = .false.            !  restoring ice thickness and fraction leads   (T => fill  namice_dmp)
    acrit         = 1.0e-06 , 1.0e-06  !  minimum lead fraction in the Northern & Southern Hemispheres
@@ -47,11 +47,11 @@
    pstar       =   1.0e+04 !  1st bulk-rheology parameter
    c_rhg       =  20.0     !  2nd bulk-rhelogy parameter
    etamn       =   0.0e+07 !  minimun value for viscosity
-   creepl      =   1.0e-08 !  creep limit
+   creepl      =   2.0e-08 !  creep limit
    ecc         =   2.0     !  eccentricity of the elliptical yield curve
-   ahi0        = 350.e0    !  horizontal eddy diffusivity coefficient for sea-ice [m2/s]
+   ahi0        = 250.e0    !  horizontal eddy diffusivity coefficient for sea-ice [m2/s]
    nevp        =   120     !  number of EVP subcycling iterations
-   telast      =   9600    !  timescale for EVP elastic waves
+   telast      =   3600    !  timescale for EVP elastic waves
    alphaevp    =   1.0     !  coefficient for the solution of EVP int. stresses
 /
 !-----------------------------------------------------------------------

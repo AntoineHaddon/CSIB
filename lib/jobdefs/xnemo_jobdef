@@ -4,6 +4,7 @@
 #=======================================================================
 #     keyword :: xnemo
 # description :: Run NEMO
+# D. Yang Apr 2015: added eddy energy flux.
 
  set -a
  . betapath2
@@ -43,8 +44,20 @@
  fi
 
  # nemo_forcing identifies the type of forcing to use
- # Currenlty the only valid values are "bulk" or "flux"
- nemo_forcing=bulk
+ # Currenlty the only valid values are "bulk", "bulk_iaf", "flux" or "flux_iaf"
+ nemo_forcing=bulk_iaf
+
+ # For interannual forcing, iaf_year_offset gives the offset between
+ # the current nemo year and the desired year in the forcing dataset
+ # such that forcing_year = current_year + iaf_year_offset.
+ # The data to be used will end in _y${forcing_year}.nc
+ iaf_year_offset=0
+
+ # For interannual forcing, iaf_loop_year gives the year at which the
+ # forcing will loop back to the first specified year of forcing. 
+ # The number is given in terms of "forcing_year" as opposed to
+ # nemo "current_year": forcing_year = current_year + iaf_year_offset
+ iaf_loop_year=0 
 
  # The name of a tar file containing the NEMO restart files
  # This must be set for the first job of a run unless nemo_from_rest = on
@@ -68,6 +81,10 @@
 # nemo_cmoc = off means use PISCES
 # nemo_cmoc = on means use CMOC
   nemo_cmoc=off
+
+ # pisces_offline = off means use online model
+ # pisces_offline = on  means use offline model with prescribed velocities
+ pisces_offline=off
 
  # Identify files containing namelist input
  if [ "x$nemo_carbon" = "xoff" ]; then
@@ -112,7 +129,7 @@
 
  # RTD switch. If nemo_carbon=on, both physical and carbon RTD will be done,
  # otherwise only physical. User can specify rtd exectuables below. 
- nemo_ann_rtd=on
+ nemo_rtd=on
 
  # If nemo_dump is true then dump history files and restart arhives to CFS. 
  # Only files that were saved to DATAPATH are dumped. If nemo_ann_cat=on, 
@@ -165,6 +182,10 @@ cat > Execute_Script <<'end_of_script'
 
   # Add job specific functions, definitions etc
   : ; . local_defs
+
+  # Create a log file to record the sha1 of all accessed files
+  rm -f xnemo_access_log
+  touch xnemo_access_log
 
   # These variables are set when the job string is created
   previous_year=NotSet
@@ -316,12 +337,17 @@ cat > Execute_Script <<'end_of_script'
   nemo_cmoc=${nemo_cmoc:-off}
   ToF nemo_cmoc
 
+  # pisces_offline = off means use online model
+  # pisces_offline = on  means use offline model with prescribed velocities
+  pisces_offline=${pisces_offline:-off}
+  ToF pisces_offline
+
   # Identify the type of forcing to use
   nemo_forcing=${nemo_forcing:-bulk}
 
   # Currently the only valid values for nemo_forcing are "bulk" or "flux"
   case $nemo_forcing in
-    bulk|flux) ;; # These are valid values
+    bulk|bulk_iaf|flux|flux_iaf) ;; # These are valid values
     *) bail "Invalid value for nemo_forcing = $nemo_forcing" ;;
   esac
 
@@ -416,8 +442,10 @@ cat > Execute_Script <<'end_of_script'
       acc_cp namelist $nemo_namelist
 
       # The input ice namelist is hard coded as "namelist_ice" in nemo source
-      [ -z "$nemo_namelist_ice" ] && bail "nemo_namelist_ice is not defined"
-      acc_cp namelist_ice $nemo_namelist_ice
+      if [ $pisces_offline -ne  1 ]; then
+        [ -z "$nemo_namelist_ice" ] && bail "nemo_namelist_ice is not defined"
+        acc_cp namelist_ice $nemo_namelist_ice
+      fi
 
       if [ $nemo_carbon -eq 1 ]; then
 	# The input top namelist is hard coded as "namelist_top" in nemo source
@@ -464,29 +492,31 @@ cat > Execute_Script <<'end_of_script'
       # in the previous run.
 
       # Ocean restart files
-      found_rs=`(ls -1 *_${cn_ocerst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
-      [ -z "$found_rs" ] && bail "No ocean restart files were found in $nemo_rs"
-      rm -f input_ocn_restart_file_names
-      touch input_ocn_restart_file_names
-      for rsfile in $found_rs; do
-	sfx=`echo $rsfile|sed 's/^.*\(_[0-9][0-9][0-9][0-9].nc\).*$/\1/'`
-	mv $rsfile ${cn_ocerst_in}$sfx
-	echo "${cn_ocerst_in}$sfx" >> input_ocn_restart_file_names
-      done
+      if [ $pisces_offline -ne 1 ]; then
+        found_rs=`(ls -1 *_${cn_ocerst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
+        [ -z "$found_rs" ] && bail "No ocean restart files were found in $nemo_rs "
+        rm -f input_ocn_restart_file_names
+        touch input_ocn_restart_file_names
+        for rsfile in $found_rs; do
+  	  sfx=`echo $rsfile|sed 's/^.*\(_[0-9][0-9][0-9][0-9].nc\).*$/\1/'`
+	  mv $rsfile ${cn_ocerst_in}$sfx
+	  echo "${cn_ocerst_in}$sfx" >> input_ocn_restart_file_names
+        done
 
-      # Ice restart files
-      rm -f input_ice_restart_file_names
-      touch input_ice_restart_file_names
-      found_rs=`(ls -1 *_${cn_icerst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
-      if [ -z "$found_rs" ]; then
-	[ $nn_ice -ge 2 ] && bail "No ice restart files were found in $nemo_rs"
-	with_ice=off
-      else
-	for rsfile in $found_rs; do
-	  sfx=`echo $rsfile|sed 's/^.*\(_[0-9][0-9][0-9][0-9].nc\).*$/\1/'`
-	  mv $rsfile ${cn_icerst_in}$sfx
-	  echo "${cn_icerst_in}$sfx" >> input_ice_restart_file_names
-	done
+        # Ice restart files
+        rm -f input_ice_restart_file_names
+        touch input_ice_restart_file_names
+        found_rs=`(ls -1 *_${cn_icerst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
+        if [ -z "$found_rs" ]; then
+	  [ $nn_ice -ge 2 ] && bail "No ice restart files were found in $nemo_rs "
+	  with_ice=off
+        else
+	  for rsfile in $found_rs; do
+	    sfx=`echo $rsfile|sed 's/^.*\(_[0-9][0-9][0-9][0-9].nc\).*$/\1/'`
+	    mv $rsfile ${cn_icerst_in}$sfx
+	    echo "${cn_icerst_in}$sfx" >> input_ice_restart_file_names
+	  done
+        fi
       fi
 
       if [ $nemo_carbon -eq 1 ]; then
@@ -523,9 +553,11 @@ cat > Execute_Script <<'end_of_script'
 	[ -z "$nemo_namelist" ] && bail "nemo_namelist is not defined"
 	acc_cp namelist $nemo_namelist nocp=no
 
-	# The input ice namelist is hard coded as "namelist_ice" in nemo source
-	[ -z "$nemo_namelist_ice" ] && bail "nemo_namelist_ice is not defined"
-	acc_cp namelist_ice $nemo_namelist_ice nocp=no
+	if [ $pisces_offline -ne 1 ]; then
+	  # The input ice namelist is hard coded as "namelist_ice" in nemo source
+	  [ -z "$nemo_namelist_ice" ] && bail "nemo_namelist_ice is not defined"
+	  acc_cp namelist_ice $nemo_namelist_ice nocp=no
+        fi
 
 	if [ $nemo_carbon -eq 1 ]; then
 	  # The input top namelist is hard coded as "namelist_top" in nemo source
@@ -545,7 +577,10 @@ cat > Execute_Script <<'end_of_script'
       else
 	# Use the namelist files found in the restart archive
 	[ ! -s rs_namelist ]     && bail "Missing rs_namelist from $nemo_rs"
-	[ ! -s rs_namelist_ice ] && bail "Missing rs_namelist_ice from $nemo_rs"
+
+	if [ $pisces_offline -ne 1 ]; then
+	  [ ! -s rs_namelist_ice ] && bail "Missing rs_namelist_ice from $nemo_rs"
+        fi
 
 	if [ $nemo_carbon -eq 1 ]; then
 	  [ ! -s rs_namelist_top ]    && bail "Missing rs_namelist_top from $nemo_rs"
@@ -560,8 +595,10 @@ cat > Execute_Script <<'end_of_script'
 	cp -f rs_namelist namelist
 
 	# The input ice namelist is hard coded as "namelist_ice" in nemo source
-	cp -f rs_namelist_ice namelist_ice
-
+	if [ $pisces_offline -ne 1 ]; then
+	  cp -f rs_namelist_ice namelist_ice
+        fi
+ 
 	if [ $nemo_carbon -eq 1 ]; then
 	  # The input top namelist is hard coded as "namelist_top" in nemo source
 	  cp -f rs_namelist_top namelist_top
@@ -585,6 +622,7 @@ cat > Execute_Script <<'end_of_script'
       # get this from the time.step file that was saved in the restart
       prev_itend=`cat rs_time.step`
       nn_it000=`expr $prev_itend + 1`
+      echo "nn_it000 " : ${nn_it000}
 
       # Date stamp from the previous restart
       # Increment the job number from the previous namelist file
@@ -656,7 +694,9 @@ cat > Execute_Script <<'end_of_script'
       ln_ctl nn_print nn_ice
 
     # Modify specified parameter values in the input ice namelist
-    mod_nl namelist_ice cn_icerst_in cn_icerst_out
+    if [ $pisces_offline -ne 1 ]; then
+      mod_nl namelist_ice cn_icerst_in cn_icerst_out
+    fi
 
     # Modify the input top namelist
     if [ $nemo_carbon -eq 1 ]; then
@@ -684,6 +724,7 @@ cat > Execute_Script <<'end_of_script'
     nemo_mask_itf=nemo_3.3_orca2_mask_itf.nc
     nemo_M2rowdrg=nemo_3.3_orca2_m2rowdrg.nc
     nemo_K1rowdrg=nemo_3.3_orca2_k1rowdrg.nc
+    nemo_Eddyengf=nemo_3.3_orca2_k1rowdrg.nc
     nemo_geothermal_heating=nemo_3.3_orca2_geothermal_heating.nc
     nemo_runoff_core_monthly=nemo_3.3_orca2_runoff_core_monthly.nc
     nemo_sss_data=nemo_3.3_orca2_sss_data.nc
@@ -699,6 +740,7 @@ cat > Execute_Script <<'end_of_script'
     acc_cp mask_itf.nc            $nemo_mask_itf
     acc_cp M2rowdrg.nc            $nemo_M2rowdrg
     acc_cp K1rowdrg.nc            $nemo_K1rowdrg
+    acc_cp Eddyengf.nc            $nemo_Eddyengf
     acc_cp geothermal_heating.nc  $nemo_geothermal_heating
     acc_cp runoff_core_monthly.nc $nemo_runoff_core_monthly
     acc_cp sss_data.nc            $nemo_sss_data
@@ -712,41 +754,59 @@ cat > Execute_Script <<'end_of_script'
     acc_cp data_1m_potential_temperature_nomask.nc $nemo_data_1m_potential_temperature_nomask
     acc_cp data_1m_salinity_nomask.nc              $nemo_data_1m_salinity_nomask
 
-    nemo_t=nemo_3.3_orca2_t_10.15june2009_orca2.nc
-    nemo_u=nemo_3.3_orca2_u_10.15june2009_orca2.nc
-    nemo_v=nemo_3.3_orca2_v_10.15june2009_orca2.nc
-    nemo_q=nemo_3.3_orca2_q_10.15june2009_orca2.nc
-    nemo_qsw=nemo_3.3_orca2_ncar_rad.15june2009_orca2.nc
-    nemo_qlw=nemo_3.3_orca2_ncar_rad.15june2009_orca2.nc
-    nemo_precip=nemo_3.3_orca2_ncar_precip.15june2009_orca2.nc
-    nemo_snow=nemo_3.3_orca2_ncar_precip.15june2009_orca2.nc
-    nemo_weights_bicubic1=nemo_3.4_weights_grid02_bicubic_orca1.nc
-    nemo_weights_bilinear1=nemo_3.4_weights_grid02_bilinear_orca1.nc
-    nemo_weights_bicubic2=nemo_3.4_weights_grid03_bicubic_orca1.nc
-    nemo_weights_bilinear2=nemo_3.4_weights_grid03_bilinear_orca1.nc
-
-    acc_cp tair10m.nc          $nemo_t
-    acc_cp uwnd10m.nc          $nemo_u
-    acc_cp vwnd10m.nc          $nemo_v
-    acc_cp humi10m.nc          $nemo_q
-    acc_cp qsw.nc              $nemo_qsw
-    acc_cp qlw.nc              $nemo_qlw
-    acc_cp precip.nc           $nemo_precip
-    acc_cp snow.nc             $nemo_snow
-    acc_cp weights_bic1.nc     $nemo_weights_bicubic1
-    acc_cp weights_bil1.nc     $nemo_weights_bilinear1 
-    acc_cp weights_bic2.nc     $nemo_weights_bicubic2
-    acc_cp weights_bil2.nc     $nemo_weights_bilinear2
-
     if [ x"$nemo_forcing" = "xbulk" ]; then
       # Bulk forcing
-      nemo_utau=mc_ncq_5d_06360101_06361231_grid_ufl_mean.nc
-      nemo_vtau=mc_ncq_5d_06360101_06361231_grid_vfl_mean.nc
-      nemo_qtot=mc_ncq_5d_06360101_06361231_grid_hfl_mean.nc
-      nemo_qsr=mc_ncq_5d_06360101_06361231_grid_hfl_mean.nc
-      nemo_emp=mc_ncq_5d_06360101_06361231_grid_hfl_mean.nc
-      nemo_weights_bicubic3=nemo_3.4_weights_grid02_bicubic_orca2.nc
-      nemo_weights_bilinear3=nemo_3.4_weights_grid02_bilinear_orca2.nc
+      nemo_t=nemo_3.3_orca2_t_10.15june2009_orca2.nc
+      nemo_u=nemo_3.3_orca2_u_10.15june2009_orca2.nc
+      nemo_v=nemo_3.3_orca2_v_10.15june2009_orca2.nc
+      nemo_q=nemo_3.3_orca2_q_10.15june2009_orca2.nc
+      nemo_qsw=nemo_3.3_orca2_ncar_rad.15june2009_orca2.nc
+      nemo_qlw=nemo_3.3_orca2_ncar_rad.15june2009_orca2.nc
+      nemo_precip=nemo_3.3_orca2_ncar_precip.15june2009_orca2.nc
+      nemo_snow=nemo_3.3_orca2_ncar_precip.15june2009_orca2.nc
+      nemo_weights_bicubic2=nemo_3.4_weights_grid03_bicubic_orca1.nc
+      nemo_weights_bilinear2=nemo_3.4_weights_grid03_bilinear_orca1.nc
+
+      acc_cp tair10m.nc          $nemo_t
+      acc_cp uwnd10m.nc          $nemo_u
+      acc_cp vwnd10m.nc          $nemo_v
+      acc_cp humi10m.nc          $nemo_q
+      acc_cp qsw.nc              $nemo_qsw
+      acc_cp qlw.nc              $nemo_qlw
+      acc_cp precip.nc           $nemo_precip
+      acc_cp snow.nc             $nemo_snow
+      acc_cp weights_bic2.nc     $nemo_weights_bicubic2
+      acc_cp weights_bil2.nc     $nemo_weights_bilinear2
+
+    elif [ x"$nemo_forcing" = "xbulk_iaf" ]; then
+      nemo_t=uncs_corev2_t_10
+      nemo_u=uncs_corev2_u_10
+      nemo_v=uncs_corev2_v_10
+      nemo_q=uncs_corev2_q_10
+      nemo_qsw=uncs_corev2_ncar_rad
+      nemo_qlw=uncs_corev2_ncar_rad
+      nemo_precip=uncs_corev2_ncar_precip
+      nemo_snow=uncs_corev2_ncar_precip
+      nemo_weights_bicubic2=nemo_3.4_weights_grid03_bicubic_orca1.nc
+      nemo_weights_bilinear2=nemo_3.4_weights_grid03_bilinear_orca1.nc
+
+      yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
+      fy=`expr ${yearc} + ${iaf_year_offset} | awk  '{printf "%04d",$1}'`
+      yd=`expr ${iaf_loop_year} - ${iaf_year_offset}`
+      fyl=`expr ${fy} - '(' '(' ${yearc} - 1 ')' / ${yd} ')' \* ${yd}`           
+      forcing_year=`expr ${fyl} | awk  '{printf "%04d",$1}'`
+      
+      acc_cp tair10m_y${yearc}.nc          ${nemo_t}_y${forcing_year}.nc
+      acc_cp uwnd10m_y${yearc}.nc          ${nemo_u}_y${forcing_year}.nc
+      acc_cp vwnd10m_y${yearc}.nc          ${nemo_v}_y${forcing_year}.nc
+      acc_cp humi10m_y${yearc}.nc          ${nemo_q}_y${forcing_year}.nc
+      acc_cp qsw_y${yearc}.nc              ${nemo_qsw}_y${forcing_year}.nc
+      acc_cp qlw_y${yearc}.nc              ${nemo_qlw}_y${forcing_year}.nc
+      acc_cp precip_y${yearc}.nc           ${nemo_precip}_y${forcing_year}.nc
+      acc_cp snow_y${yearc}.nc             ${nemo_snow}_y${forcing_year}.nc
+      acc_cp weights_bic2.nc     $nemo_weights_bicubic2
+      acc_cp weights_bil2.nc     $nemo_weights_bilinear2
+
     elif [ x"$nemo_forcing" = "xflux" ]; then
       # Flux forcing
       nemo_utau=nemo_3.4_orca1_t_10.15june2009.nc
@@ -756,22 +816,94 @@ cat > Execute_Script <<'end_of_script'
       nemo_emp=nemo_3.4_orca1_t_10.15june2009.nc
       nemo_weights_bicubic3=nemo_3.4_weights_grid03_bicubic_orca1.nc
       nemo_weights_bilinear3=nemo_3.4_weights_grid03_bilinear_orca1.nc
+
+      acc_cp utau.nc             $nemo_utau
+      acc_cp vtau.nc             $nemo_vtau
+      acc_cp qtot.nc             $nemo_qtot
+      acc_cp qsr.nc              $nemo_qsr
+      acc_cp emp.nc              $nemo_emp
+      acc_cp weights_bic3.nc     $nemo_weights_bicubic3
+      acc_cp weights_bil3.nc     $nemo_weights_bilinear3
+
+    elif [ x"$nemo_forcing" = "xflux_iaf" ]; then
+      # Flux forcing
+      nemo_utau=uncs_oufs_iga
+      nemo_vtau=uncs_ovfs_iga
+      nemo_qtot=uncs_obeg_iga
+      nemo_qsr=uncs_ofsg_iga
+      nemo_emp=uncs_obwg_iga
+      nemo_weights_bicubic3=nemo_3.4_weights_grid03_bicubic_orca1.nc
+      nemo_weights_bilinear3=nemo_3.4_weights_grid03_bilinear_orca1.nc
+
+      yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
+      fy=`expr ${yearc} + ${iaf_year_offset} | awk  '{printf "%04d",$1}'`
+      yd=`expr ${iaf_loop_year} - ${iaf_year_offset}`
+      fyl=`expr ${fy} - '(' '(' ${yearc} - 1 ')' / ${yd} ')' \* ${yd}`           
+      forcing_year=`expr ${fyl} | awk  '{printf "%04d",$1}'`
+
+      acc_cp utau_y${yearc}.nc             ${nemo_utau}_y${forcing_year}.nc
+      acc_cp vtau_y${yearc}.nc             ${nemo_vtau}_y${forcing_year}.nc
+      acc_cp qtot_y${yearc}.nc             ${nemo_qtot}_y${forcing_year}.nc
+      acc_cp qsr_y${yearc}.nc              ${nemo_qsr}_y${forcing_year}.nc
+      acc_cp emp_y${yearc}.nc              ${nemo_emp}_y${forcing_year}.nc
+      acc_cp weights_bic3.nc     $nemo_weights_bicubic3
+      acc_cp weights_bil3.nc     $nemo_weights_bilinear3
     fi
 
-    acc_cp utau.nc             $nemo_utau
-    acc_cp vtau.nc             $nemo_vtau
-    acc_cp qtot.nc             $nemo_qtot
-    acc_cp qsr.nc              $nemo_qsr
-    acc_cp emp.nc              $nemo_emp
-    acc_cp weights_bic3.nc     $nemo_weights_bicubic3
-    acc_cp weights_bil3.nc     $nemo_weights_bilinear3
+    # Modify the namelists to suite the forcing, as specified in the makefile
+    # Bulk forcing
+    if [ x"$nemo_forcing" = "xbulk" ] || [ x"$nemo_forcing" = "xbulk_iaf" ] ; then
+      ln_ana=".false.   !  analytical formulation                    (T => fill namsbc_ana )"
+      ln_flx=".false.   !  flux formulation                          (T => fill namsbc_flx )"
+      ln_blk_clio=".false.   !  CLIO bulk formulation                     (T => fill namsbc_clio)"
+      ln_blk_core=".true.    !  CORE bulk formulation                     (T => fill namsbc_core)"
+      ln_blk_mfs=".false.   !  MFS bulk formulation                      (T => fill namsbc_mfs )"
+      ln_cpl=".false.   !  Coupled formulation                       (T => fill namsbc_cpl )"
 
-  #  acc_cp t_10.15JUNE2009_orca2.nc         nemo_3.3_orca2_t_10.15june2009_orca2.nc
-  #  acc_cp u_10.15JUNE2009_orca2.nc         nemo_3.3_orca2_u_10.15june2009_orca2.nc
-  #  acc_cp v_10.15JUNE2009_orca2.nc         nemo_3.3_orca2_v_10.15june2009_orca2.nc
-  #  acc_cp q_10.15JUNE2009_orca2.nc         nemo_3.3_orca2_q_10.15june2009_orca2.nc
-  #  acc_cp ncar_rad.15JUNE2009_orca2.nc     nemo_3.3_orca2_ncar_rad.15june2009_orca2.nc
-  #  acc_cp ncar_precip.15JUNE2009_orca2.nc  nemo_3.3_orca2_ncar_precip.15june2009_orca2.nc
+      sn_wndi=" 'uwnd10m'     ,         6         , 'U_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bic2' , 'Uwnd' "
+      sn_wndj=" 'vwnd10m'     ,         6         , 'V_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bic2' , 'Vwnd' "
+      sn_qsr=" 'qsw'         ,        24         , 'SWDN_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
+      sn_qlw=" 'qlw'         ,        24         , 'LWDN_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
+      sn_tair=" 'tair10m'     ,         6         , 'T_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
+      sn_humi=" 'humi10m'     ,         6         , 'Q_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
+      sn_prec=" 'precip'      ,        -1         , 'PRC_MOD1',   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
+      sn_snow=" 'snow'        ,        -1         , 'SNOW'    ,   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
+      sn_tdif=" 'taudif_core' ,        24         , 'taudif'  ,   .false.    , .true. , 'yearly'  , ''             , '' "
+
+      mod_nl namelist ln_ana ln_flx ln_blk_clio ln_blk_core ln_blk_mfs ln_cpl sn_wndi sn_wndj sn_qsr sn_qlw sn_tair sn_humi \
+                      sn_prec sn_snow sn_tdif
+    
+    elif [ x"$nemo_forcing" = "xflux" ] || [ x"$nemo_forcing" = "xflux_iaf" ] ; then
+      ln_ana=".false.   !  analytical formulation                    (T => fill namsbc_ana )"
+      ln_flx=".true.    !  flux formulation                          (T => fill namsbc_flx )"
+      ln_blk_clio=".false.   !  CLIO bulk formulation                     (T => fill namsbc_clio)" 
+      ln_blk_core=".false.    !  CORE bulk formulation                     (T => fill namsbc_core)" 
+      ln_blk_mfs=".false.   !  MFS bulk formulation                      (T => fill namsbc_mfs )"
+      ln_cpl=".false.   !  Coupled formulation                       (T => fill namsbc_cpl )"
+
+      sn_utau=" 'utau'      ,        24         , 'OUFS'    , .false.      , .false., 'yearly'  , 'weights_bic3', 'Uwnd' "
+      sn_vtau=" 'vtau'      ,        24         , 'OVFS'    , .false.      , .false., 'yearly'  , 'weights_bic3', 'Vwnd' "
+      sn_qtot=" 'qtot'      ,        24         , 'OBEG'    , .false.      , .false., 'yearly'  , 'weights_bil3', '' "
+      sn_qsr=" 'qsr'       ,        24         , 'OFSG'    , .false.      , .false., 'yearly'  , 'weights_bil3', '' "
+      sn_emp=" 'emp'       ,        24         , 'OBWG'    , .false.      , .false., 'yearly'  , 'weights_bil3', '' "
+ 
+      mod_nl namelist ln_ana ln_flx ln_blk_clio ln_blk_core ln_blk_mfs ln_cpl sn_utau sn_vtau sn_qtot sn_qsr sn_emp
+    fi
+
+    if [ $pisces_offline -eq 1 ]; then
+      # Dynamics files for running offline
+      dyna_grid_t=uncs_dyna_grid_t.nc
+      dyna_grid_u=uncs_dyna_grid_u.nc
+      dyna_grid_v=uncs_dyna_grid_v.nc
+      dyna_grid_w=uncs_dyna_grid_w.nc
+      offline_mash_mask=uncs_mesh_mask.nc
+
+      acc_cp dyna_grid_t.nc $dyna_grid_t
+      acc_cp dyna_grid_u.nc $dyna_grid_u
+      acc_cp dyna_grid_v.nc $dyna_grid_v
+      acc_cp dyna_grid_w.nc $dyna_grid_w
+      acc_cp mesh_mask.nc   $offline_mash_mask
+    fi 
 
     if [ $nemo_carbon -eq 1 ]; then
       # Access PISCES files
@@ -800,6 +932,7 @@ cat > Execute_Script <<'end_of_script'
       nemo_data_doc_nomask=nemo_3.4_orca2_data_doc_nomask.nc
       nemo_data_fer_nomask=nemo_3.4_orca2_data_fer_nomask.nc
       nemo_data_no3_nomask=nemo_3.4_orca2_data_no3_nomask.nc
+      nemo_data_atcco2=nemo_atcco2_1850-2005.txt
 
       acc_cp data_dic_nomask.nc        $nemo_data_dic_nomask
       acc_cp data_alkalini_nomask.nc   $nemo_data_alkalini_nomask
@@ -809,6 +942,11 @@ cat > Execute_Script <<'end_of_script'
       acc_cp data_doc_nomask.nc        $nemo_data_doc_nomask
       acc_cp data_fer_nomask.nc        $nemo_data_fer_nomask
       acc_cp data_no3_nomask.nc        $nemo_data_no3_nomask
+      acc_cp atcco2.txt                $nemo_data_atcco2
+
+      # Modify the pisces namelist to read CO2 from file, if specified in makefile
+      ln_co2int=.false. # read atm pco2 from a file (T) or constant (F) 
+      mod_nl namelist_pisces ln_co2int
     fi 
 
     #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
@@ -1013,12 +1151,27 @@ cat > Execute_Script <<'end_of_script'
     if [ $nemo_save_rs -eq 1 ]; then
       # tar up the current restarts and save them to DATAPATH
 
-      # Make sure that at least 1 restart file is present
-      eval ofnpatt=${cn_exp}_\*_${cn_ocerst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
-      found_rs=`(ls -1 $ofnpatt || : ) 2>/dev/null`
-      if [ -z "$found_rs" ]; then
-	# No ocean restart files exist
-	bail "Attempting to save restarts but no ocean restart files exist."
+
+      if [ $pisces_offline -eq 0 ]; then
+        # Make sure that at least 1 restart file is present
+        eval ofnpatt=${cn_exp}_\*_${cn_ocerst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
+        found_rs=`(ls -1 $ofnpatt || : ) 2>/dev/null`
+        if [ -z "$found_rs" ]; then
+	  # No ocean restart files exist
+	  bail "Attempting to save restarts but no ocean restart files exist."
+        fi
+
+        if [ $with_ice -eq 1 ]; then
+	  eval ifnpatt=${cn_exp}_\*_${cn_icerst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
+	  found_rs=`(ls -1 $ifnpatt || : ) 2>/dev/null`
+	  if [ -z "$found_rs" ]; then
+	    # No ice restart files exist
+	    bail "Attempting to save restarts but no ice restart files exist."
+	  fi
+        else
+	  ifnpatt=''
+        fi
+
       fi
 
       if [ $nemo_carbon -eq 1 ]; then
@@ -1031,17 +1184,6 @@ cat > Execute_Script <<'end_of_script'
 	fi
       else
 	pfnpatt=''
-      fi
-
-      if [ $with_ice -eq 1 ]; then
-	eval ifnpatt=${cn_exp}_\*_${cn_icerst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
-	found_rs=`(ls -1 $ifnpatt || : ) 2>/dev/null`
-	if [ -z "$found_rs" ]; then
-	  # No ice restart files exist
-	  bail "Attempting to save restarts but no ice restart files exist."
-	fi
-      else
-	ifnpatt=''
       fi
 
       # tarlist contains a list of additional files to add to the restart archive
@@ -1082,6 +1224,8 @@ cat > Execute_Script <<'end_of_script'
       cp -f saved_history_file_names rs_saved_history_file_names || :
       [ -s rs_saved_history_file_names ] && tarlist="$tarlist rs_saved_history_file_names"
 
+      cp -f xnemo_access_log rs_xnemo_access_log || :
+      [ -s rs_xnemo_access_log ] && tarlist="$tarlist rs_xnemo_access_log"
 
       rm -f NEXT_RESTART_ARC
       tar cf NEXT_RESTART_ARC $tarlist $ofnpatt $ifnpatt $pfnpatt ||
@@ -1114,6 +1258,206 @@ cat > Execute_Script <<'end_of_script'
     #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
     #=#=#=#     Post processing     #=#=#=#
     #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+    # If nemo_rtd is true then execute the nemo run time diagnostics
+    nemo_rtd=on
+    ToF nemo_rtd
+
+    if [ $nemo_rtd -eq 1 ]; then
+      rtd_file_dump_list=rtd_file_dump_list_$$
+      rtd_file_del_list=rtd_file_del_list_$$
+      rm -f $rtd_file_dump_list
+      rm -f $rtd_file_del_list
+      touch $rtd_file_dump_list
+      touch $rtd_file_del_list
+
+      # Specify the location of some NCO tools
+      # These are required for manipulation of the netcdf files
+      NCOBIN=/users/tor/acrn/rls/local/aix64/bin
+      NCRCAT="$NCOBIN/ncrcat"
+      NCATTED="$NCOBIN/ncatted"
+
+      # Invoke the nemo run time diagnostics
+      if [ $pisces_offline -eq 0 ]; then
+
+          # This currently requires certain yearly history files, which may or may not have
+          # been created above. Verify that they exist by attempting to access them
+          # These files could be modified so create local copies with write access
+
+          rtd_hist1="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_grid_t.nc"
+          rtd_hist2="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_grid_u.nc"
+          rtd_hist3="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_grid_v.nc"
+          rtd_hist4="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_grid_w.nc"
+          access grid_t $rtd_hist1 
+          access grid_u $rtd_hist2 
+          access grid_v $rtd_hist3 
+          access grid_w $rtd_hist4 
+
+          # This also requires a file containing grid information
+          # This file could be modified so create a local copy with write access
+          orca_grid_info=nemo3.4.1_orca1_mesh_mask_ngr.nc
+          access orca_mesh_mask $orca_grid_info 
+
+          # The user must define year_rtdiag_start
+          year_rtdiag_start=''
+          [ -z "$year_rtdiag_start" ] &&
+            bail "Run time diagnostics was requested but year_rtdiag_start is not defined."
+
+          # Access the rtd executable
+          physical_rtd_exe=nemo_orca_physical_rtd_v02c
+          [ -z "$physical_rtd_exe" ] && bail "physical_rtd_exe is not defined."
+          access $physical_rtd_exe $physical_rtd_exe nocp=off
+          chmod u+x $physical_rtd_exe
+
+          # Access an existing rtd file containing data up to the previous year, if year > year_rtdiag_start
+          # Create a local copy with write access
+          curr_rtd_file=sc_${runid}_${rs_date}_nemo_physical_rtd.nc
+          found_file=`(ls -1 $DATAPATH/$curr_rtd_file* || : ) 2>/dev/null`
+          if [ -n "$found_file" ]; then 
+              access nemo_physical_rtd.nc $curr_rtd_file nocp=off
+              chmod u+rw nemo_physical_rtd.nc      
+              # Create run time diagnostics for physical ocean variables
+              $physical_rtd_exe $stop_year $start_mon
+              echo $curr_rtd_file >> $rtd_file_del_list
+          else
+              # Create run time diagnostics for physical ocean variables
+              $physical_rtd_exe $stop_year $start_mon
+              ${NCATTED} -O -a RTD_version,global,a,c,"${physical_rtd_exe}" nemo_physical_rtd.nc
+          fi
+
+          # Save the rtd file created by physical_rtd_exe
+          new_rtd_file=sc_${runid}_${stop_date}_nemo_physical_rtd.nc
+          save nemo_physical_rtd.nc $new_rtd_file
+          echo $new_rtd_file >> $rtd_file_dump_list
+
+          # Copy the new physical rtd file to Victoria
+          scp_rtd_to_Victoria nemo_physical_rtd.nc sc_${runid}_nemo_physical_rtd.nc
+
+          # Move deleting to the delete part
+          # delete RTD files from 2 years ago from RUNPATH (if we are 2+ years from rtd starting).
+          # yearcm2=`expr ${current_year} - 2 | awk  '{printf "%04d",$1}'`        
+          # 
+          # if [ ${yearcm2} -ge ${year_rtdiag_start} ] ; then
+          #     access  old_rtd  na  nocp  sc_${runid}_${year_rtdiag_start}_${yearcm2}_nemo_physical_rtd.nc
+          #     delete  old_rtd na 
+          # fi
+          if [ $nn_ice -ne 0 ]; then
+            # Also generate ICE run time diagnostics
+
+            # Access additional annual history files containing PISCES related variables
+            rtd_hist7="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_icemod.nc"
+            access icemod $rtd_hist7 #nocp=off
+
+            # Access the rtd executable
+            ice_rtd_exe=nemo_ice_rtd_v02c
+            [ -z "$ice_rtd_exe" ] && bail "ice_rtd_exe is not defined."
+            access $ice_rtd_exe $ice_rtd_exe nocp=off
+            chmod u+x $ice_rtd_exe
+
+            # Access an existing rtd file containing data up to the previous year, if 
+            # year > year_rtdiag_start
+            curr_rtd_file=sc_${runid}_${rs_date}_nemo_ice_rtd.nc
+            found_file=`(ls -1 $DATAPATH/$curr_rtd_file* || : ) 2>/dev/null`
+            if [ -n "$found_file" ]; then 
+                access nemo_ice_rtd.nc $curr_rtd_file nocp=off
+                chmod u+rw nemo_ice_rtd.nc
+                # Create run time diagnostics for carbon variables
+                $ice_rtd_exe $stop_year $start_mon
+                echo $curr_rtd_file >> $rtd_file_del_list
+            else
+                # Create run time diagnostics for carbon variables
+                $ice_rtd_exe $stop_year $start_mon
+                ${NCATTED} -O -a RTD_version,global,a,c,"${ice_rtd_exe}" nemo_ice_rtd.nc
+            fi
+
+            # Save the rtd file created by carbon_rtd_exe
+            new_rtd_file=sc_${runid}_${stop_date}_nemo_ice_rtd.nc
+            save nemo_ice_rtd.nc $new_rtd_file
+            echo $new_rtd_file >> $rtd_file_dump_list
+
+            # Copy the new carbon rtd file to Victoria
+            scp_rtd_to_Victoria nemo_ice_rtd.nc sc_${runid}_nemo_ice_rtd.nc
+
+            # delete RTD files from 2 years ago from RUNPATH (if we are 2+ years from rtd starting).
+            #if [ ${yearcm2} -ge ${year_rtdiag_start} ] ; then
+            #  access  old_rtd  na  nocp  sc_${runid}_${year_rtdiag_start}_${yearcm2}_nemo_ice_rtd.nc
+            #  delete  old_rtd na
+            #fi
+          fi
+      fi # if [pisces_offline -eq 0 ]
+
+      if [ $nemo_carbon -eq 1 ]; then
+        # Also generate PISCES run time diagnostics
+
+        # Access additional annual history files containing PISCES related variables
+        rtd_hist5="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_ptrc_t.nc"
+        rtd_hist6="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_diad_t.nc"
+        access ptrc_t $rtd_hist5 
+        access diad_t $rtd_hist6 
+
+        # Access the rtd executable
+        carbon_rtd_exe=nemo_orca1_carbon_rtd_v02c
+        [ -z "$carbon_rtd_exe" ] && bail "carbon_rtd_exe is not defined."
+        access $carbon_rtd_exe $carbon_rtd_exe nocp=off
+        chmod u+x $carbon_rtd_exe
+
+        # Access an existing rtd file containing data up to the previous year, if 
+        # year > year_rtdiag_start
+        curr_rtd_file=sc_${runid}_${rs_date}_nemo_carbon_rtd.nc
+        found_file=`(ls -1 $DATAPATH/$curr_rtd_file* || : ) 2>/dev/null`
+        if [ -n "$found_file" ]; then 
+            access nemo_carbon_rtd.nc $curr_rtd_file nocp=off
+            chmod u+rw nemo_carbon_rtd.nc
+            # Create run time diagnostics for carbon variables
+            $carbon_rtd_exe $stop_year $start_mon
+            echo $curr_rtd_file >> $rtd_file_del_list
+        else
+            # Create run time diagnostics for carbon variables
+            $carbon_rtd_exe $stop_year $start_mon
+            ${NCATTED} -O -a RTD_version,global,a,c,"${carbon_rtd_exe}" nemo_carbon_rtd.nc
+        fi
+
+        # Save the rtd file created by carbon_rtd_exe
+        new_rtd_file=sc_${runid}_${stop_date}_nemo_carbon_rtd.nc
+        save nemo_carbon_rtd.nc $new_rtd_file
+        echo $new_rtd_file >> $rtd_file_dump_list
+
+        # Copy the new carbon rtd file to Victoria
+        scp_rtd_to_Victoria nemo_carbon_rtd.nc sc_${runid}_nemo_carbon_rtd.nc
+
+        # delete RTD files from 2 years ago from RUNPATH (if we are 2+ years from rtd starting).
+        #if [ ${yearcm2} -ge ${year_rtdiag_start} ] ; then
+        #  access  old_rtd  na  nocp  sc_${runid}_${year_rtdiag_start}_${yearcm2}_nemo_carbon_rtd.nc
+        #  delete  old_rtd na
+        #fi
+      fi
+
+      echo "RTD FILE dump list: `cat $rtd_file_dump_list`"
+      echo "RTD FILE del list: `cat $rtd_file_del_list`"
+      # Clean up
+      release grid_t
+      release grid_u
+      release grid_v
+      release grid_w
+      release icemod
+      if [ $nemo_carbon -eq 1 ]; then
+        # PISCES related files
+        release ptrc_t
+        release diad_t
+        release orca_mesh_mask
+      fi
+      
+    # Save RTDs in a tar file to runpath for later dumping     
+    curr_rtd_tar=mc_${runid}_${stop_date}_rtd.tar 
+    for f in `cat $rtd_file_dump_list`; do
+        access $f $f na
+    done
+
+    tar cf $curr_rtd_tar `cat $rtd_file_dump_list` ||
+         bail "Could not create a tar archive of the RTD"
+    save $curr_rtd_tar $curr_rtd_tar na
+    echo $curr_rtd_tar >> $rtd_file_del_list
+
+    fi # if [ $nemo_rtd -eq 1 ]; then 1215
 
   #=#=#=# Optionally concatenate history files annually.
   #=#=#=# Optionally generate run time diagnostics from these annual history files
@@ -1213,20 +1557,10 @@ cat > Execute_Script <<'end_of_script'
     ToF nemo_ann_rtd
 
     if [ $nemo_ann_rtd -eq 1 ]; then
-      # Invoke the nemo run time diagnostics
-
-      # This currently requires certain yearly history files, which may or may not have
-      # been created above. Verify that they exist by attempting to access them
-      # These files could be modified so create local copies with write access
-      rtd_hist1="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_grid_t.nc"
-      rtd_hist2="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_grid_u.nc"
-      rtd_hist3="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_grid_v.nc"
-      rtd_hist4="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_grid_w.nc"
-      access grid_t $rtd_hist1 nocp=off
-      access grid_u $rtd_hist2 nocp=off
-      access grid_v $rtd_hist3 nocp=off
-      access grid_w $rtd_hist4 nocp=off
-      chmod u+rw grid_t grid_u grid_v grid_w
+      # The user must define year_rtdiag_start
+      year_rtdiag_start=''
+      [ -z "$year_rtdiag_start" ] &&
+      bail "Run time diagnostics was requested but year_rtdiag_start is not defined."
 
       # This also requires a file containing grid information
       # This file could be modified so create a local copy with write access
@@ -1234,46 +1568,60 @@ cat > Execute_Script <<'end_of_script'
       access orca_mesh_mask $orca_grid_info nocp=off
       chmod u+rw orca_mesh_mask
 
-      # The user must define year_rtdiag_start
-      year_rtdiag_start=''
-      [ -z "$year_rtdiag_start" ] &&
-        bail "Run time diagnostics was requested but year_rtdiag_start is not defined."
-
-      # Access the rtd executable
-      physical_rtd_exe=nemo_orca_physical_rtd_v02c
-      [ -z "$physical_rtd_exe" ] && bail "physical_rtd_exe is not defined."
-      access $physical_rtd_exe $physical_rtd_exe nocp=off
-      chmod u+x $physical_rtd_exe
-
-      # Access an existing rtd file containing data up to the previous year, if year > year_rtdiag_start
-      # Create a local copy with write access
-      if [ ${year_rtdiag_start} -lt ${stop_year} ] ; then
-          stop_year_prev=`echo $stop_year|awk '{printf "%4.4d",$1-1}' -`
-          curr_rtd_file=sc_${runid}_${year_rtdiag_start}_${stop_year_prev}_nemo_physical_rtd.nc
-          access nemo_physical_rtd.nc $curr_rtd_file nocp=off
-          chmod u+rw nemo_physical_rtd.nc      
-          # Create run time diagnostics for physical ocean variables
-          $physical_rtd_exe $stop_year
-      else
-          # Create run time diagnostics for physical ocean variables
-          $physical_rtd_exe $stop_year
-          ${NCATTED} -O -a RTD_version,global,a,c,"${physical_rtd_exe}" nemo_physical_rtd.nc
-      fi
-
-      # Save the rtd file created by physical_rtd_exe
-      new_rtd_file=sc_${runid}_${year_rtdiag_start}_${stop_year}_nemo_physical_rtd.nc
-      save nemo_physical_rtd.nc $new_rtd_file
-
-      # Copy the new physical rtd file to Victoria
-      scp_rtd_to_Victoria nemo_physical_rtd.nc sc_${runid}_nemo_physical_rtd.nc
-
       # delete RTD files from 2 years ago from RUNPATH (if we are 2+ years from rtd starting).
-       yearcm2=`expr ${current_year} - 2 | awk  '{printf "%04d",$1}'`        
+      yearcm2=`expr ${current_year} - 2 | awk  '{printf "%04d",$1}'`        
        
-       if [ ${yearcm2} -ge ${year_rtdiag_start} ] ; then
-           access  old_rtd  na  nocp  sc_${runid}_${year_rtdiag_start}_${yearcm2}_nemo_physical_rtd.nc
-           delete  old_rtd na 
-       fi
+
+      if [ $pisces_offline -eq 0 ]; then
+        # Invoke the nemo run time diagnostics
+
+        # This currently requires certain yearly history files, which may or may not have
+        # been created above. Verify that they exist by attempting to access them
+        # These files could be modified so create local copies with write access
+        rtd_hist1="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_grid_t.nc"
+        rtd_hist2="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_grid_u.nc"
+        rtd_hist3="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_grid_v.nc"
+        rtd_hist4="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_grid_w.nc"
+        access grid_t $rtd_hist1 nocp=off
+        access grid_u $rtd_hist2 nocp=off
+        access grid_v $rtd_hist3 nocp=off
+        access grid_w $rtd_hist4 nocp=off
+        chmod u+rw grid_t grid_u grid_v grid_w
+
+        # Access the rtd executable
+        physical_rtd_exe=nemo_orca_physical_rtd_v02c
+        [ -z "$physical_rtd_exe" ] && bail "physical_rtd_exe is not defined."
+        access $physical_rtd_exe $physical_rtd_exe nocp=off
+        chmod u+x $physical_rtd_exe
+
+        # Access an existing rtd file containing data up to the previous year, if year > year_rtdiag_start
+        # Create a local copy with write access
+        if [ ${year_rtdiag_start} -lt ${stop_year} ] ; then
+            stop_year_prev=`echo $stop_year|awk '{printf "%4.4d",$1-1}' -`
+            curr_rtd_file=sc_${runid}_${year_rtdiag_start}_${stop_year_prev}_nemo_physical_rtd.nc
+            access nemo_physical_rtd.nc $curr_rtd_file nocp=off
+            chmod u+rw nemo_physical_rtd.nc      
+            # Create run time diagnostics for physical ocean variables
+            $physical_rtd_exe $stop_year
+        else
+            # Create run time diagnostics for physical ocean variables
+            $physical_rtd_exe $stop_year
+            ${NCATTED} -O -a RTD_version,global,a,c,"${physical_rtd_exe}" nemo_physical_rtd.nc
+        fi
+
+        # Save the rtd file created by physical_rtd_exe
+        new_rtd_file=sc_${runid}_${year_rtdiag_start}_${stop_year}_nemo_physical_rtd.nc
+        save nemo_physical_rtd.nc $new_rtd_file
+
+        # Copy the new physical rtd file to Victoria
+        scp_rtd_to_Victoria nemo_physical_rtd.nc sc_${runid}_nemo_physical_rtd.nc
+
+         # delete RTD files from 2 years ago from RUNPATH (if we are 2+ years from rtd starting).
+         if [ ${yearcm2} -ge ${year_rtdiag_start} ] ; then
+             access  old_rtd  na  nocp  sc_${runid}_${year_rtdiag_start}_${yearcm2}_nemo_physical_rtd.nc
+             delete  old_rtd na 
+         fi
+      fi
 
       if [ $nemo_carbon -eq 1 ]; then
         # Also generate PISCES run time diagnostics
@@ -1432,6 +1780,13 @@ cat > Execute_Script <<'end_of_script'
               echo "WARNING: nemo_dump_rs=on but could not create a list of restart files to dump"  
 	  fi
 	fi
+
+	# For the RTD files
+	if [ $nemo_rtd -eq 1 ]; then
+            if [ -n "$curr_rtd_tar" ]; then
+                echo $curr_rtd_tar >> ${hist_file_dump_list}
+            fi
+	fi
         
         if [ $nemo_dump_hist -ne 1 -a ${dump_this_rs} -ne 1 ]; then
             DUMPHIST=''
@@ -1527,6 +1882,12 @@ cat > Execute_Script <<'end_of_script'
                 echo "${nemo_rs} to be deleted..."
 	        echo ${nemo_rs} >> ${hist_file_del_list}
             fi
+	  fi
+
+	  # For the RTD files
+  	  if [ $nemo_rtd -eq 1 ]; then
+              cat ${rtd_file_del_list} >> ${hist_file_del_list}
+              echo "deleting... `cat ${hist_file_del_list}`"
 	  fi
           
 	  [ -s ${hist_file_del_list} ] || 
@@ -1743,6 +2104,8 @@ cat >local_defs << 'end_local_defs'
     access $local_file $remote_file $* ||
       cp $remote_file $local_file ||
       bail "--> acc_cp $local_file $remote_file $* <-- Unable to locate $remote_file"
+
+    sha1sum $local_file >> xnemo_access_log
   }
 
   days_in_month() {

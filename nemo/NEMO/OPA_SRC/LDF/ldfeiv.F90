@@ -131,8 +131,12 @@ CONTAINS
                ! eddies using the isopycnal slopes calculated in ldfslp.F :
                ! T^-1 = sqrt(m_jpk(N^2*(r1^2+r2^2)*e3w))
                ze3w = fse3w(ji,1,jk) * tmask(ji,1,jk)
-               zah(ji,1) = zah(ji,1) + zn2 * ( wslpi(ji,1,jk) * wslpi(ji,1,jk)   &
-                  &                          + wslpj(ji,1,jk) * wslpj(ji,1,jk) ) * ze3w
+               ! DY, 08/MAY/2015
+               !zah(ji,1) = zah(ji,1) + zn2 * ( wslpi(ji,1,jk) * wslpi(ji,1,jk)   &
+               !   &                          + wslpj(ji,1,jk) * wslpj(ji,1,jk) ) * ze3w
+               zah(ji,1) = zah(ji,1) + SQRT( zn2 * ( wslpi(ji,1,jk) * wslpi(ji,1,jk)   &
+                  &                          + wslpj(ji,1,jk) * wslpj(ji,1,jk) ) ) * ze3w
+               ! DY, 08/MAY/2015
                zhw(ji,1) = zhw(ji,1) + ze3w
             END DO
 #  else
@@ -148,8 +152,12 @@ CONTAINS
                   ! eddies using the isopycnal slopes calculated in ldfslp.F : 
                   ! T^-1 = sqrt(m_jpk(N^2*(r1^2+r2^2)*e3w))
                   ze3w = fse3w(ji,jj,jk) * tmask(ji,jj,jk)
-                  zah(ji,jj) = zah(ji,jj) + zn2 * ( wslpi(ji,jj,jk) * wslpi(ji,jj,jk)   &
-                     &                            + wslpj(ji,jj,jk) * wslpj(ji,jj,jk) ) * ze3w
+                  ! DY, 08/MAY/2015
+                  !zah(ji,jj) = zah(ji,jj) + zn2 * ( wslpi(ji,jj,jk) * wslpi(ji,jj,jk)   &
+                  !   &                            + wslpj(ji,jj,jk) * wslpj(ji,jj,jk) ) * ze3w
+                  zah(ji,jj) = zah(ji,jj) + SQRT( zn2 * ( wslpi(ji,jj,jk) * wslpi(ji,jj,jk)   & 
+                     &                            + wslpj(ji,jj,jk) * wslpj(ji,jj,jk) ) ) * ze3w
+                  ! DY, 08/MAY/2015
                   zhw(ji,jj) = zhw(ji,jj) + ze3w
                END DO
             END DO
@@ -161,10 +169,17 @@ CONTAINS
 !CDIR NOVERRCHK 
          DO ji = fs_2, fs_jpim1   ! vector opt.
             zfw = MAX( ABS( 2. * omega * SIN( rad * gphit(ji,jj) ) ) , 1.e-10 )
+            ! DY, 08/MAY/2015
             ! Rossby radius at w-point taken < 40km and  > 2km
-            zross(ji,jj) = MAX( MIN( .4 * zn(ji,jj) / zfw, 40.e3 ), 2.e3 )
+            !zross(ji,jj) = MAX( MIN( .4 * zn(ji,jj) / zfw, 40.e3 ), 2.e3 )
+            ! Rossby radius at w-point taken < 4000km and > 2km
+            zross(ji,jj) = MAX( MIN( .32 * zn(ji,jj) / zfw, 200.e3 ), 2.e3 )
             ! Compute aeiw by multiplying Ro^2 and T^-1
-            aeiw(ji,jj) = zross(ji,jj) * zross(ji,jj) * SQRT( zah(ji,jj) / zhw(ji,jj) ) * tmask(ji,jj,1)
+            !aeiw(ji,jj) = zross(ji,jj) * zross(ji,jj) * SQRT( zah(ji,jj) / zhw(ji,jj) ) * tmask(ji,jj,1)
+            !aeiw(ji,jj) = zross(ji,jj) * zross(ji,jj) * ( zah(ji,jj) / zhw(ji,jj) ) * tmask(ji,jj,1)
+            !aeiw(ji,jj) = 50000. * zross(ji,jj) * ( zah(ji,jj) / zhw(ji,jj) ) * tmask(ji,jj,1)
+            aeiw(ji,jj) = 25000. * zross(ji,jj) * ( zah(ji,jj) / zhw(ji,jj) ) * tmask(ji,jj,1)
+            ! DY, 08/MAY/2015
          END DO
       END DO
 
@@ -185,6 +200,23 @@ CONTAINS
             aeiw(ji,jj) = MIN( 1., ABS( ff(ji,jj) / zf20 ) ) * aeiw(ji,jj)
          END DO
       END DO
+
+      ! DY, 08/MAY/2015
+      ! Limit the coefficient to 200 - 3000 m^2 /s
+      DO jj = 2, jpjm1
+         DO ji = fs_2, fs_jpim1   ! vector opt.
+      ! DY, 02/JUN/2015
+      ! Limit the coefficient to 100 - 3000 m^2 /s
+      !     aeiw(ji,jj) = MIN( MAX( aeiw(ji,jj) , 200.) , 3000. ) * tmask(ji,jj,1)
+      ! DY, 11/JUN/2015
+      ! Limit the coefficient to 100 - 2000 m^2 /s
+      !     aeiw(ji,jj) = MIN( MAX( aeiw(ji,jj) , 100.) , 3000. ) * tmask(ji,jj,1)
+           aeiw(ji,jj) = MIN( MAX( aeiw(ji,jj) , 100.) , 2000. ) * tmask(ji,jj,1)
+      ! DY, 11/JUN/2015
+      ! DY, 02/JUN/2015
+         END DO
+      END DO
+      ! DY, 08/MAY/2015
 
       ! ORCA R05: Take the minimum between aeiw  and aeiv0
       IF( cp_cfg == "orca" .AND. jp_cfg == 05 ) THEN
