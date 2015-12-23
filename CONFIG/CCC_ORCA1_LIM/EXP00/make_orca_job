@@ -26,7 +26,7 @@ uxxx=mc
 # where Year and Month are integers. Month will default
 # to 1 for start and 12 for stop if it is not present.
 start=001
-stop=0100
+stop=010
 
 # Set start year for rtd
 year_rtdiag_start=001

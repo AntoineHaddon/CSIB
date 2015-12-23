@@ -195,7 +195,7 @@ cat <<end_job_defs >$job_defs
   runid=$runid
 
 # time step for the dynamics (and tracer if nn_acc=0)
-  rn_rdt=1080.
+  rn_rdt=1440.
 
 # Define the nemo domain (implies node geometry for MPI)
   nemo_jpni=7
@@ -281,7 +281,7 @@ debug=off
   nemo_M2rowdrg=nemo_3.4.1_orca025_m2rowdrg_orca1_inter.nc
   nemo_K1rowdrg=nemo_3.4.1_orca025_k1rowdrg_orca1_inter.nc
   nemo_geothermal_heating=nemo_3.3_orca2_geothermal_heating.nc
-  nemo_runoff_core_monthly=nemo_3.4.1_orca025_rout_socoefr_month_r1i1p1_1979-2005-mean2.nc
+  nemo_runoff_core_monthly=nemo_3.4_orca025_runoff_cmc.nc
   nemo_sss_data=nemo_3.4_orca025_sss_1m.nc
   nemo_chlorophyll=nemo_3.4.1_orca025_chlorophyll_1m_orca1.nc
   nemo_subbains=nemo_3.4_orca1_basinmask_050308_ukmo.nc
