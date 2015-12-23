@@ -263,7 +263,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
 !              !  file name           ! frequency (hours) ! variable  ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation !
 !              !                      !  (if <0  months)  !   name    !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  !
-   sn_rnf      = 'runoff_core_monthly',        -1         , 'ROUT',       .true.     , .true. , 'yearly'  , 'weights_bil2', ''
+   sn_rnf      = 'runoff_core_monthly',        -1         , 'sorunoff',   .true.     , .true. , 'yearly'  , 'weights_bil2', ''
    sn_cnf      = 'runoff_core_monthly',        -1         , 'socoefr' ,   .true.     , .true. , 'yearly'  , ''       , ''
    sn_s_rnf    = 'runoffs'            ,        24         , 'rosaline',   .true.     , .true. , 'yearly'  , ''       , ''
    sn_t_rnf    = 'runoffs'            ,        24         , 'rotemper',   .true.     , .true. , 'yearly'  , ''       , ''
