@@ -3,6 +3,7 @@
 #   Usage: setup-nemo [options] ver=tag runid=name config=config \
 #                     [save=on] \
 #                     [repo=dirpath] \
+#                     [exp=EXP00] \
 #          Quantities in square brackets are optional
 #
 # Purpose: Copy all files needed to compile and run nemo into the current directory and optionally 
@@ -21,6 +22,7 @@
 #   save=on       ...with save=on the namelist and iodef files required to do the nemo run will be saved to
 #                    DATAPATH with the appropriate runid in their name. The corresponding variables in the 
 #                    make_orca_job file are set by default to point to the files on DATAPATH.
+#   exp=EXP_bulk_COREv2_NY ...is the name of the "experiment" directory from which to extract files.
 #
 # Examples:
 #    setup-nemo ver=ccc_nemo_v0.1 runid=nta config=CCC_ORCA1_LIM_PISCES 
@@ -36,6 +38,8 @@
 #
 # Neil Swart, 05-11-2014
 # Adapted from Larry's build-nemo
+#
+# updated 12-2015 to handle multiple experiments
 ########################################################################
 #
 
@@ -86,6 +90,9 @@ nemo_repo=$CCRNSRC/ocean_dir/nemo-CCCma.git
 # whether namelist and iodef files are saved to DATAPATH.
 save_files=on
 
+# set experiment directory
+nemo_exp=EXP00
+
 # process command line options
 while getopts n:m:r:hktvx opt
 do
@@ -111,6 +118,7 @@ for arg in "$@"; do
               repo) nemo_repo="$val" ;;        # location of git repository
             config) nemo_config="$val" ;;      # name of subdir in which config lives
               save) save_files="$val" ;;       # save namelists to DATAPATH
+               exp) nemo_exp="$val" ;;         # NEMO experiment directory
                  *) bail "Invalid command line arg --> $arg <--" ;;
          esac
          ;;
@@ -135,34 +143,42 @@ case $nemo_config in
     CCC_ORCA025_LIM)      lists='namelist namelist_ice iodef.xml xmlio_server.def'                               ;;
     CCC_ORCA1_LIM)        lists='namelist namelist_ice iodef.xml xmlio_server.def'                               ;;
     CCC_ORCA1_LIM_PISCES) lists='namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
+    CCC_ORCA2_LIM)        lists='namelist namelist_ice iodef.xml xmlio_server.def'                               ;;
     CCC_ORCA2_LIM_PISCES) lists='namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
     CCC_ORCA2_LIM_CMOC)   lists='namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def' ;;
+    CCC_ORCA1_LIM_CMOC)   lists='namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def' ;;
+    CCC_ORCA025_LIM_CMOC) lists='namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def' ;;
+    CCC_ORCA2_OFF_PISCES) lists='namelist namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
                      *) bail "Invalid configuration --> $arg <-- ...config MUST be a CCC_* config." ;;
 esac
 
 nemo_config_lc=`echo "$nemo_config" | awk '{print tolower($0)}'`
 
 # Get the compile script, and reset runid, repo and ver.
-git archive --remote=${nemo_repo} --format=tar ${nemo_version}:nemo/CONFIG/${nemo_config}/EXP00/ compile | tar xf - 
+git archive --remote=${nemo_repo} --format=tar ${nemo_version}:nemo/CONFIG/${nemo_config}/${nemo_exp}/ compile | tar xf - 
 cat compile | sed "s:runid:${nemo_runid}:;s:repo=[^ ]*:repo=$nemo_repo:;s:ver=[^ ]*:ver=$nemo_version:" > compile_${nemo_runid}
 rm -f compile
 chmod +x compile_${nemo_runid}
 
 # Get the make_orca_job_file, and reset runid, repo and ver.
-git archive --remote=${nemo_repo} --format=tar ${nemo_version}:nemo/CONFIG/${nemo_config}/EXP00/ make_orca_job | tar xf -
+git archive --remote=${nemo_repo} --format=tar ${nemo_version}:nemo/CONFIG/${nemo_config}/${nemo_exp}/ make_orca_job | tar xf -
 cat make_orca_job | sed "s:runid=abc:runid=${runid}:g;s:jdef-repo=[^ ]*:jdef-repo=$nemo_repo:;s:jdef-rev=[^ ]*:jdef-rev=$nemo_version:" > make_orca_job_${nemo_runid}
 rm -f make_orca_job
 chmod +x make_orca_job_${nemo_runid}
 
 # Get the namelists/iodefs and optionally save them to DATAPATH
-[ -s namelists ] && bail "namelists dir already exists"
-mkdir namelists
-cd namelists
+if [ -s namelists ]; then 
+    echo "WARNING: namelists dir already exists, overwriting"
+    cd namelists
+else
+    mkdir namelists
+    cd namelists
+fi
 
 for i in $lists
 do
     # Step1: retrieve from the repo
-    git archive --remote=${nemo_repo} --format=tar ${nemo_version}:nemo/CONFIG/${nemo_config}/EXP00/ ${i} | tar xf -
+    git archive --remote=${nemo_repo} --format=tar ${nemo_version}:nemo/CONFIG/${nemo_config}/${nemo_exp}/ ${i} | tar xf -
     # Step2: save to RUNPATH
     if [ "x${save_files}" == 'xon' ]
     then
@@ -171,4 +187,16 @@ do
     fi
 done
 
+# print to log
+cd ../
+echo '~~~' >> .setup-nemo.log
+echo `date` >> .setup-nemo.log
+echo 'setup-nemo ' $@ >> .setup-nemo.log
+if [[ ${nemo_repo} == *.git ]]; then
+    nrg=${nemo_repo}
+else
+    nrg=${nemo_repo}/.git
+fi
+
+echo 'Corresponds to SHA1:' `git --git-dir=${nrg} rev-parse ${nemo_version}` >> .setup-nemo.log
 
