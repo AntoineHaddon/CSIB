@@ -195,7 +195,7 @@ cat <<end_job_defs >$job_defs
   runid=$runid
 
 # time step for the dynamics (and tracer if nn_acc=0)
-  rn_rdt=1440.
+  rn_rdt=1080.
 
 # Define the nemo domain (implies node geometry for MPI)
   nemo_jpni=7
