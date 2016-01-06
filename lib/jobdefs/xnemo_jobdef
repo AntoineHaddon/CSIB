@@ -1452,7 +1452,7 @@ cat > Execute_Script <<'end_of_script'
         access $f $f na
     done
 
-    tar cf $curr_rtd_tar `cat $rtd_file_dump_list` ||
+    tar hcf $curr_rtd_tar `cat $rtd_file_dump_list` ||
          bail "Could not create a tar archive of the RTD"
     save $curr_rtd_tar $curr_rtd_tar na
     echo $curr_rtd_tar >> $rtd_file_del_list
