@@ -331,6 +331,7 @@
           <field ref="empmr"        name="sowaflup"  />
           <field ref="qt"           name="sohefldo"  />
           <field ref="mldr10_1"     name="somxl010"  />
+          <field ref="ice_cover"    name="soicecov"  />
           <field ref="erp"          name="sowafldp"  />
           <field ref="mlddzt"       name="sothedep"  />
 	</file>   
@@ -354,19 +355,21 @@
           <field ref="aht2d_eiv"    name="soleaeiw" />
         </file>
 
-        <file id="1m_icemod" name="auto" description="CICE variables" >
+        <file id="1m_icemod" name="auto" description="ice variables" >
+          <field ref="ice_pres"                     />
           <field ref="ice_cover"    name="soicecov" />
-          <field ref="icethic_cea"  name="iicethic" />
           <field ref="snowthic_cea" name="isnowthi" />
-          <field ref="ist_cea"      name="iicetemp" />
+          <field ref="icethic_cea"  name="iicethic" />
+          <field ref="iceprod_cea"  name="iiceprod" />
+          <field ref="ist_ipa"      name="iicetemp" />
+          <field ref="ioceflxb"     name="ioceflxb" />
           <field ref="uice_ipa"     name="iicevelu" />
           <field ref="vice_ipa"     name="iicevelv" />
           <field ref="utau_ice"     name="iicestru" />
           <field ref="vtau_ice"     name="iicestrv" />
-          <field ref="ioceflxb"     name="ioceflxb" />
+          <field ref="qsr_io_cea"   name="iicesflx" />
+          <field ref="qns_io_cea"   name="iicenflx" />
           <field ref="snowpre"      name="isnowpre" />
-          <field ref="snow_ai_cea"  name="snow_over_sea_ice" />
-          <field ref="subl_ai_cea"  name="sublim_over_sea_ice" />
         </file>
 
       </group>

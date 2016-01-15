@@ -23,11 +23,11 @@
 !-----------------------------------------------------------------------
 &namrun        !   parameters of the run
 !-----------------------------------------------------------------------
-  nn_no = 500
-  cn_exp = "ngg"
-  nn_it000 = 5247241
-  nn_itend = 5256000
-  nn_date0 = 5000101
+  nn_no = 1000
+  cn_exp = "ngm"
+  nn_it000 = 9627241
+  nn_itend = 9636000
+  nn_date0 = 10000101
    nn_leapy    =       0   !  Leap year calendar (1) or not (0)
   ln_rstart = .true.
   nn_rstctl = 0
@@ -37,7 +37,7 @@
   cn_ocerst_in = "restart"
   cn_ocerst_out = "restart"
    nn_istate   =       1   !  output the initial state (1) or not (0)
-  nn_stock = 5256000
+  nn_stock = 9636000
   nn_write = 8760
    ln_dimgnnn  = .false.   !  DIMG file format: 1 file for all processors (F) or by processor (T)
    ln_mskland  = .false.   !  mask land points in NetCDF outputs (costly: + ~15%)
@@ -101,7 +101,7 @@
    sn_sal  = 'data_1m_salinity_nomask'             , -1,'vosaline',  .true.  , .true., 'yearly'   , ''       , ' '
    !
    cn_dir        = './'     !  root directory for the location of the runoff files
-   ln_tsd_init   = .false.  !  Initialisation of ocean T & S with T &S input data (T) or not (F)
+   ln_tsd_init   = .true.   !  Initialisation of ocean T & S with T &S input data (T) or not (F)
    ln_tsd_tradmp = .false.  !  damping of ocean T & S toward T &S input data (T) or not (F)
 /
 !!======================================================================
@@ -124,16 +124,16 @@
 !-----------------------------------------------------------------------
 &namsbc        !   Surface Boundary Condition (surface module)
 !-----------------------------------------------------------------------
-   nn_fsbc     = 24        !  frequency of surface boundary condition computation 
+   nn_fsbc     = 3         !  frequency of surface boundary condition computation 
                            !     (also = the frequency of sea-ice model call)
    ln_ana      = .false.   !  analytical formulation                    (T => fill namsbc_ana ) 
    ln_flx      = .false.   !  flux formulation                          (T => fill namsbc_flx )
    ln_blk_clio = .false.   !  CLIO bulk formulation                     (T => fill namsbc_clio) 
    ln_blk_core = .false.   !  CORE bulk formulation                     (T => fill namsbc_core) 
    ln_blk_mfs  = .false.   !  MFS bulk formulation                      (T => fill namsbc_mfs )
-   ln_cpl      = .true.   !  Coupled formulation                       (T => fill namsbc_cpl )
+   ln_cpl      = .true.    !  Coupled formulation                       (T => fill namsbc_cpl )
    ln_apr_dyn  = .false.   !  Patm gradient added in ocean & ice Eqs.   (T => fill namsbc_apr )
-   nn_ice      = 0         !  =0 no ice boundary condition   ,
+   nn_ice      = 2         !  =0 no ice boundary condition   ,
                            !  =1 use observed ice-cover      ,
                            !  =2 ice-model used                         ("key_lim3" or "key_lim2)
    ln_dm2dc    = .false.   !  daily mean to diurnal cycle on short wave
@@ -160,11 +160,11 @@
 !-----------------------------------------------------------------------
 !              !  file name  ! frequency (hours) ! variable  ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation !
 !              !             !  (if <0  months)  !   name    !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  !
-   sn_utau     = 'utau'      ,        24         , 'OUFS',     .false.      , .true., 'yearly'  , 'weights_bic3', 'Uwnd'
-   sn_vtau     = 'vtau'      ,        24         , 'OVFS',     .false.      , .true., 'yearly'  , 'weights_bic3', 'Vwnd'
-   sn_qtot     = 'qtot'      ,        24         , 'OBEG',     .false.      , .true., 'yearly'  , 'weights_bil3', ''
-   sn_qsr      = 'qsr'       ,        24         , 'OFSG',     .false.      , .true., 'yearly'  , 'weights_bil3', ''
-   sn_emp      = 'emp'       ,        24         , 'OBWG',     .false.      , .true., 'yearly'  , 'weights_bil3', ''
+   sn_utau     = 'utau'      ,        24         , 'utau'    , .false.      , .false., 'yearly'  , ''       , ''
+   sn_vtau     = 'vtau'      ,        24         , 'vtau'    , .false.      , .false., 'yearly'  , ''       , ''
+   sn_qtot     = 'qtot'      ,        24         , 'qtot'    , .false.      , .false., 'yearly'  , ''       , ''
+   sn_qsr      = 'qsr'       ,        24         , 'qsr'     , .false.      , .false., 'yearly'  , ''       , ''
+   sn_emp      = 'emp'       ,        24         , 'emp'     , .false.      , .false., 'yearly'  , ''       , ''
 
    cn_dir      = './'      !  root directory for the location of the flux files
 /      
@@ -188,15 +188,15 @@
 !-----------------------------------------------------------------------
 !              !  file name    ! frequency (hours) ! variable  ! time interp. !  clim  ! 'yearly'/ ! weights        ! rotation !
 !              !               !  (if <0  months)  !   name    !   (logical)  !  (T/F) ! 'monthly' ! filename       ! pairing  !
-   sn_wndi     = 'uwnd10m'     ,         6         , 'U_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bic2' , 'Uwnd'
-   sn_wndj     = 'vwnd10m'     ,         6         , 'V_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bic2' , 'Vwnd'
-   sn_qsr      = 'qsw'         ,        24         , 'SWDN_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , ''
-   sn_qlw      = 'qlw'         ,        24         , 'LWDN_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , ''
-   sn_tair     = 'tair10m'     ,         6         , 'T_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , ''
-   sn_humi     = 'humi10m'     ,         6         , 'Q_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , ''
-   sn_prec     = 'precip'      ,        -1         , 'PRC_MOD1',   .false.    , .true. , 'yearly'  , 'weights_bil2' , ''
-   sn_snow     = 'snow'        ,        -1         , 'SNOW'    ,   .false.    , .true. , 'yearly'  , 'weights_bil2' , ''
-   sn_tdif     = 'taudif_core' ,        24         , 'taudif'  ,   .false.    , .true. , 'yearly'  , ''             , ''
+   sn_wndi     = 'uwnd10m'     ,         6         , 'U_10_MOD',   .false.    , .false. , 'yearly'  , 'weights_bic2' , 'Uwnd'
+   sn_wndj     = 'vwnd10m'     ,         6         , 'V_10_MOD',   .false.    , .false. , 'yearly'  , 'weights_bic2' , 'Vwnd'
+   sn_qsr      = 'qsw'         ,        24         , 'SWDN_MOD',   .false.    , .false. , 'yearly'  , 'weights_bil2' , ''
+   sn_qlw      = 'qlw'         ,        24         , 'LWDN_MOD',   .false.    , .false. , 'yearly'  , 'weights_bil2' , ''
+   sn_tair     = 'tair10m'     ,         6         , 'T_10_MOD',   .false.    , .false. , 'yearly'  , 'weights_bil2' , ''
+   sn_humi     = 'humi10m'     ,         6         , 'Q_10_MOD',   .false.    , .false. , 'yearly'  , 'weights_bil2' , ''
+   sn_prec     = 'precip'      ,        -1         , 'PRC_MOD',   .false.    , .false. , 'yearly'  , 'weights_bil2' , ''
+   sn_snow     = 'snow'        ,        -1         , 'SNOW'    ,   .false.    , .false. , 'yearly'  , 'weights_bil2' , ''
+   sn_tdif     = 'taudif_core' ,        24         , 'taudif'  ,   .false.    , .true.  , 'yearly'  , ''             , ''
 
    cn_dir      = './'      !  root directory for the location of the bulk files
    ln_2m       = .false.   !  air temperature and humidity referenced at 2m (T) instead 10m (F)
@@ -224,26 +224,39 @@
 !                    !     description       !  multiple  !    vector   !      vector          ! vector !
 !                    !                       ! categories !  reference  !    orientation       ! grids  !
 ! send
-!--- sn_snd_temp%cldes : 'oce only' or 'weighted oce and ice' or 'mixed oce-ice'
 sn_snd_temp   =       'weighted oce and ice' ,    'no'    ,     ''      ,         ''           ,   ''    
-!--- sn_snd_alb%cldes : 'none' or 'weighted ice' or 'mixed oce-ice'
-sn_snd_alb    =       'none'                 ,    'no'    ,     ''      ,         ''           ,   ''    
-!--- sn_snd_thick%cldes : 'ice and snow' or 'weighted ice and snow'
-sn_snd_thick  =       'ice and snow'         ,    'no'   ,     ''      ,         ''           ,   ''    
+sn_snd_alb    =       'weighted ice'         ,    'no'    ,     ''      ,         ''           ,   ''    
+sn_snd_thick  =       'none'                 ,    'no'   ,     ''      ,         ''           ,   ''    
 sn_snd_crt    =       'none'                 ,    'no'    , 'spherical' , 'eastward-northward' ,  'T'       
-sn_snd_co2    =       'none'                 ,    'no'    ,     ''      ,         ''           ,   ''        
+sn_snd_co2    =       'coupled'              ,    'no'    ,     ''      ,         ''           ,   ''        
 ! receive
-sn_rcv_w10m   =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_w10m   =       'none'                 ,    'no'    ,     ''      ,         ''          ,   ''    
 sn_rcv_taumod =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
-sn_rcv_tau    =       'oce and ice'          ,    'no'    , 'spherical' , 'eastward-northward',   'T'   
-sn_rcv_dqnsdt =       'none'                 ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_tau    =       'oce only'             ,    'no'    , 'cartesian' , 'eastward-northward',  'U,V'   
+sn_rcv_dqnsdt =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
 sn_rcv_qsr    =       'oce and ice'          ,    'no'    ,     ''      ,         ''          ,   ''    
 sn_rcv_qns    =       'oce and ice'          ,    'no'    ,     ''      ,         ''          ,   ''    
-sn_rcv_emp    =       'oce and ice'          ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_emp    =       'conservative'         ,    'no'    ,     ''      ,         ''          ,   ''    
 sn_rcv_rnf    =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
-sn_rcv_cal    =       'none'                 ,    'no'    ,     ''      ,         ''          ,   ''    
-sn_rcv_iceflx =       'coupled'              ,    'yes'   ,     ''      ,         ''          ,   ''    
-sn_rcv_co2    =       'none'                 ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_cal    =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
+
+!sn_snd_temp   =       'weighted oce and ice' ,    'no'    ,     ''      ,         ''           ,   ''    
+!sn_snd_alb    =       'weighted ice'         ,    'no'    ,     ''      ,         ''           ,   ''    
+!sn_snd_thick  =       'none'                 ,    'no'   ,     ''      ,         ''           ,   ''    
+!sn_snd_crt    =       'none'                 ,    'no'    , 'spherical' , 'eastward-northward' ,  'T'       
+!sn_snd_co2    =       'coupled'              ,    'no'    ,     ''      ,         ''           ,   ''        
+!! receive
+!sn_rcv_w10m   =       'none'                 ,    'no'    ,     ''      ,         ''          ,   ''    
+!sn_rcv_taumod =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
+!sn_rcv_tau    =       'oce only'             ,    'no'    , 'cartesian' , 'eastward-northward',  'U,V'   
+!sn_rcv_dqnsdt =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
+!sn_rcv_qsr    =       'oce and ice'          ,    'no'    ,     ''      ,         ''          ,   ''    
+!sn_rcv_qns    =       'oce and ice'          ,    'no'    ,     ''      ,         ''          ,   ''    
+!sn_rcv_emp    =       'conservative'         ,    'no'    ,     ''      ,         ''          ,   ''    
+!sn_rcv_rnf    =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
+!sn_rcv_cal    =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
+!sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
 /
 !-----------------------------------------------------------------------
 &namtra_qsr    !   penetrative solar radiation
@@ -267,7 +280,7 @@ sn_rcv_co2    =       'none'                 ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
 !              !  file name           ! frequency (hours) ! variable  ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation !
 !              !                      !  (if <0  months)  !   name    !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  !
-   sn_rnf      = 'runoff_core_monthly',        -1         , 'ROUT',       .true.     , .true. , 'yearly'  , 'weights_bil3.nc', ''
+   sn_rnf      = 'runoff_core_monthly',        -1         , 'sorunoff',   .true.     , .true. , 'yearly'  , ''       , ''
    sn_cnf      = 'runoff_core_monthly',        -1         , 'socoeff' ,   .true.     , .true. , 'yearly'  , ''       , ''
    sn_s_rnf    = 'runoffs'            ,        24         , 'rosaline',   .true.     , .true. , 'yearly'  , ''       , ''
    sn_t_rnf    = 'runoffs'            ,        24         , 'rotemper',   .true.     , .true. , 'yearly'  , ''       , ''
@@ -300,7 +313,7 @@ sn_rcv_co2    =       'none'                 ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
 !              !  file name  ! frequency (hours) ! variable  ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation !
 !              !             !  (if <0  months)  !   name    !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  !
-   sn_sst      = 'sst_data'  ,        -1         ,  'votemper'    ,    .true.    , .true. , 'yearly'  , ''       , ''
+   sn_sst      = 'sst_data'  ,        -1         ,  'votemper'    ,    .false.   , .false., 'yearly'  , ''       , ''
    sn_sss      = 'sss_data'  ,        -1         ,  'vosaline'    ,    .true.    , .true. , 'yearly'  , ''       , ''
 
    cn_dir      = './'      !  root directory for the location of the runoff files
@@ -488,7 +501,7 @@ sn_rcv_co2    =       'none'                 ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
 &nambbc        !   bottom temperature boundary condition
 !-----------------------------------------------------------------------
-   ln_trabbc   = .true.    !  Apply a geothermal heating at the ocean bottom
+   ln_trabbc   = .false.   !  Apply a geothermal heating at the ocean bottom
    nn_geoflx   =    1      !  geothermal heat flux: = 0 no flux 
                            !     = 1 constant flux
                            !     = 2 variable flux (read in geothermal_heating.nc in mW/m2) 
@@ -626,8 +639,7 @@ sn_rcv_co2    =       'none'                 ,    'no'    ,     ''      ,       
    ln_dynldf_hor    =  .true.   !  horizontal (geopotential)            (require "key_ldfslp" in s-coord.)
    ln_dynldf_iso    =  .false.  !  iso-neutral                          (require "key_ldfslp")
    !                       !  Coefficient
-   rn_ahm_0_lap     = 40000.    !  horizontal laplacian eddy viscosity   [m2/s]
-!   rn_ahm_0_lap     = 10000.    !  horizontal laplacian eddy viscosity   [m2/s]
+   rn_ahm_0_lap     = 10000.    !  horizontal laplacian eddy viscosity   [m2/s]
    rn_ahmb_0        =     0.    !  background eddy viscosity for ldf_iso [m2/s]
    rn_ahm_0_blp     =     0.    !  horizontal bilaplacian eddy viscosity [m4/s] 
 /
@@ -646,9 +658,8 @@ sn_rcv_co2    =       'none'                 ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
 &namzdf        !   vertical physics
 !-----------------------------------------------------------------------
-   rn_avm0     =   1.2e-4  !  vertical eddy viscosity   [m2/s]          (background Kz if not "key_zdfcst")
-   rn_avt0     =   2.5e-5  !  vertical eddy diffusivity [m2/s]          (background Kz if not "key_zdfcst")
-!   rn_avt0     =   1.2e-5  !  vertical eddy diffusivity [m2/s]          (background Kz if not "key_zdfcst")
+   rn_avm0     =   1.5e-4  !  vertical eddy viscosity   [m2/s]          (background Kz if not "key_zdfcst")
+   rn_avt0     =   1.5e-5  !  vertical eddy diffusivity [m2/s]          (background Kz if not "key_zdfcst")
    nn_avb      =    0      !  profile for background avt & avm (=1) or not (=0)
    nn_havtb    =    0      !  horizontal shape for avtb (=1) or not (=0)
    ln_zdfevd   = .true.    !  enhanced vertical diffusion (evd) (T) or not (F)
@@ -746,6 +757,7 @@ sn_rcv_co2    =       'none'                 ,    'no'    ,     ''      ,       
    rn_me       = 0.2       !  mixing efficiency 
    ln_tmx_itf  = .true.    !  ITF specific parameterisation
    rn_tfe_itf  = 1.        !  ITF tidal dissipation efficiency
+   ln_leewmx   = .true.    !  addition of Lee Wave mixing (.true.) or not (.false., default in the code)
 /
 
 !!======================================================================
@@ -814,7 +826,7 @@ sn_rcv_co2    =       'none'                 ,    'no'    ,     ''      ,       
    nn_nchunks_k=   31      !  number of chunks in k-dimension
                            !  setting nn_nchunks_k = jpk will give a chunk size of 1 in the vertical which
                            !  is optimal for postprocessing which works exclusively with horizontal slabs
-   ln_nc4zip   = .true.    !  (T) use netcdf4 chunking and compression
+   ln_nc4zip   = .false.    !  (T) use netcdf4 chunking and compression
                            !  (F) ignore chunking information and produce netcdf3-compatible files
 /
 !-----------------------------------------------------------------------
@@ -997,15 +1009,4 @@ sn_rcv_co2    =       'none'                 ,    'no'    ,     ''      ,       
     ln_trjhand  = .false.            ! Handling non linear trajectory
     nn_ittrjfrq = 20                 ! Output/input frequency
     ln_trj_spl = .false.             ! Handling trajectory at simple precision
-/
-!-----------------------------------------------------------------------
-&namsbc_cice ! Reading CICE input fields passed from AGCM/coupler
-!-----------------------------------------------------------------------
-!              !  file name  ! frequency (hours) ! variable  ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation !
-!              !             !  (if <0  months)  !   name    !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  !    
-   sn_snow   = 'snowfall_1m' ,        24         ,  'SNOW'   ,    .false.   , .true. , 'monthly' , 'weights_bil3'  , ''
-   sn_rain   = 'rainfall_1m' ,        24         ,  'RAIN'   ,    .false.   , .true. , 'monthly' , 'weights_bil3'  , ''
-   sn_sblm   = 'sublim_1m'   ,        24         ,  'sblm'   ,    .false.   , .true. , 'monthly' , 'weights_bil3'  , ''
-   sn_top1   = 'topmeltn1_1m',        24         ,  'OBEG'   ,    .false.   , .true. , 'yearly'  , 'weights_bil3'  , ''
-   sn_bot1   = 'botmeltn1_1m',        24         ,  'HSEA'   ,    .false.   , .true. , 'monthly' , 'weights_bil3'  , ''
 /

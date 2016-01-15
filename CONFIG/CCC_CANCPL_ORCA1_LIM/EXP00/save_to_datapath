@@ -18,6 +18,16 @@ case $this_host in
          ;;
 esac
 
+# If the user supplies a list of file names on the command line then the user supplied files
+# will be saved if they exist in SOURCE_DIR. Otherwise all files in flist will be saved.
+flist="namelist_ice namelist iodef.xml xmlio_server.def"
+if [ -n "$1" ]; then
+  flist="$@"
+fi
+
+# Prefix for each "saved" file name
+pfx=cancpl_orca1_lim_
+
 # The files to be saved must live in SOURCE_DIR
 # Assume SOURCE_DIR is also where this script lives
 SOURCE_DIR=$(readlink -f $(dirname $0))
@@ -25,16 +35,8 @@ SOURCE_DIR=$(readlink -f $(dirname $0))
 # Change to SOURCE_DIR so that files may be referenced without a leading pathname
 cd $SOURCE_DIR || { echo "Unable to change to directory $SOURCE_DIR"; exit 1; }
 
-# Prefix for each "saved" file name
-pfx=cancpl_dev_nemo_
-
 # The name of a temporary file
 tmpf=xxx_$$
-
-flist="ice_in namelist iodef.xml xmlio_server.def"
-if [ -n "$1" ]; then
-  flist="$@"
-fi
 
 for fname in ${flist}; do
   if [ -s $fname ]; then
@@ -47,8 +49,6 @@ for fname in ${flist}; do
              cp $fname $tmpf;
              save $tmpf ${pfx}$fname;
              release $tmpf"
-
-    # echo "## ${this_host}: rmt_cmd = $rmt_cmd"
 
     echo "Saving $fname on hadar..."
     ssh hadar 'bash -s' -- <<< $rmt_cmd || { echo "Problem executing $rmt_cmd"; exit 1; }
