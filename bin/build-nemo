@@ -246,6 +246,7 @@ if [ -z "$coupled" ]; then
   # coupled was not defined oin the command line ...define it here
   case $nemo_config in
     CCC_ORCA1_CANCPL) coupled=on ;;
+    CCC_CANCPL_ORCA1_LIM) coupled=on ;;
     *) coupled=off ;;
   esac
 fi
