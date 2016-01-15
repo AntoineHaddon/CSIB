@@ -38,7 +38,11 @@ MODULE sbcmod
    USE sbcice_lim_2     ! surface boundary condition: LIM 2.0 sea-ice model
    USE sbcice_cice      ! surface boundary condition: CICE    sea-ice model
    USE sbccpl           ! surface boundary condition: coupled florulation
+#if defined key_cancpl
+   USE cpl_cancpl, ONLY:lk_cpl      ! are we in coupled mode?
+#else
    USE cpl_oasis3, ONLY:lk_cpl      ! are we in coupled mode?
+#endif
    USE sbcssr           ! surface boundary condition: sea surface restoring
    USE sbcrnf           ! surface boundary condition: runoffs
    USE sbcfwb           ! surface boundary condition: freshwater budget
@@ -99,9 +103,9 @@ CONTAINS
 
       !                          ! overwrite namelist parameter using CPP key information
       IF( Agrif_Root() ) THEN                ! AGRIF zoom
-        IF( lk_lim2 )   nn_ice      = 2
-        IF( lk_lim3 )   nn_ice      = 3
-        IF( lk_cice )   nn_ice      = 4
+        IF( lk_lim2 .and. nn_ice /= 0 ) nn_ice = 2
+        IF( lk_lim3 .and. nn_ice /= 0 ) nn_ice = 3
+        IF( lk_cice .and. nn_ice /= 0 ) nn_ice = 4
       ENDIF
       IF( cp_cfg == 'gyre' ) THEN            ! GYRE configuration
           ln_ana      = .TRUE.   
@@ -155,8 +159,8 @@ CONTAINS
       !
       IF( ( nn_ice == 2 .OR. nn_ice ==3 ) .AND. .NOT.( ln_blk_clio .OR. ln_blk_core .OR. lk_cpl ) )   &
          &   CALL ctl_stop( 'LIM sea-ice model requires a bulk formulation or coupled configuration' )
-      IF( nn_ice == 4 .AND. .NOT.( ln_blk_core .OR. lk_cpl ) )   &
-         &   CALL ctl_stop( 'CICE sea-ice model requires ln_blk_core or lk_cpl' )
+      IF( nn_ice == 4 .AND. .NOT.( ln_blk_core .OR. lk_cpl .OR. ln_flx ) )   &
+         &   CALL ctl_stop( 'CICE sea-ice model requires ln_blk_core or lk_cpl or ln_flx' )
       IF( nn_ice == 4 .AND. ( .NOT. ( cp_cfg == 'orca' ) .OR. lk_agrif ) )   &
          &   CALL ctl_stop( 'CICE sea-ice model currently only available in a global ORCA configuration without AGRIF' )
       

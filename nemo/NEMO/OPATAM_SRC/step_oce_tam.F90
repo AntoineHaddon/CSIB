@@ -20,7 +20,11 @@ MODULE step_oce_tam
    USE sbcmod           ! surface boundary condition       (sbc     routine)
    USE sbcrnf           ! surface boundary condition: runoff variables
    USE sbccpl           ! surface boundary condition: coupled formulation (call send at end of step)
+#if defined key_cancpl
+   USE cpl_cancpl, ONLY : lk_cpl
+#else
    USE cpl_oasis3, ONLY : lk_cpl
+#endif
    USE sbctide          ! Tide initialisation
 
    USE traqsr           ! solar radiation penetration      (tra_qsr routine)

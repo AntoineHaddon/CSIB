@@ -61,6 +61,7 @@ set -o posix
 \mkdir  ${1}/MY_SRC
 \cp -R  ${2}/cpp_${2}.fcm ${1}/cpp_${1}.fcm
 \cp -R  ${2}/EXP00/*namelist* ${1}/EXP00/.
+[ -f ${2}/EXP00/ice_in ] &&  \cp -R  ${2}/EXP00/ice_in ${1}/EXP00/.
 [ -f ${2}/EXP00/AGRIF_FixedGrids.in ] &&  \cp -R  ${2}/EXP00/AGRIF_FixedGrids.in ${1}/EXP00/.
 [ -f ${2}/EXP00/iodef.xml ] &&  \cp -R  ${2}/EXP00/iodef.xml ${1}/EXP00/.
 [ -f ${2}/EXP00/xmlio_server.def ] &&  \cp -R  ${2}/EXP00/xmlio_server.def ${1}/EXP00/.
