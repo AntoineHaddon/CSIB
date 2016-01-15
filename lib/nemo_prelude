@@ -1,0 +1,967 @@
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+# NEMO prelude
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+
+# Output file names will begin with ${uxxx}_${runid}_
+  uxxx=${uxxx:=mc}
+  runid=${runid:=tcpl}
+
+# Define the nemo domain (implies node geometry for MPI)
+  nemo_jpni=${nemo_jpni:=8}
+  nemo_jpnj=${nemo_jpnj:=6}
+  nemo_jpnij=${nemo_jpnij:=48}
+
+# The name of a tar file containing the NEMO restart files
+# This must be set for the first job of a run unless nemo_from_rest = on
+# Restart files created by the submission job will have names of the form
+#     ${uxxx}_${runid}_YYYYMMDD_restart.tar
+  nemo_restart=${nemo_restart:=''}
+
+# nemo_from_rest is used to flag starting nemo from rest rather than a restart
+# If this is set "on" then the user must also supply namelist files via the
+# variables nemo_namelist and nemo_namelist_ice.
+# Either define nemo_restart or set nemo_from_rest = on but not both.
+  nemo_from_rest=${nemo_from_rest:=off}
+
+# nemo_exec identifies the nemo executable
+# This file is saved in the reastart archive.
+# If nemo_exec is not defined then the executable found in the restart will be used.
+  nemo_exec=${nemo_exec:=''}
+
+# nemo_forcing identifies the type of forcing to use
+# Currenlty the only valid values are "bulk", "flux" or "coupled"
+  nemo_forcing=${nemo_forcing:=coupled}
+
+# nemo_carbon = off means use physical ocean only
+# nemo_carbon = on  means include PISCES
+  nemo_carbon=${nemo_carbon:=off}
+
+# nemo_cmoc = off means use PISCES
+# nemo_cmoc = on means use CMOC
+  nemo_cmoc=${nemo_cmoc:=off}
+
+# Identify files containing namelist input for NEMO (namelist) and LIM or CICE (namelist_ice)
+# These namelist files are only used when starting from rest or when nemo_force_namelist = on
+# These files must be saved on DATAPATH
+  nemo_namelist=${nemo_namelist:=cancpl_dev_nemo_namelist}
+  nemo_namelist_ice=${nemo_namelist_ice:=cancpl_dev_nemo_ice_in}
+  nemo_force_namelist=${nemo_force_namelist:=off}
+
+  # Miscelaneous local definitions
+
+  # ---Start_submit_ignore_code----
+
+  stamp=`date "+%j%H%M%S"$$`
+
+  # this_host will simply be the output from uname
+  this_host=`uname -n|awk -F\. '{print \$1}' -`
+
+  # this_mach will be a known alias (or possibly the actual machine name)
+  this_mach=$this_host
+  ROUTE_SSH=''
+  case $this_mach in
+      c1*) this_mach=spica;  ROUTE_SSH='ssh spica'  ;;
+      c2*) this_mach=hadar;  ROUTE_SSH='ssh hadar'  ;;
+     ib3*) this_mach=pollux; ROUTE_SSH='ssh pollux' ;;
+   joule*) this_mach=joule;  ROUTE_SSH='ssh joule'  ;;
+  esac
+
+  # bail is a simple error exit routine
+  error_out="${JHOME:-$HOME}/.queue/error_nemo_processing_${runid}_${this_host}_$stamp"
+  [ -z "$error_out" ] || rm -f $error_out
+  bail_prefix="nemo prelude"
+  bail(){
+    echo `date`" $this_host $runid --- ${bail_prefix}: $*"
+    echo `date`" $this_host $runid --- ${bail_prefix}: $*" >>$error_out
+    [ -n "$model" ] && echo `date`" $this_host $runid --- ${bail_prefix}: $*" >>haltit
+    exit 1
+  }
+
+  # Name a file to contain debugging info
+  # This file will survive even when stdout goes missing
+  dbg_out="${JHOME:-$HOME}/.queue/dbg_xnemo_${runid}_${this_host}_$stamp"
+  [ -z "$dbg_out" ] || rm -f $dbg_out
+
+  ToF(){
+    #   usage: ToF var_name
+    # purpose: Possibly reset the value of var_name to "0" (false) or "1" (true)
+    #          If var_name is null or has a value of "off" or "no" then reset to "0"
+    #          If var_name has a value of "on" or "yes" then reset to "1"
+    #          Otherwise return with var_name unchanged
+    [ -z "$1" ] && bail "ToF requires a variable name as an argument"
+    eval ToF_var\=\$$1
+    XXX=`echo $ToF_var|sed 's/ //g'`
+    eval ToF_var\=$XXX
+    if [ -n "$ToF_var" ]; then
+      if   [ "$ToF_var" = 'on'  ]; then eval ToF_var\=1
+      elif [ "$ToF_var" = 'off' ]; then eval ToF_var\=0
+      elif [ "$ToF_var" = 'yes' ]; then eval ToF_var\=1
+      elif [ "$ToF_var" = 'no'  ]; then eval ToF_var\=0
+      else
+        eval ToF_var\=\$$1
+      fi
+    else
+      eval ToF_var\=0
+    fi
+    eval $1=$ToF_var
+  }
+
+  # mod_nl is used to change namelist values for the current job
+  mod_nl(){
+    # Modify a text file containing namelists
+    # Each variable definition in this input namelist file must be on a line by itself
+    # and be the of the form var =.* which will be replaced with var = value
+    #
+    # Usage: mod_nl namelist_file_in var1 [var2 ...]
+    #   namelist_file_in  ...is an existing text file containing the namelists
+    #   var1 var2 ...     ...names of variables to be changed
+    #                        these variables must be defined in the current environment
+    #
+    [ -z "$1" ] && bail "mod_nl requires a namelist file as the first arg"
+    [ -z "$2" ] && bail "mod_nl requires at least 1 variable name on the command line"
+    nlfile=$1
+    [ ! -s $nlfile ] && bail "mod_nl input namelist file --> $nlfile <-- is missing or empty"
+    shift
+
+    # Create a backup copy of the input namelist file, overwriting any existing backup
+    cp -f $nlfile ${nlfile}.bak
+
+    # Write a sed program to make the requested substitutions
+    sprog=mod_nl_cmd
+    rm -f $sprog
+    touch $sprog
+    for var in $*; do
+      ischar=0
+      # This assumes the nemo naming convention (char variables start with "c")
+      [ x`echo $var|sed -n '/^ *c/p'` != x ] && ischar=1
+      # Any variable name beginning with _char_ is assumed to contain a string value
+      # The leading _char_ prefix is removed from this name before further processing
+      if [ x`echo $var|sed -n '/^ *_char_/p'` != x ]; then
+        ischar=1
+        var=`echo $var|sed 's/^_char_//'`
+      fi
+      eval val=\$$var
+      [ -z "$val" ] && bail "mod_nl $var is not defined or null"
+      if [ $ischar -eq 1 ]; then
+        # This is a character variable that needs to be quoted
+        vsub='s/^ *'$var' *=.*/'"  ${var} = \"$val\""'/'
+      else
+        vsub='s/^ *'$var' *=.*/'"  ${var} = $val"'/'
+      fi
+      # Add this command to the file
+      # Note, the quotes are required to preserve white space
+      echo "$vsub" >> $sprog
+
+      # Echo the changes to stdout (useful for debugging runs)
+      echo "${nlfile}: RESET $var = $val"
+    done
+
+    # Make the substitutions in situ, overwriting the input file
+    sed -f $sprog $nlfile > mod_nl_tmp
+    mv mod_nl_tmp $nlfile
+    rm $sprog
+  }
+
+  days_in_month() {
+    # Determine the number of days in a given month (assuming 365 day year)
+    [ -z "$1" ] && bail "--> days_in_month <-- requires an integer as the first arg"
+    case $1 in
+      1|01) days_this_month=31 ;;
+      2|02) days_this_month=28 ;;
+      3|03) days_this_month=31 ;;
+      4|04) days_this_month=30 ;;
+      5|05) days_this_month=31 ;;
+      6|06) days_this_month=30 ;;
+      7|07) days_this_month=31 ;;
+      8|08) days_this_month=31 ;;
+      9|09) days_this_month=30 ;;
+        10) days_this_month=31 ;;
+        11) days_this_month=30 ;;
+        12) days_this_month=31 ;;
+         *) days_this_month=0
+            bail "month = $1 is out of range" ;;
+    esac
+  }
+
+  # These variables are set when the job string is created
+  previous_year=${previous_year:=NotSet}
+  previous_month=${previous_month:=NotSet}
+  current_year=${current_year:=NotSet}
+  current_month=${current_month:=NotSet}
+  next_year=${next_year:=NotSet}
+  next_month=${next_month:=NotSet}
+  run_start_year=${run_start_year:=NotSet}
+  run_start_month=${run_start_month:=NotSet}
+  run_stop_year=${run_stop_year:=NotSet}
+  run_stop_month=${run_stop_month:=NotSet}
+
+  export previous_year previous_month current_year current_month next_year next_month
+
+  # This invocation of make_file_name_list will process the *_year and *_months
+  # variables defined above and output a file containing definitions for
+  # start_year, start_mon, stop_year, stop_mon
+  tmp_file_list="nemo_date_list_${stamp}"
+  make_file_name_list --dates_only $tmp_file_list >>$error_out 2>&1 ||
+    bail "Problem in make_file_name_list --dates_only $tmp_file_list"
+  rm -f $error_out
+
+  # Verify that the output list is not empty
+  [ ! -s "$tmp_file_list" ] && bail "Unable to create file list"
+
+  # A file list was created ...source it
+  # This will add the following variables to the current envoronment
+  #   start_year, start_mon, stop_year, stop_mon, days_in_job
+  : ; . $tmp_file_list
+  rm -f $tmp_file_list
+
+  # Reformat start_year and stop_year to match nemo's 4 digits.
+  start_year=`echo $start_year|awk -F':' '{printf "%4.4d",$1}' -`
+  stop_year=`echo $stop_year|awk -F':' '{printf "%4.4d",$1}' -`
+
+  # set the intial year year_init for cice if not using restart
+  year_init=${cice_year_init:=$start_year}
+
+  # Determine run start and stop dates in YYYYMMDD format
+  run_start_day=1
+  run_start_date=`echo $run_start_year $run_start_month $run_start_day|\
+                   awk '{printf "%4.4d%2.2d%2.2d",$1,$2,$3}' -`
+  days_in_month $run_stop_month
+  run_stop_day=$days_this_month
+  run_stop_date=`echo $run_stop_year $run_stop_month $run_stop_day|\
+                   awk '{printf "%4.4d%2.2d%2.2d",$1,$2,$3}' -`
+
+  # refdate is a reference date used to calculate first time step
+  # given the start_year and start_mon for the current job
+  refdate="${run_start_year}:${run_start_month}"
+
+  # Determine the number of days since the reference date (start of run)
+  # The reference date is normally define by run_start_(year/month)
+  # but may be overridden by the user
+  # This will be the number of days to the start of start_(year/mon)
+  days_since_run_start=`days_since --quiet --ref="$refdate" "${start_year}:${start_mon}" ||
+                        bail "Error in days_since calculating days_since_run_start."`
+
+  # Currently start_day is always 1
+  start_day=1
+
+  # Determine the number of days in the last month of the run
+  case $stop_mon in
+    1|01) stop_day=31 ;;
+    2|02) stop_day=28 ;;
+    3|03) stop_day=31 ;;
+    4|04) stop_day=30 ;;
+    5|05) stop_day=31 ;;
+    6|06) stop_day=30 ;;
+    7|07) stop_day=31 ;;
+    8|08) stop_day=31 ;;
+    9|09) stop_day=30 ;;
+      10) stop_day=31 ;;
+      11) stop_day=30 ;;
+      12) stop_day=31 ;;
+       *) bail "stop_mon=$stop_mon is out of range" ;;
+  esac
+
+  # First and last calendar date YYYYMMDD determined from user input start/stop
+  start_date=`echo $start_year $start_mon $start_day|awk '{printf "%4.4d%2.2d%2.2d",$1,$2,$3}' -`
+  stop_date=`echo $stop_year $stop_mon $stop_day|awk '{printf "%4.4d%2.2d%2.2d",$1,$2,$3}' -`
+ 
+  nemo_start_year=$start_year
+  nemo_start_mon=$start_mon
+  nemo_start_day=$start_day
+  nemo_stop_year=$stop_year
+  nemo_stop_mon=$stop_mon
+  nemo_stop_day=$stop_day
+  nemo_start_date=$start_date
+  nemo_stop_date=$stop_date
+
+  # Determine the year and month of the previous restart, if any
+  if [ $start_mon -eq 1 ]; then
+    rs_mon=12
+    if [ $start_year -eq 1 ]; then
+      rs_year=0
+    else
+      rs_year=`expr $start_year - 1`
+    fi
+  else
+    rs_mon=`expr $start_mon - 1`
+    rs_year=$start_year
+  fi
+
+  # Determine the number of days in the last month of the previous restart
+  case $rs_mon in
+    1|01) rs_day=31 ;;
+    2|02) rs_day=28 ;;
+    3|03) rs_day=31 ;;
+    4|04) rs_day=30 ;;
+    5|05) rs_day=31 ;;
+    6|06) rs_day=30 ;;
+    7|07) rs_day=31 ;;
+    8|08) rs_day=31 ;;
+    9|09) rs_day=30 ;;
+      10) rs_day=31 ;;
+      11) rs_day=30 ;;
+      12) rs_day=31 ;;
+       *) bail "rs_mon=$rs_mon is out of range" ;;
+  esac
+
+  # Calendar date (YYYYMMDD) for the previous restart
+  rs_date=`echo $rs_year $rs_mon $rs_day|awk '{printf "%4.4d%2.2d%2.2d",$1,$2,$3}' -`
+
+  if [ "$run_start_date" = "$start_date" ]; then
+    # This is the first job in a longer run
+    first_job_in_run=1
+  else
+    # This is not the first job in the run
+    first_job_in_run=0
+    # Disallow starting from rest (this may need to be revistited in the future)
+    nemo_from_rest=off
+  fi
+
+  # Restart file name
+  if [ -n "$model" ]; then
+    # Assume this script is running within gcmjcl
+    rs_year_mon=`echo $rs_year $rs_mon|awk '{printf "%3.3d_m%2.2d",$1,$2}' -`
+    rs_sfx=nemors.tar
+    # rs_sfx=`echo $rs_day|awk '{printf "d%2.2d_nemors.tar",$1}' -`
+    if [ $first_job_in_run -eq 1 ]; then
+      if [ -n "$start" ]; then
+        rs_file=${start}$rs_sfx
+      else
+        rs_file=${uxxx}_${runid}_${rs_year_mon}_$rs_sfx
+      fi
+    else
+      rs_file=${uxxx}_${runid}_${rs_year_mon}_$rs_sfx
+    fi
+  else
+    # NEMO stand alone mode of operation
+    rs_file=${uxxx}_${runid}_${rs_date}_restart.tar
+  fi
+  # nemo_rs is the restart file name that will be used below
+  # It will be the same as rs_file unless nemo_restart is defined
+  nemo_rs=${nemo_restart:-$rs_file}
+
+  # time step for the dynamics (and tracer if nn_acc=0)
+  rn_rdt=${nemo_rn_rdt:=1800.}
+
+  # time step for the cice thermodynamics dt
+  dt=${cice_dt:=1800.}
+
+  # Number of time steps per day
+  steps_per_day=`echo $rn_rdt|awk '{s=86400./$1; printf "%d",s}' -`
+
+  # Total number of time steps in the current job
+  [ -z "$days_in_job" ] && bail "days_in_job must be defined"
+  steps_in_job=`echo $steps_per_day $days_in_job|awk '{printf "%d",$1*$2}' -`
+
+  # The number of CICE time steps for each call to cice (used by cice)
+  npt=${cice_npt:=1}
+
+  # The number of NEMO time steps between calls to cice (used by NEMO)
+  nn_fsbc=${nemo_nn_fsbc:=1}
+
+#xxx  [ $nn_fsbc -ne $npt ] && bail "nn_fsbc = $nn_fsbc and npt = $npt must be equal"
+
+  # nemo_carbon = off means use physical ocean only
+  # nemo_carbon = on  means include PISCES
+  nemo_carbon=${nemo_carbon:-off}
+  ToF nemo_carbon
+
+  # nemo_cmoc = off means use PISCES
+  # nemo_cmoc = on means use CMOC
+  nemo_cmoc=${nemo_cmoc:-off}
+  ToF nemo_cmoc
+
+  # Identify the type of forcing to use
+  nemo_forcing=${nemo_forcing:-coupled}
+
+  # The following parameters are used by nemo to define restart file names
+
+  # The job name
+  cn_exp=$runid
+
+  # Part of the input ocean restart name (default restart)
+  # The input ocean restart file name will be ${cn_ocerst_in}_MMMM.nc
+  # where MMMM is the MPI task number (I4.4)
+  cn_ocerst_in="restart"
+
+  # Part of output ocean restart name (default restart)
+  # The output ocean restart file name will be ${cn_exp}_NNNNNNNN_${cn_ocerst_out}_MMMM.nc
+  # where NNNNNNNN is the time step (I8.8) and MMMM is the MPI task number (I4.4)
+  cn_ocerst_out="restart"
+
+  # Part of input ice restart name (default restart_ice_in)
+  # The input ice restart file name will be ${cn_icerst_in}_MMMM.nc
+  # where MMMM is the MPI task number (I4.4)
+  cn_icerst_in="restart_ice_in"
+
+  # Part of output ice restart name (default restart_ice)
+  # The output ice restart file name will be ${cn_exp}_NNNNNNNN_${cn_icerst_out}_NNNN.nc
+  # where NNNNNNNN is the time step (I8.8) and MMMM is the MPI task number (I4.4)
+  cn_icerst_out="restart_ice"
+
+  # Part of input pisces restart name (default restart_trc_in)
+  # The input pisces restart file name will be ${cn_trcrst_in}_MMMM.nc
+  # where MMMM is the MPI task number (I4.4)
+  cn_trcrst_in="restart_trc_in"
+
+  # Part of output pisces restart name (default restart_trc)
+  # The output pisces restart file name will be ${cn_exp}_NNNNNNNN_${cn_trcrst_out}_NNNN.nc
+  # where NNNNNNNN is the time step (I8.8) and MMMM is the MPI task number (I4.4)
+  cn_trcrst_out="restart_trc"
+
+  # Define nn_ice which identifies the ice model used in NEMO
+  nn_ice=${nemo_nn_ice:=0}
+  case $nn_ice in
+    0) ;; # no ice boundary condition
+    1) ;; # observed ice cover
+    2) ;; # LIM2 ice-model
+    3) ;; # LIM3 ice-model
+    4) ;; # CICE ice-model
+    *) bail "Invalid value for nn_ice = $nn_ice" ;;
+  esac
+
+  # Ignore missing ice restart files when with_ice = off
+  if [ $nn_ice -ge 2 ]; then
+    with_ice=on
+  else
+    with_ice=off
+  fi
+  ToF with_ice
+
+  # Configure namelist parameters etc appropriate for continuing from a restart or not
+  [ -z "$nemo_from_rest" ] && bail "nemo_from_rest is not defined"
+  ToF nemo_from_rest
+  if [ $nemo_from_rest -eq 1 ]; then
+    #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+    #=#=#=#    Start from rest    #=#=#=#
+    #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+    ln_rstart=.false.
+    ln_rsttr=.false.
+    # restart (cice)
+    restart=${cice_restart:=.false.}
+
+    [ -n "$nemo_restart" ] &&
+      bail "nemo_from_rest = on and nemo_restart = ${nemo_restart}. These are mutually exclusive."
+    echo "###############################"
+    echo "###   Starting from rest.   ###"
+    echo "###############################"
+
+    # job number
+    nn_no=1
+
+    # first time step
+    # This will correspond with the beginning of ${start_year}:${start_mon}
+    [ -z "$days_since_run_start" ] && bail "Cannot determine days_since_run_start"
+    nn_it000=`echo $steps_per_day $days_since_run_start|awk '{printf "%d",1+$1*$2}' -`
+    istep0=0
+
+    # Initial date
+    prev_date0="010101"
+
+    # Use input namelist files from a user supplied location
+
+    # The input ocean namelist is hard coded as "namelist" in nemo source
+    [ -z "$nemo_namelist" ] && bail "nemo_namelist is not defined"
+    access namelist $nemo_namelist
+
+    # The input ice namelist is hard coded in nemo source
+    [ -z "$nemo_namelist_ice" ] && bail "nemo_namelist_ice is not defined"
+    if [ $nn_ice -eq 4 ]; then
+      # Using CICE
+      access ice_in $nemo_namelist_ice nocp=no na
+    else
+      access namelist_ice $nemo_namelist_ice nocp=no na
+    fi
+
+    if [ $nemo_carbon -eq 1 ]; then
+      # The input top namelist is hard coded as "namelist_top" in nemo source
+      [ -z "$nemo_namelist_top" ] && bail "nemo_namelist_top is not defined"
+      access namelist_top $nemo_namelist_top
+
+      # The input pisces namelist is hard coded as "namelist_pisces" in nemo source
+      [ -z "$nemo_namelist_pisces" ] && bail "nemo_namelist_pisces is not defined"
+      access namelist_pisces $nemo_namelist_pisces
+        
+      if [ $nemo_cmoc -eq 1 ]; then
+        # The input cmoc namelist is hard coded as "namelist_pisces" in nemo source
+        [ -z "$nemo_namelist_cmoc" ] && bail "nemo_namelist_cmoc is not defined"
+        access namelist_cmoc $nemo_namelist_cmoc
+      fi
+    fi
+
+    if [ ! -x nemo.exe ]; then
+      # Get a local copy of the NEMO executable
+      [ -z "$nemo_exec" ] && bail "nemo_exec must be defined."
+      access nemo.exe $nemo_exec nocp=no
+    fi
+
+  else
+    #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+    #=#=#=#   Start from a restart  #=#=#=#
+    #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+    ln_rstart=.true.
+    ln_rsttr=.true.
+    restart=${cice_restart:=.true.}
+
+    # Extract restart and namelist files from the tar archive
+    [ -z "$nemo_rs" ] && bail "No restart file name provided. Define nemo_restart."
+    echo "##########################"
+    echo "###   Restarting from file $nemo_rs"
+    echo "##########################"
+    rm -f RESTART_ARC
+    access RESTART_ARC $nemo_rs
+    tar xf RESTART_ARC || bail "Cannot extract files from $nemo_rs"
+    release RESTART_ARC
+
+    # Rename each task specific output restart file from the previous run
+    # as the equivalent task specific input restart for the current run
+
+    # When starting a new run from an existing restart the ocean and ice restart
+    # file names found in the restart tar file will be prefixed with the runid used
+    # in the previous run.
+
+    # Ocean restart files
+    found_rs=`(ls -1 *_${cn_ocerst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
+    [ -z "$found_rs" ] && bail "No ocean restart files were found in $nemo_rs"
+    rm -f input_ocn_restart_file_names
+    touch input_ocn_restart_file_names
+    for rsfile in $found_rs; do
+      sfx=`echo $rsfile|sed 's/^.*\(_[0-9][0-9][0-9][0-9].nc\).*$/\1/'`
+      mv $rsfile ${cn_ocerst_in}$sfx
+      echo "${cn_ocerst_in}$sfx" >> input_ocn_restart_file_names
+    done
+
+    # Ice restart files
+    rm -f input_ice_restart_file_names
+    touch input_ice_restart_file_names
+    if [ $nn_ice -eq 4 ]; then
+      # The ice model is CICE
+      # nemo_cice_pointer_file is the value of the parameter pointer_file in the CICE namelist setup_nml
+      # and is initialized as "ice.restart_file" in CICE source code
+      nemo_cice_pointer_file=${nemo_cice_pointer_file:=ice.restart_file}
+      [ ! -s "$nemo_cice_pointer_file" ] && bail "CICE pointer file $nemo_cice_pointer_file is missinmg or empty"
+      cicerslist=`cat $nemo_cice_pointer_file | xargs`
+      [ -z `echo $cicerslist|sed 's/ *//g'` ] && bail "Problem reading CICE restart pointer file $nemo_cice_pointer_file"
+      found_rs=`(ls -1 $cicerslist || : ) 2>/dev/null`
+      [ -z "$found_rs" ] && bail "No CICE restart files were found in $nemo_rs"
+    else
+      found_rs=`(ls -1 *_${cn_icerst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
+      if [ -z "$found_rs" ]; then
+        [ $nn_ice -ge 2 ] && bail "No ice restart files were found in $nemo_rs"
+        with_ice=off
+      else
+        for rsfile in $found_rs; do
+          sfx=`echo $rsfile|sed 's/^.*\(_[0-9][0-9][0-9][0-9].nc\).*$/\1/'`
+          mv $rsfile ${cn_icerst_in}$sfx
+          echo "${cn_icerst_in}$sfx" >> input_ice_restart_file_names
+        done
+      fi
+    fi
+
+    if [ $nemo_carbon -eq 1 ]; then
+      # Pisces restart files
+      found_rs=`(ls -1 *_${cn_trcrst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
+      [ -z "$found_rs" ] && bail "No Pisces restart files were found in $nemo_rs"
+      rm -f input_trc_restart_file_names
+      touch input_trc_restart_file_names
+      for rsfile in $found_rs; do
+        sfx=`echo $rsfile|sed 's/^.*\(_[0-9][0-9][0-9][0-9].nc\).*$/\1/'`
+        mv $rsfile ${cn_trcrst_in}$sfx
+        echo "${cn_trcrst_in}$sfx" >> input_trc_restart_file_names
+      done
+    fi
+
+    # Get a local copy of the NEMO executable
+    rm -f nemo.exe
+    if [ -z "$nemo_exec" ]; then
+      # If nemo_exec is not defined then use the executable found in the restart archive
+      [ ! -s rs_nemo_exec ] && bail "rs_nemo_exec is missing from $nemo_rs"
+      mv rs_nemo_exec nemo.exe
+    else
+      # Otherwise use the executable pointed to by nemo_exec
+      access nemo.exe $nemo_exec nocp=no
+    fi
+    [ ! -s nemo.exe ] && bail "Unable to find nemo executable."
+
+    ToF nemo_force_namelist
+    if [ $nemo_force_namelist -eq 1 ]; then
+      # Override the namelist files found in the restart archive with
+      # files supplied by the user
+
+      # The input ocean namelist is hard coded as "namelist" in nemo source
+      [ -z "$nemo_namelist" ] && bail "nemo_namelist is not defined"
+      rm -f namelist
+      access namelist $nemo_namelist nocp=no
+
+      # The input ice namelist is hard coded in nemo source
+      [ -z "$nemo_namelist_ice" ] && bail "nemo_namelist_ice is not defined"
+      if [ $nn_ice -eq 4 ]; then
+        # Using CICE
+        rm -f ice_in
+        access ice_in $nemo_namelist_ice nocp=no na
+      else
+        rm -f namelist_ice
+        access namelist_ice $nemo_namelist_ice nocp=no na
+      fi
+
+      if [ $nemo_carbon -eq 1 ]; then
+        # The input top namelist is hard coded as "namelist_top" in nemo source
+        [ -z "$nemo_namelist_top" ] && bail "nemo_namelist_top is not defined"
+        rm -f namelist_top
+        access namelist_top $nemo_namelist_top nocp=no
+
+        # The input pisces namelist is hard coded as "namelist_pisces" in nemo source
+        [ -z "$nemo_namelist_pisces" ] && bail "nemo_namelist_pisces is not defined"
+        rm -f namelist_pisces
+        access namelist_pisces $nemo_namelist_pisces nocp=no
+        
+        if [ $nemo_cmoc -eq 1 ]; then
+          # The input cmoc namelist is hard coded as "namelist_cmoc" in nemo source
+          [ -z "$nemo_namelist_cmoc" ] && bail "nemo_namelist_cmoc is not defined"
+          rm -f namelist_cmoc
+          access namelist_cmoc $nemo_namelist_cmoc nocp=no
+        fi
+      fi
+    else
+      # Use the namelist files found in the restart archive
+      [ ! -s rs_namelist ]     && bail "Missing rs_namelist from $nemo_rs"
+
+      if [ $nn_ice -eq 4 ]; then
+        # Using CICE
+        [ ! -s rs_ice_in ] && bail "Missing rs_ice_in from $nemo_rs"
+      else
+        [ ! -s rs_namelist_ice ] && bail "Missing rs_namelist_ice from $nemo_rs"
+      fi
+
+      if [ $nemo_carbon -eq 1 ]; then
+        [ ! -s rs_namelist_top ]    && bail "Missing rs_namelist_top from $nemo_rs"
+        [ ! -s rs_namelist_pisces ] && bail "Missing rs_namelist_pisces from $nemo_rs"
+
+        if [ $nemo_cmoc -eq 1 ]; then
+          [ ! -s rs_namelist_cmoc ] && bail "Missing rs_namelist_cmoc from $nemo_rs"
+        fi
+      fi
+
+      # The input ocean namelist is hard coded as "namelist" in nemo source
+      cp -f rs_namelist namelist
+
+      # The input ice namelist is hard coded as "namelist_ice" in nemo source
+      if [ $nn_ice -eq 4 ]; then
+        # Using CICE
+        cp -f rs_ice_in ice_in
+      else
+        cp -f rs_namelist_ice namelist_ice
+      fi
+
+      if [ $nemo_carbon -eq 1 ]; then
+        # The input top namelist is hard coded as "namelist_top" in nemo source
+        cp -f rs_namelist_top namelist_top
+
+        # The input pisces namelist is hard coded as "namelist_pisces" in nemo source
+        cp -f rs_namelist_pisces namelist_pisces
+
+        if [ $nemo_cmoc -eq 1 ]; then
+          # The input cmoc namelist is hard coded as "namelist_cmoc" in nemo source
+          cp -f rs_namelist_cmoc namelist_cmoc
+        fi
+      fi
+    fi
+
+    # job number
+    # Increment the job number from the previous namelist file
+    prev_no=`sed -n '/^ *nn_no *=/p' rs_namelist|sed 's/^.*= *\([^ \t\!]*\).*/\1/'`
+    nn_no=`expr $prev_no + 1`
+
+    # Current beginning time step
+    # get this from the time.step file that was saved in the restart
+    prev_itend=`cat rs_time.step`
+    # Time step at the end of the previous run (required by CICE)
+    istep0=$prev_itend
+    nn_it000=`expr $prev_itend + 1`
+
+    # Date stamp from the previous restart
+    # Increment the job number from the previous namelist file
+    prev_date0=`sed -n '/^ *nn_date0 *=/p' rs_namelist|sed 's/^.*= *\([^ \t\!]*\).*/\1/'`
+  fi
+
+  if [ -n "$model" ]; then
+    # Assume this script is running within gcmjcl
+    if [ -x nemo.exe ]; then
+      # Save the nemo executable to DATAPATH
+      access OLDnemo.exe ${model}nemo.exe na
+      save nemo.exe ${model}nemo.exe
+      delete OLDnemo.exe na
+    fi
+  fi
+
+  # The user may override the initial time step value by setting nemo_nn_it000
+  [ -n "$nemo_nn_it000" ] && nn_it000=$nemo_nn_it000
+
+  # Always use nn_it000 and nn_date0 from the namelist file
+  #   nn_rstctl is restart control; activated only if ln_rstart = T
+  #     = 0 nn_date0 read in namelist ; nn_it000 : read in namelist
+  #     = 1 nn_date0 read in namelist ; nn_it000 : check consistancy between namelist and restart
+  #     = 2 nn_date0 read in restart  ; nn_it000 : check consistancy between namelist and restart
+  nn_rstctl=0
+
+  # last time step
+  # This will correspond with the end of ${stop_year}:${stop_mon}
+  nn_itend=`echo $nn_it000 $steps_in_job|awk '{printf "%d",$1+$2-1}' -`
+
+  # initial calendar date yymmdd
+  nn_date0=`echo $start_year $start_mon $start_day|awk '{printf "%2.2d%2.2d%2.2d",$1,$2,$3}' -`
+
+  # Leap year calendar (1) or not (0)
+  nn_leapy=0
+
+  # DY, 02/04/2015
+  # set use_leap_years for cice
+  if [ $nn_leapy -eq 1 ]; then
+    use_leap_years=.true.
+  else
+    use_leap_years=.false.
+    days_per_year=365
+  fi    
+  # DY, 02/04/2015
+
+  # output the initial state (1) or not (0)
+  nn_istate=0
+
+  # frequency of creation of a restart file (modulo referenced to 1)
+  nn_stock=$nn_itend
+
+  # frequency of write in the output file (modulo referenced to nn_it000)
+  nn_write=$steps_in_job
+
+  # DIMG file format: 1 file for all processors (F) or by processor (T)
+  ln_dimgnnn=.false.
+
+  # mask land points in NetCDF outputs (costly: + ~15%)
+  ln_mskland=.false.
+
+  # clobber (overwrite) an existing file
+  ln_clobber=.false.
+
+  # chunksize (bytes) for NetCDF file (works only with iom_nf90 routines)
+  nn_chunksz=0
+
+  ###### "nammpp_dyndist" Namelist parameters #####
+  ###### Massively Parallel Distribution for AGRIF zoom ("key_agrif" && "key_mpp_dyndist")
+
+  # jpni  number of processors following i
+  jpni=$nemo_jpni
+
+  # jpnj  number of processors following j
+  jpnj=$nemo_jpnj
+
+  # jpnij number of local domains
+  jpnij=$nemo_jpnij
+
+  # nprocs is required by CICE
+  nprocs=$nemo_jpnij
+
+  # &namctl        #  Control prints & Benchmark
+  # Set ln_ctl = T and nn_print = 1 to get debugging output
+  # Set ln_ctl = F and nn_print = 0 to get normal output
+  ln_ctl=${nemo_ln_ctl:=.false.}     #  toggles control print (expensive)
+  nn_print=${nemo_nn_print:=0}       #  level of print (0 no extra print)
+
+  # Runoff
+  ln_rnf=${nemo_ln_rnf:=.true.}
+
+  # &namtsd    !   data : Temperature  & Salinity
+  # ln_tsd_init flags initialization of ocean T & S with T & S input data (T) or not (F)
+  ln_tsd_init=${nemo_ln_tsd_init:=.true.}
+
+  runtype=${cice_runtype:=continue}
+  ice_ic=${cice_ice_ic:=none}
+
+  # Modify specified parameter values in the input ocean namelist
+  mod_nl namelist nn_it000 nn_itend nn_stock nn_write jpni jpnj jpnij \
+    rn_rdt cn_exp nn_date0 ln_rstart nn_rstctl nn_no cn_ocerst_in cn_ocerst_out \
+    ln_ctl nn_print nn_ice ln_rnf ln_tsd_init nn_fsbc
+
+  # Modify specified parameter values in the namelist read by the ice module
+  # NOTE: If character variables do not follow the NEMO naming convention (that their names begin with the letter "c")
+  #       then these variable names must be prefixed with "_char_" on the mod_nl command line below
+  [ -s namelist_ice ] && mod_nl namelist_ice cn_icerst_in cn_icerst_out
+  [ -s ice_in ] && mod_nl ice_in days_per_year use_leap_years year_init istep0 dt npt restart nprocs _char_runtype _char_ice_ic
+
+  # Modify the input top namelist
+  if [ $nemo_carbon -eq 1 ]; then
+    mod_nl namelist_top ln_rsttr cn_trcrst_in cn_trcrst_out
+  fi
+
+  # Access files required to run NEMO
+
+  orca_grid_info="nemo3.4.1_orca1_mesh_mask_ngr.nc"
+
+  nemo_iodef=cancpl_dev_nemo_iodef.xml
+  nemo_xmlio_server_def=cancpl_dev_nemo_xmlio_server.def
+  nemo_ahmcoef=nemo_3.4_orca1_ahmcoef
+  nemo_coordinates=nemo_3.4_orca1_coordinates_ukorca1.nc
+  nemo_bathy_meter=nemo_3.4_orca1_bathy_meter_050308_ukmo.nc
+  nemo_mask_itf=nemo_3.4_orca1_mask_itf_orca1_new.nc
+  nemo_M2rowdrg=nemo_3.4_orca1_m2rowdrg_r1_modif.nc
+  nemo_K1rowdrg=nemo_3.4_orca1_k1rowdrg_r1_modif.nc
+  nemo_geothermal_heating=nemo_3.3_orca2_geothermal_heating.nc
+  nemo_runoff_core_monthly=nemo_3.4_orca1_rout_socoeff_month_r1i1p1_1979-2005-mean2.nc
+  nemo_sst_data=nemo_3.4_orca1_sst_1m_orca1.nc
+  nemo_sss_data=nemo_3.4_orca1_sss_1m_orca1.nc
+  nemo_chlorophyll=nemo_3.4_orca1_chlorophyll-orca1_1m.nc
+  nemo_subbasins=nemo_3.4_orca1_basinmask_050308_ukmo_modified.nc
+
+  [ -s iodef.xml ]              || access iodef.xml              $nemo_iodef
+  [ -s xmlio_server.def ]       || access xmlio_server.def       $nemo_xmlio_server_def
+  [ -s ahmcoef ]                || access ahmcoef                $nemo_ahmcoef
+  [ -s coordinates.nc ]         || access coordinates.nc         $nemo_coordinates
+  [ -s bathy_meter.nc ]         || access bathy_meter.nc         $nemo_bathy_meter
+  [ -s mask_itf.nc ]            || access mask_itf.nc            $nemo_mask_itf
+  [ -s M2rowdrg.nc ]            || access M2rowdrg.nc            $nemo_M2rowdrg
+  [ -s K1rowdrg.nc ]            || access K1rowdrg.nc            $nemo_K1rowdrg
+  [ -s geothermal_heating.nc ]  || access geothermal_heating.nc  $nemo_geothermal_heating
+  [ -s runoff_core_monthly.nc ] || access runoff_core_monthly.nc $nemo_runoff_core_monthly
+  [ -s sss_data.nc ]            || access sss_data.nc            $nemo_sss_data
+  [ -s sst_data.nc ]            || access sst_data.nc            $nemo_sst_data
+  [ -s chlorophyll.nc ]         || access chlorophyll.nc         $nemo_chlorophyll
+  [ -s subbasins.nc ]           || access subbasins.nc           $nemo_subbasins
+
+  # CICE related
+  nemo_cice_grid=nemo_3.4.1_orca1_cice_tgraham_grid.nc
+  nemo_cice_kmt=nemo_3.4.1_orca1_cice_tgraham_kmt.nc
+
+  [ -s grid ] || access grid  $nemo_cice_grid
+  [ -s kmt ]  || access kmt   $nemo_cice_kmt
+
+  nemo_data_1m_potential_temperature_nomask=uncs_canesm2_iga_to_orca1_data_thetao_nomask.nc
+  nemo_data_1m_salinity_nomask=uncs_canesm2_iga_to_orca1_data_so_nomask.nc
+#  nemo_data_1m_potential_temperature_nomask=nemo_3.4_orca1_potemp_1m_z46_nomask.nc
+#  nemo_data_1m_salinity_nomask=nemo_3.4_orca1_salin_1m_z46_nomask.nc
+
+  [ -s data_1m_potential_temperature_nomask.nc ] || access data_1m_potential_temperature_nomask.nc $nemo_data_1m_potential_temperature_nomask
+  [ -s data_1m_salinity_nomask.nc ]              || access data_1m_salinity_nomask.nc              $nemo_data_1m_salinity_nomask
+
+  nemo_t=nemo_3.4_orca1_t_10.15june2009.nc
+  nemo_u=nemo_3.4_orca1_u_10.15june2009.nc
+  nemo_v=nemo_3.4_orca1_v_10.15june2009.nc
+  nemo_q=nemo_3.4_orca1_q_10.15june2009.nc
+  nemo_qsw=nemo_3.4_orca1_ncar_rad.15june2009.nc
+  nemo_qlw=nemo_3.4_orca1_ncar_rad.15june2009.nc
+  nemo_precip=nemo_3.4_orca1_ncar_precip.15june2009.nc
+  nemo_snow=nemo_3.4_orca1_ncar_precip.15june2009.nc
+  # weights_grid02_* are weights for ECMWF data
+  nemo_weights_bicubic1=nemo_3.4_weights_grid02_bicubic_orca1.nc
+  nemo_weights_bilinear1=nemo_3.4_weights_grid02_bilinear_orca1.nc
+  # weights_grid03_* are weights for CORE data
+  nemo_weights_bicubic2=nemo_3.4_weights_grid03_bicubic_orca1.nc
+  nemo_weights_bilinear2=nemo_3.4_weights_grid03_bilinear_orca1.nc
+  # weights_canam4grid_* are weights for CanAM4
+  # nemo_weights_bicubic2=nemo_3.4_weights_canam4grid_bicubic_orca1.nc
+  # nemo_weights_bilinear2=nemo_3.4_weights_canam4grid_bilinear_orca1.nc
+
+  [ -s tair10m.nc ]      || access tair10m.nc          $nemo_t
+  [ -s uwnd10m.nc ]      || access uwnd10m.nc          $nemo_u
+  [ -s vwnd10m.nc ]      || access vwnd10m.nc          $nemo_v
+  [ -s humi10m.nc ]      || access humi10m.nc          $nemo_q
+  [ -s qsw.nc ]          || access qsw.nc              $nemo_qsw
+  [ -s qlw.nc ]          || access qlw.nc              $nemo_qlw
+  [ -s precip.nc ]       || access precip.nc           $nemo_precip
+  [ -s snow.nc ]         || access snow.nc             $nemo_snow
+  [ -s weights_bic1.nc ] || access weights_bic1.nc     $nemo_weights_bicubic1
+  [ -s weights_bil1.nc ] || access weights_bil1.nc     $nemo_weights_bilinear1 
+  [ -s weights_bic2.nc ] || access weights_bic2.nc     $nemo_weights_bicubic2
+  [ -s weights_bil2.nc ] || access weights_bil2.nc     $nemo_weights_bilinear2
+
+  nemo_weights_bicubic3=nemo_3.4_weights_canam4grid_bicubic_orca1.nc
+  nemo_weights_bilinear3=nemo_3.4_weights_canam4grid_bilinear_orca1.nc
+
+  [ -s weights_bic3.nc ] || access weights_bic3.nc     $nemo_weights_bicubic3
+  [ -s weights_bil3.nc ] || access weights_bil3.nc     $nemo_weights_bilinear3
+
+  if [ x"$nemo_forcing" = "xbulk" ]; then
+    # Bulk forcing
+    nemo_utau=mc_ncq_5d_06360101_06361231_grid_ufl_mean.nc
+    nemo_vtau=mc_ncq_5d_06360101_06361231_grid_vfl_mean.nc
+    nemo_qtot=mc_ncq_5d_06360101_06361231_grid_hfl_mean.nc
+    nemo_qsr=mc_ncq_5d_06360101_06361231_grid_hfl_mean.nc
+    nemo_emp=mc_ncq_5d_06360101_06361231_grid_hfl_mean.nc
+    nemo_weights_bicubic3=nemo_3.4_weights_grid02_bicubic_orca2.nc
+    nemo_weights_bilinear3=nemo_3.4_weights_grid02_bilinear_orca2.nc
+
+    [ -s utau.nc ]         || access utau.nc             $nemo_utau
+    [ -s vtau.nc ]         || access vtau.nc             $nemo_vtau
+    [ -s qtot.nc ]         || access qtot.nc             $nemo_qtot
+    [ -s qsr.nc ]          || access qsr.nc              $nemo_qsr
+    [ -s emp.nc ]          || access emp.nc              $nemo_emp
+    [ -s weights_bic3.nc ] || access weights_bic3.nc     $nemo_weights_bicubic3
+    [ -s weights_bil3.nc ] || access weights_bil3.nc     $nemo_weights_bilinear3
+
+  elif [ x"$nemo_forcing" = "xflux" ]; then
+    # Flux forcing
+    nemo_utau=sa_gcm16_05_w_2005_oufs_signchg.nc
+    nemo_vtau=sa_gcm16_05_w_2005_ovfs_signchg.nc
+    nemo_qtot=sa_gcm16_05_w_2005_obeg.nc
+    nemo_qsr=sa_gcm16_05_w_2005_ofsg.nc
+    nemo_emp=sa_gcm16_05_w_2005_obwg_signchg.nc
+    nemo_weights_bicubic3=nemo_3.4_weights_canam4grid_bicubic_orca1.nc
+    nemo_weights_bilinear3=nemo_3.4_weights_canam4grid_bilinear_orca1.nc
+
+    [ -s utau.nc ]         || access utau.nc             $nemo_utau
+    [ -s vtau.nc ]         || access vtau.nc             $nemo_vtau
+    [ -s qtot.nc ]         || access qtot.nc             $nemo_qtot
+    [ -s qsr.nc ]          || access qsr.nc              $nemo_qsr
+    [ -s emp.nc ]          || access emp.nc              $nemo_emp
+    [ -s weights_bic3.nc ] || access weights_bic3.nc     $nemo_weights_bicubic3
+    [ -s weights_bil3.nc ] || access weights_bil3.nc     $nemo_weights_bilinear3
+
+    # CICE forcing files
+    nemo_snowfall='sa_gcm17l_mix14_snow_gs_0001010200-0001020100.nc'
+    nemo_rainfall='sa_gcm17l_mix14_rain_gs_0001010200-0001020100.nc'
+    nemo_sublim='sa_gcm17l_mix14_sblm_0001010200-0001020100.nc'
+    nemo_topmeltn1='sa_gcm16_05_w_2005_obeg.nc'
+    nemo_botmeltn1='sa_gcm17l_mix14_hsea_gs_chgsign_0001010200-0001020100.nc'
+
+    [ -s snowfall_1m ]  || access snowfall_1m         $nemo_snowfall
+    [ -s rainfall_1m ]  || access rainfall_1m         $nemo_rainfall
+    [ -s sublim_1m ]    || access sublim_1m           $nemo_sublim
+    [ -s topmeltn1_1m ] || access topmeltn1_1m        $nemo_topmeltn1
+    [ -s botmeltn1_1m ] || access botmeltn1_1m        $nemo_botmeltn1
+  fi
+
+  if [ $nemo_carbon -eq 1 ]; then
+    # Access PISCES files
+    nemo_presatm=nemo_3.4_orca2_presatm.nc
+    nemo_dust_orca=nemo_3.4_orca2_dust.orca.nc
+    nemo_river_orca=nemo_3.4_orca2_river.orca.nc
+    nemo_ndeposition_orca=nemo_3.4_orca2_ndeposition.orca.nc
+    nemo_bathy_orca=nemo_3.4_orca2_bathy.orca.nc
+
+    [ -s presatm.nc ]          || access presatm.nc           $nemo_presatm
+    [ -s dust.orca.nc ]        || access dust.orca.nc         $nemo_dust_orca
+    [ -s river.orca.nc ]       || access river.orca.nc        $nemo_river_orca
+    [ -s ndeposition.orca.nc ] || access ndeposition.orca.nc  $nemo_ndeposition_orca
+    [ -s bathy.orca.nc ]       || access bathy.orca.nc        $nemo_bathy_orca
+
+    if [ $nemo_cmoc -eq 1 ]; then
+      nemo_fermask_orca=nemo_3.4_orca2_femask.orca.nc
+      [ -s fermask.orca.nc ] || access fermask.orca.nc $nemo_fermask_orca
+    fi
+
+    nemo_data_dic_nomask=nemo_3.4_orca2_data_dic_nomask.nc
+    nemo_data_alkalini_nomask=nemo_3.4_orca2_data_alkalini_nomask.nc
+    nemo_data_o2_nomask=nemo_3.4_orca2_data_o2_nomask.nc
+    nemo_data_po4_nomask=nemo_3.4_orca2_data_po4_nomask.nc
+    nemo_data_si_nomask=nemo_3.4_orca2_data_si_nomask.nc
+    nemo_data_doc_nomask=nemo_3.4_orca2_data_doc_nomask.nc
+    nemo_data_fer_nomask=nemo_3.4_orca2_data_fer_nomask.nc
+    nemo_data_no3_nomask=nemo_3.4_orca2_data_no3_nomask.nc
+
+    [ -s data_dic_nomask.nc ]      || access data_dic_nomask.nc        $nemo_data_dic_nomask
+    [ -s data_alkalini_nomask.nc ] || access data_alkalini_nomask.nc   $nemo_data_alkalini_nomask
+    [ -s data_o2_nomask.nc ]       || access data_o2_nomask.nc         $nemo_data_o2_nomask
+    [ -s data_po4_nomask.nc ]      || access data_po4_nomask.nc        $nemo_data_po4_nomask
+    [ -s data_si_nomask.nc ]       || access data_si_nomask.nc         $nemo_data_si_nomask
+    [ -s data_doc_nomask.nc ]      || access data_doc_nomask.nc        $nemo_data_doc_nomask
+    [ -s data_fer_nomask.nc ]      || access data_fer_nomask.nc        $nemo_data_fer_nomask
+    [ -s data_no3_nomask.nc ]      || access data_no3_nomask.nc        $nemo_data_no3_nomask
+  fi 

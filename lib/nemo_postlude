@@ -1,0 +1,942 @@
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+# NEMO postlude
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+
+cat >reorder_list << 'end_reorder_list'
+#!/usr/bin/perl
+
+  # ---Start_submit_ignore_code----
+
+  # Process input file which must contain valid file names, one name per line
+  # Only the first white space separated word in each line is used
+  while ($flist = shift) {
+    open(FLIST,$flist) or die "reorder_list: Cannot open input file $flist\n";
+    while (<FLIST>) {
+      chomp;
+      # Ignore blank lines and comment lines
+      next if /^\s*$/;
+      next if /^\s*#/;
+      # Only the first word on the line is significant
+      ($fin) = split;
+      # This must be a valid non-empty file
+      die "reorder_list: $fin is missing or empty.\n" unless -s $fin;
+      $list{$fin} = -s $fin;
+    }
+  }
+  die "reorder_list: No valid file names found.\n" unless defined %list;
+
+  # Sort in ascending order by size and print the reordered list to stdout
+  foreach (sort {$list{$a} <=> $list{$b}} keys %list) {
+    print "$_\n";
+  }
+
+  # ---Stop_submit_ignore_code----
+
+end_reorder_list
+
+  scp_rtd_to_Victoria() {
+    # Copy a single rtd file to Victoria
+    # Usage: scp_rtd_to_Victoria local_rtd_file remote_rtd_file
+    [ -z "$1" ] &&
+      bail "scp_rtd_to_Victoria requires a file name as the first arg."
+    [ -z "$2" ] &&
+      bail "scp_rtd_to_Victoria requires a file name as the second arg."
+    [ -e $1 ] || bail "scp_rtd_to_Victoria: File --> $1 <-- is missing."
+
+    # Do not abort if the transfer (or any part of the following) fails
+    set +e
+
+    # The local file specification
+    if [ x`echo $1|sed -n '/^\//p'` = x ]; then
+      # This must be an absolute pathname, assume the file is in pwd
+      locfspec=`pwd`/$1
+    else
+      locfspec=$1
+    fi
+
+    # Any or all of the variables rtd_dest_file, rtd_dest_dir or rtd_dest_mach
+    # may be set by the invoking process to override the following defaults
+    remfile=$2
+    remdir=${rtd_dest_dir:-/misc/pubplots/CanESM_run_plots/rtdfiles_nemo}
+    remmach=${rtd_dest_mach:-ftp1.cccma.ec.gc.ca}
+    rempath=$remdir/$remfile
+
+    if [ -n "$ROUTE_SSH" ]; then
+      $ROUTE_SSH "scp -p -o NoneSwitch=yes $locfspec ${remmach}:$rempath"
+      $ROUTE_SSH "ssh $remmach chmod ug+rw $rempath"
+    else
+      scp -p -o NoneSwitch=yes $locfspec ${remmach}:$rempath
+      ssh $remmach chmod ug+rw $rempath
+    fi
+
+    set -e
+  }
+
+  # bail_prefix is used in the error exit function bail (defined in nemo_prelude)
+  bail_prefix="nemo postlude"
+
+  # The job name
+  cn_exp=$runid
+
+  # Part of the input ocean restart name (default restart)
+  # The input ocean restart file name will be ${cn_ocerst_in}_MMMM.nc
+  # where MMMM is the MPI task number (I4.4)
+  cn_ocerst_in="restart"
+
+  # Part of output ocean restart name (default restart)
+  # The output ocean restart file name will be ${cn_exp}_NNNNNNNN_${cn_ocerst_out}_MMMM.nc
+  # where NNNNNNNN is the time step (I8.8) and MMMM is the MPI task number (I4.4)
+  cn_ocerst_out="restart"
+
+  # Part of input ice restart name (default restart_ice_in)
+  # The input ice restart file name will be ${cn_icerst_in}_MMMM.nc
+  # where MMMM is the MPI task number (I4.4)
+  cn_icerst_in="restart_ice_in"
+
+  # Part of output ice restart name (default restart_ice)
+  # The output ice restart file name will be ${cn_exp}_NNNNNNNN_${cn_icerst_out}_NNNN.nc
+  # where NNNNNNNN is the time step (I8.8) and MMMM is the MPI task number (I4.4)
+  cn_icerst_out="restart_ice"
+
+  # Part of input pisces restart name (default restart_trc_in)
+  # The input pisces restart file name will be ${cn_trcrst_in}_MMMM.nc
+  # where MMMM is the MPI task number (I4.4)
+  cn_trcrst_in="restart_trc_in"
+
+  # Part of output pisces restart name (default restart_trc)
+  # The output pisces restart file name will be ${cn_exp}_NNNNNNNN_${cn_trcrst_out}_NNNN.nc
+  # where NNNNNNNN is the time step (I8.8) and MMMM is the MPI task number (I4.4)
+  cn_trcrst_out="restart_trc"
+
+  # Determine the year and month of the current restart to be saved below
+  # This restart will be for the last month of the current run
+  nemo_rsout_year=$nemo_stop_year
+  nemo_rsout_mon=$nemo_stop_mon
+
+  # Determine the number of days in the last month of the previous restart
+  case $nemo_rsout_mon in
+    1|01) nemo_rsout_day=31 ;;
+    2|02) nemo_rsout_day=28 ;;
+    3|03) nemo_rsout_day=31 ;;
+    4|04) nemo_rsout_day=30 ;;
+    5|05) nemo_rsout_day=31 ;;
+    6|06) nemo_rsout_day=30 ;;
+    7|07) nemo_rsout_day=31 ;;
+    8|08) nemo_rsout_day=31 ;;
+    9|09) nemo_rsout_day=30 ;;
+      10) nemo_rsout_day=31 ;;
+      11) nemo_rsout_day=30 ;;
+      12) nemo_rsout_day=31 ;;
+       *) bail "nemo_rsout_mon=$nemo_rsout_mon is out of range" ;;
+  esac
+
+  # do_nemo_run needs to be looked at
+  do_nemo_run=${do_nemo_run:-on}
+  ToF do_nemo_run
+
+  if [ $do_nemo_run -eq 1 ]; then
+
+    # The file saved_history_file_names will contain a list of saved files to be archived.
+    # Since "save" will blindly transpose all file name characters to lower case before
+    # saving to DATAPATH, we must keep track of the case of these files in some way.
+    # The file saved_history_FILE_NAMES will contain the same list of file names that
+    # saved_history_file_names contains but it will preserve case. (Large pita)
+    rm -f saved_history_file_names
+    touch saved_history_file_names
+    rm -f saved_history_FILE_NAMES
+    touch saved_history_FILE_NAMES
+
+    nemo_save_hist=${nemo_save_hist:-on}
+    ToF nemo_save_hist
+    if [ $nemo_save_hist -eq 1 ]; then
+      #=#=#=# Combine output files that were written one file per MPI task
+      #=#=#=# into a single file containing data from all MPI tasks
+
+      nemo_rebuild_exec=nemo_3.4_orca2_lim_flio_rbld_exe
+      nemo_rebuild_sh=nemo_3.4_orca2_lim_rebuild_sh
+
+      # Verify the rebuild executable variables that are defined
+      [ -z "$nemo_rebuild_exec" ] && bail "nemo_rebuild_exec is not defined"
+      [ -z "$nemo_rebuild_sh" ]   && bail "nemo_rebuild_sh is not defined"
+
+      [ -s flio_rbld.exe ] || access flio_rbld.exe $nemo_rebuild_exec nocp=no
+      [ -s REBUILD ]       || access REBUILD $nemo_rebuild_sh nocp=no
+      chmod u+x REBUILD
+
+      # 1 year save interval
+      nemo_save_1y_data=${nemo_save_1y_data:-on}
+      ToF nemo_save_1y_data
+      if [ $nemo_save_1y_data -eq 1 ]; then
+	nemo_1y_suffix_list=${nemo_1y_suffix_list:="grid_T"}
+	for sfx in $nemo_1y_suffix_list; do
+	  pfx=${cn_exp}_1y_${start_date}_${stop_date}_$sfx
+	  ncout=${uxxx}_${pfx}.nc
+	  if [ -s "${pfx}.nc" ]; then
+	    # The output file already exists
+	    # Assume that there are no task specific files and therefore
+	    # no need to combine them into a single file
+	    # Note file names must be transposed to lower case letters since
+	    # the "save" will blindly do so
+	    cp ${pfx}.nc $ncout
+	    save $ncout $ncout && echo "$ncout" >> saved_history_FILE_NAMES
+	  else
+	    eval fnpatt=${pfx}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
+	    found_file=`(ls -1 $fnpatt || : ) 2>/dev/null`
+	    if [ -n "$found_file" ]; then
+	      # At least 1 file name matches the current pattern
+	      REBUILD -o $ncout $fnpatt &&
+		  save $ncout $ncout &&
+		  echo "$ncout" >> saved_history_FILE_NAMES
+	    fi
+	  fi
+	done
+      fi
+
+      # 1 month save interval
+      nemo_save_1m_data=${nemo_save_1m_data:-on}
+      ToF nemo_save_1m_data
+      if [ $nemo_save_1m_data -eq 1 ]; then
+	nemo_1m_suffix_list=${nemo_1m_suffix_list:="grid_T"}
+	for sfx in $nemo_1m_suffix_list; do
+	  pfx=${cn_exp}_1m_${start_date}_${stop_date}_$sfx
+	  ncout=${uxxx}_${pfx}.nc
+	  if [ -s "${pfx}.nc" ]; then
+	    # The output file already exists
+	    # Assume that there are no task specific files and therefore
+	    # no need to combine them into a single file
+	    # Note file names must be transposed to lower case letters since
+	    # the "save" will blindly do so
+	    cp ${pfx}.nc $ncout
+	    save $ncout $ncout && echo "$ncout" >> saved_history_FILE_NAMES
+	  else
+	    eval fnpatt=${pfx}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
+	    found_file=`(ls -1 $fnpatt || : ) 2>/dev/null`
+	    if [ -n "$found_file" ]; then
+	      # At least 1 file name matches the current pattern
+	      REBUILD -o $ncout $fnpatt &&
+		  save $ncout $ncout &&
+		  echo "$ncout" >> saved_history_FILE_NAMES
+	    fi
+	  fi
+	done
+      fi
+
+      # 1 day save interval
+      nemo_save_1d_data=${nemo_save_1d_data:-on}
+      ToF nemo_save_1d_data
+      if [ $nemo_save_1d_data -eq 1 ]; then
+	nemo_1d_suffix_list=${nemo_1d_suffix_list:="grid_T grid_T_0n180w diaptr"}
+	for sfx in $nemo_1d_suffix_list; do
+	  pfx=${cn_exp}_1d_${start_date}_${stop_date}_$sfx
+	  ncout=${uxxx}_${pfx}.nc
+	  if [ -s "${pfx}.nc" ]; then
+	    # The output file already exists
+	    # Assume that there are no task specific files and therefore
+	    # no need to combine them into a single file
+	    # Note file names must be transposed to lower case letters since
+	    # the "save" will blindly do so
+	    cp ${pfx}.nc $ncout
+	    save $ncout $ncout && echo "$ncout" >> saved_history_FILE_NAMES
+	  else
+	    eval fnpatt=${pfx}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
+	    found_file=`(ls -1 $fnpatt || : ) 2>/dev/null`
+	    if [ -n "$found_file" ]; then
+	      # At least 1 file name matches the current pattern
+	      REBUILD -o $ncout $fnpatt &&
+		  save $ncout $ncout &&
+		  echo "$ncout" >> saved_history_FILE_NAMES
+	    fi
+	  fi
+	done
+      fi
+
+      # 5 day save interval
+      nemo_save_5d_data=${nemo_save_5d_data:-on}
+      ToF nemo_save_5d_data
+      if [ $nemo_save_5d_data -eq 1 ]; then
+	nemo_5d_suffix_list=${nemo_5d_suffix_list:="icemod grid_T grid_U grid_V grid_W"}
+	for sfx in $nemo_5d_suffix_list; do
+	  pfx=${cn_exp}_5d_${start_date}_${stop_date}_$sfx
+	  ncout=${uxxx}_${pfx}.nc
+	  if [ -s "${pfx}.nc" ]; then
+	    # The output file already exists
+	    # Assume that there are no task specific files and therefore
+	    # no need to combine them into a single file
+	    # Note file names must be transposed to lower case letters since
+	    # the "save" will blindly do so
+	    cp ${pfx}.nc $ncout
+	    save $ncout $ncout && echo "$ncout" >> saved_history_FILE_NAMES
+	  else
+	    eval fnpatt=${pfx}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
+	    found_file=`(ls -1 $fnpatt || : ) 2>/dev/null`
+	    if [ -n "$found_file" ]; then
+	      # At least 1 file name matches the current pattern
+	      REBUILD -o $ncout $fnpatt &&
+		  save $ncout $ncout &&
+		  echo "$ncout" >> saved_history_FILE_NAMES
+	    fi
+	  fi
+	done
+      fi
+
+      if [ -s saved_history_FILE_NAMES ]; then
+	# Once files have been rebuilt and saved to DATAPATH create a file that is
+	# equivalent to the file saved_history_FILE_NAMES except that all file names
+	# contained therein are lower case.
+	rm -f saved_history_file_names
+	cat saved_history_FILE_NAMES | tr '[A-Z]' '[a-z]' > saved_history_file_names
+      else
+	# Get a list of files in the current dir for human perusal
+	pwd
+	ls -l
+	bail "nemo_save_hist = on but no history files were saved."
+      fi
+
+    fi
+
+    ## order the saved history file list. 
+    if [ -s saved_history_file_names -a -s saved_history_FILE_NAMES ]; then
+      # Reorder the list of files that were saved so that
+      # the file names appear in order of descending size
+      [ ! -f reorder_list ] && bail "reorder_list is missing."
+      chmod u+x reorder_list
+      reorder_list saved_history_FILE_NAMES > XXX
+      mv XXX saved_history_FILE_NAMES
+      [ ! -s saved_history_FILE_NAMES ] &&
+	bail "Empty file --> saved_history_FILE_NAMES <-- after reorder."
+      rm -f saved_history_file_names
+      cat saved_history_FILE_NAMES | tr '[A-Z]' '[a-z]' > saved_history_file_names
+    fi
+    if [ -s saved_history_file_names ]; then
+      echo " "
+      echo "###########################"
+      echo "Ocean files to be archived:"
+      echo "###########################"
+      cat saved_history_file_names
+      echo " "
+    fi
+
+    #=#=#=# Save the current restart files.
+
+    # After the job has run remove input restart files (if any)
+    [ -s input_ocn_restart_file_names ] && cat input_ocn_restart_file_names | xargs rm -f
+    [ -s input_ice_restart_file_names ] && cat input_ice_restart_file_names | xargs rm -f
+    [ -s input_trc_restart_file_names ] && cat input_trc_restart_file_names | xargs rm -f
+
+    nemo_save_rs=${nemo_save_rs:-on}
+    ToF nemo_save_rs
+    if [ $nemo_save_rs -eq 1 ]; then
+      # tar up the current restarts and save them to DATAPATH
+
+      # Make sure that at least 1 restart file is present
+      eval ofnpatt=${cn_exp}_\*_${cn_ocerst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
+      found_rs=`(ls -1 $ofnpatt || : ) 2>/dev/null`
+      if [ -z "$found_rs" ]; then
+	# No ocean restart files exist
+	bail "Attempting to save restarts but no ocean restart files exist."
+      fi
+
+      if [ $nemo_carbon -eq 1 ]; then
+	# Deal with Pisces restarts
+	eval pfnpatt=${cn_exp}_\*_${cn_trcrst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
+	found_rs=`(ls -1 $pfnpatt || : ) 2>/dev/null`
+	if [ -z "$found_rs" ]; then
+	  # No pisces restart files exist
+	  bail "Attempting to save restarts but no pisces restart files exist."
+	fi
+      else
+	pfnpatt=''
+      fi
+
+      if [ $with_ice -eq 1 ]; then
+        if [ $nn_ice -eq 4 ]; then
+          # The ice model is CICE
+          # ifnpatt must contain the value of the CICE variable pointer_file as well as ice restart file names
+          # nemo_cice_pointer_file is the value of the parameter pointer_file in the CICE namelist setup_nml
+          # and is initialized as "ice.restart_file" in CICE source code
+          nemo_cice_pointer_file=${nemo_cice_pointer_file:=ice.restart_file}
+          [ ! -s "$nemo_cice_pointer_file" ] && bail "CICE pointer file $nemo_cice_pointer_file is missinmg or empty"
+          ifnpatt=`cat $nemo_cice_pointer_file | xargs`
+          [ -z `echo $ifnpatt|sed 's/ *//g'` ] && bail "Problem reading CICE restart pointer file $nemo_cice_pointer_file"
+          # Include the CICE pointer file name as well as the restart file names
+          ifnpatt="$ifnpatt $nemo_cice_pointer_file"
+        else
+          # Anything but CICE
+          eval ifnpatt=${cn_exp}_\*_${cn_icerst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
+          found_rs=`(ls -1 $ifnpatt || : ) 2>/dev/null`
+          if [ -z "$found_rs" ]; then
+            # No ice restart files exist
+            bail "Attempting to save restarts but no ice restart files exist."
+          fi
+        fi
+      else
+	ifnpatt=''
+      fi
+
+      # tarlist contains a list of additional files to add to the restart archive
+      tarlist=''
+
+      # Create copies of the namelists used and include them in the tar file
+      cp -f namelist rs_namelist || :
+      [ -s rs_namelist ] && tarlist="$tarlist rs_namelist"
+      case $nn_ice in
+        0) ;; # no ice boundary condition
+        1) ;; # use observed ice cover
+        2) # LIM2 ice-model
+           cp -f namelist_ice rs_namelist_ice || :
+           [ -s rs_namelist_ice ] && tarlist="$tarlist rs_namelist_ice"
+           ;;
+        3) # LIM3 ice-model
+           cp -f namelist_ice rs_namelist_ice || :
+           [ -s rs_namelist_ice ] && tarlist="$tarlist rs_namelist_ice"
+           ;;
+        4) # CICE ice-model
+           cp -f ice_in rs_ice_in || :
+           [ -s rs_ice_in ] && tarlist="$tarlist rs_ice_in"
+           ;;
+        *) bail "Invalid value for nn_ice = $nn_ice" ;;
+      esac
+      if [ $nemo_carbon -eq 1 ]; then
+	cp -f namelist_pisces rs_namelist_pisces || :
+	cp -f namelist_top    rs_namelist_top    || :
+	[ -s rs_namelist_pisces ]  && tarlist="$tarlist rs_namelist_pisces"
+	[ -s rs_namelist_top ]     && tarlist="$tarlist rs_namelist_top"
+
+        if [ $nemo_cmoc -eq 1 ]; then
+	  cp -f namelist_cmoc rs_namelist_cmoc || :
+	  [ -s rs_namelist_cmoc ]  && tarlist="$tarlist rs_namelist_cmoc"
+        fi
+      fi
+
+      # Save a copy of the executable that was just run to the restart archive
+      cp -f nemo.exe rs_nemo_exec || :
+      [ -s rs_nemo_exec ] && tarlist="$tarlist rs_nemo_exec"
+
+      # Add a file containing the time step
+      cp -f time.step rs_time.step || :
+      [ -s rs_time.step ] && tarlist="$tarlist rs_time.step"
+
+      # Add ocean output and timing info
+      cp -f ocean.output rs_ocean.output || :
+      [ -s rs_ocean.output ] && tarlist="$tarlist rs_ocean.output"
+
+      cp -f timing.output rs_timing.output || :
+      [ -s rs_timing.output ] && tarlist="$tarlist rs_timing.output"
+
+      cp -f saved_history_file_names rs_saved_history_file_names || :
+      [ -s rs_saved_history_file_names ] && tarlist="$tarlist rs_saved_history_file_names"
+
+
+      rm -f NEXT_RESTART_ARC
+      tar cf NEXT_RESTART_ARC $tarlist $ofnpatt $ifnpatt $pfnpatt ||
+	bail "Unable to create restart archive"
+      if [ -n "$model" ]; then
+        # Assume we are running from gcmjcl
+        rs_out=${model}nemors.tar
+      else
+        rs_out=${uxxx}_${cn_exp}_${stop_date}_restart.tar
+      fi
+      save NEXT_RESTART_ARC $rs_out
+      release NEXT_RESTART_ARC
+      nemo_rs_out=$rs_out
+    fi
+
+    # Echo ocean output to stdout, if requested
+    nemo_write_stdout=on
+    ToF nemo_write_stdout
+    if [ $nemo_write_stdout -eq 1 ]; then
+      if [ -s ocean.output ]; then
+        echo " "
+        echo "########################## ocean output ##########################"
+        echo " "
+        cat ocean.output
+      fi
+    fi
+
+  else
+    # Make sure we have the most recent restart archive name, even if do_nemo_run=off.
+    rs_out=${uxxx}_${cn_exp}_${stop_date}_restart.tar
+    # Make sure nemo_save_hist is defined
+    nemo_save_hist=on
+    ToF nemo_save_hist
+  fi
+
+    #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+    #=#=#=#     Post processing     #=#=#=#
+    #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+
+  #=#=#=# Optionally concatenate history files annually.
+  #=#=#=# Optionally generate run time diagnostics from these annual history files
+
+  nemo_ann_cat=${nemo_ann_cat:-on}
+  ToF nemo_ann_cat
+
+  if [ $nemo_ann_cat -eq 1 -a $stop_mon -eq 12 ]; then
+    if [ $nemo_save_hist -ne 1 -a $do_nemo_run -eq 1 ]; then
+      bail "Annual processing for history files was requested but history files are not saved."
+    fi
+    # This is the end of Dec and history files exist on disk for the current year
+    # History file are saved with names of the form
+    #    ${uxxx}_${runid}_${freq}_${start_date}_${stop_date}_${sfx}.nc
+    # where freq is one of: 1y, 1m, 1d, 5d
+    #       sfx  is one of: icemod, grid_T, grid_U, grid_V, grid_W, grid_T_0n180w, diaptr
+    #                       depending on the frequency
+    #       start_date and stop_date are of the form: YYYYMMDD
+
+    # Specify the location of some NCO tools
+    # These are required for manipulation of the netcdf files
+    NCOBIN=/users/tor/acrn/opt/package/bin
+    NCRCAT="$NCOBIN/ncrcat"
+    NCATTED="$NCOBIN/ncatted"
+
+    test -x "$NCRCAT"  || bail "$NCRCAT does not have execute permission"
+    test -x "$NCATTED" || bail "$NCATTED does not have execute permission"
+
+    # Concatenate sub-annual history files into yearly files
+    # The user can redefine nemo_ann_cat_freq_list and nemo_ann_cat_suffix_list
+    # to only concatenate a subset of the history files
+    nemo_ann_cat_freq_list=${nemo_ann_cat_freq_list:-'1y 1m 1d 5d'}
+    nemo_ann_cat_suffix_list=${nemo_ann_cat_suffix_list:-'icemod grid_t grid_u grid_v grid_w ptrc_t diad_t'}
+
+    # Keep track of any yearly history file created here in the file ann_cat_file_list
+    ann_cat_file_list=ann_cat_file_list_$$
+    rm -f $ann_cat_file_list
+    touch $ann_cat_file_list
+
+    for freq in $nemo_ann_cat_freq_list; do
+      for sfx in $nemo_ann_cat_suffix_list; do
+        pfx="${uxxx}_${cn_exp}_${freq}_${stop_year}????_${stop_year}????_$sfx"
+        eval fnpatt=${pfx}.nc.\[0-9\]\[0-9\]\[0-9\]
+        found_file=`(ls -1 $DATAPATH/$fnpatt || : ) 2>/dev/null`
+        if [ -n "$found_file" ]; then
+          # At least 1 matching file name was found on DATAPATH
+          # Identify a list of unique matching file names to be accessed
+          acclist=''
+          for full_path in $found_file; do
+            # echo "full_path = $full_path"
+            bname=`basename $full_path|sed 's/\.[0-9][0-9][0-9]$//'`
+            acclist="$acclist $bname"
+          done
+
+          # Ensure all file names are unique
+          # Copies will be created when multiple edition numbers exist for the same file
+          acclist=`echo $acclist|awk '{for(i=1;i<=NF;i++){printf "%s\n",$i}}'|sort -u|xargs`
+          nfile=0
+          for curr_fname in $acclist; do 
+            nfile=`expr $nfile + 1`
+            access $curr_fname $curr_fname na
+          done
+          # Save the concatenated annual history file for this freq and sfx
+          ann_name="${uxxx}_${cn_exp}_${freq}_${stop_year}0101_${stop_year}1231_${sfx}.nc"
+          if [ $nfile -eq 1 ]; then
+            # If there is only 1 sub-annual file then assume it already includes data
+            # for the entire year and we should, therefore, not resave the same file
+            # Verify that the file found on disk is the full year file
+            # Remove any spaces around the single file name in acclist
+            acclist=`echo $acclist|sed 's/ *//g'`
+            if [ $ann_name != $acclist ]; then
+              bail "The history file --> $acclist <-- does not span the full year."
+            fi
+            echo $ann_name >> $ann_cat_file_list
+          elif [ $nfile -gt 1 ]; then
+            # This is only done if there is more than 1 sub-annual file
+            $NCRCAT -h $acclist $ann_name ||
+              bail "Problem executing $NCRCAT -h $acclist $ann_name"
+            # Delete the sub-annual files
+            for sub_ann in $acclist; do
+              delete $sub_ann na
+            done
+            # Save to DATAPATH
+            save $ann_name $ann_name
+            release $ann_name
+            echo $ann_name >> $ann_cat_file_list
+          else
+            bail "Problem concatenating annual history file(s) $acclist"
+          fi
+
+        fi
+      done
+    done
+
+    # If nemo_ann_rtd is true then execute the nemo run time diagnostics
+    nemo_ann_rtd=${nemo_ann_rtd:-on}
+    ToF nemo_ann_rtd
+
+    if [ $nemo_ann_rtd -eq 1 ]; then
+      # Invoke the nemo run time diagnostics
+
+      # This currently requires certain yearly history files, which may or may not have
+      # been created above. Verify that they exist by attempting to access them
+      # These files could be modified so create local copies with write access
+      rtd_hist1="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_grid_t.nc"
+      rtd_hist2="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_grid_u.nc"
+      rtd_hist3="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_grid_v.nc"
+      rtd_hist4="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_grid_w.nc"
+      access grid_t $rtd_hist1 nocp=off || bail "NEMO run time diagnostics are requested but $rtd_hist1 is missing."
+      access grid_u $rtd_hist2 nocp=off || bail "NEMO run time diagnostics are requested but $rtd_hist2 is missing."
+      access grid_v $rtd_hist3 nocp=off || bail "NEMO run time diagnostics are requested but $rtd_hist3 is missing."
+      access grid_w $rtd_hist4 nocp=off || bail "NEMO run time diagnostics are requested but $rtd_hist4 is missing."
+      chmod u+rw grid_t grid_u grid_v grid_w
+
+      # This also requires a file containing grid information
+      # This file could be modified so create a local copy with write access
+      orca_grid_info=nemo3.4.1_orca1_mesh_mask_ngr.nc
+      access orca_mesh_mask $orca_grid_info nocp=off
+      chmod u+rw orca_mesh_mask
+
+      # The user must define nemo_rtdiag_start_year
+      nemo_rtdiag_start_year=${nemo_rtdiag_start_year:=''}
+      [ -z "$nemo_rtdiag_start_year" ] &&
+        bail "NEMO run time diagnostics are requested but nemo_rtdiag_start_year is not defined."
+
+      # Access the rtd executable
+      physical_rtd_exe=nemo_orca_physical_rtd_v02c
+      [ -z "$physical_rtd_exe" ] && bail "physical_rtd_exe is not defined."
+      access $physical_rtd_exe $physical_rtd_exe nocp=off
+      chmod u+x $physical_rtd_exe
+
+      # Access an existing rtd file if it exists on DATAPATH, otherwise create a new rtd file
+      stop_year_prev=`echo $stop_year|awk '{printf "%4.4d",$1-1}' -`
+      curr_rtd_file=sc_${runid}_${nemo_rtdiag_start_year}_${stop_year_prev}_nemo_physical_rtd.nc
+      rm -f nemo_physical_rtd.nc
+      found_rtd_file=1
+      access nemo_physical_rtd.nc $curr_rtd_file nocp=off || found_rtd_file=0
+      if [ ${nemo_rtdiag_start_year} -lt ${stop_year} -a $found_rtd_file -eq 0 ]; then
+        bail "Expecting NEMO run time diagnostics file $curr_rtd_file to be on DATAPATH. It is missing."
+        # Alternatively redefine nemo_rtdiag_start_year as run_start_year and carry on
+        # Possibly check DATAPATH for an rtd file with the new nemo_rtdiag_start_year in its name and use it if it exist
+      fi
+      $physical_rtd_exe $stop_year
+      [ $found_rtd_file -eq 0 ] && ${NCATTED} -O -a RTD_version,global,a,c,"${physical_rtd_exe}" nemo_physical_rtd.nc
+
+#      # Access an existing rtd file containing data up to the previous year, if year > nemo_rtdiag_start_year
+#      # Create a local copy with write access
+#      if [ ${nemo_rtdiag_start_year} -lt ${stop_year} ] ; then
+#          stop_year_prev=`echo $stop_year|awk '{printf "%4.4d",$1-1}' -`
+#          curr_rtd_file=sc_${runid}_${nemo_rtdiag_start_year}_${stop_year_prev}_nemo_physical_rtd.nc
+#          access nemo_physical_rtd.nc $curr_rtd_file nocp=off || bail "Expecting NEMO run time diagnostics file $curr_rtd_file to be on DATAPATH. It is missing."
+#          chmod u+rw nemo_physical_rtd.nc      
+#          # Create run time diagnostics for physical ocean variables
+#          $physical_rtd_exe $stop_year
+#      else
+#          # Create run time diagnostics for physical ocean variables
+#          $physical_rtd_exe $stop_year
+#          ${NCATTED} -O -a RTD_version,global,a,c,"${physical_rtd_exe}" nemo_physical_rtd.nc
+#      fi
+
+      # Save the rtd file created by physical_rtd_exe
+      new_rtd_file=sc_${runid}_${nemo_rtdiag_start_year}_${stop_year}_nemo_physical_rtd.nc
+      save nemo_physical_rtd.nc $new_rtd_file
+
+      # Copy the new physical rtd file to Victoria
+      scp_rtd_to_Victoria nemo_physical_rtd.nc sc_${runid}_nemo_physical_rtd.nc
+
+      # delete RTD files from 2 years ago from RUNPATH (if we are 2+ years from rtd starting).
+       yearcm2=`expr ${current_year} - 2 | awk  '{printf "%04d",$1}'`        
+       
+       if [ ${yearcm2} -ge ${nemo_rtdiag_start_year} ] ; then
+           access  old_rtd  na  nocp  sc_${runid}_${nemo_rtdiag_start_year}_${yearcm2}_nemo_physical_rtd.nc
+           delete  old_rtd
+       fi
+
+      if [ $nemo_carbon -eq 1 ]; then
+        # Also generate PISCES run time diagnostics
+
+        # Access additional annual history files containing PISCES related variables
+        rtd_hist5="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_ptrc_t.nc"
+        rtd_hist6="${uxxx}_${cn_exp}_1m_${stop_year}0101_${stop_year}1231_diad_t.nc"
+        access ptrc_t $rtd_hist5 nocp=off
+        access diad_t $rtd_hist6 nocp=off
+        chmod u+rw ptrc_t diad_t
+
+        # Access the rtd executable
+        carbon_rtd_exe=nemo_orca1_carbon_rtd_v02c
+        [ -z "$carbon_rtd_exe" ] && bail "carbon_rtd_exe is not defined."
+        access $carbon_rtd_exe $carbon_rtd_exe nocp=off
+        chmod u+x $carbon_rtd_exe
+
+        # Access an existing rtd file containing data up to the previous year, if 
+        # year > nemo_rtdiag_start_year
+        if [ ${nemo_rtdiag_start_year} -lt ${stop_year} ] ; then
+            stop_year_prev=`echo $stop_year|awk '{printf "%4.4d",$1-1}' -`
+            curr_rtd_file=sc_${runid}_${nemo_rtdiag_start_year}_${stop_year_prev}_nemo_carbon_rtd.nc
+            access nemo_carbon_rtd.nc $curr_rtd_file nocp=off
+            chmod u+rw nemo_carbon_rtd.nc
+            # Create run time diagnostics for carbon variables
+            $carbon_rtd_exe $stop_year
+        else
+            # Create run time diagnostics for carbon variables
+            $carbon_rtd_exe $stop_year
+            ${NCATTED} -O -a RTD_version,global,a,c,"${carbon_rtd_exe}" nemo_carbon_rtd.nc
+        fi
+
+        # Save the rtd file created by carbon_rtd_exe
+        new_rtd_file=sc_${runid}_${nemo_rtdiag_start_year}_${stop_year}_nemo_carbon_rtd.nc
+        save nemo_carbon_rtd.nc $new_rtd_file
+
+        # Copy the new carbon rtd file to Victoria
+        scp_rtd_to_Victoria nemo_carbon_rtd.nc sc_${runid}_nemo_carbon_rtd.nc
+
+        # delete RTD files from 2 years ago from RUNPATH (if we are 2+ years from rtd starting).
+        if [ ${yearcm2} -ge ${nemo_rtdiag_start_year} ] ; then
+          access  old_rtd  na  nocp  sc_${runid}_${nemo_rtdiag_start_year}_${yearcm2}_nemo_carbon_rtd.nc
+          delete  old_rtd
+        fi
+      fi
+
+      # Clean up
+      release grid_t
+      release grid_u
+      release grid_v
+      release grid_w
+      release orca1_mesh_mask
+      if [ $nemo_carbon -eq 1 ]; then
+        # PISCES related files
+        release ptrc_t
+        release diad_t
+        release orca_mesh_mask
+      fi
+       
+    fi
+  fi
+
+  ####################################################################
+  #  DUMPING and DELETING
+
+  # Optionally dump history files saved on DATAPATH to cfs
+  nemo_dump_hist=${nemo_dump_hist:-off}
+  ToF nemo_dump_hist
+
+  # Optionally dump restart archives saved on DATAPATH to cfs
+  nemo_dump_rs=${nemo_dump_rs:-off}
+  ToF nemo_dump_rs
+
+  # Optionally delete history files saved on DATAPATH.
+  nemo_del_hist=${nemo_del_hist:-on}
+  ToF nemo_del_hist
+
+  # If nemo_del_rs=on, then delete the previous restart tar archive from DATAPATH.
+  nemo_del_rs=${nemo_del_rs:=off}
+  ToF nemo_del_rs
+
+  if [ $nemo_dump_hist -eq 1 -o $nemo_dump_rs -eq 1 -o $nemo_del_hist -eq 1 -o $nemo_del_rs -eq 1 ]; then
+    # If nemo_ann_cat=on, only dump/delete in December. Else do it every step.
+    if [ $nemo_ann_cat -eq 1 -a $stop_mon -eq 12 ] || [ $nemo_ann_cat -ne 1 ]; then
+
+      # DUMPING SECTION #
+      if [ $nemo_dump_hist -eq 1 -o $nemo_dump_rs -eq 1 ]; then
+
+        # The user can redefine nemo_dump_hist_freq_list and nemo_dump_hist_suffix_list
+        # to only dump a subset of the history files
+        nemo_dump_hist_freq_list='1y 1m 1d 5d'
+        nemo_dump_hist_suffix_list='icemod grid_t grid_u grid_v grid_w ptrc_t diad_t'
+
+        # The user can redefine nemo_dump_rs_month_list. Restarts will
+        # only be dumped for those months listed in nemo_dump_rs_month_list.
+        nemo_dump_rs_month_list='01 02 03 04 05 06 07 08 09 10 11 12'
+
+	# Keep track of history files to dump in hist_file_dump_list
+	hist_file_dump_list=hist_file_dump_list_$$
+	rm -f $hist_file_dump_list
+	touch $hist_file_dump_list
+
+	# For the history files
+	if [ $nemo_dump_hist -eq 1 ]; then
+	  if [ $nemo_save_hist -ne 1 -a $do_nemo_run -eq 1 ]; then
+	    bail "Dumping for history files was requested but nemo_save_hist=off"
+	  fi
+
+	  for freq in $nemo_dump_hist_freq_list; do
+	    for sfx in $nemo_dump_hist_suffix_list; do
+	      if [ $nemo_ann_cat -eq 1 ]; then
+		pfx="${uxxx}_${cn_exp}_${freq}_${stop_year}????_${stop_year}????_$sfx"
+	      else
+		pfx="${uxxx}_${cn_exp}_${freq}_${stop_year}${start_mon}01_${stop_year}${stop_mon}${stop_day}_$sfx"
+	      fi
+	      eval fnpatt=${pfx}.nc.\[0-9\]\[0-9\]\[0-9\]
+	      echo ${fnpatt}
+	      found_file=`(ls -1 $DATAPATH/$fnpatt || : ) 2>/dev/null`
+	      if [ -n "$found_file" ]; then
+		# At least 1 matching file name was found on DATAPATH
+		# Identify a list of unique matching file names to be accessed
+		acclist=''
+		for full_path in $found_file; do
+		  # echo "full_path = $full_path"
+		  bname=`basename $full_path|sed 's/\.[0-9][0-9][0-9]$//'`
+		  acclist="$acclist $bname"
+		 done
+		# Ensure all file names are unique
+		# Copies will be created when multiple edition numbers exist for the
+		#same file
+		acclist=`echo $acclist|awk '{for(i=1;i<=NF;i++){printf "%s\n",$i}}' |sort -u|xargs`
+	        # echo the files to hist_file_dump_list
+	        echo ${acclist} >> ${hist_file_dump_list}
+	      fi  
+	    done
+	  done
+	  [ -s ${hist_file_dump_list} ] || bail "Could not create a list of history files to dump"  
+	fi
+
+	# For the restart files
+	if [ $nemo_dump_rs -eq 1 ]; then
+	  # First determine if this is a month in nemo_dump_rs_month_list
+	  mmrs=`echo $rs_out | sed 's/^.*_\([0-9][0-9]*\)_restart\.tar$/\1/'|cut -c 5-6`
+	  dump_this_rs=0
+	  for mitem in ${nemo_dump_rs_month_list}; do
+	    if [ x"${mitem}" = x"${mmrs}" ]; then
+	      dump_this_rs=1
+	    fi
+	  done
+
+	  if [ ${dump_this_rs} -eq 1 ]; then
+	    eval fnpatt=${rs_out}.\[0-9\]\[0-9\]\[0-9\]
+	    found_rs_file=`(ls -1 $DATAPATH/$fnpatt || : ) 2>/dev/null`
+	    [ -n "$found_rs_file" ] || bail "nemo_dump_rs=on but cannot find ${rs_out} on DATAPATH"
+	    echo ${rs_out} >> ${hist_file_dump_list}
+	    [ -s ${hist_file_dump_list} ] || bail "Could not create a list of restart files to dump"  
+	  fi
+	fi
+
+        if [ $nemo_dump_hist -ne 1 -a ${dump_this_rs} -ne 1 ]; then
+            DUMPHIST=''
+        else
+     	  # Create DUMPHIST variable to pass to cccjob.
+	  [ -s ${hist_file_dump_list} ] || bail "Could not create list of files to dump"  
+	  DUMPHIST="dump_sublist=${hist_file_dump_list}:s"
+        fi
+      fi
+
+      ####################################################################
+      # DELETE SECTION #
+
+      # The user can redefine nemo_del_hist_freq_list and nemo_del_hist_suffix_list
+      # to only delete a subset of the history files
+      nemo_del_hist_freq_list=${nemo_del_hist_freq_list:-'1y 1m 1d 5d'}
+      nemo_del_hist_suffix_list=${nemo_del_hist_suffix_list:-'icemod grid_t grid_u grid_v grid_w ptrc_t diad_t'}
+
+      if [ $nemo_del_hist -eq 1 -o $nemo_del_rs -eq 1 ]; then
+
+	# Keep track of history files to delete in hist_file_del_list
+	hist_file_del_list=hist_file_del_list_$$
+	rm -f $hist_file_del_list
+	touch $hist_file_del_list
+
+	if [ $nemo_del_hist -eq 1 ]; then
+	  if [ $nemo_save_hist -ne 1 -a $do_nemo_run -eq 1 ]; then
+	    bail "Deleting for history files was requested but nemo_save_hist=off"
+	  fi
+
+	  for freq in $nemo_del_hist_freq_list; do
+	    for sfx in $nemo_del_hist_suffix_list; do
+	      if [ $nemo_ann_cat -eq 1 ]; then
+		pfx="${uxxx}_${cn_exp}_${freq}_${stop_year}????_${stop_year}????_$sfx"
+	      else
+		pfx="${uxxx}_${cn_exp}_${freq}_${stop_year}${start_mon}01_${stop_year}${stop_mon}${stop_day}_$sfx"
+	      fi
+	      eval fnpatt=${pfx}.nc.\[0-9\]\[0-9\]\[0-9\]
+	      echo ${fnpatt}
+	      found_file=`(ls -1 $DATAPATH/$fnpatt || : ) 2>/dev/null`
+	      if [ -n "$found_file" ]; then
+		# At least 1 matching file name was found on DATAPATH
+		# Identify a list of unique matching file names to be accessed
+		acclist=''
+		for full_path in $found_file; do
+		  # echo "full_path = $full_path"
+		  bname=`basename $full_path|sed 's/\.[0-9][0-9][0-9]$//'`
+		  acclist="$acclist $bname"
+		 done
+		# Ensure all file names are unique
+		# Copies will be created when multiple edition numbers exist for the
+		#same file
+		acclist=`echo $acclist|awk '{for(i=1;i<=NF;i++){printf "%s\n",$i}}' |sort -u|xargs`
+	        # echo the files to hist_file_dump_list
+	        echo ${acclist} >> ${hist_file_del_list}
+	      fi  
+	    done
+	  done
+	  [ -s ${hist_file_del_list} ] || bail "Could not create a list of history files to delete"  
+	fi
+
+	if [ $nemo_del_rs -eq 1 ]; then
+	  if [ $nemo_ann_cat -eq 1 ]; then
+	    # In this case we will want to delete all restart files for the year.
+            rsy=`echo $rs_year |awk '{printf "%4.4d",$1}'`
+	    rspfx="${uxxx}_${runid}_${rsy}????_restart.tar"
+	    eval rsfnpatt=${rspfx}.\[0-9\]\[0-9\]\[0-9\]
+	    echo ${rsfnpatt}
+	    found_file=`(ls -1 $DATAPATH/$rsfnpatt || : ) 2>/dev/null`
+	    if [ -n "$found_file" ]; then
+	      # At least 1 matching file name was found on DATAPATH
+	      # Identify a list of unique matching file names to be accessed
+	      acclist=''
+	      for full_path in $found_file; do
+		# echo "full_path = $full_path"
+		bname=`basename $full_path|sed 's/\.[0-9][0-9][0-9]$//'`
+		acclist="$acclist $bname"
+	       done
+	      # Ensure all file names are unique
+	      # Copies will be created when multiple edition numbers exist for the
+	      #same file
+	      acclist=`echo $acclist|awk '{for(i=1;i<=NF;i++){printf "%s\n",$i}}' |sort -u|xargs`
+	    fi  
+	    # echo the files to hist_file_dump_list
+	    echo ${acclist} >> ${hist_file_del_list}
+	  else
+	    # we just want to delete the last restart
+	    echo ${nemo_rs} >> ${hist_file_del_list}
+	  fi
+	  [ -s ${hist_file_del_list} ] || bail "Could not create a list of restart files to delete"  
+	fi
+	
+	# Creat DELHIST variable to pass to cccjob.
+	[ -s ${hist_file_del_list} ] || bail "Could not create list of files to delete"  
+	DELHIST="del_list=${hist_file_del_list}:s"
+      fi
+
+      # make the dump_del_job with the lists from above and run it.
+      # Check that at least one of DUMPHIST or DELHIST are defined.
+      if [ -n "${DUMPHIST}" -o -n "${DELHIST}" ]; then  
+	[ -n "${DUMPHIST}" ] || DUMPHIST=''
+	[ -n "${DELHIST}" ]  || DELHIST=''
+
+	# If arclabel is set then the cmcarc filename will be ${arclabel}_${timestamp}_arc.
+	# If not set then the cmcarc filename will be ${commonprefix}_${timestamp}_arc
+	# where commonprefix is the common prefix of all of the individual file names
+	# of all files that are dumped.
+	dump_sublist_arclabel=${uxxx}_${cn_exp}_${stop_year}0101_${stop_year}1231
+
+	bemach=$this_mach
+	shortermdir=${shortermdir:=off}
+	masterdir=${masterdir:=on}
+	sv=${sv:=off}
+	besc=${besc:=on}
+	with_lsarc=off
+
+	varlist="dump_sublist_arclabel uxxx runid shortermdir masterdir sv bemach
+		 besc with_lsarc"
+	rm -f dump_del_defs
+	touch dump_del_defs
+	for var in $varlist; do
+	  eval val=\$$var
+	  # If this variable is defined add it to the list
+	  [ -n "$val" ] && echo ${var}=\'$val\' >> dump_del_defs
+	done
+
+	dump_del_job="dump_del_job_$$"
+	cccjob --out=$dump_del_job --job="$DUMPHIST $DELHIST" dump_del_defs
+	rm -f dump_del_defs
+	CWD=`pwd`
+
+	# Submit the job just created
+	if [ -n "$ROUTE_SSH" ]; then
+	  $ROUTE_SSH "cd ${CWD} ; rsub $dump_del_job $this_mach"
+	else
+	  cd ${CWD}
+	  rsub $dump_del_job $this_mach
+	fi
+
+	# Clean up
+	rm -f $dump_del_job
+      fi
+    fi
+  fi

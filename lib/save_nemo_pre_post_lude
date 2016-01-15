@@ -4,7 +4,7 @@
 # must be saved on DATAPATH prior to running nemo
 # Their "saved" names must be used in the make script used to create the submission job
 #
-# Larry Solheim ...June,2015
+# Larry Solheim ...Sept,2015
 
 # this_host will be the current hostname as output from uname
 this_host=`uname -n|awk -F. '{print $1}' -`
@@ -20,7 +20,7 @@ esac
 
 # If the user supplies a list of file names on the command line then the user supplied files
 # will be saved if they exist in SOURCE_DIR. Otherwise all files in flist will be saved.
-flist="namelist_ice namelist iodef.xml xmlio_server.def"
+flist="nemo_prelude nemo_postlude"
 if [ -n "$1" ]; then
   flist="$@"
 fi
