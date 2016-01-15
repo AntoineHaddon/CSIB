@@ -37,7 +37,11 @@ MODULE limsbc_2
    USE iom              ! I/O library
    USE prtctl           ! Print control
    USE lib_fortran      ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
+#if defined key_cancpl
+   USE cpl_cancpl, ONLY : lk_cpl
+#else
    USE cpl_oasis3, ONLY : lk_cpl
+#endif
 
    IMPLICIT NONE
    PRIVATE

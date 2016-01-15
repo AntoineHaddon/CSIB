@@ -13,7 +13,7 @@ CONTAINS
     myDoc => parsefile(name)
     CALL parsing_root(myDoc)
 
-    PRINT *, 'Le parsing est termine !!! '
+    ! PRINT *, 'Le parsing est termine !!! '
   
   END SUBROUTINE parsing_xml_file
   
