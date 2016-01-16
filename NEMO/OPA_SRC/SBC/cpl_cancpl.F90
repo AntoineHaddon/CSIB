@@ -29,7 +29,9 @@ MODULE cpl_cancpl
   use in_out_manager               ! I/O manager
   use lbclnk                       ! ocean lateral boundary conditions (or mpp link)
   use sbc_oce, only: nn_ice
+#if defined key_cice
   use ice_domain_size, only: ncat
+#endif
   use lib_mpp, only: mpi_comm_opa
 
   implicit none
@@ -319,7 +321,11 @@ contains
 
      !--- Set a value for nemo_ncat, defined in com_cpl
      !--- ncat is defined in the CICE module ice_domain_size
+#if defined key_cice
      nemo_ncat = ncat
+#else
+     nemo_ncat = 1
+#endif
 
      !--- Initialize coupler events
      call cpl_initialize_events()
