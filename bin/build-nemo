@@ -293,7 +293,7 @@ if [ $coupled = "on" ]; then
   git archive --remote=$cancpl_repo --format=tar --prefix=tmp_CanCPL/ \
               $cancpl_version src/comm/com_cpl.F90 | tar xf -
   sed '/^#include *"cpl_cppdefs"/d' tmp_CanCPL/src/comm/com_cpl.F90 > tmp_com_cpl.F90
-  mv tmp_com_cpl.F90 $nemo_root/NEMO/CanCPL/com_cpl.F90
+  mv tmp_com_cpl.F90 $nemo_root/NEMO/OPA_SRC/SBC/com_cpl.F90
 fi
 
 if [ -n "$nemo_source_mods" ]; then
