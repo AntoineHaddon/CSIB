@@ -54,14 +54,14 @@ CONTAINS
       INTEGER  ::   ji, jj, jk
       CHARACTER (len=25) :: charout
       ! <CMOC code OR 10/15/2015> arrays for total water column remineralisation, total euphotic zone nitrogen fixation, temporary array for DNF diagnostics, pon flux (euphotic zone bottom) for PIC burial diagnostics, PIC flux at the bottom, bottom POC
-      REAL(wp), POINTER, DIMENSION(:,:  ) :: zredettot, zn2fixtot, zwork, zfpon, zbpon, zbpoc
+      REAL(wp), POINTER, DIMENSION(:,:  ) :: zredettot, zn2fixtot, zwork, zfpon, zbpon, zbpoc, zdenittot ! <CMOC code OR 12/11/2015> total denitrification
       ! <CMOC code OR 10/15/2015> arrays for depth-dependent rates, zJNd is used to compute the balance between denitrification and nitrogen fixation
       REAL(wp), POINTER, DIMENSION(:,:,:) :: zredet,    zn2fix,   zJNd
       !!---------------------------------------------------------------------
       !
       IF( nn_timing == 1 )  CALL timing_start('p4z_rem')
       !
-      CALL wrk_alloc( jpi, jpj,      zredettot, zn2fixtot, zwork , zfpon, zbpon, zbpoc   )       
+      CALL wrk_alloc( jpi, jpj,      zredettot, zn2fixtot, zwork , zfpon, zbpon, zbpoc, zdenittot   ) ! <CMOC code OR 12/11/2015> total denitrification
       CALL wrk_alloc( jpi, jpj, jpk, zredet,    zn2fix,    zJNd          )                       
 
       ! <CMOC code OR 10/15/2015> Initialization of CMOC arrays
@@ -69,6 +69,8 @@ CONTAINS
        zredettot(:,:)   = 0._wp
        zn2fix   (:,:,:) = 0._wp
        zn2fixtot(:,:)   = 0._wp
+       ! <CMOC code OR 12/11/2015> Total denitrification diagnostics
+       zdenittot(:,:)   = 0._wp
 
        zJNd     (:,:,:) = 0._wp
        zwork    (:,:)   = 0._wp
@@ -125,6 +127,7 @@ CONTAINS
       DO jk = 12, jpkm1
       !
             zJNd(:,:,jk) = -zredet(:,:,jk) * trn(:,:,jk,jppoc) * zn2fixtot(:,:) / (zredettot(:,:) + rtrn)
+            zdenittot(:,:) = zdenittot(:,:) + zJNd(:,:,jk) * fse3t(:,:,jk) * tmask(:,:,jk)      ! <CMOC code OR 12/11/2015> Total denitrification (negative at this stage); NOTE: since denitrification is over the whole water column I apply the land mask at each depth instead of once using the surface (as in the case of DNF diagnostics, see farther below)
       !
       END DO
       
@@ -221,14 +224,16 @@ CONTAINS
          IF( jnt == nrdttrc ) THEN
               zwork(:,:)  =  zn2fixtot(:,:) * ncrr_cmoc * 1.e+3_wp * rfact2r * tmask(:,:,1) ! <CMOC code OR 10/15/2015> 1.e+3_wp is to convert from L^-1 to m^-3 (left in the sum line #119); the diagnostics has to be rescaled to per second by dividing by rfact2.
               CALL iom_put( "Nfix"   , zwork )                                         ! nitrogen fixation in molN m^-2 s^-1 
-              CALL iom_put( "BUPOC"  , wsbio3(:,:,11) /rday * zbpoc(:,:) * 1e+3_wp  )  ! POC burial flux
-              CALL iom_put( "BUCALC" , zfpon(:,:) * 1e+3_wp / rfact2 * zbpon(:,:)  )   ! PIC burial flux
+              zwork(:,:)  = -zdenittot(:,:) * ncrr_cmoc * 1.e+3_wp * rfact2r                ! <CMOC code OR 12/11/2015> 1.e+3_wp is to convert from L^-1 to m^-3 (left in the sum line #119); the diagnostics has to be rescaled to per second by dividing by rfact2; NOTE: land mask already taken into account
+	      CALL iom_put( "Denit"  , zwork )                                         ! denitrification in molN m^-2 s^-1 
+              ! <CMOC code OR 12/11/2015> denitrification ! CALL iom_put( "BUPOC"  , wsbio3(:,:,11) /rday * zbpoc(:,:) * 1e+3_wp  )  ! POC burial flux
+              ! <CMOC code OR 12/11/2015> denitrification ! CALL iom_put( "BUCALC" , zfpon(:,:) * 1e+3_wp * rfact2r * zbpon(:,:)  )  ! <CMOC code OR 12/11/2015> *rfact2r replaces /rfact2 ! PIC burial flux
 
          ENDIF
         ENDIF
       ENDIF
 
-      CALL wrk_dealloc( jpi, jpj,      zredettot, zn2fixtot, zwork, zfpon, zbpon, zbpoc  )
+      CALL wrk_dealloc( jpi, jpj,      zredettot, zn2fixtot, zwork, zfpon, zbpon, zbpoc, zdenittot  ) ! <CMOC code OR 12/11/2015> Total denitrification
       CALL wrk_dealloc( jpi, jpj, jpk, zredet,    zn2fix,   zJNd         )
       !
       IF( nn_timing == 1 )  CALL timing_stop('p4z_rem')
