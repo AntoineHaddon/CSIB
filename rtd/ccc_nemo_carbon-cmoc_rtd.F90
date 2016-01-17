@@ -6,6 +6,9 @@ IMPLICIT NONE
 !
 ! HISTORY:
 ! -------
+! O. Riche    Jan    2016   Fix total N and C RTD, issue: unit problem across 
+!                           variables; outputs are in nitrogen except DIC/TA.
+!
 ! N. Swart    Dec    2015   Abstract all calculations to ccc_nemo_rtd_utils
 !                           module, which is shared between all rtd.
 !
@@ -344,11 +347,11 @@ SUBROUTINE calc (imt, jmt, km, lm)
           enddo  ! depth, k        
 
     !     compute toc and ton
-          toc(l) = dicvol(l)  + pocvol(l) + phyvol(l) + zoovol(l)                                          
+          toc(l) = dicvol(l)  + 106./16. * pocvol(l) + phyvol(l) + zoovol(l)                                          
     !     convert from mmol C to Pg C      
           toc(l) = toc(l) * 12.0e-18
           print*,'toc', toc(l)
-          ton(l) = no3vol(l) + 16./122.*(phyvol(l) + zoovol(l)  + pocvol(l))                                             
+          ton(l) = no3vol(l) + phyvol(l) + zoovol(l)  + pocvol(l)                                             
     !     convert to Pg      
           ton(l) = ton(l) * 14.007e-18
 
