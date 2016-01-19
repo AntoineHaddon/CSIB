@@ -716,6 +716,9 @@ CONTAINS
         !--- Receive cpl_time_string from the coupler
         !--- cpl_time_string is found in the com_cpl module
         call bcast_inter(cpl_time_string, cpl_master, "ocn")
+        call bcast_inter(cpl_time_secs, cpl_master, "ocn")
+        write(numout,*)"isec=",isec,"  cpl_time_secs=",cpl_time_secs
+        call flush(numout)
       endif
 #endif
 

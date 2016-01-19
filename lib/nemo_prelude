@@ -804,12 +804,14 @@
   nemo_mask_itf=nemo_3.4_orca1_mask_itf_orca1_new.nc
   nemo_M2rowdrg=nemo_3.4_orca1_m2rowdrg_r1_modif.nc
   nemo_K1rowdrg=nemo_3.4_orca1_k1rowdrg_r1_modif.nc
+  nemo_Eddyengf=nemo_3.4_orca1_eddy_mix.nc
   nemo_geothermal_heating=nemo_3.3_orca2_geothermal_heating.nc
   nemo_runoff_core_monthly=nemo_3.4_orca1_rout_socoeff_month_r1i1p1_1979-2005-mean2.nc
   nemo_sst_data=nemo_3.4_orca1_sst_1m_orca1.nc
   nemo_sss_data=nemo_3.4_orca1_sss_1m_orca1.nc
   nemo_chlorophyll=nemo_3.4_orca1_chlorophyll-orca1_1m.nc
   nemo_subbasins=nemo_3.4_orca1_basinmask_050308_ukmo_modified.nc
+
 
   [ -s iodef.xml ]              || access iodef.xml              $nemo_iodef
   [ -s xmlio_server.def ]       || access xmlio_server.def       $nemo_xmlio_server_def
@@ -819,6 +821,7 @@
   [ -s mask_itf.nc ]            || access mask_itf.nc            $nemo_mask_itf
   [ -s M2rowdrg.nc ]            || access M2rowdrg.nc            $nemo_M2rowdrg
   [ -s K1rowdrg.nc ]            || access K1rowdrg.nc            $nemo_K1rowdrg
+  [ -s Eddyengf.nc ]            || access Eddyengf.nc            $nemo_Eddyengf
   [ -s geothermal_heating.nc ]  || access geothermal_heating.nc  $nemo_geothermal_heating
   [ -s runoff_core_monthly.nc ] || access runoff_core_monthly.nc $nemo_runoff_core_monthly
   [ -s sss_data.nc ]            || access sss_data.nc            $nemo_sss_data
@@ -826,17 +829,19 @@
   [ -s chlorophyll.nc ]         || access chlorophyll.nc         $nemo_chlorophyll
   [ -s subbasins.nc ]           || access subbasins.nc           $nemo_subbasins
 
-  # CICE related
-  nemo_cice_grid=nemo_3.4.1_orca1_cice_tgraham_grid.nc
-  nemo_cice_kmt=nemo_3.4.1_orca1_cice_tgraham_kmt.nc
+  if [ $nn_ice -eq 4 ]; then
+    # CICE related
+    nemo_cice_grid=nemo_3.4.1_orca1_cice_tgraham_grid.nc
+    nemo_cice_kmt=nemo_3.4.1_orca1_cice_tgraham_kmt.nc
+    [ -s grid ] || access grid  $nemo_cice_grid
+    [ -s kmt ]  || access kmt   $nemo_cice_kmt
+  fi
 
-  [ -s grid ] || access grid  $nemo_cice_grid
-  [ -s kmt ]  || access kmt   $nemo_cice_kmt
 
-  nemo_data_1m_potential_temperature_nomask=uncs_canesm2_iga_to_orca1_data_thetao_nomask.nc
-  nemo_data_1m_salinity_nomask=uncs_canesm2_iga_to_orca1_data_so_nomask.nc
-#  nemo_data_1m_potential_temperature_nomask=nemo_3.4_orca1_potemp_1m_z46_nomask.nc
-#  nemo_data_1m_salinity_nomask=nemo_3.4_orca1_salin_1m_z46_nomask.nc
+#  nemo_data_1m_potential_temperature_nomask=uncs_canesm2_iga_to_orca1_data_thetao_nomask.nc
+#  nemo_data_1m_salinity_nomask=uncs_canesm2_iga_to_orca1_data_so_nomask.nc
+  nemo_data_1m_potential_temperature_nomask=nemo_3.4_orca1_potemp_1m_z46_nomask.nc
+  nemo_data_1m_salinity_nomask=nemo_3.4_orca1_salin_1m_z46_nomask.nc
 
   [ -s data_1m_potential_temperature_nomask.nc ] || access data_1m_potential_temperature_nomask.nc $nemo_data_1m_potential_temperature_nomask
   [ -s data_1m_salinity_nomask.nc ]              || access data_1m_salinity_nomask.nc              $nemo_data_1m_salinity_nomask
