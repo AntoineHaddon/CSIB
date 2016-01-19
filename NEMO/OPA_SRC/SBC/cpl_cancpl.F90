@@ -267,7 +267,7 @@ contains
 !---TODO--- The fields in these lists must be in the same order as the the data
 !---TODO--- is sent or received.
 !---TODO--- See subroutine sbc_cpl_snd for the send order
-!---TODO--- nemo_recv_var should already by in the correct order which is
+!---TODO--- nemo_recv_var should already be in the correct order which is
 !---TODO--- the order the fields appear in srcv
      if ( nemo_n_send_var > 0 ) then
        !--- nemo_send_var needs to be reordered
@@ -276,8 +276,8 @@ contains
        !--- The subroutine sbc_cpl_snd determines the send order
        !--- Since there is no clear way to determine this order on the fly
        !--- it must be hard coded here (this is bad). Therefore if there
-       !--- are any changes in sbc_cpl_snd that alter this order then they
-       !--- there must also be changes here
+       !--- are any changes in sbc_cpl_snd that alter this order then there
+       !--- must also be changes here
        do ji=1,nemo_n_send_var
        enddo
      endif
