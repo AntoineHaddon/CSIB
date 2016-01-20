@@ -56,7 +56,7 @@ MODULE cpl_cancpl
 
   !--- These are defined in com_cpl
   public :: cpl_vinfo_t, find_cpl_vinfo
-  public :: bcast_inter, cpl_time_string, cpl_time_secs, cpl_master
+  public :: bcast_inter, cpl_time_string, cpl_elasped_time_secs, cpl_master
 
   integer            ::   nerror        ! return error code
   integer, parameter ::   nmaxfld=40    ! maximum number of coupling fields
