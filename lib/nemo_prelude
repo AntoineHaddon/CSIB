@@ -767,7 +767,7 @@
   nn_print=${nemo_nn_print:=0}       #  level of print (0 no extra print)
 
   # Runoff
-  ln_rnf=${nemo_ln_rnf:=.true.}
+  ln_rnf=${nemo_ln_rnf:=.false.}
 
   # &namtsd    !   data : Temperature  & Salinity
   # ln_tsd_init flags initialization of ocean T & S with T & S input data (T) or not (F)
