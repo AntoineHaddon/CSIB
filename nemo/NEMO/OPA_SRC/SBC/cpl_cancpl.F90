@@ -56,7 +56,7 @@ MODULE cpl_cancpl
 
   !--- These are defined in com_cpl
   public :: cpl_vinfo_t, find_cpl_vinfo
-  public :: bcast_inter, cpl_time_string, cpl_master
+  public :: bcast_inter, cpl_time_string, cpl_time_secs, cpl_master
 
   integer            ::   nerror        ! return error code
   integer, parameter ::   nmaxfld=40    ! maximum number of coupling fields
@@ -586,32 +586,6 @@ contains
 
      !---Determine the rank of the calling process in MPI_COMM_WORLD
      call mpi_comm_rank ( MPI_COMM_WORLD, rank, ierr )
-
-!xxx     cpl_vinfo = find_cpl_vinfo( name="start_cpl2ocn" )
-!xxx     freq = cpl_vinfo%freq
-!xxx     if ( mod(kstep,freq) == 0 ) then
-!xxx       !--- Receive cpl_time_string from the coupler
-!xxx       !--- cpl_time_string is found in the com_cpl module
-!xxx       call bcast_inter(cpl_time_string, cpl_master, "ocn")
-!xxx     endif
-!xxx
-!xxx       sz = len(cpl_time_string)
-!xxxwrite(numout,*)"cpl_cancpl_rcv: rank,cpl_time_string = ",rank,"  ",trim(cpl_time_string)
-!xxxcall flush(numout)
-!xxx       if ( rank == ocn_master ) then
-!xxx!--TODO-- Need a better way to assign this with a unique tag value
-!xxx!--TODO-- both here and in field_ops
-!xxx         tag = 22
-!xxx         call mpi_recv(cpl_time_string, sz, MPI_CHARACTER, cpl_master, &
-!xxx                       tag, MPI_COMM_WORLD, status, ierr )
-!xxx       endif
-!xxx       write(numout,*)"cpl_cancpl_rcv: before mpi_bcast rank, mpi_comm_opa = ",rank,mpi_comm_opa
-!xxx       call flush(numout)
-!xxx       call mpi_bcast(cpl_time_string, sz, MPI_CHARACTER, 0_4, &
-!xxx                      mpi_comm_opa, ierr)
-!xxx       write(numout,*)"cpl_cancpl_rcv: after mpi_bcast rank = ",rank
-!xxx       call flush(numout)
-!xxx     endif
 
      !--- Loop over all "catagories" (normally only 1) for this variable
      !--- receiving separate data from the coupler for each catagory
