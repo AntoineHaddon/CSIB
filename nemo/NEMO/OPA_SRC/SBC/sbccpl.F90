@@ -716,10 +716,10 @@ CONTAINS
         !--- Receive cpl_time_string from the coupler
         !--- cpl_time_string is found in the com_cpl module
         call bcast_inter(cpl_time_string, cpl_master, "ocn")
-        !--- Send elasped coupler time in seconds from the coupler to the ocean
-        !--- cpl_elasped_time_secs is found in the com_cpl module
-        call bcast_inter(cpl_elasped_time_secs, cpl_master, "ocn")
-        write(numout,*)"isec=",isec,"  cpl_elasped_time_secs=",cpl_elasped_time_secs
+        !--- Send elapsed coupler time in seconds from the coupler to the ocean
+        !--- cpl_elapsed_time_secs is found in the com_cpl module
+        call bcast_inter(cpl_elapsed_time_secs, cpl_master, "ocn")
+        write(numout,*)"isec=",isec,"  cpl_elapsed_time_secs=",cpl_elapsed_time_secs
         call flush(numout)
       endif
 #endif
