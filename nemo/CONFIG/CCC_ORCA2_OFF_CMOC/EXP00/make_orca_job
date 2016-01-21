@@ -78,7 +78,7 @@ pisces_offline=on
 
 # Concatenate history files into one file per year
 # (Required for RTD). The sub-annual files will be deleted.
-nemo_ann_cat=on
+nemo_ann_cat=off
 
 # RTD switch. If nemo_carbon=on, both physical and carbon RTD will be done,
 # otherwise only physical. User can specify rtd exectuables below. 
