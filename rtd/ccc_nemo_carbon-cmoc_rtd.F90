@@ -351,7 +351,7 @@ SUBROUTINE calc (imt, jmt, km, lm)
           enddo  ! depth, k        
 
     !     compute toc and ton
-          toc(l) = dicvol(l)  + 106./16. * pocvol(l) + phyvol(l) + zoovol(l)                                          
+          toc(l) = dicvol(l)  + 106./16. * ( pocvol(l) + phyvol(l) + zoovol(l) )                                         
     !     convert from mmol C to Pg C      
           toc(l) = toc(l) * 12.0e-18
           print*,'toc', toc(l)
@@ -548,6 +548,11 @@ SUBROUTINE calc (imt, jmt, km, lm)
               CALL defvar ('NFIX', iou, 1, (/id_time/), -1.e4                    & 
      &            , 1.e4,' ', 'F', 'Nitrogen fixation at surface'                &
      &            , 'NFIX', 'TgN/yr')
+          endif
+!             Denti <CMOC code OR 01/15/2016>
+              CALL defvar ('DENIT', iou, 1, (/id_time/), -1.e4                    & 
+     &            , 1.e4,' ', 'F', 'Water column denitrification '                &
+     &            , 'DENIT', 'TgN/yr')
           endif
 
           CALL enddef (iou)
