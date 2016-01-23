@@ -57,11 +57,12 @@ CONTAINS
       REAL(wp), POINTER, DIMENSION(:,:  ) :: zredettot, zn2fixtot, zwork, zfpon, zbpon, zbpoc, zdenittot ! <CMOC code OR 12/11/2015> total denitrification
       ! <CMOC code OR 10/15/2015> arrays for depth-dependent rates, zJNd is used to compute the balance between denitrification and nitrogen fixation
       REAL(wp), POINTER, DIMENSION(:,:,:) :: zredet,    zn2fix,   zJNd
+      REAL(wp) :: zdeup, zideup  ! <CMOC code OR 01/23/2016>  scale of the euphotic defined according to jk_eud_cmoc
       !!---------------------------------------------------------------------
       !
       IF( nn_timing == 1 )  CALL timing_start('p4z_rem')
       !
-      CALL wrk_alloc( jpi, jpj,      zredettot, zn2fixtot, zwork , zfpon, zbpon, zbpoc, zdenittot   ) ! <CMOC code OR 12/11/2015> total denitrification
+      CALL wrk_alloc( jpi, jpj,      zredettot, zn2fixtot, zwork , zfpon, zbpon, zbpoc, zdenittot   ) ! <CMOC code OR 12/11/2015> total denitrification      
       CALL wrk_alloc( jpi, jpj, jpk, zredet,    zn2fix,    zJNd          )                       
 
       ! <CMOC code OR 10/15/2015> Initialization of CMOC arrays
@@ -79,9 +80,12 @@ CONTAINS
        zbpoc    (:,:)   = 0._wp
 
       ! <CMOC code OR 10/15/2015> remineralisation rate of detritus
-      DO jk = 1, jpkm1
-         DO jj = 1, jpj
-            DO ji = 1, jpi
+      ! <CMOC code OR 12/17/2015> imposing the seafloor bathymetry as the bottom of the water column instead of the maximum level on the vertical grid
+ 
+      DO ji = 1, jpi
+          DO jj = 1, jpj
+
+            DO jk = jk_eud_cmoc, mbkt(ji,jj) ! <CMOC code OR 01/23/2016> introduce the jk_eud_cmoc index ! <CMOC code OR 12/17/2015> use bathymetry bottom instead of vertical grid maximum
                !
                ! one way to think of the global variable "xstep" is the time step in days
                zredet (ji,jj,jk) = reref_cmoc * xstep &
@@ -89,48 +93,62 @@ CONTAINS
                &                 * exp ( -ed_cmoc * 1e3_wp / 8.31_wp * ( 1._wp / ( tsn(ji,jj,jk,jp_tem) + 273.15_wp + rtrn ) - 1._wp / ( tvm_cmoc + 273.15_wp ) ) )
                !
             END DO
-         END DO
-      END DO
 
       ! <CMOC code OR 10/15/2015> N2-fixation and denitrification implementation
-      ! <CMOC code OR 10/15/2015> remineralization integration over the water column, from 111 m (k level = 12), excluded, down to the bottom.
-      DO jk = 12, jpkm1
+      ! <CMOC code OR 10/15/2015> remineralization integration over the water column, from 111 m (k level = 12), included, down to the bottom.
+      ! <CMOC code OR 12/17/2015> imposing the seafloor bathymetry as the bottom of the water column instead of the maximum level on the vertical grid 
+            DO jk = 12, mbkt(ji,jj)  
    
-                zredettot(:,:) = zredettot(:,:) + zredet(:,:,jk) * trn(:,:,jk,jppoc)  * fse3t(:,:,jk)
-            
-      END DO
-      ! <CMOC code OR 10/15/2015> N2 fixation integration over the surface layer, between k level 1 and k level 11
-      DO jk = 1, 11
-   
-                zn2fix (:,:,jk) = pnf_cmoc * cnrr_cmoc * 1e-12_wp / 3600._wp * rfact2 & ! reference rate
-                !
-                &                 * kn_cmoc * 1e-6_wp / ( kn_cmoc * 1e-6_wp + trn(:,:,jk,jpno3) + rtrn) & ! N inhibition
-                !
-                &                 * qsr(:,:)*0.43_wp * exp ( - ( (0.04 + 0.03 * trn(:,:,1,jpnch) * 1e6_wp) * fsdept(:,:,jk) ) ) / inf_cmoc & ! ligh sensitivity
-                !
-                &                 * ( max(tsn(:,:,jk,jp_tem), tnfmi_cmoc ) - tnfmi_cmoc ) / ( tnfMa_cmoc - tnfmi_cmoc ) & ! temperature dependence
-                !
-                &                 * ( phinf_cmoc * exp( 1._wp ) * anf_cmoc * fsdept(:,:,jk) * exp ( -anf_cmoc * fsdept(:,:,jk) ) + phi0_cmoc ) ! diazotroph abundance dependence
-                !
-                zn2fixtot(:,:) = zn2fixtot(:,:) + zn2fix(:,:,jk) * fse3t(:,:,jk) ! total nitrogen fixation on the current 1/4 time step
- 
-      END DO 
+                zredettot(ji,jj) = zredettot(ji,jj) + zredet(ji,jj,jk) * trn(ji,jj,jk,jppoc)  * fse3t(ji,jj,jk) * tmask(ji,jj,jk)
+     
+            END DO
 
+
+
+      ! <CMOC code OR 10/15/2015> N2 fixation integration over the surface layer, between k level 1 and k level 11
+
+
+            ! <CMOC code OR 01/23/2016> Move DNF inside the conditional branching for open ocean criterion (nk_bal_cmoc = 15)
+            IF ( nk_bal_cmoc <= mbkt(ji,jj) ) THEN
+            
+	     DO jk = 1, jk_eud_cmoc
+   
+                zn2fix (ji,jj,jk) = pnf_cmoc * cnrr_cmoc * 1e-12_wp / 3600._wp * rfact2 & ! reference rate
+                !
+                &                 * kn_cmoc * 1e-6_wp / ( kn_cmoc * 1e-6_wp + trn(ji,jj,jk,jpno3) + rtrn) & ! N inhibition
+                !
+                &                 * qsr(ji,jj)*0.43_wp * exp ( - ( (0.04 + 0.03 * trn(ji,jj,1,jpnch) * 1e6_wp) * fsdept(ji,jj,jk) ) ) / inf_cmoc & ! ligh sensitivity
+                !
+                &                 * ( max(tsn(ji,jj,jk,jp_tem), tnfmi_cmoc ) - tnfmi_cmoc ) / ( tnfMa_cmoc - tnfmi_cmoc ) & ! temperature dependence
+                !
+                &                 * ( phinf_cmoc * exp( 1._wp ) * anf_cmoc * fsdept(ji,jj,jk) * exp ( -anf_cmoc * fsdept(ji,jj,jk) ) + phi0_cmoc ) ! diazotroph abundance dependence
+                !
+                zn2fixtot(ji,jj) = zn2fixtot(ji,jj) + zn2fix(ji,jj,jk) * fse3t(ji,jj,jk) * tmask(ji,jj,jk) ! total nitrogen fixation on the current 1/4 time step
+ 
+   
       ! <CMOC code OR 10/15/2015> In the 2 loops below, compute the CMOC term of N2-fixation/denitrification and scale denitrification according to N2-fixation to have a balance between them at each grid point
       ! ---------------------------------------------------------------------
-      DO jk = 1, 11 
-      !
-            zJNd(:,:,jk) =  zn2fix(:,:,jk)
-      !
-      END DO 
-
-      DO jk = 12, jpkm1
-      !
-            zJNd(:,:,jk) = -zredet(:,:,jk) * trn(:,:,jk,jppoc) * zn2fixtot(:,:) / (zredettot(:,:) + rtrn)
-            zdenittot(:,:) = zdenittot(:,:) + zJNd(:,:,jk) * fse3t(:,:,jk) * tmask(:,:,jk)      ! <CMOC code OR 12/11/2015> Total denitrification (negative at this stage); NOTE: since denitrification is over the whole water column I apply the land mask at each depth instead of once using the surface (as in the case of DNF diagnostics, see farther below)
-      !
-      END DO
       
+      ! <CMOC code OR 12/17/2015> ! imposing an open ocean criterion on DNF - denit term
+      !
+                zJNd(ji,jj,jk) =  zn2fix(ji,jj,jk)
+      !
+             END DO 
+
+             DO jk = jk_eud_cmoc+1 , mbkt(ji,jj) 
+      !
+		zJNd(ji,jj,jk)  = -zredet(ji,jj,jk) * trn(ji,jj,jk,jppoc) * zn2fixtot(ji,jj) / (zredettot(ji,jj) + rtrn)
+		zdenittot(ji,jj) = zdenittot(ji,jj) + zJNd(ji,jj,jk) * fse3t(ji,jj,jk) * tmask(ji,jj,jk)      ! <CMOC code OR 12/11/2015> Total denitrification (negative at this stage); NOTE: since denitrification is over the whole water column I apply the land mask at each depth instead of once using the surface (as in the case of DNF diagnostics, see farther below)
+    !
+
+
+             END DO
+     
+            ENDIF
+
+          END DO 
+      END DO      
+ 
       ! print mean trends (used for debugging)
        IF(ln_ctl)   THEN
          WRITE(charout, FMT="('rem1')")
@@ -175,33 +193,37 @@ CONTAINS
        DO ji = 1, jpi
         DO jj = 1, jpj
 
+        !<CMOC code OR 01/23/2016> Define the scale of the euphotic zone
+        zdeup = fsdepw(ji,jj,jk_eud_cmoc)
+	zideup= 1._wp / zdeup
+        
 	! <CMOC code OR 10/15/2015> Alkalinity and DIC balance due to PIC
-	! <CMOC code OR 10/15/2015> open ocean criterion based on ocean bottom depth
-	! k = 15 equivalent to z about 150 m
-        IF ( 15 <= mbkt(ji,jj) ) THEN
+	! <CMOC code OR 10/23/2015> open ocean criterion based on ocean bottom depth
+	! jk = nk_bal_cmoc = 15 equivalent to z about 150 m
+        IF ( nk_bal_cmoc <= mbkt(ji,jj) ) THEN
 
          ! <CMOC code OR 10/15/2015> POC flux at the bottom of the euphotic zone taken as k = 11 as in the rest of the code  
-         zfpon(ji,jj) = xrcico(ji,jj) * wsbio3(ji,jj,11) * xstep * trn(ji,jj,11,jppoc) ! PIC export at the bottom of the euphotic zone based on Zahariev et al 2008 p.59
+         zfpon(ji,jj) = xrcico(ji,jj) * wsbio3(ji,jj,jk_eud_cmoc) * xstep * trn(ji,jj,jk_eud_cmoc,jppoc) ! PIC export at the bottom of the euphotic zone based on Zahariev et al 2008 p.59
          ! Diagnostic terms follow
-         zbpon(ji,jj) = exp(-1* (fsdepw(ji,jj,mbkt(ji,jj)+1)-fsdepw(ji,jj,11)) /dci_cmoc) ! fraction of PIC left at the bottom of the water column (used by BUCALC diagnostics)
+         zbpon(ji,jj) = exp(-1* (fsdepw(ji,jj,mbkt(ji,jj)+1)-zdeup) /dci_cmoc) ! fraction of PIC left at the bottom of the water column (used by BUCALC diagnostics)
          zbpoc(ji,jj) = trn(ji,jj,mbkt(ji,jj),jppoc)   ! POC at the bottom at the water column (used by BUPOC diagnostics)
          ! <CMOC code OR 10/15/2015> fsdepw is the w grid, according to Nemo 23 the depth of the top and bottom of the layer where a tracer at level k is located, k is the top and k+1 is the bottom.
          
          ! <CMOC code OR 10/15/2015> Calcification in the euphotic zone
          ! PIC export below the euphotic zone is balanced by calcification and the associated loss of DIC and alkalinity at the surface, evenly distributed over the euphotic zone
-         DO jk =1, 11
-	    tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) -     zfpon(ji,jj) * ( 1 - zbpon(ji,jj) ) * ideup_cmoc
-	    tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) - 2 * zfpon(ji,jj) * ( 1 - zbpon(ji,jj) ) * ideup_cmoc
+         DO jk =1, jk_eud_cmoc
+	    tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) -     zfpon(ji,jj) * ( 1 - zbpon(ji,jj) ) * zideup
+	    tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) - 2 * zfpon(ji,jj) * ( 1 - zbpon(ji,jj) ) * zideup
          END DO
          ! <CMOC code OR 10/15/2015> ( 1 - zbpon ) is the fraction of PIC export that went into the water column below the euphotic zone
          ! the extra term - exp(), which is in fact + zfpon * exp(), is a balance term to enforce long-term equilibrium between surface and bottom conditions of DIC and Akalinity  
 
          ! <CMOC code OR 10/15/2015> below the euphotic zone
-         DO jk = 12, mbkt(ji,jj)
+         DO jk = jk_eud_cmoc+1, mbkt(ji,jj)
 	    ! <CMOC code OR 10/15/2015> Calcite Dissolution, source of Alkalinity/DIC
 	    ! source/sink is calculated as the finite difference between 2 consecutive depth levels
-	    tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) +     zfpon(ji,jj) * ( exp(-1._wp*(fsdepw(ji,jj,jk)-fsdepw(ji,jj,11))/dci_cmoc) - exp(-1._wp*(fsdepw(ji,jj,jk+1)-fsdepw(ji,jj,11))/dci_cmoc) ) / fse3w(ji,jj,jk)
-	    tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) + 2 * zfpon(ji,jj) * ( exp(-1._wp*(fsdepw(ji,jj,jk)-fsdepw(ji,jj,11))/dci_cmoc) - exp(-1._wp*(fsdepw(ji,jj,jk+1)-fsdepw(ji,jj,11))/dci_cmoc) ) / fse3w(ji,jj,jk)
+	    tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) +     zfpon(ji,jj) * ( exp(-1._wp*(fsdepw(ji,jj,jk)-zdeup)/dci_cmoc) - exp(-1._wp*(fsdepw(ji,jj,jk+1)-zdeup)/dci_cmoc) ) / fse3w(ji,jj,jk)
+	    tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) + 2 * zfpon(ji,jj) * ( exp(-1._wp*(fsdepw(ji,jj,jk)-zdeup)/dci_cmoc) - exp(-1._wp*(fsdepw(ji,jj,jk+1)-zdeup)/dci_cmoc) ) / fse3w(ji,jj,jk)
 	    ! <CMOC code OR 10/15/2015> Below the euphotic zone calcite dissolution dominates; the POC flux varies as zfpon*exp(-(z-110)/2700), zfpon being the flux at the bottom of the euphotic zone 
          END DO
 
@@ -258,7 +280,7 @@ CONTAINS
       NAMELIST/namcmocpoc/ ed_cmoc, reref_cmoc
       NAMELIST/namcmoccal/ rmcico_cmoc, trcico_cmoc, aci_cmoc, dci_cmoc
       NAMELIST/namcmocnfx/ phinf_cmoc, phi0_cmoc, anf_cmoc, pnf_cmoc, inf_cmoc, tnfMa_cmoc, tnfmi_cmoc
-      NAMELIST/namcmocdeu/  deup_cmoc, ideup_cmoc
+      NAMELIST/namcmocdeu/ jk_eud_cmoc, nk_bal_cmoc
 
       REWIND( numcmoc )            
       READ  ( numcmoc, namcmocpoc )
@@ -298,8 +320,9 @@ CONTAINS
          WRITE(numout,*) ' '
          WRITE(numout,*) ' Namelist parameters, Euphotic zone depth , namcmocdeu'
          WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-         WRITE(numout,*) '    Depth of euphotic zone                    deup_cmoc =',   deup_cmoc
-         WRITE(numout,*) '    Inverse of the depth of euphotic zone    ideup_cmoc =',  ideup_cmoc
+         WRITE(numout,*) '    Index of the bottom of the euphotic zone jk_eud_cmoc =', jk_eud_cmoc
+         WRITE(numout,*) '    Open ocean, min. number of vert. layers  nk_bal_cmoc =', nk_bal_cmoc
+
       ENDIF
       !
    END SUBROUTINE p4z_rem_init
