@@ -98,8 +98,8 @@ MODULE sms_pisces
    !   Redfield ratio and euphotic zone
    REAL(wp)    :: cnrr_cmoc  
    REAL(wp)    :: ncrr_cmoc  
-   REAL(wp)    :: deup_cmoc  
-   REAL(wp)    :: ideup_cmoc  
+   INTEGER     :: jk_eud_cmoc   ! <CMOC code OR 01/23/2016> scale of the euphotic zone
+   INTEGER     :: nk_bal_cmoc   ! <CMOC code OR 01/23/2016> open ocean criterion
    ! <CMOC code OR 10/21/2015> CMOC block end
 
 
