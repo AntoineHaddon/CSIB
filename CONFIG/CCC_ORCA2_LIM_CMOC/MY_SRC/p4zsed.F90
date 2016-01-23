@@ -92,13 +92,13 @@ CONTAINS
             zdep = xstep / fse3t(ji,jj,ikt)
             zwsbio3 = wsbio3(ji,jj,ikt) * zdep
 
-            trn(ji,jj,ikt,jppoc) = trn(ji,jj,ikt,jppoc) - trn(ji,jj,ikt,jppoc) * zwsbio3
             trn(ji,jj,ikt,jpdic) = trn(ji,jj,ikt,jpdic) &
                &               + trn(ji,jj,ikt,jppoc) * zwsbio3 ! <CMOC code OR 10/22/2015> instantaneously remineralize bottom sunk POC into DIC
             trn(ji,jj,ikt,jpno3) = trn(ji,jj,ikt,jpno3) &
                &               + trn(ji,jj,ikt,jppoc) * zwsbio3 ! <CMOC code OR 10/22/2015> instantaneously remineralize bottom sunk POC into DIN
             trn(ji,jj,ikt,jpoxy) = trn(ji,jj,ikt,jpoxy) &
                &               - trn(ji,jj,ikt,jppoc) * zwsbio3 ! <CMOC code OR 10/22/2015> instantaneously remineralize bottom sunk POC and take up O2
+            trn(ji,jj,ikt,jppoc) = trn(ji,jj,ikt,jppoc) - trn(ji,jj,ikt,jppoc) * zwsbio3 ! <CMOC code OR 01/19/2016> bug fix
          END DO
       END DO
 
