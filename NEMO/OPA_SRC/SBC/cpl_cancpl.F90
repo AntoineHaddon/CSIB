@@ -327,6 +327,27 @@ contains
      nemo_ncat = 1
 #endif
 
+     !--- Set values for nemo_jpiglo and nemo_jpjglo, defined in com_cpl
+     !--- jpiglo and jpjglo are defined in the module par_oce
+     nemo_jpiglo = jpiglo
+     nemo_jpjglo = jpjglo
+
+     !--- Gather tmask at the surface into the temporary global array png
+     !--- tmask is found in module dom_oce
+     call mppsync
+     call mppgather (tmask(:,:,1),0,png)
+     call mppsync
+
+     if ( rank == ocn_master ) then
+       !--- Allocate space for nemo_tmask, which is defined in com_cpl
+       if ( associated(nemo_tmask) ) deallocate(nemo_tmask)
+       allocate( nemo_tmask(nemo_jpiglo,nemo_jpjglo) )
+
+       !--- Assign the global 3d array containing the surface tmask to nemo_tmask
+       !--- This data is then sent to the coupler in cpl_initialize_events
+       call copy_3d_to_2d_global(nemo_tmask, png)
+     endif
+
      !--- Initialize coupler events
      call cpl_initialize_events()
 
@@ -374,7 +395,6 @@ contains
 
   end subroutine copy_1d_to_3d_global
 
-
   subroutine copy_3d_to_1d_global(wrk, png)
     !------------------------------------------------------------------------
     !--- Copy values from a global 3D array containing data from a recent
@@ -411,6 +431,39 @@ contains
     wrk(1:jpiglo*jpjglo) = reshape( glob_arr(1:jpiglo,1:jpjglo), (/ jpiglo*jpjglo /) )
 
   end subroutine copy_3d_to_1d_global
+
+  subroutine copy_3d_to_2d_global(glob_a2d, png)
+    !------------------------------------------------------------------------
+    !--- Copy values from a global 3D array containing data from a recent
+    !--- call to mppgather to a global 2D array to be sent to the agcm
+    !------------------------------------------------------------------------
+    real(kind=8), intent(out) :: glob_a2d(jpiglo, jpjglo)
+    real(wp), intent(in) :: png(jpi,jpj,jpnij)
+
+    !--- Local
+    integer :: ji, jj, jn, ji_glob, jj_glob
+
+    glob_a2d = 0.0_8
+    do jn = 1,jpnij
+      !--- jn loops over all subdomains
+      do ji=nldit(jn),nleit(jn)
+        do jj=nldjt(jn),nlejt(jn)
+          !--- nimppt(jn),njmppt(jn) are the global indicies corresponding to the
+          !--- (1,1) grid cell in the local index space of the current subdomain
+          ji_glob = ji + nimppt(jn) - 1
+          jj_glob = jj + njmppt(jn) - 1
+          if ( ji_glob < 1      .or. jj_glob < 1 .or. &
+               ji_glob > jpiglo .or. jj_glob > jpjglo ) then
+            write(6,*)'copy_3d_to_2d_global: Global index is out of range.'
+            write(6,*)'jn, ji, jj, ji_glob, jj_glob: ',jn, ji, jj, ji_glob, jj_glob
+            call ctl_stop("STOP", "copy_3d_to_2d_global", "Global index is out of range")
+          endif
+          glob_a2d(ji_glob,jj_glob) = png(ji,jj,jn)
+        enddo
+      enddo
+    enddo
+
+  end subroutine copy_3d_to_2d_global
 
 
   subroutine cpl_cancpl_snd( kid, kstep, pdata, kinfo )
