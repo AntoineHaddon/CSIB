@@ -97,7 +97,7 @@ CONTAINS
       ! <CMOC code OR 10/15/2015> N2-fixation and denitrification implementation
       ! <CMOC code OR 10/15/2015> remineralization integration over the water column, from 111 m (k level = 12), included, down to the bottom.
       ! <CMOC code OR 12/17/2015> imposing the seafloor bathymetry as the bottom of the water column instead of the maximum level on the vertical grid 
-            DO jk = 12, mbkt(ji,jj)  
+            DO jk = jk_eud_cmoc+1, mbkt(ji,jj)  
    
                 zredettot(ji,jj) = zredettot(ji,jj) + zredet(ji,jj,jk) * trn(ji,jj,jk,jppoc)  * fse3t(ji,jj,jk) * tmask(ji,jj,jk)
      
