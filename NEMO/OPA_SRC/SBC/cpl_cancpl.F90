@@ -343,9 +343,57 @@ contains
        if ( associated(nemo_tmask) ) deallocate(nemo_tmask)
        allocate( nemo_tmask(nemo_jpiglo,nemo_jpjglo) )
 
-       !--- Assign the global 3d array containing the surface tmask to nemo_tmask
+       !--- Assign the global array containing the surface tmask to nemo_tmask
        !--- This data is then sent to the coupler in cpl_initialize_events
        call copy_3d_to_2d_global(nemo_tmask, png)
+     endif
+
+     !--- Gather umask at the surface into the temporary global array png
+     !--- umask is found in module dom_oce
+     call mppsync
+     call mppgather (umask(:,:,1),0,png)
+     call mppsync
+
+     if ( rank == ocn_master ) then
+       !--- Allocate space for nemo_umask, which is defined in com_cpl
+       if ( associated(nemo_umask) ) deallocate(nemo_umask)
+       allocate( nemo_umask(nemo_jpiglo,nemo_jpjglo) )
+
+       !--- Assign the global array containing the surface umask to nemo_umask
+       !--- This data is then sent to the coupler in cpl_initialize_events
+       call copy_3d_to_2d_global(nemo_umask, png)
+     endif
+
+     !--- Gather vmask at the surface into the temporary global array png
+     !--- vmask is found in module dom_oce
+     call mppsync
+     call mppgather (vmask(:,:,1),0,png)
+     call mppsync
+
+     if ( rank == ocn_master ) then
+       !--- Allocate space for nemo_vmask, which is defined in com_cpl
+       if ( associated(nemo_vmask) ) deallocate(nemo_vmask)
+       allocate( nemo_vmask(nemo_jpiglo,nemo_jpjglo) )
+
+       !--- Assign the global array containing the surface vmask to nemo_vmask
+       !--- This data is then sent to the coupler in cpl_initialize_events
+       call copy_3d_to_2d_global(nemo_vmask, png)
+     endif
+
+     !--- Gather fmask at the surface into the temporary global array png
+     !--- fmask is found in module dom_oce
+     call mppsync
+     call mppgather (fmask(:,:,1),0,png)
+     call mppsync
+
+     if ( rank == ocn_master ) then
+       !--- Allocate space for nemo_fmask, which is defined in com_cpl
+       if ( associated(nemo_fmask) ) deallocate(nemo_fmask)
+       allocate( nemo_fmask(nemo_jpiglo,nemo_jpjglo) )
+
+       !--- Assign the global array containing the surface fmask to nemo_fmask
+       !--- This data is then sent to the coupler in cpl_initialize_events
+       call copy_3d_to_2d_global(nemo_fmask, png)
      endif
 
      !--- Initialize coupler events
