@@ -89,6 +89,14 @@ MODULE cpl_cancpl
   !--- cpl_vinfo_t is defined in the com_cpl module
   type(cpl_vinfo_t), save :: cpl_vinfo
 
+  !--- The order that fields are sent from NEMO to the coupler is determined
+  !--- in the subroutine sbc_cpl_snd. In terms of the index in ssnd, this order is
+  !--- jps_toce=2, jps_tice=3, jps_tmix=4, jps_albice=5, jps_albmix=6, jps_fice=1,
+  !--- jps_hice=7, jps_hsnw=8, jps_co2=15, jps_ocx1=9, jps_ocy1=10, jps_ocz1=11,
+  !--- jps_ivx1=12, jps_ivy1=13, jps_ivz1=14
+  integer, dimension(15) :: send_order = &
+      (/ 2, 3, 4, 5, 6, 1, 7, 8, 15, 9, 10, 11, 12, 13, 14 /)
+
   !--- NOTE: nproc is not equal to the MPI task in MPI_COMM_WORLD since it will always
   !--- be one of 0,1,2,...(jpnij-1) and the AGCM gets the first set of MPI tasks.
   !--- However nproc == 0 should still correspond with the ocn_master task
@@ -142,17 +150,18 @@ contains
      integer, intent(in) :: krcv   ! Number of all possible fields received
      integer, intent(in) :: ksnd   ! Number of all possible fields sent
      !
-     integer :: ji,jc          ! local loop indices
+     integer :: ji,jc,jx          ! local loop indices
      character(len=8) :: zclname
      integer :: ldbg=1
      integer(kind=impi) :: rank, ierr
      integer :: verbose=1
-     character(32), allocatable :: var_list(:)
+     character(32) :: var_list(50)
      type var_order_t
        character(32) :: name
        integer       :: index
+       integer       :: rank
      end type var_order_t
-     type(var_order_t), pointer, dimension(:) :: var_order => null()
+     type(var_order_t) :: var_order(50)
      !!--------------------------------------------------------------------
 
      !--- Determine the rank of the calling process in MPI_COMM_WORLD
@@ -180,9 +189,12 @@ contains
      !--- Send variables
      !
      !--- nemo_n_send_var is the number of fields in nemo_send_var
-     !--- These are available from the com_cpl module
+     !--- These variables are available from the com_cpl module
      nemo_n_send_var=0
-     nemo_send_var(:) = " "
+     var_list(:) = " "
+     var_order(:)%name  = " "
+     var_order(:)%index = 0
+     var_order(:)%rank  = 0
      do ji = 1, ksnd
         if ( ssnd(ji)%laction ) then 
            do jc = 1, ssnd(ji)%nct
@@ -197,13 +209,28 @@ contains
               ssnd(ji)%nid(jc) = cpl_vinfo%tag
 
               nemo_n_send_var = nemo_n_send_var + 1
-              if ( nemo_n_send_var > nemo_send_var_max ) then
+              if ( nemo_n_send_var > 40 ) then
                 write(numout,*) "cpl_cancpl_define: Too many send variables"
                 write(6,*) "cpl_cancpl_define: Too many send variables"
                 call flush(6)
                 call ctl_stop("STOP", " cpl_cancpl_define", "Too many send variables")
               endif
-              nemo_send_var(nemo_n_send_var) = trim(zclname)
+              var_list(nemo_n_send_var) = trim(zclname)
+
+              var_order(nemo_n_send_var)%name  = trim(zclname)
+              var_order(nemo_n_send_var)%index = ji
+              do jx=1,size(send_order)
+                if ( var_order(nemo_n_send_var)%index == send_order(jx) ) then
+                  var_order(nemo_n_send_var)%rank = jx
+                  exit
+                endif
+              enddo
+              if ( var_order(nemo_n_send_var)%rank == 0 ) then
+                write(6,*)"cpl_cancpl_define: Unable to determine rank for ", &
+                          trim(var_order(nemo_n_send_var)%name
+                call flush(6)
+                call ctl_stop("STOP", " cpl_cancpl_define", "Unable to determine send rank")
+              endif
 
               if ( rank == ocn_master ) then
                 !--- Write to NEMO's ocean.output file
@@ -219,13 +246,18 @@ contains
            end do
         endif
      end do
-     !
+     if ( nemo_n_send_var > 0 ) then
+       if ( associated(nemo_send_var) ) deallocate(nemo_send_var)
+       allocate( nemo_send_var(nemo_n_send_var) )
+       nemo_send_var(1:nemo_n_send_var) = var_list(1:nemo_n_send_var)
+     endif
+
      !--- Receive variables
      !
      !--- nemo_n_recv_var is the number of fields in nemo_recv_var
-     !--- These are available from the com_cpl module
+     !--- These variables are available from the com_cpl module
      nemo_n_recv_var=0
-     nemo_recv_var(:) = " "
+     var_list(:) = " "
      do ji = 1, krcv
         if ( srcv(ji)%laction ) then 
            do jc = 1, srcv(ji)%nct
@@ -240,13 +272,13 @@ contains
               srcv(ji)%nid(jc) = cpl_vinfo%tag
 
               nemo_n_recv_var = nemo_n_recv_var + 1
-              if ( nemo_n_recv_var > nemo_recv_var_max ) then
+              if ( nemo_n_recv_var > 40 ) then
                 write(numout,*) "cpl_cancpl_define: Too many receive variables"
                 write(6,*) "cpl_cancpl_define: Too many receive variables"
                 call flush(6)
                 call ctl_stop("STOP", " cpl_cancpl_define", "Too many receive variables")
               endif
-              nemo_recv_var(nemo_n_recv_var) = trim(zclname)
+              var_list(nemo_n_recv_var) = trim(zclname)
 
               if ( rank == ocn_master ) then
                 !--- Write to NEMO's ocean.output file
@@ -262,6 +294,11 @@ contains
            end do
         endif
      end do
+     if ( nemo_n_recv_var > 0 ) then
+       if ( associated(nemo_recv_var) ) deallocate(nemo_recv_var)
+       allocate( nemo_recv_var(nemo_n_recv_var) )
+       nemo_recv_var(1:nemo_n_recv_var) = var_list(1:nemo_n_recv_var)
+     endif
 
 !---TODO--- nemo_send_var and nemo_recv_var need to be reordered
 !---TODO--- The fields in these lists must be in the same order as the the data
@@ -269,17 +306,32 @@ contains
 !---TODO--- See subroutine sbc_cpl_snd for the send order
 !---TODO--- nemo_recv_var should already be in the correct order which is
 !---TODO--- the order the fields appear in srcv
-     if ( nemo_n_send_var > 0 ) then
+     if ( nemo_n_send_var > 1 ) then
        !--- nemo_send_var needs to be reordered
-       if (allocated(var_list) ) deallocate(var_list)
-       allocate( var_list(nemo_n_send_var) )
+
        !--- The subroutine sbc_cpl_snd determines the send order
        !--- Since there is no clear way to determine this order on the fly
        !--- it must be hard coded here (this is bad). Therefore if there
        !--- are any changes in sbc_cpl_snd that alter this order then there
        !--- must also be changes here
-       do ji=1,nemo_n_send_var
+       var_list(:) = " "
+       do jx=1,nemo_n_send_var
+         write(6,*)"cpl_cancpl_define: Send name ",trim(var_order(jx)%name), &
+                   "  index=",var_order(jx)%index,"  rank=",var_order(jx)%rank
+         call flush(6)
        enddo
+!xxx       do jx=2,nemo_n_send_var
+!xxx         a=ARR(jx)
+!xxx         do ji=jx-1,1,-1
+!xxx           if ( ARR(ji) <= a ) then
+!xxx             ji=0
+!xxx             exit
+!xxx           enddo
+!xxx           ARR(ji+1) = ARR(i)
+!xxx         end do
+!xxx         ji=0
+!xxx         ARR(ji+1)=a
+!xxx       end do
      endif
 
      if ( rank == ocn_master .and. verbose > 0 ) then
@@ -396,7 +448,7 @@ contains
        call copy_3d_to_2d_global(nemo_fmask, png)
      endif
 
-     !--- Initialize coupler events
+     !--- Initialize coupler events and broadcast global variables
      call cpl_initialize_events()
 
      !--- Broadcast the initial date and time from the coupler to all tasks
