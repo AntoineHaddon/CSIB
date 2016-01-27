@@ -1,0 +1,4 @@
+#!/bin/sh
+repo_dir=/users/tor/acrn/rls/src/nemo_cancpl_dev
+$repo_dir/bin/build-nemo -k ver=CanCPL_LIM repo=$repo_dir exec=dev_ccc_cancpl_orca1_lim.exe arch=xlf_aix-cancpl refcfg=CCC_CANCPL_ORCA1_LIM cfg=CCC_CANCPL_ORCA1_LIM
+
