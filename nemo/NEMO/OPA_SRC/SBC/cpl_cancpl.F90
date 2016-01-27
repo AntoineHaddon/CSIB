@@ -89,14 +89,6 @@ MODULE cpl_cancpl
   !--- cpl_vinfo_t is defined in the com_cpl module
   type(cpl_vinfo_t), save :: cpl_vinfo
 
-  !--- The order that fields are sent from NEMO to the coupler is determined
-  !--- in the subroutine sbc_cpl_snd. In terms of the index in ssnd, this order is
-  !--- jps_toce=2, jps_tice=3, jps_tmix=4, jps_albice=5, jps_albmix=6, jps_fice=1,
-  !--- jps_hice=7, jps_hsnw=8, jps_co2=15, jps_ocx1=9, jps_ocy1=10, jps_ocz1=11,
-  !--- jps_ivx1=12, jps_ivy1=13, jps_ivz1=14
-  integer, dimension(15) :: send_order = &
-      (/ 2, 3, 4, 5, 6, 1, 7, 8, 15, 9, 10, 11, 12, 13, 14 /)
-
   !--- NOTE: nproc is not equal to the MPI task in MPI_COMM_WORLD since it will always
   !--- be one of 0,1,2,...(jpnij-1) and the AGCM gets the first set of MPI tasks.
   !--- However nproc == 0 should still correspond with the ocn_master task
@@ -149,21 +141,32 @@ contains
      !!--------------------------------------------------------------------
      integer, intent(in) :: krcv   ! Number of all possible fields received
      integer, intent(in) :: ksnd   ! Number of all possible fields sent
-     !
-     integer :: ji,jc,jx          ! local loop indices
+
+     !--- Local
+     integer :: ji,jc,jx
      character(len=8) :: zclname
      integer :: ldbg=1
      integer(kind=impi) :: rank, ierr
      integer :: verbose=1
      integer :: min_rank, min_index
-     character(32) :: var_list(50)
-     type var_order_t
+
+     !--- var_list_info will be assigned enough info about each list of variables
+     !--- sent or received to allow a simple reordering of these lists
+     type var_list_info_t
        character(32) :: name
        integer       :: index
        integer       :: rank
        logical       :: used
-     end type var_order_t
-     type(var_order_t) :: var_order(50)
+     end type var_list_info_t
+     type(var_list_info_t) :: var_list_info(50)
+
+     !--- The order that fields are sent from NEMO to the coupler is determined
+     !--- in the subroutine sbc_cpl_snd. In terms of the index in ssnd, this order is
+     !--- jps_toce=2, jps_tice=3, jps_tmix=4, jps_albice=5, jps_albmix=6, jps_fice=1,
+     !--- jps_hice=7, jps_hsnw=8, jps_co2=15, jps_ocx1=9, jps_ocy1=10, jps_ocz1=11,
+     !--- jps_ivx1=12, jps_ivy1=13, jps_ivz1=14
+     integer, dimension(15) :: send_order = &
+         (/ 2, 3, 4, 5, 6, 1, 7, 8, 15, 9, 10, 11, 12, 13, 14 /)
      !!--------------------------------------------------------------------
 
      !--- Determine the rank of the calling process in MPI_COMM_WORLD
@@ -180,7 +183,6 @@ contains
      !--- Allocate temporary space used with MPI gather/scatter ops below
      allocate( png(jpi,jpj,jpnij), stat=nerror )
      if( nerror > 0 ) then
-       !--- TODO --- Also tell coupler that there is a problem
        call ctl_stop("STOP", " cpl_cancpl_define", "Problem allocating png")
      endif
 
@@ -193,11 +195,10 @@ contains
      !--- nemo_n_send_var is the number of fields in nemo_send_var
      !--- These variables are available from the com_cpl module
      nemo_n_send_var=0
-     var_list(:) = " "
-     var_order(:)%name  = " "
-     var_order(:)%index = 0
-     var_order(:)%rank  = 0
-     var_order(:)%used  = .false.
+     var_list_info(:)%name  = " "
+     var_list_info(:)%index = 0
+     var_list_info(:)%rank  = 0
+     var_list_info(:)%used  = .false.
      do ji = 1, ksnd
         if ( ssnd(ji)%laction ) then 
            do jc = 1, ssnd(ji)%nct
@@ -218,19 +219,18 @@ contains
                 call flush(6)
                 call ctl_stop("STOP", " cpl_cancpl_define", "Too many send variables")
               endif
-              var_list(nemo_n_send_var) = trim(zclname)
 
-              var_order(nemo_n_send_var)%name  = trim(zclname)
-              var_order(nemo_n_send_var)%index = ji
+              var_list_info(nemo_n_send_var)%name  = trim(zclname)
+              var_list_info(nemo_n_send_var)%index = ji
               do jx=1,size(send_order)
-                if ( var_order(nemo_n_send_var)%index == send_order(jx) ) then
-                  var_order(nemo_n_send_var)%rank = jx
+                if ( var_list_info(nemo_n_send_var)%index == send_order(jx) ) then
+                  var_list_info(nemo_n_send_var)%rank = jx
                   exit
                 endif
               enddo
-              if ( var_order(nemo_n_send_var)%rank == 0 ) then
+              if ( var_list_info(nemo_n_send_var)%rank == 0 ) then
                 write(6,*)"cpl_cancpl_define: Unable to determine rank for ", &
-                          trim(var_order(nemo_n_send_var)%name)
+                          trim(var_list_info(nemo_n_send_var)%name)
                 call flush(6)
                 call ctl_stop("STOP", " cpl_cancpl_define", "Unable to determine send rank")
               endif
@@ -252,7 +252,39 @@ contains
      if ( nemo_n_send_var > 0 ) then
        if ( associated(nemo_send_var) ) deallocate(nemo_send_var)
        allocate( nemo_send_var(nemo_n_send_var) )
-       nemo_send_var(1:nemo_n_send_var) = var_list(1:nemo_n_send_var)
+       nemo_send_var(1:nemo_n_send_var) = var_list_info(1:nemo_n_send_var)%name
+     endif
+
+     if ( nemo_n_send_var > 1 ) then
+       !--- nemo_send_var needs to be reordered
+       !--- The fields in this list must be in the same order as the the data
+       !--- that is sent to the coupler.
+       !--- The subroutine sbc_cpl_snd determines the send order
+       !--- There is no clear way to determine this order on the fly so
+       !--- it must be hard coded here (this is bad).
+       !--- If there are any changes in sbc_cpl_snd that alter this order
+       !--- then there must also be changes here.
+       do ji=1,nemo_n_send_var
+         min_rank  = 1000
+         min_index = -1
+         !--- Find the index of the variable with the lowest rank
+         do jx=1,nemo_n_send_var
+           !--- Ignore names already in the ordered list
+           if ( var_list_info(jx)%used ) cycle
+           if ( var_list_info(jx)%rank < min_rank ) then
+             min_rank = var_list_info(jx)%rank
+             min_index = jx
+           endif
+         enddo
+         if ( min_index < 1 ) then
+           write(6,*)"cpl_cancpl_define: Unable to find min rank at send list element ",ji
+           call flush(6)
+           call ctl_stop("STOP", " cpl_cancpl_define", "Unable to find send list min rank")
+         endif
+         var_list_info(min_index)%used = .true.
+         !--- Overwrite nemo_send_var with the properly ordered names
+         nemo_send_var(ji) = var_list_info(min_index)%name
+       enddo
      endif
 
      !--- Receive variables
@@ -260,7 +292,10 @@ contains
      !--- nemo_n_recv_var is the number of fields in nemo_recv_var
      !--- These variables are available from the com_cpl module
      nemo_n_recv_var=0
-     var_list(:) = " "
+     var_list_info(:)%name  = " "
+     var_list_info(:)%index = 0
+     var_list_info(:)%rank  = 0
+     var_list_info(:)%used  = .false.
      do ji = 1, krcv
         if ( srcv(ji)%laction ) then 
            do jc = 1, srcv(ji)%nct
@@ -281,7 +316,11 @@ contains
                 call flush(6)
                 call ctl_stop("STOP", " cpl_cancpl_define", "Too many receive variables")
               endif
-              var_list(nemo_n_recv_var) = trim(zclname)
+
+              var_list_info(nemo_n_recv_var)%name  = trim(zclname)
+              var_list_info(nemo_n_recv_var)%index = ji
+              !--- The rank in srcv also indicates the order data is received
+              var_list_info(nemo_n_recv_var)%rank = ji
 
               if ( rank == ocn_master ) then
                 !--- Write to NEMO's ocean.output file
@@ -300,45 +339,12 @@ contains
      if ( nemo_n_recv_var > 0 ) then
        if ( associated(nemo_recv_var) ) deallocate(nemo_recv_var)
        allocate( nemo_recv_var(nemo_n_recv_var) )
-       nemo_recv_var(1:nemo_n_recv_var) = var_list(1:nemo_n_recv_var)
-     endif
-
-!---TODO--- nemo_send_var and nemo_recv_var need to be reordered
-!---TODO--- The fields in these lists must be in the same order as the the data
-!---TODO--- is sent or received.
-!---TODO--- See subroutine sbc_cpl_snd for the send order
-!---TODO--- nemo_recv_var should already be in the correct order which is
-!---TODO--- the order the fields appear in srcv
-     if ( nemo_n_send_var > 1 ) then
-       !--- nemo_send_var needs to be reordered
-
-       !--- The subroutine sbc_cpl_snd determines the send order
-       !--- Since there is no clear way to determine this order on the fly
-       !--- it must be hard coded here (this is bad). Therefore if there
-       !--- are any changes in sbc_cpl_snd that alter this order then there
-       !--- must also be changes here
-       do ji=1,nemo_n_send_var
-         min_rank  = 100
-         min_index = -1
-         do jx=1,nemo_n_send_var
-           !--- Ignore names already in the ordered list
-           if ( var_order(jx)%used ) cycle
-           if ( var_order(jx)%rank < min_rank ) then
-             min_rank = var_order(jx)%rank
-             min_index = jx
-           endif
-         enddo
-         if ( min_index < 1 ) then
-           write(6,*)"cpl_cancpl_define: Unable to find min rank."
-           call flush(6)
-           call ctl_stop("STOP", " cpl_cancpl_define", "Unable to find min rank")
-         endif
-         var_order(min_index)%used = .true.
-         nemo_send_var(ji) = var_order(min_index)%name
-         write(6,*)"cpl_cancpl_define: Send name ",trim(nemo_send_var(ji)), &
-                   "  index=",min_index,"  rank=",min_rank
-         call flush(6)
-       enddo
+       !--- The fields in this list must be in the same order as the the data
+       !--- that is received from the coupler
+       !--- nemo_recv_var should already be in the correct order which is
+       !--- the order the fields appear in srcv
+       !--- If this ever changes then this list will need to be reordered
+       nemo_recv_var(1:nemo_n_recv_var) = var_list_info(1:nemo_n_recv_var)%name
      endif
 
      if ( rank == ocn_master .and. verbose > 0 ) then
@@ -349,15 +355,8 @@ contains
        call flush(6)
      endif
 
-     !---DBG--- !--- Verify the relationship between nproc, narea and rank
-     !---DBG--- call mppsync
-     !---DBG--- write(numout,*) "cpl_cancpl_define: nproc,narea,rank: ",nproc,narea,rank
-     !---DBG--- call flush(numout)
-     !---DBG--- write(6,*) "cpl_cancpl_define: nproc,narea,rank: ",nproc,narea,rank
-     !---DBG--- call flush(6)
-
-     !--- These values will be broadcast to all mpi tasks
-     !--- in the following call to cpl_initialize_events
+     !--- The following values will be broadcast to all mpi tasks
+     !--- in the call to cpl_initialize_events
 
      !--- Set a value for nemo_nn_ice, defined in com_cpl
      nemo_nn_ice = nn_ice
@@ -404,6 +403,7 @@ contains
 
        !--- Assign the global array containing the surface tmask to nemo_tmask
        !--- This data is then sent to the coupler in cpl_initialize_events
+       !--- tmask is assigned in module dommsk using data from the array mbathy
        call copy_3d_to_2d_global(nemo_tmask, png)
      endif
 
@@ -420,6 +420,8 @@ contains
 
        !--- Assign the global array containing the surface umask to nemo_umask
        !--- This data is then sent to the coupler in cpl_initialize_events
+       !--- umask is defined in module dommsk in terms of tmask as follows
+       !---    umask(i,j) = tmask(i,j) * tmask(i+1,j)
        call copy_3d_to_2d_global(nemo_umask, png)
      endif
 
@@ -436,6 +438,8 @@ contains
 
        !--- Assign the global array containing the surface vmask to nemo_vmask
        !--- This data is then sent to the coupler in cpl_initialize_events
+       !--- vmask is defined in module dommsk in terms of tmask as follows
+       !---    vmask(i,j) = tmask(i,j) * tmask(i,j+1)
        call copy_3d_to_2d_global(nemo_vmask, png)
      endif
 
@@ -452,6 +456,11 @@ contains
 
        !--- Assign the global array containing the surface fmask to nemo_fmask
        !--- This data is then sent to the coupler in cpl_initialize_events
+       !--- fmask is defined in module dommsk in terms of tmask as follows
+       !---    fmask(i,j) = tmask(i,j) * tmask(i+1,j) * tmask(i,j+1) * tmask(i+1,j+1)
+       !--- then further modified for lateral boundary conditions on velocity
+       !--- and to increase lateral friction near certain straights
+       !--- Note: this means fmask will have values other than 0/1 (e.g. 0.5,2,3)
        call copy_3d_to_2d_global(nemo_fmask, png)
      endif
 
@@ -464,7 +473,6 @@ contains
 
   end subroutine cpl_cancpl_define
 
-
   subroutine copy_1d_to_3d_global(wrk, png)
     !------------------------------------------------------------------------
     !--- Copy values from a global 1D wrk array containing data received from
@@ -475,10 +483,45 @@ contains
 
     !--- Local
     real(kind=8) :: glob_arr(jpiglo, jpjglo)
-    integer :: ji, jj, jn, ji_glob, jj_glob
+!xxx    integer :: ji, jj, jn, ji_glob, jj_glob
 
     glob_arr = 0.0_8
     glob_arr(1:jpiglo,1:jpjglo) = reshape( wrk(1:jpiglo*jpjglo), (/ jpiglo,jpjglo /) )
+
+    call copy_2d_to_3d_global(glob_arr, png)
+
+!xxx    do jn = 1,jpnij
+!xxx      !--- jn loops over all subdomains
+!xxx      png(:,:,jn) = 0.0_8
+!xxx      do ji=nldit(jn),nleit(jn)
+!xxx        do jj=nldjt(jn),nlejt(jn)
+!xxx          !--- nimppt(jn),njmppt(jn) are the global indicies corresponding to the
+!xxx          !--- (1,1) grid cell in the local index space of the current subdomain
+!xxx          ji_glob = ji + nimppt(jn) - 1
+!xxx          jj_glob = jj + njmppt(jn) - 1
+!xxx          if ( ji_glob < 1      .or. jj_glob < 1 .or. &
+!xxx               ji_glob > jpiglo .or. jj_glob > jpjglo ) then
+!xxx            write(6,*)'copy_1d_to_3d_global: Global index is out of range.'
+!xxx            write(6,*)'jn, ji, jj, ji_glob, jj_glob: ',jn, ji, jj, ji_glob, jj_glob
+!xxx            call ctl_stop("STOP", "copy_1d_to_3d_global", "Global index is out of range")
+!xxx          endif
+!xxx          png(ji,jj,jn) = glob_arr(ji_glob,jj_glob)
+!xxx        enddo
+!xxx      enddo
+!xxx    enddo
+
+  end subroutine copy_1d_to_3d_global
+
+  subroutine copy_2d_to_3d_global(glob_a2d, png)
+    !------------------------------------------------------------------------
+    !--- Copy values from a global 2D array dimensioned (jpiglo, jpjglo)
+    !--- to a global 3D array suitable for use with mppscatter
+    !------------------------------------------------------------------------
+    real(kind=8) :: glob_a2d(jpiglo, jpjglo)
+    real(wp), intent(out) :: png(jpi,jpj,jpnij)
+
+    !--- Local
+    integer :: ji, jj, jn, ji_glob, jj_glob
 
     do jn = 1,jpnij
       !--- jn loops over all subdomains
@@ -491,16 +534,16 @@ contains
           jj_glob = jj + njmppt(jn) - 1
           if ( ji_glob < 1      .or. jj_glob < 1 .or. &
                ji_glob > jpiglo .or. jj_glob > jpjglo ) then
-            write(6,*)'copy_1d_to_3d_global: Global index is out of range.'
+            write(6,*)'copy_2d_to_3d_global: Global index is out of range.'
             write(6,*)'jn, ji, jj, ji_glob, jj_glob: ',jn, ji, jj, ji_glob, jj_glob
-            call ctl_stop("STOP", "copy_1d_to_3d_global", "Global index is out of range")
+            call ctl_stop("STOP", "copy_2d_to_3d_global", "Global index is out of range")
           endif
-          png(ji,jj,jn) = glob_arr(ji_glob,jj_glob)
+          png(ji,jj,jn) = glob_a2d(ji_glob,jj_glob)
         enddo
       enddo
     enddo
 
-  end subroutine copy_1d_to_3d_global
+  end subroutine copy_2d_to_3d_global
 
   subroutine copy_3d_to_1d_global(wrk, png)
     !------------------------------------------------------------------------
@@ -512,27 +555,29 @@ contains
 
     !--- Local
     real(kind=8) :: glob_arr(jpiglo, jpjglo)
-    integer :: ji, jj, jn, ji_glob, jj_glob
+!xxx    integer :: ji, jj, jn, ji_glob, jj_glob
 
-    glob_arr = 0.0_8
-    do jn = 1,jpnij
-      !--- jn loops over all subdomains
-      do ji=nldit(jn),nleit(jn)
-        do jj=nldjt(jn),nlejt(jn)
-          !--- nimppt(jn),njmppt(jn) are the global indicies corresponding to the
-          !--- (1,1) grid cell in the local index space of the current subdomain
-          ji_glob = ji + nimppt(jn) - 1
-          jj_glob = jj + njmppt(jn) - 1
-          if ( ji_glob < 1      .or. jj_glob < 1 .or. &
-               ji_glob > jpiglo .or. jj_glob > jpjglo ) then
-            write(6,*)'copy_3d_to_1d_global: Global index is out of range.'
-            write(6,*)'jn, ji, jj, ji_glob, jj_glob: ',jn, ji, jj, ji_glob, jj_glob
-            call ctl_stop("STOP", "copy_3d_to_1d_global", "Global index is out of range")
-          endif
-          glob_arr(ji_glob,jj_glob) = png(ji,jj,jn)
-        enddo
-      enddo
-    enddo
+!xxx    glob_arr = 0.0_8
+!xxx    do jn = 1,jpnij
+!xxx      !--- jn loops over all subdomains
+!xxx      do ji=nldit(jn),nleit(jn)
+!xxx        do jj=nldjt(jn),nlejt(jn)
+!xxx          !--- nimppt(jn),njmppt(jn) are the global indicies corresponding to the
+!xxx          !--- (1,1) grid cell in the local index space of the current subdomain
+!xxx          ji_glob = ji + nimppt(jn) - 1
+!xxx          jj_glob = jj + njmppt(jn) - 1
+!xxx          if ( ji_glob < 1      .or. jj_glob < 1 .or. &
+!xxx               ji_glob > jpiglo .or. jj_glob > jpjglo ) then
+!xxx            write(6,*)'copy_3d_to_1d_global: Global index is out of range.'
+!xxx            write(6,*)'jn, ji, jj, ji_glob, jj_glob: ',jn, ji, jj, ji_glob, jj_glob
+!xxx            call ctl_stop("STOP", "copy_3d_to_1d_global", "Global index is out of range")
+!xxx          endif
+!xxx          glob_arr(ji_glob,jj_glob) = png(ji,jj,jn)
+!xxx        enddo
+!xxx      enddo
+!xxx    enddo
+
+    call  copy_3d_to_2d_global(glob_arr, png)
 
     wrk = 0.0_8
     wrk(1:jpiglo*jpjglo) = reshape( glob_arr(1:jpiglo,1:jpjglo), (/ jpiglo*jpjglo /) )
