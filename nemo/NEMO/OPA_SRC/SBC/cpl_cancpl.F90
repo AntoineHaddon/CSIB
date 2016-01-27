@@ -155,11 +155,13 @@ contains
      integer :: ldbg=1
      integer(kind=impi) :: rank, ierr
      integer :: verbose=1
+     integer :: min_rank, min_index
      character(32) :: var_list(50)
      type var_order_t
        character(32) :: name
        integer       :: index
        integer       :: rank
+       logical       :: used
      end type var_order_t
      type(var_order_t) :: var_order(50)
      !!--------------------------------------------------------------------
@@ -195,6 +197,7 @@ contains
      var_order(:)%name  = " "
      var_order(:)%index = 0
      var_order(:)%rank  = 0
+     var_order(:)%used  = .false.
      do ji = 1, ksnd
         if ( ssnd(ji)%laction ) then 
            do jc = 1, ssnd(ji)%nct
@@ -314,24 +317,28 @@ contains
        !--- it must be hard coded here (this is bad). Therefore if there
        !--- are any changes in sbc_cpl_snd that alter this order then there
        !--- must also be changes here
-       var_list(:) = " "
-       do jx=1,nemo_n_send_var
-         write(6,*)"cpl_cancpl_define: Send name ",trim(var_order(jx)%name), &
-                   "  index=",var_order(jx)%index,"  rank=",var_order(jx)%rank
+       do ji=1,nemo_n_send_var
+         min_rank  = 100
+         min_index = -1
+         do jx=1,nemo_n_send_var
+           !--- Ignore names already in the ordered list
+           if ( var_order(jx)%used ) cycle
+           if ( var_order(jx)%rank < min_rank ) then
+             min_rank = var_order(jx)%rank
+             min_index = jx
+           endif
+         enddo
+         if ( min_index < 1 ) then
+           write(6,*)"cpl_cancpl_define: Unable to find min rank."
+           call flush(6)
+           call ctl_stop("STOP", " cpl_cancpl_define", "Unable to find min rank")
+         endif
+         var_order(min_index)%used = .true.
+         nemo_send_var(ji) = var_order(min_index)%name
+         write(6,*)"cpl_cancpl_define: Send name ",trim(nemo_send_var(ji)), &
+                   "  index=",min_index,"  rank=",min_rank
          call flush(6)
        enddo
-!xxx       do jx=2,nemo_n_send_var
-!xxx         a=ARR(jx)
-!xxx         do ji=jx-1,1,-1
-!xxx           if ( ARR(ji) <= a ) then
-!xxx             ji=0
-!xxx             exit
-!xxx           enddo
-!xxx           ARR(ji+1) = ARR(i)
-!xxx         end do
-!xxx         ji=0
-!xxx         ARR(ji+1)=a
-!xxx       end do
      endif
 
      if ( rank == ocn_master .and. verbose > 0 ) then
