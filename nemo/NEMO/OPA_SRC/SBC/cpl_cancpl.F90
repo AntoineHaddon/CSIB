@@ -227,7 +227,7 @@ contains
               enddo
               if ( var_order(nemo_n_send_var)%rank == 0 ) then
                 write(6,*)"cpl_cancpl_define: Unable to determine rank for ", &
-                          trim(var_order(nemo_n_send_var)%name
+                          trim(var_order(nemo_n_send_var)%name)
                 call flush(6)
                 call ctl_stop("STOP", " cpl_cancpl_define", "Unable to determine send rank")
               endif
