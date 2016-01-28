@@ -40,7 +40,6 @@ CONTAINS
       DO jn = 1, jptra
 
          zrfact = 1.0e+6_wp ! <CMOC code OR 10/23/2015> 
-
          IF( jn == jpno3 .OR. jn == jpphy .OR. jn == jpzoo .OR. jn == jppoc )                  zrfact = 1.0e+6 / 106._wp * 16._wp   ! <CMOC code OR 10/23/2015> change the chemical currency from carbon to nitrogen
 
          cltra = TRIM( ctrcnm(jn) )                  ! short title for tracer
