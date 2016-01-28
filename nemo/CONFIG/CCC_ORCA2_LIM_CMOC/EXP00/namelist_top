@@ -49,7 +49,11 @@
    cn_dir        =  './'      !  root directory for the location of the data files
    rn_trfac(1)   =   1.0e-06  !  multiplicative factor
    rn_trfac(2)   =   1.0e-06  !  -      -      -     -
-   rn_trfac(3)   =  44.6e-06  !  -      -      -     - ! <CMOC OR 01/15/2016> original O2 factor to convert from mL/L (original PISCES conversion 44.6e-06)
+   rn_trfac(3)   =  44.6e-06  !  -      -      -     - !!!! <CMOC code OR 11/19/2015> revert to PISCES 1:1 molar O2:C ratio ! <CMOC OR 11/30/2013> O2 converted from mL/L (original PISCES conversion 44.6e-06) and converted from O2 to C (106/138)
+! <CMOC OR 07/15/2014> ! Removal of all the tracers !     rn_trfac(5)   = 122.0e-06  !  -      -      -     -
+! <CMOC OR 07/15/2014> ! Removal of all the tracers !     rn_trfac(7)   =   1.0e-06  !  -      -      -     -
+! <CMOC OR 07/15/2014> ! Removal of all the tracers !     rn_trfac(10)  =   1.0      !  -      -      -     -
+! <CMOC OR 07/15/2014> ! Removal of all the tracers !     rn_trfac(12)  =   1.0      !  -      -      -     -
    rn_trfac(8)  =   6.6e-06  !  -      -      -     -   ! <CMOC OR 07/15/2014> ! Removal of all the tracers !  
 /
 !-----------------------------------------------------------------------
