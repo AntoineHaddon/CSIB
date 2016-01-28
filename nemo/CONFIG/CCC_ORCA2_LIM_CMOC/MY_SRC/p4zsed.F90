@@ -85,20 +85,24 @@ CONTAINS
       trn(:,:,1,jpdic) = trn(:,:,1,jpdic) + rivinp(:,:) * 2.631 * rfact2
       trn(:,:,1,jptal) = trn(:,:,1,jptal) + (cotdep(:,:) - rno3*rivinp(:,:) ) * rfact2
 
-      ! Fate of POC reaching the ocean floor: complete remineralization
+      ! Fate of POC reaching the ocean floor: complete remineralization into DIC, DIN
+      ! and sink of O2 and TALK
       DO jj = 1, jpj
          DO ji = 1, jpi
             ikt  = mbkt(ji,jj)
             zdep = xstep / fse3t(ji,jj,ikt)
             zwsbio3 = wsbio3(ji,jj,ikt) * zdep
 
-            trn(ji,jj,ikt,jpdic) = trn(ji,jj,ikt,jpdic) &
-               &               + trn(ji,jj,ikt,jppoc) * zwsbio3 ! <CMOC code OR 10/22/2015> instantaneously remineralize bottom sunk POC into DIC
-            trn(ji,jj,ikt,jpno3) = trn(ji,jj,ikt,jpno3) &
-               &               + trn(ji,jj,ikt,jppoc) * zwsbio3 ! <CMOC code OR 10/22/2015> instantaneously remineralize bottom sunk POC into DIN
-            trn(ji,jj,ikt,jpoxy) = trn(ji,jj,ikt,jpoxy) &
-               &               - trn(ji,jj,ikt,jppoc) * zwsbio3 ! <CMOC code OR 10/22/2015> instantaneously remineralize bottom sunk POC and take up O2
-            trn(ji,jj,ikt,jppoc) = trn(ji,jj,ikt,jppoc) - trn(ji,jj,ikt,jppoc) * zwsbio3 ! <CMOC code OR 01/19/2016> bug fix
+            trn(ji,jj,ikt,jpdic) = trn(ji,jj,ikt,jpdic)                       &
+               &                             + trn(ji,jj,ikt,jppoc) * zwsbio3 
+            trn(ji,jj,ikt,jptal) = trn(ji,jj,ikt,jptal)                       &
+               &                             - trn(ji,jj,ikt,jppoc) * zwsbio3 
+            trn(ji,jj,ikt,jpno3) = trn(ji,jj,ikt,jpno3)                       &
+               &                             + trn(ji,jj,ikt,jppoc) * zwsbio3 
+            trn(ji,jj,ikt,jpoxy) = trn(ji,jj,ikt,jpoxy)                       &
+               &                             - trn(ji,jj,ikt,jppoc) * zwsbio3 
+            trn(ji,jj,ikt,jppoc) = trn(ji,jj,ikt,jppoc)                       &
+                                             - trn(ji,jj,ikt,jppoc) * zwsbio3 
          END DO
       END DO
 
