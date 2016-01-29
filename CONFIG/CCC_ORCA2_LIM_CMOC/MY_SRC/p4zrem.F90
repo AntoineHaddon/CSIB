@@ -224,7 +224,7 @@ CONTAINS
          ! PIC export below the euphotic zone is balanced by calcification and 
          ! the associated loss of DIC and alkalinity at the surface, evenly 
          ! distributed over the euphotic zone
-         DO jk =1, jk_eud_cmoc
+         DO jk =1, jk_eud_cmoc-1
              tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) -                       &
             &                     zfpon(ji,jj) * (1 - zbpon(ji,jj)) * zideup
 
@@ -238,7 +238,7 @@ CONTAINS
          ! and bottom conditions of DIC and Akalinity  
 
          ! <CMOC code OR 10/15/2015> below the euphotic zone
-         DO jk = jk_eud_cmoc+1, mbkt(ji,jj)
+         DO jk = jk_eud_cmoc, mbkt(ji,jj)
             ! <CMOC code OR 10/15/2015> Calcite Dissolution, source of Alkalinity/DIC
             ! source/sink is calculated as the finite difference between 2 consecutive depth levels
             tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) +                              &
