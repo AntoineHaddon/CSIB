@@ -96,7 +96,7 @@ CONTAINS
             trn(ji,jj,ikt,jpdic) = trn(ji,jj,ikt,jpdic)                       &
                &                             + trn(ji,jj,ikt,jppoc) * zwsbio3 
             trn(ji,jj,ikt,jptal) = trn(ji,jj,ikt,jptal)                       &
-               &                             - trn(ji,jj,ikt,jppoc) * zwsbio3 
+               &                             - trn(ji,jj,ikt,jppoc) * zwsbio3 * ncrr_cmoc
             trn(ji,jj,ikt,jpno3) = trn(ji,jj,ikt,jpno3)                       &
                &                             + trn(ji,jj,ikt,jppoc) * zwsbio3 
             trn(ji,jj,ikt,jpoxy) = trn(ji,jj,ikt,jpoxy)                       &
