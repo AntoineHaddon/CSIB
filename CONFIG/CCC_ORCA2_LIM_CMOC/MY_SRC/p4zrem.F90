@@ -228,8 +228,8 @@ CONTAINS
              tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) -                       &
             &                     zfpon(ji,jj) * (1 - zbpon(ji,jj)) * zideup
 
-             tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) -                       &
-            &                     2 * zfpon(ji,jj) * (1 - zbpon(ji,jj)) * zideup
+!             tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) -                       &
+!            &                     2 * zfpon(ji,jj) * (1 - zbpon(ji,jj)) * zideup
          END DO
          ! <CMOC code OR 10/15/2015> ( 1 - zbpon ) is the fraction of PIC 
          ! export that went into the water column below the euphotic zone
@@ -247,11 +247,11 @@ CONTAINS
             &                   - exp(-1._wp*(fsdepw(ji,jj,jk+1)-zdeup)/dci_cmoc) )  &
             &                   / fse3w(ji,jj,jk)
 
-            tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) +                              &
-            &                        2 * zfpon(ji,jj) *                              &
-            &                       (exp(-1._wp*(fsdepw(ji,jj,jk)-zdeup)/dci_cmoc)   &
-            &                      - exp(-1._wp*(fsdepw(ji,jj,jk+1)-zdeup)/dci_cmoc) &
-            &                       ) / fse3w(ji,jj,jk)
+!            tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) +                              &
+!            &                        2 * zfpon(ji,jj) *                              &
+!            &                       (exp(-1._wp*(fsdepw(ji,jj,jk)-zdeup)/dci_cmoc)   &
+!            &                      - exp(-1._wp*(fsdepw(ji,jj,jk+1)-zdeup)/dci_cmoc) &
+!            &                       ) / fse3w(ji,jj,jk)
             ! <CMOC code OR 10/15/2015> Below the euphotic zone calcite dissolution 
             !dominates; the POC flux varies as zfpon*exp(-(z-110)/2700), zfpon being 
             ! the flux at the bottom of the euphotic zone 
