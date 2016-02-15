@@ -254,7 +254,7 @@ CONTAINS
                 DO jk = jk_eud_cmoc+1, mbkt(ji,jj)
                    zcaldiv =  ( zcalflxexp(jk) - zcalflxexp(jk+1) ) / fse3t(ji,jj,jk)
 
-                   tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) +       * zcaldiv                      
+                   tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) +         zcaldiv                      
                    tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) + 2._wp * zcaldiv                      
                 END DO
 
