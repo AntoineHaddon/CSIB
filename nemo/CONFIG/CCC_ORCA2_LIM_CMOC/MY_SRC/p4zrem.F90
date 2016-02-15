@@ -67,12 +67,17 @@ CONTAINS
       REAL(wp), POINTER, DIMENSION(:,:,:) :: zredet,    zn2fix,   zJNd
       REAL(wp) :: zdeup, zideup  ! <CMOC code OR 01/23/2016>  scale of the euphotic 
                                  ! defined according to jk_eud_cmoc
+      REAL(wp), POINTER, DIMENSION(:) :: zdepw        ! computation of depths between t-grid cells.
+      REAL(wp), POINTER, DIMENSION(:) :: zcalflxexp   ! exponential decay of calcite flux with depth
+      REAL(wp) :: zcaldiv, zcalbotflx                 ! divergence of the calcite flux, bottom flx
+
       !!---------------------------------------------------------------------
       !
       IF( nn_timing == 1 )  CALL timing_start('p4z_rem')
       !
       CALL wrk_alloc( jpi, jpj,      zredettot, zn2fixtot, zwork , zfpon, zbpon, zbpoc, zdenittot) 
       CALL wrk_alloc( jpi, jpj, jpk, zredet,    zn2fix,    zJNd          )                       
+      CALL wrk_alloc( jpk, zdepw, zcalflxexp )
 
       ! <CMOC code OR 10/15/2015> Initialization of CMOC arrays
        zredet   (:,:,:) = 0._wp
@@ -145,7 +150,7 @@ CONTAINS
                 !
                 ! total nitrogen fixation on the current 1/4 time step
                 zn2fixtot(ji,jj) = zn2fixtot(ji,jj) + zn2fix(ji,jj,jk) * fse3t(ji,jj,jk)      &
-                &                                   *  tmask(ji,jj,jk) 
+                &                                    *  tmask(ji,jj,jk) 
  
    
       ! <CMOC code OR 10/15/2015> In the 2 loops below, compute the CMOC term of  
@@ -185,7 +190,7 @@ CONTAINS
          tra(:,:,jk,jptal) = tra(:,:,jk,jptal) - zredet(:,:,jk) * trn(:,:,jk,jppoc) * ncrr_cmoc
       END DO
 
-      !     Calcite flux <CMOC code OR 10/15/2015>
+      !     Calcite flux
       !     --------------------------------------------------------------------
       ! <CMOC code OR 10/15/2015> rain ratio at level jk, temperature is temperature in the 1st layer 
          xrcico(:,:) = rmcico_cmoc * exp(aci_cmoc * ( tsn(:,:,1,jp_tem)       &
@@ -196,74 +201,69 @@ CONTAINS
          &                              )
 
        DO ji = 1, jpi
-        DO jj = 1, jpj
+          DO jj = 1, jpj
+             ! Open ocean criterion based on ocean bottom depth; generally nk_bal_cmoc=15
+             ! Use this to avoid calcite flux over areas shallower than the euphotic zone.
+             IF ( nk_bal_cmoc <= mbkt(ji,jj) ) THEN
+                ! Compute the depth of the euphotic zone. Note the sum of e3t is nearly, but not exactly
+                ! equal to depw depths.
+                zdeup = 0._wp
+                DO jk =1, jk_eud_cmoc
+                   zdeup = zdeup + fse3t(ji,jj,jk)
+                ENDDO
+                ! Inverse depth, for computing averages.
+                zideup= 1._wp / zdeup
 
-        !<CMOC code OR 01/23/2016> Define the scale of the euphotic zone
-        zdeup = 0._wp
-        DO jk =1, jk_eud_cmoc
-           zdeup = zdeup + fse3t(ji,jj,jk)
-        ENDDO
-!        zdeup = fsdepw(ji,jj,jk_eud_cmoc)
-        zideup= 1._wp / zdeup
-        
-        ! <CMOC code OR 10/15/2015> Alkalinity and DIC balance due to PIC
-        ! <CMOC code OR 10/23/2015> open ocean criterion based on ocean bottom depth
-        ! jk = nk_bal_cmoc = 15 equivalent to z about 150 m
-        IF ( nk_bal_cmoc <= mbkt(ji,jj) ) THEN
+                ! Calculate the center points between t-grid. Should be the w-grid points, but there is
+                ! a small offset.
+                zdepw(:) = 0._wp
+                DO jk = 2, jpk
+                   zdepw(jk) = zdepw(jk-1) + fse3t(ji,jj,jk-1)
+                ENDDO
+                !WRITE(numout,*) 'depth comp', zdeup, zdepw(jk_eud_cmoc+1), fsdepw(ji,jj,jk_eud_cmoc+1)
 
-         ! <CMOC code OR 10/15/2015> POC flux at the bottom of the euphotic zone 
-         ! taken as k = 11 as in the rest of the code  PIC export at the bottom 
-         ! of the euphotic zone based on Zahariev et al 2008 p.59
-         zfpon(ji,jj) = xrcico(ji,jj) * wsbio3(ji,jj,jk_eud_cmoc) * xstep * trn(ji,jj,jk_eud_cmoc,jppoc) 
-         ! Diagnostic terms follow
-              ! fraction of PIC left at the bottom of the water column (used by BUCALC diagnostics)
-         zbpon(ji,jj) = exp(-1* (fsdepw(ji,jj,mbkt(ji,jj)+1)-zdeup) /dci_cmoc) 
-              ! POC at the bottom at the water column (used by BUPOC diagnostics)
-         zbpoc(ji,jj) = trn(ji,jj,mbkt(ji,jj),jppoc)   
-              ! <CMOC code OR 10/15/2015> fsdepw is the w grid, according to 
-              !Nemo 23 the depth of the top and bottom of the layer where a 
-              !tracer at level k is located, k is the top and k+1 is the bottom.
-         
-         ! <CMOC code OR 10/15/2015> Calcification in the euphotic zone
-         ! PIC export below the euphotic zone is balanced by calcification and 
-         ! the associated loss of DIC and alkalinity at the surface, evenly 
-         ! distributed over the euphotic zone
-         DO jk =1, jk_eud_cmoc
-             tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) -                       &
-            &                     zfpon(ji,jj) * (1 - zbpon(ji,jj)) * zideup
+                ! PIC export at the bottom of the euphotic zone based on Zahariev et al 2008 p.59
+                zfpon(ji,jj) = xrcico(ji,jj) * wsbio3(ji,jj,jk_eud_cmoc) * xstep * trn(ji,jj,jk_eud_cmoc,jppoc) 
 
-             tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) -                       &
-            &                     2 * zfpon(ji,jj) * (1 - zbpon(ji,jj)) * zideup
-         END DO
-         ! <CMOC code OR 10/15/2015> ( 1 - zbpon ) is the fraction of PIC 
-         ! export that went into the water column below the euphotic zone
-         ! the extra term - exp(), which is in fact + zfpon * exp(), is a 
-         ! balance term to enforce long-term equilibrium between surface 
-         ! and bottom conditions of DIC and Akalinity  
+                ! Exponential decay of calcite flux with depth. 
+                zcalflxexp(:) = 0._wp
+                DO jk = jk_eud_cmoc+1, mbkt(ji,jj)+1
+                    zcalflxexp(jk) = zfpon(ji,jj) * exp(-1._wp*(zdepw(jk)-zdeup) / dci_cmoc)
+                ENDDO
 
-         ! <CMOC code OR 10/15/2015> below the euphotic zone
-         DO jk = jk_eud_cmoc+1, mbkt(ji,jj)
-            ! <CMOC code OR 10/15/2015> Calcite Dissolution, source of Alkalinity/DIC
-            ! source/sink is calculated as the finite difference between 2 consecutive depth levels
-            tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) +                              &
-            &                     zfpon(ji,jj) * (                                   &
-            &                     exp(-1._wp*(fsdepw(ji,jj,jk)-zdeup)/dci_cmoc)      &
-            &                   - exp(-1._wp*(fsdepw(ji,jj,jk+1)-zdeup)/dci_cmoc) )  &
-            &                   / fse3t(ji,jj,jk)
+                ! Bottom PIC flux into sediments, which is removed from the deepest layer and
+                ! added back to the surface (below).
+                zcalbotflx = zcalflxexp( mbkt(ji,jj)+1 )
 
-            tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) +                              &
-            &                        2 * zfpon(ji,jj) *                              &
-            &                       (exp(-1._wp*(fsdepw(ji,jj,jk)-zdeup)/dci_cmoc)   &
-            &                      - exp(-1._wp*(fsdepw(ji,jj,jk+1)-zdeup)/dci_cmoc) &
-            &                       ) / fse3t(ji,jj,jk)
-            ! <CMOC code OR 10/15/2015> Below the euphotic zone calcite dissolution 
-            !dominates; the POC flux varies as zfpon*exp(-(z-110)/2700), zfpon being 
-            ! the flux at the bottom of the euphotic zone 
-         END DO
+                ! Set the bottom boundary condition on the calcite flux to zero (no flux to sediment),
+                ! and deal with the sediment flux separately from the sinking in the sections below.
+                zcalflxexp( mbkt(ji,jj)+1 ) = 0._wp
+               
+                ! Over the levels of the euphotic zone, remove the euphotic-zone averaged
+                ! PIC flux (mol/m3) from each level. 
+                DO jk =1, jk_eud_cmoc
+                    tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) -                       &
+                   &                         zfpon(ji,jj) * zideup
 
-        ENDIF
+                    tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) -                       &
+                   &                     2 * zfpon(ji,jj) * zideup
+                END DO
 
-        END DO
+                ! Below the euphotic zone; compute the divergence of the PIC flux
+                ! and distribute it over the t-cell. No sinking flux through the bottom here.
+                DO jk = jk_eud_cmoc+1, mbkt(ji,jj)
+                   zcaldiv =  ( zcalflxexp(jk) - zcalflxexp(jk+1) ) / fse3t(ji,jj,jk)
+
+                   tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) +       * zcaldiv                      
+                   tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) + 2._wp * zcaldiv                      
+                END DO
+
+                ! Do the bottom sedimentation of calcite. The sedimenting flux is added back
+                ! to the surface layer (psuedo "river flux") for conservation.
+                !tra(ji,jj,mbkt(ji,jj),jptal) = tra(ji,jj,mbkt(ji,jj),jptal) - zcalbotflx / fse3t(ji,jj,mbkt(ji,jj))
+                !tra(ji,jj,1,jptal) = tra(ji,jj,1,jptal)  + zcalbotflx / fse3t(ji,jj, 1)
+             ENDIF
+          END DO
        END DO
 
       ! print mean trends (used for debugging)
