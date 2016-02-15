@@ -18,7 +18,6 @@ MODULE p4zbio
    USE trc             !  passive tracers common variables 
    USE sms_pisces      !  PISCES Source Minus Sink variables
    USE p4zsink         !  vertical flux of particulate matter due to sinking
-   USE p4zopt          !  optical model
    USE p4zprod         !  Growth rate of the 2 phyto groups
    USE p4zmort         !  Mortality terms for phytoplankton
    USE p4zmicro        !  Sources and sinks of microzooplankton
@@ -74,7 +73,6 @@ CONTAINS
       END DO
           
       CALL p4z_sink ( kt, jnt )     ! vertical flux of particulate organic matter
-      CALL p4z_opt  ( kt, jnt )     ! Optic: PAR in the water column
       CALL p4z_prod ( kt, jnt )     ! phytoplankton growth rate over the global ocean. 
       !                             ! (for each element : C, Si, Fe, Chl )
       ! <CMOC code OR 10/19/2015) iom_put (in p4z_rem) must be called only once (over the physics time step), so jnt is to be passed to p4z_rem when saving Nfix if the diagnostics to be made on a complete physics time step.
