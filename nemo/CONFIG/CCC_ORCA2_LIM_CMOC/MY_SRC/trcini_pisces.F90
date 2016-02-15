@@ -29,7 +29,6 @@ MODULE trcini_pisces
    USE p4zprod         !  Growth rate of the 2 phyto groups
    USE p4zmicro        !  Sources and sinks of microzooplankton
    USE p4zmort         !  Mortality terms for phytoplankton
-   USE p4zlys          !  Calcite saturation
    USE p4zsed          !  Sedimentation
 
    IMPLICIT NONE
@@ -132,7 +131,6 @@ CONTAINS
       CALL p4z_mort_init      !  phytoplankton mortality 
       CALL p4z_micro_init     !  microzooplankton
       CALL p4z_sed_init       !  sedimentation 
-      CALL p4z_lys_init       !  calcite saturation
       CALL p4z_flx_init       !  gas exchange 
 
       ndayflxtr = 0
