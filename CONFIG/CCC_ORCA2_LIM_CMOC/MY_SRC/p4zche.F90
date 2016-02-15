@@ -177,7 +177,7 @@ CONTAINS
       ! CHEMICAL CONSTANTS - DEEP OCEAN
       ! -------------------------------
 !CDIR NOVERRCHK
-      DO jk = 1, jpk
+      DO jk = 1, 1
 !CDIR NOVERRCHK
          DO jj = 1, jpj
 !CDIR NOVERRCHK
