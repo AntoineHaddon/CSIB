@@ -70,6 +70,7 @@ CONTAINS
       REAL(wp), POINTER, DIMENSION(:) :: zdepw        ! computation of depths between t-grid cells.
       REAL(wp), POINTER, DIMENSION(:) :: zcalflxexp   ! exponential decay of calcite flux with depth
       REAL(wp) :: zcaldiv, zcalbotflx                 ! divergence of the calcite flux, bottom flx
+      REAL(wp) :: globvol, globtal
 
       !!---------------------------------------------------------------------
       !
@@ -177,6 +178,11 @@ CONTAINS
             ENDIF
           END DO 
       END DO      
+
+      globvol = glob_sum( cvol(:,:,:) )
+      globtal = glob_sum( trn(:,:,:,jptal) * cvol(:,:,:) ) / globvol
+      WRITE(numout,*) 'TAL integral : ', globtal*1000._wp
+
  
       !     --------------------------------------------------------------------
       !     Update the arrays TRA which contain the biological sources and sinks
@@ -248,6 +254,8 @@ CONTAINS
                 !    tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) -                       &
                 !   &                     2 * zfpon(ji,jj) * zideup
                 END DO
+                    tra(ji,jj,1,jptal) = tra(ji,jj,1,jptal) -                       &
+                   &                     2 * zfpon(ji,jj) / fse3t(ji,jj,1)
 
                 ! Below the euphotic zone; compute the divergence of the PIC flux
                 ! and distribute it over the t-cell. No sinking flux through the bottom here.
@@ -255,7 +263,7 @@ CONTAINS
                    zcaldiv =  ( zcalflxexp(jk) - zcalflxexp(jk+1) ) / fse3t(ji,jj,jk)
 
                    tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) +         zcaldiv                      
-                !   tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) + 2._wp * zcaldiv                      
+                   tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) + 2._wp * zcaldiv                      
                 END DO
 
                 ! Do the bottom sedimentation of calcite. The sedimenting flux is added back
