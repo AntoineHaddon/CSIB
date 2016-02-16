@@ -176,6 +176,8 @@ CONTAINS
 
       ! CHEMICAL CONSTANTS - DEEP OCEAN
       ! -------------------------------
+      ! For CMOC only the surface layer is needed for the carbonate system
+     
 !CDIR NOVERRCHK
       DO jk = 1, 1
 !CDIR NOVERRCHK
