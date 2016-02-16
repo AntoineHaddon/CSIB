@@ -245,8 +245,8 @@ CONTAINS
                     tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) -                       &
                    &                         zfpon(ji,jj) * zideup
 
-                    tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) -                       &
-                   &                     2 * zfpon(ji,jj) * zideup
+                !    tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) -                       &
+                !   &                     2 * zfpon(ji,jj) * zideup
                 END DO
 
                 ! Below the euphotic zone; compute the divergence of the PIC flux
@@ -255,7 +255,7 @@ CONTAINS
                    zcaldiv =  ( zcalflxexp(jk) - zcalflxexp(jk+1) ) / fse3t(ji,jj,jk)
 
                    tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) +         zcaldiv                      
-                   tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) + 2._wp * zcaldiv                      
+                !   tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) + 2._wp * zcaldiv                      
                 END DO
 
                 ! Do the bottom sedimentation of calcite. The sedimenting flux is added back
