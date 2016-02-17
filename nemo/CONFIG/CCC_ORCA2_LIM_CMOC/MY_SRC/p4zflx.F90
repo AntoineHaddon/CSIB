@@ -231,9 +231,9 @@ CONTAINS
             CALL iom_put( "Kg"   , zkgco2(:,:) * tmask(:,:,1) )
             CALL iom_put( "Dpco2", ( satmco2(:,:) * patm(:,:) - zh2co3(:,:) / ( chemc(:,:,1) + rtrn ) ) * tmask(:,:,1) )
             CALL iom_put( "Dpo2" , ( atcox * patm(:,:) - trn(:,:,1,jpoxy) / ( chemc(:,:,2) + rtrn ) )   * tmask(:,:,1) )
-            zph3d = -1. * LOG10( hi(:,:,:)
+            zph3d = -1. * LOG10( hi(:,:,:) )
             zph3d(:,:,2:) = 0._wp
-            CALL iom_put( "PH"    , zph3d )                                            * tmask(:,:,:) )
+            CALL iom_put( "PH"    , zph3d * tmask(:,:,:) )
          ELSE
             trc2d(:,:,jp_pcs0_2d    ) = oce_co2(:,:) / e1e2t(:,:) / rfact 
             trc2d(:,:,jp_pcs0_2d + 1) = zoflx(:,:) * 1000 * tmask(:,:,1) 
