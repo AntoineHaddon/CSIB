@@ -60,13 +60,11 @@ CONTAINS
       ! total euphotic zone nitrogen fixation, temporary array for DNF diagnostics, 
       ! pon flux (euphotic zone bottom) for PIC burial diagnostics, PIC flux at the 
       ! bottom, bottom POC
-      REAL(wp), POINTER, DIMENSION(:,:  ) :: zredettot, zn2fixtot, zwork, zfpon, zbpon
+      REAL(wp), POINTER, DIMENSION(:,:  ) :: zredettot, zn2fixtot, zwork
       REAL(wp), POINTER, DIMENSION(:,:  ) :: zbpoc, zdenittot 
       ! <CMOC code OR 10/15/2015> arrays for depth-dependent rates, zJNd is used to 
       !compute the balance between denitrification and nitrogen fixation
       REAL(wp), POINTER, DIMENSION(:,:,:) :: zredet,    zn2fix,   zJNd
-      REAL(wp) :: zdeup, zideup  ! <CMOC code OR 01/23/2016>  scale of the euphotic 
-                                 ! defined according to jk_eud_cmoc
       REAL(wp), POINTER, DIMENSION(:) :: zdepw        ! computation of depths between t-grid cells.
       REAL(wp), POINTER, DIMENSION(:) :: zcalflxexp   ! exponential decay of calcite flux with depth
       REAL(wp) :: zcaldiv, zcalbotflx                 ! divergence of the calcite flux, bottom flx
@@ -90,8 +88,6 @@ CONTAINS
 
        zJNd     (:,:,:) = 0._wp
        zwork    (:,:)   = 0._wp
-       zfpon    (:,:)   = 0._wp
-       zbpon    (:,:)   = 0._wp
        zbpoc    (:,:)   = 0._wp
 
       ! <CMOC code OR 10/15/2015> remineralisation rate of detritus
@@ -191,86 +187,6 @@ CONTAINS
          tra(:,:,jk,jptal) = tra(:,:,jk,jptal) - zredet(:,:,jk) * trn(:,:,jk,jppoc) * ncrr_cmoc
       END DO
 
-      !     Calcite flux
-      !     --------------------------------------------------------------------
-      !     Note that below the trn arrays must be modified directly for conservation
-      !     due to xneg
-      ! <CMOC code OR 10/15/2015> rain ratio at level jk, temperature is temperature in the 1st layer 
-         xrcico(:,:) = rmcico_cmoc * exp(aci_cmoc * ( tsn(:,:,1,jp_tem)       &
-         &                                - trcico_cmoc ) ) /                 &
-         &                              (1._wp + exp(aci_cmoc *               &
-         &                                (tsn(:,:,1,jp_tem) - trcico_cmoc))  &
-         &                               + rtrn                               &
-         &                              )
-
-       DO ji = 1, jpi
-          DO jj = 1, jpj
-             ! Open ocean criterion based on ocean bottom depth; generally nk_bal_cmoc=15
-             ! Use this to avoid calcite flux over areas shallower than the euphotic zone.
-             IF ( nk_bal_cmoc <= mbkt(ji,jj) ) THEN
-                ! Compute the depth of the euphotic zone. Note the sum of e3t is nearly, but not exactly
-                ! equal to depw depths.
-                zdeup = 0._wp
-                DO jk =1, jk_eud_cmoc
-                   zdeup = zdeup + fse3t(ji,jj,jk)
-                ENDDO
-                ! Inverse depth, for computing averages.
-                zideup= 1._wp / zdeup
-
-                ! Calculate the center points between t-grid. Should be the w-grid points, but there is
-                ! a small offset.
-                zdepw(:) = 0._wp
-                DO jk = 2, jpk
-                   zdepw(jk) = zdepw(jk-1) + fse3t(ji,jj,jk-1)
-                ENDDO
-                !WRITE(numout,*) 'depth comp', zdeup, zdepw(jk_eud_cmoc+1), fsdepw(ji,jj,jk_eud_cmoc+1)
-
-                ! PIC export at the bottom of the euphotic zone based on Zahariev et al 2008 p.59
-                zfpon(ji,jj) = xrcico(ji,jj) * wsbio3(ji,jj,jk_eud_cmoc) * xstep * trn(ji,jj,jk_eud_cmoc,jppoc) 
-
-                ! Exponential decay of calcite flux with depth. 
-                zcalflxexp(:) = 0._wp
-                DO jk = jk_eud_cmoc+1, mbkt(ji,jj)+1
-                    zcalflxexp(jk) = zfpon(ji,jj) * exp(-1._wp*(zdepw(jk)-zdeup) / dci_cmoc)
-                ENDDO
-
-                ! Bottom PIC flux into sediments, which is removed from the deepest layer and
-                ! added back to the surface (below).
-                zcalbotflx = zcalflxexp( mbkt(ji,jj)+1 )
-
-                ! Set the bottom boundary condition on the calcite flux to zero (no flux to sediment),
-                ! and deal with the sediment flux separately from the sinking in the sections below.
-                zcalflxexp( mbkt(ji,jj)+1 ) = 0._wp
-               
-                ! Over the levels of the euphotic zone, remove the euphotic-zone averaged
-                ! PIC flux (mol/m3) from each level. 
-                DO jk =1, jk_eud_cmoc
-                    trn(ji,jj,jk,jpdic) = trn(ji,jj,jk,jpdic) -                       &
-                   &                              zfpon(ji,jj) * zideup
-
-                    trn(ji,jj,jk,jptal) = trn(ji,jj,jk,jptal) -                       &
-                   &                      2._wp * zfpon(ji,jj) * zideup
-                END DO
-
-                ! Below the euphotic zone; compute the divergence of the PIC flux
-                ! and distribute it over the t-cell. No sinking flux through the bottom here.
-                DO jk = jk_eud_cmoc+1, mbkt(ji,jj)
-                   zcaldiv =  ( zcalflxexp(jk) - zcalflxexp(jk+1) ) / fse3t(ji,jj,jk)
-
-                   trn(ji,jj,jk,jpdic) = trn(ji,jj,jk,jpdic) +         zcaldiv                      
-                   trn(ji,jj,jk,jptal) = trn(ji,jj,jk,jptal) + 2._wp * zcaldiv                      
-                END DO
-
-                ! Do the bottom sedimentation of calcite. The sedimenting flux is added back
-                ! to the surface layer (psuedo "river flux") for conservation.
-                !tra(ji,jj,mbkt(ji,jj),jptal) = tra(ji,jj,mbkt(ji,jj),jptal) - zcalbotflx / fse3t(ji,jj,mbkt(ji,jj))
-                !tra(ji,jj,1,jptal) = tra(ji,jj,1,jptal)  + zcalbotflx / fse3t(ji,jj, 1)
-             ENDIF
-          END DO
-       END DO
-       globvol = glob_sum( cvol(:,:,:) )
-       globtal = glob_sum( trn(:,:,:,jptal) * cvol(:,:,:) ) / globvol
-       WRITE(numout,*) 'TAL integral : ', globtal*1000._wp
 
       ! print mean trends (used for debugging)
       IF(ln_ctl)   THEN
@@ -296,14 +212,11 @@ CONTAINS
               ! already taken into account
               zwork(:,:)  = -zdenittot(:,:) * ncrr_cmoc * 1.e+3_wp * rfact2r                
               CALL iom_put( "Denit"  , zwork )                                         ! denitrification in molN m^-2 s^-1 
-              ! <CMOC code OR 12/11/2015> denitrification ! CALL iom_put( "BUPOC"  , wsbio3(:,:,11) /rday * zbpoc(:,:) * 1e+3_wp  )  ! POC burial flux
-              ! <CMOC code OR 12/11/2015> denitrification ! CALL iom_put( "BUCALC" , zfpon(:,:) * 1e+3_wp * rfact2r * zbpon(:,:)  )  ! <CMOC code OR 12/11/2015> *rfact2r replaces /rfact2 ! PIC burial flux
-
          ENDIF
         ENDIF
       ENDIF
 
-      CALL wrk_dealloc( jpi, jpj,      zredettot, zn2fixtot, zwork, zfpon, zbpon, zbpoc, zdenittot  ) ! <CMOC code OR 12/11/2015> Total denitrification
+      CALL wrk_dealloc( jpi, jpj,      zredettot, zn2fixtot, zwork, zbpoc, zdenittot  ) ! <CMOC code OR 12/11/2015> Total denitrification
       CALL wrk_dealloc( jpi, jpj, jpk, zredet,    zn2fix,   zJNd         )
       !
       IF( nn_timing == 1 )  CALL timing_stop('p4z_rem')
@@ -333,8 +246,6 @@ CONTAINS
       REWIND( numcmoc )            
       READ  ( numcmoc, namcmocpoc )
       REWIND( numcmoc )            
-      READ  ( numcmoc, namcmoccal )
-      REWIND( numcmoc )            
       READ  ( numcmoc, namcmocnfx )
       REWIND( numcmoc )            
       READ  ( numcmoc, namcmocdeu )
@@ -348,13 +259,6 @@ CONTAINS
          WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
          WRITE(numout,*) '    Remineralisation rate of POC              reref_cmoc=', reref_cmoc
          WRITE(numout,*) '    Activation energy for remineralization    ed_cmoc   =', ed_cmoc   
-         WRITE(numout,*) ' '
-         WRITE(numout,*) ' Namelist parameters for calcite export  , namcmoccal'
-         WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-         WRITE(numout,*) '    Maximum rain ratio                      rmcico_cmoc =', rmcico_cmoc
-         WRITE(numout,*) '    Rain ratio half-point temperature       trcico_cmoc =', trcico_cmoc
-         WRITE(numout,*) '    Rain ratio scaling factor                  aci_cmoc =',    aci_cmoc
-         WRITE(numout,*) '    CaCO3 redissolution depth scale            dci_cmoc =',    dci_cmoc
          WRITE(numout,*) ' '
          WRITE(numout,*) ' Namelist parameters for dinitrogen fix. , namcmocnfx'
          WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
