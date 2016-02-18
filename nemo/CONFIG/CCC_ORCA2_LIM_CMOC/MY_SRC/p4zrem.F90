@@ -263,8 +263,8 @@ CONTAINS
 
                 ! Do the bottom sedimentation of calcite. The sedimenting flux is added back
                 ! to the surface layer (psuedo "river flux") for conservation.
-                !tra(ji,jj,mbkt(ji,jj),jptal) = tra(ji,jj,mbkt(ji,jj),jptal) - zcalbotflx / fse3t(ji,jj,mbkt(ji,jj))
-                !tra(ji,jj,1,jptal) = tra(ji,jj,1,jptal)  + zcalbotflx / fse3t(ji,jj, 1)
+                trn(ji,jj,mbkt(ji,jj),jptal) = trn(ji,jj,mbkt(ji,jj),jptal) - zcalbotflx / fse3t(ji,jj,mbkt(ji,jj))
+                trn(ji,jj,1,jptal) = trn(ji,jj,1,jptal)  + zcalbotflx / fse3t(ji,jj, 1)
              ENDIF
           END DO
        END DO
@@ -305,6 +305,7 @@ CONTAINS
 
       CALL wrk_dealloc( jpi, jpj,      zredettot, zn2fixtot, zwork, zfpon, zbpon, zbpoc, zdenittot  ) ! <CMOC code OR 12/11/2015> Total denitrification
       CALL wrk_dealloc( jpi, jpj, jpk, zredet,    zn2fix,   zJNd         )
+      CALL wrk_alloc( jpk, zdepw, zcalflxexp )
       !
       IF( nn_timing == 1 )  CALL timing_stop('p4z_rem')
       !
