@@ -166,7 +166,7 @@ CONTAINS
 
                trn(ji,jj,jk,jpdic) = trn(ji,jj,jk,jpdic) +         zcaldiv 
                trn(ji,jj,jk,jptal) = trn(ji,jj,jk,jptal) + 2._wp * zcaldiv                      
-               ztalapz = ztalapz + SUM(2._wp * zcaldiv)
+               ztalapz = ztalapz + 2._wp * zcaldiv
             ENDDO
          ENDDO
       ENDDO
