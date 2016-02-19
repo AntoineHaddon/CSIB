@@ -66,6 +66,7 @@ CONTAINS
       REAL(wp), POINTER, DIMENSION(:,:,:) ::   zcalflxexp    ! exponential decay of calcite flux with depth
       REAL(wp) ::   zcaldiv                                  ! divergence of the calcite flux
       REAL(wp) ::   globvol, globtal                         ! TAL conservation diagnostics
+      REAL(wp) ::   ztaleuz, ztalapz, ztalflxsum             ! TAL conservation diagnostics
       
       INTEGER  ::   ik1
       CHARACTER (len=25) :: charout
@@ -124,7 +125,7 @@ CONTAINS
 
       ! Exponential decay of calcite flux with depth, at w-points.
       zcalflxexp(:,:,:) = 0._wp
-      DO jk = jk_eud_cmoc+1, jpk
+      DO jk = jk_eud_cmoc+1, jpk                                                         ! This tmask potentially at jk-1
          zcalflxexp(:,:,jk) = zfpon(:,:) * exp(-1._wp*(fsdepw(:,:,jk)-zdeup) / dci_cmoc) * tmask(:,:,jk)
       ENDDO
                 
@@ -146,16 +147,18 @@ CONTAINS
 
       ! Over the levels of the euphotic zone, remove the euphotic-zone averaged
       ! PIC flux (mol/m3) from each level. 
+      ztaleuz = 0._wp
       DO jk =1, jk_eud_cmoc
          trn(:,:,jk,jpdic) = trn(:,:,jk,jpdic) -                                   &
          &                              zfpon(:,:) * zideup(:,:) 
 
          trn(:,:,jk,jptal) = trn(:,:,jk,jptal) -                                   &
          &                      2._wp * zfpon(:,:) * zideup(:,:) 
+         ztaleuz = ztaleuz + SUM(2._wp * zfpon(:,:) * zideup(:,:))
       END DO
 
-      ! Below the euphotic zone; compute the divergence of the PIC flux
       ! and distribute it over the t-cell. No sinking flux through the bottom here.
+      ztalapz = 0._wp
       DO jk = jk_eud_cmoc+1, jpkm1
          DO jj = 1, jpj
             DO ji = 1,jpi
@@ -163,9 +166,18 @@ CONTAINS
 
                trn(ji,jj,jk,jpdic) = trn(ji,jj,jk,jpdic) +         zcaldiv 
                trn(ji,jj,jk,jptal) = trn(ji,jj,jk,jptal) + 2._wp * zcaldiv                      
+               ztalapz = ztalapz + SUM(2._wp * zcaldiv)
             ENDDO
          ENDDO
       ENDDO
+
+      ztalflxsum = 0._wp
+      ztalflxsum = SUM(zfpon(:,:))
+      WRITE(numout,*) 'talflxsum', ztalflxsum
+      WRITE(numout,*) 'taleuzsum', ztaleuz
+      WRITE(numout,*) 'talapzsum', ztalapz
+
+      ! Below the euphotic zone; compute the divergence of the PIC flux
     
       ! Do the bottom sedimentation of calcite. The sedimenting flux is added back
       ! to the surface layer (psuedo "river flux") for conservation.
