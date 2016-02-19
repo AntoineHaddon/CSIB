@@ -7,6 +7,7 @@ MODULE p4zrem
    !!             2.0  !  2007-12  (C. Ethe, G. Madec)  F90
    !!             3.4  !  2011-06  (O. Aumont, C. Ethe) Quota model for iron
    !!          CMOC 1  !  2013-2015(O. Riche) remineralization, PIC export and nitrogen fixation, based on Zahariev et al 2008
+   !!          CMOC 1  !  2016-02  (N. Swart) Bugfixes and moves calcite flux to p4zsink; DNF to p4zsed.
    !!----------------------------------------------------------------------
 #if defined key_pisces
    !!----------------------------------------------------------------------
@@ -46,9 +47,10 @@ CONTAINS
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE p4z_rem  ***
       !!
-      !! ** Purpose :   Compute remineralization/scavenging of organic compounds
+      !! ** Purpose :   Compute remineralization of detritus
       !!
-      !! ** Method  : - ???
+      !! ** Method  : Temperature dependent remineralization based on
+      !!              Zahariev et al. (2008)
       !!---------------------------------------------------------------------
       !
       INTEGER, INTENT(in) ::   kt, jnt ! <CMOC code OR 10/15/2015> add the time 
@@ -56,122 +58,37 @@ CONTAINS
       !
       INTEGER  ::   ji, jj, jk
       CHARACTER (len=25) :: charout
-      ! <CMOC code OR 10/15/2015> arrays for total water column remineralisation, 
-      ! total euphotic zone nitrogen fixation, temporary array for DNF diagnostics, 
-      ! pon flux (euphotic zone bottom) for PIC burial diagnostics, PIC flux at the 
-      ! bottom, bottom POC
-      REAL(wp), POINTER, DIMENSION(:,:  ) :: zredettot, zn2fixtot, zwork
-      REAL(wp), POINTER, DIMENSION(:,:  ) :: zbpoc, zdenittot 
-      ! <CMOC code OR 10/15/2015> arrays for depth-dependent rates, zJNd is used to 
-      !compute the balance between denitrification and nitrogen fixation
-      REAL(wp), POINTER, DIMENSION(:,:,:) :: zredet,    zn2fix,   zJNd
-      REAL(wp), POINTER, DIMENSION(:) :: zdepw        ! computation of depths between t-grid cells.
-      REAL(wp), POINTER, DIMENSION(:) :: zcalflxexp   ! exponential decay of calcite flux with depth
-      REAL(wp) :: zcaldiv, zcalbotflx                 ! divergence of the calcite flux, bottom flx
-      REAL(wp) :: globvol, globtal
-
       !!---------------------------------------------------------------------
       !
       IF( nn_timing == 1 )  CALL timing_start('p4z_rem')
       !
-      CALL wrk_alloc( jpi, jpj,      zredettot, zn2fixtot, zwork , zfpon, zbpon, zbpoc, zdenittot) 
-      CALL wrk_alloc( jpi, jpj, jpk, zredet,    zn2fix,    zJNd          )                       
-      CALL wrk_alloc( jpk, zdepw, zcalflxexp )
 
-      ! <CMOC code OR 10/15/2015> Initialization of CMOC arrays
-       zredet   (:,:,:) = 0._wp
-       zredettot(:,:)   = 0._wp
-       zn2fix   (:,:,:) = 0._wp
-       zn2fixtot(:,:)   = 0._wp
-       ! <CMOC code OR 12/11/2015> Total denitrification diagnostics
-       zdenittot(:,:)   = 0._wp
+      ! Initialization of CMOC arrays
+       redet   (:,:,:) = 0._wp
+       redettot(:,:)   = 0._wp
 
-       zJNd     (:,:,:) = 0._wp
-       zwork    (:,:)   = 0._wp
-       zbpoc    (:,:)   = 0._wp
-
-      ! <CMOC code OR 10/15/2015> remineralisation rate of detritus
-      ! <CMOC code OR 12/17/2015> imposing the seafloor bathymetry 
-      !                           as the bottom of the water column 
-      !                           instead of the maximum level on 
-      !                           the vertical grid
- 
-      DO ji = 1, jpi
-          DO jj = 1, jpj
-
-            DO jk = jk_eud_cmoc, mbkt(ji,jj) ! <CMOC code OR 01/23/2016> introduce 
-                                             ! the jk_eud_cmoc index 
-               ! one way to think of the global variable "xstep" is the time step in days
-               zredet (ji,jj,jk) = reref_cmoc * xstep &
+      ! Remineralisation rate of detritus
+      DO jk = 1, jpk
+         DO jj = 1, jpj
+            DO ji = 1, jpi
+               redet (ji,jj,jk) = reref_cmoc * xstep &
                &                 * exp ( -ed_cmoc * 1e3_wp / 8.31_wp *        &
                &                ( 1._wp / ( tsn(ji,jj,jk,jp_tem) + 273.15_wp  &
                &                 + rtrn ) - 1._wp / ( tvm_cmoc + 273.15_wp )  &
-               &                )      )
+               &                )      ) * tmask(ji,jj,jk)
             END DO
+          END DO 
+      END DO      
 
-      ! <CMOC code OR 10/15/2015> N2-fixation and denitrification implementation
-      ! <CMOC code OR 10/15/2015> remineralization integration over the water column, 
-      !                           from 111 m (k level = 12), included, down to the bottom.
-      ! <CMOC code OR 12/17/2015> imposing the seafloor bathymetry as the bottom i
-      !                           of the water column instead of the maximum level 
-      !                           on the vertical grid 
-            DO jk = jk_eud_cmoc+1, mbkt(ji,jj)  
-                zredettot(ji,jj) = zredettot(ji,jj) + zredet(ji,jj,jk)  &
-                &                    *   trn(ji,jj,jk,jppoc)            &
-                &                    * fse3t(ji,jj,jk)                  &
-                &                    * tmask(ji,jj,jk)
+      ! Integration of remineralization below the euphotic zone (used for dentrification scaling)
+      DO jk = jk_eud_cmoc+1, jpk
+         DO jj = 1, jpj
+            DO ji = 1, jpi
+                redettot(ji,jj) = redettot(ji,jj) + redet(ji,jj,jk)        &
+                &                                   *    trn(ji,jj,jk,jppoc)  &
+                &                                   * fse3t(ji,jj,jk)         &
+                &                                   * tmask(ji,jj,jk)
             END DO
-
-      ! <CMOC code OR 10/15/2015> N2 fixation integration over the surface layer, between k level 1 and k level 11
-
-            ! <CMOC code OR 01/23/2016> Move DNF inside the conditional 
-            ! branching for open ocean criterion (nk_bal_cmoc = 15)
-            IF ( nk_bal_cmoc <= mbkt(ji,jj) ) THEN
-            
-            DO jk = 1, jk_eud_cmoc
-   
-                zn2fix (ji,jj,jk) = pnf_cmoc * cnrr_cmoc * 1e-12_wp / 3600._wp * rfact2 & ! reference rate
-                !
-                &                 * kn_cmoc * 1e-6_wp / ( kn_cmoc * 1e-6_wp                  &
-                                  + trn(ji,jj,jk,jpno3) + rtrn) & ! N inhibition
-                !
-                &                 * qsr(ji,jj)*0.43_wp * exp ( - ( (0.04 + 0.03              &
-                &                 * trn(ji,jj,1,jpnch) * 1e6_wp) * fsdept(ji,jj,jk) ) )      &
-                &                 / inf_cmoc                                                 & ! ligh sensitivity
-                !
-                &                 * ( max(tsn(ji,jj,jk,jp_tem), tnfmi_cmoc ) - tnfmi_cmoc )   &
-                &                 / ( tnfMa_cmoc - tnfmi_cmoc ) & ! temperature dependence
-                !
-                &                 * ( phinf_cmoc * exp( 1._wp ) * anf_cmoc * fsdept(ji,jj,jk) &
-                &                 * exp ( -anf_cmoc * fsdept(ji,jj,jk) ) + phi0_cmoc ) ! diazotroph abundance dependence
-                !
-                ! total nitrogen fixation on the current 1/4 time step
-                zn2fixtot(ji,jj) = zn2fixtot(ji,jj) + zn2fix(ji,jj,jk) * fse3t(ji,jj,jk)      &
-                &                                    *  tmask(ji,jj,jk) 
- 
-   
-      ! <CMOC code OR 10/15/2015> In the 2 loops below, compute the CMOC term of  
-      ! N2-fixation/denitrification and scale denitrification according to 
-      ! N2-fixation to have a balance between them at each grid point
-      ! ---------------------------------------------------------------------
-      
-      ! <CMOC code OR 12/17/2015> ! imposing an open ocean criterion on DNF - denit term
-      !
-                zJNd(ji,jj,jk) =  zn2fix(ji,jj,jk)
-      !
-             END DO 
-
-             DO jk = jk_eud_cmoc+1 , mbkt(ji,jj) 
-                zJNd(ji,jj,jk)  = -zredet(ji,jj,jk) * trn(ji,jj,jk,jppoc) *   &
-                &               zn2fixtot(ji,jj) / (zredettot(ji,jj) + rtrn)
-! <CMOC code OR 12/11/2015> Total denitrification (negative at this stage); NOTE: since denitrification is 
-! over the whole water column I apply the land mask at each depth instead of once using the surface 
-! (as in the case of DNF diagnostics, see farther below)j) + rtrn)
-                zdenittot(ji,jj) = zdenittot(ji,jj) +                         &
-                &                       zJNd(ji,jj,jk) * fse3t(ji,jj,jk) *    &
-                &                                        tmask(ji,jj,jk)      
-             END DO
-            ENDIF
           END DO 
       END DO      
 
@@ -179,12 +96,11 @@ CONTAINS
       !     Update the arrays TRA which contain the biological sources and sinks
       !     --------------------------------------------------------------------
       DO jk = 1, jpkm1
-         tra(:,:,jk,jppoc) = tra(:,:,jk,jppoc) - zredet(:,:,jk) * trn(:,:,jk,jppoc) 
-         tra(:,:,jk,jpno3) = tra(:,:,jk,jpno3) + zredet(:,:,jk) * trn(:,:,jk,jppoc) & 
-         &                                     +   zJNd(:,:,jk)
-         tra(:,:,jk,jpoxy) = tra(:,:,jk,jpoxy) - zredet(:,:,jk) * trn(:,:,jk,jppoc)
-         tra(:,:,jk,jpdic) = tra(:,:,jk,jpdic) + zredet(:,:,jk) * trn(:,:,jk,jppoc) 
-         tra(:,:,jk,jptal) = tra(:,:,jk,jptal) - zredet(:,:,jk) * trn(:,:,jk,jppoc) * ncrr_cmoc
+         tra(:,:,jk,jppoc) = tra(:,:,jk,jppoc) - redet(:,:,jk) * trn(:,:,jk,jppoc) 
+         tra(:,:,jk,jpno3) = tra(:,:,jk,jpno3) + redet(:,:,jk) * trn(:,:,jk,jppoc) 
+         tra(:,:,jk,jpoxy) = tra(:,:,jk,jpoxy) - redet(:,:,jk) * trn(:,:,jk,jppoc)
+         tra(:,:,jk,jpdic) = tra(:,:,jk,jpdic) + redet(:,:,jk) * trn(:,:,jk,jppoc) 
+         tra(:,:,jk,jptal) = tra(:,:,jk,jptal) - redet(:,:,jk) * trn(:,:,jk,jppoc) * ncrr_cmoc
       END DO
 
 
@@ -195,29 +111,6 @@ CONTAINS
          CALL prt_ctl_trc(tab4d=tra, mask=tmask, clinfo=ctrcnm)
       ENDIF
 
-      IF( ln_diatrc ) THEN  
-        IF( lk_iomput ) THEN
-        
-         ! <CMOC code OR 10/15/2015>
-         IF( jnt == nrdttrc ) THEN 
-              ! <CMOC code OR 10/15/2015> 1.e+3_wp is to convert from L^-1 to m^-3
-              !  (left in the sum line #119); the diagnostics has to be rescaled 
-              ! to per second by dividing by rfact2.
-              zwork(:,:)  =  zn2fixtot(:,:) * ncrr_cmoc * 1.e+3_wp * rfact2r * tmask(:,:,1)
-              ! nitrogen fixation in molN m^-2 s^-1 
-              CALL iom_put( "Nfix"   , zwork )         
-              ! <CMOC code OR 12/11/2015> 1.e+3_wp is to convert from L^-1 to 
-              ! m^-3 (left in the sum line #119); the diagnostics has to be 
-              ! rescaled to per second by dividing by rfact2; NOTE: land mask 
-              ! already taken into account
-              zwork(:,:)  = -zdenittot(:,:) * ncrr_cmoc * 1.e+3_wp * rfact2r                
-              CALL iom_put( "Denit"  , zwork )                                         ! denitrification in molN m^-2 s^-1 
-         ENDIF
-        ENDIF
-      ENDIF
-
-      CALL wrk_dealloc( jpi, jpj,      zredettot, zn2fixtot, zwork, zbpoc, zdenittot  ) ! <CMOC code OR 12/11/2015> Total denitrification
-      CALL wrk_dealloc( jpi, jpj, jpk, zredet,    zn2fix,   zJNd         )
       !
       IF( nn_timing == 1 )  CALL timing_stop('p4z_rem')
       !
@@ -239,42 +132,21 @@ CONTAINS
 
       ! <CMOC code OR 10/15/2015> CMOC namelist
       NAMELIST/namcmocpoc/ ed_cmoc, reref_cmoc
-      NAMELIST/namcmoccal/ rmcico_cmoc, trcico_cmoc, aci_cmoc, dci_cmoc
-      NAMELIST/namcmocnfx/ phinf_cmoc, phi0_cmoc, anf_cmoc, pnf_cmoc, inf_cmoc, tnfMa_cmoc, tnfmi_cmoc
       NAMELIST/namcmocdeu/ jk_eud_cmoc, nk_bal_cmoc
 
       REWIND( numcmoc )            
       READ  ( numcmoc, namcmocpoc )
-      REWIND( numcmoc )            
-      READ  ( numcmoc, namcmocnfx )
-      REWIND( numcmoc )            
-      READ  ( numcmoc, namcmocdeu )
+
       ! <CMOC code OR 10/15/2015> CMOC namelist end 
       !!----------------------------------------------------------------------
       
       ! control print
       IF(lwp) THEN
-
          WRITE(numout,*) ' Namelist parameters for remineralization, namcmocpoc'
          WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
          WRITE(numout,*) '    Remineralisation rate of POC              reref_cmoc=', reref_cmoc
          WRITE(numout,*) '    Activation energy for remineralization    ed_cmoc   =', ed_cmoc   
          WRITE(numout,*) ' '
-         WRITE(numout,*) ' Namelist parameters for dinitrogen fix. , namcmocnfx'
-         WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-         WRITE(numout,*) '    Maximum ref. diazotroph concentration    phinf_cmoc =',  phinf_cmoc
-         WRITE(numout,*) '    Surface ref. diazotroph concentration     phi0_cmoc =',   phi0_cmoc
-         WRITE(numout,*) '    Inverse depth of diazotroph conc.max.      anf_cmoc =',    anf_cmoc
-         WRITE(numout,*) '    Maximum ref. rate of dinitrogen fix.       pnf_cmoc =',    pnf_cmoc
-         WRITE(numout,*) '    Maximum ref. dinitrogen fix surf. irr.     inf_cmoc =',    inf_cmoc
-         WRITE(numout,*) '    Maximum ref. dinitrogen fix SST          tnfMa_cmoc =',  tnfMa_cmoc
-         WRITE(numout,*) '    Minimum ref. dinitrogen fix SST          tnfmi_cmoc =',  tnfmi_cmoc
-         WRITE(numout,*) ' '
-         WRITE(numout,*) ' Namelist parameters, Euphotic zone depth , namcmocdeu'
-         WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-         WRITE(numout,*) '    Index of the bottom of the euphotic zone jk_eud_cmoc =', jk_eud_cmoc
-         WRITE(numout,*) '    Open ocean, min. number of vert. layers  nk_bal_cmoc =', nk_bal_cmoc
-
       ENDIF
       !
    END SUBROUTINE p4z_rem_init
