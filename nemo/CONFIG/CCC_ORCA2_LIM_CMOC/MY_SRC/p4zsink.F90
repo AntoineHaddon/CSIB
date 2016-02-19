@@ -124,7 +124,7 @@ CONTAINS
 
       ! Exponential decay of calcite flux with depth, at w-points.
       zcalflxexp(:,:,:) = 0._wp
-      DO jk = jk_eud_cmoc+1, jpkm1
+      DO jk = jk_eud_cmoc+1, jpk
          zcalflxexp(:,:,jk) = zfpon(:,:) * exp(-1._wp*(fsdepw(:,:,jk)-zdeup) / dci_cmoc) * tmask(:,:,jk)
       ENDDO
                 
