@@ -122,10 +122,10 @@ CONTAINS
       zfpon(:,:) = xrcico(:,:) * wsbio3(:,:,jk_eud_cmoc) * xstep * trn(:,:,jk_eud_cmoc,jppoc)             &
       &                        *  tmask(:,:,jk_eud_cmoc) * oomask(:,:)
 
-      ! Exponential decay of calcite flux with depth. 
+      ! Exponential decay of calcite flux with depth, at w-points.
       zcalflxexp(:,:,:) = 0._wp
-      DO jk = jk_eud_cmoc+1, mbkt(ji,jj)+1
-         zcalflxexp(:,:,jk) = zfpon(:,:) * exp(-1._wp*(fsdepw(:,:,jk)-zdeup) / dci_cmoc) 
+      DO jk = jk_eud_cmoc+1, jpkm1
+         zcalflxexp(:,:,jk) = zfpon(:,:) * exp(-1._wp*(fsdepw(:,:,jk)-zdeup) / dci_cmoc) * tmask(:,:,jk)
       ENDDO
                 
       ! Bottom PIC flux into sediments, which is removed from the deepest layer and
