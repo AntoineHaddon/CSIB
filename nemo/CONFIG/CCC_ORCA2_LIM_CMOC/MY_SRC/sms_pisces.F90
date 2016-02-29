@@ -44,6 +44,7 @@ MODULE sms_pisces
    LOGICAL  ::   ln_pisclo         !: Restoring or not of nutrients to initial value
                                    !: on close seas
    !!*  Remineralization
+   REAL(wp), ALLOCATABLE, SAVE,   DIMENSION(:,:  ) ::   oomask         ! Open ocean mask 
    REAL(wp), ALLOCATABLE, SAVE,   DIMENSION(:,:,:)  ::  redet          !: detritus remineralization
    REAL(wp), ALLOCATABLE, SAVE,   DIMENSION(:,:)    ::  redettot       !: detritus remineralization integrated below the euphotic zone
 
@@ -157,7 +158,8 @@ CONTAINS
 
 
       !*  Remineralization
-      ALLOCATE(redet(jpi,jpj,jpk), redettot(jpi,jpj), STAT=ierr(7) ) 
+      ALLOCATE(redet(jpi,jpj,jpk), redettot(jpi,jpj), 
+               oomask(jpi,jpj), STAT=ierr(7) ) 
 
       !
       sms_pisces_alloc = MAXVAL( ierr )
