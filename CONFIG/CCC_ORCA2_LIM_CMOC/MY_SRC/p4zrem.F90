@@ -85,8 +85,8 @@ CONTAINS
          DO jj = 1, jpj
             DO ji = 1, jpi
                 redettot(ji,jj) = redettot(ji,jj) + redet(ji,jj,jk)        &
-                &                                   *    trn(ji,jj,jk,jppoc)  &
-                &                                   * fse3t(ji,jj,jk)         &
+                &                                   * trn(ji,jj,jk,jppoc)  &
+                &                                   * fse3t(ji,jj,jk)      &
                 &                                   * tmask(ji,jj,jk)
             END DO
           END DO 

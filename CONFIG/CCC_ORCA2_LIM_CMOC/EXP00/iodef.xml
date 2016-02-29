@@ -258,6 +258,7 @@
        <field id="Dpco2"       description="Delta CO2"                                unit="uatm"                         />
        <field id="Dpo2"        description="Delta O2"                                 unit="uatm"                         />
        <field id="Heup"        description="Euphotic layer depth"                     unit="m"                            />
+       <field id="oomask"      description="Open Ocean mask"                          unit="-"                            />
      </group>
        
     </field_definition>
@@ -383,7 +384,7 @@
            <field ref="LNlight"    />
            <field ref="PAR"       />
            <field ref="Mumax"    />
-
+           <field ref="oomask"    />
        </file> 
 
 

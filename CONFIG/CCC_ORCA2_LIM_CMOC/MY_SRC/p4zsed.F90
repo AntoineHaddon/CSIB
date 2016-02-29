@@ -139,7 +139,7 @@ CONTAINS
          DO jj = 1, jpj
             DO ji = 1, jpi
 
-                   zn2fix (ji,jj,jk) = pnf_cmoc * cnrr_cmoc * 1e-12_wp / 3600._wp * rfact2 & ! reference rate
+                   zn2fix(ji,jj,jk) = pnf_cmoc * cnrr_cmoc * 1e-12_wp / 3600._wp * rfact2 & ! reference rate
                    !
                    &                 * kn_cmoc * 1e-6_wp / ( kn_cmoc * 1e-6_wp                  &
                                   + trn(ji,jj,jk,jpno3) + rtrn) & ! N inhibition
@@ -149,15 +149,16 @@ CONTAINS
                    &                 / inf_cmoc                                                 & ! ligh sensitivity
                    !
                    &                 * ( max(tsn(ji,jj,jk,jp_tem), tnfmi_cmoc ) - tnfmi_cmoc )   &
-                   &                 / ( tnfMa_cmoc - tnfmi_cmoc ) & ! temperature dependence
+                   &                 / ( tnfMa_cmoc - tnfmi_cmoc ) & i                            ! temperature dependence
                    !
                    &                 * ( phinf_cmoc * exp( 1._wp ) * anf_cmoc * fsdept(ji,jj,jk) &
                    &                 * exp ( -anf_cmoc * fsdept(ji,jj,jk) ) + phi0_cmoc )        &! diazotroph abundance dependence
+                   !
                    &                 * oomask(ji,jj)                                              ! open ocean mask
                    !
                    ! total nitrogen fixation on the current 1/4 time step
                    zn2fixtot(ji,jj) = zn2fixtot(ji,jj) + zn2fix(ji,jj,jk) * fse3t(ji,jj,jk)      &
-                   &                                    *  tmask(ji,jj,jk)
+                   &                                    *  tmask(ji,jj,jk) 
 
                    zJNd(ji,jj,jk) =  zn2fix(ji,jj,jk)
                END DO

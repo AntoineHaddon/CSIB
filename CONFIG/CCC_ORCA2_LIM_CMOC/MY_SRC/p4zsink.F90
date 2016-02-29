@@ -31,7 +31,6 @@ MODULE p4zsink
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   wsbio3   !: POC sinking speed 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   sinking  !: POC sinking fluxes
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:  ) ::   oomask   ! Open ocean mask 
 
    INTEGER  :: iksed  = 10
 
@@ -109,8 +108,8 @@ CONTAINS
 
       !     Calcite sinking flux
       !     --------------------------------------------------------------------
-      ! Define an open ocean mask, based on where mbkt > nk_bal_cmoc == 15 (generally)
-      oomask = 0._wp
+      ! Define an open ocean mask, based on where mbkt > nk_bal_cmoc == 15 (or as define in namelist)
+      oomask(:,:) = 0._wp
       WHERE ( mbkt(:,:) >= nk_bal_cmoc ) oomask = 1._wp
 
       !  Rain ratio at level jk_eud_cmoc - bottom of the euphotic zone:
@@ -201,6 +200,7 @@ CONTAINS
          ik1  = iksed + 1
          IF( lk_iomput ) THEN
            IF( jnt == nrdttrc ) THEN
+              CALL iom_put( "oomask"  ,   oomask(:,:))
               CALL iom_put( "EPC100"  ,   sinking(:,:,ik1)                       * zrfact2 * tmask(:,:,1) )
               CALL iom_put( "EPCALC100",  zfpon(:,:) / rday * 1e3_wp ) ! <CMOC code OR 10/22/2015> PIC diagnostics
               ! <CMOC code OR 12/11/2015> denitrification ! CALL iom_put( "BUPOC"  , wsbio3(:,:,11) /rday * zbpoc(:,:) * 1e+3_wp  )  ! POC burial flux
@@ -408,7 +408,6 @@ CONTAINS
       !
       ALLOCATE( wsbio3 (jpi,jpj,jpk) ,        &
          &      sinking(jpi,jpj,jpk) ,        &
-         &       oomask(jpi,jpj    ) ,        &
          &                                    STAT=p4z_sink_alloc )
          !
       IF( p4z_sink_alloc /= 0 ) CALL ctl_warn('p4z_sink_alloc : failed to allocate arrays.')
