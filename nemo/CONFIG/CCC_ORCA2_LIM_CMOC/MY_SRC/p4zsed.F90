@@ -83,6 +83,7 @@ CONTAINS
       ! <CMOC code OR 10/15/2015> arrays for depth-dependent rates, zJNd is used to 
       !compute the balance between denitrification and nitrogen fixation
       REAL(wp), POINTER, DIMENSION(:,:,:) :: zn2fix,   zJNd
+      REAL(wp)   :: zrtn
 
       CHARACTER (len=25) :: charout
       !
@@ -124,8 +125,6 @@ CONTAINS
       ! ----------------------------------------------------------
 
       ! <CMOC code OR 10/15/2015> Initialization of CMOC arrays
-      redet   (:,:,:)  = 0._wp
-      redettot(:,:)    = 0._wp
       zn2fix   (:,:,:) = 0._wp
       zn2fixtot(:,:)   = 0._wp
       ! <CMOC code OR 12/11/2015> Total denitrification diagnostics
@@ -138,27 +137,24 @@ CONTAINS
       DO jk = 1, jk_eud_cmoc
          DO jj = 1, jpj
             DO ji = 1, jpi
-
-                   zn2fix(ji,jj,jk) = pnf_cmoc * cnrr_cmoc * 1e-12_wp / 3600._wp * rfact2 & ! reference rate
+                   zn2fix(ji,jj,jk) = pnf_cmoc * cnrr_cmoc * 1e-12_wp / 3600._wp * rfact2        & ! reference rate
                    !
-                   &                 * kn_cmoc * 1e-6_wp / ( kn_cmoc * 1e-6_wp                  &
-                   &                                         + trn(ji,jj,jk,jpno3) + rtrn)      & ! N inhibition
+                   &                 * kn_cmoc * 1e-6_wp / ( kn_cmoc * 1e-6_wp                   &
+                   &                                         + trn(ji,jj,jk,jpno3) + rtrn)       & ! N inhibition
                    !
-                   &                 * qsr(ji,jj)*0.43_wp * exp ( - ( (0.04 + 0.03              &
-                   &                 * trn(ji,jj,1,jpnch) * 1e6_wp) * fsdept(ji,jj,jk) ) )      &
-                   &                 / inf_cmoc                                                 & ! ligh sensitivity
+                   &                 * qsr(ji,jj)*0.43_wp * exp ( - ( (0.04 + 0.03               &
+                   &                 * trn(ji,jj,1,jpnch) * 1e6_wp) * fsdept(ji,jj,jk) ) )       &
+                   &                 / inf_cmoc                                                  & ! ligh sensitivity
                    !
                    &                 * ( max(tsn(ji,jj,jk,jp_tem), tnfmi_cmoc ) - tnfmi_cmoc )   &
-                   &                 / ( tnfMa_cmoc - tnfmi_cmoc ) &                              ! temperature dependence
+                   &                 / ( tnfMa_cmoc - tnfmi_cmoc ) &                               ! temperature dependence
                    !
                    &                 * ( phinf_cmoc * exp( 1._wp ) * anf_cmoc * fsdept(ji,jj,jk) &
-                   &                 * exp ( -anf_cmoc * fsdept(ji,jj,jk) ) + phi0_cmoc )        &! diazotroph abundance dependence
-                   &                 * oomask(ji,jj)                                              ! open ocean mask
+                   &                 * exp ( -anf_cmoc * fsdept(ji,jj,jk) ) + phi0_cmoc )        & ! diazotroph abundance dependence
+                   &                 * oomask(ji,jj) * tmask(ji,jj,jk)                             ! open ocean / land mask
                    !
                    ! total nitrogen fixation on the current 1/4 time step
-                   zn2fixtot(ji,jj) = zn2fixtot(ji,jj) + zn2fix(ji,jj,jk) * fse3t(ji,jj,jk)      &
-                   &                                    *  tmask(ji,jj,jk) 
-
+                   zn2fixtot(ji,jj) = zn2fixtot(ji,jj) + zn2fix(ji,jj,jk) * fse3t(ji,jj,jk)     
                    zJNd(ji,jj,jk) =  zn2fix(ji,jj,jk)
                END DO
           END DO
@@ -167,16 +163,17 @@ CONTAINS
       DO jk = jk_eud_cmoc+1, jpkm1
          DO jj = 1, jpj
             DO ji = 1, jpi
-                  zJNd(ji,jj,jk)  =  -redet(ji,jj,jk) * trn(ji,jj,jk,jppoc)                         &
-                   &                                  * zn2fixtot(ji,jj) / (redettot(ji,jj) + rtrn) &
-                   &                                  *     tmask(ji,jj,jk) * oomask(ji,jj)
+                  zJNd(ji,jj,jk)  =  -zn2fixtot(ji,jj) *                                &
+                   &                 ( redet(ji,jj,jk) / (redettot(ji,jj) + rtrn) )     & 
+                   &                                   * tmask(ji,jj,jk) * oomask(ji,jj)
 
-                  zdenittot(ji,jj) = zdenittot(ji,jj) +                                             &
-                  &                       zJNd(ji,jj,jk) * fse3t(ji,jj,jk)                          &
-                  &                                      * tmask(ji,jj,jk) * oomask(ji,jj)
+                  zdenittot(ji,jj) = zdenittot(ji,jj) + zJNd(ji,jj,jk) * fse3t(ji,jj,jk)                           
                END DO
           END DO
       END DO
+   
+     ! WRITE(numout,*) 'DNF sum:', SUM(zn2fixtot(:,:)) + SUM(zdenittot(:,:))
+
       !     --------------------------------------------------------------------
       !     Update the arrays TRA which contain the biological sources and sinks
       !     --------------------------------------------------------------------
@@ -289,7 +286,6 @@ CONTAINS
         &                ln_river,                                                 &
         &                sn_fmsk
       NAMELIST/namcmocnfx/ phinf_cmoc, phi0_cmoc, anf_cmoc, pnf_cmoc, inf_cmoc, tnfMa_cmoc, tnfmi_cmoc
-      NAMELIST/namcmocdeu/ jk_eud_cmoc, nk_bal_cmoc
         
       !!----------------------------------------------------------------------
       !
