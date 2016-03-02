@@ -210,9 +210,9 @@ CONTAINS
       !   ENDDO
       !ENDDO
 
-      globvol = glob_sum( cvol(:,:,:) )
-      globtal = glob_sum( trn(:,:,:,jptal) * cvol(:,:,:) ) / globvol
-      WRITE(numout,*) 'TAL integral : ', globtal*1000._wp
+      !globvol = glob_sum( cvol(:,:,:) )
+      !globtal = glob_sum( trn(:,:,:,jptal) * cvol(:,:,:) ) / globvol
+      !WRITE(numout,*) 'TAL integral : ', globtal*1000._wp
       !     --------------------------------------------------------------------
 
       IF( ln_diatrc ) THEN

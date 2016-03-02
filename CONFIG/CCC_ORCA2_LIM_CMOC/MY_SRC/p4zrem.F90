@@ -75,7 +75,7 @@ CONTAINS
                &                 * exp ( -ed_cmoc * 1e3_wp / 8.31_wp *        &
                &                ( 1._wp / ( tsn(ji,jj,jk,jp_tem) + 273.15_wp  &
                &                 + rtrn ) - 1._wp / ( tvm_cmoc + 273.15_wp )  &
-               &                )      ) * tmask(ji,jj,jk)
+               &                )      ) * trn(ji,jj,jk,jppoc) * tmask(ji,jj,jk)
             END DO
           END DO 
       END DO      
@@ -84,10 +84,9 @@ CONTAINS
       DO jk = jk_eud_cmoc+1, jpk
          DO jj = 1, jpj
             DO ji = 1, jpi
-                redettot(ji,jj) = redettot(ji,jj) + redet(ji,jj,jk)        &
-                &                                   * trn(ji,jj,jk,jppoc)  &
-                &                                   * fse3t(ji,jj,jk)      &
-                &                                   * tmask(ji,jj,jk)
+                redettot(ji,jj) = redettot(ji,jj) + redet(ji,jj,jk)         &
+                &                                 * fse3t(ji,jj,jk)         &
+                &                                 * tmask(ji,jj,jk)
             END DO
           END DO 
       END DO      
@@ -96,11 +95,11 @@ CONTAINS
       !     Update the arrays TRA which contain the biological sources and sinks
       !     --------------------------------------------------------------------
       DO jk = 1, jpkm1
-         tra(:,:,jk,jppoc) = tra(:,:,jk,jppoc) - redet(:,:,jk) * trn(:,:,jk,jppoc) 
-         tra(:,:,jk,jpno3) = tra(:,:,jk,jpno3) + redet(:,:,jk) * trn(:,:,jk,jppoc) 
-         tra(:,:,jk,jpoxy) = tra(:,:,jk,jpoxy) - redet(:,:,jk) * trn(:,:,jk,jppoc)
-         tra(:,:,jk,jpdic) = tra(:,:,jk,jpdic) + redet(:,:,jk) * trn(:,:,jk,jppoc) 
-         tra(:,:,jk,jptal) = tra(:,:,jk,jptal) - redet(:,:,jk) * trn(:,:,jk,jppoc) * ncrr_cmoc
+         tra(:,:,jk,jppoc) = tra(:,:,jk,jppoc) - redet(:,:,jk) 
+         tra(:,:,jk,jpno3) = tra(:,:,jk,jpno3) + redet(:,:,jk) 
+         tra(:,:,jk,jpoxy) = tra(:,:,jk,jpoxy) - redet(:,:,jk) 
+         tra(:,:,jk,jpdic) = tra(:,:,jk,jpdic) + redet(:,:,jk) 
+         tra(:,:,jk,jptal) = tra(:,:,jk,jptal) - redet(:,:,jk) * ncrr_cmoc
       END DO
 
 
@@ -132,7 +131,6 @@ CONTAINS
 
       ! <CMOC code OR 10/15/2015> CMOC namelist
       NAMELIST/namcmocpoc/ ed_cmoc, reref_cmoc
-      NAMELIST/namcmocdeu/ jk_eud_cmoc, nk_bal_cmoc
 
       REWIND( numcmoc )            
       READ  ( numcmoc, namcmocpoc )
