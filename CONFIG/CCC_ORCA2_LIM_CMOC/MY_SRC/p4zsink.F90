@@ -65,7 +65,9 @@ CONTAINS
       REAL(wp), POINTER, DIMENSION(:,:,:) ::   zcalflxexp    ! exponential decay of calcite flux with depth
       REAL(wp) ::   zcaldiv                                  ! divergence of the calcite flux
       REAL(wp) ::   globvol, globtal                         ! TAL conservation diagnostics
-      REAL(wp) ::   ztaleuz, ztalapz, ztalflxsum             ! TAL conservation diagnostics
+      REAL(wp) ::   ztaleuz, ztalapz, ztalflxsum,ztalapb     ! TAL conservation diagnostics
+      REAL(wp), POINTER, DIMENSION(:) :: zdepw ! computation of depths between t-grid cells.
+
       
       INTEGER  ::   ik1
       CHARACTER (len=25) :: charout
@@ -75,8 +77,8 @@ CONTAINS
 
       CALL wrk_alloc( jpi, jpj, zfpon, zcalbotflx, zdeup, zideup)
       CALL wrk_alloc( jpi, jpj, jpk, zcalflxexp )
+      CALL wrk_alloc( jpk, zdepw)
 
-      !
       !    Sinking speeds of detritus is increased with depth as shown
       !    by data and from the coagulation theory
       !    -----------------------------------------------------------
@@ -112,6 +114,19 @@ CONTAINS
       oomask(:,:) = 0._wp
       WHERE ( mbkt(:,:) >= nk_bal_cmoc ) oomask = 1._wp
 
+      ! The euphotic zone depth and inverse depth, used for computing averages.
+      zdeup(:,:) = 0._wp
+      DO jk =1, jk_eud_cmoc
+       zdeup(:,:) = zdeup(:,:) +  fse3t(:,:,jk)
+      ENDDO
+      zideup(:,:) = 1._wp / zdeup(:,:)
+
+      ! Computing t-grid bounding depths more accurate then using w-grid depths, despite supposed identity.
+      zdepw(:) = 0._wp
+      DO jk = 2, jpk
+         zdepw(jk) = zdepw(jk-1) + fse3t(ji,jj,jk-1)
+      ENDDO
+
       !  Rain ratio at level jk_eud_cmoc - bottom of the euphotic zone:
       !  Temperature is however taken from the 1st layer (confirmed with RJC, 16/02/2016)
       xrcico(:,:) = rmcico_cmoc * exp(aci_cmoc * ( tsn(:,:,1,jp_tem)  - trcico_cmoc ) )                   &
@@ -124,8 +139,13 @@ CONTAINS
 
       ! Exponential decay of calcite flux with depth, at w-points.
       zcalflxexp(:,:,:) = 0._wp
-      DO jk = jk_eud_cmoc+1, jpk                                                         ! This tmask potentially at jk-1
-         zcalflxexp(:,:,jk) = zfpon(:,:) * exp(-1._wp*(fsdepw(:,:,jk)-zdeup) / dci_cmoc) * tmask(:,:,jk)
+      DO jk = jk_eud_cmoc+1, jpk                                                         
+         DO jj = 1, jpj
+            DO ji = 1,jpi
+               zcalflxexp(ji,jj,jk) = zfpon(ji,jj) * exp(-1._wp*(zdepw(jk)-zdeup(ji,jj)) / dci_cmoc)      &
+               &                                   * tmask(ji,jj,jk-1)                ! Mask at jk-1 ensures bottom flux
+            ENDDO                                                                     ! is included.
+         ENDDO
       ENDDO
                 
       ! Bottom PIC flux into sediments, which is removed from the deepest layer and
@@ -136,45 +156,45 @@ CONTAINS
 
          ! Set the bottom boundary condition on the calcite flux to zero (no flux to sediment),
          ! and deal with the sediment flux separately from the sinking in the sections below.
-         zcalflxexp(ji,jj,mbkt(ji,jj)+1) = 0._wp
+           zcalflxexp(ji,jj,mbkt(ji,jj)+1) = 0._wp
          ENDDO
       ENDDO
 
-      ! The euphotic zone depth and inverse depth, used for computing averages.
-       zdeup(:,:) = fsdepw(:,:,jk_eud_cmoc+1)
-      zideup(:,:) = 1._wp / zdeup(:,:)
-
       ! Over the levels of the euphotic zone, remove the euphotic-zone averaged
       ! PIC flux (mol/m3) from each level. 
-      ztaleuz = 0._wp
+      !ztaleuz = 0._wp
       DO jk =1, jk_eud_cmoc
          trn(:,:,jk,jpdic) = trn(:,:,jk,jpdic) -                                   &
          &                              zfpon(:,:) * zideup(:,:) 
 
          trn(:,:,jk,jptal) = trn(:,:,jk,jptal) -                                   &
          &                      2._wp * zfpon(:,:) * zideup(:,:) 
-         ztaleuz = ztaleuz + SUM(2._wp * zfpon(:,:) * zideup(:,:))
+      !   ztaleuz = ztaleuz + SUM(2._wp * zfpon(:,:) * zideup(:,:) * fse3t(:,:,jk))
       END DO
 
-      ! and distribute it over the t-cell. No sinking flux through the bottom here.
-      ztalapz = 0._wp
+      ! Compute the divergence of the calcite flux and distribute it over the t-cell. 
+      ! No sinking flux through the bottom here, given the masking above.
+      !ztalapz = 0._wp
       DO jk = jk_eud_cmoc+1, jpkm1
          DO jj = 1, jpj
             DO ji = 1,jpi
-               zcaldiv =  ( zcalflxexp(ji,jj,jk) - zcalflxexp(ji,jj,jk+1) ) / fse3t(ji,jj,jk)
+               zcaldiv =  ( zcalflxexp(ji,jj,jk) - zcalflxexp(ji,jj,jk+1) ) / fse3t(ji,jj,jk) * tmask(ji,jj,jk)
 
                trn(ji,jj,jk,jpdic) = trn(ji,jj,jk,jpdic) +         zcaldiv 
                trn(ji,jj,jk,jptal) = trn(ji,jj,jk,jptal) + 2._wp * zcaldiv                      
-               ztalapz = ztalapz + 2._wp * zcaldiv
+      !         ztalapz = ztalapz + 2._wp * zcaldiv * fse3t(ji,jj,jk) 
             ENDDO
          ENDDO
       ENDDO
 
-      ztalflxsum = 0._wp
-      ztalflxsum = SUM(zfpon(:,:))
-      WRITE(numout,*) 'talflxsum', ztalflxsum
-      WRITE(numout,*) 'taleuzsum', ztaleuz
-      WRITE(numout,*) 'talapzsum', ztalapz
+      !ztalflxsum = 0._wp
+      !ztalflxsum = SUM(2._wp * zfpon(:,:))
+      !ztalapb = ztalapz + SUM(2._wp*zcalbotflx(:,:))
+      !WRITE(numout,*) 'talflxsum', ztalflxsum
+      !WRITE(numout,*) 'taleuzsum', ztaleuz
+      !WRITE(numout,*) 'talapzsum', ztalapz
+      !WRITE(numout,*) 'talapbsum', ztalapb
+      !WRITE(numout,*) 'sumspace' 
 
       ! Below the euphotic zone; compute the divergence of the PIC flux
     
@@ -221,6 +241,7 @@ CONTAINS
 
       CALL wrk_dealloc( jpi, jpj, zfpon, zcalbotflx, zdeup, zideup)
       CALL wrk_dealloc( jpi, jpj, jpk, zcalflxexp )
+      CALL wrk_dealloc( jpk, zdepw)
       !
       IF( nn_timing == 1 )  CALL timing_stop('p4z_sink')
       !

@@ -158,8 +158,8 @@ CONTAINS
 
 
       !*  Remineralization
-      ALLOCATE(redet(jpi,jpj,jpk), redettot(jpi,jpj), 
-               oomask(jpi,jpj), STAT=ierr(7) ) 
+      ALLOCATE(redet(jpi,jpj,jpk), redettot(jpi,jpj),             &
+        &     oomask(jpi,jpj), STAT=ierr(7) ) 
 
       !
       sms_pisces_alloc = MAXVAL( ierr )
