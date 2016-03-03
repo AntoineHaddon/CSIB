@@ -133,7 +133,9 @@ CONTAINS
                       !  p.40 Eq. 4.65 (note that in the report phytoplankton currency is N not C).
                       !  12._wp (gC molC^-1) to convert trn(...,jpphy) from moles to grams in the tra(...,jpchn) equations.
                       !  zprnch must be in gchl L^-1 per molC L^-1.
-                      zprnch(ji,jj,jk) = 12._wp * thm_cmoc  * 2._wp  * zpislopead(ji,jj,jk)  /  ( 2._wp * zpislopead(ji,jj,jk)  +  achl_cmoc * thm_cmoc  * zetot(ji,jj,jk) * r1_rday + rtrn )
+                      zprnch(ji,jj,jk) = 12._wp * thm_cmoc  * 2._wp    *  zpislopead(ji,jj,jk)  /  &
+                      &                 ( 2._wp * zpislopead(ji,jj,jk) +                           &
+                      &                  achl_cmoc * thm_cmoc  * zetot(ji,jj,jk) * r1_rday + rtrn )
 
                   ENDIF
                END DO
@@ -157,7 +159,9 @@ CONTAINS
                   ! chlorophyll production term   over a time step
 		  zprod =              zprbio(ji,jj,jk)  * trn(ji,jj,jk,jpnch) * rfact2
 		  ! nudge chlorophyll back to balanced growth, Zahariev et al 2008
-		  zprochln(ji,jj,jk) = zprod + ( zprnch (ji,jj,jk) * trn(ji,jj,jk,jpphy) - trn(ji,jj,jk,jpnch) ) * itau_cmoc * r1_rday * rfact2
+		  zprochln(ji,jj,jk) = zprod + (zprnch (ji,jj,jk) * trn(ji,jj,jk,jpphy) - &
+                  &                             trn(ji,jj,jk,jpnch)                       &
+                  &                            ) * itau_cmoc * r1_rday * rfact2
                      
                   ENDIF
                END DO
