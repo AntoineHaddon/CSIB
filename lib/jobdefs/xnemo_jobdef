@@ -1275,6 +1275,10 @@ cat > Execute_Script <<'end_of_script'
       NCOBIN=/users/tor/acrn/rls/local/aix64/bin
       NCRCAT="$NCOBIN/ncrcat"
       NCATTED="$NCOBIN/ncatted"
+          
+      # File containing grid information
+      orca_grid_info=nemo3.4.1_orca1_mesh_mask_ngr.nc
+      access orca_mesh_mask $orca_grid_info 
 
       # Invoke the nemo run time diagnostics
       if [ $pisces_offline -eq 0 ]; then
@@ -1292,10 +1296,6 @@ cat > Execute_Script <<'end_of_script'
           access grid_v $rtd_hist3 
           access grid_w $rtd_hist4 
 
-          # This also requires a file containing grid information
-          # This file could be modified so create a local copy with write access
-          orca_grid_info=nemo3.4.1_orca1_mesh_mask_ngr.nc
-          access orca_mesh_mask $orca_grid_info 
 
           # The user must define year_rtdiag_start
           year_rtdiag_start=''
