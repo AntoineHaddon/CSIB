@@ -43,6 +43,10 @@ MODULE sms_pisces
    INTEGER  ::   nn_pisdmp         !: frequency of relaxation or not of nutrients to a mean value
    LOGICAL  ::   ln_pisclo         !: Restoring or not of nutrients to initial value
                                    !: on close seas
+   !!*  Remineralization
+   REAL(wp), ALLOCATABLE, SAVE,   DIMENSION(:,:  ) ::   oomask         ! Open ocean mask 
+   REAL(wp), ALLOCATABLE, SAVE,   DIMENSION(:,:,:)  ::  redet          !: detritus remineralization
+   REAL(wp), ALLOCATABLE, SAVE,   DIMENSION(:,:)    ::  redettot       !: detritus remineralization integrated below the euphotic zone
 
    !!*  Biological fluxes for light
    INTEGER , ALLOCATABLE, SAVE,   DIMENSION(:,:)  ::  neln       !: number of T-levels + 1 in the euphotic layer
@@ -98,8 +102,8 @@ MODULE sms_pisces
    !   Redfield ratio and euphotic zone
    REAL(wp)    :: cnrr_cmoc  
    REAL(wp)    :: ncrr_cmoc  
-   REAL(wp)    :: deup_cmoc  
-   REAL(wp)    :: ideup_cmoc  
+   INTEGER     :: jk_eud_cmoc   ! <CMOC code OR 01/23/2016> scale of the euphotic zone
+   INTEGER     :: nk_bal_cmoc   ! <CMOC code OR 01/23/2016> open ocean criterion
    ! <CMOC code OR 10/21/2015> CMOC block end
 
 
@@ -132,7 +136,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       USE lib_mpp , ONLY: ctl_warn
       ! <CMOC code OR 11/13/2015> removing user-defined DNF diagnostics, revert to PISCES diagnostics
-      INTEGER ::   ierr(6)                    ! error handling ! ierr(6)            ! Local variables
+      INTEGER ::   ierr(7)                    ! error handling ! ierr(6)            ! Local variables
       !!----------------------------------------------------------------------
       ierr(:) = 0
       !*  Biological fluxes for light
@@ -151,6 +155,12 @@ CONTAINS
          !
       !* Array used to indicate negative tracer values  
       ALLOCATE( xnegtr(jpi,jpj,jpk)  ,            STAT=ierr(6) )
+
+
+      !*  Remineralization
+      ALLOCATE(redet(jpi,jpj,jpk), redettot(jpi,jpj),             &
+        &     oomask(jpi,jpj), STAT=ierr(7) ) 
+
       !
       sms_pisces_alloc = MAXVAL( ierr )
       !
