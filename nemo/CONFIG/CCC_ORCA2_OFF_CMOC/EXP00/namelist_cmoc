@@ -83,6 +83,9 @@
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &namcmocdeu     !   Euphotic zone
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-   deup_cmoc  =  100.0         ! Depth of euphotic zone
-   ideup_cmoc =  0.01          ! Inverse depth of euphotic zone
+   jk_eud_cmoc  =  11          ! Scale of euphotic zone ~100 m with jk = jk_eud_cmoc = 11
+   nk_bal_cmoc  =  15          ! Open ocean criterion: 
+   				   ! Number of vertical layers required to calculate balance
+                               ! for the calcite fluxes and DNF/denitrification ~ 150 m
+                               ! with nk_bal_cmoc = 15 
 /

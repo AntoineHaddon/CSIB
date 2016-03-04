@@ -247,6 +247,7 @@
        <field id="LNFe"        description="Iron limitation term in Nanophyto"        unit="-"                            />
        <field id="LNlight"     description="Light limitation term in Nanophyto"       unit="-"          axis_ref="deptht" />
        <field id="Nfix"        description="Nitrogen fixation at surface"             unit="mol/m2/s"                     />
+       <field id="Denit"       description="Water column denitrification"             unit="mol/m2/s"                     />
        <field id="EPC100"      description="Export of carbon particles at 100 m"      unit="mol/m2/s"                     />
        <field id="EPCALC100"   description="Export of Calcite at 100 m"               unit="mol/m2/s"                     />
        <field id="BUPOC"       description="Burial of carbon particles in sediments"  unit="mol/m2/s"                     />
@@ -257,6 +258,7 @@
        <field id="Dpco2"       description="Delta CO2"                                unit="uatm"                         />
        <field id="Dpo2"        description="Delta O2"                                 unit="uatm"                         />
        <field id="Heup"        description="Euphotic layer depth"                     unit="m"                            />
+       <field id="oomask"      description="Open Ocean mask"                          unit="-"                            />
      </group>
        
     </field_definition>
@@ -318,20 +320,6 @@
         </file>
 
         <file id="1m_icemod" name="auto" description="ice variables" >
-          <field ref="ice_pres"                     />
-          <field ref="ice_cover"    name="soicecov" />
-          <field ref="snowthic_cea" name="isnowthi" />
-          <field ref="icethic_cea"  name="iicethic" />
-          <field ref="iceprod_cea"  name="iiceprod" />
-          <field ref="ist_ipa"      name="iicetemp" />
-          <field ref="ioceflxb"     name="ioceflxb" />
-          <field ref="uice_ipa"     name="iicevelu" />
-          <field ref="vice_ipa"     name="iicevelv" />
-          <field ref="utau_ice"     name="iicestru" />
-          <field ref="vtau_ice"     name="iicestrv" />
-          <field ref="qsr_io_cea"   name="iicesflx" />
-          <field ref="qns_io_cea"   name="iicenflx" />
-          <field ref="snowpre"      name="isnowpre" />
         </file>
 
         <file id="1m_ptrc_T" name="auto" description="pisces sms variables" >
@@ -353,6 +341,7 @@
            <field ref="Cflx"      />
            <field ref="Oflx"      />
            <field ref="Nfix"      />
+	   <field ref="Denit"      />
            <field ref="EPC100"      />
            <field ref="EPCALC100"   />
            <field ref="BUPOC"       />
@@ -364,7 +353,7 @@
            <field ref="LNlight"    />
            <field ref="PAR"       />
            <field ref="Mumax"    />
-
+           <field ref="oomask"    />
        </file> 
 
 
