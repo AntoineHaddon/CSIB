@@ -224,7 +224,7 @@
 !                    !     description       !  multiple  !    vector   !      vector          ! vector !
 !                    !                       ! categories !  reference  !    orientation       ! grids  !
 ! send
-sn_snd_temp   =       'weighted oce and ice' ,    'no'    ,     ''      ,         ''           ,   ''    
+sn_snd_temp   =       'oce only'             ,    'no'    ,     ''      ,         ''           ,   ''    
 sn_snd_alb    =       'none'                 ,    'no'    ,     ''      ,         ''           ,   ''    
 sn_snd_thick  =       'weighted ice and snow',    'no'    ,     ''      ,         ''           ,   ''    
 sn_snd_crt    =       'none'                 ,    'no'    , 'spherical' , 'eastward-northward' ,   'T'       
