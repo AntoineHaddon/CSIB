@@ -469,7 +469,11 @@ contains
 
      !--- Broadcast the initial date and time from the coupler to all tasks
      !--- cpl_time_string is defined in com_cpl
+write(6,*)"cpl_cancpl_define: call bcastGroup(cpl_time_string, ..."
+call flush(6)
      call bcastGroup(cpl_time_string, cpl_master, MPI_COMM_WORLD)
+write(6,*)"cpl_cancpl_define: return from call bcastGroup(cpl_time_string, ..."
+call flush(6)
 
   end subroutine cpl_cancpl_define
 
