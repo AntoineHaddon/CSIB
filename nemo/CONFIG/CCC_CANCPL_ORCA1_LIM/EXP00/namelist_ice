@@ -78,7 +78,7 @@
    hakdif      = 1.0       !  coefficient for diffusions of ice and snow
    thth        = 0.2       !  threshold thickness for comp. of eq. thermal conductivity
    hnzst       = 0.1       !  thickness of the surf. layer in temp. computation
-   parsub      = 0.0       !  switch for snow sublimation or not
+   parsub      = 1.0       !  switch for snow sublimation or not
    alphs       = 1.0       !  coefficient for snow density when snow ice formation
 /
 !-----------------------------------------------------------------------
