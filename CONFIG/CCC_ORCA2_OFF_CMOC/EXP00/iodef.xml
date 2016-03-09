@@ -308,49 +308,18 @@
       <group id="1m" output_freq="-1"     output_level="10" enabled=".TRUE.">                      <!-- real monthly files -->
 
         <file id="1m_grid_T" name="auto" description="ocean T grid variables" >
-          <field ref="toce"         name="votemper"  />
-          <field ref="soce"         name="vosaline"  />
-          <field ref="sst"          name="sosstsst"  />
-          <field ref="ssh"          name="sossheig"  />
-          <field ref="empmr"        name="sowaflup"  />
-          <field ref="qt"           name="sohefldo"  />
-          <field ref="mldr10_1"     name="somxl010"  />
-          <field ref="qns"           />
-          <field ref="qsr"           />
         </file>
 
         <file id="1m_grid_U" name="auto" description="ocean U grid variables" >
-          <field ref="uoce"         name="vozocrtx"  />
-          <field ref="uoce_eiv"     name="vozoeivu"  />
-          <field ref="utau"         name="sozotaux"  />
         </file>
 
         <file id="1m_grid_V" name="auto" description="ocean V grid variables" >
-          <field ref="voce"         name="vomecrty"  />
-          <field ref="voce_eiv"     name="vomeeivv"  />
-          <field ref="vtau"         name="sometauy"  />
         </file>
 
         <file id="1m_grid_W" name="auto" description="ocean W grid variables" >
-          <field ref="woce"         name="vovecrtz" />
-          <field ref="woce_eiv"     name="voveeivw" />
         </file>
 
         <file id="1m_icemod" name="auto" description="ice variables" >
-          <field ref="ice_pres"                     />
-          <field ref="ice_cover"    name="soicecov" />
-          <field ref="snowthic_cea" name="isnowthi" />
-          <field ref="icethic_cea"  name="iicethic" />
-          <field ref="iceprod_cea"  name="iiceprod" />
-          <field ref="ist_ipa"      name="iicetemp" />
-          <field ref="ioceflxb"     name="ioceflxb" />
-          <field ref="uice_ipa"     name="iicevelu" />
-          <field ref="vice_ipa"     name="iicevelv" />
-          <field ref="utau_ice"     name="iicestru" />
-          <field ref="vtau_ice"     name="iicestrv" />
-          <field ref="qsr_io_cea"   name="iicesflx" />
-          <field ref="qns_io_cea"   name="iicenflx" />
-          <field ref="snowpre"      name="isnowpre" />
         </file>
 
         <file id="1m_ptrc_T" name="auto" description="pisces sms variables" >
