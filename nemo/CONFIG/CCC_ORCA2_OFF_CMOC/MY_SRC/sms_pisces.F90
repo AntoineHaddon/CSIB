@@ -107,9 +107,6 @@ MODULE sms_pisces
    ! <CMOC code OR 10/21/2015> CMOC block end
 
 
-   !!*  SMS for the organic matter
-   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   xdiss      !: shear rate used for aggregation (p4zbio, p4zmort, p4zsink ... etc)
-
    !!* Variable for chemistry of the CO2 cycle
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   akb3       !: pH constant
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   ak13       !: ...
@@ -144,8 +141,7 @@ CONTAINS
       !
       !*  Biological fluxes for primary production
       ALLOCATE( xlimnfecmoc(jpi,jpj),            STAT=ierr(2) ) !  iron limitation mask
-      ALLOCATE( xdiss  (jpi,jpj,jpk),                           &
-         &      xrcico  (jpi,jpj),               STAT=ierr(3) ) !  rain ratio 
+      ALLOCATE( xrcico  (jpi,jpj),               STAT=ierr(3) ) !  rain ratio 
          !
       !* Variable for chemistry of the CO2 cycle
       ALLOCATE( akb3(jpi,jpj,jpk)    , ak13  (jpi,jpj,jpk) ,       &

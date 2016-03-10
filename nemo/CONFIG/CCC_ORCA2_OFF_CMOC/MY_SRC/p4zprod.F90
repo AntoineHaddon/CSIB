@@ -18,7 +18,6 @@ MODULE p4zprod
    USE oce_trc         !  shared variables between ocean and passive tracers
    USE trc             !  passive tracers common variables 
    USE sms_pisces      !  PISCES Source Minus Sink variables
-   USE p4zopt          !  optical model
    USE prtctl_trc      !  print control for debugging
    USE iom             !  I/O manager
 

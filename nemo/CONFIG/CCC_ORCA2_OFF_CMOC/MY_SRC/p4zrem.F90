@@ -20,7 +20,6 @@ MODULE p4zrem
    USE oce_trc         !  shared variables between ocean and passive tracers
    USE trc             !  passive tracers common variables 
    USE sms_pisces      !  PISCES Source Minus Sink variables
-   USE p4zopt          !  optical model
    USE prtctl_trc      !  print control for debugging
    USE lib_fortran     ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
    USE iom             !
@@ -102,14 +101,12 @@ CONTAINS
          tra(:,:,jk,jptal) = tra(:,:,jk,jptal) - redet(:,:,jk) * ncrr_cmoc
       END DO
 
-
       ! print mean trends (used for debugging)
       IF(ln_ctl)   THEN
          WRITE(charout, FMT="('rem6')")
          CALL prt_ctl_trc_info(charout)
          CALL prt_ctl_trc(tab4d=tra, mask=tmask, clinfo=ctrcnm)
       ENDIF
-
       !
       IF( nn_timing == 1 )  CALL timing_stop('p4z_rem')
       !
