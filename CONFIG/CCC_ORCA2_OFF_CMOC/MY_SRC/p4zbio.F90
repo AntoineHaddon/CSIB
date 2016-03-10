@@ -18,7 +18,6 @@ MODULE p4zbio
    USE trc             !  passive tracers common variables 
    USE sms_pisces      !  PISCES Source Minus Sink variables
    USE p4zsink         !  vertical flux of particulate matter due to sinking
-   USE p4zopt          !  optical model
    USE p4zprod         !  Growth rate of the 2 phyto groups
    USE p4zmort         !  Mortality terms for phytoplankton
    USE p4zmicro        !  Sources and sinks of microzooplankton
@@ -59,25 +58,13 @@ CONTAINS
       !!---------------------------------------------------------------------
       !
       IF( nn_timing == 1 )  CALL timing_start('p4z_bio')
-      !
-      !     ASSIGN THE SHEAR RATE THAT IS USED FOR AGGREGATION
-      !     OF PHYTOPLANKTON AND DETRITUS
 
-      xdiss(:,:,:) = 1.
-
-      DO jk = 2, jpkm1
-         DO jj = 1, jpj
-            DO ji = 1, jpi
-               IF( fsdepw(ji,jj,jk+1) > hmld(ji,jj) )   xdiss(ji,jj,jk) = 0.01
-            END DO 
-         END DO
-      END DO
-          
       CALL p4z_sink ( kt, jnt )     ! vertical flux of particulate organic matter
-      CALL p4z_opt  ( kt, jnt )     ! Optic: PAR in the water column
       CALL p4z_prod ( kt, jnt )     ! phytoplankton growth rate over the global ocean. 
       !                             ! (for each element : C, Si, Fe, Chl )
-      ! <CMOC code OR 10/19/2015) iom_put (in p4z_rem) must be called only once (over the physics time step), so jnt is to be passed to p4z_rem when saving Nfix if the diagnostics to be made on a complete physics time step.
+      ! <CMOC code OR 10/19/2015) iom_put (in p4z_rem) must be called only once (over the physics time step), 
+      ! so jnt is to be passed to p4z_rem when saving Nfix if the diagnostics to be made on a complete 
+      ! physics time step.
       CALL p4z_rem  ( kt, jnt )     
       CALL p4z_mort ( kt      )     ! phytoplankton mortality
       !                             ! zooplankton sources/sinks routines 

@@ -22,14 +22,12 @@ MODULE trcini_pisces
    USE sms_pisces      !  PISCES Source Minus Sink variables
    USE p4zche          !  Chemical model
    USE p4zsink         !  vertical flux of particulate matter due to sinking
-   USE p4zopt          !  optical model
    USE p4zrem          !  Remineralisation of organic matter
    USE p4zflx          !  Gas exchange
    USE p4zsed          !  Sedimentation
    USE p4zprod         !  Growth rate of the 2 phyto groups
    USE p4zmicro        !  Sources and sinks of microzooplankton
    USE p4zmort         !  Mortality terms for phytoplankton
-   USE p4zlys          !  Calcite saturation
    USE p4zsed          !  Sedimentation
 
    IMPLICIT NONE
@@ -126,13 +124,11 @@ CONTAINS
       xstep = rfact2 / rday
 
       CALL p4z_sink_init      !  vertical flux of particulate organic matter
-      CALL p4z_opt_init       !  Optic: PAR in the water column
       CALL p4z_prod_init      !  phytoplankton growth rate over the global ocean.
       CALL p4z_rem_init       !  remineralisation
       CALL p4z_mort_init      !  phytoplankton mortality 
       CALL p4z_micro_init     !  microzooplankton
       CALL p4z_sed_init       !  sedimentation 
-      CALL p4z_lys_init       !  calcite saturation
       CALL p4z_flx_init       !  gas exchange 
 
       ndayflxtr = 0
@@ -157,7 +153,6 @@ CONTAINS
       ierr =         sms_pisces_alloc()          ! Start of PISCES-related alloc routines...
       ierr = ierr +  p4z_che_alloc()
       ierr = ierr +  p4z_sink_alloc()
-      ierr = ierr +  p4z_opt_alloc()
       ierr = ierr +  p4z_sed_alloc()
       ierr = ierr +  p4z_flx_alloc()
       !
