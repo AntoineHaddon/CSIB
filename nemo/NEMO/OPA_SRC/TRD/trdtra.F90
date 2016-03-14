@@ -9,6 +9,7 @@ MODULE trdtra
    !!            3.4.1!  2015-08  (D. Yang) output 3D tracer trends
    !!            3.4.1!  2015-09  (D. Yang) added diagnostics for the "PURE" Kz trend
    !!                                       in case of iso-neutral diffusion
+   !!            3.4.1!  2016-03  (D. Yang) added call to tra_mod for the "PURE" Kz trend
    !!----------------------------------------------------------------------
 #if  defined key_trdtra || defined key_trdtrc || defined key_trdmld || defined key_trdmld_trc 
    !!----------------------------------------------------------------------
@@ -147,15 +148,14 @@ CONTAINS
                   ztrds(:,:,jk) = ( zws(:,:,jk) - zws(:,:,jk+1) ) / fse3t(:,:,jk) 
                END DO
                CALL trd_tra_mng( ztrdt, ztrds, jptra_trd_zdfp, kt )  
+               CALL trd_mod( ztrdt, ztrds, ktrd, ctype, kt   )
                !
                CALL wrk_dealloc( jpi, jpj, jpk, zwt, zws, ztrdt )
                !
             CASE DEFAULT                 ! other trends: mask and send T & S trends to trd_tra_mng
        !  ELSE
             ztrds(:,:,:) = ptrd(:,:,:) * tmask(:,:,:)
-            !IF( ktrd == jptra_trd_ldf .OR. ktrd == jptra_trd_zdf ) THEN
-              CALL trd_tra_mng( trdt , ztrds, ktrd, kt   )
-            !END IF
+            CALL trd_tra_mng( trdt , ztrds, ktrd, kt   )
             CALL trd_mod( trdt, ztrds, ktrd, ctype, kt )  
             END SELECT
        !  END IF
