@@ -137,9 +137,9 @@
                            !  =1 use observed ice-cover      ,
                            !  =2 ice-model used                         ("key_lim3" or "key_lim2)
    ln_dm2dc    = .false.   !  daily mean to diurnal cycle on short wave
-   ln_rnf      = .true.    !  runoffs                                   (T => fill namsbc_rnf)
-   ln_ssr      = .true.    !  Sea Surface Restoring on T and/or S       (T => fill namsbc_ssr)
-   nn_fwb      = 3         !  FreshWater Budget: =0 unchecked 
+   ln_rnf      = .false.   !  runoffs                                   (T => fill namsbc_rnf)
+   ln_ssr      = .false.   !  Sea Surface Restoring on T and/or S       (T => fill namsbc_ssr)
+   nn_fwb      = 0         !  FreshWater Budget: =0 unchecked 
                            !     =1 global mean of e-p-r set to zero at each time step 
                            !     =2 annual global mean of e-p-r set to zero
                            !     =3 global emp set to zero and spread out over erp area
@@ -263,7 +263,8 @@ sn_rcv_co2    =       'none'                 ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
 !              !  file name           ! frequency (hours) ! variable  ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation !
 !              !                      !  (if <0  months)  !   name    !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  !
-   sn_rnf      = 'runoff_core_monthly',        -1         , 'sorunoff',   .true.     , .true. , 'yearly'  , ''       , ''
+!   sn_rnf      = 'runoff_core_monthly',        -1         , 'sorunoff',   .true.     , .true. , 'yearly'  , ''       , ''
+   sn_rnf      = 'runoff_core_monthly',        -1         , 'ROUT',       .true.     , .true. , 'yearly'  , 'weights_bil3.nc', ''
    sn_cnf      = 'runoff_core_monthly',        -1         , 'socoeff' ,   .true.     , .true. , 'yearly'  , ''       , ''
    sn_s_rnf    = 'runoffs'            ,        24         , 'rosaline',   .true.     , .true. , 'yearly'  , ''       , ''
    sn_t_rnf    = 'runoffs'            ,        24         , 'rotemper',   .true.     , .true. , 'yearly'  , ''       , ''
@@ -301,7 +302,7 @@ sn_rcv_co2    =       'none'                 ,    'no'    ,     ''      ,       
 
    cn_dir      = './'      !  root directory for the location of the runoff files
    nn_sstr     =     0     !  add a retroaction term in the surface heat       flux (=1) or not (=0)
-   nn_sssr     =     2     !  add a damping     term in the surface freshwater flux (=2) 
+   nn_sssr     =     0     !  add a damping     term in the surface freshwater flux (=2) 
                            !  or to SSS only (=1) or no damping term (=0)
    rn_dqdt     =   -40.    !  magnitude of the retroaction on temperature   [W/m2/K]
    rn_deds     =  -166.67  !  magnitude of the damping on salinity   [mm/day]

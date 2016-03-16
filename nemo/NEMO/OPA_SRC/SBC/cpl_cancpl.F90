@@ -107,6 +107,7 @@ contains
      !!--------------------------------------------------------------------------
 
      integer(kind=impi) :: rank, ierr
+     integer(kind=impi) :: local_ocn_comm
 
      !!============================================
      !! WARNING: No write in numout in this routine
@@ -115,9 +116,11 @@ contains
      !--- Initialize groups for cpl, atm, ocn, ice, ...
      !--- This will, among other things, define cpl_master, atm_master, ocn_master
      !--- NOTE: ocn_master is the rank in MPI_COMM_WORLD not the rank in ocn_comm
-     call define_group('ocn', ocn_comm)
+     local_ocn_comm = -1
+     call define_group('ocn', local_ocn_comm)
 
      kl_comm = ocn_comm
+     ocn_comm = local_ocn_comm
 
      !---Determine the rank of the calling process in MPI_COMM_WORLD
      call mpi_comm_rank ( MPI_COMM_WORLD, rank, ierr )
