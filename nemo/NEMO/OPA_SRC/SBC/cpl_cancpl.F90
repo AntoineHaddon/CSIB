@@ -44,15 +44,10 @@ MODULE cpl_cancpl
   public :: cpl_cancpl_freq
   public :: cpl_cancpl_finalize
 
-  !--- The mpi communicator assigned to the ocean
-  !--- This is defined in cpl_cancpl_init and so use of ocn_comm
-  !--- must occur after the call to cpl_cancpl_init
-  integer(kind=impi), public :: ocn_comm
-
   logical, public, parameter ::   lk_cpl = .true.   !: coupled flag
-  integer, public            ::   oasis_idle = 0    !: return code if no send or recv
-  integer, public            ::   oasis_rcv  = 1    !: return code if field received
-  integer, public            ::   oasis_snd  = 2    !: return code if field sent
+  integer, public, save      ::   oasis_idle = 0    !: return code if no send or recv
+  integer, public, save      ::   oasis_rcv  = 1    !: return code if field received
+  integer, public, save      ::   oasis_snd  = 2    !: return code if field sent
 
   !--- These are defined in com_cpl
   public :: cpl_vinfo_t, find_cpl_vinfo
@@ -78,12 +73,12 @@ MODULE cpl_cancpl
   real(wp), allocatable, save, dimension(:,:,:), private :: png
 
   !--- tmp char space
-  character(512) :: strng
+  character(512), save :: strng
 
   !--- Work space used to temporarily hold fields passed via MPI
-  integer, parameter :: maxx=8392704  !---4098x2048 = (2+2^12)x(2^11)
-  real(kind=8)        :: wrk(maxx)
-  integer(kind=8)     :: ibuf(8)
+  integer, parameter    :: maxx=8392704  !---4098x2048 = (2+2^12)x(2^11)
+  real(kind=8), save    :: wrk(maxx)
+  integer(kind=8), save :: ibuf(8)
 
   !--- A derived type holding coupler related information
   !--- cpl_vinfo_t is defined in the com_cpl module
@@ -115,12 +110,12 @@ contains
 
      !--- Initialize groups for cpl, atm, ocn, ice, ...
      !--- This will, among other things, define cpl_master, atm_master, ocn_master
-     !--- NOTE: ocn_master is the rank in MPI_COMM_WORLD not the rank in ocn_comm
+     !--- and return an ocean intra-communicator as local_ocn_comm
+     !--- NOTE: ocn_master is the rank in MPI_COMM_WORLD not the rank in local_ocn_comm
      local_ocn_comm = -1
      call define_group('ocn', local_ocn_comm)
 
-     kl_comm = ocn_comm
-     ocn_comm = local_ocn_comm
+     kl_comm  = local_ocn_comm
 
      !---Determine the rank of the calling process in MPI_COMM_WORLD
      call mpi_comm_rank ( MPI_COMM_WORLD, rank, ierr )
