@@ -362,8 +362,8 @@ SUBROUTINE calc (imt, jmt, km, lm)
                  phvol(l)      =     phvol(l)  + phz*dvol    
                  ppphyvol(l)   =  ppphyvol(l)  + ppphyz*dvol  
                  ppphy2vol(l)  = ppphy2vol(l)  + ppphy2z*dvol  
-                 nfixvol(l)  = nfixvol(l)  + nfixvol*dvol  
-                 irondepvol(l)  = irondepvol(l)  + irondepvol*dvol  
+                 nfixvol(l)  = nfixvol(l)  + nfixz*dvol  
+                 irondepvol(l)  = irondepvol(l)  + irondepz*dvol  
              endif
                        
               vol = vol + dvol
