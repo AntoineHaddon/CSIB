@@ -103,13 +103,13 @@ SUBROUTINE calc (imt, jmt, km, lm)
       REAL, DIMENSION(imt, jmt, km, lm) :: phy, phy2, zoo, zoo2
 
 !     Monthly primary production: PPPHY, PPPHY2 
-      REAL, DIMENSION(imt, jmt, km, lm) :: ppphy, ppphy2
+      REAL, DIMENSION(imt, jmt, km, lm) :: ppphy, ppphy2, nfix, irondep
 
 !     Monthly export fluxes of C (EPC100), CaCO3 (EPCAL100)
       REAL, DIMENSION(imt, jmt, lm)     :: epc100, epcal100
 
 !     Monthly surface fluxes of DIC, O2, N2, Fe
-      REAL, DIMENSION(imt, jmt, lm)     :: cflux, oflux, nfix, irondep
+      REAL, DIMENSION(imt, jmt, lm)     :: cflux, oflux
 
 ! ======================================================================
 !     Working arrays / variables  
@@ -131,14 +131,14 @@ SUBROUTINE calc (imt, jmt, km, lm)
 ! (1) Global-mean profiles for 3D data:
 
       REAL, DIMENSION(km, lm) :: dic_z, caco3_z, tal_z, ph_z, oxy_z, poc_z
-      REAL, DIMENSION(km, lm) :: goc_z, doc_z, no3_z, nh4_z, dfe_z, phy_z, phy2_z
+      REAL, DIMENSION(km, lm) :: goc_z, no3_z, nh4_z, dfe_z, phy_z, phy2_z
       REAL, DIMENSION(km, lm) :: zoo_z, zoo2_z, ppphy_z, ppphy2_z, nfix_z, irondep_z
 
 ! (2) Global-mean (volume weighted) or integral
 
 !     DIC, CaCO3 TA, PH, O2
       REAL, DIMENSION(lm) :: dicvol, caco3vol, talvol, phvol, oxyvol, pocvol, gocvol
-      REAL, DIMENSION(lm) :: no3vol, nh4vol, phyvol, phy2vol
+      REAL, DIMENSION(lm) :: no3vol, nh4vol, dfevol, phyvol, phy2vol
       REAL, DIMENSION(lm) :: zoovol, zoo2vol, ppphyvol, ppphy2vol, nfixvol, irondepvol
       REAL, DIMENSION(lm) :: epc100glo, epcal100glo, cglo, ofluxglo
 
@@ -217,7 +217,7 @@ SUBROUTINE calc (imt, jmt, km, lm)
 !        NO3, NH4, PO4, Si 
          CALL getvara('NO3', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), no3, 1., 0.)
          CALL getvara('NH4', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), nh4, 1., 0.)    
-         CALL getvara('dFe', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), po4, 1., 0.)    
+         CALL getvara('dFe', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), dfe, 1., 0.)    
 
 !        PHY, PHY2, ZOO, ZOO2
          CALL getvara('PHYC',  iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),  phy, 1., 0.)  
@@ -257,12 +257,9 @@ SUBROUTINE calc (imt, jmt, km, lm)
 ! POC, GOC, DOC
       pocvol(:)   = 0.0_dp
       gocvol(:)   = 0.0_dp
-      docvol(:)   = 0.0_dp
 ! NO3, NH4, PO4, Si 
       no3vol(:)   = 0.0_dp
       nh4vol(:)   = 0.0_dp  
-      po4vol(:)   = 0.0_dp  
-      sivol(:)    = 0.0_dp 
 ! PHY, PHY2, ZOO, ZOO2
       phyvol(:)   = 0.0_dp 
       phy2vol(:)  = 0.0_dp 
