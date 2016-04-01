@@ -796,8 +796,12 @@
 
   orca_grid_info="nemo3.4.1_orca1_mesh_mask_ngr.nc"
 
-  nemo_iodef=cancpl_dev_nemo_iodef.xml
-  nemo_xmlio_server_def=cancpl_dev_nemo_xmlio_server.def
+  nemo_iodef=${nemo_iodef:=''}
+  [ -z "$nemo_iodef" ] && bail "nemo_iodef is not defined"
+
+  nemo_xmlio_server_def=${nemo_xmlio_server_def:=''}
+  [ -z "$nemo_xmlio_server_def" ] && bail "nemo_xmlio_server_def is not defined"
+
   nemo_ahmcoef=nemo_3.4_orca1_ahmcoef
   nemo_coordinates=nemo_3.4_orca1_coordinates_ukorca1.nc
   nemo_bathy_meter=nemo_3.4_orca1_bathy_meter_050308_ukmo.nc
