@@ -304,28 +304,9 @@
       </group>
       
       <group id="3h" output_freq="10800"  output_level="10" enabled=".TRUE.">                      <!-- 3h files -->
-      </group>
-      
-      <group id="4h" output_freq="14400"  output_level="10" enabled=".TRUE.">                      <!-- 4h files -->
-      </group>
-      
-      <group id="6h" output_freq="21600"  output_level="10" enabled=".TRUE.">                      <!-- 6h files -->
-      </group>
-      
-      <group id="1d" output_freq="86400"  output_level="10" enabled=".TRUE.">                      <!-- 1d files -->
-      </group>
 
-      
-      <group id="3d" output_freq="259200" output_level="10" enabled=".TRUE.">                      <!-- 3d files -->
-      </group>
-      
-      <group id="5d" output_freq="432000" output_level="10" enabled=".TRUE.">                      <!-- 5d files -->
-      </group>
-      
-      <group id="1m" output_freq="-1"     output_level="10" enabled=".TRUE.">                      <!-- real monthly files -->
-
-	<file id="1m_grid_T" name="auto" description="ocean T grid variables" >
-          <field ref="toce"         name="votemper"  /> 
+        <file id="3h_grid_T" name="auto" description="ocean T grid variables" >
+          <field ref="toce"         name="votemper"  />
           <field ref="soce"         name="vosaline"  />
           <field ref="ssh"          name="sossheig"  />
           <field ref="empmr"        name="sowaflup"  />
@@ -334,28 +315,28 @@
           <field ref="ice_cover"    name="soicecov"  />
           <field ref="erp"          name="sowafldp"  />
           <field ref="mlddzt"       name="sothedep"  />
-	</file>   
+        </file>
 
-        <file id="1m_grid_U" name="auto" description="ocean U grid variables" >
+        <file id="3h_grid_U" name="auto" description="ocean U grid variables" >
           <field ref="uoce"         name="vozocrtx"  />
           <field ref="uoce_eiv"     name="vozoeivu"  />
           <field ref="utau"         name="sozotaux"  />
         </file>
 
-        <file id="1m_grid_V" name="auto" description="ocean V grid variables" >
+        <file id="3h_grid_V" name="auto" description="ocean V grid variables" >
           <field ref="voce"         name="vomecrty"  />
           <field ref="voce_eiv"     name="vomeeivv"  />
           <field ref="vtau"         name="sometauy"  />
         </file>
 
-        <file id="1m_grid_W" name="auto" description="ocean W grid variables" >
+        <file id="3h_grid_W" name="auto" description="ocean W grid variables" >
           <field ref="woce"         name="vovecrtz" />
           <field ref="woce_eiv"     name="voveeivw" />
           <field ref="aht2d"        name="soleahtw" />
           <field ref="aht2d_eiv"    name="soleaeiw" />
         </file>
 
-        <file id="1m_icemod" name="auto" description="ice variables" >
+        <file id="3h_icemod" name="auto" description="ice variables" >
           <field ref="ice_pres"                     />
           <field ref="ice_cover"    name="soicecov" />
           <field ref="snowthic_cea" name="isnowthi" />
@@ -371,6 +352,25 @@
           <field ref="qns_io_cea"   name="iicenflx" />
           <field ref="snowpre"      name="isnowpre" />
         </file>
+
+      </group>
+      
+      <group id="4h" output_freq="14400"  output_level="10" enabled=".TRUE.">                      <!-- 4h files -->
+      </group>
+      
+      <group id="6h" output_freq="21600"  output_level="10" enabled=".TRUE.">                      <!-- 6h files -->
+      </group>
+      
+      <group id="1d" output_freq="86400"  output_level="10" enabled=".TRUE.">                      <!-- 1d files -->
+      </group>
+
+      <group id="3d" output_freq="259200" output_level="10" enabled=".TRUE.">                      <!-- 3d files -->
+      </group>
+      
+      <group id="5d" output_freq="432000" output_level="10" enabled=".TRUE.">                      <!-- 5d files -->
+      </group>
+      
+      <group id="1m" output_freq="-1"     output_level="10" enabled=".TRUE.">                      <!-- real monthly files -->
 
       </group>
 
