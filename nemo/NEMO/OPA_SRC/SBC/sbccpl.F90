@@ -974,6 +974,14 @@ call flush(6)
          IF( srcv(jpr_itx1)%laction ) THEN                      !   ice stress received   !
             !                                                   ! ======================= !
             !  
+
+            !LPS
+            !--- These arrays will not be allocated in some cases (e.g. when sn_rcv_tau%cldes /= 'oce and ice')
+            !--- Assume that the third dim is always 1 in this case since that is what gets assigned below
+            !--- This assumption is completely untested.
+            if ( .not. associated(frcv(jpr_itx1)%z3) ) allocate( frcv(jpr_itx1)%z3(jpi,jpj,1) )
+            if ( .not. associated(frcv(jpr_ity1)%z3) ) allocate( frcv(jpr_ity1)%z3(jpi,jpj,1) )
+
             IF( TRIM( sn_rcv_tau%clvref ) == 'cartesian' ) THEN            ! 2 components on the sphere
                !                                                       ! (cartesian to spherical -> 3 to 2 components)
                CALL geo2oce(  frcv(jpr_itx1)%z3(:,:,1), frcv(jpr_ity1)%z3(:,:,1), frcv(jpr_itz1)%z3(:,:,1),   &
