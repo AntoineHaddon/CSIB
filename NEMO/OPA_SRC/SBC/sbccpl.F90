@@ -1006,10 +1006,18 @@ call flush(6)
             !                                                   ! ======================= !
             frcv(jpr_itx1)%z3(:,:,1) = frcv(jpr_otx1)%z3(:,:,1)
             frcv(jpr_ity1)%z3(:,:,1) = frcv(jpr_oty1)%z3(:,:,1)
+
+!LPSDBG
+write(6,*)"Branch 2: sum(frcv(jpr_itx1)%z3(:,:,1)) = ",sum(frcv(jpr_itx1)%z3(:,:,1))
+write(6,*)"Branch 2: sum(frcv(jpr_ity1)%z3(:,:,1)) = ",sum(frcv(jpr_ity1)%z3(:,:,1))
+call flush(6)
+
             !
          ENDIF
 
 !LPSDBG
+frcv(jpr_itx1)%z3(:,:,1) = frcv(jpr_otx1)%z3(:,:,1)
+frcv(jpr_ity1)%z3(:,:,1) = frcv(jpr_oty1)%z3(:,:,1)
 write(6,*)"srcv(jpr_otx1)%laction = ",srcv(jpr_otx1)%laction
 write(6,*)"srcv(jpr_itx1)%laction = ",srcv(jpr_itx1)%laction
 write(6,*)"sn_rcv_tau%clvref = ",trim(sn_rcv_tau%clvref)
