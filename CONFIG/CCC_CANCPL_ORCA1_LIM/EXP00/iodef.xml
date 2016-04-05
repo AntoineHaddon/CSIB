@@ -350,6 +350,9 @@
           <field ref="vtau_ice"     name="iicestrv" />
           <field ref="qsr_io_cea"   name="iicesflx" />
           <field ref="qns_io_cea"   name="iicenflx" />
+          <field ref="qsr_ai_cea"   name="aicesflx" />
+          <field ref="qns_ai_cea"   name="aicenflx" />
+          <field ref="qla_ai_cea"   name="aicelflx" />
           <field ref="snowpre"      name="isnowpre" />
         </file>
 

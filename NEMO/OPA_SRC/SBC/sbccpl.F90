@@ -1003,6 +1003,11 @@ CONTAINS
             !
          ENDIF
 
+!LPSDBG
+write(6,*)"sum(frcv(jpr_itx1)%z3(:,:,1)) = ",sum(frcv(jpr_itx1)%z3(:,:,1))
+write(6,*)"sum(frcv(jpr_ity1)%z3(:,:,1)) = ",sum(frcv(jpr_ity1)%z3(:,:,1))
+call flush(6)
+
          !                                                      ! ======================= !
          !                                                      !     put on ice grid     !
          !                                                      ! ======================= !
@@ -1114,6 +1119,11 @@ CONTAINS
                CALL lbc_lnk( p_taui, 'U',  -1. )   ;   CALL lbc_lnk( p_tauj, 'V',  -1. )
             ENDIF
          END SELECT
+
+!LPSDBG
+write(6,*)"sum(p_taui(:,:)) = ",sum(p_taui(:,:))
+write(6,*)"sum(p_tauj(:,:)) = ",sum(p_tauj(:,:))
+call flush(6)
 
       ENDIF
       !   
@@ -1335,6 +1345,11 @@ CONTAINS
             qsr_ice(:,:,jl) = sbc_dcy( qsr_ice(:,:,jl) )
          ENDDO
       ENDIF
+
+!LPSDBG
+write(6,*)"sum(qsr_ice) = ",sum(qsr_ice(:,:,1))
+write(6,*)"sum(frcv(jpr_qsrice)%z3(:,:,1)) = ",sum(frcv(jpr_qsrice)%z3(:,:,1))
+call flush(6)
 
       SELECT CASE( TRIM( sn_rcv_dqnsdt%cldes ) )
       CASE ('coupled')
