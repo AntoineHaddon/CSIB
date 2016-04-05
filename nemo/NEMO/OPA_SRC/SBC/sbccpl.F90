@@ -790,6 +790,12 @@ CONTAINS
          !
       ENDIF
       
+!LPSDBG
+write(6,*)"sbc_cpl_rcv: srcv(jpr_otx1)%laction = ",srcv(jpr_otx1)%laction
+write(6,*)"sbc_cpl_rcv: sn_rcv_tau%clvref = ",trim(sn_rcv_tau%clvref)
+write(6,*)"sbc_cpl_rcv: sn_rcv_tau%clvor = ",trim(sn_rcv_tau%clvor)
+call flush(6)
+
       !                                                      ! ========================= !
       !                                                      !    wind stress module     !   (taum)
       !                                                      ! ========================= !
@@ -1004,6 +1010,12 @@ CONTAINS
          ENDIF
 
 !LPSDBG
+write(6,*)"srcv(jpr_otx1)%laction = ",srcv(jpr_otx1)%laction
+write(6,*)"srcv(jpr_itx1)%laction = ",srcv(jpr_itx1)%laction
+write(6,*)"sn_rcv_tau%clvref = ",trim(sn_rcv_tau%clvref)
+write(6,*)"sn_rcv_tau%clvor = ",trim(sn_rcv_tau%clvor)
+write(6,*)"sum(frcv(jpr_otx1)%z3(:,:,1)) = ",sum(frcv(jpr_otx1)%z3(:,:,1))
+write(6,*)"sum(frcv(jpr_oty1)%z3(:,:,1)) = ",sum(frcv(jpr_oty1)%z3(:,:,1))
 write(6,*)"sum(frcv(jpr_itx1)%z3(:,:,1)) = ",sum(frcv(jpr_itx1)%z3(:,:,1))
 write(6,*)"sum(frcv(jpr_ity1)%z3(:,:,1)) = ",sum(frcv(jpr_ity1)%z3(:,:,1))
 call flush(6)
@@ -1121,6 +1133,8 @@ call flush(6)
          END SELECT
 
 !LPSDBG
+write(6,*)"cp_ice_msh = ",trim(cp_ice_msh)
+write(6,*)"srcv(jpr_itx1)%clgrid = ",trim(srcv(jpr_itx1)%clgrid)
 write(6,*)"sum(p_taui(:,:)) = ",sum(p_taui(:,:))
 write(6,*)"sum(p_tauj(:,:)) = ",sum(p_tauj(:,:))
 call flush(6)
