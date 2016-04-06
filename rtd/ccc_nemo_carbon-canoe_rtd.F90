@@ -93,10 +93,10 @@ SUBROUTINE calc (imt, jmt, km, lm)
 !     Monthly DIC, CaCO3, TA, PH, O2
       REAL, DIMENSION(imt, jmt, km, lm) :: dic, caco3, tal, ph, oxy
 
-!     Monthly POC, GOC, DOC
+!     Monthly POC, GOC
       REAL, DIMENSION(imt, jmt, km, lm) :: poc, goc
 
-!     Monthly NO3, NH4, PO4, Si
+!     Monthly NO3, NH4, dFe
       REAL, DIMENSION(imt, jmt, km, lm) :: no3, nh4, dfe
 
 !     Monthly PHY and Zoo
@@ -108,7 +108,7 @@ SUBROUTINE calc (imt, jmt, km, lm)
 !     Monthly export fluxes of C (EPC100), CaCO3 (EPCAL100)
       REAL, DIMENSION(imt, jmt, lm)     :: epc100, epcal100
 
-!     Monthly surface fluxes of DIC, O2, N2, Fe
+!     Monthly surface fluxes of DIC, O2
       REAL, DIMENSION(imt, jmt, lm)     :: cflux, oflux
 
 ! ======================================================================
@@ -210,11 +210,11 @@ SUBROUTINE calc (imt, jmt, km, lm)
 
          CALL getvara('O2', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), oxy, 1., 0.)   
 
-!        POC, GOC, DOC
+!        POC, GOC
          CALL getvara('POC', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), poc, 1., 0.)   
          CALL getvara('GOC', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), goc, 1., 0.)   
 
-!        NO3, NH4, PO4, Si 
+!        NO3, NH4, dFe
          CALL getvara('NO3', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), no3, 1., 0.)
          CALL getvara('NH4', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), nh4, 1., 0.)    
          CALL getvara('dFe', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), dfe, 1., 0.)    
@@ -254,12 +254,13 @@ SUBROUTINE calc (imt, jmt, km, lm)
       talvol(:)   = 0.0_dp
       phvol(:)    = 0.0_dp
       oxyvol(:)   = 0.0_dp
-! POC, GOC, DOC
+! POC, GOC
       pocvol(:)   = 0.0_dp
       gocvol(:)   = 0.0_dp
-! NO3, NH4, PO4, Si 
+! NO3, NH4
       no3vol(:)   = 0.0_dp
       nh4vol(:)   = 0.0_dp  
+      dfevol(:)   = 0.0_dp  
 ! PHY, PHY2, ZOO, ZOO2
       phyvol(:)   = 0.0_dp 
       phy2vol(:)  = 0.0_dp 
@@ -282,11 +283,11 @@ SUBROUTINE calc (imt, jmt, km, lm)
              CALL area_ave(e1t, e2t, e3t, g_mask, tal(:, :, k, l),     imt, jmt, km, talz,   dvol, k)  
              CALL area_ave(e1t, e2t, e3t, g_mask, oxy(:, :, k, l),     imt, jmt, km, oxyz,   dvol, k)
 
-    !        POC, GOC, DOC
+    !        POC, GOC
              CALL area_ave(e1t, e2t, e3t, g_mask, poc(:, :, k, l), imt, jmt, km, pocz, dvol, k)
              CALL area_ave(e1t, e2t, e3t, g_mask, goc(:, :, k, l), imt, jmt, km, gocz, dvol, k)
 
-    !        NO3, NH4, PO4, Si 
+    !        NO3, NH4
              CALL area_ave(e1t, e2t, e3t, g_mask, no3(:, :, k, l), imt, jmt, km, no3z, dvol, k)
              CALL area_ave(e1t, e2t, e3t, g_mask, nh4(:, :, k, l), imt, jmt, km, nh4z, dvol, k)
              CALL area_ave(e1t, e2t, e3t, g_mask, dfe(:, :, k, l), imt, jmt, km, dfez, dvol, k)  
@@ -314,11 +315,11 @@ SUBROUTINE calc (imt, jmt, km, lm)
              tal_z(k, l)   = talz     
              oxy_z(k, l)   = oxyz    
 
-    !        POC, GOC, DOC
+    !        POC, GOC
              poc_z(k, l)    = pocz       
              goc_z(k, l)    = gocz       
 
-    !        NO3, NH4, PO4, Si 
+    !        NO3, NH4
              no3_z(k, l)   = no3z  
              nh4_z(k, l)   = nh4z   
              dfe_z(k, l)   = dfez  
@@ -343,11 +344,11 @@ SUBROUTINE calc (imt, jmt, km, lm)
              talvol(l)  = talvol(l)  + talz*dvol  
              oxyvol(l)  = oxyvol(l)  + oxyz*dvol  
 
-    !        POC, GOC, DOC
+    !        POC, GOC
              pocvol(l)  = pocvol(l)  + pocz*dvol  
              gocvol(l)  = gocvol(l)  + gocz*dvol  
 
-    !        NO3, NH4, PO4, Si 
+    !        NO3, NH4, dFe
              no3vol(l)  = no3vol(l)  + no3z*dvol  
              nh4vol(l)  = nh4vol(l)  + nh4z*dvol  
              dfevol(l)  = dfevol(l)  + dfez*dvol  
@@ -386,10 +387,10 @@ SUBROUTINE calc (imt, jmt, km, lm)
              caco3vol(l)  = caco3vol(l) /vol 
              talvol(l)  = talvol(l) /vol 
              oxyvol(l)  = oxyvol(l) /vol  
-    !        POC, GOC, DOC  
+    !        POC, GOC  
              pocvol(l)  = pocvol(l) /vol  
              gocvol(l)  = gocvol(l) /vol  
-    !        NO3, NH4, PO4, Si 
+    !        NO3, NH4
              no3vol(l)  = no3vol(l) /vol  
              nh4vol(l)  = nh4vol(l) /vol 
              dfevol(l)  = dfevol(l) /vol
@@ -527,7 +528,7 @@ SUBROUTINE calc (imt, jmt, km, lm)
      &        , 'GOC', 'mmol m^-3')
 
           CALL defvar ('GOCz', iou, 2, (/id_z, id_time/), -1.e4                  & 
-     &        , 1.e4,' ', 'F', 'Large GOC by level'                              &
+     &        , 1.e4,' ', 'F', 'Large POC by level'                              &
      &        , 'GOCz', 'mmol m^-3')
 
 !         NO3
@@ -607,7 +608,7 @@ SUBROUTINE calc (imt, jmt, km, lm)
      &           , 'OFLX', 'mol/yr')
 !             Nfix
               CALL defvar ('NFIX', iou, 1, (/id_time/), -1.e4                    & 
-     &            , 1.e4,' ', 'F', 'Nitrogen fixation at surface'                &
+     &            , 1.e4,' ', 'F', 'Nitrogen fixation'                           &
      &            , 'NFIX', 'TgN/yr')
 !             Irondep
               CALL defvar ('Irondep', iou, 1, (/id_time/), -1.e4                 & 
