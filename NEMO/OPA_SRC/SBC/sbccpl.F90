@@ -789,12 +789,6 @@ CONTAINS
          llnewtx = .TRUE.
          !
       ENDIF
-      
-!LPSDBG
-write(6,*)"sbc_cpl_rcv: srcv(jpr_otx1)%laction = ",srcv(jpr_otx1)%laction
-write(6,*)"sbc_cpl_rcv: sn_rcv_tau%clvref = ",trim(sn_rcv_tau%clvref)
-write(6,*)"sbc_cpl_rcv: sn_rcv_tau%clvor = ",trim(sn_rcv_tau%clvor)
-call flush(6)
 
       !                                                      ! ========================= !
       !                                                      !    wind stress module     !   (taum)
@@ -1015,28 +1009,8 @@ call flush(6)
             frcv(jpr_itx1)%z3(:,:,1) = frcv(jpr_otx1)%z3(:,:,1)
             frcv(jpr_ity1)%z3(:,:,1) = frcv(jpr_oty1)%z3(:,:,1)
 
-!LPSDBG
-write(6,*)"Branch 2: shape(frcv(jpr_itx1)%z3) = ",shape(frcv(jpr_itx1)%z3)
-write(6,*)"Branch 2: shape(frcv(jpr_ity1)%z3) = ",shape(frcv(jpr_ity1)%z3)
-write(6,*)"Branch 2: sum(frcv(jpr_itx1)%z3(:,:,1)) = ",sum(frcv(jpr_itx1)%z3(:,:,1))
-write(6,*)"Branch 2: sum(frcv(jpr_ity1)%z3(:,:,1)) = ",sum(frcv(jpr_ity1)%z3(:,:,1))
-call flush(6)
-
             !
          ENDIF
-
-!LPSDBG
-frcv(jpr_itx1)%z3(:,:,1) = frcv(jpr_otx1)%z3(:,:,1)
-frcv(jpr_ity1)%z3(:,:,1) = frcv(jpr_oty1)%z3(:,:,1)
-write(6,*)"srcv(jpr_otx1)%laction = ",srcv(jpr_otx1)%laction
-write(6,*)"srcv(jpr_itx1)%laction = ",srcv(jpr_itx1)%laction
-write(6,*)"sn_rcv_tau%clvref = ",trim(sn_rcv_tau%clvref)
-write(6,*)"sn_rcv_tau%clvor = ",trim(sn_rcv_tau%clvor)
-write(6,*)"sum(frcv(jpr_otx1)%z3(:,:,1)) = ",sum(frcv(jpr_otx1)%z3(:,:,1))
-write(6,*)"sum(frcv(jpr_oty1)%z3(:,:,1)) = ",sum(frcv(jpr_oty1)%z3(:,:,1))
-write(6,*)"sum(frcv(jpr_itx1)%z3(:,:,1)) = ",sum(frcv(jpr_itx1)%z3(:,:,1))
-write(6,*)"sum(frcv(jpr_ity1)%z3(:,:,1)) = ",sum(frcv(jpr_ity1)%z3(:,:,1))
-call flush(6)
 
          !                                                      ! ======================= !
          !                                                      !     put on ice grid     !
@@ -1149,13 +1123,6 @@ call flush(6)
                CALL lbc_lnk( p_taui, 'U',  -1. )   ;   CALL lbc_lnk( p_tauj, 'V',  -1. )
             ENDIF
          END SELECT
-
-!LPSDBG
-write(6,*)"cp_ice_msh = ",trim(cp_ice_msh)
-write(6,*)"srcv(jpr_itx1)%clgrid = ",trim(srcv(jpr_itx1)%clgrid)
-write(6,*)"sum(p_taui(:,:)) = ",sum(p_taui(:,:))
-write(6,*)"sum(p_tauj(:,:)) = ",sum(p_tauj(:,:))
-call flush(6)
 
       ENDIF
       !   
@@ -1377,11 +1344,6 @@ call flush(6)
             qsr_ice(:,:,jl) = sbc_dcy( qsr_ice(:,:,jl) )
          ENDDO
       ENDIF
-
-!LPSDBG
-write(6,*)"sum(qsr_ice) = ",sum(qsr_ice(:,:,1))
-write(6,*)"sum(frcv(jpr_qsrice)%z3(:,:,1)) = ",sum(frcv(jpr_qsrice)%z3(:,:,1))
-call flush(6)
 
       SELECT CASE( TRIM( sn_rcv_dqnsdt%cldes ) )
       CASE ('coupled')

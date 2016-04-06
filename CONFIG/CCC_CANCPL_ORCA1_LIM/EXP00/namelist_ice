@@ -24,7 +24,7 @@
 &namiceini     !   ice initialisation
 !-----------------------------------------------------------------------
    ln_limini   = .false.   !  read the initial state in 'Ice_initialization.nc' (T) or not (F)
-   ttest       =  2.0      !  threshold water temperature for initial sea ice
+   ttest       =  -12.0      !  threshold water temperature for initial sea ice
    hninn       =  0.5      !  initial snow thickness in the north
    hginn       =  3.0      !  initial ice  thickness in the north
    alinn       =  0.05     !  initial leads area     in the north
