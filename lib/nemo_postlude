@@ -279,6 +279,35 @@ end_reorder_list
 	done
       fi
 
+      # 3 hour save interval
+      nemo_save_3h_data=${nemo_save_3h_data:-on}
+      ToF nemo_save_3h_data
+      if [ $nemo_save_3h_data -eq 1 ]; then
+        nemo_3h_suffix_list=${nemo_3h_suffix_list:="icemod grid_T grid_U grid_V grid_W"}
+        for sfx in $nemo_3h_suffix_list; do
+          pfx=${cn_exp}_3h_${start_date}_${stop_date}_$sfx
+          ncout=${uxxx}_${pfx}.nc
+          if [ -s "${pfx}.nc" ]; then
+            # The output file already exists
+            # Assume that there are no task specific files and therefore
+            # no need to combine them into a single file
+            # Note file names must be transposed to lower case letters since
+            # the "save" will blindly do so
+            cp ${pfx}.nc $ncout
+            save $ncout $ncout && echo "$ncout" >> saved_history_FILE_NAMES
+          else
+            eval fnpatt=${pfx}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
+            found_file=`(ls -1 $fnpatt || : ) 2>/dev/null`
+            if [ -n "$found_file" ]; then
+              # At least 1 file name matches the current pattern
+              REBUILD -o $ncout $fnpatt &&
+                  save $ncout $ncout &&
+                  echo "$ncout" >> saved_history_FILE_NAMES
+            fi
+          fi
+        done
+      fi
+
       if [ -s saved_history_FILE_NAMES ]; then
 	# Once files have been rebuilt and saved to DATAPATH create a file that is
 	# equivalent to the file saved_history_FILE_NAMES except that all file names
