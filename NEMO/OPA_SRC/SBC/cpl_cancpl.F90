@@ -679,7 +679,7 @@ contains
          cycle
        endif
 
-       if ( rank == ocn_master .and. verbose > -2 ) then
+       if ( rank == ocn_master .and. verbose > 2 ) then
          write(numout,*)'cpl_cancpl_snd: NEMO sending ',trim(ssnd(kid)%clname), &
              ' from task ',rank,' to task ',cpl_master,'  kstep=',kstep,'  freq=',freq, &
              ' catagory=',jc
