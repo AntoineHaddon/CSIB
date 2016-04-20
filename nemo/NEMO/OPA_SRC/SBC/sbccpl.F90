@@ -1486,6 +1486,20 @@ CONTAINS
       CASE( 'ice and snow'         )   
          ztmp3(:,:,1:jpl) = ht_i(:,:,1:jpl)
          ztmp4(:,:,1:jpl) = ht_s(:,:,1:jpl)
+      CASE( 'weighted iwe and swe' )   
+         !--- Cell average ice water equivalent and snow water equivalent
+         SELECT CASE( sn_snd_thick%clcat )
+         CASE( 'yes' )   
+            ztmp3(:,:,1:jpl) =  rhoic * ht_i(:,:,1:jpl) * a_i(:,:,1:jpl)
+            ztmp4(:,:,1:jpl) =  rhosn * ht_s(:,:,1:jpl) * a_i(:,:,1:jpl)
+         CASE( 'no' )
+            ztmp3(:,:,:) = 0.0   ;  ztmp4(:,:,:) = 0.0
+            DO jl=1,jpl
+               ztmp3(:,:,1) = ztmp3(:,:,1) + rhoic * ht_i(:,:,jl) * a_i(:,:,jl)
+               ztmp4(:,:,1) = ztmp4(:,:,1) + rhosn * ht_s(:,:,jl) * a_i(:,:,jl)
+            ENDDO
+         CASE default                  ;   CALL ctl_stop( 'sbc_cpl_snd: wrong definition of sn_snd_thick%clcat' )
+         END SELECT
       CASE default                     ;   CALL ctl_stop( 'sbc_cpl_snd: wrong definition of sn_snd_thick%cldes' )
       END SELECT
 #if defined key_cancpl
