@@ -583,6 +583,9 @@ CONTAINS
       CASE ( 'weighted ice and snow' ) 
          ssnd(jps_hice:jps_hsnw)%laction = .TRUE.
          IF ( TRIM( sn_snd_thick%clcat ) == 'yes' ) ssnd(jps_hice:jps_hsnw)%nct = jpl
+      CASE ( 'weighted iwe and swe' ) 
+         ssnd(jps_hice:jps_hsnw)%laction = .TRUE.
+         IF ( TRIM( sn_snd_thick%clcat ) == 'yes' ) ssnd(jps_hice:jps_hsnw)%nct = jpl
       CASE default   ;   CALL ctl_stop( 'sbc_cpl_init: wrong definition of sn_snd_thick%cldes' )
       END SELECT
 
