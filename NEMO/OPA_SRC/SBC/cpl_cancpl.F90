@@ -69,6 +69,23 @@ MODULE cpl_cancpl
   !--- Lists of all fields that are to be coupled
   type(fld_cpl), save, dimension(nmaxfld), public ::   srcv, ssnd
 
+  TYPE :: FLD_C
+     CHARACTER(len = 32) ::   cldes                  ! desciption of the coupling strategy
+     CHARACTER(len = 32) ::   clcat                  ! multiple ice categories strategy
+     CHARACTER(len = 32) ::   clvref                 ! reference of vector ('spherical' or 'cartesian')
+     CHARACTER(len = 32) ::   clvor                  ! orientation of vector fields ('eastward-northward' or 'local grid')
+     CHARACTER(len = 32) ::   clvgrd                 ! grids on which is located the vector fields
+  END TYPE FLD_C
+  ! Send to the atmosphere                           !
+  TYPE(FLD_C) ::   sn_snd_temp, sn_snd_alb, sn_snd_thick, sn_snd_crt, sn_snd_co2                        
+  ! Received from the atmosphere                     !
+  TYPE(FLD_C) ::   sn_rcv_w10m, sn_rcv_taumod, sn_rcv_tau, sn_rcv_dqnsdt, sn_rcv_qsr, sn_rcv_qns, sn_rcv_emp, sn_rcv_rnf
+  TYPE(FLD_C) ::   sn_rcv_cal, sn_rcv_iceflx, sn_rcv_co2
+
+  NAMELIST /namsbc_cpl/ sn_snd_temp, sn_snd_alb   , sn_snd_thick, sn_snd_crt   , sn_snd_co2,   &
+                        sn_rcv_w10m, sn_rcv_taumod, sn_rcv_tau  , sn_rcv_dqnsdt, sn_rcv_qsr,   &
+                        sn_rcv_qns , sn_rcv_emp   , sn_rcv_rnf  , sn_rcv_cal   , sn_rcv_iceflx  , sn_rcv_co2
+
   !--- tmp space for use with MPI gather/scatter operations
   real(wp), allocatable, save, dimension(:,:,:), private :: png
 
@@ -387,6 +404,47 @@ contains
      !--- jpiglo and jpjglo are defined in the module par_oce
      nemo_jpiglo = jpiglo
      nemo_jpjglo = jpjglo
+
+     !--- Assign nemo_namsbc_cpl_cldes with namelist parameters read into namsbc_cpl
+     !--- These values will be used by the coupler
+     !--- Set defaults
+     sn_snd_temp   = FLD_C( 'weighted oce and ice',    'no'    ,     ''      ,         ''           ,   ''   ) 
+     sn_snd_alb    = FLD_C( 'weighted ice'        ,    'no'    ,     ''      ,         ''           ,   ''   ) 
+     sn_snd_thick  = FLD_C( 'none'                ,    'no'    ,     ''      ,         ''           ,   ''   ) 
+     sn_snd_crt    = FLD_C( 'none'                ,    'no'    , 'spherical' , 'eastward-northward' ,  'T'   )     
+     sn_snd_co2    = FLD_C( 'none'                ,    'no'    ,     ''      ,         ''           ,   ''   )     
+     sn_rcv_w10m   = FLD_C( 'none'                ,    'no'    ,     ''      ,         ''          ,   ''    )
+     sn_rcv_taumod = FLD_C( 'coupled'             ,    'no'    ,     ''      ,         ''          ,   ''    )
+     sn_rcv_tau    = FLD_C( 'oce only'            ,    'no'    , 'cartesian' , 'eastward-northward',  'U,V'  )  
+     sn_rcv_dqnsdt = FLD_C( 'coupled'             ,    'no'    ,     ''      ,         ''          ,   ''    )
+     sn_rcv_qsr    = FLD_C( 'oce and ice'         ,    'no'    ,     ''      ,         ''          ,   ''    )
+     sn_rcv_qns    = FLD_C( 'oce and ice'         ,    'no'    ,     ''      ,         ''          ,   ''    )
+     sn_rcv_emp    = FLD_C( 'conservative'        ,    'no'    ,     ''      ,         ''          ,   ''    )
+     sn_rcv_rnf    = FLD_C( 'coupled'             ,    'no'    ,     ''      ,         ''          ,   ''    )
+     sn_rcv_cal    = FLD_C( 'coupled'             ,    'no'    ,     ''      ,         ''          ,   ''    )
+     sn_rcv_iceflx = FLD_C( 'none'                ,    'no'    ,     ''      ,         ''          ,   ''    )
+     sn_rcv_co2    = FLD_C( 'none'                ,    'no'    ,     ''      ,         ''          ,   ''    )
+
+     REWIND( numnam )                    ! ... read namlist namsbc_cpl
+     READ  ( numnam, namsbc_cpl )
+
+     nemo_namsbc_cpl_cldes(:) = " "
+     nemo_namsbc_cpl_cldes(1) = trim(sn_snd_temp%cldes)
+     nemo_namsbc_cpl_cldes(2) = trim(sn_snd_alb%cldes)
+     nemo_namsbc_cpl_cldes(3) = trim(sn_snd_thick%cldes)
+     nemo_namsbc_cpl_cldes(4) = trim(sn_snd_crt%cldes)
+     nemo_namsbc_cpl_cldes(5) = trim(sn_snd_co2%cldes)
+     nemo_namsbc_cpl_cldes(6) = trim(sn_rcv_w10m%cldes)
+     nemo_namsbc_cpl_cldes(7) = trim(sn_rcv_taumod%cldes)
+     nemo_namsbc_cpl_cldes(8) = trim(sn_rcv_tau%cldes)
+     nemo_namsbc_cpl_cldes(9) = trim(sn_rcv_dqnsdt%cldes)
+     nemo_namsbc_cpl_cldes(10) = trim(sn_rcv_qsr%cldes)
+     nemo_namsbc_cpl_cldes(11) = trim(sn_rcv_qns%cldes)
+     nemo_namsbc_cpl_cldes(12) = trim(sn_rcv_emp%cldes)
+     nemo_namsbc_cpl_cldes(13) = trim(sn_rcv_rnf%cldes)
+     nemo_namsbc_cpl_cldes(14) = trim(sn_rcv_cal%cldes)
+     nemo_namsbc_cpl_cldes(15) = trim(sn_rcv_iceflx%cldes)
+     nemo_namsbc_cpl_cldes(16) = trim(sn_rcv_co2%cldes)
 
      !--- Gather tmask at the surface into the temporary global array png
      !--- tmask is found in module dom_oce
