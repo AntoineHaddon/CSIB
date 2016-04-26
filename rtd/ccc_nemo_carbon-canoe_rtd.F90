@@ -17,6 +17,7 @@ IMPLICIT NONE
 !                         4. Improve time axis in output NetCDF, include
 !                            noleap_days subroutine.
 !
+!  J. Christian Apr 07 2016 Update to CanOE variable set.
 !  N. Swart   May 07  2014 Update to standard CMOC/CanESM2 RTD variable set. Major style revision to F90.
 !  N. Swart   May 02  2014 Made resolution independent.
 !  N. Swart   Apr 30  2014 Switched output format from CCCma to NetCDF.
@@ -86,30 +87,30 @@ SUBROUTINE calc (imt, jmt, km, lm)
       INTEGER i, j, k, l
 
 !     Grid-related arrays
-      REAL, DIMENSION(imt, jmt)     :: lon2d, lat2d, e1t, e2t
-      REAL, DIMENSION(km)           :: deptht
-      REAL, DIMENSION(imt, jmt, km) :: e3t(imt,jmt,km), t_mask
+      REAL, DIMENSION(:, :), ALLOCATABLE    :: lon2d, lat2d, e1t, e2t
+      REAL, DIMENSION(:, :, :), ALLOCATABLE :: e3t, t_mask
+      REAL, DIMENSION(:), ALLOCATABLE       :: deptht
 
 !     Monthly DIC, CaCO3, TA, PH, O2
-      REAL, DIMENSION(imt, jmt, km, lm) :: dic, caco3, tal, ph, oxy
+      REAL, DIMENSION(:, :, :, :), ALLOCATABLE :: dic, caco3, tal, ph, oxy
 
 !     Monthly POC, GOC
-      REAL, DIMENSION(imt, jmt, km, lm) :: poc, goc
+      REAL, DIMENSION(:, :, :, :), ALLOCATABLE :: poc, goc
 
 !     Monthly NO3, NH4, dFe
-      REAL, DIMENSION(imt, jmt, km, lm) :: no3, nh4, dfe
+      REAL, DIMENSION(:, :, :, :), ALLOCATABLE :: no3, nh4, dfe
 
 !     Monthly PHY and Zoo
-      REAL, DIMENSION(imt, jmt, km, lm) :: phy, phy2, phyn, phy2n, zoo, zoo2
+      REAL, DIMENSION(:, :, :, :), ALLOCATABLE :: phy, phy2, phyn, phy2n, zoo, zoo2
 
 !     Monthly primary production: PPPHY, PPPHY2 
-      REAL, DIMENSION(imt, jmt, km, lm) :: ppphy, ppphy2, nfix, irondep
+      REAL, DIMENSION(:, :, :, :), ALLOCATABLE :: ppphy, ppphy2, nfix, irondep
 
 !     Monthly export fluxes of C (EPC100), CaCO3 (EPCAL100)
-      REAL, DIMENSION(imt, jmt, lm)     :: epc100, epcal100
+      REAL, DIMENSION(:, :, :), ALLOCATABLE :: epc100, epcal100
 
 !     Monthly surface fluxes of DIC, O2
-      REAL, DIMENSION(imt, jmt, lm)     :: cflux, oflux
+      REAL, DIMENSION(:, :, :), ALLOCATABLE :: cflux, oflux
 
 ! ======================================================================
 !     Working arrays / variables  
@@ -121,27 +122,27 @@ SUBROUTINE calc (imt, jmt, km, lm)
       REAL :: test_var
 
 !     total ocean carbon, nitrogen      
-      REAL, DIMENSION(lm) :: toc, ton
+      REAL, DIMENSION(:), ALLOCATABLE :: toc, ton
  
 ! g_mask
-      REAL, DIMENSION(imt, jmt) :: g_mask
+      REAL, DIMENSION(:, :), ALLOCATABLE :: g_mask
 
 ! ======================================================================
 !     Output data 
 ! ======================================================================
 ! (1) Global-mean profiles for 3D data:
 
-      REAL, DIMENSION(km, lm) :: dic_z, caco3_z, tal_z, ph_z, oxy_z, poc_z
-      REAL, DIMENSION(km, lm) :: goc_z, no3_z, nh4_z, dfe_z, phy_z, phy2_z, phyn_z, phy2n_z
-      REAL, DIMENSION(km, lm) :: zoo_z, zoo2_z, ppphy_z, ppphy2_z, nfix_z, irondep_z
+      REAL, DIMENSION(:, :), ALLOCATABLE :: dic_z, caco3_z, tal_z, ph_z, oxy_z, poc_z
+      REAL, DIMENSION(:, :), ALLOCATABLE :: goc_z, no3_z, nh4_z, dfe_z, phy_z, phy2_z, phyn_z, phy2n_z
+      REAL, DIMENSION(:, :), ALLOCATABLE :: zoo_z, zoo2_z, ppphy_z, ppphy2_z, nfix_z, irondep_z
 
 ! (2) Global-mean (volume weighted) or integral
 
 !     DIC, CaCO3 TA, PH, O2
-      REAL, DIMENSION(lm) :: dicvol, caco3vol, talvol, phvol, oxyvol, pocvol, gocvol
-      REAL, DIMENSION(lm) :: no3vol, nh4vol, dfevol, phyvol, phy2vol, phynvol, phy2nvol
-      REAL, DIMENSION(lm) :: zoovol, zoo2vol, ppphyvol, ppphy2vol, nfixvol, irondepvol
-      REAL, DIMENSION(lm) :: epc100glo, epcal100glo, cglo, ofluxglo
+      REAL, DIMENSION(:), ALLOCATABLE :: dicvol, caco3vol, talvol, phvol, oxyvol, pocvol, gocvol
+      REAL, DIMENSION(:), ALLOCATABLE :: no3vol, nh4vol, dfevol, phyvol, phy2vol, phynvol, phy2nvol
+      REAL, DIMENSION(:), ALLOCATABLE :: zoovol, zoo2vol, ppphyvol, ppphy2vol, nfixvol, irondepvol
+      REAL, DIMENSION(:), ALLOCATABLE :: epc100glo, epcal100glo, cglo, ofluxglo
 
 !----------------
 !  NetCDF-output specific
@@ -149,6 +150,8 @@ SUBROUTINE calc (imt, jmt, km, lm)
       logical exists, exists1, notopen
       real tyear, tdays_elapsed
       CHARACTER(len=32) :: year_arg_in, mon_arg_in
+      integer, dimension(7) :: ierr
+
 
 !----------------
 !     input file stuff
@@ -188,6 +191,36 @@ SUBROUTINE calc (imt, jmt, km, lm)
       CALL getvara ('nav_lat', iou5, imt*jmt, (/1,1,1/), (/imt,jmt,1/), lat2d, 1., 0.)
       CALL getvara ('deptht', iou5, km, (/1/), (/km/), deptht, 1., 0.)
       CALL closefile (iou5)
+
+      ALLOCATE( lon2d(imt,jmt), lat2d(imt,jmt), e1t(imt,jmt), e2t(imt,jmt),      &
+         &      g_mask(imt,jmt), STAT=ierr(1) )
+      ALLOCATE( e3t(imt,jmt,km), t_mask(imt,jmt,km), STAT=ierr(2) )
+      ALLOCATE( deptht(km), STAT=ierr(3) )
+      ALLOCATE( dic(imt,jmt,km,lm), caco3(imt,jmt,km,lm),tal (imt,jmt,km,lm),    &
+         &      ph(imt,jmt,km,lm), oxy(imt,jmt,km,lm), poc(imt,jmt,km,lm),       &
+         &      goc(imt,jmt,km,lm), no3(imt,jmt,km,lm), nh4(imt,jmt,km,lm),      &
+         &      dfe(imt,jmt,km,lm), phy(imt,jmt,km,lm), phy2(imt,jmt,km,lm),     &
+         &      phyn(imt,jmt,km,lm), phy2n(imt,jmt,km,lm), zoo(imt,jmt,km,lm),   &
+         &      zoo2(imt,jmt,km,lm), ppphy(imt,jmt,km,lm), ppphy2(imt,jmt,km,lm),&
+         &      nfix(imt,jmt,km,lm), irondep(imt,jmt,km,lm), STAT=ierr(4) )
+      ALLOCATE( epc100(imt,jmt,lm), epcal100(imt,jmt,lm), cflux(imt,jmt,lm),     &
+         &      oflux(imt,jmt,lm),    STAT=ierr(5) ) 
+      ALLOCATE( dic_z(km, lm), caco3_z(km, lm), tal_z(km, lm), ph_z(km, lm),     &
+         &      oxy_z(km, lm), poc_z(km, lm), goc_z(km, lm), no3_z(km, lm),      &
+         &      nh4_z(km, lm), dfe_z(km, lm), phy_z(km, lm), phy2_z(km, lm),     &
+         &      phyn_z(km, lm), phy2n_z(km, lm), zoo_z(km, lm), zoo2_z(km, lm),  &
+         &      ppphy_z(km, lm), ppphy2_z(km, lm), nfix_z(km, lm),               &
+         &      irondep_z(km, lm), STAT=ierr(6) )
+      ALLOCATE( toc(lm), ton(lm), dicvol(lm), caco3vol(lm), talvol(lm),          &
+         &      phvol(lm), oxyvol(lm), pocvol(lm), gocvol(lm), no3vol(lm),       &
+         &      nh4vol(lm), dfevol(lm), phyvol(lm), phy2vol(lm), phynvol(lm),    &
+         &      phy2nvol(lm), zoovol(lm), zoo2vol(lm), ppphyvol(lm),             &
+         &      ppphy2vol(lm), nfixvol(lm), irondepvol(lm), epc100glo(lm),       &
+         &      epcal100glo(lm), cglo(lm), ofluxglo(lm), STAT=ierr(7) )
+
+         IF (MAXVAL(ierr) /=0) THEN
+           STOP 'Memory allocation error in Physical RTD'
+         ENDIF
 
 !---------------------------------------------------
 ! Read from NetCDF
