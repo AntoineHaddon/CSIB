@@ -174,24 +174,6 @@ SUBROUTINE calc (imt, jmt, km, lm)
 !---------------------------------------------------
 !    Get grid/mask data   
 !---------------------------------------------------
-      print*,'Reading data on NEMO grid...'
-      print*,''
-      print*,'Grid size: imt, jmt, km:', imt, jmt, km
-
-      CALL openfile (fname05,iou4)
-      CALL getvara ('e1t', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1t , 1., 0.)
-      CALL getvara ('e2t', iou4, imt*jmt, (/1,1,1/),  (/imt,jmt,1/),e2t , 1., 0.)
-      CALL getvara ('e3t', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3t , 1., 0.)
-      CALL getvara ('tmask', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/), t_mask , 1., 0.)
-      CALL closefile (iou4)
-
-!     get some more grid information
-      CALL openfile (fname06,iou5)
-      CALL getvara ('nav_lon', iou5, imt*jmt, (/1,1,1/), (/imt,jmt,1/), lon2d, 1., 0.)
-      CALL getvara ('nav_lat', iou5, imt*jmt, (/1,1,1/), (/imt,jmt,1/), lat2d, 1., 0.)
-      CALL getvara ('deptht', iou5, km, (/1/), (/km/), deptht, 1., 0.)
-      CALL closefile (iou5)
-
       ALLOCATE( lon2d(imt,jmt), lat2d(imt,jmt), e1t(imt,jmt), e2t(imt,jmt),      &
          &      g_mask(imt,jmt), STAT=ierr(1) )
       ALLOCATE( e3t(imt,jmt,km), t_mask(imt,jmt,km), STAT=ierr(2) )
@@ -219,8 +201,26 @@ SUBROUTINE calc (imt, jmt, km, lm)
          &      epcal100glo(lm), cglo(lm), ofluxglo(lm), STAT=ierr(7) )
 
          IF (MAXVAL(ierr) /=0) THEN
-           STOP 'Memory allocation error in Physical RTD'
+           STOP 'Memory allocation error in carbon RTD'
          ENDIF
+
+      print*,'Reading data on NEMO grid...'
+      print*,''
+      print*,'Grid size: imt, jmt, km:', imt, jmt, km
+
+      CALL openfile (fname05,iou4)
+      CALL getvara ('e1t', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1t , 1., 0.)
+      CALL getvara ('e2t', iou4, imt*jmt, (/1,1,1/),  (/imt,jmt,1/),e2t , 1., 0.)
+      CALL getvara ('e3t', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3t , 1., 0.)
+      CALL getvara ('tmask', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/), t_mask , 1., 0.)
+      CALL closefile (iou4)
+
+!     get some more grid information
+      CALL openfile (fname06,iou5)
+      CALL getvara ('nav_lon', iou5, imt*jmt, (/1,1,1/), (/imt,jmt,1/), lon2d, 1., 0.)
+      CALL getvara ('nav_lat', iou5, imt*jmt, (/1,1,1/), (/imt,jmt,1/), lat2d, 1., 0.)
+      CALL getvara ('deptht', iou5, km, (/1/), (/km/), deptht, 1., 0.)
+      CALL closefile (iou5)
 
 !---------------------------------------------------
 ! Read from NetCDF
