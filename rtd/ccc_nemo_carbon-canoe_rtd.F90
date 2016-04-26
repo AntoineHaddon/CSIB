@@ -100,7 +100,7 @@ SUBROUTINE calc (imt, jmt, km, lm)
       REAL, DIMENSION(imt, jmt, km, lm) :: no3, nh4, dfe
 
 !     Monthly PHY and Zoo
-      REAL, DIMENSION(imt, jmt, km, lm) :: phy, phy2, zoo, zoo2
+      REAL, DIMENSION(imt, jmt, km, lm) :: phy, phy2, phyn, phy2n, zoo, zoo2
 
 !     Monthly primary production: PPPHY, PPPHY2 
       REAL, DIMENSION(imt, jmt, km, lm) :: ppphy, ppphy2, nfix, irondep
@@ -116,7 +116,8 @@ SUBROUTINE calc (imt, jmt, km, lm)
 ! ======================================================================
       REAL :: dum, dvol, vol 
       REAL :: dicz, caco3z, talz, phz, oxyz, pocz, gocz, no3z, nh4z
-      REAL :: dfez, phyz, phy2z, zooz, zoo2z, ppphyz, ppphy2z, nfixz, irondepz
+      REAL :: dfez, phyz, phy2z, phynz, phy2nz, zooz, zoo2z 
+      REAL :: ppphyz, ppphy2z, nfixz, irondepz
       REAL :: test_var
 
 !     total ocean carbon, nitrogen      
@@ -131,14 +132,14 @@ SUBROUTINE calc (imt, jmt, km, lm)
 ! (1) Global-mean profiles for 3D data:
 
       REAL, DIMENSION(km, lm) :: dic_z, caco3_z, tal_z, ph_z, oxy_z, poc_z
-      REAL, DIMENSION(km, lm) :: goc_z, no3_z, nh4_z, dfe_z, phy_z, phy2_z
+      REAL, DIMENSION(km, lm) :: goc_z, no3_z, nh4_z, dfe_z, phy_z, phy2_z, phyn_z, phy2n_z
       REAL, DIMENSION(km, lm) :: zoo_z, zoo2_z, ppphy_z, ppphy2_z, nfix_z, irondep_z
 
 ! (2) Global-mean (volume weighted) or integral
 
 !     DIC, CaCO3 TA, PH, O2
       REAL, DIMENSION(lm) :: dicvol, caco3vol, talvol, phvol, oxyvol, pocvol, gocvol
-      REAL, DIMENSION(lm) :: no3vol, nh4vol, dfevol, phyvol, phy2vol
+      REAL, DIMENSION(lm) :: no3vol, nh4vol, dfevol, phyvol, phy2vol, phynvol, phy2nvol
       REAL, DIMENSION(lm) :: zoovol, zoo2vol, ppphyvol, ppphy2vol, nfixvol, irondepvol
       REAL, DIMENSION(lm) :: epc100glo, epcal100glo, cglo, ofluxglo
 
@@ -222,6 +223,8 @@ SUBROUTINE calc (imt, jmt, km, lm)
 !        PHY, PHY2, ZOO, ZOO2
          CALL getvara('PHYC',  iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),  phy, 1., 0.)  
          CALL getvara('PHY2C', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), phy2, 1., 0.)    
+         CALL getvara('PHYN',  iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), phyn, 1., 0.)  
+         CALL getvara('PHY2N', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),phy2n, 1., 0.)    
          CALL getvara('ZOO' ,  iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),  zoo, 1., 0.)    
          CALL getvara('ZOO2',  iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), zoo2, 1., 0.)    
       
@@ -264,6 +267,8 @@ SUBROUTINE calc (imt, jmt, km, lm)
 ! PHY, PHY2, ZOO, ZOO2
       phyvol(:)   = 0.0_dp 
       phy2vol(:)  = 0.0_dp 
+      phynvol(:)  = 0.0_dp 
+      phy2nvol(:) = 0.0_dp 
       zoovol(:)   = 0.0_dp 
       zoo2vol(:)  = 0.0_dp 
 ! PPPHY, PPPHY2      
@@ -293,10 +298,12 @@ SUBROUTINE calc (imt, jmt, km, lm)
              CALL area_ave(e1t, e2t, e3t, g_mask, dfe(:, :, k, l), imt, jmt, km, dfez, dvol, k)  
 
     !        PHY, PHY2, ZOO, ZOO2
-             CALL area_ave(e1t, e2t, e3t, g_mask, phy(:, :, k, l),  imt, jmt, km, phyz,  dvol, k)  
-             CALL area_ave(e1t, e2t, e3t, g_mask, phy2(:, :, k, l), imt, jmt, km, phy2z, dvol, k)  
-             CALL area_ave(e1t, e2t, e3t, g_mask, zoo(:, :, k, l),  imt, jmt, km, zooz,  dvol, k)  
-             CALL area_ave(e1t, e2t, e3t, g_mask, zoo2(:, :, k, l), imt, jmt, km, zoo2z, dvol, k) 
+             CALL area_ave(e1t, e2t, e3t, g_mask, phy(:, :, k, l),   imt, jmt, km, phyz,   dvol, k)  
+             CALL area_ave(e1t, e2t, e3t, g_mask, phy2(:, :, k, l),  imt, jmt, km, phy2z,  dvol, k)  
+             CALL area_ave(e1t, e2t, e3t, g_mask, phyn(:, :, k, l),  imt, jmt, km, phynz,  dvol, k)  
+             CALL area_ave(e1t, e2t, e3t, g_mask, phy2n(:, :, k, l), imt, jmt, km, phy2nz, dvol, k)  
+             CALL area_ave(e1t, e2t, e3t, g_mask, zoo(:, :, k, l),   imt, jmt, km, zooz,   dvol, k)  
+             CALL area_ave(e1t, e2t, e3t, g_mask, zoo2(:, :, k, l),  imt, jmt, km, zoo2z,  dvol, k) 
 
              if (exists) then
     !            PPPHY, PPPHY2      
@@ -327,6 +334,8 @@ SUBROUTINE calc (imt, jmt, km, lm)
     !        PHY, PHY2, ZOO, ZOO2
              phy_z(k, l)   = phyz
              phy2_z(k, l)  = phy2z
+             phyn_z(k, l)   = phynz
+             phy2n_z(k, l)  = phy2nz
              zoo_z(k, l)   = zooz
              zoo2_z(k, l)  = zoo2z
          
@@ -356,6 +365,8 @@ SUBROUTINE calc (imt, jmt, km, lm)
     !        PHY, PHY2, ZOO, ZOO2
              phyvol(l)     = phyvol(l)   + phyz*dvol
              phy2vol(l)    = phy2vol(l)  + phy2z*dvol 
+             phynvol(l)    = phynvol(l)  + phynz*dvol
+             phy2nvol(l)   = phy2nvol(l) + phy2nz*dvol 
              zoovol(l)     = zoovol(l)   + zooz*dvol
              zoo2vol(l)    = zoo2vol(l)  + zoo2z*dvol 
 
@@ -375,9 +386,8 @@ SUBROUTINE calc (imt, jmt, km, lm)
          &      + phyvol(l)  + phy2vol(l)  + zoovol(l)  + zoo2vol(l) 
     !     convert from mmol C to Pg C      
           toc(l)  = toc(l)  * 12.0e-18
-          ton(l)  = no3vol(l)  + nh4vol(l)  + 16./122. *                                       &                           
-         &      (phyvol(l)  + phy2vol(l)  + zoovol(l)  + zoo2vol(l)                                &
-         &      + pocvol(l)  + gocvol(l)  ) 
+          ton(l)  = no3vol(l) + nh4vol(l) + phynvol(l) + phy2nvol(l)  +                                         &
+         &      (zoovol(l)  + zoo2vol(l)  + pocvol(l)  + gocvol(l)) * 16./106.
     !     convert to Pg      
           ton(l)  = ton(l)  * 14.007e-18
 
