@@ -18,6 +18,8 @@ MODULE tranxt
    !!             -   !  2010-05  (C. Ethe, G. Madec)  merge TRC-TRA
    !!            3.4.1!  2015-09  (D. Yang) Added diagnostics for the "pure" Kz diffusive trend
    !!                                       in case of ln_traldf_iso
+   !!            3.4.1!  2016-04  (D. Yang) Added diagnostics for the "pure" Kz diffusive trend
+   !!                                       in case of ln_traldf_iso or ln_traldf_grif
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -134,7 +136,7 @@ CONTAINS
          CALL wrk_alloc( jpi, jpj, jpk, ztrdt, ztrds )
          ztrdt(:,:,:) = tsn(:,:,:,jp_tem) 
          ztrds(:,:,:) = tsn(:,:,:,jp_sal)
-         IF( ln_traldf_iso ) THEN              ! diagnose the "pure" Kz diffusive trend 
+         IF( ln_traldf_iso .or. ln_traldf_grif ) THEN              ! diagnose the "pure" Kz diffusive trend 
             CALL trd_tra( kt, 'TRA', jp_tem, jptra_trd_zdfp, ztrdt )
             CALL trd_tra( kt, 'TRA', jp_sal, jptra_trd_zdfp, ztrds )
          ENDIF
