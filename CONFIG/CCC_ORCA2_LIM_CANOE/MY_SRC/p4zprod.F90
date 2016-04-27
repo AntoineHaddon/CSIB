@@ -244,8 +244,9 @@ CONTAINS
               tra(ji,jj,jk,jpdn) = tra(ji,jj,jk,jpdn) + zprond(ji,jj,jk) 
               tra(ji,jj,jk,jpdch) = tra(ji,jj,jk,jpdch) + zprochld(ji,jj,jk) 
               tra(ji,jj,jk,jpdfe) = tra(ji,jj,jk,jpdfe) + zprofed(ji,jj,jk) 
-              tra(ji,jj,jk,jpoxy) = tra(ji,jj,jk,jpoxy) + (zprocn(ji,jj,jk) + zprocd(ji,jj,jk)) &
-                                    + 0.3 * zpronew(ji,jj,jk) * rr_c2n    ! O2 production equals DIC reduction + an additional nitrate term based on Laws 1991
+! O2 production equals DIC reduction + an additional nitrate term based on Laws 1991; this term is set to conserve O2 globally at steady state, i.e. 0.301887 = 2/rr_c2n where 2 mol O2 / mol N is the O2 sink to nitrification
+              tra(ji,jj,jk,jpoxy) = tra(ji,jj,jk,jpoxy) + (zprocn(ji,jj,jk) + zprocd(ji,jj,jk)) !&
+                                     + 0.301887 * (zpronew(ji,jj,jk) + zpronewd(ji,jj,jk)) * rr_c2n   
               tra(ji,jj,jk,jpfer) = tra(ji,jj,jk,jpfer) - zprofen(ji,jj,jk) - zprofed(ji,jj,jk)
               tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) - (zprocn(ji,jj,jk) + zprocd(ji,jj,jk))*1.E-6
               tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) + (zpronew(ji,jj,jk)+zpronewd(ji,jj,jk))*1.E-6 &
