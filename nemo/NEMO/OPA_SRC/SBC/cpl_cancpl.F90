@@ -86,6 +86,11 @@ MODULE cpl_cancpl
                         sn_rcv_w10m, sn_rcv_taumod, sn_rcv_tau  , sn_rcv_dqnsdt, sn_rcv_qsr,   &
                         sn_rcv_qns , sn_rcv_emp   , sn_rcv_rnf  , sn_rcv_cal   , sn_rcv_iceflx  , sn_rcv_co2
 
+  integer :: nn_fsbc, nn_ice, nn_fwb
+  logical :: ln_ana, ln_flx, ln_blk_clio, ln_blk_core, ln_cpl, ln_blk_mfs, ln_apr_dyn, ln_dm2dc, ln_rnf, ln_ssr, ln_cdgw
+  NAMELIST/namsbc/ nn_fsbc, ln_ana, ln_flx, ln_blk_clio, ln_blk_core, ln_cpl,   &
+                   ln_blk_mfs, ln_apr_dyn, nn_ice, ln_dm2dc, ln_rnf, ln_ssr, nn_fwb, ln_cdgw
+
   !--- tmp space for use with MPI gather/scatter operations
   real(wp), allocatable, save, dimension(:,:,:), private :: png
 
@@ -362,7 +367,7 @@ contains
        nemo_recv_var(1:nemo_n_recv_var) = var_list_info(1:nemo_n_recv_var)%name
      endif
 
-     if ( rank == ocn_master .and. verbose > 0 ) then
+     if ( rank == ocn_master .and. verbose > 1 ) then
        write(6,*)"cpl_cancpl_define: nemo_n_send_var=",nemo_n_send_var
        write(6,'(5(2x,a))')nemo_send_var(1:nemo_n_send_var)
        write(6,*)"cpl_cancpl_define: nemo_n_recv_var=",nemo_n_recv_var
@@ -379,6 +384,13 @@ contains
      !--- Set a value for nemo_rn_rdt, defined in com_cpl
      !--- rn_rdt is defined in the module dom_oce
      nemo_rn_rdt = nint(rn_rdt,8)
+
+     REWIND( numnam )                    ! ... read namlist namsbc
+     READ  ( numnam, namsbc )
+
+     !--- Set a value for nemo_nn_fsbc, defined in com_cpl
+     !--- nn_fsbc is defined in the namelist namsbc
+     nemo_nn_fsbc = nn_fsbc
 
      !--- Set a value for nemo_nn_it000, defined in com_cpl
      !--- nn_it000 is defined in the module in_out_manager
