@@ -228,9 +228,9 @@ contains
                  zclname=ssnd(ji)%clname
               endif
 
-              !--- Assign the mpi tag associated with this variable to ssnd
-              cpl_vinfo = find_cpl_vinfo( name=trim(zclname) )
-              ssnd(ji)%nid(jc) = cpl_vinfo%tag
+!xxx              !--- Assign the mpi tag associated with this variable to ssnd
+!xxx              cpl_vinfo = find_cpl_vinfo( name=trim(zclname) )
+!xxx              ssnd(ji)%nid(jc) = cpl_vinfo%tag
 
               nemo_n_send_var = nemo_n_send_var + 1
               if ( nemo_n_send_var > 40 ) then
@@ -255,17 +255,17 @@ contains
                 call ctl_stop("STOP", " cpl_cancpl_define", "Unable to determine send rank")
               endif
 
-              if ( rank == ocn_master ) then
-                !--- Write to NEMO's ocean.output file
-                write(numout,*) "cpl_cancpl_define: Send field ",ji, &
-                    "  name=",trim(zclname)," tag=",cpl_vinfo%tag
-                call flush(numout)
-
-                !--- Also write to stdout (unit 6)
-                write(6,*) "cpl_cancpl_define: Send field ",ji, &
-                    "  name=",trim(zclname)," tag=",cpl_vinfo%tag
-                call flush(6)
-              endif
+!xxx              if ( rank == ocn_master ) then
+!xxx                !--- Write to NEMO's ocean.output file
+!xxx                write(numout,*) "cpl_cancpl_define: Send field ",ji, &
+!xxx                    "  name=",trim(zclname)," tag=",cpl_vinfo%tag
+!xxx                call flush(numout)
+!xxx
+!xxx                !--- Also write to stdout (unit 6)
+!xxx                write(6,*) "cpl_cancpl_define: Send field ",ji, &
+!xxx                    "  name=",trim(zclname)," tag=",cpl_vinfo%tag
+!xxx                call flush(6)
+!xxx              endif
            end do
         endif
      end do
@@ -325,9 +325,9 @@ contains
                  zclname=srcv(ji)%clname
               endif
 
-              !--- Assign the mpi tag associated with this variable to srcv
-              cpl_vinfo = find_cpl_vinfo( name=trim(zclname) )
-              srcv(ji)%nid(jc) = cpl_vinfo%tag
+!xxx              !--- Assign the mpi tag associated with this variable to srcv
+!xxx              cpl_vinfo = find_cpl_vinfo( name=trim(zclname) )
+!xxx              srcv(ji)%nid(jc) = cpl_vinfo%tag
 
               nemo_n_recv_var = nemo_n_recv_var + 1
               if ( nemo_n_recv_var > 40 ) then
@@ -342,17 +342,17 @@ contains
               !--- The rank in srcv also indicates the order data is received
               var_list_info(nemo_n_recv_var)%rank = ji
 
-              if ( rank == ocn_master ) then
-                !--- Write to NEMO's ocean.output file
-                write(numout,*) "cpl_cancpl_define: Recv field ",ji, &
-                    "  name=",trim(zclname)," tag=",cpl_vinfo%tag
-                call flush(numout)
-
-                !--- Also write to stdout (unit 6)
-                write(6,*) "cpl_cancpl_define: Recv field ",ji, &
-                    "  name=",trim(zclname)," tag=",cpl_vinfo%tag
-                call flush(6)
-              endif
+!xxx              if ( rank == ocn_master ) then
+!xxx                !--- Write to NEMO's ocean.output file
+!xxx                write(numout,*) "cpl_cancpl_define: Recv field ",ji, &
+!xxx                    "  name=",trim(zclname)," tag=",cpl_vinfo%tag
+!xxx                call flush(numout)
+!xxx
+!xxx                !--- Also write to stdout (unit 6)
+!xxx                write(6,*) "cpl_cancpl_define: Recv field ",ji, &
+!xxx                    "  name=",trim(zclname)," tag=",cpl_vinfo%tag
+!xxx                call flush(6)
+!xxx              endif
            end do
         endif
      end do
@@ -538,6 +538,54 @@ contains
      !--- Broadcast the initial date and time from the coupler to all tasks
      !--- cpl_time_string is defined in com_cpl
      call bcastGroup(cpl_time_string, cpl_master, MPI_COMM_WORLD)
+
+     ! -----------------------------------------------------------------
+     ! ... Assign MPI tags to ssnd and srcv variables
+     !--- This must be done after the call to cpl_initialize_events
+     !--- because it will define these tags
+     ! -----------------------------------------------------------------
+     if ( nemo_n_send_var > 0 ) then
+       do ji=1,nemo_n_send_var
+          !--- Assign the mpi tag associated with this variable to ssnd
+          cpl_vinfo = find_cpl_vinfo( name=trim(nemo_send_var(ji)) )
+
+         !--- This will only work when ncat == 1
+          ssnd(ji)%nid(1) = cpl_vinfo%tag
+
+         if ( rank == ocn_master ) then
+           !--- Write to NEMO's ocean.output file
+           write(numout,*) "cpl_cancpl_define: Send field ",ji, &
+               "  name=",trim(nemo_send_var(ji))," tag=",cpl_vinfo%tag
+           call flush(numout)
+
+           !--- Also write to stdout (unit 6)
+           write(6,*) "cpl_cancpl_define: Send field ",ji, &
+               "  name=",trim(nemo_send_var(ji))," tag=",cpl_vinfo%tag
+           call flush(6)
+         endif
+       enddo
+     endif
+     if ( nemo_n_recv_var > 0 ) then
+       do ji=1,nemo_n_recv_var
+         !--- Assign the mpi tag associated with this variable to srcv
+         cpl_vinfo = find_cpl_vinfo( name=trim(nemo_recv_var(ji)) )
+
+         !--- This will only work when ncat == 1
+         srcv(ji)%nid(1) = cpl_vinfo%tag
+
+         if ( rank == ocn_master ) then
+           !--- Write to NEMO's ocean.output file
+           write(numout,*) "cpl_cancpl_define: Recv field ",ji, &
+               "  name=",trim(nemo_recv_var(ji))," tag=",cpl_vinfo%tag
+           call flush(numout)
+
+           !--- Also write to stdout (unit 6)
+           write(6,*) "cpl_cancpl_define: Recv field ",ji, &
+               "  name=",trim(nemo_recv_var(ji))," tag=",cpl_vinfo%tag
+           call flush(6)
+         endif
+       enddo
+     endif
 
   end subroutine cpl_cancpl_define
 
