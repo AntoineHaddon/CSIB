@@ -171,7 +171,7 @@ CONTAINS
             zwsbio3 = wsbio3(ji,jj,ikt) * zdep
             trn(ji,jj,ikt,jpgoc) = trn(ji,jj,ikt,jpgoc) - trn(ji,jj,ikt,jpgoc) * zwsbio4
             trn(ji,jj,ikt,jppoc) = trn(ji,jj,ikt,jppoc) - trn(ji,jj,ikt,jppoc) * zwsbio3
-            zocdep(ji,jj) = trn(ji,jj,ikt,jppoc) * wsbio3(ji,jj,ikt) + trn(ji,jj,ikt,jppoc) * wsbio3(ji,jj,ikt)      ! deposition in mmol m^-2 s^-1
+            zocdep(ji,jj) = trn(ji,jj,ikt,jppoc) * wsbio3(ji,jj,ikt) + trn(ji,jj,ikt,jpgoc) * wsbio4(ji,jj,ikt)      ! deposition in mmol m^-2 s^-1
 ! all deposition of POC is returned to bottom layer as inorganic nutrients
             trn(ji,jj,ikt,jpdic) = trn(ji,jj,ikt,jpdic) + (trn(ji,jj,ikt,jpgoc) * zwsbio4 + trn(ji,jj,ikt,jppoc) * zwsbio3) * 1.E-6
             trn(ji,jj,ikt,jpoxy) = trn(ji,jj,ikt,jpoxy) - (trn(ji,jj,ikt,jpgoc) * zwsbio4 + trn(ji,jj,ikt,jppoc) * zwsbio3)
