@@ -203,7 +203,7 @@ cd $path_to_rtd
 if [ $build_nemo_rtd_exe -eq 1 ]; then
   if [ $type = 'carbon-canoe' ]; then
    input_f90='ccc_nemo_carbon-canoe_rtd.F90'
-  if [ $type = 'carbon-pisces' ]; then
+  elif [ $type = 'carbon-pisces' ]; then
    input_f90='ccc_nemo_carbon-pisces_rtd.F90'
   elif [ $type = 'carbon-cmoc' ]; then
    input_f90='ccc_nemo_carbon-cmoc_rtd.F90'
