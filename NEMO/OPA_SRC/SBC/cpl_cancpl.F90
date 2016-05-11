@@ -207,7 +207,7 @@ contains
      endif
 
      ! -----------------------------------------------------------------
-     ! ... Assign MPI tags to ssnd and srcv variables
+     ! ... Assign variable name lists for ssnd and srcv variables
      ! -----------------------------------------------------------------
      !
      !--- Send variables
@@ -227,10 +227,6 @@ contains
               else
                  zclname=ssnd(ji)%clname
               endif
-
-!xxx              !--- Assign the mpi tag associated with this variable to ssnd
-!xxx              cpl_vinfo = find_cpl_vinfo( name=trim(zclname) )
-!xxx              ssnd(ji)%nid(jc) = cpl_vinfo%tag
 
               nemo_n_send_var = nemo_n_send_var + 1
               if ( nemo_n_send_var > 40 ) then
@@ -255,17 +251,6 @@ contains
                 call ctl_stop("STOP", " cpl_cancpl_define", "Unable to determine send rank")
               endif
 
-!xxx              if ( rank == ocn_master ) then
-!xxx                !--- Write to NEMO's ocean.output file
-!xxx                write(numout,*) "cpl_cancpl_define: Send field ",ji, &
-!xxx                    "  name=",trim(zclname)," tag=",cpl_vinfo%tag
-!xxx                call flush(numout)
-!xxx
-!xxx                !--- Also write to stdout (unit 6)
-!xxx                write(6,*) "cpl_cancpl_define: Send field ",ji, &
-!xxx                    "  name=",trim(zclname)," tag=",cpl_vinfo%tag
-!xxx                call flush(6)
-!xxx              endif
            end do
         endif
      end do
@@ -325,10 +310,6 @@ contains
                  zclname=srcv(ji)%clname
               endif
 
-!xxx              !--- Assign the mpi tag associated with this variable to srcv
-!xxx              cpl_vinfo = find_cpl_vinfo( name=trim(zclname) )
-!xxx              srcv(ji)%nid(jc) = cpl_vinfo%tag
-
               nemo_n_recv_var = nemo_n_recv_var + 1
               if ( nemo_n_recv_var > 40 ) then
                 write(numout,*) "cpl_cancpl_define: Too many receive variables"
@@ -342,17 +323,6 @@ contains
               !--- The rank in srcv also indicates the order data is received
               var_list_info(nemo_n_recv_var)%rank = ji
 
-!xxx              if ( rank == ocn_master ) then
-!xxx                !--- Write to NEMO's ocean.output file
-!xxx                write(numout,*) "cpl_cancpl_define: Recv field ",ji, &
-!xxx                    "  name=",trim(zclname)," tag=",cpl_vinfo%tag
-!xxx                call flush(numout)
-!xxx
-!xxx                !--- Also write to stdout (unit 6)
-!xxx                write(6,*) "cpl_cancpl_define: Recv field ",ji, &
-!xxx                    "  name=",trim(zclname)," tag=",cpl_vinfo%tag
-!xxx                call flush(6)
-!xxx              endif
            end do
         endif
      end do
@@ -796,7 +766,7 @@ contains
 
        !--- Ignore the rest of this loop if this is not a coupling time step
        if ( mod(kstep,freq) /= 0 ) then
-         if ( rank == ocn_master .and. verbose > -2 ) then
+         if ( rank == ocn_master .and. verbose > 2 ) then
            write(numout,'(a,i8,3a,i8)')'cpl_cancpl_snd: ',kstep, &
              ' is not a coupling time step for ',trim(ssnd(kid)%clname),'  freq=',freq
            call flush(numout)
@@ -804,7 +774,7 @@ contains
          cycle
        endif
 
-       if ( rank == ocn_master .and. verbose > -2 ) then
+       if ( rank == ocn_master .and. verbose > 2 ) then
          write(numout,*)'cpl_cancpl_snd: NEMO sending ',trim(ssnd(kid)%clname), &
              ' from task ',rank,' to task ',cpl_master,'  kstep=',kstep,'  freq=',freq, &
              ' catagory=',jc
@@ -922,9 +892,6 @@ contains
 
        kinfo = OASIS_idle
 
-write(numout,*)"cpl_cancpl_rcv: tag = ",srcv(kid)%nid(jc),"  for ",trim(srcv(kid)%clname)
-call flush(numout)
-
        !--- This routine is called for every variable that could be coupled
        !--- so ignore variables that are not to be coupled
        !--- srcv(:)%nid(:) is initialized to zero then defined in
@@ -938,7 +905,7 @@ call flush(numout)
 
        !--- Ignore the rest of this loop if this is not a coupling time step
        if ( mod(kstep,freq) /= 0 ) then
-         if ( rank == ocn_master .and. verbose > -2 ) then
+         if ( rank == ocn_master .and. verbose > 2 ) then
            write(numout,'(a,i8,3a,i8)')'cpl_cancpl_rvc: ',kstep, &
              ' is not a coupling time step for ',trim(srcv(kid)%clname),'  freq=',freq
            call flush(numout)
@@ -950,7 +917,7 @@ call flush(numout)
 
        if ( rank == ocn_master ) then
          !--- This is the ocean master task
-         if ( verbose > -2 ) then
+         if ( verbose > 2 ) then
            write(numout,'(3a,i2,a,i4,a,i8,a,i8)') 'cpl_cancpl_rcv: NEMO receiving ', &
              trim(srcv(kid)%clname),' from task ',cpl_master, &
              '  tag=',srcv(kid)%nid(jc),'  kstep=',kstep,'  freq=',freq
