@@ -546,48 +546,51 @@ contains
      ! -----------------------------------------------------------------
      if ( nemo_n_send_var > 0 ) then
        do ji=1,nemo_n_send_var
-         do jc=1,ssnd(ji)%nct
-
-           !--- Assign the mpi tag associated with this variable to ssnd
-           cpl_vinfo = find_cpl_vinfo( name=trim(nemo_send_var(ji)) )
-           ssnd(ji)%nid(jc) = cpl_vinfo%tag
-
-           if ( rank == ocn_master ) then
-             !--- Write to NEMO's ocean.output file
-             write(numout,*) "cpl_cancpl_define: Send field ",ji, &
-                 "  name=",trim(nemo_send_var(ji))," tag=",cpl_vinfo%tag
-             call flush(numout)
-
-             !--- Also write to stdout (unit 6)
-             write(6,*) "cpl_cancpl_define: Send field ",ji, &
-                 "  name=",trim(nemo_send_var(ji))," tag=",cpl_vinfo%tag
-             call flush(6)
+         cpl_vinfo = find_cpl_vinfo( name=trim(nemo_send_var(ji)) )
+         do jx=1,40
+           if ( trim(adjustl(nemo_send_var(ji))) .eq. trim(adjustl(ssnd(jx)%clname)) ) then
+             !--- jx is the index in ssnd for this name
+             do jc=1,ssnd(jx)%nct
+               ssnd(jx)%nid(jc) = cpl_vinfo%tag
+             enddo
            endif
-
          enddo
+         if ( rank == ocn_master ) then
+           !--- Write to NEMO's ocean.output file
+           write(numout,*) "cpl_cancpl_define: Send field ",ji, &
+               "  name=",trim(nemo_send_var(ji))," tag=",cpl_vinfo%tag
+           call flush(numout)
+
+           !--- Also write to stdout (unit 6)
+           write(6,*) "cpl_cancpl_define: Send field ",ji, &
+               "  name=",trim(nemo_send_var(ji))," tag=",cpl_vinfo%tag
+           call flush(6)
+         endif
        enddo
      endif
 
      if ( nemo_n_recv_var > 0 ) then
        do ji=1,nemo_n_recv_var
-         do jc=1,srcv(ji)%nct
-
-           !--- Assign the mpi tag associated with this variable to srcv
-           cpl_vinfo = find_cpl_vinfo( name=trim(nemo_recv_var(ji)) )
-           srcv(ji)%nid(jc) = cpl_vinfo%tag
-
-           if ( rank == ocn_master ) then
-             !--- Write to NEMO's ocean.output file
-             write(numout,*) "cpl_cancpl_define: Recv field ",ji, &
-                 "  name=",trim(nemo_recv_var(ji))," tag=",cpl_vinfo%tag
-             call flush(numout)
-
-             !--- Also write to stdout (unit 6)
-             write(6,*) "cpl_cancpl_define: Recv field ",ji, &
-                 "  name=",trim(nemo_recv_var(ji))," tag=",cpl_vinfo%tag
-             call flush(6)
+         cpl_vinfo = find_cpl_vinfo( name=trim(nemo_recv_var(ji)) )
+         do jx=1,40
+           if ( trim(adjustl(nemo_recv_var(ji))) .eq. trim(adjustl(srcv(jx)%clname)) ) then
+             !--- jx is the index in srcv for this name
+             do jc=1,srcv(jx)%nct
+               srcv(jx)%nid(jc) = cpl_vinfo%tag
+             enddo
            endif
          enddo
+         if ( rank == ocn_master ) then
+           !--- Write to NEMO's ocean.output file
+           write(numout,*) "cpl_cancpl_define: Recv field ",ji, &
+               "  name=",trim(nemo_recv_var(ji))," tag=",cpl_vinfo%tag
+           call flush(numout)
+
+           !--- Also write to stdout (unit 6)
+           write(6,*) "cpl_cancpl_define: Recv field ",ji, &
+               "  name=",trim(nemo_recv_var(ji))," tag=",cpl_vinfo%tag
+           call flush(6)
+         endif
        enddo
      endif
 
