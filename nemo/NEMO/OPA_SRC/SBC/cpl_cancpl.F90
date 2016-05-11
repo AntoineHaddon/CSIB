@@ -919,6 +919,9 @@ contains
 
        kinfo = OASIS_idle
 
+write(numout,*)"cpl_cancpl_rcv: tag = ",srcv(kid)%nid(jc),"  for ",trim(srcv(kid)%clname)
+call flush(numout)
+
        !--- This routine is called for every variable that could be coupled
        !--- so ignore variables that are not to be coupled
        !--- srcv(:)%nid(:) is initialized to zero then defined in
