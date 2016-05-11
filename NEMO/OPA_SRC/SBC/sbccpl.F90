@@ -729,6 +729,8 @@ CONTAINS
 
       DO jn = 1, jprcv                                       ! received fields sent by the atmosphere
 #if defined key_cancpl
+         write(numout,*)"receive field ",trim(srcv(jn)%%clname)," ",jn,srcv(jn)%laction
+         call flush(numout)
          IF( srcv(jn)%laction )   CALL cpl_cancpl_rcv( jn, isec, frcv(jn)%z3, nrcvinfo(jn) )
 #else
          IF( srcv(jn)%laction )   CALL cpl_prism_rcv( jn, isec, frcv(jn)%z3, nrcvinfo(jn) )
