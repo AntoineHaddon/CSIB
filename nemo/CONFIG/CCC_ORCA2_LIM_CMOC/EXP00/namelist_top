@@ -28,25 +28,12 @@
    sn_tracer(1)   = 'DIC     ' , 'Dissolved inorganic Concentration CMOC ',  'mol-C/L' ,  .true.     ,  .true.
    sn_tracer(2)   = 'Alkalini' , 'Total Alkalinity Concentration CMOC    ',  'eq/L '   ,  .true.     ,  .true.
    sn_tracer(3)   = 'O2      ' , 'Dissolved Oxygen Concentration CMOC    ',  'mol-C/L' ,  .true.     ,  .true.
-! <CMOC OR 07/15/2014> ! Removal of all the tracers !     sn_tracer(4)   = 'CaCO3   ' , 'Calcite Concentration                  ',  'mol-C/L' ,  .false.    ,  .true.
-! <CMOC OR 07/15/2014> ! Removal of all the tracers !     sn_tracer(5)   = 'PO4     ' , 'Phosphate Concentration                ',  'mol-C/L' ,  .true.     ,  .true.
    sn_tracer(4)   = 'POC     ' , 'Detritus Concentration CMOC            ',  'mol-C/L' ,  .false.    ,  .true. ! <CMOC OR 07/15/2014> ! Removal of all the tracers !  
-! <CMOC OR 07/15/2014> ! Removal of all the tracers !     sn_tracer(7)   = 'Si      ' , 'Silicate Concentration                 ',  'mol-C/L' ,  .true.     ,  .true.
    sn_tracer(5)   = 'PHY     ' , 'Nanophytoplankton Concentration CMOC   ',  'mol-C/L' ,  .false.    ,  .true. ! <CMOC OR 07/15/2014> ! Removal of all the tracers !  
    sn_tracer(6)   = 'ZOO     ' , 'Microzooplankton Concentration CMOC    ',  'mol-C/L' ,  .false.    ,  .true. ! <CMOC OR 07/15/2014> ! Removal of all the tracers !  
-! <CMOC OR 07/15/2014> ! Removal of all the tracers !     sn_tracer(10)  = 'DOC     ' , 'Dissolved organic Concentration        ',  'mol-C/L' ,  .true.     ,  .true.
-! <CMOC OR 07/09/2014> Removal of Diatoms !     sn_tracer(11)  = 'PHY2    ' , 'Diatoms Concentration                  ',  'mol-C/L' ,  .false.    ,  .true.
-! <CMOC OR 07/15/2014> ! Removal of all the tracers !     sn_tracer(11)  = 'DSi     ' , 'Diatoms Silicate Concentration         ',  'mol-C/L' ,  .false.    ,  .true.
-! <CMOC OR 07/15/2014> ! Removal of all the tracers !     sn_tracer(12)  = 'Fer     ' , 'Dissolved Iron Concentration           ',  'mol-C/L' ,  .true.     ,  .true.
-! <CMOC OR 07/15/2014> ! Removal of all the tracers !     sn_tracer(13)  = 'BFe     ' , 'Big iron particles Concentration       ',  'mol-C/L' ,  .false.    ,  .true.
-! <CMOC OR 07/15/2014> ! Removal of all the tracers !     sn_tracer(14)  = 'SFe     ' , 'Small iron particles Concentration     ',  'mol-C/L' ,  .false.    ,  .true.
-! <CMOC OR 07/15/2014> ! Removal of all the tracers !     sn_tracer(15)  = 'DFe     ' , 'Diatoms iron  Concentration            ',  'mol-C/L' ,  .false.    ,  .true.
-! <CMOC OR 07/15/2014> ! Removal of all the tracers !     sn_tracer(16)  = 'GSi     ' , 'Sinking biogenic Silicate Concentration',  'mol-C/L' ,  .false.    ,  .true.
-! <CMOC OR 07/15/2014> ! Removal of all the tracers !     sn_tracer(17)  = 'NFe     ' , 'Nano iron Concentration                ', 'mol-Chl/L',  .false.    ,  .true.
    sn_tracer(7)  = 'NCHL    ' , 'Nano chlorophyl Concentration CMOC     ',  'mol-C/L' ,  .false.    ,  .true.  ! <CMOC OR 07/15/2014> ! Removal of all the tracers !  
-! <CMOC OR 07/15/2014> ! Removal of all the tracers !     sn_tracer(19)  = 'DCHL    ' , 'Diatoms chlorophyl Concentration       ',  'mol-C/L' ,  .false.    ,  .true.
    sn_tracer(8)  = 'NO3     ' , 'Total Dissolved Nitrogen CMOC          ',  'mol-C/L' ,  .true.     ,  .true.  ! <CMOC OR 07/15/2014> ! Removal of all the tracers !  
-! <CMOC OR 07/15/2014> ! Removal of all the tracers !     sn_tracer(21)  = 'NH4     ' , 'Ammonium Concentration                 ',  'mol-C/L' ,  .false.    ,  .true.
+
 /
 !-----------------------------------------------------------------------
 &namtrc_dta      !    Initialisation from data input file
@@ -57,16 +44,12 @@
    sn_trcdta(1)  = 'data_dic_nomask'        ,        -12        ,  'DIC'     ,    .false.   , .true. , 'yearly'  , ''       , ''
    sn_trcdta(2)  = 'data_alkalini_nomask'   ,        -12        ,  'Alkalini',    .false.   , .true. , 'yearly'  , ''       , ''
    sn_trcdta(3)  = 'data_o2_nomask'         ,        -1         ,  'O2'      ,    .true.    , .true. , 'yearly'  , ''       , ''
-! <CMOC OR 07/15/2014> ! Removal of all the tracers !     sn_trcdta(5)  = 'data_po4_nomask'        ,        -1         ,  'PO4'     ,    .true.    , .true. , 'yearly'  , ''       , ''
-! <CMOC OR 07/15/2014> ! Removal of all the tracers !     sn_trcdta(7)  = 'data_si_nomask'         ,        -1         ,  'Si'      ,    .true.    , .true. , 'yearly'  , ''       , ''
-! <CMOC OR 07/15/2014> ! Removal of all the tracers !     sn_trcdta(10) = 'data_doc_nomask'        ,        -12        ,  'DOC'     ,    .false.   , .true. , 'yearly'  , ''       , ''
-! <CMOC OR 07/15/2014> ! Removal of all the tracers !     sn_trcdta(12) = 'data_fer_nomask'        ,        -12        ,  'Fer'     ,    .false.   , .true. , 'yearly'  , ''       , ''
    sn_trcdta(8) = 'data_no3_nomask'        ,        -1         ,  'NO3'     ,    .true.    , .true. , 'yearly'  , ''       , '' ! <CMOC OR 07/15/2014> ! Removal of all the tracers !  
 !
    cn_dir        =  './'      !  root directory for the location of the data files
    rn_trfac(1)   =   1.0e-06  !  multiplicative factor
    rn_trfac(2)   =   1.0e-06  !  -      -      -     -
-   rn_trfac(3)   =  34.3e-06  !  -      -      -     - ! <CMOC OR 11/30/2013> O2 converted from mL/L (original PISCES conversion 44.6e-06) and converted from O2 to C (106/138)
+   rn_trfac(3)   =  44.6e-06  !  -      -      -     - !!!! <CMOC code OR 11/19/2015> revert to PISCES 1:1 molar O2:C ratio ! <CMOC OR 11/30/2013> O2 converted from mL/L (original PISCES conversion 44.6e-06) and converted from O2 to C (106/138)
 ! <CMOC OR 07/15/2014> ! Removal of all the tracers !     rn_trfac(5)   = 122.0e-06  !  -      -      -     -
 ! <CMOC OR 07/15/2014> ! Removal of all the tracers !     rn_trfac(7)   =   1.0e-06  !  -      -      -     -
 ! <CMOC OR 07/15/2014> ! Removal of all the tracers !     rn_trfac(10)  =   1.0      !  -      -      -     -
@@ -95,7 +78,7 @@
    ln_trcldf_hor    =  .false.  !     horizontal (geopotential)         (require "key_ldfslp" when ln_sco=T)
    ln_trcldf_iso    =  .true.   !     iso-neutral                       (require "key_ldfslp")
 !                               !  Coefficient
-   rn_ahtrc_0       =  2000.    !  horizontal eddy diffusivity for tracers [m2/s]
+   rn_ahtrc_0       =  1000.    !  horizontal eddy diffusivity for tracers [m2/s]
    rn_ahtrb_0       =     0.    !     background eddy diffusivity for ldf_iso [m2/s]
 /
 !-----------------------------------------------------------------------

@@ -12,7 +12,7 @@
 &namtrc     !   tracers definition
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
    nn_dttrc      =  1        !  time step frequency for passive sn_tracers      
-   nn_writetrc   =  1460     !  time step frequency for sn_tracer outputs
+   nn_writetrc   =  5475     !  time step frequency for sn_tracer outputs
    ln_rsttr      = .false.   !  start from a restart file (T) or not (F)
    nn_rsttr      =   0       !  restart control = 0 initial time step is not compared to the restart file value
                              !                  = 1 do not use the value in the restart file
@@ -97,7 +97,7 @@
    ln_trcldf_hor    =  .false.  !     horizontal (geopotential)         (require "key_ldfslp" when ln_sco=T)
    ln_trcldf_iso    =  .true.   !     iso-neutral                       (require "key_ldfslp")
 !                               !  Coefficient
-   rn_ahtrc_0       =  2000.    !  horizontal eddy diffusivity for tracers [m2/s]
+   rn_ahtrc_0       =  1000.    !  horizontal eddy diffusivity for tracers [m2/s]
    rn_ahtrb_0       =     0.    !     background eddy diffusivity for ldf_iso [m2/s]
 /
 !-----------------------------------------------------------------------
@@ -129,7 +129,7 @@
 &namtrc_trd       !   diagnostics on tracer trends        ('key_trdtrc')
 !                          or mixed-layer trends          ('key_trdmld_trc')
 !----------------------------------------------------------------------
-   nn_trd_trc  =  1460      !  time step frequency and tracers trends
+   nn_trd_trc  =  5475      !  time step frequency and tracers trends
    nn_ctls_trc =   0        !  control surface type in mixed-layer trends (0,1 or n<jpk)
    rn_ucf_trc  =   1        !  unit conversion factor (=1 -> /seconds ; =86400. -> /day)
    ln_trdmld_trc_restart = .false.  !  restart for ML diagnostics
@@ -142,5 +142,5 @@
 &namtrc_dia       !   parameters for passive tracer additional diagnostics
 !----------------------------------------------------------------------
    ln_diatrc     =  .true.   !  save additional diag. (T) or not (F)
-   nn_writedia   =  1460     !  time step frequency for diagnostics
+   nn_writedia   =  5475     !  time step frequency for diagnostics
 /

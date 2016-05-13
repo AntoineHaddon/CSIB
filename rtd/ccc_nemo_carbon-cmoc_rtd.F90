@@ -6,6 +6,12 @@ IMPLICIT NONE
 !
 ! HISTORY:
 ! -------
+! O. Riche    Jan    2016   Fix total N and C RTD, issue: unit problem across 
+!                           variables; outputs are in nitrogen except DIC/TA.
+!
+!                           Add denitrification RTD and reactivate PIC export
+!                           (l. 241 'EPCAL100' --> 'EPCALC100').
+!
 ! N. Swart    Dec    2015   Abstract all calculations to ccc_nemo_rtd_utils
 !                           module, which is shared between all rtd.
 !
@@ -109,7 +115,7 @@ SUBROUTINE calc (imt, jmt, km, lm)
       REAL, DIMENSION(imt, jmt, lm)     :: epc100, epcal100
 
 !     Monthly surface fluxes of DIC, O2, N2, Fe
-      REAL, DIMENSION(imt, jmt, lm)     :: cflux, oflux, nfix, irondep
+      REAL, DIMENSION(imt, jmt, lm)     :: cflux, oflux, nfix, irondep, denit !<CMOC code OR 15/01/2016> denitrification
 
 ! ======================================================================
 !     Pre-computed data  
@@ -145,7 +151,7 @@ SUBROUTINE calc (imt, jmt, km, lm)
       REAL, DIMENSION(lm) :: dicvol, caco3vol, talvol, phvol, oxyvol, pocvol, gocvol
       REAL, DIMENSION(lm) :: docvol, no3vol, nh4vol, po4vol, sivol, phyvol, phy2vol
       REAL, DIMENSION(lm) :: zoovol, zoo2vol, ppphyvol, ppphy2vol
-      REAL, DIMENSION(lm) :: epc100glo, epcal100glo, cglo, ofluxglo, nfixglo, irondepglo
+      REAL, DIMENSION(lm) :: epc100glo, epcal100glo, cglo, ofluxglo, nfixglo, irondepglo, denitglo !<CMOC code OR 15/01/2016> denitrification
 
 !----------------
 !  NetCDF-output specific
@@ -233,10 +239,11 @@ SUBROUTINE calc (imt, jmt, km, lm)
 
 !       2-D :  EPCAL100, DIC flux, Oflux, Nfix, Irondep
           CALL getvara('EPC100',   iou6, imt*jmt*lm, (/1,1,1/), (/imt,jmt,lm/),   epc100, 1., 0.)    
-          CALL getvara('EPCAL100', iou6, imt*jmt*lm, (/1,1,1/), (/imt,jmt,lm/), epcal100, 1., 0.)    
+          CALL getvara('EPCALC100',iou6, imt*jmt*lm, (/1,1,1/), (/imt,jmt,lm/), epcal100, 1., 0.)    
           CALL getvara('Cflx',     iou6, imt*jmt*lm, (/1,1,1/), (/imt,jmt,lm/),    cflux, 1., 0.)    
           CALL getvara('Oflx',     iou6, imt*jmt*lm, (/1,1,1/), (/imt,jmt,lm/),    oflux, 1., 0.)    
           CALL getvara('Nfix',     iou6, imt*jmt*lm, (/1,1,1/), (/imt,jmt,lm/),     nfix, 1., 0.)    
+          CALL getvara('Denit',    iou6, imt*jmt*lm, (/1,1,1/), (/imt,jmt,lm/),    denit, 1., 0.)     !<CMOC code OR 15/01/2016> denitrification
       endif 
 
       CALL closeall ! close all open netcdf files
@@ -344,11 +351,11 @@ SUBROUTINE calc (imt, jmt, km, lm)
           enddo  ! depth, k        
 
     !     compute toc and ton
-          toc(l) = dicvol(l)  + pocvol(l) + phyvol(l) + zoovol(l)                                          
+          toc(l) = dicvol(l)  + 106./16. * ( pocvol(l) + phyvol(l) + zoovol(l) )                                         
     !     convert from mmol C to Pg C      
           toc(l) = toc(l) * 12.0e-18
           print*,'toc', toc(l)
-          ton(l) = no3vol(l) + 16./122.*(phyvol(l) + zoovol(l)  + pocvol(l))                                             
+          ton(l) = no3vol(l) + phyvol(l) + zoovol(l)  + pocvol(l)                                             
     !     convert to Pg      
           ton(l) = ton(l) * 14.007e-18
 
@@ -387,14 +394,16 @@ SUBROUTINE calc (imt, jmt, km, lm)
              CALL area_ave_flx (e1t, e2t, g_mask, cflux(:,:,l),   imt, jmt, cglo(l),       dum) 
              CALL area_ave_flx (e1t, e2t, g_mask, oflux(:,:,l),   imt, jmt, ofluxglo(l),   dum) 
              CALL area_ave_flx (e1t, e2t, g_mask, nfix(:,:,l),    imt, jmt, nfixglo(l),   dum) 
+             CALL area_ave_flx (e1t, e2t, g_mask, denit(:,:,l),   imt, jmt, denitglo(l),  dum) !<CMOC code OR 15/01/2016> denitrification
 
-    !       <PISCES OR 01/15/2014> convert into PgC/yr 
+    !        convert into PgC/yr 
              cglo(l)         = cglo(l)        * dum * 12.e-15 * 86400 * 365
              epc100glo(l)    = epc100glo(l)   * dum * 12.e-15 * 86400 * 365
              epcal100glo(l)  = epcal100glo(l) * dum * 12.e-15 * 86400 * 365
 
     !        convert to TgN/yr (assuming this is N not N2)
              nfixglo(l)      = nfixglo(l)  * dum * 14.007e-12 * 86400 * 365
+             denitglo(l)     = denitglo(l) * dum * 14.007e-12 * 86400 * 365  !<CMOC code OR 15/01/2016>
 
     !        convert to mol O2/yr
              ofluxglo(l)     = ofluxglo(l) * dum *  86400 * 365
@@ -539,6 +548,11 @@ SUBROUTINE calc (imt, jmt, km, lm)
               CALL defvar ('NFIX', iou, 1, (/id_time/), -1.e4                    & 
      &            , 1.e4,' ', 'F', 'Nitrogen fixation at surface'                &
      &            , 'NFIX', 'TgN/yr')
+
+!             Denti <CMOC code OR 01/15/2016>
+              CALL defvar ('DENIT', iou, 1, (/id_time/), -1.e4                    & 
+     &            , 1.e4,' ', 'F', 'Water column denitrification '                &
+     &            , 'DENIT', 'TgN/yr')
           endif
 
           CALL enddef (iou)
@@ -614,7 +628,12 @@ SUBROUTINE calc (imt, jmt, km, lm)
 
 !           Nfix
             CALL putvars ('NFIX', iou, ntrec2, nfixglo(l), 1., 0.)
+            
+!           Denit
+            CALL putvars ('DENIT', iou, ntrec2, denitglo(l), 1., 0.)  !<CMOC code OR 15/01/2016>
 
+            
+            
         endif
       enddo
       print*, 'closing netcdf'

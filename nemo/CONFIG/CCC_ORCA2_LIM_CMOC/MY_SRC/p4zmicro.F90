@@ -60,31 +60,35 @@ CONTAINS
          DO jj = 1, jpj
             DO ji = 1, jpi
 
-	       ! Conserve the PISCES code principle of a minimum phytoplankton biomass
+               ! Conserve the PISCES code principle of a minimum phytoplankton biomass
                zcompaph  = MAX( ( trn(ji,jj,jk,jpphy) - xthreshphy ), 0.e0 )
                !
                ! Convert kp_cmoc from uM N (mmol N m^-3) to mol C L^-1 with 1e-6_wp * cnrr_cmoc
                ! lambda formula in Zahariev et al 2008
                ! grazing tendency
-               zgrazpcmoc= xstep   * rm_cmoc * zcompaph  * trn(ji,jj,jk,jpphy)  / ( kp_cmoc * 1e-6_wp * cnrr_cmoc * kp_cmoc * 1e-6_wp * cnrr_cmoc + trn(ji,jj,jk,jpphy) * trn(ji,jj,jk,jpphy) + rtrn ) * trn(ji,jj,jk,jpzoo)
+               zgrazpcmoc = xstep   * rm_cmoc * zcompaph  * trn(ji,jj,jk,jpphy)  /       &
+               &            ( kp_cmoc * 1e-6_wp * cnrr_cmoc * kp_cmoc * 1e-6_wp *        &
+               &             cnrr_cmoc + trn(ji,jj,jk,jpphy)                             &
+               &            * trn(ji,jj,jk,jpphy) + rtrn ) * trn(ji,jj,jk,jpzoo)
                ! POC tendency due to detritus fraction of grazed phytoplankton
                zgrapoc   = ( 1._wp - ga_cmoc ) * zgrazpcmoc
 
                ! zooplankton tendencies
                tra(ji,jj,jk,jpzoo) = tra(ji,jj,jk,jpzoo) & 
                ! grazing
-               &		   +  ga_cmoc * zgrazpcmoc &
+               &                     +  ga_cmoc * zgrazpcmoc &
                ! linear mortality and loss to POC
-               &		   - ( mzn_cmoc + mzd_cmoc ) * xstep * trn(ji,jj,jk,jpzoo) &
+               &                     - ( mzn_cmoc + mzd_cmoc ) * xstep * trn(ji,jj,jk,jpzoo) &
                ! quadratic mortality ( convert mz2_cmoc from (molN m^-3)^-1 to (molC L^-1)^-1 )
-               &		   - mz2_cmoc * ncrr_cmoc * 1e3_wp * xstep * trn(ji,jj,jk,jpzoo) * trn(ji,jj,jk,jpzoo)
+               &                     - mz2_cmoc * ncrr_cmoc * 1e3_wp                         &
+               &                      * xstep * trn(ji,jj,jk,jpzoo) * trn(ji,jj,jk,jpzoo)
 
                ! contribution to phytoplankton and POC 
                tra(ji,jj,jk,jpphy) = tra(ji,jj,jk,jpphy) - zgrazpcmoc
                tra(ji,jj,jk,jpnch) = tra(ji,jj,jk,jpnch) - zgrazpcmoc * trn(ji,jj,jk,jpnch)/(trn(ji,jj,jk,jpphy)+rtrn)
                tra(ji,jj,jk,jppoc) = tra(ji,jj,jk,jppoc) + zgrapoc
 
-	       ! mortality contribution to nutrients, carbon and oxygen cycle
+               ! mortality contribution to nutrients, carbon and oxygen cycle
                tra(ji,jj,jk,jpno3) = tra(ji,jj,jk,jpno3) + mzn_cmoc * xstep * trn(ji,jj,jk,jpzoo)
                tra(ji,jj,jk,jpoxy) = tra(ji,jj,jk,jpoxy) - mzn_cmoc * xstep * trn(ji,jj,jk,jpzoo)
                tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) + mzn_cmoc * xstep * trn(ji,jj,jk,jpzoo)
