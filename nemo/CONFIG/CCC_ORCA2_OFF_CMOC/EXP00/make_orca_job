@@ -69,6 +69,9 @@ nemo_forcing=bulk
 # nemo_carbon = on  means include PISCES
 nemo_carbon=on
 
+# nemo_cmoc = off means use PISCES
+# nemo_cmoc = on means use CMOC
+nemo_cmoc=on
 # pisces_offline = off means use online model
 # pisces_offline = on  means use offline model with prescribed velocities
 pisces_offline=on
@@ -224,6 +227,8 @@ cat <<end_job_defs >$job_defs
   nemo_namelist_ice=${runid}_ccc_orca2_off_cmoc_namelist_ice
   nemo_namelist_pisces=${runid}_ccc_orca2_off_cmoc_namelist_pisces
   nemo_namelist_top=${runid}_ccc_orca2_off_cmoc_namelist_top
+# Additional namelist for CMOC
+  nemo_namelist_cmoc=${runid}_ccc_orca2_off_cmoc_namelist_cmoc
 # nn_ice = 0 no ice boundary condition
 #          1 use observed ice-cover;
 #          2 LIM2
@@ -276,6 +281,7 @@ debug=off
   nemo_mask_itf=nemo_3.3_orca2_mask_itf.nc
   nemo_M2rowdrg=nemo_3.3_orca2_m2rowdrg.nc
   nemo_K1rowdrg=nemo_3.3_orca2_k1rowdrg.nc
+  nemo_Eddyengf=uncs_orca2_eddy_mix_data_field_nomask.nc
   nemo_geothermal_heating=nemo_3.3_orca2_geothermal_heating.nc
   nemo_runoff_core_monthly=nemo_3.3_orca2_runoff_core_monthly.nc
   nemo_sss_data=nemo_3.3_orca2_sss_data.nc
@@ -384,6 +390,9 @@ debug=off
 
 # The following determines if carbon is on or not:
   nemo_carbon=${nemo_carbon}
+
+# The following determines if carbon code is CMOC or PISCES:
+  nemo_cmoc=${nemo_cmoc}
 
 # The following determines if the offline model is used:
   pisces_offline=${pisces_offline}
