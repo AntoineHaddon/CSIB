@@ -243,6 +243,7 @@ CONTAINS
       ENDIF
       !
       CALL wrk_dealloc( jpi, jpj, zkgco2, zkgo2, zh2co3, zoflx )
+      CALL wrk_dealloc( jpi, jpj, jpk, zph3d )
       !
       IF( nn_timing == 1 )  CALL timing_stop('p4z_flx')
       !
