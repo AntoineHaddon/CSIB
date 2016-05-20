@@ -533,6 +533,9 @@ CONTAINS
       CASE( 'weighted oce and ice' )
          ssnd( (/jps_toce, jps_tice/) )%laction = .TRUE.
          IF ( TRIM( sn_snd_temp%clcat ) == 'yes' )  ssnd(jps_tice)%nct = jpl
+      CASE( 'oce and ice' )
+         ssnd( (/jps_toce, jps_tice/) )%laction = .TRUE.
+         IF ( TRIM( sn_snd_temp%clcat ) == 'yes' )  ssnd(jps_tice)%nct = jpl
       CASE( 'mixed oce-ice'        )   ;   ssnd(   jps_tmix             )%laction = .TRUE.
       CASE default   ;   CALL ctl_stop( 'sbc_cpl_init: wrong definition of sn_snd_temp%cldes' )
       END SELECT
@@ -1412,6 +1415,17 @@ CONTAINS
             ztmp3(:,:,:) = 0.0
             DO jl=1,jpl
                ztmp3(:,:,1) = ztmp3(:,:,1) + tn_ice(:,:,jl) * a_i(:,:,jl)
+            ENDDO
+         CASE default                  ;   CALL ctl_stop( 'sbc_cpl_snd: wrong definition of sn_snd_temp%clcat' )
+         END SELECT
+      CASE( 'oce and ice' )   ;   ztmp1(:,:) = ( tsn(:,:,1,jp_tem) + rt0 )
+         SELECT CASE( sn_snd_temp%clcat )
+         CASE( 'yes' )   
+            ztmp3(:,:,1:jpl) = tn_ice(:,:,1:jpl)
+         CASE( 'no' )
+            ztmp3(:,:,:) = 0.0
+            DO jl=1,jpl
+               ztmp3(:,:,1) = ztmp3(:,:,1) + tn_ice(:,:,jl)
             ENDDO
          CASE default                  ;   CALL ctl_stop( 'sbc_cpl_snd: wrong definition of sn_snd_temp%clcat' )
          END SELECT
