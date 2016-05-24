@@ -572,10 +572,13 @@
       done
     fi
 
-    nemors_used_in_coupler=on
+    nemors_used_in_coupler=off
     ToF nemors_used_in_coupler
     if [ $nemors_used_in_coupler -eq 1 ]; then
       # Build global restart files for use in the coupler
+      echo "#####################################"
+      echo "###   Rebuilding global restart files
+      echo "#####################################"
 
       nemo_rebuild_exec=nemo_3.4_orca2_lim_flio_rbld_exe
       nemo_rebuild_sh=nemo_3.4_orca2_lim_rebuild_sh
