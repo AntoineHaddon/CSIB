@@ -572,7 +572,7 @@
       done
     fi
 
-    nemors_used_in_coupler=off
+    nemors_used_in_coupler=${nemors_used_in_coupler:=off}
     ToF nemors_used_in_coupler
     if [ $nemors_used_in_coupler -eq 1 ]; then
       # Build global restart files for use in the coupler
@@ -592,31 +592,31 @@
       chmod u+x REBUILD
 
       if [ -s input_ocn_restart_file_names ]; then
-        rm -f NEMO_ocn_global_rs
+        rm -f NEMO_ocn_global_rs.nc
         rs_file_names=`cat input_ocn_restart_file_names|xargs`
         [ -z "$rs_file_names" ] && bail "Missing NEMO_ocn_global_rs input file names"
-        echo "REBUILD $rs_file_names NEMO_ocn_global_rs"
-        REBUILD $rs_file_names NEMO_ocn_global_rs
-        echo "Created file NEMO_ocn_global_rs"
+        echo "REBUILD $rs_file_names NEMO_ocn_global_rs.nc"
+        REBUILD $rs_file_names NEMO_ocn_global_rs.nc
+        echo "Created file NEMO_ocn_global_rs.nc"
       else
         bail "Attempting to rebuild the NEMO ocn restart but task specific restart files are not available."
       fi
 
       if [ -s input_ice_restart_file_names ]; then
-        rm -f NEMO_ice_global_rs
+        rm -f NEMO_ice_global_rs.nc
         rs_file_names=`cat input_ice_restart_file_names|xargs`
         [ -z "$rs_file_names" ] && bail "Missing NEMO_ice_global_rs input file names"
-        echo "REBUILD $rs_file_names NEMO_ice_global_rs"
-        REBUILD $rs_file_names NEMO_ice_global_rs
-        echo "Created file NEMO_ice_global_rs"
+        echo "REBUILD $rs_file_names NEMO_ice_global_rs.nc"
+        REBUILD $rs_file_names NEMO_ice_global_rs.nc
+        echo "Created file NEMO_ice_global_rs.nc"
       fi
 
       if [ -s input_trc_restart_file_names ]; then
-        rm -f NEMO_trc_global_rs
+        rm -f NEMO_trc_global_rs.nc
         rs_file_names=`cat input_trc_restart_file_names|xargs`
         [ -z "$rs_file_names" ] && bail "Missing NEMO_trc_global_rs input file names"
-        REBUILD $rs_file_names NEMO_trc_global_rs
-        echo "Created file NEMO_trc_global_rs"
+        REBUILD $rs_file_names NEMO_trc_global_rs.nc
+        echo "Created file NEMO_trc_global_rs.nc"
       fi
     fi
 
