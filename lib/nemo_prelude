@@ -572,9 +572,9 @@
       done
     fi
 
-    nemors_used_in_coupler=${nemors_used_in_coupler:=off}
-    ToF nemors_used_in_coupler
-    if [ $nemors_used_in_coupler -eq 1 ]; then
+    nemo_rebuild_rsin=${nemo_rebuild_rsin:=off}
+    ToF nemo_rebuild_rsin
+    if [ $nemo_rebuild_rsin -eq 1 ]; then
       # Build global restart files for use in the coupler
       echo "#####################################"
       echo "###   Rebuilding global restart files"
