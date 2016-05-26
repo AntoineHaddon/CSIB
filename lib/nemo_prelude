@@ -592,29 +592,29 @@
       chmod u+x REBUILD
 
       if [ -s input_ocn_restart_file_names ]; then
-        rm -f NEMO_ocn_global_rs.nc
+        rm -f NEMO_ocn_global_rsin.nc
         rs_file_names=`cat input_ocn_restart_file_names|xargs`
-        [ -z "$rs_file_names" ] && bail "Missing NEMO_ocn_global_rs input file names"
-        REBUILD -o NEMO_ocn_global_rs.nc $rs_file_names
-        echo "Created file NEMO_ocn_global_rs.nc"
+        [ -z "$rs_file_names" ] && bail "Missing NEMO_ocn_global_rsin input file names"
+        REBUILD -o NEMO_ocn_global_rsin.nc $rs_file_names
+        echo "Created file NEMO_ocn_global_rsin.nc"
       else
         bail "Attempting to rebuild the NEMO ocn restart but task specific restart files are not available."
       fi
 
       if [ -s input_ice_restart_file_names ]; then
-        rm -f NEMO_ice_global_rs.nc
+        rm -f NEMO_ice_global_rsin.nc
         rs_file_names=`cat input_ice_restart_file_names|xargs`
-        [ -z "$rs_file_names" ] && bail "Missing NEMO_ice_global_rs input file names"
-        REBUILD -o NEMO_ice_global_rs.nc $rs_file_names
-        echo "Created file NEMO_ice_global_rs.nc"
+        [ -z "$rs_file_names" ] && bail "Missing NEMO_ice_global_rsin input file names"
+        REBUILD -o NEMO_ice_global_rsin.nc $rs_file_names
+        echo "Created file NEMO_ice_global_rsin.nc"
       fi
 
       if [ -s input_trc_restart_file_names ]; then
-        rm -f NEMO_trc_global_rs.nc
+        rm -f NEMO_trc_global_rsin.nc
         rs_file_names=`cat input_trc_restart_file_names|xargs`
-        [ -z "$rs_file_names" ] && bail "Missing NEMO_trc_global_rs input file names"
-        REBUILD -o NEMO_trc_global_rs.nc $rs_file_names
-        echo "Created file NEMO_trc_global_rs.nc"
+        [ -z "$rs_file_names" ] && bail "Missing NEMO_trc_global_rsin input file names"
+        REBUILD -o NEMO_trc_global_rsin.nc $rs_file_names
+        echo "Created file NEMO_trc_global_rsin.nc"
       fi
     fi
 
