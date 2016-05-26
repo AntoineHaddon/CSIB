@@ -595,8 +595,7 @@
         rm -f NEMO_ocn_global_rs.nc
         rs_file_names=`cat input_ocn_restart_file_names|xargs`
         [ -z "$rs_file_names" ] && bail "Missing NEMO_ocn_global_rs input file names"
-        echo "REBUILD $rs_file_names NEMO_ocn_global_rs.nc"
-        REBUILD $rs_file_names NEMO_ocn_global_rs.nc
+        REBUILD -o NEMO_ocn_global_rs.nc $rs_file_names
         echo "Created file NEMO_ocn_global_rs.nc"
       else
         bail "Attempting to rebuild the NEMO ocn restart but task specific restart files are not available."
@@ -606,8 +605,7 @@
         rm -f NEMO_ice_global_rs.nc
         rs_file_names=`cat input_ice_restart_file_names|xargs`
         [ -z "$rs_file_names" ] && bail "Missing NEMO_ice_global_rs input file names"
-        echo "REBUILD $rs_file_names NEMO_ice_global_rs.nc"
-        REBUILD $rs_file_names NEMO_ice_global_rs.nc
+        REBUILD -o NEMO_ice_global_rs.nc $rs_file_names
         echo "Created file NEMO_ice_global_rs.nc"
       fi
 
@@ -615,7 +613,7 @@
         rm -f NEMO_trc_global_rs.nc
         rs_file_names=`cat input_trc_restart_file_names|xargs`
         [ -z "$rs_file_names" ] && bail "Missing NEMO_trc_global_rs input file names"
-        REBUILD $rs_file_names NEMO_trc_global_rs.nc
+        REBUILD -o NEMO_trc_global_rs.nc $rs_file_names
         echo "Created file NEMO_trc_global_rs.nc"
       fi
     fi
