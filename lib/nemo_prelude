@@ -572,12 +572,15 @@
       done
     fi
 
-    nemo_rebuild_rsin=${nemo_rebuild_rsin:=''}
-    if [ -n "$nemo_rebuild_rsin" ]; then
+    nemo_rebuild_rsin=${nemo_rebuild_rsin:='off'}
+    ToF nemo_rebuild_rsin
+    if [ $nemo_rebuild_rsin -eq 1 ]; then
       # Build global restart files for use in the coupler
       echo "#####################################"
       echo "###   Rebuilding global restart files"
       echo "#####################################"
+
+      nemo_rebuild_rs_name=$nemo_rs
 
       # Create a temporary directory in which we rebuild the restarts
       tmp_rebuild_dir=rebuild_rs_$$
@@ -585,9 +588,9 @@
       PARENT_rb=`pwd`
       cd $tmp_rebuild_dir
 
-      access RESTART_TO_REBUILD $nemo_rebuild_rsin
-      [ -s RESTART_TO_REBUILD ] || bail "Cannot access $nemo_rebuild_rsin"
-      tar xf RESTART_TO_REBUILD || bail "Cannot extract files from $nemo_rebuild_rsin"
+      access RESTART_TO_REBUILD $nemo_rebuild_rs_name
+      [ -s RESTART_TO_REBUILD ] || bail "Cannot access $nemo_rebuild_rs_name"
+      tar xf RESTART_TO_REBUILD || bail "Cannot extract files from $nemo_rebuild_rs_name"
       release RESTART_TO_REBUILD
 
 
@@ -610,7 +613,7 @@
         echo "Created file NEMO_ocn_global_rsin.nc"
         mv NEMO_ocn_global_rsin.nc $PARENT_rb
       else
-        bail "No ocean restart files were found in $nemo_rebuild_rsin"
+        bail "No ocean restart files were found in $nemo_rebuild_rs_name"
       fi
 
       # Ice restart files
@@ -621,7 +624,7 @@
         echo "Created file NEMO_ice_global_rsin.nc"
         mv NEMO_ice_global_rsin.nc $PARENT_rb
       else
-        echo "No ice restart files were found in $nemo_rebuild_rsin"
+        echo "No ice restart files were found in $nemo_rebuild_rs_name"
       fi
 
       # Tracer restart files
@@ -632,7 +635,7 @@
         echo "Created file NEMO_trc_global_rsin.nc"
         mv NEMO_trc_global_rsin.nc $PARENT_rb
       else
-        echo "No tracer restart files were found in $nemo_rebuild_rsin"
+        echo "No tracer restart files were found in $nemo_rebuild_rs_name"
       fi
 
       # Return to the model execution directory
