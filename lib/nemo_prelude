@@ -48,7 +48,7 @@
   nemo_force_namelist=${nemo_force_namelist:=off}
 
 # Define nemo_steps_in_job to override the length of run that is set below
-  nemo_steps_in_job=''
+  nemo_steps_in_job=${nemo_steps_in_job:=''}
 
   # Miscelaneous local definitions
 
