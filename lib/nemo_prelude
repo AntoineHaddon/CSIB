@@ -47,6 +47,9 @@
   nemo_namelist_ice=${nemo_namelist_ice:=cancpl_dev_nemo_ice_in}
   nemo_force_namelist=${nemo_force_namelist:=off}
 
+# Define nemo_steps_in_job to override the length of run that is set below
+  nemo_steps_in_job=''
+
   # Miscelaneous local definitions
 
   # ---Start_submit_ignore_code----
@@ -182,6 +185,32 @@
             bail "month = $1 is out of range" ;;
     esac
   }
+
+  acc_cp() {
+    # Attempt to access a file and if that fails attempt to copy it
+    [ -z "$1" ] && bail "--> acc_cp <-- requires a local file name as the first arg"
+    local_file=$1
+    [ -z "$2" ] && bail "--> acc_cp $1 <-- requires a remote file name as the second arg"
+    remote_file=$2
+    shift 2
+    # Alternate path to a directory where .queue/.crawork will be found
+    JHOME=''
+    if [ -n "$JHOME" -a x"$JHOME" != x"$HOME" ]; then
+      # Allow optional reset of DATAPATH/RUNPATH
+      JHOME_DATA=''
+      DATAPATH=${JHOME_DATA:=$DATAPATH}
+      RUNPATH=${JHOME_DATA:=$RUNPATH}
+    fi
+    access $local_file $remote_file $* ||
+      cp $remote_file $local_file ||
+      bail "--> acc_cp $local_file $remote_file $* <-- Unable to locate $remote_file"
+
+    sha1sum $local_file >> xnemo_access_log
+  }
+
+  # Touch xnemo_access_log so that it will exist even if it never gets apppended to
+  rm -f xnemo_access_log
+  touch xnemo_access_log
 
   # These variables are set when the job string is created
   previous_year=${previous_year:=NotSet}
@@ -351,7 +380,7 @@
 
   # Total number of time steps in the current job
   [ -z "$days_in_job" ] && bail "days_in_job must be defined"
-  steps_in_job=`echo $steps_per_day $days_in_job|awk '{printf "%d",$1*$2}' -`
+  steps_in_job=${nemo_steps_in_job:=`echo $steps_per_day $days_in_job|awk '{printf "%d",$1*$2}' -`}
 
   # The number of CICE time steps for each call to cice (used by cice)
   npt=${cice_npt:=1}
