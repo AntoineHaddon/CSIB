@@ -318,7 +318,8 @@ end_reorder_list
 	# Get a list of files in the current dir for human perusal
 	pwd
 	ls -l
-	bail "nemo_save_hist = on but no history files were saved."
+	echo "nemo_save_hist = on but no history files were saved."
+	# bail "nemo_save_hist = on but no history files were saved."
       fi
 
     fi
