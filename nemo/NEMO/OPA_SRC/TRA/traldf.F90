@@ -5,6 +5,9 @@ MODULE traldf
    !!=====================================================================
    !! History :  9.0  ! 2005-11 (G. Madec)  Original code
    !!       NEMO 3.0  ! 2008-01  (C. Ethe, G. Madec)  merge TRC-TRA 
+   !!       NEMO 3.4.1! 2016-04 (D. Yang) Griffies triads scheme never got 
+   !!                                     called. This bug is now fixed 
+   !!                                     for partial steps.
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -176,7 +179,7 @@ CONTAINS
          IF ( ln_zps ) THEN             ! z-coordinate
             IF ( ln_traldf_level )   ierr = 1      ! iso-level not allowed
             IF ( ln_traldf_hor   )   nldf = 0      ! horizontal (no rotation)
-            IF ( ln_traldf_iso   )   nldf = 1      ! isoneutral (   rotation)
+            IF ( ln_traldf_iso .or. ln_traldf_grif ) nldf = 1  ! isoneutral or griffies ( rotation)
          ENDIF
          IF ( ln_sco ) THEN             ! z-coordinate
             IF ( ln_traldf_level )   nldf = 0      ! iso-level  (no rotation)
