@@ -246,6 +246,7 @@ CONTAINS
       ENDIF
       !
       CALL wrk_dealloc( jpi, jpj, jpk, znitrpot, zirondep, zafe, zbfe, zdnf )
+      CALL wrk_dealloc( jpi, jpj, zocdep, zicdep, zburial     )
       !
       IF( nn_timing == 1 )  CALL timing_stop('p4z_sed')
       !
