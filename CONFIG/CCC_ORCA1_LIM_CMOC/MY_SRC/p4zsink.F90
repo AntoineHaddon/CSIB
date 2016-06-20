@@ -200,15 +200,15 @@ CONTAINS
     
       ! Do the bottom sedimentation of calcite. The sedimenting flux is added back
       ! to the surface layer (psuedo "river flux") for conservation.
-      !DO jj = 1, jpj
-      !   DO ji = 1,jpi
-      !      trn(ji,jj,mbkt(ji,jj),jpdic) = trn(ji,jj,mbkt(ji,jj),jpdic) - zcalbotflx(ji,jj) / fse3t(ji,jj,mbkt(ji,jj))
-      !      trn(ji,jj,1,jpdic) = trn(ji,jj,1,jpdic)  + zcalbotflx(ji,jj) / fse3t(ji,jj, 1) 
+      DO jj = 1, jpj
+         DO ji = 1,jpi
+            trn(ji,jj,mbkt(ji,jj),jpdic) = trn(ji,jj,mbkt(ji,jj),jpdic) - zcalbotflx(ji,jj) / fse3t(ji,jj,mbkt(ji,jj))
+            trn(ji,jj,1,jpdic) = trn(ji,jj,1,jpdic)  + zcalbotflx(ji,jj) / fse3t(ji,jj, 1) 
 
-      !      trn(ji,jj,mbkt(ji,jj),jptal) = trn(ji,jj,mbkt(ji,jj),jptal) - 2._wp * zcalbotflx(ji,jj) / fse3t(ji,jj,mbkt(ji,jj))
-      !      trn(ji,jj,1,jptal) = trn(ji,jj,1,jptal)  + 2._wp * zcalbotflx(ji,jj) / fse3t(ji,jj, 1) 
-      !   ENDDO
-      !ENDDO
+            trn(ji,jj,mbkt(ji,jj),jptal) = trn(ji,jj,mbkt(ji,jj),jptal) - 2._wp * zcalbotflx(ji,jj) / fse3t(ji,jj,mbkt(ji,jj))
+            trn(ji,jj,1,jptal) = trn(ji,jj,1,jptal)  + 2._wp * zcalbotflx(ji,jj) / fse3t(ji,jj, 1) 
+         ENDDO
+      ENDDO
 
       !globvol = glob_sum( cvol(:,:,:) )
       !globtal = glob_sum( trn(:,:,:,jptal) * cvol(:,:,:) ) / globvol
