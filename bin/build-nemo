@@ -228,9 +228,9 @@ fi
 nemo_source_repo=$(cd $nemo_source_repo; pwd)
 
 # Define variables containing the current commit and repo path to use as cpp macros during the build
-NEMO_COMMIT_ID=$(cd $nemo_source_repo; git log -1 --pretty="%H" $nemo_version)
-NEMO_REPO_PATH=$nemo_source_repo
-nemo_add_cpp_keys+=" NEMO_COMMIT_ID=$NEMO_COMMIT_ID NEMO_REPO_PATH=$NEMO_REPO_PATH"
+# NEMO_COMMIT_ID=$(cd $nemo_source_repo; git log -1 --pretty="%H" $nemo_version)
+# NEMO_REPO_PATH=$nemo_source_repo
+# nemo_add_cpp_keys+=" NEMO_COMMIT_ID=$NEMO_COMMIT_ID NEMO_REPO_PATH=$NEMO_REPO_PATH"
 
 if [ -n "$nemo_source_mods" ]; then
   # The user has supplied a source directory containing mods to nemo_source_repo
