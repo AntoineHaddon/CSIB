@@ -434,7 +434,10 @@ end_reorder_list
 
         if [ $nemo_cmoc -eq 1 ]; then
 	  cp -f namelist_cmoc rs_namelist_cmoc || :
-	  [ -s rs_namelist_cmoc ]  && tarlist="$tarlist rs_namelist_cmoc"
+	  if [ -s rs_namelist_cmoc ]; then
+            chmod u+rw rs_namelist_cmoc
+            tarlist="$tarlist rs_namelist_cmoc"
+          fi
         fi
       fi
 
