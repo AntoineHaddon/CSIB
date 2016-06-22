@@ -15,7 +15,6 @@ MODULE trcwri_pisces
    !!----------------------------------------------------------------------
    USE trc         ! passive tracers common variables 
    USE iom         ! I/O manager
-   USE par_pisces
 
    IMPLICIT NONE
    PRIVATE
