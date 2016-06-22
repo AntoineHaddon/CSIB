@@ -70,7 +70,7 @@
   nemo_nn_it000=${nemo_nn_it000:=''}
 
 # If set then delete the previous restart from DATAPATH after it is copied to the execution dir
-  nemo_del_rs=${nemo_del_rs:=on}
+#  nemo_del_rs=${nemo_del_rs:=on}
 
 # RTD switch. If nemo_carbon=on, both physical and carbon RTD will be done,
 # otherwise only physical. User can specify rtd exectuables below. 
