@@ -53,7 +53,7 @@ nemo_exec=${runid}_ccc_orca1_lim_exe
 # nemo_freq is the number of years (or months) nemo will run for each job in the string
 # History files and restarts will be deleted after each job in the string.
 # nemo_freq will be assigned a value of the form Ny or Nm where N is a positive integer.
-nemo_freq=1y
+nemo_freq=3m # 3m to be consistent with CMOC.
 
 # If do_nemo_run=on then access all the required files and do the run, else the model
 # itself is not run.  Using do_nemo_run=off can be used, for example, to process 
