@@ -102,7 +102,7 @@
    !
    cn_dir        = './'     !  root directory for the location of the runoff files
    ln_tsd_init   = .true.   !  Initialisation of ocean T & S with T &S input data (T) or not (F)
-   ln_tsd_tradmp = .true.   !  damping of ocean T & S toward T &S input data (T) or not (F)
+   ln_tsd_tradmp = .true.  !  damping of ocean T & S toward T &S input data (T) or not (F)
 /
 !!======================================================================
 !!            ***  Surface Boundary Condition namelists  ***
