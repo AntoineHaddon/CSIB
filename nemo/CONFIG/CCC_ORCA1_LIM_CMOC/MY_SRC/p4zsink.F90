@@ -222,7 +222,7 @@ CONTAINS
            IF( jnt == nrdttrc ) THEN
               CALL iom_put( "oomask", oomask(:,:))
               CALL iom_put( "EPC100", sinking(:,:,ik1) * zrfact2 * tmask(:,:,1) )
-              CALL iom_put( "EPCALC100", zfpon(:,:) * rfact2r ) !
+              CALL iom_put( "EPCALC100",    zfpon(:,:) * zrfact2 * tmask(:,:,1) ) !
               ! <CMOC code OR 12/11/2015> denitrification ! CALL iom_put( "BUPOC"  , wsbio3(:,:,11) /rday * zbpoc(:,:) * 1e+3_wp  )  ! POC burial flux
               ! <CMOC code OR 12/11/2015> denitrification ! CALL iom_put( "BUCALC" , zfpon(:,:) * 1e+3_wp * rfact2r * zbpon(:,:)  )  ! <CMOC code OR 12/11/2015> *rfact2r replaces /rfact2 ! PIC burial flux
            ENDIF
