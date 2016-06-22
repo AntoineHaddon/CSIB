@@ -29,8 +29,20 @@
   nemo_exec=${nemo_exec:=''}
 
 # nemo_forcing identifies the type of forcing to use
-# Currenlty the only valid values are "bulk", "flux" or "coupled"
+# Currenlty the only valid values are "bulk", "bulk_iaf", "flux", "flux_iaf" or "coupled"
   nemo_forcing=${nemo_forcing:=coupled}
+
+# For interannual forcing, iaf_year_offset gives the offset between
+# the current nemo year and the desired year in the forcing dataset
+# such that forcing_year = current_year + iaf_year_offset.
+# The data to be used will end in _y${forcing_year}.nc
+# iaf_year_offset=${iaf_year_offset:=0}
+
+# For interannual forcing, iaf_loop_year gives the year at which the
+# forcing will loop back to the first specified year of forcing. 
+# The number is given in terms of "forcing_year" as opposed to
+# nemo "current_year": forcing_year = current_year + iaf_year_offset
+# iaf_loop_year=${iaf_loop_year:=0}
 
 # nemo_carbon = off means use physical ocean only
 # nemo_carbon = on  means include PISCES
@@ -46,6 +58,37 @@
   nemo_namelist=${nemo_namelist:=cancpl_dev_nemo_namelist}
   nemo_namelist_ice=${nemo_namelist_ice:=cancpl_dev_nemo_ice_in}
   nemo_force_namelist=${nemo_force_namelist:=off}
+
+# save history files
+  nemo_save_hist=${nemo_save_hist:=on}
+
+# If set, nemo_nn_it000 will define the initial time step.
+# Normally the initial time step is read from the restart and so nemo_nn_it000
+# should normally be null or unset.
+# Only set this if you are absolutely sure this is what you want.
+# If defined, nemo_nn_it000 must always be set to an integer greater than zero.
+  nemo_nn_it000=${nemo_nn_it000:=''}
+
+# If set then delete the previous restart from DATAPATH after it is copied to the execution dir
+  nemo_del_rs=${nemo_del_rs:=on}
+
+# RTD switch. If nemo_carbon=on, both physical and carbon RTD will be done,
+# otherwise only physical. User can specify rtd exectuables below. 
+  nemo_rtd=${nemo_rtd:=on}
+
+# If nemo_dump is true then dump history files and restart arhives to CFS. 
+# Only files that were saved to DATAPATH are dumped. If nemo_ann_cat=on, 
+# only the annually-concatenated history files will be dumped, along with the December
+# 31st restart archive. If do_nemo_run=off, saved history files listed in the 
+# restart archive file, rs_saved_history_file_names, will be dumped.
+  nemo_dump_hist=${nemo_dump_hist:=off}
+
+# If nemo_del_hist is true then delete all history files that were created and saved,
+# after RTD is done and after they have been dumped if nemo_dump=on. 
+# If nemo_ann_cat=on, the annually concatenated and original 
+# subannual files are all deleted. If do_nemo_run=off, saved history files 
+# listed in the restart archive file, rs_saved_history_file_names, will be deleted.
+  nemo_del_hist=${nemo_del_hist:=off}
 
 # Define nemo_steps_in_job to override the length of run that is set below
   nemo_steps_in_job=${nemo_steps_in_job:=''}
