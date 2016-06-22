@@ -39,7 +39,7 @@ MODULE trcini_pisces
    REAL(wp) :: alka0  =  2.423e-3_wp
    REAL(wp) :: oxyg0  =  177.6e-6_wp 
    REAL(wp) :: bioma0 =  1.000e-8_wp  
-   REAL(wp) :: no3    =  31.04e-6_wp * 7.625_wp
+   REAL(wp) :: no3    =  31.04e-6_wp * 6.625_wp
 
 #  include "top_substitute.h90"
    !!----------------------------------------------------------------------
@@ -79,11 +79,11 @@ CONTAINS
 
       ! Set biological ratios
       ! ---------------------
-      rno3    =  16._wp / 122._wp
-      o2nit   =  32._wp / 122._wp
-      rdenit  = 105._wp /  16._wp
-      rdenita =   3._wp /  5._wp
-      o2ut    = 131._wp / 122._wp
+      !rno3    =  16._wp / 122._wp
+      !o2nit   =  32._wp / 122._wp
+      !rdenit  = 105._wp /  16._wp
+      !rdenita =   3._wp /  5._wp
+      !o2ut    = 131._wp / 122._wp
 
       CALL p4z_che        ! initialize the chemical constants
 
