@@ -502,7 +502,7 @@ end_reorder_list
     nemo_rtd=${nemo_rtd:=on}
     ToF nemo_rtd
 
-    pisces_offline=${pisces_offline:=on}
+    pisces_offline=${pisces_offline:=off}
     ToF pisces_offline
 
     if [ $nemo_rtd -eq 1 ]; then
