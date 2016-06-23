@@ -724,6 +724,9 @@ end_reorder_list
   nemo_ann_cat=${nemo_ann_cat:=off}
   ToF nemo_ann_cat
 
+  nemo_dump_other=${nemo_dump_other:=on}
+  ToF nemo_dump_other
+
   # IF any dumps or deletes
   if [ $nemo_dump_hist -eq 1 -o $nemo_dump_rs -eq 1 -o $nemo_del_hist -eq 1 -o $nemo_del_rs -eq 1 ]; then
     # If nemo_ann_cat=on, only dump/delete in December. Else do it every step.
@@ -777,6 +780,21 @@ end_reorder_list
 	      fi  
 	    done
 	  done
+
+          if [ -n "$model" ]; then
+            # Assume we are running from gcmjcl
+            if [ $nemo_dump_other -eq 1 ]; then
+              # Dump agcm and/or coupler history files as well
+              nemo_other_suffix_list="gs ss cplhist.nc"
+              acclist=''
+              for sfx in $nemo_other_suffix_list; do
+                acclist="$acclist ${model}_$sfx"
+              done
+              # filter through lsdat to only get files saved to DATAPATH
+              [ -n "$acclist" ] && lsdat -1 --quiet $acclist >> $hist_file_dump_list
+            fi
+          fi
+
 	  [ -s ${hist_file_dump_list} ] || 
             echo " WARNING: nemo_dump_hist=on but could not create a list of history files to dump"  
 	fi
@@ -797,6 +815,21 @@ end_reorder_list
 	    found_rs_file=`(ls -1 $DATAPATH/$fnpatt || : ) 2>/dev/null`
 	    [ -n "$found_rs_file" ] || bail "nemo_dump_rs=on but cannot find ${rs_out} on DATAPATH"
 	    echo ${rs_out} >> ${hist_file_dump_list}
+
+            if [ -n "$model" ]; then
+              # Assume we are running from gcmjcl
+              if [ $nemo_dump_other -eq 1 ]; then
+                # Dump agcm and/or coupler restart files as well
+                nemo_other_suffix_list="rs cplhrs.nc"
+                acclist=''
+                for sfx in $nemo_other_suffix_list; do
+                  acclist="$acclist ${model}_$sfx"
+                done
+                # filter through lsdat to only get files saved to DATAPATH
+                [ -n "$acclist" ] && lsdat -1 --quiet $acclist >> $hist_file_dump_list
+              fi
+            fi
+
 	    [ -s ${hist_file_dump_list} ] || 
               echo "WARNING: nemo_dump_rs=on but could not create a list of restart files to dump"  
 	  fi
@@ -869,6 +902,21 @@ end_reorder_list
 	      fi  
 	    done
 	  done
+
+          if [ -n "$model" ]; then
+            # Assume we are running from gcmjcl
+            if [ $nemo_dump_other -eq 1 ]; then
+              # Dump agcm and/or coupler history files as well
+              nemo_other_suffix_list="gs ss cplhist.nc"
+              acclist=''
+              for sfx in $nemo_other_suffix_list; do
+                acclist="$acclist ${model}_$sfx"
+              done
+              # filter through lsdat to only get files saved to DATAPATH
+              [ -n "$acclist" ] && lsdat -1 --quiet $acclist >> $hist_file_del_list
+            fi
+          fi
+
 	  [ -s ${hist_file_del_list} ] || 
              echo "WARNING nemo_del_hist=on but could not create a list of history files to delete"  
 	fi
@@ -904,6 +952,23 @@ end_reorder_list
 	        echo ${nemo_rs} >> ${hist_file_del_list}
             fi
 	  fi
+
+          if [ -n "$model" ]; then
+            # Assume we are running from gcmjcl
+            if [ $nemo_dump_other -eq 1 ]; then
+              # Delete agcm and/or coupler restart files as well
+              nemo_other_suffix_list="rs cplhrs.nc"
+              acclist=''
+            ## TODO ##
+            # We do not want to delete the last restart created during a single submission
+            # What is the best way to determine when this occurs
+            #  for sfx in $nemo_other_suffix_list; do
+            #    acclist="$acclist ${model}_$sfx"
+            #  done
+            #  # filter through lsdat to only get files saved to DATAPATH
+            #  [ -n "$acclist" ] && lsdat -1 --quiet $acclist >> $hist_file_dump_list
+            fi
+          fi
 
 	  # For the RTD files
   	  if [ $nemo_rtd -eq 1 ]; then
