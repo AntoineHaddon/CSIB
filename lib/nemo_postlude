@@ -538,7 +538,7 @@ end_reorder_list
 
 
           # The user must define year_rtdiag_start
-          year_rtdiag_start=''
+          year_rtdiag_start=${nemo_rtdiag_start_year:=''}
           [ -z "$year_rtdiag_start" ] &&
             bail "Run time diagnostics was requested but year_rtdiag_start is not defined."
 
