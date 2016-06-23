@@ -512,7 +512,7 @@ end_reorder_list
 
       # Specify the location of some NCO tools
       # These are required for manipulation of the netcdf files
-      NCOBIN=/users/tor/acrn/rls/local/aix64/bin
+      NCOBIN=/users/tor/acrn/opt/package/bin
       NCRCAT="$NCOBIN/ncrcat"
       NCATTED="$NCOBIN/ncatted"
           

@@ -52,6 +52,10 @@
 # nemo_cmoc = on means use CMOC
   nemo_cmoc=${nemo_cmoc:=off}
 
+# pisces_offline = off means use online model
+# pisces_offline = on  means use offline model with prescribed velocities
+  pisces_offline=${nemo_pisces_offline:=off}
+
 # Identify files containing namelist input for NEMO (namelist) and LIM or CICE (namelist_ice)
 # These namelist files are only used when starting from rest or when nemo_force_namelist = on
 # These files must be saved on DATAPATH
@@ -433,15 +437,15 @@
 
 #xxx  [ $nn_fsbc -ne $npt ] && bail "nn_fsbc = $nn_fsbc and npt = $npt must be equal"
 
-  # nemo_carbon = off means use physical ocean only
-  # nemo_carbon = on  means include PISCES
-  nemo_carbon=${nemo_carbon:-off}
-  ToF nemo_carbon
-
-  # nemo_cmoc = off means use PISCES
-  # nemo_cmoc = on means use CMOC
-  nemo_cmoc=${nemo_cmoc:-off}
-  ToF nemo_cmoc
+#  # nemo_carbon = off means use physical ocean only
+#  # nemo_carbon = on  means include PISCES
+#  nemo_carbon=${nemo_carbon:-off}
+#  ToF nemo_carbon
+#
+#  # nemo_cmoc = off means use PISCES
+#  # nemo_cmoc = on means use CMOC
+#  nemo_cmoc=${nemo_cmoc:-off}
+#  ToF nemo_cmoc
 
   # Identify the type of forcing to use
   nemo_forcing=${nemo_forcing:-coupled}
