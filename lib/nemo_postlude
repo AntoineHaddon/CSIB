@@ -937,10 +937,10 @@ end_reorder_list
 	dump_sublist_arclabel=${uxxx}_${cn_exp}_${stop_year}0101_${stop_year}1231
 
 	bemach=$this_mach
-	shortermdir=off
-	masterdir=on
-	sv=off
-	besc=on
+	shortermdir=${shortermdir:=off}
+	masterdir=${masterdir:=on}
+	sv=${sv:=off}
+	besc=${besc:=on}
 	with_lsarc=off
 
 	varlist="dump_sublist_arclabel uxxx runid shortermdir masterdir sv bemach
