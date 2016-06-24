@@ -97,7 +97,6 @@
    # Include PISCES
    nemo_namelist=mc_nsa_nemo_3.4.1_orca2_lim_namelist
    nemo_namelist_ice=mc_nsa_nemo_3.4.1_orca2_lim_namelist_ice_lim2
-   nemo_namelist_top=mc_nsa_nemo_3.4.1_orca2_namelist_top
    nemo_namelist_pisces=mc_nsa_nemo_3.4.1_orca2_namelist_pisces
    if [ "x$nemo_cmoc" = "xon" ]; then
      nemo_namelist_cmoc=uror_nqd_namelist_cmoc
@@ -453,10 +452,6 @@ cat > Execute_Script <<'end_of_script'
       acc_cp namelist_top $nemo_namelist_top
 
       if [ $nemo_carbon -eq 1 ]; then
-	# The input top namelist is hard coded as "namelist_top" in nemo source
-	[ -z "$nemo_namelist_top" ] && bail "nemo_namelist_top is not defined"
-	acc_cp namelist_top $nemo_namelist_top
-
 	# The input pisces namelist is hard coded as "namelist_pisces" in nemo source
 	[ -z "$nemo_namelist_pisces" ] && bail "nemo_namelist_pisces is not defined"
 	acc_cp namelist_pisces $nemo_namelist_pisces
@@ -564,11 +559,11 @@ cat > Execute_Script <<'end_of_script'
 	  acc_cp namelist_ice $nemo_namelist_ice nocp=no
         fi
 
-	if [ $nemo_carbon -eq 1 ]; then
-	  # The input top namelist is hard coded as "namelist_top" in nemo source
-	  [ -z "$nemo_namelist_top" ] && bail "nemo_namelist_top is not defined"
-	  acc_cp namelist_top $nemo_namelist_top nocp=no
+        # The input top namelist is hard coded as "namelist_top" in nemo source
+        [ -z "$nemo_namelist_top" ] && bail "nemo_namelist_top is not defined"
+         acc_cp namelist_top $nemo_namelist_top nocp=no
 
+	if [ $nemo_carbon -eq 1 ]; then
 	  # The input pisces namelist is hard coded as "namelist_pisces" in nemo source
 	  [ -z "$nemo_namelist_pisces" ] && bail "nemo_namelist_pisces is not defined"
 	  acc_cp namelist_pisces $nemo_namelist_pisces nocp=no
@@ -587,8 +582,9 @@ cat > Execute_Script <<'end_of_script'
 	  [ ! -s rs_namelist_ice ] && bail "Missing rs_namelist_ice from $nemo_rs"
         fi
 
+	[ ! -s rs_namelist_top ]    && bail "Missing rs_namelist_top from $nemo_rs"
+
 	if [ $nemo_carbon -eq 1 ]; then
-	  [ ! -s rs_namelist_top ]    && bail "Missing rs_namelist_top from $nemo_rs"
 	  [ ! -s rs_namelist_pisces ] && bail "Missing rs_namelist_pisces from $nemo_rs"
 
           if [ $nemo_cmoc -eq 1 ]; then
@@ -604,9 +600,10 @@ cat > Execute_Script <<'end_of_script'
 	  cp -f rs_namelist_ice namelist_ice
         fi
  
+	# The input top namelist is hard coded as "namelist_top" in nemo source
+	cp -f rs_namelist_top namelist_top
+
 	if [ $nemo_carbon -eq 1 ]; then
-	  # The input top namelist is hard coded as "namelist_top" in nemo source
-	  cp -f rs_namelist_top namelist_top
 
 	  # The input pisces namelist is hard coded as "namelist_pisces" in nemo source
 	  cp -f rs_namelist_pisces namelist_pisces
@@ -704,9 +701,9 @@ cat > Execute_Script <<'end_of_script'
     fi
 
     # Modify the input top namelist
-    if [ $nemo_carbon -eq 1 ]; then
+    #if [ $nemo_carbon -eq 1 ]; then
 	mod_nl namelist_top ln_rsttr cn_trcrst_in cn_trcrst_out
-    fi
+    #fi
     # Write selected namelists from the namelist file
     #  sed -n '/^&namrun/,/^\//p' namelist
     #  sed -n '/^&nammpp/,/^\//p' namelist
@@ -1197,13 +1194,14 @@ cat > Execute_Script <<'end_of_script'
       # Create copies of the namelists used and include them in the tar file
       cp -f namelist        rs_namelist        || :
       cp -f namelist_ice    rs_namelist_ice    || :
+      cp -f namelist_top    rs_namelist_top    || :
       [ -s rs_namelist ]         && tarlist="$tarlist rs_namelist"
       [ -s rs_namelist_ice ]     && tarlist="$tarlist rs_namelist_ice"
+      [ -s rs_namelist_top ]     && tarlist="$tarlist rs_namelist_top"
+
       if [ $nemo_carbon -eq 1 ]; then
 	cp -f namelist_pisces rs_namelist_pisces || :
-	cp -f namelist_top    rs_namelist_top    || :
 	[ -s rs_namelist_pisces ]  && tarlist="$tarlist rs_namelist_pisces"
-	[ -s rs_namelist_top ]     && tarlist="$tarlist rs_namelist_top"
 
         if [ $nemo_cmoc -eq 1 ]; then
 	  cp -f namelist_cmoc rs_namelist_cmoc || :
