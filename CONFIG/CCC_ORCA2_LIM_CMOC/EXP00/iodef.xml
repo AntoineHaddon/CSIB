@@ -17,6 +17,7 @@
       <!-- T grid -->
       
       <group id="grid_T" axis_ref="none" grid_ref="grid_T">
+        <field id="agessc"       description="Ideal age"                                 unit="years" axis_ref="deptht"   />
 	<field id="toce"         description="temperature"                               unit="degC" axis_ref="deptht"   />
        	<field id="soce"         description="salinity"                                  unit="psu"  axis_ref="deptht"   />
 	<field id="sst"          description="sea surface temperature"                   unit="degC"                     />
@@ -52,7 +53,6 @@
       <!-- SBC -->
       
       <group id="SBC" axis_ref="none" grid_ref="grid_T" > <!-- time step automaticaly defined based on nn_fsbc -->
-
 	<field id="empmr"        description="Net Upward Water Flux"                                        unit="kg/m2/s"  />
 	<field id="empsmr"       description="concentration/dilution water flux"                            unit="kg/m2/s"  />
 	<field id="snowpre"      description="Snow precipitation"                                           unit="kg/m2/s"  />

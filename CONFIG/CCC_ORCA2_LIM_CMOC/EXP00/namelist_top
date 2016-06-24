@@ -28,11 +28,12 @@
    sn_tracer(1)   = 'DIC     ' , 'Dissolved inorganic Concentration CMOC ',  'mol-C/L' ,  .true.     ,  .true.
    sn_tracer(2)   = 'Alkalini' , 'Total Alkalinity Concentration CMOC    ',  'eq/L '   ,  .true.     ,  .true.
    sn_tracer(3)   = 'O2      ' , 'Dissolved Oxygen Concentration CMOC    ',  'mol-C/L' ,  .true.     ,  .true.
-   sn_tracer(4)   = 'POC     ' , 'Detritus Concentration CMOC            ',  'mol-C/L' ,  .false.    ,  .true. ! <CMOC OR 07/15/2014> ! Removal of all the tracers !  
-   sn_tracer(5)   = 'PHY     ' , 'Nanophytoplankton Concentration CMOC   ',  'mol-C/L' ,  .false.    ,  .true. ! <CMOC OR 07/15/2014> ! Removal of all the tracers !  
-   sn_tracer(6)   = 'ZOO     ' , 'Microzooplankton Concentration CMOC    ',  'mol-C/L' ,  .false.    ,  .true. ! <CMOC OR 07/15/2014> ! Removal of all the tracers !  
-   sn_tracer(7)  = 'NCHL    ' , 'Nano chlorophyl Concentration CMOC     ',  'mol-C/L' ,  .false.    ,  .true.  ! <CMOC OR 07/15/2014> ! Removal of all the tracers !  
-   sn_tracer(8)  = 'NO3     ' , 'Total Dissolved Nitrogen CMOC          ',  'mol-C/L' ,  .true.     ,  .true.  ! <CMOC OR 07/15/2014> ! Removal of all the tracers !  
+   sn_tracer(4)   = 'POC     ' , 'Detritus Concentration CMOC            ',  'mol-C/L' ,  .false.    ,  .true. 
+   sn_tracer(5)   = 'PHY     ' , 'Nanophytoplankton Concentration CMOC   ',  'mol-C/L' ,  .false.    ,  .true. 
+   sn_tracer(6)   = 'ZOO     ' , 'Microzooplankton Concentration CMOC    ',  'mol-C/L' ,  .false.    ,  .true. 
+   sn_tracer(7)  = 'NCHL    ' , 'Nano chlorophyl Concentration CMOC     ',  'mol-C/L' ,  .false.    ,  .true. 
+   sn_tracer(8)  = 'NO3     ' , 'Total Dissolved Nitrogen CMOC          ',  'mol-C/L' ,  .true.     ,  .true.  
+   sn_tracer(8)  = 'agessc  ' , 'Ideal Age                              ',  'years' ,    .false.     ,  .true.  
 
 /
 !-----------------------------------------------------------------------
@@ -48,13 +49,9 @@
 !
    cn_dir        =  './'      !  root directory for the location of the data files
    rn_trfac(1)   =   1.0e-06  !  multiplicative factor
-   rn_trfac(2)   =   1.0e-06  !  -      -      -     -
-   rn_trfac(3)   =  44.6e-06  !  -      -      -     - !!!! <CMOC code OR 11/19/2015> revert to PISCES 1:1 molar O2:C ratio ! <CMOC OR 11/30/2013> O2 converted from mL/L (original PISCES conversion 44.6e-06) and converted from O2 to C (106/138)
-! <CMOC OR 07/15/2014> ! Removal of all the tracers !     rn_trfac(5)   = 122.0e-06  !  -      -      -     -
-! <CMOC OR 07/15/2014> ! Removal of all the tracers !     rn_trfac(7)   =   1.0e-06  !  -      -      -     -
-! <CMOC OR 07/15/2014> ! Removal of all the tracers !     rn_trfac(10)  =   1.0      !  -      -      -     -
-! <CMOC OR 07/15/2014> ! Removal of all the tracers !     rn_trfac(12)  =   1.0      !  -      -      -     -
-   rn_trfac(8)  =   6.6e-06  !  -      -      -     -   ! <CMOC OR 07/15/2014> ! Removal of all the tracers !  
+   rn_trfac(2)   =   1.0e-06  ! 
+   rn_trfac(3)   =  44.6e-06  ! 
+   rn_trfac(8)  =   6.6e-06  !  
 /
 !-----------------------------------------------------------------------
 &namtrc_adv    !   advection scheme for passive tracer 
