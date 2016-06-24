@@ -49,9 +49,9 @@
 !
    cn_dir        =  './'      !  root directory for the location of the data files
    rn_trfac(1)   =   1.0e-06  !  multiplicative factor
-   rn_trfac(2)   =   1.0e-06  ! 
-   rn_trfac(3)   =  44.6e-06  ! 
-   rn_trfac(8)  =   6.6e-06  !  
+   rn_trfac(2)   =   1.0e-06  !
+   rn_trfac(3)   =  44.6e-06  !
+   rn_trfac(8)  =   6.6e-06  !
 /
 !-----------------------------------------------------------------------
 &namtrc_adv    !   advection scheme for passive tracer 
