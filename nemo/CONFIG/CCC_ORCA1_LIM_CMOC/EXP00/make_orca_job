@@ -643,7 +643,7 @@ debug=off
 # Determines if RTD is done, and specifies the RTD executables
   nemo_rtd=${nemo_rtd}
   physical_rtd_exe="nemo_physical_rtd_v03c_exe"
-  carbon_rtd_exe="nemo_carbon-cmoc_rtd_v03c_exe"
+  carbon_rtd_exe="nemo_carbon-cmoc_rtd_v03d_exe"
   ice_rtd_exe="nemo_ice_rtd_v03c_exe"
 
 # Dump history files saved on DATAPATH to cfs
