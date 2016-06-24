@@ -17,6 +17,7 @@
       <!-- T grid -->
       
       <group id="grid_T" axis_ref="none" grid_ref="grid_T">
+        <field id="agessc"       description="Ideal age"                                 unit="years" axis_ref="deptht"   />
         
 	<field id="toce"         description="temperature"                               unit="degC" axis_ref="deptht"   />
        	<field id="soce"         description="salinity"                                  unit="psu"  axis_ref="deptht"   />
@@ -235,7 +236,6 @@
        <field id="DCHL"     description="Diatoms chlorophyl Concentration"         unit="mg/m3" />
        <field id="NO3"      description="Nitrates Concentration"                   unit="mmol/m3" />
        <field id="NH4"      description="Ammonium Concentration"                   unit="mmol/m3" />
-       <field id="ORICHE"   description="Tracer Clone"                             unit="mmol/m3" />
      </group>
 
       <!-- diad on T grid : variables available with key_diatrc -->
@@ -362,6 +362,7 @@
           <field ref="empmr"        name="sowaflup"  />
           <field ref="qt"           name="sohefldo"  />
           <field ref="mldr10_1"     name="somxl010"  />
+          <field ref="agessc"           />
 	</file>   
 
         <file id="1m_diad_T" name="auto" description="additional pisces diagnostics" >
@@ -444,7 +445,6 @@
           <field ref="DCHL"     />
           <field ref="NO3"      />
           <field ref="NH4"      />
-          <field ref="ORICHE"   />
        </file>
 	
       </group>
