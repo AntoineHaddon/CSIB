@@ -271,7 +271,7 @@ debug=off
 # run_start_year is the first year of the run, which is normally start_year
 # but can be reset by the user if required
   run_start_year=$start_year
-  run_start_mon=$start_mon
+  run_start_month=$start_mon
 
 # nemo_nn_it000 is the initial time step of the current run
 # This is normally read from the previous restart but may be set here.
