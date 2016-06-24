@@ -33,7 +33,7 @@
    sn_tracer(6)   = 'ZOO     ' , 'Microzooplankton Concentration CMOC    ',  'mol-C/L' ,  .false.    ,  .true. 
    sn_tracer(7)  = 'NCHL    ' , 'Nano chlorophyl Concentration CMOC     ',  'mol-C/L' ,  .false.    ,  .true. 
    sn_tracer(8)  = 'NO3     ' , 'Total Dissolved Nitrogen CMOC          ',  'mol-C/L' ,  .true.     ,  .true.  
-   sn_tracer(8)  = 'agessc  ' , 'Ideal Age                              ',  'years' ,    .false.     ,  .true.  
+   sn_tracer(9)  = 'agessc  ' , 'Ideal Age                              ',  'years' ,    .false.     ,  .true.  
 
 /
 !-----------------------------------------------------------------------
