@@ -281,6 +281,7 @@ debug=off
 # run_start_year is the first year of the run, which is normally start_year
 # but can be reset by the user if required
   run_start_year=$start_year
+  run_start_mon=$start_mon
 
 # Set start year for rtd
   year_rtdiag_start=${year_rtdiag_start}
