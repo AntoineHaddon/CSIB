@@ -2,6 +2,7 @@
 # NEMO postlude
 #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
 
+  if [ ! -s reorder_list ]; then
 cat >reorder_list << 'end_reorder_list'
 #!/usr/bin/perl
 
@@ -33,6 +34,7 @@ cat >reorder_list << 'end_reorder_list'
   # ---Stop_submit_ignore_code----
 
 end_reorder_list
+  fi
 
   scp_rtd_to_Victoria() {
     # Copy a single rtd file to Victoria
@@ -521,7 +523,7 @@ end_reorder_list
           
       # File containing grid information
       orca_grid_info=nemo3.4.1_orca1_mesh_mask_ngr.nc
-      access orca_mesh_mask $orca_grid_info 
+      [ -s orca_mesh_mask ] || access orca_mesh_mask $orca_grid_info 
 
       # Invoke the nemo run time diagnostics
       if [ $pisces_offline -eq 0 ]; then
@@ -539,7 +541,6 @@ end_reorder_list
           access grid_v $rtd_hist3 
           access grid_w $rtd_hist4 
 
-
           # The user must define year_rtdiag_start
           year_rtdiag_start=${nemo_rtdiag_start_year:=''}
           [ -z "$year_rtdiag_start" ] &&
@@ -548,7 +549,7 @@ end_reorder_list
           # Access the rtd executable
           physical_rtd_exe=${nemo_physical_rtd_exe:=nemo_orca_physical_rtd_v02c}
           [ -z "$physical_rtd_exe" ] && bail "physical_rtd_exe is not defined."
-          access $physical_rtd_exe $physical_rtd_exe nocp=off
+          [ -s "$physical_rtd_exe" ] || access $physical_rtd_exe $physical_rtd_exe nocp=off
           chmod u+x $physical_rtd_exe
 
           # Access an existing rtd file containing data up to the previous year, if year > year_rtdiag_start
@@ -556,6 +557,7 @@ end_reorder_list
           curr_rtd_file=sc_${runid}_${rs_date}_nemo_physical_rtd.nc
           found_file=`(ls -1 $DATAPATH/$curr_rtd_file* || : ) 2>/dev/null`
           if [ -n "$found_file" ]; then 
+              rm -f  nemo_physical_rtd.nc
               access nemo_physical_rtd.nc $curr_rtd_file nocp=off
               chmod u+rw nemo_physical_rtd.nc      
               # Create run time diagnostics for physical ocean variables
@@ -593,7 +595,7 @@ end_reorder_list
             # Access the rtd executable
             ice_rtd_exe=${nemo_ice_rtd_exe:=nemo_ice_rtd_v02c}
             [ -z "$ice_rtd_exe" ] && bail "ice_rtd_exe is not defined."
-            access $ice_rtd_exe $ice_rtd_exe nocp=off
+            [ -s "$ice_rtd_exe" ] || access $ice_rtd_exe $ice_rtd_exe nocp=off
             chmod u+x $ice_rtd_exe
 
             # Access an existing rtd file containing data up to the previous year, if 
@@ -601,6 +603,7 @@ end_reorder_list
             curr_rtd_file=sc_${runid}_${rs_date}_nemo_ice_rtd.nc
             found_file=`(ls -1 $DATAPATH/$curr_rtd_file* || : ) 2>/dev/null`
             if [ -n "$found_file" ]; then 
+                rm -f  nemo_ice_rtd.nc
                 access nemo_ice_rtd.nc $curr_rtd_file nocp=off
                 chmod u+rw nemo_ice_rtd.nc
                 # Create run time diagnostics for carbon variables
@@ -640,7 +643,7 @@ end_reorder_list
         # Access the rtd executable
         carbon_rtd_exe=${nemo_carbon_rtd_exe:=nemo_orca1_carbon_rtd_v02c}
         [ -z "$carbon_rtd_exe" ] && bail "carbon_rtd_exe is not defined."
-        access $carbon_rtd_exe $carbon_rtd_exe nocp=off
+        [ -s "$carbon_rtd_exe" ] || access $carbon_rtd_exe $carbon_rtd_exe nocp=off
         chmod u+x $carbon_rtd_exe
 
         # Access an existing rtd file containing data up to the previous year, if 
@@ -648,6 +651,7 @@ end_reorder_list
         curr_rtd_file=sc_${runid}_${rs_date}_nemo_carbon_rtd.nc
         found_file=`(ls -1 $DATAPATH/$curr_rtd_file* || : ) 2>/dev/null`
         if [ -n "$found_file" ]; then 
+            rm -f  nemo_carbon_rtd.nc
             access nemo_carbon_rtd.nc $curr_rtd_file nocp=off
             chmod u+rw nemo_carbon_rtd.nc
             # Create run time diagnostics for carbon variables
@@ -667,11 +671,6 @@ end_reorder_list
         # Copy the new carbon rtd file to Victoria
         scp_rtd_to_Victoria nemo_carbon_rtd.nc sc_${runid}_nemo_carbon_rtd.nc
 
-        # delete RTD files from 2 years ago from RUNPATH (if we are 2+ years from rtd starting).
-        #if [ ${yearcm2} -ge ${year_rtdiag_start} ] ; then
-        #  access  old_rtd  na  nocp  sc_${runid}_${year_rtdiag_start}_${yearcm2}_nemo_carbon_rtd.nc
-        #  delete  old_rtd na
-        #fi
       fi
 
       echo "RTD FILE dump list: `cat $rtd_file_dump_list`"
@@ -788,7 +787,7 @@ end_reorder_list
               nemo_other_suffix_list="gs ss cplhist.nc"
               acclist=''
               for sfx in $nemo_other_suffix_list; do
-                acclist="$acclist ${model}_$sfx"
+                acclist="$acclist $model$sfx"
               done
               # filter through lsdat to only get files saved to DATAPATH
               [ -n "$acclist" ] && lsdat -1 --quiet $acclist >> $hist_file_dump_list
@@ -801,14 +800,19 @@ end_reorder_list
 
 	# For the restart files
 	if [ $nemo_dump_rs -eq 1 ]; then
-	  # First determine if this is a month in nemo_dump_rs_month_list
-	  mmrs=`echo $rs_out | sed 's/^.*_\([0-9][0-9]*\)_restart\.tar$/\1/'|cut -c 5-6`
-	  dump_this_rs=0
-	  for mitem in ${nemo_dump_rs_month_list}; do
-	    if [ x"${mitem}" = x"${mmrs}" ]; then
-	      dump_this_rs=1
-	    fi
-	  done
+          # First determine if this is a month in nemo_dump_rs_month_list
+          if [ -n "$model" ]; then
+            # Assume we are running from gcmjcl where the nemo rs file name is ${model}nemors.tar
+            mmrs=`echo $rs_out | sed 's/^.*_m\([0-9][0-9]\)_nemors\.tar$/\1/'`
+          else
+            mmrs=`echo $rs_out | sed 's/^.*_\([0-9][0-9]*\)_restart\.tar$/\1/'|cut -c 5-6`
+          fi
+          dump_this_rs=0
+          for mitem in ${nemo_dump_rs_month_list}; do
+            if [ x"${mitem}" = x"${mmrs}" ]; then
+              dump_this_rs=1
+            fi
+          done
 
 	  if [ ${dump_this_rs} -eq 1 ]; then
 	    eval fnpatt=${rs_out}.\[0-9\]\[0-9\]\[0-9\]
@@ -823,7 +827,7 @@ end_reorder_list
                 nemo_other_suffix_list="rs cplhrs.nc"
                 acclist=''
                 for sfx in $nemo_other_suffix_list; do
-                  acclist="$acclist ${model}_$sfx"
+                  acclist="$acclist $model$sfx"
                 done
                 # filter through lsdat to only get files saved to DATAPATH
                 [ -n "$acclist" ] && lsdat -1 --quiet $acclist >> $hist_file_dump_list
@@ -910,7 +914,7 @@ end_reorder_list
               nemo_other_suffix_list="gs ss cplhist.nc"
               acclist=''
               for sfx in $nemo_other_suffix_list; do
-                acclist="$acclist ${model}_$sfx"
+                acclist="$acclist $model$sfx"
               done
               # filter through lsdat to only get files saved to DATAPATH
               [ -n "$acclist" ] && lsdat -1 --quiet $acclist >> $hist_file_del_list
@@ -963,7 +967,7 @@ end_reorder_list
             # We do not want to delete the last restart created during a single submission
             # What is the best way to determine when this occurs
             #  for sfx in $nemo_other_suffix_list; do
-            #    acclist="$acclist ${model}_$sfx"
+            #    acclist="$acclist $model$sfx"
             #  done
             #  # filter through lsdat to only get files saved to DATAPATH
             #  [ -n "$acclist" ] && lsdat -1 --quiet $acclist >> $hist_file_dump_list

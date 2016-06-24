@@ -129,7 +129,7 @@
 
   # Name a file to contain debugging info
   # This file will survive even when stdout goes missing
-  dbg_out="${JHOME:-$HOME}/.queue/dbg_xnemo_${runid}_${this_host}_$stamp"
+  dbg_out="${JHOME:-$HOME}/.queue/dbg_nemo_processing_${runid}_${this_host}_$stamp"
   [ -z "$dbg_out" ] || rm -f $dbg_out
 
   ToF(){
