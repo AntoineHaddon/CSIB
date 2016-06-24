@@ -317,6 +317,7 @@
           <field ref="mldr10_1"     name="somxl010"  />
           <field ref="qns"           />
           <field ref="qsr"           />
+          <field ref="agessc"           />
         </file>
 
         <file id="1m_grid_U" name="auto" description="ocean U grid variables" >
