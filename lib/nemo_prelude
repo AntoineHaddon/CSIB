@@ -294,6 +294,12 @@
   start_year=`echo $start_year|awk -F':' '{printf "%4.4d",$1}' -`
   stop_year=`echo $stop_year|awk -F':' '{printf "%4.4d",$1}' -`
 
+  if [ 1 -eq 1 ]; then
+    echo "nemo_prelude: start_year=$start_year  start_mon=$start_mon"
+    echo "nemo_prelude:  stop_year=$stop_year   stop_mon=$stop_mon"
+    echo "nemo_prelude: days_in_job=$days_in_job  months=$months  month_counter=$month_counter  Orig_month_counter=$Orig_month_counter"
+  fi
+
   # set the intial year year_init for cice if not using restart
   year_init=${cice_year_init:=$start_year}
 
