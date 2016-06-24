@@ -726,6 +726,34 @@ end_reorder_list
   nemo_dump_other=${nemo_dump_other:=on}
   ToF nemo_dump_other
 
+  if [ -n "$month_counter" -a -n "$months" ]; then
+    # months and month_counter are defined
+    # These variables are define when running in gcmjcl mode
+    # Assume month_counter counts down from the value of months to 1
+    if [ $months -gt 1 ]; then
+      if [ $month_counter -eq $months ]; then
+        # This should be the first month of the current submission job
+        first_month_in_curr_job=1
+        last_month_in_curr_job=0
+      elif [ $month_counter -eq 1 ]; then
+        # This should be the last month of the current submission job
+        first_month_in_curr_job=0
+        last_month_in_curr_job=1
+      else
+        first_month_in_curr_job=0
+        last_month_in_curr_job=0
+      fi
+    else
+      # months must be 1 otherwise
+      first_month_in_curr_job=1
+      last_month_in_curr_job=1
+    fi
+  else
+    # months and month_counter are not defined. Set first/last to True
+    first_month_in_curr_job=1
+    last_month_in_curr_job=1
+  fi
+
   # IF any dumps or deletes
   if [ $nemo_dump_hist -eq 1 -o $nemo_dump_rs -eq 1 -o $nemo_del_hist -eq 1 -o $nemo_del_rs -eq 1 ]; then
     # If nemo_ann_cat=on, only dump/delete in December. Else do it every step.
@@ -908,7 +936,7 @@ end_reorder_list
 	  done
 
           if [ -n "$model" ]; then
-            # Assume we are running from gcmjcl
+            # Assume we are running in gcmjcl mode
             if [ $nemo_dump_other -eq 1 ]; then
               # Dump agcm and/or coupler history files as well
               nemo_other_suffix_list="gs ss cplhist.nc"
@@ -957,20 +985,18 @@ end_reorder_list
             fi
 	  fi
 
-          if [ -n "$model" ]; then
-            # Assume we are running from gcmjcl
-            if [ $nemo_dump_other -eq 1 ]; then
-              # Delete agcm and/or coupler restart files as well
+          if [ -n "$model" -a $nemo_dump_other -eq 1 ]; then
+            # Assume we are running in gcmjcl mode
+            if [ $last_month_in_curr_job -eq 0 ]; then
+              # Delete agcm and/or coupler restart files
+              # Do not delete if this is the last month of the current submission job
               nemo_other_suffix_list="rs cplhrs.nc"
               acclist=''
-            ## TODO ##
-            # We do not want to delete the last restart created during a single submission
-            # What is the best way to determine when this occurs
-            #  for sfx in $nemo_other_suffix_list; do
-            #    acclist="$acclist $model$sfx"
-            #  done
-            #  # filter through lsdat to only get files saved to DATAPATH
-            #  [ -n "$acclist" ] && lsdat -1 --quiet $acclist >> $hist_file_dump_list
+              for sfx in $nemo_other_suffix_list; do
+                acclist="$acclist $model$sfx"
+              done
+              # filter through lsdat to only get files saved to DATAPATH
+              [ -n "$acclist" ] && lsdat -1 --quiet $acclist >> $hist_file_del_list
             fi
           fi
 
