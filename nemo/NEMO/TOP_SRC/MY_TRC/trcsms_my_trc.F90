@@ -53,7 +53,7 @@ CONTAINS
       IF(lwp) WRITE(numout,*) ' trc_sms_my_trc:  MY_TRC model'
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~'
 
-      dtyrs = 1._wp / (3600._wp * 24 * 365) ! fraction of a year per time step 
+      dtyrs = 1._wp / (3600._wp * 24. * 365.) ! fraction of a year per time step 
       tra(:,:,:,jpage) = tra(:,:,:, jpage) + dtyrs ! Add the time to the tendancy.
       tra(:,:,1,jpage) = 0._wp  ! Hard restoring to counter E-P & river dilution, equivalent to relaxation time=0
       trn(:,:,1,jpage) = 0._wp  ! Hard restoring to counter E-P & river dilution

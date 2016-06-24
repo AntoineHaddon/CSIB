@@ -40,7 +40,7 @@ CONTAINS
       DO jn = 1, jptra
 
          ! Scale CMOC tracers
-         IF( jn >= jp_pcs0 .OR. jn <= jp_pcs1  ) THEN
+         IF( jn >= jp_pcs0 .AND. jn <= jp_pcs1  ) THEN
              zrfact = 1.0e+6_wp 
          ELSE ! for all other passive tracers
              zrfact = 1.0_wp 
@@ -51,7 +51,6 @@ CONTAINS
 
          cltra = TRIM( ctrcnm(jn) )                  ! short title for tracer
          CALL iom_put( cltra, trn(:,:,:,jn) * zrfact )
-          WRITE(*,*) cltra, zrfact
 
       END DO
       !
