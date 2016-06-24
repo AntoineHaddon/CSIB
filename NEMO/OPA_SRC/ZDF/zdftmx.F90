@@ -10,6 +10,8 @@ MODULE zdftmx
    !!                                       that it is always positive in the code.
    !!            3.4.1!  2014-09  (D. Yang) Input eddy energy flux from a file and included it
    !!                                       in the energy for mixing.
+   !!            3.4.1!  2016-05  (D. Yang) Change from hard-coded to optional lee wave mixing scaling 
+   !!                                       (default rn_lwm is 0.3)
    !!----------------------------------------------------------------------
 #if defined key_zdftmx   ||   defined key_esopa
    !!----------------------------------------------------------------------
@@ -49,6 +51,7 @@ MODULE zdftmx
    LOGICAL  ::  ln_tmx_itf = .TRUE.    ! Indonesian Through Flow (ITF): Koch-Larrouy et al. (2007) parameterization
    REAL(wp) ::  rn_tfe_itf = 1.        ! ITF tidal dissipation efficiency (St Laurent et al. 2002)
    LOGICAL  ::  ln_leewmx  = .FALSE.   ! add (.TRUE. + key_zdftmx) lee wave mixing or not (.FALSE.).
+   REAL(wp) ::  rn_lwm     = 0.3       ! lee wave mixing scaling
 
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   en_tmx     ! energy available for tidal mixing (W/m2)
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   mask_itf   ! mask to use over Indonesian area
@@ -365,7 +368,7 @@ CONTAINS
       REAL(wp), DIMENSION(:,:)  , POINTER ::  zhdep        ! Ocean depth 
       REAL(wp), DIMENSION(:,:,:), POINTER ::  zpc      ! power consumption
       !!
-      NAMELIST/namzdf_tmx/ rn_htmx, rn_n2min, rn_tfe, rn_me, ln_tmx_itf, rn_tfe_itf, ln_leewmx
+      NAMELIST/namzdf_tmx/ rn_htmx, rn_n2min, rn_tfe, rn_me, ln_tmx_itf, rn_tfe_itf, ln_leewmx, rn_lwm
       !!----------------------------------------------------------------------
       !
       IF( nn_timing == 1 )  CALL timing_start('zdf_tmx_init')
@@ -388,6 +391,7 @@ CONTAINS
          WRITE(numout,*) '      ITF specific parameterisation         = ', ln_tmx_itf
          WRITE(numout,*) '      ITF tidal dissipation efficiency      = ', rn_tfe_itf
          WRITE(numout,*) '      Lee wave mixing                       = ', ln_leewmx
+         WRITE(numout,*) '      Lee wave mixing scaling               = ', rn_lwm
       ENDIF
 
       !                              ! allocate tmx arrays
@@ -419,7 +423,7 @@ CONTAINS
       ! only the energy available for mixing is taken into account,
       ! (mixing efficiency tidal dissipation efficiency)
       IF( ln_leewmx ) THEN ! include eddy energy flux (zeef) in en_tmx
-         en_tmx(:,:) = - rn_tfe * rn_me * ( min(0.,zem2(:,:)) * 1.25 + min(0.,zek1(:,:)) + zeef(:,:) ) * tmask(:,:,1)
+         en_tmx(:,:) = - rn_tfe * rn_me * ( min(0.,zem2(:,:)) * 1.25 + min(0.,zek1(:,:)) + rn_lwm * zeef(:,:) ) * tmask(:,:,1)
       ELSE
          en_tmx(:,:) = - rn_tfe * rn_me * ( min(0.,zem2(:,:)) * 1.25 + min(0.,zek1(:,:)) ) * tmask(:,:,1)
       ENDIF
