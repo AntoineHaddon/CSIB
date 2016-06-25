@@ -857,8 +857,10 @@ end_reorder_list
                 for sfx in $nemo_other_suffix_list; do
                   acclist="$acclist $model$sfx"
                 done
-                # filter through lsdat to only get files saved to DATAPATH
-                [ -n "$acclist" ] && lsdat -1 --quiet $acclist >> $hist_file_dump_list
+                if [ -n "$acclist" ]; then
+                  # filter through lsdat to only get files saved to DATAPATH
+                  lsdat -1 --quiet $acclist | sed -e 's/[a-zA-Z0-9_.-]*_rs_nmf//g' >> $hist_file_dump_list
+                fi
               fi
             fi
 
@@ -1008,8 +1010,10 @@ end_reorder_list
               for sfx in $nemo_other_suffix_list; do
                 acclist="$acclist $model$sfx"
               done
-              # filter through lsdat to only get files saved to DATAPATH
-              [ -n "$acclist" ] && lsdat -1 --quiet $acclist >> $hist_file_del_list
+              if [ -n "$acclist" ]; then
+                # filter through lsdat to only get files saved to DATAPATH
+                lsdat -1 --quiet $acclist | sed -e 's/[a-zA-Z0-9_.-]*_rs_nmf//g' >> $hist_file_del_list
+              fi
             fi
           fi
 
