@@ -749,9 +749,9 @@ end_reorder_list
       last_month_in_curr_job=1
     fi
   else
-    # months and month_counter are not defined. Set first/last to True
-    first_month_in_curr_job=1
-    last_month_in_curr_job=1
+    # months and month_counter are not defined. Set first/last to False
+    first_month_in_curr_job=0
+    last_month_in_curr_job=0
   fi
 
   # IF any dumps or deletes
@@ -852,10 +852,10 @@ end_reorder_list
               # Assume we are running from gcmjcl
               if [ $nemo_dump_other -eq 1 ]; then
                 # Dump agcm and/or coupler restart files as well
-                nemo_other_suffix_list="rs cplhrs.nc"
+                nemo_other_suffix_list="rs cplrs.nc"
                 acclist=''
                 for sfx in $nemo_other_suffix_list; do
-                  acclist="$acclist $model$sfx"
+                  acclist="$acclist $model$sfx\\\$"
                 done
                 # filter through lsdat to only get files saved to DATAPATH
                 [ -n "$acclist" ] && lsdat -1 --quiet $acclist >> $hist_file_dump_list
@@ -895,7 +895,6 @@ end_reorder_list
       nemo_del_hist_freq_list='1y 1m 1d 5d'
       nemo_del_hist_suffix_list='icemod grid_t grid_u grid_v grid_w ptrc_t diad_t'
 
-      # if [ $nemo_del_hist -eq 1 -o $nemo_del_rs -eq 1 ]
       if [ $nemo_del_hist -eq 1 -o $nemo_del_rs -eq 1 ]; then
 	# Keep track of history files to delete in hist_file_del_list
 	hist_file_del_list=hist_file_del_list_$$
@@ -979,9 +978,23 @@ end_reorder_list
             rsfnpatt=${nemo_rs}.\[0-9\]\[0-9\]\[0-9\]
             found_file=`(ls -1 $DATAPATH/${rsfnpatt} || : ) 2>/dev/null`  
             if [ -n "$found_file" ]; then
-	        # we just want to delete the last restart
+	      # we just want to delete the last restart
+              if [ $first_month_in_curr_job -eq 1 ]; then
+                # Do not delete on the first month in the current submission job
+                # Rather write this file name into a disk file for use later
+                echo $nemo_rs > nemo_rs_first_month
+              else
+                # Otherwise delete
                 echo "${nemo_rs} to be deleted..."
 	        echo ${nemo_rs} >> ${hist_file_del_list}
+              fi
+            fi
+            if [ $last_month_in_curr_job -eq 1 ]; then
+              # Delete the nemo restart file from the first month after the last month is done
+              if [ -s nemo_rs_first_month ]; then
+                # Do not consider it an error if this file does not exist
+                cat nemo_rs_first_month >> ${hist_file_del_list}
+              fi
             fi
 	  fi
 
@@ -990,10 +1003,10 @@ end_reorder_list
             if [ $last_month_in_curr_job -eq 0 ]; then
               # Delete agcm and/or coupler restart files
               # Do not delete if this is the last month of the current submission job
-              nemo_other_suffix_list="rs cplhrs.nc"
+              nemo_other_suffix_list="rs cplrs.nc"
               acclist=''
               for sfx in $nemo_other_suffix_list; do
-                acclist="$acclist $model$sfx"
+                acclist="$acclist $model$sfx\\\$"
               done
               # filter through lsdat to only get files saved to DATAPATH
               [ -n "$acclist" ] && lsdat -1 --quiet $acclist >> $hist_file_del_list
