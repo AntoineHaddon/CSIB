@@ -855,7 +855,7 @@ end_reorder_list
                 nemo_other_suffix_list="rs cplrs.nc"
                 acclist=''
                 for sfx in $nemo_other_suffix_list; do
-                  acclist="$acclist $model$sfx\\\$"
+                  acclist="$acclist $model$sfx\$"
                 done
                 # filter through lsdat to only get files saved to DATAPATH
                 [ -n "$acclist" ] && lsdat -1 --quiet $acclist >> $hist_file_dump_list
@@ -1006,7 +1006,7 @@ end_reorder_list
               nemo_other_suffix_list="rs cplrs.nc"
               acclist=''
               for sfx in $nemo_other_suffix_list; do
-                acclist="$acclist $model$sfx\\\$"
+                acclist="$acclist $model$sfx\$"
               done
               # filter through lsdat to only get files saved to DATAPATH
               [ -n "$acclist" ] && lsdat -1 --quiet $acclist >> $hist_file_del_list
