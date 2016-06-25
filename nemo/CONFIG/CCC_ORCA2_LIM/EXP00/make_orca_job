@@ -233,6 +233,8 @@ cat <<end_job_defs >$job_defs
 # If they are full path names then these paths must be available from the execution machine.
   nemo_namelist=${runid}_ccc_orca2_lim_namelist
   nemo_namelist_ice=${runid}_ccc_orca2_lim_namelist_ice
+  nemo_namelist_top=${runid}_ccc_orca2_lim_namelist_top
+
 # nn_ice = 0 no ice boundary condition
 #          1 use observed ice-cover;
 #          2 LIM2
