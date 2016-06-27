@@ -83,7 +83,7 @@ iaf_loop_year=0
 # Mostly this affects whether namelist_top is accessed, and whether the TRC restart is
 # saved in the restart archive. Control over which passive tracers are actually 
 #carried is via cpp keys.
-nemo_trc=off
+nemo_trc=on
 
 # nemo_carbon = off means use physical ocean only
 # nemo_carbon = on  means include PISCES

@@ -77,6 +77,14 @@ iaf_year_offset=0
 # nemo "current_year": forcing_year = current_year + iaf_year_offset
 iaf_loop_year=0
 
+# nemo_trc = off means use physical ocean only
+# nemo_trc = on  means include support for passive tracers (e.g. CFC, MY_TRC), even if
+#                nemo_carbon=off. N.B. for ideal age, CFC and C14 etc.
+# Mostly this affects whether namelist_top is accessed, and whether the TRC restart is
+# saved in the restart archive. Control over which passive tracers are actually 
+#carried is via cpp keys.
+nemo_trc=on
+
 # nemo_carbon = off means use physical ocean only
 # nemo_carbon = on  means include PISCES
 nemo_carbon=off
@@ -599,6 +607,8 @@ debug=off
 # nemo "current_year": forcing_year = current_year + iaf_year_offset
   iaf_loop_year=${iaf_loop_year}
 
+# The following determines if passive tracer support is on or not:
+  nemo_trc=${nemo_trc}
 
 # The following determines if carbon is on or not:
   nemo_carbon=${nemo_carbon}
