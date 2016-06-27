@@ -74,6 +74,10 @@
  # a full pathname to a user supplied binary
  nemo_exec=''
 
+ # nemo_trc = off means use physical ocean only
+ # nemo_trc = on  means use passive tracers (general, CFC, MY_TRC, even if pisces/cmoc=off)
+ nemo_trc=off
+
  # nemo_carbon = off means use physical ocean only
  # nemo_carbon = on  means include PISCES/CMOC
  nemo_carbon=off
@@ -92,7 +96,9 @@
    # Namelist file name for NEMO (namelist) and LIM (namelist_ice)
    nemo_namelist=nemo_3.4_orca2_lim_namelist
    nemo_namelist_ice=nemo_3.4_orca2_lim_namelist_ice
-   nemo_namelist_top=mc_nsa_nemo_3.4.1_orca2_namelist_top
+     if [ "x$nemo_trc" = "xon" ]; then
+       nemo_namelist_top=mc_nsa_nemo_3.4.1_orca2_namelist_top
+     fi
  elif [ "x$nemo_carbon" = "xon" ]; then
    # Include PISCES
    nemo_namelist=mc_nsa_nemo_3.4.1_orca2_lim_namelist
@@ -333,6 +339,11 @@ cat > Execute_Script <<'end_of_script'
   nemo_carbon=${nemo_carbon:-off}
   ToF nemo_carbon
 
+  # nemo_trc = off means use physical ocean only
+  # nemo_trc = on  means include namelist top and TRC restarts
+  nemo_trc=${nemo_trc:-off}
+  ToF nemo_trc
+
   # nemo_cmoc = off means use PISCES
   # nemo_cmoc = on means use CMOC
   nemo_cmoc=${nemo_cmoc:-off}
@@ -449,8 +460,10 @@ cat > Execute_Script <<'end_of_script'
       fi
 	
       # The input top namelist is hard coded as "namelist_top" in nemo source
-      [ -z "$nemo_namelist_top" ] && bail "nemo_namelist_top is not defined"
-      acc_cp namelist_top $nemo_namelist_top
+      if [ $nemo_trc -eq 1 ]; then
+        [ -z "$nemo_namelist_top" ] && bail "nemo_namelist_top is not defined"
+        acc_cp namelist_top $nemo_namelist_top
+      fi
 
       if [ $nemo_carbon -eq 1 ]; then
 	# The input pisces namelist is hard coded as "namelist_pisces" in nemo source
@@ -520,10 +533,10 @@ cat > Execute_Script <<'end_of_script'
         fi
       fi
 
-      if [ $nemo_carbon -eq 1 ]; then
+      if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
 	# Pisces restart files
 	found_rs=`(ls -1 *_${cn_trcrst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
-	[ -z "$found_rs" ] && bail "No Pisces restart files were found in $nemo_rs"
+	[ -z "$found_rs" ] && bail "No TRC restart files were found in $nemo_rs"
 	rm -f input_trc_restart_file_names
 	touch input_trc_restart_file_names
 	for rsfile in $found_rs; do
@@ -560,9 +573,11 @@ cat > Execute_Script <<'end_of_script'
 	  acc_cp namelist_ice $nemo_namelist_ice nocp=no
         fi
 
-        # The input top namelist is hard coded as "namelist_top" in nemo source
-        [ -z "$nemo_namelist_top" ] && bail "nemo_namelist_top is not defined"
-         acc_cp namelist_top $nemo_namelist_top nocp=no
+	if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
+          # The input top namelist is hard coded as "namelist_top" in nemo source
+          [ -z "$nemo_namelist_top" ] && bail "nemo_namelist_top is not defined"
+           acc_cp namelist_top $nemo_namelist_top nocp=no
+        fi
 
 	if [ $nemo_carbon -eq 1 ]; then
 	  # The input pisces namelist is hard coded as "namelist_pisces" in nemo source
@@ -583,7 +598,9 @@ cat > Execute_Script <<'end_of_script'
 	  [ ! -s rs_namelist_ice ] && bail "Missing rs_namelist_ice from $nemo_rs"
         fi
 
-	[ ! -s rs_namelist_top ]    && bail "Missing rs_namelist_top from $nemo_rs"
+	if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
+	  [ ! -s rs_namelist_top ]    && bail "Missing rs_namelist_top from $nemo_rs"
+        fi 
 
 	if [ $nemo_carbon -eq 1 ]; then
 	  [ ! -s rs_namelist_pisces ] && bail "Missing rs_namelist_pisces from $nemo_rs"
@@ -602,7 +619,9 @@ cat > Execute_Script <<'end_of_script'
         fi
  
 	# The input top namelist is hard coded as "namelist_top" in nemo source
-	cp -f rs_namelist_top namelist_top
+	if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
+	  cp -f rs_namelist_top namelist_top
+        fi
 
 	if [ $nemo_carbon -eq 1 ]; then
 
@@ -702,9 +721,9 @@ cat > Execute_Script <<'end_of_script'
     fi
 
     # Modify the input top namelist
-    #if [ $nemo_carbon -eq 1 ]; then
+    if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
 	mod_nl namelist_top ln_rsttr cn_trcrst_in cn_trcrst_out
-    #fi
+    fi
     # Write selected namelists from the namelist file
     #  sed -n '/^&namrun/,/^\//p' namelist
     #  sed -n '/^&nammpp/,/^\//p' namelist
@@ -1177,13 +1196,13 @@ cat > Execute_Script <<'end_of_script'
 
       fi
 
-      if [ $nemo_carbon -eq 1 ]; then
-	# Deal with Pisces restarts
+      if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
+	# Deal with passive tracer restarts
 	eval pfnpatt=${cn_exp}_\*_${cn_trcrst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
 	found_rs=`(ls -1 $pfnpatt || : ) 2>/dev/null`
 	if [ -z "$found_rs" ]; then
-	  # No pisces restart files exist
-	  bail "Attempting to save restarts but no pisces restart files exist."
+	  # No TRC restart files exist
+	  bail "Attempting to save restarts but no TRC restart files exist."
 	fi
       else
 	pfnpatt=''
@@ -1195,10 +1214,13 @@ cat > Execute_Script <<'end_of_script'
       # Create copies of the namelists used and include them in the tar file
       cp -f namelist        rs_namelist        || :
       cp -f namelist_ice    rs_namelist_ice    || :
-      cp -f namelist_top    rs_namelist_top    || :
       [ -s rs_namelist ]         && tarlist="$tarlist rs_namelist"
       [ -s rs_namelist_ice ]     && tarlist="$tarlist rs_namelist_ice"
-      [ -s rs_namelist_top ]     && tarlist="$tarlist rs_namelist_top"
+
+      if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
+        cp -f namelist_top    rs_namelist_top    || :
+        [ -s rs_namelist_top ]     && tarlist="$tarlist rs_namelist_top"
+      fi
 
       if [ $nemo_carbon -eq 1 ]; then
 	cp -f namelist_pisces rs_namelist_pisces || :
