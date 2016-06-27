@@ -51,9 +51,14 @@ CONTAINS
       !
       IF(lwp) WRITE(numout,*)
       IF(lwp) WRITE(numout,*) ' trc_sms_my_trc:  MY_TRC model'
-      IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~'
-
-      dtyrs = 1._wp / (3600._wp * 24. * 365.) ! fraction of a year per time step 
+      IF(lwp) WRITE(numoout,*) ' ~~~~~~~~~~~~~~'
+! IF PISCES is used, time-stepping is Euler, so use a factor of 2, relative
+! to leapfrog stepping when PISCES is not used. (stupid, but beyond CCCma control)
+#if defined key_pisces 
+      dtyrs = 2.0_wp / (3600._wp * 24. * 365.) ! fraction of a year per time step 
+#else
+      dtyrs = 1.0_wp / (3600._wp * 24. * 365.) ! fraction of a year per time step 
+#endif
       tra(:,:,:,jpage) = tra(:,:,:, jpage) + dtyrs ! Add the time to the tendancy.
       tra(:,:,1,jpage) = 0._wp  ! Hard restoring to counter E-P & river dilution, equivalent to relaxation time=0
       trn(:,:,1,jpage) = 0._wp  ! Hard restoring to counter E-P & river dilution
