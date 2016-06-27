@@ -51,7 +51,7 @@ CONTAINS
       !
       IF(lwp) WRITE(numout,*)
       IF(lwp) WRITE(numout,*) ' trc_sms_my_trc:  MY_TRC model'
-      IF(lwp) WRITE(numoout,*) ' ~~~~~~~~~~~~~~'
+      IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~'
 ! IF PISCES is used, time-stepping is Euler, so use a factor of 2, relative
 ! to leapfrog stepping when PISCES is not used. (stupid, but beyond CCCma control)
 #if defined key_pisces 
