@@ -723,9 +723,6 @@ end_reorder_list
   nemo_ann_cat=${nemo_ann_cat:=off}
   ToF nemo_ann_cat
 
-  nemo_dump_other=${nemo_dump_other:=on}
-  ToF nemo_dump_other
-
   if [ -n "$month_counter" -a -n "$months" ]; then
     # months and month_counter are defined
     # These variables are define when running in gcmjcl mode
@@ -754,6 +751,19 @@ end_reorder_list
     last_month_in_curr_job=0
   fi
 
+  # nemo_dump_other flags dumping and deleting other (non-nemo) files
+  # but only when running in gcmjcl mode
+  nemo_dump_other=${nemo_dump_other:=on}
+  ToF nemo_dump_other
+
+  # nemo_other_hist_suffix_list will contain a list of other (non-nemo) history file suffixes
+  # that may be dumped and deleted when in gcmjcl mode
+  nemo_other_hist_suffix_list=${nemo_other_hist_suffix_list:='cplhist.nc'}
+
+  # nemo_other_rs_suffix_list will contain a list of other (non-nemo) restart file suffixes
+  # that may be dumped and deleted when in gcmjcl mode
+  nemo_other_rs_suffix_list=${nemo_other_rs_suffix_list:='rs cplrs.nc'}
+
   # IF any dumps or deletes
   if [ $nemo_dump_hist -eq 1 -o $nemo_dump_rs -eq 1 -o $nemo_del_hist -eq 1 -o $nemo_del_rs -eq 1 ]; then
     # If nemo_ann_cat=on, only dump/delete in December. Else do it every step.
@@ -761,8 +771,8 @@ end_reorder_list
       if [ $nemo_dump_hist -eq 1 -o $nemo_dump_rs -eq 1 ]; then
         # The user can redefine nemo_dump_hist_freq_list and nemo_dump_hist_suffix_list
         # to only dump a subset of the history files
-        nemo_dump_hist_freq_list='1y 1m 1d 5d'
-        nemo_dump_hist_suffix_list='icemod grid_t grid_u grid_v grid_w ptrc_t diad_t'
+        nemo_dump_hist_freq_list=${nemo_dump_hist_freq_list:='1y 1m 1d 5d'}
+        nemo_dump_hist_suffix_list=${nemo_dump_hist_suffix_list:='icemod grid_t grid_u grid_v grid_w ptrc_t diad_t'}
 
         # The user can redefine nemo_dump_rs_month_list. Restarts will
         # only be dumped for those months listed in nemo_dump_rs_month_list.
@@ -812,9 +822,8 @@ end_reorder_list
             # Assume we are running from gcmjcl
             if [ $nemo_dump_other -eq 1 ]; then
               # Dump agcm and/or coupler history files as well
-              nemo_other_suffix_list="gs ss cplhist.nc"
               acclist=''
-              for sfx in $nemo_other_suffix_list; do
+              for sfx in $nemo_other_hist_suffix_list; do
                 acclist="$acclist $model$sfx"
               done
               # filter through lsdat to only get files saved to DATAPATH
@@ -848,19 +857,16 @@ end_reorder_list
 	    [ -n "$found_rs_file" ] || bail "nemo_dump_rs=on but cannot find ${rs_out} on DATAPATH"
 	    echo ${rs_out} >> ${hist_file_dump_list}
 
-            if [ -n "$model" ]; then
+            if [ -n "$model" -a $nemo_dump_other -eq 1 ]; then
               # Assume we are running from gcmjcl
-              if [ $nemo_dump_other -eq 1 ]; then
-                # Dump agcm and/or coupler restart files as well
-                nemo_other_suffix_list="rs cplrs.nc"
-                acclist=''
-                for sfx in $nemo_other_suffix_list; do
-                  acclist="$acclist $model$sfx"
-                done
-                if [ -n "$acclist" ]; then
-                  # filter through lsdat to only get files saved to DATAPATH
-                  lsdat -1 --quiet $acclist | sed -e 's/[a-zA-Z0-9_.-]*_rs_nmf//g' >> $hist_file_dump_list
-                fi
+              # Dump agcm and/or coupler restart files as well
+              acclist=''
+              for sfx in $nemo_other_rs_suffix_list; do
+                acclist="$acclist $model$sfx"
+              done
+              if [ -n "$acclist" ]; then
+                # filter through lsdat to only get files saved to DATAPATH
+                lsdat -1 --quiet $acclist | sed -e 's/[a-zA-Z0-9_.-]*_rs_nmf//g' >> $hist_file_dump_list
               fi
             fi
 
@@ -894,8 +900,8 @@ end_reorder_list
 
       # The user can redefine nemo_del_hist_freq_list and nemo_del_hist_suffix_list
       # to only delete a subset of the history files
-      nemo_del_hist_freq_list='1y 1m 1d 5d'
-      nemo_del_hist_suffix_list='icemod grid_t grid_u grid_v grid_w ptrc_t diad_t'
+      nemo_del_hist_freq_list=${nemo_del_hist_freq_list:='1y 1m 1d 5d'}
+      nemo_del_hist_suffix_list=${nemo_del_hist_suffix_list:='icemod grid_t grid_u grid_v grid_w ptrc_t diad_t'}
 
       if [ $nemo_del_hist -eq 1 -o $nemo_del_rs -eq 1 ]; then
 	# Keep track of history files to delete in hist_file_del_list
@@ -936,18 +942,15 @@ end_reorder_list
 	    done
 	  done
 
-          if [ -n "$model" ]; then
+          if [ -n "$model" -a $nemo_dump_other -eq 1 ]; then
             # Assume we are running in gcmjcl mode
-            if [ $nemo_dump_other -eq 1 ]; then
-              # Dump agcm and/or coupler history files as well
-              nemo_other_suffix_list="gs ss cplhist.nc"
-              acclist=''
-              for sfx in $nemo_other_suffix_list; do
-                acclist="$acclist $model$sfx"
-              done
-              # filter through lsdat to only get files saved to DATAPATH
-              [ -n "$acclist" ] && lsdat -1 --quiet $acclist >> $hist_file_del_list
-            fi
+            # Dump agcm and/or coupler history files as well
+            acclist=''
+            for sfx in $nemo_other_hist_suffix_list; do
+              acclist="$acclist $model$sfx"
+            done
+            # filter through lsdat to only get files saved to DATAPATH
+            [ -n "$acclist" ] && lsdat -1 --quiet $acclist >> $hist_file_del_list
           fi
 
 	  [ -s ${hist_file_del_list} ] || 
@@ -1005,9 +1008,8 @@ end_reorder_list
             if [ $last_month_in_curr_job -eq 0 ]; then
               # Delete agcm and/or coupler restart files
               # Do not delete if this is the last month of the current submission job
-              nemo_other_suffix_list="rs cplrs.nc"
               acclist=''
-              for sfx in $nemo_other_suffix_list; do
+              for sfx in $nemo_other_rs_suffix_list; do
                 acclist="$acclist $model$sfx"
               done
               if [ -n "$acclist" ]; then
