@@ -460,7 +460,7 @@ cat > Execute_Script <<'end_of_script'
       fi
 	
       # The input top namelist is hard coded as "namelist_top" in nemo source
-      if [ $nemo_trc -eq 1 ]; then
+      if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
         [ -z "$nemo_namelist_top" ] && bail "nemo_namelist_top is not defined"
         acc_cp namelist_top $nemo_namelist_top
       fi
