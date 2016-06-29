@@ -15,7 +15,7 @@
 &nampisext     !   air-sea exchange
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
    ln_co2int  =  .false. ! read atm pco2 from a file (T) or constant (F)
-   atcco2     =  280.    ! Constant value atmospheric pCO2 - ln_co2int = F
+   atcco2     =  285.    ! Constant value atmospheric pCO2 - ln_co2int = F
    clname     =  'atcco2.txt'  ! Name of atm pCO2 file - ln_co2int = T
    nn_offset  =  0       ! Offset model-data start year - ln_co2int = T
 !                        ! If your model year is iyy, nn_offset=(years(1)-iyy) 
@@ -81,13 +81,13 @@
    mpqua      =  1.E-9    ! quadratic mortality of phytoplankton
    mpquad     =  2.E-8    ! maximum quadratic mortality of diatoms
    chldegr    =  2.E-2    ! Chlorophyll photooxidation rate
-   picfrx     =  0.1      ! CaCO3 production rate (as fraction of POC)
+   picfrx     =  0.05     ! CaCO3 production rate (as fraction of POC)
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &nampismes     !   parameters for mesozooplankton
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
    part2      =  0.75     ! part of calcite not dissolved in mesozoo guts (not used)
-   gmax2      = 1.E-5     ! maximum grazing rate in s^-1
+   gmax2      = 2.E-6     ! maximum grazing rate in s^-1
    apl        = 0.075     ! large zooplankton functional response parameter
    zsr2       = 5.787E-7  ! specific respiration rate
    lambda2    = 0.8       ! assimilation efficiency
@@ -96,7 +96,7 @@
 &nampiszoo     !   parameters for microzooplankton
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
    part       =  0.5      ! part of calcite not dissolved in microzoo guts (not used)
-   gmax1      = 2.0E-5    ! maximum grazing rate in s^-1
+   gmax1      = 5.0E-6    ! maximum grazing rate in s^-1
    aps        = 0.075     ! small zooplankton functional response parameter
    zsr1       = 5.787E-7  ! specific respiration rate
    lambda1    = 0.8       ! assimilation efficiency
@@ -107,7 +107,7 @@
    xremik     = 0.25      ! remineralisation rate of POC 
    xremip     = 0.025     ! remineralisation rate of DOC
    nitrif     = 0.05      ! NH4 nitrification rate 
-   xlam1      = 0.0001    ! scavenging rate of iron (low concentrations)
+   xlam1      = 0.001     ! scavenging rate of iron (low concentrations)
    xlam2      = 2.5       ! scavenging rate of iron (high concentrations)
    ligand     = 600.      ! ligand concentration
    pocfctr    = 0.65574   ! multiplier for POC-dependent scavenging
@@ -138,7 +138,7 @@
    ln_ndepo    =  .false.  ! boolean for atmospheric deposition of N
    ln_ironsed  =  .true.   ! boolean for Fe input from sediments
    sedfeinput  =  1000.    ! Coastal release of Iron
-   dustsolub   =  0.02     ! Solubility of the dust
+   dustsolub   =  0.01     ! Solubility of the dust
    wdust       =  2.0      ! Dust sinking speed
    nitrfix     =  2.60E-7  ! Nitrogen fixation rate
    diazolight  =  50.      ! Diazotrophs sensitivity to light (W/m2)

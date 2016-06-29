@@ -149,7 +149,7 @@ CONTAINS
 !CDIR NOVERRCHK
          DO ji = 1, jpi
             !                             ! SET ABSOLUTE TEMPERATURE
-            ztkel = tsn(ji,jj,1,jp_tem) + 273.16
+            ztkel = tsn(ji,jj,1,jp_tem) + 273.15
             zt    = ztkel * 0.01
             zt2   = zt * zt
             zsal  = tsn(ji,jj,1,jp_sal) + ( 1.- tmask(ji,jj,1) ) * 35.
@@ -187,7 +187,7 @@ CONTAINS
                zpres   = 1.025e-1 * fsdept(ji,jj,jk)
 
                ! SET ABSOLUTE TEMPERATURE
-               ztkel   = tsn(ji,jj,jk,jp_tem) + 273.16
+               ztkel   = tsn(ji,jj,jk,jp_tem) + 273.15
                zsal    = tsn(ji,jj,jk,jp_sal) + ( 1.-tmask(ji,jj,jk) ) * 35.
                zsqrt  = SQRT( zsal )
                zsal15  = zsqrt * zsal
@@ -219,11 +219,11 @@ CONTAINS
                   &   + ( akcc5 + akcc6 * ztkel + akcc7 * ztr ) * zsqrt + akcc8 * zsal + akcc9 * zsal15
 
                ! K1, K2 OF CARBONIC ACID, KB OF BORIC ACID, KW (H2O) (LIT.?)
-               zak1    = 10**(zck1)
-               zak2    = 10**(zck2)
+               zak1    = 10.**(zck1)
+               zak2    = 10.**(zck2)
                zakb    = EXP( zckb  )
                zakw    = EXP( zckw )
-               zaksp1  = 10**(zaksp0)
+               zaksp1  = 10.**(zaksp0)
 
                ! FORMULA FOR CPEXP AFTER EDMOND & GIESKES (1970)
                !        (REFERENCE TO CULBERSON & PYTKOQICZ (1968) AS MADE
@@ -242,8 +242,8 @@ CONTAINS
                !        CORRECTION AFTER CULBERSON AND PYTKOWICZ (1968)
                !        (CF. BROECKER ET AL., 1982)
 
-               zbuf1  = -(devk1(1)+devk2(1)*ztc+devk3(1)*ztc*ztc)
-               zbuf2  = 0.5*(devk4(1)+devk5(1)*ztc)
+               zbuf1  =     - ( devk1(1) + devk2(1) * ztc + devk3(1) * ztc * ztc )
+               zbuf2  = 0.5 * ( devk4(1) + devk5(1) * ztc )
                ak13(ji,jj,jk) = zak1 * EXP( zbuf1 * zcpexp + zbuf2 * zcpexp2 )
 
                zbuf1  =     - ( devk1(2) + devk2(2) * ztc + devk3(2) * ztc * ztc )
