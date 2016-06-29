@@ -12,7 +12,6 @@ MODULE trcsms_my_trc
    !! trc_sms_my_trc       : MY_TRC model main routine
    !! trc_sms_my_trc_alloc : allocate arrays specific to MY_TRC sms
    !!----------------------------------------------------------------------
-   USE par_trc         ! TOP parameters
    USE oce_trc         ! Ocean variables
    USE trc             ! TOP variables
    USE trdmod_oce
@@ -45,6 +44,7 @@ CONTAINS
       INTEGER, INTENT(in) ::   kt   ! ocean time-step index
       INTEGER ::   jn   ! dummy loop index
       REAL(wp), POINTER, DIMENSION(:,:,:) :: ztrmyt
+      REAL(wp) :: dtyrs
 !!----------------------------------------------------------------------
       !
       IF( nn_timing == 1 )  CALL timing_start('trc_sms_my_trc')
@@ -52,29 +52,19 @@ CONTAINS
       IF(lwp) WRITE(numout,*)
       IF(lwp) WRITE(numout,*) ' trc_sms_my_trc:  MY_TRC model'
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~'
+! IF PISCES is used, time-stepping is Euler, so use a factor of 2, relative
+! to leapfrog stepping when PISCES is not used. (stupid, but beyond CCCma control)
+#if defined key_pisces 
+      dtyrs = 2.0_wp / (3600._wp * 24. * 365.) ! fraction of a year per time step 
+#else
+      dtyrs = 1.0_wp / (3600._wp * 24. * 365.) ! fraction of a year per time step 
+#endif
+      tra(:,:,:,jpage) = tra(:,:,:, jpage) + dtyrs ! Add the time to the tendancy.
+      tra(:,:,1,jpage) = 0._wp  ! Hard restoring to counter E-P & river dilution, equivalent to relaxation time=0
+      trn(:,:,1,jpage) = 0._wp  ! Hard restoring to counter E-P & river dilution
+      ! WRITE(numout,*) 'Max surface, ocean age', maxval(trn(:,:,1,jpage)), maxval(trn(:,:,:,jpage))
+      ! WRITE(numout,*) 'Max surface, ocean age tra:', maxval(tra(:,:,1,jpage)), maxval(tra(:,:,:,jpage))
 
-      IF( l_trdtrc )  CALL wrk_alloc( jpi, jpj, jpk, ztrmyt )
-
-      WHERE( (glamt <= 170) .AND. (glamt >= 160) .AND. (gphit <= -74) .AND. (gphit >=-75.6) )
-        trn(:,:,1,jpmyt1) = 1._wp
-        trb(:,:,1,jpmyt1) = 1._wp
-        tra(:,:,1,jpmyt1) = 0._wp
-      END WHERE
-
-      WHERE( ((glamt <= -165) .OR. (glamt >= 160)) .AND. (gphit <= -76) .AND. (gphit >=-80))
-        trn(:,:,1,jpmyt2) = 1._wp
-        trb(:,:,1,jpmyt2) = 1._wp
-        tra(:,:,1,jpmyt2) = 0._wp
-      END WHERE
-
-      IF( l_trdtrc ) THEN      ! Save the trends in the ixed layer
-          DO jn = jp_myt0, jp_myt1
-            ztrmyt(:,:,:) = tra(:,:,:,jn)
-            CALL trd_mod_trc( ztrmyt, jn, jptra_trd_sms, kt )   ! save trends
-          END DO
-          CALL wrk_dealloc( jpi, jpj, jpk, ztrmyt )
-      END IF
-      !
       IF( nn_timing == 1 )  CALL timing_stop('trc_sms_my_trc')
       !
    END SUBROUTINE trc_sms_my_trc

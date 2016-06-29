@@ -49,6 +49,7 @@
    sn_tracer(22)  = 'DCHL    ' , 'Diatoms chlorophyl Concentration       ',  'mol-C/L' ,  .false.    ,  .true.
    sn_tracer(23)  = 'NO3     ' , 'Nitrates Concentration                 ',  'mol-C/L' ,  .true.     ,  .true.
    sn_tracer(24)  = 'NH4     ' , 'Ammonium Concentration                 ',  'mol-C/L' ,  .false.    ,  .true.
+   sn_tracer(25)  = 'agessc  ' , 'Ideal age                              ' , 'years' ,  .false.    ,  .true.
 /
 !-----------------------------------------------------------------------
 &namtrc_dta      !    Initialisation from data input file

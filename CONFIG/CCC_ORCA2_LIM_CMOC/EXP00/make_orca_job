@@ -271,6 +271,7 @@ debug=off
 # run_start_year is the first year of the run, which is normally start_year
 # but can be reset by the user if required
   run_start_year=$start_year
+  run_start_month=$start_mon
 
 # nemo_nn_it000 is the initial time step of the current run
 # This is normally read from the previous restart but may be set here.
@@ -641,7 +642,7 @@ debug=off
 # Determines if RTD is done, and specifies the RTD executables
   nemo_rtd=${nemo_rtd}
   physical_rtd_exe="nemo_physical_rtd_v03c_exe"
-  carbon_rtd_exe="nemo_carbon-cmoc_rtd_v03c_exe"
+  carbon_rtd_exe="nemo_carbon-cmoc_rtd_v03d_exe"
   ice_rtd_exe="nemo_ice_rtd_v03c_exe"
 
 # Set start year for rtd

@@ -24,12 +24,12 @@
 &namrun        !   parameters of the run
 !-----------------------------------------------------------------------
   nn_no = 1000
-  cn_exp = "ngm"
-  nn_it000 = 9627241
-  nn_itend = 9636000
+  cn_exp = "ORCA1"
+  nn_it000 = 1
+  nn_itend = 30
   nn_date0 = 10000101
    nn_leapy    =       0   !  Leap year calendar (1) or not (0)
-  ln_rstart = .true.
+  ln_rstart = .false.
   nn_rstctl = 0
                            !    = 0 nn_date0 read in namelist ; nn_it000 : read in namelist
                            !    = 1 nn_date0 read in namelist ; nn_it000 : check consistancy between namelist and restart
@@ -188,15 +188,15 @@
 !-----------------------------------------------------------------------
 !              !  file name    ! frequency (hours) ! variable  ! time interp. !  clim  ! 'yearly'/ ! weights        ! rotation !
 !              !               !  (if <0  months)  !   name    !   (logical)  !  (T/F) ! 'monthly' ! filename       ! pairing  !
-   sn_wndi     = 'uwnd10m'     ,         6         , 'U_10_MOD',   .false.    , .false. , 'yearly'  , 'weights_bic2' , 'Uwnd'
-   sn_wndj     = 'vwnd10m'     ,         6         , 'V_10_MOD',   .false.    , .false. , 'yearly'  , 'weights_bic2' , 'Vwnd'
-   sn_qsr      = 'qsw'         ,        24         , 'SWDN_MOD',   .false.    , .false. , 'yearly'  , 'weights_bil2' , ''
-   sn_qlw      = 'qlw'         ,        24         , 'LWDN_MOD',   .false.    , .false. , 'yearly'  , 'weights_bil2' , ''
-   sn_tair     = 'tair10m'     ,         6         , 'T_10_MOD',   .false.    , .false. , 'yearly'  , 'weights_bil2' , ''
-   sn_humi     = 'humi10m'     ,         6         , 'Q_10_MOD',   .false.    , .false. , 'yearly'  , 'weights_bil2' , ''
-   sn_prec     = 'precip'      ,        -1         , 'PRC_MOD',   .false.    , .false. , 'yearly'  , 'weights_bil2' , ''
-   sn_snow     = 'snow'        ,        -1         , 'SNOW'    ,   .false.    , .false. , 'yearly'  , 'weights_bil2' , ''
-   sn_tdif     = 'taudif_core' ,        24         , 'taudif'  ,   .false.    , .true.  , 'yearly'  , ''             , ''
+   sn_wndi     = 'uwnd10m'     ,         6         , 'U_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bic2' , 'Uwnd'
+   sn_wndj     = 'vwnd10m'     ,         6         , 'V_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bic2' , 'Vwnd'
+   sn_qsr      = 'qsw'         ,        24         , 'SWDN_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , ''
+   sn_qlw      = 'qlw'         ,        24         , 'LWDN_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , ''
+   sn_tair     = 'tair10m'     ,         6         , 'T_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , ''
+   sn_humi     = 'humi10m'     ,         6         , 'Q_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , ''
+   sn_prec     = 'precip'      ,        -1         , 'PRC_MOD' ,   .false.    , .true. , 'yearly'  , 'weights_bil2' , ''
+   sn_snow     = 'snow'        ,        -1         , 'SNOW'    ,   .false.    , .true. , 'yearly'  , 'weights_bil2' , ''
+   sn_tdif     = 'taudif_core' ,        24         , 'taudif'  ,   .false.    , .true. , 'yearly'  , ''             , ''
 
    cn_dir      = './'      !  root directory for the location of the bulk files
    ln_2m       = .false.   !  air temperature and humidity referenced at 2m (T) instead 10m (F)
@@ -772,9 +772,9 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
                            !  buffer blocking send or immediate non-blocking sends, resp.
    nn_buffer   =   0       !  size in bytes of exported buffer ('B' case), 0 no exportation
    ln_nnogather=  .false.  !  activate code to avoid mpi_allgather use at the northfold
-  jpni = 8
-  jpnj = 6
-  jpnij = 48
+  jpni = 1
+  jpnj = 1
+  jpnij = 1
 /
 !-----------------------------------------------------------------------
 &namctl        !   Control prints & Benchmark

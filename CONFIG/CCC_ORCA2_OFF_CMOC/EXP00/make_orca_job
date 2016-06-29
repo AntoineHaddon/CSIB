@@ -262,6 +262,7 @@ debug=off
 # run_start_year is the first year of the run, which is normally start_year
 # but can be reset by the user if required
   run_start_year=$start_year
+  run_start_month=$start_mon
 
 # Set start year for rtd
   year_rtdiag_start=${year_rtdiag_start}
@@ -407,7 +408,7 @@ debug=off
 # Determines if RTD is done, and specifies the RTD executables
   nemo_rtd=${nemo_rtd}
   physical_rtd_exe="nemo_physical_rtd_v03c_exe"
-  carbon_rtd_exe="nemo_carbon-cmoc_rtd_v03c_exe"
+  carbon_rtd_exe="nemo_carbon-cmoc_rtd_v03d_exe"
 
 # Dump history files saved on DATAPATH to cfs
 # The user can redefine nemo_dump_hist_freq_list and nemo_dump_hist_suffix_list
