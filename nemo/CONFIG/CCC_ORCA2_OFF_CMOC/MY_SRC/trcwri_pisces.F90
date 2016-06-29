@@ -39,8 +39,15 @@ CONTAINS
 
       DO jn = 1, jptra
 
-         zrfact = 1.0e+6_wp ! <CMOC code OR 10/23/2015> 
-         IF( jn == jpno3 .OR. jn == jpphy .OR. jn == jpzoo .OR. jn == jppoc )                  zrfact = 1.0e+6 / 106._wp * 16._wp   ! <CMOC code OR 10/23/2015> change the chemical currency from carbon to nitrogen
+         ! Scale CMOC tracers
+         IF( jn >= jp_pcs0 .AND. jn <= jp_pcs1  ) THEN
+             zrfact = 1.0e+6_wp 
+         ELSE ! for all other passive tracers
+             zrfact = 1.0_wp 
+         ENDIF
+
+         ! Change the chemical currency from carbon to nitrogen for certain CMOC variables
+         IF( jn == jpno3 .OR. jn == jpphy .OR. jn == jpzoo .OR. jn == jppoc )  zrfact = 1.0e+6 / 106._wp * 16._wp   
 
          cltra = TRIM( ctrcnm(jn) )                  ! short title for tracer
          CALL iom_put( cltra, trn(:,:,:,jn) * zrfact )

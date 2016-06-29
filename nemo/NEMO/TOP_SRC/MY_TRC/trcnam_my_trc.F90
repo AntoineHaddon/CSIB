@@ -14,6 +14,7 @@ MODULE trcnam_my_trc
    USE oce_trc         ! Ocean variables
    USE par_trc         ! TOP parameters
    USE trc             ! TOP variables
+!   USE sms_my_trc      ! my namelist variable
 
    IMPLICIT NONE
    PRIVATE
@@ -36,9 +37,27 @@ CONTAINS
       !!
       !!----------------------------------------------------------------------
       !
+      INTEGER :: jl, jn
+      !!
+!      NAMELIST/nampisbio/ nrdttrc
+
       IF(lwp) WRITE(numout,*)
       IF(lwp) WRITE(numout,*) ' trc_nam_my_trc : read MY_TRC namelists'
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~~'
+
+      !                               ! Open the namelist file
+      !                               ! ----------------------
+!      CALL ctl_opn( numnatp, 'namelist_my_trc', 'OLD', 'FORMATTED', 'SEQUENTIAL', -1, numout, .FALSE. )
+
+!      REWIND( numnatp )
+!      READ  ( numnatp, nampisbio )
+
+!      IF(lwp) THEN                         ! control print
+!         WRITE(numout,*) ' Namelist : nampisbio'
+!         WRITE(numout,*) '    frequence pour la biologie                nrdttrc   =', nrdttrc
+!      ENDIF
+
+
       !
    END SUBROUTINE trc_nam_my_trc
    

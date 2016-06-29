@@ -200,15 +200,15 @@ CONTAINS
     
       ! Do the bottom sedimentation of calcite. The sedimenting flux is added back
       ! to the surface layer (psuedo "river flux") for conservation.
-      !DO jj = 1, jpj
-      !   DO ji = 1,jpi
-      !      trn(ji,jj,mbkt(ji,jj),jpdic) = trn(ji,jj,mbkt(ji,jj),jpdic) - zcalbotflx(ji,jj) / fse3t(ji,jj,mbkt(ji,jj))
-      !      trn(ji,jj,1,jpdic) = trn(ji,jj,1,jpdic)  + zcalbotflx(ji,jj) / fse3t(ji,jj, 1) 
+      DO jj = 1, jpj
+         DO ji = 1,jpi
+            trn(ji,jj,mbkt(ji,jj),jpdic) = trn(ji,jj,mbkt(ji,jj),jpdic) - zcalbotflx(ji,jj) / fse3t(ji,jj,mbkt(ji,jj))
+            trn(ji,jj,1,jpdic) = trn(ji,jj,1,jpdic)  + zcalbotflx(ji,jj) / fse3t(ji,jj, 1) 
 
-      !      trn(ji,jj,mbkt(ji,jj),jptal) = trn(ji,jj,mbkt(ji,jj),jptal) - 2._wp * zcalbotflx(ji,jj) / fse3t(ji,jj,mbkt(ji,jj))
-      !      trn(ji,jj,1,jptal) = trn(ji,jj,1,jptal)  + 2._wp * zcalbotflx(ji,jj) / fse3t(ji,jj, 1) 
-      !   ENDDO
-      !ENDDO
+            trn(ji,jj,mbkt(ji,jj),jptal) = trn(ji,jj,mbkt(ji,jj),jptal) - 2._wp * zcalbotflx(ji,jj) / fse3t(ji,jj,mbkt(ji,jj))
+            trn(ji,jj,1,jptal) = trn(ji,jj,1,jptal)  + 2._wp * zcalbotflx(ji,jj) / fse3t(ji,jj, 1) 
+         ENDDO
+      ENDDO
 
       !globvol = glob_sum( cvol(:,:,:) )
       !globtal = glob_sum( trn(:,:,:,jptal) * cvol(:,:,:) ) / globvol
@@ -220,9 +220,9 @@ CONTAINS
          ik1  = iksed + 1
          IF( lk_iomput ) THEN
            IF( jnt == nrdttrc ) THEN
-              CALL iom_put( "oomask"  ,   oomask(:,:))
-              CALL iom_put( "EPC100"  ,   sinking(:,:,ik1)                       * zrfact2 * tmask(:,:,1) )
-              CALL iom_put( "EPCALC100",  zfpon(:,:) / rday * 1e3_wp ) ! <CMOC code OR 10/22/2015> PIC diagnostics
+              CALL iom_put( "oomask", oomask(:,:))
+              CALL iom_put( "EPC100", sinking(:,:,ik1) * zrfact2 * tmask(:,:,1) )
+              CALL iom_put( "EPCALC100",    zfpon(:,:) * zrfact2 * tmask(:,:,1) ) !
               ! <CMOC code OR 12/11/2015> denitrification ! CALL iom_put( "BUPOC"  , wsbio3(:,:,11) /rday * zbpoc(:,:) * 1e+3_wp  )  ! POC burial flux
               ! <CMOC code OR 12/11/2015> denitrification ! CALL iom_put( "BUCALC" , zfpon(:,:) * 1e+3_wp * rfact2r * zbpon(:,:)  )  ! <CMOC code OR 12/11/2015> *rfact2r replaces /rfact2 ! PIC burial flux
            ENDIF

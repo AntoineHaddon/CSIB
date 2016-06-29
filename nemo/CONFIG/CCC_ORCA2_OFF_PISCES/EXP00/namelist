@@ -102,7 +102,7 @@
    !
    cn_dir        = './'     !  root directory for the location of the runoff files
    ln_tsd_init   = .true.   !  Initialisation of ocean T & S with T &S input data (T) or not (F)
-   ln_tsd_tradmp = .true.   !  damping of ocean T & S toward T &S input data (T) or not (F)
+   ln_tsd_tradmp = .true.  !  damping of ocean T & S toward T &S input data (T) or not (F)
 /
 !!======================================================================
 !!            ***  Surface Boundary Condition namelists  ***
@@ -747,6 +747,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
    ln_tmx_itf  = .true.    !  ITF specific parameterisation
    rn_tfe_itf  = 1.        !  ITF tidal dissipation efficiency
    ln_leewmx   = .true.    !  addition of Lee Wave mixing (.true.) or not (.false., default in the code)
+   rn_lwm      = 0.3       !  lee wave mixing scaling (default is 0.3)
 /
 
 !!======================================================================
