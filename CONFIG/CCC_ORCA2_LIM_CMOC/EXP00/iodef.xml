@@ -17,6 +17,7 @@
       <!-- T grid -->
       
       <group id="grid_T" axis_ref="none" grid_ref="grid_T">
+        <field id="agessc"       description="Ideal age"                                 unit="years" axis_ref="deptht"   />
 	<field id="toce"         description="temperature"                               unit="degC" axis_ref="deptht"   />
        	<field id="soce"         description="salinity"                                  unit="psu"  axis_ref="deptht"   />
 	<field id="sst"          description="sea surface temperature"                   unit="degC"                     />
@@ -52,7 +53,6 @@
       <!-- SBC -->
       
       <group id="SBC" axis_ref="none" grid_ref="grid_T" > <!-- time step automaticaly defined based on nn_fsbc -->
-
 	<field id="empmr"        description="Net Upward Water Flux"                                        unit="kg/m2/s"  />
 	<field id="empsmr"       description="concentration/dilution water flux"                            unit="kg/m2/s"  />
 	<field id="snowpre"      description="Snow precipitation"                                           unit="kg/m2/s"  />
@@ -247,6 +247,7 @@
        <field id="LNFe"        description="Iron limitation term in Nanophyto"        unit="-"                            />
        <field id="LNlight"     description="Light limitation term in Nanophyto"       unit="-"          axis_ref="deptht" />
        <field id="Nfix"        description="Nitrogen fixation at surface"             unit="mol/m2/s"                     />
+       <field id="Denit"       description="Water column denitrification"             unit="mol/m2/s"                     />
        <field id="EPC100"      description="Export of carbon particles at 100 m"      unit="mol/m2/s"                     />
        <field id="EPCALC100"   description="Export of Calcite at 100 m"               unit="mol/m2/s"                     />
        <field id="BUPOC"       description="Burial of carbon particles in sediments"  unit="mol/m2/s"                     />
@@ -257,6 +258,7 @@
        <field id="Dpco2"       description="Delta CO2"                                unit="uatm"                         />
        <field id="Dpo2"        description="Delta O2"                                 unit="uatm"                         />
        <field id="Heup"        description="Euphotic layer depth"                     unit="m"                            />
+       <field id="oomask"      description="Open Ocean mask"                          unit="-"                            />
      </group>
        
     </field_definition>
@@ -315,6 +317,7 @@
           <field ref="mldr10_1"     name="somxl010"  />
           <field ref="qns"           />
           <field ref="qsr"           />
+          <field ref="agessc"           />
         </file>
 
         <file id="1m_grid_U" name="auto" description="ocean U grid variables" >
@@ -370,6 +373,7 @@
            <field ref="Cflx"      />
            <field ref="Oflx"      />
            <field ref="Nfix"      />
+	   <field ref="Denit"      />
            <field ref="EPC100"      />
            <field ref="EPCALC100"   />
            <field ref="BUPOC"       />
@@ -381,7 +385,7 @@
            <field ref="LNlight"    />
            <field ref="PAR"       />
            <field ref="Mumax"    />
-
+           <field ref="oomask"    />
        </file> 
 
 

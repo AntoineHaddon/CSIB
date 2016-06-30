@@ -4,7 +4,8 @@ MODULE trcwri_pisces
    !!    PISCES :   Output of PISCES tracers
    !!======================================================================
    !! History :   1.0  !  2009-05 (C. Ethe)  Original code
-   !!           CMOC1  !  2013-15 (O. Riche) code edition for consistency with CMOC adaptation
+   !!           CMOC1  !  2013-15 (O. Riche) code edition for consistency
+   !!                                        with CMOC adaptation
    !!----------------------------------------------------------------------
 #if defined key_top && key_pisces && defined key_iomput
    !!----------------------------------------------------------------------
@@ -38,12 +39,19 @@ CONTAINS
 
       DO jn = 1, jptra
 
-         zrfact = 1.0e+6_wp ! <CMOC code OR 10/23/2015> 
-         IF( jn == jpoxy  )                                                                    zrfact = 1.0e+6 / 106._wp * 138._wp  ! <CMOC code OR 10/23/2015> convert back to uM of O2 with the Redfield ratio
-         IF( jn == jpno3 .OR. jn == jpphy .OR. jn == jpzoo .OR. jn == jppoc )                  zrfact = 1.0e+6 / 106._wp * 16._wp   ! <CMOC code OR 10/23/2015> change the chemical currency from carbon to nitrogen
+         ! Scale CMOC tracers
+         IF( jn >= jp_pcs0 .AND. jn <= jp_pcs1  ) THEN
+             zrfact = 1.0e+6_wp 
+         ELSE ! for all other passive tracers
+             zrfact = 1.0_wp 
+         ENDIF
+
+         ! Change the chemical currency from carbon to nitrogen for certain CMOC variables
+         IF( jn == jpno3 .OR. jn == jpphy .OR. jn == jpzoo .OR. jn == jppoc )  zrfact = 1.0e+6 / 106._wp * 16._wp   
 
          cltra = TRIM( ctrcnm(jn) )                  ! short title for tracer
          CALL iom_put( cltra, trn(:,:,:,jn) * zrfact )
+          WRITE(*,*) cltra, zrfact
 
       END DO
       !
