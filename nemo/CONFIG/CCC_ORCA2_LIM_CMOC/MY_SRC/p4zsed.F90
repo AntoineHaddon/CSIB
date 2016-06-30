@@ -7,6 +7,7 @@ MODULE p4zsed
    !!             2.0  !  2007-12  (C. Ethe, G. Madec)  F90
    !!             3.4  !  2011-06  (O. Aumont, C. Ethe) USE of fldread
    !!           CMOC1  !  203-15   (O. Riche) river forcing, bottom POC remineralization, and dissolved iron mask
+   !!           CMOC1  !  2016-02  (N. Swart) Bugfixes; adds DNF
    !!----------------------------------------------------------------------
 #if defined key_pisces
    !!----------------------------------------------------------------------
@@ -23,6 +24,7 @@ MODULE p4zsed
    USE iom             !  I/O manager
    USE fldread         !  time interpolation
    USE prtctl_trc      !  print control for debugging
+   USE p4zrem          !  remineralization terms used for denitrification
 
    IMPLICIT NONE
    PRIVATE
@@ -72,10 +74,23 @@ CONTAINS
       INTEGER, INTENT(in) ::   kt, jnt ! ocean time step
       INTEGER  ::   ji, jj, jk, ikt
       REAL(wp) ::   zwsbio3, zdep
+      ! <CMOC code OR 10/15/2015> arrays for total water column remineralisation, 
+      ! total euphotic zone nitrogen fixation, temporary array for DNF diagnostics, 
+      ! pon flux (euphotic zone bottom) for PIC burial diagnostics, PIC flux at the 
+      ! bottom, bottom POC
+      REAL(wp), POINTER, DIMENSION(:,:  ) :: zn2fixtot, zwork
+      REAL(wp), POINTER, DIMENSION(:,:  ) :: zdenittot
+      ! <CMOC code OR 10/15/2015> arrays for depth-dependent rates, zJNd is used to 
+      !compute the balance between denitrification and nitrogen fixation
+      REAL(wp), POINTER, DIMENSION(:,:,:) :: zn2fix,   zJNd
+      REAL(wp)   :: zrtn
+
       CHARACTER (len=25) :: charout
       !
       IF( nn_timing == 1 )  CALL timing_start('p4z_sed')
       !
+      CALL wrk_alloc( jpi, jpj,      zn2fixtot, zwork , zdenittot)
+      CALL wrk_alloc( jpi, jpj, jpk, zn2fix,    zJNd          )
 
       IF( jnt == 1 .AND. ll_sbc ) CALL p4z_sbc( kt )
 
@@ -83,25 +98,118 @@ CONTAINS
       ! ----------------------------------------------------------
       trn(:,:,1,jpno3) = trn(:,:,1,jpno3) + rivinp(:,:) * rfact2
       trn(:,:,1,jpdic) = trn(:,:,1,jpdic) + rivinp(:,:) * 2.631 * rfact2
-      trn(:,:,1,jptal) = trn(:,:,1,jptal) + (cotdep(:,:) - rno3*rivinp(:,:) ) * rfact2
+      trn(:,:,1,jptal) = trn(:,:,1,jptal) + (cotdep(:,:) - ncrr_cmoc*rivinp(:,:) ) * rfact2
 
-      ! Fate of POC reaching the ocean floor: complete remineralization
+      ! Fate of POC reaching the ocean floor: complete remineralization into DIC, DIN
+      ! and sink of O2 and TALK
       DO jj = 1, jpj
          DO ji = 1, jpi
             ikt  = mbkt(ji,jj)
             zdep = xstep / fse3t(ji,jj,ikt)
             zwsbio3 = wsbio3(ji,jj,ikt) * zdep
 
-            trn(ji,jj,ikt,jppoc) = trn(ji,jj,ikt,jppoc) - trn(ji,jj,ikt,jppoc) * zwsbio3
-            trn(ji,jj,ikt,jpdic) = trn(ji,jj,ikt,jpdic) &
-               &               + trn(ji,jj,ikt,jppoc) * zwsbio3 ! <CMOC code OR 10/22/2015> instantaneously remineralize bottom sunk POC into DIC
-            trn(ji,jj,ikt,jpno3) = trn(ji,jj,ikt,jpno3) &
-               &               + trn(ji,jj,ikt,jppoc) * zwsbio3 ! <CMOC code OR 10/22/2015> instantaneously remineralize bottom sunk POC into DIN
-            trn(ji,jj,ikt,jpoxy) = trn(ji,jj,ikt,jpoxy) &
-               &               - trn(ji,jj,ikt,jppoc) * zwsbio3 ! <CMOC code OR 10/22/2015> instantaneously remineralize bottom sunk POC and take up O2
+            trn(ji,jj,ikt,jpdic) = trn(ji,jj,ikt,jpdic)                       &
+               &                             + trn(ji,jj,ikt,jppoc) * zwsbio3 
+            trn(ji,jj,ikt,jptal) = trn(ji,jj,ikt,jptal)                       &
+               &                             - trn(ji,jj,ikt,jppoc) * zwsbio3 * ncrr_cmoc
+            trn(ji,jj,ikt,jpno3) = trn(ji,jj,ikt,jpno3)                       &
+               &                             + trn(ji,jj,ikt,jppoc) * zwsbio3 
+            trn(ji,jj,ikt,jpoxy) = trn(ji,jj,ikt,jpoxy)                       &
+               &                             - trn(ji,jj,ikt,jppoc) * zwsbio3 
+            trn(ji,jj,ikt,jppoc) = trn(ji,jj,ikt,jppoc)                       &
+                                             - trn(ji,jj,ikt,jppoc) * zwsbio3 
          END DO
       END DO
 
+      ! Nitrogen fixation and denitrification
+      ! ----------------------------------------------------------
+
+      ! <CMOC code OR 10/15/2015> Initialization of CMOC arrays
+      zn2fix   (:,:,:) = 0._wp
+      zn2fixtot(:,:)   = 0._wp
+      ! <CMOC code OR 12/11/2015> Total denitrification diagnostics
+      zdenittot(:,:)   = 0._wp
+
+      zJNd     (:,:,:) = 0._wp
+      zwork    (:,:)   = 0._wp
+
+
+      DO jk = 1, jk_eud_cmoc
+         DO jj = 1, jpj
+            DO ji = 1, jpi
+                   zn2fix(ji,jj,jk) = pnf_cmoc * cnrr_cmoc * 1e-12_wp / 3600._wp * rfact2        & ! reference rate
+                   !
+                   &                 * kn_cmoc * 1e-6_wp / ( kn_cmoc * 1e-6_wp                   &
+                   &                                         + trn(ji,jj,jk,jpno3) + rtrn)       & ! N inhibition
+                   !
+                   &                 * qsr(ji,jj)*0.43_wp * exp ( - ( (0.04 + 0.03               &
+                   &                 * trn(ji,jj,1,jpnch) * 1e6_wp) * fsdept(ji,jj,jk) ) )       &
+                   &                 / inf_cmoc                                                  & ! ligh sensitivity
+                   !
+                   &                 * ( max(tsn(ji,jj,jk,jp_tem), tnfmi_cmoc ) - tnfmi_cmoc )   &
+                   &                 / ( tnfMa_cmoc - tnfmi_cmoc ) &                               ! temperature dependence
+                   !
+                   &                 * ( phinf_cmoc * exp( 1._wp ) * anf_cmoc * fsdept(ji,jj,jk) &
+                   &                 * exp ( -anf_cmoc * fsdept(ji,jj,jk) ) + phi0_cmoc )        & ! diazotroph abundance dependence
+                   &                 * oomask(ji,jj) * tmask(ji,jj,jk)                             ! open ocean / land mask
+                   !
+                   ! total nitrogen fixation on the current 1/4 time step
+                   zn2fixtot(ji,jj) = zn2fixtot(ji,jj) + zn2fix(ji,jj,jk) * fse3t(ji,jj,jk)     
+                   zJNd(ji,jj,jk) =  zn2fix(ji,jj,jk)
+               END DO
+          END DO
+      END DO
+
+      DO jk = jk_eud_cmoc+1, jpkm1
+         DO jj = 1, jpj
+            DO ji = 1, jpi
+                  zJNd(ji,jj,jk)  =  -zn2fixtot(ji,jj) *                                &
+                   &                 ( redet(ji,jj,jk) / (redettot(ji,jj) + rtrn) )     & 
+                   &                                   * tmask(ji,jj,jk) * oomask(ji,jj)
+
+                  zdenittot(ji,jj) = zdenittot(ji,jj) + zJNd(ji,jj,jk) * fse3t(ji,jj,jk)                           
+               END DO
+          END DO
+      END DO
+   
+     ! WRITE(numout,*) 'DNF sum:', SUM(zn2fixtot(:,:)) + SUM(zdenittot(:,:))
+
+      !     --------------------------------------------------------------------
+      !     Update the arrays TRA which contain the biological sources and sinks
+      !     --------------------------------------------------------------------
+      DO jk = 1, jpkm1
+         trn(:,:,jk,jpno3) = trn(:,:,jk,jpno3) +  zJNd(:,:,jk)
+      END DO
+
+      ! print mean trends (used for debugging)
+      IF(ln_ctl)   THEN
+         WRITE(charout, FMT="('rem6')")
+         CALL prt_ctl_trc_info(charout)
+         CALL prt_ctl_trc(tab4d=tra, mask=tmask, clinfo=ctrcnm)
+      ENDIF
+
+      IF( ln_diatrc ) THEN
+        IF( lk_iomput ) THEN
+           IF( jnt == nrdttrc ) THEN
+              ! <CMOC code OR 10/15/2015> 1.e+3_wp is to convert from L^-1 to m^-3
+              !  (left in the sum line #119); the diagnostics has to be rescaled 
+              ! to per second by dividing by rfact2.
+              zwork(:,:)  =  zn2fixtot(:,:) * ncrr_cmoc * 1.e+3_wp * rfact2r * tmask(:,:,1)
+              ! nitrogen fixation in molN m^-2 s^-1 
+              CALL iom_put( "Nfix"   , zwork )
+              ! <CMOC code OR 12/11/2015> 1.e+3_wp is to convert from L^-1 to 
+              ! m^-3 (left in the sum line #119); the diagnostics has to be 
+              ! rescaled to per second by dividing by rfact2; NOTE: land mask 
+              ! already taken into account
+              zwork(:,:)  = -zdenittot(:,:) * ncrr_cmoc * 1.e+3_wp * rfact2r
+              CALL iom_put( "Denit"  , zwork ) ! denitrification in molN m^-2 s^-1 
+         ENDIF
+        ENDIF
+      ENDIF
+
+      
+      CALL wrk_dealloc( jpi, jpj,      zn2fixtot, zwork, zdenittot  ) ! <CMOC code OR 12/11/2015> Total denitrification
+      CALL wrk_dealloc( jpi, jpj, jpk, zn2fix,   zJNd         )
       !
       IF( nn_timing == 1 )  CALL timing_stop('p4z_sed')
       !
@@ -177,6 +285,7 @@ CONTAINS
       NAMELIST/nampissed/cn_dir, sn_riverdic, sn_riverdoc,                         &
         &                ln_river,                                                 &
         &                sn_fmsk
+      NAMELIST/namcmocnfx/ phinf_cmoc, phi0_cmoc, anf_cmoc, pnf_cmoc, inf_cmoc, tnfMa_cmoc, tnfmi_cmoc
         
       !!----------------------------------------------------------------------
       !
@@ -195,12 +304,25 @@ CONTAINS
 
       REWIND( numnatp )                     ! read numnatp
       READ  ( numnatp, nampissed )
+      REWIND( numcmoc )
+      READ  ( numcmoc, namcmocnfx )
 
       IF(lwp) THEN
          WRITE(numout,*) ' '
          WRITE(numout,*) ' namelist : nampissed '
          WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~ '
          WRITE(numout,*) '    river input of nutrients                 ln_river    = ', ln_river
+         WRITE(numout,*) ' '
+         WRITE(numout,*) ' Namelist parameters for dinitrogen fix. , namcmocnfx'
+         WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+         WRITE(numout,*) '    Maximum ref. diazotroph concentration    phinf_cmoc =',  phinf_cmoc
+         WRITE(numout,*) '    Surface ref. diazotroph concentration     phi0_cmoc =',   phi0_cmoc
+         WRITE(numout,*) '    Inverse depth of diazotroph conc.max.      anf_cmoc =',    anf_cmoc
+         WRITE(numout,*) '    Maximum ref. rate of dinitrogen fix.       pnf_cmoc =',    pnf_cmoc
+         WRITE(numout,*) '    Maximum ref. dinitrogen fix surf. irr.     inf_cmoc =',    inf_cmoc
+         WRITE(numout,*) '    Maximum ref. dinitrogen fix SST          tnfMa_cmoc =',  tnfMa_cmoc
+         WRITE(numout,*) '    Minimum ref. dinitrogen fix SST          tnfmi_cmoc =',  tnfmi_cmoc
+         WRITE(numout,*) ' '
        END IF
 
       IF( ln_river ) THEN
@@ -223,7 +345,9 @@ CONTAINS
          CALL fld_fill( sf_fmsk, (/ sn_fmsk /), cn_dir, 'p4z_sed_init', 'Iron limitation mask', 'nampissed' )
                                    ALLOCATE( sf_fmsk(1)%fnow(jpi,jpj,1), STAT=ierr )  ! fnow current values based on interpolation (OR)?
                                    IF( ierr > 0 ) THEN
-                                            CALL ctl_stop( 'p4zsed: iron limitation mask, unable to allocate iron limitation array' )     ;    RETURN 
+                                            CALL ctl_stop('p4zsed: iron limitation mask,                  & 
+                                                          unable to allocate iron limitation array' )     &
+                                            ;    RETURN 
                                    ENDIF 
          !
          ! Open the the channel numfmsk associated with  file 'sn_fmsk%clname'
