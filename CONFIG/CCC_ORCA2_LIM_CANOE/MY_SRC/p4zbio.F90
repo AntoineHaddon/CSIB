@@ -102,13 +102,8 @@ CONTAINS
       END DO
       !                                ! where at least 1 tracer concentration becomes negative
       !                                ! 
-       DO jn = jp_pcs0, jp_pcs1         ! O RICHE, 2013 August 6th, following 5 lines
-                   IF( jn == jpiat ) THEN
-                      trn(:,:,:,jn) = trn(:,:,:,jn) +                 tra(:,:,:,jn) 
-                      trn(:,:,1,jn) = 0.e0
-                   ELSE
-                      trn(:,:,:,jn) = trn(:,:,:,jn) + xnegtr(:,:,:) * tra(:,:,:,jn)
-                   ENDIF
+       DO jn = jp_pcs0, jp_pcs1        
+         trn(:,:,:,jn) = trn(:,:,:,jn) + xnegtr(:,:,:) * tra(:,:,:,jn)
        END DO
 
       tra(:,:,:,:) = 0.e0

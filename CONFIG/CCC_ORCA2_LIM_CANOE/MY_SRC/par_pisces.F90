@@ -53,7 +53,6 @@ MODULE par_pisces
    INTEGER, PUBLIC, PARAMETER ::   jpgoc = jp_lp + 17    !: large particulate organic carbon concentration
    INTEGER, PUBLIC, PARAMETER ::   jpno3 = jp_lp + 18    !: Nitrates Concentration
    INTEGER, PUBLIC, PARAMETER ::   jpnh4 = jp_lp + 19    !: Ammonium Concentration
-   INTEGER, PUBLIC, PARAMETER ::   jpiat = jp_lp + 20    !: Ideal Age Tracer
 
    ! Starting/ending PISCES do-loop indices (N.B. no PISCES : jpl_pcs < jpf_pcs the do-loop are never done)
    INTEGER, PUBLIC, PARAMETER ::   jp_pcs0     = jp_lp + 1                  !: First index of PISCES tracers

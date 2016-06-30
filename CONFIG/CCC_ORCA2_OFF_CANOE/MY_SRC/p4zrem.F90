@@ -46,7 +46,6 @@ MODULE p4zrem
    REAL(wp), PUBLIC ::  o2thresh  = 6._wp      !: O2 threshold for denitrification
    REAL(wp), PUBLIC ::  nh4frx    = 02.5_wp    !: annamox fraction of denitrification
    REAL(wp), PUBLIC ::  oxymin    = 1._wp      !: half saturation constant for anoxia 
-   REAL(wp), PUBLIC ::  nwcst0    = 1.0E-6_wp  ! O RICHE Aug 2013 
    REAL(wp), PUBLIC ::  nyld      = 0.8_wp     !: denitrification stoichiometric coefficient
 
    !!* Substitution
@@ -190,10 +189,6 @@ CONTAINS
 
       !     Update the arrays TRA which contain the biological sources and sinks
       !     --------------------------------------------------------------------
-
-      DO jk = 1, jpkm1
-         tra(:,:,jk,jpiat) = tra(:,:,jk,jpiat) + nwcst0 ! O RICHE August 11th 2013
-      END DO
 
       IF( ln_diatrc ) THEN
          zrfact2 = 1.e-3 * rfact2r  ! conversion from umol/L/timestep into mol/m3/s
