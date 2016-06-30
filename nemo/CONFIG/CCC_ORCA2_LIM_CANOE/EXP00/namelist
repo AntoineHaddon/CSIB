@@ -29,7 +29,7 @@
    nn_itend    =    5475   !  last  time step (std 5475)
    nn_date0    =  010101   !  date at nit_0000 (format yyyymmdd) used if ln_rstart=F or (ln_rstart=T and nn_rstctl=0 or 1)
    nn_leapy    =       0   !  Leap year calendar (1) or not (0)
-   ln_rstart   = .true.    !  start from rest (F) or from a restart file (T)
+   ln_rstart   = .false.   !  start from rest (F) or from a restart file (T)
    nn_rstctl   =       0   !  restart control => activated only if ln_rstart = T
                            !    = 0 nn_date0 read in namelist ; nn_it000 : read in namelist
                            !    = 1 nn_date0 read in namelist ; nn_it000 : check consistancy between namelist and restart
@@ -194,7 +194,7 @@
    sn_qlw      = 'qlw'         ,        24         , 'LWDN_MOD',   .false.    , .true. , 'yearly'  , ''       , ''
    sn_tair     = 'tair10m'     ,         6         , 'T_10_MOD',   .false.    , .true. , 'yearly'  , ''       , ''
    sn_humi     = 'humi10m'     ,         6         , 'Q_10_MOD',   .false.    , .true. , 'yearly'  , ''       , ''
-   sn_prec     = 'precip'      ,        -1         , 'PRC_MOD',   .false.    , .true. , 'yearly'  , ''       , ''
+   sn_prec     = 'precip'      ,        -1         , 'PRC_MOD' ,   .false.    , .true. , 'yearly'  , ''       , ''
    sn_snow     = 'snow'        ,        -1         , 'SNOW'    ,   .false.    , .true. , 'yearly'  , ''       , ''
    sn_tdif     = 'taudif_core' ,        24         , 'taudif'  ,   .false.    , .true. , 'yearly'  , ''       , ''
 
@@ -741,6 +741,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
    ln_tmx_itf  = .true.    !  ITF specific parameterisation
    rn_tfe_itf  = 1.        !  ITF tidal dissipation efficiency
    ln_leewmx   = .true.    !  addition of Lee Wave mixing (.true.) or not (.false., default in the code)
+   rn_lwm      = 0.3       !  lee wave mixing scaling (default is 0.3)
 /
 
 !!======================================================================
@@ -993,4 +994,4 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
     ln_trjhand  = .false.            ! Handling non linear trajectory
     nn_ittrjfrq = 20                 ! Output/input frequency
     ln_trj_spl = .false.             ! Handling trajectory at simple precision
-
+/

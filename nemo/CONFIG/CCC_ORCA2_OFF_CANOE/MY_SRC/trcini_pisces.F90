@@ -114,7 +114,6 @@ CONTAINS
          trn(:,:,:,jpgoc) = bioma0
          trn(:,:,:,jpno3) = no3
          trn(:,:,:,jpnh4) = bioma0 * 16./106.
-         trn(:,:,:,jpiat) = 0.0E-6! O RICHE August 11th 2013 Older value 0._wp
 
       ENDIF
 

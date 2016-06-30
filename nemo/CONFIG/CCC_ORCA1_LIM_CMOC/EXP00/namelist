@@ -27,7 +27,7 @@
   cn_exp = "ORCA1_CMOC"
   nn_it000 = 1
   nn_itend = 30
-  nn_date0 = 10000101
+  nn_date0 = 00010101
    nn_leapy    =       0   !  Leap year calendar (1) or not (0)
   ln_rstart = .false.
   nn_rstctl = 0
