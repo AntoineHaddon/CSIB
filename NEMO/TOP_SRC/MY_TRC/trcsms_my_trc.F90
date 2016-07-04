@@ -43,7 +43,6 @@ CONTAINS
       !
       INTEGER, INTENT(in) ::   kt   ! ocean time-step index
       INTEGER ::   jn   ! dummy loop index
-      REAL(wp), POINTER, DIMENSION(:,:,:) :: ztrmyt
       REAL(wp) :: dtyrs
 !!----------------------------------------------------------------------
       !
