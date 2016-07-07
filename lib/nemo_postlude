@@ -523,12 +523,12 @@ end_reorder_list
   rtd_file_list=''
 
   if [ $nemo_rtd -eq 1 ]; then
-    rtd_file_dump_list=rtd_file_dump_list_$$
-    rtd_file_del_list=rtd_file_del_list_$$
-    rm -f $rtd_file_dump_list
-    rm -f $rtd_file_del_list
-    touch $rtd_file_dump_list
-    touch $rtd_file_del_list
+#    rtd_file_dump_list=rtd_file_dump_list_$$
+#    rtd_file_del_list=rtd_file_del_list_$$
+#    rm -f $rtd_file_dump_list
+#    rm -f $rtd_file_del_list
+#    touch $rtd_file_dump_list
+#    touch $rtd_file_del_list
 
     # Specify the location of some NCO tools
     # These are required for manipulation of the netcdf files
@@ -603,10 +603,10 @@ end_reorder_list
         cp -f nemo_physical_rtd.nc rs_nemo_physical_rtd.nc || :
         [ -s rs_nemo_physical_rtd.nc ] && rtd_file_list="$rtd_file_list rs_nemo_physical_rtd.nc"
 
-        # Save the rtd file created by physical_rtd_exe
-        new_rtd_file=sc_${runid}_${stop_date}_nemo_physical_rtd.nc
-        save nemo_physical_rtd.nc $new_rtd_file
-        echo $new_rtd_file >> $rtd_file_dump_list
+#        # Save the rtd file created by physical_rtd_exe
+#        new_rtd_file=sc_${runid}_${stop_date}_nemo_physical_rtd.nc
+#        save nemo_physical_rtd.nc $new_rtd_file
+#        echo $new_rtd_file >> $rtd_file_dump_list
 
         # Copy the new physical rtd file to Victoria
         scp_rtd_to_Victoria nemo_physical_rtd.nc sc_${runid}_nemo_physical_rtd.nc
@@ -668,10 +668,10 @@ end_reorder_list
           cp -f nemo_ice_rtd.nc rs_nemo_ice_rtd.nc || :
           [ -s rs_nemo_ice_rtd.nc ] && rtd_file_list="$rtd_file_list rs_nemo_ice_rtd.nc"
 
-          # Save the rtd file created by carbon_rtd_exe
-          new_rtd_file=sc_${runid}_${stop_date}_nemo_ice_rtd.nc
-          save nemo_ice_rtd.nc $new_rtd_file
-          echo $new_rtd_file >> $rtd_file_dump_list
+#          # Save the rtd file created by carbon_rtd_exe
+#          new_rtd_file=sc_${runid}_${stop_date}_nemo_ice_rtd.nc
+#          save nemo_ice_rtd.nc $new_rtd_file
+#          echo $new_rtd_file >> $rtd_file_dump_list
 
           # Copy the new carbon rtd file to Victoria
           scp_rtd_to_Victoria nemo_ice_rtd.nc sc_${runid}_nemo_ice_rtd.nc
@@ -734,18 +734,18 @@ end_reorder_list
       cp -f nemo_carbon_rtd.nc rs_nemo_carbon_rtd.nc || :
       [ -s rs_nemo_carbon_rtd.nc ] && rtd_file_list="$rtd_file_list rs_nemo_carbon_rtd.nc"
 
-      # Save the rtd file created by carbon_rtd_exe
-      new_rtd_file=sc_${runid}_${stop_date}_nemo_carbon_rtd.nc
-      save nemo_carbon_rtd.nc $new_rtd_file
-      echo $new_rtd_file >> $rtd_file_dump_list
+#      # Save the rtd file created by carbon_rtd_exe
+#      new_rtd_file=sc_${runid}_${stop_date}_nemo_carbon_rtd.nc
+#      save nemo_carbon_rtd.nc $new_rtd_file
+#      echo $new_rtd_file >> $rtd_file_dump_list
 
       # Copy the new carbon rtd file to Victoria
       scp_rtd_to_Victoria nemo_carbon_rtd.nc sc_${runid}_nemo_carbon_rtd.nc
 
     fi
 
-    echo "RTD FILE dump list: `cat $rtd_file_dump_list`"
-    echo "RTD FILE del list: `cat $rtd_file_del_list`"
+#    echo "RTD FILE dump list: `cat $rtd_file_dump_list`"
+#    echo "RTD FILE del list: `cat $rtd_file_del_list`"
     # Clean up
     release grid_t
     release grid_u
@@ -759,16 +759,16 @@ end_reorder_list
       release orca_mesh_mask
     fi
     
-    # Save RTDs in a tar file to runpath for later dumping     
-    curr_rtd_tar=mc_${runid}_${stop_date}_rtd.tar 
-    for f in `cat $rtd_file_dump_list`; do
-        access $f $f na
-    done
-
-    tar hcf $curr_rtd_tar `cat $rtd_file_dump_list` ||
-         bail "Could not create a tar archive of the RTD"
-    save $curr_rtd_tar $curr_rtd_tar na
-    echo $curr_rtd_tar >> $rtd_file_del_list
+#    # Save RTDs in a tar file to runpath for later dumping     
+#    curr_rtd_tar=mc_${runid}_${stop_date}_rtd.tar 
+#    for f in `cat $rtd_file_dump_list`; do
+#        access $f $f na
+#    done
+#
+#    tar hcf $curr_rtd_tar `cat $rtd_file_dump_list` ||
+#         bail "Could not create a tar archive of the RTD"
+#    save $curr_rtd_tar $curr_rtd_tar na
+#    echo $curr_rtd_tar >> $rtd_file_del_list
 
   fi # if [ $nemo_rtd -eq 1 ]; then 1215
 
@@ -1107,11 +1107,11 @@ end_reorder_list
             fi
           fi
 
-	  # For the RTD files
-  	  if [ $nemo_rtd -eq 1 ]; then
-              cat ${rtd_file_del_list} >> ${hist_file_del_list}
-              echo "deleting... `cat ${hist_file_del_list}`"
-	  fi
+#	  # For the RTD files
+#  	  if [ $nemo_rtd -eq 1 ]; then
+#              cat ${rtd_file_del_list} >> ${hist_file_del_list}
+#              echo "deleting... `cat ${hist_file_del_list}`"
+#	  fi
           
 	  [ -s ${hist_file_del_list} ] || 
             echo "WARNING: nemo_del_rs=on but could not create a list of restart files to delete
