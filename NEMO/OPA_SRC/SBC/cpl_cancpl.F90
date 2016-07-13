@@ -739,7 +739,7 @@ contains
      integer :: freq
      integer(kind=impi) :: rank, ierr
      integer :: idx, nwrds
-     integer :: verbose=3
+     integer :: verbose=1
      !!--------------------------------------------------------------------
 
      !--- Determine the rank of the calling process in MPI_COMM_WORLD
@@ -878,7 +878,7 @@ contains
      integer :: ldbg=1
      integer :: freq, idx, nwrds
      integer(kind=impi) :: rank, ierr, sz, tag
-     integer :: verbose=3
+     integer :: verbose=1
      integer (kind=impi) :: status(MPI_status_size)
      !!--------------------------------------------------------------------
 
