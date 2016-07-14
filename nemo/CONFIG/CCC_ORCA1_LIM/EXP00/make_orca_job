@@ -292,7 +292,7 @@ debug=off
   nemo_K1rowdrg=nemo_3.4_orca1_k1rowdrg_r1_modif.nc
   nemo_Eddyengf=nemo_3.4_orca1_eddy_mix.nc
   nemo_geothermal_heating=nemo_3.3_orca2_geothermal_heating.nc
-  nemo_runoff_core_monthly=nemo_3.4_orca1_runoff_1m_orca1.nc
+  nemo_runoff_core_monthly=nemo_3.4_orca1_rout_socoeff_month_r1i1p1_1979-2005-mean.nc
   nemo_sss_data=nemo_3.4_orca1_sss_1m_orca1.nc
   nemo_chlorophyll=nemo_3.4_orca1_chlorophyll-orca1_1m.nc
   nemo_subbains=nemo_3.4_orca1_basinmask_050308_ukmo_modified.nc
@@ -495,6 +495,8 @@ debug=off
 #       sn_snow=" 'snow'         ,        24         , 'prsn'    ,   .false.    , .false. , 'yearly'  , 'weights_bil2'       , '' "
 #       sn_tdif=" 'taudif_core'  ,        24         , 'taudif'  ,   .false.    , .true. , 'yearly'  , ''       , '' "
 #
+#       sn_rnf=" 'runoff_core_monthly',   -1         , 'ROUT',       .true.     , .true. , 'yearly'  , 'weights_bil3.nc'     , '' "
+#
 #      # In the case of interannual forcing, just give the file prefix. The ${prefix}_yYYYY.nc will be added
 #      # by xnemo.
 #      nemo_t=uncs_tas_iga
@@ -509,6 +511,8 @@ debug=off
 #      # WEIGHTS file for this resolution
 #      nemo_weights_bicubic2=uncs_orca1_canesm2_weights_bicubic.nc
 #      nemo_weights_bilinear2=uncs_orca1_canesm2_weights_bilin.nc
+#      nemo_weights_bicubic3=uncs_orca1_canesm2_weights_bicubic.nc
+#      nemo_weights_bilinear3=uncs_orca1_canesm2_weights_bilin.nc
 #
 ###########################################################################################################################
 ##    CanESM2 interannual bulk forcing, from historical run "igm" years 1850-2005
