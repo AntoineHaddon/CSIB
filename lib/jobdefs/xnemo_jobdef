@@ -788,6 +788,9 @@ cat > Execute_Script <<'end_of_script'
       nemo_snow=nemo_3.3_orca2_ncar_precip.15june2009_orca2.nc
       nemo_weights_bicubic2=nemo_3.4_weights_grid03_bicubic_orca1.nc
       nemo_weights_bilinear2=nemo_3.4_weights_grid03_bilinear_orca1.nc
+      nemo_weights_bicubic3=nemo_3.4_weights_grid03_bicubic_orca1.nc
+      nemo_weights_bilinear3=nemo_3.4_weights_grid03_bilinear_orca1.nc
+
 
       acc_cp tair10m.nc          $nemo_t
       acc_cp uwnd10m.nc          $nemo_u
@@ -799,6 +802,8 @@ cat > Execute_Script <<'end_of_script'
       acc_cp snow.nc             $nemo_snow
       acc_cp weights_bic2.nc     $nemo_weights_bicubic2
       acc_cp weights_bil2.nc     $nemo_weights_bilinear2
+      acc_cp weights_bic3.nc     $nemo_weights_bicubic3
+      acc_cp weights_bil3.nc     $nemo_weights_bilinear3
 
     elif [ x"$nemo_forcing" = "xbulk_iaf" ]; then
       nemo_t=uncs_corev2_t_10
@@ -811,6 +816,8 @@ cat > Execute_Script <<'end_of_script'
       nemo_snow=uncs_corev2_ncar_precip
       nemo_weights_bicubic2=nemo_3.4_weights_grid03_bicubic_orca1.nc
       nemo_weights_bilinear2=nemo_3.4_weights_grid03_bilinear_orca1.nc
+      nemo_weights_bicubic3=nemo_3.4_weights_grid03_bicubic_orca1.nc
+      nemo_weights_bilinear3=nemo_3.4_weights_grid03_bilinear_orca1.nc
 
       yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
       fy=`expr ${yearc} + ${iaf_year_offset} | awk  '{printf "%04d",$1}'`
@@ -828,6 +835,8 @@ cat > Execute_Script <<'end_of_script'
       acc_cp snow_y${yearc}.nc             ${nemo_snow}_y${forcing_year}.nc
       acc_cp weights_bic2.nc     $nemo_weights_bicubic2
       acc_cp weights_bil2.nc     $nemo_weights_bilinear2
+      acc_cp weights_bic3.nc     $nemo_weights_bicubic3
+      acc_cp weights_bil3.nc     $nemo_weights_bilinear3
 
     elif [ x"$nemo_forcing" = "xflux" ]; then
       # Flux forcing
@@ -892,8 +901,10 @@ cat > Execute_Script <<'end_of_script'
       sn_snow=" 'snow'        ,        -1         , 'SNOW'    ,   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
       sn_tdif=" 'taudif_core' ,        24         , 'taudif'  ,   .false.    , .true. , 'yearly'  , ''             , '' "
 
+      sn_rnf=" 'runoff_core_monthly',  -1         , 'sorunoff',   .true.     , .true. , 'yearly'  , ''             , '' "
+
       mod_nl namelist ln_ana ln_flx ln_blk_clio ln_blk_core ln_blk_mfs ln_cpl sn_wndi sn_wndj sn_qsr sn_qlw sn_tair sn_humi \
-                      sn_prec sn_snow sn_tdif
+                      sn_prec sn_snow sn_tdif sn_rnf
     
     elif [ x"$nemo_forcing" = "xflux" ] || [ x"$nemo_forcing" = "xflux_iaf" ] ; then
       ln_ana=".false.   !  analytical formulation                    (T => fill namsbc_ana )"
