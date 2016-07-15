@@ -121,6 +121,9 @@ nemo_source_mods=''
 # The name of the executable created by this script
 nemo_exe=''
 
+# Add a locally determine suffix to the name of the nemo executables that is created here
+add_nemo_exe_sfx=1
+
 # Nemo preprocessing keys to be added or removed at compile time
 nemo_add_cpp_keys=''
 nemo_del_cpp_keys=''
@@ -228,8 +231,15 @@ fi
 nemo_source_repo=$(cd $nemo_source_repo; pwd)
 
 # Define variables containing the current commit and repo path to use as cpp macros during the build
-# NEMO_COMMIT_ID=$(cd $nemo_source_repo; git log -1 --pretty="%H" $nemo_version)
-# NEMO_REPO_PATH=$nemo_source_repo
+NEMO_COMMIT_ID=$(cd $nemo_source_repo; git log -1 --pretty="%H" $nemo_version)
+NEMO_REPO_PATH=$nemo_source_repo
+nemo_exe_sfx=`echo "$NEMO_COMMIT_ID" | cut -c1-8`
+if [ $add_nemo_exe_sfx -eq 1 -a -n "$nemo_exe_sfx" ]; then
+  nemo_exe=${nemo_exe}_$nemo_exe_sfx
+fi
+echo "NEMO_COMMIT_ID=$NEMO_COMMIT_ID"
+echo "NEMO_REPO_PATH=$NEMO_REPO_PATH"
+echo "nemo_exe=$nemo_exe"
 # nemo_add_cpp_keys+=" NEMO_COMMIT_ID=$NEMO_COMMIT_ID NEMO_REPO_PATH=$NEMO_REPO_PATH"
 
 if [ -n "$nemo_source_mods" ]; then
@@ -248,7 +258,7 @@ esac
 
 # Determine if this is a coupled build or not
 if [ -z "$coupled" ]; then
-  # coupled was not defined oin the command line ...define it here
+  # coupled was not defined on the command line ...define it here
   case $nemo_config in
     CCC_ORCA1_CANCPL) coupled=on ;;
     CCC_CANCPL_ORCA1_LIM) coupled=on ;;
