@@ -852,11 +852,11 @@ end_reorder_list
   # that may be dumped and deleted when in gcmjcl mode
   nemo_other_rs_suffix_list=${nemo_other_rs_suffix_list:='rs cplrs.nc'}
 
-  if [ -n "$model" -a $last_month_in_curr_job -eq 1 ]; then
-    # Assume we are running form gcmjcl
-    # Save the coupler timer info file
-    [ -s cpl_time_stats ] && save cpl_time_stats ${model}cpl_stats
-  fi
+#  if [ -n "$model" -a $last_month_in_curr_job -eq 1 ]; then
+#    # Assume we are running form gcmjcl
+#    # Save the coupler timer info file
+#    [ -s cpl_time_stats ] && save cpl_time_stats ${model}cpl_stats
+#  fi
 
   # IF any dumps or deletes
   if [ $nemo_dump_hist -eq 1 -o $nemo_dump_rs -eq 1 -o $nemo_del_hist -eq 1 -o $nemo_del_rs -eq 1 ]; then
