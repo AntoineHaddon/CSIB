@@ -6,6 +6,8 @@ MODULE diaar5
    !! History :  3.2  !  2009-11  (S. Masson)  Original code
    !!            3.3  !  2010-10  (C. Ethe, G. Madec) reorganisation of initialisation phase + merge TRC-TRA
    !!            3.4.1!  2016-06  (D. Yang) added global area average of SST and SSS.
+   !!            3.4.1!  2016-07  (D. Yang) added square of sea surface height above geoid 
+   !!                                       (sshdyn2, global average sea level change removed)
    !!----------------------------------------------------------------------
 #if defined key_diaar5   || defined key_esopa
    !!----------------------------------------------------------------------
@@ -94,6 +96,7 @@ CONTAINS
       
       CALL iom_put( 'voltot', zvol               )
       CALL iom_put( 'sshtot', zvolssh / area_tot )
+      CALL iom_put( 'sshdyn2', (sshn(:,:) - (zvolssh / area_tot)) ** 2 )
       !                     
       ztsn(:,:,:,jp_tem) = tsn(:,:,:,jp_tem)                    ! thermosteric ssh
       ztsn(:,:,:,jp_sal) = sn0(:,:,:)
