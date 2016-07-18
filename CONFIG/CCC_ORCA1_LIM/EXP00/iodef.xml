@@ -27,6 +27,7 @@
 	<field id="sss2"         description="square of sea surface salinity"            unit="psu2"                     />
 	<field id="ssh"          description="sea surface height"                        unit="m"                        />
 	<field id="ssh2"         description="square of sea surface height"              unit="m2"                       />
+        <field id="sshdyn2"      description="square of sea surface height above geoid"  unit="m2"                       />
 	<field id="mldkz5"       description="mixing layer depth (Turbocline)"           unit="m"                        />
 	<field id="mldr10_1"     description="Mixed Layer Depth 0.01 ref.10m"            unit="m"                        />
        	<field id="rhop"         description="potential density (sigma0)"                unit="kg/m3" axis_ref="deptht"  />
@@ -283,6 +284,7 @@
             <field ref="toce"         name="votemper" description="sea_water_potential_temperature"                                />
             <field ref="soce"         name="vosaline" description="sea_water_salinity"                                             />
             <field ref="ssh"          name="sossheig" description="sea_surface_height_above_geoid"                                 />
+            <field ref="sshdyn2"      name="zossq"    description="square_of_sea_surface_height_above_geoid"                       />
             <field ref="empmr"        name="sowaflup" description="water_flux_into_sea_water"                            level="1" />
             <field ref="qt"           name="sohefldo"         />                             <!-- not in cmip6 request            -->
             <field ref="mldr10_1"     name="somxl010"         />                             <!-- not in cmip6 request            -->
@@ -294,7 +296,7 @@
 	  <file id="1m grid_T table 2.2" name_suffix="_table2.2" >
 	    <field ref="botpres"      name="botpres"      description="sea_water_pressure_at_sea_floor"                               />
 	    <!-- pso : sea_water_pressure_at_sea_water_surface = 0 -->
-	    <field ref="ssh2"         name="zossq"    description="square_of_sea_surface_height_above_geoid"             level="2" />
+	    <!--field ref="ssh2"         name="zossq"    description="square_of_sea_surface_height_above_geoid"             level="2", added sshdyn2 instead, DY -->
 	    <!-- masscello : sea_water_mass_per_unit_area = cellthc*rau0                                          no time changes -->
 	    <field ref="cellthc"      name="thkcello" description="cell_thickness"                                                 /> <!-- no time changes -->
 	    <field ref="sst"          name="tos"      description="sea_surface_temperature"                              level="1" />
