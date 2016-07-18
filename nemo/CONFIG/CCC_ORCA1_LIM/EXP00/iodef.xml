@@ -204,6 +204,8 @@
 	<field id="masstot"    description="global mean mass"                           unit="kg"   />
 	<field id="temptot"    description="global mean temperature"                    unit="degC" />
 	<field id="saltot"     description="global mean salinity"                       unit="psu"  />
+        <field id="ssttot"     description="global mean sst"                            unit="degC" />
+        <field id="ssstot"     description="global mean sss"                            unit="psu"  />
 	<field id="fram_trans" description="Sea Ice Mass Transport Through Fram Strait" unit="kg/s" />
       </group>
 
@@ -416,7 +418,7 @@
 	    <!-- tnpeot    : tendency_of_ocean_potential_energy_content_due_to_tides      : not available -->
 	    <!-- tnpeotb   : tendency_of_ocean_potential_energy_content_due_to_background : not available -->
 	    <!-- difvmbo : ocean_vertical_momentum_diffusivity_due_to_background : cte with time, see namelist parameters nn_avb -->
-	    <!-- field ref="av_tide" name="difvmto"  description="ocean_vertical_momentum_diffusivity_due_to_tides" level="2" /> <!-- same as trace, not in cmip6 request, DY -->
+	    <!-- field ref="av_tide" name="difvmto"  description="ocean_vertical_momentum_diffusivity_due_to_tides" level="2", same as trace, not in cmip6 request, DY -->
 	    <!-- difvmfdo : ocean_vertical_momentum_diffusivity_due_to_form_drag : ??? -->
 	    <!-- dispkevfo : ocean_kinetic_energy_dissipation_per_unit_area_due_to_vertical_friction : not available -->
 	  </file>
@@ -447,6 +449,8 @@
 	  <field ref="sshthster"  name="zostoga"  description="global_average_thermosteric_sea_level_change"  />
 	  <field ref="temptot"    name="thetaoga" description="sea_water_potential_temperature"               />
 	  <field ref="saltot"     name="soga"     description="sea_water_salinity"                            />
+          <field ref="ssttot"     name="tosga"    description="sea_surface_temperature"                       />
+          <field ref="ssstot"     name="ssstot"   description="sea_surface_salinity"                          />
 	</file>   
 	<!--
 ..............................................    icemod   .................................................
