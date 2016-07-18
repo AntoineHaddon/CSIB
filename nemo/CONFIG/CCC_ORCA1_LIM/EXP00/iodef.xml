@@ -191,6 +191,7 @@
 	<!-- variables available with key_diaar5 -->   
 	<field id="w_masstr"     description="vertical mass trasport"                      unit="kg/s"                 />
 	<field id="w_masstr2"    description="square of vertical mass trasport"            unit="kg2/s2"               />
+        <field id="bn2"          description="square_of_brunt_vaisala_frequency_in_sea_water" unit="1/s2"              />
       </group>
           
       <!-- scalar -->
@@ -403,7 +404,11 @@
             <field ref="aht2d"      name="soleahtw"    />                            <!-- not in cmip6 request   -->
             <field ref="aht2d_eiv"  name="soleaeiw"  description="ocean_tracer_diffusivity_due_to_parameterized_mesoscale_advection"  level="2" />    
            </file>
-	  
+
+          <file id="1m grid_W table 2.2" name_suffix="_table2.2" >
+            <field ref="bn2"        name="obvfsq" description="square_of_brunt_vaisala_frequency_in_sea_water"                />
+          </file>
+
 	  <file id="1m grid_W table 2.3" name_suffix="_table2.3" >
 	    <field ref="w_masstr"   name="wmo"   description="upward_ocean_mass_transport"                                    />
 	    <!-- field ref="w_masstr2"  name="wmosq" description="square_pf_upward_ocean_mass_transport", not in cmip6 request, DY -->

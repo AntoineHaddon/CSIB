@@ -16,6 +16,7 @@ MODULE diawri
    !!             -   ! 2002-12  (G. Madec)  merge of diabort and diainit, F90
    !!                 ! 2005-11  (V. Garnier) Surface pressure gradient organization
    !!            3.2  ! 2008-11  (B. Lemaire) creation from old diawri
+   !!            3.4.1! 2016-06  (D. Yang) output square of brunt vaisala frequency in sea water (1/s**2)
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -198,6 +199,7 @@ CONTAINS
          END DO
          CALL lbc_lnk( z2d, 'V', -1. )
          CALL iom_put( "v_heattr", z2d )                  !  heat transport in i-direction
+         CALL iom_put( "bn2", rn2 )                       !  Brunt-Vaisala buoyancy frequency (N^2), 1/s**2
       ENDIF
       !
       CALL wrk_dealloc( jpi , jpj      , z2d )
