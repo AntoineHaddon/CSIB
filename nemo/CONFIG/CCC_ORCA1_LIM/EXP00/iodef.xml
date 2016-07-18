@@ -449,7 +449,7 @@
 	<file id="1m_scalar" name="auto" name_suffix="_table2.2" description="table 2.2" >         <!-- scalar -->
 	  <field ref="masstot"    name="masso"    description="sea_water_mass"                                />
 	  <field ref="voltot"     name="volo"     description="sea_water_volume"                              />
-	  <!-- field ref="sshtot"     name="zosga"    description="global_average_sea_level_change", not in cmip6, DY -->
+	  <field ref="sshtot"     name="sshtot"    description="global_average_sea_level_change" /> <!--   zosga in cmip5 DY -->
 	  <!-- field ref="sshsteric"  name="zossga"   description="global_average_steric_sea_level_change", not in cmip6, DY -->
 	  <field ref="sshthster"  name="zostoga"  description="global_average_thermosteric_sea_level_change"  />
 	  <field ref="temptot"    name="thetaoga" description="sea_water_potential_temperature"               />
