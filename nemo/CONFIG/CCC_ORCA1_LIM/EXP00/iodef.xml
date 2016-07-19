@@ -48,8 +48,10 @@
 	<!-- variables available with key_diaar5 -->
 	<field id="botpres"      description="Pressure at sea floor"                     unit="dbar"                     />
 	<field id="cellthc"      description="Cell thickness"                            unit="m"     axis_ref="deptht"  />
+        <field id="sbt"          description="bottom temperaturea"                       unit="degC"                     />
+        <field id="sbs"          description="bottom salinity"                           unit="psu"                      />
         <!-- variables available with key_top and key_my_trc -->
-        <field id="agessc"       description="Ideal age"                                 unit="years" axis_ref="deptht"   />
+        <field id="agessc"       description="Ideal age"                                 unit="years" axis_ref="deptht"  />
      </group>
 
       <!-- SBC -->
@@ -302,6 +304,8 @@
 	    <field ref="sst"          name="tos"      description="sea_surface_temperature"                              level="1" />
 	    <field ref="sst2"         name="tossq"    description="square_of_sea_surface_temperature"                    level="2" />
 	    <field ref="sss"          name="sss"      description="sea_surface_salinity"                                 level="1" />
+            <field ref="sbt"          name="tob"      description="sea_water_potential_temperature_at_sea_floor"         level="1" />
+            <field ref="sbs"          name="sbs"      description="sea_water_salinity_at_sea_floor"                      level="1" />
 	    <!-- field ref="rhop"     name="rhopoto"  description="sea_water_potential_density"                          level="2" not in cmip6 request, DY-->
 	    <!-- no agessc : sea_water_age_since_surface_contact -->
 	    <!-- no cfc11  : moles_per_unit_mass_of_cfc11_in_sea_water -->
