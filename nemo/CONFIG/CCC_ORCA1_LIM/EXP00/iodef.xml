@@ -143,6 +143,7 @@
 	<field id="uocetr_eff"   description="Effective ocean transport along i-axis"      unit="m3/s"                 />
 	<!-- uoce_eiv: available with key_traldf_eiv and key_diaeiv -->
 	<field id="uoce_eiv"     description="EIV ocean current along i-axis"              unit="m/s"                  />
+        <field id="ueiv_masstr"  description="EIV Ocean Mass X Transport"                  unit="kg/s"                 /> 
 	<!-- uoce_eiv: available with key_trabbl -->
 	<field id="uoce_bbl"     description="BBL ocean current along i-axis"              unit="m/s" axis_ref="none"  />
 	<field id="ahu_bbl"      description="BBL diffusive flux along i-axis"             unit="m3/s" axis_ref="none" />
@@ -161,6 +162,7 @@
 	<field id="vocetr_eff"   description="Effective ocean transport along j-axis"      unit="m3/s"                  />
 	<!-- voce_eiv: available with key_traldf_eiv and key_diaeiv -->
 	<field id="voce_eiv"     description="EIV ocean current along j-axis"              unit="m/s"                  />
+        <field id="veiv_masstr"  description="EIV Ocean Mass Y Transport"                  unit="kg/s"                 />
 	<!-- voce_eiv: available with key_trabbl -->
 	<field id="voce_bbl"     description="BBL ocean current along j-axis"              unit="m/s"  axis_ref="none" />
 	<field id="ahv_bbl"      description="BBL diffusive flux along j-axis"             unit="m3/s" axis_ref="none" />
@@ -178,6 +180,7 @@
 	<field id="wocetr_eff"   description="effective ocean vertical transport"          unit="m3/s"                 />
 	<!-- woce_eiv: available with key_traldf_eiv and key_diaeiv -->
 	<field id="woce_eiv"     description="EIV ocean vertical velocity"                 unit="m/s"                  />
+        <field id="weiv_masstr"  description="EIV Upward Ocean Mass Transport"             unit="kg/s"                 /> 
 	<!-- woce_eiv: available with key_trabbl_adv -->
 	<field id="avt"          description="vertical eddy diffusivity"                   unit="m2/s"                 />
 	<field id="avm"          description="vertical eddy viscosity"                     unit="m2/s"                 />
@@ -356,7 +359,8 @@
           </file>
 
 	  <file id="1m grid_U ar6" name_suffix="_ar6" >
-	    <field ref="u_masstr"     name="umo"     description="ocean_mass_x_transport"                           level="1" />
+	    <field ref="u_masstr"     name="u_masstr"      description="ocean_mass_x_transport"                     level="1" />
+            <field ref="ueiv_masstr"  name="ueiv_masstr"   description="bolus_ocean_mass_x_transport"               level="1" />
 	    <!-- field ref="u_heattr"     name="hfx"     description="ocean_heat_x_transport"                           level="1", cmip6 requires 3-D, DY   -->
 	    <!-- field ref="ueiv_heattr"  name="hfxba"   description="ocean_heat_x_transport_due_to_bolus_advection"    level="2", not in cmip6 request, DY -->
 	    <!-- field ref="udiff_heattr" name="hfxdiff" description="ocean_heat_x_transport_due_to_diffusion"          level="2", not in cmip6 request, DY -->
@@ -376,10 +380,11 @@
           </file>
 
 	  <file id="1m grid_V ar6" name_suffix="_ar6" >
-	    <field ref="v_masstr"     name="vmo"     description="ocean_mass_y_transport"                           level="1" />
-	    <!-- field ref="v_heattr"     name="hfy"     description="ocean_heat_y_transport"                           level="1", cmip6 requires 3-D, DY   -->
-	    <!-- field ref="veiv_heattr"  name="hfyba"   description="ocean_heat_y_transport_due_to_bolus_advection"    level="2", not in cmip6 request, DY -->
-	    <!-- field ref="vdiff_heattr" name="hfydiff" description="ocean_heat_y_transport_due_to_diffusion"          level="2", not in cmip6 request, DY -->
+	    <field ref="v_masstr"     name="v_masstr"      description="ocean_mass_y_transport"                     level="1" />
+            <field ref="veiv_masstr"  name="veiv_masstr"   description="bolus_ocean_mass_y_transport"               level="1" />
+	    <!-- field ref="v_heattr"     name="hfy"     description="ocean_heat_y_transport"   level="1", cmip6 requires 3-D, DY   -->
+	    <!-- field ref="veiv_heattr"  name="hfyba"   description="ocean_heat_y_transport_due_to_bolus_advection"  level="2", not in cmip6 request, DY -->
+	    <!-- field ref="vdiff_heattr" name="hfydiff" description="ocean_heat_y_transport_due_to_diffusion"        level="2", not in cmip6 request, DY -->
 	    <!-- tauvcorr : surface_downward_y_stress_correction = 0 -->
 	  </file>   
 
@@ -390,18 +395,19 @@
 	<group id="1m_grid_W" name="auto" >                                                        <!-- grid W -->
 
           <file id="1m grid_W" >
-            <field ref="woce"       name="vovecrtz"    />                            <!-- not in cmip6 request   -->        
-            <field ref="woce_eiv"   name="voveeivw"    />                            <!-- not in cmip6 request   -->
-            <field ref="aht2d"      name="soleahtw"    />                            <!-- not in cmip6 request   -->
-            <field ref="aht2d_eiv"  name="soleaeiw"  description="ocean_tracer_diffusivity_due_to_parameterized_mesoscale_advection"  level="2" />    
+            <field ref="woce"         name="vovecrtz"    />                            <!-- not in cmip6 request   -->        
+            <field ref="woce_eiv"     name="voveeivw"    />                            <!-- not in cmip6 request   -->
+            <field ref="aht2d"        name="soleahtw"    />                            <!-- not in cmip6 request   -->
+            <field ref="aht2d_eiv"    name="soleaeiw"      description="ocean_tracer_diffusivity_due_to_parameterized_mesoscale_advection" level="2" />    
            </file>
 
           <file id="1m grid_W ar6" name_suffix="_ar6" >
-            <field ref="bn2"        name="obvfsq" description="square_of_brunt_vaisala_frequency_in_sea_water"                />
-	    <field ref="w_masstr"   name="wmo"   description="upward_ocean_mass_transport"                                    />
+            <field ref="bn2"          name="obvfsq"        description="square_of_brunt_vaisala_frequency_in_sea_water"       />
+	    <field ref="w_masstr"     name="w_masstr"      description="upward_ocean_mass_transport"                          />
+            <field ref="weiv_masstr"  name="weiv_masstr"   description="bolus_upward_ocean_mass_transport"          level="1" />
 	    <!-- field ref="w_masstr2"  name="wmosq" description="square_pf_upward_ocean_mass_transport", not in cmip6 request, DY -->
-	    <field ref="avt"        name="difvho"   description="ocean_vertical_heat_diffusivity"                level="2" />
-	    <field ref="avs"        name="difvso"   description="ocean_vertical_salt_diffusivity"                level="2" />
+	    <field ref="avt"          name="difvho"        description="ocean_vertical_heat_diffusivity"            level="2" />
+	    <field ref="avs"          name="difvso"        description="ocean_vertical_salt_diffusivity"            level="2" />
 	    <!-- difvtrbo : ocean_vertical_tracer_diffusivity_due_to_background : cte with time, see namelist parameters nn_avb and  nn_havtb -->
 	    <!-- field ref="av_tide" name="difvtrto" description="ocean_vertical_tracer_diffusivity_due_to_tides"   level="2", not in cmip6 request, DY -->
 	    <!-- tnpeo     : tendency_of_ocean_potential_energy_content                   : not available -->
@@ -429,15 +435,15 @@
 ..............................................    scalar   .................................................
 	  -->
 	<file id="1m_scalar" name="auto" name_suffix="_ar6" description="ar6" >         <!-- scalar -->
-	  <field ref="masstot"    name="masso"    description="sea_water_mass"                                />
-	  <field ref="voltot"     name="volo"     description="sea_water_volume"                              />
-	  <field ref="sshtot"     name="sshtot"    description="global_average_sea_level_change" /> <!--   zosga in cmip5 DY -->
+	  <field ref="masstot"        name="masso"         description="sea_water_mass"                                       />
+	  <field ref="voltot"         name="volo"          description="sea_water_volume"                                     />
+	  <field ref="sshtot"         name="sshtot"        description="global_average_sea_level_change" /> <!--   zosga in cmip5 DY -->
 	  <!-- field ref="sshsteric"  name="zossga"   description="global_average_steric_sea_level_change", not in cmip6, DY -->
-	  <field ref="sshthster"  name="zostoga"  description="global_average_thermosteric_sea_level_change"  />
-	  <field ref="temptot"    name="thetaoga" description="sea_water_potential_temperature"               />
-	  <field ref="saltot"     name="saltot"   description="sea_water_salinity"                            />
-          <field ref="ssttot"     name="tosga"    description="sea_surface_temperature"                       />
-          <field ref="ssstot"     name="ssstot"   description="sea_surface_salinity"                          />
+	  <field ref="sshthster"      name="zostoga"       description="global_average_thermosteric_sea_level_change"         />
+	  <field ref="temptot"        name="thetaoga"      description="sea_water_potential_temperature"                      />
+	  <field ref="saltot"         name="saltot"        description="sea_water_salinity"                                   />
+          <field ref="ssttot"         name="tosga"         description="sea_surface_temperature"                              />
+          <field ref="ssstot"         name="ssstot"        description="sea_surface_salinity"                                 />
 	</file>   
 	<!--
 ..............................................    icemod   .................................................
@@ -539,7 +545,7 @@
       <axis id="depthu" description="Vertical U levels" unit="m" positive=".false." />
       <axis id="depthv" description="Vertical V levels" unit="m" positive=".false." />
       <axis id="depthw" description="Vertical W levels" unit="m" positive=".false." />
-      <axis id="none" description="axe non defini" unit="none" size="1" />
+      <axis id="none"   description="axe non defini"    unit="none" size="1" />
     </axis_definition> 
     
     <grid_definition>

@@ -5,6 +5,7 @@ MODULE traadv_eiv
    !!======================================================================
    !! History :  1.0  !  2005-11 (G. Madec)  Original code, from traldf and zdf _iso
    !!            3.3  !  2010-05 (C. Ethe, G. Madec)  merge TRC-TRA 
+   !!            3.4.1!  2016-08 (D. Yang)   Added bolus mass transports.
    !!----------------------------------------------------------------------
 #if defined key_traldf_eiv   ||   defined key_esopa
    !!----------------------------------------------------------------------
@@ -161,6 +162,22 @@ CONTAINS
          CALL iom_put( "voce_eiv", v_eiv )    ! j-eiv current
          CALL iom_put( "woce_eiv", w_eiv )    ! vert. eiv current
          IF( lk_diaar5 ) THEN
+            z3d(:,:,jpk) = 0.e0 
+            DO jk = 1, jpkm1
+               z3d(:,:,jk) = rau0 * u_eiv(:,:,jk) * e2u(:,:) * fse3u(:,:,jk) * umask(:,:,jk)
+            END DO
+            CALL iom_put( "ueiv_masstr", z3d )                  ! bolus mass transport in i-direction
+            z3d(:,:,jpk) = 0.e0
+            DO jk = 1, jpkm1
+               z3d(:,:,jk) = rau0 * v_eiv(:,:,jk) * e1v(:,:) * fse3v(:,:,jk) * vmask(:,:,jk)
+            END DO
+            CALL iom_put( "veiv_masstr", z3d )                  ! bolus mass transport in j-direction 
+            z2d(:,:) = rau0 * e1t(:,:) * e2t(:,:)
+            DO jk = 1, jpk
+               z3d(:,:,jk) = w_eiv(:,:,jk) * z2d(:,:)
+            END DO
+            CALL iom_put( "weiv_masstr" , z3d )                 ! bolus mass transport in k-direction
+            !
             zztmp = 0.5 * rau0 * rcp 
             z2d(:,:) = 0.e0 
             DO jk = 1, jpkm1
