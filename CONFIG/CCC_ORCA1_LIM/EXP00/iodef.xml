@@ -360,7 +360,8 @@
 
 	  <file id="1m grid_U ar6" name_suffix="_ar6" >
 	    <field ref="u_masstr"     name="u_masstr"      description="ocean_mass_x_transport"                     level="1" />
-            <field ref="ueiv_masstr"  name="ueiv_masstr"   description="bolus_ocean_mass_x_transport"               level="1" />
+            <field ref="ueiv_masstr"  name="ueiv_masstr"   description="parameterized_ocean_mass_x_transport"       level="1" />
+            <field ref="uoce_eiv"     name="uoce_eiv"      description="x_bolus_velocity"                                     />
 	    <!-- field ref="u_heattr"     name="hfx"     description="ocean_heat_x_transport"                           level="1", cmip6 requires 3-D, DY   -->
 	    <!-- field ref="ueiv_heattr"  name="hfxba"   description="ocean_heat_x_transport_due_to_bolus_advection"    level="2", not in cmip6 request, DY -->
 	    <!-- field ref="udiff_heattr" name="hfxdiff" description="ocean_heat_x_transport_due_to_diffusion"          level="2", not in cmip6 request, DY -->
@@ -381,7 +382,8 @@
 
 	  <file id="1m grid_V ar6" name_suffix="_ar6" >
 	    <field ref="v_masstr"     name="v_masstr"      description="ocean_mass_y_transport"                     level="1" />
-            <field ref="veiv_masstr"  name="veiv_masstr"   description="bolus_ocean_mass_y_transport"               level="1" />
+            <field ref="veiv_masstr"  name="veiv_masstr"   description="parameterized_ocean_mass_y_transport"       level="1" />
+            <field ref="voce_eiv"     name="voce_eiv"      description="y_bolus_velocity"                                     />
 	    <!-- field ref="v_heattr"     name="hfy"     description="ocean_heat_y_transport"   level="1", cmip6 requires 3-D, DY   -->
 	    <!-- field ref="veiv_heattr"  name="hfyba"   description="ocean_heat_y_transport_due_to_bolus_advection"  level="2", not in cmip6 request, DY -->
 	    <!-- field ref="vdiff_heattr" name="hfydiff" description="ocean_heat_y_transport_due_to_diffusion"        level="2", not in cmip6 request, DY -->
@@ -404,7 +406,8 @@
           <file id="1m grid_W ar6" name_suffix="_ar6" >
             <field ref="bn2"          name="obvfsq"        description="square_of_brunt_vaisala_frequency_in_sea_water"       />
 	    <field ref="w_masstr"     name="w_masstr"      description="upward_ocean_mass_transport"                          />
-            <field ref="weiv_masstr"  name="weiv_masstr"   description="bolus_upward_ocean_mass_transport"          level="1" />
+            <field ref="weiv_masstr"  name="weiv_masstr"   description="parameterized_upward_ocean_mass_transport"  level="1" />
+            <field ref="woce_eiv"     name="woce_eiv"      description="upward_bolus_velocity"                                />
 	    <!-- field ref="w_masstr2"  name="wmosq" description="square_pf_upward_ocean_mass_transport", not in cmip6 request, DY -->
 	    <field ref="avt"          name="difvho"        description="ocean_vertical_heat_diffusivity"            level="2" />
 	    <field ref="avs"          name="difvso"        description="ocean_vertical_salt_diffusivity"            level="2" />
