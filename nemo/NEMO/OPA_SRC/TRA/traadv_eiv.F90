@@ -77,6 +77,7 @@ CONTAINS
       REAL(wp) ::   zvwk, zvwk1, zvwj, zvwj1   !   -      -
 # if defined key_diaeiv 
       REAL(wp) ::   zztmp                      ! local scalar
+      REAL(wp), POINTER, DIMENSION(:,:,:) :: z3d  
 # endif  
       REAL(wp), POINTER, DIMENSION(:,:) :: zu_eiv, zv_eiv, zw_eiv, z2d
       !!----------------------------------------------------------------------
@@ -85,6 +86,7 @@ CONTAINS
       !
 # if defined key_diaeiv 
       CALL wrk_alloc( jpi, jpj, zu_eiv, zv_eiv, zw_eiv, z2d )
+      CALL wrk_alloc( jpi, jpj, jpk, z3d )
 # else
       CALL wrk_alloc( jpi, jpj, zu_eiv, zv_eiv, zw_eiv )
 # endif
@@ -207,6 +209,7 @@ CONTAINS
       ! 
 # if defined key_diaeiv 
       CALL wrk_dealloc( jpi, jpj, zu_eiv, zv_eiv, zw_eiv, z2d )
+      CALL wrk_dealloc( jpi, jpj, jpk, z3d )
 # else
       CALL wrk_dealloc( jpi, jpj, zu_eiv, zv_eiv, zw_eiv )
 # endif
