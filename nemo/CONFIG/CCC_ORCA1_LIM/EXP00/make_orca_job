@@ -576,7 +576,7 @@ debug=off
 # nemo_save_*_data that are assigned below, the user can control nemo output.
 # Note, case is significant for the suffixes in these lists.
 # Any matching files that do not exist at run time will be silently ignored.
-  nemo_1y_suffix_list="grid_T_ar6"
+  nemo_1y_suffix_list="grid_T_ar6 grid_W_ar6"
   nemo_1m_suffix_list="icemod grid_T grid_T_ar6 grid_U grid_U_ar6 grid_V grid_V_ar6 grid_W grid_W_ar6 scalar_ar6"
   nemo_1d_suffix_list="grid_T_ar6 diaptr"
   nemo_5d_suffix_list="icemod grid_T grid_U grid_V grid_W"
