@@ -409,8 +409,6 @@
             <field ref="weiv_masstr"  name="weiv_masstr"   description="parameterized_upward_ocean_mass_transport"  level="1" />
             <field ref="woce_eiv"     name="woce_eiv"      description="upward_bolus_velocity"                                />
 	    <!-- field ref="w_masstr2"  name="wmosq" description="square_pf_upward_ocean_mass_transport", not in cmip6 request, DY -->
-	    <field ref="avt"          name="difvho"        description="ocean_vertical_heat_diffusivity"            level="2" />
-	    <field ref="avs"          name="difvso"        description="ocean_vertical_salt_diffusivity"            level="2" />
 	    <!-- difvtrbo : ocean_vertical_tracer_diffusivity_due_to_background : cte with time, see namelist parameters nn_avb and  nn_havtb -->
 	    <!-- field ref="av_tide" name="difvtrto" description="ocean_vertical_tracer_diffusivity_due_to_tides"   level="2", not in cmip6 request, DY -->
 	    <!-- tnpeo     : tendency_of_ocean_potential_energy_content                   : not available -->
@@ -528,6 +526,16 @@
             <field ref="strd_zdfp"    name="strd_zdfp"      description="salinity   -trend: pure vert. diffusion"     />
             <field ref="ttrd_atf"     name="ttrd_atf"       description="temperature-trend: asselin time filter"      />
             <field ref="strd_atf"     name="strd_atf"       description="salinity-trend: asselin time filter"         />
+          </file>
+          </group>
+
+        <!--
+..............................................    grid W   .................................................
+          -->
+          <group id="1y_grid_W" name="auto" >
+          <file id="1y grid_W ar6" name_suffix="_ar6" >
+	    <field ref="avt"          name="difvho"        description="ocean_vertical_heat_diffusivity"    level="3" />
+	    <field ref="avs"          name="difvso"        description="ocean_vertical_salt_diffusivity"    level="3" />
           </file>
           </group>
       </group>
