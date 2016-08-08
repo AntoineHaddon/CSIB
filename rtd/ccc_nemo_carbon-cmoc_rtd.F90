@@ -93,7 +93,7 @@ PROGRAM nemo_ocean_diag
       REAL, DIMENSION(:, :, :, :), ALLOCATABLE :: phy, phy2, zoo, zoo2
 
 !     Monthly primary production: PPPHY, PPPHY2 
-      REAL, DIMENSION(:, :, :, :) :: ppphy, ppphy2
+      REAL, DIMENSION(:, :, :, :), ALLOCATABLE :: ppphy, ppphy2
 
 !     Monthly export fluxes of C (EPC100), CaCO3 (EPCAL100)
       REAL, DIMENSION(:, :, :), ALLOCATABLE     :: epc100, epcal100
@@ -132,7 +132,7 @@ PROGRAM nemo_ocean_diag
 
 !----------------
 !  NetCDF-output specific
-      integer id_time, id_z, iou, ntrec, ntrec2, iyear, imon
+      integer id_time, id_z, ntrec, ntrec2, iyear, imon
       integer days_elapsed
       logical exists, exists1, notopen
       real tyear, tdays_elapsed
@@ -165,7 +165,7 @@ PROGRAM nemo_ocean_diag
          &      po4(imt, jmt, km, lm), si(imt, jmt, km, lm),                    &
          &      phy(imt, jmt, km, lm), phy2(imt, jmt, km, lm),                  &
          &      zoo(imt, jmt, km, lm), zoo2(imt, jmt, km, lm),                  &
-         &      ppphy(imt, jmt, km, lm), ppphy2(imt, jmt, km, lm)               &
+         &      ppphy(imt, jmt, km, lm), ppphy2(imt, jmt, km, lm),               &
          &       STAT=ierr(4) )
       ALLOCATE( epc100(imt,jmt,lm), epcal100(imt,jmt,lm),                       &
          &      cflux(imt,jmt,lm), oflux(imt,jmt,lm), nfix(imt,jmt,lm),         &
@@ -175,7 +175,7 @@ PROGRAM nemo_ocean_diag
          &      oxy_z(km, lm), poc_z(km, lm), goc_z(km, lm), doc_z(km, lm),     & 
          &      no3_z(km, lm), nh4_z(km, lm), po4_z(km, lm), si_z(km, lm),      &
          &      phy_z(km, lm), phy2_z(km, lm), zoo_z(km, lm), zoo2_z(km, lm),   &
-         &      ppphy_z(km, lm), ppphy2_z(km, lm)                               &
+         &      ppphy_z(km, lm), ppphy2_z(km, lm),                               &
          &      STAT=ierr(6) )    
       ALLOCATE( dicvol(lm), caco3vol(lm), talvol(lm), phvol(lm), oxyvol(lm),    &
          &      pocvol(lm), gocvol(lm), docvol(lm), no3vol(lm), nh4vol(lm),     &
