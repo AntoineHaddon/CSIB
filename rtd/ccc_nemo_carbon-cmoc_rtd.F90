@@ -1,6 +1,4 @@
 PROGRAM nemo_ocean_diag
-IMPLICIT NONE 
-      
 ! ======================================================================
 !  Purpose: Run-time diagnostics for NEMO (ORCA2) 
 !
@@ -68,6 +66,7 @@ IMPLICIT NONE
 
 !     Does the required calculations and saves the output to netcdf
       USE ccc_nemo_rtd_utils, only: area_ave, area_ave_flx, noleap_days
+      IMPLICIT NONE 
       integer, parameter:: dp=kind(0.d0) ! double precision
 
 ! ======================================================================
