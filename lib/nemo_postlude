@@ -475,6 +475,9 @@ end_reorder_list
       cp -f saved_history_file_names rs_saved_history_file_names || :
       [ -s rs_saved_history_file_names ] && tarlist="$tarlist rs_saved_history_file_names"
 
+      cp -f xnemo_access_log rs_xnemo_access_log || :
+      [ -s rs_xnemo_access_log ] && tarlist="$tarlist rs_xnemo_access_log"
+
 #      rm -f NEXT_RESTART_ARC
 #      tar cf NEXT_RESTART_ARC $tarlist $ofnpatt $ifnpatt $pfnpatt ||
 #	bail "Unable to create restart archive"

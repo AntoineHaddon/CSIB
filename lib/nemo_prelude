@@ -656,8 +656,9 @@
 
     nemo_rebuild_rsin=${nemo_rebuild_rsin:='off'}
     ToF nemo_rebuild_rsin
-    if [ $nemo_rebuild_rsin -eq 1 ]; then
+    if [ $nemo_rebuild_rsin -eq 1 -a $first_job_in_run -eq 1 ]; then
       # Build global restart files for use in the coupler
+      # This is only done on the first job in a longer string of jobs
       echo "#####################################"
       echo "###   Rebuilding global restart files"
       echo "#####################################"
