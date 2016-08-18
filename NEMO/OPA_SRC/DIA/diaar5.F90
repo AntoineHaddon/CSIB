@@ -8,6 +8,7 @@ MODULE diaar5
    !!            3.4.1!  2016-06  (D. Yang) added global area average of SST and SSS.
    !!            3.4.1!  2016-07  (D. Yang) added square of sea surface height above geoid 
    !!                                       (sshdyn2, global average sea level change removed)
+   !!            3.4.1!  2016-08  (D. Yang) output area     
    !!----------------------------------------------------------------------
 #if defined key_diaar5   || defined key_esopa
    !!----------------------------------------------------------------------
@@ -85,6 +86,7 @@ CONTAINS
       CALL wrk_alloc( jpi , jpj , jpk        , zrhd      , zrhop    )
       CALL wrk_alloc( jpi , jpj , jpk , jpts , ztsn                 )
 
+      CALL iom_put( 'area',area(:,:) )
       CALL iom_put( 'cellthc', fse3t(:,:,:) )
 
       zarea_ssh(:,:) = area(:,:) * sshn(:,:)
