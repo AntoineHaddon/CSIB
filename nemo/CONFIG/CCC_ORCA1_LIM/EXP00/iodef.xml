@@ -48,6 +48,7 @@
 	<!-- variables available with key_diaar5 -->
 	<field id="botpres"      description="Pressure at sea floor"                     unit="dbar"                     />
 	<field id="cellthc"      description="Cell thickness"                            unit="m"     axis_ref="deptht"  />
+        <field id="area"         description="Cell area"                                 unit="m2"                       />
         <field id="sbt"          description="bottom temperaturea"                       unit="degC"                     />
         <field id="sbs"          description="bottom salinity"                           unit="psu"                      />
         <!-- variables available with key_top and key_my_trc -->
@@ -302,7 +303,6 @@
 	    <!--field ref="ssh2"         name="zossq"    description="square_of_sea_surface_height_above_geoid"             level="2", added sshdyn2 instead, DY -->
             <field ref="sshdyn2"      name="zossq"    description="square_of_sea_surface_height_above_geoid"                       />
 	    <!-- masscello : sea_water_mass_per_unit_area = cellthc*rau0                                          no time changes -->
-	    <field ref="cellthc"      name="thkcello" description="cell_thickness"                                                 /> <!-- no time changes -->
 	    <field ref="sst"          name="tos"      description="sea_surface_temperature"                              level="1" />
 	    <field ref="sst2"         name="tossq"    description="square_of_sea_surface_temperature"                    level="2" />
 	    <field ref="sss"          name="sss"      description="sea_surface_salinity"                                 level="1" />
@@ -526,6 +526,8 @@
             <field ref="strd_zdfp"    name="strd_zdfp"      description="salinity   -trend: pure vert. diffusion"     />
             <field ref="ttrd_atf"     name="ttrd_atf"       description="temperature-trend: asselin time filter"      />
             <field ref="strd_atf"     name="strd_atf"       description="salinity-trend: asselin time filter"         />
+	    <field ref="cellthc"      name="thkcello"       description="cell_thickness"                              /> <!-- no time changes -->
+            <field ref="area"         name="areacello"      description="cell_area"                                   />
           </file>
           </group>
 
