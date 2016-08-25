@@ -853,7 +853,7 @@ end_reorder_list
 
   # nemo_other_rs_suffix_list will contain a list of other (non-nemo) restart file suffixes
   # that may be dumped and deleted when in gcmjcl mode
-  nemo_other_rs_suffix_list=${nemo_other_rs_suffix_list:='rs cplrs.nc'}
+  nemo_other_rs_suffix_list=${nemo_other_rs_suffix_list:='rs cplrs.nc an ab cpl.exe'}
 
   if [ -n "$model" -a $last_month_in_curr_job -eq 1 ]; then
     # Assume we are running form gcmjcl
@@ -1107,6 +1107,10 @@ end_reorder_list
               # Do not delete if this is the last month of the current submission job
               acclist=''
               for sfx in $nemo_other_rs_suffix_list; do
+                # Never delete certain files
+                [ "x$sfx" = 'xan' ] && continue
+                [ "x$sfx" = 'xab' ] && continue
+                [ "x$sfx" = 'xcpl.exe' ] && continue
                 acclist="$acclist $model$sfx"
               done
               if [ -n "$acclist" ]; then
