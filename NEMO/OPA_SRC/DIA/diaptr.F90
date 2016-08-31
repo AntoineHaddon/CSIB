@@ -9,6 +9,8 @@ MODULE diaptr
    !!            3.3  ! 2010-10  (G. Madec)  dynamical allocation
    !!            3.4.1! 2013-12  (D. Yang) 1. nemo_ticket #1109
    !!                                      2. nemo_ticket #1084
+   !!            3.4.1! 2016-08  (D. Yang) Removed dependence of overturning 
+   !!                                      and bolus advective transports on ln_diaznl
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -348,12 +350,12 @@ CONTAINS
          !
          IF( MOD( kt, nn_fptr ) == 0 ) THEN 
             !
-            IF( ln_diaznl ) THEN               ! i-mean temperature and salinity
+            ! IF( ln_diaznl ) THEN               ! i-mean temperature and salinity
                DO jn = 1, nptr
                   tn_jk(:,:,jn) = ptr_tjk( tsn(:,:,:,jp_tem), btmsk(:,:,jn) ) * r1_sjk(:,:,jn)
                   sn_jk(:,:,jn) = ptr_tjk( tsn(:,:,:,jp_sal), btmsk(:,:,jn) ) * r1_sjk(:,:,jn)
                END DO
-            ENDIF
+            ! ENDIF
             !
             !                          ! horizontal integral and vertical dz 
             !                                ! eulerian velocity
@@ -745,7 +747,7 @@ CONTAINS
             !  Meridional Stream-Function (Eulerian and Bolus)
             CALL histdef( numptr, "zomsfglo", "Meridional Stream-Function: Global"//TRIM(cl_comment),"Sv" ,   &
                1, jpj, nhoridz, jpk, 1, jpk, ndepidzw, 32, clop, zsto, zout )
-            IF( ln_subbas .AND. ln_diaznl ) THEN
+            IF( ln_subbas ) THEN
                CALL histdef( numptr, "zomsfatl", "Meridional Stream-Function: Atlantic"//TRIM(cl_comment),"Sv" ,   &
                   1, jpj, nhoridz, jpk, 1, jpk, ndepidzw, 32, clop, zsto, zout )
                CALL histdef( numptr, "zomsfpac", "Meridional Stream-Function: Pacific"//TRIM(cl_comment),"Sv"  ,   &
@@ -843,7 +845,7 @@ CONTAINS
 
          ! overturning outputs:
          CALL histwrite( numptr, "zomsfglo", niter, v_msf(:,:,1), ndim, ndex )
-         IF( ln_subbas .AND. ln_diaznl ) THEN
+         IF( ln_subbas ) THEN
             CALL histwrite( numptr, "zomsfatl", niter, v_msf(:,:,2) , ndim_atl_30, ndex_atl_30 )
             CALL histwrite( numptr, "zomsfpac", niter, v_msf(:,:,3) , ndim_pac_30, ndex_pac_30 )
             CALL histwrite( numptr, "zomsfind", niter, v_msf(:,:,4) , ndim_ind_30, ndex_ind_30 )
