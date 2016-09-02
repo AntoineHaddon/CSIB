@@ -322,10 +322,10 @@ if [ $build_nemo_exe -eq 1 ]; then
   # Build the nemo executable
   cd $nemo_root/CONFIG
   if [ -z "$nemo_arch" ]; then
-    NARCH="-m xlf_aix-cccma"
-  else
-    NARCH="-m $nemo_arch"
+    nemo_arch=xlf_aix-cccma
   fi
+  NARCH="-m $nemo_arch"
+
   if [ -z "$nemo_ref_config" ]; then
     REFCFG=''
   else
@@ -344,21 +344,30 @@ if [ $build_nemo_exe -eq 1 ]; then
     DELKEY="$nemo_del_cpp_keys"
   fi
 
-  # Always include the commit info
-  NEMO_CPPDEFS="$NEMO_CPPDEFS $commit_keys"
+#  # Modify cpp_${nemo_config}.fcm in the appropriate config subdir
+#  cppfcm=cpp_${nemo_config}.fcm
+#  if [ -n "$NEMO_CPPDEFS" ]; then
+#    [ -f $nemo_config/$cppfcm ] || bail "$nemo_config/$cppfcm is not a regular file"
+#    echo "Adding the following cpp defs to $cppfcm :: $NEMO_CPPDEFS"
+#    sed 's?$? '"${NEMO_CPPDEFS}?" $nemo_config/$cppfcm > $nemo_config/new_$cppfcm
+#    chmod u+w $nemo_config/$cppfcm
+#    mv $nemo_config/new_$cppfcm $nemo_config/$cppfcm
+#    echo "New $cppfcm file: "
+#    cat $nemo_config/$cppfcm
+#  fi
 
   # We are currently in the CONFIG dir
-  # Modify cpp_${nemo_config}.fcm in the appropriate config subdir
-  cppfcm=cpp_${nemo_config}.fcm
-  if [ -n "$NEMO_CPPDEFS" ]; then
-    [ -f $nemo_config/$cppfcm ] || bail "$nemo_config/$cppfcm is not a regular file"
-    echo "Adding the following cpp defs to $cppfcm :: $NEMO_CPPDEFS"
-    sed 's?$? '"${NEMO_CPPDEFS}?" $nemo_config/$cppfcm > $nemo_config/new_$cppfcm
-    chmod u+w $nemo_config/$cppfcm
-    mv $nemo_config/new_$cppfcm $nemo_config/$cppfcm
-    echo "New $cppfcm file: "
-    cat $nemo_config/$cppfcm
+  # Append certain macro defs to the appropriate arch file
+  archfile=../ARCH/arch-${nemo_arch}.fcm
+  [ -f "$archfile" ] || bail "$archfile is not a regular file"
+  if [ -n "$NEMO_COMMIT_ID" ]; then
+    echo "%NEMO_COMMIT_ID    $NEMO_COMMIT_ID" >> $archfile
   fi
+  if [ -n "$NEMO_REPO_PATH" ]; then
+    echo "%NEMO_REPO_PATH    $NEMO_REPO_PATH" >> $archfile
+  fi
+  echo "$archfile :"
+  cat $archfile
 
   # Run makenmo to create the nemo executable
   echo "makenemo -n $nemo_config $NARCH $REFCFG"
