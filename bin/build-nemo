@@ -332,11 +332,9 @@ if [ $build_nemo_exe -eq 1 ]; then
     REFCFG="-r $nemo_ref_config"
   fi
   if [ -z "$nemo_add_cpp_keys" ]; then
-    add_key=''
-    ADDKEY=''
+    NEMO_CPPDEFS=''
   else
-    add_key='add_key'
-    ADDKEY="$nemo_add_cpp_keys"
+    NEMO_CPPDEFS="$nemo_add_cpp_keys"
   fi
   if [ -z "$nemo_del_cpp_keys" ]; then
     del_key=''
@@ -346,9 +344,25 @@ if [ $build_nemo_exe -eq 1 ]; then
     DELKEY="$nemo_del_cpp_keys"
   fi
 
+  # Always include the commit info
+  NEMO_CPPDEFS="$NEMO_CPPDEFS $commit_keys"
+
+  # We are currently in the CONFIG dir
+  # Modify cpp_${nemo_config}.fcm in the appropriate config subdir
+  cppfcm=${nemo_config}/cpp_${nemo_config}.fcm
+  if [ -n "$NEMO_CPPDEFS" ]; then
+    [ -f $cppfcm ] || bail "$cppfcm is not a regular file"
+    echo "Adding the following cpp defs to $cppfcm :: $NEMO_CPPDEFS"
+    echo "$NEMO_CPPDEFS" | cat - $cppfcm > new_$cppfcm
+    chmod u+w $cppfcm
+    mv new_$cppfcm $cppfcm
+    echo "New $cppfcm file: "
+    cat $cppfcm
+  fi
+
   # Run makenmo to create the nemo executable
-  echo "makenemo -n $nemo_config $NARCH $REFCFG $add_key \"$ADDKEY\" $del_key \"$DELKEY\" add_key $commit_keys"
-  makenemo -n $nemo_config $NARCH $REFCFG $add_key "$ADDKEY" $del_key "$DELKEY" add_key "$commit_keys"
+  echo "makenemo -n $nemo_config $NARCH $REFCFG"
+  makenemo -n $nemo_config $NARCH $REFCFG
   [ $? -ne 0 ] && bail "Problem building nemo executable"
 
   # Copy the executable to the tmp dir
