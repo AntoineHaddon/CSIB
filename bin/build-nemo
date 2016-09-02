@@ -349,15 +349,15 @@ if [ $build_nemo_exe -eq 1 ]; then
 
   # We are currently in the CONFIG dir
   # Modify cpp_${nemo_config}.fcm in the appropriate config subdir
-  cppfcm=${nemo_config}/cpp_${nemo_config}.fcm
+  cppfcm=cpp_${nemo_config}.fcm
   if [ -n "$NEMO_CPPDEFS" ]; then
-    [ -f $cppfcm ] || bail "$cppfcm is not a regular file"
+    [ -f $nemo_config/$cppfcm ] || bail "$nemo_config/$cppfcm is not a regular file"
     echo "Adding the following cpp defs to $cppfcm :: $NEMO_CPPDEFS"
-    echo "$NEMO_CPPDEFS" | cat - $cppfcm > new_$cppfcm
-    chmod u+w $cppfcm
-    mv new_$cppfcm $cppfcm
+    echo "$NEMO_CPPDEFS" | cat - $nemo_config/$cppfcm > $nemo_config/new_$cppfcm
+    chmod u+w $nemo_config/$cppfcm
+    mv $nemo_config/new_$cppfcm $nemo_config/$cppfcm
     echo "New $cppfcm file: "
-    cat $cppfcm
+    cat $nemo_config/$cppfcm
   fi
 
   # Run makenmo to create the nemo executable
