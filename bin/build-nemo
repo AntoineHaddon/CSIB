@@ -347,7 +347,7 @@ if [ $build_nemo_exe -eq 1 ]; then
   fi
 
   # Run makenmo to create the nemo executable
-  echo "makenemo -n $nemo_config $NARCH $REFCFG $add_key \"$ADDKEY\" $del_key \"$DELKEY\""
+  echo "makenemo -n $nemo_config $NARCH $REFCFG $add_key \"$ADDKEY\" $del_key \"$DELKEY\" add_key $commit_keys"
   makenemo -n $nemo_config $NARCH $REFCFG $add_key "$ADDKEY" $del_key "$DELKEY" add_key "$commit_keys"
   [ $? -ne 0 ] && bail "Problem building nemo executable"
 
