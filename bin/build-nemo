@@ -240,6 +240,7 @@ fi
 echo "NEMO_COMMIT_ID=$NEMO_COMMIT_ID"
 echo "NEMO_REPO_PATH=$NEMO_REPO_PATH"
 echo "nemo_exe=$nemo_exe"
+commit_keys="NEMO_COMMIT_ID=$NEMO_COMMIT_ID NEMO_REPO_PATH=$NEMO_REPO_PATH"
 # nemo_add_cpp_keys+=" NEMO_COMMIT_ID=$NEMO_COMMIT_ID NEMO_REPO_PATH=$NEMO_REPO_PATH"
 
 if [ -n "$nemo_source_mods" ]; then
@@ -347,7 +348,7 @@ if [ $build_nemo_exe -eq 1 ]; then
 
   # Run makenmo to create the nemo executable
   echo "makenemo -n $nemo_config $NARCH $REFCFG $add_key \"$ADDKEY\" $del_key \"$DELKEY\""
-  makenemo -n $nemo_config $NARCH $REFCFG $add_key "$ADDKEY" $del_key "$DELKEY"
+  makenemo -n $nemo_config $NARCH $REFCFG $add_key "$ADDKEY" $del_key "$DELKEY" add_key "$commit_keys"
   [ $? -ne 0 ] && bail "Problem building nemo executable"
 
   # Copy the executable to the tmp dir
