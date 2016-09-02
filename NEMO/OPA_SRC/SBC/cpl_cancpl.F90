@@ -28,6 +28,7 @@ MODULE cpl_cancpl
   use dom_oce                      ! ocean space and time domain
   use in_out_manager               ! I/O manager
   use lbclnk                       ! ocean lateral boundary conditions (or mpp link)
+  use timing
   use sbc_oce, only: nn_ice
 #if defined key_cice
   use ice_domain_size, only: ncat
@@ -796,10 +797,12 @@ contains
          write(numout,*) '****************'
        endif
 
+       if ( nn_timing == 1 ) call timing_start('cplsend_gather')
        !--- Gather data into the global array png
        call mppsync
        call mppgather (pdata(:,:,jc),0,png)
        call mppsync
+       if ( nn_timing == 1 ) call timing_stop('cplsend_gather')
 
        !--- Skip the rest of this loop unless this is the master task
        if ( rank /= ocn_master ) cycle
@@ -931,10 +934,12 @@ contains
          call copy_1d_to_3d_global(wrk, png)
        endif
 
+       if ( nn_timing == 1 ) call timing_start('cplrecv_scatter')
        !--- Scatter the global array onto each NEMO task
        call mppsync
        call mppscatter (png,0,pdata(:,:,jc)) 
        call mppsync
+       if ( nn_timing == 1 ) call timing_stop('cplrecv_scatter')
 
        if ( rank == ocn_master .and. verbose > 2 ) then
          !--- Count the number of NaNs in the global png array
