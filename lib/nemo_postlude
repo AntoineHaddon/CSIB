@@ -842,10 +842,15 @@ end_reorder_list
     last_month_in_curr_job=0
   fi
 
-  # nemo_dump_other flags dumping and deleting other (non-nemo) files
+  # nemo_dump_other flags dumping other (non-nemo) files
   # but only when running in gcmjcl mode
   nemo_dump_other=${nemo_dump_other:=on}
   ToF nemo_dump_other
+
+  # nemo_del_other flags deleting other (non-nemo) files
+  # but only when running in gcmjcl mode
+  nemo_del_other=${nemo_del_other:=off}
+  ToF nemo_del_other
 
   # nemo_other_hist_suffix_list will contain a list of other (non-nemo) history file suffixes
   # that may be dumped and deleted when in gcmjcl mode
@@ -1042,12 +1047,14 @@ end_reorder_list
           if [ -n "$model" -a $nemo_dump_other -eq 1 ]; then
             # Assume we are running in gcmjcl mode
             # Dump agcm and/or coupler history files as well
-            acclist=''
-            for sfx in $nemo_other_hist_suffix_list; do
-              acclist="$acclist $model$sfx"
-            done
-            # filter through lsdat to only get files saved to DATAPATH
-            [ -n "$acclist" ] && lsdat -1 --quiet $acclist >> $hist_file_del_list
+            if [ $nemo_del_other -eq 1 ]; then
+              acclist=''
+              for sfx in $nemo_other_hist_suffix_list; do
+                acclist="$acclist $model$sfx"
+              done
+              # filter through lsdat to only get files saved to DATAPATH
+              [ -n "$acclist" ] && lsdat -1 --quiet $acclist >> $hist_file_del_list
+            fi
           fi
 
 	  [ -s ${hist_file_del_list} ] || 
