@@ -9,8 +9,11 @@ MODULE diaptr
    !!            3.3  ! 2010-10  (G. Madec)  dynamical allocation
    !!            3.4.1! 2013-12  (D. Yang) 1. nemo_ticket #1109
    !!                                      2. nemo_ticket #1084
-   !!            3.4.1! 2016-08  (D. Yang) Removed dependence of overturning 
-   !!                                      and bolus advective transports on ln_diaznl
+   !!            3.4.1! 2016-08  (D. Yang) Removed dependence of overturning
+   !!                                      and bolus advective transports on ln_diaznl.
+   !!            3.4.1! 2016-09  (D. Yang) Added an option to integrate overturning stream 
+   !!                                      function from bottom to surface (if key_diaar5);
+   !!                                      otherwise from surface to bottom (original code). 
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -416,6 +419,17 @@ CONTAINS
 #endif
             !                                ! "Meridional" Stream-Function
             DO jn = 1, nptr
+#if defined key_diaar5
+               ! integrate from bottom to surface                
+               DO jk = jpkm1, 1, -1
+                  v_msf(:,jk,jn) = v_msf (:,jk+1,jn) - v_msf (:,jk,jn)           ! Eulerian (or including bolus
+                                                                                 ! if key_diaeiv) j-Stream-Function
+#if defined key_diaeiv
+                  v_msf_eiv(:,jk,jn) = v_msf_eiv(:,jk+1,jn) - v_msf_eiv(:,jk,jn)       ! Bolus    j-Stream-Function
+#endif
+               END DO
+#else
+               ! integrate from surface to bottom
                DO jk = 2, jpk 
                   v_msf    (:,jk,jn) = v_msf    (:,jk-1,jn) + v_msf    (:,jk,jn)       ! Eulerian j-Stream-Function
 #if defined key_diaeiv
@@ -423,6 +437,7 @@ CONTAINS
 
 #endif
                END DO
+#endif
             END DO
             v_msf    (:,:,:) = v_msf    (:,:,:) * rc_sv       ! converte in Sverdrups
 #if defined key_diaeiv
