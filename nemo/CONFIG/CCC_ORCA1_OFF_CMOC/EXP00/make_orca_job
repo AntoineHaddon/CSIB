@@ -194,8 +194,8 @@ cat <<end_job_defs >$job_defs
 
 # Define the nemo domain (implies node geometry for MPI)
   nemo_jpni=8
-  nemo_jpnj=4
-  nemo_jpnij=32
+  nemo_jpnj=6
+  nemo_jpnij=48
 
 # Number of physical nodes used by this job
   phys_nodex=1
