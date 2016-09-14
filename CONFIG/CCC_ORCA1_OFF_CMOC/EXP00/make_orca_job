@@ -348,7 +348,7 @@ debug=off
   dyna_grid_u=mc_ofa-202_1d_12010101_12011231_grid_u.nc
   dyna_grid_v=mc_ofa-202_1d_12010101_12011231_grid_v.nc
   dyna_grid_w=mc_ofa-202_1d_12010101_12011231_grid_w.nc
-  offline_mesh_mask=nemo_3.4_orca1_mesh_mask.nc
+  offline_mesh_mask=nemo3.4.1_orca1_mesh_mask_ngr.nc
 
 # The boolean variable nemo_write_stdout can be used to control echoing of the
 # file ocean.output (created by nemo as stdout) at runtime. When nemo_write_stdout
