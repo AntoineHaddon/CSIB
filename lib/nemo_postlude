@@ -1013,7 +1013,7 @@ end_reorder_list
 
 	if [ $nemo_del_hist -eq 1 ]; then
 	  if [ $nemo_save_hist -ne 1 -a $do_nemo_run -eq 1 ]; then
-	    bail "Deleting for history files was requested but nemo_save_hist = off"
+	    echo "nemo_postlude: ** WW ** Deleting for history files was requested but nemo_save_hist = off"
 	  fi
 
 	  for freq in $nemo_del_hist_freq_list; do
