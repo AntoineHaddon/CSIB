@@ -311,33 +311,37 @@ debug=off
   nemo_data_1m_potential_temperature_nomask=nemo_3.4_orca1_potemp_1m_z46_nomask.nc
   nemo_data_1m_salinity_nomask=nemo_3.4_orca1_salin_1m_z46_nomask.nc
 
-  nemo_t=nemo_3.3_orca1_t_10.15june2009_orca1.nc
-  nemo_u=nemo_3.3_orca1_u_10.15june2009_orca1.nc
-  nemo_v=nemo_3.3_orca1_v_10.15june2009_orca1.nc
-  nemo_q=nemo_3.3_orca1_q_10.15june2009_orca1.nc
-  nemo_qsw=nemo_3.3_orca1_ncar_rad.15june2009_orca1.nc
-  nemo_qlw=nemo_3.3_orca1_ncar_rad.15june2009_orca1.nc
-  nemo_precip=nemo_3.3_orca1_ncar_precip.15june2009_orca1.nc
-  nemo_snow=nemo_3.3_orca1_ncar_precip.15june2009_orca1.nc
-# weights_grid02_* are weights for ECMWF data
-  nemo_weights_bicubic1=nemo_3.4_weights_grid02_bicubic_orca1.nc
-  nemo_weights_bilinear1=nemo_3.4_weights_grid02_bilinear_orca1.nc
-# weights_grid03_* are weights for CORE data
-  nemo_weights_bicubic2=nemo_3.4_weights_grid03_bicubic_orca1.nc
-  nemo_weights_bilinear2=nemo_3.4_weights_grid03_bilinear_orca1.nc
-# weights_canam4grid_* are weights for CanAM4
-# nemo_weights_bicubic2=nemo_3.4_weights_canam4grid_bicubic_orca1.nc
-# nemo_weights_bilinear2=nemo_3.4_weights_canam4grid_bilinear_orca1.nc
+#      # Sensible variable options (see definitions at top)
+      nemo_forcing=bulk
+      year_rtdiag_start=001
+      iaf_year_offset=0     
+      iaf_loop_year=0
 
-# These are for flux forcing. If don't use flux forcing, provide any
-# forcing data files existing on the disk. Only used in nemo_forcing=flux
-  nemo_utau=nemo_3.4_orca1_t_10.15june2009.nc
-  nemo_vtau=nemo_3.4_orca1_t_10.15june2009.nc
-  nemo_qtot=nemo_3.4_orca1_t_10.15june2009.nc
-  nemo_qsr=nemo_3.4_orca1_t_10.15june2009.nc
-  nemo_emp=nemo_3.4_orca1_t_10.15june2009.nc
-  nemo_weights_bicubic3=nemo_3.4_weights_grid03_bicubic_orca1.nc
-  nemo_weights_bilinear3=nemo_3.4_weights_grid03_bilinear_orca1.nc
+      # namelist paramters to be changed by XNEMO
+      sn_wndi=" 'uwnd10m'     ,         6         , 'U_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bic2' , 'Uwnd' "
+      sn_wndj=" 'vwnd10m'     ,         6         , 'V_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bic2' , 'Vwnd' "
+      sn_qsr=" 'qsw'         ,        24         , 'SWDN_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
+      sn_qlw=" 'qlw'         ,        24         , 'LWDN_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
+      sn_tair=" 'tair10m'     ,         6         , 'T_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
+      sn_humi=" 'humi10m'     ,         6         , 'Q_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
+      sn_prec=" 'precip'      ,        -1         , 'PRC_MOD'    ,   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
+      sn_snow=" 'snow'        ,        -1         , 'SNOW'    ,   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
+      sn_tdif=" 'taudif_core' ,        24         , 'taudif'  ,   .false.    , .true. , 'yearly'  , ''             , '' "
+      
+      # Forcing files to be accessed
+      nemo_t=uncs_corev2-ny_t_10.15JUNE2009.nc
+      nemo_u=uncs_corev2-ny_u_10.15JUNE2009.nc
+      nemo_v=uncs_corev2-ny_v_10.15JUNE2009.nc
+      nemo_q=uncs_corev2-ny_q_10.15JUNE2009.nc
+      nemo_qsw=uncs_corev2-ny_ncar_rad.15JUNE2009.nc
+      nemo_qlw=uncs_corev2-ny_ncar_rad.15JUNE2009.nc
+      nemo_precip=uncs_corev2-ny_ncar_precip.15JUNE2009.nc
+      nemo_snow=uncs_corev2-ny_ncar_precip.15JUNE2009.nc
+
+      # WEIGHTS file for this resolution
+      nemo_weights_bicubic2=uncs_orca1_corev2_weights_bicubic.nc
+      nemo_weights_bilinear2=uncs_orca1_corev2_weights_bilin.nc
+
 
 # Dynamics files for running offline
   dyna_grid_t=mc_ofa-202_1d_12010101_12011231_grid_t.nc
