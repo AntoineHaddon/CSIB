@@ -1058,7 +1058,7 @@ end_reorder_list
           fi
 
 	  [ -s ${hist_file_del_list} ] || 
-             echo "WARNING nemo_del_hist=on but could not create a list of history files to delete"  
+             echo "nemo_postlude: ** WW ** nemo_del_hist=on but could not create a list of history files to delete"  
 	fi
 
 	if [ $nemo_del_rs -eq 1 ]; then
@@ -1134,7 +1134,7 @@ end_reorder_list
 #	  fi
           
 	  [ -s ${hist_file_del_list} ] || 
-            echo "WARNING: nemo_del_rs=on but could not create a list of restart files to delete
+            echo "nemo_postlude: ** WW ** nemo_del_rs=on but could not create a list of restart files to delete
                   (ignore if this is the first run step)."  
 	fi
 	
