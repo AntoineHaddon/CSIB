@@ -853,18 +853,12 @@ end_reorder_list
   ToF nemo_del_other
 
   # nemo_other_hist_suffix_list will contain a list of other (non-nemo) history file suffixes
-  # that may be dumped and deleted when in gcmjcl mode
-  nemo_other_hist_suffix_list=${nemo_other_hist_suffix_list:='cplhist.nc'}
+  # that may be dumped and deleted when in gcmjcl mode (e.g. gs ss cplhist.nc)
+  nemo_other_hist_suffix_list=${nemo_other_hist_suffix_list:=''}
 
   # nemo_other_rs_suffix_list will contain a list of other (non-nemo) restart file suffixes
-  # that may be dumped and deleted when in gcmjcl mode
-  nemo_other_rs_suffix_list=${nemo_other_rs_suffix_list:='rs cplrs.nc an ab cpl.exe'}
-
-  if [ -n "$model" -a $last_month_in_curr_job -eq 1 ]; then
-    # Assume we are running form gcmjcl
-    # Save the coupler timer info file
-    [ -s cpl_time_stats ] && save cpl_time_stats ${model}cpl_stats
-  fi
+  # that may be dumped and deleted when in gcmjcl mode (e.g. rs cplrs.nc an ab cpl.exe)
+  nemo_other_rs_suffix_list=${nemo_other_rs_suffix_list:=''}
 
   # IF any dumps or deletes
   if [ $nemo_dump_hist -eq 1 -o $nemo_dump_rs -eq 1 -o $nemo_del_hist -eq 1 -o $nemo_del_rs -eq 1 ]; then
