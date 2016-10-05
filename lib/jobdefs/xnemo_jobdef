@@ -1398,13 +1398,11 @@ cat >mypartabs << EOF
         standard_name = tendency_of_sea_water_salinity_expressed_as_salt_content 
 /
 EOF
-        pfx=${cn_exp}_1y_${start_date}_${stop_date}_grid_t_ar6
+        pfx=${cn_exp}_1y_${start_date}_${stop_date}_grid_td_ar6
         ncout=${uxxx}_${pfx}.nc
-        acc_cp ${pfx} ${ncout} nocp=no
-        chmod u+rw ${pfx}
-        cdo copy -setcalendar,365_day -setpartabn,mypartabt dtn.nc ${pfx}
-        cdo copy -setcalendar,365_day -setpartabn,mypartabs dsn.nc ${pfx} 
-        release ${ncout}
+        cdo setcalendar,365_day -setpartabn,mypartabt dtn.nc dtn.nc
+        cdo setcalendar,365_day -setpartabn,mypartabs dsn.nc dsn.nc
+        cdo merge dtn.nc dsn.nc ${pfx}
         save ${pfx} ${ncout}
         rm -f mypartabt mypartabs 
       fi 
