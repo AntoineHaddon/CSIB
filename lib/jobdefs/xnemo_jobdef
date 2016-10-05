@@ -5,6 +5,7 @@
 #     keyword :: xnemo
 # description :: Run NEMO
 # D. Yang Apr 2015: added eddy energy flux.
+# D. Yang Sept 2016: added computations of opottemptend & osalttend.
 
  set -a
  . betapath2
@@ -1172,6 +1173,39 @@ cat > Execute_Script <<'end_of_script'
       echo " "
     fi
 
+    # CMIP6 post-processing switch
+    nemo_ar6_diag=on
+    ToF nemo_ar6_diag
+    if [ ${nemo_ar6_diag} -eq 1 ]; then
+      #=#=#=# Combine output files that were written one file per MPI task
+      #=#=#=# into a single file containing data from all MPI tasks
+
+      # The rebuild executable variables are defined when nemo_save_hist=on;
+      # if nemo_save_hist=off, they should be defined here.
+      [ ! -z "$nemo_rebuild_exec" ] || nemo_rebuild_exec=nemo_3.4_orca2_lim_flio_rbld_exe
+      [ ! -z "$nemo_rebuild_sh" ]   || nemo_rebuild_sh=nemo_3.4_orca2_lim_rebuild_sh
+
+      [ ! -f flio_rbld.exe ] && acc_cp flio_rbld.exe $nemo_rebuild_exec nocp=no
+      [ ! -f REBUILD ] && acc_cp REBUILD $nemo_rebuild_sh nocp=no && chmod u+x REBUILD    
+
+      # Select tn and sn from the previous DEC ocean restart to compute opottemptend and 
+      # osalttend from CMIP6 request if they do not already exist in the tar file.
+      if [ ${start_mon} -eq 1 ] && [ ${nn_it000} -ne 1 ]; then
+        prevd_itend=`expr ${prev_itend} |awk '{printf "%08d",$1}'`
+        pfx=${cn_exp}_${prevd_itend}
+        if [ ! -s ${pfx}_tn.nc ]; then
+          eval fnpatt=${cn_ocerst_in}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc 
+          found_rs=`(ls -1 $fnpatt || : ) 2>/dev/null`
+          if [ -n "$found_rs" ]; then
+            REBUILD -o ${cn_ocerst_in}.nc  ${cn_ocerst_in}_????.nc
+          fi
+          # Already consider restart both decomposed and rebuilt.
+          cdo select,name=tn,timestep=-1 ${cn_ocerst_in}.nc ${pfx}_tn.nc
+          cdo select,name=sn,timestep=-1 ${cn_ocerst_in}.nc ${pfx}_sn.nc
+        fi
+      fi
+    fi
+
     #=#=#=# Save the current restart files.
 
     # After the job has run remove input restart files (if any)
@@ -1194,6 +1228,17 @@ cat > Execute_Script <<'end_of_script'
 	  bail "Attempting to save restarts but no ocean restart files exist."
         fi
 
+        # Select tn and sn from current DEC ocean restart and archive them in the tar file
+        # to compute opottemptend and osalttend from CMIP6 request.
+        if [ ${nemo_ar6_diag} -eq 1 ] && [ ${stop_mon} -eq 12 ]; then
+          nnd_itend=`expr ${nn_itend} |awk '{printf "%08d",$1}'`
+          pfx=${cn_exp}_${nnd_itend}
+          pfx2=${pfx}_${cn_ocerst_out}
+          REBUILD -o ${pfx2}.nc ${pfx2}_????.nc 
+          cdo select,name=tn,timestep=-1 ${pfx2}.nc ${pfx}_tn.nc
+          cdo select,name=sn,timestep=-1 ${pfx2}.nc ${pfx}_sn.nc
+        fi
+          
         if [ $with_ice -eq 1 ]; then
 	  eval ifnpatt=${cn_exp}_\*_${cn_icerst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
 	  found_rs=`(ls -1 $ifnpatt || : ) 2>/dev/null`
@@ -1264,6 +1309,21 @@ cat > Execute_Script <<'end_of_script'
       cp -f xnemo_access_log rs_xnemo_access_log || :
       [ -s rs_xnemo_access_log ] && tarlist="$tarlist rs_xnemo_access_log"
 
+      # Add tn and sn for computing opottemptend and osalttend from CMIP6 request.
+      if [ ${nemo_ar6_diag} -eq 1 ]; then
+        # when nemo_freq=1y, tar tn and sn from the current DEC in DEC tar file.
+        if [ ${stop_mon} -eq 12 ]; then
+          pfx=${cn_exp}_${nnd_itend}
+        else
+        # when nemo_freq less than 1y, tar tn and sn from the previous DEC in each saved tar file
+        # so that it can be passed to previous DEC tar file.
+          prevd_itend=`echo ${steps_per_day} ${start_year} | awk '{s1=$1*365;s2=$2-1; printf "%08d",s1*s2}' -`
+          pfx=${cn_exp}_${prevd_itend}
+        fi
+        [ -s ${pfx}_tn.nc ] && tarlist="$tarlist ${pfx}_tn.nc"
+        [ -s ${pfx}_sn.nc ] && tarlist="$tarlist ${pfx}_sn.nc"
+      fi
+
       rm -f NEXT_RESTART_ARC
       tar cf NEXT_RESTART_ARC $tarlist $ofnpatt $ifnpatt $pfnpatt ||
 	bail "Unable to create restart archive"
@@ -1271,6 +1331,7 @@ cat > Execute_Script <<'end_of_script'
       save NEXT_RESTART_ARC $rs_out
 
     fi
+
 
     # Echo ocean output to stdout, if requested
     nemo_write_stdout=on
@@ -1295,6 +1356,60 @@ cat > Execute_Script <<'end_of_script'
     #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
     #=#=#=#     Post processing     #=#=#=#
     #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+
+    # Post-processing of opottemptend and osalttend from CMIP6 request.
+    if [ ${nemo_ar6_diag} -eq 1 ] && [ ${stop_mon} -eq 12 ]; then
+      if [ ${nn_it000} -ne 1 ]; then
+        prevd_itend=`echo ${steps_per_day} ${start_year} | awk '{s1=$1*365;s2=$2-1; printf "%08d",s1*s2}' -`
+        nnd_itend=`expr ${nn_itend} |awk '{printf "%08d",$1}'`
+        pfx=${cn_exp}_${prevd_itend}
+        [ -s ${pfx}_tn.nc ] || bail ${pfx}"_tn.nc does not exist"
+        pfx2=${cn_exp}_${nnd_itend}
+        [ -s ${pfx}_tn.nc ]   || bail ${pfx}"_tn.nc does not exist"
+        # Need e3t from orca_mesh_mask.
+        orca_grid_info=nemo3.4.1_orca1_mesh_mask_ngr.nc
+        access orca_mesh_mask $orca_grid_info nocp=off
+        chmod u+rw orca_mesh_mask
+        cdo -select,name=e3t orca_mesh_mask e3t.nc
+        release orca_mesh_mask
+        # rhozero=1035 kg/m3; cpocean=4000 J/(kgC)
+        # coef=1035*4000/(365*24*3600)=0.13127854
+        coeft=0.13127854
+        # coefs=1035/(1000*365*24*3600)=3.3*e-8
+        coefs=3.3e-8
+        # tn in W m-2
+        cdo mul -mulc,${coeft} -sub ${pfx2}_tn.nc ${pfx}_tn.nc e3t.nc dtn.nc
+        # sn in kg m-2 s-1 
+        cdo mul -mulc,${coefs} -sub ${pfx2}_sn.nc ${pfx}_sn.nc e3t.nc dsn.nc
+        # change name from tn to opottemptend and from sn to osalttend.
+cat >mypartabt << EOF
+&parameter
+        name = tn
+        out_name = opottemptend
+        units = "Wm-2"
+        standard_name = tendency_of_sea_water_potential_temperature_expressed_as_heat_content
+/
+EOF
+cat >mypartabs << EOF
+&parameter
+        name = sn
+        out_name = osalttend
+        units = "kg m-2 s-1"
+        standard_name = tendency_of_sea_water_salinity_expressed_as_salt_content 
+/
+EOF
+        pfx=${cn_exp}_1y_${start_date}_${stop_date}_grid_t_ar6
+        ncout=${uxxx}_${pfx}.nc
+        acc_cp ${pfx} ${ncout} nocp=no
+        chmod u+rw ${pfx}
+        cdo copy -setcalendar,365_day -setpartabn,mypartabt dtn.nc ${pfx}
+        cdo copy -setcalendar,365_day -setpartabn,mypartabs dsn.nc ${pfx} 
+        release ${ncout}
+        save ${pfx} ${ncout}
+        rm -f mypartabt mypartabs 
+      fi 
+    fi
+ 
     # If nemo_rtd is true then execute the nemo run time diagnostics
     nemo_rtd=on
     ToF nemo_rtd
