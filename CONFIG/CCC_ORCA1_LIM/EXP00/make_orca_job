@@ -641,7 +641,7 @@ debug=off
 # to only dump a subset of the history files
   nemo_dump_hist=${nemo_dump_hist}
   nemo_dump_hist_freq_list='1d 1m 1y'
-  nemo_dump_hist_suffix_list='icemod grid_t grid_t_ar6 grid_u grid_u_ar6 grid_v grid_v_ar6 grid_w grid_w_ar6 scalar_ar6 diaptr ptrc_t diad_t'
+  nemo_dump_hist_suffix_list='icemod grid_t grid_t_ar6 grid_td_ar6 grid_u grid_u_ar6 grid_v grid_v_ar6 grid_w grid_w_ar6 scalar_ar6 diaptr ptrc_t diad_t'
 
 # Dump restart archives saved on DATAPATH to cfs
 # The user can redefine nemo_dump_rs_month_list. Restarts will
@@ -654,7 +654,7 @@ debug=off
 # to only delete a subset of the history files
   nemo_del_hist=${nemo_del_hist}
   nemo_del_hist_freq_list='1d 1m 1y'
-  nemo_del_hist_suffix_list='icemod grid_t grid_t_ar6 grid_u grid_u_ar6 grid_v grid_v_ar6 grid_w grid_w_ar6 scalar_ar6 diaptr ptrc_t diad_t'
+  nemo_del_hist_suffix_list='icemod grid_t grid_t_ar6 grid_td_ar6 grid_u grid_u_ar6 grid_v grid_v_ar6 grid_w grid_w_ar6 scalar_ar6 diaptr ptrc_t diad_t'
 
 # delete the previous restart.
   nemo_del_rs=$nemo_del_rs
