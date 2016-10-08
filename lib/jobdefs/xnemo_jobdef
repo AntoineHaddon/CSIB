@@ -1398,7 +1398,8 @@ cat >mypartabs << EOF
         standard_name = tendency_of_sea_water_salinity_expressed_as_salt_content 
 /
 EOF
-        pfx=${cn_exp}_1y_${start_date}_${stop_date}_grid_td_ar6
+        start_date_dy=`echo ${start_year}0101 |awk '{printf "%08d%",$1}' -`
+        pfx=${cn_exp}_1y_${start_date_dy}_${stop_date}_grid_td_ar6
         ncout=${uxxx}_${pfx}.nc
         cdo setcalendar,365_day -setpartabn,mypartabt dtn.nc dtn.nc
         cdo setcalendar,365_day -setpartabn,mypartabs dsn.nc dsn.nc
