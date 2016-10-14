@@ -308,9 +308,9 @@
 	    <!-- masscello : sea_water_mass_per_unit_area = cellthc*rau0                                          no time changes -->
 	    <field ref="sst"          name="tos"      description="sea_surface_temperature"                              level="1" />
 	    <field ref="sst2"         name="tossq"    description="square_of_sea_surface_temperature"                    level="2" />
-	    <field ref="sss"          name="sss"      description="sea_surface_salinity"                                 level="1" />
+	    <field ref="sss"          name="sos"      description="sea_surface_salinity"                                 level="1" />
             <field ref="sbt"          name="tob"      description="sea_water_potential_temperature_at_sea_floor"         level="1" />
-            <field ref="sbs"          name="sbs"      description="sea_water_salinity_at_sea_floor"                      level="1" />
+            <field ref="sbs"          name="sob"      description="sea_water_salinity_at_sea_floor"                      level="1" />
             <field ref="agessc"       name="agessc"   description="sea_water_age_since_surface_contact"                            />
 	    <!-- field ref="rhop"     name="rhopoto"  description="sea_water_potential_density"                          level="2" not in cmip6 request, DY-->
             <field ref="mldcmip6"     name="mlotst"   description="ocean_mixed_layer_thickness_defined_by_sigma_t"       level="2" />
@@ -447,9 +447,9 @@
 	  <!-- field ref="sshsteric"  name="zossga"   description="global_average_steric_sea_level_change", not in cmip6, DY -->
 	  <field ref="sshthster"      name="zostoga"       description="global_average_thermosteric_sea_level_change"         />
 	  <field ref="temptot"        name="thetaoga"      description="sea_water_potential_temperature"                      />
-	  <field ref="saltot"         name="saltot"        description="sea_water_salinity"                                   />
+	  <field ref="saltot"         name="soga"          description="sea_water_salinity"                                   />
           <field ref="ssttot"         name="tosga"         description="sea_surface_temperature"                              />
-          <field ref="ssstot"         name="ssstot"        description="sea_surface_salinity"                                 />
+          <field ref="ssstot"         name="sosga"         description="sea_surface_salinity"                                 />
 	</file>   
 	<!--
 ..............................................    icemod   .................................................
@@ -529,8 +529,6 @@
             <field ref="strd_zdf"     name="strd_zdf"       description="salinity-trend: vertical diffusion"          />
             <field ref="ttrd_zdfp"    name="ttrd_zdfp"      description="temperature-trend: pure vert. diffusion"     />
             <field ref="strd_zdfp"    name="strd_zdfp"      description="salinity   -trend: pure vert. diffusion"     />
-            <field ref="ttrd_atf"     name="ttrd_atf"       description="temperature-trend: asselin time filter"      />
-            <field ref="strd_atf"     name="strd_atf"       description="salinity-trend: asselin time filter"         />
 	    <field ref="cellthc"      name="thkcello"       description="cell_thickness"                              /> <!-- no time changes -->
             <field ref="area"         name="areacello"      description="cell_area"                                   />
           </file>
