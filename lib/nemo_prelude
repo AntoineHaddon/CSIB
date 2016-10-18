@@ -921,7 +921,8 @@
   nn_print=${nemo_nn_print:=0}       #  level of print (0 no extra print)
 
   # Runoff
-  ln_rnf=${nemo_ln_rnf:=.false.}
+  ln_rnf=${nemo_ln_rnf:=.true.}
+  ln_rnf_emp=${nemo_ln_rnf_emp:=.true.}
 
   # &namtsd    !   data : Temperature  & Salinity
   # ln_tsd_init flags initialization of ocean T & S with T & S input data (T) or not (F)
@@ -933,7 +934,7 @@
   # Modify specified parameter values in the input ocean namelist
   mod_nl namelist nn_it000 nn_itend nn_stock nn_write jpni jpnj jpnij \
     rn_rdt cn_exp nn_date0 ln_rstart nn_rstctl nn_no cn_ocerst_in cn_ocerst_out \
-    ln_ctl nn_print nn_ice ln_rnf ln_tsd_init nn_fsbc
+    ln_ctl nn_print nn_ice ln_rnf ln_rnf_emp ln_tsd_init nn_fsbc
 
   # Modify specified parameter values in the namelist read by the ice module
   # NOTE: If character variables do not follow the NEMO naming convention (that their names begin with the letter "c")
