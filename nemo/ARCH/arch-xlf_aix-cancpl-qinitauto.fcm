@@ -20,7 +20,7 @@
 %FCFLAGS             -qstrict -qfree=f90 -g -O3 -qrealsize=8 -qextname -qsource -q64 -qlargepage -qmaxmem=-1 -qfloat=nans -qinitauto=7FF7FFFF
 %FFLAGS              -qstrict -qfixed -g -O3 -qrealsize=8 -qextname -qsource -q64 -qlargepage -qmaxmem=-1 -qfloat=nans -qinitauto=7FF7FFFF
 %LD                  mpxlf90
-# %LDFLAGS             -L/users/tor/acrn/rls/ords/coupler_archive -lcplcom
+%LDFLAGS             -L/users/tor/acrn/rls/ords/coupler_archive -lcplcom
 %FPPFLAGS            -P -C
 %AR                  ar  
 %ARFLAGS             rs
