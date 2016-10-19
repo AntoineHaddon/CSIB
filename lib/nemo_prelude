@@ -694,7 +694,11 @@
       if [ -n "$found_rs" ]; then
         REBUILD -o NEMO_ocn_global_rsin.nc $found_rs || bail "Unable to rebuild ocean restart file from $found_rs"
         echo "Created file NEMO_ocn_global_rsin.nc"
-        mv NEMO_ocn_global_rsin.nc $PARENT_rb
+        if [ 1 -eq 2 ]; then
+          mv NEMO_ocn_global_rsin.nc $PARENT_rb
+        else
+          mv NEMO_ocn_global_rsin.nc $PARENT_rb/${cn_xxx}.nc
+        fi
       else
         bail "No ocean restart files were found in $nemo_rebuild_rs_name"
       fi
@@ -705,7 +709,11 @@
       if [ -n "$found_rs" ]; then
         REBUILD -o NEMO_ice_global_rsin.nc $found_rs || bail "Unable to rebuild ice restart file from $found_rs"
         echo "Created file NEMO_ice_global_rsin.nc"
-        mv NEMO_ice_global_rsin.nc $PARENT_rb
+        if [ 1 -eq 2 ]; then
+          mv NEMO_ice_global_rsin.nc $PARENT_rb
+        else
+          mv NEMO_ice_global_rsin.nc $PARENT_rb/${cn_xxx}.nc
+        fi
       else
         echo "No ice restart files were found in $nemo_rebuild_rs_name"
       fi
