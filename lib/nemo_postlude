@@ -378,8 +378,13 @@ end_reorder_list
       eval ofnpatt=${cn_exp}_\*_${cn_ocerst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
       found_rs=`(ls -1 $ofnpatt || : ) 2>/dev/null`
       if [ -z "$found_rs" ]; then
-	# No ocean restart files exist
-	bail "Attempting to save restarts but no ocean restart files exist."
+        # Look for a restart with no numeric extention
+        eval ofnpatt=${cn_exp}_\*_${cn_ocerst_out}.nc
+        found_rs=`(ls -1 $ofnpatt || : ) 2>/dev/null`
+        if [ -z "$found_rs" ]; then
+	  # No ocean restart files exist
+	  bail "Attempting to save restarts but no ocean restart files exist."
+        fi
       fi
 
       if [ $nemo_carbon -eq 1 ]; then
@@ -387,8 +392,12 @@ end_reorder_list
 	eval pfnpatt=${cn_exp}_\*_${cn_trcrst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
 	found_rs=`(ls -1 $pfnpatt || : ) 2>/dev/null`
 	if [ -z "$found_rs" ]; then
-	  # No pisces restart files exist
-	  bail "Attempting to save restarts but no pisces restart files exist."
+          eval pfnpatt=${cn_exp}_\*_${cn_trcrst_out}.nc
+          found_rs=`(ls -1 $pfnpatt || : ) 2>/dev/null`
+          if [ -z "$found_rs" ]; then
+            # No pisces restart files exist
+	    bail "Attempting to save restarts but no pisces restart files exist."
+          fi
 	fi
       else
 	pfnpatt=''
@@ -411,8 +420,13 @@ end_reorder_list
           eval ifnpatt=${cn_exp}_\*_${cn_icerst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
           found_rs=`(ls -1 $ifnpatt || : ) 2>/dev/null`
           if [ -z "$found_rs" ]; then
-            # No ice restart files exist
-            bail "Attempting to save restarts but no ice restart files exist."
+            # Look for a restart with no numeric extention
+            eval ifnpatt=${cn_exp}_\*_${cn_icerst_out}.nc
+            found_rs=`(ls -1 $ifnpatt || : ) 2>/dev/null`
+            if [ -z "$found_rs" ]; then
+              # No ice restart files exist
+              bail "Attempting to save restarts but no ice restart files exist."
+            fi
           fi
         fi
       else
