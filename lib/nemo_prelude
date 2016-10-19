@@ -694,10 +694,10 @@
       if [ -n "$found_rs" ]; then
         REBUILD -o NEMO_ocn_global_rsin.nc $found_rs || bail "Unable to rebuild ocean restart file from $found_rs"
         echo "Created file NEMO_ocn_global_rsin.nc"
-        if [ 1 -eq 2 ]; then
-          mv NEMO_ocn_global_rsin.nc $PARENT_rb
-        else
+        if [ $jpnij -eq 1 ]; then
           mv NEMO_ocn_global_rsin.nc $PARENT_rb/restart.nc
+        else
+          mv NEMO_ocn_global_rsin.nc $PARENT_rb
         fi
       else
         bail "No ocean restart files were found in $nemo_rebuild_rs_name"
@@ -709,10 +709,10 @@
       if [ -n "$found_rs" ]; then
         REBUILD -o NEMO_ice_global_rsin.nc $found_rs || bail "Unable to rebuild ice restart file from $found_rs"
         echo "Created file NEMO_ice_global_rsin.nc"
-        if [ 1 -eq 2 ]; then
-          mv NEMO_ice_global_rsin.nc $PARENT_rb
-        else
+        if [ $jpnij -eq 1 ]; then
           mv NEMO_ice_global_rsin.nc $PARENT_rb/restart_ice_in.nc
+        else
+          mv NEMO_ice_global_rsin.nc $PARENT_rb
         fi
       else
         echo "No ice restart files were found in $nemo_rebuild_rs_name"
@@ -724,7 +724,11 @@
       if [ -n "$found_rs" ]; then
         REBUILD -o NEMO_trc_global_rsin.nc $found_rs || bail "Unable to rebuild tracer restart file from $found_rs"
         echo "Created file NEMO_trc_global_rsin.nc"
-        mv NEMO_trc_global_rsin.nc $PARENT_rb
+        if [ $jpnij -eq 1 ]; then
+          mv NEMO_trc_global_rsin.nc $PARENT_rb/restart_trc_in.nc
+        else
+          mv NEMO_trc_global_rsin.nc $PARENT_rb
+        fi
       else
         echo "No tracer restart files were found in $nemo_rebuild_rs_name"
       fi
