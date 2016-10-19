@@ -697,7 +697,7 @@
         if [ 1 -eq 2 ]; then
           mv NEMO_ocn_global_rsin.nc $PARENT_rb
         else
-          mv NEMO_ocn_global_rsin.nc $PARENT_rb/${cn_xxx}.nc
+          mv NEMO_ocn_global_rsin.nc $PARENT_rb/restart.nc
         fi
       else
         bail "No ocean restart files were found in $nemo_rebuild_rs_name"
@@ -712,7 +712,7 @@
         if [ 1 -eq 2 ]; then
           mv NEMO_ice_global_rsin.nc $PARENT_rb
         else
-          mv NEMO_ice_global_rsin.nc $PARENT_rb/${cn_xxx}.nc
+          mv NEMO_ice_global_rsin.nc $PARENT_rb/restart_ice_in.nc
         fi
       else
         echo "No ice restart files were found in $nemo_rebuild_rs_name"
