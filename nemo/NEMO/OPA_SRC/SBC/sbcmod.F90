@@ -281,6 +281,11 @@ CONTAINS
                        CALL sbc_cpl_rcv ( kt, nn_fsbc, nn_ice )   !
       END SELECT
 
+!DBG
+call check_value2d("utau",utau,msg="after sbc_cpl_rcv",mode=1)
+call check_value2d("vtau",vtau,msg="after sbc_cpl_rcv",mode=1)
+call check_value2d("taum",taum,msg="after sbc_cpl_rcv",mode=1)
+
       !                                            !==  Misc. Options  ==!
       
       SELECT CASE( nn_ice )                                       ! Update heat and freshwater fluxes over sea-ice areas
@@ -374,8 +379,8 @@ CONTAINS
       ENDIF
 
 !DBG
-call check_value2d("utau",utau,mode=1)
-call check_value2d("vtau",vtau,mode=1)
+call check_value2d("utau",utau,msg="at bottom of sbc",mode=1)
+call check_value2d("vtau",vtau,msg="at bottom of sbc",mode=1)
 call check_value2d("utau_ice",utau_ice,mode=1)
 call check_value2d("vtau_ice",vtau_ice,mode=1)
 call check_value2d("qsr_tot",qsr_tot)
@@ -383,7 +388,7 @@ call check_value2d("qns_tot",qns_tot)
 call check_value2d("emp_tot",emp_tot)
 call check_value2d("sprecip",sprecip)
 call check_value2d("wndm",wndm)
-call check_value2d("taum",taum)
+call check_value2d("taum",taum,msg="at bottom of sbc",mode=1)
 
       IF( kt == nitend )   CALL sbc_final         ! Close down surface module if necessary
       !
