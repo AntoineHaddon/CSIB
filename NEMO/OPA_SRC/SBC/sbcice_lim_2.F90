@@ -48,6 +48,9 @@ MODULE sbcice_lim_2
    USE in_out_manager   ! I/O manager
    USE prtctl           ! Print control
 
+   !DBG
+   use cpl_cancpl, only: check_value2d, check_value3d
+
    IMPLICIT NONE
    PRIVATE
 
@@ -222,6 +225,12 @@ CONTAINS
       !
       CALL wrk_dealloc( jpi,jpj,1, zalb_ice_os, zalb_ice_cs, zsist )
       !
+
+!DBG
+call check_value3d("qns_ice",qns_ice)
+call check_value3d("qsr_ice",qsr_ice)
+call check_value3d("dqns_ice",dqns_ice)
+
    END SUBROUTINE sbc_ice_lim_2
 
 #else

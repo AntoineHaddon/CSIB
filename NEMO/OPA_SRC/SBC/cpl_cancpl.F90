@@ -44,6 +44,7 @@ MODULE cpl_cancpl
   public :: cpl_cancpl_rcv
   public :: cpl_cancpl_freq
   public :: cpl_cancpl_finalize
+  public :: check_value2d, check_value3d
 
   logical, public, parameter ::   lk_cpl = .true.   !: coupled flag
   integer, public, save      ::   oasis_idle = 0    !: return code if no send or recv
@@ -113,6 +114,49 @@ MODULE cpl_cancpl
   !--- nproc is use associated through the module dom_oce
 
 contains
+
+
+  !DBG
+  subroutine check_value2d(name,var,mode)
+    character(*) :: name
+    real(wp) :: var(:,:)
+    integer, optional :: mode
+    real(wp) :: absmaxval
+    integer :: lmode
+    if ( present(mode) ) then
+      lmode = mode
+    else
+      lmode = 0
+    endif
+    absmaxval = max(abs(maxval(var)), abs(minval(var)))
+    if ( absmaxval /= 0.0_wp ) then
+      write(6,*)"** EE ** absolute max value of ",trim(name)," is non-zero.   ",absmaxval
+      if ( lmode == 0 ) then
+        call ctl_stop("STOP", " check_value2d", trim(name)//" is out of range")
+      endif
+    endif
+  end subroutine check_value2d
+
+  subroutine check_value3d(name,var,mode)
+    character(*) :: name
+    real(wp) :: var(:,:,:)
+    integer, optional :: mode
+    real(wp) :: absmaxval
+    integer :: lmode
+    if ( present(mode) ) then
+      lmode = mode
+    else
+      lmode = 0
+    endif
+    absmaxval = max(abs(maxval(var)), abs(minval(var)))
+    absmaxval = max(abs(maxval(var)), abs(minval(var)))
+    if ( absmaxval /= 0.0_wp ) then
+      write(6,*)"** EE ** absolute max value of ",trim(name)," is non-zero.   ",absmaxval
+      if ( lmode == 0 ) then
+        call ctl_stop("STOP", " check_value2d", trim(name)//" is out of range")
+      endif
+    endif
+  end subroutine check_value3d
 
   subroutine cpl_cancpl_init( kl_comm )
      !!-------------------------------------------------------------------
