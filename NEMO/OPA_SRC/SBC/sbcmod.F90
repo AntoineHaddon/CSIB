@@ -375,6 +375,15 @@ call check_value("utau",utau)
 call check_value("vtau",vtau)
 call check_value("utau_ice",utau_ice)
 call check_value("vtau_ice",vtau_ice)
+call check_value("qsr_tot",qsr_tot)
+call check_value("qsr_ice",qsr_ice)
+call check_value("qns_tot",qns_tot)
+call check_value("qns_ice",qns_ice)
+call check_value("emp_tot",emp_tot)
+call check_value("sprecip",sprecip)
+call check_value("dqns_ice",dqns_ice)
+call check_value("wndm",wndm)
+call check_value("taum",taum)
 
       IF( kt == nitend )   CALL sbc_final         ! Close down surface module if necessary
       !
@@ -388,7 +397,7 @@ subroutine check_value(name,var)
   real(wp) :: var(:,:)
   real(wp) :: absmaxval
   absmaxval = max(abs(maxval(var)), abs(minval(var)))
-  if ( absmaxval \= 0.0_wp ) then
+  if ( absmaxval /= 0.0_wp ) then
     write(6,*)"** EE ** absolute max value of ",trim(name)," is non-zero.   ",absmaxval
     call ctl_stop("STOP", " check_value", trim(name)//" is out of range")
   endif
