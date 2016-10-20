@@ -58,6 +58,9 @@ MODULE sbcmod
    USE timing           ! Timing
    USE sbcwave          ! Wave module
 
+   !DBG
+   use cpl_cancpl, only: check_value2d, check_value3d
+
    IMPLICIT NONE
    PRIVATE
 
@@ -371,49 +374,22 @@ CONTAINS
       ENDIF
 
 !DBG
-call check_value("utau",utau)
-call check_value("vtau",vtau)
-call check_value("utau_ice",utau_ice)
-call check_value("vtau_ice",vtau_ice)
-call check_value("qsr_tot",qsr_tot)
-call check_value("qns_tot",qns_tot)
-call check_value("emp_tot",emp_tot)
-call check_value("sprecip",sprecip)
-call check_value("wndm",wndm)
-call check_value("taum",taum)
-call check_ice_value()
+call check_value2d("utau",utau,mode=1)
+call check_value2d("vtau",vtau,mode=1)
+call check_value2d("utau_ice",utau_ice,mode=1)
+call check_value2d("vtau_ice",vtau_ice,mode=1)
+call check_value2d("qsr_tot",qsr_tot)
+call check_value2d("qns_tot",qns_tot)
+call check_value2d("emp_tot",emp_tot)
+call check_value2d("sprecip",sprecip)
+call check_value2d("wndm",wndm)
+call check_value2d("taum",taum)
 
       IF( kt == nitend )   CALL sbc_final         ! Close down surface module if necessary
       !
       IF( nn_timing == 1 )  CALL timing_stop('sbc')
       !
    END SUBROUTINE sbc
-
-!DBG
-subroutine check_value(name,var,var3)
-  character(*) :: name
-  real(wp) :: var(:,:)
-  real(wp), optional :: var3(:,:,:)
-  real(wp) :: absmaxval
-  if ( present(var3) ) then
-    absmaxval = max(abs(maxval(var3)), abs(minval(var3)))
-  else
-    absmaxval = max(abs(maxval(var)), abs(minval(var)))
-  endif
-  if ( absmaxval /= 0.0_wp ) then
-    write(6,*)"** EE ** absolute max value of ",trim(name)," is non-zero.   ",absmaxval
-    call ctl_stop("STOP", " check_value", trim(name)//" is out of range")
-  endif
-end subroutine check_value
-
-subroutine check_ice_value()
-  use sbc_ice, only : qns_ice, qsr_ice, dqns_ice
-  real(wp) :: filler(3,3)
-  filler = 0.0
-  call check_value("qns_ice", filler, var3=qns_ice)
-  call check_value("qsr_ice", filler, var3=qsr_ice)
-  call check_value("dqns_ice", filler, var3=dqns_ice)
-end subroutine check_ice_value
 
    SUBROUTINE sbc_final
       !!---------------------------------------------------------------------
