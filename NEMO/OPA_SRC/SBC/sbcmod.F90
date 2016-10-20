@@ -370,12 +370,29 @@ CONTAINS
             &         tab2d_2=vtau             , clinfo2=' vtau     - : ', mask2=vmask, ovlap=1 )
       ENDIF
 
+!DBG
+call check_value("utau",utau)
+call check_value("vtau",vtau)
+call check_value("utau_ice",utau_ice)
+call check_value("vtau_ice",vtau_ice)
+
       IF( kt == nitend )   CALL sbc_final         ! Close down surface module if necessary
       !
       IF( nn_timing == 1 )  CALL timing_stop('sbc')
       !
    END SUBROUTINE sbc
 
+!DBG
+subroutine check_value(name,var)
+  character(*) :: name
+  real(wp) :: var(:,:)
+  real(wp) :: absmaxval
+  absmaxval = max(abs(maxval(var)), abs(minval(var)))
+  if ( absmaxval \= 0.0_wp ) then
+    write(6,*)"** EE ** absolute max value of ",trim(name)," is non-zero.   ",absmaxval
+    call ctl_stop("STOP", " check_value", trim(name)//" is out of range")
+  endif
+end subroutine check_value
 
    SUBROUTINE sbc_final
       !!---------------------------------------------------------------------
