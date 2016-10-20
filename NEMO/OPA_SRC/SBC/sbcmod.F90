@@ -408,9 +408,11 @@ end subroutine check_value
 
 subroutine check_ice_value()
   use sbc_ice, only : qns_ice, qsr_ice, dqns_ice
-  call check_value("qns_ice", var3=qns_ice)
-  call check_value("qsr_ice", var3=qsr_ice)
-  call check_value("dqns_ice", var3=dqns_ice)
+  real(wp) :: filler(3,3)
+  filler = 0.0
+  call check_value("qns_ice", filler, var3=qns_ice)
+  call check_value("qsr_ice", filler, var3=qsr_ice)
+  call check_value("dqns_ice", filler, var3=dqns_ice)
 end subroutine check_ice_value
 
    SUBROUTINE sbc_final
