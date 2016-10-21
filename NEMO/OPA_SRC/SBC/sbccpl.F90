@@ -1133,9 +1133,9 @@ CONTAINS
       ENDIF
 
 !DBG
-call check_value2d("utau",utau,kt,msg="after sbc_cpl_ice_tau",mode=1)
-call check_value2d("vtau",vtau,kt,msg="after sbc_cpl_ice_tau",mode=1)
-call check_value2d("taum",taum,kt,msg="after sbc_cpl_ice_tau",mode=1)
+call check_value2d("utau",utau,0,msg="after sbc_cpl_ice_tau",mode=1)
+call check_value2d("vtau",vtau,0,msg="after sbc_cpl_ice_tau",mode=1)
+call check_value2d("taum",taum,0,msg="after sbc_cpl_ice_tau",mode=1)
 
       !   
       CALL wrk_dealloc( jpi,jpj, ztx, zty )
@@ -1376,9 +1376,9 @@ call check_value2d("taum",taum,kt,msg="after sbc_cpl_ice_tau",mode=1)
       END SELECT
 
 !DBG
-call check_value2d("utau",utau,kt,msg="after sbc_cpl_ice_flx",mode=1)
-call check_value2d("vtau",vtau,kt,msg="after sbc_cpl_ice_flx",mode=1)
-call check_value2d("taum",taum,kt,msg="after sbc_cpl_ice_flx",mode=1)
+call check_value2d("utau",utau,0,msg="after sbc_cpl_ice_flx",mode=1)
+call check_value2d("vtau",vtau,0,msg="after sbc_cpl_ice_flx",mode=1)
+call check_value2d("taum",taum,0,msg="after sbc_cpl_ice_flx",mode=1)
 
 
       CALL wrk_dealloc( jpi,jpj, zcptn, ztmp, zicefr )
