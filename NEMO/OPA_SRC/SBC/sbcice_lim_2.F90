@@ -227,9 +227,9 @@ CONTAINS
       !
 
 !DBG
-call check_value3d("qns_ice",qns_ice)
-call check_value3d("qsr_ice",qsr_ice)
-call check_value3d("dqns_ice",dqns_ice)
+call check_value3d("qns_ice",qns_ice,kt)
+call check_value3d("qsr_ice",qsr_ice,kt)
+call check_value3d("dqns_ice",dqns_ice,kt)
 
    END SUBROUTINE sbc_ice_lim_2
 

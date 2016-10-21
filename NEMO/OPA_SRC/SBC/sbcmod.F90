@@ -282,9 +282,9 @@ CONTAINS
       END SELECT
 
 !DBG
-call check_value2d("utau",utau,msg="after sbc_cpl_rcv",mode=1)
-call check_value2d("vtau",vtau,msg="after sbc_cpl_rcv",mode=1)
-call check_value2d("taum",taum,msg="after sbc_cpl_rcv",mode=1)
+call check_value2d("utau",utau,kt,msg="after sbc_cpl_rcv",mode=1)
+call check_value2d("vtau",vtau,kt,msg="after sbc_cpl_rcv",mode=1)
+call check_value2d("taum",taum,kt,msg="after sbc_cpl_rcv",mode=1)
 
       !                                            !==  Misc. Options  ==!
       
@@ -329,6 +329,13 @@ call check_value2d("taum",taum,msg="after sbc_cpl_rcv",mode=1)
             emp_b (:,:) = emp (:,:)
             emps_b(:,:) = emps(:,:)
          ENDIF
+!DBG
+write(numout,*)"sbc: kt=",kt,"  ln_rstart=",ln_rstart,"  nn_fwb=",nn_fwb,"  nn_closea=",nn_closea,"  ln_ssr=",ln_ssr,"  ln_rnf=",ln_rnf
+utau_b = 0.0
+vtau_b = 0.0
+qns_b = 0.0
+emp_b = 0.0
+emps_b = 0.0
       ENDIF
       !                                                ! ---------------------------------------- !
       IF( lrst_oce ) THEN                              !      Write in the ocean restart file     !
@@ -379,16 +386,16 @@ call check_value2d("taum",taum,msg="after sbc_cpl_rcv",mode=1)
       ENDIF
 
 !DBG
-call check_value2d("utau",utau,msg="at bottom of sbc",mode=1)
-call check_value2d("vtau",vtau,msg="at bottom of sbc",mode=1)
-call check_value2d("utau_ice",utau_ice,mode=1)
-call check_value2d("vtau_ice",vtau_ice,mode=1)
-call check_value2d("qsr_tot",qsr_tot)
-call check_value2d("qns_tot",qns_tot)
-call check_value2d("emp_tot",emp_tot)
-call check_value2d("sprecip",sprecip)
-call check_value2d("wndm",wndm)
-call check_value2d("taum",taum,msg="at bottom of sbc",mode=1)
+call check_value2d("utau",utau,kt,msg="at bottom of sbc",mode=1)
+call check_value2d("vtau",vtau,kt,msg="at bottom of sbc",mode=1)
+call check_value2d("utau_ice",utau_ice,kt)
+call check_value2d("vtau_ice",vtau_ice,kt)
+call check_value2d("qsr_tot",qsr_tot,kt)
+call check_value2d("qns_tot",qns_tot,kt)
+call check_value2d("emp_tot",emp_tot,kt)
+call check_value2d("sprecip",sprecip,kt)
+call check_value2d("wndm",wndm,kt)
+call check_value2d("taum",taum,kt,msg="at bottom of sbc",mode=1)
 
       IF( kt == nitend )   CALL sbc_final         ! Close down surface module if necessary
       !

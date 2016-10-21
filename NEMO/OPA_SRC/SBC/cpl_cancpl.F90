@@ -117,9 +117,10 @@ contains
 
 
   !DBG
-  subroutine check_value2d(name,var,msg,mode)
+  subroutine check_value2d(name,var,kt,msg,mode)
     character(*) :: name
     real(wp) :: var(:,:)
+    integer :: kt
     character(*), optional :: msg
     integer, optional :: mode
     real(wp) :: absmaxval
@@ -132,9 +133,9 @@ contains
     absmaxval = max(abs(maxval(var)), abs(minval(var)))
     if ( absmaxval /= 0.0_wp ) then
       if ( present(msg) ) then
-        write(numout,*)"** EE ** absolute max value of ",trim(name)," on tile ",narea," is non-zero.   ",absmaxval,"  ",trim(msg)
+        write(numout,*)"** EE ** kt=",kt,"  absolute max value of ",trim(name)," on tile ",narea," is non-zero.   ",absmaxval,"  ",trim(msg)
       else
-        write(numout,*)"** EE ** absolute max value of ",trim(name)," on tile ",narea," is non-zero.   ",absmaxval
+        write(numout,*)"** EE ** kt=",kt,"  absolute max value of ",trim(name)," on tile ",narea," is non-zero.   ",absmaxval
       endif
       if ( lmode == 0 ) then
         call ctl_stop("STOP", " check_value2d", trim(name)//" is out of range")
@@ -142,9 +143,10 @@ contains
     endif
   end subroutine check_value2d
 
-  subroutine check_value3d(name,var,msg,mode)
+  subroutine check_value3d(name,var,kt,msg,mode)
     character(*) :: name
     real(wp) :: var(:,:,:)
+    integer :: kt
     character(*), optional :: msg
     integer, optional :: mode
     real(wp) :: absmaxval
@@ -158,9 +160,9 @@ contains
     absmaxval = max(abs(maxval(var)), abs(minval(var)))
     if ( absmaxval /= 0.0_wp ) then
       if ( present(msg) ) then
-        write(numout,*)"** EE ** absolute max value of ",trim(name)," on tile ",narea," is non-zero.   ",absmaxval,"  ",trim(msg)
+        write(numout,*)"** EE ** kt=",kt,"  absolute max value of ",trim(name)," on tile ",narea," is non-zero.   ",absmaxval,"  ",trim(msg)
       else
-        write(numout,*)"** EE ** absolute max value of ",trim(name)," on tile ",narea," is non-zero.   ",absmaxval
+        write(numout,*)"** EE ** kt=",kt,"  absolute max value of ",trim(name)," on tile ",narea," is non-zero.   ",absmaxval
       endif
       if ( lmode == 0 ) then
         call ctl_stop("STOP", " check_value2d", trim(name)//" is out of range")
