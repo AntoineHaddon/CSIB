@@ -298,6 +298,7 @@ call check_value2d("taum",taum,kt,msg="after sbc_cpl_rcv",mode=1)
       END SELECT                                              
 
 !DBG
+write(numout,*)"sbc: nn_ice=",nn_ice,"  lk_bdy=",lk_bdy
 call check_value2d("utau",utau,kt,msg="after sbc_ice_lim_2",mode=1)
 call check_value2d("vtau",vtau,kt,msg="after sbc_ice_lim_2",mode=1)
 call check_value2d("taum",taum,kt,msg="after sbc_ice_lim_2",mode=1)
