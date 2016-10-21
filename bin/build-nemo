@@ -155,6 +155,9 @@ verbose=0
 # Flag to remove, or not remove, temporary dir created below
 keep_tmpd=0
 
+# THREADS is added to the makenemo command line
+THREADS='-j 6'
+
 # CCRNSRC must be defined
 CCRNSRC=${CCRNSRC:=/home/acrnsrc}
 [   -z "$CCRNSRC" ] && bail "CCRNSRC must be defined"
@@ -381,7 +384,7 @@ if [ $build_nemo_exe -eq 1 ]; then
 
   # Run makenmo to create the nemo executable
   echo "makenemo -n $nemo_config $NARCH $REFCFG"
-  makenemo -n $nemo_config $NARCH $REFCFG
+  makenemo $THREADS -n $nemo_config $NARCH $REFCFG
   [ $? -ne 0 ] && bail "Problem building nemo executable"
 
   # Copy the executable to the tmp dir
