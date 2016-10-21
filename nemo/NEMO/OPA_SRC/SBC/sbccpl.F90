@@ -1131,6 +1131,12 @@ CONTAINS
          END SELECT
 
       ENDIF
+
+!DBG
+call check_value2d("utau",utau,kt,msg="after sbc_cpl_ice_tau",mode=1)
+call check_value2d("vtau",vtau,kt,msg="after sbc_cpl_ice_tau",mode=1)
+call check_value2d("taum",taum,kt,msg="after sbc_cpl_ice_tau",mode=1)
+
       !   
       CALL wrk_dealloc( jpi,jpj, ztx, zty )
       !
@@ -1368,6 +1374,12 @@ CONTAINS
          topmelt(:,:,:)=frcv(jpr_topm)%z3(:,:,:)
          botmelt(:,:,:)=frcv(jpr_botm)%z3(:,:,:)
       END SELECT
+
+!DBG
+call check_value2d("utau",utau,kt,msg="after sbc_cpl_ice_flx",mode=1)
+call check_value2d("vtau",vtau,kt,msg="after sbc_cpl_ice_flx",mode=1)
+call check_value2d("taum",taum,kt,msg="after sbc_cpl_ice_flx",mode=1)
+
 
       CALL wrk_dealloc( jpi,jpj, zcptn, ztmp, zicefr )
       !

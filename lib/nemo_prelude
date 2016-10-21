@@ -726,6 +726,12 @@
 
       # Return to the model execution directory
       cd $PARENT_rb
+
+      # Remove all ORCA domain specific restart files since the global restarts will be used
+      [ -s input_ocn_restart_file_names ] && cat input_ocn_restart_file_names | xargs rm -f
+      [ -s input_ice_restart_file_names ] && cat input_ice_restart_file_names | xargs rm -f
+      [ -s input_trc_restart_file_names ] && cat input_trc_restart_file_names | xargs rm -f
+
     fi
 
     # Get a local copy of the NEMO executable
@@ -902,6 +908,8 @@
   # chunksize (bytes) for NetCDF file (works only with iom_nf90 routines)
   nn_chunksz=0
 
+  nn_closea=${nemo_nn_closea:=0}
+
   ###### "nammpp_dyndist" Namelist parameters #####
   ###### Massively Parallel Distribution for AGRIF zoom ("key_agrif" && "key_mpp_dyndist")
 
@@ -937,7 +945,7 @@
   # Modify specified parameter values in the input ocean namelist
   mod_nl namelist nn_it000 nn_itend nn_stock nn_write jpni jpnj jpnij \
     rn_rdt cn_exp nn_date0 ln_rstart nn_rstctl nn_no cn_ocerst_in cn_ocerst_out \
-    ln_ctl nn_print nn_ice ln_rnf ln_rnf_emp ln_tsd_init nn_fsbc
+    ln_ctl nn_print nn_ice ln_rnf ln_rnf_emp ln_tsd_init nn_fsbc nn_closea
 
   # Modify specified parameter values in the namelist read by the ice module
   # NOTE: If character variables do not follow the NEMO naming convention (that their names begin with the letter "c")
