@@ -204,7 +204,18 @@ CONTAINS
          ENDIF
 #endif
                            CALL lim_thd_2      ( kt )      ! Ice thermodynamics 
+
+!DBG
+call check_value2d("utau",utau,kt,msg="after lim_thd_2",mode=1)
+call check_value2d("vtau",vtau,kt,msg="after lim_thd_2",mode=1)
+call check_value2d("taum",taum,kt,msg="after lim_thd_2",mode=1)
+
                            CALL lim_sbc_flx_2  ( kt )      ! update surface ocean mass, heat & salt fluxes 
+
+!DBG
+call check_value2d("utau",utau,kt,msg="after lim_sbc_flx_2",mode=1)
+call check_value2d("vtau",vtau,kt,msg="after lim_sbc_flx_2",mode=1)
+call check_value2d("taum",taum,kt,msg="after lim_sbc_flx_2",mode=1)
 
          IF( ( MOD( kt+nn_fsbc-1, ninfo ) == 0 .OR. ntmoy == 1 ) .AND. .NOT. lk_mpp )   &
             &              CALL lim_dia_2      ( kt )      ! Ice Diagnostics
@@ -222,6 +233,12 @@ CONTAINS
       !                                              ! Update surface ocean stresses (only in ice-dynamic case)
       !                                                   ! otherwise the atm.-ocean stresses are used everywhere
       IF( ln_limdyn    )   CALL lim_sbc_tau_2( kt, ub(:,:,1), vb(:,:,1) )  ! using before instantaneous surf. currents
+
+!DBG
+call check_value2d("utau",utau,kt,msg="after lim_sbc_tau_2",mode=1)
+call check_value2d("vtau",vtau,kt,msg="after lim_sbc_tau_2",mode=1)
+call check_value2d("taum",taum,kt,msg="after lim_sbc_tau_2",mode=1)
+
       !
       CALL wrk_dealloc( jpi,jpj,1, zalb_ice_os, zalb_ice_cs, zsist )
       !
