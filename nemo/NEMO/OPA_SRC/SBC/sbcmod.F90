@@ -297,7 +297,20 @@ call check_value2d("taum",taum,kt,msg="after sbc_cpl_rcv",mode=1)
       CASE(  4 )   ;         CALL sbc_ice_cice ( kt, nsbc )          ! CICE ice model
       END SELECT                                              
 
+!DBG
+call check_value2d("utau",utau,kt,msg="after sbc_ice_lim_2",mode=1)
+call check_value2d("vtau",vtau,kt,msg="after sbc_ice_lim_2",mode=1)
+call check_value2d("taum",taum,kt,msg="after sbc_ice_lim_2",mode=1)
+utau = 0.0
+vtau = 0.0
+taum = 0.0
+
       IF( ln_rnf         )   CALL sbc_rnf( kt )                   ! add runoffs to fresh water fluxes
+
+!DBG
+call check_value2d("utau",utau,kt,msg="after sbc_rnf",mode=1)
+call check_value2d("vtau",vtau,kt,msg="after sbc_rnf",mode=1)
+call check_value2d("taum",taum,kt,msg="after sbc_rnf",mode=1)
  
       IF( ln_ssr         )   CALL sbc_ssr( kt )                   ! add SST/SSS damping term
 
