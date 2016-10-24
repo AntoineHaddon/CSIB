@@ -156,7 +156,7 @@ verbose=0
 keep_tmpd=0
 
 # THREADS is added to the makenemo command line
-THREADS='-j 6'
+THREADS='-j 8'
 
 # CCRNSRC must be defined
 CCRNSRC=${CCRNSRC:=/home/acrnsrc}
