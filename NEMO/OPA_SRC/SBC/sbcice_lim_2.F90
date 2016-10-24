@@ -48,8 +48,11 @@ MODULE sbcice_lim_2
    USE in_out_manager   ! I/O manager
    USE prtctl           ! Print control
 
+#undef DBGLS
+#ifdef DBGLS
    !DBG
    use cpl_cancpl, only: check_value2d, check_value3d
+#endif
 
    IMPLICIT NONE
    PRIVATE
@@ -205,17 +208,23 @@ CONTAINS
 #endif
                            CALL lim_thd_2      ( kt )      ! Ice thermodynamics 
 
+#undef DBGLS
+#ifdef DBGLS
 !DBG
 call check_value2d("utau",utau,kt,msg="after lim_thd_2",mode=1)
 call check_value2d("vtau",vtau,kt,msg="after lim_thd_2",mode=1)
 call check_value2d("taum",taum,kt,msg="after lim_thd_2",mode=1)
+#endif
 
                            CALL lim_sbc_flx_2  ( kt )      ! update surface ocean mass, heat & salt fluxes 
 
+#undef DBGLS
+#ifdef DBGLS
 !DBG
 call check_value2d("utau",utau,kt,msg="after lim_sbc_flx_2",mode=1)
 call check_value2d("vtau",vtau,kt,msg="after lim_sbc_flx_2",mode=1)
 call check_value2d("taum",taum,kt,msg="after lim_sbc_flx_2",mode=1)
+#endif
 
          IF( ( MOD( kt+nn_fsbc-1, ninfo ) == 0 .OR. ntmoy == 1 ) .AND. .NOT. lk_mpp )   &
             &              CALL lim_dia_2      ( kt )      ! Ice Diagnostics
@@ -234,19 +243,25 @@ call check_value2d("taum",taum,kt,msg="after lim_sbc_flx_2",mode=1)
       !                                                   ! otherwise the atm.-ocean stresses are used everywhere
       IF( ln_limdyn    )   CALL lim_sbc_tau_2( kt, ub(:,:,1), vb(:,:,1) )  ! using before instantaneous surf. currents
 
+#undef DBGLS
+#ifdef DBGLS
 !DBG
 call check_value2d("utau",utau,kt,msg="after lim_sbc_tau_2",mode=1)
 call check_value2d("vtau",vtau,kt,msg="after lim_sbc_tau_2",mode=1)
 call check_value2d("taum",taum,kt,msg="after lim_sbc_tau_2",mode=1)
+#endif
 
       !
       CALL wrk_dealloc( jpi,jpj,1, zalb_ice_os, zalb_ice_cs, zsist )
       !
 
+#undef DBGLS
+#ifdef DBGLS
 !DBG
 call check_value3d("qns_ice",qns_ice,kt)
 call check_value3d("qsr_ice",qsr_ice,kt)
 call check_value3d("dqns_ice",dqns_ice,kt)
+#endif
 
    END SUBROUTINE sbc_ice_lim_2
 

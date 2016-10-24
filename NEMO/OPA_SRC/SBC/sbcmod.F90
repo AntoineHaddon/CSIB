@@ -58,8 +58,11 @@ MODULE sbcmod
    USE timing           ! Timing
    USE sbcwave          ! Wave module
 
+#undef DBGLS
+#ifdef DBGLS
    !DBG
    use cpl_cancpl, only: check_value2d, check_value3d
+#endif
 
    IMPLICIT NONE
    PRIVATE
@@ -281,10 +284,13 @@ CONTAINS
                        CALL sbc_cpl_rcv ( kt, nn_fsbc, nn_ice )   !
       END SELECT
 
+#undef DBGLS
+#ifdef DBGLS
 !DBG
 call check_value2d("utau",utau,kt,msg="after sbc_cpl_rcv",mode=1)
 call check_value2d("vtau",vtau,kt,msg="after sbc_cpl_rcv",mode=1)
 call check_value2d("taum",taum,kt,msg="after sbc_cpl_rcv",mode=1)
+#endif
 
       !                                            !==  Misc. Options  ==!
       
@@ -297,6 +303,8 @@ call check_value2d("taum",taum,kt,msg="after sbc_cpl_rcv",mode=1)
       CASE(  4 )   ;         CALL sbc_ice_cice ( kt, nsbc )          ! CICE ice model
       END SELECT                                              
 
+#undef DBGLS
+#ifdef DBGLS
 !DBG
 write(numout,*)"sbc: nn_ice=",nn_ice,"  lk_bdy=",lk_bdy
 call check_value2d("utau",utau,kt,msg="after sbc_ice_lim_2",mode=1)
@@ -305,13 +313,17 @@ call check_value2d("taum",taum,kt,msg="after sbc_ice_lim_2",mode=1)
 utau = 0.0
 vtau = 0.0
 taum = 0.0
+#endif
 
       IF( ln_rnf         )   CALL sbc_rnf( kt )                   ! add runoffs to fresh water fluxes
 
+#undef DBGLS
+#ifdef DBGLS
 !DBG
 call check_value2d("utau",utau,kt,msg="after sbc_rnf",mode=1)
 call check_value2d("vtau",vtau,kt,msg="after sbc_rnf",mode=1)
 call check_value2d("taum",taum,kt,msg="after sbc_rnf",mode=1)
+#endif
  
       IF( ln_ssr         )   CALL sbc_ssr( kt )                   ! add SST/SSS damping term
 
@@ -343,13 +355,6 @@ call check_value2d("taum",taum,kt,msg="after sbc_rnf",mode=1)
             emp_b (:,:) = emp (:,:)
             emps_b(:,:) = emps(:,:)
          ENDIF
-!DBG
-write(numout,*)"sbc: kt=",kt,"  ln_rstart=",ln_rstart,"  nn_fwb=",nn_fwb,"  nn_closea=",nn_closea,"  ln_ssr=",ln_ssr,"  ln_rnf=",ln_rnf
-utau_b = 0.0
-vtau_b = 0.0
-qns_b = 0.0
-emp_b = 0.0
-emps_b = 0.0
       ENDIF
       !                                                ! ---------------------------------------- !
       IF( lrst_oce ) THEN                              !      Write in the ocean restart file     !
@@ -399,6 +404,8 @@ emps_b = 0.0
             &         tab2d_2=vtau             , clinfo2=' vtau     - : ', mask2=vmask, ovlap=1 )
       ENDIF
 
+#undef DBGLS
+#ifdef DBGLS
 !DBG
 call check_value2d("utau",utau,kt,msg="at bottom of sbc",mode=1)
 call check_value2d("vtau",vtau,kt,msg="at bottom of sbc",mode=1)
@@ -410,6 +417,7 @@ call check_value2d("emp_tot",emp_tot,kt)
 call check_value2d("sprecip",sprecip,kt)
 call check_value2d("wndm",wndm,kt)
 call check_value2d("taum",taum,kt,msg="at bottom of sbc",mode=1)
+#endif
 
       IF( kt == nitend )   CALL sbc_final         ! Close down surface module if necessary
       !
