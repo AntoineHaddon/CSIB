@@ -888,10 +888,10 @@
   # DY, 02/04/2015
 
   # output the initial state (1) or not (0)
-  nn_istate=0
+  nn_istate=${nemo_nn_istate:=0}
 
   # frequency of creation of a restart file (modulo referenced to 1)
-  nn_stock=$nn_itend
+  nn_stock=${nemo_nn_stock:=$nn_itend}
 
   # frequency of write in the output file (modulo referenced to nn_it000)
   nn_write=$steps_in_job
