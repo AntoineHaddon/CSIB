@@ -1132,10 +1132,13 @@ CONTAINS
 
       ENDIF
 
+#undef DBGLS
+#ifdef DBGLS
 !DBG
 call check_value2d("utau",utau,0,msg="after sbc_cpl_ice_tau",mode=1)
 call check_value2d("vtau",vtau,0,msg="after sbc_cpl_ice_tau",mode=1)
 call check_value2d("taum",taum,0,msg="after sbc_cpl_ice_tau",mode=1)
+#endif
 
       !   
       CALL wrk_dealloc( jpi,jpj, ztx, zty )
@@ -1375,10 +1378,13 @@ call check_value2d("taum",taum,0,msg="after sbc_cpl_ice_tau",mode=1)
          botmelt(:,:,:)=frcv(jpr_botm)%z3(:,:,:)
       END SELECT
 
+#undef DBGLS
+#ifdef DBGLS
 !DBG
 call check_value2d("utau",utau,0,msg="after sbc_cpl_ice_flx",mode=1)
 call check_value2d("vtau",vtau,0,msg="after sbc_cpl_ice_flx",mode=1)
 call check_value2d("taum",taum,0,msg="after sbc_cpl_ice_flx",mode=1)
+#endif
 
 
       CALL wrk_dealloc( jpi,jpj, zcptn, ztmp, zicefr )
