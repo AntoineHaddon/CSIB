@@ -105,7 +105,12 @@ CONTAINS
          IF(lwp) WRITE(numout,*) 'sbc_ice_lim_2 : update ocean surface boudary condition' 
          IF(lwp) WRITE(numout,*) '~~~~~~~~~~~~~   via Louvain la Neuve Ice Model (LIM) time stepping'
          !
+!DBG
+CALL dia_wri_state( 'output.state.before_ice_init_2.in.sbc_ice_lim_2', kt )
+
          CALL ice_init_2
+!DBG
+CALL dia_wri_state( 'output.state.after_ice_init_2.in.sbc_ice_lim_2', kt )
       ENDIF
 
       !                                        !----------------------!
@@ -140,6 +145,8 @@ CONTAINS
          CALL albedo_ice( zsist, reshape( hicif, (/jpi,jpj,1/) ), &
                                  reshape( hsnif, (/jpi,jpj,1/) ), &
                           zalb_ice_cs, zalb_ice_os )
+!DBG
+CALL dia_wri_state( 'output.state.after_albedo_ice.in.sbc_ice_lim_2', kt )
 
          ! ... Sea-ice surface boundary conditions output from bulk formulae :
          !     - utau_ice   ! surface ice stress i-component (I-point)   [N/m2]
@@ -171,6 +178,8 @@ CONTAINS
          CASE( 5 )           ! Coupled formulation : atmosphere-ice stress only (fluxes provided after ice dynamics)
             CALL sbc_cpl_ice_tau( utau_ice , vtau_ice )
          END SELECT
+!DBG
+CALL dia_wri_state( 'output.state.after_sbc_cpl_ice_tau.in.sbc_ice_lim_2', kt )
 
          CALL iom_put( 'utau_ice', utau_ice )     ! Wind stress over ice along i-axis at I-point
          CALL iom_put( 'vtau_ice', vtau_ice )     ! Wind stress over ice along j-axis at I-point
@@ -207,6 +216,8 @@ CONTAINS
          ENDIF
 #endif
                            CALL lim_thd_2      ( kt )      ! Ice thermodynamics 
+!DBG
+CALL dia_wri_state( 'output.state.after_lim_thd_2.in.sbc_ice_lim_2', kt )
 
 #undef DBGLS
 #ifdef DBGLS
@@ -217,6 +228,8 @@ call check_value2d("taum",taum,kt,msg="after lim_thd_2",mode=1)
 #endif
 
                            CALL lim_sbc_flx_2  ( kt )      ! update surface ocean mass, heat & salt fluxes 
+!DBG
+CALL dia_wri_state( 'output.state.after_lim_sbc_flx_2.in.sbc_ice_lim_2', kt )
 
 #undef DBGLS
 #ifdef DBGLS
@@ -242,6 +255,8 @@ call check_value2d("taum",taum,kt,msg="after lim_sbc_flx_2",mode=1)
       !                                              ! Update surface ocean stresses (only in ice-dynamic case)
       !                                                   ! otherwise the atm.-ocean stresses are used everywhere
       IF( ln_limdyn    )   CALL lim_sbc_tau_2( kt, ub(:,:,1), vb(:,:,1) )  ! using before instantaneous surf. currents
+!DBG
+CALL dia_wri_state( 'output.state.after_lim_sbc_tau_2.in.sbc_ice_lim_2', kt )
 
 #undef DBGLS
 #ifdef DBGLS
