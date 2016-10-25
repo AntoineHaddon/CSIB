@@ -94,7 +94,7 @@ CONTAINS
       ! Update data, open boundaries, surface boundary condition (including sea-ice)
       !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 !DBG
-CALL dia_wri_state( 'output.state.before_sbc.in.stp', kstp )
+! CALL dia_wri_state( 'output.state.before_sbc.in.stp', kstp )
                          CALL sbc    ( kstp )         ! Sea Boundary Condition (including sea-ice)
 !DBG
 CALL dia_wri_state( 'output.state.after_sbc.in.stp', kstp )
