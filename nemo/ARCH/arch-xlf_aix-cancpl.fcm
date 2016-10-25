@@ -17,8 +17,8 @@
 %NCDF_INC            -I/users/tor/acrn/rls/local/aix64/netcdf3.6.3/include
 %NCDF_LIB            -L /users/tor/acrn/rls/local/aix64/netcdf3.6.3/lib -lnetcdf
 %FC                  mpxlf90
-%FCFLAGS             -qstrict -qfree=f90 -g -O0 -qrealsize=8 -qextname -qsource -q64 -qlargepage -qmaxmem=-1
-%FFLAGS              -qstrict -qfixed -g -O0 -qrealsize=8 -qextname -qsource -q64 -qlargepage -qmaxmem=-1
+%FCFLAGS             -qstrict -qfree=f90 -g -O3 -qrealsize=8 -qextname -qsource -q64 -qlargepage -qmaxmem=-1
+%FFLAGS              -qstrict -qfixed -g -O3 -qrealsize=8 -qextname -qsource -q64 -qlargepage -qmaxmem=-1
 %LD                  mpxlf90
 %LDFLAGS             -L/users/tor/acrn/rls/ords/coupler_archive -lcplcom
 %FPPFLAGS            -P -C
