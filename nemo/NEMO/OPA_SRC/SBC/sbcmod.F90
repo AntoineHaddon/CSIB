@@ -58,6 +58,7 @@ MODULE sbcmod
    USE timing           ! Timing
    USE sbcwave          ! Wave module
 
+   USE diawri
 #undef DBGLS
 #ifdef DBGLS
    !DBG
