@@ -48,6 +48,7 @@ MODULE sbcice_lim_2
    USE in_out_manager   ! I/O manager
    USE prtctl           ! Print control
 
+   USE diawri
 #undef DBGLS
 #ifdef DBGLS
    !DBG
