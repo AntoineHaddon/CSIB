@@ -59,11 +59,8 @@ MODULE sbcmod
    USE sbcwave          ! Wave module
 
    USE diawri
-#undef DBGLS
-#ifdef DBGLS
    !DBG
    use cpl_cancpl, only: check_value2d, check_value3d
-#endif
 
    IMPLICIT NONE
    PRIVATE
