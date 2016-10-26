@@ -59,6 +59,7 @@ MODULE sbccpl
 #if defined key_cice
    USE ice_domain_size, only: ncat
 #endif
+   USE diawri
    IMPLICIT NONE
    PRIVATE
 
@@ -874,6 +875,10 @@ call check_value2d("vtau",vtau,0,msg="after assign in sbc_cpl_rcv")
          CALL iom_put( "taum_oce", taum )   ! output wind stress module
          !  
       ENDIF
+                                                   !==  sbc formulation  ==!
+!DBG
+if (kt == nit000) CALL dia_wri_state_noice( 'out.state0.after_sbc_cpl_rcv', kt )
+
 
 #if defined key_cpl_carbon_cycle
       !                                                              ! atmosph. CO2 (ppm)
