@@ -287,13 +287,10 @@ if (kt == nit000) CALL dia_wri_state_noice( 'out.state0.before_sbc_cpl_rcv', kt 
                        CALL sbc_cpl_rcv ( kt, nn_fsbc, nn_ice )   !
       END SELECT
 
-#undef DBGLS
-#ifdef DBGLS
 !DBG
-call check_value2d("utau",utau,kt,msg="after sbc_cpl_rcv",mode=1)
-call check_value2d("vtau",vtau,kt,msg="after sbc_cpl_rcv",mode=1)
-call check_value2d("taum",taum,kt,msg="after sbc_cpl_rcv",mode=1)
-#endif
+call check_value2d("utau",utau,kt,msg="after sbc_cpl_rcv")
+call check_value2d("vtau",vtau,kt,msg="after sbc_cpl_rcv")
+!call check_value2d("taum",taum,kt,msg="after sbc_cpl_rcv",mode=1)
 
       !                                            !==  Misc. Options  ==!
 !DBG
@@ -308,7 +305,7 @@ if (kt == nit000) CALL dia_wri_state_noice( 'out.state0.before_sbc_ice_lim_2', k
       CASE(  4 )   ;         CALL sbc_ice_cice ( kt, nsbc )          ! CICE ice model
       END SELECT                                              
 !DBG
-if (kt == nit000) CALL dia_wri_state( 'output.state.after_sbc_ice_lim_2', kt )
+if (kt == nit000) CALL dia_wri_state( 'out.state0.after_sbc_ice_lim_2', kt )
 
 #undef DBGLS
 #ifdef DBGLS
