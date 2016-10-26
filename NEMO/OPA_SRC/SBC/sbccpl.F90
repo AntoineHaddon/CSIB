@@ -777,6 +777,9 @@ call check_value3d("vtau-jpr_oty1",frcv(jpr_oty1)%z3,kt,msg="after receive from 
                frcv(jpr_otx1)%z3(:,:,1) = ztx(:,:)      ! overwrite 1st component on the 1st grid
                frcv(jpr_oty1)%z3(:,:,1) = zty(:,:)      ! overwrite 2nd component on the 2nd grid
             ENDIF
+!DBG
+call check_value3d("utau-jpr_otx1",frcv(jpr_otx1)%z3,kt,msg="after rotate in sbc_cpl_rcv")
+call check_value3d("vtau-jpr_oty1",frcv(jpr_oty1)%z3,kt,msg="after rotate in sbc_cpl_rcv")
             !                              
             IF( srcv(jpr_otx1)%clgrid == 'T' ) THEN
                DO jj = 2, jpjm1                                          ! T ==> (U,V)
@@ -787,6 +790,9 @@ call check_value3d("vtau-jpr_oty1",frcv(jpr_oty1)%z3,kt,msg="after receive from 
                END DO
                CALL lbc_lnk( frcv(jpr_otx1)%z3(:,:,1), 'U',  -1. )   ;   CALL lbc_lnk( frcv(jpr_oty1)%z3(:,:,1), 'V',  -1. )
             ENDIF
+!DBG
+call check_value3d("utau-jpr_otx1",frcv(jpr_otx1)%z3,kt,msg="after map to U grid in sbc_cpl_rcv")
+call check_value3d("vtau-jpr_oty1",frcv(jpr_oty1)%z3,kt,msg="after map to U grid in sbc_cpl_rcv")
             llnewtx = .TRUE.
          ELSE
             llnewtx = .FALSE.
