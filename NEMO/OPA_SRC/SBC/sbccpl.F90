@@ -738,6 +738,10 @@ CONTAINS
 #endif
       END DO
 
+!DBG
+call check_value3d("utau-jpr_otx1",frcv(jpr_otx1)%z3,kt,msg="after receive from cpl")
+call check_value3d("vtau-jpr_oty1",frcv(jpr_oty1)%z3,kt,msg="after receive from cpl")
+
       !                                                      ! ========================= !
       IF( srcv(jpr_otx1)%laction ) THEN                      !  ocean stress components  !
          !                                                   ! ========================= !
@@ -795,6 +799,10 @@ CONTAINS
          llnewtx = .TRUE.
          !
       ENDIF
+!DBG
+call check_value3d("utau-jpr_otx1",frcv(jpr_otx1)%z3,kt,msg="after mods in sbc_cpl_rcv")
+call check_value3d("vtau-jpr_oty1",frcv(jpr_oty1)%z3,kt,msg="after mods in sbc_cpl_rcv")
+
 
       !                                                      ! ========================= !
       !                                                      !    wind stress module     !   (taum)
