@@ -106,9 +106,6 @@ CONTAINS
          IF(lwp) WRITE(numout,*) 'sbc_ice_lim_2 : update ocean surface boudary condition' 
          IF(lwp) WRITE(numout,*) '~~~~~~~~~~~~~   via Louvain la Neuve Ice Model (LIM) time stepping'
          !
-!DBG
-CALL dia_wri_state( 'output.state.before_ice_init_2.in.sbc_ice_lim_2', kt )
-
          CALL ice_init_2
 !DBG
 CALL dia_wri_state( 'output.state.after_ice_init_2.in.sbc_ice_lim_2', kt )
