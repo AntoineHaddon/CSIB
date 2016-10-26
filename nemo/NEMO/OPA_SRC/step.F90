@@ -94,16 +94,16 @@ CONTAINS
       ! Update data, open boundaries, surface boundary condition (including sea-ice)
       !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 !DBG
-! CALL dia_wri_state( 'output.state.before_sbc.in.stp', kstp )
+CALL dia_wri_state_noice( 'out.state0.before_sbc.in.stp', kstp )
                          CALL sbc    ( kstp )         ! Sea Boundary Condition (including sea-ice)
 !DBG
-CALL dia_wri_state( 'output.state.after_sbc.in.stp', kstp )
+CALL dia_wri_state( 'out.state1.after_sbc.in.stp', kstp )
       IF( lk_tide    )   CALL sbc_tide( kstp )
       IF( lk_obc     )   CALL obc_dta( kstp )         ! update dynamic and tracer data at open boundaries
       IF( lk_obc     )   CALL obc_rad( kstp )         ! compute phase velocities at open boundaries
       IF( lk_bdy     )   CALL bdy_dta( kstp, time_offset=+1 ) ! update dynamic and tracer data at open boundaries
 !DBG
-CALL dia_wri_state( 'output.state.after_bdy_dta.in.stp', kstp )
+CALL dia_wri_state( 'out.state1.after_bdy_dta.in.stp', kstp )
 
       !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
       !  Ocean dynamics : ssh, wn, hdiv, rot                                 !
@@ -141,7 +141,7 @@ CALL dia_wri_state( 'output.state.after_bdy_dta.in.stp', kstp )
 
                          CALL zdf_mxl( kstp )         ! mixed layer depth
 !DBG
-CALL dia_wri_state( 'output.state.after_zdf_mxl.in.stp', kstp )
+CALL dia_wri_state( 'out.state1.after_zdf_mxl.in.stp', kstp )
 
                                                       ! write TKE or GLS information in the restart file
       IF( lrst_oce .AND. lk_zdftke )   CALL tke_rst( kstp, 'WRITE' )

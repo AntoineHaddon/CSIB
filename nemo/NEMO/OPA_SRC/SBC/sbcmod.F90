@@ -267,7 +267,7 @@ CONTAINS
       IF (ln_cdgw) CALL sbc_wave( kt )
                                                    !==  sbc formulation  ==!
 !DBG
-! CALL dia_wri_state( 'output.state.before_sbc_cpl_rcv', kt )
+CALL dia_wri_state_noice( 'out.state0.before_sbc_cpl_rcv', kt )
                                                             
       SELECT CASE( nsbc )                                ! Compute ocean surface boundary condition
       !                                                  ! (i.e. utau,vtau, qns, qsr, emp, emps)
@@ -297,7 +297,7 @@ call check_value2d("taum",taum,kt,msg="after sbc_cpl_rcv",mode=1)
 
       !                                            !==  Misc. Options  ==!
 !DBG
-!CALL dia_wri_state( 'output.state.before_sbc_ice_lim_2', kt )
+CALL dia_wri_state_noice( 'out.state0.before_sbc_ice_lim_2', kt )
       
       SELECT CASE( nn_ice )                                       ! Update heat and freshwater fluxes over sea-ice areas
       CASE(  0 )   ;         CALL sbc_ice_none ( kt )                ! no-ice, SST not dropping below freezing point

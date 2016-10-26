@@ -55,6 +55,7 @@ MODULE diawri
 
    PUBLIC   dia_wri                 ! routines called by step.F90
    PUBLIC   dia_wri_state
+   PUBLIC   dia_wri_state_noice
    PUBLIC   dia_wri_alloc           ! Called by nemogcm module
 
    INTEGER ::   nid_T, nz_T, nh_T, ndim_T, ndim_hT   ! grid_T file
@@ -783,5 +784,126 @@ CONTAINS
       ! 
 
    END SUBROUTINE dia_wri_state
+
+   SUBROUTINE dia_wri_state_noice( cdfile_name, kt )
+      !!---------------------------------------------------------------------
+      !!                 ***  ROUTINE dia_wri_state_noice  ***
+      !!        
+      !! ** Purpose :   create a NetCDF file named cdfile_name which contains 
+      !!      the instantaneous ocean state and forcing fields.
+      !!        Used to find errors in the initial state or save the last
+      !!      ocean state in case of abnormal end of a simulation
+      !!
+      !! ** Method  :   NetCDF files using ioipsl
+      !!      File 'output.init.nc'  is created if ninist = 1 (namelist)
+      !!      File 'output.abort.nc' is created in case of abnormal job end
+      !!----------------------------------------------------------------------
+      CHARACTER (len=* ), INTENT( in ) ::   cdfile_name      ! name of the file created
+      INTEGER           , INTENT( in ) ::   kt               ! ocean time-step index
+      !! 
+      CHARACTER (len=32) :: clname
+      CHARACTER (len=40) :: clop
+      INTEGER  ::   id_i , nz_i, nh_i       
+      INTEGER, DIMENSION(1) ::   idex             ! local workspace
+      REAL(wp) ::   zsto, zout, zmax, zjulian, zdt
+      !!----------------------------------------------------------------------
+      ! 
+      ! 0. Initialisation
+      ! -----------------
+
+      ! Define name, frequency of output and means
+      clname = cdfile_name
+      IF( .NOT. Agrif_Root() ) clname = TRIM(Agrif_CFixed())//'_'//TRIM(clname)
+      zdt  = rdt
+      zsto = rdt
+      clop = "inst(x)"           ! no use of the mask value (require less cpu time)
+      zout = rdt
+      zmax = ( nitend - nit000 + 1 ) * zdt
+
+      IF(lwp) WRITE(numout,*)
+      IF(lwp) WRITE(numout,*) 'dia_wri_state_noice : single instantaneous ocean state'
+      IF(lwp) WRITE(numout,*) '~~~~~~~~~~~~~   and forcing fields file created '
+      IF(lwp) WRITE(numout,*) '                and named :', clname, '.nc'
+
+
+      ! 1. Define NETCDF files and fields at beginning of first time step
+      ! -----------------------------------------------------------------
+
+      ! Compute julian date from starting date of the run
+      CALL ymds2ju( nyear, nmonth, nday, rdt, zjulian )         ! time axis 
+      zjulian = zjulian - adatrj   !   set calendar origin to the beginning of the experiment
+      CALL histbeg( clname, jpi, glamt, jpj, gphit,   &
+          1, jpi, 1, jpj, nit000-1, zjulian, zdt, nh_i, id_i, domain_id=nidom, snc4chunks=snc4set ) ! Horizontal grid : glamt and gphit
+      CALL histvert( id_i, "deptht", "Vertical T levels",   &    ! Vertical grid : gdept
+          "m", jpk, gdept_0, nz_i, "down")
+
+      ! Declare all the output fields as NetCDF variables
+
+      CALL histdef( id_i, "vosaline", "Salinity"              , "PSU"    ,   &   ! salinity
+         &          jpi, jpj, nh_i, jpk, 1, jpk, nz_i, 32, clop, zsto, zout )
+      CALL histdef( id_i, "votemper", "Temperature"           , "C"      ,   &   ! temperature
+         &          jpi, jpj, nh_i, jpk, 1, jpk, nz_i, 32, clop, zsto, zout )
+      CALL histdef( id_i, "sossheig", "Sea Surface Height"    , "m"      ,   &  ! ssh
+         &          jpi, jpj, nh_i, 1  , 1, 1  , nz_i, 32, clop, zsto, zout )
+      CALL histdef( id_i, "vozocrtx", "Zonal Current"         , "m/s"    ,   &   ! zonal current
+         &          jpi, jpj, nh_i, jpk, 1, jpk, nz_i, 32, clop, zsto, zout )
+      CALL histdef( id_i, "vomecrty", "Meridional Current"    , "m/s"    ,   &   ! meridonal current
+         &          jpi, jpj, nh_i, jpk, 1, jpk, nz_i, 32, clop, zsto, zout ) 
+      CALL histdef( id_i, "vovecrtz", "Vertical Velocity"     , "m/s"    ,   &   ! vertical current
+         &          jpi, jpj, nh_i, jpk, 1, jpk, nz_i, 32, clop, zsto, zout ) 
+      CALL histdef( id_i, "sowaflup", "Net Upward Water Flux" , "Kg/m2/S",   &   ! net freshwater 
+         &          jpi, jpj, nh_i, 1  , 1, 1  , -99 , 32, clop, zsto, zout )
+      CALL histdef( id_i, "sohefldo", "Net Downward Heat Flux", "W/m2"   ,   &   ! net heat flux
+         &          jpi, jpj, nh_i, 1  , 1, 1  , -99 , 32, clop, zsto, zout )
+      CALL histdef( id_i, "soshfldo", "Shortwave Radiation"   , "W/m2"   ,   &   ! solar flux
+         &          jpi, jpj, nh_i, 1  , 1, 1  , -99 , 32, clop, zsto, zout )
+      CALL histdef( id_i, "soicecov", "Ice fraction"          , "[0,1]"  ,   &   ! fr_i
+         &          jpi, jpj, nh_i, 1  , 1, 1  , -99 , 32, clop, zsto, zout )
+      CALL histdef( id_i, "sozotaux", "Zonal Wind Stress"     , "N/m2"   ,   &   ! i-wind stress
+         &          jpi, jpj, nh_i, 1  , 1, 1  , -99 , 32, clop, zsto, zout )
+      CALL histdef( id_i, "sometauy", "Meridional Wind Stress", "N/m2"   ,   &   ! j-wind stress
+         &          jpi, jpj, nh_i, 1  , 1, 1  , -99 , 32, clop, zsto, zout )
+
+!xxx #if defined key_lim2
+!xxx       CALL lim_wri_state_2( kt, id_i, nh_i )
+!xxx #else
+      CALL histend( id_i, snc4chunks=snc4set )
+!xxx #endif
+
+      ! 2. Start writing data
+      ! ---------------------
+      ! idex(1) est utilise ssi l'avant dernier argument est diffferent de 
+      ! la taille du tableau en sortie. Dans ce cas , l'avant dernier argument
+      ! donne le nombre d'elements, et idex la liste des indices a sortir
+      idex(1) = 1   ! init to avoid compil warning
+
+      ! Write all fields on T grid
+      CALL histwrite( id_i, "votemper", kt, tsn(:,:,:,jp_tem), jpi*jpj*jpk, idex )    ! now temperature
+      CALL histwrite( id_i, "vosaline", kt, tsn(:,:,:,jp_sal), jpi*jpj*jpk, idex )    ! now salinity
+      CALL histwrite( id_i, "sossheig", kt, sshn             , jpi*jpj    , idex )    ! sea surface height
+      CALL histwrite( id_i, "vozocrtx", kt, un               , jpi*jpj*jpk, idex )    ! now i-velocity
+      CALL histwrite( id_i, "vomecrty", kt, vn               , jpi*jpj*jpk, idex )    ! now j-velocity
+      CALL histwrite( id_i, "vovecrtz", kt, wn               , jpi*jpj*jpk, idex )    ! now k-velocity
+      CALL histwrite( id_i, "sowaflup", kt, (emp-rnf )       , jpi*jpj    , idex )    ! freshwater budget
+      CALL histwrite( id_i, "sohefldo", kt, qsr + qns        , jpi*jpj    , idex )    ! total heat flux
+      CALL histwrite( id_i, "soshfldo", kt, qsr              , jpi*jpj    , idex )    ! solar heat flux
+      CALL histwrite( id_i, "soicecov", kt, fr_i             , jpi*jpj    , idex )    ! ice fraction
+      CALL histwrite( id_i, "sozotaux", kt, utau             , jpi*jpj    , idex )    ! i-wind stress
+      CALL histwrite( id_i, "sometauy", kt, vtau             , jpi*jpj    , idex )    ! j-wind stress
+
+      ! 3. Close the file
+      ! -----------------
+      CALL histclo( id_i )
+#if ! defined key_iomput && ! defined key_dimgout
+      IF( ninist /= 1  ) THEN
+         CALL histclo( nid_T )
+         CALL histclo( nid_U )
+         CALL histclo( nid_V )
+         CALL histclo( nid_W )
+      ENDIF
+#endif
+      ! 
+
+   END SUBROUTINE dia_wri_state_noice
    !!======================================================================
 END MODULE diawri
