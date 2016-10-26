@@ -859,6 +859,11 @@ call check_value3d("vtau-jpr_oty1",frcv(jpr_oty1)%z3,kt,msg="after mods in sbc_c
          !
          utau(:,:) = frcv(jpr_otx1)%z3(:,:,1)
          vtau(:,:) = frcv(jpr_oty1)%z3(:,:,1)
+
+!DBG
+call check_value2d("utau",utau,0,msg="after assign in sbc_cpl_rcv")
+call check_value2d("vtau",vtau,0,msg="after assign in sbc_cpl_rcv")
+
          taum(:,:) = frcv(jpr_taum)%z3(:,:,1)
          CALL iom_put( "taum_oce", taum )   ! output wind stress module
          !  
