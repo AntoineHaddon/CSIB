@@ -402,11 +402,9 @@ call check_value2d("taum",taum,kt,msg="after sbc_rnf",mode=1)
             &         tab2d_2=vtau             , clinfo2=' vtau     - : ', mask2=vmask, ovlap=1 )
       ENDIF
 
-#undef DBGLS
-#ifdef DBGLS
 !DBG
-call check_value2d("utau",utau,kt,msg="at bottom of sbc",mode=1)
-call check_value2d("vtau",vtau,kt,msg="at bottom of sbc",mode=1)
+call check_value2d("utau",utau,kt,msg="at bottom of sbc")
+call check_value2d("vtau",vtau,kt,msg="at bottom of sbc")
 call check_value2d("utau_ice",utau_ice,kt)
 call check_value2d("vtau_ice",vtau_ice,kt)
 call check_value2d("qsr_tot",qsr_tot,kt)
@@ -414,8 +412,7 @@ call check_value2d("qns_tot",qns_tot,kt)
 call check_value2d("emp_tot",emp_tot,kt)
 call check_value2d("sprecip",sprecip,kt)
 call check_value2d("wndm",wndm,kt)
-call check_value2d("taum",taum,kt,msg="at bottom of sbc",mode=1)
-#endif
+call check_value2d("taum",taum,kt,msg="at bottom of sbc")
 
       IF( kt == nitend )   CALL sbc_final         ! Close down surface module if necessary
       !
