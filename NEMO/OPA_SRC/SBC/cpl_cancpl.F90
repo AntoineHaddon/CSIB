@@ -124,7 +124,9 @@ contains
     character(*), optional :: msg
     integer, optional :: mode
     real(wp) :: absmaxval
-    integer :: lmode
+    integer :: lmode, iu
+    logical :: exists
+    character(256) :: strng
     if ( present(mode) ) then
       lmode = mode
     else
@@ -139,6 +141,18 @@ contains
       endif
       if ( lmode == 0 ) then
         call ctl_stop("STOP", " check_value2d", trim(name)//" is out of range")
+      endif
+    endif
+    if ( lmode == 2 ) then
+      strng=" "
+      write(strng,'("out.",a,"_",i4.4)')trim(name),narea-1
+      inquire(file=trim(strng),exist=exists)
+      if ( .not. exists ) then
+        !--- Only write the first time this variable is passed
+        iu = 827+narea
+        open(iu,file=trim(strng),form="unformatted")
+        write(iu) var
+        close(iu)
       endif
     endif
   end subroutine check_value2d
@@ -150,7 +164,9 @@ contains
     character(*), optional :: msg
     integer, optional :: mode
     real(wp) :: absmaxval
-    integer :: lmode
+    integer :: lmode, iu
+    logical :: exists
+    character(256) :: strng
     if ( present(mode) ) then
       lmode = mode
     else
@@ -166,6 +182,18 @@ contains
       endif
       if ( lmode == 0 ) then
         call ctl_stop("STOP", " check_value2d", trim(name)//" is out of range")
+      endif
+    endif
+    if ( lmode == 2 ) then
+      strng=" "
+      write(strng,'("out.",a,"_",i4.4)')trim(name),narea-1
+      inquire(file=trim(strng),exist=exists)
+      if ( .not. exists ) then
+        !--- Only write the first time this variable is passed
+        iu = 927+narea
+        open(iu,file=trim(strng),form="unformatted")
+        write(iu) var
+        close(iu)
       endif
     endif
   end subroutine check_value3d
