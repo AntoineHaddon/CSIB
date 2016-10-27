@@ -285,8 +285,8 @@ if (kt == nit000) CALL dia_wri_state_noice( 'out.state0.before_sbc_cpl_rcv', kt 
       END SELECT
 
 !DBG
-call check_value2d("utau",utau,kt,msg="after sbc_cpl_rcv")
-call check_value2d("vtau",vtau,kt,msg="after sbc_cpl_rcv")
+!call check_value2d("utau",utau,kt,msg="after sbc_cpl_rcv")
+!call check_value2d("vtau",vtau,kt,msg="after sbc_cpl_rcv")
 !call check_value2d("taum",taum,kt,msg="after sbc_cpl_rcv",mode=1)
 
       !                                            !==  Misc. Options  ==!
@@ -305,13 +305,13 @@ if (kt == nit000) CALL dia_wri_state_noice( 'out.state0.before_sbc_ice_lim_2', k
 if (kt == nit000) CALL dia_wri_state( 'out.state0.after_sbc_ice_lim_2', kt )
 
 !DBG
-write(numout,*)"sbc: nn_ice=",nn_ice,"  lk_bdy=",lk_bdy
-call check_value2d("utau",utau,kt,msg="after sbc_ice_lim_2",mode=1)
-call check_value2d("vtau",vtau,kt,msg="after sbc_ice_lim_2",mode=1)
-call check_value2d("taum",taum,kt,msg="after sbc_ice_lim_2",mode=1)
-utau = 0.0
-vtau = 0.0
-taum = 0.0
+!write(numout,*)"sbc: nn_ice=",nn_ice,"  lk_bdy=",lk_bdy
+!call check_value2d("utau",utau,kt,msg="after sbc_ice_lim_2",mode=1)
+!call check_value2d("vtau",vtau,kt,msg="after sbc_ice_lim_2",mode=1)
+!call check_value2d("taum",taum,kt,msg="after sbc_ice_lim_2",mode=1)
+!utau = 0.0
+!vtau = 0.0
+!taum = 0.0
 
       IF( ln_rnf         )   CALL sbc_rnf( kt )                   ! add runoffs to fresh water fluxes
 
@@ -403,16 +403,16 @@ call check_value2d("taum",taum,kt,msg="after sbc_rnf",mode=1)
       ENDIF
 
 !DBG
-call check_value2d("utau",utau,kt,msg="at bottom of sbc")
-call check_value2d("vtau",vtau,kt,msg="at bottom of sbc")
-call check_value2d("utau_ice",utau_ice,kt)
-call check_value2d("vtau_ice",vtau_ice,kt)
-call check_value2d("qsr_tot",qsr_tot,kt)
-call check_value2d("qns_tot",qns_tot,kt)
-call check_value2d("emp_tot",emp_tot,kt)
-call check_value2d("sprecip",sprecip,kt)
-call check_value2d("wndm",wndm,kt)
-call check_value2d("taum",taum,kt,msg="at bottom of sbc")
+!call check_value2d("utau",utau,kt,msg="at bottom of sbc")
+!call check_value2d("vtau",vtau,kt,msg="at bottom of sbc")
+!call check_value2d("utau_ice",utau_ice,kt)
+!call check_value2d("vtau_ice",vtau_ice,kt)
+!call check_value2d("qsr_tot",qsr_tot,kt)
+!call check_value2d("qns_tot",qns_tot,kt)
+!call check_value2d("emp_tot",emp_tot,kt)
+!call check_value2d("sprecip",sprecip,kt)
+!call check_value2d("wndm",wndm,kt)
+!call check_value2d("taum",taum,kt,msg="at bottom of sbc")
 
       IF( kt == nitend )   CALL sbc_final         ! Close down surface module if necessary
       !
