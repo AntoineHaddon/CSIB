@@ -198,6 +198,117 @@ contains
     endif
   end subroutine check_value3d
 
+  subroutine dump_array1d(name,var,pos)
+    character(*) :: name
+    real(wp) :: var(:)
+    integer, optional :: pos
+    integer :: lpos, iu
+    logical :: exists
+    character(256) :: strng
+    if ( present(pos) ) then
+      lpos = pos
+    else
+      lpos = 0
+    endif
+    strng=" "
+    write(strng,'("out.",a,"_",i4.4)')trim(name),narea-1
+    iu = 727+narea
+    if ( lpos == 0 ) then
+      !--- Only write the first time this name is used
+      inquire(file=trim(strng),exist=exists)
+      if ( .not. exists ) then
+        open(iu,file=trim(strng),form="unformatted")
+        write(iu) var
+        close(iu)
+      endif
+    else if ( lpos == 1 ) then
+      !--- Overwrite the file each time a write is requested
+      open(iu,file=trim(strng),form="unformatted")
+      rewind(iu)
+      write(iu) var
+      close(iu)
+    else if ( lpos == 2 ) then
+      !--- Append to the file each time a write is requested
+      open(iu,file=trim(strng),form="unformatted",position="append")
+      write(iu) var
+      close(iu)
+    endif
+  end subroutine dump_array1d
+
+  subroutine dump_array2d(name,var,pos)
+    character(*) :: name
+    real(wp) :: var(:,:)
+    integer, optional :: pos
+    integer :: lpos, iu
+    logical :: exists  
+    character(256) :: strng 
+    if ( present(pos) ) then
+      lpos = pos
+    else
+      lpos = 0
+    endif
+    strng=" "
+    write(strng,'("out.",a,"_",i4.4)')trim(name),narea-1
+    iu = 727+narea
+    if ( lpos == 0 ) then
+      !--- Only write the first time this name is used
+      inquire(file=trim(strng),exist=exists)
+      if ( .not. exists ) then
+        open(iu,file=trim(strng),form="unformatted")
+        write(iu) var
+        close(iu)
+      endif
+    else if ( lpos == 1 ) then
+      !--- Overwrite the file each time a write is requested
+      open(iu,file=trim(strng),form="unformatted")
+      rewind(iu)
+      write(iu) var
+      close(iu)
+    else if ( lpos == 2 ) then
+      !--- Append to the file each time a write is requested
+      open(iu,file=trim(strng),form="unformatted",position="append")
+      write(iu) var
+      close(iu)
+    endif
+  end subroutine dump_array2d
+
+  subroutine dump_array3d(name,var,pos)
+    character(*) :: name
+    real(wp) :: var(:,:,:)
+    integer, optional :: pos
+    integer :: lpos, iu
+    logical :: exists
+    character(256) :: strng
+    if ( present(pos) ) then
+      lpos = pos
+    else
+      lpos = 0
+    endif
+    strng=" "
+    write(strng,'("out.",a,"_",i4.4)')trim(name),narea-1
+    iu = 727+narea
+    if ( lpos == 0 ) then
+      !--- Only write the first time this name is used
+      inquire(file=trim(strng),exist=exists)
+      if ( .not. exists ) then
+        open(iu,file=trim(strng),form="unformatted")
+        write(iu) var
+        close(iu)
+      endif
+    else if ( lpos == 1 ) then
+      !--- Overwrite the file each time a write is requested
+      open(iu,file=trim(strng),form="unformatted")
+      rewind(iu)
+      write(iu) var
+      close(iu)
+    else if ( lpos == 2 ) then
+      !--- Append to the file each time a write is requested
+      open(iu,file=trim(strng),form="unformatted",position="append")
+      write(iu) var
+      close(iu)
+    endif
+  end subroutine dump_array3d
+
   subroutine cpl_cancpl_init( kl_comm )
      !!-------------------------------------------------------------------
      !!             ***  ROUTINE cpl_cancpl_init  ***
@@ -1013,9 +1124,17 @@ contains
 
          !--- Receive the global array from the coupler
          call recv_data_rec(wrk, ibuf, cpl_master, trim(srcv(kid)%clname), dbg=ldbg)
+!DBG
+strng = " "
+strng=trim(srcv(kid)%clname)//"-wrk"
+call dump_array1d(trim(strng),wrk(1:cpl_vinfo%size))
 
          !--- Map the 1D wrk array onto the global 3D array png
          call copy_1d_to_3d_global(wrk, png)
+!DBG
+strng = " "
+strng=trim(srcv(kid)%clname)//"-png"
+call dump_array3d(trim(strng),png)
        endif
 
        if ( nn_timing == 1 ) call timing_start('cplrecv_scatter')
@@ -1024,6 +1143,11 @@ contains
        call mppscatter (png,0,pdata(:,:,jc)) 
        call mppsync
        if ( nn_timing == 1 ) call timing_stop('cplrecv_scatter')
+
+!DBG
+strng = " "
+strng=trim(srcv(kid)%clname)//"-pdata"
+call dump_array3d(trim(strng),pdata)
 
        if ( rank == ocn_master .and. verbose > 2 ) then
          !--- Count the number of NaNs in the global png array
