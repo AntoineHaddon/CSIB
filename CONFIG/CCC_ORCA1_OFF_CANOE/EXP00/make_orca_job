@@ -134,7 +134,7 @@ nn_ice=0
 if [ "x$do_nemo_run" = "xoff" ]; then
   time=1799
 else
-  time=3600
+  time=5400
 fi
 
 # Any command line args of the form var=val will be added to the current environment.
