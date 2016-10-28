@@ -918,13 +918,13 @@ cat > Execute_Script <<'end_of_script'
       dyna_grid_u=uncs_dyna_grid_u.nc
       dyna_grid_v=uncs_dyna_grid_v.nc
       dyna_grid_w=uncs_dyna_grid_w.nc
-      offline_mash_mask=uncs_mesh_mask.nc
+      offline_mesh_mask=uncs_mesh_mask.nc
 
       acc_cp dyna_grid_t.nc $dyna_grid_t
       acc_cp dyna_grid_u.nc $dyna_grid_u
       acc_cp dyna_grid_v.nc $dyna_grid_v
       acc_cp dyna_grid_w.nc $dyna_grid_w
-      acc_cp mesh_mask.nc   $offline_mash_mask
+      acc_cp mesh_mask.nc   $offline_mesh_mask
     fi 
 
     if [ $nemo_carbon -eq 1 ]; then
