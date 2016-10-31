@@ -498,12 +498,9 @@ end_reorder_list
       cp -f nemo_postlude rs_nemo_postlude || :
       [ -s rs_nemo_postlude ] && tarlist="$tarlist rs_nemo_postlude"
 
-      found_file=`(ls -1 mesh_mask*.nc || : ) 2>/dev/null`
+      found_file=`(ls -1 mesh_mask_*.nc || : ) 2>/dev/null`
       if [ -n "$found_file" ]; then
-        for mesh_file in $found_file; do
-          cp -f $mesh_file rs_$mesh_file
-          [ -s rs_$mesh_file ] && tarlist="$tarlist rs_$mesh_file"
-        done
+        REBUILD -o rs_mesh_mask.nc mesh_mask_*.nc && tarlist="$tarlist rs_mesh_mask.nc"
       fi
 
 #      rm -f NEXT_RESTART_ARC
