@@ -739,10 +739,6 @@ CONTAINS
 #endif
       END DO
 
-!DBG
-call check_value3d("utau-after-rcv",frcv(jpr_otx1)%z3,kt,msg="after receive from cpl",mode=2)
-call check_value3d("vtau-after-rcv",frcv(jpr_oty1)%z3,kt,msg="after receive from cpl",mode=2)
-
       !                                                      ! ========================= !
       IF( srcv(jpr_otx1)%laction ) THEN                      !  ocean stress components  !
          !                                                   ! ========================= !
@@ -778,9 +774,6 @@ call check_value3d("vtau-after-rcv",frcv(jpr_oty1)%z3,kt,msg="after receive from
                frcv(jpr_otx1)%z3(:,:,1) = ztx(:,:)      ! overwrite 1st component on the 1st grid
                frcv(jpr_oty1)%z3(:,:,1) = zty(:,:)      ! overwrite 2nd component on the 2nd grid
             ENDIF
-!DBG
-call check_value3d("utau-after-rotate",frcv(jpr_otx1)%z3,kt,msg="after rotate in sbc_cpl_rcv",mode=2)
-call check_value3d("vtau-after-rotate",frcv(jpr_oty1)%z3,kt,msg="after rotate in sbc_cpl_rcv",mode=2)
             !                              
             IF( srcv(jpr_otx1)%clgrid == 'T' ) THEN
                DO jj = 2, jpjm1                                          ! T ==> (U,V)
@@ -791,9 +784,6 @@ call check_value3d("vtau-after-rotate",frcv(jpr_oty1)%z3,kt,msg="after rotate in
                END DO
                CALL lbc_lnk( frcv(jpr_otx1)%z3(:,:,1), 'U',  -1. )   ;   CALL lbc_lnk( frcv(jpr_oty1)%z3(:,:,1), 'V',  -1. )
             ENDIF
-!DBG
-call check_value3d("utau-after-u-grid",frcv(jpr_otx1)%z3,kt,msg="after map to U grid in sbc_cpl_rcv",mode=2)
-call check_value3d("vtau-after-u-grid",frcv(jpr_oty1)%z3,kt,msg="after map to U grid in sbc_cpl_rcv",mode=2)
             llnewtx = .TRUE.
          ELSE
             llnewtx = .FALSE.
@@ -863,18 +853,11 @@ call check_value3d("vtau-after-u-grid",frcv(jpr_oty1)%z3,kt,msg="after map to U 
          utau(:,:) = frcv(jpr_otx1)%z3(:,:,1)
          vtau(:,:) = frcv(jpr_oty1)%z3(:,:,1)
 
-!DBG
-call check_value2d("utau-end-sbc-cpl-rcv",utau,0,msg="after assign in sbc_cpl_rcv",mode=2)
-call check_value2d("vtau-end-sbc-cpl-rcv",vtau,0,msg="after assign in sbc_cpl_rcv",mode=2)
-
          taum(:,:) = frcv(jpr_taum)%z3(:,:,1)
          CALL iom_put( "taum_oce", taum )   ! output wind stress module
          !  
       ENDIF
                                                    !==  sbc formulation  ==!
-!DBG
-if (kt == nit000) CALL dia_wri_state_noice( 'out.state0.after_sbc_cpl_rcv', kt )
-
 
 #if defined key_cpl_carbon_cycle
       !                                                              ! atmosph. CO2 (ppm)
@@ -1152,14 +1135,6 @@ if (kt == nit000) CALL dia_wri_state_noice( 'out.state0.after_sbc_cpl_rcv', kt )
 
       ENDIF
 
-#undef DBGLS
-#ifdef DBGLS
-!DBG
-call check_value2d("utau",utau,0,msg="after sbc_cpl_ice_tau",mode=1)
-call check_value2d("vtau",vtau,0,msg="after sbc_cpl_ice_tau",mode=1)
-call check_value2d("taum",taum,0,msg="after sbc_cpl_ice_tau",mode=1)
-#endif
-
       !   
       CALL wrk_dealloc( jpi,jpj, ztx, zty )
       !
@@ -1397,15 +1372,6 @@ call check_value2d("taum",taum,0,msg="after sbc_cpl_ice_tau",mode=1)
          topmelt(:,:,:)=frcv(jpr_topm)%z3(:,:,:)
          botmelt(:,:,:)=frcv(jpr_botm)%z3(:,:,:)
       END SELECT
-
-#undef DBGLS
-#ifdef DBGLS
-!DBG
-call check_value2d("utau",utau,0,msg="after sbc_cpl_ice_flx",mode=1)
-call check_value2d("vtau",vtau,0,msg="after sbc_cpl_ice_flx",mode=1)
-call check_value2d("taum",taum,0,msg="after sbc_cpl_ice_flx",mode=1)
-#endif
-
 
       CALL wrk_dealloc( jpi,jpj, zcptn, ztmp, zicefr )
       !
