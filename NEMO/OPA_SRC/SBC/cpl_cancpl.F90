@@ -1124,17 +1124,17 @@ contains
 
          !--- Receive the global array from the coupler
          call recv_data_rec(wrk, ibuf, cpl_master, trim(srcv(kid)%clname), dbg=ldbg)
-!DBG
-strng = " "
-strng=trim(srcv(kid)%clname)//"-wrk"
-call dump_array1d(trim(strng),wrk(1:cpl_vinfo%size))
+!xxx !DBG
+!xxx strng = " "
+!xxx strng=trim(srcv(kid)%clname)//"-wrk"
+!xxx call dump_array1d(trim(strng),wrk(1:cpl_vinfo%size))
 
          !--- Map the 1D wrk array onto the global 3D array png
          call copy_1d_to_3d_global(wrk, png)
-!DBG
-strng = " "
-strng=trim(srcv(kid)%clname)//"-png"
-call dump_array3d(trim(strng),png)
+!xxx !DBG
+!xxx strng = " "
+!xxx strng=trim(srcv(kid)%clname)//"-png"
+!xxx call dump_array3d(trim(strng),png)
        endif
 
        if ( nn_timing == 1 ) call timing_start('cplrecv_scatter')
@@ -1144,10 +1144,10 @@ call dump_array3d(trim(strng),png)
        call mppsync
        if ( nn_timing == 1 ) call timing_stop('cplrecv_scatter')
 
-!DBG
-strng = " "
-strng=trim(srcv(kid)%clname)//"-pdata"
-call dump_array3d(trim(strng),pdata)
+!xxx !DBG
+!xxx strng = " "
+!xxx strng=trim(srcv(kid)%clname)//"-pdata"
+!xxx call dump_array3d(trim(strng),pdata)
 
        if ( rank == ocn_master .and. verbose > 2 ) then
          !--- Count the number of NaNs in the global png array

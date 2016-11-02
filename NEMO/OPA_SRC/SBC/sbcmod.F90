@@ -59,8 +59,6 @@ MODULE sbcmod
    USE sbcwave          ! Wave module
 
    USE diawri
-   !DBG
-   use cpl_cancpl, only: check_value2d, check_value3d
 
    IMPLICIT NONE
    PRIVATE
@@ -263,8 +261,6 @@ CONTAINS
 
       IF (ln_cdgw) CALL sbc_wave( kt )
                                                    !==  sbc formulation  ==!
-!DBG
-if (kt == nit000) CALL dia_wri_state_noice( 'out.state0.before_sbc_cpl_rcv', kt )
                                                             
       SELECT CASE( nsbc )                                ! Compute ocean surface boundary condition
       !                                                  ! (i.e. utau,vtau, qns, qsr, emp, emps)
@@ -284,15 +280,7 @@ if (kt == nit000) CALL dia_wri_state_noice( 'out.state0.before_sbc_cpl_rcv', kt 
                        CALL sbc_cpl_rcv ( kt, nn_fsbc, nn_ice )   !
       END SELECT
 
-!DBG
-!call check_value2d("utau",utau,kt,msg="after sbc_cpl_rcv")
-!call check_value2d("vtau",vtau,kt,msg="after sbc_cpl_rcv")
-!call check_value2d("taum",taum,kt,msg="after sbc_cpl_rcv",mode=1)
-
       !                                            !==  Misc. Options  ==!
-!DBG
-if (kt == nit000) CALL dia_wri_state_noice( 'out.state0.before_sbc_ice_lim_2', kt )
-      
       SELECT CASE( nn_ice )                                       ! Update heat and freshwater fluxes over sea-ice areas
       CASE(  0 )   ;         CALL sbc_ice_none ( kt )                ! no-ice, SST not dropping below freezing point
       CASE(  1 )   ;         CALL sbc_ice_if   ( kt )                ! Ice-cover climatology ("Ice-if" model)
@@ -301,28 +289,9 @@ if (kt == nit000) CALL dia_wri_state_noice( 'out.state0.before_sbc_ice_lim_2', k
       CASE(  3 )   ;         CALL sbc_ice_lim  ( kt, nsbc )          ! LIM-3 ice model
       CASE(  4 )   ;         CALL sbc_ice_cice ( kt, nsbc )          ! CICE ice model
       END SELECT                                              
-!DBG
-if (kt == nit000) CALL dia_wri_state( 'out.state0.after_sbc_ice_lim_2', kt )
-
-!DBG
-!write(numout,*)"sbc: nn_ice=",nn_ice,"  lk_bdy=",lk_bdy
-!call check_value2d("utau",utau,kt,msg="after sbc_ice_lim_2",mode=1)
-!call check_value2d("vtau",vtau,kt,msg="after sbc_ice_lim_2",mode=1)
-!call check_value2d("taum",taum,kt,msg="after sbc_ice_lim_2",mode=1)
-!utau = 0.0
-!vtau = 0.0
-!taum = 0.0
 
       IF( ln_rnf         )   CALL sbc_rnf( kt )                   ! add runoffs to fresh water fluxes
 
-#undef DBGLS
-#ifdef DBGLS
-!DBG
-call check_value2d("utau",utau,kt,msg="after sbc_rnf",mode=1)
-call check_value2d("vtau",vtau,kt,msg="after sbc_rnf",mode=1)
-call check_value2d("taum",taum,kt,msg="after sbc_rnf",mode=1)
-#endif
- 
       IF( ln_ssr         )   CALL sbc_ssr( kt )                   ! add SST/SSS damping term
 
       IF( nn_fwb    /= 0 )   CALL sbc_fwb( kt, nn_fwb, nn_fsbc )  ! control the freshwater budget
@@ -401,18 +370,6 @@ call check_value2d("taum",taum,kt,msg="after sbc_rnf",mode=1)
          CALL prt_ctl(tab2d_1=utau             , clinfo1=' utau     - : ', mask1=umask,                      &
             &         tab2d_2=vtau             , clinfo2=' vtau     - : ', mask2=vmask, ovlap=1 )
       ENDIF
-
-!DBG
-!call check_value2d("utau",utau,kt,msg="at bottom of sbc")
-!call check_value2d("vtau",vtau,kt,msg="at bottom of sbc")
-!call check_value2d("utau_ice",utau_ice,kt)
-!call check_value2d("vtau_ice",vtau_ice,kt)
-!call check_value2d("qsr_tot",qsr_tot,kt)
-!call check_value2d("qns_tot",qns_tot,kt)
-!call check_value2d("emp_tot",emp_tot,kt)
-!call check_value2d("sprecip",sprecip,kt)
-!call check_value2d("wndm",wndm,kt)
-!call check_value2d("taum",taum,kt,msg="at bottom of sbc")
 
       IF( kt == nitend )   CALL sbc_final         ! Close down surface module if necessary
       !
