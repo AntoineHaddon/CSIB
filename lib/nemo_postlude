@@ -511,7 +511,10 @@ end_reorder_list
 
       found_file=`(ls -1 mesh_mask_*.nc || : ) 2>/dev/null`
       if [ -n "$found_file" ]; then
+        rm -f rs_mesh_mask.nc
         REBUILD -o rs_mesh_mask.nc mesh_mask_*.nc && tarlist="$tarlist rs_mesh_mask.nc"
+        # Remove all tiled mesh_mask files after the rebuild
+        rm -f mesh_mask_*.nc
       fi
 
 #      rm -f NEXT_RESTART_ARC
