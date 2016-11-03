@@ -5,6 +5,7 @@ MODULE trdmod_oce
    !!======================================================================
    !! History :  1.0  !  2004-08  (C. Talandier) Original code
    !!            3.4.1!  2015-09  (D. Yang) Added a new active tracer trend index (jptra_trd_zdfp)
+   !!            3.4.1!  2016-10  (D. Yang) Added a new active tracer trend index (jptra_trd_eiv)
    !!----------------------------------------------------------------------
    USE trdicp_oce              ! ocean momentum/tracers bassin properties trends variables
    USE trdmld_oce              ! ocean active mixed layer tracers trends variables
@@ -52,6 +53,7 @@ MODULE trdmod_oce
    INTEGER, PUBLIC, PARAMETER ::   jptra_trd_qsr = 10     !: penetrative solar radiation
    INTEGER, PUBLIC, PARAMETER ::   jptra_trd_nsr = 11     !: non solar radiation
    INTEGER, PUBLIC, PARAMETER ::   jptra_trd_atf = 12     !: Asselin correction
+   INTEGER, PUBLIC, PARAMETER ::   jptra_trd_eiv = 17     !: (x- + y- + z-) advection from GM scheme
 #if defined key_top
    !                                                     !!!* Passive tracers trends indexes
    INTEGER, PUBLIC, PARAMETER ::   jptra_trd_sms  = 13    !: sources m. sinks

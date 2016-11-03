@@ -6,10 +6,11 @@ MODULE trdtra
    !! History :  1.0  !  2004-08  (C. Talandier) Original code
    !!            2.0  !  2005-04  (C. Deltel)    Add Asselin trend in the ML budget
    !!            3.3  !  2010-06  (C. Ethe) merge TRA-TRC 
-   !!            3.4.1!  2015-08  (D. Yang) output 3D tracer trends
+   !!            3.4.1!  2015-08  (D. Yang) output 3D tracer trends.
    !!            3.4.1!  2015-09  (D. Yang) added diagnostics for the "PURE" Kz trend
-   !!                                       in case of iso-neutral diffusion
-   !!            3.4.1!  2016-03  (D. Yang) added call to tra_mod for the "PURE" Kz trend
+   !!                                       in case of iso-neutral diffusion.
+   !!            3.4.1!  2016-03  (D. Yang) added call to tra_mod for the "PURE" Kz trend.
+   !!            3.4.1!  2016-10  (D. Yang) added advection trends from GM scheme.
    !!----------------------------------------------------------------------
 #if  defined key_trdtra || defined key_trdtrc || defined key_trdmld || defined key_trdmld_trc 
    !!----------------------------------------------------------------------
@@ -36,7 +37,7 @@ MODULE trdtra
    IMPLICIT NONE
    PRIVATE
 
-   PUBLIC   trd_tra          ! called by all  traXX modules
+   PUBLIC   trd_tra, trd_tra_adv, trd_tra_mng  ! called by all  traXX modules
  
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: trdtx, trdty, trdt  !:
 
@@ -350,6 +351,8 @@ CONTAINS
       CASE( jptra_trd_bbc  )   ;   CALL iom_put( "ttrd_bbc" , ptrdx )        ! geothermal heating   (only on temperature)
       CASE( jptra_trd_atf  )   ;   CALL iom_put( "ttrd_atf" , ptrdx )        ! asselin time Filter
                                    CALL iom_put( "strd_atf" , ptrdy )
+      CASE( jptra_trd_eiv  )   ;   CALL iom_put( "ttrd_eiv" , ptrdx )
+                                   CALL iom_put( "strd_eiv" , ptrdy )
       END SELECT
       !
    END SUBROUTINE trd_tra_iom
