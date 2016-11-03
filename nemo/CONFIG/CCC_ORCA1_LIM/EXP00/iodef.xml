@@ -251,7 +251,9 @@
         <field id="ttrd_qsr"   description="temperature-trend: solar penetr. heating"   unit="degC/s"                  />
         <field id="ttrd_bbc"   description="temperature-trend: geothermal heating"      unit="degC/s"                  />
         <field id="ttrd_atf"   description="temperature-trend: asselin time filter"     unit="degC/s"                  />
-        <field id="strd_atf"   description="salinity-trend: asselin time filter"        unit="1e-3/s" />
+        <field id="strd_atf"   description="salinity-trend: asselin time filter"        unit="1e-3/s"                  />
+        <field id="ttrd_eiv"   description="temperature-trend: advection from GM sheme" unit="degC/s"                  />
+        <field id="strd_eiv"   description="salinity-trend: advection from GM sheme"    unit="1e-3/s"                  />
       </group>
       
     </field_definition>
@@ -529,6 +531,8 @@
             <field ref="strd_zdf"     name="strd_zdf"       description="salinity-trend: vertical diffusion"          />
             <field ref="ttrd_zdfp"    name="ttrd_zdfp"      description="temperature-trend: pure vert. diffusion"     />
             <field ref="strd_zdfp"    name="strd_zdfp"      description="salinity   -trend: pure vert. diffusion"     />
+            <field ref="ttrd_eiv"     name="ttrd_eiv"       description="temperature-trend: advection from GM scheme" />
+            <field ref="strd_eiv"     name="strd_eiv"       description="salinity-trend: advection from GM scheme"    />
 	    <field ref="cellthc"      name="thkcello"       description="cell_thickness"                              /> <!-- no time changes -->
             <field ref="area"         name="areacello"      description="cell_area"                                   />
           </file>
