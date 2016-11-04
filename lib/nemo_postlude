@@ -367,26 +367,28 @@ end_reorder_list
 
     fi
 
-    ## order the saved history file list. 
-    if [ -s saved_history_file_names -a -s saved_history_FILE_NAMES ]; then
-      # Reorder the list of files that were saved so that
-      # the file names appear in order of descending size
-      [ ! -f reorder_list ] && bail "reorder_list is missing."
-      chmod u+x reorder_list
-      reorder_list saved_history_FILE_NAMES > XXX
-      mv XXX saved_history_FILE_NAMES
-      [ ! -s saved_history_FILE_NAMES ] &&
-	bail "Empty file --> saved_history_FILE_NAMES <-- after reorder."
-      rm -f saved_history_file_names
-      cat saved_history_FILE_NAMES | tr '[A-Z]' '[a-z]' > saved_history_file_names
-    fi
-    if [ -s saved_history_file_names ]; then
-      echo " "
-      echo "###########################"
-      echo "Ocean files to be archived:"
-      echo "###########################"
-      cat saved_history_file_names
-      echo " "
+    if [ $nemo_save_hist -eq 1 ]; then
+      ## order the saved history file list. 
+      if [ -s saved_history_file_names -a -s saved_history_FILE_NAMES ]; then
+        # Reorder the list of files that were saved so that
+        # the file names appear in order of descending size
+        [ ! -f reorder_list ] && bail "reorder_list is missing."
+        chmod u+x reorder_list
+        reorder_list saved_history_FILE_NAMES > XXX
+        mv XXX saved_history_FILE_NAMES
+        [ ! -s saved_history_FILE_NAMES ] &&
+        bail "Empty file --> saved_history_FILE_NAMES <-- after reorder."
+        rm -f saved_history_file_names
+        cat saved_history_FILE_NAMES | tr '[A-Z]' '[a-z]' > saved_history_file_names
+      fi
+      if [ -s saved_history_file_names ]; then
+        echo " "
+        echo "###########################"
+        echo "Ocean files to be archived:"
+        echo "###########################"
+        cat saved_history_file_names
+        echo " "
+      fi
     fi
 
     #=#=#=# Save the current restart files.
@@ -599,14 +601,32 @@ end_reorder_list
         # been created above. Verify that they exist by attempting to access them
         # These files could be modified so create local copies with write access
 
-        rtd_hist1="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_grid_t.nc"
-        rtd_hist2="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_grid_u.nc"
-        rtd_hist3="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_grid_v.nc"
-        rtd_hist4="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_grid_w.nc"
-        access grid_t $rtd_hist1 
-        access grid_u $rtd_hist2 
-        access grid_v $rtd_hist3 
-        access grid_w $rtd_hist4 
+        if [ $nemo_save_hist -eq 1 ]; then
+          # Attempt to access these history files
+          rtd_hist1="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_grid_t.nc"
+          rtd_hist2="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_grid_u.nc"
+          rtd_hist3="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_grid_v.nc"
+          rtd_hist4="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_grid_w.nc"
+          access grid_t $rtd_hist1 || bail "NEMO rdt cannot access $rtd_hist1"
+          access grid_u $rtd_hist2 || bail "NEMO rdt cannot access $rtd_hist2"
+          access grid_v $rtd_hist3 || bail "NEMO rdt cannot access $rtd_hist3"
+          access grid_w $rtd_hist4 || bail "NEMO rdt cannot access $rtd_hist4"
+        else
+          # History files are not saved but they should exist in the cwd
+          # Note the capitol T,U,V,W in these names
+          rtd_hist1="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_grid_T.nc"
+          rtd_hist2="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_grid_U.nc"
+          rtd_hist3="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_grid_V.nc"
+          rtd_hist4="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_grid_W.nc"
+          [ -s $rtd_hist1 ] || bail "NEMO rdt: $rtd_hist1 is missing or empty"
+          [ -s $rtd_hist2 ] || bail "NEMO rdt: $rtd_hist2 is missing or empty"
+          [ -s $rtd_hist3 ] || bail "NEMO rdt: $rtd_hist3 is missing or empty"
+          [ -s $rtd_hist4 ] || bail "NEMO rdt: $rtd_hist4 is missing or empty"
+          cp -f $rtd_hist1 grid_t
+          cp -f $rtd_hist2 grid_u
+          cp -f $rtd_hist3 grid_v
+          cp -f $rtd_hist4 grid_w
+        fi
 
         # The user must define year_rtdiag_start
         year_rtdiag_start=${nemo_rtdiag_start_year:=''}
