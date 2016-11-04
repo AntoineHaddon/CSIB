@@ -694,9 +694,15 @@ end_reorder_list
         if [ $nn_ice -ne 0 ]; then
           # Also generate ICE run time diagnostics
 
-          # Access additional annual history files containing PISCES related variables
-          rtd_hist7="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_icemod.nc"
-          access icemod $rtd_hist7
+          if [ $nemo_save_hist -eq 1 ]; then
+            # Access additional annual history files containing PISCES related variables
+            rtd_hist7="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_icemod.nc"
+            access icemod $rtd_hist7 || bail "NEMO rdt cannot access $rtd_hist7"
+          else
+            rtd_hist7="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_icemod.nc"
+            [ -s $rtd_hist7 ] || bail "NEMO rdt: $rtd_hist7 is missing or empty"
+            cp -f $rtd_hist7 icemod
+          fi
 
           # Access the rtd executable
           ice_rtd_exe=${nemo_ice_rtd_exe:=nemo_ice_rtd_v02c}
@@ -759,11 +765,20 @@ end_reorder_list
     if [ $nemo_carbon -eq 1 ]; then
       # Also generate PISCES run time diagnostics
 
-      # Access additional annual history files containing PISCES related variables
-      rtd_hist5="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_ptrc_t.nc"
-      rtd_hist6="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_diad_t.nc"
-      access ptrc_t $rtd_hist5 
-      access diad_t $rtd_hist6 
+      if [ $nemo_save_hist -eq 1 ]; then
+        # Access additional annual history files containing PISCES related variables
+        rtd_hist5="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_ptrc_t.nc"
+        rtd_hist6="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_diad_t.nc"
+        access ptrc_t $rtd_hist5 
+        access diad_t $rtd_hist6 
+      else
+        rtd_hist5="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_ptrc_T.nc"
+        rtd_hist6="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_diad_T.nc"
+        [ -s $rtd_hist5 ] || bail "NEMO rdt: $rtd_hist5 is missing or empty"
+        [ -s $rtd_hist6 ] || bail "NEMO rdt: $rtd_hist6 is missing or empty"
+        cp -f $rtd_hist5 ptrc_t
+        cp -f $rtd_hist6 diad_t
+      fi
 
       # Access the rtd executable
       carbon_rtd_exe=${nemo_carbon_rtd_exe:=nemo_orca1_carbon_rtd_v02c}
