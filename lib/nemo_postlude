@@ -149,6 +149,11 @@ end_reorder_list
   nemo_save_rs=${nemo_save_rs:-on}
   ToF nemo_save_rs
 
+  # If nemo_rtd is true then execute the nemo run time diagnostics
+  # If nemo_rtd is true then history files need to be rebuilt
+  nemo_rtd=${nemo_rtd:=on}
+  ToF nemo_rtd
+
   # tarlist contains a list of additional files to add to the restart archive
   tarlist=''
 
@@ -177,20 +182,9 @@ end_reorder_list
 
     nemo_save_hist=${nemo_save_hist:-on}
     ToF nemo_save_hist
-    if [ $nemo_save_hist -eq 1 ]; then
+    if [ $nemo_save_hist -eq 1 -o $nemo_rtd -eq 1 ]; then
       #=#=#=# Combine output files that were written one file per MPI task
       #=#=#=# into a single file containing data from all MPI tasks
-
-#      nemo_rebuild_exec=nemo_3.4_orca2_lim_flio_rbld_exe
-#      nemo_rebuild_sh=nemo_3.4_orca2_lim_rebuild_sh
-#
-#      # Verify the rebuild executable variables that are defined
-#      [ -z "$nemo_rebuild_exec" ] && bail "nemo_rebuild_exec is not defined"
-#      [ -z "$nemo_rebuild_sh" ]   && bail "nemo_rebuild_sh is not defined"
-#
-#      [ -s flio_rbld.exe ] || access flio_rbld.exe $nemo_rebuild_exec nocp=no
-#      [ -s REBUILD ]       || access REBUILD $nemo_rebuild_sh nocp=no
-#      chmod u+x REBUILD
 
       # 1 year save interval
       nemo_save_1y_data=${nemo_save_1y_data:-on}
@@ -207,15 +201,19 @@ end_reorder_list
 	    # Note file names must be transposed to lower case letters since
 	    # the "save" will blindly do so
 	    cp ${pfx}.nc $ncout
-	    save $ncout $ncout && echo "$ncout" >> saved_history_FILE_NAMES
+            if [ $nemo_save_hist -eq 1 ]; then
+	      save $ncout $ncout && echo "$ncout" >> saved_history_FILE_NAMES
+            fi
 	  else
 	    eval fnpatt=${pfx}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
 	    found_file=`(ls -1 $fnpatt || : ) 2>/dev/null`
 	    if [ -n "$found_file" ]; then
 	      # At least 1 file name matches the current pattern
-	      REBUILD -o $ncout $fnpatt &&
-		  save $ncout $ncout &&
-		  echo "$ncout" >> saved_history_FILE_NAMES
+	      REBUILD -o $ncout $fnpatt || bail "Unable to rebuild $ncout"
+              if [ $nemo_save_hist -eq 1 ]; then
+                save $ncout $ncout &&
+                echo "$ncout" >> saved_history_FILE_NAMES
+              fi
 	    fi
 	  fi
 	done
@@ -236,15 +234,19 @@ end_reorder_list
 	    # Note file names must be transposed to lower case letters since
 	    # the "save" will blindly do so
 	    cp ${pfx}.nc $ncout
-	    save $ncout $ncout && echo "$ncout" >> saved_history_FILE_NAMES
+            if [ $nemo_save_hist -eq 1 ]; then
+	      save $ncout $ncout && echo "$ncout" >> saved_history_FILE_NAMES
+            fi
 	  else
 	    eval fnpatt=${pfx}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
 	    found_file=`(ls -1 $fnpatt || : ) 2>/dev/null`
 	    if [ -n "$found_file" ]; then
 	      # At least 1 file name matches the current pattern
-	      REBUILD -o $ncout $fnpatt &&
-		  save $ncout $ncout &&
-		  echo "$ncout" >> saved_history_FILE_NAMES
+	      REBUILD -o $ncout $fnpatt || bail "Unable to rebuild $ncout"
+              if [ $nemo_save_hist -eq 1 ]; then
+                save $ncout $ncout &&
+                echo "$ncout" >> saved_history_FILE_NAMES
+              fi
 	    fi
 	  fi
 	done
@@ -265,15 +267,19 @@ end_reorder_list
 	    # Note file names must be transposed to lower case letters since
 	    # the "save" will blindly do so
 	    cp ${pfx}.nc $ncout
-	    save $ncout $ncout && echo "$ncout" >> saved_history_FILE_NAMES
+            if [ $nemo_save_hist -eq 1 ]; then
+	      save $ncout $ncout && echo "$ncout" >> saved_history_FILE_NAMES
+            fi
 	  else
 	    eval fnpatt=${pfx}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
 	    found_file=`(ls -1 $fnpatt || : ) 2>/dev/null`
 	    if [ -n "$found_file" ]; then
 	      # At least 1 file name matches the current pattern
-	      REBUILD -o $ncout $fnpatt &&
-		  save $ncout $ncout &&
-		  echo "$ncout" >> saved_history_FILE_NAMES
+	      REBUILD -o $ncout $fnpatt || bail "Unable to rebuild $ncout"
+              if [ $nemo_save_hist -eq 1 ]; then
+                save $ncout $ncout &&
+                echo "$ncout" >> saved_history_FILE_NAMES
+              fi
 	    fi
 	  fi
 	done
@@ -294,15 +300,19 @@ end_reorder_list
 	    # Note file names must be transposed to lower case letters since
 	    # the "save" will blindly do so
 	    cp ${pfx}.nc $ncout
-	    save $ncout $ncout && echo "$ncout" >> saved_history_FILE_NAMES
+            if [ $nemo_save_hist -eq 1 ]; then
+	      save $ncout $ncout && echo "$ncout" >> saved_history_FILE_NAMES
+            fi
 	  else
 	    eval fnpatt=${pfx}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
 	    found_file=`(ls -1 $fnpatt || : ) 2>/dev/null`
 	    if [ -n "$found_file" ]; then
 	      # At least 1 file name matches the current pattern
-	      REBUILD -o $ncout $fnpatt &&
-		  save $ncout $ncout &&
-		  echo "$ncout" >> saved_history_FILE_NAMES
+	      REBUILD -o $ncout $fnpatt || bail "Unable to rebuild $ncout"
+              if [ $nemo_save_hist -eq 1 ]; then
+                save $ncout $ncout &&
+                echo "$ncout" >> saved_history_FILE_NAMES
+              fi
 	    fi
 	  fi
 	done
@@ -323,15 +333,19 @@ end_reorder_list
             # Note file names must be transposed to lower case letters since
             # the "save" will blindly do so
             cp ${pfx}.nc $ncout
-            save $ncout $ncout && echo "$ncout" >> saved_history_FILE_NAMES
+            if [ $nemo_save_hist -eq 1 ]; then
+              save $ncout $ncout && echo "$ncout" >> saved_history_FILE_NAMES
+            fi
           else
             eval fnpatt=${pfx}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
             found_file=`(ls -1 $fnpatt || : ) 2>/dev/null`
             if [ -n "$found_file" ]; then
               # At least 1 file name matches the current pattern
-              REBUILD -o $ncout $fnpatt &&
-                  save $ncout $ncout &&
-                  echo "$ncout" >> saved_history_FILE_NAMES
+              REBUILD -o $ncout $fnpatt || bail "Unable to rebuild $ncout"
+              if [ $nemo_save_hist -eq 1 ]; then
+                save $ncout $ncout &&
+                echo "$ncout" >> saved_history_FILE_NAMES
+              fi
             fi
           fi
         done
@@ -552,10 +566,6 @@ end_reorder_list
   fi
 
   ######## Run time diagnostics #######
-
-  # If nemo_rtd is true then execute the nemo run time diagnostics
-  nemo_rtd=${nemo_rtd:=on}
-  ToF nemo_rtd
 
   pisces_offline=${pisces_offline:=off}
   ToF pisces_offline
