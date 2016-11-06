@@ -572,6 +572,10 @@ end_reorder_list
   pisces_offline=${pisces_offline:=off}
   ToF pisces_offline
 
+  nemo_new_rtd=${nemo_new_rtd:=off}
+  ToF nemo_new_rtd
+  [ ${first_job_in_run:-0} -eq 0 ] && nemo_new_rtd=0
+
   # rtd_file_list will contain a list of rtd associated files to be added
   # to the nemo restart tarball
   rtd_file_list=''
@@ -660,6 +664,7 @@ end_reorder_list
 #        fi
 
         # Create run time diagnostics for physical ocean variables
+        [ $nemo_new_rtd -eq 1 ] && rm -f rs_nemo_physical_rtd.nc
         if [ -s rs_nemo_physical_rtd.nc ]; then
           # Append to the rtd file found in the restart
           cp -f rs_nemo_physical_rtd.nc nemo_physical_rtd.nc
@@ -731,6 +736,7 @@ end_reorder_list
 #          fi
 
           # Create run time diagnostics for ice variables
+          [ $nemo_new_rtd -eq 1 ] && rm -f rs_nemo_ice_rtd.nc
           if [ -s rs_nemo_ice_rtd.nc ]; then
             # Append to the rtd file found in the restart
             cp -f rs_nemo_ice_rtd.nc nemo_ice_rtd.nc
@@ -806,6 +812,7 @@ end_reorder_list
 #          ${NCATTED} -O -a RTD_version,global,a,c,"${carbon_rtd_exe}" nemo_carbon_rtd.nc
 #      fi
 
+      [ $nemo_new_rtd -eq 1 ] && rm -f rs_nemo_carbon_rtd.nc
       if [ -s rs_nemo_carbon_rtd.nc ]; then
         # Append to the rtd file found in the restart
         cp -f rs_nemo_carbon_rtd.nc nemo_carbon_rtd.nc
