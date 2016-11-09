@@ -7,7 +7,7 @@ MODULE zdfmxl
    !!            3.2  ! 2009-07  (S. Masson, G. Madec)  IOM + merge of DO-loop
    !!            3.4.1! 2016-08  (D. Yang) Added mixed layer depth (mlotst) 
    !!                                      and squared mixed layer depth (mlotstsq)
-   !!                                      using OMDP's recommendations for CMIP6, 
+   !!                                      following OMDP's recommendations for CMIP6, 
    !!(Griffies et al, Geosci. Model Dev. Discuss., doi:10.5194/gmd-2016-77, 2016, p35-37)
    !!----------------------------------------------------------------------
    !!   zdf_mxl      : Compute the turbocline and mixed layer depths.
@@ -156,10 +156,9 @@ CONTAINS
                      zgwt2 = ABS(delta_b(jk) - zb_c )
                      zgwt = zgwt1 / (zgwt1 + zgwt2)
                      mldt(ji,jj) = ( zgwt * fsdept(ji,jj,jk) + (1. - zgwt) * fsdept(ji,jj,jk-1) ) * tmask(ji,jj,jk)
-                     GO TO 100
+                  EXIT
                   END IF
                END DO
-  100          CONTINUE    
             END DO
          END DO    
       ENDIF
