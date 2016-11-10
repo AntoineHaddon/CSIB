@@ -51,7 +51,6 @@ CONTAINS
 
          cltra = TRIM( ctrcnm(jn) )                  ! short title for tracer
          CALL iom_put( cltra, trn(:,:,:,jn) * zrfact )
-          WRITE(*,*) cltra, zrfact
 
       END DO
       !
