@@ -34,6 +34,8 @@
         <!-- variables available with key_diaar5 -->
         <field id="mldcmip6"     description="Mixed Layer Depth for CMIP6"               unit="m"                        />
         <field id="mldsq"        description="Squared Mixed Layer Depth for CMIP6"       unit="m2"                       />
+        <field id="opottempmint" description="mass integrated potential temperature over ocean columns" unit="kg m-2 degC" />
+        <field id="somint"       description="mass integrated salinity over ocean columns"              unit="kg m-2 * (1e-3)" />
 	<!-- next variables available with key_diahth -->
 	<field id="mlddzt"       description="Thermocline Depth (max dT/dz)"             unit="m"                        />
 	<field id="mldr10_3"     description="Mixed Layer Depth dr=0.03 (ref.10m)"       unit="m"                        />
@@ -317,6 +319,8 @@
 	    <!-- field ref="rhop"     name="rhopoto"  description="sea_water_potential_density"                          level="2" not in cmip6 request, DY-->
             <field ref="mldcmip6"     name="mlotst"   description="ocean_mixed_layer_thickness_defined_by_sigma_t"       level="2" />
             <field ref="mldsq"        name="mlotstsq" description="square_of_ocean_mixed_layer_thickness_defined_by_sigma_t" level="3" />
+            <field ref="opottempmint" name="opottempmint" description="integral_wrt_depth_of_product_of_sea_water_density_and_potential_temperature" level="1" />
+            <field ref="somint"       name="somint"       description="integral_wrt_depth_of_product_of_sea_water_density_and_salinity" level="1" />
 	    <!-- no agessc : sea_water_age_since_surface_contact -->
 	    <!-- no cfc11  : moles_per_unit_mass_of_cfc11_in_sea_water -->
 	    <!-- msftbarot : ocean_barotropic_mass_streamfunction : offline -->
