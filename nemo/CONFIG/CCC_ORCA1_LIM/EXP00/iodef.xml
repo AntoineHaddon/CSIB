@@ -356,6 +356,23 @@
 	    <field ref="qsr"           name="rsntds"      description="surface_net_downward_shortwave_flux"                                         level="1" />
 	    <field ref="qsr3d"         name="rsdo"        description="downwelling_shortwave_flux_in_sea_water"                                     level="1" />
 	    <field ref="qrp"           name="hfcorr"      description="heat_flux_correction"                                                        level="1" />
+            <!-- Physical ocean model trend diagnostics: temperature and salinity -->
+            <field ref="ttrd_xad"     name="ttrd_xad"       description="temperature-trend: i-advection"              />
+            <field ref="strd_xad"     name="strd_xad"       description="salinity-trend: i-advection"                 />
+            <field ref="ttrd_yad"     name="ttrd_yad"       description="temperature-trend: j-advection"              />
+            <field ref="strd_yad"     name="strd_yad"       description="salinity-trend: j-advection"                 />
+            <field ref="ttrd_zad"     name="ttrd_zad"       description="temperature-trend: k-advection"              />
+            <field ref="strd_zad"     name="strd_zad"       description="salinity-trend: k-advection"                 />
+            <field ref="ttrd_ldf"     name="ttrd_ldf"       description="temperature-trend: lateral  diffusion"       />
+            <field ref="strd_ldf"     name="strd_ldf"       description="salinity-trend: lateral  diffusion"          />
+            <field ref="ttrd_zdf"     name="ttrd_zdf"       description="temperature-trend: vertical diffusion"       />
+            <field ref="strd_zdf"     name="strd_zdf"       description="salinity-trend: vertical diffusion"          />
+            <field ref="ttrd_zdfp"    name="ttrd_zdfp"      description="temperature-trend: pure vert. diffusion"     />
+            <field ref="strd_zdfp"    name="strd_zdfp"      description="salinity   -trend: pure vert. diffusion"     />
+            <field ref="ttrd_eiv"     name="ttrd_eiv"       description="temperature-trend: advection from GM scheme" />
+            <field ref="strd_eiv"     name="strd_eiv"       description="salinity-trend: advection from GM scheme"    />
+	    <field ref="cellthc"      name="thkcello"       description="cell_thickness"                              /> <!-- no time changes -->
+            <field ref="area"         name="areacello"      description="cell_area"                                   />
 	  </file>   
 	</group>
 	<!--
@@ -440,6 +457,8 @@
 	    <!-- difmxylo : ocean_momentum_xy_laplacian_diffusivity : cte with time, see ln_dynldf_lap -->
 	    <!-- difmxybo : ocean_momentum_xy_biharmonic_diffusivity : cte with time, see ln_dynldf_bilap -->
 	    <!-- dispkexyfo : ocean_kinetic_energy_dissipation_per_unit_area_due_to_xy_friction : not available -->
+            <field ref="avt"          name="difvho"        description="ocean_vertical_heat_diffusivity"    level="3" />
+            <field ref="avs"          name="difvso"        description="ocean_vertical_salt_diffusivity"    level="3" />
 	  </file>   
 
 	</group>
@@ -516,7 +535,7 @@
 +++++++++++++++++++++++++++++++++++++++++++++++   yearly   ++++++++++++++++++++++++++++++++++++++++++++++++++
         -->
 
-      <group id="1y" output_freq="-12"  enabled=".TRUE.">                      <!-- real yearly files -->
+      <group id="1y" output_freq="-12"  enabled=".FALSE." >                      <!-- real yearly files -->
         <!--
 ..............................................    grid T   .................................................
           -->
@@ -537,7 +556,7 @@
             <field ref="strd_zdfp"    name="strd_zdfp"      description="salinity   -trend: pure vert. diffusion"     />
             <field ref="ttrd_eiv"     name="ttrd_eiv"       description="temperature-trend: advection from GM scheme" />
             <field ref="strd_eiv"     name="strd_eiv"       description="salinity-trend: advection from GM scheme"    />
-	    <field ref="cellthc"      name="thkcello"       description="cell_thickness"                              /> <!-- no time changes -->
+            <field ref="cellthc"      name="thkcello"       description="cell_thickness"                              /> <!-- no time changes -->
             <field ref="area"         name="areacello"      description="cell_area"                                   />
           </file>
           </group>
