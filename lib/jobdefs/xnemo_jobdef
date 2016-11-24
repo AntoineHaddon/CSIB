@@ -1378,9 +1378,9 @@ cat > Execute_Script <<'end_of_script'
         # coefs=1035/(1000*365*24*3600)=3.3*e-8
         coefs=3.3e-8
         # tn in W m-2
-        cdo mul -mulc,${coeft} -sub ${pfx2}_tn.nc ${pfx}_tn.nc e3t.nc dtn.nc
+        cdo mul -mulc,${coeft} -sub ${pfx2}_tn.nc ${pfx}_tn.nc e3t.nc dtn1.nc
         # sn in kg m-2 s-1 
-        cdo mul -mulc,${coefs} -sub ${pfx2}_sn.nc ${pfx}_sn.nc e3t.nc dsn.nc
+        cdo mul -mulc,${coefs} -sub ${pfx2}_sn.nc ${pfx}_sn.nc e3t.nc dsn1.nc
         # change name from tn to opottemptend and from sn to osalttend.
 cat >mypartabt << EOF
 &parameter
@@ -1398,11 +1398,11 @@ cat >mypartabs << EOF
         standard_name = tendency_of_sea_water_salinity_expressed_as_salt_content 
 /
 EOF
-        start_date_dy=`echo ${start_year}0101 |awk '{printf "%08d%",$1}' -`
+        start_date_dy=`echo ${start_year}0101 |awk '{printf "%08d",$1}' -`
         pfx=${cn_exp}_1y_${start_date_dy}_${stop_date}_grid_td_ar6
         ncout=${uxxx}_${pfx}.nc
-        cdo setcalendar,365_day -setpartabn,mypartabt dtn.nc dtn.nc
-        cdo setcalendar,365_day -setpartabn,mypartabs dsn.nc dsn.nc
+        cdo setcalendar,365_day -setpartabn,mypartabt dtn1.nc dtn.nc
+        cdo setcalendar,365_day -setpartabn,mypartabs dsn1.nc dsn.nc
         cdo merge dtn.nc dsn.nc ${pfx}
         save ${pfx} ${ncout}
         rm -f mypartabt mypartabs 
