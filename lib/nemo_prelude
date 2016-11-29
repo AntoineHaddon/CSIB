@@ -590,6 +590,8 @@
     echo "##########################"
     echo "###   Restarting from file $nemo_rs"
     echo "##########################"
+    # Ensure that we can overwrite existing files with files from the restart
+    chmod u+rw *
     rm -f rs_nemo_exec
     rm -f RESTART_ARC
     access RESTART_ARC $nemo_rs
