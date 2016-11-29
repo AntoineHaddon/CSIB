@@ -594,9 +594,8 @@
     rm -f RESTART_ARC
     access RESTART_ARC $nemo_rs
     # Ensure that we can overwrite existing files with files from the restart
-    # Ignore any netcdf file
-    # tar tf RESTART_ARC | grep -v '\.nc$' | xargs -I'{}' chmod u+rw {} 2>/dev/null
-    tar tf RESTART_ARC | grep -v '\.nc$' | xargs -I'{}' chmod u+rw {}
+    # Ignore any netcdf files in the restart
+    tar tf RESTART_ARC | grep -v '\.nc$' | xargs -I'{}' chmod u+rw {} || :
     tar xf RESTART_ARC || bail "Cannot extract files from $nemo_rs"
     release RESTART_ARC
 
