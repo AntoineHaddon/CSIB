@@ -306,7 +306,7 @@ chmod -R u+w $local_src
 if [ $coupled = "on" ]; then
   # Add a copy of com_cpl.F90 to the CanCPL subdir in the nemo tree
   cancpl_repo=$CCRNSRC/coupler_dir/coupler.git
-  cancpl_version=HEAD
+  cancpl_version=dev_main
   git archive --remote=$cancpl_repo --format=tar --prefix=tmp_CanCPL/ \
               $cancpl_version src/comm/com_cpl.F90 | tar xf -
   sed '/^#include *"cpl_cppdefs"/d' tmp_CanCPL/src/comm/com_cpl.F90 > tmp_com_cpl.F90
