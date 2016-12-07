@@ -7,7 +7,8 @@
 #          Quantities in square brackets are optional
 #
 # Purpose: Copy all files needed to compile and run nemo into the current directory and optionally 
-#          save required namelist files to DATAPATH.  
+#          save required namelist files to DATAPATH. Also drops a logfile for the run into
+#          ".setup-nemo.log" and sends a copy of this log to the nemo run database.  
 #          
 #
 # Variable definitions:
@@ -16,30 +17,32 @@
 #   runid=abc     ...abc is the runid for your run (normally three letters). This will be
 #                    used in saving the namelist files to DATAPATH, and in naming local files.
 #   config=name   ...name is the name of a CCCma nemo configuration (one of CCC_ORCA1_LIM,
-#                    CCC_ORCA1_LIM_PISCES, CCC-ORCA2-LIM_PISCES,
-#                    CCC_ORCA2_LIM_CMOC and CCC_ORCA025_LIM).
+#                    CCC_ORCA1_LIM_PISCES, CCC_ORCA1_LIM_CMOC, CCC_ORCA1_LIM_CANOE, CCC_ORCA2_LIM_PISCES,
+#                    CCC_ORCA2_LIM_CMOC, CCC_ORCA2_LIM_CANOE, CCC_ORCA2_OFF_CMOC, CCC_ORCA2_OFF_CANOE 
+#                    and CCC_ORCA025_LIM).
 #   repo=dirpath  ...dirpath is the pathname to the git repository
 #   save=on       ...with save=on the namelist and iodef files required to do the nemo run will be saved to
 #                    DATAPATH with the appropriate runid in their name. The corresponding variables in the 
 #                    make_orca_job file are set by default to point to the files on DATAPATH.
-#   exp=EXP_bulk_COREv2_NY ...is the name of the "experiment" directory from which to extract files.
+#   exp=EXP00 ...is the name of the "experiment" directory from which to extract files (generally not needed).
 #
 # Examples:
+# -setup an "out of the box" CCC_ORCA1_LIM_PISCES configuration in the current directory:
+#
 #    setup-nemo ver=ccc_nemo_v0.1 runid=nta config=CCC_ORCA1_LIM_PISCES 
-#     -- setup an "out of the box" CCC_ORCA1_LIM_PISCES configuration in the current directory. 
 #     
-#     -- the above command will result in a compile and make_orca_job_nta file in the current directory.
-#        To launch the run one simply needs to compile the model and
-#        then generate the jobstring and submit.
+#  The above command will result in a compile and make_orca_job_nta file in the current directory.
+#  To launch the run one simply needs to compile the model and then generate the jobstring and submit.
+#
+# -setup the CCC_ORCA1_LIM_PISCES configuration from my custom repo on branch my_crazy_test_branch 
+#  in the current directory:
 #
 #    setup-nemo repo=path/to/my/nemo-CCCma_repo ver=my_crazy_test_branch runid=nta config=CCC_ORCA1_LIM_PISCES 
-#     -- setup the CCC_ORCA1_LIM_PISCES configuration from my custom repo on branch my_crazy_test_branch 
-#        in the current directory. 
 #
 # Neil Swart, 05-11-2014
 # Adapted from Larry's build-nemo
 #
-# updated 12-2015 to handle multiple experiments
+# last updated 06-2016 
 ########################################################################
 #
 
@@ -138,30 +141,66 @@ done
 # Ensure this is a full pathname
 #nemo_source_repo=$(cd $nemo_source_repo; pwd)
 
+# Try to get user input list for a new config.
+get_list(){
+echo " "
+echo "*** Unrecognized CONFIG! ***"
+echo " "
+echo "This might be OK if you have just added this CONFIG to your repo, otherwise you are in trouble and should abort.
+      We need to figure out which namelists (etc) you want to save from this config. The choices below relate only 
+      to the *names* of files to be used. The files themselves will be extracted from the CONFIG ($nemo_config) that you specified."
+echo " "
+echo "Choose an option and hit enter"
+echo "
+      a) Abort \n 
+      b) use physics default: 'namelist namelist_ice iodef.xml xmlio_server.def' \n
+      c) use carbon (pisces/canoe) default: 'namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def' \n
+      d) use carbon (cmoc) default: 'namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def'
+     "
+echo " "
+read inlist
+case $inlist in
+    a) bail "Aborting..." ;;
+    b) lists='namelist namelist_ice namelist_top iodef.xml xmlio_server.def' ;;
+    c) lists='namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
+    d) lists='namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def' ;;
+    *) bail "Aborting" ;;
+esac
+}
+
 # Make sure the config is valid and decide which namelist files we need.
 case $nemo_config in
-    CCC_ORCA025_LIM)      lists='namelist namelist_ice iodef.xml xmlio_server.def'                               ;;
-    CCC_ORCA1_LIM)        lists='namelist namelist_ice iodef.xml xmlio_server.def'                               ;;
-    CCC_ORCA1_LIM_PISCES) lists='namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
-    CCC_ORCA2_LIM)        lists='namelist namelist_ice iodef.xml xmlio_server.def'                               ;;
-    CCC_ORCA2_LIM_PISCES) lists='namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
-    CCC_ORCA2_LIM_CMOC)   lists='namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def' ;;
-    CCC_ORCA1_LIM_CMOC)   lists='namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def' ;;
+    CCC_ORCA025_LIM)      lists='namelist namelist_ice namelist_top iodef.xml xmlio_server.def'                               ;;
     CCC_ORCA025_LIM_CMOC) lists='namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def' ;;
+    CCC_ORCA1_LIM)        lists='namelist namelist_ice namelist_top iodef.xml xmlio_server.def'                               ;;
+    CCC_ORCA1_LIM_PISCES) lists='namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
+    CCC_ORCA1_LIM_CANOE) lists='namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
+    CCC_ORCA2_LIM)        lists='namelist namelist_ice namelist_top iodef.xml xmlio_server.def'                               ;;
+    CCC_ORCA2_LIM_PISCES) lists='namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
+    CCC_ORCA2_LIM_CANOE) lists='namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
+    CCC_ORCA2_LIM_CMOC)   lists='namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def' ;;
+    CCC_ORCA2_LIM_INERT)  lists='namelist namelist_ice namelist_top iodef.xml xmlio_server.def' ;;
+    CCC_ORCA1_LIM_CMOC)   lists='namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def' ;;
     CCC_ORCA2_OFF_PISCES) lists='namelist namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
-                     *) bail "Invalid configuration --> $arg <-- ...config MUST be a CCC_* config." ;;
+    CCC_ORCA2_OFF_CANOE) lists='namelist namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
+    CCC_ORCA2_OFF_CMOC) lists='namelist namelist_pisces namelist_top namelist_cmoc iodef.xml xmlio_server.def'  ;;
+                     #*) bail "Invalid configuration --> $arg <-- ...config MUST be a CCC_* config." ;;
+                     *) get_list ;;
 esac
 
 nemo_config_lc=`echo "$nemo_config" | awk '{print tolower($0)}'`
 
 # Get the compile script, and reset runid, repo and ver.
-git archive --remote=${nemo_repo} --format=tar ${nemo_version}:nemo/CONFIG/${nemo_config}/${nemo_exp}/ compile | tar xf - 
+git archive --remote=${nemo_repo} --format=tar ${nemo_version}:nemo/CONFIG/${nemo_config}/${nemo_exp}/ compile | tar xf - ||
+          bail "Failed to extract code from archive: check that the repo and ver (branch) are correct and valid"
+
 cat compile | sed "s:runid:${nemo_runid}:;s:repo=[^ ]*:repo=$nemo_repo:;s:ver=[^ ]*:ver=$nemo_version:" > compile_${nemo_runid}
 rm -f compile
 chmod +x compile_${nemo_runid}
 
 # Get the make_orca_job_file, and reset runid, repo and ver.
-git archive --remote=${nemo_repo} --format=tar ${nemo_version}:nemo/CONFIG/${nemo_config}/${nemo_exp}/ make_orca_job | tar xf -
+git archive --remote=${nemo_repo} --format=tar ${nemo_version}:nemo/CONFIG/${nemo_config}/${nemo_exp}/ make_orca_job | tar xf - ||
+         bail "Failed to extract code from archive: check that the repo and ver (branch) are correct and valid"
 cat make_orca_job | sed "s:runid=abc:runid=${runid}:g;s:jdef-repo=[^ ]*:jdef-repo=$nemo_repo:;s:jdef-rev=[^ ]*:jdef-rev=$nemo_version:" > make_orca_job_${nemo_runid}
 rm -f make_orca_job
 chmod +x make_orca_job_${nemo_runid}
@@ -178,7 +217,8 @@ fi
 for i in $lists
 do
     # Step1: retrieve from the repo
-    git archive --remote=${nemo_repo} --format=tar ${nemo_version}:nemo/CONFIG/${nemo_config}/${nemo_exp}/ ${i} | tar xf -
+    git archive --remote=${nemo_repo} --format=tar ${nemo_version}:nemo/CONFIG/${nemo_config}/${nemo_exp}/ ${i} | tar xf - ||
+         "Failed to extract lists from archive: check that the repo and ver (branch) are correct and valid; AND check lists argument is valid"
     # Step2: save to RUNPATH
     if [ "x${save_files}" == 'xon' ]
     then
@@ -199,4 +239,15 @@ else
 fi
 
 echo 'Corresponds to SHA1:' `git --git-dir=${nrg} rev-parse ${nemo_version}` >> .setup-nemo.log
+
+# Write log to nemo run database
+datef=`date +"%Y-%m-%d %T"`
+userf=`whoami`
+sha1=`git --git-dir=${nrg} rev-parse ${nemo_version}`
+
+sqlite3 /users/tor/acrn/ncs/ocean_runs/ocean_runs.db << EOF
+                        INSERT INTO runs (runid, date, user, config, ver, repo, sha1)
+                        values('${nemo_runid}', '${datef}', '${userf}', '${nemo_config}', 
+                               '${nemo_version}', '${nemo_repo}', '${sha1}');
+EOF
 

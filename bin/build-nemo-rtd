@@ -174,8 +174,9 @@ GIT_PATH=/users/tor/acrn/rls/local/aix64/bin
 add2path $GIT_PATH
 
 # Define netcdf details
-netcdf_include="/users/tor/acrn/rls/local/aix64/netcdf3.6.3/include";
-netcdf_lib="/users/tor/acrn/rls/local/aix64/netcdf3.6.3/lib";
+# No longer used; now used nfconfig libs
+#netcdf_include="/users/tor/acrn/rls/local/aix64/netcdf3.6.3/include";
+#netcdf_lib="/users/tor/acrn/rls/local/aix64/netcdf3.6.3/lib";
 
 # Create a temporary directory and change to it
 CWD=`pwd`
@@ -200,7 +201,9 @@ chmod -R u+w $path_to_rtd
 cd $path_to_rtd
 
 if [ $build_nemo_rtd_exe -eq 1 ]; then
-  if [ $type = 'carbon-pisces' ]; then
+  if [ $type = 'carbon-canoe' ]; then
+   input_f90='ccc_nemo_carbon-canoe_rtd.F90'
+  elif [ $type = 'carbon-pisces' ]; then
    input_f90='ccc_nemo_carbon-pisces_rtd.F90'
   elif [ $type = 'carbon-cmoc' ]; then
    input_f90='ccc_nemo_carbon-cmoc_rtd.F90'
@@ -209,7 +212,7 @@ if [ $build_nemo_rtd_exe -eq 1 ]; then
   elif [ $type = 'ice' ]; then
    input_f90='ccc_nemo_ice_rtd.F90'
   else
-    bail "type must be one of 'carbon-pisces', 'carbon-cmoc', 'physical' or 'ice'"
+    bail "type must be one of 'carbon-canoe', 'carbon-pisces', 'carbon-cmoc', 'physical' or 'ice'"
   fi
 
   # Build the nemo-rtd executable

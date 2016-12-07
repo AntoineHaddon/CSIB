@@ -1,0 +1,2 @@
+build-nemo ver=master repo=$CCRNSRC/ocean_dir/nemo-CCCma.git exec=runid_ccc_orca1_off_cmoc_exe arch=xlf_aix-cccma refcfg=CCC_ORCA1_OFF_CMOC cfg=CCC_ORCA1_OFF_CMOC
+
