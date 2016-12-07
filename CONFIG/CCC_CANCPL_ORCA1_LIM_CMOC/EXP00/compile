@@ -1,1 +1,3 @@
-build-nemo ver=master repo=$CCRNSRC/ocean_dir/nemo-CCCma.git exec=runid_ccc_orca1_lim_cmoc_exe arch=xlf_aix-cccma refcfg=CCC_ORCA1_LIM_CMOC cfg=CCC_ORCA1_LIM_CMOC
+arch=xlf_aix-cancpl
+repo_dir=/users/tor/acrn/rls/src/nemo_cancpl_dev
+$repo_dir/bin/build-nemo -k ver=CanCPL_LIM repo=$repo_dir exec=dev_ccc_cancpl_orca1_lim_cmoc.exe arch=$arch refcfg=CCC_CANCPL_ORCA1_LIM_CMOC cfg=CCC_CANCPL_ORCA1_LIM_CMOC
