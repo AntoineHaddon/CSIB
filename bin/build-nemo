@@ -20,6 +20,9 @@
 #   ### Incomplete ### -t   ...compile a set of nemo tools rather than the ocean model
 #   -v   ...increase verbosity (additive)
 #   -h   ...show this usage message
+#   -a   ...do not use a version specific build-nemo (use the build-nemo found on your PATH)
+#   -b   ...use a version specific build-nemo, namely the version specicifed on the command line
+#           If both -a and -b are present then -a takes precedence
 #   -k   ...do not delete the tmp dir after compilation is complete (used for debugging)
 #
 # Variable definitions:
@@ -115,12 +118,17 @@ nemo_version=''
 nemo_source_repo=$CCRNSRC/ocean_dir/nemo-CCCma.git
 
 # Extract NEMO commit info and the location of the repo from the command line
+# Determine if either or both of the -a, -b options are present
+opta=''
+optb=''
 for arg in "$@"; do
   case $arg in
     *=*) var=`echo $arg|awk -F\= '{printf "%s",$1}' -`
          val=`echo "$arg"|awk '{i=index($0,"=")+1;printf "%s",substr($0,i)}' -`
          [ X"$var" = Xver ]  && nemo_version="$val"
          [ X"$var" = Xrepo ] && nemo_source_repo="$val"
+     -a) opta='a' ;;  # Do not use a version specific build-nemo
+     -b) optb='b' ;;  # Use a version specific build-nemo
   esac
 done
 [ -z "$nemo_version" ] && usage -e "A NEMO version (e.g. commit|tag|branch) is required on the command line."
@@ -135,16 +143,6 @@ nemo_source_repo=$(cd $nemo_source_repo; pwd)
 # Determine if we should use the build-nemo script associated with the user supplied NEMO version
 # If so then retrieve the version specific build-nemo script from the repo
 use_ver_specific_build_nemo=0
-opta=''
-optb=''
-while getopts :ab opt; do
-  case $opt in
-    a) opta='a' ;;  # Do not use a version specific build-nemo
-    b) optb='b' ;;  # Use a version specific build-nemo
-    *) ;;
-  esac
-done
-OPTIND=1
 case ${opta}.${optb} in
   a.b) use_ver_specific_build_nemo=0 ;;  # Do not use a version specific build-nemo
   a. ) use_ver_specific_build_nemo=0 ;;  # Do not use a version specific build-nemo

@@ -624,6 +624,22 @@ contains
      nemo_namsbc_cpl_cldes(15) = trim(sn_rcv_iceflx%cldes)
      nemo_namsbc_cpl_cldes(16) = trim(sn_rcv_co2%cldes)
 
+     !--- Gather glamt into nemo_glamt (found in com_cpl)
+     !--- glamt is found in module dom_oce
+     call cpl_gather("glamt", rank)
+
+     !--- Gather glamu into nemo_glamu (found in com_cpl)
+     !--- glamu is found in module dom_oce
+     call cpl_gather("glamu", rank)
+
+     !--- Gather glamv into nemo_glamv (found in com_cpl)
+     !--- glamv is found in module dom_oce
+     call cpl_gather("glamv", rank)
+
+     !--- Gather glamf into nemo_glamf (found in com_cpl)
+     !--- glamf is found in module dom_oce
+     call cpl_gather("glamf", rank)
+
      !--- Gather tmask at the surface into the temporary global array png
      !--- tmask is found in module dom_oce
      call mppsync
@@ -761,6 +777,73 @@ contains
      endif
 
   end subroutine cpl_cancpl_define
+
+  subroutine cpl_gather(vname, rank)
+    character(*), intent(in) :: vname
+    integer(kind=impi), intent(in) :: rank
+
+    !--- Gather the variable vname into a global array named nemo_vname
+    !--- This data is then sent to the coupler in cpl_initialize_events
+
+    select case (trim(adjustl(vname)))
+      case ("glamt")
+        !--- Gather the variable into the temporary global array png
+        call mppsync
+        call mppgather (glamt(:,:,1),0,png)
+        call mppsync
+        if ( rank == ocn_master ) then
+          !--- Allocate space for the 2D array nemo_glamt (defined in com_cpl)
+          !--- and assign the values in png to nemo_glamt
+          if ( associated(nemo_glamt) ) deallocate(nemo_glamt)
+          allocate( nemo_glamt(nemo_jpiglo,nemo_jpjglo) )
+          call copy_3d_to_2d_global(nemo_glamt, png)
+        endif
+
+      case ("glamu")
+        !--- Gather the variable into the temporary global array png
+        call mppsync
+        call mppgather (glamu(:,:,1),0,png)
+        call mppsync
+        if ( rank == ocn_master ) then
+          !--- Allocate space for the 2D array nemo_glamu (defined in com_cpl)
+          !--- and assign the values in png to nemo_glamu
+          if ( associated(nemo_glamu) ) deallocate(nemo_glamu)
+          allocate( nemo_glamu(nemo_jpiglo,nemo_jpjglo) )
+          call copy_3d_to_2d_global(nemo_glamu, png)
+        endif
+
+      case ("glamv")
+        !--- Gather the variable into the temporary global array png
+        call mppsync
+        call mppgather (glamv(:,:,1),0,png)
+        call mppsync
+        if ( rank == ocn_master ) then
+          !--- Allocate space for the 2D array nemo_glamv (defined in com_cpl)
+          !--- and assign the values in png to nemo_glamv
+          if ( associated(nemo_glamv) ) deallocate(nemo_glamv)
+          allocate( nemo_glamv(nemo_jpiglo,nemo_jpjglo) )
+          call copy_3d_to_2d_global(nemo_glamv, png)
+        endif
+
+      case ("glamf")
+        !--- Gather the variable into the temporary global array png
+        call mppsync
+        call mppgather (glamf(:,:,1),0,png)
+        call mppsync
+        if ( rank == ocn_master ) then
+          !--- Allocate space for the 2D array nemo_glamf (defined in com_cpl)
+          !--- and assign the values in png to nemo_glamf
+          if ( associated(nemo_glamf) ) deallocate(nemo_glamf)
+          allocate( nemo_glamf(nemo_jpiglo,nemo_jpjglo) )
+          call copy_3d_to_2d_global(nemo_glamf, png)
+        endif
+
+      case default
+        write(6,*)"cpl_gather: Invalid variable name ",trim(vname)
+        call flush(6)
+
+    end select
+  end subroutine cpl_gather
 
   subroutine copy_1d_to_3d_global(wrk, png)
     !------------------------------------------------------------------------
