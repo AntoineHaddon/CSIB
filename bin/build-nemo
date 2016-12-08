@@ -127,6 +127,7 @@ for arg in "$@"; do
          val=`echo "$arg"|awk '{i=index($0,"=")+1;printf "%s",substr($0,i)}' -`
          [ X"$var" = Xver ]  && nemo_version="$val"
          [ X"$var" = Xrepo ] && nemo_source_repo="$val"
+         ;;
      -a) opta='a' ;;  # Do not use a version specific build-nemo
      -b) optb='b' ;;  # Use a version specific build-nemo
   esac
