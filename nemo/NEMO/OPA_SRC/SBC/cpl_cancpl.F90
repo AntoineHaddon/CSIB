@@ -29,7 +29,7 @@ MODULE cpl_cancpl
   use in_out_manager               ! I/O manager
   use lbclnk                       ! ocean lateral boundary conditions (or mpp link)
   use timing
-  use sbc_oce, only: nn_ice
+  !??? should this be use associated ??? use sbc_oce, only: nn_ice
 #if defined key_cice
   use ice_domain_size, only: ncat
 #endif
@@ -789,7 +789,7 @@ contains
       case ("glamt")
         !--- Gather the variable into the temporary global array png
         call mppsync
-        call mppgather (glamt(:,:,1),0,png)
+        call mppgather (glamt(:,:),0,png)
         call mppsync
         if ( rank == ocn_master ) then
           !--- Allocate space for the 2D array nemo_glamt (defined in com_cpl)
@@ -802,7 +802,7 @@ contains
       case ("glamu")
         !--- Gather the variable into the temporary global array png
         call mppsync
-        call mppgather (glamu(:,:,1),0,png)
+        call mppgather (glamu(:,:),0,png)
         call mppsync
         if ( rank == ocn_master ) then
           !--- Allocate space for the 2D array nemo_glamu (defined in com_cpl)
@@ -815,7 +815,7 @@ contains
       case ("glamv")
         !--- Gather the variable into the temporary global array png
         call mppsync
-        call mppgather (glamv(:,:,1),0,png)
+        call mppgather (glamv(:,:),0,png)
         call mppsync
         if ( rank == ocn_master ) then
           !--- Allocate space for the 2D array nemo_glamv (defined in com_cpl)
@@ -828,7 +828,7 @@ contains
       case ("glamf")
         !--- Gather the variable into the temporary global array png
         call mppsync
-        call mppgather (glamf(:,:,1),0,png)
+        call mppgather (glamf(:,:),0,png)
         call mppsync
         if ( rank == ocn_master ) then
           !--- Allocate space for the 2D array nemo_glamf (defined in com_cpl)
