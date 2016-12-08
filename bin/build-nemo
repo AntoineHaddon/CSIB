@@ -109,10 +109,56 @@ fi
 # The version of code to extract and compile
 nemo_version=''
 
-# The default location of the repository containing nemo source code
+# Set the default location of the repository containing nemo source code
 [ -z "$CCRNSRC" ] && bail "CCRNSRC must be set"
 [ ! -d "$CCRNSRC" ] && bail "CCRNSRC=$CCRNSRC is not a directory"
 nemo_source_repo=$CCRNSRC/ocean_dir/nemo-CCCma.git
+
+# Extract NEMO commit info and the location of the repo from the command line
+for arg in "$@"; do
+  case $arg in
+    *=*) var=`echo $arg|awk -F\= '{printf "%s",$1}' -`
+         val=`echo "$arg"|awk '{i=index($0,"=")+1;printf "%s",substr($0,i)}' -`
+         [ X"$var" = Xver ]  && nemo_version="$val"
+         [ X"$var" = Xrepo ] && nemo_source_repo="$val"
+  esac
+done
+[ -z "$nemo_version" ] && usage -e "A NEMO version (e.g. commit|tag|branch) is required on the command line."
+[ -z "$nemo_source_repo" ] && usage -e "The source repository name is missing."
+
+# Currently, the repo must be on a locally accessable directory path
+# TODO: This will need to be modified to allow remote repos
+[ ! -d "$nemo_source_repo" ] && usage -e "Repository is not a directory --> $nemo_source_repo <--"
+# Ensure this is a full pathname
+nemo_source_repo=$(cd $nemo_source_repo; pwd)
+
+# Determine if we should use the build-nemo script associated with the user supplied NEMO version
+# If so then retrieve the version specific build-nemo script from the repo
+use_ver_specific_build_nemo=0
+opta=''
+optb=''
+while getopts :ab opt; do
+  case $opt in
+    a) opta='a' ;;  # Do not use a version specific build-nemo
+    b) optb='b' ;;  # Use a version specific build-nemo
+    *) ;;
+  esac
+done
+OPTIND=1
+case ${opta}.${optb} in
+  a.b) use_ver_specific_build_nemo=0 ;;  # Do not use a version specific build-nemo
+  a. ) use_ver_specific_build_nemo=0 ;;  # Do not use a version specific build-nemo
+   .b) use_ver_specific_build_nemo=1 ;;  # Use a version specific build-nemo
+esac
+echo "use_ver_specific_build_nemo=$use_ver_specific_build_nemo"
+
+if [ $use_ver_specific_build_nemo -eq 1 ]; then
+  git archive --remote=$nemo_source_repo --format=tar --prefix=tmp_local_ $nemo_version bin/build-nemo | tar xf - ||
+    bail "Unable to extract build-nemo, version --> $nemo_version <-- from repository $nemo_source_repo"
+  chmod u+x tmp_local_bin/build-nemo
+  echo "Using build-nemo from version $nemo_version of repo $nemo_source_repo"
+  exec tmp_local_bin/build-nemo -a "$@"
+fi
 
 # The location of a dir containing user supplied source files that will
 # replace, or add to, existing files in the repository
@@ -169,9 +215,10 @@ CCRNTMP=${CCRNTMP:=/tmp}
 [ ! -d "$CCRNTMP" ] && bail "$CCRNTMP is not a directory"
 
 # process command line options
-while getopts n:m:r:hktvx opt
+while getopts abn:m:r:hktvx opt
 do
   case $opt in
+  a|b) ;; # These are processed above
     m) nemo_arch="$OPTARG" ;;
     n) nemo_config="$OPTARG" ;;
     r) nemo_ref_config="$OPTARG" ;;
@@ -198,8 +245,8 @@ for arg in "$@"; do
          # add this variable definition to the current environment
          [ -n "$var" ] && eval ${var}=\"\$val\" # preserve quoted assignments
          case $var in
-               ver) nemo_version="$val" ;;     # git version, tag or branch
-              repo) nemo_source_repo="$val" ;; # location of git repository
+               ver) ;; # git version, tag or branch (set above)
+              repo) ;; # location of git repository (set above)
                src) nemo_source_mods="$val" ;; # location of user supplied modification
               exec) nemo_exe="$val" ;;         # name for the executable created here
                cfg) nemo_config="$val" ;;      # name of subdir in which config lives
@@ -218,7 +265,6 @@ for arg in "$@"; do
   esac
 done
 
-[ -z "$nemo_version" ] && usage -e "A version number/tag or branch is required on the command line."
 if [ $build_nemo_exe -eq 1 ]; then
   # The name of the executable is not required unless it is to be built
   [ -z "$nemo_exe" ] &&
@@ -227,11 +273,6 @@ if [ $build_nemo_exe -eq 1 ]; then
   [ -z "$nemo_config" ] &&
     usage -e "The name of the configuration is required on the command line ...cfg=cfgname"
 fi
-
-[ -z "$nemo_source_repo" ] && usage -e "The source repository name is missing."
-[ ! -d "$nemo_source_repo" ] && usage -e "Repository is not a directory --> $nemo_source_repo <--"
-# Ensure this is a full pathname
-nemo_source_repo=$(cd $nemo_source_repo; pwd)
 
 # Define variables containing the current commit and repo path to use as cpp macros during the build
 NEMO_COMMIT_ID=$(cd $nemo_source_repo; git log -1 --pretty="%H" $nemo_version)
@@ -262,8 +303,7 @@ esac
 if [ -z "$coupled" ]; then
   # coupled was not defined on the command line ...define it here
   case $nemo_config in
-    CCC_ORCA1_CANCPL) coupled=on ;;
-    CCC_CANCPL_ORCA1_LIM) coupled=on ;;
+    CCC_CANCPL_*) coupled=on ;;
     *) coupled=off ;;
   esac
 fi
