@@ -149,7 +149,6 @@ case ${opta}.${optb} in
   a. ) use_ver_specific_build_nemo=0 ;;  # Do not use a version specific build-nemo
    .b) use_ver_specific_build_nemo=1 ;;  # Use a version specific build-nemo
 esac
-echo "use_ver_specific_build_nemo=$use_ver_specific_build_nemo"
 
 if [ $use_ver_specific_build_nemo -eq 1 ]; then
   git archive --remote=$nemo_source_repo --format=tar --prefix=tmp_local_ $nemo_version bin/build-nemo | tar xf - ||
