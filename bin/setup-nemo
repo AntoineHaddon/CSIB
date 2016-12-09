@@ -245,7 +245,7 @@ datef=`date +"%Y-%m-%d %T"`
 userf=`whoami`
 sha1=`git --git-dir=${nrg} rev-parse ${nemo_version}`
 
-sqlite3 /users/tor/acrn/ncs/ocean_runs.db << EOF
+sqlite3 /users/tor/acrn/ncs/ocean_runs/ocean_runs.db << EOF
                         INSERT INTO runs (runid, date, user, config, ver, repo, sha1)
                         values('${nemo_runid}', '${datef}', '${userf}', '${nemo_config}', 
                                '${nemo_version}', '${nemo_repo}', '${sha1}');
