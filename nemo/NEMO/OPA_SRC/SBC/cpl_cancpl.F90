@@ -640,79 +640,69 @@ contains
      !--- glamf is found in module dom_oce
      call cpl_gather("glamf", rank)
 
-     !--- Gather tmask at the surface into the temporary global array png
+     !--- Gather gphit into nemo_gphit (found in com_cpl)
+     !--- gphit is found in module dom_oce
+     call cpl_gather("gphit", rank)
+
+     !--- Gather gphiu into nemo_gphiu (found in com_cpl)
+     !--- gphiu is found in module dom_oce
+     call cpl_gather("gphiu", rank)
+
+     !--- Gather gphiv into nemo_gphiv (found in com_cpl)
+     !--- gphiv is found in module dom_oce
+     call cpl_gather("gphiv", rank)
+
+     !--- Gather gphif into nemo_gphif (found in com_cpl)
+     !--- gphif is found in module dom_oce
+     call cpl_gather("gphif", rank)
+
+     !--- Gather e1t into nemo_e1t (found in com_cpl)
+     !--- e1t is found in module dom_oce
+     call cpl_gather("e1t", rank)
+
+     !--- Gather e1u into nemo_e1u (found in com_cpl)
+     !--- e1u is found in module dom_oce
+     call cpl_gather("e1u", rank)
+
+     !--- Gather e1v into nemo_e1v (found in com_cpl)
+     !--- e1v is found in module dom_oce
+     call cpl_gather("e1v", rank)
+
+     !--- Gather e1f into nemo_e1f (found in com_cpl)
+     !--- e1f is found in module dom_oce
+     call cpl_gather("e1f", rank)
+
+     !--- Gather e2t into nemo_e2t (found in com_cpl)
+     !--- e2t is found in module dom_oce
+     call cpl_gather("e2t", rank)
+
+     !--- Gather e2u into nemo_e2u (found in com_cpl)
+     !--- e2u is found in module dom_oce
+     call cpl_gather("e2u", rank)
+
+     !--- Gather e2v into nemo_e2v (found in com_cpl)
+     !--- e2v is found in module dom_oce
+     call cpl_gather("e2v", rank)
+
+     !--- Gather e2f into nemo_e2f (found in com_cpl)
+     !--- e2f is found in module dom_oce
+     call cpl_gather("e2f", rank)
+
+     !--- Gather tmask (level 1) into nemo_tmask (found in com_cpl)
      !--- tmask is found in module dom_oce
-     call mppsync
-     call mppgather (tmask(:,:,1),0,png)
-     call mppsync
+     call cpl_gather("tmask", rank)
 
-     if ( rank == ocn_master ) then
-       !--- Allocate space for nemo_tmask, which is defined in com_cpl
-       if ( associated(nemo_tmask) ) deallocate(nemo_tmask)
-       allocate( nemo_tmask(nemo_jpiglo,nemo_jpjglo) )
-
-       !--- Assign the global array containing the surface tmask to nemo_tmask
-       !--- This data is then sent to the coupler in cpl_initialize_events
-       !--- tmask is assigned in module dommsk using data from the array mbathy
-       call copy_3d_to_2d_global(nemo_tmask, png)
-     endif
-
-     !--- Gather umask at the surface into the temporary global array png
+     !--- Gather umask (level 1) into nemo_umask (found in com_cpl)
      !--- umask is found in module dom_oce
-     call mppsync
-     call mppgather (umask(:,:,1),0,png)
-     call mppsync
+     call cpl_gather("umask", rank)
 
-     if ( rank == ocn_master ) then
-       !--- Allocate space for nemo_umask, which is defined in com_cpl
-       if ( associated(nemo_umask) ) deallocate(nemo_umask)
-       allocate( nemo_umask(nemo_jpiglo,nemo_jpjglo) )
-
-       !--- Assign the global array containing the surface umask to nemo_umask
-       !--- This data is then sent to the coupler in cpl_initialize_events
-       !--- umask is defined in module dommsk in terms of tmask as follows
-       !---    umask(i,j) = tmask(i,j) * tmask(i+1,j)
-       call copy_3d_to_2d_global(nemo_umask, png)
-     endif
-
-     !--- Gather vmask at the surface into the temporary global array png
+     !--- Gather vmask (level 1) into nemo_vmask (found in com_cpl)
      !--- vmask is found in module dom_oce
-     call mppsync
-     call mppgather (vmask(:,:,1),0,png)
-     call mppsync
+     call cpl_gather("vmask", rank)
 
-     if ( rank == ocn_master ) then
-       !--- Allocate space for nemo_vmask, which is defined in com_cpl
-       if ( associated(nemo_vmask) ) deallocate(nemo_vmask)
-       allocate( nemo_vmask(nemo_jpiglo,nemo_jpjglo) )
-
-       !--- Assign the global array containing the surface vmask to nemo_vmask
-       !--- This data is then sent to the coupler in cpl_initialize_events
-       !--- vmask is defined in module dommsk in terms of tmask as follows
-       !---    vmask(i,j) = tmask(i,j) * tmask(i,j+1)
-       call copy_3d_to_2d_global(nemo_vmask, png)
-     endif
-
-     !--- Gather fmask at the surface into the temporary global array png
+     !--- Gather fmask (level 1) into nemo_fmask (found in com_cpl)
      !--- fmask is found in module dom_oce
-     call mppsync
-     call mppgather (fmask(:,:,1),0,png)
-     call mppsync
-
-     if ( rank == ocn_master ) then
-       !--- Allocate space for nemo_fmask, which is defined in com_cpl
-       if ( associated(nemo_fmask) ) deallocate(nemo_fmask)
-       allocate( nemo_fmask(nemo_jpiglo,nemo_jpjglo) )
-
-       !--- Assign the global array containing the surface fmask to nemo_fmask
-       !--- This data is then sent to the coupler in cpl_initialize_events
-       !--- fmask is defined in module dommsk in terms of tmask as follows
-       !---    fmask(i,j) = tmask(i,j) * tmask(i+1,j) * tmask(i,j+1) * tmask(i+1,j+1)
-       !--- then further modified for lateral boundary conditions on velocity
-       !--- and to increase lateral friction near certain straights
-       !--- Note: this means fmask will have values other than 0/1 (e.g. 0.5,2,3)
-       call copy_3d_to_2d_global(nemo_fmask, png)
-     endif
+     call cpl_gather("fmask", rank)
 
      !--- Initialize coupler events and broadcast global variables
      call cpl_initialize_events()
@@ -838,6 +828,114 @@ contains
           call copy_3d_to_2d_global(nemo_glamf, png)
         endif
 
+      case ("gphit")
+        !--- Gather the variable into the temporary global array png
+        call mppsync
+        call mppgather (gphit(:,:),0,png)
+        call mppsync
+        if ( rank == ocn_master ) then
+          !--- Allocate space for the 2D array nemo_gphit (defined in com_cpl)
+          !--- and assign the values in png to nemo_gphit
+          if ( associated(nemo_gphit) ) deallocate(nemo_gphit)
+          allocate( nemo_gphit(nemo_jpiglo,nemo_jpjglo) )
+          call copy_3d_to_2d_global(nemo_gphit, png)
+        endif
+
+      case ("gphiu")
+        !--- Gather the variable into the temporary global array png
+        call mppsync
+        call mppgather (gphiu(:,:),0,png)
+        call mppsync
+        if ( rank == ocn_master ) then
+          !--- Allocate space for the 2D array nemo_gphiu (defined in com_cpl)
+          !--- and assign the values in png to nemo_gphiu
+          if ( associated(nemo_gphiu) ) deallocate(nemo_gphiu)
+          allocate( nemo_gphiu(nemo_jpiglo,nemo_jpjglo) )
+          call copy_3d_to_2d_global(nemo_gphiu, png)
+        endif
+
+      case ("gphiv")
+        !--- Gather the variable into the temporary global array png
+        call mppsync
+        call mppgather (gphiv(:,:),0,png)
+        call mppsync
+        if ( rank == ocn_master ) then
+          !--- Allocate space for the 2D array nemo_gphiv (defined in com_cpl)
+          !--- and assign the values in png to nemo_gphiv
+          if ( associated(nemo_gphiv) ) deallocate(nemo_gphiv)
+          allocate( nemo_gphiv(nemo_jpiglo,nemo_jpjglo) )
+          call copy_3d_to_2d_global(nemo_gphiv, png)
+        endif
+
+      case ("gphif")
+        !--- Gather the variable into the temporary global array png
+        call mppsync
+        call mppgather (gphif(:,:),0,png)
+        call mppsync
+        if ( rank == ocn_master ) then
+          !--- Allocate space for the 2D array nemo_gphif (defined in com_cpl)
+          !--- and assign the values in png to nemo_gphif
+          if ( associated(nemo_gphif) ) deallocate(nemo_gphif)
+          allocate( nemo_gphif(nemo_jpiglo,nemo_jpjglo) )
+          call copy_3d_to_2d_global(nemo_gphif, png)
+        endif
+
+      case ("tmask")
+        !--- Gather the variable into the temporary global array png
+        !--- Gather only the surface (level 1) values for tmask
+        call mppsync
+        call mppgather (tmask(:,:,1),0,png)
+        call mppsync
+        if ( rank == ocn_master ) then
+          !--- Allocate space for the 2D array nemo_tmask (defined in com_cpl)
+          !--- and assign the values in png to nemo_tmask
+          if ( associated(nemo_tmask) ) deallocate(nemo_tmask)
+          allocate( nemo_tmask(nemo_jpiglo,nemo_jpjglo) )
+          call copy_3d_to_2d_global(nemo_tmask, png)
+        endif
+
+      case ("umask")
+        !--- Gather the variable into the temporary global array png
+        !--- Gather only the surface (level 1) values for umask
+        call mppsync
+        call mppgather (umask(:,:,1),0,png)
+        call mppsync
+        if ( rank == ocn_master ) then
+          !--- Allocate space for the 2D array nemo_umask (defined in com_cpl)
+          !--- and assign the values in png to nemo_umask
+          if ( associated(nemo_umask) ) deallocate(nemo_umask)
+          allocate( nemo_umask(nemo_jpiglo,nemo_jpjglo) )
+          call copy_3d_to_2d_global(nemo_umask, png)
+        endif
+
+      case ("vmask")
+        !--- Gather the variable into the temporary global array png
+        !--- Gather only the surface (level 1) values for vmask
+        call mppsync
+        call mppgather (vmask(:,:,1),0,png)
+        call mppsync
+        if ( rank == ocn_master ) then
+          !--- Allocate space for the 2D array nemo_vmask (defined in com_cpl)
+          !--- and assign the values in png to nemo_vmask
+          if ( associated(nemo_vmask) ) deallocate(nemo_vmask)
+          allocate( nemo_vmask(nemo_jpiglo,nemo_jpjglo) )
+          call copy_3d_to_2d_global(nemo_vmask, png)
+        endif
+
+      case ("fmask")
+        !--- Gather the variable into the temporary global array png
+        !--- Gather only the surface (level 1) values for fmask
+        call mppsync
+        call mppgather (fmask(:,:,1),0,png)
+        call mppsync
+        if ( rank == ocn_master ) then
+          !--- Allocate space for the 2D array nemo_fmask (defined in com_cpl)
+          !--- and assign the values in png to nemo_fmask
+          if ( associated(nemo_fmask) ) deallocate(nemo_fmask)
+          allocate( nemo_fmask(nemo_jpiglo,nemo_jpjglo) )
+          call copy_3d_to_2d_global(nemo_fmask, png)
+        endif
+
       case default
         write(6,*)"cpl_gather: Invalid variable name ",trim(vname)
         call flush(6)
@@ -855,32 +953,11 @@ contains
 
     !--- Local
     real(kind=8) :: glob_arr(jpiglo, jpjglo)
-!xxx    integer :: ji, jj, jn, ji_glob, jj_glob
 
     glob_arr = 0.0_8
     glob_arr(1:jpiglo,1:jpjglo) = reshape( wrk(1:jpiglo*jpjglo), (/ jpiglo,jpjglo /) )
 
     call copy_2d_to_3d_global(glob_arr, png)
-
-!xxx    do jn = 1,jpnij
-!xxx      !--- jn loops over all subdomains
-!xxx      png(:,:,jn) = 0.0_8
-!xxx      do ji=nldit(jn),nleit(jn)
-!xxx        do jj=nldjt(jn),nlejt(jn)
-!xxx          !--- nimppt(jn),njmppt(jn) are the global indicies corresponding to the
-!xxx          !--- (1,1) grid cell in the local index space of the current subdomain
-!xxx          ji_glob = ji + nimppt(jn) - 1
-!xxx          jj_glob = jj + njmppt(jn) - 1
-!xxx          if ( ji_glob < 1      .or. jj_glob < 1 .or. &
-!xxx               ji_glob > jpiglo .or. jj_glob > jpjglo ) then
-!xxx            write(6,*)'copy_1d_to_3d_global: Global index is out of range.'
-!xxx            write(6,*)'jn, ji, jj, ji_glob, jj_glob: ',jn, ji, jj, ji_glob, jj_glob
-!xxx            call ctl_stop("STOP", "copy_1d_to_3d_global", "Global index is out of range")
-!xxx          endif
-!xxx          png(ji,jj,jn) = glob_arr(ji_glob,jj_glob)
-!xxx        enddo
-!xxx      enddo
-!xxx    enddo
 
   end subroutine copy_1d_to_3d_global
 
@@ -927,27 +1004,6 @@ contains
 
     !--- Local
     real(kind=8) :: glob_arr(jpiglo, jpjglo)
-!xxx    integer :: ji, jj, jn, ji_glob, jj_glob
-
-!xxx    glob_arr = 0.0_8
-!xxx    do jn = 1,jpnij
-!xxx      !--- jn loops over all subdomains
-!xxx      do ji=nldit(jn),nleit(jn)
-!xxx        do jj=nldjt(jn),nlejt(jn)
-!xxx          !--- nimppt(jn),njmppt(jn) are the global indicies corresponding to the
-!xxx          !--- (1,1) grid cell in the local index space of the current subdomain
-!xxx          ji_glob = ji + nimppt(jn) - 1
-!xxx          jj_glob = jj + njmppt(jn) - 1
-!xxx          if ( ji_glob < 1      .or. jj_glob < 1 .or. &
-!xxx               ji_glob > jpiglo .or. jj_glob > jpjglo ) then
-!xxx            write(6,*)'copy_3d_to_1d_global: Global index is out of range.'
-!xxx            write(6,*)'jn, ji, jj, ji_glob, jj_glob: ',jn, ji, jj, ji_glob, jj_glob
-!xxx            call ctl_stop("STOP", "copy_3d_to_1d_global", "Global index is out of range")
-!xxx          endif
-!xxx          glob_arr(ji_glob,jj_glob) = png(ji,jj,jn)
-!xxx        enddo
-!xxx      enddo
-!xxx    enddo
 
     call  copy_3d_to_2d_global(glob_arr, png)
 
