@@ -880,6 +880,110 @@ contains
           call copy_3d_to_2d_global(nemo_gphif, png)
         endif
 
+      case ("e1t")
+        !--- Gather the variable into the temporary global array png
+        call mppsync
+        call mppgather (e1t(:,:),0,png)
+        call mppsync
+        if ( rank == ocn_master ) then
+          !--- Allocate space for the 2D array nemo_e1t (defined in com_cpl)
+          !--- and assign the values in png to nemo_e1t
+          if ( associated(nemo_e1t) ) deallocate(nemo_e1t)
+          allocate( nemo_e1t(nemo_jpiglo,nemo_jpjglo) )
+          call copy_3d_to_2d_global(nemo_e1t, png)
+        endif
+
+      case ("e1u")
+        !--- Gather the variable into the temporary global array png
+        call mppsync
+        call mppgather (e1u(:,:),0,png)
+        call mppsync
+        if ( rank == ocn_master ) then
+          !--- Allocate space for the 2D array nemo_e1u (defined in com_cpl)
+          !--- and assign the values in png to nemo_e1u
+          if ( associated(nemo_e1u) ) deallocate(nemo_e1u)
+          allocate( nemo_e1u(nemo_jpiglo,nemo_jpjglo) )
+          call copy_3d_to_2d_global(nemo_e1u, png)
+        endif
+
+      case ("e1v")
+        !--- Gather the variable into the temporary global array png
+        call mppsync
+        call mppgather (e1v(:,:),0,png)
+        call mppsync
+        if ( rank == ocn_master ) then
+          !--- Allocate space for the 2D array nemo_e1v (defined in com_cpl)
+          !--- and assign the values in png to nemo_e1v
+          if ( associated(nemo_e1v) ) deallocate(nemo_e1v)
+          allocate( nemo_e1v(nemo_jpiglo,nemo_jpjglo) )
+          call copy_3d_to_2d_global(nemo_e1v, png)
+        endif
+
+      case ("e1f")
+        !--- Gather the variable into the temporary global array png
+        call mppsync
+        call mppgather (e1f(:,:),0,png)
+        call mppsync
+        if ( rank == ocn_master ) then
+          !--- Allocate space for the 2D array nemo_e1f (defined in com_cpl)
+          !--- and assign the values in png to nemo_e1f
+          if ( associated(nemo_e1f) ) deallocate(nemo_e1f)
+          allocate( nemo_e1f(nemo_jpiglo,nemo_jpjglo) )
+          call copy_3d_to_2d_global(nemo_e1f, png)
+        endif
+
+      case ("e2t")
+        !--- Gather the variable into the temporary global array png
+        call mppsync
+        call mppgather (e2t(:,:),0,png)
+        call mppsync
+        if ( rank == ocn_master ) then
+          !--- Allocate space for the 2D array nemo_e2t (defined in com_cpl)
+          !--- and assign the values in png to nemo_e2t
+          if ( associated(nemo_e2t) ) deallocate(nemo_e2t)
+          allocate( nemo_e2t(nemo_jpiglo,nemo_jpjglo) )
+          call copy_3d_to_2d_global(nemo_e2t, png)
+        endif
+
+      case ("e2u")
+        !--- Gather the variable into the temporary global array png
+        call mppsync
+        call mppgather (e2u(:,:),0,png)
+        call mppsync
+        if ( rank == ocn_master ) then
+          !--- Allocate space for the 2D array nemo_e2u (defined in com_cpl)
+          !--- and assign the values in png to nemo_e2u
+          if ( associated(nemo_e2u) ) deallocate(nemo_e2u)
+          allocate( nemo_e2u(nemo_jpiglo,nemo_jpjglo) )
+          call copy_3d_to_2d_global(nemo_e2u, png)
+        endif
+
+      case ("e2v")
+        !--- Gather the variable into the temporary global array png
+        call mppsync
+        call mppgather (e2v(:,:),0,png)
+        call mppsync
+        if ( rank == ocn_master ) then
+          !--- Allocate space for the 2D array nemo_e2v (defined in com_cpl)
+          !--- and assign the values in png to nemo_e2v
+          if ( associated(nemo_e2v) ) deallocate(nemo_e2v)
+          allocate( nemo_e2v(nemo_jpiglo,nemo_jpjglo) )
+          call copy_3d_to_2d_global(nemo_e2v, png)
+        endif
+
+      case ("e2f")
+        !--- Gather the variable into the temporary global array png
+        call mppsync
+        call mppgather (e2f(:,:),0,png)
+        call mppsync
+        if ( rank == ocn_master ) then
+          !--- Allocate space for the 2D array nemo_e2f (defined in com_cpl)
+          !--- and assign the values in png to nemo_e2f
+          if ( associated(nemo_e2f) ) deallocate(nemo_e2f)
+          allocate( nemo_e2f(nemo_jpiglo,nemo_jpjglo) )
+          call copy_3d_to_2d_global(nemo_e2f, png)
+        endif
+
       case ("tmask")
         !--- Gather the variable into the temporary global array png
         !--- Gather only the surface (level 1) values for tmask
