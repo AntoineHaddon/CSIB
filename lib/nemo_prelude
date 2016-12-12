@@ -378,6 +378,15 @@
   start_date=`echo $start_year $start_mon $start_day|awk '{printf "%4.4d%2.2d%2.2d",$1,$2,$3}' -`
   stop_date=`echo $stop_year $stop_mon $stop_day|awk '{printf "%4.4d%2.2d%2.2d",$1,$2,$3}' -`
 
+  nemo_start_year=$start_year
+  nemo_start_mon=$start_mon
+  nemo_start_day=$start_day
+  nemo_stop_year=$stop_year
+  nemo_stop_mon=$stop_mon
+  nemo_stop_day=$stop_day
+  nemo_start_date=$start_date
+  nemo_stop_date=$stop_date
+
   # Determine the year and month of the previous restart, if any
   if [ $start_mon -eq 1 ]; then
     rs_mon=12
