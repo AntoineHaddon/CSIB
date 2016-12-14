@@ -129,9 +129,9 @@
    ln_ana      = .false.   !  analytical formulation                    (T => fill namsbc_ana ) 
    ln_flx      = .false.   !  flux formulation                          (T => fill namsbc_flx )
    ln_blk_clio = .false.   !  CLIO bulk formulation                     (T => fill namsbc_clio) 
-   ln_blk_core = .true.    !  CORE bulk formulation                     (T => fill namsbc_core) 
+   ln_blk_core = .false.   !  CORE bulk formulation                     (T => fill namsbc_core) 
    ln_blk_mfs  = .false.   !  MFS bulk formulation                      (T => fill namsbc_mfs )
-   ln_cpl      = .false.   !  Coupled formulation                       (T => fill namsbc_cpl )
+   ln_cpl      = .true.    !  Coupled formulation                       (T => fill namsbc_cpl )
    ln_apr_dyn  = .false.   !  Patm gradient added in ocean & ice Eqs.   (T => fill namsbc_apr )
    nn_ice      = 2         !  =0 no ice boundary condition   ,
                            !  =1 use observed ice-cover      ,
@@ -224,21 +224,21 @@
 !                    !     description       !  multiple  !    vector   !      vector          ! vector !
 !                    !                       ! categories !  reference  !    orientation       ! grids  !
 ! send
-sn_snd_temp   =       'weighted oce and ice' ,    'no'    ,     ''      ,         ''           ,   ''    
-sn_snd_alb    =       'weighted ice'         ,    'no'    ,     ''      ,         ''           ,   ''    
-sn_snd_thick  =       'none'                 ,    'no'   ,     ''      ,         ''           ,   ''    
+sn_snd_temp   =       'oce and ice'          ,    'no'    ,     ''      ,         ''           ,   ''    
+sn_snd_alb    =       'none'                 ,    'no'    ,     ''      ,         ''           ,   ''    
+sn_snd_thick  =       'weighted iwe and swe' ,    'no'    ,     ''      ,         ''           ,   ''    
 sn_snd_crt    =       'none'                 ,    'no'    , 'spherical' , 'eastward-northward' ,  'T'       
 sn_snd_co2    =       'coupled'              ,    'no'    ,     ''      ,         ''           ,   ''        
 ! receive
-sn_rcv_w10m   =       'none'                 ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_w10m   =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
 sn_rcv_taumod =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
-sn_rcv_tau    =       'oce only'             ,    'no'    , 'cartesian' , 'eastward-northward',  'U,V'   
+sn_rcv_tau    =       'oce and ice'          ,    'no'    , 'spherical' , 'eastward-northward',  'T'   
 sn_rcv_dqnsdt =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
 sn_rcv_qsr    =       'oce and ice'          ,    'no'    ,     ''      ,         ''          ,   ''    
 sn_rcv_qns    =       'oce and ice'          ,    'no'    ,     ''      ,         ''          ,   ''    
-sn_rcv_emp    =       'conservative'         ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_emp    =       'oce and ice'          ,    'no'    ,     ''      ,         ''          ,   ''    
 sn_rcv_rnf    =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
-sn_rcv_cal    =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_cal    =       'none'                 ,    'no'    ,     ''      ,         ''          ,   ''    
 sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
 /
 !-----------------------------------------------------------------------
@@ -263,14 +263,14 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
 !              !  file name           ! frequency (hours) ! variable  ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation !
 !              !                      !  (if <0  months)  !   name    !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  !
-   sn_rnf      = 'runoff_core_monthly',        -1         , 'sorunoff',   .true.     , .true. , 'yearly'  , ''       , ''
+   sn_rnf      = 'runoff_core_monthly',        -1         , 'ROUT',       .true.     , .true. , 'yearly'  , 'weights_bil3.nc', ''
    sn_cnf      = 'runoff_core_monthly',        -1         , 'socoeff' ,   .true.     , .true. , 'yearly'  , ''       , ''
    sn_s_rnf    = 'runoffs'            ,        24         , 'rosaline',   .true.     , .true. , 'yearly'  , ''       , ''
    sn_t_rnf    = 'runoffs'            ,        24         , 'rotemper',   .true.     , .true. , 'yearly'  , ''       , ''
    sn_dep_rnf  = 'runoffs'            ,         0         , 'rodepth' ,   .false.    , .true. , 'yearly'  , ''       , ''
 
    cn_dir       = './'      !  root directory for the location of the runoff files
-   ln_rnf_emp   = .false.   !  runoffs included into precipitation field (T) or into a file (F)
+   ln_rnf_emp   = .true.    !  runoffs included into precipitation field (T) or into a file (F)
    ln_rnf_mouth = .true.    !  specific treatment at rivers mouths
    rn_hrnf      =  15.e0    !  depth over which enhanced vertical mixing is used
    rn_avt_rnf   =   1.e-3   !  value of the additional vertical mixing coef. [m2/s]
@@ -301,7 +301,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 
    cn_dir      = './'      !  root directory for the location of the runoff files
    nn_sstr     =     0     !  add a retroaction term in the surface heat       flux (=1) or not (=0)
-   nn_sssr     =     2     !  add a damping     term in the surface freshwater flux (=2) 
+   nn_sssr     =     0     !  add a damping     term in the surface freshwater flux (=2) 
                            !  or to SSS only (=1) or no damping term (=0)
    rn_dqdt     =   -40.    !  magnitude of the retroaction on temperature   [W/m2/K]
    rn_deds     =  -166.67  !  magnitude of the damping on salinity   [mm/day]

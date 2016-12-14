@@ -2,6 +2,15 @@
 # NEMO prelude
 #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
 
+# Identify the location of the NEMO git repository and the commit within
+# that repository that is associated with the current run
+  nemo_repo=${nemo_repo:=$CCRNSRC/ocean_dir/nemo-CCCma.git}
+  nemo_ver=${nemo_ver:=''}
+
+# Identify the NEMO configuration associated with the current run
+# (e.g. CCC_ORCA1_LIM, CCC_ORCA1_LIM_CMOC, CCC_ORCA1_LIM_CANOE, ...)
+  nemo_config=${nemo_config:=''}
+
 # Output file names will begin with ${uxxx}_${runid}_
   uxxx=${uxxx:=mc}
   runid=${runid:=tcpl}
@@ -378,6 +387,7 @@
   start_date=`echo $start_year $start_mon $start_day|awk '{printf "%4.4d%2.2d%2.2d",$1,$2,$3}' -`
   stop_date=`echo $stop_year $stop_mon $stop_day|awk '{printf "%4.4d%2.2d%2.2d",$1,$2,$3}' -`
 
+  # These may be required in nemo_postlude
   nemo_start_year=$start_year
   nemo_start_mon=$start_mon
   nemo_start_day=$start_day
@@ -469,7 +479,7 @@
   # The number of CICE time steps for each call to cice (used by cice)
   npt=${cice_npt:=1}
 
-  # The number of NEMO time steps between calls to cice (used by NEMO)
+  # The number of NEMO time steps between calls to sbc (used by NEMO)
   nn_fsbc=${nemo_nn_fsbc:=1}
 
   # For consistency always use 1 for true and 0 for false
@@ -579,36 +589,48 @@
 
     # Use input namelist files from a user supplied location
 
+find_nemo_namelist() {
+  [ -z "$1" ] && bail "find_nemo_namelist: requires a namelist file as the first arg"
+  if [ -z "$2" ]; then
+    # If there is a second argument then assume it is the file name on DATAPATH
+    acc_cp $1 $2 nocp=no
+  else
+    # Otherwise look for a configuration specific file in the NEMO repository
+    # nemo_repo, nemo_ver and nemo_config must be defined
+    [ -z "$nemo_repo" -o -z "$nemo_ver" -o -z "$nemo_config" ] &&
+      bail "find_nemo_namelist: One or more of nemo_repo, nemo_ver, nemo_config are undefined"
+    # Attempt to extract this file from the NEMO repository
+    rm -f $1
+    gitrip $nemo_ver nemo/CONFIG/$nemo_config/EXP00/$1 repo=$nemo_repo
+    [ -s $1 ] || bail "find_nemo_namelist: Unable to extract $1 from $nemo_repo"
+  fi
+}
+
     # The input ocean namelist is hard coded as "namelist" in nemo source
-    [ -z "$nemo_namelist" ] && bail "nemo_namelist is not defined"
-    acc_cp namelist $nemo_namelist
+    find_nemo_namelist namelist $nemo_namelist
 
     # The input ice namelist is hard coded in nemo source
     if [ $pisces_offline -ne  1 ]; then
-      [ -z "$nemo_namelist_ice" ] && bail "nemo_namelist_ice is not defined"
       if [ $nn_ice -eq 4 ]; then
         # Using CICE
-        acc_cp ice_in $nemo_namelist_ice nocp=no na
+        find_nemo_namelist ice_in $nemo_namelist_ice
       else
-        acc_cp namelist_ice $nemo_namelist_ice nocp=no na
+        find_nemo_namelist namelist_ice $nemo_namelist_ice
       fi
     fi
 
     if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
       # The input top namelist is hard coded as "namelist_top" in nemo source
-      [ -z "$nemo_namelist_top" ] && bail "nemo_namelist_top is not defined"
-      access namelist_top $nemo_namelist_top nocp=no
+      find_nemo_namelist namelist_top $nemo_namelist_top
     fi
 
     if [ $nemo_carbon -eq 1 ]; then
       # The input pisces namelist is hard coded as "namelist_pisces" in nemo source
-      [ -z "$nemo_namelist_pisces" ] && bail "nemo_namelist_pisces is not defined"
-      access namelist_pisces $nemo_namelist_pisces nocp=no
+      find_nemo_namelist namelist_pisces $nemo_namelist_pisces
         
       if [ $nemo_cmoc -eq 1 ]; then
         # The input cmoc namelist is hard coded as "namelist_pisces" in nemo source
-        [ -z "$nemo_namelist_cmoc" ] && bail "nemo_namelist_cmoc is not defined"
-        access namelist_cmoc $nemo_namelist_cmoc nocp=no
+        find_nemo_namelist namelist_cmoc $nemo_namelist_cmoc
       fi
     fi
 
