@@ -1054,7 +1054,7 @@
     [ -s kmt ]  || acc_cp kmt   $nemo_cice_kmt
   fi
 
-  nemo_data_1m_potential_temperature_nomask=${nemo_data_1m_potential_temperature_nomask=:=nemo_3.4_orca1_potemp_1m_z46_nomask.nc}
+  nemo_data_1m_potential_temperature_nomask=${nemo_data_1m_potential_temperature_nomask:=nemo_3.4_orca1_potemp_1m_z46_nomask.nc}
   nemo_data_1m_salinity_nomask=${nemo_data_1m_salinity_nomask:=nemo_3.4_orca1_salin_1m_z46_nomask.nc}
 
   [ -s data_1m_potential_temperature_nomask.nc ] ||
