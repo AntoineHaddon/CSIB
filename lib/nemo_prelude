@@ -11,6 +11,10 @@
 # (e.g. CCC_ORCA1_LIM, CCC_ORCA1_LIM_CMOC, CCC_ORCA1_LIM_CANOE, ...)
   nemo_config=${nemo_config:=''}
 
+  echo "### NEMO runtime: nemo_repo   = $nemo_repo"
+  echo "### NEMO runtime: nemo_ver    = $nemo_ver"
+  echo "### NEMO runtime: nemo_config = $nemo_config"
+
 # Output file names will begin with ${uxxx}_${runid}_
   uxxx=${uxxx:=mc}
   runid=${runid:=tcpl}
@@ -591,7 +595,7 @@
 
 find_nemo_namelist() {
   [ -z "$1" ] && bail "find_nemo_namelist: requires a namelist file as the first arg"
-  if [ -z "$2" ]; then
+  if [ -n "$2" ]; then
     # If there is a second argument then assume it is the file name on DATAPATH
     acc_cp $1 $2 nocp=no
   else
