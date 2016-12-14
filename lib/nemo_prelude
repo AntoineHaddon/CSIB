@@ -2,6 +2,8 @@
 # NEMO prelude
 #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
 
+echo "#################### Start NEMO pre-processing #################"
+
 # Identify the location of the NEMO git repository and the commit within
 # that repository that is associated with the current run
   nemo_repo=${nemo_repo:=$CCRNSRC/ocean_dir/nemo-CCCma.git}
@@ -299,6 +301,24 @@
     sha1sum $local_file >> xnemo_access_log
   }
 
+  find_nemo_config_EXP00() {
+    # Find a file in a CONFIG subdir of a NEMO repository
+    [ -z "$1" ] && bail "find_nemo_config_EXP00: requires a file name as the first arg"
+    if [ -n "$2" ]; then
+      # If there is a second argument then assume it is the file name on DATAPATH
+      acc_cp $1 $2 nocp=no
+    else
+      # Otherwise look for a configuration specific file in the NEMO repository
+      # nemo_repo, nemo_ver and nemo_config must be defined in this case
+      [ -z "$nemo_repo" -o -z "$nemo_ver" -o -z "$nemo_config" ] &&
+        bail "find_nemo_config_EXP00: One or more of nemo_repo, nemo_ver, nemo_config are undefined"
+      # Attempt to extract this file from the NEMO repository
+      rm -f $1
+      gitrip $nemo_ver nemo/CONFIG/$nemo_config/EXP00/$1 repo=$nemo_repo
+      [ -s $1 ] || bail "find_nemo_config_EXP00: Unable to extract $1 from $nemo_repo"
+    fi
+  }
+
   # Touch xnemo_access_log so that it will exist even if it never gets apppended to
   rm -f xnemo_access_log
   touch xnemo_access_log
@@ -593,55 +613,38 @@
 
     # Use input namelist files from a user supplied location
 
-find_nemo_namelist() {
-  [ -z "$1" ] && bail "find_nemo_namelist: requires a namelist file as the first arg"
-  if [ -n "$2" ]; then
-    # If there is a second argument then assume it is the file name on DATAPATH
-    acc_cp $1 $2 nocp=no
-  else
-    # Otherwise look for a configuration specific file in the NEMO repository
-    # nemo_repo, nemo_ver and nemo_config must be defined
-    [ -z "$nemo_repo" -o -z "$nemo_ver" -o -z "$nemo_config" ] &&
-      bail "find_nemo_namelist: One or more of nemo_repo, nemo_ver, nemo_config are undefined"
-    # Attempt to extract this file from the NEMO repository
-    rm -f $1
-    gitrip $nemo_ver nemo/CONFIG/$nemo_config/EXP00/$1 repo=$nemo_repo
-    [ -s $1 ] || bail "find_nemo_namelist: Unable to extract $1 from $nemo_repo"
-  fi
-}
-
     # The input ocean namelist is hard coded as "namelist" in nemo source
-    find_nemo_namelist namelist $nemo_namelist
+    find_nemo_config_EXP00 namelist $nemo_namelist
 
     # The input ice namelist is hard coded in nemo source
     if [ $pisces_offline -ne  1 ]; then
       if [ $nn_ice -eq 4 ]; then
         # Using CICE
-        find_nemo_namelist ice_in $nemo_namelist_ice
+        find_nemo_config_EXP00 ice_in $nemo_namelist_ice
       else
-        find_nemo_namelist namelist_ice $nemo_namelist_ice
+        find_nemo_config_EXP00 namelist_ice $nemo_namelist_ice
       fi
     fi
 
     if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
       # The input top namelist is hard coded as "namelist_top" in nemo source
-      find_nemo_namelist namelist_top $nemo_namelist_top
+      find_nemo_config_EXP00 namelist_top $nemo_namelist_top
     fi
 
     if [ $nemo_carbon -eq 1 ]; then
       # The input pisces namelist is hard coded as "namelist_pisces" in nemo source
-      find_nemo_namelist namelist_pisces $nemo_namelist_pisces
+      find_nemo_config_EXP00 namelist_pisces $nemo_namelist_pisces
         
       if [ $nemo_cmoc -eq 1 ]; then
         # The input cmoc namelist is hard coded as "namelist_pisces" in nemo source
-        find_nemo_namelist namelist_cmoc $nemo_namelist_cmoc
+        find_nemo_config_EXP00 namelist_cmoc $nemo_namelist_cmoc
       fi
     fi
 
     if [ ! -x nemo.exe ]; then
       # Get a local copy of the NEMO executable
       [ -z "$nemo_exec" ] && bail "nemo_exec must be defined."
-      access nemo.exe $nemo_exec nocp=no
+      acc_cp nemo.exe $nemo_exec nocp=no
     fi
 
   else
@@ -756,8 +759,8 @@ find_nemo_namelist() {
       [ -z "$nemo_rebuild_exec" ] && bail "nemo_rebuild_exec is not defined"
       [ -z "$nemo_rebuild_sh" ]   && bail "nemo_rebuild_sh is not defined"
 
-      [ -s flio_rbld.exe ] || access flio_rbld.exe $nemo_rebuild_exec nocp=no
-      [ -s REBUILD ]       || access REBUILD $nemo_rebuild_sh nocp=no
+      [ -s flio_rbld.exe ] || acc_cp flio_rbld.exe $nemo_rebuild_exec nocp=no
+      [ -s REBUILD ]       || acc_cp REBUILD $nemo_rebuild_sh nocp=no
       chmod u+x REBUILD
 
       # Ocean restart files
@@ -814,7 +817,7 @@ find_nemo_namelist() {
       mv rs_nemo_exec nemo.exe
     else
       # Otherwise use the executable pointed to by nemo_exec
-      access nemo.exe $nemo_exec nocp=no
+      acc_cp nemo.exe $nemo_exec nocp=no
     fi
     [ ! -s nemo.exe ] && bail "Unable to find nemo executable."
 
@@ -824,9 +827,8 @@ find_nemo_namelist() {
       # files supplied by the user
 
       # The input ocean namelist is hard coded as "namelist" in nemo source
-      [ -z "$nemo_namelist" ] && bail "nemo_namelist is not defined"
       rm -f namelist
-      access namelist $nemo_namelist nocp=no
+      find_nemo_config_EXP00 namelist $nemo_namelist
 
       if [ $pisces_offline -ne 1 ]; then
         # The input ice namelist is hard coded in nemo source
@@ -834,10 +836,10 @@ find_nemo_namelist() {
         if [ $nn_ice -eq 4 ]; then
           # Using CICE
           rm -f ice_in
-          access ice_in $nemo_namelist_ice nocp=no na
+          find_nemo_config_EXP00 ice_in $nemo_namelist_ice
         else
           rm -f namelist_ice
-          access namelist_ice $nemo_namelist_ice nocp=no na
+          find_nemo_config_EXP00 namelist_ice $nemo_namelist_ice
         fi
       fi
 
@@ -845,20 +847,20 @@ find_nemo_namelist() {
         # The input top namelist is hard coded as "namelist_top" in nemo source
         [ -z "$nemo_namelist_top" ] && bail "nemo_namelist_top is not defined"
         rm -f namelist_top
-        access namelist_top $nemo_namelist_top nocp=no
+        find_nemo_config_EXP00 namelist_top $nemo_namelist_top
       fi
 
       if [ $nemo_carbon -eq 1 ]; then
         # The input pisces namelist is hard coded as "namelist_pisces" in nemo source
         [ -z "$nemo_namelist_pisces" ] && bail "nemo_namelist_pisces is not defined"
         rm -f namelist_pisces
-        access namelist_pisces $nemo_namelist_pisces nocp=no
+        find_nemo_config_EXP00 namelist_pisces $nemo_namelist_pisces
         
         if [ $nemo_cmoc -eq 1 ]; then
           # The input cmoc namelist is hard coded as "namelist_cmoc" in nemo source
           [ -z "$nemo_namelist_cmoc" ] && bail "nemo_namelist_cmoc is not defined"
           rm -f namelist_cmoc
-          access namelist_cmoc $nemo_namelist_cmoc nocp=no
+          find_nemo_config_EXP00 namelist_cmoc $nemo_namelist_cmoc
         fi
       fi
     else
@@ -1029,18 +1031,11 @@ find_nemo_namelist() {
 
   # Access files required to run NEMO
 
-  orca_grid_info=${orca_grid_info:=nemo3.4.1_orca1_mesh_mask_ngr.nc}
+  nemo_iodef=${nemo_iodef:=''}
+  [ -s iodef.xml ] || find_nemo_config_EXP00 iodef.xml $nemo_iodef
 
-  if [ $nemo_carbon -eq 1 ]; then
-    # PISCES I/O
-    nemo_iodef=${nemo_iodef:=nemo_3.4.1_orca2_lim_pisces_iodef.xml}
-  else
-    nemo_iodef=${nemo_iodef:=nemo_3.4_orca2_lim_iodef_xml}
-  fi
-  [ -z "$nemo_iodef" ] && bail "nemo_iodef is not defined"
-
-  nemo_xmlio_server_def=${nemo_xmlio_server_def:=nemo_3.4_orca2_lim_xmlio_server_def}
-  [ -z "$nemo_xmlio_server_def" ] && bail "nemo_xmlio_server_def is not defined"
+  nemo_xmlio_server_def=${nemo_xmlio_server_def:=''}
+  [ -s xmlio_server.def ] || find_nemo_config_EXP00 xmlio_server.def $nemo_xmlio_server_def
 
   nemo_ahmcoef=${nemo_ahmcoef:=nemo_3.4_orca1_ahmcoef}
   nemo_coordinates=${nemo_coordinates:=nemo_3.4_orca1_coordinates_ukorca1.nc}
@@ -1056,8 +1051,6 @@ find_nemo_namelist() {
   nemo_chlorophyll=${nemo_chlorophyll:=nemo_3.4_orca1_chlorophyll-orca1_1m.nc}
   nemo_subbasins=${nemo_subbasins:=nemo_3.4_orca1_basinmask_050308_ukmo_modified.nc}
 
-  [ -s iodef.xml ]              || acc_cp iodef.xml              $nemo_iodef
-  [ -s xmlio_server.def ]       || acc_cp xmlio_server.def       $nemo_xmlio_server_def
   [ -s ahmcoef ]                || acc_cp ahmcoef                $nemo_ahmcoef
   [ -s coordinates.nc ]         || acc_cp coordinates.nc         $nemo_coordinates
   [ -s bathy_meter.nc ]         || acc_cp bathy_meter.nc         $nemo_bathy_meter
@@ -1103,24 +1096,24 @@ find_nemo_namelist() {
   nemo_weights_bicubic2=${nemo_weights_bicubic2:=nemo_3.4_weights_grid03_bicubic_orca1.nc}
   nemo_weights_bilinear2=${nemo_weights_bilinear2:=nemo_3.4_weights_grid03_bilinear_orca1.nc}
 
-  [ -s tair10m.nc ]      || access tair10m.nc          $nemo_t
-  [ -s uwnd10m.nc ]      || access uwnd10m.nc          $nemo_u
-  [ -s vwnd10m.nc ]      || access vwnd10m.nc          $nemo_v
-  [ -s humi10m.nc ]      || access humi10m.nc          $nemo_q
-  [ -s qsw.nc ]          || access qsw.nc              $nemo_qsw
-  [ -s qlw.nc ]          || access qlw.nc              $nemo_qlw
-  [ -s precip.nc ]       || access precip.nc           $nemo_precip
-  [ -s snow.nc ]         || access snow.nc             $nemo_snow
-  [ -s weights_bic1.nc ] || access weights_bic1.nc     $nemo_weights_bicubic1
-  [ -s weights_bil1.nc ] || access weights_bil1.nc     $nemo_weights_bilinear1 
-  [ -s weights_bic2.nc ] || access weights_bic2.nc     $nemo_weights_bicubic2
-  [ -s weights_bil2.nc ] || access weights_bil2.nc     $nemo_weights_bilinear2
+  [ -s tair10m.nc ]      || acc_cp tair10m.nc          $nemo_t
+  [ -s uwnd10m.nc ]      || acc_cp uwnd10m.nc          $nemo_u
+  [ -s vwnd10m.nc ]      || acc_cp vwnd10m.nc          $nemo_v
+  [ -s humi10m.nc ]      || acc_cp humi10m.nc          $nemo_q
+  [ -s qsw.nc ]          || acc_cp qsw.nc              $nemo_qsw
+  [ -s qlw.nc ]          || acc_cp qlw.nc              $nemo_qlw
+  [ -s precip.nc ]       || acc_cp precip.nc           $nemo_precip
+  [ -s snow.nc ]         || acc_cp snow.nc             $nemo_snow
+  [ -s weights_bic1.nc ] || acc_cp weights_bic1.nc     $nemo_weights_bicubic1
+  [ -s weights_bil1.nc ] || acc_cp weights_bil1.nc     $nemo_weights_bilinear1 
+  [ -s weights_bic2.nc ] || acc_cp weights_bic2.nc     $nemo_weights_bicubic2
+  [ -s weights_bil2.nc ] || acc_cp weights_bil2.nc     $nemo_weights_bilinear2
 
   nemo_weights_bicubic3=${nemo_weights_bicubic3:=nemo_3.4_weights_canam4grid_bicubic_orca1.nc}
   nemo_weights_bilinear3=${nemo_weights_bilinear3:=nemo_3.4_weights_canam4grid_bilinear_orca1.nc}
 
-  [ -s weights_bic3.nc ] || access weights_bic3.nc     $nemo_weights_bicubic3
-  [ -s weights_bil3.nc ] || access weights_bil3.nc     $nemo_weights_bilinear3
+  [ -s weights_bic3.nc ] || acc_cp weights_bic3.nc     $nemo_weights_bicubic3
+  [ -s weights_bil3.nc ] || acc_cp weights_bil3.nc     $nemo_weights_bilinear3
 
   if [ x"$nemo_forcing" = "xbulk" ]; then
     # Bulk forcing
@@ -1132,13 +1125,13 @@ find_nemo_namelist() {
     nemo_weights_bicubic3=${nemo_weights_bicubic3:=nemo_3.4_weights_grid02_bicubic_orca2.nc}
     nemo_weights_bilinear3=${nemo_weights_bilinear3:=nemo_3.4_weights_grid02_bilinear_orca2.nc}
 
-    [ -s utau.nc ]         || access utau.nc             $nemo_utau
-    [ -s vtau.nc ]         || access vtau.nc             $nemo_vtau
-    [ -s qtot.nc ]         || access qtot.nc             $nemo_qtot
-    [ -s qsr.nc ]          || access qsr.nc              $nemo_qsr
-    [ -s emp.nc ]          || access emp.nc              $nemo_emp
-    [ -s weights_bic3.nc ] || access weights_bic3.nc     $nemo_weights_bicubic3
-    [ -s weights_bil3.nc ] || access weights_bil3.nc     $nemo_weights_bilinear3
+    [ -s utau.nc ]         || acc_cp utau.nc             $nemo_utau
+    [ -s vtau.nc ]         || acc_cp vtau.nc             $nemo_vtau
+    [ -s qtot.nc ]         || acc_cp qtot.nc             $nemo_qtot
+    [ -s qsr.nc ]          || acc_cp qsr.nc              $nemo_qsr
+    [ -s emp.nc ]          || acc_cp emp.nc              $nemo_emp
+    [ -s weights_bic3.nc ] || acc_cp weights_bic3.nc     $nemo_weights_bicubic3
+    [ -s weights_bil3.nc ] || acc_cp weights_bil3.nc     $nemo_weights_bilinear3
 
   elif [ x"$nemo_forcing" = "xflux" ]; then
     # Flux forcing
@@ -1150,13 +1143,13 @@ find_nemo_namelist() {
     nemo_weights_bicubic3=${nemo_weights_bicubic3:=nemo_3.4_weights_canam4grid_bicubic_orca1.nc}
     nemo_weights_bilinear3=${nemo_weights_bilinear3:=nemo_3.4_weights_canam4grid_bilinear_orca1.nc}
 
-    [ -s utau.nc ]         || access utau.nc             $nemo_utau
-    [ -s vtau.nc ]         || access vtau.nc             $nemo_vtau
-    [ -s qtot.nc ]         || access qtot.nc             $nemo_qtot
-    [ -s qsr.nc ]          || access qsr.nc              $nemo_qsr
-    [ -s emp.nc ]          || access emp.nc              $nemo_emp
-    [ -s weights_bic3.nc ] || access weights_bic3.nc     $nemo_weights_bicubic3
-    [ -s weights_bil3.nc ] || access weights_bil3.nc     $nemo_weights_bilinear3
+    [ -s utau.nc ]         || acc_cp utau.nc             $nemo_utau
+    [ -s vtau.nc ]         || acc_cp vtau.nc             $nemo_vtau
+    [ -s qtot.nc ]         || acc_cp qtot.nc             $nemo_qtot
+    [ -s qsr.nc ]          || acc_cp qsr.nc              $nemo_qsr
+    [ -s emp.nc ]          || acc_cp emp.nc              $nemo_emp
+    [ -s weights_bic3.nc ] || acc_cp weights_bic3.nc     $nemo_weights_bicubic3
+    [ -s weights_bil3.nc ] || acc_cp weights_bil3.nc     $nemo_weights_bilinear3
 
     # CICE forcing files
     nemo_snowfall=${nemo_snowfall:='sa_gcm17l_mix14_snow_gs_0001010200-0001020100.nc'}
@@ -1165,11 +1158,11 @@ find_nemo_namelist() {
     nemo_topmeltn1=${nemo_topmeltn1:='sa_gcm16_05_w_2005_obeg.nc'}
     nemo_botmeltn1=${nemo_botmeltn1:='sa_gcm17l_mix14_hsea_gs_chgsign_0001010200-0001020100.nc'}
 
-    [ -s snowfall_1m ]  || access snowfall_1m         $nemo_snowfall
-    [ -s rainfall_1m ]  || access rainfall_1m         $nemo_rainfall
-    [ -s sublim_1m ]    || access sublim_1m           $nemo_sublim
-    [ -s topmeltn1_1m ] || access topmeltn1_1m        $nemo_topmeltn1
-    [ -s botmeltn1_1m ] || access botmeltn1_1m        $nemo_botmeltn1
+    [ -s snowfall_1m ]  || acc_cp snowfall_1m         $nemo_snowfall
+    [ -s rainfall_1m ]  || acc_cp rainfall_1m         $nemo_rainfall
+    [ -s sublim_1m ]    || acc_cp sublim_1m           $nemo_sublim
+    [ -s topmeltn1_1m ] || acc_cp topmeltn1_1m        $nemo_topmeltn1
+    [ -s botmeltn1_1m ] || acc_cp botmeltn1_1m        $nemo_botmeltn1
   fi
 
   if [ $nemo_carbon -eq 1 ]; then
@@ -1216,3 +1209,5 @@ find_nemo_namelist() {
     ln_co2int=${ln_co2int:=.false.} # read atm pco2 from a file (T) or constant (F)
     mod_nl namelist_pisces ln_co2int
   fi 
+
+echo "#################### Stop NEMO pre-processing #################"
