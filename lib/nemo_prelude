@@ -1062,7 +1062,7 @@
   [ -s data_1m_salinity_nomask.nc ]              ||
       acc_cp data_1m_salinity_nomask.nc              $nemo_data_1m_salinity_nomask
 
-  nemo_t=${nemo_t=:=nemo_3.4_orca1_t_10.15june2009.nc}
+  nemo_t=${nemo_t:=nemo_3.4_orca1_t_10.15june2009.nc}
   nemo_u=${nemo_u:=nemo_3.4_orca1_u_10.15june2009.nc}
   nemo_v=${nemo_v:=nemo_3.4_orca1_v_10.15june2009.nc}
   nemo_q=${nemo_q:=nemo_3.4_orca1_q_10.15june2009.nc}
@@ -1187,6 +1187,6 @@
     [ -s atcco2.txt ]              || acc_cp atcco2.txt                $nemo_data_atcco2
 
     # Modify the pisces namelist to read CO2 from file, if specified in makefile
-    ln_co2int=${ln_co2int=:=.false.} # read atm pco2 from a file (T) or constant (F)
+    ln_co2int=${ln_co2int:=.false.} # read atm pco2 from a file (T) or constant (F)
     mod_nl namelist_pisces ln_co2int
   fi 
