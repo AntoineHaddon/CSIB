@@ -1003,33 +1003,32 @@
 
   # Access files required to run NEMO
 
-  orca_grid_info="nemo3.4.1_orca1_mesh_mask_ngr.nc"
+  orca_grid_info=${orca_grid_info:=nemo3.4.1_orca1_mesh_mask_ngr.nc}
 
   if [ $nemo_carbon -eq 1 ]; then
     # PISCES I/O
-    nemo_iodef=nemo_3.4.1_orca2_lim_pisces_iodef.xml
+    nemo_iodef=${nemo_iodef:=nemo_3.4.1_orca2_lim_pisces_iodef.xml}
   else
     nemo_iodef=${nemo_iodef:=nemo_3.4_orca2_lim_iodef_xml}
-    [ -z "$nemo_iodef" ] && bail "nemo_iodef is not defined"
   fi
+  [ -z "$nemo_iodef" ] && bail "nemo_iodef is not defined"
 
   nemo_xmlio_server_def=${nemo_xmlio_server_def:=nemo_3.4_orca2_lim_xmlio_server_def}
   [ -z "$nemo_xmlio_server_def" ] && bail "nemo_xmlio_server_def is not defined"
 
-  nemo_ahmcoef=nemo_3.4_orca1_ahmcoef
-  nemo_coordinates=nemo_3.4_orca1_coordinates_ukorca1.nc
-  nemo_bathy_meter=nemo_3.4_orca1_bathy_meter_050308_ukmo.nc
-  nemo_mask_itf=nemo_3.4_orca1_mask_itf_orca1_new.nc
-  nemo_M2rowdrg=nemo_3.4_orca1_m2rowdrg_r1_modif.nc
-  nemo_K1rowdrg=nemo_3.4_orca1_k1rowdrg_r1_modif.nc
-  nemo_Eddyengf=nemo_3.4_orca1_eddy_mix.nc
-  nemo_geothermal_heating=nemo_3.3_orca2_geothermal_heating.nc
-  nemo_runoff_core_monthly=nemo_3.4_orca1_rout_socoeff_month_r1i1p1_1979-2005-mean2.nc
-  nemo_sst_data=nemo_3.4_orca1_sst_1m_orca1.nc
-  nemo_sss_data=nemo_3.4_orca1_sss_1m_orca1.nc
-  nemo_chlorophyll=nemo_3.4_orca1_chlorophyll-orca1_1m.nc
-  nemo_subbasins=nemo_3.4_orca1_basinmask_050308_ukmo_modified.nc
-
+  nemo_ahmcoef=${nemo_ahmcoef:=nemo_3.4_orca1_ahmcoef}
+  nemo_coordinates=${nemo_coordinates:=nemo_3.4_orca1_coordinates_ukorca1.nc}
+  nemo_bathy_meter=${nemo_bathy_meter:=nemo_3.4_orca1_bathy_meter_050308_ukmo.nc}
+  nemo_mask_itf=${nemo_mask_itf:=nemo_3.4_orca1_mask_itf_orca1_new.nc}
+  nemo_M2rowdrg=${nemo_M2rowdrg:=nemo_3.4_orca1_m2rowdrg_r1_modif.nc}
+  nemo_K1rowdrg=${nemo_K1rowdrg:=nemo_3.4_orca1_k1rowdrg_r1_modif.nc}
+  nemo_Eddyengf=${nemo_Eddyengf:=nemo_3.4_orca1_eddy_mix.nc}
+  nemo_geothermal_heating=${nemo_geothermal_heating:=nemo_3.3_orca2_geothermal_heating.nc}
+  nemo_runoff_core_monthly=${nemo_runoff_core_monthly:=nemo_3.4_orca1_runoff_1m_orca1.nc}
+  nemo_sst_data=${nemo_sst_data:=nemo_3.4_orca1_sst_1m_orca1.nc}
+  nemo_sss_data=${nemo_sss_data:=nemo_3.4_orca1_sss_1m_orca1.nc}
+  nemo_chlorophyll=${nemo_chlorophyll:=nemo_3.4_orca1_chlorophyll-orca1_1m.nc}
+  nemo_subbasins=${nemo_subbasins:=nemo_3.4_orca1_basinmask_050308_ukmo_modified.nc}
 
   [ -s iodef.xml ]              || acc_cp iodef.xml              $nemo_iodef
   [ -s xmlio_server.def ]       || acc_cp xmlio_server.def       $nemo_xmlio_server_def
@@ -1049,38 +1048,34 @@
 
   if [ $nn_ice -eq 4 ]; then
     # CICE related
-    nemo_cice_grid=nemo_3.4.1_orca1_cice_tgraham_grid.nc
-    nemo_cice_kmt=nemo_3.4.1_orca1_cice_tgraham_kmt.nc
+    nemo_cice_grid=${nemo_cice_grid:=nemo_3.4.1_orca1_cice_tgraham_grid.nc}
+    nemo_cice_kmt=${nemo_cice_kmt:=nemo_3.4.1_orca1_cice_tgraham_kmt.nc}
     [ -s grid ] || acc_cp grid  $nemo_cice_grid
     [ -s kmt ]  || acc_cp kmt   $nemo_cice_kmt
   fi
 
-
-  nemo_data_1m_potential_temperature_nomask=nemo_3.4_orca1_potemp_1m_z46_nomask.nc
-  nemo_data_1m_salinity_nomask=nemo_3.4_orca1_salin_1m_z46_nomask.nc
+  nemo_data_1m_potential_temperature_nomask=${nemo_data_1m_potential_temperature_nomask=:=nemo_3.4_orca1_potemp_1m_z46_nomask.nc}
+  nemo_data_1m_salinity_nomask=${nemo_data_1m_salinity_nomask:=nemo_3.4_orca1_salin_1m_z46_nomask.nc}
 
   [ -s data_1m_potential_temperature_nomask.nc ] ||
       acc_cp data_1m_potential_temperature_nomask.nc $nemo_data_1m_potential_temperature_nomask
   [ -s data_1m_salinity_nomask.nc ]              ||
       acc_cp data_1m_salinity_nomask.nc              $nemo_data_1m_salinity_nomask
 
-  nemo_t=nemo_3.4_orca1_t_10.15june2009.nc
-  nemo_u=nemo_3.4_orca1_u_10.15june2009.nc
-  nemo_v=nemo_3.4_orca1_v_10.15june2009.nc
-  nemo_q=nemo_3.4_orca1_q_10.15june2009.nc
-  nemo_qsw=nemo_3.4_orca1_ncar_rad.15june2009.nc
-  nemo_qlw=nemo_3.4_orca1_ncar_rad.15june2009.nc
-  nemo_precip=nemo_3.4_orca1_ncar_precip.15june2009.nc
-  nemo_snow=nemo_3.4_orca1_ncar_precip.15june2009.nc
+  nemo_t=${nemo_t=:=nemo_3.4_orca1_t_10.15june2009.nc}
+  nemo_u=${nemo_u:=nemo_3.4_orca1_u_10.15june2009.nc}
+  nemo_v=${nemo_v:=nemo_3.4_orca1_v_10.15june2009.nc}
+  nemo_q=${nemo_q:=nemo_3.4_orca1_q_10.15june2009.nc}
+  nemo_qsw=${nemo_qsw:=nemo_3.4_orca1_ncar_rad.15june2009.nc}
+  nemo_qlw=${nemo_qlw:=nemo_3.4_orca1_ncar_rad.15june2009.nc}
+  nemo_precip=${nemo_precip:=nemo_3.4_orca1_ncar_precip.15june2009.nc}
+  nemo_snow=${nemo_snow:=nemo_3.4_orca1_ncar_precip.15june2009.nc}
   # weights_grid02_* are weights for ECMWF data
-  nemo_weights_bicubic1=nemo_3.4_weights_grid02_bicubic_orca1.nc
-  nemo_weights_bilinear1=nemo_3.4_weights_grid02_bilinear_orca1.nc
+  nemo_weights_bicubic1=${nemo_weights_bicubic1:=nemo_3.4_weights_grid02_bicubic_orca1.nc}
+  nemo_weights_bilinear1=${nemo_weights_bilinear1:=nemo_3.4_weights_grid02_bilinear_orca1.nc}
   # weights_grid03_* are weights for CORE data
-  nemo_weights_bicubic2=nemo_3.4_weights_grid03_bicubic_orca1.nc
-  nemo_weights_bilinear2=nemo_3.4_weights_grid03_bilinear_orca1.nc
-  # weights_canam4grid_* are weights for CanAM4
-  # nemo_weights_bicubic2=nemo_3.4_weights_canam4grid_bicubic_orca1.nc
-  # nemo_weights_bilinear2=nemo_3.4_weights_canam4grid_bilinear_orca1.nc
+  nemo_weights_bicubic2=${nemo_weights_bicubic2:=nemo_3.4_weights_grid03_bicubic_orca1.nc}
+  nemo_weights_bilinear2=${nemo_weights_bilinear2:=nemo_3.4_weights_grid03_bilinear_orca1.nc}
 
   [ -s tair10m.nc ]      || access tair10m.nc          $nemo_t
   [ -s uwnd10m.nc ]      || access uwnd10m.nc          $nemo_u
@@ -1095,21 +1090,21 @@
   [ -s weights_bic2.nc ] || access weights_bic2.nc     $nemo_weights_bicubic2
   [ -s weights_bil2.nc ] || access weights_bil2.nc     $nemo_weights_bilinear2
 
-  nemo_weights_bicubic3=nemo_3.4_weights_canam4grid_bicubic_orca1.nc
-  nemo_weights_bilinear3=nemo_3.4_weights_canam4grid_bilinear_orca1.nc
+  nemo_weights_bicubic3=${nemo_weights_bicubic3:=nemo_3.4_weights_canam4grid_bicubic_orca1.nc}
+  nemo_weights_bilinear3=${nemo_weights_bilinear3:=nemo_3.4_weights_canam4grid_bilinear_orca1.nc}
 
   [ -s weights_bic3.nc ] || access weights_bic3.nc     $nemo_weights_bicubic3
   [ -s weights_bil3.nc ] || access weights_bil3.nc     $nemo_weights_bilinear3
 
   if [ x"$nemo_forcing" = "xbulk" ]; then
     # Bulk forcing
-    nemo_utau=mc_ncq_5d_06360101_06361231_grid_ufl_mean.nc
-    nemo_vtau=mc_ncq_5d_06360101_06361231_grid_vfl_mean.nc
-    nemo_qtot=mc_ncq_5d_06360101_06361231_grid_hfl_mean.nc
-    nemo_qsr=mc_ncq_5d_06360101_06361231_grid_hfl_mean.nc
-    nemo_emp=mc_ncq_5d_06360101_06361231_grid_hfl_mean.nc
-    nemo_weights_bicubic3=nemo_3.4_weights_grid02_bicubic_orca2.nc
-    nemo_weights_bilinear3=nemo_3.4_weights_grid02_bilinear_orca2.nc
+    nemo_utau=${nemo_utau:=mc_ncq_5d_06360101_06361231_grid_ufl_mean.nc}
+    nemo_vtau=${nemo_vtau:=mc_ncq_5d_06360101_06361231_grid_vfl_mean.nc}
+    nemo_qtot=${nemo_qtot:=mc_ncq_5d_06360101_06361231_grid_hfl_mean.nc}
+    nemo_qsr=${nemo_qsr:=mc_ncq_5d_06360101_06361231_grid_hfl_mean.nc}
+    nemo_emp=${nemo_emp:=mc_ncq_5d_06360101_06361231_grid_hfl_mean.nc}
+    nemo_weights_bicubic3=${nemo_weights_bicubic3:=nemo_3.4_weights_grid02_bicubic_orca2.nc}
+    nemo_weights_bilinear3=${nemo_weights_bilinear3:=nemo_3.4_weights_grid02_bilinear_orca2.nc}
 
     [ -s utau.nc ]         || access utau.nc             $nemo_utau
     [ -s vtau.nc ]         || access vtau.nc             $nemo_vtau
@@ -1121,13 +1116,13 @@
 
   elif [ x"$nemo_forcing" = "xflux" ]; then
     # Flux forcing
-    nemo_utau=sa_gcm16_05_w_2005_oufs_signchg.nc
-    nemo_vtau=sa_gcm16_05_w_2005_ovfs_signchg.nc
-    nemo_qtot=sa_gcm16_05_w_2005_obeg.nc
-    nemo_qsr=sa_gcm16_05_w_2005_ofsg.nc
-    nemo_emp=sa_gcm16_05_w_2005_obwg_signchg.nc
-    nemo_weights_bicubic3=nemo_3.4_weights_canam4grid_bicubic_orca1.nc
-    nemo_weights_bilinear3=nemo_3.4_weights_canam4grid_bilinear_orca1.nc
+    nemo_utau=${nemo_utau:=sa_gcm16_05_w_2005_oufs_signchg.nc}
+    nemo_vtau=${nemo_vtau:=sa_gcm16_05_w_2005_ovfs_signchg.nc}
+    nemo_qtot=${nemo_qtot:=sa_gcm16_05_w_2005_obeg.nc}
+    nemo_qsr=${nemo_qsr:=sa_gcm16_05_w_2005_ofsg.nc}
+    nemo_emp=${nemo_emp:=sa_gcm16_05_w_2005_obwg_signchg.nc}
+    nemo_weights_bicubic3=${nemo_weights_bicubic3:=nemo_3.4_weights_canam4grid_bicubic_orca1.nc}
+    nemo_weights_bilinear3=${nemo_weights_bilinear3:=nemo_3.4_weights_canam4grid_bilinear_orca1.nc}
 
     [ -s utau.nc ]         || access utau.nc             $nemo_utau
     [ -s vtau.nc ]         || access vtau.nc             $nemo_vtau
@@ -1138,11 +1133,11 @@
     [ -s weights_bil3.nc ] || access weights_bil3.nc     $nemo_weights_bilinear3
 
     # CICE forcing files
-    nemo_snowfall='sa_gcm17l_mix14_snow_gs_0001010200-0001020100.nc'
-    nemo_rainfall='sa_gcm17l_mix14_rain_gs_0001010200-0001020100.nc'
-    nemo_sublim='sa_gcm17l_mix14_sblm_0001010200-0001020100.nc'
-    nemo_topmeltn1='sa_gcm16_05_w_2005_obeg.nc'
-    nemo_botmeltn1='sa_gcm17l_mix14_hsea_gs_chgsign_0001010200-0001020100.nc'
+    nemo_snowfall=${nemo_snowfall:='sa_gcm17l_mix14_snow_gs_0001010200-0001020100.nc'}
+    nemo_rainfall=${nemo_rainfall:='sa_gcm17l_mix14_rain_gs_0001010200-0001020100.nc'}
+    nemo_sublim=${nemo_sublim:='sa_gcm17l_mix14_sblm_0001010200-0001020100.nc'}
+    nemo_topmeltn1=${nemo_topmeltn1:='sa_gcm16_05_w_2005_obeg.nc'}
+    nemo_botmeltn1=${nemo_botmeltn1:='sa_gcm17l_mix14_hsea_gs_chgsign_0001010200-0001020100.nc'}
 
     [ -s snowfall_1m ]  || access snowfall_1m         $nemo_snowfall
     [ -s rainfall_1m ]  || access rainfall_1m         $nemo_rainfall
@@ -1153,38 +1148,45 @@
 
   if [ $nemo_carbon -eq 1 ]; then
     # Access PISCES files
-    nemo_presatm=nemo_3.4_orca2_presatm.nc
-    nemo_dust_orca=nemo_3.4_orca2_dust.orca.nc
-    nemo_river_orca=nemo_3.4_orca2_river.orca.nc
-    nemo_ndeposition_orca=nemo_3.4_orca2_ndeposition.orca.nc
-    nemo_bathy_orca=nemo_3.4_orca2_bathy.orca.nc
 
-    [ -s presatm.nc ]          || access presatm.nc           $nemo_presatm
-    [ -s dust.orca.nc ]        || access dust.orca.nc         $nemo_dust_orca
-    [ -s river.orca.nc ]       || access river.orca.nc        $nemo_river_orca
-    [ -s ndeposition.orca.nc ] || access ndeposition.orca.nc  $nemo_ndeposition_orca
-    [ -s bathy.orca.nc ]       || access bathy.orca.nc        $nemo_bathy_orca
+    nemo_presatm=${nemo_presatm:=uncs_orca1_presatm.nc}
+    nemo_dust_orca=${nemo_dust_orca:=uncs_orca1_dust.orca.nc}
+    nemo_river_orca=${nemo_river_orca:=nemo_3.4_orca2_river.orca.nc}
+    nemo_ndeposition_orca=${nemo_ndeposition_orca:=uncs_orca1_ndeposition.orca.nc}
+    nemo_bathy_orca=${nemo_bathy_orca:=uncs_orca1_bathy.orca.nc}
+
+    [ -s presatm.nc ]          || acc_cp presatm.nc           $nemo_presatm
+    [ -s dust.orca.nc ]        || acc_cp dust.orca.nc         $nemo_dust_orca
+    [ -s river.orca.nc ]       || acc_cp river.orca.nc        $nemo_river_orca
+    [ -s ndeposition.orca.nc ] || acc_cp ndeposition.orca.nc  $nemo_ndeposition_orca
+    [ -s bathy.orca.nc ]       || acc_cp bathy.orca.nc        $nemo_bathy_orca
 
     if [ $nemo_cmoc -eq 1 ]; then
-      nemo_fermask_orca=nemo_3.4_orca2_femask.orca.nc
-      [ -s fermask.orca.nc ] || access fermask.orca.nc $nemo_fermask_orca
+      nemo_fermask_orca=${nemo_fermask_orca:=nemo_3.4_orca1_femask.orca.nc}
+      [ -s fermask.orca.nc ] || acc_cp fermask.orca.nc $nemo_fermask_orca
     fi
 
-    nemo_data_dic_nomask=nemo_3.4_orca2_data_dic_nomask.nc
-    nemo_data_alkalini_nomask=nemo_3.4_orca2_data_alkalini_nomask.nc
-    nemo_data_o2_nomask=nemo_3.4_orca2_data_o2_nomask.nc
-    nemo_data_po4_nomask=nemo_3.4_orca2_data_po4_nomask.nc
-    nemo_data_si_nomask=nemo_3.4_orca2_data_si_nomask.nc
-    nemo_data_doc_nomask=nemo_3.4_orca2_data_doc_nomask.nc
-    nemo_data_fer_nomask=nemo_3.4_orca2_data_fer_nomask.nc
-    nemo_data_no3_nomask=nemo_3.4_orca2_data_no3_nomask.nc
+    nemo_data_dic_nomask=${nemo_data_dic_nomask:=uncs_orca1_data_dic_nomask.nc}
+    nemo_data_alkalini_nomask=${nemo_data_alkalini_nomask:=uncs_orca1_data_alkalini_nomask.nc}
+    nemo_data_o2_nomask=${nemo_data_o2_nomask:=uncs_orca1_data_o2_nomask.nc}
+    nemo_data_po4_nomask=${nemo_data_po4_nomask:=uncs_orca1_data_po4_nomask.nc}
+    nemo_data_si_nomask=${nemo_data_si_nomask:=uncs_orca1_data_si_nomask.nc}
+    nemo_data_doc_nomask=${nemo_data_doc_nomask:=uncs_orca1_data_doc_nomask.nc}
+    nemo_data_fer_nomask=${nemo_data_fer_nomask:=uncs_orca1_data_fer_nomask.nc}
+    nemo_data_no3_nomask=${nemo_data_no3_nomask:=uncs_orca1_data_no3_nomask.nc}
+    nemo_data_atcco2=${nemo_data_atcco2:=nemo_atcco2_1850-2005.txt}
 
-    [ -s data_dic_nomask.nc ]      || access data_dic_nomask.nc        $nemo_data_dic_nomask
-    [ -s data_alkalini_nomask.nc ] || access data_alkalini_nomask.nc   $nemo_data_alkalini_nomask
-    [ -s data_o2_nomask.nc ]       || access data_o2_nomask.nc         $nemo_data_o2_nomask
-    [ -s data_po4_nomask.nc ]      || access data_po4_nomask.nc        $nemo_data_po4_nomask
-    [ -s data_si_nomask.nc ]       || access data_si_nomask.nc         $nemo_data_si_nomask
-    [ -s data_doc_nomask.nc ]      || access data_doc_nomask.nc        $nemo_data_doc_nomask
-    [ -s data_fer_nomask.nc ]      || access data_fer_nomask.nc        $nemo_data_fer_nomask
-    [ -s data_no3_nomask.nc ]      || access data_no3_nomask.nc        $nemo_data_no3_nomask
+    [ -s data_dic_nomask.nc ]      || acc_cp data_dic_nomask.nc        $nemo_data_dic_nomask
+    [ -s data_alkalini_nomask.nc ] || acc_cp data_alkalini_nomask.nc   $nemo_data_alkalini_nomask
+    [ -s data_o2_nomask.nc ]       || acc_cp data_o2_nomask.nc         $nemo_data_o2_nomask
+    [ -s data_po4_nomask.nc ]      || acc_cp data_po4_nomask.nc        $nemo_data_po4_nomask
+    [ -s data_si_nomask.nc ]       || acc_cp data_si_nomask.nc         $nemo_data_si_nomask
+    [ -s data_doc_nomask.nc ]      || acc_cp data_doc_nomask.nc        $nemo_data_doc_nomask
+    [ -s data_fer_nomask.nc ]      || acc_cp data_fer_nomask.nc        $nemo_data_fer_nomask
+    [ -s data_no3_nomask.nc ]      || acc_cp data_no3_nomask.nc        $nemo_data_no3_nomask
+    [ -s atcco2.txt ]              || acc_cp atcco2.txt                $nemo_data_atcco2
+
+    # Modify the pisces namelist to read CO2 from file, if specified in makefile
+    ln_co2int=${ln_co2int=:=.false.} # read atm pco2 from a file (T) or constant (F)
+    mod_nl namelist_pisces ln_co2int
   fi 
