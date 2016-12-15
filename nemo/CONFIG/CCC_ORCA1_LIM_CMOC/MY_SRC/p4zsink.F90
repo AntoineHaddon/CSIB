@@ -112,14 +112,25 @@ CONTAINS
       !     --------------------------------------------------------------------
       ! Define an open ocean mask, based on where mbkt > nk_bal_cmoc == 15 (or as define in namelist)
       oomask(:,:) = 0._wp
-      WHERE ( mbkt(:,:) >= nk_bal_cmoc ) oomask = 1._wp
+      !WHERE ( mbkt(:,:) >= nk_bal_cmoc ) oomask = 1._wp
+      DO jj = 1, jpj
+         DO ji = 1,jpi
+            IF ( mbkt(ji,jj) >= nk_bal_cmoc ) THEN
+               oomask = 1._wp
+            ENDIF
+         ENDDO                                                               
+      ENDDO
 
       ! The euphotic zone depth and inverse depth, used for computing averages.
       zdeup(:,:) = 0._wp
       DO jk =1, jk_eud_cmoc
-       zdeup(:,:) = zdeup(:,:) +  fse3t(:,:,jk)
+         DO jj = 1, jpj
+            DO ji = 1,jpi
+               zdeup(ji,jj) = zdeup(ji,jj) +  fse3t(ji,jj,jk)
+               zideup(ji,jj) = 1._wp / zdeup(ji,jj)
+            ENDDO                                                               
+         ENDDO
       ENDDO
-      zideup(:,:) = 1._wp / zdeup(:,:)
 
       ! Computing t-grid bounding depths more accurate then using w-grid depths, despite supposed identity.
       zdepw(:) = 0._wp
@@ -127,16 +138,21 @@ CONTAINS
          zdepw(jk) = zdepw(jk-1) + fse3t(1,1,jk-1)
       ENDDO
 
-      !  Rain ratio at level jk_eud_cmoc - bottom of the euphotic zone:
-      !  Temperature is however taken from the 1st layer (confirmed with RJC, 16/02/2016)
-      xrcico(:,:) = rmcico_cmoc * exp(aci_cmoc * ( tsn(:,:,1,jp_tem)  - trcico_cmoc ) )                   &
-      &                         / (1._wp + exp(aci_cmoc *( tsn(:,:,1,jp_tem) - trcico_cmoc ) + rtrn ) )
+      DO jj = 1, jpj
+         DO ji = 1,jpi
+            !  Rain ratio at level jk_eud_cmoc - bottom of the euphotic zone:
+            !  Temperature is however taken from the 1st layer (confirmed with RJC, 16/02/2016)
+            xrcico(ji,jj) = rmcico_cmoc * exp(aci_cmoc * ( tsn(ji,jj,1,jp_tem)  - trcico_cmoc ) )                  &
+            &                         / (1._wp + exp(aci_cmoc *( tsn(ji,jj,1,jp_tem) - trcico_cmoc ) + rtrn ) )
 
-      ! PIC export at the bottom of the euphotic zone based on Zahariev et al 2008 p.59
-      ! Time stepping is included with xstep, so units are in mol/m2/step
-      zfpon(:,:) = xrcico(:,:) * wsbio3(:,:,jk_eud_cmoc) * xstep * trn(:,:,jk_eud_cmoc,jppoc)             &
-      &                        *  tmask(:,:,jk_eud_cmoc) * oomask(:,:)
+           ! PIC export at the bottom of the euphotic zone based on Zahariev et al 2008 p.59
+           ! Time stepping is included with xstep, so units are in mol/m2/step
+           zfpon(ji,jj) = xrcico(ji,jj) * wsbio3(ji,jj,jk_eud_cmoc) * xstep                                & 
+           &                        * trn(ji,jj,jk_eud_cmoc,jppoc)                                         &
+           &                        *  tmask(ji,jj,jk_eud_cmoc) * oomask(ji,jj)
 
+         ENDDO
+      ENDDO
       ! Exponential decay of calcite flux with depth, at w-points.
       zcalflxexp(:,:,:) = 0._wp
       DO jk = jk_eud_cmoc+1, jpk                                                         
