@@ -227,12 +227,12 @@
 sn_snd_temp   =       'oce and ice'          ,    'no'    ,     ''      ,         ''           ,   ''    
 sn_snd_alb    =       'none'                 ,    'no'    ,     ''      ,         ''           ,   ''    
 sn_snd_thick  =       'weighted iwe and swe' ,    'no'    ,     ''      ,         ''           ,   ''    
-sn_snd_crt    =       'none'                 ,    'no'    , 'spherical' , 'eastward-northward' ,   'T'       
+sn_snd_crt    =       'none'                 ,    'no'    , 'spherical' , 'eastward-northward' ,  'T'       
 sn_snd_co2    =       'none'                 ,    'no'    ,     ''      ,         ''           ,   ''        
 ! receive
 sn_rcv_w10m   =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
 sn_rcv_taumod =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
-sn_rcv_tau    =       'oce and ice'          ,    'no'    , 'spherical' , 'eastward-northward',   'T'   
+sn_rcv_tau    =       'oce and ice'          ,    'no'    , 'spherical' , 'eastward-northward',  'T'   
 sn_rcv_dqnsdt =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
 sn_rcv_qsr    =       'oce and ice'          ,    'no'    ,     ''      ,         ''          ,   ''    
 sn_rcv_qns    =       'oce and ice'          ,    'no'    ,     ''      ,         ''          ,   ''    
@@ -263,7 +263,6 @@ sn_rcv_co2    =       'none'                 ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
 !              !  file name           ! frequency (hours) ! variable  ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation !
 !              !                      !  (if <0  months)  !   name    !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  !
-!   sn_rnf      = 'runoff_core_monthly',        -1         , 'sorunoff',   .true.     , .true. , 'yearly'  , ''       , ''
    sn_rnf      = 'runoff_core_monthly',        -1         , 'ROUT',       .true.     , .true. , 'yearly'  , 'weights_bil3.nc', ''
    sn_cnf      = 'runoff_core_monthly',        -1         , 'socoeff' ,   .true.     , .true. , 'yearly'  , ''       , ''
    sn_s_rnf    = 'runoffs'            ,        24         , 'rosaline',   .true.     , .true. , 'yearly'  , ''       , ''
