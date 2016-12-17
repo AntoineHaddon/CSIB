@@ -276,12 +276,14 @@ fi
 # Define variables containing the current commit and repo path to use as cpp macros during the build
 NEMO_COMMIT_ID=$(cd $nemo_source_repo; git log -1 --pretty="%H" $nemo_version)
 NEMO_REPO_PATH=$nemo_source_repo
+NEMO_CONFIG=$nemo_config
 nemo_exe_sfx=`echo "$NEMO_COMMIT_ID" | cut -c1-8`
 if [ $add_nemo_exe_sfx -eq 1 -a -n "$nemo_exe_sfx" ]; then
   nemo_exe=${nemo_exe}_$nemo_exe_sfx
 fi
 echo "NEMO_COMMIT_ID=$NEMO_COMMIT_ID"
 echo "NEMO_REPO_PATH=$NEMO_REPO_PATH"
+echo "NEMO_CONFIG=$NEMO_CONFIG"
 echo "nemo_exe=$nemo_exe"
 
 if [ -n "$nemo_source_mods" ]; then
@@ -357,6 +359,10 @@ if [ $coupled = "on" ]; then
   fi
   if [ -n "$NEMO_COMMIT_ID" ]; then
     echo "#define NEMO_COMMIT_ID $NEMO_COMMIT_ID" | cat - tmp_com_cpl.F90 > $tmpfile
+    mv $tmpfile tmp_com_cpl.F90
+  fi
+  if [ -n "$NEMO_CONFIG" ]; then
+    echo "#define NEMO_CONFIG $NEMO_CONFIG" | cat - tmp_com_cpl.F90 > $tmpfile
     mv $tmpfile tmp_com_cpl.F90
   fi
   mv tmp_com_cpl.F90 $nemo_root/NEMO/OPA_SRC/SBC/com_cpl.F90
