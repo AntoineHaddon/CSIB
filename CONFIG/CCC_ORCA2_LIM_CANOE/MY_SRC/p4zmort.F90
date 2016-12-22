@@ -192,7 +192,7 @@ CONTAINS
                fe2n=spf/(spn+rtrn)
                thetac=chl/(spc+rtrn)
 
-               zmortp = mprat * xstep * spc + mpqua * xstep * spc * spc
+               zmortp = mprat2 * xstep * spc + mpqua * xstep * spc * spc
                zmortz = mprat2 * xstep * szc + mpquad * xstep * szc * szc
 
 ! reduce mortality to what can support detritus production based on the least abundant element: the MIN(...) term should be 1 if N and Fe are in excess of the detritus ratio
