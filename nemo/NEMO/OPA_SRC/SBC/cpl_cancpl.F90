@@ -544,15 +544,15 @@ contains
      !--- The following values will be broadcast to all mpi tasks
      !--- in the call to cpl_initialize_events
 
-     !--- Set a value for nemo_nn_ice, defined in com_cpl
-     nemo_nn_ice = nn_ice
-
      !--- Set a value for nemo_rn_rdt, defined in com_cpl
      !--- rn_rdt is defined in the module dom_oce
      nemo_rn_rdt = nint(rn_rdt,8)
 
      REWIND( numnam )                    ! ... read namlist namsbc
      READ  ( numnam, namsbc )
+
+     !--- Set a value for nemo_nn_ice, defined in com_cpl
+     nemo_nn_ice = nn_ice
 
      !--- Set a value for nemo_nn_fsbc, defined in com_cpl
      !--- nn_fsbc is defined in the namelist namsbc
