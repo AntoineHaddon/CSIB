@@ -533,7 +533,7 @@ contains
        nemo_recv_var(1:nemo_n_recv_var) = var_list_info(1:nemo_n_recv_var)%name
      endif
 
-     if ( rank == ocn_master .and. verbose > 1 ) then
+     if ( rank == ocn_master .and. verbose > -1 ) then
        write(6,*)"cpl_cancpl_define: nemo_n_send_var=",nemo_n_send_var
        write(6,'(5(2x,a))')nemo_send_var(1:nemo_n_send_var)
        write(6,*)"cpl_cancpl_define: nemo_n_recv_var=",nemo_n_recv_var
@@ -602,6 +602,11 @@ contains
      sn_rcv_cal    = FLD_C( 'coupled'             ,    'no'    ,     ''      ,         ''          ,   ''    )
      sn_rcv_iceflx = FLD_C( 'none'                ,    'no'    ,     ''      ,         ''          ,   ''    )
      sn_rcv_co2    = FLD_C( 'none'                ,    'no'    ,     ''      ,         ''          ,   ''    )
+
+     if ( rank == ocn_master .and. verbose > -1 ) then
+       write(6,*)"cpl_cancpl_define: READ numnam namelist"
+       call flush(6)
+     endif
 
      REWIND( numnam )                    ! ... read namlist namsbc_cpl
      READ  ( numnam, namsbc_cpl )
@@ -704,8 +709,18 @@ contains
      !--- fmask is found in module dom_oce
      call cpl_gather("fmask", rank)
 
+     if ( rank == ocn_master .and. verbose > -1 ) then
+       write(6,*)"cpl_cancpl_define: call cpl_initialize_events()"
+       call flush(6)
+     endif
+
      !--- Initialize coupler events and broadcast global variables
      call cpl_initialize_events()
+
+     if ( rank == ocn_master .and. verbose > -1 ) then
+       write(6,*)"cpl_cancpl_define: call bcastGroup(cpl_time_string, cpl_master, MPI_COMM_WORLD)"
+       call flush(6)
+     endif
 
      !--- Broadcast the initial date and time from the coupler to all tasks
      !--- cpl_time_string is defined in com_cpl
