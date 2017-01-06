@@ -76,10 +76,10 @@
 &nampismort     !   parameters for phytoplankton sinks
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
    mprat      =  0.05     ! phytoplankton mortality rate
-   mprat2     =  0.05     ! Diatoms mortality rate
+   mprat2     =  0.1      ! Diatoms mortality rate
    mpratm     =  0.05     ! Phytoplankton minimum mortality rate
-   mpqua      =  1.E-9    ! quadratic mortality of phytoplankton
-   mpquad     =  2.E-8    ! maximum quadratic mortality of diatoms
+   mpqua      =  6.E-2    ! quadratic mortality of phytoplankton
+   mpquad     =  6.E-2    ! maximum quadratic mortality of diatoms
    chldegr    =  2.E-2    ! Chlorophyll photooxidation rate
    picfrx     =  0.05     ! CaCO3 production rate (as fraction of POC)
 /
@@ -87,18 +87,18 @@
 &nampismes     !   parameters for mesozooplankton
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
    part2      =  0.75     ! part of calcite not dissolved in mesozoo guts (not used)
-   gmax2      = 2.E-6     ! maximum grazing rate in s^-1
-   apl        = 0.075     ! large zooplankton functional response parameter
-   zsr2       = 5.787E-7  ! specific respiration rate
+   gmax2      = 1.E-5     ! maximum grazing rate in s^-1
+   apl        = 0.25      ! large zooplankton functional response parameter
+   zsr2       = 1.157E-06 ! specific respiration rate
    lambda2    = 0.8       ! assimilation efficiency
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &nampiszoo     !   parameters for microzooplankton
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
    part       =  0.5      ! part of calcite not dissolved in microzoo guts (not used)
-   gmax1      = 5.0E-6    ! maximum grazing rate in s^-1
-   aps        = 0.075     ! small zooplankton functional response parameter
-   zsr1       = 5.787E-7  ! specific respiration rate
+   gmax1      = 2.0E-5    ! maximum grazing rate in s^-1
+   aps        = 0.25      ! small zooplankton functional response parameter
+   zsr1       = 3.472E-06 ! specific respiration rate
    lambda1    = 0.8       ! assimilation efficiency
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
