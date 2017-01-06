@@ -278,11 +278,27 @@
 +++++++++++++++++++++++++++++++++++++++++++++++   daily   ++++++++++++++++++++++++++++++++++++++++++++++++++
         -->
       <group id="1d" output_freq="86400"  enabled=".TRUE.">                      <!-- 1d files -->
+        <!--
+..............................................    grid T   .................................................
+          -->
 	<file id="1d_grid_T" name="auto" name_suffix="_ar6" description="ar6" >         <!-- grid T  -->
 	  <field ref="sst"          name='tos'      description="sea_surface_temperature"                              level="2"                      />
 	  <field ref="sst2"         name='tossq'    description="square_of_sea_surface_temperature"                    level="2"                      />
 	  <!-- field ref="mldkz5"   name='omldamax' description="ocean_mixed_layer_thickness_defined_by_mixing_scheme" level="2" operation="t_max(X)", not in cmip6 request, DY -->
 	</file>   
+
+        <!--
+..............................................    icemod   .................................................
+          -->
+        <file id="1d_icemod" name="auto" description="ice variables" >
+          <field ref="snowthic_cea" name="isnowthi"   description="surface_snow_thickness" level="1" />
+          <field ref="ist_ipa"      name="iicetemp"   description="surface_temperature"    level="1" />
+          <field ref="ice_cover"    name="soicecov"   description="sea_ice_area_fraction"  level="1" />
+          <field ref="icethic_cea"  name="iicethic"   description="sea_ice_thickness"      level="1" /> 
+          <field ref="uice_ipa"     name="iicevelu"   description="sea_ice_x_velocity"     level="1" />
+          <field ref="vice_ipa"     name="iicevelv"   description="sea_ice_y_velocity"     level="1" /> 
+        </file>
+
       </group>
 	<!--
 ++++++++++++++++++++++++++++++++++++++++++++++   monthly   +++++++++++++++++++++++++++++++++++++++++++++++++
@@ -482,14 +498,14 @@
 
         <file id="1m_icemod" name="auto" description="ice variables" >
           <field ref="ice_pres"                     />
-          <field ref="ice_cover"    name="soicecov"         />                       <!-- cmip6 name: sic?                      -->
-	  <field ref="snowthic_cea" name="isnowthi"   description="surface_snow_thickness" />                <!-- cmip5 name: snd       -->
-	  <field ref="icethic_cea"  name="iicethic"   description="sea_ice_thickness"      />                <!-- cmip5 name: sit       -->
+          <field ref="ice_cover"    name="soicecov"   description="sea_ice_area_fraction"  level="1" />   
+	  <field ref="snowthic_cea" name="isnowthi"   description="surface_snow_thickness" level="1" />
+	  <field ref="icethic_cea"  name="iicethic"   description="sea_ice_thickness"      level="1" />
           <field ref="iceprod_cea"  name="iiceprod"                                        />                <!-- not in cmip6 request? -->
-          <field ref="ist_ipa"      name="iicetemp"                                        />                <!-- not in cmip6 request? -->
+          <field ref="ist_ipa"      name="iicetemp"   description="surface_temperature"    level="1" />
           <field ref="ioceflxb"     name="ioceflxb"                                        />                <!-- not in cmip6 request? -->
-          <field ref="uice_ipa"     name="iicevelu"                                        />                <!-- not in cmip6 request? -->
-          <field ref="vice_ipa"     name="iicevelv"                                        />                <!-- not in cmip6 request? -->
+          <field ref="uice_ipa"     name="iicevelu"   description="sea_ice_x_velocity"     level="1" />
+          <field ref="vice_ipa"     name="iicevelv"   description="sea_ice_y_velocity"     level="1" /> 
 	  <field ref="utau_ice"     name="iicestru"   description="Eastward Atmospheric Stress On Sea Ice" />  <!-- cmip5 name: strairx -->
 	  <field ref="vtau_ice"     name="iicestrv"   description="Northward Atmospheric Stress On Sea Ice" /> <!-- cmip5 name: strairy -->
           <field ref="qsr_io_cea"   name="iicesflx"                                        />                <!-- not in cmip6 request? -->
@@ -497,7 +513,7 @@
           <field ref="snowpre"      name="isnowpre"                                        />                <!-- not in cmip6 request? -->
 	  <field ref="subl_ai_cea"  name="evap"       description="water_evaporation_flux"                           />
 	  <!-- snc : surface_snow_area_fraction : same as sic -->
-	  <field ref="icealb_cea"   name="ialb"       description="Bare Sea Ice Albedo"                              />
+	  <field ref="icealb_cea"   name="ialb"       description="Bare Sea Ice Albedo"    level="2" />
 	  <!-- ssi : Sea Ice Salinity : cte = sice = 6, expect in baltic sea = 2 -->
 	  <field ref="ist_cea"      name="tsice"      description="Surface Temperature of Sea Ice"                   />
 	  <!-- tsnint : Temperature at Interface Between Sea Ice and Snow : not available -->
