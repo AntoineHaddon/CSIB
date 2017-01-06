@@ -76,8 +76,8 @@
 &nampismort     !   parameters for phytoplankton sinks
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
    mprat      =  0.05     ! phytoplankton mortality rate
-   mprat2     =  0.1      ! Diatoms mortality rate
-   mpratm     =  0.05     ! Phytoplankton minimum mortality rate
+   mprat2     =  0.1      ! Large zooplankton mortality rate
+   mpratm     =  0.1      ! Diatoms mortality rate
    mpqua      =  6.E-2    ! quadratic mortality of phytoplankton
    mpquad     =  6.E-2    ! maximum quadratic mortality of diatoms
    chldegr    =  2.E-2    ! Chlorophyll photooxidation rate
