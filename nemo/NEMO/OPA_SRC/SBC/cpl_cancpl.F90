@@ -396,18 +396,13 @@ contains
        call flush(numout)
      endif
 
-     if ( rank == ocn_master ) then
-       write(numout,*) 'cpl_cancpl_define: allocate png ',jpi,jpj,jpnij
-       call flush(numout)
-     endif
-
      !--- Allocate temporary space used with MPI gather/scatter ops below
      allocate( png(jpi,jpj,jpnij), stat=nerror )
      if( nerror > 0 ) then
        call ctl_stop("STOP", " cpl_cancpl_define", "Problem allocating png")
      endif
 
-     if ( rank == ocn_master ) then
+     if ( rank == ocn_master .and. verbose > 1 ) then
        write(numout,*) 'cpl_cancpl_define: Assign sent variables'
        call flush(numout)
      endif
@@ -460,7 +455,7 @@ contains
            end do
         endif
      end do
-     if ( rank == ocn_master ) then
+     if ( rank == ocn_master .and. verbose > 1 ) then
        write(numout,*) 'cpl_cancpl_define: nemo_n_send_var=',nemo_n_send_var
        call flush(numout)
      endif
@@ -502,7 +497,7 @@ contains
        enddo
      endif
 
-     if ( rank == ocn_master ) then
+     if ( rank == ocn_master .and. verbose > 1 ) then
        write(numout,*) 'cpl_cancpl_define : Assign received variables'
        call flush(numout)
      endif
@@ -541,7 +536,7 @@ contains
            end do
         endif
      end do
-     if ( rank == ocn_master ) then
+     if ( rank == ocn_master .and. verbose > 1 ) then
        write(numout,*) 'cpl_cancpl_define: nemo_n_recv_var=',nemo_n_recv_var
        call flush(numout)
      endif
@@ -556,7 +551,7 @@ contains
        nemo_recv_var(1:nemo_n_recv_var) = var_list_info(1:nemo_n_recv_var)%name
      endif
 
-     if ( rank == ocn_master .and. verbose > -1 ) then
+     if ( rank == ocn_master .and. verbose > 1 ) then
        write(6,*)"cpl_cancpl_define: nemo_n_send_var=",nemo_n_send_var
        write(6,'(5(2x,a))')nemo_send_var(1:nemo_n_send_var)
        write(6,*)"cpl_cancpl_define: nemo_n_recv_var=",nemo_n_recv_var
@@ -571,7 +566,7 @@ contains
      !--- rn_rdt is defined in the module dom_oce
      nemo_rn_rdt = nint(rn_rdt,8)
 
-     if ( rank == ocn_master ) then
+     if ( rank == ocn_master .and. verbose > 1 ) then
        write(numout,*) 'cpl_cancpl_define : read namsbc namelist'
        call flush(numout)
      endif
@@ -631,7 +626,7 @@ contains
      sn_rcv_iceflx = FLD_C( 'none'                ,    'no'    ,     ''      ,         ''          ,   ''    )
      sn_rcv_co2    = FLD_C( 'none'                ,    'no'    ,     ''      ,         ''          ,   ''    )
 
-     if ( rank == ocn_master ) then
+     if ( rank == ocn_master .and. verbose > 1 ) then
        write(6,*)"cpl_cancpl_define: READ namsbc_cpl namelist"
        call flush(6)
      endif
@@ -737,7 +732,7 @@ contains
      !--- fmask is found in module dom_oce
      call cpl_gather("fmask", rank)
 
-     if ( rank == ocn_master .and. verbose > -1 ) then
+     if ( rank == ocn_master .and. verbose > 1 ) then
        write(6,*)"cpl_cancpl_define: call cpl_initialize_events()"
        call flush(6)
      endif
@@ -745,7 +740,7 @@ contains
      !--- Initialize coupler events and broadcast global variables
      call cpl_initialize_events()
 
-     if ( rank == ocn_master .and. verbose > -1 ) then
+     if ( rank == ocn_master .and. verbose > 1 ) then
        write(6,*)"cpl_cancpl_define: call bcastGroup(cpl_time_string, cpl_master, MPI_COMM_WORLD)"
        call flush(6)
      endif
@@ -770,7 +765,7 @@ contains
              enddo
            endif
          enddo
-         if ( rank == ocn_master ) then
+         if ( rank == ocn_master .and. verbose > -1 ) then
            !--- Write to NEMO's ocean.output file
            write(numout,*) "cpl_cancpl_define: Send field ",ji, &
                "  name=",trim(nemo_send_var(ji))," tag=",cpl_vinfo%tag
@@ -795,7 +790,7 @@ contains
              enddo
            endif
          enddo
-         if ( rank == ocn_master ) then
+         if ( rank == ocn_master .and. verbose > -1 ) then
            !--- Write to NEMO's ocean.output file
            write(numout,*) "cpl_cancpl_define: Recv field ",ji, &
                "  name=",trim(nemo_recv_var(ji))," tag=",cpl_vinfo%tag
