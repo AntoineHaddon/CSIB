@@ -396,6 +396,11 @@ contains
        call flush(numout)
      endif
 
+     if ( rank == ocn_master ) then
+       write(numout,*) 'cpl_cancpl_define: allocate png ',jpi,jpj,jpnij
+       call flush(numout)
+     endif
+
      !--- Allocate temporary space used with MPI gather/scatter ops below
      allocate( png(jpi,jpj,jpnij), stat=nerror )
      if( nerror > 0 ) then
