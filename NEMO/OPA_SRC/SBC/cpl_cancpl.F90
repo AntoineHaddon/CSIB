@@ -390,7 +390,7 @@ contains
 
      if ( rank == ocn_master ) then
        write(numout,*)
-       write(numout,*) 'cpl_cancpl_define : initialize coupled ocean/atmosphere'
+       write(numout,*) 'cpl_cancpl_define: initialize coupled ocean/atmosphere'
        write(numout,*) '~~~~~~~~~~~~~~~~~'
        write(numout,*)
        call flush(numout)
@@ -400,6 +400,11 @@ contains
      allocate( png(jpi,jpj,jpnij), stat=nerror )
      if( nerror > 0 ) then
        call ctl_stop("STOP", " cpl_cancpl_define", "Problem allocating png")
+     endif
+
+     if ( rank == ocn_master ) then
+       write(numout,*) 'cpl_cancpl_define: Assign sent variables'
+       call flush(numout)
      endif
 
      ! -----------------------------------------------------------------
@@ -450,6 +455,10 @@ contains
            end do
         endif
      end do
+     if ( rank == ocn_master ) then
+       write(numout,*) 'cpl_cancpl_define: nemo_n_send_var=',nemo_n_send_var
+       call flush(numout)
+     endif
      if ( nemo_n_send_var > 0 ) then
        if ( associated(nemo_send_var) ) deallocate(nemo_send_var)
        allocate( nemo_send_var(nemo_n_send_var) )
@@ -488,6 +497,11 @@ contains
        enddo
      endif
 
+     if ( rank == ocn_master ) then
+       write(numout,*) 'cpl_cancpl_define : Assign received variables'
+       call flush(numout)
+     endif
+
      !--- Receive variables
      !
      !--- nemo_n_recv_var is the number of fields in nemo_recv_var
@@ -522,6 +536,10 @@ contains
            end do
         endif
      end do
+     if ( rank == ocn_master ) then
+       write(numout,*) 'cpl_cancpl_define: nemo_n_recv_var=',nemo_n_recv_var
+       call flush(numout)
+     endif
      if ( nemo_n_recv_var > 0 ) then
        if ( associated(nemo_recv_var) ) deallocate(nemo_recv_var)
        allocate( nemo_recv_var(nemo_n_recv_var) )
@@ -547,6 +565,11 @@ contains
      !--- Set a value for nemo_rn_rdt, defined in com_cpl
      !--- rn_rdt is defined in the module dom_oce
      nemo_rn_rdt = nint(rn_rdt,8)
+
+     if ( rank == ocn_master ) then
+       write(numout,*) 'cpl_cancpl_define : read namsbc namelist'
+       call flush(numout)
+     endif
 
      REWIND( numnam )                    ! ... read namlist namsbc
      READ  ( numnam, namsbc )
@@ -603,8 +626,8 @@ contains
      sn_rcv_iceflx = FLD_C( 'none'                ,    'no'    ,     ''      ,         ''          ,   ''    )
      sn_rcv_co2    = FLD_C( 'none'                ,    'no'    ,     ''      ,         ''          ,   ''    )
 
-     if ( rank == ocn_master .and. verbose > -1 ) then
-       write(6,*)"cpl_cancpl_define: READ numnam namelist"
+     if ( rank == ocn_master ) then
+       write(6,*)"cpl_cancpl_define: READ namsbc_cpl namelist"
        call flush(6)
      endif
 
