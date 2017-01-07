@@ -29,7 +29,7 @@ MODULE p4zmort
    !! * Shared module variables
 
    REAL(wp), PUBLIC :: mprat   = 5.E-2_wp   !: phytoplankton mortality rate 
-   REAL(wp), PUBLIC :: mprat2  = 5.E-2_wp   !: Diatoms mortality rate
+   REAL(wp), PUBLIC :: mprat2  = 2.E-1_wp   !: Diatoms mortality rate
    REAL(wp), PUBLIC :: mpratm  = 5.E-2_wp   !: Phytoplankton minimum mortality rate
    REAL(wp), PUBLIC :: mpqua   = 1.E-09_wp  !: quadratic mortality of phytoplankton
    REAL(wp), PUBLIC :: mpquad  = 2.E-08_wp  !: maximum quadratic mortality of diatoms
@@ -192,7 +192,7 @@ CONTAINS
                fe2n=spf/(spn+rtrn)
                thetac=chl/(spc+rtrn)
 
-               zmortp = mprat2 * xstep * spc + mpqua * xstep * spc * spc
+               zmortp = mpratm * xstep * spc + mpqua * xstep * spc * spc
                zmortz = mprat2 * xstep * szc + mpquad * xstep * szc * szc
 
 ! reduce mortality to what can support detritus production based on the least abundant element: the MIN(...) term should be 1 if N and Fe are in excess of the detritus ratio
