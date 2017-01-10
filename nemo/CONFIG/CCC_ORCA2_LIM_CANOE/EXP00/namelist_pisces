@@ -54,14 +54,14 @@
    QNmin1     = 0.04      ! Small phytoplankton min N quota
    QNmax2     = 0.172     ! Large phytoplankton max N quota
    QNmin2     = 0.04      ! Large phytoplankton min N quota
-   VCNref     = 6.944E-6  ! Reference rate of N uptake
+   VCNref     = 0.6       ! Reference rate of N uptake
    QFemax1    = 93.08     ! Small phytoplankton max Fe quota
    QFemin1    = 4.65      ! Small phytoplankton min Fe quota
    QFemax2    = 69.81     ! Large phytoplankton max Fe quota
    QFemin2    = 6.5       ! Large phytoplankton min Fe quota
-   VCFref     = 9.176E-4  ! Reference rate of Fe uptake
-   PCref      = 3.472E-5  ! Reference rate of photosynthesis
-   alphachl   = 1.25E-5   ! Initial slope of P-E curve
+   VCFref     = 79.       ! Reference rate of Fe uptake
+   PCref      = 3.        ! Reference rate of photosynthesis
+   alphachl   = 1.08      ! Initial slope of P-E curve
    kn1        = 0.1       ! Small P half-saturation for NO3 uptake
    ka1        = 0.05      ! Small P half-saturation for NH4 uptake
    kf1        = 100.      ! Small P half-saturation for Fe uptake
@@ -70,7 +70,7 @@
    kf2        = 200.      ! Large P half-saturation for Fe uptake
    thetamax   = 0.18      ! Maximum chlorophyll/nitrogen ratio
    eta        = 2.        ! Metabolic cost of biosynthesis
-   kexh       = 2.E-5     ! Exudation rate of excess intracellular C
+   kexh       = 1.7       ! Exudation rate of excess intracellular C
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &nampismort     !   parameters for phytoplankton sinks
