@@ -154,7 +154,7 @@ CONTAINS
                       QN = MIN(QNmax1,phyn/phyc)
                       QN = MAX(QNmin1,QN)
                       qndep = MAX((QNmax1-QN)/(QNmax1-QNmin1),0.)                  ! in principle this should be nonegative but if roundoff makes it even slightly negative the exponent could go NaN
-                      VCNmax = VCNref*Tf*qndep**0.05*xstep
+                      VCNmax = VCNref*Tf*qndep**0.05
                       Alim  =  Na/(ka1+Na)
                       Nlim  =  Ni/(kn1+Ni)
                       VCN = VCNmax*((1.-Alim)*Nlim+Alim)
@@ -162,10 +162,10 @@ CONTAINS
                       QFe = MIN(QFemax1,phyfe/phyc)
                       QFe = MAX(QFemin1,QFe)
                       qfedep = MAX((QFemax1-QFe)/(QFemax1-QFemin1),0.) 
-                      VCFmax = VCFref*Tf*qfedep**0.05*xstep
+                      VCFmax = VCFref*Tf*qfedep**0.05
                       VCF = VCFmax*Fe/(kf1+Fe)
 
-                      PCmax = PCref*Tf*MIN((QFe-QFemin1+rtrn*1.e6)/(QFemax1-QFemin1),(QN-QNmin1+rtrn)/(QNmax1-QNmin1))*xstep
+                      PCmax = PCref*Tf*MIN((QFe-QFemin1+rtrn*1.e6)/(QFemax1-QFemin1),(QN-QNmin1+rtrn)/(QNmax1-QNmin1))
 
                       PCmax = MAX(PCmax,1.0e-10)
                       thetac = MAX(chl/phyc,0.001)
@@ -176,10 +176,10 @@ CONTAINS
                       xsphsyn=(phyc/phyn*mwr_n2c-rr_c2n)*phyn*imw_n
                       xsphsyn=MAX(xsphsyn,0.)
 
-                      zprocn(ji,jj,jk) = (PCphot-eta*VCN)*trn(ji,jj,jk,jpphy)-kexh*xsphsyn*xstep              ! C production rate (in molar units)
-                      zpronn(ji,jj,jk) = VCN/QN*trn(ji,jj,jk,jpnn)                                            ! N uptake rate
-                      zprofen(ji,jj,jk) = VCF/QFe*trn(ji,jj,jk,jpnfe)                                         ! Fe uptake rate
-                      zprochln(ji,jj,jk) = rhochl*VCN/thetac*trn(ji,jj,jk,jpnch)                              ! Chl production rate
+                      zprocn(ji,jj,jk) = (PCphot-eta*VCN)*trn(ji,jj,jk,jpphy)*xstep-kexh*xsphsyn*xstep        ! C production rate (in molar units)
+                      zpronn(ji,jj,jk) = VCN/QN*trn(ji,jj,jk,jpnn)*xstep                                      ! N uptake rate
+                      zprofen(ji,jj,jk) = VCF/QFe*trn(ji,jj,jk,jpnfe)*xstep                                   ! Fe uptake rate
+                      zprochln(ji,jj,jk) = rhochl*VCN/thetac*trn(ji,jj,jk,jpnch)*xstep                        ! Chl production rate
                       zpronew(ji,jj,jk) = zpronn(ji,jj,jk)*Nlim/(Alim+Nlim+rtrn)                              ! NO3 uptake
                       xlimnn(ji,jj,jk) = 1.-qndep 
                       xlimnfe(ji,jj,jk) = 1.-qfedep 
@@ -194,7 +194,7 @@ CONTAINS
                       QN = MIN(QNmax2,phyn/phyc)
                       QN = MAX(QNmin2,QN)
                       qndep = MAX((QNmax2-QN)/(QNmax2-QNmin2),0.) 
-                      VCNmax = VCNref*Tf*qndep**0.05*xstep
+                      VCNmax = VCNref*Tf*qndep**0.05
                       Alim  =  Na/(ka2+Na)
                       Nlim  =  Ni/(kn2+Ni)
                       VCN = VCNmax*((1.-Alim)*Nlim+Alim)
@@ -202,10 +202,10 @@ CONTAINS
                       QFe = MIN(QFemax2,phyfe/phyc)
                       QFe = MAX(QFemin2,QFe)
                       qfedep = MAX((QFemax2-QFe)/(QFemax2-QFemin2),0.) 
-                      VCFmax = VCFref*Tf*qfedep**0.05*xstep
+                      VCFmax = VCFref*Tf*qfedep**0.05
                       VCF = VCFmax*Fe/(kf2+Fe)
 
-                      PCmax = PCref*Tf*MIN((QFe-QFemin2+rtrn)/(QFemax2-QFemin2),(QN-QNmin2+rtrn)/(QNmax2-QNmin2))*xstep
+                      PCmax = PCref*Tf*MIN((QFe-QFemin2+rtrn)/(QFemax2-QFemin2),(QN-QNmin2+rtrn)/(QNmax2-QNmin2))
 
                       PCmax = MAX(PCmax,1.0e-10)
                       thetac = MAX(chl/phyc,0.001)
@@ -215,10 +215,10 @@ CONTAINS
                       xsphsyn=(phyc/phyn*mwr_n2c-rr_c2n)*phyn*imw_n
                       xsphsyn=MAX(xsphsyn,0.)
 
-                      zprocd(ji,jj,jk) = (PCphot-eta*VCN)*trn(ji,jj,jk,jpdia)-kexh*xsphsyn*xstep             ! C production rate (in molar units)
-                      zprond(ji,jj,jk) = VCN/QN*trn(ji,jj,jk,jpdn)                                           ! N uptake rate
-                      zprofed(ji,jj,jk) = VCF/QFe*trn(ji,jj,jk,jpdfe)                                        ! Fe uptake rate
-                      zprochld(ji,jj,jk) = rhochl*VCN/thetac*trn(ji,jj,jk,jpdch)                             ! Chl production rate
+                      zprocd(ji,jj,jk) = (PCphot-eta*VCN)*trn(ji,jj,jk,jpdia)*xstep-kexh*xsphsyn*xstep       ! C production rate (in molar units)
+                      zprond(ji,jj,jk) = VCN/QN*trn(ji,jj,jk,jpdn)*xstep                                     ! N uptake rate
+                      zprofed(ji,jj,jk) = VCF/QFe*trn(ji,jj,jk,jpdfe)*xstep                                  ! Fe uptake rate
+                      zprochld(ji,jj,jk) = rhochl*VCN/thetac*trn(ji,jj,jk,jpdch)*xstep                       ! Chl production rate
                       zpronewd(ji,jj,jk) = zprond(ji,jj,jk)*Nlim/(Alim+Nlim+rtrn)                            ! NO3 uptake
                       xlimdn(ji,jj,jk) = 1.-qndep 
                       xlimdfe(ji,jj,jk) = 1.-qfedep 
