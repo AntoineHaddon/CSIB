@@ -86,19 +86,19 @@
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &nampismes     !   parameters for mesozooplankton
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-   part2      =  0.75     ! part of calcite not dissolved in mesozoo guts (not used)
-   gmax2      = 1.E-5     ! maximum grazing rate in s^-1
+   part2      = 0.75      ! part of calcite not dissolved in mesozoo guts (not used)
+   gmax2      = 0.85      ! maximum grazing rate
    apl        = 0.25      ! large zooplankton functional response parameter
-   zsr2       = 1.157E-06 ! specific respiration rate
+   zsr2       = 0.1       ! specific respiration rate
    lambda2    = 0.8       ! assimilation efficiency
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &nampiszoo     !   parameters for microzooplankton
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-   part       =  0.5      ! part of calcite not dissolved in microzoo guts (not used)
-   gmax1      = 2.0E-5    ! maximum grazing rate in s^-1
+   part       = 0.5       ! part of calcite not dissolved in microzoo guts (not used)
+   gmax1      = 1.7       ! maximum grazing rate
    aps        = 0.25      ! small zooplankton functional response parameter
-   zsr1       = 3.472E-06 ! specific respiration rate
+   zsr1       = 0.3       ! specific respiration rate
    lambda1    = 0.8       ! assimilation efficiency
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
