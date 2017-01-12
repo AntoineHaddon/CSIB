@@ -62,9 +62,7 @@ MODULE p4zprod
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   quotan   !: proxy of N quota in Nanophyto
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   quotad   !: proxy of N quota in diatomee
    
-   REAL(wp) :: r1_rday                !: 1 / rday
    REAL(wp) :: tpp                    !: Total primary production
-
 
    !!* Substitution
 #  include "top_substitute.h90"
@@ -354,7 +352,6 @@ CONTAINS
          WRITE(numout,*) '    Exudation rate of excess intracellular C kexh         =', kexh
       ENDIF
       !
-      r1_rday   = 1._wp / rday 
       tpp       = 0._wp
       !
    END SUBROUTINE p4z_prod_init
