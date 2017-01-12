@@ -108,11 +108,11 @@ CONTAINS
 
 ! simplified CMOC type mortality: sum of linear and quadratic terms
                zmortp = mprat * xstep * spc + mpqua * xstep * spc * spc
-               if (spc.le.xminp) zmortp=0.                                    ! this is how Tessa did it but I would prefer to limit it to linear mortality only
+               zmortpn(ji,jj,jk) = zmortp       ! I will leave this here for now because that's where Hakase put it, but I think it should be after the if
                zmortz = mprat * xstep * szc + mpqua * xstep * szc * szc
-
 ! reduce mortality to what can support detritus production based on the least abundant element: the MIN(...) term should be 1 if N and Fe are in excess of the detritus ratio
                zmortp=zmortp*MIN(n2c*rr_c2n,fe2c*rr_c2fe,1.)
+               if (spc.le.xminp) zmortp=0.                                    ! this is how Tessa did it but I would prefer to limit it to linear mortality only
 ! calculate "excess" relative to grazer RR
                cxs=zmortp*MAX(c2n*rr_n2c-1.,c2fe*rr_fe2c-1.,0.)
                nxs1=zmortp*(n2c-rr_n2c)
@@ -195,11 +195,11 @@ CONTAINS
                thetac=chl/(spc+rtrn)
 
                zmortp = mpratm * xstep * spc + mpqua * xstep * spc * spc
-               if (spc.le.xminp) zmortp=0.
+               zmortpd(ji,jj,jk) = zmortp
                zmortz = mprat2 * xstep * szc + mpquad * xstep * szc * szc
-
 ! reduce mortality to what can support detritus production based on the least abundant element: the MIN(...) term should be 1 if N and Fe are in excess of the detritus ratio
                zmortp=zmortp*MIN(n2c*rr_c2n,fe2c*rr_c2fe,1.)
+               if (spc.le.xminp) zmortp=0.
 ! calculate "excess" relative to grazer RR
                cxs=zmortp*MAX(c2n*rr_n2c-1.,c2fe*rr_fe2c-1.,0.)
                nxs1=zmortp*(n2c-rr_n2c)
