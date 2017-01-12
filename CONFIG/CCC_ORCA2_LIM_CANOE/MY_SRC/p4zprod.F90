@@ -149,7 +149,7 @@ CONTAINS
 ! small phytoplankton
 
                       Tf = tgfuncp(ji,jj,jk)
-                      QN = MIN(QNmax1,phyn/phyc)
+                      QN = MIN(QNmax1,phyn/(phyc+rtrn))
                       QN = MAX(QNmin1,QN)
                       qndep = MAX((QNmax1-QN)/(QNmax1-QNmin1),0.)                  ! in principle this should be nonegative but if roundoff makes it even slightly negative the exponent could go NaN
                       VCNmax = VCNref*Tf*qndep**0.05
@@ -157,7 +157,7 @@ CONTAINS
                       Nlim  =  Ni/(kn1+Ni)
                       VCN = VCNmax*((1.-Alim)*Nlim+Alim)
 
-                      QFe = MIN(QFemax1,phyfe/phyc)
+                      QFe = MIN(QFemax1,phyfe/(phyc+rtrn))
                       QFe = MAX(QFemin1,QFe)
                       qfedep = MAX((QFemax1-QFe)/(QFemax1-QFemin1),0.) 
                       VCFmax = VCFref*Tf*qfedep**0.05
@@ -166,12 +166,12 @@ CONTAINS
                       PCmax = PCref*Tf*MIN((QFe-QFemin1+rtrn*1.e6)/(QFemax1-QFemin1),(QN-QNmin1+rtrn)/(QNmax1-QNmin1))
 
                       PCmax = MAX(PCmax,1.0e-10)
-                      thetac = MAX(chl/phyc,0.001)
+                      thetac = MAX(chl/(phyc+rtrn),0.001)
                       PCphot = PCmax*(1.-EXP(-alphachl*ei*thetac/PCmax))
                       rhochl = thetamax*(PCphot/(alphachl*thetac*MAX(ei,0.001)))
 
 ! calculate excess intracellular C for exhudation
-                      xsphsyn=(phyc/phyn*mwr_n2c-rr_c2n)*phyn*imw_n
+                      xsphsyn=(phyc/(phyn+rtrn)*mwr_n2c-rr_c2n)*phyn*imw_n
                       xsphsyn=MAX(xsphsyn,0.)
 
                       zprocn(ji,jj,jk) = (PCphot-eta*VCN)*trn(ji,jj,jk,jpphy)*xstep-kexh*xsphsyn*xstep        ! C production rate (in molar units)
@@ -189,7 +189,7 @@ CONTAINS
                       phyfe = MAX(trn(ji,jj,jk,jpdfe),0.)*mw_fe
                       chl = MAX(trn(ji,jj,jk,jpdch),0.)
 
-                      QN = MIN(QNmax2,phyn/phyc)
+                      QN = MIN(QNmax2,phyn/(phyc+rtrn))
                       QN = MAX(QNmin2,QN)
                       qndep = MAX((QNmax2-QN)/(QNmax2-QNmin2),0.) 
                       VCNmax = VCNref*Tf*qndep**0.05
@@ -197,7 +197,7 @@ CONTAINS
                       Nlim  =  Ni/(kn2+Ni)
                       VCN = VCNmax*((1.-Alim)*Nlim+Alim)
 
-                      QFe = MIN(QFemax2,phyfe/phyc)
+                      QFe = MIN(QFemax2,phyfe/(phyc+rtrn))
                       QFe = MAX(QFemin2,QFe)
                       qfedep = MAX((QFemax2-QFe)/(QFemax2-QFemin2),0.) 
                       VCFmax = VCFref*Tf*qfedep**0.05
@@ -206,11 +206,11 @@ CONTAINS
                       PCmax = PCref*Tf*MIN((QFe-QFemin2+rtrn)/(QFemax2-QFemin2),(QN-QNmin2+rtrn)/(QNmax2-QNmin2))
 
                       PCmax = MAX(PCmax,1.0e-10)
-                      thetac = MAX(chl/phyc,0.001)
+                      thetac = MAX(chl/(phyc+rtrn),0.001)
                       PCphot = PCmax*(1.-EXP(-alphachl*ei*thetac/PCmax))
                       rhochl = thetamax*(PCphot/(alphachl*thetac*MAX(ei,0.001)))
 
-                      xsphsyn=(phyc/phyn*mwr_n2c-rr_c2n)*phyn*imw_n
+                      xsphsyn=(phyc/(phyn+rtrn)*mwr_n2c-rr_c2n)*phyn*imw_n
                       xsphsyn=MAX(xsphsyn,0.)
 
                       zprocd(ji,jj,jk) = (PCphot-eta*VCN)*trn(ji,jj,jk,jpdia)*xstep-kexh*xsphsyn*xstep       ! C production rate (in molar units)
