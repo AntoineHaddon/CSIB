@@ -97,7 +97,7 @@ CONTAINS
       REAL(wp) :: PCmax,thetac,PCphot,rhochl,ei,xsphsyn, mwr_n2c, imw_n
       CHARACTER (len=25) :: charout
       REAL(wp), POINTER, DIMENSION(:,:,:) :: zprdia, zprbio, zprdch, zprnch, zysopt   
-      REAL(wp), POINTER, DIMENSION(:,:,:) :: zprorca, zprorcad, zprofed, zprofen, zprochln, zprochld, zpronew, zpronewd
+      REAL(wp), POINTER, DIMENSION(:,:,:) :: zprorca, zprorcad, zprofed, zprofen, zpronew, zpronewd
       REAL(wp), POINTER, DIMENSION(:,:,:) :: zprocn, zprocd, zpronn, zprond
       !!---------------------------------------------------------------------
       !
@@ -105,7 +105,7 @@ CONTAINS
       !
       !  Allocate temporary workspace
       CALL wrk_alloc( jpi, jpj, jpk, zprdia, zprbio, zprdch, zprnch, zysopt            ) 
-      CALL wrk_alloc( jpi, jpj, jpk, zprorca, zprorcad, zprofed, zprofen, zprochln, zprochld, zpronew, zpronewd )
+      CALL wrk_alloc( jpi, jpj, jpk, zprorca, zprorcad, zprofed, zprofen, zpronew, zpronewd )
       CALL wrk_alloc( jpi, jpj, jpk, zprocn, zprocd, zpronn, zprond                                             ) 
       !
       zprorca (:,:,:) = 0._wp
@@ -297,7 +297,7 @@ CONTAINS
       ENDIF
       !
       CALL wrk_dealloc( jpi, jpj, jpk, zprdia, zprbio, zprdch, zprnch, zysopt            ) 
-      CALL wrk_dealloc( jpi, jpj, jpk, zprorca, zprorcad, zprofed, zprofen, zprochln, zprochld, zpronew, zpronewd )
+      CALL wrk_dealloc( jpi, jpj, jpk, zprorca, zprorcad, zprofed, zprofen, zpronew, zpronewd )
       CALL wrk_dealloc( jpi, jpj, jpk, zprocn, zprocd, zpronn, zprond                                             ) 
       !
       IF( nn_timing == 1 )  CALL timing_stop('p4z_prod')
