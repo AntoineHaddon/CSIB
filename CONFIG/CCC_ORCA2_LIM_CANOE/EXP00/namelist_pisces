@@ -110,7 +110,7 @@
    xlam1      = 0.001     ! scavenging rate of iron (low concentrations)
    xlam2      = 2.5       ! scavenging rate of iron (high concentrations)
    ligand     = 600.      ! ligand concentration
-   pocfctr    = 0.65574   ! multiplier for POC-dependent scavenging
+   pocfctr    = 0.66      ! multiplier for POC-dependent scavenging
    o2thresh   = 6.        ! O2 threshold for denitrification
    nh4frx     = 0.25      ! annamox fraction of denitrification
    oxymin     = 1.        ! half saturation constant for anoxia 
@@ -118,8 +118,8 @@
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &nampiscal     !   parameters for Calcite chemistry
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-   kdca       = 8.573E-8  ! calcite dissolution rate constant in s^-1 (2700 m e-folding scale for w=20 m/d)
-   nca        =  1.       ! order of dissolution reaction (not used)
+   kdca       = 7.4E-3    ! calcite dissolution rate constant in d^-1 (2700 m e-folding scale for w=20 m/d)
+   nca        = 1.        ! order of dissolution reaction (not used)
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &nampissed     !   parameters for inputs deposition
@@ -140,7 +140,7 @@
    sedfeinput  =  1000.    ! Coastal release of Iron
    dustsolub   =  0.01     ! Solubility of the dust
    wdust       =  2.0      ! Dust sinking speed
-   nitrfix     =  2.60E-7  ! Nitrogen fixation rate
+   nitrfix     =  2.25E-2  ! Nitrogen fixation rate
    diazolight  =  50.      ! Diazotrophs sensitivity to light (W/m2)
    concfediaz  =  100.     ! Diazotrophs half-saturation Cste for Iron
 /
@@ -177,7 +177,7 @@
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &nampisdmp     !  Damping 
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-   ln_pisdmp    =  .false.    !  Relaxation fo some tracers to a mean value
+   ln_pisdmp    =  .false.    !  Relaxation of some tracers to a mean value
    nn_pisdmp    =  5475       !  Frequency of Relaxation 
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
