@@ -35,6 +35,7 @@ MODULE p4zmort
    REAL(wp), PUBLIC :: mpquad  = 2.E-08_wp  !: maximum quadratic mortality of diatoms
    REAL(wp), PUBLIC :: chldegr = 2.E-2_wp   !: Chlorophyll photooxidation rate
    REAL(wp), PUBLIC :: picfrx  = 1.E-1_wp   !: CaCO3 fraction of mortality (0.1 implies 1 mol caCO3 for each 10 mol POC)
+   REAL(wp), PUBLIC :: xminp   = 0.01       !: minimum phytoplankton concentration for linear mortality
 
    !!* Substitution
 #  include "top_substitute.h90"
@@ -107,6 +108,7 @@ CONTAINS
 
 ! simplified CMOC type mortality: sum of linear and quadratic terms
                zmortp = mprat * xstep * spc + mpqua * xstep * spc * spc
+               if (spc.le.xminp) zmortp=0.                                    ! this is how Tessa did it but I would prefer to limit it to linear mortality only
                zmortz = mprat * xstep * szc + mpqua * xstep * szc * szc
 
 ! reduce mortality to what can support detritus production based on the least abundant element: the MIN(...) term should be 1 if N and Fe are in excess of the detritus ratio
@@ -193,6 +195,7 @@ CONTAINS
                thetac=chl/(spc+rtrn)
 
                zmortp = mpratm * xstep * spc + mpqua * xstep * spc * spc
+               if (spc.le.xminp) zmortp=0.
                zmortz = mprat2 * xstep * szc + mpquad * xstep * szc * szc
 
 ! reduce mortality to what can support detritus production based on the least abundant element: the MIN(...) term should be 1 if N and Fe are in excess of the detritus ratio
