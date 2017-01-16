@@ -110,6 +110,7 @@ CONTAINS
                zmortp = mprat * xstep * spc + mpqua * xstep * spc * spc
                if (spc.le.xminp) zmortp = mpqua * xstep * spc * spc           ! no linear mortality below biomass threshold xminp
                zmortz = mprat * xstep * szc + mpqua * xstep * szc * szc
+               if (szc.le.xminp) zmortz = mpqua * xstep * szc * szc
 ! reduce mortality to what can support detritus production based on the least abundant element: the MIN(...) term should be 1 if N and Fe are in excess of the detritus ratio
                zmortp=zmortp*MIN(n2c*rr_c2n,fe2c*rr_c2fe,1.)
                zmortpn(ji,jj,jk) = zmortp
@@ -197,6 +198,7 @@ CONTAINS
                zmortp = mpratm * xstep * spc + mpqua * xstep * spc * spc
                if (spc.le.xminp) zmortp = mpqua * xstep * spc * spc           ! no linear mortality below biomass threshold xminp
                zmortz = mprat2 * xstep * szc + mpquad * xstep * szc * szc
+               if (szc.le.xminp) zmortz = mpquad * xstep * szc * szc
 ! reduce mortality to what can support detritus production based on the least abundant element: the MIN(...) term should be 1 if N and Fe are in excess of the detritus ratio
                zmortp=zmortp*MIN(n2c*rr_c2n,fe2c*rr_c2fe,1.)
                zmortpd(ji,jj,jk) = zmortp
