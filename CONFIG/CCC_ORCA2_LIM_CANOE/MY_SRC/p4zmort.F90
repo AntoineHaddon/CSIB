@@ -108,7 +108,7 @@ CONTAINS
 
 ! simplified CMOC type mortality: sum of linear and quadratic terms
                zmortp = mprat * xstep * spc + mpqua * xstep * spc * spc
-               if (spc.le.xminp) mpqua * xstep * spc * spc           ! no linear mortality below biomass threshold xminp
+               if (spc.le.xminp) zmortp = mpqua * xstep * spc * spc           ! no linear mortality below biomass threshold xminp
                zmortz = mprat * xstep * szc + mpqua * xstep * szc * szc
 ! reduce mortality to what can support detritus production based on the least abundant element: the MIN(...) term should be 1 if N and Fe are in excess of the detritus ratio
                zmortp=zmortp*MIN(n2c*rr_c2n,fe2c*rr_c2fe,1.)
@@ -195,7 +195,7 @@ CONTAINS
                thetac=chl/(spc+rtrn)
 
                zmortp = mpratm * xstep * spc + mpqua * xstep * spc * spc
-               if (spc.le.xminp) mpqua * xstep * spc * spc
+               if (spc.le.xminp) zmortp = mpqua * xstep * spc * spc           ! no linear mortality below biomass threshold xminp
                zmortz = mprat2 * xstep * szc + mpquad * xstep * szc * szc
 ! reduce mortality to what can support detritus production based on the least abundant element: the MIN(...) term should be 1 if N and Fe are in excess of the detritus ratio
                zmortp=zmortp*MIN(n2c*rr_c2n,fe2c*rr_c2fe,1.)
