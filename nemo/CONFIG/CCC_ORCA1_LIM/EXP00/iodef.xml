@@ -105,8 +105,9 @@
 	<field id="ice_pres"     description="Ice presence"                                                 unit="-"        />
 	<field id="ist_cea"      description="Ice surface temperature (cell average)"                       unit="degC"     />
 	<field id="ist_ipa"      description="Ice surface temperature (ice presence average)"               unit="degC"     />      
-	<field id="uice_ipa"     description="Ice velocity along i-axis at I-point (ice presence average)"  unit="m/s"      />      
-	<field id="vice_ipa"     description="Ice velocity along j-axis at I-point (ice presence average)"  unit="m/s"      />      
+	<field id="uice_ipa"     description="Ice velocity along i-axis at T-point (C grid) or at I-point (I grid) (ice presence average)"  unit="m/s"      />      
+	<field id="vice_ipa"     description="Ice velocity along j-axis at T-point (C grid) or at I-point (I grid) (ice presence average)"  unit="m/s"      />
+        <field id="icevel"       description="ice velocity module at T-point (C grid) or at I-point (I grid) (ice presence average)"  unit="m/s"            /> 
 	
 	<field id="utau_ice"     description="Wind stress along i-axis over the ice at i-point"             unit="N/m2"     />
 	<field id="vtau_ice"     description="Wind stress along j-axis over the ice at i-point"             unit="N/m2"     />
@@ -297,6 +298,7 @@
           <field ref="icethic_cea"  name="iicethic"   description="sea_ice_thickness"      level="1" /> 
           <field ref="uice_ipa"     name="iicevelu"   description="sea_ice_x_velocity"     level="1" />
           <field ref="vice_ipa"     name="iicevelv"   description="sea_ice_y_velocity"     level="1" /> 
+          <field ref="icevel"       name="sispeed"    description="sea_ice_speed"          level="1" />
         </file>
 
       </group>
@@ -506,6 +508,7 @@
           <field ref="ioceflxb"     name="ioceflxb"                                        />                <!-- not in cmip6 request? -->
           <field ref="uice_ipa"     name="iicevelu"   description="sea_ice_x_velocity"     level="1" />
           <field ref="vice_ipa"     name="iicevelv"   description="sea_ice_y_velocity"     level="1" /> 
+          <field ref="icevel"       name="sispeed"    description="sea_ice_speed"          level="1" />
 	  <field ref="utau_ice"     name="iicestru"   description="Eastward Atmospheric Stress On Sea Ice" />  <!-- cmip5 name: strairx -->
 	  <field ref="vtau_ice"     name="iicestrv"   description="Northward Atmospheric Stress On Sea Ice" /> <!-- cmip5 name: strairy -->
           <field ref="qsr_io_cea"   name="iicesflx"                                        />                <!-- not in cmip6 request? -->
