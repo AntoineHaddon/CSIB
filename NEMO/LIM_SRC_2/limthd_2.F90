@@ -7,6 +7,8 @@ MODULE limthd_2
    !!            2.0  ! 2002-07 (C. Ethe, G. Madec) F90
    !!            2.0  ! 2003-08 (C. Ethe)  add lim_thd_init
    !!             -   ! 2008-2008  (A. Caubel, G. Madec, E. Maisonnave, S. Masson ) generic coupled interface
+   !!          3.4.1  ! 2017-01 (D. Yang) added conversions of sea ice velocity components from C- to T-gird,
+   !!                                     and sea ice velocity module for CMIP6
    !!---------------------------------------------------------------------
 #if defined key_lim2
    !!----------------------------------------------------------------------
@@ -99,6 +101,7 @@ CONTAINS
       REAL(wp) ::   zrhoij, zrhoijm1     ! temporary scalars
       REAL(wp) ::   zztmp                ! temporary scalars within a loop
       REAL(wp), POINTER, DIMENSION(:,:)     ::   ztmp      ! 2D workspace
+      REAL(wp), POINTER, DIMENSION(:,:)     ::   z2da, z2db, z2d   ! 2D workspace
       REAL(wp), POINTER, DIMENSION(:,:)     ::   zqlbsbq   ! link with lead energy budget qldif
       REAL(wp), POINTER, DIMENSION(:,:)     ::   zlicegr   ! link with lateral ice growth 
 !!$      REAL(wp), DIMENSION(:,:) ::   firic         ! IR flux over the ice            (outputs only)
@@ -116,6 +119,7 @@ CONTAINS
       !!-------------------------------------------------------------------
 
       CALL wrk_alloc( jpi, jpj, ztmp, zqlbsbq, zlicegr, zdvosif, zdvobif, zdvolif, zdvonif, zdvomif, zu_imasstr, zv_imasstr )
+      CALL wrk_alloc( jpi, jpj, z2da, z2db, z2d )
       CALL wrk_alloc( jpi, jpj, jpk, zmsk )
 
       IF( kt == nit000 )   CALL lim_thd_init_2  ! Initialization (first time-step only)
@@ -499,10 +503,27 @@ CONTAINS
          END DO
       END DO
       !
+      SELECT CASE( cp_ice_msh )
+      CASE( 'C' )                                                     ! convert ice velocity from C- to T-grid
+         DO jj = 2 , jpjm1
+            DO ji = 2 , jpim1
+               z2da(ji,jj) = ( u_ice(ji,jj) * ztmp(ji,jj) * umask(ji,jj,1) + u_ice(ji-1,jj) * ztmp(ji-1,jj) * umask(ji-1,jj,1) ) * 0.5_wp
+               z2db(ji,jj) = ( v_ice(ji,jj) * ztmp(ji,jj) * vmask(ji,jj,1) + v_ice(ji,jj-1) * ztmp(ji,jj-1) * vmask(ji,jj-1,1) ) * 0.5_wp
+            END DO
+         END DO
+         CALL lbc_lnk( z2da, 'T', -1. )
+         CALL lbc_lnk( z2db, 'T', -1. )
+      CASE( 'I' )                                                     
+         z2da(:,:) = u_ice(:,:) * ztmp(:,:)                           ! Ice velocity along i-axis at I-point  [m/s]
+         z2db(:,:) = v_ice(:,:) * ztmp(:,:)                           ! Ice velocity along j-axis at I-point  [m/s]
+      END SELECT
+      z2d(:,:)  = SQRT( z2da(:,:) * z2da(:,:) + z2db(:,:) * z2db(:,:) )
+      !
       CALL iom_put( 'ice_pres'  , ztmp                            )   ! Ice presence                          [-]
       CALL iom_put( 'ist_ipa'   , ( sist(:,:) - rt0 ) * ztmp(:,:) )   ! Ice surface temperature               [Celius]
-      CALL iom_put( 'uice_ipa'  ,  u_ice(:,:)         * ztmp(:,:) )   ! Ice velocity along i-axis at I-point  [m/s] 
-      CALL iom_put( 'vice_ipa'  ,  v_ice(:,:)         * ztmp(:,:) )   ! Ice velocity along j-axis at I-point  [m/s]
+      CALL iom_put( 'uice_ipa'  , z2da )   ! Ice velocity u component on T grid (C-grid) or UV grid (I-grid)  [m/s]
+      CALL iom_put( 'vice_ipa'  , z2db )   ! Ice velocity v component on T grid (C-grid) or UV grid (I-grid)  [m/s]
+      CALL iom_put( "icevel"    , z2d  )   ! ice velocity module      on T grid (C-grid) or UV grid (I-grid)  [m/s]
 
       IF(ln_ctl) THEN
          CALL prt_ctl_info(' lim_thd  end  ')
@@ -518,6 +539,7 @@ CONTAINS
       ENDIF
        !
       CALL wrk_dealloc( jpi, jpj, ztmp, zqlbsbq, zlicegr, zdvosif, zdvobif, zdvolif, zdvonif, zdvomif, zu_imasstr, zv_imasstr )
+      CALL wrk_dealloc( jpi, jpj, z2da, z2db, z2d )
       CALL wrk_dealloc( jpi, jpj, jpk, zmsk )
       !
     END SUBROUTINE lim_thd_2
