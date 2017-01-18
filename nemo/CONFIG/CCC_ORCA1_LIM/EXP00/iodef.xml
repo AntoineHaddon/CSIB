@@ -102,7 +102,7 @@
 	<field id="icethic_cea"  description="Ice thickness (cell average)"                                 unit="m"        />
 	<field id="iceprod_cea"  description="Ice production (cell average)"                                unit="m/s"      />
 	
-	<field id="ice_pres"     description="Ice presence"                                                 unit="-"        />
+	<field id="ice_pres"     description="Ice presence"                                                 unit="1"        />
 	<field id="ist_cea"      description="Ice surface temperature (cell average)"                       unit="degC"     />
 	<field id="ist_ipa"      description="Ice surface temperature (ice presence average)"               unit="degC"     />      
 	<field id="uice_ipa"     description="Ice velocity along i-axis at T-point (C grid) or at I-point (I grid) (ice presence average)"  unit="m/s"      />      
@@ -292,6 +292,7 @@
 ..............................................    icemod   .................................................
           -->
         <file id="1d_icemod" name="auto" description="ice variables" >
+          <field ref="ice_pres"     name="sitimefrac" description="sea_ice_time_fraction"  level="1" />
           <field ref="snowthic_cea" name="isnowthi"   description="surface_snow_thickness" level="1" />
           <field ref="ist_ipa"      name="iicetemp"   description="surface_temperature"    level="1" />
           <field ref="ice_cover"    name="soicecov"   description="sea_ice_area_fraction"  level="1" />
@@ -499,7 +500,7 @@
 	  -->
 
         <file id="1m_icemod" name="auto" description="ice variables" >
-          <field ref="ice_pres"                     />
+          <field ref="ice_pres"     name="sitimefrac" description="sea_ice_time_fraction"  level="1" />
           <field ref="ice_cover"    name="soicecov"   description="sea_ice_area_fraction"  level="1" />   
 	  <field ref="snowthic_cea" name="isnowthi"   description="surface_snow_thickness" level="1" />
 	  <field ref="icethic_cea"  name="iicethic"   description="sea_ice_thickness"      level="1" />
