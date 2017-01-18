@@ -82,6 +82,7 @@
    mpquad     =  6.E-2    ! maximum quadratic mortality of diatoms
    chldegr    =  2.E-2    ! Chlorophyll photooxidation rate
    picfrx     =  0.05     ! CaCO3 production rate (as fraction of POC)
+   xminp      =  0.01     ! minimum phytoplankton concentration for linear mortality
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &nampismes     !   parameters for mesozooplankton

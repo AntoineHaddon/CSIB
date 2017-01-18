@@ -253,7 +253,7 @@ CONTAINS
       !!
       !!----------------------------------------------------------------------
 
-      NAMELIST/nampismort/ mprat, mprat2, mpratm, mpqua, mpquad, chldegr, picfrx
+      NAMELIST/nampismort/ mprat, mprat2, mpratm, mpqua, mpquad, chldegr, picfrx, xminp
 
       REWIND( numnatp )                     ! read numnatp
       READ  ( numnatp, nampismort )
@@ -269,6 +269,7 @@ CONTAINS
          WRITE(numout,*) '    Phytoplankton minimum mortality rate      mpratm    =', mpratm
          WRITE(numout,*) '    Chlorophyll photooxidation rate           chldegr   =', chldegr
          WRITE(numout,*) '    CaCO3 production rate                     picfrx    =', picfrx
+         WRITE(numout,*) '    Biomass threshold for linear mortality    xminp     =', xminp
       ENDIF
 
    END SUBROUTINE p4z_mort_init
