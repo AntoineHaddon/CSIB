@@ -716,9 +716,9 @@ contains
      !--- e2f is found in module dom_oce
      call cpl_gather("e2f", rank)
 
-     !--- Gather tmask (level 1) into nemo_tmask (found in com_cpl)
-     !--- tmask is found in module dom_oce
-     call cpl_gather("tmask", rank)
+     !--- Gather tmask_i into nemo_tmask (found in com_cpl)
+     !--- tmask_i is found in module dom_oce
+     call cpl_gather("tmask_i", rank)
 
      !--- Gather umask (level 1) into nemo_umask (found in com_cpl)
      !--- umask is found in module dom_oce
@@ -1020,6 +1020,20 @@ contains
           if ( associated(nemo_e2f) ) deallocate(nemo_e2f)
           allocate( nemo_e2f(nemo_jpiglo,nemo_jpjglo) )
           call copy_3d_to_2d_global(nemo_e2f, png)
+        endif
+
+      case ("tmask_i")
+        !--- Gather the variable into the temporary global array png
+        !--- tmask_i is a 2D array
+        call mppsync
+        call mppgather (tmask_i(:,:),0,png)
+        call mppsync
+        if ( rank == ocn_master ) then
+          !--- Allocate space for the 2D array nemo_tmask (defined in com_cpl)
+          !--- and assign the values in png to nemo_tmask
+          if ( associated(nemo_tmask) ) deallocate(nemo_tmask)
+          allocate( nemo_tmask(nemo_jpiglo,nemo_jpjglo) )
+          call copy_3d_to_2d_global(nemo_tmask, png)
         endif
 
       case ("tmask")
