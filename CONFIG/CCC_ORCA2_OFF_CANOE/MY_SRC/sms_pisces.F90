@@ -47,7 +47,6 @@ MODULE sms_pisces
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)  ::   xlimnn     !: ???
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)  ::   xlimdn     !: ???
 
-
    !!*  SMS for the organic matter
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   nitrfac    !: ??
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   xdiss      !: ??
@@ -58,6 +57,10 @@ MODULE sms_pisces
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   denitr     !: denitrification
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   denitnh4   !: annamox
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   nh4ox      !: nitrification
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   zmortpn    !: nanophytoplankton mortality 
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   zmortpd    !: diatoms mortality
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   zprochln   !: nanophytoplankton chl production 
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   zprochld   !: nanophytoplankton chl production    
 
    !!* Variable for chemistry of the CO2 cycle
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   akb3       !: ???
@@ -90,7 +93,7 @@ CONTAINS
       !!        *** ROUTINE sms_pisces_alloc ***
       !!----------------------------------------------------------------------
       USE lib_mpp , ONLY: ctl_warn
-      INTEGER ::   ierr(6)        ! Local variables
+      INTEGER ::   ierr(7)        ! Local variables
       !!----------------------------------------------------------------------
       ierr(:) = 0
       !*  Biological fluxes for light
@@ -119,6 +122,9 @@ CONTAINS
          !
       !* Array used to indicate negative tracer values  
       ALLOCATE( xnegtr(jpi,jpj,jpk)  ,                          STAT=ierr(6) )
+      !
+      ALLOCATE( zmortpn(jpi,jpj,jpk)  , zmortpd(jpi,jpj,jpk) ,     &
+         &      zprochln(jpi,jpj,jpk) , zprochld(jpi,jpj,jpk) , STAT=ierr(7) )
       !
       sms_pisces_alloc = MAXVAL( ierr )
       !

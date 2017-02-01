@@ -32,9 +32,9 @@ MODULE p4zmicro
 
    !! * Shared module variables
    REAL(wp), PUBLIC ::  part       = 0.5_wp          !: part of calcite not dissolved in microzoo guts (not used)
-   REAL(wp), PUBLIC ::  gmax1      = 8.1E-6_wp       !: maximum grazing rate in s^-1
+   REAL(wp), PUBLIC ::  gmax1      = 1.7_wp          !: maximum grazing rate
    REAL(wp), PUBLIC ::  aps        = 0.075_wp        !: small zooplankton functional response parameter
-   REAL(wp), PUBLIC ::  zsr1       = 5.787E-7_wp     !: specific respiration rate
+   REAL(wp), PUBLIC ::  zsr1       = 0.3_wp          !: specific respiration rate
    REAL(wp), PUBLIC ::  lambda1    = 0.8_wp          !: assimilation efficiency
 
    !!* Substitution
@@ -88,7 +88,7 @@ CONTAINS
                fe2n=spf/(spn+rtrn)
 
 ! Micrograzer functional response is determined by phytoplankton C
-               grazp=gmax1*(1.-EXP(-aps*spc))*trn(ji,jj,jk,jpzoo)*rfact2
+               grazp=gmax1*(1.-EXP(-aps*spc))*trn(ji,jj,jk,jpzoo)*xstep
 ! reduce phytoplankton consumption to what can support grazer biomass production based on the least abundant element: the MIN(...) term should be 1 if N and Fe are in excess of the grazer ratio
                grazp=grazp*MIN(n2c*rr_c2n,fe2c*rr_c2fe,1.)
 ! calculate "excess" relative to grazer RR
@@ -102,7 +102,7 @@ CONTAINS
                fexs2=grazp*rr_fe2c*(fe2n*rr_n2fe-1.)
                fexs2=MAX(fexs2,0.)
 ! calculate zooplankton respiration (in carbon units)
-               R = MAX(zsr1*Tf*trn(ji,jj,jk,jpzoo)*rfact2-cxs,0.)
+               R = MAX(zsr1*Tf*trn(ji,jj,jk,jpzoo)*xstep-cxs,0.)
 
                ! Grazing by microzooplankton
                grazing1(ji,jj,jk) = grazp
