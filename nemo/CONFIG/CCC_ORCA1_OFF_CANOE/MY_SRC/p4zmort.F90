@@ -35,6 +35,7 @@ MODULE p4zmort
    REAL(wp), PUBLIC :: mpquad  = 2.E-08_wp  !: maximum quadratic mortality of diatoms
    REAL(wp), PUBLIC :: chldegr = 2.E-2_wp   !: Chlorophyll photooxidation rate
    REAL(wp), PUBLIC :: picfrx  = 1.E-1_wp   !: CaCO3 fraction of mortality (0.1 implies 1 mol caCO3 for each 10 mol POC)
+   REAL(wp), PUBLIC :: xminp   = 0.01       !: minimum phytoplankton concentration for linear mortality
 
    !!* Substitution
 #  include "top_substitute.h90"
@@ -107,10 +108,12 @@ CONTAINS
 
 ! simplified CMOC type mortality: sum of linear and quadratic terms
                zmortp = mprat * xstep * spc + mpqua * xstep * spc * spc
+               if (spc.le.xminp) zmortp = mpqua * xstep * spc * spc           ! no linear mortality below biomass threshold xminp
                zmortz = mprat * xstep * szc + mpqua * xstep * szc * szc
-
+               if (szc.le.xminp) zmortz = mpqua * xstep * szc * szc
 ! reduce mortality to what can support detritus production based on the least abundant element: the MIN(...) term should be 1 if N and Fe are in excess of the detritus ratio
                zmortp=zmortp*MIN(n2c*rr_c2n,fe2c*rr_c2fe,1.)
+               zmortpn(ji,jj,jk) = zmortp
 ! calculate "excess" relative to grazer RR
                cxs=zmortp*MAX(c2n*rr_n2c-1.,c2fe*rr_fe2c-1.,0.)
                nxs1=zmortp*(n2c-rr_n2c)
@@ -193,10 +196,12 @@ CONTAINS
                thetac=chl/(spc+rtrn)
 
                zmortp = mpratm * xstep * spc + mpqua * xstep * spc * spc
+               if (spc.le.xminp) zmortp = mpqua * xstep * spc * spc           ! no linear mortality below biomass threshold xminp
                zmortz = mprat2 * xstep * szc + mpquad * xstep * szc * szc
-
+               if (szc.le.xminp) zmortz = mpquad * xstep * szc * szc
 ! reduce mortality to what can support detritus production based on the least abundant element: the MIN(...) term should be 1 if N and Fe are in excess of the detritus ratio
                zmortp=zmortp*MIN(n2c*rr_c2n,fe2c*rr_c2fe,1.)
+               zmortpd(ji,jj,jk) = zmortp
 ! calculate "excess" relative to grazer RR
                cxs=zmortp*MAX(c2n*rr_n2c-1.,c2fe*rr_fe2c-1.,0.)
                nxs1=zmortp*(n2c-rr_n2c)
@@ -248,7 +253,7 @@ CONTAINS
       !!
       !!----------------------------------------------------------------------
 
-      NAMELIST/nampismort/ mprat, mprat2, mpratm, mpqua, mpquad, chldegr, picfrx
+      NAMELIST/nampismort/ mprat, mprat2, mpratm, mpqua, mpquad, chldegr, picfrx, xminp
 
       REWIND( numnatp )                     ! read numnatp
       READ  ( numnatp, nampismort )
@@ -264,6 +269,7 @@ CONTAINS
          WRITE(numout,*) '    Phytoplankton minimum mortality rate      mpratm    =', mpratm
          WRITE(numout,*) '    Chlorophyll photooxidation rate           chldegr   =', chldegr
          WRITE(numout,*) '    CaCO3 production rate                     picfrx    =', picfrx
+         WRITE(numout,*) '    Biomass threshold for linear mortality    xminp     =', xminp
       ENDIF
 
    END SUBROUTINE p4z_mort_init

@@ -42,7 +42,7 @@ MODULE p4zsed
    REAL(wp) :: sedfeinput  = 1000._wp   !: Coastal release of Iron
    REAL(wp) :: dustsolub   = 0.014_wp   !: Solubility of the dust
    REAL(wp) :: wdust       = 2.0_wp     !: Sinking speed of the dust 
-   REAL(wp) :: nitrfix     = 1.7E-7_wp  !: Nitrogen fixation rate   
+   REAL(wp) :: nitrfix     = 2.25E-2_wp !: Nitrogen fixation rate   
    REAL(wp) :: diazolight  = 50._wp     !: Nitrogen fixation sensitivty to light 
    REAL(wp) :: concfediaz  = 100._wp    !: Fe half-saturation Cste for diazotrophs 
    REAL(wp) :: kni         = 0.1_wp     !: half-saturation for NO3 inhibition of diazotrophy
@@ -209,7 +209,7 @@ CONTAINS
       DO jk = 1, jpk
          DO jj = 1, jpj
             DO ji = 1, jpi
-               zfact = znitrpot(ji,jj,jk) * nitrfix * rfact2
+               zfact = znitrpot(ji,jj,jk) * nitrfix * xstep
                trn(ji,jj,jk,jpnh4) = trn(ji,jj,jk,jpnh4) + zfact
                trn(ji,jj,jk,jptal) = trn(ji,jj,jk,jptal) + 1.e-6 * zfact
            END DO
@@ -221,7 +221,7 @@ CONTAINS
          IF( lk_iomput ) THEN
             zafe(:,:,:)  =   zirondep(:,:,:) * 1.E-9                      * tmask(:,:,:)      ! zirondep and ironsed are in nmol m^-3 s^-1
             zbfe(:,:,:)  =   ironsed(:,:,:) * 1.E-9                       * tmask(:,:,:) 
-            zdnf(:,:,:)  =   znitrpot(:,:,:) * nitrfix * 0.001            * tmask(:,:,:)      ! znitrpot is n.d., nitrfix is in mmol m^-3 s^-1
+            zdnf(:,:,:)  =   znitrpot(:,:,:) * nitrfix * r1_rday * 0.001  * tmask(:,:,:)      ! znitrpot is n.d., nitrfix is in mmol m^-3 d^-1
             zocdep(:,:)  =   zocdep(:,:) * r1_rday * 0.001                * tmask(:,:,1)      ! zocdep, zicdep, and zburial are in mmol m^-2 d^-1
             zicdep(:,:)  =   zicdep(:,:) * r1_rday * 0.001                * tmask(:,:,1)
             zburial(:,:) =   zburial(:,:) * r1_rday * 0.001               * tmask(:,:,1)
