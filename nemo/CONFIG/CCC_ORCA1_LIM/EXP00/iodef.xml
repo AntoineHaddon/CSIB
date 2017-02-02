@@ -105,9 +105,10 @@
 	<field id="ice_pres"     description="Ice presence"                                                 unit="1"        />
 	<field id="ist_cea"      description="Ice surface temperature (cell average)"                       unit="degC"     />
 	<field id="ist_ipa"      description="Ice surface temperature (ice presence average)"               unit="degC"     />      
-	<field id="uice_ipa"     description="Ice velocity along i-axis at T-point (C grid) or at I-point (I grid) (ice presence average)"  unit="m/s"      />      
-	<field id="vice_ipa"     description="Ice velocity along j-axis at T-point (C grid) or at I-point (I grid) (ice presence average)"  unit="m/s"      />
-        <field id="icevel"       description="ice velocity module at T-point (C grid) or at I-point (I grid) (ice presence average)"  unit="m/s"            /> 
+        <field id="sitemptop_cea" description="Snow/ice surface temperature (cell average)"                 unit="K"        />
+	<field id="uice_ipa"     description="Ice velocity along i-axis (C grid) (ice presence average)"    unit="m/s"      />      
+	<field id="vice_ipa"     description="Ice velocity along j-axis (C grid) (ice presence average)"    unit="m/s"      />
+        <field id="ivel_cea"     description="Ice velocity module (C grid) (cell average)"                  unit="m/s"      /> 
 	
 	<field id="utau_ice"     description="Wind stress along i-axis over the ice at i-point"             unit="N/m2"     />
 	<field id="vtau_ice"     description="Wind stress along j-axis over the ice at i-point"             unit="N/m2"     />
@@ -159,6 +160,10 @@
 	<field id="u_heattr"     description="ocean eulerian heat transport along i-axis"  unit="W"    axis_ref="none" />
 	<field id="ueiv_heattr"  description="ocean bolus heat transport along i-axis"     unit="W"    axis_ref="none" />
 	<field id="udiff_heattr" description="ocean diffusion heat transport along i-axis" unit="W"    axis_ref="none" />
+        <!-- sea ice variables for SIMIP (CMIP6) -->
+        <field id="siu_cea"      description="Ice velocity along i-axis at U-point (C-grid) (cell average)" unit="m/s"  axis_ref="none" />
+        <field id="fr_iu"        description="Ice fraction at U point (C-grid)"            unit="1"    axis_ref="none" /> 
+    
      </group>
       
       <!-- V grid -->
@@ -178,6 +183,9 @@
 	<field id="v_heattr"     description="ocean eulerian heat transport along j-axis"  unit="W"    axis_ref="none" />
 	<field id="veiv_heattr"  description="ocean bolus heat transport along j-axis"     unit="W"    axis_ref="none" />
 	<field id="vdiff_heattr" description="ocean diffusion heat transport along j-axis" unit="W"    axis_ref="none" />
+        <!-- sea ice variables for SIMIP (CMIP6) -->
+        <field id="siv_cea"      description="Ice velocity along j-axis at V-point (C-grid) (cell average)" unit="m/s"  axis_ref="none" />
+        <field id="fr_iv"        description="Ice fraction at V point (C-grid)"            unit="1"    axis_ref="none" />
       </group>
       
       <!-- W grid -->
@@ -279,30 +287,56 @@
 +++++++++++++++++++++++++++++++++++++++++++++++   daily   ++++++++++++++++++++++++++++++++++++++++++++++++++
         -->
       <group id="1d" output_freq="86400"  enabled=".TRUE.">                      <!-- 1d files -->
+
         <!--
 ..............................................    grid T   .................................................
           -->
-	<file id="1d_grid_T" name="auto" name_suffix="_ar6" description="ar6" >         <!-- grid T  -->
-	  <field ref="sst"          name='tos'      description="sea_surface_temperature"                              level="2"                      />
-	  <field ref="sst2"         name='tossq'    description="square_of_sea_surface_temperature"                    level="2"                      />
-	  <!-- field ref="mldkz5"   name='omldamax' description="ocean_mixed_layer_thickness_defined_by_mixing_scheme" level="2" operation="t_max(X)", not in cmip6 request, DY -->
-	</file>   
+        <group id="1d_grid_T" name="auto" >                                                        <!-- grid T -->
+
+	  <file id="1d_grid_T"  name_suffix="_ar6"  >
+	    <field ref="sst"           name='tos'           description="sea_surface_temperature"                  level="3" />
+	    <field ref="sst2"          name='tossq'         description="square_of_sea_surface_temperature"        level="3" />
+	    <!-- field ref="mldkz5"   name='omldamax' description="ocean_mixed_layer_thickness_defined_by_mixing_scheme" level="2" operation="t_max(X)", not in cmip6 request, DY -->
+	  </file>   
 
         <!--
-..............................................    icemod   .................................................
+...........................................    icemod (grid T)   .................................................
           -->
-        <file id="1d_icemod" name="auto" description="ice variables" >
-          <field ref="ice_pres"     name="sitimefrac" description="sea_ice_time_fraction"  level="1" />
-          <field ref="snowthic_cea" name="isnowthi"   description="surface_snow_thickness" level="1" />
-          <field ref="ist_ipa"      name="iicetemp"   description="surface_temperature"    level="1" />
-          <field ref="ice_cover"    name="soicecov"   description="sea_ice_area_fraction"  level="1" />
-          <field ref="icethic_cea"  name="iicethic"   description="sea_ice_thickness"      level="1" /> 
-          <field ref="uice_ipa"     name="iicevelu"   description="sea_ice_x_velocity"     level="1" />
-          <field ref="vice_ipa"     name="iicevelv"   description="sea_ice_y_velocity"     level="1" /> 
-          <field ref="icevel"       name="sispeed"    description="sea_ice_speed"          level="1" />
-        </file>
+          <file id="1d_icemod" description="ice variables" >
+            <field ref="ice_pres"      name="sitimefrac"    description="sea_ice_time_fraction"                    level="1" />
+            <field ref="snowthic_cea"  name="isnowthi"      description="snow thickness (cell average)"            level="1" />
+            <field ref="sitemptop_cea" name="sitemptop_cea" description="surface temperature (cell average)"       level="1" />
+            <field ref="ice_cover"     name="siconc"        description="sea_ice_area_fraction"                    level="1" />
+            <field ref="icethic_cea"   name="iicethic"      description="ice thickness (cell average)"             level="1" /> 
+            <field ref="ivel_cea"      name="ivel_cea"      description="sea ice velocity module (cell average)"   level="1" />
+          </file>
+        </group>
 
-      </group>
+        <!--
+...........................................    icemod (grid U)   .................................................
+          -->
+        <group id="1d_grid_U" name="auto" >
+
+          <file id="1d_grid_U_ar6" name_suffix="_ar6" >
+            <field ref="siu_cea"       name="siu_cea"       description="ice velocity along i-axis (cell average)" level="1" />
+            <field ref="fr_iu"         name="fr_iu"         description="ice fraction at U point (C-grid)"         level="1" />
+          </file>
+        </group>
+
+        <!--
+...........................................    icemod (grid V)   .................................................
+          -->
+        <group id="1d_grid_V" name="auto" >
+           
+          <file id="1d_grid_V_ar6" name_suffix="_ar6" >
+            <field ref="siv_cea"       name="siv_cea"       description="ice velocity along j-axis (cell average)" level="1" />
+            <field ref="fr_iv"         name="fr_iv"         description="ice fraction at V point (C-grid)"         level="1" />
+          </file>
+        </group>
+
+      </group>                                                                   <!-- end of 1d files -->
+
+
 	<!--
 ++++++++++++++++++++++++++++++++++++++++++++++   monthly   +++++++++++++++++++++++++++++++++++++++++++++++++
 	  -->
@@ -312,7 +346,7 @@
 	  -->
 	<group id="1m_grid_T" name="auto" >                                                        <!-- grid T -->
 
-          <file id="1m grid_T" >
+          <file id="1m_grid_T" >
             <field ref="toce"         name="votemper" description="sea_water_potential_temperature"                                />
             <field ref="soce"         name="vosaline" description="sea_water_salinity"                                             />
             <field ref="ssh"          name="sossheig" description="sea_surface_height_above_geoid"                                 />
@@ -323,7 +357,7 @@
             <field ref="mlddzt"       name="sothedep"         />                             <!-- not in cmip6 request            -->
           </file>
 
-	  <file id="1m grid_T ar6" name_suffix="_ar6" >
+	  <file id="1m_grid_T_ar6" name_suffix="_ar6" >
 	    <field ref="botpres"      name="botpres"      description="sea_water_pressure_at_sea_floor"                               />
 	    <!-- pso : sea_water_pressure_at_sea_water_surface = 0 -->
 	    <!--field ref="ssh2"         name="zossq"    description="square_of_sea_surface_height_above_geoid"             level="2", added sshdyn2 instead, DY -->
@@ -399,16 +433,18 @@
 	  -->
 	<group id="1m_grid_U" name="auto" >                                                        <!-- grid U -->
 
-          <file id="1m grid_U" >
+          <file id="1m_grid_U" >
 	    <field ref="uoce"         name="vozocrtx"      description="sea_water_x_velocity"                                 />
             <field ref="uoce_eiv"     name="vozoeivu"  />                                          <!-- not in cmip6 request -->
 	    <field ref="utau"         name="sozotaux"      description="surface_downward_x_stress"                  level="1" />
           </file>
 
-	  <file id="1m grid_U ar6" name_suffix="_ar6" >
+	  <file id="1m_grid_U_ar6" name_suffix="_ar6" >
 	    <field ref="u_masstr"     name="u_masstr"      description="ocean_mass_x_transport"                     level="1" />
             <field ref="ueiv_masstr"  name="ueiv_masstr"   description="parameterized_ocean_mass_x_transport"       level="1" />
             <field ref="uoce_eiv"     name="uoce_eiv"      description="x_bolus_velocity"                                     />
+            <field ref="siu_cea"      name="siu_cea"       description="ice velocity along i-axis (cell average)"   level="1" />
+            <field ref="fr_iu"        name="fr_iu"         description="ice fraction at U point (C-grid)"           level="1" />
 	    <!-- field ref="u_heattr"     name="hfx"     description="ocean_heat_x_transport"                           level="1", cmip6 requires 3-D, DY   -->
 	    <!-- field ref="ueiv_heattr"  name="hfxba"   description="ocean_heat_x_transport_due_to_bolus_advection"    level="2", not in cmip6 request, DY -->
 	    <!-- field ref="udiff_heattr" name="hfxdiff" description="ocean_heat_x_transport_due_to_diffusion"          level="2", not in cmip6 request, DY -->
@@ -421,16 +457,18 @@
 	  -->
 	<group id="1m_grid_V" name="auto" >                                                        <!-- grid V -->
 
-          <file id="1m grid_V" >
+          <file id="1m_grid_V" >
 	    <field ref="voce"         name="vomecrty"      description="sea_water_y_velocity"                                 />
             <field ref="voce_eiv"     name="vomeeivv"  />                                          <!-- not in cmip6 request -->
 	    <field ref="vtau"         name="sometauy"      description="surface_downward_y_stress"                  level="1" />
           </file>
 
-	  <file id="1m grid_V ar6" name_suffix="_ar6" >
+	  <file id="1m_grid_V_ar6" name_suffix="_ar6" >
 	    <field ref="v_masstr"     name="v_masstr"      description="ocean_mass_y_transport"                     level="1" />
             <field ref="veiv_masstr"  name="veiv_masstr"   description="parameterized_ocean_mass_y_transport"       level="1" />
             <field ref="voce_eiv"     name="voce_eiv"      description="y_bolus_velocity"                                     />
+            <field ref="siv_cea"      name="siv_cea"       description="ice velocity along j-axis (cell average)"   level="1" />
+            <field ref="fr_iv"        name="fr_iv"         description="ice fraction at V point (C-grid)"           level="1" />
 	    <!-- field ref="v_heattr"     name="hfy"     description="ocean_heat_y_transport"   level="1", cmip6 requires 3-D, DY   -->
 	    <!-- field ref="veiv_heattr"  name="hfyba"   description="ocean_heat_y_transport_due_to_bolus_advection"  level="2", not in cmip6 request, DY -->
 	    <!-- field ref="vdiff_heattr" name="hfydiff" description="ocean_heat_y_transport_due_to_diffusion"        level="2", not in cmip6 request, DY -->
@@ -443,14 +481,14 @@
 	  -->
 	<group id="1m_grid_W" name="auto" >                                                        <!-- grid W -->
 
-          <file id="1m grid_W" >
+          <file id="1m_grid_W" >
             <field ref="woce"         name="vovecrtz"    />                            <!-- not in cmip6 request   -->        
             <field ref="woce_eiv"     name="voveeivw"    />                            <!-- not in cmip6 request   -->
             <field ref="aht2d"        name="soleahtw"    />                            <!-- not in cmip6 request   -->
             <field ref="aht2d_eiv"    name="soleaeiw"      description="ocean_tracer_diffusivity_due_to_parameterized_mesoscale_advection" level="2" />    
            </file>
 
-          <file id="1m grid_W ar6" name_suffix="_ar6" >
+          <file id="1m_grid_W_ar6" name_suffix="_ar6" >
             <field ref="bn2"          name="obvfsq"        description="square_of_brunt_vaisala_frequency_in_sea_water"       />
 	    <field ref="w_masstr"     name="w_masstr"      description="upward_ocean_mass_transport"                          />
             <field ref="weiv_masstr"  name="weiv_masstr"   description="parameterized_upward_ocean_mass_transport"  level="1" />
@@ -500,48 +538,49 @@
 	  -->
 
         <file id="1m_icemod" name="auto" description="ice variables" >
-          <field ref="ice_pres"     name="sitimefrac" description="sea_ice_time_fraction"  level="1" />
-          <field ref="ice_cover"    name="soicecov"   description="sea_ice_area_fraction"  level="1" />   
-	  <field ref="snowthic_cea" name="isnowthi"   description="surface_snow_thickness" level="1" />
-	  <field ref="icethic_cea"  name="iicethic"   description="sea_ice_thickness"      level="1" />
-          <field ref="iceprod_cea"  name="iiceprod"                                        />                <!-- not in cmip6 request? -->
-          <field ref="ist_ipa"      name="iicetemp"   description="surface_temperature"    level="1" />
-          <field ref="ioceflxb"     name="ioceflxb"                                        />                <!-- not in cmip6 request? -->
-          <field ref="uice_ipa"     name="iicevelu"   description="sea_ice_x_velocity"     level="1" />
-          <field ref="vice_ipa"     name="iicevelv"   description="sea_ice_y_velocity"     level="1" /> 
-          <field ref="icevel"       name="sispeed"    description="sea_ice_speed"          level="1" />
-	  <field ref="utau_ice"     name="iicestru"   description="Eastward Atmospheric Stress On Sea Ice" />  <!-- cmip5 name: strairx -->
-	  <field ref="vtau_ice"     name="iicestrv"   description="Northward Atmospheric Stress On Sea Ice" /> <!-- cmip5 name: strairy -->
-          <field ref="qsr_io_cea"   name="iicesflx"                                        />                <!-- not in cmip6 request? -->
-          <field ref="qns_io_cea"   name="iicenflx"                                        />                <!-- not in cmip6 request? -->
-          <field ref="snowpre"      name="isnowpre"                                        />                <!-- not in cmip6 request? -->
-	  <field ref="subl_ai_cea"  name="evap"       description="water_evaporation_flux"                           />
+          <field ref="ice_pres"     name="sitimefrac"     description="sea_ice_time_fraction"                  level="1" />
+          <field ref="ice_cover"    name="soicecov"       description="sea_ice_area_fraction"                  level="1" />   
+	  <field ref="snowthic_cea" name="isnowthi"       description="snow thickness (cell average)"          level="1" />
+	  <field ref="icethic_cea"  name="iicethic"       description="ice thickness (cell average)"           level="1" />
+          <field ref="iceprod_cea"  name="iiceprod"                                                                      />  
+          <field ref="ist_ipa"      name="iicetemp"                                                                      />
+          <field ref="sitemptop_cea" name="sitemptop_cea" description="surface temperature (cell average)"     level="1" />
+          <field ref="ioceflxb"     name="ioceflxb"                                                                      />     
+          <field ref="uice_ipa"     name="iicevelu"                                                                      />
+          <field ref="vice_ipa"     name="iicevelv"                                                                      /> 
+          <field ref="ivel_cea"     name="ivel_cea"       description="ice velocity module (cell average)"     level="1" />
+	  <field ref="utau_ice"     name="iicestru"       description="Eastward Atmospheric Stress On Sea Ice"           />  <!-- cmip5 name: strairx -->
+	  <field ref="vtau_ice"     name="iicestrv"       description="Northward Atmospheric Stress On Sea Ice"          /> <!-- cmip5 name: strairy -->
+          <field ref="qsr_io_cea"   name="iicesflx"                                                                      /> 
+          <field ref="qns_io_cea"   name="iicenflx"                                                                      />
+          <field ref="snowpre"      name="isnowpre"                                                                      />
+	  <field ref="subl_ai_cea"  name="evap"           description="water_evaporation_flux"                           />
 	  <!-- snc : surface_snow_area_fraction : same as sic -->
-	  <field ref="icealb_cea"   name="ialb"       description="Bare Sea Ice Albedo"    level="2" />
+	  <field ref="icealb_cea"   name="ialb"           description="Bare Sea Ice Albedo"                    level="2" />
 	  <!-- ssi : Sea Ice Salinity : cte = sice = 6, expect in baltic sea = 2 -->
-	  <field ref="ist_cea"      name="tsice"      description="Surface Temperature of Sea Ice"                   />
+	  <field ref="ist_cea"      name="tsice"          description="Surface Temperature of Sea Ice"                   />
 	  <!-- tsnint : Temperature at Interface Between Sea Ice and Snow : not available -->
 	  <!-- pr : Surface Rainfall Rate into the Sea Ice Portion of the Grid Cell = 0 -->
-	  <field ref="snow_ai_cea"  name="prsn"       description="Surface Snowfall Rate into the Sea Ice Portion of the Grid Cell" />
+	  <field ref="snow_ai_cea"  name="prsn"           description="Surface Snowfall Rate into the Sea Ice Portion of the Grid Cell" />
 	  <!-- ageice   : Age of Sea Ice : not available ??? -->
 	  <!-- grFrazil : Frazil Sea Ice Growth (Leads) Rate ??? -->
 	  <!-- grCongel : Congelation Sea Ice Growth Rate ??? -->
-	  <field ref="licepro_cea"  name="grLateral"  description="Lateral Sea Ice Growth Rate"                      />
-	  <field ref="sntoice_cea"  name="snoToIce"   description="Snow-Ice Formation Rate"                          />
-	  <field ref="snowmel_cea"  name="snomelt"    description="Snow Melt Rate"                                   />
-	  <field ref="ticemel_cea"  name="tmelt"      description="Rate of Melt at Upper Surface of Sea Ice"         />
-	  <field ref="bicemel_cea"  name="bmelt"      description="Rate of Melt at Sea Ice Base"                     />
+	  <field ref="licepro_cea"  name="grLateral"      description="Lateral Sea Ice Growth Rate"                      />
+	  <field ref="sntoice_cea"  name="snoToIce"       description="Snow-Ice Formation Rate"                          />
+	  <field ref="snowmel_cea"  name="snomelt"        description="Snow Melt Rate"                                   />
+	  <field ref="ticemel_cea"  name="tmelt"          description="Rate of Melt at Upper Surface of Sea Ice"         />
+	  <field ref="bicemel_cea"  name="bmelt"          description="Rate of Melt at Sea Ice Base"                     />
 	  <!-- hcice  : Sea Ice Total Heat Content ??? -->
-	  <field ref="qsr_ai_cea"   name="rsdssi"     description="surface_downwelling_shortwave_flux_in_air"        />
+	  <field ref="qsr_ai_cea"   name="rsdssi"         description="surface_downwelling_shortwave_flux_in_air"        />
 	  <!-- rsussi : surface_upwelling_shortwave_flux_in_air ??? -->
 	  <!-- rldssi : surface_downwelling_longwave_flux_in_air ??? -->
 	  <!-- rlussi : surface_upwelling_longwave_flux_in_air ??? -->
 	  <!-- hfssi  : surface_upward_sensible_heat_flux ??? -->
 	  <!-- hflssi : surface_upward_latent_heat_flux ??? -->
-	  <field ref="subl_ai_cea"  name="sblsi"      description="surface_snow_and_ice_sublimation_flux"            />
-	  <field ref="u_imasstr"    name="transix"    description="Eastward Sea Ice Transport"                       />
-	  <field ref="v_imasstr"    name="transiy"    description="Northward Sea Ice Transport"                      />
-	  <field ref="fram_trans"   name="transifs"   description="Sea Ice Mass Transport Through Fram Strait"       />
+	  <field ref="subl_ai_cea"  name="sblsi"          description="surface_snow_and_ice_sublimation_flux"            />
+	  <field ref="u_imasstr"    name="transix"        description="Eastward Sea Ice Transport"                       />
+	  <field ref="v_imasstr"    name="transiy"        description="Northward Sea Ice Transport"                      />
+	  <field ref="fram_trans"   name="transifs"       description="Sea Ice Mass Transport Through Fram Strait"       />
 	  <!-- strocnx : Eastward Ocean Stress On Sea Ice ??? -->
 	  <!-- strocny : Northward Ocean Stress On Sea Ice ??? -->
 	  <!-- streng  : Compressive Sea Ice Strength ??? -->
