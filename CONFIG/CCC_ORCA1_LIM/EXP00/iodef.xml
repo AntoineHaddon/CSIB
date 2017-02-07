@@ -89,6 +89,7 @@
 	<field id="taum_oce"     description="wind stress module over open ocean"                           unit="N/m2"     />
 
 	<field id="ice_cover"    description="Ice fraction"                                                 unit="1"        />
+        <field id="sn_cover"     description="Snow cover"                                                   unit="1"        />
 
 	<field id="ioceflxb"     description="Oceanic flux at the ice base"                                 unit="W/m2"     />
 	<field id="qsr_ai_cea"   description="Air-Ice downward solar heat flux (cell average)"              unit="W/m2"     />
@@ -540,6 +541,7 @@
         <file id="1m_icemod" name="auto" description="ice variables" >
           <field ref="ice_pres"     name="sitimefrac"     description="sea_ice_time_fraction"                  level="1" />
           <field ref="ice_cover"    name="soicecov"       description="sea_ice_area_fraction"                  level="1" />   
+          <field ref="sn_cover"     name="sisnconc"       description="surface_snow_area_fraction"             level="1" />
 	  <field ref="snowthic_cea" name="isnowthi"       description="snow thickness (cell average)"          level="1" />
 	  <field ref="icethic_cea"  name="iicethic"       description="ice thickness (cell average)"           level="1" />
           <field ref="iceprod_cea"  name="iiceprod"                                                                      />  
@@ -556,7 +558,7 @@
           <field ref="snowpre"      name="isnowpre"                                                                      />
 	  <field ref="subl_ai_cea"  name="evap"           description="water_evaporation_flux"                           />
 	  <!-- snc : surface_snow_area_fraction : same as sic -->
-	  <field ref="icealb_cea"   name="ialb"           description="Bare Sea Ice Albedo"                    level="2" />
+	  <field ref="icealb_cea"   name="ialb"           description="Bare Sea Ice Albedo (cell average)"     level="2" />
 	  <!-- ssi : Sea Ice Salinity : cte = sice = 6, expect in baltic sea = 2 -->
 	  <field ref="ist_cea"      name="tsice"          description="Surface Temperature of Sea Ice"                   />
 	  <!-- tsnint : Temperature at Interface Between Sea Ice and Snow : not available -->
