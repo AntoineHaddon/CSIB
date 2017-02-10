@@ -285,10 +285,10 @@ if [ -z "$coupled" ]; then
 fi
 
 if [ $coupled = "on" ]; then
-  # Define cancpl repo and commit withing that repo
+  # Define cancpl repo and commit
   # Values supplied on the command line will be used, if present, otherwise use these defaults
   cancpl_repo=${cancpl_repo:=$CCRNSRC/coupler_dir/coupler.git}
-  cancpl_ver=${cancpl_ver:=dev_main}
+  cancpl_ver=${cancpl_ver:=master}
   # The coupler repo must be on a locally accessable directory path
   [ ! -d "$cancpl_repo" ] && usage -e "Coupler repository is not a directory --> $cancpl_repo <--"
   # Ensure this is a full pathname

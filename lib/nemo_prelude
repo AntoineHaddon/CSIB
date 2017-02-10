@@ -1013,10 +1013,15 @@ echo "#################### Start NEMO pre-processing #################"
   runtype=${cice_runtype:=continue}
   ice_ic=${cice_ice_ic:=none}
 
+  # Never pass O_TauMod from the coupler to NEMO
+  # This means O_TauMod is calculated in sbccpl
+  sn_rcv_taumod="       'none'              ,    'no'    ,     ''      ,         ''          ,   ''"
+
   # Modify specified parameter values in the input ocean namelist
   mod_nl namelist nn_it000 nn_itend nn_istate nn_stock nn_write jpni jpnj jpnij \
     rn_rdt cn_exp nn_date0 ln_rstart nn_rstctl nn_no cn_ocerst_in cn_ocerst_out \
-    ln_ctl nn_print nn_ice ln_rnf ln_rnf_emp ln_tsd_init nn_fsbc nn_closea nn_msh
+    ln_ctl nn_print nn_ice ln_rnf ln_rnf_emp ln_tsd_init nn_fsbc nn_closea nn_msh \
+    sn_rcv_taumod
 
   # Modify specified parameter values in the namelist read by the ice module
   # NOTE: If character variables do not follow the NEMO naming convention (that their names begin with the letter "c")
