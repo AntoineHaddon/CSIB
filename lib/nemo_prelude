@@ -319,6 +319,7 @@ echo "#################### Start NEMO pre-processing #################"
       # Attempt to extract this file from the NEMO repository
       rm -f $1
       gitrip $nemo_ver nemo/CONFIG/$nemo_config/EXP00/$1 repo=$nemo_repo
+      sleep 1
       [ -s $1 ] || bail "find_nemo_config_EXP00: Unable to extract $1 from $nemo_repo"
     fi
   }
@@ -836,7 +837,6 @@ echo "#################### Start NEMO pre-processing #################"
 
       if [ $pisces_offline -ne 1 ]; then
         # The input ice namelist is hard coded in nemo source
-        [ -z "$nemo_namelist_ice" ] && bail "nemo_namelist_ice is not defined"
         if [ $nn_ice -eq 4 ]; then
           # Using CICE
           rm -f ice_in
@@ -849,20 +849,17 @@ echo "#################### Start NEMO pre-processing #################"
 
       if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
         # The input top namelist is hard coded as "namelist_top" in nemo source
-        [ -z "$nemo_namelist_top" ] && bail "nemo_namelist_top is not defined"
         rm -f namelist_top
         find_nemo_config_EXP00 namelist_top $nemo_namelist_top
       fi
 
       if [ $nemo_carbon -eq 1 ]; then
         # The input pisces namelist is hard coded as "namelist_pisces" in nemo source
-        [ -z "$nemo_namelist_pisces" ] && bail "nemo_namelist_pisces is not defined"
         rm -f namelist_pisces
         find_nemo_config_EXP00 namelist_pisces $nemo_namelist_pisces
         
         if [ $nemo_cmoc -eq 1 ]; then
           # The input cmoc namelist is hard coded as "namelist_cmoc" in nemo source
-          [ -z "$nemo_namelist_cmoc" ] && bail "nemo_namelist_cmoc is not defined"
           rm -f namelist_cmoc
           find_nemo_config_EXP00 namelist_cmoc $nemo_namelist_cmoc
         fi
