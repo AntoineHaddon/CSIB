@@ -97,14 +97,14 @@ CONTAINS
       REAL(wp) ::   zdenitot, znitrpottot, zlim, zfact, zfactcal
       REAL(wp) ::   zcaloss, zwsbio3, zwsbio4, zwscal, zdep
       CHARACTER (len=25) :: charout
-      REAL(wp), POINTER, DIMENSION(:,:,:) :: znitrpot, zirondep, zafe, zbfe, zdnf                 ! afe and bfe indicate aeolian and benthic Fe sources
+      REAL(wp), POINTER, DIMENSION(:,:,:) :: znitrpot, zirondep, zafe, zbfe                       ! afe and bfe indicate aeolian and benthic Fe sources
       REAL(wp), POINTER, DIMENSION(:,:) :: zocdep, zicdep, zburial                                ! deposition and burial of POC and PIC
       !!---------------------------------------------------------------------
       !
       IF( nn_timing == 1 )  CALL timing_start('p4z_sed')
       !
       ! Allocate temporary workspace
-      CALL wrk_alloc( jpi, jpj, jpk, znitrpot, zirondep, zafe, zbfe, zdnf     )
+      CALL wrk_alloc( jpi, jpj, jpk, znitrpot, zirondep, zafe, zbfe     )
       CALL wrk_alloc( jpi, jpj, zocdep, zicdep, zburial     )
 
       IF( jnt == 1 .AND. ll_sbc ) CALL p4z_sbc( kt )
@@ -245,7 +245,7 @@ CONTAINS
          CALL prt_ctl_trc(tab4d=trn, mask=tmask, clinfo=ctrcnm)
       ENDIF
       !
-      CALL wrk_dealloc( jpi, jpj, jpk, znitrpot, zirondep, zafe, zbfe, zdnf )
+      CALL wrk_dealloc( jpi, jpj, jpk, znitrpot, zirondep, zafe, zbfe )
       CALL wrk_dealloc( jpi, jpj, zocdep, zicdep, zburial     )
       !
       IF( nn_timing == 1 )  CALL timing_stop('p4z_sed')
