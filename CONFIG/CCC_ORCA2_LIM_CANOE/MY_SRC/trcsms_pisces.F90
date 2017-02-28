@@ -151,7 +151,7 @@ CONTAINS
       REAL(wp) ::  alkmean = 2426.     ! mean value of alkalinity ( Glodap ; for Goyet 2391. )
       REAL(wp) ::  no3mean = 30.90     ! mean value of nitrate
       !
-      REAL(wp) :: zarea, zalksum, zno3sum
+      REAL(wp) :: zarea, zdntrsum, zdnfsum
       !!---------------------------------------------------------------------
 
 
@@ -164,14 +164,12 @@ CONTAINS
          ! set total alkalinity, phosphate, & nitrate
          zarea          = 1._wp / glob_sum( cvol(:,:,:) ) * 1e6              
 
-         zalksum = glob_sum( trn(:,:,:,jptal) * cvol(:,:,:)  ) * zarea
-         zno3sum = glob_sum( trn(:,:,:,jpno3) * cvol(:,:,:)  ) * zarea
+         zdnfsum = glob_sum( zdnf * cvol(:,:,:)  ) * zarea
+         zdntrsum = glob_sum( denitr * cvol(:,:,:)  ) * zarea
  
-         IF(lwp) WRITE(numout,*) '       TALK mean : ', zalksum
-         trn(:,:,:,jptal) = trn(:,:,:,jptal) * alkmean / zalksum
-
-         IF(lwp) WRITE(numout,*) '       NO3  mean : ', zno3sum
-         trn(:,:,:,jpno3) = trn(:,:,:,jpno3) * no3mean / zno3sum
+         IF(lwp) WRITE(numout,*) '       Totals  : ', zdnfsum, zdntrsum
+         !trn(:,:,:,jptal) = trn(:,:,:,jptal) * alkmean / zalksum
+         !trn(:,:,:,jpno3) = trn(:,:,:,jpno3) * no3mean / zno3sum
 
          !
       ENDIF
