@@ -166,7 +166,7 @@ CONTAINS
 
          zdnfsum = glob_sum( zdnf(:,:,:)  * cvol(:,:,:)  ) * zarea
          zdntrsum = glob_sum( denitr(:,:,:)  * cvol(:,:,:)  ) * zarea
-         ztau = FLOAT(nn_pisdmp)*rn_rdt*1.0570e-11       ! 1/(3000*365*86400) = 1.0569930e-11
+         ztau = FLOAT(nn_pisdmp)*rfact*1.0570e-11       ! 1/(3000*365*86400) = 1.0569930e-11
          IF(lwp) WRITE(numout,*) '       Totals  : ', zdnfsum, zdntrsum, ztau
 
          ztau = ztau * (zdnfsum-zdntrsum)/zdntrsum + 1.
