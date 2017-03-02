@@ -162,10 +162,10 @@ CONTAINS
       IF( cp_cfg == "orca" .AND. .NOT. lk_c1d ) THEN      ! ORCA condiguration (not 1D) !
          !                                                    ! --------------------------- !
          ! set total alkalinity, phosphate, & nitrate
-         zarea          = 1._wp / glob_sum( cvol(:,:,:) ) * 1e6              
+         zarea          = 1._wp / glob_sum( cvol(:,:,:) )
 
-         zdnfsum = glob_sum( zdnf * cvol(:,:,:)  ) * zarea
-         zdntrsum = glob_sum( denitr * cvol(:,:,:)  ) * zarea
+         zdnfsum = glob_sum( zdnf(:,:,:)  * cvol(:,:,:)  ) * zarea
+         zdntrsum = glob_sum( denitr(:,:,:)  * cvol(:,:,:)  ) * zarea
  
          IF(lwp) WRITE(numout,*) '       Totals  : ', zdnfsum, zdntrsum
          !trn(:,:,:,jptal) = trn(:,:,:,jptal) * alkmean / zalksum
