@@ -59,6 +59,7 @@ CONTAINS
       REAL(wp) :: ztn,Tf,lpc,lpn,lpf,chl,grazt,grazp,grazz,R,szc,itfc
       REAL(wp) :: c2n,n2c,c2fe,fe2c,n2fe,fe2n
       REAL(wp) :: cxs,nxs1,fexs1,nxs2,fexs2
+      REAL(wp) :: csw1,csw2
       CHARACTER (len=25) :: charout
       REAL(wp) :: zrfact2
       !!---------------------------------------------------------------------
@@ -104,7 +105,15 @@ CONTAINS
                fexs1=MAX(fexs1,0.)
                fexs2=grazp*rr_fe2c*(fe2n*rr_n2fe-1.)
                fexs2=MAX(fexs2,0.)
-
+               csw1=MAX(cxs,0.)
+               csw1=csw1/(csw1+rtrn)   !!! csw1 is 1 when cxs>0 and 0 otherwise
+               csw2=1.-csw1            !!! csw2 is 0 when cxs>0 and 1 otherwise
+               !!! apply csw1 switch on nxs2 and fexs2 terms
+               nxs1 = csw2*nxs1
+               fexs1= csw2*fexs1
+               !!! apply csw2 switch on nxs1 and fexs1 terms
+               nxs2 = csw1*nxs2
+               fexs2= csw1*fexs2
 ! calculate zooplankton respiration (in carbon units)
                R = MAX(zsr2*Tf*trn(ji,jj,jk,jpmes)*xstep-cxs,0.)
 
