@@ -151,7 +151,7 @@ CONTAINS
       REAL(wp) ::  alkmean = 2426.     ! mean value of alkalinity ( Glodap ; for Goyet 2391. )
       REAL(wp) ::  no3mean = 30.90     ! mean value of nitrate
       !
-      REAL(wp) :: zarea, zdntrsum, zdnfsum, ztau
+      REAL(wp) :: zarea, zdntrsum, zdnfsum, ztau, nsum
       !!---------------------------------------------------------------------
 
 
@@ -163,11 +163,12 @@ CONTAINS
          !                                                    ! --------------------------- !
          ! set total alkalinity, phosphate, & nitrate
          zarea          = 1._wp / glob_sum( cvol(:,:,:) )
+         nsum          = 1._wp / glob_sum( trn(:,:,:,jpno3)*cvol(:,:,:) )
 
          zdnfsum = glob_sum( zdnf(:,:,:)  * cvol(:,:,:)  ) * zarea
          zdntrsum = glob_sum( denitr(:,:,:)  * cvol(:,:,:)  ) * zarea
          ztau = FLOAT(nn_pisdmp)*rfact*1.0570e-10       ! 1/(3000*365*86400) = 1.0569930e-11
-         IF(lwp) WRITE(numout,*) '       Totals  : ', zdnfsum, zdntrsum, ztau
+         IF(lwp) WRITE(numout,*) '       Totals  : ', zdnfsum, zdntrsum, ztau, nsum
          ztau = ztau * (zdntrsum-zdnfsum)/(zdntrsum+rtrn) + 1.
 
          !trn(:,:,:,jptal) = trn(:,:,:,jptal) * alkmean / zalksum
