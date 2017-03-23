@@ -162,14 +162,15 @@ CONTAINS
       IF( cp_cfg == "orca" .AND. .NOT. lk_c1d ) THEN      ! ORCA condiguration (not 1D) !
          !                                                    ! --------------------------- !
          ! set total alkalinity, phosphate, & nitrate
-         zarea          = 1._wp / glob_sum( cvol(:,:,:) )
-         nsum          = 1._wp / glob_sum( trn(:,:,:,jpno3)*cvol(:,:,:) )
+         !zarea          = 1._wp / glob_sum( cvol(:,:,:) )
+         nsum          = 1._wp / glob_sum( trn(:,:,:,jpno3)*cvol(:,:,:)*0.001 )      ! inverse global total NO3 in mol^-1
 
-         zdnfsum = glob_sum( zdnf(:,:,:)  * cvol(:,:,:)  ) * zarea
-         zdntrsum = glob_sum( denitr(:,:,:)  * cvol(:,:,:)  ) * zarea
-         ztau = FLOAT(nn_pisdmp)*rfact*1.0570e-10       ! 1/(3000*365*86400) = 1.0569930e-11
+         zdnfsum = glob_sum( zdnf(:,:,:)  * cvol(:,:,:)  ) !* zarea                  ! global total in molN s^-1
+         zdntrsum = glob_sum( denitr(:,:,:)  * cvol(:,:,:)  ) !* zarea
+         !ztau = FLOAT(nn_pisdmp)*rfact*1.0570e-10       ! 1/(3000*365*86400) = 1.0569930e-11
+         !ztau = ztau * (zdntrsum-zdnfsum)/(zdntrsum+rtrn) + 1.
+         ztau = 1.+(zdntrsum-zdnfsum)*nsum*FLOAT(nn_pisdmp)*rfact       
          IF(lwp) WRITE(numout,*) '       Totals  : ', zdnfsum, zdntrsum, ztau, nsum
-         ztau = ztau * (zdntrsum-zdnfsum)/(zdntrsum+rtrn) + 1.
 
          !trn(:,:,:,jptal) = trn(:,:,:,jptal) * alkmean / zalksum
          trn(:,:,:,jpno3) = trn(:,:,:,jpno3) * ztau
