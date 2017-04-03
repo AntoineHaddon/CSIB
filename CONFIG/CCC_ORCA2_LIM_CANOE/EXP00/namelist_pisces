@@ -178,8 +178,8 @@
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &nampisdmp     !  Damping 
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-   ln_pisdmp    =  .false.    !  Relaxation of some tracers to a mean value
-   nn_pisdmp    =  5475       !  Frequency of Relaxation 
+   ln_pisdmp    =  .true.     !  Relaxation of some tracers to a mean value
+   nn_pisdmp    =    75       !  Frequency of Relaxation 
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &nampismass     !  Mass conservation
