@@ -151,26 +151,24 @@ CONTAINS
       REAL(wp) ::  alkmean = 2426.     ! mean value of alkalinity ( Glodap ; for Goyet 2391. )
       REAL(wp) ::  no3mean = 30.90     ! mean value of nitrate
       !
-      REAL(wp) :: zarea, zdntrsum, zdnfsum, ztau, nsum
+      REAL(wp) :: zdntrsum, zdnfsum, ztau, nsum
       !!---------------------------------------------------------------------
 
 
-      IF(lwp)  WRITE(numout,*)
-      IF(lwp)  WRITE(numout,*) ' trc_sms_pisces_dmp : Relaxation of nutrients at time-step kt = ', kt
-      IF(lwp)  WRITE(numout,*)
+      !IF(lwp)  WRITE(numout,*)
+      !IF(lwp)  WRITE(numout,*) ' trc_sms_pisces_dmp : Relaxation of nutrients at time-step kt = ', kt
+      !IF(lwp)  WRITE(numout,*)
 
-      IF( cp_cfg == "orca" .AND. .NOT. lk_c1d ) THEN      ! ORCA condiguration (not 1D) !
+      IF( cp_cfg == "orca" .AND. .NOT. lk_c1d ) THEN      ! ORCA configuration (not 1D) !
          !                                                    ! --------------------------- !
-         ! set total alkalinity, phosphate, & nitrate
-         !zarea          = 1._wp / glob_sum( cvol(:,:,:) )
-         nsum          = 1._wp / glob_sum( trn(:,:,:,jpno3)*cvol(:,:,:)*0.001 )      ! inverse global total NO3 in mol^-1
+         ! adjust NO3 according to difference between global total rates of denitrification and N2 fixation
+         ! this adjustment must be multiplicative rather than additive to prevent negative concentrations
 
-         zdnfsum = glob_sum( zdnf(:,:,:)  * cvol(:,:,:)  ) !* zarea                  ! global total in molN s^-1
-         zdntrsum = glob_sum( denitr(:,:,:)  * cvol(:,:,:)  ) !* zarea
-         !ztau = FLOAT(nn_pisdmp)*rfact*1.0570e-10       ! 1/(3000*365*86400) = 1.0569930e-11
-         !ztau = ztau * (zdntrsum-zdnfsum)/(zdntrsum+rtrn) + 1.
+         nsum = 1. / glob_sum( trn(:,:,:,jpno3)*cvol(:,:,:)*0.001 )                  ! inverse global total NO3 in mol^-1
+         zdnfsum = glob_sum( zdnf(:,:,:)  * cvol(:,:,:)  )                           ! global total in molN s^-1
+         zdntrsum = glob_sum( denitr(:,:,:)  * cvol(:,:,:)  )         
          ztau = 1.+(zdntrsum-zdnfsum)*nsum*FLOAT(nn_pisdmp)*rfact       
-         IF(lwp) WRITE(numout,*) '       Totals  : ', zdnfsum, zdntrsum, ztau, nsum
+         !IF(lwp) WRITE(numout,*) '       Totals  : ', zdnfsum, zdntrsum, ztau, nsum
 
          !trn(:,:,:,jptal) = trn(:,:,:,jptal) * alkmean / zalksum
          trn(:,:,:,jpno3) = trn(:,:,:,jpno3) * ztau
