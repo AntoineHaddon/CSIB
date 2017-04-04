@@ -164,9 +164,9 @@ CONTAINS
          ! adjust NO3 according to difference between global total rates of denitrification and N2 fixation
          ! this adjustment must be multiplicative rather than additive to prevent negative concentrations
 
-         nsum = 1. / glob_sum( trn(:,:,:,jpno3)*cvol(:,:,:)*0.001 )                  ! inverse global total NO3 in mol^-1
-         zdnfsum = glob_sum( zdnf(:,:,:)  * cvol(:,:,:)  )                           ! global total in molN s^-1
-         zdntrsum = glob_sum( denitr(:,:,:)  * cvol(:,:,:)  )         
+         nsum = 1. / glob_sum( trn(:,:,:,jpno3)*cvol(:,:,:)*0.0010008 )              ! inverse global total N in mol^-1 (1.0008 is an approximate correction for non-NO3 N)
+         zdnfsum = glob_sum( zdnf(:,:,:) * cvol(:,:,:)  )                           ! global total in molN s^-1
+         zdntrsum = glob_sum( denitr(:,:,:) * cvol(:,:,:)  )         
          ztau = 1.+(zdntrsum-zdnfsum)*nsum*FLOAT(nn_pisdmp)*rfact       
          !IF(lwp) WRITE(numout,*) '       Totals  : ', zdnfsum, zdntrsum, ztau, nsum
 
