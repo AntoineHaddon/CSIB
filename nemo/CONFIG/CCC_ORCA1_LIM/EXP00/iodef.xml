@@ -376,7 +376,7 @@
             <field ref="qt"            name="sohefldo"       description="surface_downward_heat_flux_in_sea_water"  level="0" /> <!-- cmip6 requested as priority 1, DY -->
             <field ref="mldr10_1"      name="somxl010"                                                              level="0" />
 	    <field ref="qns"           name="qns"            description="surface_net_downward_non_solar_flux"      level="0" />
-	    <field ref="qsr"           name="qrs"            description="surface_net_downward_shortwave_flux"      level="0" /> <!-- cmip6 requested as priority 2, DY -->
+	    <field ref="qsr"           name="qsr"            description="surface_net_downward_shortwave_flux"      level="0" /> <!-- cmip6 requested as priority 2, DY -->
             <field ref="agessc"        name="agessc"         description="sea_water_age_since_surface_contact"      level="0" /> <!-- cmip6 requested as priority 1, DY -->
           </file>
 
