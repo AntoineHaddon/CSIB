@@ -371,7 +371,9 @@
             <field ref="sbs"          name="sob"      description="sea_water_salinity_at_sea_floor"                      level="1" />
             <field ref="agessc"       name="agessc"   description="sea_water_age_since_surface_contact"                            />
 	    <!-- field ref="rhop"     name="rhopoto"  description="sea_water_potential_density"                          level="2" not in cmip6 request, DY-->
-            <field ref="mldcmip6"     name="mlotst"   description="ocean_mixed_layer_thickness_defined_by_sigma_t"       level="2" />
+            <field ref="mldcmip6"     name="mlotst"   description="ocean_mixed_layer_thickness_defined_by_sigma_t"       level="1" />
+            <field ref="mldcmip6"     name="mlotstmin" description="ocean_mixed_layer_thickness_defined_by_sigma_t"      level="1" operation="t_min(X)" />
+            <field ref="mldcmip6"     name="mlotstmax" description="ocean_mixed_layer_thickness_defined_by_sigma_t"      level="1" operation="t_max(X)" />
             <field ref="mldsq"        name="mlotstsq" description="square_of_ocean_mixed_layer_thickness_defined_by_sigma_t" level="3" />
             <field ref="opottempmint" name="opottempmint" description="integral_wrt_depth_of_product_of_sea_water_density_and_potential_temperature" level="1" />
             <field ref="somint"       name="somint"       description="integral_wrt_depth_of_product_of_sea_water_density_and_salinity" level="1" />
