@@ -1,3 +1,6 @@
 arch=xlf_aix-cancpl
+cancpl_ver=snopako+phsil6-to-phsil7
+cancpl_repo=/users/tor/acrn/src/coupler_dir/coupler.git
 repo_dir=/users/tor/acrn/rls/src/nemo_cancpl_dev
-$repo_dir/bin/build-nemo -b -k ver=CanCPL_LIM_dev repo=$repo_dir exec=dev_ccc_cancpl_orca1_lim_cmoc.exe arch=$arch refcfg=CCC_CANCPL_ORCA1_LIM_CMOC cfg=CCC_CANCPL_ORCA1_LIM_CMOC
+$repo_dir/bin/build-nemo -b -k ver=CanCPL_LIM_dev repo=$repo_dir exec=dev_ccc_cancpl_orca1_lim_cmoc.exe arch=$arch refcfg=CCC_CANCPL_ORCA1_LIM_CMOC cfg=CCC_CANCPL_ORCA1_LIM_CMOC \
+                         cancpl_ver=$cancpl_ver cancpl_repo=$cancpl_repo
