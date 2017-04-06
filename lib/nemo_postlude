@@ -223,7 +223,7 @@ end_reorder_list
       nemo_save_1m_data=${nemo_save_1m_data:-on}
       ToF nemo_save_1m_data
       if [ $nemo_save_1m_data -eq 1 ]; then
-	nemo_1m_suffix_list=${nemo_1m_suffix_list:="icemod grid_T grid_U grid_V grid_W ptrc_T diad_T not_a_file_T"}
+	nemo_1m_suffix_list=${nemo_1m_suffix_list:="icemod grid_T grid_U grid_V grid_W ptrc_T diad_T"}
 	for sfx in $nemo_1m_suffix_list; do
 	  pfx=${cn_exp}_1m_${start_date}_${stop_date}_$sfx
 	  ncout=${uxxx}_${pfx}.nc

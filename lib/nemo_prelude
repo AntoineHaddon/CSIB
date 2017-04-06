@@ -689,11 +689,13 @@ echo "#################### Start NEMO pre-processing #################"
     # Ocean restart files
     if [ $pisces_offline -ne 1 ]; then
       found_rs=`(ls -1 *_${cn_ocerst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
+      [ -z "$found_rs" ] && found_rs=`(ls -1 *_${cn_ocerst_out}.nc || : ) 2>/dev/null`
       [ -z "$found_rs" ] && bail "No ocean restart files were found in $nemo_rs"
       rm -f input_ocn_restart_file_names
       touch input_ocn_restart_file_names
       for rsfile in $found_rs; do
         sfx=`echo $rsfile|sed 's/^.*\(_[0-9][0-9][0-9][0-9].nc\).*$/\1/'`
+        [ "x$sfx" = "x$rsfile" ] && sfx=`echo $rsfile|sed 's/^.*\(\.nc\).*$/\1/'`
         mv $rsfile ${cn_ocerst_in}$sfx
         echo "${cn_ocerst_in}$sfx" >> input_ocn_restart_file_names
       done
@@ -713,12 +715,14 @@ echo "#################### Start NEMO pre-processing #################"
         [ -z "$found_rs" ] && bail "No CICE restart files were found in $nemo_rs"
       else
         found_rs=`(ls -1 *_${cn_icerst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
+        [ -z "$found_rs" ] && found_rs=`(ls -1 *_${cn_icerst_out}.nc || : ) 2>/dev/null`
         if [ -z "$found_rs" ]; then
           [ $nn_ice -ge 2 ] && bail "No ice restart files were found in $nemo_rs"
           with_ice=off
         else
           for rsfile in $found_rs; do
             sfx=`echo $rsfile|sed 's/^.*\(_[0-9][0-9][0-9][0-9].nc\).*$/\1/'`
+            [ "x$sfx" = "x$rsfile" ] && sfx=`echo $rsfile|sed 's/^.*\(\.nc\).*$/\1/'`
             mv $rsfile ${cn_icerst_in}$sfx
             echo "${cn_icerst_in}$sfx" >> input_ice_restart_file_names
           done
@@ -729,11 +733,13 @@ echo "#################### Start NEMO pre-processing #################"
     if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
       # Pisces restart files
       found_rs=`(ls -1 *_${cn_trcrst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
+      [ -z "$found_rs" ] && found_rs=`(ls -1 *_${cn_trcrst_out}.nc || : ) 2>/dev/null`
       [ -z "$found_rs" ] && bail "No Pisces restart files were found in $nemo_rs"
       rm -f input_trc_restart_file_names
       touch input_trc_restart_file_names
       for rsfile in $found_rs; do
         sfx=`echo $rsfile|sed 's/^.*\(_[0-9][0-9][0-9][0-9].nc\).*$/\1/'`
+        [ "x$sfx" = "x$rsfile" ] && sfx=`echo $rsfile|sed 's/^.*\(\.nc\).*$/\1/'`
         mv $rsfile ${cn_trcrst_in}$sfx
         echo "${cn_trcrst_in}$sfx" >> input_trc_restart_file_names
       done
