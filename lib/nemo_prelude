@@ -157,6 +157,10 @@ echo "#################### Start NEMO pre-processing #################"
 # Define nemo_steps_in_job to override the length of run that is set below
   nemo_steps_in_job=${nemo_steps_in_job:=''}
 
+# Define nemo_trans_co2 to determine if we reset sn_rcv_co2 and sn_snd_co2 in namelist
+# This is only used when nemo_carbon is on
+  nemo_trans_co2=${nemo_trans_co2:=on}
+
 # Alternate path to a directory where .queue/.crawork will be found
   JHOME=''
 
@@ -513,6 +517,7 @@ echo "#################### Start NEMO pre-processing #################"
 
   # For consistency always use 1 for true and 0 for false
   ToF nemo_carbon
+  ToF nemo_trans_co2
   ToF nemo_trc
   ToF nemo_cmoc
   ToF pisces_offline
@@ -1209,6 +1214,13 @@ echo "#################### Start NEMO pre-processing #################"
     # Modify the pisces namelist to read CO2 from file, if specified in makefile
     ln_co2int=${ln_co2int:=.false.} # read atm pco2 from a file (T) or constant (F)
     mod_nl namelist_pisces ln_co2int
+
+    # Reset sn_rcv_co2 and sn_snd_co2 in namelist if requested by the user
+    if [ $nemo_trans_co2 -eq 0 ]; then
+      sn_rcv_co2=" 'none' , 'no' , '' , '' , '' "
+      sn_snd_co2=" 'none' , 'no' , '' , '' , '' "
+      mod_nl namelist sn_rcv_co2 sn_snd_co2
+    fi
   fi 
 
 echo "#################### Stop NEMO pre-processing #################"
