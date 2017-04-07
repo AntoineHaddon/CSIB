@@ -398,6 +398,9 @@ end_reorder_list
     [ -s input_ice_restart_file_names ] && cat input_ice_restart_file_names | xargs rm -f
     [ -s input_trc_restart_file_names ] && cat input_trc_restart_file_names | xargs rm -f
 
+    nemo_rebuild_rs=${nemo_rebuild_rs:-off}
+    ToF nemo_rebuild_rs
+
     if [ $nemo_save_rs -eq 1 ]; then
       # tar up the current restarts and save them to DATAPATH
 
@@ -412,6 +415,22 @@ end_reorder_list
 	  # No ocean restart files exist
 	  bail "Attempting to save restarts but no ocean restart files exist."
         fi
+      else
+        # Restarts with a 4 digit numeric extension exist, assume these are per MPI task
+        if [ $nemo_rebuild_rs -eq 1 ]; then
+          # Rebuild this restart
+          for one_rsfile in $found_rs ; do
+            # Define the global restart file name using the first per MPI task file
+            ncout=`echo $one_rsfile|sed 's/^\(.*\)_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc$/\1.nc/'`
+            [ -z "$ncout" ] && bail "Unable to determine global restart file name from $one_rsfile"
+            break
+          done
+          REBUILD -o $ncout $ofnpatt || bail "Unable to rebuild $ncout"
+          # Remove all per MPI task restart files
+          rm -f $ofnpatt
+          # Redefine ofnpatt as the name of the global restart just created
+          ofnpatt=$ncout
+        fi
       fi
 
       if [ $nemo_carbon -eq 1 ]; then
@@ -424,6 +443,22 @@ end_reorder_list
           if [ -z "$found_rs" ]; then
             # No pisces restart files exist
 	    bail "Attempting to save restarts but no pisces restart files exist."
+          fi
+        else
+          # Restarts with a 4 digit numeric extension exist, assume these are per MPI task
+          if [ $nemo_rebuild_rs -eq 1 ]; then
+            # Rebuild this restart
+            for one_rsfile in $found_rs ; do
+              # Define the global restart file name using the first per MPI task file
+              ncout=`echo $one_rsfile|sed 's/^\(.*\)_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc$/\1.nc/'`
+              [ -z "$ncout" ] && bail "Unable to determine global restart file name from $one_rsfile"
+              break
+            done
+            REBUILD -o $ncout $pfnpatt || bail "Unable to rebuild $ncout"
+            # Remove all per MPI task restart files
+            rm -f $pfnpatt
+            # Redefine pfnpatt as the name of the global restart just created
+            pfnpatt=$ncout
           fi
 	fi
       else
@@ -453,6 +488,22 @@ end_reorder_list
             if [ -z "$found_rs" ]; then
               # No ice restart files exist
               bail "Attempting to save restarts but no ice restart files exist."
+            fi
+          else
+            # Restarts with a 4 digit numeric extension exist, assume these are per MPI task
+            if [ $nemo_rebuild_rs -eq 1 ]; then
+              # Rebuild this restart
+              for one_rsfile in $found_rs ; do
+                # Define the global restart file name using the first per MPI task file
+                ncout=`echo $one_rsfile|sed 's/^\(.*\)_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc$/\1.nc/'`
+                [ -z "$ncout" ] && bail "Unable to determine global restart file name from $one_rsfile"
+                break
+              done
+              REBUILD -o $ncout $ifnpatt || bail "Unable to rebuild $ncout"
+              # Remove all per MPI task restart files
+              rm -f $ifnpatt
+              # Redefine ifnpatt as the name of the global restart just created
+              ifnpatt=$ncout
             fi
           fi
         fi
