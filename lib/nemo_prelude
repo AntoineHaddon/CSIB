@@ -694,6 +694,7 @@ echo "#################### Start NEMO pre-processing #################"
       rm -f input_ocn_restart_file_names
       touch input_ocn_restart_file_names
       for rsfile in $found_rs; do
+        [ $rsfile = 'cpl_restart.nc' ] && continue
         sfx=`echo $rsfile|sed 's/^.*\(_[0-9][0-9][0-9][0-9].nc\).*$/\1/'`
         [ "x$sfx" = "x$rsfile" ] && sfx=`echo $rsfile|sed 's/^.*\(\.nc\).*$/\1/'`
         mv $rsfile ${cn_ocerst_in}$sfx
@@ -721,6 +722,7 @@ echo "#################### Start NEMO pre-processing #################"
           with_ice=off
         else
           for rsfile in $found_rs; do
+            [ $rsfile = 'cpl_restart.nc' ] && continue
             sfx=`echo $rsfile|sed 's/^.*\(_[0-9][0-9][0-9][0-9].nc\).*$/\1/'`
             [ "x$sfx" = "x$rsfile" ] && sfx=`echo $rsfile|sed 's/^.*\(\.nc\).*$/\1/'`
             mv $rsfile ${cn_icerst_in}$sfx
@@ -738,6 +740,7 @@ echo "#################### Start NEMO pre-processing #################"
       rm -f input_trc_restart_file_names
       touch input_trc_restart_file_names
       for rsfile in $found_rs; do
+        [ $rsfile = 'cpl_restart.nc' ] && continue
         sfx=`echo $rsfile|sed 's/^.*\(_[0-9][0-9][0-9][0-9].nc\).*$/\1/'`
         [ "x$sfx" = "x$rsfile" ] && sfx=`echo $rsfile|sed 's/^.*\(\.nc\).*$/\1/'`
         mv $rsfile ${cn_trcrst_in}$sfx
