@@ -25,7 +25,6 @@ MODULE zdfmxl
 #if defined key_diaar5   
    USE eosbn2          ! equation of state
    USE phycst          ! physical constants
-   USE diaar5, ONLY : lk_diaar5
 #endif
 
    IMPLICIT NONE
@@ -100,12 +99,12 @@ CONTAINS
       IF( nn_timing == 1 )  CALL timing_start('zdf_mxl')
       !
       CALL wrk_alloc( jpi,jpj, imld )
-      IF( lk_diaar5 ) THEN
+#if defined key_diaar5
          CALL wrk_alloc( jpk, delta_b)
          CALL wrk_alloc( jpi,jpj, mldt)
          CALL wrk_alloc( jpi,jpj,jpk, zrhd, zrhd1)
          CALL wrk_alloc( jpi,jpj,jpk,jpts, ztsn) 
-      ENDIF
+#endif
 
       IF( kt == nit000 ) THEN
          IF(lwp) WRITE(numout,*)
@@ -137,7 +136,7 @@ CONTAINS
          END DO
       END DO
       ! mixed layer depth using cmip6 criterion
-      IF ( lk_diaar5 ) THEN
+#if defined key_diaar5
          CALL eos( tsn, zrhd )                 ! now in situ density
          DO jk = 1, jpk
             ztsn(:,:,jk,jp_tem) = tsn(:,:,1,jp_tem)
@@ -161,26 +160,26 @@ CONTAINS
                END DO
             END DO
          END DO    
-      ENDIF
+#endif
       !
       IF( .NOT.lk_offline ) THEN            ! no need to output in offline mode
          CALL iom_put( "mldr10_1", hmlp )   ! mixed layer depth
          CALL iom_put( "mldkz5"  , hmld )   ! turbocline depth
-         IF ( lk_diaar5 ) THEN
+#if defined key_diaar5
             CALL iom_put( "mldcmip6",        mldt )  ! mixed layer depth for cmip6
             CALL iom_put( "mldsq",    mldt * mldt )  ! squared mixed layer depth for cmip6
-         ENDIF
+#endif
       ENDIF
       
       IF(ln_ctl)   CALL prt_ctl( tab2d_1=REAL(nmln,wp), clinfo1=' nmln : ', tab2d_2=hmlp, clinfo2=' hmlp : ', ovlap=1 )
       !
       CALL wrk_dealloc( jpi,jpj, imld )
-      IF ( lk_diaar5 ) THEN
+#if defined key_diaar5
          CALL wrk_dealloc( jpk, delta_b )
          CALL wrk_dealloc( jpi,jpj, mldt )
          CALL wrk_dealloc( jpi,jpj,jpk, zrhd, zrhd1 )
          CALL wrk_dealloc( jpi,jpj,jpk,jpts, ztsn )
-      ENDIF
+#endif
       !
       IF( nn_timing == 1 )  CALL timing_stop('zdf_mxl')
       !
