@@ -1295,8 +1295,8 @@ end_reorder_list
 	dump_sublist_arclabel=${uxxx}_${cn_exp}_${stop_year}0101_${stop_year}1231
 
 	bemach=$this_mach
-	shortermdir=${shortermdir:=off}
-	masterdir=${masterdir:=on}
+	shortermdir=${nemo_shortermdir:=off}
+	masterdir=${nemo_masterdir:=on}
 	sv=${sv:=off}
 	besc=${besc:=on}
 	with_lsarc=off
