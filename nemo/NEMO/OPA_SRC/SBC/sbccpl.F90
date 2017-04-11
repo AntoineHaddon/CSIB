@@ -497,7 +497,7 @@ CONTAINS
       !                                                      ! ------------------------- !
       !                                                      !  mean sea level pressure  !
       !                                                      ! ------------------------- !
-      srcv(jpr_mspl)%clname = 'O_MSLP'
+      srcv(jpr_mslp)%clname = 'O_MSLP'
 #if defined key_cpl_carbon_cycle
       srcv(jpr_co2 )%laction = .TRUE.
       srcv(jpr_mslp)%laction = .TRUE.
