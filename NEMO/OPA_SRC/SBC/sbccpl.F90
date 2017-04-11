@@ -102,7 +102,8 @@ MODULE sbccpl
    INTEGER, PARAMETER ::   jpr_co2    = 31
    INTEGER, PARAMETER ::   jpr_topm   = 32            ! topmeltn
    INTEGER, PARAMETER ::   jpr_botm   = 33            ! botmeltn
-   INTEGER, PARAMETER ::   jprcv      = 33            ! total number of fields received
+   INTEGER, PARAMETER ::   jpr_mslp   = 34            ! mean sea level pressure
+   INTEGER, PARAMETER ::   jprcv      = 34            ! total number of fields received
 
    INTEGER, PARAMETER ::   jps_fice   =  1            ! ice fraction 
    INTEGER, PARAMETER ::   jps_toce   =  2            ! ocean temperature
@@ -492,6 +493,16 @@ CONTAINS
       !                                                      !      Atmospheric CO2      !
       !                                                      ! ------------------------- !
       srcv(jpr_co2 )%clname = 'O_AtmCO2'   ;   IF( TRIM(sn_rcv_co2%cldes   ) == 'coupled' )    srcv(jpr_co2 )%laction = .TRUE.
+
+      !                                                      ! ------------------------- !
+      !                                                      !  mean sea level pressure  !
+      !                                                      ! ------------------------- !
+      srcv(jpr_mspl)%clname = 'O_MSLP'
+#if defined key_cpl_carbon_cycle
+      srcv(jpr_co2 )%laction = .TRUE.
+      srcv(jpr_mslp)%laction = .TRUE.
+#endif
+
       !                                                      ! ------------------------- !
       !                                                      !   topmelt and botmelt     !   
       !                                                      ! ------------------------- !
@@ -862,6 +873,8 @@ CONTAINS
 #if defined key_cpl_carbon_cycle
       !                                                              ! atmosph. CO2 (ppm)
       IF( srcv(jpr_co2)%laction )   atm_co2(:,:) = frcv(jpr_co2)%z3(:,:,1)
+      !                                                              ! mean sea level pressure (atm)
+      IF( srcv(jpr_mslp)%laction )  atm_mslp(:,:) = frcv(jpr_mslp)%z3(:,:,1)
 #endif
 
       !                                                      ! ========================= !
