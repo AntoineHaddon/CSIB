@@ -421,7 +421,7 @@ end_reorder_list
           # Rebuild this restart
           for one_rsfile in $found_rs ; do
             # Define the global restart file name using the first per MPI task file
-            ncout=`echo $one_rsfile|sed 's/^\(.*\)_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc$/\1.nc/'`
+            ncout=`echo $one_rsfile|sed 's/^\(.*\)_[0-9][0-9][0-9][0-9].nc$/\1.nc/'`
             [ -z "$ncout" ] && bail "Unable to determine global restart file name from $one_rsfile"
             break
           done
@@ -450,7 +450,7 @@ end_reorder_list
             # Rebuild this restart
             for one_rsfile in $found_rs ; do
               # Define the global restart file name using the first per MPI task file
-              ncout=`echo $one_rsfile|sed 's/^\(.*\)_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc$/\1.nc/'`
+              ncout=`echo $one_rsfile|sed 's/^\(.*\)_[0-9][0-9][0-9][0-9].nc$/\1.nc/'`
               [ -z "$ncout" ] && bail "Unable to determine global restart file name from $one_rsfile"
               break
             done
@@ -495,7 +495,7 @@ end_reorder_list
               # Rebuild this restart
               for one_rsfile in $found_rs ; do
                 # Define the global restart file name using the first per MPI task file
-                ncout=`echo $one_rsfile|sed 's/^\(.*\)_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc$/\1.nc/'`
+                ncout=`echo $one_rsfile|sed 's/^\(.*\)_[0-9][0-9][0-9][0-9].nc$/\1.nc/'`
                 [ -z "$ncout" ] && bail "Unable to determine global restart file name from $one_rsfile"
                 break
               done
@@ -1074,6 +1074,7 @@ end_reorder_list
 	fi
 
 	# For the restart files
+        dump_this_rs=0
 	if [ $nemo_dump_rs -eq 1 ]; then
           # First determine if this is a month in nemo_dump_rs_month_list
           if [ -n "$model" ]; then
@@ -1082,14 +1083,13 @@ end_reorder_list
           else
             mmrs=`echo $rs_out | sed 's/^.*_\([0-9][0-9]*\)_restart\.tar$/\1/'|cut -c 5-6`
           fi
-          dump_this_rs=0
           for mitem in ${nemo_dump_rs_month_list}; do
             if [ x"${mitem}" = x"${mmrs}" ]; then
               dump_this_rs=1
             fi
           done
 
-	  if [ ${dump_this_rs} -eq 1 ]; then
+	  if [ $dump_this_rs -eq 1 ]; then
 	    eval fnpatt=${rs_out}.\[0-9\]\[0-9\]\[0-9\]
 	    found_rs_file=`(ls -1 $DATAPATH/$fnpatt || : ) 2>/dev/null`
 	    [ -n "$found_rs_file" ] || bail "nemo_dump_rs=on but cannot find ${rs_out} on DATAPATH"
@@ -1120,7 +1120,7 @@ end_reorder_list
             fi
 	fi
         
-        if [ $nemo_dump_hist -ne 1 -a ${dump_this_rs} -ne 1 ]; then
+        if [ $nemo_dump_hist -ne 1 -a $dump_this_rs -ne 1 ]; then
             DUMPHIST=''
         else
      	  # Create DUMPHIST variable to pass to cccjob.
