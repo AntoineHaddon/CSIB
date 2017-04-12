@@ -492,14 +492,17 @@ CONTAINS
       !                                                      ! ------------------------- !
       !                                                      !      Atmospheric CO2      !
       !                                                      ! ------------------------- !
-      srcv(jpr_co2 )%clname = 'O_AtmCO2'   ;   IF( TRIM(sn_rcv_co2%cldes   ) == 'coupled' )    srcv(jpr_co2 )%laction = .TRUE.
-
+      srcv(jpr_co2 )%clname = 'O_AtmCO2'
+#if defined key_cpl_carbon_cycle
+      srcv(jpr_co2 )%laction = .TRUE.
+#else
+      IF( TRIM(sn_rcv_co2%cldes ) == 'coupled' ) srcv(jpr_co2 )%laction = .TRUE.
+#endif
       !                                                      ! ------------------------- !
       !                                                      !  mean sea level pressure  !
       !                                                      ! ------------------------- !
       srcv(jpr_mslp)%clname = 'O_MSLP'
 #if defined key_cpl_carbon_cycle
-      srcv(jpr_co2 )%laction = .TRUE.
       srcv(jpr_mslp)%laction = .TRUE.
 #endif
 
@@ -634,7 +637,13 @@ CONTAINS
       !                                                      ! ------------------------- !
       !                                                      !          CO2 flux         !
       !                                                      ! ------------------------- !
-      ssnd(jps_co2)%clname = 'O_CO2FLX' ;  IF( TRIM(sn_snd_co2%cldes) == 'coupled' )    ssnd(jps_co2 )%laction = .TRUE.
+      ssnd(jps_co2)%clname = 'O_CO2FLX'
+#if defined key_cpl_carbon_cycle
+      ssnd(jps_co2 )%laction = .TRUE.
+#else
+      IF( TRIM(sn_snd_co2%cldes) == 'coupled' ) ssnd(jps_co2 )%laction = .TRUE.
+#endif
+
       !
       ! ================================ !
       !   initialisation of the coupler  !
