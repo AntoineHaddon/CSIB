@@ -1359,8 +1359,8 @@ cat > Execute_Script <<'end_of_script'
 
     # Post-processing of opottemptend and osalttend from CMIP6 request.
     if [ ${nemo_ar6_diag} -eq 1 ] && [ ${stop_mon} -eq 12 ]; then
-      if [ ${nn_it000} -ne 1 ]; then
-        prevd_itend=`echo ${steps_per_day} ${start_year} | awk '{s1=$1*365;s2=$2-1; printf "%08d",s1*s2}' -`
+      prevd_itend=`echo ${steps_per_day} ${start_year} | awk '{s1=$1*365;s2=$2-1; printf "%08d",s1*s2}' -`
+      if [ ${nn_it000} -ne 1 -a ${prevd_itend} -gt 0 ]; then
         nnd_itend=`expr ${nn_itend} |awk '{printf "%08d",$1}'`
         pfx=${cn_exp}_${prevd_itend}
         [ -s ${pfx}_tn.nc ] || bail ${pfx}"_tn.nc does not exist"
