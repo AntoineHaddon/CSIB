@@ -310,10 +310,7 @@ CONTAINS
       t_oce_co2_flx = 0._wp
       !
 #if defined key_cpl_carbon_cycle
-      !TODO--- how should patm be initialized
-      !        e.g from restart, as the value 1, read via mpi from coupler
-      ! patm = atm_mslp
-      CALL p4z_patm( nit000 )
+      patm = atm_mslp
 #else
       CALL p4z_patm( nit000 )
 #endif
