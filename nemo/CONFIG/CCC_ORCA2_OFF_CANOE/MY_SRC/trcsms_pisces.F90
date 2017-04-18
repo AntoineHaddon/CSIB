@@ -151,27 +151,27 @@ CONTAINS
       REAL(wp) ::  alkmean = 2426.     ! mean value of alkalinity ( Glodap ; for Goyet 2391. )
       REAL(wp) ::  no3mean = 30.90     ! mean value of nitrate
       !
-      REAL(wp) :: zarea, zalksum, zno3sum
+      REAL(wp) :: zdntrsum, zdnfsum, ztau, nsum
       !!---------------------------------------------------------------------
 
 
-      IF(lwp)  WRITE(numout,*)
-      IF(lwp)  WRITE(numout,*) ' trc_sms_pisces_dmp : Relaxation of nutrients at time-step kt = ', kt
-      IF(lwp)  WRITE(numout,*)
+      !IF(lwp)  WRITE(numout,*)
+      !IF(lwp)  WRITE(numout,*) ' trc_sms_pisces_dmp : Relaxation of nutrients at time-step kt = ', kt
+      !IF(lwp)  WRITE(numout,*)
 
-      IF( cp_cfg == "orca" .AND. .NOT. lk_c1d ) THEN      ! ORCA condiguration (not 1D) !
+      IF( cp_cfg == "orca" .AND. .NOT. lk_c1d ) THEN      ! ORCA configuration (not 1D) !
          !                                                    ! --------------------------- !
-         ! set total alkalinity, phosphate, & nitrate
-         zarea          = 1._wp / glob_sum( cvol(:,:,:) ) * 1e6              
+         ! adjust NO3 according to difference between global total rates of denitrification and N2 fixation
+         ! this adjustment must be multiplicative rather than additive to prevent negative concentrations
 
-         zalksum = glob_sum( trn(:,:,:,jptal) * cvol(:,:,:)  ) * zarea
-         zno3sum = glob_sum( trn(:,:,:,jpno3) * cvol(:,:,:)  ) * zarea
- 
-         IF(lwp) WRITE(numout,*) '       TALK mean : ', zalksum
-         trn(:,:,:,jptal) = trn(:,:,:,jptal) * alkmean / zalksum
+         nsum = 1. / glob_sum( trn(:,:,:,jpno3)*cvol(:,:,:)*0.0010008 )              ! inverse global total N in mol^-1 (1.0008 is an approximate correction for non-NO3 N)
+         zdnfsum = glob_sum( zdnf(:,:,:) * cvol(:,:,:)  )                           ! global total in molN s^-1
+         zdntrsum = glob_sum( denitr(:,:,:) * cvol(:,:,:)  )         
+         ztau = 1.+(zdntrsum-zdnfsum)*nsum*FLOAT(nn_pisdmp)*rfact       
+         !IF(lwp) WRITE(numout,*) '       Totals  : ', zdnfsum, zdntrsum, ztau, nsum
 
-         IF(lwp) WRITE(numout,*) '       NO3  mean : ', zno3sum
-         trn(:,:,:,jpno3) = trn(:,:,:,jpno3) * no3mean / zno3sum
+         !trn(:,:,:,jptal) = trn(:,:,:,jptal) * alkmean / zalksum
+         trn(:,:,:,jpno3) = trn(:,:,:,jpno3) * ztau
 
          !
       ENDIF

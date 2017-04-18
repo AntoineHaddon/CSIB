@@ -55,6 +55,7 @@ MODULE sms_pisces
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   grazing2   !: mesozooplankton grazing on phytoplankton
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   grazing3   !: mesozooplankton grazing on microzooplankton
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   denitr     !: denitrification
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   zdnf       !: N2 fixation
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   denitnh4   !: annamox
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   nh4ox      !: nitrification
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   zmortpn    !: nanophytoplankton mortality 
@@ -104,11 +105,11 @@ CONTAINS
          &      xlimnn (jpi,jpj,jpk), xlimdn (jpi,jpj,jpk),    STAT=ierr(2) )
          !
       !*  SMS for the organic matter
-      ALLOCATE( nitrfac(jpi,jpj,jpk), denitr(jpi,jpj,jpk),        &
+      ALLOCATE( nitrfac(jpi,jpj,jpk),  denitr(jpi,jpj,jpk),        &
          &      denitnh4(jpi,jpj,jpk), nh4ox(jpi,jpj,jpk),         &
-         &      prodcal(jpi,jpj,jpk) , grazing1(jpi,jpj,jpk),      &
-         &      grazing2(jpi,jpj,jpk) , grazing3(jpi,jpj,jpk),     &
-         &      xdiss  (jpi,jpj,jpk),                          STAT=ierr(3) )  
+         &      zdnf(jpi,jpj,jpk),     prodcal(jpi,jpj,jpk),       & 
+         &      grazing1(jpi,jpj,jpk), grazing2(jpi,jpj,jpk),      &
+         &      grazing3(jpi,jpj,jpk), xdiss  (jpi,jpj,jpk),   STAT=ierr(3) )  
          !
       !* Variable for chemistry of the CO2 cycle
       ALLOCATE( akb3(jpi,jpj,jpk)    , ak13  (jpi,jpj,jpk) ,       &
