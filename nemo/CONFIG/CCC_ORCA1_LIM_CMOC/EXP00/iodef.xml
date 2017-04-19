@@ -663,37 +663,37 @@
 	</file>   
 
         <file id="1m_ptrc_T" name="auto" description="pisces sms variables" >
-          <field ref="DIC"                                                                                                    />
-          <field ref="Alkalini"                                                                                               />
-          <field ref="O2"                                                                                                     />
-          <field ref="POC"                                                                                                    />
-          <field ref="PHY"                                                                                                    />
-          <field ref="ZOO"                                                                                                    />
-          <field ref="NCHL"                                                                                                   />
-          <field ref="NO3"                                                                                                    />
+          <field ref="DIC"                                                                                         level="0"  />
+          <field ref="Alkalini"                                                                                    level="0"  />
+          <field ref="O2"                                                                                          level="0"  />
+          <field ref="POC"                                                                                         level="0"  />
+          <field ref="PHY"                                                                                         level="0"  />
+          <field ref="ZOO"                                                                                         level="0"  />
+          <field ref="NCHL"                                                                                        level="0"  />
+          <field ref="NO3"                                                                                         level="0"  />
        </file>
 
         <file id="1m_diad_T" name="auto" description="additional cmoc diagnostic variables" >
-          <field ref="PH"                                                                                                     />
-          <field ref="sDIC"                                                                                                   />
-          <field ref="sAlk"                                                                                                   />
-          <field ref="PPPHY"                                                                                                  />
-          <field ref="Cflx"                                                                                                   />
-          <field ref="Oflx"                                                                                                   />
-          <field ref="Nfix"                                                                                                   />
-          <field ref="Denit"                                                                                                  />
-          <field ref="EPC100"                                                                                                 />
-          <field ref="EPCALC100"                                                                                              />
-          <field ref="BUPOC"                                                                                                  />
-          <field ref="BUCALC"                                                                                                 />
-          <field ref="Dpco2"                                                                                                  />
-          <field ref="Dpo2"                                                                                                   />
-          <field ref="LNnut"                                                                                                  />
-          <field ref="LNFe"                                                                                                   />
-          <field ref="LNlight"                                                                                                />
-          <field ref="PAR"                                                                                                    />
-          <field ref="Mumax"                                                                                                  />
-          <field ref="oomask"                                                                                                 />
+          <field ref="PH"                                                                                          level="0"  />
+          <field ref="sDIC"                                                                                        level="0"  />
+          <field ref="sAlk"                                                                                        level="0"  />
+          <field ref="PPPHY"                                                                                       level="0"  />
+          <field ref="Cflx"                                                                                        level="0"  />
+          <field ref="Oflx"                                                                                        level="0"  />
+          <field ref="Nfix"                                                                                        level="0"  />
+          <field ref="Denit"                                                                                       level="0"  />
+          <field ref="EPC100"                                                                                      level="0"  />
+          <field ref="EPCALC100"                                                                                   level="0"  />
+          <field ref="BUPOC"                                                                                       level="0"  />
+          <field ref="BUCALC"                                                                                      level="0"  />
+          <field ref="Dpco2"                                                                                       level="0"  />
+          <field ref="Dpo2"                                                                                        level="0"  />
+          <field ref="LNnut"                                                                                       level="0"  />
+          <field ref="LNFe"                                                                                        level="0"  />
+          <field ref="LNlight"                                                                                     level="0"  />
+          <field ref="PAR"                                                                                         level="0"  />
+          <field ref="Mumax"                                                                                       level="0"  />
+          <field ref="oomask"                                                                                      level="0"  />
        </file>
 
       </group>
