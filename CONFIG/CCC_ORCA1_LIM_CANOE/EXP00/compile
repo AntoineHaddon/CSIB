@@ -1,1 +1,5 @@
-build-nemo -j4 ver=master repo=git@gitlab.science.gc.ca:CanESM/CanNEMO.git exec=runid_ccc_orca1_lim_canoe_exe arch=XC40_CCCma_intel-pe refcfg=CCC_ORCA1_LIM_CANOE cfg=CCC_ORCA1_LIM_CANOE
+#CMIP6 output
+build-nemo -j4 ver=master repo=git@gitlab.science.gc.ca:CanESM/CanNEMO.git exec=runid_ccc_orca1_lim_canoe_exe arch=XC40_CCCma_intel-pe refcfg=CCC_ORCA1_LIM_CANOE cfg=CCC_ORCA1_LIM_CANOE add_key="key_trdtra key_diaar5"
+#
+#Default output
+#build-nemo -j4 ver=master repo=git@gitlab.science.gc.ca:CanESM/CanNEMO.git exec=runid_ccc_orca1_lim_canoe_exe arch=XC40_CCCma_intel-pe refcfg=CCC_ORCA1_LIM_CANOE cfg=CCC_ORCA1_LIM_CANOE
