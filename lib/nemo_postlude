@@ -709,7 +709,7 @@ end_reorder_list
         [ -s rs_nemo_physical_rtd.nc ] && rtd_file_list="$rtd_file_list rs_nemo_physical_rtd.nc"
 
         # Copy the new physical rtd file to Victoria
-        scp_rtd_to_Victoria nemo_physical_rtd.nc sc_${runid}_nemo_physical_rtd.nc
+        [ -s nemo_physical_rtd.nc ] && scp_rtd_to_Victoria nemo_physical_rtd.nc sc_${runid}_nemo_physical_rtd.nc
 
         # Move deleting to the delete part
         # delete RTD files from 2 years ago from RUNPATH (if we are 2+ years from rtd starting).
@@ -759,7 +759,7 @@ end_reorder_list
           [ -s rs_nemo_ice_rtd.nc ] && rtd_file_list="$rtd_file_list rs_nemo_ice_rtd.nc"
 
           # Copy the new carbon rtd file to Victoria
-          scp_rtd_to_Victoria nemo_ice_rtd.nc sc_${runid}_nemo_ice_rtd.nc
+          [ -s nemo_ice_rtd.nc ] && scp_rtd_to_Victoria nemo_ice_rtd.nc sc_${runid}_nemo_ice_rtd.nc
 
           # delete RTD files from 2 years ago from RUNPATH (if we are 2+ years from rtd starting).
           #if [ ${yearcm2} -ge ${year_rtdiag_start} ] ; then
@@ -813,7 +813,7 @@ end_reorder_list
       [ -s rs_nemo_carbon_rtd.nc ] && rtd_file_list="$rtd_file_list rs_nemo_carbon_rtd.nc"
 
       # Copy the new carbon rtd file to Victoria
-      scp_rtd_to_Victoria nemo_carbon_rtd.nc sc_${runid}_nemo_carbon_rtd.nc
+      [ -s nemo_carbon_rtd.nc ] && scp_rtd_to_Victoria nemo_carbon_rtd.nc sc_${runid}_nemo_carbon_rtd.nc
 
     fi
 
