@@ -632,12 +632,6 @@ end_reorder_list
   rtd_file_list=''
 
   if [ $nemo_rtd -eq 1 ]; then
-#    rtd_file_dump_list=rtd_file_dump_list_$$
-#    rtd_file_del_list=rtd_file_del_list_$$
-#    rm -f $rtd_file_dump_list
-#    rm -f $rtd_file_del_list
-#    touch $rtd_file_dump_list
-#    touch $rtd_file_del_list
 
     # Specify the location of some NCO tools
     # These are required for manipulation of the netcdf files
@@ -697,23 +691,6 @@ end_reorder_list
         cp -f $physical_rtd_exe rs_$physical_rtd_exe || :
         [ -s rs_$physical_rtd_exe ] && rtd_file_list="$rtd_file_list rs_$physical_rtd_exe"
 
-#        # Access an existing rtd file containing data up to the previous year, if year > year_rtdiag_start
-#        # Create a local copy with write access
-#        curr_rtd_file=sc_${runid}_${rs_date}_nemo_physical_rtd.nc
-#        found_file=`(ls -1 $DATAPATH/$curr_rtd_file* || : ) 2>/dev/null`
-#        if [ -n "$found_file" ]; then 
-#            release nemo_physical_rtd.nc
-#            access  nemo_physical_rtd.nc $curr_rtd_file nocp=no
-#            chmod u+rw nemo_physical_rtd.nc      
-#            # Create run time diagnostics for physical ocean variables
-#            $physical_rtd_exe $stop_year $start_mon
-#            echo $curr_rtd_file >> $rtd_file_del_list
-#        else
-#            # Create run time diagnostics for physical ocean variables
-#            $physical_rtd_exe $stop_year $start_mon
-#            ${NCATTED} -O -a RTD_version,global,a,c,"${physical_rtd_exe}" nemo_physical_rtd.nc
-#        fi
-
         # Create run time diagnostics for physical ocean variables
         [ $nemo_new_rtd -eq 1 ] && rm -f rs_nemo_physical_rtd.nc
         if [ -s rs_nemo_physical_rtd.nc ]; then
@@ -725,16 +702,11 @@ end_reorder_list
         else
           # Create a new rtd file
           $physical_rtd_exe $stop_year $start_mon
-          ${NCATTED} -O -a RTD_version,global,a,c,"${physical_rtd_exe}" nemo_physical_rtd.nc
+          [ -s nemo_physical_rtd.nc ] && ${NCATTED} -O -a RTD_version,global,a,c,"${physical_rtd_exe}" nemo_physical_rtd.nc
         fi
 
         cp -f nemo_physical_rtd.nc rs_nemo_physical_rtd.nc || :
         [ -s rs_nemo_physical_rtd.nc ] && rtd_file_list="$rtd_file_list rs_nemo_physical_rtd.nc"
-
-#        # Save the rtd file created by physical_rtd_exe
-#        new_rtd_file=sc_${runid}_${stop_date}_nemo_physical_rtd.nc
-#        save nemo_physical_rtd.nc $new_rtd_file
-#        echo $new_rtd_file >> $rtd_file_dump_list
 
         # Copy the new physical rtd file to Victoria
         scp_rtd_to_Victoria nemo_physical_rtd.nc sc_${runid}_nemo_physical_rtd.nc
@@ -769,23 +741,6 @@ end_reorder_list
           cp -f $ice_rtd_exe rs_$ice_rtd_exe || :
           [ -s rs_$ice_rtd_exe ] && rtd_file_list="$rtd_file_list rs_$ice_rtd_exe"
 
-#          # Access an existing rtd file containing data up to the previous year, if 
-#          # year > year_rtdiag_start
-#          curr_rtd_file=sc_${runid}_${rs_date}_nemo_ice_rtd.nc
-#          found_file=`(ls -1 $DATAPATH/$curr_rtd_file* || : ) 2>/dev/null`
-#          if [ -n "$found_file" ]; then 
-#              release nemo_ice_rtd.nc
-#              access  nemo_ice_rtd.nc $curr_rtd_file nocp=no
-#              chmod u+rw nemo_ice_rtd.nc
-#              # Create run time diagnostics for carbon variables
-#              $ice_rtd_exe $stop_year $start_mon
-#              echo $curr_rtd_file >> $rtd_file_del_list
-#          else
-#              # Create run time diagnostics for carbon variables
-#              $ice_rtd_exe $stop_year $start_mon
-#              ${NCATTED} -O -a RTD_version,global,a,c,"${ice_rtd_exe}" nemo_ice_rtd.nc
-#          fi
-
           # Create run time diagnostics for ice variables
           [ $nemo_new_rtd -eq 1 ] && rm -f rs_nemo_ice_rtd.nc
           if [ -s rs_nemo_ice_rtd.nc ]; then
@@ -797,16 +752,11 @@ end_reorder_list
           else
             # Create a new rtd file
             $ice_rtd_exe $stop_year $start_mon
-            ${NCATTED} -O -a RTD_version,global,a,c,"${ice_rtd_exe}" nemo_ice_rtd.nc
+            [ -s nemo_ice_rtd.nc ] && ${NCATTED} -O -a RTD_version,global,a,c,"${ice_rtd_exe}" nemo_ice_rtd.nc
           fi
 
           cp -f nemo_ice_rtd.nc rs_nemo_ice_rtd.nc || :
           [ -s rs_nemo_ice_rtd.nc ] && rtd_file_list="$rtd_file_list rs_nemo_ice_rtd.nc"
-
-#          # Save the rtd file created by carbon_rtd_exe
-#          new_rtd_file=sc_${runid}_${stop_date}_nemo_ice_rtd.nc
-#          save nemo_ice_rtd.nc $new_rtd_file
-#          echo $new_rtd_file >> $rtd_file_dump_list
 
           # Copy the new carbon rtd file to Victoria
           scp_rtd_to_Victoria nemo_ice_rtd.nc sc_${runid}_nemo_ice_rtd.nc
@@ -846,23 +796,6 @@ end_reorder_list
       cp -f $carbon_rtd_exe rs_$carbon_rtd_exe || :
       [ -s rs_$carbon_rtd_exe ] && rtd_file_list="$rtd_file_list rs_$carbon_rtd_exe"
 
-#      # Access an existing rtd file containing data up to the previous year, if 
-#      # year > year_rtdiag_start
-#      curr_rtd_file=sc_${runid}_${rs_date}_nemo_carbon_rtd.nc
-#      found_file=`(ls -1 $DATAPATH/$curr_rtd_file* || : ) 2>/dev/null`
-#      if [ -n "$found_file" ]; then 
-#          rm -f  nemo_carbon_rtd.nc
-#          access nemo_carbon_rtd.nc $curr_rtd_file nocp=no
-#          chmod u+rw nemo_carbon_rtd.nc
-#          # Create run time diagnostics for carbon variables
-#          $carbon_rtd_exe $stop_year $start_mon
-#          echo $curr_rtd_file >> $rtd_file_del_list
-#      else
-#          # Create run time diagnostics for carbon variables
-#          $carbon_rtd_exe $stop_year $start_mon
-#          ${NCATTED} -O -a RTD_version,global,a,c,"${carbon_rtd_exe}" nemo_carbon_rtd.nc
-#      fi
-
       [ $nemo_new_rtd -eq 1 ] && rm -f rs_nemo_carbon_rtd.nc
       if [ -s rs_nemo_carbon_rtd.nc ]; then
         # Append to the rtd file found in the restart
@@ -873,16 +806,11 @@ end_reorder_list
       else
         # Create a new rtd file
         $carbon_rtd_exe $stop_year $start_mon
-        ${NCATTED} -O -a RTD_version,global,a,c,"${carbon_rtd_exe}" nemo_carbon_rtd.nc
+        [ -s nemo_carbon_rtd.nc ] && ${NCATTED} -O -a RTD_version,global,a,c,"${carbon_rtd_exe}" nemo_carbon_rtd.nc
       fi
 
       cp -f nemo_carbon_rtd.nc rs_nemo_carbon_rtd.nc || :
       [ -s rs_nemo_carbon_rtd.nc ] && rtd_file_list="$rtd_file_list rs_nemo_carbon_rtd.nc"
-
-#      # Save the rtd file created by carbon_rtd_exe
-#      new_rtd_file=sc_${runid}_${stop_date}_nemo_carbon_rtd.nc
-#      save nemo_carbon_rtd.nc $new_rtd_file
-#      echo $new_rtd_file >> $rtd_file_dump_list
 
       # Copy the new carbon rtd file to Victoria
       scp_rtd_to_Victoria nemo_carbon_rtd.nc sc_${runid}_nemo_carbon_rtd.nc
