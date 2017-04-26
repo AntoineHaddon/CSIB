@@ -347,35 +347,35 @@ debug=off
 ##########################################################################################################################
 
 #      # Sensible variable options (see definitions at top)
-#      nemo_forcing=bulk
-#      year_rtdiag_start=001
-#      iaf_year_offset=0     
-#      iaf_loop_year=0
-#
-#      # namelist paramters to be changed by XNEMO
-#      sn_wndi=" 'uwnd10m'     ,         6         , 'U_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bic2' , 'Uwnd' "
-#      sn_wndj=" 'vwnd10m'     ,         6         , 'V_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bic2' , 'Vwnd' "
-#      sn_qsr=" 'qsw'         ,        24         , 'SWDN_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
-#      sn_qlw=" 'qlw'         ,        24         , 'LWDN_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
-#      sn_tair=" 'tair10m'     ,         6         , 'T_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
-#      sn_humi=" 'humi10m'     ,         6         , 'Q_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
-#      sn_prec=" 'precip'      ,        -1         , 'PRC_MOD'    ,   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
-#      sn_snow=" 'snow'        ,        -1         , 'SNOW'    ,   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
-#      sn_tdif=" 'taudif_core' ,        24         , 'taudif'  ,   .false.    , .true. , 'yearly'  , ''             , '' "
-#      
-#      # Forcing files to be accessed
-#      nemo_t=uncs_corev2-ny_t_10.15JUNE2009.nc
-#      nemo_u=uncs_corev2-ny_u_10.15JUNE2009.nc
-#      nemo_v=uncs_corev2-ny_v_10.15JUNE2009.nc
-#      nemo_q=uncs_corev2-ny_q_10.15JUNE2009.nc
-#      nemo_qsw=uncs_corev2-ny_ncar_rad.15JUNE2009.nc
-#      nemo_qlw=uncs_corev2-ny_ncar_rad.15JUNE2009.nc
-#      nemo_precip=uncs_corev2-ny_ncar_precip.15JUNE2009.nc
-#      nemo_snow=uncs_corev2-ny_ncar_precip.15JUNE2009.nc
-#
-#      # WEIGHTS file for this resolution
-#      nemo_weights_bicubic2=uncs_orca1_corev2_weights_bicubic.nc
-#      nemo_weights_bilinear2=uncs_orca1_corev2_weights_bilin.nc
+      nemo_forcing=bulk
+      year_rtdiag_start=001
+      iaf_year_offset=0     
+      iaf_loop_year=0
+
+      # namelist paramters to be changed by XNEMO
+      sn_wndi=" 'uwnd10m'     ,         6         , 'U_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bic2' , 'Uwnd' "
+      sn_wndj=" 'vwnd10m'     ,         6         , 'V_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bic2' , 'Vwnd' "
+      sn_qsr=" 'qsw'         ,        24         , 'SWDN_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
+      sn_qlw=" 'qlw'         ,        24         , 'LWDN_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
+      sn_tair=" 'tair10m'     ,         6         , 'T_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
+      sn_humi=" 'humi10m'     ,         6         , 'Q_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
+      sn_prec=" 'precip'      ,        -1         , 'PRC_MOD'    ,   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
+      sn_snow=" 'snow'        ,        -1         , 'SNOW'    ,   .false.    , .true. , 'yearly'  , 'weights_bil2' , '' "
+      sn_tdif=" 'taudif_core' ,        24         , 'taudif'  ,   .false.    , .true. , 'yearly'  , ''             , '' "
+      
+      # Forcing files to be accessed
+      nemo_t=uncs_corev2-ny_t_10.15JUNE2009.nc
+      nemo_u=uncs_corev2-ny_u_10.15JUNE2009.nc
+      nemo_v=uncs_corev2-ny_v_10.15JUNE2009.nc
+      nemo_q=uncs_corev2-ny_q_10.15JUNE2009.nc
+      nemo_qsw=uncs_corev2-ny_ncar_rad.15JUNE2009.nc
+      nemo_qlw=uncs_corev2-ny_ncar_rad.15JUNE2009.nc
+      nemo_precip=uncs_corev2-ny_ncar_precip.15JUNE2009.nc
+      nemo_snow=uncs_corev2-ny_ncar_precip.15JUNE2009.nc
+
+      # WEIGHTS file for this resolution
+      nemo_weights_bicubic2=uncs_orca1_corev2_weights_bicubic.nc
+      nemo_weights_bilinear2=uncs_orca1_corev2_weights_bilin.nc
 
 ###########################################################################################################################
 ##    COREv2 interannual forcing (1949-2009)
@@ -481,42 +481,42 @@ debug=off
 ##    CanESM2 interannual bulk forcing, from pre-industriual control run "iga" years 2201-2299
 ###########################################################################################################################
 #      # Sensible variable options (see definitions at top)
-       nemo_forcing=bulk_iaf
- #      The below setting correspond to a "start" (above) of year 1. Adjust iaf_year_offset accordingly for a different start.
-       year_rtdiag_start=001
-       iaf_year_offset=2298     
-       iaf_loop_year=2299
- 
-       # namelist paramters to be changed by XNEMO
-        sn_wndi=" 'uwnd10m'      ,        24         , 'uas'     ,   .false.    , .false. , 'yearly'  , 'weights_bic2'       , 'Uwnd' "
-        sn_wndj=" 'vwnd10m'      ,        24         , 'vas'     ,   .false.    , .false. , 'yearly'  , 'weights_bic2'       , 'Vwnd' "
-        sn_qsr=" 'qsw'          ,        24         , 'rsds'    ,   .false.    , .false. , 'yearly'  , 'weights_bil2'       , '' "
-        sn_qlw=" 'qlw'          ,        24         , 'rlds'    ,   .false.    , .false. , 'yearly'  , 'weights_bil2'       , '' "
-        sn_tair=" 'tair10m'      ,        24         , 'tas'     ,   .false.    , .false. , 'yearly'  , 'weights_bil2'       , '' "
-        sn_humi=" 'humi10m'      ,        24         , 'huss'    ,   .false.    , .false. , 'yearly'  , 'weights_bil2'       , '' "
-        sn_prec=" 'precip'       ,        24         , 'pr'      ,   .false.    , .false. , 'yearly'  , 'weights_bil2'       , '' "
-        sn_snow=" 'snow'         ,        24         , 'prsn'    ,   .false.    , .false. , 'yearly'  , 'weights_bil2'       , '' "
-        sn_tdif=" 'taudif_core'  ,        24         , 'taudif'  ,   .false.    , .true. , 'yearly'  , ''       , '' "
- 
-        sn_rnf=" 'runoff_core_monthly',   -1         , 'ROUT',       .true.     , .true. , 'yearly'  , 'weights_bil3.nc'     , '' "
- 
-       # In the case of interannual forcing, just give the file prefix. The ${prefix}_yYYYY.nc will be added
-       # by xnemo.
-       nemo_t=uncs_tas_iga
-       nemo_u=uncs_uas_iga
-       nemo_v=uncs_vas_iga
-       nemo_q=uncs_huss_iga
-       nemo_qsw=uncs_rsds_iga
-       nemo_qlw=uncs_rlds_iga
-       nemo_precip=uncs_pr_iga
-       nemo_snow=uncs_prsn_iga
- 
-       # WEIGHTS file for this resolution
-       nemo_weights_bicubic2=uncs_orca1_canesm2_weights_bicubic.nc
-       nemo_weights_bilinear2=uncs_orca1_canesm2_weights_bilin.nc
-       nemo_weights_bicubic3=uncs_orca1_canesm2_weights_bicubic.nc
-       nemo_weights_bilinear3=uncs_orca1_canesm2_weights_bilin.nc
- 
+#      nemo_forcing=bulk_iaf
+##      The below setting correspond to a "start" (above) of year 1. Adjust iaf_year_offset accordingly for a different start.
+#      year_rtdiag_start=001
+#      iaf_year_offset=2199     
+#      iaf_loop_year=2299
+#
+#      # namelist paramters to be changed by XNEMO
+#       sn_wndi=" 'uwnd10m'      ,        24         , 'uas'     ,   .false.    , .false. , 'yearly'  , 'weights_bic2'       , 'Uwnd' "
+#       sn_wndj=" 'vwnd10m'      ,        24         , 'vas'     ,   .false.    , .false. , 'yearly'  , 'weights_bic2'       , 'Vwnd' "
+#       sn_qsr=" 'qsw'          ,        24         , 'rsds'    ,   .false.    , .false. , 'yearly'  , 'weights_bil2'       , '' "
+#       sn_qlw=" 'qlw'          ,        24         , 'rlds'    ,   .false.    , .false. , 'yearly'  , 'weights_bil2'       , '' "
+#       sn_tair=" 'tair10m'      ,        24         , 'tas'     ,   .false.    , .false. , 'yearly'  , 'weights_bil2'       , '' "
+#       sn_humi=" 'humi10m'      ,        24         , 'huss'    ,   .false.    , .false. , 'yearly'  , 'weights_bil2'       , '' "
+#       sn_prec=" 'precip'       ,        24         , 'pr'      ,   .false.    , .false. , 'yearly'  , 'weights_bil2'       , '' "
+#       sn_snow=" 'snow'         ,        24         , 'prsn'    ,   .false.    , .false. , 'yearly'  , 'weights_bil2'       , '' "
+#       sn_tdif=" 'taudif_core'  ,        24         , 'taudif'  ,   .false.    , .true. , 'yearly'  , ''       , '' "
+#
+#       sn_rnf=" 'runoff_core_monthly',   -1         , 'ROUT',       .true.     , .true. , 'yearly'  , 'weights_bil3.nc'     , '' "
+#
+#      # In the case of interannual forcing, just give the file prefix. The ${prefix}_yYYYY.nc will be added
+#      # by xnemo.
+#      nemo_t=uncs_tas_iga
+#      nemo_u=uncs_uas_iga
+#      nemo_v=uncs_vas_iga
+#      nemo_q=uncs_huss_iga
+#      nemo_qsw=uncs_rsds_iga
+#      nemo_qlw=uncs_rlds_iga
+#      nemo_precip=uncs_pr_iga
+#      nemo_snow=uncs_prsn_iga
+#
+#      # WEIGHTS file for this resolution
+#      nemo_weights_bicubic2=uncs_orca1_canesm2_weights_bicubic.nc
+#      nemo_weights_bilinear2=uncs_orca1_canesm2_weights_bilin.nc
+#      nemo_weights_bicubic3=uncs_orca1_canesm2_weights_bicubic.nc
+#      nemo_weights_bilinear3=uncs_orca1_canesm2_weights_bilin.nc
+#
 ###########################################################################################################################
 ##    CanESM2 interannual bulk forcing, from historical run "igm" years 1850-2005
 ###########################################################################################################################
