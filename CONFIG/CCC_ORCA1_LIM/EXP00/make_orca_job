@@ -53,7 +53,7 @@ nemo_exec=${runid}_ccc_orca1_lim_exe
 # nemo_freq is the number of years (or months) nemo will run for each job in the string
 # History files and restarts will be deleted after each job in the string.
 # nemo_freq will be assigned a value of the form Ny or Nm where N is a positive integer.
-nemo_freq=1y # 3m to be consistent with CMOC.
+nemo_freq=3m # 3m to be consistent with CMOC.
 
 # If do_nemo_run=on then access all the required files and do the run, else the model
 # itself is not run.  Using do_nemo_run=off can be used, for example, to process 
@@ -295,7 +295,7 @@ debug=off
   nemo_K1rowdrg=nemo_3.4_orca1_k1rowdrg_r1_modif.nc
   nemo_Eddyengf=nemo_3.4_orca1_eddy_mix.nc
   nemo_geothermal_heating=nemo_3.3_orca2_geothermal_heating.nc
-  nemo_runoff_core_monthly=nemo_3.4_orca1_rout_socoeff_month_r1i1p1_1979-2005-mean.nc
+  nemo_runoff_core_monthly=nemo_3.4_orca1_runoff_1m_orca1.nc
   nemo_sss_data=nemo_3.4_orca1_sss_1m_orca1.nc
   nemo_chlorophyll=nemo_3.4_orca1_chlorophyll-orca1_1m.nc
   nemo_subbasins=nemo_3.4_orca1_basinmask_050308_ukmo_modified.nc
