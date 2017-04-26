@@ -584,19 +584,7 @@ end_reorder_list
         rm -f mesh_mask_*.nc
       fi
 
-#      rm -f NEXT_RESTART_ARC
-#      tar cf NEXT_RESTART_ARC $tarlist $ofnpatt $ifnpatt $pfnpatt ||
-#	bail "Unable to create restart archive"
-#      if [ -n "$model" ]; then
-#        # Assume we are running from gcmjcl
-#        rs_out=${model}nemors.tar
-#      else
-#        rs_out=${uxxx}_${cn_exp}_${stop_date}_restart.tar
-#      fi
-#      save NEXT_RESTART_ARC $rs_out
-#      release NEXT_RESTART_ARC
-#      nemo_rs_out=$rs_out
-    fi
+    fi  # if [ $nemo_save_rs -eq 1 ]; then
 
     # Echo ocean output to stdout, if requested
     nemo_write_stdout=on
@@ -788,7 +776,12 @@ end_reorder_list
       fi
 
       # Access the rtd executable
-      carbon_rtd_exe=${nemo_carbon_rtd_exe:=nemo_orca1_carbon_rtd_v02c}
+      if [ $nemo_cmoc -eq 1 ]; then
+        carbon_rtd_exe=${nemo_carbon_rtd_exe:=nemo_orca1_carbon_rtd_v02c}
+      fi
+      if [ $nemo_canoe -eq 1 ]; then
+        carbon_rtd_exe=${nemo_carbon_rtd_exe:=nemo_carbon-canoe_rtd_v03c_exe}
+      fi
       [ -z "$carbon_rtd_exe" ] && bail "carbon_rtd_exe is not defined."
       [ -s "$carbon_rtd_exe" ] || access $carbon_rtd_exe $carbon_rtd_exe nocp=no
       chmod u+x $carbon_rtd_exe

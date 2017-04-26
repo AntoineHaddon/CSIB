@@ -99,10 +99,6 @@ echo "#################### Start NEMO pre-processing #################"
 # nemo_carbon = on  means include PISCES
   nemo_carbon=${nemo_carbon:=off}
 
-# nemo_cmoc = off means use PISCES
-# nemo_cmoc = on means use CMOC
-  nemo_cmoc=${nemo_cmoc:=off}
-
 # pisces_offline = off means use online model
 # pisces_offline = on  means use offline model with prescribed velocities
   pisces_offline=${nemo_pisces_offline:=off}
@@ -515,11 +511,23 @@ echo "#################### Start NEMO pre-processing #################"
   # The number of NEMO time steps between calls to sbc (used by NEMO)
   nn_fsbc=${nemo_nn_fsbc:=1}
 
+  nemo_cmoc=0
+  nemo_canoe=0
+  case $nemo_config in
+    *_CANOE*) # use CANOE carbon in NEMO
+              nemo_canoe=1
+              ;;
+     *_CMOC*) # use CMOC carbon in NEMO
+              nemo_cmoc=1
+              ;;
+  esac
+
   # For consistency always use 1 for true and 0 for false
   ToF nemo_carbon
   ToF nemo_trans_co2
   ToF nemo_trc
   ToF nemo_cmoc
+  ToF nemo_canoe
   ToF pisces_offline
 
   # Identify the type of forcing to use
