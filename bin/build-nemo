@@ -457,10 +457,6 @@ if [ $build_nemo_exe -eq 1 ]; then
 #  echo "$archfile :"
 #  cat $archfile
 
-  # Load required modules on the xc40
-  module load cray-hdf5
-  module load cray-netcdf
-
   # Run makenmo to create the nemo executable
   echo "makenemo -n $nemo_config $NARCH $REFCFG"
   makenemo $THREADS -n $nemo_config $NARCH $REFCFG
