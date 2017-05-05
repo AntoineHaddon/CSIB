@@ -312,6 +312,7 @@ nemo_exe_sfx="${nemo_sfx}-${cancpl_sfx}"
 if [ $add_nemo_exe_sfx -eq 1 -a -n "$nemo_exe_sfx" ]; then
   nemo_exe=${nemo_exe}_$nemo_exe_sfx
 fi
+echo "nemo_version=$nemo_version"
 echo "NEMO_COMMIT=$NEMO_COMMIT"
 echo "NEMO_REPO_PATH=$NEMO_REPO_PATH"
 echo "NEMO_CONFIG=$NEMO_CONFIG"
@@ -327,18 +328,18 @@ if [ -n "$nemo_source_mods" ]; then
   nemo_source_mods=$(cd $nemo_source_mods; pwd)
 fi
 
-# This script is intended to be run on the back end
-case $this_host in
-  c1*|c2*) ;; # This is spica or hadar  ...OK
-        *) bail "This should be run on a back end machine" ;;
-esac
-
-# Set up env to use git
-GIT_PATH=/users/tor/acrn/rls/local/aix64/bin
-[ ! -d "$GIT_PATH" ] && bail "$GIT_PATH is not a directory"
-[ ! -s "$GIT_PATH/git" ] && bail "$GIT_PATH/git is missing"
-[ ! -x "$GIT_PATH/git" ] && bail "You require execute permission for $GIT_PATH/git"
-add2path $GIT_PATH
+# # This script is intended to be run on the back end
+# case $this_host in
+#   c1*|c2*) ;; # This is spica or hadar  ...OK
+#         *) bail "This should be run on a back end machine" ;;
+# esac
+# 
+# # Set up env to use git
+# GIT_PATH=/users/tor/acrn/rls/local/aix64/bin
+# [ ! -d "$GIT_PATH" ] && bail "$GIT_PATH is not a directory"
+# [ ! -s "$GIT_PATH/git" ] && bail "$GIT_PATH/git is missing"
+# [ ! -x "$GIT_PATH/git" ] && bail "You require execute permission for $GIT_PATH/git"
+# add2path $GIT_PATH
 
 # Create a temporary directory and change to it
 CWD=`pwd`
