@@ -76,10 +76,6 @@ set -o posix
 #
 #-
 
-# Load required modules on the xc40
-module load cray-hdf5
-module load cray-netcdf
-
 #-
 #- Initialization of the options ---
 x_d="";
