@@ -882,6 +882,18 @@ cat > Execute_Script <<'end_of_script'
       acc_cp weights_bil3.nc     $nemo_weights_bilinear3
     fi
 
+    # CMIP6 post-processing switch
+    nemo_ar6_diag=on
+    ToF nemo_ar6_diag
+
+    # Modify the namelist to output on-the-fly diagnostics when nemo_ar6_diag = on.
+    if [ ${nemo_ar6_diag} -eq 1 ] ; then
+      ln_diaptr=.true.
+      ln_diaznl=.false.
+      nn_fwri=24
+      mod_nl namelist ln_diaptr ln_diaznl nn_fwri
+    fi
+
     # Modify the namelists to suite the forcing, as specified in the makefile
     # Bulk forcing
     if [ x"$nemo_forcing" = "xbulk" ] || [ x"$nemo_forcing" = "xbulk_iaf" ] ; then
@@ -1173,9 +1185,6 @@ cat > Execute_Script <<'end_of_script'
       echo " "
     fi
 
-    # CMIP6 post-processing switch
-    nemo_ar6_diag=on
-    ToF nemo_ar6_diag
     if [ ${nemo_ar6_diag} -eq 1 ]; then
       #=#=#=# Combine output files that were written one file per MPI task
       #=#=#=# into a single file containing data from all MPI tasks
