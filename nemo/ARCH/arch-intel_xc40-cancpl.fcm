@@ -14,8 +14,8 @@
 # USER_LIB    additional libraries to pass to the linker, e.g. -l<library>
 
 
-%NCDF_INC    
-%NCDF_LIB   
+%NCDF_INC            -I/opt/cray/netcdf/4.4.0/INTEL/15.0/include
+%NCDF_LIB            -L/opt/cray/netcdf/4.4.0/INTEL/15.0/lib -lnetcdf -lnetcdff
 %FC                  ftn
 %FCFLAGS             -free -fpp -D_ISZ_MPI_=4 -D_Cray_XC30 -Qoption,link,--noinhibit-exec -openmp -list -traceback -O1 -init=arrays -init=zero -fp-model precise -assume buffered_stdout,protect_parens -convert big_endian -r8 -i8 -align array64byte 
 %FFLAGS              -fixed -fpp -D_ISZ_MPI_=4 -D_Cray_XC30 -Qoption,link,--noinhibit-exec -openmp -list -traceback -O1 -init=arrays -init=zero -fp-model precise -assume buffered_stdout,protect_parens -convert big_endian -r8 -i8 -align array64byte
@@ -25,5 +25,5 @@
 %AR                  ar  
 %ARFLAGS             rs
 %MK                  make 
-%USER_INC   
-%USER_LIB   
+%USER_INC            %NCDF_INC
+%USER_LIB            %NCDF_LIB
