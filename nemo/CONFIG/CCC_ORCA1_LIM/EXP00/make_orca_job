@@ -640,6 +640,9 @@ debug=off
   nemo_ann_cat_freq_list='1m'
   nemo_ann_cat_suffix_list='icemod grid_t grid_u grid_v grid_w ptrc_t diad_t'
 
+# CMIP6 post-processing switch
+  nemo_ar6_diag=${nemo_ar6_diag}
+
 # Determines if RTD is done, and specifies the RTD executables
   nemo_rtd=${nemo_rtd}
   physical_rtd_exe="nemo_physical_rtd_v03c_exe"
