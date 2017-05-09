@@ -696,8 +696,8 @@
           <field ref="Denitr"                                                                                      level="0"  />
           <field ref="Nfix"                                                                                        level="0"  />
           <field ref="Nitrif"                                                                                      level="4"  />
-          <field ref="EPC100"                                                                                      level="0"  />
-          <field ref="EPCALC100"                                                                                   level="0"  />
+          <field ref="EPC100"    description="sinking_mole_flux_of_particulate_organic_matter_expressed_as_carbon_in_sea_water" level="0" />
+          <field ref="EPCALC100" description="sinking_mole_flux_of_calcite_expressed_as_carbon_in_sea_water"       level="0"  />
           <field ref="PCAL"                                                                                        level="0"  />
           <field ref="DCAL"                                                                                        level="0"  />
           <field ref="GRAZ1"                                                                                       level="4"  />
@@ -706,11 +706,11 @@
           <field ref="Dpco2"                                                                                       level="0"  />
           <field ref="pco2"                                                                                        level="0"  />
           <field ref="Cflx"                                                                                        level="0"  />
-          <field ref="Oflx"                                                                                        level="0"  />
+          <field ref="Oflx"      description="surface_downward_mole_flux_of_molecular_oxygen"                      level="0"  />
           <field ref="OCdep"                                                                                       level="0"  />
           <field ref="ICdep"                                                                                       level="0"  />
-          <field ref="Burial"                                                                                      level="0"  />
-          <field ref="PH"                                                                                          level="0"  />
+          <field ref="Burial"    description="tendency_of_ocean_mole_content_of_inorganic_carbon_due_to_sedimentation"          level="0" />
+          <field ref="PH"        description="sea_water_ph_reported_on_total_scale "                               level="0"  />
           <field ref="Irondep"                                                                                     level="4"  />
           <field ref="Ironsed"                                                                                     level="4"  />
         </file>
