@@ -116,8 +116,8 @@ CONTAINS
          IF(lwp) WRITE(numout,*) '~~~~~~~~~~~   add to velocity fields the eiv component'
          !
          l_trd = .FALSE.
-         IF( ( cdtype == 'TRA' .AND. l_trdtra ) .OR. ( cdtype == 'TRC' .AND. l_trdtrc ) ) l_trd = .TRUE.
 # if defined key_diaeiv 
+         IF( ( cdtype == 'TRA' .AND. l_trdtra ) .OR. ( cdtype == 'TRC' .AND. l_trdtrc ) ) l_trd = .TRUE.
          IF( cdtype == 'TRA') THEN
             u_eiv(:,:,:) = 0.e0
             v_eiv(:,:,:) = 0.e0
