@@ -363,7 +363,7 @@ contains
      character(len=8) :: zclname
      integer :: ldbg=1
      integer(kind=impi) :: rank, ierr
-     integer :: verbose=1
+     integer :: verbose=2
      integer :: min_rank, min_index
 
      !--- var_list_info will be assigned enough info about each list of variables
@@ -742,6 +742,8 @@ contains
 
      if ( rank == ocn_master .and. verbose > 1 ) then
        write(6,*)"cpl_cancpl_define: call bcastGroup(cpl_time_string, cpl_master, MPI_COMM_WORLD)"
+       write(6,*)"cpl_cancpl_define: cpl_master = ",cpl_master
+       write(6,*)"cpl_cancpl_define: MPI_COMM_WORLD = ",MPI_COMM_WORLD
        call flush(6)
      endif
 
