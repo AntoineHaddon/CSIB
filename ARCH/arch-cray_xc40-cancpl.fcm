@@ -14,13 +14,11 @@
 # USER_LIB    additional libraries to pass to the linker, e.g. -l<library>
 
 
-# %NCDF_INC            -I/opt/cray/netcdf/4.4.0/CRAY/8.3/include
-# %NCDF_LIB            -L/opt/cray/netcdf/4.4.0/CRAY/8.3/lib -lnetcdf -lnetcdff
-%NCDF_INC            
-%NCDF_LIB            
+%NCDF_INC            -I/opt/cray/netcdf/4.4.0/CRAY/8.3/include
+%NCDF_LIB            -L/opt/cray/netcdf/4.4.0/CRAY/8.3/lib -lnetcdf -lnetcdff
 %FC                  ftn
-%FCFLAGS             
-%FFLAGS              
+%FCFLAGS             -ffree -eZ -ra -O2 -Othread1,fp2,ipa1,vector2,cache2,scalar2 -h flex_mp=conservative -s real64 -s word_pointer -D_IMPI_=4 -O nointerchange
+%FFLAGS              -ffixed -eZ -ra -O2 -Othread1,fp2,ipa1,vector2,cache2,scalar2 -h flex_mp=conservative -s real64 -s word_pointer -D_IMPI_=4 -O nointerchange
 %LD                  ftn
 %LDFLAGS    
 %FPPFLAGS            -P -C
