@@ -14,11 +14,13 @@
 # USER_LIB    additional libraries to pass to the linker, e.g. -l<library>
 
 
-%NCDF_INC            -I/opt/cray/netcdf/4.4.0/CRAY/8.3/include
-%NCDF_LIB            -L/opt/cray/netcdf/4.4.0/CRAY/8.3/lib -lnetcdf -lnetcdff
+# %NCDF_INC            -I/opt/cray/netcdf/4.4.0/CRAY/8.3/include
+# %NCDF_LIB            -L/opt/cray/netcdf/4.4.0/CRAY/8.3/lib -lnetcdf -lnetcdff
+%NCDF_INC            
+%NCDF_LIB            
 %FC                  ftn
-%FCFLAGS             -O2
-%FFLAGS              -O2
+%FCFLAGS             
+%FFLAGS              
 %LD                  ftn
 %LDFLAGS    
 %FPPFLAGS            -P -C
