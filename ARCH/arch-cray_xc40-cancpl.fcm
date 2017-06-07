@@ -17,8 +17,8 @@
 %NCDF_INC            -I/opt/cray/netcdf/4.4.0/CRAY/8.3/include
 %NCDF_LIB            -L/opt/cray/netcdf/4.4.0/CRAY/8.3/lib -lnetcdf -lnetcdff
 %FC                  ftn
-%FCFLAGS             -ffree -eZ -ra -O2 -Othread1,fp2,ipa1,vector2,cache2,scalar2 -h flex_mp=conservative -s real64 -s word_pointer -D_IMPI_=4 -O nointerchange
-%FFLAGS              -ffixed -eZ -ra -O2 -Othread1,fp2,ipa1,vector2,cache2,scalar2 -h flex_mp=conservative -s real64 -s word_pointer -D_IMPI_=4 -O nointerchange
+%FCFLAGS             -ffree -eZ -ra -O2 -D_IMPI_=4
+%FFLAGS              -ffixed -eZ -ra -D_IMPI_=4
 %LD                  ftn
 %LDFLAGS    
 %FPPFLAGS            -P -C
