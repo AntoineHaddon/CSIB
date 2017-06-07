@@ -17,8 +17,8 @@
 %NCDF_INC            -I/opt/cray/netcdf/4.4.0/CRAY/8.3/include
 %NCDF_LIB            -L/opt/cray/netcdf/4.4.0/CRAY/8.3/lib -lnetcdf -lnetcdff
 %FC                  ftn
-%FCFLAGS             -ffree -eZ -ra -O2 -D_IMPI_=4
-%FFLAGS              -ffixed -eZ -ra -D_IMPI_=4
+%FCFLAGS             -O2
+%FFLAGS              -O2
 %LD                  ftn
 %LDFLAGS    
 %FPPFLAGS            -P -C
