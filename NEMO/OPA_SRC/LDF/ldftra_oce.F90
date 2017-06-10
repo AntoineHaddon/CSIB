@@ -29,6 +29,7 @@ MODULE ldftra_oce
    REAL(wp), PUBLIC ::   rn_ahtb_0       =    0._wp  !: lateral background eddy diffusivity (m2/s)
    REAL(wp), PUBLIC ::   rn_aeiv_0       = 2000._wp  !: eddy induced velocity coefficient (m2/s)
    REAL(wp), PUBLIC ::   rn_slpmax       = 0.01_wp   !: slope limit
+   REAL(wp), PUBLIC ::   rn_gm           = 1._wp     !: scalling to aeiw
 
    REAL(wp), PUBLIC ::   aht0, ahtb0, aeiv0         !!: OLD namelist names
    LOGICAL , PUBLIC ::   ln_triad_iso    = .FALSE.   !: calculate triads twice
