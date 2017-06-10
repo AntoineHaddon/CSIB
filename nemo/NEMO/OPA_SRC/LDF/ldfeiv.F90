@@ -5,7 +5,7 @@ MODULE ldfeiv
    !!======================================================================
    !! History :  OPA  ! 1999-03  (G. Madec, A. Jouzeau)  Original code
    !!   NEMO     1.0  ! 2002-06  (G. Madec)  Free form, F90
-   !!   NEMO    3.4.1 ! 2017-06  (D. Yang) Reduce aeiw by half 
+   !!   NEMO    3.4.1 ! 2017-06  (D. Yang) Added scaling to aeiw (rn_gm)
    !!----------------------------------------------------------------------
 #if   defined key_traldf_eiv   &&   defined key_traldf_c2d
    !!----------------------------------------------------------------------
@@ -203,10 +203,10 @@ CONTAINS
       END DO
 
       ! DY, 02/JUN/2017
-      ! Reduce aeiw by half
+      ! Added scalling to aeiw (rn_gm)
       DO jj = 2, jpjm1
          DO ji = fs_2, fs_jpim1   ! vector opt.
-            aeiw(ji,jj) = 0.5 * aeiw(ji,jj)
+            aeiw(ji,jj) = rn_gm * aeiw(ji,jj)
          END DO
       END DO
       ! DY, 02/JUN/2017
