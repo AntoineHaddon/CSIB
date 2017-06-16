@@ -282,6 +282,9 @@ debug=off
   run_start_year=$start_year
   run_start_month=$start_mon
 
+# CMIP6 post-processing switch
+  nemo_ar6_diag=${nemo_ar6_diag}
+
 # nemo_nn_it000 is the initial time step of the current run
 # This is normally read from the previous restart but may be set here.
 # If defined, nemo_nn_it000 must always be set to an integer greater than zero.
@@ -640,9 +643,6 @@ debug=off
   nemo_ann_cat=${nemo_ann_cat}
   nemo_ann_cat_freq_list='1y 1m 1d 5d'
   nemo_ann_cat_suffix_list='icemod grid_t grid_u grid_v grid_w'
-
-# CMIP6 post-processing switch
-  nemo_ar6_diag=${nemo_ar6_diag}
 
 # Determines if RTD is done, and specifies the RTD executables
   nemo_rtd=${nemo_rtd}
