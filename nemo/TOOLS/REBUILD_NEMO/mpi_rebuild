@@ -1,0 +1,68 @@
+#!/bin/ksh
+#  Neil Swart, spring 2017
+#  Modifies the below to setup mulitple namelists for an mpi
+#  based parallel rebuild based on rebuild_nemo_mpi.f90. Unlike
+#  it's predecessor, this script no longer calls the actual
+#  fortran executable at the end - that is left to the user.
+#  This script only constructs the required namelists.
+# 
+#
+#  The script creates the nam_rebuild namelist based upon
+#  the command line options you give it (see usage below)
+#
+#  Ed Blockley, September 2011
+#
+
+#set -ax
+usage ()
+{
+   echo
+   echo "  MPI NEMO REBUILD"
+   echo "  ****************"
+   echo
+   echo "  usage: ${0##*/} filebase_list ndomain"
+   echo
+   echo "filebase list is a list of basefile name enclosed in quotes."
+   echo        ' e.g.:  "grid_t grid_u grid_v"' 
+   echo
+   echo " ndomain is the number of tiles that need to be rebuilt = pni x pnj"
+   exit 1
+}
+
+shift $(expr ${OPTIND} - 1)
+
+if [[ $# < 2 ]] ; then
+   usage
+fi
+
+file=$1
+ndomain=$2
+DIM1=$3
+DIM2=$4
+
+if [[ -n ${DIM1} && -n ${DIM2} ]] ; then
+   dim_str=" dims '${DIM1}','${DIM2}'"
+   dims="dims='${DIM1}','${DIM2}'"
+   echo ${dim_str} >> nam_rebuild
+fi
+
+fnum=00
+for f in $file; do
+  fnum=`echo $fnum|awk -F':' '{printf "%2.2d",$1}'`
+
+cat > nam_rebuild${fnum} << EOC
+   &nam_rebuild
+   filebase='${f}'
+   ndomain=${ndomain}
+EOC
+
+  if [[ -n ${dims} ]] ; then
+     echo ${dims} >> nam_rebuild${fnum}
+  fi
+  if [[ -n ${NCHUNKSIZE} ]] ; then
+     echo " nchunksize=${NCHUNKSIZE}" >> nam_rebuild${fnum}
+  fi
+  echo "/" >> nam_rebuild${fnum}
+
+  fnum=$(( ${fnum} + 1 ))
+done
