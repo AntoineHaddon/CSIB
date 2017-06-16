@@ -141,7 +141,7 @@ verbose=0
 keep_tmpd=0
 
 # Number of processors to use during compilation
-comp_mp=4
+comp_mp=1
 
 # CCRNTMP must be defined
 CCRNTMP=/tmp
@@ -149,7 +149,7 @@ CCRNTMP=/tmp
 [ ! -d "$CCRNTMP" ] && bail "/tmp is not a directory"
 
 # process command line options
-while getopts n:m:r:hktvx opt
+while getopts j:n:m:r:hktvx opt
 do
   case $opt in
     m) nemo_arch="$OPTARG" ;;
@@ -241,7 +241,7 @@ cd CanNEMO
 git checkout $nemo_version 
 
 # Make everything user writeable so that an overwrite will clobber existing files
-chmod -R u+w $local_src
+chmod -R u+w .
 
 if [ $build_nemo_exe -eq 1 ]; then
   # Build the nemo executable
@@ -270,8 +270,20 @@ if [ $build_nemo_exe -eq 1 ]; then
     del_key='del_key'
     DELKEY="$nemo_del_cpp_keys"
   fi
+  env=''
+  case $nemo_arch in
+    XC40_CCCma_cray-pe*) env='cray' ;;
+    XC40_CCCma_intel-pe*) env='intel' ;;
+    *) bail "Unknown ARCH - we don't know if this is the Cray or Intel PE" ;;
+  esac
+
+  if [ $env = 'cray' ]; then
+      module switch PrgEnv-intel PrgEnv-cray
+  fi
+      module load cray-netcdf
+      module load cray-mpich
   echo "makenemo -j $comp_np  -n $nemo_config $NARCH $REFCFG $add_key \"$ADDKEY\" $del_key \"$DELKEY\""
-  makenemo -j $comp_np -n $nemo_config $NARCH $REFCFG $add_key "$ADDKEY" $del_key "$DELKEY"
+  ./makenemo -j $comp_np -n $nemo_config $NARCH $REFCFG $add_key "$ADDKEY" $del_key "$DELKEY"
   [ $? -ne 0 ] && bail "Problem building nemo executable"
   # Copy the executable to the tmp dir
   cp $nemo_config/BLD/bin/nemo.exe $tmpd/$nemo_exe
