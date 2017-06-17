@@ -1,6 +1,7 @@
 #!/bin/bash
 #
 #   Usage: build-nemo [options] ver=tag exec=name cfg=cfgdir \
+#                     srcpath=srcpath \
 #                     [refcfg=cfgdir] \
 #                     [arch=fname] \
 #                     [repo=dirpath] \
@@ -23,6 +24,7 @@
 #   -k   ...do not delete the tmp dir after compilation is complete (used for debugging)
 #
 # Variable definitions:
+#   srcpath=srcpath ...path to copy source from, instead of clone a repo.
 #   ver=tag       ...tag is the version number/tag or branch to extract from
 #                    the git repository (e.g. nemo_v3.4)
 #   exec=name     ...name is the name of the nemo executable to be created
@@ -109,6 +111,9 @@ nemo_version=''
 # The default location of the repository containing nemo source code
 nemo_source_repo='git@gitlab.science.gc.ca:CanESM/CanNEMO.git'
 
+# Path to copy code from instead of cloning a repo
+nemo_source_path=''
+
 # The name of the executable created by this script
 nemo_exe=''
 
@@ -141,7 +146,11 @@ verbose=0
 keep_tmpd=0
 
 # Number of processors to use during compilation
-comp_mp=1
+comp_np=1
+
+printf "\n\n ------------------- \n"
+printf "        build-nemo       \n"
+printf "------------------- \n"
 
 # CCRNTMP must be defined
 CCRNTMP=/tmp
@@ -181,6 +190,7 @@ for arg in "$@"; do
          case $var in
                ver) nemo_version="$val" ;;     # git version, tag or branch
               repo) nemo_source_repo="$val" ;; # location of git repository
+              srcpath) nemo_source_path="$val" ;; # location of code in a dir structure (instead of cloning)
                src) nemo_source_mods="$val" ;; # location of user supplied modification
               exec) nemo_exe="$val" ;;         # name for the executable created here
                cfg) nemo_config="$val" ;;      # name of subdir in which config lives
@@ -197,7 +207,6 @@ for arg in "$@"; do
   esac
 done
 
-[ -z "$nemo_version" ] && usage -e "A version number/tag or branch is required on the command line."
 if [ $build_nemo_exe -eq 1 ]; then
   # The name of the executable is not required unless it is to be built
   [ -z "$nemo_exe" ] &&
@@ -207,7 +216,7 @@ if [ $build_nemo_exe -eq 1 ]; then
     usage -e "The name of the configuration is required on the command line ...cfg=cfgname"
 fi
 
-[ -z "$nemo_source_repo" ] && usage -e "The source repository name is missing."
+
 #[ ! -d "$nemo_source_repo" ] && usage -e "Repository is not a directory --> $nemo_source_repo <--"
 # Ensure this is a full pathname
 #nemo_source_repo=$(cd $nemo_source_repo; pwd)
@@ -223,22 +232,43 @@ esac
 CWD=`pwd`
 tmpd=$CCRNTMP/tmp_build_nemo_${this_host}_$stamp
 mkdir $tmpd || bail "Cannot create temporary dir $tmpd"
+cd $tmpd
 
-# Change to the git repository and extract the desired version
-# Put it into a subdirectory ($local_src) of the tmp dir
-local_src="src_$nemo_version"
+# Clone the git repo, or copy the srcpath directory
+if [ -z "$nemo_source_path" ]; then
+    [ -z "$nemo_version" ] && usage -e "A version number/tag or branch is required on the command line."
+    [ -z "$nemo_source_repo" ] && usage -e "The source repository name is missing."
+    # Get the code from the repo
+    git clone $nemo_source_repo CanNEMO
+    cd CanNEMO
+    git checkout $nemo_version 
+else
+   echo
+   echo "WARNING: copying files from $nemo_source_path, not using strict cloning"
+   echo "Checking if this is a repo anyway"
+   cp -r $nemo_source_path CanNEMO
+   cd CanNEMO
+   if [ -d .git ]; then
+   # If srcpath is a git repo, do some checks
+       branch=`git branch`
+       echo "$nemo_source_path is a git repo...we are using branch $branch"
+       diffs=`git diff --name-only HEAD`
+       if [ ! -z "$diffs" ]; then
+           echo "WARNING: there are local (non-committed) changes in the following files that are being used:"
+           echo $diffs
+     
+           printf "status \n, `git status`"
+       fi
+   fi
+fi
+
+printf "\n\n ------------------- \n"
+printf "\n\n\n"
 
 # path_to_nemo is the dir path (relative to the top git source dir) in which nemo code
 # lives and is used by git archive to extract the nemo subset of the repository source
 path_to_nemo=nemo
 nemo_root=nemo
-# Change to the tmp dir and build the executable
-cd $tmpd
-
-# Get the code from the repo
-git clone $nemo_source_repo CanNEMO
-cd CanNEMO
-git checkout $nemo_version 
 
 # Make everything user writeable so that an overwrite will clobber existing files
 chmod -R u+w .
@@ -279,6 +309,8 @@ if [ $build_nemo_exe -eq 1 ]; then
 
   if [ $env = 'cray' ]; then
       module switch PrgEnv-intel PrgEnv-cray
+  else
+      module switch PrgEnv-cray PrgEnv-intel
   fi
       module load cray-netcdf
       module load cray-mpich
@@ -289,6 +321,7 @@ if [ $build_nemo_exe -eq 1 ]; then
   cp $nemo_config/BLD/bin/nemo.exe $tmpd/$nemo_exe
   cd $tmpd
   [ ! -s "$nemo_exe" ] && bail "Unable to create nemo executable $nemo_exe"
+  cp $nemo_exe $CWD/$nemo_exe
   # Save the nemo executable to RUNPATH/DATAPATH
   #save $nemo_exe $nemo_exe || bail "Problem while saving $nemo_exe"
   #release $nemo_exe
