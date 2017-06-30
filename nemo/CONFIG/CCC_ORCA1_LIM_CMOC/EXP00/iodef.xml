@@ -644,7 +644,7 @@
 	  <field ref="ticemel_cea"     name="tmelt"          description="Rate of Melt at Upper Surface of Sea Ice" level="4" />
 	  <field ref="bicemel_cea"     name="bmelt"          description="Rate of Melt at Sea Ice Base"            level="4"  />
 	  <!-- hcice  : Sea Ice Total Heat Content ??? -->
-	  <field ref="qsr_ai_cea"      name="rsdssi"         description="surface_downwelling_shortwave_flux_in_air"          />
+	  <field ref="qsr_ai_cea"      name="rsdssi"         description="surface_downwelling_shortwave_flux_in_air" level="4" />
 	  <!-- rsussi : surface_upwelling_shortwave_flux_in_air ??? -->
 	  <!-- rldssi : surface_downwelling_longwave_flux_in_air ??? -->
 	  <!-- rlussi : surface_upwelling_longwave_flux_in_air ??? -->
