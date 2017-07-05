@@ -122,7 +122,7 @@ nemo_source_mods=''
 nemo_exe=''
 
 # Nemo preprocessing keys to be added or removed at compile time
-nemo_add_cpp_keys=''
+nemo_add_cpp_keys='key_mpp_mpi'
 nemo_del_cpp_keys=''
 
 # A boolean flag used to build (or not build) the nemo executable
