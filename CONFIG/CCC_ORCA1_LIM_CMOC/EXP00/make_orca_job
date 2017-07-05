@@ -3,6 +3,14 @@
 #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
 # Create a job string that will run NEMO
 #
+# Duo Yang, Jun 2017: adapted for CMIP6 diagnostics.
+#    Notes:
+#    For CMIP6 diagnostics: set nemo_ar6_diag = on below;
+#    For CCCma default output:
+#      1) set nemo_ar6_diag = off below;
+#      2) set output_level="0" in iodef.xml file;
+#      3) remove ' "add_key="key_trdtra key_diaar5" ' from compile file.
+#
 # Neil Swart Jul 2014 : update to new xnemo.
 #
 # Larry Solheim ...Mar 2012
@@ -203,6 +211,61 @@ start_year=`echo $start|awk -F':' '{printf "%3.3d",$1}' -`
 start_mon=`echo $start|awk -F':' '{if ($2~/^[0-9][0-9]*$/) printf "%2.2d",$2; else print "01"}' -`
 stop_year=`echo $stop|awk -F':' '{printf "%3.3d",$1}' -`
 stop_mon=`echo $stop|awk -F':' '{if ($2~/^[0-9][0-9]*$/) printf "%2.2d",$2; else print "12"}' -`
+
+# By adding or removing suffixes from these lists or modifying the boolean variables
+# nemo_save_*_data that are assigned below, the user can control nemo output.
+# Note, case is significant for the suffixes in these lists.
+# Any matching files that do not exist at run time will be silently ignored.
+  if [ ${nemo_ar6_diag} = on ] ; then
+    nemo_1y_suffix_list="grid_T_ar6 grid_W_ar6"
+    nemo_1m_suffix_list="icemod grid_T grid_T_ar6 grid_U grid_U_ar6 grid_V grid_V_ar6 grid_W grid_W_ar6 scalar_ar6 ptrc_T diad_T"
+    nemo_1d_suffix_list="icemod grid_T_ar6 grid_U_ar6 grid_V_ar6 diaptr"
+    nemo_5d_suffix_list="icemod grid_T grid_U grid_V grid_W"
+  else
+    nemo_1y_suffix_list="grid_T ptrc_T diad_T"
+    nemo_1m_suffix_list="icemod grid_T grid_U grid_V grid_W ptrc_T diad_T"
+    nemo_1d_suffix_list="diaptr"
+    nemo_5d_suffix_list="icemod grid_T grid_U grid_V grid_W"
+  fi
+
+# The following boolean variables will determine if any nemo output files with a
+# particular save frequencies are saved to DATAPATH.
+# If any of these are "off" then that set of files will not be saved regardless of
+# the value of the corresponding nemo_*_suffix_list variable that is set above.
+  if [ ${nemo_ar6_diag} = on ] ; then
+    nemo_save_1y_data=on
+    nemo_save_1m_data=on
+    nemo_save_1d_data=on
+    nemo_save_5d_data=off
+  else
+    nemo_save_1y_data=off
+    nemo_save_1m_data=on
+    nemo_save_1d_data=off
+    nemo_save_5d_data=off
+  fi
+
+# Dump history files saved on DATAPATH to cfs
+# The user can redefine nemo_dump_hist_freq_list ('1y 1m 1d 5d') and
+# nemo_dump_hist_suffix_list ('icemod grid_t grid_u grid_v grid_w')
+# to only dump a subset of the history files
+  if [ ${nemo_ar6_diag} = on ] ; then
+    nemo_dump_hist_freq_list='1d 1m 1y'
+    nemo_dump_hist_suffix_list='icemod grid_t grid_t_ar6 grid_td_ar6 grid_u grid_u_ar6 grid_v grid_v_ar6 grid_w grid_w_ar6 scalar_ar6 diaptr ptrc_t diad_t'
+  else
+    nemo_dump_hist_freq_list='1m'
+    nemo_dump_hist_suffix_list='icemod grid_t grid_u grid_v grid_w ptrc_t diad_t'
+  fi
+
+# Delete history files saved on DATAPATH.
+# The user can redefine nemo_del_hist_freq_list and nemo_del_hist_suffix_list
+# to only delete a subset of the history files
+  if [ ${nemo_ar6_diag} = on ] ; then
+    nemo_del_hist_freq_list='1d 1m 1y'
+    nemo_del_hist_suffix_list='icemod grid_t grid_t_ar6 grid_td_ar6 grid_u grid_u_ar6 grid_v grid_v_ar6 grid_w grid_w_ar6 scalar_ar6 diaptr ptrc_t diad_t'
+  else
+    nemo_del_hist_freq_list='1m'
+    nemo_del_hist_suffix_list='icemod grid_t grid_u grid_v grid_w ptrc_t diad_t'
+  fi
 
 # All variable definitions in the following here document will be passed to the
 # cccjob command below and used to modify the job string for the current run.
@@ -598,38 +661,25 @@ debug=off
 # frq is the save frequency, one of "1y", "1m", "1d", "5d" (y=year, m=month, d=day)
 # start_date and stop_date are determined at run time
 # sfx is one of the suffixes shown below
+
 # 
 # By adding or removing suffixes from these lists or modifying the boolean variables
 # nemo_save_*_data that are assigned below, the user can control nemo output.
 # Note, case is significant for the suffixes in these lists.
 # Any matching files that do not exist at run time will be silently ignored.
-  if [ ${nemo_ar6_diag} = on ] ; then
-    nemo_1y_suffix_list="grid_T_ar6 grid_W_ar6"
-    nemo_1m_suffix_list="icemod grid_T grid_T_ar6 grid_U grid_U_ar6 grid_V grid_V_ar6 grid_W grid_W_ar6 scalar_ar6 ptrc_T diad_T"
-    nemo_1d_suffix_list="icemod grid_T_ar6 grid_U_ar6 grid_V_ar6 diaptr"
-    nemo_5d_suffix_list="icemod grid_T grid_U grid_V grid_W"
-  else
-    nemo_1y_suffix_list="grid_T ptrc_T diad_T"
-    nemo_1m_suffix_list="icemod grid_T grid_U grid_V grid_W ptrc_T diad_T"
-    nemo_1d_suffix_list="grid_T grid_T_0n180w diaptr"
-    nemo_5d_suffix_list="icemod grid_T grid_U grid_V grid_W"
-  fi
+  nemo_1y_suffix_list="${nemo_1y_suffix_list}"
+  nemo_1m_suffix_list="${nemo_1m_suffix_list}"
+  nemo_1d_suffix_list="${nemo_1d_suffix_list}"
+  nemo_5d_suffix_list="${nemo_5d_suffix_list}"
 
 # The following boolean variables will determine if any nemo output files with a
 # particular save frequencies are saved to DATAPATH.
 # If any of these are "off" then that set of files will not be saved regardless of
 # the value of the corresponding nemo_*_suffix_list variable that is set above.
-  if [ ${nemo_ar6_diag} = on ] ; then
-    nemo_save_1y_data=on
-    nemo_save_1m_data=on
-    nemo_save_1d_data=on
-    nemo_save_5d_data=off
-  else
-    nemo_save_1y_data=off
-    nemo_save_1m_data=on
-    nemo_save_1d_data=off
-    nemo_save_5d_data=off
-  fi
+  nemo_save_1y_data="${nemo_save_1y_data}"
+  nemo_save_1m_data="${nemo_save_1m_data}"
+  nemo_save_1d_data="${nemo_save_1d_data}"
+  nemo_save_5d_data="${nemo_save_5d_data}"
 
 # If do_nemo_run=on then access all the required files and do the run, else the model
 # itself is not run.  Using do_nemo_run=off can be used, for example, to process 
@@ -670,13 +720,8 @@ debug=off
 # The user can redefine nemo_dump_hist_freq_list and nemo_dump_hist_suffix_list
 # to only dump a subset of the history files
   nemo_dump_hist=${nemo_dump_hist}
-  if [ ${nemo_ar6_diag} = on ] ; then
-    nemo_dump_hist_freq_list='1d 1m 1y'
-    nemo_dump_hist_suffix_list='icemod grid_t grid_t_ar6 grid_td_ar6 grid_u grid_u_ar6 grid_v grid_v_ar6 grid_w grid_w_ar6 scalar_ar6 diaptr ptrc_t diad_t'
-  else
-    nemo_dump_hist_freq_list='1m'
-    nemo_dump_hist_suffix_list='icemod grid_t grid_u grid_v grid_w ptrc_t diad_t'
-  fi
+  nemo_dump_hist_freq_list='${nemo_dump_hist_freq_list}'
+  nemo_dump_hist_suffix_list='${nemo_dump_hist_suffix_list}'
 
 # Dump restart archives saved on DATAPATH to cfs
 # The user can redefine nemo_dump_rs_month_list. Restarts will
@@ -688,13 +733,8 @@ debug=off
 # The user can redefine nemo_del_hist_freq_list and nemo_del_hist_suffix_list
 # to only delete a subset of the history files
   nemo_del_hist=${nemo_del_hist}
-  if [ ${nemo_ar6_diag} = on ] ; then
-    nemo_del_hist_freq_list='1d 1m 1y'
-    nemo_del_hist_suffix_list='icemod grid_t grid_t_ar6 grid_td_ar6 grid_u grid_u_ar6 grid_v grid_v_ar6 grid_w grid_w_ar6 scalar_ar6 diaptr ptrc_t diad_t'
-  else
-    nemo_del_hist_freq_list='1m'
-    nemo_del_hist_suffix_list='icemod grid_t grid_u grid_v grid_w ptrc_t diad_t'
-  fi
+  nemo_del_hist_freq_list='${nemo_del_hist_freq_list}'
+  nemo_del_hist_suffix_list='${nemo_del_hist_suffix_list}'
 
 # delete the previous restart.
   nemo_del_rs=$nemo_del_rs
