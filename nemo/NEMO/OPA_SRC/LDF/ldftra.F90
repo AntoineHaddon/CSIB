@@ -96,6 +96,7 @@ CONTAINS
          WRITE(numout,*) '      maximum isoppycnal slope      rn_slpmax       = ', rn_slpmax
          WRITE(numout,*) '      pure lateral mixing in ML     ln_triad_iso    = ', ln_triad_iso
          WRITE(numout,*) '      lateral mixing on bottom      ln_botmix_grif  = ', ln_botmix_grif
+         WRITE(numout,*) '      GM coef. scaling              rn_gm           = ', rn_gm
          WRITE(numout,*)
       ENDIF
 
