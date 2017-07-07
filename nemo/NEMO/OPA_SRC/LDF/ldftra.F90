@@ -6,6 +6,7 @@ MODULE ldftra
    !! History :        ! 1997-07  (G. Madec)  from inimix.F split in 2 routines
    !!   NEMO      1.0  ! 2002-09  (G. Madec)  F90: Free form and module
    !!             2.0  ! 2005-11  (G. Madec)  
+   !!           3.4.1  ! 2017-06  (D. Yang) Added scaling to aeiw (rn_gm)
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -68,7 +69,7 @@ CONTAINS
          &                 ln_traldf_grif , ln_traldf_gdia,                   &
          &                 ln_triad_iso   , ln_botmix_grif,                   &
          &                 rn_aht_0       , rn_ahtb_0      , rn_aeiv_0,       &
-         &                 rn_slpmax
+         &                 rn_slpmax      , rn_gm
       !!----------------------------------------------------------------------
 
       !  Define the lateral tracer physics parameters
@@ -95,6 +96,7 @@ CONTAINS
          WRITE(numout,*) '      maximum isoppycnal slope      rn_slpmax       = ', rn_slpmax
          WRITE(numout,*) '      pure lateral mixing in ML     ln_triad_iso    = ', ln_triad_iso
          WRITE(numout,*) '      lateral mixing on bottom      ln_botmix_grif  = ', ln_botmix_grif
+         WRITE(numout,*) '      GM coef. scaling              rn_gm           = ', rn_gm
          WRITE(numout,*)
       ENDIF
 
