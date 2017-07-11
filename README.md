@@ -36,3 +36,36 @@ More information can be found on the CCCma [twiki](http://wiki.cccma.ec.gc.ca/cg
 ## Contact
 
 For questions: neil.swart@canada.ca
+
+-----------------------------------
+# Development of the CMIP6 diagnostics
+
+## Options to output the CMIP6 diagnostics or the default CCCma fields
+
+For the CMIP6 diagnostics: 
+    set nemo_ar6_diag = on in make_orca_job.
+
+For the default CCCma fields:
+    1) set nemo_ar6_diag = off in make_orca_job;
+    2) set output_level="0" in iodef.xml file;
+    3) remove ' "add_key="key_trdtra key_diaar5" ' from compile file.
+
+## Supported configurations
+
+    1. CCC_ORCA1_LIM
+    2. CCC_ORCA1_LIM_CMOC
+    3. CCC_ORCA1_LIM_CANOE
+    4. CCC_ORCA1_OFF_CMOC
+    5. CCC_ORCA1_OFF_CANOE
+    6. CCC_ORCA025_LIM
+
+    Note that the CMIP6 diagnostics are only available for configs 1-3.
+
+## Contact
+
+    For problems and questions: duo.yang@canada.ca
+
+D. YANG, 11/JUL/2017
+-----------------------------------
+
+
