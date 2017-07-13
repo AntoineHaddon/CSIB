@@ -43,7 +43,7 @@ For questions: neil.swart@canada.ca
 ## Options to output the CMIP6 diagnostics or the default CCCma fields
 
 For the CMIP6 diagnostics: 
-    set nemo_ar6_diag = on in make_orca_job.
+    set nemo_ar6_diag = on in make_orca_job (default).
 
 For the default CCCma fields:
     1) set nemo_ar6_diag = off in make_orca_job;
