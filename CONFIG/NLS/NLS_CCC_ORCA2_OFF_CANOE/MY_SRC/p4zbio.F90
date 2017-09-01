@@ -108,8 +108,8 @@ CONTAINS
 
       tra(:,:,:,:) = 0.e0
 
-      CALL total_element(totfe,totn)
-      WRITE(numout,*) totfe, totn
+      !CALL total_element(totfe,totn)
+      !WRITE(numout,*) totfe, totn
 
       !
       IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
