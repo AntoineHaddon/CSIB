@@ -44,7 +44,7 @@
    sn_tracer(17)  = 'GOC     ' , 'Big organic carbon Concentration       ',  'mol-C/L' ,  .false.    ,  .true.
    sn_tracer(18)  = 'NO3     ' , 'Nitrates Concentration                 ',  'mol-C/L' ,  .true.     ,  .true.
    sn_tracer(19)  = 'NH4     ' , 'Ammonium Concentration                 ',  'mol-C/L' ,  .false.    ,  .true.
-   sn_tracer(20)  = 'agessc     ' , 'Ideal Age                           ',  'years'   ,  .false.    ,  .true.
+   sn_tracer(20)  = 'agessc  ' , 'Ideal Age                              ',  'years'   ,  .false.    ,  .true.
 /
 !-----------------------------------------------------------------------
 &namtrc_dta      !    Initialisation from data input file
