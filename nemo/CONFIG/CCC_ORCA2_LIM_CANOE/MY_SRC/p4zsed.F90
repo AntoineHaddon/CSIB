@@ -42,7 +42,7 @@ MODULE p4zsed
    REAL(wp) :: sedfeinput  = 1000._wp   !: Coastal release of Iron
    REAL(wp) :: dustsolub   = 0.014_wp   !: Solubility of the dust
    REAL(wp) :: wdust       = 2.0_wp     !: Sinking speed of the dust 
-   REAL(wp) :: nitrfix     = 1.7E-7_wp  !: Nitrogen fixation rate   
+   REAL(wp) :: nitrfix     = 2.25E-2_wp !: Nitrogen fixation rate   
    REAL(wp) :: diazolight  = 50._wp     !: Nitrogen fixation sensitivty to light 
    REAL(wp) :: concfediaz  = 100._wp    !: Fe half-saturation Cste for diazotrophs 
    REAL(wp) :: kni         = 0.1_wp     !: half-saturation for NO3 inhibition of diazotrophy
@@ -97,14 +97,14 @@ CONTAINS
       REAL(wp) ::   zdenitot, znitrpottot, zlim, zfact, zfactcal
       REAL(wp) ::   zcaloss, zwsbio3, zwsbio4, zwscal, zdep
       CHARACTER (len=25) :: charout
-      REAL(wp), POINTER, DIMENSION(:,:,:) :: znitrpot, zirondep, zafe, zbfe, zdnf                 ! afe and bfe indicate aeolian and benthic Fe sources
+      REAL(wp), POINTER, DIMENSION(:,:,:) :: znitrpot, zirondep, zafe, zbfe                       ! afe and bfe indicate aeolian and benthic Fe sources
       REAL(wp), POINTER, DIMENSION(:,:) :: zocdep, zicdep, zburial                                ! deposition and burial of POC and PIC
       !!---------------------------------------------------------------------
       !
       IF( nn_timing == 1 )  CALL timing_start('p4z_sed')
       !
       ! Allocate temporary workspace
-      CALL wrk_alloc( jpi, jpj, jpk, znitrpot, zirondep, zafe, zbfe, zdnf     )
+      CALL wrk_alloc( jpi, jpj, jpk, znitrpot, zirondep, zafe, zbfe     )
       CALL wrk_alloc( jpi, jpj, zocdep, zicdep, zburial     )
 
       IF( jnt == 1 .AND. ll_sbc ) CALL p4z_sbc( kt )
@@ -209,7 +209,7 @@ CONTAINS
       DO jk = 1, jpk
          DO jj = 1, jpj
             DO ji = 1, jpi
-               zfact = znitrpot(ji,jj,jk) * nitrfix * rfact2
+               zfact = znitrpot(ji,jj,jk) * nitrfix * xstep
                trn(ji,jj,jk,jpnh4) = trn(ji,jj,jk,jpnh4) + zfact
                trn(ji,jj,jk,jptal) = trn(ji,jj,jk,jptal) + 1.e-6 * zfact
            END DO
@@ -221,7 +221,7 @@ CONTAINS
          IF( lk_iomput ) THEN
             zafe(:,:,:)  =   zirondep(:,:,:) * 1.E-9                      * tmask(:,:,:)      ! zirondep and ironsed are in nmol m^-3 s^-1
             zbfe(:,:,:)  =   ironsed(:,:,:) * 1.E-9                       * tmask(:,:,:) 
-            zdnf(:,:,:)  =   znitrpot(:,:,:) * nitrfix * 0.001            * tmask(:,:,:)      ! znitrpot is n.d., nitrfix is in mmol m^-3 s^-1
+            zdnf(:,:,:)  =   znitrpot(:,:,:) * nitrfix * r1_rday * 0.001  * tmask(:,:,:)      ! znitrpot is n.d., nitrfix is in mmol m^-3 d^-1
             zocdep(:,:)  =   zocdep(:,:) * r1_rday * 0.001                * tmask(:,:,1)      ! zocdep, zicdep, and zburial are in mmol m^-2 d^-1
             zicdep(:,:)  =   zicdep(:,:) * r1_rday * 0.001                * tmask(:,:,1)
             zburial(:,:) =   zburial(:,:) * r1_rday * 0.001               * tmask(:,:,1)
@@ -245,7 +245,7 @@ CONTAINS
          CALL prt_ctl_trc(tab4d=trn, mask=tmask, clinfo=ctrcnm)
       ENDIF
       !
-      CALL wrk_dealloc( jpi, jpj, jpk, znitrpot, zirondep, zafe, zbfe, zdnf )
+      CALL wrk_dealloc( jpi, jpj, jpk, znitrpot, zirondep, zafe, zbfe )
       CALL wrk_dealloc( jpi, jpj, zocdep, zicdep, zburial     )
       !
       IF( nn_timing == 1 )  CALL timing_stop('p4z_sed')
