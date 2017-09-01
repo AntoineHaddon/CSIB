@@ -192,9 +192,11 @@ CONTAINS
 
       IF( ln_diatrc ) THEN
          zrfact2 = 1.e-3 * rfact2r  ! conversion from umol/L/timestep into mol/m3/s
+         denitr(:,:,:) = denitr(:,:,:) * zrfact2
+         nh4ox(:,:,:) = nh4ox(:,:,:) * zrfact2
          IF( jnt == nrdttrc ) THEN
-          CALL iom_put( "Denitr"   , denitr(:,:,:) * zrfact2 * tmask(:,:,:) )  ! rate of denitrification
-          CALL iom_put( "Nitrif"   , nh4ox(:,:,:) * zrfact2 * tmask(:,:,:) )  ! rate of denitrification
+          CALL iom_put( "Denitr"   , denitr(:,:,:) * tmask(:,:,:) )  ! rate of denitrification
+          CALL iom_put( "Nitrif"   , nh4ox(:,:,:) * tmask(:,:,:) )  ! rate of nitrification
          ENDIF
       ENDIF
 
