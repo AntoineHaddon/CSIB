@@ -13,8 +13,10 @@ echo "#################### Start NEMO pre-processing #################"
   this_mach=$this_host
   ROUTE_SSH=''
   case $this_mach in
-      c1*) this_mach=spica;  ROUTE_SSH='ssh spica'  ;;
-      c2*) this_mach=hadar;  ROUTE_SSH='ssh hadar'  ;;
+             xc1*) this_mach=hare;   ROUTE_SSH='ssh hare'  ;;
+             xc2*) this_mach=brooks; ROUTE_SSH='ssh brooks'  ;;
+      eccc1-ppp1*) this_mach=ppp1;   ROUTE_SSH='ssh ppp1'  ;;
+      eccc1-ppp2*) this_mach=ppp2;   ROUTE_SSH='ssh ppp2'  ;;
      ib3*) this_mach=pollux; ROUTE_SSH='ssh pollux' ;;
    joule*) this_mach=joule;  ROUTE_SSH='ssh joule'  ;;
   esac
