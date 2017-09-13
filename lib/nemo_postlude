@@ -49,10 +49,10 @@ end_reorder_list
     # Identify the staging directory
     case $(uname -n|awk -F'.' '{print $1}' -) in
       xc1*|eccc1-ppp1*) # hare or ppp1
-            rtd_staging_dir=/space/hall1/sitestore/eccc/crd/ccrn/prod/rtd/nemo_rtd
+            rtd_staging_dir=/space/hall1/work/eccc/crd/ccrn/prod/rtd/nemo_rtd
             ;;
       xc2*|eccc1-ppp2*) # brooks or ppp2
-            rtd_staging_dir=/space/hall2/sitestore/eccc/crd/ccrn/prod/rtd/nemo_rtd
+            rtd_staging_dir=/space/hall2/work/eccc/crd/ccrn/prod/rtd/nemo_rtd
             ;;
     esac
 
