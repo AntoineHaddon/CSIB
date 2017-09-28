@@ -303,7 +303,7 @@
       <group id="2h" output_freq="7200"   output_level="10" enabled=".TRUE.">                      <!-- 2h files -->
       </group>
       
-      <group id="3h" output_freq="10800"  output_level="10" enabled=".TRUE.">                      <!-- 3h files -->
+      <group id="3h" output_freq="10800"  output_level="10" enabled=".FALSE.">                      <!-- 3h files -->
 
         <file id="3h_grid_T" name="auto" description="ocean T grid variables" >
           <field ref="toce"         name="votemper"  />
