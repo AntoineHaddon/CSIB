@@ -25,6 +25,8 @@
 #                    DATAPATH with the appropriate runid in their name. The corresponding variables in the 
 #                    make_orca_job file are set by default to point to the files on DATAPATH.
 #   exp=EXP00 ...is the name of the "experiment" directory from which to extract files (generally not needed).
+#   maestro_repo=url ...repositorty to use for the maestro suite (defaults to gitlab).
+#   maestro_ver=ver ...version of the maestro repo to use (defaults to develop).
 #
 # Examples:
 # -setup an "out of the box" CCC_ORCA1_LIM_PISCES configuration in the current directory:
@@ -39,10 +41,10 @@
 #
 #    setup-nemo repo=path/to/my/nemo-CCCma_repo ver=my_crazy_test_branch runid=nta config=CCC_ORCA1_LIM_PISCES 
 #
-# Neil Swart, 05-11-2014
+# Neil Swart, 2014-11-05
 # Adapted from Larry's build-nemo
 #
-# last updated 06-2016 
+# last updated 2017-07-20 
 ########################################################################
 #
 bail(){
@@ -87,6 +89,9 @@ nemo_version=''
 # The default location of the repository containing nemo source code
 nemo_repo=git@gitlab.science.gc.ca:CanESM/CanNEMO.git
 
+maestro_repo=git@gitlab.science.gc.ca:ncs001/CanNEMO_maestro_suite.git
+maestro_version='develop'
+
 # Target machine to run on. Where we will put stuff on lustre
 #run_mach=''
 
@@ -123,6 +128,8 @@ for arg in "$@"; do
             config) nemo_config="$val" ;;      # name of subdir in which config lives
               save) save_files="$val" ;;       # save namelists to DATAPATH
                exp) nemo_exp="$val" ;;         # NEMO experiment directory
+      maestro_repo) maestro_repo="$val" ;;     # maestro repo
+   maestro_version) maestro_ver="$val" ;;      # maestro verion / commit
                  *) bail "Invalid command line arg --> $arg <--" ;;
          esac
          ;;
@@ -191,16 +198,33 @@ esac
 
 nemo_config_lc=`echo "$nemo_config" | awk '{print tolower($0)}'`
 
+# Make a directory by cloning the maestro repo and do basic maestro setup
+[ -d $nemo_runid ] && bail "Directory $nemo_runid already exists! Aborting"
 
-mkdir -p $nemo_runid
+git clone $maestro_repo $nemo_runid
 cd $nemo_runid
+git checkout $maestro_version
 CWD=`pwd`
+nrg=`pwd`/.git
+sha1_maestro=`git --git-dir=${nrg} rev-parse ${maestro_version}`
+
+# basic maestro setup
+export SEQ_EXP_HOME=`pwd`
+mkdir hub logs sequencing stats listings
+makelinks -f
+PATH=$CWD/bin:$PATH
+export PATH
+
+sed -i "s/RUNID=.*/RUNID=${nemo_runid}/g" experiment.cfg
+sed -i "s/SEQ_JOBNAME_PREFIX=.*/SEQ_JOBNAME_PREFIX=${nemo_runid}-/g" resources/resources.def
+config-maestro
 
 # Do the cloning to RAMDISK for speedup
 #stamp=`date "+%j%H%M%S"$$`
 #tmpd=/tmp/tmp_setup_nemo_$stamp
 #mkdir -p $tmpd && cd $tmpd || tmpd=$CWD
 
+# Get the CanESM source code
 src_path=CanNEMO_tmp_src
 git clone --recursive $nemo_repo $src_path
 cd CanNEMO_tmp_src
@@ -211,24 +235,12 @@ nrg=`pwd`/.git
 sha1=`git --git-dir=${nrg} rev-parse ${nemo_version}`
 echo sha1 is $sha1
 
+cd $CWD
+
 ## Move down from RAMDISK
 #if [ "$tmpd" != "$CWD" ]; then
 #   mv $tmpd/$src_path $CWD/
 #fi
-
-# Extract required maestro information and do basic maestro setup
-cd $CWD
-cp -r ${src_path}/lib/maestro/* $CWD/
-export SEQ_EXP_HOME=`pwd`
-mkdir hub logs sequencing stats listings
-makelinks -f
-PATH=$CWD/bin:$PATH
-export PATH
-
-sed -i "s/RUNID=.*/RUNID=${nemo_runid}/g" experiment.cfg
-sed -i "s/SEQ_JOBNAME_PREFIX=.*/SEQ_JOBNAME_PREFIX=${nemo_runid}-/g" resources/resources.def
-
-config-maestro
 
 # SETUP links to relevant namelists and compile script
 
@@ -273,21 +285,36 @@ done
 sed -i "s#nemo_xmlio_server_def=.*#nemo_xmlio_server_def="'${SEQ_EXP_HOME}/namelists/'xmlio_server.def"#" ../experiment.cfg
 sed -i "s#nemo_iodef=.*#nemo_iodef="'${SEQ_EXP_HOME}/namelists/'iodef.xml"#" ../experiment.cfg
 
+
+# Setup files and carbon options, depending on the config.
+if [[ $nemo_config_lower == *"cmoc"* ]]; then
+    sed -i "s#nemo_carbon=.*#nemo_carbon=on#" ../experiment.cfg
+    sed -i "s#nemo_cmoc=.*#nemo_cmoc=on#" ../experiment.cfg
+    sed -i 's#nemo_hist_file_suffix_list=.*#nemo_hist_file_suffix_list="grid_T grid_U grid_V grid_W icemod ptrc_T diad_T"#' ../experiment.cfg
+    sed -i 's#nemo_hist_file_freq_list=.*#nemo_hist_file_freq_list="      1m     1m     1m     1m    1m      1m     1m"#' ../experiment.cfg
+elif [[ $nemo_config_lower == *"canoe"* ]]; then
+    sed -i "s#nemo_carbon=.*#nemo_carbon=on#" ../experiment.cfg
+    sed -i 's#nemo_hist_file_suffix_list=.*#nemo_hist_file_suffix_list="grid_T grid_U grid_V grid_W icemod ptrc_T diad_T"#' ../experiment.cfg
+    sed -i 's#nemo_hist_file_freq_list=.*#nemo_hist_file_freq_list="      1m     1m     1m     1m    1m      1m     1m"#' ../experiment.cfg
+fi
+
 # print to log
 cd ../
 echo '~~~' >> .setup-nemo.log
 echo `date` >> .setup-nemo.log
 echo 'setup-nemo ' $@ >> .setup-nemo.log
 
-echo 'Corresponds to SHA1:' $sha1 >> .setup-nemo.log
+echo 'Code corresponds to SHA1:' $sha1 >> .setup-nemo.log
+echo 'Maestro suite corresponds to SHA1:' $sha1_maestro >> .setup-nemo.log
+
 
 # Write log to nemo run database
 datef=`date +"%Y-%m-%d %T"`
 userf=`whoami`
 
-sqlite3 /home/ncs001/ocean_runs/ocean_runs.db  << EOF
-                        INSERT INTO runs (runid, date, user, config, ver, repo, sha1)
-                        values('${nemo_runid}', '${datef}', '${userf}', '${nemo_config}', 
-                               '${nemo_version}', '${nemo_repo}', '${sha1}');
-EOF
+#sqlite3 /home/ncs001/ocean_runs/ocean_runs.db  << EOF
+#                        INSERT INTO runs (runid, date, user, config, ver, repo, sha1)
+#                        values('${nemo_runid}', '${datef}', '${userf}', '${nemo_config}', 
+#                               '${nemo_version}', '${nemo_repo}', '${sha1}');
+#EOF
 

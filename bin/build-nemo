@@ -47,12 +47,14 @@
 #   build-nemo ver=nemo_v3.4 exec=nemo_v3.4_orca2_lim_exe cfg=ORCA2_LIM
 #     -- Build an "out of the box" ORCA2_LIM configuration
 #
-#   build-nemo ver=nemo_v3.4 exec=nemo_v3.4_orca2_lim_exe cfg=ORCA2_LIM src=/my/mods/to/orca2
-#     -- Build an ORCA2_LIM configuration that uses mods from the /my/mods/to/orca2 directory
+#   build-nemo exec=nemo_v3.4_orca2_lim_exe cfg=ORCA2_LIM srcpath=/path/to/code/
+#     -- Build an ORCA2_LIM configuration that uses the nemo code define in srcpath (with
+#        a dir structure the same as the default).
 #
 ########################################################################
 #
 # Larry Solheim Sep 2012
+# Last update: NCS, 2017-09-28
 
 FULLPATH=`type $0|awk '{print $3}'` # pathname of this script
 Runame=`basename $FULLPATH`
@@ -118,7 +120,7 @@ nemo_source_path=''
 nemo_exe=''
 
 # Nemo preprocessing keys to be added or removed at compile time
-nemo_add_cpp_keys=''
+nemo_add_cpp_keys='key_mpp_mpi'
 nemo_del_cpp_keys=''
 
 # A boolean flag used to build (or not build) the nemo executable
