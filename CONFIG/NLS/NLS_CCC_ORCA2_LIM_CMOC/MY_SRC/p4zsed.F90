@@ -345,9 +345,7 @@ CONTAINS
          CALL fld_fill( sf_fmsk, (/ sn_fmsk /), cn_dir, 'p4z_sed_init', 'Iron limitation mask', 'nampissed' )
                                    ALLOCATE( sf_fmsk(1)%fnow(jpi,jpj,1), STAT=ierr )  ! fnow current values based on interpolation (OR)?
                                    IF( ierr > 0 ) THEN
-                                            CALL ctl_stop('p4zsed: iron limitation mask,                  & 
-                                                          unable to allocate iron limitation array' )     &
-                                            ;    RETURN 
+                                            CALL ctl_stop('p4zsed: iron limitation mask,unable to allocate iron limitation array') ; RETURN
                                    ENDIF 
          !
          ! Open the the channel numfmsk associated with  file 'sn_fmsk%clname'
