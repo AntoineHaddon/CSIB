@@ -56,9 +56,9 @@ echo "#################### Start NEMO pre-processing #################"
   runid=${runid:=tcpl}
 
 # Define the nemo domain (implies node geometry for MPI)
-  nemo_jpni=${nemo_jpni:=8}
-  nemo_jpnj=${nemo_jpnj:=6}
-  nemo_jpnij=${nemo_jpnij:=48}
+  nemo_jpni=${nemo_jpni:=12}
+  nemo_jpnj=${nemo_jpnj:=9}
+  nemo_jpnij=${nemo_jpnij:=108}
 
 # The name of a tar file containing the NEMO restart files
 # This must be set for the first job of a run unless nemo_from_rest = on
