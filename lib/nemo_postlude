@@ -44,7 +44,6 @@ end_reorder_list
     [ -e $1 ] || bail "rtd_staging: File --> $1 <-- is missing."
 
     # Do not abort if the copy fails
-    set +e
 
     # Identify the staging directory
     case $(uname -n|awk -F'.' '{print $1}' -) in
@@ -57,7 +56,6 @@ end_reorder_list
     esac
 
     cp $1 $rtd_staging_dir/$2
-    set -e
   }
 
   parallel_rebuild_rs_hist() {
