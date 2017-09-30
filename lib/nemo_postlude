@@ -510,7 +510,7 @@ end_reorder_list
           bail "Run time diagnostics was requested but year_rtdiag_start is not defined."
 
         # Access the rtd executable
-        physical_rtd_exe=${nemo_physical_rtd_exe:=nemo_orca_physical_rtd_v02c}
+        physical_rtd_exe=${nemo_physical_rtd_exe:=nemo_physical_rtd_xc40_test-v2_exe}
         [ -z "$physical_rtd_exe" ] && bail "physical_rtd_exe is not defined."
         [ -s "$physical_rtd_exe" ] || access $physical_rtd_exe $physical_rtd_exe nocp=no
         chmod u+x $physical_rtd_exe
@@ -560,7 +560,7 @@ end_reorder_list
           fi
 
           # Access the rtd executable
-          ice_rtd_exe=${nemo_ice_rtd_exe:=nemo_ice_rtd_v02c}
+          ice_rtd_exe=${nemo_ice_rtd_exe:=nemo_ice_rtd_xc40_test-v2_exe}
           [ -z "$ice_rtd_exe" ] && bail "ice_rtd_exe is not defined."
           [ -s "$ice_rtd_exe" ] || access $ice_rtd_exe $ice_rtd_exe nocp=no
           chmod u+x $ice_rtd_exe
