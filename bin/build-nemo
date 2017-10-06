@@ -166,7 +166,7 @@ nemo_source_mods=''
 nemo_exe=''
 
 # Add a locally determine suffix to the name of the nemo executables that is created here
-add_nemo_exe_sfx=1
+add_nemo_exe_sfx=0
 
 # Nemo preprocessing keys to be added or removed at compile time
 nemo_add_cpp_keys=''
