@@ -1015,7 +1015,7 @@ echo "#################### Start NEMO pre-processing #################"
   nprocs=$nemo_jpnij
 
   # nn_msh  determines if NEMO will create (=1) a mesh file or not (=0)
-  nn_msh=${nemo_nn_msh:=1}
+  nn_msh=${nemo_nn_msh:=0}
 
   # &namctl        #  Control prints & Benchmark
   # Set ln_ctl = T and nn_print = 1 to get debugging output
