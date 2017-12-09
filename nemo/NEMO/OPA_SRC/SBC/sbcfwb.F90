@@ -67,7 +67,7 @@ CONTAINS
       !
       INTEGER  ::   inum, ikty, iyear   ! local integers
       REAL(wp) ::   z_fwf, z_fwf_nsrf, zsum_fwf, zsum_erp   ! local scalars
-      REAL(wp) ::   z_rnf_to_spread, z_emp_to_spread, sal_min        ! 
+      REAL(wp) ::   z_rnf_to_spread, z_emp_to_spread        ! 
       REAL(wp) ::   zsurf_neg, zsurf_pos, zsurf_tospread    !   -      -
       REAL(wp), POINTER, DIMENSION(:,:) ::   ztmsk_neg, ztmsk_pos, ztmsk_tospread, z_wgt, zerp_cor
       REAL(wp), POINTER, DIMENSION(:,:) ::   ztmsk_rnf, ztmsk_emp, ztmsk_low_sal, zsurf_sal
@@ -197,7 +197,6 @@ CONTAINS
       CASE ( 4 )                             !==  global fwf preserved, with spreading away from low sal areas  ==!
          !
          IF( MOD( kt-1, kn_fsbc ) == 0 ) THEN
-            sal_min = 10.0 ! The minimum salinity 'allowed'
 
             ! Initialize masks
             ztmsk_rnf(:,:) = 0.0_wp           ! Mask=1 where runoff is positive
@@ -209,7 +208,7 @@ CONTAINS
             WHERE( rnf(:,:) > 0._wp )   ztmsk_rnf = 1.0_wp
 
             zsurf_sal = tsn(:,:,1,jp_sal)
-            WHERE( zsurf_sal  <= sal_min )   ztmsk_low_sal = 1.0_wp
+            WHERE( zsurf_sal  <= rn_min_sal )   ztmsk_low_sal = 1.0_wp
            
             ! where there is low salinity AND positive runoff / negative emp
             ztmsk_emp(:,:) = ztmsk_emp(:,:) * ztmsk_low_sal(:,:)            
