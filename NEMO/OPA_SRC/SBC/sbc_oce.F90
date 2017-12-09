@@ -43,6 +43,7 @@ MODULE sbc_oce
    !                                             !:  = 0 unchecked 
    !                                             !:  = 1 global mean of e-p-r set to zero at each nn_fsbc time step
    !                                             !:  = 2 annual global mean of e-p-r set to zero
+   REAL(wp), PUBLIC ::   rn_minsal   = 5._wp     !: Minimum salinity when nn_fwb=4
    LOGICAL , PUBLIC ::   ln_cdgw     = .FALSE.   !: true if neutral drag coefficient read from wave model
 
    !!----------------------------------------------------------------------
