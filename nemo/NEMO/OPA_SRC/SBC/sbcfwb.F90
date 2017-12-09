@@ -208,7 +208,7 @@ CONTAINS
             WHERE( rnf(:,:) > 0._wp )   ztmsk_rnf = 1.0_wp
 
             zsurf_sal = tsn(:,:,1,jp_sal)
-            WHERE( zsurf_sal  <= rn_min_sal )   ztmsk_low_sal = 1.0_wp
+            WHERE( zsurf_sal  <= rn_minsal )   ztmsk_low_sal = 1.0_wp
            
             ! where there is low salinity AND positive runoff / negative emp
             ztmsk_emp(:,:) = ztmsk_emp(:,:) * ztmsk_low_sal(:,:)            
