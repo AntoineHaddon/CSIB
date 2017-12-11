@@ -91,7 +91,8 @@ CONTAINS
       INTEGER ::   icpt   ! local integer
       !!
       NAMELIST/namsbc/ nn_fsbc   , ln_ana , ln_flx  , ln_blk_clio, ln_blk_core, ln_cpl,   &
-         &             ln_blk_mfs, ln_apr_dyn, nn_ice , ln_dm2dc, ln_rnf, ln_ssr     , nn_fwb, ln_cdgw
+         &             ln_blk_mfs, ln_apr_dyn, nn_ice , ln_dm2dc, ln_rnf, ln_ssr, nn_fwb, &
+         &             ln_cdgw, rn_minsal
       !!----------------------------------------------------------------------
 
       IF(lwp) THEN
@@ -130,8 +131,9 @@ CONTAINS
          WRITE(numout,*) '              daily mean to diurnal cycle qsr            ln_dm2dc    = ', ln_dm2dc 
          WRITE(numout,*) '              runoff / runoff mouths                     ln_rnf      = ', ln_rnf
          WRITE(numout,*) '              Sea Surface Restoring on SST and/or SSS    ln_ssr      = ', ln_ssr
-         WRITE(numout,*) '              FreshWater Budget control  (=0/1/2)        nn_fwb      = ', nn_fwb
+         WRITE(numout,*) '              FreshWater Budget control  (=0/1/2/3/4)    nn_fwb      = ', nn_fwb
          WRITE(numout,*) '              closed sea (=0/1) (set in namdom)          nn_closea   = ', nn_closea
+         WRITE(numout,*) '              Salinity minimum (if nn_fwb=4)             rn_minsal   = ', rn_minsal
       ENDIF
 
       !                              ! allocate sbc arrays

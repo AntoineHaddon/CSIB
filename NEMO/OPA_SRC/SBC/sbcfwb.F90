@@ -58,6 +58,8 @@ CONTAINS
       !!                =2 annual global mean corrected from previous year
       !!                =3 global mean of emp set to zero at each nn_fsbc time step
       !!                   & spread out over erp area depending its sign
+      !!                =4 Spread only over areas of low salinity, 
+      !!                    preserving global integral flux
       !!----------------------------------------------------------------------
       INTEGER, INTENT( in ) ::   kt       ! ocean time-step index
       INTEGER, INTENT( in ) ::   kn_fsbc  ! 
@@ -65,13 +67,16 @@ CONTAINS
       !
       INTEGER  ::   inum, ikty, iyear   ! local integers
       REAL(wp) ::   z_fwf, z_fwf_nsrf, zsum_fwf, zsum_erp   ! local scalars
+      REAL(wp) ::   z_rnf_to_spread, z_emp_to_spread        ! 
       REAL(wp) ::   zsurf_neg, zsurf_pos, zsurf_tospread    !   -      -
       REAL(wp), POINTER, DIMENSION(:,:) ::   ztmsk_neg, ztmsk_pos, ztmsk_tospread, z_wgt, zerp_cor
+      REAL(wp), POINTER, DIMENSION(:,:) ::   ztmsk_rnf, ztmsk_emp, ztmsk_low_sal, zsurf_sal
       !!----------------------------------------------------------------------
       !
       IF( nn_timing == 1 )  CALL timing_start('sbc_fwb')
       !
       CALL wrk_alloc( jpi,jpj, ztmsk_neg, ztmsk_pos, ztmsk_tospread, z_wgt, zerp_cor )
+      CALL wrk_alloc( jpi,jpj, ztmsk_rnf, ztmsk_emp, ztmsk_low_sal, zsurf_sal )
       !
       IF( kt == nit000 ) THEN
          IF(lwp) THEN
@@ -81,6 +86,7 @@ CONTAINS
             IF( kn_fwb == 1 )   WRITE(numout,*) '          instantaneously set to zero'
             IF( kn_fwb == 2 )   WRITE(numout,*) '          adjusted from previous year budget'
             IF( kn_fwb == 3 )   WRITE(numout,*) '          fwf set to zero and spread out over erp area'
+            IF( kn_fwb == 4 )   WRITE(numout,*) '          spreading over low salinity areas with global FWF conservation'
          ENDIF
          !
          IF( kn_fwb == 3 .AND. nn_sssr /= 2 )   CALL ctl_stop( 'sbc_fwb: nn_fwb = 3 requires nn_sssr = 2, we stop ' )
@@ -186,6 +192,38 @@ CONTAINS
                WRITE(numout,*)'   MAX(zerp_cor) = ', MAXVAL(zerp_cor) 
             ENDIF
          ENDIF
+
+
+      CASE ( 4 )                             !==  global fwf preserved, with spreading away from low sal areas  ==!
+         !
+         IF( MOD( kt-1, kn_fsbc ) == 0 ) THEN
+
+            ! Initialize masks
+            ztmsk_rnf(:,:) = 0.0_wp           ! Mask=1 where runoff is positive
+            ztmsk_emp(:,:) = 0.0_wp           ! Mask=1 were E-P is negative
+            ztmsk_low_sal(:,:) = 0.0_wp       ! Mask=1 where salinity is at or below its min
+
+            ! Create masks
+            WHERE( emp(:,:) < 0._wp )   ztmsk_emp = 1.0_wp
+            WHERE( rnf(:,:) > 0._wp )   ztmsk_rnf = 1.0_wp
+
+            zsurf_sal = tsn(:,:,1,jp_sal)
+            WHERE( zsurf_sal  <= rn_minsal )   ztmsk_low_sal = 1.0_wp
+           
+            ! where there is low salinity AND positive runoff / negative emp
+            ztmsk_emp(:,:) = ztmsk_emp(:,:) * ztmsk_low_sal(:,:)            
+            ztmsk_rnf(:,:) = ztmsk_rnf(:,:) * ztmsk_low_sal(:,:)
+
+            ! How much FW is put into the low salinity area, that we need to spread elsewhere?
+            z_rnf_to_spread = glob_sum( e1e2t(:,:) *  rnf(:,:)  * ztmsk_rnf(:,:) ) / area
+            z_emp_to_spread = glob_sum( e1e2t(:,:) *  emp(:,:)  * ztmsk_emp(:,:) ) / area
+            !
+            emp (:,:) = emp (:,:)*(1.0_wp - ztmsk_emp(:,:)) + z_emp_to_spread
+            emps(:,:) = emps(:,:)*(1.0_wp - ztmsk_emp(:,:)) + z_emp_to_spread
+            rnf (:,:) = rnf (:,:)*(1.0_wp - ztmsk_rnf(:,:)) + z_rnf_to_spread
+            !
+         ENDIF
+
          !
       CASE DEFAULT                           !==  you should never be there  ==!
          CALL ctl_stop( 'sbc_fwb : wrong nn_fwb value for the FreshWater Budget correction, choose either 1, 2 or 3' )
@@ -193,6 +231,7 @@ CONTAINS
       END SELECT
       !
       CALL wrk_dealloc( jpi,jpj, ztmsk_neg, ztmsk_pos, ztmsk_tospread, z_wgt, zerp_cor )
+      CALL wrk_dealloc( jpi,jpj, ztmsk_rnf, ztmsk_emp, ztmsk_low_sal, zsurf_sal )
       !
       IF( nn_timing == 1 )  CALL timing_stop('sbc_fwb')
       !
