@@ -90,8 +90,9 @@ MODULE cpl_cancpl
 
   integer :: nn_fsbc, nn_ice, nn_fwb
   logical :: ln_ana, ln_flx, ln_blk_clio, ln_blk_core, ln_cpl, ln_blk_mfs, ln_apr_dyn, ln_dm2dc, ln_rnf, ln_ssr, ln_cdgw
+  real(wp) :: rn_minsal
   NAMELIST/namsbc/ nn_fsbc, ln_ana, ln_flx, ln_blk_clio, ln_blk_core, ln_cpl,   &
-                   ln_blk_mfs, ln_apr_dyn, nn_ice, ln_dm2dc, ln_rnf, ln_ssr, nn_fwb, ln_cdgw
+                   ln_blk_mfs, ln_apr_dyn, nn_ice, ln_dm2dc, ln_rnf, ln_ssr, nn_fwb, ln_cdgw, rn_minsal
 
   !--- tmp space for use with MPI gather/scatter operations
   real(wp), allocatable, save, dimension(:,:,:), private :: png
