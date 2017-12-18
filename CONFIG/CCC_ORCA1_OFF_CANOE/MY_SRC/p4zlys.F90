@@ -31,11 +31,12 @@ MODULE p4zlys
    PUBLIC   p4z_lys_init    ! called in trcsms_pisces.F90
 
    !! * Shared module variables
-   REAL(wp), PUBLIC :: kdca = 4.0E-7_wp   !: diss. rate constant calcite
+   REAL(wp), PUBLIC :: kdca = 7.4E-3_wp   !: diss. rate constant calcite
    REAL(wp), PUBLIC :: nca  = 1.0_wp      !: order of reaction for calcite dissolution (not used)
 
    !! * Module variables
    REAL(wp) :: calcon = 1.03E-2           !: mean calcite concentration [Ca2+] in sea water [mole/kg solution]
+   REAL(wp) :: r1_rday = 1.0_wp/86400._wp !: 1 / rday
  
    INTEGER  :: rmtss                      !: number of seconds per month 
 
@@ -129,7 +130,7 @@ CONTAINS
                ! AMOUNT CACO3 (12C) THAT RE-ENTERS SOLUTION
                !       (ACCORDING TO THIS FORMULATION ALSO SOME PARTICULATE
                !       CACO3 GETS DISSOLVED EVEN IN THE CASE OF OVERSATURATION)
-               zdispot = kdca * trn(ji,jj,jk,jpcal)
+               zdispot = kdca * r1_rday * trn(ji,jj,jk,jpcal)
               !  CHANGE OF [CO3--] , [ALK], PARTICULATE [CACO3],
               !       AND [SUM(CO2)] DUE TO CACO3 DISSOLUTION/PRECIPITATION
               zcaldiss(ji,jj,jk)  = zdispot                         ! calcite dissolution (first order, no saturation state dependence)

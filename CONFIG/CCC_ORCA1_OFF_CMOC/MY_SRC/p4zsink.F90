@@ -124,7 +124,7 @@ CONTAINS
       ! Computing t-grid bounding depths more accurate then using w-grid depths, despite supposed identity.
       zdepw(:) = 0._wp
       DO jk = 2, jpk
-         zdepw(jk) = zdepw(jk-1) + fse3t(ji,jj,jk-1)
+         zdepw(jk) = zdepw(jk-1) + fse3t(1,1,jk-1)
       ENDDO
 
       !  Rain ratio at level jk_eud_cmoc - bottom of the euphotic zone:
