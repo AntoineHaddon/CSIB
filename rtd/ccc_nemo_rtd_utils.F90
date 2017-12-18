@@ -132,7 +132,7 @@ contains
           doy = ((275*mmon)/9) - ((mmon+9)/6) + day - 30
 
           ! Compute the number of days in the preceeding years
-          dpy = 365 * year
+          dpy = 365 * myear
 
           ! Tally for the final result
           days_elapsed = dpy + doy
