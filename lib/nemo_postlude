@@ -384,7 +384,7 @@ end_reorder_list
         *) bail "Invalid value for nn_ice = $nn_ice" ;;
       esac
 
-      if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ];
+      if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
 	cp -f namelist_top    rs_namelist_top    || :
 	[ -s rs_namelist_top ]     && tarlist="$tarlist rs_namelist_top"
       fi
