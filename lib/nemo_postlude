@@ -320,7 +320,7 @@ end_reorder_list
         bail "Attempting to save restarts but no ocean restart files exist. Looking for $ofnpatt"
       fi
 
-      if [ $nemo_carbon -eq 1 ]; then
+      if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
         # Deal with Pisces restarts
         eval pfnpatt=${cn_exp}_${end_step}_${cn_trcrst_out}.nc
         found_rs=`(ls -1 $pfnpatt || : ) 2>/dev/null`
@@ -380,11 +380,14 @@ end_reorder_list
            ;;
         *) bail "Invalid value for nn_ice = $nn_ice" ;;
       esac
+      if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ];
+	cp -f namelist_top    rs_namelist_top    || :
+	[ -s rs_namelist_top ]     && tarlist="$tarlist rs_namelist_top"
+      fi
+
       if [ $nemo_carbon -eq 1 ]; then
 	cp -f namelist_pisces rs_namelist_pisces || :
-	cp -f namelist_top    rs_namelist_top    || :
 	[ -s rs_namelist_pisces ]  && tarlist="$tarlist rs_namelist_pisces"
-	[ -s rs_namelist_top ]     && tarlist="$tarlist rs_namelist_top"
 
         if [ $nemo_cmoc -eq 1 ]; then
 	  cp -f namelist_cmoc rs_namelist_cmoc || :
