@@ -363,6 +363,9 @@ end_reorder_list
       # Create copies of the namelists used and include them in the tar file
       cp -f namelist rs_namelist || :
       [ -s rs_namelist ] && tarlist="$tarlist rs_namelist"
+      cp -f namelist_top    rs_namelist_top    || :
+      [ -s rs_namelist_top ]     && tarlist="$tarlist rs_namelist_top"
+
       case $nn_ice in
         0) ;; # no ice boundary condition
         1) ;; # use observed ice cover
@@ -380,11 +383,11 @@ end_reorder_list
            ;;
         *) bail "Invalid value for nn_ice = $nn_ice" ;;
       esac
+
+
       if [ $nemo_carbon -eq 1 ]; then
 	cp -f namelist_pisces rs_namelist_pisces || :
-	cp -f namelist_top    rs_namelist_top    || :
 	[ -s rs_namelist_pisces ]  && tarlist="$tarlist rs_namelist_pisces"
-	[ -s rs_namelist_top ]     && tarlist="$tarlist rs_namelist_top"
 
         if [ $nemo_cmoc -eq 1 ]; then
 	  cp -f namelist_cmoc rs_namelist_cmoc || :
