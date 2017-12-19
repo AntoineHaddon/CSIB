@@ -646,10 +646,10 @@ echo "#################### Start NEMO pre-processing #################"
       fi
     fi
 
-    if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
+    #if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
       # The input top namelist is hard coded as "namelist_top" in nemo source
       find_nemo_config_EXP00 namelist_top $nemo_namelist_top
-    fi
+    #fi
 
     if [ $nemo_carbon -eq 1 ]; then
       # The input pisces namelist is hard coded as "namelist_pisces" in nemo source
