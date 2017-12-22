@@ -64,6 +64,10 @@ CONTAINS
       ! WRITE(numout,*) 'Max surface, ocean age', maxval(trn(:,:,1,jpage)), maxval(trn(:,:,:,jpage))
       ! WRITE(numout,*) 'Max surface, ocean age tra:', maxval(tra(:,:,1,jpage)), maxval(tra(:,:,:,jpage))
 
+! Oleg special tracers
+      tra(:,:,1,jpo1) = 1._wp / (3600._wp * 24. * 365.)
+      tra(:,:,1,jpo2) = 2._wp / (3600._wp * 24. * 365.)
+
       IF( nn_timing == 1 )  CALL timing_stop('trc_sms_my_trc')
       !
    END SUBROUTINE trc_sms_my_trc

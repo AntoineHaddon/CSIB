@@ -26,6 +26,8 @@
 !                !           !                                           !  units       ! from file    ! or not ! 
 !                !           !                                           !              ! or not       !        !
    sn_tracer(1)  = 'agessc  ' , 'Ideal Age                              ',  'years' ,    .false.     ,  .true.  
+   sn_tracer(2)  = 'o1  ' , 'Oleg1                              ',  'years' ,    .false.     ,  .true.  
+   sn_tracer(3)  = 'o2  ' , 'Oleg2                              ',  'years' ,    .false.     ,  .true.  
 
 /
 !-----------------------------------------------------------------------
