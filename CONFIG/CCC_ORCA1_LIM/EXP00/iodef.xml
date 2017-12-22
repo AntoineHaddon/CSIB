@@ -18,6 +18,8 @@
       
       <group id="grid_T" axis_ref="none" grid_ref="grid_T">
         <field id="agessc"       description="Ideal age"                                 unit="years" axis_ref="deptht"   />
+        <field id="o1"           description="Oleg 1"                                    unit="degC" axis_ref="deptht"   />
+        <field id="o2"           description="Oleg 2"                                    unit="degC" axis_ref="deptht"   />
 	<field id="toce"         description="temperature"                               unit="degC" axis_ref="deptht"   />
        	<field id="soce"         description="salinity"                                  unit="psu"  axis_ref="deptht"   />
 	<field id="sst"          description="sea surface temperature"                   unit="degC"                     />
