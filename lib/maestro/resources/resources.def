@@ -1,0 +1,29 @@
+# Where to run
+FRONTEND=eccc-ppp2
+BACKEND=brooks
+
+SEQ_DEFAULT_MACHINE=eccc-ppp1
+
+# Prefix to job/file names
+SEQ_JOBNAME_PREFIX=st7-
+
+# Maestro submission method
+SEQ_CONTAINER_METHOD=immediate
+#SEQ_CONTAINER_METHOD=submit
+
+# Queues 
+BACKEND_XFER_Q=xfer
+FRONTEND_XFER_Q=xfer
+BACKEND_DEFAULT_Q=development
+FRONTEND_DEFAULT_Q=development
+
+# NEMO related info, used for looping in maestro and setting resources.
+NEMO_LOOP_START=1
+NEMO_LOOP_STEP=1
+NEMO_LOOP_END=3
+NEMO_FREQ_MONTHS=1
+NEMO_RUN_START_MONTH=04
+NEMO_RUN_START_YEAR=0001
+NEMO_NPROC=288
+NEMO_RDT=3600
+NEMO_WALLCLOCK=20

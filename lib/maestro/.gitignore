@@ -1,0 +1,10 @@
+*~
+stats/
+listings/
+hub/
+logs/
+sequencing/
+*.swp
+*.bak
+.nfs*
+*.kate-swp

@@ -1,0 +1,146 @@
+# If nemo_rtd is true then execute the nemo run time diagnostics
+
+if [ $nemo_rtd -eq 1 ]; then
+  # Get the input files for this chunk
+  ln -s $OUTPUT_PATH/${cn_exp}_1m_${NEMO_CHUNK_START_DATE}_${NEMO_CHUNK_END_DATE}_*.nc .
+
+  # Specify the location of some NCO tools
+  # These are required for manipulation of the netcdf files
+  #NCOBIN=/users/tor/acrn/rls/local/aix64/bin
+  #NCRCAT="$NCOBIN/ncrcat"
+  #NCATTED="$NCOBIN/ncatted"
+  acc_cp orca_mesh_mask $orca_grid_info 
+
+  # The RTD will be continued from the RTD files in the OUTPUT_PATH dir.
+  OLD_RTD_LOC=$OUTPUT_PATH
+
+  # Invoke the nemo run time diagnostics
+  #--------------
+  # Physics RTD
+  #--------------
+  if [ $pisces_offline -eq 0 ]; then
+      # Get the old RTD, if it exists.
+      [ -s $OLD_RTD_LOC/sc_${cn_exp}_nemo_physical_rtd.nc ]  && cp $OLD_RTD_LOC/sc_${cn_exp}_nemo_physical_rtd.nc ./nemo_physical_rtd.nc 
+      # Rename the input files for RTD.
+      ln -s  ${cn_exp}_1m_${NEMO_CHUNK_START_DATE}_${NEMO_CHUNK_END_DATE}_grid_T.nc grid_t
+      ln -s ${cn_exp}_1m_${NEMO_CHUNK_START_DATE}_${NEMO_CHUNK_END_DATE}_grid_U.nc  grid_u
+      ln -s ${cn_exp}_1m_${NEMO_CHUNK_START_DATE}_${NEMO_CHUNK_END_DATE}_grid_V.nc grid_v
+      ln -s ${cn_exp}_1m_${NEMO_CHUNK_START_DATE}_${NEMO_CHUNK_END_DATE}_grid_W.nc grid_w
+
+      # Access the rtd executable
+      [ -z "$physical_rtd_exe" ] && bail "physical_rtd_exe is not defined."
+      acc_cp $physical_rtd_exe $physical_rtd_exe 
+
+      # If nemo_physical_rtd.nc exists, append to it. Else start it, and add version attribute.
+      if [ -f "nemo_physical_rtd.nc" ]; then 
+          # Create run time diagnostics for physical ocean variables
+          ./$physical_rtd_exe ${NEMO_CHUNK_START_YEAR} ${NEMO_CHUNK_START_MONTH}
+            #echo $curr_rtd_file >> $rtd_file_del_list
+      else
+          # Create run time diagnostics for physical ocean variables
+          ./$physical_rtd_exe ${NEMO_CHUNK_START_YEAR} ${NEMO_CHUNK_START_MONTH}
+          #${NCATTED} -O -a RTD_version,global,a,c,"${physical_rtd_exe}" nemo_physical_rtd.nc
+      fi
+
+      # Save the rtd file created by physical_rtd_exe
+      #new_rtd_file=sc_${runid}_${stop_date}_nemo_physical_rtd.nc
+      #save nemo_physical_rtd.nc $new_rtd_file
+      #echo $new_rtd_file >> $rtd_file_dump_list
+
+      #--------------
+      # Sea-ice RTD
+      #--------------
+      if [ $nn_ice -ne 0 ]; then
+        # Get the old RTD, if it exists.
+        [ -s $OLD_RTD_LOC/sc_${cn_exp}_nemo_ice_rtd.nc ]       && cp $OLD_RTD_LOC/sc_${cn_exp}_nemo_ice_rtd.nc ./nemo_ice_rtd.nc 
+        # Rename the files for RTD.
+        ln -s ${cn_exp}_1m_${NEMO_CHUNK_START_DATE}_${NEMO_CHUNK_END_DATE}_icemod.nc icemod
+
+        # Access the rtd executable
+        [ -z "$ice_rtd_exe" ] && bail "ice_rtd_exe is not defined."
+        acc_cp $ice_rtd_exe $ice_rtd_exe 
+
+        # If nemo_ice_rtd.nc exists, append to it. Else start it, and add version attribute.
+        if [ -f "nemo_ice_rtd.nc" ]; then 
+            # Create run time diagnostics for carbon variables
+            ./$ice_rtd_exe ${NEMO_CHUNK_START_YEAR} ${NEMO_CHUNK_START_MONTH}
+              #echo $curr_rtd_file >> $rtd_file_del_list
+        else
+            # Create run time diagnostics for carbon variables
+            ./$ice_rtd_exe ${NEMO_CHUNK_START_YEAR} ${NEMO_CHUNK_START_MONTH}
+            #${NCATTED} -O -a RTD_version,global,a,c,"${ice_rtd_exe}" nemo_ice_rtd.nc
+        fi
+
+        # Save the rtd file created by carbon_rtd_exe
+        #new_rtd_file=sc_${runid}_${stop_date}_nemo_ice_rtd.nc
+        #save nemo_ice_rtd.nc $new_rtd_file
+        #echo $new_rtd_file >> $rtd_file_dump_list
+
+      fi
+  fi # if [pisces_offline -eq 0 ]
+
+  #--------------
+  # Carbon RTD
+  #--------------
+  if [ $nemo_carbon -eq 1 ]; then
+
+    # Get the old RTD, if it exists.
+    [ -s $OLD_RTD_LOC/sc_${cn_exp}_nemo_carbon_rtd.nc ]  && cp $OLD_RTD_LOC/sc_${cn_exp}_nemo_carbon_rtd.nc ./nemo_carbon_rtd.nc 
+
+    # Rename files for RTD
+    ln -s  ${cn_exp}_1m_${NEMO_CHUNK_START_DATE}_${NEMO_CHUNK_END_DATE}_ptrc_T.nc ptrc_t
+    ln -s  ${cn_exp}_1m_${NEMO_CHUNK_START_DATE}_${NEMO_CHUNK_END_DATE}_diad_T.nc diad_t
+    [ -e ptrc_t ] || bail "Failed in carbon RTD: ptrc_t missing"
+    [ -e diad_t ] || bail "Failed in carbon RTD: diad_t missing"
+
+    # Access the rtd executable
+    [ -z "$carbon_rtd_exe" ] && bail "carbon_rtd_exe is not defined."
+    acc_cp $carbon_rtd_exe $carbon_rtd_exe nocp=off
+
+    # If nemo_ice_rtd.nc exists, append to it. Else start it, and add version attribute.
+    if [ -z "nemo_carbon_rtd.nc" ]; then 
+        ./$carbon_rtd_exe ${NEMO_CHUNK_START_YEAR} ${NEMO_CHUNK_START_MONTH}
+          #echo $curr_rtd_file >> $rtd_file_del_list
+    else
+        # Create run time diagnostics for carbon variables
+        ./$carbon_rtd_exe ${NEMO_CHUNK_START_YEAR} ${NEMO_CHUNK_START_MONTH}
+        #${NCATTED} -O -a RTD_version,global,a,c,"${carbon_rtd_exe}" nemo_carbon_rtd.nc
+    fi
+
+    # Save the rtd file created by carbon_rtd_exe
+    #new_rtd_file=sc_${runid}_${stop_date}_nemo_carbon_rtd.nc
+    #save nemo_carbon_rtd.nc $new_rtd_file
+    #echo $new_rtd_file >> $rtd_file_dump_list
+
+  fi
+
+  # Clean up
+  release grid_t
+  release grid_u
+  release grid_v
+  release grid_w
+  release icemod
+  release orca_mesh_mask
+  if [ $nemo_carbon -eq 1 ]; then
+    # PISCES related files
+    release ptrc_t
+    release diad_t
+  fi
+
+  # copy out RTD to sitestore (OUTPUTH_PATH), add it to the tar archive, and copy to the location for sync with Victoria
+  for i in *rtd.nc; do
+     mv $i sc_${cn_exp}_$i
+     cp sc_${cn_exp}_$i $OUTPUT_PATH/sc_${cn_exp}_$i
+     cp sc_${cn_exp}_$i ${SITESTORE_ROOT}/prod/rtd/nemo_rtd/sc_${cn_exp}_$i
+     tar -rvf $OUTPUT_PATH/${cn_exp}_${NEMO_CHUNK_END_DATE}_restart.tar sc_${cn_exp}_$i
+  done
+
+fi # if [ $nemo_rtd -eq 1 ]
+
+# Cleanup up temporary run files
+if [ "${NEMO_CLEAN_TMP}" == 1 ] ; then
+    if [ "${loop_postproc}" > ${NEMO_CLEANUP_LAG} ] ; then
+        lmlag=$((${loop_postproc}-${NEMO_CLEANUP_LAG}))
+        rm -rf ${SEQ_WORKBASE}/CanNEMO/loop_postproc/nemo_diag+${lmlag}
+    fi
+fi
