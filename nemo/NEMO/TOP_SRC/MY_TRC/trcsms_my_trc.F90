@@ -65,8 +65,20 @@ CONTAINS
       ! WRITE(numout,*) 'Max surface, ocean age tra:', maxval(tra(:,:,1,jpage)), maxval(tra(:,:,:,jpage))
 
 ! Oleg special tracers
-      tra(:,:,1,jpo1) = 1._wp / (3600._wp * 24. * 365.)
-      tra(:,:,1,jpo2) = 2._wp / (3600._wp * 24. * 365.)
+      ! To get the heat flux anomaly field from netcdf, do something like for runoff:
+      ! CALL fld_read ( kt, nn_fsbc, sf_rnf   )    ! Read Runoffs data and provide it at kt
+      ! rnf(:,:) =  sf_rnf(1)%fnow(:,:,1) 
+
+      ! To increment temperature with the heat flux anomaly, this is what we want to do:
+      ! zfact = 0.5e0
+      ! sbc_tsc_b(:,:,:) = sbc_tsc(:,:,:)
+      ! sbc_tsc(ji,jj,jp_tem) = ro0cpr * qns(ji,jj) ! where qns is our heat flux anomaly
+      ! z1_e3t = zfact / fse3t(ji,jj,1)
+      ! tsa(ji,jj,1,jn) = tsa(ji,jj,1,jn) + ( sbc_tsc_b(ji,jj,jn) + sbc_tsc(ji,jj,jn) ) * z1_e3t
+
+      ! Dummy, add time-step in years to tracers....just to do something.
+      tra(:,:,1,jpo1) = tra(:,:,1,jpo1) + 1._wp / (3600._wp * 24. * 365.)
+      tra(:,:,1,jpo2) = tra(:,:,1,jpo2) + 2._wp / (3600._wp * 24. * 365.)
 
       IF( nn_timing == 1 )  CALL timing_stop('trc_sms_my_trc')
       !
