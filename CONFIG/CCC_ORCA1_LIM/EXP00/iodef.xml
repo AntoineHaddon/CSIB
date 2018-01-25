@@ -338,6 +338,8 @@
           <field ref="erp"          name="sowafldp"  />
           <field ref="mlddzt"       name="sothedep"  />
           <field ref="agessc"           />
+          <field ref="o1"               />
+          <field ref="o2"               />
 	</file>   
 
         <file id="1m_grid_U" name="auto" description="ocean U grid variables" >
