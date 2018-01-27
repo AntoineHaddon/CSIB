@@ -2,7 +2,7 @@
 
 The development of NEMO at CCCma, including ocean physics, biogeochemistry and sea-ice as well as associated scripts and code for running the model. 
 
-The `official` version of the code is on the ECCC gitlab server [https://eccc-gitlab.science.gc.ca/ncs001/CanNEMO], which includes issue tracking
+The `official` version of the code is on the Science Network gitlab server [https://gitlab.science.gc.ca/ncs001/CanNEMO], which includes issue tracking
 and a wiki. This is only available from within the ECCC network, and hence stategic mirrors also exist, but are not formal.
 
 ## Layout

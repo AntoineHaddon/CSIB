@@ -95,7 +95,7 @@ echo "#################### Start NEMO pre-processing #################"
 
 # nemo_trc = off means use physical ocean only
 # nemo_trc = on  means use passive tracers (general, CFC, MY_TRC, even if pisces/cmoc=off)
-  nemo_trc=${nemo_trc:=off}
+  nemo_trc=${nemo_trc:=on}
 
 # nemo_carbon = off means use physical ocean only
 # nemo_carbon = on  means include PISCES
@@ -495,10 +495,10 @@ echo "#################### Start NEMO pre-processing #################"
   nemo_rs=${nemo_restart:-$rs_file}
 
   # time step for the dynamics (and tracer if nn_acc=0)
-  rn_rdt=${nemo_rn_rdt:=1800.}
+  rn_rdt=${nemo_rn_rdt:=3600.}
 
   # time step for the cice thermodynamics dt
-  dt=${cice_dt:=1800.}
+  dt=${cice_dt:=3600.}
 
   # Number of time steps per day
   steps_per_day=`echo $rn_rdt|awk '{s=86400./$1; printf "%d",s}' -`
@@ -511,7 +511,7 @@ echo "#################### Start NEMO pre-processing #################"
   npt=${cice_npt:=1}
 
   # The number of NEMO time steps between calls to sbc (used by NEMO)
-  nn_fsbc=${nemo_nn_fsbc:=1}
+  nn_fsbc=${nemo_nn_fsbc:=3}
 
   nemo_cmoc=0
   nemo_canoe=0
@@ -1121,24 +1121,24 @@ echo "#################### Start NEMO pre-processing #################"
   nemo_weights_bicubic2=${nemo_weights_bicubic2:=nemo_3.4_weights_grid03_bicubic_orca1.nc}
   nemo_weights_bilinear2=${nemo_weights_bilinear2:=nemo_3.4_weights_grid03_bilinear_orca1.nc}
 
-  [ -s tair10m.nc ]      || acc_cp tair10m.nc          $nemo_t
-  [ -s uwnd10m.nc ]      || acc_cp uwnd10m.nc          $nemo_u
-  [ -s vwnd10m.nc ]      || acc_cp vwnd10m.nc          $nemo_v
-  [ -s humi10m.nc ]      || acc_cp humi10m.nc          $nemo_q
-  [ -s qsw.nc ]          || acc_cp qsw.nc              $nemo_qsw
-  [ -s qlw.nc ]          || acc_cp qlw.nc              $nemo_qlw
-  [ -s precip.nc ]       || acc_cp precip.nc           $nemo_precip
-  [ -s snow.nc ]         || acc_cp snow.nc             $nemo_snow
-  [ -s weights_bic1.nc ] || acc_cp weights_bic1.nc     $nemo_weights_bicubic1
-  [ -s weights_bil1.nc ] || acc_cp weights_bil1.nc     $nemo_weights_bilinear1 
-  [ -s weights_bic2.nc ] || acc_cp weights_bic2.nc     $nemo_weights_bicubic2
-  [ -s weights_bil2.nc ] || acc_cp weights_bil2.nc     $nemo_weights_bilinear2
+  #[ -s tair10m.nc ]      || acc_cp tair10m.nc          $nemo_t
+  #[ -s uwnd10m.nc ]      || acc_cp uwnd10m.nc          $nemo_u
+  #[ -s vwnd10m.nc ]      || acc_cp vwnd10m.nc          $nemo_v
+  #[ -s humi10m.nc ]      || acc_cp humi10m.nc          $nemo_q
+  #[ -s qsw.nc ]          || acc_cp qsw.nc              $nemo_qsw
+  #[ -s qlw.nc ]          || acc_cp qlw.nc              $nemo_qlw
+  #[ -s precip.nc ]       || acc_cp precip.nc           $nemo_precip
+  #[ -s snow.nc ]         || acc_cp snow.nc             $nemo_snow
+  #[ -s weights_bic1.nc ] || acc_cp weights_bic1.nc     $nemo_weights_bicubic1
+  #[ -s weights_bil1.nc ] || acc_cp weights_bil1.nc     $nemo_weights_bilinear1 
+  #[ -s weights_bic2.nc ] || acc_cp weights_bic2.nc     $nemo_weights_bicubic2
+  #[ -s weights_bil2.nc ] || acc_cp weights_bil2.nc     $nemo_weights_bilinear2
 
-  nemo_weights_bicubic3=${nemo_weights_bicubic3:=nemo_3.4_weights_canam4grid_bicubic_orca1.nc}
-  nemo_weights_bilinear3=${nemo_weights_bilinear3:=nemo_3.4_weights_canam4grid_bilinear_orca1.nc}
+  #nemo_weights_bicubic3=${nemo_weights_bicubic3:=nemo_3.4_weights_canam4grid_bicubic_orca1.nc}
+  #nemo_weights_bilinear3=${nemo_weights_bilinear3:=nemo_3.4_weights_canam4grid_bilinear_orca1.nc}
 
-  [ -s weights_bic3.nc ] || acc_cp weights_bic3.nc     $nemo_weights_bicubic3
-  [ -s weights_bil3.nc ] || acc_cp weights_bil3.nc     $nemo_weights_bilinear3
+  #[ -s weights_bic3.nc ] || acc_cp weights_bic3.nc     $nemo_weights_bicubic3
+  #[ -s weights_bil3.nc ] || acc_cp weights_bil3.nc     $nemo_weights_bilinear3
 
   if [ x"$nemo_forcing" = "xbulk" ]; then
     # Bulk forcing

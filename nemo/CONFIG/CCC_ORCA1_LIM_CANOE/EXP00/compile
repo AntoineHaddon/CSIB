@@ -1,1 +1,1 @@
-build-nemo ver=master repo=$CCRNSRC/ocean_dir/nemo-CCCma.git exec=runid_ccc_orca1_lim_canoe_exe arch=xlf_aix-cccma refcfg=CCC_ORCA1_LIM_CANOE cfg=CCC_ORCA1_LIM_CANOE
+build-nemo -j4 ver=master repo=git@gitlab.science.gc.ca:CanESM/CanNEMO.git exec=runid_ccc_orca1_lim_canoe_exe arch=XC40_CCCma_intel-pe refcfg=CCC_ORCA1_LIM_CANOE cfg=CCC_ORCA1_LIM_CANOE

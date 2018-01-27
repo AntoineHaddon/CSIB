@@ -25,6 +25,8 @@
 #                    DATAPATH with the appropriate runid in their name. The corresponding variables in the 
 #                    make_orca_job file are set by default to point to the files on DATAPATH.
 #   exp=EXP00 ...is the name of the "experiment" directory from which to extract files (generally not needed).
+#   maestro_repo=url ...repositorty to use for the maestro suite (defaults to gitlab).
+#   maestro_ver=ver ...version of the maestro repo to use (defaults to develop).
 #
 # Examples:
 # -setup an "out of the box" CCC_ORCA1_LIM_PISCES configuration in the current directory:
@@ -39,13 +41,12 @@
 #
 #    setup-nemo repo=path/to/my/nemo-CCCma_repo ver=my_crazy_test_branch runid=nta config=CCC_ORCA1_LIM_PISCES 
 #
-# Neil Swart, 05-11-2014
+# Neil Swart, 2014-11-05
 # Adapted from Larry's build-nemo
 #
-# last updated 06-2016 
+# last updated 2017-07-20 
 ########################################################################
 #
-
 bail(){
 echo "${Runame}: *** ERROR *** $1"
 exit 1
@@ -86,9 +87,13 @@ nemo_config=''
 nemo_version=''
 
 # The default location of the repository containing nemo source code
-[ -z "$CCRNSRC" ] && bail "CCRNSRC must be set"
-[ ! -d "$CCRNSRC" ] && bail "CCRNSRC=$CCRNSRC is not a directory"
-nemo_repo=$CCRNSRC/ocean_dir/nemo-CCCma.git
+nemo_repo=git@gitlab.science.gc.ca:CanESM/CanNEMO.git
+
+maestro_repo=git@gitlab.science.gc.ca:ncs001/CanNEMO_maestro_suite.git
+maestro_version='develop'
+
+# Target machine to run on. Where we will put stuff on lustre
+#run_mach=''
 
 # whether namelist and iodef files are saved to DATAPATH.
 save_files=on
@@ -118,10 +123,13 @@ for arg in "$@"; do
          case $var in
              runid) nemo_runid="$val" ;;       # The runid for this setup (three letters)
                ver) nemo_version="$val" ;;     # git version, tag or branch
+ #             mach) run_mach="$val" ;;         # target machine
               repo) nemo_repo="$val" ;;        # location of git repository
             config) nemo_config="$val" ;;      # name of subdir in which config lives
               save) save_files="$val" ;;       # save namelists to DATAPATH
                exp) nemo_exp="$val" ;;         # NEMO experiment directory
+      maestro_repo) maestro_repo="$val" ;;     # maestro repo
+   maestro_version) maestro_ver="$val" ;;      # maestro verion / commit
                  *) bail "Invalid command line arg --> $arg <--" ;;
          esac
          ;;
@@ -135,7 +143,7 @@ done
     bail "The name of the configuration is required on the command line ...config=cfgname"
 
 [ -z "$nemo_repo" ] && bail "The source repository name is missing."
-[ ! -d "$nemo_repo" ] && bail "Repository is not a directory --> $nemo_source_repo <--"
+#[ ! -d "$nemo_repo" ] && bail "Repository is not a directory --> $nemo_source_repo <--"
 #echo "Using the git repository $nemo_repo"
 
 # Ensure this is a full pathname
@@ -190,64 +198,123 @@ esac
 
 nemo_config_lc=`echo "$nemo_config" | awk '{print tolower($0)}'`
 
-# Get the compile script, and reset runid, repo and ver.
-git archive --remote=${nemo_repo} --format=tar ${nemo_version}:nemo/CONFIG/${nemo_config}/${nemo_exp}/ compile | tar xf - ||
-          bail "Failed to extract code from archive: check that the repo and ver (branch) are correct and valid"
+# Make a directory by cloning the maestro repo and do basic maestro setup
+[ -d $nemo_runid ] && bail "Directory $nemo_runid already exists! Aborting"
 
-cat compile | sed "s:runid:${nemo_runid}:;s:repo=[^ ]*:repo=$nemo_repo:;s:ver=[^ ]*:ver=$nemo_version:" > compile_${nemo_runid}
+git clone $maestro_repo $nemo_runid
+cd $nemo_runid
+git checkout $maestro_version
+CWD=`pwd`
+nrg=`pwd`/.git
+sha1_maestro=`git --git-dir=${nrg} rev-parse ${maestro_version}`
+
+# basic maestro setup
+export SEQ_EXP_HOME=`pwd`
+mkdir hub logs sequencing stats listings
+makelinks -f
+PATH=$CWD/bin:$PATH
+export PATH
+
+sed -i "s/RUNID=.*/RUNID=${nemo_runid}/g" experiment.cfg
+sed -i "s/SEQ_JOBNAME_PREFIX=.*/SEQ_JOBNAME_PREFIX=${nemo_runid}-/g" resources/resources.def
+config-maestro
+
+# Do the cloning to RAMDISK for speedup
+#stamp=`date "+%j%H%M%S"$$`
+#tmpd=/tmp/tmp_setup_nemo_$stamp
+#mkdir -p $tmpd && cd $tmpd || tmpd=$CWD
+
+# Get the CanESM source code
+src_path=CanNEMO_tmp_src
+git clone --recursive $nemo_repo $src_path
+cd CanNEMO_tmp_src
+git checkout $nemo_version
+git submodule update --init --recursive
+# Get the exact checksum of the ver
+nrg=`pwd`/.git
+sha1=`git --git-dir=${nrg} rev-parse ${nemo_version}`
+echo sha1 is $sha1
+
+cd $CWD
+
+## Move down from RAMDISK
+#if [ "$tmpd" != "$CWD" ]; then
+#   mv $tmpd/$src_path $CWD/
+#fi
+
+# SETUP links to relevant namelists and compile script
+
+# Get the compile script, and reset runid, repo and ver.
+ln -s ${src_path}/nemo/CONFIG/${nemo_config}/${nemo_exp}/compile ${CWD}/compile
+[ -e compile ] || bail "Failed to extract compile script from ${src_path}/nemo/CONFIG/${nemo_config}/${nemo_exp}/compile" 
+cat compile | sed "s#runid#${nemo_runid}#;s#repo=[^ ]*#repo="$nemo_repo"#;s#ver=[^ ]*#ver=$sha1 srcpath=${CWD}/${src_path}#" > compile_${nemo_runid}
 rm -f compile
 chmod +x compile_${nemo_runid}
 
-# Get the make_orca_job_file, and reset runid, repo and ver.
-git archive --remote=${nemo_repo} --format=tar ${nemo_version}:nemo/CONFIG/${nemo_config}/${nemo_exp}/ make_orca_job | tar xf - ||
-         bail "Failed to extract code from archive: check that the repo and ver (branch) are correct and valid"
-cat make_orca_job | sed "s:runid=abc:runid=${runid}:g;s:jdef-repo=[^ ]*:jdef-repo=$nemo_repo:;s:jdef-rev=[^ ]*:jdef-rev=$nemo_version:" > make_orca_job_${nemo_runid}
-rm -f make_orca_job
-chmod +x make_orca_job_${nemo_runid}
+nemo_config_lower=`echo ${nemo_config} | tr '[:upper:]' '[:lower:]'`
+nemo_exe=${nemo_runid}_${nemo_config_lower}_exe
+sed -i "s#nemo_exec=.*#nemo_exec="'${SEQ_EXP_HOME}/'${nemo_exe}"#g" experiment.cfg
 
+# nameslists
 # Get the namelists/iodefs and optionally save them to DATAPATH
-if [ -s namelists ]; then 
+if [ -s $CWD/namelists ]; then 
     echo "WARNING: namelists dir already exists, overwriting"
-    cd namelists
+    cd $CWD/namelists
 else
     mkdir namelists
-    cd namelists
+    cd $CWD/namelists
 fi
-
+. ${CWD}/bin/CanNEMO_shell_functions.sh
 for i in $lists
 do
-    # Step1: retrieve from the repo
-    git archive --remote=${nemo_repo} --format=tar ${nemo_version}:nemo/CONFIG/${nemo_config}/${nemo_exp}/ ${i} | tar xf - ||
-         "Failed to extract lists from archive: check that the repo and ver (branch) are correct and valid; AND check lists argument is valid"
-    # Step2: save to RUNPATH
-    if [ "x${save_files}" == 'xon' ]
-    then
-        save ${i} ${nemo_runid}_${nemo_config_lc}_${i}
-        echo "${nemo_runid}_${nemo_config_lc}_${i} saved to DATAPATH"
+    # Link here from source using relative links
+    ln -s ../${src_path}/nemo/CONFIG/${nemo_config}/${nemo_exp}/${i} .
+    if [[ $i == *"namelist"* ]]; then
+       #stre="${i}="'${SEQ_EXP_HOME}/namelists/'${i}"" 
+       #mod_nl $CWD/experiment.cfg stre
+       sed -i "s#${i}=.*#${i}="'${SEQ_EXP_HOME}/namelists/'${i}"#" ../experiment.cfg
     fi
 done
+# Modifiy namelist paths in experiment.cfg
+#sed -i "s#nemo_namelist=.*#nemo_namelist="'${SEQ_EXP_HOME}/namelists/'namelist"#" ../experiment.cfg
+#sed -i "s#nemo_namelist_ice=.*#nemo_namelist_ice="'${SEQ_EXP_HOME}/namelists/'namelist_ice"#" ../experiment.cfg
+#sed -i "s#nemo_namelist_top=.*#nemo_namelist_top="'${SEQ_EXP_HOME}/namelists/'namelist_top"#" ../experiment.cfg
+#sed -i "s#nemo_namelist_pisces=.*#nemo_namelist_pisces="'${SEQ_EXP_HOME}/namelists/'namelist_pisces"#" ../experiment.cfg
+#sed -i "s#nemo_namelist_cmoc=.*#nemo_namelist_cmoc="'${SEQ_EXP_HOME}/namelists/'namelist_cmoc"#" ../experiment.cfg
+
+sed -i "s#nemo_xmlio_server_def=.*#nemo_xmlio_server_def="'${SEQ_EXP_HOME}/namelists/'xmlio_server.def"#" ../experiment.cfg
+sed -i "s#nemo_iodef=.*#nemo_iodef="'${SEQ_EXP_HOME}/namelists/'iodef.xml"#" ../experiment.cfg
+
+
+# Setup files and carbon options, depending on the config.
+if [[ $nemo_config_lower == *"cmoc"* ]]; then
+    sed -i "s#nemo_carbon=.*#nemo_carbon=on#" ../experiment.cfg
+    sed -i "s#nemo_cmoc=.*#nemo_cmoc=on#" ../experiment.cfg
+    sed -i 's#nemo_hist_file_suffix_list=.*#nemo_hist_file_suffix_list="grid_T grid_U grid_V grid_W icemod ptrc_T diad_T"#' ../experiment.cfg
+    sed -i 's#nemo_hist_file_freq_list=.*#nemo_hist_file_freq_list="      1m     1m     1m     1m    1m      1m     1m"#' ../experiment.cfg
+elif [[ $nemo_config_lower == *"canoe"* ]]; then
+    sed -i "s#nemo_carbon=.*#nemo_carbon=on#" ../experiment.cfg
+    sed -i 's#nemo_hist_file_suffix_list=.*#nemo_hist_file_suffix_list="grid_T grid_U grid_V grid_W icemod ptrc_T diad_T"#' ../experiment.cfg
+    sed -i 's#nemo_hist_file_freq_list=.*#nemo_hist_file_freq_list="      1m     1m     1m     1m    1m      1m     1m"#' ../experiment.cfg
+fi
 
 # print to log
 cd ../
 echo '~~~' >> .setup-nemo.log
 echo `date` >> .setup-nemo.log
 echo 'setup-nemo ' $@ >> .setup-nemo.log
-if [[ ${nemo_repo} == *.git ]]; then
-    nrg=${nemo_repo}
-else
-    nrg=${nemo_repo}/.git
-fi
 
-echo 'Corresponds to SHA1:' `git --git-dir=${nrg} rev-parse ${nemo_version}` >> .setup-nemo.log
+echo 'Code corresponds to SHA1:' $sha1 >> .setup-nemo.log
+echo 'Maestro suite corresponds to SHA1:' $sha1_maestro >> .setup-nemo.log
+
 
 # Write log to nemo run database
 datef=`date +"%Y-%m-%d %T"`
 userf=`whoami`
-sha1=`git --git-dir=${nrg} rev-parse ${nemo_version}`
 
-sqlite3 /users/tor/acrn/ncs/ocean_runs/ocean_runs.db << EOF
-                        INSERT INTO runs (runid, date, user, config, ver, repo, sha1)
-                        values('${nemo_runid}', '${datef}', '${userf}', '${nemo_config}', 
-                               '${nemo_version}', '${nemo_repo}', '${sha1}');
-EOF
+#sqlite3 /home/ncs001/ocean_runs/ocean_runs.db  << EOF
+#                        INSERT INTO runs (runid, date, user, config, ver, repo, sha1)
+#                        values('${nemo_runid}', '${datef}', '${userf}', '${nemo_config}', 
+#                               '${nemo_version}', '${nemo_repo}', '${sha1}');
+#EOF
 
