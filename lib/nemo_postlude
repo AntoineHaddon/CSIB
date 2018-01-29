@@ -1,5 +1,7 @@
 #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
 # NEMO postlude
+# Revised NEMO history file pattens to be consistent with those in AGCM
+#                                                    - Jan/2018, D.Yang
 #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
 
   if [ ! -s reorder_list ]; then
@@ -170,7 +172,10 @@ end_reorder_list
       for pfx in ${hist_file_list}; do
         ncout=${pfx}.nc
         [ -s $ncout ] || { echo "$ncout is missing or empty. Ignored"; continue; }
-        save $ncout ${uxxx}_$ncout && echo "${uxxx}_$ncout" >> saved_history_FILE_NAMES
+        freq=`echo $pfx |cut -d'_' -f 2`
+        sfx=`echo $pfx |cut -d'_' -f 5,6`
+        ncsave=${cn_exp}_${stop_year}_${stop_mon}_${freq}_${sfx}.nc
+        save $ncout ${uxxx}_$ncsave && echo "${uxxx}_$ncsave" >> saved_history_FILE_NAMES
       done
     fi
 
