@@ -1,5 +1,7 @@
 #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
 # NEMO postlude
+# Revised NEMO history file pattens to be consistent with those in AGCM
+#                                                    - Jan/2018, D.Yang
 #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
 
   if [ ! -s reorder_list ]; then
@@ -170,7 +172,10 @@ end_reorder_list
       for pfx in ${hist_file_list}; do
         ncout=${pfx}.nc
         [ -s $ncout ] || { echo "$ncout is missing or empty. Ignored"; continue; }
-        save $ncout ${uxxx}_$ncout && echo "${uxxx}_$ncout" >> saved_history_FILE_NAMES
+        freq=`echo $pfx |cut -d'_' -f 2`
+        sfx=`echo $pfx |cut -d'_' -f 5,6`
+        ncsave=${cn_exp}_${stop_year}_m${stop_mon}_${freq}_${sfx}.nc
+        save $ncout ${uxxx}_$ncsave && echo "${uxxx}_$ncsave" >> saved_history_FILE_NAMES
       done
     fi
 
@@ -486,10 +491,10 @@ end_reorder_list
 
         if [ $nemo_save_hist -eq 1 ]; then
           # Attempt to access these history files
-          rtd_hist1="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_grid_t.nc"
-          rtd_hist2="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_grid_u.nc"
-          rtd_hist3="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_grid_v.nc"
-          rtd_hist4="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_grid_w.nc"
+          rtd_hist1="${uxxx}_${cn_exp}_${stop_year}_m${stop_mon}_1m_grid_t.nc"
+          rtd_hist2="${uxxx}_${cn_exp}_${stop_year}_m${stop_mon}_1m_grid_u.nc"
+          rtd_hist3="${uxxx}_${cn_exp}_${stop_year}_m${stop_mon}_1m_grid_v.nc"
+          rtd_hist4="${uxxx}_${cn_exp}_${stop_year}_m${stop_mon}_1m_grid_w.nc"
           access grid_t $rtd_hist1 || bail "NEMO rdt cannot access $rtd_hist1"
           access grid_u $rtd_hist2 || bail "NEMO rdt cannot access $rtd_hist2"
           access grid_v $rtd_hist3 || bail "NEMO rdt cannot access $rtd_hist3"
@@ -497,10 +502,10 @@ end_reorder_list
         else
           # History files are not saved but they should exist in the cwd
           # Note the capitol T,U,V,W in these names
-          rtd_hist1="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_grid_T.nc"
-          rtd_hist2="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_grid_U.nc"
-          rtd_hist3="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_grid_V.nc"
-          rtd_hist4="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_grid_W.nc"
+          rtd_hist1="${uxxx}_${cn_exp}_${stop_year}_m${stop_mon}_1m_grid_t.nc"
+          rtd_hist2="${uxxx}_${cn_exp}_${stop_year}_m${stop_mon}_1m_grid_u.nc"
+          rtd_hist3="${uxxx}_${cn_exp}_${stop_year}_m${stop_mon}_1m_grid_v.nc"
+          rtd_hist4="${uxxx}_${cn_exp}_${stop_year}_m${stop_mon}_1m_grid_w.nc"
           [ -s $rtd_hist1 ] || bail "NEMO rdt: $rtd_hist1 is missing or empty"
           [ -s $rtd_hist2 ] || bail "NEMO rdt: $rtd_hist2 is missing or empty"
           [ -s $rtd_hist3 ] || bail "NEMO rdt: $rtd_hist3 is missing or empty"
@@ -558,10 +563,10 @@ end_reorder_list
 
           if [ $nemo_save_hist -eq 1 ]; then
             # Access additional annual history files containing PISCES related variables
-            rtd_hist7="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_icemod.nc"
+            rtd_hist7="${uxxx}_${cn_exp}_${stop_year}_m${stop_mon}_1m_icemod.nc"
             access icemod $rtd_hist7 || bail "NEMO rdt cannot access $rtd_hist7"
           else
-            rtd_hist7="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_icemod.nc"
+            rtd_hist7="${uxxx}_${cn_exp}_${stop_year}_m${stop_mon}_1m_icemod.nc"
             [ -s $rtd_hist7 ] || bail "NEMO rdt: $rtd_hist7 is missing or empty"
             cp -f $rtd_hist7 icemod
           fi
@@ -608,13 +613,13 @@ end_reorder_list
 
       if [ $nemo_save_hist -eq 1 ]; then
         # Access additional annual history files containing PISCES related variables
-        rtd_hist5="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_ptrc_t.nc"
-        rtd_hist6="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_diad_t.nc"
+        rtd_hist5="${uxxx}_${cn_exp}_${stop_year}_m${stop_mon}_1m_ptrc_t.nc"
+        rtd_hist6="${uxxx}_${cn_exp}_${stop_year}_m${stop_mon}_1m_diad_t.nc"
         access ptrc_t $rtd_hist5 
         access diad_t $rtd_hist6 
       else
-        rtd_hist5="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_ptrc_T.nc"
-        rtd_hist6="${uxxx}_${cn_exp}_1m_${start_date}_${stop_date}_diad_T.nc"
+        rtd_hist5="${uxxx}_${cn_exp}_${stop_year}_m${stop_mon}_1m_ptrc_T.nc"
+        rtd_hist6="${uxxx}_${cn_exp}_${stop_year}_m${stop_mon}_1m_diad_T.nc"
         [ -s $rtd_hist5 ] || bail "NEMO rdt: $rtd_hist5 is missing or empty"
         [ -s $rtd_hist6 ] || bail "NEMO rdt: $rtd_hist6 is missing or empty"
         cp -f $rtd_hist5 ptrc_t
@@ -786,9 +791,9 @@ end_reorder_list
 	  for freq in $nemo_dump_hist_freq_list; do
 	    for sfx in $nemo_dump_hist_suffix_list; do
 	      if [ $nemo_ann_cat -eq 1 ]; then
-		pfx="${uxxx}_${cn_exp}_${freq}_${stop_year}????_${stop_year}????_$sfx"
+		pfx="${uxxx}_${cn_exp}_${stop_year}_m??_${freq}_$sfx"
 	      else
-		pfx="${uxxx}_${cn_exp}_${freq}_${stop_year}${start_mon}01_${stop_year}${stop_mon}${stop_day}_$sfx"
+		pfx="${uxxx}_${cn_exp}_${stop_year}_m${stop_mon}_${freq}_$sfx"
 	      fi
 	      eval fnpatt=${pfx}.nc.\[0-9\]\[0-9\]\[0-9\]
 	      found_file=`(ls -1 $DATAPATH/$fnpatt || : ) 2>/dev/null`
@@ -909,9 +914,9 @@ end_reorder_list
 	  for freq in $nemo_del_hist_freq_list; do
 	    for sfx in $nemo_del_hist_suffix_list; do
 	      if [ $nemo_ann_cat -eq 1 ]; then
-		pfx="${uxxx}_${cn_exp}_${freq}_${stop_year}????_${stop_year}????_$sfx"
+		pfx="${uxxx}_${cn_exp}_${stop_year}_m??_${freq}_$sfx"
 	      else
-		pfx="${uxxx}_${cn_exp}_${freq}_${stop_year}${start_mon}01_${stop_year}${stop_mon}${stop_day}_$sfx"
+		pfx="${uxxx}_${cn_exp}_${stop_year}_m${stop_mon}_${freq}_$sfx"
 	      fi
 	      eval fnpatt=${pfx}.nc.\[0-9\]\[0-9\]\[0-9\]
 	      echo ${fnpatt}
