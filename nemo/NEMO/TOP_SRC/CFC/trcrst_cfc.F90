@@ -15,7 +15,8 @@ MODULE trcrst_cfc
    USE oce_trc         ! Ocean variables
    USE par_trc         ! TOP parameters
    USE trc             ! TOP variables
-   USE trcsms_cfc          ! CFC sms trends
+   USE trcsms_cfc      ! CFC sms trends
+   USE par_cfc, only :: jp_cfc
    USE iom
 
    IMPLICIT NONE
@@ -25,10 +26,10 @@ MODULE trcrst_cfc
    PUBLIC  trc_rst_wri_cfc   ! called by trcini.F90 module
 
 CONTAINS
-   
-   SUBROUTINE trc_rst_read_cfc( knum ) 
+
+   SUBROUTINE trc_rst_read_cfc( knum )
       !!----------------------------------------------------------------------
-      !!                     ***  trc_rst_read_cfc  ***  
+      !!                     ***  trc_rst_read_cfc  ***
       !!
       !! ** Purpose : Read in restart file specific variables from CFC model
       !!
@@ -40,9 +41,9 @@ CONTAINS
       IF(lwp) WRITE(numout,*)
       IF(lwp) WRITE(numout,*) ' trc_rst_read_cfc : Read specific variables from CFC model '
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~'
-      
+
       DO jn = jp_cfc0, jp_cfc1
-         CALL iom_get( knum, jpdom_autoglo, 'qint_'//ctrcnm(jn), qint_cfc(:,:,jn) ) 
+         CALL iom_get( knum, jpdom_autoglo, 'qint_'//ctrcnm(jn), qint_cfc(:,:,jn) )
       END DO
 
    END SUBROUTINE trc_rst_read_cfc
