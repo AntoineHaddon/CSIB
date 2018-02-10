@@ -6,7 +6,7 @@ MODULE par_cfc
    !! History :   2.0  !  2007-12  (C. Ethe, G. Madec)  revised architecture
    !!----------------------------------------------------------------------
    !! NEMO/TOP 3.3 , NEMO Consortium (2010)
-   !! $Id: par_cfc.F90 3294 2012-01-28 16:44:18Z rblod $ 
+   !! $Id: par_cfc.F90 3294 2012-01-28 16:44:18Z rblod $
    !! Software governed by the CeCILL licence (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
    USE par_lobster, ONLY : jp_lobster      !: number of tracers in LOBSTER
@@ -25,28 +25,29 @@ MODULE par_cfc
    INTEGER, PARAMETER ::   jp_lc_2d   = jp_lobster_2d  + jp_pisces_2d  !:
    INTEGER, PARAMETER ::   jp_lc_3d   = jp_lobster_3d  + jp_pisces_3d  !:
    INTEGER, PARAMETER ::   jp_lc_trd  = jp_lobster_trd + jp_pisces_trd !:
-   
+
 #if defined key_cfc
    !!---------------------------------------------------------------------
    !!   'key_cfc'   :                                          CFC tracers
    !!---------------------------------------------------------------------
-   LOGICAL, PUBLIC, PARAMETER ::   lk_cfc     = .TRUE.      !: CFC flag 
-   INTEGER, PUBLIC, PARAMETER ::   jp_cfc     =  1          !: number of passive tracers
-   INTEGER, PUBLIC, PARAMETER ::   jp_cfc_2d  =  2          !: additional 2d output arrays ('key_trc_diaadd')
-   INTEGER, PUBLIC, PARAMETER ::   jp_cfc_3d  =  0          !: additional 3d output arrays ('key_trc_diaadd')
+   LOGICAL, PUBLIC, PARAMETER ::   lk_cfc     = .TRUE.      !: CFC flag
+   INTEGER, PUBLIC, PARAMETER ::   jp_cfc     =  3          !: number of passive tracers
+   INTEGER, PUBLIC, PARAMETER ::   jp_cfc_2d  =  3          !: additional 2d output arrays ('key_trc_diaadd')
+   INTEGER, PUBLIC, PARAMETER ::   jp_cfc_3d  =  3          !: additional 3d output arrays ('key_trc_diaadd')
    INTEGER, PUBLIC, PARAMETER ::   jp_cfc_trd =  0          !: number of sms trends for CFC
-   
+
    ! assign an index in trc arrays for each CFC prognostic variables
-   INTEGER, PUBLIC, PARAMETER ::   jpc11       = jp_lc + 1   !: CFC-11 
-   INTEGER, PUBLIC, PARAMETER ::   jpc12       = jp_lc + 2   !: CFC-12   
+   INTEGER, PUBLIC, PARAMETER ::   jpc11       = jp_lc + 1   !: CFC-11
+   INTEGER, PUBLIC, PARAMETER ::   jpc12       = jp_lc + 2   !: CFC-12
+   INTEGER, PUBLIC, PARAMETER ::   jpsf6       = jp_lc + 3   !: SF6
 #else
    !!---------------------------------------------------------------------
    !!   Default     :                                       No CFC tracers
    !!---------------------------------------------------------------------
-   LOGICAL, PUBLIC, PARAMETER ::   lk_cfc     = .FALSE.     !: CFC flag 
+   LOGICAL, PUBLIC, PARAMETER ::   lk_cfc     = .FALSE.     !: CFC flag
    INTEGER, PUBLIC, PARAMETER ::   jp_cfc     =  0          !: No CFC tracers
-   INTEGER, PUBLIC, PARAMETER ::   jp_cfc_2d  =  0          !: No CFC additional 2d output arrays 
-   INTEGER, PUBLIC, PARAMETER ::   jp_cfc_3d  =  0          !: No CFC additional 3d output arrays 
+   INTEGER, PUBLIC, PARAMETER ::   jp_cfc_2d  =  0          !: No CFC additional 2d output arrays
+   INTEGER, PUBLIC, PARAMETER ::   jp_cfc_3d  =  0          !: No CFC additional 3d output arrays
    INTEGER, PUBLIC, PARAMETER ::   jp_cfc_trd =  0          !: number of sms trends for CFC
 #endif
 

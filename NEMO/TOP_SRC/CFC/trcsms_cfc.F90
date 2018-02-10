@@ -20,40 +20,44 @@ MODULE trcsms_cfc
    USE trdmod_oce
    USE trdmod_trc
    USE iom           ! I/O library
+   USE par_cfc, only :: jp_cfc
 
    IMPLICIT NONE
    PRIVATE
 
-   PUBLIC   trc_sms_cfc         ! called in ???    
+   PUBLIC   trc_sms_cfc         ! called in ???
    PUBLIC   trc_sms_cfc_alloc   ! called in trcini_cfc.F90
 
    INTEGER , PUBLIC, PARAMETER ::   jphem  =   2   ! parameter for the 2 hemispheres
    INTEGER , PUBLIC            ::   jpyear         ! Number of years read in CFC1112 file
    INTEGER , PUBLIC            ::   ndate_beg      ! initial calendar date (aammjj) for CFC
    INTEGER , PUBLIC            ::   nyear_res      ! restoring time constant (year)
-   INTEGER , PUBLIC            ::   nyear_beg      ! initial year (aa) 
-   
+   INTEGER , PUBLIC            ::   nyear_beg      ! initial year (aa)
+
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   p_cfc    ! partial hemispheric pressure for CFC
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   xphem    ! spatial interpolation factor for patm
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qtr_cfc  ! flux at surface
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qint_cfc ! cumulative flux 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qint_cfc ! cumulative flux
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   patm     ! atmospheric function
 
-   REAL(wp), DIMENSION(4,2) ::   soa   ! coefficient for solubility of CFC [mol/l/atm]
-   REAL(wp), DIMENSION(3,2) ::   sob   !    "               "
-   REAL(wp), DIMENSION(4,2) ::   sca   ! coefficients for schmidt number in degre Celcius
-      
+   REAL(wp), DIMENSION(4,jp_cfc+1) ::   soa   ! coefficient for solubility of CFC [mol/l/atm]
+   REAL(wp), DIMENSION(3,jp_cfc+1) ::   sob   !    "               "
+   REAL(wp), DIMENSION(5,jp_cfc+1) ::   sca   ! coefficients for schmidt number in degre Celcius
+
    !                          ! coefficients for conversion
-   REAL(wp) ::   xconv1 = 1.0          ! conversion from to 
-   REAL(wp) ::   xconv2 = 0.01/3600.   ! conversion from cm/h to m/s: 
+   REAL(wp) ::   xconv1 = 1.0          ! conversion from to
+   REAL(wp) ::   xconv2 = 0.01/3600.   ! conversion from cm/h to m/s:
    REAL(wp) ::   xconv3 = 1.0e+3       ! conversion from mol/l/atm to mol/m3/atm
-   REAL(wp) ::   xconv4 = 1.0e-12      ! conversion from mol/m3/atm to mol/m3/pptv 
+   REAL(wp) ::   xconv4 = 1.0e-12      ! conversion from mol/m3/atm to mol/m3/pptv
+   REAL(wp), parameter :: kw_scale = 0.251  !< Scale factor used when calculating Schmidt number
+                                            !! 0.251 is the updated Wanninkhof 2014 value
+                                            !! 0.39 is the Wanninkhof 1992 values
 
    !! * Substitutions
 #  include "top_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 3.3 , NEMO Consortium (2010)
-   !! $Id: trcsms_cfc.F90 3294 2012-01-28 16:44:18Z rblod $ 
+   !! $Id: trcsms_cfc.F90 3294 2012-01-28 16:44:18Z rblod $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -62,14 +66,14 @@ CONTAINS
       !!----------------------------------------------------------------------
       !!                     ***  ROUTINE trc_sms_cfc  ***
       !!
-      !! ** Purpose :   Compute the surface boundary contition on CFC 11 
-      !!             passive tracer associated with air-mer fluxes and add it 
+      !! ** Purpose :   Compute the surface boundary contition on CFC 11
+      !!             passive tracer associated with air-mer fluxes and add it
       !!             to the general trend of tracers equations.
       !!
       !! ** Method  : - get the atmospheric partial pressure - given in pico -
       !!              - computation of solubility ( in 1.e-12 mol/l then in 1.e-9 mol/m3)
       !!              - computation of transfert speed ( given in cm/hour ----> cm/s )
-      !!              - the input function is given by : 
+      !!              - the input function is given by :
       !!                speed * ( concentration at equilibrium - concentration at surface )
       !!              - the input function is in pico-mol/m3/s and the
       !!                CFC concentration in pico-mol/m3
@@ -80,10 +84,10 @@ CONTAINS
       INTEGER  ::   ji, jj, jn, jl, jm, js
       INTEGER  ::   iyear_beg, iyear_end
       INTEGER  ::   im1, im2, ierr
-      REAL(wp) ::   ztap, zdtap        
+      REAL(wp) ::   ztap, zdtap
       REAL(wp) ::   zt1, zt2, zt3, zv2
       REAL(wp) ::   zsol      ! solubility
-      REAL(wp) ::   zsch      ! schmidt number 
+      REAL(wp) ::   zsch      ! schmidt number
       REAL(wp) ::   zpp_cfc   ! atmospheric partial pressure of CFC
       REAL(wp) ::   zca_cfc   ! concentration at equilibrium
       REAL(wp) ::   zak_cfc   ! transfert coefficients
@@ -116,17 +120,18 @@ CONTAINS
       !                                                  !------------!
       DO jl = 1, jp_cfc                                  !  CFC loop  !
          !                                               !------------!
+         ! Index of tracer in big tracer array
          jn = jp_cfc0 + jl - 1
          ! time interpolation at time kt
          DO jm = 1, jphem
             zpatm(jm,jl) = (  p_cfc(iyear_beg, jm, jl) * FLOAT (im1)  &
                &           +  p_cfc(iyear_end, jm, jl) * FLOAT (im2) ) / 12.
          END DO
-         
+
          !                                                         !------------!
          DO jj = 1, jpj                                            !  i-j loop  !
             DO ji = 1, jpi                                         !------------!
- 
+
                ! space interpolation
                zpp_cfc  =       xphem(ji,jj)   * zpatm(1,jl)   &
                   &     + ( 1.- xphem(ji,jj) ) * zpatm(2,jl)
@@ -135,28 +140,29 @@ CONTAINS
                ! coefficient for solubility for CFC-11/12 in  mol/l/atm
                IF( tmask(ji,jj,1) .GE. 0.5 ) THEN
                   ztap  = ( tsn(ji,jj,1,jp_tem) + 273.16 ) * 0.01
-                  zdtap = sob(1,jl) + ztap * ( sob(2,jl) + ztap * sob(3,jl) ) 
+                  zdtap = sob(1,jl) + ztap * ( sob(2,jl) + ztap * sob(3,jl) )
                   zsol  =  EXP( soa(1,jl) + soa(2,jl) / ztap + soa(3,jl) * LOG( ztap )   &
-                     &                    + soa(4,jl) * ztap * ztap + tsn(ji,jj,1,jp_sal) * zdtap ) 
+                     &                    + soa(4,jl) * ztap * ztap + tsn(ji,jj,1,jp_sal) * zdtap )
                ELSE
                   zsol  = 0.e0
                ENDIF
-               ! conversion from mol/l/atm to mol/m3/atm and from mol/m3/atm to mol/m3/pptv    
-               zsol = xconv4 * xconv3 * zsol * tmask(ji,jj,1)  
+               ! conversion from mol/l/atm to mol/m3/atm and from mol/m3/atm to mol/m3/pptv
+               zsol = xconv4 * xconv3 * zsol * tmask(ji,jj,1)
                ! concentration at equilibrium
-               zca_cfc = xconv1 * zpp_cfc * zsol * tmask(ji,jj,1)             
-  
+               zca_cfc = xconv1 * zpp_cfc * zsol * tmask(ji,jj,1)
+
                ! Computation of speed transfert
                !    Schmidt number
-               zt1  = tsn(ji,jj,1,jp_tem)
-               zt2  = zt1 * zt1 
-               zt3  = zt1 * zt2
-               zsch = sca(1,jl) + sca(2,jl) * zt1 + sca(3,jl) * zt2 + sca(4,jl) * zt3
+               zsch = calc_schmidt_number(5, sca(jl,:), tsn(ji, jj, 1, jp_tem))
+!               zt1  = tsn(ji,jj,1,jp_tem)
+!               zt2  = zt1 * zt1
+!               zt3  = zt1 * zt2
+!               zsch = sca(1,jl) + sca(2,jl) * zt1 + sca(3,jl) * zt2 + sca(4,jl) * zt3
 
                !    speed transfert : formulae of wanninkhof 1992
                zv2     = wndm(ji,jj) * wndm(ji,jj)
                zsch    = zsch / 660.
-               zak_cfc = ( 0.39 * xconv2 * zv2 / SQRT(zsch) ) * tmask(ji,jj,1)
+               zak_cfc = ( kw_scale * xconv2 * zv2 / SQRT(zsch) ) * tmask(ji,jj,1)
 
                ! Input function  : speed *( conc. at equil - concen at surface )
                ! trn in pico-mol/l idem qtr; ak in en m/a
@@ -166,7 +172,7 @@ CONTAINS
 #endif
                   &                         * tmask(ji,jj,1) * ( 1. - fr_i(ji,jj) )
                ! Add the surface flux to the trend
-               tra(ji,jj,1,jn) = tra(ji,jj,1,jn) + qtr_cfc(ji,jj,jl) / fse3t(ji,jj,1) 
+               tra(ji,jj,1,jn) = tra(ji,jj,1,jn) + qtr_cfc(ji,jj,jl) / fse3t(ji,jj,1)
 
                ! cumulation of surface flux at each time step
                qint_cfc(ji,jj,jl) = qint_cfc(ji,jj,jl) + qtr_cfc(ji,jj,jl) * rdt
@@ -181,13 +187,17 @@ CONTAINS
         IF( lk_iomput ) THEN
            CALL iom_put( "qtrCFC11"  , qtr_cfc (:,:,1) )
            CALL iom_put( "qintCFC11" , qint_cfc(:,:,1) )
+           CALL iom_put( "qtrCFC12"  , qtr_cfc (:,:,2) )
+           CALL iom_put( "qintCFC12" , qint_cfc(:,:,2) )
+           CALL iom_put( "qtrSF6"  , qtr_cfc (:,:,3) )
+           CALL iom_put( "qintSF6" , qint_cfc(:,:,3) )
         ELSE
            trc2d(:,:,jp_cfc0_2d    ) = qtr_cfc (:,:,1)
            trc2d(:,:,jp_cfc0_2d + 1) = qint_cfc(:,:,1)
         END IF
         !
       END IF
- 
+
       IF( l_trdtrc ) THEN
           DO jn = jp_cfc0, jp_cfc1
             CALL trd_mod_trc( tra(:,:,:,jn), jn, jptra_trd_sms, kt )   ! save trends
@@ -201,16 +211,16 @@ CONTAINS
 
    SUBROUTINE trc_cfc_cst
       !!---------------------------------------------------------------------
-      !!                     ***  trc_cfc_cst  ***  
+      !!                     ***  trc_cfc_cst  ***
       !!
       !! ** Purpose : sets constants for CFC model
       !!---------------------------------------------------------------------
 
-      ! coefficient for CFC11 
+      ! coefficient for CFC11
       !----------------------
 
       ! Solubility
-      soa(1,1) = -229.9261 
+      soa(1,1) = -229.9261
       soa(2,1) =  319.6552
       soa(3,1) =  119.4471
       soa(4,1) =  -1.39165
@@ -219,13 +229,15 @@ CONTAINS
       sob(2,1) =   0.091459
       sob(3,1) =  -0.0157274
 
-      ! Schmidt number 
-      sca(1,1) = 3501.8
-      sca(2,1) = -210.31
-      sca(3,1) =  6.1851
-      sca(4,1) = -0.07513
+      ! Schmidt number
+      ! Values from Wanninkhof [2014]
+      sca(1,1) =  3579.2
+      sca(2,1) =  -222.63
+      sca(3,1) =     7.5749
+      sca(4,1) =    -0.14595
+      sca(5,1) =     0.0011874
 
-      ! coefficient for CFC12 
+      ! coefficient for CFC12
       !----------------------
 
       ! Solubility
@@ -238,11 +250,35 @@ CONTAINS
       sob(2,2) =   0.091015
       sob(3,2) =  -0.0153924
 
-      ! schmidt number 
-      sca(1,2) =  3845.4 
-      sca(2,2) =  -228.95
-      sca(3,2) =  6.1908 
-      sca(4,2) =  -0.067430
+      ! schmidt number
+      ! Values from Wanninkhof [2014]
+      sca(1,2) = 3828.1
+      sca(2,2) = -249.86
+      sca(3,2) =    8.7603
+      sca(4,2) =   -0.1716
+      sca(5,2) =    0.001408
+
+      ! coefficient for SF6
+      !----------------------
+      ! Table 3, column 2 of Bullister, Wisegarver, and Menzia [Deep-Sea Research, 2001]
+
+      ! Solubility
+      soa(1,3) = -80.0343
+      soa(2,3) = 117.232
+      soa(3,3) =  29.5817
+      soa(4,3) =   0. ! Unlike CFCs Solubility function for SF6 has no fourth temperature term
+
+      sob(1,3) =   0.0335183
+      sob(2,3) =   -0.0373942
+      sob(3,3) =   0.00774862
+
+      ! schmidt number
+      ! Values from Wanninkhof [2014]
+      sca(1,3) = 3177.5
+      sca(2,3) = -200.57
+      sca(3,3) =    6.8865
+      sca(4,3) =   -0.13335
+      sca(5,3) =    0.0010877
 
    END SUBROUTINE trc_cfc_cst
 
@@ -258,6 +294,20 @@ CONTAINS
       IF( trc_sms_cfc_alloc /= 0 ) CALL ctl_warn('trc_sms_cfc_alloc : failed to allocate arrays.')
       !
    END FUNCTION trc_sms_cfc_alloc
+
+   !> Calculates the Schmidt numbr as a function of temperature via Horner's method
+   REAL FUNCTION calc_schmidt_number(n, coeffs, temp) RESULT sc
+     INTEGER            :: n        !< Number of polynomial coefficients
+     REAL, DIMENSION(n) :: coeffs   !< Polynomial coefficieints in increasing order of degree
+     REAL,              :: temp     !< Temperature (in degC)
+
+     sc = coeffs(n)
+     do k=n-1,1,-1
+      sc = sc*temp + coeffs[k]
+     enddo
+
+   END FUNCTION calc_schmidt_number
+
 
 #else
    !!----------------------------------------------------------------------
