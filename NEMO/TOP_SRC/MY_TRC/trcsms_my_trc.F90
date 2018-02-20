@@ -16,12 +16,16 @@ MODULE trcsms_my_trc
    USE trc             ! TOP variables
    USE trdmod_oce
    USE trdmod_trc
+   USE phycst
 
    IMPLICIT NONE
    PRIVATE
 
    PUBLIC   trc_sms_my_trc       ! called by trcsms.F90 module
    PUBLIC   trc_sms_my_trc_alloc ! called by trcini_my_trc.F90 module
+
+   !! * Substitution
+#  include "domzgr_substitute.h90"
 
    ! Defined HERE the arrays specific to MY_TRC sms and ALLOCATE them in trc_sms_my_trc_alloc
 
@@ -77,8 +81,8 @@ CONTAINS
       ! tsa(ji,jj,1,jn) = tsa(ji,jj,1,jn) + ( sbc_tsc_b(ji,jj,jn) + sbc_tsc(ji,jj,jn) ) * z1_e3t
 
       ! Dummy, add time-step in years to tracers....just to do something.
-      !tra(:,:,1,jpo1) = tra(:,:,1,jpo1) + 1._wp / (3600._wp * 24. * 365.)
-      !tra(:,:,1,jpo2) = tra(:,:,1,jpo2) + 2._wp / (3600._wp * 24. * 365.)
+      tra(:,:,1,jpo1) = tra(:,:,1,jpo1) + 1._wp / (3600._wp * 24. * 365.)
+      tra(:,:,1,jpo2) = ro0cpr / fse3t(:,:,1) 
 
       IF( nn_timing == 1 )  CALL timing_stop('trc_sms_my_trc')
       !
