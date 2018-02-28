@@ -20,7 +20,8 @@ MODULE trcsms_cfc
    USE trdmod_oce
    USE trdmod_trc
    USE iom           ! I/O library
-   USE par_cfc, only :: jp_cfc
+   USE par_cfc,   only : jp_cfci
+   USE dom_ocean, only : nsec_year, nyear_len, nyear
 
    IMPLICIT NONE
    PRIVATE
@@ -28,21 +29,20 @@ MODULE trcsms_cfc
    PUBLIC   trc_sms_cfc         ! called in ???
    PUBLIC   trc_sms_cfc_alloc   ! called in trcini_cfc.F90
 
-   INTEGER , PUBLIC, PARAMETER ::   jphem  =   2   ! parameter for the 2 hemispheres
-   INTEGER , PUBLIC            ::   jpyear         ! Number of years read in CFC1112 file
-   INTEGER , PUBLIC            ::   ndate_beg      ! initial calendar date (aammjj) for CFC
-   INTEGER , PUBLIC            ::   nyear_res      ! restoring time constant (year)
-   INTEGER , PUBLIC            ::   nyear_beg      ! initial year (aa)
+   INTEGER , PUBLIC, PARAMETER ::   jphem  =   2    ! parameter for the 2 hemispheres
+   INTEGER , PUBLIC            ::   jpyear          ! Number of years read in CFC1112 file
+   INTEGER , PUBLIC            ::   cfc_year_offset ! Offset from model year.
 
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   p_cfc    ! partial hemispheric pressure for CFC
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   xphem    ! spatial interpolation factor for patm
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qtr_cfc  ! flux at surface
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qint_cfc ! cumulative flux
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   patm     ! atmospheric function
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:)     ::   p_cfc_year  ! Year associated with the atmospheric partial pressure
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   p_cfc       ! partial hemispheric pressure for CFC
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   xphem       ! spatial interpolation factor for patm
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qtr_cfc     ! flux at surface
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qint_cfc    ! cumulative flux
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   patm        ! atmospheric function
 
-   REAL(wp), DIMENSION(4,jp_cfc+1) ::   soa   ! coefficient for solubility of CFC [mol/l/atm]
-   REAL(wp), DIMENSION(3,jp_cfc+1) ::   sob   !    "               "
-   REAL(wp), DIMENSION(5,jp_cfc+1) ::   sca   ! coefficients for schmidt number in degre Celcius
+   REAL(wp), DIMENSION(4,jp_cfc) ::   soa   ! coefficient for solubility of CFC [mol/l/atm]
+   REAL(wp), DIMENSION(3,jp_cfc) ::   sob   !    "               "
+   REAL(wp), DIMENSION(5,jp_cfc) ::   sca   ! coefficients for schmidt number in degre Celcius
 
    !                          ! coefficients for conversion
    REAL(wp) ::   xconv1 = 1.0          ! conversion from to
@@ -83,8 +83,10 @@ CONTAINS
       !
       INTEGER  ::   ji, jj, jn, jl, jm, js
       INTEGER  ::   iyear_beg, iyear_end
-      INTEGER  ::   im1, im2, ierr
-      REAL(wp) ::   ztap, zdtap
+      INTEGER  ::   ierr
+      INTEGER  ::   nyears, cfc_year
+      REAL(wp) ::   year_frac, wt1, wt2
+      REAL(wp) ::   ztap, zdtap, iztap
       REAL(wp) ::   zt1, zt2, zt3, zv2
       REAL(wp) ::   zsol      ! solubility
       REAL(wp) ::   zsch      ! schmidt number
@@ -106,16 +108,42 @@ CONTAINS
 
       ! Temporal interpolation
       ! ----------------------
-      iyear_beg = nyear - 1900
-      IF ( nmonth <= 6 ) THEN
-         iyear_beg = iyear_beg - 1
-         im1       =  6 - nmonth + 1
-         im2       =  6 + nmonth - 1
-      ELSE
-         im1       = 12 - nmonth + 7
-         im2       =      nmonth - 7
+      nyears = SIZE(p_cfc_year(:))
+      ! Calculate the given year that the CFC module sees
+      cfc_year = nyear + cfc_year_offset
+      year_frac = ( nsec_year / 86400. ) / ( 86400. * nyear_len(1) )
+
+      ! Check to make sure that the current 'cfc_year' is within the observational range
+      ! and set time interpolation factors keeping in mind that atmospheric values are
+      ! annual averages with time at the middle of the year. If earlier than the record,
+      ! atmospheric concentratio assumed to be equal to the first entry. If later than
+      ! the record, then its assumed to be equal to the last entry
+      IF ( cfc_year < p_cfc_year(1) ) THEN
+        iyear_beg = 1
+        iyear_end = 1
+        im1       = 1.
+        im2       = 0.
+      ELSEIF ( cfc_year > p_cfc_year(nyears) ) THEN
+        iyear_beg = nyears
+        iyear_end = nyears
+        im1       = 0.
+        im2       = 0.
+      ELSEIF ( yearfrac > 0.5 ) THEN
+        iyear_beg = cfc_year - FLOOR(p_cfc_year(1)) + 1
+        iyear_end = iyear_beg + 1
+        im1       = yearfrac
+        im2       = 1. - yearfrac
+      ELSEIF ( yearfrac < 0.5 ) THEN
+        iyear_beg = cfc_year-FLOOR(p_cfc_year(1))
+        iyear_end = iyear_beg + 1
+        im1       = 1. - yearfrac
+        im2       = yearfrac
+      ELSEIF ( yearfrac == 0.5 ) THEN
+        iyear_beg = cfc_year - FLOOR(p_cfc_year(1)) + 1
+        iyear_end = iyear_beg
+        im1       = 1.
+        im2       = 0.
       ENDIF
-      iyear_end = iyear_beg + 1
 
       !                                                  !------------!
       DO jl = 1, jp_cfc                                  !  CFC loop  !
@@ -124,14 +152,12 @@ CONTAINS
          jn = jp_cfc0 + jl - 1
          ! time interpolation at time kt
          DO jm = 1, jphem
-            zpatm(jm,jl) = (  p_cfc(iyear_beg, jm, jl) * FLOAT (im1)  &
-               &           +  p_cfc(iyear_end, jm, jl) * FLOAT (im2) ) / 12.
+            zpatm(jm,jl) = p_cfc(iyear_beg, jm, jl)*wt1 + p_cfc(iyear_end, jm, jl)*wt2
          END DO
 
          !                                                         !------------!
          DO jj = 1, jpj                                            !  i-j loop  !
             DO ji = 1, jpi                                         !------------!
-
                ! space interpolation
                zpp_cfc  =       xphem(ji,jj)   * zpatm(1,jl)   &
                   &     + ( 1.- xphem(ji,jj) ) * zpatm(2,jl)
@@ -139,10 +165,12 @@ CONTAINS
                ! Computation of concentration at equilibrium : in picomol/l
                ! coefficient for solubility for CFC-11/12 in  mol/l/atm
                IF( tmask(ji,jj,1) .GE. 0.5 ) THEN
-                  ztap  = ( tsn(ji,jj,1,jp_tem) + 273.16 ) * 0.01
-                  zdtap = sob(1,jl) + ztap * ( sob(2,jl) + ztap * sob(3,jl) )
-                  zsol  =  EXP( soa(1,jl) + soa(2,jl) / ztap + soa(3,jl) * LOG( ztap )   &
-                     &                    + soa(4,jl) * ztap * ztap + tsn(ji,jj,1,jp_sal) * zdtap )
+                  ztap  = ( tsn(ji,jj,1,jp_tem ) + 273.15 ) * 0.01
+                  iztap = 100. / ( tsn(ji,jj,1,jp_tem ) + 273.15 )
+                  ! Temperature terms first
+                  zdtap = soa(1,jl) + soa(2,jl)*iztap + soa(3,jl)*LOG(ztap) + soa(4,jl)*(ztap*ztap)
+                  zdtap = zdtap + tsn(ji,jj,1,jp_sal)*( sob(1,jl) + sob(2,jl)*ztap + sob(3,jl)*(ztap*ztap))
+                  zsol  =  EXP( zdtap )
                ELSE
                   zsol  = 0.e0
                ENDIF
@@ -154,10 +182,6 @@ CONTAINS
                ! Computation of speed transfert
                !    Schmidt number
                zsch = calc_schmidt_number(5, sca(jl,:), tsn(ji, jj, 1, jp_tem))
-!               zt1  = tsn(ji,jj,1,jp_tem)
-!               zt2  = zt1 * zt1
-!               zt3  = zt1 * zt2
-!               zsch = sca(1,jl) + sca(2,jl) * zt1 + sca(3,jl) * zt2 + sca(4,jl) * zt3
 
                !    speed transfert : formulae of wanninkhof 1992
                zv2     = wndm(ji,jj) * wndm(ji,jj)

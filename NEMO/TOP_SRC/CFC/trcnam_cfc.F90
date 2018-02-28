@@ -21,10 +21,11 @@ MODULE trcnam_cfc
    PRIVATE
 
    PUBLIC   trc_nam_cfc   ! called by trcnam.F90 module
+   CHAR(LEN=255), PUBLIC :: cfc_nc_file = '' ! Name of the netcdf file containing atmospheric history of CFCs
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 3.3 , NEMO Consortium (2010)
-   !! $Id: trcnam_cfc.F90 3294 2012-01-28 16:44:18Z rblod $ 
+   !! $Id: trcnam_cfc.F90 3294 2012-01-28 16:44:18Z rblod $
    !! Software governed by the CeCILL licence (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 
@@ -33,10 +34,10 @@ CONTAINS
    SUBROUTINE trc_nam_cfc
       !!-------------------------------------------------------------------
       !!                  ***  ROUTINE trc_nam_cfc  ***
-      !!                 
+      !!
       !! ** Purpose :   Definition some run parameter for CFC model
       !!
-      !! ** Method  :   Read the namcfc namelist and check the parameter 
+      !! ** Method  :   Read the namcfc namelist and check the parameter
       !!       values called at the first timestep (nittrc000)
       !!
       !! ** input   :   Namelist namcfc
@@ -45,28 +46,26 @@ CONTAINS
       INTEGER :: jl, jn
       TYPE(DIAG), DIMENSION(jp_cfc_2d) :: cfcdia2d
       !!
-      NAMELIST/namcfcdate/ ndate_beg, nyear_res
+      NAMELIST/namcfcdate/ cfc_year_offset, cfc_nc_file
       NAMELIST/namcfcdia/  cfcdia2d     ! additional diagnostics
       !!-------------------------------------------------------------------
 
-      ndate_beg = 300101            ! default namelist value
-      nyear_res = 1950
+      nc_input_file = ''
 
       !                             ! Open namelist file
       CALL ctl_opn( numnatc, 'namelist_cfc', 'OLD', 'FORMATTED', 'SEQUENTIAL', -1, numout, .FALSE. )
-         
+
       READ( numnatc , namcfcdate )     ! read namelist
+      cfc_nc_file = nc_input_file      ! If this is blank, then the atmospheric values are expected to be
+                                       ! to be read in from a formatted text file
 
       IF(lwp) THEN                  ! control print
          WRITE(numout,*)
          WRITE(numout,*) ' trc_nam: Read namdates, namelist for CFC chemical model'
          WRITE(numout,*) ' ~~~~~~~'
-         WRITE(numout,*) '    initial calendar date (aammjj) for CFC  ndate_beg = ', ndate_beg
-         WRITE(numout,*) '    restoring time constant (year)          nyear_res = ', nyear_res
+         WRITE(numout,*) '    offset from the model year        cfc_year_offset = ', cfc_year_offset
+         WRITE(numout,*) '    netcdf file with surface values   cfc_nc_file = '    , cfc_nc_file
       ENDIF
-      nyear_beg = ndate_beg / 10000
-      IF(lwp) WRITE(numout,*) '    initial year (aa)                       nyear_beg = ', nyear_beg
-      !
 
       IF( .NOT.lk_iomput .AND. ln_diatrc ) THEN
          !
@@ -102,7 +101,7 @@ CONTAINS
       ENDIF
 
    END SUBROUTINE trc_nam_cfc
-   
+
 #else
    !!----------------------------------------------------------------------
    !!  Dummy module :                                                No CFC
@@ -110,7 +109,7 @@ CONTAINS
 CONTAINS
    SUBROUTINE trc_nam_cfc                      ! Empty routine
    END  SUBROUTINE  trc_nam_cfc
-#endif  
+#endif
 
    !!======================================================================
 END MODULE trcnam_cfc

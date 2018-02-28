@@ -34,12 +34,13 @@ MODULE par_cfc
    INTEGER, PUBLIC, PARAMETER ::   jp_cfc     =  3          !: number of passive tracers
    INTEGER, PUBLIC, PARAMETER ::   jp_cfc_2d  =  3          !: additional 2d output arrays ('key_trc_diaadd')
    INTEGER, PUBLIC, PARAMETER ::   jp_cfc_3d  =  3          !: additional 3d output arrays ('key_trc_diaadd')
-   INTEGER, PUBLIC, PARAMETER ::   jp_cfc_trd =  0          !: number of sms trends for CFC
+   INTEGER, PUBLIC, PARAMETER ::   jp_cfc_trd =  3          !: number of sms trends for CFC
 
    ! assign an index in trc arrays for each CFC prognostic variables
    INTEGER, PUBLIC, PARAMETER ::   jpc11       = jp_lc + 1   !: CFC-11
    INTEGER, PUBLIC, PARAMETER ::   jpc12       = jp_lc + 2   !: CFC-12
    INTEGER, PUBLIC, PARAMETER ::   jpsf6       = jp_lc + 3   !: SF6
+
 #else
    !!---------------------------------------------------------------------
    !!   Default     :                                       No CFC tracers
@@ -52,14 +53,14 @@ MODULE par_cfc
 #endif
 
    ! Starting/ending CFC do-loop indices (N.B. no CFC : jp_cfc0 > jp_cfc1 the do-loop are never done)
-   INTEGER, PUBLIC, PARAMETER ::   jp_cfc0     = jp_lc + 1       !: First index of CFC tracers
-   INTEGER, PUBLIC, PARAMETER ::   jp_cfc1     = jp_lc + jp_cfc  !: Last  index of CFC tracers
-   INTEGER, PUBLIC, PARAMETER ::   jp_cfc0_2d  = jp_lc_2d  + 1       !: First index of CFC tracers
-   INTEGER, PUBLIC, PARAMETER ::   jp_cfc1_2d  = jp_lc_2d  + jp_cfc_2d  !: Last  index of CFC tracers
-   INTEGER, PUBLIC, PARAMETER ::   jp_cfc0_3d  = jp_lc_3d  + 1       !: First index of CFC tracers
-   INTEGER, PUBLIC, PARAMETER ::   jp_cfc1_3d  = jp_lc_3d  + jp_cfc_3d  !: Last  index of CFC tracers
-   INTEGER, PUBLIC, PARAMETER ::   jp_cfc0_trd = jp_lc_trd + 1       !: First index of CFC tracers
-   INTEGER, PUBLIC, PARAMETER ::   jp_cfc1_trd = jp_lc_trd + jp_cfc_trd  !: Last  index of CFC tracers
+   INTEGER, PUBLIC, PARAMETER ::   jp_cfc0     = jp_lc + 1       !: First index of CFC tracers in main tracer arrays
+   INTEGER, PUBLIC, PARAMETER ::   jp_cfc1     = jp_lc + jp_cfc  !: Last  index of CFC tracers in main tracer arrays
+   INTEGER, PUBLIC, PARAMETER ::   jp_cfc0_2d  = jp_lc_2d  + 1           !: First index of CFC tracers in 2d output arrays
+   INTEGER, PUBLIC, PARAMETER ::   jp_cfc1_2d  = jp_lc_2d  + jp_cfc_2d   !: Last  index of CFC tracers in 2d output arrays
+   INTEGER, PUBLIC, PARAMETER ::   jp_cfc0_3d  = jp_lc_3d  + 1           !: First index of CFC tracers in 3d output arrays
+   INTEGER, PUBLIC, PARAMETER ::   jp_cfc1_3d  = jp_lc_3d  + jp_cfc_3d   !: Last  index of CFC tracers in 3d output arrays
+   INTEGER, PUBLIC, PARAMETER ::   jp_cfc0_trd = jp_lc_trd + 1           !: First index of CFC tracers in surface trends
+   INTEGER, PUBLIC, PARAMETER ::   jp_cfc1_trd = jp_lc_trd + jp_cfc_trd  !: Last  index of CFC tracers in surface trends
 
    !!======================================================================
 END MODULE par_cfc
