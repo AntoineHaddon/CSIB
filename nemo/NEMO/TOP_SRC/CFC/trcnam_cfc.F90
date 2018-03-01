@@ -49,7 +49,7 @@ CONTAINS
       TYPE(DIAG), DIMENSION(jp_cfc_2d) :: cfcdia2d
       TYPE(DIAG), DIMENSION(jp_cfc_3d) :: cfcdia3d
       !!
-      NAMELIST/namcfcdate/ cfc_year_offset, cfc_nc_file
+      NAMELIST/namcfcparam/ cfc_year_offset, cfc_nc_file
       NAMELIST/namcfcdia/ cfcdia2d ! additional diagnostics
       !!-------------------------------------------------------------------
 
@@ -61,8 +61,6 @@ CONTAINS
       CALL ctl_opn( numnatc, 'namelist_cfc', 'OLD', 'FORMATTED', 'SEQUENTIAL', -1, numout, .FALSE. )
 
       READ( numnatc , namcfcparam ) ! read namelist
-      ! If this is blank, then the atmospheric values are expected to be
-                                       ! to be read in from a formatted text file
 
       IF(lwp) THEN ! control print
          WRITE(numout,*)
