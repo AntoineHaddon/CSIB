@@ -47,84 +47,14 @@ MODULE trcsms_cfc
    REAL(wp), DIMENSION(5,jp_cfc) :: sca ! coefficients for schmidt number in degre Celcius
 
    ! ! coefficients for conversion
-   REAL(wp) :: xconv1 = 1.0 ! conversion from to
-   REAL(wp) :: xconv2 = 0.01/3600. ! conversion from cm/h to m/s:
-   REAL(wp) :: xconv3 = 1.0e+3 ! conversion from mol/l/atm to mol/m3/atm
-   REAL(wp) :: xconv4 = 1.0e-12 ! conversion from mol/m3/atm to mol/m3/pptv
+   REAL(wp), parameter :: xconv1 = 1.0 ! conversion from to
+   REAL(wp), parameter :: xconv2 = 0.01/3600. ! conversion from cm/h to m/s:
+   REAL(wp), parameter :: xconv3 = 1.0e+3 ! conversion from mol/l/atm to mol/m3/atm
+   REAL(wp), parameter :: xconv4 = 1.0e-12 ! conversion from mol/m3/atm to mol/m3/pptv
    REAL(wp), parameter :: kw_scale = 0.251 !< Scale factor used when calculating Schmidt number
                                             !! 0.251 is the updated Wanninkhof 2014 value
                                             !! 0.39 is the Wanninkhof 1992 values
 
-   !! * Substitutions
-   !!----------------------------------------------------------------------
-   !! *** top_substitute.h90 ***
-   !!----------------------------------------------------------------------
-   !! ** purpose : Statement function file: to be include in all passive tracer modules
-   !!----------------------------------------------------------------------
-   !! History : 1.0 ! 2004-03 (C. Ethe) Original code
-   !! 2.0 ! 2007-12 (C. Ethe, G. Madec) new architecture
-   !!----------------------------------------------------------------------
-   !!----------------------------------------------------------------------
-   !! *** domzgr_substitute.h90 ***
-   !!----------------------------------------------------------------------
-   !! ** purpose : substitute fsdep. and fse.., the vert. depth and scale
-   !! factors depending on the vertical coord. used, using CPP macro.
-   !!----------------------------------------------------------------------
-   !! History : 1.0 ! 2005-10 (A. Beckmann, G. Madec) generalisation to all coord.
-   !! 3.1 ! 2009-02 (G. Madec, M. Leclair) pure z* coordinate
-   !!----------------------------------------------------------------------
-! reference for s- or zps-coordinate (3D no time dependency)
-! z- or s-coordinate (1D or 3D + no time dependency) use reference in all cases
-   !!----------------------------------------------------------------------
-   !! NEMO/OPA 3.3 , NEMO Consortium (2010)
-   !! $Id: domzgr_substitute.h90 2528 2010-12-27 17:33:53Z rblod $
-   !! Software governed by the CeCILL licence (NEMOGCM/NEMO_CeCILL.txt)
-   !!----------------------------------------------------------------------
-   !!----------------------------------------------------------------------
-   !! *** ldfeiv_substitute.h90 ***
-   !!----------------------------------------------------------------------
-   !! ** purpose : substitute fsaei. the eddy induced velocity coeff.
-   !! with a constant or 1D or 2D or 3D array, using CPP macro.
-   !!----------------------------------------------------------------------
-   !!----------------------------------------------------------------------
-   !! NEMO/OPA 3.3 , NEMO Consortium (2010)
-   !! $Id: ldfeiv_substitute.h90 2528 2010-12-27 17:33:53Z rblod $
-   !! Software governed by the CeCILL licence (NEMOGCM/NEMO_CeCILL.txt)
-   !!----------------------------------------------------------------------
-! 'traldf_c2d' : eiv: 2D coefficient
-   !!----------------------------------------------------------------------
-   !! *** ldftra_substitute.h90 ***
-   !!----------------------------------------------------------------------
-   !! ** purpose : substitute fsaht. the eddy diffusivity coeff.
-   !! with a constant or 1D or 2D or 3D array, using CPP macro.
-   !!----------------------------------------------------------------------
-   !!----------------------------------------------------------------------
-   !! NEMO/OPA 3.3 , NEMO Consortium (2010)
-   !! $Id: ldftra_substitute.h90 3294 2012-01-28 16:44:18Z rblod $
-   !! Software governed by the CeCILL licence (NEMOGCM/NEMO_CeCILL.txt)
-   !!----------------------------------------------------------------------
-! 'key_traldf_c2d' : aht: 2D coefficient
-   !!----------------------------------------------------------------------
-   !! *** vectopt_loop_substitute ***
-   !!----------------------------------------------------------------------
-   !! ** purpose : substitute the inner loop starting and inding indices
-   !! to allow unrolling of do-loop using CPP macro.
-   !!----------------------------------------------------------------------
-   !!----------------------------------------------------------------------
-   !! NEMO/OPA 3.3 , NEMO Consortium (2010)
-   !! $Id: vectopt_loop_substitute.h90 2528 2010-12-27 17:33:53Z rblod $
-   !! Software governed by the CeCILL licence (NEMOGCM/NEMO_CeCILL.txt)
-   !!----------------------------------------------------------------------
-   !!----------------------------------------------------------------------
-   !! NEMO/TOP 3.3 , NEMO Consortium (2010)
-   !! $Id: top_substitute.h90 2528 2010-12-27 17:33:53Z rblod $
-   !! Software governed by the CeCILL licence (NEMOGCM/NEMO_CeCILL.txt)
-   !!----------------------------------------------------------------------
-   !!----------------------------------------------------------------------
-   !! NEMO/TOP 3.3 , NEMO Consortium (2010)
-   !! $Id: trcsms_cfc.F90 3294 2012-01-28 16:44:18Z rblod $
-   !! Software governed by the CeCILL licence (NEMOGCM/NEMO_CeCILL.txt)
-   !!----------------------------------------------------------------------
 CONTAINS
    SUBROUTINE trc_sms_cfc( kt )
       !!----------------------------------------------------------------------
@@ -267,8 +197,10 @@ CONTAINS
            CALL iom_put( "qtrSF6" , qtr_cfc (:,:,3) )
            CALL iom_put( "qintSF6" , qint_cfc(:,:,3) )
         ELSE
-           trc2d(:,:,jp_cfc0_2d ) = qtr_cfc (:,:,1)
-           trc2d(:,:,jp_cfc0_2d + 1) = qint_cfc(:,:,1)
+           DO jl = 1, jp_cfc
+             trc2d(:,:,jp_cfc0_2d + 2*jl-2 ) = qtr_cfc (:,:,jl)
+             trc2d(:,:,jp_cfc0_2d + 2*jl-1 ) = qint_cfc(:,:,jl)
+           ENDDO
         END IF
         !
       END IF

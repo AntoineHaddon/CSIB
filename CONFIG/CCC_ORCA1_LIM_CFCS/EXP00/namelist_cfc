@@ -9,10 +9,10 @@
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 !              !    name   !           title of the field          !     units      !
 !              !           !                                       !                !  
-   cfcdia2d(1) = 'C11flux ' , 'CFC-11 Surface Flux                 ',  'molC/m2/s   '
-   cfcdia2d(2) = 'C12flux ' , 'CFC-12 Surface Flux                 ',  'molC/m2/s   '
-   cfcdia2d(3) = 'SF6flux ' , 'SF6 Surface Flux                    ',  'molC/m2/s   '
-   cfcdia3d(1) = 'cfc11   ' , 'CFC-11 concentration                ',  'molC/m3     '
-   cfcdia3d(2) = 'cfc12   ' , 'CFC-12 concetrnation                ',  'molC/m3     '
-   cfcdia3d(3) = 'sf6     ' , 'SF6i concentration                  ',  'molC/m3     '
+   cfcdia2d(1) = 'C11qtr  ' , 'CFC-11 surface flux                 ',  'mol/m2/s    '
+   cfcdia2d(2) = 'C11qint ' , 'CFC-11 integrated surface flux      ',  'mol/m2      '
+   cfcdia2d(3) = 'C12qtr  ' , 'CFC-12 surface flux                 ',  'mol/m2/s    '
+   cfcdia2d(4) = 'C12qint ' , 'CFC-12 integrated surface flux      ',  'mol/m2      '
+   cfcdia2d(5) = 'SF6qtr  ' , 'SF6 surface flux                    ',  'mol/m2/s    '
+   cfcdia2d(6) = 'SF6fint ' , 'SF6 integrated surface lux          ',  'mol/m2      '
 /

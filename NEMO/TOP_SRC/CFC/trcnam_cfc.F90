@@ -50,7 +50,7 @@ CONTAINS
       TYPE(DIAG), DIMENSION(jp_cfc_3d) :: cfcdia3d
       !!
       NAMELIST/namcfcdate/ cfc_year_offset, cfc_nc_file
-      NAMELIST/namcfcdia/ cfcdia2d, cfcdia3d ! additional diagnostics
+      NAMELIST/namcfcdia/ cfcdia2d ! additional diagnostics
       !!-------------------------------------------------------------------
 
       ! If this is blank, then the atmospheric values are expected to be
@@ -82,12 +82,6 @@ CONTAINS
             WRITE(cfcdia2d(jl)%lname,'("2D DIAGNOSTIC NUMBER ",I2)') jl ! long name
             cfcdia2d(jl)%units = ' ' ! units
          END DO
-         ! Interior concentrations
-         DO jl = 1, jp_cfc_3d
-            WRITE(cfcdia2d(jl)%sname,'("3D_",I1)') jl ! short name
-            WRITE(cfcdia2d(jl)%lname,'("3D DIAGNOSTIC NUMBER ",I2)') jl ! long name
-            cfcdia2d(jl)%units = ' ' ! units
-         END DO
 
          REWIND( numnatc ) ! read natrtd
          READ ( numnatc, namcfcdia )
@@ -98,12 +92,6 @@ CONTAINS
             ctrc2l(jn) = TRIM( cfcdia2d(jl)%lname )
             ctrc2u(jn) = TRIM( cfcdia2d(jl)%units )
          END DO
-         DO jl = 1, jp_cfc_3d
-            jn = jp_cfc0_3d + jl - 1
-            ctrc3d(jn) = TRIM( cfcdia3d(jl)%sname )
-            ctrc3l(jn) = TRIM( cfcdia3d(jl)%lname )
-            ctrc3u(jn) = TRIM( cfcdia3d(jl)%units )
-         END DO
 
          IF(lwp) THEN ! control print
             WRITE(numout,*)
@@ -112,11 +100,6 @@ CONTAINS
                jn = jp_cfc0_2d + jl - 1
                WRITE(numout,*) '  2d diag nb : ', jn, '    short name : ', ctrc2d(jn), &
                  & '  long name  : ', ctrc2l(jn), '   unit : ', ctrc2u(jn)
-            END DO
-            DO jl = 1, jp_cfc_3d
-               jn = jp_cfc0_3d + jl - 1
-               WRITE(numout,*) '  3d diag nb : ', jn, '    short name : ', ctrc3d(jn), &
-                 & '  long name  : ', ctrc3l(jn), '   unit : ', ctrc3u(jn)
             END DO
             WRITE(numout,*) ' '
          ENDIF
