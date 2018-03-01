@@ -212,6 +212,6 @@ CONTAINS
       CALL chkerr( nf90_inq_varid(ncid, varname, varid), 'trcini_cfc', 0 )
       CALL chkerr( nf90_get_var(ncid, varid, varout), 'trcini_cfc', 0 )
 
-   END SUBROUTINE reaD_var1d
+   END SUBROUTINE read_var1d
    !!======================================================================
 END MODULE trcini_cfc

@@ -47,9 +47,10 @@ CONTAINS
       INTEGER :: numnatc
       INTEGER :: jl, jn
       TYPE(DIAG), DIMENSION(jp_cfc_2d) :: cfcdia2d
+      TYPE(DIAG), DIMENSION(jp_cfc_3d) :: cfcdia3d
       !!
       NAMELIST/namcfcdate/ cfc_year_offset, cfc_nc_file
-      NAMELIST/namcfcdia/ cfcdia2d ! additional diagnostics
+      NAMELIST/namcfcdia/ cfcdia2d, cfcdia3d ! additional diagnostics
       !!-------------------------------------------------------------------
 
       ! If this is blank, then the atmospheric values are expected to be
@@ -59,7 +60,7 @@ CONTAINS
       ! ! Open namelist file
       CALL ctl_opn( numnatc, 'namelist_cfc', 'OLD', 'FORMATTED', 'SEQUENTIAL', -1, numout, .FALSE. )
 
-      READ( numnatc , namcfcdate ) ! read namelist
+      READ( numnatc , namcfcparam ) ! read namelist
       ! If this is blank, then the atmospheric values are expected to be
                                        ! to be read in from a formatted text file
 
@@ -75,9 +76,16 @@ CONTAINS
          !
          ! Namelist namcfcdia
          ! -------------------
+         ! Surface fluxes
          DO jl = 1, jp_cfc_2d
             WRITE(cfcdia2d(jl)%sname,'("2D_",I1)') jl ! short name
             WRITE(cfcdia2d(jl)%lname,'("2D DIAGNOSTIC NUMBER ",I2)') jl ! long name
+            cfcdia2d(jl)%units = ' ' ! units
+         END DO
+         ! Interior concentrations
+         DO jl = 1, jp_cfc_3d
+            WRITE(cfcdia2d(jl)%sname,'("3D_",I1)') jl ! short name
+            WRITE(cfcdia2d(jl)%lname,'("3D DIAGNOSTIC NUMBER ",I2)') jl ! long name
             cfcdia2d(jl)%units = ' ' ! units
          END DO
 
@@ -90,14 +98,25 @@ CONTAINS
             ctrc2l(jn) = TRIM( cfcdia2d(jl)%lname )
             ctrc2u(jn) = TRIM( cfcdia2d(jl)%units )
          END DO
+         DO jl = 1, jp_cfc_3d
+            jn = jp_cfc0_3d + jl - 1
+            ctrc3d(jn) = TRIM( cfcdia3d(jl)%sname )
+            ctrc3l(jn) = TRIM( cfcdia3d(jl)%lname )
+            ctrc3u(jn) = TRIM( cfcdia3d(jl)%units )
+         END DO
 
          IF(lwp) THEN ! control print
             WRITE(numout,*)
-            WRITE(numout,*) ' Namelist : natadd'
+            WRITE(numout,*) ' Namelist : namcfcdia'
             DO jl = 1, jp_cfc_2d
                jn = jp_cfc0_2d + jl - 1
                WRITE(numout,*) '  2d diag nb : ', jn, '    short name : ', ctrc2d(jn), &
                  & '  long name  : ', ctrc2l(jn), '   unit : ', ctrc2u(jn)
+            END DO
+            DO jl = 1, jp_cfc_3d
+               jn = jp_cfc0_3d + jl - 1
+               WRITE(numout,*) '  3d diag nb : ', jn, '    short name : ', ctrc3d(jn), &
+                 & '  long name  : ', ctrc3l(jn), '   unit : ', ctrc3u(jn)
             END DO
             WRITE(numout,*) ' '
          ENDIF
