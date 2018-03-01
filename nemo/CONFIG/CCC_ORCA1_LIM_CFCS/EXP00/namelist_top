@@ -25,7 +25,10 @@
 !                !    name   !           title of the field              ! initial data ! initial data ! save   !
 !                !           !                                           !  units       ! from file    ! or not ! 
 !                !           !                                           !              ! or not       !        !
-   sn_tracer(1)  = 'agessc  ' , 'Ideal Age                              ',  'years' ,    .false.     ,  .true.  
+   sn_tracer(1)  = 'cfc11   ' , 'CFC-11 concentration                   ',  'molC/m3     .false.     ,  .true.
+   sn_tracer(2)  = 'cfc12   ' , 'CFC-12 concetrnation                   ',  'molC/m3     .false.     ,  .true. 
+   sn_tracer(3)  = 'sf6     ' , 'SF6 concentration                      ',  'molC/m3     .false.     ,  .true. 
+   sn_tracer(4)  = 'agessc  ' , 'Ideal Age                              ',  'years' ,    .false.     ,  .true.  
 
 /
 !-----------------------------------------------------------------------
