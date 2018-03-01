@@ -1,0 +1,18 @@
+!'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+&namcfcparam   ! Set parameters governing the cfc tracer module 
+!,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+    cfc_year_offset = -8000 ! The year that the cfc module sees. For example if the model year is 1000 and offset is 900, the cfc_year is 1900
+    cfc_nc_file = 'nemo_cfc_atmhist.nc'
+/
+!'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+&namcfcdia     !   additional 2D/3D tracers diagnostics 
+!,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+!              !    name   !           title of the field          !     units      !
+!              !           !                                       !                !  
+   cfcdia2d(1) = 'C11flux ' , 'CFC-11 Surface Flux                 ',  'molC/m2/s   '
+   cfcdia2d(2) = 'C12flux ' , 'CFC-12 Surface Flux                 ',  'molC/m2/s   '
+   cfcdia2d(3) = 'SF6flux ' , 'SF6 Surface Flux                    ',  'molC/m2/s   '
+   cfcdia3d(1) = 'cfc11   ' , 'CFC-11 concentration                ',  'molC/m3     '
+   cfcdia3d(2) = 'cfc12   ' , 'CFC-12 concetrnation                ',  'molC/m3     '
+   cfcdia3d(3) = 'sf6     ' , 'SF6i concentration                  ',  'molC/m3     '
+/
