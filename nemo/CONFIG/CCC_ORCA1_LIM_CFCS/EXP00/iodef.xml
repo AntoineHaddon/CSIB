@@ -286,6 +286,20 @@
         <field id="traj_group" description="floats group"       unit="none"  operation="inst(X)"  />
       </group>
 
+      <!-- ptrc on T grid -->
+
+     <group id="ptrc_T" axis_ref="deptht" grid_ref="none">
+       <field id="cfc11" description="CFC11 tracer concentration" unit="mmol/m3" grid_ref="grid_T"/>
+       <field id="cfc12" description="CFC12 tracer concentration" unit="mmol/m3" grid_ref="grid_T"/>
+       <field id="sf6"   description="SF6 tracer concentration"   unit="mmol/m3" grid_ref="grid_T"/>
+       <field id="c11qtr" description="CFC11 tracer flux" unit="mmol/m3" grid_ref="grid_T"/>
+       <field id="c12qtr" description="CFC12 tracer flux" unit="mmol/m3" grid_ref="grid_T"/>
+       <field id="sf6qtr"  description="SF6 tracer flux"   unit="mmol/m3" grid_ref="grid_T"/>
+       <field id="c11qint" description="CFC11 integrated tracer flux" unit="mmol/m3" grid_ref="grid_T"/>
+       <field id="c12qint" description="CFC12 integrated tracer flux" unit="mmol/m3" grid_ref="grid_T"/>
+       <field id="sf6qint" description="SF6 integrated tracer flux"   unit="mmol/m3" grid_ref="grid_T"/>
+     </group>
+
     </field_definition>
 
     <!-- 
