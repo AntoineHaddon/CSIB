@@ -20,12 +20,6 @@
         <field id="cfc11" description="CFC11 tracer concentration" unit="mmol/m3" axis_ref="deptht"/>
         <field id="cfc12" description="CFC12 tracer concentration" unit="mmol/m3" axis_ref="deptht"/>
         <field id="sf6"   description="SF6 tracer concentration"   unit="mmol/m3" axis_ref="deptht"/>
-        <field id="C11qtr" description="CFC11 tracer flux" unit="mol/m2/s"/>
-        <field id="C12qtr" description="CFC12 tracer flux" unit="mol/m2/s"/>
-        <field id="SF6qtr"  description="SF6 tracer flux"  unit="mol/m2/s"/>
-        <field id="C11qint" description="CFC11 integrated tracer flux" unit="mol/m2" />
-        <field id="C12qint" description="CFC12 integrated tracer flux" unit="mol/m2" />
-        <field id="SF6qint" description="SF6 integrated tracer flux"   unit="mol/m2" />
         <field id="agessc"       description="Ideal age"                                 unit="years" axis_ref="deptht"   />
         <field id="toce"         description="temperature"                               unit="degC" axis_ref="deptht"   />
        	<field id="soce"         description="salinity"                                  unit="psu"  axis_ref="deptht"   />
@@ -296,8 +290,13 @@
       </group>
 
       <!-- ptrc on T grid -->
-
-     <group id="ptrc_T" axis_ref="none" grid_ref="grid_T">
+     <group id="diad_T" axis_ref="none" grid_ref="grid_T">
+        <field id="CFC11qtr" description="CFC11 tracer flux" unit="mol/m2/s"/>
+        <field id="CFC11qint" description="CFC11 integrated tracer flux" unit="mol/m2" />
+        <field id="CFC12qtr" description="CFC12 tracer flux" unit="mol/m2/s"/>
+        <field id="CFC12qint" description="CFC12 integrated tracer flux" unit="mol/m2" />
+        <field id="SF6qtr"  description="SF6 tracer flux"  unit="mol/m2/s"/>
+        <field id="SF6qint" description="SF6 integrated tracer flux"   unit="mol/m2" />
      </group>
 
     </field_definition>
@@ -325,6 +324,11 @@
       </group>
       
       <group id="6h" output_freq="21600"  output_level="10" enabled=".TRUE.">                      <!-- 6h files -->
+        	<file id="1m_grid_T" name="auto" description="ocean T grid variables" >
+                  <field ref="cfc11"           />
+                  <field ref="cfc12"           />
+                  <field ref="sf6"           />
+        	</file>   
       </group>
       
       <group id="1d" output_freq="86400"  output_level="10" enabled=".TRUE.">                      <!-- 1d files -->
@@ -339,18 +343,6 @@
       
       <group id="1m" output_freq="-1"     output_level="10" enabled=".TRUE.">                      <!-- real monthly files -->
 
-	<file id="1m_grid_T" name="auto" description="ocean T grid variables" >
-          <field ref="toce"         name="votemper"  /> 
-          <field ref="soce"         name="vosaline"  />
-          <field ref="ssh"          name="sossheig"  />
-          <field ref="empmr"        name="sowaflup"  />
-          <field ref="qt"           name="sohefldo"  />
-          <field ref="mldr10_1"     name="somxl010"  />
-          <field ref="ice_cover"    name="soicecov"  />
-          <field ref="erp"          name="sowafldp"  />
-          <field ref="mlddzt"       name="sothedep"  />
-          <field ref="agessc"           />
-	</file>   
 
         <file id="1m_grid_U" name="auto" description="ocean U grid variables" >
           <field ref="uoce"         name="vozocrtx"  />
