@@ -31,6 +31,8 @@ MODULE trcsms_cfc
    PUBLIC trc_sms_cfc ! called in ???
    PUBLIC trc_sms_cfc_alloc ! called in trcini_cfc.F90
 
+   #include "domzgr_substitute.h90"
+
    INTEGER , PUBLIC, PARAMETER :: jphem = 2 ! parameter for the 2 hemispheres
    INTEGER , PUBLIC :: jpyear ! Number of years read in CFC1112 file
    INTEGER , PUBLIC :: cfc_year_offset ! Offset from model year.
@@ -190,12 +192,12 @@ CONTAINS
       IF( ln_diatrc ) THEN
         !
         IF( lk_iomput ) THEN
-           CALL iom_put( "qtrCFC11" , qtr_cfc (:,:,1) )
-           CALL iom_put( "qintCFC11" , qint_cfc(:,:,1) )
-           CALL iom_put( "qtrCFC12" , qtr_cfc (:,:,2) )
-           CALL iom_put( "qintCFC12" , qint_cfc(:,:,2) )
-           CALL iom_put( "qtrSF6" , qtr_cfc (:,:,3) )
-           CALL iom_put( "qintSF6" , qint_cfc(:,:,3) )
+           CALL iom_put( "CFC11qtr" , qtr_cfc (:,:,1) )
+           CALL iom_put( "CFC11qint" , qint_cfc(:,:,1) )
+           CALL iom_put( "CFC12qtr" , qtr_cfc (:,:,2) )
+           CALL iom_put( "CFC12qint" , qint_cfc(:,:,2) )
+           CALL iom_put( "SF6qtr" , qtr_cfc (:,:,3) )
+           CALL iom_put( "SF6qint" , qint_cfc(:,:,3) )
         ELSE
            DO jl = 1, jp_cfc
              trc2d(:,:,jp_cfc0_2d + 2*jl-2 ) = qtr_cfc (:,:,jl)
