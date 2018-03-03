@@ -103,7 +103,6 @@ end_reorder_list
 
     # Add relevant restarts to rebuild_list
     end_step=$(echo $nn_itend | awk '{printf "%8.8d",$1}')
-    if [ $pisces_offline -eq 0 ]; then
         pfx=${cn_exp}_${end_step}_restart
         n_rbnl=$(echo $n_rebuild|awk '{printf "%2.2d",$1}')
         rbnl_file=nam_rebuild$n_rbnl
@@ -123,7 +122,6 @@ end_reorder_list
         echo "/"                     >> $rbnl_file
         rebuild_list+=" $pfx"
         n_rebuild+=1
-    fi
     if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
         pfx=${cn_exp}_${end_step}_restart_trc
         n_rbnl=$(echo $n_rebuild|awk '{printf "%2.2d",$1}')
