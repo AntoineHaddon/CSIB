@@ -1047,7 +1047,7 @@ echo "#################### Start NEMO pre-processing #################"
   [ -s K1rowdrg.nc ]            || acc_cp K1rowdrg.nc            $nemo_K1rowdrg
   [ -s Eddyengf.nc ]            || acc_cp Eddyengf.nc            $nemo_Eddyengf
 #  [ -s geothermal_heating.nc ]  || acc_cp geothermal_heating.nc  $nemo_geothermal_heating
-#  [ -s runoff_core_monthly.nc ] || acc_cp runoff_core_monthly.nc $nemo_runoff_core_monthly
+  [ -s runoff_core_monthly.nc ] || acc_cp runoff_core_monthly.nc $nemo_runoff_core_monthly
 #  [ -s sss_data.nc ]            || acc_cp sss_data.nc            $nemo_sss_data
 #  [ -s sst_data.nc ]            || acc_cp sst_data.nc            $nemo_sst_data
   [ -s chlorophyll.nc ]         || acc_cp chlorophyll.nc         $nemo_chlorophyll
