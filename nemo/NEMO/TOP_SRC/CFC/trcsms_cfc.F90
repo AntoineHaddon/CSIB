@@ -31,7 +31,7 @@ MODULE trcsms_cfc
    PUBLIC trc_sms_cfc ! called in ???
    PUBLIC trc_sms_cfc_alloc ! called in trcini_cfc.F90
 
-   #include "domzgr_substitute.h90"
+!   #include "domzgr_substitute.h90"
 
    INTEGER , PUBLIC, PARAMETER :: jphem = 2 ! parameter for the 2 hemispheres
    INTEGER , PUBLIC :: jpyear ! Number of years read in CFC1112 file
@@ -88,7 +88,7 @@ CONTAINS
       REAL(wp) :: zsch ! schmidt number
       REAL(wp) :: zca_cfc ! concentration at equilibrium
       REAL(wp) :: zak_cfc ! transfert coefficients
-      REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: zpp_cfc ! atmospheric partial pressure of CFC
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zpp_cfc ! atmospheric partial pressure of CFC
       REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: zpatm ! atmospheric function
       !!----------------------------------------------------------------------
       !
@@ -99,7 +99,7 @@ CONTAINS
       IF( ierr > 0 ) THEN
          CALL ctl_stop( 'trc_sms_cfc: unable to allocate zpatm array' ) ; RETURN
       ENDIF
-      ALLOCATE( zpatm(jpi,jpj,jp_cfc), STAT=ierr )
+      ALLOCATE( zpp_cfc(jpi,jpj,jp_cfc), STAT=ierr )
       IF( ierr > 0 ) THEN
          CALL ctl_stop( 'trc_sms_cfc: unable to allocate zpp_cfc array' ) ; RETURN
       ENDIF
@@ -198,13 +198,13 @@ CONTAINS
         IF( lk_iomput ) THEN
            CALL iom_put( "CFC11qtr" , qtr_cfc (:,:,1) )
            CALL iom_put( "CFC11qint" , qint_cfc(:,:,1) )
-           CALL iom_put( "CFC11patm" , zpp_atm(:,:,1) )
+           CALL iom_put( "CFC11patm" , zpp_cfc(:,:,1) )
            CALL iom_put( "CFC12qtr" , qtr_cfc (:,:,2) )
            CALL iom_put( "CFC12qint" , qint_cfc(:,:,2) )
-           CALL iom_put( "CFC12patm" , zpp_atm(:,:,2) )
+           CALL iom_put( "CFC12patm" , zpp_cfc(:,:,2) )
            CALL iom_put( "SF6qtr" , qtr_cfc (:,:,3) )
            CALL iom_put( "SF6qint" , qint_cfc(:,:,3) )
-           CALL iom_put( "SF6patm" , zpp_atm(:,:,3) )
+           CALL iom_put( "SF6patm" , zpp_cfc(:,:,3) )
         ELSE
            DO jl = 1, jp_cfc
              trc2d(:,:,jp_cfc0_2d + 2*jl-2 ) = qtr_cfc (:,:,jl)
