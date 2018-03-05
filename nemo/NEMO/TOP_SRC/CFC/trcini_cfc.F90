@@ -54,6 +54,7 @@ CONTAINS
       IF(lwp) WRITE(numout,*)
       IF(lwp) WRITE(numout,*) ' trc_ini_cfc: initialisation of CFC chemical model'
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~'
+      IF( trc_sms_cfc_alloc() /= 0 ) CALL ctl_stop( 'STOP', 'trc_ini_cfc: unable to allocate CFC arrays' )
 
       ! If cfc_nc_file is not blank then read from a netcdf file
       read_nc = ( TRIM(cfc_nc_file) /= '' )
@@ -135,7 +136,6 @@ CONTAINS
       IF( ierr > 0 ) THEN
          CALL ctl_stop( 'trc_ini_cfc: unable to allocate p_cfc array' ) ; RETURN
       ENDIF
-      IF( trc_sms_cfc_alloc() /= 0 ) CALL ctl_stop( 'STOP', 'trc_ini_cfc: unable to allocate CFC arrays' )
 
       REWIND(inum)
 
