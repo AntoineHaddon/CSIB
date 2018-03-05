@@ -34,7 +34,7 @@ MODULE par_cfc
    !!---------------------------------------------------------------------
    LOGICAL, PUBLIC, PARAMETER :: lk_cfc = .TRUE. !: CFC flag
    INTEGER, PUBLIC, PARAMETER :: jp_cfc = 3 !: number of passive tracers
-   INTEGER, PUBLIC, PARAMETER :: jp_cfc_2d = 6 !: additional 2d output arrays ('key_trc_diaadd')
+   INTEGER, PUBLIC, PARAMETER :: jp_cfc_2d = 9 !: additional 2d output arrays ('key_trc_diaadd')
    INTEGER, PUBLIC, PARAMETER :: jp_cfc_3d = 0 !: additional 3d output arrays ('key_trc_diaadd')
    INTEGER, PUBLIC, PARAMETER :: jp_cfc_trd = 3 !: number of sms trends for CFC
 
