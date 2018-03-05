@@ -291,12 +291,15 @@
 
       <!-- ptrc on T grid -->
      <group id="diad_T" axis_ref="none" grid_ref="grid_T">
-        <field id="CFC11qtr" description="CFC11 tracer flux" unit="mol/m2/s"/>
+        <field id="CFC11qtr"  description="CFC11 tracer flux"            unit="mol/m2/s"/>
         <field id="CFC11qint" description="CFC11 integrated tracer flux" unit="mol/m2" />
-        <field id="CFC12qtr" description="CFC12 tracer flux" unit="mol/m2/s"/>
+        <field id="CFC11patm" description="CFC11 atmospheric partial pressure" unit="ppt" />
+        <field id="CFC12qtr"  description="CFC12 tracer flux"            unit="mol/m2/s"/>
         <field id="CFC12qint" description="CFC12 integrated tracer flux" unit="mol/m2" />
-        <field id="SF6qtr"  description="SF6 tracer flux"  unit="mol/m2/s"/>
-        <field id="SF6qint" description="SF6 integrated tracer flux"   unit="mol/m2" />
+        <field id="CFC12patm" description="CFC12 atmospheric partial pressure" unit="ppt" />
+        <field id="SF6qtr"    description="SF6 tracer flux"              unit="mol/m2/s"/>
+        <field id="SF6qint"   description="SF6 integrated tracer flux"   unit="mol/m2" />
+        <field id="SF6patm"   description="SF6 atmospheric partial pressure" unit="ppt" />
      </group>
 
     </field_definition>
@@ -324,11 +327,6 @@
       </group>
       
       <group id="6h" output_freq="21600"  output_level="10" enabled=".TRUE.">                      <!-- 6h files -->
-        	<file id="1m_grid_T" name="auto" description="ocean T grid variables" >
-                  <field ref="cfc11"           />
-                  <field ref="cfc12"           />
-                  <field ref="sf6"           />
-        	</file>   
       </group>
       
       <group id="1d" output_freq="86400"  output_level="10" enabled=".TRUE.">                      <!-- 1d files -->
@@ -379,6 +377,20 @@
           <field ref="qns_io_cea"   name="iicenflx" />
           <field ref="snowpre"      name="isnowpre" />
         </file>
+
+	<file id="1m_grid_T" name="auto" description="ocean T grid variables" >
+	  <field ref="toce"         name="votemper"  />
+	  <field ref="soce"         name="vosaline"  />
+          <field ref="sst"          name="sosstsst"  />
+          <field ref="ssh"          name="sossheig"  />
+          <field ref="empmr"        name="sowaflup"  />
+          <field ref="qt"           name="sohefldo"  />
+          <field ref="mldr10_1"     name="somxl010"  />
+          <field ref="agessc"           />
+          <field ref="cfc11"           />
+          <field ref="cfc12"           />
+          <field ref="sf6"             />
+        </file>   
 
       </group>
 
