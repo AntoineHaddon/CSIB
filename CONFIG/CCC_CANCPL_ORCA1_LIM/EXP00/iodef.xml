@@ -387,21 +387,17 @@
           <field ref="erp"          name="sowafldp"  />
           <field ref="mlddzt"       name="sothedep"  />
           <field ref="agessc"           />
-          <field ref="hflx_ice_cea"           />
-          <field ref="snow_ao_cea"           />
           <field ref="qns"           />
           <field ref="qsr"           />
           <field ref="qrp"           />
-          <field ref="snow_ao_cea"           />
           <field ref="snow_ai_cea"           />
-          <field ref="isnwmlt_cea"           />
+          <field ref="snow_ao_cea"           />
           <field ref="hflx_rain_cea"           />
           <field ref="hflx_snow_cea"           />
           <field ref="hflx_ice_cea"           />
           <field ref="hflx_rnf_cea"           />
+          <field ref="isnwmlt_cea"           />
           <field ref="snowmel_cea"           />
-          <field ref=""           />
-          <field ref=""           />
         </file>
 
         <file id="1m_grid_U" name="auto" description="ocean U grid variables" >
