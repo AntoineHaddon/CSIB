@@ -995,3 +995,17 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
     nn_ittrjfrq = 20                 ! Output/input frequency
     ln_trj_spl = .false.             ! Handling trajectory at simple precision
 /
+!-----------------------------------------------------------------------
+&namsbc_o1o2 ! heat fluxes read from a file
+!-----------------------------------------------------------------------
+!            !  file  ! frequency (hours) !  variable      ! time intep !  clim   ! 'yearly' or ! weights  ! rotation  !
+!            !  name  !  (if <0  months)  !   name         !   (T/F)    !  (T/F)  ! 'monthly'   ! filename ! pairs     !
+   sn_o1     =  'o1' ,         -1     ,    'heat_flux_anom',  .false.   , .true.  ,  'yearly'   ,  ''       , ''        )
+   sn_o2     =  'o2' ,         -1     ,    'heat_flux_anom',  .false.   , .true.  ,  'yearly'   ,  ''       , ''        )
+
+   cn_dir = './'   ! root directory for the location of the trace file(s)
+   ln_o1  = .true. ! tracer o1 read from a file (T) or not (uniform fluxes of 1 W/m2)
+   ln_o2  = .true. ! tracer o2 read from a file (T) or not (uniform fluxes of 2 W/m2)
+/
+    
+    

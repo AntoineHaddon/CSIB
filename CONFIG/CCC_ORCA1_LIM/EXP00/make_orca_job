@@ -296,6 +296,8 @@ debug=off
   nemo_sss_data=nemo_3.4_orca1_sss_1m_orca1.nc
   nemo_chlorophyll=nemo_3.4_orca1_chlorophyll-orca1_1m.nc
   nemo_subbains=nemo_3.4_orca1_basinmask_050308_ukmo_modified.nc
+  nemo_o1=urdy_fafmip_hfds_orca1.nc
+  nemo_o2=urdy_fafmip_hfds_orca1.nc
 
   nemo_data_1m_potential_temperature_nomask=nemo_3.4_orca1_potemp_1m_z46_nomask.nc
   nemo_data_1m_salinity_nomask=nemo_3.4_orca1_salin_1m_z46_nomask.nc
