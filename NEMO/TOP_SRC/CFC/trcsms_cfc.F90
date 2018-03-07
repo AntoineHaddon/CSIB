@@ -109,7 +109,7 @@ CONTAINS
       nyears = SIZE(p_cfc_year(:))
       ! Calculate the given year that the CFC module sees
       cfc_year = nyear + cfc_year_offset
-      yearfrac = ( nsec_year / 86400. ) / ( 86400. * nyear_len(1) )
+      yearfrac = ( nsec_year ) / ( 86400. * nyear_len(1) )
       ! Check to make sure that the current 'cfc_year' is within the observational range
       ! and set time interpolation factors keeping in mind that atmospheric values are
       ! annual averages with time at the middle of the year. If earlier than the record,
