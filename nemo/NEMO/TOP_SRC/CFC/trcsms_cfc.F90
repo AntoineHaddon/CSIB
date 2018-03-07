@@ -103,7 +103,7 @@ CONTAINS
       IF( ierr > 0 ) THEN
          CALL ctl_stop( 'trc_sms_cfc: unable to allocate zpp_cfc array' ) ; RETURN
       ENDIF
-      IF( kt == nittrc000 ) CALL trc_cfc_cst
+      CALL trc_cfc_cst
       ! Temporal interpolation
       ! ----------------------
       nyears = SIZE(p_cfc_year(:))
@@ -117,30 +117,22 @@ CONTAINS
       ! the record, then its assumed to be equal to the last entry
       IF ( cfc_year < p_cfc_year(1) ) THEN
         iyear_beg = 1
-        iyear_end = 1
         wt1 = 1.
-        wt2 = 0.
       ELSEIF ( cfc_year > p_cfc_year(nyears) ) THEN
         iyear_beg = nyears
-        iyear_end = nyears
-        wt1 = 0.
-        wt2 = 0.
+        wt1 = 1.
       ELSEIF ( yearfrac > 0.5 ) THEN
         iyear_beg = cfc_year - FLOOR(p_cfc_year(1)) + 1
-        iyear_end = iyear_beg + 1
-        wt1 = yearfrac
-        wt2 = 1. - yearfrac
+        wt1 = 1.5 - yearfrac
       ELSEIF ( yearfrac < 0.5 ) THEN
         iyear_beg = cfc_year-FLOOR(p_cfc_year(1))
-        iyear_end = iyear_beg + 1
-        wt1 = 1. - yearfrac
-        wt2 = yearfrac
+        wt1 = 0.5 - yearfrac
       ELSEIF ( yearfrac == 0.5 ) THEN
         iyear_beg = cfc_year - FLOOR(p_cfc_year(1)) + 1
-        iyear_end = iyear_beg
         wt1 = 1.
-        wt2 = 0.
       ENDIF
+      wt2 = 1. - wt1
+      iyear_end = iyear_beg + 1
       ! !------------!
       DO jl = 1, jp_cfc ! CFC loop !
          ! !------------!
@@ -174,7 +166,7 @@ CONTAINS
                zca_cfc = xconv1 * zpp_cfc(ji,jj,jl) * zsol * tmask(ji,jj,1)
                ! Computation of speed transfert
                ! Schmidt number
-               zsch = calc_schmidt_number(5, sca(jl,:), tsn(ji, jj, 1, jp_tem))
+               zsch = calc_schmidt_number(5, sca(:,jl), tsn(ji, jj, 1, jp_tem))
                ! speed transfert : formulae of wanninkhof 1992
                zv2 = wndm(ji,jj) * wndm(ji,jj)
                zsch = zsch / 660.
