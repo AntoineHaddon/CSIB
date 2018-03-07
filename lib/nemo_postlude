@@ -158,7 +158,7 @@ end_reorder_list
 
     # Rename mesh_mask.nc if it was created
     # This file will be added to the restart archive if it exists
-    #[ -s mesh_mask.nc ] && mv mesh_mask.nc rs_mesh_mask.nc
+    [ -s mesh_mask.nc ] && mv mesh_mask.nc rs_mesh_mask.nc
 
     # Clean up
     if [ -s mesh_mask_0000.nc ]; then
