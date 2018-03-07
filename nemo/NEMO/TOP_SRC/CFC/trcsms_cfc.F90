@@ -196,15 +196,15 @@ CONTAINS
       IF( ln_diatrc ) THEN
         !
         IF( lk_iomput ) THEN
-           CALL iom_put( "CFC11qtr" , qtr_cfc (:,:,1) )
-           CALL iom_put( "CFC11qint" , qint_cfc(:,:,1) )
-           CALL iom_put( "CFC11patm" , zpp_cfc(:,:,1) )
-           CALL iom_put( "CFC12qtr" , qtr_cfc (:,:,2) )
-           CALL iom_put( "CFC12qint" , qint_cfc(:,:,2) )
-           CALL iom_put( "CFC12patm" , zpp_cfc(:,:,2) )
-           CALL iom_put( "SF6qtr" , qtr_cfc (:,:,3) )
-           CALL iom_put( "SF6qint" , qint_cfc(:,:,3) )
-           CALL iom_put( "SF6patm" , zpp_cfc(:,:,3) )
+           CALL iom_put( "cfc11qtr" , qtr_cfc (:,:,1) )
+           CALL iom_put( "cfc11qint" , qint_cfc(:,:,1) )
+           CALL iom_put( "cfc11patm" , zpp_cfc(:,:,1) )
+           CALL iom_put( "cfc12qtr" , qtr_cfc (:,:,2) )
+           CALL iom_put( "cfc12qint" , qint_cfc(:,:,2) )
+           CALL iom_put( "cfc12patm" , zpp_cfc(:,:,2) )
+           CALL iom_put( "sf6qtr" , qtr_cfc (:,:,3) )
+           CALL iom_put( "sf6qint" , qint_cfc(:,:,3) )
+           CALL iom_put( "sf6patm" , zpp_cfc(:,:,3) )
         ELSE
            DO jl = 1, jp_cfc
              trc2d(:,:,jp_cfc0_2d + 2*jl-2 ) = qtr_cfc (:,:,jl)
