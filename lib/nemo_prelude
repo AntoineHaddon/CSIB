@@ -1205,4 +1205,6 @@ echo "#################### Start NEMO pre-processing #################"
     fi
   fi 
 
+  rm -f mesh_mask*.nc
+
 echo "#################### Stop NEMO pre-processing #################"
