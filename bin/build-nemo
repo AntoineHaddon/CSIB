@@ -159,7 +159,7 @@ printf "        build-nemo       \n"
 printf "------------------- \n"
 
 # process command line options
-while getopts j:n:m:r:hktvx opt
+while getopts j:n:m:r:hktvxd opt
 do
   case $opt in
     m) nemo_arch="$OPTARG" ;;
@@ -321,7 +321,7 @@ if [ $build_nemo_exe -eq 1 ]; then
   case $nemo_arch in
     XC40_CCCma_cray-pe*) env='cray' ;;
     XC40_CCCma_intel-pe*) env='intel' ;;
-    *) bail "Unknown ARCH - we don't know if this is the Cray or Intel PE" ;;
+    *) bail "Unknown ARCH $(nemo_arch) - we don't know if this is the Cray or Intel PE" ;;
   esac
 
   if [ $env = 'cray' ]; then
