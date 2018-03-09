@@ -210,12 +210,13 @@ for arg in "$@"; do
 done
 
 # When debugging is requested, the behaviour of this script needs to be adjusted accordingly
-if [ $debug -eq 1 ] then
+if [ $debug -eq 1 ]; then
   # Need to retain the postprocessed source files and store them in a runtime accessible directory
   keep_tmpd=1
-  CCRNTMP=./tmp # Assumed to be in the RUNID directory
+  CCRNTMP=$PWD/tmp # Assumed to be in the RUNID directory
   [ ! -d $CCRNTMP ] && mkdir $CCRNTMP # This directory probably does not exist
-  nemo_arch=$(nemo_arch)-debug # Use a version of the requested architecture with debug options
+  nemo_arch="$nemo_arch-debug" # Use a version of the requested architecture with debug options
+  if [ $build_nemo_exe -eq 1 ] && nemo_exe="$nemo_exe-debug" # Make sure not to clobber an existing optimised executable
 else
   # CCRNTMP must be defined
   CCRNTMP=/tmp
