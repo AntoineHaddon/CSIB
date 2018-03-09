@@ -18,6 +18,7 @@ MODULE trcsms_cfc
    !!----------------------------------------------------------------------
    USE oce_trc ! Ocean variables
    USE par_trc ! TOP parameters
+   USE sbc_oce, only : fr_i ! Fraction of surface covered by ice
    USE trc ! TOP variables
    USE trdmod_oce
    USE trdmod_trc
@@ -170,7 +171,7 @@ CONTAINS
                ! speed transfert : formulae of wanninkhof 1992
                zv2 = wndm(ji,jj) * wndm(ji,jj)
                zsch = zsch / 660.
-               zak_cfc = ( kw_scale * xconv2 * zv2 / SQRT(zsch) ) * tmask(ji,jj,1)
+               zak_cfc = (( kw_scale * xconv2 * zv2 / SQRT(zsch) )*(1.-fr_i(ji,jj))) * tmask(ji,jj,1)
                ! Input function : speed *( conc. at equil - concen at surface )
                ! trn in pico-mol/l idem qtr; ak in en m/a
                qtr_cfc(ji,jj,jl) = -zak_cfc * ( trb(ji,jj,1,jn) - zca_cfc ) &
