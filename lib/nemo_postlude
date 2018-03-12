@@ -38,28 +38,6 @@ cat >reorder_list << 'end_reorder_list'
 end_reorder_list
   fi
 
-  rtd_staging() {
-    # Copy a single rtd file to a local staging directory
-    # Usage: rtd_staging local_rtd_file remote_rtd_file
-    [ -z "$1" ] && bail "rtd_staging requires a file name as the first arg."
-    [ -z "$2" ] && bail "rtd_staging requires a file name as the second arg."
-    [ -e $1 ] || bail "rtd_staging: File --> $1 <-- is missing."
-
-    # Do not abort if the copy fails
-
-    # Identify the staging directory
-    case $(uname -n|awk -F'.' '{print $1}' -) in
-      xc1*|eccc1-ppp1*) # hare or ppp1
-            rtd_staging_dir=/space/hall1/work/eccc/crd/ccrn/prod/rtd/nemo_rtd
-            ;;
-      xc2*|eccc1-ppp2*) # brooks or ppp2
-            rtd_staging_dir=/space/hall2/work/eccc/crd/ccrn/prod/rtd/nemo_rtd
-            ;;
-    esac
-
-    cp $1 $rtd_staging_dir/$2
-  }
-
   parallel_rebuild_rs_hist() {
     # Rebuild a number of NEMO restart and/or/ history file in parallel
     # The following parameters must be defined prior to invoking this function
@@ -71,7 +49,7 @@ end_reorder_list
     rebuild_list=""
     declare -i n_rebuild=0
 
-    if [ $nemo_save_hist -eq 1 ] || [ $nemo_rtd -eq 1 ]; then
+    if [ $nemo_save_hist -eq 1 ] ; then
       # Define the list of history files to rebuild
       for sfx in ${nemo_hist_file_suffix_list}; do
         for freq in ${nemo_hist_file_freq_list}; do
@@ -145,6 +123,7 @@ end_reorder_list
         echo "    ndomain=$jpnij"    >> $rbnl_file
         echo "/"                     >> $rbnl_file
         rebuild_list+=" $pfx"
+        hist_file_list+=" $pfx"
         n_rebuild+=1
     fi
 
@@ -230,28 +209,6 @@ end_reorder_list
   # where NNNNNNNN is the time step (I8.8) and MMMM is the MPI task number (I4.4)
   cn_trcrst_out="restart_trc"
 
-  # Determine the year and month of the current restart to be saved below
-  # This restart will be for the last month of the current run
-  nemo_rsout_year=$nemo_stop_year
-  nemo_rsout_mon=$nemo_stop_mon
-
-  # Determine the number of days in the last month of the previous restart
-  case $nemo_rsout_mon in
-    1|01) nemo_rsout_day=31 ;;
-    2|02) nemo_rsout_day=28 ;;
-    3|03) nemo_rsout_day=31 ;;
-    4|04) nemo_rsout_day=30 ;;
-    5|05) nemo_rsout_day=31 ;;
-    6|06) nemo_rsout_day=30 ;;
-    7|07) nemo_rsout_day=31 ;;
-    8|08) nemo_rsout_day=31 ;;
-    9|09) nemo_rsout_day=30 ;;
-      10) nemo_rsout_day=31 ;;
-      11) nemo_rsout_day=30 ;;
-      12) nemo_rsout_day=31 ;;
-       *) bail "nemo_rsout_mon=$nemo_rsout_mon is out of range" ;;
-  esac
-
   # After the job has run remove input restart files (if any)
   [ -s input_ocn_restart_file_names ] && cat input_ocn_restart_file_names | xargs rm -f
   [ -s input_ice_restart_file_names ] && cat input_ice_restart_file_names | xargs rm -f
@@ -259,23 +216,13 @@ end_reorder_list
 
   ######## Save history and restart files #######
 
-  # do_nemo_run needs to be looked at
-  do_nemo_run=${do_nemo_run:-on}
-  ToF do_nemo_run
-
   # Should we save the NEMO restart to DATAPATH
   nemo_save_rs=${nemo_save_rs:-on}
   ToF nemo_save_rs
 
-  # If nemo_rtd is true then execute the nemo run time diagnostics
-  # If nemo_rtd is true then history files need to be rebuilt
-  nemo_rtd=${nemo_rtd:=on}
-  ToF nemo_rtd
-
   # tarlist contains a list of additional files to add to the restart archive
   tarlist=''
 
-  if [ $do_nemo_run -eq 1 ]; then
 
     # The file saved_history_file_names will contain a list of saved files to be archived.
     # Since "save" will blindly transpose all file name characters to lower case before
@@ -436,26 +383,6 @@ end_reorder_list
 
     fi  # if [ $nemo_save_rs -eq 1 ]; then
 
-    # Echo ocean output to stdout, if requested
-    nemo_write_stdout=on
-    ToF nemo_write_stdout
-    if [ $nemo_write_stdout -eq 1 ]; then
-      if [ -s ocean.output ]; then
-        echo " "
-        echo "########################## ocean output ##########################"
-        echo " "
-        cat ocean.output
-      fi
-    fi
-
-  else
-    # Make sure we have the most recent restart archive name, even if do_nemo_run=off.
-    rs_out=${uxxx}_${cn_exp}_${stop_date}_restart.tar
-    # Make sure nemo_save_hist is defined
-    nemo_save_hist=on
-    ToF nemo_save_hist
-  fi
-
   ########## Save the NEMO restart ##########
 
   if [ $do_nemo_run -eq 1 -a $nemo_save_rs -eq 1 ]; then
@@ -472,4 +399,16 @@ end_reorder_list
     save NEXT_RESTART_ARC $rs_out
     release NEXT_RESTART_ARC
   fi
+
+    # Echo ocean output to stdout, if requested
+    nemo_write_stdout=on
+    ToF nemo_write_stdout
+    if [ $nemo_write_stdout -eq 1 ]; then
+      if [ -s ocean.output ]; then
+        echo " "
+        echo "########################## ocean output ##########################"
+        echo " "
+        cat ocean.output
+      fi
+    fi
 
