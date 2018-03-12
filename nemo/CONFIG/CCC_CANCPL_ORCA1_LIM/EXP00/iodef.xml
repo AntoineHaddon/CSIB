@@ -403,6 +403,10 @@
           <field ref="hflx_rnf_cea"           />
           <field ref="isnwmlt_cea"           />
           <field ref="snowmel_cea"           />
+          <field ref="hflx_qsr_tot"           />
+          <field ref="hflx_qnr_tot"           />
+          <field ref="hflx_qsr_ice"           />
+          <field ref="hflx_qns_ice"           />
         </file>
 
         <file id="1m_grid_U" name="auto" description="ocean U grid variables" >
