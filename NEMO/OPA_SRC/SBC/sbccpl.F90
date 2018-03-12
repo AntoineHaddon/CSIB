@@ -1395,6 +1395,13 @@ CONTAINS
          botmelt(:,:,:)=frcv(jpr_botm)%z3(:,:,:)
       END SELECT
 
+
+      ! Diagnostics of total heat fluxes received by NEMO from coupler
+      CALL iom_put( 'hflx_qsr_tot', qsr_tot)   ! Solar heat flux (cell average)
+      CALL iom_put( 'hflx_qns_tot', qns_tot)   ! Solar heat flux (cell average)
+      CALL iom_put( 'hflx_qsr_ice', qsr_ice(:,:,1)*zicefr(:,:))   ! Solar heat flux over sea-ice (cell average)
+      CALL iom_put( 'hflx_qns_ice', qns_ice(:,:,1)*zicefr(:,:))   ! Solar heat flux over sea-ice (cell average)
+
       CALL wrk_dealloc( jpi,jpj, zcptn, ztmp, zicefr )
       !
       IF( nn_timing == 1 )  CALL timing_stop('sbc_cpl_ice_flx')
