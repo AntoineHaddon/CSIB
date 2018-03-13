@@ -14,7 +14,7 @@
 !-----------------------------------------------------------------------
   cn_icerst_in = "restart_ice_in"
   cn_icerst_out = "restart_ice"
-   ln_limdyn     = .false.             !  ice dynamics (T) or thermodynamics only (F)
+   ln_limdyn     = .true.             !  ice dynamics (T) or thermodynamics only (F)
    ln_limdmp     = .false.            !  restoring ice thickness and fraction leads   (T => fill  namice_dmp)
    acrit         = 1.0e-06 , 1.0e-06  !  minimum lead fraction in the Northern & Southern Hemispheres
    hsndif        =  0.e0              !  computation of temperature in snow (=0.0) or not
