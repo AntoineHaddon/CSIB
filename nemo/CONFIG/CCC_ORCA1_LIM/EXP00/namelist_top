@@ -108,3 +108,15 @@
    ln_diatrc     =  .true.   !  save additional diag. (T) or not (F)
    nn_writedia   =  5475     !  time step frequency for diagnostics
 /
+!-----------------------------------------------------------------------
+&namsbc_o1o2 ! o1 & o2 heat fluxes read from files or not
+!-----------------------------------------------------------------------
+!            !  file  ! frequency (hours) !  variable      ! time intep !  clim   ! 'yearly' or ! weights  ! rotation  !
+!            !  name  !  (if <0  months)  !   name         !   (T/F)    !  (T/F)  ! 'monthly'   ! filename ! pairs     !
+   sn_o1     =  'o1' ,         -1     ,    'heat_flux_anom',  .false.   , .true.  ,  'yearly'   ,  ''       , ''       
+   sn_o2     =  'o2' ,         -1     ,    'heat_flux_anom',  .false.   , .true.  ,  'yearly'   ,  ''       , ''       
+
+   cn_dir = './'   ! root directory for the location of the trace file(s)
+   ln_o1  = .true. ! tracer o1 read from a file (T) or not (uniform fluxes of 1 W/m2)
+   ln_o2  = .true. ! tracer o2 read from a file (T) or not (uniform fluxes of 2 W/m2)
+/

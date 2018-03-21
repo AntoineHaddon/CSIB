@@ -18,6 +18,7 @@ MODULE trcsms_my_trc
    USE trdmod_trc
    USE phycst
    USE fldread         ! read input fields
+   USE sbc_oce         ! surface boundary condition: ocean fields
 
    IMPLICIT NONE
    PRIVATE
@@ -26,8 +27,6 @@ MODULE trcsms_my_trc
    PUBLIC   trc_sms_my_trc_alloc ! called by trcini_my_trc.F90 module
 
    INTEGER , PARAMETER ::   jpfld = 2   ! maximum number of files to read
-   INTEGER , PARAMETER ::   jpo1  = 1   ! index of tracer o1
-   INTEGER , PARAMETER ::   jpo2  = 2   ! index of tracer o2
    TYPE(FLD), ALLOCATABLE, DIMENSION(:) ::   sf    ! structure of input fields (file informations, fields read)
 
    !! * Substitution
@@ -52,13 +51,16 @@ CONTAINS
       !!----------------------------------------------------------------------
       !
       INTEGER, INTENT(in) ::   kt   ! ocean time-step index
-      INTEGER ::   jn   ! dummy loop index
-      REAL(wp) :: zfact = 1._wp             ! temporary scalar
+      INTEGER ::   ji, jn                       ! dummy loop index
+      INTEGER  ::  ierror                       ! return error code
+      REAL(wp) :: zfact = 1._wp                 ! temporary scalar
       REAL(wp) :: dtyrs
       CHARACTER(len=100) ::  cn_dir             ! Root directory for location of tracer files
-      TYPE(FLD_N), DIMENSION(jpfld) ::   slf_i  ! array of namelist information structures
+      TYPE(FLD_N), DIMENSION(jpo1:jpo2) :: slf_i  ! array of namelist information structures
       TYPE(FLD_N) :: sn_o1, sn_o2               ! informations about the fields to be read
-      NAMELIST/namsbc_olo2/ cn_dir, ln_o1, ln_o2, sn_o1, sn_o2
+      LOGICAL ::  ln_o1 = .FALSE. 
+      LOGICAL ::  ln_o2 = .FALSE. 
+      NAMELIST/namsbc_o1o2/ cn_dir, ln_o1, ln_o2, sn_o1, sn_o2
 !!----------------------------------------------------------------------
       !
       IF( nn_timing == 1 )  CALL timing_start('trc_sms_my_trc')
@@ -89,12 +91,12 @@ CONTAINS
          sn_o1 = FLD_N(  'o1' ,    -1     , 'heat_flux_anom',   .false.  , .true. ,   'yearly'  ,  ''       , ''        )
          sn_o2 = FLD_N(  'o2' ,    -1     , 'heat_flux_anom',   .false.  , .true. ,   'yearly'  ,  ''       , ''        )
          !
-         REWIND ( numnam )                     ! read in namlist namsbc_o1o2
-         READ   ( numnam, namsbc_o1o2 )           
+         REWIND ( numnat )                     ! read in namlist namsbc_o1o2
+         READ   ( numnat, namsbc_o1o2 )           
          !                                     ! Control print
          IF(lwp) THEN
             WRITE(numout,*)
-            WRITE(numout,'trc_sms_my_trc : o1 o2 tracers'
+            WRITE(numout,*) 'trc_sms_my_trc : o1 o2 tracers'
             WRITE(numout,*) '~~~~~~~ '
             WRITE(numout,*) '   Namelist namsbc_o1o2'
             WRITE(numout,*) 'o1 flux in a file to be read  ln_o1 = ', ln_o1
@@ -104,11 +106,11 @@ CONTAINS
          !                                     ! store namelist information in an array
          slf_i(jpo1) = sn_o1   ;   slf_i(jpo2) = sn_o2
          !
-         ALLOCATE( sf(jpfld), STAT=ierror )    ! set sf structure
+         ALLOCATE( sf(jpo1:jpo2), STAT=ierror ) ! set sf structure
          IF( ierror > 0 ) THEN
             CALL ctl_stop( 'trc_sms_my_trc: unable to allocate sf structure' )   ;   RETURN
          ENDIF
-         DO ji= 1, jpfld
+         DO ji= jpo1,jpo2
             ALLOCATE( sf(ji)%fnow(jpi,jpj,1) )
             IF( slf_i(ji)%ln_tint ) ALLOCATE( sf(ji)%fdta(jpi,jpj,1,2) )
          END DO
