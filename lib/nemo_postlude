@@ -145,15 +145,17 @@ end_reorder_list
     aprun -j 1 -n $n_rebuild -N $n_rebuild -d $OMP_NUM_THREADS rebuild_nemo_mpi.exe
 
     if [ $nemo_save_hist -eq 1 ]; then
-      # Save the global history files htat were just created
+      # Save the global history files that were just created
       for pfx in ${hist_file_list}; do
         ncout=${pfx}.nc
         [ -s $ncout ] || { echo "$ncout is missing or empty. Ignored"; continue; }
-#         freq=`echo $pfx |cut -d'_' -f 2`
-#         sfx=`echo $pfx |cut -d'_' -f 5,6`
-	freq=`echo $pfx | sed "s/${cn_exp}_\([0-9]\+[ymdh]\)_[0-9]\+_[0-9]\+_\(.*\)/\1/"`
-	sfx=`echo  $pfx | sed "s/${cn_exp}_\([0-9]\+[ymdh]\)_[0-9]\+_[0-9]\+_\(.*\)/\2/"`
-        ncsave=${cn_exp}_${stop_year}_m${stop_mon}_${freq}_${sfx}.nc
+	if [ "$pfx" = "mesh_mask" ] ; then
+	  ncsave=${cn_exp}_${stop_year}_m${stop_mon}_mesh_mask.nc
+	else
+	  freq=`echo $pfx | sed "s/${cn_exp}_\([0-9]\+[ymdh]\)_[0-9]\+_[0-9]\+_\(.*\)/\1/"`
+	  sfx=`echo  $pfx | sed "s/${cn_exp}_\([0-9]\+[ymdh]\)_[0-9]\+_[0-9]\+_\(.*\)/\2/"`
+	  ncsave=${cn_exp}_${stop_year}_m${stop_mon}_${freq}_${sfx}.nc
+	fi
         save $ncout ${uxxx}_$ncsave && echo "${uxxx}_$ncsave" >> saved_history_FILE_NAMES
       done
     fi
