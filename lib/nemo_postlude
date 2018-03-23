@@ -149,8 +149,10 @@ end_reorder_list
       for pfx in ${hist_file_list}; do
         ncout=${pfx}.nc
         [ -s $ncout ] || { echo "$ncout is missing or empty. Ignored"; continue; }
-        freq=`echo $pfx |cut -d'_' -f 2`
-        sfx=`echo $pfx |cut -d'_' -f 5,6`
+#         freq=`echo $pfx |cut -d'_' -f 2`
+#         sfx=`echo $pfx |cut -d'_' -f 5,6`
+	freq=`echo $pfx | sed "s/${cn_exp}_\([0-9]\+[ymdh]\)_[0-9]\+_[0-9]\+_\(.*\)/\1/"`
+	sfx=`echo  $pfx | sed "s/${cn_exp}_\([0-9]\+[ymdh]\)_[0-9]\+_[0-9]\+_\(.*\)/\2/"`
         ncsave=${cn_exp}_${stop_year}_m${stop_mon}_${freq}_${sfx}.nc
         save $ncout ${uxxx}_$ncsave && echo "${uxxx}_$ncsave" >> saved_history_FILE_NAMES
       done
