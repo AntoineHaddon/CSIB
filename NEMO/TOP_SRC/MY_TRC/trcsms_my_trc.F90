@@ -121,10 +121,10 @@ CONTAINS
       IF( ln_o1 .or. ln_o2 ) THEN
          CALL fld_read( kt, nn_fsbc, sf )      ! input fields provided at the current time-step
       !
-         IF( MOD( kt-1, nn_fsbc ) == 0 ) THEN  ! update o1 o2 fluxes at each SBC frequency
+      !  IF( MOD( kt-1, nn_fsbc ) == 0 ) THEN  ! update o1 o2 fluxes at each SBC frequency
             tra(:,:,1,jpo1) = zfact * sf(jpo1)%fnow(:,:,1) * ro0cpr / fse3t(:,:,1)
             tra(:,:,1,jpo2) = zfact * sf(jpo2)%fnow(:,:,1) * ro0cpr / fse3t(:,:,1)
-         ENDIF
+      !  ENDIF
       ELSE
       ! Apply uniform fluxes of 1 W/m2 and 2 W/m2 to tracers.
          tra(:,:,1,jpo1) = 1._wp * ro0cpr / fse3t(:,:,1)
