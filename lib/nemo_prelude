@@ -1162,7 +1162,7 @@ echo "#################### Start NEMO pre-processing #################"
     nemo_ndeposition_orca=${nemo_ndeposition_orca:=uncs_orca1_ndeposition.orca.nc}
 #    nemo_bathy_orca=${nemo_bathy_orca:=uncs_orca1_bathy.orca.nc}
 
-#    [ -s presatm.nc ]          || acc_cp presatm.nc           $nemo_presatm
+    [ -s presatm.nc ]          || acc_cp presatm.nc           $nemo_presatm
     [ -s dust.orca.nc ]        || acc_cp dust.orca.nc         $nemo_dust_orca
     [ -s river.orca.nc ]       || acc_cp river.orca.nc        $nemo_river_orca
     [ -s ndeposition.orca.nc ] || acc_cp ndeposition.orca.nc  $nemo_ndeposition_orca
