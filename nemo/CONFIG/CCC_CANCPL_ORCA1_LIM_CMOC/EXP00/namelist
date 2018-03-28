@@ -230,7 +230,7 @@ sn_snd_temp   =       'oce and ice'          ,    'no'    ,     ''      ,       
 sn_snd_alb    =       'none'                 ,    'no'    ,     ''      ,         ''           ,   ''    
 sn_snd_thick  =       'weighted iwe and swe' ,    'no'    ,     ''      ,         ''           ,   ''    
 sn_snd_crt    =       'none'                 ,    'no'    , 'spherical' , 'eastward-northward' ,  'T'       
-sn_snd_co2    =       'none'                 ,    'no'    ,     ''      ,         ''           ,   ''        
+sn_snd_co2    =       'coupled'              ,    'no'    ,     ''      ,         ''           ,   ''        
 ! receive
 sn_rcv_w10m   =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
 sn_rcv_taumod =       'none'                 ,    'no'    ,     ''      ,         ''          ,   ''    
@@ -241,7 +241,7 @@ sn_rcv_qns    =       'conservative'         ,    'no'    ,     ''      ,       
 sn_rcv_emp    =       'conservative'         ,    'no'    ,     ''      ,         ''          ,   ''    
 sn_rcv_rnf    =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
 sn_rcv_cal    =       'none'                 ,    'no'    ,     ''      ,         ''          ,   ''    
-sn_rcv_co2    =       'none'                 ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
 /
 !-----------------------------------------------------------------------
 &namtra_qsr    !   penetrative solar radiation
