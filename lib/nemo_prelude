@@ -1156,7 +1156,7 @@ echo "#################### Start NEMO pre-processing #################"
   if [ $nemo_carbon -eq 1 ]; then
     # Access PISCES files
 
-#    nemo_presatm=${nemo_presatm:=uncs_orca1_presatm.nc}
+    nemo_presatm=${nemo_presatm:=uncs_orca1_presatm.nc}
     nemo_dust_orca=${nemo_dust_orca:=uncs_orca1_dust.orca.nc}
     nemo_river_orca=${nemo_river_orca:=nemo_3.4_orca2_river.orca.nc}
     nemo_ndeposition_orca=${nemo_ndeposition_orca:=uncs_orca1_ndeposition.orca.nc}
