@@ -284,7 +284,40 @@
       <group id="2h" output_freq="7200"   output_level="10" enabled=".FALSE.">                     <!-- 2h files -->
       </group>
       
-      <group id="3h" output_freq="10800"  output_level="10" enabled=".FALSE.">                     <!-- 3h files -->
+      <group id="3h" output_freq="10800"  output_level="10" enabled=".TRUE.">                     <!-- 3h files -->
+        <file id="3h_ptrc_T" name="auto" description="pisces sms variables" >
+           <field ref="DIC"      />
+           <field ref="Alkalini" />
+           <field ref="O2"       />
+           <field ref="POC"      />
+           <field ref="PHY"      />
+           <field ref="ZOO"      />
+           <field ref="NCHL"     />
+           <field ref="NO3"      />
+       </file>
+	
+        <file id="3h_diad_T" name="auto" description="additional diagnostic variables" >
+           <field ref="PH"      />
+           <field ref="sDIC"    />
+           <field ref="sAlk"    />
+           <field ref="PPPHY"      />
+           <field ref="Cflx"      />
+           <field ref="Oflx"      />
+           <field ref="Nfix"      />
+	   <field ref="Denit"      />
+           <field ref="EPC100"      />
+           <field ref="EPCALC100"   />
+           <field ref="BUPOC"       />
+           <field ref="BUCALC"       />
+           <field ref="Dpco2"      />
+           <field ref="Dpo2"      />
+           <field ref="LNnut"      />
+           <field ref="LNFe"       />
+           <field ref="LNlight"    />
+           <field ref="PAR"       />
+           <field ref="Mumax"    />
+           <field ref="oomask"    />
+       </file> 
       </group>
       
       <group id="4h" output_freq="14400"  output_level="10" enabled=".FALSE.">                     <!-- 4h files -->
