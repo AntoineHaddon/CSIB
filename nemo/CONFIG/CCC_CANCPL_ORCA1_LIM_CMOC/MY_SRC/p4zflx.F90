@@ -121,9 +121,9 @@ CONTAINS
          satmco2(:,:) = atcco2 
       ENDIF
 
-!#if defined key_cpl_carbon_cycle
-!      satmco2(:,:) = atm_co2(:,:)
-!#endif
+#if defined key_cpl_carbon_cycle
+      satmco2(:,:) = atm_co2(:,:)
+#endif
 
       DO jm = 1, 10
 !CDIR NOVERRCHK
@@ -241,6 +241,10 @@ CONTAINS
             trc2d(:,:,jp_pcs0_2d + 3) = ( satmco2(:,:) * patm(:,:) - zh2co3(:,:) / ( chemc(:,:,1) + rtrn ) ) * tmask(:,:,1) 
          ENDIF
       ENDIF
+
+#if defined key_cpl_carbon_cycle
+      oce_co2(:,:) = oce_co2(:,:) / e1e2t(:,:) / rfact
+#endif
       !
       CALL wrk_dealloc( jpi, jpj, zkgco2, zkgo2, zh2co3, zoflx )
       CALL wrk_dealloc( jpi, jpj, jpk, zph3d )
