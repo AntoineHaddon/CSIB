@@ -124,7 +124,7 @@
 !-----------------------------------------------------------------------
 &namsbc        !   Surface Boundary Condition (surface module)
 !-----------------------------------------------------------------------
-   nn_fsbc     = 3         !  frequency of surface boundary condition computation 
+   nn_fsbc     = 1         !  frequency of surface boundary condition computation 
                            !     (also = the frequency of sea-ice model call)
    ln_ana      = .false.   !  analytical formulation                    (T => fill namsbc_ana ) 
    ln_flx      = .false.   !  flux formulation                          (T => fill namsbc_flx )
