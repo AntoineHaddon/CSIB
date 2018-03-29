@@ -121,9 +121,9 @@ CONTAINS
          satmco2(:,:) = atcco2 
       ENDIF
 
-#if defined key_cpl_carbon_cycle
-      satmco2(:,:) = atm_co2(:,:)
-#endif
+!#if defined key_cpl_carbon_cycle
+!      satmco2(:,:) = atm_co2(:,:)
+!#endif
 
       DO jm = 1, 10
 !CDIR NOVERRCHK
