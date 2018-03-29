@@ -157,6 +157,7 @@ end_reorder_list
 	  ncsave=${cn_exp}_${stop_year}_m${stop_mon}_${freq}_${sfx}.nc
 	fi
         save $ncout ${uxxx}_$ncsave && echo "${uxxx}_$ncsave" >> saved_history_FILE_NAMES
+        rm -f ${pfx}_[0-9][0-9][0-9][0-9].nc
       done
     fi
 
