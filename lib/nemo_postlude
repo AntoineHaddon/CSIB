@@ -56,14 +56,13 @@ end_reorder_list
           pfx=${cn_exp}_${freq}_${start_date}_${stop_date}_$sfx
           mkdir $pfx
           mv $pfx*.nc $pfx
-          rebuild_list+=" $pfx"
-
 	  if [ "$pfx" = "mesh_mask" ] ; then
 	    ncsave=${cn_exp}_${stop_year}_m${stop_mon}_mesh_mask
 	  else
 	    ncsave=${cn_exp}_${stop_year}_m${stop_mon}_${freq}_${sfx}
 	  fi
-          save $ncout ${uxxx}_$ncsave && echo "${uxxx}_$ncsave" >> saved_history_FILE_NAMES
+          save $pfx ${uxxx}_$ncsave && echo "${uxxx}_$ncsave" >> saved_history_FILE_NAMES
+
      #   rm -f ${pfx}_[0-9][0-9][0-9][0-9].nc
           #eval fnpatt=${pfx}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
           #found_file=`(ls -1 $fnpatt || : ) 2>/dev/null`
