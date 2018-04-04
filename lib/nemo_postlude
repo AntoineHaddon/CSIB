@@ -55,9 +55,16 @@ end_reorder_list
         for freq in ${nemo_hist_file_freq_list}; do
           pfx=${cn_exp}_${freq}_${start_date}_${stop_date}_$sfx
           mkdir $pfx
-          for fil in $found_file; do
-              mv $pfx*.nc $pfx
-          done
+          mv $pfx*.nc $pfx
+          rebuild_list+=" $pfx"
+
+	  if [ "$pfx" = "mesh_mask" ] ; then
+	    ncsave=${cn_exp}_${stop_year}_m${stop_mon}_mesh_mask
+	  else
+	    ncsave=${cn_exp}_${stop_year}_m${stop_mon}_${freq}_${sfx}
+	  fi
+          save $ncout ${uxxx}_$ncsave && echo "${uxxx}_$ncsave" >> saved_history_FILE_NAMES
+     #   rm -f ${pfx}_[0-9][0-9][0-9][0-9].nc
           #eval fnpatt=${pfx}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
           #found_file=`(ls -1 $fnpatt || : ) 2>/dev/null`
           #if [ -n "$found_file" ]; then
@@ -148,22 +155,22 @@ end_reorder_list
     [ -s rebuild_nemo_mpi.exe ] || bail "Unable to access rebuild_nemo_mpi.exe"
     aprun -j 1 -n $n_rebuild -N $n_rebuild -d $OMP_NUM_THREADS rebuild_nemo_mpi.exe
 
-    if [ $nemo_save_hist -eq 1 ]; then
+    #if [ $nemo_save_hist -eq 1 ]; then
       # Save the global history files that were just created
-      for pfx in ${hist_file_list}; do
-        ncout=${pfx}
-        [ -s $ncout ] || { echo "$ncout is missing or empty. Ignored"; continue; }
-	if [ "$pfx" = "mesh_mask" ] ; then
-	  ncsave=${cn_exp}_${stop_year}_m${stop_mon}_mesh_mask
-	else
-	  freq=`echo $pfx | sed "s/${cn_exp}_\([0-9]\+[ymdh]\)_[0-9]\+_[0-9]\+_\(.*\)/\1/"`
-	  sfx=`echo  $pfx | sed "s/${cn_exp}_\([0-9]\+[ymdh]\)_[0-9]\+_[0-9]\+_\(.*\)/\2/"`
-	  ncsave=${cn_exp}_${stop_year}_m${stop_mon}_${freq}_${sfx}
-	fi
-        save $ncout ${uxxx}_$ncsave && echo "${uxxx}_$ncsave" >> saved_history_FILE_NAMES
-        rm -f ${pfx}_[0-9][0-9][0-9][0-9].nc
-      done
-    fi
+    #  for pfx in ${hist_file_list}; do
+     #   ncout=${pfx}
+     #   [ -s $ncout ] || { echo "$ncout is missing or empty. Ignored"; continue; }
+#	if [ "$pfx" = "mesh_mask" ] ; then
+#	  ncsave=${cn_exp}_${stop_year}_m${stop_mon}_mesh_mask
+#	else
+#	  freq=`echo $pfx | sed "s/${cn_exp}_\([0-9]\+[ymdh]\)_[0-9]\+_[0-9]\+_\(.*\)/\1/"`
+#	  sfx=`echo  $pfx | sed "s/${cn_exp}_\([0-9]\+[ymdh]\)_[0-9]\+_[0-9]\+_\(.*\)/\2/"`
+#	  ncsave=${cn_exp}_${stop_year}_m${stop_mon}_${freq}_${sfx}
+#	fi
+#        save $ncout ${uxxx}_$ncsave && echo "${uxxx}_$ncsave" >> saved_history_FILE_NAMES
+     #   rm -f ${pfx}_[0-9][0-9][0-9][0-9].nc
+     # done
+    #fi
 
     # Rename mesh_mask.nc if it was created
     # This file will be added to the restart archive if it exists
