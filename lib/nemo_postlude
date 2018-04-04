@@ -54,24 +54,28 @@ end_reorder_list
       for sfx in ${nemo_hist_file_suffix_list}; do
         for freq in ${nemo_hist_file_freq_list}; do
           pfx=${cn_exp}_${freq}_${start_date}_${stop_date}_$sfx
-          eval fnpatt=${pfx}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
-          found_file=`(ls -1 $fnpatt || : ) 2>/dev/null`
-          if [ -n "$found_file" ]; then
+          mkdir $pfx
+          for fil in $found_file; do
+              mv $pfx*.nc $pfx
+          done
+          #eval fnpatt=${pfx}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
+          #found_file=`(ls -1 $fnpatt || : ) 2>/dev/null`
+          #if [ -n "$found_file" ]; then
             # At least 1 file name matches the current pattern
             # Create a namelist file for use with this rebuild
             # Each file that is rebuilt requires a namelist file
-            n_rbnl=$(echo $n_rebuild|awk '{printf "%2.2d",$1}')
-            rbnl_file=nam_rebuild$n_rbnl
-            echo "&nam_rebuild"           > $rbnl_file
-            echo "    filebase='${pfx}'" >> $rbnl_file
-            echo "    ndomain=$jpnij"    >> $rbnl_file
-            echo "/"                     >> $rbnl_file
-            echo "rebuild namelist:"
-            cat $rbnl_file
+            #n_rbnl=$(echo $n_rebuild|awk '{printf "%2.2d",$1}')
+            #rbnl_file=nam_rebuild$n_rbnl
+            #echo "&nam_rebuild"           > $rbnl_file
+            #echo "    filebase='${pfx}'" >> $rbnl_file
+            #echo "    ndomain=$jpnij"    >> $rbnl_file
+            #echo "/"                     >> $rbnl_file
+            #echo "rebuild namelist:"
+            #cat $rbnl_file
             # Increment file count and append to the rebuild list
-            n_rebuild+=1
-            rebuild_list+=" $pfx"
-          fi
+            #n_rebuild+=1
+            #rebuild_list+=" $pfx"
+          #fi
         done
       done
     fi
@@ -147,14 +151,14 @@ end_reorder_list
     if [ $nemo_save_hist -eq 1 ]; then
       # Save the global history files that were just created
       for pfx in ${hist_file_list}; do
-        ncout=${pfx}.nc
+        ncout=${pfx}
         [ -s $ncout ] || { echo "$ncout is missing or empty. Ignored"; continue; }
 	if [ "$pfx" = "mesh_mask" ] ; then
-	  ncsave=${cn_exp}_${stop_year}_m${stop_mon}_mesh_mask.nc
+	  ncsave=${cn_exp}_${stop_year}_m${stop_mon}_mesh_mask
 	else
 	  freq=`echo $pfx | sed "s/${cn_exp}_\([0-9]\+[ymdh]\)_[0-9]\+_[0-9]\+_\(.*\)/\1/"`
 	  sfx=`echo  $pfx | sed "s/${cn_exp}_\([0-9]\+[ymdh]\)_[0-9]\+_[0-9]\+_\(.*\)/\2/"`
-	  ncsave=${cn_exp}_${stop_year}_m${stop_mon}_${freq}_${sfx}.nc
+	  ncsave=${cn_exp}_${stop_year}_m${stop_mon}_${freq}_${sfx}
 	fi
         save $ncout ${uxxx}_$ncsave && echo "${uxxx}_$ncsave" >> saved_history_FILE_NAMES
         rm -f ${pfx}_[0-9][0-9][0-9][0-9].nc
