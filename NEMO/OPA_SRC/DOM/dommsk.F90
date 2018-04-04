@@ -185,12 +185,12 @@ CONTAINS
             IF( jp_cfg == 1 )   THEN
                tmask_bgc_closea(:,:,:) = tmask(:,:,:)
                ! Caspian sea indices, from closea.
-               ii0=332
-               ii1=344
-               ij0=203
-               ij1=235
-               tmask_bgc_closea( mi0(ii0):mi1(ii1) , mj0(ij0):mj1(ij1) , 1:jpk ) = 0._wp
-               IF(lwp) WRITE(numout,*)' Masking out Caspian Sea for biogeochemistry in cpl mode'
+               !ii0=332
+               !ii1=344
+               !ij0=203
+               !ij1=235
+               !tmask_bgc_closea( mi0(ii0):mi1(ii1) , mj0(ij0):mj1(ij1) , 1:jpk ) = 0._wp
+               WRITE(numout,*)' Masking out Caspian Sea for biogeochemistry in cpl mode'
                IF(lwp) WRITE(numout,*)
             ENDIF
          ENDIF
