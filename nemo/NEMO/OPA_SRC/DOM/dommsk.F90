@@ -180,7 +180,7 @@ CONTAINS
 
 !! When running coupled in CanESM2, we want to mask out the closed seas (Caspian @ ORCA1),
 !! for the purposes of ocean biogeochemistry, but we keep it in the physics.
-      IF( ln_cpl ) THEN
+!      IF( ln_cpl ) THEN
          IF( cp_cfg == 'orca' ) THEN
             IF( jp_cfg == 1 )   THEN
                tmask_bgc_closea(:,:,:) = tmask(:,:,:)
@@ -194,7 +194,7 @@ CONTAINS
                IF(lwp) WRITE(numout,*)
             ENDIF
          ENDIF
-      ENDIF
+ !     ENDIF
 
 !!gm  ????
 #if defined key_zdfkpp
