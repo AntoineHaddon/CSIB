@@ -43,12 +43,12 @@ For questions: neil.swart@canada.ca
 ## Options to output the CMIP6 diagnostics or the default CCCma fields
 
 For the CMIP6 diagnostics: 
-    set nemo_ar6_diag = on in make_orca_job (default).
+    set nemo_ar6_diag = on in experiment.cfg (default).
 
 For the default CCCma fields:
-    1) set nemo_ar6_diag = off in make_orca_job;
+    1) set nemo_ar6_diag = off in experiment.cfg;
     2) set output_level="0" in iodef.xml file;
-    3) remove ' "add_key="key_trdtra key_diaar5" ' from compile file.
+    3) use "Default output" option (i.e. add_key="key_trdtra key_diaar5" being removed) in the compile file.
 
 ## Supported configurations
 
@@ -65,7 +65,7 @@ For the default CCCma fields:
 
     For problems and questions: duo.yang@canada.ca
 
-D. YANG, 11/JUL/2017
+D. YANG, 05/APR/2018
 -----------------------------------
 
 
