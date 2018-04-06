@@ -28,7 +28,7 @@ MODULE par_cfc
    INTEGER, PARAMETER :: jp_lc_3d = jp_lobster_3d + jp_pisces_3d !:
    INTEGER, PARAMETER :: jp_lc_trd = jp_lobster_trd + jp_pisces_trd !:
 
-
+#if defined key_cfc
    !!---------------------------------------------------------------------
    !! 'key_cfc' : CFC tracers
    !!---------------------------------------------------------------------
@@ -42,6 +42,17 @@ MODULE par_cfc
    INTEGER, PUBLIC, PARAMETER :: jpc11 = jp_lc + 1 !: CFC-11
    INTEGER, PUBLIC, PARAMETER :: jpc12 = jp_lc + 2 !: CFC-12
    INTEGER, PUBLIC, PARAMETER :: jpsf6 = jp_lc + 3 !: SF6
+#else
+   !!---------------------------------------------------------------------
+   !!   Default     :                                       No CFC tracers
+   !!---------------------------------------------------------------------
+   LOGICAL, PUBLIC, PARAMETER ::   lk_cfc     = .FALSE.     !: CFC flag 
+   INTEGER, PUBLIC, PARAMETER ::   jp_cfc     =  0          !: No CFC tracers
+   INTEGER, PUBLIC, PARAMETER ::   jp_cfc_2d  =  0          !: No CFC additional 2d output arrays 
+   INTEGER, PUBLIC, PARAMETER ::   jp_cfc_3d  =  0          !: No CFC additional 3d output arrays 
+   INTEGER, PUBLIC, PARAMETER ::   jp_cfc_trd =  0          !: number of sms trends for CFC
+#endif
+
    ! Starting/ending CFC do-loop indices (N.B. no CFC : jp_cfc0 > jp_cfc1 the do-loop are never done)
    INTEGER, PUBLIC, PARAMETER :: jp_cfc0 = jp_lc + 1 !: First index of CFC tracers in main tracer arrays
    INTEGER, PUBLIC, PARAMETER :: jp_cfc1 = jp_lc + jp_cfc !: Last index of CFC tracers in main tracer arrays

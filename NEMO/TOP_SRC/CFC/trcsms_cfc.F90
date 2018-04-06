@@ -9,7 +9,7 @@ MODULE trcsms_cfc
    !! NEMO 1.0 ! 2004-03 (C. Ethe) free form + modularity
    !! 2.0 ! 2007-12 (C. Ethe, G. Madec) reorganisation
    !!----------------------------------------------------------------------
-
+#if defined key_cfc
    !!----------------------------------------------------------------------
    !! 'key_cfc' CFC tracers
    !!----------------------------------------------------------------------
@@ -297,5 +297,15 @@ CONTAINS
       sc = sc*temp + coeffs(k)
      enddo
    END FUNCTION calc_schmidt_number
+
+#else
+   !!----------------------------------------------------------------------
+   !!   Dummy module                                         No CFC tracers
+   !!----------------------------------------------------------------------
+CONTAINS
+   SUBROUTINE trc_sms_cfc( kt )       ! Empty routine
+      WRITE(*,*) 'trc_sms_cfc: You should not have seen this print! error?', kt
+   END SUBROUTINE trc_sms_cfc
+#endif
    !!======================================================================
 END MODULE trcsms_cfc
