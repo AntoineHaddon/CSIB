@@ -7,7 +7,7 @@ MODULE trcrst_cfc
    !!======================================================================
    !! History : 1.0 ! 2010-01 (C. Ethe) Original
    !!----------------------------------------------------------------------
-
+#if defined key_cfc
    !!----------------------------------------------------------------------
    !! 'key_cfc' CFC tracers
    !!----------------------------------------------------------------------
@@ -71,5 +71,22 @@ CONTAINS
       END DO
 
    END SUBROUTINE trc_rst_wri_cfc
+
+#else
+   !!----------------------------------------------------------------------
+   !!  Dummy module :                                     No passive tracer
+   !!----------------------------------------------------------------------
+CONTAINS
+   SUBROUTINE trc_rst_read_cfc( knum )
+     INTEGER, INTENT(in)  :: knum
+     WRITE(*,*) 'trc_rst_wri_cfc: You should not have seen this print! error?', knum
+   END SUBROUTINE trc_rst_read_cfc
+
+   SUBROUTINE trc_rst_wri_cfc( kt, kitrst, knum )
+     INTEGER, INTENT(in)  :: kt, kitrst, knum
+     WRITE(*,*) 'trc_rst_wri_cfc: You should not have seen this print! error?', kt, kitrst, knum
+   END SUBROUTINE trc_rst_wri_cfc
+#endif
+
    !!======================================================================
 END MODULE trcrst_cfc
