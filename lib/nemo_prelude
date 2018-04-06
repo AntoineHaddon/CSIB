@@ -302,9 +302,10 @@ echo "#################### Start NEMO pre-processing #################"
         bail "find_nemo_config_EXP00: One or more of nemo_repo, nemo_ver, nemo_config are undefined"
       # Attempt to extract this file from the NEMO repository
       rm -f $1
-      gitrip $nemo_ver nemo/CONFIG/$nemo_config/EXP00/$1 repo=$nemo_repo
-      sleep 1
-      [ -s $1 ] || bail "find_nemo_config_EXP00: Unable to extract $1 from $nemo_repo"
+      #gitrip $nemo_ver nemo/CONFIG/$nemo_config/EXP00/$1 repo=$nemo_repo
+      cp ${nemo_repo}/nemo/CONFIG/$nemo_config/EXP00/$1 .  
+      #sleep 1
+      [ -s $1 ] || bail "find_nemo_config_EXP00: Unable to copy $1 from $nemo_repo"
     fi
   }
 
@@ -655,11 +656,18 @@ echo "#################### Start NEMO pre-processing #################"
     echo "##########################"
 
     rm -f RESTART_ARC
-    access RESTART_ARC $nemo_rs
-    # Ensure that we can overwrite existing files with files from the restart
-    # Ignore any netcdf files in the restart
-    tar tf RESTART_ARC | grep -v '\.nc$' | xargs -I'{}' chmod u+rw {} || :
-    tar xf RESTART_ARC || bail "Cannot extract files from $nemo_rs"
+    access RESTART_ARC $nemo_rs || access RESTART_ARC `basename $nemo_rs .tar` nocp=off
+
+    # Deal with "old" tar archives, or new directory based restarts
+    if ! tar tf RESTART_ARC &> /dev/null; then
+        mv RESTART_ARC/* . || bail "Cannot get files from restart directory"
+    else
+        # Ensure that we can overwrite existing files with files from the restart
+        # Ignore any netcdf files in the restart
+        tar tf RESTART_ARC | grep -v '\.nc$' | xargs -I'{}' chmod u+rw {} || :
+        tar xf RESTART_ARC || bail "Cannot extract files from $nemo_rs"
+    fi
+  
     release RESTART_ARC
 
     # Rename each task specific output restart file from the previous run

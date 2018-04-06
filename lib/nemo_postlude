@@ -4,183 +4,6 @@
 #                                                    - Jan/2018, D.Yang
 #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
 
-  if [ ! -s reorder_list ]; then
-cat >reorder_list << 'end_reorder_list'
-#!/usr/bin/perl
-
-  # ---Start_submit_ignore_code----
-
-  # Process input file which must contain valid file names, one name per line
-  # Only the first white space separated word in each line is used
-  while ($flist = shift) {
-    open(FLIST,$flist) or die "reorder_list: Cannot open input file $flist\n";
-    while (<FLIST>) {
-      chomp;
-      # Ignore blank lines and comment lines
-      next if /^\s*$/;
-      next if /^\s*#/;
-      # Only the first word on the line is significant
-      ($fin) = split;
-      # This must be a valid non-empty file
-      die "reorder_list: $fin is missing or empty.\n" unless -s $fin;
-      $list{$fin} = -s $fin;
-    }
-  }
-  die "reorder_list: No valid file names found.\n" unless defined %list;
-
-  # Sort in ascending order by size and print the reordered list to stdout
-  foreach (sort {$list{$a} <=> $list{$b}} keys %list) {
-    print "$_\n";
-  }
-
-  # ---Stop_submit_ignore_code----
-
-end_reorder_list
-  fi
-
-  parallel_rebuild_rs_hist() {
-    # Rebuild a number of NEMO restart and/or/ history file in parallel
-    # The following parameters must be defined prior to invoking this function
-    #     cn_exp, start_date, stop_date, jpnij, nn_itend, pisces_offline,
-    #     nemo_trc, nemo_carbon, nemo_save_hist, nemo_rtd
-    # as well as the history file suffix and frequency lists
-    #     nemo_hist_file_suffix_list, nemo_hist_file_freq_list
-
-    rebuild_list=""
-    declare -i n_rebuild=0
-
-    if [ $nemo_save_hist -eq 1 ] ; then
-      # Define the list of history files to rebuild
-      for sfx in ${nemo_hist_file_suffix_list}; do
-        for freq in ${nemo_hist_file_freq_list}; do
-          pfx=${cn_exp}_${freq}_${start_date}_${stop_date}_$sfx
-          mkdir $pfx
-          mv $pfx*.nc $pfx
-	  if [ "$pfx" = "mesh_mask" ] ; then
-	    ncsave=${cn_exp}_${stop_year}_m${stop_mon}_mesh_mask
-	  else
-	    ncsave=${cn_exp}_${stop_year}_m${stop_mon}_${freq}_${sfx}
-	  fi
-          save $pfx ${uxxx}_$ncsave && echo "${uxxx}_$ncsave" >> saved_history_FILE_NAMES
-
-     #   rm -f ${pfx}_[0-9][0-9][0-9][0-9].nc
-          #eval fnpatt=${pfx}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
-          #found_file=`(ls -1 $fnpatt || : ) 2>/dev/null`
-          #if [ -n "$found_file" ]; then
-            # At least 1 file name matches the current pattern
-            # Create a namelist file for use with this rebuild
-            # Each file that is rebuilt requires a namelist file
-            #n_rbnl=$(echo $n_rebuild|awk '{printf "%2.2d",$1}')
-            #rbnl_file=nam_rebuild$n_rbnl
-            #echo "&nam_rebuild"           > $rbnl_file
-            #echo "    filebase='${pfx}'" >> $rbnl_file
-            #echo "    ndomain=$jpnij"    >> $rbnl_file
-            #echo "/"                     >> $rbnl_file
-            #echo "rebuild namelist:"
-            #cat $rbnl_file
-            # Increment file count and append to the rebuild list
-            #n_rebuild+=1
-            #rebuild_list+=" $pfx"
-          #fi
-        done
-      done
-    fi
-
-    # Keep track of history files in a separate list
-    hist_file_list=$rebuild_list
-
-    # Add relevant restarts to rebuild_list
-    end_step=$(echo $nn_itend | awk '{printf "%8.8d",$1}')
-        pfx=${cn_exp}_${end_step}_restart
-        n_rbnl=$(echo $n_rebuild|awk '{printf "%2.2d",$1}')
-        rbnl_file=nam_rebuild$n_rbnl
-        echo "&nam_rebuild"           > $rbnl_file
-        echo "    filebase='${pfx}'" >> $rbnl_file
-        echo "    ndomain=$jpnij"    >> $rbnl_file
-        echo "/"                     >> $rbnl_file
-        rebuild_list+=" $pfx"
-        n_rebuild+=1
-
-        pfx=${cn_exp}_${end_step}_restart_ice
-        n_rbnl=$(echo $n_rebuild|awk '{printf "%2.2d",$1}')
-        rbnl_file=nam_rebuild$n_rbnl
-        echo "&nam_rebuild"           > $rbnl_file
-        echo "    filebase='${pfx}'" >> $rbnl_file
-        echo "    ndomain=$jpnij"    >> $rbnl_file
-        echo "/"                     >> $rbnl_file
-        rebuild_list+=" $pfx"
-        n_rebuild+=1
-    if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
-        pfx=${cn_exp}_${end_step}_restart_trc
-        n_rbnl=$(echo $n_rebuild|awk '{printf "%2.2d",$1}')
-        rbnl_file=nam_rebuild$n_rbnl
-        echo "&nam_rebuild"           > $rbnl_file
-        echo "    filebase='${pfx}'" >> $rbnl_file
-        echo "    ndomain=$jpnij"    >> $rbnl_file
-        echo "/"                     >> $rbnl_file
-        rebuild_list+=" $pfx"
-        n_rebuild+=1
-    fi
-
-    # Add the mesh_mask file created by the model, if present
-    if [ -s mesh_mask_0000.nc ]; then
-        rm -f rs_mesh_mask.nc
-        pfx=mesh_mask
-        n_rbnl=$(echo $n_rebuild|awk '{printf "%2.2d",$1}')
-        rbnl_file=nam_rebuild$n_rbnl
-        echo "&nam_rebuild"           > $rbnl_file
-        echo "    filebase='${pfx}'" >> $rbnl_file
-        echo "    ndomain=$jpnij"    >> $rbnl_file
-        echo "/"                     >> $rbnl_file
-        rebuild_list+=" $pfx"
-        hist_file_list+=" $pfx"
-        n_rebuild+=1
-    fi
-
-    # Do nothing more if there are no files to rebuild
-    [[ $n_rebuild == 0 ]] && return
-
-    # Invoke the parallel rebuild
-    export OMP_NUM_THREADS=5
-    # The total number for "n" must be <=36 to fit on one node of the XC40
-    # This could be tuned, and defitely changed for other machines.
-    while [ $(($OMP_NUM_THREADS * $n_rebuild)) -gt 36 ]; do
-        OMP_NUM_THREADS=$(($OMP_NUM_THREADS -1))
-    done
-
-    # Each file that is rebuilt uses 1 MPI task and OMP_NUM_THREADS OpenMP threads
-    # The executable must be accessable at run time and namelist files present in cwd
-    [ -s rebuild_nemo_mpi.exe ] || access rebuild_nemo_mpi.exe rebuild_nemo_mpi.exe nocp=no na
-    [ -s rebuild_nemo_mpi.exe ] || bail "Unable to access rebuild_nemo_mpi.exe"
-    aprun -j 1 -n $n_rebuild -N $n_rebuild -d $OMP_NUM_THREADS rebuild_nemo_mpi.exe
-
-    #if [ $nemo_save_hist -eq 1 ]; then
-      # Save the global history files that were just created
-    #  for pfx in ${hist_file_list}; do
-     #   ncout=${pfx}
-     #   [ -s $ncout ] || { echo "$ncout is missing or empty. Ignored"; continue; }
-#	if [ "$pfx" = "mesh_mask" ] ; then
-#	  ncsave=${cn_exp}_${stop_year}_m${stop_mon}_mesh_mask
-#	else
-#	  freq=`echo $pfx | sed "s/${cn_exp}_\([0-9]\+[ymdh]\)_[0-9]\+_[0-9]\+_\(.*\)/\1/"`
-#	  sfx=`echo  $pfx | sed "s/${cn_exp}_\([0-9]\+[ymdh]\)_[0-9]\+_[0-9]\+_\(.*\)/\2/"`
-#	  ncsave=${cn_exp}_${stop_year}_m${stop_mon}_${freq}_${sfx}
-#	fi
-#        save $ncout ${uxxx}_$ncsave && echo "${uxxx}_$ncsave" >> saved_history_FILE_NAMES
-     #   rm -f ${pfx}_[0-9][0-9][0-9][0-9].nc
-     # done
-    #fi
-
-    # Rename mesh_mask.nc if it was created
-    # This file will be added to the restart archive if it exists
-    [ -s mesh_mask.nc ] && mv mesh_mask.nc rs_mesh_mask.nc
-
-    # Clean up
-    if [ -s mesh_mask_0000.nc ]; then
-      rm mesh_mask_[0-9][0-9][0-9].nc
-    fi
-  }
-
   #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
   #=#=#=#     Post processing     #=#=#=#
   #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
@@ -238,7 +61,6 @@ end_reorder_list
   # tarlist contains a list of additional files to add to the restart archive
   tarlist=''
 
-
     # The file saved_history_file_names will contain a list of saved files to be archived.
     # Since "save" will blindly transpose all file name characters to lower case before
     # saving to DATAPATH, we must keep track of the case of these files in some way.
@@ -253,11 +75,38 @@ end_reorder_list
     nemo_hist_file_suffix_list=${nemo_hist_file_suffix_list:="icemod grid_T grid_U grid_V grid_W ptrc_T diad_T"}
     nemo_hist_file_freq_list=${nemo_hist_file_freq_list:="1y 1m 5d 1d 3h 1h"}
 
+    # Collect history files into directories and save 
     nemo_save_hist=${nemo_save_hist:-on}
     ToF nemo_save_hist
 
-    # Rebuild restart and history files and optionally save history files
-    parallel_rebuild_rs_hist || bail "Unable to rebuild NEMO files"
+    if [ $nemo_save_hist -eq 1 ] ; then
+      # Define the list of history files to rebuild
+      for sfx in ${nemo_hist_file_suffix_list}; do
+        for freq in ${nemo_hist_file_freq_list}; do
+          pfx=${cn_exp}_${freq}_${start_date}_${stop_date}_$sfx
+          eval fnpatt=${pfx}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
+          found_file=`(ls -1 $fnpatt || : ) 2>/dev/null`
+          if [ -n "$found_file" ]; then
+             rm -rf $pfx
+             mkdir $pfx
+             mv $pfx*.nc $pfx
+	     ncsave=${cn_exp}_${stop_year}_m${stop_mon}_${freq}_${sfx}
+             save $pfx ${uxxx}_$ncsave && echo "${uxxx}_$ncsave" >> saved_history_FILE_NAMES
+          fi   
+        done
+      done
+      
+      # Add the mesh_mask file created by the model, if present
+      if [ -s mesh_mask_0000.nc ]; then
+         rm -f rs_mesh_mask.nc
+         pfx=mesh_mask
+         rm -rf $pfx
+         mkdir $pfx
+         mv $pfx*.nc $pfx
+	 ncsave=${cn_exp}_${stop_year}_m${stop_mon}_mesh_mask
+         save $pfx ${uxxx}_$ncsave && echo "${uxxx}_$ncsave" >> saved_history_FILE_NAMES
+      fi
+    fi
 
     if [ -s saved_history_FILE_NAMES ]; then
       # Once files have been rebuilt and saved to DATAPATH create a file that is
@@ -269,57 +118,45 @@ end_reorder_list
 
     #=#=#=# Save the current restart files.
 
-    nemo_rebuild_rs=${nemo_rebuild_rs:-off}
-    ToF nemo_rebuild_rs
-
     if [ $nemo_save_rs -eq 1 ]; then
-      # tar up the current restarts and save them to DATAPATH
+        # Collect up the current restarts and save them to DATAPATH
+        rm -rf NEXT_RESTART_ARC
+        mkdir NEXT_RESTART_ARC
+    
+        # Identify the last NEMO timestep, which will be in the rs names
+        end_step=$(echo $nn_itend | awk '{printf "%8.8d",$1}')
 
-      # Format nn_itend for use in identifying the restart file names
-      end_step=$(echo $nn_itend | awk '{printf "%8.8d",$1}')
-
-      eval ofnpatt=${cn_exp}_${end_step}_${cn_ocerst_out}.nc
-      found_rs=`(ls -1 $ofnpatt || : ) 2>/dev/null`
-      if [ -z "$found_rs" ]; then
-        # No ocean restart files exist
-        bail "Attempting to save restarts but no ocean restart files exist. Looking for $ofnpatt"
-      fi
-
-      if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
-        # Deal with Pisces restarts
-        eval pfnpatt=${cn_exp}_${end_step}_${cn_trcrst_out}.nc
-        found_rs=`(ls -1 $pfnpatt || : ) 2>/dev/null`
+        eval ofnpatt=${cn_exp}_${end_step}_${cn_ocerst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
+        found_rs=`(ls -1 $ofnpatt || : ) 2>/dev/null`
         if [ -z "$found_rs" ]; then
-          # No pisces restart files exist
-          bail "Attempting to save restarts but no pisces restart files exist. Looking for $pfnpatt"
-        fi
-      else
-        pfnpatt=''
-      fi
-
-      if [ $with_ice -eq 1 ]; then
-        if [ $nn_ice -eq 4 ]; then
-          # The ice model is CICE
-          # ifnpatt must contain the value of the CICE variable pointer_file as well as ice restart file names
-          # nemo_cice_pointer_file is the value of the parameter pointer_file in the CICE namelist setup_nml
-          # and is initialized as "ice.restart_file" in CICE source code
-          nemo_cice_pointer_file=${nemo_cice_pointer_file:=ice.restart_file}
-          [ ! -s "$nemo_cice_pointer_file" ] && bail "CICE pointer file $nemo_cice_pointer_file is missinmg or empty"
-          ifnpatt=`cat $nemo_cice_pointer_file | xargs`
-          [ -z `echo $ifnpatt|sed 's/ *//g'` ] && bail "Problem reading CICE restart pointer file $nemo_cice_pointer_file"
-          # Include the CICE pointer file name as well as the restart file names
-          ifnpatt="$ifnpatt $nemo_cice_pointer_file"
+          # No ocean restart files exist
+          bail "Attempting to save restarts but no ocean restart files exist. Looking for $ofnpatt"
         else
-          # Anything but CICE
-          eval ifnpatt=${cn_exp}_${end_step}_${cn_icerst_out}.nc
-          found_rs=`(ls -1 $ifnpatt || : ) 2>/dev/null`
+          mv $found_rs NEXT_RESTART_ARC
+        fi
+
+        if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
+          # Deal with Pisces restarts
+          eval pfnpatt=${cn_exp}_${end_step}_${cn_trcrst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
+          found_rs=`(ls -1 $pfnpatt || : ) 2>/dev/null`
           if [ -z "$found_rs" ]; then
-            # No ice restart files exist
-            bail "Attempting to save restarts but no ice restart files exist. Looking for $ifnpatt"
+            # No pisces restart files exist
+            bail "Attempting to save restarts but no pisces restart files exist. Looking for $pfnpatt"
+          else
+            mv $found_rs NEXT_RESTART_ARC
           fi
         fi
-      else
-        ifnpatt=''
+
+      if [ $with_ice -eq 1 ]; then
+         # Anything but CICE
+         eval ifnpatt=${cn_exp}_${end_step}_${cn_icerst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
+         found_rs=`(ls -1 $ifnpatt || : ) 2>/dev/null`
+         if [ -z "$found_rs" ]; then
+            # No ice restart files exist
+            bail "Attempting to save restarts but no ice restart files exist. Looking for $ifnpatt"
+         else
+            mv $found_rs NEXT_RESTART_ARC
+         fi
       fi
 
       # tarlist contains a list of additional files to add to the restart archive
@@ -348,11 +185,6 @@ end_reorder_list
            ;;
         *) bail "Invalid value for nn_ice = $nn_ice" ;;
       esac
-
-      if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
-	cp -f namelist_top    rs_namelist_top    || :
-	[ -s rs_namelist_top ]     && tarlist="$tarlist rs_namelist_top"
-      fi
 
       if [ $nemo_carbon -eq 1 ]; then
 	cp -f namelist_pisces rs_namelist_pisces || :
@@ -396,24 +228,17 @@ end_reorder_list
 
       [ -s rs_mesh_mask.nc ] && tarlist="$tarlist rs_mesh_mask.nc"
 
-    fi  # if [ $nemo_save_rs -eq 1 ]; then
+      mv -f $tarlist NEXT_RESTART_ARC || :
 
-  ########## Save the NEMO restart ##########
-
-  if [ $do_nemo_run -eq 1 -a $nemo_save_rs -eq 1 ]; then
-    # Save the restart file here so that rtd files may be included
-    rm -f NEXT_RESTART_ARC
-    tar cf NEXT_RESTART_ARC $tarlist $rtd_file_list $ofnpatt $ifnpatt $pfnpatt ||
-      bail "Unable to create restart archive"
-    if [ -n "$model" ]; then
-      # Assume we are running from gcmjcl
-      rs_out=${model}nemors.tar
-    else
-      rs_out=${uxxx}_${cn_exp}_${stop_date}_restart.tar
+      if [ -n "$model" ]; then
+          # Assume we are running from gcmjcl
+          rs_out=${model}nemors
+      else
+          rs_out=${uxxx}_${cn_exp}_${stop_date}_restart.tar
+      fi
+      save NEXT_RESTART_ARC $rs_out
+      release NEXT_RESTART_ARC
     fi
-    save NEXT_RESTART_ARC $rs_out
-    release NEXT_RESTART_ARC
-  fi
 
     # Echo ocean output to stdout, if requested
     nemo_write_stdout=on
