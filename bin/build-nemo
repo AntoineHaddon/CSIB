@@ -156,7 +156,7 @@ debug=0
 
 printf "\n\n ------------------- \n"
 printf "        build-nemo       \n"
-printf "------------------- \n"
+printf " ------------------- \n"
 
 # process command line options
 while getopts j:n:m:r:hktvxd opt
@@ -216,7 +216,7 @@ if [ $debug -eq 1 ]; then
   CCRNTMP=$PWD/tmp # Assumed to be in the RUNID directory
   [ ! -d $CCRNTMP ] && mkdir $CCRNTMP # This directory probably does not exist
   nemo_arch="$nemo_arch-debug" # Use a version of the requested architecture with debug options
-  if [ $build_nemo_exe -eq 1 ] && nemo_exe="$nemo_exe-debug" # Make sure not to clobber an existing optimised executable
+  [ $build_nemo_exe -eq 1 ] && nemo_exe="$nemo_exe-debug" # Make sure not to clobber an existing optimised executable
 else
   # CCRNTMP must be defined
   CCRNTMP=/tmp
