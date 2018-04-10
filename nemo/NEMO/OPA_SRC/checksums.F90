@@ -196,9 +196,41 @@ CONTAINS
    SUBROUTINE after_ts_chksum(msg)
       CHARACTER(LEN=*) :: msg !< The point of the algorithm that the checksum is being done
 
-      CALL chksum( "T after array "//TRIM(msg), tsa(:,:,:,jp_tem), tmask)
-      CALL chksum( "S after array "//TRIM(msg), tsa(:,:,:,jp_sal), tmask)
+      CALL chksum( "T tendency array "//TRIM(msg), tsa(:,:,:,jp_tem), tmask)
+      CALL chksum( "S tendency array "//TRIM(msg), tsa(:,:,:,jp_sal), tmask)
 
    END SUBROUTINE after_ts_chksum
+
+   !> Calculates the bitcount of real number by summing the number of bits set for exponent
+   !! and an integer representation of the fractional part.
+   INTEGER FUNCTION bitcount( scalar )
+      REAL(wp) :: scalar !< Scalar to be bit-counted
+
+      INTEGER*2 :: real_exponent
+      REAL(wp)  :: real_mantissa
+      INTEGER*8 :: mantissa_int
+      INTEGER   :: bit
+
+      bitcount = 0
+      ! Add a bit if the number is negative
+      IF ( scalar<0 ) bitcount = bitcount + 1
+      real_exponent = EXPONENT(scalar)
+      real_mantissa = FRACTION(ABS(scalar))
+
+      ! Multiply the mantissa by 10^18 so that it becomes a number that can be truncated into an integer
+      ! while retaining all the digits. Note that if there are more significant digits than this, then
+      ! some changes will be lost
+      mantissa_int = INT(real_mantissa*1.e18)
+
+      ! Loop over the exponent, declared as INTEGER*2, so 2*8=16 bits to check, starting from 0
+      DO bit=0,16
+        IF ( BTEST(real_exponent, bit) ) bitcount = bitcount + 1
+      ENDDO
+      ! Loop over the integer representing the mantissa
+      DO bit=0,64
+        IF ( BTEST(mantissa_int, bit) ) bitcount = bitcount + 1
+      ENDDO
+
+   END FUNCTION bitcount
    !!======================================================================
 END MODULE checksums
