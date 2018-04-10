@@ -1,7 +1,7 @@
 MODULE traadv
    !!==============================================================================
    !!                       ***  MODULE  traadv  ***
-   !! Ocean active tracers:  advection trend 
+   !! Ocean active tracers:  advection trend
    !!==============================================================================
    !! History :  2.0  !  2005-11  (G. Madec)  Original code
    !!            3.3  !  2010-09  (C. Ethe, G. Madec)  merge TRC-TRA + switch from velocity to transport
@@ -28,6 +28,7 @@ MODULE traadv
    USE lib_mpp         ! MPP library
    USE wrk_nemo        ! Memory Allocation
    USE timing          ! Timing
+   USE checksums, only : nn_chksum, after_ts_chksum
 
 
    IMPLICIT NONE
@@ -96,35 +97,35 @@ CONTAINS
       IF( lk_traldf_eiv .AND. .NOT. ln_traldf_grif )   &
          &              CALL tra_adv_eiv( kt, nit000, zun, zvn, zwn, 'TRA' )    ! add the eiv transport (if necessary)
       !
-      CALL iom_put( "uocetr_eff", zun )                                         ! output effective transport      
+      CALL iom_put( "uocetr_eff", zun )                                         ! output effective transport
       CALL iom_put( "vocetr_eff", zvn )
       CALL iom_put( "wocetr_eff", zwn )
 
       SELECT CASE ( nadv )                            !==  compute advection trend and add it to general trend  ==!
       CASE ( 1 )   ;    CALL tra_adv_cen2  ( kt, nit000, 'TRA',         zun, zvn, zwn, tsb, tsn, tsa, jpts )   !  2nd order centered
-      CASE ( 2 )   ;    CALL tra_adv_tvd   ( kt, nit000, 'TRA', r2dtra, zun, zvn, zwn, tsb, tsn, tsa, jpts )   !  TVD 
-      CASE ( 3 )   ;    CALL tra_adv_muscl ( kt, nit000, 'TRA', r2dtra, zun, zvn, zwn, tsb,      tsa, jpts )   !  MUSCL 
-      CASE ( 4 )   ;    CALL tra_adv_muscl2( kt, nit000, 'TRA', r2dtra, zun, zvn, zwn, tsb, tsn, tsa, jpts )   !  MUSCL2 
-      CASE ( 5 )   ;    CALL tra_adv_ubs   ( kt, nit000, 'TRA', r2dtra, zun, zvn, zwn, tsb, tsn, tsa, jpts )   !  UBS 
-      CASE ( 6 )   ;    CALL tra_adv_qck   ( kt, nit000, 'TRA', r2dtra, zun, zvn, zwn, tsb, tsn, tsa, jpts )   !  QUICKEST 
+      CASE ( 2 )   ;    CALL tra_adv_tvd   ( kt, nit000, 'TRA', r2dtra, zun, zvn, zwn, tsb, tsn, tsa, jpts )   !  TVD
+      CASE ( 3 )   ;    CALL tra_adv_muscl ( kt, nit000, 'TRA', r2dtra, zun, zvn, zwn, tsb,      tsa, jpts )   !  MUSCL
+      CASE ( 4 )   ;    CALL tra_adv_muscl2( kt, nit000, 'TRA', r2dtra, zun, zvn, zwn, tsb, tsn, tsa, jpts )   !  MUSCL2
+      CASE ( 5 )   ;    CALL tra_adv_ubs   ( kt, nit000, 'TRA', r2dtra, zun, zvn, zwn, tsb, tsn, tsa, jpts )   !  UBS
+      CASE ( 6 )   ;    CALL tra_adv_qck   ( kt, nit000, 'TRA', r2dtra, zun, zvn, zwn, tsb, tsn, tsa, jpts )   !  QUICKEST
       !
       CASE (-1 )                                      !==  esopa: test all possibility with control print  ==!
-         CALL tra_adv_cen2  ( kt, nit000, 'TRA',         zun, zvn, zwn, tsb, tsn, tsa, jpts )          
+         CALL tra_adv_cen2  ( kt, nit000, 'TRA',         zun, zvn, zwn, tsb, tsn, tsa, jpts )
          CALL prt_ctl( tab3d_1=tsa(:,:,:,jp_tem), clinfo1=' adv0 - Ta: ', mask1=tmask,               &
             &          tab3d_2=tsa(:,:,:,jp_sal), clinfo2=       ' Sa: ', mask2=tmask, clinfo3='tra' )
-         CALL tra_adv_tvd   ( kt, nit000, 'TRA', r2dtra, zun, zvn, zwn, tsb, tsn, tsa, jpts )          
+         CALL tra_adv_tvd   ( kt, nit000, 'TRA', r2dtra, zun, zvn, zwn, tsb, tsn, tsa, jpts )
          CALL prt_ctl( tab3d_1=tsa(:,:,:,jp_tem), clinfo1=' adv1 - Ta: ', mask1=tmask,               &
             &          tab3d_2=tsa(:,:,:,jp_sal), clinfo2=       ' Sa: ', mask2=tmask, clinfo3='tra' )
-         CALL tra_adv_muscl ( kt, nit000, 'TRA', r2dtra, zun, zvn, zwn, tsb,      tsa, jpts )          
+         CALL tra_adv_muscl ( kt, nit000, 'TRA', r2dtra, zun, zvn, zwn, tsb,      tsa, jpts )
          CALL prt_ctl( tab3d_1=tsa(:,:,:,jp_tem), clinfo1=' adv3 - Ta: ', mask1=tmask,               &
             &          tab3d_2=tsa(:,:,:,jp_sal), clinfo2=       ' Sa: ', mask2=tmask, clinfo3='tra' )
-         CALL tra_adv_muscl2( kt, nit000, 'TRA', r2dtra, zun, zvn, zwn, tsb, tsn, tsa, jpts )          
+         CALL tra_adv_muscl2( kt, nit000, 'TRA', r2dtra, zun, zvn, zwn, tsb, tsn, tsa, jpts )
          CALL prt_ctl( tab3d_1=tsa(:,:,:,jp_tem), clinfo1=' adv4 - Ta: ', mask1=tmask,               &
             &          tab3d_2=tsa(:,:,:,jp_sal), clinfo2=       ' Sa: ', mask2=tmask, clinfo3='tra' )
-         CALL tra_adv_ubs   ( kt, nit000, 'TRA', r2dtra, zun, zvn, zwn, tsb, tsn, tsa, jpts )          
+         CALL tra_adv_ubs   ( kt, nit000, 'TRA', r2dtra, zun, zvn, zwn, tsb, tsn, tsa, jpts )
          CALL prt_ctl( tab3d_1=tsa(:,:,:,jp_tem), clinfo1=' adv5 - Ta: ', mask1=tmask,               &
             &          tab3d_2=tsa(:,:,:,jp_sal), clinfo2=       ' Sa: ', mask2=tmask, clinfo3='tra' )
-         CALL tra_adv_qck   ( kt, nit000, 'TRA', r2dtra, zun, zvn, zwn, tsb, tsn, tsa, jpts )          
+         CALL tra_adv_qck   ( kt, nit000, 'TRA', r2dtra, zun, zvn, zwn, tsb, tsn, tsa, jpts )
          CALL prt_ctl( tab3d_1=tsa(:,:,:,jp_tem), clinfo1=' adv6 - Ta: ', mask1=tmask,               &
             &          tab3d_2=tsa(:,:,:,jp_sal), clinfo2=       ' Sa: ', mask2=tmask, clinfo3='tra' )
       END SELECT
@@ -132,19 +133,20 @@ CONTAINS
       !                                              ! print mean trends (used for debugging)
       IF(ln_ctl)   CALL prt_ctl( tab3d_1=tsa(:,:,:,jp_tem), clinfo1=' adv  - Ta: ', mask1=tmask,               &
          &                       tab3d_2=tsa(:,:,:,jp_sal), clinfo2=       ' Sa: ', mask2=tmask, clinfo3='tra' )
+      IF (nn_chksum) CALL after_ts_chksum("after tra_adv")
       !
       IF( nn_timing == 1 )  CALL timing_stop('tra_adv')
       !
       CALL wrk_dealloc( jpi, jpj, jpk, zun, zvn, zwn )
-      !                                          
+      !
    END SUBROUTINE tra_adv
 
 
    SUBROUTINE tra_adv_init
       !!---------------------------------------------------------------------
       !!                  ***  ROUTINE tra_adv_init  ***
-      !!                
-      !! ** Purpose :   Control the consistency between namelist options for 
+      !!
+      !! ** Purpose :   Control the consistency between namelist options for
       !!              tracer advection schemes and set nadv
       !!----------------------------------------------------------------------
       INTEGER ::   ioptio

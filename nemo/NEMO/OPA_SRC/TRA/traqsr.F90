@@ -8,7 +8,7 @@ MODULE traqsr
    !!                 !  1996-01  (G. Madec)  s-coordinates
    !!   NEMO     1.0  !  2002-06  (G. Madec)  F90: Free form and module
    !!             -   !  2005-11  (G. Madec) zco, zps, sco coordinate
-   !!            3.2  !  2009-04  (G. Madec & NEMO team) 
+   !!            3.2  !  2009-04  (G. Madec & NEMO team)
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -20,7 +20,7 @@ MODULE traqsr
    USE sbc_oce         ! surface boundary condition: ocean
    USE trc_oce         ! share SMS/Ocean variables
    USE trdmod_oce      ! ocean variables trends
-   USE trdtra          ! ocean active tracers trends 
+   USE trdtra          ! ocean active tracers trends
    USE in_out_manager  ! I/O manager
    USE phycst          ! physical constants
    USE prtctl          ! Print control
@@ -30,6 +30,7 @@ MODULE traqsr
    USE lib_mpp         ! MPP library
    USE wrk_nemo       ! Memory Allocation
    USE timing         ! Timing
+   USE checksums, only : do_chksum, after_ts_chksum
 
 
    IMPLICIT NONE
@@ -40,14 +41,14 @@ MODULE traqsr
 
    !                                           !!* Namelist namtra_qsr: penetrative solar radiation
    LOGICAL , PUBLIC ::   ln_traqsr  = .TRUE.    !: light absorption (qsr) flag
-   LOGICAL , PUBLIC ::   ln_qsr_rgb = .FALSE.   !: Red-Green-Blue light absorption flag  
+   LOGICAL , PUBLIC ::   ln_qsr_rgb = .FALSE.   !: Red-Green-Blue light absorption flag
    LOGICAL , PUBLIC ::   ln_qsr_2bd = .TRUE.    !: 2 band         light absorption flag
    LOGICAL , PUBLIC ::   ln_qsr_bio = .FALSE.   !: bio-model      light absorption flag
    INTEGER , PUBLIC ::   nn_chldta  = 0         !: use Chlorophyll data (=1) or not (=0)
    REAL(wp), PUBLIC ::   rn_abs     = 0.58_wp   !: fraction absorbed in the very near surface (RGB & 2 bands)
    REAL(wp), PUBLIC ::   rn_si0     = 0.35_wp   !: very near surface depth of extinction      (RGB & 2 bands)
    REAL(wp), PUBLIC ::   rn_si1     = 23.0_wp   !: deepest depth of extinction (water type I)       (2 bands)
-   
+
    ! Module variables
    REAL(wp) ::   xsi0r                           !: inverse of rn_si0
    REAL(wp) ::   xsi1r                           !: inverse of rn_si1
@@ -76,13 +77,13 @@ CONTAINS
       !!      through 2 wavebands (rn_si0,rn_si1) or 3 wavebands (RGB) and a ratio rn_abs
       !!      Considering the 2 wavebands case:
       !!         I(k) = Qsr*( rn_abs*EXP(z(k)/rn_si0) + (1.-rn_abs)*EXP(z(k)/rn_si1) )
-      !!         The temperature trend associated with the solar radiation penetration 
+      !!         The temperature trend associated with the solar radiation penetration
       !!         is given by : zta = 1/e3t dk[ I ] / (rau0*Cp)
       !!         At the bottom, boudary condition for the radiation is no flux :
       !!      all heat which has not been absorbed in the above levels is put
       !!      in the last ocean level.
       !!         In z-coordinate case, the computation is only done down to the
-      !!      level where I(k) < 1.e-15 W/m2. In addition, the coefficients 
+      !!      level where I(k) < 1.e-15 W/m2. In addition, the coefficients
       !!      used for the computation are calculated one for once as they
       !!      depends on k only.
       !!
@@ -106,8 +107,8 @@ CONTAINS
       !
       IF( nn_timing == 1 )  CALL timing_start('tra_qsr')
       !
-      CALL wrk_alloc( jpi, jpj,      zekb, zekg, zekr        ) 
-      CALL wrk_alloc( jpi, jpj, jpk, ze0, ze1, ze2, ze3, zea ) 
+      CALL wrk_alloc( jpi, jpj,      zekb, zekg, zekr        )
+      CALL wrk_alloc( jpi, jpj, jpk, ze0, ze1, ze2, ze3, zea )
       !
       IF( kt == nit000 ) THEN
          IF(lwp) WRITE(numout,*)
@@ -117,7 +118,7 @@ CONTAINS
       ENDIF
 
       IF( l_trdtra ) THEN      ! Save ta and sa trends
-         CALL wrk_alloc( jpi, jpj, jpk, ztrdt ) 
+         CALL wrk_alloc( jpi, jpj, jpk, ztrdt )
          ztrdt(:,:,:) = tsa(:,:,:,jp_tem)
       ENDIF
 
@@ -141,7 +142,7 @@ CONTAINS
       ENDIF
       !                                        Compute now qsr tracer content field
       !                                        ************************************
-      
+
       !                                           ! ============================================== !
       IF( lk_qsr_bio .AND. ln_qsr_bio ) THEN      !  bio-model fluxes  : all vertical coordinates  !
          !                                        ! ============================================== !
@@ -150,7 +151,7 @@ CONTAINS
          END DO
          !                                        Add to the general trend
          DO jk = 1, jpkm1
-            DO jj = 2, jpjm1 
+            DO jj = 2, jpjm1
                DO ji = fs_2, fs_jpim1   ! vector opt.
                   z1_e3t = zfact / fse3t(ji,jj,jk)
                   tsa(ji,jj,jk,jp_tem) = tsa(ji,jj,jk,jp_tem) + ( qsr_hc_b(ji,jj,jk) + qsr_hc(ji,jj,jk) ) * z1_e3t
@@ -159,7 +160,7 @@ CONTAINS
          END DO
          CALL iom_put( 'qsr3d', etot3 )   ! Shortwave Radiation 3D distribution
          !                                        ! ============================================== !
-      ELSE                                        !  Ocean alone : 
+      ELSE                                        !  Ocean alone :
          !                                        ! ============================================== !
          !
          !                                                ! ------------------------- !
@@ -171,7 +172,7 @@ CONTAINS
                IF( nn_chldta == 1 ) THEN                             !*  Variable Chlorophyll
                   !
                   CALL fld_read( kt, 1, sf_chl )                         ! Read Chl data and provides it at the current time step
-                  !         
+                  !
 !CDIR COLLAPSE
 !CDIR NOVERRCHK
                   DO jj = 1, jpj                                         ! Separation in R-G-B depending of the surface Chl
@@ -187,7 +188,7 @@ CONTAINS
                ELSE                                            ! Variable ocean volume but constant chrlorophyll
                   zchl = 0.05                                     ! constant chlorophyll
                   irgb = NINT( 41 + 20.*LOG10( zchl ) + 1.e-15 )
-                  zekb(:,:) = rkrgb(1,irgb)                       ! Separation in R-G-B depending of the chlorophyll 
+                  zekb(:,:) = rkrgb(1,irgb)                       ! Separation in R-G-B depending of the chlorophyll
                   zekg(:,:) = rkrgb(2,irgb)
                   zekr(:,:) = rkrgb(3,irgb)
                ENDIF
@@ -202,7 +203,7 @@ CONTAINS
                DO jk = 2, nksr+1
 !CDIR NOVERRCHK
                   DO jj = 1, jpj
-!CDIR NOVERRCHK   
+!CDIR NOVERRCHK
                      DO ji = 1, jpi
                         zc0 = ze0(ji,jj,jk-1) * EXP( - fse3t(ji,jj,jk-1) * xsi0r     )
                         zc1 = ze1(ji,jj,jk-1) * EXP( - fse3t(ji,jj,jk-1) * zekb(ji,jj) )
@@ -237,12 +238,12 @@ CONTAINS
             IF( lk_vvl ) THEN                                  !* variable volume
                zz0   =        rn_abs   * ro0cpr
                zz1   = ( 1. - rn_abs ) * ro0cpr
-               DO jk = 1, nksr                    ! solar heat absorbed at T-point in the top 400m 
+               DO jk = 1, nksr                    ! solar heat absorbed at T-point in the top 400m
                   DO jj = 1, jpj
                      DO ji = 1, jpi
                         zc0 = zz0 * EXP( -fsdepw(ji,jj,jk  )*xsi0r ) + zz1 * EXP( -fsdepw(ji,jj,jk  )*xsi1r )
                         zc1 = zz0 * EXP( -fsdepw(ji,jj,jk+1)*xsi0r ) + zz1 * EXP( -fsdepw(ji,jj,jk+1)*xsi1r )
-                        qsr_hc(ji,jj,jk) = qsr(ji,jj) * ( zc0*tmask(ji,jj,jk) - zc1*tmask(ji,jj,jk+1) ) 
+                        qsr_hc(ji,jj,jk) = qsr(ji,jj) * ( zc0*tmask(ji,jj,jk) - zc1*tmask(ji,jj,jk+1) )
                      END DO
                   END DO
                END DO
@@ -261,7 +262,7 @@ CONTAINS
          !
          !                                        Add to the general trend
          DO jk = 1, nksr
-            DO jj = 2, jpjm1 
+            DO jj = 2, jpjm1
                DO ji = fs_2, fs_jpim1   ! vector opt.
                   z1_e3t = zfact / fse3t(ji,jj,jk)
                   tsa(ji,jj,jk,jp_tem) = tsa(ji,jj,jk,jp_tem) + ( qsr_hc_b(ji,jj,jk) + qsr_hc(ji,jj,jk) ) * z1_e3t
@@ -284,13 +285,14 @@ CONTAINS
       IF( l_trdtra ) THEN     ! qsr tracers trends saved for diagnostics
          ztrdt(:,:,:) = tsa(:,:,:,jp_tem) - ztrdt(:,:,:)
          CALL trd_tra( kt, 'TRA', jp_tem, jptra_trd_qsr, ztrdt )
-         CALL wrk_dealloc( jpi, jpj, jpk, ztrdt ) 
+         CALL wrk_dealloc( jpi, jpj, jpk, ztrdt )
       ENDIF
       !                       ! print mean trends (used for debugging)
-      IF(ln_ctl)   CALL prt_ctl( tab3d_1=tsa(:,:,:,jp_tem), clinfo1=' qsr  - Ta: ', mask1=tmask, clinfo3='tra-ta' )
+      IF(ln_ctl)     CALL prt_ctl( tab3d_1=tsa(:,:,:,jp_tem), clinfo1=' qsr  - Ta: ', mask1=tmask, clinfo3='tra-ta' )
+      IF (nn_chksum) CALL after_ts_chksum("after tra_qsr")
       !
-      CALL wrk_dealloc( jpi, jpj,      zekb, zekg, zekr        ) 
-      CALL wrk_dealloc( jpi, jpj, jpk, ze0, ze1, ze2, ze3, zea ) 
+      CALL wrk_dealloc( jpi, jpj,      zekb, zekg, zekr        )
+      CALL wrk_dealloc( jpi, jpj, jpk, ze0, ze1, ze2, ze3, zea )
       !
       IF( nn_timing == 1 )  CALL timing_stop('tra_qsr')
       !
@@ -306,7 +308,7 @@ CONTAINS
       !! ** Method  :   The profile of solar radiation within the ocean is set
       !!      from two length scale of penetration (rn_si0,rn_si1) and a ratio
       !!      (rn_abs). These parameters are read in the namtra_qsr namelist. The
-      !!      default values correspond to clear water (type I in Jerlov' 
+      !!      default values correspond to clear water (type I in Jerlov'
       !!      (1968) classification.
       !!         called by tra_qsr at the first timestep (nit000)
       !!
@@ -332,8 +334,8 @@ CONTAINS
       !
       IF( nn_timing == 1 )  CALL timing_start('tra_qsr_init')
       !
-      CALL wrk_alloc( jpi, jpj,      zekb, zekg, zekr        ) 
-      CALL wrk_alloc( jpi, jpj, jpk, ze0, ze1, ze2, ze3, zea ) 
+      CALL wrk_alloc( jpi, jpj,      zekb, zekg, zekr        )
+      CALL wrk_alloc( jpi, jpj, jpk, ze0, ze1, ze2, ze3, zea )
       !
 
       cn_dir = './'       ! directory in which the model is executed
@@ -361,7 +363,7 @@ CONTAINS
       ENDIF
 
       IF( ln_traqsr ) THEN     ! control consistency
-         !                      
+         !
          IF( .NOT.lk_qsr_bio .AND. ln_qsr_bio )   THEN
             CALL ctl_warn( 'No bio model : force ln_qsr_bio = FALSE ' )
             ln_qsr_bio = .FALSE.
@@ -376,7 +378,7 @@ CONTAINS
             CALL ctl_stop( '          Choose ONE type of light penetration in namelist namtra_qsr',  &
             &              ' 2 bands, 3 RGB bands or bio-model light penetration' )
          !
-         IF( ln_qsr_rgb .AND. nn_chldta == 0 )   nqsr =  1 
+         IF( ln_qsr_rgb .AND. nn_chldta == 0 )   nqsr =  1
          IF( ln_qsr_rgb .AND. nn_chldta == 1 )   nqsr =  2
          IF( ln_qsr_2bd                      )   nqsr =  3
          IF( ln_qsr_bio                      )   nqsr =  4
@@ -391,7 +393,7 @@ CONTAINS
          !
       ENDIF
       !                          ! ===================================== !
-      IF( ln_traqsr  ) THEN      !  Initialisation of Light Penetration  !  
+      IF( ln_traqsr  ) THEN      !  Initialisation of Light Penetration  !
          !                       ! ===================================== !
          !
          xsi0r = 1.e0 / rn_si0
@@ -432,21 +434,21 @@ CONTAINS
                   !
                   zchl = 0.05                                 ! constant chlorophyll
                   irgb = NINT( 41 + 20.*LOG10(zchl) + 1.e-15 )
-                  zekb(:,:) = rkrgb(1,irgb)                   ! Separation in R-G-B depending of the chlorophyll 
+                  zekb(:,:) = rkrgb(1,irgb)                   ! Separation in R-G-B depending of the chlorophyll
                   zekg(:,:) = rkrgb(2,irgb)
                   zekr(:,:) = rkrgb(3,irgb)
                   !
                   zcoef = ( 1. - rn_abs ) / 3.e0              ! equi-partition in R-G-B
                   ze0(:,:,1) = rn_abs
                   ze1(:,:,1) = zcoef
-                  ze2(:,:,1) = zcoef 
+                  ze2(:,:,1) = zcoef
                   ze3(:,:,1) = zcoef
                   zea(:,:,1) = tmask(:,:,1)                   ! = ( ze0+ze1+z2+ze3 ) * tmask
-               
+
                   DO jk = 2, nksr+1
 !CDIR NOVERRCHK
                      DO jj = 1, jpj
-!CDIR NOVERRCHK   
+!CDIR NOVERRCHK
                         DO ji = 1, jpi
                            zc0 = ze0(ji,jj,jk-1) * EXP( - fse3t_0(ji,jj,jk-1) * xsi0r     )
                            zc1 = ze1(ji,jj,jk-1) * EXP( - fse3t_0(ji,jj,jk-1) * zekb(ji,jj) )
@@ -459,10 +461,10 @@ CONTAINS
                            zea(ji,jj,jk) = ( zc0 + zc1 + zc2 + zc3 ) * tmask(ji,jj,jk)
                         END DO
                      END DO
-                  END DO 
+                  END DO
                   !
                   DO jk = 1, nksr
-                     etot3(:,:,jk) = ro0cpr * ( zea(:,:,jk) - zea(:,:,jk+1) ) 
+                     etot3(:,:,jk) = ro0cpr * ( zea(:,:,jk) - zea(:,:,jk+1) )
                   END DO
                   etot3(:,:,nksr+1:jpk) = 0.e0                ! below 400m set to zero
                ENDIF
@@ -490,7 +492,7 @@ CONTAINS
                      DO ji = 1, jpi
                         zc0 = zz0 * EXP( -fsdepw(ji,jj,jk  )*xsi0r ) + zz1 * EXP( -fsdepw(ji,jj,jk  )*xsi1r )
                         zc1 = zz0 * EXP( -fsdepw(ji,jj,jk+1)*xsi0r ) + zz1 * EXP( -fsdepw(ji,jj,jk+1)*xsi1r )
-                        etot3(ji,jj,jk) = (  zc0 * tmask(ji,jj,jk) - zc1 * tmask(ji,jj,jk+1)  ) 
+                        etot3(ji,jj,jk) = (  zc0 * tmask(ji,jj,jk) - zc1 * tmask(ji,jj,jk+1)  )
                      END DO
                   END DO
                END DO
@@ -499,7 +501,7 @@ CONTAINS
             ENDIF
          ENDIF
          !                       ! ===================================== !
-      ELSE                       !        No light penetration           !                   
+      ELSE                       !        No light penetration           !
          !                       ! ===================================== !
          IF(lwp) THEN
             WRITE(numout,*)
@@ -508,8 +510,8 @@ CONTAINS
          ENDIF
       ENDIF
       !
-      CALL wrk_dealloc( jpi, jpj,      zekb, zekg, zekr        ) 
-      CALL wrk_dealloc( jpi, jpj, jpk, ze0, ze1, ze2, ze3, zea ) 
+      CALL wrk_dealloc( jpi, jpj,      zekb, zekg, zekr        )
+      CALL wrk_dealloc( jpi, jpj, jpk, ze0, ze1, ze2, ze3, zea )
       !
       IF( nn_timing == 1 )  CALL timing_stop('tra_qsr_init')
       !
