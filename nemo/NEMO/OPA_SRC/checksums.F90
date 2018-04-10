@@ -1,4 +1,4 @@
-MODULE checksum
+MODULE checksums
    !!======================================================================
    !!                       ***  MODULE checksums  ***
    !! Utility functions: Calculate checksums of arrays. Robust across PE
