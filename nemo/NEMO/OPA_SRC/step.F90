@@ -29,7 +29,7 @@ MODULE step
    !!   stp             : OPA system time-stepping
    !!----------------------------------------------------------------------
    USE step_oce         ! time stepping definition modules
-   USE checksums, only  : now_state_chksum, nn_chksum
+   USE checksums, only  : now_state_chksum, after_state_chksum, nn_chksum
 #if defined key_top
    USE trcstp           ! passive tracer time-stepping      (trc_stp routine)
 #endif

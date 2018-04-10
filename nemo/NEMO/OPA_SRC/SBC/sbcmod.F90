@@ -47,7 +47,7 @@ MODULE sbcmod
    USE bdyice_lim2      ! unstructured open boundary data  (bdy_ice_lim_2 routine)
 
    USE prtctl           ! Print control                    (prt_ctl routine)
-   USE checksum, only   : after_state_chksum
+   USE checksums, only  : after_state_chksum, nn_chksum
    USE restart          ! ocean restart
    USE iom              ! IOM library
    USE in_out_manager   ! I/O manager
