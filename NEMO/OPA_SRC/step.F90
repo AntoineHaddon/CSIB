@@ -29,6 +29,7 @@ MODULE step
    !!   stp             : OPA system time-stepping
    !!----------------------------------------------------------------------
    USE step_oce         ! time stepping definition modules
+   USE checksums, only  : now_state_chksum, nn_chksum
 #if defined key_top
    USE trcstp           ! passive tracer time-stepping      (trc_stp routine)
 #endif
@@ -93,6 +94,7 @@ CONTAINS
       !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
       ! Update data, open boundaries, surface boundary condition (including sea-ice)
       !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+      IF (nn_chksum  )   CALL after_state_chksum( "before surface and OBC" )
                          CALL sbc    ( kstp )         ! Sea Boundary Condition (including sea-ice)
       IF( lk_tide    )   CALL sbc_tide( kstp )
       IF( lk_obc     )   CALL obc_dta( kstp )         ! update dynamic and tracer data at open boundaries
@@ -109,10 +111,10 @@ CONTAINS
       !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
                          CALL bn2( tsb, rn2b )        ! before Brunt-Vaisala frequency
                          CALL bn2( tsn, rn2  )        ! now    Brunt-Vaisala frequency
+      IF (nn_chksum  )   CALL now_state_chksum( "before vertical physics" )
       !
       !  VERTICAL PHYSICS
                          CALL zdf_bfr( kstp )         ! bottom friction
-
       !                                               ! Vertical eddy viscosity and diffusivity coefficients
       IF( lk_zdfric  )   CALL zdf_ric( kstp )            ! Richardson number dependent Kz
       IF( lk_zdftke  )   CALL zdf_tke( kstp )            ! TKE closure scheme for Kz
@@ -141,6 +143,7 @@ CONTAINS
       !
       !  LATERAL  PHYSICS
       !
+      IF (nn_chksum  )   CALL after_state_chksum( "before lateral physics" )
       IF( lk_ldfslp ) THEN                            ! slope of lateral mixing
                          CALL eos( tsb, rhd )                ! before in situ density
          IF( ln_zps )    CALL zps_hde( kstp, jpts, tsb, gtsu, gtsv,  &    ! Partial steps: before horizontal gradient
@@ -182,6 +185,7 @@ CONTAINS
       ! May not be exact for sbc and zdf parameters
       IF( ( ln_trjhand ) .AND. ( kstp == nit000 ) ) CALL tam_trj_wri( kstp - 1 )
 
+      IF (nn_chksum  )   CALL now_state_chksum( "before active tracer physics" )
       IF(  ln_asmiau .AND. &
          & ln_trainc     )   CALL tra_asm_inc( kstp )       ! apply tracer assimilation increment
                              CALL tra_sbc    ( kstp )       ! surface boundary condition
@@ -218,6 +222,7 @@ CONTAINS
                                ua(:,:,:) = 0.e0             ! set dynamics trends to zero
                                va(:,:,:) = 0.e0
 
+      IF (nn_chksum  )   CALL now_state_chksum( "before dynamics" )
       IF(  ln_asmiau .AND. &
          & ln_dyninc       )   CALL dyn_asm_inc( kstp )     ! apply dynamics assimilation increment
       IF( ln_bkgwri )          CALL asm_bkg_wri( kstp )     ! output background fields

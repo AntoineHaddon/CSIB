@@ -12,7 +12,7 @@ MODULE trazdf
    !!   tra_zdf_init : initialisation of the computation
    !!----------------------------------------------------------------------
    USE oce             ! ocean dynamics and tracers variables
-   USE dom_oce         ! ocean space and time domain variables 
+   USE dom_oce         ! ocean space and time domain variables
    USE domvvl          ! variable volume
    USE phycst          ! physical constant
    USE zdf_oce         ! ocean vertical physics variables
@@ -24,13 +24,14 @@ MODULE trazdf
 
    USE ldftra_oce      ! ocean active tracers: lateral physics
    USE trdmod_oce      ! ocean active tracers: lateral physics
-   USE trdtra      ! ocean tracers trends 
+   USE trdtra      ! ocean tracers trends
    USE in_out_manager  ! I/O manager
    USE prtctl          ! Print control
    USE lbclnk          ! ocean lateral boundary conditions (or mpp link)
    USE lib_mpp         ! MPP library
    USE wrk_nemo        ! Memory allocation
    USE timing          ! Timing
+   USE checksums, only : nn_chksum, after_ts_chksum
 
 
    IMPLICIT NONE
@@ -79,13 +80,13 @@ CONTAINS
       ENDIF
 
       SELECT CASE ( nzdf )                       ! compute lateral mixing trend and add it to the general trend
-      CASE ( 0 )    ;    CALL tra_zdf_exp( kt, nit000, 'TRA', r2dtra, nn_zdfexp, tsb, tsa, jpts )  !   explicit scheme 
-      CASE ( 1 )    ;    CALL tra_zdf_imp( kt, nit000, 'TRA', r2dtra,            tsb, tsa, jpts )  !   implicit scheme 
+      CASE ( 0 )    ;    CALL tra_zdf_exp( kt, nit000, 'TRA', r2dtra, nn_zdfexp, tsb, tsa, jpts )  !   explicit scheme
+      CASE ( 1 )    ;    CALL tra_zdf_imp( kt, nit000, 'TRA', r2dtra,            tsb, tsa, jpts )  !   implicit scheme
       CASE ( -1 )                                       ! esopa: test all possibility with control print
          CALL tra_zdf_exp( kt, nit000, 'TRA', r2dtra, nn_zdfexp, tsb, tsa, jpts )
          CALL prt_ctl( tab3d_1=tsa(:,:,:,jp_tem), clinfo1=' zdf0 - Ta: ', mask1=tmask,               &
          &             tab3d_2=tsa(:,:,:,jp_sal), clinfo2=       ' Sa: ', mask2=tmask, clinfo3='tra' )
-         CALL tra_zdf_imp( kt, nit000, 'TRA', r2dtra,            tsb, tsa, jpts ) 
+         CALL tra_zdf_imp( kt, nit000, 'TRA', r2dtra,            tsb, tsa, jpts )
          CALL prt_ctl( tab3d_1=tsa(:,:,:,jp_tem), clinfo1=' zdf1 - Ta: ', mask1=tmask,               &
          &             tab3d_2=tsa(:,:,:,jp_sal), clinfo2=       ' Sa: ', mask2=tmask, clinfo3='tra' )
       END SELECT
@@ -103,6 +104,7 @@ CONTAINS
       !                                          ! print mean trends (used for debugging)
       IF(ln_ctl)   CALL prt_ctl( tab3d_1=tsa(:,:,:,jp_tem), clinfo1=' zdf  - Ta: ', mask1=tmask,               &
          &                       tab3d_2=tsa(:,:,:,jp_sal), clinfo2=       ' Sa: ', mask2=tmask, clinfo3='tra' )
+      IF (nn_chksum) CALL after_ts_chksum("after tra_zdf")
       !
       IF( nn_timing == 1 )  CALL timing_stop('tra_zdf')
       !

@@ -76,6 +76,7 @@ MODULE nemogcm
    USE mod_ioclient
 #endif
    USE tamtrj          ! Output trajectory, needed for TAM
+   USE checksums, only : nn_chksum
 
    IMPLICIT NONE
    PRIVATE
@@ -201,7 +202,7 @@ CONTAINS
       !!
       NAMELIST/namctl/ ln_ctl  , nn_print, nn_ictls, nn_ictle,   &
          &             nn_isplt, nn_jsplt, nn_jctls, nn_jctle,   &
-         &             nn_bench, nn_timing
+         &             nn_bench, nn_timing, nn_chksum
       !!----------------------------------------------------------------------
       !
       cltxt = ''
@@ -407,6 +408,7 @@ CONTAINS
          WRITE(numout,*) '      number of proc. following j     nn_jsplt   = ', nn_jsplt
          WRITE(numout,*) '      benchmark parameter (0/1)       nn_bench   = ', nn_bench
          WRITE(numout,*) '      timing activated    (0/1)       nn_timing  = ', nn_timing
+         WRITE(numout,*) '      do checksums        (T/F)       nn_chksum  = ', nn_chksum
       ENDIF
       !
       nprint    = nn_print          ! convert DOCTOR namelist names into OLD names
