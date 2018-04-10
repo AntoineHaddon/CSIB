@@ -37,6 +37,7 @@ MODULE tradmp
    USE prtctl         ! Print control
    USE wrk_nemo       ! Memory allocation
    USE timing         ! Timing
+   USE checksums, only : nn_chksum, after_ts_chksum
 
    IMPLICIT NONE
    PRIVATE

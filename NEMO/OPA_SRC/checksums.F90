@@ -9,10 +9,11 @@ MODULE checksums
    !!----------------------------------------------------------------------
    !!   chksum   :  Calculates a checksum of a given 2d/3d array
    !!----------------------------------------------------------------------
-   USE dom_oce       : tmask, umask, vmask
-   USE libmpp,  only : mpp_min, mpp_sum
+   USE par_kind, only : wp
+   USE dom_oce, only : tmask, umask, vmask, narea
+   USE lib_mpp, only : mpp_min, mpp_max, mpp_sum
    USE oce,     only : un, vn, wn, tsn, ua, va, tsa, ub, vb, tsb
-   USE par_oce, only : jpi, jpj, jpim1, jpjm1, jpk, jp_tem
+   USE par_oce, only : jpi, jpj, jpim1, jpjm1, jpk, jp_tem, jp_sal
    IMPLICIT NONE
    PRIVATE
 
@@ -57,8 +58,8 @@ CONTAINS
       IF (PRESENT(iend))   ie = iend
       IF (PRESENT(jend))   je = jend
 
-      ! Set the initial min/max values to the first value to be checked in the array
-      minarray = array(is,js) ; maxarray = array(is,js)
+      ! Set the initial min/max values to be ridiculous values
+      minarray = HUGE(minarray) ; maxarray = -HUGE(maxarray)
 
       bc = 0
       IF (PRESENT(mask)) THEN
@@ -71,7 +72,7 @@ CONTAINS
          ENDDO ; ENDDO
       ELSE
          DO ji = is, ie ; DO jj = js, je
-            minarray = MIN) minarray, array(ji,jj) )
+            minarray = MIN( minarray, array(ji,jj) )
             maxarray = MAX( maxarray, array(ji,jj) )
             bc = bc + bitcount( array(ji,jj) )
          ENDDO ; ENDDO
@@ -83,8 +84,8 @@ CONTAINS
 
       bc = mod(bc, bitlen)
 
-      IF (lwp) THEN
-        WRITE(*,'(A,X,I10,X,A,ES25.16,X,A,ES25.16') &
+      IF (narea==1) THEN
+        WRITE(*,'(A,X,A,I10.10,X,A,ES25.16,X,A,ES25.16)') &
               TRIM(msg), "chksum=", bc, "Global minimum=", minarray, "Global maximum=", maxarray
       ENDIF
 
@@ -118,11 +119,11 @@ CONTAINS
       IF (PRESENT(kend))   ke = kend
 
       ! Set the initial min/max values to the first value to be checked in the array
-      minarray = array(is,js,ks) ; maxarray = array(is,js,ks)
+      minarray = HUGE(minarray) ; maxarray = -HUGE(maxarray)
       bc = 0
       IF (PRESENT(mask)) THEN
         DO jk = ks, ke ; DO ji = is, ie ; DO jj = js, je
-           IF (mask(ji,jj,k)>0.) THEN
+           IF (mask(ji,jj,jk)>0.) THEN
               minarray = MIN(minarray, array(ji,jj,jk))
               maxarray = MAX(maxarray, array(ji,jj,jk))
               bc = bc + bitcount( array(ji,jj,jk) )
@@ -142,8 +143,8 @@ CONTAINS
 
       bc = mod(bc, bitlen)
 
-      IF (lwp) THEN
-        WRITE(*,'(A,X,I10,X,A,E25.16,X,A,E25.16') &
+      IF (narea==1) THEN
+        WRITE(*,'(A,X,A,I10.10,X,A,E25.16,X,A,E25.16)') &
               TRIM(msg), "chksum=", bc, "Global minimum=", minarray, "Global maximum=", maxarray
       ENDIF
 
@@ -176,10 +177,10 @@ CONTAINS
    SUBROUTINE after_state_chksum(msg)
       CHARACTER(LEN=*) :: msg !< The point of the algorithm that the checksum is being done
 
-      CALL chksum( "u after array "//TRIM(msg), ua, umask)
-      CALL chksum( "v after array "//TRIM(msg), va, vmask)
-      CALL chksum( "T after array "//TRIM(msg), tsa(:,:,:,jp_tem), tmask)
-      CALL chksum( "S after array "//TRIM(msg), tsa(:,:,:,jp_sal), tmask)
+      CALL chksum( "u tendency array "//TRIM(msg), ua, umask)
+      CALL chksum( "v tendency array "//TRIM(msg), va, vmask)
+      CALL chksum( "T tendency array "//TRIM(msg), tsa(:,:,:,jp_tem), tmask)
+      CALL chksum( "S tendency array "//TRIM(msg), tsa(:,:,:,jp_sal), tmask)
 
    END SUBROUTINE after_state_chksum
    !!!! T/S cchecksums

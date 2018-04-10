@@ -30,7 +30,7 @@ MODULE traqsr
    USE lib_mpp         ! MPP library
    USE wrk_nemo       ! Memory Allocation
    USE timing         ! Timing
-   USE checksums, only : do_chksum, after_ts_chksum
+   USE checksums, only : nn_chksum, after_ts_chksum
 
 
    IMPLICIT NONE
