@@ -4,12 +4,19 @@
 #                     [save=on] \
 #                     [repo=dirpath] \
 #                     [exp=EXP00] \
-#          Quantities in square brackets are optional
+#                     [maestro_repo=url] \
+#                     [maestro_version=ver] \
+#          Quantities in square brackets are optional. Note that ver and config are not required if
+#          the flags -d or -r are used. See below.
 #
 # Purpose: Copy all files needed to compile and run nemo into the current directory and optionally 
 #          save required namelist files to DATAPATH. Also drops a logfile for the run into
 #          ".setup-nemo.log" and sends a copy of this log to the nemo run database.  
 #          
+# Options:
+#   -h          ...display this usage documentation!
+#   -d          ...sets up a maestro dump to tape/delete only job on existing data
+#   -r          ...sets up a maestro rtd only job on existing data
 #
 # Variable definitions:
 #   ver=tag       ...tag is the version number/tag or branch to extract from
@@ -17,16 +24,17 @@
 #   runid=abc     ...abc is the runid for your run (normally three letters). This will be
 #                    used in saving the namelist files to DATAPATH, and in naming local files.
 #   config=name   ...name is the name of a CCCma nemo configuration (one of CCC_ORCA1_LIM,
-#                    CCC_ORCA1_LIM_PISCES, CCC_ORCA1_LIM_CMOC, CCC_ORCA1_LIM_CANOE, CCC_ORCA2_LIM_PISCES,
-#                    CCC_ORCA2_LIM_CMOC, CCC_ORCA2_LIM_CANOE, CCC_ORCA2_OFF_CMOC, CCC_ORCA2_OFF_CANOE 
+#                    CCC_ORCA1_LIM_PISCES, CCC_ORCA1_LIM_CMOC, CCC_ORCA1_LIM_CANOE, 
+#                    CCC_ORCA1_OFF_PISCES, CCC_ORCA1_OFF_CANOE, CCC_ORCA1_OFF_CMOC,
 #                    and CCC_ORCA025_LIM).
+#                    Note that 2 degree configs are no longer supported.
 #   repo=dirpath  ...dirpath is the pathname to the git repository
 #   save=on       ...with save=on the namelist and iodef files required to do the nemo run will be saved to
 #                    DATAPATH with the appropriate runid in their name. The corresponding variables in the 
 #                    make_orca_job file are set by default to point to the files on DATAPATH.
 #   exp=EXP00 ...is the name of the "experiment" directory from which to extract files (generally not needed).
 #   maestro_repo=url ...repositorty to use for the maestro suite (defaults to gitlab).
-#   maestro_ver=ver ...version of the maestro repo to use (defaults to develop).
+#   maestro_version=ver ...version of the maestro repo to use (defaults to develop).
 #
 # Examples:
 # -setup an "out of the box" CCC_ORCA1_LIM_PISCES configuration in the current directory:
@@ -41,10 +49,19 @@
 #
 #    setup-nemo repo=path/to/my/nemo-CCCma_repo ver=my_crazy_test_branch runid=nta config=CCC_ORCA1_LIM_PISCES 
 #
+# -setup a job to dump to tape and/or delete (existing) data from sitestore for run abc 
+#
+#    setup-nemo -d runid=abc
+#
+# -setup an rtd only job for run abc
+#
+#    setup-nemo -r runid=abc
+#
 # Neil Swart, 2014-11-05
 # Adapted from Larry's build-nemo
 #
-# last updated 2017-07-20 
+# Clint Seinen, updated 2018-02-01 
+# Updated to combine other setup scripts into one.
 ########################################################################
 #
 bail(){
@@ -89,8 +106,14 @@ nemo_version=''
 # The default location of the repository containing nemo source code
 nemo_repo=git@gitlab.science.gc.ca:CanESM/CanNEMO.git
 
+# The default maestro version
 maestro_repo=git@gitlab.science.gc.ca:ncs001/CanNEMO_maestro_suite.git
 maestro_version='develop'
+# a binary flag specifying if the user entered non-default maestro ver
+usr_maestro_ver=0 
+
+# The default jobtype
+jobtype='sim'
 
 # Target machine to run on. Where we will put stuff on lustre
 #run_mach=''
@@ -102,12 +125,14 @@ save_files=on
 nemo_exp=EXP00
 
 # process command line options
-while getopts n:m:r:hktvx opt
+while getopts hxrd opt
 do
   case $opt in
     x) set -x ;;
     h) usage ;;
-    -) shift; break ;; # end of options
+    r) jobtype='rtd';;      # rtd only
+    d) jobtype='dumpdel';;  # dumpdel only
+    -) shift; break ;;      # end of options
     ?) usage -e $USAGE   ;;
   esac
 done
@@ -121,15 +146,15 @@ for arg in "$@"; do
          # add this variable definition to the current environment
          [ -n "$var" ] && eval ${var}=\"\$val\" # preserve quoted assignments
          case $var in
-             runid) nemo_runid="$val" ;;       # The runid for this setup (three letters)
-               ver) nemo_version="$val" ;;     # git version, tag or branch
- #             mach) run_mach="$val" ;;         # target machine
-              repo) nemo_repo="$val" ;;        # location of git repository
-            config) nemo_config="$val" ;;      # name of subdir in which config lives
-              save) save_files="$val" ;;       # save namelists to DATAPATH
-               exp) nemo_exp="$val" ;;         # NEMO experiment directory
-      maestro_repo) maestro_repo="$val" ;;     # maestro repo
-   maestro_version) maestro_ver="$val" ;;      # maestro verion / commit
+             runid) nemo_runid="$val" ;;    # The runid for this setup (three letters)
+               ver) nemo_version="$val" ;;  # git version, tag or branch
+ #             mach) run_mach="$val" ;;     # target machine
+              repo) nemo_repo="$val" ;;     # location of git repository
+            config) nemo_config="$val" ;;   # name of subdir in which config lives
+              save) save_files="$val" ;;    # save namelists to DATAPATH
+               exp) nemo_exp="$val" ;;      # NEMO experiment directory
+      maestro_repo) ;;                      # maestro repo (already added to the env in the eval statement)
+   maestro_version) usr_maestro_ver=1;;     # maestro verion / commit, the actual var is added to the env in the eval statement 
                  *) bail "Invalid command line arg --> $arg <--" ;;
          esac
          ;;
@@ -138,183 +163,278 @@ for arg in "$@"; do
 done
 
 [ -z "$nemo_runid" ] && bail "A runid is required on the command line."
-[ -z "$nemo_version" ] && bail "A version number/tag or branch is required on the command line."
-[ -z "$nemo_config" ] &&
-    bail "The name of the configuration is required on the command line ...config=cfgname"
 
-[ -z "$nemo_repo" ] && bail "The source repository name is missing."
-#[ ! -d "$nemo_repo" ] && bail "Repository is not a directory --> $nemo_source_repo <--"
-#echo "Using the git repository $nemo_repo"
+# Set up maestro according the jobtype
+if [ "$jobtype" == 'rtd' ] || [ "$jobtype" == 'dumpdel' ]; then
 
-# Ensure this is a full pathname
-#nemo_source_repo=$(cd $nemo_source_repo; pwd)
-
-# Try to get user input list for a new config.
-get_list(){
-echo " "
-echo "*** Unrecognized CONFIG! ***"
-echo " "
-echo "This might be OK if you have just added this CONFIG to your repo, otherwise you are in trouble and should abort.
-      We need to figure out which namelists (etc) you want to save from this config. The choices below relate only 
-      to the *names* of files to be used. The files themselves will be extracted from the CONFIG ($nemo_config) that you specified."
-echo " "
-echo "Choose an option and hit enter"
-echo "
-      a) Abort \n 
-      b) use physics default: 'namelist namelist_ice iodef.xml xmlio_server.def' \n
-      c) use carbon (pisces/canoe) default: 'namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def' \n
-      d) use carbon (cmoc) default: 'namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def'
-     "
-echo " "
-read inlist
-case $inlist in
-    a) bail "Aborting..." ;;
-    b) lists='namelist namelist_ice namelist_top iodef.xml xmlio_server.def' ;;
-    c) lists='namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
-    d) lists='namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def' ;;
-    *) bail "Aborting" ;;
-esac
-}
-
-# Make sure the config is valid and decide which namelist files we need.
-case $nemo_config in
-    CCC_ORCA025_LIM)      lists='namelist namelist_ice namelist_top iodef.xml xmlio_server.def'                               ;;
-    CCC_ORCA025_LIM_CMOC) lists='namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def' ;;
-    CCC_ORCA1_LIM)        lists='namelist namelist_ice namelist_top iodef.xml xmlio_server.def'                               ;;
-    CCC_ORCA1_LIM_PISCES) lists='namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
-    CCC_ORCA1_LIM_CANOE) lists='namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
-    CCC_ORCA2_LIM)        lists='namelist namelist_ice namelist_top iodef.xml xmlio_server.def'                               ;;
-    CCC_ORCA2_LIM_PISCES) lists='namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
-    CCC_ORCA2_LIM_CANOE) lists='namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
-    CCC_ORCA2_LIM_CMOC)   lists='namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def' ;;
-    CCC_ORCA2_LIM_INERT)  lists='namelist namelist_ice namelist_top iodef.xml xmlio_server.def' ;;
-    CCC_ORCA1_LIM_CMOC)   lists='namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def' ;;
-    CCC_ORCA2_OFF_PISCES) lists='namelist namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
-    CCC_ORCA2_OFF_CANOE) lists='namelist namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
-    CCC_ORCA2_OFF_CMOC) lists='namelist namelist_pisces namelist_top namelist_cmoc iodef.xml xmlio_server.def'  ;;
-                     #*) bail "Invalid configuration --> $arg <-- ...config MUST be a CCC_* config." ;;
-                     *) get_list ;;
-esac
-
-nemo_config_lc=`echo "$nemo_config" | awk '{print tolower($0)}'`
-
-# Make a directory by cloning the maestro repo and do basic maestro setup
-[ -d $nemo_runid ] && bail "Directory $nemo_runid already exists! Aborting"
-
-git clone $maestro_repo $nemo_runid
-cd $nemo_runid
-git checkout $maestro_version
-CWD=`pwd`
-nrg=`pwd`/.git
-sha1_maestro=`git --git-dir=${nrg} rev-parse ${maestro_version}`
-
-# basic maestro setup
-export SEQ_EXP_HOME=`pwd`
-mkdir hub logs sequencing stats listings
-makelinks -f
-PATH=$CWD/bin:$PATH
-export PATH
-
-sed -i "s/RUNID=.*/RUNID=${nemo_runid}/g" experiment.cfg
-sed -i "s/SEQ_JOBNAME_PREFIX=.*/SEQ_JOBNAME_PREFIX=${nemo_runid}-/g" resources/resources.def
-config-maestro
-
-# Do the cloning to RAMDISK for speedup
-#stamp=`date "+%j%H%M%S"$$`
-#tmpd=/tmp/tmp_setup_nemo_$stamp
-#mkdir -p $tmpd && cd $tmpd || tmpd=$CWD
-
-# Get the CanESM source code
-src_path=CanNEMO_tmp_src
-git clone --recursive $nemo_repo $src_path
-cd CanNEMO_tmp_src
-git checkout $nemo_version
-git submodule update --init --recursive
-# Get the exact checksum of the ver
-nrg=`pwd`/.git
-sha1=`git --git-dir=${nrg} rev-parse ${nemo_version}`
-echo sha1 is $sha1
-
-cd $CWD
-
-## Move down from RAMDISK
-#if [ "$tmpd" != "$CWD" ]; then
-#   mv $tmpd/$src_path $CWD/
-#fi
-
-# SETUP links to relevant namelists and compile script
-
-# Get the compile script, and reset runid, repo and ver.
-ln -s ${src_path}/nemo/CONFIG/${nemo_config}/${nemo_exp}/compile ${CWD}/compile
-[ -e compile ] || bail "Failed to extract compile script from ${src_path}/nemo/CONFIG/${nemo_config}/${nemo_exp}/compile" 
-cat compile | sed "s#runid#${nemo_runid}#;s#repo=[^ ]*#repo="$nemo_repo"#;s#ver=[^ ]*#ver=$sha1 srcpath=${CWD}/${src_path}#" > compile_${nemo_runid}
-rm -f compile
-chmod +x compile_${nemo_runid}
-
-nemo_config_lower=`echo ${nemo_config} | tr '[:upper:]' '[:lower:]'`
-nemo_exe=${nemo_runid}_${nemo_config_lower}_exe
-sed -i "s#nemo_exec=.*#nemo_exec="'${SEQ_EXP_HOME}/'${nemo_exe}"#g" experiment.cfg
-
-# nameslists
-# Get the namelists/iodefs and optionally save them to DATAPATH
-if [ -s $CWD/namelists ]; then 
-    echo "WARNING: namelists dir already exists, overwriting"
-    cd $CWD/namelists
-else
-    mkdir namelists
-    cd $CWD/namelists
-fi
-. ${CWD}/bin/CanNEMO_shell_functions.sh
-for i in $lists
-do
-    # Link here from source using relative links
-    ln -s ../${src_path}/nemo/CONFIG/${nemo_config}/${nemo_exp}/${i} .
-    if [[ $i == *"namelist"* ]]; then
-       #stre="${i}="'${SEQ_EXP_HOME}/namelists/'${i}"" 
-       #mod_nl $CWD/experiment.cfg stre
-       sed -i "s#${i}=.*#${i}="'${SEQ_EXP_HOME}/namelists/'${i}"#" ../experiment.cfg
+    if [ "$jobtype" == 'rtd' ]; then
+        # set up dirs for rtd
+        echo "Setting up an rtd only job"
+        # if the use gave a maestro version, use that, else default to 
+        # rtd only branch
+        [ $usr_maestro_ver -eq 1 ] || maestro_version='maestro-rtd'
+    else
+        # set up dirs for dumpdel
+        echo "Setting up a dump(to tape)/delete data only job"
+        # if user gave a maestro version, use that, else default to the 
+        # hpcarchonly branch
+        [ $usr_maestro_ver -eq 1 ] || maestro_version='maestro-hpcarch'
     fi
-done
-# Modifiy namelist paths in experiment.cfg
-#sed -i "s#nemo_namelist=.*#nemo_namelist="'${SEQ_EXP_HOME}/namelists/'namelist"#" ../experiment.cfg
-#sed -i "s#nemo_namelist_ice=.*#nemo_namelist_ice="'${SEQ_EXP_HOME}/namelists/'namelist_ice"#" ../experiment.cfg
-#sed -i "s#nemo_namelist_top=.*#nemo_namelist_top="'${SEQ_EXP_HOME}/namelists/'namelist_top"#" ../experiment.cfg
-#sed -i "s#nemo_namelist_pisces=.*#nemo_namelist_pisces="'${SEQ_EXP_HOME}/namelists/'namelist_pisces"#" ../experiment.cfg
-#sed -i "s#nemo_namelist_cmoc=.*#nemo_namelist_cmoc="'${SEQ_EXP_HOME}/namelists/'namelist_cmoc"#" ../experiment.cfg
 
-sed -i "s#nemo_xmlio_server_def=.*#nemo_xmlio_server_def="'${SEQ_EXP_HOME}/namelists/'xmlio_server.def"#" ../experiment.cfg
-sed -i "s#nemo_iodef=.*#nemo_iodef="'${SEQ_EXP_HOME}/namelists/'iodef.xml"#" ../experiment.cfg
+    # create directory by cloning the maestro repo
+    [ -d ${nemo_runid}-${jobtype} ] && bail "Directory ${nemo_runid}-${jobtype} already exists! Aborting"
+    git clone $maestro_repo ${nemo_runid}-${jobtype}
+    cd ${nemo_runid}-${jobtype} || { echo "Failed to clone" ;  exit 1 ; }
+    git checkout $maestro_version
+
+    CWD=`pwd`
+    nrg=`pwd`/.git
+    sha1_maestro=`git --git-dir=${nrg} rev-parse ${maestro_version}`
+
+    # basic maestro setup
+    export SEQ_EXP_HOME=`pwd`
+    mkdir hub logs sequencing stats listings
+    makelinks -f
+    PATH=$CWD/bin:$PATH
+    export PATH
+
+    sed -i "s/RUNID=.*/RUNID=${nemo_runid}/g" experiment.cfg
+    sed -i "s/SEQ_JOBNAME_PREFIX=.*/SEQ_JOBNAME_PREFIX=${nemo_runid}-/g" resources/resources.def
+    config-maestro
+
+    # produce message about experiement.cfg
+    echo ""
+    if [ "$jobtype" == 'rtd' ]; then 
+        echo "NOTE: You should copy the experiment.cfg used for the run here, then do bin/config-maestro before launching."
+        echo "Alter the 'start' and 'end' variables if you wish to only perform the diagnostics on a sub-range."
+    else
+        echo "NOTE: You should copy the experiment.cfg used for the run here, and then alter the settings to fit your needs."
+        echo "Warning: it is possible to delete data that hasn't been archived to tape. Be sure to review the descriptions for 'Dump to tape settings' and 'Delete off sitestore settings'."
+        echo "See http://wiki.cccma.ec.gc.ca/twiki/bin/view/Main/TechnicalDevelopmentConversion2017-nemo-maestro-instructions for additional details"
+    fi
+
+    # print to log
+    cd ../
+    echo '~~~' >> .setup-${jobtype}.log
+    echo `date` >> .setup-${jobtype}.log
+    echo "setup-${jobtype}"  $@ >> .setup-${jobtype}.log
+    echo 'Maestro suite corresponds to SHA1:' $sha1_maestro >> .setup-${jobtype}.log
+else
+    echo "Setting up an ocean only run"
+    [ -z "$nemo_version" ] && bail "A version number/tag or branch is required on the command line."
+    [ -z "$nemo_config" ] &&
+        bail "The name of the configuration is required on the command line ...config=cfgname"
+
+    [ -z "$nemo_repo" ] && bail "The source repository name is missing."
+    #[ ! -d "$nemo_repo" ] && bail "Repository is not a directory --> $nemo_source_repo <--"
+    #echo "Using the git repository $nemo_repo"
+
+    # Ensure this is a full pathname
+    #nemo_source_repo=$(cd $nemo_source_repo; pwd)
+
+    # Try to get user input list for a new config.
+    get_list(){
+    echo " "
+    echo "*** Unrecognized CONFIG! ***"
+    echo " "
+    echo "This might be OK if you have just added this CONFIG to your repo, otherwise you are in trouble and should abort.
+          We need to figure out which namelists (etc) you want to save from this config. The choices below relate only 
+          to the *names* of files to be used. The files themselves will be extracted from the CONFIG ($nemo_config) that you specified."
+    echo " "
+    echo "Choose an option and hit enter"
+    echo "
+          a) Abort \n 
+          b) use physics default: 'namelist namelist_ice iodef.xml xmlio_server.def' \n
+          c) use carbon (pisces/canoe) default: 'namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def' \n
+          d) use carbon (cmoc) default: 'namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def'
+         "
+    echo " "
+    read inlist
+    case $inlist in
+        a) bail "Aborting..." ;;
+        b) lists='namelist namelist_ice namelist_top iodef.xml xmlio_server.def' ;;
+        c) lists='namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
+        d) lists='namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def' ;;
+        *) bail "Aborting" ;;
+    esac
+    }
+
+    # Make sure the config is valid and decide which namelist files we need.
+    case $nemo_config in
+        CCC_ORCA025_LIM)      lists='namelist namelist_ice namelist_top iodef.xml xmlio_server.def'                               ;;
+        CCC_ORCA025_LIM_CMOC) lists='namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def' ;;
+        CCC_ORCA1_LIM)        lists='namelist namelist_ice namelist_top iodef.xml xmlio_server.def'                               ;;
+        CCC_ORCA1_LIM_PISCES) lists='namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
+        CCC_ORCA1_LIM_CANOE) lists='namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
+        CCC_ORCA1_LIM_CMOC)   lists='namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def' ;;
+        CCC_ORCA1_OFF_PISCES) lists='namelist namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
+        CCC_ORCA1_OFF_CANOE) lists='namelist namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
+        CCC_ORCA1_OFF_CMOC) lists='namelist namelist_pisces namelist_top namelist_cmoc iodef.xml xmlio_server.def'  ;;
+                         #*) bail "Invalid configuration --> $arg <-- ...config MUST be a CCC_* config." ;;
+                         *) get_list ;;
+    esac
+
+    nemo_config_lc=`echo "$nemo_config" | awk '{print tolower($0)}'`
+
+    # Make a directory by cloning the maestro repo and do basic maestro setup
+    [ -d $nemo_runid ] && bail "Directory $nemo_runid already exists! Aborting"
+
+    git clone $maestro_repo $nemo_runid
+    cd $nemo_runid || { echo "Failed to clone" ;  exit 1 ; }
+
+    git checkout $maestro_version
+    CWD=`pwd`
+    nrg=`pwd`/.git
+    sha1_maestro=`git --git-dir=${nrg} rev-parse ${maestro_version}`
+
+    # basic maestro setup
+    export SEQ_EXP_HOME=`pwd`
+    mkdir hub logs sequencing stats listings
+    makelinks -f
+    PATH=$CWD/bin:$PATH
+    export PATH
+
+    sed -i "s/RUNID=.*/RUNID=${nemo_runid}/g" experiment.cfg
+    sed -i "s/SEQ_JOBNAME_PREFIX=.*/SEQ_JOBNAME_PREFIX=${nemo_runid}-/g" resources/resources.def
+    config-maestro
+
+    # Do the cloning to RAMDISK for speedup
+    #stamp=`date "+%j%H%M%S"$$`
+    #tmpd=/tmp/tmp_setup_nemo_$stamp
+    #mkdir -p $tmpd && cd $tmpd || tmpd=$CWD
+
+    # Get the CanESM source code
+    src_path=CanNEMO_tmp_src
+    git clone --recursive $nemo_repo $src_path
+    cd CanNEMO_tmp_src
+    git checkout $nemo_version
+    git submodule update --init --recursive
+    # Get the exact checksum of the ver
+    nrg=`pwd`/.git
+    sha1=`git --git-dir=${nrg} rev-parse ${nemo_version}`
+    echo sha1 is $sha1
+
+    cd $CWD
+
+    ## Move down from RAMDISK
+    #if [ "$tmpd" != "$CWD" ]; then
+    #   mv $tmpd/$src_path $CWD/
+    #fi
+
+    # SETUP links to relevant namelists and compile script
+
+    # Get the compile script, and reset runid, repo and ver.
+    ln -s ${src_path}/nemo/CONFIG/${nemo_config}/${nemo_exp}/compile ${CWD}/compile
+    [ -e compile ] || bail "Failed to extract compile script from ${src_path}/nemo/CONFIG/${nemo_config}/${nemo_exp}/compile" 
+    cat compile | sed "s#runid#${nemo_runid}#;s#repo=[^ ]*#repo="$nemo_repo"#;s#ver=[^ ]*#ver=$sha1 srcpath=${CWD}/${src_path}#" > compile_${nemo_runid}
+    rm -f compile
+    chmod +x compile_${nemo_runid}
+
+    # add to compile script to allow it to be called from any where (not just on the xc40s)
+    insrt_hdr="#!/bin/bash\nCWD="'`pwd`'"\nssh "'$(whoami)'"@hare << EOSSH\ncd "'$CWD'"\n"
+    sed -i "1i $insrt_hdr" compile_${nemo_runid}
+    echo "EOSSH" >> compile_${nemo_runid}
+
+    nemo_config_lower=`echo ${nemo_config} | tr '[:upper:]' '[:lower:]'`
+    nemo_exe=${nemo_runid}_${nemo_config_lower}_exe
+    sed -i "s#nemo_exec=.*#nemo_exec="'${SEQ_EXP_HOME}/'${nemo_exe}"#g" experiment.cfg
+
+    # nameslists
+    # Get the namelists/iodefs and optionally save them to DATAPATH
+    if [ -s $CWD/namelists ]; then 
+        echo "WARNING: namelists dir already exists, overwriting"
+        cd $CWD/namelists
+    else
+        mkdir namelists
+        cd $CWD/namelists
+    fi
+    . ${CWD}/bin/CanNEMO_shell_functions.sh
+    for i in $lists
+    do
+        # Link here from source using relative links
+        ln -s ../${src_path}/nemo/CONFIG/${nemo_config}/${nemo_exp}/${i} .
+        if [[ $i == *"namelist"* ]]; then
+           #stre="${i}="'${SEQ_EXP_HOME}/namelists/'${i}"" 
+           #mod_nl $CWD/experiment.cfg stre
+           sed -i "s#${i}=.*#${i}="'${SEQ_EXP_HOME}/namelists/'${i}"#" ../experiment.cfg
+        fi
+    done
+    # Modifiy namelist paths in experiment.cfg
+    #sed -i "s#nemo_namelist=.*#nemo_namelist="'${SEQ_EXP_HOME}/namelists/'namelist"#" ../experiment.cfg
+    #sed -i "s#nemo_namelist_ice=.*#nemo_namelist_ice="'${SEQ_EXP_HOME}/namelists/'namelist_ice"#" ../experiment.cfg
+    #sed -i "s#nemo_namelist_top=.*#nemo_namelist_top="'${SEQ_EXP_HOME}/namelists/'namelist_top"#" ../experiment.cfg
+    #sed -i "s#nemo_namelist_pisces=.*#nemo_namelist_pisces="'${SEQ_EXP_HOME}/namelists/'namelist_pisces"#" ../experiment.cfg
+    #sed -i "s#nemo_namelist_cmoc=.*#nemo_namelist_cmoc="'${SEQ_EXP_HOME}/namelists/'namelist_cmoc"#" ../experiment.cfg
+
+    sed -i "s#nemo_xmlio_server_def=.*#nemo_xmlio_server_def="'${SEQ_EXP_HOME}/namelists/'xmlio_server.def"#" ../experiment.cfg
+    sed -i "s#nemo_iodef=.*#nemo_iodef="'${SEQ_EXP_HOME}/namelists/'iodef.xml"#" ../experiment.cfg
 
 
-# Setup files and carbon options, depending on the config.
-if [[ $nemo_config_lower == *"cmoc"* ]]; then
-    sed -i "s#nemo_carbon=.*#nemo_carbon=on#" ../experiment.cfg
-    sed -i "s#nemo_cmoc=.*#nemo_cmoc=on#" ../experiment.cfg
-    sed -i 's#nemo_hist_file_suffix_list=.*#nemo_hist_file_suffix_list="grid_T grid_U grid_V grid_W icemod ptrc_T diad_T"#' ../experiment.cfg
-    sed -i 's#nemo_hist_file_freq_list=.*#nemo_hist_file_freq_list="      1m     1m     1m     1m    1m      1m     1m"#' ../experiment.cfg
-elif [[ $nemo_config_lower == *"canoe"* ]]; then
-    sed -i "s#nemo_carbon=.*#nemo_carbon=on#" ../experiment.cfg
-    sed -i 's#nemo_hist_file_suffix_list=.*#nemo_hist_file_suffix_list="grid_T grid_U grid_V grid_W icemod ptrc_T diad_T"#' ../experiment.cfg
-    sed -i 's#nemo_hist_file_freq_list=.*#nemo_hist_file_freq_list="      1m     1m     1m     1m    1m      1m     1m"#' ../experiment.cfg
+    # Setup files and carbon options, depending on the config.
+    #if [[ $nemo_config_lower == *"cmoc"* ]]; then
+    #    sed -i "s#nemo_carbon=.*#nemo_carbon=on#" ../experiment.cfg
+    #    sed -i "s#nemo_cmoc=.*#nemo_cmoc=on#" ../experiment.cfg
+    #    sed -i 's#nemo_hist_file_suffix_list=.*#nemo_hist_file_suffix_list="grid_T grid_U grid_V grid_W icemod ptrc_T diad_T"#' ../experiment.cfg
+    #    sed -i 's#nemo_hist_file_freq_list=.*#nemo_hist_file_freq_list="      1m     1m     1m     1m    1m      1m     1m"#' ../experiment.cfg
+    #    sed -i 's#nemo_dump_file_suff=.*#nemo_dump_file_suff="grid_T grid_U grid_V grid_W icemod ptrc_T diad_T"#' ../experiment.cfg
+    #    sed -i 's#nemo_dump_file_freq=.*#nemo_dump_file_freq="1m     1m     1m     1m    1m      1m     1m"#' ../experiment.cfg
+    #    sed -i 's#nemo_del_file_suff=.*#nemo_del_file_suff="grid_T grid_U grid_V grid_W icemod ptrc_T diad_T"#' ../experiment.cfg
+    #    sed -i 's#nemo_del_file_freq=.*#nemo_del_file_freq="1m     1m     1m     1m    1m      1m     1m"#' ../experiment.cfg
+    #elif [[ $nemo_config_lower == *"canoe"* ]]; then
+    #    sed -i "s#nemo_carbon=.*#nemo_carbon=on#" ../experiment.cfg
+    #    sed -i 's#nemo_hist_file_suffix_list=.*#nemo_hist_file_suffix_list="grid_T grid_U grid_V grid_W icemod ptrc_T diad_T"#' ../experiment.cfg
+    #    sed -i 's#nemo_hist_file_freq_list=.*#nemo_hist_file_freq_list="      1m     1m     1m     1m    1m      1m     1m"#' ../experiment.cfg
+    #    sed -i 's#nemo_dump_file_suff=.*#nemo_dump_file_suff="grid_T grid_U grid_V grid_W icemod ptrc_T diad_T"#' ../experiment.cfg
+    #    sed -i 's#nemo_dump_file_freq=.*#nemo_dump_file_freq="      1m     1m     1m     1m    1m      1m     1m"#' ../experiment.cfg
+    #    sed -i 's#nemo_del_file_suff=.*#nemo_del_file_suff="grid_T grid_U grid_V grid_W icemod ptrc_T diad_T"#' ../experiment.cfg
+    #    sed -i 's#nemo_del_file_freq=.*#nemo_del_file_freq="      1m     1m     1m     1m    1m      1m     1m"#' ../experiment.cfg
+    #fi
+
+    # Setup files and carbon options, depending on the config.
+    if [[ $nemo_config_lower == *"cmoc"* ]] || [[ $nemo_config_lower == *"canoe"* ]]; then
+        sed -i "s#nemo_carbon=.*#nemo_carbon=on#" ../experiment.cfg
+        if [[ $nemo_config_lower == *"cmoc"* ]]; then
+            sed -i "s#nemo_cmoc=.*#nemo_cmoc=on#" ../experiment.cfg
+        fi
+        if [[ $nemo_config_lower == *"off"* ]]; then
+            sed -i 's#nemo_hist_file_suffix_list=.*#nemo_hist_file_suffix_list="ptrc_T diad_T"#' ../experiment.cfg
+            sed -i 's#nemo_hist_file_freq_list=.*#nemo_hist_file_freq_list="1m     1m"#' ../experiment.cfg
+            sed -i 's#nemo_dump_file_suff=.*#nemo_dump_file_suff="ptrc_T diad_T"#' ../experiment.cfg
+            sed -i 's#nemo_dump_file_freq=.*#nemo_dump_file_freq="1m     1m"#' ../experiment.cfg
+            sed -i 's#nemo_del_file_suff=.*#nemo_del_file_suff="ptrc_T diad_T"#' ../experiment.cfg
+            sed -i 's#nemo_del_file_freq=.*#nemo_del_file_freq="1m     1m"#' ../experiment.cfg
+        else
+            sed -i 's#nemo_hist_file_suffix_list=.*#nemo_hist_file_suffix_list="grid_T grid_U grid_V grid_W icemod ptrc_T diad_T"#' ../experiment.cfg
+            sed -i 's#nemo_hist_file_freq_list=.*#nemo_hist_file_freq_list="      1m     1m     1m     1m    1m      1m     1m"#' ../experiment.cfg
+            sed -i 's#nemo_dump_file_suff=.*#nemo_dump_file_suff="grid_T grid_U grid_V grid_W icemod ptrc_T diad_T"#' ../experiment.cfg
+            sed -i 's#nemo_dump_file_freq=.*#nemo_dump_file_freq="      1m     1m     1m     1m    1m      1m     1m"#' ../experiment.cfg
+            sed -i 's#nemo_del_file_suff=.*#nemo_del_file_suff="grid_T grid_U grid_V grid_W icemod ptrc_T diad_T"#' ../experiment.cfg
+            sed -i 's#nemo_del_file_freq=.*#nemo_del_file_freq="      1m     1m     1m     1m    1m      1m     1m"#' ../experiment.cfg
+        fi
+    fi
+
+    # Set the nemoval resolution, depending on the config (default is 1d in experiment.cfg).
+    if [[ $nemo_config_lower == *"orca025"* ]]; then
+        sed -i "s#nemoval_res=.*#nemoval_res=025d#" ../experiment.cfg
+    fi
+
+    # print to log
+    cd ../
+    echo '~~~' >> .setup-nemo.log
+    echo `date` >> .setup-nemo.log
+    echo 'setup-nemo ' $@ >> .setup-nemo.log
+
+    echo 'Code corresponds to SHA1:' $sha1 >> .setup-nemo.log
+    echo 'Maestro suite corresponds to SHA1:' $sha1_maestro >> .setup-nemo.log
+
+
+    # Write log to nemo run database
+    datef=`date +"%Y-%m-%d %T"`
+    userf=`whoami`
+
+    sqlite3 /home/ncs001/ocean_runs/ocean_runs.db  << EOF
+                            INSERT INTO runs (runid, date, user, config, ver, repo, sha1)
+                            values('${nemo_runid}', '${datef}', '${userf}', '${nemo_config}', 
+                                   '${nemo_version}', '${nemo_repo}', '${sha1}');
+EOF
 fi
-
-# print to log
-cd ../
-echo '~~~' >> .setup-nemo.log
-echo `date` >> .setup-nemo.log
-echo 'setup-nemo ' $@ >> .setup-nemo.log
-
-echo 'Code corresponds to SHA1:' $sha1 >> .setup-nemo.log
-echo 'Maestro suite corresponds to SHA1:' $sha1_maestro >> .setup-nemo.log
-
-
-# Write log to nemo run database
-datef=`date +"%Y-%m-%d %T"`
-userf=`whoami`
-
-#sqlite3 /home/ncs001/ocean_runs/ocean_runs.db  << EOF
-#                        INSERT INTO runs (runid, date, user, config, ver, repo, sha1)
-#                        values('${nemo_runid}', '${datef}', '${userf}', '${nemo_config}', 
-#                               '${nemo_version}', '${nemo_repo}', '${sha1}');
-#EOF
-
