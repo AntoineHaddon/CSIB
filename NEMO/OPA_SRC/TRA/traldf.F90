@@ -1,12 +1,12 @@
 MODULE traldf
    !!======================================================================
    !!                       ***  MODULE  traldf  ***
-   !! Ocean Active tracers : lateral diffusive trends 
+   !! Ocean Active tracers : lateral diffusive trends
    !!=====================================================================
    !! History :  9.0  ! 2005-11 (G. Madec)  Original code
-   !!       NEMO 3.0  ! 2008-01  (C. Ethe, G. Madec)  merge TRC-TRA 
-   !!       NEMO 3.4.1! 2016-04 (D. Yang) Griffies triads scheme never got 
-   !!                                     called. This bug is now fixed 
+   !!       NEMO 3.0  ! 2008-01  (C. Ethe, G. Madec)  merge TRC-TRA
+   !!       NEMO 3.4.1! 2016-04 (D. Yang) Griffies triads scheme never got
+   !!                                     called. This bug is now fixed
    !!                                     for partial steps.
    !!----------------------------------------------------------------------
 
@@ -33,12 +33,13 @@ MODULE traldf
    USE lbclnk          ! ocean lateral boundary conditions (or mpp link)
    USE wrk_nemo        ! Memory allocation
    USE timing          ! Timing
+   USE checksums, only : nn_chksum, after_ts_chksum
 
    IMPLICIT NONE
    PRIVATE
 
-   PUBLIC   tra_ldf         ! called by step.F90 
-   PUBLIC   tra_ldf_init    ! called by opa.F90 
+   PUBLIC   tra_ldf         ! called by step.F90
+   PUBLIC   tra_ldf_init    ! called by opa.F90
    !
    INTEGER ::   nldf = 0   ! type of lateral diffusion used defined from ln_traldf_... namlist logicals)
 
@@ -50,7 +51,7 @@ MODULE traldf
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 3.3 , NEMO Consortium (2010)
-   !! $Id: traldf.F90 3294 2012-01-28 16:44:18Z rblod $ 
+   !! $Id: traldf.F90 3294 2012-01-28 16:44:18Z rblod $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -58,7 +59,7 @@ CONTAINS
    SUBROUTINE tra_ldf( kt )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE tra_ldf  ***
-      !! 
+      !!
       !! ** Purpose :   compute the lateral ocean tracer physics.
       !!----------------------------------------------------------------------
       INTEGER, INTENT( in ) ::   kt   ! ocean time-step index
@@ -68,40 +69,40 @@ CONTAINS
       !
       IF( nn_timing == 1 )  CALL timing_start('tra_ldf')
       !
-      rldf = 1     ! For active tracers the 
+      rldf = 1     ! For active tracers the
 
       IF( l_trdtra )   THEN                    !* Save ta and sa trends
-         CALL wrk_alloc( jpi, jpj, jpk, ztrdt, ztrds ) 
-         ztrdt(:,:,:) = tsa(:,:,:,jp_tem) 
+         CALL wrk_alloc( jpi, jpj, jpk, ztrdt, ztrds )
+         ztrdt(:,:,:) = tsa(:,:,:,jp_tem)
          ztrds(:,:,:) = tsa(:,:,:,jp_sal)
       ENDIF
 
       SELECT CASE ( nldf )                       ! compute lateral mixing trend and add it to the general trend
       CASE ( 0 )   ;   CALL tra_ldf_lap     ( kt, nit000, 'TRA', gtsu, gtsv, tsb, tsa, jpts        )  ! iso-level laplacian
       CASE ( 1 )                                                                              ! rotated laplacian
-         IF( ln_traldf_grif ) THEN                                                          
+         IF( ln_traldf_grif ) THEN
                        CALL tra_ldf_iso_grif( kt, nit000,'TRA', gtsu, gtsv, tsb, tsa, jpts, ahtb0 )      ! Griffies operator
-         ELSE                                                                                
+         ELSE
                        CALL tra_ldf_iso     ( kt, nit000, 'TRA', gtsu, gtsv, tsb, tsa, jpts, ahtb0 )      ! Madec operator
          ENDIF
       CASE ( 2 )   ;   CALL tra_ldf_bilap   ( kt, nit000, 'TRA', gtsu, gtsv, tsb, tsa, jpts        )  ! iso-level bilaplacian
       CASE ( 3 )   ;   CALL tra_ldf_bilapg  ( kt, nit000, 'TRA',             tsb, tsa, jpts        )  ! s-coord. geopot. bilap.
          !
       CASE ( -1 )                                ! esopa: test all possibility with control print
-         CALL tra_ldf_lap   ( kt, nit000, 'TRA', gtsu, gtsv, tsb, tsa, jpts        ) 
+         CALL tra_ldf_lap   ( kt, nit000, 'TRA', gtsu, gtsv, tsb, tsa, jpts        )
          CALL prt_ctl( tab3d_1=tsa(:,:,:,jp_tem), clinfo1=' ldf0 - Ta: ', mask1=tmask,               &
          &             tab3d_2=tsa(:,:,:,jp_sal), clinfo2=       ' Sa: ', mask2=tmask, clinfo3='tra' )
          IF( ln_traldf_grif ) THEN
             CALL tra_ldf_iso_grif( kt, nit000, 'TRA', gtsu, gtsv, tsb, tsa, jpts, ahtb0 )
          ELSE
-            CALL tra_ldf_iso     ( kt, nit000, 'TRA', gtsu, gtsv, tsb, tsa, jpts, ahtb0 )  
+            CALL tra_ldf_iso     ( kt, nit000, 'TRA', gtsu, gtsv, tsb, tsa, jpts, ahtb0 )
          ENDIF
          CALL prt_ctl( tab3d_1=tsa(:,:,:,jp_tem), clinfo1=' ldf1 - Ta: ', mask1=tmask,               &
          &             tab3d_2=tsa(:,:,:,jp_sal), clinfo2=       ' Sa: ', mask2=tmask, clinfo3='tra' )
-         CALL tra_ldf_bilap ( kt, nit000, 'TRA', gtsu, gtsv, tsb, tsa, jpts        ) 
+         CALL tra_ldf_bilap ( kt, nit000, 'TRA', gtsu, gtsv, tsb, tsa, jpts        )
          CALL prt_ctl( tab3d_1=tsa(:,:,:,jp_tem), clinfo1=' ldf2 - Ta: ', mask1=tmask,               &
          &             tab3d_2=tsa(:,:,:,jp_sal), clinfo2=       ' Sa: ', mask2=tmask, clinfo3='tra' )
-         CALL tra_ldf_bilapg( kt, nit000, 'TRA',             tsb, tsa, jpts        ) 
+         CALL tra_ldf_bilapg( kt, nit000, 'TRA',             tsb, tsa, jpts        )
          CALL prt_ctl( tab3d_1=tsa(:,:,:,jp_tem), clinfo1=' ldf3 - Ta: ', mask1=tmask,               &
          &             tab3d_2=tsa(:,:,:,jp_sal), clinfo2=       ' Sa: ', mask2=tmask, clinfo3='tra' )
       END SELECT
@@ -116,11 +117,12 @@ CONTAINS
          ztrds(:,:,:) = tsa(:,:,:,jp_sal) - ztrds(:,:,:)
          CALL trd_tra( kt, 'TRA', jp_tem, jptra_trd_ldf, ztrdt )
          CALL trd_tra( kt, 'TRA', jp_sal, jptra_trd_ldf, ztrds )
-         CALL wrk_dealloc( jpi, jpj, jpk, ztrdt, ztrds ) 
+         CALL wrk_dealloc( jpi, jpj, jpk, ztrdt, ztrds )
       ENDIF
       !                                          ! print mean trends (used for debugging)
       IF(ln_ctl)   CALL prt_ctl( tab3d_1=tsa(:,:,:,jp_tem), clinfo1=' ldf  - Ta: ', mask1=tmask,               &
          &                       tab3d_2=tsa(:,:,:,jp_sal), clinfo2=       ' Sa: ', mask2=tmask, clinfo3='tra' )
+      IF (nn_chksum) CALL after_ts_chksum("after tra_ldf")
       !
       IF( nn_timing == 1 )  CALL timing_stop('tra_ldf')
       !
@@ -130,7 +132,7 @@ CONTAINS
    SUBROUTINE tra_ldf_init
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE tra_ldf_init  ***
-      !! 
+      !!
       !! ** Purpose :   Choice of the operator for the lateral tracer diffusion
       !!
       !! ** Method  :   set nldf from the namtra_ldf logicals
@@ -140,12 +142,12 @@ CONTAINS
       !!      nldf ==  2   bilaplacian operator
       !!      nldf ==  3   Rotated bilaplacian
       !!----------------------------------------------------------------------
-      INTEGER ::   ioptio, ierr         ! temporary integers 
+      INTEGER ::   ioptio, ierr         ! temporary integers
       !!----------------------------------------------------------------------
 
       !  Define the lateral mixing oparator for tracers
       ! ===============================================
-    
+
       IF(lwp) THEN                    ! Namelist print
          WRITE(numout,*)
          WRITE(numout,*) 'tra_ldf_init : lateral tracer diffusive operator'
@@ -195,7 +197,7 @@ CONTAINS
             IF ( ln_traldf_iso   )   ierr = 2      ! isoneutral (   rotation)
          ENDIF
          IF ( ln_zps ) THEN             ! z-coordinate
-            IF ( ln_traldf_level )   ierr = 1      ! iso-level not allowed 
+            IF ( ln_traldf_level )   ierr = 1      ! iso-level not allowed
             IF ( ln_traldf_hor   )   nldf = 2      ! horizontal (no rotation)
             IF ( ln_traldf_iso   )   ierr = 2      ! isoneutral (   rotation)
          ENDIF
@@ -246,7 +248,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE ldf_ano  ***
       !!
-      !! ** Purpose :   initializations of 
+      !! ** Purpose :   initializations of
       !!----------------------------------------------------------------------
       !
       USE zdf_oce         ! vertical mixing
@@ -257,12 +259,12 @@ CONTAINS
       INTEGER  ::   ierr            ! local integer
       LOGICAL  ::   llsave          ! local logical
       REAL(wp) ::   zt0, zs0, z12   ! local scalar
-      REAL(wp), POINTER, DIMENSION(:,:,:) :: zt_ref, zs_ref, ztb, zsb, zavt     
+      REAL(wp), POINTER, DIMENSION(:,:,:) :: zt_ref, zs_ref, ztb, zsb, zavt
       !!----------------------------------------------------------------------
       !
       IF( nn_timing == 1 )  CALL timing_start('ldf_ano')
       !
-      CALL wrk_alloc( jpi, jpj, jpk, zt_ref, zs_ref, ztb, zsb, zavt ) 
+      CALL wrk_alloc( jpi, jpj, jpk, zt_ref, zs_ref, ztb, zsb, zavt )
       !
 
       IF(lwp) THEN
@@ -330,7 +332,7 @@ CONTAINS
       tsa(:,:,:,jp_sal) = va  (:,:,:)
       avt(:,:,:)        = zavt(:,:,:)
       !
-      CALL wrk_dealloc( jpi, jpj, jpk, zt_ref, zs_ref, ztb, zsb, zavt ) 
+      CALL wrk_dealloc( jpi, jpj, jpk, zt_ref, zs_ref, ztb, zsb, zavt )
       !
       IF( nn_timing == 1 )  CALL timing_stop('ldf_ano')
       !

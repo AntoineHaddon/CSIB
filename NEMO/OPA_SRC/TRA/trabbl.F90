@@ -35,7 +35,7 @@ MODULE trabbl
    USE prtctl         ! Print control
    USE wrk_nemo       ! Memory Allocation
    USE timing         ! Timing
-
+   USE checksums, only : nn_chksum, after_ts_chksum
 
    IMPLICIT NONE
    PRIVATE
@@ -124,6 +124,7 @@ CONTAINS
          IF( ln_ctl )  &
          CALL prt_ctl( tab3d_1=tsa(:,:,:,jp_tem), clinfo1=' bbl_ldf  - Ta: ', mask1=tmask, &
          &             tab3d_2=tsa(:,:,:,jp_sal), clinfo2=           ' Sa: ', mask2=tmask, clinfo3='tra' )
+         IF (nn_chksum) CALL after_ts_chksum("after tra_bbl_dif")
          ! lateral boundary conditions ; just need for outputs
          CALL lbc_lnk( ahu_bbl, 'U', 1. )     ;     CALL lbc_lnk( ahv_bbl, 'V', 1. )
          CALL iom_put( "ahu_bbl", ahu_bbl )   ! bbl diffusive flux i-coef
@@ -137,6 +138,7 @@ CONTAINS
          IF(ln_ctl)   &
          CALL prt_ctl( tab3d_1=tsa(:,:,:,jp_tem), clinfo1=' bbl_adv  - Ta: ', mask1=tmask,   &
          &             tab3d_2=tsa(:,:,:,jp_sal), clinfo2=           ' Sa: ', mask2=tmask, clinfo3='tra' )
+         IF (nn_chksum) CALL after_ts_chksum("after tra_bbl_adv")
          ! lateral boundary conditions ; just need for outputs
          CALL lbc_lnk( utr_bbl, 'U', 1. )     ;   CALL lbc_lnk( vtr_bbl, 'V', 1. )
          CALL iom_put( "uoce_bbl", utr_bbl )  ! bbl i-transport

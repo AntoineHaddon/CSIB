@@ -12,7 +12,7 @@ MODULE tradmp
    !!            8.1  ! 2001-02  (G. Madec, E. Durand)  cleaning
    !!  NEMO      1.0  ! 2002-08  (G. Madec, E. Durand)  free form + modules
    !!            3.2  ! 2009-08  (G. Madec, C. Talandier)  DOCTOR norm for namelist parameter
-   !!            3.3  ! 2010-06  (C. Ethe, G. Madec) merge TRA-TRC 
+   !!            3.3  ! 2010-06  (C. Ethe, G. Madec) merge TRA-TRC
    !!            3.4  ! 2011-04  (G. Madec, C. Ethe) Merge of dtatem and dtasal + suppression of CPP keys
    !!----------------------------------------------------------------------
 
@@ -53,7 +53,7 @@ MODULE tradmp
    REAL(wp)        ::   rn_surf   =   50._wp  ! surface time scale for internal damping        [days]
    REAL(wp)        ::   rn_bot    =  360._wp  ! bottom time scale for internal damping         [days]
    REAL(wp)        ::   rn_dep    =  800._wp  ! depth of transition between rn_surf and rn_bot [meters]
-   INTEGER         ::   nn_file   =    2      ! = 1 create a damping.coeff NetCDF file 
+   INTEGER         ::   nn_file   =    2      ! = 1 create a damping.coeff NetCDF file
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   strdmp   !: damping salinity trend (psu/s)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   ttrdmp   !: damping temperature trend (Celcius/s)
@@ -64,7 +64,7 @@ MODULE tradmp
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 3.3 , NEMO Consortium (2010)
-   !! $Id: tradmp.F90 3294 2012-01-28 16:44:18Z rblod $ 
+   !! $Id: tradmp.F90 3294 2012-01-28 16:44:18Z rblod $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -84,12 +84,12 @@ CONTAINS
    SUBROUTINE tra_dmp( kt )
       !!----------------------------------------------------------------------
       !!                   ***  ROUTINE tra_dmp  ***
-      !!                  
+      !!
       !! ** Purpose :   Compute the tracer trend due to a newtonian damping
       !!      of the tracer field towards given data field and add it to the
       !!      general tracer trends.
       !!
-      !! ** Method  :   Newtonian damping towards t_dta and s_dta computed 
+      !! ** Method  :   Newtonian damping towards t_dta and s_dta computed
       !!      and add to the general tracer trends:
       !!                     ta = ta + resto * (t_dta - tb)
       !!                     sa = sa + resto * (s_dta - sb)
@@ -104,7 +104,7 @@ CONTAINS
       !!
       INTEGER  ::   ji, jj, jk   ! dummy loop indices
       REAL(wp) ::   zta, zsa             ! local scalars
-      REAL(wp), POINTER, DIMENSION(:,:,:,:) ::  zts_dta 
+      REAL(wp), POINTER, DIMENSION(:,:,:,:) ::  zts_dta
       !!----------------------------------------------------------------------
       !
       IF( nn_timing == 1 )  CALL timing_start( 'tra_dmp')
@@ -124,7 +124,7 @@ CONTAINS
                   tsa(ji,jj,jk,jp_tem) = tsa(ji,jj,jk,jp_tem) + zta
                   tsa(ji,jj,jk,jp_sal) = tsa(ji,jj,jk,jp_sal) + zsa
                   strdmp(ji,jj,jk) = zsa           ! save the trend (used in asmtrj)
-                  ttrdmp(ji,jj,jk) = zta      
+                  ttrdmp(ji,jj,jk) = zta
                END DO
             END DO
          END DO
@@ -138,7 +138,7 @@ CONTAINS
                      zsa = resto(ji,jj,jk) * ( zts_dta(ji,jj,jk,jp_sal) - tsb(ji,jj,jk,jp_sal) )
                   ELSE
                      zta = 0._wp
-                     zsa = 0._wp  
+                     zsa = 0._wp
                   ENDIF
                   tsa(ji,jj,jk,jp_tem) = tsa(ji,jj,jk,jp_tem) + zta
                   tsa(ji,jj,jk,jp_sal) = tsa(ji,jj,jk,jp_sal) + zsa
@@ -157,7 +157,7 @@ CONTAINS
                      zsa = resto(ji,jj,jk) * ( zts_dta(ji,jj,jk,jp_sal) - tsb(ji,jj,jk,jp_sal) )
                   ELSE
                      zta = 0._wp
-                     zsa = 0._wp  
+                     zsa = 0._wp
                   ENDIF
                   tsa(ji,jj,jk,jp_tem) = tsa(ji,jj,jk,jp_tem) + zta
                   tsa(ji,jj,jk,jp_sal) = tsa(ji,jj,jk,jp_sal) + zsa
@@ -176,6 +176,7 @@ CONTAINS
       !                           ! Control print
       IF(ln_ctl)   CALL prt_ctl( tab3d_1=tsa(:,:,:,jp_tem), clinfo1=' dmp  - Ta: ', mask1=tmask,   &
          &                       tab3d_2=tsa(:,:,:,jp_sal), clinfo2=       ' Sa: ', mask2=tmask, clinfo3='tra' )
+      IF (nn_chksum) CALL after_ts_chksum("after tra_dmp")
       !
       CALL wrk_dealloc( jpi, jpj, jpk, jpts,  zts_dta )
       !
@@ -187,8 +188,8 @@ CONTAINS
    SUBROUTINE tra_dmp_init
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE tra_dmp_init  ***
-      !! 
-      !! ** Purpose :   Initialization for the newtonian damping 
+      !!
+      !! ** Purpose :   Initialization for the newtonian damping
       !!
       !! ** Method  :   read the nammbf namelist and check the parameters
       !!----------------------------------------------------------------------
@@ -197,7 +198,7 @@ CONTAINS
 
       REWIND ( numnam )                  ! Read Namelist namtra_dmp : temperature and salinity damping term
       READ   ( numnam, namtra_dmp )
-      
+
       IF( lzoom )   nn_zdmp = 0          ! restoring to climatology at closed north or south boundaries
 
       IF(lwp) THEN                       ! Namelist print
@@ -289,8 +290,8 @@ CONTAINS
       ! damping along the forced closed boundary over 6 grid-points
       DO jn = 1, 6
          IF( lzoom_w )   presto( mi0(jn+jpizoom):mi1(jn+jpizoom), : , : )                    = zfact(jn)   ! west  closed
-         IF( lzoom_s )   presto( : , mj0(jn+jpjzoom):mj1(jn+jpjzoom), : )                    = zfact(jn)   ! south closed 
-         IF( lzoom_e )   presto( mi0(jpiglo+jpizoom-1-jn):mi1(jpiglo+jpizoom-1-jn) , : , : ) = zfact(jn)   ! east  closed 
+         IF( lzoom_s )   presto( : , mj0(jn+jpjzoom):mj1(jn+jpjzoom), : )                    = zfact(jn)   ! south closed
+         IF( lzoom_e )   presto( mi0(jpiglo+jpizoom-1-jn):mi1(jpiglo+jpizoom-1-jn) , : , : ) = zfact(jn)   ! east  closed
          IF( lzoom_n )   presto( : , mj0(jpjglo+jpjzoom-1-jn):mj1(jpjglo+jpjzoom-1-jn) , : ) = zfact(jn)   ! north closed
       END DO
 
@@ -302,7 +303,7 @@ CONTAINS
          IF(lwp .AND. lzoom_arct ) WRITE(numout,*) '              dtacof_zoom : ORCA Antarctic zoom'
          IF(lwp) WRITE(numout,*)
          !
-         !                          ! Initialization : 
+         !                          ! Initialization :
          presto(:,:,:) = 0._wp
          zlat0 = 10._wp                     ! zlat0 : latitude strip where resto decreases
          zlat1 = 30._wp                     ! zlat1 : resto = 1 before zlat1
@@ -314,7 +315,7 @@ CONTAINS
                DO ji = 1, jpi
                   zlat = ABS( gphit(ji,jj) )
                   IF( zlat1 <= zlat .AND. zlat <= zlat2 ) THEN
-                     presto(ji,jj,jk) = 0.5_wp * z1_5d * (  1._wp - COS( rpi*(zlat2-zlat)/zlat0 )  ) 
+                     presto(ji,jj,jk) = 0.5_wp * z1_5d * (  1._wp - COS( rpi*(zlat2-zlat)/zlat0 )  )
                   ELSEIF( zlat < zlat1 ) THEN
                      presto(ji,jj,jk) = z1_5d
                   ENDIF
@@ -362,9 +363,9 @@ CONTAINS
       REAL(wp) ::   zlat, zlat0, zlat1, zlat2   !   -      -
       REAL(wp) ::   zsdmp, zbdmp                !   -      -
       CHARACTER(len=20)                   :: cfile
-      REAL(wp), POINTER, DIMENSION(:    ) :: zhfac 
-      REAL(wp), POINTER, DIMENSION(:,:  ) :: zmrs 
-      REAL(wp), POINTER, DIMENSION(:,:,:) :: zdct 
+      REAL(wp), POINTER, DIMENSION(:    ) :: zhfac
+      REAL(wp), POINTER, DIMENSION(:,:  ) :: zmrs
+      REAL(wp), POINTER, DIMENSION(:,:,:) :: zdct
       !!----------------------------------------------------------------------
       !
       IF( nn_timing == 1 )  CALL timing_start('dtacof')
@@ -396,7 +397,7 @@ CONTAINS
             CALL cofdis( zdct )
          ENDIF
 
-         !                            ! Compute arrays resto 
+         !                            ! Compute arrays resto
          zinfl = 1000.e3_wp                ! distance of influence for damping term
          zlat0 = 10._wp                    ! latitude strip where resto decreases
          zlat1 = REAL( kn_hdmp )           ! resto = 0 between -zlat1 and zlat1
@@ -452,7 +453,7 @@ CONTAINS
          !
          SELECT CASE ( jp_cfg )
          !                                           ! =======================
-         CASE ( 4 )                                  !  ORCA_R4 configuration 
+         CASE ( 4 )                                  !  ORCA_R4 configuration
             !                                        ! =======================
             ij0 =  50   ;   ij1 =  56                    ! Mediterranean Sea
 
@@ -469,7 +470,7 @@ CONTAINS
                zhfac (jk) = 1._wp / rday
             END DO
             !                                        ! =======================
-         CASE ( 2 )                                  !  ORCA_R2 configuration 
+         CASE ( 2 )                                  !  ORCA_R2 configuration
             !                                        ! =======================
             ij0 =  96   ;   ij1 = 110                    ! Mediterranean Sea
             ii0 = 157   ;   ii1 = 181   ;   zmrs( mi0(ii0):mi1(ii1) , mj0(ij0):mj1(ij1) ) = 1._wp
@@ -522,17 +523,17 @@ CONTAINS
             ij0 = 270   ;   ij1 = 310   ;   zmrs( mi0(ii0):mi1(ii1) , mj0(ij0):mj1(ij1) ) = 1._wp
             !
             ii0 = 666   ;   ii1 = 675                    ! Decrease before Bab el Mandeb Strait
-            ij0 = 270   ;   ij1 = 290   
+            ij0 = 270   ;   ij1 = 290
             DO ji = mi0(ii0), mi1(ii1)
                zmrs( ji , mj0(ij0):mj1(ij1) ) = 0.1_wp * ABS( FLOAT(ji - mi1(ii1)) )
-            END DO 
+            END DO
             zsdmp = 1._wp / ( pn_surf * rday )
             zbdmp = 1._wp / ( pn_bot  * rday )
             DO jk = 1, jpk
                zhfac(jk) = (  zbdmp + (zsdmp-zbdmp) * EXP( -fsdept(1,1,jk)/pn_dep )  )
             END DO
             !                                       ! ========================
-         CASE ( 025 )                               !  ORCA_R025 configuration 
+         CASE ( 025 )                               !  ORCA_R025 configuration
             !                                       ! ========================
             CALL ctl_stop( ' Not yet implemented in ORCA_R025' )
             !
@@ -580,18 +581,18 @@ CONTAINS
       !! ** Purpose :   Compute the distance between ocean T-points and the
       !!      ocean model coastlines. Save the distance in a NetCDF file.
       !!
-      !! ** Method  :   For each model level, the distance-to-coast is 
-      !!      computed as follows : 
+      !! ** Method  :   For each model level, the distance-to-coast is
+      !!      computed as follows :
       !!       - The coastline is defined as the serie of U-,V-,F-points
       !!      that are at the ocean-land bound.
-      !!       - For each ocean T-point, the distance-to-coast is then 
-      !!      computed as the smallest distance (on the sphere) between the 
+      !!       - For each ocean T-point, the distance-to-coast is then
+      !!      computed as the smallest distance (on the sphere) between the
       !!      T-point and all the coastline points.
       !!       - For land T-points, the distance-to-coast is set to zero.
       !!      C A U T I O N : Computation not yet implemented in mpp case.
       !!
       !! ** Action  : - pdct, distance to the coastline (argument)
-      !!              - NetCDF file 'dist.coast.nc' 
+      !!              - NetCDF file 'dist.coast.nc'
       !!----------------------------------------------------------------------
       USE ioipsl      ! IOipsl librairy
       !!
@@ -642,8 +643,8 @@ CONTAINS
             DO ji = 2, jpim1
                zmask(ji,jj) =  ( tmask(ji,jj+1,jk) + tmask(ji+1,jj+1,jk) &
                    &           + tmask(ji,jj  ,jk) + tmask(ji+1,jj  ,jk) )
-               llcotu(ji,jj) = ( tmask(ji,jj,  jk) + tmask(ji+1,jj  ,jk) == 1._wp ) 
-               llcotv(ji,jj) = ( tmask(ji,jj  ,jk) + tmask(ji  ,jj+1,jk) == 1._wp ) 
+               llcotu(ji,jj) = ( tmask(ji,jj,  jk) + tmask(ji+1,jj  ,jk) == 1._wp )
+               llcotv(ji,jj) = ( tmask(ji,jj  ,jk) + tmask(ji  ,jj+1,jk) == 1._wp )
                llcotf(ji,jj) = ( zmask(ji,jj) > 0._wp ) .AND. ( zmask(ji,jj) < 4._wp )
             END DO
          END DO
@@ -755,7 +756,7 @@ CONTAINS
 
 
       ! 2. Create the  distance to the coast file in NetCDF format
-      ! ----------------------------------------------------------    
+      ! ----------------------------------------------------------
       clname = 'dist.coast'
       itime  = 0
       CALL ymds2ju( 0     , 1      , 1     , 0._wp , zdate0 )
