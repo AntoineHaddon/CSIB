@@ -6,6 +6,7 @@
 #                     [exp=EXP00] \
 #                     [maestro_repo=url] \
 #                     [maestro_version=ver] \
+#                     [cmip6_diag=on] \
 #          Quantities in square brackets are optional. Note that ver and config are not required if
 #          the flags -d or -r are used. See below.
 #
@@ -35,6 +36,7 @@
 #   exp=EXP00 ...is the name of the "experiment" directory from which to extract files (generally not needed).
 #   maestro_repo=url ...repositorty to use for the maestro suite (defaults to gitlab).
 #   maestro_version=ver ...version of the maestro repo to use (defaults to develop).
+#   cmip6_diag=on ...with nemo_ar6_diag=on the cmip6 diagnostics will be output.
 #
 # Examples:
 # -setup an "out of the box" CCC_ORCA1_LIM_PISCES configuration in the current directory:
@@ -49,6 +51,11 @@
 #
 #    setup-nemo repo=path/to/my/nemo-CCCma_repo ver=my_crazy_test_branch runid=nta config=CCC_ORCA1_LIM_PISCES 
 #
+# - setup the CCC_ORCA1_LIM configuration with cmip6 diagnostics from myrepo on branch my_test_branch 
+#  in the current directory:
+#
+#    setup-nemo repo=path/to/my/nemo-CCCma_repo ver=my_test_branch runid=abc config=CCC_ORCA1_LIM cmip6_diag=on
+#
 # -setup a job to dump to tape and/or delete (existing) data from sitestore for run abc 
 #
 #    setup-nemo -d runid=abc
@@ -62,6 +69,9 @@
 #
 # Clint Seinen, updated 2018-02-01 
 # Updated to combine other setup scripts into one.
+#
+# Duo Yang, 2018-04-10
+# Adapted for cmip6 diagnostics.
 ########################################################################
 #
 bail(){
@@ -124,6 +134,9 @@ save_files=on
 # set experiment directory
 nemo_exp=EXP00
 
+# Set default history file output
+nemo_ar6_diag=off
+
 # process command line options
 while getopts hxrd opt
 do
@@ -155,6 +168,7 @@ for arg in "$@"; do
                exp) nemo_exp="$val" ;;      # NEMO experiment directory
       maestro_repo) ;;                      # maestro repo (already added to the env in the eval statement)
    maestro_version) usr_maestro_ver=1;;     # maestro verion / commit, the actual var is added to the env in the eval statement 
+        cmip6_diag) nemo_ar6_diag="$val" ;; # cmip6 diagnostics or defaul history file output
                  *) bail "Invalid command line arg --> $arg <--" ;;
          esac
          ;;
@@ -295,6 +309,9 @@ else
     export PATH
 
     sed -i "s/RUNID=.*/RUNID=${nemo_runid}/g" experiment.cfg
+    if [ ${nemo_ar6_diag} = on ] ; then
+       sed -i "s/nemo_ar6_diag=.*/nemo_ar6_diag=on/" experiment.cfg
+    fi
     sed -i "s/SEQ_JOBNAME_PREFIX=.*/SEQ_JOBNAME_PREFIX=${nemo_runid}-/g" resources/resources.def
     config-maestro
 
@@ -327,6 +344,9 @@ else
     ln -s ${src_path}/nemo/CONFIG/${nemo_config}/${nemo_exp}/compile ${CWD}/compile
     [ -e compile ] || bail "Failed to extract compile script from ${src_path}/nemo/CONFIG/${nemo_config}/${nemo_exp}/compile" 
     cat compile | sed "s#runid#${nemo_runid}#;s#repo=[^ ]*#repo="$nemo_repo"#;s#ver=[^ ]*#ver=$sha1 srcpath=${CWD}/${src_path}#" > compile_${nemo_runid}
+    if [ ${nemo_ar6_diag} = on ] ; then
+       sed -i '/^build-nemo/s/$/ add_key="key_trdtra key_diaar5"/' compile_${nemo_runid}
+    fi
     rm -f compile
     chmod +x compile_${nemo_runid}
 
@@ -357,6 +377,11 @@ else
            #stre="${i}="'${SEQ_EXP_HOME}/namelists/'${i}"" 
            #mod_nl $CWD/experiment.cfg stre
            sed -i "s#${i}=.*#${i}="'${SEQ_EXP_HOME}/namelists/'${i}"#" ../experiment.cfg
+        fi
+        if [[ $i == "iodef"* ]]; then
+           if [ ${nemo_ar6_diag} = on ] ; then
+              sed -i 's#output_level=.*#output_level="10"#' ${i}
+           fi
         fi
     done
     # Modifiy namelist paths in experiment.cfg
