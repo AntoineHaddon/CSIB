@@ -380,7 +380,7 @@ else
         fi
         if [[ $i == "iodef"* ]]; then
            if [ ${nemo_ar6_diag} = on ] ; then
-              sed -i 's#output_level=.*#output_level="10"#' ${i}
+              sed -i 's#output_level=.*#output_level="10" >#' ${i}
            fi
         fi
     done
