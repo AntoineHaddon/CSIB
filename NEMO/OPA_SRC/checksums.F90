@@ -52,7 +52,8 @@ CONTAINS
       REAL(wp) :: minarray, maxarray
 
       ! By default set indices to only the "inner" part of the array, not the halo
-      is = 2 ; ie = jpim1 ; js = 2  ; je = jpjm1
+      is = 2 ; ie = jpim1
+      js = 2 ; je = jpjm1
       IF (PRESENT(istart)) is = istart
       IF (PRESENT(jstart)) js = jstart
       IF (PRESENT(iend))   ie = iend
@@ -63,7 +64,7 @@ CONTAINS
 
       bc = 0
       IF (PRESENT(mask)) THEN
-         DO ji = is, ie ; DO jj = js, je
+         DO jj = js, je ; DO ji = is, ie
             IF ( mask(ji,jj) > 0. ) THEN
                minarray = MIN( minarray, array(ji,jj) )
                maxarray = MAX( maxarray, array(ji,jj) )
@@ -71,7 +72,7 @@ CONTAINS
             ENDIF
          ENDDO ; ENDDO
       ELSE
-         DO ji = is, ie ; DO jj = js, je
+         DO jj = js, je ; DO ji = is, ie
             minarray = MIN( minarray, array(ji,jj) )
             maxarray = MAX( maxarray, array(ji,jj) )
             bc = bc + bitcount( array(ji,jj) )
@@ -110,19 +111,21 @@ CONTAINS
       REAL(wp) :: minarray, maxarray
 
       ! By default set indices to only the "inner" part of the array, not the halo
-      is = 2 ; ie = jpim1 ; js = 2  ; je = jpjm1 ; ks = 1 ; ke = jpk
+      is = 2 ; ie = jpim1
+      js = 2 ; je = jpjm1
+      ks = 1 ; ke = jpk
       IF (PRESENT(istart)) is = istart
       IF (PRESENT(jstart)) js = jstart
-      IF (PRESENT(kstart)) js = kstart
+      IF (PRESENT(kstart)) ks = kstart
       IF (PRESENT(iend))   ie = iend
       IF (PRESENT(jend))   je = jend
       IF (PRESENT(kend))   ke = kend
 
-      ! Set the initial min/max values to the first value to be checked in the array
+      ! Set the initial min/max values to be ridiculous values
       minarray = HUGE(minarray) ; maxarray = -HUGE(maxarray)
       bc = 0
       IF (PRESENT(mask)) THEN
-        DO jk = ks, ke ; DO ji = is, ie ; DO jj = js, je
+        DO jk = ks, ke ; DO jj = js, je ; DO ji = is, ie
            IF (mask(ji,jj,jk)>0.) THEN
               minarray = MIN(minarray, array(ji,jj,jk))
               maxarray = MAX(maxarray, array(ji,jj,jk))
@@ -130,7 +133,7 @@ CONTAINS
            ENDIF
         ENDDO ; ENDDO ; ENDDO
       ELSE
-        DO jk = ks, ke ; DO ji = is, ie ; DO jj = js, je
+        DO jk = ks, ke ; DO jj = js, je ; DO ji = is, ie
            minarray = MIN(minarray, array(ji,jj,jk))
            maxarray = MAX(maxarray, array(ji,jj,jk))
            bc = bc + bitcount( array(ji,jj,jk) )
