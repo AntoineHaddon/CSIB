@@ -202,34 +202,17 @@ CONTAINS
 
    END SUBROUTINE after_ts_chksum
 
-   !> Calculates the bitcount of real number by summing the number of bits set for exponent
-   !! and an integer representation of the fractional part.
+   !> Calculates the bitcount of a real number by transferring its memory representation to an
+   !! integer of the same byte-size and then using BTEST to check it bit by bit
    INTEGER FUNCTION bitcount( scalar )
-      REAL(wp) :: scalar !< Scalar to be bit-counted
+      REAL(wp)    :: scalar     !< Scalar to be bit-counted
+      INTEGER(wp) :: scalar_int !< Integer with memory representation of 'scalar'
 
-      INTEGER*2 :: real_exponent
-      REAL(wp)  :: real_mantissa
-      INTEGER*8 :: mantissa_int
-      INTEGER   :: bit
-
+      INTEGER :: bit
       bitcount = 0
-      ! Add a bit if the number is negative
-      IF ( scalar<0 ) bitcount = bitcount + 1
-      real_exponent = EXPONENT(scalar)
-      real_mantissa = FRACTION(ABS(scalar))
-
-      ! Multiply the mantissa by 10^18 so that it becomes a number that can be truncated into an integer
-      ! while retaining all the digits. Note that if there are more significant digits than this, then
-      ! some changes will be lost
-      mantissa_int = INT(real_mantissa*1.e18)
-
-      ! Loop over the exponent, declared as INTEGER*2, so 2*8=16 bits to check, starting from 0
-      DO bit=0,16
-        IF ( BTEST(real_exponent, bit) ) bitcount = bitcount + 1
-      ENDDO
-      ! Loop over the integer representing the mantissa
-      DO bit=0,64
-        IF ( BTEST(mantissa_int, bit) ) bitcount = bitcount + 1
+      scalar_int = TRANSFER(scalar, scalar_int)
+      DO bit=0,BIT_SIZE(scalar_int)-1
+        IF ( BTEST(scalar_int, bit) ) bitcount = bitcount + 1
       ENDDO
 
    END FUNCTION bitcount
