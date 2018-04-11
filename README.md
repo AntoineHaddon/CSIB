@@ -40,15 +40,13 @@ For questions: neil.swart@canada.ca
 -----------------------------------
 # Development of the CMIP6 diagnostics
 
-## Options to output the CMIP6 diagnostics or the default CCCma fields
+## Option to output the CMIP6 diagnostics
 
-For the CMIP6 diagnostics: 
-    set nemo_ar6_diag = on in experiment.cfg (default).
+To output the CMIP6 diagnostics, add cmip6_diag=on as one of the command line args in setup-nemo.
 
-For the default CCCma fields:
-    1) set nemo_ar6_diag = off in experiment.cfg;
-    2) set output_level="0" in iodef.xml file;
-    3) use "Default output" option (i.e. add_key="key_trdtra key_diaar5" being removed) in the compile file.
+e.g.,
+
+setup-nemo repo=/home/rdy001/dyang_repoer=cmip6-diag maestro_repo=/home/rdy001/maestro_repo maestro_version=maestro-cmip6-diag config=CCC_ORCA1_LIM runid=abc cmip6_diag=on
 
 ## Supported configurations
 
@@ -65,7 +63,7 @@ For the default CCCma fields:
 
     For problems and questions: duo.yang@canada.ca
 
-D. YANG, 05/APR/2018
+D. YANG, 11/APR/2018
 -----------------------------------
 
 
