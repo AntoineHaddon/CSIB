@@ -304,6 +304,7 @@ else
     # basic maestro setup
     export SEQ_EXP_HOME=`pwd`
     mkdir hub logs sequencing stats listings
+    touch "logs/`date '+%Y%m%d'`000000_nodelog"
     makelinks -f
     PATH=$CWD/bin:$PATH
     export PATH
