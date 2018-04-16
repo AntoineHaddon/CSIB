@@ -843,8 +843,8 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 &namptr       !   Poleward Transport Diagnostic
 !-----------------------------------------------------------------------
    ln_diaptr  = .false.    !  Poleward heat and salt transport (T) or not (F)
-   ln_diaznl  = .true.     !  Add zonal means and meridional stream functions
-   ln_subbas  = .true.     !  Atlantic/Pacific/Indian basins computation (T) or not 
+   ln_diaznl  = .false.    !  Add zonal means and meridional stream functions
+   ln_subbas  = .false.    !  Atlantic/Pacific/Indian basins computation (T) or not 
                            !  (orca configuration only, need input basins mask file named "subbasins.nc"
    ln_ptrcomp = .true.     !  Add decomposition : overturning
    nn_fptr    =  1         !  Frequency of ptr computation [time step]

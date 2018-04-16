@@ -5,6 +5,10 @@ MODULE diaar5
    !!======================================================================
    !! History :  3.2  !  2009-11  (S. Masson)  Original code
    !!            3.3  !  2010-10  (C. Ethe, G. Madec) reorganisation of initialisation phase + merge TRC-TRA
+   !!            3.4.1!  2016-06  (D. Yang) added global area average of SST and SSS.
+   !!            3.4.1!  2016-07  (D. Yang) added square of sea surface height above geoid 
+   !!                                       (sshdyn2, global average sea level change removed)
+   !!            3.4.1!  2016-08  (D. Yang) output area     
    !!----------------------------------------------------------------------
 #if defined key_diaar5   || defined key_esopa
    !!----------------------------------------------------------------------
@@ -82,6 +86,7 @@ CONTAINS
       CALL wrk_alloc( jpi , jpj , jpk        , zrhd      , zrhop    )
       CALL wrk_alloc( jpi , jpj , jpk , jpts , ztsn                 )
 
+      CALL iom_put( 'area',area(:,:) )
       CALL iom_put( 'cellthc', fse3t(:,:,:) )
 
       zarea_ssh(:,:) = area(:,:) * sshn(:,:)
@@ -93,7 +98,7 @@ CONTAINS
       
       CALL iom_put( 'voltot', zvol               )
       CALL iom_put( 'sshtot', zvolssh / area_tot )
-
+      CALL iom_put( 'sshdyn2', (sshn(:,:) - (zvolssh / area_tot)) ** 2 )
       !                     
       ztsn(:,:,:,jp_tem) = tsn(:,:,:,jp_tem)                    ! thermosteric ssh
       ztsn(:,:,:,jp_sal) = sn0(:,:,:)
@@ -160,6 +165,25 @@ CONTAINS
       CALL iom_put( 'temptot', ztemp )
       CALL iom_put( 'saltot' , zsal  )
       !
+      !                                         ! Mean sst and sss
+      ztemp = 0._wp
+      zsal  = 0._wp
+      DO jj = 1, jpj
+         DO ji = 1, jpi
+            ztemp = ztemp + area(ji,jj) * tsn(ji,jj,1,jp_tem)
+            zsal  = zsal  + area(ji,jj) * tsn(ji,jj,1,jp_sal)
+         END DO
+      END DO
+      IF( lk_mpp ) THEN
+         CALL mpp_sum( ztemp )
+         CALL mpp_sum( zsal  )
+      END IF
+      !
+      ztemp = ztemp / area_tot
+      zsal  = zsal  / area_tot
+      CALL iom_put( 'ssttot', ztemp)                  ! global area mean sst 
+      CALL iom_put( 'ssstot', zsal )                  ! global area mean sss
+      !
       CALL wrk_dealloc( jpi , jpj              , zarea_ssh , zbotpres )
       CALL wrk_dealloc( jpi , jpj , jpk        , zrhd      , zrhop    )
       CALL wrk_dealloc( jpi , jpj , jpk , jpts , ztsn                 )
@@ -198,6 +222,7 @@ CONTAINS
          vol0        = vol0        + SUM( area (:,:) * tmask(:,:,jk) * fse3t_0(:,:,jk) )
          thick0(:,:) = thick0(:,:) +    tmask_i(:,:) * tmask(:,:,jk) * fse3t_0(:,:,jk)
       END DO
+      
       IF( lk_mpp )   CALL mpp_sum( vol0 )
       
       CALL iom_open ( 'data_1m_salinity_nomask', inum )
