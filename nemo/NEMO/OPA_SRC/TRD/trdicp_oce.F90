@@ -3,7 +3,8 @@ MODULE trdicp_oce
    !!                   ***  MODULE trdicp_oce  ***
    !! Ocean trends :   set tracer and momentum trend variables
    !!======================================================================
-
+   !! History :  3.4.1! 2016-03 (D. YANG) Added jpicpt_zdfp and jpicpt_atf
+   !!
    !!----------------------------------------------------------------------
    !!   'key_trdtra'   or                         tracer trends diagnostics
    !!   'key_trddyn'                            momentum trends diagnostics
@@ -40,9 +41,11 @@ MODULE trdicp_oce
    INTEGER, PARAMETER ::   jpicpt_qsr = 10   !: penetrative solar radiation
    INTEGER, PARAMETER ::   jpicpt_nsr = 11   !: non solar radiation
    INTEGER, PARAMETER ::   jpicpt_zl1 = 12   !: first level vertical flux
+   INTEGER, PARAMETER ::   jpicpt_zdfp= 13   !: "PURE" Kz trend (iso-neutral diffusion case)
+   INTEGER, PARAMETER ::   jpicpt_atf = 14   !: Asselin correction
 
    !                                        !!! => Total tracer trends indexes <=
-   INTEGER, PARAMETER ::   jptot_tra  = 12   !: change it when adding/removing one indice above
+   INTEGER, PARAMETER ::   jptot_tra  = 14   !: change it when adding/removing one indice above
    
    !                                        !!! => dynamic trends indexes <=
    INTEGER, PARAMETER ::   jpicpd_hpg =  1   !: hydrostatic pressure gradient 

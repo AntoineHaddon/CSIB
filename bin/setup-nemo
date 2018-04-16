@@ -6,6 +6,7 @@
 #                     [exp=EXP00] \
 #                     [maestro_repo=url] \
 #                     [maestro_version=ver] \
+#                     [cmip6_diag=on] \
 #          Quantities in square brackets are optional. Note that ver and config are not required if
 #          the flags -d or -r are used. See below.
 #
@@ -43,6 +44,7 @@
 #   exp=EXP00 ...is the name of the "experiment" directory from which to extract files (generally not needed).
 #   maestro_repo=url ...repositorty to use for the maestro suite (defaults to gitlab).
 #   maestro_version=ver ...version of the maestro repo to use (defaults to develop).
+#   cmip6_diag=on ...with nemo_ar6_diag=on the cmip6 diagnostics will be output.
 #
 # Examples:
 # -setup an "out of the box" CCC_ORCA1_LIM_PISCES configuration in the current directory:
@@ -61,6 +63,11 @@
 #
 #    setup-nemo -l 20:12 ver=develop runid=abc config=CCC_ORCA1_LIM
 # 
+# - setup the CCC_ORCA1_LIM configuration with cmip6 diagnostics from myrepo on branch my_test_branch 
+#  in the current directory:
+#
+#    setup-nemo repo=path/to/my/nemo-CCCma_repo ver=my_test_branch runid=abc config=CCC_ORCA1_LIM cmip6_diag=on
+#
 # -setup a job to dump to tape and/or delete (existing) data from sitestore for run abc 
 #
 #    setup-nemo -d runid=abc
@@ -69,11 +76,10 @@
 #
 #    setup-nemo -r runid=abc
 #
-# Neil Swart, 2014-11-05
-# Adapted from Larry's build-nemo
-#
-# 2018-02-01 Clint Seinen : Updated to combine other setup scripts into one.
-# 2018-04-09 Clint Seinen : Updated to allow for automatic launching.
+# 2014-11-05 Neil Swart     : Adapted from Larry's build-nemo
+# 2018-02-01 Clint Seinen   : Updated to combine other setup scripts into one.
+# 2018-04-09 Clint Seinen   : Updated to allow for automatic launching.
+# 2018-04-10 Duo Yang       : Adapted for cmip6 diagnostics.
 ########################################################################
 #
 bail(){
@@ -139,6 +145,9 @@ save_files=on
 # set experiment directory
 nemo_exp=EXP00
 
+# Set default history file output
+nemo_ar6_diag=off
+
 # process command line options
 while getopts hxrdl: opt
 do
@@ -176,6 +185,7 @@ for arg in "$@"; do
                exp) nemo_exp="$val" ;;      # NEMO experiment directory
       maestro_repo) ;;                      # maestro repo (already added to the env in the eval statement)
    maestro_version) usr_maestro_ver=1;;     # maestro verion / commit, the actual var is added to the env in the eval statement 
+        cmip6_diag) nemo_ar6_diag="$val" ;; # cmip6 diagnostics or defaul history file output
                  *) bail "Invalid command line arg --> $arg <--" ;;
          esac
          ;;
@@ -317,6 +327,9 @@ else
     export PATH
 
     sed -i "s/RUNID=.*/RUNID=${nemo_runid}/g" experiment.cfg
+    if [ ${nemo_ar6_diag} = on ] ; then
+       sed -i "s/nemo_ar6_diag=.*/nemo_ar6_diag=on/" experiment.cfg
+    fi
     sed -i "s/SEQ_JOBNAME_PREFIX=.*/SEQ_JOBNAME_PREFIX=${nemo_runid}-/g" resources/resources.def
     config-maestro
 
@@ -349,6 +362,9 @@ else
     ln -s ${src_path}/nemo/CONFIG/${nemo_config}/${nemo_exp}/compile ${CWD}/compile
     [ -e compile ] || bail "Failed to extract compile script from ${src_path}/nemo/CONFIG/${nemo_config}/${nemo_exp}/compile" 
     cat compile | sed "s#build-nemo#../CanNEMO_tmp_src/bin/build-nemo#;s#runid#${nemo_runid}#;s#repo=[^ ]*#repo="$nemo_repo"#;s#ver=[^ ]*#ver=$sha1 srcpath=${CWD}/${src_path}#" > compile_${nemo_runid}
+    if [ ${nemo_ar6_diag} = on ] ; then
+       sed -i '/^build-nemo/s/$/ add_key="key_trdtra key_diaar5"/' compile_${nemo_runid}
+    fi
     rm -f compile
     chmod +x compile_${nemo_runid}
 
@@ -380,6 +396,11 @@ else
            #mod_nl $CWD/experiment.cfg stre
            sed -i "s#${i}=.*#${i}="'${SEQ_EXP_HOME}/namelists/'${i}"#" ../experiment.cfg
         fi
+        if [[ $i == "iodef"* ]]; then
+           if [ ${nemo_ar6_diag} = on ] ; then
+              sed -i 's#output_level=.*#output_level="10" >#' ${i}
+           fi
+        fi
     done
     # Modifiy namelist paths in experiment.cfg
     #sed -i "s#nemo_namelist=.*#nemo_namelist="'${SEQ_EXP_HOME}/namelists/'namelist"#" ../experiment.cfg
@@ -404,13 +425,6 @@ else
             sed -i 's#nemo_dump_file_freq=.*#nemo_dump_file_freq="1m     1m"#' ../experiment.cfg
             sed -i 's#nemo_del_file_suff=.*#nemo_del_file_suff="ptrc_T diad_T"#' ../experiment.cfg
             sed -i 's#nemo_del_file_freq=.*#nemo_del_file_freq="1m     1m"#' ../experiment.cfg
-        else
-            sed -i 's#nemo_hist_file_suffix_list=.*#nemo_hist_file_suffix_list="grid_T grid_U grid_V grid_W icemod ptrc_T diad_T"#' ../experiment.cfg
-            sed -i 's#nemo_hist_file_freq_list=.*#nemo_hist_file_freq_list="      1m     1m     1m     1m    1m      1m     1m"#' ../experiment.cfg
-            sed -i 's#nemo_dump_file_suff=.*#nemo_dump_file_suff="grid_T grid_U grid_V grid_W icemod ptrc_T diad_T"#' ../experiment.cfg
-            sed -i 's#nemo_dump_file_freq=.*#nemo_dump_file_freq="      1m     1m     1m     1m    1m      1m     1m"#' ../experiment.cfg
-            sed -i 's#nemo_del_file_suff=.*#nemo_del_file_suff="grid_T grid_U grid_V grid_W icemod ptrc_T diad_T"#' ../experiment.cfg
-            sed -i 's#nemo_del_file_freq=.*#nemo_del_file_freq="      1m     1m     1m     1m    1m      1m     1m"#' ../experiment.cfg
         fi
     fi
 
@@ -465,6 +479,7 @@ EOF
             echo "NOTE: NemoVal diagnostics currently aren't supported for the quarter degree model."
             echo "NemoVal turned off for this run"
             sed -i "s#nemoval_diag=.*#nemoval_diag=off#" ./experiment.cfg
+            sed -i "s#nemoval_rtd=.*#nemoval_rtd=off#" ./experiment.cfg
 
             # set necessary data files for added resolution
             # grid information
