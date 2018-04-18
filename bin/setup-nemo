@@ -476,10 +476,7 @@ EOF
 
         # considerations for quarter degree model
         if [[ $nemo_config_lower == *"orca025"* ]]; then
-            echo "NOTE: NemoVal diagnostics currently aren't supported for the quarter degree model."
-            echo "NemoVal turned off for this run"
-            sed -i "s#nemoval_diag=.*#nemoval_diag=off#" ./experiment.cfg
-            sed -i "s#nemoval_rtd=.*#nemoval_rtd=off#" ./experiment.cfg
+            sed -i "s#nemo_rtd=.*#nemo_rtd=off#" ./experiment.cfg
 
             # set necessary data files for added resolution
             # grid information
