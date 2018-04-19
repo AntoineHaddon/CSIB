@@ -756,7 +756,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
 &namsol        !   elliptic solver / island / free surface 
 !-----------------------------------------------------------------------
-   nn_solv     =      1    !  elliptic solver: =1 preconditioned conjugate gradient (pcg)
+   nn_solv     =      2    !  elliptic solver: =1 preconditioned conjugate gradient (pcg)
                            !                   =2 successive-over-relaxation (sor)
    nn_sol_arp  =      0    !  absolute/relative (0/1) precision convergence test
    rn_eps      =  1.e-6    !  absolute precision of the solver
@@ -772,7 +772,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
    cn_mpi_send =  'I'      !  mpi send/recieve type   ='S', 'B', or 'I' for standard send,
                            !  buffer blocking send or immediate non-blocking sends, resp.
    nn_buffer   =   0       !  size in bytes of exported buffer ('B' case), 0 no exportation
-   ln_nnogather=  .false.  !  activate code to avoid mpi_allgather use at the northfold
+   ln_nnogather=  .true.  !  activate code to avoid mpi_allgather use at the northfold
   jpni = 1
   jpnj = 1
   jpnij = 1

@@ -15,9 +15,17 @@
 #          ".setup-nemo.log" and sends a copy of this log to the nemo run database.  
 #          
 # Options:
-#   -h          ...display this usage documentation!
-#   -d          ...sets up a maestro dump to tape/delete only job on existing data
-#   -r          ...sets up a maestro rtd only job on existing data
+#   -h                  ...display this usage documentation!
+#   -d                  ...sets up a maestro dump to tape/delete only job on existing data
+#   -r                  ...sets up a maestro rtd only job on existing data
+#   -l END_yr:END_mnth  ...compiles and launches a simulation from 0001:01 to the specified end date
+#                   Note: the desired simulation length must be such that the default nemo_freq divides 
+#                       evenly into it. The default values for nemo_freq are set to  
+#                       -> CCC_ORCA1_LIM        : 120 mnths
+#                       -> CCC_ORCA1_LIM_CMOC   : 60  mnths
+#                       -> CCC_ORCA1_LIM_CANOE  : 24  mnths
+#                       -> CCC_ORCA025_LIM      : 4   mnths
+#                       -> others               : 12  mnths
 #
 # Variable definitions:
 #   ver=tag       ...tag is the version number/tag or branch to extract from
@@ -51,6 +59,10 @@
 #
 #    setup-nemo repo=path/to/my/nemo-CCCma_repo ver=my_crazy_test_branch runid=nta config=CCC_ORCA1_LIM_PISCES 
 #
+# -setup a CCC_ORCA1_LIM config from develop and automatically compile and launch 20 year simulation
+#
+#    setup-nemo -l 20:12 ver=develop runid=abc config=CCC_ORCA1_LIM
+# 
 # - setup the CCC_ORCA1_LIM configuration with cmip6 diagnostics from myrepo on branch my_test_branch 
 #  in the current directory:
 #
@@ -64,14 +76,10 @@
 #
 #    setup-nemo -r runid=abc
 #
-# Neil Swart, 2014-11-05
-# Adapted from Larry's build-nemo
-#
-# Clint Seinen, updated 2018-02-01 
-# Updated to combine other setup scripts into one.
-#
-# Duo Yang, 2018-04-10
-# Adapted for cmip6 diagnostics.
+# 2014-11-05 Neil Swart     : Adapted from Larry's build-nemo
+# 2018-02-01 Clint Seinen   : Updated to combine other setup scripts into one.
+# 2018-04-09 Clint Seinen   : Updated to allow for automatic launching.
+# 2018-04-10 Duo Yang       : Adapted for cmip6 diagnostics.
 ########################################################################
 #
 bail(){
@@ -125,6 +133,9 @@ usr_maestro_ver=0
 # The default jobtype
 jobtype='sim'
 
+# flag to decide whether to compile and launch
+lnch_jb=0
+
 # Target machine to run on. Where we will put stuff on lustre
 #run_mach=''
 
@@ -138,14 +149,20 @@ nemo_exp=EXP00
 nemo_ar6_diag=off
 
 # process command line options
-while getopts hxrd opt
+while getopts hxrdl: opt
 do
   case $opt in
     x) set -x ;;
     h) usage ;;
     r) jobtype='rtd';;      # rtd only
     d) jobtype='dumpdel';;  # dumpdel only
-    -) shift; break ;;      # end of options
+    l) lnch_jb=1            # comp/lnch rn_ln long simulation
+        [[ "$OPTARG" == *"="* ]] && 
+        bail "you must provide an argument with -l in the following format Y:MM" 
+        rn_ln_m=$(echo $OPTARG | sed "s/.*://" | xargs printf "%02d")
+        rn_ln_y=$(echo $OPTARG | sed "s/:.*//" | xargs printf "%04d")
+        [ "${rn_ln_m}" -gt 12 ] && bail "number of months given with -l must be less than 12" ;;
+    -) shift; break ;;              # end of options
     ?) usage -e $USAGE   ;;
   esac
 done
@@ -344,7 +361,7 @@ else
     # Get the compile script, and reset runid, repo and ver.
     ln -s ${src_path}/nemo/CONFIG/${nemo_config}/${nemo_exp}/compile ${CWD}/compile
     [ -e compile ] || bail "Failed to extract compile script from ${src_path}/nemo/CONFIG/${nemo_config}/${nemo_exp}/compile" 
-    cat compile | sed "s#runid#${nemo_runid}#;s#repo=[^ ]*#repo="$nemo_repo"#;s#ver=[^ ]*#ver=$sha1 srcpath=${CWD}/${src_path}#" > compile_${nemo_runid}
+    cat compile | sed "s#build-nemo#./CanNEMO_tmp_src/bin/build-nemo#;s#runid#${nemo_runid}#;s#repo=[^ ]*#repo="$nemo_repo"#;s#ver=[^ ]*#ver=$sha1 srcpath=${CWD}/${src_path}#" > compile_${nemo_runid}
     if [ ${nemo_ar6_diag} = on ] ; then
        sed -i '/^build-nemo/s/$/ add_key="key_trdtra key_diaar5"/' compile_${nemo_runid}
     fi
@@ -395,27 +412,6 @@ else
     sed -i "s#nemo_xmlio_server_def=.*#nemo_xmlio_server_def="'${SEQ_EXP_HOME}/namelists/'xmlio_server.def"#" ../experiment.cfg
     sed -i "s#nemo_iodef=.*#nemo_iodef="'${SEQ_EXP_HOME}/namelists/'iodef.xml"#" ../experiment.cfg
 
-
-    # Setup files and carbon options, depending on the config.
-    #if [[ $nemo_config_lower == *"cmoc"* ]]; then
-    #    sed -i "s#nemo_carbon=.*#nemo_carbon=on#" ../experiment.cfg
-    #    sed -i "s#nemo_cmoc=.*#nemo_cmoc=on#" ../experiment.cfg
-    #    sed -i 's#nemo_hist_file_suffix_list=.*#nemo_hist_file_suffix_list="grid_T grid_U grid_V grid_W icemod ptrc_T diad_T"#' ../experiment.cfg
-    #    sed -i 's#nemo_hist_file_freq_list=.*#nemo_hist_file_freq_list="      1m     1m     1m     1m    1m      1m     1m"#' ../experiment.cfg
-    #    sed -i 's#nemo_dump_file_suff=.*#nemo_dump_file_suff="grid_T grid_U grid_V grid_W icemod ptrc_T diad_T"#' ../experiment.cfg
-    #    sed -i 's#nemo_dump_file_freq=.*#nemo_dump_file_freq="1m     1m     1m     1m    1m      1m     1m"#' ../experiment.cfg
-    #    sed -i 's#nemo_del_file_suff=.*#nemo_del_file_suff="grid_T grid_U grid_V grid_W icemod ptrc_T diad_T"#' ../experiment.cfg
-    #    sed -i 's#nemo_del_file_freq=.*#nemo_del_file_freq="1m     1m     1m     1m    1m      1m     1m"#' ../experiment.cfg
-    #elif [[ $nemo_config_lower == *"canoe"* ]]; then
-    #    sed -i "s#nemo_carbon=.*#nemo_carbon=on#" ../experiment.cfg
-    #    sed -i 's#nemo_hist_file_suffix_list=.*#nemo_hist_file_suffix_list="grid_T grid_U grid_V grid_W icemod ptrc_T diad_T"#' ../experiment.cfg
-    #    sed -i 's#nemo_hist_file_freq_list=.*#nemo_hist_file_freq_list="      1m     1m     1m     1m    1m      1m     1m"#' ../experiment.cfg
-    #    sed -i 's#nemo_dump_file_suff=.*#nemo_dump_file_suff="grid_T grid_U grid_V grid_W icemod ptrc_T diad_T"#' ../experiment.cfg
-    #    sed -i 's#nemo_dump_file_freq=.*#nemo_dump_file_freq="      1m     1m     1m     1m    1m      1m     1m"#' ../experiment.cfg
-    #    sed -i 's#nemo_del_file_suff=.*#nemo_del_file_suff="grid_T grid_U grid_V grid_W icemod ptrc_T diad_T"#' ../experiment.cfg
-    #    sed -i 's#nemo_del_file_freq=.*#nemo_del_file_freq="      1m     1m     1m     1m    1m      1m     1m"#' ../experiment.cfg
-    #fi
-
     # Setup files and carbon options, depending on the config.
     if [[ $nemo_config_lower == *"cmoc"* ]] || [[ $nemo_config_lower == *"canoe"* ]]; then
         sed -i "s#nemo_carbon=.*#nemo_carbon=on#" ../experiment.cfg
@@ -437,6 +433,20 @@ else
         sed -i "s#nemoval_res=.*#nemoval_res=025d#" ../experiment.cfg
     fi
 
+    # Set nemo_freq
+    echo "Setting nemo_freq, based off given config, to recommended value for 3hr wallclock time"
+    case $nemo_config_lower in 
+        "ccc_orca1_lim")        frq="10y"   ;; 
+        "ccc_orca1_lim_cmoc")   frq="5y"    ;;
+        "ccc_orca1_lim_canoe")  frq="2y"    ;;
+        "ccc_orca025_lim")      frq="4m"    ;;
+        *) 
+            echo "There is currently no recommended nemo_freq for config ${nemo_config}"
+            echo "Value set to 1y. Alter if desired"
+            frq="1y" ;;
+    esac
+    sed -i "s#nemo_freq=.*#nemo_freq=${frq}#" ../experiment.cfg
+
     # print to log
     cd ../
     echo '~~~' >> .setup-nemo.log
@@ -445,7 +455,6 @@ else
 
     echo 'Code corresponds to SHA1:' $sha1 >> .setup-nemo.log
     echo 'Maestro suite corresponds to SHA1:' $sha1_maestro >> .setup-nemo.log
-
 
     # Write log to nemo run database
     datef=`date +"%Y-%m-%d %T"`
@@ -456,4 +465,53 @@ else
                             values('${nemo_runid}', '${datef}', '${userf}', '${nemo_config}', 
                                    '${nemo_version}', '${nemo_repo}', '${sha1}');
 EOF
+
+    # if the -l flag was given, launch simulation according to the desired length
+    if [ $lnch_jb -eq 1 ]; then
+        echo "Compiling and launching default $nemo_config simulation from 0001:01 to ${rn_ln_y}:${rn_ln_m}"
+
+        # compile
+        echo "compiling..."
+        ./compile_${runid} >> compile.log 2>&1    
+
+        # considerations for quarter degree model
+        if [[ $nemo_config_lower == *"orca025"* ]]; then
+            sed -i "s#nemo_rtd=.*#nemo_rtd=off#" ./experiment.cfg
+
+            # set necessary data files for added resolution
+            # grid information
+            sed -i "s#orca_grid_info=.*#orca_grid_info=nemo3.4.1_orca025_mesh_mask_ngb.nc#" ./experiment.cfg
+            # init files
+            sed -i "s#nemo_data_1m_potential_temperature_nomask=.*#nemo_data_1m_potential_temperature_nomask=nemo_3.4_orca025_potemp_1m_z46_nomask_orca1jan.nc#" ./experiment.cfg
+            sed -i "s#nemo_data_1m_salinity_nomask=.*#nemo_data_1m_salinity_nomask=nemo_3.4_orca025_salin_1m_z46_nomask_orca1jan.nc#" ./experiment.cfg
+            sed -i "s#nemo_coordinates=.*#nemo_coordinates=nemo_3.4_orca025_coordinates_cmc.nc#" ./experiment.cfg
+            sed -i "s#nemo_bathy_meter=.*#nemo_bathy_meter=nemo_3.4_orca025_bathy_meter_cmc.nc#" ./experiment.cfg
+            sed -i "s#nemo_M2rowdrg=.*#nemo_M2rowdrg=nemo_3.4.1_orca025_m2rowdrg_orca1_inter.nc#" ./experiment.cfg
+            sed -i "s#nemo_K1rowdrg=.*#nemo_K1rowdrg=nemo_3.4.1_orca025_k1rowdrg_orca1_inter.nc#" ./experiment.cfg
+            sed -i "s#nemo_sss_data=.*#nemo_sss_data=nemo_3.4_orca025_sss_1m.nc#" ./experiment.cfg
+            sed -i "s#nemo_chlorophyll=.*#nemo_chlorophyll=nemo_3.4.1_orca025_chlorophyll_1m_orca1.nc#" ./experiment.cfg
+            # forcing consideration (set up to work with default forcing)
+            #   - the addressing forces replacements only in default forcing section
+            sed -i "/^\s*#/! s#nemo_weights_bicubic2=.*#nemo_weights_bicubic2=uncs_orca025_canesm2_weights_bicubic.nc#" ./experiment.cfg
+            sed -i "/^\s*#/! s#nemo_weights_bilinear2=.*#nemo_weights_bilinear2=uncs_orca025_canesm2_weights_bilin.nc#" ./experiment.cfg
+            sed -i "/^\s*#/! s#nemo_runoff_core_monthly=.*#nemo_runoff_core_monthly=nemo_3.4.1_orca025_rout_socoefr_month_r1i1p1_1979-2005-mean2.nc#" ./experiment.cfg
+            sed -i "/^\s*sn_cnf=./ s#socoeff#socoefr#" ./experiment.cfg
+            sed -i "/^\s*sn_cnf=./ s#weights_bil2##" ./experiment.cfg
+            # timestep
+            sed -i "s#nemo_rdt=.*#nemo_rdt=1200#" ./experiment.cfg
+        fi
+
+        # set run length
+        sed -i "s#end=.*#end=${rn_ln_y}:${rn_ln_m}#" ./experiment.cfg
+
+        # config maestro
+        ./bin/config-maestro 2>/dev/null || 
+        bail "your desired simulation length must be set such that nemo_freq (set to ${frq}) "\
+        "evenly divides into the number of months in the run. Alter 'end' or 'nemo_freq' in "\
+        "experiment.cfg and try to launch again with the following command './bin/config-maestro; "\
+        "expbegin -e \`pwd\` -d \`date +%Y%m%d%H%M\`'"
+
+        # launch run
+        expbegin -e `pwd` -d `date +%Y%m%d%H%M`
+    fi
 fi
