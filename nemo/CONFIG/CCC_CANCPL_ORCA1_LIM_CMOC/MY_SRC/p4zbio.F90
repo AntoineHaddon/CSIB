@@ -100,8 +100,8 @@ CONTAINS
          IF( lk_iomput ) THEN
           IF( jnt == nrdttrc ) THEN             
 
-               CALL iom_put( "sDIC"   , trn(:,:,:,jpdic) / tsn(:,:,:,jp_sal) * 35 * 1e+3_wp * tmask(:,:,:) )
-               CALL iom_put( "sAlk"   , trn(:,:,:,jptal) / tsn(:,:,:,jp_sal) * 35 * 1e+3_wp * tmask(:,:,:) )
+               CALL iom_put( "sDIC"   , trn(:,:,:,jpdic) / tsn(:,:,:,jp_sal) * 35 * 1e+3_wp * tmask_bgc_closea(:,:,:) )
+               CALL iom_put( "sAlk"   , trn(:,:,:,jptal) / tsn(:,:,:,jp_sal) * 35 * 1e+3_wp * tmask_bgc_closea(:,:,:) )
 
           ENDIF
          ENDIF
@@ -111,7 +111,7 @@ CONTAINS
       IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('bio ')")
          CALL prt_ctl_trc_info(charout)
-         CALL prt_ctl_trc(tab4d=trn, mask=tmask, clinfo=ctrcnm)
+         CALL prt_ctl_trc(tab4d=trn, mask=tmask_bgc_closea, clinfo=ctrcnm)
       ENDIF
       !
       IF( nn_timing == 1 )  CALL timing_stop('p4z_bio')
