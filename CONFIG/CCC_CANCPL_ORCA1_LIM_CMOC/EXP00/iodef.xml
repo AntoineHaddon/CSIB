@@ -129,6 +129,10 @@
 	<field id="sntoice_cea"  description="Snow-Ice Formation Rate (cell average)"                       unit="kg/m2/s"  />
 	<field id="ticemel_cea"  description="Rate of Melt at Upper Surface of Sea Ice (cell average)"      unit="kg/m2/s"  />
 
+	<field id="hflx_qsr_tot"  description="Solar heat flux from coupler (cell average)"                 unit="W/m2"     />
+	<field id="hflx_qns_tot"  description="Non solar heat flux from coupler (cell average)"             unit="W/m2"     />
+	<field id="hflx_qsr_ice"  description="Solar heat flux from coupler over sea-ice (cell average)"     unit="W/m2"     />
+	<field id="hflx_qns_ice"  description="Non solar heat flux from coupler over sea-ice (cell average)" unit="W/m2"     />
       </group>
 
       <!-- U grid -->
@@ -281,6 +285,39 @@
       </group>
       
       <group id="3h" output_freq="10800"  output_level="10" enabled=".FALSE.">                     <!-- 3h files -->
+        <file id="3h_ptrc_T" name="auto" description="pisces sms variables" >
+           <field ref="DIC"      />
+           <field ref="Alkalini" />
+           <field ref="O2"       />
+           <field ref="POC"      />
+           <field ref="PHY"      />
+           <field ref="ZOO"      />
+           <field ref="NCHL"     />
+           <field ref="NO3"      />
+       </file>
+	
+        <file id="3h_diad_T" name="auto" description="additional diagnostic variables" >
+           <field ref="PH"      />
+           <field ref="sDIC"    />
+           <field ref="sAlk"    />
+           <field ref="PPPHY"      />
+           <field ref="Cflx"      />
+           <field ref="Oflx"      />
+           <field ref="Nfix"      />
+	   <field ref="Denit"      />
+           <field ref="EPC100"      />
+           <field ref="EPCALC100"   />
+           <field ref="BUPOC"       />
+           <field ref="BUCALC"       />
+           <field ref="Dpco2"      />
+           <field ref="Dpo2"      />
+           <field ref="LNnut"      />
+           <field ref="LNFe"       />
+           <field ref="LNlight"    />
+           <field ref="PAR"       />
+           <field ref="Mumax"    />
+           <field ref="oomask"    />
+       </file> 
       </group>
       
       <group id="4h" output_freq="14400"  output_level="10" enabled=".FALSE.">                     <!-- 4h files -->
@@ -316,9 +353,25 @@
           <field ref="empmr"        name="sowaflup"  />
           <field ref="qt"           name="sohefldo"  />
           <field ref="mldr10_1"     name="somxl010"  />
+          <field ref="ice_cover"    name="soicecov"  />
+          <field ref="erp"          name="sowafldp"  />
+          <field ref="mlddzt"       name="sothedep"  />
+          <field ref="agessc"           />
           <field ref="qns"           />
           <field ref="qsr"           />
-          <field ref="agessc"           />
+          <field ref="qrp"           />
+          <field ref="snow_ai_cea"           />
+          <field ref="snow_ao_cea"           />
+          <field ref="hflx_rain_cea"           />
+          <field ref="hflx_snow_cea"           />
+          <field ref="hflx_ice_cea"           />
+          <field ref="hflx_rnf_cea"           />
+          <field ref="isnwmlt_cea"           />
+          <field ref="snowmel_cea"           />
+          <field ref="hflx_qsr_tot"           />
+          <field ref="hflx_qns_tot"           />
+          <field ref="hflx_qsr_ice"           />
+          <field ref="hflx_qns_ice"           />
         </file>
 
         <file id="1m_grid_U" name="auto" description="ocean U grid variables" >
@@ -352,6 +405,9 @@
           <field ref="vtau_ice"     name="iicestrv" />
           <field ref="qsr_io_cea"   name="iicesflx" />
           <field ref="qns_io_cea"   name="iicenflx" />
+          <field ref="qsr_ai_cea"   name="aicesflx" />
+          <field ref="qns_ai_cea"   name="aicenflx" />
+          <field ref="qla_ai_cea"   name="aicelflx" />
           <field ref="snowpre"      name="isnowpre" />
         </file>
 

@@ -182,6 +182,7 @@ MODULE dom_oce
    INTEGER , PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   mbku, mbkv   !: vertical index of the bottom last U- and W- ocean level
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   bathy        !: ocean depth (meters)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   tmask_i      !: interior domain T-point mask
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   tmask_bgc_closea      !: tmask, excluding closeas for BGC, used in cpl mode.
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   bmask        !: land/ocean mask of barotropic stream function
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: tmask, umask, vmask, fmask   !: land/ocean mask at T-, U-, V- and F-pts
@@ -300,7 +301,7 @@ CONTAINS
          &     mbkt   (jpi,jpj) , mbku (jpi,jpj) , mbkv(jpi,jpj) , STAT=ierr(9) )
 
       ALLOCATE( tmask(jpi,jpj,jpk) , umask(jpi,jpj,jpk),     & 
-         &      vmask(jpi,jpj,jpk) , fmask(jpi,jpj,jpk), STAT=ierr(10) )
+         &      vmask(jpi,jpj,jpk) , fmask(jpi,jpj,jpk), tmask_bgc_closea(jpi,jpj,jpk), STAT=ierr(10) )
 
 #if defined key_noslip_accurate
       ALLOCATE( npcoa(4,jpk), nicoa(2*(jpi+jpj),4,jpk), njcoa(2*(jpi+jpj),4,jpk), STAT=ierr(11) )
