@@ -22,6 +22,7 @@ MODULE dommsk
    !!   dom_msk        : compute land/ocean mask
    !!   dom_msk_nsa    : update land/ocean mask when no-slip accurate option is used.
    !!----------------------------------------------------------------------
+   USE sbc_oce         ! To find out if coupled or not
    USE oce             ! ocean dynamics and tracers
    USE dom_oce         ! ocean space and time domain
    USE in_out_manager  ! I/O manager
@@ -176,6 +177,24 @@ CONTAINS
             END DO  
          END DO  
       END DO  
+
+!! When running coupled in CanESM2, we want to mask out the closed seas (Caspian @ ORCA1),
+!! for the purposes of ocean biogeochemistry, but we keep it in the physics.
+!      IF( ln_cpl ) THEN
+         IF( cp_cfg == 'orca' ) THEN
+            IF( jp_cfg == 1 )   THEN
+               tmask_bgc_closea(:,:,:) = tmask(:,:,:)
+               ! Caspian sea indices, from closea.
+               ii0=332
+               ii1=344
+               ij0=203
+               ij1=235
+               tmask_bgc_closea( mi0(ii0):mi1(ii1) , mj0(ij0):mj1(ij1) , 1:jpk ) = 0._wp
+               WRITE(numout,*)' Masking out Caspian Sea for biogeochemistry in cpl mode'
+               IF(lwp) WRITE(numout,*)
+            ENDIF
+         ENDIF
+ !     ENDIF
 
 !!gm  ????
 #if defined key_zdfkpp

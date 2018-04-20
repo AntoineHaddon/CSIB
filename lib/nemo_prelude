@@ -302,9 +302,10 @@ echo "#################### Start NEMO pre-processing #################"
         bail "find_nemo_config_EXP00: One or more of nemo_repo, nemo_ver, nemo_config are undefined"
       # Attempt to extract this file from the NEMO repository
       rm -f $1
-      gitrip $nemo_ver nemo/CONFIG/$nemo_config/EXP00/$1 repo=$nemo_repo
-      sleep 1
-      [ -s $1 ] || bail "find_nemo_config_EXP00: Unable to extract $1 from $nemo_repo"
+      #gitrip $nemo_ver nemo/CONFIG/$nemo_config/EXP00/$1 repo=$nemo_repo
+      cp ${nemo_repo}/nemo/CONFIG/$nemo_config/EXP00/$1 .  
+      #sleep 1
+      [ -s $1 ] || bail "find_nemo_config_EXP00: Unable to copy $1 from $nemo_repo"
     fi
   }
 
@@ -655,11 +656,18 @@ echo "#################### Start NEMO pre-processing #################"
     echo "##########################"
 
     rm -f RESTART_ARC
-    access RESTART_ARC $nemo_rs
-    # Ensure that we can overwrite existing files with files from the restart
-    # Ignore any netcdf files in the restart
-    tar tf RESTART_ARC | grep -v '\.nc$' | xargs -I'{}' chmod u+rw {} || :
-    tar xf RESTART_ARC || bail "Cannot extract files from $nemo_rs"
+    access RESTART_ARC $nemo_rs || access RESTART_ARC `basename $nemo_rs .tar` nocp=off
+
+    # Deal with "old" tar archives, or new directory based restarts
+    if ! tar tf RESTART_ARC &> /dev/null; then
+        mv RESTART_ARC/* . || bail "Cannot get files from restart directory"
+    else
+        # Ensure that we can overwrite existing files with files from the restart
+        # Ignore any netcdf files in the restart
+        tar tf RESTART_ARC | grep -v '\.nc$' | xargs -I'{}' chmod u+rw {} || :
+        tar xf RESTART_ARC || bail "Cannot extract files from $nemo_rs"
+    fi
+  
     release RESTART_ARC
 
     # Rename each task specific output restart file from the previous run
@@ -1156,13 +1164,13 @@ echo "#################### Start NEMO pre-processing #################"
   if [ $nemo_carbon -eq 1 ]; then
     # Access PISCES files
 
-#    nemo_presatm=${nemo_presatm:=uncs_orca1_presatm.nc}
+    nemo_presatm=${nemo_presatm:=uncs_orca1_presatm.nc}
     nemo_dust_orca=${nemo_dust_orca:=uncs_orca1_dust.orca.nc}
     nemo_river_orca=${nemo_river_orca:=nemo_3.4_orca2_river.orca.nc}
     nemo_ndeposition_orca=${nemo_ndeposition_orca:=uncs_orca1_ndeposition.orca.nc}
 #    nemo_bathy_orca=${nemo_bathy_orca:=uncs_orca1_bathy.orca.nc}
 
-#    [ -s presatm.nc ]          || acc_cp presatm.nc           $nemo_presatm
+    [ -s presatm.nc ]          || acc_cp presatm.nc           $nemo_presatm
     [ -s dust.orca.nc ]        || acc_cp dust.orca.nc         $nemo_dust_orca
     [ -s river.orca.nc ]       || acc_cp river.orca.nc        $nemo_river_orca
     [ -s ndeposition.orca.nc ] || acc_cp ndeposition.orca.nc  $nemo_ndeposition_orca
