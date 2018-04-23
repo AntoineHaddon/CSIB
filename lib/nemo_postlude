@@ -84,9 +84,8 @@
       for sfx in ${nemo_hist_file_suffix_list}; do
         for freq in ${nemo_hist_file_freq_list}; do
           pfx=${cn_exp}_${freq}_${start_date}_${stop_date}_$sfx
-          eval fnpatt=${pfx}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
-          found_file=`(ls -1 $fnpatt || : ) 2>/dev/null`
-          if [ -n "$found_file" ]; then
+          fnpatt=${pfx}_0000.nc
+          if [ -s "$fnpatt" ]; then
              rm -rf $pfx
              mkdir $pfx
              mv $pfx*.nc $pfx
