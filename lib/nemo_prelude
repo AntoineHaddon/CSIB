@@ -656,12 +656,16 @@ echo "#################### Start NEMO pre-processing #################"
     echo "##########################"
 
     rm -f RESTART_ARC
-    access RESTART_ARC $nemo_rs || access RESTART_ARC `basename $nemo_rs .tar` nocp=off
+    access RESTART_ARC `basename $nemo_rs .tar` nocp=off || access RESTART_ARC $nemo_rs 
 
     # Deal with "old" tar archives, or new directory based restarts
     if ! tar tf RESTART_ARC &> /dev/null; then
+        # This is the directory. checksum the contents
+        sha1sum RESTART_ARC/* >> xnemo_access_log
         mv RESTART_ARC/* . || bail "Cannot get files from restart directory"
     else
+        # this is the tar file. checksum it.
+        sha1sum RESTART_ARC >> xnemo_access_log
         # Ensure that we can overwrite existing files with files from the restart
         # Ignore any netcdf files in the restart
         tar tf RESTART_ARC | grep -v '\.nc$' | xargs -I'{}' chmod u+rw {} || :
