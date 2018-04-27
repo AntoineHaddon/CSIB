@@ -17,8 +17,8 @@
 %NCDF_INC            -I/opt/cray/netcdf/4.4.0/INTEL/15.0/include
 %NCDF_LIB            -L/opt/cray/netcdf/4.4.0/INTEL/15.0/lib -lnetcdf -lnetcdff
 %FC                  ftn
-%FCFLAGS             -free -fpp -D_IMPI_=4 -D_Cray_XC30 -Qoption,link,--noinhibit-exec -list -traceback -O1 -init=arrays -init=zero -fp-model precise -assume buffered_stdout,protect_parens -convert big_endian -r8 -align array64byte 
-%FFLAGS              -fixed -fpp -D_IMPI_=4 -D_Cray_XC30 -Qoption,link,--noinhibit-exec -list -traceback -O1 -init=arrays -init=zero -fp-model precise -assume buffered_stdout,protect_parens -convert big_endian -r8 -align array64byte
+%FCFLAGS             -free -fpp -D_IMPI_=4 -D_Cray_XC30 -Qoption,link,--noinhibit-exec -list -traceback -O3 -init=arrays -init=zero -assume buffered_stdout,protect_parens -convert big_endian -r8 -align array64byte 
+%FFLAGS              -fixed -fpp -D_IMPI_=4 -D_Cray_XC30 -Qoption,link,--noinhibit-exec -list -traceback -O3 -init=arrays -init=zero -assume buffered_stdout,protect_parens -convert big_endian -r8 -align array64byte
 %LD                  ftn
 %LDFLAGS    
 %FPPFLAGS            -P -C
