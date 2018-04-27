@@ -13,6 +13,7 @@ MODULE sbcmod
    !!            3.4  ! 2011-11  (C. Harris) CICE added as an option
    !!            3.4.1! 2013-08  (D. Yang) added option preventing SST from dropping below freezing when no sea ice
    !!                                      point when no sea ice.
+   !!            3.4.1! 2017-02  (D. Yang) added computation of snow cover for SIMIP.
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -49,6 +50,11 @@ MODULE sbcmod
    USE closea           ! closed sea
    USE bdy_par          ! for lk_bdy
    USE bdyice_lim2      ! unstructured open boundary data  (bdy_ice_lim_2 routine)
+#if defined key_lim2
+   USE ice_2            ! LIM-2: ice variables
+   USE wrk_nemo
+   USE par_oce          ! ocean parameter
+#endif
 
    USE prtctl           ! Print control                    (prt_ctl routine)
    USE restart          ! ocean restart
@@ -234,8 +240,13 @@ CONTAINS
       !!              - updte the ice fraction : fr_i
       !!----------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt       ! ocean time step
+#if defined key_lim2
+      INTEGER                           ::   ji, jj      ! dummy loop indices
+      REAL(wp), POINTER, DIMENSION(:,:) ::   sn_cover    ! snow cover for SIMIP (LIM-2)
       !!---------------------------------------------------------------------
       !
+      CALL wrk_alloc( jpi, jpj, sn_cover )
+#endif
       IF( nn_timing == 1 )  CALL timing_start('sbc')
       !
       !                                            ! ---------------------------------------- !
@@ -351,6 +362,16 @@ CONTAINS
          CALL iom_put( "qns"   , qns        )                   ! solar heat flux
          CALL iom_put( "qsr"   ,       qsr  )                   ! solar heat flux
          IF( nn_ice > 0 )   CALL iom_put( "ice_cover", fr_i )   ! ice fraction 
+         ! calculation of snow cover for SIMIP (LIM-2)
+#if defined key_lim2
+         sn_cover(:,:) = 0._wp
+         DO jj = 1,jpj
+            DO ji = 1,jpi
+               IF( fr_i(ji,jj) .GT. 0.e0 .AND. hsnif(ji,jj) .GT. 0.e0 ) sn_cover(ji,jj) = 1._wp
+            ENDDO
+         ENDDO
+         CALL iom_put( "sn_cover", sn_cover )
+#endif
       ENDIF
       !
       CALL iom_setkt( kt )           ! iom_put outside of sbc is called at every time step
@@ -377,6 +398,10 @@ CONTAINS
       !
       IF( nn_timing == 1 )  CALL timing_stop('sbc')
       !
+#if defined key_lim2
+      CALL wrk_dealloc( jpi, jpj, sn_cover )
+#endif
+
    END SUBROUTINE sbc
 
    SUBROUTINE sbc_final

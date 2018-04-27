@@ -531,9 +531,9 @@ logical :: res_match
 ! /pseudo/vps/radfunc [1]
 ! //radfunc/data
 ! //data
-! //*/vps/data
+! ///vps/data
 ! //job//data      
-! //*
+! //
 !
 integer :: len_target, len_path, pos_target, pos_path
 character(len=100) :: anchor_leaf ! *** Hard limit

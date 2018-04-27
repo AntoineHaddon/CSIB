@@ -4,6 +4,7 @@ MODULE trdicp
    !! Ocean diagnostics:  ocean tracers and dynamic trends
    !!=====================================================================
    !! History :  1.0  !  2004-08 (C. Talandier) New trends organization
+   !!           3.4.1 !  2016-03 (D. Yang )     Output "PURE" Kz trend & Asselin correction
    !!----------------------------------------------------------------------
 #if  defined key_trdtra   ||   defined key_trddyn   ||   defined key_esopa
    !!----------------------------------------------------------------------
@@ -480,6 +481,8 @@ CONTAINS
             WRITE (numout,9406)  tmo(jpicpt_dmp) / tvolt, smo(jpicpt_dmp) / tvolt
             WRITE (numout,9407)  tmo(jpicpt_qsr) / tvolt
             WRITE (numout,9408)  tmo(jpicpt_nsr) / tvolt, smo(jpicpt_nsr) / tvolt
+            WRITE (numout,9412)  tmo(jpicpt_zdfp)/ tvolt, smo(jpicpt_zdfp)/ tvolt
+            WRITE (numout,9413)  tmo(jpicpt_atf) / tvolt, smo(jpicpt_atf) / tvolt
             WRITE (numout,9409) 
             WRITE (numout,9410) (  tmo(jpicpt_xad) + tmo(jpicpt_yad) + tmo(jpicpt_zad) + tmo(jpicpt_ldf) + tmo(jpicpt_zdf)   &
             &                    + tmo(jpicpt_npc) + tmo(jpicpt_dmp) + tmo(jpicpt_qsr) + tmo(jpicpt_nsr) ) / tvolt,   &
@@ -487,7 +490,7 @@ CONTAINS
             &                    + smo(jpicpt_npc) + smo(jpicpt_dmp)                   + smo(jpicpt_nsr) ) / tvolt
          ENDIF
 
-9400     FORMAT(' tracer trend at it= ',i6,' :     temperature',   &
+9400     FORMAT(' tracer trend at it= ',i10' : temperature',   &
               '              salinity',/' ============================')
 9401     FORMAT(' zonal      advection        ',e20.13,'     ',e20.13)
 9411     FORMAT(' meridional advection        ',e20.13,'     ',e20.13)
@@ -498,6 +501,8 @@ CONTAINS
 9406     FORMAT(' damping term                ',e20.13,'     ',e20.13)
 9407     FORMAT(' penetrative qsr             ',e20.13)
 9408     FORMAT(' non solar radiation         ',e20.13,'     ',e20.13)
+9412     FORMAT(' "PURE" Kz trend             ',e20.13,'     ',e20.13)
+9413     FORMAT(' Asselin correction          ',e20.13,'     ',e20.13)
 9409     FORMAT(' -------------------------------------------------------------------------')
 9410     FORMAT(' total trend                 ',e20.13,'     ',e20.13)
 
