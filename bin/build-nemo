@@ -6,7 +6,7 @@
 #                     [arch=fname] \
 #                     [repo=dirpath] \
 #                     [add_key=keys] \
-#                     [del_key=keys]
+#                     [del_key=keys] 
 #          Quantities in square brackets are optional
 #
 # Purpose: Create a nemo executable or build nemo specifc tools
@@ -25,6 +25,7 @@
 #   -b   ...use a version specific build-nemo, namely the version specicifed on the command line
 #           If both -a and -b are present then -a takes precedence
 #   -k   ...do not delete the tmp dir after compilation is complete (used for debugging)
+#   -d   ...compile an executable with debugging symbols (for use with DDT or GDB)
 #
 # Variable definitions:
 #   srcpath=srcpath ...path to copy source from, instead of clone a repo.
@@ -166,6 +167,9 @@ keep_tmpd=0
 # Number of processors to use during compilation
 comp_np=4
 
+# Set debug to 0 (turned off, regular optimizations used)
+debug=0
+
 printf "\n\n ------------------- \n"
 printf "        build-nemo       \n"
 printf " ------------------- \n"
@@ -175,7 +179,7 @@ CCRNTMP=/tmp
 [ ! -d "$CCRNTMP" ] && bail "/tmp is not a directory"
 
 # process command line options
-while getopts j:n:m:r:hktvx opt
+while getopts j:n:m:r:hktvxd opt
 do
   case $opt in
     m) nemo_arch="$OPTARG" ;;
@@ -190,6 +194,7 @@ do
        build_rebuild_nemo_tool=1
        build_weights_tool=1
        ;;
+    d) debug=1 ;;
     h) usage ;;
     -) shift; break ;; # end of options
     ?) usage -e $USAGE   ;;
@@ -227,6 +232,21 @@ for arg in "$@"; do
     *) bail "Invalid command line arg --> $arg <--" ;;
   esac
 done
+
+# When debugging is requested, the behaviour of this script needs to be adjusted accordingly
+if [ $debug -eq 1 ]; then
+  # Need to retain the postprocessed source files and store them in a runtime accessible directory
+  keep_tmpd=1
+  CCRNTMP=$PWD/tmp # Assumed to be in the RUNID directory
+  [ ! -d $CCRNTMP ] && mkdir $CCRNTMP # This directory probably does not exist
+  nemo_arch="$nemo_arch-debug" # Use a version of the requested architecture with debug options
+  [ $build_nemo_exe -eq 1 ] && nemo_exe="$nemo_exe-debug" # Make sure not to clobber an existing optimised executable
+else
+  # CCRNTMP must be defined
+  CCRNTMP=/tmp
+  [   -z "$CCRNTMP" ] && bail "/tmp must be defined"
+  [ ! -d "$CCRNTMP" ] && bail "/tmp is not a directory"
+fi
 
 if [ $build_nemo_exe -eq 1 ]; then
   # The name of the executable is not required unless it is to be built
@@ -409,7 +429,7 @@ if [ $build_nemo_exe -eq 1 ]; then
     XC40_CCCma_intel-pe*) env='intel' ;;
     intel_xc40-cancpl*) env='intel' ;;
     cray_xc40-cancpl*) env='cray' ;;
-    *) echo "WARNING: Unknown ARCH - we don't know if this is the Cray or Intel PE" ;;
+    *) bail "Unknown ARCH $(nemo_arch) - we don't know if this is the Cray or Intel PE" ;;
   esac
 
   if [ $env = 'cray' ]; then
