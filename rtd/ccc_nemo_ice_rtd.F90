@@ -74,13 +74,13 @@ SUBROUTINE calc (imt, jmt, lm)
 !     Monthly snow fields: snow thickness, snow precip, snow precip 
 !                          over ice
       REAL, DIMENSION(imt, jmt, lm) :: isnowthi, isnowpre, & 
-          &  snow_over_sea_ice
+          &  snow_over_sea_ice, aicesflx, aicenflx, iicesflx, iicenflx
 ! ======================================================================
 !     Output data 
 ! ======================================================================
 !     Integral quantities: ice area, extent, volume
       REAL, DIMENSION(lm)      :: area_nh, area_sh, extent_nh      &
-          & , extent_sh, vol_nh, vol_sh
+          & , extent_sh, vol_nh, vol_sh, vol_sno_nh, vol_sno_sh
 
 !     Average quantities: ice thickness
       REAL, DIMENSION(lm)      :: thick_nh, thick_sh
@@ -90,13 +90,15 @@ SUBROUTINE calc (imt, jmt, lm)
       REAL, DIMENSION(lm)      :: isnowthick_nh, isnowthick_sh
       REAL, DIMENSION(lm)      :: iohflx_nh, iohflx_sh
       REAL, DIMENSION(lm)      :: test_calc
+      REAL, DIMENSION(lm)      :: aicesflx_ave, aicenflx_ave
+      REAL, DIMENSION(lm)      :: iicesflx_ave, iicenflx_ave
 
 ! ======================================================================
 !     Working Arrays
 ! ======================================================================
 
       REAL, DIMENSION(imt, jmt)       :: nh_mask, sh_mask, tarea
-      REAL, DIMENSION(imt, jmt, lm)   :: extent_tf, thick_over_ice
+      REAL, DIMENSION(imt, jmt, lm)   :: extent_tf, thick_over_ice, snow_thick_over_ice
       REAL, DIMENSION(imt, jmt, lm)   :: ipres_mask
       REAL, DIMENSION(imt, jmt)   :: ipres_mask_nh, ipres_mask_sh
       REAL                        :: ss                      ! area
@@ -195,6 +197,18 @@ SUBROUTINE calc (imt, jmt, lm)
 ! Snow thickness (cell average)
       call getvara ('isnowthi', iou0, imt*jmt*lm                       &
           & ,(/1,1,1/), (/imt,jmt,lm/), isnowthi, 1., 0.)
+! Solar heat flux over ice
+      call getvara ('aicesflx', iou0, imt*jmt*lm                       &
+          & ,(/1,1,1/), (/imt,jmt,lm/), aicesflx, 1., 0.)
+! Non Solar heat flux over ice
+      call getvara ('aicenflx', iou0, imt*jmt*lm                       &
+          & ,(/1,1,1/), (/imt,jmt,lm/), aicenflx, 1., 0.)
+! Solar heat flux over ice
+      call getvara ('iicesflx', iou0, imt*jmt*lm                       &
+          & ,(/1,1,1/), (/imt,jmt,lm/), iicesflx, 1., 0.)
+! Non Solar heat flux over ice
+      call getvara ('iicenflx', iou0, imt*jmt*lm                       &
+          & ,(/1,1,1/), (/imt,jmt,lm/), iicenflx, 1., 0.)
 
 ! Hold these for now.
 ! Sublimation over sea-ice (cell average)
@@ -223,9 +237,13 @@ SUBROUTINE calc (imt, jmt, lm)
       thick_over_ice(:,:,:) = 0.0_dp
       where (soicecov .gt. 0.0_dp) ! logical array.
           thick_over_ice = iicethic / soicecov
-      elsewhere
-          thick_over_ice = 0.0_dp
       endwhere
+! Repeat for snow Thickness is given as a grid-cell ave. Convert to thickness over ice.
+      snow_thick_over_ice(:,:,:) = 0.0_dp
+      where (soicecov .gt. 0.0_dp) ! logical array.
+          snow_thick_over_ice = isnowthi / soicecov
+      endwhere
+
 ! Now make a mask so we don't include 0s (ice free) in mean calculations
       ipres_mask(:,:,:) = 0.0_dp
       where (soicecov .gt. 0.0_dp) ! logical array.
@@ -257,6 +275,9 @@ SUBROUTINE calc (imt, jmt, lm)
 ! calculate sea-ice volume in each hemisphere
           vol_nh(cur_mon) = SUM(iicethic(:, :, cur_mon)*nh_mask*tarea)
           vol_sh(cur_mon) = SUM(iicethic(:, :, cur_mon)*sh_mask*tarea)
+! calculate snow volume in each hemisphere
+          vol_sno_nh(cur_mon) = SUM(isnowthi(:, :, cur_mon)*nh_mask*tarea)
+          vol_sno_sh(cur_mon) = SUM(isnowthi(:, :, cur_mon)*sh_mask*tarea)
 !
 !     AREA AVERAGES for each hemisphere
 !
@@ -266,61 +287,75 @@ SUBROUTINE calc (imt, jmt, lm)
           ipres_mask_sh = ipres_mask(:, :, cur_mon) * sh_mask * t_mask
 
 ! calculate sea-ice thickness 
-          CALL area_ave_flx(e1t, e2t, ipres_mask_nh                     &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_nh*soicecov(:,:,cur_mon)                     &
               &            , thick_over_ice(:, :, cur_mon)             & 
               &            , imt, jmt, thick_nh(cur_mon), ss)
-          CALL area_ave_flx(e1t, e2t, ipres_mask_sh   &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_sh*soicecov(:,:,cur_mon)   &
               &            , thick_over_ice(:, :, cur_mon)             & 
               &            , imt, jmt, thick_sh(cur_mon), ss)
+! Snow thickness
+          CALL area_ave_flx(e1t, e2t, ipres_mask_nh*soicecov(:,:,cur_mon),                         &
+              & snow_thick_over_ice(:, :, cur_mon), imt, jmt                      &
+              &            , isnowthick_nh(cur_mon), ss)
+          CALL area_ave_flx(e1t, e2t, ipres_mask_sh*soicecov(:,:,cur_mon),                         &
+              & snow_thick_over_ice(:, :, cur_mon), imt, jmt,                     &
+              & isnowthick_sh(cur_mon), ss)
 ! calculate surface temp 
-          CALL area_ave_flx(e1t, e2t, ipres_mask_nh,                    &
-              &  iicetemp(:, :, cur_mon), imt, jmt         &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_nh*soicecov(:,:,cur_mon),                    &
+              &  iicetemp(:, :, cur_mon), imt, jmt                      &
               &            , surf_temp_nh(cur_mon), ss)
-          CALL area_ave_flx(e1t, e2t, ipres_mask_sh,                    &
-              & iicetemp(:, :, cur_mon), imt, jmt,         &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_sh*soicecov(:,:,cur_mon),                    &
+              & iicetemp(:, :, cur_mon), imt, jmt,                      &
               & surf_temp_sh(cur_mon), ss)
 ! calculate ice u velocities 
-          CALL area_ave_flx(e1t, e2t, ipres_mask_nh,                    &
-              &  iicevelu(:, :, cur_mon), imt, jmt                     &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_nh*soicecov(:,:,cur_mon),                    &
+              &  iicevelu(:, :, cur_mon), imt, jmt                      &
               &            , ivelu_nh(cur_mon), ss)
           CALL area_ave_flx(e1t, e2t, ipres_mask_sh,                    &
-              & iicevelu(:, :, cur_mon), imt, jmt,                     &
+              & iicevelu(:, :, cur_mon), imt, jmt,                      &
               & ivelu_sh(cur_mon), ss)
 ! calculate ice v velocities 
-          CALL area_ave_flx(e1t, e2t, ipres_mask_nh,                    &
-              &  iicevelv(:, :, cur_mon), imt, jmt                     &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_nh*soicecov(:,:,cur_mon),                    &
+              &  iicevelv(:, :, cur_mon), imt, jmt                      &
               &            , ivelv_nh(cur_mon), ss)
           CALL area_ave_flx(e1t, e2t, ipres_mask_sh,                    &
-              & iicevelv(:, :, cur_mon), imt, jmt,                     &
+              & iicevelv(:, :, cur_mon), imt, jmt,                      &
               & ivelv_sh(cur_mon), ss)
 ! calculate ice u wind stress
-          CALL area_ave_flx(e1t, e2t, ipres_mask_nh,                    &
-              &  iicestru(:, :, cur_mon), imt, jmt                     &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_nh*soicecov(:,:,cur_mon),                    &
+              &  iicestru(:, :, cur_mon), imt, jmt                      &
               &            , itauu_nh(cur_mon), ss)
-          CALL area_ave_flx(e1t, e2t, ipres_mask_sh,                    &
-              & iicestru(:, :, cur_mon), imt, jmt,                     &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_sh*soicecov(:,:,cur_mon),                    &
+              & iicestru(:, :, cur_mon), imt, jmt,                      &
               & itauu_sh(cur_mon), ss)
 ! calculate ice v wind stress
-          CALL area_ave_flx(e1t, e2t, ipres_mask_nh,                    &
-              &  iicestrv(:, :, cur_mon), imt, jmt                     &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_nh*soicecov(:,:,cur_mon),                    &
+              &  iicestrv(:, :, cur_mon), imt, jmt                      &
               &            , itauv_nh(cur_mon), ss)
-          CALL area_ave_flx(e1t, e2t, ipres_mask_sh,                    &
-              & iicestrv(:, :, cur_mon), imt, jmt,                     &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_sh*soicecov(:,:,cur_mon),                    &
+              & iicestrv(:, :, cur_mon), imt, jmt,                      &
               & itauv_sh(cur_mon), ss)
 ! calculate oceanic heat flux at ice base
-          CALL area_ave_flx(e1t, e2t, ipres_mask_nh,                    &
-              &  ioceflxb(:, :, cur_mon), imt, jmt                     &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_nh*soicecov(:,:,cur_mon),                    &
+              &  ioceflxb(:, :, cur_mon), imt, jmt                      &
               &            , iohflx_nh(cur_mon), ss)
-          CALL area_ave_flx(e1t, e2t, ipres_mask_sh,                    &
-              & ioceflxb(:, :, cur_mon), imt, jmt,                     &
+          CALL area_ave_flx(e1t, e2t, ipres_mask_sh*soicecov(:,:,cur_mon),                    &
+              & ioceflxb(:, :, cur_mon), imt, jmt,                      &
               & iohflx_sh(cur_mon), ss)
-! Snow thickness
-          CALL area_ave_flx(e1t, e2t, ipres_mask_nh,                    &
-              & isnowthi(:, :, cur_mon), imt, jmt                      &
-              &            , isnowthick_nh(cur_mon), ss)
-          CALL area_ave_flx(e1t, e2t, ipres_mask_sh,                    &
-              & isnowthi(:, :, cur_mon), imt, jmt,                     &
-              & isnowthick_nh(cur_mon), ss)
+!  Solar and non solar heat fluxes from atmosphere
+          CALL area_ave_flx(e1t, e2t, t_mask,                    &
+              & aicenflx(:, :, cur_mon), imt, jmt,                      &
+              & aicenflx_ave(cur_mon), ss)
+          CALL area_ave_flx(e1t, e2t, t_mask,                    &
+              & aicesflx(:, :, cur_mon), imt, jmt,                      &
+              & aicesflx_ave(cur_mon), ss)
+!  Solar and non solar heat fluxes from ice to ocean 
+          CALL area_ave_flx(e1t, e2t, t_mask,                    &
+              & iicenflx(:, :, cur_mon), imt, jmt,                      &
+              & iicenflx_ave(cur_mon), ss)
+          CALL area_ave_flx(e1t, e2t, t_mask,                    &
+              & iicesflx(:, :, cur_mon), imt, jmt,                      &
+              & iicesflx_ave(cur_mon), ss)
       enddo 
 
 !---------------------------------------------------
@@ -382,7 +417,19 @@ SUBROUTINE calc (imt, jmt, lm)
       print*,'-------------------------------------'
       print*,'NH     ', isnowthick_nh
       print*,'SH     ', isnowthick_sh
-
+      print*,'-------------------------------------'
+      print*,'   ATM-ICE Solar/nonsolar flux  (W/m^2) '
+      print*,'-------------------------------------'
+      print*,'S      ', aicesflx_ave
+      print*,'NS     ', aicenflx_ave
+      print*,'NET    ', aicenflx_ave + aicesflx_ave
+      print*,'-------------------------------------'
+      print*,'   ICE-OCE Solar/nonsolar flux  (W/m^2) '
+      print*,'-------------------------------------'
+      print*,'S      ', iicesflx_ave
+      print*,'NS     ', iicenflx_ave
+      print*,'NET    ', iicenflx_ave + iicesflx_ave
+     
 
 !---------------------------------------------------------
 !     RTD output: Time series information section
@@ -441,6 +488,14 @@ SUBROUTINE calc (imt, jmt, lm)
           call defvar ('Volume_SH', iou, 1, (/id_time/), 0              &    
      &        , 1.e15,' ', 'D', 'Southern Hemisphere sea-ice volume'    &    
      &        , 'sea_ice_volume', 'm^3')     
+!   Volume NH snow
+          call defvar ('Volume_snow_NH', iou, 1, (/id_time/), 0              &    
+     &        , 1.e15,' ', 'D', 'Northern Hemisphere snow volume on ice'    &    
+     &        , '', 'm^3')     
+!   Volume SH snow
+          call defvar ('Volume_snow_SH', iou, 1, (/id_time/), 0              &    
+     &        , 1.e15,' ', 'D', 'Southern Hemisphere sea-ice volume on ice'    &    
+     &        , '', 'm^3')     
 !   Thickness NH
           call defvar ('Thickness_NH', iou, 1, (/id_time/), 0           &    
      &        , 1.e15,' ', 'D', 'Northern Hemisphere sea-ice thickness' &    
@@ -460,6 +515,22 @@ SUBROUTINE calc (imt, jmt, lm)
      &        , 'Southern Hemisphere snow thickness over sea ice'       &    
      &        , 'surface_snow_thickness_where_sea_ice', 'm')     
 
+!   Solar heat flux
+          call defvar ('aicesflx', iou, 1, (/id_time/), -1e15           &    
+     &        , 1.e15,' ', 'D', 'Atmosphere-Ice solar flux'             &    
+     &        , '', 'W m^{-2}')     
+!   Non Solar heat flux
+          call defvar ('aicenflx', iou, 1, (/id_time/), -1e15           &    
+     &        , 1.e15,' ', 'D', 'Atmosphere-Ice non solar flux'         &    
+     &        , '', 'W m^{-2}')     
+!   Solar heat flux ice-oce
+          call defvar ('iicesflx', iou, 1, (/id_time/), -1e15           &    
+     &        , 1.e15,' ', 'D', 'Ice-ocean solar flux'             &    
+     &        , '', 'W m^{-2}')     
+!   Non Solar heat flux ice-oce
+          call defvar ('iicenflx', iou, 1, (/id_time/), -1e15           &    
+     &        , 1.e15,' ', 'D', 'Ice-ocean non solar flux'         &    
+     &        , '', 'W m^{-2}')     
 
           call enddef (iou)
 
@@ -493,12 +564,19 @@ SUBROUTINE calc (imt, jmt, lm)
 !       Volume
         call putvars ('Volume_NH', iou, ntrec2, vol_nh(cur_mon), 1., 0.)
         call putvars ('Volume_SH', iou, ntrec2, vol_sh(cur_mon), 1., 0.)
+        call putvars ('Volume_snow_NH', iou, ntrec2, vol_sno_nh(cur_mon), 1., 0.)
+        call putvars ('Volume_snow_SH', iou, ntrec2, vol_sno_sh(cur_mon), 1., 0.)
 !       Thickness
         call putvars ('Thickness_NH', iou, ntrec2, thick_nh(cur_mon), 1., 0.)
         call putvars ('Thickness_SH', iou, ntrec2, thick_sh(cur_mon), 1., 0.)
 !       Snow Thickness
         call putvars ('Snow_thickness_NH', iou, ntrec2, isnowthick_nh(cur_mon), 1., 0.)
         call putvars ('Snow_thickness_SH', iou, ntrec2, isnowthick_sh(cur_mon), 1., 0.)
+!       Heat fluxes
+        call putvars ('aicenflx', iou, ntrec2, aicenflx_ave(cur_mon), 1., 0.)
+        call putvars ('aicesflx', iou, ntrec2, aicesflx_ave(cur_mon), 1., 0.)
+        call putvars ('iicenflx', iou, ntrec2, iicenflx_ave(cur_mon), 1., 0.)
+        call putvars ('iicesflx', iou, ntrec2, iicesflx_ave(cur_mon), 1., 0.)
       enddo
         
       print*, 'closing netcdf'

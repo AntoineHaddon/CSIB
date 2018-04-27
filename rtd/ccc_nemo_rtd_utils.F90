@@ -49,11 +49,9 @@ contains
                 ss=0.
                 do i=1,imt-2  ! not to double count the cyclic boundary
                     do j=1,jmt-1 ! north fold
-                        if (mask(i,j).gt.0.5) then  ! mask the region of interst
-                            arc = e1(i,j)*e2(i,j)
+                            arc = e1(i,j)*e2(i,j)*mask(i,j)
                             ss=ss+arc
                             s1=s1+a(i,j)*arc
-                        endif
                     enddo
                 enddo
 
