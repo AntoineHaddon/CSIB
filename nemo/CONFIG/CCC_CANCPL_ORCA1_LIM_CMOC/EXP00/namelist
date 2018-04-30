@@ -24,12 +24,12 @@
 &namrun        !   parameters of the run
 !-----------------------------------------------------------------------
   nn_no = 1000
-  cn_exp = "ORCA1_CMOC"
-  nn_it000 = 1
-  nn_itend = 30
-  nn_date0 = 00010101
+  cn_exp = "ngm"
+  nn_it000 = 9627241
+  nn_itend = 9636000
+  nn_date0 = 10000101
    nn_leapy    =       0   !  Leap year calendar (1) or not (0)
-  ln_rstart = .false.
+  ln_rstart = .true.
   nn_rstctl = 0
                            !    = 0 nn_date0 read in namelist ; nn_it000 : read in namelist
                            !    = 1 nn_date0 read in namelist ; nn_it000 : check consistancy between namelist and restart
@@ -124,7 +124,7 @@
 !-----------------------------------------------------------------------
 &namsbc        !   Surface Boundary Condition (surface module)
 !-----------------------------------------------------------------------
-   nn_fsbc     = 3         !  frequency of surface boundary condition computation 
+   nn_fsbc     = 1         !  frequency of surface boundary condition computation 
                            !     (also = the frequency of sea-ice model call)
    ln_ana      = .false.   !  analytical formulation                    (T => fill namsbc_ana ) 
    ln_flx      = .false.   !  flux formulation                          (T => fill namsbc_flx )
@@ -137,7 +137,7 @@
                            !  =1 use observed ice-cover      ,
                            !  =2 ice-model used                         ("key_lim3" or "key_lim2)
    ln_dm2dc    = .false.   !  daily mean to diurnal cycle on short wave
-   ln_rnf      = .true.    !  runoffs                                   (T => fill namsbc_rnf)
+   ln_rnf      = .false.   !  runoffs                                   (T => fill namsbc_rnf)
    ln_ssr      = .false.   !  Sea Surface Restoring on T and/or S       (T => fill namsbc_ssr)
    nn_fwb      = 4         !  FreshWater Budget: =0 unchecked 
                            !     =1 global mean of e-p-r set to zero at each time step 
@@ -190,15 +190,15 @@
 !-----------------------------------------------------------------------
 !              !  file name    ! frequency (hours) ! variable  ! time interp. !  clim  ! 'yearly'/ ! weights        ! rotation !
 !              !               !  (if <0  months)  !   name    !   (logical)  !  (T/F) ! 'monthly' ! filename       ! pairing  !
-   sn_wndi     = 'uwnd10m'     ,         6         , 'U_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bic2' , 'Uwnd'
-   sn_wndj     = 'vwnd10m'     ,         6         , 'V_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bic2' , 'Vwnd'
-   sn_qsr      = 'qsw'         ,        24         , 'SWDN_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , ''
-   sn_qlw      = 'qlw'         ,        24         , 'LWDN_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , ''
-   sn_tair     = 'tair10m'     ,         6         , 'T_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , ''
-   sn_humi     = 'humi10m'     ,         6         , 'Q_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , ''
-   sn_prec     = 'precip'      ,        -1         , 'PRC_MOD' ,   .false.    , .true. , 'yearly'  , 'weights_bil2' , ''
-   sn_snow     = 'snow'        ,        -1         , 'SNOW'    ,   .false.    , .true. , 'yearly'  , 'weights_bil2' , ''
-   sn_tdif     = 'taudif_core' ,        24         , 'taudif'  ,   .false.    , .true. , 'yearly'  , ''             , ''
+   sn_wndi     = 'uwnd10m'     ,         6         , 'U_10_MOD',   .false.    , .false. , 'yearly'  , 'weights_bic2' , 'Uwnd'
+   sn_wndj     = 'vwnd10m'     ,         6         , 'V_10_MOD',   .false.    , .false. , 'yearly'  , 'weights_bic2' , 'Vwnd'
+   sn_qsr      = 'qsw'         ,        24         , 'SWDN_MOD',   .false.    , .false. , 'yearly'  , 'weights_bil2' , ''
+   sn_qlw      = 'qlw'         ,        24         , 'LWDN_MOD',   .false.    , .false. , 'yearly'  , 'weights_bil2' , ''
+   sn_tair     = 'tair10m'     ,         6         , 'T_10_MOD',   .false.    , .false. , 'yearly'  , 'weights_bil2' , ''
+   sn_humi     = 'humi10m'     ,         6         , 'Q_10_MOD',   .false.    , .false. , 'yearly'  , 'weights_bil2' , ''
+   sn_prec     = 'precip'      ,        -1         , 'PRC_MOD',   .false.    , .false. , 'yearly'  , 'weights_bil2' , ''
+   sn_snow     = 'snow'        ,        -1         , 'SNOW'    ,   .false.    , .false. , 'yearly'  , 'weights_bil2' , ''
+   sn_tdif     = 'taudif_core' ,        24         , 'taudif'  ,   .false.    , .true.  , 'yearly'  , ''             , ''
 
    cn_dir      = './'      !  root directory for the location of the bulk files
    ln_2m       = .false.   !  air temperature and humidity referenced at 2m (T) instead 10m (F)
@@ -234,11 +234,11 @@ sn_snd_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 ! receive
 sn_rcv_w10m   =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
 sn_rcv_taumod =       'none'                 ,    'no'    ,     ''      ,         ''          ,   ''    
-sn_rcv_tau    =       'oce and ice'          ,    'no'    , 'spherical' , 'eastward-northward',  'T'   
+sn_rcv_tau    =       'conservative'         ,    'no'    , 'spherical' , 'eastward-northward',  'T'   
 sn_rcv_dqnsdt =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
-sn_rcv_qsr    =       'oce and ice'          ,    'no'    ,     ''      ,         ''          ,   ''    
-sn_rcv_qns    =       'oce and ice'          ,    'no'    ,     ''      ,         ''          ,   ''    
-sn_rcv_emp    =       'oce and ice'          ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_qsr    =       'conservative'         ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_qns    =       'conservative'         ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_emp    =       'conservative'         ,    'no'    ,     ''      ,         ''          ,   ''    
 sn_rcv_rnf    =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
 sn_rcv_cal    =       'none'                 ,    'no'    ,     ''      ,         ''          ,   ''    
 sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
@@ -758,7 +758,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
 &namsol        !   elliptic solver / island / free surface 
 !-----------------------------------------------------------------------
-   nn_solv     =      1    !  elliptic solver: =1 preconditioned conjugate gradient (pcg)
+   nn_solv     =      2    !  elliptic solver: =1 preconditioned conjugate gradient (pcg)
                            !                   =2 successive-over-relaxation (sor)
    nn_sol_arp  =      0    !  absolute/relative (0/1) precision convergence test
    rn_eps      =  1.e-6    !  absolute precision of the solver
@@ -774,10 +774,10 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
    cn_mpi_send =  'I'      !  mpi send/recieve type   ='S', 'B', or 'I' for standard send,
                            !  buffer blocking send or immediate non-blocking sends, resp.
    nn_buffer   =   0       !  size in bytes of exported buffer ('B' case), 0 no exportation
-   ln_nnogather=  .false.  !  activate code to avoid mpi_allgather use at the northfold
-  jpni = 1
-  jpnj = 1
-  jpnij = 1
+   ln_nnogather=  .true.   !  activate code to avoid mpi_allgather use at the northfold
+  jpni = 8
+  jpnj = 6
+  jpnij = 48
 /
 !-----------------------------------------------------------------------
 &namctl        !   Control prints & Benchmark

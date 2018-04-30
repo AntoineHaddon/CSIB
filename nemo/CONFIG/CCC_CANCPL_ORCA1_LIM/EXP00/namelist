@@ -234,11 +234,11 @@ sn_snd_co2    =       'none'                 ,    'no'    ,     ''      ,       
 ! receive
 sn_rcv_w10m   =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
 sn_rcv_taumod =       'none'                 ,    'no'    ,     ''      ,         ''          ,   ''    
-sn_rcv_tau    =       'oce and ice'          ,    'no'    , 'spherical' , 'eastward-northward',  'T'   
+sn_rcv_tau    =       'conservative'         ,    'no'    , 'spherical' , 'eastward-northward',  'T'   
 sn_rcv_dqnsdt =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
-sn_rcv_qsr    =       'oce and ice'          ,    'no'    ,     ''      ,         ''          ,   ''    
-sn_rcv_qns    =       'oce and ice'          ,    'no'    ,     ''      ,         ''          ,   ''    
-sn_rcv_emp    =       'oce and ice'          ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_qsr    =       'conservative'         ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_qns    =       'conservative'         ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_emp    =       'conservative'         ,    'no'    ,     ''      ,         ''          ,   ''    
 sn_rcv_rnf    =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
 sn_rcv_cal    =       'none'                 ,    'no'    ,     ''      ,         ''          ,   ''    
 sn_rcv_co2    =       'none'                 ,    'no'    ,     ''      ,         ''          ,   ''    
@@ -758,7 +758,7 @@ sn_rcv_co2    =       'none'                 ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
 &namsol        !   elliptic solver / island / free surface 
 !-----------------------------------------------------------------------
-   nn_solv     =      1    !  elliptic solver: =1 preconditioned conjugate gradient (pcg)
+   nn_solv     =      2    !  elliptic solver: =1 preconditioned conjugate gradient (pcg)
                            !                   =2 successive-over-relaxation (sor)
    nn_sol_arp  =      0    !  absolute/relative (0/1) precision convergence test
    rn_eps      =  1.e-6    !  absolute precision of the solver
@@ -774,7 +774,7 @@ sn_rcv_co2    =       'none'                 ,    'no'    ,     ''      ,       
    cn_mpi_send =  'I'      !  mpi send/recieve type   ='S', 'B', or 'I' for standard send,
                            !  buffer blocking send or immediate non-blocking sends, resp.
    nn_buffer   =   0       !  size in bytes of exported buffer ('B' case), 0 no exportation
-   ln_nnogather=  .false.  !  activate code to avoid mpi_allgather use at the northfold
+   ln_nnogather=  .true.   !  activate code to avoid mpi_allgather use at the northfold
   jpni = 8
   jpnj = 6
   jpnij = 48
