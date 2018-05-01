@@ -24,11 +24,11 @@
 &namrun        !   parameters of the run
 !-----------------------------------------------------------------------
   nn_no = 1000
-  cn_exp = "ORCA1_CANOE"
+  cn_exp = "ORCA1"
   nn_it000 = 1
-  nn_itend = 30
+  nn_itend = 3
   nn_date0 = 00010101
-   nn_leapy    =       0   !  Leap year calendar (1) or not (0)
+  nn_leapy    =       0   !  Leap year calendar (1) or not (0)
   ln_rstart = .false.
   nn_rstctl = 0
                            !    = 0 nn_date0 read in namelist ; nn_it000 : read in namelist
@@ -188,15 +188,16 @@
 !-----------------------------------------------------------------------
 !              !  file name    ! frequency (hours) ! variable  ! time interp. !  clim  ! 'yearly'/ ! weights        ! rotation !
 !              !               !  (if <0  months)  !   name    !   (logical)  !  (T/F) ! 'monthly' ! filename       ! pairing  !
-   sn_wndi     = 'uwnd10m'     ,         6         , 'U_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bic2' , 'Uwnd'
-   sn_wndj     = 'vwnd10m'     ,         6         , 'V_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bic2' , 'Vwnd'
-   sn_qsr      = 'qsw'         ,        24         , 'SWDN_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , ''
-   sn_qlw      = 'qlw'         ,        24         , 'LWDN_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , ''
-   sn_tair     = 'tair10m'     ,         6         , 'T_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , ''
-   sn_humi     = 'humi10m'     ,         6         , 'Q_10_MOD',   .false.    , .true. , 'yearly'  , 'weights_bil2' , ''
-   sn_prec     = 'precip'      ,        -1         , 'PRC_MOD' ,   .false.    , .true. , 'yearly'  , 'weights_bil2' , ''
-   sn_snow     = 'snow'        ,        -1         , 'SNOW'    ,   .false.    , .true. , 'yearly'  , 'weights_bil2' , ''
-   sn_tdif     = 'taudif_core' ,        24         , 'taudif'  ,   .false.    , .true. , 'yearly'  , ''             , ''
+   sn_wndi     = 'uwnd10m'      ,        24         , 'uas'     ,   .false.    , .false. , 'yearly'  , 'weights_bic2'       , 'Uwnd' 
+   sn_wndj     = 'vwnd10m'      ,        24         , 'vas'     ,   .false.    , .false. , 'yearly'  , 'weights_bic2'       , 'Vwnd'
+   sn_qsr      = 'qsw'          ,        24         , 'rsds'    ,   .false.    , .false. , 'yearly'  , 'weights_bil2'       , '' 
+   sn_qlw      = 'qlw'          ,        24         , 'rlds'    ,   .false.    , .false. , 'yearly'  , 'weights_bil2'       , ''
+   sn_tair     = 'tair10m'      ,        24         , 'tas'     ,   .false.    , .false. , 'yearly'  , 'weights_bil2'       , '' 
+   sn_humi     = 'humi10m'      ,        24         , 'huss'    ,   .false.    , .false. , 'yearly'  , 'weights_bil2'       , '' 
+   sn_prec     = 'precip'       ,        24         , 'pr'      ,   .false.    , .false. , 'yearly'  , 'weights_bil2'       , '' 
+   sn_snow     = 'snow'         ,        24         , 'prsn'    ,   .false.    , .false. , 'yearly'  , 'weights_bil2'       , '' 
+   sn_tdif     = 'taudif_core'  ,        24         , 'taudif'  ,   .false.    , .true. , 'yearly'  , ''       , '' 
+
 
    cn_dir      = './'      !  root directory for the location of the bulk files
    ln_2m       = .false.   !  air temperature and humidity referenced at 2m (T) instead 10m (F)
@@ -263,8 +264,8 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
 !              !  file name           ! frequency (hours) ! variable  ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation !
 !              !                      !  (if <0  months)  !   name    !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  !
-   sn_rnf      = 'runoff_core_monthly',        -1         , 'sorunoff',   .true.     , .true. , 'yearly'  , ''       , ''
-   sn_cnf      = 'runoff_core_monthly',        -1         , 'socoeff' ,   .true.     , .true. , 'yearly'  , ''       , ''
+   sn_rnf      = 'runoff_core_monthly',        -1         , 'ROUT'    ,   .true.     , .true. , 'yearly'  , 'weights_bil2', '' 
+   sn_cnf      = 'runoff_core_monthly',        -1         , 'socoeff' ,   .true.     , .true. , 'yearly'  , 'weights_bil2', '' 
    sn_s_rnf    = 'runoffs'            ,        24         , 'rosaline',   .true.     , .true. , 'yearly'  , ''       , ''
    sn_t_rnf    = 'runoffs'            ,        24         , 'rotemper',   .true.     , .true. , 'yearly'  , ''       , ''
    sn_dep_rnf  = 'runoffs'            ,         0         , 'rodepth' ,   .false.    , .true. , 'yearly'  , ''       , ''
@@ -756,7 +757,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
 &namsol        !   elliptic solver / island / free surface 
 !-----------------------------------------------------------------------
-   nn_solv     =      2    !  elliptic solver: =1 preconditioned conjugate gradient (pcg)
+   nn_solv     =      1    !  elliptic solver: =1 preconditioned conjugate gradient (pcg)
                            !                   =2 successive-over-relaxation (sor)
    nn_sol_arp  =      0    !  absolute/relative (0/1) precision convergence test
    rn_eps      =  1.e-6    !  absolute precision of the solver
@@ -772,7 +773,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
    cn_mpi_send =  'I'      !  mpi send/recieve type   ='S', 'B', or 'I' for standard send,
                            !  buffer blocking send or immediate non-blocking sends, resp.
    nn_buffer   =   0       !  size in bytes of exported buffer ('B' case), 0 no exportation
-   ln_nnogather=  .true.  !  activate code to avoid mpi_allgather use at the northfold
+   ln_nnogather=  .false.  !  activate code to avoid mpi_allgather use at the northfold
   jpni = 1
   jpnj = 1
   jpnij = 1
@@ -995,3 +996,4 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
     nn_ittrjfrq = 20                 ! Output/input frequency
     ln_trj_spl = .false.             ! Handling trajectory at simple precision
 /
+

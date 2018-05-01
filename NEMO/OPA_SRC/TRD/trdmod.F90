@@ -6,6 +6,9 @@ MODULE trdmod
    !! History :  1.0  !  2004-08  (C. Talandier) Original code
    !!             -   !  2005-04  (C. Deltel)    Add Asselin trend in the ML budget
    !!            3.3  ! 2010-10  (C. Ethe, G. Madec) reorganisation of initialisation phase
+   !!            3.4.1! 2016-03  (D. YANG)       Added computations of two basin averaged properties
+   !!                                            of tracers: "PURE" Kz trend (iso-neutral diffusion)
+   !!                                            and Asselin correction.
    !!----------------------------------------------------------------------
 #if  defined key_trdtra || defined key_trddyn || defined key_trdmld || defined key_trdvor || defined key_esopa
    !!----------------------------------------------------------------------
@@ -98,6 +101,9 @@ CONTAINS
                                          z2dx(:,:) = wn(:,:,1)*tsn(:,:,1,jp_tem)/fse3t(:,:,1)
                                          z2dy(:,:) = wn(:,:,1)*tsn(:,:,1,jp_sal)/fse3t(:,:,1)
                                          CALL trd_icp( z2dx , z2dy , jpicpt_zl1, ctype )   ! 1st z- vertical adv 
+            CASE ( jptra_trd_zdfp )  ;   CALL trd_icp( ptrdx, ptrdy, jpicpt_zdfp, ctype )  ! "PURE" Kz trend (iso-neutral diffusion 
+                                                                                           ! case otherwise jptra_trd_zdf is "PURE")
+            CASE ( jptra_trd_atf )   ;   CALL trd_icp( ptrdx, ptrdy, jpicpt_atf, ctype )   ! Asselin correction
             END SELECT
          END IF
 
