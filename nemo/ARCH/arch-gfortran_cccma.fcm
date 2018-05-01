@@ -1,4 +1,4 @@
-# generic gfortran compiler options for linux
+# Compiler options for Linux workstations/servers at the CCCma in Victoria
 # NCDF_INC    netcdf include file
 # NCDF_LIB    netcdf library
 # FC          Fortran compiler command

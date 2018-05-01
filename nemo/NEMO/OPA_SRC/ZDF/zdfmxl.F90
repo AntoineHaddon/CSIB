@@ -5,6 +5,10 @@ MODULE zdfmxl
    !!======================================================================
    !! History :  1.0  ! 2003-08  (G. Madec)  original code
    !!            3.2  ! 2009-07  (S. Masson, G. Madec)  IOM + merge of DO-loop
+   !!            3.4.1! 2016-08  (D. Yang) Added mixed layer depth (mlotst) 
+   !!                                      and squared mixed layer depth (mlotstsq)
+   !!                                      following OMDP's recommendations for CMIP6, 
+   !!(Griffies et al, Geosci. Model Dev. Discuss., doi:10.5194/gmd-2016-77, 2016, p35-37)
    !!----------------------------------------------------------------------
    !!   zdf_mxl      : Compute the turbocline and mixed layer depths.
    !!----------------------------------------------------------------------
@@ -18,6 +22,10 @@ MODULE zdfmxl
    USE wrk_nemo        ! work arrays
    USE timing          ! Timing
    USE trc_oce, ONLY : lk_offline ! offline flag
+#if defined key_diaar5   
+   USE eosbn2          ! equation of state
+   USE phycst          ! physical constants
+#endif
 
    IMPLICIT NONE
    PRIVATE
@@ -63,7 +71,7 @@ CONTAINS
       !! ** Method  :   The mixed layer depth is the shallowest W depth with 
       !!      the density of the corresponding T point (just bellow) bellow a
       !!      given value defined locally as rho(10m) + zrho_c
-      !!               The turbocline depth is the depth at which the vertical
+      !!                The turbocline depth is the depth at which the vertical
       !!      eddy diffusivity coefficient (resulting from the vertical physics
       !!      alone, not the isopycnal part, see trazdf.F) fall below a given
       !!      value defined locally (avt_c here taken equal to 5 cm/s2)
@@ -77,11 +85,26 @@ CONTAINS
       INTEGER, POINTER, DIMENSION(:,:) ::   imld                ! temporary workspace
       REAL(wp) ::   zrho_c = 0.01_wp    ! density criterion for mixed layer depth
       REAL(wp) ::   zavt_c = 5.e-4_wp   ! Kz criterion for the turbocline depth
+#if defined key_diaar5      
+      REAL(wp) ::   zb_c = 0.0003_wp    ! buoyancy difference threshold for mixed 
+                                        ! layer depth in m/s2 (cmip6)
+      REAL(wp) ::  zgwt1, zgwt2, zgwt
+      REAL(wp), POINTER, DIMENSION(:)       :: delta_b       ! 1D workspace
+      REAL(wp), POINTER, DIMENSION(:,:)     :: mldt          ! 2D workspace 
+      REAL(wp), POINTER, DIMENSION(:,:,:)   :: zrhd, zrhd1   ! 3D workspace
+      REAL(wp), POINTER, DIMENSION(:,:,:,:) :: ztsn          ! 4D workspace
+#endif
       !!----------------------------------------------------------------------
       !
       IF( nn_timing == 1 )  CALL timing_start('zdf_mxl')
       !
       CALL wrk_alloc( jpi,jpj, imld )
+#if defined key_diaar5
+         CALL wrk_alloc( jpk, delta_b)
+         CALL wrk_alloc( jpi,jpj, mldt)
+         CALL wrk_alloc( jpi,jpj,jpk, zrhd, zrhd1)
+         CALL wrk_alloc( jpi,jpj,jpk,jpts, ztsn) 
+#endif
 
       IF( kt == nit000 ) THEN
          IF(lwp) WRITE(numout,*)
@@ -112,14 +135,51 @@ CONTAINS
             hmlpt(ji,jj) = fsdept(ji,jj,iikn-1)                     ! depth of the last T-point inside the mixed layer
          END DO
       END DO
+      ! mixed layer depth using cmip6 criterion
+#if defined key_diaar5
+         CALL eos( tsn, zrhd )                 ! now in situ density
+         DO jk = 1, jpk
+            ztsn(:,:,jk,jp_tem) = tsn(:,:,1,jp_tem)
+            ztsn(:,:,jk,jp_sal) = tsn(:,:,1,jp_sal)
+         ENDDO
+         CALL eos( ztsn, zrhd1 )               ! now in situ density using 1st level T & S
+      ! zrhd and zrhd1 are masked in-situ density anomaly (density resumed in delta_b)
+         mldt(:,:)  = 0.0
+         delta_b(:) = 0.0
+         DO jj = 1, jpj
+            DO ji = 1, jpi
+               DO jk = 1, jpkm1
+                  delta_b(jk) = - grav * ( zrhd1(ji,jj,jk) - zrhd(ji,jj,jk) ) / ( zrhd(ji,jj,jk) + 1. )
+                  IF ( delta_b(jk) > zb_c .AND. jk > 1 ) THEN
+                     zgwt1 = ABS(zb_c - delta_b(jk-1) )
+                     zgwt2 = ABS(delta_b(jk) - zb_c )
+                     zgwt = zgwt1 / (zgwt1 + zgwt2)
+                     mldt(ji,jj) = ( zgwt * fsdept(ji,jj,jk) + (1. - zgwt) * fsdept(ji,jj,jk-1) ) * tmask(ji,jj,jk)
+                  EXIT
+                  END IF
+               END DO
+            END DO
+         END DO    
+#endif
+      !
       IF( .NOT.lk_offline ) THEN            ! no need to output in offline mode
          CALL iom_put( "mldr10_1", hmlp )   ! mixed layer depth
          CALL iom_put( "mldkz5"  , hmld )   ! turbocline depth
+#if defined key_diaar5
+            CALL iom_put( "mldcmip6",        mldt )  ! mixed layer depth for cmip6
+            CALL iom_put( "mldsq",    mldt * mldt )  ! squared mixed layer depth for cmip6
+#endif
       ENDIF
       
       IF(ln_ctl)   CALL prt_ctl( tab2d_1=REAL(nmln,wp), clinfo1=' nmln : ', tab2d_2=hmlp, clinfo2=' hmlp : ', ovlap=1 )
       !
       CALL wrk_dealloc( jpi,jpj, imld )
+#if defined key_diaar5
+         CALL wrk_dealloc( jpk, delta_b )
+         CALL wrk_dealloc( jpi,jpj, mldt )
+         CALL wrk_dealloc( jpi,jpj,jpk, zrhd, zrhd1 )
+         CALL wrk_dealloc( jpi,jpj,jpk,jpts, ztsn )
+#endif
       !
       IF( nn_timing == 1 )  CALL timing_stop('zdf_mxl')
       !
