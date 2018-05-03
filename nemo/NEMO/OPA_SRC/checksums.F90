@@ -52,8 +52,8 @@ CONTAINS
       REAL(wp) :: minarray, maxarray
 
       ! By default set indices to only the "inner" part of the array, not the halo
-      is = 2 ; ie = jpim1
-      js = 2 ; je = jpjm1
+      is = jpi+1 ; ie = jpim1
+      js = jpj+1 ; je = jpjm1
       IF (PRESENT(istart)) is = istart
       IF (PRESENT(jstart)) js = jstart
       IF (PRESENT(iend))   ie = iend
