@@ -285,7 +285,6 @@ CONTAINS
                        CALL sbc_blk_core( kt )                    !
                        CALL sbc_cpl_rcv ( kt, nn_fsbc, nn_ice )   !
       END SELECT
-      IF (nn_chksum  )   CALL after_state_chksum( "after sbc calculation" )
       !                                            !==  Misc. Options  ==!
 
       SELECT CASE( nn_ice )                                       ! Update heat and freshwater fluxes over sea-ice areas
@@ -387,6 +386,16 @@ CONTAINS
          CALL prt_ctl(tab3d_1=tsn(:,:,:,jp_sal), clinfo1=' sss      - : ', mask1=tmask, ovlap=1, kdim=1   )
          CALL prt_ctl(tab2d_1=utau             , clinfo1=' utau     - : ', mask1=umask,                      &
             &         tab2d_2=vtau             , clinfo2=' vtau     - : ', mask2=vmask, ovlap=1 )
+      ENDIF
+      IF(nn_chksum) THEN         ! print array checksums (for debugging)
+         CALL chksum('fr_i     after sbc calculation', fr_i      , mask=tmask, istart = 1)
+         CALL chksum('emp-rnf  after sbc calculation', (emp-rnf) , mask=tmask, istart = 1)
+         CALL chksum('emps-rnf after sbc calculation', (emps-rnf), mask=tmask, istart = 1)
+         CALL chksum('qns      after sbc calculation', qns       , mask=tmask, istart = 1)
+         CALL chksum('qsr      after sbc calculation', qsr       , mask=tmask, istart = 1)
+         CALL chksum('utau     after sbc calculation', utau      , mask=umask, istart = 1 )
+         CALL chksum('vtau     after sbc calculation', vtau      , mask=vmask, istart = 1 )
+        CALL after_state_chksum( "after sbc calculation" )
       ENDIF
 
       IF( kt == nitend )   CALL sbc_final         ! Close down surface module if necessary
