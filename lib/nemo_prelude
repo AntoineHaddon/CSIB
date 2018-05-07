@@ -485,7 +485,8 @@ echo "#################### Start NEMO pre-processing #################"
 
   # Total number of time steps in the current job
   [ -z "$days_in_job" ] && bail "days_in_job must be defined"
-  steps_in_job=${nemo_steps_in_job:=`echo $steps_per_day $days_in_job|awk '{printf "%d",$1*$2}' -`}
+#  steps_in_job=${nemo_steps_in_job:=`echo $steps_per_day $days_in_job|awk '{printf "%d",$1*$2}' -`}
+  steps_in_job=`echo $steps_per_day $days_in_job|awk '{printf "%d",$1*$2}' -`
 
   # The number of NEMO time steps between calls to sbc (used by NEMO)
   nn_fsbc=${nemo_nn_fsbc:=3}
