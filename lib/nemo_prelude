@@ -348,7 +348,7 @@ echo "#################### Start NEMO pre-processing #################"
   start_year=`echo $start_year|awk -F':' '{printf "%4.4d",$1}' -`
   stop_year=`echo $stop_year|awk -F':' '{printf "%4.4d",$1}' -`
 
-  if [ 1 -eq 2 ]; then
+  if [ 1 -eq 1 ]; then
     echo "nemo_prelude: start_year=$start_year  start_mon=$start_mon"
     echo "nemo_prelude:  stop_year=$stop_year   stop_mon=$stop_mon"
     echo "nemo_prelude: days_in_job=$days_in_job  months=$months  month_counter=$month_counter"
