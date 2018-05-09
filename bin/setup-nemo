@@ -306,7 +306,8 @@ else
     esac
 
     nemo_config_lc=`echo "$nemo_config" | awk '{print tolower($0)}'`
-
+    # Set the configuration on which to base this experiment
+    sed -i 's/.*config=.*/config='"$nemo_config/" experiment.cfg
     # Make a directory by cloning the maestro repo and do basic maestro setup
     [ -d $nemo_runid ] && bail "Directory $nemo_runid already exists! Aborting"
 
