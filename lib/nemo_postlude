@@ -89,7 +89,7 @@
              rm -rf $pfx
              mkdir $pfx
              mv $pfx*.nc $pfx
-	     ncsave=${cn_exp}_${stop_year}_m${stop_mon}_${freq}_${sfx}
+	     ncsave=${cn_exp}_${start_year}_m${start_mon}_${freq}_${sfx}
              save $pfx ${uxxx}_$ncsave && echo "${uxxx}_$ncsave" >> saved_history_FILE_NAMES
           fi   
         done
@@ -102,7 +102,7 @@
          rm -rf $pfx
          mkdir $pfx
          mv $pfx*.nc $pfx
-	 ncsave=${cn_exp}_${stop_year}_m${stop_mon}_mesh_mask
+	 ncsave=${cn_exp}_${start_year}_m${start_mon}_mesh_mask
          save $pfx ${uxxx}_$ncsave && echo "${uxxx}_$ncsave" >> saved_history_FILE_NAMES
       fi
     fi
