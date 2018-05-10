@@ -1,7 +1,7 @@
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &namcfcparam   ! Set parameters governing the cfc tracer module 
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-    cfc_year_offset = 0 ! The year that the cfc module sees. For example if the model year is 1000 and offset is 900, the cfc_year is 1900
+    offset_cfc_year = 0 ! The year that the cfc module sees. For example if the model year is 1000 and offset is 900, the cfc_year is 1900
     cfc_nc_file = 'nemo_cfc_atmhist.nc'
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''

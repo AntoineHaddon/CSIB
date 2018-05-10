@@ -36,7 +36,7 @@ MODULE trcsms_cfc
 
    INTEGER , PUBLIC, PARAMETER :: jphem = 2 ! parameter for the 2 hemispheres
    INTEGER , PUBLIC :: jpyear ! Number of years read in CFC1112 file
-   INTEGER , PUBLIC :: cfc_year_offset ! Offset from model year.
+   INTEGER , PUBLIC :: offset_cfc_year ! Offset from model year.
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) :: p_cfc_year ! Year associated with the atmospheric partial pressure
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: p_cfc ! partial hemispheric pressure for CFC
@@ -109,7 +109,7 @@ CONTAINS
       ! ----------------------
       nyears = SIZE(p_cfc_year(:))
       ! Calculate the given year that the CFC module sees
-      cfc_year = nyear + cfc_year_offset
+      cfc_year = nyear + offset_cfc_year
       yearfrac = ( nsec_year ) / ( 86400. * nyear_len(1) )
       ! Check to make sure that the current 'cfc_year' is within the observational range
       ! and set time interpolation factors keeping in mind that atmospheric values are
