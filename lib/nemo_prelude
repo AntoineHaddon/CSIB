@@ -412,11 +412,7 @@ echo "#################### Start NEMO pre-processing #################"
   nemo_stop_date=$stop_date
 
   # Determine the year and month of the previous restart, if any
-  if [ $cpl_model_year -eq $run_start_year ] ; then
-    nemo_months_run=1
-  else
-    nemo_months_run=$months_run
-  fi
+  nemo_months_run=$months_run
   if [ $start_mon -eq 1 ]; then
     rs_mon=`expr 13 - $nemo_months_run`
     if [ $start_year -eq 1 ]; then
@@ -490,7 +486,7 @@ echo "#################### Start NEMO pre-processing #################"
 
   # Total number of time steps in the current job
   [ -z "$days_in_job" ] && bail "days_in_job must be defined"
-#  steps_in_job=${nemo_steps_in_job:=`echo $steps_per_day $days_in_job|awk '{printf "%d",$1*$2}' -`}
+# steps_in_job=${nemo_steps_in_job:=`echo $steps_per_day $days_in_job|awk '{printf "%d",$1*$2}' -`}
   steps_in_job=`echo $steps_per_day $days_in_job|awk '{printf "%d",$1*$2}' -`
 
   # The number of NEMO time steps between calls to sbc (used by NEMO)
