@@ -89,7 +89,7 @@
           if [ -s "$fnpatt" ]; then
              rm -rf $pfx
              mkdir $pfx
-             mv $pfx*.nc $pfx
+             mv ${pfx}_[0-9]*.nc $pfx
              save $pfx ${uxxx}_$ncsave && echo "${uxxx}_$ncsave" >> saved_history_FILE_NAMES
           elif [ -s "${pfx}.nc" ]; then
              save ${pfx}.nc ${uxxx}_${ncsave}.nc && echo "${uxxx}_${ncsave}.nc" >> saved_history_FILE_NAMES
