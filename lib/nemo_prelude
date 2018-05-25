@@ -1005,9 +1005,9 @@ echo "#################### Start NEMO pre-processing #################"
   ln_rnf_emp=${nemo_ln_rnf_emp:=.true.}
 
   # namelist parameters for on-the-fly diagnostics (CMIP6)
-  ln_diaptr=${nemo_ln_diaptr:=.true.}
-  ln_diaznl=${nemo_ln_diaznl:=.false.}
-  nn_fwri=${nemo_nn_fwri:=24}
+  ln_diaptr=${nemo_ln_diaptr:=.false.}
+  ln_diaznl=${nemo_ln_diaznl:=.true.}
+  nn_fwri=${nemo_nn_fwri:=15}
 
   # &namtsd    !   data : Temperature  & Salinity
   # ln_tsd_init flags initialization of ocean T & S with T & S input data (T) or not (F)
