@@ -95,7 +95,7 @@ CONTAINS
       INTEGER, INTENT(in) ::   kt, jnt ! ocean time step
       INTEGER  ::   ji, jj, jk, ikt
       REAL(wp) ::   zdenitot, znitrpottot, zlim, zfact, zfactcal
-      REAL(wp) ::   zcaloss, zwsbio3, zwsbio4, zwscal, zdep
+      REAL(wp) ::   zcaloss, zwsbio3, zwsbio4, zwscal, zdep, zsfc
       CHARACTER (len=25) :: charout
       REAL(wp), POINTER, DIMENSION(:,:,:) :: znitrpot, zirondep, zafe, zbfe                       ! afe and bfe indicate aeolian and benthic Fe sources
       REAL(wp), POINTER, DIMENSION(:,:) :: zocdep, zicdep, zburial                                ! deposition and burial of POC and PIC
@@ -150,13 +150,16 @@ CONTAINS
 
             ikt  = mbkt(ji,jj)
             zdep = xstep / fse3t(ji,jj,ikt)
+            zsfc = xstep / fse3t(ji,jj,1)
             zwscal  = wscal (ji,jj,ikt) * zdep
             zcaloss = trn(ji,jj,ikt,jpcal) * zwscal
             
             trn(ji,jj,ikt,jpcal) = trn(ji,jj,ikt,jpcal) - zcaloss
             zfactcal = FLOAT(FLOOR(MIN( 1.-excess(ji,jj,ikt), 1.5 )))       ! set burial fraction to 1 if Omega>1 and 0 otherwise
-            trn(ji,jj,ikt,jptal) =  trn(ji,jj,ikt,jptal) + zcaloss * zfactcal * 2.E-6
-            trn(ji,jj,ikt,jpdic) =  trn(ji,jj,ikt,jpdic) + zcaloss * zfactcal * 1.E-6
+            trn(ji,jj,ikt,jptal) =  trn(ji,jj,ikt,jptal) + zcaloss * (1.-zfactcal) * 2.E-6
+            trn(ji,jj,ikt,jpdic) =  trn(ji,jj,ikt,jpdic) + zcaloss * (1.-zfactcal) * 1.E-6
+! reintroduce alkalinity lost to burial at surface
+            trn(ji,jj,1,jptal) =  trn(ji,jj,1,jptal) + zcaloss * zfactcal * 2.E-6 * zsfc/zdep
             zicdep(ji,jj) = trn(ji,jj,ikt,jpcal) * wscal(ji,jj,ikt)         ! deposition in mmol m^-2 s^-1
             zburial(ji,jj) = trn(ji,jj,ikt,jpcal) * wscal(ji,jj,ikt) * zfactcal
 
@@ -169,15 +172,16 @@ CONTAINS
             zdep = xstep / fse3t(ji,jj,ikt)
             zwsbio4 = wsbio4(ji,jj,ikt) * zdep
             zwsbio3 = wsbio3(ji,jj,ikt) * zdep
-            trn(ji,jj,ikt,jpgoc) = trn(ji,jj,ikt,jpgoc) - trn(ji,jj,ikt,jpgoc) * zwsbio4
-            trn(ji,jj,ikt,jppoc) = trn(ji,jj,ikt,jppoc) - trn(ji,jj,ikt,jppoc) * zwsbio3
-            zocdep(ji,jj) = trn(ji,jj,ikt,jppoc) * wsbio3(ji,jj,ikt) + trn(ji,jj,ikt,jpgoc) * wsbio4(ji,jj,ikt)      ! deposition in mmol m^-2 s^-1
 ! all deposition of POC is returned to bottom layer as inorganic nutrients
             trn(ji,jj,ikt,jpdic) = trn(ji,jj,ikt,jpdic) + (trn(ji,jj,ikt,jpgoc) * zwsbio4 + trn(ji,jj,ikt,jppoc) * zwsbio3) * 1.E-6
             trn(ji,jj,ikt,jpoxy) = trn(ji,jj,ikt,jpoxy) - (trn(ji,jj,ikt,jpgoc) * zwsbio4 + trn(ji,jj,ikt,jppoc) * zwsbio3)
             trn(ji,jj,ikt,jpnh4) = trn(ji,jj,ikt,jpnh4) + (trn(ji,jj,ikt,jpgoc) * zwsbio4 + trn(ji,jj,ikt,jppoc) * zwsbio3) * rr_n2c
             trn(ji,jj,ikt,jpfer) = trn(ji,jj,ikt,jpfer) + (trn(ji,jj,ikt,jpgoc) * zwsbio4 + trn(ji,jj,ikt,jppoc) * zwsbio3) * rr_fe2c
             trn(ji,jj,ikt,jptal) = trn(ji,jj,ikt,jptal) + (trn(ji,jj,ikt,jpgoc) * zwsbio4 + trn(ji,jj,ikt,jppoc) * zwsbio3) * rr_n2c * 1.E-6
+! operations on POC and GOC arrays MUST come after all other lines where these arrays appear on RHS
+            trn(ji,jj,ikt,jpgoc) = trn(ji,jj,ikt,jpgoc) - trn(ji,jj,ikt,jpgoc) * zwsbio4
+            trn(ji,jj,ikt,jppoc) = trn(ji,jj,ikt,jppoc) - trn(ji,jj,ikt,jppoc) * zwsbio3
+            zocdep(ji,jj) = trn(ji,jj,ikt,jppoc) * wsbio3(ji,jj,ikt) + trn(ji,jj,ikt,jpgoc) * wsbio4(ji,jj,ikt)      ! deposition in mmol m^-2 s^-1
          END DO
       END DO
 

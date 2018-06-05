@@ -56,7 +56,7 @@ MODULE sms_pisces
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   grazing3   !: mesozooplankton grazing on microzooplankton
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   denitr     !: denitrification
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   zdnf       !: N2 fixation
-   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   denitnh4   !: annamox
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   denitnh4   !: anammox
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   nh4ox      !: nitrification
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   zmortpn    !: nanophytoplankton mortality 
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   zmortpd    !: diatoms mortality
