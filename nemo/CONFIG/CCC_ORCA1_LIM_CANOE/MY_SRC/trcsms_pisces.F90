@@ -65,8 +65,9 @@ CONTAINS
       !
       IF( nn_timing == 1 )  CALL timing_start('trc_sms_pisces')
       !
-      IF( ln_pisdmp .AND. MOD( kt - nn_dttrc, nn_pisdmp ) == 0 )   CALL trc_sms_pisces_dmp( kt )  ! Relaxation of some tracers
-                                                                   CALL trc_sms_pisces_mass_conserv( kt ) ! Mass conservation checking
+    !  IF( ln_pisdmp .AND. MOD( kt - nn_dttrc, nn_pisdmp ) == 0 )   CALL trc_sms_pisces_dmp( kt )  ! Relaxation of some tracers
+    !                                                               CALL trc_sms_pisces_mass_conserv( kt ) ! Mass conservation checking
+
       IF( l_trdtrc )  THEN
          CALL wrk_alloc( jpi, jpj, jpk, jp_pisces, ztrdpis ) 
          DO jn = 1, jp_pisces
@@ -93,6 +94,7 @@ CONTAINS
          !
          CALL p4z_bio (kt, jnt)    ! Compute soft tissue production (POC)
          CALL p4z_sed (kt, jnt)    ! compute soft tissue remineralisation
+         CALL trc_sms_pisces_dmp( kt )
          !
          DO jn = jp_pcs0, jp_pcs1
             trb(:,:,:,jn) = trn(:,:,:,jn)
@@ -148,32 +150,26 @@ CONTAINS
       !
       INTEGER, INTENT( in )  ::     kt ! time step
       !
-      REAL(wp) ::  alkmean = 2426.     ! mean value of alkalinity ( Glodap ; for Goyet 2391. )
-      REAL(wp) ::  no3mean = 30.90     ! mean value of nitrate
-      !
-      REAL(wp) :: zdntrsum, zdnfsum, ztau, nsum
+      REAL(wp) :: zdntrsum, zdnfsum, ztau, znsum, zalksum, zalksum0
       !!---------------------------------------------------------------------
 
-
-      !IF(lwp)  WRITE(numout,*)
-      !IF(lwp)  WRITE(numout,*) ' trc_sms_pisces_dmp : Relaxation of nutrients at time-step kt = ', kt
-      !IF(lwp)  WRITE(numout,*)
 
       IF( cp_cfg == "orca" .AND. .NOT. lk_c1d ) THEN      ! ORCA configuration (not 1D) !
          !                                                    ! --------------------------- !
          ! adjust NO3 according to difference between global total rates of denitrification and N2 fixation
          ! this adjustment must be multiplicative rather than additive to prevent negative concentrations
 
-         nsum = 1. / glob_sum( trn(:,:,:,jpno3)*cvol(:,:,:)*0.0010008 )              ! inverse global total N in mol^-1 (1.0008 is an approximate correction for non-NO3 N)
-         zdnfsum = glob_sum( zdnf(:,:,:) * cvol(:,:,:)  )                           ! global total in molN s^-1
+         znsum = glob_sum( trn(:,:,:,jpno3)*cvol(:,:,:) )                             ! global total N in mol^-1
+         zdnfsum = glob_sum( zdnf(:,:,:) * cvol(:,:,:)  )                             ! global total in molN s^-1
          zdntrsum = glob_sum( denitr(:,:,:) * cvol(:,:,:)  )         
-         ztau = 1.+(zdntrsum-zdnfsum)*nsum*FLOAT(nn_pisdmp)*rfact       
-         !IF(lwp) WRITE(numout,*) '       Totals  : ', zdnfsum, zdntrsum, ztau, nsum
+         ztau = (zdntrsum-zdnfsum)/(znsum*0.0010008)*rfact/FLOAT(nrdttrc)             ! 1.0008 is an approximate correction for non-NO3 N
+         znsum = znsum*ztau                                                           ! global total of delta-N (for subsequent alkalinity calculation)
+         trn(:,:,:,jpno3) = trn(:,:,:,jpno3) * (1.+ztau)                              ! multiplicative correction to NO3
+! remove alkalinity to compensate for losses to nitrification bypassed in nonphysical addition/subtraction of NO3 (- 1 mol / mol N)
+         zalksum0 = glob_sum( trn(:,:,:,jptal)*cvol(:,:,:) )
+         zalksum = zalksum0 - znsum*1.E-6
+         trn(:,:,:,jptal) = trn(:,:,:,jptal) * zalksum / zalksum0
 
-         !trn(:,:,:,jptal) = trn(:,:,:,jptal) * alkmean / zalksum
-         trn(:,:,:,jpno3) = trn(:,:,:,jpno3) * ztau
-
-         !
       ENDIF
 
    END SUBROUTINE trc_sms_pisces_dmp

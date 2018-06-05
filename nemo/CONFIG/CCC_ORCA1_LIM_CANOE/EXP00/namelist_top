@@ -126,7 +126,7 @@
    ln_trdmld_trc_instant = .true.  !  flag to diagnose trends of instantantaneous or mean ML T/S
    ln_trdtrc(1)  =   .true.
    ln_trdtrc(2)  =   .true.
-   ln_trdtrc(23) =   .true.
+   ln_trdtrc(18) =   .true.
 /
 !-----------------------------------------------------------------------
 &namtrc_dia       !   parameters for passive tracer additional diagnostics
