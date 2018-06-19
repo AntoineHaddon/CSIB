@@ -59,14 +59,16 @@ MODULE p4zsed
    TYPE(FLD), ALLOCATABLE, DIMENSION(:) ::   sf_riverdoc  ! structure of input riverdoc
    TYPE(FLD), ALLOCATABLE, DIMENSION(:) ::   sf_ndepo     ! structure of input nitrogen deposition
    TYPE(FLD), ALLOCATABLE, DIMENSION(:) ::   sf_ironsed   ! structure of input iron from sediment
+   TYPE(FLD), ALLOCATABLE, DIMENSION(:) ::   sf_si
 
    INTEGER , PARAMETER :: nbtimes = 365  !: maximum number of times record in a file
-   INTEGER  :: ntimes_dust, ntimes_riv, ntimes_ndep       ! number of time steps in a file
+   INTEGER  :: ntimes_dust, ntimes_riv, ntimes_ndep, ntimes_si      ! number of time steps in a file
 
    REAL(wp), ALLOCATABLE, SAVE,   DIMENSION(:,:) :: dust      !: dust fields
    REAL(wp), ALLOCATABLE, SAVE,   DIMENSION(:,:) :: rivinp, cotdep    !: river input fields
    REAL(wp), ALLOCATABLE, SAVE,   DIMENSION(:,:) :: nitdep    !: atmospheric N deposition 
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: ironsed   !: Coastal supply of iron
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: silica
 
    REAL(wp) :: rivalkinput, rivpo4input, nitdepinput
 
@@ -334,17 +336,18 @@ CONTAINS
       !!----------------------------------------------------------------------
       !
       INTEGER  :: ji, jj, jk, jm
-      INTEGER  :: numdust, numriv, numiron, numdepo
+      INTEGER  :: numdust, numriv, numiron, numdepo, numsi
       INTEGER  :: ierr, ierr1, ierr2, ierr3
       REAL(wp) :: zexpide, zdenitide, zmaskt
       REAL(wp), DIMENSION(nbtimes) :: zsteps                 ! times records
       REAL(wp), DIMENSION(:,:,:), ALLOCATABLE :: zdust, zndepo, zriverdic, zriverdoc, zcmask
+      REAL(wp), DIMENSION(:,:,:,:), ALLOCATABLE :: zsi
       !
       CHARACTER(len=100) ::  cn_dir          ! Root directory for location of ssr files
-      TYPE(FLD_N) ::   sn_dust, sn_riverdoc, sn_riverdic, sn_ndepo, sn_ironsed        ! informations about the fields to be read
+      TYPE(FLD_N) ::   sn_dust, sn_riverdoc, sn_riverdic, sn_ndepo, sn_ironsed, sn_si        ! informations about the fields to be read
       NAMELIST/nampissed/cn_dir, sn_dust, sn_riverdic, sn_riverdoc, sn_ndepo, sn_ironsed, &
         &                ln_dust, ln_river, ln_ndepo, ln_ironsed,         &
-        &                sedfeinput, dustsolub, wdust, nitrfix, diazolight, concfediaz 
+        &                sedfeinput, dustsolub, wdust, nitrfix, diazolight, concfediaz, sn_si 
       !!----------------------------------------------------------------------
       !
       IF( nn_timing == 1 )  CALL timing_start('p4z_sed_init')
@@ -364,6 +367,7 @@ CONTAINS
       sn_riverdoc = FLD_N( 'river'      ,   -12     ,  'riverdoc' ,  .false.   , .true.  ,   'yearly'  , ''       , ''         )
       sn_ndepo    = FLD_N( 'ndeposition',   -12     ,  'ndep'     ,  .false.   , .true.  ,   'yearly'  , ''       , ''         )
       sn_ironsed  = FLD_N( 'ironsed'    ,   -12     ,  'bathy'    ,  .false.   , .true.  ,   'yearly'  , ''       , ''         )
+      sn_si       = FLD_N( 'data_si_nomask', -1     ,  'Si'       ,  .true.   , .true.  ,   'monthly'  , ''       , ''         )
 
       REWIND( numnatp )                     ! read numnatp
       READ  ( numnatp, nampissed )
@@ -389,6 +393,33 @@ CONTAINS
       ELSE
           ll_sbc = .FALSE.
       ENDIF
+
+         IF(lwp) WRITE(numout,*) '    initialize silicate '
+         IF(lwp) WRITE(numout,*) '    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ '
+         !
+         ALLOCATE( sf_si(1), STAT=ierr )           !* allocate and fill sf_sst (forcing structure) with sn_sst
+         IF( ierr > 0 )   CALL ctl_stop( 'STOP', 'p4z_sed_init: unable to allocate sf_si structure' )
+         !
+         CALL fld_fill( sf_si, (/ sn_si /), cn_dir, 'p4z_sed_init', 'Iron from sediment ', 'nampissed' )
+                                   ALLOCATE( sf_si(1)%fnow(jpi,jpj,jpk)   )
+         IF( sn_si%ln_tint )     ALLOCATE( sf_si(1)%fdta(jpi,jpj,jpk,2) )
+         !
+         ! Get total input dust ; need to compute total atmospheric supply of Si in a year
+         CALL iom_open (  TRIM( sn_si%clname ) , numsi )
+         CALL iom_gettime( numsi, zsteps, kntime=ntimes_si)  ! get number of record in file
+         ALLOCATE( zsi(jpi,jpj,jpk,ntimes_si) )
+         DO jm = 1, ntimes_si
+          CALL iom_get( numsi, jpdom_data, TRIM( sn_si%clvar ), zsi(:,:,:,jm), jm )
+         END DO
+         CALL iom_close( numsi )
+         DO jk = 1, jpk
+            DO jj = 1, jpj
+               DO ji = 1, jpi
+                  asi3(ji,jj,jk)=zsi(ji,jj,jk,1)
+               END DO
+            END DO
+         END DO
+         DEALLOCATE( zsi)
 
       ! dust input from the atmosphere
       ! ------------------------------
