@@ -36,7 +36,7 @@ MODULE checksums
 CONTAINS
    !> Does a bit count and a reproducing sum on a 2D array to keep track of the global array
    !! as NEMO integrates. Primarily intended for use as a debugging tool.
-   SUBROUTINE chksum_2d( msg, array, mask, istart, iend, jstart, jend, bc_out )
+   SUBROUTINE chksum_2d( msg, array, mask, istart, iend, jstart, jend, alt_unit, bc_out )
       CHARACTER(LEN=*)                      , INTENT(IN   ) :: msg      !< Prefix phrase for print message
       REAL(wp), DIMENSION(jpi,jpj)          , INTENT(IN   ) :: array    !< Array to be checksummed
       REAL(wp), DIMENSION(jpi,jpj), OPTIONAL, INTENT(IN   ) :: mask     !< Array to be checksummed
@@ -44,11 +44,13 @@ CONTAINS
       INTEGER, OPTIONAL                     , INTENT(IN   ) :: iend     !< Last index to use along the i-axis
       INTEGER, OPTIONAL                     , INTENT(IN   ) :: jstart   !< First index to use along the i-axis
       INTEGER, OPTIONAL                     , INTENT(IN   ) :: jend     !< Last index to use along the i-axis
+      INTEGER, OPTIONAL                     , INTENT(IN   ) :: alt_unit !< Where to write the message 
       INTEGER, OPTIONAL                     , INTENT(  OUT) :: bc_out   !< Return the bitcount if requested 
       ! Local variables
       INTEGER  :: ji, jj         ! Loop variables
       INTEGER  :: is, ie, js, je ! Beginning and end start indices
       INTEGER  :: bc             ! bitcount of array
+      INTEGER  :: write_unit
       REAL(wp) :: minarray, maxarray
 
       ! By default set indices to only the "inner" part of the array, not the halo
@@ -58,7 +60,9 @@ CONTAINS
       IF (PRESENT(jstart)) js = jstart
       IF (PRESENT(iend))   ie = iend
       IF (PRESENT(jend))   je = jend
-
+      ! By default write ot the screen
+      write_unit = 6 ; IF( PRESENT(alt_unit) ) write_unit = alt_unit
+      
       ! Set the initial min/max values to be ridiculous values
       minarray = HUGE(minarray) ; maxarray = -HUGE(maxarray)
 
@@ -86,7 +90,7 @@ CONTAINS
       bc = mod(bc, bitlen)
 
       IF (narea==1) THEN
-        WRITE(*,'(A,X,A,I10.10,X,A,ES25.16,X,A,ES25.16)') &
+        WRITE(write_unit,'(A,X,A,I10.10,X,A,ES25.16,X,A,ES25.16)') &
               TRIM(msg), "chksum=", bc, "Global minimum=", minarray, "Global maximum=", maxarray
       ENDIF
       IF( PRESENT(bc_out) ) bc_out = bc
@@ -94,7 +98,7 @@ CONTAINS
 
    !> Does a bit count and a reproducing sum on a 3D array to keep track of the global array
    !! as NEMO integrates. Primarily intended for use as a debugging tool.
-   SUBROUTINE chksum_3d( msg, array, mask, istart, iend, jstart, jend, kstart, kend, bc_out )
+   SUBROUTINE chksum_3d( msg, array, mask, istart, iend, jstart, jend, kstart, kend, alt_unit, bc_out )
       CHARACTER(LEN=*)                          , INTENT(IN   ) :: msg      !< Name of the array to be checksummed
       REAL(wp), DIMENSION(jpi,jpj,jpk)          , INTENT(IN   ) :: array    !< Array to be checksummed
       REAL(wp), DIMENSION(jpi,jpj,jpk), OPTIONAL, INTENT(IN   ) :: mask     !< Array to be checksummed
@@ -104,11 +108,13 @@ CONTAINS
       INTEGER, OPTIONAL                         , INTENT(IN   ) :: jend     !< Last index to use along the i-axis
       INTEGER, OPTIONAL                         , INTENT(IN   ) :: kstart   !< First index to use along the i-axis
       INTEGER, OPTIONAL                         , INTENT(IN   ) :: kend     !< Last index to use along the i-axis
+      INTEGER, OPTIONAL                         , INTENT(IN   ) :: alt_unit !< Where to write the message 
       INTEGER, OPTIONAL                         , INTENT(  OUT) :: bc_out   !< Return the bitcount if requested 
       ! Local variables
       INTEGER  :: ji, jj, jk             ! Loop variables
       INTEGER  :: is, ie, js, je, ks, ke ! Beginning and end start indices
       INTEGER  :: bc                     ! bitcount of array
+      INTEGER  :: write_unit
       REAL(wp) :: minarray, maxarray
 
       ! By default set indices to only the "inner" part of the array, not the halo
@@ -121,6 +127,8 @@ CONTAINS
       IF (PRESENT(iend))   ie = iend
       IF (PRESENT(jend))   je = jend
       IF (PRESENT(kend))   ke = kend
+      ! By default write to the screen
+      write_unit = 6 ; IF( PRESENT(alt_unit) ) write_unit = alt_unit
 
       ! Set the initial min/max values to be ridiculous values
       minarray = HUGE(minarray) ; maxarray = -HUGE(maxarray)
@@ -148,7 +156,7 @@ CONTAINS
       bc = mod(bc, bitlen)
 
       IF (narea==1) THEN
-        WRITE(*,'(A,X,A,I10.10,X,A,E25.16,X,A,E25.16)') &
+        WRITE(write_unit,'(A,X,A,I10.10,X,A,E25.16,X,A,E25.16)') &
               TRIM(msg), "chksum=", bc, "Global minimum=", minarray, "Global maximum=", maxarray
       ENDIF
       IF( PRESENT(bc_out) ) bc_out = bc
@@ -167,15 +175,21 @@ CONTAINS
    END SUBROUTINE before_state_chksum
 
    !> Convenience routine to do a chksum of current state of the model 'now' arays of u,v,w,T,S
-   SUBROUTINE now_state_chksum(msg)
-      CHARACTER(LEN=*) :: msg !< The point of the algorithm that the checksum is being done
+   SUBROUTINE now_state_chksum(msg, alt_unit, state_bc)
+      CHARACTER(LEN=*),  INTENT(IN   ) :: msg !< The point of the algorithm that the checksum is being done
+      INTEGER, OPTIONAL, INTENT(IN   ) :: alt_unit
+      INTEGER, OPTIONAL, INTENT(  OUT) :: state_bc
+      INTEGER :: write_unit, bc, bc_sum
 
-      CALL chksum( "u now array "//TRIM(msg), un, umask)
-      CALL chksum( "v now array "//TRIM(msg), vn, vmask)
-      CALL chksum( "w now array "//TRIM(msg), wn, tmask)
-      CALL chksum( "T now array "//TRIM(msg), tsn(:,:,:,jp_tem), tmask)
-      CALL chksum( "S now array "//TRIM(msg), tsn(:,:,:,jp_sal), tmask)
+      write_unit = 6; IF( PRESENT(alt_unit) ) write_unit = alt_unit
+      bc_sum = 0
+      CALL chksum( "u now array "//TRIM(msg), un, umask, alt_unit=write_unit, bc_out = bc); bc_sum = bc_sum + bc
+      CALL chksum( "v now array "//TRIM(msg), vn, vmask, alt_unit=write_unit, bc_out = bc); bc_sum = bc_sum + bc
+      CALL chksum( "w now array "//TRIM(msg), wn, tmask, alt_unit=write_unit, bc_out = bc); bc_sum = bc_sum + bc
+      CALL chksum( "T now array "//TRIM(msg), tsn(:,:,:,jp_tem), tmask, alt_unit = write_unit, bc_out = bc); bc_sum = bc_sum + bc
+      CALL chksum( "S now array "//TRIM(msg), tsn(:,:,:,jp_sal), tmask, alt_unit = write_unit, bc_out = bc); bc_sum = bc_sum + bc
 
+      IF( PRESENT( state_bc )) state_bc = bc_sum
    END SUBROUTINE now_state_chksum
 
    !> Convenience routine to do a chksum of current state of the model 'after' arrays of u,v,w,T,S

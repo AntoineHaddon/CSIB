@@ -61,6 +61,7 @@ MODULE nemogcm
    USE diaobs          ! Observation diagnostics       (dia_obs_init routine)
    USE lib_fortran     ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
    USE step            ! NEMO time-stepping                 (stp     routine)
+   USE checksums, only : now_state_chksum
 #if defined key_oasis3
    USE cpl_oasis3      ! OASIS3 coupling
 #elif defined key_oasis4
@@ -76,7 +77,7 @@ MODULE nemogcm
    USE mod_ioclient
 #endif
    USE tamtrj          ! Output trajectory, needed for TAM
-   USE checksums, only : nn_chksum
+   USE checksums, only : ln_chksum
 
    IMPLICIT NONE
    PRIVATE
@@ -165,6 +166,7 @@ CONTAINS
       !                            !------------------------!
       !                            !==  finalize the run  ==!
       !                            !------------------------!
+      CALL now_state_chksum("at run finalization", alt_unit = numout) 
       IF(lwp) WRITE(numout,cform_aaa)   ! Flag AAAAAAA
       !
       IF( nstop /= 0 .AND. lwp ) THEN   ! error print
@@ -202,7 +204,7 @@ CONTAINS
       !!
       NAMELIST/namctl/ ln_ctl  , nn_print, nn_ictls, nn_ictle,   &
          &             nn_isplt, nn_jsplt, nn_jctls, nn_jctle,   &
-         &             nn_bench, nn_timing, nn_chksum
+         &             nn_bench, nn_timing, ln_chksum
       !!----------------------------------------------------------------------
       !
       cltxt = ''
@@ -408,7 +410,7 @@ CONTAINS
          WRITE(numout,*) '      number of proc. following j     nn_jsplt   = ', nn_jsplt
          WRITE(numout,*) '      benchmark parameter (0/1)       nn_bench   = ', nn_bench
          WRITE(numout,*) '      timing activated    (0/1)       nn_timing  = ', nn_timing
-         WRITE(numout,*) '      do checksums        (T/F)       nn_chksum  = ', nn_chksum
+         WRITE(numout,*) '      do checksums        (T/F)       ln_chksum  = ', ln_chksum
       ENDIF
       !
       nprint    = nn_print          ! convert DOCTOR namelist names into OLD names
