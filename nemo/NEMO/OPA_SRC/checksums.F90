@@ -24,7 +24,7 @@ MODULE checksums
       MODULE PROCEDURE chksum_2d, chksum_3d
    END INTERFACE
 
-   LOGICAL, PUBLIC    :: nn_chksum = .FALSE. !< If true, calculate and write checksums
+   LOGICAL, PUBLIC    :: ln_chksum = .FALSE. !< If true, calculate and write checksums
 
    ! Module variables
    INTEGER, PARAMETER :: bitlen = 1000000000 !< Length of the checksum
@@ -36,15 +36,15 @@ MODULE checksums
 CONTAINS
    !> Does a bit count and a reproducing sum on a 2D array to keep track of the global array
    !! as NEMO integrates. Primarily intended for use as a debugging tool.
-   SUBROUTINE chksum_2d( msg, array, mask, istart, iend, jstart, jend )
-      CHARACTER(LEN=*)                       :: msg      !< Prefix phrase for print message, usually
-                                                         !! 'varname before/after process'
-      REAL(wp), DIMENSION(jpi,jpj)           :: array    !< Array to be checksummed
-      REAL(wp), DIMENSION(jpi,jpj), OPTIONAL :: mask     !< Array to be checksummed
-      INTEGER, OPTIONAL                      :: istart   !< First index to use along the i-axis
-      INTEGER, OPTIONAL                      :: iend     !< Last index to use along the i-axis
-      INTEGER, OPTIONAL                      :: jstart   !< First index to use along the i-axis
-      INTEGER, OPTIONAL                      :: jend     !< Last index to use along the i-axis
+   SUBROUTINE chksum_2d( msg, array, mask, istart, iend, jstart, jend, bc_out )
+      CHARACTER(LEN=*)                      , INTENT(IN   ) :: msg      !< Prefix phrase for print message
+      REAL(wp), DIMENSION(jpi,jpj)          , INTENT(IN   ) :: array    !< Array to be checksummed
+      REAL(wp), DIMENSION(jpi,jpj), OPTIONAL, INTENT(IN   ) :: mask     !< Array to be checksummed
+      INTEGER, OPTIONAL                     , INTENT(IN   ) :: istart   !< First index to use along the i-axis
+      INTEGER, OPTIONAL                     , INTENT(IN   ) :: iend     !< Last index to use along the i-axis
+      INTEGER, OPTIONAL                     , INTENT(IN   ) :: jstart   !< First index to use along the i-axis
+      INTEGER, OPTIONAL                     , INTENT(IN   ) :: jend     !< Last index to use along the i-axis
+      INTEGER, OPTIONAL                     , INTENT(  OUT) :: bc_out   !< Return the bitcount if requested 
       ! Local variables
       INTEGER  :: ji, jj         ! Loop variables
       INTEGER  :: is, ie, js, je ! Beginning and end start indices
@@ -89,21 +89,22 @@ CONTAINS
         WRITE(*,'(A,X,A,I10.10,X,A,ES25.16,X,A,ES25.16)') &
               TRIM(msg), "chksum=", bc, "Global minimum=", minarray, "Global maximum=", maxarray
       ENDIF
-
+      IF( PRESENT(bc_out) ) bc_out = bc
    END SUBROUTINE chksum_2d
 
    !> Does a bit count and a reproducing sum on a 3D array to keep track of the global array
    !! as NEMO integrates. Primarily intended for use as a debugging tool.
-   SUBROUTINE chksum_3d( msg, array, mask, istart, iend, jstart, jend, kstart, kend )
-      CHARACTER(LEN=*)                           :: msg      !< Name of the array to be checksummed
-      REAL(wp), DIMENSION(jpi,jpj,jpk)           :: array    !< Array to be checksummed
-      REAL(wp), DIMENSION(jpi,jpj,jpk), OPTIONAL :: mask     !< Array to be checksummed
-      INTEGER, OPTIONAL                          :: istart   !< First index to use along the i-axis
-      INTEGER, OPTIONAL                          :: iend     !< Last index to use along the i-axis
-      INTEGER, OPTIONAL                          :: jstart   !< First index to use along the i-axis
-      INTEGER, OPTIONAL                          :: jend     !< Last index to use along the i-axis
-      INTEGER, OPTIONAL                          :: kstart   !< First index to use along the i-axis
-      INTEGER, OPTIONAL                          :: kend     !< Last index to use along the i-axis
+   SUBROUTINE chksum_3d( msg, array, mask, istart, iend, jstart, jend, kstart, kend, bc_out )
+      CHARACTER(LEN=*)                          , INTENT(IN   ) :: msg      !< Name of the array to be checksummed
+      REAL(wp), DIMENSION(jpi,jpj,jpk)          , INTENT(IN   ) :: array    !< Array to be checksummed
+      REAL(wp), DIMENSION(jpi,jpj,jpk), OPTIONAL, INTENT(IN   ) :: mask     !< Array to be checksummed
+      INTEGER, OPTIONAL                         , INTENT(IN   ) :: istart   !< First index to use along the i-axis
+      INTEGER, OPTIONAL                         , INTENT(IN   ) :: iend     !< Last index to use along the i-axis
+      INTEGER, OPTIONAL                         , INTENT(IN   ) :: jstart   !< First index to use along the i-axis
+      INTEGER, OPTIONAL                         , INTENT(IN   ) :: jend     !< Last index to use along the i-axis
+      INTEGER, OPTIONAL                         , INTENT(IN   ) :: kstart   !< First index to use along the i-axis
+      INTEGER, OPTIONAL                         , INTENT(IN   ) :: kend     !< Last index to use along the i-axis
+      INTEGER, OPTIONAL                         , INTENT(  OUT) :: bc_out   !< Return the bitcount if requested 
       ! Local variables
       INTEGER  :: ji, jj, jk             ! Loop variables
       INTEGER  :: is, ie, js, je, ks, ke ! Beginning and end start indices
@@ -150,6 +151,7 @@ CONTAINS
         WRITE(*,'(A,X,A,I10.10,X,A,E25.16,X,A,E25.16)') &
               TRIM(msg), "chksum=", bc, "Global minimum=", minarray, "Global maximum=", maxarray
       ENDIF
+      IF( PRESENT(bc_out) ) bc_out = bc
 
    END SUBROUTINE chksum_3d
    !!!! Full state checksums

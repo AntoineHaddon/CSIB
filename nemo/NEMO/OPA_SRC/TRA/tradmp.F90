@@ -37,7 +37,7 @@ MODULE tradmp
    USE prtctl         ! Print control
    USE wrk_nemo       ! Memory allocation
    USE timing         ! Timing
-   USE checksums, only : nn_chksum, after_ts_chksum
+   USE checksums, only : ln_chksum, after_ts_chksum
 
    IMPLICIT NONE
    PRIVATE
@@ -177,7 +177,7 @@ CONTAINS
       !                           ! Control print
       IF(ln_ctl)   CALL prt_ctl( tab3d_1=tsa(:,:,:,jp_tem), clinfo1=' dmp  - Ta: ', mask1=tmask,   &
          &                       tab3d_2=tsa(:,:,:,jp_sal), clinfo2=       ' Sa: ', mask2=tmask, clinfo3='tra' )
-      IF (nn_chksum) CALL after_ts_chksum("after tra_dmp")
+      IF (ln_chksum) CALL after_ts_chksum("after tra_dmp")
       !
       CALL wrk_dealloc( jpi, jpj, jpk, jpts,  zts_dta )
       !

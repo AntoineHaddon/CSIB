@@ -31,7 +31,7 @@ MODULE trazdf
    USE lib_mpp         ! MPP library
    USE wrk_nemo        ! Memory allocation
    USE timing          ! Timing
-   USE checksums, only : nn_chksum, after_ts_chksum
+   USE checksums, only : ln_chksum, after_ts_chksum
 
 
    IMPLICIT NONE
@@ -104,7 +104,7 @@ CONTAINS
       !                                          ! print mean trends (used for debugging)
       IF(ln_ctl)   CALL prt_ctl( tab3d_1=tsa(:,:,:,jp_tem), clinfo1=' zdf  - Ta: ', mask1=tmask,               &
          &                       tab3d_2=tsa(:,:,:,jp_sal), clinfo2=       ' Sa: ', mask2=tmask, clinfo3='tra' )
-      IF (nn_chksum) CALL after_ts_chksum("after tra_zdf")
+      IF (ln_chksum) CALL after_ts_chksum("after tra_zdf")
       !
       IF( nn_timing == 1 )  CALL timing_stop('tra_zdf')
       !

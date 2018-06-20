@@ -53,7 +53,7 @@ MODULE sbcmod
 #endif
 
    USE prtctl           ! Print control                    (prt_ctl routine)
-   USE checksums, only  : after_state_chksum, nn_chksum
+   USE checksums, only  : chksum, after_state_chksum, ln_chksum
    USE restart          ! ocean restart
    USE iom              ! IOM library
    USE in_out_manager   ! I/O manager
@@ -295,7 +295,7 @@ CONTAINS
       CASE(  3 )   ;         CALL sbc_ice_lim  ( kt, nsbc )          ! LIM-3 ice model
       CASE(  4 )   ;         CALL sbc_ice_cice ( kt, nsbc )          ! CICE ice model
       END SELECT
-      IF (nn_chksum  )   CALL after_state_chksum( "after ice model" )
+      IF (ln_chksum  )   CALL after_state_chksum( "after ice model" )
 
       IF( ln_rnf         )   CALL sbc_rnf( kt )                   ! add runoffs to fresh water fluxes
 
@@ -387,15 +387,15 @@ CONTAINS
          CALL prt_ctl(tab2d_1=utau             , clinfo1=' utau     - : ', mask1=umask,                      &
             &         tab2d_2=vtau             , clinfo2=' vtau     - : ', mask2=vmask, ovlap=1 )
       ENDIF
-      IF(nn_chksum) THEN         ! print array checksums (for debugging)
-         CALL chksum('fr_i     after sbc calculation', fr_i      , mask=tmask, istart = 1)
-         CALL chksum('emp-rnf  after sbc calculation', (emp-rnf) , mask=tmask, istart = 1)
-         CALL chksum('emps-rnf after sbc calculation', (emps-rnf), mask=tmask, istart = 1)
-         CALL chksum('qns      after sbc calculation', qns       , mask=tmask, istart = 1)
-         CALL chksum('qsr      after sbc calculation', qsr       , mask=tmask, istart = 1)
-         CALL chksum('utau     after sbc calculation', utau      , mask=umask, istart = 1 )
-         CALL chksum('vtau     after sbc calculation', vtau      , mask=vmask, istart = 1 )
-        CALL after_state_chksum( "after sbc calculation" )
+      IF(ln_chksum) THEN         ! print array checksums (for debugging)
+         CALL chksum('fr_i     after sbc calculation', fr_i      , mask=tmask(:,:,1), istart = 1)
+         CALL chksum('emp-rnf  after sbc calculation', (emp-rnf) , mask=tmask(:,:,1), istart = 1)
+         CALL chksum('emps-rnf after sbc calculation', (emps-rnf), mask=tmask(:,:,1), istart = 1)
+         CALL chksum('qns      after sbc calculation', qns       , mask=tmask(:,:,1), istart = 1)
+         CALL chksum('qsr      after sbc calculation', qsr       , mask=tmask(:,:,1), istart = 1)
+         CALL chksum('utau     after sbc calculation', utau      , mask=umask(:,:,1), istart = 1)
+         CALL chksum('vtau     after sbc calculation', vtau      , mask=vmask(:,:,1), istart = 1)
+         CALL after_state_chksum( "after sbc calculation" )
       ENDIF
 
       IF( kt == nitend )   CALL sbc_final         ! Close down surface module if necessary

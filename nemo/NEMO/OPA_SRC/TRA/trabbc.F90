@@ -23,7 +23,7 @@ MODULE trabbc
    USE prtctl          ! Print control
    USE wrk_nemo        ! Memory Allocation
    USE timing          ! Timing
-   USE checksums, only : nn_chksum, chksum
+   USE checksums, only : ln_chksum, chksum
 
    IMPLICIT NONE
    PRIVATE
@@ -107,7 +107,7 @@ CONTAINS
       !
       IF( nn_timing == 1 )  CALL timing_stop('tra_bbc')
       !
-      IF (nn_chksum) CALL chksum("T tendency after trabbc", tsa(:,:,:,jp_tem), tmask)
+      IF (ln_chksum) CALL chksum("T tendency after trabbc", tsa(:,:,:,jp_tem), tmask)
    END SUBROUTINE tra_bbc
 
 
