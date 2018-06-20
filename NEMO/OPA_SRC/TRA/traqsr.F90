@@ -30,7 +30,7 @@ MODULE traqsr
    USE lib_mpp         ! MPP library
    USE wrk_nemo       ! Memory Allocation
    USE timing         ! Timing
-   USE checksums, only : nn_chksum, after_ts_chksum
+   USE checksums, only : ln_chksum, after_ts_chksum
 
 
    IMPLICIT NONE
@@ -289,7 +289,7 @@ CONTAINS
       ENDIF
       !                       ! print mean trends (used for debugging)
       IF(ln_ctl)     CALL prt_ctl( tab3d_1=tsa(:,:,:,jp_tem), clinfo1=' qsr  - Ta: ', mask1=tmask, clinfo3='tra-ta' )
-      IF (nn_chksum) CALL after_ts_chksum("after tra_qsr")
+      IF (ln_chksum) CALL after_ts_chksum("after tra_qsr")
       !
       CALL wrk_dealloc( jpi, jpj,      zekb, zekg, zekr        )
       CALL wrk_dealloc( jpi, jpj, jpk, ze0, ze1, ze2, ze3, zea )

@@ -35,7 +35,7 @@ MODULE zdfkpp
    USE trdtra          ! tracers trends
    USE timing          ! Timing
    USE lib_fortran     ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
-   USE checksums, only : nn_chksum, after_ts_chksum
+   USE checksums, only : ln_chksum, after_ts_chksum
 
    IMPLICIT NONE
    PRIVATE
@@ -1276,7 +1276,7 @@ CONTAINS
          CALL prt_ctl( tab3d_1=tsa(:,:,:,jp_tem), clinfo1=' kpp  - Ta: ', mask1=tmask,   &
          &             tab3d_2=tsa(:,:,:,jp_sal), clinfo2=       ' Sa: ', mask2=tmask, clinfo3='tra' )
       ENDIF
-      IF (nn_chksum) CALL after_ts_chksum("after tra_kpp")
+      IF (ln_chksum) CALL after_ts_chksum("after tra_kpp")
       !
       IF( nn_timing == 1 )  CALL timing_stop('tra_kpp')
       !
