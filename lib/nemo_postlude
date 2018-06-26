@@ -83,13 +83,13 @@
       # Define the list of history files to rebuild
       for sfx in ${nemo_hist_file_suffix_list}; do
         for freq in ${nemo_hist_file_freq_list}; do
-          pfx=${cn_exp}_${freq}_${start_date}_${stop_date}_$sfx
+          pfx=${cn_exp}_${freq}_${nemo_start_date}_${nemo_stop_date}_$sfx
           fnpatt=${pfx}_0000.nc
           if [ -s "$fnpatt" ]; then
              rm -rf $pfx
              mkdir $pfx
              mv $pfx*.nc $pfx
-	     ncsave=${cn_exp}_${start_year}_m${start_mon}_${freq}_${sfx}
+	     ncsave=${cn_exp}_${nemo_start_year}_m${nemo_start_mon}_${freq}_${sfx}
              save $pfx ${uxxx}_$ncsave && echo "${uxxx}_$ncsave" >> saved_history_FILE_NAMES
           fi   
         done
@@ -102,7 +102,7 @@
          rm -rf $pfx
          mkdir $pfx
          mv $pfx*.nc $pfx
-	 ncsave=${cn_exp}_${start_year}_m${start_mon}_mesh_mask
+	 ncsave=${cn_exp}_${nemo_start_year}_m${nemo_start_mon}_mesh_mask
          save $pfx ${uxxx}_$ncsave && echo "${uxxx}_$ncsave" >> saved_history_FILE_NAMES
       fi
     fi
@@ -229,11 +229,14 @@
 
       mv -f $tarlist NEXT_RESTART_ARC || :
 
-      if [ -n "$model" ]; then
-          # Assume we are running from gcmjcl
-          rs_out=${model}nemors
+      if [ -n "$model_rs" ]; then
+	# Assume we are running from gcmrun
+	rs_out=${model_rs}nemors
+      elif [ -n "$model" ]; then
+	# Assume we are running from gcmjcl
+	rs_out=${model_rs}nemors
       else
-          rs_out=${uxxx}_${cn_exp}_${stop_date}_restart.tar
+	rs_out=${uxxx}_${cn_exp}_${nemo_stop_date}_restart.tar
       fi
       save NEXT_RESTART_ARC $rs_out
       release NEXT_RESTART_ARC
