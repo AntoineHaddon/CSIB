@@ -1041,7 +1041,7 @@ echo "#################### Start NEMO pre-processing #################"
 
   nemo_ahmcoef=${nemo_ahmcoef:=nemo_3.4_orca1_ahmcoef}
   nemo_coordinates=${nemo_coordinates:=nemo_3.4_orca1_coordinates_ukorca1.nc}
-  nemo_bathy_meter=${nemo_bathy_meter:=nemo_3.4_orca1_bathy_meter_050308_ukmo.nc}
+  nemo_bathy_meter=${nemo_bathy_meter:=nemo_3.4_orca1_bathy_meter_050308_UKMO_mod.nc}
   nemo_mask_itf=${nemo_mask_itf:=nemo_3.4_orca1_mask_itf_orca1_new.nc}
   nemo_M2rowdrg=${nemo_M2rowdrg:=nemo_3.4_orca1_m2rowdrg_r1_modif.nc}
   nemo_K1rowdrg=${nemo_K1rowdrg:=nemo_3.4_orca1_k1rowdrg_r1_modif.nc}
