@@ -364,7 +364,7 @@ else
     [ -e compile ] || bail "Failed to extract compile script from ${src_path}/nemo/CONFIG/${nemo_config}/${nemo_exp}/compile" 
     cat compile | sed "s#build-nemo#./CanNEMO_tmp_src/bin/build-nemo#;s#runid#${nemo_runid}#;s#repo=[^ ]*#repo="$nemo_repo"#;s#ver=[^ ]*#ver=$sha1 srcpath=${CWD}/${src_path}#" > compile_${nemo_runid}
     if [ ${nemo_ar6_diag} = on ] ; then
-       sed -i '/^build-nemo/s/$/ add_key="key_trdtra key_diaar5"/' compile_${nemo_runid}
+       sed -i '/cfg/s/$/ add_key="key_trdtra key_diaar5"/' compile_${nemo_runid}
     fi
     rm -f compile
     chmod +x compile_${nemo_runid}
