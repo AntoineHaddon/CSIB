@@ -231,6 +231,7 @@ if [ "$jobtype" == 'rtd' ] || [ "$jobtype" == 'dumpdel' ]; then
 
     sed -i "s/RUNID=.*/RUNID=${nemo_runid}/g" experiment.cfg
     sed -i "s/SEQ_JOBNAME_PREFIX=.*/SEQ_JOBNAME_PREFIX=${nemo_runid}-/g" resources/resources.def
+    sed -i "s/CONFIG=.*/CONFIG=${nemo_config}/g" experiment.cfg
     config-maestro
 
     # produce message about experiement.cfg
