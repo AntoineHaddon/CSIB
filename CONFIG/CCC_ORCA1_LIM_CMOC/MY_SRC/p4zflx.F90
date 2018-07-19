@@ -86,9 +86,10 @@ CONTAINS
       INTEGER, INTENT(in) ::   kt   !
       !
       INTEGER  ::   ji, jj, jm, iind, iindm1
-      REAL(wp) ::   ztc, ztc2, ztc3, zws, zkgwan
+      REAL(wp) ::   ztc, ztc2, ztc3, ztc4, zws, zkgwan
       REAL(wp) ::   zfld, zflu, zfld16, zflu16, zfact
       REAL(wp) ::   zph, zah2, zbot, zdic, zalk, zsch_o2, zalka, zsch_co2
+      REAL(wp) ::   zph2, zph3, zpo4, zsi, zpd, zp0, zp1, zp3        ! coefficients added to account for P and Si contribution to TA
       REAL(wp) ::   zyr_dec, zdco2dt
       CHARACTER (len=25) :: charout
       REAL(wp), POINTER, DIMENSION(:,:) :: zkgco2, zkgo2, zh2co3, zoflx 
@@ -137,9 +138,20 @@ CONTAINS
                zdic  = trn(ji,jj,1,jpdic) / zfact
                zph   = MAX( hi(ji,jj,1), 1.e-10 ) / zfact
                zalka = trn(ji,jj,1,jptal) / zfact
-
+               zph2 = zph*zph
+               zph3 = zph*zph2
+               zpo4 = trn(ji,jj,1,jpno3) / 106. / zfact                      ! in CMOC NO3 is in C units (based on Redfield ratio of 106/16)
+               zsi = asi3(ji,jj,1) * 0.000001 / zfact                        ! silica is a static array based on initialization file, not a carried tracer
+ 
+               ! CALCULATE P AND Si ION CONCENTRATIONS AS PER ORR ET AL (BPG EQUATIONS 43-47)
+               ! zp3 = H3PO4, zp1 = HPO4(2-), zp0 = PO4(3-): denominator is the same for all 3 equations
+               zpd = 1./ ( zph3 + akp13(ji,jj,1)*zph2 + akp13(ji,jj,1)*akp23(ji,jj,1)*zph + akp13(ji,jj,1)*akp23(ji,jj,1)*akp33(ji,jj,1) )
+               zp3 = zph3*zpo4 * zpd
+               zp1 = zph*zpo4*akp13(ji,jj,1)*akp23(ji,jj,1) * zpd
+               zp0 = zpo4*akp13(ji,jj,1)*akp23(ji,jj,1)*akp33(ji,jj,1) * zpd
+               zsi = zsi / (1. + zph / aksi3(ji,jj,1))
                ! CALCULATE [ALK]([CO3--], [HCO3-])
-               zalk  = zalka - (  akw3(ji,jj,1) / zph - zph + zbot / ( 1.+ zph / akb3(ji,jj,1) )  )
+               zalk  = zalka - (  akw3(ji,jj,1) / zph - zph + zbot / ( 1.+ zph / akb3(ji,jj,1) ) + 2.*zp0 + zp1 - zp3 + zsi )
 
                ! CALCULATE [H+] AND [H2CO3]
                zah2   = SQRT(  (zdic-zalk)**2 + 4.* ( zalk * ak23(ji,jj,1)   &
@@ -163,16 +175,17 @@ CONTAINS
       DO jj = 1, jpj
 !CDIR NOVERRCHK
          DO ji = 1, jpi
-            ztc  = MIN( 35., tsn(ji,jj,1,jp_tem) )
+!            ztc  = MIN( 35., tsn(ji,jj,1,jp_tem) )
             ztc2 = ztc * ztc
             ztc3 = ztc * ztc2 
+            ztc4 = ztc * ztc3 
             ! Compute the schmidt Number both O2 and CO2
-            zsch_co2 = 2073.1 - 125.62 * ztc + 3.6276 * ztc2 - 0.043126 * ztc3
-            zsch_o2  = 1953.4 - 128.0  * ztc + 3.9918 * ztc2 - 0.050091 * ztc3
+            zsch_co2 = 2116.8 - 136.25 * ztc + 4.7353 * ztc2 - 0.092307 * ztc3 + 0.0007555 * ztc4
+            zsch_o2  = 1920.4 - 135.6  * ztc + 5.2122 * ztc2 - 0.10939  * ztc3 + 0.00093777 * ztc4
             !  wind speed 
             zws  = wndm(ji,jj) * wndm(ji,jj)
             ! Compute the piston velocity for O2 and CO2
-            zkgwan = 0.3 * zws  + 2.5 * ( 0.5246 + 0.016256 * ztc + 0.00049946  * ztc2 )
+            zkgwan = 0.251 * zws  
             zkgwan = zkgwan * xconv * ( 1.- fr_i(ji,jj) ) * tmask(ji,jj,1)
 # if defined key_degrad
             zkgwan = zkgwan * facvol(ji,jj,1)
