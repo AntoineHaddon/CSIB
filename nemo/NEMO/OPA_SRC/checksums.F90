@@ -36,8 +36,7 @@ MODULE checksums
 CONTAINS
    !> Does a bit count and a reproducing sum on a 2D array to keep track of the global array
    !! as NEMO integrates. Primarily intended for use as a debugging tool.
-   SUBROUTINE chksum_2d( msg, array, mask, istart, iend, jstart, jend, alt_unit, bc_out )
-      CHARACTER(LEN=*)                      , INTENT(IN   ) :: msg      !< Prefix phrase for print message
+   SUBROUTINE chksum_2d( array, mask, istart, iend, jstart, jend, alt_unit, msg, bc_out )
       REAL(wp), DIMENSION(jpi,jpj)          , INTENT(IN   ) :: array    !< Array to be checksummed
       REAL(wp), DIMENSION(jpi,jpj), OPTIONAL, INTENT(IN   ) :: mask     !< Array to be checksummed
       INTEGER, OPTIONAL                     , INTENT(IN   ) :: istart   !< First index to use along the i-axis
@@ -45,6 +44,7 @@ CONTAINS
       INTEGER, OPTIONAL                     , INTENT(IN   ) :: jstart   !< First index to use along the i-axis
       INTEGER, OPTIONAL                     , INTENT(IN   ) :: jend     !< Last index to use along the i-axis
       INTEGER, OPTIONAL                     , INTENT(IN   ) :: alt_unit !< Where to write the message 
+      CHARACTER(LEN=*), OPTIONAL            , INTENT(IN   ) :: msg      !< Prefix phrase for print message
       INTEGER, OPTIONAL                     , INTENT(  OUT) :: bc_out   !< Return the bitcount if requested 
       ! Local variables
       INTEGER  :: ji, jj         ! Loop variables
@@ -98,8 +98,7 @@ CONTAINS
 
    !> Does a bit count and a reproducing sum on a 3D array to keep track of the global array
    !! as NEMO integrates. Primarily intended for use as a debugging tool.
-   SUBROUTINE chksum_3d( msg, array, mask, istart, iend, jstart, jend, kstart, kend, alt_unit, bc_out )
-      CHARACTER(LEN=*)                          , INTENT(IN   ) :: msg      !< Name of the array to be checksummed
+   SUBROUTINE chksum_3d( array, mask, istart, iend, jstart, jend, kstart, kend, alt_unit, msg, bc_out )
       REAL(wp), DIMENSION(jpi,jpj,jpk)          , INTENT(IN   ) :: array    !< Array to be checksummed
       REAL(wp), DIMENSION(jpi,jpj,jpk), OPTIONAL, INTENT(IN   ) :: mask     !< Array to be checksummed
       INTEGER, OPTIONAL                         , INTENT(IN   ) :: istart   !< First index to use along the i-axis
@@ -109,6 +108,7 @@ CONTAINS
       INTEGER, OPTIONAL                         , INTENT(IN   ) :: kstart   !< First index to use along the i-axis
       INTEGER, OPTIONAL                         , INTENT(IN   ) :: kend     !< Last index to use along the i-axis
       INTEGER, OPTIONAL                         , INTENT(IN   ) :: alt_unit !< Where to write the message 
+      CHARACTER(LEN=*), OPTIONAL                , INTENT(IN   ) :: msg      !< Name of the array to be checksummed
       INTEGER, OPTIONAL                         , INTENT(  OUT) :: bc_out   !< Return the bitcount if requested 
       ! Local variables
       INTEGER  :: ji, jj, jk             ! Loop variables
@@ -155,7 +155,7 @@ CONTAINS
 
       bc = mod(bc, bitlen)
 
-      IF (narea==1) THEN
+      IF (narea==1 .AND. PRESENT(msg)) THEN
         WRITE(write_unit,'(A,X,A,I10.10,X,A,E25.16,X,A,E25.16)') &
               TRIM(msg), "chksum=", bc, "Global minimum=", minarray, "Global maximum=", maxarray
       ENDIF
@@ -167,10 +167,10 @@ CONTAINS
    SUBROUTINE before_state_chksum(msg)
       CHARACTER(LEN=*) :: msg !< The point of the algorithm that the checksum is being done
 
-      CALL chksum( "u before array "//TRIM(msg), ub, umask)
-      CALL chksum( "v before array "//TRIM(msg), vb, vmask)
-      CALL chksum( "T before array "//TRIM(msg), tsb(:,:,:,jp_tem), tmask)
-      CALL chksum( "S before array "//TRIM(msg), tsb(:,:,:,jp_sal), tmask)
+      CALL chksum( ub, mask = umask               , msg = "u before array "//TRIM(msg))
+      CALL chksum( vb, mask = vmask               , msg = "v before array "//TRIM(msg))
+      CALL chksum( tsb(:,:,:,jp_tem), mask = tmask, msg = "T before array "//TRIM(msg))
+      CALL chksum( tsb(:,:,:,jp_sal), mask = tmask, msg = "S before array "//TRIM(msg))
 
    END SUBROUTINE before_state_chksum
 
@@ -183,11 +183,16 @@ CONTAINS
 
       write_unit = 6; IF( PRESENT(alt_unit) ) write_unit = alt_unit
       bc_sum = 0
-      CALL chksum( "u now array "//TRIM(msg), un, umask, alt_unit=write_unit, bc_out = bc); bc_sum = bc_sum + bc
-      CALL chksum( "v now array "//TRIM(msg), vn, vmask, alt_unit=write_unit, bc_out = bc); bc_sum = bc_sum + bc
-      CALL chksum( "w now array "//TRIM(msg), wn, tmask, alt_unit=write_unit, bc_out = bc); bc_sum = bc_sum + bc
-      CALL chksum( "T now array "//TRIM(msg), tsn(:,:,:,jp_tem), tmask, alt_unit = write_unit, bc_out = bc); bc_sum = bc_sum + bc
-      CALL chksum( "S now array "//TRIM(msg), tsn(:,:,:,jp_sal), tmask, alt_unit = write_unit, bc_out = bc); bc_sum = bc_sum + bc
+      CALL chksum( un, mask = umask, alt_unit=write_unit, bc_out = bc                 , msg = "u now array "//TRIM(msg))
+      bc_sum = bc_sum + bc
+      CALL chksum( vn, mask = vmask, alt_unit=write_unit, bc_out = bc                 , msg = "v now array "//TRIM(msg))
+      bc_sum = bc_sum + bc
+      CALL chksum( wn, mask = tmask, alt_unit=write_unit, bc_out = bc                 , msg = "w now array "//TRIM(msg))
+      bc_sum = bc_sum + bc
+      CALL chksum( tsn(:,:,:,jp_tem), mask = tmask, alt_unit = write_unit, bc_out = bc, msg = "T now array "//TRIM(msg))
+      bc_sum = bc_sum + bc
+      CALL chksum( tsn(:,:,:,jp_sal), mask = tmask, alt_unit = write_unit, bc_out = bc, msg = "S now array "//TRIM(msg))
+      bc_sum = bc_sum + bc
 
       IF( PRESENT( state_bc )) state_bc = bc_sum
    END SUBROUTINE now_state_chksum
@@ -196,10 +201,10 @@ CONTAINS
    SUBROUTINE after_state_chksum(msg)
       CHARACTER(LEN=*) :: msg !< The point of the algorithm that the checksum is being done
 
-      CALL chksum( "u tendency array "//TRIM(msg), ua, umask)
-      CALL chksum( "v tendency array "//TRIM(msg), va, vmask)
-      CALL chksum( "T tendency array "//TRIM(msg), tsa(:,:,:,jp_tem), tmask)
-      CALL chksum( "S tendency array "//TRIM(msg), tsa(:,:,:,jp_sal), tmask)
+      CALL chksum( ua,                mask = umask, msg = "u tendency array "//TRIM(msg))
+      CALL chksum( va,                mask = vmask, msg = "v tendency array "//TRIM(msg))
+      CALL chksum( tsa(:,:,:,jp_tem), mask = tmask, msg = "T tendency array "//TRIM(msg))
+      CALL chksum( tsa(:,:,:,jp_sal), mask = tmask, msg = "S tendency array "//TRIM(msg))
 
    END SUBROUTINE after_state_chksum
    !!!! T/S cchecksums
@@ -207,8 +212,8 @@ CONTAINS
    SUBROUTINE now_ts_chksum(msg)
       CHARACTER(LEN=*) :: msg !< The point of the algorithm that the checksum is being done
 
-      CALL chksum( "T now array "//TRIM(msg), tsn(:,:,:,jp_tem), tmask)
-      CALL chksum( "S now array "//TRIM(msg), tsn(:,:,:,jp_sal), tmask)
+      CALL chksum( tsn(:,:,:,jp_tem), mask = tmask, msg = "T now array "//TRIM(msg))
+      CALL chksum( tsn(:,:,:,jp_sal), mask = tmask, msg = "S now array "//TRIM(msg))
 
    END SUBROUTINE now_ts_chksum
 
@@ -216,8 +221,8 @@ CONTAINS
    SUBROUTINE after_ts_chksum(msg)
       CHARACTER(LEN=*) :: msg !< The point of the algorithm that the checksum is being done
 
-      CALL chksum( "T tendency array "//TRIM(msg), tsa(:,:,:,jp_tem), tmask)
-      CALL chksum( "S tendency array "//TRIM(msg), tsa(:,:,:,jp_sal), tmask)
+      CALL chksum( tsa(:,:,:,jp_tem), mask = tmask, msg = "T tendency array "//TRIM(msg) )
+      CALL chksum( tsa(:,:,:,jp_sal), mask = tmask, msg = "S tendency array "//TRIM(msg) )
 
    END SUBROUTINE after_ts_chksum
 

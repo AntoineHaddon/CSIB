@@ -107,7 +107,7 @@ CONTAINS
       !
       IF( nn_timing == 1 )  CALL timing_stop('tra_bbc')
       !
-      IF (ln_chksum) CALL chksum("T tendency after trabbc", tsa(:,:,:,jp_tem), tmask)
+      IF (ln_chksum) CALL chksum(tsa(:,:,:,jp_tem), mask = tmask, msg = "T tendency after trabbc")
    END SUBROUTINE tra_bbc
 
 
