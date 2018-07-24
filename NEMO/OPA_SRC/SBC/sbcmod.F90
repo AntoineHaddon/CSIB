@@ -388,13 +388,13 @@ CONTAINS
             &         tab2d_2=vtau             , clinfo2=' vtau     - : ', mask2=vmask, ovlap=1 )
       ENDIF
       IF(ln_chksum) THEN         ! print array checksums (for debugging)
-         CALL chksum('fr_i     after sbc calculation', fr_i      , mask=tmask(:,:,1), istart = 1)
-         CALL chksum('emp-rnf  after sbc calculation', (emp-rnf) , mask=tmask(:,:,1), istart = 1)
-         CALL chksum('emps-rnf after sbc calculation', (emps-rnf), mask=tmask(:,:,1), istart = 1)
-         CALL chksum('qns      after sbc calculation', qns       , mask=tmask(:,:,1), istart = 1)
-         CALL chksum('qsr      after sbc calculation', qsr       , mask=tmask(:,:,1), istart = 1)
-         CALL chksum('utau     after sbc calculation', utau      , mask=umask(:,:,1), istart = 1)
-         CALL chksum('vtau     after sbc calculation', vtau      , mask=vmask(:,:,1), istart = 1)
+         CALL chksum(fr_i      , mask=tmask(:,:,1), istart = 1, msg = 'fr_i     after sbc calculation')
+         CALL chksum((emp-rnf) , mask=tmask(:,:,1), istart = 1, msg = 'emp-rnf  after sbc calculation')
+         CALL chksum((emps-rnf), mask=tmask(:,:,1), istart = 1, msg = 'emps-rnf after sbc calculation')
+         CALL chksum(qns       , mask=tmask(:,:,1), istart = 1, msg = 'qns      after sbc calculation')
+         CALL chksum(qsr       , mask=tmask(:,:,1), istart = 1, msg = 'qsr      after sbc calculation')
+         CALL chksum(utau      , mask=umask(:,:,1), istart = 1, msg = 'utau     after sbc calculation')
+         CALL chksum(vtau      , mask=vmask(:,:,1), istart = 1, msg = 'vtau     after sbc calculation')
          CALL after_state_chksum( "after sbc calculation" )
       ENDIF
 

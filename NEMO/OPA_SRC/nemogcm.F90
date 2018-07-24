@@ -204,7 +204,7 @@ CONTAINS
       !!
       NAMELIST/namctl/ ln_ctl  , nn_print, nn_ictls, nn_ictle,   &
          &             nn_isplt, nn_jsplt, nn_jctls, nn_jctle,   &
-         &             nn_bench, nn_timing, ln_chksum
+         &             nn_bench, nn_timing, ln_chksum, ln_ctl_chksum
       !!----------------------------------------------------------------------
       !
       cltxt = ''
@@ -400,17 +400,18 @@ CONTAINS
          WRITE(numout,*) 'nemo_ctl: Control prints & Benchmark'
          WRITE(numout,*) '~~~~~~~ '
          WRITE(numout,*) '   Namelist namctl'
-         WRITE(numout,*) '      run control (for debugging)     ln_ctl     = ', ln_ctl
-         WRITE(numout,*) '      level of print                  nn_print   = ', nn_print
-         WRITE(numout,*) '      Start i indice for SUM control  nn_ictls   = ', nn_ictls
-         WRITE(numout,*) '      End i indice for SUM control    nn_ictle   = ', nn_ictle
-         WRITE(numout,*) '      Start j indice for SUM control  nn_jctls   = ', nn_jctls
-         WRITE(numout,*) '      End j indice for SUM control    nn_jctle   = ', nn_jctle
-         WRITE(numout,*) '      number of proc. following i     nn_isplt   = ', nn_isplt
-         WRITE(numout,*) '      number of proc. following j     nn_jsplt   = ', nn_jsplt
-         WRITE(numout,*) '      benchmark parameter (0/1)       nn_bench   = ', nn_bench
-         WRITE(numout,*) '      timing activated    (0/1)       nn_timing  = ', nn_timing
-         WRITE(numout,*) '      do checksums        (T/F)       ln_chksum  = ', ln_chksum
+         WRITE(numout,*) '      run control (for debugging)     ln_ctl         = ', ln_ctl
+         WRITE(numout,*) '      run control checksums           ln_ctl_chksum  = ', ln_ctl_chksum
+         WRITE(numout,*) '      level of print                  nn_print       = ', nn_print
+         WRITE(numout,*) '      Start i indice for SUM control  nn_ictls       = ', nn_ictls
+         WRITE(numout,*) '      End i indice for SUM control    nn_ictle       = ', nn_ictle
+         WRITE(numout,*) '      Start j indice for SUM control  nn_jctls       = ', nn_jctls
+         WRITE(numout,*) '      End j indice for SUM control    nn_jctle       = ', nn_jctle
+         WRITE(numout,*) '      number of proc. following i     nn_isplt       = ', nn_isplt
+         WRITE(numout,*) '      number of proc. following j     nn_jsplt       = ', nn_jsplt
+         WRITE(numout,*) '      benchmark parameter (0/1)       nn_bench       = ', nn_bench
+         WRITE(numout,*) '      timing activated    (0/1)       nn_timing      = ', nn_timing
+         WRITE(numout,*) '      do checksums        (T/F)       ln_chksum      = ', ln_chksum
       ENDIF
       !
       nprint    = nn_print          ! convert DOCTOR namelist names into OLD names
