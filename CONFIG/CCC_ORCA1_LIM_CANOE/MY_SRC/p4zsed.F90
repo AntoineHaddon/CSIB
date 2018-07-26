@@ -160,8 +160,9 @@ CONTAINS
             zfactcal = FLOAT(FLOOR(MIN( 1.-excess(ji,jj,ikt), 1.5 )))       ! set burial fraction to 1 if Omega>1 and 0 otherwise
             trn(ji,jj,ikt,jptal) =  trn(ji,jj,ikt,jptal) + zcaloss * (1.-zfactcal) * 2.E-6
             trn(ji,jj,ikt,jpdic) =  trn(ji,jj,ikt,jpdic) + zcaloss * (1.-zfactcal) * 1.E-6
-! reintroduce alkalinity lost to burial at surface
+! reintroduce alkalinity and DIC lost to burial at surface
             trn(ji,jj,1,jptal) =  trn(ji,jj,1,jptal) + zcaloss * zfactcal * 2.E-6 * zsfc/zdep
+            trn(ji,jj,1,jpdic) =  trn(ji,jj,1,jpdic) + zcaloss * zfactcal * 1.E-6 * zsfc/zdep
             zicdep(ji,jj) = trn(ji,jj,ikt,jpcal) * wscal(ji,jj,ikt)         ! deposition in mmol m^-2 s^-1
             zburial(ji,jj) = trn(ji,jj,ikt,jpcal) * wscal(ji,jj,ikt) * zfactcal
 
