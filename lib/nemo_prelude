@@ -412,16 +412,15 @@ echo "#################### Start NEMO pre-processing #################"
   nemo_stop_date=$stop_date
 
   # Determine the year and month of the previous restart, if any
-  nemo_months_run=$months_run
   if [ $start_mon -eq 1 ]; then
-    rs_mon=`expr 13 - $nemo_months_run`
+    rs_mon=12
     if [ $start_year -eq 1 ]; then
       rs_year=0
     else
       rs_year=`expr $start_year - 1`
     fi
   else
-    rs_mon=`expr $start_mon - $nemo_months_run`
+    rs_mon=`expr $start_mon - 1`
     rs_year=$start_year
   fi
 
