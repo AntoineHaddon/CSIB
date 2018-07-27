@@ -57,6 +57,9 @@
         <field id="somint"       description="mass integrated salinity over ocean columns"              unit="kg m-2 * (1e-3)" />
         <!-- variables available with key_top and key_my_trc -->
         <field id="agessc"       description="Ideal age"                                 unit="years" axis_ref="deptht"  />
+        <field id="cfc11"        description="CFC11 tracer concentration"                unit="mol/m3" axis_ref="deptht"/>
+        <field id="cfc12"        description="CFC12 tracer concentration"                unit="mol/m3" axis_ref="deptht"/>
+        <field id="sf6"          description="SF6 tracer concentration"                  unit="mol/m3" axis_ref="deptht"/>
      </group>
 
       <!-- SBC -->
@@ -321,6 +324,15 @@
        <field id="Dpo2"        description="Delta O2"                                 unit="uatm"                         />
        <field id="Heup"        description="Euphotic layer depth"                     unit="m"                            />
        <field id="oomask"      description="Open Ocean mask"                          unit="-"                            />
+       <field id="cfc11qtr"  description="CFC11 tracer flux"                          unit="mol/m2/s"/>
+       <field id="cfc11qint" description="CFC11 integrated tracer flux"               unit="mol/m2" />
+       <field id="cfc11patm" description="CFC11 atmospheric partial pressure"         unit="ppt" />
+       <field id="cfc12qtr"  description="CFC12 tracer flux"                          unit="mol/m2/s"/>
+       <field id="cfc12qint" description="CFC12 integrated tracer flux"               unit="mol/m2" />
+       <field id="cfc12patm" description="CFC12 atmospheric partial pressure"         unit="ppt" />
+       <field id="sf6qtr"    description="SF6 tracer flux"                            unit="mol/m2/s"/>
+       <field id="sf6qint"   description="SF6 integrated tracer flux"                 unit="mol/m2" />
+       <field id="sf6patm"   description="SF6 atmospheric partial pressure"           unit="ppt" />
      </group>
       
     </field_definition>

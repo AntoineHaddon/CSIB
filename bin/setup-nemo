@@ -231,6 +231,7 @@ if [ "$jobtype" == 'rtd' ] || [ "$jobtype" == 'dumpdel' ]; then
 
     sed -i "s/RUNID=.*/RUNID=${nemo_runid}/g" experiment.cfg
     sed -i "s/SEQ_JOBNAME_PREFIX=.*/SEQ_JOBNAME_PREFIX=${nemo_runid}-/g" resources/resources.def
+    sed -i "s/CONFIG=.*/CONFIG=${nemo_config}/g" experiment.cfg
     config-maestro
 
     # produce message about experiement.cfg
@@ -306,7 +307,6 @@ else
     esac
 
     nemo_config_lc=`echo "$nemo_config" | awk '{print tolower($0)}'`
-
     # Make a directory by cloning the maestro repo and do basic maestro setup
     [ -d $nemo_runid ] && bail "Directory $nemo_runid already exists! Aborting"
 
@@ -327,6 +327,8 @@ else
     export PATH
 
     sed -i "s/RUNID=.*/RUNID=${nemo_runid}/g" experiment.cfg
+    # Set the configuration on which to base this experiment
+    sed -i 's/.*config=.*/config='"$nemo_config/" experiment.cfg
     if [ ${nemo_ar6_diag} = on ] ; then
        sed -i "s/nemo_ar6_diag=.*/nemo_ar6_diag=on/" experiment.cfg
     fi
