@@ -110,6 +110,7 @@ CONTAINS
       !!              Madec, 2008, internal report, IPSL.
       !!----------------------------------------------------------------------
       INTEGER ::   istp       ! time step index
+      INTEGER ::   numfin     ! File unit to write the final state of the model
       !!----------------------------------------------------------------------
       !
 #if defined key_agrif
@@ -166,7 +167,11 @@ CONTAINS
       !                            !------------------------!
       !                            !==  finalize the run  ==!
       !                            !------------------------!
-      CALL now_state_chksum("at run finalization", alt_unit = numout) 
+      ! Write the final state of the model into a text file
+      IF( lwp ) THEN
+        CALL ctl_opn( numfin, 'final.state', 'REPLACE', 'FORMATTED', 'SEQUENTIAL', -1, numout, lwp ) 
+      ENDIF
+      CALL now_state_chksum("at run finalization", alt_unit = numfin) 
       IF(lwp) WRITE(numout,cform_aaa)   ! Flag AAAAAAA
       !
       IF( nstop /= 0 .AND. lwp ) THEN   ! error print
@@ -204,7 +209,8 @@ CONTAINS
       !!
       NAMELIST/namctl/ ln_ctl  , nn_print, nn_ictls, nn_ictle,   &
          &             nn_isplt, nn_jsplt, nn_jctls, nn_jctle,   &
-         &             nn_bench, nn_timing, ln_chksum, ln_ctl_chksum
+         &             nn_bench, nn_timing, ln_chksum, ln_ctl_chksum, &
+         &             nn_state_freq
       !!----------------------------------------------------------------------
       !
       cltxt = ''
@@ -400,18 +406,19 @@ CONTAINS
          WRITE(numout,*) 'nemo_ctl: Control prints & Benchmark'
          WRITE(numout,*) '~~~~~~~ '
          WRITE(numout,*) '   Namelist namctl'
-         WRITE(numout,*) '      run control (for debugging)     ln_ctl         = ', ln_ctl
-         WRITE(numout,*) '      run control checksums           ln_ctl_chksum  = ', ln_ctl_chksum
-         WRITE(numout,*) '      level of print                  nn_print       = ', nn_print
-         WRITE(numout,*) '      Start i indice for SUM control  nn_ictls       = ', nn_ictls
-         WRITE(numout,*) '      End i indice for SUM control    nn_ictle       = ', nn_ictle
-         WRITE(numout,*) '      Start j indice for SUM control  nn_jctls       = ', nn_jctls
-         WRITE(numout,*) '      End j indice for SUM control    nn_jctle       = ', nn_jctle
-         WRITE(numout,*) '      number of proc. following i     nn_isplt       = ', nn_isplt
-         WRITE(numout,*) '      number of proc. following j     nn_jsplt       = ', nn_jsplt
-         WRITE(numout,*) '      benchmark parameter (0/1)       nn_bench       = ', nn_bench
-         WRITE(numout,*) '      timing activated    (0/1)       nn_timing      = ', nn_timing
-         WRITE(numout,*) '      do checksums        (T/F)       ln_chksum      = ', ln_chksum
+         WRITE(numout,*) '      run control (for debugging)                    ln_ctl         = ', ln_ctl
+         WRITE(numout,*) '      run control checksums                          ln_ctl_chksum  = ', ln_ctl_chksum
+         WRITE(numout,*) '      level of print                                 nn_print       = ', nn_print
+         WRITE(numout,*) '      Start i indice for SUM control                 nn_ictls       = ', nn_ictls
+         WRITE(numout,*) '      End i indice for SUM control                   nn_ictle       = ', nn_ictle
+         WRITE(numout,*) '      Start j indice for SUM control                 nn_jctls       = ', nn_jctls
+         WRITE(numout,*) '      End j indice for SUM control                   nn_jctle       = ', nn_jctle
+         WRITE(numout,*) '      number of proc. following i                    nn_isplt       = ', nn_isplt
+         WRITE(numout,*) '      number of proc. following j                    nn_jsplt       = ', nn_jsplt
+         WRITE(numout,*) '      benchmark parameter (0/1)                      nn_bench       = ', nn_bench
+         WRITE(numout,*) '      timing activated    (0/1)                      nn_timing      = ', nn_timing
+         WRITE(numout,*) '      do checksums        (T/F)                      ln_chksum      = ', ln_chksum
+         WRITE(numout,*) '      frequency (iter) for writing state stats       nn_state_freq  = ', nn_state_freq 
       ENDIF
       !
       nprint    = nn_print          ! convert DOCTOR namelist names into OLD names

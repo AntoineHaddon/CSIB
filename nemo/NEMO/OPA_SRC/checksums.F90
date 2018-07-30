@@ -9,11 +9,12 @@ MODULE checksums
    !!----------------------------------------------------------------------
    !!   chksum   :  Calculates a checksum of a given 2d/3d array
    !!----------------------------------------------------------------------
-   USE par_kind, only : wp
-   USE dom_oce, only : tmask, umask, vmask, narea
-   USE lib_mpp, only : mpp_min, mpp_max, mpp_sum
-   USE oce,     only : un, vn, wn, tsn, ua, va, tsa, ub, vb, tsb
-   USE par_oce, only : jpi, jpj, jpim1, jpjm1, jpk, jp_tem, jp_sal
+   USE par_kind,       only : wp
+   USE dom_oce,        only : tmask, umask, vmask, narea
+   USE lib_mpp,        only : mpp_min, mpp_max, mpp_sum
+   USE oce,            only : un, vn, wn, tsn, ua, va, tsa, ub, vb, tsb
+   USE par_oce,        only : jpi, jpj, jpim1, jpjm1, jpk, jp_tem, jp_sal
+   USE in_out_manager, only : lwp
    IMPLICIT NONE
    PRIVATE
 
@@ -89,9 +90,9 @@ CONTAINS
 
       bc = mod(bc, bitlen)
 
-      IF (narea==1) THEN
+      IF (lwp .AND. PRESENT(msg)) THEN
         WRITE(write_unit,'(A,X,A,I10.10,X,A,ES25.16,X,A,ES25.16)') &
-              TRIM(msg), "chksum=", bc, "Global minimum=", minarray, "Global maximum=", maxarray
+              TRIM(msg), "chksum=", bc, "Global min=", minarray, "Global max=", maxarray
       ENDIF
       IF( PRESENT(bc_out) ) bc_out = bc
    END SUBROUTINE chksum_2d
@@ -155,9 +156,9 @@ CONTAINS
 
       bc = mod(bc, bitlen)
 
-      IF (narea==1 .AND. PRESENT(msg)) THEN
+      IF (lwp .AND. PRESENT(msg)) THEN
         WRITE(write_unit,'(A,X,A,I10.10,X,A,E25.16,X,A,E25.16)') &
-              TRIM(msg), "chksum=", bc, "Global minimum=", minarray, "Global maximum=", maxarray
+              TRIM(msg), "chksum=", bc, "Global min=", minarray, "Global max=", maxarray
       ENDIF
       IF( PRESENT(bc_out) ) bc_out = bc
 

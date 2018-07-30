@@ -21,6 +21,7 @@ MODULE stpctl
    USE lib_mpp         ! distributed memory computing
    USE dynspg_oce      ! pressure gradient schemes 
    USE c1d             ! 1D vertical configuration
+   USE checksums, only : now_state_chksum
 
    IMPLICIT NONE
    PRIVATE
@@ -63,7 +64,8 @@ CONTAINS
          WRITE(numout,*) 'stp_ctl : time-stepping control'
          WRITE(numout,*) '~~~~~~~'
          ! open time.step file
-         CALL ctl_opn( numstp, 'time.step', 'REPLACE', 'FORMATTED', 'SEQUENTIAL', -1, numout, lwp, narea )
+         CALL ctl_opn( numstp,  'time.step', 'REPLACE', 'FORMATTED', 'SEQUENTIAL', -1, numout, lwp, narea )
+         CALL ctl_opn( numstat, 'time.stat', 'REPLACE', 'FORMATTED', 'SEQUENTIAL', -1, numout, lwp ) 
       ENDIF
 
       IF(lwp) WRITE ( numstp, '(1x, i8)' )   kt      !* save the current time step in numstp
@@ -139,6 +141,12 @@ CONTAINS
       ENDIF
 9500  FORMAT (' kt=',i6,' min SSS: ',1pg11.4,', i j: ',2i5)
 
+      ! Check if it's time for the now state global stats should be written
+      IF( MOD(kt,nn_state_freq) == 0 ) THEN
+         ! Write the final state of the model into a text file
+         WRITE(numstat,'(A,X,I10.10)') 'Timestep: ', kt
+         CALL now_state_chksum("  ", alt_unit = numstat) 
+      ENDIF
       
       IF( lk_c1d )  RETURN          ! No log file in case of 1D vertical configuration
 
