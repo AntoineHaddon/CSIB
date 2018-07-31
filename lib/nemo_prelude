@@ -348,7 +348,7 @@ echo "#################### Start NEMO pre-processing #################"
   start_year=`echo $start_year|awk -F':' '{printf "%4.4d",$1}' -`
   stop_year=`echo $stop_year|awk -F':' '{printf "%4.4d",$1}' -`
 
-  if [ 1 -eq 2 ]; then
+  if [ 1 -eq 1 ]; then
     echo "nemo_prelude: start_year=$start_year  start_mon=$start_mon"
     echo "nemo_prelude:  stop_year=$stop_year   stop_mon=$stop_mon"
     echo "nemo_prelude: days_in_job=$days_in_job  months=$months  month_counter=$month_counter"
@@ -485,7 +485,8 @@ echo "#################### Start NEMO pre-processing #################"
 
   # Total number of time steps in the current job
   [ -z "$days_in_job" ] && bail "days_in_job must be defined"
-  steps_in_job=${nemo_steps_in_job:=`echo $steps_per_day $days_in_job|awk '{printf "%d",$1*$2}' -`}
+# steps_in_job=${nemo_steps_in_job:=`echo $steps_per_day $days_in_job|awk '{printf "%d",$1*$2}' -`}
+  steps_in_job=`echo $steps_per_day $days_in_job|awk '{printf "%d",$1*$2}' -`
 
   # The number of NEMO time steps between calls to sbc (used by NEMO)
   nn_fsbc=${nemo_nn_fsbc:=3}
@@ -1045,7 +1046,7 @@ echo "#################### Start NEMO pre-processing #################"
 
   nemo_ahmcoef=${nemo_ahmcoef:=nemo_3.4_orca1_ahmcoef}
   nemo_coordinates=${nemo_coordinates:=nemo_3.4_orca1_coordinates_ukorca1.nc}
-  nemo_bathy_meter=${nemo_bathy_meter:=nemo_3.4_orca1_bathy_meter_050308_ukmo.nc}
+  nemo_bathy_meter=${nemo_bathy_meter:=nemo_3.4_orca1_bathy_meter_050308_ukmo_mod.nc}
   nemo_mask_itf=${nemo_mask_itf:=nemo_3.4_orca1_mask_itf_orca1_new.nc}
   nemo_M2rowdrg=${nemo_M2rowdrg:=nemo_3.4_orca1_m2rowdrg_r1_modif.nc}
   nemo_K1rowdrg=${nemo_K1rowdrg:=nemo_3.4_orca1_k1rowdrg_r1_modif.nc}

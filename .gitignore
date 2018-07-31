@@ -2,6 +2,7 @@
 *.mod
 *~
 .#*
+#*#
 tmp/
 *.swp*
 deploy.git/
