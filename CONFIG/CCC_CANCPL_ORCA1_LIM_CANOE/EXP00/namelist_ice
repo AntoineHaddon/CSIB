@@ -24,7 +24,7 @@
 &namiceini     !   ice initialisation
 !-----------------------------------------------------------------------
    ln_limini   = .false.   !  read the initial state in 'Ice_initialization.nc' (T) or not (F)
-   ttest       =  2.0      !  threshold water temperature for initial sea ice
+   ttest       =  -12.0      !  threshold water temperature for initial sea ice
    hninn       =  0.5      !  initial snow thickness in the north
    hginn       =  3.0      !  initial ice  thickness in the north
    alinn       =  0.05     !  initial leads area     in the north
@@ -74,7 +74,7 @@
    parlat      = 0.0       !  percentage of energy used for lateral ablation
    hakspl      = 0.5       !  slope of distr. for Hakkinen-Mellor's lateral melting
    hibspl      = 0.5       !  slope of distribution for Hibler's lateral melting
-   exld        = 2.0       !  exponent for leads-closure rate
+   exld        = 3.0       !  exponent for leads-closure rate
    hakdif      = 1.0       !  coefficient for diffusions of ice and snow
    thth        = 0.2       !  threshold thickness for comp. of eq. thermal conductivity
    hnzst       = 0.1       !  thickness of the surf. layer in temp. computation
