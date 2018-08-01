@@ -302,9 +302,10 @@ echo "#################### Start NEMO pre-processing #################"
         bail "find_nemo_config_EXP00: One or more of nemo_repo, nemo_ver, nemo_config are undefined"
       # Attempt to extract this file from the NEMO repository
       rm -f $1
-      gitrip $nemo_ver nemo/CONFIG/$nemo_config/EXP00/$1 repo=$nemo_repo
-      sleep 1
-      [ -s $1 ] || bail "find_nemo_config_EXP00: Unable to extract $1 from $nemo_repo"
+      #gitrip $nemo_ver nemo/CONFIG/$nemo_config/EXP00/$1 repo=$nemo_repo
+      cp ${nemo_repo}/nemo/CONFIG/$nemo_config/EXP00/$1 .  
+      #sleep 1
+      [ -s $1 ] || bail "find_nemo_config_EXP00: Unable to copy $1 from $nemo_repo"
     fi
   }
 
@@ -347,7 +348,7 @@ echo "#################### Start NEMO pre-processing #################"
   start_year=`echo $start_year|awk -F':' '{printf "%4.4d",$1}' -`
   stop_year=`echo $stop_year|awk -F':' '{printf "%4.4d",$1}' -`
 
-  if [ 1 -eq 2 ]; then
+  if [ 1 -eq 1 ]; then
     echo "nemo_prelude: start_year=$start_year  start_mon=$start_mon"
     echo "nemo_prelude:  stop_year=$stop_year   stop_mon=$stop_mon"
     echo "nemo_prelude: days_in_job=$days_in_job  months=$months  month_counter=$month_counter"
@@ -484,7 +485,8 @@ echo "#################### Start NEMO pre-processing #################"
 
   # Total number of time steps in the current job
   [ -z "$days_in_job" ] && bail "days_in_job must be defined"
-  steps_in_job=${nemo_steps_in_job:=`echo $steps_per_day $days_in_job|awk '{printf "%d",$1*$2}' -`}
+# steps_in_job=${nemo_steps_in_job:=`echo $steps_per_day $days_in_job|awk '{printf "%d",$1*$2}' -`}
+  steps_in_job=`echo $steps_per_day $days_in_job|awk '{printf "%d",$1*$2}' -`
 
   # The number of NEMO time steps between calls to sbc (used by NEMO)
   nn_fsbc=${nemo_nn_fsbc:=3}
@@ -655,11 +657,22 @@ echo "#################### Start NEMO pre-processing #################"
     echo "##########################"
 
     rm -f RESTART_ARC
-    access RESTART_ARC $nemo_rs
-    # Ensure that we can overwrite existing files with files from the restart
-    # Ignore any netcdf files in the restart
-    tar tf RESTART_ARC | grep -v '\.nc$' | xargs -I'{}' chmod u+rw {} || :
-    tar xf RESTART_ARC || bail "Cannot extract files from $nemo_rs"
+    access RESTART_ARC `basename $nemo_rs .tar` nocp=off || access RESTART_ARC $nemo_rs 
+
+    # Deal with "old" tar archives, or new directory based restarts
+    if ! tar tf RESTART_ARC &> /dev/null; then
+        # This is the directory. checksum the contents
+        sha1sum RESTART_ARC/* >> xnemo_access_log
+        mv RESTART_ARC/* . || bail "Cannot get files from restart directory"
+    else
+        # this is the tar file. checksum it.
+        sha1sum RESTART_ARC >> xnemo_access_log
+        # Ensure that we can overwrite existing files with files from the restart
+        # Ignore any netcdf files in the restart
+        tar tf RESTART_ARC | grep -v '\.nc$' | xargs -I'{}' chmod u+rw {} || :
+        tar xf RESTART_ARC || bail "Cannot extract files from $nemo_rs"
+    fi
+  
     release RESTART_ARC
 
     # Rename each task specific output restart file from the previous run
@@ -1027,7 +1040,7 @@ echo "#################### Start NEMO pre-processing #################"
 
   nemo_ahmcoef=${nemo_ahmcoef:=nemo_3.4_orca1_ahmcoef}
   nemo_coordinates=${nemo_coordinates:=nemo_3.4_orca1_coordinates_ukorca1.nc}
-  nemo_bathy_meter=${nemo_bathy_meter:=nemo_3.4_orca1_bathy_meter_050308_ukmo.nc}
+  nemo_bathy_meter=${nemo_bathy_meter:=nemo_3.4_orca1_bathy_meter_050308_ukmo_mod.nc}
   nemo_mask_itf=${nemo_mask_itf:=nemo_3.4_orca1_mask_itf_orca1_new.nc}
   nemo_M2rowdrg=${nemo_M2rowdrg:=nemo_3.4_orca1_m2rowdrg_r1_modif.nc}
   nemo_K1rowdrg=${nemo_K1rowdrg:=nemo_3.4_orca1_k1rowdrg_r1_modif.nc}
