@@ -54,7 +54,7 @@ CONTAINS
       REAL(wp) ::   zfact
       REAL(wp) ::   ztn, zadap
       REAL(wp) ::   zprod
-      REAL(wp) ::   zpislopen 
+      REAL(wp) ::   zpislopen, ztheta 
       REAL(wp) ::   zrfact2
       CHARACTER (len=25) :: charout
       REAL(wp), POINTER, DIMENSION(:,:,:) :: zpislopead, zprbio, zprnch
@@ -112,10 +112,10 @@ CONTAINS
                       
                       ! phytoplankton photoacclimation used in light limitation
                       ! trn(...,jpnchl) / trn(...,jpphy) / 12. is theta in gChl per gC
-                      zpislopen =  achl_cmoc * trn(ji,jj,jk,jpnch)           &
-                        &          / ( trn(ji,jj,jk,jpphy) * 12._wp + rtrn)  &
-                        ! zpislopead * rday is growth rate in d^-1 at temperature ToC as achl_cmoc is in d^-1
-                        &          / ( zpislopead(ji,jj,jk) * rday  + rtrn )
+                      ! ztheta is set to a maximum of thm_cmoc so as prevent appearance of light-saturation in case when zetot is small but trn(ji,jj,jk,jpphy) is 0
+                      ztheta = MIN(thm_cmoc,trn(ji,jj,jk,jpnch)/(trn(ji,jj,jk,jpphy)*12._wp+rtrn))
+                      zpislopen =  achl_cmoc * ztheta / ( zpislopead(ji,jj,jk) * rday  + rtrn )
+                      ! zpislopead * rday is growth rate in d^-1 at temperature ToC as achl_cmoc is in d^-1
 
                       ! limitation functions
                       ! --------------------
@@ -188,11 +188,11 @@ CONTAINS
          zrfact2 = 1.e3 * rfact2r  ! conversion from mol L^-1 timestep^-1 into mol m^-3 s^-1
          IF( lk_iomput ) THEN
            IF( jnt == nrdttrc ) THEN
-              CALL iom_put( "PPPHY"   , zprorca (:,:,:) * zrfact2 * tmask(:,:,:) )
-              CALL iom_put( "Mumax"   , zpislopead  (:,:,:) * rday * tmask(:,:,:) )
-              CALL iom_put( "LNnut"   , zlimn   (:,:,:) * tmask(:,:,:) )
-              CALL iom_put( "LNFe"    , xlimnfecmoc (:,:) * tmask(:,:,1) )
-              CALL iom_put( "LNlight" , zliml   (:,:,:) * tmask(:,:,:) )
+              CALL iom_put( "PPPHY"   , zprorca (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )
+              CALL iom_put( "Mumax"   , zpislopead  (:,:,:) * rday * tmask_bgc_closea(:,:,:) )
+              CALL iom_put( "LNnut"   , zlimn   (:,:,:) * tmask_bgc_closea(:,:,:) )
+              CALL iom_put( "LNFe"    , xlimnfecmoc (:,:) * tmask_bgc_closea(:,:,1) )
+              CALL iom_put( "LNlight" , zliml   (:,:,:) * tmask_bgc_closea(:,:,:) )
               
            ENDIF
            
@@ -201,7 +201,7 @@ CONTAINS
       IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('prod')")
          CALL prt_ctl_trc_info(charout)
-         CALL prt_ctl_trc(tab4d=tra, mask=tmask, clinfo=ctrcnm)
+         CALL prt_ctl_trc(tab4d=tra, mask=tmask_bgc_closea, clinfo=ctrcnm)
       ENDIF
       !
       CALL wrk_dealloc( jpi, jpj, jpk, zpislopead, zprbio, zprnch )

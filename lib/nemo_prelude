@@ -134,24 +134,6 @@ echo "#################### Start NEMO pre-processing #################"
 # If set then delete the previous restart from DATAPATH after it is copied to the execution dir
   nemo_del_rs=${nemo_del_rs:=on}
 
-# RTD switch. If nemo_carbon=on, both physical and carbon RTD will be done,
-# otherwise only physical. User can specify rtd exectuables below. 
-  nemo_rtd=${nemo_rtd:=on}
-
-# If nemo_dump_hist is true then dump history files and restart arhives to CFS. 
-# Only files that were saved to DATAPATH are dumped. If nemo_ann_cat=on, 
-# only the annually-concatenated history files will be dumped, along with the December
-# 31st restart archive. If do_nemo_run=off, saved history files listed in the 
-# restart archive file, rs_saved_history_file_names, will be dumped.
-  nemo_dump_hist=${nemo_dump_hist:=off}
-
-# If nemo_del_hist is true then delete all history files that were created and saved,
-# after RTD is done and after they have been dumped if nemo_dump=on. 
-# If nemo_ann_cat=on, the annually concatenated and original 
-# subannual files are all deleted. If do_nemo_run=off, saved history files 
-# listed in the restart archive file, rs_saved_history_file_names, will be deleted.
-  nemo_del_hist=${nemo_del_hist:=off}
-
 # Define nemo_steps_in_job to override the length of run that is set below
   nemo_steps_in_job=${nemo_steps_in_job:=''}
 
@@ -497,18 +479,12 @@ echo "#################### Start NEMO pre-processing #################"
   # time step for the dynamics (and tracer if nn_acc=0)
   rn_rdt=${nemo_rn_rdt:=3600.}
 
-  # time step for the cice thermodynamics dt
-  dt=${cice_dt:=3600.}
-
   # Number of time steps per day
   steps_per_day=`echo $rn_rdt|awk '{s=86400./$1; printf "%d",s}' -`
 
   # Total number of time steps in the current job
   [ -z "$days_in_job" ] && bail "days_in_job must be defined"
   steps_in_job=${nemo_steps_in_job:=`echo $steps_per_day $days_in_job|awk '{printf "%d",$1*$2}' -`}
-
-  # The number of CICE time steps for each call to cice (used by cice)
-  npt=${cice_npt:=1}
 
   # The number of NEMO time steps between calls to sbc (used by NEMO)
   nn_fsbc=${nemo_nn_fsbc:=3}
@@ -530,14 +506,13 @@ echo "#################### Start NEMO pre-processing #################"
   ToF nemo_trc
   ToF nemo_cmoc
   ToF nemo_canoe
-  ToF pisces_offline
 
   # Identify the type of forcing to use
   nemo_forcing=${nemo_forcing:-coupled}
 
   # Abort if the value for nemo_forcing is unknown
   case $nemo_forcing in
-    bulk|bulk_iaf|flux|flux_iaf|coupled) ;; # These are valid values
+    coupled) ;; # These are valid values
     *) bail "Invalid value for nemo_forcing = $nemo_forcing" ;;
   esac
 
@@ -637,14 +612,12 @@ echo "#################### Start NEMO pre-processing #################"
     find_nemo_config_EXP00 namelist $nemo_namelist
 
     # The input ice namelist is hard coded in nemo source
-    if [ $pisces_offline -ne  1 ]; then
       if [ $nn_ice -eq 4 ]; then
         # Using CICE
         find_nemo_config_EXP00 ice_in $nemo_namelist_ice
       else
         find_nemo_config_EXP00 namelist_ice $nemo_namelist_ice
       fi
-    fi
 
     if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
       # The input top namelist is hard coded as "namelist_top" in nemo source
@@ -697,7 +670,6 @@ echo "#################### Start NEMO pre-processing #################"
     # in the previous run.
 
     # Ocean restart files
-    if [ $pisces_offline -ne 1 ]; then
       found_rs=`(ls -1 *_${cn_ocerst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
       [ -z "$found_rs" ] && found_rs=`(ls -1 *_${cn_ocerst_out}.nc || : ) 2>/dev/null`
       [ -z "$found_rs" ] && bail "No ocean restart files were found in $nemo_rs"
@@ -740,7 +712,6 @@ echo "#################### Start NEMO pre-processing #################"
           done
         fi
       fi
-    fi
 
     if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
       # Pisces restart files
@@ -859,7 +830,6 @@ echo "#################### Start NEMO pre-processing #################"
       rm -f namelist
       find_nemo_config_EXP00 namelist $nemo_namelist
 
-      if [ $pisces_offline -ne 1 ]; then
         # The input ice namelist is hard coded in nemo source
         if [ $nn_ice -eq 4 ]; then
           # Using CICE
@@ -869,7 +839,6 @@ echo "#################### Start NEMO pre-processing #################"
           rm -f namelist_ice
           find_nemo_config_EXP00 namelist_ice $nemo_namelist_ice
         fi
-      fi
 
       if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
         # The input top namelist is hard coded as "namelist_top" in nemo source
@@ -892,14 +861,12 @@ echo "#################### Start NEMO pre-processing #################"
       # Use the namelist files found in the restart archive
       [ ! -s rs_namelist ] && bail "Missing rs_namelist from $nemo_rs"
 
-      if [ $pisces_offline -ne 1 ]; then
         if [ $nn_ice -eq 4 ]; then
           # Using CICE
           [ ! -s rs_ice_in ] && bail "Missing rs_ice_in from $nemo_rs"
         else
           [ ! -s rs_namelist_ice ] && bail "Missing rs_namelist_ice from $nemo_rs"
         fi
-      fi
 
       if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
         [ ! -s rs_namelist_top ]    && bail "Missing rs_namelist_top from $nemo_rs"
@@ -917,14 +884,12 @@ echo "#################### Start NEMO pre-processing #################"
       cp -f rs_namelist namelist
 
       # The input ice namelist is hard coded as "namelist_ice" in nemo source
-      if [ $pisces_offline -ne 1 ]; then
         if [ $nn_ice -eq 4 ]; then
           # Using CICE
           cp -f rs_ice_in ice_in
         else
           cp -f rs_namelist_ice namelist_ice
         fi
-      fi
 
       if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
         # The input top namelist is hard coded as "namelist_top" in nemo source
@@ -1042,12 +1007,10 @@ echo "#################### Start NEMO pre-processing #################"
   # Modify specified parameter values in the namelist read by the ice module
   # NOTE: If character variables do not follow the NEMO naming convention (that their names begin with the letter "c")
   #       then these variable names must be prefixed with "_char_" on the mod_nl command line below
-  if [ $pisces_offline -ne 1 ]; then
     [ -s namelist_ice ] &&
         mod_nl namelist_ice cn_icerst_in cn_icerst_out
     [ -s ice_in ] &&
         mod_nl ice_in days_per_year use_leap_years year_init istep0 dt npt restart nprocs _char_runtype _char_ice_ic
-  fi
 
   # Modify the input top namelist
   if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
@@ -1069,10 +1032,10 @@ echo "#################### Start NEMO pre-processing #################"
   nemo_M2rowdrg=${nemo_M2rowdrg:=nemo_3.4_orca1_m2rowdrg_r1_modif.nc}
   nemo_K1rowdrg=${nemo_K1rowdrg:=nemo_3.4_orca1_k1rowdrg_r1_modif.nc}
   nemo_Eddyengf=${nemo_Eddyengf:=nemo_3.4_orca1_eddy_mix.nc}
-  nemo_geothermal_heating=${nemo_geothermal_heating:=nemo_3.3_orca2_geothermal_heating.nc}
+#  nemo_geothermal_heating=${nemo_geothermal_heating:=nemo_3.3_orca2_geothermal_heating.nc}
   nemo_runoff_core_monthly=${nemo_runoff_core_monthly:=nemo_3.4_orca1_runoff_1m_orca1.nc}
-  nemo_sst_data=${nemo_sst_data:=nemo_3.4_orca1_sst_1m_orca1.nc}
-  nemo_sss_data=${nemo_sss_data:=nemo_3.4_orca1_sss_1m_orca1.nc}
+#  nemo_sst_data=${nemo_sst_data:=nemo_3.4_orca1_sst_1m_orca1.nc}
+#  nemo_sss_data=${nemo_sss_data:=nemo_3.4_orca1_sss_1m_orca1.nc}
   nemo_chlorophyll=${nemo_chlorophyll:=nemo_3.4_orca1_chlorophyll-orca1_1m.nc}
   nemo_subbasins=${nemo_subbasins:=nemo_3.4_orca1_basinmask_050308_ukmo_modified.nc}
 
@@ -1083,10 +1046,10 @@ echo "#################### Start NEMO pre-processing #################"
   [ -s M2rowdrg.nc ]            || acc_cp M2rowdrg.nc            $nemo_M2rowdrg
   [ -s K1rowdrg.nc ]            || acc_cp K1rowdrg.nc            $nemo_K1rowdrg
   [ -s Eddyengf.nc ]            || acc_cp Eddyengf.nc            $nemo_Eddyengf
-  [ -s geothermal_heating.nc ]  || acc_cp geothermal_heating.nc  $nemo_geothermal_heating
+#  [ -s geothermal_heating.nc ]  || acc_cp geothermal_heating.nc  $nemo_geothermal_heating
   [ -s runoff_core_monthly.nc ] || acc_cp runoff_core_monthly.nc $nemo_runoff_core_monthly
-  [ -s sss_data.nc ]            || acc_cp sss_data.nc            $nemo_sss_data
-  [ -s sst_data.nc ]            || acc_cp sst_data.nc            $nemo_sst_data
+#  [ -s sss_data.nc ]            || acc_cp sss_data.nc            $nemo_sss_data
+#  [ -s sst_data.nc ]            || acc_cp sst_data.nc            $nemo_sst_data
   [ -s chlorophyll.nc ]         || acc_cp chlorophyll.nc         $nemo_chlorophyll
   [ -s subbasins.nc ]           || acc_cp subbasins.nc           $nemo_subbasins
 
@@ -1106,20 +1069,20 @@ echo "#################### Start NEMO pre-processing #################"
   [ -s data_1m_salinity_nomask.nc ]              ||
       acc_cp data_1m_salinity_nomask.nc              $nemo_data_1m_salinity_nomask
 
-  nemo_t=${nemo_t:=nemo_3.4_orca1_t_10.15june2009.nc}
-  nemo_u=${nemo_u:=nemo_3.4_orca1_u_10.15june2009.nc}
-  nemo_v=${nemo_v:=nemo_3.4_orca1_v_10.15june2009.nc}
-  nemo_q=${nemo_q:=nemo_3.4_orca1_q_10.15june2009.nc}
-  nemo_qsw=${nemo_qsw:=nemo_3.4_orca1_ncar_rad.15june2009.nc}
-  nemo_qlw=${nemo_qlw:=nemo_3.4_orca1_ncar_rad.15june2009.nc}
-  nemo_precip=${nemo_precip:=nemo_3.4_orca1_ncar_precip.15june2009.nc}
-  nemo_snow=${nemo_snow:=nemo_3.4_orca1_ncar_precip.15june2009.nc}
+#  nemo_t=${nemo_t:=nemo_3.4_orca1_t_10.15june2009.nc}
+#  nemo_u=${nemo_u:=nemo_3.4_orca1_u_10.15june2009.nc}
+#  nemo_v=${nemo_v:=nemo_3.4_orca1_v_10.15june2009.nc}
+#  nemo_q=${nemo_q:=nemo_3.4_orca1_q_10.15june2009.nc}
+#  nemo_qsw=${nemo_qsw:=nemo_3.4_orca1_ncar_rad.15june2009.nc}
+#  nemo_qlw=${nemo_qlw:=nemo_3.4_orca1_ncar_rad.15june2009.nc}
+#  nemo_precip=${nemo_precip:=nemo_3.4_orca1_ncar_precip.15june2009.nc}
+#  nemo_snow=${nemo_snow:=nemo_3.4_orca1_ncar_precip.15june2009.nc}
   # weights_grid02_* are weights for ECMWF data
-  nemo_weights_bicubic1=${nemo_weights_bicubic1:=nemo_3.4_weights_grid02_bicubic_orca1.nc}
-  nemo_weights_bilinear1=${nemo_weights_bilinear1:=nemo_3.4_weights_grid02_bilinear_orca1.nc}
+#  nemo_weights_bicubic1=${nemo_weights_bicubic1:=nemo_3.4_weights_grid02_bicubic_orca1.nc}
+#  nemo_weights_bilinear1=${nemo_weights_bilinear1:=nemo_3.4_weights_grid02_bilinear_orca1.nc}
   # weights_grid03_* are weights for CORE data
-  nemo_weights_bicubic2=${nemo_weights_bicubic2:=nemo_3.4_weights_grid03_bicubic_orca1.nc}
-  nemo_weights_bilinear2=${nemo_weights_bilinear2:=nemo_3.4_weights_grid03_bilinear_orca1.nc}
+#  nemo_weights_bicubic2=${nemo_weights_bicubic2:=nemo_3.4_weights_grid03_bicubic_orca1.nc}
+#  nemo_weights_bilinear2=${nemo_weights_bilinear2:=nemo_3.4_weights_grid03_bilinear_orca1.nc}
 
   #[ -s tair10m.nc ]      || acc_cp tair10m.nc          $nemo_t
   #[ -s uwnd10m.nc ]      || acc_cp uwnd10m.nc          $nemo_u
@@ -1140,55 +1103,55 @@ echo "#################### Start NEMO pre-processing #################"
   #[ -s weights_bic3.nc ] || acc_cp weights_bic3.nc     $nemo_weights_bicubic3
   #[ -s weights_bil3.nc ] || acc_cp weights_bil3.nc     $nemo_weights_bilinear3
 
-  if [ x"$nemo_forcing" = "xbulk" ]; then
-    # Bulk forcing
-    nemo_utau=${nemo_utau:=mc_ncq_5d_06360101_06361231_grid_ufl_mean.nc}
-    nemo_vtau=${nemo_vtau:=mc_ncq_5d_06360101_06361231_grid_vfl_mean.nc}
-    nemo_qtot=${nemo_qtot:=mc_ncq_5d_06360101_06361231_grid_hfl_mean.nc}
-    nemo_qsr=${nemo_qsr:=mc_ncq_5d_06360101_06361231_grid_hfl_mean.nc}
-    nemo_emp=${nemo_emp:=mc_ncq_5d_06360101_06361231_grid_hfl_mean.nc}
-    nemo_weights_bicubic3=${nemo_weights_bicubic3:=nemo_3.4_weights_grid02_bicubic_orca2.nc}
-    nemo_weights_bilinear3=${nemo_weights_bilinear3:=nemo_3.4_weights_grid02_bilinear_orca2.nc}
-
-    [ -s utau.nc ]         || acc_cp utau.nc             $nemo_utau
-    [ -s vtau.nc ]         || acc_cp vtau.nc             $nemo_vtau
-    [ -s qtot.nc ]         || acc_cp qtot.nc             $nemo_qtot
-    [ -s qsr.nc ]          || acc_cp qsr.nc              $nemo_qsr
-    [ -s emp.nc ]          || acc_cp emp.nc              $nemo_emp
-    [ -s weights_bic3.nc ] || acc_cp weights_bic3.nc     $nemo_weights_bicubic3
-    [ -s weights_bil3.nc ] || acc_cp weights_bil3.nc     $nemo_weights_bilinear3
-
-  elif [ x"$nemo_forcing" = "xflux" ]; then
-    # Flux forcing
-    nemo_utau=${nemo_utau:=sa_gcm16_05_w_2005_oufs_signchg.nc}
-    nemo_vtau=${nemo_vtau:=sa_gcm16_05_w_2005_ovfs_signchg.nc}
-    nemo_qtot=${nemo_qtot:=sa_gcm16_05_w_2005_obeg.nc}
-    nemo_qsr=${nemo_qsr:=sa_gcm16_05_w_2005_ofsg.nc}
-    nemo_emp=${nemo_emp:=sa_gcm16_05_w_2005_obwg_signchg.nc}
-    nemo_weights_bicubic3=${nemo_weights_bicubic3:=nemo_3.4_weights_canam4grid_bicubic_orca1.nc}
-    nemo_weights_bilinear3=${nemo_weights_bilinear3:=nemo_3.4_weights_canam4grid_bilinear_orca1.nc}
-
-    [ -s utau.nc ]         || acc_cp utau.nc             $nemo_utau
-    [ -s vtau.nc ]         || acc_cp vtau.nc             $nemo_vtau
-    [ -s qtot.nc ]         || acc_cp qtot.nc             $nemo_qtot
-    [ -s qsr.nc ]          || acc_cp qsr.nc              $nemo_qsr
-    [ -s emp.nc ]          || acc_cp emp.nc              $nemo_emp
-    [ -s weights_bic3.nc ] || acc_cp weights_bic3.nc     $nemo_weights_bicubic3
-    [ -s weights_bil3.nc ] || acc_cp weights_bil3.nc     $nemo_weights_bilinear3
-
-    # CICE forcing files
-    nemo_snowfall=${nemo_snowfall:='sa_gcm17l_mix14_snow_gs_0001010200-0001020100.nc'}
-    nemo_rainfall=${nemo_rainfall:='sa_gcm17l_mix14_rain_gs_0001010200-0001020100.nc'}
-    nemo_sublim=${nemo_sublim:='sa_gcm17l_mix14_sblm_0001010200-0001020100.nc'}
-    nemo_topmeltn1=${nemo_topmeltn1:='sa_gcm16_05_w_2005_obeg.nc'}
-    nemo_botmeltn1=${nemo_botmeltn1:='sa_gcm17l_mix14_hsea_gs_chgsign_0001010200-0001020100.nc'}
-
-    [ -s snowfall_1m ]  || acc_cp snowfall_1m         $nemo_snowfall
-    [ -s rainfall_1m ]  || acc_cp rainfall_1m         $nemo_rainfall
-    [ -s sublim_1m ]    || acc_cp sublim_1m           $nemo_sublim
-    [ -s topmeltn1_1m ] || acc_cp topmeltn1_1m        $nemo_topmeltn1
-    [ -s botmeltn1_1m ] || acc_cp botmeltn1_1m        $nemo_botmeltn1
-  fi
+#  if [ x"$nemo_forcing" = "xbulk" ]; then
+#    # Bulk forcing
+#    nemo_utau=${nemo_utau:=mc_ncq_5d_06360101_06361231_grid_ufl_mean.nc}
+#    nemo_vtau=${nemo_vtau:=mc_ncq_5d_06360101_06361231_grid_vfl_mean.nc}
+#    nemo_qtot=${nemo_qtot:=mc_ncq_5d_06360101_06361231_grid_hfl_mean.nc}
+#    nemo_qsr=${nemo_qsr:=mc_ncq_5d_06360101_06361231_grid_hfl_mean.nc}
+#    nemo_emp=${nemo_emp:=mc_ncq_5d_06360101_06361231_grid_hfl_mean.nc}
+#    nemo_weights_bicubic3=${nemo_weights_bicubic3:=nemo_3.4_weights_grid02_bicubic_orca2.nc}
+#    nemo_weights_bilinear3=${nemo_weights_bilinear3:=nemo_3.4_weights_grid02_bilinear_orca2.nc}
+#
+#    [ -s utau.nc ]         || acc_cp utau.nc             $nemo_utau
+#    [ -s vtau.nc ]         || acc_cp vtau.nc             $nemo_vtau
+#    [ -s qtot.nc ]         || acc_cp qtot.nc             $nemo_qtot
+#    [ -s qsr.nc ]          || acc_cp qsr.nc              $nemo_qsr
+#    [ -s emp.nc ]          || acc_cp emp.nc              $nemo_emp
+#    [ -s weights_bic3.nc ] || acc_cp weights_bic3.nc     $nemo_weights_bicubic3
+#    [ -s weights_bil3.nc ] || acc_cp weights_bil3.nc     $nemo_weights_bilinear3
+#
+#  elif [ x"$nemo_forcing" = "xflux" ]; then
+#    # Flux forcing
+#    nemo_utau=${nemo_utau:=sa_gcm16_05_w_2005_oufs_signchg.nc}
+#    nemo_vtau=${nemo_vtau:=sa_gcm16_05_w_2005_ovfs_signchg.nc}
+#    nemo_qtot=${nemo_qtot:=sa_gcm16_05_w_2005_obeg.nc}
+#    nemo_qsr=${nemo_qsr:=sa_gcm16_05_w_2005_ofsg.nc}
+#    nemo_emp=${nemo_emp:=sa_gcm16_05_w_2005_obwg_signchg.nc}
+#    nemo_weights_bicubic3=${nemo_weights_bicubic3:=nemo_3.4_weights_canam4grid_bicubic_orca1.nc}\
+#    nemo_weights_bilinear3=${nemo_weights_bilinear3:=nemo_3.4_weights_canam4grid_bilinear_orca1.nc}
+#
+#    [ -s utau.nc ]         || acc_cp utau.nc             $nemo_utau
+#    [ -s vtau.nc ]         || acc_cp vtau.nc             $nemo_vtau
+#    [ -s qtot.nc ]         || acc_cp qtot.nc             $nemo_qtot
+#    [ -s qsr.nc ]          || acc_cp qsr.nc              $nemo_qsr
+#    [ -s emp.nc ]          || acc_cp emp.nc              $nemo_emp
+#    [ -s weights_bic3.nc ] || acc_cp weights_bic3.nc     $nemo_weights_bicubic3
+#    [ -s weights_bil3.nc ] || acc_cp weights_bil3.nc     $nemo_weights_bilinear3
+#
+#    # CICE forcing files
+#    nemo_snowfall=${nemo_snowfall:='sa_gcm17l_mix14_snow_gs_0001010200-0001020100.nc'}
+#    nemo_rainfall=${nemo_rainfall:='sa_gcm17l_mix14_rain_gs_0001010200-0001020100.nc'}
+#    nemo_sublim=${nemo_sublim:='sa_gcm17l_mix14_sblm_0001010200-0001020100.nc'}
+#    nemo_topmeltn1=${nemo_topmeltn1:='sa_gcm16_05_w_2005_obeg.nc'}
+#    nemo_botmeltn1=${nemo_botmeltn1:='sa_gcm17l_mix14_hsea_gs_chgsign_0001010200-0001020100.nc'}
+#
+#    [ -s snowfall_1m ]  || acc_cp snowfall_1m         $nemo_snowfall
+#    [ -s rainfall_1m ]  || acc_cp rainfall_1m         $nemo_rainfall
+#    [ -s sublim_1m ]    || acc_cp sublim_1m           $nemo_sublim
+#    [ -s topmeltn1_1m ] || acc_cp topmeltn1_1m        $nemo_topmeltn1
+#    [ -s botmeltn1_1m ] || acc_cp botmeltn1_1m        $nemo_botmeltn1
+#  fi
 
   if [ $nemo_carbon -eq 1 ]; then
     # Access PISCES files
@@ -1197,13 +1160,13 @@ echo "#################### Start NEMO pre-processing #################"
     nemo_dust_orca=${nemo_dust_orca:=uncs_orca1_dust.orca.nc}
     nemo_river_orca=${nemo_river_orca:=nemo_3.4_orca2_river.orca.nc}
     nemo_ndeposition_orca=${nemo_ndeposition_orca:=uncs_orca1_ndeposition.orca.nc}
-    nemo_bathy_orca=${nemo_bathy_orca:=uncs_orca1_bathy.orca.nc}
+#    nemo_bathy_orca=${nemo_bathy_orca:=uncs_orca1_bathy.orca.nc}
 
     [ -s presatm.nc ]          || acc_cp presatm.nc           $nemo_presatm
     [ -s dust.orca.nc ]        || acc_cp dust.orca.nc         $nemo_dust_orca
     [ -s river.orca.nc ]       || acc_cp river.orca.nc        $nemo_river_orca
     [ -s ndeposition.orca.nc ] || acc_cp ndeposition.orca.nc  $nemo_ndeposition_orca
-    [ -s bathy.orca.nc ]       || acc_cp bathy.orca.nc        $nemo_bathy_orca
+#    [ -s bathy.orca.nc ]       || acc_cp bathy.orca.nc        $nemo_bathy_orca
 
     if [ $nemo_cmoc -eq 1 ]; then
       nemo_fermask_orca=${nemo_fermask_orca:=nemo_3.4_orca1_femask.orca.nc}
@@ -1241,5 +1204,7 @@ echo "#################### Start NEMO pre-processing #################"
       mod_nl namelist sn_rcv_co2 sn_snd_co2
     fi
   fi 
+
+  rm -f mesh_mask*.nc
 
 echo "#################### Stop NEMO pre-processing #################"

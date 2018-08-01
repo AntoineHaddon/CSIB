@@ -173,7 +173,7 @@ CONTAINS
             zws  = wndm(ji,jj) * wndm(ji,jj)
             ! Compute the piston velocity for O2 and CO2
             zkgwan = 0.3 * zws  + 2.5 * ( 0.5246 + 0.016256 * ztc + 0.00049946  * ztc2 )
-            zkgwan = zkgwan * xconv * ( 1.- fr_i(ji,jj) ) * tmask(ji,jj,1)
+            zkgwan = zkgwan * xconv * ( 1.- fr_i(ji,jj) ) * tmask_bgc_closea(ji,jj,1)
 # if defined key_degrad
             zkgwan = zkgwan * facvol(ji,jj,1)
 #endif 
@@ -186,15 +186,15 @@ CONTAINS
       DO jj = 1, jpj
          DO ji = 1, jpi
             ! Compute CO2 flux for the sea and air
-            zfld = satmco2(ji,jj) * patm(ji,jj) * tmask(ji,jj,1) * chemc(ji,jj,1) * zkgco2(ji,jj)   ! (mol/L) * (m/s)
-            zflu = zh2co3(ji,jj) * tmask(ji,jj,1) * zkgco2(ji,jj)                                   ! (mol/L) (m/s) ?
-            oce_co2(ji,jj) = ( zfld - zflu ) * rfact * e1e2t(ji,jj) * tmask(ji,jj,1) * 1000.
+            zfld = satmco2(ji,jj) * patm(ji,jj) * tmask_bgc_closea(ji,jj,1) * chemc(ji,jj,1) * zkgco2(ji,jj)   ! (mol/L) * (m/s)
+            zflu = zh2co3(ji,jj) * tmask_bgc_closea(ji,jj,1) * zkgco2(ji,jj)                                   ! (mol/L) (m/s) ?
+            oce_co2(ji,jj) = ( zfld - zflu ) * rfact * e1e2t(ji,jj) * tmask_bgc_closea(ji,jj,1) * 1000.
             ! compute the trend
             tra(ji,jj,1,jpdic) = tra(ji,jj,1,jpdic) + ( zfld - zflu ) / fse3t(ji,jj,1)
 
             ! Compute O2 flux 
-            zfld16 = atcox * patm(ji,jj) * chemc(ji,jj,2) * tmask(ji,jj,1) * zkgo2(ji,jj)          ! (mol/L) * (m/s)
-            zflu16 = trn(ji,jj,1,jpoxy) * tmask(ji,jj,1) * zkgo2(ji,jj)
+            zfld16 = atcox * patm(ji,jj) * chemc(ji,jj,2) * tmask_bgc_closea(ji,jj,1) * zkgo2(ji,jj)          ! (mol/L) * (m/s)
+            zflu16 = trn(ji,jj,1,jpoxy) * tmask_bgc_closea(ji,jj,1) * zkgo2(ji,jj)
             zoflx(ji,jj) = zfld16 - zflu16
             tra(ji,jj,1,jpoxy) = tra(ji,jj,1,jpoxy) + zoflx(ji,jj) / fse3t(ji,jj,1)
          END DO
@@ -221,26 +221,30 @@ CONTAINS
       IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('flx ')")
          CALL prt_ctl_trc_info(charout)
-         CALL prt_ctl_trc(tab4d=tra, mask=tmask, clinfo=ctrcnm)
+         CALL prt_ctl_trc(tab4d=tra, mask=tmask_bgc_closea, clinfo=ctrcnm)
       ENDIF
 
       IF( ln_diatrc ) THEN
          IF( lk_iomput ) THEN
             CALL iom_put( "Cflx" , oce_co2(:,:) / e1e2t(:,:) / rfact ) 
-            CALL iom_put( "Oflx" , zoflx(:,:) * 1000 * tmask(:,:,1)  )
-            CALL iom_put( "Kg"   , zkgco2(:,:) * tmask(:,:,1) )
-            CALL iom_put( "Dpco2", ( satmco2(:,:) * patm(:,:) - zh2co3(:,:) / ( chemc(:,:,1) + rtrn ) ) * tmask(:,:,1) )
-            CALL iom_put( "Dpo2" , ( atcox * patm(:,:) - trn(:,:,1,jpoxy) / ( chemc(:,:,2) + rtrn ) )   * tmask(:,:,1) )
+            CALL iom_put( "Oflx" , zoflx(:,:) * 1000 * tmask_bgc_closea(:,:,1)  )
+            CALL iom_put( "Kg"   , zkgco2(:,:) * tmask_bgc_closea(:,:,1) )
+            CALL iom_put( "Dpco2", ( satmco2(:,:) * patm(:,:) - zh2co3(:,:) / ( chemc(:,:,1) + rtrn ) ) * tmask_bgc_closea(:,:,1) )
+            CALL iom_put( "Dpo2" , ( atcox * patm(:,:) - trn(:,:,1,jpoxy) / ( chemc(:,:,2) + rtrn ) )   * tmask_bgc_closea(:,:,1) )
             zph3d = -1. * LOG10( hi(:,:,:) )
             zph3d(:,:,2:) = 0._wp
-            CALL iom_put( "PH"    , zph3d * tmask(:,:,:) )
+            CALL iom_put( "PH"    , zph3d * tmask_bgc_closea(:,:,:) )
          ELSE
             trc2d(:,:,jp_pcs0_2d    ) = oce_co2(:,:) / e1e2t(:,:) / rfact 
-            trc2d(:,:,jp_pcs0_2d + 1) = zoflx(:,:) * 1000 * tmask(:,:,1) 
-            trc2d(:,:,jp_pcs0_2d + 2) = zkgco2(:,:) * tmask(:,:,1) 
-            trc2d(:,:,jp_pcs0_2d + 3) = ( satmco2(:,:) * patm(:,:) - zh2co3(:,:) / ( chemc(:,:,1) + rtrn ) ) * tmask(:,:,1) 
+            trc2d(:,:,jp_pcs0_2d + 1) = zoflx(:,:) * 1000 * tmask_bgc_closea(:,:,1) 
+            trc2d(:,:,jp_pcs0_2d + 2) = zkgco2(:,:) * tmask_bgc_closea(:,:,1) 
+            trc2d(:,:,jp_pcs0_2d + 3) = ( satmco2(:,:) * patm(:,:) - zh2co3(:,:) / ( chemc(:,:,1) + rtrn ) ) * tmask_bgc_closea(:,:,1) 
          ENDIF
       ENDIF
+
+#if defined key_cpl_carbon_cycle
+      oce_co2(:,:) = oce_co2(:,:) / e1e2t(:,:) / rfact
+#endif
       !
       CALL wrk_dealloc( jpi, jpj, zkgco2, zkgo2, zh2co3, zoflx )
       CALL wrk_dealloc( jpi, jpj, jpk, zph3d )
