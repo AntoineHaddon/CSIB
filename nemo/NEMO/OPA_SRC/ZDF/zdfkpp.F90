@@ -1,11 +1,11 @@
 MODULE zdfkpp
    !!======================================================================
    !!                       ***  MODULE  zdfkpp  ***
-   !! Ocean physics:  vertical mixing coefficient compute from the KPP 
+   !! Ocean physics:  vertical mixing coefficient compute from the KPP
    !!                 turbulent closure parameterization
    !!=====================================================================
    !! History :  OPA  ! 2000-03 (W.G. Large, J. Chanut) Original code
-   !!            8.1  ! 2002-06 (J.M. Molines) for real case CLIPPER  
+   !!            8.1  ! 2002-06 (J.M. Molines) for real case CLIPPER
    !!            8.2  ! 2003-10 (Chanut J.) re-writting
    !!   NEMO     1.0  ! 2005-01 (C. Ethe, G. Madec) Free form, F90 + creation of tra_kpp routine
    !!            3.3  ! 2010-10 (C. Ethe, G. Madec) reorganisation of initialisation phase + merge TRC-TRA
@@ -19,7 +19,7 @@ MODULE zdfkpp
    !!   tra_kpp      : compute and add to the T & S trend the non-local flux
    !!   trc_kpp      : compute and add to the passive tracer trend the non-local flux (lk_top=T)
    !!----------------------------------------------------------------------
-   USE oce             ! ocean dynamics and active tracers 
+   USE oce             ! ocean dynamics and active tracers
    USE dom_oce         ! ocean space and time domain
    USE zdf_oce         ! ocean vertical physics
    USE sbc_oce         ! surface boundary condition: ocean
@@ -35,6 +35,7 @@ MODULE zdfkpp
    USE trdtra          ! tracers trends
    USE timing          ! Timing
    USE lib_fortran     ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
+   USE checksums, only : ln_chksum, after_ts_chksum
 
    IMPLICIT NONE
    PRIVATE
@@ -62,14 +63,14 @@ MODULE zdfkpp
 
 #if defined key_zdfddm
    !                                        !!! ** Double diffusion Mixing
-   REAL(wp) ::   difssf  = 1.e-03_wp         ! maximum salt fingering mixing 
-   REAL(wp) ::   Rrho0   = 1.9_wp            ! limit for salt  fingering mixing 
+   REAL(wp) ::   difssf  = 1.e-03_wp         ! maximum salt fingering mixing
+   REAL(wp) ::   Rrho0   = 1.9_wp            ! limit for salt  fingering mixing
    REAL(wp) ::   difsdc  = 1.5e-06_wp        ! maximum diffusive convection mixing
 #endif
-   LOGICAL  ::   ln_kpprimix  = .TRUE.       ! Shear instability mixing 
+   LOGICAL  ::   ln_kpprimix  = .TRUE.       ! Shear instability mixing
 
    !                                        !!! ** General constants  **
-   REAL(wp) ::   epsln   = 1.0e-20_wp        ! a small positive number    
+   REAL(wp) ::   epsln   = 1.0e-20_wp        ! a small positive number
    REAL(wp) ::   pthird  = 1._wp/3._wp       ! 1/3
    REAL(wp) ::   pfourth = 1._wp/4._wp       ! 1/4
 
@@ -80,31 +81,31 @@ MODULE zdfkpp
    REAL(wp) ::   rconc2   = 16.0_wp          !         "        "
    REAL(wp) ::   rconcm   = 8.38_wp          ! momentum flux profile fit
    REAL(wp) ::   rconam   = 1.26_wp          !         "       "
-   REAL(wp) ::   rzetam   = -.20_wp          !         "       "       
+   REAL(wp) ::   rzetam   = -.20_wp          !         "       "
    REAL(wp) ::   rconcs   = 98.96_wp         !  scalar  flux profile fit
    REAL(wp) ::   rconas   = -28.86_wp        !         "       "
-   REAL(wp) ::   rzetas   = -1.0_wp          !         "       "  
-   
+   REAL(wp) ::   rzetas   = -1.0_wp          !         "       "
+
    !                                        !!! ** Boundary Layer Depth Diagnostic  **
    REAL(wp) ::   Ricr     = 0.3_wp           ! critical bulk Richardson Number
-   REAL(wp) ::   rcekman  = 0.7_wp           ! coefficient for ekman depth  
-   REAL(wp) ::   rcmonob  = 1.0_wp           ! coefficient for Monin-Obukhov depth 
+   REAL(wp) ::   rcekman  = 0.7_wp           ! coefficient for ekman depth
+   REAL(wp) ::   rcmonob  = 1.0_wp           ! coefficient for Monin-Obukhov depth
    REAL(wp) ::   rconcv   = 1.7_wp           ! ratio of interior buoyancy frequency to its value at entrainment depth
-   REAL(wp) ::   hbf      = 1.0_wp           ! fraction of bound. layer depth to which absorbed solar 
+   REAL(wp) ::   hbf      = 1.0_wp           ! fraction of bound. layer depth to which absorbed solar
       !                                      ! rad. and contributes to surf. buo. forcing
    REAL(wp) ::   Vtc                         ! function of rconcv,rconcs,epsilon,vonk,Ricr
-   
+
    !                                        !!! ** Nonlocal Boundary Layer Mixing **
    REAL(wp) ::   rcstar   = 5.0_wp           ! coefficient for convective nonlocal transport
-   REAL(wp) ::   rcs      = 1.0e-3_wp        ! conversion: mm/s ==> m/s   
+   REAL(wp) ::   rcs      = 1.0e-3_wp        ! conversion: mm/s ==> m/s
    REAL(wp) ::   rcg                         ! non-dimensional coefficient for nonlocal transport
 
 #if ! defined key_kppcustom
-   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:) ::   del     ! array for reference mean values of vertical integration 
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:) ::   del     ! array for reference mean values of vertical integration
 #endif
 
 #if defined key_kpplktb
-   !                                         !!! ** Parameters for lookup table for turbulent velocity scales ** 
+   !                                         !!! ** Parameters for lookup table for turbulent velocity scales **
    INTEGER, PARAMETER ::   nilktb   = 892     ! number of values for zehat in KPP lookup table
    INTEGER, PARAMETER ::   njlktb   = 482     ! number of values for ustar in KPP lookup table
    INTEGER, PARAMETER ::   nilktbm1 = nilktb-1   !
@@ -113,29 +114,29 @@ MODULE zdfkpp
    REAL(wp), DIMENSION(nilktb,njlktb) ::   wmlktb   ! lookup table for the turbulent vertical velocity scale (momentum)
    REAL(wp), DIMENSION(nilktb,njlktb) ::   wslktb   ! lookup table for the turbulent vertical velocity scale (tracers)
 
-   REAL(wp) ::   dehatmin = -4.e-7_wp    ! minimum limit for zhat in lookup table (m3/s3) 
+   REAL(wp) ::   dehatmin = -4.e-7_wp    ! minimum limit for zhat in lookup table (m3/s3)
    REAL(wp) ::   dehatmax = 0._wp        ! maximum limit for zhat in lookup table (m3/s3)
    REAL(wp) ::   ustmin   = 0._wp        ! minimum limit for ustar in lookup table (m/s)
-   REAL(wp) ::   ustmax   = 0.04_wp      ! maximum limit for ustar in lookup table (m/s)    
+   REAL(wp) ::   ustmax   = 0.04_wp      ! maximum limit for ustar in lookup table (m/s)
    REAL(wp) ::   dezehat                 ! delta zhat in lookup table
    REAL(wp) ::   deustar                 ! delta ustar in lookup table
 #endif
-   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:) ::   ratt   ! attenuation coef  (already defines in module traqsr, 
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:) ::   ratt   ! attenuation coef  (already defines in module traqsr,
    !                                    ! but only if the solar radiation penetration is considered)
-   
+
    !                                    !!! * penetrative solar radiation coefficient *
    REAL(wp) ::   rabs = 0.58_wp          ! fraction associated with xsi1
-   REAL(wp) ::   xsi1 = 0.35_wp          ! first depth of extinction 
-   REAL(wp) ::   xsi2 = 23.0_wp          ! second depth of extinction 
-      !                           ! (default values: water type Ib) 
+   REAL(wp) ::   xsi1 = 0.35_wp          ! first depth of extinction
+   REAL(wp) ::   xsi2 = 23.0_wp          ! second depth of extinction
+      !                           ! (default values: water type Ib)
 
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   etmean, eumean, evmean   ! coeff. used for hor. smoothing at t-, u- & v-points
-        
+
 #if defined key_c1d
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   rig    !: gradient Richardson number
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   rib    !: bulk Richardson number
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   buof   !: buoyancy forcing
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   mols   !: moning-Obukhov length scale 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   mols   !: moning-Obukhov length scale
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   ekdp   !: Ekman depth
 #endif
 
@@ -182,30 +183,30 @@ CONTAINS
       !!
       !! ** Method :   The boundary layer depth hkpp is diagnosed at tracer points
       !!      from profiles of buoyancy, and shear, and the surface forcing.
-      !!      Above hbl (sigma=-z/hbl <1) the mixing coefficients are computed from 
+      !!      Above hbl (sigma=-z/hbl <1) the mixing coefficients are computed from
       !!
-      !!                      Kx =  hkpp  Wx(sigma) G(sigma)  
+      !!                      Kx =  hkpp  Wx(sigma) G(sigma)
       !!
       !!             and the non local term ghat = Cs / Ws(sigma) / hkpp
       !!      Below hkpp  the coefficients are the sum of mixing due to internal waves
       !!      shear instability and double diffusion.
       !!
-      !!      -1- Compute the now interior vertical mixing coefficients at all depths. 
-      !!      -2- Diagnose the boundary layer depth. 
-      !!      -3- Compute the now boundary layer vertical mixing coefficients. 
+      !!      -1- Compute the now interior vertical mixing coefficients at all depths.
+      !!      -2- Diagnose the boundary layer depth.
+      !!      -3- Compute the now boundary layer vertical mixing coefficients.
       !!      -4- Compute the now vertical eddy vicosity and diffusivity.
       !!      -5- Smoothing
       !!
-      !!        N.B. The computation is done from jk=2 to jpkm1 
+      !!        N.B. The computation is done from jk=2 to jpkm1
       !!             Surface value of avt avmu avmv are set once a time to zero
       !!             in routine zdf_kpp_init.
       !!
       !! ** Action  :   update the non-local terms ghats
       !!                update avt, avmu, avmv (before vertical eddy coef.)
       !!
-      !! References : Large W.G., Mc Williams J.C. and Doney S.C.              
+      !! References : Large W.G., Mc Williams J.C. and Doney S.C.
       !!         Reviews of Geophysics, 32, 4, November 1994
-      !!         Comments in the code refer to this paper, particularly 
+      !!         Comments in the code refer to this paper, particularly
       !!         the equation number. (LMD94, here after)
       !!----------------------------------------------------------------------
       USE oce     , zviscos => ua   ! temp. array for viscosities use ua as workspace
@@ -222,25 +223,25 @@ CONTAINS
       REAL(wp) ::   zrib, zrinum, zdVsq, zVtsq                      !
       REAL(wp) ::   zehat, zeta, zhrib, zsig, zscale, zwst, zws, zwm   ! Velocity scales
 #if defined key_kpplktb
-      INTEGER ::    il, jl                                          ! Lookup table or Analytical functions 
+      INTEGER ::    il, jl                                          ! Lookup table or Analytical functions
       REAL(wp) ::   ud, zfrac, ufrac, zwam, zwbm, zwas, zwbs        !
 #else
       REAL(wp) ::   zwsun, zwmun, zcons, zconm, zwcons, zwconm      !
 #endif
       REAL(wp) ::   zsr, zbw, ze, zb, zd, zc, zaw, za, zb1, za1, zkw, zk0, zcomp , zrhd,zrhdr,zbvzed   ! In situ density
-#if ! defined key_kppcustom     
+#if ! defined key_kppcustom
       INTEGER  ::   jm                          ! dummy loop indices
       REAL(wp) ::   zr1, zr2, zr3, zr4, zrhop   ! Compression terms
 #endif
       REAL(wp) ::   zflag, ztemp, zrn2, zdep21, zdep32, zdep43
       REAL(wp) ::   zdku2, zdkv2, ze3sqr, zsh2, zri, zfri          ! Interior richardson mixing
       REAL(wp), POINTER, DIMENSION(:,:) ::   zmoek                 ! Moning-Obukov limitation
-      REAL(wp), POINTER, DIMENSION(:)   ::   zmoa, zekman                
+      REAL(wp), POINTER, DIMENSION(:)   ::   zmoa, zekman
       REAL(wp)                          ::   zmob, zek
-      REAL(wp), POINTER, DIMENSION(:,:) ::   zdepw, zdift, zvisc   ! The pipe 
+      REAL(wp), POINTER, DIMENSION(:,:) ::   zdepw, zdift, zvisc   ! The pipe
       REAL(wp), POINTER, DIMENSION(:,:) ::   zdept
       REAL(wp), POINTER, DIMENSION(:,:) ::   zriblk
-      REAL(wp), POINTER, DIMENSION(:)   ::   zhmax, zria, zhbl 
+      REAL(wp), POINTER, DIMENSION(:)   ::   zhmax, zria, zhbl
       REAL(wp) ::   zflagri, zflagek, zflagmo, zflagh, zflagkb   !
       REAL(wp), POINTER, DIMENSION(:)   ::   za2m, za3m, zkmpm, za2t, za3t, zkmpt   ! Shape function (G)
       REAL(wp) ::   zdelta, zdelta2, zdzup, zdzdn, zdzh, zvath, zgat1, zdat1, zkm1m, zkm1t
@@ -274,15 +275,15 @@ CONTAINS
 #endif
 
       zviscos(:,:,:) = 0.
-      zblcm  (:,:  ) = 0. 
+      zblcm  (:,:  ) = 0.
       zdiffut(:,:,:) = 0.
-      zblct  (:,:  ) = 0. 
+      zblct  (:,:  ) = 0.
 #if defined key_zdfddm
       zdiffus(:,:,:) = 0.
-      zblcs  (:,:  ) = 0. 
+      zblcs  (:,:  ) = 0.
 #endif
       ghats(:,:,:) = 0.
-     
+
       zBo   (:,:) = 0.
       zBosol(:,:) = 0.
       zustar(:,:) = 0.
@@ -290,49 +291,49 @@ CONTAINS
 
       !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
       ! I. Interior diffusivity and viscosity at w points ( T interfaces)
-      !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  
+      !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
       DO jk = 2, jpkm1
          DO jj = 2, jpjm1
-            DO ji = fs_2, fs_jpim1 
+            DO ji = fs_2, fs_jpim1
                ! Mixing due to internal waves breaking
                ! -------------------------------------
-               avmu(ji,jj,jk)  = rn_difmiw 
-               avt (ji,jj,jk)  = rn_difsiw             
+               avmu(ji,jj,jk)  = rn_difmiw
+               avt (ji,jj,jk)  = rn_difsiw
                ! Mixing due to vertical shear instability
-               ! -------------------------------------               
-               IF( ln_kpprimix ) THEN          
+               ! -------------------------------------
+               IF( ln_kpprimix ) THEN
                   ! Compute the gradient Richardson  number at interfaces (zri):
                   ! LMD94, eq. 27 (is vertical smoothing needed : Rig=N^2 / (dz(u))^2 + (dz(v))^2
                   zdku2 =   ( un(ji - 1,jj,jk - 1) - un(ji - 1,jj,jk) ) &
                      &    * ( un(ji - 1,jj,jk - 1) - un(ji - 1,jj,jk) ) &
                      &    + ( un(ji    ,jj,jk - 1) - un(ji    ,jj,jk) ) &
-                     &    * ( un(ji    ,jj,jk - 1) - un(ji    ,jj,jk) )  
-                  
+                     &    * ( un(ji    ,jj,jk - 1) - un(ji    ,jj,jk) )
+
                   zdkv2 =   ( vn(ji,jj - 1,jk - 1) - vn(ji,jj - 1,jk) ) &
                      &    * ( vn(ji,jj - 1,jk - 1) - vn(ji,jj - 1,jk) ) &
                      &    + ( vn(ji,    jj,jk - 1) - vn(ji,    jj,jk) ) &
-                     &    * ( vn(ji,    jj,jk - 1) - vn(ji,    jj,jk) )  
+                     &    * ( vn(ji,    jj,jk - 1) - vn(ji,    jj,jk) )
 
                   ze3sqr = 1. / ( fse3w(ji,jj,jk) * fse3w(ji,jj,jk) )
                   ! Square of vertical shear  at interfaces
                   zsh2   = 0.5 * ( zdku2 + zdkv2 ) * ze3sqr
-                  zri    = MAX( rn2(ji,jj,jk), 0. ) / ( zsh2 + epsln ) 
+                  zri    = MAX( rn2(ji,jj,jk), 0. ) / ( zsh2 + epsln )
 #if defined key_c1d
                   ! save the gradient richardson number
                   rig(ji,jj,jk) = zri * tmask(ji,jj,jk)
-#endif                  
+#endif
                   ! Evaluate f of Ri (zri) for shear instability store in zfri
                   ! LMD94, eq. 28a,b,c, figure 3 ; Rem: p1 is 3, hard coded
                   zfri  = MAX( zri , 0. )
                   zfri  = MIN( zfri / rn_riinfty , 1.0 )
                   zfri  = ( 1.0 - zfri * zfri )
                   zfri  = zfri * zfri  * zfri
-                  ! add shear contribution to mixing coef. 
-                  avmu(ji,jj,jk) =  avmu(ji,jj,jk) + rn_difri * zfri   
-                  avt (ji,jj,jk) =  avt (ji,jj,jk) + rn_difri * zfri    
+                  ! add shear contribution to mixing coef.
+                  avmu(ji,jj,jk) =  avmu(ji,jj,jk) + rn_difri * zfri
+                  avt (ji,jj,jk) =  avt (ji,jj,jk) + rn_difri * zfri
                ENDIF
-#if defined key_zdfddm 
-               avs (ji,jj,jk) =  avt (ji,jj,jk)              
+#if defined key_zdfddm
+               avs (ji,jj,jk) =  avt (ji,jj,jk)
                !  Double diffusion mixing ; NOT IN ROUTINE ZDFDDM.F90
                ! ------------------------------------------------------------------
                ! only retains positive value of rrau
@@ -348,33 +349,33 @@ CONTAINS
                   ! of temperature
                   zavdds = MIN( zrrau, Rrho0 )
                   zavdds = ( zavdds - 1.0 ) / ( Rrho0 - 1.0 )
-                  zavdds = 1.0 - zavdds * zavdds 
-                  zavdds = zavdds * zavdds * zavdds 
-                  zavdds = difssf * zavdds 
+                  zavdds = 1.0 - zavdds * zavdds
+                  zavdds = zavdds * zavdds * zavdds
+                  zavdds = difssf * zavdds
                   zavddt = 0.7 * zavdds
                ELSEIF( zrrau < 1. .AND. zrrau > 0. .AND. zds < 0.) THEN
                   !
                   ! Diffusive convection case.
                   !---------------------------
                   ! Compute interior diffusivity for double diffusive mixing of
-                  ! temperature (Marmorino and Caldwell, 1976); 
-                  ! Compute interior diffusivity for double diffusive mixing of salinity 
+                  ! temperature (Marmorino and Caldwell, 1976);
+                  ! Compute interior diffusivity for double diffusive mixing of salinity
                   zinr   = 1. / zrrau
-                  zavddt = 0.909 * EXP( 4.6 * EXP( -0.54* ( zinr - 1. ) ) ) 
+                  zavddt = 0.909 * EXP( 4.6 * EXP( -0.54* ( zinr - 1. ) ) )
                   zavddt = difsdc * zavddt
                   IF( zrrau < 0.5) THEN
                      zavdds = zavddt * 0.15 * zrrau
                   ELSE
-                     zavdds = zavddt * (1.85 * zrrau - 0.85 ) 
+                     zavdds = zavddt * (1.85 * zrrau - 0.85 )
                   ENDIF
                ELSE
                   zavddt = 0.
                   zavdds = 0.
-               ENDIF 
+               ENDIF
                ! Add double diffusion contribution to temperature and salinity  mixing coefficients.
-               avt (ji,jj,jk) =  avt (ji,jj,jk) +  zavddt 
-               avs (ji,jj,jk) =  avs (ji,jj,jk) +  zavdds         
-#endif                      
+               avt (ji,jj,jk) =  avt (ji,jj,jk) +  zavddt
+               avs (ji,jj,jk) =  avs (ji,jj,jk) +  zavdds
+#endif
             END DO
          END DO
       END DO
@@ -384,8 +385,8 @@ CONTAINS
       !JMM at the time zdfkpp is called, q still holds the sum q + qsr
       !---------------------------------------------------------------------
       DO jj = 2, jpjm1
-         DO ji = fs_2, fs_jpim1     
-            IF( nn_eos < 1) THEN   
+         DO ji = fs_2, fs_jpim1
+            IF( nn_eos < 1) THEN
                zt     = tsn(ji,jj,1,jp_tem)
                zs     = tsn(ji,jj,1,jp_sal) - 35.0
                zh     = fsdept(ji,jj,1)
@@ -426,35 +427,35 @@ CONTAINS
             ! Radiative surface buoyancy force
             zBosol(ji,jj) = grav * zthermal * qsr(ji,jj)
             ! Non radiative surface buoyancy force
-            zBo   (ji,jj) = grav * zthermal * qns(ji,jj) -  grav * zhalin * ( emps(ji,jj)-rnf(ji,jj) ) 
+            zBo   (ji,jj) = grav * zthermal * qns(ji,jj) -  grav * zhalin * ( emps(ji,jj)-rnf(ji,jj) )
             ! Surface Temperature flux for non-local term
             wt0(ji,jj) = - ( qsr(ji,jj) + qns(ji,jj) )* ro0cpr * tmask(ji,jj,1)
             ! Surface salinity flux for non-local term
-            ws0(ji,jj) = - ( ( emps(ji,jj)-rnf(ji,jj) ) * tsn(ji,jj,1,jp_sal) * rcs ) * tmask(ji,jj,1) 
+            ws0(ji,jj) = - ( ( emps(ji,jj)-rnf(ji,jj) ) * tsn(ji,jj,1,jp_sal) * rcs ) * tmask(ji,jj,1)
          ENDDO
       ENDDO
 
-      zflageos = 0.5 + SIGN( 0.5, nn_eos - 1. ) 
-      !  Compute surface buoyancy forcing, Monin Obukhov and Ekman depths  
-      !------------------------------------------------------------------    
+      zflageos = 0.5 + SIGN( 0.5, nn_eos - 1. )
+      !  Compute surface buoyancy forcing, Monin Obukhov and Ekman depths
+      !------------------------------------------------------------------
       DO jj = 2, jpjm1
          DO ji = fs_2, fs_jpim1
-            !  Reference surface density = density at first T point level   
-            zrhos         = rhop(ji,jj,1) + zflageos * rau0 * ( 1. - tmask(ji,jj,1) )  
+            !  Reference surface density = density at first T point level
+            zrhos         = rhop(ji,jj,1) + zflageos * rau0 * ( 1. - tmask(ji,jj,1) )
             ! Friction velocity (zustar), at T-point : LMD94 eq. 2
             zustar(ji,jj) = SQRT( taum(ji,jj) / ( zrhos +  epsln ) )
          ENDDO
       ENDDO
 
-!CDIR NOVERRCHK  
+!CDIR NOVERRCHK
       !                                               ! ===============
       DO jj = 2, jpjm1                                 !  Vertical slab
          !                                             ! ===============
-         
+
          !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
          ! II Compute Boundary layer mixing coef. and diagnose the new boundary layer depth
          !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-         
+
          ! Initialization
          jkmax       = 0
          zdept (:,:) = 0.
@@ -471,12 +472,12 @@ CONTAINS
             zria(ji ) = 0.
             ! Maximum boundary layer depth
             ikbot     = mbkt(ji,jj)    ! ikbot is the last T point in the water
-            zhmax(ji) = fsdept(ji,jj,ikbot) - 0.001      
+            zhmax(ji) = fsdept(ji,jj,ikbot) - 0.001
             ! Compute Monin obukhov length scale at the surface and Ekman depth:
             zbuofdep   = zBo(ji,jj) + zBosol(ji,jj) * ratt(1)
             zekman(ji) = rcekman * zustar(ji,jj) / ( ABS( ff(ji,jj) ) + epsln )
-            zucube     = zustar(ji,jj) * zustar(ji,jj) * zustar(ji,jj) 
-            zmoa(ji)   = zucube / ( vonk * ( zbuofdep + epsln ) )   
+            zucube     = zustar(ji,jj) * zustar(ji,jj) * zustar(ji,jj)
+            zmoa(ji)   = zucube / ( vonk * ( zbuofdep + epsln ) )
 #if defined key_c1d
             ! store the surface buoyancy forcing
             zstabl        = 0.5 + SIGN( 0.5, zbuofdep )
@@ -485,10 +486,10 @@ CONTAINS
             zmob          = zstabl * zmoa(ji) + ( 1.0 - zstabl ) * fsdept(ji,jj,1)
             mols(ji,jj,1) = MIN( zmob , zhmax(ji) ) * tmask(ji,jj,1)
             ! store Ekman depth
-            zek           = zstabl * zekman(ji) + ( 1.0 - zstabl ) * fsdept(ji,jj,1)  
-            ekdp(ji,jj )  = MIN( zek , zhmax(ji) ) * tmask(ji,jj,1)  
-#endif 
-         END DO     
+            zek           = zstabl * zekman(ji) + ( 1.0 - zstabl ) * fsdept(ji,jj,1)
+            ekdp(ji,jj )  = MIN( zek , zhmax(ji) ) * tmask(ji,jj,1)
+#endif
+         END DO
          ! Compute the pipe
          ! ---------------------
          DO jk = 2, jpkm1
@@ -498,13 +499,13 @@ CONTAINS
                ! Flag (zstabl  = 1) if positive forcing
                zstabl   =  0.5 + SIGN(  0.5, zbuofdep)
 
-               !   Compute bulk richardson number zrib at depht 
+               !   Compute bulk richardson number zrib at depht
                !-------------------------------------------------------
                !                           [Br - B(d)] * d         zrinum
                !             Rib(z) = ----------------------- = -------------
                !                       |Vr - V(d)|^2 + Vt(d)^2   zdVsq + zVtsq
                !
-               ! First compute zt,zs,zu,zv = means in the surface layer < epsilon*depht  
+               ! First compute zt,zs,zu,zv = means in the surface layer < epsilon*depht
                ! Else surface values are taken at the first T level.
                ! For stability, resolved vertical shear is computed with "before velocities".
                zref = epsilon * fsdept(ji,jj,jk)
@@ -542,18 +543,18 @@ CONTAINS
                ze  = ( -3.508914e-8*zt-1.248266e-8 ) *zt-2.595994e-6
                zbw = (  1.296821e-6*zt-5.782165e-9 ) *zt+1.045941e-4
                zb  = zbw + ze * zs
-               
+
                zd  = -2.042967e-2
                zc  =   (-7.267926e-5*zt+2.598241e-3 ) *zt+0.1571896
                zaw = ( ( 5.939910e-6*zt+2.512549e-3 ) *zt-0.1028859 ) *zt - 4.721788
                za  = ( zd*zsr + zc ) *zs + zaw
-               
+
                zb1 =   (-0.1909078*zt+7.390729 ) *zt-55.87545
                za1 = ( ( 2.326469e-3*zt+1.553190)*zt-65.00517 ) *zt+1044.077
                zkw = ( ( (-1.361629e-4*zt-1.852732e-2 ) *zt-30.41638 ) *zt + 2098.925 ) *zt+190925.6
                zk0 = ( zb1*zsr + za1 )*zs + zkw
                zcomp =   1.0 - zh / ( zk0 - zh * ( za - zh * zb ) )
-               
+
 #if defined key_kppcustom
                ! potential density of water(zrh = zt,zs at level jk):
                zrhdr = zrh / zcomp
@@ -567,36 +568,36 @@ CONTAINS
                   zr2= ( ( ( 5.3875e-9*zt-8.2467e-7 ) *zt+7.6438e-5 ) *zt   &
                      &   -4.0899e-3 ) *zt+0.824493
                   zr3= ( -1.6546e-6*zt+1.0227e-4 ) *zt-5.72466e-3
-                  zr4= 4.8314e-4              
+                  zr4= 4.8314e-4
                   ! potential volumic mass (reference to the surface)
-                  zrhop= ( zr4*zs + zr3*zsr + zr2 ) *zs + zr1                 
+                  zrhop= ( zr4*zs + zr3*zsr + zr2 ) *zs + zr1
                   zrhdr = zrhop / zcomp
                ELSE
                   zrhdr = zrh / zcomp
                ENDIF
 #endif
-               
+
                ! potential density of ambiant water at level jk :
-               zrhd   = ( rhd(ji,jj,jk) * rau0 + rau0 )  
-               
+               zrhd   = ( rhd(ji,jj,jk) * rau0 + rau0 )
+
                ! And now the Rib number numerator .
                zrinum = grav * ( zrhd - zrhdr ) / rau0
                zrinum = zrinum * ( fsdept(ji,jj,jk) - zref ) * tmask(ji,jj,jk)
-           
+
                ! Resolved shear contribution to Rib at depth T-point (zdVsq)
                ztx    =   ( ub( ji , jj ,jk)   +  ub(ji - 1, jj ,jk) ) &
-                  &     / MAX( 1. , umask( ji , jj ,jk) + umask(ji - 1, jj ,jk) )   
+                  &     / MAX( 1. , umask( ji , jj ,jk) + umask(ji - 1, jj ,jk) )
                zty    =   ( vb( ji , jj ,jk)   +  vb(ji  ,jj - 1,jk) ) &
-                  &     / MAX( 1., vmask( ji , jj ,jk) + vmask(ji  ,jj - 1,jk) ) 
-               
+                  &     / MAX( 1., vmask( ji , jj ,jk) + vmask(ji  ,jj - 1,jk) )
+
                zdVsq  = ( zu - ztx ) * ( zu - ztx ) + ( zv - zty ) * ( zv - zty )
-               
+
                ! Scalar turbulent velocity scale zws for hbl=gdept
                zscale = zstabl + ( 1.0 - zstabl ) * epsilon
                zehat  = vonk * zscale * fsdept(ji,jj,jk) * zbuofdep
-               zucube = zustar(ji,jj) * zustar(ji,jj) * zustar(ji,jj)              
+               zucube = zustar(ji,jj) * zustar(ji,jj) * zustar(ji,jj)
                zeta   = zehat / ( zucube + epsln )
-               
+
                IF( zehat > 0. ) THEN
                   ! Stable case
                   zws  = vonk * zustar(ji,jj) / ( 1.0 + rconc1 * zeta )
@@ -608,13 +609,13 @@ CONTAINS
                   il     = INT( zd / dezehat )
                   il     = MIN( il, nilktbm1 )
                   il     = MAX( il, 1 )
-                  
+
                   ud     = zustar(ji,jj) - ustmin
                   jl     = INT( ud / deustar )
                   jl     = MIN( jl, njlktbm1 )
                   jl     = MAX( jl, 1 )
-                  
-                  zfrac  = zd / dezehat - FLOAT( il )  
+
+                  zfrac  = zd / dezehat - FLOAT( il )
                   ufrac  = ud / deustar - FLOAT( jl )
                   zwas   = ( 1. - zfrac ) * wslktb(il,jl+1) + zfrac * wslktb(il+1,jl+1)
                   zwbs   = ( 1. - zfrac ) * wslktb(il,jl  ) + zfrac * wslktb(il+1,jl  )
@@ -623,39 +624,39 @@ CONTAINS
 #else
                   ! use analytical functions:
                   zcons  = 0.5 + SIGN( 0.5 , ( rzetas - zeta ) )
-                  zwcons = vonk * zustar(ji,jj) * ( ( ABS( rconas - rconcs * zeta ) )**pthird ) 
+                  zwcons = vonk * zustar(ji,jj) * ( ( ABS( rconas - rconcs * zeta ) )**pthird )
                   zwsun  = vonk * zustar(ji,jj) * SQRT( ABS ( 1.0 - rconc2 * zeta ) )
                   !
                   zws    = zcons * zwcons +  ( 1.0 - zcons) * zwsun
 #endif
                ENDIF
-               
+
                ! Turbulent shear contribution to Rib (zVtsq) bv frequency at levels  ( ie T-point jk)
-               zrn2   = 0.5 * ( rn2(ji,jj,jk) + rn2(ji,jj,jk+1) )   
-               zbvzed = SQRT( ABS( zrn2 ) ) 
+               zrn2   = 0.5 * ( rn2(ji,jj,jk) + rn2(ji,jj,jk+1) )
+               zbvzed = SQRT( ABS( zrn2 ) )
                zVtsq  = fsdept(ji,jj,jk) * zws * zbvzed  * Vtc
-               
-               ! Finally, the bulk Richardson number at depth fsdept(i,j,k) 
+
+               ! Finally, the bulk Richardson number at depth fsdept(i,j,k)
                zrib  = zrinum   / ( zdVsq + zVtsq + epsln )
- 
+
                ! Find subscripts around the boundary layer depth, build the pipe
                ! ----------------------------------------------------------------
 
-               ! Flag (zflagri = 1) if zrib < Ricr  
+               ! Flag (zflagri = 1) if zrib < Ricr
                zflagri = 0.5 + SIGN( 0.5, ( Ricr - zrib ) )
                !  Flag (zflagh  = 1) if still within overall boundary layer
                zflagh  = 0.5 + SIGN( 0.5, ( fsdept(ji,jj,1) - zdept(ji,2) ) )
-               
+
                ! Ekman layer depth
                zek     = zstabl * zekman(ji) + ( 1.0 - zstabl ) * zhmax(ji)
                zflag   = 0.5 + SIGN( 0.5, ( zek - fsdept(ji,jj,jk-1) ) )
                zek     = zflag * zek + ( 1.0 - zflag ) * zhmax(ji)
                zflagek = 0.5 + SIGN( 0.5, ( zek - fsdept(ji,jj,jk) ) )
                ! Flag (zflagmo = 1) if still within stable Monin-Obukhov and in water
-               zmob    = zucube / ( vonk * ( zbuofdep + epsln ) )  
+               zmob    = zucube / ( vonk * ( zbuofdep + epsln ) )
                ztemp   = zstabl * zmob + ( 1.0 - zstabl) * zhmax(ji)
-               ztemp   = MIN( ztemp , zhmax(ji) ) 
-               zflagmo = 0.5 + SIGN( 0.5, ( ztemp - fsdept(ji,jj,jk) ) )             
+               ztemp   = MIN( ztemp , zhmax(ji) )
+               zflagmo = 0.5 + SIGN( 0.5, ( ztemp - fsdept(ji,jj,jk) ) )
 
                ! No limitation by Monin Obukhov or Ekman depths:
 !               zflagek = 1.0
@@ -668,31 +669,31 @@ CONTAINS
                zmask(ji,jk) = zflagh
                jkp2         = MIN( jk+2 , ikbot )
                jkm1         = MAX( jk-1 , 2 )
-               jkmax        = MAX( jkmax, jk * INT( REAL( zflagh+epsln ) ) ) 
+               jkmax        = MAX( jkmax, jk * INT( REAL( zflagh+epsln ) ) )
 
-               zdept(ji,1)  = zdept(ji,1) + zflagkb * fsdept(ji,jj,jk-1) 
-               zdept(ji,2)  = zdept(ji,2) + zflagkb * fsdept(ji,jj,jk  ) 
-               zdept(ji,3)  = zdept(ji,3) + zflagkb * fsdept(ji,jj,jk+1) 
+               zdept(ji,1)  = zdept(ji,1) + zflagkb * fsdept(ji,jj,jk-1)
+               zdept(ji,2)  = zdept(ji,2) + zflagkb * fsdept(ji,jj,jk  )
+               zdept(ji,3)  = zdept(ji,3) + zflagkb * fsdept(ji,jj,jk+1)
 
-               zdepw(ji,1)  = zdepw(ji,1) + zflagkb * fsdepw(ji,jj,jk-1) 
-               zdepw(ji,2)  = zdepw(ji,2) + zflagkb * fsdepw(ji,jj,jk  ) 
+               zdepw(ji,1)  = zdepw(ji,1) + zflagkb * fsdepw(ji,jj,jk-1)
+               zdepw(ji,2)  = zdepw(ji,2) + zflagkb * fsdepw(ji,jj,jk  )
                zdepw(ji,3)  = zdepw(ji,3) + zflagkb * fsdepw(ji,jj,jk+1)
-               zdepw(ji,4)  = zdepw(ji,4) + zflagkb * fsdepw(ji,jj,jkp2)  
+               zdepw(ji,4)  = zdepw(ji,4) + zflagkb * fsdepw(ji,jj,jkp2)
 
                zriblk(ji,1) = zriblk(ji,1) + zflagkb * zria(ji)
                zriblk(ji,2) = zriblk(ji,2) + zflagkb * zrib
 
                zmoek (ji,0) = zmoek (ji,0) + zflagkb * zek
                zmoek (ji,1) = zmoek (ji,1) + zflagkb * zmoa(ji)
-               zmoek (ji,2) = zmoek (ji,2) + zflagkb * ztemp  
+               zmoek (ji,2) = zmoek (ji,2) + zflagkb * ztemp
                ! Save Monin Obukhov depth
                zmoa  (ji)   = zmob
-           
+
                zvisc(ji,1) = zvisc(ji,1) + zflagkb * avmu(ji,jj,jkm1)
                zvisc(ji,2) = zvisc(ji,2) + zflagkb * avmu(ji,jj,jk  )
                zvisc(ji,3) = zvisc(ji,3) + zflagkb * avmu(ji,jj,jk+1)
                zvisc(ji,4) = zvisc(ji,4) + zflagkb * avmu(ji,jj,jkp2)
-               
+
                zdift(ji,1) = zdift(ji,1) + zflagkb * avt (ji,jj,jkm1)
                zdift(ji,2) = zdift(ji,2) + zflagkb * avt (ji,jj,jk  )
                zdift(ji,3) = zdift(ji,3) + zflagkb * avt (ji,jj,jk+1)
@@ -703,76 +704,76 @@ CONTAINS
                zdifs(ji,2) = zdifs(ji,2) + zflagkb * avs (ji,jj,jk  )
                zdifs(ji,3) = zdifs(ji,3) + zflagkb * avs (ji,jj,jk+1)
                zdifs(ji,4) = zdifs(ji,4) + zflagkb * avs (ji,jj,jkp2)
-#endif               
-               ! Save the Richardson number 
-               zria  (ji)   = zrib  
+#endif
+               ! Save the Richardson number
+               zria  (ji)   = zrib
 #if defined key_c1d
                ! store buoyancy length scale
-               buof(ji,jj,jk) = zbuofdep * tmask(ji,jj,jk) 
+               buof(ji,jj,jk) = zbuofdep * tmask(ji,jj,jk)
                ! store Monin Obukhov
                zmob           = zstabl * zmob + ( 1.0 - zstabl) * fsdept(ji,jj,1)
-               mols(ji,jj,jk) = MIN( zmob , zhmax(ji) ) * tmask(ji,jj,jk) 
+               mols(ji,jj,jk) = MIN( zmob , zhmax(ji) ) * tmask(ji,jj,jk)
                ! Bulk Richardson number
-               rib(ji,jj,jk)  = zrib * tmask(ji,jj,jk)             
-#endif               
+               rib(ji,jj,jk)  = zrib * tmask(ji,jj,jk)
+#endif
             END DO
          END DO
          !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
          ! III PROCESS THE PIPE
          !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-         
-         DO ji = fs_2, fs_jpim1 
-            
+
+         DO ji = fs_2, fs_jpim1
+
             ! Find the boundary layer depth zhbl
             ! ----------------------------------------
-            
-            ! Interpolate monin Obukhov and critical Ri mumber depths   
+
+            ! Interpolate monin Obukhov and critical Ri mumber depths
             ztemp = zdept(ji,2) - zdept(ji,1)
             zflag = ( Ricr - zriblk(ji,1) ) / ( zriblk(ji,2) - zriblk(ji,1)  + epsln )
-            zhrib = zdept(ji,1) + zflag * ztemp      
+            zhrib = zdept(ji,1) + zflag * ztemp
 
-            IF( zriblk(ji,2) < Ricr ) zhrib = zhmax(ji) 
-         
+            IF( zriblk(ji,2) < Ricr ) zhrib = zhmax(ji)
+
             IF( zmoek(ji,2) < zdept(ji,2) ) THEN
                IF ( zmoek(ji,1) < 0. ) THEN
                   zmob = zdept(ji,2) - epsln
                ELSE
                   zmob = ztemp + zmoek(ji,1) - zmoek(ji,2)
                   zmob = ( zmoek(ji,1) * zdept(ji,2) - zmoek(ji,2) * zdept(ji,1) ) / zmob
-                  zmob = MAX( zmob , zdept(ji,1) + epsln )                
+                  zmob = MAX( zmob , zdept(ji,1) + epsln )
                ENDIF
-            ELSE           
-               zmob = zhmax(ji) 
+            ELSE
+               zmob = zhmax(ji)
             ENDIF
             ztemp   = MIN( zmob , zmoek(ji,0) )
-                         
-            ! Finally, the boundary layer depth, zhbl 
+
+            ! Finally, the boundary layer depth, zhbl
             zhbl(ji) = MAX( fsdept(ji,jj,1) + epsln, MIN( zhrib , ztemp ) )
-            
+
             ! Save hkpp for further diagnostics (optional)
-            hkpp(ji,jj) = zhbl(ji) * tmask(ji,jj,1) 
-          
+            hkpp(ji,jj) = zhbl(ji) * tmask(ji,jj,1)
+
             ! Correct mask if zhbl < fsdepw(ji,jj,2) for no viscosity/diffusivity enhancement at fsdepw(ji,jj,2)
             !     zflag = 1 if zhbl(ji) > fsdepw(ji,jj,2)
             IF( zhbl(ji) < fsdepw(ji,jj,2) ) zmask(ji,2) = 0.
-          
-            
+
+
             !  Velocity scales at depth zhbl
             ! -----------------------------------
-            
+
             !  Compute bouyancy forcing down to zhbl
             ztemp    = -hbf * zhbl(ji)
             zatt1    = 1.0 - ( rabs * EXP( ztemp / xsi1 ) + ( 1.0 - rabs ) * EXP( ztemp / xsi2 ) )
             zbuofdep = zBo(ji,jj) + zBosol(ji,jj) * zatt1
-            zstabl   = 0.5 + SIGN( 0.5 , zbuofdep ) 
+            zstabl   = 0.5 + SIGN( 0.5 , zbuofdep )
 
             zbuofdep = zbuofdep + zstabl * epsln
 
-            zscale = zstabl + ( 1.0 - zstabl ) * epsilon          
+            zscale = zstabl + ( 1.0 - zstabl ) * epsilon
             zehat  = vonk * zscale * zhbl(ji) * zbuofdep
-            zucube = zustar(ji,jj) * zustar(ji,jj) * zustar(ji,jj)              
+            zucube = zustar(ji,jj) * zustar(ji,jj) * zustar(ji,jj)
             zeta   = zehat / ( zucube + epsln )
-            
+
             IF( zehat > 0. ) THEN
                ! Stable case
                zws  = vonk * zustar(ji,jj) / ( 1.0 + rconc1 * zeta )
@@ -785,13 +786,13 @@ CONTAINS
                il     = INT( zd / dezehat )
                il     = MIN( il, nilktbm1 )
                il     = MAX( il, 1 )
-               
+
                ud     = zustar(ji,jj) - ustmin
                jl     = INT( ud / deustar )
                jl     = MIN( jl, njlktbm1 )
                jl     = MAX( jl, 1 )
-               
-               zfrac  = zd / dezehat - FLOAT( il )  
+
+               zfrac  = zd / dezehat - FLOAT( il )
                ufrac  = ud / deustar - FLOAT( jl )
                zwas   = ( 1. - zfrac ) * wslktb(il,jl+1) + zfrac * wslktb(il+1,jl+1)
                zwbs   = ( 1. - zfrac ) * wslktb(il,jl  ) + zfrac * wslktb(il+1,jl  )
@@ -804,90 +805,90 @@ CONTAINS
                ! use analytical functions
                zconm  = 0.5 + SIGN( 0.5, ( rzetam - zeta) )
                zcons  = 0.5 + SIGN( 0.5, ( rzetas - zeta) )
-               
+
                ! Momentum : zeta < rzetam (zconm = 1)
-               ! Scalars  : zeta < rzetas (zcons = 1) 
+               ! Scalars  : zeta < rzetas (zcons = 1)
                zwconm = zustar(ji,jj) * vonk * ( ( ABS( rconam - rconcm * zeta) )**pthird )
                zwcons = zustar(ji,jj) * vonk * ( ( ABS( rconas - rconcs * zeta) )**pthird )
-               
+
                ! Momentum : rzetam <= zeta < 0 (zconm = 0)
-               ! Scalars  : rzetas <= zeta < 0 (zcons = 0)	
+               ! Scalars  : rzetas <= zeta < 0 (zcons = 0)
                zwmun  = SQRT( ABS( 1.0 - rconc2 * zeta ) )
                zwsun  = vonk * zustar(ji,jj) * zwmun
                zwmun  = vonk * zustar(ji,jj) * SQRT(zwmun)
                !
                zwm    = zconm * zwconm + ( 1.0 - zconm ) * zwmun
                zws    = zcons * zwcons + ( 1.0 - zcons ) * zwsun
-               
+
 #endif
             ENDIF
-            
-            
+
+
             ! Viscosity, diffusivity values and derivatives at h
             ! --------------------------------------------------------
-            
+
             ! check between at which interfaces is located zhbl(ji)
             ! ztemp = 1, zdepw(ji,2) < zhbl <  zdepw(ji,3)
             ! ztemp = 0, zdepw(ji,1) < zhbl <  zdepw(ji,2)
-            ztemp  =  0.5 + SIGN( 0.5, ( zhbl(ji) - zdepw(ji,2) ) )  
+            ztemp  =  0.5 + SIGN( 0.5, ( zhbl(ji) - zdepw(ji,2) ) )
             zdep21 =   zdepw(ji,2) - zdepw(ji,1) + epsln
             zdep32 =   zdepw(ji,3) - zdepw(ji,2) + epsln
-            zdep43 =   zdepw(ji,4) - zdepw(ji,3) + epsln  
-            
+            zdep43 =   zdepw(ji,4) - zdepw(ji,3) + epsln
+
             ! Compute R as in LMD94, eq D5b
             zdelta =  ( zhbl(ji) - zdepw(ji,2) ) *         ztemp   / zdep32   &
-               &    + ( zhbl(ji) - zdepw(ji,1) ) * ( 1.0 - ztemp ) / zdep21 
-            
+               &    + ( zhbl(ji) - zdepw(ji,1) ) * ( 1.0 - ztemp ) / zdep21
+
             ! Compute the vertical derivative of viscosities (zdzh) at z=zhbl(ji)
             zdzup  =  ( zvisc(ji,2) - zvisc(ji,3) ) *         ztemp   / zdep32 &
                &    + ( zvisc(ji,1) - zvisc(ji,2) ) * ( 1.0 - ztemp ) / zdep21
-            
+
             zdzdn  =  ( zvisc(ji,3) - zvisc(ji,4) ) *         ztemp   / zdep43 &
                &    + ( zvisc(ji,2) - zvisc(ji,3) ) * ( 1.0 - ztemp ) / zdep32
-            
-            ! LMD94, eq D5b :          
+
+            ! LMD94, eq D5b :
             zdzh   = ( 1.0 - zdelta ) * zdzup + zdelta * zdzdn
             zdzh   = MAX( zdzh , 0. )
-            
+
             ! Compute viscosities (zvath) at z=zhbl(ji), LMD94 eq D5a
             zvath  =          ztemp   * ( zvisc(ji,3) + zdzh * ( zdepw(ji,3) - zhbl(ji) ) ) &
                &    + ( 1.0 - ztemp ) * ( zvisc(ji,2) + zdzh * ( zdepw(ji,2) - zhbl(ji) ) )
-            
+
             ! Compute G (zgat1) and its derivative (zdat1) at z=hbl(ji), LMD94 eq 18
-            
-            ! Vertical derivative of velocity scale divided by velocity scale squared at z=hbl(ji) 
+
+            ! Vertical derivative of velocity scale divided by velocity scale squared at z=hbl(ji)
             ! (non zero only in stable conditions)
             zflag  =  -zstabl * rconc1 * zbuofdep / ( zucube * zustar(ji,jj) + epsln )
-            
+
             ! G at its derivative at z=hbl:
             zgat1  = zvath  / ( zhbl(ji) * ( zwm + epsln )  )
             zdat1  = -zdzh  / ( zwm + epsln ) -  zflag * zvath / zhbl(ji)
-            
+
             ! G coefficients, LMD94 eq 17
             za2m(ji) = -2.0 + 3.0 * zgat1 - zdat1
             za3m(ji) =  1.0 - 2.0 * zgat1 + zdat1
 
-            
+
             ! Compute the vertical derivative of temperature diffusivities (zdzh) at z=zhbl(ji)
             zdzup  =  ( zdift(ji,2) - zdift(ji,3) ) *         ztemp   / zdep32 &
                &    + ( zdift(ji,1) - zdift(ji,2) ) * ( 1.0 - ztemp ) / zdep21
-            
+
             zdzdn  =  ( zdift(ji,3) - zdift(ji,4) ) *         ztemp   / zdep43 &
                &    + ( zdift(ji,2) - zdift(ji,3) ) * ( 1.0 - ztemp ) / zdep32
-            
-            ! LMD94, eq D5b :          
+
+            ! LMD94, eq D5b :
             zdzh   = ( 1.0 - zdelta ) * zdzup + zdelta * zdzdn
             zdzh   = MAX( zdzh , 0. )
-            
-            
+
+
             ! Compute diffusivities (zvath) at z=zhbl(ji), LMD94 eq D5a
             zvath  =          ztemp   * ( zdift(ji,3) + zdzh * ( zdepw(ji,3) - zhbl(ji) ) ) &
                &    + ( 1.0 - ztemp ) * ( zdift(ji,2) + zdzh * ( zdepw(ji,2) - zhbl(ji) ) )
-                        
+
             ! G at its derivative at z=hbl:
             zgat1  = zvath  / ( zhbl(ji) * ( zws + epsln )  )
             zdat1  = -zdzh  / ( zws + epsln ) -  zflag * zvath / zhbl(ji)
-            
+
             ! G coefficients, LMD94 eq 17
             za2t(ji) = -2.0 + 3.0 * zgat1 - zdat1
             za3t(ji) =  1.0 - 2.0 * zgat1 + zdat1
@@ -896,22 +897,22 @@ CONTAINS
             ! Compute the vertical derivative of salinities diffusivities (zdzh) at z=zhbl(ji)
             zdzup  =  ( zdifs(ji,2) - zdifs(ji,3) ) *         ztemp   / zdep32 &
                &    + ( zdifs(ji,1) - zdifs(ji,2) ) * ( 1.0 - ztemp ) / zdep21
-            
+
             zdzdn  =  ( zdifs(ji,3) - zdifs(ji,4) ) *         ztemp   / zdep43 &
                &    + ( zdifs(ji,2) - zdifs(ji,3) ) * ( 1.0 - ztemp ) / zdep32
-            
-            ! LMD94, eq D5b :          
+
+            ! LMD94, eq D5b :
             zdzh   = ( 1.0 - zdelta ) * zdzup + zdelta * zdzdn
-            zdzh   = MAX( zdzh , 0. )           
-            
+            zdzh   = MAX( zdzh , 0. )
+
             ! Compute diffusivities (zvath) at z=zhbl(ji), LMD94 eq D5a
             zvath  =          ztemp   * ( zdifs(ji,3) + zdzh * ( zdepw(ji,3) - zhbl(ji) ) ) &
                &    + ( 1.0 - ztemp ) * ( zdifs(ji,2) + zdzh * ( zdepw(ji,2) - zhbl(ji) ) )
-                        
+
             ! G at its derivative at z=hbl:
             zgat1  = zvath  / ( zhbl(ji) * ( zws + epsln )  )
             zdat1  = -zdzh  / ( zws + epsln ) -  zflag * zvath / zhbl(ji)
-            
+
             ! G coefficients, LMD94 eq 17
             za2s(ji) = -2.0 + 3.0 * zgat1 - zdat1
             za3s(ji) =  1.0 - 2.0 * zgat1 + zdat1
@@ -923,17 +924,17 @@ CONTAINS
             !          za2(ji,2) = -2.0
             !          za3(ji,2) =  1.0
             !--------------------------------------------------------
-            
+
             !  Compute Enhanced Mixing Coefficients (LMD94,eq D6)
             ! ---------------------------------------------------------------
-            
-            ! Delta 
+
+            ! Delta
             zdelta  = ( zhbl(ji)  - zdept(ji,1) ) / ( zdept(ji,2) - zdept(ji,1) + epsln )
             zdelta2 = zdelta * zdelta
-            
-            !  Mixing coefficients at first level above h (zdept(ji,1)) 
+
+            !  Mixing coefficients at first level above h (zdept(ji,1))
             ! and at first interface in the pipe (zdepw(ji,2))
-            
+
             ! At first T level above h (zdept(ji,1)) (always in the boundary layer)
             zsig    = zdept(ji,1) / zhbl(ji)
             ztemp   = zstabl * zsig  + ( 1.0 - zstabl ) * MIN( zsig , epsilon )
@@ -947,7 +948,7 @@ CONTAINS
             zkm1t  = zhbl(ji) * zws * zsig * ( 1.0 + zsig * ( za2t(ji) + zsig * za3t(ji) ) )
 #if defined key_zdfddm
             zkm1s  = zhbl(ji) * zws * zsig * ( 1.0 + zsig * ( za2s(ji) + zsig * za3s(ji) ) )
-#endif                        
+#endif
             ! At first W level in the pipe (zdepw(ji,2)) (not always in the boundary layer ):
             zsig    = MIN( zdepw(ji,2) / zhbl(ji) , 1.0 )
             ztemp   = zstabl * zsig + ( 1.0 - zstabl ) * MIN( zsig , epsilon )
@@ -961,8 +962,8 @@ CONTAINS
             zkmpt(ji) = zhbl(ji) * zws * zsig * ( 1.0 + zsig * ( za2t(ji) + zsig * za3t(ji) ) )
 #if defined key_zdfddm
             zkmps(ji) = zhbl(ji) * zws * zsig * ( 1.0 + zsig * ( za2s(ji) + zsig * za3s(ji) ) )
-#endif  
-      
+#endif
+
             ! check if this point is in the boundary layer,else take interior viscosity/diffusivity:
             zflag       = 0.5 + SIGN( 0.5, ( zhbl(ji) - zdepw(ji,2) ) )
             zkmpm(ji) = zkmpm(ji) * zflag + ( 1.0 - zflag ) * zvisc(ji,2)
@@ -979,21 +980,21 @@ CONTAINS
 #if defined key_zdfddm
             ztemp     = ( 1.0 - 2.0 * zdelta + zdelta2 ) * zkm1s + zdelta2 * zkmps(ji)
             zkmps(ji) = ( 1.0 - zdelta ) * zdifs(ji,2) + zdelta * ztemp
-#endif            
+#endif
 
          END DO
          !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
          ! IV. Compute vertical eddy viscosity and diffusivity coefficients
          !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-         
+
          DO jk  = 2, jkmax
-            
+
             ! Compute turbulent velocity scales on the interfaces
             ! --------------------------------------------------------
             DO  ji = fs_2, fs_jpim1
                zbuofdep = zBo(ji,jj) + zBosol(ji,jj) * zatt1
-               zstabl   = 0.5 + SIGN( 0.5 , zbuofdep ) 
-               zbuofdep = zbuofdep + zstabl * epsln          
+               zstabl   = 0.5 + SIGN( 0.5 , zbuofdep )
+               zbuofdep = zbuofdep + zstabl * epsln
                zsig    = fsdepw(ji,jj,jk) / zhbl(ji)
                ztemp   = zstabl * zsig + ( 1. - zstabl ) * MIN( zsig , epsilon )
                zehat   = vonk * ztemp * zhbl(ji) * zbuofdep
@@ -1012,13 +1013,13 @@ CONTAINS
                   il     = INT( zd / dezehat )
                   il     = MIN( il, nilktbm1 )
                   il     = MAX( il, 1 )
-                  
+
                   ud     = zustar(ji,jj) - ustmin
                   jl     = INT( ud / deustar )
                   jl     = MIN( jl, njlktbm1 )
                   jl     = MAX( jl, 1 )
-                  
-                  zfrac  = zd / dezehat - FLOAT( il )  
+
+                  zfrac  = zd / dezehat - FLOAT( il )
                   ufrac  = ud / deustar - FLOAT( jl )
                   zwas   = ( 1. - zfrac ) * wslktb(il,jl+1) + zfrac * wslktb(il+1,jl+1)
                   zwbs   = ( 1. - zfrac ) * wslktb(il,jl  ) + zfrac * wslktb(il+1,jl  )
@@ -1031,58 +1032,58 @@ CONTAINS
                   ! use analytical functions
                   zconm  = 0.5 + SIGN( 0.5, ( rzetam - zeta) )
                   zcons  = 0.5 + SIGN( 0.5, ( rzetas - zeta) )
-                  
+
                   ! Momentum : zeta < rzetam (zconm = 1)
-                  ! Scalars  : zeta < rzetas (zcons = 1) 
+                  ! Scalars  : zeta < rzetas (zcons = 1)
                   zwconm = zustar(ji,jj) * vonk * ( ( ABS( rconam - rconcm * zeta) )**pthird )
                   zwcons = zustar(ji,jj) * vonk * ( ( ABS( rconas - rconcs * zeta) )**pthird )
-                  
+
                   ! Momentum : rzetam <= zeta < 0 (zconm = 0)
-                  ! Scalars  : rzetas <= zeta < 0 (zcons = 0)	
+                  ! Scalars  : rzetas <= zeta < 0 (zcons = 0)
                   zwmun  = SQRT( ABS( 1.0 - rconc2 * zeta ) )
                   zwsun  = vonk * zustar(ji,jj) * zwmun
                   zwmun  = vonk * zustar(ji,jj) * SQRT(zwmun)
                   !
                   zwm    = zconm * zwconm + ( 1.0 - zconm ) * zwmun
                   zws    = zcons * zwcons + ( 1.0 - zcons ) * zwsun
-                  
+
 #endif
                ENDIF
-               
+
                zblcm(ji,jk) = zhbl(ji) * zwm * zsig  * ( 1.0 + zsig * ( za2m(ji) + zsig * za3m(ji) ) )
                zblct(ji,jk) = zhbl(ji) * zws * zsig  * ( 1.0 + zsig * ( za2t(ji) + zsig * za3t(ji) ) )
 #if defined key_zdfddm
                zblcs(ji,jk) = zhbl(ji) * zws * zsig  * ( 1.0 + zsig * ( za2s(ji) + zsig * za3s(ji) ) )
-#endif              
+#endif
                !  Compute Nonlocal transport term = ghats * <ws>o
                ! ----------------------------------------------------
                ghats(ji,jj,jk-1) = ( 1. - zstabl ) * rcg / ( zws * zhbl(ji) + epsln ) * tmask(ji,jj,jk)
 
             END DO
-         END DO     
+         END DO
          !  Combine interior and boundary layer coefficients and nonlocal term
          ! -----------------------------------------------------------------------
-         DO jk = 2, jpkm1   
+         DO jk = 2, jpkm1
             DO ji = fs_2, fs_jpim1
                zflag = zmask(ji,jk) * zmask(ji,jk+1)
                zviscos(ji,jj,jk) = ( 1.0 - zmask(ji,jk) )         * avmu (ji,jj,jk) & ! interior viscosities
                   &              +                        zflag   * zblcm(ji,jk    ) & ! boundary layer viscosities
                   &              + zmask(ji,jk) * ( 1.0 - zflag ) * zkmpm(ji       )   ! viscosity enhancement at W_level near zhbl
-               
-               zviscos(ji,jj,jk) = zviscos(ji,jj,jk) * tmask(ji,jj,jk)   
 
-            
-               zdiffut(ji,jj,jk) = ( 1.0 - zmask(ji,jk) )          * avt (ji,jj,jk) & ! interior diffusivities 
+               zviscos(ji,jj,jk) = zviscos(ji,jj,jk) * tmask(ji,jj,jk)
+
+
+               zdiffut(ji,jj,jk) = ( 1.0 - zmask(ji,jk) )          * avt (ji,jj,jk) & ! interior diffusivities
                   &              +                        zflag   * zblct(ji,jk   ) & ! boundary layer diffusivities
                   &              + zmask(ji,jk) * ( 1.0 - zflag ) * zkmpt(ji      )   ! diffusivity enhancement at W_level near zhbl
-                       
-               zdiffut(ji,jj,jk) = zdiffut(ji,jj,jk) * tmask(ji,jj,jk) 
+
+               zdiffut(ji,jj,jk) = zdiffut(ji,jj,jk) * tmask(ji,jj,jk)
 #if defined key_zdfddm
-               zdiffus(ji,jj,jk) = ( 1.0 - zmask(ji,jk) )         * avs (ji,jj,jk) & ! interior diffusivities 
+               zdiffus(ji,jj,jk) = ( 1.0 - zmask(ji,jk) )         * avs (ji,jj,jk) & ! interior diffusivities
                   &              +                        zflag   * zblcs(ji,jk   ) & ! boundary layer diffusivities
                   &              + zmask(ji,jk) * ( 1.0 - zflag ) * zkmps(ji      )   ! diffusivity enhancement at W_level near zhbl
-               zdiffus(ji,jj,jk) = zdiffus(ji,jj,jk) * tmask(ji,jj,jk) 
-#endif               
+               zdiffus(ji,jj,jk) = zdiffus(ji,jj,jk) * tmask(ji,jj,jk)
+#endif
                ! Non local flux in the boundary layer only
                ghats(ji,jj,jk-1) = zmask(ji,jk) * ghats(ji,jj,jk-1)
 
@@ -1093,9 +1094,9 @@ CONTAINS
       !                                                ! ===============
 
       ! Lateral boundary conditions on zvicos and zdiffus  (sign unchanged)
-      CALL lbc_lnk( zviscos(:,:,:), 'U', 1. )  ; CALL lbc_lnk( zdiffut(:,:,:), 'W', 1. )  
-#if defined key_zdfddm  
-      CALL lbc_lnk( zdiffus(:,:,:), 'W', 1. ) 
+      CALL lbc_lnk( zviscos(:,:,:), 'U', 1. )  ; CALL lbc_lnk( zdiffut(:,:,:), 'W', 1. )
+#if defined key_zdfddm
+      CALL lbc_lnk( zdiffus(:,:,:), 'W', 1. )
 #endif
 
       SELECT CASE ( nn_ave )
@@ -1107,24 +1108,24 @@ CONTAINS
                   DO ji = fs_2, fs_jpim1
                      avmu(ji,jj,jk) = ( zviscos(ji,jj,jk) + zviscos(ji+1,jj,jk) ) &
                         &  / MAX( 1., tmask(ji,jj,jk) + tmask (ji + 1,jj,jk) ) * umask(ji,jj,jk)
-                     
+
                      avmv(ji,jj,jk) = ( zviscos(ji,jj,jk) + zviscos(ji,jj+1,jk) ) &
                         &  / MAX( 1., tmask(ji,jj,jk) + tmask (ji,jj+1,jk) ) * vmask(ji,jj,jk)
-                     
-                     avt (ji,jj,jk) =  zdiffut(ji,jj,jk) * tmask(ji,jj,jk)  
-#if defined key_zdfddm     
-                     avs (ji,jj,jk) =  zdiffus(ji,jj,jk) * tmask(ji,jj,jk)  
+
+                     avt (ji,jj,jk) =  zdiffut(ji,jj,jk) * tmask(ji,jj,jk)
+#if defined key_zdfddm
+                     avs (ji,jj,jk) =  zdiffus(ji,jj,jk) * tmask(ji,jj,jk)
 #endif
                   END DO
                END DO
             END DO
-            
+
          CASE ( 1 )                ! viscosity and diffusivity smoothing
-            !                      
+            !
             !           ( 1/2  1  1/2 )              ( 1/2  1/2 )             ( 1/2  1  1/2 )
             ! avt = 1/8 ( 1    2  1   )   avmu = 1/4 ( 1    1   )   avmv= 1/4 ( 1/2  1  1/2 )
             !           ( 1/2  1  1/2 )              ( 1/2  1/2 )
-  
+
             DO jk = 2, jpkm1
                DO jj = 2, jpjm1
                   DO ji = fs_2, fs_jpim1
@@ -1132,27 +1133,27 @@ CONTAINS
                      avmu(ji,jj,jk) = (      zviscos(ji  ,jj  ,jk) + zviscos(ji+1,jj  ,jk)   &
                         &              +.5*( zviscos(ji  ,jj-1,jk) + zviscos(ji+1,jj-1,jk)   &
                         &                   +zviscos(ji  ,jj+1,jk) + zviscos(ji+1,jj+1,jk) ) ) * eumean(ji,jj,jk)
-                     
+
                      avmv(ji,jj,jk) = (      zviscos(ji  ,jj  ,jk) + zviscos(ji  ,jj+1,jk)   &
                         &              +.5*( zviscos(ji-1,jj  ,jk) + zviscos(ji-1,jj+1,jk)   &
                         &                   +zviscos(ji+1,jj  ,jk) + zviscos(ji+1,jj+1,jk) ) ) * evmean(ji,jj,jk)
- 
+
                      avt (ji,jj,jk) = ( .5*( zdiffut(ji-1,jj+1,jk) + zdiffut(ji-1,jj-1,jk)    &
                         &                   +zdiffut(ji+1,jj+1,jk) + zdiffut(ji+1,jj-1,jk) )  &
                         &              +1.*( zdiffut(ji-1,jj  ,jk) + zdiffut(ji  ,jj+1,jk)    &
                         &                   +zdiffut(ji  ,jj-1,jk) + zdiffut(ji+1,jj  ,jk) )  &
                         &              +2.*  zdiffut(ji  ,jj  ,jk)                          ) * etmean(ji,jj,jk)
-#if defined key_zdfddm   
+#if defined key_zdfddm
                      avs (ji,jj,jk) = ( .5*( zdiffus(ji-1,jj+1,jk) + zdiffus(ji-1,jj-1,jk)    &
                         &                   +zdiffus(ji+1,jj+1,jk) + zdiffus(ji+1,jj-1,jk) )  &
                         &              +1.*( zdiffus(ji-1,jj  ,jk) + zdiffus(ji  ,jj+1,jk)    &
                         &                   +zdiffus(ji  ,jj-1,jk) + zdiffus(ji+1,jj  ,jk) )  &
-                        &              +2.*  zdiffus(ji  ,jj  ,jk)                          ) * etmean(ji,jj,jk)  
-#endif                
+                        &              +2.*  zdiffus(ji  ,jj  ,jk)                          ) * etmean(ji,jj,jk)
+#endif
                   END DO
                END DO
             END DO
-         
+
          END SELECT
 
          DO jk = 2, jpkm1                       ! vertical slab
@@ -1162,7 +1163,7 @@ CONTAINS
             DO jj = 2, jpjm1
                DO ji = fs_2, fs_jpim1   ! vector opt.
                   avt(ji,jj,jk) = MAX( avt(ji,jj,jk), avtb(jk) ) * tmask(ji,jj,jk)
-#if defined key_zdfddm  
+#if defined key_zdfddm
                   avs(ji,jj,jk) = MAX( avs(ji,jj,jk), avtb(jk) ) * tmask(ji,jj,jk)
 #endif
                END DO
@@ -1185,12 +1186,12 @@ CONTAINS
 
          ! Lateral boundary conditions on avt  (sign unchanged)
          CALL lbc_lnk( avt(:,:,:), 'W', 1. )
-#if defined key_zdfddm  
-         CALL lbc_lnk( avs(:,:,:), 'W', 1. )  
+#if defined key_zdfddm
+         CALL lbc_lnk( avs(:,:,:), 'W', 1. )
 #endif
          ! Lateral boundary conditions (avmu,avmv) (U- and V- points, sign unchanged)
-         CALL lbc_lnk( avmu(:,:,:), 'U', 1. )   ;    CALL lbc_lnk( avmv(:,:,:), 'V', 1. )  
- 
+         CALL lbc_lnk( avmu(:,:,:), 'U', 1. )   ;    CALL lbc_lnk( avmv(:,:,:), 'V', 1. )
+
          IF(ln_ctl) THEN
 #if defined key_zdfddm
             CALL prt_ctl(tab3d_1=avt , clinfo1=' kpp - t: ', tab3d_2=avs , clinfo2=' s: ', ovlap=1, kdim=jpk)
@@ -1237,7 +1238,7 @@ CONTAINS
       IF( nn_timing == 1 )  CALL timing_start('tra_kpp')
       !
       IF( kt == nit000 ) THEN
-         IF(lwp) WRITE(numout,*) 
+         IF(lwp) WRITE(numout,*)
          IF(lwp) WRITE(numout,*) 'tra_kpp : KPP non-local tracer fluxes'
          IF(lwp) WRITE(numout,*) '~~~~~~~   '
       ENDIF
@@ -1249,13 +1250,13 @@ CONTAINS
 
       ! add non-local temperature and salinity flux ( in convective case only)
       DO jk = 1, jpkm1
-         DO jj = 2, jpjm1 
+         DO jj = 2, jpjm1
             DO ji = fs_2, fs_jpim1
                tsa(ji,jj,jk,jp_tem) =  tsa(ji,jj,jk,jp_tem)                      &
-                  &                 - (  ghats(ji,jj,jk  ) * avt  (ji,jj,jk  )   & 
+                  &                 - (  ghats(ji,jj,jk  ) * avt  (ji,jj,jk  )   &
                   &                    - ghats(ji,jj,jk+1) * avt  (ji,jj,jk+1) ) * wt0(ji,jj) / fse3t(ji,jj,jk)
                tsa(ji,jj,jk,jp_sal) =  tsa(ji,jj,jk,jp_sal)                      &
-                  &                 - (  ghats(ji,jj,jk  ) * fsavs(ji,jj,jk  )   & 
+                  &                 - (  ghats(ji,jj,jk  ) * fsavs(ji,jj,jk  )   &
                   &                    - ghats(ji,jj,jk+1) * fsavs(ji,jj,jk+1) ) * ws0(ji,jj) / fse3t(ji,jj,jk)
             END DO
          END DO
@@ -1275,6 +1276,7 @@ CONTAINS
          CALL prt_ctl( tab3d_1=tsa(:,:,:,jp_tem), clinfo1=' kpp  - Ta: ', mask1=tmask,   &
          &             tab3d_2=tsa(:,:,:,jp_sal), clinfo2=       ' Sa: ', mask2=tmask, clinfo3='tra' )
       ENDIF
+      IF (ln_chksum) CALL after_ts_chksum("after tra_kpp")
       !
       IF( nn_timing == 1 )  CALL timing_stop('tra_kpp')
       !
@@ -1309,7 +1311,7 @@ CONTAINS
       !!----------------------------------------------------------------------
 
       IF( kt == nit000 ) THEN
-         IF(lwp) WRITE(numout,*) 
+         IF(lwp) WRITE(numout,*)
          IF(lwp) WRITE(numout,*) 'trc_kpp : KPP non-local tracer fluxes'
          IF(lwp) WRITE(numout,*) '~~~~~~~   '
       ENDIF
@@ -1321,9 +1323,9 @@ CONTAINS
          IF( l_trdtrc )  ztrtrd(:,:,:)  = tra(:,:,:,jn)
          ! add non-local on passive tracer flux ( in convective case only)
          DO jk = 1, jpkm1
-            DO jj = 2, jpjm1 
+            DO jj = 2, jpjm1
                DO ji = fs_2, fs_jpim1
-                  ! Surface tracer flux for non-local term 
+                  ! Surface tracer flux for non-local term
                   zflx = - ( emps(ji,jj) * tra(ji,jj,1,jn) * rcs ) * tmask(ji,jj,1)
                   ! compute the trend
                   ztra = - ( ghats(ji,jj,jk  ) * fsavs(ji,jj,jk  )   &
@@ -1361,8 +1363,8 @@ CONTAINS
    SUBROUTINE zdf_kpp_init
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE zdf_kpp_init  ***
-      !!                     
-      !! ** Purpose :   Initialization of the vertical eddy diffivity and 
+      !!
+      !! ** Purpose :   Initialization of the vertical eddy diffivity and
       !!      viscosity when using a kpp turbulent closure scheme
       !!
       !! ** Method  :   Read the namkpp namelist and check the parameters
@@ -1372,7 +1374,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       INTEGER  ::   ji, jj, jk     ! dummy loop indices
 #if ! defined key_kppcustom
-      INTEGER  ::   jm             ! dummy loop indices     
+      INTEGER  ::   jm             ! dummy loop indices
       REAL(wp) ::   zref, zdist    ! tempory scalars
 #endif
 #if defined key_kpplktb
@@ -1380,7 +1382,7 @@ CONTAINS
 #endif
       REAL(wp) ::   zhbf           ! tempory scalars
       LOGICAL  ::   ll_kppcustom   ! 1st ocean level taken as surface layer
-      LOGICAL  ::   ll_kpplktb     ! Lookup table for turbul. velocity scales 
+      LOGICAL  ::   ll_kpplktb     ! Lookup table for turbul. velocity scales
       !!
       NAMELIST/namzdf_kpp/ ln_kpprimix, rn_difmiw, rn_difsiw, rn_riinfty, rn_difri, rn_bvsqcon, rn_difcon, nn_ave
       !!----------------------------------------------------------------------
@@ -1421,7 +1423,7 @@ CONTAINS
          WRITE(numout,*) '     Lookup table for turbul. velocity scales ll_kpplktb   = ', ll_kpplktb
          WRITE(numout,*) '     1st ocean level taken as surface layer   ll_kppcustom = ', ll_kppcustom
       ENDIF
-      
+
       IF( lk_zdfddm) THEN
          IF(lwp) THEN
             WRITE(numout,*)
@@ -1429,7 +1431,7 @@ CONTAINS
             WRITE(numout,*) '    CAUTION : done in routine zdfkpp, not in routine zdfddm '
          ENDIF
       ENDIF
-      
+
 
       !set constants not in namelist
       !-----------------------------
@@ -1446,12 +1448,12 @@ CONTAINS
       ! Should be different is s_coordinate
       DO jk = 1, jpk
          zhbf     = - fsdept(1,1,jk) * hbf
-         ratt(jk) = 1.0 - ( rabs * EXP( zhbf / xsi1 ) + ( 1.0 - rabs ) * EXP( zhbf / xsi2 ) )        
+         ratt(jk) = 1.0 - ( rabs * EXP( zhbf / xsi1 ) + ( 1.0 - rabs ) * EXP( zhbf / xsi2 ) )
       ENDDO
 
-      ! Horizontal average : initialization of weighting arrays 
+      ! Horizontal average : initialization of weighting arrays
       ! -------------------
-      
+
       SELECT CASE ( nn_ave )
 
       CASE ( 0 )                ! no horizontal average
@@ -1460,18 +1462,18 @@ CONTAINS
          ! weighting mean arrays etmean, eumean and evmean
          !           ( 1  1 )                                          ( 1 )
          ! avt = 1/4 ( 1  1 )     avmu = 1/2 ( 1  1 )       avmv=  1/2 ( 1 )
-         !                          
+         !
          etmean(:,:,:) = 0.e0
          eumean(:,:,:) = 0.e0
          evmean(:,:,:) = 0.e0
-         
+
          DO jk = 1, jpkm1
             DO jj = 2, jpjm1
                DO ji = 2, jpim1   ! vector opt.
                   etmean(ji,jj,jk) = tmask(ji,jj,jk)                     &
                   &  / MAX( 1.,  umask(ji-1,jj  ,jk) + umask(ji,jj,jk)   &
                   &            + vmask(ji  ,jj-1,jk) + vmask(ji,jj,jk)  )
-                  
+
                   eumean(ji,jj,jk) = umask(ji,jj,jk)                     &
                   &  / MAX( 1.,  tmask(ji,jj,jk) + tmask(ji+1,jj  ,jk)  )
 
@@ -1481,7 +1483,7 @@ CONTAINS
             END DO
          END DO
 
-      CASE ( 1 )                ! horizontal average 
+      CASE ( 1 )                ! horizontal average
          IF(lwp) WRITE(numout,*) '          horizontal average on avt, avmu, avmv'
          ! weighting mean arrays etmean, eumean and evmean
          !           ( 1/2  1  1/2 )              ( 1/2  1/2 )             ( 1/2  1  1/2 )
@@ -1490,7 +1492,7 @@ CONTAINS
          etmean(:,:,:) = 0.e0
          eumean(:,:,:) = 0.e0
          evmean(:,:,:) = 0.e0
-         
+
          DO jk = 1, jpkm1
             DO jj = 2, jpjm1
                DO ji = fs_2, fs_jpim1   ! vector opt.
@@ -1500,12 +1502,12 @@ CONTAINS
                      &             +tmask(ji+1,jj+1,jk) + tmask(ji+1,jj-1,jk) ) &
                      &      +1. * ( tmask(ji-1,jj  ,jk) + tmask(ji  ,jj+1,jk)   &
                      &             +tmask(ji  ,jj-1,jk) + tmask(ji+1,jj  ,jk) ) )
-                  
+
                   eumean(ji,jj,jk) = umask(ji,jj,jk)                        &
                      &  / MAX( 1.,   tmask(ji,jj  ,jk) + tmask(ji+1,jj  ,jk)   &
                      &       +.5 * ( tmask(ji,jj-1,jk) + tmask(ji+1,jj-1,jk)   &
                      &              +tmask(ji,jj+1,jk) + tmask(ji+1,jj+1,jk) )  )
-                  
+
                   evmean(ji,jj,jk) = vmask(ji,jj,jk)                        &
                      &  / MAX( 1.,   tmask(ji  ,jj,jk) + tmask(ji  ,jj+1,jk)   &
                      &       +.5 * ( tmask(ji-1,jj,jk) + tmask(ji-1,jj+1,jk)   &
@@ -1519,7 +1521,7 @@ CONTAINS
          CALL ctl_stop( ctmp1 )
 
       END SELECT
- 
+
       ! Initialization of vertical eddy coef. to the background value
       ! -------------------------------------------------------------
       DO jk = 1, jpk
@@ -1536,15 +1538,15 @@ CONTAINS
       hkpp (:,:  ) = 0. ! just a diagnostic (not essential)
 
 #if ! defined key_kppcustom
-      ! compute arrays (del, wz) for reference mean values 
+      ! compute arrays (del, wz) for reference mean values
       ! (increase speed for vectorization key_kppcustom not defined)
       del(1:jpk, 1:jpk) = 0.
       DO jk = 1, jpk
-         zref = epsilon * fsdept(1,1,jk)    
+         zref = epsilon * fsdept(1,1,jk)
          DO jm = 1 , jpk
-            zdist = zref - fsdepw(1,1,jm)   
+            zdist = zref - fsdepw(1,1,jm)
             IF( zdist > 0.  ) THEN
-               del(jk,jm) = MIN( zdist, fse3t(1,1,jm) ) / zref   
+               del(jk,jm) = MIN( zdist, fse3t(1,1,jm) ) / zref
             ELSE
                del(jk,jm) = 0.
             ENDIF
@@ -1556,24 +1558,24 @@ CONTAINS
       ! build lookup table for turbulent velocity scales
       dezehat = ( dehatmax - dehatmin ) / nilktbm1
       deustar = ( ustmax   - ustmin   ) / njlktbm1
- 
+
       DO jj = 1, njlktb
          zustar = ( jj - 1) * deustar + ustmin
-         zustvk = vonk * zustar 
-         zucube = zustar * zustar * zustar 
+         zustvk = vonk * zustar
+         zucube = zustar * zustar * zustar
          DO ji = 1 , nilktb
             zehat = ( ji - 1 ) * dezehat + dehatmin
             zeta   = zehat / ( zucube + epsln )
             IF( zehat >= 0 ) THEN             ! Stable case
-               wmlktb(ji,jj) = zustvk / ABS( 1.0 + rconc1 * zeta + epsln )                        
+               wmlktb(ji,jj) = zustvk / ABS( 1.0 + rconc1 * zeta + epsln )
                wslktb(ji,jj) = wmlktb(ji,jj)
-            ELSE                                ! Unstable case 
+            ELSE                                ! Unstable case
                IF( zeta > rzetam ) THEN
                   wmlktb(ji,jj) = zustvk * ABS( 1.0    - rconc2 * zeta )**pfourth
                ELSE
                   wmlktb(ji,jj) = zustvk * ABS( rconam - rconcm * zeta )**pthird
                ENDIF
-               
+
                IF( zeta > rzetas ) THEN
                   wslktb(ji,jj) = zustvk * SQRT( ABS( 1.0 - rconc2 * zeta ) )
                ELSE
