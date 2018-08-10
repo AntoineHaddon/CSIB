@@ -171,7 +171,7 @@ printf "        build-nemo       \n"
 printf " ------------------- \n"
 
 # CCRNTMP must be defined
-CCRNTMP=/tmp
+#CCRNTMP=/tmp
 [ ! -d "$CCRNTMP" ] && bail "/tmp is not a directory"
 
 # process command line options
