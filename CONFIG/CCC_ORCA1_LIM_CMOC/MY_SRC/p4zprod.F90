@@ -180,6 +180,7 @@ CONTAINS
               tra(ji,jj,jk,jpoxy) = tra(ji,jj,jk,jpoxy) + zprorca(ji,jj,jk)
               tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) - zprorca(ji,jj,jk)
               tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) + ncrr_cmoc * zprorca(ji,jj,jk)
+              tra(ji,jj,jk,jpdnt) = tra(ji,jj,jk,jpdnt) - zprorca(ji,jj,jk)
               
           END DO
         END DO
