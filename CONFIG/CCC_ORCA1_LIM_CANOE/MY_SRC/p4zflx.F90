@@ -174,7 +174,7 @@ CONTAINS
       DO jj = 1, jpj
 !CDIR NOVERRCHK
          DO ji = 1, jpi
-!            ztc  = MIN( 35., tsn(ji,jj,1,jp_tem) )
+            ztc  = tsn(ji,jj,1,jp_tem)
             ztc2 = ztc * ztc
             ztc3 = ztc * ztc2 
             ztc4 = ztc * ztc3 
