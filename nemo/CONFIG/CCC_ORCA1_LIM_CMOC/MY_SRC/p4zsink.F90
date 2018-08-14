@@ -166,9 +166,10 @@ CONTAINS
       DO jk =1, jk_eud_cmoc
          trn(:,:,jk,jpdic) = trn(:,:,jk,jpdic) -                                   &
          &                              zfpon(:,:) * zideup(:,:) 
-
          trn(:,:,jk,jptal) = trn(:,:,jk,jptal) -                                   &
          &                      2._wp * zfpon(:,:) * zideup(:,:) 
+         trn(:,:,jk,jpdnt) = trn(:,:,jk,jpdnt) -                                   &
+         &                              zfpon(:,:) * zideup(:,:) 
       !   ztaleuz = ztaleuz + SUM(2._wp * zfpon(:,:) * zideup(:,:) * fse3t(:,:,jk))
       END DO
 
@@ -182,6 +183,7 @@ CONTAINS
 
                trn(ji,jj,jk,jpdic) = trn(ji,jj,jk,jpdic) +         zcaldiv 
                trn(ji,jj,jk,jptal) = trn(ji,jj,jk,jptal) + 2._wp * zcaldiv                      
+               trn(ji,jj,jk,jpdnt) = trn(ji,jj,jk,jpdnt) +         zcaldiv 
       !         ztalapz = ztalapz + 2._wp * zcaldiv * fse3t(ji,jj,jk) 
             ENDDO
          ENDDO
@@ -204,9 +206,10 @@ CONTAINS
          DO ji = 1,jpi
             trn(ji,jj,mbkt(ji,jj),jpdic) = trn(ji,jj,mbkt(ji,jj),jpdic) - zcalbotflx(ji,jj) / fse3t(ji,jj,mbkt(ji,jj))
             trn(ji,jj,1,jpdic) = trn(ji,jj,1,jpdic)  + zcalbotflx(ji,jj) / fse3t(ji,jj, 1) 
-
             trn(ji,jj,mbkt(ji,jj),jptal) = trn(ji,jj,mbkt(ji,jj),jptal) - 2._wp * zcalbotflx(ji,jj) / fse3t(ji,jj,mbkt(ji,jj))
             trn(ji,jj,1,jptal) = trn(ji,jj,1,jptal)  + 2._wp * zcalbotflx(ji,jj) / fse3t(ji,jj, 1) 
+            trn(ji,jj,mbkt(ji,jj),jpdnt) = trn(ji,jj,mbkt(ji,jj),jpdnt) - zcalbotflx(ji,jj) / fse3t(ji,jj,mbkt(ji,jj))
+            trn(ji,jj,1,jpdnt) = trn(ji,jj,1,jpdnt)  + zcalbotflx(ji,jj) / fse3t(ji,jj, 1) 
          ENDDO
       ENDDO
 

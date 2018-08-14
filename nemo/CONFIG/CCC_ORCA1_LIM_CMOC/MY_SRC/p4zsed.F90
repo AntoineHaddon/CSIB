@@ -101,6 +101,8 @@ CONTAINS
       trn(:,:,1,jpno3) = trn(:,:,1,jpno3) + rivinp(:,:) * rfact2
       trn(:,:,1,jpdic) = trn(:,:,1,jpdic) + rivinp(:,:) * 2.631 * rfact2
       trn(:,:,1,jptal) = trn(:,:,1,jptal) + (cotdep(:,:) - ncrr_cmoc*rivinp(:,:) ) * rfact2
+      trn(:,:,1,jpdab) = trn(:,:,1,jpdab) + rivinp(:,:) * 2.631 * rfact2
+      trn(:,:,1,jpdnt) = trn(:,:,1,jpdnt) + rivinp(:,:) * 2.631 * rfact2
 
       ! Fate of POC reaching the ocean floor: complete remineralization into DIC, DIN
       ! and sink of O2 and TALK
@@ -111,6 +113,8 @@ CONTAINS
             zwsbio3 = wsbio3(ji,jj,ikt) * zdep
 
             trn(ji,jj,ikt,jpdic) = trn(ji,jj,ikt,jpdic)                       &
+               &                             + trn(ji,jj,ikt,jppoc) * zwsbio3 
+            trn(ji,jj,ikt,jpdnt) = trn(ji,jj,ikt,jpdnt)                       &
                &                             + trn(ji,jj,ikt,jppoc) * zwsbio3 
             trn(ji,jj,ikt,jptal) = trn(ji,jj,ikt,jptal)                       &
                &                             - trn(ji,jj,ikt,jppoc) * zwsbio3 * ncrr_cmoc
