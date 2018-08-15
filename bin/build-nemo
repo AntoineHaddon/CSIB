@@ -334,7 +334,7 @@ nemo_root=nemo
 if [ $coupled = "on" ]; then
   # Add a copy of com_cpl.F90 to the SBC subdir in the nemo tree
   #gitrip $cancpl_ver src/comm/com_cpl.F90 repo=$cancpl_repo
-  cp ${cancpl_repo}/src/comm/com_cpl.F90
+  cp ${cancpl_repo}/src/comm/com_cpl.F90 .
   [ -s com_cpl.F90 ] || bail "Unable to extract com_cpl.F90 from coupler repo $cancpl_repo"
   # Modify com_cpl.F90 to contain NEMO and CanCPL version info
   sed '/^#include *"cpl_cppdefs"/d' com_cpl.F90 > tmp_com_cpl.F90 && rm -f com_cpl.F90
