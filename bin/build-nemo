@@ -1,10 +1,9 @@
 #!/bin/bash
 #
-#   Usage: build-nemo [options] ver=tag exec=name cfg=cfgdir \
+#   Usage: build-nemo [options] exec=name cfg=cfgdir \
 #                     srcpath=srcpath \
 #                     [refcfg=cfgdir] \
 #                     [arch=fname] \
-#                     [repo=dirpath] \
 #                     [add_key=keys] \
 #                     [del_key=keys]
 #          Quantities in square brackets are optional
@@ -27,9 +26,7 @@
 #   -k   ...do not delete the tmp dir after compilation is complete (used for debugging)
 #
 # Variable definitions:
-#   srcpath=srcpath ...path to copy source from, instead of clone a repo.
-#   ver=tag       ...tag is the version number/tag or branch to extract from
-#                    the git repository (e.g. nemo_v3.4)
+#   srcpath=srcpath ...location of the NEMO source code. 
 #   exec=name     ...name is the name of the nemo executable to be created
 #                    On successful compilation, a file by this name will be saved on RUNPATH
 #   cfg=name      ...name is the name of a subdir under the CONFIG dir in the repository
@@ -38,7 +35,6 @@
 #                    which will contain a reference configuration
 #   arch=name     ...name is the name of an arch specific make include file found in the ARCH
 #                    subdir that is used to define compiler switches and libs etc
-#   repo=dirpath  ...dirpath is the pathname to the git repository
 #   add_key=keys  ...A whitespace separated list of cpp preprocessor keys to be added
 #                    for this complie. If there is more than one then keys will need
 #                    to be quoted. (e.g. add_keys="key_mpp_mpi key_nproci=8 key_nprocj=4")
@@ -47,10 +43,8 @@
 #                    to be quoted. (e.g. del_keys="key_nproci key_nprocj")
 #
 # Examples:
-#   build-nemo ver=nemo_v3.4 exec=nemo_v3.4_orca2_lim_exe cfg=ORCA2_LIM
-#     -- Build an "out of the box" ORCA2_LIM configuration
-#
 #   build-nemo exec=nemo_v3.4_orca2_lim_exe cfg=ORCA2_LIM srcpath=/path/to/code/
+#
 #     -- Build an ORCA2_LIM configuration that uses the nemo code define in srcpath (with
 #        a dir structure the same as the default).
 #
@@ -59,6 +53,8 @@
 # Larry Solheim Sep 2012
 # Last update: NCS, 2017-12-18 - merge develop (ocean only) into develop_canesm. 
 #                              - major conflicts needed to be resolved.
+#              NCS, 2018-08-16 - move compile to in source (in the repo), but
+#                                .gitignore compilation related files for VCS.
 
 FULLPATH=`type $0|awk '{print $3}'` # pathname of this script
 Runame=`basename $FULLPATH`
@@ -124,7 +120,7 @@ fi
 nemo_version=''
 
 # The default location of the repository containing nemo source code
-nemo_source_repo='git@gitlab.science.gc.ca:CanESM/CanNEMO.git'
+#nemo_source_repo='git@gitlab.science.gc.ca:CanESM/CanNEMO.git'
 
 # Path to copy code from instead of cloning a repo
 nemo_source_path=''
@@ -270,25 +266,26 @@ case $this_host in
 esac
 
 # Create a temporary directory and change to it
+#   // Actuall, now compile in source
 CWD=`pwd`
-tmpd=$CCRNTMP/tmp_build_nemo_${this_host}_$stamp
-mkdir $tmpd || bail "Cannot create temporary dir $tmpd"
-cd $tmpd
+#tmpd=$CCRNTMP/tmp_build_nemo_${this_host}_$stamp
+#mkdir $tmpd || bail "Cannot create temporary dir $tmpd"
+#cd $tmpd
 
 # Clone the git repo, or copy the srcpath directory
 if [ -z "$nemo_source_path" ]; then
-    [ -z "$nemo_version" ] && usage -e "A version number/tag or branch is required on the command line."
-    [ -z "$nemo_source_repo" ] && usage -e "The source repository name is missing."
+    #[ -z "$nemo_version" ] && usage -e "A version number/tag or branch is required on the command line."
+    #[ -z "$nemo_source_repo" ] && usage -e "The source repository name is missing."
     # Get the code from the repo
-    git clone $nemo_source_repo CanNEMO
-    cd CanNEMO
-    git checkout $nemo_version 
+    #git clone $nemo_source_repo CanNEMO
+    #cd CanNEMO
+    #git checkout $nemo_version 
+    bail "nemo_source_path not defined"
 else
    echo
-   echo "WARNING: copying files from $nemo_source_path, not using strict cloning"
-   echo "Checking if this is a repo anyway"
-   cp -r $nemo_source_path CanNEMO
-   cd CanNEMO
+   echo "Compiling in:  ${nemo_source_path}"
+   #cp -r $nemo_source_path CanNEMO
+   cd $nemo_source_path || bail "Cannot cd in ${nemo_source_path}"
    if [ -d .git ]; then
    # If srcpath is a git repo, do some checks
        branch=`git branch`
@@ -297,7 +294,6 @@ else
        if [ ! -z "$diffs" ]; then
            echo "WARNING: there are local (non-committed) changes in the following files that are being used:"
            echo $diffs
-     
            printf "status \n, `git status`"
        fi
    fi
@@ -424,18 +420,18 @@ if [ $build_nemo_exe -eq 1 ]; then
   ./makenemo -j $comp_np -n $nemo_config $NARCH $REFCFG 
   [ $? -ne 0 ] && bail "Problem building nemo executable"
 
-  # Copy the executable to the tmp dir
-  cp $nemo_config/BLD/bin/nemo.exe $tmpd/$nemo_exe
-  cd $tmpd
-  [ ! -s "$nemo_exe" ] && bail "Unable to create nemo executable $nemo_exe"
+  # Copy the executable to the run dir (ocean only) or save in coupled mode
+  #cp $nemo_config/BLD/bin/nemo.exe $tmpd/$nemo_exe
+  #cd $tmpd
+  [ ! -s "$nemo_config/BLD/bin/nemo.exe" ] && bail "Unable to create nemo executable $nemo_exe"
    if [ $coupled = "on" ]; then
       # Save the nemo executable to RUNPATH/DATAPATH
-      save $nemo_exe $nemo_exe || bail "Problem while saving $nemo_exe"
+      save $nemo_config/BLD/bin/nemo.exe $nemo_exe || bail "Problem while saving $nemo_exe"
       #release $nemo_exe
       echo "Saved $nemo_exe on RUNPATH $RUNPATH"
    else
       # In ocean-only we copy to the PROD dir
-      cp $nemo_exe $CWD/$nemo_exe
+      ln -s $nemo_config/BLD/bin/nemo.exe $CWD/$nemo_exe
    fi
 fi
 
@@ -476,8 +472,8 @@ fi
 
 # Return to the original dir and clean up
 cd $CWD
-if [ $keep_tmpd -eq 1 ]; then
-  echo "Temporary directory remains in $tmpd"
-else
-  rm -fr $tmpd
-fi
+#if [ $keep_tmpd -eq 1 ]; then
+#  echo "Temporary directory remains in $tmpd"
+#else
+#  rm -fr $tmpd
+#fi
