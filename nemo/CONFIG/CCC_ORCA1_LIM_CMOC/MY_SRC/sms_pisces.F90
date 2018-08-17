@@ -122,6 +122,7 @@ MODULE sms_pisces
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   hi         !: hydronium concentration
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   hj         !: abiotic hydronium concentration
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   hk         !: natural hydronium concentration
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   hk         !: radiocarbon hydronium concentration
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   excess     !: calcite saturation(>0) / undersaturation(<0) state (p4zlys)
 
    !!* Array used to indicate negative tracer values
