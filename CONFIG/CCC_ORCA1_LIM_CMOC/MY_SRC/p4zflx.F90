@@ -18,17 +18,19 @@ MODULE p4zflx
    !!   p4z_flx_init  :   Read the namelist
    !!   p4z_patm      :   Read sfc atm pressure [atm] for each grid cell
    !!----------------------------------------------------------------------
+   USE dom_oce, only  : nyear, nyear_len, nsec_year   
    USE oce_trc                      !  shared variables between ocean and passive tracers 
    USE trc                          !  passive tracers common variables
    USE sms_pisces                   !  PISCES Source Minus Sink variables
    USE p4zche                       !  Chemical model
    USE prtctl_trc                   !  print control for debugging
+   USE trc_util
    USE iom                          !  I/O manager
    USE fldread                      !  read input fields
 #if defined key_cpl_carbon_cycle
    USE sbc_oce, ONLY :  atm_co2     !  atmospheric pCO2               
 #endif
-
+   
    IMPLICIT NONE
    PRIVATE
 
@@ -43,7 +45,7 @@ MODULE p4zflx
    INTEGER           ::  nn_offset = 0             !: Offset model-data start year (default = 0) 
 
    !!  Variables related to reading atmospheric CO2 time history    
-   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:) :: atcco2h, years
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:) :: atcco2h, atcco2h_years
    INTEGER  :: nmaxrec, numco2
 
    !                                         !!* nampisatm namelist (Atmospheric PRessure) *
@@ -90,7 +92,7 @@ CONTAINS
       REAL(wp) ::   zfld, zflu, zfld16, zflu16, zfact
       REAL(wp) ::   zph, zah2, zbot, zdic, zalk, zsch_o2, zalka, zsch_co2
       REAL(wp) ::   zph2, zph3, zpo4, zsi, zpd, zp0, zp1, zp3        ! coefficients added to account for P and Si contribution to TA
-      REAL(wp) ::   zyr_dec, zdco2dt
+      REAL(wp) ::   zyr_dec, zdco2dt, current_yearfrac
       CHARACTER (len=25) :: charout
       REAL(wp), POINTER, DIMENSION(:,:) :: zkgco2, zkgo2, zh2co3, zoflx 
       REAL(wp), POINTER, DIMENSION(:,:,:) :: zph3d
@@ -113,13 +115,8 @@ CONTAINS
          ! Caveats: First column of .txt must be in years, decimal  years preferably. 
          ! For nn_offset, if your model year is iyy, nn_offset=(years(1)-iyy) 
          ! then the first atmospheric CO2 record read is at years(1)
-         zyr_dec = REAL( nyear + nn_offset, wp ) + REAL( nday_year, wp ) / REAL( nyear_len(1), wp )
-         jm = 1
-         DO WHILE( jm <= nmaxrec .AND. years(jm) < zyr_dec ) ;  jm = jm + 1 ;  END DO
-         iind = jm  ;   iindm1 = jm - 1
-         zdco2dt = ( atcco2h(iind) - atcco2h(iindm1) ) / ( years(iind) - years(iindm1) + rtrn )
-         atcco2  = zdco2dt * ( zyr_dec - years(iindm1) ) + atcco2h(iindm1)
-         satmco2(:,:) = atcco2 
+         current_yearfrac = nyear + (nsec_year / ( nyear_len * 86400.))
+         satmco2(:,:) = lin_interp( current_yearfrac + nn_offset, atcco2h_years, atcco2h )
       ENDIF
 
 #if defined key_cpl_carbon_cycle
@@ -274,7 +271,8 @@ CONTAINS
       !! ** input   :   Namelist nampisext
       !!----------------------------------------------------------------------
       NAMELIST/nampisext/ln_co2int, atcco2, clname, nn_offset
-      INTEGER :: jm
+      INTEGER :: jm, ntime, ncid
+      REAL(wp), DIMENSION(:,:) :: tmp2d
       !!----------------------------------------------------------------------
       !
       REWIND( numnatp )                     ! read numnatp
@@ -295,26 +293,24 @@ CONTAINS
          satmco2(:,:)  = atcco2      ! Initialisation of atmospheric pco2
       ELSE
          IF(lwp)  THEN
-            WRITE(numout,*) '    Atmospheric pCO2 value  from file clname      =', TRIM( clname )
-            WRITE(numout,*) '    Offset model-data start year      nn_offset   =', nn_offset
+            WRITE(numout,*) '    Atmospheric pCO2 value from file       clname         =', TRIM( clname )
+            WRITE(numout,*) '    Atmospheric pCO2 variable name in file clvarname      =', TRIM( clvarname )
+            WRITE(numout,*) '    Offset model-data start year           nn_offset   =', nn_offset
             WRITE(numout,*) ' '
          ENDIF
-         CALL ctl_opn( numco2, TRIM( clname) , 'OLD', 'FORMATTED', 'SEQUENTIAL', -1 , numout, lwp )
-         jm = 0                      ! Count the number of record in co2 file
-         DO
-           READ(numco2,*,END=100) 
-           jm = jm + 1
-         END DO
- 100     nmaxrec = jm - 1 
-         ALLOCATE( years  (nmaxrec) )     ;      years  (:) = 0._wp
-         ALLOCATE( atcco2h(nmaxrec) )     ;      atcco2h(:) = 0._wp
-
-         REWIND(numco2)
-         DO jm = 1, nmaxrec          ! get  xCO2 data
-            READ(numco2, *)  years(jm), atcco2h(jm)
-            IF(lwp) WRITE(numout, '(f6.0,f7.2)')  years(jm), atcco2h(jm)
-         END DO
-         CLOSE(numco2)
+         CALL chkerr(nf90_open( clname, NF90_NOWRITE, ncid ), 'trcini_cfc', 0)
+         CALL read_var2d( ncid, clvarname, tmp2d )
+         CALL chkerr(nf90_close( ncid )) 
+         ! Set the time-varying atmospheric history from the read in data
+         ALLOCATE(atcco2h(ntime))
+         atcco2h(:) = tmp2d(:,1) ! Sector '1' corresponds to global average
+         DEALLOCATE(tmp2d)
+         ! Input file for OMIP6 is in Gregorian days since 1 January 0000, manually overwrite
+         ! so that atcco2h_years is in yearfraction
+         DO jm = 1,ntime
+            atcco2h_years(jm) = (jm-1) + 0.5
+         ENDDO
+         
       ENDIF
       !
       area = glob_sum( e1e2t(:,:) )        ! interior global domain surface
