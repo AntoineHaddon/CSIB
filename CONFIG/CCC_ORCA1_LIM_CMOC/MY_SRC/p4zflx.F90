@@ -59,6 +59,7 @@ MODULE p4zflx
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) :: oce_co2n  !: natural ocean carbon flux
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) :: satmco2   !: atmospheric pco2 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) :: satmco2n  !: preindustrial atmospheric pco2 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) :: satmco2r  !: Delta-C14 pco2 
 
    REAL(wp) ::  t_oce_co2_flx               !: Total ocean carbon flux 
    REAL(wp) ::  t_atm_co2_flx               !: global mean of atmospheric pco2
@@ -96,13 +97,13 @@ CONTAINS
       REAL(wp) ::   zph2, zph3, zpo4, zsi, zpd, zp0, zp1, zp3        ! coefficients added to account for P and Si contribution to TA
       REAL(wp) ::   zyr_dec, zdco2dt
       CHARACTER (len=25) :: charout
-      REAL(wp), POINTER, DIMENSION(:,:) :: zkgco2, zkgo2, zh2co3, zh2co3a, zh2co3n, zoflx, zoflxa
+      REAL(wp), POINTER, DIMENSION(:,:) :: zkgco2, zkgo2, zh2co3, zh2co3a, zh2co3n, zh2co3r, zoflx, zoflxa
       REAL(wp), POINTER, DIMENSION(:,:,:) :: zph3d
       !!---------------------------------------------------------------------
       !
       IF( nn_timing == 1 )  CALL timing_start('p4z_flx')
       !
-      CALL wrk_alloc( jpi, jpj, zkgco2, zkgo2, zh2co3, zh2co3a, zh2co3n, zoflx, zoflxa )
+      CALL wrk_alloc( jpi, jpj, zkgco2, zkgo2, zh2co3, zh2co3a, zh2co3n, zh2co3r, zoflx, zoflxa )
       CALL wrk_alloc( jpi, jpj, jpk, zph3d )
 
       !
@@ -113,7 +114,7 @@ CONTAINS
 
       IF( kt /= nit000 ) CALL p4z_patm( kt )    ! Get sea-level pressure (E&K [1981] climatology) for use in flux calcs
 
-      IF( ln_co2int ) THEN 
+      IF( ln_co2int ) THEN
          ! Linear temporal interpolation  of atmospheric pco2.  atcco2.txt has annual values.
          ! Caveats: First column of .txt must be in years, decimal  years preferably. 
          ! For nn_offset, if your model year is iyy, nn_offset=(years(1)-iyy) 
@@ -187,6 +188,16 @@ CONTAINS
                zh2co3n(ji,jj) = ( 2.* zdic - zalk ) / ( 2.+ ak13(ji,jj,1) / zah2 ) * zfact
                hk(ji,jj,1)   = zah2 * zfact
 
+              ! RADIOCARBON CHEMISTRY
+               zdic  = trn(ji,jj,1,jpdrc) / zfact
+               zph   = MAX( hj(ji,jj,1), 1.e-10 ) / zfact
+               zalka = trn(ji,jj,1,jpaab) / zfact
+               zalk  = zalka - (  akw3(ji,jj,1) / zph - zph + zbot / ( 1.+ zph / akb3(ji,jj,1) ) + 2.*zp0 + zp1 - zp3 + zsi )
+               zah2   = SQRT(  (zdic-zalk)**2 + 4.* ( zalk * ak23(ji,jj,1)   &
+                  &                                        / ak13(ji,jj,1) ) * ( 2.* zdic - zalk )  )
+               zah2   = 0.5 * ak13(ji,jj,1) / zalk * ( ( zdic - zalk ) + zah2 )
+               zh2co3r(ji,jj) = ( 2.* zdic - zalk ) / ( 2.+ ak13(ji,jj,1) / zah2 ) * zfact
+               hl(ji,jj,1)   = zah2 * zfact
             END DO
          END DO
       END DO
@@ -241,6 +252,11 @@ CONTAINS
             zflu = zh2co3n(ji,jj) * tmask(ji,jj,1) * zkgco2(ji,jj)                                   ! (mol/L) (m/s) ?
             oce_co2n(ji,jj) = ( zfld - zflu ) * rfact * e1e2t(ji,jj) * tmask(ji,jj,1) * 1000.
             tra(ji,jj,1,jpdnt) = tra(ji,jj,1,jpdnt) + ( zfld - zflu ) / fse3t(ji,jj,1)
+            ! DI14C
+            zfld = satmco2r(ji,jj) * patm(ji,jj) * tmask(ji,jj,1) * chemc(ji,jj,1) * zkgco2(ji,jj)   ! (mol/L) * (m/s)
+            zflu = zh2co3n(ji,jj) * tmask(ji,jj,1) * zkgco2(ji,jj)                                   ! (mol/L) (m/s) ?
+            oce_co2r(ji,jj) = ( zfld - zflu ) * rfact * e1e2t(ji,jj) * tmask(ji,jj,1) * 1000.
+            tra(ji,jj,1,jpdnr) = tra(ji,jj,1,jpdnr) + ( zfld - zflu ) / fse3t(ji,jj,1)
 
             ! Compute O2 flux 
             zfld16 = atcox * patm(ji,jj) * chemc(ji,jj,2) * tmask(ji,jj,1) * zkgo2(ji,jj)          ! (mol/L) * (m/s)

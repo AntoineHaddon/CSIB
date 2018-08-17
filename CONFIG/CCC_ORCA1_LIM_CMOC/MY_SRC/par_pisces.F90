@@ -28,7 +28,7 @@ MODULE par_pisces
    !!---------------------------------------------------------------------
    LOGICAL, PUBLIC, PARAMETER ::   lk_pisces     = .TRUE.  !: PISCES flag 
    LOGICAL, PUBLIC, PARAMETER ::   lk_kriest     = .FALSE. !: Kriest flag 
-   INTEGER, PUBLIC, PARAMETER ::   jp_pisces     = 12      !: CMOC1 tracers
+   INTEGER, PUBLIC, PARAMETER ::   jp_pisces     = 13      !: CMOC1 tracers
    INTEGER, PUBLIC, PARAMETER ::   jp_pisces_2d  = 13      !: additional 2d output 
    INTEGER, PUBLIC, PARAMETER ::   jp_pisces_3d  = 11      !: additional 3d output 
    INTEGER, PUBLIC, PARAMETER ::   jp_pisces_trd =  1      !: number of sms trends for PISCES
@@ -48,6 +48,7 @@ MODULE par_pisces
    INTEGER, PUBLIC, PARAMETER ::   jpaab = jp_lp +  10   !: abiotic alkalinity
    INTEGER, PUBLIC, PARAMETER ::   jpoab = jp_lp +  11   !: abiotic oxygen
    INTEGER, PUBLIC, PARAMETER ::   jpdnt = jp_lp +  12   !: natural DIC
+   INTEGER, PUBLIC, PARAMETER ::   jpdrc = jp_lp +  13   !: abiotic DI14C
 #else
    !!---------------------------------------------------------------------
    !!   Default                                   No CFC geochemical model
