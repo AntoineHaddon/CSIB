@@ -16,6 +16,7 @@ MODULE trc_util
 
    PUBLIC read_var1d
    PUBLIC read_var2d
+   PUBLIC lin_interp
 
    CONTAINS
    !> read_var1d: Read a 1d variable from a netcdf file. Allocate the output
@@ -84,5 +85,41 @@ MODULE trc_util
 
    END SUBROUTINE read_var2d
 
+   !> Linearly interpolate yvec(tvec) to the point tint. If outside the lower bound, return the first entry. If outside
+   !! the upper bound, return the last entry. Optionally return the weights and indices used
+   FUNCTION lin_interp( tint, tvec, yvec ) RESULT(yint)
+      REAL(wp)               :: tint !< Point at which to interpolate
+      REAL(wp), DIMENSION(:) :: tvec !< Vector containing t points
+      REAL(wp), DIMENSION(:) :: yvec !< Vector containing y(t) points
+      REAL(wp)               :: yint !< Interpolated value y(tint)
+
+      INTEGER :: ntime, jt
+      REAL(wp) :: wt1, wt2, r_dt
+
+      ntime = SIZE(yvec)
+      IF (ntime /= SIZE(tvec)) call ctl_stop( 'STOP', 'lin_interp: yvec and tvec not the same size')
+
+      ! Check edge cases
+      IF ( tint < tvec(1) ) THEN
+         yint = yvec(1)
+         RETURN
+      ELSEIF ( tint > tvec(ntime) ) THEN
+         yint = yvec(ntime)
+         RETURN
+      ENDIF
+
+      DO jt=1,ntime-1
+         IF ( tint > tvec(jt) ) THEN
+            r_dt = 1./(tvec(jt+1) - tvec(jt))
+            wt2 = (tint - tvec(jt))*r_dt
+            wt1 = 1. - wt2
+            yint = wt1*yvec(jt) + wt2*yvec(jt+1)
+            RETURN
+         ENDIF
+      ENDDO
+      ! This function should have returned before now. If not, something has gone terribly wrong
+      CALL ctl_stop('STOP', 'lin_interp: Something has gone very wrong')
+
+   END FUNCTION 
    !!======================================================================
 END MODULE trc_util
