@@ -30,7 +30,8 @@ MODULE p4zflx
 #if defined key_cpl_carbon_cycle
    USE sbc_oce, ONLY :  atm_co2     !  atmospheric pCO2               
 #endif
-   
+   USE obs_utils, ONLY : chkerr
+   USE netcdf 
    IMPLICIT NONE
    PRIVATE
 
@@ -41,7 +42,8 @@ MODULE p4zflx
    !                                      !!** Namelist  nampisext  **
    REAL(wp)          ::  atcco2    = 278._wp       !: pre-industrial atmospheric [co2] (ppm) 	
    LOGICAL           ::  ln_co2int = .FALSE.       !: flag to read in a file and interpolate atmospheric pco2 or not
-   CHARACTER(len=34) ::  clname    = 'atcco2.txt'  !: filename of pco2 values
+   CHARACTER(len=120) ::  clname       = 'co2atm.nc'                               !: filename of pco2 values
+   CHARACTER(len=120) ::  clvarname    = 'mole_fraction_of_carbon_dioxide_in_air'  !: variable name in clname file 
    INTEGER           ::  nn_offset = 0             !: Offset model-data start year (default = 0) 
 
    !!  Variables related to reading atmospheric CO2 time history    
@@ -115,7 +117,7 @@ CONTAINS
          ! Caveats: First column of .txt must be in years, decimal  years preferably. 
          ! For nn_offset, if your model year is iyy, nn_offset=(years(1)-iyy) 
          ! then the first atmospheric CO2 record read is at years(1)
-         current_yearfrac = nyear + (nsec_year / ( nyear_len * 86400.))
+         current_yearfrac = nyear + (nsec_year / ( nyear_len(1) * 86400.))
          satmco2(:,:) = lin_interp( current_yearfrac + nn_offset, atcco2h_years, atcco2h )
       ENDIF
 
@@ -270,9 +272,9 @@ CONTAINS
       !!      called at the first timestep (nittrc000)
       !! ** input   :   Namelist nampisext
       !!----------------------------------------------------------------------
-      NAMELIST/nampisext/ln_co2int, atcco2, clname, nn_offset
+      NAMELIST/nampisext/ln_co2int, atcco2, clname, clvarname, nn_offset
       INTEGER :: jm, ntime, ncid
-      REAL(wp), DIMENSION(:,:) :: tmp2d
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: tmp2d
       !!----------------------------------------------------------------------
       !
       REWIND( numnatp )                     ! read numnatp
@@ -299,8 +301,10 @@ CONTAINS
             WRITE(numout,*) ' '
          ENDIF
          CALL chkerr(nf90_open( clname, NF90_NOWRITE, ncid ), 'trcini_cfc', 0)
+         CALL read_var1d( ncid, 'time',    atcco2h_years)
          CALL read_var2d( ncid, clvarname, tmp2d )
-         CALL chkerr(nf90_close( ncid )) 
+         CALL chkerr(nf90_close( ncid ), 'trcini_cfc', 0)
+         ntime = SIZE(atcco2h_years)
          ! Set the time-varying atmospheric history from the read in data
          ALLOCATE(atcco2h(ntime))
          atcco2h(:) = tmp2d(:,1) ! Sector '1' corresponds to global average
