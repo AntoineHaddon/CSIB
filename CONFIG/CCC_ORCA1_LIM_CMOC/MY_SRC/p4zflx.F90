@@ -41,16 +41,29 @@ MODULE p4zflx
    PUBLIC   p4z_flx_alloc  
 
    !                                      !!** Namelist  nampisext  **
-   REAL(wp)          ::  atcco2    = 284.32_wp     !: pre-industrial atmospheric [co2] (ppm) 	
-   REAL(wp)          ::  atcco2n   = 284.32_wp     !: pre-industrial atmospheric [co2] (ppm) 	
-   LOGICAL           ::  ln_co2int = .FALSE.       !: flag to read in a file and interpolate atmospheric pco2 or not
+   REAL(wp)           ::  atcco2    = 284.32_wp     !: pre-industrial atmospheric [co2] (ppm) 	
+   REAL(wp)           ::  atcco2n   = 284.32_wp     !: pre-industrial atmospheric [co2] (ppm) 	
+   REAL(wp)           ::  atcd14c   = 0             !: 14C/C in CO2 (0 corresponds to pre-industrial)
+   LOGICAL            ::  ln_co2int = .FALSE.       !: flag to read in a file and interpolate atmospheric pco2 or not
    CHARACTER(len=120) ::  clname       = 'co2atm.nc'                               !: filename of pco2 values
    CHARACTER(len=120) ::  clvarname    = 'mole_fraction_of_carbon_dioxide_in_air'  !: variable name in clname file 
-   INTEGER           ::  nn_offset = 0             !: Offset model-data start year (default = 0) 
+   CHARACTER(len=120) ::  cl14name     = 'Delta14co2.nc'      !: filename of delta C-14 pco2 values
+   CHARACTER(len=120) ::  cl14varname  = 'Delta14co2_in_air'  !: variable name in cl14name file 
+   INTEGER            ::  nn_offset = 0             !: Offset model-data start year (default = 0) 
 
    !!  Variables related to reading atmospheric CO2 time history    
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:) :: atcco2h, atcco2h_years
    INTEGER  :: nmaxrec, numco2
+
+   ! Parameters related to Delta-14C
+   INTEGER,  PARAMETER  :: nd14csec = 3
+   REAL(wp), PARAMETER :: bandlat1 = 30.   ! Latitude of southern (northern) bound of the first (second) sector
+   REAL(wp), PARAMETER :: bandlat2 = -30.  ! Latitude of southern (northern) bound of the second (third) sector
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) :: secmapd14c      !: How to map from model(i,j) point to &
+                                                                          !! the latitudinal sector that Delta-14C
+                                                                          !! field is valid for
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) :: atcd14ch        !: Delta-C14 pco2 atmospheric history
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:)   :: atcd14ch_years  !: Delta-C14 pco2 years 
 
    !                                         !!* nampisatm namelist (Atmospheric PRessure) *
    LOGICAL, PUBLIC ::   ln_presatm = .true.  !: ref. pressure: global mean Patm (F) or a constant (F)
@@ -62,9 +75,10 @@ MODULE p4zflx
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) :: oce_co2   !: ocean carbon flux 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) :: oce_co2a  !: abiotic ocean carbon flux
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) :: oce_co2n  !: natural ocean carbon flux
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) :: oce_co2r  !: ocean radiocarbon flux
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) :: satmco2   !: atmospheric pco2 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) :: satmco2n  !: preindustrial atmospheric pco2 
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) :: satmco2r  !: Delta-C14 pco2 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) :: satmd14c  !: Delta-C14 pco2 
 
    REAL(wp) ::  t_oce_co2_flx               !: Total ocean carbon flux 
    REAL(wp) ::  t_atm_co2_flx               !: global mean of atmospheric pco2
@@ -104,6 +118,7 @@ CONTAINS
       CHARACTER (len=25) :: charout
       REAL(wp), POINTER, DIMENSION(:,:) :: zkgco2, zkgo2, zh2co3, zh2co3a, zh2co3n, zh2co3r, zoflx, zoflxa
       REAL(wp), POINTER, DIMENSION(:,:,:) :: zph3d
+      REAL(wp), DIMENSION(nd14csec) :: d14c_now
       !!---------------------------------------------------------------------
       !
       IF( nn_timing == 1 )  CALL timing_start('p4z_flx')
@@ -126,6 +141,15 @@ CONTAINS
          ! then the first atmospheric CO2 record read is at years(1)
          current_yearfrac = nyear + (nsec_year / ( nyear_len(1) * 86400.))
          satmco2(:,:) = lin_interp( current_yearfrac + nn_offset, atcco2h_years, atcco2h )
+
+         ! Interpolate each sector of 14C
+         DO ji=1,nd14csec
+            d14c_now(ji) = lin_interp(current_yearfrac + nn_offset, atcd14ch_years, atcd14ch(:,ji))
+         ENDDO
+         DO jj = 1,jpj ; DO ji = 1,jpi
+            satmd14c(ji,jj) = d14c_now(secmapd14c(ji,jj))
+         ENDDO ; ENDDO
+
       ENDIF
 
 #if defined key_cpl_carbon_cycle
@@ -190,7 +214,7 @@ CONTAINS
 
               ! RADIOCARBON CHEMISTRY
                zdic  = trn(ji,jj,1,jpdrc) / zfact
-               zph   = MAX( hj(ji,jj,1), 1.e-10 ) / zfact
+               zph   = MAX( hl(ji,jj,1), 1.e-10 ) / zfact
                zalka = trn(ji,jj,1,jpaab) / zfact
                zalk  = zalka - (  akw3(ji,jj,1) / zph - zph + zbot / ( 1.+ zph / akb3(ji,jj,1) ) + 2.*zp0 + zp1 - zp3 + zsi )
                zah2   = SQRT(  (zdic-zalk)**2 + 4.* ( zalk * ak23(ji,jj,1)   &
@@ -253,10 +277,12 @@ CONTAINS
             oce_co2n(ji,jj) = ( zfld - zflu ) * rfact * e1e2t(ji,jj) * tmask(ji,jj,1) * 1000.
             tra(ji,jj,1,jpdnt) = tra(ji,jj,1,jpdnt) + ( zfld - zflu ) / fse3t(ji,jj,1)
             ! DI14C
-            zfld = satmco2r(ji,jj) * patm(ji,jj) * tmask(ji,jj,1) * chemc(ji,jj,1) * zkgco2(ji,jj)   ! (mol/L) * (m/s)
-            zflu = zh2co3n(ji,jj) * tmask(ji,jj,1) * zkgco2(ji,jj)                                   ! (mol/L) (m/s) ?
+            ! zfld representss equations 17-19 in Orr et al. 2016
+            zfld = (satmco2(ji,jj)*(1 + satmd14c(ji,jj))*1.e-3 ) * patm(ji,jj) * tmask(ji,jj,1) * &
+                   chemc(ji,jj,1) * zkgco2(ji,jj)   ! (mol/L) * (m/s)
+            zflu = zh2co3r(ji,jj) * tmask(ji,jj,1) * zkgco2(ji,jj)                                   ! (mol/L) (m/s) ?
             oce_co2r(ji,jj) = ( zfld - zflu ) * rfact * e1e2t(ji,jj) * tmask(ji,jj,1) * 1000.
-            tra(ji,jj,1,jpdnr) = tra(ji,jj,1,jpdnr) + ( zfld - zflu ) / fse3t(ji,jj,1)
+            tra(ji,jj,1,jpdrc) = tra(ji,jj,1,jpdrc) + ( zfld - zflu ) / fse3t(ji,jj,1)
 
             ! Compute O2 flux 
             zfld16 = atcox * patm(ji,jj) * chemc(ji,jj,2) * tmask(ji,jj,1) * zkgo2(ji,jj)          ! (mol/L) * (m/s)
@@ -337,8 +363,9 @@ CONTAINS
       !!      called at the first timestep (nittrc000)
       !! ** input   :   Namelist nampisext
       !!----------------------------------------------------------------------
-      NAMELIST/nampisext/ln_co2int, atcco2, clname, clvarname, nn_offset
-      INTEGER :: jm, ntime, ncid
+      NAMELIST/nampisext/ln_co2int, atcco2, satmd14c, clname, clvarname, cl14name, &
+                         cl14varname, nn_offset
+      INTEGER :: jm, ntime, ncid, ji, jj
       REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: tmp2d
       !!----------------------------------------------------------------------
       !
@@ -354,15 +381,19 @@ CONTAINS
       ENDIF
       IF( .NOT.ln_co2int ) THEN
          IF(lwp) THEN                         ! control print
-            WRITE(numout,*) '    Constant Atmospheric pCO2 value  atcco2    =', atcco2
+            WRITE(numout,*) '    Constant Atmospheric pCO2 value       atcco2    =', atcco2
+            WRITE(numout,*) '    Constant Atmospheric delta 14C value  atcd14c   =', atcd14c
             WRITE(numout,*) ' '
          ENDIF
          satmco2(:,:)  = atcco2      ! Initialisation of atmospheric pco2
          satmco2n(:,:) = atcco2n
+         satmd14c(:,:) = atcd14c
       ELSE
          IF(lwp)  THEN
-            WRITE(numout,*) '    Atmospheric pCO2 value from file       clname         =', TRIM( clname )
-            WRITE(numout,*) '    Atmospheric pCO2 variable name in file clvarname      =', TRIM( clvarname )
+            WRITE(numout,*) '    Atmospheric pCO2 value from file             clname     =', TRIM( clname )
+            WRITE(numout,*) '    Atmospheric pCO2 variable name in file       clvarname  =', TRIM( clvarname )
+            WRITE(numout,*) '    Atmospheric Delta 14C value from file        cl14name     =', TRIM( cl14name )
+            WRITE(numout,*) '    Atmospheric Delta 14C variable name in file  cl14varname  =', TRIM( cl14varname )
             WRITE(numout,*) '    Offset model-data start year           nn_offset   =', nn_offset
             WRITE(numout,*) ' '
          ENDIF
@@ -380,7 +411,16 @@ CONTAINS
          DO jm = 1,ntime
             atcco2h_years(jm) = (jm-1) + 0.5
          ENDDO
-         
+         ! Map model grid to latitudinal sector in the OMIP input file for delta-14C
+         DO jj = 1,jpj ; DO ji = 1,jpi
+            IF ( gphit(ji,jj) >= bandlat1 ) THEN
+               secmapd14c(ji,jj) = 1
+            ELSEIF ( gphit(ji,jj) > bandlat2 .AND. gphit(ji,jj) < bandlat1 ) THEN
+               secmapd14c(ji,jj) = 2
+            ELSEIF ( gphit(ji,jj) <= bandlat2 ) THEN
+               secmapd14c(ji,jj) = 3
+            ENDIF
+         ENDDO ; ENDDO
       ENDIF
       !
       area = glob_sum( e1e2t(:,:) )        ! interior global domain surface
