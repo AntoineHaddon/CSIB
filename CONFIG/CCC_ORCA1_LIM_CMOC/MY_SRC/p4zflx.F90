@@ -32,6 +32,7 @@ MODULE p4zflx
 #endif
    USE obs_utils, ONLY : chkerr
    USE netcdf 
+
    IMPLICIT NONE
    PRIVATE
 
@@ -300,10 +301,10 @@ CONTAINS
             WRITE(numout,*) '    Offset model-data start year           nn_offset   =', nn_offset
             WRITE(numout,*) ' '
          ENDIF
-         CALL chkerr(nf90_open( clname, NF90_NOWRITE, ncid ), 'trcini_cfc', 0)
+         CALL chkerr(nf90_open( clname, NF90_NOWRITE, ncid ), 'p4z_flx_init', 0)
          CALL read_var1d( ncid, 'time',    atcco2h_years)
          CALL read_var2d( ncid, clvarname, tmp2d )
-         CALL chkerr(nf90_close( ncid ), 'trcini_cfc', 0)
+         CALL chkerr(nf90_close( ncid ), 'p4z_flx_init', 0)
          ntime = SIZE(atcco2h_years)
          ! Set the time-varying atmospheric history from the read in data
          ALLOCATE(atcco2h(ntime))
