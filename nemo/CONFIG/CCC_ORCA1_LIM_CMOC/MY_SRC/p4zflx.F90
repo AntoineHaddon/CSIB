@@ -278,7 +278,7 @@ CONTAINS
             tra(ji,jj,1,jpdnt) = tra(ji,jj,1,jpdnt) + ( zfld - zflu ) / fse3t(ji,jj,1)
             ! DI14C
             ! zfld representss equations 17-19 in Orr et al. 2016
-            zfld = (satmco2(ji,jj)*(1 + satmd14c(ji,jj))*1.e-3 ) * patm(ji,jj) * tmask(ji,jj,1) * &
+            zfld = (satmco2(ji,jj)*(1. + satmd14c(ji,jj)*1.e-3)) * patm(ji,jj) * tmask(ji,jj,1) * &
                    chemc(ji,jj,1) * zkgco2(ji,jj)   ! (mol/L) * (m/s)
             zflu = zh2co3r(ji,jj) * tmask(ji,jj,1) * zkgco2(ji,jj)                                   ! (mol/L) (m/s) ?
             oce_co2r(ji,jj) = ( zfld - zflu ) * rfact * e1e2t(ji,jj) * tmask(ji,jj,1) * 1000.
