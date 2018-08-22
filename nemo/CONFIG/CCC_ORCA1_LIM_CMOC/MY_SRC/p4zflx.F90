@@ -116,14 +116,16 @@ CONTAINS
       REAL(wp) ::   zph2, zph3, zpo4, zsi, zpd, zp0, zp1, zp3        ! coefficients added to account for P and Si contribution to TA
       REAL(wp) ::   zyr_dec, zdco2dt, current_yearfrac
       CHARACTER (len=25) :: charout
-      REAL(wp), POINTER, DIMENSION(:,:) :: zkgco2, zkgo2, zh2co3, zh2co3a, zh2co3n, zh2co3r, zoflx, zoflxa
+      REAL(wp), POINTER, DIMENSION(:,:) :: zkgco2, zkgo2, zh2co3, zh2co3a, zh2co3n, zh2co3r, zoflx, zoflxa, abio_alk
       REAL(wp), POINTER, DIMENSION(:,:,:) :: zph3d
       REAL(wp), DIMENSION(nd14csec) :: d14c_now
+      REAL(wp) :: r_sss_glob_avg
       !!---------------------------------------------------------------------
       !
       IF( nn_timing == 1 )  CALL timing_start('p4z_flx')
       !
       CALL wrk_alloc( jpi, jpj, zkgco2, zkgo2, zh2co3, zh2co3a, zh2co3n, zh2co3r, zoflx, zoflxa )
+      CALL wrk_alloc( jpi, jpj, abio_alk) 
       CALL wrk_alloc( jpi, jpj, jpk, zph3d )
 
       !
@@ -155,6 +157,16 @@ CONTAINS
 #if defined key_cpl_carbon_cycle
       satmco2(:,:) = atm_co2(:,:)
 #endif
+
+      ! Calculate 'abiotic alkalinity' Equation 27 of Orr et al. 2016
+      r_sss_glob_avg = 1./sss_glob_avg
+!CDIR NOVERRCHK
+       DO jj = 1, jpj
+!CDIR NOVERRCHK
+          DO ji = 1, jpi
+             abio_alk(ji,jj) = surf_alk_abio*(tsn(ji,jj,1,jp_sal)*r_sss_glob_avg)
+          ENDDO
+       ENDDO
 
       DO jm = 1, 10
 !CDIR NOVERRCHK
@@ -193,7 +205,7 @@ CONTAINS
               ! ABIOTIC CARBON CHEMISTRY
                zdic  = trn(ji,jj,1,jpdab) / zfact
                zph   = MAX( hj(ji,jj,1), 1.e-10 ) / zfact
-               zalka = trn(ji,jj,1,jpaab) / zfact
+               zalka = abio_alk(ji,jj) / zfact
                zalk  = zalka - (  akw3(ji,jj,1) / zph - zph + zbot / ( 1.+ zph / akb3(ji,jj,1) ) + 2.*zp0 + zp1 - zp3 + zsi )
                zah2   = SQRT(  (zdic-zalk)**2 + 4.* ( zalk * ak23(ji,jj,1)   &
                   &                                        / ak13(ji,jj,1) ) * ( 2.* zdic - zalk )  )
@@ -215,7 +227,7 @@ CONTAINS
               ! RADIOCARBON CHEMISTRY
                zdic  = trn(ji,jj,1,jpdrc) / zfact
                zph   = MAX( hl(ji,jj,1), 1.e-10 ) / zfact
-               zalka = trn(ji,jj,1,jpaab) / zfact
+               zalka = abio_alk(ji,jj) / zfact
                zalk  = zalka - (  akw3(ji,jj,1) / zph - zph + zbot / ( 1.+ zph / akb3(ji,jj,1) ) + 2.*zp0 + zp1 - zp3 + zsi )
                zah2   = SQRT(  (zdic-zalk)**2 + 4.* ( zalk * ak23(ji,jj,1)   &
                   &                                        / ak13(ji,jj,1) ) * ( 2.* zdic - zalk )  )
@@ -346,6 +358,7 @@ CONTAINS
       ENDIF
       !
       CALL wrk_dealloc( jpi, jpj, zkgco2, zkgo2, zh2co3, zh2co3a, zh2co3n, zoflx, zoflxa )
+      CALL wrk_dealloc( jpi, jpj, abio_alk ) 
       CALL wrk_dealloc( jpi, jpj, jpk, zph3d )
       !
       IF( nn_timing == 1 )  CALL timing_stop('p4z_flx')

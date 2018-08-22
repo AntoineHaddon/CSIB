@@ -130,9 +130,10 @@ MODULE sms_pisces
 
    !! Variables used to calculate globally averaged salinity of the previous year
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:) :: salt_avg      !: Time average of surface salinity
-   REAL(wp), SAVE                              :: salt_dtsum   !: Accumulated time used for calculating average of salt
+   REAL(wp), SAVE                              :: salt_dtsum    !: Accumulated time used for calculating average of salt
    REAL(wp), SAVE                              :: sss_glob_avg  !: Globally averaged surface salinity from previous year 
-
+   REAL(wp), PARAMETER                         :: surf_alk_abio = 2297*1e-6 !: Globally averaged surface alkalinity
+                                                                            !! defined on page 2182 of Orr et al. 2016 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 3.3 , NEMO Consortium (2010)
    !! $Id: sms_pisces.F90 3294 2012-01-28 16:44:18Z rblod $ 
