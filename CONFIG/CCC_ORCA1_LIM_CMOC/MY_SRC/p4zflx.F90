@@ -151,7 +151,8 @@ CONTAINS
          DO jj = 1,jpj ; DO ji = 1,jpi
             satmd14c(ji,jj) = d14c_now(secmapd14c(ji,jj))
          ENDDO ; ENDDO
-
+      ELSE 
+         satmd14c(:,:) = atcd14c
       ENDIF
 
 #if defined key_cpl_carbon_cycle
@@ -424,6 +425,7 @@ CONTAINS
          DO jm = 1,ntime
             atcco2h_years(jm) = (jm-1) + 0.5
          ENDDO
+         ALLOCATE(secmapd14c(jpi,jpj))
          ! Map model grid to latitudinal sector in the OMIP input file for delta-14C
          DO jj = 1,jpj ; DO ji = 1,jpi
             IF ( gphit(ji,jj) >= bandlat1 ) THEN
@@ -510,6 +512,7 @@ CONTAINS
       !!                     ***  ROUTINE p4z_flx_alloc  ***
       !!----------------------------------------------------------------------
       ALLOCATE( oce_co2(jpi,jpj), oce_co2a(jpi,jpj), oce_co2n(jpi,jpj), satmco2(jpi,jpj), satmco2n(jpi,jpj), patm(jpi,jpj), STAT=p4z_flx_alloc )
+      ALLOCATE(secmapd14c(jpi,jpj), satmd14c(jpi,jpj), oce_co2r(jpi,jpj))
       !
       IF( p4z_flx_alloc /= 0 )   CALL ctl_warn('p4z_flx_alloc : failed to allocate arrays')
       !
