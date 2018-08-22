@@ -213,16 +213,6 @@ CONTAINS
                zh2co3n(ji,jj) = ( 2.* zdic - zalk ) / ( 2.+ ak13(ji,jj,1) / zah2 ) * zfact
                hk(ji,jj,1)   = zah2 * zfact
 
-              ! RADIOCARBON CHEMISTRY
-               zdic  = trn(ji,jj,1,jpdrc) / zfact
-               zph   = MAX( hl(ji,jj,1), 1.e-10 ) / zfact
-               zalka = trn(ji,jj,1,jpaab) / zfact
-               zalk  = zalka - (  akw3(ji,jj,1) / zph - zph + zbot / ( 1.+ zph / akb3(ji,jj,1) ) + 2.*zp0 + zp1 - zp3 + zsi )
-               zah2   = SQRT(  (zdic-zalk)**2 + 4.* ( zalk * ak23(ji,jj,1)   &
-                  &                                        / ak13(ji,jj,1) ) * ( 2.* zdic - zalk )  )
-               zah2   = 0.5 * ak13(ji,jj,1) / zalk * ( ( zdic - zalk ) + zah2 )
-               zh2co3r(ji,jj) = ( 2.* zdic - zalk ) / ( 2.+ ak13(ji,jj,1) / zah2 ) * zfact
-               hl(ji,jj,1)   = zah2 * zfact
             END DO
          END DO
       END DO
@@ -257,6 +247,9 @@ CONTAINS
             ! compute gas exchange for CO2 and O2
             zkgco2(ji,jj) = zkgwan * SQRT( 660./ zsch_co2 )
             zkgo2 (ji,jj) = zkgwan * SQRT( 660./ zsch_o2 )
+
+            ! Radiocarbon based on equation 29
+            zh2co3r(ji,jj) = zh2co3a(ji,jj) * ( tra(ji,jj,1,jpdrc)/tra(ji,jj,1,jpdab )
          END DO
       END DO
 
@@ -278,7 +271,7 @@ CONTAINS
             oce_co2n(ji,jj) = ( zfld - zflu ) * rfact * e1e2t(ji,jj) * tmask(ji,jj,1) * 1000.
             tra(ji,jj,1,jpdnt) = tra(ji,jj,1,jpdnt) + ( zfld - zflu ) / fse3t(ji,jj,1)
             ! DI14C
-            ! zfld representss equations 17-19 in Orr et al. 2016
+            ! zfld representss equations 17-19 and equation 29 in Orr et al. 2016
             zfld = (satmco2(ji,jj)*(1. + satmd14c(ji,jj)*1.e-3)) * patm(ji,jj) * tmask(ji,jj,1) * &
                    chemc(ji,jj,1) * zkgco2(ji,jj)   ! (mol/L) * (m/s)
             zflu = zh2co3r(ji,jj) * tmask(ji,jj,1) * zkgco2(ji,jj)                                   ! (mol/L) (m/s) ?
@@ -328,6 +321,7 @@ CONTAINS
             CALL iom_put( "Oflx" , zoflx(:,:) * 1000 * tmask(:,:,1)  )
             CALL iom_put( "Cflx_abio" , oce_co2a(:,:) / e1e2t(:,:) / rfact )
             CALL iom_put( "Cflx_nat" , oce_co2n(:,:) / e1e2t(:,:) / rfact )
+            CALL iom_put( "Cflx_14C" , oce_co2r(:,:) / e1e2t(:,:) / rfact )
             CALL iom_put( "Oflx_abio" , zoflxa(:,:) * 1000 * tmask(:,:,1)  )
             CALL iom_put( "Kg"   , zkgco2(:,:) * tmask(:,:,1) )
             CALL iom_put( "Dpco2", ( satmco2(:,:) * patm(:,:) - zh2co3(:,:) / ( chemc(:,:,1) + rtrn ) ) * tmask(:,:,1) )
