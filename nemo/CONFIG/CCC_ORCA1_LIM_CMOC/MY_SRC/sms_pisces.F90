@@ -159,7 +159,7 @@ CONTAINS
          &      akp33(jpi,jpj,jpk)   , aksi3 (jpi,jpj,jpk) ,       &
          &      asi3 (jpi,jpj,jpk)   , hi    (jpi,jpj,jpk) ,       &
          &      hj  (jpi,jpj,jpk)    , hk  (jpi,jpj,jpk)   ,       &
-         &      excess(jpi,jpj,jpk)  ,   STAT=ierr(4) )
+         &      hl  (jpi,jpj,jpk)    , excess(jpi,jpj,jpk)  ,   STAT=ierr(4) )
          !
       !* Array used to indicate negative tracer values  
       ALLOCATE( xnegtr(jpi,jpj,jpk)  ,            STAT=ierr(6) )
