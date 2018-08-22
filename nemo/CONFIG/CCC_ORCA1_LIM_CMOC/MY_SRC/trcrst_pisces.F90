@@ -18,6 +18,7 @@ MODULE trcrst_pisces
    USE trc             ! TOP variables
    USE trcsms_pisces          ! pisces sms trends
    USE sms_pisces          ! pisces sms variables
+   USE p4zint
    USE iom
    USE trcdta
 
@@ -80,6 +81,21 @@ CONTAINS
          END DO
       ENDIF
 
+      ! Load variables related to sea surface salinities
+      IF (iom_varid( knum, 'sss_glob_avg', ldstop = .FALSE.) > 0) THEN
+         CALL iom_get( knum, 'sss_glob_avg', sss_glob_avg )
+      ELSE
+         sss_glob_avg = glob_avg_area_wt( trn(:,:,1,jp_sal) ) 
+      ENDIF
+      IF (iom_varid( knum, 'salt_dtsum', ldstop = .FALSE.) > 0) THEN
+         CALL iom_get( knum, 'salt_dtsum', salt_dtsum )
+      ELSE
+         salt_dtsum = 0. 
+      ENDIF
+      IF (iom_varid( knum, 'salt_avg', ldstop = .FALSE.) > 0) THEN
+         CALL iom_get( knum, jpdom_autoglo, 'salt_avg', salt_avg )
+         salt_avg(:,:) = 0.
+      ENDIF
    END SUBROUTINE trc_rst_read_pisces
 
    SUBROUTINE trc_rst_wri_pisces( kt, kitrst, knum )
@@ -98,7 +114,11 @@ CONTAINS
       IF(lwp) WRITE(numout,*) ' trc_rst_wri_pisces : Write specific variables from pisces model '
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~'
 
-      CALL iom_rstput( kt, kitrst, knum, 'PH', hi(:,:,:) )
+      CALL iom_rstput( kt, kitrst, knum, 'PH',           hi(:,:,:) )
+      ! Variables related to calculating annually+globally averaged sea surface salinity
+      CALL iom_rstput( kt, kitrst, knum, 'sss_glob_avg', sss_glob_avg)
+      CALL iom_rstput( kt, kitrst, knum, 'salt_avg',     salt_avg(:,:))
+      CALL iom_rstput( kt, kitrst, knum, 'salt_dtsum', salt_dtsum )
 
    END SUBROUTINE trc_rst_wri_pisces
 

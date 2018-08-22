@@ -128,6 +128,11 @@ MODULE sms_pisces
    !!* Array used to indicate negative tracer values
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   xnegtr     !: time step correction
 
+   !! Variables used to calculate globally averaged salinity of the previous year
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:) :: salt_avg      !: Time average of surface salinity
+   REAL(wp), SAVE                              :: salt_dtsum   !: Accumulated time used for calculating average of salt
+   REAL(wp), SAVE                              :: sss_glob_avg  !: Globally averaged surface salinity from previous year 
+
    !!----------------------------------------------------------------------
    !! NEMO/TOP 3.3 , NEMO Consortium (2010)
    !! $Id: sms_pisces.F90 3294 2012-01-28 16:44:18Z rblod $ 
@@ -152,14 +157,15 @@ CONTAINS
       ALLOCATE( xrcico  (jpi,jpj),               STAT=ierr(3) ) !  rain ratio 
          !
       !* Variable for chemistry of the CO2 cycle
-      ALLOCATE( akb3(jpi,jpj,jpk)    , ak13  (jpi,jpj,jpk) ,       &
-         &      ak23(jpi,jpj,jpk)    , aksp  (jpi,jpj,jpk) ,       &
-         &      akw3(jpi,jpj,jpk)    , borat (jpi,jpj,jpk) ,       &
-         &      akp13(jpi,jpj,jpk)   , akp23 (jpi,jpj,jpk) ,       &
-         &      akp33(jpi,jpj,jpk)   , aksi3 (jpi,jpj,jpk) ,       &
-         &      asi3 (jpi,jpj,jpk)   , hi    (jpi,jpj,jpk) ,       &
-         &      hj  (jpi,jpj,jpk)    , hk  (jpi,jpj,jpk)   ,       &
-         &      excess(jpi,jpj,jpk)  ,   STAT=ierr(4) )
+      ALLOCATE( akb3  (jpi,jpj,jpk)  , ak13    (jpi,jpj,jpk) ,       &
+         &      ak23  (jpi,jpj,jpk)  , aksp    (jpi,jpj,jpk) ,       &
+         &      akw3  (jpi,jpj,jpk)  , borat   (jpi,jpj,jpk) ,       &
+         &      akp13 (jpi,jpj,jpk)  , akp23   (jpi,jpj,jpk) ,       &
+         &      akp33 (jpi,jpj,jpk)  , aksi3   (jpi,jpj,jpk) ,       &
+         &      asi3  (jpi,jpj,jpk)  , hi      (jpi,jpj,jpk) ,       &
+         &      hj    (jpi,jpj,jpk)  , hk      (jpi,jpj,jpk) ,       &
+         &      hl    (jpi,jpj,jpk)  , salt_avg(jpi,jpj)     ,       &
+         &      excess(jpi,jpj,jpk)  , STAT=ierr(4)          )
          !
       !* Array used to indicate negative tracer values  
       ALLOCATE( xnegtr(jpi,jpj,jpk)  ,            STAT=ierr(6) )
