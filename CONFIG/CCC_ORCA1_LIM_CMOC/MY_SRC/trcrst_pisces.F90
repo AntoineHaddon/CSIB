@@ -41,6 +41,7 @@ CONTAINS
       INTEGER  ::  ji, jj, jk
       REAL(wp) ::  zcaralk, zbicarb, zco3
       REAL(wp) ::  ztmas, ztmas1
+      REAL(wp) :: r_sss_glob_avg, abio_alk
       !!----------------------------------------------------------------------
 
       !
@@ -49,37 +50,6 @@ CONTAINS
       IF(lwp) WRITE(numout,*)
       IF(lwp) WRITE(numout,*) ' trc_rst_read_pisces : Read specific variables from pisces model '
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~'
-      ! 
-      IF( iom_varid( knum, 'PH', ldstop = .FALSE. ) > 0 ) THEN
-         CALL iom_get( knum, jpdom_autoglo, 'PH' , hi(:,:,:)  )
-      ELSE
-!         hi(:,:,:) = 1.e-9 
-         ! Set PH from  total alkalinity, borat (???), akb3 (???) and ak23 (???)
-         ! --------------------------------------------------------
-         DO jk = 1, jpk
-            DO jj = 1, jpj
-               DO ji = 1, jpi
-                  ztmas   = tmask(ji,jj,jk)
-                  ztmas1  = 1. - tmask(ji,jj,jk)
-                  zcaralk = trn(ji,jj,jk,jptal) - borat(ji,jj,jk) / (  1. + 1.E-8 / ( rtrn + akb3(ji,jj,jk) )  )
-                  zco3    = ( zcaralk - trn(ji,jj,jk,jpdic) ) * ztmas + 0.5e-3 * ztmas1
-                  zbicarb = ( 2. * trn(ji,jj,jk,jpdic) - zcaralk )
-                  hi(ji,jj,jk) = ( ak23(ji,jj,jk) * zbicarb / zco3 ) * ztmas + 1.e-9 * ztmas1
-                  zco3    = ( zcaralk - trn(ji,jj,jk,jpdnt) ) * ztmas + 0.5e-3 * ztmas1
-                  zbicarb = ( 2. * trn(ji,jj,jk,jpdnt) - zcaralk )
-                  hk(ji,jj,jk) = ( ak23(ji,jj,jk) * zbicarb / zco3 ) * ztmas + 1.e-9 * ztmas1
-                  zcaralk = trn(ji,jj,jk,jpaab) - borat(ji,jj,jk) / (  1. + 1.E-8 / ( rtrn + akb3(ji,jj,jk) )  )
-                  zco3    = ( zcaralk - trn(ji,jj,jk,jpdab) ) * ztmas + 0.5e-3 * ztmas1
-                  zbicarb = ( 2. * trn(ji,jj,jk,jpdab) - zcaralk )
-                  hj(ji,jj,jk) = ( ak23(ji,jj,jk) * zbicarb / zco3 ) * ztmas + 1.e-9 * ztmas1
-                  zcaralk = trn(ji,jj,jk,jpaab) - borat(ji,jj,jk) / (  1. + 1.E-8 / ( rtrn + akb3(ji,jj,jk) )  )
-                  zco3    = ( zcaralk - trn(ji,jj,jk,jpdrc) ) * ztmas + 0.5e-3 * ztmas1
-                  zbicarb = ( 2. * trn(ji,jj,jk,jpdrc) - zcaralk )
-                  hl(ji,jj,jk) = ( ak23(ji,jj,jk) * zbicarb / zco3 ) * ztmas + 1.e-9 * ztmas1
-               END DO
-            END DO
-         END DO
-      ENDIF
 
       ! Load variables related to sea surface salinities
       IF (iom_varid( knum, 'sss_glob_avg', ldstop = .FALSE.) > 0) THEN
@@ -96,6 +66,42 @@ CONTAINS
          CALL iom_get( knum, jpdom_autoglo, 'salt_avg', salt_avg )
          salt_avg(:,:) = 0.
       ENDIF
+      ! 
+      IF( iom_varid( knum, 'PH', ldstop = .FALSE. ) > 0 ) THEN
+         CALL iom_get( knum, jpdom_autoglo, 'PH' , hi(:,:,:)  )
+      ELSE
+!         hi(:,:,:) = 1.e-9 
+         ! Set PH from  total alkalinity, borat (???), akb3 (???) and ak23 (???)
+         ! --------------------------------------------------------
+         r_sss_glob_avg = 1./sss_glob_avg
+         DO jk = 1, jpk
+            DO jj = 1, jpj
+               DO ji = 1, jpi
+                  ! Abiotic alkalinity calculation
+                  abio_alk = surf_alk_abio*(tsn(ji,jj,1,jp_sal)*r_sss_glob_avg)
+
+                  ztmas   = tmask(ji,jj,jk)
+                  ztmas1  = 1. - tmask(ji,jj,jk)
+                  zcaralk = trn(ji,jj,jk,jptal) - borat(ji,jj,jk) / (  1. + 1.E-8 / ( rtrn + akb3(ji,jj,jk) )  )
+                  zco3    = ( zcaralk - trn(ji,jj,jk,jpdic) ) * ztmas + 0.5e-3 * ztmas1
+                  zbicarb = ( 2. * trn(ji,jj,jk,jpdic) - zcaralk )
+                  hi(ji,jj,jk) = ( ak23(ji,jj,jk) * zbicarb / zco3 ) * ztmas + 1.e-9 * ztmas1
+                  zco3    = ( zcaralk - trn(ji,jj,jk,jpdnt) ) * ztmas + 0.5e-3 * ztmas1
+                  zbicarb = ( 2. * trn(ji,jj,jk,jpdnt) - zcaralk )
+                  hk(ji,jj,jk) = ( ak23(ji,jj,jk) * zbicarb / zco3 ) * ztmas + 1.e-9 * ztmas1
+                  zcaralk = abio_alk - borat(ji,jj,jk) / (  1. + 1.E-8 / ( rtrn + akb3(ji,jj,jk) )  )
+                  zco3    = ( zcaralk - trn(ji,jj,jk,jpdab) ) * ztmas + 0.5e-3 * ztmas1
+                  zbicarb = ( 2. * trn(ji,jj,jk,jpdab) - zcaralk )
+                  hj(ji,jj,jk) = ( ak23(ji,jj,jk) * zbicarb / zco3 ) * ztmas + 1.e-9 * ztmas1
+                  zcaralk = abio_alk - borat(ji,jj,jk) / (  1. + 1.E-8 / ( rtrn + akb3(ji,jj,jk) )  )
+                  zco3    = ( zcaralk - trn(ji,jj,jk,jpdrc) ) * ztmas + 0.5e-3 * ztmas1
+                  zbicarb = ( 2. * trn(ji,jj,jk,jpdrc) - zcaralk )
+                  hl(ji,jj,jk) = ( ak23(ji,jj,jk) * zbicarb / zco3 ) * ztmas + 1.e-9 * ztmas1
+               END DO
+            END DO
+         END DO
+      ENDIF
+
    END SUBROUTINE trc_rst_read_pisces
 
    SUBROUTINE trc_rst_wri_pisces( kt, kitrst, knum )

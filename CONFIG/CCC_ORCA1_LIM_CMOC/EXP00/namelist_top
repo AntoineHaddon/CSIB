@@ -34,11 +34,10 @@
    sn_tracer(7)   = 'NCHL    ' , 'Nano chlorophyl Concentration CMOC     ',  'mol-C/L' ,  .false.    ,  .true. 
    sn_tracer(8)   = 'NO3     ' , 'Total Dissolved Nitrogen CMOC          ',  'mol-C/L' ,  .true.     ,  .true.  
    sn_tracer(9)   = 'DICabio ' , 'Abiotic DIC                            ',  'mol-C/L' ,  .true.     ,  .true.
-   sn_tracer(10)  = 'ALKabio ' , 'Abiotic alkalinity                     ',  'mol-C/L' ,  .true.     ,  .true.
-   sn_tracer(11)  = 'O2abio  ' , 'Abiotic oxygen                         ',  'mol-C/L' ,  .true.     ,  .true.
-   sn_tracer(12)  = 'DICnat  ' , 'Natural DIC                            ',  'mol-C/L' ,  .true.     ,  .true.
-   sn_tracer(13)  = 'DI14C   ' , 'Radiocarbon DIC                        ',  'mol-C/L' ,  .true.     ,  .true.
-   sn_tracer(14)  = 'agessc  ' , 'Ideal Age                              ',  'years' ,    .false.     ,  .true.  
+   sn_tracer(10)  = 'O2abio  ' , 'Abiotic oxygen                         ',  'mol-C/L' ,  .true.     ,  .true.
+   sn_tracer(11)  = 'DICnat  ' , 'Natural DIC                            ',  'mol-C/L' ,  .true.     ,  .true.
+   sn_tracer(12)  = 'DI14C   ' , 'Radiocarbon DIC                        ',  'mol-C/L' ,  .true.     ,  .true.
+   sn_tracer(13)  = 'agessc  ' , 'Ideal Age                              ',  'years' ,    .false.     ,  .true.  
 /
 !-----------------------------------------------------------------------
 &namtrc_dta      !    Initialisation from data input file
@@ -51,10 +50,9 @@
    sn_trcdta(3)  = 'data_o2_nomask'         ,        -1         ,  'O2'      ,    .true.    , .true. , 'yearly'  , ''       , ''
    sn_trcdta(8)  = 'data_no3_nomask'        ,        -1         ,  'NO3'     ,    .true.    , .true. , 'yearly'  , ''       , ''
    sn_trcdta(9)  = 'data_dicabio_nomask'    ,        -12        ,  'DICabio' ,    .false.   , .true. , 'yearly'  , ''       , ''
-   sn_trcdta(10) = 'data_alkabio_nomask'    ,        -12        ,  'ALKabio' ,    .false.   , .true. , 'yearly'  , ''       , ''
-   sn_trcdta(11) = 'data_o2abio_nomask'     ,        -1         ,  'O2abio'  ,    .true.    , .true. , 'yearly'  , ''       , ''
-   sn_trcdta(12) = 'data_dicnat_nomask'     ,        -12        ,  'DICnat'  ,    .false.   , .true. , 'yearly'  , ''       , ''
-   sn_trcdta(13) = 'data_c14t_nomask'       ,        -12        ,  'C14abio' ,    .false.   , .true. , 'yearly'  , ''       , ''
+   sn_trcdta(10) = 'data_o2abio_nomask'     ,        -1         ,  'O2abio'  ,    .true.    , .true. , 'yearly'  , ''       , ''
+   sn_trcdta(11) = 'data_dicnat_nomask'     ,        -12        ,  'DICnat'  ,    .false.   , .true. , 'yearly'  , ''       , ''
+   sn_trcdta(12) = 'data_c14t_nomask'       ,        -12        ,  'C14abio' ,    .false.   , .true. , 'yearly'  , ''       , ''
 !
    cn_dir        =  './'      !  root directory for the location of the data files
    rn_trfac(1)   =   1.0e-06  !  multiplicative factor
@@ -62,10 +60,9 @@
    rn_trfac(3)   =  44.6e-06  !
    rn_trfac(8)   =  6.625e-06 !
    rn_trfac(9)   =   1.0e-06  ! 
-   rn_trfac(10)  =   1.0e-06  !
-   rn_trfac(11)  =  44.6e-06  !
+   rn_trfac(10)  =  44.6e-06  !
+   rn_trfac(11)  =   1.0e-06  ! 
    rn_trfac(12)  =   1.0e-06  ! 
-   rn_trfac(13)  =   1.0e-06  ! 
 /
 !-----------------------------------------------------------------------
 &namtrc_adv    !   advection scheme for passive tracer 
