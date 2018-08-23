@@ -47,12 +47,12 @@
 !                !                          !  (if <0  months)  !   name     !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  !
    sn_trcdta(1)  = 'data_dic_nomask'        ,        -12        ,  'DIC'     ,    .false.   , .true. , 'yearly'  , ''       , ''
    sn_trcdta(2)  = 'data_alkalini_nomask'   ,        -12        ,  'Alkalini',    .false.   , .true. , 'yearly'  , ''       , ''
-   sn_trcdta(3)  = 'data_o2_nomask'         ,        -1         ,  'O2'      ,    .true.    , .true. , 'yearly'  , ''       , ''
-   sn_trcdta(8)  = 'data_no3_nomask'        ,        -1         ,  'NO3'     ,    .true.    , .true. , 'yearly'  , ''       , ''
-   sn_trcdta(9)  = 'data_dicabio_nomask'    ,        -12        ,  'DICabio' ,    .false.   , .true. , 'yearly'  , ''       , ''
-   sn_trcdta(10) = 'data_o2abio_nomask'     ,        -1         ,  'O2abio'  ,    .true.    , .true. , 'yearly'  , ''       , ''
-   sn_trcdta(11) = 'data_dicnat_nomask'     ,        -12        ,  'DICnat'  ,    .false.   , .true. , 'yearly'  , ''       , ''
-   sn_trcdta(12) = 'data_c14t_nomask'       ,        -12        ,  'C14abio' ,    .false.   , .true. , 'yearly'  , ''       , ''
+   sn_trcdta(3)  = 'data_o2_nomask'         ,        -12        ,  'O2'      ,    .false.   , .true. , 'yearly'  , ''       , ''
+   sn_trcdta(8)  = 'data_no3_nomask'        ,        -12        ,  'NO3'     ,    .false.   , .true. , 'yearly'  , ''       , ''
+   sn_trcdta(9)  = 'data_ct_abio_nomask'    ,        -12        ,  'DICabio' ,    .false.   , .true. , 'yearly'  , ''       , ''
+   sn_trcdta(10) = 'data_o2abio_nomask'     ,        -12        ,  'O2abio'  ,    .false.   , .true. , 'yearly'  , ''       , ''
+   sn_trcdta(11) = 'data_dic_nomask'        ,        -12        ,  'DIC'     ,    .false.   , .true. , 'yearly'  , ''       , ''
+   sn_trcdta(12) = 'data_c14t_abio_nomask'  ,        -12        ,  'C14abio' ,    .false.   , .true. , 'yearly'  , ''       , ''
 !
    cn_dir        =  './'      !  root directory for the location of the data files
    rn_trfac(1)   =   1.0e-06  !  multiplicative factor
