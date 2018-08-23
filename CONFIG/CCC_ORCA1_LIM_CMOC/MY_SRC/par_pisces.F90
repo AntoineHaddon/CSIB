@@ -28,7 +28,7 @@ MODULE par_pisces
    !!---------------------------------------------------------------------
    LOGICAL, PUBLIC, PARAMETER ::   lk_pisces     = .TRUE.  !: PISCES flag 
    LOGICAL, PUBLIC, PARAMETER ::   lk_kriest     = .FALSE. !: Kriest flag 
-   INTEGER, PUBLIC, PARAMETER ::   jp_pisces     = 13      !: CMOC1 tracers
+   INTEGER, PUBLIC, PARAMETER ::   jp_pisces     = 12      !: CMOC1 tracers
    INTEGER, PUBLIC, PARAMETER ::   jp_pisces_2d  = 13      !: additional 2d output 
    INTEGER, PUBLIC, PARAMETER ::   jp_pisces_3d  = 11      !: additional 3d output 
    INTEGER, PUBLIC, PARAMETER ::   jp_pisces_trd =  1      !: number of sms trends for PISCES
