@@ -109,7 +109,7 @@ CONTAINS
 
       IF( .NOT. ln_rsttr ) THEN
          ! Initialize abiotic alkalinity variables
-         sss_glob_avg = glob_avg_area_wt( trn(ji,jj,jk,jp_sal) )
+         sss_glob_avg = glob_avg_area_wt( tsn(:,:,1,jp_sal) )
          r_sss_glob_avg = 1./sss_glob_avg
          salt_avg(:,:) = 0.
          salt_dtsum = 0.

@@ -135,7 +135,7 @@ CONTAINS
       ENDIF
       
       ! Update average of sea surface salinity
-      CALL update_salt_avg_2d(trn(:,:,1,jp_sal), rdt, salt_avg, salt_dtsum)  
+      CALL update_salt_avg_2d(tsn(:,:,1,jp_sal), rdt, salt_avg, salt_dtsum)  
       ! If this is the last timestep of the year, reset all the annual
       ! salt-related variables
       IF ( (salt_dtsum + rdt) == nyear_len(1)*86400.) THEN
