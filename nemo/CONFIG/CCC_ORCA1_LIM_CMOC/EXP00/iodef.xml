@@ -326,6 +326,7 @@
        <field id="Cflx_abio"   description="Abiotic DIC flux"                         unit="mol/m2/s"                     />
        <field id="Oflx_abio"   description="Abiotic Oxygen flux"                      unit="mol/m2/s"                     />
        <field id="Cflx_nat"    description="Natural DIC flux"                         unit="mol/m2/s"                     />
+       <field id="Cflx_14C"    description="Radiocarbon DIC flux"                     unit="mol/m2/s"                     />
        <field id="Kg"          description="Gas transfer"                             unit="mol/m2/s/uatm"                />
        <field id="Dpco2"       description="Delta CO2"                                unit="uatm"                         />
        <field id="Dpo2"        description="Delta O2"                                 unit="uatm"                         />
