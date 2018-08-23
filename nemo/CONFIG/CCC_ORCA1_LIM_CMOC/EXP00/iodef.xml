@@ -299,6 +299,7 @@
        <field id="ALKabio"  description="Abiotic Alkalinity"                            unit="mmoleq/m3"               />
        <field id="O2abio"   description="Abiotic Oxygen"                                unit="umolO2/L"                />
        <field id="DICnat"   description="Natural DIC"                                   unit="mmolC/m3"                />
+       <field id="DI14C"   description="Radiocarbon DIC"                                   unit="mmolC/m3"                />
      </group>
 
       <!-- diad on T grid : variables available with key_diatrc -->
