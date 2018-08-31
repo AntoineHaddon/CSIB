@@ -419,6 +419,7 @@ CONTAINS
          WRITE(numout,*) '      timing activated    (0/1)                      nn_timing      = ', nn_timing
          WRITE(numout,*) '      do checksums        (T/F)                      ln_chksum      = ', ln_chksum
          WRITE(numout,*) '      frequency (iter) for writing state stats       nn_state_freq  = ', nn_state_freq 
+         WRITE(numout,*) '      global check for negative salinities           ln_chk_negsal  = ', ln_chk_negsal 
       ENDIF
       !
       nprint    = nn_print          ! convert DOCTOR namelist names into OLD names
