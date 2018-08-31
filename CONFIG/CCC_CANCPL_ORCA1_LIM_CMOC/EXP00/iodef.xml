@@ -560,7 +560,7 @@
             <field ref="area"          name="areacello"     description="cell_area"                                level="1"  /> <!-- Ofx -->
 	  </file>   
 
-          <file id="1m_grid_T_trd" name_suffix="_trd" >
+          <file id="1m_grid_T_trd" name_suffix="_trd" enabled=".FALSE.">
             <!-- Physical ocean model trend diagnostics: temperature and salinity -->
             <field ref="ttrd_xad"      name="ttrd_xad"      description="temperature-trend: i-advection"           level="3"  />
             <field ref="strd_xad"      name="strd_xad"      description="salinity-trend: i-advection"              level="3"  />
@@ -777,36 +777,36 @@
 +++++++++++++++++++++++++++++++++++++++++++++++   yearly   ++++++++++++++++++++++++++++++++++++++++++++++++++
         -->
 
-      <group id="1y" output_freq="-12"  enabled=".FALSE." >                      <!-- real yearly files -->
+      <group id="1y" output_freq="-12"  enabled=".TRUE." >                      <!-- real yearly files -->
         <!--
 ..............................................    grid T   .................................................
           -->
           <group id="1y_grid_T" name="auto" >
-          <file id="1y grid_T ar6" name_suffix="_ar6" >
+          <file id="1y_grid_T_ar6" name_suffix="_ar6" >
             <!-- Physical ocean model trend diagnostics: temperature and salinity -->
-            <field ref="ttrd_xad"      name="ttrd_xad"       description="temperature-trend: i-advection"              />
-            <field ref="strd_xad"      name="strd_xad"       description="salinity-trend: i-advection"                 />
-            <field ref="ttrd_yad"      name="ttrd_yad"       description="temperature-trend: j-advection"              />
-            <field ref="strd_yad"      name="strd_yad"       description="salinity-trend: j-advection"                 />
-            <field ref="ttrd_zad"      name="ttrd_zad"       description="temperature-trend: k-advection"              />
-            <field ref="strd_zad"      name="strd_zad"       description="salinity-trend: k-advection"                 />
-            <field ref="ttrd_ldf"      name="ttrd_ldf"       description="temperature-trend: lateral  diffusion"       />
-            <field ref="strd_ldf"      name="strd_ldf"       description="salinity-trend: lateral  diffusion"          />
-            <field ref="ttrd_zdf"      name="ttrd_zdf"       description="temperature-trend: vertical diffusion"       />
-            <field ref="strd_zdf"      name="strd_zdf"       description="salinity-trend: vertical diffusion"          />
-            <field ref="ttrd_zdfp"     name="ttrd_zdfp"      description="temperature-trend: pure vert. diffusion"     />
-            <field ref="strd_zdfp"     name="strd_zdfp"      description="salinity   -trend: pure vert. diffusion"     />
-            <field ref="ttrd_eiv"      name="ttrd_eiv"       description="temperature-trend: advection from GM scheme" />
-            <field ref="strd_eiv"      name="strd_eiv"       description="salinity-trend: advection from GM scheme"    />
-            <field ref="cellthc"       name="thkcello"       description="cell_thickness"                              /> <!-- no time changes -->
-            <field ref="area"          name="areacello"      description="cell_area"                                   />
+            <field ref="ttrd_xad"      name="ttrd_xad"       description="temperature-trend: i-advection"              level="3" />
+            <field ref="strd_xad"      name="strd_xad"       description="salinity-trend: i-advection"                 level="3" />
+            <field ref="ttrd_yad"      name="ttrd_yad"       description="temperature-trend: j-advection"              level="3" />
+            <field ref="strd_yad"      name="strd_yad"       description="salinity-trend: j-advection"                 level="3" />
+            <field ref="ttrd_zad"      name="ttrd_zad"       description="temperature-trend: k-advection"              level="3" />
+            <field ref="strd_zad"      name="strd_zad"       description="salinity-trend: k-advection"                 level="3" />
+            <field ref="ttrd_ldf"      name="ttrd_ldf"       description="temperature-trend: lateral  diffusion"       level="3" />
+            <field ref="strd_ldf"      name="strd_ldf"       description="salinity-trend: lateral  diffusion"          level="3" />
+            <field ref="ttrd_zdf"      name="ttrd_zdf"       description="temperature-trend: vertical diffusion"       level="3" />
+            <field ref="strd_zdf"      name="strd_zdf"       description="salinity-trend: vertical diffusion"          level="3" />
+            <field ref="ttrd_zdfp"     name="ttrd_zdfp"      description="temperature-trend: pure vert. diffusion"     level="3" />
+            <field ref="strd_zdfp"     name="strd_zdfp"      description="salinity   -trend: pure vert. diffusion"     level="3" />
+            <field ref="ttrd_eiv"      name="ttrd_eiv"       description="temperature-trend: advection from GM scheme" level="3" />
+            <field ref="strd_eiv"      name="strd_eiv"       description="salinity-trend: advection from GM scheme"    level="3" />
+            <!-- field ref="cellthc"       name="thkcello"       description="cell_thickness"                          --> <!-- no time changes -->
+            <!-- field ref="area"          name="areacello"      description="cell_area"                               -->
           </file>
           </group>
 
         <!--
 ..............................................    grid W   .................................................
           -->
-          <group id="1y_grid_W" name="auto" >
+          <group id="1y_grid_W" name="auto" enabled=".FALSE.">
           <file id="1y grid_W ar6" name_suffix="_ar6" >
 	    <field ref="avt"           name="difvho"        description="ocean_vertical_heat_diffusivity"    level="3" />
 	    <field ref="avs"           name="difvso"        description="ocean_vertical_salt_diffusivity"    level="3" />
