@@ -51,13 +51,13 @@ MODULE p4zche
    REAL(wp) ::   bor1   = 0.000232       ! borat constants
    REAL(wp) ::   bor2   = 1. / 10.811
 
-   REAL(wp) ::   ca0    = -162.8301      ! WEISS & PRICE 1980, units mol/(kg atm)
-   REAL(wp) ::   ca1    =  218.2968
-   REAL(wp) ::   ca2    =   90.9241
-   REAL(wp) ::   ca3    =   -1.47696
-   REAL(wp) ::   ca4    =    0.025695
-   REAL(wp) ::   ca5    =   -0.025225
-   REAL(wp) ::   ca6    =    0.0049867
+   REAL(wp) ::   ca0    = -160.7333   ! WEISS & PRICE 1980, units mol/(kg atm)
+   REAL(wp) ::   ca1    =  215.4152
+   REAL(wp) ::   ca2    =  89.8920
+   REAL(wp) ::   ca3    = - 1.47759
+   REAL(wp) ::   ca4    =   0.029941
+   REAL(wp) ::   ca5    = - 0.027455
+   REAL(wp) ::   ca6    =   0.0053407
 
    REAL(wp) ::   c10    = -3633.86        ! Coeff. for 1. dissoc. of carbonic acid (Dickson et al., 2007)
    REAL(wp) ::   c11    =    61.2172    
