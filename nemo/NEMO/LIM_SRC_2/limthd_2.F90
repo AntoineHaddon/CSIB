@@ -14,6 +14,7 @@ MODULE limthd_2
    !!                                     surface (snow or ice) temperature (cell average) at T point 
    !!                                     following SIMIP guide paper by Nots etal (2016).
    !!          3.4.1  ! 2018-09 (D. Yang) Make the local array names (z2d_dy, fr_iu_dy & fr_iv_dy) unique. 
+   !!          3.4.1  ! 2018-09 (D. Yang) Mask fr_iu_dy & fr_iv_dy.
    !!---------------------------------------------------------------------
 #if defined key_lim2
    !!----------------------------------------------------------------------
@@ -530,8 +531,8 @@ CONTAINS
          ! ice fractions at U and V points (C-grid) 
          DO jj = 1 , jpjm1
            DO ji = 1 , jpim1
-              fr_iu_dy(ji,jj) = ( fr_i(ji,jj) + fr_i(ji+1,jj) ) * 0.5_wp
-              fr_iv_dy(ji,jj) = ( fr_i(ji,jj) + fr_i(ji,jj+1) ) * 0.5_wp
+              fr_iu_dy(ji,jj) = ( fr_i(ji,jj) + fr_i(ji+1,jj) ) * 0.5_wp * umask(ji,jj,1)
+              fr_iv_dy(ji,jj) = ( fr_i(ji,jj) + fr_i(ji,jj+1) ) * 0.5_wp * vmask(ji,jj,1)
            END DO
          END DO
          CALL lbc_lnk( fr_iu_dy, 'U', -1. ) ; CALL lbc_lnk( fr_iv_dy, 'V', -1. )  ! lateral boundary conditions
