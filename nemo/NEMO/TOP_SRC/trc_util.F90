@@ -17,6 +17,7 @@ MODULE trc_util
    PUBLIC read_var1d
    PUBLIC read_var2d
    PUBLIC lin_interp
+
    CONTAINS
    !> read_var1d: Read a 1d variable from a netcdf file. Allocate the output
    !! array, fill with values, and return
