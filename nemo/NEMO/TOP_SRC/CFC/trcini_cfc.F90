@@ -19,6 +19,8 @@ MODULE trcini_cfc
    USE trcsms_cfc ! CFC sms trends
    USE trcnam_cfc, ONLY : cfc_nc_file
    USE obs_utils, ONLY : chkerr
+   USE trc_util, ONLY : read_var1d
+   USE lib_mpp
    USE netcdf
    IMPLICIT NONE
    PRIVATE
@@ -179,40 +181,24 @@ CONTAINS
    SUBROUTINE read_from_netcdf( )
       INTEGER :: ncid, varid, dimlen, dimid
       CHARACTER(LEN=255) :: dimname
+      REAL(wp), DIMENSION(:), ALLOCATABLE :: wrk1d
 
       ! Open netcdf and get the dimension
       CALL chkerr(nf90_open( cfc_nc_file, NF90_NOWRITE, ncid ), 'trcini_cfc', 0)
-      CALL chkerr(nf90_inq_dimid(ncid, "index", dimid), 'trcini_cfc', 0)
-      CALL chkerr(nf90_inquire_dimension(ncid, dimid, dimname, len = dimlen), 'trcini_cfc', 0)
-
+      CALL read_var1d( ncid, 'Year', p_cfc_year, dimlen=dimlen )
       ! Allocate arrays now that we know how many years are in the file
-      ALLOCATE(p_cfc_year(dimlen)) ; p_cfc_year(:) = 0.
       ALLOCATE(p_cfc(dimlen, jphem, jp_cfc)) ; p_cfc(:,:,:) = 0.
 
       ! Read all the necessary fields
-      CALL read_var1d( ncid, "Year", p_cfc_year(:) )
-      CALL read_var1d( ncid, "CFC11NH", p_cfc(:,1,1) )
-      CALL read_var1d( ncid, "CFC11SH", p_cfc(:,2,1) )
-      CALL read_var1d( ncid, "CFC12NH", p_cfc(:,1,2) )
-      CALL read_var1d( ncid, "CFC12SH", p_cfc(:,2,2) )
-      CALL read_var1d( ncid, "SF6NH", p_cfc(:,1,3) )
-      CALL read_var1d( ncid, "SF6SH", p_cfc(:,2,3) )
-
+      CALL read_var1d( ncid, 'CFC11NH', wrk1d ); p_cfc(:,1,1) = wrk1d  
+      CALL read_var1d( ncid, 'CFC11SH', wrk1d ); p_cfc(:,2,1) = wrk1d 
+      CALL read_var1d( ncid, 'CFC12NH', wrk1d ); p_cfc(:,1,2) = wrk1d 
+      CALL read_var1d( ncid, 'CFC12SH', wrk1d ); p_cfc(:,2,2) = wrk1d 
+      CALL read_var1d( ncid, 'SF6NH',   wrk1d ); p_cfc(:,1,3) = wrk1d 
+      CALL read_var1d( ncid, 'SF6SH',   wrk1d ); p_cfc(:,2,3) = wrk1d 
       CALL chkerr(nf90_close( ncid ), 'trcini_cfc',0)
-
+      DEALLOCATE(wrk1d)
    END SUBROUTINE read_from_netcdf
-
-   !> Read a vector variable given its name
-   SUBROUTINE read_var1d( ncid, varname, varout )
-      INTEGER , INTENT(IN ) :: ncid !< File ID for an already opened netcdf file
-      CHARACTER(LEN=*) , INTENT(IN ) :: varname !< Name of variable to be read
-      REAL(wp), DIMENSION(:), INTENT(INOUT) :: varout !< Variable data
-
-      INTEGER :: varid
-      CALL chkerr( nf90_inq_varid(ncid, varname, varid), 'trcini_cfc', 0 )
-      CALL chkerr( nf90_get_var(ncid, varid, varout), 'trcini_cfc', 0 )
-
-   END SUBROUTINE read_var1d
 
 #else
    !!----------------------------------------------------------------------
