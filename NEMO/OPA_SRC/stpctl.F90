@@ -54,7 +54,9 @@ CONTAINS
       !!
       INTEGER  ::   ji, jj, jk              ! dummy loop indices
       INTEGER  ::   ii, ij, ik              ! temporary integers
+      INTEGER  ::   numneg
       REAL(wp) ::   zumax, zsmin, zssh2     ! temporary scalars
+      REAL(wp) ::   zmean
       INTEGER, DIMENSION(3) ::   ilocu      ! 
       INTEGER, DIMENSION(2) ::   ilocs      ! 
       !!----------------------------------------------------------------------
@@ -140,7 +142,34 @@ CONTAINS
          kindic = -3
       ENDIF
 9500  FORMAT (' kt=',i6,' min SSS: ',1pg11.4,', i j: ',2i5)
-
+      IF (ln_chk_negsal) THEN
+         zsmin = 0.
+         zmean = 0.
+         numneg = 0
+         DO jk =1,jpk
+            DO jj = 2, jpjm1
+               DO ji = 1, jpi
+                  IF (tsn(ji,jj,jk,jp_sal)*tmask(ji,jj,jk)<0.) THEN
+                     zsmin = MIN(zsmin, tsn(ji,jj,jk,jp_sal))
+                     zmean = zmean + tsn(ji,jj,jk,jp_sal)
+                     numneg = numneg + 1
+                 ENDIF
+               END DO
+            END DO
+         END DO
+         CALL mpp_min(zsmin)
+         IF (zsmin < 0.) THEN
+            CALL mpp_sum(zmean)
+            CALL mpp_sum(numneg)
+            IF (lwp) THEN
+               WRITE(numout,*) "===Negative salinities detected"
+               WRITE(numout,*) "   Global min      : ", zsmin
+               WRITE(numout,*) "   Global mean     : ", zmean/numneg
+               WRITE(numout,*) "   Number of points: ", numneg
+               CALL FLUSH(numout)
+            ENDIF
+         ENDIF
+      ENDIF
       ! Check if it's time for the now state global stats should be written
       IF( MOD(kt,nn_state_freq) == 0 ) THEN
          ! Write the final state of the model into a text file

@@ -284,7 +284,6 @@ CONTAINS
       REAL(wp), DIMENSION(nbtimes) :: zsteps                 ! times records
       REAL(wp), DIMENSION(:,:,:), ALLOCATABLE :: zriverdic, zriverdoc !
       REAL(wp), DIMENSION(:,:)  , ALLOCATABLE :: zfmask      ! <CMOC code OR 10/22/2015> add zfmask for iron limitation mask
-      REAL(wp), DIMENSION(:,:,:,:), ALLOCATABLE :: zsi
       !
       CHARACTER(len=100) ::  cn_dir                          ! Root directory for location of ssr files
       !TYPE(FLD_N) ::   sn_fmsk, sn_riverdoc, sn_riverdic     ! <CMOC code OR 10/22/2015> add sn_fmsk (iron limitation mask)        ! informations about the fields to be read
@@ -353,19 +352,12 @@ CONTAINS
          ! Get total input dust ; need to compute total atmospheric supply of Si in a year
          CALL iom_open (  TRIM( sn_si%clname ) , numsi )
          CALL iom_gettime( numsi, zsteps, kntime=ntimes_si)  ! get number of record in file
-         ALLOCATE( zsi(jpi,jpj,jpk,ntimes_si) )
-         DO jm = 1, ntimes_si
-          CALL iom_get( numsi, jpdom_data, TRIM( sn_si%clvar ), zsi(:,:,:,jm), jm )
-         END DO
+         IF (ntimes_si > 0) THEN
+            CALL iom_get( numsi, jpdom_data, TRIM( sn_si%clvar ), asi3(:,:,:), 1 )
+         ELSE
+            CALL iom_get( numsi, jpdom_data, TRIM( sn_si%clvar ), asi3(:,:,:) )
+         ENDIF 
          CALL iom_close( numsi )
-         DO jk = 1, jpk
-            DO jj = 1, jpj
-               DO ji = 1, jpi
-                  asi3(ji,jj,jk)=zsi(ji,jj,jk,1)
-               END DO
-            END DO
-         END DO
-         DEALLOCATE( zsi)
 
       ! iron mask/iron limitation for the ocean ! <CMOC code OR 10/22/2015>
       ! ---------------------------------------
