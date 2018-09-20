@@ -18,6 +18,7 @@ MODULE trcsms_pisces
    USE sms_pisces      !  PISCES Source Minus Sink variables
    USE p4zbio          !  Biological model
    USE p4zche          !  Chemical model
+   USE p4zdcy          !  Radioactive decay
    USE p4zflx          !  Gas exchange
    USE p4zsed          !  Sedimentation
    USE trdmod_oce      !  Ocean trends variables
@@ -106,6 +107,7 @@ CONTAINS
       ENDIF
 
       CALL p4z_flx( kt )             ! Compute surface fluxes
+      CALL p4z_dcy( kt )
 
       DO jn = jp_pcs0, jp_pcs1
         CALL lbc_lnk( trn(:,:,:,jn), 'T', 1. )
