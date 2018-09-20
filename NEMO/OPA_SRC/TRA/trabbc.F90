@@ -11,18 +11,19 @@ MODULE trabbc
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
-   !!   tra_bbc      : update the tracer trend at ocean bottom 
+   !!   tra_bbc      : update the tracer trend at ocean bottom
    !!   tra_bbc_init : initialization of geothermal heat flux trend
    !!----------------------------------------------------------------------
    USE oce             ! ocean variables
    USE dom_oce         ! domain: ocean
    USE phycst          ! physical constants
-   USE trdmod_oce      ! trends: ocean variables 
-   USE trdtra          ! trends: active tracers 
+   USE trdmod_oce      ! trends: ocean variables
+   USE trdtra          ! trends: active tracers
    USE in_out_manager  ! I/O manager
    USE prtctl          ! Print control
    USE wrk_nemo        ! Memory Allocation
    USE timing          ! Timing
+   USE checksums, only : ln_chksum, chksum
 
    IMPLICIT NONE
    PRIVATE
@@ -36,12 +37,12 @@ MODULE trabbc
    REAL(wp)        ::   rn_geoflx_cst = 86.4e-3_wp   !  Constant value of geothermal heat flux
 
    REAL(wp), PUBLIC, DIMENSION(:,:), ALLOCATABLE ::   qgh_trd0   ! geothermal heating trend
- 
+
    !! * Substitutions
 #  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 3.3 , NEMO Consortium (2010)
-   !! $Id $ 
+   !! $Id $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -50,11 +51,11 @@ CONTAINS
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE tra_bbc  ***
       !!
-      !! ** Purpose :   Compute the bottom boundary contition on temperature 
-      !!              associated with geothermal heating and add it to the 
+      !! ** Purpose :   Compute the bottom boundary contition on temperature
+      !!              associated with geothermal heating and add it to the
       !!              general trend of temperature equations.
       !!
-      !! ** Method  :   The geothermal heat flux set to its constant value of 
+      !! ** Method  :   The geothermal heat flux set to its constant value of
       !!              86.4 mW/m2 (Stein and Stein 1992, Huang 1999).
       !!       The temperature trend associated to this heat flux through the
       !!       ocean bottom can be computed once and is added to the temperature
@@ -106,6 +107,7 @@ CONTAINS
       !
       IF( nn_timing == 1 )  CALL timing_stop('tra_bbc')
       !
+      IF (ln_chksum) CALL chksum(tsa(:,:,:,jp_tem), mask = tmask, msg = "T tendency after trabbc")
    END SUBROUTINE tra_bbc
 
 
@@ -129,7 +131,7 @@ CONTAINS
       INTEGER  ::   ji, jj              ! dummy loop indices
       INTEGER  ::   inum                ! temporary logical unit
       !!
-      NAMELIST/nambbc/ln_trabbc, nn_geoflx, rn_geoflx_cst 
+      NAMELIST/nambbc/ln_trabbc, nn_geoflx, rn_geoflx_cst
       !!----------------------------------------------------------------------
 
       REWIND( numnam )                 ! Read Namelist nambbc : bottom momentum boundary condition

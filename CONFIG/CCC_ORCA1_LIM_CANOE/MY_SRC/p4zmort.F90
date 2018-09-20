@@ -145,6 +145,7 @@ CONTAINS
                tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) + cxs*1.E-6
                tra(ji,jj,jk,jpoxy) = tra(ji,jj,jk,jpoxy) - cxs
                tra(ji,jj,jk,jpnh4) = tra(ji,jj,jk,jpnh4) + nxs1 + nxs2
+               tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) + (nxs1 + nxs2)*1.E-6
                tra(ji,jj,jk,jpfer) = tra(ji,jj,jk,jpfer) + fexs1 + fexs2
                tra(ji,jj,jk,jpzoo) = tra(ji,jj,jk,jpzoo) - zmortz
                tra(ji,jj,jk,jppoc) = tra(ji,jj,jk,jppoc) + zmortp + zmortz
@@ -244,6 +245,7 @@ CONTAINS
                tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) + cxs*1.E-6
                tra(ji,jj,jk,jpoxy) = tra(ji,jj,jk,jpoxy) - cxs
                tra(ji,jj,jk,jpnh4) = tra(ji,jj,jk,jpnh4) + nxs1 + nxs2
+               tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) + (nxs1 + nxs2)*1.E-6
                tra(ji,jj,jk,jpfer) = tra(ji,jj,jk,jpfer) + fexs1 + fexs2
                tra(ji,jj,jk,jpmes) = tra(ji,jj,jk,jpmes) - zmortz 
                tra(ji,jj,jk,jpgoc) = tra(ji,jj,jk,jpgoc) + zmortp + zmortz

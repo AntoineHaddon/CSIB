@@ -63,7 +63,14 @@ CONTAINS
                   zcaralk = trn(ji,jj,jk,jptal) - borat(ji,jj,jk) / (  1. + 1.E-8 / ( rtrn + akb3(ji,jj,jk) )  )
                   zco3    = ( zcaralk - trn(ji,jj,jk,jpdic) ) * ztmas + 0.5e-3 * ztmas1
                   zbicarb = ( 2. * trn(ji,jj,jk,jpdic) - zcaralk )
-                 hi(ji,jj,jk) = ( ak23(ji,jj,jk) * zbicarb / zco3 ) * ztmas + 1.e-9 * ztmas1
+                  hi(ji,jj,jk) = ( ak23(ji,jj,jk) * zbicarb / zco3 ) * ztmas + 1.e-9 * ztmas1
+                  zco3    = ( zcaralk - trn(ji,jj,jk,jpdnt) ) * ztmas + 0.5e-3 * ztmas1
+                  zbicarb = ( 2. * trn(ji,jj,jk,jpdnt) - zcaralk )
+                  hk(ji,jj,jk) = ( ak23(ji,jj,jk) * zbicarb / zco3 ) * ztmas + 1.e-9 * ztmas1
+                  zcaralk = trn(ji,jj,jk,jpaab) - borat(ji,jj,jk) / (  1. + 1.E-8 / ( rtrn + akb3(ji,jj,jk) )  )
+                  zco3    = ( zcaralk - trn(ji,jj,jk,jpdab) ) * ztmas + 0.5e-3 * ztmas1
+                  zbicarb = ( 2. * trn(ji,jj,jk,jpdab) - zcaralk )
+                  hj(ji,jj,jk) = ( ak23(ji,jj,jk) * zbicarb / zco3 ) * ztmas + 1.e-9 * ztmas1
                END DO
             END DO
          END DO

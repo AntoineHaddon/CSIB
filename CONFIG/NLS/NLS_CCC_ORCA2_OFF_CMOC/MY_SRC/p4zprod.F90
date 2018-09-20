@@ -54,7 +54,7 @@ CONTAINS
       REAL(wp) ::   zfact
       REAL(wp) ::   ztn, zadap
       REAL(wp) ::   zprod
-      REAL(wp) ::   zpislopen 
+      REAL(wp) ::   zpislopen, ztheta 
       REAL(wp) ::   zrfact2
       CHARACTER (len=25) :: charout
       REAL(wp), POINTER, DIMENSION(:,:,:) :: zpislopead, zprbio, zprnch
@@ -112,10 +112,10 @@ CONTAINS
                       
                       ! phytoplankton photoacclimation used in light limitation
                       ! trn(...,jpnchl) / trn(...,jpphy) / 12. is theta in gChl per gC
-                      zpislopen =  achl_cmoc * trn(ji,jj,jk,jpnch)           &
-                        &          / ( trn(ji,jj,jk,jpphy) * 12._wp + rtrn)  &
-                        ! zpislopead * rday is growth rate in d^-1 at temperature ToC as achl_cmoc is in d^-1
-                        &          / ( zpislopead(ji,jj,jk) * rday  + rtrn )
+                      ! ztheta is set to a maximum of thm_cmoc so as prevent appearance of light-saturation in case when zetot is small but trn(ji,jj,jk,jpphy) is 0
+                      ztheta = MIN(thm_cmoc,trn(ji,jj,jk,jpnch)/(trn(ji,jj,jk,jpphy)*12._wp+rtrn))
+                      zpislopen =  achl_cmoc * ztheta / ( zpislopead(ji,jj,jk) * rday  + rtrn )
+                      ! zpislopead * rday is growth rate in d^-1 at temperature ToC as achl_cmoc is in d^-1
 
                       ! limitation functions
                       ! --------------------
@@ -180,6 +180,7 @@ CONTAINS
               tra(ji,jj,jk,jpoxy) = tra(ji,jj,jk,jpoxy) + zprorca(ji,jj,jk)
               tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) - zprorca(ji,jj,jk)
               tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) + ncrr_cmoc * zprorca(ji,jj,jk)
+              tra(ji,jj,jk,jpdnt) = tra(ji,jj,jk,jpdnt) - zprorca(ji,jj,jk)
               
           END DO
         END DO

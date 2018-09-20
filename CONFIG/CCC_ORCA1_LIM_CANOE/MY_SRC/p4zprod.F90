@@ -178,7 +178,7 @@ CONTAINS
                       zpronn(ji,jj,jk) = VCN/QN*trn(ji,jj,jk,jpnn)*xstep                                      ! N uptake rate
                       zprofen(ji,jj,jk) = VCF/QFe*trn(ji,jj,jk,jpnfe)*xstep                                   ! Fe uptake rate
                       zprochln(ji,jj,jk) = rhochl*VCN/thetac*trn(ji,jj,jk,jpnch)*xstep                        ! Chl production rate
-                      zpronew(ji,jj,jk) = zpronn(ji,jj,jk)*Nlim/(Alim+Nlim+rtrn)                              ! NO3 uptake
+                      zpronew(ji,jj,jk) = zpronn(ji,jj,jk)*(1.-Alim)*Nlim/(Alim+(1.-Alim)*Nlim+rtrn)          ! NO3 uptake
                       xlimnn(ji,jj,jk) = 1.-qndep 
                       xlimnfe(ji,jj,jk) = 1.-qfedep 
 
@@ -217,7 +217,7 @@ CONTAINS
                       zprond(ji,jj,jk) = VCN/QN*trn(ji,jj,jk,jpdn)*xstep                                     ! N uptake rate
                       zprofed(ji,jj,jk) = VCF/QFe*trn(ji,jj,jk,jpdfe)*xstep                                  ! Fe uptake rate
                       zprochld(ji,jj,jk) = rhochl*VCN/thetac*trn(ji,jj,jk,jpdch)*xstep                       ! Chl production rate
-                      zpronewd(ji,jj,jk) = zprond(ji,jj,jk)*Nlim/(Alim+Nlim+rtrn)                            ! NO3 uptake
+                      zpronewd(ji,jj,jk) = zprond(ji,jj,jk)*(1.-Alim)*Nlim/(Alim+(1.-Alim)*Nlim+rtrn)        ! NO3 uptake
                       xlimdn(ji,jj,jk) = 1.-qndep 
                       xlimdfe(ji,jj,jk) = 1.-qfedep 
 

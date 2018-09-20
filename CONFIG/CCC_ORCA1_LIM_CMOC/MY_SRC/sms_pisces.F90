@@ -113,13 +113,26 @@ MODULE sms_pisces
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   ak23       !: ...
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   aksp       !: ...
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   akw3       !: ...
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   akp13
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   akp23
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   akp33
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   aksi3
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   asi3
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   borat      !: borate constant
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   hi         !: hydronium concentration
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   hj         !: abiotic hydronium concentration
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   hk         !: natural hydronium concentration
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   excess     !: calcite saturation(>0) / undersaturation(<0) state (p4zlys)
 
    !!* Array used to indicate negative tracer values
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   xnegtr     !: time step correction
 
+   !! Variables used to calculate globally averaged salinity of the previous year
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:) :: salt_avg      !: Time average of surface salinity
+   REAL(wp), SAVE                              :: salt_dtsum    !: Accumulated time used for calculating average of salt
+   REAL(wp), SAVE                              :: sss_glob_avg  !: Globally averaged surface salinity from previous year 
+   REAL(wp), PARAMETER                         :: surf_alk_abio = 2297*1e-6 !: Globally averaged surface alkalinity
+                                                                            !! defined on page 2182 of Orr et al. 2016 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 3.3 , NEMO Consortium (2010)
    !! $Id: sms_pisces.F90 3294 2012-01-28 16:44:18Z rblod $ 
@@ -147,7 +160,11 @@ CONTAINS
       ALLOCATE( akb3(jpi,jpj,jpk)    , ak13  (jpi,jpj,jpk) ,       &
          &      ak23(jpi,jpj,jpk)    , aksp  (jpi,jpj,jpk) ,       &
          &      akw3(jpi,jpj,jpk)    , borat (jpi,jpj,jpk) ,       &
-         &      hi  (jpi,jpj,jpk)    , excess(jpi,jpj,jpk) ,   STAT=ierr(4) )
+         &      akp13(jpi,jpj,jpk)   , akp23 (jpi,jpj,jpk) ,       &
+         &      akp33(jpi,jpj,jpk)   , aksi3 (jpi,jpj,jpk) ,       &
+         &      asi3 (jpi,jpj,jpk)   , hi    (jpi,jpj,jpk) ,       &
+         &      hj  (jpi,jpj,jpk)    , hk  (jpi,jpj,jpk)   ,       &
+         &      excess(jpi,jpj,jpk)  , salt_avg(jpi,jpj),  STAT=ierr(4) )
          !
       !* Array used to indicate negative tracer values  
       ALLOCATE( xnegtr(jpi,jpj,jpk)  ,            STAT=ierr(6) )
