@@ -57,6 +57,9 @@
         <field id="somint"       description="mass integrated salinity over ocean columns"              unit="kg m-2 * (1e-3)" />
         <!-- variables available with key_top and key_my_trc -->
         <field id="agessc"       description="Ideal age"                                 unit="years" axis_ref="deptht"  />
+        <field id="cfc11"        description="CFC11 tracer concentration"                unit="mol/m3" axis_ref="deptht"/>
+        <field id="cfc12"        description="CFC12 tracer concentration"                unit="mol/m3" axis_ref="deptht"/>
+        <field id="sf6"          description="SF6 tracer concentration"                  unit="mol/m3" axis_ref="deptht"/>
      </group>
 
       <!-- SBC -->
@@ -292,6 +295,11 @@
        <field id="DCHL"     description="Diatoms chlorophyl Concentration"              unit="mg/m3"                   />
        <field id="NO3"      description="Dissolved Nitrogen Concentration CMOC"         unit="mmolN/m3"                />
        <field id="NH4"      description="Ammonium Concentration"                        unit="mmol/m3"                 />
+       <field id="DICabio"  description="Abiotic DIC"                                   unit="mmolC/m3"                />
+       <field id="ALKabio"  description="Abiotic Alkalinity"                            unit="mmoleq/m3"               />
+       <field id="O2abio"   description="Abiotic Oxygen"                                unit="umolO2/L"                />
+       <field id="DICnat"   description="Natural DIC"                                   unit="mmolC/m3"                />
+       <field id="DI14C"   description="Radiocarbon DIC"                                   unit="mmolC/m3"                />
      </group>
 
       <!-- diad on T grid : variables available with key_diatrc -->
@@ -316,11 +324,27 @@
        <field id="BUCALC"      description="Burial of Calcite in sediments"           unit="mol/m2/s"                     />
        <field id="Cflx"        description="DIC flux"                                 unit="mol/m2/s"                     />
        <field id="Oflx"        description="Oxygen flux"                              unit="mol/m2/s"                     />
+       <field id="Cflx_abio"   description="Abiotic DIC flux"                         unit="mol/m2/s"                     />
+       <field id="Oflx_abio"   description="Abiotic Oxygen flux"                      unit="mol/m2/s"                     />
+       <field id="Cflx_nat"    description="Natural DIC flux"                         unit="mol/m2/s"                     />
+       <field id="Cflx_14C"    description="Radiocarbon DIC flux"                     unit="mol/m2/s"                     />
        <field id="Kg"          description="Gas transfer"                             unit="mol/m2/s/uatm"                />
        <field id="Dpco2"       description="Delta CO2"                                unit="uatm"                         />
        <field id="Dpo2"        description="Delta O2"                                 unit="uatm"                         />
+       <field id="spco2"       description="Surface pCO2"                             unit="uatm"                         />
+       <field id="spco2a"      description="Abiotic Surface pCO2"                     unit="uatm"                         />
+       <field id="spco2n"      description="Natural Surface pCO2"                     unit="uatm"                         />
        <field id="Heup"        description="Euphotic layer depth"                     unit="m"                            />
        <field id="oomask"      description="Open Ocean mask"                          unit="-"                            />
+       <field id="cfc11qtr"  description="CFC11 tracer flux"                          unit="mol/m2/s"/>
+       <field id="cfc11qint" description="CFC11 integrated tracer flux"               unit="mol/m2" />
+       <field id="cfc11patm" description="CFC11 atmospheric partial pressure"         unit="ppt" />
+       <field id="cfc12qtr"  description="CFC12 tracer flux"                          unit="mol/m2/s"/>
+       <field id="cfc12qint" description="CFC12 integrated tracer flux"               unit="mol/m2" />
+       <field id="cfc12patm" description="CFC12 atmospheric partial pressure"         unit="ppt" />
+       <field id="sf6qtr"    description="SF6 tracer flux"                            unit="mol/m2/s"/>
+       <field id="sf6qint"   description="SF6 integrated tracer flux"                 unit="mol/m2" />
+       <field id="sf6patm"   description="SF6 atmospheric partial pressure"           unit="ppt" />
      </group>
       
     </field_definition>
@@ -683,6 +707,10 @@
           <field ref="ZOO"                                                                                         level="0"  />
           <field ref="NCHL"                                                                                        level="0"  />
           <field ref="NO3"                                                                                         level="0"  />
+          <field ref="DICabio"                                                                                     level="0"  />
+          <field ref="ALKabio"                                                                                     level="0"  />
+          <field ref="O2abio"                                                                                      level="0"  />
+          <field ref="DICnat"                                                                                      level="0"  />
        </file>
 
         <file id="1m_diad_T" name="auto" description="additional cmoc diagnostic variables" >
@@ -692,6 +720,9 @@
           <field ref="PPPHY"     description="tendency_of_mole_concentration_of_particulate_organic_matter_expressed_as_carbon_in_sea_water_due_to_net_primary_production" level="0" />
           <field ref="Cflx"                                                                                        level="0"  />
           <field ref="Oflx"                                                                                        level="0"  />
+          <field ref="Cflx_abio"                                                                                   level="0"  />
+          <field ref="Oflx_abio"                                                                                   level="0"  />
+          <field ref="Cflx_nat"                                                                                    level="0"  />
           <field ref="Nfix"      description="tendency_of_ocean_mole_content_of_elemental_nitrogen_due_to_fixation"             level="0" />
           <field ref="Denit"                                                                                       level="0"  />
           <field ref="EPC100"    description="sinking_mole_flux_of_particulate_organic_matter_expressed_as_carbon_in_sea_water" level="0" />
@@ -700,6 +731,9 @@
           <field ref="BUCALC"                                                                                      level="0"  />
           <field ref="Dpco2"                                                                                       level="0"  />
           <field ref="Dpo2"                                                                                        level="0"  />
+          <field ref="spco2"                                                                                       level="0"  />
+          <field ref="spco2a"                                                                                      level="0"  />
+          <field ref="spco2n"                                                                                      level="0"  />
           <field ref="LNnut"                                                                                       level="0"  />
           <field ref="LNFe"                                                                                        level="0"  />
           <field ref="LNlight"                                                                                     level="0"  />

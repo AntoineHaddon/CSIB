@@ -49,7 +49,7 @@ CONTAINS
       TYPE(DIAG), DIMENSION(jp_cfc_2d) :: cfcdia2d
       TYPE(DIAG), DIMENSION(jp_cfc_3d) :: cfcdia3d
       !!
-      NAMELIST/namcfcparam/ cfc_year_offset, cfc_nc_file
+      NAMELIST/namcfcparam/ offset_cfc_year, cfc_nc_file
       NAMELIST/namcfcdia/ cfcdia2d ! additional diagnostics
       !!-------------------------------------------------------------------
 
@@ -66,7 +66,7 @@ CONTAINS
          WRITE(numout,*)
          WRITE(numout,*) ' trc_nam: Read namdates, namelist for CFC chemical model'
          WRITE(numout,*) ' ~~~~~~~'
-         WRITE(numout,*) '    offset from the model year        cfc_year_offset = ', cfc_year_offset
+         WRITE(numout,*) '    offset from the model year        offset_cfc_year = ', offset_cfc_year
          WRITE(numout,*) '    netcdf file with surface values   cfc_nc_file = ' , cfc_nc_file
       ENDIF
 
@@ -112,7 +112,7 @@ CONTAINS
 CONTAINS
    SUBROUTINE trc_nam_cfc                      ! Empty routine
    END  SUBROUTINE  trc_nam_cfc
-#endif  
+#endif
 
    !!======================================================================
 END MODULE trcnam_cfc

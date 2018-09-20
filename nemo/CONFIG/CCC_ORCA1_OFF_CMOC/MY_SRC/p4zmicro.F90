@@ -94,8 +94,9 @@ CONTAINS
                tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) + mzn_cmoc * xstep * trn(ji,jj,jk,jpzoo)
                tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) - mzn_cmoc * xstep * trn(ji,jj,jk,jpzoo) * ncrr_cmoc               
                tra(ji,jj,jk,jppoc) = tra(ji,jj,jk,jppoc) + mzd_cmoc * xstep * trn(ji,jj,jk,jpzoo) &
-               !
                &                    + ncrr_cmoc * 1e3_wp * mz2_cmoc * xstep * trn(ji,jj,jk,jpzoo) * trn(ji,jj,jk,jpzoo)
+               tra(ji,jj,jk,jpdnt) = tra(ji,jj,jk,jpdnt) + mzn_cmoc * xstep * trn(ji,jj,jk,jpzoo)
+               !
 
             END DO
          END DO

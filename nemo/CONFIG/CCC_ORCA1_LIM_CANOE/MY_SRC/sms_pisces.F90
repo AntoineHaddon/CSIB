@@ -69,6 +69,11 @@ MODULE sms_pisces
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   ak23       !: ???
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   aksp       !: ???
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   akw3       !: ???
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   akp13
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   akp23
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   akp33
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   aksi3
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   asi3
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   borat      !: ???
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   hi         !: ???
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   excess     !: ???
@@ -115,6 +120,9 @@ CONTAINS
       ALLOCATE( akb3(jpi,jpj,jpk)    , ak13  (jpi,jpj,jpk) ,       &
          &      ak23(jpi,jpj,jpk)    , aksp  (jpi,jpj,jpk) ,       &
          &      akw3(jpi,jpj,jpk)    , borat (jpi,jpj,jpk) ,       &
+         &      akp13(jpi,jpj,jpk)   , akp23 (jpi,jpj,jpk) ,       &
+         &      akp33(jpi,jpj,jpk)   , aksi3 (jpi,jpj,jpk) ,       &
+         &      asi3 (jpi,jpj,jpk)   ,                             &
          &      hi  (jpi,jpj,jpk)    , excess(jpi,jpj,jpk) ,   STAT=ierr(4) )
          !
       !* Temperature dependence of SMS terms

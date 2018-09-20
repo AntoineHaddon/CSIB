@@ -10,6 +10,7 @@ MODULE prtctl
    USE in_out_manager   ! I/O manager
    USE lib_mpp          ! distributed memory computing
    USE wrk_nemo         ! work arrays
+   USE checksums        ! Array checksumming
 
    IMPLICIT NONE
    PRIVATE
@@ -88,6 +89,7 @@ CONTAINS
       !
       CHARACTER (len=15) :: cl2
       INTEGER ::   overlap, jn, sind, eind, kdir,j_id
+      INTEGER ::   bc1, bc2
       REAL(wp) :: zsum1, zsum2, zvctl1, zvctl2
       REAL(wp), POINTER, DIMENSION(:,:)   :: ztab2d_1, ztab2d_2
       REAL(wp), POINTER, DIMENSION(:,:,:) :: zmask1, zmask2, ztab3d_1, ztab3d_2
@@ -168,36 +170,72 @@ CONTAINS
          ENDIF
 
          ! Compute the sum control
-         ! 2D arrays
-         IF( PRESENT(tab2d_1) )   THEN
-            zsum1 = SUM( ztab2d_1(nictls:nictle,njctls:njctle)*zmask1(nictls:nictle,njctls:njctle,1) )
-            zsum2 = SUM( ztab2d_2(nictls:nictle,njctls:njctle)*zmask2(nictls:nictle,njctls:njctle,1) )
-         ENDIF
+         IF( ln_ctl_chksum ) THEN
+            ! 2D arrays
+            IF( PRESENT(tab2d_1) )   THEN
+               CALL chksum( ztab2d_1(:,:), mask = zmask1(:,:,1),                                         &
+                            istart = nictls, iend = nictle, jstart = njctls, jend=njctle, bc_out = bc1 )
+               CALL chksum( ztab2d_2(:,:), mask = zmask2(:,:,1),                                         &
+                            istart = nictls, iend = nictle, jstart = njctls, jend=njctle, bc_out = bc2 )
+            ENDIF
 
-         ! 3D arrays
-         IF( PRESENT(tab3d_1) )   THEN
-            zsum1 = SUM( ztab3d_1(nictls:nictle,njctls:njctle,1:kdir)*zmask1(nictls:nictle,njctls:njctle,1:kdir) )
-            zsum2 = SUM( ztab3d_2(nictls:nictle,njctls:njctle,1:kdir)*zmask2(nictls:nictle,njctls:njctle,1:kdir) )
-         ENDIF
-
-         ! Print the result
-         IF( PRESENT(clinfo3) )   THEN
-            WRITE(j_id,FMT='(a,D23.16,3x,a,D23.16)')clinfo1, zsum1-zvctl1, cl2, zsum2-zvctl2
-            SELECT CASE( clinfo3 )
-            CASE ( 'tra-ta' ) 
-               t_ctll(jn) = zsum1
-            CASE ( 'tra' ) 
-                t_ctll(jn) = zsum1
-                s_ctll(jn) = zsum2
-            CASE ( 'dyn' ) 
-                u_ctll(jn) = zsum1
-                v_ctll(jn) = zsum2 
-            END SELECT
-         ELSEIF ( PRESENT(clinfo2) .OR. PRESENT(tab2d_2) .OR. PRESENT(tab3d_2) )   THEN
-            WRITE(j_id,FMT='(a,D23.16,3x,a,D23.16)')clinfo1, zsum1, cl2, zsum2
+            ! 3D arrays
+            IF( PRESENT(tab3d_1) )   THEN
+               CALL chksum( ztab3d_1(:,:,:), mask = zmask1(:,:,:),                                                &
+                            istart = nictls, iend = nictle, jstart = njctls, jend=njctle, kstart = 1, kend = kdir,&
+                            bc_out = bc1 )
+               CALL chksum( ztab3d_2(:,:,:), mask = zmask2(:,:,:),                                                &
+                            istart = nictls, iend = nictle, jstart = njctls, jend=njctle, kstart = 1, kend = kdir,&
+                            bc_out = bc2 )
+            ENDIF
+            ! Print the result
+            IF( PRESENT(clinfo3) )   THEN
+               WRITE(j_id,FMT='(a,D23.16,3x,a,D23.16)')clinfo1, zsum1-zvctl1, cl2, zsum2-zvctl2
+               SELECT CASE( clinfo3 )
+               CASE ( 'tra-ta' ) 
+                  t_ctll(jn) = bc1 
+               CASE ( 'tra' ) 
+                   t_ctll(jn) = bc1 
+                   s_ctll(jn) = bc2 
+               CASE ( 'dyn' ) 
+                   u_ctll(jn) = bc1 
+                   v_ctll(jn) = bc2 
+               END SELECT
+            ELSEIF ( PRESENT(clinfo2) .OR. PRESENT(tab2d_2) .OR. PRESENT(tab3d_2) )   THEN
+               WRITE(j_id,FMT='(a,I10.10,3x,a,I10.10)')clinfo1, bc1, cl2, bc2 
+            ELSE
+               WRITE(j_id,FMT='(a,I10.10)')clinfo1, bc1
+            ENDIF
          ELSE
-            WRITE(j_id,FMT='(a,D23.16)')clinfo1, zsum1
+            IF( PRESENT(tab2d_1) )   THEN
+                zsum1 = SUM(ztab2d_1(nictls:nictle,njctls:njctle)*zmask1(nictls:nictle,njctls:njctle,1) )
+                zsum2 = SUM(ztab2d_2(nictls:nictle,njctls:njctle)*zmask2(nictls:nictle,njctls:njctle,1) )
+            ENDIF
+            ! 3D arrays
+            IF( PRESENT(tab3d_1) )   THEN
+                zsum1 = SUM(ztab3d_1(nictls:nictle,njctls:njctle,1:kdir)*zmask1(nictls:nictle,njctls:njctle,1:kdir) )
+                zsum2 = SUM(ztab3d_2(nictls:nictle,njctls:njctle,1:kdir)*zmask2(nictls:nictle,njctls:njctle,1:kdir) )
+            ENDIF
+            ! Print the result
+            IF( PRESENT(clinfo3) )   THEN
+               WRITE(j_id,FMT='(a,D23.16,3x,a,D23.16)')clinfo1, zsum1-zvctl1, cl2, zsum2-zvctl2
+               SELECT CASE( clinfo3 )
+               CASE ( 'tra-ta' ) 
+                  t_ctll(jn) = zsum1
+               CASE ( 'tra' ) 
+                   t_ctll(jn) = zsum1
+                   s_ctll(jn) = zsum2
+               CASE ( 'dyn' ) 
+                   u_ctll(jn) = zsum1
+                   v_ctll(jn) = zsum2 
+               END SELECT
+            ELSEIF ( PRESENT(clinfo2) .OR. PRESENT(tab2d_2) .OR. PRESENT(tab3d_2) )   THEN
+               WRITE(j_id,FMT='(a,D23.16,3x,a,D23.16)')clinfo1, zsum1, cl2, zsum2
+            ELSE
+               WRITE(j_id,FMT='(a,D23.16)')clinfo1, zsum1
+            ENDIF
          ENDIF
+
 
       ENDDO
 

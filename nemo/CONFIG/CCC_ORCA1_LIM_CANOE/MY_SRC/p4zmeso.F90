@@ -119,6 +119,7 @@ CONTAINS
 
                !   Update the arrays TRA which contain the biological sources and sinks
                tra(ji,jj,jk,jpnh4) = tra(ji,jj,jk,jpnh4) + R*rr_n2c + nxs1 + nxs2
+               tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) + (R*rr_n2c + nxs1 + nxs2)*1.E-6
                tra(ji,jj,jk,jpoxy) = tra(ji,jj,jk,jpoxy) - R - cxs
                tra(ji,jj,jk,jpfer) = tra(ji,jj,jk,jpfer) + R*rr_fe2c + fexs1 + fexs2
                tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) + (R + cxs)*1.E-6

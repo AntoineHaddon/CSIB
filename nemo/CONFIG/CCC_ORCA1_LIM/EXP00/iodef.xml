@@ -57,7 +57,10 @@
         <field id="sbt"          description="bottom temperaturea"                       unit="degC"                     />
         <field id="sbs"          description="bottom salinity"                           unit="psu"                      />
         <!-- variables available with key_top and key_my_trc -->
-        <field id="agessc"       description="Ideal age"                                 unit="years" axis_ref="deptht"  />
+        <field id="agessc"       description="Ideal age"                                 unit="years"  axis_ref="deptht"  />
+        <field id="cfc11"        description="CFC11 tracer concentration"                unit="mol/m3" axis_ref="deptht"/>
+        <field id="cfc12"        description="CFC12 tracer concentration"                unit="mol/m3" axis_ref="deptht"/>
+        <field id="sf6"          description="SF6 tracer concentration"                  unit="mol/m3" axis_ref="deptht"/>
      </group>
 
       <!-- SBC -->
@@ -217,6 +220,19 @@
       </group>
           
       <!-- scalar -->
+
+     <!-- ptrc on T grid, available with key_cfc -->
+     <group id="diad_T" axis_ref="none" grid_ref="grid_T">
+        <field id="cfc11qtr"  description="CFC11 tracer flux"            unit="mol/m2/s"/>
+        <field id="cfc11qint" description="CFC11 integrated tracer flux" unit="mol/m2" />
+        <field id="cfc11patm" description="CFC11 atmospheric partial pressure" unit="ppt" />
+        <field id="cfc12qtr"  description="CFC12 tracer flux"            unit="mol/m2/s"/>
+        <field id="cfc12qint" description="CFC12 integrated tracer flux" unit="mol/m2" />
+        <field id="cfc12patm" description="CFC12 atmospheric partial pressure" unit="ppt" />
+        <field id="sf6qtr"    description="SF6 tracer flux"              unit="mol/m2/s"/>
+        <field id="sf6qint"   description="SF6 integrated tracer flux"   unit="mol/m2" />
+        <field id="sf6patm"   description="SF6 atmospheric partial pressure" unit="ppt" />
+     </group>
       
       <!-- variables available with key_diaar5 -->
       <group id="scalar" axis_ref="none" grid_ref="scalarpoint" zoom_ref="1point" >
