@@ -21,6 +21,7 @@ MODULE trcini_pisces
    USE trc             !  passive tracers common variables 
    USE sms_pisces      !  PISCES Source Minus Sink variables
    USE p4zche          !  Chemical model
+   USE p4zint          !  interpolation and computation of various accessory fields
    USE p4zsink         !  vertical flux of particulate matter due to sinking
    USE p4zrem          !  Remineralisation of organic matter
    USE p4zflx          !  Gas exchange
@@ -59,6 +60,7 @@ CONTAINS
       INTEGER  ::  ji, jj, jk
       REAL(wp) ::  zcaralk, zbicarb, zco3
       REAL(wp) ::  ztmas, ztmas1
+      REAL(wp) ::  r_sss_glob_avg, abio_alk
       !!----------------------------------------------------------------------
       IF(lwp) WRITE(numout,*)
       IF(lwp) WRITE(numout,*) ' trc_ini_pisces :   PISCES biochemical model initialisation'
@@ -100,18 +102,25 @@ CONTAINS
          trn(:,:,:,jpnch) = bioma0 * 12. / 55.
          trn(:,:,:,jpno3) = no3
          trn(:,:,:,jpdab) = sco2
-         trn(:,:,:,jpaab) = alka0
          trn(:,:,:,jpoab) = oxyg0
          trn(:,:,:,jpdnt) = sco2
 
       ENDIF
 
       IF( .NOT. ln_rsttr ) THEN
+         ! Initialize abiotic alkalinity variables
+         sss_glob_avg = glob_avg_area_wt( tsn(:,:,1,jp_sal) )
+         r_sss_glob_avg = 1./sss_glob_avg
+         salt_avg(:,:) = 0.
+         salt_dtsum = 0.
          ! Initialization of chemical variables of the carbon cycle
          ! --------------------------------------------------------
          DO jk = 1, jpk
             DO jj = 1, jpj
                DO ji = 1, jpi
+                  ! Abiotic alkalinity calculation
+                  abio_alk = surf_alk_abio*(tsn(ji,jj,1,jp_sal)*r_sss_glob_avg)
+
                   ztmas   = tmask(ji,jj,jk)
                   ztmas1  = 1. - tmask(ji,jj,jk)
                   zcaralk = trn(ji,jj,jk,jptal) - borat(ji,jj,jk) / (  1. + 1.E-8 / ( rtrn + akb3(ji,jj,jk) )  )
@@ -121,7 +130,7 @@ CONTAINS
                   zco3    = ( zcaralk - trn(ji,jj,jk,jpdnt) ) * ztmas + 0.5e-3 * ztmas1
                   zbicarb = ( 2. * trn(ji,jj,jk,jpdnt) - zcaralk )
                   hk(ji,jj,jk) = ( ak23(ji,jj,jk) * zbicarb / zco3 ) * ztmas + 1.e-9 * ztmas1
-                  zcaralk = trn(ji,jj,jk,jpaab) - borat(ji,jj,jk) / (  1. + 1.E-8 / ( rtrn + akb3(ji,jj,jk) )  )
+                  zcaralk = abio_alk - borat(ji,jj,jk) / (  1. + 1.E-8 / ( rtrn + akb3(ji,jj,jk) )  )
                   zco3    = ( zcaralk - trn(ji,jj,jk,jpdab) ) * ztmas + 0.5e-3 * ztmas1
                   zbicarb = ( 2. * trn(ji,jj,jk,jpdab) - zcaralk )
                   hj(ji,jj,jk) = ( ak23(ji,jj,jk) * zbicarb / zco3 ) * ztmas + 1.e-9 * ztmas1

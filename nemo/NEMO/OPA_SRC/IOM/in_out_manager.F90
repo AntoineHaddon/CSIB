@@ -86,6 +86,7 @@ MODULE in_out_manager
    !!----------------------------------------------------------------------
    LOGICAL ::   ln_ctl            = .FALSE.   !: run control for debugging
    LOGICAL ::   ln_ctl_chksum     = .FALSE.   !: Print run control as checksums
+   LOGICAL ::   ln_chk_negsal     = .FALSE.   !: Check for negative salinity
    INTEGER ::   nn_timing    =    0    !: run control for timing
    INTEGER ::   nn_print     =    0    !: level of print (0 no print)
    INTEGER ::   nn_ictls     =    0    !: Start i indice for the SUM control
