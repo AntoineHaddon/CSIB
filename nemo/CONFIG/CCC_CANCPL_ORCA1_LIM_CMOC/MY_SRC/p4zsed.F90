@@ -44,11 +44,13 @@ MODULE p4zsed
    TYPE(FLD), ALLOCATABLE, DIMENSION(:) ::   sf_riverdic  ! structure of input riverdic
    TYPE(FLD), ALLOCATABLE, DIMENSION(:) ::   sf_riverdoc  ! structure of input riverdoc
    TYPE(FLD), ALLOCATABLE, DIMENSION(:) ::   sf_fmsk      ! structure of input iron limitation mask ! <CMOC code OR 10/22/2015>
+   TYPE(FLD), ALLOCATABLE, DIMENSION(:) ::   sf_si        ! structure of input silicate concentration
 
    INTEGER , PARAMETER :: nbtimes = 365  !: maximum number of times record in a file
-   INTEGER  :: ntimes_riv
+   INTEGER  :: ntimes_riv, ntimes_si
 
    REAL(wp), ALLOCATABLE, SAVE,   DIMENSION(:,:) :: rivinp, cotdep    !: river input fields
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: silica
 
    !!* Substitution
 #  include "top_substitute.h90"
@@ -99,6 +101,8 @@ CONTAINS
       trn(:,:,1,jpno3) = trn(:,:,1,jpno3) + rivinp(:,:) * rfact2
       trn(:,:,1,jpdic) = trn(:,:,1,jpdic) + rivinp(:,:) * 2.631 * rfact2
       trn(:,:,1,jptal) = trn(:,:,1,jptal) + (cotdep(:,:) - ncrr_cmoc*rivinp(:,:) ) * rfact2
+      trn(:,:,1,jpdab) = trn(:,:,1,jpdab) + rivinp(:,:) * 2.631 * rfact2
+      trn(:,:,1,jpdnt) = trn(:,:,1,jpdnt) + rivinp(:,:) * 2.631 * rfact2
 
       ! Fate of POC reaching the ocean floor: complete remineralization into DIC, DIN
       ! and sink of O2 and TALK
@@ -109,6 +113,8 @@ CONTAINS
             zwsbio3 = wsbio3(ji,jj,ikt) * zdep
 
             trn(ji,jj,ikt,jpdic) = trn(ji,jj,ikt,jpdic)                       &
+               &                             + trn(ji,jj,ikt,jppoc) * zwsbio3 
+            trn(ji,jj,ikt,jpdnt) = trn(ji,jj,ikt,jpdnt)                       &
                &                             + trn(ji,jj,ikt,jppoc) * zwsbio3 
             trn(ji,jj,ikt,jptal) = trn(ji,jj,ikt,jptal)                       &
                &                             - trn(ji,jj,ikt,jppoc) * zwsbio3 * ncrr_cmoc
@@ -273,18 +279,19 @@ CONTAINS
       !!----------------------------------------------------------------------
       !
       INTEGER  :: ji, jj, jk, jm
-      INTEGER  :: numfmsk, numriv                            ! <CMOC code OR 10/22/2015> add numfmsk (iron limitation mask)
+      INTEGER  :: numfmsk, numriv, numsi                            ! <CMOC code OR 10/22/2015> add numfmsk (iron limitation mask)
       INTEGER  :: ierr, ierr1, ierr2
       REAL(wp), DIMENSION(nbtimes) :: zsteps                 ! times records
       REAL(wp), DIMENSION(:,:,:), ALLOCATABLE :: zriverdic, zriverdoc !
       REAL(wp), DIMENSION(:,:)  , ALLOCATABLE :: zfmask      ! <CMOC code OR 10/22/2015> add zfmask for iron limitation mask
       !
       CHARACTER(len=100) ::  cn_dir                          ! Root directory for location of ssr files
-      TYPE(FLD_N) ::   sn_fmsk, sn_riverdoc, sn_riverdic     ! <CMOC code OR 10/22/2015> add sn_fmsk (iron limitation mask)        ! informations about the fields to be read
+      !TYPE(FLD_N) ::   sn_fmsk, sn_riverdoc, sn_riverdic     ! <CMOC code OR 10/22/2015> add sn_fmsk (iron limitation mask)        ! informations about the fields to be read
+      TYPE(FLD_N) ::   sn_fmsk, sn_riverdoc, sn_riverdic, sn_si                              ! informations about the fields to be read
 
       NAMELIST/nampissed/cn_dir, sn_riverdic, sn_riverdoc,                         &
         &                ln_river,                                                 &
-        &                sn_fmsk
+        &                sn_fmsk, sn_si
       NAMELIST/namcmocnfx/ phinf_cmoc, phi0_cmoc, anf_cmoc, pnf_cmoc, inf_cmoc, tnfMa_cmoc, tnfmi_cmoc
         
       !!----------------------------------------------------------------------
@@ -301,6 +308,7 @@ CONTAINS
       sn_riverdic = FLD_N( 'river'      ,   -12     ,  'riverdic' ,  .false.   , .true.  ,   'yearly'  , ''       , '' )
       sn_riverdoc = FLD_N( 'river'      ,   -12     ,  'riverdoc' ,  .false.   , .true.  ,   'yearly'  , ''       , '' )
       sn_fmsk     = FLD_N( 'fermask'    ,   -12     ,  'femask'   ,  .false.   , .true.  ,   'yearly'  , ''       , '' )   ! <CMOC code OR 10/22/2015> add the iron limitation mask
+      sn_si       = FLD_N( 'data_si_nomask', -1     ,  'Si'       ,  .true.   , .true.  ,   'monthly'  , ''       , ''         )
 
       REWIND( numnatp )                     ! read numnatp
       READ  ( numnatp, nampissed )
@@ -331,6 +339,26 @@ CONTAINS
            ll_sbc = .FALSE.
       ENDIF
 
+         IF(lwp) WRITE(numout,*) '    initialize silicate '
+         IF(lwp) WRITE(numout,*) '    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ '
+         !
+         ALLOCATE( sf_si(1), STAT=ierr )           !* allocate and fill sf_sst (forcing structure) with sn_sst
+         IF( ierr > 0 )   CALL ctl_stop( 'STOP', 'p4z_sed_init: unable to allocate sf_si structure' )
+         !
+         CALL fld_fill( sf_si, (/ sn_si /), cn_dir, 'p4z_sed_init', 'Iron from sediment ', 'nampissed' )
+                                   ALLOCATE( sf_si(1)%fnow(jpi,jpj,jpk)   )
+         IF( sn_si%ln_tint )     ALLOCATE( sf_si(1)%fdta(jpi,jpj,jpk,2) )
+         !
+         ! Get total input dust ; need to compute total atmospheric supply of Si in a year
+         CALL iom_open (  TRIM( sn_si%clname ) , numsi )
+         CALL iom_gettime( numsi, zsteps, kntime=ntimes_si)  ! get number of record in file
+         IF (ntimes_si > 0) THEN
+            CALL iom_get( numsi, jpdom_data, TRIM( sn_si%clvar ), asi3(:,:,:), 1 )
+         ELSE
+            CALL iom_get( numsi, jpdom_data, TRIM( sn_si%clvar ), asi3(:,:,:) )
+         ENDIF 
+         CALL iom_close( numsi )
+
       ! iron mask/iron limitation for the ocean ! <CMOC code OR 10/22/2015>
       ! ---------------------------------------
          IF(lwp) WRITE(numout,*) '    initialize CMOC iron limitation'
@@ -345,9 +373,7 @@ CONTAINS
          CALL fld_fill( sf_fmsk, (/ sn_fmsk /), cn_dir, 'p4z_sed_init', 'Iron limitation mask', 'nampissed' )
                                    ALLOCATE( sf_fmsk(1)%fnow(jpi,jpj,1), STAT=ierr )  ! fnow current values based on interpolation (OR)?
                                    IF( ierr > 0 ) THEN
-                                            CALL ctl_stop('p4zsed: iron limitation mask,                  & 
-                                                          unable to allocate iron limitation array' )     &
-                                            ;    RETURN 
+                                            CALL ctl_stop('p4zsed: iron limitation mask,unable to allocate iron limitation array') ; RETURN
                                    ENDIF 
          !
          ! Open the the channel numfmsk associated with  file 'sn_fmsk%clname'

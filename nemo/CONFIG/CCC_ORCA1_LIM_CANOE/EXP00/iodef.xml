@@ -2,9 +2,9 @@
 <simulation> 
   
   <context id="nemo">
-
-    <!-- $id$ -->
     
+    <!-- $id$ -->
+
     <!-- 
 ============================================================================================================
 =                                  definition of all existing variables                                    =
@@ -31,11 +31,6 @@
 	<field id="mldkz5"       description="mixing layer depth (Turbocline)"           unit="m"                        />
 	<field id="mldr10_1"     description="Mixed Layer Depth 0.01 ref.10m"            unit="m"                        />
        	<field id="rhop"         description="potential density (sigma0)"                unit="kg/m3" axis_ref="deptht"  />
-        <!-- variables available with key_diaar5 -->
-        <field id="mldcmip6"     description="Mixed Layer Depth for CMIP6"               unit="m"                        />
-        <field id="mldsq"        description="Squared Mixed Layer Depth for CMIP6"       unit="m2"                       />
-        <field id="opottempmint" description="mass integrated potential temperature over ocean columns" unit="kg m-2 degC"     />
-        <field id="somint"       description="mass integrated salinity over ocean columns"              unit="kg m-2 * (1e-3)" />
 	<!-- next variables available with key_diahth -->
 	<field id="mlddzt"       description="Thermocline Depth (max dT/dz)"             unit="m"                        />
 	<field id="mldr10_3"     description="Mixed Layer Depth dr=0.03 (ref.10m)"       unit="m"                        />
@@ -56,11 +51,10 @@
         <field id="area"         description="Cell area"                                 unit="m2"                       />
         <field id="sbt"          description="bottom temperaturea"                       unit="degC"                     />
         <field id="sbs"          description="bottom salinity"                           unit="psu"                      />
-        <!-- variables available with key_top and key_my_trc -->
-        <field id="cfc11"        description="CFC11 tracer concentration"                unit="mol/m3" axis_ref="deptht"/>
-        <field id="cfc12"        description="CFC12 tracer concentration"                unit="mol/m3" axis_ref="deptht"/>
-        <field id="sf6"          description="SF6 tracer concentration"                  unit="mol/m3" axis_ref="deptht"/>
-        <field id="agessc"       description="Ideal age"                                 unit="years" axis_ref="deptht"  />
+        <field id="mldcmip6"     description="Mixed Layer Depth for CMIP6"               unit="m"                        />
+        <field id="mldsq"        description="Squared Mixed Layer Depth for CMIP6"       unit="m2"                       />
+        <field id="opottempmint" description="mass integrated potential temperature over ocean columns" unit="kg m-2 degC"     />
+        <field id="somint"       description="mass integrated salinity over ocean columns"              unit="kg m-2 * (1e-3)" />
      </group>
 
       <!-- SBC -->
@@ -110,9 +104,9 @@
 	<field id="ist_cea"      description="Ice surface temperature (cell average)"                       unit="degC"     />
 	<field id="ist_ipa"      description="Ice surface temperature (ice presence average)"               unit="degC"     />      
         <field id="sitemptop_cea" description="Snow/ice surface temperature (cell average)"                 unit="K"        />
-	<field id="uice_ipa"     description="Ice velocity along i-axis (C grid) (ice presence average)"    unit="m/s"      />      
+	<field id="uice_ipa"     description="Ice velocity along i-axis (C grid) (ice presence average)"    unit="m/s"      />
 	<field id="vice_ipa"     description="Ice velocity along j-axis (C grid) (ice presence average)"    unit="m/s"      />
-        <field id="ivel_cea"     description="Ice velocity module (C grid) (cell average)"                  unit="m/s"      /> 
+        <field id="ivel_cea"     description="Ice velocity module (C grid) (cell average)"                  unit="m/s"      />
 	
 	<field id="utau_ice"     description="Wind stress along i-axis over the ice at i-point"             unit="N/m2"     />
 	<field id="vtau_ice"     description="Wind stress along j-axis over the ice at i-point"             unit="N/m2"     />
@@ -144,6 +138,10 @@
 	<field id="snowmel_cea"  description="Snow Melt Rate (cell average)"                                unit="kg/m2/s"  />
 	<field id="sntoice_cea"  description="Snow-Ice Formation Rate (cell average)"                       unit="kg/m2/s"  />
 	<field id="ticemel_cea"  description="Rate of Melt at Upper Surface of Sea Ice (cell average)"      unit="kg/m2/s"  />
+        <field id="hflx_qsr_tot"  description="Solar heat flux from coupler (cell average)"                 unit="W/m2"     />
+        <field id="hflx_qns_tot"  description="Non solar heat flux from coupler (cell average)"             unit="W/m2"     />
+        <field id="hflx_qsr_ice"  description="Solar heat flux from coupler over sea-ice (cell average)"     unit="W/m2"    />
+        <field id="hflx_qns_ice"  description="Non solar heat flux from coupler over sea-ice (cell average)" unit="W/m2"    />
 
       </group>
 
@@ -152,12 +150,12 @@
       <group id="grid_U"  axis_ref="depthu" grid_ref="grid_U">
 	<field id="utau"         description="Wind Stress along i-axis"                    unit="N/m2" axis_ref="none" />
 	<field id="uoce"         description="ocean current along i-axis"                  unit="m/s"                  />
-	<field id="uocetr_eff"   description="Effective ocean transport along i-axis"      unit="m3/s"                 />
+	<field id="uocetr_eff"     description="Effective ocean transport along i-axis"    unit="m3/s"                 />
 	<!-- uoce_eiv: available with key_traldf_eiv and key_diaeiv -->
 	<field id="uoce_eiv"     description="EIV ocean current along i-axis"              unit="m/s"                  />
-        <field id="ueiv_masstr"  description="EIV Ocean Mass X Transport"                  unit="kg/s"                 /> 
+        <field id="ueiv_masstr"  description="EIV Ocean Mass X Transport"                  unit="kg/s"                 />
 	<!-- uoce_eiv: available with key_trabbl -->
-	<field id="uoce_bbl"     description="BBL ocean current along i-axis"              unit="m/s" axis_ref="none"  />
+	<field id="uoce_bbl"     description="BBL ocean current along i-axis"              unit="m/s"  axis_ref="none" />
 	<field id="ahu_bbl"      description="BBL diffusive flux along i-axis"             unit="m3/s" axis_ref="none" />
  	<!-- variables available with key_diaar5 -->
 	<field id="u_masstr"     description="ocean eulerian mass transport along i-axis"  unit="kg/s"                 />
@@ -166,8 +164,8 @@
 	<field id="udiff_heattr" description="ocean diffusion heat transport along i-axis" unit="W"    axis_ref="none" />
         <!-- sea ice variables for SIMIP (CMIP6) -->
         <field id="siu_cea"      description="Ice velocity along i-axis at U-point (C-grid) (cell average)" unit="m/s"  axis_ref="none" />
-        <field id="fr_iu"        description="Ice fraction at U point (C-grid)"            unit="1"    axis_ref="none" /> 
-    
+        <field id="fr_iu"        description="Ice fraction at U point (C-grid)"            unit="1"    axis_ref="none" />
+
      </group>
       
       <!-- V grid -->
@@ -180,7 +178,7 @@
 	<field id="voce_eiv"     description="EIV ocean current along j-axis"              unit="m/s"                  />
         <field id="veiv_masstr"  description="EIV Ocean Mass Y Transport"                  unit="kg/s"                 />
 	<!-- voce_eiv: available with key_trabbl -->
-	<field id="voce_bbl"     description="BBL ocean current along j-axis"              unit="m/s"  axis_ref="none" />
+	<field id="voce_bbl"     description="BBL ocean current along j-axis"              unit="m/s" axis_ref="none"  />
 	<field id="ahv_bbl"      description="BBL diffusive flux along j-axis"             unit="m3/s" axis_ref="none" />
 	<!-- variables available with key_diaar5 -->
 	<field id="v_masstr"     description="ocean eulerian mass transport along j-axis"  unit="kg/s"                 />
@@ -196,10 +194,10 @@
       
       <group id="grid_W"  axis_ref="depthw" grid_ref="grid_W">
 	<field id="woce"         description="ocean vertical velocity"                     unit="m/s"                  />
-	<field id="wocetr_eff"   description="effective ocean vertical transport"          unit="m3/s"                 />
+	<field id="wocetr_eff"     description="effective ocean vertical transport"          unit="m3/s"                 />
 	<!-- woce_eiv: available with key_traldf_eiv and key_diaeiv -->
 	<field id="woce_eiv"     description="EIV ocean vertical velocity"                 unit="m/s"                  />
-        <field id="weiv_masstr"  description="EIV Upward Ocean Mass Transport"             unit="kg/s"                 /> 
+        <field id="weiv_masstr"  description="EIV Upward Ocean Mass Transport"             unit="kg/s"                 />
 	<!-- woce_eiv: available with key_trabbl_adv -->
 	<field id="avt"          description="vertical eddy diffusivity"                   unit="m2/s"                 />
 	<field id="avm"          description="vertical eddy viscosity"                     unit="m2/s"                 />
@@ -251,8 +249,8 @@
         <field id="ttrd_zdf"   description="temperature-trend: vertical diffusion"      unit="degC/s"                  />
         <field id="strd_zdf"   description="salinity-trend: vertical diffusion"         unit="1e-3/s"                  />
         <!-- ln_traldf_iso=T only (iso-neutral diffusion) -->
-        <field id="ttrd_zdfp"  description="temperature-trend: pure vert. diffusion"    unit="degC/s"                  />
-        <field id="strd_zdfp"  description="salinity   -trend: pure vert. diffusion"    unit="1e-3/s"                  />
+        <field id="ttrd_zdfp"     long_name="temperature-trend: pure vert. diffusion"   unit="degC/s"                  />
+        <field id="strd_zdfp"     long_name="salinity   -trend: pure vert. diffusion"   unit="1e-3/s"                  />
 
         <!-- -->
         <field id="ttrd_dmp"   description="temperature-trend: interior restoring"      unit="degC/s"                  />
@@ -290,10 +288,12 @@
        <field id="DCHL"     description="Diatoms chlorophyl Concentration"         unit="mg/m3"   />
        <field id="ZOO"      description="Microzooplankton Concentration"           unit="mmol/m3" />
        <field id="ZOO2"     description="Mesozooplankton Concentration"            unit="mmol/m3" />
-       <field id="dFe"      description="Dissolved Iron Concentration"             unit="mmol/m3" />
+       <field id="dFe"      description="Dissolved Iron Concentration"             unit="nmol/m3" />
        <field id="GOC"      description="Big organic carbon Concentration"         unit="mmol/m3" />
        <field id="NO3"      description="Nitrates Concentration"                   unit="mmol/m3" />
        <field id="NH4"      description="Ammonium Concentration"                   unit="mmol/m3" />
+        <!-- variables available with key_top and key_my_trc -->
+       <field id="agessc"   description="Ideal age"                                unit="years"   />
      </group>
 
       <!-- diad on T grid : variables available with key_diatrc -->
@@ -307,19 +307,13 @@
        <field id="PPPHY2"      description="Primary production of diatoms"            unit="mol/m3/s"   axis_ref="deptht" />
        <field id="PPNEWN"      description="New Primary production of nanophyto"      unit="mol/m3/s"   axis_ref="deptht" />
        <field id="PPNEWD"      description="New Primary production of diatoms"        unit="mol/m3/s"   axis_ref="deptht" />
-       <field id="PBSi"        description="Primary production of Si diatoms"         unit="mol/m3/s"   axis_ref="deptht" />
-       <field id="PFeN"        description="Primary production of nano iron"          unit="mol/m3/s"   axis_ref="deptht" />
-       <field id="PFeD"        description="Primary production of diatoms iron"       unit="mol/m3/s"   axis_ref="deptht" />
+       <field id="PFeN"        description="Primary production of nano iron"          unit="umol/m3/s"  axis_ref="deptht" />
+       <field id="PFeD"        description="Primary production of diatoms iron"       unit="umol/m3/s"  axis_ref="deptht" />
        <field id="PCAL"        description="Calcite production"                       unit="mol/m3/s"   axis_ref="deptht" />
        <field id="DCAL"        description="Calcite dissolution"                      unit="mol/m3/s"   axis_ref="deptht" />
        <field id="GRAZ1"       description="Microzooplankton grazing"                 unit="mol/m3/s"   axis_ref="deptht" />
        <field id="GRAZ2"       description="Netplankton grazing by zooplankton"       unit="mol/m3/s"   axis_ref="deptht" />
        <field id="GRAZ3"       description="Microzooplankton grazing by zooplankton"  unit="mol/m3/s"   axis_ref="deptht" />
-       <field id="Mumax"       description="Maximum growth rate"                      unit="s-1"        axis_ref="deptht" />
-       <field id="MuN"         description="Realized growth rate for nanophyto"       unit="s-1"        axis_ref="deptht" />
-       <field id="MuD"         description="Realized growth rate for diatomes"        unit="s-1"        axis_ref="deptht" />
-       <field id="MuNlight"    description="Light limited growth rate for nanophyto"  unit="s-1"        axis_ref="deptht" />
-       <field id="MuDlight"    description="Light limited growth rate for diatomes"   unit="s-1"        axis_ref="deptht" />
        <field id="LNN"         description="Nitrogen limitation term in Nanophyto"    unit="-"          axis_ref="deptht" />
        <field id="LDN"         description="Nitrogen limitation term in Diatoms"      unit="-"          axis_ref="deptht" />
        <field id="LNFe"        description="Iron limitation term in Nanophyto"        unit="-"          axis_ref="deptht" />
@@ -343,17 +337,8 @@
        <field id="Burial"      description="CaCO3 burial"                             unit="mol/m2/s"                     />
        <field id="Irondep"     description="Iron deposition"                          unit="mol/m3/s"   axis_ref="deptht" />
        <field id="Ironsed"     description="Sediment Iron"                            unit="mol/m3/s"   axis_ref="deptht" />
-       <field id="cfc11qtr"    description="CFC11 tracer flux"                        unit="mol/m2/s"                     />
-       <field id="cfc11qint"   description="CFC11 integrated tracer flux"             unit="mol/m2"                       />
-       <field id="cfc11patm"   description="CFC11 atmospheric partial pressure"       unit="ppt"                          />
-       <field id="cfc12qtr"    description="CFC12 tracer flux"                        unit="mol/m2/s"                     />
-       <field id="cfc12qint"   description="CFC12 integrated tracer flux"             unit="mol/m2"                       />
-       <field id="cfc12patm"   description="CFC12 atmospheric partial pressure"       unit="ppt"                          />
-       <field id="sf6qtr"      description="SF6 tracer flux"                          unit="mol/m2/s"                     />
-       <field id="sf6qint"     description="SF6 integrated tracer flux"               unit="mol/m2"                       />
-       <field id="sf6patm"     description="SF6 atmospheric partial pressure"         unit="ppt"                          />
      </group>
-      
+       
     </field_definition>
     
     <!-- 
@@ -366,10 +351,10 @@
 =                  http://www2-pcmdi.llnl.gov/svn/repository/cmor/trunk/Tables/CMIP5_Oimon                 =              
 =          http://www.clivar.org/organization/wgomd/references/WGOMD_CMIP5_ocean_fields.June2009.pdf       =
 =                                                                                                          =
-=                                 *******************************************                              =
-=                                  CMIP6 ocean data request, including CaNOE                               =
+=                                 ******************************************                               =
+=                                  CMIP6 ocean data request, including CMOC                                =
 =                                              (D. YANG, 2017-04)                                          = 
-=                                 *******************************************                              =
+=                                 ******************************************                               =
 =                                                                                                          =
 = Physical ocean fields (OMIP and FAFMIP):                                                                 =
 = http://wiki.cccma.ec.gc.ca/~acrnrdy/phyocn/phyocn_cccma_ar6_mip_tables_20170405_v01.00.03.xlsx           =
@@ -399,8 +384,21 @@
 =
 ============================================================================================================
     -->
-    
-    <file_definition output_level="0" >
+
+    <file_definition output_level="10" >
+      <!--
++++++++++++++++++++++++++++++++++++++++++++++++ 3 hourly  ++++++++++++++++++++++++++++++++++++++++++++++++++
+        -->
+      <group id="3h" output_freq="10800"  output_level="10" enabled=".FALSE.">                     <!-- 3h files -->
+
+        <file id="3h_ptrc_T" name="auto" description="pisces sms variables" >
+           <field ref="DIC"         level="0" />
+           <field ref="O2"          level="0" />
+           <field ref="NO3"         level="0" />
+        </file>
+
+      </group>    
+
       <!--
 +++++++++++++++++++++++++++++++++++++++++++++++   daily   ++++++++++++++++++++++++++++++++++++++++++++++++++
         -->
@@ -411,13 +409,13 @@
           -->
         <group id="1d_grid_T" name="auto" >                                                        <!-- grid T -->
 
-	  <file id="1d_grid_T"  name_suffix="_ar6"  >
-	    <field ref="sst"           name='tos'           description="sea_surface_temperature"                  level="3" />
-	    <field ref="sst2"          name='tossq'         description="square_of_sea_surface_temperature"        level="3" />
+          <file id="1d_grid_T"  name_suffix="_ar6"  >
+            <field ref="sst"           name='tos'           description="sea_surface_temperature"                  level="3" />
+            <field ref="sst2"          name='tossq'         description="square_of_sea_surface_temperature"        level="3" />
             <field ref="sss"           name='sos'           description="sea_surface_salinity"                     level="3" />
             <field ref="sss2"          name='sossq'         description="square_of_sea_surface_salinity"           level="3" />
-	    <!-- field ref="mldkz5"   name='omldamax' description="ocean_mixed_layer_thickness_defined_by_mixing_scheme" level="2" operation="t_max(X)", not in cmip6 request, DY -->
-	  </file>   
+            <!-- field ref="mldkz5"   name='omldamax' description="ocean_mixed_layer_thickness_defined_by_mixing_scheme" level="2" operation="t_max(X)", not in cmip6 request, DY -->
+          </file>
 
         <!--
 ...........................................    icemod (grid T)   .................................................
@@ -427,7 +425,7 @@
             <field ref="snowthic_cea"  name="isnowthi"      description="snow thickness (cell average)"            level="1" />
             <field ref="sitemptop_cea" name="sitemptop_cea" description="surface temperature (cell average)"       level="1" />
             <field ref="ice_cover"     name="siconc"        description="sea_ice_area_fraction"                    level="1" />
-            <field ref="icethic_cea"   name="iicethic"      description="ice thickness (cell average)"             level="1" /> 
+            <field ref="icethic_cea"   name="iicethic"      description="ice thickness (cell average)"             level="1" />
             <field ref="ivel_cea"      name="ivel_cea"      description="sea ice velocity module (cell average)"   level="1" />
           </file>
         </group>
@@ -441,13 +439,13 @@
             <field ref="siu_cea"       name="siu_cea"       description="ice velocity along i-axis (cell average)" level="1" />
             <field ref="fr_iu"         name="fr_iu"         description="ice fraction at U point (C-grid)"         level="1" />
           </file>
-        </group>
+        </group>      
 
         <!--
 ...........................................    icemod (grid V)   .................................................
           -->
         <group id="1d_grid_V" name="auto" >
-           
+
           <file id="1d_grid_V_ar6" name_suffix="_ar6" >
             <field ref="siv_cea"       name="siv_cea"        description="ice velocity along j-axis (cell average)" level="1" />
             <field ref="fr_iv"         name="fr_iv"          description="ice fraction at V point (C-grid)"         level="1" />
@@ -457,420 +455,370 @@
       </group>                                                                   <!-- end of 1d files -->
 
 
-	<!--
+        <!--
 ++++++++++++++++++++++++++++++++++++++++++++++   monthly   +++++++++++++++++++++++++++++++++++++++++++++++++
-	  -->
+          -->
       <group id="1m" output_freq="-1"     enabled=".TRUE.">                      <!-- real monthly files -->
-	<!--
+        <!--
 ..............................................    grid T   .................................................
-	  -->
-	<group id="1m_grid_T" name="auto" >                                                        <!-- grid T -->
+          -->
+        <group id="1m_grid_T" name="auto" >                                                        <!-- grid T -->
 
           <file id="1m_grid_T" >
             <field ref="toce"          name="votemper"       description="sea_water_potential_temperature"          level="0" /> <!-- cmip6 requested as priority 1, DY -->
             <field ref="soce"          name="vosaline"       description="sea_water_salinity"                       level="0" /> <!-- cmip6 requested as priority 1, DY -->
-	    <field ref="sst"           name="sosstsst"       description="sea_surface_temperature"                  level="0" /> <!-- cmip6 requested as priority 1, DY -->
+            <field ref="sst"           name="sosstsst"       description="sea_surface_temperature"                  level="0" /> <!-- cmip6 requested as priority 1, DY -->
             <field ref="ssh"           name="sossheig"       description="sea_surface_height_above_geoid"           level="0" /> <!-- cmip6 requested as priority 1, DY -->
             <field ref="empmr"         name="sowaflup"       description="water_flux_into_sea_water"                level="0" /> <!-- cmip6 requested as priority 1, DY -->
             <field ref="qt"            name="sohefldo"       description="surface_downward_heat_flux_in_sea_water"  level="0" /> <!-- cmip6 requested as priority 1, DY -->
-            <field ref="mldr10_1"      name="somxl010"                                                              level="0" />
-	    <field ref="qns"           name="qns"            description="surface_net_downward_non_solar_flux"      level="0" />
-	    <field ref="qsr"           name="qsr"            description="surface_net_downward_shortwave_flux"      level="0" /> <!-- cmip6 requested as priority 2, DY -->
-            <field ref="agessc"        name="agessc"         description="sea_water_age_since_surface_contact"      level="0" /> <!-- cmip6 requested as priority 1, DY -->
+            <field ref="mldr10_1"      name="somxl010"       description="Mixed Layer Depth 0.01 ref.10m"           level="0" />
+            <field ref="erp"           name="sowafldp"       description="water_flux_correction"                    level="0" /> <!-- cmip6 requested as priority 1, DY -->
+            <field ref="mlddzt"        name="sothedep"                                                              level="0" />
+            <field ref="qns"           name="qns"            description="surface_net_downward_non_solar_flux"      level="0" />
+            <field ref="qsr"           name="qsr"            description="surface_net_downward_shortwave_flux"      level="0" /> <!-- cmip6 requested as priority 2, DY -->
+            <field ref="qrp"           name="qrp"            description="heat_flux_correction"                     level="0" /> <!-- cmip6 requested as priority 1, DY -->
+            <field ref="snow_ai_cea"   name="snow_ai_cea"    description="Surface Snowfall Rate into the Sea Ice Portion of the Grid Cell"        level="0" />
+            <field ref="snow_ao_cea"   name="snow_ao_cea"    description="snowfall_flux"                            level="0" /> <!-- cmip6 requested as priority 2, DY -->
+            <field ref="hflx_rain_cea" name="hflx_rain_cea"  description="temperature_flux_due_to_rainfall_expressed_as_heat_flux_into_sea_water" level="0" /> <!-- cmip6 requested as priority 2, DY -->
+            <field ref="hflx_snow_cea" name="hflx_snow_cea"  description="heat_flux_into_sea_water_due_to_snow_thermodynamics"          level="0" /> <!-- cmip6 requested as priority 2, DY -->
+            <field ref="hflx_ice_cea"  name="hflx_ice_cea"   description="heat_flux_into_sea_water_due_to_sea_ice_thermodynamics"       level="0" /> <!-- cmip6 requested as priority 2, DY -->
+             <field ref="hflx_rnf_cea" name="hflx_rnf_cea"    description="temperature_flux_due_to_runoff_expressed_as_heat_flux_into_sea_water" level="0" /> <!-- cmip6 requested as priority 2, DY -->
+            <field ref="isnwmlt_cea"   name="isnwmlt_cea"    description="water_flux_into_sea_water_due_to_sea_ice_thermodynamics"      level="0" /> <!-- cmip6 requested as priority 1, DY -->
+            <field ref="snowmel_cea"   name="snowmel_cea"    description="Snow Melt Rate"                          level="0" />
+            <field ref="hflx_qsr_tot"  name="hflx_qsr_tot"   description="Solar heat flux from coupler (cell average)"                  level="0" />
+            <field ref="hflx_qns_tot"  name="hflx_qns_tot"   description="Non solar heat flux from coupler (cell average)"              level="0" />
+            <field ref="hflx_qsr_ice"  name="hflx_qsr_ice"   description="Solar heat flux from coupler over sea-ice (cell average)"     level="0" />
+            <field ref="hflx_qns_ice"  name="hflx_qns_ice"   description="Non solar heat flux from coupler over sea-ice (cell average)" level="0" />
           </file>
 
-	  <file id="1m_grid_T_ar6" name_suffix="_ar6" >
-	    <field ref="botpres"       name="botpres"        description="sea_water_pressure_at_sea_floor"          level="1" />
-	    <!-- pso : sea_water_pressure_at_sea_water_surface = 0 -->
-	    <!--field ref="ssh2"       name="zossq"          description="square_of_sea_surface_height_above_geoid" level="2", added sshdyn2 instead, DY -->
+          <file id="1m_grid_T_ar6" name_suffix="_ar6" >
+            <field ref="botpres"       name="botpres"        description="sea_water_pressure_at_sea_floor"          level="1" />
+            <!-- pso : sea_water_pressure_at_sea_water_surface = 0 -->
+            <!--field ref="ssh2"       name="zossq"          description="square_of_sea_surface_height_above_geoid" level="2", added sshdyn2 instead, DY -->
             <field ref="sshdyn2"       name="zossq"          description="square_of_sea_surface_height_above_geoid" level="3" />
-	    <!-- masscello : sea_water_mass_per_unit_area = cellthc*rau0                                    no time changes -->
-	    <field ref="sst2"          name="tossq"          description="square_of_sea_surface_temperature"        level="3" />
-	    <field ref="sss"           name="sos"            description="sea_surface_salinity"                     level="1" />
+            <!-- masscello : sea_water_mass_per_unit_area = cellthc*rau0                                    no time changes -->
+            <field ref="sst2"          name="tossq"          description="square_of_sea_surface_temperature"        level="3" />
+            <field ref="sss"           name="sos"            description="sea_surface_salinity"                     level="1" />
             <field ref="sbt"           name="tob"            description="sea_water_potential_temperature_at_sea_floor"   level="1"                               />
             <field ref="sbs"           name="sob"            description="sea_water_salinity_at_sea_floor"          level="1" />
-            <field ref="erp"           name="wfcorr"         description="water_flux_correction"                    level="1" />
-	    <!-- field ref="rhop"      name="rhopoto"        description="sea_water_potential_density"              level="2"            not in cmip6 request, DY-->
+            <!--field ref="erp"        name="wfcorr"         description="water_flux_correction"                    level="1" --> <!-- moved to 1m_grid_T as level="0" for *CANCPL_ORCA1_LIM*, DY -->
+            <!-- field ref="rhop"      name="rhopoto"        description="sea_water_potential_density"              level="2"            not in cmip6 request, DY-->
             <field ref="mldcmip6"      name="mlotst"         description="ocean_mixed_layer_thickness_defined_by_sigma_t" level="1"                               />
             <field ref="mldcmip6"      name="mlotstmin"      description="ocean_mixed_layer_thickness_defined_by_sigma_t" level="1" operation="t_min(X)"          />
             <field ref="mldcmip6"      name="mlotstmax"      description="ocean_mixed_layer_thickness_defined_by_sigma_t" level="1" operation="t_max(X)"          />
             <field ref="mldsq"         name="mlotstsq"       description="square_of_ocean_mixed_layer_thickness_defined_by_sigma_t"                     level="3" />
             <field ref="opottempmint"  name="opottempmint"   description="integral_wrt_depth_of_product_of_sea_water_density_and_potential_temperature" level="3" />
             <field ref="somint"        name="somint"         description="integral_wrt_depth_of_product_of_sea_water_density_and_salinity"              level="3" />
-	    <!-- no cfc11  : moles_per_unit_mass_of_cfc11_in_sea_water -->
-	    <!-- msftbarot : ocean_barotropic_mass_streamfunction : offline -->
-	    <!-- field ref="mldkz5"       name='omlmax'   description="ocean_mixed_layer_thickness_defined_by_mixing_scheme" level="2" operation="t_max(X)" not in cmip6 request, DY-->
-	    <field ref="rain"          name="prlq"           description="rainfall_flux"                            level="2" />
-	    <field ref="snow_ao_cea"   name="prsn"           description="snowfall_flux"                            level="2" />
-	    <field ref="evap_ao_cea"   name="evs"            description="water_evaporation_flux"                   level="2" />
-	    <field ref="runoffs"       name="friver"         description="water_flux_into_sea_water_from_rivers"    level="2" />
-	    <field ref="calving"       name="ficeberg"       description="water_flux_into_sea_water_from_icebergs"  level="2" />
-	    <field ref="isnwmlt_cea"   name="fsitherm"       description="water_flux_into_sea_water_due_to_sea_ice_thermodynamics"                      level="1" />
-	    <!-- wfonocorr : water_flux_into_sea_water_without_flux_correction : emp - erp -->  
-	    <!-- vsfpr    : virtual_salt_flux_into_sea_water_due_to_rainfall    = 0 --> 
-	    <!-- vsfevap  : virtual_salt_flux_into_sea_water_due_to_evaporation = 0 --> 
-	    <!-- vsfriver : virtual_salt_flux_into_sea_water_from_rivers        = 0 --> 	  
-	    <field ref="fsal_virt_cea" name="vsfsit"        description="virtual_salt_flux_into_sea_water_due_to_sea_ice_thermodynamics"               level="2" />
-	    <!-- vsf      : virtual_salt_flux_into_sea_water = fsal_virtual + fsal_real -->
-	    <!-- wfcorr   : virtual_salt_flux_correction                        = 0 --> 
-	    <field ref="fsal_virt_cea" name="sfdsi"         description="downward_sea_ice_basal_salt_flux"         level="1" />
-	    <!-- sfriver  : salt_flux_into_sea_water_from_rivers                = 0 --> 
-	    <!-- hfgeou : upward_geothermal_heat_flux_at_sea_floor : cte, see nambbc and trabbc.F90 -->
-	    <field ref="hflx_rain_cea" name="hfrainds"      description="temperature_flux_due_to_rainfall_expressed_as_heat_flux_into_sea_water"       level="2" />
-	    <field ref="hflx_evap_cea" name="hfevapds"      description="temperature_flux_due_to_evaporation_expressed_as_heat_flux_out_of_sea_water"  level="2" />
-	    <field ref="hflx_rnf_cea"  name="hfrunoffds"    description="temperature_flux_due_to_runoff_expressed_as_heat_flux_into_sea_water"         level="2" />
-	    <field ref="hflx_snow_cea" name="hfsnthermds"   description="heat_flux_into_sea_water_due_to_snow_thermodynamics"                          level="2" />
-	    <field ref="hflx_ice_cea"  name="hfsithermds"   description="heat_flux_into_sea_water_due_to_sea_ice_thermodynamics"                       level="2" /> <!-- removed from cmip6 data request -->
-	    <field ref="hflx_cal_cea"  name="hfibthermds"   description="heat_flux_into_sea_water_due_to_iceberg_thermodynamics"                       level="2" />
-	    <!-- rlds   : surface_net_downward_longwave_flux : not available -->
-	    <!-- hfls   : surface_downward_latent_heat_flux  : not available -->
-	    <!-- hfss   : surface_downward_sensible_heat_flux: not available -->
-	    <field ref="qsr3d"         name="rsdo"          description="downwelling_shortwave_flux_in_sea_water"  level="2"  />
-	    <field ref="qrp"           name="hfcorr"        description="heat_flux_correction"                     level="1"  />
-            <!-- Physical ocean model trend diagnostics: temperature and salinity (originally priority 3) -->
-            <field ref="ttrd_xad"      name="ttrd_xad"      description="temperature-trend: i-advection"           level="1"  />
-            <field ref="strd_xad"      name="strd_xad"      description="salinity-trend: i-advection"              level="1"  />
-            <field ref="ttrd_yad"      name="ttrd_yad"      description="temperature-trend: j-advection"           level="1"  />
-            <field ref="strd_yad"      name="strd_yad"      description="salinity-trend: j-advection"              level="1"  />
-            <field ref="ttrd_zad"      name="ttrd_zad"      description="temperature-trend: k-advection"           level="1"  />
-            <field ref="strd_zad"      name="strd_zad"      description="salinity-trend: k-advection"              level="1"  />
-            <field ref="ttrd_ldf"      name="ttrd_ldf"      description="temperature-trend: lateral  diffusion"    level="1"  />
-            <field ref="strd_ldf"      name="strd_ldf"      description="salinity-trend: lateral  diffusion"       level="1"  />
-            <field ref="ttrd_zdf"      name="ttrd_zdf"      description="temperature-trend: vertical diffusion"    level="1"  />
-            <field ref="strd_zdf"      name="strd_zdf"      description="salinity-trend: vertical diffusion"       level="1"  />
-            <field ref="ttrd_zdfp"     name="ttrd_zdfp"     description="temperature-trend: pure vert. diffusion"  level="1"  />
-            <field ref="strd_zdfp"     name="strd_zdfp"     description="salinity   -trend: pure vert. diffusion"  level="1"  />
-            <field ref="ttrd_eiv"      name="ttrd_eiv"      description="temperature-trend: advection from GM scheme" level="1" />
-            <field ref="strd_eiv"      name="strd_eiv"      description="salinity-trend: advection from GM scheme" level="1"  />
-	    <field ref="cellthc"       name="thkcello"      description="cell_thickness"                           level="1"  /> <!-- Ofx -->
+            <!-- no cfc11  : moles_per_unit_mass_of_cfc11_in_sea_water -->
+            <!-- msftbarot : ocean_barotropic_mass_streamfunction : offline -->
+            <!-- field ref="mldkz5"       name='omlmax'   description="ocean_mixed_layer_thickness_defined_by_mixing_scheme" level="2" operation="t_max(X)" not in cmip6 request, DY-->
+            <field ref="rain"          name="prlq"           description="rainfall_flux"                            level="2" />
+            <!--field ref="snow_ao_cea" name="prsn"          description="snowfall_flux"                            level="2" --> <!-- moved to 1m_grid_T as level="0" for *CANCPL_ORCA1_LIM*, DY -->
+            <field ref="evap_ao_cea"   name="evs"            description="water_evaporation_flux"                   level="2" />
+            <field ref="runoffs"       name="friver"         description="water_flux_into_sea_water_from_rivers"    level="2" />
+            <field ref="calving"       name="ficeberg"       description="water_flux_into_sea_water_from_icebergs"  level="2" />
+            <!--field ref="isnwmlt_cea" name="fsitherm"      description="water_flux_into_sea_water_due_to_sea_ice_thermodynamics"                      level="1" --> <!-- moved to 1m_grid_T as level="0" for *CANCPL_ORCA1_LIM*, DY -->
+            <!-- wfonocorr : water_flux_into_sea_water_without_flux_correction : emp - erp -->
+            <!-- vsfpr    : virtual_salt_flux_into_sea_water_due_to_rainfall    = 0 -->
+            <!-- vsfevap  : virtual_salt_flux_into_sea_water_due_to_evaporation = 0 -->
+            <!-- vsfriver : virtual_salt_flux_into_sea_water_from_rivers        = 0 -->
+            <field ref="fsal_virt_cea" name="vsfsit"        description="virtual_salt_flux_into_sea_water_due_to_sea_ice_thermodynamics"                level="2" />
+            <!-- vsf      : virtual_salt_flux_into_sea_water = fsal_virtual + fsal_real -->
+            <!-- wfcorr   : virtual_salt_flux_correction                        = 0 -->
+            <field ref="fsal_virt_cea" name="sfdsi"         description="downward_sea_ice_basal_salt_flux"         level="1" />
+            <!-- sfriver  : salt_flux_into_sea_water_from_rivers                = 0 -->
+            <!-- hfgeou : upward_geothermal_heat_flux_at_sea_floor : cte, see nambbc and trabbc.F90 -->
+            <!--field ref="hflx_rain_cea" name="hfrainds"   description="temperature_flux_due_to_rainfall_expressed_as_heat_flux_into_sea_water"        level="2" --> <!-- moved to 1m_grid_T as level="0" for *CANCPL_ORCA1_LIM*, DY -->
+            <field ref="hflx_evap_cea" name="hfevapds"      description="temperature_flux_due_to_evaporation_expressed_as_heat_flux_out_of_sea_water"   level="2" />
+            <!--field ref="hflx_rnf_cea"  name="hfrunoffds"  description="temperature_flux_due_to_runoff_expressed_as_heat_flux_into_sea_water"         level="2" --> <!-- moved to 1m_grid_T as level="0" for *CANCPL_ORCA1_LIM*, DY -->
+            <!--field ref="hflx_snow_cea" name="hfsnthermds" description="heat_flux_into_sea_water_due_to_snow_thermodynamics"                          level="2" --> <!-- moved to 1m_grid_T as level="0" for *CANCPL_ORCA1_LIM*, DY -->
+            <!--field ref="hflx_ice_cea"  name="hfsithermds" description="heat_flux_into_sea_water_due_to_sea_ice_thermodynamics"                       level="2" --> <!-- moved to 1m_grid_T as level="0" for *CANCPL_ORCA1_LIM*, DY -->
+            <field ref="hflx_cal_cea"  name="hfibthermds"   description="heat_flux_into_sea_water_due_to_iceberg_thermodynamics"                        level="2" />
+            <!-- rlds   : surface_net_downward_longwave_flux : not available -->
+            <!-- hfls   : surface_downward_latent_heat_flux  : not available -->
+            <!-- hfss   : surface_downward_sensible_heat_flux: not available -->
+            <field ref="qsr3d"         name="rsdo"          description="downwelling_shortwave_flux_in_sea_water"  level="2"  />
+            <!--field ref="qrp"        name="hfcorr"        description="heat_flux_correction"                     level="1" --> <!-- moved to 1m_grid_T as level="0" for *CANCPL_ORCA1_LIM*, DY -->
+            <field ref="cellthc"       name="thkcello"      description="cell_thickness"                           level="1"  /> <!-- Ofx -->
             <field ref="area"          name="areacello"     description="cell_area"                                level="1"  /> <!-- Ofx -->
-	  </file>   
-	</group>
-	<!--
-..............................................    grid U   .................................................
-	  -->
-	<group id="1m_grid_U" name="auto" >                                                        <!-- grid U -->
-
-          <file id="1m_grid_U" >
-	    <field ref="uoce"          name="vozocrtx"      description="sea_water_x_velocity"                     level="0"  /> <!-- cmip6 requested as priority 1, DY -->
-            <field ref="uoce_eiv"      name="vozoeivu"      description="x_bolus_velocity"                         level="0"  /> 
-	    <field ref="utau"          name="sozotaux"      description="surface_downward_x_stress"                level="0"  /> <!-- cmip6 requested as priority 1, DY -->
           </file>
 
-	  <file id="1m_grid_U_ar6" name_suffix="_ar6" >
-	    <field ref="u_masstr"      name="u_masstr"      description="ocean_mass_x_transport"                   level="1"  />
+          <file id="1m_grid_T_trd" name_suffix="_trd" enabled=".FALSE.">
+            <!-- Physical ocean model trend diagnostics: temperature and salinity -->
+            <field ref="ttrd_xad"      name="ttrd_xad"      description="temperature-trend: i-advection"           level="3"  />
+            <field ref="strd_xad"      name="strd_xad"      description="salinity-trend: i-advection"              level="3"  />
+            <field ref="ttrd_yad"      name="ttrd_yad"      description="temperature-trend: j-advection"           level="3"  />
+            <field ref="strd_yad"      name="strd_yad"      description="salinity-trend: j-advection"              level="3"  />
+            <field ref="ttrd_zad"      name="ttrd_zad"      description="temperature-trend: k-advection"           level="3"  />
+            <field ref="strd_zad"      name="strd_zad"      description="salinity-trend: k-advection"              level="3"  />
+            <field ref="ttrd_ldf"      name="ttrd_ldf"      description="temperature-trend: lateral  diffusion"    level="3"  />
+            <field ref="strd_ldf"      name="strd_ldf"      description="salinity-trend: lateral  diffusion"       level="3"  />
+            <field ref="ttrd_zdf"      name="ttrd_zdf"      description="temperature-trend: vertical diffusion"    level="3"  />
+            <field ref="strd_zdf"      name="strd_zdf"      description="salinity-trend: vertical diffusion"       level="3"  />
+            <field ref="ttrd_zdfp"     name="ttrd_zdfp"     description="temperature-trend: pure vert. diffusion"  level="3"  />
+            <field ref="strd_zdfp"     name="strd_zdfp"     description="salinity   -trend: pure vert. diffusion"  level="3"  />
+            <field ref="ttrd_eiv"      name="ttrd_eiv"      description="temperature-trend: advection from GM scheme" level="3" />
+            <field ref="strd_eiv"      name="strd_eiv"      description="salinity-trend: advection from GM scheme" level="3"  />
+          </file>
+        </group>
+        <!--
+..............................................    grid U   .................................................
+          -->
+        <group id="1m_grid_U" name="auto" >                                                        <!-- grid U -->
+
+          <file id="1m_grid_U" >
+            <field ref="uoce"          name="vozocrtx"      description="sea_water_x_velocity"                     level="0"  /> <!-- cmip6 requested as priority 1, DY -->
+            <field ref="uoce_eiv"      name="vozoeivu"      description="x_bolus_velocity"                         level="0"  />
+            <field ref="utau"          name="sozotaux"      description="surface_downward_x_stress"                level="0"  /> <!-- cmip6 requested as priority 1, DY -->
+          </file>
+
+          <file id="1m_grid_U_ar6" name_suffix="_ar6" >
+            <field ref="u_masstr"      name="u_masstr"      description="ocean_mass_x_transport"                   level="1"  />
             <field ref="ueiv_masstr"   name="ueiv_masstr"   description="parameterized_ocean_mass_x_transport"     level="1"  />
             <field ref="siu_cea"       name="siu_cea"       description="ice velocity along i-axis (cell average)" level="1"  />
             <field ref="fr_iu"         name="fr_iu"         description="ice fraction at U point (C-grid)"         level="1"  />
-	    <!-- field ref="u_heattr"     name="hfx"     description="ocean_heat_x_transport"                           level="1", cmip6 requires 3-D, DY   -->
-	    <!-- field ref="ueiv_heattr"  name="hfxba"   description="ocean_heat_x_transport_due_to_bolus_advection"    level="2", not in cmip6 request, DY -->
-	    <!-- field ref="udiff_heattr" name="hfxdiff" description="ocean_heat_x_transport_due_to_diffusion"          level="2", not in cmip6 request, DY -->
-	    <!-- tauucorr : surface_downward_x_stress_correction = 0 -->
-	  </file>   
-
-	</group>
-	<!--
-..............................................    grid V   .................................................
-	  -->
-	<group id="1m_grid_V" name="auto" >                                                        <!-- grid V -->
-
-          <file id="1m_grid_V" >
-	    <field ref="voce"          name="vomecrty"      description="sea_water_y_velocity"                     level="0"  /> <!-- cmip6 requested as priority 1, DY -->
-            <field ref="voce_eiv"      name="vomeeivv"      description="y_bolus_velocity"                         level="0"  />  
-	    <field ref="vtau"          name="sometauy"      description="surface_downward_y_stress"                level="0"  /> <!-- cmip6 requested as priority 1, DY -->
+            <!-- field ref="u_heattr"     name="hfx"     description="ocean_heat_x_transport"                           level="1", cmip6 requires 3-D, DY   -->
+            <!-- field ref="ueiv_heattr"  name="hfxba"   description="ocean_heat_x_transport_due_to_bolus_advection"    level="2", not in cmip6 request, DY -->
+            <!-- field ref="udiff_heattr" name="hfxdiff" description="ocean_heat_x_transport_due_to_diffusion"          level="2", not in cmip6 request, DY -->
+            <!-- tauucorr : surface_downward_x_stress_correction = 0 -->
           </file>
 
-	  <file id="1m_grid_V_ar6" name_suffix="_ar6" >
-	    <field ref="v_masstr"      name="v_masstr"      description="ocean_mass_y_transport"                   level="1"  />
+        </group>
+        <!--
+..............................................    grid V   .................................................
+          -->
+        <group id="1m_grid_V" name="auto" >                                                        <!-- grid V -->
+
+          <file id="1m_grid_V" >
+            <field ref="voce"          name="vomecrty"      description="sea_water_y_velocity"                     level="0"  /> <!-- cmip6 requested as priority 1, DY -->
+            <field ref="voce_eiv"      name="vomeeivv"      description="y_bolus_velocity"                         level="0"  />
+            <field ref="vtau"          name="sometauy"      description="surface_downward_y_stress"                level="0"  /> <!-- cmip6 requested as priority 1, DY -->
+          </file>
+
+          <file id="1m_grid_V_ar6" name_suffix="_ar6" >
+            <field ref="v_masstr"      name="v_masstr"      description="ocean_mass_y_transport"                   level="1"  />
             <field ref="veiv_masstr"   name="veiv_masstr"   description="parameterized_ocean_mass_y_transport"     level="1"  />
             <field ref="siv_cea"       name="siv_cea"       description="ice velocity along j-axis (cell average)" level="1"  />
             <field ref="fr_iv"         name="fr_iv"         description="ice fraction at V point (C-grid)"         level="1"  />
-	    <!-- field ref="v_heattr"     name="hfy"     description="ocean_heat_y_transport"   level="1", cmip6 requires 3-D, DY   -->
-	    <!-- field ref="veiv_heattr"  name="hfyba"   description="ocean_heat_y_transport_due_to_bolus_advection"  level="2", not in cmip6 request, DY -->
-	    <!-- field ref="vdiff_heattr" name="hfydiff" description="ocean_heat_y_transport_due_to_diffusion"        level="2", not in cmip6 request, DY -->
-	    <!-- tauvcorr : surface_downward_y_stress_correction = 0 -->
-	  </file>   
+            <!-- field ref="v_heattr"     name="hfy"     description="ocean_heat_y_transport"   level="1", cmip6 requires 3-D, DY   -->
+            <!-- field ref="veiv_heattr"  name="hfyba"   description="ocean_heat_y_transport_due_to_bolus_advection"  level="2", not in cmip6 request, DY -->
+            <!-- field ref="vdiff_heattr" name="hfydiff" description="ocean_heat_y_transport_due_to_diffusion"        level="2", not in cmip6 request, DY -->
+            <!-- tauvcorr : surface_downward_y_stress_correction = 0 -->
+          </file>
 
-	</group>
-	<!--
+        </group>
+        <!--
 ..............................................    grid W   .................................................
-	  -->
-	<group id="1m_grid_W" name="auto" >                                                        <!-- grid W -->
+          -->
+        <group id="1m_grid_W" name="auto" >                                                        <!-- grid W -->
 
           <file id="1m_grid_W" >
             <field ref="woce"          name="vovecrtz"      description="upward_sea_water_velocity"                level="0"  /> <!-- cmip6 requested as priority 1, DY -->
             <field ref="woce_eiv"      name="voveeivw"      description="upward_bolus_velocity"                    level="0"  />
-            <field ref="aht2d"         name="soleahtw"                                                             level="0"  />     
+            <field ref="aht2d"         name="soleahtw"      description="lateral eddy diffusivity"                 level="0"  />     
             <field ref="aht2d_eiv"     name="soleaeiw"      description="ocean_tracer_bolus_laplacian_diffusivity" level="0"  /> <!-- cmip6 requested as priority 3, DY -->
           </file>
 
           <file id="1m_grid_W_ar6" name_suffix="_ar6" >
             <field ref="bn2"           name="obvfsq"        description="square_of_brunt_vaisala_frequency_in_sea_water" level="1" />
-	    <field ref="w_masstr"      name="w_masstr"      description="upward_ocean_mass_transport"              level="1"  />
+            <field ref="w_masstr"      name="w_masstr"      description="upward_ocean_mass_transport"              level="1"  />
             <field ref="weiv_masstr"   name="weiv_masstr"   description="parameterized_upward_ocean_mass_transport" level="1" />
-	    <!-- field ref="w_masstr2"  name="wmosq" description="square_pf_upward_ocean_mass_transport", not in cmip6 request, DY -->
-	    <!-- difvtrbo : ocean_vertical_tracer_diffusivity_due_to_background : cte with time, see namelist parameters nn_avb and  nn_havtb -->
-	    <!-- field ref="av_tide" name="difvtrto" description="ocean_vertical_tracer_diffusivity_due_to_tides"   level="2", not in cmip6 request, DY -->
-	    <!-- tnpeo     : tendency_of_ocean_potential_energy_content                   : not available -->
-	    <!-- tnpeot    : tendency_of_ocean_potential_energy_content_due_to_tides      : not available -->
-	    <!-- tnpeotb   : tendency_of_ocean_potential_energy_content_due_to_background : not available -->
-	    <!-- difvmbo : ocean_vertical_momentum_diffusivity_due_to_background : cte with time, see namelist parameters nn_avb -->
-	    <!-- field ref="av_tide" name="difvmto"  description="ocean_vertical_momentum_diffusivity_due_to_tides" level="2", same as trace, not in cmip6 request, DY -->
-	    <!-- difvmfdo : ocean_vertical_momentum_diffusivity_due_to_form_drag : ??? -->
-	    <!-- dispkevfo : ocean_kinetic_energy_dissipation_per_unit_area_due_to_vertical_friction : not available -->
-	    <!-- if ln_traldf_lap    =  .true. -->
-	    <!-- diftrelo : ocean_tracer_epineutral_laplacian_diffusivity : cte with time, see ln_traldf_iso -->
-	    <!-- diftrxylo : ocean_tracer_xy_laplacian_diffusivity : cte with time -->
-	    <!-- if ln_traldf_bilap  =  .true. -->
-	    <!-- field ref="diftrbbo" name="aht2d_eiv" description="ocean_tracer_bolus_biharmonic_diffusivity"                    level="2" /-->
-	    <!-- diftrebo : ocean_tracer_epineutral_biharmonic_diffusivity : cte with time, see ln_traldf_iso -->
-	    <!-- diftrxybo : ocean_tracer_xy_biharmonic_diffusivity : cte with time -->
-	    <!-- tnkebto : tendency_of_ocean_eddy_kinetic_energy_content_due_to_bolus_transport : not available -->
-	    <!-- difmxylo : ocean_momentum_xy_laplacian_diffusivity : cte with time, see ln_dynldf_lap -->
-	    <!-- difmxybo : ocean_momentum_xy_biharmonic_diffusivity : cte with time, see ln_dynldf_bilap -->
-	    <!-- dispkexyfo : ocean_kinetic_energy_dissipation_per_unit_area_due_to_xy_friction : not available -->
+            <!-- field ref="w_masstr2"  name="wmosq" description="square_pf_upward_ocean_mass_transport", not in cmip6 request, DY -->
+            <!-- difvtrbo : ocean_vertical_tracer_diffusivity_due_to_background : cte with time, see namelist parameters nn_avb and  nn_havtb -->
+            <!-- field ref="av_tide" name="difvtrto" description="ocean_vertical_tracer_diffusivity_due_to_tides"   level="2", not in cmip6 request, DY -->
+            <!-- tnpeo     : tendency_of_ocean_potential_energy_content                   : not available -->
+            <!-- tnpeot    : tendency_of_ocean_potential_energy_content_due_to_tides      : not available -->
+            <!-- tnpeotb   : tendency_of_ocean_potential_energy_content_due_to_background : not available -->
+            <!-- difvmbo : ocean_vertical_momentum_diffusivity_due_to_background : cte with time, see namelist parameters nn_avb -->
+            <!-- field ref="av_tide" name="difvmto"  description="ocean_vertical_momentum_diffusivity_due_to_tides" level="2", same as trace, not in cmip6 request, DY -->
+            <!-- difvmfdo : ocean_vertical_momentum_diffusivity_due_to_form_drag : ??? -->
+            <!-- dispkevfo : ocean_kinetic_energy_dissipation_per_unit_area_due_to_vertical_friction : not available -->
+            <!-- if ln_traldf_lap    =  .true. -->
+            <!-- diftrelo : ocean_tracer_epineutral_laplacian_diffusivity : cte with time, see ln_traldf_iso -->
+            <!-- diftrxylo : ocean_tracer_xy_laplacian_diffusivity : cte with time -->
+            <!-- if ln_traldf_bilap  =  .true. -->
+            <!-- field ref="diftrbbo" name="aht2d_eiv" description="ocean_tracer_bolus_biharmonic_diffusivity"                    level="2" /-->
+            <!-- diftrebo : ocean_tracer_epineutral_biharmonic_diffusivity : cte with time, see ln_traldf_iso -->
+            <!-- diftrxybo : ocean_tracer_xy_biharmonic_diffusivity : cte with time -->
+            <!-- tnkebto : tendency_of_ocean_eddy_kinetic_energy_content_due_to_bolus_transport : not available -->
+            <!-- difmxylo : ocean_momentum_xy_laplacian_diffusivity : cte with time, see ln_dynldf_lap -->
+            <!-- difmxybo : ocean_momentum_xy_biharmonic_diffusivity : cte with time, see ln_dynldf_bilap -->
+            <!-- dispkexyfo : ocean_kinetic_energy_dissipation_per_unit_area_due_to_xy_friction : not available -->
             <field ref="avt"           name="difvho"        description="ocean_vertical_heat_diffusivity"          level="3"  />
             <field ref="avs"           name="difvso"        description="ocean_vertical_salt_diffusivity"          level="3"  />
-	  </file>   
+          </file>
 
-	</group>
-	<!--
+        </group>
+        <!--
 ..............................................    scalar   .................................................
-	  -->
-	<file id="1m_scalar" name="auto" name_suffix="_ar6" description="ar6" >         <!-- scalar -->
-	  <!--field ref="masstot"      name="masso"         description="sea_water_mass"                           level="4" -->  <!-- The cmip6 requested is computed offline -->
-	  <field ref="voltot"          name="volo"          description="sea_water_volume"                         level="1"  />  
-	  <field ref="sshtot"          name="sshtot"        description="global_average_sea_level_change"          level="1"  />  <!-- zosga in cmip5 DY -->
-	  <!-- field ref="sshsteric"   name="zossga"   description="global_average_steric_sea_level_change", not in cmip6, DY -->
-	  <field ref="sshthster"       name="zostoga"       description="global_average_thermosteric_sea_level_change" level="1" />
-	  <field ref="temptot"         name="thetaoga"      description="sea_water_potential_temperature"          level="1"  />
-	  <field ref="saltot"          name="soga"          description="sea_water_salinity"                       level="1"  />
+          -->
+        <file id="1m_scalar" name="auto" name_suffix="_ar6" description="ar6" >         <!-- scalar -->
+          <!--field ref="masstot"      name="masso"         description="sea_water_mass"                           level="4" -->  <!-- The cmip6 requested is computed offline -->
+          <field ref="voltot"          name="volo"          description="sea_water_volume"                         level="1"  />
+          <field ref="sshtot"          name="sshtot"        description="global_average_sea_level_change"          level="1"  />  <!-- zosga in cmip5 DY -->
+          <!-- field ref="sshsteric"   name="zossga"   description="global_average_steric_sea_level_change", not in cmip6, DY -->
+          <field ref="sshthster"       name="zostoga"       description="global_average_thermosteric_sea_level_change" level="1" />
+          <field ref="temptot"         name="thetaoga"      description="sea_water_potential_temperature"          level="1"  />
+          <field ref="saltot"          name="soga"          description="sea_water_salinity"                       level="1"  />
           <field ref="ssttot"          name="tosga"         description="sea_surface_temperature"                  level="1"  />
           <field ref="ssstot"          name="sosga"         description="sea_surface_salinity"                     level="1"  />
-	</file>   
-	<!--
+        </file>
+        <!--
 ..............................................    icemod   .................................................
-	  -->
-
+          -->
         <file id="1m_icemod" name="auto" description="ice variables" >
           <field ref="ice_pres"        name="ice_pres"       description="sea_ice_time_fraction"                   level="0"  /> <!-- cmip6 requested as priority 1, DY -->
           <field ref="ice_cover"       name="soicecov"       description="sea_ice_area_fraction"                   level="0"  /> <!-- cmip6 requested as priority 1, DY -->
           <field ref="sn_cover"        name="sisnconc"       description="surface_snow_area_fraction"              level="1"  />
-	  <field ref="snowthic_cea"    name="isnowthi"       description="snow thickness (cell average)"           level="0"  /> <!-- cmip6 requested as priority 1, DY -->
-	  <field ref="icethic_cea"     name="iicethic"       description="ice thickness (cell average)"            level="0"  /> <!-- cmip6 requested as priority 1, DY -->
-          <field ref="iceprod_cea"     name="iiceprod"                                                             level="0"  />  
+          <field ref="snowthic_cea"    name="isnowthi"       description="snow thickness (cell average)"           level="0"  /> <!-- cmip6 requested as priority 1, DY -->
+          <field ref="icethic_cea"     name="iicethic"       description="ice thickness (cell average)"            level="0"  /> <!-- cmip6 requested as priority 1, DY -->
+          <field ref="iceprod_cea"     name="iiceprod"                                                             level="0"  />
           <field ref="ist_ipa"         name="iicetemp"                                                             level="0"  />
           <field ref="sitemptop_cea"   name="sitemptop_cea"  description="surface temperature (cell average)"      level="1"  />
           <field ref="ioceflxb"        name="ioceflxb"                                                             level="0"  />     
           <field ref="uice_ipa"        name="iicevelu"                                                             level="0"  /> <!-- now interpolated on T-grid, DY -->
           <field ref="vice_ipa"        name="iicevelv"                                                             level="0"  /> <!-- now interpolated on T-grid, DY -->
           <field ref="ivel_cea"        name="ivel_cea"       description="ice velocity module (cell average)"      level="1"  />
-	  <field ref="utau_ice"        name="iicestru"       description="Eastward Atmospheric Stress On Sea Ice"  level="0"  /> <!-- cmip5 name: strairx -->
-	  <field ref="vtau_ice"        name="iicestrv"       description="Northward Atmospheric Stress On Sea Ice" level="0"  /> <!-- cmip5 name: strairy -->
-          <field ref="qsr_io_cea"      name="iicesflx"                                                             level="0"  /> 
+          <field ref="utau_ice"        name="iicestru"       description="Eastward Atmospheric Stress On Sea Ice"  level="0"  /> <!-- cmip5 name: strairx -->
+          <field ref="vtau_ice"        name="iicestrv"       description="Northward Atmospheric Stress On Sea Ice" level="0"  /> <!-- cmip5 name: strairy -->
+          <field ref="qsr_io_cea"      name="iicesflx"                                                             level="0"  />
           <field ref="qns_io_cea"      name="iicenflx"                                                             level="0"  />
           <field ref="snowpre"         name="isnowpre"                                                             level="0"  />
-	  <field ref="subl_ai_cea"     name="evap"           description="water_evaporation_flux"                  level="4"  />
-	  <!-- snc : surface_snow_area_fraction : same as sic -->
-	  <field ref="icealb_cea"      name="ialb"           description="Bare Sea Ice Albedo (cell average)"      level="2"  />
-	  <!-- ssi : Sea Ice Salinity : cte = sice = 6, expect in baltic sea = 2 -->
-	  <field ref="ist_cea"         name="tsice"          description="Surface Temperature of Sea Ice"          level="4"  />
-	  <!-- tsnint : Temperature at Interface Between Sea Ice and Snow : not available -->
-	  <!-- pr : Surface Rainfall Rate into the Sea Ice Portion of the Grid Cell = 0 -->
-	  <field ref="snow_ai_cea"     name="prsn"           description="Surface Snowfall Rate into the Sea Ice Portion of the Grid Cell"  level="4"  />
-	  <!-- ageice   : Age of Sea Ice : not available ??? -->
-	  <!-- grFrazil : Frazil Sea Ice Growth (Leads) Rate ??? -->
-	  <!-- grCongel : Congelation Sea Ice Growth Rate ??? -->
-	  <field ref="licepro_cea"     name="grLateral"      description="Lateral Sea Ice Growth Rate"             level="4"  />
-	  <field ref="sntoice_cea"     name="snoToIce"       description="Snow-Ice Formation Rate"                 level="4"  />
-	  <field ref="snowmel_cea"     name="snomelt"        description="Snow Melt Rate"                          level="4"  />
-	  <field ref="ticemel_cea"     name="tmelt"          description="Rate of Melt at Upper Surface of Sea Ice" level="4" />
-	  <field ref="bicemel_cea"     name="bmelt"          description="Rate of Melt at Sea Ice Base"            level="4"  />
-	  <!-- hcice  : Sea Ice Total Heat Content ??? -->
-	  <field ref="qsr_ai_cea"      name="rsdssi"         description="surface_downwelling_shortwave_flux_in_air" level="4" />
-	  <!-- rsussi : surface_upwelling_shortwave_flux_in_air ??? -->
-	  <!-- rldssi : surface_downwelling_longwave_flux_in_air ??? -->
-	  <!-- rlussi : surface_upwelling_longwave_flux_in_air ??? -->
-	  <!-- hfssi  : surface_upward_sensible_heat_flux ??? -->
-	  <!-- hflssi : surface_upward_latent_heat_flux ??? -->
-	  <field ref="subl_ai_cea"     name="sblsi"          description="surface_snow_and_ice_sublimation_flux"   level="4"  />
-	  <field ref="u_imasstr"       name="transix"        description="Eastward Sea Ice Transport"              level="4"  />
-	  <field ref="v_imasstr"       name="transiy"        description="Northward Sea Ice Transport"             level="4"  />
-	  <field ref="fram_trans"      name="transifs"       description="Sea Ice Mass Transport Through Fram Strait" level="4"  />
-	  <!-- strocnx : Eastward Ocean Stress On Sea Ice ??? -->
-	  <!-- strocny : Northward Ocean Stress On Sea Ice ??? -->
-	  <!-- streng  : Compressive Sea Ice Strength ??? -->
-	  <!-- divice  : Strain Rate Divergence of Sea Ice ??? -->
-	  <!-- shrice  : Strain Rate Shear of Sea Ice ??? -->
-	  <!-- ridgice : Sea Ice Ridging Rate ??? -->
-	</file>   
-
-        <file id="1m_diad_T" name="auto" description="additional pisces diagnostics" >
-          <field ref="PAR"                                                                                         level="0"  />
-          <field ref="PPPHY"                                                                                       level="0"  />
-          <field ref="PPPHY2"                                                                                      level="0"  />
-          <field ref="PPNEWN"                                                                                      level="0"  />
-          <field ref="PPNEWD"                                                                                      level="0"  />
-          <field ref="PFeN"                                                                                        level="4"  />
-          <field ref="PFeD"                                                                                        level="4"  />
-          <field ref="LNN"                                                                                         level="4"  />
-          <field ref="LDN"                                                                                         level="4"  />
-          <field ref="LNFe"                                                                                        level="4"  />
-          <field ref="LDFe"                                                                                        level="4"  />
-          <field ref="Denitr"                                                                                      level="0"  />
-          <field ref="Nfix"                                                                                        level="0"  />
-          <field ref="Nitrif"                                                                                      level="4"  />
-          <field ref="EPC100"    description="sinking_mole_flux_of_particulate_organic_matter_expressed_as_carbon_in_sea_water" level="0" />
-          <field ref="EPCALC100" description="sinking_mole_flux_of_calcite_expressed_as_carbon_in_sea_water"       level="0"  />
-          <field ref="PCAL"                                                                                        level="0"  />
-          <field ref="DCAL"                                                                                        level="0"  />
-          <field ref="GRAZ1"                                                                                       level="4"  />
-          <field ref="GRAZ2"                                                                                       level="4"  />
-          <field ref="GRAZ3"                                                                                       level="4"  />
-          <field ref="Dpco2"                                                                                       level="0"  />
-          <field ref="pco2"                                                                                        level="0"  />
-          <field ref="Cflx"                                                                                        level="0"  />
-          <field ref="Oflx"      description="surface_downward_mole_flux_of_molecular_oxygen"                      level="0"  />
-          <field ref="OCdep"                                                                                       level="0"  />
-          <field ref="ICdep"                                                                                       level="0"  />
-          <field ref="Burial"    description="tendency_of_ocean_mole_content_of_inorganic_carbon_due_to_sedimentation"          level="0" />
-          <field ref="PH"        description="sea_water_ph_reported_on_total_scale "                               level="0"  />
-          <field ref="Irondep"                                                                                     level="4"  />
-          <field ref="Ironsed"                                                                                     level="4"  />
+          <field ref="subl_ai_cea"     name="evap"           description="water_evaporation_flux"                  level="4"  />
+          <!-- snc : surface_snow_area_fraction : same as sic -->
+          <field ref="icealb_cea"      name="ialb"           description="Bare Sea Ice Albedo (cell average)"      level="2"  />
+          <!-- ssi : Sea Ice Salinity : cte = sice = 6, expect in baltic sea = 2 -->
+          <field ref="ist_cea"         name="tsice"          description="Surface Temperature of Sea Ice"          level="4"  />
+          <!-- tsnint : Temperature at Interface Between Sea Ice and Snow : not available -->
+          <!-- pr : Surface Rainfall Rate into the Sea Ice Portion of the Grid Cell = 0 -->
+          <!-- ageice   : Age of Sea Ice : not available ??? -->
+          <!-- grFrazil : Frazil Sea Ice Growth (Leads) Rate ??? -->
+          <!-- grCongel : Congelation Sea Ice Growth Rate ??? -->
+          <field ref="licepro_cea"     name="grLateral"      description="Lateral Sea Ice Growth Rate"             level="4"  />
+          <field ref="sntoice_cea"     name="snoToIce"       description="Snow-Ice Formation Rate"                 level="4"  />
+          <field ref="ticemel_cea"     name="tmelt"          description="Rate of Melt at Upper Surface of Sea Ice" level="4" />
+          <field ref="bicemel_cea"     name="bmelt"          description="Rate of Melt at Sea Ice Base"            level="4"  />
+          <!-- hcice  : Sea Ice Total Heat Content ??? -->
+          <field ref="qsr_ai_cea"      name="aicesflx"                                                             level="0"  />
+          <field ref="qns_ai_cea"      name="aicenflx"                                                             level="0"  />
+          <field ref="qla_ai_cea"      name="aicelflx"                                                             level="0"  />
+          <!-- rsussi : surface_upwelling_shortwave_flux_in_air ??? -->
+          <!-- rldssi : surface_downwelling_longwave_flux_in_air ??? -->
+          <!-- rlussi : surface_upwelling_longwave_flux_in_air ??? -->
+          <!-- hfssi  : surface_upward_sensible_heat_flux ??? -->
+          <!-- hflssi : surface_upward_latent_heat_flux ??? -->
+          <field ref="subl_ai_cea"     name="sblsi"          description="surface_snow_and_ice_sublimation_flux"   level="4"  />
+          <field ref="u_imasstr"       name="transix"        description="Eastward Sea Ice Transport"              level="4"  />
+          <field ref="v_imasstr"       name="transiy"        description="Northward Sea Ice Transport"             level="4"  />
+          <field ref="fram_trans"      name="transifs"       description="Sea Ice Mass Transport Through Fram Strait" level="4"  />
+          <!-- strocnx : Eastward Ocean Stress On Sea Ice ??? -->
+          <!-- strocny : Northward Ocean Stress On Sea Ice ??? -->
+          <!-- streng  : Compressive Sea Ice Strength ??? -->
+          <!-- divice  : Strain Rate Divergence of Sea Ice ??? -->
+          <!-- shrice  : Strain Rate Shear of Sea Ice ??? -->
+          <!-- ridgice : Sea Ice Ridging Rate ??? -->
         </file>
-
+ 
         <file id="1m_ptrc_T" name="auto" description="pisces sms variables" >
-          <field ref="DIC"                                                                                         level="0"  />
-          <field ref="TAlk"                                                                                        level="0"  />
-          <field ref="O2"                                                                                          level="0"  />
-          <field ref="CaCO3"                                                                                       level="0"  />
-          <field ref="POC"                                                                                         level="0"  />
-          <field ref="PHYC"                                                                                        level="0"  />
-          <field ref="PHYN"                                                                                        level="0"  />
-          <field ref="PHYFe"                                                                                       level="0"  />
-          <field ref="NCHL"                                                                                        level="0"  />
-          <field ref="PHY2C"                                                                                       level="0"  />
-          <field ref="PHY2N"                                                                                       level="0"  />
-          <field ref="PHY2Fe"                                                                                      level="0"  />
-          <field ref="DCHL"                                                                                        level="0"  />
-          <field ref="ZOO"                                                                                         level="0"  />
-          <field ref="ZOO2"                                                                                        level="0"  />
-          <field ref="dFe"                                                                                         level="0"  />
-          <field ref="GOC"                                                                                         level="0"  />
-          <field ref="NO3"                                                                                         level="0"  />
-          <field ref="NH4"                                                                                         level="0"  />
+          <field ref="DIC"    name="dissic"  description="mole_concentration_of_dissolved_inorganic_carbon_in_sea_water"                           level="0" />
+          <field ref="TAlk"   name="talk"    description="sea_water_alkalinity_expressed_as_mole_equivalent"                                       level="0" />
+          <field ref="O2"     name="o2"      description="mole_concentration_of_dissolved_molecular_oxygen_in_sea_water"                           level="0" />
+          <field ref="CaCO3"  name="calc"    description="mole_concentration_of_calcite_expressed_as_carbon_in_sea_water"                          level="0" />
+          <field ref="POC"                                                                                                                         level="0" />
+          <field ref="PHYC"   name="phymisc" description="mole_concentration_of_miscellaneous_phytoplankton_expressed_as_carbon_in_sea_water"      level="0" />
+          <field ref="PHYN"                                                                                                                        level="0" />
+          <field ref="PHYFe"                                                                                                                       level="2" />
+          <field ref="NCHL"   name="chldiat" description="mass_concentration_of_diatoms_expressed_as_chlorophyll_in_sea_water"                     level="1" />
+          <field ref="PHY2C"  name="phydiat" description="mole_concentration_of_diatoms_expressed_as_carbon_in_sea_water"                          level="0" />
+          <field ref="PHY2N"                                                                                                                       level="0" />
+          <field ref="PHY2Fe"                                                                                                                      level="2" />
+          <field ref="DCHL"   name="chlmisc" description="mass_concentration_of_miscellaneous_phytoplankton_expressed_as_chlorophyll_in_sea_water" level="1" />
+          <field ref="ZOO"    name="zmicro"  description="mole_concentration_of_microzooplankton_expressed_as_carbon_in_sea_water"                 level="0" />
+          <field ref="ZOO2"   name="zmeso"   description="mole_concentration_of_mesozooplankton_expressed_as_carbon_in_sea_water"                  level="0" />
+          <field ref="dFe"    name="dfe"     description="mole_concentration_of_dissolved_iron_in_sea_water"                                       level="0" />
+          <field ref="GOC"                                                                                                                         level="0" />
+          <field ref="NO3"    name="no3"    description="mole_concentration_of_nitrate_in_sea_water"                                               level="0" />
+          <field ref="NH4"    name="nh4"    description="mole_concentration_of_ammonium_in_sea_water"                                              level="0" />
+          <field ref="agessc" name="agessc" description="sea_water_age_since_surface_contact"                                                      level="0" /> <!-- cmip6 requested as priority 1, DY -->
        </file>
-
+	
+        <file id="1m_diad_T" name="auto" description="additional pisces diagnostics" >
+          <field ref="PAR"                                                                                                                                                level="0" />
+          <field ref="PPPHY"     name="intppmisc" description="net_primary_mole_productivity_of_biomass_expressed_as_carbon_by_miscellaneous_phytoplankton"               level="0" />
+          <field ref="PPPHY2"    name="intppdiat" description="net_primary_mole_productivity_of_biomass_expressed_as_carbon_by_diatoms"                                   level="0" />
+          <field ref="PPNEWN"                                                                                                                                             level="4" />
+          <field ref="PPNEWD"                                                                                                                                             level="4" />
+          <field ref="PFeN"                                                                                                                                               level="2" />
+          <field ref="PFeD"                                                                                                                                               level="2" />
+          <field ref="LNN"       name="limnmisc"  description="nitrogen_growth_limitation_of_miscellaneous_phytoplankton"                                                 level="3" />
+          <field ref="LDN"       name="limndiat"  description="nitrogen_growth_limitation_of_diatoms"                                                                     level="2" />
+          <field ref="LNFe"      name="limfemisc" description="iron_growth_limitation_of_miscellaneous_phytoplankton"                                                     level="3" />
+          <field ref="LDFe"      name="limfediat" description="iron_growth_limitation_of_diatoms"                                                                         level="2" />
+          <field ref="Nfix"      name="intpn2"    description="tendency_of_ocean_mole_content_of_elemental_nitrogen_due_to_fixation"                                      level="0" />
+          <field ref="Denitr"    name="frn"       description="tendency_of_ocean_mole_content_of_elemental_nitrogen_due_to_denitrification_and_sedimentation"             level="3" />
+          <field ref="Nitrif"                                                                                                                                             level="4" />
+          <field ref="EPC100"    name="epc100"    description="sinking_mole_flux_of_particulate_organic_matter_expressed_as_carbon_in_sea_water"                          level="0" />
+          <field ref="EPCALC100" name="epcalc100" description="sinking_mole_flux_of_calcite_expressed_as_carbon_in_sea_water"                                             level="0" />
+          <field ref="PCAL"      name="pcalc"     description="tendency_of_mole_concentration_of_calcite_expressed_as_carbon_in_sea_water_due_to_biological_production"   level="2" />
+          <field ref="DCAL"      name="dcalc"     description="tendency_of_mole_concentration_of_calcite_expressed_as_carbon_in_sea_water_due_to_dissolution"             level="2" />
+          <field ref="GRAZ1"                                                                                                                                              level="3" />
+          <field ref="GRAZ2"                                                                                                                                              level="3" />
+          <field ref="GRAZ3"                                                                                                                                              level="3" />
+          <field ref="Dpco2"     name="dpco2"     description="surface_carbon_dioxide_partial_pressure_difference_between_sea_water_and_air"                              level="3" />
+          <field ref="Dpo2"      name="dpo2"      description="surface_molecular_oxygen_partial_pressure_difference_between_sea_water_and_air"                            level="3" />
+          <field ref="pco2"      name="spco2"     description="surface_partial_pressure_of_carbon_dioxide_in_sea_water"                                                   level="0" />
+          <field ref="Cflx"      name="fgco2"     description="surface_downward_mass_flux_of_carbon_dioxide_expressed_as_carbon"                                          level="0" />
+          <field ref="Oflx"      name="fgo2"      description="surface_downward_mole_flux_of_molecular_oxygen"                                                            level="0" />
+          <field ref="OCdep"                                                                                                                                              level="4" />
+          <field ref="ICdep"                                                                                                                                              level="4" />
+          <field ref="Burial"    name="fric"      description="tendency_of_ocean_mole_content_of_inorganic_carbon_due_to_sedimentation"                                   level="3" />
+          <field ref="PH"        name="ph"        description="sea_water_ph_reported_on_total_scale"                                                                      level="0" />
+          <field ref="Irondep"   name="fediss"    description="tendency_of_mole_concentration_of_dissolved_iron_in_sea_water_due_to_dissolution_from_inorganic_particles" level="0" />
+          <field ref="Ironsed"                                                                                                                                            level="3" />
+        </file>
+        
       </group>
 
       <!-- 
 +++++++++++++++++++++++++++++++++++++++++++++++   yearly   ++++++++++++++++++++++++++++++++++++++++++++++++++
         -->
 
-      <group id="1y" output_freq="-12"  enabled=".FALSE." >                      <!-- real yearly files -->
+
+      <group id="1y" output_freq="-12"  enabled=".TRUE." >                      <!-- real yearly files -->
         <!--
 ..............................................    grid T   .................................................
           -->
           <group id="1y_grid_T" name="auto" >
-          <file id="1y grid_T ar6" name_suffix="_ar6" >
+          <file id="1y_grid_T_ar6" name_suffix="_ar6" >
             <!-- Physical ocean model trend diagnostics: temperature and salinity -->
-            <field ref="ttrd_xad"      name="ttrd_xad"       description="temperature-trend: i-advection"              />
-            <field ref="strd_xad"      name="strd_xad"       description="salinity-trend: i-advection"                 />
-            <field ref="ttrd_yad"      name="ttrd_yad"       description="temperature-trend: j-advection"              />
-            <field ref="strd_yad"      name="strd_yad"       description="salinity-trend: j-advection"                 />
-            <field ref="ttrd_zad"      name="ttrd_zad"       description="temperature-trend: k-advection"              />
-            <field ref="strd_zad"      name="strd_zad"       description="salinity-trend: k-advection"                 />
-            <field ref="ttrd_ldf"      name="ttrd_ldf"       description="temperature-trend: lateral  diffusion"       />
-            <field ref="strd_ldf"      name="strd_ldf"       description="salinity-trend: lateral  diffusion"          />
-            <field ref="ttrd_zdf"      name="ttrd_zdf"       description="temperature-trend: vertical diffusion"       />
-            <field ref="strd_zdf"      name="strd_zdf"       description="salinity-trend: vertical diffusion"          />
-            <field ref="ttrd_zdfp"     name="ttrd_zdfp"      description="temperature-trend: pure vert. diffusion"     />
-            <field ref="strd_zdfp"     name="strd_zdfp"      description="salinity   -trend: pure vert. diffusion"     />
-            <field ref="ttrd_eiv"      name="ttrd_eiv"       description="temperature-trend: advection from GM scheme" />
-            <field ref="strd_eiv"      name="strd_eiv"       description="salinity-trend: advection from GM scheme"    />
-            <field ref="cellthc"       name="thkcello"       description="cell_thickness"                              /> <!-- no time changes -->
-            <field ref="area"          name="areacello"      description="cell_area"                                   />
+            <field ref="ttrd_xad"      name="ttrd_xad"       description="temperature-trend: i-advection"              level="3" />
+            <field ref="strd_xad"      name="strd_xad"       description="salinity-trend: i-advection"                 level="3" />
+            <field ref="ttrd_yad"      name="ttrd_yad"       description="temperature-trend: j-advection"              level="3" />
+            <field ref="strd_yad"      name="strd_yad"       description="salinity-trend: j-advection"                 level="3" />
+            <field ref="ttrd_zad"      name="ttrd_zad"       description="temperature-trend: k-advection"              level="3" />
+            <field ref="strd_zad"      name="strd_zad"       description="salinity-trend: k-advection"                 level="3" />
+            <field ref="ttrd_ldf"      name="ttrd_ldf"       description="temperature-trend: lateral  diffusion"       level="3" />
+            <field ref="strd_ldf"      name="strd_ldf"       description="salinity-trend: lateral  diffusion"          level="3" />
+            <field ref="ttrd_zdf"      name="ttrd_zdf"       description="temperature-trend: vertical diffusion"       level="3" />
+            <field ref="strd_zdf"      name="strd_zdf"       description="salinity-trend: vertical diffusion"          level="3" />
+            <field ref="ttrd_zdfp"     name="ttrd_zdfp"      description="temperature-trend: pure vert. diffusion"     level="3" />
+            <field ref="strd_zdfp"     name="strd_zdfp"      description="salinity   -trend: pure vert. diffusion"     level="3" />
+            <field ref="ttrd_eiv"      name="ttrd_eiv"       description="temperature-trend: advection from GM scheme" level="3" />
+            <field ref="strd_eiv"      name="strd_eiv"       description="salinity-trend: advection from GM scheme"    level="3" />
+            <!-- field ref="cellthc"       name="thkcello"       description="cell_thickness"                          --> <!-- no time changes -->
+            <!-- field ref="area"          name="areacello"      description="cell_area"                               -->
           </file>
           </group>
 
         <!--
 ..............................................    grid W   .................................................
           -->
-          <group id="1y_grid_W" name="auto" >
+          <group id="1y_grid_W" name="auto" enabled=".FALSE.">
           <file id="1y grid_W ar6" name_suffix="_ar6" >
-	    <field ref="avt"           name="difvho"        description="ocean_vertical_heat_diffusivity"    level="3" />
-	    <field ref="avs"           name="difvso"        description="ocean_vertical_salt_diffusivity"    level="3" />
+            <field ref="avt"           name="difvho"        description="ocean_vertical_heat_diffusivity"    level="3" />
+            <field ref="avs"           name="difvso"        description="ocean_vertical_salt_diffusivity"    level="3" />
           </file>
           </group>
-
-        <file id="1y_ptrc_T" name="auto" description="pisces sms variables" >
-          <field ref="DIC"      />
-          <field ref="TAlk"     />
-          <field ref="O2"       />
-          <field ref="CaCO3"    />
-          <field ref="POC"      />
-          <field ref="PHYC"      />
-          <field ref="PHYN"      />
-          <field ref="PHYFe"      />
-          <field ref="NCHL"     />
-          <field ref="PHY2C"     />
-          <field ref="PHY2N"     />
-          <field ref="PHY2Fe"     />
-          <field ref="DCHL"     />
-          <field ref="ZOO"      />
-          <field ref="ZOO2"     />
-          <field ref="dFe"      />
-          <field ref="GOC"      />
-          <field ref="NO3"      />
-          <field ref="NH4"      />
-       </file>
-
-       <file id="1y_diad_T" name="auto" description="additional pisces diagnostics" >
-          <field ref="PH"       />
-          <field ref="CO3"      />
-          <field ref="CO3sat"   />
-          <field ref="PAR"      />
-          <field ref="PPPHY"    />
-          <field ref="PPPHY2"   />
-          <field ref="PPNEWN"   />
-          <field ref="PPNEWD"   />
-          <field ref="PBSi"     />
-          <field ref="PFeN"     />
-          <field ref="PFeD"     />
-          <field ref="PCAL"     />
-          <field ref="DCAL"     />
-          <field ref="GRAZ1"    />
-          <field ref="GRAZ2"    />
-          <field ref="GRAZ3"    />
-          <field ref="Mumax"    />
-          <field ref="MuN"      />
-          <field ref="MuD"      />
-          <field ref="MuNlight" />
-          <field ref="MuDlight" />
-          <field ref="LNN"      />
-          <field ref="LDN"      />
-          <field ref="LNFe"     />
-          <field ref="LDFe"     />
-          <field ref="LNlight"  />
-          <field ref="LDlight"  />
-          <field ref="EPC100"   />
-          <field ref="EPCALC100" />
-          <field ref="Cflx"     />
-          <field ref="Oflx"     />
-          <field ref="Kg"       />
-          <field ref="Dpco2"    />
-          <field ref="pco2"     />
-          <field ref="Dpo2"     />
-          <field ref="Heup"     />
-          <field ref="OCdep"  />
-          <field ref="ICdep"  />
-          <field ref="Burial"  />
-          <field ref="Irondep"  />
-          <field ref="Ironsed"  />
-          <field ref="Denitr"   />
-          <field ref="Nfix"     />
-          <field ref="Nitrif"   />
-       </file>
 
       </group>
       <!-- 
@@ -890,164 +838,164 @@
       <axis id="depthu" description="Vertical U levels" unit="m" positive=".false." />
       <axis id="depthv" description="Vertical V levels" unit="m" positive=".false." />
       <axis id="depthw" description="Vertical W levels" unit="m" positive=".false." />
-      <axis id="none"   description="axe non defini"    unit="none" size="1" />
+      <axis id="none" description="axe non defini" unit="none" size="1" />
     </axis_definition> 
     
     <grid_definition>
       <grid id="grid_T" description="grid T" >
     <!--   Eq section   -->
-	<zoom id="EqT" ibegin="1" jbegin="0000" ni="0000" nj="1" />
+        <zoom id="EqT" ibegin="1" jbegin="0000" ni="0000" nj="1" />
     <!--   TAO   -->
       <!--   137e   -->
-	<zoom id="2n137eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="5n137eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="8n137eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="2n137eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="5n137eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="8n137eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
       <!--   147e   -->
-	<zoom id="0n147eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="2n147eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="5n147eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="0n147eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="2n147eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="5n147eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
       <!--   156e   -->
-	<zoom id="5s156eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="2s156eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="0n156eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="2n156eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="5n156eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="8n156eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="5s156eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="2s156eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="0n156eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="2n156eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="5n156eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="8n156eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
       <!--   165e   -->
-	<zoom id="8s165eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="5s165eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="2s165eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="0n165eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="2n165eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="5n165eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="8n165eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="8s165eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="5s165eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="2s165eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="0n165eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="2n165eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="5n165eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="8n165eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
       <!--   180w   -->
-	<zoom id="8s180wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="5s180wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="2s180wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="0n180wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="2n180wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="5n180wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="8n180wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="8s180wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="5s180wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="2s180wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="0n180wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="2n180wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="5n180wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="8n180wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
       <!--   170w   -->
-	<zoom id="8s170wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="5s170wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="2s170wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="0n170wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="2n170wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="5n170wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="8n170wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="8s170wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="5s170wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="2s170wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="0n170wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="2n170wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="5n170wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="8n170wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
       <!--   155w   -->
-	<zoom id="8s155wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="5s155wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="2s155wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="0n155wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="2n155wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="5n155wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="8n155wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="8s155wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="5s155wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="2s155wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="0n155wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="2n155wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="5n155wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="8n155wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
       <!--   140w   -->
-	<zoom id="8s140wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="5s140wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="2s140wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="0n140wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="2n140wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="5n140wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="8n140wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="8s140wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="5s140wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="2s140wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="0n140wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="2n140wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="5n140wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="8n140wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
       <!--   125w   -->
-	<zoom id="8s125wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="5s125wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="2s125wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="0n125wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="2n125wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="5n125wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="8n125wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="8s125wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="5s125wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="2s125wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="0n125wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="2n125wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="5n125wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="8n125wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
       <!--   110w   -->
-	<zoom id="8s110wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="5s110wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="2s110wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="0n110wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="2n110wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="5n110wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="8n110wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="8s110wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="5s110wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="2s110wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="0n110wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="2n110wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="5n110wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="8n110wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
       <!--   95w   -->
-	<zoom id="8s95wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="5s95wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="2s95wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="0n95wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="2n95wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="5n95wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="8n95wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="8s95wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="5s95wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="2s95wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="0n95wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="2n95wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="5n95wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="8n95wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
     <!--   RAMA   -->
       <!--   55e   -->
-	<zoom id="16s55eT"    ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="12s55eT"    ibegin="0000" jbegin="0000" ni="1" nj="1" />
- 	<zoom id="8s55eT"     ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="4s55eT"     ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="1.5s55eT"   ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="0n55eT"     ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="1.5n55eT"   ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="4n55eT"     ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="16s55eT"    ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="12s55eT"    ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="8s55eT"     ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="4s55eT"     ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="1.5s55eT"   ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="0n55eT"     ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="1.5n55eT"   ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="4n55eT"     ibegin="0000" jbegin="0000" ni="1" nj="1" />
       <!--   65e   -->
-	<zoom id="15n65eT"    ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="15n65eT"    ibegin="0000" jbegin="0000" ni="1" nj="1" />
       <!--   67e   -->
-	<zoom id="16s67eT"    ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="12s67eT"    ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="8s67eT"     ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="4s67eT"     ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="1.5s67eT"   ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="0n67eT"     ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="1.5n67eT"   ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="4n67eT"     ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="8n67eT"     ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="16s67eT"    ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="12s67eT"    ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="8s67eT"     ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="4s67eT"     ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="1.5s67eT"   ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="0n67eT"     ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="1.5n67eT"   ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="4n67eT"     ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="8n67eT"     ibegin="0000" jbegin="0000" ni="1" nj="1" />
       <!--   80.5e   -->
-	<zoom id="16s80.5eT"  ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="12s80.5eT"  ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="8s80.5eT"   ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="4s80.5eT"   ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="1.5s80.5eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="0n80.5eT"   ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="1.5n80.5eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="4n80.5eT"   ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="16s80.5eT"  ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="12s80.5eT"  ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="8s80.5eT"   ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="4s80.5eT"   ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="1.5s80.5eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="0n80.5eT"   ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="1.5n80.5eT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="4n80.5eT"   ibegin="0000" jbegin="0000" ni="1" nj="1" />
       <!--   90e   -->
-	<zoom id="1.5s90eT"   ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="0n90eT"     ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="1.5n90eT"   ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="4n90eT"     ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="8n90eT"     ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="12n90eT"    ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="15n90eT"    ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="1.5s90eT"   ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="0n90eT"     ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="1.5n90eT"   ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="4n90eT"     ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="8n90eT"     ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="12n90eT"    ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="15n90eT"    ibegin="0000" jbegin="0000" ni="1" nj="1" />
       <!--   95e   -->
-	<zoom id="16s95eT"    ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="12s95eT"    ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="8s95eT"     ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="5s95eT"     ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="16s95eT"    ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="12s95eT"    ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="8s95eT"     ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="5s95eT"     ibegin="0000" jbegin="0000" ni="1" nj="1" />
     <!--   PIRATA   -->
       <!--   38w-30w   -->
-	<zoom id="19s34wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="14s32wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="8s30wT"  ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="0n35wT"  ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="4n38wT"  ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="8n38wT"  ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="12n38wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="15n38wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="20n38wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="19s34wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="14s32wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="8s30wT"  ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="0n35wT"  ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="4n38wT"  ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="8n38wT"  ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="12n38wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="15n38wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="20n38wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
       <!--   23w   -->
-	<zoom id="0n23wT"  ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="4n23wT"  ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="12n23wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="21n23wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="0n23wT"  ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="4n23wT"  ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="12n23wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="21n23wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
       <!--   10w   -->
-	<zoom id="10s10wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="6s10wT"  ibegin="0000" jbegin="0000" ni="1" nj="1" />
-	<zoom id="0n10wT"  ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="10s10wT" ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="6s10wT"  ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="0n10wT"  ibegin="0000" jbegin="0000" ni="1" nj="1" />
       <!--   0e   -->
-	<zoom id="0n0eT"   ibegin="0000" jbegin="0000" ni="1" nj="1" />
+        <zoom id="0n0eT"   ibegin="0000" jbegin="0000" ni="1" nj="1" />
       </grid>
 
       <grid id="grid_U" description="grid U" >
     <!--   Eq section   -->
-	<zoom id="EqU" ibegin="1" jbegin="0000" ni="0000" nj="1" />
+        <zoom id="EqU" ibegin="1" jbegin="0000" ni="0000" nj="1" />
       </grid>
 
       <grid id="grid_V" description="grid V" >
@@ -1055,12 +1003,13 @@
 
       <grid id="grid_W" description="grid W" >
     <!--   Eq section   -->
-	<zoom id="EqW" ibegin="1" jbegin="0000" ni="0000" nj="1" />
+        <zoom id="EqW" ibegin="1" jbegin="0000" ni="0000" nj="1" />
       </grid>
 
       <grid id="scalarpoint" description="scalar" >
-	<zoom id="1point" ibegin="1" jbegin="1" ni="1" nj="1" />
+        <zoom id="1point" ibegin="1" jbegin="1" ni="1" nj="1" />
       </grid>
+
 
     </grid_definition>    
     

@@ -45,9 +45,9 @@ MODULE par_pisces
    INTEGER, PUBLIC, PARAMETER ::   jpnch = jp_lp +  7    !
    INTEGER, PUBLIC, PARAMETER ::   jpno3 = jp_lp +  8    !
    INTEGER, PUBLIC, PARAMETER ::   jpdab = jp_lp +  9    !: abiotic DIC 
-   INTEGER, PUBLIC, PARAMETER ::   jpaab = jp_lp +  10   !: abiotic alkalinity
-   INTEGER, PUBLIC, PARAMETER ::   jpoab = jp_lp +  11   !: abiotic oxygen
-   INTEGER, PUBLIC, PARAMETER ::   jpdnt = jp_lp +  12   !: natural DIC
+   INTEGER, PUBLIC, PARAMETER ::   jpoab = jp_lp +  10   !: abiotic oxygen
+   INTEGER, PUBLIC, PARAMETER ::   jpdnt = jp_lp +  11   !: natural DIC
+   INTEGER, PUBLIC, PARAMETER ::   jpdrc = jp_lp +  12   !: abiotic DI14C
 #else
    !!---------------------------------------------------------------------
    !!   Default                                   No CFC geochemical model

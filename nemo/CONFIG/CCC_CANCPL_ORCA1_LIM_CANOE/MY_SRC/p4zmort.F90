@@ -29,12 +29,13 @@ MODULE p4zmort
    !! * Shared module variables
 
    REAL(wp), PUBLIC :: mprat   = 5.E-2_wp   !: phytoplankton mortality rate 
-   REAL(wp), PUBLIC :: mprat2  = 5.E-2_wp   !: Diatoms mortality rate
+   REAL(wp), PUBLIC :: mprat2  = 2.E-1_wp   !: Diatoms mortality rate
    REAL(wp), PUBLIC :: mpratm  = 5.E-2_wp   !: Phytoplankton minimum mortality rate
    REAL(wp), PUBLIC :: mpqua   = 1.E-09_wp  !: quadratic mortality of phytoplankton
    REAL(wp), PUBLIC :: mpquad  = 2.E-08_wp  !: maximum quadratic mortality of diatoms
    REAL(wp), PUBLIC :: chldegr = 2.E-2_wp   !: Chlorophyll photooxidation rate
    REAL(wp), PUBLIC :: picfrx  = 1.E-1_wp   !: CaCO3 fraction of mortality (0.1 implies 1 mol caCO3 for each 10 mol POC)
+   REAL(wp), PUBLIC :: xminp   = 0.01       !: minimum phytoplankton concentration for linear mortality
 
    !!* Substitution
 #  include "top_substitute.h90"
@@ -78,6 +79,7 @@ CONTAINS
       REAL(wp) :: spc,spn,spf,szc,chl
       REAL(wp) :: c2n,n2c,c2fe,fe2c,n2fe,fe2n,thetac
       REAL(wp) :: cxs,nxs1,nxs2,fexs1,fexs2
+      REAL(wp) :: csw1,csw2
       CHARACTER (len=25) :: charout
 
       !!---------------------------------------------------------------------
@@ -107,10 +109,12 @@ CONTAINS
 
 ! simplified CMOC type mortality: sum of linear and quadratic terms
                zmortp = mprat * xstep * spc + mpqua * xstep * spc * spc
+               if (spc.le.xminp) zmortp = mpqua * xstep * spc * spc           ! no linear mortality below biomass threshold xminp
                zmortz = mprat * xstep * szc + mpqua * xstep * szc * szc
-
+               if (szc.le.xminp) zmortz = mpqua * xstep * szc * szc
 ! reduce mortality to what can support detritus production based on the least abundant element: the MIN(...) term should be 1 if N and Fe are in excess of the detritus ratio
                zmortp=zmortp*MIN(n2c*rr_c2n,fe2c*rr_c2fe,1.)
+               zmortpn(ji,jj,jk) = zmortp
 ! calculate "excess" relative to grazer RR
                cxs=zmortp*MAX(c2n*rr_n2c-1.,c2fe*rr_fe2c-1.,0.)
                nxs1=zmortp*(n2c-rr_n2c)
@@ -122,6 +126,16 @@ CONTAINS
                fexs2=zmortp*rr_fe2c*(fe2n*rr_n2fe-1.)
                fexs2=MAX(fexs2,0.)
 
+               csw1=MAX(cxs,0.)
+               csw1=csw1/(csw1+rtrn)   !!! csw1 is 1 when cxs>0 and 0 otherwise
+               csw2=1.-csw1            !!! csw2 is 0 when cxs>0 and 1 otherwise
+               !!! apply csw1 switch on nxs2 and fexs2 terms
+               nxs1 = csw2*nxs1
+               fexs1= csw2*fexs1
+               !!! apply csw2 switch on nxs1 and fexs1 terms
+               nxs2 = csw1*nxs2
+               fexs2= csw1*fexs2
+
                !   Update the arrays TRA which contains the biological sources and sinks
 
                tra(ji,jj,jk,jpphy) = tra(ji,jj,jk,jpphy) - zmortp - cxs
@@ -131,6 +145,7 @@ CONTAINS
                tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) + cxs*1.E-6
                tra(ji,jj,jk,jpoxy) = tra(ji,jj,jk,jpoxy) - cxs
                tra(ji,jj,jk,jpnh4) = tra(ji,jj,jk,jpnh4) + nxs1 + nxs2
+               tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) + (nxs1 + nxs2)*1.E-6
                tra(ji,jj,jk,jpfer) = tra(ji,jj,jk,jpfer) + fexs1 + fexs2
                tra(ji,jj,jk,jpzoo) = tra(ji,jj,jk,jpzoo) - zmortz
                tra(ji,jj,jk,jppoc) = tra(ji,jj,jk,jppoc) + zmortp + zmortz
@@ -166,6 +181,7 @@ CONTAINS
       REAL(wp) :: spc,spn,spf,szc,chl
       REAL(wp) :: c2n,n2c,c2fe,fe2c,n2fe,fe2n,thetac
       REAL(wp) :: cxs,nxs1,nxs2,fexs1,fexs2
+      REAL(wp) :: csw1,csw2
       CHARACTER (len=25) :: charout
       !!---------------------------------------------------------------------
       !
@@ -192,11 +208,13 @@ CONTAINS
                fe2n=spf/(spn+rtrn)
                thetac=chl/(spc+rtrn)
 
-               zmortp = mprat2 * xstep * spc + mpqua * xstep * spc * spc
+               zmortp = mpratm * xstep * spc + mpqua * xstep * spc * spc
+               if (spc.le.xminp) zmortp = mpqua * xstep * spc * spc           ! no linear mortality below biomass threshold xminp
                zmortz = mprat2 * xstep * szc + mpquad * xstep * szc * szc
-
+               if (szc.le.xminp) zmortz = mpquad * xstep * szc * szc
 ! reduce mortality to what can support detritus production based on the least abundant element: the MIN(...) term should be 1 if N and Fe are in excess of the detritus ratio
                zmortp=zmortp*MIN(n2c*rr_c2n,fe2c*rr_c2fe,1.)
+               zmortpd(ji,jj,jk) = zmortp
 ! calculate "excess" relative to grazer RR
                cxs=zmortp*MAX(c2n*rr_n2c-1.,c2fe*rr_fe2c-1.,0.)
                nxs1=zmortp*(n2c-rr_n2c)
@@ -208,6 +226,16 @@ CONTAINS
                fexs2=zmortp*rr_fe2c*(fe2n*rr_n2fe-1.)
                fexs2=MAX(fexs2,0.)
 
+               csw1=MAX(cxs,0.)
+               csw1=csw1/(csw1+rtrn)   !!! csw1 is 1 when cxs>0 and 0 otherwise
+               csw2=1.-csw1            !!! csw2 is 0 when cxs>0 and 1 otherwise
+               !!! apply csw1 switch on nxs2 and fexs2 terms
+               nxs1 = csw2*nxs1
+               fexs1= csw2*fexs1
+               !!! apply csw2 switch on nxs1 and fexs1 terms
+               nxs2 = csw1*nxs2
+               fexs2= csw1*fexs2
+
                !   Update the arrays tra which contains the biological sources and sinks
                !   ---------------------------------------------------------------------
                tra(ji,jj,jk,jpdia) = tra(ji,jj,jk,jpdia) - zmortp - cxs 
@@ -217,6 +245,7 @@ CONTAINS
                tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) + cxs*1.E-6
                tra(ji,jj,jk,jpoxy) = tra(ji,jj,jk,jpoxy) - cxs
                tra(ji,jj,jk,jpnh4) = tra(ji,jj,jk,jpnh4) + nxs1 + nxs2
+               tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) + (nxs1 + nxs2)*1.E-6
                tra(ji,jj,jk,jpfer) = tra(ji,jj,jk,jpfer) + fexs1 + fexs2
                tra(ji,jj,jk,jpmes) = tra(ji,jj,jk,jpmes) - zmortz 
                tra(ji,jj,jk,jpgoc) = tra(ji,jj,jk,jpgoc) + zmortp + zmortz
@@ -248,7 +277,7 @@ CONTAINS
       !!
       !!----------------------------------------------------------------------
 
-      NAMELIST/nampismort/ mprat, mprat2, mpratm, mpqua, mpquad, chldegr, picfrx
+      NAMELIST/nampismort/ mprat, mprat2, mpratm, mpqua, mpquad, chldegr, picfrx, xminp
 
       REWIND( numnatp )                     ! read numnatp
       READ  ( numnatp, nampismort )
@@ -264,6 +293,7 @@ CONTAINS
          WRITE(numout,*) '    Phytoplankton minimum mortality rate      mpratm    =', mpratm
          WRITE(numout,*) '    Chlorophyll photooxidation rate           chldegr   =', chldegr
          WRITE(numout,*) '    CaCO3 production rate                     picfrx    =', picfrx
+         WRITE(numout,*) '    Biomass threshold for linear mortality    xminp     =', xminp
       ENDIF
 
    END SUBROUTINE p4z_mort_init

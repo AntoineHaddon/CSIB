@@ -31,11 +31,12 @@ MODULE p4zlys
    PUBLIC   p4z_lys_init    ! called in trcsms_pisces.F90
 
    !! * Shared module variables
-   REAL(wp), PUBLIC :: kdca = 4.0E-7_wp   !: diss. rate constant calcite
+   REAL(wp), PUBLIC :: kdca = 7.4E-3_wp   !: diss. rate constant calcite
    REAL(wp), PUBLIC :: nca  = 1.0_wp      !: order of reaction for calcite dissolution (not used)
 
    !! * Module variables
    REAL(wp) :: calcon = 1.03E-2           !: mean calcite concentration [Ca2+] in sea water [mole/kg solution]
+   REAL(wp) :: r1_rday = 1.0_wp/86400._wp !: 1 / rday
  
    INTEGER  :: rmtss                      !: number of seconds per month 
 
@@ -61,7 +62,8 @@ CONTAINS
       INTEGER, INTENT(in) ::   kt ! ocean time step
       INTEGER  ::   ji, jj, jk, jn
       REAL(wp) ::   zalk, zdic, zph, zah2
-      REAL(wp) ::   zdispot, zfact, zcalcon, zalka, zaldi
+      REAL(wp) ::   zdispot, zfact, zcalcon, zalka, zbot
+      REAL(wp) ::   zph2, zph3, zpo4, zsi, zpd, zp0, zp1, zp3        ! coefficients added to account for P and Si contribution to TA
       REAL(wp) ::   zomegaca, zexcess, zexcess0
       REAL(wp) ::   zrfact
       CHARACTER (len=25) :: charout
@@ -86,19 +88,35 @@ CONTAINS
             DO jj = 1, jpj
 !CDIR NOVERRCHK
                DO ji = 1, jpi
-                  zfact = rhop(ji,jj,jk) / 1000. + rtrn
-                  zph  = hi(ji,jj,jk) * tmask(ji,jj,jk) / zfact + ( 1.-tmask(ji,jj,jk) ) * 1.e-9 ! [H+]
-                  zdic  = trn(ji,jj,jk,jpdic) / zfact
-                  zalka = trn(ji,jj,jk,jptal) / zfact
-                  ! CALCULATE [ALK]([CO3--], [HCO3-])
-                  zalk  = zalka - ( akw3(ji,jj,jk) / zph - zph + borat(ji,jj,jk) / ( 1. + zph / akb3(ji,jj,jk) ) )
-                  ! CALCULATE [H+] and [CO3--]
-                  zaldi = zdic - zalk
-                  zah2  = SQRT( zaldi * zaldi + 4.* ( zalk * ak23(ji,jj,jk) / ak13(ji,jj,jk) ) * ( zdic + zaldi ) )
-                  zah2  = 0.5 * ak13(ji,jj,jk) / zalk * ( zaldi + zah2 )
-                  !
+
+                  zbot  = borat(ji,jj,1)
+                  zfact = rhop(ji,jj,1) / 1000. + rtrn
+                  zdic  = trn(ji,jj,1,jpdic) / zfact
+                  zph   = MAX( hi(ji,jj,1), 1.e-10 ) / zfact
+                  zalka = trn(ji,jj,1,jptal) / zfact
+                  zph2 = zph*zph
+                  zph3 = zph*zph2
+                  zpo4 = (trn(ji,jj,1,jpno3)+trn(ji,jj,1,jpnh4)) / 16. *0.000001 / zfact
+                  zsi = asi3(ji,jj,1) * 0.000001 / zfact                        ! silica is a static array based on initialization file, not a carried tracer
+
+               ! CALCULATE P AND Si ION CONCENTRATIONS AS PER ORR ET AL (BPG EQUATIONS 43-47)
+               ! zp3 = H3PO4, zp1 = HPO4(2-), zp0 = PO4(3-): denominator is the same for all 3 equations
+                  zpd = 1./ ( zph3 + akp13(ji,jj,1)*zph2 + akp13(ji,jj,1)*akp23(ji,jj,1)*zph + akp13(ji,jj,1)*akp23(ji,jj,1)*akp33(ji,jj,1) )
+                  zp3 = zph3*zpo4 * zpd
+                  zp1 = zph*zpo4*akp13(ji,jj,1)*akp23(ji,jj,1) * zpd
+                  zp0 = zpo4*akp13(ji,jj,1)*akp23(ji,jj,1)*akp33(ji,jj,1) * zpd
+                  zsi = zsi / (1. + zph / aksi3(ji,jj,1))
+
+               ! CALCULATE [ALK]([CO3--], [HCO3-])
+                  zalk  = zalka - (  akw3(ji,jj,1) / zph - zph + zbot / ( 1.+ zph / akb3(ji,jj,1) ) + 2.*zp0 + zp1 - zp3 + zsi )
+
+               ! CALCULATE [H+] AND [H2CO3]
+                  zah2   = SQRT(  (zdic-zalk)*(zdic-zalk) + 4.* ( zalk * ak23(ji,jj,1)   &
+                     &                                        / ak13(ji,jj,1) ) * ( 2.* zdic - zalk )  )
+                  zah2   = 0.5 * ak13(ji,jj,1) / zalk * ( ( zdic - zalk ) + zah2 )
                   zco3(ji,jj,jk) = zalk / ( 2. + zah2 / ak23(ji,jj,jk) ) * zfact
                   hi(ji,jj,jk)   = zah2 * zfact
+
                END DO
             END DO
          END DO
@@ -129,7 +147,7 @@ CONTAINS
                ! AMOUNT CACO3 (12C) THAT RE-ENTERS SOLUTION
                !       (ACCORDING TO THIS FORMULATION ALSO SOME PARTICULATE
                !       CACO3 GETS DISSOLVED EVEN IN THE CASE OF OVERSATURATION)
-               zdispot = kdca * trn(ji,jj,jk,jpcal)
+               zdispot = kdca * r1_rday * trn(ji,jj,jk,jpcal)
               !  CHANGE OF [CO3--] , [ALK], PARTICULATE [CACO3],
               !       AND [SUM(CO2)] DUE TO CACO3 DISSOLUTION/PRECIPITATION
               zcaldiss(ji,jj,jk)  = zdispot                         ! calcite dissolution (first order, no saturation state dependence)
