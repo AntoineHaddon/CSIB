@@ -139,7 +139,7 @@ CONTAINS
            ! Time stepping is included with xstep, so units are in mol/m2/step
            zfpon(ji,jj) = xrcico(ji,jj) * wsbio3(ji,jj,jk_eud_cmoc) * xstep                                & 
            &                        * trn(ji,jj,jk_eud_cmoc,jppoc)                                         &
-           &                        *  tmask(ji,jj,jk_eud_cmoc) * oomask(ji,jj)
+           &                        *  tmask_bgc_closea(ji,jj,jk_eud_cmoc) * oomask(ji,jj)
 
          ENDDO
       ENDDO
@@ -150,7 +150,7 @@ CONTAINS
          DO jj = 1, jpj
             DO ji = 1,jpi
                zcalflxexp(ji,jj,jk) = zfpon(ji,jj) * exp(-1.0_wp*(gdepw(ji,jj,jk)-gdepw(ji,jj,jk_eud_cmoc_p1)) * r_dci_cmoc)      &
-               &                                   * tmask(ji,jj,jk-1)                ! Mask at jk-1 ensures bottom flux
+               &                                   * tmask_bgc_closea(ji,jj,jk-1)                ! Mask at jk-1 ensures bottom flux
             ENDDO                                                                     ! is included.
          ENDDO
       ENDDO
@@ -195,7 +195,7 @@ CONTAINS
       DO jk = jk_eud_cmoc_p1, jpkm1
          DO jj = 1, jpj
             DO ji = 1,jpi
-               zcaldiv =  ( zcalflxexp(ji,jj,jk) - zcalflxexp(ji,jj,jk+1) ) / fse3t(ji,jj,jk) * tmask(ji,jj,jk)
+               zcaldiv =  ( zcalflxexp(ji,jj,jk) - zcalflxexp(ji,jj,jk+1) ) / fse3t(ji,jj,jk) * tmask_bgc_closea(ji,jj,jk)
 
                trn(ji,jj,jk,jpdic) = trn(ji,jj,jk,jpdic) +         zcaldiv 
                trn(ji,jj,jk,jptal) = trn(ji,jj,jk,jptal) + 2.0_wp * zcaldiv                      
@@ -237,13 +237,13 @@ CONTAINS
          IF( lk_iomput ) THEN
            IF( jnt == nrdttrc ) THEN
               CALL iom_put( "oomask", oomask(:,:))
-              CALL iom_put( "EPC100", sinking(:,:,ik1) * zrfact2 * tmask(:,:,1) )
-              CALL iom_put( "EPCALC100",    zfpon(:,:) * zrfact2 * tmask(:,:,1) ) !
+              CALL iom_put( "EPC100", sinking(:,:,ik1) * zrfact2 * tmask_bgc_closea(:,:,1) )
+              CALL iom_put( "EPCALC100",    zfpon(:,:) * zrfact2 * tmask_bgc_closea(:,:,1) ) !
               ! <CMOC code OR 12/11/2015> denitrification ! CALL iom_put( "BUPOC"  , wsbio3(:,:,11) /rday * zbpoc(:,:) * 1e+3_wp  )  ! POC burial flux
               ! <CMOC code OR 12/11/2015> denitrification ! CALL iom_put( "BUCALC" , zfpon(:,:) * 1e+3_wp * rfact2r * zbpon(:,:)  )  ! <CMOC code OR 12/11/2015> *rfact2r replaces /rfact2 ! PIC burial flux
            ENDIF
          ELSE
-           trc2d(:,:,jp_pcs0_2d + 4) = sinking (:,:,ik1) * zrfact2 * tmask(:,:,1)
+           trc2d(:,:,jp_pcs0_2d + 4) = sinking (:,:,ik1) * zrfact2 * tmask_bgc_closea(:,:,1)
 
          ENDIF
       ENDIF
@@ -251,7 +251,7 @@ CONTAINS
       IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('sink')")
          CALL prt_ctl_trc_info(charout)
-         CALL prt_ctl_trc(tab4d=tra, mask=tmask, clinfo=ctrcnm)
+         CALL prt_ctl_trc(tab4d=tra, mask=tmask_bgc_closea, clinfo=ctrcnm)
       ENDIF
       !
 
@@ -350,7 +350,7 @@ CONTAINS
       ztrb (:,:,:) = trn(:,:,:,jp_tra)
 
       DO jk = 1, jpkm1
-         zwsink2(:,:,jk+1) = -pwsink(:,:,jk) / rday * tmask(:,:,jk+1) 
+         zwsink2(:,:,jk+1) = -pwsink(:,:,jk) / rday * tmask_bgc_closea(:,:,jk+1) 
       END DO
       zwsink2(:,:,1) = 0.e0
 
@@ -360,7 +360,7 @@ CONTAINS
       !DO jn = 1, 2
          !  first guess of the slopes interior values
 !          DO jk = 2, jpkm1
-!             ztraz(:,:,jk) = ( trn(:,:,jk-1,jp_tra) - trn(:,:,jk,jp_tra) ) * tmask(:,:,jk)
+!             ztraz(:,:,jk) = ( trn(:,:,jk-1,jp_tra) - trn(:,:,jk,jp_tra) ) * tmask_bgc_closea(:,:,jk)
 !          END DO
 !          ztraz(:,:,1  ) = 0.0
 !          ztraz(:,:,jpk) = 0.0

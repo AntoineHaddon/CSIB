@@ -18,7 +18,9 @@ MODULE trcsms_pisces
    USE sms_pisces      !  PISCES Source Minus Sink variables
    USE p4zbio          !  Biological model
    USE p4zche          !  Chemical model
+   USE p4zdcy          !  Radioactive decay
    USE p4zflx          !  Gas exchange
+   USE p4zint          !  Interpolation and computation of accessory fields 
    USE p4zsed          !  Sedimentation
    USE trdmod_oce      !  Ocean trends variables
    USE trdmod_trc      !  TOP trends variables
@@ -86,7 +88,6 @@ CONTAINS
          !
       ENDIF
 
-         
       DO jnt = 1, nrdttrc          ! Potential time splitting if requested
          !
          CALL p4z_bio (kt, jnt)    ! Compute soft tissue production (POC)
@@ -106,6 +107,7 @@ CONTAINS
       ENDIF
 
       CALL p4z_flx( kt )             ! Compute surface fluxes
+      CALL p4z_dcy( kt )
 
       DO jn = jp_pcs0, jp_pcs1
         CALL lbc_lnk( trn(:,:,:,jn), 'T', 1. )
@@ -131,7 +133,16 @@ CONTAINS
          END DO
          !
       ENDIF
-      !
+      
+      ! Update average of sea surface salinity
+      CALL update_salt_avg_2d(tsn(:,:,1,jp_sal), rdt, salt_avg, salt_dtsum)  
+      ! If this is the last timestep of the year, reset all the annual
+      ! salt-related variables
+      IF ( (salt_dtsum + rdt) == nyear_len(1)*86400.) THEN
+         sss_glob_avg = glob_avg_area_wt( salt_avg ) 
+         salt_avg(:,:) = 0.
+         salt_dtsum = 0.
+      ENDIF
       IF( nn_timing == 1 )  CALL timing_stop('trc_sms_pisces')
       !
    END SUBROUTINE trc_sms_pisces

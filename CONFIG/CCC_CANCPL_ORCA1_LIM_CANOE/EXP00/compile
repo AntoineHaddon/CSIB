@@ -1,8 +1,0 @@
-arch=xlf_aix-cancpl
-cancpl_ver=carbon-cmoc
-cancpl_repo=/users/tor/acrn/src/coupler_dir/coupler.git
-nemo_ver=carbon-cmoc
-nemo_repo=/users/tor/acrn/rls/src/nemo_cancpl_dev/deploy.git
-BUILD_NEMO=/users/tor/acrn/rls/src/nemo_cancpl_dev/bin/build-nemo
-$BUILD_NEMO -b -k ver=$nemo_ver repo=$nemo_repo exec=dev_ccc_cancpl_orca1_lim_canoe.exe arch=$arch refcfg=CCC_CANCPL_ORCA1_LIM_CANOE cfg=CCC_CANCPL_ORCA1_LIM_CANOE \
-            cancpl_ver=$cancpl_ver cancpl_repo=$cancpl_repo

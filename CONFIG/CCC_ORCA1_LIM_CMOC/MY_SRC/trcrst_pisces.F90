@@ -80,8 +80,8 @@ CONTAINS
                   ! Abiotic alkalinity calculation
                   abio_alk = surf_alk_abio*(tsn(ji,jj,1,jp_sal)*r_sss_glob_avg)
 
-                  ztmas   = tmask(ji,jj,jk)
-                  ztmas1  = 1. - tmask(ji,jj,jk)
+                  ztmas   = tmask_bgc_closea(ji,jj,jk)
+                  ztmas1  = 1. - tmask_bgc_closea(ji,jj,jk)
                   zcaralk = trn(ji,jj,jk,jptal) - borat(ji,jj,jk) / (  1. + 1.E-8 / ( rtrn + akb3(ji,jj,jk) )  )
                   zco3    = ( zcaralk - trn(ji,jj,jk,jpdic) ) * ztmas + 0.5e-3 * ztmas1
                   zbicarb = ( 2. * trn(ji,jj,jk,jpdic) - zcaralk )
@@ -229,7 +229,7 @@ CONTAINS
                  DO jk = 1, jpkm1
                     DO jj = ictsj1(jc), ictsj2(jc)
                        DO ji = ictsi1(jc), ictsi2(jc)
-                          trn(ji,jj,jk,jn) = ztrcdta(ji,jj,jk,jl) * tmask(ji,jj,jk) 
+                          trn(ji,jj,jk,jn) = ztrcdta(ji,jj,jk,jl) * tmask_bgc_closea(ji,jj,jk) 
                           trb(ji,jj,jk,jn) = trn(ji,jj,jk,jn)
                        ENDDO
                     ENDDO

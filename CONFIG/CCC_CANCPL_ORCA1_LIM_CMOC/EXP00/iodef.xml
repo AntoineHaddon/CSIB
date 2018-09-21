@@ -55,8 +55,6 @@
         <field id="mldsq"        description="Squared Mixed Layer Depth for CMIP6"       unit="m2"                       />
         <field id="opottempmint" description="mass integrated potential temperature over ocean columns" unit="kg m-2 degC"     />
         <field id="somint"       description="mass integrated salinity over ocean columns"              unit="kg m-2 * (1e-3)" />
-        <!-- variables available with key_top and key_my_trc -->
-        <field id="agessc"       description="Ideal age"                                 unit="years" axis_ref="deptht"  />
      </group>
 
       <!-- SBC -->
@@ -277,25 +275,21 @@
        <field id="DIC"      description="Dissolved Inorganic Carbon Concentration CMOC" unit="mmolC/m3"                />
        <field id="Alkalini" description="Total Alkalinity Concentration CMOC"           unit="mmoleq/m3"               />
        <field id="O2"       description="Oxygen Concentration CMOC"                     unit="umolO2/L"                />
-       <field id="CaCO3"    description="Calcite Concentration"                         unit="mmol/m3"                 />
-       <field id="PO4"      description="Phosphate Concentration"                       unit="mmol/m3"                 />
        <field id="POC"      description="Detritus CMOC"                                 unit="mmolN/m3"                />
-       <field id="Si"       description="Silicate Concentration"                        unit="mmol/m3"                 />
        <field id="PHY"      description="Phytoplankton Concentration CMOC"              unit="mmolN/m3"                />
        <field id="ZOO"      description="Zooplankton Concentration CMOC"                unit="mmolN/m3"                />
-       <field id="DOC"      description="Dissolved organic Concentration"               unit="mmol/m3"                 />
-       <field id="PHY2"     description="Diatoms Concentration"                         unit="mmol/m3"                 />
-       <field id="DSi"      description="Diatoms Silicate Concentration"                unit="mmol/m3"                 />
-       <field id="Fer"      description="Dissolved Iron Concentration"                  unit="mmol/m3"                 />
-       <field id="BFe"      description="Big iron particles Concentration"              unit="mmol/m3"                 />
-       <field id="SFe"      description="Small iron particles Concentration"            unit="mmol/m3"                 />
-       <field id="DFe"      description="Diatoms iron  Concentration"                   unit="mmol/m3"                 />
-       <field id="GSi"      description="Sinking biogenic Silicate Concentration"       unit="mmol/m3"                 />
-       <field id="NFe"      description="Nano iron Concentration"                       unit="mmol/m3"                 />
        <field id="NCHL"     description="Chlorophyll Concentration CMOC"                unit="mgChl/m3"                />
-       <field id="DCHL"     description="Diatoms chlorophyl Concentration"              unit="mg/m3"                   />
        <field id="NO3"      description="Dissolved Nitrogen Concentration CMOC"         unit="mmolN/m3"                />
-       <field id="NH4"      description="Ammonium Concentration"                        unit="mmol/m3"                 />
+       <field id="DICabio"  description="Abiotic DIC"                                   unit="mmolC/m3"                />
+       <field id="ALKabio"  description="Abiotic Alkalinity"                            unit="mmoleq/m3"               />
+       <field id="O2abio"   description="Abiotic Oxygen"                                unit="umolO2/L"                />
+       <field id="DICnat"   description="Natural DIC"                                   unit="mmolC/m3"                />
+       <field id="DI14C"    description="Radiocarbon DIC"                               unit="mmolC/m3"                />
+       <!-- variables available with key_top and key_my_trc -->
+       <field id="agessc"   description="Ideal age"                                     unit="years"                   />
+       <field id="cfc11"    description="CFC11 tracer concentration"                    unit="mol/m3"                  />
+       <field id="cfc12"    description="CFC12 tracer concentration"                    unit="mol/m3"                  />
+       <field id="sf6"      description="SF6 tracer concentration"                      unit="mol/m3"                  />
      </group>
 
       <!-- diad on T grid : variables available with key_diatrc -->
@@ -320,11 +314,27 @@
        <field id="BUCALC"      description="Burial of Calcite in sediments"           unit="mol/m2/s"                     />
        <field id="Cflx"        description="DIC flux"                                 unit="mol/m2/s"                     />
        <field id="Oflx"        description="Oxygen flux"                              unit="mol/m2/s"                     />
+       <field id="Cflx_abio"   description="Abiotic DIC flux"                         unit="mol/m2/s"                     />
+       <field id="Oflx_abio"   description="Abiotic Oxygen flux"                      unit="mol/m2/s"                     />
+       <field id="Cflx_nat"    description="Natural DIC flux"                         unit="mol/m2/s"                     />
+       <field id="Cflx_14C"    description="Radiocarbon DIC flux"                     unit="mol/m2/s"                     />
        <field id="Kg"          description="Gas transfer"                             unit="mol/m2/s/uatm"                />
        <field id="Dpco2"       description="Delta CO2"                                unit="uatm"                         />
        <field id="Dpo2"        description="Delta O2"                                 unit="uatm"                         />
+       <field id="spco2"       description="Surface pCO2"                             unit="uatm"                         />
+       <field id="spco2a"      description="Abiotic Surface pCO2"                     unit="uatm"                         />
+       <field id="spco2n"      description="Natural Surface pCO2"                     unit="uatm"                         />
        <field id="Heup"        description="Euphotic layer depth"                     unit="m"                            />
        <field id="oomask"      description="Open Ocean mask"                          unit="-"                            />
+       <field id="cfc11qtr"    description="CFC11 tracer flux"                        unit="mol/m2/s"                     />
+       <field id="cfc11qint"   description="CFC11 integrated tracer flux"             unit="mol/m2"                       />
+       <field id="cfc11patm"   description="CFC11 atmospheric partial pressure"       unit="ppt"                          />
+       <field id="cfc12qtr"    description="CFC12 tracer flux"                        unit="mol/m2/s"                     />
+       <field id="cfc12qint"   description="CFC12 integrated tracer flux"             unit="mol/m2"                       />
+       <field id="cfc12patm"   description="CFC12 atmospheric partial pressure"       unit="ppt"                          />
+       <field id="sf6qtr"      description="SF6 tracer flux"                          unit="mol/m2/s"                     />
+       <field id="sf6qint"     description="SF6 integrated tracer flux"               unit="mol/m2"                       />
+       <field id="sf6patm"     description="SF6 atmospheric partial pressure"         unit="ppt"                          />
      </group>
       
     </field_definition>
@@ -490,7 +500,6 @@
             <field ref="mldr10_1"      name="somxl010"       description="Mixed Layer Depth 0.01 ref.10m"           level="0" />
             <field ref="erp"           name="sowafldp"       description="water_flux_correction"                    level="0" /> <!-- cmip6 requested as priority 1, DY -->
             <field ref="mlddzt"        name="sothedep"                                                              level="0" />
-            <field ref="agessc"        name="agessc"         description="sea_water_age_since_surface_contact"      level="0" /> <!-- cmip6 requested as priority 1, DY -->
 	    <field ref="qns"           name="qns"            description="surface_net_downward_non_solar_flux"      level="0" />
 	    <field ref="qsr"           name="qsr"            description="surface_net_downward_shortwave_flux"      level="0" /> <!-- cmip6 requested as priority 2, DY -->
             <field ref="qrp"           name="qrp"            description="heat_flux_correction"                     level="0" /> <!-- cmip6 requested as priority 1, DY -->
@@ -526,7 +535,6 @@
             <field ref="mldsq"         name="mlotstsq"       description="square_of_ocean_mixed_layer_thickness_defined_by_sigma_t"                     level="3" />
             <field ref="opottempmint"  name="opottempmint"   description="integral_wrt_depth_of_product_of_sea_water_density_and_potential_temperature" level="3" />
             <field ref="somint"        name="somint"         description="integral_wrt_depth_of_product_of_sea_water_density_and_salinity"              level="3" />
-	    <!-- no cfc11  : moles_per_unit_mass_of_cfc11_in_sea_water -->
 	    <!-- msftbarot : ocean_barotropic_mass_streamfunction : offline -->
 	    <!-- field ref="mldkz5"       name='omlmax'   description="ocean_mixed_layer_thickness_defined_by_mixing_scheme" level="2" operation="t_max(X)" not in cmip6 request, DY-->
 	    <field ref="rain"          name="prlq"           description="rainfall_flux"                            level="2" />
@@ -738,37 +746,56 @@
 	</file>   
 
         <file id="1m_ptrc_T" name="auto" description="pisces sms variables" >
-          <field ref="DIC"                                                                                         level="0"  />
-          <field ref="Alkalini"                                                                                    level="0"  />
-          <field ref="O2"                                                                                          level="0"  />
-          <field ref="POC"                                                                                         level="0"  />
-          <field ref="PHY"                                                                                         level="0"  />
-          <field ref="ZOO"                                                                                         level="0"  />
-          <field ref="NCHL"                                                                                        level="0"  />
-          <field ref="NO3"                                                                                         level="0"  />
+          <field ref="DIC"      name="dissic"      description="mole_concentration_of_dissolved_inorganic_carbon_in_sea_water"                  level="0" />
+          <field ref="Alkalini" name="talk"        description="sea_water_alkalinity_expressed_as_mole_equivalent"                              level="0" />
+          <field ref="O2"       name="o2"          description="mole_concentration_of_dissolved_molecular_oxygen_in_sea_water"                  level="0" />
+          <field ref="POC"      name="detoc"       description="mole_concentration_of_organic_detritus_expressed_as_carbon_in_sea_water"        level="0" />
+          <field ref="PHY"      name="phyc"        description="mole_concentration_of_phytoplankton_expressed_as_carbon_in_sea_water"           level="0" />
+          <field ref="ZOO"      name="zooc"        description="mole_concentration_of_zooplankton_expressed_as_carbon_in_sea_water"             level="0" />
+          <field ref="NCHL"     name="chl"         description="mass_concentration_of_phytoplankton_expressed_as_chlorophyll_in_sea_water"      level="1" />
+          <field ref="NO3"      name="no3"         description="mole_concentration_of_nitrate_in_sea_water"                                     level="0" />
+          <field ref="DICnat"   name="dissicnat"   description="mole_concentration_of_dissolved_inorganic_carbon_natural_analogue_in_sea_water" level="1" />
+          <field ref="DICabio"  name="dissicabio"  description="mole_concentration_of_dissolved_inorganic_carbon_abiotic_analogue_in_sea_water" level="1" />
+          <field ref="ALKabio"                                                                                                                  level="1" />
+          <field ref="O2abio"                                                                                                                   level="0" />
+          <field ref="agessc"   name="agessc"      description="sea_water_age_since_surface_contact"                                            level="0" /> <!-- cmip6 requested as priority 1, DY -->
+          <field ref="cfc11"    name="cfc11"       description="mole_concentration_of_cfc11_in_sea_water"                                       level="1" />
+          <field ref="cfc12"    name="cfc12"       description="mole_concentration_of_cfc12_in_sea_water"                                       level="1" />
+          <field ref="sf6"      name="sf6"         description="mole_concentration_of_sulfur_hexafluoride_in_sea_water"                         level="2" />
+          <field ref="DI14C"    name="fg14co2abio" description="surface_downward_mass_flux_of_14C_dioxide_abiotic_analogue_expressed_as_carbon" level="1" />
        </file>
 
         <file id="1m_diad_T" name="auto" description="additional cmoc diagnostic variables" >
-          <field ref="PH"        description="sea_water_ph_reported_on_total_scale"                                level="0"  />
-          <field ref="sDIC"                                                                                        level="0"  />
-          <field ref="sAlk"                                                                                        level="0"  />
-          <field ref="PPPHY"     description="tendency_of_mole_concentration_of_particulate_organic_matter_expressed_as_carbon_in_sea_water_due_to_net_primary_production" level="0" />
-          <field ref="Cflx"                                                                                        level="0"  />
-          <field ref="Oflx"                                                                                        level="0"  />
-          <field ref="Nfix"      description="tendency_of_ocean_mole_content_of_elemental_nitrogen_due_to_fixation"             level="0" />
-          <field ref="Denit"                                                                                       level="0"  />
-          <field ref="EPC100"    description="sinking_mole_flux_of_particulate_organic_matter_expressed_as_carbon_in_sea_water" level="0" />
-          <field ref="EPCALC100" description="sinking_mole_flux_of_calcite_expressed_as_carbon_in_sea_water"       level="0"  />
-          <field ref="BUPOC"                                                                                       level="0"  />
-          <field ref="BUCALC"                                                                                      level="0"  />
-          <field ref="Dpco2"                                                                                       level="0"  />
-          <field ref="Dpo2"                                                                                        level="0"  />
-          <field ref="LNnut"                                                                                       level="0"  />
-          <field ref="LNFe"                                                                                        level="0"  />
-          <field ref="LNlight"                                                                                     level="0"  />
-          <field ref="PAR"                                                                                         level="0"  />
-          <field ref="Mumax"                                                                                       level="0"  />
-          <field ref="oomask"                                                                                      level="0"  />
+          <field ref="PH"        name="phos"        description="sea_water_ph_reported_on_total_scale"                                                                                        level="0" />
+          <field ref="sDIC"                                                                                                                                                                   level="0" />
+          <field ref="sAlk"                                                                                                                                                                   level="0" />
+          <field ref="PPPHY"     name="pp"          description="tendency_of_mole_concentration_of_particulate_organic_matter_expressed_as_carbon_in_sea_water_due_to_net_primary_production" level="0" />
+          <field ref="Cflx"      name="fgco2"       description="surface_downward_mass_flux_of_carbon_dioxide_expressed_as_carbon"                                                            level="0" />
+          <field ref="Oflx"      name="fgo2"        description="surface_downward_mole_flux_of_molecular_oxygen"                                                                              level="0" />
+          <field ref="Cflx_abio" name="fgco2abio"   description="surface_downward_mass_flux_of_carbon_dioxide_abiotic_analogue_expressed_as_carbon"                                           level="1" />
+          <field ref="Cflx_nat"  name="fgco2nat"    description="surface_downward_mass_flux_of_carbon_dioxide_natural_analogue_expressed_as_carbon"                                           level="1" />
+          <field ref="Oflx_abio"                                                                                                                                                              level="0" />
+          <field ref="Cflx_14C"  name="fg14co2abio" description="surface_downward_mass_flux_of_14C_dioxide_abiotic_analogue_expressed_as_carbon"                                              level="1"/>
+          <field ref="Nfix"      name="intpn2"      description="tendency_of_ocean_mole_content_of_elemental_nitrogen_due_to_fixation"                                                        level="0" />
+          <field ref="Denit"     name="frn"         description="tendency_of_ocean_mole_content_of_elemental_nitrogen_due_to_denitrification_and_sedimentation"                               level="3" />
+          <field ref="EPC100"    name="epc100"      description="sinking_mole_flux_of_particulate_organic_matter_expressed_as_carbon_in_sea_water"                                            level="0" />
+          <field ref="EPCALC100" name="epcalc100"   description="sinking_mole_flux_of_calcite_expressed_as_carbon_in_sea_water"                                                               level="0" />
+          <field ref="BUPOC"                                                                                                                                                                  level="4" />
+          <field ref="BUCALC"                                                                                                                                                                 level="4" />
+          <field ref="Dpco2"     name="dpco2"       description="surface_carbon_dioxide_partial_pressure_difference_between_sea_water_and_air"                                                level="3" />
+          <field ref="Dpo2"      name="dpo2"        description="surface_molecular_oxygen_partial_pressure_difference_between_sea_water_and_air"                                              level="3" />
+          <field ref="spco2"     name="spco2"       description="surface_partial_pressure_of_carbon_dioxide_in_sea_water"                                                                     level="1" />
+          <field ref="spco2a"    name="spco2abio"   description="surface_carbon_dioxide_abiotic_analogue_partial_pressure_difference_between_sea_water_and_air"                               level="1" />
+          <field ref="spco2n"    name="spco2nat"    description="surface_carbon_dioxide_natural_analogue_partial_pressure_difference_between_sea_water_and_air"                               level="1" />
+          <field ref="LNnut"     name="limnmisc"    description="nitrogen_growth_limitation_of_miscellaneous_phytoplankton"                                                                   level="3" />
+          <field ref="LNFe"      name="limfemisc"   description="iron_growth_limitation_of_miscellaneous_phytoplankton"                                                                       level="3" />
+          <field ref="LNlight"   name="limirrmisc"  description="growth_limitation_of_miscellaneous_phytoplankton_due_to_solar_irradiance"                                                    level="3" />
+          <field ref="PAR"                                                                                                                                                                    level="0" />
+          <field ref="Mumax"                                                                                                                                                                  level="4" />
+          <field ref="oomask"                                                                                                                                                                 level="4" />
+          <field ref="cfc11qtr"  name="fgcfc11"     description="surface_downward_mole_flux_of_cfc11"                                                                                         level="1" />
+          <field ref="cfc12qtr"  name="fgcfc12"     description="surface_downward_mole_flux_of_cfc12"                                                                                         level="1" />
+          <field ref="sf6qtr"    name="fgsf6"       description="surface_downward_mole_flux_of_sulfur_hexafluoride"                                                                           level="2" />
        </file>
 
       </group>

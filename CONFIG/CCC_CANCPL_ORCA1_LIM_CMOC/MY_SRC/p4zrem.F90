@@ -99,6 +99,7 @@ CONTAINS
          tra(:,:,jk,jpoxy) = tra(:,:,jk,jpoxy) - redet(:,:,jk) 
          tra(:,:,jk,jpdic) = tra(:,:,jk,jpdic) + redet(:,:,jk) 
          tra(:,:,jk,jptal) = tra(:,:,jk,jptal) - redet(:,:,jk) * ncrr_cmoc
+         tra(:,:,jk,jpdnt) = tra(:,:,jk,jpdnt) + redet(:,:,jk) 
       END DO
 
       ! print mean trends (used for debugging)

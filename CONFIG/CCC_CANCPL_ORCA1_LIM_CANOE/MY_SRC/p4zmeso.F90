@@ -31,9 +31,9 @@ MODULE p4zmeso
 
    !! * Shared module variables
    REAL(wp), PUBLIC ::  part2      = 0.5_wp          !: part of calcite not dissolved in mesozoo guts (not used)
-   REAL(wp), PUBLIC ::  gmax2      = 8.1E-6_wp       !: maximum grazing rate rate in s^-1
+   REAL(wp), PUBLIC ::  gmax2      = 0.85_wp         !: maximum grazing rate rate
    REAL(wp), PUBLIC ::  apl        = 0.075_wp        !: large zooplankton functional response parameter
-   REAL(wp), PUBLIC ::  zsr2       = 5.787E-7_wp     !: specific respiration rate
+   REAL(wp), PUBLIC ::  zsr2       = 0.3_wp          !: specific respiration rate
    REAL(wp), PUBLIC ::  lambda2    = 0.8_wp          !: assimilation efficiency
 
    !!* Substitution
@@ -59,6 +59,7 @@ CONTAINS
       REAL(wp) :: ztn,Tf,lpc,lpn,lpf,chl,grazt,grazp,grazz,R,szc,itfc
       REAL(wp) :: c2n,n2c,c2fe,fe2c,n2fe,fe2n
       REAL(wp) :: cxs,nxs1,fexs1,nxs2,fexs2
+      REAL(wp) :: csw1,csw2
       CHARACTER (len=25) :: charout
       REAL(wp) :: zrfact2
       !!---------------------------------------------------------------------
@@ -89,7 +90,7 @@ CONTAINS
                fe2n=lpf/(lpn+rtrn)
 
 ! assume grazing hyperbola is determined by total food concentration and the two food types are consumed in proportion to their concentrations (in C units)
-               grazt=gmax2*(1.-EXP(-apl*(lpc+szc)))*trn(ji,jj,jk,jpmes)*rfact2
+               grazt=gmax2*(1.-EXP(-apl*(lpc+szc)))*trn(ji,jj,jk,jpmes)*xstep
                grazz=grazt*szc*itfc
                grazp=grazt*lpc*itfc
 ! reduce phytoplankton fraction to what can support grazer biomass production based on the least abundant element: the MIN(...) term should be 1 if N and Fe are in excess of the grazer ratio
@@ -104,12 +105,21 @@ CONTAINS
                fexs1=MAX(fexs1,0.)
                fexs2=grazp*rr_fe2c*(fe2n*rr_n2fe-1.)
                fexs2=MAX(fexs2,0.)
-
+               csw1=MAX(cxs,0.)
+               csw1=csw1/(csw1+rtrn)   !!! csw1 is 1 when cxs>0 and 0 otherwise
+               csw2=1.-csw1            !!! csw2 is 0 when cxs>0 and 1 otherwise
+               !!! apply csw1 switch on nxs2 and fexs2 terms
+               nxs1 = csw2*nxs1
+               fexs1= csw2*fexs1
+               !!! apply csw2 switch on nxs1 and fexs1 terms
+               nxs2 = csw1*nxs2
+               fexs2= csw1*fexs2
 ! calculate zooplankton respiration (in carbon units)
-               R = MAX(zsr2*Tf*trn(ji,jj,jk,jpmes)*rfact2-cxs,0.)
+               R = MAX(zsr2*Tf*trn(ji,jj,jk,jpmes)*xstep-cxs,0.)
 
                !   Update the arrays TRA which contain the biological sources and sinks
                tra(ji,jj,jk,jpnh4) = tra(ji,jj,jk,jpnh4) + R*rr_n2c + nxs1 + nxs2
+               tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) + (R*rr_n2c + nxs1 + nxs2)*1.E-6
                tra(ji,jj,jk,jpoxy) = tra(ji,jj,jk,jpoxy) - R - cxs
                tra(ji,jj,jk,jpfer) = tra(ji,jj,jk,jpfer) + R*rr_fe2c + fexs1 + fexs2
                tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) + (R + cxs)*1.E-6
