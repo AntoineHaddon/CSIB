@@ -31,6 +31,10 @@ MODULE trcrst
    USE trcrst_pisces   ! PISCES   restart
    USE trcrst_c14b     ! C14 bomb restart
    USE trcrst_my_trc   ! MY_TRC   restart
+   USE trcini_lobster  ! LOBSTER  restart
+   USE trcini_pisces   ! PISCES   restart
+   USE trcini_c14b     ! C14 bomb restart
+   USE trcini_my_trc   ! MY_TRC   restart
    USE daymod
    IMPLICIT NONE
    PRIVATE
@@ -98,7 +102,8 @@ CONTAINS
       !!
       !! ** purpose  :   read passive tracer fields in restart files
       !!----------------------------------------------------------------------
-      INTEGER  ::  jn     
+      INTEGER  ::  jn
+      INTEGER, DIMENSION(jptra) :: trn_in_restart,trb_in_restart
 
       !!----------------------------------------------------------------------
       !
@@ -107,19 +112,110 @@ CONTAINS
       IF(lwp) WRITE(numout,*) '~~~~~~~~~~~~'
 
       ! READ prognostic variables and computes diagnostic variable
-      DO jn = 1, jptra
-         CALL iom_get( numrtr, jpdom_autoglo, 'TRN'//ctrcnm(jn), trn(:,:,:,jn) )
-      END DO
+      IF ( ln_altres ) THEN
+         DO jn = 1, jptra
+            trn_in_restart(jn) = iom_varid( numrtr, 'TRN'//ctrcnm(jn), ldstop = .FALSE. )
+            trb_in_restart(jn) = iom_varid( numrtr, 'TRB'//ctrcnm(jn), ldstop = .FALSE. )
+            IF ( trn_in_restart(jn) > 0 ) CALL iom_get( numrtr, jpdom_autoglo, 'TRN'//ctrcnm(jn), trn(:,:,:,jn) )
+            IF ( trb_in_restart(jn) > 0 ) CALL iom_get( numrtr, jpdom_autoglo, 'TRB'//ctrcnm(jn), trb(:,:,:,jn) )
+         END DO
+         ! Check each tracer package to see if all the required fields are present in the restart
+         IF ( lk_lobster ) THEN
+            DO jn = 1, jp_lobster
+               ! Exit the loop if the id for either the trn or trb array is not there 
+               IF ( (trn_in_restart(jn) == 0) .OR. (trb_in_restart(jn) == 0) ) EXIT
+            ENDDO
+            ! If the above loop completed (i.e. all fields were found in the restart, then jn should equal jp_lobster
+            ! Otherwise, something is missing and the initialization routines should be called
+            IF ( jn /= jp_lobster ) THEN
+               CALL trc_ini_lobster( )
+               ! trb and trn should be the same at the start?
+               DO jn = 1,jp_lobster
+                  trb(:,:,:,jn) = trn(:,:,:jn)
+               END DO
+            ELSE
+               CALL trc_rst_read_lobster( numrtr )      ! LOBSTER bio-model
+            ENDIF
+         ENDIF
+         IF ( lk_pisces ) THEN
+            DO jn = jp_lp+1, jp_pisces
+               ! Exit the loop if the id for either the trn or trb array is not there 
+               IF ( (trn_in_restart(jn) == 0) .OR. (trb_in_restart(jn) == 0) ) EXIT
+            ENDDO
+            ! If the above loop completed (i.e. all fields were found in the restart, then jn should equal jp_pisces
+            ! Otherwise, something is missing and the initialization routines should be called
+            IF ( jn /= jp_pisces ) THEN
+               CALL trc_ini_pisces( )
+               ! trb and trn should be the same at the start?
+               DO jn = jp_lp+1, jp_pisces
+                  trb(:,:,:,jn) = trn(:,:,:jn)
+               END DO
+            ELSE
+               CALL trc_rst_read_pisces( numrtr )
+            ENDIF
+         ENDIF
+         IF ( lk_cfc ) THEN
+            DO jn = jp_lc+1, jp_cfc
+               ! Exit the loop if the id for either the trn or trb array is not there 
+               IF ( (trn_in_restart(jn) == 0) .OR. (trb_in_restart(jn) == 0) ) EXIT
+            ENDDO
+            ! If the above loop completed (i.e. all fields were found in the restart, then jn should equal jp_cfc
+            ! Otherwise, something is missing and the initialization routines should be called
+            IF ( jn /= jp_cfc ) THEN
+               CALL trc_ini_cfc( )
+               ! trb and trn should be the same at the start?
+               DO jn = jp_lc, jp_cfc
+                  trb(:,:,:,jn) = trn(:,:,:jn)
+               END DO
+            ELSE
+               CALL trc_rst_read_cfc( numrtr )
+            ENDIF
+         IF ( lk_c14b ) THEN
+            DO jn = jp_lb+1, jp_c14b
+               ! Exit the loop if the id for either the trn or trb array is not there 
+               IF ( (trn_in_restart(jn) == 0) .OR. (trb_in_restart(jn) == 0) ) EXIT
+            ENDDO
+            ! If the above loop completed (i.e. all fields were found in the restart, then jn should equal jp_c14b
+            ! Otherwise, something is missing and the initialization routines should be called
+            IF ( jn /= jp_c14b ) THEN
+               CALL trc_ini_c14b( )
+               ! trb and trn should be the same at the start?
+               DO jn = jp_lb+1, jp_c14b
+                  trb(:,:,:,jn) = trn(:,:,:jn)
+               END DO
+            ELSE
+               CALL trc_rst_read_c14b( numrtr )
+            ENDIF
+         ENDIF
+         IF ( lk_my_trc ) THEN
+            DO jn = jp_lm+1, jp_my_trc
+               ! Exit the loop if the id for either the trn or trb array is not there 
+               IF ( (trn_in_restart(jn) == 0) .OR. (trb_in_restart(jn) == 0) ) EXIT
+            ENDDO
+            ! If the above loop completed (i.e. all fields were found in the restart, then jn should equal jp_my_trc
+            ! Otherwise, something is missing and the initialization routines should be called
+            IF ( jn /= jp_my_trc ) THEN
+               CALL trc_ini_my_trc( )
+               ! trb and trn should be the same at the start?
+               DO jn = jp_lm+1, jp_my_trc
+                  trb(:,:,:,jn) = trn(:,:,:jn)
+               END DO
+            ELSE
+               CALL trc_rst_read_my_trc( numrtr )
+            ENDIF
+         ENDIF
+      ELSE
+         DO jn = 1, jptra
+            CALL iom_get( numrtr, jpdom_autoglo, 'TRN'//ctrcnm(jn), trn(:,:,:,jn) )
+            CALL iom_get( numrtr, jpdom_autoglo, 'TRB'//ctrcnm(jn), trb(:,:,:,jn) )
+         END DO
+         IF( lk_lobster )   CALL trc_rst_read_lobster( numrtr )      ! LOBSTER bio-model
+         IF( lk_pisces  )   CALL trc_rst_read_pisces ( numrtr )      ! PISCES  bio-model
+         IF( lk_cfc     )   CALL trc_rst_read_cfc    ( numrtr )      ! CFC     tracers
+         IF( lk_c14b    )   CALL trc_rst_read_c14b   ( numrtr )      ! C14 bomb  tracer
+         IF( lk_my_trc  )   CALL trc_rst_read_my_trc ( numrtr )      ! MY_TRC  tracers
+      ENDIF
 
-      DO jn = 1, jptra
-         CALL iom_get( numrtr, jpdom_autoglo, 'TRB'//ctrcnm(jn), trb(:,:,:,jn) )
-      END DO
-
-      IF( lk_lobster )   CALL trc_rst_read_lobster( numrtr )      ! LOBSTER bio-model
-      IF( lk_pisces  )   CALL trc_rst_read_pisces ( numrtr )      ! PISCES  bio-model
-      IF( lk_cfc     )   CALL trc_rst_read_cfc    ( numrtr )      ! CFC     tracers
-      IF( lk_c14b    )   CALL trc_rst_read_c14b   ( numrtr )      ! C14 bomb  tracer
-      IF( lk_my_trc  )   CALL trc_rst_read_my_trc ( numrtr )      ! MY_TRC  tracers
 
       CALL iom_close( numrtr )
       !

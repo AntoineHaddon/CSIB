@@ -53,6 +53,9 @@ MODULE trc
    REAL(wp)            , PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:)   ::  rdttrc         !: vertical profile of passive tracer time step
    LOGICAL             , PUBLIC                                    ::  ln_trcdta      !: Read inputs data from files
    LOGICAL             , PUBLIC                                    ::  ln_trcdmp      !: internal damping flag
+   LOGICAL             , PUBLIC                                    ::  ln_altres      !: If (T) any tracers not found in the restart
+                                                                                      !! file will go through their initialization
+                                                                                      !! routine
    INTEGER             , PUBLIC                                    ::  nittrc000       !: first time step of passive tracers model
 
    !! information for outputs
