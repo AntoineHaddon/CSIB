@@ -455,41 +455,6 @@ if [ $build_nemo_exe -eq 1 ]; then
    fi
 fi
 
-if [ $build_rebuild_tool -eq 1 ]; then
-  # Build nemo rebuild tool
-  cd $nemo_root/TOOLS
-  maketools -n REBUILD -m xlf_aix_noMP-cccma
-  [ $? -ne 0 ] && bail "Problem building tool REBUILD"
-  # This will build a binary named "flio_rbld.exe" in TOOLS/REBUILD/BLD/bin
-  cp REBUILD/BLD/bin/*.exe $tmpd
-  # There is also a script in REBUILD/rebuild
-  cp REBUILD/rebuild $tmpd
-  cd $tmpd
-fi
-
-if [ $build_rebuild_nemo_tool -eq 1 ]; then
-  # Build nemo rebuild_nemo tool
-  cd $nemo_root/TOOLS
-  maketools -n REBUILD_NEMO -m xlf_aix_noMP-cccma
-  [ $? -ne 0 ] && bail "Problem building tool REBUILD_NEMO"
-  # This will build a binary named "rebuild_nemo.exe" in TOOLS/REBUILD_NEMO/BLD/bin
-  cp REBUILD_NEMO/BLD/bin/*.exe $tmpd
-  # There is also a script in REBUILD/rebuild_nemo
-  cp REBUILD/rebuild_nemo $tmpd
-  cd $tmpd
-fi
-
-if [ $build_weights_tool -eq 1 ]; then
-  # Build nemo weights tool
-  cd $nemo_root/TOOLS
-  maketools -n WEIGHTS -m xlf_aix_noMP-cccma
-  [ $? -ne 0 ] && bail "Problem building tool WEIGHTS"
-  # This will build a binaries named scrip.exe, scripgrid.exe, scripinterp.exe
-  # and scripshape.exe in TOOLS/WEIGHTS/BLD/bin
-  cp WEIGHTS/BLD/bin/*.exe $tmpd
-  cd $tmpd
-fi
-
 # Return to the original dir and clean up
 cd $CWD
 #if [ $keep_tmpd -eq 1 ]; then
