@@ -26,6 +26,7 @@ MODULE trcrst
    USE trc
    USE trcnam_trp
    USE iom
+   USE trcdta          ! initialisation form files
    USE trcrst_cfc      ! CFC      
    USE trcrst_lobster  ! LOBSTER  restart
    USE trcrst_pisces   ! PISCES   restart
@@ -104,8 +105,8 @@ CONTAINS
       !! ** purpose  :   read passive tracer fields in restart files
       !!----------------------------------------------------------------------
       INTEGER  ::  jn
-      INTEGER, DIMENSION(jptra) :: trn_in_restart,trb_in_restart
-
+      LOGICAL, DIMENSION(jptra) :: trc_in_restart
+      REAL(wp), POINTER, DIMENSION(:,:,:,:) ::  ztrcdta   ! 4D  workspace
       !!----------------------------------------------------------------------
       !
       IF(lwp) WRITE(numout,*)
@@ -114,97 +115,68 @@ CONTAINS
 
       ! READ prognostic variables and computes diagnostic variable
       IF ( ln_altres ) THEN
+         trc_in_restart(:) = .FALSE.
          DO jn = 1, jptra
-            trn_in_restart(jn) = iom_varid( numrtr, 'TRN'//ctrcnm(jn), ldstop = .FALSE. )
-            trb_in_restart(jn) = iom_varid( numrtr, 'TRB'//ctrcnm(jn), ldstop = .FALSE. )
-            IF ( trn_in_restart(jn) > 0 ) CALL iom_get( numrtr, jpdom_autoglo, 'TRN'//ctrcnm(jn), trn(:,:,:,jn) )
-            IF ( trb_in_restart(jn) > 0 ) CALL iom_get( numrtr, jpdom_autoglo, 'TRB'//ctrcnm(jn), trb(:,:,:,jn) )
+            IF ( iom_varid( numrtr, 'TRN'//ctrcnm(jn), ldstop = .FALSE. ) > 0 .AND.     &
+                 iom_varid( numrtr, 'TRB'//ctrcnm(jn), ldstop = .FALSE. ) > 0      ) THEN
+               CALL iom_get( numrtr, jpdom_autoglo, 'TRN'//ctrcnm(jn), trn(:,:,:,jn) )
+               CALL iom_get( numrtr, jpdom_autoglo, 'TRB'//ctrcnm(jn), trb(:,:,:,jn) )
+               trc_in_restart(jn) = .TRUE.
+            ELSE ! Not found in restart, so set to 0
+               trc_in_restart(jn) = .FALSE.
+               trn(:,:,:,jn) = 0.
+               trb(:,:,:,jn) = 0.
+            ENDIF
          END DO
-         ! Check each tracer package to see if all the required fields are present in the restart
-         IF ( lk_lobster ) THEN
-            DO jn = 1, jp_lobster
-               ! Exit the loop if the id for either the trn or trb array is not there 
-               IF ( (trn_in_restart(jn) == 0) .OR. (trb_in_restart(jn) == 0) ) EXIT
-            ENDDO
-            ! If the above loop completed (i.e. all fields were found in the restart, then jn should equal jp_lobster
-            ! Otherwise, something is missing and the initialization routines should be called
-            IF ( jn /= jp_lobster ) THEN
-               CALL trc_ini_lobster( )
-               ! trb and trn should be the same at the start?
-               DO jn = 1,jp_lobster
-                  trb(:,:,:,jn) = trn(:,:,:,jn)
-               END DO
-            ELSE
-               CALL trc_rst_read_lobster( numrtr )      ! LOBSTER bio-model
+
+         ! Now check to see if any of the missing tracers should be initialised from data files
+         IF ( .NOT. ALL(trc_in_restart) ) THEN
+            CALL wrk_alloc( jpi, jpj, jpk, nb_trcdta, ztrcdta )    ! Memory allocation
+            CALL trc_dta( nit000, ztrcdta )   ! read tracer data at nit000
+            ! Check package by to see which tracers should be initialised be in data files
+            IF( lk_lobster ) THEN
+               IF ( .NOT. ALL(trc_in_restart(jp_lob0:jp_lob1)) ) THEN
+                  CALL tracer_reinit(trc_in_restart, ztrcdta, jp_lob0, jp_lob1)
+               ELSE
+                  CALL trc_rst_read_lobster( numrtr )      ! LOBSTER bio-model
+               ENDIF
             ENDIF
-         ENDIF
-         IF ( lk_pisces ) THEN
-            DO jn = jp_lp+1, jp_pisces
-               ! Exit the loop if the id for either the trn or trb array is not there 
-               IF ( (trn_in_restart(jn) == 0) .OR. (trb_in_restart(jn) == 0) ) EXIT
-            ENDDO
-            ! If the above loop completed (i.e. all fields were found in the restart, then jn should equal jp_pisces
-            ! Otherwise, something is missing and the initialization routines should be called
-            IF ( jn /= jp_pisces ) THEN
-               CALL trc_ini_pisces( )
-               ! trb and trn should be the same at the start?
-               DO jn = jp_lp+1, jp_pisces
-                  trb(:,:,:,jn) = trn(:,:,:,jn)
-               END DO
-            ELSE
-               CALL trc_rst_read_pisces( numrtr )
+            IF( lk_pisces  ) THEN 
+               IF ( .NOT. ALL(trc_in_restart(jp_pcs0:jp_pcs1)) ) THEN
+                  CALL tracer_reinit(trc_in_restart, ztrcdta, jp_pcs0, jp_pcs1)
+               ELSE
+                  CALL trc_rst_read_pisces( numrtr )
+               ENDIF
             ENDIF
-         ENDIF
-         IF ( lk_cfc ) THEN
-            DO jn = jp_lc+1, jp_cfc
-               ! Exit the loop if the id for either the trn or trb array is not there 
-               IF ( (trn_in_restart(jn) == 0) .OR. (trb_in_restart(jn) == 0) ) EXIT
-            ENDDO
-            ! If the above loop completed (i.e. all fields were found in the restart, then jn should equal jp_cfc
-            ! Otherwise, something is missing and the initialization routines should be called
-            IF ( jn /= jp_cfc ) THEN
-               CALL trc_ini_cfc( )
-               ! trb and trn should be the same at the start?
-               DO jn = jp_lc, jp_cfc
-                  trb(:,:,:,jn) = trn(:,:,:,jn)
-               END DO
-            ELSE
-               CALL trc_rst_read_cfc( numrtr )
+            IF( lk_cfc     ) THEN 
+               IF ( .NOT. ALL(trc_in_restart(jp_cfc0:jp_cfc1)) ) THEN
+                  CALL tracer_reinit(trc_in_restart, ztrcdta, jp_cfc0, jp_cfc1)
+               ELSE
+                  CALL trc_rst_read_cfc( numrtr )
+               ENDIF
             ENDIF
-         ENDIF
-         IF ( lk_c14b ) THEN
-            DO jn = jp_lb+1, jp_c14b
-               ! Exit the loop if the id for either the trn or trb array is not there 
-               IF ( (trn_in_restart(jn) == 0) .OR. (trb_in_restart(jn) == 0) ) EXIT
-            ENDDO
-            ! If the above loop completed (i.e. all fields were found in the restart, then jn should equal jp_c14b
-            ! Otherwise, something is missing and the initialization routines should be called
-            IF ( jn /= jp_c14b ) THEN
-               CALL trc_ini_c14b( )
-               ! trb and trn should be the same at the start?
-               DO jn = jp_lb+1, jp_c14b
-                  trb(:,:,:,jn) = trn(:,:,:,jn)
-               END DO
-            ELSE
-               CALL trc_rst_read_c14b( numrtr )
+            IF( lk_c14b    ) THEN 
+               IF ( .NOT. ALL(trc_in_restart(jp_c14b0:jp_c14b1)) ) THEN
+                  CALL tracer_reinit(trc_in_restart, ztrcdta, jp_c14b0, jp_c14b1)
+               ELSE
+                  CALL trc_rst_read_c14b( numrtr )
+               ENDIF
             ENDIF
-         ENDIF
-         IF ( lk_my_trc ) THEN
-            DO jn = jp_lm+1, jp_my_trc
-               ! Exit the loop if the id for either the trn or trb array is not there 
-               IF ( (trn_in_restart(jn) == 0) .OR. (trb_in_restart(jn) == 0) ) EXIT
-            ENDDO
-            ! If the above loop completed (i.e. all fields were found in the restart, then jn should equal jp_my_trc
-            ! Otherwise, something is missing and the initialization routines should be called
-            IF ( jn /= jp_my_trc ) THEN
-               CALL trc_ini_my_trc( )
-               ! trb and trn should be the same at the start?
-               DO jn = jp_lm+1, jp_my_trc
-                  trb(:,:,:,jn) = trn(:,:,:,jn)
-               END DO
-            ELSE
-               CALL trc_rst_read_my_trc( numrtr )
+            IF( lk_my_trc  ) THEN 
+               IF ( .NOT. ALL(trc_in_restart(jp_myt0:jp_myt1)) ) THEN
+                  CALL tracer_reinit(trc_in_restart, ztrcdta, jp_myt0, jp_myt1)
+               ELSE
+                  CALL trc_rst_read_my_trc( numrtr )
+               ENDIF
             ENDIF
+            CALL wrk_dealloc( jpi, jpj, jpk, nb_trcdta, ztrcdta )
+         ELSE ! If trcdta_renit is FALSE, then all the fields are present and any auxiliary fields from all the tracer
+              ! packages can be loaded
+            IF( lk_lobster )   CALL trc_rst_read_lobster( numrtr )      ! LOBSTER bio-model
+            IF( lk_pisces  )   CALL trc_rst_read_pisces ( numrtr )      ! PISCES  bio-model
+            IF( lk_cfc     )   CALL trc_rst_read_cfc    ( numrtr )      ! CFC     tracers
+            IF( lk_c14b    )   CALL trc_rst_read_c14b   ( numrtr )      ! C14 bomb  tracer
+            IF( lk_my_trc  )   CALL trc_rst_read_my_trc ( numrtr )      ! MY_TRC  tracers
          ENDIF
       ELSE
          DO jn = 1, jptra
@@ -409,6 +381,26 @@ CONTAINS
       !
    END SUBROUTINE trc_rst_stat
 
+   !> Initializes passive tracer values from a data file if it has been defined in the namelist and has not been found
+   !! in the restart file
+   SUBROUTINE tracer_reinit( trc_in_restart, ztrcdta, jp0, jp1 )
+      LOGICAL, DIMENSION(jptra),                  INTENT(IN) :: trc_in_restart !< True if the tracer was found
+                                                                               !! in the restart 
+      REAL(wp), DIMENSION(jpi,jpj,jpk,nb_trcdta), INTENT(IN) :: ztrcdta        !< Contains tracer data from
+                                                                               !! initialisation files
+      INTEGER,                                    INTENT(IN) :: jp0            !< First index to check
+      INTEGER,                                    INTENT(IN) :: jp1            !< Last index to check
+      ! Local variables
+      INTEGER :: jl, jn
+      DO jn = jp0, jp1
+         IF( ln_trc_ini(jn) .AND. (.NOT. trc_in_restart(jn)) ) THEN
+            jl = n_trc_index(jn) 
+            trn(:,:,:,jn) = ztrcdta(:,:,:,jl) * tmask(:,:,:)  
+            trb(:,:,:,jn) = trn(:,:,:,jn)
+         ENDIF
+      END DO
+
+   END SUBROUTINE tracer_reinit
 #else
    !!----------------------------------------------------------------------
    !!  Dummy module :                                     No passive tracer
