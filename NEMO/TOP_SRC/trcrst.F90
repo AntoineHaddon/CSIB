@@ -31,6 +31,7 @@ MODULE trcrst
    USE trcrst_pisces   ! PISCES   restart
    USE trcrst_c14b     ! C14 bomb restart
    USE trcrst_my_trc   ! MY_TRC   restart
+   USE trcini_cfc      ! CFC      
    USE trcini_lobster  ! LOBSTER  restart
    USE trcini_pisces   ! PISCES   restart
    USE trcini_c14b     ! C14 bomb restart
@@ -131,7 +132,7 @@ CONTAINS
                CALL trc_ini_lobster( )
                ! trb and trn should be the same at the start?
                DO jn = 1,jp_lobster
-                  trb(:,:,:,jn) = trn(:,:,:jn)
+                  trb(:,:,:,jn) = trn(:,:,:,jn)
                END DO
             ELSE
                CALL trc_rst_read_lobster( numrtr )      ! LOBSTER bio-model
@@ -148,7 +149,7 @@ CONTAINS
                CALL trc_ini_pisces( )
                ! trb and trn should be the same at the start?
                DO jn = jp_lp+1, jp_pisces
-                  trb(:,:,:,jn) = trn(:,:,:jn)
+                  trb(:,:,:,jn) = trn(:,:,:,jn)
                END DO
             ELSE
                CALL trc_rst_read_pisces( numrtr )
@@ -165,11 +166,12 @@ CONTAINS
                CALL trc_ini_cfc( )
                ! trb and trn should be the same at the start?
                DO jn = jp_lc, jp_cfc
-                  trb(:,:,:,jn) = trn(:,:,:jn)
+                  trb(:,:,:,jn) = trn(:,:,:,jn)
                END DO
             ELSE
                CALL trc_rst_read_cfc( numrtr )
             ENDIF
+         ENDIF
          IF ( lk_c14b ) THEN
             DO jn = jp_lb+1, jp_c14b
                ! Exit the loop if the id for either the trn or trb array is not there 
@@ -181,7 +183,7 @@ CONTAINS
                CALL trc_ini_c14b( )
                ! trb and trn should be the same at the start?
                DO jn = jp_lb+1, jp_c14b
-                  trb(:,:,:,jn) = trn(:,:,:jn)
+                  trb(:,:,:,jn) = trn(:,:,:,jn)
                END DO
             ELSE
                CALL trc_rst_read_c14b( numrtr )
@@ -198,7 +200,7 @@ CONTAINS
                CALL trc_ini_my_trc( )
                ! trb and trn should be the same at the start?
                DO jn = jp_lm+1, jp_my_trc
-                  trb(:,:,:,jn) = trn(:,:,:jn)
+                  trb(:,:,:,jn) = trn(:,:,:,jn)
                END DO
             ELSE
                CALL trc_rst_read_my_trc( numrtr )
