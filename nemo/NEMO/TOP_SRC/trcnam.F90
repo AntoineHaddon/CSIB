@@ -82,6 +82,7 @@ CONTAINS
       nn_rsttr      =  0
       cn_trcrst_in  = 'restart_trc'
       cn_trcrst_out = 'restart_trc'
+      ln_altres     = .FALSE.
       !
       DO jn = 1, jptra
          WRITE( sn_tracer(jn)%clsname,'("TR_",I1)'           ) jn
