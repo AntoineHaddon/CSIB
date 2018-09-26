@@ -178,11 +178,14 @@ CONTAINS
          ln_trcdta = .TRUE.
       ENDIF
       !
-      IF( ln_rsttr .AND. .NOT.ln_trcdmp .AND. ln_trcdta ) THEN
-          CALL ctl_warn( 'trc_nam: passive tracer restart and  data intialisation, ',   &
-             &           'we keep the restart values and set ln_trcdta to FALSE' )
-         ln_trcdta = .FALSE.
-      ENDIF
+      ! Nothing changes if ln_trcdta is .FALSE. or .TRUE. if ln_rsttr is .TRUE., all tracer values will be from the
+      ! restart file. However, if this code is executed, then the ln_altres does not work as intended because the tracer
+      ! data initialisation has not been done.
+!      IF( ln_rsttr .AND. .NOT.ln_trcdmp .AND. ln_trcdta ) THEN
+!          CALL ctl_warn( 'trc_nam: passive tracer restart and  data intialisation, ',   &
+!             &           'we keep the restart values and set ln_trcdta to FALSE' )
+!         ln_trcdta = .FALSE.
+!      ENDIF
       !
       IF( .NOT.ln_trcdta ) THEN
          ln_trc_ini(:) = .FALSE.

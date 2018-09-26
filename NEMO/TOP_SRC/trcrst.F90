@@ -124,6 +124,8 @@ CONTAINS
                trc_in_restart(jn) = .TRUE.
             ELSE ! Not found in restart, retain values of trn,trb that were set during that module's initialization
                trc_in_restart(jn) = .FALSE.
+               IF (lwp) WRITE(numout,*) TRIM(ctrcnm(jn))//' not found in restart, reinitializing'
+               
             ENDIF
          END DO
 
@@ -133,41 +135,41 @@ CONTAINS
             CALL trc_dta( nit000, ztrcdta )   ! read tracer data at nit000
             ! Check package by to see which tracers should be initialised be in data files
             IF( lk_lobster ) THEN
-               IF ( .NOT. ALL(trc_in_restart(jp_lob0:jp_lob1)) ) THEN
-                  CALL tracer_reinit(trc_in_restart, ztrcdta, jp_lob0, jp_lob1)
-               ELSE
+               IF ( ALL(trc_in_restart(jp_lob0:jp_lob1)) ) THEN
                   CALL trc_rst_read_lobster( numrtr )      ! LOBSTER bio-model
+               ELSE
+                  CALL tracer_reinit(trc_in_restart, ztrcdta, jp_lob0, jp_lob1)
                ENDIF
             ENDIF
             IF( lk_pisces  ) THEN 
-               IF ( .NOT. ALL(trc_in_restart(jp_pcs0:jp_pcs1)) ) THEN
-                  CALL tracer_reinit(trc_in_restart, ztrcdta, jp_pcs0, jp_pcs1)
-               ELSE
+               IF ( ALL(trc_in_restart(jp_pcs0:jp_pcs1)) ) THEN
                   CALL trc_rst_read_pisces( numrtr )
+               ELSE
+                  CALL tracer_reinit(trc_in_restart, ztrcdta, jp_pcs0, jp_pcs1)
                ENDIF
             ENDIF
             IF( lk_cfc     ) THEN 
-               IF ( .NOT. ALL(trc_in_restart(jp_cfc0:jp_cfc1)) ) THEN
-                  CALL tracer_reinit(trc_in_restart, ztrcdta, jp_cfc0, jp_cfc1)
-               ELSE
+               IF ( ALL(trc_in_restart(jp_cfc0:jp_cfc1)) ) THEN
                   CALL trc_rst_read_cfc( numrtr )
+               ELSE
+                  CALL tracer_reinit(trc_in_restart, ztrcdta, jp_cfc0, jp_cfc1)
                ENDIF
             ENDIF
             IF( lk_c14b    ) THEN 
-               IF ( .NOT. ALL(trc_in_restart(jp_c14b0:jp_c14b1)) ) THEN
-                  CALL tracer_reinit(trc_in_restart, ztrcdta, jp_c14b0, jp_c14b1)
-               ELSE
+               IF ( ALL(trc_in_restart(jp_c14b0:jp_c14b1)) ) THEN
                   CALL trc_rst_read_c14b( numrtr )
+               ELSE
+                  CALL tracer_reinit(trc_in_restart, ztrcdta, jp_c14b0, jp_c14b1)
                ENDIF
             ENDIF
             IF( lk_my_trc  ) THEN 
-               IF ( .NOT. ALL(trc_in_restart(jp_myt0:jp_myt1)) ) THEN
-                  CALL tracer_reinit(trc_in_restart, ztrcdta, jp_myt0, jp_myt1)
-               ELSE
+               IF ( ALL(trc_in_restart(jp_myt0:jp_myt1)) ) THEN
                   CALL trc_rst_read_my_trc( numrtr )
+               ELSE
+                  CALL tracer_reinit(trc_in_restart, ztrcdta, jp_myt0, jp_myt1)
                ENDIF
             ENDIF
-            CALL wrk_dealloc( jpi, jpj, jpk, nb_trcdta, ztrcdta )
+            IF ( ln_trcdta ) CALL wrk_dealloc( jpi, jpj, jpk, nb_trcdta, ztrcdta )
          ELSE ! If trcdta_renit is FALSE, then all the fields are present and any auxiliary fields from all the tracer
               ! packages can be loaded
             IF( lk_lobster )   CALL trc_rst_read_lobster( numrtr )      ! LOBSTER bio-model
