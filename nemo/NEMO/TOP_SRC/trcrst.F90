@@ -122,10 +122,8 @@ CONTAINS
                CALL iom_get( numrtr, jpdom_autoglo, 'TRN'//ctrcnm(jn), trn(:,:,:,jn) )
                CALL iom_get( numrtr, jpdom_autoglo, 'TRB'//ctrcnm(jn), trb(:,:,:,jn) )
                trc_in_restart(jn) = .TRUE.
-            ELSE ! Not found in restart, so set to 0
+            ELSE ! Not found in restart, retain values of trn,trb that were set during that module's initialization
                trc_in_restart(jn) = .FALSE.
-               trn(:,:,:,jn) = 0.
-               trb(:,:,:,jn) = 0.
             ENDIF
          END DO
 
@@ -201,7 +199,7 @@ CONTAINS
       !!
       !! ** purpose  :   write passive tracer fields in restart files
       !!----------------------------------------------------------------------
-      INTEGER, INTENT( in ) ::   kt    ! ocean time-step index
+      INTEGER, INTENT( in ) ::   kt    ! ocean time-step inex
       !!
       INTEGER  :: jn
       REAL(wp) :: zarak0
