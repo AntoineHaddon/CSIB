@@ -26,11 +26,17 @@ MODULE trcrst
    USE trc
    USE trcnam_trp
    USE iom
+   USE trcdta          ! initialisation form files
    USE trcrst_cfc      ! CFC      
    USE trcrst_lobster  ! LOBSTER  restart
    USE trcrst_pisces   ! PISCES   restart
    USE trcrst_c14b     ! C14 bomb restart
    USE trcrst_my_trc   ! MY_TRC   restart
+   USE trcini_cfc      ! CFC      
+   USE trcini_lobster  ! LOBSTER  restart
+   USE trcini_pisces   ! PISCES   restart
+   USE trcini_c14b     ! C14 bomb restart
+   USE trcini_my_trc   ! MY_TRC   restart
    USE daymod
    IMPLICIT NONE
    PRIVATE
@@ -98,8 +104,9 @@ CONTAINS
       !!
       !! ** purpose  :   read passive tracer fields in restart files
       !!----------------------------------------------------------------------
-      INTEGER  ::  jn     
-
+      INTEGER  ::  jn
+      LOGICAL, DIMENSION(jptra) :: trc_in_restart
+      REAL(wp), POINTER, DIMENSION(:,:,:,:) ::  ztrcdta   ! 4D  workspace
       !!----------------------------------------------------------------------
       !
       IF(lwp) WRITE(numout,*)
@@ -107,19 +114,82 @@ CONTAINS
       IF(lwp) WRITE(numout,*) '~~~~~~~~~~~~'
 
       ! READ prognostic variables and computes diagnostic variable
-      DO jn = 1, jptra
-         CALL iom_get( numrtr, jpdom_autoglo, 'TRN'//ctrcnm(jn), trn(:,:,:,jn) )
-      END DO
+      IF ( ln_altres ) THEN
+         trc_in_restart(:) = .FALSE.
+         DO jn = 1, jptra
+            IF ( iom_varid( numrtr, 'TRN'//ctrcnm(jn), ldstop = .FALSE. ) > 0 .AND.     &
+                 iom_varid( numrtr, 'TRB'//ctrcnm(jn), ldstop = .FALSE. ) > 0      ) THEN
+               CALL iom_get( numrtr, jpdom_autoglo, 'TRN'//ctrcnm(jn), trn(:,:,:,jn) )
+               CALL iom_get( numrtr, jpdom_autoglo, 'TRB'//ctrcnm(jn), trb(:,:,:,jn) )
+               trc_in_restart(jn) = .TRUE.
+            ELSE ! Not found in restart, retain values of trn,trb that were set during that module's initialization
+               trc_in_restart(jn) = .FALSE.
+               IF (lwp) WRITE(numout,*) TRIM(ctrcnm(jn))//' not found in restart, reinitializing'
+               
+            ENDIF
+         END DO
 
-      DO jn = 1, jptra
-         CALL iom_get( numrtr, jpdom_autoglo, 'TRB'//ctrcnm(jn), trb(:,:,:,jn) )
-      END DO
+         ! Now check to see if any of the missing tracers should be initialised from data files
+         IF ( .NOT. ALL(trc_in_restart) ) THEN
+            CALL wrk_alloc( jpi, jpj, jpk, nb_trcdta, ztrcdta )    ! Memory allocation
+            CALL trc_dta( nit000, ztrcdta )   ! read tracer data at nit000
+            ! Check package by to see which tracers should be initialised be in data files
+            IF( lk_lobster ) THEN
+               IF ( ALL(trc_in_restart(jp_lob0:jp_lob1)) ) THEN
+                  CALL trc_rst_read_lobster( numrtr )      ! LOBSTER bio-model
+               ELSE
+                  CALL tracer_reinit(trc_in_restart, ztrcdta, jp_lob0, jp_lob1)
+               ENDIF
+            ENDIF
+            IF( lk_pisces  ) THEN 
+               IF ( ALL(trc_in_restart(jp_pcs0:jp_pcs1)) ) THEN
+                  CALL trc_rst_read_pisces( numrtr )
+               ELSE
+                  CALL tracer_reinit(trc_in_restart, ztrcdta, jp_pcs0, jp_pcs1)
+               ENDIF
+            ENDIF
+            IF( lk_cfc     ) THEN 
+               IF ( ALL(trc_in_restart(jp_cfc0:jp_cfc1)) ) THEN
+                  CALL trc_rst_read_cfc( numrtr )
+               ELSE
+                  CALL tracer_reinit(trc_in_restart, ztrcdta, jp_cfc0, jp_cfc1)
+               ENDIF
+            ENDIF
+            IF( lk_c14b    ) THEN 
+               IF ( ALL(trc_in_restart(jp_c14b0:jp_c14b1)) ) THEN
+                  CALL trc_rst_read_c14b( numrtr )
+               ELSE
+                  CALL tracer_reinit(trc_in_restart, ztrcdta, jp_c14b0, jp_c14b1)
+               ENDIF
+            ENDIF
+            IF( lk_my_trc  ) THEN 
+               IF ( ALL(trc_in_restart(jp_myt0:jp_myt1)) ) THEN
+                  CALL trc_rst_read_my_trc( numrtr )
+               ELSE
+                  CALL tracer_reinit(trc_in_restart, ztrcdta, jp_myt0, jp_myt1)
+               ENDIF
+            ENDIF
+            IF ( ln_trcdta ) CALL wrk_dealloc( jpi, jpj, jpk, nb_trcdta, ztrcdta )
+         ELSE ! If trcdta_renit is FALSE, then all the fields are present and any auxiliary fields from all the tracer
+              ! packages can be loaded
+            IF( lk_lobster )   CALL trc_rst_read_lobster( numrtr )      ! LOBSTER bio-model
+            IF( lk_pisces  )   CALL trc_rst_read_pisces ( numrtr )      ! PISCES  bio-model
+            IF( lk_cfc     )   CALL trc_rst_read_cfc    ( numrtr )      ! CFC     tracers
+            IF( lk_c14b    )   CALL trc_rst_read_c14b   ( numrtr )      ! C14 bomb  tracer
+            IF( lk_my_trc  )   CALL trc_rst_read_my_trc ( numrtr )      ! MY_TRC  tracers
+         ENDIF
+      ELSE
+         DO jn = 1, jptra
+            CALL iom_get( numrtr, jpdom_autoglo, 'TRN'//ctrcnm(jn), trn(:,:,:,jn) )
+            CALL iom_get( numrtr, jpdom_autoglo, 'TRB'//ctrcnm(jn), trb(:,:,:,jn) )
+         END DO
+         IF( lk_lobster )   CALL trc_rst_read_lobster( numrtr )      ! LOBSTER bio-model
+         IF( lk_pisces  )   CALL trc_rst_read_pisces ( numrtr )      ! PISCES  bio-model
+         IF( lk_cfc     )   CALL trc_rst_read_cfc    ( numrtr )      ! CFC     tracers
+         IF( lk_c14b    )   CALL trc_rst_read_c14b   ( numrtr )      ! C14 bomb  tracer
+         IF( lk_my_trc  )   CALL trc_rst_read_my_trc ( numrtr )      ! MY_TRC  tracers
+      ENDIF
 
-      IF( lk_lobster )   CALL trc_rst_read_lobster( numrtr )      ! LOBSTER bio-model
-      IF( lk_pisces  )   CALL trc_rst_read_pisces ( numrtr )      ! PISCES  bio-model
-      IF( lk_cfc     )   CALL trc_rst_read_cfc    ( numrtr )      ! CFC     tracers
-      IF( lk_c14b    )   CALL trc_rst_read_c14b   ( numrtr )      ! C14 bomb  tracer
-      IF( lk_my_trc  )   CALL trc_rst_read_my_trc ( numrtr )      ! MY_TRC  tracers
 
       CALL iom_close( numrtr )
       !
@@ -131,7 +201,7 @@ CONTAINS
       !!
       !! ** purpose  :   write passive tracer fields in restart files
       !!----------------------------------------------------------------------
-      INTEGER, INTENT( in ) ::   kt    ! ocean time-step index
+      INTEGER, INTENT( in ) ::   kt    ! ocean time-step inex
       !!
       INTEGER  :: jn
       REAL(wp) :: zarak0
@@ -311,6 +381,26 @@ CONTAINS
       !
    END SUBROUTINE trc_rst_stat
 
+   !> Initializes passive tracer values from a data file if it has been defined in the namelist and has not been found
+   !! in the restart file
+   SUBROUTINE tracer_reinit( trc_in_restart, ztrcdta, jp0, jp1 )
+      LOGICAL, DIMENSION(jptra),                  INTENT(IN) :: trc_in_restart !< True if the tracer was found
+                                                                               !! in the restart 
+      REAL(wp), DIMENSION(jpi,jpj,jpk,nb_trcdta), INTENT(IN) :: ztrcdta        !< Contains tracer data from
+                                                                               !! initialisation files
+      INTEGER,                                    INTENT(IN) :: jp0            !< First index to check
+      INTEGER,                                    INTENT(IN) :: jp1            !< Last index to check
+      ! Local variables
+      INTEGER :: jl, jn
+      DO jn = jp0, jp1
+         IF( ln_trc_ini(jn) .AND. (.NOT. trc_in_restart(jn)) ) THEN
+            jl = n_trc_index(jn) 
+            trn(:,:,:,jn) = ztrcdta(:,:,:,jl) * tmask(:,:,:)  
+            trb(:,:,:,jn) = trn(:,:,:,jn)
+         ENDIF
+      END DO
+
+   END SUBROUTINE tracer_reinit
 #else
    !!----------------------------------------------------------------------
    !!  Dummy module :                                     No passive tracer
