@@ -261,7 +261,8 @@ CONTAINS
             zkgo2 (ji,jj) = zkgwan * SQRT( 660./ zsch_o2 )
 
             ! Radiocarbon based on equation 29
-            zh2co3r(ji,jj) = zh2co3a(ji,jj) * ( tra(ji,jj,1,jpdrc)/tra(ji,jj,1,jpdab) )
+            ! MAX is to avoid a divide by 0
+            zh2co3r(ji,jj) = zh2co3a(ji,jj) * ( trn(ji,jj,1,jpdrc)/MAX(trn(ji,jj,1,jpdab),1.e-30))*tmask(ji,jj,1)
          END DO
       END DO
 

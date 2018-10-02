@@ -178,14 +178,12 @@ CONTAINS
          END DO  
       END DO  
 
-!! When running coupled in CanESM, we want to mask out the closed seas (Caspian @ ORCA1),
+!! When running coupled in CanESM2, we want to mask out the closed seas (Caspian @ ORCA1),
 !! for the purposes of ocean biogeochemistry, but we keep it in the physics.
-!! In the case of ocean only, just use the regular tmask
-
-      tmask_bgc_closea(:,:,:) = tmask(:,:,:)
-      IF( ln_cpl ) THEN
+!      IF( ln_cpl ) THEN
          IF( cp_cfg == 'orca' ) THEN
             IF( jp_cfg == 1 )   THEN
+               tmask_bgc_closea(:,:,:) = tmask(:,:,:)
                ! Caspian sea indices, from closea.
                ii0=332
                ii1=344
@@ -196,7 +194,7 @@ CONTAINS
                IF(lwp) WRITE(numout,*)
             ENDIF
          ENDIF
-      ENDIF
+ !     ENDIF
 
 !!gm  ????
 #if defined key_zdfkpp
