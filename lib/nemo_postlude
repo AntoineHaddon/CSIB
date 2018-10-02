@@ -72,8 +72,18 @@
     touch saved_history_FILE_NAMES
 
     # History file suffix and frequency lists
-    nemo_hist_file_suffix_list=${nemo_hist_file_suffix_list:="icemod grid_T grid_U grid_V grid_W ptrc_T diad_T"}
-    nemo_hist_file_freq_list=${nemo_hist_file_freq_list:="1y 1m 5d 1d 3h 1h"}
+    nemo_hist_file_suffix_list_save=${nemo_hist_file_suffix_list_save}
+    nemo_hist_file_freq_list_save=${nemo_hist_file_freq_list_save}
+
+    nemo_hist_file_suffix_list_array_save=($nemo_hist_file_suffix_list_save)
+    nemo_hist_file_freq_list_array_save=($nemo_hist_file_freq_list_save)
+
+    # Check that the lists are the same length. Use this number to loop below..
+    n_suffix=${#nemo_hist_file_suffix_list_array_save[@]}
+    n_freq=${#nemo_hist_file_freq_list_array_save[@]}
+    if [ "$n_suffix" -ne "$n_freq" ]; then
+      bail "ERROR: nemo_hist_file_suffix_list_array_save and nemo_hist_file_freq_list_array_save MUST have the same number of elements."
+    fi  
 
     # Collect history files into directories and save 
     nemo_save_hist=${nemo_save_hist:-on}
@@ -81,8 +91,9 @@
 
     if [ $nemo_save_hist -eq 1 ] ; then
       # Define the list of history files to rebuild
-      for sfx in ${nemo_hist_file_suffix_list}; do
-        for freq in ${nemo_hist_file_freq_list}; do
+      for i in $(seq 0 $(($n_suffix-1))); do
+          sfx=${nemo_hist_file_suffix_list_array_save[$i]}
+          freq=${nemo_hist_file_freq_list_array_save[$i]}
           pfx=${cn_exp}_${freq}_${nemo_start_date}_${nemo_stop_date}_$sfx
           fnpatt=${pfx}_0000.nc
           if [ -s "$fnpatt" ]; then
@@ -95,8 +106,7 @@
              ncsave=${cn_exp}_${nemo_start_year}_m${nemo_start_mon}_${freq}_${sfx}    
              save ${pfx}.nc ${uxxx}_${ncsave}.nc && echo "${uxxx}_${ncsave}.nc" >> saved_history_FILE_NAMES
           fi   
-        done
-      done
+       done
       
       # Add the mesh_mask file created by the model, if present
       if [ -s mesh_mask_0000.nc ]; then
