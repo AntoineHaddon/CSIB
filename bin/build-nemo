@@ -451,7 +451,7 @@ if [ $build_nemo_exe -eq 1 ]; then
       echo "Saved $nemo_exe on RUNPATH $RUNPATH"
    else
       # In ocean-only we copy to the PROD dir
-      ln -s $nemo_config/BLD/bin/nemo.exe $CWD/$nemo_exe
+      ln -s ${nemo_source_path}/nemo/CONFIG/${nemo_config}/BLD/bin/nemo.exe ${CWD}/${nemo_exe}
    fi
 fi
 
