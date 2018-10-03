@@ -95,14 +95,17 @@
           sfx=${nemo_hist_file_suffix_list_array_save[$i]}
           freq=${nemo_hist_file_freq_list_array_save[$i]}
           pfx=${cn_exp}_${freq}_${nemo_start_date}_${nemo_stop_date}_$sfx
+          echo $pfx
           fnpatt=${pfx}_0000.nc
           if [ -s "$fnpatt" ]; then
+             echo "found $fnpatt"
              rm -rf $pfx
              mkdir $pfx
              mv ${pfx}_[0-9]*.nc $pfx
  	     ncsave=${cn_exp}_${nemo_start_year}_m${nemo_start_mon}_${freq}_${sfx}
              save $pfx ${uxxx}_$ncsave && echo "${uxxx}_$ncsave" >> saved_history_FILE_NAMES
           elif [ -s "${pfx}.nc" ]; then
+             echo "found ${pfx}.nc"
              ncsave=${cn_exp}_${nemo_start_year}_m${nemo_start_mon}_${freq}_${sfx}    
              save ${pfx}.nc ${uxxx}_${ncsave}.nc && echo "${uxxx}_${ncsave}.nc" >> saved_history_FILE_NAMES
           fi   
