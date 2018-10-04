@@ -195,8 +195,8 @@ CONTAINS
          denitr(:,:,:) = denitr(:,:,:) * zrfact2
          nh4ox(:,:,:) = nh4ox(:,:,:) * zrfact2
          IF( jnt == nrdttrc ) THEN
-       !   CALL iom_put( "Denitr"   , denitr(:,:,:) * tmask(:,:,:) )  ! rate of denitrification
-          CALL iom_put( "Nitrif"   , nh4ox(:,:,:) * tmask(:,:,:) )  ! rate of nitrification
+       !   CALL iom_put( "Denitr"   , denitr(:,:,:) * tmask_bgc_closea(:,:,:) )  ! rate of denitrification
+          CALL iom_put( "Nitrif"   , nh4ox(:,:,:) * tmask_bgc_closea(:,:,:) )  ! rate of nitrification
          ENDIF
       ENDIF
 

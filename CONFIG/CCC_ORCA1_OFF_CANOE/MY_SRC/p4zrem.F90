@@ -44,7 +44,7 @@ MODULE p4zrem
    REAL(wp), PUBLIC ::  ligand    = 6.0E+2_wp  !: ligand concentration
    REAL(wp), PUBLIC ::  pocfctr   = 0.65574_wp !: multiplier for POC-dependent scavenging
    REAL(wp), PUBLIC ::  o2thresh  = 6._wp      !: O2 threshold for denitrification
-   REAL(wp), PUBLIC ::  nh4frx    = 02.5_wp    !: annamox fraction of denitrification
+   REAL(wp), PUBLIC ::  nh4frx    = 0.25_wp    !: anammox fraction of denitrification
    REAL(wp), PUBLIC ::  oxymin    = 1._wp      !: half saturation constant for anoxia 
    REAL(wp), PUBLIC ::  nyld      = 0.8_wp     !: denitrification stoichiometric coefficient
 
@@ -138,7 +138,7 @@ CONTAINS
                zofer2 = zorem2 * rr_fe2c
 
 ! denitrification is assumed to remove NO3 as a fraction of remineralization increasing linearly from 0 to 1 with declining [O2] for [O2]<10 uM
-! NO3 fraction is then divided 0.75/0.25 between NO3 and NH4 (50% classical denitrification and 50% annamox)
+! NO3 fraction is then divided between NO3 and NH4 according to the parameter nh4frx (for anammox 50% of N comes from NO3 and 50% from NH4)
                zonitr=1.-MIN(trn(ji,jj,jk,jpoxy),o2thresh)/o2thresh
                tra(ji,jj,jk,jpnh4) = tra(ji,jj,jk,jpnh4) + (zorem + zorem2)*rr_n2c - (zorem + zorem2)*nyld*zonitr*0.5*nh4frx
                tra(ji,jj,jk,jpno3) = tra(ji,jj,jk,jpno3) - (zorem + zorem2)*nyld*zonitr*(1.-0.5*nh4frx)
@@ -148,7 +148,7 @@ CONTAINS
                tra(ji,jj,jk,jppoc) = tra(ji,jj,jk,jppoc) - zorem
                tra(ji,jj,jk,jpgoc) = tra(ji,jj,jk,jpgoc) - zorem2
                tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) + 1.e-6 * (zorem + zorem2)*rr_n2c                         ! 1 mol of alkalinity per mol of N
-               tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) + 1.e-6 * (zorem + zorem2)*nyld*zonitr*(1.-nh4frx)        ! +1 mol if denitrification, 0 if annamox
+               tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) + 1.e-6 * (zorem + zorem2)*nyld*zonitr*(1.-nh4frx)        ! +1 mol if denitrification, 0 if anammox
                denitr(ji,jj,jk) = (zorem + zorem2)*zonitr*nyld
 
             END DO
@@ -195,8 +195,8 @@ CONTAINS
          denitr(:,:,:) = denitr(:,:,:) * zrfact2
          nh4ox(:,:,:) = nh4ox(:,:,:) * zrfact2
          IF( jnt == nrdttrc ) THEN
-          CALL iom_put( "Denitr"   , denitr(:,:,:) * tmask(:,:,:) )  ! rate of denitrification
-          CALL iom_put( "Nitrif"   , nh4ox(:,:,:) * tmask(:,:,:) )  ! rate of nitrification
+       !   CALL iom_put( "Denitr"   , denitr(:,:,:) * tmask_bgc_closea(:,:,:) )  ! rate of denitrification
+          CALL iom_put( "Nitrif"   , nh4ox(:,:,:) * tmask_bgc_closea(:,:,:) )  ! rate of nitrification
          ENDIF
       ENDIF
 

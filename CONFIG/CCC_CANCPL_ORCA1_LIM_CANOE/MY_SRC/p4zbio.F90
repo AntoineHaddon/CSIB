@@ -109,7 +109,7 @@ CONTAINS
       IF( ln_diatrc ) THEN
          denitr(:,:,:) = denitr(:,:,:) * xnegtr(:,:,:)
          IF( jnt == nrdttrc ) THEN
-          CALL iom_put( "Denitr"   , denitr(:,:,:) * tmask(:,:,:) )  ! rate of denitrification
+          CALL iom_put( "Denitr"   , denitr(:,:,:) * tmask_bgc_closea(:,:,:) )  ! rate of denitrification
          ENDIF
       ENDIF
 

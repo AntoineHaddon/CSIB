@@ -119,6 +119,7 @@ CONTAINS
 
                !   Update the arrays TRA which contain the biological sources and sinks
                tra(ji,jj,jk,jpnh4) = tra(ji,jj,jk,jpnh4) + R*rr_n2c + nxs1 + nxs2
+               tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) + (R*rr_n2c + nxs1 + nxs2)*1.E-6
                tra(ji,jj,jk,jpoxy) = tra(ji,jj,jk,jpoxy) - R - cxs
                tra(ji,jj,jk,jpfer) = tra(ji,jj,jk,jpfer) + R*rr_fe2c + fexs1 + fexs2
                tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) + (R + cxs)*1.E-6
@@ -140,11 +141,11 @@ CONTAINS
       !
       IF( ln_diatrc .AND. lk_iomput ) THEN
          zrfact2 = 1.e-3 * rfact2r
-!         grazing(:,:,:) = grazing(:,:,:) * zrfact2 * tmask(:,:,:)   ! Total grazing of phyto by zoo
-         prodcal(:,:,:) = prodcal(:,:,:) * zrfact2 * tmask(:,:,:)   ! Calcite production
+!         grazing(:,:,:) = grazing(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:)   ! Total grazing of phyto by zoo
+         prodcal(:,:,:) = prodcal(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:)   ! Calcite production
          IF( jnt == nrdttrc ) THEN
-            CALL iom_put( "GRAZ2" , grazing2 * zrfact2 * tmask(:,:,:) )  ! Grazing of large phytoplankton
-            CALL iom_put( "GRAZ3" , grazing3 * zrfact2 * tmask(:,:,:) )  ! Grazing of microzooplankton
+            CALL iom_put( "GRAZ2" , grazing2 * zrfact2 * tmask_bgc_closea(:,:,:) )  ! Grazing of large phytoplankton
+            CALL iom_put( "GRAZ3" , grazing3 * zrfact2 * tmask_bgc_closea(:,:,:) )  ! Grazing of microzooplankton
             CALL iom_put( "PCAL" , prodcal  )  ! Calcite production
          ENDIF
       ENDIF
