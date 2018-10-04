@@ -187,7 +187,7 @@ CONTAINS
             ztkel = tsn(ji,jj,1,jp_tem) + 273.15
             zt    = ztkel * 0.01
             zt2   = zt * zt
-            zsal  = tsn(ji,jj,1,jp_sal) + ( 1.- tmask(ji,jj,1) ) * 35.
+            zsal  = tsn(ji,jj,1,jp_sal) + ( 1.- tmask_bgc_closea(ji,jj,1) ) * 35.
             zsal2 = zsal * zsal
             zlogt = LOG( zt )
             !                             ! LN(K0) OF SOLUBILITY OF CO2 (EQ. 12, WEISS, 1980)
@@ -223,7 +223,7 @@ CONTAINS
 
                ! SET ABSOLUTE TEMPERATURE
                ztkel   = tsn(ji,jj,jk,jp_tem) + 273.15
-               zsal    = tsn(ji,jj,jk,jp_sal) + ( 1.-tmask(ji,jj,jk) ) * 35.
+               zsal    = tsn(ji,jj,jk,jp_sal) + ( 1.-tmask_bgc_closea(ji,jj,jk) ) * 35.
                zsqrt  = SQRT( zsal )
                zsal15  = zsqrt * zsal
                zlogt  = LOG( ztkel )
@@ -231,7 +231,7 @@ CONTAINS
                zis    = 19.924 * zsal / ( 1000.- 1.005 * zsal )
                zis2   = zis * zis
                zisqrt = SQRT( zis )
-               ztc     = tsn(ji,jj,jk,jp_tem) + ( 1.- tmask(ji,jj,jk) ) * 20.
+               ztc     = tsn(ji,jj,jk,jp_tem) + ( 1.- tmask_bgc_closea(ji,jj,jk) ) * 20.
 
                ! CHLORINITY (WOOSTER ET AL., 1969)
                zcl     = zsal * salchl
