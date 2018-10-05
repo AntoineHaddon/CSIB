@@ -262,7 +262,7 @@ CONTAINS
 
             ! Radiocarbon based on equation 29
             ! MAX is to avoid a divide by 0
-            zh2co3r(ji,jj) = zh2co3a(ji,jj) * ( trn(ji,jj,1,jpdrc)/MAX(trn(ji,jj,1,jpdab),1.e-30))*tmask(ji,jj,1)
+            zh2co3r(ji,jj) = zh2co3a(ji,jj) * ( trn(ji,jj,1,jpdrc)/MAX(trn(ji,jj,1,jpdab),1.e-30))*tmask_bgc_closea(ji,jj,1)
          END DO
       END DO
 

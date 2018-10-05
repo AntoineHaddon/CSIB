@@ -123,8 +123,8 @@ CONTAINS
          DO jk = 1, jpk
             DO jj = 1, jpj
                DO ji = 1, jpi
-                  ztmas   = tmask(ji,jj,jk)
-                  ztmas1  = 1. - tmask(ji,jj,jk)
+                  ztmas   = tmask_bgc_closea(ji,jj,jk)
+                  ztmas1  = 1. - tmask_bgc_closea(ji,jj,jk)
                   zcaralk = trn(ji,jj,jk,jptal) - borat(ji,jj,jk) / (  1. + 1.E-8 / ( rtrn + akb3(ji,jj,jk) )  )
                   zco3    = ( zcaralk - trn(ji,jj,jk,jpdic) ) * ztmas + 0.5e-3 * ztmas1
                   zbicarb = ( 2. * trn(ji,jj,jk,jpdic) - zcaralk )

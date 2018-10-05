@@ -138,7 +138,7 @@ CONTAINS
          ze1  (:,:,1) = parlux * qsr(:,:)             ! surface value : separation in R-G-B + near surface 
          ze2  (:,:,1) = parlux * qsr(:,:)
          ze3  (:,:,1) = parlux * qsr(:,:)
-         etot3(:,:,1) =          qsr(:,:) * tmask(:,:,1)
+         etot3(:,:,1) =          qsr(:,:) * tmask_bgc_closea(:,:,1)
          !
          DO jk = 2, nksrp + 1
 !CDIR NOVERRCHK
@@ -153,7 +153,7 @@ CONTAINS
                   ze1(ji,jj,jk) = zc1
                   ze2(ji,jj,jk) = zc2
                   ze3(ji,jj,jk) = zc3
-                  etot3(ji,jj,jk) = ( zc0 + zc1 + zc2 + zc3 ) * tmask(ji,jj,jk)
+                  etot3(ji,jj,jk) = ( zc0 + zc1 + zc2 + zc3 ) * tmask_bgc_closea(ji,jj,jk)
               END DO
               !
             END DO
@@ -222,12 +222,12 @@ CONTAINS
         !
         IF( lk_iomput ) THEN
            IF( jnt == nrdttrc ) THEN
-              CALL iom_put( "Heup", heup(:,:  ) * tmask(:,:,1) )  ! euphotic layer deptht
-              CALL iom_put( "PAR" , etot(:,:,:) * tmask(:,:,:) )  ! Photosynthetically Available Radiation
+              CALL iom_put( "Heup", heup(:,:  ) * tmask_bgc_closea(:,:,1) )  ! euphotic layer deptht
+              CALL iom_put( "PAR" , etot(:,:,:) * tmask_bgc_closea(:,:,:) )  ! Photosynthetically Available Radiation
            ENDIF
         ELSE
-           trc2d(:,:,  jp_pcs0_2d + 10) = heup(:,:  ) * tmask(:,:,1)  
-           trc3d(:,:,:,jp_pcs0_3d + 3)  = etot(:,:,:) * tmask(:,:,:)
+           trc2d(:,:,  jp_pcs0_2d + 10) = heup(:,:  ) * tmask_bgc_closea(:,:,1)  
+           trc3d(:,:,:,jp_pcs0_3d + 3)  = etot(:,:,:) * tmask_bgc_closea(:,:,:)
         ENDIF
         !
       ENDIF

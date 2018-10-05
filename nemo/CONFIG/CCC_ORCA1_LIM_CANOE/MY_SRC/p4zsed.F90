@@ -226,12 +226,12 @@ CONTAINS
       IF( ln_diatrc ) THEN
          zfact = 1.e+3 * rfact2r
          IF( lk_iomput ) THEN
-            zafe(:,:,:)  =   zirondep(:,:,:) * 1.E-9                      * tmask(:,:,:)      ! zirondep and ironsed are in nmol m^-3 s^-1
-            zbfe(:,:,:)  =   ironsed(:,:,:) * 1.E-9                       * tmask(:,:,:) 
-            zdnf(:,:,:)  =   znitrpot(:,:,:) * nitrfix * r1_rday * 0.001  * tmask(:,:,:)      ! znitrpot is n.d., nitrfix is in mmol m^-3 d^-1
-            zocdep(:,:)  =   zocdep(:,:) * r1_rday * 0.001                * tmask(:,:,1)      ! zocdep, zicdep, and zburial are in mmol m^-2 d^-1
-            zicdep(:,:)  =   zicdep(:,:) * r1_rday * 0.001                * tmask(:,:,1)
-            zburial(:,:) =   zburial(:,:) * r1_rday * 0.001               * tmask(:,:,1)
+            zafe(:,:,:)  =   zirondep(:,:,:) * 1.E-9                      * tmask_bgc_closea(:,:,:)      ! zirondep and ironsed are in nmol m^-3 s^-1
+            zbfe(:,:,:)  =   ironsed(:,:,:) * 1.E-9                       * tmask_bgc_closea(:,:,:) 
+            zdnf(:,:,:)  =   znitrpot(:,:,:) * nitrfix * r1_rday * 0.001  * tmask_bgc_closea(:,:,:)      ! znitrpot is n.d., nitrfix is in mmol m^-3 d^-1
+            zocdep(:,:)  =   zocdep(:,:) * r1_rday * 0.001                * tmask_bgc_closea(:,:,1)      ! zocdep, zicdep, and zburial are in mmol m^-2 d^-1
+            zicdep(:,:)  =   zicdep(:,:) * r1_rday * 0.001                * tmask_bgc_closea(:,:,1)
+            zburial(:,:) =   zburial(:,:) * r1_rday * 0.001               * tmask_bgc_closea(:,:,1)
             IF( jnt == nrdttrc ) THEN
                CALL iom_put( "Irondep", zafe  )  ! surface downward net flux of iron
                CALL iom_put( "Ironsed", zbfe  )  ! iron from sediments
@@ -241,8 +241,8 @@ CONTAINS
                CALL iom_put( "Burial" , zburial) ! CaCO3 burial
             ENDIF
          ELSE
-            trc2d(:,:,jp_pcs0_2d + 11) = zirondep(:,:,1)           * zfact * fse3t(:,:,1) * tmask(:,:,1)
-            trc2d(:,:,jp_pcs0_2d + 12) = znitrpot(:,:,1) * nitrfix * zfact * fse3t(:,:,1) * tmask(:,:,1)
+            trc2d(:,:,jp_pcs0_2d + 11) = zirondep(:,:,1)           * zfact * fse3t(:,:,1) * tmask_bgc_closea(:,:,1)
+            trc2d(:,:,jp_pcs0_2d + 12) = znitrpot(:,:,1) * nitrfix * zfact * fse3t(:,:,1) * tmask_bgc_closea(:,:,1)
          ENDIF
       ENDIF
       !
@@ -475,8 +475,8 @@ CONTAINS
          rivpo4input = 0._wp 
          rivalkinput = 0._wp 
          DO jm = 1, ntimes_riv
-            rivpo4input = rivpo4input + glob_sum( ( zriverdic(:,:,jm) + zriverdoc(:,:,jm) ) * tmask(:,:,1) ) 
-            rivalkinput = rivalkinput + glob_sum(   zriverdic(:,:,jm)                       * tmask(:,:,1) ) 
+            rivpo4input = rivpo4input + glob_sum( ( zriverdic(:,:,jm) + zriverdoc(:,:,jm) ) * tmask_bgc_closea(:,:,1) ) 
+            rivalkinput = rivalkinput + glob_sum(   zriverdic(:,:,jm)                       * tmask_bgc_closea(:,:,1) ) 
          END DO
          rivpo4input = rivpo4input * 1E9 / 31.6_wp
          rivalkinput = rivalkinput * 1E9 / 12._wp 
@@ -510,7 +510,7 @@ CONTAINS
          CALL iom_close( numdepo )
          nitdepinput = 0._wp
          DO jm = 1, ntimes_ndep
-           nitdepinput = nitdepinput + glob_sum( zndepo(:,:,jm) * e1e2t(:,:) * tmask(:,:,1) ) 
+           nitdepinput = nitdepinput + glob_sum( zndepo(:,:,jm) * e1e2t(:,:) * tmask_bgc_closea(:,:,1) ) 
          ENDDO
          nitdepinput = nitdepinput / 14E6 
          DEALLOCATE( zndepo)
@@ -532,9 +532,9 @@ CONTAINS
          DO jk = 1, 5
             DO jj = 2, jpjm1
                DO ji = fs_2, fs_jpim1
-                  IF( tmask(ji,jj,jk) /= 0. ) THEN
-                     zmaskt = tmask(ji+1,jj,jk) * tmask(ji-1,jj,jk) * tmask(ji,jj+1,jk)    &
-                        &                       * tmask(ji,jj-1,jk) * tmask(ji,jj,jk+1)
+                  IF( tmask_bgc_closea(ji,jj,jk) /= 0. ) THEN
+                     zmaskt = tmask_bgc_closea(ji+1,jj,jk) * tmask_bgc_closea(ji-1,jj,jk) * tmask_bgc_closea(ji,jj+1,jk)    &
+                        &                       * tmask_bgc_closea(ji,jj-1,jk) * tmask_bgc_closea(ji,jj,jk+1)
                      IF( zmaskt == 0. )   zcmask(ji,jj,jk ) = MAX( 0.1, zcmask(ji,jj,jk) ) 
                   END IF
                END DO

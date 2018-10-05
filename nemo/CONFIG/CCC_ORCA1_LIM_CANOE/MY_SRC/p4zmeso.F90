@@ -141,11 +141,11 @@ CONTAINS
       !
       IF( ln_diatrc .AND. lk_iomput ) THEN
          zrfact2 = 1.e-3 * rfact2r
-!         grazing(:,:,:) = grazing(:,:,:) * zrfact2 * tmask(:,:,:)   ! Total grazing of phyto by zoo
-         prodcal(:,:,:) = prodcal(:,:,:) * zrfact2 * tmask(:,:,:)   ! Calcite production
+!         grazing(:,:,:) = grazing(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:)   ! Total grazing of phyto by zoo
+         prodcal(:,:,:) = prodcal(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:)   ! Calcite production
          IF( jnt == nrdttrc ) THEN
-            CALL iom_put( "GRAZ2" , grazing2 * zrfact2 * tmask(:,:,:) )  ! Grazing of large phytoplankton
-            CALL iom_put( "GRAZ3" , grazing3 * zrfact2 * tmask(:,:,:) )  ! Grazing of microzooplankton
+            CALL iom_put( "GRAZ2" , grazing2 * zrfact2 * tmask_bgc_closea(:,:,:) )  ! Grazing of large phytoplankton
+            CALL iom_put( "GRAZ3" , grazing3 * zrfact2 * tmask_bgc_closea(:,:,:) )  ! Grazing of microzooplankton
             CALL iom_put( "PCAL" , prodcal  )  ! Calcite production
          ENDIF
       ENDIF

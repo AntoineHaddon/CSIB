@@ -163,14 +163,14 @@ CONTAINS
       IF( ln_diatrc )  THEN
          !
          IF( lk_iomput ) THEN
-            CALL iom_put( "PH"    , -1. * LOG10( hi(:,:,:) )                * tmask(:,:,:) )
-            CALL iom_put( "CO3"   ,        zco3    (:,:,:) * 1e+3           * tmask(:,:,:) )
-            CALL iom_put( "CO3sat",        aksp    (:,:,:) * 1e+3 / calcon  * tmask(:,:,:) )
-            CALL iom_put( "DCAL"  ,        zcaldiss(:,:,:) * 1.e-3          * tmask(:,:,:) )       ! conversion from umol/L/s to mol/m3/s
+            CALL iom_put( "PH"    , -1. * LOG10( hi(:,:,:) )                * tmask_bgc_closea(:,:,:) )
+            CALL iom_put( "CO3"   ,        zco3    (:,:,:) * 1e+3           * tmask_bgc_closea(:,:,:) )
+            CALL iom_put( "CO3sat",        aksp    (:,:,:) * 1e+3 / calcon  * tmask_bgc_closea(:,:,:) )
+            CALL iom_put( "DCAL"  ,        zcaldiss(:,:,:) * 1.e-3          * tmask_bgc_closea(:,:,:) )       ! conversion from umol/L/s to mol/m3/s
          ELSE
-            trc3d(:,:,:,jp_pcs0_3d    ) = -1. * LOG10( hi(:,:,:) ) * tmask(:,:,:)
-            trc3d(:,:,:,jp_pcs0_3d + 1) = zco3(:,:,:)              * tmask(:,:,:)
-            trc3d(:,:,:,jp_pcs0_3d + 2) = aksp(:,:,:) / calcon     * tmask(:,:,:)
+            trc3d(:,:,:,jp_pcs0_3d    ) = -1. * LOG10( hi(:,:,:) ) * tmask_bgc_closea(:,:,:)
+            trc3d(:,:,:,jp_pcs0_3d + 1) = zco3(:,:,:)              * tmask_bgc_closea(:,:,:)
+            trc3d(:,:,:,jp_pcs0_3d + 2) = aksp(:,:,:) / calcon     * tmask_bgc_closea(:,:,:)
          ENDIF
          !
       ENDIF

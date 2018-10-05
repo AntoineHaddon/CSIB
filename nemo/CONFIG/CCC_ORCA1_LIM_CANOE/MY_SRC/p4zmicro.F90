@@ -140,7 +140,7 @@ CONTAINS
       IF( ln_diatrc ) THEN
          zrfact2 = 1.e-3 * rfact2r  ! conversion from umol/L/timestep into mol/m3/s
          IF( jnt == nrdttrc ) THEN
-          CALL iom_put( "GRAZ1"   , grazing1(:,:,:) * zrfact2 * tmask(:,:,:) )  ! microzooplankton grazing on nanophytoplankton
+          CALL iom_put( "GRAZ1"   , grazing1(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )  ! microzooplankton grazing on nanophytoplankton
          ENDIF
       ENDIF
 
