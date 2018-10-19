@@ -32,9 +32,9 @@ MODULE p4zmicro
 
    !! * Shared module variables
    REAL(wp), PUBLIC ::  part       = 0.5_wp          !: part of calcite not dissolved in microzoo guts (not used)
-   REAL(wp), PUBLIC ::  gmax1      = 8.1E-6_wp       !: maximum grazing rate in s^-1
+   REAL(wp), PUBLIC ::  gmax1      = 1.7_wp          !: maximum grazing rate
    REAL(wp), PUBLIC ::  aps        = 0.075_wp        !: small zooplankton functional response parameter
-   REAL(wp), PUBLIC ::  zsr1       = 5.787E-7_wp     !: specific respiration rate
+   REAL(wp), PUBLIC ::  zsr1       = 0.3_wp          !: specific respiration rate
    REAL(wp), PUBLIC ::  lambda1    = 0.8_wp          !: assimilation efficiency
 
    !!* Substitution
@@ -60,6 +60,7 @@ CONTAINS
       REAL(wp) :: ztn,Tf,spc,spn,spf,chl,grazp,R
       REAL(wp) :: c2n,n2c,c2fe,fe2c,n2fe,fe2n
       REAL(wp) :: cxs,nxs1,fexs1,nxs2,fexs2
+      REAL(wp) :: csw1,csw2
       REAL(wp) :: zrfact2
       CHARACTER (len=25) :: charout
       !!---------------------------------------------------------------------
@@ -88,7 +89,7 @@ CONTAINS
                fe2n=spf/(spn+rtrn)
 
 ! Micrograzer functional response is determined by phytoplankton C
-               grazp=gmax1*(1.-EXP(-aps*spc))*trn(ji,jj,jk,jpzoo)*rfact2
+               grazp=gmax1*(1.-EXP(-aps*spc))*trn(ji,jj,jk,jpzoo)*xstep
 ! reduce phytoplankton consumption to what can support grazer biomass production based on the least abundant element: the MIN(...) term should be 1 if N and Fe are in excess of the grazer ratio
                grazp=grazp*MIN(n2c*rr_c2n,fe2c*rr_c2fe,1.)
 ! calculate "excess" relative to grazer RR
@@ -101,8 +102,17 @@ CONTAINS
                fexs1=MAX(fexs1,0.)
                fexs2=grazp*rr_fe2c*(fe2n*rr_n2fe-1.)
                fexs2=MAX(fexs2,0.)
+               csw1=MAX(cxs,0.)
+               csw1=csw1/(csw1+rtrn)   !!! csw1 is 1 when cxs>0 and 0 otherwise
+               csw2=1.-csw1            !!! csw2 is 0 when cxs>0 and 1 otherwise
+               !!! apply csw1 switch on nxs2 and fexs2 terms
+               nxs1 = csw2*nxs1
+               fexs1= csw2*fexs1
+               !!! apply csw2 switch on nxs1 and fexs1 terms
+               nxs2 = csw1*nxs2
+               fexs2= csw1*fexs2
 ! calculate zooplankton respiration (in carbon units)
-               R = MAX(zsr1*Tf*trn(ji,jj,jk,jpzoo)*rfact2-cxs,0.)
+               R = MAX(zsr1*Tf*trn(ji,jj,jk,jpzoo)*xstep-cxs,0.)
 
                ! Grazing by microzooplankton
                grazing1(ji,jj,jk) = grazp
@@ -111,6 +121,7 @@ CONTAINS
                !  ------------------------
                !zgrarsig  = zgrarem * sigma1
                tra(ji,jj,jk,jpnh4) = tra(ji,jj,jk,jpnh4) + R*rr_n2c + nxs1 + nxs2
+               tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) + (R*rr_n2c + nxs1 + nxs2)*1.E-6
                tra(ji,jj,jk,jpoxy) = tra(ji,jj,jk,jpoxy) - R - cxs
                tra(ji,jj,jk,jpfer) = tra(ji,jj,jk,jpfer) + R*rr_fe2c + fexs1 + fexs2
                tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) + (R + cxs)*1.E-6
@@ -129,7 +140,7 @@ CONTAINS
       IF( ln_diatrc ) THEN
          zrfact2 = 1.e-3 * rfact2r  ! conversion from umol/L/timestep into mol/m3/s
          IF( jnt == nrdttrc ) THEN
-          CALL iom_put( "GRAZ1"   , grazing1(:,:,:) * zrfact2 * tmask(:,:,:) )  ! microzooplankton grazing on nanophytoplankton
+          CALL iom_put( "GRAZ1"   , grazing1(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )  ! microzooplankton grazing on nanophytoplankton
          ENDIF
       ENDIF
 

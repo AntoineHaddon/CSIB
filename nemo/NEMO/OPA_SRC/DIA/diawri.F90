@@ -16,6 +16,11 @@ MODULE diawri
    !!             -   ! 2002-12  (G. Madec)  merge of diabort and diainit, F90
    !!                 ! 2005-11  (V. Garnier) Surface pressure gradient organization
    !!            3.2  ! 2008-11  (B. Lemaire) creation from old diawri
+   !!            3.4.1! 2016-06  (D. Yang) output square of brunt vaisala frequency in sea water (1/s**2)
+   !!            3.4.1! 2016-07  (D. Yang) added sea water potential temperature at sea floor (C) and
+   !!                                      sea_water_salinity_at_sea_floor (psu)
+   !!            3.4.1! 2016-11  (D. Yang) added mass integrated potential temperature over ocean columns (kg m-2 °C)
+   !!                                      and mass integrated salinity over ocean columns (kg m-2 * (1e-3))
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -121,6 +126,7 @@ CONTAINS
       INTEGER, INTENT( in ) ::   kt      ! ocean time-step index
       !!
       INTEGER                      ::   ji, jj, jk              ! dummy loop indices
+      INTEGER                      ::   jkbot
       REAL(wp)                     ::   zztmp, zztmpx, zztmpy   ! 
       !!
       REAL(wp), POINTER, DIMENSION(:,:)   :: z2d       ! 2D workspace
@@ -144,6 +150,22 @@ CONTAINS
       CALL iom_put( "sst2"   , tsn(:,:,1,jp_tem) * tsn(:,:,1,jp_tem) )    ! square of sea surface temperature
       CALL iom_put( "sss"    , tsn(:,:,1,jp_sal)                     )    ! sea surface salinity
       CALL iom_put( "sss2"   , tsn(:,:,1,jp_sal) * tsn(:,:,1,jp_sal) )    ! square of sea surface salinity
+      IF( lk_diaar5 ) THEN
+         DO jj = 1, jpj
+            DO ji = 1, jpi
+               jkbot = mbkt(ji,jj)
+               z2d(ji,jj) = tsn(ji,jj,jkbot,jp_tem)
+            END DO
+         END DO
+         CALL iom_put( "sbt", z2d )                ! bottom temperaturea
+         DO jj = 1, jpj
+            DO ji = 1, jpi
+               jkbot = mbkt(ji,jj)
+               z2d(ji,jj) = tsn(ji,jj,jkbot,jp_sal)
+            END DO
+         END DO
+         CALL iom_put( "sbs", z2d )                ! bottom salinity
+      ENDIF
       CALL iom_put( "uoce"   , un                                    )    ! i-current      
       CALL iom_put( "voce"   , vn                                    )    ! j-current
       
@@ -198,7 +220,20 @@ CONTAINS
             END DO
          END DO
          CALL lbc_lnk( z2d, 'V', -1. )
-         CALL iom_put( "v_heattr", z2d )                  !  heat transport in i-direction
+         CALL iom_put( "v_heattr", z2d )                  !  heat transport in j-direction
+         ! integral_wrt_depth_of_product_of_sea_water_density_and_potential_temperature (kg m-2 °C )
+         z2d(:,:) = 0.e0
+         DO jk = 1, jpkm1
+            z2d(:,:) = z2d(:,:) + rau0 * fse3t(:,:,jk) * tsn(:,:,jk,jp_tem) * tmask(:,:,jk)
+         END DO
+         CALL iom_put( "opottempmint", z2d )
+         ! integral_wrt_depth_of_product_of_sea_water_density_and_salinity (kg m-2 * (1e-3))
+         z2d(:,:) = 0.e0
+         DO jk = 1, jpkm1
+            z2d(:,:) = z2d(:,:) + rau0 * fse3t(:,:,jk) * tsn(:,:,jk,jp_sal) * tmask(:,:,jk)
+         END DO
+         CALL iom_put( "somint", z2d )
+         CALL iom_put( "bn2", rn2 )                       !  Brunt-Vaisala buoyancy frequency (N^2), 1/s**2
       ENDIF
       !
       CALL wrk_dealloc( jpi , jpj      , z2d )

@@ -17,8 +17,8 @@
 %NCDF_INC            -I/users/tor/acrn/rls/local/aix64/netcdf3.6.3/include
 %NCDF_LIB            -L /users/tor/acrn/rls/local/aix64/netcdf3.6.3/lib -lnetcdf
 %FC                  mpxlf90
-%FCFLAGS             -qstrict -qfree=f90 -g -O3 -qrealsize=8 -qextname -qsource -q64 -qlargepage -qmaxmem=-1
-%FFLAGS              -qstrict -qfixed -g -O3 -qrealsize=8 -qextname -qsource -q64 -qlargepage -qmaxmem=-1
+%FCFLAGS             -qstrict -qfree=f90 -g -O2 -qrealsize=8 -qextname -qsource -q64 -qlargepage -qmaxmem=-1
+%FFLAGS              -qstrict -qfixed -g -O2 -qrealsize=8 -qextname -qsource -q64 -qlargepage -qmaxmem=-1
 # %FCFLAGS             -qstrict -qfree=f90 -g -O3 -qrealsize=8 -qextname -qsource -q64 -qlargepage -qmaxmem=-1 -I/usr/lpp/bos/inst_root/opt/ibmhpc/pe1101/ppe.poe/include/thread64
 # %FFLAGS              -qstrict -qfixed -g -O3 -qrealsize=8 -qextname -qsource -q64 -qlargepage -qmaxmem=-1 -I/usr/lpp/bos/inst_root/opt/ibmhpc/pe1101/ppe.poe/include/thread64
 %LD                  mpxlf90

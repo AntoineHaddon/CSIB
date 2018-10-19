@@ -36,3 +36,34 @@ More information can be found on the CCCma [twiki](http://wiki.cccma.ec.gc.ca/cg
 ## Contact
 
 For questions: neil.swart@canada.ca
+
+-----------------------------------
+# Development of the CMIP6 diagnostics
+
+## Option to output the CMIP6 diagnostics
+
+To output the CMIP6 diagnostics, add cmip6_diag=on as one of the command line args in setup-nemo.
+
+e.g.,
+
+setup-nemo repo=/home/rdy001/dyang_repoer=cmip6-diag maestro_repo=/home/rdy001/maestro_repo maestro_version=maestro-cmip6-diag config=CCC_ORCA1_LIM runid=abc cmip6_diag=on
+
+## Supported configurations
+
+    1. CCC_ORCA1_LIM
+    2. CCC_ORCA1_LIM_CMOC
+    3. CCC_ORCA1_LIM_CANOE
+    4. CCC_ORCA1_OFF_CMOC
+    5. CCC_ORCA1_OFF_CANOE
+    6. CCC_ORCA025_LIM
+
+    Note that the CMIP6 diagnostics are only available for configs 1-3.
+
+## Contact
+
+    For problems and questions: duo.yang@canada.ca
+
+D. YANG, 11/APR/2018
+-----------------------------------
+
+

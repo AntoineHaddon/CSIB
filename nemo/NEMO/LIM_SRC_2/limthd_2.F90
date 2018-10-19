@@ -7,6 +7,14 @@ MODULE limthd_2
    !!            2.0  ! 2002-07 (C. Ethe, G. Madec) F90
    !!            2.0  ! 2003-08 (C. Ethe)  add lim_thd_init
    !!             -   ! 2008-2008  (A. Caubel, G. Madec, E. Maisonnave, S. Masson ) generic coupled interface
+   !!          3.4.1  ! 2017-01 (D. Yang) Under C-grid option, corrected uice_ipa and vice_ipa from U and V 
+   !!                                     points to T point so to be consistent with iodef.xml.
+   !!          3.4.1  ! 2017-01 (D. Yang) Under C-grid option, added two components of sea ice velocity 
+   !!                                     (cell average) at U and V points, sea ice velocity module and 
+   !!                                     surface (snow or ice) temperature (cell average) at T point 
+   !!                                     following SIMIP guide paper by Nots etal (2016).
+   !!          3.4.1  ! 2018-09 (D. Yang) Make the local array names (z2d_dy, fr_iu_dy & fr_iv_dy) unique. 
+   !!          3.4.1  ! 2018-09 (D. Yang) Mask fr_iu_dy & fr_iv_dy.
    !!---------------------------------------------------------------------
 #if defined key_lim2
    !!----------------------------------------------------------------------
@@ -103,6 +111,7 @@ CONTAINS
       REAL(wp) ::   zrhoij, zrhoijm1     ! temporary scalars
       REAL(wp) ::   zztmp                ! temporary scalars within a loop
       REAL(wp), POINTER, DIMENSION(:,:)     ::   ztmp      ! 2D workspace
+      REAL(wp), POINTER, DIMENSION(:,:)     ::   z2da, z2db, z2d_dy, fr_iu_dy, fr_iv_dy ! 2D workspace
       REAL(wp), POINTER, DIMENSION(:,:)     ::   zqlbsbq   ! link with lead energy budget qldif
       REAL(wp), POINTER, DIMENSION(:,:)     ::   zlicegr   ! link with lateral ice growth 
 !!$      REAL(wp), DIMENSION(:,:) ::   firic         ! IR flux over the ice            (outputs only)
@@ -120,6 +129,7 @@ CONTAINS
       !!-------------------------------------------------------------------
 
       CALL wrk_alloc( jpi, jpj, ztmp, zqlbsbq, zlicegr, zdvosif, zdvobif, zdvolif, zdvonif, zdvomif, zu_imasstr, zv_imasstr )
+      CALL wrk_alloc( jpi, jpj, z2da, z2db, z2d_dy, fr_iu_dy, fr_iv_dy )
       CALL wrk_alloc( jpi, jpj, jpk, zmsk )
 
       IF( kt == nit000 )   CALL lim_thd_init_2  ! Initialization (first time-step only)
@@ -442,16 +452,16 @@ CONTAINS
       ! Outputs
       !--------------------------------------------------------------------------------
       ztmp(:,:) = 1. - pfrld(:,:)                                ! fraction of ice after the dynamic, before the thermodynamic
-      CALL iom_put( 'ioceflxb', fbif )                           ! Oceanic flux at the ice base           [W/m2 ???]
-      CALL iom_put( 'ist_cea', (sist(:,:) - rt0) * ztmp(:,:) )   ! Ice surface temperature                [Celius]
-      CALL iom_put( 'qsr_ai_cea', qsr_ice(:,:,1) * ztmp(:,:) )   ! Solar flux over the ice                [W/m2]
-      CALL iom_put( 'qns_ai_cea', qns_ice(:,:,1) * ztmp(:,:) )   ! Non-solar flux over the ice            [W/m2]
+      CALL iom_put( 'ioceflxb', fbif )                           ! Oceanic flux at the ice base  [W/m2 ???]
+      CALL iom_put( 'ist_cea', (sist(:,:) - rt0) * ztmp(:,:) )   ! Ice surface temperature       [Celius]
+      CALL iom_put( 'qsr_ai_cea', qsr_ice(:,:,1) * ztmp(:,:) )   ! Solar flux over the ice       [W/m2]
+      CALL iom_put( 'qns_ai_cea', qns_ice(:,:,1) * ztmp(:,:) )   ! Non-solar flux over the ice   [W/m2]
       IF( .NOT. lk_cpl )   CALL iom_put( 'qla_ai_cea', qla_ice(:,:,1) * ztmp(:,:) )     ! Latent flux over the ice  [W/m2]
       !
-      CALL iom_put( 'snowthic_cea', hsnif  (:,:) * fr_i(:,:) )   ! Snow thickness             [m]
-      CALL iom_put( 'icethic_cea' , hicif  (:,:) * fr_i(:,:) )   ! Ice thickness              [m]
+      CALL iom_put( 'snowthic_cea', hsnif  (:,:) * fr_i(:,:) )   ! Snow thickness                [m]
+      CALL iom_put( 'icethic_cea' , hicif  (:,:) * fr_i(:,:) )   ! Ice thickness                 [m]
       zztmp = 1.0 / rdt_ice
-      CALL iom_put( 'iceprod_cea' , hicifp (:,:) * zztmp     )   ! Ice produced               [m/s]
+      CALL iom_put( 'iceprod_cea' , hicifp (:,:) * zztmp     )   ! Ice produced                  [m/s]
       IF( lk_diaar5 ) THEN
          CALL iom_put( 'snowmel_cea' , rdmsnif(:,:) * zztmp     )   ! Snow melt                  [kg/m2/s]
          zztmp = rhoic / rdt_ice
@@ -503,10 +513,51 @@ CONTAINS
          END DO
       END DO
       !
-      CALL iom_put( 'ice_pres'  , ztmp                            )   ! Ice presence                          [-]
-      CALL iom_put( 'ist_ipa'   , ( sist(:,:) - rt0 ) * ztmp(:,:) )   ! Ice surface temperature               [Celius]
-      CALL iom_put( 'uice_ipa'  ,  u_ice(:,:)         * ztmp(:,:) )   ! Ice velocity along i-axis at I-point  [m/s] 
-      CALL iom_put( 'vice_ipa'  ,  v_ice(:,:)         * ztmp(:,:) )   ! Ice velocity along j-axis at I-point  [m/s]
+      ! For time sampling,  SIMIP requestes area-weighted average for intensive variables 
+      ! (sithick, sisnthick, sitemptop, siu, siv and sispeed). Thus, the variables are multiplied
+      ! by area fractions, which will be divided by the sum of the area fractions during post-processing.
+      SELECT CASE( cp_ice_msh )
+      CASE( 'C' )                                                     
+         ! calculation of sispeed (z2da and z2db are sea ice velocity at T-point)
+         DO jj = 2 , jpjm1
+            DO ji = 2 , jpim1
+               z2da(ji,jj) = ( u_ice(ji,jj) * umask(ji,jj,1) + u_ice(ji-1,jj) * umask(ji-1,jj,1) ) * 0.5_wp
+               z2db(ji,jj) = ( v_ice(ji,jj) * vmask(ji,jj,1) + v_ice(ji,jj-1) * vmask(ji,jj-1,1) ) * 0.5_wp
+            END DO
+         END DO
+         CALL lbc_lnk( z2da, 'T', 1. )
+         CALL lbc_lnk( z2db, 'T', 1. ) 
+         z2d_dy(:,:) = SQRT( z2da(:,:) * z2da(:,:) + z2db(:,:) * z2db(:,:) ) * fr_i(:,:)
+         ! ice fractions at U and V points (C-grid) 
+         DO jj = 1 , jpjm1
+           DO ji = 1 , jpim1
+              fr_iu_dy(ji,jj) = ( fr_i(ji,jj) + fr_i(ji+1,jj) ) * 0.5_wp * umask(ji,jj,1)
+              fr_iv_dy(ji,jj) = ( fr_i(ji,jj) + fr_i(ji,jj+1) ) * 0.5_wp * vmask(ji,jj,1)
+           END DO
+         END DO
+         CALL lbc_lnk( fr_iu_dy, 'U', -1. ) ; CALL lbc_lnk( fr_iv_dy, 'V', -1. )  ! lateral boundary conditions
+         CALL iom_put( "ivel_cea"  , z2d_dy  )                    ! ice velocity module (cell average) at T point       [m/s]
+         ! calculation of siu
+         CALL iom_put( 'siu_cea'   , u_ice(:,:) * fr_iu_dy(:,:) ) ! ice velocity along i-axis (cell average) at U-point [m/s]
+         ! calculation of siv
+         CALL iom_put( 'siv_cea'   , v_ice(:,:) * fr_iv_dy(:,:) ) ! ice velocity along j-axis (cell average) at V-point [m/s]
+         ! fr_iu and fr_iv are for calculation of siu and siv.
+         CALL iom_put( 'fr_iu'     , fr_iu_dy )                   ! ice fraction at U point (C-grid)
+         CALL iom_put( 'fr_iv'     , fr_iv_dy )                   ! ice fraction at V point (C-grid)
+      CASE( 'I' )                                                     
+         z2da(:,:) = u_ice(:,:)                                   ! Ice velocity along i-axis at I-point                [m/s]
+         z2db(:,:) = v_ice(:,:)                                   ! Ice velocity along j-axis at I-point                [m/s]
+      END SELECT
+      !
+      ! calculation of sitemptop
+      CALL iom_put( 'sitemptop_cea', sist(:,:) * fr_i(:,:) )  ! ice surface temperature (cell average)                [K]
+      ! sitimefrac
+      CALL iom_put( 'ice_pres'  , ztmp                       )  ! Ice presence                                        [-]
+      !
+      CALL iom_put( 'ist_ipa'   , ( sist(:,:) - rt0 ) * ztmp(:,:) )  ! Ice surface temperature                        [degC]
+      ! ice velocity components at T-point (C-grid) or UV point (I-grid)                                              [m/s]
+      CALL iom_put( 'uice_ipa'  ,  z2da(:,:) * ztmp(:,:) )            
+      CALL iom_put( 'vice_ipa'  ,  z2db(:,:) * ztmp(:,:) ) 
 
       IF(ln_ctl) THEN
          CALL prt_ctl_info(' lim_thd  end  ')
@@ -522,6 +573,7 @@ CONTAINS
       ENDIF
        !
       CALL wrk_dealloc( jpi, jpj, ztmp, zqlbsbq, zlicegr, zdvosif, zdvobif, zdvolif, zdvonif, zdvomif, zu_imasstr, zv_imasstr )
+      CALL wrk_dealloc( jpi, jpj, z2da, z2db, z2d_dy, fr_iu_dy, fr_iv_dy )
       CALL wrk_dealloc( jpi, jpj, jpk, zmsk )
       !
     END SUBROUTINE lim_thd_2

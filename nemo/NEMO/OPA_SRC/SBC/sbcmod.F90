@@ -13,6 +13,7 @@ MODULE sbcmod
    !!            3.4  ! 2011-11  (C. Harris) CICE added as an option
    !!            3.4.1! 2013-08  (D. Yang) added option preventing SST from dropping below freezing when no sea ice
    !!                                      point when no sea ice.
+   !!            3.4.1! 2017-02  (D. Yang) added computation of snow cover for SIMIP.
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -49,8 +50,14 @@ MODULE sbcmod
    USE closea           ! closed sea
    USE bdy_par          ! for lk_bdy
    USE bdyice_lim2      ! unstructured open boundary data  (bdy_ice_lim_2 routine)
+#if defined key_lim2
+   USE ice_2            ! LIM-2: ice variables
+   USE wrk_nemo
+   USE par_oce          ! ocean parameter
+#endif
 
    USE prtctl           ! Print control                    (prt_ctl routine)
+   USE checksums, only  : chksum, after_state_chksum, ln_chksum
    USE restart          ! ocean restart
    USE iom              ! IOM library
    USE in_out_manager   ! I/O manager
@@ -65,13 +72,13 @@ MODULE sbcmod
 
    PUBLIC   sbc        ! routine called by step.F90
    PUBLIC   sbc_init   ! routine called by opa.F90
-   
+
    INTEGER ::   nsbc   ! type of surface boundary condition (deduced from namsbc informations)
-      
+
    !! * Substitutions
 #  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
-   !! NEMO/OPA 4.0 , NEMO-consortium (2011) 
+   !! NEMO/OPA 4.0 , NEMO-consortium (2011)
    !! $Id: sbcmod.F90 3690 2012-11-27 16:51:05Z gm $
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
@@ -111,10 +118,10 @@ CONTAINS
         IF( lk_cice .and. nn_ice /= 0 ) nn_ice = 4
       ENDIF
       IF( cp_cfg == 'gyre' ) THEN            ! GYRE configuration
-          ln_ana      = .TRUE.   
+          ln_ana      = .TRUE.
           nn_ice      =   0
       ENDIF
-      
+
       IF(lwp) THEN               ! Control print
          WRITE(numout,*) '        Namelist namsbc (partly overwritten with CPP key setting)'
          WRITE(numout,*) '           frequency update of sbc (and ice)             nn_fsbc     = ', nn_fsbc
@@ -127,8 +134,8 @@ CONTAINS
          WRITE(numout,*) '              coupled    formulation (T if key_sbc_cpl)  ln_cpl      = ', ln_cpl
          WRITE(numout,*) '           Misc. options of sbc : '
          WRITE(numout,*) '              Patm gradient added in ocean & ice Eqs.    ln_apr_dyn  = ', ln_apr_dyn
-         WRITE(numout,*) '              ice management in the sbc (=0/1/2/3)       nn_ice      = ', nn_ice 
-         WRITE(numout,*) '              daily mean to diurnal cycle qsr            ln_dm2dc    = ', ln_dm2dc 
+         WRITE(numout,*) '              ice management in the sbc (=0/1/2/3)       nn_ice      = ', nn_ice
+         WRITE(numout,*) '              daily mean to diurnal cycle qsr            ln_dm2dc    = ', ln_dm2dc
          WRITE(numout,*) '              runoff / runoff mouths                     ln_rnf      = ', ln_rnf
          WRITE(numout,*) '              Sea Surface Restoring on SST and/or SSS    ln_ssr      = ', ln_ssr
          WRITE(numout,*) '              FreshWater Budget control  (=0/1/2/3/4)    nn_fwb      = ', nn_fwb
@@ -140,8 +147,8 @@ CONTAINS
       IF( sbc_oce_alloc() /= 0 )   CALL ctl_stop( 'STOP', 'sbc_init : unable to allocate sbc_oce arrays' )
 
       !                          ! Checks:
-      IF( .NOT. ln_rnf ) THEN                      ! no specific treatment in vicinity of river mouths 
-         ln_rnf_mouth  = .false.                      
+      IF( .NOT. ln_rnf ) THEN                      ! no specific treatment in vicinity of river mouths
+         ln_rnf_mouth  = .false.
          IF( sbc_rnf_alloc() /= 0 )   CALL ctl_stop( 'STOP', 'sbc_init : unable to allocate sbc_rnf arrays' )
          nkrnf         = 0
          rnf     (:,:) = 0.e0
@@ -150,9 +157,9 @@ CONTAINS
       ENDIF
       IF( nn_ice == 0  )   fr_i(:,:) = 0.e0        ! no ice in the domain, ice fraction is always zero
 
-      !                                            ! restartability   
+      !                                            ! restartability
       IF( MOD( nitend - nit000 + 1, nn_fsbc) /= 0 .OR.   &
-          MOD( nstock             , nn_fsbc) /= 0 ) THEN 
+          MOD( nstock             , nn_fsbc) /= 0 ) THEN
          WRITE(ctmp1,*) 'experiment length (', nitend - nit000 + 1, ') or nstock (', nstock,   &
             &           ' is NOT a multiple of nn_fsbc (', nn_fsbc, ')'
          CALL ctl_stop( ctmp1, 'Impossible to properly do model restart' )
@@ -167,19 +174,19 @@ CONTAINS
          &   CALL ctl_stop( 'CICE sea-ice model requires ln_blk_core or lk_cpl or ln_flx' )
       IF( nn_ice == 4 .AND. ( .NOT. ( cp_cfg == 'orca' ) .OR. lk_agrif ) )   &
          &   CALL ctl_stop( 'CICE sea-ice model currently only available in a global ORCA configuration without AGRIF' )
-      
+
       IF( ln_dm2dc )   nday_qsr = -1   ! initialisation flag
 
       IF( ln_dm2dc .AND. .NOT.( ln_flx .OR. ln_blk_core ) )   &
          &   CALL ctl_stop( 'diurnal cycle into qsr field from daily values requires a flux or core-bulk formulation' )
-      
+
       IF( ln_dm2dc .AND. ( ( NINT(rday) / ( nn_fsbc * NINT(rdt) ) )  < 8 ) )   &
          &   CALL ctl_warn( 'diurnal cycle for qsr: the sampling of the diurnal cycle is too small...' )
 
-       !drag coefficient read from wave model definable only with mfs bulk formulae and core 
+       !drag coefficient read from wave model definable only with mfs bulk formulae and core
        IF(ln_cdgw .AND. .NOT.(ln_blk_mfs .OR. ln_blk_core) )              &
           &   CALL ctl_stop( 'drag coefficient read from wave model definable only with mfs bulk formulae and core')
-      
+
       !                          ! Choice of the Surface Boudary Condition (set nsbc)
       icpt = 0
       IF( ln_ana          ) THEN   ;   nsbc =  1   ; icpt = icpt + 1   ;   ENDIF       ! analytical      formulation
@@ -220,22 +227,27 @@ CONTAINS
    SUBROUTINE sbc( kt )
       !!---------------------------------------------------------------------
       !!                    ***  ROUTINE sbc  ***
-      !!              
+      !!
       !! ** Purpose :   provide at each time-step the ocean surface boundary
       !!                condition (momentum, heat and freshwater fluxes)
       !!
-      !! ** Method  :   blah blah  to be written ????????? 
+      !! ** Method  :   blah blah  to be written ?????????
       !!                CAUTION : never mask the surface stress field (tke sbc)
       !!
-      !! ** Action  : - set the ocean surface boundary condition at before and now 
-      !!                time step, i.e.  
+      !! ** Action  : - set the ocean surface boundary condition at before and now
+      !!                time step, i.e.
       !!                utau_b, vtau_b, qns_b, qsr_b, emp_n, emps_b, qrp_b, erp_b
       !!                utau  , vtau  , qns  , qsr  , emp  , emps  , qrp  , erp
       !!              - updte the ice fraction : fr_i
       !!----------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt       ! ocean time step
+#if defined key_lim2
+      INTEGER                           ::   ji, jj      ! dummy loop indices
+      REAL(wp), POINTER, DIMENSION(:,:) ::   sn_cover    ! snow cover for SIMIP (LIM-2)
       !!---------------------------------------------------------------------
       !
+      CALL wrk_alloc( jpi, jpj, sn_cover )
+#endif
       IF( nn_timing == 1 )  CALL timing_start('sbc')
       !
       !                                            ! ---------------------------------------- !
@@ -263,7 +275,7 @@ CONTAINS
 
       IF (ln_cdgw) CALL sbc_wave( kt )
                                                    !==  sbc formulation  ==!
-                                                            
+
       SELECT CASE( nsbc )                                ! Compute ocean surface boundary condition
       !                                                  ! (i.e. utau,vtau, qns, qsr, emp, emps)
       CASE(  0 )   ;   CALL sbc_gyre    ( kt )                    ! analytical formulation : GYRE configuration
@@ -273,7 +285,7 @@ CONTAINS
       CASE(  4 )   ;   CALL sbc_blk_core( kt )                    ! bulk formulation : CORE for the ocean
       CASE(  5 )   ;   CALL sbc_cpl_rcv ( kt, nn_fsbc, nn_ice )   ! coupled formulation
       CASE(  6 )   ;   CALL sbc_blk_mfs ( kt )                    ! bulk formulation : MFS for the ocean
-      CASE( -1 )                                
+      CASE( -1 )
                        CALL sbc_ana     ( kt )                    ! ESOPA, test ALL the formulations
                        CALL sbc_gyre    ( kt )                    !
                        CALL sbc_flx     ( kt )                    !
@@ -281,7 +293,6 @@ CONTAINS
                        CALL sbc_blk_core( kt )                    !
                        CALL sbc_cpl_rcv ( kt, nn_fsbc, nn_ice )   !
       END SELECT
-
       !                                            !==  Misc. Options  ==!
       SELECT CASE( nn_ice )                                       ! Update heat and freshwater fluxes over sea-ice areas
       CASE(  0 )   ;         CALL sbc_ice_none ( kt )                ! no-ice, SST not dropping below freezing point
@@ -290,7 +301,8 @@ CONTAINS
               IF( lk_bdy )   CALL bdy_ice_lim_2( kt )                ! BDY boundary condition
       CASE(  3 )   ;         CALL sbc_ice_lim  ( kt, nsbc )          ! LIM-3 ice model
       CASE(  4 )   ;         CALL sbc_ice_cice ( kt, nsbc )          ! CICE ice model
-      END SELECT                                              
+      END SELECT
+      IF (ln_chksum  )   CALL after_state_chksum( "after ice model" )
 
       IF( ln_rnf         )   CALL sbc_rnf( kt )                   ! add runoffs to fresh water fluxes
 
@@ -298,7 +310,7 @@ CONTAINS
 
       IF( nn_fwb    /= 0 )   CALL sbc_fwb( kt, nn_fwb, nn_fsbc )  ! control the freshwater budget
 
-      IF( nn_closea == 1 )   CALL sbc_clo( kt )                   ! treatment of closed sea in the model domain 
+      IF( nn_closea == 1 )   CALL sbc_clo( kt )                   ! treatment of closed sea in the model domain
       !                                                           ! (update freshwater fluxes)
 !RBbug do not understand why see ticket 667
       CALL lbc_lnk( emp, 'T', 1. )
@@ -306,7 +318,7 @@ CONTAINS
       IF( kt == nit000 ) THEN                          !   set the forcing field at nit000 - 1    !
          !                                             ! ---------------------------------------- !
          IF( ln_rstart .AND.    &                               !* Restart: read in restart file
-            & iom_varid( numror, 'utau_b', ldstop = .FALSE. ) > 0 ) THEN 
+            & iom_varid( numror, 'utau_b', ldstop = .FALSE. ) > 0 ) THEN
             IF(lwp) WRITE(numout,*) '          nit000-1 surface forcing fields red in the restart file'
             CALL iom_get( numror, jpdom_autoglo, 'utau_b', utau_b )   ! before i-stress  (U-point)
             CALL iom_get( numror, jpdom_autoglo, 'vtau_b', vtau_b )   ! before j-stress  (V-point)
@@ -317,7 +329,7 @@ CONTAINS
             CALL iom_get( numror, jpdom_autoglo, 'emps_b', emps_b )   ! before C/D freshwater flux (T-point)
          ELSE                                                   !* no restart: set from nit000 values
             IF(lwp) WRITE(numout,*) '          nit000-1 surface forcing fields set to nit000'
-            utau_b(:,:) = utau(:,:) 
+            utau_b(:,:) = utau(:,:)
             vtau_b(:,:) = vtau(:,:)
             qns_b (:,:) = qns (:,:)
             ! qsr_b (:,:) = qsr (:,:)
@@ -347,18 +359,28 @@ CONTAINS
       IF( MOD( kt-1, nn_fsbc ) == 0 ) THEN
          CALL iom_put( "empmr" , emp  - rnf )                   ! upward water flux
          CALL iom_put( "empsmr", emps - rnf )                   ! c/d water flux
-         CALL iom_put( "qt"    , qns  + qsr )                   ! total heat flux 
+         CALL iom_put( "qt"    , qns  + qsr )                   ! total heat flux
          CALL iom_put( "qns"   , qns        )                   ! solar heat flux
          CALL iom_put( "qsr"   ,       qsr  )                   ! solar heat flux
-         IF( nn_ice > 0 )   CALL iom_put( "ice_cover", fr_i )   ! ice fraction 
+         IF( nn_ice > 0 )   CALL iom_put( "ice_cover", fr_i )   ! ice fraction
+         ! calculation of snow cover for SIMIP (LIM-2)
+#if defined key_lim2
+         sn_cover(:,:) = 0._wp
+         DO jj = 1,jpj
+            DO ji = 1,jpi
+               IF( fr_i(ji,jj) .GT. 0.e0 .AND. hsnif(ji,jj) .GT. 0.e0 ) sn_cover(ji,jj) = 1._wp
+            ENDDO
+         ENDDO
+         CALL iom_put( "sn_cover", sn_cover )
+#endif
       ENDIF
       !
       CALL iom_setkt( kt )           ! iom_put outside of sbc is called at every time step
       !
-      CALL iom_put( "utau", utau )   ! i-wind stress   (stress can be updated at 
+      CALL iom_put( "utau", utau )   ! i-wind stress   (stress can be updated at
       CALL iom_put( "vtau", vtau )   ! j-wind stress    each time step in sea-ice)
-      CALL iom_put( "taum", taum )   ! wind stress module 
-      CALL iom_put( "wspd", wndm )   ! wind speed  module 
+      CALL iom_put( "taum", taum )   ! wind stress module
+      CALL iom_put( "wspd", wndm )   ! wind speed  module
       !
       IF(ln_ctl) THEN         ! print mean trends (used for debugging)
          CALL prt_ctl(tab2d_1=fr_i             , clinfo1=' fr_i     - : ', mask1=tmask, ovlap=1 )
@@ -372,11 +394,25 @@ CONTAINS
          CALL prt_ctl(tab2d_1=utau             , clinfo1=' utau     - : ', mask1=umask,                      &
             &         tab2d_2=vtau             , clinfo2=' vtau     - : ', mask2=vmask, ovlap=1 )
       ENDIF
+      IF(ln_chksum) THEN         ! print array checksums (for debugging)
+         CALL chksum(fr_i      , mask=tmask(:,:,1), istart = 1, msg = 'fr_i     after sbc calculation')
+         CALL chksum((emp-rnf) , mask=tmask(:,:,1), istart = 1, msg = 'emp-rnf  after sbc calculation')
+         CALL chksum((emps-rnf), mask=tmask(:,:,1), istart = 1, msg = 'emps-rnf after sbc calculation')
+         CALL chksum(qns       , mask=tmask(:,:,1), istart = 1, msg = 'qns      after sbc calculation')
+         CALL chksum(qsr       , mask=tmask(:,:,1), istart = 1, msg = 'qsr      after sbc calculation')
+         CALL chksum(utau      , mask=umask(:,:,1), istart = 1, msg = 'utau     after sbc calculation')
+         CALL chksum(vtau      , mask=vmask(:,:,1), istart = 1, msg = 'vtau     after sbc calculation')
+         CALL after_state_chksum( "after sbc calculation" )
+      ENDIF
 
       IF( kt == nitend )   CALL sbc_final         ! Close down surface module if necessary
       !
       IF( nn_timing == 1 )  CALL timing_stop('sbc')
       !
+#if defined key_lim2
+      CALL wrk_dealloc( jpi, jpj, sn_cover )
+#endif
+
    END SUBROUTINE sbc
 
    SUBROUTINE sbc_final

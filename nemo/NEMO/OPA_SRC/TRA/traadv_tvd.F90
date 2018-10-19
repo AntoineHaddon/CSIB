@@ -12,7 +12,10 @@ MODULE traadv_tvd
    !!    NEMO    1.0  !  2004-01  (A. de Miranda, G. Madec, J.M. Molines ): advective bbl
    !!            2.0  !  2008-04  (S. Cravatte) add the i-, j- & k- trends computation
    !!             -   !  2009-11  (V. Garnier) Surface pressure gradient organization
-   !!            3.3  !  2010-05  (C. Ethe, G. Madec)  merge TRC-TRA + switch from velocity to transport
+   !!            3.3  !  2010-05  (C. Ethe, G. Madec)  merge TRC-TRA + switch from velocity to transport     
+   !!            3.4.1!  2015-09  (D. Yang) Masked a few fields following v3.6_stable
+   !!            3.4.1!  2018-08  (D. Yang) Revert back the masking above because of the bit pattern
+   !!                                       changes under optimization level O3 (intel compiler).
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -142,7 +145,7 @@ CONTAINS
                DO ji = 1, jpi
                   zfp_wk = pwn(ji,jj,jk) + ABS( pwn(ji,jj,jk) )
                   zfm_wk = pwn(ji,jj,jk) - ABS( pwn(ji,jj,jk) )
-                  zwz(ji,jj,jk) = 0.5 * ( zfp_wk * ptb(ji,jj,jk,jn) + zfm_wk * ptb(ji,jj,jk-1,jn) )
+                  zwz(ji,jj,jk) = 0.5 * ( zfp_wk * ptb(ji,jj,jk,jn) + zfm_wk * ptb(ji,jj,jk-1,jn) )  
                END DO
             END DO
          END DO

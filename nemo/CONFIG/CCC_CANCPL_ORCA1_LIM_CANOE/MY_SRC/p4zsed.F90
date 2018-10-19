@@ -42,7 +42,7 @@ MODULE p4zsed
    REAL(wp) :: sedfeinput  = 1000._wp   !: Coastal release of Iron
    REAL(wp) :: dustsolub   = 0.014_wp   !: Solubility of the dust
    REAL(wp) :: wdust       = 2.0_wp     !: Sinking speed of the dust 
-   REAL(wp) :: nitrfix     = 1.7E-7_wp  !: Nitrogen fixation rate   
+   REAL(wp) :: nitrfix     = 2.25E-2_wp !: Nitrogen fixation rate   
    REAL(wp) :: diazolight  = 50._wp     !: Nitrogen fixation sensitivty to light 
    REAL(wp) :: concfediaz  = 100._wp    !: Fe half-saturation Cste for diazotrophs 
    REAL(wp) :: kni         = 0.1_wp     !: half-saturation for NO3 inhibition of diazotrophy
@@ -59,14 +59,16 @@ MODULE p4zsed
    TYPE(FLD), ALLOCATABLE, DIMENSION(:) ::   sf_riverdoc  ! structure of input riverdoc
    TYPE(FLD), ALLOCATABLE, DIMENSION(:) ::   sf_ndepo     ! structure of input nitrogen deposition
    TYPE(FLD), ALLOCATABLE, DIMENSION(:) ::   sf_ironsed   ! structure of input iron from sediment
+   TYPE(FLD), ALLOCATABLE, DIMENSION(:) ::   sf_si
 
    INTEGER , PARAMETER :: nbtimes = 365  !: maximum number of times record in a file
-   INTEGER  :: ntimes_dust, ntimes_riv, ntimes_ndep       ! number of time steps in a file
+   INTEGER  :: ntimes_dust, ntimes_riv, ntimes_ndep, ntimes_si      ! number of time steps in a file
 
    REAL(wp), ALLOCATABLE, SAVE,   DIMENSION(:,:) :: dust      !: dust fields
    REAL(wp), ALLOCATABLE, SAVE,   DIMENSION(:,:) :: rivinp, cotdep    !: river input fields
    REAL(wp), ALLOCATABLE, SAVE,   DIMENSION(:,:) :: nitdep    !: atmospheric N deposition 
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: ironsed   !: Coastal supply of iron
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: silica
 
    REAL(wp) :: rivalkinput, rivpo4input, nitdepinput
 
@@ -95,16 +97,16 @@ CONTAINS
       INTEGER, INTENT(in) ::   kt, jnt ! ocean time step
       INTEGER  ::   ji, jj, jk, ikt
       REAL(wp) ::   zdenitot, znitrpottot, zlim, zfact, zfactcal
-      REAL(wp) ::   zcaloss, zwsbio3, zwsbio4, zwscal, zdep
+      REAL(wp) ::   zcaloss, zwsbio3, zwsbio4, zwscal, zdep, zsfc
       CHARACTER (len=25) :: charout
-      REAL(wp), POINTER, DIMENSION(:,:,:) :: znitrpot, zirondep, zafe, zbfe, zdnf                 ! afe and bfe indicate aeolian and benthic Fe sources
+      REAL(wp), POINTER, DIMENSION(:,:,:) :: znitrpot, zirondep, zafe, zbfe                       ! afe and bfe indicate aeolian and benthic Fe sources
       REAL(wp), POINTER, DIMENSION(:,:) :: zocdep, zicdep, zburial                                ! deposition and burial of POC and PIC
       !!---------------------------------------------------------------------
       !
       IF( nn_timing == 1 )  CALL timing_start('p4z_sed')
       !
       ! Allocate temporary workspace
-      CALL wrk_alloc( jpi, jpj, jpk, znitrpot, zirondep, zafe, zbfe, zdnf     )
+      CALL wrk_alloc( jpi, jpj, jpk, znitrpot, zirondep, zafe, zbfe     )
       CALL wrk_alloc( jpi, jpj, zocdep, zicdep, zburial     )
 
       IF( jnt == 1 .AND. ll_sbc ) CALL p4z_sbc( kt )
@@ -150,13 +152,17 @@ CONTAINS
 
             ikt  = mbkt(ji,jj)
             zdep = xstep / fse3t(ji,jj,ikt)
+            zsfc = xstep / fse3t(ji,jj,1)
             zwscal  = wscal (ji,jj,ikt) * zdep
             zcaloss = trn(ji,jj,ikt,jpcal) * zwscal
             
             trn(ji,jj,ikt,jpcal) = trn(ji,jj,ikt,jpcal) - zcaloss
             zfactcal = FLOAT(FLOOR(MIN( 1.-excess(ji,jj,ikt), 1.5 )))       ! set burial fraction to 1 if Omega>1 and 0 otherwise
-            trn(ji,jj,ikt,jptal) =  trn(ji,jj,ikt,jptal) + zcaloss * zfactcal * 2.E-6
-            trn(ji,jj,ikt,jpdic) =  trn(ji,jj,ikt,jpdic) + zcaloss * zfactcal * 1.E-6
+            trn(ji,jj,ikt,jptal) =  trn(ji,jj,ikt,jptal) + zcaloss * (1.-zfactcal) * 2.E-6
+            trn(ji,jj,ikt,jpdic) =  trn(ji,jj,ikt,jpdic) + zcaloss * (1.-zfactcal) * 1.E-6
+! reintroduce alkalinity and DIC lost to burial at surface
+            trn(ji,jj,1,jptal) =  trn(ji,jj,1,jptal) + zcaloss * zfactcal * 2.E-6 * zsfc/zdep
+            trn(ji,jj,1,jpdic) =  trn(ji,jj,1,jpdic) + zcaloss * zfactcal * 1.E-6 * zsfc/zdep
             zicdep(ji,jj) = trn(ji,jj,ikt,jpcal) * wscal(ji,jj,ikt)         ! deposition in mmol m^-2 s^-1
             zburial(ji,jj) = trn(ji,jj,ikt,jpcal) * wscal(ji,jj,ikt) * zfactcal
 
@@ -169,15 +175,16 @@ CONTAINS
             zdep = xstep / fse3t(ji,jj,ikt)
             zwsbio4 = wsbio4(ji,jj,ikt) * zdep
             zwsbio3 = wsbio3(ji,jj,ikt) * zdep
-            trn(ji,jj,ikt,jpgoc) = trn(ji,jj,ikt,jpgoc) - trn(ji,jj,ikt,jpgoc) * zwsbio4
-            trn(ji,jj,ikt,jppoc) = trn(ji,jj,ikt,jppoc) - trn(ji,jj,ikt,jppoc) * zwsbio3
-            zocdep(ji,jj) = trn(ji,jj,ikt,jppoc) * wsbio3(ji,jj,ikt) + trn(ji,jj,ikt,jpgoc) * wsbio4(ji,jj,ikt)      ! deposition in mmol m^-2 s^-1
 ! all deposition of POC is returned to bottom layer as inorganic nutrients
             trn(ji,jj,ikt,jpdic) = trn(ji,jj,ikt,jpdic) + (trn(ji,jj,ikt,jpgoc) * zwsbio4 + trn(ji,jj,ikt,jppoc) * zwsbio3) * 1.E-6
             trn(ji,jj,ikt,jpoxy) = trn(ji,jj,ikt,jpoxy) - (trn(ji,jj,ikt,jpgoc) * zwsbio4 + trn(ji,jj,ikt,jppoc) * zwsbio3)
             trn(ji,jj,ikt,jpnh4) = trn(ji,jj,ikt,jpnh4) + (trn(ji,jj,ikt,jpgoc) * zwsbio4 + trn(ji,jj,ikt,jppoc) * zwsbio3) * rr_n2c
             trn(ji,jj,ikt,jpfer) = trn(ji,jj,ikt,jpfer) + (trn(ji,jj,ikt,jpgoc) * zwsbio4 + trn(ji,jj,ikt,jppoc) * zwsbio3) * rr_fe2c
             trn(ji,jj,ikt,jptal) = trn(ji,jj,ikt,jptal) + (trn(ji,jj,ikt,jpgoc) * zwsbio4 + trn(ji,jj,ikt,jppoc) * zwsbio3) * rr_n2c * 1.E-6
+! operations on POC and GOC arrays MUST come after all other lines where these arrays appear on RHS
+            trn(ji,jj,ikt,jpgoc) = trn(ji,jj,ikt,jpgoc) - trn(ji,jj,ikt,jpgoc) * zwsbio4
+            trn(ji,jj,ikt,jppoc) = trn(ji,jj,ikt,jppoc) - trn(ji,jj,ikt,jppoc) * zwsbio3
+            zocdep(ji,jj) = trn(ji,jj,ikt,jppoc) * wsbio3(ji,jj,ikt) + trn(ji,jj,ikt,jpgoc) * wsbio4(ji,jj,ikt)      ! deposition in mmol m^-2 s^-1
          END DO
       END DO
 
@@ -209,7 +216,7 @@ CONTAINS
       DO jk = 1, jpk
          DO jj = 1, jpj
             DO ji = 1, jpi
-               zfact = znitrpot(ji,jj,jk) * nitrfix * rfact2
+               zfact = znitrpot(ji,jj,jk) * nitrfix * xstep
                trn(ji,jj,jk,jpnh4) = trn(ji,jj,jk,jpnh4) + zfact
                trn(ji,jj,jk,jptal) = trn(ji,jj,jk,jptal) + 1.e-6 * zfact
            END DO
@@ -219,12 +226,12 @@ CONTAINS
       IF( ln_diatrc ) THEN
          zfact = 1.e+3 * rfact2r
          IF( lk_iomput ) THEN
-            zafe(:,:,:)  =   zirondep(:,:,:) * 1.E-9                      * tmask(:,:,:)      ! zirondep and ironsed are in nmol m^-3 s^-1
-            zbfe(:,:,:)  =   ironsed(:,:,:) * 1.E-9                       * tmask(:,:,:) 
-            zdnf(:,:,:)  =   znitrpot(:,:,:) * nitrfix * 0.001            * tmask(:,:,:)      ! znitrpot is n.d., nitrfix is in mmol m^-3 s^-1
-            zocdep(:,:)  =   zocdep(:,:) * r1_rday * 0.001                * tmask(:,:,1)      ! zocdep, zicdep, and zburial are in mmol m^-2 d^-1
-            zicdep(:,:)  =   zicdep(:,:) * r1_rday * 0.001                * tmask(:,:,1)
-            zburial(:,:) =   zburial(:,:) * r1_rday * 0.001               * tmask(:,:,1)
+            zafe(:,:,:)  =   zirondep(:,:,:) * 1.E-9                      * tmask_bgc_closea(:,:,:)      ! zirondep and ironsed are in nmol m^-3 s^-1
+            zbfe(:,:,:)  =   ironsed(:,:,:) * 1.E-9                       * tmask_bgc_closea(:,:,:) 
+            zdnf(:,:,:)  =   znitrpot(:,:,:) * nitrfix * r1_rday * 0.001  * tmask_bgc_closea(:,:,:)      ! znitrpot is n.d., nitrfix is in mmol m^-3 d^-1
+            zocdep(:,:)  =   zocdep(:,:) * r1_rday * 0.001                * tmask_bgc_closea(:,:,1)      ! zocdep, zicdep, and zburial are in mmol m^-2 d^-1
+            zicdep(:,:)  =   zicdep(:,:) * r1_rday * 0.001                * tmask_bgc_closea(:,:,1)
+            zburial(:,:) =   zburial(:,:) * r1_rday * 0.001               * tmask_bgc_closea(:,:,1)
             IF( jnt == nrdttrc ) THEN
                CALL iom_put( "Irondep", zafe  )  ! surface downward net flux of iron
                CALL iom_put( "Ironsed", zbfe  )  ! iron from sediments
@@ -234,8 +241,8 @@ CONTAINS
                CALL iom_put( "Burial" , zburial) ! CaCO3 burial
             ENDIF
          ELSE
-            trc2d(:,:,jp_pcs0_2d + 11) = zirondep(:,:,1)           * zfact * fse3t(:,:,1) * tmask(:,:,1)
-            trc2d(:,:,jp_pcs0_2d + 12) = znitrpot(:,:,1) * nitrfix * zfact * fse3t(:,:,1) * tmask(:,:,1)
+            trc2d(:,:,jp_pcs0_2d + 11) = zirondep(:,:,1)           * zfact * fse3t(:,:,1) * tmask_bgc_closea(:,:,1)
+            trc2d(:,:,jp_pcs0_2d + 12) = znitrpot(:,:,1) * nitrfix * zfact * fse3t(:,:,1) * tmask_bgc_closea(:,:,1)
          ENDIF
       ENDIF
       !
@@ -245,7 +252,7 @@ CONTAINS
          CALL prt_ctl_trc(tab4d=trn, mask=tmask, clinfo=ctrcnm)
       ENDIF
       !
-      CALL wrk_dealloc( jpi, jpj, jpk, znitrpot, zirondep, zafe, zbfe, zdnf )
+      CALL wrk_dealloc( jpi, jpj, jpk, znitrpot, zirondep, zafe, zbfe )
       CALL wrk_dealloc( jpi, jpj, zocdep, zicdep, zburial     )
       !
       IF( nn_timing == 1 )  CALL timing_stop('p4z_sed')
@@ -330,17 +337,18 @@ CONTAINS
       !!----------------------------------------------------------------------
       !
       INTEGER  :: ji, jj, jk, jm
-      INTEGER  :: numdust, numriv, numiron, numdepo
+      INTEGER  :: numdust, numriv, numiron, numdepo, numsi
       INTEGER  :: ierr, ierr1, ierr2, ierr3
       REAL(wp) :: zexpide, zdenitide, zmaskt
       REAL(wp), DIMENSION(nbtimes) :: zsteps                 ! times records
       REAL(wp), DIMENSION(:,:,:), ALLOCATABLE :: zdust, zndepo, zriverdic, zriverdoc, zcmask
+      REAL(wp), DIMENSION(:,:,:,:), ALLOCATABLE :: zsi
       !
       CHARACTER(len=100) ::  cn_dir          ! Root directory for location of ssr files
-      TYPE(FLD_N) ::   sn_dust, sn_riverdoc, sn_riverdic, sn_ndepo, sn_ironsed        ! informations about the fields to be read
+      TYPE(FLD_N) ::   sn_dust, sn_riverdoc, sn_riverdic, sn_ndepo, sn_ironsed, sn_si        ! informations about the fields to be read
       NAMELIST/nampissed/cn_dir, sn_dust, sn_riverdic, sn_riverdoc, sn_ndepo, sn_ironsed, &
         &                ln_dust, ln_river, ln_ndepo, ln_ironsed,         &
-        &                sedfeinput, dustsolub, wdust, nitrfix, diazolight, concfediaz 
+        &                sedfeinput, dustsolub, wdust, nitrfix, diazolight, concfediaz, sn_si 
       !!----------------------------------------------------------------------
       !
       IF( nn_timing == 1 )  CALL timing_start('p4z_sed_init')
@@ -360,6 +368,7 @@ CONTAINS
       sn_riverdoc = FLD_N( 'river'      ,   -12     ,  'riverdoc' ,  .false.   , .true.  ,   'yearly'  , ''       , ''         )
       sn_ndepo    = FLD_N( 'ndeposition',   -12     ,  'ndep'     ,  .false.   , .true.  ,   'yearly'  , ''       , ''         )
       sn_ironsed  = FLD_N( 'ironsed'    ,   -12     ,  'bathy'    ,  .false.   , .true.  ,   'yearly'  , ''       , ''         )
+      sn_si       = FLD_N( 'data_si_nomask', -1     ,  'Si'       ,  .true.   , .true.  ,   'monthly'  , ''       , ''         )
 
       REWIND( numnatp )                     ! read numnatp
       READ  ( numnatp, nampissed )
@@ -385,6 +394,33 @@ CONTAINS
       ELSE
           ll_sbc = .FALSE.
       ENDIF
+
+         IF(lwp) WRITE(numout,*) '    initialize silicate '
+         IF(lwp) WRITE(numout,*) '    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ '
+         !
+         ALLOCATE( sf_si(1), STAT=ierr )           !* allocate and fill sf_sst (forcing structure) with sn_sst
+         IF( ierr > 0 )   CALL ctl_stop( 'STOP', 'p4z_sed_init: unable to allocate sf_si structure' )
+         !
+         CALL fld_fill( sf_si, (/ sn_si /), cn_dir, 'p4z_sed_init', 'Iron from sediment ', 'nampissed' )
+                                   ALLOCATE( sf_si(1)%fnow(jpi,jpj,jpk)   )
+         IF( sn_si%ln_tint )     ALLOCATE( sf_si(1)%fdta(jpi,jpj,jpk,2) )
+         !
+         ! Get total input dust ; need to compute total atmospheric supply of Si in a year
+         CALL iom_open (  TRIM( sn_si%clname ) , numsi )
+         CALL iom_gettime( numsi, zsteps, kntime=ntimes_si)  ! get number of record in file
+         ALLOCATE( zsi(jpi,jpj,jpk,ntimes_si) )
+         DO jm = 1, ntimes_si
+          CALL iom_get( numsi, jpdom_data, TRIM( sn_si%clvar ), zsi(:,:,:,jm), jm )
+         END DO
+         CALL iom_close( numsi )
+         DO jk = 1, jpk
+            DO jj = 1, jpj
+               DO ji = 1, jpi
+                  asi3(ji,jj,jk)=zsi(ji,jj,jk,1)
+               END DO
+            END DO
+         END DO
+         DEALLOCATE( zsi)
 
       ! dust input from the atmosphere
       ! ------------------------------
@@ -439,8 +475,8 @@ CONTAINS
          rivpo4input = 0._wp 
          rivalkinput = 0._wp 
          DO jm = 1, ntimes_riv
-            rivpo4input = rivpo4input + glob_sum( ( zriverdic(:,:,jm) + zriverdoc(:,:,jm) ) * tmask(:,:,1) ) 
-            rivalkinput = rivalkinput + glob_sum(   zriverdic(:,:,jm)                       * tmask(:,:,1) ) 
+            rivpo4input = rivpo4input + glob_sum( ( zriverdic(:,:,jm) + zriverdoc(:,:,jm) ) * tmask_bgc_closea(:,:,1) ) 
+            rivalkinput = rivalkinput + glob_sum(   zriverdic(:,:,jm)                       * tmask_bgc_closea(:,:,1) ) 
          END DO
          rivpo4input = rivpo4input * 1E9 / 31.6_wp
          rivalkinput = rivalkinput * 1E9 / 12._wp 
@@ -474,7 +510,7 @@ CONTAINS
          CALL iom_close( numdepo )
          nitdepinput = 0._wp
          DO jm = 1, ntimes_ndep
-           nitdepinput = nitdepinput + glob_sum( zndepo(:,:,jm) * e1e2t(:,:) * tmask(:,:,1) ) 
+           nitdepinput = nitdepinput + glob_sum( zndepo(:,:,jm) * e1e2t(:,:) * tmask_bgc_closea(:,:,1) ) 
          ENDDO
          nitdepinput = nitdepinput / 14E6 
          DEALLOCATE( zndepo)
@@ -496,9 +532,9 @@ CONTAINS
          DO jk = 1, 5
             DO jj = 2, jpjm1
                DO ji = fs_2, fs_jpim1
-                  IF( tmask(ji,jj,jk) /= 0. ) THEN
-                     zmaskt = tmask(ji+1,jj,jk) * tmask(ji-1,jj,jk) * tmask(ji,jj+1,jk)    &
-                        &                       * tmask(ji,jj-1,jk) * tmask(ji,jj,jk+1)
+                  IF( tmask_bgc_closea(ji,jj,jk) /= 0. ) THEN
+                     zmaskt = tmask_bgc_closea(ji+1,jj,jk) * tmask_bgc_closea(ji-1,jj,jk) * tmask_bgc_closea(ji,jj+1,jk)    &
+                        &                       * tmask_bgc_closea(ji,jj-1,jk) * tmask_bgc_closea(ji,jj,jk+1)
                      IF( zmaskt == 0. )   zcmask(ji,jj,jk ) = MAX( 0.1, zcmask(ji,jj,jk) ) 
                   END IF
                END DO

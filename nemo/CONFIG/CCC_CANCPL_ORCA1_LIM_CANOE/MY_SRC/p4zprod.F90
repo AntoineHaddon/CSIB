@@ -40,14 +40,14 @@ MODULE p4zprod
    REAL(wp), PUBLIC ::  QNmin1     = 0.04_wp           !: Small phytoplankton min N quota
    REAL(wp), PUBLIC ::  QNmax2     = 0.172_wp          !: Large phytoplankton max N quota
    REAL(wp), PUBLIC ::  QNmin2     = 0.04_wp           !: Large phytoplankton min N quota
-   REAL(wp), PUBLIC ::  VCNref     = 6.94444E-6_wp     !: Reference rate of N uptake
+   REAL(wp), PUBLIC ::  VCNref     = 0.6_wp            !: Reference rate of N uptake
    REAL(wp), PUBLIC ::  QFemax1    = 93.075_wp         !: Small phytoplankton max Fe quota
    REAL(wp), PUBLIC ::  QFemin1    = 4.65_wp           !: Small phytoplankton min Fe quota
    REAL(wp), PUBLIC ::  QFemax2    = 69.8063_wp        !: Large phytoplankton max Fe quota
    REAL(wp), PUBLIC ::  QFemin2    = 4.65_wp           !: Large phytoplankton min Fe quota
-   REAL(wp), PUBLIC ::  VCFref     = 9.17593E-4_wp     !: Reference rate of Fe uptake
-   REAL(wp), PUBLIC ::  PCref      = 3.472E-5_wp       !: Reference rate of photosynthesis
-   REAL(wp), PUBLIC ::  alphachl   = 1.25E-5_wp        !: Initial slope of P-E curve
+   REAL(wp), PUBLIC ::  VCFref     = 79._wp            !: Reference rate of Fe uptake
+   REAL(wp), PUBLIC ::  PCref      = 3._wp             !: Reference rate of photosynthesis
+   REAL(wp), PUBLIC ::  alphachl   = 1.08_wp           !: Initial slope of P-E curve
    REAL(wp), PUBLIC ::  kn1        = 0.1_wp            !: Small P half-saturation for NO3 uptake
    REAL(wp), PUBLIC ::  ka1        = 0.05_wp           !: Small P half-saturation for NH4 uptake
    REAL(wp), PUBLIC ::  kf1        = 100._wp           !: Small P half-saturation for Fe uptake
@@ -56,15 +56,13 @@ MODULE p4zprod
    REAL(wp), PUBLIC ::  kf2        = 200._wp           !: Large P half-saturation for Fe uptake
    REAL(wp), PUBLIC ::  thetamax   = 0.18_wp           !: Maximum chlorophyll/nitrogen ratio
    REAL(wp), PUBLIC ::  eta        = 2._wp             !: Metabolic cost of biosynthesis
-   REAL(wp), PUBLIC ::  kexh       = 2.E-5_wp          !: exhudation of excess intracellular C
+   REAL(wp), PUBLIC ::  kexh       = 1.7_wp            !: exhudation of excess intracellular C
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   prmax    !: optimal production = f(temperature)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   quotan   !: proxy of N quota in Nanophyto
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   quotad   !: proxy of N quota in diatomee
    
-   REAL(wp) :: r1_rday                !: 1 / rday
    REAL(wp) :: tpp                    !: Total primary production
-
 
    !!* Substitution
 #  include "top_substitute.h90"
@@ -99,7 +97,7 @@ CONTAINS
       REAL(wp) :: PCmax,thetac,PCphot,rhochl,ei,xsphsyn, mwr_n2c, imw_n
       CHARACTER (len=25) :: charout
       REAL(wp), POINTER, DIMENSION(:,:,:) :: zprdia, zprbio, zprdch, zprnch, zysopt   
-      REAL(wp), POINTER, DIMENSION(:,:,:) :: zprorca, zprorcad, zprofed, zprofen, zprochln, zprochld, zpronew, zpronewd
+      REAL(wp), POINTER, DIMENSION(:,:,:) :: zprorca, zprorcad, zprofed, zprofen, zpronew, zpronewd
       REAL(wp), POINTER, DIMENSION(:,:,:) :: zprocn, zprocd, zpronn, zprond
       !!---------------------------------------------------------------------
       !
@@ -107,7 +105,7 @@ CONTAINS
       !
       !  Allocate temporary workspace
       CALL wrk_alloc( jpi, jpj, jpk, zprdia, zprbio, zprdch, zprnch, zysopt            ) 
-      CALL wrk_alloc( jpi, jpj, jpk, zprorca, zprorcad, zprofed, zprofen, zprochln, zprochld, zpronew, zpronewd )
+      CALL wrk_alloc( jpi, jpj, jpk, zprorca, zprorcad, zprofed, zprofen, zpronew, zpronewd )
       CALL wrk_alloc( jpi, jpj, jpk, zprocn, zprocd, zpronn, zprond                                             ) 
       !
       zprorca (:,:,:) = 0._wp
@@ -151,7 +149,7 @@ CONTAINS
 ! small phytoplankton
 
                       Tf = tgfuncp(ji,jj,jk)
-                      QN = MIN(QNmax1,phyn/phyc)
+                      QN = MIN(QNmax1,phyn/(phyc+rtrn))
                       QN = MAX(QNmin1,QN)
                       qndep = MAX((QNmax1-QN)/(QNmax1-QNmin1),0.)                  ! in principle this should be nonegative but if roundoff makes it even slightly negative the exponent could go NaN
                       VCNmax = VCNref*Tf*qndep**0.05
@@ -159,7 +157,7 @@ CONTAINS
                       Nlim  =  Ni/(kn1+Ni)
                       VCN = VCNmax*((1.-Alim)*Nlim+Alim)
 
-                      QFe = MIN(QFemax1,phyfe/phyc)
+                      QFe = MIN(QFemax1,phyfe/(phyc+rtrn))
                       QFe = MAX(QFemin1,QFe)
                       qfedep = MAX((QFemax1-QFe)/(QFemax1-QFemin1),0.) 
                       VCFmax = VCFref*Tf*qfedep**0.05
@@ -168,19 +166,19 @@ CONTAINS
                       PCmax = PCref*Tf*MIN((QFe-QFemin1+rtrn*1.e6)/(QFemax1-QFemin1),(QN-QNmin1+rtrn)/(QNmax1-QNmin1))
 
                       PCmax = MAX(PCmax,1.0e-10)
-                      thetac = MAX(chl/phyc,0.001)
+                      thetac = MAX(chl/(phyc+rtrn),0.001)
                       PCphot = PCmax*(1.-EXP(-alphachl*ei*thetac/PCmax))
                       rhochl = thetamax*(PCphot/(alphachl*thetac*MAX(ei,0.001)))
 
 ! calculate excess intracellular C for exhudation
-                      xsphsyn=(phyc/phyn*mwr_n2c-rr_c2n)*phyn*imw_n
+                      xsphsyn=(phyc/(phyn+rtrn)*mwr_n2c-rr_c2n)*phyn*imw_n
                       xsphsyn=MAX(xsphsyn,0.)
 
-                      zprocn(ji,jj,jk) = (PCphot-eta*VCN)*trn(ji,jj,jk,jpphy)*rfact2-kexh*xsphsyn*rfact2      ! C production rate (in molar units)
-                      zpronn(ji,jj,jk) = VCN/QN*trn(ji,jj,jk,jpnn)*rfact2                                     ! N uptake rate
-                      zprofen(ji,jj,jk) = VCF/QFe*trn(ji,jj,jk,jpnfe)*rfact2                                  ! Fe uptake rate
-                      zprochln(ji,jj,jk) = rhochl*VCN/thetac*trn(ji,jj,jk,jpnch)*rfact2                       ! Chl production rate
-                      zpronew(ji,jj,jk) = zpronn(ji,jj,jk)*Nlim/(Alim+Nlim+rtrn)                              ! NO3 uptake
+                      zprocn(ji,jj,jk) = (PCphot-eta*VCN)*trn(ji,jj,jk,jpphy)*xstep-kexh*xsphsyn*xstep        ! C production rate (in molar units)
+                      zpronn(ji,jj,jk) = VCN/QN*trn(ji,jj,jk,jpnn)*xstep                                      ! N uptake rate
+                      zprofen(ji,jj,jk) = VCF/QFe*trn(ji,jj,jk,jpnfe)*xstep                                   ! Fe uptake rate
+                      zprochln(ji,jj,jk) = rhochl*VCN/thetac*trn(ji,jj,jk,jpnch)*xstep                        ! Chl production rate
+                      zpronew(ji,jj,jk) = zpronn(ji,jj,jk)*(1.-Alim)*Nlim/(Alim+(1.-Alim)*Nlim+rtrn)          ! NO3 uptake
                       xlimnn(ji,jj,jk) = 1.-qndep 
                       xlimnfe(ji,jj,jk) = 1.-qfedep 
 
@@ -191,7 +189,7 @@ CONTAINS
                       phyfe = MAX(trn(ji,jj,jk,jpdfe),0.)*mw_fe
                       chl = MAX(trn(ji,jj,jk,jpdch),0.)
 
-                      QN = MIN(QNmax2,phyn/phyc)
+                      QN = MIN(QNmax2,phyn/(phyc+rtrn))
                       QN = MAX(QNmin2,QN)
                       qndep = MAX((QNmax2-QN)/(QNmax2-QNmin2),0.) 
                       VCNmax = VCNref*Tf*qndep**0.05
@@ -199,7 +197,7 @@ CONTAINS
                       Nlim  =  Ni/(kn2+Ni)
                       VCN = VCNmax*((1.-Alim)*Nlim+Alim)
 
-                      QFe = MIN(QFemax2,phyfe/phyc)
+                      QFe = MIN(QFemax2,phyfe/(phyc+rtrn))
                       QFe = MAX(QFemin2,QFe)
                       qfedep = MAX((QFemax2-QFe)/(QFemax2-QFemin2),0.) 
                       VCFmax = VCFref*Tf*qfedep**0.05
@@ -208,18 +206,18 @@ CONTAINS
                       PCmax = PCref*Tf*MIN((QFe-QFemin2+rtrn)/(QFemax2-QFemin2),(QN-QNmin2+rtrn)/(QNmax2-QNmin2))
 
                       PCmax = MAX(PCmax,1.0e-10)
-                      thetac = MAX(chl/phyc,0.001)
+                      thetac = MAX(chl/(phyc+rtrn),0.001)
                       PCphot = PCmax*(1.-EXP(-alphachl*ei*thetac/PCmax))
                       rhochl = thetamax*(PCphot/(alphachl*thetac*MAX(ei,0.001)))
 
-                      xsphsyn=(phyc/phyn*mwr_n2c-rr_c2n)*phyn*imw_n
+                      xsphsyn=(phyc/(phyn+rtrn)*mwr_n2c-rr_c2n)*phyn*imw_n
                       xsphsyn=MAX(xsphsyn,0.)
 
-                      zprocd(ji,jj,jk) = (PCphot-eta*VCN)*trn(ji,jj,jk,jpdia)*rfact2-kexh*xsphsyn*rfact2     ! C production rate (in molar units)
-                      zprond(ji,jj,jk) = VCN/QN*trn(ji,jj,jk,jpdn)*rfact2                                    ! N uptake rate
-                      zprofed(ji,jj,jk) = VCF/QFe*trn(ji,jj,jk,jpdfe)*rfact2                                 ! Fe uptake rate
-                      zprochld(ji,jj,jk) = rhochl*VCN/thetac*trn(ji,jj,jk,jpdch)*rfact2                      ! Chl production rate
-                      zpronewd(ji,jj,jk) = zprond(ji,jj,jk)*Nlim/(Alim+Nlim+rtrn)                            ! NO3 uptake
+                      zprocd(ji,jj,jk) = (PCphot-eta*VCN)*trn(ji,jj,jk,jpdia)*xstep-kexh*xsphsyn*xstep       ! C production rate (in molar units)
+                      zprond(ji,jj,jk) = VCN/QN*trn(ji,jj,jk,jpdn)*xstep                                     ! N uptake rate
+                      zprofed(ji,jj,jk) = VCF/QFe*trn(ji,jj,jk,jpdfe)*xstep                                  ! Fe uptake rate
+                      zprochld(ji,jj,jk) = rhochl*VCN/thetac*trn(ji,jj,jk,jpdch)*xstep                       ! Chl production rate
+                      zpronewd(ji,jj,jk) = zprond(ji,jj,jk)*(1.-Alim)*Nlim/(Alim+(1.-Alim)*Nlim+rtrn)        ! NO3 uptake
                       xlimdn(ji,jj,jk) = 1.-qndep 
                       xlimdfe(ji,jj,jk) = 1.-qfedep 
 
@@ -269,25 +267,25 @@ CONTAINS
          zrfact2 = 1.e-3 * rfact2r  ! conversion from umol/L/timestep into mol/m3/s
          IF( lk_iomput ) THEN
            IF( jnt == nrdttrc ) THEN
-              CALL iom_put( "PPPHY"   , zprocn (:,:,:) * zrfact2 * tmask(:,:,:) )  ! primary production by nanophyto
-              CALL iom_put( "PPPHY2"  , zprocd (:,:,:) * zrfact2 * tmask(:,:,:) )  ! primary production by diatom
-              CALL iom_put( "PPNEWN"  , zpronew (:,:,:) * zrfact2 * tmask(:,:,:) )  ! new primary production by nanophyto
-              CALL iom_put( "PPNEWD"  , zpronewd(:,:,:) * zrfact2 * tmask(:,:,:) )  ! new primary production by diatom
-              CALL iom_put( "PFeD"    , zprofed (:,:,:) * zrfact2 * tmask(:,:,:) )  ! biogenic iron production by diatom
-              CALL iom_put( "PFeN"    , zprofen (:,:,:) * zrfact2 * tmask(:,:,:) )  ! biogenic iron production by nanophyto
-              CALL iom_put( "LNN"     , xlimnn  (:,:,:) * tmask(:,:,:) )  ! Nitrogen limitation term
-              CALL iom_put( "LDN"     , xlimdn  (:,:,:) * tmask(:,:,:) )  ! Nitrogen limitation term
-              CALL iom_put( "LNFe"    , xlimnfe (:,:,:) * tmask(:,:,:) )  ! Iron limitation term
-              CALL iom_put( "LDFe"    , xlimdfe (:,:,:) * tmask(:,:,:) )  ! Iron limitation term
+              CALL iom_put( "PPPHY"   , zprocn (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )  ! primary production by nanophyto
+              CALL iom_put( "PPPHY2"  , zprocd (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )  ! primary production by diatom
+              CALL iom_put( "PPNEWN"  , zpronew (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )  ! new primary production by nanophyto
+              CALL iom_put( "PPNEWD"  , zpronewd(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )  ! new primary production by diatom
+              CALL iom_put( "PFeD"    , zprofed (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )  ! biogenic iron production by diatom
+              CALL iom_put( "PFeN"    , zprofen (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )  ! biogenic iron production by nanophyto
+              CALL iom_put( "LNN"     , xlimnn  (:,:,:) * tmask_bgc_closea(:,:,:) )  ! Nitrogen limitation term
+              CALL iom_put( "LDN"     , xlimdn  (:,:,:) * tmask_bgc_closea(:,:,:) )  ! Nitrogen limitation term
+              CALL iom_put( "LNFe"    , xlimnfe (:,:,:) * tmask_bgc_closea(:,:,:) )  ! Iron limitation term
+              CALL iom_put( "LDFe"    , xlimdfe (:,:,:) * tmask_bgc_closea(:,:,:) )  ! Iron limitation term
            ENDIF
          ELSE
-              trc3d(:,:,:,jp_pcs0_3d + 4)  = zprorca (:,:,:) * zrfact2 * tmask(:,:,:)
-              trc3d(:,:,:,jp_pcs0_3d + 5)  = zprorcad(:,:,:) * zrfact2 * tmask(:,:,:)
-              trc3d(:,:,:,jp_pcs0_3d + 6)  = zpronew (:,:,:) * zrfact2 * tmask(:,:,:)
-              trc3d(:,:,:,jp_pcs0_3d + 7)  = zpronewd(:,:,:) * zrfact2 * tmask(:,:,:)
-              trc3d(:,:,:,jp_pcs0_3d + 8)  = zprorcad(:,:,:) * zrfact2 * tmask(:,:,:) * zysopt(:,:,:)
-              trc3d(:,:,:,jp_pcs0_3d + 9)  = zprofed (:,:,:) * zrfact2 * tmask(:,:,:)
-              trc3d(:,:,:,jp_pcs0_3d + 10) = zprofen (:,:,:) * zrfact2 * tmask(:,:,:)
+              trc3d(:,:,:,jp_pcs0_3d + 4)  = zprorca (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:)
+              trc3d(:,:,:,jp_pcs0_3d + 5)  = zprorcad(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:)
+              trc3d(:,:,:,jp_pcs0_3d + 6)  = zpronew (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:)
+              trc3d(:,:,:,jp_pcs0_3d + 7)  = zpronewd(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:)
+              trc3d(:,:,:,jp_pcs0_3d + 8)  = zprorcad(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) * zysopt(:,:,:)
+              trc3d(:,:,:,jp_pcs0_3d + 9)  = zprofed (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:)
+              trc3d(:,:,:,jp_pcs0_3d + 10) = zprofen (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:)
          ENDIF
          !
       ENDIF
@@ -299,7 +297,7 @@ CONTAINS
       ENDIF
       !
       CALL wrk_dealloc( jpi, jpj, jpk, zprdia, zprbio, zprdch, zprnch, zysopt            ) 
-      CALL wrk_dealloc( jpi, jpj, jpk, zprorca, zprorcad, zprofed, zprofen, zprochln, zprochld, zpronew, zpronewd )
+      CALL wrk_dealloc( jpi, jpj, jpk, zprorca, zprorcad, zprofed, zprofen, zpronew, zpronewd )
       CALL wrk_dealloc( jpi, jpj, jpk, zprocn, zprocd, zpronn, zprond                                             ) 
       !
       IF( nn_timing == 1 )  CALL timing_stop('p4z_prod')
@@ -354,7 +352,6 @@ CONTAINS
          WRITE(numout,*) '    Exudation rate of excess intracellular C kexh         =', kexh
       ENDIF
       !
-      r1_rday   = 1._wp / rday 
       tpp       = 0._wp
       !
    END SUBROUTINE p4z_prod_init

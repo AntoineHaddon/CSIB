@@ -59,7 +59,7 @@ CONTAINS
       TYPE(PTRACER), DIMENSION(jptra) :: sn_tracer  ! type of tracer for saving if not key_iomput
       !!
       NAMELIST/namtrc/ nn_dttrc, nn_writetrc, ln_rsttr, nn_rsttr, &
-         &             cn_trcrst_in, cn_trcrst_out, sn_tracer, ln_trcdta, ln_trcdmp
+         &             cn_trcrst_in, cn_trcrst_out, sn_tracer, ln_trcdta, ln_trcdmp, ln_altres
 #if defined key_trdmld_trc  || defined key_trdtrc
       NAMELIST/namtrc_trd/ nn_trd_trc, nn_ctls_trc, rn_ucf_trc, &
          &                ln_trdmld_trc_restart, ln_trdmld_trc_instant, &
@@ -82,6 +82,7 @@ CONTAINS
       nn_rsttr      =  0
       cn_trcrst_in  = 'restart_trc'
       cn_trcrst_out = 'restart_trc'
+      ln_altres     = .FALSE.
       !
       DO jn = 1, jptra
          WRITE( sn_tracer(jn)%clsname,'("TR_",I1)'           ) jn
@@ -112,13 +113,14 @@ CONTAINS
       IF(lwp) THEN                   ! control print
          WRITE(numout,*)
          WRITE(numout,*) ' Namelist : namtrc'
-         WRITE(numout,*) '   time step freq. for passive tracer           nn_dttrc      = ', nn_dttrc
-         WRITE(numout,*) '   restart  for passive tracer                  ln_rsttr      = ', ln_rsttr
-         WRITE(numout,*) '   control of time step for passive tracer      nn_rsttr      = ', nn_rsttr
-         WRITE(numout,*) '   first time step for pass. trac.              nittrc000     = ', nittrc000
-         WRITE(numout,*) '   frequency of outputs for passive tracers     nn_writetrc   = ', nn_writetrc  
-         WRITE(numout,*) '   Read inputs data from file (y/n)             ln_trcdta     = ', ln_trcdta
-         WRITE(numout,*) '   Damping of passive tracer (y/n)              ln_trcdmp     = ', ln_trcdmp
+         WRITE(numout,*) '   time step freq. for passive tracer                nn_dttrc      = ', nn_dttrc
+         WRITE(numout,*) '   restart  for passive tracer                       ln_rsttr      = ', ln_rsttr
+         WRITE(numout,*) '   control of time step for passive tracer           nn_rsttr      = ', nn_rsttr
+         WRITE(numout,*) '   first time step for pass. trac.                   nittrc000     = ', nittrc000
+         WRITE(numout,*) '   frequency of outputs for passive tracers          nn_writetrc   = ', nn_writetrc  
+         WRITE(numout,*) '   Read inputs data from file (y/n)                  ln_trcdta     = ', ln_trcdta
+         WRITE(numout,*) '   Damping of passive tracer (y/n)                   ln_trcdmp     = ', ln_trcdmp
+         WRITE(numout,*) '   Reinitialize tracer if not found in restart (y/n) ln_altres     = ', ln_altres
          WRITE(numout,*) ' '
          DO jn = 1, jptra
             WRITE(numout,*) '  tracer nb : ', jn, '    short name : ', ctrcnm(jn)
@@ -176,11 +178,14 @@ CONTAINS
          ln_trcdta = .TRUE.
       ENDIF
       !
-      IF( ln_rsttr .AND. .NOT.ln_trcdmp .AND. ln_trcdta ) THEN
-          CALL ctl_warn( 'trc_nam: passive tracer restart and  data intialisation, ',   &
-             &           'we keep the restart values and set ln_trcdta to FALSE' )
-         ln_trcdta = .FALSE.
-      ENDIF
+      ! Nothing changes if ln_trcdta is .FALSE. or .TRUE. if ln_rsttr is .TRUE., all tracer values will be from the
+      ! restart file. However, if this code is executed, then the ln_altres does not work as intended because the tracer
+      ! data initialisation has not been done.
+!      IF( ln_rsttr .AND. .NOT.ln_trcdmp .AND. ln_trcdta ) THEN
+!          CALL ctl_warn( 'trc_nam: passive tracer restart and  data intialisation, ',   &
+!             &           'we keep the restart values and set ln_trcdta to FALSE' )
+!         ln_trcdta = .FALSE.
+!      ENDIF
       !
       IF( .NOT.ln_trcdta ) THEN
          ln_trc_ini(:) = .FALSE.

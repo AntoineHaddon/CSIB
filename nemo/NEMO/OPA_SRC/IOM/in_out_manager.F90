@@ -84,7 +84,9 @@ MODULE in_out_manager
    !!----------------------------------------------------------------------
    !!                    output monitoring
    !!----------------------------------------------------------------------
-   LOGICAL ::   ln_ctl     = .FALSE.   !: run control for debugging
+   LOGICAL ::   ln_ctl            = .FALSE.   !: run control for debugging
+   LOGICAL ::   ln_ctl_chksum     = .FALSE.   !: Print run control as checksums
+   LOGICAL ::   ln_chk_negsal     = .FALSE.   !: Check for negative salinity
    INTEGER ::   nn_timing    =    0    !: run control for timing
    INTEGER ::   nn_print     =    0    !: level of print (0 no print)
    INTEGER ::   nn_ictls     =    0    !: Start i indice for the SUM control
@@ -95,7 +97,7 @@ MODULE in_out_manager
    INTEGER ::   nn_jsplt     =    1    !: number of processors following j
    INTEGER ::   nn_bench     =    0    !: benchmark parameter (0/1)
    INTEGER ::   nn_bit_cmp   =    0    !: bit reproducibility  (0/1)
-
+   INTEGER ::   nn_state_freq =   24   !: Write time.stat if MOD(kt,nn_state_freq)==0
    !                                          
    INTEGER ::   nprint, nictls, nictle, njctls, njctle, isplt, jsplt, nbench    !: OLD namelist names
 
@@ -105,6 +107,7 @@ MODULE in_out_manager
    !!                        logical units
    !!----------------------------------------------------------------------
    INTEGER ::   numstp      =   -1      !: logical unit for time step
+   INTEGER ::   numstat     =   -1      !: logical unit for time step stats
    INTEGER ::   numtime     =   -1      !: logical unit for timing
    INTEGER ::   numout      =    6      !: logical unit for output print
    INTEGER ::   numnam      =   -1      !: logical unit for namelist

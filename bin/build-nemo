@@ -5,7 +5,7 @@
 #                     [refcfg=cfgdir] \
 #                     [arch=fname] \
 #                     [add_key=keys] \
-#                     [del_key=keys]
+#                     [del_key=keys] 
 #          Quantities in square brackets are optional
 #
 # Purpose: Create a nemo executable or build nemo specifc tools
@@ -24,6 +24,7 @@
 #   -b   ...use a version specific build-nemo, namely the version specicifed on the command line
 #           If both -a and -b are present then -a takes precedence
 #   -k   ...do not delete the tmp dir after compilation is complete (used for debugging)
+#   -d   ...compile an executable with debugging symbols (for use with DDT or GDB)
 #
 # Variable definitions:
 #   srcpath=srcpath ...location of the NEMO source code. 
@@ -162,6 +163,9 @@ keep_tmpd=0
 # Number of processors to use during compilation
 comp_np=4
 
+# Set debug to 0 (turned off, regular optimizations used)
+debug=0
+
 printf "\n\n ------------------- \n"
 printf "        build-nemo       \n"
 printf " ------------------- \n"
@@ -171,7 +175,7 @@ printf " ------------------- \n"
 [ ! -d "$CCRNTMP" ] && bail "/tmp is not a directory"
 
 # process command line options
-while getopts j:n:m:r:hktvx opt
+while getopts j:n:m:r:hktvxd opt
 do
   case $opt in
     m) nemo_arch="$OPTARG" ;;
@@ -186,6 +190,7 @@ do
        build_rebuild_nemo_tool=1
        build_weights_tool=1
        ;;
+    d) debug=1 ;;
     h) usage ;;
     -) shift; break ;; # end of options
     ?) usage -e $USAGE   ;;
@@ -223,6 +228,21 @@ for arg in "$@"; do
     *) bail "Invalid command line arg --> $arg <--" ;;
   esac
 done
+
+# When debugging is requested, the behaviour of this script needs to be adjusted accordingly
+if [ $debug -eq 1 ]; then
+  # Need to retain the postprocessed source files and store them in a runtime accessible directory
+  keep_tmpd=1
+  CCRNTMP=$PWD/tmp # Assumed to be in the RUNID directory
+  [ ! -d $CCRNTMP ] && mkdir $CCRNTMP # This directory probably does not exist
+  nemo_arch="$nemo_arch-debug" # Use a version of the requested architecture with debug options
+  [ $build_nemo_exe -eq 1 ] && nemo_exe="$nemo_exe-debug" # Make sure not to clobber an existing optimised executable
+else
+  # CCRNTMP must be defined
+  CCRNTMP=/tmp
+  [   -z "$CCRNTMP" ] && bail "/tmp must be defined"
+  [ ! -d "$CCRNTMP" ] && bail "/tmp is not a directory"
+fi
 
 if [ $build_nemo_exe -eq 1 ]; then
   # The name of the executable is not required unless it is to be built
@@ -406,7 +426,7 @@ if [ $build_nemo_exe -eq 1 ]; then
     XC40_CCCma_intel-pe*) env='intel' ;;
     intel_xc40-cancpl*) env='intel' ;;
     cray_xc40-cancpl*) env='cray' ;;
-    *) echo "WARNING: Unknown ARCH - we don't know if this is the Cray or Intel PE" ;;
+    *) bail "Unknown ARCH $(nemo_arch) - we don't know if this is the Cray or Intel PE" ;;
   esac
 
   if [ $env = 'cray' ]; then
@@ -431,43 +451,8 @@ if [ $build_nemo_exe -eq 1 ]; then
       echo "Saved $nemo_exe on RUNPATH $RUNPATH"
    else
       # In ocean-only we copy to the PROD dir
-      ln -s $nemo_config/BLD/bin/nemo.exe $CWD/$nemo_exe
+      ln -s ${nemo_source_path}/nemo/CONFIG/${nemo_config}/BLD/bin/nemo.exe ${CWD}/${nemo_exe}
    fi
-fi
-
-if [ $build_rebuild_tool -eq 1 ]; then
-  # Build nemo rebuild tool
-  cd $nemo_root/TOOLS
-  maketools -n REBUILD -m xlf_aix_noMP-cccma
-  [ $? -ne 0 ] && bail "Problem building tool REBUILD"
-  # This will build a binary named "flio_rbld.exe" in TOOLS/REBUILD/BLD/bin
-  cp REBUILD/BLD/bin/*.exe $tmpd
-  # There is also a script in REBUILD/rebuild
-  cp REBUILD/rebuild $tmpd
-  cd $tmpd
-fi
-
-if [ $build_rebuild_nemo_tool -eq 1 ]; then
-  # Build nemo rebuild_nemo tool
-  cd $nemo_root/TOOLS
-  maketools -n REBUILD_NEMO -m xlf_aix_noMP-cccma
-  [ $? -ne 0 ] && bail "Problem building tool REBUILD_NEMO"
-  # This will build a binary named "rebuild_nemo.exe" in TOOLS/REBUILD_NEMO/BLD/bin
-  cp REBUILD_NEMO/BLD/bin/*.exe $tmpd
-  # There is also a script in REBUILD/rebuild_nemo
-  cp REBUILD/rebuild_nemo $tmpd
-  cd $tmpd
-fi
-
-if [ $build_weights_tool -eq 1 ]; then
-  # Build nemo weights tool
-  cd $nemo_root/TOOLS
-  maketools -n WEIGHTS -m xlf_aix_noMP-cccma
-  [ $? -ne 0 ] && bail "Problem building tool WEIGHTS"
-  # This will build a binaries named scrip.exe, scripgrid.exe, scripinterp.exe
-  # and scripshape.exe in TOOLS/WEIGHTS/BLD/bin
-  cp WEIGHTS/BLD/bin/*.exe $tmpd
-  cd $tmpd
 fi
 
 # Return to the original dir and clean up

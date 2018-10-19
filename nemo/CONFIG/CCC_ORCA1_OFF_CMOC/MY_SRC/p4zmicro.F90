@@ -94,9 +94,9 @@ CONTAINS
                tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) + mzn_cmoc * xstep * trn(ji,jj,jk,jpzoo)
                tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) - mzn_cmoc * xstep * trn(ji,jj,jk,jpzoo) * ncrr_cmoc               
                tra(ji,jj,jk,jppoc) = tra(ji,jj,jk,jppoc) + mzd_cmoc * xstep * trn(ji,jj,jk,jpzoo) &
-               !
                &                    + ncrr_cmoc * 1e3_wp * mz2_cmoc * xstep * trn(ji,jj,jk,jpzoo) * trn(ji,jj,jk,jpzoo)
-
+               tra(ji,jj,jk,jpdnt) = tra(ji,jj,jk,jpdnt) + mzn_cmoc * xstep * trn(ji,jj,jk,jpzoo)
+               !
             END DO
          END DO
       END DO
@@ -104,7 +104,7 @@ CONTAINS
       IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('micro')")
          CALL prt_ctl_trc_info(charout)
-         CALL prt_ctl_trc(tab4d=tra, mask=tmask, clinfo=ctrcnm)
+         CALL prt_ctl_trc(tab4d=tra, mask=tmask_bgc_closea, clinfo=ctrcnm)
       ENDIF
       !
       IF( nn_timing == 1 )  CALL timing_stop('p4z_micro')

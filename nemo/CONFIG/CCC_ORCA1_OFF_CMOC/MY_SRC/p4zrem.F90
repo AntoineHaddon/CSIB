@@ -74,7 +74,7 @@ CONTAINS
                &                 * exp ( -ed_cmoc * 1e3_wp / 8.31_wp *        &
                &                ( 1._wp / ( tsn(ji,jj,jk,jp_tem) + 273.15_wp  &
                &                 + rtrn ) - 1._wp / ( tvm_cmoc + 273.15_wp )  &
-               &                )      ) * trn(ji,jj,jk,jppoc) * tmask(ji,jj,jk)
+               &                )      ) * trn(ji,jj,jk,jppoc) * tmask_bgc_closea(ji,jj,jk)
             END DO
           END DO 
       END DO      
@@ -85,7 +85,7 @@ CONTAINS
             DO ji = 1, jpi
                 redettot(ji,jj) = redettot(ji,jj) + redet(ji,jj,jk)         &
                 &                                 * fse3t(ji,jj,jk)         &
-                &                                 * tmask(ji,jj,jk)
+                &                                 * tmask_bgc_closea(ji,jj,jk)
             END DO
           END DO 
       END DO      
@@ -99,13 +99,14 @@ CONTAINS
          tra(:,:,jk,jpoxy) = tra(:,:,jk,jpoxy) - redet(:,:,jk) 
          tra(:,:,jk,jpdic) = tra(:,:,jk,jpdic) + redet(:,:,jk) 
          tra(:,:,jk,jptal) = tra(:,:,jk,jptal) - redet(:,:,jk) * ncrr_cmoc
+         tra(:,:,jk,jpdnt) = tra(:,:,jk,jpdnt) + redet(:,:,jk) 
       END DO
 
       ! print mean trends (used for debugging)
       IF(ln_ctl)   THEN
          WRITE(charout, FMT="('rem6')")
          CALL prt_ctl_trc_info(charout)
-         CALL prt_ctl_trc(tab4d=tra, mask=tmask, clinfo=ctrcnm)
+         CALL prt_ctl_trc(tab4d=tra, mask=tmask_bgc_closea, clinfo=ctrcnm)
       ENDIF
       !
       IF( nn_timing == 1 )  CALL timing_stop('p4z_rem')

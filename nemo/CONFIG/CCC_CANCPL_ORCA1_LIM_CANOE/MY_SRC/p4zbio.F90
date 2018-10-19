@@ -106,10 +106,17 @@ CONTAINS
          trn(:,:,:,jn) = trn(:,:,:,jn) + xnegtr(:,:,:) * tra(:,:,:,jn)
        END DO
 
+      IF( ln_diatrc ) THEN
+         denitr(:,:,:) = denitr(:,:,:) * xnegtr(:,:,:)
+         IF( jnt == nrdttrc ) THEN
+          CALL iom_put( "Denitr"   , denitr(:,:,:) * tmask_bgc_closea(:,:,:) )  ! rate of denitrification
+         ENDIF
+      ENDIF
+
       tra(:,:,:,:) = 0.e0
 
-      CALL total_element(totfe,totn)
-      WRITE(numout,*) totfe, totn
+      !CALL total_element(totfe,totn)
+      !WRITE(numout,*) totfe, totn
 
       !
       IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
@@ -135,16 +142,16 @@ CONTAINS
       totn=0.
 
             totn = glob_sum( (   (trn(:,:,:,jpno3) + trn(:,:,:,jpnh4)  &
-            &                     + trn(:,:,:,jpnn) + trn(:,:,:,jpdn))*6.625  &
+            &                     + trn(:,:,:,jpnn) + trn(:,:,:,jpdn))*rr_c2n  &
             &                     + trn(:,:,:,jpzoo) + trn(:,:,:,jpmes)  &
             &                     + trn(:,:,:,jppoc) + trn(:,:,:,jpgoc)  ) * cvol(:,:,:)  )
-            totn=totn/6.625
+            totn=totn/rr_c2n
  
-! zoo and poc concs are in C units, 4.981=33/6.625
+! zoo and poc concs are in C units
 
             totfe = glob_sum( (   trn(:,:,:,jpfer) + trn(:,:,:,jpdfe) + trn(:,:,:,jpnfe)   &
-            &                     + trn(:,:,:,jpzoo)*4.981 + trn(:,:,:,jpmes)*4.981  &
-            &                     + trn(:,:,:,jppoc)*4.981 + trn(:,:,:,jpgoc)*4.981  ) * cvol(:,:,:)  )
+            &                     + trn(:,:,:,jpzoo)*rr_fe2c + trn(:,:,:,jpmes)*rr_fe2c  &
+            &                     + trn(:,:,:,jppoc)*rr_fe2c + trn(:,:,:,jpgoc)*rr_fe2c  ) * cvol(:,:,:)  )
 
       !
    END SUBROUTINE total_element

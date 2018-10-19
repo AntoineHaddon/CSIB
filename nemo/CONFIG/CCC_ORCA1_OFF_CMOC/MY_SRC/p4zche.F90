@@ -48,16 +48,16 @@ MODULE p4zche
    REAL(wp) ::   rgas   = 83.143         ! universal gas constants
    REAL(wp) ::   oxyco  = 1. / 22.4144   ! converts from liters of an ideal gas to moles
 
-   REAL(wp) ::   bor1   = 0.00023        ! borat constants
-   REAL(wp) ::   bor2   = 1. / 10.82
+   REAL(wp) ::   bor1   = 0.000232       ! borat constants
+   REAL(wp) ::   bor2   = 1. / 10.811
 
-   REAL(wp) ::   ca0    = -162.8301      ! WEISS & PRICE 1980, units mol/(kg atm)
-   REAL(wp) ::   ca1    =  218.2968
-   REAL(wp) ::   ca2    =   90.9241
-   REAL(wp) ::   ca3    =   -1.47696
-   REAL(wp) ::   ca4    =    0.025695
-   REAL(wp) ::   ca5    =   -0.025225
-   REAL(wp) ::   ca6    =    0.0049867
+   REAL(wp) ::   ca0    = -160.7333   ! WEISS & PRICE 1980, units mol/(kg atm)
+   REAL(wp) ::   ca1    =  215.4152
+   REAL(wp) ::   ca2    =  89.8920
+   REAL(wp) ::   ca3    = - 1.47759
+   REAL(wp) ::   ca4    =   0.029941
+   REAL(wp) ::   ca5    = - 0.027455
+   REAL(wp) ::   ca6    =   0.0053407
 
    REAL(wp) ::   c10    = -3633.86        ! Coeff. for 1. dissoc. of carbonic acid (Dickson et al., 2007)
    REAL(wp) ::   c11    =    61.2172    
@@ -91,6 +91,40 @@ MODULE p4zche
    REAL(wp) ::   cw4    =     -5.977 
    REAL(wp) ::   cw5    =      1.0495  
    REAL(wp) ::   cw6    =     -0.01615
+
+    REAL(wp) ::   cp10    = -4576.752    ! Coeff. for dissoc. of H3PO4 (Dickson et al 2007)
+    REAL(wp) ::   cp11    = 115.525
+    REAL(wp) ::   cp12    = -18.453
+    REAL(wp) ::   cp13    = -106.736
+    REAL(wp) ::   cp14    = 0.69171
+    REAL(wp) ::   cp15    = -0.65643
+    REAL(wp) ::   cp16    = -0.01844
+        
+    REAL(wp) ::   cp20    = -8814.715    ! Coeff. for dissoc. of H2PO4- (Dickson et al 2007)
+    REAL(wp) ::   cp21    = 172.0883
+    REAL(wp) ::   cp22    = -27.927
+    REAL(wp) ::   cp23    = -160.340
+    REAL(wp) ::   cp24    = 1.3566
+    REAL(wp) ::   cp25    = 0.37335
+    REAL(wp) ::   cp26    = -0.05778
+       
+    REAL(wp) ::   cp30    = -3070.75     ! Coeff. for dissoc. of HPO4-- (Dickson et al 2007)
+    REAL(wp) ::   cp31    = -18.141
+    REAL(wp) ::   cp32    = 17.27039
+    REAL(wp) ::   cp33    = 2.81197
+    REAL(wp) ::   cp34    = -44.99486
+    REAL(wp) ::   cp35    = -0.09984
+    
+    REAL(wp) ::   csi0    = -8904.2      ! Coeff. for dissoc. of Si(OH)4 (Dickson et al 2007)
+    REAL(wp) ::   csi1    = 117.385
+    REAL(wp) ::   csi2    = -19.334
+    REAL(wp) ::   csi3    = -458.79
+    REAL(wp) ::   csi4    = 3.5913
+    REAL(wp) ::   csi5    = 188.74
+    REAL(wp) ::   csi6    = -1.5998
+    REAL(wp) ::   csi7    = -12.1652
+    REAL(wp) ::   csi8    = 0.07871
+    REAL(wp) ::   csi9    = -0.001005
 
    !                                    ! volumetric solubility constants for o2 in ml/L  
    REAL(wp) ::   ox0    =  2.00856      ! from Table 1 for Eq 8 of Garcia and Gordon, 1992.
@@ -137,6 +171,7 @@ CONTAINS
       REAL(wp) ::   zsqrt, ztr  , zlogt , zcek1
       REAL(wp) ::   zis  , zis2 , zsal15, zisqrt
       REAL(wp) ::   zckb , zck1 , zck2  , zckw  , zak1 , zak2  , zakb , zaksp0, zakw
+      REAL(wp) ::   zckp1, zckp2, zckp3, zcksi, zakp1, zakp2, zakp3, zaksi
       REAL(wp) ::   zaksp1
       !!---------------------------------------------------------------------
       !
@@ -149,10 +184,10 @@ CONTAINS
 !CDIR NOVERRCHK
          DO ji = 1, jpi
             !                             ! SET ABSOLUTE TEMPERATURE
-            ztkel = tsn(ji,jj,1,jp_tem) + 273.16
+            ztkel = tsn(ji,jj,1,jp_tem) + 273.15
             zt    = ztkel * 0.01
             zt2   = zt * zt
-            zsal  = tsn(ji,jj,1,jp_sal) + ( 1.- tmask(ji,jj,1) ) * 35.
+            zsal  = tsn(ji,jj,1,jp_sal) + ( 1.- tmask_bgc_closea(ji,jj,1) ) * 35.
             zsal2 = zsal * zsal
             zlogt = LOG( zt )
             !                             ! LN(K0) OF SOLUBILITY OF CO2 (EQ. 12, WEISS, 1980)
@@ -189,8 +224,8 @@ CONTAINS
                zpres   = 1.025e-1 * fsdept(ji,jj,jk)
 
                ! SET ABSOLUTE TEMPERATURE
-               ztkel   = tsn(ji,jj,jk,jp_tem) + 273.16
-               zsal    = tsn(ji,jj,jk,jp_sal) + ( 1.-tmask(ji,jj,jk) ) * 35.
+               ztkel   = tsn(ji,jj,jk,jp_tem) + 273.15
+               zsal    = tsn(ji,jj,jk,jp_sal) + ( 1.-tmask_bgc_closea(ji,jj,jk) ) * 35.
                zsqrt  = SQRT( zsal )
                zsal15  = zsqrt * zsal
                zlogt  = LOG( ztkel )
@@ -198,7 +233,7 @@ CONTAINS
                zis    = 19.924 * zsal / ( 1000.- 1.005 * zsal )
                zis2   = zis * zis
                zisqrt = SQRT( zis )
-               ztc     = tsn(ji,jj,jk,jp_tem) + ( 1.- tmask(ji,jj,jk) ) * 20.
+               ztc     = tsn(ji,jj,jk,jp_tem) + ( 1.- tmask_bgc_closea(ji,jj,jk) ) * 20.
 
                ! CHLORINITY (WOOSTER ET AL., 1969)
                zcl     = zsal * salchl
@@ -214,6 +249,13 @@ CONTAINS
                ! PKW (H2O) (DICKSON AND RILEY, 1979)
                zckw    = cw0 * ztr + cw1 + cw2 * zlogt + ( cw3 * ztr + cw4 + cw5 * zlogt ) * zsqrt + cw6 * zsal
 
+              ! DISSOCIATION CONSTANTS FOR PHOSPHATE AND SILICATE
+               zckp1    = cp10 * ztr + cp11 + cp12 * zlogt + (cp13 * ztr + cp14) * zsqrt + (cp15 * ztr + cp16) * zsal
+               zckp2    = cp20 * ztr + cp21 + cp22 * zlogt + (cp23 * ztr + cp24) * zsqrt + (cp25 * ztr + cp26) * zsal
+               zckp3    = cp30 * ztr + cp31 + (cp32 * ztr + cp33) * zsqrt + (cp34 * ztr + cp35) * zsal
+
+               zcksi = csi0 * ztr + csi1 + csi2 * zlogt + (csi3 * ztr + csi4) * zisqrt + (csi5 * ztr + csi6) * zis &
+                  & + (csi7 * ztr + csi8) * zis2 + LOG(1. + csi9 * zsal)
 
                ! APPARENT SOLUBILITY PRODUCT K'SP OF CALCITE IN SEAWATER
                !       (S=27-43, T=2-25 DEG C) at pres =0 (atmos. pressure) (MUCCI 1983)
@@ -221,11 +263,15 @@ CONTAINS
                   &   + ( akcc5 + akcc6 * ztkel + akcc7 * ztr ) * zsqrt + akcc8 * zsal + akcc9 * zsal15
 
                ! K1, K2 OF CARBONIC ACID, KB OF BORIC ACID, KW (H2O) (LIT.?)
-               zak1    = 10**(zck1)
-               zak2    = 10**(zck2)
+               zak1    = 10.**(zck1)
+               zak2    = 10.**(zck2)
                zakb    = EXP( zckb  )
                zakw    = EXP( zckw )
-               zaksp1  = 10**(zaksp0)
+               zakp1    = EXP( zckp1 )
+               zakp2    = EXP( zckp2 )
+               zakp3    = EXP( zckp3 )
+               zaksi    = EXP( zcksi )
+               zaksp1  = 10.**(zaksp0)
 
                ! FORMULA FOR CPEXP AFTER EDMOND & GIESKES (1970)
                !        (REFERENCE TO CULBERSON & PYTKOQICZ (1968) AS MADE
@@ -260,6 +306,11 @@ CONTAINS
                zbuf2  = 0.5 * ( devk4(4) + devk5(4) * ztc )
                akw3(ji,jj,jk) = zakw * EXP( zbuf1 * zcpexp + zbuf2 * zcpexp2 )
 
+               ! K_Px and K_Si (NO PRESSURE CORRECTION)
+               akp13(ji,jj,jk) = zakp1
+               akp23(ji,jj,jk) = zakp2
+               akp33(ji,jj,jk) = zakp3
+               aksi3(ji,jj,jk) = zaksi
 
                ! APPARENT SOLUBILITY PRODUCT K'SP OF CALCITE 
                !        AS FUNCTION OF PRESSURE FOLLOWING MILLERO

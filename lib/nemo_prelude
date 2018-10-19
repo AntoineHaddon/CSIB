@@ -636,6 +636,12 @@ echo "#################### Start NEMO pre-processing #################"
       fi
     fi
 
+    # If CFCs are enabled we need to override namelist_top and namelist_cfc       
+    if [ $nemo_cfc -eq 1 ]; then         
+       find_nemo_config_EXP00 namelist_cfc namelist_cfc
+       find_nemo_config_EXP00 namelist_top namelist_top_cfc
+    fi
+
     if [ ! -x nemo.exe ]; then
       # Get a local copy of the NEMO executable
       [ -z "$nemo_exec" ] && bail "nemo_exec must be defined."
@@ -1005,6 +1011,11 @@ echo "#################### Start NEMO pre-processing #################"
   ln_rnf=${nemo_ln_rnf:=.true.}
   ln_rnf_emp=${nemo_ln_rnf_emp:=.true.}
 
+  # namelist parameters for on-the-fly diagnostics (CMIP6)
+  ln_diaptr=${nemo_ln_diaptr:=.false.}
+  ln_diaznl=${nemo_ln_diaznl:=.true.}
+  nn_fwri=${nemo_nn_fwri:=15}
+
   # &namtsd    !   data : Temperature  & Salinity
   # ln_tsd_init flags initialization of ocean T & S with T & S input data (T) or not (F)
   ln_tsd_init=${nemo_ln_tsd_init:=.true.}
@@ -1015,7 +1026,8 @@ echo "#################### Start NEMO pre-processing #################"
   # Modify specified parameter values in the input ocean namelist
   mod_nl namelist nn_it000 nn_itend nn_istate nn_stock nn_write jpni jpnj jpnij \
     rn_rdt cn_exp nn_date0 ln_rstart nn_rstctl nn_no cn_ocerst_in cn_ocerst_out \
-    ln_ctl nn_print nn_ice ln_rnf ln_rnf_emp ln_tsd_init nn_fsbc nn_closea nn_msh
+    ln_ctl nn_print nn_ice ln_rnf ln_rnf_emp ln_tsd_init nn_fsbc nn_closea nn_msh \
+    ln_diaptr ln_diaznl nn_fwri
 
   # Modify specified parameter values in the namelist read by the ice module
   # NOTE: If character variables do not follow the NEMO naming convention (that their names begin with the letter "c")
@@ -1028,6 +1040,11 @@ echo "#################### Start NEMO pre-processing #################"
   # Modify the input top namelist
   if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
     mod_nl namelist_top ln_rsttr cn_trcrst_in cn_trcrst_out
+  fi
+
+  # Modify cfc namelist and copy over input file     
+  if [ $nemo_cfc -eq 1 ]; then         
+    mod_nl namelist_cfc offset_cfc_year         
   fi
 
   # Access files required to run NEMO
@@ -1196,6 +1213,15 @@ echo "#################### Start NEMO pre-processing #################"
     nemo_data_no3_nomask=${nemo_data_no3_nomask:=uncs_orca1_data_no3_nomask.nc}
     nemo_data_atcco2=${nemo_data_atcco2:=nemo_atcco2_1850-2005.txt}
 
+    # Abiotic BGC 
+    nemo_data_at_abio_nomask=omip6_orca1_data_at_abio_nomask.nc 
+    nemo_data_c14t_abio_nomask=omip6_orca1_data_c14t_abio_nomask.nc 
+    nemo_data_ct_abio_nomask=omip6_orca1_data_ct_abio_nomask.nc 
+    nemo_data_o2_abio_nomask=omip6_orca1_data_o2abio_nomask.nc 
+    
+    #cfc atmospheric history 
+    nemo_cfc_atmhist=ras003_nemo_cfc_atmhist.nc
+
     [ -s data_dic_nomask.nc ]      || acc_cp data_dic_nomask.nc        $nemo_data_dic_nomask
     [ -s data_alkalini_nomask.nc ] || acc_cp data_alkalini_nomask.nc   $nemo_data_alkalini_nomask
     [ -s data_o2_nomask.nc ]       || acc_cp data_o2_nomask.nc         $nemo_data_o2_nomask
@@ -1205,6 +1231,16 @@ echo "#################### Start NEMO pre-processing #################"
     [ -s data_fer_nomask.nc ]      || acc_cp data_fer_nomask.nc        $nemo_data_fer_nomask
     [ -s data_no3_nomask.nc ]      || acc_cp data_no3_nomask.nc        $nemo_data_no3_nomask
     [ -s atcco2.txt ]              || acc_cp atcco2.txt                $nemo_data_atcco2
+
+      # Abiotic biogeochemistry       
+    [ -s data_at_abio_nomask.nc ]   ||  acc_cp data_at_abio_nomask.nc    $nemo_data_at_abio_nomask       
+    [ -s data_c14t_abio_nomask.nc ] ||  acc_cp data_c14t_abio_nomask.nc  $nemo_data_c14t_abio_nomask       
+    [ -s data_ct_abio_nomask.nc ]   ||  acc_cp data_ct_abio_nomask.nc    $nemo_data_ct_abio_nomask       
+    [ -s data_o2abio_nomask.nc ]    ||  acc_cp data_o2abio_nomask.nc     $nemo_data_o2_abio_nomask
+
+    #if [ "$nemo_cfc" -eq 1 ]; then         
+        acc_cp nemo_cfc_atmhist.nc $nemo_cfc_atmhist     
+    #fi
 
     # Modify the pisces namelist to read CO2 from file, if specified in makefile
     ln_co2int=${ln_co2int:=.false.} # read atm pco2 from a file (T) or constant (F)
