@@ -1239,7 +1239,7 @@ echo "#################### Start NEMO pre-processing #################"
     [ -s data_o2abio_nomask.nc ]    ||  acc_cp data_o2abio_nomask.nc     $nemo_data_o2_abio_nomask
 
     #if [ "$nemo_cfc" -eq 1 ]; then         
-        acc_cp nemo_cfc_atmhist.nc $nemo_cfc_atmhist     
+    [ -s nemo_cfc_atmhist.nc ]      ||  acc_cp nemo_cfc_atmhist.nc       $nemo_cfc_atmhist     
     #fi
 
     # Modify the pisces namelist to read CO2 from file, if specified in makefile
