@@ -502,12 +502,16 @@ echo "#################### Start NEMO pre-processing #################"
               ;;
   esac
 
+  # Use CFCs or not
+  nemo_cfc=${nemo_cfc:=0}
+
   # For consistency always use 1 for true and 0 for false
   ToF nemo_carbon
   ToF nemo_trans_co2
   ToF nemo_trc
   ToF nemo_cmoc
   ToF nemo_canoe
+  ToF nemo_cfc
 
   # Identify the type of forcing to use
   nemo_forcing=${nemo_forcing:-coupled}
