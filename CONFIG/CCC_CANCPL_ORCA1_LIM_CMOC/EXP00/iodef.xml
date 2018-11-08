@@ -113,6 +113,7 @@
         
         <field id="u_imasstr"    description="Sea-ice mass transport along i-axis"                          unit="kg/s"     />
         <field id="v_imasstr"    description="Sea-ice mass transport along j-axis"                          unit="kg/s"     />
+        <field id="emp_x_sss"    description="Total virtual salt flux entering the ocean"                   unit="kg*1e-3/m2/s" />
 
         <!-- available key_coupled -->
         <field id="snow_ao_cea"  description="Snow over ice-free ocean (cell average)"                      unit="kg/m2/s"  />
