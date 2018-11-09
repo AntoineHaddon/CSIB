@@ -410,7 +410,7 @@ CONTAINS
          IF(lwp)  THEN
             WRITE(numout,*) '    Atmospheric pCO2 value from file             clname     =', TRIM( clname )
             WRITE(numout,*) '    Atmospheric pCO2 variable name in file       clvarname  =', TRIM( clvarname )
-            WRITE(numout,*) '    Offset model-data start year                  nn_offset   =', nn_offset
+            WRITE(numout,*) '    Offset model-data start year                 nn_offset  =', nn_offset
             WRITE(numout,*) ' '
          ENDIF
          CALL chkerr(nf90_open( clname, NF90_NOWRITE, ncid ), 'p4z_flx_init', 0)
