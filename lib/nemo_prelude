@@ -1226,6 +1226,9 @@ echo "#################### Start NEMO pre-processing #################"
     #cfc atmospheric history 
     nemo_cfc_atmhist=ras003_nemo_cfc_atmhist.nc
 
+    #c14 atmospheric history
+    nemo_data_atc14c=omip6_Delta14co2.nc
+
     [ -s data_dic_nomask.nc ]      || acc_cp data_dic_nomask.nc        $nemo_data_dic_nomask
     [ -s data_alkalini_nomask.nc ] || acc_cp data_alkalini_nomask.nc   $nemo_data_alkalini_nomask
     [ -s data_o2_nomask.nc ]       || acc_cp data_o2_nomask.nc         $nemo_data_o2_nomask
