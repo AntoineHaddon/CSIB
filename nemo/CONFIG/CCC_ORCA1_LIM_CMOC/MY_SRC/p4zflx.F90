@@ -45,11 +45,13 @@ MODULE p4zflx
    REAL(wp)           ::  atcco2n   = 284.32_wp     !: pre-industrial atmospheric [co2] (ppm) 	
    REAL(wp)           ::  atcd14c   = 0             !: 14C/C in CO2 (0 corresponds to pre-industrial)
    LOGICAL            ::  ln_co2int = .FALSE.       !: flag to read in a file and interpolate atmospheric pco2 or not
+   LOGICAL            ::  ln_c14int = .FALSE.       !: flag to read in a file and interpolate atmospheric 14C or not
    CHARACTER(len=120) ::  clname       = 'co2atm.nc'                               !: filename of pco2 values
    CHARACTER(len=120) ::  clvarname    = 'mole_fraction_of_carbon_dioxide_in_air'  !: variable name in clname file 
    CHARACTER(len=120) ::  cl14name     = 'Delta14co2.nc'      !: filename of delta C-14 pco2 values
    CHARACTER(len=120) ::  cl14varname  = 'Delta14co2_in_air'  !: variable name in cl14name file 
    INTEGER            ::  nn_offset = 0             !: Offset model-data start year (default = 0) 
+   INTEGER            ::  nn_readoffset_c14 = 1850  !: Offset atmospheric history file of C14 (CMIP6 is 1850)
 
    !!  Variables related to reading atmospheric CO2 time history    
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:) :: atcco2h, atcco2h_years
@@ -136,14 +138,19 @@ CONTAINS
 
       IF( kt /= nit000 ) CALL p4z_patm( kt )    ! Get sea-level pressure (E&K [1981] climatology) for use in flux calcs
 
+      ! Calculate the decimal year if we need to interpolate
+      IF( ln_co2int .OR. ln_c14int ) current_yearfrac = nyear + (nsec_year / ( nyear_len(1) * 86400.))
       IF( ln_co2int ) THEN
          ! Linear temporal interpolation  of atmospheric pco2.  atcco2.txt has annual values.
          ! Caveats: First column of .txt must be in years, decimal  years preferably. 
          ! For nn_offset, if your model year is iyy, nn_offset=(years(1)-iyy) 
          ! then the first atmospheric CO2 record read is at years(1)
-         current_yearfrac = nyear + (nsec_year / ( nyear_len(1) * 86400.))
          satmco2(:,:) = lin_interp( current_yearfrac + nn_offset, atcco2h_years, atcco2h )
-
+      ELSE
+         satmco2(:,:) = atcco2
+      ENDIF
+      ! Linear interpolation of carbon 14.
+      IF ( ln_c14int ) THEN
          ! Interpolate each sector of 14C
          DO ji=1,nd14csec
             d14c_now(ji) = lin_interp(current_yearfrac + nn_offset, atcd14ch_years, atcd14ch(:,ji))
@@ -376,8 +383,8 @@ CONTAINS
       !!      called at the first timestep (nittrc000)
       !! ** input   :   Namelist nampisext
       !!----------------------------------------------------------------------
-      NAMELIST/nampisext/ln_co2int, atcco2, satmd14c, clname, clvarname, cl14name, &
-                         cl14varname, nn_offset
+      NAMELIST/nampisext/ln_co2int, ln_c14int, atcco2, satmd14c, clname, clvarname, cl14name, &
+                         cl14varname, nn_offset, nn_readoffset_c14
       INTEGER :: jm, ntime, ncid, ji, jj
       REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: tmp2d
       !!----------------------------------------------------------------------
@@ -395,19 +402,15 @@ CONTAINS
       IF( .NOT.ln_co2int ) THEN
          IF(lwp) THEN                         ! control print
             WRITE(numout,*) '    Constant Atmospheric pCO2 value       atcco2    =', atcco2
-            WRITE(numout,*) '    Constant Atmospheric delta 14C value  atcd14c   =', atcd14c
             WRITE(numout,*) ' '
          ENDIF
          satmco2(:,:)  = atcco2      ! Initialisation of atmospheric pco2
          satmco2n(:,:) = atcco2n
-         satmd14c(:,:) = atcd14c
       ELSE
          IF(lwp)  THEN
             WRITE(numout,*) '    Atmospheric pCO2 value from file             clname     =', TRIM( clname )
             WRITE(numout,*) '    Atmospheric pCO2 variable name in file       clvarname  =', TRIM( clvarname )
-            WRITE(numout,*) '    Atmospheric Delta 14C value from file        cl14name     =', TRIM( cl14name )
-            WRITE(numout,*) '    Atmospheric Delta 14C variable name in file  cl14varname  =', TRIM( cl14varname )
-            WRITE(numout,*) '    Offset model-data start year           nn_offset   =', nn_offset
+            WRITE(numout,*) '    Offset model-data start year                  nn_offset   =', nn_offset
             WRITE(numout,*) ' '
          ENDIF
          CALL chkerr(nf90_open( clname, NF90_NOWRITE, ncid ), 'p4z_flx_init', 0)
@@ -424,6 +427,28 @@ CONTAINS
          DO jm = 1,ntime
             atcco2h_years(jm) = (jm-1) + 0.5
          ENDDO
+      ENDIF
+      IF (.NOT. ln_c14int) THEN
+         IF(lwp) THEN                         ! control print
+            WRITE(numout,*) '    Constant Atmospheric delta 14C value  atcd14c   =', atcd14c
+            WRITE(numout,*) ' '
+         ENDIF
+         satmd14c(:,:) = atcd14c
+      ELSE
+         IF(lwp)  THEN
+            WRITE(numout,*) '    Atmospheric Delta 14C value from file        cl14name          =', TRIM( cl14name )
+            WRITE(numout,*) '    Atmospheric Delta 14C variable name in file  cl14varname       =', TRIM( cl14varname )
+            WRITE(numout,*) '    Offset atmospheric history of 14C            nn_readoffset_c14 =', nn_readoffset_c14
+            WRITE(numout,*) '    Offset model-data start year                 nn_offset         =', nn_offset
+            WRITE(numout,*) ' '
+         ENDIF
+         ! Read in C14 atmospheric fractionation (3 sectors)
+         CALL chkerr(nf90_open( clname, NF90_NOWRITE, ncid ), 'p4z_flx_init', 0)
+         CALL read_var1d( ncid, 'time',    atcd14ch_years)
+         ! Add an offset to the time axis
+         atcd14ch_years(:) = atcd14ch_years(:) + nn_readoffset_c14
+         CALL read_var2d( ncid, clvarname, atcd14ch )
+         CALL chkerr(nf90_close( ncid ), 'p4z_flx_init', 0)
          ALLOCATE(secmapd14c(jpi,jpj))
          ! Map model grid to latitudinal sector in the OMIP input file for delta-14C
          DO jj = 1,jpj ; DO ji = 1,jpi
