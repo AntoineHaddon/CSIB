@@ -410,7 +410,7 @@ CONTAINS
          IF(lwp)  THEN
             WRITE(numout,*) '    Atmospheric pCO2 value from file             clname     =', TRIM( clname )
             WRITE(numout,*) '    Atmospheric pCO2 variable name in file       clvarname  =', TRIM( clvarname )
-            WRITE(numout,*) '    Offset model-data start year                 nn_offset   =', nn_offset
+            WRITE(numout,*) '    Offset model-data start year                 nn_offset  =', nn_offset
             WRITE(numout,*) ' '
          ENDIF
          CALL chkerr(nf90_open( clname, NF90_NOWRITE, ncid ), 'p4z_flx_init', 0)
@@ -436,18 +436,18 @@ CONTAINS
          satmd14c(:,:) = atcd14c
       ELSE
          IF(lwp)  THEN
-            WRITE(numout,*) '    Atmospheric Delta 14C value from file        cl14name     =', TRIM( cl14name )
-            WRITE(numout,*) '    Atmospheric Delta 14C variable name in file  cl14varname  =', TRIM( cl14varname )
+            WRITE(numout,*) '    Atmospheric Delta 14C value from file        cl14name          =', TRIM( cl14name )
+            WRITE(numout,*) '    Atmospheric Delta 14C variable name in file  cl14varname       =', TRIM( cl14varname )
             WRITE(numout,*) '    Offset atmospheric history of 14C            nn_readoffset_c14 =', nn_readoffset_c14
-            WRITE(numout,*) '    Offset model-data start year                 nn_offset   =', nn_offset
+            WRITE(numout,*) '    Offset model-data start year                 nn_offset         =', nn_offset
             WRITE(numout,*) ' '
          ENDIF
          ! Read in C14 atmospheric fractionation (3 sectors)
          CALL chkerr(nf90_open( clname, NF90_NOWRITE, ncid ), 'p4z_flx_init', 0)
-         CALL read_var1d( ncid, 'time',    atcco2h_years)
+         CALL read_var1d( ncid, 'time',    atcd14ch_years)
          ! Add an offset to the time axis
          atcd14ch_years(:) = atcd14ch_years(:) + nn_readoffset_c14
-         CALL read_var2d( ncid, clvarname, tmp2d )
+         CALL read_var2d( ncid, clvarname, atcd14ch )
          CALL chkerr(nf90_close( ncid ), 'p4z_flx_init', 0)
          ALLOCATE(secmapd14c(jpi,jpj))
          ! Map model grid to latitudinal sector in the OMIP input file for delta-14C
