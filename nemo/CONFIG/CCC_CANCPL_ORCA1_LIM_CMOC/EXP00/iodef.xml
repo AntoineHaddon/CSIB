@@ -580,8 +580,8 @@
             <!-- vsfevap  : virtual_salt_flux_into_sea_water_due_to_evaporation = 0 --> 
             <!-- vsfriver : virtual_salt_flux_into_sea_water_from_rivers        = 0 -->           
             <field ref="fsal_virt_cea" name="vsfsit"        description="virtual_salt_flux_into_sea_water_due_to_sea_ice_thermodynamics"                level="2" />
-            <!-- vsf      : virtual_salt_flux_into_sea_water = fsal_virtual + fsal_real -->
             <!-- wfcorr   : virtual_salt_flux_correction                        = 0 --> 
+            <field ref="emp_x_sss"     name="emp_x_sss"     description="virtual_salt_flux_into_sea_water"         level="2" />   <!-- vsf kg*1e-3/m2/s, DY -->
             <field ref="fsal_virt_cea" name="sfdsi"         description="downward_sea_ice_basal_salt_flux"         level="1" />
             <!-- sfriver  : salt_flux_into_sea_water_from_rivers                = 0 --> 
             <!-- hfgeou : upward_geothermal_heat_flux_at_sea_floor : cte, see nambbc and trabbc.F90 -->
