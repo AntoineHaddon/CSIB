@@ -1246,12 +1246,13 @@ echo "#################### Start NEMO pre-processing #################"
     [ -s data_o2abio_nomask.nc ]    ||  acc_cp data_o2abio_nomask.nc     $nemo_data_o2_abio_nomask
 
     if [ "$nemo_cfc" -eq 1 ]; then         
-    [ -s nemo_cfc_atmhist.nc ]      ||  acc_cp nemo_cfc_atmhist.nc       $nemo_cfc_atmhist     
+      [ -s nemo_cfc_atmhist.nc ]      ||  acc_cp nemo_cfc_atmhist.nc       $nemo_cfc_atmhist
+      [ -z "$cfc_offset_year"  ]      ||  mod_nl namelist_cfc cfc_offset_year
     fi
 
     # Modify the pisces namelist to read CO2 from file, if specified in makefile
     ln_co2int=${ln_co2int:=.false.} # read atm pco2 from a file (T) or constant (F)
-    mod_nl namelist_pisces ln_co2int
+    mod_nl namelist_pisces ln_co2int ln_c14int 
 
     # Reset sn_rcv_co2 and sn_snd_co2 in namelist if requested by the user
     if [ $nemo_trans_co2 -eq 0 ]; then
