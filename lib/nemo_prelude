@@ -1194,13 +1194,13 @@ echo "#################### Start NEMO pre-processing #################"
     nemo_dust_orca=${nemo_dust_orca:=uncs_orca1_dust.orca.nc}
     nemo_river_orca=${nemo_river_orca:=nemo_3.4_orca2_river.orca.nc}
     nemo_ndeposition_orca=${nemo_ndeposition_orca:=uncs_orca1_ndeposition.orca.nc}
-#    nemo_bathy_orca=${nemo_bathy_orca:=uncs_orca1_bathy.orca.nc}
+    nemo_bathy_orca=${nemo_bathy_orca:=uncs_orca1_bathy.orca.nc}
 
     [ -s presatm.nc ]          || acc_cp presatm.nc           $nemo_presatm
     [ -s dust.orca.nc ]        || acc_cp dust.orca.nc         $nemo_dust_orca
     [ -s river.orca.nc ]       || acc_cp river.orca.nc        $nemo_river_orca
     [ -s ndeposition.orca.nc ] || acc_cp ndeposition.orca.nc  $nemo_ndeposition_orca
-#    [ -s bathy.orca.nc ]       || acc_cp bathy.orca.nc        $nemo_bathy_orca
+    [ -s bathy.orca.nc ]       || acc_cp bathy.orca.nc        $nemo_bathy_orca
 
     if [ $nemo_cmoc -eq 1 ]; then
       nemo_fermask_orca=${nemo_fermask_orca:=nemo_3.4_orca1_femask.orca.nc}
@@ -1213,7 +1213,7 @@ echo "#################### Start NEMO pre-processing #################"
     nemo_data_po4_nomask=${nemo_data_po4_nomask:=uncs_orca1_data_po4_nomask.nc}
     nemo_data_si_nomask=${nemo_data_si_nomask:=uncs_orca1_data_si_nomask.nc}
     nemo_data_doc_nomask=${nemo_data_doc_nomask:=uncs_orca1_data_doc_nomask.nc}
-    nemo_data_fer_nomask=${nemo_data_fer_nomask:=uncs_orca1_data_fer_nomask.nc}
+    nemo_data_fer_nomask=${nemo_data_fer_nomask:=urjc_orca1_data_fer_nomask.nc}
     nemo_data_no3_nomask=${nemo_data_no3_nomask:=uncs_orca1_data_no3_nomask.nc}
     nemo_data_atcco2=${nemo_data_atcco2:=nemo_atcco2_1850-2005.txt}
 

@@ -720,61 +720,61 @@
         </file>
  
         <file id="1m_ptrc_T" name="auto" description="pisces sms variables" >
-          <field ref="DIC"    name="dissic"  description="mole_concentration_of_dissolved_inorganic_carbon_in_sea_water"                           level="0" />
-          <field ref="TAlk"   name="talk"    description="sea_water_alkalinity_expressed_as_mole_equivalent"                                       level="0" />
-          <field ref="O2"     name="o2"      description="mole_concentration_of_dissolved_molecular_oxygen_in_sea_water"                           level="0" />
-          <field ref="CaCO3"  name="calc"    description="mole_concentration_of_calcite_expressed_as_carbon_in_sea_water"                          level="0" />
-          <field ref="POC"                                                                                                                         level="0" />
-          <field ref="PHYC"   name="phymisc" description="mole_concentration_of_miscellaneous_phytoplankton_expressed_as_carbon_in_sea_water"      level="0" />
-          <field ref="PHYN"                                                                                                                        level="0" />
-          <field ref="PHYFe"                                                                                                                       level="2" />
-          <field ref="NCHL"   name="chldiat" description="mass_concentration_of_diatoms_expressed_as_chlorophyll_in_sea_water"                     level="1" />
-          <field ref="PHY2C"  name="phydiat" description="mole_concentration_of_diatoms_expressed_as_carbon_in_sea_water"                          level="0" />
-          <field ref="PHY2N"                                                                                                                       level="0" />
-          <field ref="PHY2Fe"                                                                                                                      level="2" />
-          <field ref="DCHL"   name="chlmisc" description="mass_concentration_of_miscellaneous_phytoplankton_expressed_as_chlorophyll_in_sea_water" level="1" />
-          <field ref="ZOO"    name="zmicro"  description="mole_concentration_of_microzooplankton_expressed_as_carbon_in_sea_water"                 level="0" />
-          <field ref="ZOO2"   name="zmeso"   description="mole_concentration_of_mesozooplankton_expressed_as_carbon_in_sea_water"                  level="0" />
-          <field ref="dFe"    name="dfe"     description="mole_concentration_of_dissolved_iron_in_sea_water"                                       level="0" />
-          <field ref="GOC"                                                                                                                         level="0" />
-          <field ref="NO3"    name="no3"    description="mole_concentration_of_nitrate_in_sea_water"                                               level="0" />
-          <field ref="NH4"    name="nh4"    description="mole_concentration_of_ammonium_in_sea_water"                                              level="0" />
-          <field ref="agessc" name="agessc" description="sea_water_age_since_surface_contact"                                                      level="0" /> <!-- cmip6 requested as priority 1, DY -->
+          <field ref="DIC"	level="0" />
+          <field ref="TAlk"	level="0" />
+          <field ref="O2"	level="0" />
+          <field ref="CaCO3"	level="0" />
+          <field ref="POC"	level="0" />
+          <field ref="PHYC"	level="0" />
+          <field ref="PHYN"	level="0" />
+          <field ref="PHYFe"	level="2" />
+          <field ref="NCHL"	level="1" />
+          <field ref="PHY2C"	level="0" />
+          <field ref="PHY2N"	level="0" />
+          <field ref="PHY2Fe"	level="2" />
+          <field ref="DCHL"	level="1" />
+          <field ref="ZOO"	level="0" />
+          <field ref="ZOO2"	level="0" />
+          <field ref="dFe"	level="0" />
+          <field ref="GOC"      level="0" />
+          <field ref="NO3"	level="0" />
+          <field ref="NH4"	level="0" />
+          <field ref="agessc"	level="0" /> <!-- cmip6 requested as priority 1, DY -->
        </file>
 	
         <file id="1m_diad_T" name="auto" description="additional pisces diagnostics" >
-          <field ref="PAR"                                                                                                                                                level="0" />
-          <field ref="PPPHY"     name="intppmisc" description="net_primary_mole_productivity_of_biomass_expressed_as_carbon_by_miscellaneous_phytoplankton"               level="0" />
-          <field ref="PPPHY2"    name="intppdiat" description="net_primary_mole_productivity_of_biomass_expressed_as_carbon_by_diatoms"                                   level="0" />
-          <field ref="PPNEWN"                                                                                                                                             level="4" />
-          <field ref="PPNEWD"                                                                                                                                             level="4" />
-          <field ref="PFeN"                                                                                                                                               level="2" />
-          <field ref="PFeD"                                                                                                                                               level="2" />
-          <field ref="LNN"       name="limnmisc"  description="nitrogen_growth_limitation_of_miscellaneous_phytoplankton"                                                 level="3" />
-          <field ref="LDN"       name="limndiat"  description="nitrogen_growth_limitation_of_diatoms"                                                                     level="2" />
-          <field ref="LNFe"      name="limfemisc" description="iron_growth_limitation_of_miscellaneous_phytoplankton"                                                     level="3" />
-          <field ref="LDFe"      name="limfediat" description="iron_growth_limitation_of_diatoms"                                                                         level="2" />
-          <field ref="Nfix"      name="intpn2"    description="tendency_of_ocean_mole_content_of_elemental_nitrogen_due_to_fixation"                                      level="0" />
-          <field ref="Denitr"    name="frn"       description="tendency_of_ocean_mole_content_of_elemental_nitrogen_due_to_denitrification_and_sedimentation"             level="3" />
-          <field ref="Nitrif"                                                                                                                                             level="4" />
-          <field ref="EPC100"    name="epc100"    description="sinking_mole_flux_of_particulate_organic_matter_expressed_as_carbon_in_sea_water"                          level="0" />
-          <field ref="EPCALC100" name="epcalc100" description="sinking_mole_flux_of_calcite_expressed_as_carbon_in_sea_water"                                             level="0" />
-          <field ref="PCAL"      name="pcalc"     description="tendency_of_mole_concentration_of_calcite_expressed_as_carbon_in_sea_water_due_to_biological_production"   level="2" />
-          <field ref="DCAL"      name="dcalc"     description="tendency_of_mole_concentration_of_calcite_expressed_as_carbon_in_sea_water_due_to_dissolution"             level="2" />
-          <field ref="GRAZ1"                                                                                                                                              level="3" />
-          <field ref="GRAZ2"                                                                                                                                              level="3" />
-          <field ref="GRAZ3"                                                                                                                                              level="3" />
-          <field ref="Dpco2"     name="dpco2"     description="surface_carbon_dioxide_partial_pressure_difference_between_sea_water_and_air"                              level="3" />
-          <field ref="Dpo2"      name="dpo2"      description="surface_molecular_oxygen_partial_pressure_difference_between_sea_water_and_air"                            level="3" />
-          <field ref="pco2"      name="spco2"     description="surface_partial_pressure_of_carbon_dioxide_in_sea_water"                                                   level="0" />
-          <field ref="Cflx"      name="fgco2"     description="surface_downward_mass_flux_of_carbon_dioxide_expressed_as_carbon"                                          level="0" />
-          <field ref="Oflx"      name="fgo2"      description="surface_downward_mole_flux_of_molecular_oxygen"                                                            level="0" />
-          <field ref="OCdep"                                                                                                                                              level="4" />
-          <field ref="ICdep"                                                                                                                                              level="4" />
-          <field ref="Burial"    name="fric"      description="tendency_of_ocean_mole_content_of_inorganic_carbon_due_to_sedimentation"                                   level="3" />
-          <field ref="PH"        name="ph"        description="sea_water_ph_reported_on_total_scale"                                                                      level="0" />
-          <field ref="Irondep"   name="fediss"    description="tendency_of_mole_concentration_of_dissolved_iron_in_sea_water_due_to_dissolution_from_inorganic_particles" level="0" />
-          <field ref="Ironsed"                                                                                                                                            level="3" />
+          <field ref="PAR"              level="0" />
+          <field ref="PPPHY"		level="0" />
+          <field ref="PPPHY2"		level="0" />
+          <field ref="PPNEWN"		level="4" />
+          <field ref="PPNEWD"		level="4" />
+          <field ref="PFeN"		level="2" />
+          <field ref="PFeD"		level="2" />
+          <field ref="LNN"		level="3" />
+          <field ref="LDN"		level="2" />
+          <field ref="LNFe"		level="3" />
+          <field ref="LDFe"		level="2" />
+          <field ref="Nfix"		level="0" />
+          <field ref="Denitr"		level="3" />
+          <field ref="Nitrif"           level="4" />
+          <field ref="EPC100"		level="0" />
+          <field ref="EPCALC100"	level="0" />
+          <field ref="PCAL"		level="2" />
+          <field ref="DCAL"		level="2" />
+          <field ref="GRAZ1"            level="3" />
+          <field ref="GRAZ2"            level="3" />
+          <field ref="GRAZ3"            level="3" />
+          <field ref="Dpco2"		level="3" />
+          <field ref="Dpo2"		level="3" />
+          <field ref="pco2"		level="0" />
+          <field ref="Cflx"		level="0" />
+          <field ref="Oflx"		level="0" />
+          <field ref="OCdep"            level="4" />
+          <field ref="ICdep"            level="4" />
+          <field ref="Burial"		level="3" />
+          <field ref="PH"		level="0" />
+          <field ref="Irondep"		level="0" />
+          <field ref="Ironsed"          level="3" />
         </file>
         
       </group>
