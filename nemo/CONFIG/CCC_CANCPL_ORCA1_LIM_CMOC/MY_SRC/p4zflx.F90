@@ -153,7 +153,7 @@ CONTAINS
       IF ( ln_c14int ) THEN
          ! Interpolate each sector of 14C
          DO ji=1,nd14csec
-            d14c_now(ji) = lin_interp(current_yearfrac + nn_offset, atcd14ch_years, atcd14ch(:,ji))
+            d14c_now(ji) = lin_interp(current_yearfrac + nn_offset, atcd14ch_years, atcd14ch(ji,:))
          ENDDO
          DO jj = 1,jpj ; DO ji = 1,jpi
             satmd14c(ji,jj) = d14c_now(secmapd14c(ji,jj))
@@ -384,7 +384,7 @@ CONTAINS
       !! ** input   :   Namelist nampisext
       !!----------------------------------------------------------------------
       NAMELIST/nampisext/ln_co2int, ln_c14int, atcco2, satmd14c, clname, clvarname, cl14name, &
-                         cl14varname, nn_offset, nn_readoffset_c14
+                         cl14varname, nn_offset, nn_readoffset_c14, atcd14c
       INTEGER :: jm, ntime, ncid, ji, jj
       REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: tmp2d
       !!----------------------------------------------------------------------
@@ -443,13 +443,12 @@ CONTAINS
             WRITE(numout,*) ' '
          ENDIF
          ! Read in C14 atmospheric fractionation (3 sectors)
-         CALL chkerr(nf90_open( clname, NF90_NOWRITE, ncid ), 'p4z_flx_init', 0)
+         CALL chkerr(nf90_open( cl14name, NF90_NOWRITE, ncid ), 'p4z_flx_init', 0)
          CALL read_var1d( ncid, 'time',    atcd14ch_years)
          ! Add an offset to the time axis
          atcd14ch_years(:) = atcd14ch_years(:) + nn_readoffset_c14
-         CALL read_var2d( ncid, clvarname, atcd14ch )
+         CALL read_var2d( ncid, cl14varname, atcd14ch )
          CALL chkerr(nf90_close( ncid ), 'p4z_flx_init', 0)
-         ALLOCATE(secmapd14c(jpi,jpj))
          ! Map model grid to latitudinal sector in the OMIP input file for delta-14C
          DO jj = 1,jpj ; DO ji = 1,jpi
             IF ( gphit(ji,jj) >= bandlat1 ) THEN
