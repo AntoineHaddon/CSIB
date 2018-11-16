@@ -113,6 +113,7 @@
         
         <field id="u_imasstr"    description="Sea-ice mass transport along i-axis"                          unit="kg/s"     />
         <field id="v_imasstr"    description="Sea-ice mass transport along j-axis"                          unit="kg/s"     />
+        <field id="emp_x_sss"    description="Total virtual salt flux entering the ocean"                   unit="kg*1e-3/m2/s" />
 
         <!-- available key_coupled -->
         <field id="snow_ao_cea"  description="Snow over ice-free ocean (cell average)"                      unit="kg/m2/s"  />
@@ -426,6 +427,37 @@
       </group>
 
       <!--
++++++++++++++++++++++++++++++++++++++++++++++++   hourly  ++++++++++++++++++++++++++++++++++++++++++++++++++
+        -->
+      <group id="1h" output_freq="3600"   enabled=".TRUE.">                      <!-- 1h files -->
+
+        <!--
+...........................................    icemod (grid T)   .................................................
+          -->
+        <group id="1h_grid_T" name="auto" >                                                        <!-- grid T -->
+          <file id="1h_icemod" description="ice variables" >
+            <field ref="ice_cover"     name="siconc"        description="sea_ice_area_fraction"                    level="2" />
+          </file>
+        </group>
+      </group>                                                                   <!-- end of 1h files -->
+
+      <!--
++++++++++++++++++++++++++++++++++++++++++++++++   3 hourly  ++++++++++++++++++++++++++++++++++++++++++++++++++
+        -->
+      <group id="3h" output_freq="10800"   enabled=".TRUE.">                      <!-- 3h files -->
+
+        <!--
+...........................................    grid T   .....................................................
+          -->
+        <group id="3h_grid_T" name="auto" >                                                        <!-- grid T -->
+
+          <file id="3h_grid_T"  name_suffix="_ar6"  >
+            <field ref="sst"           name="tos"           description="sea_surface_temperature"                  level="1" />
+          </file>
+        </group>
+      </group>
+
+      <!--
 +++++++++++++++++++++++++++++++++++++++++++++++   daily   ++++++++++++++++++++++++++++++++++++++++++++++++++
         -->
       <group id="1d" output_freq="86400"  enabled=".TRUE.">                      <!-- 1d files -->
@@ -548,8 +580,8 @@
             <!-- vsfevap  : virtual_salt_flux_into_sea_water_due_to_evaporation = 0 --> 
             <!-- vsfriver : virtual_salt_flux_into_sea_water_from_rivers        = 0 -->           
             <field ref="fsal_virt_cea" name="vsfsit"        description="virtual_salt_flux_into_sea_water_due_to_sea_ice_thermodynamics"                level="2" />
-            <!-- vsf      : virtual_salt_flux_into_sea_water = fsal_virtual + fsal_real -->
             <!-- wfcorr   : virtual_salt_flux_correction                        = 0 --> 
+            <field ref="emp_x_sss"     name="emp_x_sss"     description="virtual_salt_flux_into_sea_water"         level="2" />   <!-- vsf kg*1e-3/m2/s, DY -->
             <field ref="fsal_virt_cea" name="sfdsi"         description="downward_sea_ice_basal_salt_flux"         level="1" />
             <!-- sfriver  : salt_flux_into_sea_water_from_rivers                = 0 --> 
             <!-- hfgeou : upward_geothermal_heat_flux_at_sea_floor : cte, see nambbc and trabbc.F90 -->
