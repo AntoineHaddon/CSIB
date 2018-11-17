@@ -582,7 +582,7 @@
             <field ref="fsal_virt_cea" name="vsfsit"        description="virtual_salt_flux_into_sea_water_due_to_sea_ice_thermodynamics"                level="2" />
             <!-- wfcorr   : virtual_salt_flux_correction                        = 0 --> 
             <field ref="emp_x_sss"     name="emp_x_sss"     description="virtual_salt_flux_into_sea_water"         level="2" />   <!-- vsf kg*1e-3/m2/s, DY -->
-            <field ref="fsal_virt_cea" name="sfdsi"         description="downward_sea_ice_basal_salt_flux"         level="1" />
+            <field ref="fsal_real_cea" name="sfdsi"         description="downward_sea_ice_basal_salt_flux"         level="1" />
             <!-- sfriver  : salt_flux_into_sea_water_from_rivers                = 0 --> 
             <!-- hfgeou : upward_geothermal_heat_flux_at_sea_floor : cte, see nambbc and trabbc.F90 -->
             <!--field ref="hflx_rain_cea" name="hfrainds"   description="temperature_flux_due_to_rainfall_expressed_as_heat_flux_into_sea_water"        level="2" --> <!-- moved to 1m_grid_T as level="0" for *CANCPL_ORCA1_LIM*, DY -->
@@ -596,8 +596,8 @@
             <!-- hfss   : surface_downward_sensible_heat_flux: not available -->
             <field ref="qsr3d"         name="rsdo"          description="downwelling_shortwave_flux_in_sea_water"  level="2"  />
             <!--field ref="qrp"        name="hfcorr"        description="heat_flux_correction"                     level="1" --> <!-- moved to 1m_grid_T as level="0" for *CANCPL_ORCA1_LIM*, DY -->
-            <field ref="cellthc"       name="thkcello"      description="cell_thickness"                           level="1"  /> <!-- Ofx -->
-            <field ref="area"          name="areacello"     description="cell_area"                                level="1"  /> <!-- Ofx -->
+            <!--field ref="cellthc"    name="thkcello"      description="cell_thickness"                           level="1"  --> <!-- Ofx -->
+            <!--field ref="area"       name="areacello"     description="cell_area"                                level="1"  --> <!-- Ofx -->
           </file>   
 
           <file id="1m_grid_T_trd" name_suffix="_trd" enabled=".FALSE.">
@@ -857,8 +857,8 @@
             <field ref="strd_zdfp"     name="strd_zdfp"      description="salinity   -trend: pure vert. diffusion"     level="3" />
             <field ref="ttrd_eiv"      name="ttrd_eiv"       description="temperature-trend: advection from GM scheme" level="3" />
             <field ref="strd_eiv"      name="strd_eiv"       description="salinity-trend: advection from GM scheme"    level="3" />
-            <!-- field ref="cellthc"       name="thkcello"       description="cell_thickness"                          --> <!-- no time changes -->
-            <!-- field ref="area"          name="areacello"      description="cell_area"                               -->
+            <field ref="cellthc"       name="thkcello"       description="cell_thickness"                              level="1" /> <!-- Ofx -->
+            <field ref="area"          name="areacello"      description="cell_area"                                   level="1" /> <!-- Ofx -->
           </file>
           </group>
 
