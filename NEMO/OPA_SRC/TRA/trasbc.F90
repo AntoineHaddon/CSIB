@@ -23,6 +23,7 @@ MODULE trasbc
    USE trdtra          ! ocean trends
    USE ice_2           ! LIM-2: ice variables
    USE in_out_manager  ! I/O manager
+   USE diaar5, ONLY :   lk_diaar5
    USE prtctl          ! Print control
    USE restart         ! ocean restart
    USE sbcrnf          ! River runoff  
@@ -190,7 +191,7 @@ CONTAINS
       ! Output total virtual salt flux entering the ocean (vsf = emp_x_sss * 0.001) for OMIP.
       ! emp = evaporation - precipitation - runoff + snow melt over sea ice (Freezing minus Melting)
       ! rdmicif * r1_rdtice is Freezing minus Melting (F-M)
-      CALL iom_put( "emp_x_sss", (emp (:,:) + rdmicif(:,:) * r1_rdtice ) * tsn(:,:,1,jp_sal) )
+      IF( lk_diaar5 ) CALL iom_put( "emp_x_sss", ( emp(:,:) + rdmicif(:,:) * r1_rdtice ) * tsn(:,:,1,jp_sal) )
       !
       ! Concentration dilution effect on (t,s) due to evapouration, precipitation and qns, but not river runoff  
       DO jn = 1, jpts
