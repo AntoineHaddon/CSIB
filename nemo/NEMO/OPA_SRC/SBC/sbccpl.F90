@@ -7,6 +7,7 @@ MODULE sbccpl
    !!            3.0  ! 2008-02  (G. Madec, C Talandier)  surface module
    !!            3.1  ! 2009_02  (G. Madec, S. Masson, E. Maisonave, A. Caubel) generic coupled interface
    !!            3.4  ! 2011_11  (C. Harris) more flexibility + multi-category fields
+   !!            3.4.1! 2018-11  (D. Yang) Output lhflx_snow_cea.
    !!----------------------------------------------------------------------
 #if defined key_oasis3 || defined key_oasis4 || defined key_cancpl
    !!----------------------------------------------------------------------
@@ -1317,6 +1318,7 @@ CONTAINS
       ztmp(:,:) = p_frld(:,:) * sprecip(:,:) * lfus               ! add the latent heat of solid precip. melting
       qns_tot(:,:) = qns_tot(:,:) - ztmp(:,:)                     ! over free ocean 
       IF( lk_diaar5 )   CALL iom_put( 'hflx_snow_cea', ztmp + sprecip(:,:) * zcptn(:,:) )   ! heat flux from snow (cell average)
+      IF( lk_diaar5 )   CALL iom_put( 'lhflx_snow_cea', ztmp )    ! Latent heat flux from snow (cell average)
 !!gm
 !!    currently it is taken into account in leads budget but not in the qns_tot, and thus not in 
 !!    the flux that enter the ocean....
