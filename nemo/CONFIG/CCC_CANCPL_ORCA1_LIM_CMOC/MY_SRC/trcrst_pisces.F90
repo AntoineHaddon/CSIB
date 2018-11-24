@@ -55,7 +55,7 @@ CONTAINS
       IF (iom_varid( knum, 'sss_glob_avg', ldstop = .FALSE.) > 0) THEN
          CALL iom_get( knum, 'sss_glob_avg', sss_glob_avg )
       ELSE
-         sss_glob_avg = glob_avg_area_wt( trn(:,:,1,jp_sal) ) 
+         sss_glob_avg = glob_avg_area_wt( tsn(:,:,1,jp_sal) ) 
       ENDIF
       IF (iom_varid( knum, 'salt_dtsum', ldstop = .FALSE.) > 0) THEN
          CALL iom_get( knum, 'salt_dtsum', salt_dtsum )
