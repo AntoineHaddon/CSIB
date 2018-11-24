@@ -44,7 +44,9 @@ CONTAINS
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~'
 
       DO jn = jp_cfc0, jp_cfc1
-         CALL iom_get( knum, jpdom_autoglo, 'qint_'//ctrcnm(jn), qint_cfc(:,:,jn) )
+         IF (iom_varid( knum, 'qint_'//ctrcnm(jn), ldstop = .FALSE.) > 0) THEN
+            CALL iom_get( knum, jpdom_autoglo, 'qint_'//ctrcnm(jn), qint_cfc(:,:,jn) )
+         ENDIF
       END DO
 
    END SUBROUTINE trc_rst_read_cfc
