@@ -70,6 +70,7 @@
         <field id="qns"          description="non solar Downward Heat Flux"                                 unit="W/m2"     />
         <field id="qsr"          description="Shortwave Radiation"                                          unit="W/m2"     />
         <field id="qsr3d"        description="Shortwave Radiation 3D distribution"        axis_ref="deptht" unit="W/m2"     />
+        <field id="rsdoabsorb"   description="Net Rate of Absorption of Shortwave Energy in Ocean Layer" axis_ref="deptht" unit="W/m2"     />
         <field id="qrp"          description="Surface Heat Flux: Damping"                                   unit="W/m2"     />
         <field id="erp"          description="Surface Water Flux: Damping"                                  unit="Kg/m2/s"  />
         <field id="taum"         description="wind stress module"                                           unit="N/m2"     />
@@ -859,6 +860,7 @@
             <field ref="strd_zdfp"     name="strd_zdfp"      description="salinity   -trend: pure vert. diffusion"     level="3" />
             <field ref="ttrd_eiv"      name="ttrd_eiv"       description="temperature-trend: advection from GM scheme" level="3" />
             <field ref="strd_eiv"      name="strd_eiv"       description="salinity-trend: advection from GM scheme"    level="3" />
+            <field ref="rsdoabsorb"    name="rsdoabsorb"     description="net_rate_of_absorption_of_shortwave_energy_in_ocean_layer"    level="3" />
             <field ref="cellthc"       name="thkcello"       description="cell_thickness"                              level="1" /> <!-- Ofx -->
             <field ref="area"          name="areacello"      description="cell_area"                                   level="1" /> <!-- Ofx -->
           </file>
