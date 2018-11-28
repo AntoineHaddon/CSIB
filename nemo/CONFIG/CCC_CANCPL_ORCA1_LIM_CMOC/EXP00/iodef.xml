@@ -473,7 +473,7 @@
             <field ref="sst2"          name='tossq'         description="square_of_sea_surface_temperature"        level="3" />
             <field ref="sss"           name='sos'           description="sea_surface_salinity"                     level="3" />
             <field ref="sss2"          name='sossq'         description="square_of_sea_surface_salinity"           level="3" />
-            <!-- field ref="mldkz5"   name='omldamax' description="ocean_mixed_layer_thickness_defined_by_mixing_scheme" level="2" operation="t_max(X)", not in cmip6 request, DY -->
+            <field ref="mldkz5"        name='omldamax'      description="ocean_mixed_layer_thickness_defined_by_mixing_scheme" level="1" operation="t_max(X)" />
           </file>   
 
         <!--
