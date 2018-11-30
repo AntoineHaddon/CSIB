@@ -41,8 +41,8 @@ MODULE p4zflx
    PUBLIC   p4z_flx_alloc  
 
    !                                      !!** Namelist  nampisext  **
-   REAL(wp)           ::  atcco2    = 284.32_wp     !: pre-industrial atmospheric [co2] (ppm) 	
-   REAL(wp)           ::  atcco2n   = 284.32_wp     !: pre-industrial atmospheric [co2] (ppm) 	
+   REAL(wp)           ::  atcco2    = 284.316962     !: pre-industrial atmospheric [co2] (ppm)	
+   REAL(wp)           ::  atcco2n   = 284.316962     !: pre-industrial atmospheric [co2] (ppm) 	
    REAL(wp)           ::  atcd14c   = 0             !: 14C/C in CO2 (0 corresponds to pre-industrial)
    LOGICAL            ::  ln_co2int = .FALSE.       !: flag to read in a file and interpolate atmospheric pco2 or not
    LOGICAL            ::  ln_c14int = .FALSE.       !: flag to read in a file and interpolate atmospheric 14C or not
