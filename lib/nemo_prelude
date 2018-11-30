@@ -641,13 +641,6 @@ echo "#################### Start NEMO pre-processing #################"
       fi
     fi
 
-    # If CFCs are enabled we need to override namelist_top and namelist_cfc       
-    if [ $nemo_cfc -eq 1 ]; then         
-       find_nemo_config_EXP00 namelist_cfc $nemo_namelist_cfc
-       find_nemo_config_EXP00 namelist_top_cfc $nemo_namelist_top_cfc
-       mv namelist_top_cfc namelist_top
-    fi
-
     if [ ! -x nemo.exe ]; then
       # Get a local copy of the NEMO executable
       [ -z "$nemo_exec" ] && bail "nemo_exec must be defined."
@@ -832,6 +825,13 @@ echo "#################### Start NEMO pre-processing #################"
       [ -s input_ice_restart_file_names ] && cat input_ice_restart_file_names | xargs rm -f
       [ -s input_trc_restart_file_names ] && cat input_trc_restart_file_names | xargs rm -f
 
+    fi
+
+    # If CFCs are enabled we need to override namelist_top and namelist_cfc       
+    if [ $nemo_cfc -eq 1 ]; then         
+       find_nemo_config_EXP00 namelist_cfc $nemo_namelist_cfc
+       find_nemo_config_EXP00 namelist_top_cfc $nemo_namelist_top_cfc
+       mv namelist_top_cfc namelist_top
     fi
 
     # Get a local copy of the NEMO executable
