@@ -18,7 +18,7 @@
 !                        ! If your model year is iyy, nn_offset=(years(1)-iyy) 
 !                        ! then the first atmospheric CO2 record read is at years(1)
    ln_co2int   = .false. ! read atm pco2 from a file (T) or constant (F)
-   atcco2      = 284.32  ! Constant value atmospheric pCO2 - ln_co2int = F
+   atcco2      = 284.316962  ! Constant value atmospheric pCO2 - ln_co2int = F
    clname      = 'omip6_co2atm.nc'     ! Name of atm pCO2 file - ln_co2int = T
    clvarname   = 'mole_fraction_of_carbon_dioxide_in_air' ! CO2 variable name in clname
    ln_c14int   = .false. ! read atm C14 from a file (T) or constant (F)
