@@ -101,7 +101,7 @@ CONTAINS
                   ! -------------------------
                   
                   ! original PISCES condition for PAR
-                  IF( zetot(ji,jj,jk) > 1.E-3 ) THEN
+!                  IF( zetot(ji,jj,jk) > 1.E-3 ) THEN
                       ztn    = tsn(ji,jj,jk,jp_tem) + 273.15_wp
                       ! ep_cmoc is in kJ mol^-1 and 8.31 is the ideal gas constant in J mol^-1 K^-1
                       zadap  = ep_cmoc * 1e+3_wp / 8.31_wp * ( 1._wp / ( ztn + rtrn ) - 1._wp / ( tvm_cmoc + 273.15_wp) )
@@ -136,7 +136,7 @@ CONTAINS
                       &                 ( 2._wp * zpislopead(ji,jj,jk) +                           &
                       &                  achl_cmoc * thm_cmoc  * zetot(ji,jj,jk) * r1_rday + rtrn )
 
-                  ENDIF
+!                  ENDIF
                END DO
             END DO
          END DO
@@ -147,7 +147,7 @@ CONTAINS
          DO jj = 1, jpj
 !CDIR NOVERRCHK
             DO ji = 1, jpi
-               IF( zetot(ji,jj,jk) > 1.E-3 ) THEN
+!               IF( zetot(ji,jj,jk) > 1.E-3 ) THEN
                
                   ! Prognostic phytoplankton and chlorophyll tendencies
                   ! ---------------------------------------------------
@@ -162,7 +162,7 @@ CONTAINS
                   &                             trn(ji,jj,jk,jpnch)                       &
                   &                            ) * itau_cmoc * r1_rday * rfact2
                      
-                  ENDIF
+!                  ENDIF
                END DO
             END DO
          END DO
