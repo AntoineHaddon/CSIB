@@ -283,11 +283,11 @@ echo "#################### Start NEMO pre-processing #################"
       DATAPATH=${JHOME_DATA:=$DATAPATH}
       RUNPATH=${JHOME_DATA:=$RUNPATH}
     fi
-    access $local_file $remote_file $* ||
-      cp $remote_file $local_file ||
-      bail "--> acc_cp $local_file $remote_file $* <-- Unable to locate $remote_file"
+    access $local_file $remote_file $* 
+      #cp $remote_file $local_file ||
+      #bail "--> acc_cp $local_file $remote_file $* <-- Unable to locate $remote_file"
 
-    sha1sum $local_file >> xnemo_access_log
+    # sha1sum $local_file >> xnemo_access_log
   }
 
   find_nemo_config_EXP00() {
