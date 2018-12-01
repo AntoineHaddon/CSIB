@@ -69,12 +69,14 @@ CONTAINS
       ! Initialization of qint in case of no restart
       !----------------------------------------------
       qtr_cfc(:,:,:) = 0._wp
+      ! Always reset qint_cfc to 0 at initialization (to avoid problems with
+      ! coupled run)
+      qint_cfc(:,:,:) = 0._wp
       IF( .NOT. ln_rsttr ) THEN
          IF(lwp) THEN
             WRITE(numout,*)
             WRITE(numout,*) 'Initialization de qint ; No restart : qint equal zero '
          ENDIF
-         qint_cfc(:,:,:) = 0._wp
          DO jl = 1, jp_cfc
             jn = jp_cfc0 + jl - 1
             trn(:,:,:,jn) = 0._wp
