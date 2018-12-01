@@ -791,7 +791,6 @@
           <field ref="NO3"      level="0" />
           <field ref="DICnat"   level="1" />
           <field ref="DICabio"  level="1" />
-          <field ref="ALKabio"  level="1" />
           <field ref="O2abio"   level="0" />
           <field ref="agessc"   level="0" /> <!-- cmip6 requested as priority 1, DY -->
           <field ref="cfc11"    level="1" />

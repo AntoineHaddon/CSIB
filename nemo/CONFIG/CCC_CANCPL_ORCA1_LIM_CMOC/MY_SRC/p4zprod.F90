@@ -194,7 +194,7 @@ CONTAINS
               CALL iom_put( "LNnut"   , zlimn   (:,:,:) * tmask_bgc_closea(:,:,:) )
               CALL iom_put( "LNFe"    , xlimnfecmoc (:,:) * tmask_bgc_closea(:,:,1) )
               CALL iom_put( "LNlight" , zliml   (:,:,:) * tmask_bgc_closea(:,:,:) )
-              
+              CALL iom_put( "PAR"   , zetot   (:,:,:) * tmask_bgc_closea(:,:,:) )
            ENDIF
            
           ENDIF
