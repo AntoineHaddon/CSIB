@@ -157,7 +157,7 @@ CONTAINS
                    !
                    &                 * ( phinf_cmoc * exp( 1._wp ) * anf_cmoc * fsdept(ji,jj,jk) &
                    &                 * exp ( -anf_cmoc * fsdept(ji,jj,jk) ) + phi0_cmoc )        & ! diazotroph abundance dependence
-                   &                 * oomask(ji,jj) * tmask(ji,jj,jk)                             ! open ocean / land mask
+                   &                 * oomask(ji,jj) * tmask_bgc_closea(ji,jj,jk)                             ! open ocean / land mask
                    !
                    ! total nitrogen fixation on the current 1/4 time step
                    zn2fixtot(ji,jj) = zn2fixtot(ji,jj) + zn2fix(ji,jj,jk) * fse3t(ji,jj,jk)     
@@ -171,7 +171,7 @@ CONTAINS
             DO ji = 1, jpi
                   zJNd(ji,jj,jk)  =  -zn2fixtot(ji,jj) *                                &
                    &                 ( redet(ji,jj,jk) / (redettot(ji,jj) + rtrn) )     & 
-                   &                                   * tmask(ji,jj,jk) * oomask(ji,jj)
+                   &                                   * tmask_bgc_closea(ji,jj,jk) * oomask(ji,jj)
 
                   zdenittot(ji,jj) = zdenittot(ji,jj) + zJNd(ji,jj,jk) * fse3t(ji,jj,jk)                           
                END DO
@@ -191,7 +191,7 @@ CONTAINS
       IF(ln_ctl)   THEN
          WRITE(charout, FMT="('rem6')")
          CALL prt_ctl_trc_info(charout)
-         CALL prt_ctl_trc(tab4d=tra, mask=tmask, clinfo=ctrcnm)
+         CALL prt_ctl_trc(tab4d=tra, mask=tmask_bgc_closea, clinfo=ctrcnm)
       ENDIF
 
       IF( ln_diatrc ) THEN
@@ -200,7 +200,7 @@ CONTAINS
               ! <CMOC code OR 10/15/2015> 1.e+3_wp is to convert from L^-1 to m^-3
               !  (left in the sum line #119); the diagnostics has to be rescaled 
               ! to per second by dividing by rfact2.
-              zwork(:,:)  =  zn2fixtot(:,:) * ncrr_cmoc * 1.e+3_wp * rfact2r * tmask(:,:,1)
+              zwork(:,:)  =  zn2fixtot(:,:) * ncrr_cmoc * 1.e+3_wp * rfact2r * tmask_bgc_closea(:,:,1)
               ! nitrogen fixation in molN m^-2 s^-1 
               CALL iom_put( "Nfix"   , zwork )
               ! <CMOC code OR 12/11/2015> 1.e+3_wp is to convert from L^-1 to 
@@ -284,7 +284,6 @@ CONTAINS
       REAL(wp), DIMENSION(nbtimes) :: zsteps                 ! times records
       REAL(wp), DIMENSION(:,:,:), ALLOCATABLE :: zriverdic, zriverdoc !
       REAL(wp), DIMENSION(:,:)  , ALLOCATABLE :: zfmask      ! <CMOC code OR 10/22/2015> add zfmask for iron limitation mask
-      REAL(wp), DIMENSION(:,:,:,:), ALLOCATABLE :: zsi
       !
       CHARACTER(len=100) ::  cn_dir                          ! Root directory for location of ssr files
       !TYPE(FLD_N) ::   sn_fmsk, sn_riverdoc, sn_riverdic     ! <CMOC code OR 10/22/2015> add sn_fmsk (iron limitation mask)        ! informations about the fields to be read
@@ -353,19 +352,12 @@ CONTAINS
          ! Get total input dust ; need to compute total atmospheric supply of Si in a year
          CALL iom_open (  TRIM( sn_si%clname ) , numsi )
          CALL iom_gettime( numsi, zsteps, kntime=ntimes_si)  ! get number of record in file
-         ALLOCATE( zsi(jpi,jpj,jpk,ntimes_si) )
-         DO jm = 1, ntimes_si
-          CALL iom_get( numsi, jpdom_data, TRIM( sn_si%clvar ), zsi(:,:,:,jm), jm )
-         END DO
+         IF (ntimes_si > 0) THEN
+            CALL iom_get( numsi, jpdom_data, TRIM( sn_si%clvar ), asi3(:,:,:), 1 )
+         ELSE
+            CALL iom_get( numsi, jpdom_data, TRIM( sn_si%clvar ), asi3(:,:,:) )
+         ENDIF 
          CALL iom_close( numsi )
-         DO jk = 1, jpk
-            DO jj = 1, jpj
-               DO ji = 1, jpi
-                  asi3(ji,jj,jk)=zsi(ji,jj,jk,1)
-               END DO
-            END DO
-         END DO
-         DEALLOCATE( zsi)
 
       ! iron mask/iron limitation for the ocean ! <CMOC code OR 10/22/2015>
       ! ---------------------------------------

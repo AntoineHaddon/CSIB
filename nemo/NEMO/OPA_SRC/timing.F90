@@ -491,7 +491,7 @@ CONTAINS
          s_timer => s_timer%next
       END DO      
 
-         WRITE(*,*) 'ARPDBG: timing: done gathers'
+      !   WRITE(*,*) 'ARPDBG: timing: done gathers'
       
       IF( narea == 1 ) THEN    
          ! Compute some stats
@@ -515,7 +515,7 @@ CONTAINS
             sl_timer_glob => sl_timer_glob%next                                
          END DO
 
-         WRITE(*,*) 'ARPDBG: timing: done computing stats'
+      !   WRITE(*,*) 'ARPDBG: timing: done computing stats'
       
          ! reorder the averaged list by CPU time      
          s_wrk => NULL()

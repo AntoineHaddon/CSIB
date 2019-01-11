@@ -27,6 +27,7 @@ MODULE p4zflx
    USE fldread                      !  read input fields
 #if defined key_cpl_carbon_cycle
    USE sbc_oce, ONLY :  atm_co2     !  atmospheric pCO2               
+   USE sbc_oce, ONLY :  atm_mslp    !  atmospheric mean sea level pressure
 #endif
 
    IMPLICIT NONE
@@ -103,7 +104,11 @@ CONTAINS
       !     SURFACE LAYER); THE RESULT OF THIS CALCULATION
       !     IS USED TO COMPUTE AIR-SEA FLUX OF CO2
 
+#if defined key_cpl_carbon_cycle
+      patm = atm_mslp
+#else
       IF( kt /= nit000 ) CALL p4z_patm( kt )    ! Get sea-level pressure (E&K [1981] climatology) for use in flux calcs
+#endif
 
       IF( ln_co2int ) THEN 
          ! Linear temporal interpolation  of atmospheric pco2.  atcco2.txt has annual values.
@@ -304,7 +309,11 @@ CONTAINS
       t_atm_co2_flx = 0._wp
       t_oce_co2_flx = 0._wp
       !
+#if defined key_cpl_carbon_cycle
+      patm = atm_mslp
+#else
       CALL p4z_patm( nit000 )
+#endif
       !
    END SUBROUTINE p4z_flx_init
 

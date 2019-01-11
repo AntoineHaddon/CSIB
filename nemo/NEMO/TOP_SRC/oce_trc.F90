@@ -158,6 +158,7 @@ MODULE oce_trc
    USE dom_oce , ONLY :   umask      =>   umask      !: land/ocean mask at u-points   
    USE dom_oce , ONLY :   vmask      =>   vmask      !: land/ocean mask at v-points 
    USE dom_oce , ONLY :   fmask      =>   fmask      !: land/ocean mask at f-points 
+   USE dom_oce , ONLY :   tmask_bgc_closea      =>   tmask_bgc_closea     !: land/ocean mask at t-points for BGC
 
    !* time domain *
    USE dom_oce , ONLY :   neuler     =>   neuler     !: restart euler forward option (0=Euler)

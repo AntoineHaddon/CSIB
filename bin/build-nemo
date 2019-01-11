@@ -1,10 +1,9 @@
 #!/bin/bash
 #
-#   Usage: build-nemo [options] ver=tag exec=name cfg=cfgdir \
+#   Usage: build-nemo [options] exec=name cfg=cfgdir \
 #                     srcpath=srcpath \
 #                     [refcfg=cfgdir] \
 #                     [arch=fname] \
-#                     [repo=dirpath] \
 #                     [add_key=keys] \
 #                     [del_key=keys] 
 #          Quantities in square brackets are optional
@@ -21,13 +20,14 @@
 #   ### Incomplete ### -t   ...compile a set of nemo tools rather than the ocean model
 #   -v   ...increase verbosity (additive)
 #   -h   ...show this usage message
+#   -a   ...do not use a version specific build-nemo (use the build-nemo found on your PATH)
+#   -b   ...use a version specific build-nemo, namely the version specicifed on the command line
+#           If both -a and -b are present then -a takes precedence
 #   -k   ...do not delete the tmp dir after compilation is complete (used for debugging)
 #   -d   ...compile an executable with debugging symbols (for use with DDT or GDB)
 #
 # Variable definitions:
-#   srcpath=srcpath ...path to copy source from, instead of clone a repo.
-#   ver=tag       ...tag is the version number/tag or branch to extract from
-#                    the git repository (e.g. nemo_v3.4)
+#   srcpath=srcpath ...location of the NEMO source code. 
 #   exec=name     ...name is the name of the nemo executable to be created
 #                    On successful compilation, a file by this name will be saved on RUNPATH
 #   cfg=name      ...name is the name of a subdir under the CONFIG dir in the repository
@@ -36,7 +36,6 @@
 #                    which will contain a reference configuration
 #   arch=name     ...name is the name of an arch specific make include file found in the ARCH
 #                    subdir that is used to define compiler switches and libs etc
-#   repo=dirpath  ...dirpath is the pathname to the git repository
 #   add_key=keys  ...A whitespace separated list of cpp preprocessor keys to be added
 #                    for this complie. If there is more than one then keys will need
 #                    to be quoted. (e.g. add_keys="key_mpp_mpi key_nproci=8 key_nprocj=4")
@@ -45,17 +44,18 @@
 #                    to be quoted. (e.g. del_keys="key_nproci key_nprocj")
 #
 # Examples:
-#   build-nemo ver=nemo_v3.4 exec=nemo_v3.4_orca2_lim_exe cfg=ORCA2_LIM
-#     -- Build an "out of the box" ORCA2_LIM configuration
-#
 #   build-nemo exec=nemo_v3.4_orca2_lim_exe cfg=ORCA2_LIM srcpath=/path/to/code/
+#
 #     -- Build an ORCA2_LIM configuration that uses the nemo code define in srcpath (with
 #        a dir structure the same as the default).
 #
 ########################################################################
 #
 # Larry Solheim Sep 2012
-# Last update: NCS, 2017-09-28
+# Last update: NCS, 2017-12-18 - merge develop (ocean only) into develop_canesm. 
+#                              - major conflicts needed to be resolved.
+#              NCS, 2018-08-16 - move compile to in source (in the repo), but
+#                                .gitignore compilation related files for VCS.
 
 FULLPATH=`type $0|awk '{print $3}'` # pathname of this script
 Runame=`basename $FULLPATH`
@@ -86,6 +86,15 @@ this_host=`hostname|cut -d'.' -f1`
 
 bail(){
 echo "${Runame}: *** ERROR *** $1"
+
+if [ -z "$keep_tmpd" ] ; then
+  if [ $keep_tmpd -eq 1 ]; then
+    echo "Temporary directory remains in $tmpd"
+  elif [ -z "$tmpd" ]; then
+    cd $CWD
+    rm -fr $tmpd
+  fi
+fi
 exit 1
 }
 
@@ -112,7 +121,7 @@ fi
 nemo_version=''
 
 # The default location of the repository containing nemo source code
-nemo_source_repo='git@gitlab.science.gc.ca:CanESM/CanNEMO.git'
+#nemo_source_repo='git@gitlab.science.gc.ca:CanESM/CanNEMO.git'
 
 # Path to copy code from instead of cloning a repo
 nemo_source_path=''
@@ -121,7 +130,7 @@ nemo_source_path=''
 nemo_exe=''
 
 # Nemo preprocessing keys to be added or removed at compile time
-nemo_add_cpp_keys='key_mpp_mpi'
+nemo_add_cpp_keys=''
 nemo_del_cpp_keys=''
 
 # A boolean flag used to build (or not build) the nemo executable
@@ -137,6 +146,9 @@ nemo_ref_config=''
 # The name of a make include file used to determine compiler name and flags
 nemo_arch=''
 
+# Is this nemo build for a coupled model
+coupled=''
+
 # Boolean flags used to build (or not build) particular nemo tools
 build_rebuild_tool=0
 build_rebuild_nemo_tool=0
@@ -149,7 +161,7 @@ verbose=0
 keep_tmpd=0
 
 # Number of processors to use during compilation
-comp_np=1
+comp_np=4
 
 # Set debug to 0 (turned off, regular optimizations used)
 debug=0
@@ -157,6 +169,10 @@ debug=0
 printf "\n\n ------------------- \n"
 printf "        build-nemo       \n"
 printf " ------------------- \n"
+
+# CCRNTMP must be defined
+#CCRNTMP=/tmp
+[ ! -d "$CCRNTMP" ] && bail "/tmp is not a directory"
 
 # process command line options
 while getopts j:n:m:r:hktvxd opt
@@ -193,7 +209,6 @@ for arg in "$@"; do
                ver) nemo_version="$val" ;;     # git version, tag or branch
               repo) nemo_source_repo="$val" ;; # location of git repository
               srcpath) nemo_source_path="$val" ;; # location of code in a dir structure (instead of cloning)
-               src) nemo_source_mods="$val" ;; # location of user supplied modification
               exec) nemo_exe="$val" ;;         # name for the executable created here
                cfg) nemo_config="$val" ;;      # name of subdir in which config lives
             refcfg) nemo_ref_config="$val" ;;  # name of subdir in which ref config lives
@@ -202,6 +217,11 @@ for arg in "$@"; do
            add_key) nemo_add_cpp_keys="$val" ;;
                      # a list of cpp keys to remove before compiling nemo
            del_key) nemo_del_cpp_keys="$val" ;;
+                    # if coupled is defined on the cmd line then this value will be used
+           coupled) ;;
+                    # Allow the user to supply a CanCPL repo and/or version
+       cancpl_repo) ;;
+        cancpl_ver) ;;
                  *) bail "Invalid command line arg --> $arg <--" ;;
          esac
          ;;
@@ -233,10 +253,30 @@ if [ $build_nemo_exe -eq 1 ]; then
     usage -e "The name of the configuration is required on the command line ...cfg=cfgname"
 fi
 
+# Determine if this is a coupled build or not
+if [ -z "$coupled" ]; then
+  # coupled was not defined on the command line ...define it here
+  case $nemo_config in
+    CCC_CANCPL_*) coupled=on ;;
+    *) coupled=off ;;
+  esac
+fi
 
-#[ ! -d "$nemo_source_repo" ] && usage -e "Repository is not a directory --> $nemo_source_repo <--"
-# Ensure this is a full pathname
-#nemo_source_repo=$(cd $nemo_source_repo; pwd)
+if [ $coupled = "on" ]; then
+  # Define cancpl repo and commit
+  # Values supplied on the command line will be used, if present, otherwise use these defaults
+  cancpl_repo=${cancpl_repo:=$CCRNSRC/coupler_dir/coupler.git}
+  cancpl_ver=${cancpl_ver:=master}
+  # The coupler repo must be on a locally accessable directory path
+  [ ! -d "$cancpl_repo" ] && usage -e "Coupler repository is not a directory --> $cancpl_repo <--"
+  # Ensure this is a full pathname
+  cancpl_repo=$(cd $cancpl_repo; pwd)
+  # Verify that this is a valid commit
+  # If so then reassign as the full sha1 hash
+  commit=$(cd $cancpl_repo; git rev-parse $cancpl_ver) ||
+      { echo "$(basename $0): Commit $cancpl_ver is not present in coupler repository $cancpl_repo"; exit 1; }
+  cancpl_ver=$commit
+fi
 
 
 # This script is intended to be run on the back end
@@ -246,25 +286,26 @@ case $this_host in
 esac
 
 # Create a temporary directory and change to it
+#   // Actuall, now compile in source
 CWD=`pwd`
-tmpd=$CCRNTMP/tmp_build_nemo_${this_host}_$stamp
-mkdir $tmpd || bail "Cannot create temporary dir $tmpd"
-cd $tmpd
+#tmpd=$CCRNTMP/tmp_build_nemo_${this_host}_$stamp
+#mkdir $tmpd || bail "Cannot create temporary dir $tmpd"
+#cd $tmpd
 
 # Clone the git repo, or copy the srcpath directory
 if [ -z "$nemo_source_path" ]; then
-    [ -z "$nemo_version" ] && usage -e "A version number/tag or branch is required on the command line."
-    [ -z "$nemo_source_repo" ] && usage -e "The source repository name is missing."
+    #[ -z "$nemo_version" ] && usage -e "A version number/tag or branch is required on the command line."
+    #[ -z "$nemo_source_repo" ] && usage -e "The source repository name is missing."
     # Get the code from the repo
-    git clone $nemo_source_repo CanNEMO
-    cd CanNEMO
-    git checkout $nemo_version 
+    #git clone $nemo_source_repo CanNEMO
+    #cd CanNEMO
+    #git checkout $nemo_version 
+    bail "nemo_source_path not defined"
 else
    echo
-   echo "WARNING: copying files from $nemo_source_path, not using strict cloning"
-   echo "Checking if this is a repo anyway"
-   cp -r $nemo_source_path CanNEMO
-   cd CanNEMO
+   echo "Compiling in:  ${nemo_source_path}"
+   #cp -r $nemo_source_path CanNEMO
+   cd $nemo_source_path || bail "Cannot cd in ${nemo_source_path}"
    if [ -d .git ]; then
    # If srcpath is a git repo, do some checks
        branch=`git branch`
@@ -273,11 +314,30 @@ else
        if [ ! -z "$diffs" ]; then
            echo "WARNING: there are local (non-committed) changes in the following files that are being used:"
            echo $diffs
-     
            printf "status \n, `git status`"
        fi
    fi
 fi
+
+# Define variables containing the current commit and repo path to use as cpp macros during the build
+NEMO_COMMIT=$(git log -1 --pretty="%H" $nemo_version)
+NEMO_REPO_PATH=$nemo_source_repo
+NEMO_CONFIG=$nemo_config
+NEMO_CANCPL_COMMIT=$cancpl_ver
+NEMO_CANCPL_REPO_PATH=$cancpl_repo
+nemo_sfx=`echo "$NEMO_COMMIT" | cut -c1-8`
+cancpl_sfx=`echo "$NEMO_CANCPL_COMMIT" | cut -c1-8`
+#nemo_exe_sfx="${nemo_sfx}-${cancpl_sfx}"
+#if [ $add_nemo_exe_sfx -eq 1 -a -n "$nemo_exe_sfx" ]; then
+#  nemo_exe=${nemo_exe}_$nemo_exe_sfx
+#fi
+echo "nemo_version=$nemo_version"
+echo "NEMO_COMMIT=$NEMO_COMMIT"
+echo "NEMO_REPO_PATH=$NEMO_REPO_PATH"
+echo "NEMO_CONFIG=$NEMO_CONFIG"
+echo "NEMO_CANCPL_COMMIT=$NEMO_CANCPL_COMMIT"
+echo "NEMO_CANCPL_REPO_PATH=$NEMO_CANCPL_REPO_PATH"
+echo "nemo_exe=$nemo_exe"
 
 printf "\n\n ------------------- \n"
 printf "\n\n\n"
@@ -287,6 +347,37 @@ printf "\n\n\n"
 path_to_nemo=nemo
 nemo_root=nemo
 
+if [ $coupled = "on" ]; then
+  # Add a copy of com_cpl.F90 to the SBC subdir in the nemo tree
+  #gitrip $cancpl_ver src/comm/com_cpl.F90 repo=$cancpl_repo
+  cp ${cancpl_repo}/src/comm/com_cpl.F90 .
+  [ -s com_cpl.F90 ] || bail "Unable to extract com_cpl.F90 from coupler repo $cancpl_repo"
+  # Modify com_cpl.F90 to contain NEMO and CanCPL version info
+  sed '/^#include *"cpl_cppdefs"/d' com_cpl.F90 > tmp_com_cpl.F90 && rm -f com_cpl.F90
+  tmpfile=tmpf$stamp
+  if [ -n "$NEMO_REPO_PATH" ]; then
+    echo "#define NEMO_REPO_PATH $NEMO_REPO_PATH" | cat - tmp_com_cpl.F90 > $tmpfile
+    mv $tmpfile tmp_com_cpl.F90
+  fi
+  if [ -n "$NEMO_COMMIT" ]; then
+    echo "#define NEMO_COMMIT $NEMO_COMMIT" | cat - tmp_com_cpl.F90 > $tmpfile
+    mv $tmpfile tmp_com_cpl.F90
+  fi
+  if [ -n "$NEMO_CONFIG" ]; then
+    echo "#define NEMO_CONFIG $NEMO_CONFIG" | cat - tmp_com_cpl.F90 > $tmpfile
+    mv $tmpfile tmp_com_cpl.F90
+  fi
+  if [ -n "$NEMO_CANCPL_REPO_PATH" ]; then
+    echo "#define NEMO_CANCPL_REPO_PATH $NEMO_CANCPL_REPO_PATH" | cat - tmp_com_cpl.F90 > $tmpfile
+    mv $tmpfile tmp_com_cpl.F90
+  fi
+  if [ -n "$NEMO_CANCPL_COMMIT" ]; then
+    echo "#define NEMO_CANCPL_COMMIT $NEMO_CANCPL_COMMIT" | cat - tmp_com_cpl.F90 > $tmpfile
+    mv $tmpfile tmp_com_cpl.F90
+  fi
+  mv tmp_com_cpl.F90 $nemo_root/NEMO/OPA_SRC/SBC/com_cpl.F90
+fi
+
 # Make everything user writeable so that an overwrite will clobber existing files
 chmod -R u+w .
 
@@ -294,21 +385,19 @@ if [ $build_nemo_exe -eq 1 ]; then
   # Build the nemo executable
   cd $nemo_root/CONFIG
   if [ -z "$nemo_arch" ]; then
-    NARCH="-m xlf_aix-cccma"
-  else
-    NARCH="-m $nemo_arch"
+    nemo_arch=xlf_aix-cccma
   fi
+  NARCH="-m $nemo_arch"
+
   if [ -z "$nemo_ref_config" ]; then
     REFCFG=''
   else
     REFCFG="-r $nemo_ref_config"
   fi
   if [ -z "$nemo_add_cpp_keys" ]; then
-    add_key=''
-    ADDKEY=''
+    NEMO_CPPDEFS=''
   else
-    add_key='add_key'
-    ADDKEY="$nemo_add_cpp_keys"
+    NEMO_CPPDEFS="$nemo_add_cpp_keys"
   fi
   if [ -z "$nemo_del_cpp_keys" ]; then
     del_key=''
@@ -317,10 +406,26 @@ if [ $build_nemo_exe -eq 1 ]; then
     del_key='del_key'
     DELKEY="$nemo_del_cpp_keys"
   fi
+
+  # We are currently in the CONFIG dir
+  # Modify cpp_${nemo_config}.fcm to include any user supplied macros
+  cppfcm=cpp_${nemo_config}.fcm
+  if [ -n "$NEMO_CPPDEFS" ]; then
+    [ -f $nemo_config/$cppfcm ] || bail "$nemo_config/$cppfcm is not a regular file"
+    echo "Adding the following cpp defs to $cppfcm :: $NEMO_CPPDEFS"
+    sed 's?$? '"${NEMO_CPPDEFS}?" $nemo_config/$cppfcm > $nemo_config/new_$cppfcm
+    chmod u+w $nemo_config/$cppfcm
+    mv $nemo_config/new_$cppfcm $nemo_config/$cppfcm
+    echo "New $cppfcm file: "
+    cat $nemo_config/$cppfcm
+  fi
+
   env=''
   case $nemo_arch in
     XC40_CCCma_cray-pe*) env='cray' ;;
     XC40_CCCma_intel-pe*) env='intel' ;;
+    intel_xc40-cancpl*) env='intel' ;;
+    cray_xc40-cancpl*) env='cray' ;;
     *) bail "Unknown ARCH $(nemo_arch) - we don't know if this is the Cray or Intel PE" ;;
   esac
 
@@ -331,59 +436,29 @@ if [ $build_nemo_exe -eq 1 ]; then
   fi
       module load cray-netcdf
       module load cray-mpich
-  echo "makenemo -j $comp_np  -n $nemo_config $NARCH $REFCFG $add_key \"$ADDKEY\" $del_key \"$DELKEY\""
-  ./makenemo -j $comp_np -n $nemo_config $NARCH $REFCFG $add_key "$ADDKEY" $del_key "$DELKEY"
+  echo "makenemo -j $comp_np  -n $nemo_config $NARCH $REFCFG"
+  ./makenemo -j $comp_np -n $nemo_config $NARCH $REFCFG 
   [ $? -ne 0 ] && bail "Problem building nemo executable"
-  # Copy the executable to the tmp dir
-  cp $nemo_config/BLD/bin/nemo.exe $tmpd/$nemo_exe
-  cd $tmpd
-  [ ! -s "$nemo_exe" ] && bail "Unable to create nemo executable $nemo_exe"
-  cp $nemo_exe $CWD/$nemo_exe
-  # Save the nemo executable to RUNPATH/DATAPATH
-  #save $nemo_exe $nemo_exe || bail "Problem while saving $nemo_exe"
-  #release $nemo_exe
-  #echo "Saved $nemo_exe on RUNPATH $RUNPATH"
-fi
 
-if [ $build_rebuild_tool -eq 1 ]; then
-  # Build nemo rebuild tool
-  cd $nemo_root/TOOLS
-  maketools -n REBUILD -m xlf_aix_noMP-cccma
-  [ $? -ne 0 ] && bail "Problem building tool REBUILD"
-  # This will build a binary named "flio_rbld.exe" in TOOLS/REBUILD/BLD/bin
-  cp REBUILD/BLD/bin/*.exe $tmpd
-  # There is also a script in REBUILD/rebuild
-  cp REBUILD/rebuild $tmpd
-  cd $tmpd
-fi
-
-if [ $build_rebuild_nemo_tool -eq 1 ]; then
-  # Build nemo rebuild_nemo tool
-  cd $nemo_root/TOOLS
-  maketools -n REBUILD_NEMO -m xlf_aix_noMP-cccma
-  [ $? -ne 0 ] && bail "Problem building tool REBUILD_NEMO"
-  # This will build a binary named "rebuild_nemo.exe" in TOOLS/REBUILD_NEMO/BLD/bin
-  cp REBUILD_NEMO/BLD/bin/*.exe $tmpd
-  # There is also a script in REBUILD/rebuild_nemo
-  cp REBUILD/rebuild_nemo $tmpd
-  cd $tmpd
-fi
-
-if [ $build_weights_tool -eq 1 ]; then
-  # Build nemo weights tool
-  cd $nemo_root/TOOLS
-  maketools -n WEIGHTS -m xlf_aix_noMP-cccma
-  [ $? -ne 0 ] && bail "Problem building tool WEIGHTS"
-  # This will build a binaries named scrip.exe, scripgrid.exe, scripinterp.exe
-  # and scripshape.exe in TOOLS/WEIGHTS/BLD/bin
-  cp WEIGHTS/BLD/bin/*.exe $tmpd
-  cd $tmpd
+  # Copy the executable to the run dir (ocean only) or save in coupled mode
+  #cp $nemo_config/BLD/bin/nemo.exe $tmpd/$nemo_exe
+  #cd $tmpd
+  [ ! -s "$nemo_config/BLD/bin/nemo.exe" ] && bail "Unable to create nemo executable $nemo_exe"
+   if [ $coupled = "on" ]; then
+      # Save the nemo executable to RUNPATH/DATAPATH
+      save $nemo_config/BLD/bin/nemo.exe $nemo_exe || bail "Problem while saving $nemo_exe"
+      #release $nemo_exe
+      echo "Saved $nemo_exe on RUNPATH $RUNPATH"
+   else
+      # In ocean-only we copy to the PROD dir
+      ln -s ${nemo_source_path}/nemo/CONFIG/${nemo_config}/BLD/bin/nemo.exe ${CWD}/${nemo_exe}
+   fi
 fi
 
 # Return to the original dir and clean up
 cd $CWD
-if [ $keep_tmpd -eq 1 ]; then
-  echo "Temporary directory remains in $tmpd"
-else
-  rm -fr $tmpd
-fi
+#if [ $keep_tmpd -eq 1 ]; then
+#  echo "Temporary directory remains in $tmpd"
+#else
+#  rm -fr $tmpd
+#fi

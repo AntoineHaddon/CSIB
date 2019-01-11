@@ -43,9 +43,15 @@ CONTAINS
       IF(lwp) WRITE(numout,*) ' trc_rst_read_cfc : Read specific variables from CFC model '
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~'
 
-      DO jn = jp_cfc0, jp_cfc1
-         CALL iom_get( knum, jpdom_autoglo, 'qint_'//ctrcnm(jn), qint_cfc(:,:,jn) )
-      END DO
+!      These lines read in the total accumulated CFC11, CFC12, and SF6 flux.
+!      However, for some reason they were causing problems when trying to
+!      restart the coupled model. Because we do not use these quantities, they
+!      are commented out
+!      DO jn = jp_cfc0, jp_cfc1
+!         IF (iom_varid( knum, 'qint_'//ctrcnm(jn), ldstop = .FALSE.) > 0) THEN
+!            CALL iom_get( knum, jpdom_autoglo, 'qint_'//ctrcnm(jn), qint_cfc(:,:,jn) )
+!         ENDIF
+!      END DO
 
    END SUBROUTINE trc_rst_read_cfc
 
@@ -66,9 +72,13 @@ CONTAINS
       IF(lwp) WRITE(numout,*) ' trc_rst_wri_cfc : Write specific variables from CFC model '
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~'
 
-      DO jn = jp_cfc0, jp_cfc1
-         CALL iom_rstput( kt, kitrst, knum, 'qint_'//ctrcnm(jn), qint_cfc(:,:,jn) )
-      END DO
+!      These lines read in the total accumulated CFC11, CFC12, and SF6 flux.
+!      However, for some reason they were causing problems when trying to
+!      restart the coupled model. Because we do not use these quantities, they
+!      are commented out
+!      DO jn = jp_cfc0, jp_cfc1
+!         CALL iom_rstput( kt, kitrst, knum, 'qint_'//ctrcnm(jn), qint_cfc(:,:,jn) )
+!      END DO
 
    END SUBROUTINE trc_rst_wri_cfc
 

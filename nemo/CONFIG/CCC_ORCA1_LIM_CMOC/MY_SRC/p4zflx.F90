@@ -41,15 +41,17 @@ MODULE p4zflx
    PUBLIC   p4z_flx_alloc  
 
    !                                      !!** Namelist  nampisext  **
-   REAL(wp)           ::  atcco2    = 284.32_wp     !: pre-industrial atmospheric [co2] (ppm) 	
-   REAL(wp)           ::  atcco2n   = 284.32_wp     !: pre-industrial atmospheric [co2] (ppm) 	
+   REAL(wp)           ::  atcco2    = 284.316962     !: pre-industrial atmospheric [co2] (ppm)	
+   REAL(wp)           ::  atcco2n   = 284.316962     !: pre-industrial atmospheric [co2] (ppm) 	
    REAL(wp)           ::  atcd14c   = 0             !: 14C/C in CO2 (0 corresponds to pre-industrial)
    LOGICAL            ::  ln_co2int = .FALSE.       !: flag to read in a file and interpolate atmospheric pco2 or not
+   LOGICAL            ::  ln_c14int = .FALSE.       !: flag to read in a file and interpolate atmospheric 14C or not
    CHARACTER(len=120) ::  clname       = 'co2atm.nc'                               !: filename of pco2 values
    CHARACTER(len=120) ::  clvarname    = 'mole_fraction_of_carbon_dioxide_in_air'  !: variable name in clname file 
    CHARACTER(len=120) ::  cl14name     = 'Delta14co2.nc'      !: filename of delta C-14 pco2 values
    CHARACTER(len=120) ::  cl14varname  = 'Delta14co2_in_air'  !: variable name in cl14name file 
    INTEGER            ::  nn_offset = 0             !: Offset model-data start year (default = 0) 
+   INTEGER            ::  nn_readoffset_c14 = 1850  !: Offset atmospheric history file of C14 (CMIP6 is 1850)
 
    !!  Variables related to reading atmospheric CO2 time history    
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:) :: atcco2h, atcco2h_years
@@ -136,14 +138,19 @@ CONTAINS
 
       IF( kt /= nit000 ) CALL p4z_patm( kt )    ! Get sea-level pressure (E&K [1981] climatology) for use in flux calcs
 
+      ! Calculate the decimal year if we need to interpolate
+      IF( ln_co2int .OR. ln_c14int ) current_yearfrac = nyear + (nsec_year / ( nyear_len(1) * 86400.))
       IF( ln_co2int ) THEN
          ! Linear temporal interpolation  of atmospheric pco2.  atcco2.txt has annual values.
          ! Caveats: First column of .txt must be in years, decimal  years preferably. 
          ! For nn_offset, if your model year is iyy, nn_offset=(years(1)-iyy) 
          ! then the first atmospheric CO2 record read is at years(1)
-         current_yearfrac = nyear + (nsec_year / ( nyear_len(1) * 86400.))
          satmco2(:,:) = lin_interp( current_yearfrac + nn_offset, atcco2h_years, atcco2h )
-
+      ELSE
+         satmco2(:,:) = atcco2
+      ENDIF
+      ! Linear interpolation of carbon 14.
+      IF ( ln_c14int ) THEN
          ! Interpolate each sector of 14C
          DO ji=1,nd14csec
             d14c_now(ji) = lin_interp(current_yearfrac + nn_offset, atcd14ch_years, atcd14ch(:,ji))
@@ -252,7 +259,7 @@ CONTAINS
             zws  = wndm(ji,jj) * wndm(ji,jj)
             ! Compute the piston velocity for O2 and CO2
             zkgwan = 0.251 * zws  
-            zkgwan = zkgwan * xconv * ( 1.- fr_i(ji,jj) ) * tmask(ji,jj,1)
+            zkgwan = zkgwan * xconv * ( 1.- fr_i(ji,jj) ) * tmask_bgc_closea(ji,jj,1)
 # if defined key_degrad
             zkgwan = zkgwan * facvol(ji,jj,1)
 #endif 
@@ -269,35 +276,35 @@ CONTAINS
       DO jj = 1, jpj
          DO ji = 1, jpi
             ! Compute CO2 flux for the sea and air
-            zfld = satmco2(ji,jj) * patm(ji,jj) * tmask(ji,jj,1) * chemc(ji,jj,1) * zkgco2(ji,jj)   ! (mol/L) * (m/s)
-            zflu = zh2co3(ji,jj) * tmask(ji,jj,1) * zkgco2(ji,jj)                                   ! (mol/L) (m/s) ?
-            oce_co2(ji,jj) = ( zfld - zflu ) * rfact * e1e2t(ji,jj) * tmask(ji,jj,1) * 1000.
+            zfld = satmco2(ji,jj) * patm(ji,jj) * tmask_bgc_closea(ji,jj,1) * chemc(ji,jj,1) * zkgco2(ji,jj)   ! (mol/L) * (m/s)
+            zflu = zh2co3(ji,jj) * tmask_bgc_closea(ji,jj,1) * zkgco2(ji,jj)                                   ! (mol/L) (m/s) ?
+            oce_co2(ji,jj) = ( zfld - zflu ) * rfact * e1e2t(ji,jj) * tmask_bgc_closea(ji,jj,1) * 1000.
             ! compute the trend
             tra(ji,jj,1,jpdic) = tra(ji,jj,1,jpdic) + ( zfld - zflu ) / fse3t(ji,jj,1)
             ! abiotic DIC
-            zflu = zh2co3a(ji,jj) * tmask(ji,jj,1) * zkgco2(ji,jj)                                   ! (mol/L) (m/s) ?
-            oce_co2a(ji,jj) = ( zfld - zflu ) * rfact * e1e2t(ji,jj) * tmask(ji,jj,1) * 1000.
+            zflu = zh2co3a(ji,jj) * tmask_bgc_closea(ji,jj,1) * zkgco2(ji,jj)                                   ! (mol/L) (m/s) ?
+            oce_co2a(ji,jj) = ( zfld - zflu ) * rfact * e1e2t(ji,jj) * tmask_bgc_closea(ji,jj,1) * 1000.
             tra(ji,jj,1,jpdab) = tra(ji,jj,1,jpdab) + ( zfld - zflu ) / fse3t(ji,jj,1)
             ! natural DIC
-            zfld = satmco2n(ji,jj) * patm(ji,jj) * tmask(ji,jj,1) * chemc(ji,jj,1) * zkgco2(ji,jj)   ! (mol/L) * (m/s)
-            zflu = zh2co3n(ji,jj) * tmask(ji,jj,1) * zkgco2(ji,jj)                                   ! (mol/L) (m/s) ?
-            oce_co2n(ji,jj) = ( zfld - zflu ) * rfact * e1e2t(ji,jj) * tmask(ji,jj,1) * 1000.
+            zfld = satmco2n(ji,jj) * patm(ji,jj) * tmask_bgc_closea(ji,jj,1) * chemc(ji,jj,1) * zkgco2(ji,jj)   ! (mol/L) * (m/s)
+            zflu = zh2co3n(ji,jj) * tmask_bgc_closea(ji,jj,1) * zkgco2(ji,jj)                                   ! (mol/L) (m/s) ?
+            oce_co2n(ji,jj) = ( zfld - zflu ) * rfact * e1e2t(ji,jj) * tmask_bgc_closea(ji,jj,1) * 1000.
             tra(ji,jj,1,jpdnt) = tra(ji,jj,1,jpdnt) + ( zfld - zflu ) / fse3t(ji,jj,1)
             ! DI14C
             ! zfld representss equations 17-19 and equation 29 in Orr et al. 2016
-            zfld = (satmco2(ji,jj)*(1. + satmd14c(ji,jj)*1.e-3)) * patm(ji,jj) * tmask(ji,jj,1) * &
+            zfld = (satmco2(ji,jj)*(1. + satmd14c(ji,jj)*1.e-3)) * patm(ji,jj) * tmask_bgc_closea(ji,jj,1) * &
                    chemc(ji,jj,1) * zkgco2(ji,jj)   ! (mol/L) * (m/s)
-            zflu = zh2co3r(ji,jj) * tmask(ji,jj,1) * zkgco2(ji,jj)                                   ! (mol/L) (m/s) ?
-            oce_co2r(ji,jj) = ( zfld - zflu ) * rfact * e1e2t(ji,jj) * tmask(ji,jj,1) * 1000.
+            zflu = zh2co3r(ji,jj) * tmask_bgc_closea(ji,jj,1) * zkgco2(ji,jj)                                   ! (mol/L) (m/s) ?
+            oce_co2r(ji,jj) = ( zfld - zflu ) * rfact * e1e2t(ji,jj) * tmask_bgc_closea(ji,jj,1) * 1000.
             tra(ji,jj,1,jpdrc) = tra(ji,jj,1,jpdrc) + ( zfld - zflu ) / fse3t(ji,jj,1)
 
             ! Compute O2 flux 
-            zfld16 = atcox * patm(ji,jj) * chemc(ji,jj,2) * tmask(ji,jj,1) * zkgo2(ji,jj)          ! (mol/L) * (m/s)
-            zflu16 = trn(ji,jj,1,jpoxy) * tmask(ji,jj,1) * zkgo2(ji,jj)
+            zfld16 = atcox * patm(ji,jj) * chemc(ji,jj,2) * tmask_bgc_closea(ji,jj,1) * zkgo2(ji,jj)          ! (mol/L) * (m/s)
+            zflu16 = trn(ji,jj,1,jpoxy) * tmask_bgc_closea(ji,jj,1) * zkgo2(ji,jj)
             zoflx(ji,jj) = zfld16 - zflu16
             tra(ji,jj,1,jpoxy) = tra(ji,jj,1,jpoxy) + zoflx(ji,jj) / fse3t(ji,jj,1)
             ! abiotic O2
-            zflu16 = trn(ji,jj,1,jpoab) * tmask(ji,jj,1) * zkgo2(ji,jj)
+            zflu16 = trn(ji,jj,1,jpoab) * tmask_bgc_closea(ji,jj,1) * zkgo2(ji,jj)
             zoflxa(ji,jj) = zfld16 - zflu16
             tra(ji,jj,1,jpoab) = tra(ji,jj,1,jpoab) + zoflxa(ji,jj) / fse3t(ji,jj,1)
 
@@ -325,33 +332,37 @@ CONTAINS
       IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('flx ')")
          CALL prt_ctl_trc_info(charout)
-         CALL prt_ctl_trc(tab4d=tra, mask=tmask, clinfo=ctrcnm)
+         CALL prt_ctl_trc(tab4d=tra, mask=tmask_bgc_closea, clinfo=ctrcnm)
       ENDIF
 
       IF( ln_diatrc ) THEN
          IF( lk_iomput ) THEN
             CALL iom_put( "Cflx" , oce_co2(:,:) / e1e2t(:,:) / rfact ) 
-            CALL iom_put( "Oflx" , zoflx(:,:) * 1000 * tmask(:,:,1)  )
+            CALL iom_put( "Oflx" , zoflx(:,:) * 1000 * tmask_bgc_closea(:,:,1)  )
             CALL iom_put( "Cflx_abio" , oce_co2a(:,:) / e1e2t(:,:) / rfact )
             CALL iom_put( "Cflx_nat" , oce_co2n(:,:) / e1e2t(:,:) / rfact )
             CALL iom_put( "Cflx_14C" , oce_co2r(:,:) / e1e2t(:,:) / rfact )
-            CALL iom_put( "Oflx_abio" , zoflxa(:,:) * 1000 * tmask(:,:,1)  )
-            CALL iom_put( "Kg"   , zkgco2(:,:) * tmask(:,:,1) )
-            CALL iom_put( "Dpco2", ( satmco2(:,:) * patm(:,:) - zh2co3(:,:) / ( chemc(:,:,1) + rtrn ) ) * tmask(:,:,1) )
-            CALL iom_put( "Dpo2" , ( atcox * patm(:,:) - trn(:,:,1,jpoxy) / ( chemc(:,:,2) + rtrn ) )   * tmask(:,:,1) )
-            CALL iom_put( "spco2", zh2co3(:,:) / ( chemc(:,:,1) + rtrn ) * tmask(:,:,1) )
-            CALL iom_put( "spco2a", zh2co3a(:,:) / ( chemc(:,:,1) + rtrn ) * tmask(:,:,1) )
-            CALL iom_put( "spco2n", zh2co3n(:,:) / ( chemc(:,:,1) + rtrn ) * tmask(:,:,1) )
+            CALL iom_put( "Oflx_abio" , zoflxa(:,:) * 1000 * tmask_bgc_closea(:,:,1)  )
+            CALL iom_put( "Kg"   , zkgco2(:,:) * tmask_bgc_closea(:,:,1) )
+            CALL iom_put( "Dpco2", ( satmco2(:,:) * patm(:,:) - zh2co3(:,:) / ( chemc(:,:,1) + rtrn ) ) * tmask_bgc_closea(:,:,1) )
+            CALL iom_put( "Dpo2" , ( atcox * patm(:,:) - trn(:,:,1,jpoxy) / ( chemc(:,:,2) + rtrn ) )   * tmask_bgc_closea(:,:,1) )
+            CALL iom_put( "spco2", zh2co3(:,:) / ( chemc(:,:,1) + rtrn ) * tmask_bgc_closea(:,:,1) )
+            CALL iom_put( "spco2a", zh2co3a(:,:) / ( chemc(:,:,1) + rtrn ) * tmask_bgc_closea(:,:,1) )
+            CALL iom_put( "spco2n", zh2co3n(:,:) / ( chemc(:,:,1) + rtrn ) * tmask_bgc_closea(:,:,1) )
             zph3d = -1. * LOG10( hi(:,:,:) )
             zph3d(:,:,2:) = 0._wp
-            CALL iom_put( "PH"    , zph3d * tmask(:,:,:) )
+            CALL iom_put( "PH"    , zph3d * tmask_bgc_closea(:,:,:) )
          ELSE
             trc2d(:,:,jp_pcs0_2d    ) = oce_co2(:,:) / e1e2t(:,:) / rfact 
-            trc2d(:,:,jp_pcs0_2d + 1) = zoflx(:,:) * 1000 * tmask(:,:,1) 
-            trc2d(:,:,jp_pcs0_2d + 2) = zkgco2(:,:) * tmask(:,:,1) 
-            trc2d(:,:,jp_pcs0_2d + 3) = ( satmco2(:,:) * patm(:,:) - zh2co3(:,:) / ( chemc(:,:,1) + rtrn ) ) * tmask(:,:,1) 
+            trc2d(:,:,jp_pcs0_2d + 1) = zoflx(:,:) * 1000 * tmask_bgc_closea(:,:,1) 
+            trc2d(:,:,jp_pcs0_2d + 2) = zkgco2(:,:) * tmask_bgc_closea(:,:,1) 
+            trc2d(:,:,jp_pcs0_2d + 3) = ( satmco2(:,:) * patm(:,:) - zh2co3(:,:) / ( chemc(:,:,1) + rtrn ) ) * tmask_bgc_closea(:,:,1) 
          ENDIF
       ENDIF
+
+#if defined key_cpl_carbon_cycle
+      oce_co2(:,:) = oce_co2(:,:) / e1e2t(:,:) / rfact
+#endif
       !
       CALL wrk_dealloc( jpi, jpj, zkgco2, zkgo2, zh2co3, zh2co3a, zh2co3n, zoflx, zoflxa )
       CALL wrk_dealloc( jpi, jpj, abio_alk ) 
@@ -372,8 +383,8 @@ CONTAINS
       !!      called at the first timestep (nittrc000)
       !! ** input   :   Namelist nampisext
       !!----------------------------------------------------------------------
-      NAMELIST/nampisext/ln_co2int, atcco2, satmd14c, clname, clvarname, cl14name, &
-                         cl14varname, nn_offset
+      NAMELIST/nampisext/ln_co2int, ln_c14int, atcco2, satmd14c, clname, clvarname, cl14name, &
+                         cl14varname, nn_offset, nn_readoffset_c14
       INTEGER :: jm, ntime, ncid, ji, jj
       REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: tmp2d
       !!----------------------------------------------------------------------
@@ -391,19 +402,15 @@ CONTAINS
       IF( .NOT.ln_co2int ) THEN
          IF(lwp) THEN                         ! control print
             WRITE(numout,*) '    Constant Atmospheric pCO2 value       atcco2    =', atcco2
-            WRITE(numout,*) '    Constant Atmospheric delta 14C value  atcd14c   =', atcd14c
             WRITE(numout,*) ' '
          ENDIF
          satmco2(:,:)  = atcco2      ! Initialisation of atmospheric pco2
          satmco2n(:,:) = atcco2n
-         satmd14c(:,:) = atcd14c
       ELSE
          IF(lwp)  THEN
             WRITE(numout,*) '    Atmospheric pCO2 value from file             clname     =', TRIM( clname )
             WRITE(numout,*) '    Atmospheric pCO2 variable name in file       clvarname  =', TRIM( clvarname )
-            WRITE(numout,*) '    Atmospheric Delta 14C value from file        cl14name     =', TRIM( cl14name )
-            WRITE(numout,*) '    Atmospheric Delta 14C variable name in file  cl14varname  =', TRIM( cl14varname )
-            WRITE(numout,*) '    Offset model-data start year           nn_offset   =', nn_offset
+            WRITE(numout,*) '    Offset model-data start year                 nn_offset  =', nn_offset
             WRITE(numout,*) ' '
          ENDIF
          CALL chkerr(nf90_open( clname, NF90_NOWRITE, ncid ), 'p4z_flx_init', 0)
@@ -420,6 +427,28 @@ CONTAINS
          DO jm = 1,ntime
             atcco2h_years(jm) = (jm-1) + 0.5
          ENDDO
+      ENDIF
+      IF (.NOT. ln_c14int) THEN
+         IF(lwp) THEN                         ! control print
+            WRITE(numout,*) '    Constant Atmospheric delta 14C value  atcd14c   =', atcd14c
+            WRITE(numout,*) ' '
+         ENDIF
+         satmd14c(:,:) = atcd14c
+      ELSE
+         IF(lwp)  THEN
+            WRITE(numout,*) '    Atmospheric Delta 14C value from file        cl14name          =', TRIM( cl14name )
+            WRITE(numout,*) '    Atmospheric Delta 14C variable name in file  cl14varname       =', TRIM( cl14varname )
+            WRITE(numout,*) '    Offset atmospheric history of 14C            nn_readoffset_c14 =', nn_readoffset_c14
+            WRITE(numout,*) '    Offset model-data start year                 nn_offset         =', nn_offset
+            WRITE(numout,*) ' '
+         ENDIF
+         ! Read in C14 atmospheric fractionation (3 sectors)
+         CALL chkerr(nf90_open( clname, NF90_NOWRITE, ncid ), 'p4z_flx_init', 0)
+         CALL read_var1d( ncid, 'time',    atcd14ch_years)
+         ! Add an offset to the time axis
+         atcd14ch_years(:) = atcd14ch_years(:) + nn_readoffset_c14
+         CALL read_var2d( ncid, clvarname, atcd14ch )
+         CALL chkerr(nf90_close( ncid ), 'p4z_flx_init', 0)
          ALLOCATE(secmapd14c(jpi,jpj))
          ! Map model grid to latitudinal sector in the OMIP input file for delta-14C
          DO jj = 1,jpj ; DO ji = 1,jpi
