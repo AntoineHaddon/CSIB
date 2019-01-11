@@ -178,7 +178,7 @@ CONTAINS
                       zpronn(ji,jj,jk) = VCN/QN*trn(ji,jj,jk,jpnn)*xstep                                      ! N uptake rate
                       zprofen(ji,jj,jk) = VCF/QFe*trn(ji,jj,jk,jpnfe)*xstep                                   ! Fe uptake rate
                       zprochln(ji,jj,jk) = rhochl*VCN/thetac*trn(ji,jj,jk,jpnch)*xstep                        ! Chl production rate
-                      zpronew(ji,jj,jk) = zpronn(ji,jj,jk)*Nlim/(Alim+Nlim+rtrn)                              ! NO3 uptake
+                      zpronew(ji,jj,jk) = zpronn(ji,jj,jk)*(1.-Alim)*Nlim/(Alim+(1.-Alim)*Nlim+rtrn)          ! NO3 uptake
                       xlimnn(ji,jj,jk) = 1.-qndep 
                       xlimnfe(ji,jj,jk) = 1.-qfedep 
 
@@ -217,7 +217,7 @@ CONTAINS
                       zprond(ji,jj,jk) = VCN/QN*trn(ji,jj,jk,jpdn)*xstep                                     ! N uptake rate
                       zprofed(ji,jj,jk) = VCF/QFe*trn(ji,jj,jk,jpdfe)*xstep                                  ! Fe uptake rate
                       zprochld(ji,jj,jk) = rhochl*VCN/thetac*trn(ji,jj,jk,jpdch)*xstep                       ! Chl production rate
-                      zpronewd(ji,jj,jk) = zprond(ji,jj,jk)*Nlim/(Alim+Nlim+rtrn)                            ! NO3 uptake
+                      zpronewd(ji,jj,jk) = zprond(ji,jj,jk)*(1.-Alim)*Nlim/(Alim+(1.-Alim)*Nlim+rtrn)        ! NO3 uptake
                       xlimdn(ji,jj,jk) = 1.-qndep 
                       xlimdfe(ji,jj,jk) = 1.-qfedep 
 
@@ -267,25 +267,25 @@ CONTAINS
          zrfact2 = 1.e-3 * rfact2r  ! conversion from umol/L/timestep into mol/m3/s
          IF( lk_iomput ) THEN
            IF( jnt == nrdttrc ) THEN
-              CALL iom_put( "PPPHY"   , zprocn (:,:,:) * zrfact2 * tmask(:,:,:) )  ! primary production by nanophyto
-              CALL iom_put( "PPPHY2"  , zprocd (:,:,:) * zrfact2 * tmask(:,:,:) )  ! primary production by diatom
-              CALL iom_put( "PPNEWN"  , zpronew (:,:,:) * zrfact2 * tmask(:,:,:) )  ! new primary production by nanophyto
-              CALL iom_put( "PPNEWD"  , zpronewd(:,:,:) * zrfact2 * tmask(:,:,:) )  ! new primary production by diatom
-              CALL iom_put( "PFeD"    , zprofed (:,:,:) * zrfact2 * tmask(:,:,:) )  ! biogenic iron production by diatom
-              CALL iom_put( "PFeN"    , zprofen (:,:,:) * zrfact2 * tmask(:,:,:) )  ! biogenic iron production by nanophyto
-              CALL iom_put( "LNN"     , xlimnn  (:,:,:) * tmask(:,:,:) )  ! Nitrogen limitation term
-              CALL iom_put( "LDN"     , xlimdn  (:,:,:) * tmask(:,:,:) )  ! Nitrogen limitation term
-              CALL iom_put( "LNFe"    , xlimnfe (:,:,:) * tmask(:,:,:) )  ! Iron limitation term
-              CALL iom_put( "LDFe"    , xlimdfe (:,:,:) * tmask(:,:,:) )  ! Iron limitation term
+              CALL iom_put( "PPPHY"   , zprocn (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )  ! primary production by nanophyto
+              CALL iom_put( "PPPHY2"  , zprocd (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )  ! primary production by diatom
+              CALL iom_put( "PPNEWN"  , zpronew (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )  ! new primary production by nanophyto
+              CALL iom_put( "PPNEWD"  , zpronewd(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )  ! new primary production by diatom
+              CALL iom_put( "PFeD"    , zprofed (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )  ! biogenic iron production by diatom
+              CALL iom_put( "PFeN"    , zprofen (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )  ! biogenic iron production by nanophyto
+              CALL iom_put( "LNN"     , xlimnn  (:,:,:) * tmask_bgc_closea(:,:,:) )  ! Nitrogen limitation term
+              CALL iom_put( "LDN"     , xlimdn  (:,:,:) * tmask_bgc_closea(:,:,:) )  ! Nitrogen limitation term
+              CALL iom_put( "LNFe"    , xlimnfe (:,:,:) * tmask_bgc_closea(:,:,:) )  ! Iron limitation term
+              CALL iom_put( "LDFe"    , xlimdfe (:,:,:) * tmask_bgc_closea(:,:,:) )  ! Iron limitation term
            ENDIF
          ELSE
-              trc3d(:,:,:,jp_pcs0_3d + 4)  = zprorca (:,:,:) * zrfact2 * tmask(:,:,:)
-              trc3d(:,:,:,jp_pcs0_3d + 5)  = zprorcad(:,:,:) * zrfact2 * tmask(:,:,:)
-              trc3d(:,:,:,jp_pcs0_3d + 6)  = zpronew (:,:,:) * zrfact2 * tmask(:,:,:)
-              trc3d(:,:,:,jp_pcs0_3d + 7)  = zpronewd(:,:,:) * zrfact2 * tmask(:,:,:)
-              trc3d(:,:,:,jp_pcs0_3d + 8)  = zprorcad(:,:,:) * zrfact2 * tmask(:,:,:) * zysopt(:,:,:)
-              trc3d(:,:,:,jp_pcs0_3d + 9)  = zprofed (:,:,:) * zrfact2 * tmask(:,:,:)
-              trc3d(:,:,:,jp_pcs0_3d + 10) = zprofen (:,:,:) * zrfact2 * tmask(:,:,:)
+              trc3d(:,:,:,jp_pcs0_3d + 4)  = zprorca (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:)
+              trc3d(:,:,:,jp_pcs0_3d + 5)  = zprorcad(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:)
+              trc3d(:,:,:,jp_pcs0_3d + 6)  = zpronew (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:)
+              trc3d(:,:,:,jp_pcs0_3d + 7)  = zpronewd(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:)
+              trc3d(:,:,:,jp_pcs0_3d + 8)  = zprorcad(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) * zysopt(:,:,:)
+              trc3d(:,:,:,jp_pcs0_3d + 9)  = zprofed (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:)
+              trc3d(:,:,:,jp_pcs0_3d + 10) = zprofen (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:)
          ENDIF
          !
       ENDIF

@@ -48,6 +48,8 @@ MODULE sbcice_lim_2
    USE in_out_manager   ! I/O manager
    USE prtctl           ! Print control
 
+   USE diawri
+
    IMPLICIT NONE
    PRIVATE
 
@@ -201,6 +203,7 @@ CONTAINS
          ENDIF
 #endif
                            CALL lim_thd_2      ( kt )      ! Ice thermodynamics 
+
                            CALL lim_sbc_flx_2  ( kt )      ! update surface ocean mass, heat & salt fluxes 
 
          IF( ( MOD( kt+nn_fsbc-1, ninfo ) == 0 .OR. ntmoy == 1 ) .AND. .NOT. lk_mpp )   &
@@ -222,6 +225,7 @@ CONTAINS
       !
       CALL wrk_dealloc( jpi,jpj,1, zalb_ice_os, zalb_ice_cs, zsist )
       !
+
    END SUBROUTINE sbc_ice_lim_2
 
 #else

@@ -86,6 +86,9 @@ MODULE asminc
 
    REAL(wp), DIMENSION(:,:), ALLOCATABLE ::   ssh_bkg, ssh_bkginc   ! Background sea surface height and its increment
    REAL(wp), DIMENSION(:,:), ALLOCATABLE ::   seaice_bkginc         ! Increment to the background sea ice conc
+#if defined key_cice   
+   REAL(wp), DIMENSION(:,:), ALLOCATABLE ::   ndaice_da
+#endif
 
    !! * Substitutions
 #  include "domzgr_substitute.h90"
@@ -360,6 +363,9 @@ CONTAINS
       ALLOCATE( v_bkginc(jpi,jpj,jpk) )
       ALLOCATE( ssh_bkginc(jpi,jpj)   )
       ALLOCATE( seaice_bkginc(jpi,jpj))
+#if defined key_cice
+      ALLOCATE(ndaice_da(jpi,jpj)     )     
+#endif
 #if defined key_asminc
       ALLOCATE( ssh_iau(jpi,jpj)      )
 #endif

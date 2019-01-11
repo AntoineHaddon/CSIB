@@ -73,6 +73,7 @@ MODULE sbc_oce
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   fr_i              !: ice fraction = 1 - lead fraction      (between 0 to 1)
 #if defined key_cpl_carbon_cycle
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   atm_co2           !: atmospheric pCO2                             [ppm]
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   atm_mslp          !: atmospheric mean seal level pressure         [atm]
 #endif
 
    !!----------------------------------------------------------------------
@@ -115,7 +116,7 @@ CONTAINS
          !
       ALLOCATE( tprecip(jpi,jpj) , sprecip(jpi,jpj) , fr_i(jpi,jpj) ,     &
 #if defined key_cpl_carbon_cycle
-         &      atm_co2(jpi,jpj) ,                                        &
+         &      atm_co2(jpi,jpj) , atm_mslp(jpi,jpj) ,                    &
 #endif
          &      ssu_m  (jpi,jpj) , sst_m(jpi,jpj) ,                       &
          &      ssv_m  (jpi,jpj) , sss_m  (jpi,jpj), ssh_m(jpi,jpj) , STAT=ierr(4) )

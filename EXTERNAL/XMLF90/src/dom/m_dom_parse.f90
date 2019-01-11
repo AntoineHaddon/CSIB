@@ -129,7 +129,7 @@ CONTAINS
     
     call open_xmlfile(filename, fxml, iostat)
 
-    PRINT *,'filename : ',filename
+    ! PRINT *,'filename : ',filename
     if (iostat /= 0) then
        stop "Cannot open file."
     endif

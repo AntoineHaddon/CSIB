@@ -50,7 +50,8 @@ CONTAINS
          IF( jn == jpno3 .OR. jn == jpphy .OR. jn == jpzoo .OR. jn == jppoc )  zrfact = 1.0e+6 / 106._wp * 16._wp   
 
          cltra = TRIM( ctrcnm(jn) )                  ! short title for tracer
-         CALL iom_put( cltra, trn(:,:,:,jn) * zrfact )
+         CALL iom_put( cltra, trn(:,:,:,jn) * zrfact * tmask_bgc_closea(:,:,:) ) ! Also mask out the Caspian for passive tracers.
+
       END DO
       !
    END SUBROUTINE trc_wri_pisces

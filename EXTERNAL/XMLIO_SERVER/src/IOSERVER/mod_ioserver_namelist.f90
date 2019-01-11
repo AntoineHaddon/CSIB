@@ -66,7 +66,7 @@ CONTAINS
     ENDIF 
     
     
-    PRINT *,'namelist read --> ',using_server,using_oasis,client_id,server_id
+    ! PRINT *,'namelist read --> ',using_server,using_oasis,client_id,server_id
     
   END SUBROUTINE read_namelist
 

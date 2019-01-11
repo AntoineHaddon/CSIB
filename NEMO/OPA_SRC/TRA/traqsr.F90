@@ -9,6 +9,9 @@ MODULE traqsr
    !!   NEMO     1.0  !  2002-06  (G. Madec)  F90: Free form and module
    !!             -   !  2005-11  (G. Madec) zco, zps, sco coordinate
    !!            3.2  !  2009-04  (G. Madec & NEMO team)
+   !!            3.4.1!  2018-11  (D. Yang) Output rsdoabsorb (net rate of 
+   !!                                       absorption of shortwave energy 
+   !!                                       in ocean layer in W m-2 for CMIP6)
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -222,7 +225,8 @@ CONTAINS
                   qsr_hc(:,:,jk) = ro0cpr * ( zea(:,:,jk) - zea(:,:,jk+1) )
                END DO
                zea(:,:,nksr+1:jpk) = 0.e0     ! below 400m set to zero
-               CALL iom_put( 'qsr3d', zea )   ! Shortwave Radiation 3D distribution
+               CALL iom_put( 'qsr3d', zea )   ! Shortwave Radiation 3D distribution in W m-2
+               CALL iom_put( 'rsdoabsorb', qsr_hc / ro0cpr ) ! net rate of absorption of shortwave energy in ocean layer in W m-2
                !
             ELSE                                                 !*  Constant Chlorophyll
                DO jk = 1, nksr

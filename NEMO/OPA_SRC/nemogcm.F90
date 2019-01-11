@@ -61,6 +61,11 @@ MODULE nemogcm
    USE diaobs          ! Observation diagnostics       (dia_obs_init routine)
    USE lib_fortran     ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
    USE step            ! NEMO time-stepping                 (stp     routine)
+
+#if defined key_cancpl
+   USE cpl_cancpl
+#endif
+
    USE checksums, only : now_state_chksum
 #if defined key_oasis3
    USE cpl_oasis3      ! OASIS3 coupling
@@ -190,6 +195,8 @@ CONTAINS
       CALL nemo_closefile
 #if defined key_oasis3 || defined key_oasis4
       CALL cpl_prism_finalize           ! end coupling and mpp communications with OASIS
+#elif defined key_cancpl
+      CALL cpl_cancpl_finalize
 #else
       IF( lk_mpp )   CALL mppstop       ! end mpp communications
 #endif
@@ -228,6 +235,9 @@ CONTAINS
 # if defined key_oasis3 || defined key_oasis4
          CALL cpl_prism_init( ilocal_comm )                 ! nemo local communicator given by oasis
 # endif
+# if defined key_cancpl
+         CALL cpl_cancpl_init( ilocal_comm )
+# endif
          CALL  init_ioclient( ilocal_comm )                 ! exchange io_server nemo local communicator with the io_server
       ENDIF
       narea = mynode( cltxt, numnam, nstop, ilocal_comm )   ! Nodes selection
@@ -237,6 +247,11 @@ CONTAINS
          CALL cpl_prism_init( ilocal_comm )                 ! nemo local communicator given by oasis
       ENDIF
       narea = mynode( cltxt, numnam, nstop, ilocal_comm )   ! Nodes selection (control print return in cltxt)
+# elif defined key_cancpl
+      IF( Agrif_Root() ) THEN
+         CALL cpl_cancpl_init( ilocal_comm )
+      ENDIF
+      narea = mynode( cltxt, numnam, nstop, ilocal_comm )
 # else
       ilocal_comm = 0
       narea = mynode( cltxt, numnam, nstop )                 ! Nodes selection (control print return in cltxt)
