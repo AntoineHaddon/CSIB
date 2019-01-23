@@ -799,6 +799,8 @@
           <field ref="cfc12"    level="1" />
           <field ref="sf6"      level="2" />
           <field ref="DI14C"    level="1" />
+          <field ref="o1"       level="1" />
+          <field ref="o2"       level="1" />
        </file>
 
         <file id="1m_diad_T" name="auto" description="additional cmoc diagnostic variables" >
