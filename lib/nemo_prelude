@@ -1069,8 +1069,8 @@ echo "#################### Start NEMO pre-processing #################"
 #  nemo_sss_data=${nemo_sss_data:=nemo_3.4_orca1_sss_1m_orca1.nc}
   nemo_chlorophyll=${nemo_chlorophyll:=nemo_3.4_orca1_chlorophyll-orca1_1m.nc}
   nemo_subbasins=${nemo_subbasins:=nemo_3.4_orca1_basinmask_050308_ukmo_modified.nc}
-  nemo_o1=${nemo_o1:=urdy_fafmip_hfds_orca1.nc}
-  nemo_o2=${nemo_o2:=urdy_fafmip_hfds_orca1.nc}
+  nemo_o1=${nemo_o1:=urdy_fafmip_hfds_orca1_record.nc}
+  nemo_o2=${nemo_o2:=urdy_fafmip_hfds_orca1_record.nc}
 
   [ -s ahmcoef ]                || acc_cp ahmcoef                $nemo_ahmcoef
   [ -s coordinates.nc ]         || acc_cp coordinates.nc         $nemo_coordinates
