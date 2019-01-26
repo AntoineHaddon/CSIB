@@ -39,6 +39,7 @@ MODULE sbcmod
    USE sbcice_lim_2     ! surface boundary condition: LIM 2.0 sea-ice model
    USE sbcice_cice      ! surface boundary condition: CICE    sea-ice model
    USE sbccpl           ! surface boundary condition: coupled florulation
+   USE sbcfafmip        ! surface boundary condition: add additional anomalies to computed fluxes
 #if defined key_cancpl
    USE cpl_cancpl, ONLY:lk_cpl      ! are we in coupled mode?
 #else
@@ -220,6 +221,9 @@ CONTAINS
       IF( ln_ssr      )   CALL sbc_ssr_init               ! Sea-Surface Restoring initialisation
       !
       IF( nn_ice == 4 )   CALL cice_sbc_init( nsbc )      ! CICE initialisation
+
+      CALL sbc_fafmip_init( )                             ! Initialize FAFMIP forcing module. Note that this
+                                                          ! subroutine does nothing if ln_tau and ln_emp are false
       !
    END SUBROUTINE sbc_init
 
@@ -293,6 +297,9 @@ CONTAINS
                        CALL sbc_blk_core( kt )                    !
                        CALL sbc_cpl_rcv ( kt, nn_fsbc, nn_ice )   !
       END SELECT
+      ! Apply anomalies for FAFMIP if requested
+      IF ( ln_faftau .OR. ln_fafemp ) CALL sbc_fafmip( kt )
+
       !                                            !==  Misc. Options  ==!
       SELECT CASE( nn_ice )                                       ! Update heat and freshwater fluxes over sea-ice areas
       CASE(  0 )   ;         CALL sbc_ice_none ( kt )                ! no-ice, SST not dropping below freezing point
