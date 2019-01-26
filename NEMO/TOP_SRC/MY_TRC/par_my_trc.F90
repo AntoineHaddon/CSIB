@@ -41,13 +41,15 @@ MODULE par_my_trc
    !!   'key_my_trc'                     user defined tracers (MY_TRC)
    !!---------------------------------------------------------------------
    LOGICAL, PUBLIC, PARAMETER ::   lk_my_trc     = .TRUE.   !: PTS flag 
-   INTEGER, PUBLIC, PARAMETER ::   jp_my_trc     =  1       !: number of PTS tracers
+   INTEGER, PUBLIC, PARAMETER ::   jp_my_trc     =  3       !: number of PTS tracers
    INTEGER, PUBLIC, PARAMETER ::   jp_my_trc_2d  =  0       !: additional 2d output arrays ('key_trc_diaadd')
    INTEGER, PUBLIC, PARAMETER ::   jp_my_trc_3d  =  0       !: additional 3d output arrays ('key_trc_diaadd')
    INTEGER, PUBLIC, PARAMETER ::   jp_my_trc_trd =  0       !: number of sms trends for MY_TRC
 
    ! assign an index in trc arrays for each PTS prognostic variables
    INTEGER, PUBLIC, PARAMETER ::   jpage = jp_lm + 1     !: 1st MY_TRC tracer: Ideal age in years
+   INTEGER, PUBLIC, PARAMETER ::   jpo1 = jp_lm + 2     !: Oleg tracer 1
+   INTEGER, PUBLIC, PARAMETER ::   jpo2 = jp_lm + 3     !: Oleg tracer 2
 
 #else
    !!---------------------------------------------------------------------
