@@ -66,8 +66,10 @@ CONTAINS
          WRITE(numout,*)
          WRITE(numout,*) ' trc_nam: Read namdates, namelist for CFC chemical model'
          WRITE(numout,*) ' ~~~~~~~'
-         WRITE(numout,*) '    offset from the model year        offset_cfc_year = ', offset_cfc_year
-         WRITE(numout,*) '    netcdf file with surface values   cfc_nc_file = ' , cfc_nc_file
+         WRITE(numout,*) '    offset from the model year                offset_cfc_year = ' , offset_cfc_year
+         WRITE(numout,*) '    netcdf file with surface values           cfc_nc_file     = ' , cfc_nc_file
+         WRITE(numout,*) '    Set CFCs to 0 until a specified year      ln_reset_cfc    = ' , ln_reset_cfc 
+         WRITE(numout,*) '    Year until which CFCs will be set to 0    nn_cfc_reset    = ' , nn_reset_cfc
       ENDIF
 
       IF( .NOT.lk_iomput .AND. ln_diatrc ) THEN
