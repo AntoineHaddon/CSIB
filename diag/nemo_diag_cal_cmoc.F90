@@ -160,7 +160,7 @@ CONTAINS
       ALLOCATE( co3_satc(imt,jmt,km,lm), co3_sata(imt,jmt,km,lm), STAT=ierr(1) )
 
       IF (MAXVAL(ierr) /=0) THEN
-         STOP 'Memory allocation error in cmip6_tstend'
+         STOP 'Memory allocation error in cmip6_co3sat'
       ENDIF
 
        DO l=1,lm
@@ -228,7 +228,7 @@ CONTAINS
 
    END SUBROUTINE cmip6_co3sat
 
-   SUBROUTINE cmip6_cchem
+   SUBROUTINE cmip6_cchem(XDIC, XTA, CO3, pH)
 
       !!-------------------------------------------------------------
       !! Purpose: Solve carbon chemistry to generate [H+], which can then be used to calculate [CO3--] etc
@@ -245,15 +245,17 @@ CONTAINS
       REAL :: zaksp0, zbuf1, zbuf2, zcpexp, zcpexp2, zbot, zfact, zdic, zph
       REAL :: zalka, zph2, zph3, zpo4, zsi, zpd, zp3, zp1, zp0, zalk, zah2, hion
       REAL :: zrhop, zr1, zr2, zr3, zr4, zt, zs, zsr
+      REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: hi
+      REAL, DIMENSION(imt,jmt,km,lm) :: XDIC, XTA, CO3, pH
 
       !!----------------
       !! Allocate Arrays
       !!----------------
-      ALLOCATE( hi(imt,jmt,km,lm), CO3(imt,jmt,km,lm), pH(imt,jmt,km,lm), STAT=ierr(1) )
+      ALLOCATE( hi(imt,jmt,km,lm), STAT=ierr(1) )
       ALLOCATE( prhop(imt,jmt,km,lm), STAT=ierr(2) )
 
       IF (MAXVAL(ierr) /=0) THEN
-         STOP 'Memory allocation error in cmip6_tstend'
+         STOP 'Memory allocation error in cmip6_cchem'
       ENDIF
 
 ! this part is from p4zche.F90 (define the equilibrium constants, borate concentration etc as function of T, S, P)
@@ -412,8 +414,8 @@ CONTAINS
                ! DUMMY VARIABLES FOR DIC, H+, AND BORATE
                zbot  = borat(i,j,k,l)
                zfact = prhop(i,j,k,l)*0.001 + (1.-tmask(i,j,k))
-               zdic  = CC(i,j,k,l) * 0.000001 / zfact
-               zalka = AA(i,j,k,l) * 0.000001 / zfact
+               zdic  = XDIC(i,j,k,l) * 0.000001 / zfact
+               zalka = XTA(i,j,k,l) * 0.000001 / zfact
                zph   = MAX( hi(i,j,k,l), 1.e-10 ) / zfact
                zph2 = zph*zph
                zph3 = zph*zph2
@@ -451,10 +453,10 @@ CONTAINS
           DO i=1,imt
               ! pH calculated from [H+] in mol L^-1
               pH(i,j,k,l)=ALOG10(hi(i,j,k,l))*(-1.)
-              ! convert [H+] to  mol kg^-1 (CC is in mmol m^-3; CO3 is in mol m^-3; hion and ak* are in mol kg^-1)
+              ! convert [H+] to  mol kg^-1 (XDIC is in mmol m^-3; CO3 is in mol m^-3; hion and ak* are in mol kg^-1)
               zfact = prhop(i,j,k,l)*0.001 + (1.-tmask(i,j,k))
               hion=hi(i,j,k,l)/zfact
-              CO3(i,j,k,l)=CC(i,j,k,l)*ak13(i,j,k,l)*ak23(i,j,k,l)/(hion*hion + ak13(i,j,k,l)*hion + ak13(i,j,k,l)*ak23(i,j,k,l))*0.001
+              CO3(i,j,k,l)=XDIC(i,j,k,l)*ak13(i,j,k,l)*ak23(i,j,k,l)/(hion*hion + ak13(i,j,k,l)*hion + ak13(i,j,k,l)*ak23(i,j,k,l))*0.001
           ENDDO
          ENDDO
         ENDDO
@@ -482,7 +484,7 @@ CONTAINS
       ALLOCATE( o2sol(imt,jmt,km,lm), STAT=ierr(1) )
 
       IF (MAXVAL(ierr) /=0) THEN
-         STOP 'Memory allocation error in cmip6_tstend'
+         STOP 'Memory allocation error in cmip6_o2sol'
       ENDIF
 
        DO l=1,lm
