@@ -275,6 +275,13 @@ CONTAINS
          END DO
          !
       ENDIF
+#ifdef key_fafmip
+      IF( l_trdtra ) THEN
+         Tr_sbc(:,:,:) = Tr_sbc(:,:,:) + (tsa(:,:,:,jp_tem) - ztrdt(:,:,:))
+      ELSE
+         call ctl_stop('For key_fafmip trdtra must also have key_trdtra defined')
+      ENDIF
+#endif
       !
       IF( lrst_oce ) THEN   !                  Write in the ocean restart file
          !                                     *******************************

@@ -34,7 +34,9 @@ MODULE sbc_fafmip
    INTEGER , PARAMETER ::   jp_vtau = 2   ! index of wind stress (j-component) file
    INTEGER , PARAMETER ::   jp_emp  = 3   ! index of evaporation-precipation file
    INTEGER , PARAMETER ::   jp_hflx = 4   ! index of heat flux
-   TYPE(FLD), ALLOCATABLE, DIMENSION(:) ::   sf_fafmip    ! structure of input fields (file informations, fields read)
+   TYPE(FLD),       ALLOCATABLE, DIMENSION(:) ::   sf_fafmip    ! structure of input fields (file informations, fields read)
+
+   PUBLIC, REAL,    ALLOCATABLE, DIMENSION(:,:,:) :: Tr_sbc       ! Surface flux for redistributed heat tracer
 
 
    !! * Substitutions
@@ -91,9 +93,12 @@ CONTAINS
       IF ( ln_fafemp ) THEN
          CALL fld_read( kt, nn_fsbc, sf_fafmip(jp_emp) )
       ENDIF
+      IF ( ln_fafheat ) THEN
+         ! Even though this is read in here, this is not applied until traqsr.
+         CALL fld_read( kt, nn_fsbc, sf_fafmip(jp_hflx) )
+      ENDIF
      
       IF( MOD( kt-1, nn_fsbc ) == 0 ) THEN                        ! update ocean fluxes at each SBC frequency
-
          ! Treat the perturbation to wind stress first
          IF ( ln_faftau ) THEN
 !CDIR COLLAPSE
@@ -129,7 +134,6 @@ CONTAINS
          ENDIF
 
       ENDIF
-      !
    END SUBROUTINE sbc_fafmip
 
    SUBROUTINE sbc_fafmip_init( )
@@ -144,7 +148,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       CHARACTER(len=100) ::  cn_dir                               ! Root directory for location of flx files
       TYPE(FLD_N) ::   sn_utau_anom, sn_vtau_anom, sn_qtot_anom, sn_emp_anon  ! informations about the fields to be read
-      NAMELIST/namsbc_flx/ ln_faftau, ln_qtot, ln_fafemp
+      NAMELIST/namsbc_fafmip/ ln_faftau, ln_fafheat, ln_fafemp
       TYPE(FLD_N), DIMENSION(jpfld) ::   slf_i                    ! array of namelist information structures
 
       ! set file information
@@ -152,17 +156,18 @@ CONTAINS
       ! ... default values (NB: frequency positive => hours, negative => months)
       !                   !  file   ! frequency !  variable  ! time intep !  clim   ! 'yearly' or ! weights  ! rotation  !
       !                   !  name   !  (hours)  !   name     !   (T/F)    !  (T/F)  !  'monthly'  ! filename ! pairs     !
-      sn_utau_anom = FLD_N(  'utau' ,    24     ,  'utau'    ,  .false.   , .false. ,   'yearly'  , ''       , ''        )
-      sn_vtau_anom = FLD_N(  'vtau' ,    24     ,  'vtau'    ,  .false.   , .false. ,   'yearly'  , ''       , ''        )
-      sn_emp_anom  = FLD_N(  'emp'  ,    24     ,  'emp'     ,  .false.   , .false. ,   'yearly'  , ''       , ''        )
+      sn_utau_anom = FLD_N(  'utau' ,    24     ,  'utau'    ,  .true.    , .true.  ,   'yearly'  , ''       , ''        )
+      sn_vtau_anom = FLD_N(  'vtau' ,    24     ,  'vtau'    ,  .true.    , .true.  ,   'yearly'  , ''       , ''        )
+      sn_qtot_anom = FLD_N(  'qtot' ,    24     ,  'qtot'    ,  .true.    , .true.  ,   'yearly'  , ''       , ''        )
+      sn_emp_anom  = FLD_N(  'emp'  ,    24     ,  'emp'     ,  .true.    , .true.  ,   'yearly'  , ''       , ''        )
       !
       REWIND ( numnam )                         ! read in namlist namflx
       READ   ( numnam, namsbc_fafmip ) 
       !
       !                                         ! store namelist information in an array
-      slf_i(jp_utau) = sn_utau   ;   slf_i(jp_vtau) = sn_vtau
-      slf_i(jp_qtot) = sn_qtot
-      slf_i(jp_emp ) = sn_emp
+      slf_i(jp_utau) = sn_utau_anom   ;   slf_i(jp_vtau) = sn_vtau_anom
+      slf_i(jp_qtot) = sn_qtot_anom
+      slf_i(jp_emp ) = sn_emp_anom
       !
       ALLOCATE( sf_fafmip(jpfld), STAT=ierror )        ! set sf structure
       IF( ierror > 0 ) THEN   
@@ -174,6 +179,9 @@ CONTAINS
       END DO
       !                                         ! fill sf with slf_i and control print
       CALL fld_fill( sf, slf_i, cn_dir, 'sbc_anom', 'flux anomalies for ocean surface boundary condition', 'namsbc_flx' )
+      
+      ! Allocate the "redistributed heat" tracer flux array
+      ALLOCATE( Tr_sbc(jpi,jpj,jpk ) )
 
    END SUBROUTINE sbc_fafmip_init
 

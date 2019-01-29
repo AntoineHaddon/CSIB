@@ -32,6 +32,9 @@ MODULE trasbc
    USE lbclnk          ! ocean lateral boundary conditions (or mpp link)
    USE wrk_nemo        ! Memory Allocation
    USE timing          ! Timing
+#ifdef key_fafmip
+   USE trcsms_fafmip   ! FAFMIP needs to get the net fluxes for the temperature tracer
+#endif
 
    IMPLICIT NONE
    PRIVATE
@@ -233,7 +236,19 @@ CONTAINS
             END DO  
          END DO  
       ENDIF
- 
+
+#ifdef key_fafmip
+      IF( l_trdtra ) THEN
+         Tr_sbc(:,:,:) = Tr_sbc(:,:,:) + (tsa(:,:,:,jp_tem) - ztrdt(:,:,:))
+      ELSE
+         call ctl_stop('For key_fafmip trdtra must also have key_trdtra defined')
+      ENDIF
+      ! Now that the non-fafmip flux has been calculated and stored, add in the perturbation
+      IF (ln_fafheat) THEN
+         tsa(:,:,1,jp_tem) = tsa(:,:,1,jp_tem) + sf_fafmip(jp_hflx)%fnow(:,:,1) 
+      ENDIF
+#endif
+      
       IF( l_trdtra )   THEN                      ! save the horizontal diffusive trends for further diagnostics
          ztrdt(:,:,:) = tsa(:,:,:,jp_tem) - ztrdt(:,:,:)
          ztrds(:,:,:) = tsa(:,:,:,jp_sal) - ztrds(:,:,:)
