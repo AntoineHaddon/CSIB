@@ -29,6 +29,11 @@ MODULE par_fafmip
    USE par_c14b   , ONLY : jp_c14b_3d      !: number of tracers in C14
    USE par_c14b   , ONLY : jp_c14b_trd     !: number of tracers in C14
 
+   USE par_my_trc   , ONLY : jp_my_trc         !: number of tracers in C14
+   USE par_my_trc   , ONLY : jp_my_trc_2d      !: number of tracers in C14
+   USE par_my_trc   , ONLY : jp_my_trc_3d      !: number of tracers in C14
+   USE par_my_trc   , ONLY : jp_my_trc_trd     !: number of tracers in C14
+
    IMPLICIT NONE
 
    INTEGER, PARAMETER ::   jp_ln      = jp_lobster     + jp_pisces     + jp_cfc     + jp_c14b     + jp_my_trc     !: 

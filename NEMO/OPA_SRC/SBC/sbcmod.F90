@@ -40,7 +40,7 @@ MODULE sbcmod
    USE sbcice_cice      ! surface boundary condition: CICE    sea-ice model
    USE sbccpl           ! surface boundary condition: coupled florulation
 #if defined key_fafmip
-   USE sbcfafmip, only : sbc_fafmip, sbc_fafmip_init ! surface boundary condition: add additional anomalies to computed fluxes
+   USE sbcfaf, only : sbc_fafmip, sbc_fafmip_init ! surface boundary condition: add additional anomalies to computed fluxes
 #endif
 #if defined key_cancpl
    USE cpl_cancpl, ONLY:lk_cpl      ! are we in coupled mode?
