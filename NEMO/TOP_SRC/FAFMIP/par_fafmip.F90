@@ -62,14 +62,14 @@ MODULE par_fafmip
 #endif
 
    ! Starting/ending PISCES do-loop indices (N.B. no PISCES : jpl_pcs < jpf_pcs the do-loop are never done)
-   INTEGER, PUBLIC, PARAMETER ::   jp_myt0     = jp_ln     + 1              !: First index of fafmip passive tracers
-   INTEGER, PUBLIC, PARAMETER ::   jp_myt1     = jp_ln     + jp_fafmip      !: Last  index of fafmip passive tracers
-   INTEGER, PUBLIC, PARAMETER ::   jp_myt0_2d  = jp_ln_2d  + 1              !: First index of fafmip passive tracers
-   INTEGER, PUBLIC, PARAMETER ::   jp_myt1_2d  = jp_ln_2d  + jp_fafmip_2d   !: Last  index of fafmip passive tracers
-   INTEGER, PUBLIC, PARAMETER ::   jp_myt0_3d  = jp_ln_3d  + 1              !: First index of fafmip passive tracers
-   INTEGER, PUBLIC, PARAMETER ::   jp_myt1_3d  = jp_ln_3d  + jp_fafmip_3d   !: Last  index of fafmip passive tracers
-   INTEGER, PUBLIC, PARAMETER ::   jp_myt0_trd = jp_ln_trd + 1              !: First index of fafmip passive tracers
-   INTEGER, PUBLIC, PARAMETER ::   jp_myt1_trd = jp_ln_trd + jp_fafmip_trd  !: Last  index of fafmip passive tracers
+   INTEGER, PUBLIC, PARAMETER ::   jp_faf0     = jp_ln     + 1              !: First index of fafmip passive tracers
+   INTEGER, PUBLIC, PARAMETER ::   jp_faf1     = jp_ln     + jp_fafmip      !: Last  index of fafmip passive tracers
+   INTEGER, PUBLIC, PARAMETER ::   jp_faf0_2d  = jp_ln_2d  + 1              !: First index of fafmip passive tracers
+   INTEGER, PUBLIC, PARAMETER ::   jp_faf1_2d  = jp_ln_2d  + jp_fafmip_2d   !: Last  index of fafmip passive tracers
+   INTEGER, PUBLIC, PARAMETER ::   jp_faf0_3d  = jp_ln_3d  + 1              !: First index of fafmip passive tracers
+   INTEGER, PUBLIC, PARAMETER ::   jp_faf1_3d  = jp_ln_3d  + jp_fafmip_3d   !: Last  index of fafmip passive tracers
+   INTEGER, PUBLIC, PARAMETER ::   jp_faf0_trd = jp_ln_trd + 1              !: First index of fafmip passive tracers
+   INTEGER, PUBLIC, PARAMETER ::   jp_faf1_trd = jp_ln_trd + jp_fafmip_trd  !: Last  index of fafmip passive tracers
 
    !!======================================================================
 END MODULE par_fafmip

@@ -34,6 +34,9 @@ MODULE traqsr
    USE wrk_nemo       ! Memory Allocation
    USE timing         ! Timing
    USE checksums, only : ln_chksum, after_ts_chksum
+#if defined key_fafmip
+   USE sbcfafmip, only : sf_fafmip, Tr_sbc
+#endif
 
 
    IMPLICIT NONE
@@ -280,6 +283,17 @@ CONTAINS
          Tr_sbc(:,:,:) = Tr_sbc(:,:,:) + (tsa(:,:,:,jp_tem) - ztrdt(:,:,:))
       ELSE
          call ctl_stop('For key_fafmip trdtra must also have key_trdtra defined')
+      ENDIF
+!CDIR NOVERRCHK
+      ! Apply heat flux anomalies if they should affect the physical state of the model (fafheat, fafall)
+      IF ( ln_fafheat ) THEN
+         DO jj = 1, jpj
+!CDIR NOVERRCHK
+            DO ji = 1, jpi
+               z1_e3t = zfact / fse3t(ji,jj,jk)
+               tsa(ji,jj,1,jp_tem) = tsa(ji,jj,1,jp_tem) + sf_fafmip(jp_hflx)%fnow(ji,jj,1) * z1_e3t
+            ENDDO
+         ENDDO
       ENDIF
 #endif
       !

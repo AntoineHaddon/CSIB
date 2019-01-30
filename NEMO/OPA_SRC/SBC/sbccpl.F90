@@ -62,8 +62,8 @@ MODULE sbccpl
 #endif
    USE diawri
 #if defined key_fafmip
-   USE sbc_fafmip
-   USE par_fafmip
+   USE sbc_fafmip, only : ln_fafheat 
+   USE par_fafmip, only : jpTr 
 #endif
    IMPLICIT NONE
    PRIVATE

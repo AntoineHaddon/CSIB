@@ -7,7 +7,7 @@ MODULE trcsms_fafmip
    !!----------------------------------------------------------------------
 #if defined key_fafmip
    !!----------------------------------------------------------------------
-   !!   'key_fafmip'                                               CFC tracers
+   !!   'key_fafmip'                                         FAFMIP tracers
    !!----------------------------------------------------------------------
    !! trc_sms_fafmip       : fafmip model main routine
    !! trc_sms_fafmip_alloc : allocate arrays specific to fafmip sms
@@ -18,14 +18,13 @@ MODULE trcsms_fafmip
    USE trdmod_trc
    USE phycst
    USE fldread         ! read input fields
-   USE sbc_oce         ! surface boundary condition: ocean fields
+   USE sbcfafmip, only : sf_fafmip, Tr_sbc ! Surface boundary conditions for fafmip
+   USE parfafmip, only : jpTr, jpTa
 
    IMPLICIT NONE
    PRIVATE
 
    PUBLIC   trc_sms_fafmip       ! called by trcsms.F90 module
-   PUBLIC   trc_sms_fafmip_alloc ! called by trcini_fafmip.F90 module
-   
 
    !! * Substitution
 #  include "domzgr_substitute.h90"
@@ -60,7 +59,7 @@ CONTAINS
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~'
 
       ! Apply fluxes to redistributed heat tracer
-      tra(:,:,:,jpTr) = Tr_sbc(:,:,:)
+      tra(:,:,:,jpTr) = Tr_sbc(:,:,:)  ! This is the heat flux from actual model components
       ! Reset the sbc flux array to 0.
       Tr_sbc(:,:,:) = 0.
 
@@ -70,21 +69,6 @@ CONTAINS
       IF( nn_timing == 1 )  CALL timing_stop('trc_sms_fafmip')
       !
    END SUBROUTINE trc_sms_fafmip
-
-
-   INTEGER FUNCTION trc_sms_fafmip_alloc()
-      !!----------------------------------------------------------------------
-      !!              ***  ROUTINE trc_sms_fafmip_alloc  ***
-      !!----------------------------------------------------------------------
-      !
-      ! ALLOCATE here the arrays specific to fafmip
-      ! ALLOCATE( tab(...) , STAT=trc_sms_fafmip_alloc )
-      trc_sms_fafmip_alloc = 0      ! set to zero if no array to be allocated
-      !
-      IF( trc_sms_fafmip_alloc /= 0 ) CALL ctl_warn('trc_sms_fafmip_alloc : failed to allocate arrays')
-      !
-   END FUNCTION trc_sms_fafmip_alloc
-
 
 #else
    !!----------------------------------------------------------------------
