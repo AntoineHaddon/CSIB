@@ -32,8 +32,8 @@ MODULE trasbc
    USE lbclnk          ! ocean lateral boundary conditions (or mpp link)
    USE wrk_nemo        ! Memory Allocation
    USE timing          ! Timing
-#ifdef key_fafmip
-   USE trcsms_fafmip   ! FAFMIP needs to get the net fluxes for the temperature tracer
+#if defined key_fafmip
+   USE sbcfaf ! FAFMIP needs to get the net fluxes for the temperature tracer
 #endif
 
    IMPLICIT NONE
@@ -237,7 +237,7 @@ CONTAINS
          END DO  
       ENDIF
 
-#ifdef key_fafmip
+#if defined key_fafmip
       IF( l_trdtra ) THEN
          Tr_sbc(:,:,:) = Tr_sbc(:,:,:) + (tsa(:,:,:,jp_tem) - ztrdt(:,:,:))
       ELSE

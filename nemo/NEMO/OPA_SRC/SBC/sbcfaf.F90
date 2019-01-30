@@ -1,11 +1,10 @@
-MODULE sbc_fafmip
+MODULE sbcfaf
    !!======================================================================
    !!                       ***  MODULE  sbcanom  ***
    !! Ocean surface flux anomalies
    !!=====================================================================
    !! History :  3.4  !  2019-01 Andrew shao
    !!----------------------------------------------------------------------
-#ifdef key_fafmip
    !!----------------------------------------------------------------------
    !!   namanom   : flux formulation namlist
    !!   sbc_anom  : flux formulation as ocean surface boundary condition (forced mode, fluxes read in NetCDF files)
@@ -31,12 +30,13 @@ MODULE sbc_fafmip
    LOGICAL, PUBLIC :: ln_fafheat = .false.  ! If true, use the FAFMIP temperature variable for use in flux calculations
 
    INTEGER , PARAMETER ::   jpfld   = 4   ! maximum number of files to read 
-   INTEGER , PARAMETER ::   jp_utau = 1   ! index of wind stress (i-component) file
-   INTEGER , PARAMETER ::   jp_vtau = 2   ! index of wind stress (j-component) file
-   INTEGER , PARAMETER ::   jp_emp  = 3   ! index of evaporation-precipation file
-   INTEGER , PARAMETER ::   jp_hflx = 4   ! index of heat flux
-   TYPE(FLD),       ALLOCATABLE, DIMENSION(:)       :: sf_fafmip    ! structure of input fields (file informations, fields read)
-   PUBLIC, REAL,    ALLOCATABLE, DIMENSION(:,:,:)   :: Tr_sbc       ! Surface flux for redistributed heat tracer
+   INTEGER , PUBLIC,  PARAMETER ::   jp_utau = 1   ! index of wind stress (i-component) file
+   INTEGER , PUBLIC,  PARAMETER ::   jp_vtau = 2   ! index of wind stress (j-component) file
+   INTEGER , PUBLIC,  PARAMETER ::   jp_emp  = 3   ! index of evaporation-precipation file
+   INTEGER , PUBLIC,  PARAMETER ::   jp_hflx = 4   ! index of heat flux
+
+   TYPE(FLD), PUBLIC, ALLOCATABLE, DIMENSION(:)       :: sf_fafmip    ! structure of input fields (file informations, fields read)
+   REAL,      PUBLIC, ALLOCATABLE, DIMENSION(:,:,:)   :: Tr_sbc       ! Surface flux for redistributed heat tracer
 
 
    !! * Substitutions
@@ -87,15 +87,15 @@ CONTAINS
       !
       ! Check to see if anomalies should be added by each flux type
       IF ( ln_faftau ) THEN
-         CALL fld_read( kt, nn_fsbc, sf_fafmip(jp_utau) )
-         CALL fld_read( kt, nn_fsbc, sf_fafmip(jp_vtau) )
+         CALL fld_read( kt, nn_fsbc, sf_fafmip(jp_utau:jp_utau) )
+         CALL fld_read( kt, nn_fsbc, sf_fafmip(jp_vtau:jp_vtau) )
       ENDIF
       IF ( ln_fafemp ) THEN
-         CALL fld_read( kt, nn_fsbc, sf_fafmip(jp_emp) )
+         CALL fld_read( kt, nn_fsbc, sf_fafmip(jp_emp:jp_emp) )
       ENDIF
       IF ( ln_fafhflx ) THEN
          ! Even though this is read in here, this is not applied until traqsr.
-         CALL fld_read( kt, nn_fsbc, sf_fafmip(jp_hflx) )
+         CALL fld_read( kt, nn_fsbc, sf_fafmip(jp_hflx:jp_hflx) )
       ENDIF
      
       IF( MOD( kt-1, nn_fsbc ) == 0 ) THEN                        ! update ocean fluxes at each SBC frequency
@@ -147,9 +147,10 @@ CONTAINS
       !! ** Action  : - read namsbc parameters
       !!----------------------------------------------------------------------
       CHARACTER(len=100) ::  cn_dir                               ! Root directory for location of flx files
-      TYPE(FLD_N) ::   sn_utau_anom, sn_vtau_anom, sn_qtot_anom, sn_emp_anon  ! informations about the fields to be read
-      NAMELIST/namsbc_fafmip/ ln_faftau, ln_fafemp, ln_fafhflx, ln_fafemp, ln_fafheat
+      TYPE(FLD_N) ::   sn_utau_anom, sn_vtau_anom, sn_qtot_anom, sn_emp_anom  ! informations about the fields to be read
+      NAMELIST/namsbc_fafmip/ ln_faftau, ln_fafhflx, ln_fafemp, ln_fafheat
       TYPE(FLD_N), DIMENSION(jpfld) ::   slf_i                    ! array of namelist information structures
+      INTEGER :: ji, ierror
 
       ! set file information
       cn_dir = './'        ! directory in which the model is executed
@@ -174,7 +175,7 @@ CONTAINS
       !
       !                                         ! store namelist information in an array
       slf_i(jp_utau) = sn_utau_anom   ;   slf_i(jp_vtau) = sn_vtau_anom
-      slf_i(jp_qtot) = sn_qtot_anom
+      slf_i(jp_hflx) = sn_qtot_anom
       slf_i(jp_emp ) = sn_emp_anom
       !
       ALLOCATE( sf_fafmip(jpfld), STAT=ierror )        ! set sf structure
@@ -193,10 +194,5 @@ CONTAINS
       Tr_sbc(:,:,:) = 0.
 
    END SUBROUTINE sbc_fafmip_init
-#else
-CONTAINS
-  SUBROUTINE sbc_fafmip_init() 
-  END SUBROUTINE
-#endif
    !!======================================================================
-END MODULE sbcfafmip
+END MODULE sbcfaf

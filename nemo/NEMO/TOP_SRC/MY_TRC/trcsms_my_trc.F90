@@ -56,7 +56,6 @@ CONTAINS
       REAL(wp) :: zfact = 1._wp                 ! temporary scalar
       REAL(wp) :: dtyrs
       CHARACTER(len=100) ::  cn_dir             ! Root directory for location of tracer files
-      NAMELIST/namsbc_o1o2/ cn_dir, ln_o1, ln_o2, sn_o1, sn_o2
 !!----------------------------------------------------------------------
       !
       IF( nn_timing == 1 )  CALL timing_start('trc_sms_my_trc')

@@ -18,8 +18,8 @@ MODULE trcsms_fafmip
    USE trdmod_trc
    USE phycst
    USE fldread         ! read input fields
-   USE sbcfafmip, only : sf_fafmip, Tr_sbc ! Surface boundary conditions for fafmip
-   USE parfafmip, only : jpTr, jpTa
+   USE sbcfaf, only : sf_fafmip, Tr_sbc, jp_hflx ! Surface boundary conditions for fafmip
+   USE par_fafmip, only : jpTr, jpTa
 
    IMPLICIT NONE
    PRIVATE
