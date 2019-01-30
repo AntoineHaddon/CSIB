@@ -7,14 +7,14 @@ MODULE trcini_fafmip
    !!----------------------------------------------------------------------
 #if defined key_fafmip
    !!----------------------------------------------------------------------
-   !!   'key_fafmip'                                               CFC tracers
+   !!   'key_fafmip'                                         FAFMIP tracers
    !!----------------------------------------------------------------------
    !! trc_ini_fafmip   : fafmip model initialisation
    !!----------------------------------------------------------------------
    USE par_trc         ! TOP parameters
    USE oce_trc
    USE trc
-   USE trcsms_fafmip
+   USE par_fafmip, only : jpTr, jpTa
 
    IMPLICIT NONE
    PRIVATE
@@ -27,7 +27,7 @@ MODULE trcini_fafmip
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE trc_ini_fafmip
+   SUBROUTINE trc_ini_fafmip( force_init )
       !!----------------------------------------------------------------------
       !!                     ***  trc_ini_fafmip  ***  
       !!
@@ -35,20 +35,26 @@ CONTAINS
       !!
       !! ** Method  : - Read the namcfc namelist and check the parameter values
       !!----------------------------------------------------------------------
-    
-      !                       ! Allocate fafmip arrays
-      IF( trc_sms_fafmip_alloc() /= 0 )   CALL ctl_stop( 'STOP', 'trc_ini_fafmip: unable to allocate fafmip arrays' )
+      LOGICAL, OPTIONAL, INTENT(IN) :: force_init ! Allow the tracer to initialize 
+      ! Local variables
+      LOGICAL :: initialize
 
       IF(lwp) WRITE(numout,*)
       IF(lwp) WRITE(numout,*) ' trc_ini_fafmip: initialisation of fafmip model'
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~'
      
+      initialize = .NOT. ln_rsttr
+      IF ( PRESENT(force_init) ) initialize = force_init
       ! Initialize the redistributed heat tracer to the temperature variable (Section 2.4, paragraph 4)
-      IF( .NOT. ln_rsttr ) THEN
-         trn(:,:,:,jpTr) = tsn(:,:,:jp_tem)
-         tra(:,:,:,jpTr) = tsa(:,:,:jp_tem)
-         trb(:,:,:,jpTr) = tsb(:,:,:jp_tem)
-      ENDIF    
+      IF( initialize ) THEN
+         trn(:,:,:,jpTr) = tsn(:,:,:,jp_tem)
+         tra(:,:,:,jpTr) = tsa(:,:,:,jp_tem)
+         trb(:,:,:,jpTr) = tsb(:,:,:,jp_tem)
+         ! Added heat variables is initialized to 0.
+         trn(:,:,:,jpTa) = 0.
+         tra(:,:,:,jpTa) = 0.
+         trb(:,:,:,jpTa) = 0.
+      ENDIF 
       !
    END SUBROUTINE trc_ini_fafmip
 

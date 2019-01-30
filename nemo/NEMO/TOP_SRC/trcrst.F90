@@ -32,11 +32,12 @@ MODULE trcrst
    USE trcrst_pisces   ! PISCES   restart
    USE trcrst_c14b     ! C14 bomb restart
    USE trcrst_my_trc   ! MY_TRC   restart
+   USE trcrst_fafmip   ! FAFMIP   restart
    USE trcini_cfc      ! CFC      
    USE trcini_lobster  ! LOBSTER  restart
    USE trcini_pisces   ! PISCES   restart
    USE trcini_c14b     ! C14 bomb restart
-   USE trcini_my_trc   ! MY_TRC   restart
+   USE trcini_fafmip   ! FAFMIP   restart
    USE daymod
    IMPLICIT NONE
    PRIVATE
@@ -129,7 +130,7 @@ CONTAINS
             ENDIF
          END DO
 
-         ! Now check to see if any of the missing tracers should be initialised from data files
+         ! Now check to see if any of the missing tracers should be initialised from data files or in some other way
          IF ( .NOT. ALL(trc_in_restart) ) THEN
             CALL wrk_alloc( jpi, jpj, jpk, nb_trcdta, ztrcdta )    ! Memory allocation
             CALL trc_dta( nit000, ztrcdta )   ! read tracer data at nit000
@@ -159,6 +160,11 @@ CONTAINS
                   CALL tracer_reinit(trc_in_restart, ztrcdta, jp_myt0, jp_myt1)
                ENDIF
             ENDIF
+            IF( lk_fafmip ) THEN
+               IF ( .NOT. ALL(trc_in_restart(jp_faf0:jp_faf1)) ) THEN
+                  CALL trc_ini_fafmip( .true. )
+               ENDIF
+            ENDIF
             IF ( ln_trcdta ) CALL wrk_dealloc( jpi, jpj, jpk, nb_trcdta, ztrcdta )
          ELSE ! If trcdta_renit is FALSE, then all the fields are present and any auxiliary fields from all the tracer
               ! packages can be loaded
@@ -174,6 +180,7 @@ CONTAINS
       IF( lk_cfc     )   CALL trc_rst_read_cfc    ( numrtr )      ! CFC     tracers
       IF( lk_c14b    )   CALL trc_rst_read_c14b   ( numrtr )      ! C14 bomb  tracer
       IF( lk_my_trc  )   CALL trc_rst_read_my_trc ( numrtr )      ! MY_TRC  tracers
+      IF( lk_fafmip  )   CALL trc_rst_read_fafmip ( numrtr )      ! FAFMIP  tracers
 
 
       CALL iom_close( numrtr )
@@ -209,6 +216,7 @@ CONTAINS
       IF( lk_cfc     )   CALL trc_rst_wri_cfc    ( kt, nitrst, numrtw )      ! CFC     tracers
       IF( lk_c14b    )   CALL trc_rst_wri_c14b   ( kt, nitrst, numrtw )      ! C14 bomb  tracer
       IF( lk_my_trc  )   CALL trc_rst_wri_my_trc ( kt, nitrst, numrtw )      ! MY_TRC  tracers
+      IF( lk_fafmip  )   CALL trc_rst_wri_fafmip ( kt, nitrst, numrtw )      ! FAFMIP  tracers
 
       IF( kt == nitrst ) THEN
           CALL trc_rst_stat            ! statistics

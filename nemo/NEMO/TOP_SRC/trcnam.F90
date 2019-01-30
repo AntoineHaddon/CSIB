@@ -25,6 +25,7 @@ MODULE trcnam
    USE trcnam_cfc        ! CFC SMS namelist
    USE trcnam_c14b       ! C14 SMS namelist
    USE trcnam_my_trc     ! MY_TRC SMS namelist
+   USE trcnam_fafmip     ! FAFMIP SMS namelist
    USE trdmod_oce       
    USE trdmod_trc_oce
    USE iom               ! I/O manager
@@ -256,6 +257,9 @@ CONTAINS
 
       IF( lk_my_trc  ) THEN   ;   CALL trc_nam_my_trc      ! MY_TRC  tracers
       ELSE                    ;   IF(lwp) WRITE(numout,*) '          MY_TRC not used'
+      ENDIF
+      IF( lk_fafmip  ) THEN   ;   CALL trc_nam_fafmip      ! FAFMIP tracers
+      ELSE                    ;   IF(lwp) WRITE(numout,*) '         FAFMIP not used'
       ENDIF
       !
    END SUBROUTINE trc_nam

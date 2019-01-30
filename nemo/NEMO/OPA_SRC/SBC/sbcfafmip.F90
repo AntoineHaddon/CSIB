@@ -5,7 +5,7 @@ MODULE sbc_fafmip
    !!=====================================================================
    !! History :  3.4  !  2019-01 Andrew shao
    !!----------------------------------------------------------------------
-
+#ifdef key_fafmip
    !!----------------------------------------------------------------------
    !!   namanom   : flux formulation namlist
    !!   sbc_anom  : flux formulation as ocean surface boundary condition (forced mode, fluxes read in NetCDF files)
@@ -27,6 +27,7 @@ MODULE sbc_fafmip
    PUBLIC sbc_fafmip_init       ! routine called by step.
    LOGICAL, PUBLIC :: ln_faftau  = .false.  ! If true, read in and apply windstress anomalies
    LOGICAL, PUBLIC :: ln_fafemp  = .false.  ! If true, read in and apply freshwater anomalies
+   LOGICAL, PUBLIC :: ln_fafhflx = .false.  ! If true, read in heat flux anomalies which MAY be used later
    LOGICAL, PUBLIC :: ln_fafheat = .false.  ! If true, use the FAFMIP temperature variable for use in flux calculations
 
    INTEGER , PARAMETER ::   jpfld   = 4   ! maximum number of files to read 
@@ -34,9 +35,8 @@ MODULE sbc_fafmip
    INTEGER , PARAMETER ::   jp_vtau = 2   ! index of wind stress (j-component) file
    INTEGER , PARAMETER ::   jp_emp  = 3   ! index of evaporation-precipation file
    INTEGER , PARAMETER ::   jp_hflx = 4   ! index of heat flux
-   TYPE(FLD),       ALLOCATABLE, DIMENSION(:) ::   sf_fafmip    ! structure of input fields (file informations, fields read)
-
-   PUBLIC, REAL,    ALLOCATABLE, DIMENSION(:,:,:) :: Tr_sbc       ! Surface flux for redistributed heat tracer
+   TYPE(FLD),       ALLOCATABLE, DIMENSION(:)       :: sf_fafmip    ! structure of input fields (file informations, fields read)
+   PUBLIC, REAL,    ALLOCATABLE, DIMENSION(:,:,:)   :: Tr_sbc       ! Surface flux for redistributed heat tracer
 
 
    !! * Substitutions
@@ -93,7 +93,7 @@ CONTAINS
       IF ( ln_fafemp ) THEN
          CALL fld_read( kt, nn_fsbc, sf_fafmip(jp_emp) )
       ENDIF
-      IF ( ln_fafheat ) THEN
+      IF ( ln_fafhflx ) THEN
          ! Even though this is read in here, this is not applied until traqsr.
          CALL fld_read( kt, nn_fsbc, sf_fafmip(jp_hflx) )
       ENDIF
@@ -148,7 +148,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       CHARACTER(len=100) ::  cn_dir                               ! Root directory for location of flx files
       TYPE(FLD_N) ::   sn_utau_anom, sn_vtau_anom, sn_qtot_anom, sn_emp_anon  ! informations about the fields to be read
-      NAMELIST/namsbc_fafmip/ ln_faftau, ln_fafheat, ln_fafemp
+      NAMELIST/namsbc_fafmip/ ln_faftau, ln_fafemp, ln_fafhflx, ln_fafemp, ln_fafheat
       TYPE(FLD_N), DIMENSION(jpfld) ::   slf_i                    ! array of namelist information structures
 
       ! set file information
@@ -156,13 +156,21 @@ CONTAINS
       ! ... default values (NB: frequency positive => hours, negative => months)
       !                   !  file   ! frequency !  variable  ! time intep !  clim   ! 'yearly' or ! weights  ! rotation  !
       !                   !  name   !  (hours)  !   name     !   (T/F)    !  (T/F)  !  'monthly'  ! filename ! pairs     !
-      sn_utau_anom = FLD_N(  'utau' ,    24     ,  'utau'    ,  .true.    , .true.  ,   'yearly'  , ''       , ''        )
-      sn_vtau_anom = FLD_N(  'vtau' ,    24     ,  'vtau'    ,  .true.    , .true.  ,   'yearly'  , ''       , ''        )
-      sn_qtot_anom = FLD_N(  'qtot' ,    24     ,  'qtot'    ,  .true.    , .true.  ,   'yearly'  , ''       , ''        )
-      sn_emp_anom  = FLD_N(  'emp'  ,    24     ,  'emp'     ,  .true.    , .true.  ,   'yearly'  , ''       , ''        )
+      sn_utau_anom = FLD_N(  'utau' ,    -1     ,  'utau'    ,  .true.    , .true.  ,   'yearly'  , ''       , ''        )
+      sn_vtau_anom = FLD_N(  'vtau' ,    -1     ,  'vtau'    ,  .true.    , .true.  ,   'yearly'  , ''       , ''        )
+      sn_qtot_anom = FLD_N(  'qtot' ,    -1     ,  'qtot'    ,  .true.    , .true.  ,   'yearly'  , ''       , ''        )
+      sn_emp_anom  = FLD_N(  'emp'  ,    -1     ,  'emp'     ,  .true.    , .true.  ,   'yearly'  , ''       , ''        )
       !
       REWIND ( numnam )                         ! read in namlist namflx
       READ   ( numnam, namsbc_fafmip ) 
+      
+      IF(lwp) THEN               ! Control print
+         WRITE(numout,*) '        Namelist namsbc_fafmip                                    '
+         WRITE(numout,*) '          Read in and apply wind stress anomalies                 ln_faftau  = ', ln_faftau
+         WRITE(numout,*) '          Read in and apply water flux anomalies                  ln_fafemp  = ', ln_fafemp
+         WRITE(numout,*) '          Read in heat flux anomalies which MAY be used later     ln_fafhflx = ', ln_fafhflx
+         WRITE(numout,*) '          Read in and apply heat flux anomalies                   ln_fafheat = ', ln_fafheat
+      ENDIF
       !
       !                                         ! store namelist information in an array
       slf_i(jp_utau) = sn_utau_anom   ;   slf_i(jp_vtau) = sn_vtau_anom
@@ -178,12 +186,17 @@ CONTAINS
          IF( slf_i(ji)%ln_tint ) ALLOCATE( sf_fafmip(ji)%fdta(jpi,jpj,1,2) )
       END DO
       !                                         ! fill sf with slf_i and control print
-      CALL fld_fill( sf, slf_i, cn_dir, 'sbc_anom', 'flux anomalies for ocean surface boundary condition', 'namsbc_flx' )
+      CALL fld_fill( sf_fafmip, slf_i, cn_dir, 'sbc_anom', 'flux anomalies for ocean surface boundary condition', 'namsbc_fafmip' )
       
       ! Allocate the "redistributed heat" tracer flux array
       ALLOCATE( Tr_sbc(jpi,jpj,jpk ) )
+      Tr_sbc(:,:,:) = 0.
 
    END SUBROUTINE sbc_fafmip_init
-
+#else
+CONTAINS
+  SUBROUTINE sbc_fafmip_init() 
+  END SUBROUTINE
+#endif
    !!======================================================================
 END MODULE sbcfafmip
