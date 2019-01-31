@@ -147,8 +147,8 @@ CONTAINS
       !! ** Action  : - read namsbc parameters
       !!----------------------------------------------------------------------
       CHARACTER(len=100) ::  cn_dir                               ! Root directory for location of flx files
-      TYPE(FLD_N) ::   sn_utau_anom, sn_vtau_anom, sn_qtot_anom, sn_emp_anom  ! informations about the fields to be read
-      NAMELIST/namsbc_fafmip/ ln_faftau, ln_fafhflx, ln_fafemp, ln_fafheat
+      TYPE(FLD_N) ::   sn_utau, sn_vtau, sn_qtot, sn_emp          ! information about the fields to be read
+      NAMELIST/namsbc_fafmip/ ln_faftau, ln_fafhflx, ln_fafemp, ln_fafheat, cn_dir, sn_utau, sn_vtau, sn_qtot, sn_emp 
       TYPE(FLD_N), DIMENSION(jpfld) ::   slf_i                    ! array of namelist information structures
       INTEGER :: ji, ierror
 
@@ -157,10 +157,10 @@ CONTAINS
       ! ... default values (NB: frequency positive => hours, negative => months)
       !                   !  file   ! frequency !  variable  ! time intep !  clim   ! 'yearly' or ! weights  ! rotation  !
       !                   !  name   !  (hours)  !   name     !   (T/F)    !  (T/F)  !  'monthly'  ! filename ! pairs     !
-      sn_utau_anom = FLD_N(  'utau' ,    -1     ,  'utau'    ,  .true.    , .true.  ,   'yearly'  , ''       , ''        )
-      sn_vtau_anom = FLD_N(  'vtau' ,    -1     ,  'vtau'    ,  .true.    , .true.  ,   'yearly'  , ''       , ''        )
-      sn_qtot_anom = FLD_N(  'qtot' ,    -1     ,  'qtot'    ,  .true.    , .true.  ,   'yearly'  , ''       , ''        )
-      sn_emp_anom  = FLD_N(  'emp'  ,    -1     ,  'emp'     ,  .true.    , .true.  ,   'yearly'  , ''       , ''        )
+      sn_utau = FLD_N(  'utau' ,    -1     ,  'utau'    ,  .true.    , .true.  ,   'yearly'  , ''       , ''        )
+      sn_vtau = FLD_N(  'vtau' ,    -1     ,  'vtau'    ,  .true.    , .true.  ,   'yearly'  , ''       , ''        )
+      sn_qtot = FLD_N(  'qtot' ,    -1     ,  'qtot'    ,  .true.    , .true.  ,   'yearly'  , ''       , ''        )
+      sn_emp  = FLD_N(  'emp'  ,    -1     ,  'emp'     ,  .true.    , .true.  ,   'yearly'  , ''       , ''        )
       !
       REWIND ( numnam )                         ! read in namlist namflx
       READ   ( numnam, namsbc_fafmip ) 
@@ -174,9 +174,9 @@ CONTAINS
       ENDIF
       !
       !                                         ! store namelist information in an array
-      slf_i(jp_utau) = sn_utau_anom   ;   slf_i(jp_vtau) = sn_vtau_anom
-      slf_i(jp_hflx) = sn_qtot_anom
-      slf_i(jp_emp ) = sn_emp_anom
+      slf_i(jp_utau) = sn_utau   ;   slf_i(jp_vtau) = sn_vtau
+      slf_i(jp_hflx) = sn_qtot
+      slf_i(jp_emp ) = sn_emp
       !
       ALLOCATE( sf_fafmip(jpfld), STAT=ierror )        ! set sf structure
       IF( ierror > 0 ) THEN   

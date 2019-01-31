@@ -290,6 +290,8 @@
        <field id="cfc11"    description="CFC11 tracer concentration"                    unit="mol/m3"                  />
        <field id="cfc12"    description="CFC12 tracer concentration"                    unit="mol/m3"                  />
        <field id="sf6"      description="SF6 tracer concentration"                      unit="mol/m3"                  />
+       <field id="Tre"      description="Redistributed heat tracer"                     unit="C"                       />
+       <field id="Tad"      description="Added heat tracer"                             unit="C"                       />
      </group>
 
       <!-- diad on T grid : variables available with key_diatrc -->
