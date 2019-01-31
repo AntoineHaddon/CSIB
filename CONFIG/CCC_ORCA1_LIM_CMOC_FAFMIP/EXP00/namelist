@@ -248,8 +248,14 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
    ln_faftau  = .false.       ! Read in and apply windstress anomalies 
    ln_fafemp  = .false.       ! Read in and apply water flux anoamlies
-   ln_fafhflx = .false.       ! Read in heat flux anomalies which MAY be applied
+   ln_fafhflx = .true.       ! Read in heat flux anomalies which MAY be applied
    ln_fafheat = .false.       ! Apply heatflux to the temperature tracer
+!              !  file name  ! frequency (hours) ! variable  ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation !
+!              !             !  (if <0  months)  !   name    !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  !
+   sn_utau     = 'utau'      ,        -1         , 'utau'    , .false.      , .false., 'yearly'  , ''       , ''
+   sn_vtau     = 'vtau'      ,        -1         , 'vtau'    , .false.      , .false., 'yearly'  , ''       , ''
+   sn_qtot     = 'qtot'      ,        -1         , 'qtot'    , .false.      , .false., 'yearly'  , ''       , ''
+   sn_emp      = 'emp'       ,        -1         , 'emp'     , .false.      , .false., 'yearly'  , ''       , ''
 /
 !-----------------------------------------------------------------------
 &namtra_qsr    !   penetrative solar radiation
