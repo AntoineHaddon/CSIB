@@ -48,15 +48,31 @@ CONTAINS
       !!----------------------------------------------------------------------
       !
       INTEGER, INTENT(in) ::   kt   ! ocean time-step index
-      INTEGER ::   ji, jn                       ! dummy loop index
+      INTEGER ::   ji, jj, jn                       ! dummy loop index
       INTEGER  ::  ierror                       ! return error code
 !!----------------------------------------------------------------------
-      !
+      REAL(wp) :: zfact, z1_e3t
+!
       IF( nn_timing == 1 )  CALL timing_start('trc_sms_fafmip')
       !
       IF(lwp) WRITE(numout,*)
       IF(lwp) WRITE(numout,*) ' trc_sms_fafmip:  fafmip model'
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~'
+      !                                        ***********************************
+# if defined key_pisces
+     zfact = 1.
+# else
+      IF( kt == nit000 ) THEN                     ! Set the forcing field at nit000 - 1
+         !                                        ! -----------------------------------
+         IF( ln_rstart )                          ! Restart: read in restart file
+            zfact = 0.5e0
+         ELSE
+            zfact = 1.e0
+         ENDIF
+      ELSE
+         zfact = 0.5e0
+      ENDIF
+# endif
 
       ! Apply fluxes to redistributed heat tracer
       tra(:,:,:,jpTr) = Tr_sbc(:,:,:)  ! This is the heat flux from actual model components
@@ -64,7 +80,12 @@ CONTAINS
       Tr_sbc(:,:,:) = 0.
 
       ! Apply fluxes to added heat tracer
-      tra(:,:,1,jpTa) = sf_fafmip(jp_hflx)%fnow(:,:,1)
+      DO jj = 1, jpj
+         DO ji = 1, jpi
+            z1_e3t = zfact / fse3t(ji,jj,1)
+            tra(ji,jj,1,jpTa) = (sf_fafmip(jp_hflx)%fnow(ji,jj,1) * ro0cpr) * z1_e3t
+         ENDDO
+      ENDDO
 
       IF( nn_timing == 1 )  CALL timing_stop('trc_sms_fafmip')
       !
