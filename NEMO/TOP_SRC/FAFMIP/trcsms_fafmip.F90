@@ -51,7 +51,7 @@ CONTAINS
       INTEGER ::   ji, jj, jn                       ! dummy loop index
       INTEGER  ::  ierror                       ! return error code
 !!----------------------------------------------------------------------
-      REAL(wp) :: zfact, z1_e3t
+      REAL(wp) :: zfact1, zfact2, z1_e3t
 !
       IF( nn_timing == 1 )  CALL timing_start('trc_sms_fafmip')
       !
@@ -59,30 +59,37 @@ CONTAINS
       IF(lwp) WRITE(numout,*) ' trc_sms_fafmip:  fafmip model'
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~'
       !                                        ***********************************
+      ! These next blocks are needed to deal with the fact that passive tracers
+      ! and active tracers may be timestepped differently because PISCES assumes
+      ! Euler timestepping (and thus need to multiple the tendency by 2)
 # if defined key_pisces
-     zfact = 1.
+     zfact1 = 1.
+     zfact2 = 2.
 # else
       IF( kt == nit000 ) THEN                     ! Set the forcing field at nit000 - 1
          !                                        ! -----------------------------------
          IF( ln_rstart )                          ! Restart: read in restart file
-            zfact = 0.5e0
+            zfact1 = 0.5e0
+            zfact2 = 0.5e0
          ELSE
-            zfact = 1.e0
+            zfact1 = 1.e0
+            zfact1 = 1.e0
          ENDIF
       ELSE
-         zfact = 0.5e0
+         zfact1 = 0.5e0
+         zfact2 = 0.5e0
       ENDIF
 # endif
 
       ! Apply fluxes to redistributed heat tracer
-      tra(:,:,:,jpTr) = Tr_sbc(:,:,:)  ! This is the heat flux from actual model components
+      tra(:,:,:,jpTr) = zfact2*Tr_sbc(:,:,:)  ! This is the heat flux from actual model components
       ! Reset the sbc flux array to 0.
       Tr_sbc(:,:,:) = 0.
 
       ! Apply fluxes to added heat tracer
       DO jj = 1, jpj
          DO ji = 1, jpi
-            z1_e3t = zfact / fse3t(ji,jj,1)
+            z1_e3t = zfact1 / fse3t(ji,jj,1)
             tra(ji,jj,1,jpTa) = (sf_fafmip(jp_hflx)%fnow(ji,jj,1) * ro0cpr) * z1_e3t
          ENDDO
       ENDDO
