@@ -286,8 +286,8 @@ CONTAINS
       IF ( ln_fafheat ) THEN
          DO jj = 1, jpj
             DO ji = 1, jpi
-               z1_e3t = zfact / fse3t(ji,jj,jk)
-               tsa(ji,jj,1,jp_tem) = tsa(ji,jj,1,jp_tem) + sf_fafmip(jp_hflx)%fnow(ji,jj,1) * z1_e3t
+               z1_e3t = zfact / fse3t(ji,jj,1)
+               tsa(ji,jj,1,jp_tem) = tsa(ji,jj,1,jp_tem) + (sf_fafmip(jp_hflx)%fnow(ji,jj,1) * etot3(ji,jj,1)) * z1_e3t
             ENDDO
          ENDDO
       ENDIF
