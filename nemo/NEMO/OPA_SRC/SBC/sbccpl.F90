@@ -62,9 +62,9 @@ MODULE sbccpl
 #endif
    USE diawri
 #if defined key_fafmip
-   USE sbc_fafmip, only : ln_fafheat 
+   USE sbcfaf,     only : ln_fafheat 
    USE par_fafmip, only : jpTr
-   USE trc,        only : trn
+   USE trc,        only : trb
 #endif
    IMPLICIT NONE
    PRIVATE
@@ -1436,7 +1436,7 @@ CONTAINS
       !
       IF( nn_timing == 1 )  CALL timing_start('sbc_cpl_snd')
       !
-      CALL wrk_alloc( jpi,jpj, zfr_l, ztmp1, ztmp2, zotx1, zoty1, zotz1, zitx1, zity1, zitz1 )
+      CALL wrk_alloc( jpi,jpj, zfr_l, ztmp1, ztmp2, zotx1, zoty1, zotz1, zitx1, zity1, zitz1, zsst )
       CALL wrk_alloc( jpi,jpj,jpl, ztmp3, ztmp4 )
 
       isec = ( kt - nit000 ) * NINT(rdttra(1))        ! date of exchanges
@@ -1446,10 +1446,10 @@ CONTAINS
       !                                                      ! ------------------------- !
       !                                                      !    Surface temperature    !   in Kelvin
       !                                                      ! ------------------------- !
-      zsst => tsn(:,:,1,jp_tem)
+      zsst(:,:) = tsn(:,:,1,jp_tem)
 #if defined key_fafmip
       IF (ln_fafheat) THEN
-         zsst => trn(:,:,1,jpTr)
+         zsst(:,:) = trb(:,:,1,jpTr)
       ENDIF
 #endif
       SELECT CASE( sn_snd_temp%cldes)
@@ -1725,7 +1725,7 @@ CONTAINS
          ! 
       ENDIF
       !
-      CALL wrk_dealloc( jpi,jpj, zfr_l, ztmp1, ztmp2, zotx1, zoty1, zotz1, zitx1, zity1, zitz1 )
+      CALL wrk_dealloc( jpi,jpj, zfr_l, ztmp1, ztmp2, zotx1, zoty1, zotz1, zitx1, zity1, zitz1, zsst )
       CALL wrk_dealloc( jpi,jpj,jpl, ztmp3, ztmp4 )
       !
       IF( nn_timing == 1 )  CALL timing_stop('sbc_cpl_snd')

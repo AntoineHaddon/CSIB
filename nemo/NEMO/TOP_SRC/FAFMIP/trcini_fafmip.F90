@@ -47,8 +47,8 @@ CONTAINS
       IF ( PRESENT(force_init) ) initialize = force_init
       ! Initialize the redistributed heat tracer to the temperature variable (Section 2.4, paragraph 4)
       IF( initialize ) THEN
-         trn(:,:,:,jpTr) = tsn(:,:,:,jp_tem)
-         tra(:,:,:,jpTr) = tsa(:,:,:,jp_tem)
+         trn(:,:,:,jpTr) = 0. 
+         tra(:,:,:,jpTr) = 0. 
          trb(:,:,:,jpTr) = tsb(:,:,:,jp_tem)
          ! Added heat variables is initialized to 0.
          trn(:,:,:,jpTa) = 0.

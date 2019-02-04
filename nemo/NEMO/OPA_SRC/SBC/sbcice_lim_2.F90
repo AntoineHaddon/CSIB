@@ -51,7 +51,7 @@ MODULE sbcice_lim_2
    USE diawri
 
 #if defined key_fafmip
-   USE trc,        only : trn
+   USE trc,        only : trb
    USE sbcfaf,     only : ln_fafheat
    USE par_fafmip, only : jpTr
 #endif
@@ -138,7 +138,7 @@ CONTAINS
 
 #if defined key_fafmip
          if ( ln_fafheat ) THEN
-           zsist(:,:,1) = trn(:,:,1,jpTr) + rt0 * ( 1. - tmask(:,:,1) ) 
+           zsist(:,:,1) = trb(:,:,1,jpTr) + rt0 * ( 1. - tmask(:,:,1) ) 
          else
             zsist (:,:,1) = sist (:,:) + rt0 * ( 1. - tmask(:,:,1) )
          endif
