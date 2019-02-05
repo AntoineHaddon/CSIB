@@ -9,6 +9,7 @@ MODULE nemo_diag_cal_cmoc
    !!---------------------------------------------------------------
    !!
    !!---------------------------------------------------------------
+   !! density            : seawater potential density
    !! cmip6_co3sat       : [CO3--] at calcite/aragonite saturation
    !! cmip6_cchem        : [CO3--], pH, Omega_X
    !! cmip6_o2sol        : oxygen saturation concentration
@@ -22,6 +23,7 @@ MODULE nemo_diag_cal_cmoc
    PUBLIC cmip6_cchem
    PUBLIC cmip6_o2sol
    PUBLIC saturation_depth
+   PUBLIC density
 
    REAL, PARAMETER :: salchl = 1. / 1.80655    ! conversion factor for salinity --> chlorinity (Wooster et al. 1969)
    REAL, PARAMETER :: Ca=0.010280              ! concentration of Ca at S=35 in mol kg^-1 (from Zeebe Table 1.1.6)
@@ -202,10 +204,10 @@ CONTAINS
       !        (P. 1285) AND BERNER (1976)
                 zbuf1  =     - ( devk1(5) + devk2(5) * ztc + devk3(5) * ztc * ztc )
                 zbuf2  = 0.5 * ( devk4(5) + devk5(5) * ztc )
-! [CO3--] in mol m^-3 assuming a reference density of 1025.
+! [CO3--] in mol m^-3 
                 Kspc(i,j,k,l) = zaksp1 * EXP( zbuf1 * zcpexp + zbuf2 * zcpexp2 )
                 Kspc(i,j,k,l) = Kspc(i,j,k,l) + ( 1.- tmask(i,j,k) ) * 1.e-7
-                co3_satc(i,j,k,l) = Kspc(i,j,k,l) / zca * 1025.
+                co3_satc(i,j,k,l) = Kspc(i,j,k,l) / zca * prhop(i,j,k,l)
                 co3_satc(i,j,k,l) = co3_satc(i,j,k,l) * tmask(i,j,k)
 
       ! APPARENT SOLUBILITY PRODUCT K'SP OF ARAGONITE IN SEAWATER
@@ -214,10 +216,9 @@ CONTAINS
                 zaksp1  = 10.**(zaksp0)
                 zbuf1  =     - ( devk1(6) + devk2(6) * ztc + devk3(6) * ztc * ztc )
                 zbuf2  = 0.5 * ( devk4(6) + devk5(6) * ztc )
-                co3_sata(i,j,k,l) = zaksp1 * EXP( zbuf1 * zcpexp + zbuf2 * zcpexp2 ) / zca * 1025.
                 Kspa(i,j,k,l) = Kspa(i,j,k,l) + ( 1.- tmask(i,j,k) ) * 1.e-7
                 Kspa(i,j,k,l) = zaksp1 * EXP( zbuf1 * zcpexp + zbuf2 * zcpexp2 )
-                co3_sata(i,j,k,l) = Kspa(i,j,k,l) / zca * 1025.
+                co3_sata(i,j,k,l) = Kspa(i,j,k,l) / zca * prhop(i,j,k,l)
                 co3_sata(i,j,k,l) = co3_sata(i,j,k,l) * tmask(i,j,k)
 
           ENDDO
@@ -244,15 +245,14 @@ CONTAINS
       REAL :: zaksp0, zbuf1, zbuf2, zcpexp, zcpexp2, zbot, zfact, zdic, zph
       REAL :: zalka, zph2, zph3, zpo4, zsi, zpd, zp3, zp1, zp0, zalk, zah2, hion
       REAL :: zrhop, zr1, zr2, zr3, zr4, zt, zs, zsr, zca
-      REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: hi, prhop, borat, ak13, ak23, akb3, akw3
+      REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: hi, borat, ak13, ak23, akb3, akw3
       REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: akp13, akp23, akp33, aksi3
       REAL, DIMENSION(imt,jmt,km,lm) :: XDIC, XTA, CO3, pH, Om_A, Om_C, Kspc, Kspa
 
       !!----------------
       !! Allocate Arrays
       !!----------------
-      ALLOCATE(  hi(imt,jmt,km,lm),prhop(imt,jmt,km,lm),borat(imt,jmt,km,lm),ak13(imt,jmt,km,lm),ak23(imt,jmt,km,lm),akb3(imt,jmt,km,lm),akw3(imt,jmt,km,lm),akp13(imt,jmt,km,lm),akp23(imt,jmt,km,lm),akp33(imt,jmt,km,lm),aksi3(imt,jmt,km,lm), STAT=ierr(1) )
-      !ALLOCATE( prhop(imt,jmt,km,lm), STAT=ierr(2) )
+      ALLOCATE(  hi(imt,jmt,km,lm),borat(imt,jmt,km,lm),ak13(imt,jmt,km,lm),ak23(imt,jmt,km,lm),akb3(imt,jmt,km,lm),akw3(imt,jmt,km,lm),akp13(imt,jmt,km,lm),akp23(imt,jmt,km,lm),akp33(imt,jmt,km,lm),aksi3(imt,jmt,km,lm), STAT=ierr(1) )
 
       IF (MAXVAL(ierr) /=0) THEN
          STOP 'Memory allocation error in cmip6_cchem'
@@ -371,38 +371,6 @@ CONTAINS
         ENDDO
        ENDDO
 
-
-! calculate local seawater potential density (from eosbn2.F90)
-
-        DO l=1,lm
-         DO k=1,km
-          DO j=1,jmt
-           DO i=1,imt
-
-                zt   = TT(i,j,k,l)
-                zs    = SS(i,j,k,l) + ( 1.-tmask(i,j,k) ) * 35.
-                zsr  = SQRT( zs )
-                  !
-                  ! compute volumic mass pure water at atm pressure
-                  zr1= ( ( ( ( 6.536332e-9*zt-1.120083e-6 )*zt+1.001685e-4 )*zt   &
-                     &                          -9.095290e-3 )*zt+6.793952e-2 )*zt+999.842594
-                  ! seawater volumic mass atm pressure
-                  zr2= ( ( ( 5.3875e-9*zt-8.2467e-7 ) *zt+7.6438e-5 ) *zt   &
-                     &                                         -4.0899e-3 ) *zt+0.824493
-                  zr3= ( -1.6546e-6*zt+1.0227e-4 )    *zt-5.72466e-3
-                  zr4= 4.8314e-4
-                  !
-                  ! potential volumic mass (reference to the surface)
-                  zrhop= ( zr4*zs + zr3*zsr + zr2 ) *zs + zr1
-                  !
-                  ! save potential volumic mass
-                  prhop(i,j,k,l) = zrhop * tmask(i,j,k)
-                  !
-          ENDDO
-         ENDDO
-        ENDDO
-       ENDDO
-
 ! this part is from p4zflx.F90
 
        DO jm = 1, 10
@@ -464,7 +432,7 @@ CONTAINS
         ENDDO
        ENDDO
 
-      DEALLOCATE( hi, prhop, borat, ak13, ak23, akb3, akw3, akp13, akp23, akp33, aksi3 )
+      DEALLOCATE( hi, borat, ak13, ak23, akb3, akw3, akp13, akp23, akp33, aksi3 )
 
    END SUBROUTINE cmip6_cchem
 
@@ -564,6 +532,48 @@ CONTAINS
         ENDDO
 
    END SUBROUTINE saturation_depth
+
+   SUBROUTINE density
+
+      !!-------------------------------------------------------------
+      !! Purpose: Calculate seawater potential density (from eosbn2.F90)
+      !! Input fields:
+      !!            3D: T, S
+      !! Output:    potential density in kg m^-3
+      !!-------------------------------------------------------------
+      INTEGER                 :: i,j,k,l
+      REAL                    :: zt, zs, zsr, zr1, zr2, zr3, zr4, zrhop
+
+        DO l=1,lm
+         DO k=1,km
+          DO j=1,jmt
+           DO i=1,imt
+
+                zt   = TT(i,j,k,l)
+                zs    = SS(i,j,k,l) + ( 1.-tmask(i,j,k) ) * 35.
+                zsr  = SQRT( zs )
+                  !
+                  ! compute volumic mass pure water at atm pressure
+                  zr1= ( ( ( ( 6.536332e-9*zt-1.120083e-6 )*zt+1.001685e-4 )*zt   &
+                     &                          -9.095290e-3 )*zt+6.793952e-2 )*zt+999.842594
+                  ! seawater volumic mass atm pressure
+                  zr2= ( ( ( 5.3875e-9*zt-8.2467e-7 ) *zt+7.6438e-5 ) *zt   &
+                     &                                         -4.0899e-3 ) *zt+0.824493
+                  zr3= ( -1.6546e-6*zt+1.0227e-4 )    *zt-5.72466e-3
+                  zr4= 4.8314e-4
+                  !
+                  ! potential volumic mass (reference to the surface)
+                  zrhop= ( zr4*zs + zr3*zsr + zr2 ) *zs + zr1
+                  !
+                  ! save potential volumic mass
+                  prhop(i,j,k,l) = zrhop * tmask(i,j,k)
+                  !
+          ENDDO
+         ENDDO
+        ENDDO
+       ENDDO
+
+   END SUBROUTINE density
 
 END MODULE nemo_diag_cal_cmoc
 

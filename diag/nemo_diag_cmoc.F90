@@ -65,7 +65,7 @@ PROGRAM nemo_diag_cmoc
    ALLOCATE( pHfull(imt,jmt,km,lm), CO3full(imt,jmt,km,lm), pHabio(imt,jmt,km,lm), CO3abio(imt,jmt,km,lm), pHnat(imt,jmt,km,lm), CO3nat(imt,jmt,km,lm), STAT=ierr(5) )
    ALLOCATE( K_sp_cal(imt,jmt,km,lm), K_sp_arag(imt,jmt,km,lm), Omega_C(imt,jmt,km,lm), Omega_A(imt,jmt,km,lm), Omega_C_abio(imt,jmt,km,lm), Omega_A_abio(imt,jmt,km,lm), Omega_C_nat(imt,jmt,km,lm), Omega_A_nat(imt,jmt,km,lm), STAT=ierr(6) )
    ALLOCATE( zsat_c(imt,jmt,lm), zsat_a(imt,jmt,lm), STAT=ierr(7) )
-   ALLOCATE( co3_satc(imt,jmt,km,lm), co3_sata(imt,jmt,km,lm), o2sol(imt,jmt,km,lm), STAT=ierr(8) )
+   ALLOCATE( prhop(imt,jmt,km,lm), co3_satc(imt,jmt,km,lm), co3_sata(imt,jmt,km,lm), o2sol(imt,jmt,km,lm), STAT=ierr(8) )
  
    IF (MAXVAL(ierr) /=0) THEN
       STOP 'Memory allocation error in cmip6_nemo_offl'
@@ -150,6 +150,7 @@ PROGRAM nemo_diag_cmoc
    !!---------------------------------------------------------
    !! Computations of solubility product, O2 solubility, pH, carbonate ion
    !!---------------------------------------------------------
+   CALL density
    CALL cmip6_co3sat(K_sp_arag,K_sp_cal)
    CALL cmip6_o2sol
    CALL cmip6_cchem(CC,AA,K_sp_cal,K_sp_arag,CO3full,pHfull,Omega_C,Omega_A)

@@ -23,8 +23,8 @@ MODULE nemo_diag_glovars_cmoc
       REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: K_sp_cal, K_sp_arag, Omega_C, Omega_A
       REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: Omega_C_abio, Omega_A_abio
       REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: Omega_C_nat, Omega_A_nat
-      REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: o2sol
+      REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: prhop, o2sol
       REAL, DIMENSION(:,:,:), ALLOCATABLE     :: zsat_a, zsat_c
-
+ 
 END MODULE nemo_diag_glovars_cmoc
 
