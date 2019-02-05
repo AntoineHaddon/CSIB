@@ -17,15 +17,14 @@ MODULE nemo_diag_glovars_cmoc
       REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: TT, SS
       REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: CC, AA, CAB, CNT
       REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: asi3, NO3
-      REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: borat, ak13, ak23, akb3, akw3
-      REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: akp13, akp23, akp33, aksi3
       REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: co3_sata, co3_satc
       REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: CO3full, pHfull
       REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: CO3abio, pHabio, CO3nat, pHnat
-!      REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: XDIC, XTA, CO3, pH
-!      REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: hi
+      REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: K_sp_cal, K_sp_arag, Omega_C, Omega_A
+      REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: Omega_C_abio, Omega_A_abio
+      REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: Omega_C_nat, Omega_A_nat
       REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: o2sol
-      REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: prhop
+      REAL, DIMENSION(:,:,:), ALLOCATABLE     :: zsat_a, zsat_c
 
 END MODULE nemo_diag_glovars_cmoc
 

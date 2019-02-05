@@ -9,9 +9,10 @@ MODULE nemo_diag_cal_cmoc
    !!---------------------------------------------------------------
    !!
    !!---------------------------------------------------------------
-   !! cmip6_co3sat   : [CO3--] at calcite/aragonite saturation
-   !! cmip6_cchem    : [CO3--], pH
-   !! cmip6_o2sol    : oxygen saturation concentration
+   !! cmip6_co3sat       : [CO3--] at calcite/aragonite saturation
+   !! cmip6_cchem        : [CO3--], pH, Omega_X
+   !! cmip6_o2sol        : oxygen saturation concentration
+   !! saturation_depth   : depth of saturation horizon
    !!---------------------------------------------------------------
    USE nemo_diag_glovars_cmoc
 
@@ -20,6 +21,7 @@ MODULE nemo_diag_cal_cmoc
    PUBLIC cmip6_co3sat           ! Called by nemo_diag_cmoc.F90
    PUBLIC cmip6_cchem
    PUBLIC cmip6_o2sol
+   PUBLIC saturation_depth
 
    REAL, PARAMETER :: salchl = 1. / 1.80655    ! conversion factor for salinity --> chlorinity (Wooster et al. 1969)
    REAL, PARAMETER :: Ca=0.010280              ! concentration of Ca at S=35 in mol kg^-1 (from Zeebe Table 1.1.6)
@@ -140,7 +142,7 @@ MODULE nemo_diag_cal_cmoc
 
 CONTAINS
 
-   SUBROUTINE cmip6_co3sat 
+   SUBROUTINE cmip6_co3sat(Kspa, Kspc) 
       !!
       !!-------------------------------------------------------------
       !! Purpose: Compute [CO3--] at calcite/aragonite saturation  = 1
@@ -153,15 +155,7 @@ CONTAINS
       INTEGER, DIMENSION (1)  :: ierr                   ! local variable
       REAL :: ztkel, zsal, zsqrt, zsal15, zlogt, ztr, zis, zis2, zisqrt, ztc
       REAL :: zaksp0, zaksp1, zbuf1, zbuf2, zpres, zcpexp, zcpexp2,zca
-
-      !!----------------
-      !! Allocate Arrays
-      !!----------------
-      ALLOCATE( co3_satc(imt,jmt,km,lm), co3_sata(imt,jmt,km,lm), STAT=ierr(1) )
-
-      IF (MAXVAL(ierr) /=0) THEN
-         STOP 'Memory allocation error in cmip6_co3sat'
-      ENDIF
+      REAL, DIMENSION(imt,jmt,km,lm) :: Kspa, Kspc
 
        DO l=1,lm
         DO k=1,km
@@ -209,26 +203,31 @@ CONTAINS
                 zbuf1  =     - ( devk1(5) + devk2(5) * ztc + devk3(5) * ztc * ztc )
                 zbuf2  = 0.5 * ( devk4(5) + devk5(5) * ztc )
 ! [CO3--] in mol m^-3 assuming a reference density of 1025.
-                co3_satc(i,j,k,l) = zaksp1 * EXP( zbuf1 * zcpexp + zbuf2 * zcpexp2 ) / zca * 1025.
+                Kspc(i,j,k,l) = zaksp1 * EXP( zbuf1 * zcpexp + zbuf2 * zcpexp2 )
+                Kspc(i,j,k,l) = Kspc(i,j,k,l) + ( 1.- tmask(i,j,k) ) * 1.e-7
+                co3_satc(i,j,k,l) = Kspc(i,j,k,l) / zca * 1025.
+                co3_satc(i,j,k,l) = co3_satc(i,j,k,l) * tmask(i,j,k)
 
-      ! APPARENT SOLUBILITY PRODUCT K'SP OF CALCITE IN SEAWATER
-      !       (S=27-43, T=2-25 DEG C) at pres =0 (atmos. pressure) (MUCCI 1983)
+      ! APPARENT SOLUBILITY PRODUCT K'SP OF ARAGONITE IN SEAWATER
                 zaksp0  = bkcc1 + bkcc2 * ztkel + bkcc3 * ztr + bkcc4 * LOG10( ztkel )   &
               &   + ( bkcc5 + bkcc6 * ztkel + bkcc7 * ztr ) * zsqrt + bkcc8 * zsal + bkcc9 * zsal15
                 zaksp1  = 10.**(zaksp0)
                 zbuf1  =     - ( devk1(6) + devk2(6) * ztc + devk3(6) * ztc * ztc )
                 zbuf2  = 0.5 * ( devk4(6) + devk5(6) * ztc )
                 co3_sata(i,j,k,l) = zaksp1 * EXP( zbuf1 * zcpexp + zbuf2 * zcpexp2 ) / zca * 1025.
+                Kspa(i,j,k,l) = Kspa(i,j,k,l) + ( 1.- tmask(i,j,k) ) * 1.e-7
+                Kspa(i,j,k,l) = zaksp1 * EXP( zbuf1 * zcpexp + zbuf2 * zcpexp2 )
+                co3_sata(i,j,k,l) = Kspa(i,j,k,l) / zca * 1025.
+                co3_sata(i,j,k,l) = co3_sata(i,j,k,l) * tmask(i,j,k)
 
           ENDDO
          ENDDO
         ENDDO
        ENDDO
 
-
    END SUBROUTINE cmip6_co3sat
 
-   SUBROUTINE cmip6_cchem(XDIC, XTA, CO3, pH)
+   SUBROUTINE cmip6_cchem(XDIC, XTA, Kspc, Kspa, CO3, pH, Om_C, Om_A)
 
       !!-------------------------------------------------------------
       !! Purpose: Solve carbon chemistry to generate [H+], which can then be used to calculate [CO3--] etc
@@ -244,15 +243,16 @@ CONTAINS
       REAL :: zak1, zak2, zakb, zakw, zakp1, zakp2, zakp3, zaksi, zaksp1, zaksp2
       REAL :: zaksp0, zbuf1, zbuf2, zcpexp, zcpexp2, zbot, zfact, zdic, zph
       REAL :: zalka, zph2, zph3, zpo4, zsi, zpd, zp3, zp1, zp0, zalk, zah2, hion
-      REAL :: zrhop, zr1, zr2, zr3, zr4, zt, zs, zsr
-      REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: hi
-      REAL, DIMENSION(imt,jmt,km,lm) :: XDIC, XTA, CO3, pH
+      REAL :: zrhop, zr1, zr2, zr3, zr4, zt, zs, zsr, zca
+      REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: hi, prhop, borat, ak13, ak23, akb3, akw3
+      REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: akp13, akp23, akp33, aksi3
+      REAL, DIMENSION(imt,jmt,km,lm) :: XDIC, XTA, CO3, pH, Om_A, Om_C, Kspc, Kspa
 
       !!----------------
       !! Allocate Arrays
       !!----------------
-      ALLOCATE( hi(imt,jmt,km,lm), STAT=ierr(1) )
-      ALLOCATE( prhop(imt,jmt,km,lm), STAT=ierr(2) )
+      ALLOCATE(  hi(imt,jmt,km,lm),prhop(imt,jmt,km,lm),borat(imt,jmt,km,lm),ak13(imt,jmt,km,lm),ak23(imt,jmt,km,lm),akb3(imt,jmt,km,lm),akw3(imt,jmt,km,lm),akp13(imt,jmt,km,lm),akp23(imt,jmt,km,lm),akp33(imt,jmt,km,lm),aksi3(imt,jmt,km,lm), STAT=ierr(1) )
+      !ALLOCATE( prhop(imt,jmt,km,lm), STAT=ierr(2) )
 
       IF (MAXVAL(ierr) /=0) THEN
          STOP 'Memory allocation error in cmip6_cchem'
@@ -414,8 +414,8 @@ CONTAINS
                ! DUMMY VARIABLES FOR DIC, H+, AND BORATE
                zbot  = borat(i,j,k,l)
                zfact = prhop(i,j,k,l)*0.001 + (1.-tmask(i,j,k))
-               zdic  = XDIC(i,j,k,l) * 0.000001 / zfact
-               zalka = XTA(i,j,k,l) * 0.000001 / zfact
+               zdic  = XDIC(i,j,k,l) * 0.000001 / zfact + (1.-tmask(i,j,k))*0.002
+               zalka = XTA(i,j,k,l) * 0.000001 / zfact + (1.-tmask(i,j,k))*0.002
                zph   = MAX( hi(i,j,k,l), 1.e-10 ) / zfact
                zph2 = zph*zph
                zph3 = zph*zph2
@@ -432,14 +432,12 @@ CONTAINS
 
                ! CALCULATE [ALK]([CO3--], [HCO3-])
                zalk  = zalka - (  akw3(i,j,k,l) / zph - zph + zbot / ( 1.+ zph / akb3(i,j,k,l) ) + 2.*zp0 + zp1 - zp3 + zsi )
-               ! version without PO4 and Si contribution to alkalinity (for testing purposes only)
-               !zalk  = zalka - (  akw3(i,j,k,l) / zph - zph + zbot / ( 1.+ zph / akb3(i,j,k,l) ) )
 
                ! CALCULATE [H+] AND [H2CO3]
                zah2   = SQRT(  (zdic-zalk)*(zdic-zalk) + 4.* ( zalk * ak23(i,j,k,l)   &
                   &                                        / ak13(i,j,k,l) ) * ( 2.* zdic - zalk )  )
                zah2   = 0.5 * ak13(i,j,k,l) / zalk * ( ( zdic - zalk ) + zah2 )
-               hi(i,j,k,l)   = zah2 * zfact
+               hi(i,j,k,l)   = zah2 * zfact + (1.-tmask(i,j,k))*1.e-7
 
            ENDDO
           ENDDO
@@ -452,16 +450,21 @@ CONTAINS
          DO j=1,jmt
           DO i=1,imt
               ! pH calculated from [H+] in mol L^-1
-              pH(i,j,k,l)=ALOG10(hi(i,j,k,l))*(-1.)
+              pH(i,j,k,l)=ALOG10(hi(i,j,k,l))*(-1.)*tmask(i,j,k)
               ! convert [H+] to  mol kg^-1 (XDIC is in mmol m^-3; CO3 is in mol m^-3; hion and ak* are in mol kg^-1)
               zfact = prhop(i,j,k,l)*0.001 + (1.-tmask(i,j,k))
               hion=hi(i,j,k,l)/zfact
               CO3(i,j,k,l)=XDIC(i,j,k,l)*ak13(i,j,k,l)*ak23(i,j,k,l)/(hion*hion + ak13(i,j,k,l)*hion + ak13(i,j,k,l)*ak23(i,j,k,l))*0.001
+              CO3(i,j,k,l)=CO3(i,j,k,l)*tmask(i,j,k)
+              zca     = Ca*SS(i,j,k,l)/35.                   ! [Ca++] in mol kg-1
+              Om_A(i,j,k,l) = zca * (CO3(i,j,k,l) * 0.001 / zfact) / Kspa(i,j,k,l)      ! to calculate Omega, [CO3--] must be in mol kg^-1
+              Om_C(i,j,k,l) = zca * (CO3(i,j,k,l) * 0.001 / zfact) / Kspc(i,j,k,l)
           ENDDO
          ENDDO
         ENDDO
        ENDDO
 
+      DEALLOCATE( hi, prhop, borat, ak13, ak23, akb3, akw3, akp13, akp23, akp33, aksi3 )
 
    END SUBROUTINE cmip6_cchem
 
@@ -477,15 +480,6 @@ CONTAINS
       INTEGER                 :: i,j,k,l
       INTEGER, DIMENSION (1)  :: ierr                   ! local variable
       REAL :: ztkel, zsal, zt, zt2, zsal2, zlogt, zcek1, ztgg, ztgg2, ztgg3, ztgg4, ztgg5, zoxy 
-
-      !!----------------
-      !! Allocate Arrays
-      !!----------------
-      ALLOCATE( o2sol(imt,jmt,km,lm), STAT=ierr(1) )
-
-      IF (MAXVAL(ierr) /=0) THEN
-         STOP 'Memory allocation error in cmip6_o2sol'
-      ENDIF
 
        DO l=1,lm
         DO k=1,km
@@ -509,14 +503,67 @@ CONTAINS
                    + zsal * ( ox6 + ox7 * ztgg + ox8 * ztgg2 + ox9 * ztgg3 ) +  ox10 * zsal2
 
                 o2sol(i,j,k,l) =  EXP( zoxy  ) * 0.0445919       ! convert to mol m^-3
+                o2sol(i,j,k,l) = o2sol(i,j,k,l) * tmask(i,j,k)
 
           ENDDO
          ENDDO
         ENDDO
        ENDDO
 
-
    END SUBROUTINE cmip6_o2sol
+
+   SUBROUTINE saturation_depth(Om_C, Om_A)
+
+      !!-------------------------------------------------------------
+      !! Purpose: Calculate depth of calcite and aragonite saturation horizon based on criteria given in footnotes to Table 15 in Orr et al, 2017 
+      !! If supersaturated water is never encountered then z_sat=0; if all levels are supersaturated then z_sat=MDV (99999.); otherwise, z_sat is depth of shallowest layer where Omega<1
+      !! A value of 0 will be registered in the unlikely case that there is undersaturation at the surface and a subsurface supersaturation zone
+      !! Input fields:
+      !!            3D: Omega_A, Omega_C
+      !! Output:    depth of saturation horizon
+      !!-------------------------------------------------------------
+      INTEGER                 :: i,j,k,l,jm,isw1,isw2,kk
+      REAL, DIMENSION(imt,jmt,km,lm) :: Om_C, Om_A
+
+       DO l=1,lm
+         DO j=1,jmt
+          DO i=1,imt
+
+           isw1=0
+           isw2=0
+           kk=0
+           DO k=1,km
+            IF (Om_C(i,j,k,l) .GT. 1. .AND. isw1 .EQ. 0) THEN
+             kk=k+1
+            ELSE
+             isw1=1
+             IF (k .EQ. 1) isw2=1
+            ENDIF
+           ENDDO
+           zsat_c(i,j,l)=deptht(kk+1)       ! the RHS here will be garbage in case "all levels are supersaturated" because kk+1>km, but it will be overwritten in the next line
+           IF (isw1 .EQ. 0) zsat_c(i,j,l)=99999.
+           IF (isw1 .EQ. 1 .AND. isw2 .EQ. 1) zsat_c(i,j,l)=0.
+
+           isw1=0
+           isw2=0
+           kk=0
+           DO k=1,km
+            IF (Om_A(i,j,k,l) .GT. 1. .AND. isw1 .EQ. 0) THEN
+             kk=k+1
+            ELSE
+             isw1=1
+             IF (k .EQ. 1) isw2=1
+            ENDIF
+           ENDDO
+           zsat_a(i,j,l)=deptht(kk+1)
+           IF (isw1 .EQ. 0) zsat_a(i,j,l)=99999.
+           IF (isw1 .EQ. 1 .AND. isw2 .EQ. 1) zsat_a(i,j,l)=0.
+
+          ENDDO
+         ENDDO
+        ENDDO
+
+   END SUBROUTINE saturation_depth
 
 END MODULE nemo_diag_cal_cmoc
 

@@ -38,6 +38,7 @@ PROGRAM nemo_diag_cmoc
    LOGICAL   :: exists
    !INTEGER   :: strlen
    INTEGER, DIMENSION(10)            :: ierr
+   REAL, PARAMETER :: Ca=0.010280
    REAL, DIMENSION(:), ALLOCATABLE   :: time
    REAL, DIMENSION(:), ALLOCATABLE   :: ytime
    REAL, DIMENSION(:), ALLOCATABLE   :: x, y
@@ -60,11 +61,11 @@ PROGRAM nemo_diag_cmoc
    ALLOCATE( e3t(imt,jmt,km), tmask(imt,jmt,km), time_bnds(ntbnds,lm), STAT=ierr(1) )
    ALLOCATE( time(lm), ytime(ly), deptht(km), x(imt), y(jmt), STAT=ierr(2) )
    ALLOCATE( nav_lon_t(imt,jmt), nav_lat_t(imt,jmt), STAT=ierr(3) )
-   ALLOCATE( borat(imt,jmt,km,lm), ak13(imt,jmt,km,lm), ak23(imt,jmt,km,lm), akb3(imt,jmt,km,lm), &
-     &       akw3(imt,jmt,km,lm), akp13(imt,jmt,km,lm), akp23(imt,jmt,km,lm), akp33(imt,jmt,km,lm), &
-     &       aksi3(imt,jmt,km,lm), asi3(imt,jmt,km,lm), STAT=ierr(4) )
-   ALLOCATE( TT(imt,jmt,km,lm), SS(imt,jmt,km,lm), CC(imt,jmt,km,lm), CAB(imt,jmt,km,lm), CNT(imt,jmt,km,lm), AA(imt,jmt,km,lm), NO3(imt,jmt,km,lm), STAT=ierr(5) )
-   ALLOCATE( pHfull(imt,jmt,km,lm), CO3full(imt,jmt,km,lm), pHabio(imt,jmt,km,lm), CO3abio(imt,jmt,km,lm), pHnat(imt,jmt,km,lm), CO3nat(imt,jmt,km,lm), STAT=ierr(6) )
+   ALLOCATE( TT(imt,jmt,km,lm), SS(imt,jmt,km,lm), CC(imt,jmt,km,lm), CAB(imt,jmt,km,lm), CNT(imt,jmt,km,lm), AA(imt,jmt,km,lm), NO3(imt,jmt,km,lm), asi3(imt,jmt,km,lm), STAT=ierr(4) )
+   ALLOCATE( pHfull(imt,jmt,km,lm), CO3full(imt,jmt,km,lm), pHabio(imt,jmt,km,lm), CO3abio(imt,jmt,km,lm), pHnat(imt,jmt,km,lm), CO3nat(imt,jmt,km,lm), STAT=ierr(5) )
+   ALLOCATE( K_sp_cal(imt,jmt,km,lm), K_sp_arag(imt,jmt,km,lm), Omega_C(imt,jmt,km,lm), Omega_A(imt,jmt,km,lm), Omega_C_abio(imt,jmt,km,lm), Omega_A_abio(imt,jmt,km,lm), Omega_C_nat(imt,jmt,km,lm), Omega_A_nat(imt,jmt,km,lm), STAT=ierr(6) )
+   ALLOCATE( zsat_c(imt,jmt,lm), zsat_a(imt,jmt,lm), STAT=ierr(7) )
+   ALLOCATE( co3_satc(imt,jmt,km,lm), co3_sata(imt,jmt,km,lm), o2sol(imt,jmt,km,lm), STAT=ierr(8) )
  
    IF (MAXVAL(ierr) /=0) THEN
       STOP 'Memory allocation error in cmip6_nemo_offl'
@@ -149,11 +150,14 @@ PROGRAM nemo_diag_cmoc
    !!---------------------------------------------------------
    !! Computations of solubility product, O2 solubility, pH, carbonate ion
    !!---------------------------------------------------------
-   CALL cmip6_co3sat
+   CALL cmip6_co3sat(K_sp_arag,K_sp_cal)
    CALL cmip6_o2sol
-   CALL cmip6_cchem(CC,AA,CO3full,pHfull)
-   CALL cmip6_cchem(CAB,AA,CO3abio,pHabio)
-   CALL cmip6_cchem(CNT,AA,CO3nat,pHnat)
+   CALL cmip6_cchem(CC,AA,K_sp_cal,K_sp_arag,CO3full,pHfull,Omega_C,Omega_A)
+   CALL cmip6_cchem(CAB,AA,K_sp_cal,K_sp_arag,CO3abio,pHabio,Omega_C_abio,Omega_A_abio)
+   CALL cmip6_cchem(CNT,AA,K_sp_cal,K_sp_arag,CO3nat,pHnat,Omega_C_nat,Omega_A_nat)
+   CALL saturation_depth(Omega_C,Omega_A)
+
+   DEALLOCATE( TT, SS, CC, AA, CAB, CNT, NO3, asi3 )
 
    !!-----------------------------------------------------------------
    !! Output  in NetCDF format
@@ -363,10 +367,10 @@ PROGRAM nemo_diag_cmoc
    ENDIF
 
    ! If the output file does not exist, abort
-   INQUIRE (file="pH.nc", exist=exists)
+   INQUIRE (file="pH3D.nc", exist=exists)
    IF (.not. exists) THEN
       print*,"output file pH.nc not found...creating a new file..."
-      CALL opennew ("pH.nc", iou)
+      CALL opennew ("pH3D.nc", iou)
       ntrec = 1
       CALL redef (iou)
 
@@ -392,18 +396,18 @@ PROGRAM nemo_diag_cmoc
       CALL putatttext (iou, 'deptht', 'valid_max', '5875.141f')
       CALL putatttext (iou, 'deptht', 'title', 'deptht')
       ! pH
-      CALL defvar ('pH', iou, 4, (/id_x, id_y, id_z, id_time/), 0., 0., ' ', 'F', &
-                   'pH', 'pH', ' ')
-      CALL putatttext (iou, 'pH', 'coordinates', 'time_counter deptht nav_lat nav_lon')
+      CALL defvar ('pH3D', iou, 4, (/id_x, id_y, id_z, id_time/), 0., 0., ' ', 'F', &
+                   'pH3D', 'pH3D', ' ')
+      CALL putatttext (iou, 'pH3D', 'coordinates', 'time_counter deptht nav_lat nav_lon')
       CALL enddef (iou)
       !CALL putvara ('nav_lon', iou, imt*jmt, (/1,1/), (/imt, jmt/), nav_lon_t(:,:), 1., 0.)
       !CALL putvara ('nav_lat', iou, imt*jmt, (/1,1/), (/imt, jmt/), nav_lat_t(:,:), 1., 0.)
       CALL putvara ('deptht', iou, km, (/1/), (/km/), deptht(:), 1., 0.)
       CALL putvara ('time_counter', iou, lm, (/1/), (/lm/), time, 1., 0.)
       CALL putvara ('time_counter_bnds', iou, ntbnds*lm, (/1,1/), (/ntbnds,lm/), time_bnds, 1., 0.)
-      CALL putvara ('pH', iou, imt*jmt*km*lm, (/1,1,1,1/), (/imt, jmt, km, lm/), pHfull(:,:,:,:), 1., 0.)
+      CALL putvara ('pH3D', iou, imt*jmt*km*lm, (/1,1,1,1/), (/imt, jmt, km, lm/), pHfull(:,:,:,:), 1., 0.)
       print*, '---------------------'
-      print*, 'pH.nc written OK!'
+      print*, 'pH3D.nc written OK!'
       print*, '---------------------'
       CALL closefile (iou)
    ELSE
@@ -602,4 +606,355 @@ PROGRAM nemo_diag_cmoc
       print*, 'pHnat.nc already exists'
    ENDIF
 
+   ! If the output file does not exist, abort
+   INQUIRE (file="Omega_C.nc", exist=exists)
+   IF (.not. exists) THEN
+      print*,"output file Omega_C.nc not found...creating a new file..."
+      CALL opennew ("Omega_C.nc", iou)
+      ntrec = 1
+      CALL redef (iou)
+
+      ! basic grid specification
+      CALL defdim ('time_counter', iou, 0, id_time)
+      CALL defdim ('tbnds', iou, ntbnds, id_tbnds)
+      CALL defdim ('x', iou, imt, id_x)
+      CALL defdim ('y', iou, jmt, id_y)
+      CALL defdim ('deptht', iou, km, id_z)
+      CALL defvar ('time_counter', iou, 1, (/id_time/), 0., 0., 'T', 'D'   &
+                   , long_name, standard_name, units)
+      CALL putatttext (iou, 'time_counter', 'calendar', calendar)
+      CALL putatttext (iou, 'time_counter', 'title', title)
+      CALL putatttext (iou, 'time_counter', 'time_origin', time_origin)
+      CALL putatttext (iou, 'time_counter', 'bounds', bounds)
+      CALL defvar ('time_counter_bnds', iou, 2, (/id_tbnds, id_time/), 0., 0., ' ', 'D' &
+             , '', '', '')
+      CALL defvar ('deptht', iou, 1, id_z, 0., 0., ' ', 'F', &
+                   'Vertical T levels', 'model_level_number', 'm')
+      CALL putatttext (iou, 'deptht', 'axis', 'Z')
+      CALL putatttext (iou, 'deptht', 'positive', 'down')
+      CALL putatttext (iou, 'deptht', 'valid_min', '3.046773f')
+      CALL putatttext (iou, 'deptht', 'valid_max', '5875.141f')
+      CALL putatttext (iou, 'deptht', 'title', 'deptht')
+      ! Omega_C
+      CALL defvar ('Omega_C', iou, 4, (/id_x, id_y, id_z, id_time/), 0., 0., ' ', 'F', &
+                   'Omega_C', 'Calcite saturation state', '1')
+      CALL putatttext (iou, 'Omega_C', 'coordinates', 'time_counter deptht nav_lat nav_lon')
+      CALL enddef (iou)
+      CALL putvara ('deptht', iou, km, (/1/), (/km/), deptht(:), 1., 0.)
+      CALL putvara ('time_counter', iou, lm, (/1/), (/lm/), time, 1., 0.)
+      CALL putvara ('time_counter_bnds', iou, ntbnds*lm, (/1,1/), (/ntbnds,lm/), time_bnds, 1., 0.)
+      CALL putvara ('Omega_C', iou, imt*jmt*km*lm, (/1,1,1,1/), (/imt, jmt, km, lm/), Omega_C(:,:,:,:), 1., 0.)
+      print*, '---------------------'
+      print*, 'Omega_C.nc written OK!'
+      print*, '---------------------'
+      CALL closefile (iou)
+   ELSE
+      print*, 'Omega_C.nc already exists'
+   ENDIF
+
+   ! If the output file does not exist, abort
+   INQUIRE (file="Omega_C_nat.nc", exist=exists)
+   IF (.not. exists) THEN
+      print*,"output file Omega_C_nat.nc not found...creating a new file..."
+      CALL opennew ("Omega_C_nat.nc", iou)
+      ntrec = 1
+      CALL redef (iou)
+
+      ! basic grid specification
+      CALL defdim ('time_counter', iou, 0, id_time)
+      CALL defdim ('tbnds', iou, ntbnds, id_tbnds)
+      CALL defdim ('x', iou, imt, id_x)
+      CALL defdim ('y', iou, jmt, id_y)
+      CALL defdim ('deptht', iou, km, id_z)
+      CALL defvar ('time_counter', iou, 1, (/id_time/), 0., 0., 'T', 'D'   &
+                   , long_name, standard_name, units)
+      CALL putatttext (iou, 'time_counter', 'calendar', calendar)
+      CALL putatttext (iou, 'time_counter', 'title', title)
+      CALL putatttext (iou, 'time_counter', 'time_origin', time_origin)
+      CALL putatttext (iou, 'time_counter', 'bounds', bounds)
+      CALL defvar ('time_counter_bnds', iou, 2, (/id_tbnds, id_time/), 0., 0., ' ', 'D' &
+             , '', '', '')
+      CALL defvar ('deptht', iou, 1, id_z, 0., 0., ' ', 'F', &
+                   'Vertical T levels', 'model_level_number', 'm')
+      CALL putatttext (iou, 'deptht', 'axis', 'Z')
+      CALL putatttext (iou, 'deptht', 'positive', 'down')
+      CALL putatttext (iou, 'deptht', 'valid_min', '3.046773f')
+      CALL putatttext (iou, 'deptht', 'valid_max', '5875.141f')
+      CALL putatttext (iou, 'deptht', 'title', 'deptht')
+      ! Omega_C_nat
+      CALL defvar ('Omega_C_nat', iou, 4, (/id_x, id_y, id_z, id_time/), 0., 0., ' ', 'F', &
+                   'Omega_C_nat', 'Calcite saturation state for natural DIC', '1')
+      CALL putatttext (iou, 'Omega_C_nat', 'coordinates', 'time_counter deptht nav_lat nav_lon')
+      CALL enddef (iou)
+      CALL putvara ('deptht', iou, km, (/1/), (/km/), deptht(:), 1., 0.)
+      CALL putvara ('time_counter', iou, lm, (/1/), (/lm/), time, 1., 0.)
+      CALL putvara ('time_counter_bnds', iou, ntbnds*lm, (/1,1/), (/ntbnds,lm/), time_bnds, 1., 0.)
+      CALL putvara ('Omega_C_nat', iou, imt*jmt*km*lm, (/1,1,1,1/), (/imt, jmt, km, lm/), Omega_C_nat(:,:,:,:), 1., 0.)
+      print*, '---------------------'
+      print*, 'Omega_C_nat.nc written OK!'
+      print*, '---------------------'
+      CALL closefile (iou)
+   ELSE
+      print*, 'Omega_C_nat.nc already exists'
+   ENDIF
+
+   ! If the output file does not exist, abort
+   INQUIRE (file="Omega_C_abio.nc", exist=exists)
+   IF (.not. exists) THEN
+      print*,"output file Omega_C_abio.nc not found...creating a new file..."
+      CALL opennew ("Omega_C_abio.nc", iou)
+      ntrec = 1
+      CALL redef (iou)
+
+      ! basic grid specification
+      CALL defdim ('time_counter', iou, 0, id_time)
+      CALL defdim ('tbnds', iou, ntbnds, id_tbnds)
+      CALL defdim ('x', iou, imt, id_x)
+      CALL defdim ('y', iou, jmt, id_y)
+      CALL defdim ('deptht', iou, km, id_z)
+      CALL defvar ('time_counter', iou, 1, (/id_time/), 0., 0., 'T', 'D'   &
+                   , long_name, standard_name, units)
+      CALL putatttext (iou, 'time_counter', 'calendar', calendar)
+      CALL putatttext (iou, 'time_counter', 'title', title)
+      CALL putatttext (iou, 'time_counter', 'time_origin', time_origin)
+      CALL putatttext (iou, 'time_counter', 'bounds', bounds)
+      CALL defvar ('time_counter_bnds', iou, 2, (/id_tbnds, id_time/), 0., 0., ' ', 'D' &
+             , '', '', '')
+      CALL defvar ('deptht', iou, 1, id_z, 0., 0., ' ', 'F', &
+                   'Vertical T levels', 'model_level_number', 'm')
+      CALL putatttext (iou, 'deptht', 'axis', 'Z')
+      CALL putatttext (iou, 'deptht', 'positive', 'down')
+      CALL putatttext (iou, 'deptht', 'valid_min', '3.046773f')
+      CALL putatttext (iou, 'deptht', 'valid_max', '5875.141f')
+      CALL putatttext (iou, 'deptht', 'title', 'deptht')
+      ! Omega_C_abio
+      CALL defvar ('Omega_C_abio', iou, 4, (/id_x, id_y, id_z, id_time/), 0., 0., ' ', 'F', &
+                   'Omega_C_abio', 'Calcite saturation state for abiotic DIC', '1')
+      CALL putatttext (iou, 'Omega_C_abio', 'coordinates', 'time_counter deptht nav_lat nav_lon')
+      CALL enddef (iou)
+      CALL putvara ('deptht', iou, km, (/1/), (/km/), deptht(:), 1., 0.)
+      CALL putvara ('time_counter', iou, lm, (/1/), (/lm/), time, 1., 0.)
+      CALL putvara ('time_counter_bnds', iou, ntbnds*lm, (/1,1/), (/ntbnds,lm/), time_bnds, 1., 0.)
+      CALL putvara ('Omega_C_abio', iou, imt*jmt*km*lm, (/1,1,1,1/), (/imt, jmt, km, lm/), Omega_C_abio(:,:,:,:), 1., 0.)
+      print*, '---------------------'
+      print*, 'Omega_C_abio.nc written OK!'
+      print*, '---------------------'
+      CALL closefile (iou)
+   ELSE
+      print*, 'Omega_C_abio.nc already exists'
+   ENDIF
+
+   ! If the output file does not exist, abort
+   INQUIRE (file="Omega_A.nc", exist=exists)
+   IF (.not. exists) THEN
+      print*,"output file Omega_A.nc not found...creating a new file..."
+      CALL opennew ("Omega_A.nc", iou)
+      ntrec = 1
+      CALL redef (iou)
+
+      ! basic grid specification
+      CALL defdim ('time_counter', iou, 0, id_time)
+      CALL defdim ('tbnds', iou, ntbnds, id_tbnds)
+      CALL defdim ('x', iou, imt, id_x)
+      CALL defdim ('y', iou, jmt, id_y)
+      CALL defdim ('deptht', iou, km, id_z)
+      CALL defvar ('time_counter', iou, 1, (/id_time/), 0., 0., 'T', 'D'   &
+                   , long_name, standard_name, units)
+      CALL putatttext (iou, 'time_counter', 'calendar', calendar)
+      CALL putatttext (iou, 'time_counter', 'title', title)
+      CALL putatttext (iou, 'time_counter', 'time_origin', time_origin)
+      CALL putatttext (iou, 'time_counter', 'bounds', bounds)
+      CALL defvar ('time_counter_bnds', iou, 2, (/id_tbnds, id_time/), 0., 0., ' ', 'D' &
+             , '', '', '')
+      CALL defvar ('deptht', iou, 1, id_z, 0., 0., ' ', 'F', &
+                   'Vertical T levels', 'model_level_number', 'm')
+      CALL putatttext (iou, 'deptht', 'axis', 'Z')
+      CALL putatttext (iou, 'deptht', 'positive', 'down')
+      CALL putatttext (iou, 'deptht', 'valid_min', '3.046773f')
+      CALL putatttext (iou, 'deptht', 'valid_max', '5875.141f')
+      CALL putatttext (iou, 'deptht', 'title', 'deptht')
+      ! Omega_A
+      CALL defvar ('Omega_A', iou, 4, (/id_x, id_y, id_z, id_time/), 0., 0., ' ', 'F', &
+                   'Omega_A', 'Aragonite saturation state', '1')
+      CALL putatttext (iou, 'Omega_A', 'coordinates', 'time_counter deptht nav_lat nav_lon')
+      CALL enddef (iou)
+      CALL putvara ('deptht', iou, km, (/1/), (/km/), deptht(:), 1., 0.)
+      CALL putvara ('time_counter', iou, lm, (/1/), (/lm/), time, 1., 0.)
+      CALL putvara ('time_counter_bnds', iou, ntbnds*lm, (/1,1/), (/ntbnds,lm/), time_bnds, 1., 0.)
+      CALL putvara ('Omega_A', iou, imt*jmt*km*lm, (/1,1,1,1/), (/imt, jmt, km, lm/), Omega_A(:,:,:,:), 1., 0.)
+      print*, '---------------------'
+      print*, 'Omega_A.nc written OK!'
+      print*, '---------------------'
+      CALL closefile (iou)
+   ELSE
+      print*, 'Omega_A.nc already exists'
+   ENDIF
+
+   ! If the output file does not exist, abort
+   INQUIRE (file="Omega_A_nat.nc", exist=exists)
+   IF (.not. exists) THEN
+      print*,"output file Omega_A_nat.nc not found...creating a new file..."
+      CALL opennew ("Omega_A_nat.nc", iou)
+      ntrec = 1
+      CALL redef (iou)
+
+      ! basic grid specification
+      CALL defdim ('time_counter', iou, 0, id_time)
+      CALL defdim ('tbnds', iou, ntbnds, id_tbnds)
+      CALL defdim ('x', iou, imt, id_x)
+      CALL defdim ('y', iou, jmt, id_y)
+      CALL defdim ('deptht', iou, km, id_z)
+      CALL defvar ('time_counter', iou, 1, (/id_time/), 0., 0., 'T', 'D'   &
+                   , long_name, standard_name, units)
+      CALL putatttext (iou, 'time_counter', 'calendar', calendar)
+      CALL putatttext (iou, 'time_counter', 'title', title)
+      CALL putatttext (iou, 'time_counter', 'time_origin', time_origin)
+      CALL putatttext (iou, 'time_counter', 'bounds', bounds)
+      CALL defvar ('time_counter_bnds', iou, 2, (/id_tbnds, id_time/), 0., 0., ' ', 'D' &
+             , '', '', '')
+      CALL defvar ('deptht', iou, 1, id_z, 0., 0., ' ', 'F', &
+                   'Vertical T levels', 'model_level_number', 'm')
+      CALL putatttext (iou, 'deptht', 'axis', 'Z')
+      CALL putatttext (iou, 'deptht', 'positive', 'down')
+      CALL putatttext (iou, 'deptht', 'valid_min', '3.046773f')
+      CALL putatttext (iou, 'deptht', 'valid_max', '5875.141f')
+      CALL putatttext (iou, 'deptht', 'title', 'deptht')
+      ! Omega_A_nat
+      CALL defvar ('Omega_A_nat', iou, 4, (/id_x, id_y, id_z, id_time/), 0., 0., ' ', 'F', &
+                   'Omega_A_nat', 'Aragonite saturation state for natural DIC', '1')
+      CALL putatttext (iou, 'Omega_A_nat', 'coordinates', 'time_counter deptht nav_lat nav_lon')
+      CALL enddef (iou)
+      CALL putvara ('deptht', iou, km, (/1/), (/km/), deptht(:), 1., 0.)
+      CALL putvara ('time_counter', iou, lm, (/1/), (/lm/), time, 1., 0.)
+      CALL putvara ('time_counter_bnds', iou, ntbnds*lm, (/1,1/), (/ntbnds,lm/), time_bnds, 1., 0.)
+      CALL putvara ('Omega_A_nat', iou, imt*jmt*km*lm, (/1,1,1,1/), (/imt, jmt, km, lm/), Omega_A_nat(:,:,:,:), 1., 0.)
+      print*, '---------------------'
+      print*, 'Omega_A_nat.nc written OK!'
+      print*, '---------------------'
+      CALL closefile (iou)
+   ELSE
+      print*, 'Omega_A_nat.nc already exists'
+   ENDIF
+
+   ! If the output file does not exist, abort
+   INQUIRE (file="Omega_A_abio.nc", exist=exists)
+   IF (.not. exists) THEN
+      print*,"output file Omega_A_abio.nc not found...creating a new file..."
+      CALL opennew ("Omega_A_abio.nc", iou)
+      ntrec = 1
+      CALL redef (iou)
+
+      ! basic grid specification
+      CALL defdim ('time_counter', iou, 0, id_time)
+      CALL defdim ('tbnds', iou, ntbnds, id_tbnds)
+      CALL defdim ('x', iou, imt, id_x)
+      CALL defdim ('y', iou, jmt, id_y)
+      CALL defdim ('deptht', iou, km, id_z)
+      CALL defvar ('time_counter', iou, 1, (/id_time/), 0., 0., 'T', 'D'   &
+                   , long_name, standard_name, units)
+      CALL putatttext (iou, 'time_counter', 'calendar', calendar)
+      CALL putatttext (iou, 'time_counter', 'title', title)
+      CALL putatttext (iou, 'time_counter', 'time_origin', time_origin)
+      CALL putatttext (iou, 'time_counter', 'bounds', bounds)
+      CALL defvar ('time_counter_bnds', iou, 2, (/id_tbnds, id_time/), 0., 0., ' ', 'D' &
+             , '', '', '')
+      CALL defvar ('deptht', iou, 1, id_z, 0., 0., ' ', 'F', &
+                   'Vertical T levels', 'model_level_number', 'm')
+      CALL putatttext (iou, 'deptht', 'axis', 'Z')
+      CALL putatttext (iou, 'deptht', 'positive', 'down')
+      CALL putatttext (iou, 'deptht', 'valid_min', '3.046773f')
+      CALL putatttext (iou, 'deptht', 'valid_max', '5875.141f')
+      CALL putatttext (iou, 'deptht', 'title', 'deptht')
+      ! Omega_A_abio
+      CALL defvar ('Omega_A_abio', iou, 4, (/id_x, id_y, id_z, id_time/), 0., 0., ' ', 'F', &
+                   'Omega_A_abio', 'Aragonite saturation state for abiotic DIC', '1')
+      CALL putatttext (iou, 'Omega_A_abio', 'coordinates', 'time_counter deptht nav_lat nav_lon')
+      CALL enddef (iou)
+      CALL putvara ('deptht', iou, km, (/1/), (/km/), deptht(:), 1., 0.)
+      CALL putvara ('time_counter', iou, lm, (/1/), (/lm/), time, 1., 0.)
+      CALL putvara ('time_counter_bnds', iou, ntbnds*lm, (/1,1/), (/ntbnds,lm/), time_bnds, 1., 0.)
+      CALL putvara ('Omega_A_abio', iou, imt*jmt*km*lm, (/1,1,1,1/), (/imt, jmt, km, lm/), Omega_A_abio(:,:,:,:), 1., 0.)
+      print*, '---------------------'
+      print*, 'Omega_A_abio.nc written OK!'
+      print*, '---------------------'
+      CALL closefile (iou)
+   ELSE
+      print*, 'Omega_A_abio.nc already exists'
+   ENDIF
+
+   ! If the output file does not exist, abort
+   INQUIRE (file="Zsat_A.nc", exist=exists)
+   IF (.not. exists) THEN
+      print*,"output file Zsat_A.nc not found...creating a new file..."
+      CALL opennew ("Zsat_A.nc", iou)
+      ntrec = 1
+      CALL redef (iou)
+
+      ! basic grid specification
+      CALL defdim ('time_counter', iou, 0, id_time)
+      CALL defdim ('tbnds', iou, ntbnds, id_tbnds)
+      CALL defdim ('x', iou, imt, id_x)
+      CALL defdim ('y', iou, jmt, id_y)
+      CALL defvar ('time_counter', iou, 1, (/id_time/), 0., 0., 'T', 'D'   &
+                   , long_name, standard_name, units)
+      CALL putatttext (iou, 'time_counter', 'calendar', calendar)
+      CALL putatttext (iou, 'time_counter', 'title', title)
+      CALL putatttext (iou, 'time_counter', 'time_origin', time_origin)
+      CALL putatttext (iou, 'time_counter', 'bounds', bounds)
+      CALL defvar ('time_counter_bnds', iou, 2, (/id_tbnds, id_time/), 0., 0., ' ', 'D' &
+             , '', '', '')
+      ! Zsat_A
+      CALL defvar ('Zsat_A', iou, 3, (/id_x, id_y, id_time/), 0., 0., ' ', 'F', &
+                   'Zsat_A', 'Aragonite saturation horizon depth', 'm')
+      CALL putatttext (iou, 'Zsat_A', 'coordinates', 'time_counter deptht nav_lat nav_lon')
+      CALL enddef (iou)
+      CALL putvara ('time_counter', iou, lm, (/1/), (/lm/), time, 1., 0.)
+      CALL putvara ('time_counter_bnds', iou, ntbnds*lm, (/1,1/), (/ntbnds,lm/), time_bnds, 1., 0.)
+      CALL putvara ('Zsat_A', iou, imt*jmt*lm, (/1,1,1/), (/imt, jmt, lm/), zsat_a(:,:,:), 1., 0.)
+      print*, '---------------------'
+      print*, 'Zsat_A.nc written OK!'
+      print*, '---------------------'
+      CALL closefile (iou)
+   ELSE
+      print*, 'Zsat_A.nc already exists'
+   ENDIF
+
+   ! If the output file does not exist, abort
+   INQUIRE (file="Zsat_C.nc", exist=exists)
+   IF (.not. exists) THEN
+      print*,"output file Zsat_C.nc not found...creating a new file..."
+      CALL opennew ("Zsat_C.nc", iou)
+      ntrec = 1
+      CALL redef (iou)
+
+      ! basic grid specification
+      CALL defdim ('time_counter', iou, 0, id_time)
+      CALL defdim ('tbnds', iou, ntbnds, id_tbnds)
+      CALL defdim ('x', iou, imt, id_x)
+      CALL defdim ('y', iou, jmt, id_y)
+      CALL defvar ('time_counter', iou, 1, (/id_time/), 0., 0., 'T', 'D'   &
+                   , long_name, standard_name, units)
+      CALL putatttext (iou, 'time_counter', 'calendar', calendar)
+      CALL putatttext (iou, 'time_counter', 'title', title)
+      CALL putatttext (iou, 'time_counter', 'time_origin', time_origin)
+      CALL putatttext (iou, 'time_counter', 'bounds', bounds)
+      CALL defvar ('time_counter_bnds', iou, 2, (/id_tbnds, id_time/), 0., 0., ' ', 'D' &
+             , '', '', '')
+      ! Zsat_C
+      CALL defvar ('Zsat_C', iou, 3, (/id_x, id_y, id_time/), 0., 0., ' ', 'F', &
+                   'Zsat_C', 'Calcite saturation horizon depth', 'm')
+      CALL putatttext (iou, 'Zsat_C', 'coordinates', 'time_counter deptht nav_lat nav_lon')
+      CALL enddef (iou)
+      CALL putvara ('time_counter', iou, lm, (/1/), (/lm/), time, 1., 0.)
+      CALL putvara ('time_counter_bnds', iou, ntbnds*lm, (/1,1/), (/ntbnds,lm/), time_bnds, 1., 0.)
+      CALL putvara ('Zsat_C', iou, imt*jmt*lm, (/1,1,1/), (/imt, jmt, lm/), zsat_c(:,:,:), 1., 0.)
+      print*, '---------------------'
+      print*, 'Zsat_C.nc written OK!'
+      print*, '---------------------'
+      CALL closefile (iou)
+   ELSE
+      print*, 'Zsat_C.nc already exists'
+   ENDIF
+
 END PROGRAM nemo_diag_cmoc
+
