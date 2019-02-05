@@ -49,7 +49,7 @@ CONTAINS
       TYPE(DIAG), DIMENSION(jp_cfc_2d) :: cfcdia2d
       TYPE(DIAG), DIMENSION(jp_cfc_3d) :: cfcdia3d
       !!
-      NAMELIST/namcfcparam/ offset_cfc_year, cfc_nc_file
+      NAMELIST/namcfcparam/ offset_cfc_year, cfc_nc_file, ln_reset_cfc, nn_reset_cfc
       NAMELIST/namcfcdia/ cfcdia2d ! additional diagnostics
       !!-------------------------------------------------------------------
 
