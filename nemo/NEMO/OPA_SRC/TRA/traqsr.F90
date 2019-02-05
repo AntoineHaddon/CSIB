@@ -134,13 +134,17 @@ CONTAINS
          !                                        ! -----------------------------------
          IF( ln_rstart .AND.    &                    ! Restart: read in restart file
               & iom_varid( numror, 'qsr_hc_b', ldstop = .FALSE. ) > 0 ) THEN
+            IF(lwp) WRITE(numout,*) '          nit000-1 qsr tracer content forcing field red in the restart file'
             zfact = 0.5e0
+            CALL iom_get( numror, jpdom_autoglo, 'qsr_hc_b', qsr_hc_b )   ! before heat content trend due to Qsr flux
          ELSE                                           ! No restart or restart not found: Euler forward time stepping
             zfact = 1.e0
+            qsr_hc_b(:,:,:) = 0.e0
          ENDIF
       ELSE                                        ! Swap of forcing field
          !                                        ! ---------------------
          zfact = 0.5e0
+         qsr_hc_b(:,:,:) = qsr_hc(:,:,:)
       ENDIF
       !                                        Compute now qsr tracer content field
       !                                        ************************************
