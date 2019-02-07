@@ -23,6 +23,7 @@ MODULE nemo_diag_cal_cmoc
    PUBLIC cmip6_cchem
    PUBLIC cmip6_o2sol
    PUBLIC saturation_depth
+   PUBLIC cmip6_zo2min
    PUBLIC density
 
    REAL, PARAMETER :: salchl = 1. / 1.80655    ! conversion factor for salinity --> chlorinity (Wooster et al. 1969)
@@ -490,7 +491,7 @@ CONTAINS
       !!            3D: Omega_A, Omega_C
       !! Output:    depth of saturation horizon
       !!-------------------------------------------------------------
-      INTEGER                 :: i,j,k,l,jm,isw1,isw2,kk
+      INTEGER                 :: i,j,k,l,isw1,isw2,kk
       REAL, DIMENSION(imt,jmt,km,lm) :: Om_C, Om_A
 
        DO l=1,lm
@@ -533,8 +534,36 @@ CONTAINS
 
    END SUBROUTINE saturation_depth
 
-   SUBROUTINE density
+   SUBROUTINE cmip6_zo2min
 
+      !!-------------------------------------------------------------------------------------------------------
+      !! Purpose: Calculate minimum oxygen concentration over the water column and the depth at which it occurs
+      !! Input fields:
+      !!            3D: O2
+      !! Output:    minimum oxygen concentration, depth of minimum oxygen concentration
+      !!-------------------------------------------------------------------------------------------------------
+      INTEGER                 :: i,j,k,l
+
+       DO l=1,lm
+         DO j=1,jmt
+          DO i=1,imt
+
+           o2min(i,j,l)=O2(i,j,1,l)*1.e-3
+           zo2min(i,j,l)=0.
+           DO k=1,km
+            IF (O2(i,j,k,l)*1.e-3 .LT. o2min(i,j,l) .AND. tmask(i,j,k) .NE. 0.) THEN
+             o2min(i,j,l)=O2(i,j,k,l)*1.e-3
+             zo2min(i,j,l)=deptht(k)
+            ENDIF
+           ENDDO
+
+          ENDDO
+         ENDDO
+        ENDDO
+
+   END SUBROUTINE cmip6_zo2min
+
+   SUBROUTINE density
       !!-------------------------------------------------------------
       !! Purpose: Calculate seawater potential density (from eosbn2.F90)
       !! Input fields:

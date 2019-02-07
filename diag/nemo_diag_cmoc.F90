@@ -5,7 +5,7 @@ PROGRAM nemo_diag_cmoc
    !!                  CMIP6 nemo offline diagnostics
    !!===============================================================
    !! 2018-04 (D. Yang): Original code
-   !! 2019-01 (J. Christian): biogeochemistry (CMOC) version
+   !! 2019-02 (J. Christian): biogeochemistry (CMOC) version
    !!---------------------------------------------------------------
    !!
    !!---------------------------------------------------------------
@@ -13,7 +13,8 @@ PROGRAM nemo_diag_cmoc
    !! 3D: e3t, tmask
    !! 
    !! OUTPUT FIELDS
-   !! 3D: [CO3--]sat, [CO3--], pH, [O2]sat, abiotic and natural pH and [CO3--]
+   !! 3D: [CO3--]sat, [CO3--], pH, [O2]sat, abiotic and natural pH and [CO3--], Omaega_A, Omega_C
+   !! 2D: calcite and aragonite saturation depth, minimum [O2], depth of minimum [O2]
    !!
    !! INPUT FILES
    !! grid_t
@@ -21,7 +22,8 @@ PROGRAM nemo_diag_cmoc
    !! orca_mesh_mask
    !!
    !! OUTPUT FILES
-   !! CO3sata.nc, CO3sata.nc, CO3.nc pH.nc, O2sat.nc, pHabio.nc, pHnat.nc, CO3abio.nc, CO3nat.nc
+   !! CO3sata.nc, CO3satc.nc, o2sol.nc, CO3.nc, pH3D.nc, CO3abio.nc, pHabio.nc, CO3nat.nc, pHnat.nc, Omega_C.nc, Omega_C_nat.nc, Omega_C_abio.nc, Omega_A.nc, Omega_A_nat.nc, Omega_A_abio.nc, 
+   !! Zsat_A.nc, Zsat_C.nc, o2min.nc, zo2min.nc
    !!---------------------------------------------------------------
    USE nemo_diag_glovars_cmoc     ! global variable declarations
    USE nemo_diag_cal_cmoc         ! diagnostics calculations
@@ -61,10 +63,10 @@ PROGRAM nemo_diag_cmoc
    ALLOCATE( e3t(imt,jmt,km), tmask(imt,jmt,km), time_bnds(ntbnds,lm), STAT=ierr(1) )
    ALLOCATE( time(lm), ytime(ly), deptht(km), x(imt), y(jmt), STAT=ierr(2) )
    ALLOCATE( nav_lon_t(imt,jmt), nav_lat_t(imt,jmt), STAT=ierr(3) )
-   ALLOCATE( TT(imt,jmt,km,lm), SS(imt,jmt,km,lm), CC(imt,jmt,km,lm), CAB(imt,jmt,km,lm), CNT(imt,jmt,km,lm), AA(imt,jmt,km,lm), NO3(imt,jmt,km,lm), asi3(imt,jmt,km,lm), STAT=ierr(4) )
+   ALLOCATE( TT(imt,jmt,km,lm), SS(imt,jmt,km,lm), CC(imt,jmt,km,lm), CAB(imt,jmt,km,lm), CNT(imt,jmt,km,lm), AA(imt,jmt,km,lm), NO3(imt,jmt,km,lm), O2(imt,jmt,km,lm), asi3(imt,jmt,km,lm), STAT=ierr(4) )
    ALLOCATE( pHfull(imt,jmt,km,lm), CO3full(imt,jmt,km,lm), pHabio(imt,jmt,km,lm), CO3abio(imt,jmt,km,lm), pHnat(imt,jmt,km,lm), CO3nat(imt,jmt,km,lm), STAT=ierr(5) )
    ALLOCATE( K_sp_cal(imt,jmt,km,lm), K_sp_arag(imt,jmt,km,lm), Omega_C(imt,jmt,km,lm), Omega_A(imt,jmt,km,lm), Omega_C_abio(imt,jmt,km,lm), Omega_A_abio(imt,jmt,km,lm), Omega_C_nat(imt,jmt,km,lm), Omega_A_nat(imt,jmt,km,lm), STAT=ierr(6) )
-   ALLOCATE( zsat_c(imt,jmt,lm), zsat_a(imt,jmt,lm), STAT=ierr(7) )
+   ALLOCATE( zsat_c(imt,jmt,lm), zsat_a(imt,jmt,lm), o2min(imt,jmt,lm), zo2min(imt,jmt,lm), STAT=ierr(7) )
    ALLOCATE( prhop(imt,jmt,km,lm), co3_satc(imt,jmt,km,lm), co3_sata(imt,jmt,km,lm), o2sol(imt,jmt,km,lm), STAT=ierr(8) )
  
    IF (MAXVAL(ierr) /=0) THEN
@@ -139,6 +141,8 @@ PROGRAM nemo_diag_cmoc
    CALL getvara ('Alkalini', iou3, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), AA, 1., 0.)
    ! Nitrate
    CALL getvara ('NO3', iou3, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), NO3, 1., 0.)
+   ! Oxygen
+   CALL getvara ('O2', iou3, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), O2, 1., 0.)
    ! Silicate
    CALL getvara ('Si', iou4, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), asi3, 1., 0.)
    print*, '-------------------'
@@ -153,6 +157,7 @@ PROGRAM nemo_diag_cmoc
    CALL density
    CALL cmip6_co3sat(K_sp_arag,K_sp_cal)
    CALL cmip6_o2sol
+   CALL cmip6_zo2min
    CALL cmip6_cchem(CC,AA,K_sp_cal,K_sp_arag,CO3full,pHfull,Omega_C,Omega_A)
    CALL cmip6_cchem(CAB,AA,K_sp_cal,K_sp_arag,CO3abio,pHabio,Omega_C_abio,Omega_A_abio)
    CALL cmip6_cchem(CNT,AA,K_sp_cal,K_sp_arag,CO3nat,pHnat,Omega_C_nat,Omega_A_nat)
@@ -955,6 +960,80 @@ PROGRAM nemo_diag_cmoc
       CALL closefile (iou)
    ELSE
       print*, 'Zsat_C.nc already exists'
+   ENDIF
+
+   ! If the output file does not exist, abort
+   INQUIRE (file="o2min.nc", exist=exists)
+   IF (.not. exists) THEN
+      print*,"output file o2min.nc not found...creating a new file..."
+      CALL opennew ("o2min.nc", iou)
+      ntrec = 1
+      CALL redef (iou)
+
+      ! basic grid specification
+      CALL defdim ('time_counter', iou, 0, id_time)
+      CALL defdim ('tbnds', iou, ntbnds, id_tbnds)
+      CALL defdim ('x', iou, imt, id_x)
+      CALL defdim ('y', iou, jmt, id_y)
+      CALL defvar ('time_counter', iou, 1, (/id_time/), 0., 0., 'T', 'D'   &
+                   , long_name, standard_name, units)
+      CALL putatttext (iou, 'time_counter', 'calendar', calendar)
+      CALL putatttext (iou, 'time_counter', 'title', title)
+      CALL putatttext (iou, 'time_counter', 'time_origin', time_origin)
+      CALL putatttext (iou, 'time_counter', 'bounds', bounds)
+      CALL defvar ('time_counter_bnds', iou, 2, (/id_tbnds, id_time/), 0., 0., ' ', 'D' &
+             , '', '', '')
+      ! o2min
+      CALL defvar ('o2min', iou, 3, (/id_x, id_y, id_time/), 0., 0., ' ', 'F', &
+                   'o2min', 'Minimum oxygen concentration', 'mol m^-3')
+      CALL putatttext (iou, 'o2min', 'coordinates', 'time_counter deptht nav_lat nav_lon')
+      CALL enddef (iou)
+      CALL putvara ('time_counter', iou, lm, (/1/), (/lm/), time, 1., 0.)
+      CALL putvara ('time_counter_bnds', iou, ntbnds*lm, (/1,1/), (/ntbnds,lm/), time_bnds, 1., 0.)
+      CALL putvara ('o2min', iou, imt*jmt*lm, (/1,1,1/), (/imt, jmt, lm/), o2min(:,:,:), 1., 0.)
+      print*, '---------------------'
+      print*, 'o2min.nc written OK!'
+      print*, '---------------------'
+      CALL closefile (iou)
+   ELSE
+      print*, 'o2min.nc already exists'
+   ENDIF
+
+   ! If the output file does not exist, abort
+   INQUIRE (file="zo2min.nc", exist=exists)
+   IF (.not. exists) THEN
+      print*,"output file zo2min.nc not found...creating a new file..."
+      CALL opennew ("zo2min.nc", iou)
+      ntrec = 1
+      CALL redef (iou)
+
+      ! basic grid specification
+      CALL defdim ('time_counter', iou, 0, id_time)
+      CALL defdim ('tbnds', iou, ntbnds, id_tbnds)
+      CALL defdim ('x', iou, imt, id_x)
+      CALL defdim ('y', iou, jmt, id_y)
+      CALL defvar ('time_counter', iou, 1, (/id_time/), 0., 0., 'T', 'D'   &
+                   , long_name, standard_name, units)
+      CALL putatttext (iou, 'time_counter', 'calendar', calendar)
+      CALL putatttext (iou, 'time_counter', 'title', title)
+      CALL putatttext (iou, 'time_counter', 'time_origin', time_origin)
+      CALL putatttext (iou, 'time_counter', 'bounds', bounds)
+      CALL defvar ('time_counter_bnds', iou, 2, (/id_tbnds, id_time/), 0., 0., ' ', 'D' &
+             , '', '', '')
+      ! zo2min
+      CALL defvar ('zo2min', iou, 3, (/id_x, id_y, id_time/), 0., 0., ' ', 'F', &
+                   'zo2min', 'Depth of minimum oxygen concentration', 'm')
+      CALL putatttext (iou, 'zo2min', 'coordinates', 'time_counter deptht nav_lat nav_lon')
+      CALL enddef (iou)
+      CALL putvara ('time_counter', iou, lm, (/1/), (/lm/), time, 1., 0.)
+      CALL putvara ('time_counter_bnds', iou, ntbnds*lm, (/1,1/), (/ntbnds,lm/), time_bnds, 1., 0.)
+      CALL putvara ('zo2min', iou, imt*jmt*lm, (/1,1,1/), (/imt, jmt, lm/), zo2min(:,:,:), 1., 0.)
+      print*, '---------------------'
+      print*, 'zo2min.nc written OK!'
+      print*, '---------------------'
+      CALL closefile (iou)
+   ELSE
+      print*, 'zo2min.nc already exists'
    ENDIF
 
 END PROGRAM nemo_diag_cmoc

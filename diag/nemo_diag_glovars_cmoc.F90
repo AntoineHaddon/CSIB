@@ -16,7 +16,7 @@ MODULE nemo_diag_glovars_cmoc
       REAL, DIMENSION(:), ALLOCATABLE         :: deptht
       REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: TT, SS
       REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: CC, AA, CAB, CNT
-      REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: asi3, NO3
+      REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: asi3, NO3, O2
       REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: co3_sata, co3_satc
       REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: CO3full, pHfull
       REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: CO3abio, pHabio, CO3nat, pHnat
@@ -25,6 +25,7 @@ MODULE nemo_diag_glovars_cmoc
       REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: Omega_C_nat, Omega_A_nat
       REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: prhop, o2sol
       REAL, DIMENSION(:,:,:), ALLOCATABLE     :: zsat_a, zsat_c
+      REAL, DIMENSION(:,:,:), ALLOCATABLE     :: o2min, zo2min
  
 END MODULE nemo_diag_glovars_cmoc
 
