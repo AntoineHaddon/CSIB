@@ -132,6 +132,8 @@ CONTAINS
                END DO
             END DO
             emps(:,:) = emp (:,:)                                    ! Initialization of emps (needed when no ice model)
+
+            CALL iom_put("fafemp_x_sss",sf_fafmip(jp_emp)%fnow(:,:,1)*tsn(:,:,1,jp_sal))
          ENDIF
 
       ENDIF
