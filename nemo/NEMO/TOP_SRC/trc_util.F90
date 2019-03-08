@@ -32,20 +32,20 @@ MODULE trc_util
       INTEGER, DIMENSION(NF90_MAX_VAR_DIMS) :: dimid_loc
 
       ! Get the variable id name and other information about the variable
-      CALL chkerr( nf90_inq_varid(ncid, varname, varid), 'trc_util', 0 )
-      CALL chkerr( nf90_inquire_variable(ncid, varid, ndims=ndim, dimids=dimid_loc), 'trc_util', 0)
+      CALL chkerr( nf90_inq_varid(ncid, varname, varid), 'read_var1d', 0 )
+      CALL chkerr( nf90_inquire_variable(ncid, varid, ndims=ndim, dimids=dimid_loc), 'read_var1d', 0)
       ! Consistency checks
       IF (ndim /= 1) &
           CALL ctl_stop( 'STOP', 'read_var1d: read_var1d was called for a variable with more than 1 dimension')
 
       ! Allocate if necessary
       IF (.NOT. ALLOCATED(varout)) THEN
-         CALL chkerr(nf90_inquire_dimension(ncid, dimid_loc(1), len = dimlen_loc), 'trc_util', 0)
+         CALL chkerr(nf90_inquire_dimension(ncid, dimid_loc(1), len = dimlen_loc), 'read_var1d', 0)
          ALLOCATE( varout(dimlen_loc) )
       ENDIF
 
       varout(:) = 0.
-      CALL chkerr( nf90_get_var(ncid, varid, varout), 'trc_util', 0 )
+      CALL chkerr( nf90_get_var(ncid, varid, varout), 'read_var1d', 0 )
 
       IF (PRESENT(dimlen)) dimlen = dimlen_loc
 
@@ -64,21 +64,21 @@ MODULE trc_util
       INTEGER, DIMENSION(NF90_MAX_VAR_DIMS) :: dimid_loc
 
       ! Get the variable id name and other information about the variable
-      CALL chkerr( nf90_inq_varid(ncid, varname, varid), 'trc_util', 0 )
-      CALL chkerr( nf90_inquire_variable(ncid, varid, ndims=ndim, dimids=dimid_loc), 'trc_util', 0)
+      CALL chkerr( nf90_inq_varid(ncid, varname, varid), 'read_var2d', 0 )
+      CALL chkerr( nf90_inquire_variable(ncid, varid, ndims=ndim, dimids=dimid_loc), 'read_var2d', 0)
       ! Consistency checks
       IF (ndim /= 2) &
           CALL ctl_stop( 'STOP', 'read_var2d: read_var2d was called for a variable with more than 1 dimension')
 
       ! Allocate if necessary
       IF (.NOT. ALLOCATED(varout)) THEN
-         CALL chkerr(nf90_inquire_dimension(ncid, dimid_loc(1), len = dimlen_loc1), 'trc_util', 0)
-         CALL chkerr(nf90_inquire_dimension(ncid, dimid_loc(2), len = dimlen_loc2), 'trc_util', 0)
+         CALL chkerr(nf90_inquire_dimension(ncid, dimid_loc(1), len = dimlen_loc1), 'read_var2d', 0)
+         CALL chkerr(nf90_inquire_dimension(ncid, dimid_loc(2), len = dimlen_loc2), 'read_var2d', 0)
          ALLOCATE( varout(dimlen_loc1,dimlen_loc2) )
       ENDIF
 
       varout(:,:) = 0.
-      CALL chkerr( nf90_get_var(ncid, varid, varout), 'trc_util', 0 )
+      CALL chkerr( nf90_get_var(ncid, varid, varout), 'read_var2d', 0 )
 
       IF (PRESENT(dimlen1)) dimlen1 = dimlen_loc1
       IF (PRESENT(dimlen2)) dimlen2 = dimlen_loc2

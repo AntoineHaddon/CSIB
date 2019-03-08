@@ -113,6 +113,7 @@ echo "#################### Start NEMO pre-processing #################"
   nemo_namelist_top=${nemo_namelist_top:=''}
   nemo_namelist_pisces=${nemo_namelist_pisces:=''}
   nemo_namelist_cmoc=${nemo_namelist_cmoc:=''}
+  nemo_namelist_cfc=${nemo_namelist_cfc:=''}
 
 # Normally user suppled namelist files are only required when starting the model
 # from rest. Otherwise the namelist files are stored in the restart archive and
@@ -282,11 +283,11 @@ echo "#################### Start NEMO pre-processing #################"
       DATAPATH=${JHOME_DATA:=$DATAPATH}
       RUNPATH=${JHOME_DATA:=$RUNPATH}
     fi
-    access $local_file $remote_file $* ||
-      cp $remote_file $local_file ||
-      bail "--> acc_cp $local_file $remote_file $* <-- Unable to locate $remote_file"
+    access $local_file $remote_file $* 
+      #cp $remote_file $local_file ||
+      #bail "--> acc_cp $local_file $remote_file $* <-- Unable to locate $remote_file"
 
-    sha1sum $local_file >> xnemo_access_log
+    # sha1sum $local_file >> xnemo_access_log
   }
 
   find_nemo_config_EXP00() {
@@ -640,12 +641,6 @@ echo "#################### Start NEMO pre-processing #################"
       fi
     fi
 
-    # If CFCs are enabled we need to override namelist_top and namelist_cfc       
-    if [ $nemo_cfc -eq 1 ]; then         
-       find_nemo_config_EXP00 namelist_cfc namelist_cfc
-       find_nemo_config_EXP00 namelist_top namelist_top_cfc
-    fi
-
     if [ ! -x nemo.exe ]; then
       # Get a local copy of the NEMO executable
       [ -z "$nemo_exec" ] && bail "nemo_exec must be defined."
@@ -930,6 +925,13 @@ echo "#################### Start NEMO pre-processing #################"
       fi
     fi
 
+    # If CFCs are enabled we need to override namelist_top and namelist_cfc       
+    if [ $nemo_cfc -eq 1 ]; then         
+       find_nemo_config_EXP00 namelist_cfc $nemo_namelist_cfc
+       find_nemo_config_EXP00 namelist_top_cfc $nemo_namelist_top_cfc
+       mv namelist_top_cfc namelist_top
+    fi
+
     # job number
     # Increment the job number from the previous namelist file
     prev_no=`sed -n '/^ *nn_no *=/p' rs_namelist|sed 's/^.*= *\([^ \t\!]*\).*/\1/'`
@@ -1044,11 +1046,6 @@ echo "#################### Start NEMO pre-processing #################"
   # Modify the input top namelist
   if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
     mod_nl namelist_top ln_rsttr cn_trcrst_in cn_trcrst_out
-  fi
-
-  # Modify cfc namelist and copy over input file     
-  if [ $nemo_cfc -eq 1 ]; then         
-    mod_nl namelist_cfc offset_cfc_year         
   fi
 
   # Access files required to run NEMO
@@ -1226,6 +1223,9 @@ echo "#################### Start NEMO pre-processing #################"
     #cfc atmospheric history 
     nemo_cfc_atmhist=ras003_nemo_cfc_atmhist.nc
 
+    #c14 atmospheric history
+    nemo_data_atc14c=omip6_delta14co2.nc
+
     [ -s data_dic_nomask.nc ]      || acc_cp data_dic_nomask.nc        $nemo_data_dic_nomask
     [ -s data_alkalini_nomask.nc ] || acc_cp data_alkalini_nomask.nc   $nemo_data_alkalini_nomask
     [ -s data_o2_nomask.nc ]       || acc_cp data_o2_nomask.nc         $nemo_data_o2_nomask
@@ -1241,14 +1241,20 @@ echo "#################### Start NEMO pre-processing #################"
     [ -s data_c14t_abio_nomask.nc ] ||  acc_cp data_c14t_abio_nomask.nc  $nemo_data_c14t_abio_nomask       
     [ -s data_ct_abio_nomask.nc ]   ||  acc_cp data_ct_abio_nomask.nc    $nemo_data_ct_abio_nomask       
     [ -s data_o2abio_nomask.nc ]    ||  acc_cp data_o2abio_nomask.nc     $nemo_data_o2_abio_nomask
+    
+    #ln_c14int=${ln_c14int:=.true.}  # 
+    if [ "$ln_c14int" = ".true." ]; then     
+      [ -s omip6_Delta14co2.nc ] ||  acc_cp omip6_Delta14co2.nc       $nemo_data_atc14c 
+    fi
 
     if [ "$nemo_cfc" -eq 1 ]; then         
-    [ -s nemo_cfc_atmhist.nc ]      ||  acc_cp nemo_cfc_atmhist.nc       $nemo_cfc_atmhist     
+      [ -s nemo_cfc_atmhist.nc ]      ||  acc_cp nemo_cfc_atmhist.nc       $nemo_cfc_atmhist
+      [ -n "$cfc_offset_year"  ]      &&  mod_nl namelist_cfc offset_cfc_year
     fi
 
     # Modify the pisces namelist to read CO2 from file, if specified in makefile
-    ln_co2int=${ln_co2int:=.false.} # read atm pco2 from a file (T) or constant (F)
-    mod_nl namelist_pisces ln_co2int
+     ln_co2int=${ln_co2int:=.false.} # read atm pco2 from a file (T) or constant (F)
+    mod_nl namelist_pisces ln_co2int ln_c14int 
 
     # Reset sn_rcv_co2 and sn_snd_co2 in namelist if requested by the user
     if [ $nemo_trans_co2 -eq 0 ]; then

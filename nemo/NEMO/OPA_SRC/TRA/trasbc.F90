@@ -8,6 +8,7 @@ MODULE trasbc
    !!  NEMO      1.0  !  2002-06  (G. Madec)  F90: Free form and module
    !!            3.3  !  2010-04  (M. Leclair, G. Madec)  Forcing averaged over 2 time steps
    !!             -   !  2010-09  (C. Ethe, G. Madec) Merge TRA-TRC
+   !!            3.4.1!  2018-11  (D. Yang) Output total virtual salt flux entering the ocean for OMIP
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -20,7 +21,9 @@ MODULE trasbc
    USE traqsr          ! solar radiation penetration
    USE trdmod_oce      ! ocean trends 
    USE trdtra          ! ocean trends
+   USE ice_2           ! LIM-2: ice variables
    USE in_out_manager  ! I/O manager
+   USE diaar5, ONLY :   lk_diaar5
    USE prtctl          ! Print control
    USE restart         ! ocean restart
    USE sbcrnf          ! River runoff  
@@ -34,6 +37,8 @@ MODULE trasbc
    PRIVATE
 
    PUBLIC   tra_sbc    ! routine called by step.F90
+
+   REAL(wp)  ::   r1_rdtice  ! = 1. / rdt_ice
 
    !! * Substitutions
 #  include "domzgr_substitute.h90"
@@ -121,6 +126,7 @@ CONTAINS
       ENDIF
 
       zsrau = 1. / rau0             ! initialization
+      r1_rdtice = 1._wp / rdt_ice
 
       IF( l_trdtra )   THEN                    !* Save ta and sa trends
          CALL wrk_alloc( jpi, jpj, jpk, ztrdt, ztrds ) 
@@ -181,6 +187,12 @@ CONTAINS
             END DO
          END DO
       ENDIF
+      ! 
+      ! Output total virtual salt flux entering the ocean (vsf = emp_x_sss * 0.001) for OMIP.
+      ! emp = evaporation - precipitation - runoff + snow melt over sea ice (Freezing minus Melting)
+      ! rdmicif * r1_rdtice is Freezing minus Melting (F-M)
+      IF( lk_diaar5 ) CALL iom_put( "emp_x_sss", ( emp(:,:) + rdmicif(:,:) * r1_rdtice ) * tsn(:,:,1,jp_sal) )
+      !
       ! Concentration dilution effect on (t,s) due to evapouration, precipitation and qns, but not river runoff  
       DO jn = 1, jpts
          DO jj = 2, jpj
