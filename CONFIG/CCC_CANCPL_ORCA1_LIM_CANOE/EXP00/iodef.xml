@@ -61,19 +61,20 @@
       
       <group id="SBC" axis_ref="none" grid_ref="grid_T" > <!-- time step automaticaly defined based on nn_fsbc -->
 
-	<field id="empmr"        description="Net Upward Water Flux"                                        unit="kg/m2/s"  />
-	<field id="empsmr"       description="concentration/dilution water flux"                            unit="kg/m2/s"  />
-	<field id="snowpre"      description="Snow precipitation"                                           unit="kg/m2/s"  />
-	<field id="runoffs"      description="River Runoffs"                                                unit="Kg/m2/s"  />
+        <field id="empmr"        description="Net Upward Water Flux"                                        unit="kg/m2/s"  />
+        <field id="empsmr"       description="concentration/dilution water flux"                            unit="kg/m2/s"  />
+        <field id="snowpre"      description="Snow precipitation"                                           unit="kg/m2/s"  />
+        <field id="runoffs"      description="River Runoffs"                                                unit="Kg/m2/s"  />
 
-	<field id="qt"           description="Net Downward Heat Flux"                                       unit="W/m2"     />
-	<field id="qns"          description="non solar Downward Heat Flux"                                 unit="W/m2"     />
-	<field id="qsr"          description="Shortwave Radiation"                                          unit="W/m2"     />
-	<field id="qsr3d"        description="Shortwave Radiation 3D distribution"        axis_ref="deptht" unit="W/m2"     />
-	<field id="qrp"          description="Surface Heat Flux: Damping"                                   unit="W/m2"     />
-	<field id="erp"          description="Surface Water Flux: Damping"                                  unit="Kg/m2/s"  />
-	<field id="taum"         description="wind stress module"                                           unit="N/m2"     />
-	<field id="wspd"         description="Wind speed module at 10 m"                                    unit="m/s"      />
+        <field id="qt"           description="Net Downward Heat Flux"                                       unit="W/m2"     />
+        <field id="qns"          description="non solar Downward Heat Flux"                                 unit="W/m2"     />
+        <field id="qsr"          description="Shortwave Radiation"                                          unit="W/m2"     />
+        <field id="qsr3d"        description="Shortwave Radiation 3D distribution"        axis_ref="deptht" unit="W/m2"     />
+        <field id="rsdoabsorb"   description="Net Rate of Absorption of Shortwave Energy in Ocean Layer" axis_ref="deptht" unit="W/m2"     />
+        <field id="qrp"          description="Surface Heat Flux: Damping"                                   unit="W/m2"     />
+        <field id="erp"          description="Surface Water Flux: Damping"                                  unit="Kg/m2/s"  />
+        <field id="taum"         description="wind stress module"                                           unit="N/m2"     />
+        <field id="wspd"         description="Wind speed module at 10 m"                                    unit="m/s"      />
 
         <!-- * variable relative to atmospheric pressure forcing : available with ln_apr_dyn -->
         <field id="ssh_ib"       description="Inverse barometer sea surface height"                         unit="m"        />
@@ -104,40 +105,42 @@
 	<field id="ist_cea"      description="Ice surface temperature (cell average)"                       unit="degC"     />
 	<field id="ist_ipa"      description="Ice surface temperature (ice presence average)"               unit="degC"     />      
         <field id="sitemptop_cea" description="Snow/ice surface temperature (cell average)"                 unit="K"        />
-	<field id="uice_ipa"     description="Ice velocity along i-axis (C grid) (ice presence average)"    unit="m/s"      />
-	<field id="vice_ipa"     description="Ice velocity along j-axis (C grid) (ice presence average)"    unit="m/s"      />
-        <field id="ivel_cea"     description="Ice velocity module (C grid) (cell average)"                  unit="m/s"      />
-	
-	<field id="utau_ice"     description="Wind stress along i-axis over the ice at i-point"             unit="N/m2"     />
-	<field id="vtau_ice"     description="Wind stress along j-axis over the ice at i-point"             unit="N/m2"     />
-	
-	<field id="u_imasstr"    description="Sea-ice mass transport along i-axis"                          unit="kg/s"     />
-	<field id="v_imasstr"    description="Sea-ice mass transport along j-axis"                          unit="kg/s"     />
+        <field id="uice_ipa"     description="Ice velocity along i-axis (C grid) (ice presence average)"    unit="m/s"      />      
+        <field id="vice_ipa"     description="Ice velocity along j-axis (C grid) (ice presence average)"    unit="m/s"      />
+        <field id="ivel_cea"     description="Ice velocity module (C grid) (cell average)"                  unit="m/s"      /> 
+        
+        <field id="utau_ice"     description="Wind stress along i-axis over the ice at i-point"             unit="N/m2"     />
+        <field id="vtau_ice"     description="Wind stress along j-axis over the ice at i-point"             unit="N/m2"     />
+        
+        <field id="u_imasstr"    description="Sea-ice mass transport along i-axis"                          unit="kg/s"     />
+        <field id="v_imasstr"    description="Sea-ice mass transport along j-axis"                          unit="kg/s"     />
+        <field id="emp_x_sss"    description="Total virtual salt flux entering the ocean"                   unit="kg*1e-3/m2/s" />
 
-	<!-- available key_coupled -->
-	<field id="snow_ao_cea"  description="Snow over ice-free ocean (cell average)"                      unit="kg/m2/s"  />
-	<field id="snow_ai_cea"  description="Snow over sea-ice (cell average)"                             unit="kg/m2/s"  />
-	<field id="subl_ai_cea"  description="Sublimation over sea-ice (cell average)"                      unit="kg/m2/s"  />
-	<field id="icealb_cea"   description="Ice albedo (cell average)"                                    unit="1"        />
-	<field id="calving"      description="Calving"                                                      unit="kg/m2/s"  />
-	<!-- available if key_coupled + conservative method -->
-	<field id="rain"         description="Liquid precipitation"                                         unit="Kg/m2/s"  />
-	<field id="evap_ao_cea"  description="Evaporation over ice-free ocean (cell average)"               unit="kg/m2/s"  />
-	<!-- variables available with key_diaar5 -->
-	<field id="isnwmlt_cea"   description="Snow over Ice melting (cell average)"                        unit="kg/m2/s"  />
-	<field id="fsal_virt_cea" description="Virtual salt flux due to ice formation (cell average)"       unit="kg/m2/s"  />
-	<field id="fsal_real_cea" description="Real salt flux due to ice formation (cell average)"          unit="kg/m2/s"  />
-	<field id="hflx_rain_cea" description="heat flux due to rainfall"                                   unit="W/m2"     />
-	<field id="hflx_evap_cea" description="heat flux due to evaporation"                                unit="W/m2"     />
-	<field id="hflx_snow_cea" description="heat flux due to snow falling over ice-free ocean"           unit="W/m2"     />
-	<field id="hflx_ice_cea"  description="heat flux due to ice thermodynamics"                         unit="W/m2"     />
-	<field id="hflx_rnf_cea"  description="heat flux due to runoffs"                                    unit="W/m2"     />
-	<field id="hflx_cal_cea"  description="heat flux due to calving"                                    unit="W/m2"     />
-	<field id="bicemel_cea"  description="Rate of Melt at Sea Ice Base (cell average)"                  unit="kg/m2/s"  />
-	<field id="licepro_cea"  description="Lateral Sea Ice Growth Rate (cell average)"                   unit="kg/m2/s"  />
-	<field id="snowmel_cea"  description="Snow Melt Rate (cell average)"                                unit="kg/m2/s"  />
-	<field id="sntoice_cea"  description="Snow-Ice Formation Rate (cell average)"                       unit="kg/m2/s"  />
-	<field id="ticemel_cea"  description="Rate of Melt at Upper Surface of Sea Ice (cell average)"      unit="kg/m2/s"  />
+        <!-- available key_coupled -->
+        <field id="snow_ao_cea"  description="Snow over ice-free ocean (cell average)"                      unit="kg/m2/s"  />
+        <field id="snow_ai_cea"  description="Snow over sea-ice (cell average)"                             unit="kg/m2/s"  />
+        <field id="subl_ai_cea"  description="Sublimation over sea-ice (cell average)"                      unit="kg/m2/s"  />
+        <field id="icealb_cea"   description="Ice albedo (cell average)"                                    unit="1"        />
+        <field id="calving"      description="Calving"                                                      unit="kg/m2/s"  />
+        <!-- available if key_coupled + conservative method -->
+        <field id="rain"         description="Liquid precipitation"                                         unit="Kg/m2/s"  />
+        <field id="evap_ao_cea"  description="Evaporation over ice-free ocean (cell average)"               unit="kg/m2/s"  />
+        <!-- variables available with key_diaar5 -->
+        <field id="isnwmlt_cea"   description="Snow over Ice melting (cell average)"                        unit="kg/m2/s"  />
+        <field id="fsal_virt_cea" description="Virtual salt flux due to ice formation (cell average)"       unit="kg/m2/s"  />
+        <field id="fsal_real_cea" description="Real salt flux due to ice formation (cell average)"          unit="kg/m2/s"  />
+        <field id="hflx_rain_cea" description="heat flux due to rainfall"                                   unit="W/m2"     />
+        <field id="hflx_evap_cea" description="heat flux due to evaporation"                                unit="W/m2"     />
+        <field id="hflx_snow_cea" description="heat flux due to snow falling over ice-free ocean"           unit="W/m2"     />
+        <field id="lhflx_snow_cea" description="latent heat flux due to snow falling over ice-free ocean"   unit="W/m2"     />
+        <field id="hflx_ice_cea"  description="heat flux due to ice thermodynamics"                         unit="W/m2"     />
+        <field id="hflx_rnf_cea"  description="heat flux due to runoffs"                                    unit="W/m2"     />
+        <field id="hflx_cal_cea"  description="heat flux due to calving"                                    unit="W/m2"     />
+        <field id="bicemel_cea"   description="Rate of Melt at Sea Ice Base (cell average)"                 unit="kg/m2/s"  />
+        <field id="licepro_cea"   description="Lateral Sea Ice Growth Rate (cell average)"                  unit="kg/m2/s"  />
+        <field id="snowmel_cea"   description="Snow Melt Rate (cell average)"                               unit="kg/m2/s"  />
+        <field id="sntoice_cea"   description="Snow-Ice Formation Rate (cell average)"                      unit="kg/m2/s"  />
+        <field id="ticemel_cea"   description="Rate of Melt at Upper Surface of Sea Ice (cell average)"     unit="kg/m2/s"  />
         <field id="hflx_qsr_tot"  description="Solar heat flux from coupler (cell average)"                 unit="W/m2"     />
         <field id="hflx_qns_tot"  description="Non solar heat flux from coupler (cell average)"             unit="W/m2"     />
         <field id="hflx_qsr_ice"  description="Solar heat flux from coupler over sea-ice (cell average)"     unit="W/m2"    />
