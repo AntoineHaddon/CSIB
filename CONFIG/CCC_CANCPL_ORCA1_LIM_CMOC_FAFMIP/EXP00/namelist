@@ -250,12 +250,12 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
    ln_fafemp  = .false.       ! Read in and apply water flux anoamlies
    ln_fafhflx = .true.       ! Read in heat flux anomalies which MAY be applied
    ln_fafheat = .true.       ! Apply heatflux to the temperature tracer
-!              !  file name     ! frequency (hours) ! variable                             ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation !
-!              !                !  (if <0  months)  !   name                               !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  !
-   sn_utau     = 'fafmip_utau'  ,        -1         , 'surface_downward_eastward_stress'   , .true.      , .true., 'yearly'  , ''       , ''
-   sn_vtau     = 'fafmip_vtau'  ,        -1         , 'surface_downward_northward_stress'  , .true.      , .true., 'yearly'  , ''       , ''
-   sn_qtot     = 'fafmip_qtot'  ,        -1         , 'heat_flux_anom'                     , .true.      , .true., 'yearly'  , ''       , ''
-   sn_emp      = 'fafmip_emp'   ,        -1         , 'water_flux_into_sea_water'          , .true.      , .true., 'yearly'  , ''       , ''
+!              !  file name     ! frequency (hours) ! variable            ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation !
+!              !                !  (if <0  months)  !   name              !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  !
+   sn_utau     = 'fafmip_utau'  ,        -1         , 'taux_flux_anom'    , .true.      , .true., 'yearly'  , ''       , 'Uwnd'
+   sn_vtau     = 'fafmip_vtau'  ,        -1         , 'tauy_flux_anom'    , .true.      , .true., 'yearly'  , ''       , 'Vwnd'
+   sn_qtot     = 'fafmip_qtot'  ,        -1         , 'heat_flux_anom'    , .true.      , .true., 'yearly'  , ''       , ''
+   sn_emp      = 'fafmip_emp'   ,        -1         , 'water_flux_anom'   , .true.      , .true., 'yearly'  , ''       , ''
 /
 !-----------------------------------------------------------------------
 &namtra_qsr    !   penetrative solar radiation
