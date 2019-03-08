@@ -252,8 +252,8 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
    ln_fafheat = .true.       ! Apply heatflux to the temperature tracer
 !              !  file name     ! frequency (hours) ! variable            ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation !
 !              !                !  (if <0  months)  !   name              !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  !
-   sn_utau     = 'fafmip_utau'  ,        -1         , 'taux_flux_anom'    , .true.      , .true., 'yearly'  , ''       , 'Uwnd'
-   sn_vtau     = 'fafmip_vtau'  ,        -1         , 'tauy_flux_anom'    , .true.      , .true., 'yearly'  , ''       , 'Vwnd'
+   sn_utau     = 'fafmip_tauu'  ,        -1         , 'taux_flux_anom'    , .true.      , .true., 'yearly'  , ''       , 'Uwnd'
+   sn_vtau     = 'fafmip_tauv'  ,        -1         , 'tauy_flux_anom'    , .true.      , .true., 'yearly'  , ''       , 'Vwnd'
    sn_qtot     = 'fafmip_qtot'  ,        -1         , 'heat_flux_anom'    , .true.      , .true., 'yearly'  , ''       , ''
    sn_emp      = 'fafmip_emp'   ,        -1         , 'water_flux_anom'   , .true.      , .true., 'yearly'  , ''       , ''
 /
