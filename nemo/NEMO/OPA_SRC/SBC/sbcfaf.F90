@@ -123,11 +123,12 @@ CONTAINS
             END DO
             CALL lbc_lnk( taum(:,:), 'T', 1. )   ;   CALL lbc_lnk( wndm(:,:), 'T', 1. )
          ENDIF
-        ! Now apply freshwater perturbations
+        ! Now apply freshwater perturbations 
          IF ( ln_fafemp ) THEN
             DO jj = 1, jpj                                           ! set the ocean fluxes from read fields
                DO ji = 1, jpi
-                  emp (ji,jj) = emp(ji,jj) + sf_fafmip(jp_emp)%fnow(ji,jj,1)
+                  ! FAFMIP provides Water flux into the ocean
+                  emp (ji,jj) = emp(ji,jj) + -1.*sf_fafmip(jp_emp)%fnow(ji,jj,1)
                END DO
             END DO
             emps(:,:) = emp (:,:)                                    ! Initialization of emps (needed when no ice model)
