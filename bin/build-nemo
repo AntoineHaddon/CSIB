@@ -161,7 +161,7 @@ verbose=0
 keep_tmpd=0
 
 # Number of processors to use during compilation
-comp_np=4
+comp_np=12
 
 # Set debug to 0 (turned off, regular optimizations used)
 debug=0

@@ -1069,7 +1069,6 @@ echo "#################### Start NEMO pre-processing #################"
 #  nemo_sss_data=${nemo_sss_data:=nemo_3.4_orca1_sss_1m_orca1.nc}
   nemo_chlorophyll=${nemo_chlorophyll:=nemo_3.4_orca1_chlorophyll-orca1_1m.nc}
   nemo_subbasins=${nemo_subbasins:=nemo_3.4_orca1_basinmask_050308_ukmo_modified.nc}
-  nemo_fafmip_qtot=${nemo_fafmip_qtot:=urdy_fafmip_hfds_orca1_record.nc}
   nemo_o2=${nemo_o2:=urdy_fafmip_hfds_orca1_record.nc}
 
   [ -s ahmcoef ]                || acc_cp ahmcoef                $nemo_ahmcoef
@@ -1102,7 +1101,26 @@ echo "#################### Start NEMO pre-processing #################"
   [ -s data_1m_salinity_nomask.nc ]              ||
       acc_cp data_1m_salinity_nomask.nc              $nemo_data_1m_salinity_nomask
 
-  [ -s fafmip_qtot.nc ]         || acc_cp fafmip_qtot.nc         $nemo_fafmip_qtot
+  # Modify all FAFMIP related quantities
+  if [[ $nemo_config == *"_FAFMIP"* ]]; then
+
+    ln_faftau=${ln_faftau:=.false.}
+    ln_fafemp=${ln_fafemp:=.false.}
+    ln_fafhflx=${ln_fafhflx:=.true.}
+    ln_fafheat=${ln_fafheat:=.false.}
+    mod_nl namelist ln_faftau ln_fafemp ln_fafhflx ln_fafheat
+
+    # Set specified or default names for fafmip forcing files
+    nemo_fafmip_qtot=${nemo_fafmip_qtot:=urdy_fafmip_hfds_orca1_record.nc}
+    nemo_fafmip_tauu=${nemo_fafmip_tauu:=urdy_fafmip_tauu_orca1_record.nc}
+    nemo_fafmip_tauv=${nemo_fafmip_tauv:=urdy_fafmip_tauv_orca1_record.nc}
+    nemo_fafmip_wfo=${nemo_fafmip_wfo:=urdy_fafmip_wfo_orca1_record.nc}
+    # Access all the forcing files
+    [ -s fafmip_qtot.nc ] || acc_cp fafmip_qtot.nc $nemo_fafmip_qtot
+    [ -s fafmip_tauu.nc ] || acc_cp fafmip_tauu.nc $nemo_fafmip_tauu
+    [ -s fafmip_tauv.nc ] || acc_cp fafmip_tauv.nc $nemo_fafmip_tauv
+    [ -s fafmip_wfo.nc ]  || acc_cp fafmip_wfo.nc $nemo_fafmip_wfo
+  fi
   [ -s o2.nc ]                  || acc_cp o2.nc                  $nemo_o2
 
 #  nemo_t=${nemo_t:=nemo_3.4_orca1_t_10.15june2009.nc}
