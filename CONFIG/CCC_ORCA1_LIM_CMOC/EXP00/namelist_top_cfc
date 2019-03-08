@@ -31,12 +31,12 @@
    sn_tracer(4)   = 'POC     ' , 'Detritus Concentration CMOC            ',  'mol-C/L' ,  .false.    ,  .true. 
    sn_tracer(5)   = 'PHY     ' , 'Nanophytoplankton Concentration CMOC   ',  'mol-C/L' ,  .false.    ,  .true. 
    sn_tracer(6)   = 'ZOO     ' , 'Microzooplankton Concentration CMOC    ',  'mol-C/L' ,  .false.    ,  .true. 
-   sn_tracer(7)  = 'NCHL    ' , 'Nano chlorophyl Concentration CMOC     ',  'mol-C/L' ,  .false.    ,  .true. 
-   sn_tracer(8)  = 'NO3     ' , 'Total Dissolved Nitrogen CMOC          ',  'mol-C/L' ,  .true.     ,  .true.  
-   sn_tracer(9)  = 'cfc11   ' , 'CFC-11 concentration                   ',  'molC/m3',     .false.     ,  .true.
-   sn_tracer(10)  = 'cfc12   ' , 'CFC-12 concentration                   ',  'molC/m3',     .false.     ,  .true. 
-   sn_tracer(11)  = 'sf6     ' , 'SF6 concentration                      ',  'molC/m3',     .false.     ,  .true. 
-   sn_tracer(12)  = 'agessc  ' , 'Ideal Age                              ',  'years' ,    .false.     ,  .true.  
+   sn_tracer(7)   = 'NCHL    ' , 'Nano chlorophyl Concentration CMOC     ',  'mol-C/L' ,  .false.    ,  .true. 
+   sn_tracer(8)   = 'NO3     ' , 'Total Dissolved Nitrogen CMOC          ',  'mol-C/L' ,  .true.     ,  .true.  
+   sn_tracer(9)   = 'cfc11   ' , 'CFC-11 concentration                   ',  'molC/m3',   .false.    ,  .true.
+   sn_tracer(10)  = 'cfc12   ' , 'CFC-12 concentration                   ',  'molC/m3',   .false.    ,  .true. 
+   sn_tracer(11)  = 'sf6     ' , 'SF6 concentration                      ',  'molC/m3',   .false.    ,  .true. 
+   sn_tracer(12)  = 'agessc  ' , 'Ideal Age                              ',  'years' ,    .false.    ,  .true.  
 
 /
 !-----------------------------------------------------------------------
