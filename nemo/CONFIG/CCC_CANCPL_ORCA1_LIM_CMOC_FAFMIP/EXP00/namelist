@@ -255,7 +255,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
    sn_utau     = 'fafmip_tauu'  ,        -1         , 'taux_flux_anom'    , .true.      , .true., 'yearly'  , ''       , 'Uwnd'
    sn_vtau     = 'fafmip_tauv'  ,        -1         , 'tauy_flux_anom'    , .true.      , .true., 'yearly'  , ''       , 'Vwnd'
    sn_qtot     = 'fafmip_qtot'  ,        -1         , 'heat_flux_anom'    , .true.      , .true., 'yearly'  , ''       , ''
-   sn_emp      = 'fafmip_emp'   ,        -1         , 'water_flux_anom'   , .true.      , .true., 'yearly'  , ''       , ''
+   sn_emp      = 'fafmip_wfo'   ,        -1         , 'water_flux_anom'   , .true.      , .true., 'yearly'  , ''       , ''
 /
 !-----------------------------------------------------------------------
 &namtra_qsr    !   penetrative solar radiation
