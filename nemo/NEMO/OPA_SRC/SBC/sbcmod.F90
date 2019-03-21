@@ -300,10 +300,6 @@ CONTAINS
                        CALL sbc_blk_core( kt )                    !
                        CALL sbc_cpl_rcv ( kt, nn_fsbc, nn_ice )   !
       END SELECT
-      ! Apply anomalies for FAFMIP if requested
-#if defined key_fafmip
-      CALL sbc_fafmip( kt )
-#endif
 
       !                                            !==  Misc. Options  ==!
       SELECT CASE( nn_ice )                                       ! Update heat and freshwater fluxes over sea-ice areas
@@ -314,6 +310,10 @@ CONTAINS
       CASE(  3 )   ;         CALL sbc_ice_lim  ( kt, nsbc )          ! LIM-3 ice model
       CASE(  4 )   ;         CALL sbc_ice_cice ( kt, nsbc )          ! CICE ice model
       END SELECT
+      ! Apply anomalies for FAFMIP if requested
+#if defined key_fafmip
+      CALL sbc_fafmip( kt )
+#endif
       IF (ln_chksum  )   CALL after_state_chksum( "after ice model" )
 
       IF( ln_rnf         )   CALL sbc_rnf( kt )                   ! add runoffs to fresh water fluxes

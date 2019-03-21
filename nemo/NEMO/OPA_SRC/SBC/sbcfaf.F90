@@ -97,7 +97,6 @@ CONTAINS
          ! Even though this is read in here, this is not applied until traqsr.
          CALL fld_read( kt, nn_fsbc, sf_fafmip(jp_hflx:jp_hflx) )
       ENDIF
-     
       IF( MOD( kt-1, nn_fsbc ) == 0 ) THEN                        ! update ocean fluxes at each SBC frequency
          ! Treat the perturbation to wind stress first
          IF ( ln_faftau ) THEN
