@@ -160,11 +160,13 @@ CONTAINS
                   CALL tracer_reinit(trc_in_restart, ztrcdta, jp_myt0, jp_myt1)
                ENDIF
             ENDIF
+#ifdef key_fafmip            
             IF( lk_fafmip ) THEN
                IF ( .NOT. ALL(trc_in_restart(jp_faf0:jp_faf1)) ) THEN
                   CALL trc_ini_fafmip( .true. )
                ENDIF
             ENDIF
+#endif
             IF ( ln_trcdta ) CALL wrk_dealloc( jpi, jpj, jpk, nb_trcdta, ztrcdta )
          ELSE ! If trcdta_renit is FALSE, then all the fields are present and any auxiliary fields from all the tracer
               ! packages can be loaded
