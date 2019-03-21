@@ -588,6 +588,7 @@
             <field ref="fsal_virt_cea" name="vsfsit"        description="virtual_salt_flux_into_sea_water_due_to_sea_ice_thermodynamics"                level="2" />
             <!-- wfcorr   : virtual_salt_flux_correction                        = 0 --> 
             <field ref="emp_x_sss"     name="emp_x_sss"     description="virtual_salt_flux_into_sea_water"         level="2" />   <!-- vsf kg*1e-3/m2/s, DY -->
+            <field ref="fafemp_x_sss"     name="fafemp_x_sss"     description="virtual_salt_flux_into_sea_water"         level="2" />   <!-- vsf kg*1e-3/m2/s, DY -->
             <field ref="fsal_real_cea" name="fsal_real_cea" description="real salt flux captured by brine pockets" level="1" />
             <!-- sfriver  : salt_flux_into_sea_water_from_rivers                = 0 --> 
             <!-- hfgeou : upward_geothermal_heat_flux_at_sea_floor : cte, see nambbc and trabbc.F90 -->
