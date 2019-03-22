@@ -23,7 +23,7 @@ MODULE trcsms_cfc
    USE trdmod_oce
    USE trdmod_trc
    USE iom ! I/O library
-   USE par_cfc, only : jp_cfc
+   USE par_cfc, only : jp_cfc, jp_cfc0, jp_cfc1
    USE dom_oce, only : nsec_year, nyear_len, nyear
 
    IMPLICIT NONE
@@ -37,6 +37,11 @@ MODULE trcsms_cfc
    INTEGER , PUBLIC, PARAMETER :: jphem = 2 ! parameter for the 2 hemispheres
    INTEGER , PUBLIC :: jpyear ! Number of years read in CFC1112 file
    INTEGER , PUBLIC :: offset_cfc_year ! Offset from model year.
+   LOGICAL , PUBLIC :: ln_reset_cfc = .true. ! If true, set all tracers in CFC module to zero before year specifie
+                                             ! by nn_cfc_reset
+   INTEGER ,  PUBLIC :: nn_reset_cfc = 1930  ! This could be set to 1935, however 1930 is a 'safe' value to avoid
+                                             ! any potential problems with missing the first year of CFCs during 
+                                             ! the interpolation of the  atmospheric record
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) :: p_cfc_year ! Year associated with the atmospheric partial pressure
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: p_cfc ! partial hemispheric pressure for CFC
@@ -104,7 +109,8 @@ CONTAINS
       IF( ierr > 0 ) THEN
          CALL ctl_stop( 'trc_sms_cfc: unable to allocate zpp_cfc array' ) ; RETURN
       ENDIF
-      CALL trc_cfc_cst
+      CALL trc_cfc_cst ! Set solubility and Schmidt number coefficients
+
       ! Temporal interpolation
       ! ----------------------
       nyears = SIZE(p_cfc_year(:))
@@ -186,6 +192,24 @@ CONTAINS
          ! !----------------!
       END DO ! end CFC loop !
       ! !----------------!
+      ! Check to see if we should be resetting all CFCs/SF6 to 0.
+      IF (ln_reset_cfc) THEN
+         yearfrac = ( nsec_year ) / ( 86400. * nyear_len(1) )
+         ! Model year (nyear) + cfc offset + yearfrac
+         cfc_year = nyear + offset_cfc_year + yearfrac
+         ! If the year that the CFC module 'thinks' it is is less than the reset
+         ! year, set all CFC/SF6 tendencies and concentrations to zero
+         IF (cfc_year < nn_reset_cfc) THEN
+            DO jl = jp_cfc0, jp_cfc1
+               tra(:,:,:,jl) = 0.
+               trb(:,:,:,jl) = 0.
+               trn(:,:,:,jl) = 0.
+               qtr_cfc(:,:,:) = 0.
+               qint_cfc(:,:,:) = 0.
+               zpp_cfc(:,:,:) = 0.
+            ENDDO
+         ENDIF
+      ENDIF
       IF( ln_diatrc ) THEN
         !
         IF( lk_iomput ) THEN
