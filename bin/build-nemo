@@ -391,6 +391,8 @@ if [ $build_nemo_exe -eq 1 ]; then
 
   if [ -z "$nemo_ref_config" ]; then
     REFCFG=''
+  elif [ "$nemo_ref_config" == "$nemo_config" ]; then
+    REFCFG=''
   else
     REFCFG="-r $nemo_ref_config"
   fi
