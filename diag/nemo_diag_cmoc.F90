@@ -30,22 +30,24 @@ PROGRAM nemo_diag_cmoc
  
    IMPLICIT NONE
 
-   CHARACTER(len=100) :: fname01, fname02, fname03, fname04
+   CHARACTER(len=100) :: fname01, fname02, fname03, fname04, fname05
    CHARACTER(len=100) :: axis, standard_name, units, calendar, title
    CHARACTER(len=100) :: long_name, time_origin, bounds
-   INTEGER   :: iou, iou1, iou2, iou3, iou4
+   INTEGER   :: iou, iou1, iou2, iou3, iou4, iou5
    INTEGER   :: ntrec, id_time, id_tbnds, id_l, id_s, id_x, id_y, id_z
    INTEGER   :: ntbnds
-   INTEGER   :: i, l
+   INTEGER   :: i, j, k, l
    LOGICAL   :: exists
    !INTEGER   :: strlen
    INTEGER, DIMENSION(10)            :: ierr
    REAL, PARAMETER :: Ca=0.010280
-   REAL, DIMENSION(:), ALLOCATABLE   :: time
-   REAL, DIMENSION(:), ALLOCATABLE   :: ytime
-   REAL, DIMENSION(:), ALLOCATABLE   :: x, y
-   REAL, DIMENSION(:,:), ALLOCATABLE :: nav_lon_t, nav_lat_t
-   REAL, DIMENSION(:,:), ALLOCATABLE :: time_bnds
+   REAL, DIMENSION(:),       ALLOCATABLE :: time
+   REAL, DIMENSION(:),       ALLOCATABLE :: ytime
+   REAL, DIMENSION(:),       ALLOCATABLE :: x, y
+   REAL, DIMENSION(:,:),     ALLOCATABLE :: nav_lon_t, nav_lat_t
+   REAL, DIMENSION(:,:),     ALLOCATABLE :: time_bnds
+   REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: alk_abio
+   REAL                                  :: sss_glob_avg, r_sss_glob_avg
    !!-------------------------------------
    !! Establish grid size from input files.
    !!-------------------------------------
@@ -63,8 +65,9 @@ PROGRAM nemo_diag_cmoc
    ALLOCATE( e3t(imt,jmt,km), tmask(imt,jmt,km), time_bnds(ntbnds,lm), STAT=ierr(1) )
    ALLOCATE( time(lm), ytime(ly), deptht(km), x(imt), y(jmt), STAT=ierr(2) )
    ALLOCATE( nav_lon_t(imt,jmt), nav_lat_t(imt,jmt), STAT=ierr(3) )
-   ALLOCATE( TT(imt,jmt,km,lm), SS(imt,jmt,km,lm), CC(imt,jmt,km,lm), CAB(imt,jmt,km,lm), CNT(imt,jmt,km,lm), AA(imt,jmt,km,lm), NO3(imt,jmt,km,lm), O2(imt,jmt,km,lm), asi3(imt,jmt,km,lm), STAT=ierr(4) )
-   ALLOCATE( pHfull(imt,jmt,km,lm), CO3full(imt,jmt,km,lm), pHabio(imt,jmt,km,lm), CO3abio(imt,jmt,km,lm), pHnat(imt,jmt,km,lm), CO3nat(imt,jmt,km,lm), STAT=ierr(5) )
+   ALLOCATE( TT(imt,jmt,km,lm), SS(imt,jmt,km,lm), CC(imt,jmt,km,lm), CAB(imt,jmt,km,lm), CNT(imt,jmt,km,lm), &
+             AA(imt,jmt,km,lm), NO3(imt,jmt,km,lm), O2(imt,jmt,km,lm), asi3(imt,jmt,km,lm), STAT=ierr(4) )
+   ALLOCATE( pHfull(imt,jmt,km,lm), CO3full(imt,jmt,km,lm), pHabio(imt,jmt,km,lm), CO3abio(imt,jmt,km,lm), pHnat(imt,jmt,km,lm), CO3nat(imt,jmt,km,lm), alk_abio(imt,jmt,km,lm), STAT=ierr(5) )
    ALLOCATE( K_sp_cal(imt,jmt,km,lm), K_sp_arag(imt,jmt,km,lm), Omega_C(imt,jmt,km,lm), Omega_A(imt,jmt,km,lm), Omega_C_abio(imt,jmt,km,lm), Omega_A_abio(imt,jmt,km,lm), Omega_C_nat(imt,jmt,km,lm), Omega_A_nat(imt,jmt,km,lm), STAT=ierr(6) )
    ALLOCATE( zsat_c(imt,jmt,lm), zsat_a(imt,jmt,lm), o2min(imt,jmt,lm), zo2min(imt,jmt,lm), STAT=ierr(7) )
    ALLOCATE( prhop(imt,jmt,km,lm), co3_satc(imt,jmt,km,lm), co3_sata(imt,jmt,km,lm), o2sol(imt,jmt,km,lm), STAT=ierr(8) )
@@ -73,10 +76,11 @@ PROGRAM nemo_diag_cmoc
       STOP 'Memory allocation error in cmip6_nemo_offl'
    ENDIF
       
-   iou1 =0
-   iou2 =0
-   iou3 =0
-   iou4 =0
+   iou1=0
+   iou2=0
+   iou3=0
+   iou4=0
+   iou5=0
 
    !!--------------------
    !! Define NetCDF files   
@@ -86,6 +90,7 @@ PROGRAM nemo_diag_cmoc
    fname02='grid_t'
    fname03='ptrc_t'
    fname04='si.nc'
+   fname05='rsp'
    
    !!------------------------------
    !! Open the defined NetCDF files   
@@ -96,6 +101,7 @@ PROGRAM nemo_diag_cmoc
    CALL openfile (fname02,iou2)
    CALL openfile (fname03,iou3)
    CALL openfile (fname04,iou4)
+   CALL openfile (fname05,iou5)
 
    !!-------------------
    !! Get grid/mask data   
@@ -145,12 +151,26 @@ PROGRAM nemo_diag_cmoc
    CALL getvara ('O2', iou3, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), O2, 1., 0.)
    ! Silicate
    CALL getvara ('Si', iou4, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), asi3, 1., 0.)
+   ! Globally averaged Salinity 
+   CALL getvara ('sss_glob_avg', iou5, 1, (/1/), (/1/), sss_glob_avg, 1., 0.)
    print*, '-------------------'
    print*, 'Input data read OK!'
    print*, '-------------------'
 
    CALL closeall
 
+   !Apply temperature and salinity funnel to ensure that various polynomial
+   !fits within the carbon chemistry are reasonable. Values chosen are from
+   !Mucci 1983
+   !!Also calculate the abiotic alkalinity as specified in Orr et al. 2017
+   r_sss_glob_avg = 1./sss_glob_avg
+   DO i=1,imt ; DO j=1,jmt ; DO k=1,km ; DO l=1,lm
+     TT(i,j,k,l) = MAX(TT(i,j,k,l),5.)
+     TT(i,j,k,l) = MIN(TT(i,j,k,l),40.)
+     SS(i,j,k,l) = MAX(SS(i,j,k,l),5.)
+     SS(i,j,k,l) = MIN(SS(i,j,k,l),44.)
+     alk_abio(i,j,k,l) = ( 2297. )*( SS(i,j,k,l)*r_sss_glob_avg ) ! Equation 27 of Orr et al. 2017 in micromol
+   ENDDO ; ENDDO; ENDDO ; ENDDO
    !!---------------------------------------------------------
    !! Computations of solubility product, O2 solubility, pH, carbonate ion
    !!---------------------------------------------------------
@@ -159,11 +179,11 @@ PROGRAM nemo_diag_cmoc
    CALL cmip6_o2sol
    CALL cmip6_zo2min
    CALL cmip6_cchem(CC,AA,K_sp_cal,K_sp_arag,CO3full,pHfull,Omega_C,Omega_A)
-   CALL cmip6_cchem(CAB,AA,K_sp_cal,K_sp_arag,CO3abio,pHabio,Omega_C_abio,Omega_A_abio)
+   CALL cmip6_cchem(CAB,alk_abio,K_sp_cal,K_sp_arag,CO3abio,pHabio,Omega_C_abio,Omega_A_abio)
    CALL cmip6_cchem(CNT,AA,K_sp_cal,K_sp_arag,CO3nat,pHnat,Omega_C_nat,Omega_A_nat)
    CALL saturation_depth(Omega_C,Omega_A)
 
-   DEALLOCATE( TT, SS, CC, AA, CAB, CNT, NO3, asi3 )
+   DEALLOCATE( TT, SS, CC, AA, CAB, CNT, NO3, asi3, alk_abio)
 
    !!-----------------------------------------------------------------
    !! Output  in NetCDF format
