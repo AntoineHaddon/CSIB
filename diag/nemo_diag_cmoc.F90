@@ -239,7 +239,7 @@ PROGRAM nemo_diag_cmoc
       CALL putvara ('deptht', iou, km, (/1/), (/km/), deptht(:), 1., 0.)
       CALL putvara ('time_counter', iou, lm, (/1/), (/lm/), time, 1., 0.)
       CALL putvara ('time_counter_bnds', iou, ntbnds*lm, (/1,1/), (/ntbnds,lm/), time_bnds, 1., 0.)
-      CALL putvara ('CO3sata', iou, imt*jmt*km*lm, (/1,1,1,1/), (/imt, jmt, km, lm/), CO3sata(:,:,:,:), 1., 0.)
+      CALL putvara ('CO3sata', iou, imt*jmt*km*lm, (/1,1,1,1/), (/imt, jmt, km, lm/), co3_sata(:,:,:,:), 1., 0.)
       print*, '---------------------'
       print*, 'CO3sata.nc written OK!'
       print*, '---------------------'
@@ -287,7 +287,7 @@ PROGRAM nemo_diag_cmoc
       CALL putvara ('deptht', iou, km, (/1/), (/km/), deptht(:), 1., 0.)
       CALL putvara ('time_counter', iou, lm, (/1/), (/lm/), time, 1., 0.)
       CALL putvara ('time_counter_bnds', iou, ntbnds*lm, (/1,1/), (/ntbnds,lm/), time_bnds, 1., 0.)
-      CALL putvara ('CO3satc', iou, imt*jmt*km*lm, (/1,1,1,1/), (/imt, jmt, km, lm/), CO3satc(:,:,:,:), 1., 0.)
+      CALL putvara ('CO3satc', iou, imt*jmt*km*lm, (/1,1,1,1/), (/imt, jmt, km, lm/), co3_satc(:,:,:,:), 1., 0.)
       print*, '---------------------'
       print*, 'CO3satc.nc written OK!'
       print*, '---------------------'
