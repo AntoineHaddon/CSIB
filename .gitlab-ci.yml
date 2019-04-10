@@ -1,0 +1,12 @@
+
+
+stages:
+    - mirroring
+
+mirror:
+    stage: mirroring
+    script:
+          - git remote add tr /space/hall2/sitestore/eccc/crd/ccrn/users/scrd105/CanNEMO
+          - git push tr develop
+    only:
+        - triggers
