@@ -90,7 +90,7 @@ PROGRAM nemo_diag_cmoc
    fname02='grid_t'
    fname03='ptrc_t'
    fname04='si.nc'
-   fname05='rsp'
+   fname05='sss_glob_avg.nc'
    
    !!------------------------------
    !! Open the defined NetCDF files   
