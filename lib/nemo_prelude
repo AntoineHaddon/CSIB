@@ -1123,29 +1123,29 @@ echo "#################### Start NEMO pre-processing #################"
   fi
   [ -s o2.nc ]                  || acc_cp o2.nc                  $nemo_o2
 
-#  nemo_t=${nemo_t:=nemo_3.4_orca1_t_10.15june2009.nc}
-#  nemo_u=${nemo_u:=nemo_3.4_orca1_u_10.15june2009.nc}
-#  nemo_v=${nemo_v:=nemo_3.4_orca1_v_10.15june2009.nc}
-#  nemo_q=${nemo_q:=nemo_3.4_orca1_q_10.15june2009.nc}
-#  nemo_qsw=${nemo_qsw:=nemo_3.4_orca1_ncar_rad.15june2009.nc}
-#  nemo_qlw=${nemo_qlw:=nemo_3.4_orca1_ncar_rad.15june2009.nc}
-#  nemo_precip=${nemo_precip:=nemo_3.4_orca1_ncar_precip.15june2009.nc}
-#  nemo_snow=${nemo_snow:=nemo_3.4_orca1_ncar_precip.15june2009.nc}
+ nemo_t=${nemo_t:=nemo_3.4_orca1_t_10.15june2009.nc}
+ nemo_u=${nemo_u:=nemo_3.4_orca1_u_10.15june2009.nc}
+ nemo_v=${nemo_v:=nemo_3.4_orca1_v_10.15june2009.nc}
+ nemo_q=${nemo_q:=nemo_3.4_orca1_q_10.15june2009.nc}
+ nemo_qsw=${nemo_qsw:=nemo_3.4_orca1_ncar_rad.15june2009.nc}
+ nemo_qlw=${nemo_qlw:=nemo_3.4_orca1_ncar_rad.15june2009.nc}
+ nemo_precip=${nemo_precip:=nemo_3.4_orca1_ncar_precip.15june2009.nc}
+ nemo_snow=${nemo_snow:=nemo_3.4_orca1_ncar_precip.15june2009.nc}
   # weights_grid02_* are weights for ECMWF data
 #  nemo_weights_bicubic1=${nemo_weights_bicubic1:=nemo_3.4_weights_grid02_bicubic_orca1.nc}
 #  nemo_weights_bilinear1=${nemo_weights_bilinear1:=nemo_3.4_weights_grid02_bilinear_orca1.nc}
   # weights_grid03_* are weights for CORE data
-#  nemo_weights_bicubic2=${nemo_weights_bicubic2:=nemo_3.4_weights_grid03_bicubic_orca1.nc}
-#  nemo_weights_bilinear2=${nemo_weights_bilinear2:=nemo_3.4_weights_grid03_bilinear_orca1.nc}
+  nemo_weights_bicubic2=${nemo_weights_bicubic2:=nemo_3.4_weights_grid03_bicubic_orca1.nc}
+  nemo_weights_bilinear2=${nemo_weights_bilinear2:=nemo_3.4_weights_grid03_bilinear_orca1.nc}
 
-  #[ -s tair10m.nc ]      || acc_cp tair10m.nc          $nemo_t
-  #[ -s uwnd10m.nc ]      || acc_cp uwnd10m.nc          $nemo_u
-  #[ -s vwnd10m.nc ]      || acc_cp vwnd10m.nc          $nemo_v
-  #[ -s humi10m.nc ]      || acc_cp humi10m.nc          $nemo_q
-  #[ -s qsw.nc ]          || acc_cp qsw.nc              $nemo_qsw
-  #[ -s qlw.nc ]          || acc_cp qlw.nc              $nemo_qlw
-  #[ -s precip.nc ]       || acc_cp precip.nc           $nemo_precip
-  #[ -s snow.nc ]         || acc_cp snow.nc             $nemo_snow
+  [ -s tair10m.nc ]      || acc_cp tair10m.nc          $nemo_t
+  [ -s uwnd10m.nc ]      || acc_cp uwnd10m.nc          $nemo_u
+  [ -s vwnd10m.nc ]      || acc_cp vwnd10m.nc          $nemo_v
+  [ -s humi10m.nc ]      || acc_cp humi10m.nc          $nemo_q
+  [ -s qsw.nc ]          || acc_cp qsw.nc              $nemo_qsw
+  [ -s qlw.nc ]          || acc_cp qlw.nc              $nemo_qlw
+  [ -s precip.nc ]       || acc_cp precip.nc           $nemo_precip
+  [ -s snow.nc ]         || acc_cp snow.nc             $nemo_snow
   #[ -s weights_bic1.nc ] || acc_cp weights_bic1.nc     $nemo_weights_bicubic1
   #[ -s weights_bil1.nc ] || acc_cp weights_bil1.nc     $nemo_weights_bilinear1 
   #[ -s weights_bic2.nc ] || acc_cp weights_bic2.nc     $nemo_weights_bicubic2
