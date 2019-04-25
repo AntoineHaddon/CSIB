@@ -1065,8 +1065,8 @@ echo "#################### Start NEMO pre-processing #################"
   nemo_Eddyengf=${nemo_Eddyengf:=nemo_3.4_orca1_eddy_mix.nc}
 #  nemo_geothermal_heating=${nemo_geothermal_heating:=nemo_3.3_orca2_geothermal_heating.nc}
   nemo_runoff_core_monthly=${nemo_runoff_core_monthly:=nemo_3.4_orca1_runoff_1m_orca1.nc}
-#  nemo_sst_data=${nemo_sst_data:=nemo_3.4_orca1_sst_1m_orca1.nc}
-#  nemo_sss_data=${nemo_sss_data:=nemo_3.4_orca1_sss_1m_orca1.nc}
+  nemo_sst_data=${nemo_sst_data:=nemo_3.4_orca1_sst_1m_orca1.nc}
+  nemo_sss_data=${nemo_sss_data:=nemo_3.4_orca1_sss_1m_orca1.nc}
   nemo_chlorophyll=${nemo_chlorophyll:=nemo_3.4_orca1_chlorophyll-orca1_1m.nc}
   nemo_subbasins=${nemo_subbasins:=nemo_3.4_orca1_basinmask_050308_ukmo_modified.nc}
   nemo_o2=${nemo_o2:=urdy_fafmip_hfds_orca1_record.nc}
@@ -1080,8 +1080,8 @@ echo "#################### Start NEMO pre-processing #################"
   [ -s Eddyengf.nc ]            || acc_cp Eddyengf.nc            $nemo_Eddyengf
 #  [ -s geothermal_heating.nc ]  || acc_cp geothermal_heating.nc  $nemo_geothermal_heating
   [ -s runoff_core_monthly.nc ] || acc_cp runoff_core_monthly.nc $nemo_runoff_core_monthly
-#  [ -s sss_data.nc ]            || acc_cp sss_data.nc            $nemo_sss_data
-#  [ -s sst_data.nc ]            || acc_cp sst_data.nc            $nemo_sst_data
+  [ -s sss_data.nc ]            || acc_cp sss_data.nc            $nemo_sss_data
+  [ -s sst_data.nc ]            || acc_cp sst_data.nc            $nemo_sst_data
   [ -s chlorophyll.nc ]         || acc_cp chlorophyll.nc         $nemo_chlorophyll
   [ -s subbasins.nc ]           || acc_cp subbasins.nc           $nemo_subbasins
 
@@ -1148,8 +1148,8 @@ echo "#################### Start NEMO pre-processing #################"
   [ -s snow.nc ]         || acc_cp snow.nc             $nemo_snow
   #[ -s weights_bic1.nc ] || acc_cp weights_bic1.nc     $nemo_weights_bicubic1
   #[ -s weights_bil1.nc ] || acc_cp weights_bil1.nc     $nemo_weights_bilinear1 
-  #[ -s weights_bic2.nc ] || acc_cp weights_bic2.nc     $nemo_weights_bicubic2
-  #[ -s weights_bil2.nc ] || acc_cp weights_bil2.nc     $nemo_weights_bilinear2
+  [ -s weights_bic2.nc ] || acc_cp weights_bic2.nc     $nemo_weights_bicubic2
+  [ -s weights_bil2.nc ] || acc_cp weights_bil2.nc     $nemo_weights_bilinear2
 
   #nemo_weights_bicubic3=${nemo_weights_bicubic3:=nemo_3.4_weights_canam4grid_bicubic_orca1.nc}
   #nemo_weights_bilinear3=${nemo_weights_bilinear3:=nemo_3.4_weights_canam4grid_bilinear_orca1.nc}
