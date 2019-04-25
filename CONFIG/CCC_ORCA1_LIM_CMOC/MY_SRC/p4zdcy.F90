@@ -10,7 +10,7 @@ MODULE p4zdcy
    USE oce_trc                      !  shared variables between ocean and passive tracers 
    USE trc                          !  passive tracers common variables
    USE sms_pisces                   !  PISCES Source Minus Sink variables
-   USE par_pisces, only : jpdrc
+
    IMPLICIT NONE
    PRIVATE
 
