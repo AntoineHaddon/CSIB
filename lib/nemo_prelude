@@ -1157,6 +1157,41 @@ echo "#################### Start NEMO pre-processing #################"
   #[ -s weights_bic3.nc ] || acc_cp weights_bic3.nc     $nemo_weights_bicubic3
   #[ -s weights_bil3.nc ] || acc_cp weights_bil3.nc     $nemo_weights_bilinear3
 
+
+  if [ x"$nemo_forcing" = "xbulk_iaf" ]; then
+      nemo_t=uncs_corev2_t_10
+      nemo_u=uncs_corev2_u_10
+      nemo_v=uncs_corev2_v_10
+      nemo_q=uncs_corev2_q_10
+      nemo_qsw=uncs_corev2_ncar_rad
+      nemo_qlw=uncs_corev2_ncar_rad
+      nemo_precip=uncs_corev2_ncar_precip
+      nemo_snow=uncs_corev2_ncar_precip
+      nemo_weights_bicubic2=nemo_3.4_weights_grid03_bicubic_orca1.nc
+      nemo_weights_bilinear2=nemo_3.4_weights_grid03_bilinear_orca1.nc
+      nemo_weights_bicubic3=nemo_3.4_weights_grid03_bicubic_orca1.nc
+      nemo_weights_bilinear3=nemo_3.4_weights_grid03_bilinear_orca1.nc
+
+      yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
+      fy=`expr ${yearc} + ${iaf_year_offset} | awk  '{printf "%04d",$1}'`
+      yd=`expr ${iaf_loop_year} - ${iaf_year_offset}`
+      fyl=`expr ${fy} - '(' '(' ${yearc} - 1 ')' / ${yd} ')' \* ${yd}`           
+      forcing_year=`expr ${fyl} | awk  '{printf "%04d",$1}'`
+      
+      acc_cp tair10m_y${yearc}.nc          ${nemo_t}_y${forcing_year}.nc
+      acc_cp uwnd10m_y${yearc}.nc          ${nemo_u}_y${forcing_year}.nc
+      acc_cp vwnd10m_y${yearc}.nc          ${nemo_v}_y${forcing_year}.nc
+      acc_cp humi10m_y${yearc}.nc          ${nemo_q}_y${forcing_year}.nc
+      acc_cp qsw_y${yearc}.nc              ${nemo_qsw}_y${forcing_year}.nc
+      acc_cp qlw_y${yearc}.nc              ${nemo_qlw}_y${forcing_year}.nc
+      acc_cp precip_y${yearc}.nc           ${nemo_precip}_y${forcing_year}.nc
+      acc_cp snow_y${yearc}.nc             ${nemo_snow}_y${forcing_year}.nc
+      acc_cp weights_bic2.nc     $nemo_weights_bicubic2
+      acc_cp weights_bil2.nc     $nemo_weights_bilinear2
+      acc_cp weights_bic3.nc     $nemo_weights_bicubic3
+      acc_cp weights_bil3.nc     $nemo_weights_bilinear3
+  fi
+
 #  if [ x"$nemo_forcing" = "xbulk" ]; then
 #    # Bulk forcing
 #    nemo_utau=${nemo_utau:=mc_ncq_5d_06360101_06361231_grid_ufl_mean.nc}
