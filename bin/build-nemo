@@ -25,6 +25,7 @@
 #           If both -a and -b are present then -a takes precedence
 #   -k   ...do not delete the tmp dir after compilation is complete (used for debugging)
 #   -d   ...compile an executable with debugging symbols (for use with DDT or GDB)
+#   -s   ...save executable instead  of linking it
 #
 # Variable definitions:
 #   srcpath=srcpath ...location of the NEMO source code. 
@@ -149,6 +150,9 @@ nemo_arch=''
 # Is this nemo build for a coupled model
 coupled=''
 
+# to officiall "save" the executable or not
+save_exe=''
+
 # Boolean flags used to build (or not build) particular nemo tools
 build_rebuild_tool=0
 build_rebuild_nemo_tool=0
@@ -175,7 +179,7 @@ printf " ------------------- \n"
 [ ! -d "$CCRNTMP" ] && bail "/tmp is not a directory"
 
 # process command line options
-while getopts j:n:m:r:hktvxd opt
+while getopts j:n:m:r:hktvxds opt
 do
   case $opt in
     m) nemo_arch="$OPTARG" ;;
@@ -190,6 +194,7 @@ do
        build_rebuild_nemo_tool=1
        build_weights_tool=1
        ;;
+    s) save_exe="on" ;;
     d) debug=1 ;;
     h) usage ;;
     -) shift; break ;; # end of options
@@ -446,7 +451,7 @@ if [ $build_nemo_exe -eq 1 ]; then
   #cp $nemo_config/BLD/bin/nemo.exe $tmpd/$nemo_exe
   #cd $tmpd
   [ ! -s "$nemo_config/BLD/bin/nemo.exe" ] && bail "Unable to create nemo executable $nemo_exe"
-   if [ $coupled = "on" ]; then
+   if [ "$coupled" = "on" ] || [ "$save_exe" = "on" ]; then
       # Save the nemo executable to RUNPATH/DATAPATH
       save $nemo_config/BLD/bin/nemo.exe $nemo_exe || bail "Problem while saving $nemo_exe"
       #release $nemo_exe

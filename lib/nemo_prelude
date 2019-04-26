@@ -1176,7 +1176,7 @@ echo "#################### Start NEMO pre-processing #################"
       [ ! -z $nemo_weights_bicubic2  ] && acc_cp weights_bic2.nc $nemo_weights_bicubic2
       [ ! -z $nemo_weights_bilinear2 ] && acc_cp weights_bil2.nc $nemo_weights_bilinear2
 
-      mod_nl sn_wndi sn_wndj sn_qsr sn_qlw sn_tair sn_humi sn_prec sn_snow sn_tdif sn_rnf sn_cnf
+      mod_nl namelist sn_wndi sn_wndj sn_qsr sn_qlw sn_tair sn_humi sn_prec sn_snow sn_tdif sn_rnf sn_cnf
   fi
 
 #  if [ x"$nemo_forcing" = "xbulk" ]; then
