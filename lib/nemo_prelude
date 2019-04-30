@@ -1253,7 +1253,7 @@ echo "#################### Start NEMO pre-processing #################"
     nemo_data_alkalini_nomask=omip6_orca1_data_at_nomask.nc
     nemo_data_o2_nomask=omip6_orca1_data_o2_nomask.nc
     nemo_data_po4_nomask=omip6_orca1_data_po4_nomask.nc
-    nemo_data_si_nomask=omip6_orca1_data_si_nomask.nc
+    nemo_data_si_nomask=${nemo_data_si_nomask:=uncs_orca1_data_si_nomask.nc}
     nemo_data_no3_nomask=omip6_orca1_data_no3_nomask.nc
     nemo_data_doc_nomask=urjc_orca1_data_doc_nomask.nc
     nemo_data_fer_nomask=urjc_orca1_data_fer_nomask.nc  
