@@ -1179,56 +1179,6 @@ echo "#################### Start NEMO pre-processing #################"
       mod_nl namelist sn_wndi sn_wndj sn_qsr sn_qlw sn_tair sn_humi sn_prec sn_snow sn_tdif sn_rnf sn_cnf
   fi
 
-#  if [ x"$nemo_forcing" = "xbulk" ]; then
-#    # Bulk forcing
-#    nemo_utau=${nemo_utau:=mc_ncq_5d_06360101_06361231_grid_ufl_mean.nc}
-#    nemo_vtau=${nemo_vtau:=mc_ncq_5d_06360101_06361231_grid_vfl_mean.nc}
-#    nemo_qtot=${nemo_qtot:=mc_ncq_5d_06360101_06361231_grid_hfl_mean.nc}
-#    nemo_qsr=${nemo_qsr:=mc_ncq_5d_06360101_06361231_grid_hfl_mean.nc}
-#    nemo_emp=${nemo_emp:=mc_ncq_5d_06360101_06361231_grid_hfl_mean.nc}
-#    nemo_weights_bicubic3=${nemo_weights_bicubic3:=nemo_3.4_weights_grid02_bicubic_orca2.nc}
-#    nemo_weights_bilinear3=${nemo_weights_bilinear3:=nemo_3.4_weights_grid02_bilinear_orca2.nc}
-#
-#    [ -s utau.nc ]         || acc_cp utau.nc             $nemo_utau
-#    [ -s vtau.nc ]         || acc_cp vtau.nc             $nemo_vtau
-#    [ -s qtot.nc ]         || acc_cp qtot.nc             $nemo_qtot
-#    [ -s qsr.nc ]          || acc_cp qsr.nc              $nemo_qsr
-#    [ -s emp.nc ]          || acc_cp emp.nc              $nemo_emp
-#    [ -s weights_bic3.nc ] || acc_cp weights_bic3.nc     $nemo_weights_bicubic3
-#    [ -s weights_bil3.nc ] || acc_cp weights_bil3.nc     $nemo_weights_bilinear3
-#
-#  elif [ x"$nemo_forcing" = "xflux" ]; then
-#    # Flux forcing
-#    nemo_utau=${nemo_utau:=sa_gcm16_05_w_2005_oufs_signchg.nc}
-#    nemo_vtau=${nemo_vtau:=sa_gcm16_05_w_2005_ovfs_signchg.nc}
-#    nemo_qtot=${nemo_qtot:=sa_gcm16_05_w_2005_obeg.nc}
-#    nemo_qsr=${nemo_qsr:=sa_gcm16_05_w_2005_ofsg.nc}
-#    nemo_emp=${nemo_emp:=sa_gcm16_05_w_2005_obwg_signchg.nc}
-#    nemo_weights_bicubic3=${nemo_weights_bicubic3:=nemo_3.4_weights_canam4grid_bicubic_orca1.nc}\
-#    nemo_weights_bilinear3=${nemo_weights_bilinear3:=nemo_3.4_weights_canam4grid_bilinear_orca1.nc}
-#
-#    [ -s utau.nc ]         || acc_cp utau.nc             $nemo_utau
-#    [ -s vtau.nc ]         || acc_cp vtau.nc             $nemo_vtau
-#    [ -s qtot.nc ]         || acc_cp qtot.nc             $nemo_qtot
-#    [ -s qsr.nc ]          || acc_cp qsr.nc              $nemo_qsr
-#    [ -s emp.nc ]          || acc_cp emp.nc              $nemo_emp
-#    [ -s weights_bic3.nc ] || acc_cp weights_bic3.nc     $nemo_weights_bicubic3
-#    [ -s weights_bil3.nc ] || acc_cp weights_bil3.nc     $nemo_weights_bilinear3
-#
-#    # CICE forcing files
-#    nemo_snowfall=${nemo_snowfall:='sa_gcm17l_mix14_snow_gs_0001010200-0001020100.nc'}
-#    nemo_rainfall=${nemo_rainfall:='sa_gcm17l_mix14_rain_gs_0001010200-0001020100.nc'}
-#    nemo_sublim=${nemo_sublim:='sa_gcm17l_mix14_sblm_0001010200-0001020100.nc'}
-#    nemo_topmeltn1=${nemo_topmeltn1:='sa_gcm16_05_w_2005_obeg.nc'}
-#    nemo_botmeltn1=${nemo_botmeltn1:='sa_gcm17l_mix14_hsea_gs_chgsign_0001010200-0001020100.nc'}
-#
-#    [ -s snowfall_1m ]  || acc_cp snowfall_1m         $nemo_snowfall
-#    [ -s rainfall_1m ]  || acc_cp rainfall_1m         $nemo_rainfall
-#    [ -s sublim_1m ]    || acc_cp sublim_1m           $nemo_sublim
-#    [ -s topmeltn1_1m ] || acc_cp topmeltn1_1m        $nemo_topmeltn1
-#    [ -s botmeltn1_1m ] || acc_cp botmeltn1_1m        $nemo_botmeltn1
-#  fi
-
   if [ $nemo_carbon -eq 1 ]; then
     # Access PISCES files
 
@@ -1249,11 +1199,16 @@ echo "#################### Start NEMO pre-processing #################"
       [ -s fermask.orca.nc ] || acc_cp fermask.orca.nc $nemo_fermask_orca
     fi
 
+    if [ x"$nemo_forcing" = "xbulk_iaf" ]; then
+        nemo_data_si_nomask=${nemo_data_si_nomask:=omip6_orca1_data_si_nomask.nc}
+    else
+        nemo_data_si_nomask=${nemo_data_si_nomask:=uncs_orca1_data_si_nomask.nc}
+    fi
+
     nemo_data_dic_nomask=omip6_orca1_data_ct_preind_nomask.nc
     nemo_data_alkalini_nomask=omip6_orca1_data_at_nomask.nc
     nemo_data_o2_nomask=omip6_orca1_data_o2_nomask.nc
     nemo_data_po4_nomask=omip6_orca1_data_po4_nomask.nc
-    nemo_data_si_nomask=${nemo_data_si_nomask:=uncs_orca1_data_si_nomask.nc}
     nemo_data_no3_nomask=omip6_orca1_data_no3_nomask.nc
     nemo_data_doc_nomask=urjc_orca1_data_doc_nomask.nc
     nemo_data_fer_nomask=urjc_orca1_data_fer_nomask.nc  
