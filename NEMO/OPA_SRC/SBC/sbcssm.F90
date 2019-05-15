@@ -20,6 +20,11 @@ MODULE sbcssm
    USE restart         ! ocean restart
    USE iom
    USE in_out_manager  ! I/O manager
+#ifdef key_fafmip
+   USE sbcfaf,     only : ln_fafheat
+   USE par_fafmip, only : jpTr, jpTa
+   USE trc,        only : trb
+#endif
 
    IMPLICIT NONE
    PRIVATE
@@ -64,6 +69,9 @@ CONTAINS
          ssu_m(:,:) = ub(:,:,1)
          ssv_m(:,:) = vb(:,:,1)
          sst_m(:,:) = tsn(:,:,1,jp_tem)
+#ifdef key_fafmip
+         IF (ln_fafheat) sst_m(:,:) = tsn(:,:,1,jp_tem) - trb(:,:,1,jpTa)
+#endif         
          sss_m(:,:) = tsn(:,:,1,jp_sal)
          !                          ! removed inverse barometer ssh when Patm forcing is used (for sea-ice dynamics)
          IF( ln_apr_dyn ) THEN   ;   ssh_m(:,:) = sshn(:,:) - 0.5 * ( ssh_ib(:,:) + ssh_ibb(:,:) )
@@ -104,6 +112,9 @@ CONTAINS
                ssu_m(:,:) = zcoef * ub(:,:,1)
                ssv_m(:,:) = zcoef * vb(:,:,1)
                sst_m(:,:) = zcoef * tsn(:,:,1,jp_tem)
+#ifdef key_fafmip
+               IF (ln_fafheat) sst_m(:,:) = zcoef * (tsn(:,:,1,jp_tem) - trb(:,:,1,jpTa))
+#endif
                sss_m(:,:) = zcoef * tsn(:,:,1,jp_sal)
                !                          ! removed inverse barometer ssh when Patm forcing is used 
                IF( ln_apr_dyn ) THEN   ;   ssh_m(:,:) = zcoef * ( sshn(:,:) - 0.5 * ( ssh_ib(:,:) + ssh_ibb(:,:) ) )
@@ -126,6 +137,9 @@ CONTAINS
          ssu_m(:,:) = ssu_m(:,:) + ub(:,:,1)
          ssv_m(:,:) = ssv_m(:,:) + vb(:,:,1)
          sst_m(:,:) = sst_m(:,:) + tsn(:,:,1,jp_tem)
+#ifdef key_fafmip
+         IF (ln_fafheat) sst_m(:,:) = sst_m(:,:) + (tsn(:,:,1,jp_tem) - trb(:,:,1,jpTa))
+#endif
          sss_m(:,:) = sss_m(:,:) + tsn(:,:,1,jp_sal)
          !                          ! removed inverse barometer ssh when Patm forcing is used (for sea-ice dynamics)
          IF( ln_apr_dyn ) THEN   ;   ssh_m(:,:) = ssh_m(:,:) + sshn(:,:) - 0.5 *  ( ssh_ib(:,:) + ssh_ibb(:,:) )
