@@ -19,6 +19,7 @@ MODULE trcsms
    USE trcsms_cfc         ! CFC 11 & 12
    USE trcsms_c14b        ! C14b tracer 
    USE trcsms_my_trc      ! MY_TRC  tracers
+   USE trcsms_fafmip      ! FAFMIP
    USE prtctl_trc         ! Print control for debbuging
 
    IMPLICIT NONE
@@ -53,6 +54,7 @@ CONTAINS
       IF( lk_cfc     )   CALL trc_sms_cfc    ( kt )    ! surface fluxes of CFC
       IF( lk_c14b    )   CALL trc_sms_c14b   ( kt )    ! surface fluxes of C14
       IF( lk_my_trc  )   CALL trc_sms_my_trc ( kt )    ! MY_TRC  tracers
+      IF( lk_fafmip  )   CALL trc_sms_fafmip ( kt )    ! FAFMIP tracers
 
       IF(ln_ctl) THEN      ! print mean trends (used for debugging)
          WRITE(charout, FMT="('sms ')")
