@@ -16,16 +16,21 @@ MODULE par_trc
    USE par_c14b      ! C14 bomb tracer
    USE par_cfc       ! CFC 11 and 12 tracers
    USE par_my_trc    ! user defined passive tracers
+   USE par_fafmip    ! FAFMIP tracers
 
    IMPLICIT NONE
 
    ! Passive tracers : Total size
    ! ---------------               ! total number of passive tracers, of 2d and 3d output and trend arrays
-   INTEGER, PUBLIC,  PARAMETER ::   jptra    =  jp_lobster    + jp_pisces     + jp_cfc     + jp_c14b    + jp_my_trc
-   INTEGER, PUBLIC,  PARAMETER ::   jpdia2d  =  jp_lobster_2d + jp_pisces_2d  + jp_cfc_2d  + jp_c14b_2d + jp_my_trc_2d
-   INTEGER, PUBLIC,  PARAMETER ::   jpdia3d  =  jp_lobster_3d + jp_pisces_3d  + jp_cfc_3d  + jp_c14b_3d + jp_my_trc_3d
+   INTEGER, PUBLIC,  PARAMETER ::   jptra    =  jp_lobster    + jp_pisces     + jp_cfc     + jp_c14b    + &
+                                                jp_my_trc     + jp_fafmip
+   INTEGER, PUBLIC,  PARAMETER ::   jpdia2d  =  jp_lobster_2d + jp_pisces_2d  + jp_cfc_2d  + jp_c14b_2d + &
+                                                jp_my_trc_2d  + jp_fafmip_2d
+   INTEGER, PUBLIC,  PARAMETER ::   jpdia3d  =  jp_lobster_3d + jp_pisces_3d  + jp_cfc_3d  + jp_c14b_3d + &
+                                                jp_my_trc_3d  + jp_fafmip_3d
    !                     ! total number of sms diagnostic arrays
-   INTEGER, PUBLIC,  PARAMETER ::   jpdiabio = jp_lobster_trd + jp_pisces_trd + jp_cfc_trd + jp_c14b_trd + jp_my_trc_trd
+   INTEGER, PUBLIC,  PARAMETER ::   jpdiabio = jp_lobster_trd + jp_pisces_trd + jp_cfc_trd + jp_c14b_trd + &
+                                               jp_my_trc_trd  + jp_fafmip_trd
    
    !  1D configuration ("key_c1d")
    ! -----------------

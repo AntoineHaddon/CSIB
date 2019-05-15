@@ -48,7 +48,6 @@ MODULE par_my_trc
 
    ! assign an index in trc arrays for each PTS prognostic variables
    INTEGER, PUBLIC, PARAMETER ::   jpage = jp_lm + 1     !: 1st MY_TRC tracer: Ideal age in years
-
 #else
    !!---------------------------------------------------------------------
    !!   Default                           No user defined tracers (MY_TRC)

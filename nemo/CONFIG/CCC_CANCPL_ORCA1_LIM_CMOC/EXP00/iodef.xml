@@ -290,6 +290,8 @@
        <field id="DI14C"    description="Radiocarbon DIC"                               unit="mmolC/m3"                />
        <!-- variables available with key_top and key_my_trc -->
        <field id="agessc"   description="Ideal age"                                     unit="years"                   />
+       <field id="o1"       description="Oleg 1"                                        unit="degC"                    />
+       <field id="o2"       description="Oleg 2"                                        unit="degC"                    />
        <field id="cfc11"    description="CFC11 tracer concentration"                    unit="mol/m3"                  />
        <field id="cfc12"    description="CFC12 tracer concentration"                    unit="mol/m3"                  />
        <field id="sf6"      description="SF6 tracer concentration"                      unit="mol/m3"                  />
@@ -797,6 +799,8 @@
           <field ref="cfc12"    level="1" />
           <field ref="sf6"      level="2" />
           <field ref="DI14C"    level="1" />
+          <field ref="o1"       name="pathetao" description="sea_water_additional_potential_temperature"    level="1" />
+          <field ref="o2"       name="prthetao" description="sea_water_redistributed_potential_temperature" level="1" />
        </file>
 
         <file id="1m_diad_T" name="auto" description="additional cmoc diagnostic variables" >

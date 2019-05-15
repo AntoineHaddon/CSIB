@@ -42,7 +42,6 @@
    sn_tracer(14)  = 'cfc12   ' , 'CFC-12 concentration                   ',  'molC/m3',   .false.    ,  .true. 
    sn_tracer(15)  = 'sf6     ' , 'SF6 concentration                      ',  'molC/m3',   .false.    ,  .true. 
    sn_tracer(16)  = 'agessc  ' , 'Ideal Age                              ',  'years' ,    .false.    ,  .true.  
-
 /
 !-----------------------------------------------------------------------
 &namtrc_dta      !    Initialisation from data input file

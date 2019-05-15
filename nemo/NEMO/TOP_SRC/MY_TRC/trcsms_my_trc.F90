@@ -16,12 +16,21 @@ MODULE trcsms_my_trc
    USE trc             ! TOP variables
    USE trdmod_oce
    USE trdmod_trc
+   USE phycst
+   USE fldread         ! read input fields
+   USE sbc_oce         ! surface boundary condition: ocean fields
 
    IMPLICIT NONE
    PRIVATE
 
    PUBLIC   trc_sms_my_trc       ! called by trcsms.F90 module
    PUBLIC   trc_sms_my_trc_alloc ! called by trcini_my_trc.F90 module
+
+   INTEGER , PARAMETER ::   jpfld = 2   ! maximum number of files to read
+   TYPE(FLD), ALLOCATABLE, DIMENSION(:) ::   sf    ! structure of input fields (file informations, fields read)
+
+   !! * Substitution
+#  include "domzgr_substitute.h90"
 
    ! Defined HERE the arrays specific to MY_TRC sms and ALLOCATE them in trc_sms_my_trc_alloc
 
@@ -42,8 +51,11 @@ CONTAINS
       !!----------------------------------------------------------------------
       !
       INTEGER, INTENT(in) ::   kt   ! ocean time-step index
-      INTEGER ::   jn   ! dummy loop index
+      INTEGER ::   ji, jn                       ! dummy loop index
+      INTEGER  ::  ierror                       ! return error code
+      REAL(wp) :: zfact = 1._wp                 ! temporary scalar
       REAL(wp) :: dtyrs
+      CHARACTER(len=100) ::  cn_dir             ! Root directory for location of tracer files
 !!----------------------------------------------------------------------
       !
       IF( nn_timing == 1 )  CALL timing_start('trc_sms_my_trc')

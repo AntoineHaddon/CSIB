@@ -61,6 +61,11 @@ MODULE sbccpl
    USE ice_domain_size, only: ncat
 #endif
    USE diawri
+#if defined key_fafmip
+   USE sbcfaf,     only : ln_fafheat 
+   USE par_fafmip, only : jpTr
+   USE trc,        only : trb
+#endif
    IMPLICIT NONE
    PRIVATE
 
@@ -1425,12 +1430,13 @@ CONTAINS
       INTEGER ::   ji, jj, jl   ! dummy loop indices
       INTEGER ::   isec, info   ! local integer
       REAL(wp), POINTER, DIMENSION(:,:)   ::   zfr_l, ztmp1, ztmp2, zotx1, zoty1, zotz1, zitx1, zity1, zitz1
+      REAL(wp), POINTER, DIMENSION(:,:)   ::   zsst ! The actual SST passed through to the coupler
       REAL(wp), POINTER, DIMENSION(:,:,:) ::   ztmp3, ztmp4   
       !!----------------------------------------------------------------------
       !
       IF( nn_timing == 1 )  CALL timing_start('sbc_cpl_snd')
       !
-      CALL wrk_alloc( jpi,jpj, zfr_l, ztmp1, ztmp2, zotx1, zoty1, zotz1, zitx1, zity1, zitz1 )
+      CALL wrk_alloc( jpi,jpj, zfr_l, ztmp1, ztmp2, zotx1, zoty1, zotz1, zitx1, zity1, zitz1, zsst )
       CALL wrk_alloc( jpi,jpj,jpl, ztmp3, ztmp4 )
 
       isec = ( kt - nit000 ) * NINT(rdttra(1))        ! date of exchanges
@@ -1440,9 +1446,15 @@ CONTAINS
       !                                                      ! ------------------------- !
       !                                                      !    Surface temperature    !   in Kelvin
       !                                                      ! ------------------------- !
+      zsst(:,:) = tsn(:,:,1,jp_tem)
+#if defined key_fafmip
+      IF (ln_fafheat) THEN
+         zsst(:,:) = trb(:,:,1,jpTr)
+      ENDIF
+#endif
       SELECT CASE( sn_snd_temp%cldes)
-      CASE( 'oce only'             )   ;   ztmp1(:,:) =   tsn(:,:,1,jp_tem) + rt0
-      CASE( 'weighted oce and ice' )   ;   ztmp1(:,:) = ( tsn(:,:,1,jp_tem) + rt0 ) * zfr_l(:,:)   
+      CASE( 'oce only'             )   ;   ztmp1(:,:) =   zsst(:,:) + rt0
+      CASE( 'weighted oce and ice' )   ;   ztmp1(:,:) =   ( zsst(:,:) + rt0 ) * zfr_l(:,:)   
          SELECT CASE( sn_snd_temp%clcat )
          CASE( 'yes' )   
             ztmp3(:,:,1:jpl) = tn_ice(:,:,1:jpl) * a_i(:,:,1:jpl)
@@ -1453,7 +1465,7 @@ CONTAINS
             ENDDO
          CASE default                  ;   CALL ctl_stop( 'sbc_cpl_snd: wrong definition of sn_snd_temp%clcat' )
          END SELECT
-      CASE( 'oce and ice' )   ;   ztmp1(:,:) = ( tsn(:,:,1,jp_tem) + rt0 )
+      CASE( 'oce and ice' )   ;   ztmp1(:,:) = ( zsst(:,:) + rt0 )
          SELECT CASE( sn_snd_temp%clcat )
          CASE( 'yes' )   
             ztmp3(:,:,1:jpl) = tn_ice(:,:,1:jpl)
@@ -1713,7 +1725,7 @@ CONTAINS
          ! 
       ENDIF
       !
-      CALL wrk_dealloc( jpi,jpj, zfr_l, ztmp1, ztmp2, zotx1, zoty1, zotz1, zitx1, zity1, zitz1 )
+      CALL wrk_dealloc( jpi,jpj, zfr_l, ztmp1, ztmp2, zotx1, zoty1, zotz1, zitx1, zity1, zitz1, zsst )
       CALL wrk_dealloc( jpi,jpj,jpl, ztmp3, ztmp4 )
       !
       IF( nn_timing == 1 )  CALL timing_stop('sbc_cpl_snd')
