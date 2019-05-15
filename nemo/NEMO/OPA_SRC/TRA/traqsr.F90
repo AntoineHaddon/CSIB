@@ -286,15 +286,6 @@ CONTAINS
       ELSE
          call ctl_stop('For key_fafmip trdtra must also have key_trdtra defined')
       ENDIF
-      ! Apply heat flux anomalies if they should affect the physical state of the model (fafheat, fafall)
-      IF ( ln_fafheat ) THEN
-         DO jj = 1, jpj
-            DO ji = 1, jpi
-               z1_e3t = zfact / fse3t(ji,jj,1)
-               tsa(ji,jj,1,jp_tem) = tsa(ji,jj,1,jp_tem) + (sf_fafmip(jp_hflx)%fnow(ji,jj,1) * etot3(ji,jj,1)) * z1_e3t
-            ENDDO
-         ENDDO
-      ENDIF
 #endif
       !
       IF( lrst_oce ) THEN   !                  Write in the ocean restart file
