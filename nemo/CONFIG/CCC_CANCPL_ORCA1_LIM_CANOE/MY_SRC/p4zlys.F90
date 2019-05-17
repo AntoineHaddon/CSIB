@@ -65,6 +65,7 @@ CONTAINS
       REAL(wp) ::   zdispot, zfact, zcalcon, zalka, zbot
       REAL(wp) ::   zph2, zph3, zpo4, zsi, zpd, zp0, zp1, zp3        ! coefficients added to account for P and Si contribution to TA
       REAL(wp) ::   zomegaca, zexcess, zexcess0
+      REAL(wp) ::   ztmas, ztmas1
       REAL(wp) ::   zrfact
       CHARACTER (len=25) :: charout
       REAL(wp), POINTER, DIMENSION(:,:,:) :: zco3, zcaldiss   
@@ -89,11 +90,13 @@ CONTAINS
 !CDIR NOVERRCHK
                DO ji = 1, jpi
 
-                  zbot  = borat(ji,jj,1)
+                  ztmas   = tmask_bgc_closea(ji,jj,jk)
+                  ztmas1  = 1. - tmask_bgc_closea(ji,jj,jk)
+                  zbot  = borat(ji,jj,1) * ztmas + 0.000416 * ztmas1 
                   zfact = rhop(ji,jj,1) / 1000. + rtrn
-                  zdic  = trn(ji,jj,1,jpdic) / zfact
-                  zph   = MAX( hi(ji,jj,1), 1.e-10 ) / zfact
-                  zalka = trn(ji,jj,1,jptal) / zfact
+                  zdic  = trn(ji,jj,1,jpdic) / zfact * ztmas + 2. * ztmas1
+                  zph   = MAX( hi(ji,jj,1), 1.e-10 ) / zfact * ztmas + 1.e-9 * ztmas1
+                  zalka = trn(ji,jj,1,jptal) / zfact * ztmas + 2.2 * ztmas1
                   zph2 = zph*zph
                   zph3 = zph*zph2
                   zpo4 = (trn(ji,jj,1,jpno3)+trn(ji,jj,1,jpnh4)) / 16. *0.000001 / zfact
