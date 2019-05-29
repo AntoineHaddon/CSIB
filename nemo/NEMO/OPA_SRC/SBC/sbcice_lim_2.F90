@@ -136,15 +136,7 @@ CONTAINS
          ! ... masked sea surface freezing temperature [Kelvin] (set to rt0 over land)
          tfu(:,:) = tfreez( sss_m ) +  rt0 
 
-#if defined key_fafmip
-         if ( ln_fafheat ) THEN
-           zsist(:,:,1) = trb(:,:,1,jpTr) + rt0 * ( 1. - tmask(:,:,1) ) 
-         else
-            zsist (:,:,1) = sist (:,:) + rt0 * ( 1. - tmask(:,:,1) )
-         endif
-#else
          zsist (:,:,1) = sist (:,:) + rt0 * ( 1. - tmask(:,:,1) )
-#endif
 
          ! ... ice albedo (clear sky and overcast sky)
          CALL albedo_ice( zsist, reshape( hicif, (/jpi,jpj,1/) ), &
