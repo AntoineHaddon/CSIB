@@ -11,7 +11,6 @@ MODULE sbcfaf
    !!----------------------------------------------------------------------
    USE oce             ! ocean dynamics and tracers
    USE dom_oce         ! ocean space and time domain
-   USE eosbn2, only : tfreez ! Equation of state
    USE sbc_oce         ! surface boundary condition: ocean fields
    USE phycst          ! physical constants
    USE fldread         ! read input fields
@@ -19,7 +18,6 @@ MODULE sbcfaf
    USE in_out_manager  ! I/O manager
    USE lib_mpp         ! distribued memory computing library
    USE lbclnk          ! ocean lateral boundary conditions (or mpp link)
-   USE wrk_nemo
 
    IMPLICIT NONE
    PRIVATE
@@ -84,12 +82,9 @@ CONTAINS
       REAL(wp) ::   zrhoa  = 1.22         ! Air density kg/m3
       REAL(wp) ::   zcdrag = 1.5e-3       ! drag coefficient
       REAL(wp) ::   ztx, zty, zmod, zcoef ! temporary variables
-      REAL(wp), POINTER, DIMENSION(:,:  ) :: tfreeze, qfraz
-      REAL(wp) ::   inv_rdt
       !!
       !!---------------------------------------------------------------------
       !
-      CALL wrk_alloc( jpi, jpj, tfreeze, qfraz )
       ! Check to see if anomalies should be added by each flux type
       IF ( ln_faftau ) THEN
          CALL fld_read( kt, nn_fsbc, sf_fafmip(jp_utau:jp_utau) )
@@ -139,24 +134,8 @@ CONTAINS
 
             CALL iom_put("fafemp_x_sss",sf_fafmip(jp_emp)%fnow(:,:,1)*tsn(:,:,1,jp_sal))
          ENDIF
-         ! Calculate a heat flux due to the 'real' SST dropping below freezing.
-         ! This is necessary because the frazil heat flux is calculated in the
-         ! ice model and not in the ocean
-         IF ( ln_fafheat ) THEN
-            inv_rdt = 1./(rn_rdt*nn_fsbc)
-            tfreeze = tfreez(tsn(:,:,1,jp_sal))
-            DO jj = 1,jpj
-               DO ji = 1,jpi
-                  qfraz(ji,jj) = MAX(0., rau0 * rcp * fse3t_m(ji,jj,1) * ( tfreeze(ji,jj) - tsn(ji,jj,1,jp_tem) )*inv_rdt)
-                  qns(ji,jj) = qns(ji,jj) + qfraz(ji,jj)
-               ENDDO
-            END DO
-            CALL iom_put("faf_qfraz",qfraz(:,:))
-         ENDIF
 
       ENDIF
-
-      CALL wrk_dealloc( jpi, jpj, tfreeze, qfraz )
    END SUBROUTINE sbc_fafmip
 
    SUBROUTINE sbc_fafmip_init( )
