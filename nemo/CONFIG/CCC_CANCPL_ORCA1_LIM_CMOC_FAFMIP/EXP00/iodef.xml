@@ -137,6 +137,7 @@
         <field id="hflx_ice_cea"  description="heat flux due to ice thermodynamics"                         unit="W/m2"     />
         <field id="hflx_rnf_cea"  description="heat flux due to runoffs"                                    unit="W/m2"     />
         <field id="hflx_cal_cea"  description="heat flux due to calving"                                    unit="W/m2"     />
+        <field id="faf_qfraz"     description="heat flux due to unresolved frazil formation in fafheat"     unit="W/m2"     />
         <field id="bicemel_cea"   description="Rate of Melt at Sea Ice Base (cell average)"                 unit="kg/m2/s"  />
         <field id="licepro_cea"   description="Lateral Sea Ice Growth Rate (cell average)"                  unit="kg/m2/s"  />
         <field id="snowmel_cea"   description="Snow Melt Rate (cell average)"                               unit="kg/m2/s"  />
