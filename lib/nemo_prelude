@@ -1054,6 +1054,10 @@ echo "#################### Start NEMO pre-processing #################"
   nemo_iodef=${nemo_iodef:=''}
   [ -s iodef.xml ] || find_nemo_config_EXP00 iodef.xml $nemo_iodef
 
+  # Update NEMO priority level of output variables: output_level 
+  output_level=${output_level}
+  sed -i "s/output_level=\"\([0-9]\+\)\"/output_level=\"${output_level}\"/" iodef.xml
+
   nemo_xmlio_server_def=${nemo_xmlio_server_def:=''}
   [ -s xmlio_server.def ] || find_nemo_config_EXP00 xmlio_server.def $nemo_xmlio_server_def
 
