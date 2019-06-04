@@ -43,7 +43,7 @@ export PATH=/fs/ssm/hpco/exp/mib002/anaconda/anaconda-4.4.0/anaconda_4.4.0_ubunt
   sfxlst="1m_grid_t 1m_grid_t_ar6 1m_grid_u 1m_grid_u_ar6 1m_grid_v 1m_grid_v_ar6 1m_grid_w 1m_grid_w_ar6     \
           1m_icemod 1m_scalar_ar6 1m_ptrc_t 1m_diad_t          \
           1d_grid_t_ar6 1d_grid_u_ar6 1d_grid_v_ar6 1d_icemod  \
-          1h_icemod 3h_grid_t_ar6 1d_diaptr"
+          3h_grid_t_ar6 1d_diaptr"
 
 # suffix list for yearly nemo historical files.
   sfxlst_1y="1y_grid_t_ar6"
