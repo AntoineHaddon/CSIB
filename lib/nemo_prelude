@@ -520,6 +520,7 @@ echo "#################### Start NEMO pre-processing #################"
   # Abort if the value for nemo_forcing is unknown
   case $nemo_forcing in
     coupled) ;; # These are valid values
+    bulk_iaf) ;;
     *) bail "Invalid value for nemo_forcing = $nemo_forcing" ;;
   esac
 
@@ -1065,8 +1066,8 @@ echo "#################### Start NEMO pre-processing #################"
   nemo_Eddyengf=${nemo_Eddyengf:=nemo_3.4_orca1_eddy_mix.nc}
 #  nemo_geothermal_heating=${nemo_geothermal_heating:=nemo_3.3_orca2_geothermal_heating.nc}
   nemo_runoff_core_monthly=${nemo_runoff_core_monthly:=nemo_3.4_orca1_runoff_1m_orca1.nc}
-#  nemo_sst_data=${nemo_sst_data:=nemo_3.4_orca1_sst_1m_orca1.nc}
-#  nemo_sss_data=${nemo_sss_data:=nemo_3.4_orca1_sss_1m_orca1.nc}
+  nemo_sst_data=${nemo_sst_data:=nemo_3.4_orca1_sst_1m_orca1.nc}
+  nemo_sss_data=${nemo_sss_data:=omip6_orca1_data_sss_nomask.nc}
   nemo_chlorophyll=${nemo_chlorophyll:=nemo_3.4_orca1_chlorophyll-orca1_1m.nc}
   nemo_subbasins=${nemo_subbasins:=nemo_3.4_orca1_basinmask_050308_ukmo_modified.nc}
   nemo_o2=${nemo_o2:=urdy_fafmip_hfds_orca1_record.nc}
@@ -1080,8 +1081,8 @@ echo "#################### Start NEMO pre-processing #################"
   [ -s Eddyengf.nc ]            || acc_cp Eddyengf.nc            $nemo_Eddyengf
 #  [ -s geothermal_heating.nc ]  || acc_cp geothermal_heating.nc  $nemo_geothermal_heating
   [ -s runoff_core_monthly.nc ] || acc_cp runoff_core_monthly.nc $nemo_runoff_core_monthly
-#  [ -s sss_data.nc ]            || acc_cp sss_data.nc            $nemo_sss_data
-#  [ -s sst_data.nc ]            || acc_cp sst_data.nc            $nemo_sst_data
+  [ -s sss_data.nc ]            || acc_cp sss_data.nc            $nemo_sss_data
+  [ -s sst_data.nc ]            || acc_cp sst_data.nc            $nemo_sst_data
   [ -s chlorophyll.nc ]         || acc_cp chlorophyll.nc         $nemo_chlorophyll
   [ -s subbasins.nc ]           || acc_cp subbasins.nc           $nemo_subbasins
 
@@ -1093,8 +1094,8 @@ echo "#################### Start NEMO pre-processing #################"
     [ -s kmt ]  || acc_cp kmt   $nemo_cice_kmt
   fi
 
-  nemo_data_1m_potential_temperature_nomask=${nemo_data_1m_potential_temperature_nomask:=nemo_3.4_orca1_potemp_1m_z46_nomask.nc}
-  nemo_data_1m_salinity_nomask=${nemo_data_1m_salinity_nomask:=nemo_3.4_orca1_salin_1m_z46_nomask.nc}
+  nemo_data_1m_potential_temperature_nomask=${nemo_data_1m_potential_temperature_nomask:=omip6_orca1_data_ptmp_nomask.nc}
+  nemo_data_1m_salinity_nomask=${nemo_data_1m_salinity_nomask:=omip6_orca1_data_salt_nomask.nc}
 
   [ -s data_1m_potential_temperature_nomask.nc ] ||
       acc_cp data_1m_potential_temperature_nomask.nc $nemo_data_1m_potential_temperature_nomask
@@ -1123,89 +1124,60 @@ echo "#################### Start NEMO pre-processing #################"
   fi
   [ -s o2.nc ]                  || acc_cp o2.nc                  $nemo_o2
 
-#  nemo_t=${nemo_t:=nemo_3.4_orca1_t_10.15june2009.nc}
-#  nemo_u=${nemo_u:=nemo_3.4_orca1_u_10.15june2009.nc}
-#  nemo_v=${nemo_v:=nemo_3.4_orca1_v_10.15june2009.nc}
-#  nemo_q=${nemo_q:=nemo_3.4_orca1_q_10.15june2009.nc}
-#  nemo_qsw=${nemo_qsw:=nemo_3.4_orca1_ncar_rad.15june2009.nc}
-#  nemo_qlw=${nemo_qlw:=nemo_3.4_orca1_ncar_rad.15june2009.nc}
-#  nemo_precip=${nemo_precip:=nemo_3.4_orca1_ncar_precip.15june2009.nc}
-#  nemo_snow=${nemo_snow:=nemo_3.4_orca1_ncar_precip.15june2009.nc}
-  # weights_grid02_* are weights for ECMWF data
-#  nemo_weights_bicubic1=${nemo_weights_bicubic1:=nemo_3.4_weights_grid02_bicubic_orca1.nc}
-#  nemo_weights_bilinear1=${nemo_weights_bilinear1:=nemo_3.4_weights_grid02_bilinear_orca1.nc}
-  # weights_grid03_* are weights for CORE data
-#  nemo_weights_bicubic2=${nemo_weights_bicubic2:=nemo_3.4_weights_grid03_bicubic_orca1.nc}
-#  nemo_weights_bilinear2=${nemo_weights_bilinear2:=nemo_3.4_weights_grid03_bilinear_orca1.nc}
 
-  #[ -s tair10m.nc ]      || acc_cp tair10m.nc          $nemo_t
-  #[ -s uwnd10m.nc ]      || acc_cp uwnd10m.nc          $nemo_u
-  #[ -s vwnd10m.nc ]      || acc_cp vwnd10m.nc          $nemo_v
-  #[ -s humi10m.nc ]      || acc_cp humi10m.nc          $nemo_q
-  #[ -s qsw.nc ]          || acc_cp qsw.nc              $nemo_qsw
-  #[ -s qlw.nc ]          || acc_cp qlw.nc              $nemo_qlw
-  #[ -s precip.nc ]       || acc_cp precip.nc           $nemo_precip
-  #[ -s snow.nc ]         || acc_cp snow.nc             $nemo_snow
-  #[ -s weights_bic1.nc ] || acc_cp weights_bic1.nc     $nemo_weights_bicubic1
-  #[ -s weights_bil1.nc ] || acc_cp weights_bil1.nc     $nemo_weights_bilinear1 
-  #[ -s weights_bic2.nc ] || acc_cp weights_bic2.nc     $nemo_weights_bicubic2
-  #[ -s weights_bil2.nc ] || acc_cp weights_bil2.nc     $nemo_weights_bilinear2
 
-  #nemo_weights_bicubic3=${nemo_weights_bicubic3:=nemo_3.4_weights_canam4grid_bicubic_orca1.nc}
-  #nemo_weights_bilinear3=${nemo_weights_bilinear3:=nemo_3.4_weights_canam4grid_bilinear_orca1.nc}
+  if [ x"$nemo_forcing" = "xbulk_iaf" ]; then
+      # namelist paramters to be changed by XNEMO
+      sn_wndi=" 'uwnd10m'     ,         6         , 'U_10_MOD',   .true.    , .false. , 'yearly'  , '' , 'Uwnd' "
+      sn_wndj=" 'vwnd10m'     ,         6         , 'V_10_MOD',   .true.    , .false. , 'yearly'  , '' , 'Vwnd' "
+      sn_qsr="  'qsw'         ,        24         , 'SWDN_MOD',   .true.    , .false. , 'yearly'  , '' , '' "
+      sn_qlw="  'qlw'         ,        24         , 'LWDN_MOD',   .true.    , .false. , 'yearly'  , '' , '' "
+      sn_tair=" 'tair10m'     ,         6         , 'T_10_MOD',   .true.    , .false. , 'yearly'  , '' , '' "
+      sn_humi=" 'humi10m'     ,         6         , 'Q_10_MOD',   .true.    , .false. , 'yearly'  , '' , '' "
+      sn_prec=" 'precip'      ,        -1         , 'PRC_MOD' ,   .true.    , .false. , 'yearly'  , '' , '' "
+      sn_snow=" 'snow'        ,        -1         , 'SNOW'    ,   .true.    , .false. , 'yearly'  , '' , '' "
+      sn_tdif=" 'taudif_core' ,        24         , 'taudif'  ,   .false.    , .false. , 'yearly'  , '' , '' "
 
-  #[ -s weights_bic3.nc ] || acc_cp weights_bic3.nc     $nemo_weights_bicubic3
-  #[ -s weights_bil3.nc ] || acc_cp weights_bil3.nc     $nemo_weights_bilinear3
+      # Forcing files to be accessed
+      # In the case of interannual forcing, just give the file prefix. The ${prefix}_yYYYY.nc will be added
+      # by xnemo.
+      nemo_t=omip6_orca1_corev2_t_10
+      nemo_u=omip6_orca1_corev2_u_10
+      nemo_v=omip6_orca1_corev2_v_10
+      nemo_q=omip6_orca1_corev2_q_10
+      nemo_qsw=omip6_orca1_corev2_ncar_rad
+      nemo_qlw=omip6_orca1_corev2_ncar_rad
+      nemo_precip=omip6_orca1_corev2_ncar_precip
+      nemo_snow=omip6_orca1_corev2_ncar_precip
 
-#  if [ x"$nemo_forcing" = "xbulk" ]; then
-#    # Bulk forcing
-#    nemo_utau=${nemo_utau:=mc_ncq_5d_06360101_06361231_grid_ufl_mean.nc}
-#    nemo_vtau=${nemo_vtau:=mc_ncq_5d_06360101_06361231_grid_vfl_mean.nc}
-#    nemo_qtot=${nemo_qtot:=mc_ncq_5d_06360101_06361231_grid_hfl_mean.nc}
-#    nemo_qsr=${nemo_qsr:=mc_ncq_5d_06360101_06361231_grid_hfl_mean.nc}
-#    nemo_emp=${nemo_emp:=mc_ncq_5d_06360101_06361231_grid_hfl_mean.nc}
-#    nemo_weights_bicubic3=${nemo_weights_bicubic3:=nemo_3.4_weights_grid02_bicubic_orca2.nc}
-#    nemo_weights_bilinear3=${nemo_weights_bilinear3:=nemo_3.4_weights_grid02_bilinear_orca2.nc}
-#
-#    [ -s utau.nc ]         || acc_cp utau.nc             $nemo_utau
-#    [ -s vtau.nc ]         || acc_cp vtau.nc             $nemo_vtau
-#    [ -s qtot.nc ]         || acc_cp qtot.nc             $nemo_qtot
-#    [ -s qsr.nc ]          || acc_cp qsr.nc              $nemo_qsr
-#    [ -s emp.nc ]          || acc_cp emp.nc              $nemo_emp
-#    [ -s weights_bic3.nc ] || acc_cp weights_bic3.nc     $nemo_weights_bicubic3
-#    [ -s weights_bil3.nc ] || acc_cp weights_bil3.nc     $nemo_weights_bilinear3
-#
-#  elif [ x"$nemo_forcing" = "xflux" ]; then
-#    # Flux forcing
-#    nemo_utau=${nemo_utau:=sa_gcm16_05_w_2005_oufs_signchg.nc}
-#    nemo_vtau=${nemo_vtau:=sa_gcm16_05_w_2005_ovfs_signchg.nc}
-#    nemo_qtot=${nemo_qtot:=sa_gcm16_05_w_2005_obeg.nc}
-#    nemo_qsr=${nemo_qsr:=sa_gcm16_05_w_2005_ofsg.nc}
-#    nemo_emp=${nemo_emp:=sa_gcm16_05_w_2005_obwg_signchg.nc}
-#    nemo_weights_bicubic3=${nemo_weights_bicubic3:=nemo_3.4_weights_canam4grid_bicubic_orca1.nc}\
-#    nemo_weights_bilinear3=${nemo_weights_bilinear3:=nemo_3.4_weights_canam4grid_bilinear_orca1.nc}
-#
-#    [ -s utau.nc ]         || acc_cp utau.nc             $nemo_utau
-#    [ -s vtau.nc ]         || acc_cp vtau.nc             $nemo_vtau
-#    [ -s qtot.nc ]         || acc_cp qtot.nc             $nemo_qtot
-#    [ -s qsr.nc ]          || acc_cp qsr.nc              $nemo_qsr
-#    [ -s emp.nc ]          || acc_cp emp.nc              $nemo_emp
-#    [ -s weights_bic3.nc ] || acc_cp weights_bic3.nc     $nemo_weights_bicubic3
-#    [ -s weights_bil3.nc ] || acc_cp weights_bil3.nc     $nemo_weights_bilinear3
-#
-#    # CICE forcing files
-#    nemo_snowfall=${nemo_snowfall:='sa_gcm17l_mix14_snow_gs_0001010200-0001020100.nc'}
-#    nemo_rainfall=${nemo_rainfall:='sa_gcm17l_mix14_rain_gs_0001010200-0001020100.nc'}
-#    nemo_sublim=${nemo_sublim:='sa_gcm17l_mix14_sblm_0001010200-0001020100.nc'}
-#    nemo_topmeltn1=${nemo_topmeltn1:='sa_gcm16_05_w_2005_obeg.nc'}
-#    nemo_botmeltn1=${nemo_botmeltn1:='sa_gcm17l_mix14_hsea_gs_chgsign_0001010200-0001020100.nc'}
-#
-#    [ -s snowfall_1m ]  || acc_cp snowfall_1m         $nemo_snowfall
-#    [ -s rainfall_1m ]  || acc_cp rainfall_1m         $nemo_rainfall
-#    [ -s sublim_1m ]    || acc_cp sublim_1m           $nemo_sublim
-#    [ -s topmeltn1_1m ] || acc_cp topmeltn1_1m        $nemo_topmeltn1
-#    [ -s botmeltn1_1m ] || acc_cp botmeltn1_1m        $nemo_botmeltn1
-#  fi
+      # WEIGHTS file for this resolution
+      nemo_weights_bicubic2=
+      nemo_weights_bilinear2=
+
+     # Runoff to use
+     nemo_runoff_core_monthly=nemo_3.4_orca1_runoff_1m_orca1.nc
+     sn_rnf=" 'runoff_core_monthly',        -1         , 'sorunoff'    ,   .true.     , .true. , 'yearly'  , '', '' "
+     sn_cnf=" 'runoff_core_monthly',        -1         , 'socoeff'     ,   .true.     , .true. , 'yearly'  , '', '' "
+
+      yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
+      fy=`expr ${yearc} + ${iaf_year_offset} | awk  '{printf "%04d",$1}'`
+      yd=`expr ${iaf_loop_year} - ${iaf_year_offset}`
+      fyl=`expr ${fy} - '(' '(' ${yearc} - 1 ')' / ${yd} ')' \* ${yd}`           
+      forcing_year=`expr ${fyl} | awk  '{printf "%04d",$1}'`
+      
+      acc_cp tair10m_y${yearc}.nc          ${nemo_t}_y${forcing_year}.nc
+      acc_cp uwnd10m_y${yearc}.nc          ${nemo_u}_y${forcing_year}.nc
+      acc_cp vwnd10m_y${yearc}.nc          ${nemo_v}_y${forcing_year}.nc
+      acc_cp humi10m_y${yearc}.nc          ${nemo_q}_y${forcing_year}.nc
+      acc_cp qsw_y${yearc}.nc              ${nemo_qsw}_y${forcing_year}.nc
+      acc_cp qlw_y${yearc}.nc              ${nemo_qlw}_y${forcing_year}.nc
+      acc_cp precip_y${yearc}.nc           ${nemo_precip}_y${forcing_year}.nc
+      acc_cp snow_y${yearc}.nc             ${nemo_snow}_y${forcing_year}.nc
+      [ ! -z $nemo_weights_bicubic2  ] && acc_cp weights_bic2.nc $nemo_weights_bicubic2
+      [ ! -z $nemo_weights_bilinear2 ] && acc_cp weights_bil2.nc $nemo_weights_bilinear2
+
+      mod_nl namelist sn_wndi sn_wndj sn_qsr sn_qlw sn_tair sn_humi sn_prec sn_snow sn_tdif sn_rnf sn_cnf
+  fi
 
   if [ $nemo_carbon -eq 1 ]; then
     # Access PISCES files
@@ -1227,15 +1199,21 @@ echo "#################### Start NEMO pre-processing #################"
       [ -s fermask.orca.nc ] || acc_cp fermask.orca.nc $nemo_fermask_orca
     fi
 
-    nemo_data_dic_nomask=${nemo_data_dic_nomask:=uncs_orca1_data_dic_nomask.nc}
-    nemo_data_alkalini_nomask=${nemo_data_alkalini_nomask:=uncs_orca1_data_alkalini_nomask.nc}
-    nemo_data_o2_nomask=${nemo_data_o2_nomask:=uncs_orca1_data_o2_nomask.nc}
-    nemo_data_po4_nomask=${nemo_data_po4_nomask:=uncs_orca1_data_po4_nomask.nc}
-    nemo_data_si_nomask=${nemo_data_si_nomask:=uncs_orca1_data_si_nomask.nc}
-    nemo_data_doc_nomask=${nemo_data_doc_nomask:=uncs_orca1_data_doc_nomask.nc}
-    nemo_data_fer_nomask=${nemo_data_fer_nomask:=uncs_orca1_data_fer_nomask.nc}
-    nemo_data_no3_nomask=${nemo_data_no3_nomask:=uncs_orca1_data_no3_nomask.nc}
-    nemo_data_atcco2=${nemo_data_atcco2:=nemo_atcco2_1850-2005.txt}
+    if [ x"$nemo_forcing" = "xbulk_iaf" ]; then
+        nemo_data_si_nomask=${nemo_data_si_nomask:=omip6_orca1_data_si_nomask.nc}
+    else
+        nemo_data_si_nomask=${nemo_data_si_nomask:=uncs_orca1_data_si_nomask.nc}
+    fi
+
+    nemo_data_dic_nomask=omip6_orca1_data_ct_preind_nomask.nc
+    nemo_data_alkalini_nomask=omip6_orca1_data_at_nomask.nc
+    nemo_data_o2_nomask=omip6_orca1_data_o2_nomask.nc
+    nemo_data_po4_nomask=omip6_orca1_data_po4_nomask.nc
+    nemo_data_no3_nomask=omip6_orca1_data_no3_nomask.nc
+    nemo_data_doc_nomask=urjc_orca1_data_doc_nomask.nc
+    nemo_data_fer_nomask=urjc_orca1_data_fer_nomask.nc  
+    nemo_data_atcco2=omip6_co2atm.nc
+    nemo_data_atc14c=omip6_Delta14co2.nc
 
     # Abiotic BGC 
     nemo_data_at_abio_nomask=omip6_orca1_data_at_abio_nomask.nc 
