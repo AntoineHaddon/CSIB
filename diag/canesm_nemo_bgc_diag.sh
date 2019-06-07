@@ -12,6 +12,9 @@ set -x
 export PATH=/fs/ssm/hpco/exp/mib002/anaconda/anaconda-4.4.0/anaconda_4.4.0_ubuntu-14.04-amd64-64/envs/cdo-1.9.0/bin:$PATH
 export LD_LIBRARY_PATH=/fs/ssm/hpco/tmp/eccc/201402/04/intel-2016.1.150/ubuntu-14.04-amd64-64/lib/:$LD_LIBRARY_PATH
 
+# NEMO priority level
+  output_level=${output_level}
+
 # First and last month/year of 12-month period
   fmon=`echo $nemo_rtd_mons | cut -f1 -d' '`
   nmon=`echo $nemo_rtd_mons | wc -w` # number of chunks in 12-month period
@@ -69,27 +72,18 @@ export LD_LIBRARY_PATH=/fs/ssm/hpco/tmp/eccc/201402/04/intel-2016.1.150/ubuntu-1
   ln -s 1m_diad_t_${fmon} diad_t  || ( echo "Link to diad_t failed" ; exit 1 )
   ln -s 1m_ptrc_t_${fmon} ptrc_t  || ( echo "Link to ptrc_t failed" ; exit 1 )
 
-  if [[ $nemo_config == *'CMOC'* ]]; then
+  if [[ $nemo_config == *'CMOC'* && ${output_level} -gt 0 ]]; then
     # Expected outputs from CMOC or CanOE offline diagnostics
-    cmoc_outvars="CO3sata
-                  CO3satc
-                  o2sol
-                  CO3
-                  pH3D
-                  CO3abio
-                  pHabio
-                  CO3nat
-                  pHnat
-                  Omega_C
-                  Omega_C_nat
-                  Omega_C_abio
-                  Omega_A
-                  Omega_A_nat
-                  Omega_A_abio
-                  Zsat_A
-                  Zsat_C
-                  o2min
-                  zo2min"
+    cmoc_outvars_l1="Zsat_A Zsat_C o2min zo2min o2sol pH3D pHabio pHnat"
+    cmoc_outvars_l2="CO3 CO3abio CO3nat CO3sata CO3satc"
+    cmoc_outvars_l8="Omega_A Omega_A_abio Omega_A_nat Omega_C Omega_C_abio Omega_C_nat"
+    case ${output_level} in
+         1) cmoc_outvars="${cmoc_outvars_l1}"                          ;;
+         2) cmoc_outvars="${cmoc_outvars_l1} ${cmoc_outvars_l2}"       ;;
+     [3-7]) cmoc_outvars="${cmoc_outvars_l1} ${cmoc_outvars_l2}"       ;;
+         8) cmoc_outvars="${cmoc_outvars_l1} ${cmoc_outvars_l2} ${cmoc_outvars_l8}" ;;
+         *) cmoc_outvars="${cmoc_outvars_l1} ${cmoc_outvars_l2} ${cmoc_outvars_l8}" ;;
+    esac
 
     # Compile the diagnostic program
     WRKDIR=$PWD
@@ -113,9 +107,8 @@ export LD_LIBRARY_PATH=/fs/ssm/hpco/tmp/eccc/201402/04/intel-2016.1.150/ubuntu-1
     fi
     # Run the offline diagnostics
     ./nemo_diag_cmoc.exe
-  fi
 
-  cmoc_destfile="1m_diad_t"
+    cmoc_destfile="1m_diad_t"
 
 # # SK: comment out until someone tells it's needed
 #     # Merge all CMOC variables into a single file and save it
@@ -126,10 +119,11 @@ export LD_LIBRARY_PATH=/fs/ssm/hpco/tmp/eccc/201402/04/intel-2016.1.150/ubuntu-1
 #     release $cmoc_destfile
 
 # Extract some grid variables from 1m_diad_t
-  ncks -v nav_lat,nav_lon 1m_diad_t_${fmon} 1m_diad_t_header
+    ncks -v nav_lat,nav_lon 1m_diad_t_${fmon} 1m_diad_t_header
 
 # Save time series
-  for f in $cmoc_outvars; do
-    ncks -A 1m_diad_t_header $f.nc
-    save $f.nc sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_${cmoc_destfile}_${f}.nc
-  done
+    for f in $cmoc_outvars; do
+      ncks -A 1m_diad_t_header $f.nc
+      save $f.nc sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_${cmoc_destfile}_${f}.nc
+    done
+  fi
