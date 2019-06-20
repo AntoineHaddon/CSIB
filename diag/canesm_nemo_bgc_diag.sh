@@ -7,7 +7,7 @@
 #########################################################
 
 set -x
-
+set -e
 # Get CDO / TEMPORARY!
 export PATH=/fs/ssm/hpco/exp/mib002/anaconda/anaconda-4.4.0/anaconda_4.4.0_ubuntu-14.04-amd64-64/envs/cdo-1.9.0/bin:$PATH
 export LD_LIBRARY_PATH=/fs/ssm/hpco/tmp/eccc/201402/04/intel-2016.1.150/ubuntu-14.04-amd64-64/lib/:$LD_LIBRARY_PATH
@@ -60,10 +60,6 @@ export LD_LIBRARY_PATH=/fs/ssm/hpco/tmp/eccc/201402/04/intel-2016.1.150/ubuntu-1
       mv ${sfx}_m$fmon ${sfx}_$fmon
     fi
   done
-
-# Access the nemo restart files
-  diag_rs1="mc_${runid}_${yearm1}_m${lmon}_nemors.tar" # previous year
-  access rsp $diag_rs1 || ( echo "$diag_rs1 does not exist" ; exit 1 )
 
 ##########################
 # CMIP6 nemo diagnostics #
