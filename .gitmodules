@@ -1,3 +1,0 @@
-[submodule "lib/maestro"]
-	path = lib/maestro
-	url = git@gitlab.science.gc.ca:ncs001/CanNEMO_maestro_suite.git
