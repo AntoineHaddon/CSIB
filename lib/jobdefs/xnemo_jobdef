@@ -883,11 +883,11 @@ cat > Execute_Script <<'end_of_script'
     fi
 
     # CMIP6 post-processing switch
-    nemo_ar6_diag=on
-    ToF nemo_ar6_diag
+    with_nemo_diag=on
+    ToF with_nemo_diag
 
-    # Modify the namelist to output on-the-fly diagnostics when nemo_ar6_diag = on.
-    if [ ${nemo_ar6_diag} -eq 1 ] ; then
+    # Modify the namelist to output on-the-fly diagnostics when with_nemo_diag = on.
+    if [ ${with_nemo_diag} -eq 1 ] ; then
       ln_diaptr=.true.
       ln_diaznl=.false.
       nn_fwri=24
@@ -1185,7 +1185,7 @@ cat > Execute_Script <<'end_of_script'
       echo " "
     fi
 
-    if [ ${nemo_ar6_diag} -eq 1 ]; then
+    if [ ${with_nemo_diag} -eq 1 ]; then
       #=#=#=# Combine output files that were written one file per MPI task
       #=#=#=# into a single file containing data from all MPI tasks
 
@@ -1239,7 +1239,7 @@ cat > Execute_Script <<'end_of_script'
 
         # Select tn and sn from current DEC ocean restart and archive them in the tar file
         # to compute opottemptend and osalttend from CMIP6 request.
-        if [ ${nemo_ar6_diag} -eq 1 ] && [ ${stop_mon} -eq 12 ]; then
+        if [ ${with_nemo_diag} -eq 1 ] && [ ${stop_mon} -eq 12 ]; then
           nnd_itend=`expr ${nn_itend} |awk '{printf "%08d",$1}'`
           pfx=${cn_exp}_${nnd_itend}
           pfx2=${pfx}_${cn_ocerst_out}
@@ -1319,7 +1319,7 @@ cat > Execute_Script <<'end_of_script'
       [ -s rs_xnemo_access_log ] && tarlist="$tarlist rs_xnemo_access_log"
 
       # Add tn and sn for computing opottemptend and osalttend from CMIP6 request.
-      if [ ${nemo_ar6_diag} -eq 1 ]; then
+      if [ ${with_nemo_diag} -eq 1 ]; then
         # when nemo_freq=1y, tar tn and sn from the current DEC in DEC tar file.
         if [ ${stop_mon} -eq 12 ]; then
           pfx=${cn_exp}_${nnd_itend}
@@ -1367,7 +1367,7 @@ cat > Execute_Script <<'end_of_script'
     #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
 
     # Post-processing of opottemptend and osalttend from CMIP6 request.
-    if [ ${nemo_ar6_diag} -eq 1 ] && [ ${stop_mon} -eq 12 ]; then
+    if [ ${with_nemo_diag} -eq 1 ] && [ ${stop_mon} -eq 12 ]; then
       prevd_itend=`echo ${steps_per_day} ${start_year} | awk '{s1=$1*365;s2=$2-1; printf "%08d",s1*s2}' -`
       if [ ${nn_it000} -ne 1 -a ${prevd_itend} -gt 0 ]; then
         nnd_itend=`expr ${nn_itend} |awk '{printf "%08d",$1}'`
