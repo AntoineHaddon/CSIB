@@ -224,9 +224,9 @@ for arg in "$@"; do
            del_key) nemo_del_cpp_keys="$val" ;;
                     # if coupled is defined on the cmd line then this value will be used
            coupled) ;;
-                    # Allow the user to supply a CanCPL repo and/or version
+                    # Turn on coupling, which requires the coupler code be compiled with nemo
        cancpl_repo) ;;
-        cancpl_ver) ;;
+                    # location of coupler repository
                  *) bail "Invalid command line arg --> $arg <--" ;;
          esac
          ;;
@@ -270,17 +270,15 @@ fi
 if [ $coupled = "on" ]; then
   # Define cancpl repo and commit
   # Values supplied on the command line will be used, if present, otherwise use these defaults
-  cancpl_repo=${cancpl_repo:=$CCRNSRC/coupler_dir/coupler.git}
-  cancpl_ver=${cancpl_ver:=master}
+  cancpl_repo=${cancpl_repo:=$CCRNSRC/CanCPL}
   # The coupler repo must be on a locally accessable directory path
   [ ! -d "$cancpl_repo" ] && usage -e "Coupler repository is not a directory --> $cancpl_repo <--"
   # Ensure this is a full pathname
   cancpl_repo=$(cd $cancpl_repo; pwd)
   # Verify that this is a valid commit
   # If so then reassign as the full sha1 hash
-  commit=$(cd $cancpl_repo; git rev-parse $cancpl_ver) ||
-      { echo "$(basename $0): Commit $cancpl_ver is not present in coupler repository $cancpl_repo"; exit 1; }
-  cancpl_ver=$commit
+  cancpl_ver=$(cd $cancpl_repo; git rev-parse HEAD) ||
+      { echo "$(basename $0): Failed to extract the coupler commit from $cancpl_repo"! Is this a true git repo?; exit 1; }
 fi
 
 
