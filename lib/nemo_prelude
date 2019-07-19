@@ -1190,13 +1190,13 @@ echo "#################### Start NEMO pre-processing #################"
     nemo_dust_orca=${nemo_dust_orca:=uncs_orca1_dust.orca.nc}
     nemo_river_orca=${nemo_river_orca:=nemo_3.4_orca2_river.orca.nc}
     nemo_ndeposition_orca=${nemo_ndeposition_orca:=uncs_orca1_ndeposition.orca.nc}
-#    nemo_bathy_orca=${nemo_bathy_orca:=uncs_orca1_bathy.orca.nc}
+    nemo_bathy_orca=${nemo_bathy_orca:=uncs_orca1_bathy.orca.nc}
 
     [ -s presatm.nc ]          || acc_cp presatm.nc           $nemo_presatm
     [ -s dust.orca.nc ]        || acc_cp dust.orca.nc         $nemo_dust_orca
     [ -s river.orca.nc ]       || acc_cp river.orca.nc        $nemo_river_orca
     [ -s ndeposition.orca.nc ] || acc_cp ndeposition.orca.nc  $nemo_ndeposition_orca
-#    [ -s bathy.orca.nc ]       || acc_cp bathy.orca.nc        $nemo_bathy_orca
+    [ -s bathy.orca.nc ]       || acc_cp bathy.orca.nc        $nemo_bathy_orca
 
     if [ $nemo_cmoc -eq 1 ]; then
       nemo_fermask_orca=${nemo_fermask_orca:=nemo_3.4_orca1_femask.orca.nc}
