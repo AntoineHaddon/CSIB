@@ -1069,7 +1069,7 @@ echo "#################### Start NEMO pre-processing #################"
   nemo_K1rowdrg=${nemo_K1rowdrg:=nemo_3.4_orca1_k1rowdrg_r1_modif.nc}
   nemo_Eddyengf=${nemo_Eddyengf:=nemo_3.4_orca1_eddy_mix.nc}
 #  nemo_geothermal_heating=${nemo_geothermal_heating:=nemo_3.3_orca2_geothermal_heating.nc}
-  nemo_runoff_core_monthly=${nemo_runoff_core_monthly:=nemo_3.4_orca1_runoff_1m_orca1.nc}
+  nemo_runoff_socoeff_monthly=${nemo_runoff_core_monthly:=nemo_3.4_orca1_runoff_1m_orca1.nc}
   nemo_sst_data=${nemo_sst_data:=nemo_3.4_orca1_sst_1m_orca1.nc}
   nemo_sss_data=${nemo_sss_data:=omip6_orca1_data_sss_nomask.nc}
   nemo_chlorophyll=${nemo_chlorophyll:=nemo_3.4_orca1_chlorophyll-orca1_1m.nc}
@@ -1084,7 +1084,6 @@ echo "#################### Start NEMO pre-processing #################"
   [ -s K1rowdrg.nc ]            || acc_cp K1rowdrg.nc            $nemo_K1rowdrg
   [ -s Eddyengf.nc ]            || acc_cp Eddyengf.nc            $nemo_Eddyengf
 #  [ -s geothermal_heating.nc ]  || acc_cp geothermal_heating.nc  $nemo_geothermal_heating
-  [ -s runoff_core_monthly.nc ] || acc_cp runoff_core_monthly.nc $nemo_runoff_core_monthly
   [ -s sss_data.nc ]            || acc_cp sss_data.nc            $nemo_sss_data
   [ -s sst_data.nc ]            || acc_cp sst_data.nc            $nemo_sst_data
   [ -s chlorophyll.nc ]         || acc_cp chlorophyll.nc         $nemo_chlorophyll
@@ -1153,15 +1152,17 @@ echo "#################### Start NEMO pre-processing #################"
       nemo_qlw=omip6_orca1_corev2_ncar_rad
       nemo_precip=omip6_orca1_corev2_ncar_precip
       nemo_snow=omip6_orca1_corev2_ncar_precip
+      nemo_runoff=omip6_orca1_corev2_runoff
+      [ -s runoff_core_monthly.nc ] || acc_cp runoff_core_monthly.nc $nemo_runoff_core_monthly
 
       # WEIGHTS file for this resolution
       nemo_weights_bicubic2=
       nemo_weights_bilinear2=
 
-     # Runoff to use
-     nemo_runoff_core_monthly=nemo_3.4_orca1_runoff_1m_orca1.nc
-     sn_rnf=" 'runoff_core_monthly',        -1         , 'sorunoff'    ,   .true.     , .true. , 'yearly'  , '', '' "
-     sn_cnf=" 'runoff_core_monthly',        -1         , 'socoeff'     ,   .true.     , .true. , 'yearly'  , '', '' "
+      # Runoff to use
+      nemo_runoff_core_monthly=nemo_3.4_orca1_runoff_1m_orca1.nc
+      sn_rnf=" 'runoff',        -1         , 'runoff'    ,   .true.     , .true. , 'yearly'  , '', '' "
+      sn_cnf=" 'runoff',        -1         , 'socoeff'   ,   .true.     , .true. , 'yearly'  , '', '' "
 
       yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
       fy=`expr ${yearc} + ${iaf_year_offset} | awk  '{printf "%04d",$1}'`
@@ -1177,6 +1178,7 @@ echo "#################### Start NEMO pre-processing #################"
       acc_cp qlw_y${yearc}.nc              ${nemo_qlw}_y${forcing_year}.nc
       acc_cp precip_y${yearc}.nc           ${nemo_precip}_y${forcing_year}.nc
       acc_cp snow_y${yearc}.nc             ${nemo_snow}_y${forcing_year}.nc
+      acc_cp runoff_y${yearc}.nc           ${nemo_runoff}_y${runoff_year}.nc
       [ ! -z $nemo_weights_bicubic2  ] && acc_cp weights_bic2.nc $nemo_weights_bicubic2
       [ ! -z $nemo_weights_bilinear2 ] && acc_cp weights_bil2.nc $nemo_weights_bilinear2
 
@@ -1216,7 +1218,7 @@ echo "#################### Start NEMO pre-processing #################"
     nemo_data_no3_nomask=omip6_orca1_data_no3_nomask.nc
     nemo_data_doc_nomask=urjc_orca1_data_doc_nomask.nc
     nemo_data_fer_nomask=urjc_orca1_data_fer_nomask.nc  
-    nemo_data_atcco2=omip6_co2atm.nc
+    nemo_data_atcco2=omip6_co2atm_annual.nc
     nemo_data_atc14c=omip6_Delta14co2.nc
 
     # Abiotic BGC 
@@ -1258,7 +1260,10 @@ echo "#################### Start NEMO pre-processing #################"
     fi
 
     # Modify the pisces namelist to read CO2 from file, if specified in makefile
-     ln_co2int=${ln_co2int:=.false.} # read atm pco2 from a file (T) or constant (F)
+    ln_co2int=${ln_co2int:=.false.} # read atm pco2 from a file (T) or constant (F)
+    if [ "$ln_co2int" = ".true." ]; then     
+      [ -s co2atm.nc ] ||  acc_cp co2atm.nc       $nemo_data_atcco2
+    fi
     mod_nl namelist_pisces ln_co2int ln_c14int 
 
     # Reset sn_rcv_co2 and sn_snd_co2 in namelist if requested by the user
