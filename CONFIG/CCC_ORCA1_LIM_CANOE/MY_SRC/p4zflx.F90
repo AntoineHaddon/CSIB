@@ -41,11 +41,12 @@ MODULE p4zflx
    PUBLIC   p4z_flx_alloc  
 
    !                                      !!** Namelist  nampisext  **
-   REAL(wp)          ::  atcco2    = 278._wp       !: pre-industrial atmospheric [co2] (ppm) 	
-   LOGICAL           ::  ln_co2int = .FALSE.       !: flag to read in a file and interpolate atmospheric pco2 or not
-   CHARACTER(len=120) ::  clname       = 'co2atm.nc'                               !: filename of pco2 values
+   REAL(wp)          ::  atcco2    = 284.32          !: pre-industrial atmospheric [co2] (ppm) 	
+   LOGICAL           ::  ln_co2int = .FALSE.         !: flag to read in a file and interpolate atmospheric pco2 or not
+   CHARACTER(len=120) ::  clname       = 'co2atm.nc' !: filename of pco2 values
    CHARACTER(len=120) ::  clvarname    = 'mole_fraction_of_carbon_dioxide_in_air'  !: variable name in clname file 
    INTEGER           ::  nn_offset = 0             !: Offset model-data start year (default = 0) 
+   INTEGER           ::  nn_readoffset_co2 = 1850  !: Initial year in data file (default = 1850) 
 
    !!  Variables related to reading atmospheric CO2 time history    
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:) :: atcco2h, atcco2h_years
@@ -271,7 +272,7 @@ CONTAINS
       !!      called at the first timestep (nittrc000)
       !! ** input   :   Namelist nampisext
       !!----------------------------------------------------------------------
-      NAMELIST/nampisext/ln_co2int, atcco2, clname, clvarname, nn_offset
+      NAMELIST/nampisext/ln_co2int, atcco2, clname, clvarname, nn_offset, nn_readoffset_co2
       INTEGER :: jm, ntime, ncid
       REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: tmp2d
       !!----------------------------------------------------------------------
@@ -311,7 +312,7 @@ CONTAINS
          ! Input file for OMIP6 is in Gregorian days since 1 January 0000, manually overwrite
          ! so that atcco2h_years is in yearfraction
          DO jm = 1,ntime
-            atcco2h_years(jm) = (jm-1) + 0.5
+            atcco2h_years(jm) = (jm-1) + (nn_readoffset_co2 + 0.5)
          ENDDO
          
       ENDIF
