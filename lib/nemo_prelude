@@ -926,13 +926,6 @@ echo "#################### Start NEMO pre-processing #################"
       fi
     fi
 
-    # If CFCs are enabled we need to override namelist_top and namelist_cfc       
-    if [ $nemo_cfc -eq 1 ]; then         
-       find_nemo_config_EXP00 namelist_cfc $nemo_namelist_cfc
-       find_nemo_config_EXP00 namelist_top_cfc $nemo_namelist_top_cfc
-       mv namelist_top_cfc namelist_top
-    fi
-
     # job number
     # Increment the job number from the previous namelist file
     prev_no=`sed -n '/^ *nn_no *=/p' rs_namelist|sed 's/^.*= *\([^ \t\!]*\).*/\1/'`
@@ -949,6 +942,13 @@ echo "#################### Start NEMO pre-processing #################"
     # Increment the job number from the previous namelist file
     prev_date0=`sed -n '/^ *nn_date0 *=/p' rs_namelist|sed 's/^.*= *\([^ \t\!]*\).*/\1/'`
   fi
+  # If CFCs are enabled we need to override namelist_top and namelist_cfc       
+  if [ $nemo_cfc -eq 1 ]; then         
+     find_nemo_config_EXP00 namelist_cfc $nemo_namelist_cfc
+     find_nemo_config_EXP00 namelist_top_cfc $nemo_namelist_top_cfc
+     mv namelist_top_cfc namelist_top
+  fi
+
 
   # The user may override the initial time step value by setting nemo_nn_it000
   [ -n "$nemo_nn_it000" ] && nn_it000=$nemo_nn_it000
@@ -1069,7 +1069,6 @@ echo "#################### Start NEMO pre-processing #################"
   nemo_K1rowdrg=${nemo_K1rowdrg:=nemo_3.4_orca1_k1rowdrg_r1_modif.nc}
   nemo_Eddyengf=${nemo_Eddyengf:=nemo_3.4_orca1_eddy_mix.nc}
 #  nemo_geothermal_heating=${nemo_geothermal_heating:=nemo_3.3_orca2_geothermal_heating.nc}
-  nemo_runoff_socoeff_monthly=${nemo_runoff_core_monthly:=nemo_3.4_orca1_runoff_1m_orca1.nc}
   nemo_sst_data=${nemo_sst_data:=nemo_3.4_orca1_sst_1m_orca1.nc}
   nemo_sss_data=${nemo_sss_data:=omip6_orca1_data_sss_nomask.nc}
   nemo_chlorophyll=${nemo_chlorophyll:=nemo_3.4_orca1_chlorophyll-orca1_1m.nc}
@@ -1153,16 +1152,14 @@ echo "#################### Start NEMO pre-processing #################"
       nemo_precip=omip6_orca1_corev2_ncar_precip
       nemo_snow=omip6_orca1_corev2_ncar_precip
       nemo_runoff=omip6_orca1_corev2_runoff
-      [ -s runoff_core_monthly.nc ] || acc_cp runoff_core_monthly.nc $nemo_runoff_core_monthly
 
       # WEIGHTS file for this resolution
       nemo_weights_bicubic2=
       nemo_weights_bilinear2=
 
       # Runoff to use
-      nemo_runoff_core_monthly=nemo_3.4_orca1_runoff_1m_orca1.nc
-      sn_rnf=" 'runoff',        -1         , 'runoff'    ,   .true.     , .true. , 'yearly'  , '', '' "
-      sn_cnf=" 'runoff',        -1         , 'socoeff'   ,   .true.     , .true. , 'yearly'  , '', '' "
+      sn_rnf=" 'runoff',        -1         , 'runoff'    ,   .true.     , .false. , 'yearly'  , '', '' "
+      sn_cnf=" 'runoff',        -1         , 'socoeff'   ,   .true.     , .false. , 'yearly'  , '', '' "
 
       yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
       fy=`expr ${yearc} + ${iaf_year_offset} | awk  '{printf "%04d",$1}'`
@@ -1178,7 +1175,7 @@ echo "#################### Start NEMO pre-processing #################"
       acc_cp qlw_y${yearc}.nc              ${nemo_qlw}_y${forcing_year}.nc
       acc_cp precip_y${yearc}.nc           ${nemo_precip}_y${forcing_year}.nc
       acc_cp snow_y${yearc}.nc             ${nemo_snow}_y${forcing_year}.nc
-      acc_cp runoff_y${yearc}.nc           ${nemo_runoff}_y${runoff_year}.nc
+      acc_cp runoff_y${yearc}.nc           ${nemo_runoff}_y${forcing_year}.nc
       [ ! -z $nemo_weights_bicubic2  ] && acc_cp weights_bic2.nc $nemo_weights_bicubic2
       [ ! -z $nemo_weights_bilinear2 ] && acc_cp weights_bil2.nc $nemo_weights_bilinear2
 
@@ -1241,7 +1238,7 @@ echo "#################### Start NEMO pre-processing #################"
     [ -s data_doc_nomask.nc ]      || acc_cp data_doc_nomask.nc        $nemo_data_doc_nomask
     [ -s data_fer_nomask.nc ]      || acc_cp data_fer_nomask.nc        $nemo_data_fer_nomask
     [ -s data_no3_nomask.nc ]      || acc_cp data_no3_nomask.nc        $nemo_data_no3_nomask
-    [ -s atcco2.txt ]              || acc_cp atcco2.txt                $nemo_data_atcco2
+    [ -s omip6_co2atm.nc ]         || acc_cp omip6_co2atm.nc           $nemo_data_atcco2
 
     # Abiotic biogeochemistry       
     [ -s data_at_abio_nomask.nc ]   ||  acc_cp data_at_abio_nomask.nc    $nemo_data_at_abio_nomask       
