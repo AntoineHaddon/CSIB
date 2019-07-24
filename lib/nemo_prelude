@@ -1238,7 +1238,6 @@ echo "#################### Start NEMO pre-processing #################"
     [ -s data_doc_nomask.nc ]      || acc_cp data_doc_nomask.nc        $nemo_data_doc_nomask
     [ -s data_fer_nomask.nc ]      || acc_cp data_fer_nomask.nc        $nemo_data_fer_nomask
     [ -s data_no3_nomask.nc ]      || acc_cp data_no3_nomask.nc        $nemo_data_no3_nomask
-    [ -s omip6_co2atm.nc ]         || acc_cp omip6_co2atm.nc           $nemo_data_atcco2
 
     # Abiotic biogeochemistry       
     [ -s data_at_abio_nomask.nc ]   ||  acc_cp data_at_abio_nomask.nc    $nemo_data_at_abio_nomask       
