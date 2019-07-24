@@ -1238,7 +1238,6 @@ echo "#################### Start NEMO pre-processing #################"
     [ -s data_doc_nomask.nc ]      || acc_cp data_doc_nomask.nc        $nemo_data_doc_nomask
     [ -s data_fer_nomask.nc ]      || acc_cp data_fer_nomask.nc        $nemo_data_fer_nomask
     [ -s data_no3_nomask.nc ]      || acc_cp data_no3_nomask.nc        $nemo_data_no3_nomask
-    [ -s atcco2.txt ]              || acc_cp atcco2.txt                $nemo_data_atcco2
 
     # Abiotic biogeochemistry       
     [ -s data_at_abio_nomask.nc ]   ||  acc_cp data_at_abio_nomask.nc    $nemo_data_at_abio_nomask       
@@ -1259,7 +1258,7 @@ echo "#################### Start NEMO pre-processing #################"
     # Modify the pisces namelist to read CO2 from file, if specified in makefile
     ln_co2int=${ln_co2int:=.false.} # read atm pco2 from a file (T) or constant (F)
     if [ "$ln_co2int" = ".true." ]; then     
-      [ -s co2atm.nc ] ||  acc_cp co2atm.nc       $nemo_data_atcco2
+      [ -s co2atm.nc ] ||  acc_cp omip6_co2atm.nc       $nemo_data_atcco2
     fi
     mod_nl namelist_pisces ln_co2int ln_c14int 
 
