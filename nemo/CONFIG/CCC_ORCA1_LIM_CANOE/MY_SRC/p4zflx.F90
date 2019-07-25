@@ -43,7 +43,7 @@ MODULE p4zflx
    !                                      !!** Namelist  nampisext  **
    REAL(wp)          ::  atcco2    = 284.32          !: pre-industrial atmospheric [co2] (ppm) 	
    LOGICAL           ::  ln_co2int = .FALSE.         !: flag to read in a file and interpolate atmospheric pco2 or not
-   CHARACTER(len=120) ::  clname       = 'co2atm.nc' !: filename of pco2 values
+   CHARACTER(len=120) ::  clname       = 'omip6_co2atm.nc' !: filename of pco2 values
    CHARACTER(len=120) ::  clvarname    = 'mole_fraction_of_carbon_dioxide_in_air'  !: variable name in clname file 
    INTEGER           ::  nn_offset = 0             !: Offset model-data start year (default = 0) 
    INTEGER           ::  nn_readoffset_co2 = 1850  !: Initial year in data file (default = 1850) 
