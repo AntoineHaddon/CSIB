@@ -14,6 +14,7 @@ MODULE diaptr
    !!            3.4.1! 2016-09  (D. Yang) Added an option to integrate overturning stream 
    !!                                      function from bottom to surface (if key_diaar5);
    !!                                      otherwise from surface to bottom (original code). 
+   !!            3.4.1! 2019-07  (D. Yang) Relax the length limit of the diaptr file
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -571,7 +572,7 @@ CONTAINS
       INTEGER, SAVE ::           ndim_atl_30  , ndim_pac_30  , ndim_ind_30  , ndim_ipc_30
       INTEGER, SAVE ::   ndim_h, ndim_h_atl_30, ndim_h_pac_30, ndim_h_ind_30, ndim_h_ipc_30
       !!
-      CHARACTER (len=40) ::   clhstnam, clop, clop_once, cl_comment   ! temporary names
+      CHARACTER (len=80) ::   clhstnam, clop, clop_once, cl_comment   ! temporary names
       INTEGER            ::   iline, it, itmod, ji, jj, jk            !
 #if defined key_iomput
       INTEGER            ::   inum                                    ! temporary logical unit
