@@ -10,6 +10,8 @@ set -x
 
 # Get CDO / TEMPORARY!
 export PATH=/fs/ssm/hpco/exp/mib002/anaconda/anaconda-4.4.0/anaconda_4.4.0_ubuntu-14.04-amd64-64/envs/cdo-1.9.0/bin:$PATH 
+# NEMO priority level
+  output_level=${output_level}
 
 # First and last month/year of 12-month period
   fmon=`echo $nemo_rtd_mons | cut -f1 -d' '`
@@ -40,13 +42,18 @@ export PATH=/fs/ssm/hpco/exp/mib002/anaconda/anaconda-4.4.0/anaconda_4.4.0_ubunt
   [ -s mfo_line_mask ] || access mfo_line_mask mfo_line_mask
 
 # suffix list for sub-yearly nemo historical files.
-  sfxlst="1m_grid_t 1m_grid_t_ar6 1m_grid_u 1m_grid_u_ar6 1m_grid_v 1m_grid_v_ar6 1m_grid_w 1m_grid_w_ar6     \
-          1m_icemod 1m_scalar_ar6 1m_ptrc_t 1m_diad_t          \
-          1d_grid_t_ar6 1d_grid_u_ar6 1d_grid_v_ar6 1d_icemod  \
-          3h_grid_t_ar6 1d_diaptr"
+  sfxlst="1m_grid_t 1m_grid_u 1m_grid_v 1m_grid_w 1m_icemod 1m_ptrc_t 1m_diad_t"
+  if [ $output_level .ge. 1 ] ; then
+      sfxlst="$sfxlst 1m_grid_t_ar6 1m_grid_u_ar6 1m_grid_v_ar6 1m_grid_w_ar6     \
+              1m_scalar_ar6          \
+              1d_grid_t_ar6 1d_grid_u_ar6 1d_grid_v_ar6 1d_icemod  \
+              3h_grid_t_ar6 1d_diaptr"
+  fi
 
 # suffix list for yearly nemo historical files.
-  sfxlst_1y="1y_grid_t_ar6"
+  if [ $output_level .ge. 1 ] ; then  
+      sfxlst_1y="1y_grid_t_ar6"
+  fi
 
 # Access the history files
   for sfx in $sfxlst ; do
@@ -71,13 +78,14 @@ export PATH=/fs/ssm/hpco/exp/mib002/anaconda/anaconda-4.4.0/anaconda_4.4.0_ubunt
     fi
   done
 
-# Access the yearly files
-  if [ $nmon -eq 1 ] ; then
-    for sfx in $sfxlst_1y ; do
-      diag_hist="mc_${runid}_${fyear}_m${fmon}_${sfx}.nc"
-      access ${sfx}_${fmon} $diag_hist na
-    done
-  fi
+# Access the yearly files (when output_level .ge. 1)
+  if [ $output_level .ge. 1 ] ; then
+      if [ $nmon -eq 1 ] ; then
+        for sfx in $sfxlst_1y ; do
+          diag_hist="mc_${runid}_${fyear}_m${fmon}_${sfx}.nc"
+          access ${sfx}_${fmon} $diag_hist na
+        done
+      fi
 
 # Access the nemo restart files
   diag_rs1="mc_${runid}_${yearm1}_m${lmon}_nemors.tar" # previous year
@@ -172,9 +180,12 @@ export PATH=/fs/ssm/hpco/exp/mib002/anaconda/anaconda-4.4.0/anaconda_4.4.0_ubunt
   sfxlst=`echo $sfxlst | sed -e "s/1d_diaptr/1m_diaptr/"`
 
 # Append yearly diagnostics
-  if [ $nmon -eq 1 ] ; then
-    sfxlst="$sfxlst $sfxlst_1y"
+  if [ $output_level .ge. 1 ] ; then
+      if [ $nmon -eq 1 ] ; then
+        sfxlst="$sfxlst $sfxlst_1y"
+      fi
   fi
+  fi # only when output_level .ge. 1
 
 # Split to time series
   for sfx in $sfxlst ; do

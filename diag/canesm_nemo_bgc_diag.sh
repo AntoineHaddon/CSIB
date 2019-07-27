@@ -7,7 +7,7 @@
 #########################################################
 
 set -x
-
+set -e
 # Get CDO / TEMPORARY!
 export PATH=/fs/ssm/hpco/exp/mib002/anaconda/anaconda-4.4.0/anaconda_4.4.0_ubuntu-14.04-amd64-64/envs/cdo-1.9.0/bin:$PATH
 export LD_LIBRARY_PATH=/fs/ssm/hpco/tmp/eccc/201402/04/intel-2016.1.150/ubuntu-14.04-amd64-64/lib/:$LD_LIBRARY_PATH
@@ -60,10 +60,6 @@ export LD_LIBRARY_PATH=/fs/ssm/hpco/tmp/eccc/201402/04/intel-2016.1.150/ubuntu-1
       mv ${sfx}_m$fmon ${sfx}_$fmon
     fi
   done
-
-# Access the nemo restart files
-  diag_rs1="mc_${runid}_${yearm1}_m${lmon}_nemors.tar" # previous year
-  access rsp $diag_rs1 || ( echo "$diag_rs1 does not exist" ; exit 1 )
 
 ##########################
 # CMIP6 nemo diagnostics #
@@ -126,4 +122,40 @@ export LD_LIBRARY_PATH=/fs/ssm/hpco/tmp/eccc/201402/04/intel-2016.1.150/ubuntu-1
       ncks -A 1m_diad_t_header $f.nc
       save $f.nc sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_${cmoc_destfile}_${f}.nc
     done
+
+  # Similar but for CANOE configurations
+  elif [[ $nemo_config == *'CANOE'* && ${output_level} -gt 0 ]]; then
+    # Expected outputs from CMOC or CanOE offline diagnostics
+    canoe_outvars_l1="o2sol pH3D"
+    canoe_outvars_l2="CO3 CO3sata CO3satc"
+    case ${output_level} in
+         1) canoe_outvars="${canoe_outvars_l1}"                          ;;
+         2) canoe_outvars="${canoe_outvars_l1} ${canoe_outvars_l2}"       ;;
+         *) canoe_outvars="${canoe_outvars_l1} ${canoe_outvars_l2} ${canoe_outvars_l8}" ;;
+    esac
+
+    # Compile the diagnostic program
+    WRKDIR=$PWD
+    ( cd $CCRNSRC/CanESM/CanNEMO/diag ;
+      . ssmuse-sh -d /fs/ssm/hpco/tmp/eccc/201402/03/base  -d main/opt/intelcomp/intelcomp-2016.1.156 ;
+      ifort -o $WRKDIR/nemo_diag_canoe.exe nemo_diag_glovars_canoe.F90 nemo_diag_cal_canoe.F90 nemo_diag_canoe.F90 uvic_netcdf.f \
+            -I/fs/ssm/hpco/tmp/eccc/201402/04/intel-2016.1.150/ubuntu-14.04-amd64-64/include/                                \
+            -L/fs/ssm/hpco/tmp/eccc/201402/04/intel-2016.1.150/ubuntu-14.04-amd64-64/lib/ -lnetcdf -lnetcdff -lhdf5 -lhdf5_hl;
+    )
+
+    # Get all auxiliary files needed before running the offline diagnostics
+    access si.nc uncs_orca1_data_si_nomask.nc
+    # Run the offline diagnostics
+    ./nemo_diag_canoe.exe
+
+# Extract some grid variables from 1m_diad_t
+    ncks -v nav_lat,nav_lon 1m_diad_t_${fmon} 1m_diad_t_header
+
+# Save time series
+    for f in $cmoc_outvars; do
+      ncks -A 1m_diad_t_header $f.nc
+      save $f.nc sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_${cmoc_destfile}_${f}.nc
+    done
+
+
   fi

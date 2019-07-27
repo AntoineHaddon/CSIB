@@ -362,7 +362,7 @@ PROGRAM nemo_diag_canoe
    INQUIRE (file="pH.nc", exist=exists)
    IF (.not. exists) THEN
       print*,"output file pH.nc not found...creating a new file..."
-      CALL opennew ("pH.nc", iou)
+      CALL opennew ("pH3D.nc", iou)
       ntrec = 1
       CALL redef (iou)
 
@@ -388,22 +388,22 @@ PROGRAM nemo_diag_canoe
       CALL putatttext (iou, 'deptht', 'valid_max', '5875.141f')
       CALL putatttext (iou, 'deptht', 'title', 'deptht')
       ! pH
-      CALL defvar ('pH', iou, 4, (/id_x, id_y, id_z, id_time/), 0., 0., ' ', 'F', &
-                   'pH', 'pH', ' ')
-      CALL putatttext (iou, 'pH', 'coordinates', 'time_counter deptht nav_lat nav_lon')
+      CALL defvar ('pH3D', iou, 4, (/id_x, id_y, id_z, id_time/), 0., 0., ' ', 'F', &
+                   'pH3D', 'pH3D', ' ')
+      CALL putatttext (iou, 'pH3D', 'coordinates', 'time_counter deptht nav_lat nav_lon')
       CALL enddef (iou)
       !CALL putvara ('nav_lon', iou, imt*jmt, (/1,1/), (/imt, jmt/), nav_lon_t(:,:), 1., 0.)
       !CALL putvara ('nav_lat', iou, imt*jmt, (/1,1/), (/imt, jmt/), nav_lat_t(:,:), 1., 0.)
       CALL putvara ('deptht', iou, km, (/1/), (/km/), deptht(:), 1., 0.)
       CALL putvara ('time_counter', iou, lm, (/1/), (/lm/), time, 1., 0.)
       CALL putvara ('time_counter_bnds', iou, ntbnds*lm, (/1,1/), (/ntbnds,lm/), time_bnds, 1., 0.)
-      CALL putvara ('pH', iou, imt*jmt*km*lm, (/1,1,1,1/), (/imt, jmt, km, lm/), pH(:,:,:,:), 1., 0.)
+      CALL putvara ('pH3D', iou, imt*jmt*km*lm, (/1,1,1,1/), (/imt, jmt, km, lm/), pH(:,:,:,:), 1., 0.)
       print*, '---------------------'
-      print*, 'pH.nc written OK!'
+      print*, 'pH3D.nc written OK!'
       print*, '---------------------'
       CALL closefile (iou)
    ELSE
-      print*, 'pH.nc already exists'
+      print*, 'pH3D.nc already exists'
    ENDIF
 
 END PROGRAM nemo_diag_canoe
