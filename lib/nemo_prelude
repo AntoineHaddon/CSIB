@@ -1069,6 +1069,7 @@ echo "#################### Start NEMO pre-processing #################"
   nemo_K1rowdrg=${nemo_K1rowdrg:=nemo_3.4_orca1_k1rowdrg_r1_modif.nc}
   nemo_Eddyengf=${nemo_Eddyengf:=nemo_3.4_orca1_eddy_mix.nc}
 #  nemo_geothermal_heating=${nemo_geothermal_heating:=nemo_3.3_orca2_geothermal_heating.nc}
+  nemo_runoff_core_monthly=${nemo_runoff_core_monthly:=nemo_3.4_orca1_runoff_1m_orca1.nc}
   nemo_sst_data=${nemo_sst_data:=nemo_3.4_orca1_sst_1m_orca1.nc}
   nemo_sss_data=${nemo_sss_data:=omip6_orca1_data_sss_nomask.nc}
   nemo_chlorophyll=${nemo_chlorophyll:=nemo_3.4_orca1_chlorophyll-orca1_1m.nc}
@@ -1083,6 +1084,7 @@ echo "#################### Start NEMO pre-processing #################"
   [ -s K1rowdrg.nc ]            || acc_cp K1rowdrg.nc            $nemo_K1rowdrg
   [ -s Eddyengf.nc ]            || acc_cp Eddyengf.nc            $nemo_Eddyengf
 #  [ -s geothermal_heating.nc ]  || acc_cp geothermal_heating.nc  $nemo_geothermal_heating
+  [ -s runoff_core_monthly.nc ] || acc_cp runoff_core_monthly.nc $nemo_runoff_core_monthly
   [ -s sss_data.nc ]            || acc_cp sss_data.nc            $nemo_sss_data
   [ -s sst_data.nc ]            || acc_cp sst_data.nc            $nemo_sst_data
   [ -s chlorophyll.nc ]         || acc_cp chlorophyll.nc         $nemo_chlorophyll
