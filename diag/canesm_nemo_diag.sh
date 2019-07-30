@@ -43,7 +43,7 @@ export PATH=/fs/ssm/hpco/exp/mib002/anaconda/anaconda-4.4.0/anaconda_4.4.0_ubunt
 
 # suffix list for sub-yearly nemo historical files.
   sfxlst="1m_grid_t 1m_grid_u 1m_grid_v 1m_grid_w 1m_icemod 1m_ptrc_t 1m_diad_t"
-  if [ $output_level .ge. 1 ] ; then
+  if [ $output_level -ge 1 ] ; then
       sfxlst="$sfxlst 1m_grid_t_ar6 1m_grid_u_ar6 1m_grid_v_ar6 1m_grid_w_ar6     \
               1m_scalar_ar6          \
               1d_grid_t_ar6 1d_grid_u_ar6 1d_grid_v_ar6 1d_icemod  \
@@ -51,7 +51,7 @@ export PATH=/fs/ssm/hpco/exp/mib002/anaconda/anaconda-4.4.0/anaconda_4.4.0_ubunt
   fi
 
 # suffix list for yearly nemo historical files.
-  if [ $output_level .ge. 1 ] ; then  
+  if [ $output_level -ge 1 ] ; then  
       sfxlst_1y="1y_grid_t_ar6"
   fi
 
@@ -78,8 +78,8 @@ export PATH=/fs/ssm/hpco/exp/mib002/anaconda/anaconda-4.4.0/anaconda_4.4.0_ubunt
     fi
   done
 
-# Execute the following line on when output_level .ge. 1
-  if [ $output_level .ge. 1 ] ; then     
+# Execute the following lines when output_level -ge 1
+  if [ $output_level -ge 1 ] ; then     
       if [ $nmon -eq 1 ] ; then
         for sfx in $sfxlst_1y ; do
           diag_hist="mc_${runid}_${fyear}_m${fmon}_${sfx}.nc"
@@ -183,7 +183,7 @@ export PATH=/fs/ssm/hpco/exp/mib002/anaconda/anaconda-4.4.0/anaconda_4.4.0_ubunt
       if [ $nmon -eq 1 ] ; then
         sfxlst="$sfxlst $sfxlst_1y"
       fi
-  fi # end of "output_level .ge. 1"
+  fi # end of "output_level -ge 1"
 
 # Split to time series
   for sfx in $sfxlst ; do
