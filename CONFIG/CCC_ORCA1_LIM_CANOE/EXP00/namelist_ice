@@ -74,11 +74,11 @@
    parlat      = 0.0       !  percentage of energy used for lateral ablation
    hakspl      = 0.5       !  slope of distr. for Hakkinen-Mellor's lateral melting
    hibspl      = 0.5       !  slope of distribution for Hibler's lateral melting
-   exld        = 2.0       !  exponent for leads-closure rate
+   exld        = 3.0       !  exponent for leads-closure rate
    hakdif      = 1.0       !  coefficient for diffusions of ice and snow
    thth        = 0.2       !  threshold thickness for comp. of eq. thermal conductivity
    hnzst       = 0.1       !  thickness of the surf. layer in temp. computation
-   parsub      = 1.0       !  switch for snow sublimation or not
+   parsub      = 0.0       !  switch for snow sublimation or not
    alphs       = 1.0       !  coefficient for snow density when snow ice formation
 /
 !-----------------------------------------------------------------------
