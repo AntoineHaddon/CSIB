@@ -240,10 +240,10 @@ fi
 
 
 # This script is intended to be run on the back end
-case $this_host in
-  xc1*|xc2*) ;; # This is spica or hadar  ...OK
-        *) bail "This should be run on a back end machine" ;;
-esac
+#case $this_host in
+#  xc1*|xc2*) ;; # This is spica or hadar  ...OK
+#        *) bail "This should be run on a back end machine" ;;
+#esac
 
 # Create a temporary directory and change to it
 CWD=`pwd`
