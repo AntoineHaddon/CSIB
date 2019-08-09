@@ -13,7 +13,7 @@ PROGRAM nemo_diag_cmoc
    !! 3D: e3t, tmask
    !! 
    !! OUTPUT FIELDS
-   !! 3D: [CO3--]sat, [CO3--], pH, [O2]sat, abiotic and natural pH and [CO3--], Omaega_A, Omega_C
+   !! 3D: [CO3--]sat, [CO3--], pH, [O2]sat, abiotic and natural pH and [CO3--], Omega_A, Omega_C
    !! 2D: calcite and aragonite saturation depth, minimum [O2], depth of minimum [O2]
    !!
    !! INPUT FILES
@@ -183,7 +183,7 @@ PROGRAM nemo_diag_cmoc
    CALL cmip6_cchem(CNT,AA,K_sp_cal,K_sp_arag,CO3nat,pHnat,Omega_C_nat,Omega_A_nat)
    CALL saturation_depth(Omega_C,Omega_A)
 
-   DEALLOCATE( TT, SS, CC, AA, CAB, CNT, NO3, asi3, alk_abio)
+   DEALLOCATE( TT, SS, CC, AA, CAB, CNT, NO3, O2, asi3, alk_abio)
 
    !!-----------------------------------------------------------------
    !! Output  in NetCDF format
@@ -395,7 +395,7 @@ PROGRAM nemo_diag_cmoc
    ! If the output file does not exist, abort
    INQUIRE (file="pH3D.nc", exist=exists)
    IF (.not. exists) THEN
-      print*,"output file pH.nc not found...creating a new file..."
+      print*,"output file pH3D.nc not found...creating a new file..."
       CALL opennew ("pH3D.nc", iou)
       ntrec = 1
       CALL redef (iou)
@@ -437,7 +437,7 @@ PROGRAM nemo_diag_cmoc
       print*, '---------------------'
       CALL closefile (iou)
    ELSE
-      print*, 'pH.nc already exists'
+      print*, 'pH3D.nc already exists'
    ENDIF
 
    ! If the output file does not exist, abort
