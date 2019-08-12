@@ -133,6 +133,7 @@ export LD_LIBRARY_PATH=/fs/ssm/hpco/tmp/eccc/201402/04/intel-2016.1.150/ubuntu-1
          2) canoe_outvars="${canoe_outvars_l1} ${canoe_outvars_l2}"       ;;
          *) canoe_outvars="${canoe_outvars_l1} ${canoe_outvars_l2} ${canoe_outvars_l8}" ;;
     esac
+    canoe_destfile="1m_diad_t"
 
     # Compile the diagnostic program
     WRKDIR=$PWD
@@ -152,9 +153,9 @@ export LD_LIBRARY_PATH=/fs/ssm/hpco/tmp/eccc/201402/04/intel-2016.1.150/ubuntu-1
     ncks -v nav_lat,nav_lon 1m_diad_t_${fmon} 1m_diad_t_header
 
 # Save time series
-    for f in $cmoc_outvars; do
+    for f in $canoe_outvars; do
       ncks -A 1m_diad_t_header $f.nc
-      save $f.nc sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_${cmoc_destfile}_${f}.nc
+      save $f.nc sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_${canoe_destfile}_${f}.nc
     done
 
 
