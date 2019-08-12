@@ -25,7 +25,7 @@ PROGRAM nemo_diag_canoe
    !! CO3sata.nc, CO3sata.nc, CO3.nc pH3D.nc, O2sat.nc, Omega_C.nc, Omega_A.nc
    !!---------------------------------------------------------------
    USE nemo_diag_glovars_canoe     ! global variable declarations
-   USE nemo_diag_cal               ! diagnostics calculations
+   USE nemo_diag_cal_canoe         ! diagnostics calculations
  
    IMPLICIT NONE
 
