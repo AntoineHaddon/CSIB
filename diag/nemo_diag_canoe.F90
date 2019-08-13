@@ -206,16 +206,16 @@ PROGRAM nemo_diag_canoe
       CALL putatttext (iou, 'deptht', 'valid_max', '5875.141f')
       CALL putatttext (iou, 'deptht', 'title', 'deptht')
       ! CO3_sat (aragonite)
-      CALL defvar ('CO3_sata', iou, 4, (/id_x, id_y, id_z, id_time/), 0., 0., ' ', 'F', &
-                   'CO3_sata', '[CO3--] at Aragonite Saturation', 'mol m-3')
-      CALL putatttext (iou, 'CO3_sata', 'coordinates', 'nav_lat nav_lon')
+      CALL defvar ('CO3sata', iou, 4, (/id_x, id_y, id_z, id_time/), 0., 0., ' ', 'F', &
+                   'CO3sata', '[CO3--] at Aragonite Saturation', 'mol m-3')
+      CALL putatttext (iou, 'CO3sata', 'coordinates', 'nav_lat nav_lon')
       CALL enddef (iou)
       !CALL putvara ('nav_lon', iou, imt*jmt, (/1,1/), (/imt, jmt/), nav_lon_t(:,:), 1., 0.)
       !CALL putvara ('nav_lat', iou, imt*jmt, (/1,1/), (/imt, jmt/), nav_lat_t(:,:), 1., 0.)
       CALL putvara ('deptht', iou, km, (/1/), (/km/), deptht(:), 1., 0.)
       CALL putvara ('time_counter', iou, lm, (/1/), (/lm/), time, 1., 0.)
       CALL putvara ('time_counter_bnds', iou, ntbnds*lm, (/1,1/), (/ntbnds,lm/), time_bnds, 1., 0.)
-      CALL putvara ('CO3_sata', iou, imt*jmt*km*lm, (/1,1,1,1/), (/imt, jmt, km, lm/), CO3_sata(:,:,:,:), 1., 0.)
+      CALL putvara ('CO3sata', iou, imt*jmt*km*lm, (/1,1,1,1/), (/imt, jmt, km, lm/), CO3_sata(:,:,:,:), 1., 0.)
       print*, '---------------------'
       print*, 'CO3sata.nc written OK!'
       print*, '---------------------'
@@ -254,16 +254,16 @@ PROGRAM nemo_diag_canoe
       CALL putatttext (iou, 'deptht', 'valid_max', '5875.141f')
       CALL putatttext (iou, 'deptht', 'title', 'deptht')
       ! CO3_sat (calcite)
-      CALL defvar ('CO3_satc', iou, 4, (/id_x, id_y, id_z, id_time/), 0., 0., ' ', 'F', &
-                   'CO3_satc', '[CO3--] at Calcite Saturation', 'mol m-3')
-      CALL putatttext (iou, 'CO3_satc', 'coordinates', 'nav_lat nav_lon')
+      CALL defvar ('CO3satc', iou, 4, (/id_x, id_y, id_z, id_time/), 0., 0., ' ', 'F', &
+                   'CO3satc', '[CO3--] at Calcite Saturation', 'mol m-3')
+      CALL putatttext (iou, 'CO3satc', 'coordinates', 'nav_lat nav_lon')
       CALL enddef (iou)
       !CALL putvara ('nav_lon', iou, imt*jmt, (/1,1/), (/imt, jmt/), nav_lon_t(:,:), 1., 0.)
       !CALL putvara ('nav_lat', iou, imt*jmt, (/1,1/), (/imt, jmt/), nav_lat_t(:,:), 1., 0.)
       CALL putvara ('deptht', iou, km, (/1/), (/km/), deptht(:), 1., 0.)
       CALL putvara ('time_counter', iou, lm, (/1/), (/lm/), time, 1., 0.)
       CALL putvara ('time_counter_bnds', iou, ntbnds*lm, (/1,1/), (/ntbnds,lm/), time_bnds, 1., 0.)
-      CALL putvara ('CO3_satc', iou, imt*jmt*km*lm, (/1,1,1,1/), (/imt, jmt, km, lm/), CO3_satc(:,:,:,:), 1., 0.)
+      CALL putvara ('CO3satc', iou, imt*jmt*km*lm, (/1,1,1,1/), (/imt, jmt, km, lm/), CO3_satc(:,:,:,:), 1., 0.)
       print*, '---------------------'
       print*, 'CO3satc.nc written OK!'
       print*, '---------------------'
