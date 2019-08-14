@@ -388,7 +388,7 @@
 ============================================================================================================
     -->
     
-    <file_definition output_level="10" >
+    <file_definition output_level="4" >
       <!--
 +++++++++++++++++++++++++++++++++++++++++++++++ 3 hourly  ++++++++++++++++++++++++++++++++++++++++++++++++++
         -->
@@ -433,7 +433,7 @@
       <!--
 +++++++++++++++++++++++++++++++++++++++++++++++   hourly  ++++++++++++++++++++++++++++++++++++++++++++++++++
         -->
-      <group id="1h" output_freq="3600"   enabled=".TRUE.">                      <!-- 1h files -->
+      <group id="1h" output_freq="3600"   enabled=".FALSE.">                      <!-- 1h files -->
 
         <!--
 ...........................................    icemod (grid T)   .................................................
@@ -630,7 +630,7 @@
 
           <file id="1m_grid_U" >
             <field ref="uoce"          name="vozocrtx"      description="sea_water_x_velocity"                     level="0"  /> <!-- cmip6 requested as priority 1, DY -->
-            <field ref="uoce_eiv"      name="vozoeivu"      description="x_bolus_velocity"                         level="0"  /> 
+            <field ref="uoce_eiv"      name="vozoeivu"      description="x_bolus_velocity"                         level="8"  /> 
             <field ref="utau"          name="sozotaux"      description="surface_downward_x_stress"                level="0"  /> <!-- cmip6 requested as priority 1, DY -->
           </file>
 
@@ -653,7 +653,7 @@
 
           <file id="1m_grid_V" >
             <field ref="voce"          name="vomecrty"      description="sea_water_y_velocity"                     level="0"  /> <!-- cmip6 requested as priority 1, DY -->
-            <field ref="voce_eiv"      name="vomeeivv"      description="y_bolus_velocity"                         level="0"  />  
+            <field ref="voce_eiv"      name="vomeeivv"      description="y_bolus_velocity"                         level="8"  />  
             <field ref="vtau"          name="sometauy"      description="surface_downward_y_stress"                level="0"  /> <!-- cmip6 requested as priority 1, DY -->
           </file>
 
@@ -676,7 +676,7 @@
 
           <file id="1m_grid_W" >
             <field ref="woce"          name="vovecrtz"      description="upward_sea_water_velocity"                level="0"  /> <!-- cmip6 requested as priority 1, DY -->
-            <field ref="woce_eiv"      name="voveeivw"      description="upward_bolus_velocity"                    level="0"  />
+            <field ref="woce_eiv"      name="voveeivw"      description="upward_bolus_velocity"                    level="8"  />
             <field ref="aht2d"         name="soleahtw"      description="lateral eddy diffusivity"                 level="0"  />     
             <field ref="aht2d_eiv"     name="soleaeiw"      description="ocean_tracer_bolus_laplacian_diffusivity" level="0"  /> <!-- cmip6 requested as priority 3, DY -->
           </file>
@@ -795,18 +795,16 @@
           <field ref="DICabio"  level="1" />
           <field ref="O2abio"   level="0" />
           <field ref="agessc"   level="0" /> <!-- cmip6 requested as priority 1, DY -->
-          <field ref="cfc11"    level="1" />
-          <field ref="cfc12"    level="1" />
-          <field ref="sf6"      level="2" />
+          <field ref="cfc11"    level="4" />
+          <field ref="cfc12"    level="4" />
+          <field ref="sf6"      level="4" />
           <field ref="DI14C"    level="1" />
-          <field ref="o1"       name="pathetao" description="sea_water_additional_potential_temperature"    level="1" />
-          <field ref="o2"       name="prthetao" description="sea_water_redistributed_potential_temperature" level="1" />
        </file>
 
         <file id="1m_diad_T" name="auto" description="additional cmoc diagnostic variables" >
-          <field ref="PH"        level="0" />
-          <field ref="sDIC"      level="0" />
-          <field ref="sAlk"      level="0" />
+          <field ref="PH"        level="8" />
+          <field ref="sDIC"      level="8" />
+          <field ref="sAlk"      level="8" />
           <field ref="PPPHY"     level="0" />
           <field ref="Cflx"      level="0" />
           <field ref="Oflx"      level="0" />
@@ -818,8 +816,8 @@
           <field ref="Denit"     level="3" />
           <field ref="EPC100"    level="0" />
           <field ref="EPCALC100" level="0" />
-          <field ref="BUPOC"     level="4" />
-          <field ref="BUCALC"    level="4" />
+          <field ref="BUPOC"     level="8" />
+          <field ref="BUCALC"    level="8" />
           <field ref="Dpco2"     level="3" />
           <field ref="Dpo2"      level="3" />
           <field ref="spco2"     level="1" />
@@ -828,9 +826,9 @@
           <field ref="LNnut"     level="3" />
           <field ref="LNFe"      level="3" />
           <field ref="LNlight"   level="3" />
-          <field ref="PAR"       level="0" />
-          <field ref="Mumax"     level="4" />
-          <field ref="oomask"    level="4" />
+          <field ref="PAR"       level="8" />
+          <field ref="Mumax"     level="8" />
+          <field ref="oomask"    level="8" />
           <field ref="cfc11qtr"  level="1" />
           <field ref="cfc12qtr"  level="1" />
           <field ref="sf6qtr"    level="2" />
