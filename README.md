@@ -1,9 +1,7 @@
 # CanNEMO
 
 The development of NEMO at CCCma, including ocean physics, biogeochemistry and sea-ice as well as associated scripts and code for running the model. 
-
-The `official` version of the code is on the Science Network gitlab server [https://gitlab.science.gc.ca/ncs001/CanNEMO], which includes issue tracking
-and a wiki. This is only available from within the ECCC network, and hence stategic mirrors also exist, but are not formal.
+CanNEMO is a component of [CanESM](https://gitlab.com/cccma/canesm).
 
 ## Layout
 
@@ -19,51 +17,15 @@ There are four directories at the top level of the repo:
          several directories beginning with "CCC_", and these house
          the official CCCma configurations of the model.
 
-## Branches, workflow and contributions
 
-Development follows the gitflow-like workflow.
+## License
 
-- The head of the `master` branch always reflects the latest frozen verion of the code. Master
-  is updated approximately once every 18 months, as defined under the CCCma development cycle.
+CanESM is distributed under the [Open Government License - Canada version 2.0](https://open.canada.ca/en/open-government-licence-canada).
+The NEMO code is government by the CeCILL FREE SOFTWARE LICENSE AGREEMENT, which permits distribution of modified code.
 
-- All work is done on `feature` branches.  
+## Support disclaimer
 
-- Features are merged together on `develop`, which represents a working version of the code.
-
-More information can be found on the CCCma [twiki](http://wiki.cccma.ec.gc.ca/cgi-bin/twiki/view/Main/NemoVersionControl)
-
-
-## Contact
-
-For questions: neil.swart@canada.ca
-
------------------------------------
-# Development of the CMIP6 diagnostics
-
-## Option to output the CMIP6 diagnostics
-
-To output the CMIP6 diagnostics, add cmip6_diag=on as one of the command line args in setup-nemo.
-
-e.g.,
-
-setup-nemo repo=/home/rdy001/dyang_repoer=cmip6-diag maestro_repo=/home/rdy001/maestro_repo maestro_version=maestro-cmip6-diag config=CCC_ORCA1_LIM runid=abc cmip6_diag=on
-
-## Supported configurations
-
-    1. CCC_ORCA1_LIM
-    2. CCC_ORCA1_LIM_CMOC
-    3. CCC_ORCA1_LIM_CANOE
-    4. CCC_ORCA1_OFF_CMOC
-    5. CCC_ORCA1_OFF_CANOE
-    6. CCC_ORCA025_LIM
-
-    Note that the CMIP6 diagnostics are only available for configs 1-3.
-
-## Contact
-
-    For problems and questions: duo.yang@canada.ca
-
-D. YANG, 11/APR/2018
------------------------------------
-
-
+This code is made available on an as-is basis. lt has been tested only on the computing facilities
+within Environment and Climate Change Canada (ECCC). There is no guarantee that it will run on
+other platforms or if it does, that it will run correctly. No support of any kind will be made available
+to help users to run the model on their own system. README documents linked below describe the development process.
