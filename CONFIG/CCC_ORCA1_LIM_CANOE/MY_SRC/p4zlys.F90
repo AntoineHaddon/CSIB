@@ -94,9 +94,9 @@ CONTAINS
                   ztmas1  = 1. - tmask_bgc_closea(ji,jj,jk)
                   zbot  = borat(ji,jj,jk) * ztmas + 0.000416 * ztmas1 
                   zfact = rhop(ji,jj,jk) / 1000. + rtrn
-                  zdic  = trn(ji,jj,jk,jpdic) / zfact * ztmas + 2. * ztmas1
+                  zdic  = trn(ji,jj,jk,jpdic) / zfact * ztmas + 0.002 * ztmas1
                   zph   = MAX( hi(ji,jj,jk), 1.e-10 ) / zfact * ztmas + 1.e-9 * ztmas1
-                  zalka = trn(ji,jj,jk,jptal) / zfact * ztmas + 2.2 * ztmas1
+                  zalka = trn(ji,jj,jk,jptal) / zfact * ztmas + 0.0024 * ztmas1
                   zph2 = zph*zph
                   zph3 = zph*zph2
                   zpo4 = (trn(ji,jj,jk,jpno3)+trn(ji,jj,jk,jpnh4)) / 16. *0.000001 / zfact

@@ -40,7 +40,7 @@ CONTAINS
          zrfact = 1.0e+0 
          IF( jn == jpdic .OR. jn == jptal ) zrfact = 1.0e+6 
          cltra = TRIM( ctrcnm(jn) )                  ! short title for tracer
-         CALL iom_put( cltra, trn(:,:,:,jn) * zrfact )
+         CALL iom_put( cltra, trn(:,:,:,jn) * zrfact * tmask_bgc_closea(:,:,:) ) ! Also mask out the Caspian for passive tracers.
 
       END DO
       !
