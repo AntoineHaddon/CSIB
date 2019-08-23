@@ -127,18 +127,18 @@ export LD_LIBRARY_PATH=/fs/ssm/hpco/tmp/eccc/201402/04/intel-2016.1.150/ubuntu-1
     cmoc_annual_ptrc="cfc11 cfc12 sf6 nchl di14c dic dicabio dicnat no3 o2 alkalini poc zoo phy"
     cmoc_annual_diad="cflx_14c cflx cflx_abio cflx_nat ph3d phabio phnat co3 co3sata co3satc ppphy co3abio co3nat o2sol"
 
-    cmoc_src_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1m_ptrc_t_
-    cmoc_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_ptrc_t_
-    for f in $cmoc_annual_ptrc; do
+    cmoc_src_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1m_ptrc_t
+    cmoc_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_ptrc_t
+    for f in ${cmoc_annual_ptrc}; do
         access tmp.nc ${cmoc_src_file}_$f.nc
         cdo yearmean ${cmoc_src_file}_$f.nc $f.nc
         save $f.nc ${cmoc_dest_file}_$f.nc
         release tmp.nc
     done
     
-    cmoc_src_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1m_diad_t_
-    cmoc_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_diad_t_
-    for f in $cmoc_annual_diad; do
+    cmoc_src_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1m_diad_t
+    cmoc_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_diad_t
+    for f in ${cmoc_annual_diad}; do
         access tmp.nc ${cmoc_src_file}_$f.nc
         cdo yearmean ${cmoc_src_file}_$f.nc $f.nc
         save $f.nc ${cmoc_dest_file}_$f.nc
@@ -185,18 +185,18 @@ export LD_LIBRARY_PATH=/fs/ssm/hpco/tmp/eccc/201402/04/intel-2016.1.150/ubuntu-1
     canoe_annual_ptrc="nchl dchl dfe dic no3 o2 talk caco3 nh4 zoo zoo2 phy2c phyc phyn phy2n phyfe phy2fe poc goc"
     canoe_annual_diad="cflx ph3d co3 co3sata co3satc dcal graz1 graz2 pfen pfed pcal pphy pphy2 o2sol irondep"
 
-    canoe_src_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1m_ptrc_t_
-    canoe_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_ptrc_t_
-    for f in $canoe_annual_ptrc; do
+    canoe_src_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1m_ptrc_t
+    canoe_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_ptrc_t
+    for f in ${canoe_annual_ptrc}; do
         access tmp.nc ${canoe_src_file}_$f.nc
         cdo yearmean tmp.nc $f.nc
         save $f.nc ${canoe_dest_file}_$f.nc
         release tmp.nc
     done
     
-    canoe_src_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1m_diad_t_
-    canoe_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_diad_t_
-    for f in $canoe_annual_diad; do
+    canoe_src_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1m_diad_t
+    canoe_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_diad_t
+    for f in ${canoe_annual_diad}; do
         access tmp.nc ${canoe_src_file}_$f.nc
         cdo yearmean tmp.nc $f.nc
         save $f.nc ${canoe_dest_file}_$f.nc
