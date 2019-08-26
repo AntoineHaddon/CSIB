@@ -329,6 +329,7 @@ if [ $build_nemo_exe -eq 1 ]; then
   else
       module switch PrgEnv-cray PrgEnv-intel
   fi
+      module load craype-x86-skylake
       module load cray-netcdf
       module load cray-mpich
   echo "makenemo -j $comp_np  -n $nemo_config $NARCH $REFCFG $add_key \"$ADDKEY\" $del_key \"$DELKEY\""
