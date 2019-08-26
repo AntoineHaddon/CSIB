@@ -131,8 +131,8 @@ export LD_LIBRARY_PATH=/fs/ssm/hpco/tmp/eccc/201402/04/intel-2016.1.150/ubuntu-1
     cmoc_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_ptrc_t
     for f in ${cmoc_annual_ptrc}; do
         access tmp.nc ${cmoc_src_file}_$f.nc
-        cdo yearmean ${cmoc_src_file}_$f.nc $f.nc
-        save $f.nc ${cmoc_dest_file}_$f.nc
+        cdo yearmean tmp.nc ann_$f.nc
+        save ann_$f.nc ${cmoc_dest_file}_$f.nc
         release tmp.nc
     done
     
@@ -140,8 +140,8 @@ export LD_LIBRARY_PATH=/fs/ssm/hpco/tmp/eccc/201402/04/intel-2016.1.150/ubuntu-1
     cmoc_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_diad_t
     for f in ${cmoc_annual_diad}; do
         access tmp.nc ${cmoc_src_file}_$f.nc
-        cdo yearmean ${cmoc_src_file}_$f.nc $f.nc
-        save $f.nc ${cmoc_dest_file}_$f.nc
+        cdo yearmean tmp.nc ann_$f.nc
+        save ann_$f.nc ${cmoc_dest_file}_$f.nc
         release tmp.nc
     done
 
@@ -189,8 +189,8 @@ export LD_LIBRARY_PATH=/fs/ssm/hpco/tmp/eccc/201402/04/intel-2016.1.150/ubuntu-1
     canoe_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_ptrc_t
     for f in ${canoe_annual_ptrc}; do
         access tmp.nc ${canoe_src_file}_$f.nc
-        cdo yearmean tmp.nc $f.nc
-        save $f.nc ${canoe_dest_file}_$f.nc
+        cdo yearmean tmp.nc ann_$f.nc
+        save ann_$f.nc ${canoe_dest_file}_$f.nc
         release tmp.nc
     done
     
@@ -198,8 +198,8 @@ export LD_LIBRARY_PATH=/fs/ssm/hpco/tmp/eccc/201402/04/intel-2016.1.150/ubuntu-1
     canoe_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_diad_t
     for f in ${canoe_annual_diad}; do
         access tmp.nc ${canoe_src_file}_$f.nc
-        cdo yearmean tmp.nc $f.nc
-        save $f.nc ${canoe_dest_file}_$f.nc
+        cdo yearmean tmp.nc ann_$f.nc
+        save ann_$f.nc ${canoe_dest_file}_$f.nc
         release tmp.nc
     done
 
