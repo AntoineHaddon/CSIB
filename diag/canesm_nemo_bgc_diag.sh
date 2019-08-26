@@ -183,7 +183,7 @@ export LD_LIBRARY_PATH=/fs/ssm/hpco/tmp/eccc/201402/04/intel-2016.1.150/ubuntu-1
     done
     
     canoe_annual_ptrc="nchl dchl dfe dic no3 o2 talk caco3 nh4 zoo zoo2 phy2c phyc phyn phy2n phyfe phy2fe poc goc"
-    canoe_annual_diad="cflx ph3d co3 co3sata co3satc dcal graz1 graz2 pfen pfed pcal pphy pphy2 o2sol irondep"
+    canoe_annual_diad="cflx ph3d co3 co3sata co3satc dcal graz1 graz2 pfen pfed pcal ppphy ppphy2 o2sol irondep"
 
     canoe_src_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1m_ptrc_t
     canoe_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_ptrc_t
