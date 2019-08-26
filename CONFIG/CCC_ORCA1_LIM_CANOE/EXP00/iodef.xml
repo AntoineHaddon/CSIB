@@ -61,19 +61,20 @@
       
       <group id="SBC" axis_ref="none" grid_ref="grid_T" > <!-- time step automaticaly defined based on nn_fsbc -->
 
-	<field id="empmr"        description="Net Upward Water Flux"                                        unit="kg/m2/s"  />
-	<field id="empsmr"       description="concentration/dilution water flux"                            unit="kg/m2/s"  />
-	<field id="snowpre"      description="Snow precipitation"                                           unit="kg/m2/s"  />
-	<field id="runoffs"      description="River Runoffs"                                                unit="Kg/m2/s"  />
+        <field id="empmr"        description="Net Upward Water Flux"                                        unit="kg/m2/s"  />
+        <field id="empsmr"       description="concentration/dilution water flux"                            unit="kg/m2/s"  />
+        <field id="snowpre"      description="Snow precipitation"                                           unit="kg/m2/s"  />
+        <field id="runoffs"      description="River Runoffs"                                                unit="Kg/m2/s"  />
 
-	<field id="qt"           description="Net Downward Heat Flux"                                       unit="W/m2"     />
-	<field id="qns"          description="non solar Downward Heat Flux"                                 unit="W/m2"     />
-	<field id="qsr"          description="Shortwave Radiation"                                          unit="W/m2"     />
-	<field id="qsr3d"        description="Shortwave Radiation 3D distribution"        axis_ref="deptht" unit="W/m2"     />
-	<field id="qrp"          description="Surface Heat Flux: Damping"                                   unit="W/m2"     />
-	<field id="erp"          description="Surface Water Flux: Damping"                                  unit="Kg/m2/s"  />
-	<field id="taum"         description="wind stress module"                                           unit="N/m2"     />
-	<field id="wspd"         description="Wind speed module at 10 m"                                    unit="m/s"      />
+        <field id="qt"           description="Net Downward Heat Flux"                                       unit="W/m2"     />
+        <field id="qns"          description="non solar Downward Heat Flux"                                 unit="W/m2"     />
+        <field id="qsr"          description="Shortwave Radiation"                                          unit="W/m2"     />
+        <field id="qsr3d"        description="Shortwave Radiation 3D distribution"        axis_ref="deptht" unit="W/m2"     />
+        <field id="rsdoabsorb"   description="Net Rate of Absorption of Shortwave Energy in Ocean Layer" axis_ref="deptht" unit="W/m2"     />
+        <field id="qrp"          description="Surface Heat Flux: Damping"                                   unit="W/m2"     />
+        <field id="erp"          description="Surface Water Flux: Damping"                                  unit="Kg/m2/s"  />
+        <field id="taum"         description="wind stress module"                                           unit="N/m2"     />
+        <field id="wspd"         description="Wind speed module at 10 m"                                    unit="m/s"      />
 
         <!-- * variable relative to atmospheric pressure forcing : available with ln_apr_dyn -->
         <field id="ssh_ib"       description="Inverse barometer sea surface height"                         unit="m"        />
@@ -104,40 +105,42 @@
 	<field id="ist_cea"      description="Ice surface temperature (cell average)"                       unit="degC"     />
 	<field id="ist_ipa"      description="Ice surface temperature (ice presence average)"               unit="degC"     />      
         <field id="sitemptop_cea" description="Snow/ice surface temperature (cell average)"                 unit="K"        />
-	<field id="uice_ipa"     description="Ice velocity along i-axis (C grid) (ice presence average)"    unit="m/s"      />
-	<field id="vice_ipa"     description="Ice velocity along j-axis (C grid) (ice presence average)"    unit="m/s"      />
-        <field id="ivel_cea"     description="Ice velocity module (C grid) (cell average)"                  unit="m/s"      />
-	
-	<field id="utau_ice"     description="Wind stress along i-axis over the ice at i-point"             unit="N/m2"     />
-	<field id="vtau_ice"     description="Wind stress along j-axis over the ice at i-point"             unit="N/m2"     />
-	
-	<field id="u_imasstr"    description="Sea-ice mass transport along i-axis"                          unit="kg/s"     />
-	<field id="v_imasstr"    description="Sea-ice mass transport along j-axis"                          unit="kg/s"     />
+        <field id="uice_ipa"     description="Ice velocity along i-axis (C grid) (ice presence average)"    unit="m/s"      />      
+        <field id="vice_ipa"     description="Ice velocity along j-axis (C grid) (ice presence average)"    unit="m/s"      />
+        <field id="ivel_cea"     description="Ice velocity module (C grid) (cell average)"                  unit="m/s"      /> 
+        
+        <field id="utau_ice"     description="Wind stress along i-axis over the ice at i-point"             unit="N/m2"     />
+        <field id="vtau_ice"     description="Wind stress along j-axis over the ice at i-point"             unit="N/m2"     />
+        
+        <field id="u_imasstr"    description="Sea-ice mass transport along i-axis"                          unit="kg/s"     />
+        <field id="v_imasstr"    description="Sea-ice mass transport along j-axis"                          unit="kg/s"     />
+        <field id="emp_x_sss"    description="Total virtual salt flux entering the ocean"                   unit="kg*1e-3/m2/s" />
 
-	<!-- available key_coupled -->
-	<field id="snow_ao_cea"  description="Snow over ice-free ocean (cell average)"                      unit="kg/m2/s"  />
-	<field id="snow_ai_cea"  description="Snow over sea-ice (cell average)"                             unit="kg/m2/s"  />
-	<field id="subl_ai_cea"  description="Sublimation over sea-ice (cell average)"                      unit="kg/m2/s"  />
-	<field id="icealb_cea"   description="Ice albedo (cell average)"                                    unit="1"        />
-	<field id="calving"      description="Calving"                                                      unit="kg/m2/s"  />
-	<!-- available if key_coupled + conservative method -->
-	<field id="rain"         description="Liquid precipitation"                                         unit="Kg/m2/s"  />
-	<field id="evap_ao_cea"  description="Evaporation over ice-free ocean (cell average)"               unit="kg/m2/s"  />
-	<!-- variables available with key_diaar5 -->
-	<field id="isnwmlt_cea"   description="Snow over Ice melting (cell average)"                        unit="kg/m2/s"  />
-	<field id="fsal_virt_cea" description="Virtual salt flux due to ice formation (cell average)"       unit="kg/m2/s"  />
-	<field id="fsal_real_cea" description="Real salt flux due to ice formation (cell average)"          unit="kg/m2/s"  />
-	<field id="hflx_rain_cea" description="heat flux due to rainfall"                                   unit="W/m2"     />
-	<field id="hflx_evap_cea" description="heat flux due to evaporation"                                unit="W/m2"     />
-	<field id="hflx_snow_cea" description="heat flux due to snow falling over ice-free ocean"           unit="W/m2"     />
-	<field id="hflx_ice_cea"  description="heat flux due to ice thermodynamics"                         unit="W/m2"     />
-	<field id="hflx_rnf_cea"  description="heat flux due to runoffs"                                    unit="W/m2"     />
-	<field id="hflx_cal_cea"  description="heat flux due to calving"                                    unit="W/m2"     />
-	<field id="bicemel_cea"  description="Rate of Melt at Sea Ice Base (cell average)"                  unit="kg/m2/s"  />
-	<field id="licepro_cea"  description="Lateral Sea Ice Growth Rate (cell average)"                   unit="kg/m2/s"  />
-	<field id="snowmel_cea"  description="Snow Melt Rate (cell average)"                                unit="kg/m2/s"  />
-	<field id="sntoice_cea"  description="Snow-Ice Formation Rate (cell average)"                       unit="kg/m2/s"  />
-	<field id="ticemel_cea"  description="Rate of Melt at Upper Surface of Sea Ice (cell average)"      unit="kg/m2/s"  />
+        <!-- available key_coupled -->
+        <field id="snow_ao_cea"  description="Snow over ice-free ocean (cell average)"                      unit="kg/m2/s"  />
+        <field id="snow_ai_cea"  description="Snow over sea-ice (cell average)"                             unit="kg/m2/s"  />
+        <field id="subl_ai_cea"  description="Sublimation over sea-ice (cell average)"                      unit="kg/m2/s"  />
+        <field id="icealb_cea"   description="Ice albedo (cell average)"                                    unit="1"        />
+        <field id="calving"      description="Calving"                                                      unit="kg/m2/s"  />
+        <!-- available if key_coupled + conservative method -->
+        <field id="rain"         description="Liquid precipitation"                                         unit="Kg/m2/s"  />
+        <field id="evap_ao_cea"  description="Evaporation over ice-free ocean (cell average)"               unit="kg/m2/s"  />
+        <!-- variables available with key_diaar5 -->
+        <field id="isnwmlt_cea"   description="Snow over Ice melting (cell average)"                        unit="kg/m2/s"  />
+        <field id="fsal_virt_cea" description="Virtual salt flux due to ice formation (cell average)"       unit="kg/m2/s"  />
+        <field id="fsal_real_cea" description="Real salt flux due to ice formation (cell average)"          unit="kg/m2/s"  />
+        <field id="hflx_rain_cea" description="heat flux due to rainfall"                                   unit="W/m2"     />
+        <field id="hflx_evap_cea" description="heat flux due to evaporation"                                unit="W/m2"     />
+        <field id="hflx_snow_cea" description="heat flux due to snow falling over ice-free ocean"           unit="W/m2"     />
+        <field id="lhflx_snow_cea" description="latent heat flux due to snow falling over ice-free ocean"   unit="W/m2"     />
+        <field id="hflx_ice_cea"  description="heat flux due to ice thermodynamics"                         unit="W/m2"     />
+        <field id="hflx_rnf_cea"  description="heat flux due to runoffs"                                    unit="W/m2"     />
+        <field id="hflx_cal_cea"  description="heat flux due to calving"                                    unit="W/m2"     />
+        <field id="bicemel_cea"   description="Rate of Melt at Sea Ice Base (cell average)"                 unit="kg/m2/s"  />
+        <field id="licepro_cea"   description="Lateral Sea Ice Growth Rate (cell average)"                  unit="kg/m2/s"  />
+        <field id="snowmel_cea"   description="Snow Melt Rate (cell average)"                               unit="kg/m2/s"  />
+        <field id="sntoice_cea"   description="Snow-Ice Formation Rate (cell average)"                      unit="kg/m2/s"  />
+        <field id="ticemel_cea"   description="Rate of Melt at Upper Surface of Sea Ice (cell average)"     unit="kg/m2/s"  />
         <field id="hflx_qsr_tot"  description="Solar heat flux from coupler (cell average)"                 unit="W/m2"     />
         <field id="hflx_qns_tot"  description="Non solar heat flux from coupler (cell average)"             unit="W/m2"     />
         <field id="hflx_qsr_ice"  description="Solar heat flux from coupler over sea-ice (cell average)"     unit="W/m2"    />
@@ -387,15 +390,34 @@
 
     <file_definition output_level="10" >
       <!--
-+++++++++++++++++++++++++++++++++++++++++++++++ 3 hourly  ++++++++++++++++++++++++++++++++++++++++++++++++++
++++++++++++++++++++++++++++++++++++++++++++++++   hourly  ++++++++++++++++++++++++++++++++++++++++++++++++++
         -->
-      <group id="3h" output_freq="10800"  output_level="10" enabled=".FALSE.">                     <!-- 3h files -->
+      <group id="1h" output_freq="3600"   enabled=".TRUE.">                      <!-- 1h files -->
 
-        <file id="3h_ptrc_T" name="auto" description="pisces sms variables" >
-           <field ref="DIC"         level="0" />
-           <field ref="O2"          level="0" />
-           <field ref="NO3"         level="0" />
-        </file>
+        <!--
+...........................................    icemod (grid T)   .................................................
+          -->
+        <group id="1h_grid_T" name="auto" >                                                        <!-- grid T -->
+          <file id="1h_icemod" description="ice variables" >
+            <field ref="ice_cover"     name="siconc"        description="sea_ice_area_fraction"                    level="2" />
+          </file>
+        </group>
+      </group>                                                                   <!-- end of 1h files -->
+
+      <!--
++++++++++++++++++++++++++++++++++++++++++++++++   3 hourly  ++++++++++++++++++++++++++++++++++++++++++++++++++
+        -->
+      <group id="3h" output_freq="10800"   enabled=".TRUE.">                      <!-- 3h files -->
+
+        <!--
+...........................................    grid T   .....................................................
+          -->
+        <group id="3h_grid_T" name="auto" >                                                        <!-- grid T -->
+
+          <file id="3h_grid_T"  name_suffix="_ar6"  >
+            <field ref="sst"           name="tos"           description="sea_surface_temperature"                  level="1" />
+          </file>
+        </group>
 
       </group>    
 
@@ -414,7 +436,7 @@
             <field ref="sst2"          name='tossq'         description="square_of_sea_surface_temperature"        level="3" />
             <field ref="sss"           name='sos'           description="sea_surface_salinity"                     level="3" />
             <field ref="sss2"          name='sossq'         description="square_of_sea_surface_salinity"           level="3" />
-            <!-- field ref="mldkz5"   name='omldamax' description="ocean_mixed_layer_thickness_defined_by_mixing_scheme" level="2" operation="t_max(X)", not in cmip6 request, DY -->
+            <field ref="mldkz5"        name='omldamax'      description="ocean_mixed_layer_thickness_defined_by_mixing_scheme" level="1" operation="t_max(X)" />
           </file>
 
         <!--
@@ -480,7 +502,8 @@
             <field ref="snow_ai_cea"   name="snow_ai_cea"    description="Surface Snowfall Rate into the Sea Ice Portion of the Grid Cell"        level="0" />
             <field ref="snow_ao_cea"   name="snow_ao_cea"    description="snowfall_flux"                            level="0" /> <!-- cmip6 requested as priority 2, DY -->
             <field ref="hflx_rain_cea" name="hflx_rain_cea"  description="temperature_flux_due_to_rainfall_expressed_as_heat_flux_into_sea_water" level="0" /> <!-- cmip6 requested as priority 2, DY -->
-            <field ref="hflx_snow_cea" name="hflx_snow_cea"  description="heat_flux_into_sea_water_due_to_snow_thermodynamics"          level="0" /> <!-- cmip6 requested as priority 2, DY -->
+            <field ref="hflx_snow_cea" name="hflx_snow_cea"  description="heat_flux_into_sea_water_due_to_snow_thermodynamics"          level="0" />
+            <field ref="lhflx_snow_cea" name="lhflx_snow_cea"  description="heat_flux_into_sea_water_due_to_snow_thermodynamics"          level="0" /> <!-- cmip6 requested as priority 2, DY -->
             <field ref="hflx_ice_cea"  name="hflx_ice_cea"   description="heat_flux_into_sea_water_due_to_sea_ice_thermodynamics"       level="0" /> <!-- cmip6 requested as priority 2, DY -->
              <field ref="hflx_rnf_cea" name="hflx_rnf_cea"    description="temperature_flux_due_to_runoff_expressed_as_heat_flux_into_sea_water" level="0" /> <!-- cmip6 requested as priority 2, DY -->
             <field ref="isnwmlt_cea"   name="isnwmlt_cea"    description="water_flux_into_sea_water_due_to_sea_ice_thermodynamics"      level="0" /> <!-- cmip6 requested as priority 1, DY -->
@@ -509,23 +532,22 @@
             <field ref="mldsq"         name="mlotstsq"       description="square_of_ocean_mixed_layer_thickness_defined_by_sigma_t"                     level="3" />
             <field ref="opottempmint"  name="opottempmint"   description="integral_wrt_depth_of_product_of_sea_water_density_and_potential_temperature" level="3" />
             <field ref="somint"        name="somint"         description="integral_wrt_depth_of_product_of_sea_water_density_and_salinity"              level="3" />
-            <!-- no cfc11  : moles_per_unit_mass_of_cfc11_in_sea_water -->
             <!-- msftbarot : ocean_barotropic_mass_streamfunction : offline -->
             <!-- field ref="mldkz5"       name='omlmax'   description="ocean_mixed_layer_thickness_defined_by_mixing_scheme" level="2" operation="t_max(X)" not in cmip6 request, DY-->
             <field ref="rain"          name="prlq"           description="rainfall_flux"                            level="2" />
             <!--field ref="snow_ao_cea" name="prsn"          description="snowfall_flux"                            level="2" --> <!-- moved to 1m_grid_T as level="0" for *CANCPL_ORCA1_LIM*, DY -->
             <field ref="evap_ao_cea"   name="evs"            description="water_evaporation_flux"                   level="2" />
             <field ref="runoffs"       name="friver"         description="water_flux_into_sea_water_from_rivers"    level="2" />
-            <field ref="calving"       name="ficeberg"       description="water_flux_into_sea_water_from_icebergs"  level="2" />
+            <!--field ref="calving"       name="ficeberg"       description="water_flux_into_sea_water_from_icebergs"  level="2" , DY -->
             <!--field ref="isnwmlt_cea" name="fsitherm"      description="water_flux_into_sea_water_due_to_sea_ice_thermodynamics"                      level="1" --> <!-- moved to 1m_grid_T as level="0" for *CANCPL_ORCA1_LIM*, DY -->
             <!-- wfonocorr : water_flux_into_sea_water_without_flux_correction : emp - erp -->
             <!-- vsfpr    : virtual_salt_flux_into_sea_water_due_to_rainfall    = 0 -->
             <!-- vsfevap  : virtual_salt_flux_into_sea_water_due_to_evaporation = 0 -->
             <!-- vsfriver : virtual_salt_flux_into_sea_water_from_rivers        = 0 -->
             <field ref="fsal_virt_cea" name="vsfsit"        description="virtual_salt_flux_into_sea_water_due_to_sea_ice_thermodynamics"                level="2" />
-            <!-- vsf      : virtual_salt_flux_into_sea_water = fsal_virtual + fsal_real -->
             <!-- wfcorr   : virtual_salt_flux_correction                        = 0 -->
-            <field ref="fsal_virt_cea" name="sfdsi"         description="downward_sea_ice_basal_salt_flux"         level="1" />
+            <field ref="emp_x_sss"     name="emp_x_sss"     description="virtual_salt_flux_into_sea_water"         level="2" />   <!-- vsf kg*1e-3/m2/s, DY -->
+            <field ref="fsal_real_cea" name="fsal_real_cea" description="real salt flux captured by brine pockets" level="1" />
             <!-- sfriver  : salt_flux_into_sea_water_from_rivers                = 0 -->
             <!-- hfgeou : upward_geothermal_heat_flux_at_sea_floor : cte, see nambbc and trabbc.F90 -->
             <!--field ref="hflx_rain_cea" name="hfrainds"   description="temperature_flux_due_to_rainfall_expressed_as_heat_flux_into_sea_water"        level="2" --> <!-- moved to 1m_grid_T as level="0" for *CANCPL_ORCA1_LIM*, DY -->
@@ -539,8 +561,8 @@
             <!-- hfss   : surface_downward_sensible_heat_flux: not available -->
             <field ref="qsr3d"         name="rsdo"          description="downwelling_shortwave_flux_in_sea_water"  level="2"  />
             <!--field ref="qrp"        name="hfcorr"        description="heat_flux_correction"                     level="1" --> <!-- moved to 1m_grid_T as level="0" for *CANCPL_ORCA1_LIM*, DY -->
-            <field ref="cellthc"       name="thkcello"      description="cell_thickness"                           level="1"  /> <!-- Ofx -->
-            <field ref="area"          name="areacello"     description="cell_area"                                level="1"  /> <!-- Ofx -->
+            <!--field ref="cellthc"    name="thkcello"      description="cell_thickness"                           level="1"  --> <!-- Ofx -->
+            <!--field ref="area"       name="areacello"     description="cell_area"                                level="1"  --> <!-- Ofx -->
           </file>
 
           <file id="1m_grid_T_trd" name_suffix="_trd" enabled=".FALSE.">
@@ -720,61 +742,61 @@
         </file>
  
         <file id="1m_ptrc_T" name="auto" description="pisces sms variables" >
-          <field ref="DIC"    name="dissic"  description="mole_concentration_of_dissolved_inorganic_carbon_in_sea_water"                           level="0" />
-          <field ref="TAlk"   name="talk"    description="sea_water_alkalinity_expressed_as_mole_equivalent"                                       level="0" />
-          <field ref="O2"     name="o2"      description="mole_concentration_of_dissolved_molecular_oxygen_in_sea_water"                           level="0" />
-          <field ref="CaCO3"  name="calc"    description="mole_concentration_of_calcite_expressed_as_carbon_in_sea_water"                          level="0" />
-          <field ref="POC"                                                                                                                         level="0" />
-          <field ref="PHYC"   name="phymisc" description="mole_concentration_of_miscellaneous_phytoplankton_expressed_as_carbon_in_sea_water"      level="0" />
-          <field ref="PHYN"                                                                                                                        level="0" />
-          <field ref="PHYFe"                                                                                                                       level="2" />
-          <field ref="NCHL"   name="chldiat" description="mass_concentration_of_diatoms_expressed_as_chlorophyll_in_sea_water"                     level="1" />
-          <field ref="PHY2C"  name="phydiat" description="mole_concentration_of_diatoms_expressed_as_carbon_in_sea_water"                          level="0" />
-          <field ref="PHY2N"                                                                                                                       level="0" />
-          <field ref="PHY2Fe"                                                                                                                      level="2" />
-          <field ref="DCHL"   name="chlmisc" description="mass_concentration_of_miscellaneous_phytoplankton_expressed_as_chlorophyll_in_sea_water" level="1" />
-          <field ref="ZOO"    name="zmicro"  description="mole_concentration_of_microzooplankton_expressed_as_carbon_in_sea_water"                 level="0" />
-          <field ref="ZOO2"   name="zmeso"   description="mole_concentration_of_mesozooplankton_expressed_as_carbon_in_sea_water"                  level="0" />
-          <field ref="dFe"    name="dfe"     description="mole_concentration_of_dissolved_iron_in_sea_water"                                       level="0" />
-          <field ref="GOC"                                                                                                                         level="0" />
-          <field ref="NO3"    name="no3"    description="mole_concentration_of_nitrate_in_sea_water"                                               level="0" />
-          <field ref="NH4"    name="nh4"    description="mole_concentration_of_ammonium_in_sea_water"                                              level="0" />
-          <field ref="agessc" name="agessc" description="sea_water_age_since_surface_contact"                                                      level="0" /> <!-- cmip6 requested as priority 1, DY -->
+          <field ref="DIC"	level="0" />
+          <field ref="TAlk"	level="0" />
+          <field ref="O2"	level="0" />
+          <field ref="CaCO3"	level="0" />
+          <field ref="POC"	level="0" />
+          <field ref="PHYC"	level="0" />
+          <field ref="PHYN"	level="0" />
+          <field ref="PHYFe"	level="2" />
+          <field ref="NCHL"	level="1" />
+          <field ref="PHY2C"	level="0" />
+          <field ref="PHY2N"	level="0" />
+          <field ref="PHY2Fe"	level="2" />
+          <field ref="DCHL"	level="1" />
+          <field ref="ZOO"	level="0" />
+          <field ref="ZOO2"	level="0" />
+          <field ref="dFe"	level="0" />
+          <field ref="GOC"      level="0" />
+          <field ref="NO3"	level="0" />
+          <field ref="NH4"	level="0" />
+          <field ref="agessc"	level="0" /> <!-- cmip6 requested as priority 1, DY -->
        </file>
 	
         <file id="1m_diad_T" name="auto" description="additional pisces diagnostics" >
-          <field ref="PAR"                                                                                                                                                level="0" />
-          <field ref="PPPHY"     name="intppmisc" description="net_primary_mole_productivity_of_biomass_expressed_as_carbon_by_miscellaneous_phytoplankton"               level="0" />
-          <field ref="PPPHY2"    name="intppdiat" description="net_primary_mole_productivity_of_biomass_expressed_as_carbon_by_diatoms"                                   level="0" />
-          <field ref="PPNEWN"                                                                                                                                             level="4" />
-          <field ref="PPNEWD"                                                                                                                                             level="4" />
-          <field ref="PFeN"                                                                                                                                               level="2" />
-          <field ref="PFeD"                                                                                                                                               level="2" />
-          <field ref="LNN"       name="limnmisc"  description="nitrogen_growth_limitation_of_miscellaneous_phytoplankton"                                                 level="3" />
-          <field ref="LDN"       name="limndiat"  description="nitrogen_growth_limitation_of_diatoms"                                                                     level="2" />
-          <field ref="LNFe"      name="limfemisc" description="iron_growth_limitation_of_miscellaneous_phytoplankton"                                                     level="3" />
-          <field ref="LDFe"      name="limfediat" description="iron_growth_limitation_of_diatoms"                                                                         level="2" />
-          <field ref="Nfix"      name="intpn2"    description="tendency_of_ocean_mole_content_of_elemental_nitrogen_due_to_fixation"                                      level="0" />
-          <field ref="Denitr"    name="frn"       description="tendency_of_ocean_mole_content_of_elemental_nitrogen_due_to_denitrification_and_sedimentation"             level="3" />
-          <field ref="Nitrif"                                                                                                                                             level="4" />
-          <field ref="EPC100"    name="epc100"    description="sinking_mole_flux_of_particulate_organic_matter_expressed_as_carbon_in_sea_water"                          level="0" />
-          <field ref="EPCALC100" name="epcalc100" description="sinking_mole_flux_of_calcite_expressed_as_carbon_in_sea_water"                                             level="0" />
-          <field ref="PCAL"      name="pcalc"     description="tendency_of_mole_concentration_of_calcite_expressed_as_carbon_in_sea_water_due_to_biological_production"   level="2" />
-          <field ref="DCAL"      name="dcalc"     description="tendency_of_mole_concentration_of_calcite_expressed_as_carbon_in_sea_water_due_to_dissolution"             level="2" />
-          <field ref="GRAZ1"                                                                                                                                              level="3" />
-          <field ref="GRAZ2"                                                                                                                                              level="3" />
-          <field ref="GRAZ3"                                                                                                                                              level="3" />
-          <field ref="Dpco2"     name="dpco2"     description="surface_carbon_dioxide_partial_pressure_difference_between_sea_water_and_air"                              level="3" />
-          <field ref="Dpo2"      name="dpo2"      description="surface_molecular_oxygen_partial_pressure_difference_between_sea_water_and_air"                            level="3" />
-          <field ref="pco2"      name="spco2"     description="surface_partial_pressure_of_carbon_dioxide_in_sea_water"                                                   level="0" />
-          <field ref="Cflx"      name="fgco2"     description="surface_downward_mass_flux_of_carbon_dioxide_expressed_as_carbon"                                          level="0" />
-          <field ref="Oflx"      name="fgo2"      description="surface_downward_mole_flux_of_molecular_oxygen"                                                            level="0" />
-          <field ref="OCdep"                                                                                                                                              level="4" />
-          <field ref="ICdep"                                                                                                                                              level="4" />
-          <field ref="Burial"    name="fric"      description="tendency_of_ocean_mole_content_of_inorganic_carbon_due_to_sedimentation"                                   level="3" />
-          <field ref="PH"        name="ph"        description="sea_water_ph_reported_on_total_scale"                                                                      level="0" />
-          <field ref="Irondep"   name="fediss"    description="tendency_of_mole_concentration_of_dissolved_iron_in_sea_water_due_to_dissolution_from_inorganic_particles" level="0" />
-          <field ref="Ironsed"                                                                                                                                            level="3" />
+          <field ref="PAR"              level="0" />
+          <field ref="PPPHY"		level="0" />
+          <field ref="PPPHY2"		level="0" />
+          <field ref="PPNEWN"		level="4" />
+          <field ref="PPNEWD"		level="4" />
+          <field ref="PFeN"		level="2" />
+          <field ref="PFeD"		level="2" />
+          <field ref="LNN"		level="3" />
+          <field ref="LDN"		level="2" />
+          <field ref="LNFe"		level="3" />
+          <field ref="LDFe"		level="2" />
+          <field ref="Nfix"		level="0" />
+          <field ref="Denitr"		level="3" />
+          <field ref="Nitrif"           level="4" />
+          <field ref="EPC100"		level="0" />
+          <field ref="EPCALC100"	level="0" />
+          <field ref="PCAL"		level="2" />
+          <field ref="DCAL"		level="2" />
+          <field ref="GRAZ1"            level="3" />
+          <field ref="GRAZ2"            level="3" />
+          <field ref="GRAZ3"            level="3" />
+          <field ref="Dpco2"		level="3" />
+          <field ref="Dpo2"		level="3" />
+          <field ref="pco2"		level="0" />
+          <field ref="Cflx"		level="0" />
+          <field ref="Oflx"		level="0" />
+          <field ref="OCdep"            level="4" />
+          <field ref="ICdep"            level="4" />
+          <field ref="Burial"		level="3" />
+          <field ref="PH"		level="0" />
+          <field ref="Irondep"		level="0" />
+          <field ref="Ironsed"          level="3" />
         </file>
         
       </group>
@@ -805,8 +827,9 @@
             <field ref="strd_zdfp"     name="strd_zdfp"      description="salinity   -trend: pure vert. diffusion"     level="3" />
             <field ref="ttrd_eiv"      name="ttrd_eiv"       description="temperature-trend: advection from GM scheme" level="3" />
             <field ref="strd_eiv"      name="strd_eiv"       description="salinity-trend: advection from GM scheme"    level="3" />
-            <!-- field ref="cellthc"       name="thkcello"       description="cell_thickness"                          --> <!-- no time changes -->
-            <!-- field ref="area"          name="areacello"      description="cell_area"                               -->
+            <field ref="rsdoabsorb"    name="rsdoabsorb"     description="net_rate_of_absorption_of_shortwave_energy_in_ocean_layer"    level="3" />
+            <field ref="cellthc"       name="thkcello"       description="cell_thickness"                              level="1" /> <!-- Ofx -->
+            <field ref="area"          name="areacello"      description="cell_area"                                   level="1" /> <!-- Ofx -->
           </file>
           </group>
 

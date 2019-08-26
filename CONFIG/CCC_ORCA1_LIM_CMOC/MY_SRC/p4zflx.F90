@@ -52,6 +52,7 @@ MODULE p4zflx
    CHARACTER(len=120) ::  cl14varname  = 'Delta14co2_in_air'  !: variable name in cl14name file 
    INTEGER            ::  nn_offset = 0             !: Offset model-data start year (default = 0) 
    INTEGER            ::  nn_readoffset_c14 = 1850  !: Offset atmospheric history file of C14 (CMIP6 is 1850)
+   INTEGER            ::  nn_readoffset_co2 = 1850  !: Offset atmospheric history file of CO2 (CMIP6 is 1850)
 
    !!  Variables related to reading atmospheric CO2 time history    
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:) :: atcco2h, atcco2h_years
@@ -384,7 +385,7 @@ CONTAINS
       !! ** input   :   Namelist nampisext
       !!----------------------------------------------------------------------
       NAMELIST/nampisext/ln_co2int, ln_c14int, atcco2, satmd14c, clname, clvarname, cl14name, &
-                         cl14varname, nn_offset, nn_readoffset_c14, atcd14c
+                         cl14varname, nn_offset, nn_readoffset_c14, nn_readoffset_co2, atcd14c
       INTEGER :: jm, ntime, ncid, ji, jj
       REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: tmp2d
       !!----------------------------------------------------------------------
@@ -425,7 +426,7 @@ CONTAINS
          ! Input file for OMIP6 is in Gregorian days since 1 January 0000, manually overwrite
          ! so that atcco2h_years is in yearfraction
          DO jm = 1,ntime
-            atcco2h_years(jm) = (jm-1) + 0.5
+            atcco2h_years(jm) = (jm-1) + (nn_readoffset_co2+0.5)
          ENDDO
       ENDIF
       IF (.NOT. ln_c14int) THEN
