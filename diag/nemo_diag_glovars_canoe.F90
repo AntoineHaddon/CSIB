@@ -15,13 +15,13 @@ MODULE nemo_diag_glovars_canoe
       REAL, DIMENSION(:,:,:), ALLOCATABLE     :: umask, vmask, tmask, fsdept
       REAL, DIMENSION(:), ALLOCATABLE         :: deptht
       REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: TT, SS, CC, AA
-      REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: asi3, NO3, NH4
-      REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: borat, ak13, ak23, akb3, akw3
-      REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: akp13, akp23, akp33, aksi3
+      REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: asi3, NO3, NH4, O2
       REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: co3_sata, co3_satc
-      REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: o2sol
-      REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: hi, pH, CO3
-      REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: prhop
+      REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: CO3, pH
+      REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: K_sp_cal, K_sp_arag, Omega_C, Omega_A
+      REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: prhop, o2sol
+      REAL, DIMENSION(:,:,:), ALLOCATABLE     :: zsat_a, zsat_c
+      REAL, DIMENSION(:,:,:), ALLOCATABLE     :: o2min, zo2min
 
 END MODULE nemo_diag_glovars_canoe
 
