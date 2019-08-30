@@ -101,6 +101,12 @@ PROGRAM nemo_diag_canoe
    !!-------------------
    CALL getvara ('e3t', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3t , 1., 0.)
    CALL getvara ('tmask', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),tmask , 1., 0.)
+   ! Mask out Caspian in CCCma ORCA1 grid
+   IF ( (imt == 362) .AND. (jmt == 292) ) THEN
+     tmask( 332:344, 203:235, 1:km ) = 0.
+   ELSE
+     stop "NEMO BGC diagnostic deck expects ORCA R1 grid"
+   ENDIF
 
    !!-------------------------------------
    !! Read in the monthly data from NetCDF
