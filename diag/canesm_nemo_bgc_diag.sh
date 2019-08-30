@@ -8,9 +8,6 @@
 
 set -x
 set -e
-# Get CDO / TEMPORARY!
-export PATH=/fs/ssm/hpco/exp/mib002/anaconda/anaconda-4.4.0/anaconda_4.4.0_ubuntu-14.04-amd64-64/envs/cdo-1.9.0/bin:$PATH
-export LD_LIBRARY_PATH=/fs/ssm/hpco/tmp/eccc/201402/04/intel-2016.1.150/ubuntu-14.04-amd64-64/lib/:$LD_LIBRARY_PATH
 
 # NEMO priority level
   output_level=${output_level}
@@ -84,10 +81,8 @@ export LD_LIBRARY_PATH=/fs/ssm/hpco/tmp/eccc/201402/04/intel-2016.1.150/ubuntu-1
     # Compile the diagnostic program
     WRKDIR=$PWD
     ( cd $CCRNSRC/CanESM/CanNEMO/diag ;
-      . ssmuse-sh -d /fs/ssm/hpco/tmp/eccc/201402/03/base  -d main/opt/intelcomp/intelcomp-2016.1.156 ;
       ifort -o $WRKDIR/nemo_diag_cmoc.exe nemo_diag_glovars_cmoc.F90 nemo_diag_cal_cmoc.F90 nemo_diag_cmoc.F90 uvic_netcdf.f \
-            -I/fs/ssm/hpco/tmp/eccc/201402/04/intel-2016.1.150/ubuntu-14.04-amd64-64/include/                                \
-            -L/fs/ssm/hpco/tmp/eccc/201402/04/intel-2016.1.150/ubuntu-14.04-amd64-64/lib/ -lnetcdf -lnetcdff -lhdf5 -lhdf5_hl;
+               `nc-config --fflags` `nc-config --flibs` 
     )
 
     # Get all auxiliary files needed before running the offline diagnostics
@@ -137,10 +132,8 @@ export LD_LIBRARY_PATH=/fs/ssm/hpco/tmp/eccc/201402/04/intel-2016.1.150/ubuntu-1
     # Compile the diagnostic program
     WRKDIR=$PWD
     ( cd $CCRNSRC/CanESM/CanNEMO/diag ;
-      . ssmuse-sh -d /fs/ssm/hpco/tmp/eccc/201402/03/base  -d main/opt/intelcomp/intelcomp-2016.1.156 ;
       ifort -o $WRKDIR/nemo_diag_canoe.exe nemo_diag_glovars_canoe.F90 nemo_diag_cal_canoe.F90 nemo_diag_canoe.F90 uvic_netcdf.f \
-            -I/fs/ssm/hpco/tmp/eccc/201402/04/intel-2016.1.150/ubuntu-14.04-amd64-64/include/                                \
-            -L/fs/ssm/hpco/tmp/eccc/201402/04/intel-2016.1.150/ubuntu-14.04-amd64-64/lib/ -lnetcdf -lnetcdff -lhdf5 -lhdf5_hl;
+                `nc-config --fflags` `nc-config --flibs` 
     )
 
     # Get all auxiliary files needed before running the offline diagnostics
