@@ -54,9 +54,9 @@
 !                !                          !  (if <0  months)  !   name     !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  !
    sn_trcdta(1)  = 'data_dic_nomask'        ,        -12        ,  'DIC'     ,    .false.   , .true. , 'yearly'  , ''       , ''
    sn_trcdta(2)  = 'data_alkalini_nomask'   ,        -12        ,  'Alkalini',    .false.   , .true. , 'yearly'  , ''       , ''
-   sn_trcdta(3)  = 'data_o2_nomask'         ,        -1         ,  'O2'      ,    .true.    , .true. , 'yearly'  , ''       , ''
+   sn_trcdta(3)  = 'data_o2_nomask'         ,        -12        ,  'O2'      ,    .false.   , .true. , 'yearly'  , ''       , ''
    sn_trcdta(16) = 'data_fer_nomask'        ,        -12        ,  'Fer'     ,    .false.   , .true. , 'yearly'  , ''       , ''
-   sn_trcdta(18) = 'data_no3_nomask'        ,        -1         ,  'NO3'     ,    .true.    , .true. , 'yearly'  , ''       , ''
+   sn_trcdta(18) = 'data_no3_nomask'        ,        -12        ,  'NO3'     ,    .false.   , .true. , 'yearly'  , ''       , ''
 !
    cn_dir        =  './'      !  root directory for the location of the data files
    rn_trfac(1)   =   1.0e-06   ! In this version DIC and TA will remain in mol/L
