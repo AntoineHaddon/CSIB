@@ -245,7 +245,7 @@ CONTAINS
       ENDIF
       ! Now that the non-fafmip flux has been calculated and stored, add in the perturbation
       IF (ln_fafheat) THEN
-         tsa(:,:,1,jp_tem) = tsa(:,:,1,jp_tem) + sf_fafmip(jp_hflx)%fnow(:,:,1)*ro0cpr 
+         tsa(:,:,1,jp_tem) = tsa(:,:,1,jp_tem) + (sf_fafmip(jp_hflx)%fnow(:,:,1)*ro0cpr)*z1_e3t
       ENDIF
 #endif
       
