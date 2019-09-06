@@ -13,7 +13,7 @@ PROGRAM nemo_diag_cmoc
    !! 3D: e3t, tmask
    !! 
    !! OUTPUT FIELDS
-   !! 3D: [CO3--]sat, [CO3--], pH, [O2]sat, abiotic and natural pH and [CO3--], Omaega_A, Omega_C
+   !! 3D: [CO3--]sat, [CO3--], pH, [O2]sat, abiotic and natural pH and [CO3--], Omega_A, Omega_C
    !! 2D: calcite and aragonite saturation depth, minimum [O2], depth of minimum [O2]
    !!
    !! INPUT FILES
@@ -183,7 +183,7 @@ PROGRAM nemo_diag_cmoc
    CALL cmip6_cchem(CNT,AA,K_sp_cal,K_sp_arag,CO3nat,pHnat,Omega_C_nat,Omega_A_nat)
    CALL saturation_depth(Omega_C,Omega_A)
 
-   DEALLOCATE( TT, SS, CC, AA, CAB, CNT, NO3, asi3, alk_abio)
+   DEALLOCATE( TT, SS, CC, AA, CAB, CNT, NO3, O2, asi3, alk_abio)
 
    !!-----------------------------------------------------------------
    !! Output  in NetCDF format
@@ -232,7 +232,7 @@ PROGRAM nemo_diag_cmoc
       ! CO3_sat (aragonite)
       CALL defvar ('CO3sata', iou, 4, (/id_x, id_y, id_z, id_time/), 0., 0., ' ', 'F', &
                    'CO3sata', '[CO3--] at Aragonite Saturation', 'mol m-3')
-      CALL putatttext (iou, 'CO3sata', 'coordinates', 'time_counter deptht nav_lat nav_lon')
+      CALL putatttext (iou, 'CO3sata', 'coordinates', 'nav_lat nav_lon')
       CALL enddef (iou)
       !CALL putvara ('nav_lon', iou, imt*jmt, (/1,1/), (/imt, jmt/), nav_lon_t(:,:), 1., 0.)
       !CALL putvara ('nav_lat', iou, imt*jmt, (/1,1/), (/imt, jmt/), nav_lat_t(:,:), 1., 0.)
@@ -280,7 +280,7 @@ PROGRAM nemo_diag_cmoc
       ! CO3_sat (calcite)
       CALL defvar ('CO3satc', iou, 4, (/id_x, id_y, id_z, id_time/), 0., 0., ' ', 'F', &
                    'CO3satc', '[CO3--] at Calcite Saturation', 'mol m-3')
-      CALL putatttext (iou, 'CO3satc', 'coordinates', 'time_counter deptht nav_lat nav_lon')
+      CALL putatttext (iou, 'CO3satc', 'coordinates', 'nav_lat nav_lon')
       CALL enddef (iou)
       !CALL putvara ('nav_lon', iou, imt*jmt, (/1,1/), (/imt, jmt/), nav_lon_t(:,:), 1., 0.)
       !CALL putvara ('nav_lat', iou, imt*jmt, (/1,1/), (/imt, jmt/), nav_lat_t(:,:), 1., 0.)
@@ -328,7 +328,7 @@ PROGRAM nemo_diag_cmoc
       ! o2sol
       CALL defvar ('o2sol', iou, 4, (/id_x, id_y, id_z, id_time/), 0., 0., ' ', 'F', &
                    'o2sol', 'Oxygen concentration at saturation', 'mol m-3')
-      CALL putatttext (iou, 'o2sol', 'coordinates', 'time_counter deptht nav_lat nav_lon')
+      CALL putatttext (iou, 'o2sol', 'coordinates', 'nav_lat nav_lon')
       CALL enddef (iou)
       !CALL putvara ('nav_lon', iou, imt*jmt, (/1,1/), (/imt, jmt/), nav_lon_t(:,:), 1., 0.)
       !CALL putvara ('nav_lat', iou, imt*jmt, (/1,1/), (/imt, jmt/), nav_lat_t(:,:), 1., 0.)
@@ -376,7 +376,7 @@ PROGRAM nemo_diag_cmoc
       ! CO3
       CALL defvar ('CO3', iou, 4, (/id_x, id_y, id_z, id_time/), 0., 0., ' ', 'F', &
                    'CO3', 'Carbonate ion concentration', 'mol m-3')
-      CALL putatttext (iou, 'CO3', 'coordinates', 'time_counter deptht nav_lat nav_lon')
+      CALL putatttext (iou, 'CO3', 'coordinates', 'nav_lat nav_lon')
       CALL enddef (iou)
       !CALL putvara ('nav_lon', iou, imt*jmt, (/1,1/), (/imt, jmt/), nav_lon_t(:,:), 1., 0.)
       !CALL putvara ('nav_lat', iou, imt*jmt, (/1,1/), (/imt, jmt/), nav_lat_t(:,:), 1., 0.)
@@ -395,7 +395,7 @@ PROGRAM nemo_diag_cmoc
    ! If the output file does not exist, abort
    INQUIRE (file="pH3D.nc", exist=exists)
    IF (.not. exists) THEN
-      print*,"output file pH.nc not found...creating a new file..."
+      print*,"output file pH3D.nc not found...creating a new file..."
       CALL opennew ("pH3D.nc", iou)
       ntrec = 1
       CALL redef (iou)
@@ -424,7 +424,7 @@ PROGRAM nemo_diag_cmoc
       ! pH
       CALL defvar ('pH3D', iou, 4, (/id_x, id_y, id_z, id_time/), 0., 0., ' ', 'F', &
                    'pH3D', 'pH3D', ' ')
-      CALL putatttext (iou, 'pH3D', 'coordinates', 'time_counter deptht nav_lat nav_lon')
+      CALL putatttext (iou, 'pH3D', 'coordinates', 'nav_lat nav_lon')
       CALL enddef (iou)
       !CALL putvara ('nav_lon', iou, imt*jmt, (/1,1/), (/imt, jmt/), nav_lon_t(:,:), 1., 0.)
       !CALL putvara ('nav_lat', iou, imt*jmt, (/1,1/), (/imt, jmt/), nav_lat_t(:,:), 1., 0.)
@@ -437,7 +437,7 @@ PROGRAM nemo_diag_cmoc
       print*, '---------------------'
       CALL closefile (iou)
    ELSE
-      print*, 'pH.nc already exists'
+      print*, 'pH3D.nc already exists'
    ENDIF
 
    ! If the output file does not exist, abort
@@ -472,7 +472,7 @@ PROGRAM nemo_diag_cmoc
       ! CO3abio
       CALL defvar ('CO3abio', iou, 4, (/id_x, id_y, id_z, id_time/), 0., 0., ' ', 'F', &
                    'CO3abio', 'Carbonate ion concentration', 'mol m-3')
-      CALL putatttext (iou, 'CO3abio', 'coordinates', 'time_counter deptht nav_lat nav_lon')
+      CALL putatttext (iou, 'CO3abio', 'coordinates', 'nav_lat nav_lon')
       CALL enddef (iou)
       !CALL putvara ('nav_lon', iou, imt*jmt, (/1,1/), (/imt, jmt/), nav_lon_t(:,:), 1., 0.)
       !CALL putvara ('nav_lat', iou, imt*jmt, (/1,1/), (/imt, jmt/), nav_lat_t(:,:), 1., 0.)
@@ -520,7 +520,7 @@ PROGRAM nemo_diag_cmoc
       ! pHabio
       CALL defvar ('pHabio', iou, 4, (/id_x, id_y, id_z, id_time/), 0., 0., ' ', 'F', &
                    'pHabio', 'pHabio', ' ')
-      CALL putatttext (iou, 'pHabio', 'coordinates', 'time_counter deptht nav_lat nav_lon')
+      CALL putatttext (iou, 'pHabio', 'coordinates', 'nav_lat nav_lon')
       CALL enddef (iou)
       !CALL putvara ('nav_lon', iou, imt*jmt, (/1,1/), (/imt, jmt/), nav_lon_t(:,:), 1., 0.)
       !CALL putvara ('nav_lat', iou, imt*jmt, (/1,1/), (/imt, jmt/), nav_lat_t(:,:), 1., 0.)
@@ -568,7 +568,7 @@ PROGRAM nemo_diag_cmoc
       ! CO3nat
       CALL defvar ('CO3nat', iou, 4, (/id_x, id_y, id_z, id_time/), 0., 0., ' ', 'F', &
                    'CO3nat', 'Carbonate ion concentration', 'mol m-3')
-      CALL putatttext (iou, 'CO3nat', 'coordinates', 'time_counter deptht nav_lat nav_lon')
+      CALL putatttext (iou, 'CO3nat', 'coordinates', 'nav_lat nav_lon')
       CALL enddef (iou)
       !CALL putvara ('nav_lon', iou, imt*jmt, (/1,1/), (/imt, jmt/), nav_lon_t(:,:), 1., 0.)
       !CALL putvara ('nav_lat', iou, imt*jmt, (/1,1/), (/imt, jmt/), nav_lat_t(:,:), 1., 0.)
@@ -616,7 +616,7 @@ PROGRAM nemo_diag_cmoc
       ! pHnat
       CALL defvar ('pHnat', iou, 4, (/id_x, id_y, id_z, id_time/), 0., 0., ' ', 'F', &
                    'pHnat', 'pHnat', ' ')
-      CALL putatttext (iou, 'pHnat', 'coordinates', 'time_counter deptht nav_lat nav_lon')
+      CALL putatttext (iou, 'pHnat', 'coordinates', 'nav_lat nav_lon')
       CALL enddef (iou)
       !CALL putvara ('nav_lon', iou, imt*jmt, (/1,1/), (/imt, jmt/), nav_lon_t(:,:), 1., 0.)
       !CALL putvara ('nav_lat', iou, imt*jmt, (/1,1/), (/imt, jmt/), nav_lat_t(:,:), 1., 0.)
@@ -664,7 +664,7 @@ PROGRAM nemo_diag_cmoc
       ! Omega_C
       CALL defvar ('Omega_C', iou, 4, (/id_x, id_y, id_z, id_time/), 0., 0., ' ', 'F', &
                    'Omega_C', 'Calcite saturation state', '1')
-      CALL putatttext (iou, 'Omega_C', 'coordinates', 'time_counter deptht nav_lat nav_lon')
+      CALL putatttext (iou, 'Omega_C', 'coordinates', 'nav_lat nav_lon')
       CALL enddef (iou)
       CALL putvara ('deptht', iou, km, (/1/), (/km/), deptht(:), 1., 0.)
       CALL putvara ('time_counter', iou, lm, (/1/), (/lm/), time, 1., 0.)
@@ -710,7 +710,7 @@ PROGRAM nemo_diag_cmoc
       ! Omega_C_nat
       CALL defvar ('Omega_C_nat', iou, 4, (/id_x, id_y, id_z, id_time/), 0., 0., ' ', 'F', &
                    'Omega_C_nat', 'Calcite saturation state for natural DIC', '1')
-      CALL putatttext (iou, 'Omega_C_nat', 'coordinates', 'time_counter deptht nav_lat nav_lon')
+      CALL putatttext (iou, 'Omega_C_nat', 'coordinates', 'nav_lat nav_lon')
       CALL enddef (iou)
       CALL putvara ('deptht', iou, km, (/1/), (/km/), deptht(:), 1., 0.)
       CALL putvara ('time_counter', iou, lm, (/1/), (/lm/), time, 1., 0.)
@@ -756,7 +756,7 @@ PROGRAM nemo_diag_cmoc
       ! Omega_C_abio
       CALL defvar ('Omega_C_abio', iou, 4, (/id_x, id_y, id_z, id_time/), 0., 0., ' ', 'F', &
                    'Omega_C_abio', 'Calcite saturation state for abiotic DIC', '1')
-      CALL putatttext (iou, 'Omega_C_abio', 'coordinates', 'time_counter deptht nav_lat nav_lon')
+      CALL putatttext (iou, 'Omega_C_abio', 'coordinates', 'nav_lat nav_lon')
       CALL enddef (iou)
       CALL putvara ('deptht', iou, km, (/1/), (/km/), deptht(:), 1., 0.)
       CALL putvara ('time_counter', iou, lm, (/1/), (/lm/), time, 1., 0.)
@@ -802,7 +802,7 @@ PROGRAM nemo_diag_cmoc
       ! Omega_A
       CALL defvar ('Omega_A', iou, 4, (/id_x, id_y, id_z, id_time/), 0., 0., ' ', 'F', &
                    'Omega_A', 'Aragonite saturation state', '1')
-      CALL putatttext (iou, 'Omega_A', 'coordinates', 'time_counter deptht nav_lat nav_lon')
+      CALL putatttext (iou, 'Omega_A', 'coordinates', 'nav_lat nav_lon')
       CALL enddef (iou)
       CALL putvara ('deptht', iou, km, (/1/), (/km/), deptht(:), 1., 0.)
       CALL putvara ('time_counter', iou, lm, (/1/), (/lm/), time, 1., 0.)
@@ -848,7 +848,7 @@ PROGRAM nemo_diag_cmoc
       ! Omega_A_nat
       CALL defvar ('Omega_A_nat', iou, 4, (/id_x, id_y, id_z, id_time/), 0., 0., ' ', 'F', &
                    'Omega_A_nat', 'Aragonite saturation state for natural DIC', '1')
-      CALL putatttext (iou, 'Omega_A_nat', 'coordinates', 'time_counter deptht nav_lat nav_lon')
+      CALL putatttext (iou, 'Omega_A_nat', 'coordinates', 'nav_lat nav_lon')
       CALL enddef (iou)
       CALL putvara ('deptht', iou, km, (/1/), (/km/), deptht(:), 1., 0.)
       CALL putvara ('time_counter', iou, lm, (/1/), (/lm/), time, 1., 0.)
@@ -894,7 +894,7 @@ PROGRAM nemo_diag_cmoc
       ! Omega_A_abio
       CALL defvar ('Omega_A_abio', iou, 4, (/id_x, id_y, id_z, id_time/), 0., 0., ' ', 'F', &
                    'Omega_A_abio', 'Aragonite saturation state for abiotic DIC', '1')
-      CALL putatttext (iou, 'Omega_A_abio', 'coordinates', 'time_counter deptht nav_lat nav_lon')
+      CALL putatttext (iou, 'Omega_A_abio', 'coordinates', 'nav_lat nav_lon')
       CALL enddef (iou)
       CALL putvara ('deptht', iou, km, (/1/), (/km/), deptht(:), 1., 0.)
       CALL putvara ('time_counter', iou, lm, (/1/), (/lm/), time, 1., 0.)
@@ -932,7 +932,7 @@ PROGRAM nemo_diag_cmoc
       ! Zsat_A
       CALL defvar ('Zsat_A', iou, 3, (/id_x, id_y, id_time/), 0., 0., ' ', 'F', &
                    'Zsat_A', 'Aragonite saturation horizon depth', 'm')
-      CALL putatttext (iou, 'Zsat_A', 'coordinates', 'time_counter deptht nav_lat nav_lon')
+      CALL putatttext (iou, 'Zsat_A', 'coordinates', 'nav_lat nav_lon')
       CALL enddef (iou)
       CALL putvara ('time_counter', iou, lm, (/1/), (/lm/), time, 1., 0.)
       CALL putvara ('time_counter_bnds', iou, ntbnds*lm, (/1,1/), (/ntbnds,lm/), time_bnds, 1., 0.)
@@ -969,7 +969,7 @@ PROGRAM nemo_diag_cmoc
       ! Zsat_C
       CALL defvar ('Zsat_C', iou, 3, (/id_x, id_y, id_time/), 0., 0., ' ', 'F', &
                    'Zsat_C', 'Calcite saturation horizon depth', 'm')
-      CALL putatttext (iou, 'Zsat_C', 'coordinates', 'time_counter deptht nav_lat nav_lon')
+      CALL putatttext (iou, 'Zsat_C', 'coordinates', 'nav_lat nav_lon')
       CALL enddef (iou)
       CALL putvara ('time_counter', iou, lm, (/1/), (/lm/), time, 1., 0.)
       CALL putvara ('time_counter_bnds', iou, ntbnds*lm, (/1,1/), (/ntbnds,lm/), time_bnds, 1., 0.)
@@ -1006,7 +1006,7 @@ PROGRAM nemo_diag_cmoc
       ! o2min
       CALL defvar ('o2min', iou, 3, (/id_x, id_y, id_time/), 0., 0., ' ', 'F', &
                    'o2min', 'Minimum oxygen concentration', 'mol m^-3')
-      CALL putatttext (iou, 'o2min', 'coordinates', 'time_counter deptht nav_lat nav_lon')
+      CALL putatttext (iou, 'o2min', 'coordinates', 'nav_lat nav_lon')
       CALL enddef (iou)
       CALL putvara ('time_counter', iou, lm, (/1/), (/lm/), time, 1., 0.)
       CALL putvara ('time_counter_bnds', iou, ntbnds*lm, (/1,1/), (/ntbnds,lm/), time_bnds, 1., 0.)
@@ -1043,7 +1043,7 @@ PROGRAM nemo_diag_cmoc
       ! zo2min
       CALL defvar ('zo2min', iou, 3, (/id_x, id_y, id_time/), 0., 0., ' ', 'F', &
                    'zo2min', 'Depth of minimum oxygen concentration', 'm')
-      CALL putatttext (iou, 'zo2min', 'coordinates', 'time_counter deptht nav_lat nav_lon')
+      CALL putatttext (iou, 'zo2min', 'coordinates', 'nav_lat nav_lon')
       CALL enddef (iou)
       CALL putvara ('time_counter', iou, lm, (/1/), (/lm/), time, 1., 0.)
       CALL putvara ('time_counter_bnds', iou, ntbnds*lm, (/1,1/), (/ntbnds,lm/), time_bnds, 1., 0.)
