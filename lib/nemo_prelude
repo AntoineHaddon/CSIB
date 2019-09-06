@@ -1120,10 +1120,10 @@ echo "#################### Start NEMO pre-processing #################"
     mod_nl namelist ln_faftau ln_fafemp ln_fafhflx ln_fafheat
 
     # Set specified or default names for fafmip forcing files
-    nemo_fafmip_qtot=${nemo_fafmip_qtot:=urdy_fafmip_hfds_orca1_record.nc}
-    nemo_fafmip_tauu=${nemo_fafmip_tauu:=urdy_fafmip_tauu_orca1_record.nc}
-    nemo_fafmip_tauv=${nemo_fafmip_tauv:=urdy_fafmip_tauv_orca1_record.nc}
-    nemo_fafmip_wfo=${nemo_fafmip_wfo:=urdy_fafmip_wfo_orca1_record.nc}
+    nemo_fafmip_qtot=${nemo_fafmip_qtot:=cmip6_fafmip_hfds_orca1.nc}
+    nemo_fafmip_tauu=${nemo_fafmip_tauu:=cmip6_fafmip_tauu_orca1.nc}
+    nemo_fafmip_tauv=${nemo_fafmip_tauv:=cmip6_fafmip_tauv_orca1.nc}
+    nemo_fafmip_wfo=${nemo_fafmip_wfo:=cmip6_fafmip_wfo_orca1.nc}
     # Access all the forcing files
     [ -s fafmip_qtot.nc ] || acc_cp fafmip_qtot.nc $nemo_fafmip_qtot
     [ -s fafmip_tauu.nc ] || acc_cp fafmip_tauu.nc $nemo_fafmip_tauu
