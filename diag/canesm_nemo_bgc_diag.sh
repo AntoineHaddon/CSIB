@@ -144,7 +144,6 @@ set -e
   elif [[ $nemo_config == *'CANOE'* && ${output_level} -gt 0 ]]; then
     # Expected outputs from CMOC or CanOE offline diagnostics
     canoe_outvars_l1="Zsat_A Zsat_C o2min zo2min o2sol pH3D"
-    canoe_outvars_l1="o2sol pH3D"
     canoe_outvars_l2="CO3 CO3sata CO3satc"
     canoe_outvars_l8="Omega_C Omega_A"
     case ${output_level} in
