@@ -39,8 +39,8 @@
    sn_tracer(11)  = 'DICnat  ' , 'Natural DIC                            ',  'mol-C/L' ,  .true.     ,  .true.
    sn_tracer(12)  = 'DI14C   ' , 'Radiocarbon DIC                        ',  'mol-C/L' ,  .true.     ,  .true.
    sn_tracer(13)  = 'agessc  ' , 'Ideal Age                              ',  'years' ,    .false.     ,  .true.  
-   sn_tracer(14)  = 'o1      ' , 'Oleg1                                  ',  'years' ,    .false.     ,  .true.
-   sn_tracer(15)  = 'o2      ' , 'Oleg2                                  ',  'years' ,    .false.     ,  .true.
+   sn_tracer(14)  = 'Tre     ' , 'Redistributed heat tracer              ',  'C'      ,   .false.    ,  .true.  
+   sn_tracer(15)  = 'Tad     ' , 'Added heat tracer                      ',  'C'      ,   .false.    ,  .true.  
 /
 !-----------------------------------------------------------------------
 &namtrc_dta      !    Initialisation from data input file

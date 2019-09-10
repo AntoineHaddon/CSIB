@@ -127,10 +127,10 @@ CONTAINS
             DO jj = 1, jpj                                           ! set the ocean fluxes from read fields
                DO ji = 1, jpi
                   ! FAFMIP provides Water flux into the ocean
-                  emp (ji,jj) = emp(ji,jj) + -1.*sf_fafmip(jp_emp)%fnow(ji,jj,1)
+                  emp(ji,jj)  = emp(ji,jj)  - sf_fafmip(jp_emp)%fnow(ji,jj,1)
+                  emps(ji,jj) = emps(ji,jj) - sf_fafmip(jp_emp)%fnow(ji,jj,1)
                END DO
             END DO
-            emps(:,:) = emp (:,:)                                    ! Initialization of emps (needed when no ice model)
 
             CALL iom_put("fafemp_x_sss",sf_fafmip(jp_emp)%fnow(:,:,1)*tsn(:,:,1,jp_sal))
          ENDIF

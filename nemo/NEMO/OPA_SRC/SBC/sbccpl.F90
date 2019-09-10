@@ -63,7 +63,7 @@ MODULE sbccpl
    USE diawri
 #if defined key_fafmip
    USE sbcfaf,     only : ln_fafheat 
-   USE par_fafmip, only : jpTr
+   USE par_fafmip, only : jpTr, jpTa
    USE trc,        only : trb
 #endif
    IMPLICIT NONE
@@ -1449,7 +1449,7 @@ CONTAINS
       zsst(:,:) = tsn(:,:,1,jp_tem)
 #if defined key_fafmip
       IF (ln_fafheat) THEN
-         zsst(:,:) = trb(:,:,1,jpTr)
+         zsst(:,:) = tsn(:,:,1,jp_tem) - trb(:,:,1,jpTa) 
       ENDIF
 #endif
       SELECT CASE( sn_snd_temp%cldes)

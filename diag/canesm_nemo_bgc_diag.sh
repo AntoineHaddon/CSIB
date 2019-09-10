@@ -118,16 +118,40 @@ set -e
       save $f.nc sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_${cmoc_destfile}_${f}.nc
     done
 
+# Calculate annual averages for select variables
+    cmoc_annual_ptrc="cfc11 cfc12 sf6 nchl di14c dic dicabio dicnat no3 o2 alkalini poc zoo phy"
+    cmoc_annual_diad="cflx_14c cflx cflx_abio cflx_nat ph3d phabio phnat co3 co3sata co3satc ppphy co3abio co3nat o2sol"
+
+    cmoc_src_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1m_ptrc_t
+    cmoc_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_ptrc_t
+    for f in ${cmoc_annual_ptrc}; do
+        access tmp.nc ${cmoc_src_file}_$f.nc
+        cdo yearmean tmp.nc ann_$f.nc
+        save ann_$f.nc ${cmoc_dest_file}_$f.nc
+        release tmp.nc
+    done
+    
+    cmoc_src_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1m_diad_t
+    cmoc_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_diad_t
+    for f in ${cmoc_annual_diad}; do
+        access tmp.nc ${cmoc_src_file}_$f.nc
+        cdo yearmean tmp.nc ann_$f.nc
+        save ann_$f.nc ${cmoc_dest_file}_$f.nc
+        release tmp.nc
+    done
+
   # Similar but for CANOE configurations
   elif [[ $nemo_config == *'CANOE'* && ${output_level} -gt 0 ]]; then
     # Expected outputs from CMOC or CanOE offline diagnostics
-    canoe_outvars_l1="o2sol pH3D"
+    canoe_outvars_l1="Zsat_A Zsat_C o2min zo2min o2sol pH3D"
     canoe_outvars_l2="CO3 CO3sata CO3satc"
+    canoe_outvars_l8="Omega_C Omega_A"
     case ${output_level} in
          1) canoe_outvars="${canoe_outvars_l1}"                          ;;
-         2) canoe_outvars="${canoe_outvars_l1} ${canoe_outvars_l2}"       ;;
+         [2-7]) canoe_outvars="${canoe_outvars_l1} ${canoe_outvars_l2}"       ;;
          *) canoe_outvars="${canoe_outvars_l1} ${canoe_outvars_l2} ${canoe_outvars_l8}" ;;
     esac
+    canoe_destfile="1m_diad_t"
 
     # Compile the diagnostic program
     WRKDIR=$PWD
@@ -145,9 +169,30 @@ set -e
     ncks -v nav_lat,nav_lon 1m_diad_t_${fmon} 1m_diad_t_header
 
 # Save time series
-    for f in $cmoc_outvars; do
+    for f in $canoe_outvars; do
       ncks -A 1m_diad_t_header $f.nc
-      save $f.nc sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_${cmoc_destfile}_${f}.nc
+      save $f.nc sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_${canoe_destfile}_${f}.nc
+    done
+    
+    canoe_annual_ptrc="nchl dchl dfe dic no3 o2 talk caco3 nh4 zoo zoo2 phy2c phyc phyn phy2n phyfe phy2fe poc goc"
+    canoe_annual_diad="cflx ph3d co3 co3sata co3satc dcal graz1 graz2 pfen pfed pcal ppphy ppphy2 o2sol irondep"
+
+    canoe_src_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1m_ptrc_t
+    canoe_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_ptrc_t
+    for f in ${canoe_annual_ptrc}; do
+        access tmp.nc ${canoe_src_file}_$f.nc
+        cdo yearmean tmp.nc ann_$f.nc
+        save ann_$f.nc ${canoe_dest_file}_$f.nc
+        release tmp.nc
+    done
+    
+    canoe_src_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1m_diad_t
+    canoe_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_diad_t
+    for f in ${canoe_annual_diad}; do
+        access tmp.nc ${canoe_src_file}_$f.nc
+        cdo yearmean tmp.nc ann_$f.nc
+        save ann_$f.nc ${canoe_dest_file}_$f.nc
+        release tmp.nc
     done
 
 
