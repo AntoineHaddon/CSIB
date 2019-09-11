@@ -125,6 +125,10 @@ CONTAINS
       zprocd  (:,:,:) = 0._wp
       zpronn  (:,:,:) = 0._wp
       zprond  (:,:,:) = 0._wp
+      xlimnn  (:,:,:) = 1._wp      ! limitation terms are initialized as 1 because they will not be calculated during the Arctic winter
+      xlimnfe (:,:,:) = 1._wp
+      xlimdn  (:,:,:) = 1._wp
+      xlimdfe (:,:,:) = 1._wp
 ! precalculate some constant terms to minimize divisions
       mwr_n2c=mw_n/mw_c
       imw_n=1./mw_n
