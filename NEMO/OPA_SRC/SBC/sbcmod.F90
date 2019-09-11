@@ -309,6 +309,7 @@ CONTAINS
               IF( lk_bdy )   CALL bdy_ice_lim_2( kt )                ! BDY boundary condition
       CASE(  3 )   ;         CALL sbc_ice_lim  ( kt, nsbc )          ! LIM-3 ice model
       CASE(  4 )   ;         CALL sbc_ice_cice ( kt, nsbc )          ! CICE ice model
+      CASE(  5 )   ;         print *, 'nn_ice = 5, no constraint on SST unless restoring'
       END SELECT
       ! Apply anomalies for FAFMIP if requested
 #if defined key_fafmip
