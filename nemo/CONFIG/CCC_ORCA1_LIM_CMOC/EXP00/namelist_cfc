@@ -3,6 +3,8 @@
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
     offset_cfc_year = 0 ! The year that the cfc module sees. For example if the model year is 1000 and offset is 900, the cfc_year is 1900
     cfc_nc_file = 'nemo_cfc_atmhist.nc'
+    ln_reset_cfc = .true. ! Enforce that oceanic CFCs should be zero until year nn_reset_cfc
+    nn_reset_cfc = 1930   ! Year until which CFCs should be 0
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &namcfcdia     !   additional 2D/3D tracers diagnostics 
