@@ -82,7 +82,7 @@ set -e
     WRKDIR=$PWD
     ( cd $CCRNSRC/CanESM/CanNEMO/diag ;
       ifort -o $WRKDIR/nemo_diag_cmoc.exe nemo_diag_glovars_cmoc.F90 nemo_diag_cal_cmoc.F90 nemo_diag_cmoc.F90 uvic_netcdf.f \
-               `nc-config --fflags` `nc-config --flibs` 
+               `nc-config --fflags` `nc-config --flibs`
     )
 
     # Get all auxiliary files needed before running the offline diagnostics
@@ -101,14 +101,6 @@ set -e
 
     cmoc_destfile="1m_diad_t"
 
-# # SK: comment out until someone tells it's needed
-#     # Merge all CMOC variables into a single file and save it
-#     for f in $cmoc_outvars; do
-#       ncks -A $f.nc $cmoc_destfile
-#     done
-#     save    $cmoc_destfile mc_${runid}_${year}_m${fmon}_${cmoc_destfile}.nc
-#     release $cmoc_destfile
-
 # Extract some grid variables from 1m_diad_t
     ncks -v nav_lat,nav_lon 1m_diad_t_${fmon} 1m_diad_t_header
 
@@ -125,19 +117,25 @@ set -e
     cmoc_src_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1m_ptrc_t
     cmoc_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_ptrc_t
     for f in ${cmoc_annual_ptrc}; do
-        access tmp.nc ${cmoc_src_file}_$f.nc
+      release tmp.nc
+      access  tmp.nc ${cmoc_src_file}_$f.nc na
+      if [ -s tmp.nc ] ; then
         cdo yearmean tmp.nc ann_$f.nc
         save ann_$f.nc ${cmoc_dest_file}_$f.nc
         release tmp.nc
+      fi
     done
-    
+
     cmoc_src_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1m_diad_t
     cmoc_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_diad_t
     for f in ${cmoc_annual_diad}; do
-        access tmp.nc ${cmoc_src_file}_$f.nc
+      release tmp.nc
+      access  tmp.nc ${cmoc_src_file}_$f.nc na
+      if [ -s tmp.nc ] ; then
         cdo yearmean tmp.nc ann_$f.nc
         save ann_$f.nc ${cmoc_dest_file}_$f.nc
         release tmp.nc
+      fi
     done
 
   # Similar but for CANOE configurations
@@ -157,7 +155,7 @@ set -e
     WRKDIR=$PWD
     ( cd $CCRNSRC/CanESM/CanNEMO/diag ;
       ifort -o $WRKDIR/nemo_diag_canoe.exe nemo_diag_glovars_canoe.F90 nemo_diag_cal_canoe.F90 nemo_diag_canoe.F90 uvic_netcdf.f \
-                `nc-config --fflags` `nc-config --flibs` 
+                `nc-config --fflags` `nc-config --flibs`
     )
 
     # Get all auxiliary files needed before running the offline diagnostics
@@ -173,27 +171,32 @@ set -e
       ncks -A 1m_diad_t_header $f.nc
       save $f.nc sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_${canoe_destfile}_${f}.nc
     done
-    
+
     canoe_annual_ptrc="nchl dchl dfe dic no3 o2 talk caco3 nh4 zoo zoo2 phy2c phyc phyn phy2n phyfe phy2fe poc goc"
     canoe_annual_diad="cflx ph3d co3 co3sata co3satc dcal graz1 graz2 pfen pfed pcal ppphy ppphy2 o2sol irondep"
 
     canoe_src_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1m_ptrc_t
     canoe_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_ptrc_t
     for f in ${canoe_annual_ptrc}; do
-        access tmp.nc ${canoe_src_file}_$f.nc
+      release tmp.nc
+      access  tmp.nc ${canoe_src_file}_$f.nc na
+      if [ -s tmp.nc ] ; then
         cdo yearmean tmp.nc ann_$f.nc
         save ann_$f.nc ${canoe_dest_file}_$f.nc
         release tmp.nc
+      fi
     done
-    
+
     canoe_src_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1m_diad_t
     canoe_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_diad_t
     for f in ${canoe_annual_diad}; do
-        access tmp.nc ${canoe_src_file}_$f.nc
+      release tmp.nc
+      access  tmp.nc ${canoe_src_file}_$f.nc na
+      if [ -s tmp.nc ] ; then
         cdo yearmean tmp.nc ann_$f.nc
         save ann_$f.nc ${canoe_dest_file}_$f.nc
         release tmp.nc
+      fi
     done
-
 
   fi
