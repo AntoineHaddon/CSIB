@@ -9,7 +9,7 @@
 set -x
 
 # Get CDO / TEMPORARY!
-export PATH=/fs/ssm/hpco/exp/mib002/anaconda/anaconda-4.4.0/anaconda_4.4.0_ubuntu-14.04-amd64-64/envs/cdo-1.9.0/bin:$PATH 
+export PATH=/fs/ssm/hpco/exp/mib002/anaconda/anaconda-4.4.0/anaconda_4.4.0_ubuntu-14.04-amd64-64/envs/cdo-1.9.0/bin:$PATH
 # NEMO priority level
   output_level=${output_level}
 
@@ -36,7 +36,7 @@ export PATH=/fs/ssm/hpco/exp/mib002/anaconda/anaconda-4.4.0/anaconda_4.4.0_ubunt
 
 # Access file containing grid information
   orca_grid_info=nemo_mesh_mask_rc3.nc
-  [ -s orca_mesh_mask ] || access orca_mesh_mask $orca_grid_info 
+  [ -s orca_mesh_mask ] || access orca_mesh_mask $orca_grid_info
 
 # Access file containing mfo line mask
   [ -s mfo_line_mask ] || access mfo_line_mask mfo_line_mask
@@ -51,7 +51,7 @@ export PATH=/fs/ssm/hpco/exp/mib002/anaconda/anaconda-4.4.0/anaconda_4.4.0_ubunt
   fi
 
 # suffix list for yearly nemo historical files.
-  if [ $output_level -ge 1 ] ; then  
+  if [ $output_level -ge 1 ] ; then
       sfxlst_1y="1y_grid_t_ar6"
   fi
 
@@ -59,7 +59,7 @@ export PATH=/fs/ssm/hpco/exp/mib002/anaconda/anaconda-4.4.0/anaconda_4.4.0_ubunt
   for sfx in $sfxlst ; do
     yr=$fyear
     mp=0
-    for mm in $nemo_rtd_mons ; do  
+    for mm in $nemo_rtd_mons ; do
       if [ $mm -lt $mp ] ; then
 	# increment year by 1 if the current month is smaller than the previous month
 	yr=`echo $yr | awk '{printf "%04d", $1 + 1}'`;
@@ -79,7 +79,7 @@ export PATH=/fs/ssm/hpco/exp/mib002/anaconda/anaconda-4.4.0/anaconda_4.4.0_ubunt
   done
 
 # Execute the following lines when output_level -ge 1
-  if [ $output_level -ge 1 ] ; then     
+  if [ $output_level -ge 1 ] ; then
       if [ $nmon -eq 1 ] ; then
         for sfx in $sfxlst_1y ; do
           diag_hist="mc_${runid}_${fyear}_m${fmon}_${sfx}.nc"
@@ -106,7 +106,7 @@ export PATH=/fs/ssm/hpco/exp/mib002/anaconda/anaconda-4.4.0/anaconda_4.4.0_ubunt
 
 # Get tn and sn from the last step of current year
       if [ -L rsc ] ; then
-        mkdir dir_rsc; cd dir_rsc 
+        mkdir dir_rsc; cd dir_rsc
         tar -xvf ../rsc
         cdo select,name=tn,timestep=-1 ${runid}_*_restart.nc ../tnc.nc
         cdo select,name=sn,timestep=-1 ${runid}_*_restart.nc ../snc.nc
@@ -148,7 +148,7 @@ export PATH=/fs/ssm/hpco/exp/mib002/anaconda/anaconda-4.4.0/anaconda_4.4.0_ubunt
       ncatted -h -a FillValue,time_counter,d,,, tstend.nc
       ncatted -h -a missing_value,time_counter,d,,, tstend.nc
       ncatted -h -a FillValue,time_counter_bnds,d,,, tstend.nc
-      ncatted -h -a missing_value,time_counter_bnds,d,,, tstend.nc  
+      ncatted -h -a missing_value,time_counter_bnds,d,,, tstend.nc
       ncatted -h -a missing_value,opottemptend,d,,, tstend.nc
       ncatted -h -a missing_value,osalttend,d,,, tstend.nc
 
