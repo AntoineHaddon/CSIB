@@ -64,7 +64,9 @@ MODULE nemogcm_tam
    USE step            ! NEMO time-stepping                 (stp     routine)
    USE tradmp
    USE trabbl
-#if defined key_oasis3
+#if defined key_cancpl
+   USE cpl_cancpl
+#elif defined key_oasis3
    USE cpl_oasis3      ! OASIS3 coupling
 #elif defined key_oasis4
    USE cpl_oasis4      ! OASIS4 coupling (not working)

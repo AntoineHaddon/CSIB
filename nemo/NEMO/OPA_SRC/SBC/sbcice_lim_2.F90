@@ -48,6 +48,14 @@ MODULE sbcice_lim_2
    USE in_out_manager   ! I/O manager
    USE prtctl           ! Print control
 
+   USE diawri
+
+#if defined key_fafmip
+   USE trc,        only : trb
+   USE sbcfaf,     only : ln_fafheat
+   USE par_fafmip, only : jpTr
+#endif
+
    IMPLICIT NONE
    PRIVATE
 
@@ -128,7 +136,15 @@ CONTAINS
          ! ... masked sea surface freezing temperature [Kelvin] (set to rt0 over land)
          tfu(:,:) = tfreez( sss_m ) +  rt0 
 
+#if defined key_fafmip
+         if ( ln_fafheat ) THEN
+           zsist(:,:,1) = trb(:,:,1,jpTr) + rt0 * ( 1. - tmask(:,:,1) ) 
+         else
+            zsist (:,:,1) = sist (:,:) + rt0 * ( 1. - tmask(:,:,1) )
+         endif
+#else
          zsist (:,:,1) = sist (:,:) + rt0 * ( 1. - tmask(:,:,1) )
+#endif
 
          ! ... ice albedo (clear sky and overcast sky)
          CALL albedo_ice( zsist, reshape( hicif, (/jpi,jpj,1/) ), &
@@ -201,6 +217,7 @@ CONTAINS
          ENDIF
 #endif
                            CALL lim_thd_2      ( kt )      ! Ice thermodynamics 
+
                            CALL lim_sbc_flx_2  ( kt )      ! update surface ocean mass, heat & salt fluxes 
 
          IF( ( MOD( kt+nn_fsbc-1, ninfo ) == 0 .OR. ntmoy == 1 ) .AND. .NOT. lk_mpp )   &
@@ -222,6 +239,7 @@ CONTAINS
       !
       CALL wrk_dealloc( jpi,jpj,1, zalb_ice_os, zalb_ice_cs, zsist )
       !
+
    END SUBROUTINE sbc_ice_lim_2
 
 #else

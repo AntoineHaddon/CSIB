@@ -21,7 +21,11 @@ MODULE limthd_zdf_2
    USE lib_mpp          ! MPP library
    USE wrk_nemo         ! work arrays
    USE lib_fortran      ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
+#if defined key_cancpl
+   USE cpl_cancpl, ONLY : lk_cpl
+#else
    USE cpl_oasis3, ONLY : lk_cpl
+#endif
       
    IMPLICIT NONE
    PRIVATE

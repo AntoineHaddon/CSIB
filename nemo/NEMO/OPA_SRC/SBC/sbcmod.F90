@@ -39,7 +39,14 @@ MODULE sbcmod
    USE sbcice_lim_2     ! surface boundary condition: LIM 2.0 sea-ice model
    USE sbcice_cice      ! surface boundary condition: CICE    sea-ice model
    USE sbccpl           ! surface boundary condition: coupled florulation
+#if defined key_fafmip
+   USE sbcfaf, only : sbc_fafmip, sbc_fafmip_init ! surface boundary condition: add additional anomalies to computed fluxes
+#endif
+#if defined key_cancpl
+   USE cpl_cancpl, ONLY:lk_cpl      ! are we in coupled mode?
+#else
    USE cpl_oasis3, ONLY:lk_cpl      ! are we in coupled mode?
+#endif
    USE sbcssr           ! surface boundary condition: sea surface restoring
    USE sbcrnf           ! surface boundary condition: runoffs
    USE sbcfwb           ! surface boundary condition: freshwater budget
@@ -60,6 +67,8 @@ MODULE sbcmod
    USE lib_mpp          ! MPP library
    USE timing           ! Timing
    USE sbcwave          ! Wave module
+
+   USE diawri
 
    IMPLICIT NONE
    PRIVATE
@@ -94,7 +103,6 @@ CONTAINS
       NAMELIST/namsbc/ nn_fsbc   , ln_ana , ln_flx  , ln_blk_clio, ln_blk_core, ln_cpl,   &
          &             ln_blk_mfs, ln_apr_dyn, nn_ice , ln_dm2dc, ln_rnf, ln_ssr, nn_fwb, &
          &             ln_cdgw, rn_minsal
-         
       !!----------------------------------------------------------------------
 
       IF(lwp) THEN
@@ -108,9 +116,9 @@ CONTAINS
 
       !                          ! overwrite namelist parameter using CPP key information
       IF( Agrif_Root() ) THEN                ! AGRIF zoom
-        IF( lk_lim2 )   nn_ice      = 2
-        IF( lk_lim3 )   nn_ice      = 3
-        IF( lk_cice )   nn_ice      = 4
+        IF( lk_lim2 .and. nn_ice /= 0 ) nn_ice = 2
+        IF( lk_lim3 .and. nn_ice /= 0 ) nn_ice = 3
+        IF( lk_cice .and. nn_ice /= 0 ) nn_ice = 4
       ENDIF
       IF( cp_cfg == 'gyre' ) THEN            ! GYRE configuration
           ln_ana      = .TRUE.
@@ -165,8 +173,8 @@ CONTAINS
       !
       IF( ( nn_ice == 2 .OR. nn_ice ==3 ) .AND. .NOT.( ln_blk_clio .OR. ln_blk_core .OR. lk_cpl ) )   &
          &   CALL ctl_stop( 'LIM sea-ice model requires a bulk formulation or coupled configuration' )
-      IF( nn_ice == 4 .AND. .NOT.( ln_blk_core .OR. lk_cpl ) )   &
-         &   CALL ctl_stop( 'CICE sea-ice model requires ln_blk_core or lk_cpl' )
+      IF( nn_ice == 4 .AND. .NOT.( ln_blk_core .OR. lk_cpl .OR. ln_flx ) )   &
+         &   CALL ctl_stop( 'CICE sea-ice model requires ln_blk_core or lk_cpl or ln_flx' )
       IF( nn_ice == 4 .AND. ( .NOT. ( cp_cfg == 'orca' ) .OR. lk_agrif ) )   &
          &   CALL ctl_stop( 'CICE sea-ice model currently only available in a global ORCA configuration without AGRIF' )
 
@@ -215,6 +223,10 @@ CONTAINS
       IF( ln_ssr      )   CALL sbc_ssr_init               ! Sea-Surface Restoring initialisation
       !
       IF( nn_ice == 4 )   CALL cice_sbc_init( nsbc )      ! CICE initialisation
+#if defined key_fafmip
+      CALL sbc_fafmip_init( )                             ! Initialize FAFMIP forcing module. Note that this
+                                                          ! subroutine does nothing if ln_tau and ln_emp are false
+#endif
       !
    END SUBROUTINE sbc_init
 
@@ -288,8 +300,8 @@ CONTAINS
                        CALL sbc_blk_core( kt )                    !
                        CALL sbc_cpl_rcv ( kt, nn_fsbc, nn_ice )   !
       END SELECT
-      !                                            !==  Misc. Options  ==!
 
+      !                                            !==  Misc. Options  ==!
       SELECT CASE( nn_ice )                                       ! Update heat and freshwater fluxes over sea-ice areas
       CASE(  0 )   ;         CALL sbc_ice_none ( kt )                ! no-ice, SST not dropping below freezing point
       CASE(  1 )   ;         CALL sbc_ice_if   ( kt )                ! Ice-cover climatology ("Ice-if" model)
@@ -297,7 +309,12 @@ CONTAINS
               IF( lk_bdy )   CALL bdy_ice_lim_2( kt )                ! BDY boundary condition
       CASE(  3 )   ;         CALL sbc_ice_lim  ( kt, nsbc )          ! LIM-3 ice model
       CASE(  4 )   ;         CALL sbc_ice_cice ( kt, nsbc )          ! CICE ice model
+      CASE(  5 )   ;         print *, 'nn_ice = 5, no constraint on SST unless restoring'
       END SELECT
+      ! Apply anomalies for FAFMIP if requested
+#if defined key_fafmip
+      CALL sbc_fafmip( kt )
+#endif
       IF (ln_chksum  )   CALL after_state_chksum( "after ice model" )
 
       IF( ln_rnf         )   CALL sbc_rnf( kt )                   ! add runoffs to fresh water fluxes
@@ -410,7 +427,6 @@ CONTAINS
 #endif
 
    END SUBROUTINE sbc
-
 
    SUBROUTINE sbc_final
       !!---------------------------------------------------------------------

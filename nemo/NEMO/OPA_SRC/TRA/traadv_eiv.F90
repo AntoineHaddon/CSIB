@@ -27,7 +27,7 @@ MODULE traadv_eiv
    USE phycst          ! physical constants
    USE lbclnk          ! ocean lateral boundary conditions (or mpp link)
    USE diaar5, ONLY:   lk_diaar5
-   USE trdmod_oce, ONLY: jptra_trd_eiv, l_trdtra, l_trdtrc ! active tracer trend index and tracers trend flags
+   USE trdmod_oce, ONLY: jptra_trd_eiv, l_trdtra ! active tracer trend index and tracers trend flags
    USE trdtra          ! ocean tracers trends
    USE par_oce, ONLY:  jpts ! Number of active tracers (=2, i.e. T & S )
 # endif  
@@ -38,8 +38,6 @@ MODULE traadv_eiv
    PRIVATE
 
    PUBLIC   tra_adv_eiv   ! routine called by step.F90
-
-   LOGICAL  :: l_trd      ! flag to compute trends
 
    !! * Substitutions
 #  include "domzgr_substitute.h90"
@@ -115,9 +113,7 @@ CONTAINS
          IF(lwp) WRITE(numout,*) 'tra_adv_eiv : eddy induced advection on ', cdtype,' :'
          IF(lwp) WRITE(numout,*) '~~~~~~~~~~~   add to velocity fields the eiv component'
          !
-         l_trd = .FALSE.
 # if defined key_diaeiv 
-         IF( ( cdtype == 'TRA' .AND. l_trdtra ) .OR. ( cdtype == 'TRC' .AND. l_trdtrc ) ) l_trd = .TRUE.
          IF( cdtype == 'TRA') THEN
             u_eiv(:,:,:) = 0.e0
             v_eiv(:,:,:) = 0.e0
@@ -127,7 +123,7 @@ CONTAINS
       ENDIF
 
 # if defined key_diaeiv
-      IF( cdtype == 'TRA' .AND. lk_diaar5 .AND. l_trd )  THEN
+      IF( cdtype == 'TRA' .AND. l_trdtra .AND. lk_diaar5 )  THEN
          CALL wrk_alloc( jpi, jpj, jpk, zwz, ptrdx_eiv, ptrdy_eiv, ptrdz_eiv, ptrdt_eiv, ptrds_eiv )
       END IF
 # endif
@@ -210,7 +206,7 @@ CONTAINS
             END DO
             CALL iom_put( "weiv_masstr" , z3d )                 ! bolus mass transport in k-direction
             ! computations of opottemppmadvect & ocontemppmadvect (tendencies, degC/s & 1e-3 s-1)
-            IF( l_trd )  THEN 
+#if defined key_trdtra
                ! initialization and bottom flux set to zero
                zwx(:,:,:) = 0.e0 ; zwy(:,:,:) = 0.e0 ; zwz(:,:,:) = 0.e0
                DO jn = 1, jpts
@@ -243,7 +239,7 @@ CONTAINS
                   IF( jn == jp_sal ) ptrds_eiv = ptrdx_eiv + ptrdy_eiv + ptrdz_eiv
                END DO
                CALL trd_tra_mng( ptrdt_eiv, ptrds_eiv, jptra_trd_eiv, kt )
-            END IF
+#endif
             ! end of opottemppmadvect & ocontemppmadvect
             zztmp = 0.5 * rau0 * rcp 
             z2d(:,:) = 0.e0 
@@ -277,7 +273,7 @@ CONTAINS
       CALL wrk_dealloc( jpi, jpj, jpk, z3d )
       IF( cdtype == 'TRA' .AND. lk_diaar5 ) THEN
          CALL wrk_dealloc( jpi, jpj, jpk, pun_eiv, pvn_eiv, pwn_eiv )
-         IF( l_trd )  THEN
+         IF( l_trdtra )  THEN
             CALL wrk_dealloc( jpi, jpj, jpk, zwz, ptrdx_eiv, ptrdy_eiv, ptrdz_eiv, ptrdt_eiv, ptrds_eiv )
          END IF
       END IF

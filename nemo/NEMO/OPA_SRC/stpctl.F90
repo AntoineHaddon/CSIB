@@ -55,8 +55,9 @@ CONTAINS
       INTEGER  ::   ji, jj, jk              ! dummy loop indices
       INTEGER  ::   ii, ij, ik              ! temporary integers
       INTEGER  ::   numneg
-      REAL(wp) ::   zumax, zsmin, zssh2     ! temporary scalars
       REAL(wp) ::   zmean
+      REAL(wp) ::   zumax, zsmin, zssh2, zumax_local     ! temporary scalars
+      REAL(wp) ::   ztmin, ztmax            ! temporary scalars
       INTEGER, DIMENSION(3) ::   ilocu      ! 
       INTEGER, DIMENSION(2) ::   ilocs      ! 
       !!----------------------------------------------------------------------
@@ -77,16 +78,44 @@ CONTAINS
       !                                              !  ------------------------
       !! zumax = MAXVAL( ABS( un(:,:,:) ) )                ! slower than the following loop on NEC SX5
       zumax = 0.e0
+      zumax_local = 0.e0
       DO jk = 1, jpk
          DO jj = 1, jpj
             DO ji = 1, jpi
                zumax = MAX(zumax,ABS(un(ji,jj,jk)))
+               if ( zumax > zumax_local ) then
+                 zumax_local = zumax
+                 ilocu(1) = ji
+                 ilocu(2) = jj
+                 ilocu(3) = jk
+               endif
           END DO 
         END DO 
       END DO        
       IF( lk_mpp )   CALL mpp_max( zumax )                 ! max over the global domain
       !
-      IF( MOD( kt, nwrite ) == 1 .AND. lwp )   WRITE(numout,*) ' ==>> time-step= ',kt,' abs(U) max: ', zumax
+      IF ( MOD( kt, nwrite ) == 1 .AND. lwp ) THEN
+        WRITE(numout,*) ' ==>> time-step= ',kt,' abs(U) max: ', zumax
+      ENDIF
+
+      if ( .true. ) then
+        !--- Find min/max in SST
+        ztmin = HUGE(ztmin)
+        ztmax = -HUGE(ztmax)
+        DO jj = 2, jpjm1
+           DO ji = 1, jpi
+              IF( tmask(ji,jj,1) == 1) then
+                ztmin = MIN(ztmin,tsn(ji,jj,1,jp_tem))
+                ztmax = MAX(ztmax,tsn(ji,jj,1,jp_tem))
+              ENDIF
+           END DO
+        END DO
+        IF( lk_mpp )   CALL mpp_min( ztmin )   ! min over the global domain
+        IF( lk_mpp )   CALL mpp_max( ztmax )   ! max over the global domain
+        IF ( lwp ) THEN
+          WRITE(numout,*) ' ==>> time-step= ',kt,' SST min,max: ', ztmin,ztmax
+        ENDIF
+      endif
       !
       IF( zumax > 20.e0 ) THEN
          IF( lk_mpp ) THEN
@@ -105,6 +134,36 @@ CONTAINS
             WRITE(numout,*)
             WRITE(numout,*) '          output of last fields in numwso'
          ENDIF
+
+         IF( lk_mpp .and. zumax_local > 20.e0 ) THEN
+           !--- On each subdomain, write vel, T and S before, now and after (b,n,a)
+           !--- at the grid point where the velocity is a max and > 20
+           write(numout,*)'kt=',kt,'  nproc=',nproc,'  U_max=',zumax_local,'  b,n,a U: ', &
+                        ub(ilocu(1),ilocu(2),ilocu(3)), &
+                        un(ilocu(1),ilocu(2),ilocu(3)), &
+                        ua(ilocu(1),ilocu(2),ilocu(3)), &
+                        '  local i,j,k: ',ilocu
+           write(numout,*)'kt=',kt,'  nproc=',nproc,'  U_max=',zumax_local,'  b,n,a V: ', &
+                        vb(ilocu(1),ilocu(2),ilocu(3)), &
+                        vn(ilocu(1),ilocu(2),ilocu(3)), &
+                        va(ilocu(1),ilocu(2),ilocu(3)), &
+                        '  local i,j,k: ',ilocu
+           write(numout,*)'kt=',kt,'  nproc=',nproc,'  U_max=',zumax_local,'  W: ', &
+                        wn(ilocu(1),ilocu(2),ilocu(3)), &
+                        '  local i,j,k: ',ilocu
+           write(numout,*)'kt=',kt,'  nproc=',nproc,'  U_max=',zumax_local,'  b,n,a Temp: ', &
+                        tsb(ilocu(1),ilocu(2),ilocu(3),1), &
+                        tsn(ilocu(1),ilocu(2),ilocu(3),1), &
+                        tsa(ilocu(1),ilocu(2),ilocu(3),1), &
+                        '  local i,j,k: ',ilocu
+           write(numout,*)'kt=',kt,'  nproc=',nproc,'  U_max=',zumax_local,'  b,n,a Salt: ', &
+                        tsb(ilocu(1),ilocu(2),ilocu(3),2), &
+                        tsn(ilocu(1),ilocu(2),ilocu(3),2), &
+                        tsa(ilocu(1),ilocu(2),ilocu(3),2), &
+                        '  local i,j,k: ',ilocu
+           call flush(numout)
+         endif
+
          kindic = -3
       ENDIF
 9400  FORMAT (' kt=',i6,' max abs(U): ',1pg11.4,', i j k: ',3i5)

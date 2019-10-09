@@ -41,11 +41,12 @@ MODULE p4zflx
    PUBLIC   p4z_flx_alloc  
 
    !                                      !!** Namelist  nampisext  **
-   REAL(wp)          ::  atcco2    = 278._wp       !: pre-industrial atmospheric [co2] (ppm) 	
-   LOGICAL           ::  ln_co2int = .FALSE.       !: flag to read in a file and interpolate atmospheric pco2 or not
-   CHARACTER(len=120) ::  clname       = 'co2atm.nc'                               !: filename of pco2 values
+   REAL(wp)          ::  atcco2    = 284.32          !: pre-industrial atmospheric [co2] (ppm) 	
+   LOGICAL           ::  ln_co2int = .FALSE.         !: flag to read in a file and interpolate atmospheric pco2 or not
+   CHARACTER(len=120) ::  clname       = 'omip6_co2atm.nc' !: filename of pco2 values
    CHARACTER(len=120) ::  clvarname    = 'mole_fraction_of_carbon_dioxide_in_air'  !: variable name in clname file 
    INTEGER           ::  nn_offset = 0             !: Offset model-data start year (default = 0) 
+   INTEGER           ::  nn_readoffset_co2 = 1850  !: Initial year in data file (default = 1850) 
 
    !!  Variables related to reading atmospheric CO2 time history    
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:) :: atcco2h, atcco2h_years
@@ -186,7 +187,7 @@ CONTAINS
             zws  = wndm(ji,jj) * wndm(ji,jj)
             ! Compute the piston velocity for O2 and CO2
             zkgwan = 0.251 * zws  
-            zkgwan = zkgwan * xconv * ( 1.- fr_i(ji,jj) ) * tmask(ji,jj,1)
+            zkgwan = zkgwan * xconv * ( 1.- fr_i(ji,jj) ) * tmask_bgc_closea(ji,jj,1)
             ! compute gas exchange for CO2 and O2
             zkgco2(ji,jj) = zkgwan * SQRT( 660./ zsch_co2 )
             zkgo2 (ji,jj) = zkgwan * SQRT( 660./ zsch_o2 )
@@ -196,15 +197,15 @@ CONTAINS
       DO jj = 1, jpj
          DO ji = 1, jpi
             ! Compute CO2 flux for the sea and air
-            zfld = satmco2(ji,jj) * patm(ji,jj) * tmask(ji,jj,1) * chemc(ji,jj,1) * zkgco2(ji,jj)   ! (mol/L) * (m/s)
-            zflu = zh2co3(ji,jj) * tmask(ji,jj,1) * zkgco2(ji,jj)                                   ! (mol/L) (m/s) ?
-            oce_co2(ji,jj) = ( zfld - zflu ) * rfact * e1e2t(ji,jj) * tmask(ji,jj,1) * 1000.
+            zfld = satmco2(ji,jj) * patm(ji,jj) * tmask_bgc_closea(ji,jj,1) * chemc(ji,jj,1) * zkgco2(ji,jj)   ! (mol/L) * (m/s)
+            zflu = zh2co3(ji,jj) * tmask_bgc_closea(ji,jj,1) * zkgco2(ji,jj)                                   ! (mol/L) (m/s) ?
+            oce_co2(ji,jj) = ( zfld - zflu ) * rfact * e1e2t(ji,jj) * tmask_bgc_closea(ji,jj,1) * 1000.
             ! compute the trend
             tra(ji,jj,1,jpdic) = tra(ji,jj,1,jpdic) + ( zfld - zflu ) / fse3t(ji,jj,1)
 
             ! Compute O2 flux 
-            zfld16 = atcox * patm(ji,jj) * chemc(ji,jj,2) * tmask(ji,jj,1) * zkgo2(ji,jj)          ! (mol/L) * (m/s)
-            zflu16 = trn(ji,jj,1,jpoxy) * tmask(ji,jj,1) * zkgo2(ji,jj) * 1.e-6   ! convert to mol/L
+            zfld16 = atcox * patm(ji,jj) * chemc(ji,jj,2) * tmask_bgc_closea(ji,jj,1) * zkgo2(ji,jj)          ! (mol/L) * (m/s)
+            zflu16 = trn(ji,jj,1,jpoxy) * tmask_bgc_closea(ji,jj,1) * zkgo2(ji,jj) * 1.e-6   ! convert to mol/L
             zoflx(ji,jj) = zfld16 - zflu16
             tra(ji,jj,1,jpoxy) = tra(ji,jj,1,jpoxy) + zoflx(ji,jj) / fse3t(ji,jj,1) * 1.e6   ! convert to mmol m^-3
          END DO
@@ -237,18 +238,22 @@ CONTAINS
       IF( ln_diatrc ) THEN
          IF( lk_iomput ) THEN
             CALL iom_put( "Cflx" , oce_co2(:,:) / e1e2t(:,:) / rfact ) 
-            CALL iom_put( "Oflx" , zoflx(:,:) * 1000 * tmask(:,:,1)  )
-            CALL iom_put( "Kg"   , zkgco2(:,:) * tmask(:,:,1) )
-            CALL iom_put( "Dpco2", ( zh2co3(:,:) / ( chemc(:,:,1) + rtrn ) - satmco2(:,:) * patm(:,:) ) * tmask(:,:,1) )
-            CALL iom_put( "pco2" , ( zh2co3(:,:) / ( chemc(:,:,1) + rtrn ) ) * tmask(:,:,1) )
-            CALL iom_put( "Dpo2" , ( atcox * patm(:,:) - trn(:,:,1,jpoxy) / ( chemc(:,:,2) + rtrn ) ) * tmask(:,:,1) )
+            CALL iom_put( "Oflx" , zoflx(:,:) * 1000 * tmask_bgc_closea(:,:,1)  )
+            CALL iom_put( "Kg"   , zkgco2(:,:) * tmask_bgc_closea(:,:,1) )
+            CALL iom_put( "Dpco2", ( zh2co3(:,:) / ( chemc(:,:,1) + rtrn ) - satmco2(:,:) * patm(:,:) ) * tmask_bgc_closea(:,:,1) )
+            CALL iom_put( "pco2" , ( zh2co3(:,:) / ( chemc(:,:,1) + rtrn ) ) * tmask_bgc_closea(:,:,1) )
+            CALL iom_put( "Dpo2" , ( atcox * patm(:,:) - trn(:,:,1,jpoxy) / ( chemc(:,:,2) + rtrn ) ) * tmask_bgc_closea(:,:,1) )
          ELSE
             trc2d(:,:,jp_pcs0_2d    ) = oce_co2(:,:) / e1e2t(:,:) / rfact 
-            trc2d(:,:,jp_pcs0_2d + 1) = zoflx(:,:) * 1000 * tmask(:,:,1) 
-            trc2d(:,:,jp_pcs0_2d + 2) = zkgco2(:,:) * tmask(:,:,1) 
-            trc2d(:,:,jp_pcs0_2d + 3) = ( satmco2(:,:) * patm(:,:) - zh2co3(:,:) / ( chemc(:,:,1) + rtrn ) ) * tmask(:,:,1) 
+            trc2d(:,:,jp_pcs0_2d + 1) = zoflx(:,:) * 1000 * tmask_bgc_closea(:,:,1) 
+            trc2d(:,:,jp_pcs0_2d + 2) = zkgco2(:,:) * tmask_bgc_closea(:,:,1) 
+            trc2d(:,:,jp_pcs0_2d + 3) = ( satmco2(:,:) * patm(:,:) - zh2co3(:,:) / ( chemc(:,:,1) + rtrn ) ) * tmask_bgc_closea(:,:,1) 
          ENDIF
       ENDIF
+
+#if defined key_cpl_carbon_cycle
+      oce_co2(:,:) = oce_co2(:,:) / e1e2t(:,:) / rfact
+#endif
       !
       CALL wrk_dealloc( jpi, jpj, zkgco2, zkgo2, zh2co3, zoflx )
       !
@@ -267,7 +272,7 @@ CONTAINS
       !!      called at the first timestep (nittrc000)
       !! ** input   :   Namelist nampisext
       !!----------------------------------------------------------------------
-      NAMELIST/nampisext/ln_co2int, atcco2, clname, clvarname, nn_offset
+      NAMELIST/nampisext/ln_co2int, atcco2, clname, clvarname, nn_offset, nn_readoffset_co2
       INTEGER :: jm, ntime, ncid
       REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: tmp2d
       !!----------------------------------------------------------------------
@@ -307,7 +312,7 @@ CONTAINS
          ! Input file for OMIP6 is in Gregorian days since 1 January 0000, manually overwrite
          ! so that atcco2h_years is in yearfraction
          DO jm = 1,ntime
-            atcco2h_years(jm) = (jm-1) + 0.5
+            atcco2h_years(jm) = (jm-1) + (nn_readoffset_co2 + 0.5)
          ENDDO
          
       ENDIF
