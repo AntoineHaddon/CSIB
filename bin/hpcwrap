@@ -221,6 +221,10 @@ def query_hpcarch(runid, syear, eyear, ftypes, action, tar_dir, verbose, silent,
             mach = "ppp1"
         elif "ppp2" in mach or mach.startswith("xc2"):
             mach = "ppp2"
+        elif "ppp3" in mach or mach.startswith("xc3"):
+            mach = "ppp3"
+        elif "ppp4" in mach or mach.startswith("xc4"):
+            mach = "ppp4"
         else:
             mach = "ppp1" # defaults to ppp1
 

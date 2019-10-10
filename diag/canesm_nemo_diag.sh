@@ -8,8 +8,6 @@
 
 set -x
 
-# Get CDO / TEMPORARY!
-export PATH=/fs/ssm/hpco/exp/mib002/anaconda/anaconda-4.4.0/anaconda_4.4.0_ubuntu-14.04-amd64-64/envs/cdo-1.9.0/bin:$PATH 
 # NEMO priority level
   output_level=${output_level}
 

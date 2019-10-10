@@ -15,8 +15,12 @@ echo "#################### Start NEMO pre-processing #################"
   case $this_mach in
              xc1*) this_mach=hare;   ROUTE_SSH='ssh hare'  ;;
              xc2*) this_mach=brooks; ROUTE_SSH='ssh brooks'  ;;
+             xc3*) this_mach=banting; ROUTE_SSH='ssh banting'  ;;
+             xc4*) this_mach=daley; ROUTE_SSH='ssh daley'  ;;
       eccc1-ppp1*) this_mach=ppp1;   ROUTE_SSH='ssh ppp1'  ;;
       eccc1-ppp2*) this_mach=ppp2;   ROUTE_SSH='ssh ppp2'  ;;
+      hpcr3*|cs3*|ppp3*|eccc*-ppp3*) this_mach=ppp3;   ROUTE_SSH='ssh ppp3'  ;;
+      hpcr4*|cs4*|ppp4*|eccc*-ppp4*) this_mach=ppp4;   ROUTE_SSH='ssh ppp4'  ;;
      ib3*) this_mach=pollux; ROUTE_SSH='ssh pollux' ;;
    joule*) this_mach=joule;  ROUTE_SSH='ssh joule'  ;;
   esac
