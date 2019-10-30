@@ -137,6 +137,7 @@
         <field id="hflx_rnf_cea"  description="heat flux due to runoffs"                                    unit="W/m2"     />
         <field id="hflx_cal_cea"  description="heat flux due to calving"                                    unit="W/m2"     />
         <field id="bicemel_cea"   description="Rate of Melt at Sea Ice Base (cell average)"                 unit="kg/m2/s"  />
+        <field id="bicegrow_cea"   description="Rate of Growth at Sea Ice Base (cell average)"              unit="kg/m2/s"  />
         <field id="licepro_cea"   description="Lateral Sea Ice Growth Rate (cell average)"                  unit="kg/m2/s"  />
         <field id="snowmel_cea"   description="Snow Melt Rate (cell average)"                               unit="kg/m2/s"  />
         <field id="sntoice_cea"   description="Snow-Ice Formation Rate (cell average)"                      unit="kg/m2/s"  />
@@ -758,9 +759,10 @@
           <!-- grFrazil : Frazil Sea Ice Growth (Leads) Rate ??? -->
           <!-- grCongel : Congelation Sea Ice Growth Rate ??? -->
           <field ref="licepro_cea"     name="grLateral"      description="Lateral Sea Ice Growth Rate"             level="4"  />
-          <field ref="sntoice_cea"     name="snoToIce"       description="Snow-Ice Formation Rate"                 level="4"  />
-          <field ref="ticemel_cea"     name="tmelt"          description="Rate of Melt at Upper Surface of Sea Ice" level="4" />
-          <field ref="bicemel_cea"     name="bmelt"          description="Rate of Melt at Sea Ice Base"            level="4"  />
+          <field ref="sntoice_cea"     name="snoToIce"       description="Snow-Ice Formation Rate"                 level="2"  />
+          <field ref="ticemel_cea"     name="tmelt"          description="Rate of Melt at Upper Surface of Sea Ice" level="2" />
+          <field ref="bicemel_cea"     name="bmelt"          description="Rate of Melt at Sea Ice Base"            level="2"  />
+          <field ref="bicegrowth_cea"  name="bgrowth"        description="Rate of Growth at Sea Ice Base"          level="2"  />
           <!-- hcice  : Sea Ice Total Heat Content ??? -->
           <field ref="qsr_ai_cea"      name="aicesflx"                                                             level="0"  />
           <field ref="qns_ai_cea"      name="aicenflx"                                                             level="0"  />

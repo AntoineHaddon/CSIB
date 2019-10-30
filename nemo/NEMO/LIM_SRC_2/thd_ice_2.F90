@@ -73,6 +73,7 @@ MODULE thd_ice_2
       dmgwi_1d    ,     &  !:    "                  "      dmgwi
       dvsbq_1d    ,     &  !:    "                  "      rdvosif
       rdvomif_1d  ,     &  !:    "                  "      rdvomif
+      rdvogif_1d  ,     &  !:    "                  "      rdvogif
       dvbbq_1d    ,     &  !:    "                  "      rdvobif
       dvlbq_1d    ,     &  !:    "                  "      rdvolif
       dvnbq_1d    ,     &  !:    "                  "      rdvolif
