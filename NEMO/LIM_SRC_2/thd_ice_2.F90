@@ -110,6 +110,7 @@ MODULE thd_ice_2
          !
       ALLOCATE( rdmicif_1d(jpij), rdmsnif_1d(jpij), qlbbq_1d(jpij),   &
          &      dmgwi_1d(jpij)  , dvsbq_1d(jpij)  , rdvomif_1d(jpij), &
+         &      rdvogif_1d(jpij), &
          &      dvbbq_1d(jpij)  , dvlbq_1d(jpij)  , dvnbq_1d(jpij)  , &
          &      Stat=ierr(3))
          !
