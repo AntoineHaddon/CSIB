@@ -4,7 +4,7 @@ MODULE limthd_zdf_2
    !!                thermodynamic growth and decay of the ice 
    !!======================================================================
    !! History :  1.0  !  01-04 (LIM) Original code
-   !!            2.0  !  02-08 (C. Ethe, G. Madec) F90
+   !!            2.0  !  02-08 (C. Ethe, G. Madec) F90 
    !!----------------------------------------------------------------------
 #if defined key_lim2
    !!----------------------------------------------------------------------
@@ -604,6 +604,8 @@ CONTAINS
           zdhicmlt  = MAX( hmelt , zdhicbot(ji) ) 
           !-- output part due to bottom melting only
           IF( zdhicmlt < 0.e0 ) rdvomif_1d(ji) = ( 1.0 - frld_1d(ji) ) * zdhicmlt
+          !-- output part due to bottom growth only
+          IF( zdhicmlt > 0.e0 ) rdvogif_1d(ji) = ( 1.0 - frld_1d(ji) ) * zdhicmlt
           !--energy after bottom melting/growing
           zqsup(ji) = ( 1.0 - frld_1d(ji) ) * xlic * ( zdhicmlt - zdhicbot(ji) )
           !-- compute the new thickness and the newly formed volume after bottom melting/growing
