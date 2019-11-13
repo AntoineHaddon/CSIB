@@ -454,6 +454,8 @@ if [ $build_nemo_exe -eq 1 ]; then
       save $nemo_config/BLD/bin/nemo.exe $nemo_exe || bail "Problem while saving $nemo_exe"
       #release $nemo_exe
       echo "Saved $nemo_exe on RUNPATH $RUNPATH"
+      echo "Resetting cfg.txt to HEAD"
+      git checkout HEAD cfg.txt || :
    else
       # In ocean-only we copy to the PROD dir
       ln -s ${nemo_source_path}/nemo/CONFIG/${nemo_config}/BLD/bin/nemo.exe ${CWD}/${nemo_exe}
