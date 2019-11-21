@@ -109,7 +109,7 @@ MODULE trc_util
       ENDIF
 
       DO jt=1,ntime-1
-         IF ( tint > tvec(jt) ) THEN
+         IF ( tint >= tvec(jt) .and. tint <= tvec(jt+1) ) THEN
             r_dt = 1./(tvec(jt+1) - tvec(jt))
             wt2 = (tint - tvec(jt))*r_dt
             wt1 = 1. - wt2

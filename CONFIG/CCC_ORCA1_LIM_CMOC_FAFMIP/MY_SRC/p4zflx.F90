@@ -420,7 +420,7 @@ CONTAINS
          ntime = SIZE(atcco2h_years)
          ! Set the time-varying atmospheric history from the read in data
          ALLOCATE(atcco2h(ntime))
-         atcco2h(:) = tmp2d(:,1) ! Sector '1' corresponds to global average
+         atcco2h(:) = tmp2d(1,:) ! Sector '1' corresponds to global average
          DEALLOCATE(tmp2d)
          ! Input file for OMIP6 is in Gregorian days since 1 January 0000, manually overwrite
          ! so that atcco2h_years is in yearfraction
