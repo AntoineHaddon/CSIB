@@ -15,6 +15,7 @@ MODULE limthd_2
    !!                                     following SIMIP guide paper by Nots etal (2016).
    !!          3.4.1  ! 2018-09 (D. Yang) Make the local array names (z2d_dy, fr_iu_dy & fr_iv_dy) unique. 
    !!          3.4.1  ! 2018-09 (D. Yang) Mask fr_iu_dy & fr_iv_dy.
+   !!          3.4.1  ! 2019-10 (D. Yang) Add bottom variation of ice volume due to growth (zdvogif) for SIMIP. 
    !!---------------------------------------------------------------------
 #if defined key_lim2
    !!----------------------------------------------------------------------
@@ -123,12 +124,14 @@ CONTAINS
       REAL(wp), POINTER, DIMENSION(:,:) ::   zdvolif       ! Total variation of ice volume                 (outputs only)
       REAL(wp), POINTER, DIMENSION(:,:) ::   zdvonif       ! Surface accretion Snow to Ice transformation  (outputs only)
       REAL(wp), POINTER, DIMENSION(:,:) ::   zdvomif       ! Bottom variation of ice volume due to melting (outputs only)
+      REAL(wp), POINTER, DIMENSION(:,:) ::   zdvogif       ! Bottom variation of ice volume due to growth  (outputs only)
       REAL(wp), POINTER, DIMENSION(:,:) ::   zu_imasstr    ! Sea-ice transport along i-axis at U-point     (outputs only) 
       REAL(wp), POINTER, DIMENSION(:,:) ::   zv_imasstr    ! Sea-ice transport along j-axis at V-point     (outputs only) 
       REAL(wp), POINTER, DIMENSION(:,:,:) ::   zmsk        ! 3D workspace
       !!-------------------------------------------------------------------
 
       CALL wrk_alloc( jpi, jpj, ztmp, zqlbsbq, zlicegr, zdvosif, zdvobif, zdvolif, zdvonif, zdvomif, zu_imasstr, zv_imasstr )
+      CALL wrk_alloc( jpi, jpj, zdvogif )
       CALL wrk_alloc( jpi, jpj, z2da, z2db, z2d_dy, fr_iu_dy, fr_iv_dy )
       CALL wrk_alloc( jpi, jpj, jpk, zmsk )
 
@@ -146,6 +149,7 @@ CONTAINS
 !      zdvonif(:,:) = 0.e0   ! lateral variation of ice volume
       zlicegr(:,:) = 0.e0   ! lateral variation of ice volume
       zdvomif(:,:) = 0.e0   ! variation of ice volume at bottom due to melting only
+      zdvogif(:,:) = 0.e0   ! variation of ice volume at bottom due to growth only
       ztr_fram     = 0.e0   ! sea-ice transport through Fram strait
       fstric (:,:) = 0.e0   ! part of solar radiation absorbing inside the ice
       fscmbq (:,:) = 0.e0   ! linked with fstric
@@ -352,6 +356,7 @@ CONTAINS
          CALL tab_1d_2d_2( nbpb, zdvosif    , npb, dvsbq_1d  (1:nbpb)     , jpi, jpj )
          CALL tab_1d_2d_2( nbpb, zdvobif    , npb, dvbbq_1d  (1:nbpb)     , jpi, jpj )
          CALL tab_1d_2d_2( nbpb, zdvomif    , npb, rdvomif_1d(1:nbpb)     , jpi, jpj )
+         CALL tab_1d_2d_2( nbpb, zdvogif    , npb, rdvogif_1d(1:nbpb)     , jpi, jpj )
          CALL tab_1d_2d_2( nbpb, zdvolif    , npb, dvlbq_1d  (1:nbpb)     , jpi, jpj )
          CALL tab_1d_2d_2( nbpb, zdvonif    , npb, dvnbq_1d  (1:nbpb)     , jpi, jpj ) 
          CALL tab_1d_2d_2( nbpb, qsr_ice(:,:,1), npb, qsr_ice_1d(1:nbpb)  , jpi, jpj )
@@ -468,6 +473,7 @@ CONTAINS
          CALL iom_put( 'sntoice_cea' , zdvonif(:,:) * zztmp     )   ! Snow to Ice transformation [kg/m2/s]
          CALL iom_put( 'ticemel_cea' , zdvosif(:,:) * zztmp     )   ! Melt at Sea Ice top        [kg/m2/s]
          CALL iom_put( 'bicemel_cea' , zdvomif(:,:) * zztmp     )   ! Melt at Sea Ice bottom     [kg/m2/s]
+         CALL iom_put( 'bicegrow_cea', zdvogif(:,:) * zztmp     )   ! Growth at Sea Ice bottom   [kg/m2/s]
          zlicegr(:,:) = MAX( 0.e0, rdmicif(:,:)-zlicegr(:,:) )
          CALL iom_put( 'licepro_cea' , zlicegr(:,:) * zztmp     )   ! Latereal sea ice growth    [kg/m2/s]
       ENDIF
@@ -573,6 +579,7 @@ CONTAINS
       ENDIF
        !
       CALL wrk_dealloc( jpi, jpj, ztmp, zqlbsbq, zlicegr, zdvosif, zdvobif, zdvolif, zdvonif, zdvomif, zu_imasstr, zv_imasstr )
+      CALL wrk_dealloc( jpi, jpj, zdvogif )
       CALL wrk_dealloc( jpi, jpj, z2da, z2db, z2d_dy, fr_iu_dy, fr_iv_dy )
       CALL wrk_dealloc( jpi, jpj, jpk, zmsk )
       !

@@ -116,7 +116,11 @@ export LD_LIBRARY_PATH=/fs/ssm/hpco/tmp/eccc/201402/04/intel-2016.1.150/ubuntu-1
     done
 
 # Calculate annual averages for select variables
-    cmoc_annual_ptrc="cfc11 cfc12 sf6 nchl di14c dic dicabio dicnat no3 o2 alkalini poc zoo phy"
+    cmoc_annual_ptrc=""
+    if [[ ${output_level} -gt 3 ]]; then
+        cmoc_annual_ptrc="cfc11 cfc12 sf6"
+    fi
+    cmoc_annual_ptrc+=" nchl di14c dic dicabio dicnat no3 o2 alkalini poc zoo phy"
     cmoc_annual_diad="cflx_14c cflx cflx_abio cflx_nat ph3d phabio phnat co3 co3sata co3satc ppphy co3abio co3nat o2sol"
 
     cmoc_src_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1m_ptrc_t
