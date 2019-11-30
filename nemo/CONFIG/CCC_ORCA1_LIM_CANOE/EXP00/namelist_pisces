@@ -21,6 +21,7 @@
    atcco2      = 284.316962  ! Constant value atmospheric pCO2 - ln_co2int = F
    clname      = 'omip6_co2atm.nc'     ! Name of atm pCO2 file - ln_co2int = T
    clvarname   = 'mole_fraction_of_carbon_dioxide_in_air' ! CO2 variable name in clname
+   nn_readoffset_co2 = 0 ! Reference year in cl14name
 !   ln_c14int   = .false. ! read atm C14 from a file (T) or constant (F)
 !   atcd14c     = 0.      ! Constant value atmospheric C14  - ln_co2int = F
 !   cl14name    = 'omip6_Delta14co2.nc' ! Name of atm pCO2 file - ln_co2int = T
