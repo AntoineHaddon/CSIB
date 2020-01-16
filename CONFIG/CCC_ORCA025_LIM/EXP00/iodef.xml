@@ -782,58 +782,6 @@
           <!-- ridgice : Sea Ice Ridging Rate ??? -->
         </file>   
 
-        <file id="1m_ptrc_T" name="auto" description="pisces sms variables" >
-          <field ref="DIC"      level="0" />
-          <field ref="Alkalini" level="0" />
-          <field ref="O2"       level="0" />
-          <field ref="POC"      level="0" />
-          <field ref="PHY"      level="0" />
-          <field ref="ZOO"      level="0" />
-          <field ref="NCHL"     level="1" />
-          <field ref="NO3"      level="0" />
-          <field ref="DICnat"   level="1" />
-          <field ref="DICabio"  level="1" />
-          <field ref="O2abio"   level="0" />
-          <field ref="agessc"   level="0" /> <!-- cmip6 requested as priority 1, DY -->
-          <field ref="cfc11"    level="4" />
-          <field ref="cfc12"    level="4" />
-          <field ref="sf6"      level="4" />
-          <field ref="DI14C"    level="1" />
-       </file>
-
-        <file id="1m_diad_T" name="auto" description="additional cmoc diagnostic variables" >
-          <field ref="PH"        level="8" />
-          <field ref="sDIC"      level="8" />
-          <field ref="sAlk"      level="8" />
-          <field ref="PPPHY"     level="0" />
-          <field ref="Cflx"      level="0" />
-          <field ref="Oflx"      level="0" />
-          <field ref="Cflx_abio" level="1" />
-          <field ref="Cflx_nat"  level="1" />
-          <field ref="Oflx_abio" level="0" />
-          <field ref="Cflx_14C"  level="1"/>
-          <field ref="Nfix"      level="0" />
-          <field ref="Denit"     level="3" />
-          <field ref="EPC100"    level="0" />
-          <field ref="EPCALC100" level="0" />
-          <field ref="BUPOC"     level="8" />
-          <field ref="BUCALC"    level="8" />
-          <field ref="Dpco2"     level="3" />
-          <field ref="Dpo2"      level="3" />
-          <field ref="spco2"     level="1" />
-          <field ref="spco2a"    level="1" />
-          <field ref="spco2n"    level="1" />
-          <field ref="LNnut"     level="3" />
-          <field ref="LNFe"      level="3" />
-          <field ref="LNlight"   level="3" />
-          <field ref="PAR"       level="8" />
-          <field ref="Mumax"     level="8" />
-          <field ref="oomask"    level="8" />
-          <field ref="cfc11qtr"  level="1" />
-          <field ref="cfc12qtr"  level="1" />
-          <field ref="sf6qtr"    level="2" />
-       </file>
-
       </group>
 
       <!-- 
