@@ -148,6 +148,9 @@ nemo_exp=EXP00
 # Set default history file output
 with_nemo_diag=off
 
+# Default input paths for desired hosts
+input_paths="eccc-ppp4:/space/hall4/sitestore/eccc/crd/ccrn/users/rcs001/nemo-inps/ daley:/space/hall4/work/eccc/crd/ccrn/users/rcs001/nemo-inps/"
+
 # process command line options
 while getopts hxrdl: opt
 do
@@ -307,12 +310,15 @@ else
     esac
 
     nemo_config_lc=`echo "$nemo_config" | awk '{print tolower($0)}'`
+
+    #========================================================================
     # Make a directory by cloning the maestro repo and do basic maestro setup
+    #========================================================================
     [ -d $nemo_runid ] && bail "Directory $nemo_runid already exists! Aborting"
 
+    # clone
     git clone $maestro_repo $nemo_runid
     cd $nemo_runid || { echo "Failed to clone" ;  exit 1 ; }
-
     git checkout $maestro_version
     CWD=`pwd`
     nrg=`pwd`/.git
@@ -326,6 +332,7 @@ else
     PATH=$CWD/bin:$PATH
     export PATH
 
+    # set experiment specific values in config and config maestro
     sed -i "s/RUNID=.*/RUNID=${nemo_runid}/g" experiment.cfg
     # Set the configuration on which to base this experiment
     sed -i 's/.*config=.*/config='"$nemo_config/" experiment.cfg
@@ -334,6 +341,13 @@ else
     fi
     sed -i "s/SEQ_JOBNAME_PREFIX=.*/SEQ_JOBNAME_PREFIX=${nemo_runid}-/g" resources/resources.def
     config-maestro
+
+    # loop over hosts in host/input-path pairs and set them inside ${SEQ_EXP_HOME}/hub/${host}
+    for hostpath in $input_paths; do
+        host=${hostpath%:*}
+        path=${hostpath#*:}
+        ssh $host "export SEQ_EXP_HOME=$SEQ_EXP_HOME; export TRUE_HOST=$host; ${SEQ_EXP_HOME}/bin/set-inputs $path"
+    done
 
     # Do the cloning to RAMDISK for speedup
     #stamp=`date "+%j%H%M%S"$$`
@@ -370,8 +384,8 @@ else
     rm -f compile
     chmod +x compile_${nemo_runid}
 
-    # add to compile script to allow it to be called from any where (not just on the xc40s)
-    insrt_hdr="#!/bin/bash\nCWD="'`pwd`'"\nssh "'$(whoami)'"@hare << EOSSH\ncd "'$CWD'"\n"
+    # add to compile script to allow it to be called from any where (not just on backends)
+    insrt_hdr="#!/bin/bash\nCWD="'`pwd`'"\nssh "'$(whoami)'"@daley << EOSSH\ncd "'$CWD'"\n"
     sed -i "1i $insrt_hdr" compile_${nemo_runid}
     echo "EOSSH" >> compile_${nemo_runid}
 
@@ -462,11 +476,11 @@ else
     datef=`date +"%Y-%m-%d %T"`
     userf=`whoami`
 
-    sqlite3 /home/ncs001/ocean_runs/ocean_runs.db  << EOF
-                            INSERT INTO runs (runid, date, user, config, ver, repo, sha1)
-                            values('${nemo_runid}', '${datef}', '${userf}', '${nemo_config}', 
-                                   '${nemo_version}', '${nemo_repo}', '${sha1}');
-EOF
+    #sqlite3 /home/ncs001/ocean_runs/ocean_runs.db  << EOF
+    #                        INSERT INTO runs (runid, date, user, config, ver, repo, sha1)
+    #                        values('${nemo_runid}', '${datef}', '${userf}', '${nemo_config}', 
+    #                               '${nemo_version}', '${nemo_repo}', '${sha1}');
+#EOF
 
     # if the -l flag was given, launch simulation according to the desired length
     if [ $lnch_jb -eq 1 ]; then
