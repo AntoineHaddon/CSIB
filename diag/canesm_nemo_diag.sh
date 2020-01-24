@@ -8,8 +8,6 @@
 
 set -x
 
-# Get CDO / TEMPORARY!
-export PATH=/fs/ssm/hpco/exp/mib002/anaconda/anaconda-4.4.0/anaconda_4.4.0_ubuntu-14.04-amd64-64/envs/cdo-1.9.0/bin:$PATH
 # NEMO priority level
   output_level=${output_level}
 
@@ -149,6 +147,7 @@ export PATH=/fs/ssm/hpco/exp/mib002/anaconda/anaconda-4.4.0/anaconda_4.4.0_ubunt
       ncatted -h -a missing_value,time_counter,d,,, tstend.nc
       ncatted -h -a FillValue,time_counter_bnds,d,,, tstend.nc
       ncatted -h -a missing_value,time_counter_bnds,d,,, tstend.nc
+      
       ncatted -h -a missing_value,opottemptend,d,,, tstend.nc
       ncatted -h -a missing_value,osalttend,d,,, tstend.nc
 
