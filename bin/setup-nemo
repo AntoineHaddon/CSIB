@@ -332,16 +332,6 @@ else
     PATH=$CWD/bin:$PATH
     export PATH
 
-    # set experiment specific values in config and config maestro
-    sed -i "s/RUNID=.*/RUNID=${nemo_runid}/g" experiment.cfg
-    # Set the configuration on which to base this experiment
-    sed -i 's/.*config=.*/config='"$nemo_config/" experiment.cfg
-    if [ ${with_nemo_diag} = on ] ; then
-       sed -i "s/with_nemo_diag=.*/with_nemo_diag=on/" experiment.cfg
-    fi
-    sed -i "s/SEQ_JOBNAME_PREFIX=.*/SEQ_JOBNAME_PREFIX=${nemo_runid}-/g" resources/resources.def
-    config-maestro
-
     # loop over hosts in host/input-path pairs and set them inside ${SEQ_EXP_HOME}/hub/${host}
     for hostpath in $input_paths; do
         host=${hostpath%:*}
@@ -371,6 +361,18 @@ else
     #if [ "$tmpd" != "$CWD" ]; then
     #   mv $tmpd/$src_path $CWD/
     #fi
+
+    # copy experiment.cfg to maestro directory
+    cp -p -f ${src_path}/nemo/CONFIG/${nemo_config}/${nemo_exp}/experiment.cfg ${CWD}/.
+    # set experiment specific values in config and config maestro
+    sed -i "s/RUNID=.*/RUNID=${nemo_runid}/g" experiment.cfg
+    # Set the configuration on which to base this experiment
+    sed -i 's/.*config=.*/config='"$nemo_config/" experiment.cfg
+    if [ ${with_nemo_diag} = on ] ; then
+       sed -i "s/with_nemo_diag=.*/with_nemo_diag=on/" experiment.cfg
+    fi
+    sed -i "s/SEQ_JOBNAME_PREFIX=.*/SEQ_JOBNAME_PREFIX=${nemo_runid}-/g" resources/resources.def
+    config-maestro
 
     # SETUP links to relevant namelists and compile script
 
@@ -514,7 +516,7 @@ else
             sed -i "/^\s*sn_cnf=./ s#socoeff#socoefr#" ./experiment.cfg
             sed -i "/^\s*sn_cnf=./ s#weights_bil2##" ./experiment.cfg
             # timestep
-            sed -i "s#nemo_rdt=.*#nemo_rdt=1200#" ./experiment.cfg
+            sed -i "s#nemo_rdt=.*#nemo_rdt=1440#" ./experiment.cfg
         fi
 
         # set run length
