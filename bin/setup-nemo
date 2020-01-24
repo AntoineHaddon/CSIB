@@ -516,7 +516,7 @@ else
             sed -i "/^\s*sn_cnf=./ s#socoeff#socoefr#" ./experiment.cfg
             sed -i "/^\s*sn_cnf=./ s#weights_bil2##" ./experiment.cfg
             # timestep
-            sed -i "s#nemo_rdt=.*#nemo_rdt=1200#" ./experiment.cfg
+            sed -i "s#nemo_rdt=.*#nemo_rdt=1440#" ./experiment.cfg
         fi
 
         # set run length
