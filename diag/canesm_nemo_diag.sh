@@ -199,4 +199,4 @@ set -x
   done
 
 # Save orca grid mask with consistent name as TS files
-  save orca_grid_info sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_mesh_mask.nc
+  save orca_mesh_mask mc_${runid}_${fyear}${fmon}_${lyear}${lmon}_mesh_mask.nc
