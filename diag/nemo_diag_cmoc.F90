@@ -6,6 +6,9 @@ PROGRAM nemo_diag_cmoc
    !!===============================================================
    !! 2018-04 (D. Yang): Original code
    !! 2019-02 (J. Christian): biogeochemistry (CMOC) version
+   !! 2020-02 (D. Yang): Revise tbnds to bnds in defdim to avoid crash
+   !!                    when later "cdo mergetime" in canesm_nemo_bgc_diag.sh
+   !!                    makes the unwanted change from tbnds to bnds. 
    !!---------------------------------------------------------------
    !!
    !!---------------------------------------------------------------
@@ -215,7 +218,7 @@ PROGRAM nemo_diag_cmoc
 
       ! basic grid specification
       CALL defdim ('time_counter', iou, 0, id_time)
-      CALL defdim ('tbnds', iou, ntbnds, id_tbnds)
+      CALL defdim ('bnds', iou, ntbnds, id_tbnds)
       CALL defdim ('x', iou, imt, id_x)
       CALL defdim ('y', iou, jmt, id_y)
       CALL defdim ('deptht', iou, km, id_z)
@@ -263,7 +266,7 @@ PROGRAM nemo_diag_cmoc
 
       ! basic grid specification
       CALL defdim ('time_counter', iou, 0, id_time)
-      CALL defdim ('tbnds', iou, ntbnds, id_tbnds)
+      CALL defdim ('bnds', iou, ntbnds, id_tbnds)
       CALL defdim ('x', iou, imt, id_x)
       CALL defdim ('y', iou, jmt, id_y)
       CALL defdim ('deptht', iou, km, id_z)
@@ -311,7 +314,7 @@ PROGRAM nemo_diag_cmoc
 
       ! basic grid specification
       CALL defdim ('time_counter', iou, 0, id_time)
-      CALL defdim ('tbnds', iou, ntbnds, id_tbnds)
+      CALL defdim ('bnds', iou, ntbnds, id_tbnds)
       CALL defdim ('x', iou, imt, id_x)
       CALL defdim ('y', iou, jmt, id_y)
       CALL defdim ('deptht', iou, km, id_z)
@@ -359,7 +362,7 @@ PROGRAM nemo_diag_cmoc
 
       ! basic grid specification
       CALL defdim ('time_counter', iou, 0, id_time)
-      CALL defdim ('tbnds', iou, ntbnds, id_tbnds)
+      CALL defdim ('bnds', iou, ntbnds, id_tbnds)
       CALL defdim ('x', iou, imt, id_x)
       CALL defdim ('y', iou, jmt, id_y)
       CALL defdim ('deptht', iou, km, id_z)
@@ -407,7 +410,7 @@ PROGRAM nemo_diag_cmoc
 
       ! basic grid specification
       CALL defdim ('time_counter', iou, 0, id_time)
-      CALL defdim ('tbnds', iou, ntbnds, id_tbnds)
+      CALL defdim ('bnds', iou, ntbnds, id_tbnds)
       CALL defdim ('x', iou, imt, id_x)
       CALL defdim ('y', iou, jmt, id_y)
       CALL defdim ('deptht', iou, km, id_z)
@@ -455,7 +458,7 @@ PROGRAM nemo_diag_cmoc
 
       ! basic grid specification
       CALL defdim ('time_counter', iou, 0, id_time)
-      CALL defdim ('tbnds', iou, ntbnds, id_tbnds)
+      CALL defdim ('bnds', iou, ntbnds, id_tbnds)
       CALL defdim ('x', iou, imt, id_x)
       CALL defdim ('y', iou, jmt, id_y)
       CALL defdim ('deptht', iou, km, id_z)
@@ -503,7 +506,7 @@ PROGRAM nemo_diag_cmoc
 
       ! basic grid specification
       CALL defdim ('time_counter', iou, 0, id_time)
-      CALL defdim ('tbnds', iou, ntbnds, id_tbnds)
+      CALL defdim ('bnds', iou, ntbnds, id_tbnds)
       CALL defdim ('x', iou, imt, id_x)
       CALL defdim ('y', iou, jmt, id_y)
       CALL defdim ('deptht', iou, km, id_z)
@@ -551,7 +554,7 @@ PROGRAM nemo_diag_cmoc
 
       ! basic grid specification
       CALL defdim ('time_counter', iou, 0, id_time)
-      CALL defdim ('tbnds', iou, ntbnds, id_tbnds)
+      CALL defdim ('bnds', iou, ntbnds, id_tbnds)
       CALL defdim ('x', iou, imt, id_x)
       CALL defdim ('y', iou, jmt, id_y)
       CALL defdim ('deptht', iou, km, id_z)
@@ -599,7 +602,7 @@ PROGRAM nemo_diag_cmoc
 
       ! basic grid specification
       CALL defdim ('time_counter', iou, 0, id_time)
-      CALL defdim ('tbnds', iou, ntbnds, id_tbnds)
+      CALL defdim ('bnds', iou, ntbnds, id_tbnds)
       CALL defdim ('x', iou, imt, id_x)
       CALL defdim ('y', iou, jmt, id_y)
       CALL defdim ('deptht', iou, km, id_z)
@@ -647,7 +650,7 @@ PROGRAM nemo_diag_cmoc
 
       ! basic grid specification
       CALL defdim ('time_counter', iou, 0, id_time)
-      CALL defdim ('tbnds', iou, ntbnds, id_tbnds)
+      CALL defdim ('bnds', iou, ntbnds, id_tbnds)
       CALL defdim ('x', iou, imt, id_x)
       CALL defdim ('y', iou, jmt, id_y)
       CALL defdim ('deptht', iou, km, id_z)
@@ -693,7 +696,7 @@ PROGRAM nemo_diag_cmoc
 
       ! basic grid specification
       CALL defdim ('time_counter', iou, 0, id_time)
-      CALL defdim ('tbnds', iou, ntbnds, id_tbnds)
+      CALL defdim ('bnds', iou, ntbnds, id_tbnds)
       CALL defdim ('x', iou, imt, id_x)
       CALL defdim ('y', iou, jmt, id_y)
       CALL defdim ('deptht', iou, km, id_z)
@@ -739,7 +742,7 @@ PROGRAM nemo_diag_cmoc
 
       ! basic grid specification
       CALL defdim ('time_counter', iou, 0, id_time)
-      CALL defdim ('tbnds', iou, ntbnds, id_tbnds)
+      CALL defdim ('bnds', iou, ntbnds, id_tbnds)
       CALL defdim ('x', iou, imt, id_x)
       CALL defdim ('y', iou, jmt, id_y)
       CALL defdim ('deptht', iou, km, id_z)
@@ -785,7 +788,7 @@ PROGRAM nemo_diag_cmoc
 
       ! basic grid specification
       CALL defdim ('time_counter', iou, 0, id_time)
-      CALL defdim ('tbnds', iou, ntbnds, id_tbnds)
+      CALL defdim ('bnds', iou, ntbnds, id_tbnds)
       CALL defdim ('x', iou, imt, id_x)
       CALL defdim ('y', iou, jmt, id_y)
       CALL defdim ('deptht', iou, km, id_z)
@@ -831,7 +834,7 @@ PROGRAM nemo_diag_cmoc
 
       ! basic grid specification
       CALL defdim ('time_counter', iou, 0, id_time)
-      CALL defdim ('tbnds', iou, ntbnds, id_tbnds)
+      CALL defdim ('bnds', iou, ntbnds, id_tbnds)
       CALL defdim ('x', iou, imt, id_x)
       CALL defdim ('y', iou, jmt, id_y)
       CALL defdim ('deptht', iou, km, id_z)
@@ -877,7 +880,7 @@ PROGRAM nemo_diag_cmoc
 
       ! basic grid specification
       CALL defdim ('time_counter', iou, 0, id_time)
-      CALL defdim ('tbnds', iou, ntbnds, id_tbnds)
+      CALL defdim ('bnds', iou, ntbnds, id_tbnds)
       CALL defdim ('x', iou, imt, id_x)
       CALL defdim ('y', iou, jmt, id_y)
       CALL defdim ('deptht', iou, km, id_z)
@@ -923,7 +926,7 @@ PROGRAM nemo_diag_cmoc
 
       ! basic grid specification
       CALL defdim ('time_counter', iou, 0, id_time)
-      CALL defdim ('tbnds', iou, ntbnds, id_tbnds)
+      CALL defdim ('bnds', iou, ntbnds, id_tbnds)
       CALL defdim ('x', iou, imt, id_x)
       CALL defdim ('y', iou, jmt, id_y)
       CALL defvar ('time_counter', iou, 1, (/id_time/), 0., 0., 'T', 'D'   &
@@ -960,7 +963,7 @@ PROGRAM nemo_diag_cmoc
 
       ! basic grid specification
       CALL defdim ('time_counter', iou, 0, id_time)
-      CALL defdim ('tbnds', iou, ntbnds, id_tbnds)
+      CALL defdim ('bnds', iou, ntbnds, id_tbnds)
       CALL defdim ('x', iou, imt, id_x)
       CALL defdim ('y', iou, jmt, id_y)
       CALL defvar ('time_counter', iou, 1, (/id_time/), 0., 0., 'T', 'D'   &
@@ -997,7 +1000,7 @@ PROGRAM nemo_diag_cmoc
 
       ! basic grid specification
       CALL defdim ('time_counter', iou, 0, id_time)
-      CALL defdim ('tbnds', iou, ntbnds, id_tbnds)
+      CALL defdim ('bnds', iou, ntbnds, id_tbnds)
       CALL defdim ('x', iou, imt, id_x)
       CALL defdim ('y', iou, jmt, id_y)
       CALL defvar ('time_counter', iou, 1, (/id_time/), 0., 0., 'T', 'D'   &
@@ -1034,7 +1037,7 @@ PROGRAM nemo_diag_cmoc
 
       ! basic grid specification
       CALL defdim ('time_counter', iou, 0, id_time)
-      CALL defdim ('tbnds', iou, ntbnds, id_tbnds)
+      CALL defdim ('bnds', iou, ntbnds, id_tbnds)
       CALL defdim ('x', iou, imt, id_x)
       CALL defdim ('y', iou, jmt, id_y)
       CALL defvar ('time_counter', iou, 1, (/id_time/), 0., 0., 'T', 'D'   &
