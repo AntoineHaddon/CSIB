@@ -51,8 +51,6 @@ set -e
 # Merge sub-yearly files
     if [ $nmon -gt 1 ] ; then
       cdo mergetime ${sfx}_?? ${sfx}_m$fmon
-      # mergetime changes tbnds to bnds, which causes nemo_diag.exe to crash.
-      ncrename -d bnds,tbnds ${sfx}_m$fmon
       rm -f ${sfx}_??
       mv ${sfx}_m$fmon ${sfx}_$fmon
     fi
