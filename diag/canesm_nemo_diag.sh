@@ -118,6 +118,13 @@ set -x
       ln -s 1m_grid_u_${fmon} grid_u  || bail "Link to grid_u failed"
       ln -s 1m_grid_v_${fmon} grid_v  || bail "Link to grid_v failed"
 
+      # Compile the diagnostic program
+      WRKDIR=$PWD
+      ( cd $CCRNSRC/CanESM/CanNEMO/diag ;
+      ifort -o $WRKDIR/nemo_diag.exe nemo_diag_glovars.F90 nemo_diag_cal.F90 nemo_diag.F90 uvic_netcdf.f \
+               `nc-config --fflags` `nc-config --flibs`
+    )
+
       [ -L grid_t -a -s tnp.nc ] && $diag_exe || bail "grid_t or tnp.nc does not exist"
 
 ######################################
