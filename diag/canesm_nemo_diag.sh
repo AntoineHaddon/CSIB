@@ -132,29 +132,9 @@ set -x
 ######################################
       [ -L 1d_diaptr_${fmon} -o -s 1d_diaptr_${fmon} ] && cdo -b F64 monmean 1d_diaptr_${fmon} 1m_diaptr_${fmon}
 
-# Remove attributes FillValue & missing_value
       [ -s mfo.nc ] && chmod u+w mfo.nc || bail "mfo.nc does not exist"
-      ncatted -h -a FillValue,time_counter,d,,, mfo.nc
-      ncatted -h -a missing_value,time_counter,d,,, mfo.nc
-      ncatted -h -a FillValue,time_counter_bnds,d,,, mfo.nc
-      ncatted -h -a missing_value,time_counter_bnds,d,,, mfo.nc
-      ncatted -h -a missing_value,mfo,d,,, mfo.nc
-
       [ -s msftbarot.nc ] && chmod u+w msftbarot.nc || bail "msftbarot.nc does not exist"
-      ncatted -h -a FillValue,time_counter,d,,, msftbarot.nc
-      ncatted -h -a missing_value,time_counter,d,,, msftbarot.nc
-      ncatted -h -a FillValue,time_counter_bnds,d,,, msftbarot.nc
-      ncatted -h -a missing_value,time_counter_bnds,d,,, msftbarot.nc
-      ncatted -h -a missing_value,msftbarot,d,,, msftbarot.nc
-
       [ -s tstend.nc ] && chmod u+w tstend.nc || bail "tstend.nc does not exist"
-      ncatted -h -a FillValue,time_counter,d,,, tstend.nc
-      ncatted -h -a missing_value,time_counter,d,,, tstend.nc
-      ncatted -h -a FillValue,time_counter_bnds,d,,, tstend.nc
-      ncatted -h -a missing_value,time_counter_bnds,d,,, tstend.nc
-      
-      ncatted -h -a missing_value,opottemptend,d,,, tstend.nc
-      ncatted -h -a missing_value,osalttend,d,,, tstend.nc
 
 # Append mfo.nc to 1m_scalar_ar6_${fmon}
       cp 1m_scalar_ar6_${fmon} 1m_scalar_ar6.nc && chmod u+w 1m_scalar_ar6.nc || bail "1m_scalar_ar6_${fmon} does not exist"
