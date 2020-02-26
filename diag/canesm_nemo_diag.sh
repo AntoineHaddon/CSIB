@@ -33,8 +33,9 @@ set -x
   [ -s "$diag_exe" ] || access $diag_exe $nemo_diag_exe
 
 # Access file containing grid information
-  orca_grid_info=nemo_mesh_mask_rc3.nc
-  [ -s orca_mesh_mask ] || access orca_mesh_mask $orca_grid_info
+  mask_mon=$(echo $nemo_rtd_mons | awk '{printf "%02d", $NF}')  # get last element of nemo_rtd_mons, printed as 2 digit number
+  orca_grid_info=mc_${runid}_${year}_m${mask_mon}_mesh_mask.nc
+  [ -s orca_mesh_mask ] || access orca_mesh_mask $orca_grid_info nocp=no
 
 # Access file containing mfo line mask
   [ -s mfo_line_mask ] || access mfo_line_mask mfo_line_mask
@@ -59,8 +60,8 @@ set -x
     mp=0
     for mm in $nemo_rtd_mons ; do
       if [ $mm -lt $mp ] ; then
-	# increment year by 1 if the current month is smaller than the previous month
-	yr=`echo $yr | awk '{printf "%04d", $1 + 1}'`;
+        # increment year by 1 if the current month is smaller than the previous month
+        yr=`echo $yr | awk '{printf "%04d", $1 + 1}'`;
       fi
       diag_hist="mc_${runid}_${yr}_m${mm}_${sfx}.nc"
       access ${sfx}_${mm} $diag_hist na
@@ -181,3 +182,6 @@ set -x
     save $ts sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_${tssfx}
     release $ts
   done
+
+# Save orca grid mask with consistent name as TS files
+  save orca_mesh_mask sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_mesh_mask.nc
