@@ -1161,7 +1161,7 @@ PROGRAM nemo_ocean_diag
         call putvars ('T', iou, ntrec2, tvol(l), 1., 0.)
         call putvara ('Tz', iou, km, (/1, ntrec2/), (/km, 1/), theta_z(:, l), 1., 0.)
 !       Salt
-        call putvars ('S', iou, ntrec2, svol, 1., 0.)
+        call putvars ('S', iou, ntrec2, svol(l), 1., 0.)
         call putvara ('Sz', iou, km, (/1, ntrec2/), (/km, 1/), salt_z(:, l), 1., 0.)
 
 !       Drake Passage transport
