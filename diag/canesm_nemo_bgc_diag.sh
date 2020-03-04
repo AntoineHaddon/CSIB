@@ -29,7 +29,8 @@ set -e
   yearm1=`echo $year | awk '{printf "%04d", $1 - 1}'`
 
 # Access file containing grid information
-  orca_grid_info=nemo_mesh_mask_rc3.nc
+  mask_mon=$(echo $nemo_rtd_mons | awk '{printf "%02d", $NF}')  # get last element of nemo_rtd_mons, printed as 2 digit number
+  orca_grid_info=mc_${runid}_${year}_m${mask_mon}_mesh_mask.nc
   [ -s orca_mesh_mask ] || access orca_mesh_mask $orca_grid_info
 
 # sfxlst is a suffix list for some nemo historical files.
@@ -51,8 +52,6 @@ set -e
 # Merge sub-yearly files
     if [ $nmon -gt 1 ] ; then
       cdo mergetime ${sfx}_?? ${sfx}_m$fmon
-      # mergetime changes tbnds to bnds, which causes nemo_diag.exe to crash.
-      ncrename -d bnds,tbnds ${sfx}_m$fmon
       rm -f ${sfx}_??
       mv ${sfx}_m$fmon ${sfx}_$fmon
     fi

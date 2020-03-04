@@ -33,8 +33,9 @@ set -x
   [ -s "$diag_exe" ] || access $diag_exe $nemo_diag_exe
 
 # Access file containing grid information
-  orca_grid_info=nemo_mesh_mask_rc3.nc
-  [ -s orca_mesh_mask ] || access orca_mesh_mask $orca_grid_info
+  mask_mon=$(echo $nemo_rtd_mons | awk '{printf "%02d", $NF}')  # get last element of nemo_rtd_mons, printed as 2 digit number
+  orca_grid_info=mc_${runid}_${year}_m${mask_mon}_mesh_mask.nc
+  [ -s orca_mesh_mask ] || access orca_mesh_mask $orca_grid_info nocp=no
 
 # Access file containing mfo line mask
   [ -s mfo_line_mask ] || access mfo_line_mask mfo_line_mask
@@ -59,8 +60,8 @@ set -x
     mp=0
     for mm in $nemo_rtd_mons ; do
       if [ $mm -lt $mp ] ; then
-	# increment year by 1 if the current month is smaller than the previous month
-	yr=`echo $yr | awk '{printf "%04d", $1 + 1}'`;
+        # increment year by 1 if the current month is smaller than the previous month
+        yr=`echo $yr | awk '{printf "%04d", $1 + 1}'`;
       fi
       diag_hist="mc_${runid}_${yr}_m${mm}_${sfx}.nc"
       access ${sfx}_${mm} $diag_hist na
@@ -69,8 +70,6 @@ set -x
 # Merge sub-yearly files
     if [ $nmon -gt 1 ] ; then
       cdo mergetime ${sfx}_?? ${sfx}_m$fmon
-      # mergetime changes tbnds to bnds, which causes nemo_diag.exe to crash.
-      ncrename -d bnds,tbnds ${sfx}_m$fmon
       rm -f ${sfx}_??
       mv ${sfx}_m$fmon ${sfx}_$fmon
     fi
@@ -120,6 +119,13 @@ set -x
       ln -s 1m_grid_u_${fmon} grid_u  || bail "Link to grid_u failed"
       ln -s 1m_grid_v_${fmon} grid_v  || bail "Link to grid_v failed"
 
+      # Compile the diagnostic program
+      WRKDIR=$PWD
+      ( cd $CCRNSRC/CanESM/CanNEMO/diag ;
+      ifort -o $WRKDIR/nemo_diag.exe nemo_diag_glovars.F90 nemo_diag_cal.F90 nemo_diag.F90 uvic_netcdf.f \
+               `nc-config --fflags` `nc-config --flibs`
+    )
+
       [ -L grid_t -a -s tnp.nc ] && $diag_exe || bail "grid_t or tnp.nc does not exist"
 
 ######################################
@@ -127,29 +133,9 @@ set -x
 ######################################
       [ -L 1d_diaptr_${fmon} -o -s 1d_diaptr_${fmon} ] && cdo -b F64 monmean 1d_diaptr_${fmon} 1m_diaptr_${fmon}
 
-# Remove attributes FillValue & missing_value
       [ -s mfo.nc ] && chmod u+w mfo.nc || bail "mfo.nc does not exist"
-      ncatted -h -a FillValue,time_counter,d,,, mfo.nc
-      ncatted -h -a missing_value,time_counter,d,,, mfo.nc
-      ncatted -h -a FillValue,time_counter_bnds,d,,, mfo.nc
-      ncatted -h -a missing_value,time_counter_bnds,d,,, mfo.nc
-      ncatted -h -a missing_value,mfo,d,,, mfo.nc
-
       [ -s msftbarot.nc ] && chmod u+w msftbarot.nc || bail "msftbarot.nc does not exist"
-      ncatted -h -a FillValue,time_counter,d,,, msftbarot.nc
-      ncatted -h -a missing_value,time_counter,d,,, msftbarot.nc
-      ncatted -h -a FillValue,time_counter_bnds,d,,, msftbarot.nc
-      ncatted -h -a missing_value,time_counter_bnds,d,,, msftbarot.nc
-      ncatted -h -a missing_value,msftbarot,d,,, msftbarot.nc
-
       [ -s tstend.nc ] && chmod u+w tstend.nc || bail "tstend.nc does not exist"
-      ncatted -h -a FillValue,time_counter,d,,, tstend.nc
-      ncatted -h -a missing_value,time_counter,d,,, tstend.nc
-      ncatted -h -a FillValue,time_counter_bnds,d,,, tstend.nc
-      ncatted -h -a missing_value,time_counter_bnds,d,,, tstend.nc
-      
-      ncatted -h -a missing_value,opottemptend,d,,, tstend.nc
-      ncatted -h -a missing_value,osalttend,d,,, tstend.nc
 
 # Append mfo.nc to 1m_scalar_ar6_${fmon}
       cp 1m_scalar_ar6_${fmon} 1m_scalar_ar6.nc && chmod u+w 1m_scalar_ar6.nc || bail "1m_scalar_ar6_${fmon} does not exist"
@@ -196,3 +182,6 @@ set -x
     save $ts sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_${tssfx}
     release $ts
   done
+
+# Save orca grid mask with consistent name as TS files
+  save orca_mesh_mask sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_mesh_mask.nc
