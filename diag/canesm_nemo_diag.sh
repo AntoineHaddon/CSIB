@@ -41,21 +41,13 @@ set -x
   [ -s mfo_line_mask ] || access mfo_line_mask mfo_line_mask
 
 # suffix list for sub-yearly nemo historical files.
-  sfxlst="1m_grid_t 1m_grid_u 1m_grid_v 1m_grid_w 1m_icemod 1m_ptrc_t 1m_diad_t"
-  if [ $output_level -ge 1 ] ; then
-      sfxlst="$sfxlst 1m_grid_t_ar6 1m_grid_u_ar6 1m_grid_v_ar6 1m_grid_w_ar6     \
-              1m_scalar_ar6          \
-              1d_grid_t_ar6 1d_grid_u_ar6 1d_grid_v_ar6 1d_icemod  \
-              3h_grid_t_ar6 1d_diaptr"
-  fi
+  nemo_diag_file_suffix_list=${nemo_diag_file_suffix_list}
 
 # suffix list for yearly nemo historical files.
-  if [ $output_level -ge 1 ] ; then
-      sfxlst_1y="1y_grid_t_ar6"
-  fi
+  nemo_diag_file_1y_suffix_list=${nemo_diag_file_1y_suffix_list}
 
 # Access the history files
-  for sfx in $sfxlst ; do
+  for sfx in $nemo_diag_file_1y_suffix_list ; do
     yr=$fyear
     mp=0
     for mm in $nemo_rtd_mons ; do
@@ -78,7 +70,7 @@ set -x
 # Execute the following lines when output_level -ge 1
   if [ $output_level -ge 1 ] ; then
       if [ $nmon -eq 1 ] ; then
-        for sfx in $sfxlst_1y ; do
+        for sfx in $nemo_diag_file_1y_suffix_list ; do
           diag_hist="mc_${runid}_${fyear}_m${fmon}_${sfx}.nc"
           access ${sfx}_${fmon} $diag_hist na
         done
@@ -162,16 +154,16 @@ set -x
 #########################################
 
 # Replace 1d_diaptr with 1m_diaptr after doing time mean
-      sfxlst=`echo $sfxlst | sed -e "s/1d_diaptr/1m_diaptr/"`
+      nemo_diag_file_suffix_list=`echo $nemo_diag_file_suffix_list | sed -e "s/1d_diaptr/1m_diaptr/"`
 
 # Append yearly diagnostics
       if [ $nmon -eq 1 ] ; then
-        sfxlst="$sfxlst $sfxlst_1y"
+        nemo_diag_file_suffix_list="$nemo_diag_file_suffix_list $nemo_diag_file_1y_suffix_list"
       fi
   fi # end of "output_level -ge 1"
 
 # Split to time series
-  for sfx in $sfxlst ; do
+  for sfx in $nemo_diag_file_suffix_list ; do
     cdo splitname ${sfx}_${fmon} xxx-${sfx}_
   done
 
