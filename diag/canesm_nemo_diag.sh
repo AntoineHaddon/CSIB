@@ -47,7 +47,7 @@ set -x
   nemo_diag_file_1y_suffix_list=${nemo_diag_file_1y_suffix_list}
 
 # Access the history files
-  for sfx in $nemo_diag_file_1y_suffix_list ; do
+  for sfx in $nemo_diag_file_suffix_list ; do
     yr=$fyear
     mp=0
     for mm in $nemo_rtd_mons ; do
