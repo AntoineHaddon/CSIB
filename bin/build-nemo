@@ -355,8 +355,9 @@ if [ $coupled = "on" ]; then
   #gitrip $cancpl_ver src/comm/com_cpl.F90 repo=$cancpl_repo
   cp ${cancpl_repo}/src/comm/com_cpl.F90 .
   [ -s com_cpl.F90 ] || bail "Unable to extract com_cpl.F90 from coupler repo $cancpl_repo"
-  # Modify com_cpl.F90 to contain NEMO and CanCPL version info
+  # Modify com_cpl.F90 to contain NEMO and CanCPL version info, and remove cppkey files
   sed '/^#include *"cppdef_config.h"/d' com_cpl.F90 > tmp_com_cpl.F90 && rm -f com_cpl.F90
+  sed '/^#include *"cppdef_sizes.h"/d' com_cpl.F90 > tmp_com_cpl.F90 && rm -f com_cpl.F90
   tmpfile=tmpf$stamp
   if [ -n "$NEMO_REPO_PATH" ]; then
     echo "#define NEMO_REPO_PATH $NEMO_REPO_PATH" | cat - tmp_com_cpl.F90 > $tmpfile
