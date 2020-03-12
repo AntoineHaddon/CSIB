@@ -6,3 +6,6 @@
 tmp/
 *.swp*
 deploy.git/
+nemo/NEMO/external/cppdef_config.h
+nemo/NEMO/external/cppdef_sizes.h
+
