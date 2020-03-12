@@ -8,6 +8,7 @@ PROGRAM nemo_diag
    !! 2020-02 (D. Yang): Revise tbnds to bnds in defdim to avoid crash
    !!                    when later "cdo mergetime" in canesm_nemo_diag.sh
    !!                    makes the unwanted change from tbnds to bnds.
+   !! 2020-03 (D. Yang): Add getdimnm
    !!---------------------------------------------------------------
    !!
    !!---------------------------------------------------------------
@@ -44,6 +45,7 @@ PROGRAM nemo_diag
    CHARACTER(len=100) :: fname05, fname06, fname07, fname08
    CHARACTER(len=100) :: axis, standard_name, units, calendar, title
    CHARACTER(len=100) :: long_name, time_origin, bounds
+   CHARACTER(len=100) :: bndsnm
    INTEGER   :: iou, iou1, iou2, iou3, iou4, iou5, iou6, iou7, iou8
    INTEGER   :: ntrec, id_time, id_tbnds, id_l, id_s, id_x, id_y, id_z
    INTEGER   :: ntbnds
@@ -67,7 +69,9 @@ PROGRAM nemo_diag
    CALL getdimlen ('y', iou, jmt)
    call getdimlen ('deptht', iou, km)
    CALL getdimlen ('time_counter', iou, lm)      
-   CALL getdimlen ('tbnds', iou, ntbnds)
+   ! dimid = 1: x; 2: y; 3: deptht; 4: time_counter; 5: tbnds or bnds
+   CALL getdimnm  (bndsnm, iou, 5, ntbnds)
+
    ly = lm / 12
 
    !!----------------
