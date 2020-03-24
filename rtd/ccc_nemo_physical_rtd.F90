@@ -748,36 +748,36 @@ PROGRAM nemo_ocean_diag
     
     ! Heat flux from snow over open ocean
           g_mask(:,:) = t_mask(:,:,1)
-          call area_ave_flx(e1t, e2t, g_mask, hflx_snow_cea(:, :), imt      &
-            &                  , jmt, hflx_snow(l), dum)
-          call area_ave_flx(e1t, e2t, g_mask, snow_ao_cea(:, :)*lfus*-1.0, imt      &
-            &                  , jmt, hflx_snow2(l), dum)
+    !     call area_ave_flx(e1t, e2t, g_mask, hflx_snow_cea(:, :), imt      &
+    !       &                  , jmt, hflx_snow(l), dum)
+    !     call area_ave_flx(e1t, e2t, g_mask, snow_ao_cea(:, :)*lfus*-1.0, imt      &
+    !       &                  , jmt, hflx_snow2(l), dum)
           call area_ave_flx(e1t, e2t, g_mask, snow_ai_cea(:, :)*lfus*-1.0, imt      &
             &                  , jmt, hflx_snow_ice(l), dum)
-          call area_ave_flx(e1t, e2t, g_mask, hflx_ice_cea(:, :), imt      &
-            &                  , jmt, hflx_ice(l), dum)
-          call area_ave_flx(e1t, e2t, g_mask, hflx_rnf_cea(:, :), imt      &
-            &                  , jmt, hflx_rnf(l), dum)
-          call area_ave_flx(e1t, e2t, g_mask, hflx_rain_cea(:, :), imt      &
-            &                  , jmt, hflx_rain(l), dum)
+    !     call area_ave_flx(e1t, e2t, g_mask, hflx_ice_cea(:, :), imt      &
+    !       &                  , jmt, hflx_ice(l), dum)
+    !     call area_ave_flx(e1t, e2t, g_mask, hflx_rnf_cea(:, :), imt      &
+    !       &                  , jmt, hflx_rnf(l), dum)
+    !     call area_ave_flx(e1t, e2t, g_mask, hflx_rain_cea(:, :), imt      &
+    !       &                  , jmt, hflx_rain(l), dum)
           call area_ave_flx(e1t, e2t, g_mask, isnwmlt_cea(:, :)*lfus, imt      &
             &                  , jmt, isnwmlt(l), dum)
           call area_ave_flx(e1t, e2t, g_mask, snowmel_cea(:, :)*lfus, imt      &
             &                  , jmt, snowmel(l), dum)
-          call area_ave_flx(e1t, e2t, g_mask, snow_ao_cea(:, :), imt      &
-            &                  , jmt, snow_ao(l), dum)
-          call area_ave_flx(e1t, e2t, g_mask, snow_ai_cea(:, :), imt      &
-            &                  , jmt, snow_ai(l), dum)
+    !     call area_ave_flx(e1t, e2t, g_mask, snow_ao_cea(:, :), imt      &
+    !       &                  , jmt, snow_ao(l), dum)
+    !     call area_ave_flx(e1t, e2t, g_mask, snow_ai_cea(:, :), imt      &
+    !       &                  , jmt, snow_ai(l), dum)
 
           ! Coupler fluxes
-          call area_ave_flx(e1t, e2t, g_mask, hflx_qsr_tot(:, :), imt      &
-            &                  , jmt, hflx_qsr_tot_ave(l), dum)
-          call area_ave_flx(e1t, e2t, g_mask, hflx_qns_tot(:, :), imt      &
-            &                  , jmt, hflx_qns_tot_ave(l), dum)
-          call area_ave_flx(e1t, e2t, g_mask, hflx_qsr_ice(:, :), imt      &
-            &                  , jmt, hflx_qsr_ice_ave(l), dum)
-          call area_ave_flx(e1t, e2t, g_mask, hflx_qns_ice(:, :), imt      &
-            &                  , jmt, hflx_qns_ice_ave(l), dum)
+    !     call area_ave_flx(e1t, e2t, g_mask, hflx_qsr_tot(:, :), imt      &
+    !       &                  , jmt, hflx_qsr_tot_ave(l), dum)
+    !     call area_ave_flx(e1t, e2t, g_mask, hflx_qns_tot(:, :), imt      &
+    !       &                  , jmt, hflx_qns_tot_ave(l), dum)
+    !     call area_ave_flx(e1t, e2t, g_mask, hflx_qsr_ice(:, :), imt      &
+    !       &                  , jmt, hflx_qsr_ice_ave(l), dum)
+    !     call area_ave_flx(e1t, e2t, g_mask, hflx_qns_ice(:, :), imt      &
+    !       &                  , jmt, hflx_qns_ice_ave(l), dum)
 
 !---------------------------------------------------
 !   Main outputs 
@@ -787,21 +787,21 @@ PROGRAM nemo_ocean_diag
       print*,'    Heat fluxes (W/m2)               '
       print*,'-------------------------------------'      
       print*,'Heat      ', hglo(l)      
-      print*,'Snow OO   ', hflx_snow(l)
-      print*,'Snow OO 1 ', hflx_snow2(l)
-      print*,'Rain      ', hflx_rain(l)
-      print*,'Runoff    ', hflx_rnf(l)
-      print*,'Snow OOcal', hflx_snow2(l)
-      print*,'Snow ice  ', hflx_snow_ice(l)
-      print*,'Below ice ', hflx_ice(l)
-      print*,'BEGO-inv  ', hglo(l) - hflx_snow2(l) - hflx_ice(l)
-      print*,'isnwmlt   ', isnwmlt(l)
-      print*,'snowmel   ', snowmel(l)
+      !print*,'Snow OO   ', hflx_snow(l)
+      !print*,'Snow OO 1 ', hflx_snow2(l)
+      !print*,'Rain      ', hflx_rain(l)
+      !print*,'Runoff    ', hflx_rnf(l)
+      !print*,'Snow OOcal', hflx_snow2(l)
+      !print*,'Snow ice  ', hflx_snow_ice(l)
+      !print*,'Below ice ', hflx_ice(l)
+      !print*,'BEGO-inv  ', hglo(l) - hflx_snow2(l) - hflx_ice(l)
+       print*,'isnwmlt   ', isnwmlt(l)
+       print*,'snowmel   ', snowmel(l)
       print*,'-------------------------------------'
       print*,'    Water fluxes (kg/m2/s)               '
       print*,'-------------------------------------'      
-      print*,'Snow OO   ', snow_ao(l) 
-      print*,'Snow ice  ', snow_ai(l) 
+      !print*,'Snow OO   ', snow_ao(l) 
+      !print*,'Snow ice  ', snow_ai(l) 
 
 !      print*,'-------------------------------------'
 !      print*,'    Temperature (C)                  '
@@ -1019,27 +1019,27 @@ PROGRAM nemo_ocean_diag
      &        , 1.e4,' ', 'F', 'Global mean heat flux at the surface'          &
      &        , 'hglo', 'W m^-^2')
 !       MEAN HEAT FLUX BELOW ICE (W/M^2)
-          call defvar ('hflx_ice', iou, 1, (/id_time/), -1.e4                      &
-     &        , 1.e4,' ', 'F', 'Global mean heat flux below sea-ice'               &
-     &        , '', 'W m^-^2')
+!         call defvar ('hflx_ice', iou, 1, (/id_time/), -1.e4                      &
+!    &        , 1.e4,' ', 'F', 'Global mean heat flux below sea-ice'               &
+!    &        , '', 'W m^-^2')
 !       MEAN HEAT FLUX DUE TO SNOW over OPEN OCEAN (W/M^2)
-          call defvar ('hflx_snow', iou, 1, (/id_time/), -1.e4                     &
-     &        , 1.e4,' ', 'F', 'Global mean heat flux from snow over open ocean'   &
-     &        , '', 'W m^-^2')
+!         call defvar ('hflx_snow', iou, 1, (/id_time/), -1.e4                     &
+!     &       , 1.e4,' ', 'F', 'Global mean heat flux from snow over open ocean'   &
+!     &       , '', 'W m^-^2')
 !       MEAN HEAT FLUX DUE TO SNOW over ICE (W/M^2)
-          call defvar ('hflx_snow_ice', iou, 1, (/id_time/), -1.e4             &
-     &        , 1.e4,' ', 'F', 'Global mean heat flux from snow over sea-ice'  &
-     &        , '', 'W m^-^2')
+!         call defvar ('hflx_snow_ice', iou, 1, (/id_time/), -1.e4             &
+!    &        , 1.e4,' ', 'F', 'Global mean heat flux from snow over sea-ice'  &
+!    &        , '', 'W m^-^2')
 !        MEAN SNOW FLUX OVER OPEN OCEAN (KG/M^2/S)
-          call defvar ('snow_ao', iou, 1, (/id_time/), -1.e4                   &
-     &        , 1.e4,' ', 'F'                                                  &
-     &        , 'Global mean snow flux over open ocean'                        & 
-     &        , ' ', 'kg m ^-^2 s^-^1')
+!         call defvar ('snow_ao', iou, 1, (/id_time/), -1.e4                   &
+!    &        , 1.e4,' ', 'F'                                                  &
+!    &        , 'Global mean snow flux over open ocean'                        & 
+!    &        , ' ', 'kg m ^-^2 s^-^1')
 !        MEAN SNOW FLUX OVER SEA-ICE (KG/M^2/S)
-          call defvar ('snow_ai', iou, 1, (/id_time/), -1.e4                   &
-     &        , 1.e4,' ', 'F'                                                  &
-     &        , 'Global mean snow flux over sea ice'                           & 
-     &        , ' ', 'kg m ^-^2 s^-^1')
+!          call defvar ('snow_ai', iou, 1, (/id_time/), -1.e4                   &
+!     &        , 1.e4,' ', 'F'                                                  &
+!     &        , 'Global mean snow flux over sea ice'                           & 
+!     &        , ' ', 'kg m ^-^2 s^-^1')
 !        MEAN FRESHWATER FLUX (KG/M^2/S)
           call defvar ('wglo', iou, 1, (/id_time/), -1.e4                      &
      &        , 1.e4,' ', 'F'                                                  &
@@ -1051,21 +1051,21 @@ PROGRAM nemo_ocean_diag
      &        , 'sshglo', 'm')
 
 !       SOLAR HEAT FLUX FROM COUPLER (W/M^2)
-          call defvar ('hflx_qsr_tot', iou, 1, (/id_time/), -1.e4              &
-     &        , 1.e4,' ', 'F', 'Solar heat flux from coupler'                  &
-     &        , '', 'W m^-^2')
+!         call defvar ('hflx_qsr_tot', iou, 1, (/id_time/), -1.e4              &
+!    &        , 1.e4,' ', 'F', 'Solar heat flux from coupler'                  &
+!    &        , '', 'W m^-^2')
 !       NON SOLAR HEAT FLUX FROM COUPLER (W/M^2)
-          call defvar ('hflx_qns_tot', iou, 1, (/id_time/), -1.e4              &
-     &        , 1.e4,' ', 'F', 'Non solar heat flux from coupler'              &
-     &        , '', 'W m^-^2')
+!         call defvar ('hflx_qns_tot', iou, 1, (/id_time/), -1.e4              &
+!    &        , 1.e4,' ', 'F', 'Non solar heat flux from coupler'              &
+!    &        , '', 'W m^-^2')
 !       SOLAR HEAT FLUX FROM COUPLER over ice (W/M^2)
-          call defvar ('hflx_qsr_ice', iou, 1, (/id_time/), -1.e4              &
-     &        , 1.e4,' ', 'F', 'Solar heat flux from coupler over ice'         &
-     &        , '', 'W m^-^2')
+!         call defvar ('hflx_qsr_ice', iou, 1, (/id_time/), -1.e4              &
+!    &        , 1.e4,' ', 'F', 'Solar heat flux from coupler over ice'         &
+!    &        , '', 'W m^-^2')
 !       NON SOLAR HEAT FLUX FROM COUPLER over ice (W/M^2)
-          call defvar ('hflx_qns_ice', iou, 1, (/id_time/), -1.e4              &
-     &        , 1.e4,' ', 'F', 'Non solar heat flux from coupler over ice'     &
-     &        , '', 'W m^-^2')
+!         call defvar ('hflx_qns_ice', iou, 1, (/id_time/), -1.e4              &
+!    &        , 1.e4,' ', 'F', 'Non solar heat flux from coupler over ice'     &
+!    &        , '', 'W m^-^2')
 !-----------------------------------------------------------------
 !        
 !        WIND ENERGY INPUT GLOBAL (TW)
@@ -1161,7 +1161,7 @@ PROGRAM nemo_ocean_diag
         call putvars ('T', iou, ntrec2, tvol(l), 1., 0.)
         call putvara ('Tz', iou, km, (/1, ntrec2/), (/km, 1/), theta_z(:, l), 1., 0.)
 !       Salt
-        call putvars ('S', iou, ntrec2, svol, 1., 0.)
+        call putvars ('S', iou, ntrec2, svol(l), 1., 0.)
         call putvara ('Sz', iou, km, (/1, ntrec2/), (/km, 1/), salt_z(:, l), 1., 0.)
 
 !       Drake Passage transport
@@ -1197,19 +1197,19 @@ PROGRAM nemo_ocean_diag
 !--------------------------------------------------------------------------
 !       MEAN HEAT FLUX SURFACE (W/M^2)
         call putvars ('hglo', iou, ntrec2, hglo(l), 1., 0.)
-        call putvars ('hflx_ice', iou, ntrec2, hflx_ice(l), 1., 0.)
-        call putvars ('hflx_snow', iou, ntrec2, hflx_snow(l), 1., 0.)
-        call putvars ('hflx_snow_ice', iou, ntrec2, hflx_snow_ice(l), 1., 0.)
+!       call putvars ('hflx_ice', iou, ntrec2, hflx_ice(l), 1., 0.)
+!       call putvars ('hflx_snow', iou, ntrec2, hflx_snow(l), 1., 0.)
+!       call putvars ('hflx_snow_ice', iou, ntrec2, hflx_snow_ice(l), 1., 0.)
 
-        call putvars ('hflx_qsr_tot', iou, ntrec2, hflx_qsr_tot_ave(l), 1., 0.)
-        call putvars ('hflx_qns_tot', iou, ntrec2, hflx_qns_tot_ave(l), 1., 0.)
-        call putvars ('hflx_qsr_ice', iou, ntrec2, hflx_qsr_ice_ave(l), 1., 0.)
-        call putvars ('hflx_qns_ice', iou, ntrec2, hflx_qns_ice_ave(l), 1., 0.)
+!       call putvars ('hflx_qsr_tot', iou, ntrec2, hflx_qsr_tot_ave(l), 1., 0.)
+!       call putvars ('hflx_qns_tot', iou, ntrec2, hflx_qns_tot_ave(l), 1., 0.)
+!       call putvars ('hflx_qsr_ice', iou, ntrec2, hflx_qsr_ice_ave(l), 1., 0.)
+!       call putvars ('hflx_qns_ice', iou, ntrec2, hflx_qns_ice_ave(l), 1., 0.)
      
 !       MEAN FRESHWATER FLUX (KG/M^2/S)
         call putvars ('wglo', iou, ntrec2, wglo(l), 1., 0.)
-        call putvars ('snow_ao', iou, ntrec2, snow_ao(l), 1., 0.)
-        call putvars ('snow_ai', iou, ntrec2, snow_ai(l), 1., 0.)
+!       call putvars ('snow_ao', iou, ntrec2, snow_ao(l), 1., 0.)
+!       call putvars ('snow_ai', iou, ntrec2, snow_ai(l), 1., 0.)
 !       SEA SURFACE HEIGHT (M)
         call putvars ('sshglo', iou, ntrec2, sshglo(l), 1., 0.)
 !--------------------------------------------------------------------------
