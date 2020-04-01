@@ -383,6 +383,7 @@ else
     if [ ${with_nemo_diag} = on ] ; then
        sed -i '/cfg/s/$/ add_key="key_trdtra key_diaar5"/' compile_${nemo_runid}
     fi
+    sed -i '/build-nemo/s/$/ > .compile-cannemo-$$.log 2>\&1 \&/' compile_${nemo_runid}
     rm -f compile
     chmod +x compile_${nemo_runid}
 
