@@ -539,19 +539,19 @@
             <field ref="qns"           name="qns"            description="surface_net_downward_non_solar_flux"      level="0" />
             <field ref="qsr"           name="qsr"            description="surface_net_downward_shortwave_flux"      level="0" /> <!-- cmip6 requested as priority 2, DY -->
             <field ref="qrp"           name="qrp"            description="heat_flux_correction"                     level="0" /> <!-- cmip6 requested as priority 1, DY -->
-            <field ref="snow_ai_cea"   name="snow_ai_cea"    description="Surface Snowfall Rate into the Sea Ice Portion of the Grid Cell"        level="0" />
-            <field ref="snow_ao_cea"   name="snow_ao_cea"    description="snowfall_flux"                            level="0" /> <!-- cmip6 requested as priority 2, DY -->
-            <field ref="hflx_rain_cea" name="hflx_rain_cea"  description="temperature_flux_due_to_rainfall_expressed_as_heat_flux_into_sea_water" level="0" /> <!-- cmip6 requested as priority 2, DY -->
-            <field ref="hflx_snow_cea" name="hflx_snow_cea"  description="heat_flux_into_sea_water_due_to_snow_thermodynamics"          level="0" />
-            <field ref="lhflx_snow_cea" name="lhflx_snow_cea" description="heat_flux_into_sea_water_due_to_snow_thermodynamics"         level="0" /> <!-- cmip6 requested as priority 2, DY --> 
-            <field ref="hflx_ice_cea"  name="hflx_ice_cea"   description="heat_flux_into_sea_water_due_to_sea_ice_thermodynamics"       level="0" /> <!-- cmip6 requested as priority 2, DY -->
-             <field ref="hflx_rnf_cea" name="hflx_rnf_cea"    description="temperature_flux_due_to_runoff_expressed_as_heat_flux_into_sea_water" level="0" /> <!-- cmip6 requested as priority 2, DY -->
+            <!-- field ref="snow_ai_cea"   name="snow_ai_cea"    description="Surface Snowfall Rate into the Sea Ice Portion of the Grid Cell"        level="0" -->
+            <!-- field ref="snow_ao_cea"   name="snow_ao_cea"    description="snowfall_flux"                            level="0" --> <!-- cmip6 requested as priority 2, DY -->
+            <!-- field ref="hflx_rain_cea" name="hflx_rain_cea"  description="temperature_flux_due_to_rainfall_expressed_as_heat_flux_into_sea_water" level="0" --> <!-- cmip6 requested as priority 2, DY -->
+            <!-- field ref="hflx_snow_cea" name="hflx_snow_cea"  description="heat_flux_into_sea_water_due_to_snow_thermodynamics"          level="0" --> <!-- cmip6 requested as priority 2, DY -->
+	    <!-- field ref="lhflx_snow_cea" name="lhflx_snow_cea" description="latent heat flux due to snow falling over ice-free ocean"    level="0" --> 
+            <!-- field ref="hflx_ice_cea"  name="hflx_ice_cea"   description="heat_flux_into_sea_water_due_to_sea_ice_thermodynamics"       level="0" --> <!-- cmip6 requested as priority 2, DY -->
+             <!-- field ref="hflx_rnf_cea" name="hflx_rnf_cea"    description="temperature_flux_due_to_runoff_expressed_as_heat_flux_into_sea_water" level="0" --> <!-- cmip6 requested as priority 2, DY -->
             <field ref="isnwmlt_cea"   name="isnwmlt_cea"    description="water_flux_into_sea_water_due_to_sea_ice_thermodynamics"      level="0" /> <!-- cmip6 requested as priority 1, DY -->
             <field ref="snowmel_cea"   name="snowmel_cea"    description="Snow Melt Rate"                          level="0" />
-            <field ref="hflx_qsr_tot"  name="hflx_qsr_tot"   description="Solar heat flux from coupler (cell average)"                  level="0" />
-            <field ref="hflx_qns_tot"  name="hflx_qns_tot"   description="Non solar heat flux from coupler (cell average)"              level="0" />
-            <field ref="hflx_qsr_ice"  name="hflx_qsr_ice"   description="Solar heat flux from coupler over sea-ice (cell average)"     level="0" />
-            <field ref="hflx_qns_ice"  name="hflx_qns_ice"   description="Non solar heat flux from coupler over sea-ice (cell average)" level="0" />
+            <!-- field ref="hflx_qsr_tot"  name="hflx_qsr_tot"   description="Solar heat flux from coupler (cell average)"                  level="0" -->
+            <!-- field ref="hflx_qns_tot"  name="hflx_qns_tot"   description="Non solar heat flux from coupler (cell average)"              level="0" -->
+            <!-- field ref="hflx_qsr_ice"  name="hflx_qsr_ice"   description="Solar heat flux from coupler over sea-ice (cell average)"     level="0" -->
+            <!-- field ref="hflx_qns_ice"  name="hflx_qns_ice"   description="Non solar heat flux from coupler over sea-ice (cell average)" level="0" -->
           </file>
 
           <file id="1m_grid_T_ar6" name_suffix="_ar6" >

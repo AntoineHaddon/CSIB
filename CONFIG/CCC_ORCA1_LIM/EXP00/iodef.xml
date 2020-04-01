@@ -539,19 +539,19 @@
             <field ref="qns"           name="qns"            description="surface_net_downward_non_solar_flux"      level="0" />
             <field ref="qsr"           name="qsr"            description="surface_net_downward_shortwave_flux"      level="0" /> <!-- cmip6 requested as priority 2, DY -->
             <field ref="qrp"           name="qrp"            description="heat_flux_correction"                     level="0" /> <!-- cmip6 requested as priority 1, DY -->
-            <field ref="snow_ai_cea"   name="snow_ai_cea"    description="Surface Snowfall Rate into the Sea Ice Portion of the Grid Cell"        level="0" />
-            <field ref="snow_ao_cea"   name="snow_ao_cea"    description="snowfall_flux"                            level="0" /> <!-- cmip6 requested as priority 2, DY -->
-            <field ref="hflx_rain_cea" name="hflx_rain_cea"  description="temperature_flux_due_to_rainfall_expressed_as_heat_flux_into_sea_water" level="0" /> <!-- cmip6 requested as priority 2, DY -->
-            <field ref="hflx_snow_cea" name="hflx_snow_cea"  description="heat_flux_into_sea_water_due_to_snow_thermodynamics"          level="0" />
-            <field ref="lhflx_snow_cea" name="lhflx_snow_cea" description="heat_flux_into_sea_water_due_to_snow_thermodynamics"         level="0" /> <!-- cmip6 requested as priority 2, DY --> 
-            <field ref="hflx_ice_cea"  name="hflx_ice_cea"   description="heat_flux_into_sea_water_due_to_sea_ice_thermodynamics"       level="0" /> <!-- cmip6 requested as priority 2, DY -->
-             <field ref="hflx_rnf_cea" name="hflx_rnf_cea"    description="temperature_flux_due_to_runoff_expressed_as_heat_flux_into_sea_water" level="0" /> <!-- cmip6 requested as priority 2, DY -->
+            <!-- field ref="snow_ai_cea"   name="snow_ai_cea"    description="Surface Snowfall Rate into the Sea Ice Portion of the Grid Cell"        level="0" -->
+            <!-- field ref="snow_ao_cea"   name="snow_ao_cea"    description="snowfall_flux"                            level="0" --> <!-- cmip6 requested as priority 2, DY -->
+            <!-- field ref="hflx_rain_cea" name="hflx_rain_cea"  description="temperature_flux_due_to_rainfall_expressed_as_heat_flux_into_sea_water" level="0" --> <!-- cmip6 requested as priority 2, DY -->
+            <!-- field ref="hflx_snow_cea" name="hflx_snow_cea"  description="heat_flux_into_sea_water_due_to_snow_thermodynamics"          level="0" --> <!-- cmip6 requested as priority 2, DY -->
+            <!-- field ref="lhflx_snow_cea" name="lhflx_snow_cea" description="latent heat flux due to snow falling over ice-free ocean"    level="0" -->
+            <!-- field ref="hflx_ice_cea"  name="hflx_ice_cea"   description="heat_flux_into_sea_water_due_to_sea_ice_thermodynamics"       level="0" --> <!-- cmip6 requested as priority 2, DY -->
+             <!-- field ref="hflx_rnf_cea" name="hflx_rnf_cea"   description="temperature_flux_due_to_runoff_expressed_as_heat_flux_into_sea_water" level="0" --> <!-- cmip6 requested as priority 2, DY -->
             <field ref="isnwmlt_cea"   name="isnwmlt_cea"    description="water_flux_into_sea_water_due_to_sea_ice_thermodynamics"      level="0" /> <!-- cmip6 requested as priority 1, DY -->
             <field ref="snowmel_cea"   name="snowmel_cea"    description="Snow Melt Rate"                          level="0" />
-            <field ref="hflx_qsr_tot"  name="hflx_qsr_tot"   description="Solar heat flux from coupler (cell average)"                  level="0" />
-            <field ref="hflx_qns_tot"  name="hflx_qns_tot"   description="Non solar heat flux from coupler (cell average)"              level="0" />
-            <field ref="hflx_qsr_ice"  name="hflx_qsr_ice"   description="Solar heat flux from coupler over sea-ice (cell average)"     level="0" />
-            <field ref="hflx_qns_ice"  name="hflx_qns_ice"   description="Non solar heat flux from coupler over sea-ice (cell average)" level="0" />
+            <!-- field ref="hflx_qsr_tot"  name="hflx_qsr_tot"   description="Solar heat flux from coupler (cell average)"                  level="0" -->
+	    <!-- field ref="hflx_qns_tot"  name="hflx_qns_tot"   description="Non solar heat flux from coupler (cell average)"              level="0" -->
+            <!-- field ref="hflx_qsr_ice"  name="hflx_qsr_ice"   description="Solar heat flux from coupler over sea-ice (cell average)"     level="0" -->
+            <!-- field ref="hflx_qns_ice"  name="hflx_qns_ice"   description="Non solar heat flux from coupler over sea-ice (cell average)" level="0" -->
           </file>
 
           <file id="1m_grid_T_ar6" name_suffix="_ar6" >
@@ -781,58 +781,6 @@
           <!-- shrice  : Strain Rate Shear of Sea Ice ??? -->
           <!-- ridgice : Sea Ice Ridging Rate ??? -->
         </file>   
-
-        <file id="1m_ptrc_T" name="auto" description="pisces sms variables" >
-          <field ref="DIC"      level="0" />
-          <field ref="Alkalini" level="0" />
-          <field ref="O2"       level="0" />
-          <field ref="POC"      level="0" />
-          <field ref="PHY"      level="0" />
-          <field ref="ZOO"      level="0" />
-          <field ref="NCHL"     level="1" />
-          <field ref="NO3"      level="0" />
-          <field ref="DICnat"   level="1" />
-          <field ref="DICabio"  level="1" />
-          <field ref="O2abio"   level="0" />
-          <field ref="agessc"   level="0" /> <!-- cmip6 requested as priority 1, DY -->
-          <field ref="cfc11"    level="4" />
-          <field ref="cfc12"    level="4" />
-          <field ref="sf6"      level="4" />
-          <field ref="DI14C"    level="1" />
-       </file>
-
-        <file id="1m_diad_T" name="auto" description="additional cmoc diagnostic variables" >
-          <field ref="PH"        level="8" />
-          <field ref="sDIC"      level="8" />
-          <field ref="sAlk"      level="8" />
-          <field ref="PPPHY"     level="0" />
-          <field ref="Cflx"      level="0" />
-          <field ref="Oflx"      level="0" />
-          <field ref="Cflx_abio" level="1" />
-          <field ref="Cflx_nat"  level="1" />
-          <field ref="Oflx_abio" level="0" />
-          <field ref="Cflx_14C"  level="1"/>
-          <field ref="Nfix"      level="0" />
-          <field ref="Denit"     level="3" />
-          <field ref="EPC100"    level="0" />
-          <field ref="EPCALC100" level="0" />
-          <field ref="BUPOC"     level="8" />
-          <field ref="BUCALC"    level="8" />
-          <field ref="Dpco2"     level="3" />
-          <field ref="Dpo2"      level="3" />
-          <field ref="spco2"     level="1" />
-          <field ref="spco2a"    level="1" />
-          <field ref="spco2n"    level="1" />
-          <field ref="LNnut"     level="3" />
-          <field ref="LNFe"      level="3" />
-          <field ref="LNlight"   level="3" />
-          <field ref="PAR"       level="8" />
-          <field ref="Mumax"     level="8" />
-          <field ref="oomask"    level="8" />
-          <field ref="cfc11qtr"  level="1" />
-          <field ref="cfc12qtr"  level="1" />
-          <field ref="sf6qtr"    level="2" />
-       </file>
 
       </group>
 
