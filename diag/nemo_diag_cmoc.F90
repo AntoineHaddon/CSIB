@@ -9,6 +9,7 @@ PROGRAM nemo_diag_cmoc
    !! 2020-02 (D. Yang): Revise tbnds to bnds in defdim to avoid crash
    !!                    when later "cdo mergetime" in canesm_nemo_bgc_diag.sh
    !!                    makes the unwanted change from tbnds to bnds. 
+   !! 2020-03 (D. Yang): Add getdimnm to accommodate both tbnds & bnds
    !!---------------------------------------------------------------
    !!
    !!---------------------------------------------------------------
@@ -36,9 +37,10 @@ PROGRAM nemo_diag_cmoc
    CHARACTER(len=100) :: fname01, fname02, fname03, fname04, fname05
    CHARACTER(len=100) :: axis, standard_name, units, calendar, title
    CHARACTER(len=100) :: long_name, time_origin, bounds
+   CHARACTER(len=100) :: dimnm
    INTEGER   :: iou, iou1, iou2, iou3, iou4, iou5
    INTEGER   :: ntrec, id_time, id_tbnds, id_l, id_s, id_x, id_y, id_z
-   INTEGER   :: ntbnds
+   INTEGER   :: ntbnds, ndim, ntdim
    INTEGER   :: i, j, k, l
    LOGICAL   :: exists
    !INTEGER   :: strlen
@@ -54,12 +56,20 @@ PROGRAM nemo_diag_cmoc
    !!-------------------------------------
    !! Establish grid size from input files.
    !!-------------------------------------
+   ! number of total dimensions (x, y, deptht, time_counter & tbnds or bnds)
+   ntdim = 5
    CALL openfile  ("grid_t", iou)
    CALL getdimlen ('x', iou, imt)
    CALL getdimlen ('y', iou, jmt)
    call getdimlen ('deptht', iou, km)
    CALL getdimlen ('time_counter', iou, lm)      
-   CALL getdimlen ('tbnds', iou, ntbnds)
+   ! get grid size for tbnds/bnds
+   Do i = 1, ntdim
+      CALL getdimnm  (dimnm, iou, i, ndim)
+      print*, 'DIM',i,':',dimnm, 'length:', ndim
+      IF (dimnm .eq. 'tbnds' .or. dimnm .eq. 'bnds') ntbnds = ndim
+   END DO
+
    ly = lm / 12
 
    !!----------------
