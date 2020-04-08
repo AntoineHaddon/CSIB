@@ -1,3 +1,5 @@
 # REQUIRED modules for nemo compilation
+    module load PrgEnv-intel
+    module load craype-x86-skylake
     module load cray-netcdf
     module load cray-mpich
