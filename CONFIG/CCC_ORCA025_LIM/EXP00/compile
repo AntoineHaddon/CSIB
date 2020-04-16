@@ -1,1 +1,1 @@
-build-nemo -j4 ver=develop repo=git@gitlab.science.gc.ca:CanESM/CanNEMO.git exec=runid_ccc_orca025_lim_exe arch=XC40_CCCma_intel-pe refcfg=CCC_ORCA025_LIM cfg=CCC_ORCA025_LIM > .compile-cannemo-$$.log 2>&1 &
+build-nemo -j4 ver=develop repo=git@gitlab.science.gc.ca:CanESM/CanNEMO.git exec=runid_ccc_orca025_lim_exe arch=XC40_CCCma_intel-pe refcfg=CCC_ORCA025_LIM cfg=CCC_ORCA025_LIM
