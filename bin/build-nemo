@@ -49,31 +49,20 @@ set -e
 #========================
 THIS_SCRIPT_PATH=$(type $0|awk '{print $3}') # pathname of this script
 THIS_SCRIPT_NAME=$(basename $THIS_SCRIPT_PATH)
+
+# output the usage information
 usage() {
-    # set exit status to non-zero if usage gets called with -e
-    err_exit=0
-    while getopts e opt; do
-    case $opt in
-        e) err_exit=1 
-           redirect_option=">&2" ;;
-        esac
-    done
-
-    # shift past options
-    shift $(( OPTIND - 1 ))
-
     # if a message was passed into this function, output the message
-    [ -n "$1" ] && echo $redirect_option "${THIS_SCRIPT_NAME}:" "$@"
+    [ -n "$1" ] && echo "${THIS_SCRIPT_NAME}:" "$@"
 
-    # finally, output the usage header, and exit with the desired exit status
-    echo $redirect_option " "
-    sed $redirect_option -n '/^###/q; s/^#$/# /; s/^ *$/# /; 3,$s/^# //p;' "$THIS_SCRIPT_PATH"
-    exit $err_exit
+    # finally, output the usage header
+    sed -n '/^###/q; s/^#$/# /; s/^ *$/# /; 3,$s/^# //p;' "$THIS_SCRIPT_PATH"
 }
 
+# bail with non-zero exit status
 bail(){
-echo "${THIS_SCRIPT_NAME}: *** ERROR *** $1"
-exit 1
+    echo "${THIS_SCRIPT_NAME}: *** ERROR *** $1"
+    exit 1
 }
 
 #===========================================
@@ -82,31 +71,29 @@ exit 1
 nemo_add_cpp_keys=''    # Nemo preprocessing keys to be added or removed at compile time
 nemo_del_cpp_keys=''    # Nemo preprocessing keys to be added or removed at compile time
 nemo_ref_config=''      # The reference configuration to be used with nemo_config
-save_exe=''             # to official "save" the executable or not
+save_exec=''            # to official "save" the execcutable or not
 is_coupled='no'         # Is this nemo build for a coupled model
 comp_np=12              # Number of processors to use during compilation
 debug=0                 # Set debug to 0 (turned off, regular optimizations used)
 CWD=$(pwd)
 
 printf "\n\n ------------------- \n"
-printf "        build-nemo       \n"
+printf "    build-nemo       \n"
 printf " ------------------- \n"
 
 #=======================================
 # process command line options/arguments
 #=======================================
 # Flags
-while getopts j:hxds opt
-do
-  case $opt in
-    j) comp_np="$OPTARG" ;;
-    x) set -x ;;
-    s) save_exe="on" ;;
-    d) debug=1 ;;
-    h) usage ;;
-    -) shift; break ;; # end of options
-    ?) usage -e    ;;
-  esac
+while getopts j:hxds opt; do
+    case $opt in
+        j) comp_np="$OPTARG" ;;
+        x) set -x ;;
+        s) save_exec="on" ;;
+        d) debug=1 ;;
+        h) usage ; exit 0 ;;
+        ?) usage ; exit 1 ;;
+    esac
 done
 shift $(( OPTIND - 1 ))
 
@@ -118,13 +105,13 @@ for arg in "$@"; do
         val=$(echo $arg | awk -F\= '{printf "%s",$2}')
         case $var in
             srcpath)    nemo_source_path="$val" ;;  # location of code in a dir structure (instead of cloning)
-            exec)       nemo_exe="$val" ;;          # name for the executable created here
+            exec)       nemo_exec="$val" ;;          # name for the executable created here
             cfg)        nemo_config="$val" ;;       # name of subdir in which config lives
             refcfg)     nemo_ref_config="$val" ;;   # name of subdir in which ref config lives
             arch)       nemo_arch="$val" ;;         # name of file with arch specific make defs
             add_key)    nemo_add_cpp_keys="$val" ;; # a list of cpp keys to add before compiling nemo
             del_key)    nemo_del_cpp_keys="$val" ;; # a list of cpp keys to remove before compiling nemo
-            *)          bail "Invalid command line arg --> $arg <--" ;;
+            *)          usage "Invalid command line arg --> $arg <--"; exit 1  ;;
          esac
          ;;
     *) bail "Invalid command line arg --> $arg <--" ;;
@@ -135,16 +122,16 @@ done
 # Consistency Checks
 #====================
 # Make sure the required arguments were given
-[[ -z "$nemo_source_path" ]]    && usage -e "srcpath must be given at the command line!"
-[[ -z "$nemo_exe" ]]            && usage -e "exec must be given at the command line!"
-[[ -z "$nemo_config" ]]         && usage -e "cfg must be given at the command line!"
-[[ -z "$nemo_arch" ]]           && usage -e "arch must be given at the command line!"
+[[ -z "$nemo_source_path" ]]    && bail "srcpath must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
+[[ -z "$nemo_exec" ]]           && bail "exec must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
+[[ -z "$nemo_config" ]]         && bail "cfg must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
+[[ -z "$nemo_arch" ]]           && bail "arch must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
 
 # Perform some consistency checks
 [[ -d "$nemo_source_path" ]] || bail "The given srcpath ---> $nemo_source_path <--- doesn't exist!"
 
 # This script is intended to be run on the back end
-case $TRUE_HOST in
+case $TRUEHOST in
     xc3*|xc4*|banting|daley) ;;
         *) bail "This should be run on a back end machine" ;;
 esac
@@ -157,7 +144,7 @@ nemo_build_dir=${nemo_source_path}/nemo/CONFIG  # where makenemo gets called
 # When debugging is requested, use the debug arch and update the name of the executable
 if (( debug == 1 )); then
   nemo_arch="$nemo_arch-debug"
-  nemo_exe="$nemo_exe-debug"
+  nemo_exec="$nemo_exec-debug"
 fi
 
 #======================
@@ -199,8 +186,8 @@ if [[ "$is_coupled" == "yes" ]]; then
 
     # copy in external coupler file, and alter inlcude statements to use the .h90 links
     cp -f $needed_cpl_src_file $nemo_cpl_src_file
-    sed -i "s/$(basename $cppdef_config_file)/$(basename $NEMO_cppdef_config_link)/g" $NEMO_cpl_src_file
-    sed -i "s/$(basename $cppdef_sizes_file)/$(basename $NEMO_cppdef_sizes_link)/g" $NEMO_cpl_src_file
+    sed -i "s/$(basename $cppdef_config_file)/$(basename $nemo_cppdef_config_link)/g" $nemo_cpl_src_file
+    sed -i "s/$(basename $cppdef_sizes_file)/$(basename $nemo_cppdef_sizes_link)/g" $nemo_cpl_src_file
 fi
 
 #=========
@@ -217,30 +204,30 @@ chmod -R u+w .
 source comp_env
 
 # build command line args
-ARGS="-j $comp_np"
-ARGS+="-m $nemo_arch"
-ARGS+="-n $nemo_config"
-[[ -n "$nemo_ref_config" ]]     && ARGS+="-r $nemo_ref_config"
-[[ -n "$nemo_add_cpp_keys" ]]   && ARGS+='add_key "'$nemo_add_cpp_keys'"'
-[[ -n "$nemo_del_cpp_keys" ]]   && ARGS+='del_key "'$nemo_del_cpp_keys'"'
+ARGS="-j $comp_np "
+ARGS+="-m $nemo_arch "
+ARGS+="-n $nemo_config "
+[[ -n "$nemo_ref_config" ]]     && ARGS+="-r $nemo_ref_config "
+[[ -n "$nemo_add_cpp_keys" ]]   && ARGS+='add_key "'$nemo_add_cpp_keys' "'
+[[ -n "$nemo_del_cpp_keys" ]]   && ARGS+='del_key "'$nemo_del_cpp_keys' "'
 
 # Create executable
 echo "makenemo $ARGS"
 ./makenemo $ARGS
-produced_exe=$nemo_config/BLD/bin/nemo.exe
+produced_exec=$nemo_config/BLD/bin/nemo.exe
 
 # Save executable or link to run directory (ocean only)
-if [[ "$save_exe" == "on" ]]; then
+if [[ "$save_exec" == "on" ]]; then
     # Save the produced executable to RUNPATH/DATAPATH
-    save $produced_exe $nemo_exe || bail "Problem while saving $nemo_exe"
-    echo "Saved $nemo_exe on RUNPATH $RUNPATH"
+    save $produced_exec $nemo_exec || bail "Problem while saving $nemo_exec"
+    echo "Saved $nemo_exec on RUNPATH $RUNPATH"
 
     # reset the cfg.txt file to avoid dirtying the repo
     echo "Resetting cfg.txt to HEAD"
     git checkout HEAD cfg.txt || :
 else
     # Link produced executable into the invocation directory
-    ln -s $produced_exe ${CWD}/${nemo_exe}
+    ln -s $produced_exec ${CWD}/${nemo_exec}
 fi
 
 # Return to the invocation directory
