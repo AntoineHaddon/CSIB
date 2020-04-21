@@ -232,3 +232,6 @@ fi
 
 # Return to the invocation directory
 cd $CWD
+
+# Link in the config specific build directory
+rm -f build_nemo ; ln -s $nemo_build_dir build_nemo
