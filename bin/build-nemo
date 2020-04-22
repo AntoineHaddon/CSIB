@@ -99,22 +99,22 @@ shift $(( OPTIND - 1 ))
 
 # Arguments
 for arg in "$@"; do
-  case $arg in
-    *=*) 
-        var=$(echo $arg | awk -F\= '{printf "%s",$1}')
-        val=$(echo $arg | awk -F\= '{printf "%s",$2}')
-        case $var in
-            srcpath)    nemo_source_path="$val" ;;  # location of code in a dir structure (instead of cloning)
-            exec)       nemo_exec="$val" ;;          # name for the executable created here
-            cfg)        nemo_config="$val" ;;       # name of subdir in which config lives
-            refcfg)     nemo_ref_config="$val" ;;   # name of subdir in which ref config lives
-            arch)       nemo_arch="$val" ;;         # name of file with arch specific make defs
-            add_key)    nemo_add_cpp_keys="$val" ;; # a list of cpp keys to add before compiling nemo
-            del_key)    nemo_del_cpp_keys="$val" ;; # a list of cpp keys to remove before compiling nemo
-            *)          usage "Invalid command line arg --> $arg <--"; exit 1  ;;
-         esac
-         ;;
-    *) bail "Invalid command line arg --> $arg <--" ;;
+    case $arg in
+        *=*) 
+            var=$(echo $arg | awk -F\= '{printf "%s",$1}')
+            val=$(echo $arg | awk -F\= '{printf "%s",$2}')
+            case $var in
+                srcpath)    nemo_source_path="$val" ;;  # location of code in a dir structure (instead of cloning)
+                exec)       nemo_exec="$val" ;;          # name for the executable created here
+                cfg)        nemo_config="$val" ;;       # name of subdir in which config lives
+                refcfg)     nemo_ref_config="$val" ;;   # name of subdir in which ref config lives
+                arch)       nemo_arch="$val" ;;         # name of file with arch specific make defs
+                add_key)    nemo_add_cpp_keys="$val" ;; # a list of cpp keys to add before compiling nemo
+                del_key)    nemo_del_cpp_keys="$val" ;; # a list of cpp keys to remove before compiling nemo
+                *)          usage "Invalid command line arg --> $arg <--"; exit 1  ;;
+             esac
+             ;;
+        *) bail "Invalid command line arg --> $arg <--" ;;
   esac
 done
 
@@ -203,17 +203,15 @@ chmod -R u+w .
 # get compilation environment
 source comp_env
 
-# build command line args
-ARGS="-j $comp_np "
-ARGS+="-m $nemo_arch "
-ARGS+="-n $nemo_config "
-[[ -n "$nemo_ref_config" ]]     && ARGS+="-r $nemo_ref_config "
-[[ -n "$nemo_add_cpp_keys" ]]   && ARGS+='add_key "'$nemo_add_cpp_keys' "'
-[[ -n "$nemo_del_cpp_keys" ]]   && ARGS+='del_key "'$nemo_del_cpp_keys' "'
+# build command line args into a bash array -> array needed for potential space delim list in add_key/del_key
+ARGS=( -j $comp_np -m $nemo_arch -n $nemo_config )
+[[ -n "$nemo_ref_config" ]]     && ARGS+=( -r $nemo_ref_config )
+[[ -n "$nemo_add_cpp_keys" ]]   && ARGS+=( add_key "$nemo_add_cpp_keys" )
+[[ -n "$nemo_del_cpp_keys" ]]   && ARGS+=( del_key "$nemo_del_cpp_keys" )
 
 # Create executable
-echo "makenemo $ARGS"
-./makenemo $ARGS
+echo 'makenemo '"${ARGS[@]}"
+./makenemo "${ARGS[@]}"
 produced_exec=$nemo_config/BLD/bin/nemo.exe
 
 # Save executable or link to run directory (ocean only)
