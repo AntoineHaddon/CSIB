@@ -33,7 +33,7 @@ set -e
 #                    for this complie. If there is more than one then keys will need
 #                    to be quoted. (e.g. add_keys="key_mpp_mpi key_nproci=8 key_nprocj=4")
 #   del_key=keys  ...A whitespace separated list of cpp preprocessor keys to be removed
-#                    for this complie. If there is more than one then keys will need
+#                    for this compile. If there is more than one then keys will need
 #                    to be quoted. (e.g. del_keys="key_nproci key_nprocj")
 #
 # Examples:
