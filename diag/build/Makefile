@@ -17,6 +17,9 @@ PHYS_DIAG_OBJS	:= $(PHYS_DIAG_FILES:.F90=.o)
 CMOC_DIAG_OBJS	:= $(CMOC_DIAG_FILES:.F90=.o)
 CANOE_DIAG_OBJS	:= $(CANOE_DIAG_FILES:.F90=.o)
 
+# make all targets by default
+.DEFAULT_GOAL := all
+
 # define implicit rules such that make knows to look in SRCDIR
 %.o : $(SRCDIR)/%.F90
 	$(FC) $(FFLAGS) -c $<
