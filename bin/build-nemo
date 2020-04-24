@@ -9,7 +9,9 @@ set -e
 #                     [del_key=keys] 
 #          Quantities in square brackets are optional
 #
-# Purpose: Create a nemo executable or build nemo specifc tools
+# Purpose: Create a nemo executable, along with associated diagnostic/rtd executables. Note that
+#           the final name of the nemo executable can be set by the user, but the diagnostic/rtd
+#           executables will always use the names defined in their associated makefiles.
 #
 # Options:
 # All options begin with a dash (-) and must appear before any other command line arg
@@ -17,24 +19,26 @@ set -e
 #   -h              ...show this usage message
 #   -d              ...compile an executable with debugging symbols (for use with DDT or GDB)
 #   -x              ...run this script with 'set -x'
-#   -s              ...save executable instead  of linking it
+#   -s              ...save executables instead of linking them into the CWD (INCOMPATIBLE WITH -p)
+#   -p strg_loc     ...instead of linking into CWD, link the executables into strg_loc (INCOMPATIBLE WITH -s)
 #
 # Variable definitions:
-#   srcpath=srcpath ...location of the NEMO source code. 
-#   exec=name     ...name is the name of the nemo executable to be created
-#                    On successful compilation, a file by this name will be saved on RUNPATH
-#   cfg=name      ...name is the name of a subdir under the CONFIG dir in the repository
-#                    which will contain details of the model configuration (e.g. ORCA2_LIM)
-#   refcfg=name   ...name is the name of a subdir under the CONFIG dir in the repository
-#                    which will contain a reference configuration
-#   arch=name     ...name is the name of an arch specific make include file found in the ARCH
-#                    subdir that is used to define compiler switches and libs etc
-#   add_key=keys  ...A whitespace separated list of cpp preprocessor keys to be added
-#                    for this complie. If there is more than one then keys will need
-#                    to be quoted. (e.g. add_keys="key_mpp_mpi key_nproci=8 key_nprocj=4")
-#   del_key=keys  ...A whitespace separated list of cpp preprocessor keys to be removed
-#                    for this compile. If there is more than one then keys will need
-#                    to be quoted. (e.g. del_keys="key_nproci key_nprocj")
+#   srcpath=srcpath     ...location of the NEMO source code. 
+#   exec=name           ...name is the name of the nemo executable to be created
+#                           On successful compilation, a file by this name will be linked [by default] into the CWD.
+#                           Use -p to have them linked to a dif. location, or -s to have them saved to RUNPATH.
+#   cfg=name            ...name is the name of a subdir under the CONFIG dir in the repository
+#                           which will contain details of the model configuration (e.g. ORCA2_LIM)
+#   refcfg=name         ...name is the name of a subdir under the CONFIG dir in the repository
+#                           which will contain a reference configuration
+#   arch=name           ...name is the name of an arch specific make include file found in the ARCH
+#                           subdir that is used to define compiler switches and libs etc
+#   add_key=keys        ...A whitespace separated list of cpp preprocessor keys to be added
+#                           for this complie. If there is more than one then keys will need
+#                           to be quoted. (e.g. add_keys="key_mpp_mpi key_vectopt_loop")
+#   del_key=keys        ...A whitespace separated list of cpp preprocessor keys to be removed
+#                           for this compile. If there is more than one then keys will need
+#                           to be quoted. (e.g. del_keys="key_nproci key_nprocj")
 #
 # Examples:
 #   build-nemo exec=nemo_v3.4_orca2_lim_exe cfg=ORCA2_LIM srcpath=/path/to/code/
@@ -71,7 +75,8 @@ bail(){
 nemo_add_cpp_keys=''    # Nemo preprocessing keys to be added or removed at compile time
 nemo_del_cpp_keys=''    # Nemo preprocessing keys to be added or removed at compile time
 nemo_ref_config=''      # The reference configuration to be used with nemo_config
-save_exec=''            # to official "save" the execcutable or not
+save_exec=''            # to "save" the execcutable or not
+strg_loc=''             # if used, tells build-nemo to link executables here instead of CWD
 is_coupled='no'         # Is this nemo build for a coupled model
 comp_np=12              # Number of processors to use during compilation
 debug=0                 # Set debug to 0 (turned off, regular optimizations used)
@@ -90,6 +95,7 @@ while getopts j:hxds opt; do
         j) comp_np="$OPTARG" ;;
         x) set -x ;;
         s) save_exec="on" ;;
+        p) strg_loc="$OPTARG" ;;
         d) debug=1 ;;
         h) usage ; exit 0 ;;
         ?) usage ; exit 1 ;;
@@ -121,6 +127,16 @@ done
 #====================
 # Consistency Checks
 #====================
+# Make sure -p and -s weren't used together
+if [[ -n "$save_exec" && -n "$strg_loc" ]]; then
+    usage "-p and -s are mutually exclusive flags!"; exit 1
+fi
+
+# if -p was used, make sure the given directory exists
+if [[ -n "$strg_loc" ]]; then
+    [[ -d "$strg_loc" ]] || bail "The desired executable output location ---> $strg_loc <--- doesn't exist!"
+fi
+
 # Make sure the required arguments were given
 [[ -z "$nemo_source_path" ]]    && bail "srcpath must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
 [[ -z "$nemo_exec" ]]           && bail "exec must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
@@ -139,7 +155,21 @@ esac
 #========================
 # Set inherited variables
 #========================
-nemo_build_dir=${nemo_source_path}/nemo/CONFIG  # where makenemo gets called
+# define build directories
+nemo_modl_blddir=${nemo_source_path}/nemo/CONFIG    # where makenemo gets called to build the model exec
+nemo_diag_blddir=${nemo_source_path}/diag/build     # where make gets called to build the diagnostic execs
+nemo_rtd_blddir=${nemo_source_path}/rtd/build       # where make gets called to build the rtd execs
+
+# define produced executables (must be consistence with makenemo and diag/rtd makefiles)
+produced_model_exec=${nemo_modl_blddir}/${nemo_config}/BLD/bin/nemo.exe
+produced_diag_execs="nemo_diag.exe nemo_diag_cmoc.exe nemo_diag_canoe.exe"
+produced_rtd_execs=""
+
+# prepends paths to diag/rtd exec lists 
+#   - Note: "[^ ]*" -> matches words (strngs w/o interior spaces)
+#           "&"     -> represents the matched pattern 
+produced_diag_execs=$(echo $produced_diag_execs | sed "s#[^ ]*#${nemo_diag_blddir}/&#g")
+produced_rtd_execs=$(echo $produced_rtd_execs | sed "s#[^ ]*#${nemo_rtd_blddir}/&#g")
 
 # When debugging is requested, use the debug arch and update the name of the executable
 if (( debug == 1 )); then
@@ -147,9 +177,9 @@ if (( debug == 1 )); then
   nemo_exec="$nemo_exec-debug"
 fi
 
-#======================
-# Coupled Consideration
-#======================
+#======================================
+# Coupled consideration for model comp
+#======================================
 [[ "$nemo_config" == "CCC_CANCPL_"* ]] && is_coupled='yes'
 if [[ "$is_coupled" == "yes" ]]; then
     # we must get code from the coupler repo, assumed to be housed in $CCRNSRC
@@ -190,11 +220,15 @@ if [[ "$is_coupled" == "yes" ]]; then
     sed -i "s/$(basename $cppdef_sizes_file)/$(basename $nemo_cppdef_sizes_link)/g" $nemo_cpl_src_file
 fi
 
-#=========
-# Compile!
-#=========
-echo "Compiling in:  ${nemo_build_dir}"
-cd $nemo_build_dir
+#====================
+# Compile the Model !
+#====================
+echo ""
+echo "=================================="
+echo "      Compiling the Model!        "
+echo "=================================="
+echo "Compiling in:  ${nemo_modl_blddir}"
+cd $nemo_modl_blddir
 #--- NECESSARY ? ---#
 # Make everything user writeable so that an overwrite will clobber existing files
 chmod -R u+w .
@@ -209,27 +243,57 @@ ARGS=( -j $comp_np -m $nemo_arch -n $nemo_config )
 [[ -n "$nemo_add_cpp_keys" ]]   && ARGS+=( add_key "$nemo_add_cpp_keys" )
 [[ -n "$nemo_del_cpp_keys" ]]   && ARGS+=( del_key "$nemo_del_cpp_keys" )
 
-# Create executable
+# Create model executable
 echo 'makenemo '"${ARGS[@]}"
 ./makenemo "${ARGS[@]}"
-produced_exec=$nemo_config/BLD/bin/nemo.exe
 
-# Save executable or link to run directory (ocean only)
+# reset the cfg.txt file to avoid dirtying the repo
+echo "Resetting cfg.txt to HEAD"
+git checkout HEAD cfg.txt || :
+
+#======================
+# Compile Diagnostics !
+#======================
+echo ""
+echo "=================================="
+echo "    Compiling the Diagnostics!    "
+echo "=================================="
+cd $nemo_diag_blddir
+
+# source compilation environment and compile
+source comp_env
+make
+
+#==============================================
+# Save executables or link to desired directory
+#==============================================
 if [[ "$save_exec" == "on" ]]; then
-    # Save the produced executable to RUNPATH/DATAPATH
-    save $produced_exec $nemo_exec || bail "Problem while saving $nemo_exec"
-    echo "Saved $nemo_exec on RUNPATH $RUNPATH"
+    echo "Saving build-nemo produced executables to RUNPATH"
 
-    # reset the cfg.txt file to avoid dirtying the repo
-    echo "Resetting cfg.txt to HEAD"
-    git checkout HEAD cfg.txt || :
+    # model exec
+    save $produced_model_exec $nemo_exec || bail "Problem while saving $nemo_exec"
+    
+    # diag execs
+    for diag_exec in $produced_diag_execs; do
+        save $diag_exec $(basename $diag_exec) || bail "Problem while saving $diag_exec"
+    done
 else
-    # Link produced executable into the invocation directory
-    ln -s $produced_exec ${CWD}/${nemo_exec}
+    # determine link location
+    if [[ -n "$strg_loc" ]]; then
+        link_loc=$strg_loc
+    else
+        link_loc=${CWD}
+    fi
+    echo "Linking build-nemo produced executables to $link_loc"
+
+    # model exec
+    ln -s $produced_model_exec ${link_loc}/${nemo_exec}
+
+    # diag execs
+    for diag_exec in $produced_diag_execs; do
+        ln -s $diag_exec ${link_loc}
+    done
 fi
 
 # Return to the invocation directory
 cd $CWD
-
-# Link in the config specific build directory
-rm -f build_nemo ; ln -s $nemo_build_dir build_nemo

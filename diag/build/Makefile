@@ -20,7 +20,7 @@ CANOE_DIAG_OBJS	:= $(CANOE_DIAG_FILES:.F90=.o)
 # make all targets by default
 .DEFAULT_GOAL := all
 
-# define implicit rules such that make knows to look in SRCDIR
+# define implicit rules for handling automatic compiling of the object files
 %.o : $(SRCDIR)/%.F90
 	$(FC) $(FFLAGS) -c $<
 %.o : $(SRCDIR)/%.f
