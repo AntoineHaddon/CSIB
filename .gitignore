@@ -9,5 +9,8 @@ deploy.git/
 nemo/NEMO/external/*
 !nemo/NEMO/external/README
 diag/build/*
+rtd/build/*
 !diag/build/Makefile
 !diag/build/comp_env
+!rtd/build/Makefile
+!rtd/build/comp_env
