@@ -1,0 +1,3 @@
+# REQUIRED compilation env for nemo rtds
+    module load PrgEnv-intel
+    module load cray-netcdf
