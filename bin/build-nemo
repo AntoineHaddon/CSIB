@@ -90,7 +90,7 @@ printf " ------------------- \n"
 # process command line options/arguments
 #=======================================
 # Flags
-while getopts j:hxds opt; do
+while getopts p:j:hxds opt; do
     case $opt in
         j) comp_np="$OPTARG" ;;
         x) set -x ;;
