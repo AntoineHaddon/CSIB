@@ -16,11 +16,11 @@ set -e
 # Options:
 # All options begin with a dash (-) and must appear before any other command line arg
 #   -j num_proc     ...number of cpus to use for parallel compilation
+#   -p strg_loc     ...instead of linking into CWD, link the executables into strg_loc (INCOMPATIBLE WITH -s)
 #   -h              ...show this usage message
 #   -d              ...compile an executable with debugging symbols (for use with DDT or GDB)
 #   -x              ...run this script with 'set -x'
 #   -s              ...save executables instead of linking them into the CWD (INCOMPATIBLE WITH -p)
-#   -p strg_loc     ...instead of linking into CWD, link the executables into strg_loc (INCOMPATIBLE WITH -s)
 #
 # Variable definitions:
 #   srcpath=srcpath     ...location of the NEMO source code. 
