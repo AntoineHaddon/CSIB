@@ -1,5 +1,13 @@
-# REQUIRED modules for nemo compilation
-    module load PrgEnv-intel
-    module load craype-x86-skylake
-    module load cray-netcdf
-    module load cray-mpich
+# CanNEMO compilation environment
+#-----------------------------------------------------------
+# Unload all modules and load Intel programming environment
+#-----------------------------------------------------------
+module purge
+module load PrgEnv-intel
+
+#---------------------------------
+# Load specific modules as needed
+#---------------------------------
+module load craype-x86-skylake
+module load cray-netcdf
+module load cray-mpich
