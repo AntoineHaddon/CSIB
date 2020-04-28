@@ -323,5 +323,7 @@ else
     done
 fi
 
+echo "build-nemo: DONE!"
+
 # Return to the invocation directory
 cd $CWD
