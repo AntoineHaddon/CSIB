@@ -1,3 +1,11 @@
-# REQUIRED compilation env for nemo rtds
-    module load PrgEnv-intel
-    module load cray-netcdf
+# CanNEMO rtd compilation environment
+#-----------------------------------------------------------
+# Unload all modules and load Intel programming environment
+#-----------------------------------------------------------
+module purge
+module load PrgEnv-intel
+
+#---------------------------------
+# Load specific modules as needed
+#---------------------------------
+module load cray-netcdf
