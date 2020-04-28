@@ -269,7 +269,7 @@ make
 #===============
 echo ""
 echo "=================================="
-echo "    Compiling the Diagnostics!    "
+echo "    Compiling the RTDs!           "
 echo "=================================="
 cd $nemo_rtd_blddir
 
@@ -305,16 +305,21 @@ else
     echo "Linking build-nemo produced executables to $link_loc"
 
     # model exec
+    [[ -f "${link_loc}/${nemo_exec}" ]] && rm ${link_loc}/${nemo_exec}
     ln -s $produced_model_exec ${link_loc}/${nemo_exec}
 
     # diag execs
     for diag_exec in $produced_diag_execs; do
-        ln -s $diag_exec $link_loc
+        linked_exec=${link_loc}/$(basename $diag_exec)
+        [[ -f "$linked_exec" ]] && rm $linked_exec
+        ln -s $diag_exec $linked_exec
     done
 
     # rtd execs
     for rtd_exec in $produced_rtd_execs; do
-        ln -s $rtd_exe $link_loc
+        linked_exec=${link_loc}/$(basename $rtd_exec)
+        [[ -f "$linked_exec" ]] && rm $linked_exec
+        ln -s $rtd_exec $linked_exec
     done
 fi
 
