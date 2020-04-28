@@ -163,7 +163,7 @@ nemo_rtd_blddir=${nemo_source_path}/rtd/build       # where make gets called to 
 # define produced executables (must be consistence with makenemo and diag/rtd makefiles)
 produced_model_exec=${nemo_modl_blddir}/${nemo_config}/BLD/bin/nemo.exe
 produced_diag_execs="nemo_diag.exe nemo_diag_cmoc.exe nemo_diag_canoe.exe"
-produced_rtd_execs=""
+produced_rtd_execs="nemo_physical_rtd.exe nemo_carbon-cmoc_rtd.exe nemo_carbon-canoe_rtd.exe nemo_ice_rtd.exe"
 
 # prepends paths to diag/rtd exec lists 
 #   - Note: "[^ ]*" -> matches words (strngs w/o interior spaces)
@@ -264,6 +264,19 @@ cd $nemo_diag_blddir
 source comp_env
 make
 
+#===============
+# Compile RTDs!
+#===============
+echo ""
+echo "=================================="
+echo "    Compiling the Diagnostics!    "
+echo "=================================="
+cd $nemo_rtd_blddir
+
+# source compilation environment and compile
+source comp_env
+make
+
 #==============================================
 # Save executables or link to desired directory
 #==============================================
@@ -276,6 +289,11 @@ if [[ "$save_exec" == "on" ]]; then
     # diag execs
     for diag_exec in $produced_diag_execs; do
         save $diag_exec $(basename $diag_exec) || bail "Problem while saving $diag_exec"
+    done
+
+    # rtd execs
+    for rtd_exec in $produced_rtd_execs; do
+        save $rtd_exec $(basename $rtd_exec) || bail "Problem while saving $rtd_exec"
     done
 else
     # determine link location
@@ -291,7 +309,12 @@ else
 
     # diag execs
     for diag_exec in $produced_diag_execs; do
-        ln -s $diag_exec ${link_loc}
+        ln -s $diag_exec $link_loc
+    done
+
+    # rtd execs
+    for rtd_exec in $produced_rtd_execs; do
+        ln -s $rtd_exe $link_loc
     done
 fi
 
