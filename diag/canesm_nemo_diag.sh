@@ -27,10 +27,9 @@ set -x
 # Previous year
   yearm1=`echo $year | awk '{printf "%04d", $1 - 1}'`
 
-# Access the nemo diag executable
-  diag_exe=${nemo_diag_exe:=nemo_diag.exe}
-  [ -z "$diag_exe" ] && ( echo "diag_exe is not defined." ; exit 1 )
-  [ -s "$diag_exe" ] || access $diag_exe $nemo_diag_exe
+# copy in the nemo diag executable
+  diag_exe=nemo_diag.exe
+  cp $CCRNSRC/executables/${diag_exe} .
 
 # Access file containing grid information
   mask_mon=$(echo $nemo_rtd_mons | awk '{printf "%02d", $NF}')  # get last element of nemo_rtd_mons, printed as 2 digit number
@@ -104,17 +103,19 @@ set -x
         rm -f -r dir_rsc
       fi
 
-##########################
-# CMIP6 nemo diagnostics #
-##########################
+##############################
+# Run CMIP6 nemo diagnostics #
+##############################
       ln -s 1m_grid_t_${fmon} grid_t  || bail "Link to grid_t failed"
       ln -s 1m_grid_u_${fmon} grid_u  || bail "Link to grid_u failed"
       ln -s 1m_grid_v_${fmon} grid_v  || bail "Link to grid_v failed"
 
-      # get diagnostic program
-      cp $CCRNSRC/executables/nemo_diag.exe . 
-
-      [ -L grid_t -a -s tnp.nc ] && $diag_exe || bail "grid_t or tnp.nc does not exist"
+      # make sure inputs exist, and run!
+      if [[ -L grid_t ]] && [[ -s tnp.nc ]]; then
+        $diag_exe
+      else
+        bail "Inputs for $diag_exe (grid_t and tnp.nc) don't exist!"
+      fi
 
 ######################################
 # Time mean (1d_diaptr -> 1m_diaptr) #
