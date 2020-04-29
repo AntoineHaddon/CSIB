@@ -8,5 +8,5 @@ module load PrgEnv-intel
 #---------------------------------
 # Load specific modules as needed
 #---------------------------------
-module load PrgEnv-intel
+module load craype-x86-skylake
 module load cray-netcdf
