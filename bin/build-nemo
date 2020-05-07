@@ -21,6 +21,7 @@ set -e
 #   -d              ...compile an executable with debugging symbols (for use with DDT or GDB)
 #   -x              ...run this script with 'set -x'
 #   -s              ...save executables instead of linking them into the CWD (INCOMPATIBLE WITH -p)
+#   -f              ...force a "clean" compile - previous temporary files will be purged and recreated
 #
 # Variable definitions:
 #   srcpath=srcpath     ...location of the NEMO source code. 
@@ -80,6 +81,7 @@ strg_loc=''             # if used, tells build-nemo to link executables here ins
 is_coupled='no'         # Is this nemo build for a coupled model
 comp_np=12              # Number of processors to use during compilation
 debug=0                 # Set debug to 0 (turned off, regular optimizations used)
+clean_compile=0         # force build-nemo to run make clean on the diag/rtds and clean the temp NEMO comp dirs
 CWD=$(pwd)
 
 printf "\n\n ------------------- \n"
@@ -90,7 +92,7 @@ printf " ------------------- \n"
 # process command line options/arguments
 #=======================================
 # Flags
-while getopts p:j:hxds opt; do
+while getopts p:j:hxdsf opt; do
     case $opt in
         j) comp_np="$OPTARG" ;;
         x) set -x ;;
@@ -98,6 +100,7 @@ while getopts p:j:hxds opt; do
         p) strg_loc="$OPTARG" ;;
         d) debug=1 ;;
         h) usage ; exit 0 ;;
+        f) clean_compile=1 ;; 
         ?) usage ; exit 1 ;;
     esac
 done
@@ -234,6 +237,15 @@ cd $nemo_modl_blddir
 chmod -R u+w .
 #-------------------#
 
+# clean temporary dirs if this is a "clean" compile
+if (( clean_compile == 1 )); then
+    nemo_tmp_build_dirs="BLD WORK"
+    for tmpdir in $nemo_tmp_build_dirs; do
+        dir2clean=${nemo_modl_blddir}/${nemo_config}/${tmpdir}
+        [[ -d "$dir2clean" ]] && rm -rf $dir2clean
+    done
+fi
+
 # get compilation environment
 source comp_env
 
@@ -262,6 +274,7 @@ cd $nemo_diag_blddir
 
 # source compilation environment and compile
 source comp_env
+(( clean_compile == 1 )) && make clean
 make
 
 #===============
@@ -275,6 +288,7 @@ cd $nemo_rtd_blddir
 
 # source compilation environment and compile
 source comp_env
+(( clean_compile == 1 )) && make clean
 make
 
 #==============================================
