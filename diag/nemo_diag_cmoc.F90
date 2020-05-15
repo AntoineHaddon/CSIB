@@ -43,6 +43,7 @@ PROGRAM nemo_diag_cmoc
    INTEGER   :: ntbnds, ndim, ntdim
    INTEGER   :: i, j, k, l
    LOGICAL   :: exists
+   LOGICAL, PARAMETER :: process_abio = .false.
    !INTEGER   :: strlen
    INTEGER, DIMENSION(10)            :: ierr
    REAL, PARAMETER :: Ca=0.010280
@@ -158,7 +159,7 @@ PROGRAM nemo_diag_cmoc
    ! DIC
    CALL getvara ('DIC', iou3, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), CC, 1., 0.)
    ! abiotic DIC
-   CALL getvara ('DICabio', iou3, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), CAB, 1., 0.)
+   if (process_abio) CALL getvara ('DICabio', iou3, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), CAB, 1., 0.)
    ! natural DIC
    CALL getvara ('DICnat', iou3, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), CNT, 1., 0.)
    ! alkalinity
@@ -170,25 +171,20 @@ PROGRAM nemo_diag_cmoc
    ! Silicate
    CALL getvara ('Si', iou4, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), asi3, 1., 0.)
    ! Globally averaged Salinity 
-   CALL getvara ('sss_glob_avg', iou5, 1, (/1/), (/1/), sss_glob_avg, 1., 0.)
+   if (process_abio) CALL getvara ('sss_glob_avg', iou5, 1, (/1/), (/1/), sss_glob_avg, 1., 0.)
    print*, '-------------------'
    print*, 'Input data read OK!'
    print*, '-------------------'
 
    CALL closeall
 
-   !Apply temperature and salinity funnel to ensure that various polynomial
-   !fits within the carbon chemistry are reasonable. Values chosen are from
-   !Mucci 1983
-   !!Also calculate the abiotic alkalinity as specified in Orr et al. 2017
+   !!Calculate the abiotic alkalinity as specified in Orr et al. 2017
+   if (process_abio) then
    r_sss_glob_avg = 1./sss_glob_avg
    DO i=1,imt ; DO j=1,jmt ; DO k=1,km ; DO l=1,lm
-     TT(i,j,k,l) = MAX(TT(i,j,k,l),5.)
-     TT(i,j,k,l) = MIN(TT(i,j,k,l),40.)
-     SS(i,j,k,l) = MAX(SS(i,j,k,l),5.)
-     SS(i,j,k,l) = MIN(SS(i,j,k,l),44.)
      alk_abio(i,j,k,l) = ( 2297. )*( SS(i,j,k,l)*r_sss_glob_avg ) ! Equation 27 of Orr et al. 2017 in micromol
    ENDDO ; ENDDO; ENDDO ; ENDDO
+   endif
    !!---------------------------------------------------------
    !! Computations of solubility product, O2 solubility, pH, carbonate ion
    !!---------------------------------------------------------
@@ -197,7 +193,7 @@ PROGRAM nemo_diag_cmoc
    CALL cmip6_o2sol
    CALL cmip6_zo2min
    CALL cmip6_cchem(CC,AA,K_sp_cal,K_sp_arag,CO3full,pHfull,Omega_C,Omega_A)
-   CALL cmip6_cchem(CAB,alk_abio,K_sp_cal,K_sp_arag,CO3abio,pHabio,Omega_C_abio,Omega_A_abio)
+   if (process_abio) CALL cmip6_cchem(CAB,alk_abio,K_sp_cal,K_sp_arag,CO3abio,pHabio,Omega_C_abio,Omega_A_abio)
    CALL cmip6_cchem(CNT,AA,K_sp_cal,K_sp_arag,CO3nat,pHnat,Omega_C_nat,Omega_A_nat)
    CALL saturation_depth(Omega_C,Omega_A)
 
@@ -458,6 +454,7 @@ PROGRAM nemo_diag_cmoc
       print*, 'pH3D.nc already exists'
    ENDIF
 
+   IF (process_abio) THEN
    ! If the output file does not exist, abort
    INQUIRE (file="CO3abio.nc", exist=exists)
    IF (.not. exists) THEN
@@ -552,6 +549,7 @@ PROGRAM nemo_diag_cmoc
       CALL closefile (iou)
    ELSE
       print*, 'pHabio.nc already exists'
+   ENDIF
    ENDIF
 
    ! If the output file does not exist, abort
@@ -742,6 +740,7 @@ PROGRAM nemo_diag_cmoc
       print*, 'Omega_C_nat.nc already exists'
    ENDIF
 
+   IF (process_abio) THEN
    ! If the output file does not exist, abort
    INQUIRE (file="Omega_C_abio.nc", exist=exists)
    IF (.not. exists) THEN
@@ -786,6 +785,7 @@ PROGRAM nemo_diag_cmoc
       CALL closefile (iou)
    ELSE
       print*, 'Omega_C_abio.nc already exists'
+   ENDIF
    ENDIF
 
    ! If the output file does not exist, abort
@@ -880,6 +880,7 @@ PROGRAM nemo_diag_cmoc
       print*, 'Omega_A_nat.nc already exists'
    ENDIF
 
+   IF (process_abio) THEN
    ! If the output file does not exist, abort
    INQUIRE (file="Omega_A_abio.nc", exist=exists)
    IF (.not. exists) THEN
@@ -924,6 +925,7 @@ PROGRAM nemo_diag_cmoc
       CALL closefile (iou)
    ELSE
       print*, 'Omega_A_abio.nc already exists'
+   ENDIF
    ENDIF
 
    ! If the output file does not exist, abort
