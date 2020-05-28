@@ -642,7 +642,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 &namzdf        !   vertical physics
 !-----------------------------------------------------------------------
    rn_avm0     =   1.5e-4  !  vertical eddy viscosity   [m2/s]          (background Kz if not "key_zdfcst")
-   rn_avt0     =   1.5e-5  !  vertical eddy diffusivity [m2/s]          (background Kz if not "key_zdfcst")
+   rn_avt0     =   0.5e-5  !  vertical eddy diffusivity [m2/s]          (background Kz if not "key_zdfcst")
    nn_avb      =    0      !  profile for background avt & avm (=1) or not (=0)
    nn_havtb    =    0      !  horizontal shape for avtb (=1) or not (=0)
    ln_zdfevd   = .true.    !  enhanced vertical diffusion (evd) (T) or not (F)
@@ -755,7 +755,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
 &namsol        !   elliptic solver / island / free surface 
 !-----------------------------------------------------------------------
-   nn_solv     =      1    !  elliptic solver: =1 preconditioned conjugate gradient (pcg)
+   nn_solv     =      2    !  elliptic solver: =1 preconditioned conjugate gradient (pcg)
                            !                   =2 successive-over-relaxation (sor)
    nn_sol_arp  =      0    !  absolute/relative (0/1) precision convergence test
    rn_eps      =  1.e-6    !  absolute precision of the solver
@@ -771,7 +771,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
    cn_mpi_send =  'I'      !  mpi send/recieve type   ='S', 'B', or 'I' for standard send,
                            !  buffer blocking send or immediate non-blocking sends, resp.
    nn_buffer   =   0       !  size in bytes of exported buffer ('B' case), 0 no exportation
-   ln_nnogather=  .false.  !  activate code to avoid mpi_allgather use at the northfold
+   ln_nnogather=  .true.   !  activate code to avoid mpi_allgather use at the northfold
   jpni = 7
   jpnj = 32
   jpnij = 224
@@ -843,8 +843,8 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 &namptr       !   Poleward Transport Diagnostic
 !-----------------------------------------------------------------------
    ln_diaptr  = .false.    !  Poleward heat and salt transport (T) or not (F)
-   ln_diaznl  = .true.     !  Add zonal means and meridional stream functions
-   ln_subbas  = .true.     !  Atlantic/Pacific/Indian basins computation (T) or not 
+   ln_diaznl  = .true.     !  Add T & S zonal means
+   ln_subbas  = .false.    !  Atlantic/Pacific/Indian basins computation (T) or not 
                            !  (orca configuration only, need input basins mask file named "subbasins.nc"
    ln_ptrcomp = .true.     !  Add decomposition : overturning
    nn_fptr    =  1         !  Frequency of ptr computation [time step]
