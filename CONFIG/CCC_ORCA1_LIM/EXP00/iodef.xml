@@ -108,7 +108,6 @@
         <field id="uice_ipa"     description="Ice velocity along i-axis (C grid) (ice presence average)"    unit="m/s"      />      
         <field id="vice_ipa"     description="Ice velocity along j-axis (C grid) (ice presence average)"    unit="m/s"      />
         <field id="ivel_cea"     description="Ice velocity module (C grid) (cell average)"                  unit="m/s"      /> 
-        
         <field id="utau_ice"     description="Wind stress along i-axis over the ice at i-point"             unit="N/m2"     />
         <field id="vtau_ice"     description="Wind stress along j-axis over the ice at i-point"             unit="N/m2"     />
         

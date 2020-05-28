@@ -52,7 +52,7 @@ MODULE p4zflx
    CHARACTER(len=120) ::  cl14varname  = 'Delta14co2_in_air'  !: variable name in cl14name file 
    INTEGER            ::  nn_offset = 0             !: Offset model-data start year (default = 0) 
    INTEGER            ::  nn_readoffset_c14 = 1850  !: Offset atmospheric history file of C14 (CMIP6 is 1850)
-   INTEGER            ::  nn_readoffset_co2 = 1850  !: Offset atmospheric history file of CO2 (CMIP6 is 1850)
+   INTEGER            ::  nn_readoffset_co2 = 0     !: Offset atmospheric history file of CO2 (CMIP6 is 1850)
 
    !!  Variables related to reading atmospheric CO2 time history    
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:) :: atcco2h, atcco2h_years
@@ -421,7 +421,7 @@ CONTAINS
          ntime = SIZE(atcco2h_years)
          ! Set the time-varying atmospheric history from the read in data
          ALLOCATE(atcco2h(ntime))
-         atcco2h(:) = tmp2d(:,1) ! Sector '1' corresponds to global average
+         atcco2h(:) = tmp2d(1,:) ! Sector '1' corresponds to global average
          DEALLOCATE(tmp2d)
          ! Input file for OMIP6 is in Gregorian days since 1 January 0000, manually overwrite
          ! so that atcco2h_years is in yearfraction
