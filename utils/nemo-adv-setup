@@ -179,7 +179,7 @@ else
     for i in $lists
     do
         # Link here from source using relative links
-        ln -s ../${src_dir}/nemo/CONFIG/${nemo_config}/EXP00/${i} .
+        ln -s ${src_dir}/nemo/CONFIG/${nemo_config}/EXP00/${i} .
         if [[ $i == *"namelist"* ]]; then
            sed -i "s#${i}=.*#${i}="'${SEQ_EXP_HOME}/namelists/'${i}"#" ../experiment.cfg
         fi
