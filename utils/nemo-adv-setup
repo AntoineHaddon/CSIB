@@ -159,31 +159,16 @@ else
        sed -i "s/with_nemo_diag=.*/with_nemo_diag=on/" experiment.cfg
     fi
     sed -i "s/SEQ_JOBNAME_PREFIX=.*/SEQ_JOBNAME_PREFIX=${nemo_runid}-/g" resources/resources.def
-    config-maestro
-
-    # SETUP links to relevant namelists and compile script
-
-    # Get the compile script, and reset runid, repo and ver.
-    ln -s ${src_dir}/nemo/CONFIG/${nemo_config}/EXP00/compile ${CWD}/compile
-    [ -e compile ] || bail "Failed to extract compile script from ${src_dir}/nemo/CONFIG/${nemo_config}/EXP00/compile" 
-    cat compile | sed "s#build-nemo#./CanNEMO_tmp_src/bin/build-nemo#;s#runid#${nemo_runid}#;s#repo=[^ ]*#repo="$nemo_repo"#;s#ver=[^ ]*#ver=$nemo_sha1 srcpath=${CWD}/${src_dir}#" > compile_${nemo_runid}
-    if [ ${with_nemo_diag} = off ] ; then
-       sed -i '/cfg/s/$/ del_key="key_trdtra key_diaar5"/' compile_${nemo_runid}
-    fi
-    sed -i '/build-nemo/s/$/ > .compile-cannemo-$$.log 2>\&1 \&/' compile_${nemo_runid}
-    rm -f compile
-    chmod +x compile_${nemo_runid}
-
-    # add to compile script to allow it to be called from any where (not just on backends)
-    insrt_hdr="#!/bin/bash\nCWD="'`pwd`'"\nssh "'$(whoami)'"@daley << EOSSH\ncd "'$CWD'"\n"
-    sed -i "1i $insrt_hdr" compile_${nemo_runid}
-    echo "EOSSH" >> compile_${nemo_runid}
-
     nemo_config_lower=$(echo ${nemo_config} | tr '[:upper:]' '[:lower:]')
     nemo_exe=${nemo_runid}_${nemo_config_lower}_exe
     sed -i "s#nemo_exec=.*#nemo_exec="'${SEQ_EXP_HOME}/'${nemo_exe}"#g" experiment.cfg
+    config-maestro
 
-    # nameslists
+    # Get the compile script 
+    cp $src_dir/utils/compile compile_${nemo_runid}
+    chmod +x compile_${nemo_runid}
+
+    # SETUP links to relevant namelists
     # Get the namelists/iodefs
     if [ -s $CWD/namelists ]; then 
         echo "WARNING: namelists dir already exists, overwriting"

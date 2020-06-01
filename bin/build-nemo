@@ -135,9 +135,9 @@ if [[ -n "$save_exec" && -n "$strg_loc" ]]; then
     usage "-p and -s are mutually exclusive flags!"; exit 1
 fi
 
-# if -p was used, make sure the given directory exists
+# if -p was used, make the directory if needed
 if [[ -n "$strg_loc" ]]; then
-    [[ -d "$strg_loc" ]] || bail "The desired executable output location ---> $strg_loc <--- doesn't exist!"
+    [[ -d "$strg_loc" ]] || mkdir $strg_loc
 fi
 
 # Make sure the required arguments were given
