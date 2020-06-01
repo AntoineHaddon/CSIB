@@ -160,8 +160,6 @@ else
     fi
     sed -i "s/SEQ_JOBNAME_PREFIX=.*/SEQ_JOBNAME_PREFIX=${nemo_runid}-/g" resources/resources.def
     nemo_config_lower=$(echo ${nemo_config} | tr '[:upper:]' '[:lower:]')
-    nemo_exe=${nemo_runid}_${nemo_config_lower}_exe
-    sed -i "s#nemo_exec=.*#nemo_exec="'${SEQ_EXP_HOME}/'${nemo_exe}"#g" experiment.cfg
     config-maestro
 
     # Get the compile script 

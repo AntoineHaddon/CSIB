@@ -288,6 +288,9 @@ make
 #==============================================
 # Save executables or link to desired directory
 #==============================================
+echo ""
+echo "COMPILATION DONE"
+echo ""
 if [[ "$save_exec" == "on" ]]; then
     echo "Saving build-nemo produced executables to RUNPATH"
 

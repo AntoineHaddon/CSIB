@@ -16,5 +16,6 @@ build_nemo_opts+=( srcpath=${strg_dir}/CanNEMO_tmp_src cfg=${config} exec=${nemo
 CWD=$(pwd)
 ssh $(whoami)@daley << EOSSH
     cd $CWD
+    echo "Compiling Nemo!"
     ${strg_dir}/CanNEMO_tmp_src/bin/build-nemo ${build_nemo_opts[@]} > .compile-cannemo-$$.log 2>&1
 EOSSH
