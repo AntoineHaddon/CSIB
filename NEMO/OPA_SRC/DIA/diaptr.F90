@@ -54,7 +54,7 @@ MODULE diaptr
    !                                           !!** namelist  namptr  **
    LOGICAL , PUBLIC ::   ln_diaptr  = .FALSE.   !: Poleward transport flag (T) or not (F)
    LOGICAL , PUBLIC ::   ln_subbas  = .FALSE.   !: Atlantic/Pacific/Indian basins calculation
-   LOGICAL , PUBLIC ::   ln_diaznl  = .FALSE.   !: Add zonal means and meridional stream functions
+   LOGICAL , PUBLIC ::   ln_diaznl  = .FALSE.   !: Add T & S zonal means
    LOGICAL , PUBLIC ::   ln_ptrcomp = .FALSE.   !: Add decomposition : overturning (and gyre, soon ...)
    INTEGER , PUBLIC ::   nn_fptr    = 15        !: frequency of ptr computation  [time step]
    INTEGER , PUBLIC ::   nn_fwri    = 15        !: frequency of ptr outputs      [time step]
@@ -486,7 +486,7 @@ CONTAINS
          WRITE(numout,*) '   Namelist namptr : set ptr parameters'
          WRITE(numout,*) '      Poleward heat & salt transport (T) or not (F)      ln_diaptr  = ', ln_diaptr
          WRITE(numout,*) '      Overturning heat & salt transport                  ln_ptrcomp = ', ln_ptrcomp
-         WRITE(numout,*) '      T & S zonal mean and meridional stream function    ln_diaznl  = ', ln_diaznl 
+         WRITE(numout,*) '      T & S zonal means                                  ln_diaznl  = ', ln_diaznl 
          WRITE(numout,*) '      Global (F) or glo/Atl/Pac/Ind/Indo-Pac basins      ln_subbas  = ', ln_subbas
          WRITE(numout,*) '      Frequency of computation                           nn_fptr    = ', nn_fptr
          WRITE(numout,*) '      Frequency of outputs                               nn_fwri    = ', nn_fwri
