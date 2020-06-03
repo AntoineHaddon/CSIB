@@ -1024,8 +1024,8 @@ PROGRAM nemo_ocean_diag
      &        , '', 'W m^-^2')
 !       MEAN HEAT FLUX DUE TO SNOW over OPEN OCEAN (W/M^2)
           call defvar ('hflx_snow', iou, 1, (/id_time/), -1.e4                     &
-     &        , 1.e4,' ', 'F', 'Global mean heat flux from snow over open ocean'   &
-     &        , '', 'W m^-^2')
+      &       , 1.e4,' ', 'F', 'Global mean heat flux from snow over open ocean'   &
+      &       , '', 'W m^-^2')
 !       MEAN HEAT FLUX DUE TO SNOW over ICE (W/M^2)
           call defvar ('hflx_snow_ice', iou, 1, (/id_time/), -1.e4             &
      &        , 1.e4,' ', 'F', 'Global mean heat flux from snow over sea-ice'  &
@@ -1036,10 +1036,10 @@ PROGRAM nemo_ocean_diag
      &        , 'Global mean snow flux over open ocean'                        & 
      &        , ' ', 'kg m ^-^2 s^-^1')
 !        MEAN SNOW FLUX OVER SEA-ICE (KG/M^2/S)
-          call defvar ('snow_ai', iou, 1, (/id_time/), -1.e4                   &
-     &        , 1.e4,' ', 'F'                                                  &
-     &        , 'Global mean snow flux over sea ice'                           & 
-     &        , ' ', 'kg m ^-^2 s^-^1')
+           call defvar ('snow_ai', iou, 1, (/id_time/), -1.e4                   &
+      &        , 1.e4,' ', 'F'                                                  &
+      &        , 'Global mean snow flux over sea ice'                           & 
+      &        , ' ', 'kg m ^-^2 s^-^1')
 !        MEAN FRESHWATER FLUX (KG/M^2/S)
           call defvar ('wglo', iou, 1, (/id_time/), -1.e4                      &
      &        , 1.e4,' ', 'F'                                                  &

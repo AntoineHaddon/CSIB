@@ -135,9 +135,9 @@ if [[ -n "$save_exec" && -n "$strg_loc" ]]; then
     usage "-p and -s are mutually exclusive flags!"; exit 1
 fi
 
-# if -p was used, make sure the given directory exists
+# if -p was used, make the directory if needed
 if [[ -n "$strg_loc" ]]; then
-    [[ -d "$strg_loc" ]] || bail "The desired executable output location ---> $strg_loc <--- doesn't exist!"
+    [[ -d "$strg_loc" ]] || mkdir $strg_loc
 fi
 
 # Make sure the required arguments were given
@@ -148,12 +148,6 @@ fi
 
 # Perform some consistency checks
 [[ -d "$nemo_source_path" ]] || bail "The given srcpath ---> $nemo_source_path <--- doesn't exist!"
-
-# This script is intended to be run on the back end
-case $TRUEHOST in
-    xc3*|xc4*|banting|daley) ;;
-        *) bail "This should be run on a back end machine" ;;
-esac
 
 #========================
 # Set inherited variables
@@ -247,7 +241,7 @@ if (( clean_compile == 1 )); then
 fi
 
 # get compilation environment
-source comp_env
+source comp_env || bail "Failure is sourcing the Nemo compilation environment! Are the correct modules available on this mach?"
 
 # build command line args into a bash array -> array needed for potential space delim list in add_key/del_key
 ARGS=( -j $comp_np -m $nemo_arch -n $nemo_config )
@@ -273,7 +267,7 @@ echo "=================================="
 cd $nemo_diag_blddir
 
 # source compilation environment and compile
-source comp_env
+source comp_env || bail "Failure in sourcing the nemo diag comp environment! Are the correct moduels available on this mach?"
 (( clean_compile == 1 )) && make clean
 make
 
@@ -287,13 +281,16 @@ echo "=================================="
 cd $nemo_rtd_blddir
 
 # source compilation environment and compile
-source comp_env
+source comp_env || bail "Failure in sourcing the nemo rtd comp environment! Are the correct modules available on this mach?"
 (( clean_compile == 1 )) && make clean
 make
 
 #==============================================
 # Save executables or link to desired directory
 #==============================================
+echo ""
+echo "COMPILATION DONE"
+echo ""
 if [[ "$save_exec" == "on" ]]; then
     echo "Saving build-nemo produced executables to RUNPATH"
 
