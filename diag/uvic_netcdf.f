@@ -1,3 +1,6 @@
+!=======================================================================
+!     2020-03 (D. Yang): Add subroutine getdimnm
+!=======================================================================      
 
       subroutine opentime (fname, relyr, ntrec, ncid)
 !=======================================================================
@@ -519,6 +522,35 @@
         i = nf_def_dim (ncid, name, nf_unlimited, id)
       endif
       call checkerror (i, 'defdim '//trim(name))
+
+      return
+      end
+
+      subroutine getdimnm (name, ncid, dimid, ln)
+!=======================================================================
+!     get a dimension name and length              
+
+!     input:
+!       ncid  = iou unit              
+!       dimid = dimension id 
+!     outpit:
+!       name  = name of dimension
+!       ln    = length of dimension              
+!=======================================================================
+
+      implicit none
+      
+      include 'netcdf.inc'
+
+      integer, intent(in) :: ncid, dimid
+      integer ndims, nvars, ngatts, unlimdimid, ln
+      integer i
+      character(*), intent(out) :: name
+
+      i = nf_inq (ncid, ndims, nvars, ngatts, unlimdimid)
+      call checkerror (i,'getdimnm nf_inq '//name)
+      i = nf_inq_dim (ncid, dimid, name, ln)
+      call checkerror (i,'getdimnm nf_inq_dim '//name)
 
       return
       end
