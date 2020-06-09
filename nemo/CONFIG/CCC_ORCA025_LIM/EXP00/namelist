@@ -139,11 +139,12 @@
    ln_dm2dc    = .false.   !  daily mean to diurnal cycle on short wave
    ln_rnf      = .true.    !  runoffs                                   (T => fill namsbc_rnf)
    ln_ssr      = .true.    !  Sea Surface Restoring on T and/or S       (T => fill namsbc_ssr)
-   nn_fwb      = 3         !  FreshWater Budget: =0 unchecked 
+   nn_fwb      = 4         !  FreshWater Budget: =0 unchecked 
                            !     =1 global mean of e-p-r set to zero at each time step 
                            !     =2 annual global mean of e-p-r set to zero
                            !     =3 global emp set to zero and spread out over erp area
    ln_cdgw = .false.       !  Neutral drag coefficient read from wave model (T => fill namsbc_wave)
+   rn_minsal = 5.0         ! Minimum salinity if nn_fwb=4
 /
 !-----------------------------------------------------------------------
 &namsbc_ana    !   analytical surface boundary condition
@@ -642,7 +643,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 &namzdf        !   vertical physics
 !-----------------------------------------------------------------------
    rn_avm0     =   1.5e-4  !  vertical eddy viscosity   [m2/s]          (background Kz if not "key_zdfcst")
-   rn_avt0     =   1.5e-5  !  vertical eddy diffusivity [m2/s]          (background Kz if not "key_zdfcst")
+   rn_avt0     =   0.5e-5  !  vertical eddy diffusivity [m2/s]          (background Kz if not "key_zdfcst")
    nn_avb      =    0      !  profile for background avt & avm (=1) or not (=0)
    nn_havtb    =    0      !  horizontal shape for avtb (=1) or not (=0)
    ln_zdfevd   = .true.    !  enhanced vertical diffusion (evd) (T) or not (F)
@@ -771,7 +772,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
    cn_mpi_send =  'I'      !  mpi send/recieve type   ='S', 'B', or 'I' for standard send,
                            !  buffer blocking send or immediate non-blocking sends, resp.
    nn_buffer   =   0       !  size in bytes of exported buffer ('B' case), 0 no exportation
-   ln_nnogather=  .true.  !  activate code to avoid mpi_allgather use at the northfold
+   ln_nnogather=  .true.   !  activate code to avoid mpi_allgather use at the northfold
   jpni = 7
   jpnj = 32
   jpnij = 224
@@ -843,7 +844,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 &namptr       !   Poleward Transport Diagnostic
 !-----------------------------------------------------------------------
    ln_diaptr  = .false.    !  Poleward heat and salt transport (T) or not (F)
-   ln_diaznl  = .false.    !  Add zonal means and meridional stream functions
+   ln_diaznl  = .true.     !  Add T & S zonal means
    ln_subbas  = .false.    !  Atlantic/Pacific/Indian basins computation (T) or not 
                            !  (orca configuration only, need input basins mask file named "subbasins.nc"
    ln_ptrcomp = .true.     !  Add decomposition : overturning
