@@ -269,8 +269,10 @@ CONTAINS
                zpres   = 1.025e-1 * deptht(k)
 
                ! SET ABSOLUTE TEMPERATURE
-               ztkel   = TT(i,j,k,l) + 273.15
-               zsal    = SS(i,j,k,l) + ( 1.-tmask(i,j,k) ) * 35.
+               ! Apply a data funnel to ensure that temperatures and salinities
+               ! fall within a reasonable range
+               ztkel   = MIN(MAX(TT(i,j,k,l),-2.),40.) + 273.15
+               zsal    = MIN(MAX(SS(i,j,k,l),5.),44.) + ( 1.-tmask(i,j,k) ) * 35.
                zsqrt  = SQRT( zsal )
                zsal15  = zsqrt * zsal
                zlogt  = LOG( ztkel )
