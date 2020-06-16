@@ -195,13 +195,15 @@ CONTAINS
  
                ! CALCULATE P AND Si ION CONCENTRATIONS AS PER ORR ET AL (BPG EQUATIONS 43-47)
                ! zp3 = H3PO4, zp1 = HPO4(2-), zp0 = PO4(3-): denominator is the same for all 3 equations
-               zpd = 1./ ( zph3 + akp13(ji,jj,1)*zph2 + akp13(ji,jj,1)*akp23(ji,jj,1)*zph + akp13(ji,jj,1)*akp23(ji,jj,1)*akp33(ji,jj,1) )
+               zpd = 1./ ( zph3 + akp13(ji,jj,1)*zph2 + akp13(ji,jj,1)*akp23(ji,jj,1)*zph &
+                    + akp13(ji,jj,1)*akp23(ji,jj,1)*akp33(ji,jj,1) )
                zp3 = zph3*zpo4 * zpd
                zp1 = zph*zpo4*akp13(ji,jj,1)*akp23(ji,jj,1) * zpd
                zp0 = zpo4*akp13(ji,jj,1)*akp23(ji,jj,1)*akp33(ji,jj,1) * zpd
                zsi = zsi / (1. + zph / aksi3(ji,jj,1))
                ! CALCULATE [ALK]([CO3--], [HCO3-])
-               zalk  = zalka - (  akw3(ji,jj,1) / zph - zph + zbot / ( 1.+ zph / akb3(ji,jj,1) ) + 2.*zp0 + zp1 - zp3 + zsi )
+               zalk  = zalka - (  akw3(ji,jj,1) / zph - zph + zbot / ( 1.+ zph / akb3(ji,jj,1) ) &
+                    + 2.*zp0 + zp1 - zp3 + zsi )
 
                ! CALCULATE [H+] AND [H2CO3]
                zah2   = SQRT(  (zdic-zalk)**2 + 4.* ( zalk * ak23(ji,jj,1)   &
@@ -214,7 +216,8 @@ CONTAINS
                zdic  = trn(ji,jj,1,jpdab) / zfact
                zph   = MAX( hj(ji,jj,1), 1.e-10 ) / zfact
                zalka = abio_alk(ji,jj) / zfact
-               zalk  = zalka - (  akw3(ji,jj,1) / zph - zph + zbot / ( 1.+ zph / akb3(ji,jj,1) ) + 2.*zp0 + zp1 - zp3 + zsi )
+               zalk  = zalka - (  akw3(ji,jj,1) / zph - zph + zbot / ( 1.+ zph / akb3(ji,jj,1) ) + &
+                    2.*zp0 + zp1 - zp3 + zsi )
                zah2   = SQRT(  (zdic-zalk)**2 + 4.* ( zalk * ak23(ji,jj,1)   &
                   &                                        / ak13(ji,jj,1) ) * ( 2.* zdic - zalk )  )
                zah2   = 0.5 * ak13(ji,jj,1) / zalk * ( ( zdic - zalk ) + zah2 )
@@ -225,7 +228,8 @@ CONTAINS
                zdic  = trn(ji,jj,1,jpdnt) / zfact
                zph   = MAX( hk(ji,jj,1), 1.e-10 ) / zfact
                zalka = trn(ji,jj,1,jptal) / zfact
-               zalk  = zalka - (  akw3(ji,jj,1) / zph - zph + zbot / ( 1.+ zph / akb3(ji,jj,1) ) + 2.*zp0 + zp1 - zp3 + zsi )
+               zalk  = zalka - (  akw3(ji,jj,1) / zph - zph + zbot / ( 1.+ zph / akb3(ji,jj,1) ) + &
+                                2.*zp0 + zp1 - zp3 + zsi )
                zah2   = SQRT(  (zdic-zalk)**2 + 4.* ( zalk * ak23(ji,jj,1)   &
                   &                                        / ak13(ji,jj,1) ) * ( 2.* zdic - zalk )  )
                zah2   = 0.5 * ak13(ji,jj,1) / zalk * ( ( zdic - zalk ) + zah2 )
@@ -269,7 +273,8 @@ CONTAINS
 
             ! Radiocarbon based on equation 29
             ! MAX is to avoid a divide by 0
-            zh2co3r(ji,jj) = zh2co3a(ji,jj) * ( trn(ji,jj,1,jpdrc)/MAX(trn(ji,jj,1,jpdab),1.e-30))*tmask_bgc_closea(ji,jj,1)
+            zh2co3r(ji,jj) = zh2co3a(ji,jj) * ( trn(ji,jj,1,jpdrc)/MAX(trn(ji,jj,1,jpdab),1.e-30)) &
+                 *tmask_bgc_closea(ji,jj,1)
          END DO
       END DO
 
@@ -344,8 +349,10 @@ CONTAINS
             CALL iom_put( "Cflx_14C" , oce_co2r(:,:) / e1e2t(:,:) / rfact )
             CALL iom_put( "Oflx_abio" , zoflxa(:,:) * 1000 * tmask_bgc_closea(:,:,1)  )
             CALL iom_put( "Kg"   , zkgco2(:,:) * tmask_bgc_closea(:,:,1) )
-            CALL iom_put( "Dpco2", ( satmco2(:,:) * patm(:,:) - zh2co3(:,:) / ( chemc(:,:,1) + rtrn ) ) * tmask_bgc_closea(:,:,1) )
-            CALL iom_put( "Dpo2" , ( atcox * patm(:,:) - trn(:,:,1,jpoxy) / ( chemc(:,:,2) + rtrn ) )   * tmask_bgc_closea(:,:,1) )
+            CALL iom_put( "Dpco2", ( satmco2(:,:) * patm(:,:) - zh2co3(:,:) / ( chemc(:,:,1) + rtrn ) ) &
+                 * tmask_bgc_closea(:,:,1) )
+            CALL iom_put( "Dpo2" , ( atcox * patm(:,:) - trn(:,:,1,jpoxy) / ( chemc(:,:,2) + rtrn ) )   &
+                 * tmask_bgc_closea(:,:,1) )
             CALL iom_put( "spco2", zh2co3(:,:) / ( chemc(:,:,1) + rtrn ) * tmask_bgc_closea(:,:,1) )
             CALL iom_put( "spco2a", zh2co3a(:,:) / ( chemc(:,:,1) + rtrn ) * tmask_bgc_closea(:,:,1) )
             CALL iom_put( "spco2n", zh2co3n(:,:) / ( chemc(:,:,1) + rtrn ) * tmask_bgc_closea(:,:,1) )
@@ -356,7 +363,8 @@ CONTAINS
             trc2d(:,:,jp_pcs0_2d    ) = oce_co2(:,:) / e1e2t(:,:) / rfact 
             trc2d(:,:,jp_pcs0_2d + 1) = zoflx(:,:) * 1000 * tmask_bgc_closea(:,:,1) 
             trc2d(:,:,jp_pcs0_2d + 2) = zkgco2(:,:) * tmask_bgc_closea(:,:,1) 
-            trc2d(:,:,jp_pcs0_2d + 3) = ( satmco2(:,:) * patm(:,:) - zh2co3(:,:) / ( chemc(:,:,1) + rtrn ) ) * tmask_bgc_closea(:,:,1) 
+            trc2d(:,:,jp_pcs0_2d + 3) = ( satmco2(:,:) * patm(:,:) - zh2co3(:,:) / &
+                 ( chemc(:,:,1) + rtrn ) ) * tmask_bgc_closea(:,:,1) 
          ENDIF
       ENDIF
 
@@ -534,7 +542,8 @@ CONTAINS
       !!----------------------------------------------------------------------
       !!                     ***  ROUTINE p4z_flx_alloc  ***
       !!----------------------------------------------------------------------
-      ALLOCATE( oce_co2(jpi,jpj), oce_co2a(jpi,jpj), oce_co2n(jpi,jpj), satmco2(jpi,jpj), satmco2n(jpi,jpj), patm(jpi,jpj), STAT=p4z_flx_alloc )
+     ALLOCATE( oce_co2(jpi,jpj), oce_co2a(jpi,jpj), oce_co2n(jpi,jpj), satmco2(jpi,jpj), &
+          satmco2n(jpi,jpj), patm(jpi,jpj), STAT=p4z_flx_alloc )
       ALLOCATE(secmapd14c(jpi,jpj), satmd14c(jpi,jpj), oce_co2r(jpi,jpj))
       !
       IF( p4z_flx_alloc /= 0 )   CALL ctl_warn('p4z_flx_alloc : failed to allocate arrays')
