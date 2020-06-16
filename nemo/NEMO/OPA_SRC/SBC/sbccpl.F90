@@ -601,7 +601,8 @@ CONTAINS
             ssnd(jps_hice:jps_hsnw)%nct = jpl
          ELSE
             IF ( jpl > 1 ) THEN
-               CALL ctl_stop( 'sbc_cpl_init: use weighted ice and snow option for sn_snd_thick%cldes if not exchanging category fields' )
+               CALL ctl_stop( 'sbc_cpl_init: use weighted ice and snow option for & 
+                               sn_snd_thick%cldes if not exchanging category fields' )
             ENDIF
          ENDIF
       CASE ( 'weighted ice and snow' ) 

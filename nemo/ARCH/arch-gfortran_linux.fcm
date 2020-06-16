@@ -14,12 +14,12 @@
 # USER_LIB    additional libraries to pass to the linker, e.g. -l<library>
 
 
-%NCDF_INC            -I/usr/local/netcdf/include
-%NCDF_LIB            -L/usr/local/netcdf/lib -lnetcdf
+%NCDF_INC            -I/usr/include -I/usr/lib/x86_64-linux-gnu/openmpi/include/ -I/usr/lib/x86_64-linux-gnu/openmpi/lib/
+%NCDF_LIB            -L/usr/lib -lnetcdf -lnetcdff -lmpi -lmpi_mpifh -lmpi_usempif08 -L/usr/lib/x86_64-linux-gnu/openmpi/lib/
 %FC	             gfortran
-%FCFLAGS             -fdefault-real-8 -O3 -funroll-all-loops -fcray-pointer 
+%FCFLAGS             -fdefault-real-8 -O3 -funroll-all-loops -fcray-pointer -static -fopenmp -cpp -fopenmp -pthread -lmpi_usempif08 -lmpi_usempi_ignore_tkr -lmpi_mpifh -lmpi
 %FFLAGS              %FCFLAGS
-%LD                  gfortran
+%LD                  mpif90
 %LDFLAGS
 %FPPFLAGS            -P -C -traditional
 %AR                  ar
