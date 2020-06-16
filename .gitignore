@@ -6,5 +6,5 @@
 tmp/
 *.swp*
 deploy.git/
-nemo/NEMO/external/*
+!nemo/NEMO/external/*
 !nemo/NEMO/external/README

@@ -24,7 +24,7 @@
 %FPPFLAGS            -P -C -traditional
 %AR                  ar
 %ARFLAGS             -rs
-%MK                  gmake
+%MK                  make
 %USER_INC            %NCDF_INC
 %USER_LIB            %NCDF_LIB
 
