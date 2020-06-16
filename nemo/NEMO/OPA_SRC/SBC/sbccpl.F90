@@ -482,8 +482,8 @@ CONTAINS
       ! and penetrates inside the ice cover ( Maykut and Untersteiner, 1971 ; Elbert anbd Curry, 1993 )
       ! Coupled case: since cloud cover is not received from atmosphere 
       !               ===> defined as constant value -> definition done in sbc_cpl_init
-      fr1_i0(:,:) = 0.18
-      fr2_i0(:,:) = 0.82
+      !fr1_i0(:,:) = 0.18
+      !fr2_i0(:,:) = 0.82
       !                                                      ! ------------------------- !
       !                                                      !      10m wind module      !   
       !                                                      ! ------------------------- !
