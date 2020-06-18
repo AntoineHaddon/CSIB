@@ -14,10 +14,10 @@
 # USER_LIB    additional libraries to pass to the linker, e.g. -l<library>
 
 
-%NCDF_INC            -I/usr/lib/x86_64-linux-gnu/openmpi/include -pthread -I/usr/lib/x86_64-linux-gnu/openmpi/lib -I/usr/include
+%NCDF_INC            -I/usr/include
 %NCDF_LIB            -L/usr/lib -lnetcdf -lnetcdff 
-%FC	             gfortran
-%FCFLAGS             -fdefault-real-8 -funroll-all-loops -fcray-pointer -static -cpp -DNDEBUG -g -O2 -finline-functions -fno-strict-aliasing -pthread
+%FC	             mpifort
+%FCFLAGS             -fdefault-real-8 -funroll-all-loops -fcray-pointer -static -cpp -DNDEBUG -g -O2 -finline-functions -fno-strict-aliasing -pthread -lmpich
 %FFLAGS              %FCFLAGS
 %LD                  mpif90
 %LDFLAGS
