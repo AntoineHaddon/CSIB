@@ -4557,7 +4557,6 @@ module com_cpl
 
       !--- Receive data
       tag_impi = tag
-      curr_real_type=MPI_REAL4
       call mpi_recv( recv_buf, recv_size, curr_real_type, origin, tag_impi, &
                      MPI_COMM_WORLD, status, ierr )
 
@@ -4739,7 +4738,6 @@ module com_cpl
 
       !--- Send data
       tag_impi = tag
-      curr_real_type=MPI_REAL4
       call mpi_ssend( send_buf, send_size, curr_real_type, destination, &
                       tag_impi, MPI_COMM_WORLD, ierr )
 
