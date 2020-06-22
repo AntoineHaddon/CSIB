@@ -1,15 +1,1 @@
-# CanNEMO compilation environment
-#-----------------------------------------------------------
-# Unload all modules and load Intel programming environment
-#-----------------------------------------------------------
-module purge
-module load PrgEnv-intel
-module unload cray-libsci   # conflicts with -mkl switch
-
-#---------------------------------
-# Load specific modules as needed
-#---------------------------------
-module load craype-x86-skylake
-module load cray-netcdf
-module load cray-mpich
-
+../../utils/comp_env
