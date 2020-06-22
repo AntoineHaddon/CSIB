@@ -3,6 +3,9 @@
 # Extracted compilation script used during the ocean-only build process
 #   THIS SHOULD JUST BE USED TO GATHER ARGUMENTS FROM THE CONFIG FILE
 
+# set SEQ_EXP_HOME for the config file system settings section
+[[ -z $SEQ_EXP_HOME ]] && SEQ_EXP_HOME=$(pwd)
+
 # source config file
 source experiment.cfg
 
