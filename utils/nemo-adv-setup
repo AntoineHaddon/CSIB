@@ -163,7 +163,7 @@ else
     config-maestro
 
     # Get the compile script 
-    cp $src_dir/utils/compile compile_${nemo_runid}
+    cp $src_dir/utils/compile_ocean_only compile_${nemo_runid}
     chmod +x compile_${nemo_runid}
 
     # SETUP links to relevant namelists
