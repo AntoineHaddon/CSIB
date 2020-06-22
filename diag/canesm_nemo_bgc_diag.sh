@@ -65,10 +65,19 @@ set -e
   ln -s 1m_ptrc_t_${fmon} ptrc_t  || ( echo "Link to ptrc_t failed" ; exit 1 )
 
   if [[ $nemo_config == *'CMOC'* && ${output_level} -gt 0 ]]; then
+
+    process_abio=0       # this flag needs to be set both here and inside nemo_diag_cmoc.F90 (process_abio = .false./.true.)
+
     # Expected outputs from CMOC or CanOE offline diagnostics
-    cmoc_outvars_l1="Zsat_A Zsat_C o2min zo2min o2sol pH3D pHabio pHnat"
-    cmoc_outvars_l2="CO3 CO3abio CO3nat CO3sata CO3satc"
-    cmoc_outvars_l8="Omega_A Omega_A_abio Omega_A_nat Omega_C Omega_C_abio Omega_C_nat"
+    if [ $process_abio -gt 0 ]; then
+      cmoc_outvars_l1="Zsat_A Zsat_C o2min zo2min o2sol pH3D pHabio pHnat"
+      cmoc_outvars_l2="CO3 CO3abio CO3nat CO3sata CO3satc"
+      cmoc_outvars_l8="Omega_A Omega_A_abio Omega_A_nat Omega_C Omega_C_abio Omega_C_nat"
+    else
+      cmoc_outvars_l1="Zsat_A Zsat_C o2min zo2min o2sol pH3D pHnat"
+      cmoc_outvars_l2="CO3 CO3nat CO3sata CO3satc"
+      cmoc_outvars_l8="Omega_A Omega_A_nat Omega_C Omega_C_nat"
+    fi
     case ${output_level} in
          1) cmoc_outvars="${cmoc_outvars_l1}"                          ;;
          2) cmoc_outvars="${cmoc_outvars_l1} ${cmoc_outvars_l2}"       ;;
@@ -83,6 +92,11 @@ set -e
     # Get all auxiliary files needed before running the offline diagnostics
     access si.nc uncs_orca1_data_si_nomask.nc
     # Get globally averaged surface salinity from previous year
+    if [ $process_abio -gt 0 ]; then
+      # Access the nemo restart files
+      diag_rs1="mc_${runid}_${yearm1}_m${lmon}_nemors.tar" # previous year
+      access rsp $diag_rs1 || ( echo "$diag_rs1 does not exist" ; exit 1 )
+    fi
     if [ -L rsp ] ; then
        mkdir dir_rsp; cd dir_rsp
        tar -xvf ../rsp

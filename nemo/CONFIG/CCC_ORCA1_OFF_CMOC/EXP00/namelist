@@ -139,11 +139,12 @@
    ln_dm2dc    = .false.   !  daily mean to diurnal cycle on short wave
    ln_rnf      = .true.    !  runoffs                                   (T => fill namsbc_rnf)
    ln_ssr      = .true.    !  Sea Surface Restoring on T and/or S       (T => fill namsbc_ssr)
-   nn_fwb      = 3         !  FreshWater Budget: =0 unchecked 
+   nn_fwb      = 4         !  FreshWater Budget: =0 unchecked 
                            !     =1 global mean of e-p-r set to zero at each time step 
                            !     =2 annual global mean of e-p-r set to zero
                            !     =3 global emp set to zero and spread out over erp area
    ln_cdgw = .false.       !  Neutral drag coefficient read from wave model (T => fill namsbc_wave )
+   rn_minsal = 5.0         ! Minimum salinity if nn_fwb=4
 /
 !-----------------------------------------------------------------------
 &namsbc_ana    !   analytical surface boundary condition
