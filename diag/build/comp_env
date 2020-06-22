@@ -1,12 +1,1 @@
-# CanNEMO diagnostic compilation environment
-#-----------------------------------------------------------
-# Unload all modules and load Intel programming environment
-#-----------------------------------------------------------
-module purge
-module load PrgEnv-intel
-
-#---------------------------------
-# Load specific modules as needed
-#---------------------------------
-module load craype-x86-skylake
-module load cray-netcdf
+../../utils/comp_env
