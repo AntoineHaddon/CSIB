@@ -107,7 +107,7 @@
         <field id="sitemptop_cea" description="Snow/ice surface temperature (cell average)"                 unit="K"        />
         <field id="uice_ipa"     description="Ice velocity along i-axis (C grid) (ice presence average)"    unit="m/s"      />      
         <field id="vice_ipa"     description="Ice velocity along j-axis (C grid) (ice presence average)"    unit="m/s"      />
-	    <field id="bicegrow_cea"   description="Rate of Growth at Sea Ice Base (cell average)"              unit="kg/m2/s"  />
+	<field id="bicegrow_cea"   description="Rate of Growth at Sea Ice Base (cell average)"              unit="kg/m2/s"  />
         <field id="ivel_cea"     description="Ice velocity module (C grid) (cell average)"                  unit="m/s"      /> 
         
         <field id="utau_ice"     description="Wind stress along i-axis over the ice at i-point"             unit="N/m2"     />
@@ -146,7 +146,6 @@
         <field id="hflx_qns_tot"  description="Non solar heat flux from coupler (cell average)"             unit="W/m2"     />
         <field id="hflx_qsr_ice"  description="Solar heat flux from coupler over sea-ice (cell average)"     unit="W/m2"    />
         <field id="hflx_qns_ice"  description="Non solar heat flux from coupler over sea-ice (cell average)" unit="W/m2"    />
-
       </group>
 
       <!-- U grid -->
