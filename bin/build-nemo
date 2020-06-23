@@ -114,7 +114,7 @@ for arg in "$@"; do
             val=$(echo $arg | awk -F\= '{printf "%s",$2}')
             case $var in
                 srcpath)    nemo_source_path="$val" ;;  # location of code in a dir structure (instead of cloning)
-                exec)       nemo_exec="$val" ;;          # name for the executable created here
+                exec)       nemo_exec="$val" ;;         # name for the executable created here
                 cfg)        nemo_config="$val" ;;       # name of subdir in which config lives
                 refcfg)     nemo_ref_config="$val" ;;   # name of subdir in which ref config lives
                 arch)       nemo_arch="$val" ;;         # name of file with arch specific make defs
@@ -153,20 +153,29 @@ fi
 # Set inherited variables
 #========================
 # define build directories
-nemo_modl_blddir=${nemo_source_path}/nemo/CONFIG    # where makenemo gets called to build the model exec
-nemo_diag_blddir=${nemo_source_path}/diag/build     # where make gets called to build the diagnostic execs
-nemo_rtd_blddir=${nemo_source_path}/rtd/build       # where make gets called to build the rtd execs
+nemo_modl_blddir=${nemo_source_path}/nemo/CONFIG                        # where makenemo gets called to build the model exec
+nemo_diag_blddir=${nemo_source_path}/diag/build                         # where make gets called to build the diagnostic execs
+nemo_rtd_blddir=${nemo_source_path}/rtd/build                           # where make gets called to build the rtd execs
+nemo_rbld_blddir=${nemo_source_path}/nemo/TOOLS/REBUILD_NEMO/src/build  # where make gets called to build the tile rebuild execs
 
-# define produced executables (must be consistence with makenemo and diag/rtd makefiles)
+# define which build directories just use `make`
+make_blddirs="$nemo_diag_blddir $nemo_rtd_blddir $nemo_rbld_blddir"
+
+# define produced executables (must be consistent with makenemo and other makefiles)
 produced_model_exec=${nemo_modl_blddir}/${nemo_config}/BLD/bin/nemo.exe
 produced_diag_execs="nemo_diag.exe nemo_diag_cmoc.exe nemo_diag_canoe.exe"
 produced_rtd_execs="nemo_physical_rtd.exe nemo_carbon-cmoc_rtd.exe nemo_carbon-canoe_rtd.exe nemo_ice_rtd.exe"
+produced_rbld_execs="rebuild_nemo.exe rebuild_nemo_mpi.exe"
 
-# prepends paths to diag/rtd exec lists 
+# prepends paths to diag/rtd/rbld exec lists 
 #   - Note: "[^ ]*" -> matches words (strngs w/o interior spaces)
 #           "&"     -> represents the matched pattern 
 produced_diag_execs=$(echo $produced_diag_execs | sed "s#[^ ]*#${nemo_diag_blddir}/&#g")
 produced_rtd_execs=$(echo $produced_rtd_execs | sed "s#[^ ]*#${nemo_rtd_blddir}/&#g")
+produced_rbld_execs=$(echo $produced_rbld_execs | sed "s#[^ ]*#${nemo_rbld_blddir}/&#g")
+
+# all non-model executables get saved without renamining, store in list
+non_model_execs="$produced_diag_execs $produced_rtd_execs $produced_rtd_execs" 
 
 # When debugging is requested, use the debug arch and update the name of the executable
 if (( debug == 1 )); then
@@ -217,9 +226,16 @@ if [[ "$is_coupled" == "yes" ]]; then
     sed -i "s/$(basename $cppdef_sizes_file)/$(basename $nemo_cppdef_sizes_link)/g" $nemo_cpl_src_file
 fi
 
-#====================
-# Compile the Model !
-#====================
+#===========
+# Compile !
+#===========
+# source general compilation environment
+source $nemo_source_path/utils/comp_env || 
+    bail "Failed to source the general nemo compilation environment! Are the modules availabl on this  mach?"
+
+#-------------------
+# compile the model
+#-------------------
 echo ""
 echo "=================================="
 echo "      Compiling the Model!        "
@@ -232,6 +248,7 @@ chmod -R u+w .
 #-------------------#
 
 # clean temporary dirs if this is a "clean" compile
+# NOTE: is there a "clean" function in `makenemo`?
 if (( clean_compile == 1 )); then
     nemo_tmp_build_dirs="BLD WORK"
     for tmpdir in $nemo_tmp_build_dirs; do
@@ -239,9 +256,6 @@ if (( clean_compile == 1 )); then
         [[ -d "$dir2clean" ]] && rm -rf $dir2clean
     done
 fi
-
-# get compilation environment
-source comp_env || bail "Failure is sourcing the Nemo compilation environment! Are the correct modules available on this mach?"
 
 # build command line args into a bash array -> array needed for potential space delim list in add_key/del_key
 ARGS=( -j $comp_np -m $nemo_arch -n $nemo_config )
@@ -257,33 +271,23 @@ echo 'makenemo '"${ARGS[@]}"
 echo "Resetting cfg.txt to HEAD"
 git checkout HEAD cfg.txt || :
 
-#======================
-# Compile Diagnostics !
-#======================
-echo ""
-echo "=================================="
-echo "    Compiling the Diagnostics!    "
-echo "=================================="
-cd $nemo_diag_blddir
+#-------------------------------
+# compile exec's using makefiles
+#-------------------------------
+for blddir in $make_blddirs; do 
+    echo ""
+    echo "=============================================="
+    echo "    Compiling executables in $blddir          "
+    echo "=============================================="
+    cd $blddir
 
-# source compilation environment and compile
-source comp_env || bail "Failure in sourcing the nemo diag comp environment! Are the correct moduels available on this mach?"
-(( clean_compile == 1 )) && make clean
-make
+    # compile
+    if (( clean_compile == 1 )); then 
+        make clean
+    fi
+    make
+done
 
-#===============
-# Compile RTDs!
-#===============
-echo ""
-echo "=================================="
-echo "    Compiling the RTDs!           "
-echo "=================================="
-cd $nemo_rtd_blddir
-
-# source compilation environment and compile
-source comp_env || bail "Failure in sourcing the nemo rtd comp environment! Are the correct modules available on this mach?"
-(( clean_compile == 1 )) && make clean
-make
 
 #==============================================
 # Save executables or link to desired directory
@@ -294,17 +298,12 @@ echo ""
 if [[ "$save_exec" == "on" ]]; then
     echo "Saving build-nemo produced executables to RUNPATH"
 
-    # model exec
+    # model exec (has the ability to be renamed via nemo_exec, which is why it is saved differently)
     save $produced_model_exec $nemo_exec || bail "Problem while saving $nemo_exec"
     
-    # diag execs
-    for diag_exec in $produced_diag_execs; do
-        save $diag_exec $(basename $diag_exec) || bail "Problem while saving $diag_exec"
-    done
-
-    # rtd execs
-    for rtd_exec in $produced_rtd_execs; do
-        save $rtd_exec $(basename $rtd_exec) || bail "Problem while saving $rtd_exec"
+    # remaining execs, which can't be renamed
+    for executable in $non_model_execs; do
+        save $executable $(basename $executable) || bail "Problem while saving $executable"
     done
 else
     # determine link location
@@ -315,22 +314,15 @@ else
     fi
     echo "Linking build-nemo produced executables to $link_loc"
 
-    # model exec
+    # model exec (has the ability to be renamed via nemo_exec, which is why it is linked differently)
     [[ -f "${link_loc}/${nemo_exec}" ]] && rm ${link_loc}/${nemo_exec}
     ln -s $produced_model_exec ${link_loc}/${nemo_exec}
 
-    # diag execs
-    for diag_exec in $produced_diag_execs; do
-        linked_exec=${link_loc}/$(basename $diag_exec)
+    # remaining execs, which can't be renamed
+    for executable in $non_model_execs; do
+        linked_exec=${link_loc}/$(basename $executable)
         [[ -f "$linked_exec" ]] && rm $linked_exec
-        ln -s $diag_exec $linked_exec
-    done
-
-    # rtd execs
-    for rtd_exec in $produced_rtd_execs; do
-        linked_exec=${link_loc}/$(basename $rtd_exec)
-        [[ -f "$linked_exec" ]] && rm $linked_exec
-        ln -s $rtd_exec $linked_exec
+        ln -s $executable $linked_exec
     done
 fi
 
