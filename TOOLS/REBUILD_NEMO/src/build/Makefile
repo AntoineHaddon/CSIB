@@ -11,11 +11,12 @@ REBLD_MPI_SRC	:= rebuild_nemo_mpi.f90
 REBLD_OBJ		:= $(REBLD_SRC:.f90=.o)
 REBLD_MPI_OBJ	:= $(REBLD_MPI_SRC:.f90=.o)
 
-# make all targets by default
-.DEFAULT_GOAL := all
-
+# create implicit rule for `.o` files so it knows to look in SRCDIR
 %.o : $(SRCDIR)/%.f90
 	$(FC) $(FFLAGS) -c $<
+	
+# make all targets by default
+.DEFAULT_GOAL := all
 
 all : rebuild_nemo.exe rebuild_nemo_mpi.exe
 
