@@ -175,7 +175,7 @@ produced_rtd_execs=$(echo $produced_rtd_execs | sed "s#[^ ]*#${nemo_rtd_blddir}/
 produced_rbld_execs=$(echo $produced_rbld_execs | sed "s#[^ ]*#${nemo_rbld_blddir}/&#g")
 
 # all non-model executables get saved without renamining, store in list
-non_model_execs="$produced_diag_execs $produced_rtd_execs $produced_rtd_execs" 
+non_model_execs="$produced_diag_execs $produced_rtd_execs $produced_rbld_execs" 
 
 # When debugging is requested, use the debug arch and update the name of the executable
 if (( debug == 1 )); then
