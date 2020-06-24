@@ -5387,7 +5387,7 @@ module com_cpl
       endif
 
       master = -1
-      do idx=1,size(task_info)
+      do idx=0,size(task_info)-1
         if ( trim(adjustl(lowerc(task_info(idx)%group_name))) .eq. &
              trim(adjustl(lowerc(group_name))) ) then
           !--- All group members will have the same leader so we use the first one
