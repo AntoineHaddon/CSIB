@@ -267,9 +267,10 @@ ARGS=( -j $comp_np -m $nemo_arch -n $nemo_config )
 echo 'makenemo '"${ARGS[@]}"
 ./makenemo "${ARGS[@]}"
 
-# reset the cfg.txt file to avoid dirtying the repo
+# reset the cfg.txt and cpp_${CONFIG}.fcm files to avoid dirtying the repo
 echo "Resetting cfg.txt to HEAD"
 git checkout HEAD cfg.txt || :
+git checkout HEAD ${nemo_config}/cpp_${nemo_config}.fcm
 
 #-------------------------------
 # compile exec's using makefiles
