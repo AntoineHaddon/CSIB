@@ -1,4 +1,4 @@
-# AIX P7 at CCCma
+# CCCma Intel compiler arch file
 # NCDF_INC    netcdf include file
 # NCDF_LIB    netcdf library
 # FC          Fortran compiler command
