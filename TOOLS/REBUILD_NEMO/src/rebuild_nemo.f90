@@ -158,12 +158,12 @@ PROGRAM rebuild_nemo
 !--------------------------------------------------------------------------------
 !0. OMP setup
 
-!$OMP PARALLEL DEFAULT(NONE) SHARED(nthreads)
-!$OMP MASTER
-!$      nthreads = omp_get_num_threads()
-!$      WRITE(numout,*) 'Running OMP with ',nthreads,' thread(s).'
-!$OMP END MASTER
-!$OMP END PARALLEL
+   !$OMP PARALLEL DEFAULT(NONE) SHARED(nthreads)
+   !$OMP MASTER
+   !$      nthreads = omp_get_num_threads()
+   !$      WRITE(numout,*) 'Running OMP with ',nthreads,' thread(s).'
+   !$OMP END MASTER
+   !$OMP END PARALLEL
  
 !--------------------------------------------------------------------------------
 !1. Read in the namelist 
@@ -597,35 +597,35 @@ PROGRAM rebuild_nemo
             STOP
          ENDIF
 
-!$OMP  PARALLEL DO DEFAULT(NONE)                                                          &
-!$OMP& PRIVATE(ifile,ncid,xtype,start_pos,local_sizes,InMin,InMax,natts,                  &
-!$OMP&         ndims,attid,attname,dimids,idim,dimname,dimlen,unlimitedDimId,             &
-!$OMP&         halo_start,halo_end,idomain,jdomain,rdomain,di,dj,dr,                      &
-!$OMP&         localdata_1d_i2,localdata_1d_i4,localdata_1d_sp,localdata_1d_dp,           &
-!$OMP&         localdata_2d_i2,localdata_2d_i4,localdata_2d_sp,localdata_2d_dp,           &
-!$OMP&         localdata_3d_i2,localdata_3d_i4,localdata_3d_sp,localdata_3d_dp,           &
-!$OMP&         localdata_4d_i2,localdata_4d_i4,localdata_4d_sp,localdata_4d_dp,           &
-!$OMP&         localdata_1d_i1,localdata_2d_i1,localdata_3d_i1,localdata_4d_i1)           &
-!$OMP& SHARED(jv,nvars,varname,filenames,ValMin,ValMax,indimlens,outdimlens,rbdims,       &
-!$OMP&        ndomain,outid,chunksize,istop,l_valid,nthreads,inncids,rebuild_dims,        &
-!$OMP&        globaldata_1d_i2,globaldata_1d_i4,globaldata_1d_sp,globaldata_1d_dp,        &
-!$OMP&        globaldata_2d_i2,globaldata_2d_i4,globaldata_2d_sp,globaldata_2d_dp,        &
-!$OMP&        globaldata_3d_i2,globaldata_3d_i4,globaldata_3d_sp,globaldata_3d_dp,        &
-!$OMP&        globaldata_4d_i2,globaldata_4d_i4,globaldata_4d_sp,globaldata_4d_dp,        &
-!$OMP&        globaldata_1d_i1,globaldata_2d_i1,globaldata_3d_i1,globaldata_4d_i1,        &
-!$OMP&        ntchunk,nt,nmax_unlimited)
+         !$OMP  PARALLEL DO DEFAULT(NONE)                                                          &
+         !$OMP& PRIVATE(ifile,ncid,xtype,start_pos,local_sizes,InMin,InMax,natts,                  &
+         !$OMP&         ndims,attid,attname,dimids,idim,dimname,dimlen,unlimitedDimId,             &
+         !$OMP&         halo_start,halo_end,idomain,jdomain,rdomain,di,dj,dr,                      &
+         !$OMP&         localdata_1d_i2,localdata_1d_i4,localdata_1d_sp,localdata_1d_dp,           &
+         !$OMP&         localdata_2d_i2,localdata_2d_i4,localdata_2d_sp,localdata_2d_dp,           &
+         !$OMP&         localdata_3d_i2,localdata_3d_i4,localdata_3d_sp,localdata_3d_dp,           &
+         !$OMP&         localdata_4d_i2,localdata_4d_i4,localdata_4d_sp,localdata_4d_dp,           &
+         !$OMP&         localdata_1d_i1,localdata_2d_i1,localdata_3d_i1,localdata_4d_i1)           &
+         !$OMP& SHARED(jv,nvars,varname,filenames,ValMin,ValMax,indimlens,outdimlens,rbdims,       &
+         !$OMP&        ndomain,outid,chunksize,istop,l_valid,nthreads,inncids,rebuild_dims,        &
+         !$OMP&        globaldata_1d_i2,globaldata_1d_i4,globaldata_1d_sp,globaldata_1d_dp,        &
+         !$OMP&        globaldata_2d_i2,globaldata_2d_i4,globaldata_2d_sp,globaldata_2d_dp,        &
+         !$OMP&        globaldata_3d_i2,globaldata_3d_i4,globaldata_3d_sp,globaldata_3d_dp,        &
+         !$OMP&        globaldata_4d_i2,globaldata_4d_i4,globaldata_4d_sp,globaldata_4d_dp,        &
+         !$OMP&        globaldata_1d_i1,globaldata_2d_i1,globaldata_3d_i1,globaldata_4d_i1,        &
+         !$OMP&        ntchunk,nt,nmax_unlimited)
 
          DO ifile = 1, ndomain
 
             ncid = inncids(ifile)
-!$OMP CRITICAL
+            !$OMP CRITICAL
             CALL check_nf90( nf90_get_att( ncid, nf90_global, 'DOMAIN_size_local', local_sizes ), istop )
             CALL check_nf90( nf90_get_att( ncid, nf90_global, 'DOMAIN_position_first', start_pos ), istop )
             CALL check_nf90( nf90_get_att( ncid, nf90_global, 'DOMAIN_halo_size_start', halo_start ), istop )
             CALL check_nf90( nf90_get_att( ncid, nf90_global, 'DOMAIN_halo_size_end', halo_end ), istop )
             CALL check_nf90( nf90_inquire_variable( ncid, jv, varname, xtype, ndims, dimids, natts ), istop )
             CALL check_nf90( nf90_inquire( ncid, unlimitedDimId = unlimitedDimId ), istop )
-!$OMP END CRITICAL
+            !$OMP END CRITICAL
 
             ! set defaults for rebuilding so that i is 1st, j 2nd
             di=1
@@ -666,35 +666,45 @@ PROGRAM rebuild_nemo
               SELECT CASE( xtype )
                   CASE( NF90_BYTE )
                      ALLOCATE(localdata_1d_i1(local_sizes(dr)))
+                     !$OMP CRITICAL
                      CALL check_nf90( nf90_get_var( ncid, jv, localdata_1d_i1 ), istop )
+                     !$OMP END CRITICAL
                      DO jr = rdomain(1), rdomain(2)
                         globaldata_1d_i1(start_pos(dr) + jr - 1) = localdata_1d_i1(jr)
                      END DO
                      DEALLOCATE(localdata_1d_i1)
                   CASE( NF90_SHORT )
                      ALLOCATE(localdata_1d_i2(local_sizes(dr)))
+                     !$OMP CRITICAL
                      CALL check_nf90( nf90_get_var( ncid, jv, localdata_1d_i2 ), istop )
+                     !$OMP END CRITICAL
                      DO jr = rdomain(1), rdomain(2)
                         globaldata_1d_i2(start_pos(dr) + jr - 1) = localdata_1d_i2(jr)
                      END DO
                      DEALLOCATE(localdata_1d_i2)
                   CASE( NF90_INT )
                      ALLOCATE(localdata_1d_i4(local_sizes(dr)))
+                     !$OMP CRITICAL
                      CALL check_nf90( nf90_get_var( ncid, jv, localdata_1d_i4 ), istop )
+                     !$OMP END CRITICAL
                      DO jr = rdomain(1), rdomain(2)
                         globaldata_1d_i4(start_pos(dr) + jr - 1) = localdata_1d_i4(jr)
                      END DO
                      DEALLOCATE(localdata_1d_i4)
                   CASE( NF90_FLOAT )
                      ALLOCATE(localdata_1d_sp(local_sizes(dr)))
+                     !$OMP CRITICAL
                      CALL check_nf90( nf90_get_var( ncid, jv, localdata_1d_sp ), istop )
+                     !$OMP END CRITICAL
                      DO jr = rdomain(1), rdomain(2)
                         globaldata_1d_sp(start_pos(dr) + jr - 1) = localdata_1d_sp(jr)
                      END DO
                      DEALLOCATE(localdata_1d_sp)
                   CASE( NF90_DOUBLE )
                      ALLOCATE(localdata_1d_dp(local_sizes(dr)))
+                     !$OMP CRITICAL
                      CALL check_nf90( nf90_get_var( ncid, jv, localdata_1d_dp ), istop )
+                     !$OMP END CRITICAL
                      DO jr = rdomain(1), rdomain(2)
                         globaldata_1d_dp(start_pos(dr) + jr - 1) = localdata_1d_dp(jr)
                      END DO
@@ -709,7 +719,9 @@ PROGRAM rebuild_nemo
                SELECT CASE( xtype )
                   CASE( NF90_BYTE )
                      ALLOCATE(localdata_2d_i1(local_sizes(di),local_sizes(dj)))
+                     !$OMP CRITICAL
                      CALL check_nf90( nf90_get_var( ncid, jv, localdata_2d_i1 ), istop )
+                     !$OMP END CRITICAL
                         DO jj = jdomain(1), jdomain(2)
                            DO ji = idomain(1), idomain(2)
                               globaldata_2d_i1(start_pos(di) + ji - 1, start_pos(dj) + jj - 1) = localdata_2d_i1(ji,jj)
@@ -718,7 +730,9 @@ PROGRAM rebuild_nemo
                      DEALLOCATE(localdata_2d_i1)
                   CASE( NF90_SHORT )
                      ALLOCATE(localdata_2d_i2(local_sizes(di),local_sizes(dj)))
+                     !$OMP CRITICAL
                      CALL check_nf90( nf90_get_var( ncid, jv, localdata_2d_i2 ), istop )
+                     !$OMP END CRITICAL
                      DO jj = jdomain(1), jdomain(2)
                         DO ji = idomain(1), idomain(2)
                            globaldata_2d_i2(start_pos(di) + ji - 1, start_pos(dj) + jj - 1) = localdata_2d_i2(ji,jj)
@@ -727,7 +741,9 @@ PROGRAM rebuild_nemo
                      DEALLOCATE(localdata_2d_i2)
                   CASE( NF90_INT )
                      ALLOCATE(localdata_2d_i4(local_sizes(di),local_sizes(dj)))
+                     !$OMP CRITICAL
                      CALL check_nf90( nf90_get_var( ncid, jv, localdata_2d_i4 ), istop )
+                     !$OMP END CRITICAL
                      DO jj = jdomain(1), jdomain(2)
                         DO ji = idomain(1), idomain(2)
                            globaldata_2d_i4(start_pos(di) + ji - 1, start_pos(dj) + jj - 1) = localdata_2d_i4(ji,jj)
@@ -736,7 +752,9 @@ PROGRAM rebuild_nemo
                      DEALLOCATE(localdata_2d_i4)
                   CASE( NF90_FLOAT )
                      ALLOCATE(localdata_2d_sp(local_sizes(di),local_sizes(dj)))
+                     !$OMP CRITICAL
                      CALL check_nf90( nf90_get_var( ncid, jv, localdata_2d_sp ), istop )
+                     !$OMP END CRITICAL
                      DO jj = jdomain(1), jdomain(2)
                         DO ji = idomain(1), idomain(2)
                            globaldata_2d_sp(start_pos(di) + ji - 1, start_pos(dj) + jj - 1) = localdata_2d_sp(ji,jj)
@@ -745,7 +763,9 @@ PROGRAM rebuild_nemo
                      DEALLOCATE(localdata_2d_sp)
                   CASE( NF90_DOUBLE )
                      ALLOCATE(localdata_2d_dp(local_sizes(di),local_sizes(dj)))
+                     !$OMP CRITICAL
                      CALL check_nf90( nf90_get_var( ncid, jv, localdata_2d_dp ), istop )
+                     !$OMP END CRITICAL
                      DO jj = jdomain(1), jdomain(2)
                         DO ji = idomain(1), idomain(2)
                            globaldata_2d_dp(start_pos(di) + ji - 1, start_pos(dj) + jj - 1) = localdata_2d_dp(ji,jj)
@@ -762,9 +782,11 @@ PROGRAM rebuild_nemo
                SELECT CASE( xtype )
                   CASE( NF90_BYTE )
                      ALLOCATE(localdata_3d_i1(local_sizes(di),local_sizes(dj),indimlens(dimids(3))))
+                     !$OMP CRITICAL
                      CALL check_nf90( nf90_get_var( ncid, jv, localdata_3d_i1 ), istop )
-!$OMP  PARALLEL DO DEFAULT(NONE) PRIVATE(ji,jj,jk)   &
-!$OMP& SHARED(idomain,jdomain,indimlens,dimids,start_pos,globaldata_3d_i1,localdata_3d_i1,di,dj) 
+                     !$OMP END CRITICAL
+                     !$OMP  PARALLEL DO DEFAULT(NONE) PRIVATE(ji,jj,jk)   &
+                     !$OMP& SHARED(idomain,jdomain,indimlens,dimids,start_pos,globaldata_3d_i1,localdata_3d_i1,di,dj) 
                      DO jk = 1, indimlens(dimids(3))
                         DO jj = jdomain(1), jdomain(2)
                            DO ji = idomain(1), idomain(2)
@@ -772,13 +794,15 @@ PROGRAM rebuild_nemo
                            END DO
                         END DO
                      END DO
-!$OMP END PARALLEL DO
+                     !$OMP END PARALLEL DO
                      DEALLOCATE(localdata_3d_i1)
                   CASE( NF90_SHORT )
                      ALLOCATE(localdata_3d_i2(local_sizes(di),local_sizes(dj),indimlens(dimids(3))))
+                     !$OMP CRITICAL
                      CALL check_nf90( nf90_get_var( ncid, jv, localdata_3d_i2 ), istop )
-!$OMP  PARALLEL DO DEFAULT(NONE) PRIVATE(ji,jj,jk)   &
-!$OMP& SHARED(idomain,jdomain,indimlens,dimids,start_pos,globaldata_3d_i2,localdata_3d_i2,di,dj) 
+                     !$OMP END CRITICAL
+                     !$OMP  PARALLEL DO DEFAULT(NONE) PRIVATE(ji,jj,jk)   &
+                     !$OMP& SHARED(idomain,jdomain,indimlens,dimids,start_pos,globaldata_3d_i2,localdata_3d_i2,di,dj) 
                      DO jk = 1, indimlens(dimids(3))
                         DO jj = jdomain(1), jdomain(2)
                            DO ji = idomain(1), idomain(2)
@@ -786,13 +810,15 @@ PROGRAM rebuild_nemo
                            END DO
                         END DO
                      END DO
-!$OMP END PARALLEL DO
+                     !$OMP END PARALLEL DO
                      DEALLOCATE(localdata_3d_i2)
                   CASE( NF90_INT )
                      ALLOCATE(localdata_3d_i4(local_sizes(di),local_sizes(dj),indimlens(dimids(3))))
+                     !$OMP CRITICAL
                      CALL check_nf90( nf90_get_var( ncid, jv, localdata_3d_i4 ), istop )
-!$OMP  PARALLEL DO DEFAULT(NONE) PRIVATE(ji,jj,jk)   &
-!$OMP& SHARED(idomain,jdomain,indimlens,dimids,start_pos,globaldata_3d_i4,localdata_3d_i4,di,dj) 
+                     !$OMP END CRITICAL
+                     !$OMP  PARALLEL DO DEFAULT(NONE) PRIVATE(ji,jj,jk)   &
+                     !$OMP& SHARED(idomain,jdomain,indimlens,dimids,start_pos,globaldata_3d_i4,localdata_3d_i4,di,dj) 
                      DO jk = 1, indimlens(dimids(3))
                         DO jj = jdomain(1), jdomain(2)
                            DO ji = idomain(1), idomain(2)
@@ -800,13 +826,15 @@ PROGRAM rebuild_nemo
                            END DO
                         END DO
                      END DO
-!$OMP END PARALLEL DO
+                     !$OMP END PARALLEL DO
                      DEALLOCATE(localdata_3d_i4)
                   CASE( NF90_FLOAT )
                      ALLOCATE(localdata_3d_sp(local_sizes(di),local_sizes(dj),indimlens(dimids(3))))
+                     !$OMP CRITICAL
                      CALL check_nf90( nf90_get_var( ncid, jv, localdata_3d_sp ), istop )
-!$OMP  PARALLEL DO DEFAULT(NONE) PRIVATE(ji,jj,jk)   &
-!$OMP& SHARED(idomain,jdomain,indimlens,dimids,start_pos,globaldata_3d_sp,localdata_3d_sp,di,dj) 
+                     !$OMP END CRITICAL
+                     !$OMP  PARALLEL DO DEFAULT(NONE) PRIVATE(ji,jj,jk)   &
+                     !$OMP& SHARED(idomain,jdomain,indimlens,dimids,start_pos,globaldata_3d_sp,localdata_3d_sp,di,dj) 
                      DO jk = 1, indimlens(dimids(3))
                         DO jj = jdomain(1), jdomain(2)
                            DO ji = idomain(1), idomain(2)
@@ -814,13 +842,15 @@ PROGRAM rebuild_nemo
                            END DO
                         END DO
                      END DO
-!$OMP END PARALLEL DO
+                     !$OMP END PARALLEL DO
                      DEALLOCATE(localdata_3d_sp)
                   CASE( NF90_DOUBLE )
                      ALLOCATE(localdata_3d_dp(local_sizes(di),local_sizes(dj),indimlens(dimids(3))))
+                     !$OMP CRITICAL
                      CALL check_nf90( nf90_get_var( ncid, jv, localdata_3d_dp ), istop )
-!$OMP  PARALLEL DO DEFAULT(NONE) PRIVATE(ji,jj,jk)   &
-!$OMP& SHARED(idomain,jdomain,indimlens,dimids,start_pos,globaldata_3d_dp,localdata_3d_dp,di,dj)
+                     !$OMP END CRITICAL
+                     !$OMP  PARALLEL DO DEFAULT(NONE) PRIVATE(ji,jj,jk)   &
+                     !$OMP& SHARED(idomain,jdomain,indimlens,dimids,start_pos,globaldata_3d_dp,localdata_3d_dp,di,dj)
                      DO jk = 1, indimlens(dimids(3))
                         DO jj = jdomain(1), jdomain(2)
                            DO ji = idomain(1), idomain(2)
@@ -828,7 +858,7 @@ PROGRAM rebuild_nemo
                            END DO
                         END DO
                      END DO
-!$OMP END PARALLEL DO
+                     !$OMP END PARALLEL DO
                      DEALLOCATE(localdata_3d_dp)
                   CASE DEFAULT
                      WRITE(numerr,*) 'Unknown nf90 type: ', xtype
@@ -841,11 +871,13 @@ PROGRAM rebuild_nemo
                   CASE( NF90_BYTE )
                      ALLOCATE(localdata_4d_i1(local_sizes(di),local_sizes(dj),               &
                          &                     indimlens(dimids(3)),ntchunk))
+                     !$OMP CRITICAL
                      CALL check_nf90( nf90_get_var( ncid, jv, localdata_4d_i1, start=(/1,1,1,nt/) ), istop )
-!$OMP  PARALLEL DEFAULT(NONE) PRIVATE(ji,jj,jk,jl)   &
-!$OMP& SHARED(idomain,jdomain,indimlens,dimids,start_pos,globaldata_4d_i1,localdata_4d_i1,di,dj,nt,ntchunk)
+                     !$OMP END CRITICAL
+                     !$OMP  PARALLEL DEFAULT(NONE) PRIVATE(ji,jj,jk,jl)   &
+                     !$OMP& SHARED(idomain,jdomain,indimlens,dimids,start_pos,globaldata_4d_i1,localdata_4d_i1,di,dj,nt,ntchunk)
                      DO jl = 1, ntchunk
-!$OMP DO 
+                        !$OMP DO 
                         DO jk = 1, indimlens(dimids(3))
                            DO jj = jdomain(1), jdomain(2)
                               DO ji = idomain(1), idomain(2)
@@ -853,18 +885,20 @@ PROGRAM rebuild_nemo
                               END DO
                            END DO
                         END DO
-!$OMP END DO nowait
+                        !$OMP END DO nowait
                      END DO
-!$OMP END PARALLEL
+                     !$OMP END PARALLEL
                      DEALLOCATE(localdata_4d_i1)
                   CASE( NF90_SHORT )
                      ALLOCATE(localdata_4d_i2(local_sizes(di),local_sizes(dj),               &
                         &                     indimlens(dimids(3)),ntchunk))
+                     !$OMP CRITICAL
                      CALL check_nf90( nf90_get_var( ncid, jv, localdata_4d_i2, start=(/1,1,1,nt/) ), istop )
-!$OMP  PARALLEL DEFAULT(NONE) PRIVATE(ji,jj,jk,jl)   &
-!$OMP& SHARED(idomain,jdomain,indimlens,dimids,start_pos,globaldata_4d_i2,localdata_4d_i2,di,dj,nt,ntchunk)
+                     !$OMP END CRITICAL
+                     !$OMP  PARALLEL DEFAULT(NONE) PRIVATE(ji,jj,jk,jl)   &
+                     !$OMP& SHARED(idomain,jdomain,indimlens,dimids,start_pos,globaldata_4d_i2,localdata_4d_i2,di,dj,nt,ntchunk)
                      DO jl = 1, ntchunk
-!$OMP DO 
+                        !$OMP DO 
                         DO jk = 1, indimlens(dimids(3))
                            DO jj = jdomain(1), jdomain(2) 
                               DO ji = idomain(1), idomain(2)
@@ -872,18 +906,20 @@ PROGRAM rebuild_nemo
                               END DO
                            END DO
                         END DO
-!$OMP END DO nowait
+                        !$OMP END DO nowait
                      END DO
-!$OMP END PARALLEL
+                     !$OMP END PARALLEL
                      DEALLOCATE(localdata_4d_i2)
                   CASE( NF90_INT )
                      ALLOCATE(localdata_4d_i4(local_sizes(di),local_sizes(dj),               &
                         &                     indimlens(dimids(3)),ntchunk))
+                     !$OMP CRITICAL
                      CALL check_nf90( nf90_get_var( ncid, jv, localdata_4d_i4, start=(/1,1,1,nt/) ), istop )
-!$OMP  PARALLEL DEFAULT(NONE) PRIVATE(ji,jj,jk,jl)   &
-!$OMP& SHARED(idomain,jdomain,indimlens,dimids,start_pos,globaldata_4d_i4,localdata_4d_i4,di,dj,nt,ntchunk)
+                     !$OMP END CRITICAL
+                     !$OMP  PARALLEL DEFAULT(NONE) PRIVATE(ji,jj,jk,jl)   &
+                     !$OMP& SHARED(idomain,jdomain,indimlens,dimids,start_pos,globaldata_4d_i4,localdata_4d_i4,di,dj,nt,ntchunk)
                      DO jl = 1, ntchunk
-!$OMP DO
+                        !$OMP DO
                         DO jk = 1, indimlens(dimids(3))
                            DO jj = jdomain(1), jdomain(2) 
                               DO ji = idomain(1), idomain(2)
@@ -891,18 +927,20 @@ PROGRAM rebuild_nemo
                               END DO
                            END DO
                         END DO
-!$OMP END DO nowait
+                        !$OMP END DO nowait
                      END DO
-!$OMP END PARALLEL
+                     !$OMP END PARALLEL
                      DEALLOCATE(localdata_4d_i4)
                   CASE( NF90_FLOAT )
                      ALLOCATE(localdata_4d_sp(local_sizes(di),local_sizes(dj),               &
                         &                     indimlens(dimids(3)),ntchunk))
+                     !$OMP CRITICAL
                      CALL check_nf90( nf90_get_var( ncid, jv, localdata_4d_sp, start=(/1,1,1,nt/) ), istop )
-!$OMP  PARALLEL DEFAULT(NONE) PRIVATE(ji,jj,jk,jl)   &
-!$OMP& SHARED(idomain,jdomain,indimlens,dimids,start_pos,globaldata_4d_sp,localdata_4d_sp,di,dj,nt,ntchunk) 
+                     !$OMP END CRITICAL
+                     !$OMP  PARALLEL DEFAULT(NONE) PRIVATE(ji,jj,jk,jl)   &
+                     !$OMP& SHARED(idomain,jdomain,indimlens,dimids,start_pos,globaldata_4d_sp,localdata_4d_sp,di,dj,nt,ntchunk) 
                      DO jl = 1, ntchunk
-!$OMP DO
+                        !$OMP DO
                         DO jk = 1, indimlens(dimids(3))
                            DO jj = jdomain(1), jdomain(2) 
                               DO ji = idomain(1), idomain(2)
@@ -910,18 +948,20 @@ PROGRAM rebuild_nemo
                               END DO
                            END DO
                         END DO
-!$OMP END DO nowait
+                        !$OMP END DO nowait
                      END DO
-!$OMP END PARALLEL
+                     !$OMP END PARALLEL
                      DEALLOCATE(localdata_4d_sp)
                   CASE( NF90_DOUBLE )
                      ALLOCATE(localdata_4d_dp(local_sizes(di),local_sizes(dj),               &
                         &                     indimlens(dimids(3)),ntchunk))
+                     !$OMP CRITICAL
                      CALL check_nf90( nf90_get_var( ncid, jv, localdata_4d_dp, start=(/1,1,1,nt/) ), istop )
-!$OMP  PARALLEL DEFAULT(NONE) PRIVATE(ji,jj,jk,jl)   &
-!$OMP& SHARED(idomain,jdomain,indimlens,dimids,start_pos,globaldata_4d_dp,localdata_4d_dp,di,dj,nt,ntchunk) 
+                     !$OMP END CRITICAL
+                     !$OMP  PARALLEL DEFAULT(NONE) PRIVATE(ji,jj,jk,jl)   &
+                     !$OMP& SHARED(idomain,jdomain,indimlens,dimids,start_pos,globaldata_4d_dp,localdata_4d_dp,di,dj,nt,ntchunk) 
                      DO jl = 1, ntchunk
-!$OMP DO
+                        !$OMP DO
                         DO jk = 1, indimlens(dimids(3))
                            DO jj = jdomain(1), jdomain(2) 
                               DO ji = idomain(1), idomain(2)
@@ -929,9 +969,9 @@ PROGRAM rebuild_nemo
                               END DO
                            END DO
                         END DO
-!$OMP END DO nowait
+                        !$OMP END DO nowait
                      END DO
-!$OMP END PARALLEL
+                     !$OMP END PARALLEL
                      DEALLOCATE(localdata_4d_dp)
                   CASE DEFAULT
                      WRITE(numerr,*) 'Unknown nf90 type: ', xtype
@@ -944,22 +984,28 @@ PROGRAM rebuild_nemo
 !    If they do then calculate the extrema over all input files.
 
             DO attid = 1, natts
+               !$OMP CRITICAL
                CALL check_nf90( nf90_inq_attname( ncid, jv, attid, attname ), istop )
+               !$OMP END CRITICAL
                IF( INDEX( attname, "valid_min" ) == 1 ) THEN
+                  !$OMP CRITICAL
                   CALL check_nf90( nf90_get_att( ncid, jv, attname, InMin), istop )
+                  !$OMP END CRITICAL
                   l_valid = .true.
                ENDIF
                IF( INDEX( attname, "valid_max" ) == 1 ) THEN
+                  !$OMP CRITICAL
                   CALL check_nf90( nf90_get_att( ncid, jv, attname, InMax ), istop )
+                  !$OMP END CRITICAL
                   l_valid = .true.
                ENDIF
             END DO
 
             IF (l_valid) THEN
-!$OMP CRITICAL
+               !$OMP CRITICAL
                IF( InMin < ValMin ) ValMin = InMin
                IF( InMax > ValMax ) ValMax = InMax
-!$OMP END CRITICAL
+               !$OMP END CRITICAL
             ENDIF
 
 !3.5 Abort if failure and only 1 thread 
@@ -970,7 +1016,7 @@ PROGRAM rebuild_nemo
             ENDIF
         
          END DO  ! loop over files
-!$OMP END PARALLEL DO
+         !$OMP END PARALLEL DO
 
 !3.6 Abort if any of the OMP threads failed
          IF( istop /= nf90_noerr )  THEN
