@@ -415,11 +415,6 @@ else
            #mod_nl $CWD/experiment.cfg stre
            sed -i "s#${i}=.*#${i}="'${SEQ_EXP_HOME}/namelists/'${i}"#" ../experiment.cfg
         fi
-        if [[ $i == "iodef"* ]]; then
-           if [ ${with_nemo_diag} = on ] ; then
-              sed -i 's#output_level=.*#output_level="10" >#' ${i}
-           fi
-        fi
     done
     # Modifiy namelist paths in experiment.cfg
     #sed -i "s#nemo_namelist=.*#nemo_namelist="'${SEQ_EXP_HOME}/namelists/'namelist"#" ../experiment.cfg
