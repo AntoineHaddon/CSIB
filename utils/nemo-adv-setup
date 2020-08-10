@@ -183,11 +183,6 @@ else
         if [[ $i == *"namelist"* ]]; then
            sed -i "s#${i}=.*#${i}="'${SEQ_EXP_HOME}/namelists/'${i}"#" ../experiment.cfg
         fi
-        if [[ $i == "iodef"* ]]; then
-           if [ ${with_nemo_diag} = on ] ; then
-              sed -i 's#output_level=.*#output_level="10" >#' ${i}
-           fi
-        fi
     done
     sed -i "s#nemo_xmlio_server_def=.*#nemo_xmlio_server_def="'${SEQ_EXP_HOME}/namelists/'xmlio_server.def"#" ../experiment.cfg
     sed -i "s#nemo_iodef=.*#nemo_iodef="'${SEQ_EXP_HOME}/namelists/'iodef.xml"#" ../experiment.cfg
