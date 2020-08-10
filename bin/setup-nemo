@@ -200,7 +200,15 @@ git checkout $nemo_version || { cd - ; bail "$nemo_version is not a valid CanNEM
 git submodule update --init --recursive
 cd -
 
-#========================================
-# Source version controlled setup script!
-#========================================
-source $src_dir/utils/nemo-adv-setup
+#=====================
+# Source setup script
+#=====================
+vcs_setup_script="$src_dir/utils/nemo-adv-setup"
+default_setup_script="nemo-adv-setup.v1.0"
+if [[ -f "$vcs_setup_script" ]]; then
+    # if this version of the code has a version controlled setup script, source it
+    source $vcs_setup_script
+else
+    # else this is an old commit which doesn't have the version controlled script, so we source a default
+    source $default_setup_script
+fi
