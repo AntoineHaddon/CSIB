@@ -204,7 +204,7 @@ cd -
 # Source setup script
 #=====================
 vcs_setup_script="$src_dir/utils/nemo-adv-setup"
-default_setup_script="nemo-adv-setup.v1.0"
+default_setup_script=".nemo-adv-setup.v1.0"
 if [[ -f "$vcs_setup_script" ]]; then
     # if this version of the code has a version controlled setup script, source it
     source $vcs_setup_script
