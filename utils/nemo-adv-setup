@@ -29,8 +29,8 @@ if [[ "$jobtype" == 'rtd' ]] || [[ "$jobtype" == 'dumpdel' ]]; then
     git checkout $maestro_version
 
     run_setup_dir=$(pwd)
-    nemo_repo_git_dir=$(pwd)/.git
-    sha1_maestro=$(git --git-dir=${nemo_repo_git_dir} rev-parse ${maestro_version})
+    git_dir=$(pwd)/.git
+    sha1_maestro=$(git --git-dir=${git_dir} rev-parse ${maestro_version})
 
     # basic maestro setup
     export SEQ_EXP_HOME=$(pwd)
@@ -120,8 +120,8 @@ else
     cd $nemo_runid || { echo "Failed to create run directory" ;  exit 1 ; }
     git checkout $maestro_version
     run_setup_dir=$(pwd)
-    nemo_repo_git_dir=$(pwd)/.git
-    sha1_maestro=$(git --git-dir=${nemo_repo_git_dir} rev-parse ${maestro_version})
+    git_dir=$(pwd)/.git
+    sha1_maestro=$(git --git-dir=${git_dir} rev-parse ${maestro_version})
 
     # basic maestro setup
     export SEQ_EXP_HOME=$(pwd)
@@ -144,8 +144,8 @@ else
     ln -s ${src_dir}
 
     # Get the exact checksum of the ver
-    nemo_repo_git_dir=${src_dir}/.git
-    nemo_sha1=$(git --git-dir=${nemo_repo_git_dir} rev-parse ${nemo_version})
+    git_dir=${src_dir}/.git
+    nemo_sha1=$(git --git-dir=${git_dir} rev-parse ${nemo_version})
     echo "Using nemo sha: $nemo_sha1"
 
     # copy experiment.cfg to maestro directory
