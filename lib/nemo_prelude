@@ -652,7 +652,6 @@ echo "#################### Start NEMO pre-processing #################"
     if [ ! -x nemo.exe ]; then
       # Get a local copy of the NEMO executable
       [ -z "$nemo_exec" ] && bail "nemo_exec must be defined."
-      #acc_cp nemo.exe $nemo_exec nocp=no
       cp ${CCRNSRC}/executables/$nemo_exec nemo.exe
     fi
 
@@ -844,7 +843,6 @@ echo "#################### Start NEMO pre-processing #################"
       mv rs_nemo_exec nemo.exe
     else
       # Otherwise use the executable pointed to by nemo_exec
-      #acc_cp nemo.exe $nemo_exec nocp=no
       cp ${CCRNSRC}/executables/$nemo_exec nemo.exe
     fi
     [ ! -s nemo.exe ] && bail "Unable to find nemo executable."
