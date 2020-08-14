@@ -1,15 +1,15 @@
 # define compiler options
 #   - cray-netcdf must be loaded to handle netcdf linking
 #	- openmp flag will need to be changed for different compilers (its using the intel settings here)
-FC		:= ftn
-FFLAGS	:= -static -qopenmp
+FC      := ftn
+FFLAGS  := -static -qopenmp
 
 # define source files which will be brought in from $SRCDIR
-SRCDIR			:= $(realpath $(CURDIR)/..)
-REBLD_SRC		:= rebuild_nemo.f90
-REBLD_MPI_SRC	:= rebuild_nemo_mpi.f90
-REBLD_OBJ		:= $(REBLD_SRC:.f90=.o)
-REBLD_MPI_OBJ	:= $(REBLD_MPI_SRC:.f90=.o)
+SRCDIR          := $(realpath $(CURDIR)/..)
+REBLD_SRC       := rebuild_nemo.f90
+REBLD_MPI_SRC   := rebuild_nemo_mpi.f90
+REBLD_OBJ       := $(REBLD_SRC:.f90=.o)
+REBLD_MPI_OBJ   := $(REBLD_MPI_SRC:.f90=.o)
 
 # create implicit rule for `.o` files so it knows to look in SRCDIR
 %.o : $(SRCDIR)/%.f90

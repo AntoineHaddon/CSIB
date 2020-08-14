@@ -1,20 +1,20 @@
 # define compiler options
 #	- cray-netcdf must be loaded to handle netcdf linking
 FC      := ftn
-FFLAGS	:= -static
+FFLAGS  := -static
 
 # define source files which will be brought in from $SRCDIR
-SRCDIR				:= $(realpath $(CURDIR)/..)
-NETCDF_SRC			:= uvic_netcdf.f
-PHYS_DIAG_FILES		:= nemo_diag_glovars.F90 nemo_diag_cal.F90 nemo_diag.F90
-CMOC_DIAG_FILES		:= nemo_diag_glovars_cmoc.F90 nemo_diag_cal_cmoc.F90 nemo_diag_cmoc.F90
-CANOE_DIAG_FILES	:= nemo_diag_glovars_canoe.F90 nemo_diag_cal_canoe.F90 nemo_diag_canoe.F90
+SRCDIR              := $(realpath $(CURDIR)/..)
+NETCDF_SRC          := uvic_netcdf.f
+PHYS_DIAG_FILES     := nemo_diag_glovars.F90 nemo_diag_cal.F90 nemo_diag.F90
+CMOC_DIAG_FILES     := nemo_diag_glovars_cmoc.F90 nemo_diag_cal_cmoc.F90 nemo_diag_cmoc.F90
+CANOE_DIAG_FILES    := nemo_diag_glovars_canoe.F90 nemo_diag_cal_canoe.F90 nemo_diag_canoe.F90
 
 # make object substitution on source file
-NETCDF_OBJ		:= $(NETCDF_SRC:.f=.o)
-PHYS_DIAG_OBJS	:= $(PHYS_DIAG_FILES:.F90=.o)
-CMOC_DIAG_OBJS	:= $(CMOC_DIAG_FILES:.F90=.o)
-CANOE_DIAG_OBJS	:= $(CANOE_DIAG_FILES:.F90=.o)
+NETCDF_OBJ      := $(NETCDF_SRC:.f=.o)
+PHYS_DIAG_OBJS  := $(PHYS_DIAG_FILES:.F90=.o)
+CMOC_DIAG_OBJS  := $(CMOC_DIAG_FILES:.F90=.o)
+CANOE_DIAG_OBJS := $(CANOE_DIAG_FILES:.F90=.o)
 
 # make all targets by default
 .DEFAULT_GOAL := all

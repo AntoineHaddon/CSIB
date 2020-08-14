@@ -1,22 +1,22 @@
 # define compiler options
 #	- cray-netcdf must be loaded to handle netcdf linking
 FC      := ftn
-FFLAGS	:= -static
+FFLAGS  := -static
 
 # define source files which will be brought in from $SRCDIR
 SRCDIR				:= $(realpath $(CURDIR)/..)
-NETCDF_SRC			:= uvic_netcdf.f
-PHYS_RTD_FILES		:= ccc_nemo_rtd_utils.F90 ccc_nemo_physical_rtd.F90
-ICE_RTD_FILES		:= ccc_nemo_rtd_utils.F90 ccc_nemo_ice_rtd.F90
-CMOC_RTD_FILES		:= ccc_nemo_rtd_utils.F90 ccc_nemo_carbon-cmoc_rtd.F90
-CANOE_RTD_FILES		:= ccc_nemo_rtd_utils.F90 ccc_nemo_carbon-canoe_rtd.F90
+NETCDF_SRC          := uvic_netcdf.f
+PHYS_RTD_FILES      := ccc_nemo_rtd_utils.F90 ccc_nemo_physical_rtd.F90
+ICE_RTD_FILES       := ccc_nemo_rtd_utils.F90 ccc_nemo_ice_rtd.F90
+CMOC_RTD_FILES      := ccc_nemo_rtd_utils.F90 ccc_nemo_carbon-cmoc_rtd.F90
+CANOE_RTD_FILES     := ccc_nemo_rtd_utils.F90 ccc_nemo_carbon-canoe_rtd.F90
 
 # make object substitution on source file
-NETCDF_OBJ		:= $(NETCDF_SRC:.f=.o)
-PHYS_RTD_OBJS	:= $(PHYS_RTD_FILES:.F90=.o)
-CMOC_RTD_OBJS	:= $(CMOC_RTD_FILES:.F90=.o)
-CANOE_RTD_OBJS	:= $(CANOE_RTD_FILES:.F90=.o)
-ICE_RTD_OBJS	:= $(ICE_RTD_FILES:.F90=.o)
+NETCDF_OBJ      := $(NETCDF_SRC:.f=.o)
+PHYS_RTD_OBJS   := $(PHYS_RTD_FILES:.F90=.o)
+CMOC_RTD_OBJS   := $(CMOC_RTD_FILES:.F90=.o)
+CANOE_RTD_OBJS  := $(CANOE_RTD_FILES:.F90=.o)
+ICE_RTD_OBJS    := $(ICE_RTD_FILES:.F90=.o)
 
 # make all targets by default
 .DEFAULT_GOAL := all
