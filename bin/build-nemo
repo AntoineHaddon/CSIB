@@ -228,9 +228,6 @@ fi
 #===========
 # Compile !
 #===========
-# source general compilation environment
-source $nemo_source_path/utils/comp_env || 
-    bail "Failed to source the general nemo compilation environment! Are the modules available on this machine?"
 
 #-------------------
 # compile the model
@@ -241,6 +238,10 @@ echo "      Compiling the Model!        "
 echo "=================================="
 echo "Compiling in:  ${nemo_model_build_dir}"
 cd $nemo_model_build_dir
+
+# source compilation environment
+source comp_env ||
+    bail "Failed to source the nemo compilation environment! Are the modules available?"
 
 # clean temporary dirs if this is a "clean" compile
 if (( clean_compile == 1 )); then
@@ -281,6 +282,10 @@ for build_dir in $make_build_dirs; do
     echo "    Compiling executables in $build_dir       "
     echo "=============================================="
     cd $build_dir
+
+    # source environment
+    source comp_env || 
+        bail "Failed to source the compilation environment in ${build_dir}! Are the modules available?"
 
     # compile
     if (( clean_compile == 1 )); then 
