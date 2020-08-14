@@ -83,27 +83,27 @@ else
           d) use carbon (cmoc) default: 'namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def'
          "
     echo " "
-    read user_namelist_option
-    case $user_namelist_option in
+    read user_option
+    case $user_option in
         a) bail "Aborting..." ;;
-        b) run_namelists='namelist namelist_ice namelist_top iodef.xml xmlio_server.def' ;;
-        c) run_namelists='namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
-        d) run_namelists='namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def' ;;
+        b) namelists_and_iofiles='namelist namelist_ice namelist_top iodef.xml xmlio_server.def' ;;
+        c) namelists_and_iofiles='namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
+        d) namelists_and_iofiles='namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def' ;;
         *) bail "Aborting" ;;
     esac
     }
 
     # Make sure the config is valid and decide which namelist files we need.
     case $nemo_config in
-        CCC_ORCA025_LIM)      run_namelists='namelist namelist_ice namelist_top iodef.xml xmlio_server.def'                               ;;
-        CCC_ORCA025_LIM_CMOC) run_namelists='namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def' ;;
-        CCC_ORCA1_LIM)        run_namelists='namelist namelist_ice namelist_top iodef.xml xmlio_server.def'                               ;;
-        CCC_ORCA1_LIM_PISCES) run_namelists='namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
-        CCC_ORCA1_LIM_CANOE) run_namelists='namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
-        CCC_ORCA1_LIM_CMOC)   run_namelists='namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def' ;;
-        CCC_ORCA1_OFF_PISCES) run_namelists='namelist namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
-        CCC_ORCA1_OFF_CANOE) run_namelists='namelist namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
-        CCC_ORCA1_OFF_CMOC) run_namelists='namelist namelist_pisces namelist_top namelist_cmoc iodef.xml xmlio_server.def'  ;;
+        CCC_ORCA025_LIM)      namelists_and_iofiles='namelist namelist_ice namelist_top iodef.xml xmlio_server.def'                               ;;
+        CCC_ORCA025_LIM_CMOC) namelists_and_iofiles='namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def' ;;
+        CCC_ORCA1_LIM)        namelists_and_iofiles='namelist namelist_ice namelist_top iodef.xml xmlio_server.def'                               ;;
+        CCC_ORCA1_LIM_PISCES) namelists_and_iofiles='namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
+        CCC_ORCA1_LIM_CANOE) namelists_and_iofiles='namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
+        CCC_ORCA1_LIM_CMOC)   namelists_and_iofiles='namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def' ;;
+        CCC_ORCA1_OFF_PISCES) namelists_and_iofiles='namelist namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
+        CCC_ORCA1_OFF_CANOE) namelists_and_iofiles='namelist namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
+        CCC_ORCA1_OFF_CMOC) namelists_and_iofiles='namelist namelist_pisces namelist_top namelist_cmoc iodef.xml xmlio_server.def'  ;;
                          #*) bail "Invalid configuration --> $arg <-- ...config MUST be a CCC_* config." ;;
                          *) get_list ;;
     esac
@@ -176,12 +176,12 @@ else
         cd $run_setup_dir/namelists
     fi
     . ${run_setup_dir}/bin/CanNEMO_shell_functions.sh
-    for namelist in $run_namelists
+    for nml_io_file in $namelists_and_iofiles
     do
         # Link here from source using relative links
-        ln -s ${src_dir}/nemo/CONFIG/${nemo_config}/EXP00/${namelist} .
-        if [[ $namelist == *"namelist"* ]]; then
-           sed -i "s#${namelist}=.*#${namelist}="'${SEQ_EXP_HOME}/namelists/'${namelist}"#" ../experiment.cfg
+        ln -s ${src_dir}/nemo/CONFIG/${nemo_config}/EXP00/${nml_io_file} .
+        if [[ $nml_io_file == *"namelist"* ]]; then
+           sed -i "s#${nml_io_file}=.*#${nml_io_file}="'${SEQ_EXP_HOME}/namelists/'${nml_io_file}"#" ../experiment.cfg
         fi
     done
     sed -i "s#nemo_xmlio_server_def=.*#nemo_xmlio_server_def="'${SEQ_EXP_HOME}/namelists/'xmlio_server.def"#" ../experiment.cfg
