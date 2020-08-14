@@ -19,8 +19,8 @@
 %FC                  ftn
 %FCFLAGS             -free -fpp -D_IMPI_=4 -D_Cray_XC30 -Qoption,link,--noinhibit-exec -list -traceback -O3 -init=arrays -init=zero -assume buffered_stdout,protect_parens -convert big_endian -r8 -align array64byte -mkl -axSKYLAKE-AVX512
 %FFLAGS              -fixed -fpp -D_IMPI_=4 -D_Cray_XC30 -Qoption,link,--noinhibit-exec -list -traceback -O3 -init=arrays -init=zero -assume buffered_stdout,protect_parens -convert big_endian -r8 -align array64byte -mkl -axSKYLAKE-AVX512
-%LD                  ftn -mkl -axSKYLAKE-AVX512
-%LDFLAGS    
+%LD                  ftn
+%LDFLAGS             -mkl -axSKYLAKE-AVX512 
 %FPPFLAGS            -P -C
 %AR                  ar  
 %ARFLAGS             rs
