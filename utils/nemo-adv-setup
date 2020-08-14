@@ -24,19 +24,19 @@ if [[ "$jobtype" == 'rtd' ]] || [[ "$jobtype" == 'dumpdel' ]]; then
 
     # create directory by cloning the maestro repo
     [ -d ${nemo_runid}-${jobtype} ] && bail "Directory ${nemo_runid}-${jobtype} already exists! Aborting"
-    git clone $maestro_repo ${nemo_runid}-${jobtype}
-    cd ${nemo_runid}-${jobtype} || { echo "Failed to clone" ;  exit 1 ; }
+    git clone $maestro_repo ${nemo_runid}-${jobtype} || bail "Failed to clone the maestro repo"
+    cd ${nemo_runid}-${jobtype}
     git checkout $maestro_version
 
-    CWD=$(pwd)
-    nrg=$(pwd)/.git
-    sha1_maestro=$(git --git-dir=${nrg} rev-parse ${maestro_version})
+    run_setup_dir=$(pwd)
+    nemo_repo_git_dir=$(pwd)/.git
+    sha1_maestro=$(git --git-dir=${nemo_repo_git_dir} rev-parse ${maestro_version})
 
     # basic maestro setup
     export SEQ_EXP_HOME=$(pwd)
     mkdir hub logs sequencing stats listings
     makelinks -f
-    PATH=$CWD/bin:$PATH
+    PATH=$run_setup_dir/bin:$PATH
     export PATH
 
     sed -i "s/RUNID=.*/RUNID=${nemo_runid}/g" experiment.cfg
@@ -44,7 +44,7 @@ if [[ "$jobtype" == 'rtd' ]] || [[ "$jobtype" == 'dumpdel' ]]; then
     sed -i "s/CONFIG=.*/CONFIG=${nemo_config}/g" experiment.cfg
     config-maestro
 
-    # produce message about experiement.cfg
+    # produce message about experiment.cfg
     echo ""
     if [ "$jobtype" == 'rtd' ]; then 
         echo "NOTE: You should copy the experiment.cfg used for the run here, then do bin/config-maestro before launching."
@@ -83,27 +83,27 @@ else
           d) use carbon (cmoc) default: 'namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def'
          "
     echo " "
-    read inlist
-    case $inlist in
+    read user_namelist_option
+    case $user_namelist_option in
         a) bail "Aborting..." ;;
-        b) lists='namelist namelist_ice namelist_top iodef.xml xmlio_server.def' ;;
-        c) lists='namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
-        d) lists='namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def' ;;
+        b) run_namelists='namelist namelist_ice namelist_top iodef.xml xmlio_server.def' ;;
+        c) run_namelists='namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
+        d) run_namelists='namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def' ;;
         *) bail "Aborting" ;;
     esac
     }
 
     # Make sure the config is valid and decide which namelist files we need.
     case $nemo_config in
-        CCC_ORCA025_LIM)      lists='namelist namelist_ice namelist_top iodef.xml xmlio_server.def'                               ;;
-        CCC_ORCA025_LIM_CMOC) lists='namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def' ;;
-        CCC_ORCA1_LIM)        lists='namelist namelist_ice namelist_top iodef.xml xmlio_server.def'                               ;;
-        CCC_ORCA1_LIM_PISCES) lists='namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
-        CCC_ORCA1_LIM_CANOE) lists='namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
-        CCC_ORCA1_LIM_CMOC)   lists='namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def' ;;
-        CCC_ORCA1_OFF_PISCES) lists='namelist namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
-        CCC_ORCA1_OFF_CANOE) lists='namelist namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
-        CCC_ORCA1_OFF_CMOC) lists='namelist namelist_pisces namelist_top namelist_cmoc iodef.xml xmlio_server.def'  ;;
+        CCC_ORCA025_LIM)      run_namelists='namelist namelist_ice namelist_top iodef.xml xmlio_server.def'                               ;;
+        CCC_ORCA025_LIM_CMOC) run_namelists='namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def' ;;
+        CCC_ORCA1_LIM)        run_namelists='namelist namelist_ice namelist_top iodef.xml xmlio_server.def'                               ;;
+        CCC_ORCA1_LIM_PISCES) run_namelists='namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
+        CCC_ORCA1_LIM_CANOE) run_namelists='namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
+        CCC_ORCA1_LIM_CMOC)   run_namelists='namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def' ;;
+        CCC_ORCA1_OFF_PISCES) run_namelists='namelist namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
+        CCC_ORCA1_OFF_CANOE) run_namelists='namelist namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
+        CCC_ORCA1_OFF_CMOC) run_namelists='namelist namelist_pisces namelist_top namelist_cmoc iodef.xml xmlio_server.def'  ;;
                          #*) bail "Invalid configuration --> $arg <-- ...config MUST be a CCC_* config." ;;
                          *) get_list ;;
     esac
@@ -119,16 +119,16 @@ else
     git clone $maestro_repo $nemo_runid
     cd $nemo_runid || { echo "Failed to create run directory" ;  exit 1 ; }
     git checkout $maestro_version
-    CWD=$(pwd)
-    nrg=$(pwd)/.git
-    sha1_maestro=$(git --git-dir=${nrg} rev-parse ${maestro_version})
+    run_setup_dir=$(pwd)
+    nemo_repo_git_dir=$(pwd)/.git
+    sha1_maestro=$(git --git-dir=${nemo_repo_git_dir} rev-parse ${maestro_version})
 
     # basic maestro setup
     export SEQ_EXP_HOME=$(pwd)
     mkdir hub logs sequencing stats listings
     touch "logs/$(date '+%Y%m%d')000000_nodelog"
     makelinks -f
-    PATH=$CWD/bin:$PATH
+    PATH=$run_setup_dir/bin:$PATH
     export PATH
 
     # loop over hosts in host/input-path pairs and set them inside ${SEQ_EXP_HOME}/hub/${host}
@@ -144,12 +144,12 @@ else
     ln -s ${src_dir}
 
     # Get the exact checksum of the ver
-    nrg=${src_dir}/.git
-    nemo_sha1=$(git --git-dir=${nrg} rev-parse ${nemo_version})
+    nemo_repo_git_dir=${src_dir}/.git
+    nemo_sha1=$(git --git-dir=${nemo_repo_git_dir} rev-parse ${nemo_version})
     echo "Using nemo sha: $nemo_sha1"
 
     # copy experiment.cfg to maestro directory
-    cp -p -f ${src_dir}/nemo/CONFIG/${nemo_config}/EXP00/experiment.cfg ${CWD}/.
+    cp -p -f ${src_dir}/nemo/CONFIG/${nemo_config}/EXP00/experiment.cfg ${run_setup_dir}/.
 
     # set experiment specific values in config and config maestro
     sed -i "s#^strg_dir=.*#strg_dir=${strg_dir}#g" experiment.cfg
@@ -168,20 +168,20 @@ else
 
     # SETUP links to relevant namelists
     # Get the namelists/iodefs
-    if [ -s $CWD/namelists ]; then 
+    if [ -s $run_setup_dir/namelists ]; then 
         echo "WARNING: namelists dir already exists, overwriting"
-        cd $CWD/namelists
+        cd $run_setup_dir/namelists
     else
         mkdir namelists
-        cd $CWD/namelists
+        cd $run_setup_dir/namelists
     fi
-    . ${CWD}/bin/CanNEMO_shell_functions.sh
-    for i in $lists
+    . ${run_setup_dir}/bin/CanNEMO_shell_functions.sh
+    for namelist in $run_namelists
     do
         # Link here from source using relative links
-        ln -s ${src_dir}/nemo/CONFIG/${nemo_config}/EXP00/${i} .
-        if [[ $i == *"namelist"* ]]; then
-           sed -i "s#${i}=.*#${i}="'${SEQ_EXP_HOME}/namelists/'${i}"#" ../experiment.cfg
+        ln -s ${src_dir}/nemo/CONFIG/${nemo_config}/EXP00/${namelist} .
+        if [[ $namelist == *"namelist"* ]]; then
+           sed -i "s#${namelist}=.*#${namelist}="'${SEQ_EXP_HOME}/namelists/'${namelist}"#" ../experiment.cfg
         fi
     done
     sed -i "s#nemo_xmlio_server_def=.*#nemo_xmlio_server_def="'${SEQ_EXP_HOME}/namelists/'xmlio_server.def"#" ../experiment.cfg
@@ -220,7 +220,7 @@ else
             echo "Value set to 1y. Alter if desired"
             frq="1y" ;;
     esac
-    if [[ ${with_nemo_diag} = on ]] && [[ $nemo_config_lower != *"orca025"* ]]; then frq="1y"; fi
+    if [[ ${with_nemo_diag} = on ]] && [[ ${nemo_config_lower} != *"orca025"* ]]; then frq="1y"; fi
     sed -i "s#nemo_freq=.*#nemo_freq=${frq}#" ../experiment.cfg
 
     # print to log
