@@ -74,10 +74,10 @@
 #===============================
 # Helper functions and variables
 #===============================
-FULLPATH=$(type $0 | awk '{print $3}') # pathname of this script
-Runame=$(basename $FULLPATH)
+script_full_path=$(type $0 | awk '{print $3}') # pathname of this script
+script_name=$(basename $script_full_path)
 bail(){
-echo "${Runame}: *** ERROR *** $1"
+echo "${script_name}: *** ERROR *** $1"
 exit 1
 }
 
@@ -92,7 +92,7 @@ usage() {
 
     # echo usage to stderr
     echo >&2 " "
-    sed >&2 -n '/^###/q; s/^#$/# /; s/^ *$/# /; 3,$s/^# //p;' "$FULLPATH"
+    sed >&2 -n '/^###/q; s/^#$/# /; s/^ *$/# /; 3,$s/^# //p;' "$script_full_path"
 
     if [[ "$err_exit" == "yes" ]]; then
         exit 1 
@@ -153,7 +153,7 @@ for arg in "$@"; do
                 repo)               nemo_repo="$val" ;;     # location of git repository
                 config)             nemo_config="$val" ;;   # name of subdir in which config lives
                 maestro_repo)       maestro_repo="$val";;   # maestro repo (already added to the env in the eval statement)
-                maestro_version)    usr_maestro_ver=1       # maestro verion / commit 
+                maestro_version)    usr_maestro_ver=1       # maestro version / commit 
                                     maestro_version="$val";; 
                 cmip6_diag)         with_nemo_diag="$val" ;; # cmip6 diagnostics or defaul history file output
                  *)                 bail "Invalid command line arg --> $arg <--" ;;
@@ -167,16 +167,16 @@ done
 #==================================
 # create storage/source directories
 #==================================
-strg_dir="/home/ords/crd/ccrn/$(whoami)/${nemo_runid}" 
-src_dir="${strg_dir}/CanNEMO_tmp_src"
-if [[ ! -d "$strg_dir" ]]; then
-    mkdir $strg_dir
+storage_dir="/home/ords/crd/ccrn/$(whoami)/${nemo_runid}" 
+src_dir="${storage_dir}/CanNEMO_tmp_src"
+if [[ ! -d "$storage_dir" ]]; then
+    mkdir $storage_dir
 else
-    echo "$strg_dir already exists!"
+    echo "$storage_dir already exists!"
     read -p "Do you want to clean it and make a new one? [y/n] " -n 1 -r
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        rm -rf $strg_dir
-        mkdir $strg_dir
+        rm -rf $storage_dir
+        mkdir $storage_dir
     else
         echo "Using existing storage directory"
     fi
