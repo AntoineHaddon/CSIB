@@ -16,7 +16,7 @@ set -e
 # Options:
 # All options begin with a dash (-) and must appear before any other command line arg
 #   -j num_proc     ...number of cpus to use for parallel compilation
-#   -p strg_loc     ...instead of linking into CWD, link the executables into strg_loc (INCOMPATIBLE WITH -s)
+#   -p storage_loc  ...instead of linking into CWD, link the executables into storage_loc (INCOMPATIBLE WITH -s)
 #   -h              ...show this usage message
 #   -d              ...compile an executable with debugging symbols (for use with DDT or GDB)
 #   -x              ...run this script with 'set -x'
@@ -76,9 +76,9 @@ bail(){
 nemo_add_cpp_keys=''    # Nemo preprocessing keys to be added or removed at compile time
 nemo_del_cpp_keys=''    # Nemo preprocessing keys to be added or removed at compile time
 nemo_ref_config=''      # The reference configuration to be used with nemo_config
-save_exec=''            # to "save" the execcutable or not
-strg_loc=''             # if used, tells build-nemo to link executables here instead of CWD
-is_coupled='no'         # Is this nemo build for a coupled model
+save_exec=0             # to "save" the execcutable or not (0=no, 1=yes)
+storage_loc=''          # if used, tells build-nemo to link executables here instead of CWD
+is_coupled=0            # Is this nemo build for a coupled model (0=ocean only, 1=coupled)
 comp_np=12              # Number of processors to use during compilation
 debug=0                 # Set debug to 0 (turned off, regular optimizations used)
 clean_compile=0         # force build-nemo to run make clean on the diag/rtds and clean the temp NEMO comp dirs
@@ -96,8 +96,8 @@ while getopts p:j:hxdsf opt; do
     case $opt in
         j) comp_np="$OPTARG" ;;
         x) set -x ;;
-        s) save_exec="on" ;;
-        p) strg_loc="$OPTARG" ;;
+        s) save_exec=1 ;;
+        p) storage_loc="$OPTARG" ;;
         d) debug=1 ;;
         h) usage ; exit 0 ;;
         f) clean_compile=1 ;; 
@@ -131,13 +131,13 @@ done
 # Consistency Checks
 #====================
 # Make sure -p and -s weren't used together
-if [[ -n "$save_exec" && -n "$strg_loc" ]]; then
+if (( save_exec == 1 )) && [[ -n "$storage_loc" ]]; then
     usage "-p and -s are mutually exclusive flags!"; exit 1
 fi
 
 # if -p was used, make the directory if needed
-if [[ -n "$strg_loc" ]]; then
-    [[ -d "$strg_loc" ]] || mkdir $strg_loc
+if [[ -n "$storage_loc" ]]; then
+    mkdir -p $storage_loc
 fi
 
 # Make sure the required arguments were given
@@ -146,36 +146,35 @@ fi
 [[ -z "$nemo_config" ]]         && bail "cfg must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
 [[ -z "$nemo_arch" ]]           && bail "arch must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
 
-# Perform some consistency checks
 [[ -d "$nemo_source_path" ]] || bail "The given srcpath ---> $nemo_source_path <--- doesn't exist!"
 
 #========================
 # Set inherited variables
 #========================
 # define build directories
-nemo_modl_blddir=${nemo_source_path}/nemo/CONFIG                        # where makenemo gets called to build the model exec
-nemo_diag_blddir=${nemo_source_path}/diag/build                         # where make gets called to build the diagnostic execs
-nemo_rtd_blddir=${nemo_source_path}/rtd/build                           # where make gets called to build the rtd execs
-nemo_rbld_blddir=${nemo_source_path}/nemo/TOOLS/REBUILD_NEMO/src/build  # where make gets called to build the tile rebuild execs
+nemo_model_build_dir=${nemo_source_path}/nemo/CONFIG                        # where makenemo gets called to build the model exec
+nemo_diag_build_dir=${nemo_source_path}/diag/build                         # where make gets called to build the diagnostic execs
+nemo_rtd_build_dir=${nemo_source_path}/rtd/build                           # where make gets called to build the rtd execs
+nemo_rbld_build_dir=${nemo_source_path}/nemo/TOOLS/REBUILD_NEMO/src/build  # where make gets called to build the tile rebuild execs
 
 # define which build directories just use `make`
-make_blddirs="$nemo_diag_blddir $nemo_rtd_blddir $nemo_rbld_blddir"
+make_build_dirs="$nemo_diag_build_dir $nemo_rtd_build_dir $nemo_rbld_build_dir"
 
-# define produced executables (must be consistent with makenemo and other makefiles)
-produced_model_exec=${nemo_modl_blddir}/${nemo_config}/BLD/bin/nemo.exe
-produced_diag_execs="nemo_diag.exe nemo_diag_cmoc.exe nemo_diag_canoe.exe"
-produced_rtd_execs="nemo_physical_rtd.exe nemo_carbon-cmoc_rtd.exe nemo_carbon-canoe_rtd.exe nemo_ice_rtd.exe"
-produced_rbld_execs="rebuild_nemo.exe rebuild_nemo_mpi.exe"
+# define target executables (must be consistent with makenemo and other makefiles)
+target_model_exec=${nemo_model_build_dir}/${nemo_config}/BLD/bin/nemo.exe
+target_diag_execs="nemo_diag.exe nemo_diag_cmoc.exe nemo_diag_canoe.exe"
+target_rtd_execs="nemo_physical_rtd.exe nemo_carbon-cmoc_rtd.exe nemo_carbon-canoe_rtd.exe nemo_ice_rtd.exe"
+target_rbld_execs="rebuild_nemo.exe rebuild_nemo_mpi.exe"
 
 # prepends paths to diag/rtd/rbld exec lists 
 #   - Note: "[^ ]*" -> matches words (strngs w/o interior spaces)
 #           "&"     -> represents the matched pattern 
-produced_diag_execs=$(echo $produced_diag_execs | sed "s#[^ ]*#${nemo_diag_blddir}/&#g")
-produced_rtd_execs=$(echo $produced_rtd_execs | sed "s#[^ ]*#${nemo_rtd_blddir}/&#g")
-produced_rbld_execs=$(echo $produced_rbld_execs | sed "s#[^ ]*#${nemo_rbld_blddir}/&#g")
+target_diag_execs=$(echo $target_diag_execs | sed "s#[^ ]*#${nemo_diag_build_dir}/&#g")
+target_rtd_execs=$(echo $target_rtd_execs | sed "s#[^ ]*#${nemo_rtd_build_dir}/&#g")
+target_rbld_execs=$(echo $target_rbld_execs | sed "s#[^ ]*#${nemo_rbld_build_dir}/&#g")
 
 # all non-model executables get saved without renamining, store in list
-non_model_execs="$produced_diag_execs $produced_rtd_execs $produced_rbld_execs" 
+non_model_execs="$target_diag_execs $target_rtd_execs $target_rbld_execs" 
 
 # When debugging is requested, use the debug arch and update the name of the executable
 if (( debug == 1 )); then
@@ -186,8 +185,8 @@ fi
 #======================================
 # Coupled consideration for model comp
 #======================================
-[[ "$nemo_config" == "CCC_CANCPL_"* ]] && is_coupled='yes'
-if [[ "$is_coupled" == "yes" ]]; then
+[[ "$nemo_config" == "CCC_CANCPL_"* ]] && is_coupled=1
+if (( is_coupled == 1 )); then
     # we must get code from the coupler repo, assumed to be housed in $CCRNSRC
     #  and cpp header files that should be contained in $WRK_DIR - confirm this
     [[ -z "$CCRNSRC" ]] && 
@@ -214,9 +213,9 @@ if [[ "$is_coupled" == "yes" ]]; then
     needed_cpl_src_file=${CCRNSRC}/CanESM/CanCPL/src/comm/com_cpl.F90                           # orig. needed cplr src file
     nemo_cpl_src_file=${nemo_external_src_dir}/com_cpl.F90                                      # copied (and modified) cplr src file
 
-    # link in the cpp files
-    [[ -f "$nemo_cppdef_config_link" ]] && rm -f $nemo_cppdef_config_link
-    [[ -f "$nemo_cppdef_sizes_link" ]] && rm -f $nemo_cppdef_sizes_link
+    # link in the cpp files (cleaning if they already exist)
+    rm -f $nemo_cppdef_config_link
+    rm -f $nemo_cppdef_sizes_link
     ln -s $cppdef_config_file $nemo_cppdef_config_link
     ln -s $cppdef_sizes_file $nemo_cppdef_sizes_link
 
@@ -231,7 +230,7 @@ fi
 #===========
 # source general compilation environment
 source $nemo_source_path/utils/comp_env || 
-    bail "Failed to source the general nemo compilation environment! Are the modules availabl on this  mach?"
+    bail "Failed to source the general nemo compilation environment! Are the modules available on this machine?"
 
 #-------------------
 # compile the model
@@ -240,21 +239,12 @@ echo ""
 echo "=================================="
 echo "      Compiling the Model!        "
 echo "=================================="
-echo "Compiling in:  ${nemo_modl_blddir}"
-cd $nemo_modl_blddir
-#--- NECESSARY ? ---#
-# Make everything user writeable so that an overwrite will clobber existing files
-chmod -R u+w .
-#-------------------#
+echo "Compiling in:  ${nemo_model_build_dir}"
+cd $nemo_model_build_dir
 
 # clean temporary dirs if this is a "clean" compile
-# NOTE: is there a "clean" function in `makenemo`?
 if (( clean_compile == 1 )); then
-    nemo_tmp_build_dirs="BLD WORK"
-    for tmpdir in $nemo_tmp_build_dirs; do
-        dir2clean=${nemo_modl_blddir}/${nemo_config}/${tmpdir}
-        [[ -d "$dir2clean" ]] && rm -rf $dir2clean
-    done
+    ./makenemo -n $nemo_config clean
 fi
 
 # build command line args into a bash array -> array needed for potential space delim list in add_key/del_key
@@ -268,19 +258,29 @@ echo 'makenemo '"${ARGS[@]}"
 ./makenemo "${ARGS[@]}"
 
 # reset the cfg.txt and cpp_${CONFIG}.fcm files to avoid dirtying the repo
-echo "Resetting cfg.txt to HEAD"
-git checkout HEAD cfg.txt || :
-git checkout HEAD ${nemo_config}/cpp_${nemo_config}.fcm
+files_to_reset="cfg.txt ${nemo_config}/cpp_${nemo_config}.fcm"
+for f in $files_to_reset; do
+    is_diff=0
+    
+    # check if the file has been changed
+    git diff -s --exit-code $f || is_diff=1
+    
+    # reset if changed
+    if (( is_diff == 1 )); then
+        echo "Resetting $f to HEAD"
+        git checkout HEAD $f
+    fi
+done 
 
 #-------------------------------
 # compile exec's using makefiles
 #-------------------------------
-for blddir in $make_blddirs; do 
+for build_dir in $make_build_dirs; do 
     echo ""
     echo "=============================================="
-    echo "    Compiling executables in $blddir          "
+    echo "    Compiling executables in $build_dir       "
     echo "=============================================="
-    cd $blddir
+    cd $build_dir
 
     # compile
     if (( clean_compile == 1 )); then 
@@ -297,10 +297,10 @@ echo ""
 echo "COMPILATION DONE"
 echo ""
 if [[ "$save_exec" == "on" ]]; then
-    echo "Saving build-nemo produced executables to RUNPATH"
+    echo "Saving build-nemo target executables to RUNPATH"
 
     # model exec (has the ability to be renamed via nemo_exec, which is why it is saved differently)
-    save $produced_model_exec $nemo_exec || bail "Problem while saving $nemo_exec"
+    save $target_model_exec $nemo_exec || bail "Problem while saving $nemo_exec"
     
     # remaining execs, which can't be renamed
     for executable in $non_model_execs; do
@@ -308,16 +308,16 @@ if [[ "$save_exec" == "on" ]]; then
     done
 else
     # determine link location
-    if [[ -n "$strg_loc" ]]; then
-        link_loc=$strg_loc
+    if [[ -n "$storage_loc" ]]; then
+        link_loc=$storage_loc
     else
         link_loc=${CWD}
     fi
-    echo "Linking build-nemo produced executables to $link_loc"
+    echo "Linking build-nemo target executables to $link_loc"
 
     # model exec (has the ability to be renamed via nemo_exec, which is why it is linked differently)
     [[ -f "${link_loc}/${nemo_exec}" ]] && rm ${link_loc}/${nemo_exec}
-    ln -s $produced_model_exec ${link_loc}/${nemo_exec}
+    ln -s $target_model_exec ${link_loc}/${nemo_exec}
 
     # remaining execs, which can't be renamed
     for executable in $non_model_execs; do
