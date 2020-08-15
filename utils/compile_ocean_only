@@ -10,8 +10,8 @@
 source experiment.cfg
 
 # build argument list
-build_nemo_opts=("-p $strg_dir/executables" "-j 12")
-build_nemo_opts+=( srcpath=${strg_dir}/CanNEMO_tmp_src cfg=${config} exec=${nemo_exec} arch=${nemo_arch} )
+build_nemo_opts=("-p $storage_dir/executables" "-j 12")
+build_nemo_opts+=( srcpath=${storage_dir}/CanNEMO_tmp_src cfg=${config} exec=${nemo_exec} arch=${nemo_arch} )
 [[ -n "${add_cpp_keys}" ]] && build_nemo_addkeys='add_key="'${add_cpp_keys}'"'
 [[ -n "${del_cpp_keys}" ]] && build_nemo_delkeys='del_key="'${del_cpp_keys}'"'
 
@@ -20,5 +20,5 @@ CWD=$(pwd)
 ssh $(whoami)@daley << EOSSH
     cd $CWD
     echo "Compiling Nemo!"
-    ${strg_dir}/CanNEMO_tmp_src/bin/build-nemo ${build_nemo_opts[@]} $build_nemo_addkeys $build_nemo_delkeys >> .compile-cannemo-$$.log 2>&1
+    ${storage_dir}/CanNEMO_tmp_src/bin/build-nemo ${build_nemo_opts[@]} $build_nemo_addkeys $build_nemo_delkeys >> .compile-cannemo-$$.log 2>&1
 EOSSH

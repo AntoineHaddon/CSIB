@@ -152,7 +152,7 @@ else
     cp -p -f ${src_dir}/nemo/CONFIG/${nemo_config}/EXP00/experiment.cfg ${run_setup_dir}/.
 
     # set experiment specific values in config and config maestro
-    sed -i "s#^strg_dir=.*#strg_dir=${strg_dir}#g" experiment.cfg
+    sed -i "s#^storage_dir=.*#storage_dir=${storage_dir}#g" experiment.cfg
     sed -i "s/RUNID=.*/RUNID=${nemo_runid}/g" experiment.cfg
     sed -i 's/.*config=.*/config='"$nemo_config/" experiment.cfg
     if [ ${with_nemo_diag} = on ] ; then
