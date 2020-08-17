@@ -112,7 +112,7 @@ maestro_version='develop'                               # default maestro versio
 usr_maestro_ver=0                                       # a binary flag specifying if the user entered non-default maestro ver
 
 jobtype='sim'                               # default job type ('sim','rtd', 'dumpdel')
-lnch_jb=0                                   # flag to decide whether to compile and launch
+launch_job=0                                # flag to decide whether to compile and launch
 with_nemo_diag=off                          # Set default history file output
 
 # Default input paths for desired hosts
@@ -129,7 +129,7 @@ do
         h) usage ;;
         r) jobtype='rtd';;      # rtd only
         d) jobtype='dumpdel';;  # dumpdel only
-        l) lnch_jb=1            # comp/lnch rn_ln long simulation
+        l) launch_job=1            # comp/lnch rn_ln long simulation
             [[ "$OPTARG" == *"="* ]] && 
             bail "you must provide an argument with -l in the following format Y:MM" 
             rn_ln_m=$(echo $OPTARG | sed "s/.*://" | xargs printf "%02d")

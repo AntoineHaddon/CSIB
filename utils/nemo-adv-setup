@@ -243,7 +243,7 @@ else
 #EOF
 
     # if the -l flag was given, launch simulation according to the desired length
-    if (( lnch_jb == 1 )); then
+    if (( launch_job == 1 )); then
         echo "Compiling and launching default $nemo_config simulation from 0001:01 to ${rn_ln_y}:${rn_ln_m}"
 
         # compile
