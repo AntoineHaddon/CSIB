@@ -116,8 +116,8 @@ else
     [ -d $nemo_runid ] && bail "Directory $nemo_runid already exists! Aborting"
 
     # clone
-    git clone $maestro_repo $nemo_runid
-    cd $nemo_runid || { echo "Failed to create run directory" ;  exit 1 ; }
+    git clone $maestro_repo $nemo_runid || bail "Failed to clone down maestro repo!"
+    cd $nemo_runid
     git checkout $maestro_version
     run_setup_dir=$(pwd)
     git_dir=$(pwd)/.git
