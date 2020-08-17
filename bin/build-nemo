@@ -301,7 +301,7 @@ done
 echo ""
 echo "COMPILATION DONE"
 echo ""
-if [[ "$save_exec" == "on" ]]; then
+if (( save_exec == 1 )); then
     echo "Saving build-nemo target executables to RUNPATH"
 
     # model exec (has the ability to be renamed via nemo_exec, which is why it is saved differently)
