@@ -107,7 +107,7 @@ usage() {
 nemo_config=''                                          # The particular configuration of nemo to be setup
 nemo_version=''                                         # The version of code to extract
 nemo_repo=git@gitlab.science.gc.ca:CanESM/CanNEMO.git   # The default nemo repo
-maestro_repo=git@gitlab.science.gc.ca:ncs001/CanNEMO_maestro_suite.git # The default maestro repo
+maestro_repo=git@gitlab.science.gc.ca:CanESM/CanNEMO_maestro_suite.git # The default maestro repo
 maestro_version='develop'                               # default maestro version
 usr_maestro_ver=0                                       # a binary flag specifying if the user entered non-default maestro ver
 
