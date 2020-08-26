@@ -25,19 +25,23 @@
 #                       -> others               : 12  mnths
 #
 # Variable definitions:
-#   ver=tag       ...tag is the version number/tag or branch to extract from
-#                    the git repository (e.g. ccc_nemo_v01)
-#   runid=abc     ...abc is the runid for your run (normally three letters). This will be
-#                    used in saving the namelist files to DATAPATH, and in naming local files.
-#   config=name   ...name is the name of a CCCma nemo configuration (one of CCC_ORCA1_LIM,
-#                    CCC_ORCA1_LIM_PISCES, CCC_ORCA1_LIM_CMOC, CCC_ORCA1_LIM_CANOE, 
-#                    CCC_ORCA1_OFF_PISCES, CCC_ORCA1_OFF_CANOE, CCC_ORCA1_OFF_CMOC,
-#                    and CCC_ORCA025_LIM).
-#                    Note that 2 degree configs are no longer supported.
-#   repo=loc      ...the pathname/url to the git repository
-#   maestro_repo=url ...repositorty to use for the maestro suite (defaults to gitlab).
+#   ver=tag             ...tag is the version number/tag or branch to extract from
+#                           the git repository (e.g. ccc_nemo_v01)
+#   runid=abc           ...abc is the runid for your run (normally three letters). This will be
+#                           used in saving the namelist files to DATAPATH, and in naming local files.
+#   config=name         ...name is the name of a CCCma nemo configuration (one of CCC_ORCA1_LIM,
+#                           CCC_ORCA1_LIM_PISCES, CCC_ORCA1_LIM_CMOC, CCC_ORCA1_LIM_CANOE, 
+#                           CCC_ORCA1_OFF_PISCES, CCC_ORCA1_OFF_CANOE, CCC_ORCA1_OFF_CMOC,
+#                           and CCC_ORCA025_LIM).
+#                           Note that 2 degree configs are no longer supported.
+#   repo=loc            ...the pathname/url to the git repository
+#   maestro_repo=url    ...repositorty to use for the maestro suite (defaults to gitlab).
+#                           NOTE: this option has been deprecated for CanNEMO versions after YYYY-MM-YY,
+#                                 as the maestro code has been moved to within CanNEMO/lib/maestro.
 #   maestro_version=ver ...version of the maestro repo to use (defaults to develop).
-#   cmip6_diag=on ...with with_nemo_diag=on the cmip6 diagnostics will be output.
+#                           NOTE: this option has been deprecated for CanNEMO versions after YYYY-MM-YY,
+#                                 as the maestro code has been moved to within CanNEMO/lib/maestro.
+#   cmip6_diag=on       ...with with_nemo_diag=on the cmip6 diagnostics will be output.
 #
 # Examples:
 # -setup an "out of the box" CCC_ORCA1_LIM_PISCES configuration in the current directory:
@@ -110,6 +114,7 @@ nemo_repo=git@gitlab.science.gc.ca:CanESM/CanNEMO.git   # The default nemo repo
 maestro_repo=git@gitlab.science.gc.ca:CanESM/CanNEMO_maestro_suite.git # The default maestro repo
 maestro_version='develop'                               # default maestro version
 usr_maestro_ver=0                                       # a binary flag specifying if the user entered non-default maestro ver
+usr_maestro_repo=0                                      # a binary flag specifying if the user entered a non-default maestro repo
 
 jobtype='sim'                               # default job type ('sim','rtd', 'dumpdel')
 launch_job=0                                # flag to decide whether to compile and launch
@@ -152,9 +157,10 @@ for arg in "$@"; do
                 ver)                nemo_version="$val" ;;  # git version, tag or branch
                 repo)               nemo_repo="$val" ;;     # location of git repository
                 config)             nemo_config="$val" ;;   # name of subdir in which config lives
-                maestro_repo)       maestro_repo="$val";;   # maestro repo (already added to the env in the eval statement)
-                maestro_version)    usr_maestro_ver=1       # maestro version / commit 
-                                    maestro_version="$val";; 
+                maestro_repo)       maestro_repo="$val"     # maestro repo (already added to the env in the eval statement)
+                                    usr_maestro_repo=1 ;;
+                maestro_version)    maestro_version="$val"  # maestro version / commit 
+                                    usr_maestro_ver=1  ;;   
                 cmip6_diag)         with_nemo_diag="$val" ;; # cmip6 diagnostics or defaul history file output
                  *)                 bail "Invalid command line arg --> $arg <--" ;;
             esac
@@ -163,6 +169,13 @@ for arg in "$@"; do
     esac
 done
 [[ -z "$nemo_runid" ]] && bail "A runid is required on the command line."
+
+# warn users about deprecation of the maestro_version/repo arguments
+if (( usr_maestro_ver == 1 )) || (( usr_maestro_repo == 1 )); then
+    echo "WARNING: you have specified 'maestro_repo' or 'maestro_version' at the command line."
+    echo "As of YYYY-MM-DD, the maestro source code is contained with in CanNEMO/lib/maestro"
+    echo "and is no longer a separate repository. These flags will have NO EFFECT for newer runs."
+fi
 
 #==================================
 # create storage/source directories
