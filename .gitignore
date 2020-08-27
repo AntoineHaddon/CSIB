@@ -5,6 +5,7 @@
 \#*#
 tmp/
 *.swp*
+*.bak
 deploy.git/
 
 # ignore everything in nemo/NEMO/external/ except the README file
