@@ -41,7 +41,8 @@ get_user_namelist_io_list(){
 # Set up maestro according the jobtype
 if [[ "$jobtype" == 'rtd' ]] || [[ "$jobtype" == 'dumpdel' ]]; then
     # NOTE: this approach needs to be reconsidered, as it relied on specific branches of the 
-    #       maestro repo, which definitely were not updated along with other codes.
+    #       maestro repo, which definitely were not updated along with other codes, and WILL
+    #       NOT WORK once we move maestro fully within the CanNEMO repo
     bail "RTD or Dump/Delete ONLY jobs are currently not supported..."
 else
     echo "Setting up an ocean only run"
@@ -211,6 +212,7 @@ else
     # if the -l flag was given, launch simulation according to the desired length
     if (( launch_job == 1 )); then
         # CSS QUESTION: are we still supporting this?
+        #               My feeling is that we don't need to support this.
         echo "Compiling and launching default $nemo_config simulation from 0001:01 to ${rn_ln_y}:${rn_ln_m}"
 
         # compile
