@@ -192,9 +192,7 @@ else
     echo '~~~' >> .setup-nemo.log
     echo $(date) >> .setup-nemo.log
     echo 'setup-nemo ' $@ >> .setup-nemo.log
-
     echo 'Code corresponds to SHA1:' $nemo_sha1 >> .setup-nemo.log
-    echo 'Maestro suite corresponds to SHA1:' $sha1_maestro >> .setup-nemo.log
 
     # Write log to nemo run database
     datef=$(date +"%Y-%m-%d %T")
