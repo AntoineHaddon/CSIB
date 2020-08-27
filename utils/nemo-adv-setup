@@ -74,6 +74,7 @@ else
 
     # bring in additional directories/files
     ln -s ${maestro_src_dir}/modules/CanNEMO EntryModule                # entry point to sequencer modules
+    ln -s ${maestro_src_dir}/modules                                    # module directory
     ln -s ${maestro_src_dir}/bin                                        # sequencing supporting binaries
     ln -s ${maestro_src_dir}/resources                                  # resource specification directory
     ln -s ${src_dir}                                                    # nemo source code
