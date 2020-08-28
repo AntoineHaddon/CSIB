@@ -33,7 +33,7 @@ set -x
 
 # Access file containing grid information
   mask_mon=$(echo $nemo_rtd_mons | awk '{printf "%02d", $NF}')  # get last element of nemo_rtd_mons, printed as 2 digit number
-  orca_grid_info=mc_${runid}_${year}_m${mask_mon}_mesh_mask.nc
+  orca_grid_info=mc_${runid}_${fyear}_m${mask_mon}_mesh_mask.nc
   [ -s orca_mesh_mask ] || access orca_mesh_mask $orca_grid_info nocp=no
 
 # Access file containing mfo line mask
