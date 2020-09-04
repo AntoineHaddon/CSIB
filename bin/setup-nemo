@@ -36,10 +36,10 @@
 #                           Note that 2 degree configs are no longer supported.
 #   repo=loc            ...the pathname/url to the git repository
 #   maestro_repo=url    ...repositorty to use for the maestro suite (defaults to gitlab).
-#                           NOTE: this option has been deprecated for CanNEMO versions after YYYY-MM-YY,
+#                           NOTE: this option has been deprecated for CanNEMO versions after 2020-09-08
 #                                 as the maestro code has been moved to within CanNEMO/lib/maestro.
 #   maestro_version=ver ...version of the maestro repo to use (defaults to develop).
-#                           NOTE: this option has been deprecated for CanNEMO versions after YYYY-MM-YY,
+#                           NOTE: this option has been deprecated for CanNEMO versions after 2020-09-08,
 #                                 as the maestro code has been moved to within CanNEMO/lib/maestro.
 #   cmip6_diag=on       ...with with_nemo_diag=on the cmip6 diagnostics will be output.
 #
@@ -173,7 +173,7 @@ done
 # warn users about deprecation of the maestro_version/repo arguments
 if (( usr_maestro_ver == 1 )) || (( usr_maestro_repo == 1 )); then
     echo "WARNING: you have specified 'maestro_repo' or 'maestro_version' at the command line."
-    echo "As of YYYY-MM-DD, the maestro source code is contained with in CanNEMO/lib/maestro"
+    echo "As of 2020-09-08, the maestro source code is contained with in CanNEMO/lib/maestro"
     echo "and is no longer a separate repository. These flags will have NO EFFECT for newer runs."
 fi
 
