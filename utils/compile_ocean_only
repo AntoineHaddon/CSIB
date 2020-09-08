@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # 
 # Extracted compilation script used during the ocean-only build process
 #   THIS SHOULD JUST BE USED TO GATHER ARGUMENTS FROM THE CONFIG FILE
