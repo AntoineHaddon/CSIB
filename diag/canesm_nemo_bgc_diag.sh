@@ -30,7 +30,7 @@ set -e
 
 # Access file containing grid information
   mask_mon=$(echo $nemo_rtd_mons | awk '{printf "%02d", $NF}')  # get last element of nemo_rtd_mons, printed as 2 digit number
-  orca_grid_info=mc_${runid}_${year}_m${mask_mon}_mesh_mask.nc
+  orca_grid_info=mc_${runid}_${fyear}_m${mask_mon}_mesh_mask.nc
   [ -s orca_mesh_mask ] || access orca_mesh_mask $orca_grid_info
 
 # sfxlst is a suffix list for some nemo historical files.
@@ -86,12 +86,8 @@ set -e
          *) cmoc_outvars="${cmoc_outvars_l1} ${cmoc_outvars_l2} ${cmoc_outvars_l8}" ;;
     esac
 
-    # Compile the diagnostic program
-    WRKDIR=$PWD
-    ( cd $CCRNSRC/CanESM/CanNEMO/diag ;
-      ifort -o $WRKDIR/nemo_diag_cmoc.exe nemo_diag_glovars_cmoc.F90 nemo_diag_cal_cmoc.F90 nemo_diag_cmoc.F90 uvic_netcdf.f \
-               `nc-config --fflags` `nc-config --flibs`
-    )
+    # copy in diagnostics exec
+    cp $CCRNSRC/executables/nemo_diag_cmoc.exe .
 
     # Get all auxiliary files needed before running the offline diagnostics
     access si.nc uncs_orca1_data_si_nomask.nc
@@ -168,12 +164,8 @@ set -e
     esac
     canoe_destfile="1m_diad_t"
 
-    # Compile the diagnostic program
-    WRKDIR=$PWD
-    ( cd $CCRNSRC/CanESM/CanNEMO/diag ;
-      ifort -o $WRKDIR/nemo_diag_canoe.exe nemo_diag_glovars_canoe.F90 nemo_diag_cal_canoe.F90 nemo_diag_canoe.F90 uvic_netcdf.f \
-                `nc-config --fflags` `nc-config --flibs`
-    )
+    # copy in executable
+    cp $CCRNSRC/executables/nemo_diag_canoe.exe .
 
     # Get all auxiliary files needed before running the offline diagnostics
     access si.nc uncs_orca1_data_si_nomask.nc

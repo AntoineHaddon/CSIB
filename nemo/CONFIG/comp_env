@@ -1,3 +1,1 @@
-# REQUIRED modules for nemo compilation
-    module load cray-netcdf
-    module load cray-mpich
+../ARCH/comp_env

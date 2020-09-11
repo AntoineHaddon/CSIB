@@ -720,7 +720,8 @@
           <field ref="licepro_cea"     name="grLateral"      description="Lateral Sea Ice Growth Rate"             level="4"  />
           <field ref="sntoice_cea"     name="snoToIce"       description="Snow-Ice Formation Rate"                 level="2"  />
           <field ref="ticemel_cea"     name="tmelt"          description="Rate of Melt at Upper Surface of Sea Ice" level="2" />
-          <field ref="bicemel_cea"     name="bmelt"          description="Rate of Melt at Sea Ice Base"            level="2"  />
+	  <field ref="bicemel_cea"     name="bmelt"          description="Rate of Melt at Sea Ice Base"            level="2"  />
+	  <field ref="bicegrow_cea"    name="bgrowth"        description="Rate of Growth at Sea Ice Base"          level="2"  />
           <!-- hcice  : Sea Ice Total Heat Content ??? -->
           <field ref="qsr_ai_cea"      name="aicesflx"                                                             level="0"  />
           <field ref="qns_ai_cea"      name="aicenflx"                                                             level="0"  />
