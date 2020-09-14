@@ -299,7 +299,7 @@ done
 #---------------------------------
 [[ -f "$target_model_exec" ]] || bail "$target_model_exec doesn't exist! Did the compilation fail?"
 for executable in $non_model_execs; do
-    [[ -f "$executable"]] || bail "$executable doesn't exist! Did the compilation fail?"
+    [[ -f "$executable" ]] || bail "$executable doesn't exist! Did the compilation fail?"
 done
 
 #==============================================
