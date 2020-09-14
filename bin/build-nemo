@@ -152,7 +152,7 @@ fi
 # Set inherited variables
 #========================
 # define build directories
-nemo_model_build_dir=${nemo_source_path}/nemo/CONFIG                        # where makenemo gets called to build the model exec
+nemo_model_build_dir=${nemo_source_path}/nemo/CONFIG                       # where makenemo gets called to build the model exec
 nemo_diag_build_dir=${nemo_source_path}/diag/build                         # where make gets called to build the diagnostic execs
 nemo_rtd_build_dir=${nemo_source_path}/rtd/build                           # where make gets called to build the rtd execs
 nemo_rbld_build_dir=${nemo_source_path}/nemo/TOOLS/REBUILD_NEMO/src/build  # where make gets called to build the tile rebuild execs
@@ -294,6 +294,13 @@ for build_dir in $make_build_dirs; do
     make
 done
 
+#---------------------------------
+# confirm that compilation worked
+#---------------------------------
+[[ -f "$target_model_exec" ]] || bail "$target_model_exec doesn't exist! Did the compilation fail?"
+for executable in $non_model_execs; do
+    [[ -f "$executable"]] || bail "$executable doesn't exist! Did the compilation fail?"
+done
 
 #==============================================
 # Save executables or link to desired directory
