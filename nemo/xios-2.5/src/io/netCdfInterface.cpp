@@ -9,6 +9,56 @@
 
 #include "netCdfInterface.hpp"
 #include "netCdfException.hpp"
+#include <fenv.h>
+
+//FRoy + RPN support + M. Valin
+extern "C"
+{
+  // Trap division-by-zero errors observed with Cray NetCDF library
+  // Reference:
+  // https://github.com/mfvalin/modeltools/blob/230888479c44d5587bbf297102bb2a3cc2de98c9/x86_utils/ieee_fp_trap_control.c
+  static unsigned short fp_trap_status = 0xFFFF;
+#define FP_TRAP_FLAGS (FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW)
+
+  int ieee_fp_trap_control (unsigned int onoff)
+  {
+#if defined(__x86_64__)
+    unsigned short int x87_status, sse_status;
+    unsigned short int old_status = fp_trap_status ;
+
+    if(onoff > 1) return 0xFFFF;  // ERROR
+
+    if(fp_trap_status == onoff) return fp_trap_status ;  // already set properly
+
+    __asm__ ("fstcw %0" : "=m" (*&x87_status));   // get legacy X87 FPU control word
+
+    if(onoff == 0) {                    // disable
+      x87_status |= FP_TRAP_FLAGS;      // set flag bits
+    }else{                              // enable
+      x87_status &= (~FP_TRAP_FLAGS);   // clear flag bits
+    }
+
+    __asm__ ("fldcw %0" : : "m" (*&x87_status));   // set legacy X87 FPU control word
+
+    __asm__ ("stmxcsr %0" : "=m" (*&sse_status));  // get new SSE MXCSR register
+
+    /* The SSE exception masks are shifted left by 7 bits.  */
+    if(onoff == 0) {                           // disable
+      sse_status |= (FP_TRAP_FLAGS << 7);      // set flag bits
+    }else{                                     // enable
+      sse_status &= ~(FP_TRAP_FLAGS << 7);     // clear flag bits
+    }
+
+    __asm__ ("ldmxcsr %0" : : "m" (*&sse_status));  // set new SSE MXCSR register
+
+    fp_trap_status = onoff;
+    return old_status;
+#else
+    return 0;
+#endif
+  }
+}
+//FRoy + RPN support + M. Valin
 
 namespace xios
 {
@@ -22,6 +72,9 @@ This function creates a new netcdf file and return its id
 int CNetCdfInterface::create(const StdString& fileName, int cMode, int& ncId)
 {
   int status = nc_create(fileName.c_str(), cMode, &ncId);
+//FRoy added print of NETCDF output mode
+  cout << " XIOS INFO: NC_CREATE FILE NAME: " << (fileName.c_str()) << endl;
+  cout << " XIOS INFO: NC_CREATE OPEN MODE: " << creationMode2String(cMode) << endl;
   if (NC_NOERR != status)
   {
     StdString errormsg(nc_strerror(status));
@@ -168,7 +221,13 @@ This function ends a netcdf file define mode, given its id
 */
 int CNetCdfInterface::endDef(int ncId)
 {
+  //FRoy + RPN support + M. Valin
+  ieee_fp_trap_control(0);
+  //FRoy + RPN support + M. Valin
   int status = nc_enddef(ncId);
+  //FRoy + RPN support + M. Valin
+  ieee_fp_trap_control(1);
+  //FRoy + RPN support + M. Valin
   if (NC_NOERR != status)
   {
     StdString errormsg(nc_strerror(status));
