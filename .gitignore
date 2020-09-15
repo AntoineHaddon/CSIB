@@ -22,3 +22,5 @@ nemo/TOOLS/REBUILD_NEMO/src/build/*
 !rtd/build/comp_env
 !nemo/TOOLS/REBUILD_NEMO/src/build/Makefile
 !nemo/TOOLS/REBUILD_NEMO/src/build/comp_env
+
+.svn
