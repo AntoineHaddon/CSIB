@@ -152,7 +152,9 @@ fi
 # Set inherited variables
 #========================
 # define build directories
-nemo_model_build_dir=${nemo_source_path}/nemo/CONFIG                       # where makenemo gets called to build the model exec
+xiosdir=xios-2.5
+nemo_xios_build_dir=${nemo_source_path}/nemo/${xiosdir}                    # where make_xios gets called to build the xios exec
+nemo_model_build_dir=${nemo_source_path}/nemo                              # where makenemo gets called to build the model exec
 nemo_diag_build_dir=${nemo_source_path}/diag/build                         # where make gets called to build the diagnostic execs
 nemo_rtd_build_dir=${nemo_source_path}/rtd/build                           # where make gets called to build the rtd execs
 nemo_rbld_build_dir=${nemo_source_path}/nemo/TOOLS/REBUILD_NEMO/src/build  # where make gets called to build the tile rebuild execs
@@ -160,7 +162,8 @@ nemo_rbld_build_dir=${nemo_source_path}/nemo/TOOLS/REBUILD_NEMO/src/build  # whe
 # define which build directories just use `make`
 make_build_dirs="$nemo_diag_build_dir $nemo_rtd_build_dir $nemo_rbld_build_dir"
 
-# define target executables (must be consistent with makenemo and other makefiles)
+# define target executables (must be consistent with make_xios, makenemo and other makefiles)
+target_xios_exec=${nemo_xios_build_dir}/bin/xios_server.exe
 target_model_exec=${nemo_model_build_dir}/${nemo_config}/BLD/bin/nemo.exe
 target_diag_execs="nemo_diag.exe nemo_diag_cmoc.exe nemo_diag_canoe.exe"
 target_rtd_execs="nemo_physical_rtd.exe nemo_carbon-cmoc_rtd.exe nemo_carbon-canoe_rtd.exe nemo_ice_rtd.exe"
@@ -236,11 +239,19 @@ echo ""
 echo "=================================="
 echo "      Compiling the Model!        "
 echo "=================================="
+
+# Compiling xios first
+echo "Compiling in:  ${nemo_xios_build_dir}"
+cd ${nemo_xios_build_dir}
+# Create xios executable
+./make_xios --full --arch $xios_arch --job 4
+
+# Compiling nemo
 echo "Compiling in:  ${nemo_model_build_dir}"
 cd $nemo_model_build_dir
 
 # source compilation environment
-source comp_env ||
+source nemo_comp_env ||
     bail "Failed to source the nemo compilation environment! Are the modules available?"
 
 # clean temporary dirs if this is a "clean" compile
