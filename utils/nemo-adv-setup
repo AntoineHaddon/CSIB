@@ -85,7 +85,8 @@ else
     #--------------------------------------------------------------------
     # copy in experiment file and set values according to setup-nemo args
     #--------------------------------------------------------------------
-    cp ${src_dir}/nemo/CONFIG/${nemo_config}/EXP00/experiment.cfg .
+    cfgdir=cfgs; expdir=EXPREF
+    cp ${src_dir}/nemo/${cfgdir}/${nemo_config}/${expdir}/experiment.cfg .
     sed -i "s#^storage_dir=.*#storage_dir=${storage_dir}#g" experiment.cfg
     sed -i "s/RUNID=.*/RUNID=${nemo_runid}/g" experiment.cfg
     sed -i 's/.*config=.*/config='"$nemo_config/" experiment.cfg
@@ -112,6 +113,7 @@ else
         CCC_ORCA1_OFF_PISCES) namelists_and_iofiles='namelist namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
         CCC_ORCA1_OFF_CANOE)  namelists_and_iofiles='namelist namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
         CCC_ORCA1_OFF_CMOC)   namelists_and_iofiles='namelist namelist_pisces namelist_top namelist_cmoc iodef.xml xmlio_server.def'  ;;
+	ORCA2_ICE_PISCES)     namelists_and_iofiles='namelist_cfg namelist_ref namelist_ice_cfg namelist_ice_ref namelist_pisces_cfg namelist_pisces_ref namelist_top_cfg namelist_top_ref iodef.xml context_nemo.xml field_def_nemo-oce.xml field_def_nemo-ice.xml field_def_nemo-pisces.xml file_def_nemo-oce.xml file_def_nemo-ice.xml file_def_nemo-pisces.xml axis_def_nemo.xml domain_def_nemo.xml grid_def_nemo.xml'  ;;
                          # ask user to specify if a non-standard config is used
                          *)get_user_namelist_io_list ;;
     esac
@@ -119,15 +121,18 @@ else
     cd $SEQ_EXP_HOME/namelists
     for nml_io_file in $namelists_and_iofiles; do
         # link into namelist directory
-        ln -s ${src_dir}/nemo/CONFIG/${nemo_config}/EXP00/${nml_io_file} .
+        ln -s ${src_dir}/nemo/${cfgdir}/${nemo_config}/${expdir}/${nml_io_file} .
         if [[ $nml_io_file == *"namelist"* ]]; then
             # if this is a namelist file (not an iodef file), set in experiment.cfg
            sed -i "s#${nml_io_file}=.*#${nml_io_file}="'${SEQ_EXP_HOME}/namelists/'${nml_io_file}"#" ../experiment.cfg
+	elif [[ $nml_io_file == *"nemo"* ]]; then
+	    # if this is a .xml file, set in experiment.cfg
+	    sed -i "s#${nml_io_file}=.*#${nml_io_file}="'${SEQ_EXP_HOME}/namelists/'${nml_io_file}"#"../experiment.cfg	
         fi
     done
     cd $SEQ_EXP_HOME
     sed -i "s#nemo_xmlio_server_def=.*#nemo_xmlio_server_def="'${SEQ_EXP_HOME}/namelists/'xmlio_server.def"#" experiment.cfg
-    sed -i "s#nemo_iodef=.*#nemo_iodef="'${SEQ_EXP_HOME}/namelists/'iodef.xml"#" experiment.cfg
+    #sed -i "s#nemo_iodef=.*#nemo_iodef="'${SEQ_EXP_HOME}/namelists/'iodef.xml"#" experiment.cfg
 
     #------------------------------------
     # Aditional Config Dependent Settings
