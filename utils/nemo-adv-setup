@@ -125,9 +125,9 @@ else
         if [[ $nml_io_file == *"namelist"* ]]; then
             # if this is a namelist file (not an iodef file), set in experiment.cfg
            sed -i "s#${nml_io_file}=.*#${nml_io_file}="'${SEQ_EXP_HOME}/namelists/'${nml_io_file}"#" ../experiment.cfg
-	elif [[ $nml_io_file == *"xml"* ]]; then
+	elif [[ $nml_io_file == *".xml"* ]]; then
 	    # if these are .xml files, set in experiment.cfg
-	    nml_io_file_var=$nml_io_file | cut -d '.' -f1
+	    nml_io_file_var=`echo $nml_io_file | cut -d '.' -f1`
            sed -i "s#${nml_io_file_var}=.*#${nml_io_file_var}="'${SEQ_EXP_HOME}/namelists/'${nml_io_file}"#" ../experiment.cfg	
         fi
     done
