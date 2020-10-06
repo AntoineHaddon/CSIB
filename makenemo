@@ -51,6 +51,7 @@ set -o posix
 # - MODELES_DIR :   "    "    "
 # - TOOLS_DIR   :   "    "    "
 # - NEMO_DIR    :   "    "    "
+# - XIOS_DIR    :   "    "    "
 # - REMOTE_CTL  : URL link to a remote resource list for an external configuration
 #                 which is not part of the reference suite
 # - LOCAL_REF   : Nearest reference configuration to an external configuration
@@ -101,6 +102,7 @@ export MAIN_DIR
 export CONFIG_DIR=${MAIN_DIR}/cfgs
 export TOOLS_DIR=${MAIN_DIR}/tools
 export COMPIL_DIR=${MAIN_DIR}/mk
+export XIOS_DIR=${MAIN_DIR}/xios-2.5
 export NEMO_DIR=${MAIN_DIR}/${x_s}
 export AGRIFUSE='10'
 list_key='0'; chk_key='1'
