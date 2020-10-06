@@ -43,7 +43,7 @@
 
 %NCDF_HOME           /opt/cray/pe/netcdf/4.6.1.3/intel/16.0
 %HDF5_HOME           
-%XIOS_HOME           $storage_dir/executables
+%XIOS_HOME           ${XIOS_DIR}
 %OASIS_HOME          
 
 %NCDF_INC                                                         
