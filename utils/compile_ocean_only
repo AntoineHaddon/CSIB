@@ -11,8 +11,9 @@ set -e
 source experiment.cfg
 
 # build argument list
-build_nemo_opts=("-p $storage_dir/executables" "-j 12")
-build_nemo_opts+=( srcpath=${storage_dir}/CanNEMO_tmp_src cfg=${config} exec=${nemo_exec} arch=${nemo_arch} )
+build_nemo_opts=("-p $storage_dir/executables" "-j 12" "-c")
+build_nemo_opts+=( xios_comp_np=8 xios_arch=$xios_arch )
+build_nemo_opts+=( srcpath=${storage_dir}/CanNEMO_tmp_src cfg=${config} refcfg=${refconfig} exec=${nemo_exec} arch=${nemo_arch} )
 [[ -n "${add_cpp_keys}" ]] && build_nemo_addkeys='add_key="'${add_cpp_keys}'"'
 [[ -n "${del_cpp_keys}" ]] && build_nemo_delkeys='del_key="'${del_cpp_keys}'"'
 
