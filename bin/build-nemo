@@ -117,7 +117,7 @@ for arg in "$@"; do
             case $var in
 		xios_comp_np) xios_comp_np="$val"   ;;  # number of processors to use during xios compilation    
 		xios_arch)  xios_arch="$val"  ;;        # xios arch name
-		xios_netcdf_lib)  xios_netcdf_lib="$val" ;;
+		xios_netcdf_lib)  xios_netcdf_lib="$val" ;; # choice of netcdf library (netcdf4_par or netcdf4_seq)
                 srcpath)    nemo_source_path="$val" ;;  # location of code in a dir structure (instead of cloning)
                 exec)       nemo_exec="$val" ;;         # name for the executable created here
                 cfg)        nemo_config="$val" ;;       # name of subdir in which config lives
