@@ -79,7 +79,8 @@ nemo_ref_config=''      # The reference configuration to be used with nemo_confi
 save_exec=0             # to "save" the execcutable or not (0=no, 1=yes)
 storage_loc=''          # if used, tells build-nemo to link executables here instead of CWD
 is_coupled=0            # Is this nemo build for a coupled model (0=ocean only, 1=coupled)
-comp_np=12              # Number of processors to use during compilation
+comp_np=12              # Number of processors to use during nemo compilation
+xios_comp_np=4          # Number of processors to use during xios compilation
 debug=0                 # Set debug to 0 (turned off, regular optimizations used)
 clean_compile=0         # force build-nemo to run make clean on the diag/rtds and clean the temp NEMO comp dirs
 CWD=$(pwd)
