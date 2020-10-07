@@ -249,8 +249,16 @@ echo "=================================="
 # Compiling xios first
 echo "Compiling in:  ${nemo_xios_build_dir}"
 cd ${nemo_xios_build_dir}
+# build command line args into a bash array
+ARGS=( --job $xios_comp_np --arch $xios_arch )
+[[ -n $xios_full ]] && ARGS+=( $xios_full )
+[[ -n $xios_debug ]] && ARGS+=( $xios_debug )
+[[ -n $xios_dev ]] && ARGS+=( $xios_dev )
+[[ -n $xios_netcdf_lib ]] && ARGS+=( $xios_netcdf_lib )
+
 # Create xios executable
-./make_xios --full --arch $xios_arch --job 4
+echo 'make_xios '"${ARGS[@]}"
+./make_xios "${ARGS[@]}"
 
 # Compiling nemo
 echo "Compiling in:  ${nemo_model_build_dir}"
