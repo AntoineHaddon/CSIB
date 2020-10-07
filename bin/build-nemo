@@ -186,6 +186,7 @@ non_model_execs="$target_diag_execs $target_rtd_execs $target_rbld_execs"
 
 # When debugging is requested, use the debug arch and update the name of the executable
 if (( debug == 1 )); then
+  xios_debug="--debug"
   nemo_arch="$nemo_arch-debug"
   nemo_exec="$nemo_exec-debug"
 fi
