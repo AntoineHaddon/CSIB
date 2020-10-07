@@ -92,7 +92,7 @@ printf " ------------------- \n"
 # process command line options/arguments
 #=======================================
 # Flags
-while getopts p:j:hxdsf opt; do
+while getopts p:j:hxdsfcv opt; do
     case $opt in
         j) comp_np="$OPTARG" ;;
         x) set -x ;;
@@ -101,6 +101,8 @@ while getopts p:j:hxdsf opt; do
         d) debug=1 ;;
         h) usage ; exit 0 ;;
         f) clean_compile=1 ;; 
+	c) xios_full="--full" ;;
+	v) xios_dev="--dev" ;;
         ?) usage ; exit 1 ;;
     esac
 done
@@ -113,11 +115,14 @@ for arg in "$@"; do
             var=$(echo $arg | awk -F\= '{printf "%s",$1}')
             val=$(echo $arg | awk -F\= '{printf "%s",$2}')
             case $var in
+		xios_comp_np) xios_comp_np="$val"   ;;  # number of processors to use during xios compilation    
+		xios_arch)  xios_arch="$val"  ;;        # xios arch name
+		xios_netcdf_lib)  xios_netcdf_lib="$val" ;;
                 srcpath)    nemo_source_path="$val" ;;  # location of code in a dir structure (instead of cloning)
                 exec)       nemo_exec="$val" ;;         # name for the executable created here
                 cfg)        nemo_config="$val" ;;       # name of subdir in which config lives
                 refcfg)     nemo_ref_config="$val" ;;   # name of subdir in which ref config lives
-                arch)       nemo_arch="$val" ;;         # name of file with arch specific make defs
+                arch)       nemo_arch="$val" ;;         # nemo arch name
                 add_key)    nemo_add_cpp_keys="$val" ;; # a list of cpp keys to add before compiling nemo
                 del_key)    nemo_del_cpp_keys="$val" ;; # a list of cpp keys to remove before compiling nemo
                 *)          usage "Invalid command line arg --> $arg <--"; exit 1  ;;
