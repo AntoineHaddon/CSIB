@@ -89,7 +89,7 @@ else
     cp ${src_dir}/nemo/${cfgdir}/${nemo_config}/${expdir}/experiment.cfg .
     sed -i "s#^storage_dir=.*#storage_dir=${storage_dir}#g" experiment.cfg
     sed -i "s/RUNID=.*/RUNID=${nemo_runid}/g" experiment.cfg
-    sed -i 's/.*config=.*/config='"$nemo_config/" experiment.cfg
+    sed -i 's/config=.*/config='"$nemo_config/" experiment.cfg
     if [ ${with_nemo_diag} = on ] ; then
        sed -i "s/with_nemo_diag=.*/with_nemo_diag=on/" experiment.cfg
     fi
