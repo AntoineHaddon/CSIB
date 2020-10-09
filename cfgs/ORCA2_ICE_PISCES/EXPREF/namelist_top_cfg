@@ -5,6 +5,9 @@
 &namtrc_run      !   run information
 !-----------------------------------------------------------------------
    ln_top_euler  = .true.
+   ln_rsttr      = .false.   !  start from a restart file (T) or not (F)
+   cn_trcrst_in  = "restart_trc"   !  suffix of pass. sn_tracer restart name (input)
+   cn_trcrst_out = "restart_trc"   !  suffix of pass. sn_tracer restart name (output)
 /
 !-----------------------------------------------------------------------
 &namtrc          !   tracers definition
