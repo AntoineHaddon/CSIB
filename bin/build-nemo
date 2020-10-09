@@ -159,6 +159,7 @@ fi
 #========================
 # define build directories
 xiosdir=xios-2.5
+cfgdir=cfgs
 nemo_xios_build_dir=${nemo_source_path}/nemo/${xiosdir}                    # where make_xios gets called to build the xios exec
 nemo_model_build_dir=${nemo_source_path}/nemo                              # where makenemo gets called to build the model exec
 nemo_diag_build_dir=${nemo_source_path}/diag/build                         # where make gets called to build the diagnostic execs
@@ -171,7 +172,7 @@ make_build_dirs=" "
 
 # define target executables (must be consistent with make_xios, makenemo and other makefiles)
 target_xios_exec=${nemo_xios_build_dir}/bin/xios_server.exe
-target_model_exec=${nemo_model_build_dir}/${nemo_config}/BLD/bin/nemo.exe
+target_model_exec=${nemo_model_build_dir}/${cfgdir}/${nemo_config}/BLD/bin/nemo.exe
 target_diag_execs="nemo_diag.exe nemo_diag_cmoc.exe nemo_diag_canoe.exe"
 target_rtd_execs="nemo_physical_rtd.exe nemo_carbon-cmoc_rtd.exe nemo_carbon-canoe_rtd.exe nemo_ice_rtd.exe"
 target_rbld_execs="rebuild_nemo.exe rebuild_nemo_mpi.exe"
@@ -184,7 +185,8 @@ target_rtd_execs=$(echo $target_rtd_execs | sed "s#[^ ]*#${nemo_rtd_build_dir}/&
 target_rbld_execs=$(echo $target_rbld_execs | sed "s#[^ ]*#${nemo_rbld_build_dir}/&#g")
 
 # all non-model executables get saved without renamining, store in list
-non_model_execs="$target_diag_execs $target_rtd_execs $target_rbld_execs" 
+# non_model_execs="$target_diag_execs $target_rtd_execs $target_rbld_execs" 
+non_model_execs=" "
 
 # When debugging is requested, use the debug arch and update the name of the executable
 if (( debug == 1 )); then
@@ -287,7 +289,6 @@ echo 'makenemo '"${ARGS[@]}"
 
 # reset the cfg.txt and cpp_${CONFIG}.fcm files to avoid dirtying the repo
 # files_to_reset="cfg.txt ${nemo_config}/cpp_${nemo_config}.fcm"
-cfgdir=cfgs
 files_to_reset="${cfgdir}/${nemo_config}/cpp_${nemo_config}.fcm"
 for f in $files_to_reset; do
     is_diff=0
@@ -326,9 +327,9 @@ done
 #---------------------------------
 # confirm that compilation worked
 #---------------------------------
-[[ -n "$make_build_dirs" ]] && [[ -f "$target_model_exec" ]] || bail "$target_model_exec doesn't exist! Did the compilation fail?"
+[[ -f "$target_model_exec" ]] || bail "$target_model_exec doesn't exist! Did the compilation fail?"
 for executable in $non_model_execs; do
-    [[ -n "$make_build_dirs" ]] && [[ -f "$executable" ]] || bail "$executable doesn't exist! Did the compilation fail?"
+    [[ -f "$executable" ]] || bail "$executable doesn't exist! Did the compilation fail?"
 done
 
 #==============================================
