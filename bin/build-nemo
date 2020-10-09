@@ -166,7 +166,8 @@ nemo_rtd_build_dir=${nemo_source_path}/rtd/build                           # whe
 nemo_rbld_build_dir=${nemo_source_path}/nemo/TOOLS/REBUILD_NEMO/src/build  # where make gets called to build the tile rebuild execs
 
 # define which build directories just use `make`
-make_build_dirs="$nemo_diag_build_dir $nemo_rtd_build_dir $nemo_rbld_build_dir"
+# make_build_dirs="$nemo_diag_build_dir $nemo_rtd_build_dir $nemo_rbld_build_dir"
+make_build_dirs=" "
 
 # define target executables (must be consistent with make_xios, makenemo and other makefiles)
 target_xios_exec=${nemo_xios_build_dir}/bin/xios_server.exe
@@ -309,25 +310,25 @@ for build_dir in $make_build_dirs; do
     echo "=============================================="
     echo "    Compiling executables in $build_dir       "
     echo "=============================================="
-    cd $build_dir
+    [[ -n "$build_dir" ]] && cd $build_dir
 
     # source environment
-    source comp_env || 
+    [[ -n "$build_dir" ]] && source comp_env || 
         bail "Failed to source the compilation environment in ${build_dir}! Are the modules available?"
 
     # compile
     if (( clean_compile == 1 )); then 
         make clean
     fi
-    make
+    [[ -n "$build_dir" ]] && make
 done
 
 #---------------------------------
 # confirm that compilation worked
 #---------------------------------
-[[ -f "$target_model_exec" ]] || bail "$target_model_exec doesn't exist! Did the compilation fail?"
+[[ -n "$make_build_dirs" ]] && [[ -f "$target_model_exec" ]] || bail "$target_model_exec doesn't exist! Did the compilation fail?"
 for executable in $non_model_execs; do
-    [[ -f "$executable" ]] || bail "$executable doesn't exist! Did the compilation fail?"
+    [[ -n "$make_build_dirs" ]] && [[ -f "$executable" ]] || bail "$executable doesn't exist! Did the compilation fail?"
 done
 
 #==============================================
