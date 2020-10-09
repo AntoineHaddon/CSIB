@@ -12,7 +12,7 @@
 #
 #  Enable cmip6_diag option when with_nemo_diag=on (D. YANG, OCT 2017)
 #
-#  This script is peeled off from nemo_pre.tsk to facilitate migrations
+#  This script is peeled off from nemo_pre.tsk and adapted to facilitate migrations
 #  (D. Yang, Aug 2020).
 #============================================================================
 
@@ -53,31 +53,46 @@
 
       # Use input namelist files from a user supplied location
 
-      # The input ocean namelist is hard coded as "namelist" in nemo source
-      [ -z "$nemo_namelist" ] && bail "nemo_namelist is not defined"
-      acc_cp namelist $nemo_namelist
+      # The input ocean namelists are hard coded as "namelist_cfg" &
+      # "namelist_ref" in nemo source
+      [ -z "$nemo_namelist_cfg" ] && bail "nemo_namelist_cfg is not defined"
+      acc_cp namelist_cfg $nemo_namelist_cfg
+      [ -z "$nemo_namelist_ref" ] && bail "nemo_namelist_ref is not defined"
+      acc_cp namelist_ref $nemo_namelist_ref
 
-      # The input ice namelist is hard coded as "namelist_ice" in nemo source
+      # The input ice namelists are hard coded as "namelist_ice_cfg" & 
+      # "namelist_ice_ref" in nemo source
       if [ $pisces_offline -ne  1 ]; then
-        [ -z "$nemo_namelist_ice" ] && bail "nemo_namelist_ice is not defined"
-        acc_cp namelist_ice $nemo_namelist_ice
+        [ -z "$nemo_namelist_ice_cfg" ] && bail "nemo_namelist_ice_cfg is not defined"
+        acc_cp namelist_ice_cfg $nemo_namelist_ice_cfg
+        [ -z "$nemo_namelist_ice_ref" ] && bail "nemo_namelist_ice_ref is not defined"
+        acc_cp namelist_ice_ref $nemo_namelist_ice_ref
       fi
-	
-      # The input top namelist is hard coded as "namelist_top" in nemo source
+
+      # The input top namelist is hard coded as "namelist_top_cfg" & 
+      # "namelist_top_ref" in nemo source
       if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
-        [ -z "$nemo_namelist_top" ] && bail "nemo_namelist_top is not defined"
-        acc_cp namelist_top $nemo_namelist_top
+        [ -z "$nemo_namelist_top_cfg" ] && bail "nemo_namelist_top_cfg is not defined"
+        acc_cp namelist_top_cfg $nemo_namelist_top_cfg
+        [ -z "$nemo_namelist_top_ref" ] && bail "nemo_namelist_top_ref is not defined"
+        acc_cp namelist_top_ref $nemo_namelist_top_ref
       fi
 
       if [ $nemo_carbon -eq 1 ]; then
-	# The input pisces namelist is hard coded as "namelist_pisces" in nemo source
-	[ -z "$nemo_namelist_pisces" ] && bail "nemo_namelist_pisces is not defined"
-	acc_cp namelist_pisces $nemo_namelist_pisces
+	# The input pisces namelist is hard coded as "namelist_pisces_cfg" & 
+	# "namelist_pisces_ref" in nemo source
+	[ -z "$nemo_namelist_pisces_cfg" ] && bail "nemo_namelist_pisces_cfg is not defined"
+	acc_cp namelist_pisces_cfg $nemo_namelist_pisces_cfg
+        [ -z "$nemo_namelist_pisces_ref" ] && bail "nemo_namelist_pisces_ref is not defined"
+        acc_cp namelist_pisces_ref $nemo_namelist_pisces_ref
         
         if [ $nemo_cmoc -eq 1 ]; then
-          # The input cmoc namelist is hard coded as "namelist_pisces" in nemo source
-          [ -z "$nemo_namelist_cmoc" ] && bail "nemo_namelist_cmoc is not defined"
-          acc_cp namelist_cmoc $nemo_namelist_cmoc 
+          # The input cmoc namelist is hard coded as "namelist_cmoc_cfg" &
+	  # "namelist_cmoc_ref" in nemo source
+          [ -z "$nemo_namelist_cmoc_cfg" ] && bail "nemo_namelist_cmoc_cfg is not defined"
+          acc_cp namelist_cmoc_cfg $nemo_namelist_cmoc_cfg 
+	  [ -z "$nemo_namelist_cmoc_ref" ] && bail "nemo_namelist_cmoc_ref is not defined"
+          acc_cp namelist_cmoc_ref $nemo_namelist_cmoc_ref
         fi
       fi
 
@@ -85,12 +100,17 @@
       [ -z "$nemo_exec" ] && bail "nemo_exec must be defined."
       cp ${storage_dir}/executables/${nemo_exec} nemo.exe
 
-      # If CFCs are enabled we need to override namelist_top and namelist_cfc 
+      # If CFCs are enabled we need to override namelist_top_cfg & namelist_top_ref,
+      # and namelist_cfc_cfg & namelist_cfc_ref 
       if [ $nemo_cfc -eq 1 ]; then
-        [ -z "$config_dir/EXP00/namelist_cfc" ] && bail "namelist_cfc not found in configuration directory"
-        [ -z "$config_dir/EXP00/namelist_top_cfc" ] && bail "namelist_cfc not found in configuration directory"
-        acc_cp namelist_top $config_dir/EXP00/namelist_top_cfc
-        acc_cp namelist_cfc $config_dir/EXP00/namelist_cfc
+        [ -z "$config_dir/EXP00/namelist_cfc_cfg" ] && bail "namelist_cfc_cfg not found in configuration directory"
+	[ -z "$config_dir/EXP00/namelist_cfc_ref" ] && bail "namelist_cfc_ref not found in configuration directory"
+        [ -z "$config_dir/EXP00/namelist_top_cfc_cfg" ] && bail "namelist_top_cfc_cfg not found in configuration directory"
+	[ -z "$config_dir/EXP00/namelist_top_cfc_ref" ] && bail "namelist_top_cfc_ref not found in configuration directory"
+        acc_cp namelist_top_cfg $config_dir/EXP00/namelist_top_cfc_cfg
+	acc_cp namelist_top_ref $config_dir/EXP00/namelist_top_cfc_ref
+        acc_cp namelist_cfc_cfg $config_dir/EXP00/namelist_cfc_cfg
+	acc_cp namelist_cfc_ref $config_dir/EXP00/namelist_cfc_ref
       fi
 
     elif [ "${nemo_loop_index}" -eq "${loop_start}" ]; then
