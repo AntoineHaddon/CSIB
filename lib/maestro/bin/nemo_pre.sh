@@ -343,26 +343,26 @@
     nn_write=$steps_in_job
 
     # Modify specified parameter values in the input ocean namelist
-    mod_nl namelist nn_it000 nn_itend nn_stock nn_write jpni jpnj jpnij \
+    mod_nl namelist_cfg nn_it000 nn_itend jpni jpnj \
       rn_rdt cn_exp nn_date0 ln_rstart nn_rstctl cn_ocerst_in cn_ocerst_out \
       ln_ctl nn_print nn_ice sn_rnf sn_cnf
 
     # Revise the ocean namelist flags to output on-the-fly diagnostics when with_nemo_diag = on.
     if [ ${with_nemo_diag} -eq 1 ] ; then
       ln_diaptr=.true.
-      ln_diaznl=.false.
-      nn_fwri=`echo $rn_rdt | awk '{printf "%d",86400/$1}'` # Frequency of ptr outputs (time steps in a day)
-      mod_nl namelist ln_diaptr ln_diaznl nn_fwri
+      # ln_diaznl=.false.
+      # nn_fwri=`echo $rn_rdt | awk '{printf "%d",86400/$1}'` # Frequency of ptr outputs (time steps in a day)
+      mod_nl namelist_cfg ln_diaptr
     fi
 
     # Modify specified parameter values in the input ice namelist
     if [ $pisces_offline -ne 1 ]; then
-      mod_nl namelist_ice cn_icerst_in cn_icerst_out
+      mod_nl namelist_ice_cfg cn_icerst_in cn_icerst_out
     fi
 
     # Modify the input top namelist
     if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
-	mod_nl namelist_top ln_rsttr cn_trcrst_in cn_trcrst_out
+	mod_nl namelist_top_cfg ln_rsttr cn_trcrst_in cn_trcrst_out
     fi
 
     # Modify cfc namelist and copy over input file
@@ -460,8 +460,8 @@
       ln_blk_core=".true.    !  CORE bulk formulation                     (T => fill namsbc_core)"
       ln_blk_mfs=".false.   !  MFS bulk formulation                      (T => fill namsbc_mfs )"
       ln_cpl=".false.   !  Coupled formulation                       (T => fill namsbc_cpl )"    
-      mod_nl namelist ln_ana ln_flx ln_blk_clio ln_blk_core ln_blk_mfs ln_cpl sn_wndi sn_wndj sn_qsr sn_qlw sn_tair sn_humi \
-                      sn_prec sn_snow sn_tdif
+      mod_nl namelist_cfg ln_blk sn_wndi sn_wndj sn_qsr sn_qlw sn_tair sn_humi \
+                      sn_prec sn_snow sn_slp sn_tdif
    
     elif [ x"$nemo_forcing" = "xflux" ] || [ x"$nemo_forcing" = "xflux_iaf" ] ; then
       ln_ana=".false.   !  analytical formulation                    (T => fill namsbc_ana )"
@@ -470,7 +470,7 @@
       ln_blk_core=".false.    !  CORE bulk formulation                     (T => fill namsbc_core)" 
       ln_blk_mfs=".false.   !  MFS bulk formulation                      (T => fill namsbc_mfs )"
       ln_cpl=".false.   !  Coupled formulation                       (T => fill namsbc_cpl )"    
-      mod_nl namelist ln_ana ln_flx ln_blk_clio ln_blk_core ln_blk_mfs ln_cpl sn_utau sn_vtau sn_qtot sn_qsr sn_emp
+      mod_nl namelist_cfg ln_flx sn_utau sn_vtau sn_qtot sn_qsr sn_emp
     fi
 
     if [ $pisces_offline -eq 1 ]; then

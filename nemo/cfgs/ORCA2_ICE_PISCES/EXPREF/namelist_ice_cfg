@@ -21,6 +21,8 @@
 !------------------------------------------------------------------------------
 &nampar         !   Generic parameters
 !------------------------------------------------------------------------------
+   cn_icerst_in     = "restart_ice"   !  suffix of ice restart name (input)
+   cn_icerst_out    = "restart_ice"   !  suffix of ice restart name (output)
 /
 !------------------------------------------------------------------------------
 &namitd         !   Ice discretization
