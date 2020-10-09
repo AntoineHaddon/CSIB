@@ -285,7 +285,9 @@ echo 'makenemo '"${ARGS[@]}"
 ./makenemo "${ARGS[@]}"
 
 # reset the cfg.txt and cpp_${CONFIG}.fcm files to avoid dirtying the repo
-files_to_reset="cfg.txt ${nemo_config}/cpp_${nemo_config}.fcm"
+# files_to_reset="cfg.txt ${nemo_config}/cpp_${nemo_config}.fcm"
+cfgdir=cfgs
+files_to_reset="${cfgdir}/${nemo_config}/cpp_${nemo_config}.fcm"
 for f in $files_to_reset; do
     is_diff=0
     
