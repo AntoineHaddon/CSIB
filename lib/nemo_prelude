@@ -694,6 +694,12 @@ echo "#################### Start NEMO pre-processing #################"
     # When starting a new run from an existing restart the ocean and ice restart
     # file names found in the restart tar file will be prefixed with the runid used
     # in the previous run.
+    
+    if [ "$runmode" == "NEMO-AGCM-hist-nudging-spin" -o "$runmode" == "NEMO-AGCM-hist-nudging" ] ; then
+       if [ -s "rs_EMPave.dat" ] ; then
+         cp rs_EMPave.dat EMPave_old.dat
+       fi
+    fi
 
     # Ocean restart files
       found_rs=`(ls -1 *_${cn_ocerst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
@@ -1083,6 +1089,146 @@ echo "#################### Start NEMO pre-processing #################"
   nemo_subbasins=${nemo_subbasins:=nemo_3.4_orca1_basinmask_050308_ukmo_modified.nc}
   nemo_o2=${nemo_o2:=urdy_fafmip_hfds_orca1_record.nc}
 
+if [ "$runmode" == "NEMO-AGCM-hist-nudging-spin" -o "$runmode" == "NEMO-AGCM-hist-nudging" ] ; then
+  nemo_weights_bilinear1=${nemo_weights_bilinear1:=uws_orca1_oisst_weights_bilin.nc}
+  nemo_weights_bicubic1=${nemo_weights_bicubic1:=uws_orca1_oisst_weights_bicubic.nc}
+  nemo_dist_coast=uws_orca1_dist_coast.nc
+  [ -s weights_bil1.nc ] || acc_cp weights_bil1.nc     $nemo_weights_bilinear1 
+  [ -s weights_bic1.nc ] || acc_cp weights_bic1.nc     $nemo_weights_bicubic1
+  [ -s dist.coast.nc ]    || acc_cp dist.coast.nc      $nemo_dist_coast
+
+  nemo_sst=uws_oisst_daily
+fi
+
+if [ "$runmode" == "NEMO-AGCM-hist-nudging" ] ; then
+  nemo_data_1m_potential_temperature=uws_oras5_thetao
+  nemo_data_1m_salinity=uws_oras5_so
+  nemo_hicif_damping=uws_hicif_damping
+  nemo_frld_damping=uws_frld_damping
+
+  acc_cp sst_y${current_year}.nc    ${nemo_sst}_y${current_year}.nc
+  before_current_year=`expr $current_year - 1 | awk  '{printf "%04d",$1}'`
+  after_current_year=`expr $current_year + 1 | awk  '{printf "%04d",$1}'`
+
+  acc_cp hicif_damping_y${current_year}.nc   ${nemo_hicif_damping}_1m_y${current_year}.nc
+  acc_cp frld_damping_y${current_year}.nc   ${nemo_frld_damping}_1m_y${current_year}.nc
+  acc_cp data_1m_potential_temperature_y${current_year}.nc  ${nemo_data_1m_potential_temperature}_1m_y${current_year}.nc
+  acc_cp data_1m_salinity_y${current_year}.nc               ${nemo_data_1m_salinity}_1m_y${current_year}.nc
+
+  acc_cp hicif_damping_y${before_current_year}.nc   ${nemo_hicif_damping}_dec_y${before_current_year}.nc
+  acc_cp frld_damping_y${before_current_year}.nc   ${nemo_frld_damping}_dec_y${before_current_year}.nc
+  acc_cp data_1m_potential_temperature_y${before_current_year}.nc  ${nemo_data_1m_potential_temperature}_dec_y${before_current_year}.nc
+  acc_cp data_1m_salinity_y${before_current_year}.nc               ${nemo_data_1m_salinity}_dec_y${before_current_year}.nc
+
+  acc_cp hicif_damping_y${after_current_year}.nc   ${nemo_hicif_damping}_jan_y${after_current_year}.nc
+  acc_cp frld_damping_y${after_current_year}.nc   ${nemo_frld_damping}_jan_y${after_current_year}.nc
+  acc_cp data_1m_potential_temperature_y${after_current_year}.nc  ${nemo_data_1m_potential_temperature}_jan_y${after_current_year}.nc
+  acc_cp data_1m_salinity_y${after_current_year}.nc               ${nemo_data_1m_salinity}_jan_y${after_current_year}.nc
+
+elif [ "$runmode" == "NEMO-AGCM-hist-nudging-spin" ] ; then
+  nemo_data_1m_potential_temperature=uws_oras5_thetao_spin
+  nemo_data_1m_salinity=uws_oras5_so_spin
+  nemo_hicif_damping=uws_hicif_damping_spin
+  nemo_frld_damping=uws_frld_damping_spin
+
+   if [ ${current_year} -le 1967 ] ; then
+       spin_year=${current_year}
+     elif [ ${current_year} -ge 1968 -a ${current_year} -le 1977 ] ; then
+       spin_year=`expr $current_year - 10`
+     elif [ ${current_year} -ge 1978 -a ${current_year} -le 1987 ] ; then
+       spin_year=`expr $current_year - 20`
+     elif [ ${current_year} -ge 1988 -a ${current_year} -le 1997 ] ; then
+       spin_year=`expr $current_year - 30`
+     elif [ ${current_year} -ge 1998 -a ${current_year} -le 2007 ] ; then
+       spin_year=`expr $current_year - 40`
+     elif [ ${current_year} -ge 2008 -a ${current_year} -le 2017 ] ; then
+       spin_year=`expr $current_year - 50`
+     elif [ ${current_year} -ge 2018 -a ${current_year} -le 2027 ] ; then
+       spin_year=`expr $current_year - 60`
+     elif [ ${current_year} -ge 2028 -a ${current_year} -le 2037 ] ; then
+       spin_year=`expr $current_year - 70`
+     elif [ ${current_year} -ge 2038 -a ${current_year} -le 2047 ] ; then
+       spin_year=`expr $current_year - 80`
+     elif [ ${current_year} -ge 2048 -a ${current_year} -le 2057 ] ; then
+       spin_year=`expr $current_year - 90`
+     elif [ ${current_year} -ge 2058 -a ${current_year} -le 2067 ] ; then
+       spin_year=`expr $current_year - 100`
+     elif [ ${current_year} -ge 2068 -a ${current_year} -le 2077 ] ; then
+       spin_year=`expr $current_year - 110`
+     elif [ ${current_year} -ge 2078 -a ${current_year} -le 2087 ] ; then
+       spin_year=`expr $current_year - 120`
+     elif [ ${current_year} -ge 2088 -a ${current_year} -le 2097 ] ; then
+       spin_year=`expr $current_year - 130`
+     elif [ ${current_year} -ge 2098 -a ${current_year} -le 2107 ] ; then
+       spin_year=`expr $current_year - 140`
+     elif [ ${current_year} -ge 2108 -a ${current_year} -le 2117 ] ; then
+       spin_year=`expr $current_year - 150`
+     elif [ ${current_year} -ge 2118 -a ${current_year} -le 2127 ] ; then
+       spin_year=`expr $current_year - 160`
+     elif [ ${current_year} -ge 2128 -a ${current_year} -le 2137 ] ; then
+       spin_year=`expr $current_year - 170`
+     elif [ ${current_year} -ge 2138 -a ${current_year} -le 2147 ] ; then
+       spin_year=`expr $current_year - 180`
+     elif [ ${current_year} -ge 2148 -a ${current_year} -le 2157 ] ; then
+       spin_year=`expr $current_year - 190`
+     elif [ ${current_year} -ge 2158 -a ${current_year} -le 2167 ] ; then
+       spin_year=`expr $current_year - 200`
+     elif [ ${current_year} -ge 2168 -a ${current_year} -le 2177 ] ; then
+       spin_year=`expr $current_year - 210`
+     elif [ ${current_year} -ge 2178 -a ${current_year} -le 2187 ] ; then
+       spin_year=`expr $current_year - 220`
+     elif [ ${current_year} -ge 2188 -a ${current_year} -le 2197 ] ; then
+       spin_year=`expr $current_year - 230`
+     elif [ ${current_year} -ge 2198 -a ${current_year} -le 2207 ] ; then
+       spin_year=`expr $current_year - 240`
+     elif [ ${current_year} -ge 2208 -a ${current_year} -le 2217 ] ; then
+       spin_year=`expr $current_year - 250`
+     elif [ ${current_year} -ge 2218 -a ${current_year} -le 2227 ] ; then
+       spin_year=`expr $current_year - 260`
+     elif [ ${current_year} -ge 2228 -a ${current_year} -le 2237 ] ; then
+       spin_year=`expr $current_year - 270`
+     elif [ ${current_year} -ge 2238 -a ${current_year} -le 2247 ] ; then
+       spin_year=`expr $current_year - 280`
+     elif [ ${current_year} -ge 2248 -a ${current_year} -le 2257 ] ; then
+       spin_year=`expr $current_year - 290`
+     elif [ ${current_year} -ge 2258 -a ${current_year} -le 2267 ] ; then
+       spin_year=`expr $current_year - 300`
+     elif [ ${current_year} -ge 2268 -a ${current_year} -le 2277 ] ; then
+       spin_year=`expr $current_year - 310`
+     elif [ ${current_year} -ge 2278 -a ${current_year} -le 2287 ] ; then
+       spin_year=`expr $current_year - 320`
+     elif [ ${current_year} -ge 2288 -a ${current_year} -le 2297 ] ; then
+       spin_year=`expr $current_year - 330`
+     elif [ ${current_year} -ge 2298 -a ${current_year} -le 2307 ] ; then
+       spin_year=`expr $current_year - 340`
+     elif [ ${current_year} -ge 2308 -a ${current_year} -le 2317 ] ; then
+       spin_year=`expr $current_year - 350`
+  fi
+
+  acc_cp sst_y${current_year}.nc    ${nemo_sst}_y${spin_year}.nc
+
+  before_current_year=`expr $current_year - 1 | awk  '{printf "%04d",$1}'`
+  after_current_year=`expr $current_year + 1 | awk  '{printf "%04d",$1}'`
+  before_spin_year=`expr ${spin_year} - 1 | awk  '{printf "%04d",$1}'`
+  after_spin_year=`expr ${spin_year} + 1 | awk  '{printf "%04d",$1}'`
+
+  acc_cp hicif_damping_y${current_year}.nc   ${nemo_hicif_damping}_1m_y${spin_year}.nc
+  acc_cp frld_damping_y${current_year}.nc   ${nemo_frld_damping}_1m_y${spin_year}.nc
+  acc_cp data_1m_potential_temperature_y${current_year}.nc  ${nemo_data_1m_potential_temperature}_1m_y${spin_year}.nc
+  acc_cp data_1m_salinity_y${current_year}.nc               ${nemo_data_1m_salinity}_1m_y${spin_year}.nc
+
+  acc_cp hicif_damping_y${before_current_year}.nc   ${nemo_hicif_damping}_dec_y${before_spin_year}.nc
+  acc_cp frld_damping_y${before_current_year}.nc   ${nemo_frld_damping}_dec_y${before_spin_year}.nc
+  acc_cp data_1m_potential_temperature_y${before_current_year}.nc  ${nemo_data_1m_potential_temperature}_dec_y${before_spin_year}.nc
+  acc_cp data_1m_salinity_y${before_current_year}.nc               ${nemo_data_1m_salinity}_dec_y${before_spin_year}.nc
+
+  acc_cp hicif_damping_y${after_current_year}.nc   ${nemo_hicif_damping}_jan_y${after_spin_year}.nc
+  acc_cp frld_damping_y${after_current_year}.nc   ${nemo_frld_damping}_jan_y${after_spin_year}.nc
+  acc_cp data_1m_potential_temperature_y${after_current_year}.nc  ${nemo_data_1m_potential_temperature}_jan_y${after_spin_year}.nc
+  acc_cp data_1m_salinity_y${after_current_year}.nc               ${nemo_data_1m_salinity}_jan_y${after_spin_year}.nc
+
+fi
+
   [ -s ahmcoef ]                || acc_cp ahmcoef                $nemo_ahmcoef
   [ -s coordinates.nc ]         || acc_cp coordinates.nc         $nemo_coordinates
   [ -s bathy_meter.nc ]         || acc_cp bathy_meter.nc         $nemo_bathy_meter
@@ -1090,7 +1236,6 @@ echo "#################### Start NEMO pre-processing #################"
   [ -s M2rowdrg.nc ]            || acc_cp M2rowdrg.nc            $nemo_M2rowdrg
   [ -s K1rowdrg.nc ]            || acc_cp K1rowdrg.nc            $nemo_K1rowdrg
   [ -s Eddyengf.nc ]            || acc_cp Eddyengf.nc            $nemo_Eddyengf
-#  [ -s geothermal_heating.nc ]  || acc_cp geothermal_heating.nc  $nemo_geothermal_heating
   [ -s runoff_core_monthly.nc ] || acc_cp runoff_core_monthly.nc $nemo_runoff_core_monthly
   [ -s sss_data.nc ]            || acc_cp sss_data.nc            $nemo_sss_data
   [ -s sst_data.nc ]            || acc_cp sst_data.nc            $nemo_sst_data
@@ -1105,8 +1250,13 @@ echo "#################### Start NEMO pre-processing #################"
     [ -s kmt ]  || acc_cp kmt   $nemo_cice_kmt
   fi
 
+if [ "$runmode" == "NEMO-AGCM-hist-nudging-spin" -o "$runmode" == "NEMO-AGCM-hist-nudging" ] ; then
+  nemo_data_1m_potential_temperature_nomask=${nemo_data_1m_potential_temperature_nomask:=nemo_3.4_orca1_potemp_1m_z46_nomask.nc}
+  nemo_data_1m_salinity_nomask=${nemo_data_1m_salinity_nomask:=nemo_3.4_orca1_salin_1m_z46_nomask.nc}
+else
   nemo_data_1m_potential_temperature_nomask=${nemo_data_1m_potential_temperature_nomask:=omip6_orca1_data_ptmp_nomask.nc}
   nemo_data_1m_salinity_nomask=${nemo_data_1m_salinity_nomask:=omip6_orca1_data_salt_nomask.nc}
+fi
 
   [ -s data_1m_potential_temperature_nomask.nc ] ||
       acc_cp data_1m_potential_temperature_nomask.nc $nemo_data_1m_potential_temperature_nomask
