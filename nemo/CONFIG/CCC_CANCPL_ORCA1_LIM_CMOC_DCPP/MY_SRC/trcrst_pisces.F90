@@ -1,1 +1,1 @@
-../../CCC_CANCPL_ORCA1_LIM_CMOC/EXP00/trcrst_pisces.F90
+../../CCC_CANCPL_ORCA1_LIM_CMOC/MY_SRC/trcrst_pisces.F90

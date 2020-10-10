@@ -1,1 +1,1 @@
-../../CCC_CANCPL_ORCA1_LIM_CMOC/EXP00/sms_pisces.F90
+../../CCC_CANCPL_ORCA1_LIM_CMOC/MY_SRC/sms_pisces.F90
