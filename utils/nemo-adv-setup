@@ -155,6 +155,10 @@ else
         fi
     fi
 
+    if [[ $nemo_config_lower == orca2_ice_pisces ]]; then
+	sed -i "s#nemo_carbon=.*#nemo_carbon=on#" experiment.cfg
+    fi
+
     # Nemoval Resolution
     if [[ $nemo_config_lower == *"orca025"* ]]; then
         sed -i "s#nemoval_res=.*#nemoval_res=025d#" experiment.cfg
