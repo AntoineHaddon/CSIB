@@ -474,22 +474,23 @@
     # Modify the namelists to suite the forcing, as specified in the makefile
     # Bulk forcing
     if [ x"$nemo_forcing" = "xbulk" ] || [ x"$nemo_forcing" = "xbulk_iaf" ] ; then
-      ln_ana=".false.   !  analytical formulation                    (T => fill namsbc_ana )"
-      ln_flx=".false.   !  flux formulation                          (T => fill namsbc_flx )"
-      ln_blk_clio=".false.   !  CLIO bulk formulation                     (T => fill namsbc_clio)"
-      ln_blk_core=".true.    !  CORE bulk formulation                     (T => fill namsbc_core)"
-      ln_blk_mfs=".false.   !  MFS bulk formulation                      (T => fill namsbc_mfs )"
-      ln_cpl=".false.   !  Coupled formulation                       (T => fill namsbc_cpl )"    
+      #ln_ana=".false.   !  analytical formulation                    (T => fill namsbc_ana )"
+      #ln_flx=".false.   !  flux formulation                          (T => fill namsbc_flx )"
+      #ln_blk_clio=".false.   !  CLIO bulk formulation                     (T => fill namsbc_clio)"
+      #ln_blk_core=".true.    !  CORE bulk formulation                     (T => fill namsbc_core)"
+      ln_blk=".true.    !  CORE bulk formulation                     (T => fill namsbc_core)"
+      #ln_blk_mfs=".false.   !  MFS bulk formulation                      (T => fill namsbc_mfs )"
+      #ln_cpl=".false.   !  Coupled formulation                       (T => fill namsbc_cpl )"    
       mod_nl namelist_cfg ln_blk sn_wndi sn_wndj sn_qsr sn_qlw sn_tair sn_humi \
                       sn_prec sn_snow sn_slp sn_tdif
    
     elif [ x"$nemo_forcing" = "xflux" ] || [ x"$nemo_forcing" = "xflux_iaf" ] ; then
-      ln_ana=".false.   !  analytical formulation                    (T => fill namsbc_ana )"
+      #ln_ana=".false.   !  analytical formulation                    (T => fill namsbc_ana )"
       ln_flx=".true.    !  flux formulation                          (T => fill namsbc_flx )"
-      ln_blk_clio=".false.   !  CLIO bulk formulation                     (T => fill namsbc_clio)" 
-      ln_blk_core=".false.    !  CORE bulk formulation                     (T => fill namsbc_core)" 
-      ln_blk_mfs=".false.   !  MFS bulk formulation                      (T => fill namsbc_mfs )"
-      ln_cpl=".false.   !  Coupled formulation                       (T => fill namsbc_cpl )"    
+      #ln_blk_clio=".false.   !  CLIO bulk formulation                     (T => fill namsbc_clio)" 
+      #ln_blk_core=".false.    !  CORE bulk formulation                     (T => fill namsbc_core)" 
+      #ln_blk_mfs=".false.   !  MFS bulk formulation                      (T => fill namsbc_mfs )"
+      #ln_cpl=".false.   !  Coupled formulation                       (T => fill namsbc_cpl )"    
       mod_nl namelist_cfg ln_flx sn_utau sn_vtau sn_qtot sn_qsr sn_emp
     fi
 
