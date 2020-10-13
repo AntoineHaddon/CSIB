@@ -372,14 +372,33 @@
     fi
     # Access or copy files required to run NEMO
     acc_cp iodef.xml              $nemo_iodef
+    acc_cp context_nemo.xml       $nemo_context_nemo
+    acc_cp field_def_nemo-oce.xml $nemo_field_def_nemo_oce
+    acc_cp field_def_nemo-ice.xml $nemo_field_def_nemo_ice
+    acc_cp field_def_nemo-pisces.xml $nemo_field_def_nemo_pisces
+    acc_cp file_def_nemo-oce.xml  $nemo_file_def_nemo_oce
+    acc_cp file_def_nemo-ice.xml  $nemo_file_def_nemo_ice
+    acc_cp file_def_nemo-pisces.xml  $nemo_file_def_nemo_pisces
+    acc_cp axis_def_nemo.xml      $nemo_axis_def_nemo
+    acc_cp domain_def_nemo.xml    $nemo_domain_def_nemo
+    acc_cp grid_def_nemo.xml      $nemo_grid_def_nemo
     acc_cp xmlio_server.def       $nemo_xmlio_server_def
-    acc_cp ahmcoef                $nemo_ahmcoef
-    acc_cp coordinates.nc         $nemo_coordinates
-    acc_cp bathy_meter.nc         $nemo_bathy_meter
-    acc_cp mask_itf.nc            $nemo_mask_itf
-    acc_cp M2rowdrg.nc            $nemo_M2rowdrg
-    acc_cp K1rowdrg.nc            $nemo_K1rowdrg
-    acc_cp Eddyengf.nc            $nemo_Eddyengf
+    acc_cp mixing_power_bot.nc    $nemo_mixing_power_bot
+    acc_cp mixing_power_pyc.nc    $nemo_mixing_power_pyc
+    acc_cp mixing_power_cri.nc    $nemo_mixing_power_cri
+    acc_cp decay_scale_bot.nc     $nemo_decay_scale_bot
+    acc_cp decay_scale_cri.nc     $nemo_decay_scale_cri
+    acc_cp eddy_viscosity_3D.nc   $nemo_eddy_viscosity_3D
+    acc_cp resto.nc               $nemo_resto
+    acc_cp empave_old.dat         $nemo_empave_old
+    acc_cp ORCA_R2_zps_domcfg     $nemo_coordinates
+    #acc_cp ahmcoef                $nemo_ahmcoef
+    #acc_cp coordinates.nc         $nemo_coordinates
+    #acc_cp bathy_meter.nc         $nemo_bathy_meter
+    #acc_cp mask_itf.nc            $nemo_mask_itf
+    #acc_cp M2rowdrg.nc            $nemo_M2rowdrg
+    #acc_cp K1rowdrg.nc            $nemo_K1rowdrg
+    #acc_cp Eddyengf.nc            $nemo_Eddyengf
     acc_cp geothermal_heating.nc  $nemo_geothermal_heating
     acc_cp runoff_core_monthly.nc $nemo_runoff_core_monthly
     acc_cp sss_data.nc            $nemo_sss_data
@@ -390,8 +409,8 @@
     acc_cp data_1m_salinity_nomask.nc              $nemo_data_1m_salinity_nomask
     acc_cp weights_bic2.nc        $nemo_weights_bicubic2   # weights for bulk mode
     acc_cp weights_bil2.nc        $nemo_weights_bilinear2  # weights for bulk mode
-    acc_cp weights_bic3.nc        $nemo_weights_bicubic3   # weights for flux mode
-    acc_cp weights_bil3.nc        $nemo_weights_bilinear3  # weights for flux mode
+    #acc_cp weights_bic3.nc        $nemo_weights_bicubic3   # weights for flux mode
+    #acc_cp weights_bil3.nc        $nemo_weights_bilinear3  # weights for flux mode
 
     # Update NEMO priority level of output variables: output_level 
     sed -i "s/output_level=\"\([0-9]\+\)\"/output_level=\"${output_level}\"/" iodef.xml
@@ -406,6 +425,7 @@
       acc_cp qlw.nc              $nemo_qlw
       acc_cp precip.nc           $nemo_precip
       acc_cp snow.nc             $nemo_snow
+      acc_cp slp.nc              $nemo_slp
 
     elif [ x"$nemo_forcing" = "xbulk_iaf" ]; then
       # Get forcing data, whcih may vary by year
