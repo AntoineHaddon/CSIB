@@ -96,6 +96,10 @@
         fi
       fi
 
+      # Get a local copy of the XIOS executable
+      [ -z "$xios_exec" ] && bail "xios_exec must be defined."
+      cp ${storage_dir}/executables/${xios_exec} xios_server.exe
+
       # Get a local copy of the NEMO executable
       [ -z "$nemo_exec" ] && bail "nemo_exec must be defined."
       cp ${storage_dir}/executables/${nemo_exec} nemo.exe
