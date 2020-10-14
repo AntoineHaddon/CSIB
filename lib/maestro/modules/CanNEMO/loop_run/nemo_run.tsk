@@ -5,7 +5,7 @@ ln -sf ../input/modfiles/* .
 
 # Run the model
 ulimit -s unlimited
-aprun -n ${jpnij} -j 1 ./nemo.exe
+aprun -n ${jpnij} -j 1 ./nemo.exe : -n ${xios_jpnij} ./xios_server.exe
 
 # Verify that run has completed, else exit
 time_step=`cat time.step`
