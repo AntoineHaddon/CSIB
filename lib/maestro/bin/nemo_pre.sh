@@ -539,5 +539,5 @@
     
       # Modify the pisces namelist to read CO2 from file, if specified in makefile
       ln_co2int=$ln_co2int # read atm pco2 from a file (T) or constant (F) 
-      mod_nl namelist_pisces ln_co2int
+      mod_nl namelist_pisces_cfg ln_co2int
     fi 
