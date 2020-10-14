@@ -386,7 +386,7 @@
     acc_cp axis_def_nemo.xml      $nemo_axis_def_nemo
     acc_cp domain_def_nemo.xml    $nemo_domain_def_nemo
     acc_cp grid_def_nemo.xml      $nemo_grid_def_nemo
-    acc_cp xmlio_server.def       $nemo_xmlio_server_def
+    #acc_cp xmlio_server.def       $nemo_xmlio_server_def
     acc_cp mixing_power_bot.nc    $nemo_mixing_power_bot
     acc_cp mixing_power_pyc.nc    $nemo_mixing_power_pyc
     acc_cp mixing_power_cri.nc    $nemo_mixing_power_cri
