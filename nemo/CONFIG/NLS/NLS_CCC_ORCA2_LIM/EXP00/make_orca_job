@@ -192,10 +192,10 @@ fi
 
 # start_year, start_mon, stop_year and stop_mon are calculated here from start and stop
 # Do not modify these definitions
-start_year=`echo $start|awk -F':' '{printf "%3.3d",$1}' -`
-start_mon=`echo $start|awk -F':' '{if ($2~/^[0-9][0-9]*$/) printf "%2.2d",$2; else print "01"}' -`
-stop_year=`echo $stop|awk -F':' '{printf "%3.3d",$1}' -`
-stop_mon=`echo $stop|awk -F':' '{if ($2~/^[0-9][0-9]*$/) printf "%2.2d",$2; else print "12"}' -`
+start_year=`echo $start|awk -F':' '{printf "%04d",$1}' -`
+start_mon=`echo $start|awk -F':' '{if ($2~/^[0-9][0-9]*$/) printf "%02d",$2; else print "01"}' -`
+stop_year=`echo $stop|awk -F':' '{printf "%04d",$1}' -`
+stop_mon=`echo $stop|awk -F':' '{if ($2~/^[0-9][0-9]*$/) printf "%02d",$2; else print "12"}' -`
 
 # All variable definitions in the following here document will be passed to the
 # cccjob command below and used to modify the job string for the current run.

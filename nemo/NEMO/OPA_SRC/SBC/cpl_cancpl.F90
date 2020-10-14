@@ -136,9 +136,11 @@ contains
     absmaxval = max(abs(maxval(var)), abs(minval(var)))
     if ( absmaxval /= 0.0_wp ) then
       if ( present(msg) ) then
-        write(numout,*)"** EE ** kt=",kt,"  absolute max value of ",trim(name)," on tile ",narea," is non-zero.   ",absmaxval,"  ",trim(msg)
+         write(numout,*)"** EE ** kt=",kt,"  absolute max value of ", &
+              trim(name)," on tile ",narea," is non-zero.   ",absmaxval,"  ",trim(msg)
       else
-        write(numout,*)"** EE ** kt=",kt,"  absolute max value of ",trim(name)," on tile ",narea," is non-zero.   ",absmaxval
+         write(numout,*)"** EE ** kt=",kt,"  absolute max value of ", &
+              trim(name)," on tile ",narea," is non-zero.   ",absmaxval
       endif
       if ( lmode == 0 ) then
         call ctl_stop("STOP", " check_value2d", trim(name)//" is out of range")
@@ -177,9 +179,11 @@ contains
     absmaxval = max(abs(maxval(var)), abs(minval(var)))
     if ( absmaxval /= 0.0_wp ) then
       if ( present(msg) ) then
-        write(numout,*)"** EE ** kt=",kt,"  absolute max value of ",trim(name)," on tile ",narea," is non-zero.   ",absmaxval,"  ",trim(msg)
+         write(numout,*)"** EE ** kt=",kt,"  absolute max value of ", &
+              trim(name)," on tile ",narea," is non-zero.   ",absmaxval,"  ",trim(msg)
       else
-        write(numout,*)"** EE ** kt=",kt,"  absolute max value of ",trim(name)," on tile ",narea," is non-zero.   ",absmaxval
+         write(numout,*)"** EE ** kt=",kt,"  absolute max value of ", &
+              trim(name)," on tile ",narea," is non-zero.   ",absmaxval
       endif
       if ( lmode == 0 ) then
         call ctl_stop("STOP", " check_value2d", trim(name)//" is out of range")
