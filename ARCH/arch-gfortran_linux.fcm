@@ -14,17 +14,17 @@
 # USER_LIB    additional libraries to pass to the linker, e.g. -l<library>
 
 
-%NCDF_INC            -I/usr/local/netcdf/include
-%NCDF_LIB            -L/usr/local/netcdf/lib -lnetcdf
-%FC	             gfortran
-%FCFLAGS             -fdefault-real-8 -O3 -funroll-all-loops -fcray-pointer 
+%NCDF_INC            -I/usr/include
+%NCDF_LIB            -L/usr/lib -lnetcdf -lnetcdff 
+%FC	             mpifort
+%FCFLAGS             -fdefault-real-8 -funroll-all-loops -fcray-pointer -static -cpp -DNDEBUG -g -O2 -finline-functions -fno-strict-aliasing -pthread -lmpich
 %FFLAGS              %FCFLAGS
-%LD                  gfortran
+%LD                  mpif90
 %LDFLAGS
 %FPPFLAGS            -P -C -traditional
 %AR                  ar
 %ARFLAGS             -rs
-%MK                  gmake
+%MK                  make
 %USER_INC            %NCDF_INC
 %USER_LIB            %NCDF_LIB
 

@@ -482,8 +482,6 @@ CONTAINS
       ! and penetrates inside the ice cover ( Maykut and Untersteiner, 1971 ; Elbert anbd Curry, 1993 )
       ! Coupled case: since cloud cover is not received from atmosphere 
       !               ===> defined as constant value -> definition done in sbc_cpl_init
-      fr1_i0(:,:) = 0.18
-      fr2_i0(:,:) = 0.82
       !                                                      ! ------------------------- !
       !                                                      !      10m wind module      !   
       !                                                      ! ------------------------- !
@@ -601,7 +599,8 @@ CONTAINS
             ssnd(jps_hice:jps_hsnw)%nct = jpl
          ELSE
             IF ( jpl > 1 ) THEN
-               CALL ctl_stop( 'sbc_cpl_init: use weighted ice and snow option for sn_snd_thick%cldes if not exchanging category fields' )
+               CALL ctl_stop( 'sbc_cpl_init: use weighted ice and snow option for & 
+                               sn_snd_thick%cldes if not exchanging category fields' )
             ENDIF
          ENDIF
       CASE ( 'weighted ice and snow' ) 
