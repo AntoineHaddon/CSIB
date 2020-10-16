@@ -183,6 +183,18 @@
         done
       fi
 
+      # Get a local copy of the XIOS executable
+      rm -f xios_server.exe
+      if [ -z "$xios_exec" ]; then
+        # If xios_exec is not defined then use the executable found in the restart archive
+        [ ! -s rs_xios_exec ] && bail "rs_xios_exec is missing from $nemo_rs"
+        mv rs_xios_exec xios_server.exe
+      else
+        # Otherwise use the executable pointed to by xios_exec
+        cp ${storage_dir}/executables/${xios_exec} xios.exe
+      fi
+      [ ! -s xios.exe ] && bail "Unable to find xios executable."
+
       # Get a local copy of the NEMO executable
       rm -f nemo.exe
       if [ -z "$nemo_exec" ]; then
