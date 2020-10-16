@@ -515,7 +515,7 @@
       acc_cp bathy.orca.nc        $nemo_bathy_orca
       acc_cp par.orca.nc          $nemo_par_orca
       acc_cp solubility.orca.nc   $nemo_solubility_orca
-      acc_cp orca2_hydrofe.orca.nc $nemo_hydrofe_orca
+      acc_cp hydrofe.orca.nc      $nemo_hydrofe_orca
 
       if [ $nemo_cmoc -eq 1 ]; then
         acc_cp fermask.orca.nc $nemo_fermask_orca
