@@ -199,81 +199,116 @@
 	# Override the namelist files found in the restart archive with
 	# files supplied by the user
 
-	# The input ocean namelist is hard coded as "namelist" in nemo source
-	[ -z "$nemo_namelist" ] && bail q"nemo_namelist is not defined"
-	acc_cp namelist $nemo_namelist nocp=no
+	# The input ocean namelist is hard coded as "namelist_cfg" &
+        # "namelist_ref" in nemo source
+	[ -z "$nemo_namelist_cfg" ] && bail q"nemo_namelist_cfg is not defined"
+	acc_cp namelist_cfg $nemo_namelist_cfg nocp=no
+        [ -z "$nemo_namelist_ref" ] && bail q"nemo_namelist_ref is not defined"
+        acc_cp namelist_ref $nemo_namelist_ref nocp=no
 
 	if [ $pisces_offline -ne 1 ]; then
-	  # The input ice namelist is hard coded as "namelist_ice" in nemo source
-	  [ -z "$nemo_namelist_ice" ] && bail "nemo_namelist_ice is not defined"
-	  acc_cp namelist_ice $nemo_namelist_ice nocp=no
+	  # The input ice namelist is hard coded as "namelist_ice_cfg" &
+	  # "namelist_ice_ref" in nemo source
+	  [ -z "$nemo_namelist_ice_cfg" ] && bail "nemo_namelist_ice_cfg is not defined"
+	  acc_cp namelist_ice_cfg $nemo_namelist_ice_cfg nocp=no
+	  [ -z "$nemo_namelist_ice_ref" ] && bail "nemo_namelist_ice_ref is not defined"
+          acc_cp namelist_ice_ref $nemo_namelist_ice_ref nocp=no
         fi
 
 	if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
-          # The input top namelist is hard coded as "namelist_top" in nemo source
-          [ -z "$nemo_namelist_top" ] && bail "nemo_namelist_top is not defined"
-           acc_cp namelist_top $nemo_namelist_top nocp=no
+          # The input top namelist is hard coded as "namelist_top_cfg" &
+	  # "namelist_top_ref" in nemo source
+          [ -z "$nemo_namelist_top_cfg" ] && bail "nemo_namelist_top_cfg is not defined"
+          acc_cp namelist_top_cfg $nemo_namelist_top_cfg nocp=no
+	  [ -z "$nemo_namelist_top_ref" ] && bail "nemo_namelist_top_ref is not defined"
+          acc_cp namelist_top_ref $nemo_namelist_top_ref nocp=no
         fi
 
 	if [ $nemo_carbon -eq 1 ]; then
-	  # The input pisces namelist is hard coded as "namelist_pisces" in nemo source
-	  [ -z "$nemo_namelist_pisces" ] && bail "nemo_namelist_pisces is not defined"
-	  acc_cp namelist_pisces $nemo_namelist_pisces nocp=no
+	  # The input pisces namelist is hard coded as "namelist_pisces_cfg" & 
+	  # "namelist_pisces_ref" in nemo source
+	  [ -z "$nemo_namelist_pisces_cfg" ] && bail "nemo_namelist_pisces_cfg is not defined"
+	  acc_cp namelist_pisces_cfg $nemo_namelist_pisces_cfg nocp=no
+	  [ -z "$nemo_namelist_pisces_ref" ] && bail "nemo_namelist_pisces_ref is not defined"
+          acc_cp namelist_pisces_ref $nemo_namelist_pisces_ref nocp=no
         
           if [ $nemo_cmoc -eq 1 ]; then
-	    # The input cmoc namelist is hard coded as "namelist_cmoc" in nemo source
-	    [ -z "$nemo_namelist_cmoc" ] && bail "nemo_namelist_cmoc is not defined"
-	    acc_cp namelist_cmoc $nemo_namelist_cmoc nocp=no
+	    # The input cmoc namelist is hard coded as "namelist_cmoc_cfg" &
+	    # "namelist_cmoc_ref" in nemo source
+	    [ -z "$nemo_namelist_cmoc_cfg" ] && bail "nemo_namelist_cmoc_cfg is not defined"
+	    acc_cp namelist_cmoc_cfg $nemo_namelist_cmoc_cfg nocp=no
+	    [ -z "$nemo_namelist_cmoc_ref" ] && bail "nemo_namelist_cmoc_ref is not defined"
+            acc_cp namelist_cmoc_ref $nemo_namelist_cmoc_ref nocp=no
           fi
-          # If CFCs are enabled we need to override namelist_top and namelist_cfc 
+          # If CFCs are enabled we need to override namelist_top_cfg & namelist_top_ref,
+	  #  and namelist_cfc_cfg & namelist_cfc_ref
           if [ $nemo_cfc -eq 1 ]; then
-            [ -z "$config_dir/EXP00/namelist_cfc" ] && bail "namelist_cfc not found in configuration directory"
-            [ -z "$config_dir/EXP00/namelist_top_cfc" ] && bail "namelist_cfc not found in configuration directory"
-            acc_cp namelist_top $config_dir/EXP00/namelist_top_cfc
-            acc_cp namelist_cfc $config_dir/EXP00/namelist_cfc
+            [ -z "$config_dir/EXP00/namelist_cfc_cfg" ] && bail "namelist_cfc_cfg not found in configuration directory"
+	    [ -z "$config_dir/EXP00/namelist_cfc_ref" ] && bail "namelist_cfc_ref not found in configuration directory"
+            [ -z "$config_dir/EXP00/namelist_top_cfc_cfg" ] && bail "namelist_top_cfc_cfg not found in configuration directory"
+	    [ -z "$config_dir/EXP00/namelist_top_cfc_ref" ] && bail "namelist_top_cfc_ref not found in configuration directory"
+            acc_cp namelist_top_cfg $config_dir/EXP00/namelist_top_cfc_cfg
+            acc_cp namelist_top_ref $config_dir/EXP00/namelist_top_cfc_ref
+            acc_cp namelist_cfc_cfg $config_dir/EXP00/namelist_cfc_cfg
+            acc_cp namelist_cfc_ref $config_dir/EXP00/namelist_cfc_ref
           fi
 	fi
       else
 	# Use the namelist files found in the restart archive
-	[ ! -s rs_namelist ]     && bail "Missing rs_namelist from $nemo_rs"
+	[ ! -s rs_namelist_cfg ]     && bail "Missing rs_namelist_cfg from $nemo_rs"
+	[ ! -s rs_namelist_ref ]     && bail "Missing rs_namelist_ref from $nemo_rs"
 
 	if [ $pisces_offline -ne 1 ]; then
-	  [ ! -s rs_namelist_ice ] && bail "Missing rs_namelist_ice from $nemo_rs"
+	  [ ! -s rs_namelist_ice_cfg ] && bail "Missing rs_namelist_ice_cfg from $nemo_rs"
+	  [ ! -s rs_namelist_ice_ref ] && bail "Missing rs_namelist_ice_ref from $nemo_rs"
         fi
 
 	if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
-	  [ ! -s rs_namelist_top ]    && bail "Missing rs_namelist_top from $nemo_rs"
+	  [ ! -s rs_namelist_top_cfg ] && bail "Missing rs_namelist_top_cfg from $nemo_rs"
+	  [ ! -s rs_namelist_top_ref ] && bail "Missing rs_namelist_top_ref from $nemo_rs"
         fi 
 
 	if [ $nemo_carbon -eq 1 ]; then
-	  [ ! -s rs_namelist_pisces ] && bail "Missing rs_namelist_pisces from $nemo_rs"
+	  [ ! -s rs_namelist_pisces_cfg ] && bail "Missing rs_namelist_pisces_cfg from $nemo_rs"
+	  [ ! -s rs_namelist_pisces_ref ] && bail "Missing rs_namelist_pisces_ref from $nemo_rs"
 
           if [ $nemo_cmoc -eq 1 ]; then
-	    [ ! -s rs_namelist_cmoc ] && bail "Missing rs_namelist_cmoc from $nemo_rs"
+	    [ ! -s rs_namelist_cmoc_cfg ] && bail "Missing rs_namelist_cmoc_cfg from $nemo_rs"
+	    [ ! -s rs_namelist_cmoc_ref ] && bail "Missing rs_namelist_cmoc_ref from $nemo_rs"
           fi
 	fi
 
-	# The input ocean namelist is hard coded as "namelist" in nemo source
-	cp -f rs_namelist namelist
+	# The input ocean namelist_cfg is hard coded as "namelist_cfg" &
+        # "namelist_ref" in nemo source
+	cp -f rs_namelist_cfg namelist_cfg
+	cp -f rs_namelist_ref namelist_ref
 
-	# The input ice namelist is hard coded as "namelist_ice" in nemo source
+	# The input ice namelist is hard coded as "namelist_ice_cfg" 
+	# "namelist_ice_ref" in nemo source
 	if [ $pisces_offline -ne 1 ]; then
-	  cp -f rs_namelist_ice namelist_ice
+	  cp -f rs_namelist_ice_cfg namelist_ice_cfg
+	  cp -f rs_namelist_ice_ref namelist_ice_ref
         fi
  
-	# The input top namelist is hard coded as "namelist_top" in nemo source
+	# The input top namelist is hard coded as "namelist_top_cfg" &
+	# "namelist_top_ref" in nemo source
 	if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
-	  cp -f rs_namelist_top namelist_top
+	  cp -f rs_namelist_top_cfg namelist_top_cfg
+	  cp -f rs_namelist_top_ref namelist_top_ref
         fi
 
 	if [ $nemo_carbon -eq 1 ]; then
 
-	  # The input pisces namelist is hard coded as "namelist_pisces" in nemo source
-	  cp -f rs_namelist_pisces namelist_pisces
+	  # The input pisces namelist is hard coded as "namelist_pisces_cfg" &
+	  # "namelist_pisces_ref" in nemo source
+	  cp -f rs_namelist_pisces_cfg namelist_pisces_cfg
+	  cp -f rs_namelist_pisces_ref namelist_pisces_ref
 
           if [ $nemo_cmoc -eq 1 ]; then
-    	    # The input cmoc namelist is hard coded as "namelist_cmoc" in nemo source
-	    cp -f rs_namelist_cmoc namelist_cmoc
+    	    # The input cmoc namelist is hard coded as "namelist_cmoc_cfg" &
+	    # "namelist_cmoc_ref" in nemo source
+	    cp -f rs_namelist_cmoc_cfg namelist_cmoc_cfg
+	    cp -f rs_namelist_cmoc_ref namelist_cmoc_ref
           fi
 	fi
       fi 
