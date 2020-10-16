@@ -134,7 +134,7 @@ if __name__ == '__main__':
         #frontend_machine = subprocess.check_output(['getdef', 'experiment.cfg', 'machine']).strip()
         hall = subprocess.check_output(['getdef', 'experiment.cfg', 'hall']).strip()
         nemo_wallclock = subprocess.check_output(['getdef', 'experiment.cfg', 'nemo_wallclock']).strip()
-        nprocs = subprocess.check_output(['getdef', 'experiment.cfg', 'jpnij']).strip()
+        nprocs = subprocess.check_output(['getdef', 'experiment.cfg', 'tjpnij']).strip()
   
         # Compute how many loops are required in total
         run_start_year, run_start_month, nloops, nemo_freq_months = calc_chunk_nloops(start, end, nemo_freq)
