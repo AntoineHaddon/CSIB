@@ -394,8 +394,8 @@
     acc_cp decay_scale_cri.nc     $nemo_decay_scale_cri
     acc_cp eddy_viscosity_3D.nc   $nemo_eddy_viscosity_3D
     acc_cp resto.nc               $nemo_resto
-    acc_cp empave_old.dat         $nemo_empave_old
-    acc_cp ORCA_R2_zps_domcfg     $nemo_coordinates
+    acc_cp EMPave_old.dat         $nemo_empave_old
+    acc_cp ORCA_R2_zps_domcfg.nc  $nemo_coordinates
     #acc_cp ahmcoef                $nemo_ahmcoef
     #acc_cp coordinates.nc         $nemo_coordinates
     #acc_cp bathy_meter.nc         $nemo_bathy_meter
@@ -425,7 +425,7 @@
       acc_cp uwnd10m.nc          $nemo_u
       acc_cp vwnd10m.nc          $nemo_v
       acc_cp humi10m.nc          $nemo_q
-      acc_cp qsw.nc              $nemo_qsw
+      acc_cp qsr.nc              $nemo_qsr
       acc_cp qlw.nc              $nemo_qlw
       acc_cp precip.nc           $nemo_precip
       acc_cp snow.nc             $nemo_snow
@@ -521,14 +521,14 @@
         acc_cp fermask.orca.nc $nemo_fermask_orca
       fi
 
-      acc_cp data_dic_nomask.nc        $nemo_data_dic_nomask
-      acc_cp data_alkalini_nomask.nc   $nemo_data_alkalini_nomask
-      acc_cp data_o2_nomask.nc         $nemo_data_o2_nomask
-      acc_cp data_po4_nomask.nc        $nemo_data_po4_nomask
-      acc_cp data_si_nomask.nc         $nemo_data_si_nomask
-      acc_cp data_doc_nomask.nc        $nemo_data_doc_nomask
-      acc_cp data_fer_nomask.nc        $nemo_data_fer_nomask
-      acc_cp data_no3_nomask.nc        $nemo_data_no3_nomask
+      acc_cp data_DIC_nomask.nc        $nemo_data_dic_nomask
+      acc_cp data_Alkalini_nomask.nc   $nemo_data_alkalini_nomask
+      acc_cp data_O2_nomask.nc         $nemo_data_o2_nomask
+      acc_cp data_PO4_nomask.nc        $nemo_data_po4_nomask
+      acc_cp data_Si_nomask.nc         $nemo_data_si_nomask
+      acc_cp data_DOC_nomask.nc        $nemo_data_doc_nomask
+      acc_cp data_Fer_nomask.nc        $nemo_data_fer_nomask
+      acc_cp data_NO3_nomask.nc        $nemo_data_no3_nomask
       acc_cp atcco2.nc                 $nemo_data_atcco2
 
       # Abiotic biogeochemistry
