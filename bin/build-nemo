@@ -172,7 +172,7 @@ nemo_rbld_build_dir=${nemo_source_path}/nemo/${tooldir}/REBUILD_NEMO/src/build  
 
 # define which build directories just use `make`
 # make_build_dirs="$nemo_diag_build_dir $nemo_rtd_build_dir $nemo_rbld_build_dir"
-make_build_dirs=" "
+make_build_dirs="$nemo_rbld_build_dir"
 
 # define target executables (must be consistent with make_xios, makenemo and other makefiles)
 target_xios_exec=${nemo_xios_build_dir}/bin/xios_server.exe
@@ -192,7 +192,7 @@ model_execs="$target_xios_exec $target_model_exec"
 
 # all non-model executables get saved without renamining, store in list
 # non_model_execs="$target_diag_execs $target_rtd_execs $target_rbld_execs" 
-non_model_execs=" "
+non_model_execs="$target_rbld_execs"
 
 # When debugging is requested, use the debug arch and update the name of the executable
 if (( debug == 1 )); then
