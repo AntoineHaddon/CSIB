@@ -13,8 +13,7 @@ ln -s ${task_input_modfiles_dir}/* .
 cp ${storage_dir}/executables/rebuild_nemo_mpi.exe .
 acc_cp mpi_rebuild ${seq_exp_home_dir}/bin/mpi_rebuild
 
-# If used, the below section does the parallel rebuild of tiles
-if [ "0" -eq "0" ] ; then
+# Establish a hist file list for moving to the output directory 
 
   # Get bash arrays with the freq and suffix list
   nemo_hist_file_suffix_list_array=($nemo_hist_file_suffix_list)
@@ -28,21 +27,24 @@ if [ "0" -eq "0" ] ; then
   fi
 
   # Loop through each element, and setup a rebuild namelist.
-  rebuild_list=""
+  histfile_list=""
   if [ $nemo_save_hist -eq 1 ] || [ $nemo_rtd -eq 1 ]; then
       for i in $(seq 0 $(($n_suffix-1))); do
           echo "${nemo_hist_file_suffix_list_array[$i]}"
           echo "${nemo_hist_file_freq_list_array[$i]}"
-         rebuild_list="$rebuild_list ${cn_exp}_${nemo_hist_file_freq_list_array[$i]}_${chunk_start_date}_${chunk_end_date}_${nemo_hist_file_suffix_list_array[$i]}"
+          histfile_list="$histfile_list ${cn_exp}_${nemo_hist_file_freq_list_array[$i]}_${chunk_start_date}_${chunk_end_date}_${nemo_hist_file_suffix_list_array[$i]}"
       done
   fi
-  histfile_list=$rebuild_list
 
+# If used, the below section does the parallel rebuild of tiles
+if [ "0" -eq "0" ] ; then
+  rebuild_list=""
+  n_rebuild=0
   # Depending on parameter choices, add relevant restarts to rebuild_list
   end_step=${chunk_nn_itend}
   if [ $pisces_offline -eq 0 ]; then
       rebuild_list="$rebuild_list ${cn_exp}_${end_step}_restart"
-      n_rebuild=$(($n_suffix + 1))
+      n_rebuild=$(($n_rebuild + 1))
       if [ $nn_ice -eq 2 ]; then
           rebuild_list="$rebuild_list ${cn_exp}_${end_step}_restart_ice"
           n_rebuild=$(($n_rebuild + 1))
