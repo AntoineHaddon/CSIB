@@ -161,13 +161,14 @@ fi
 xiosdir=xios-2.5
 cfgdir=cfgs
 xios_exec=xios_server.exe
+tooldir=tools
 
 # define build directories
 nemo_xios_build_dir=${nemo_source_path}/nemo/${xiosdir}                    # where make_xios gets called to build the xios exec
 nemo_model_build_dir=${nemo_source_path}/nemo                              # where makenemo gets called to build the model exec
 nemo_diag_build_dir=${nemo_source_path}/diag/build                         # where make gets called to build the diagnostic execs
 nemo_rtd_build_dir=${nemo_source_path}/rtd/build                           # where make gets called to build the rtd execs
-nemo_rbld_build_dir=${nemo_source_path}/nemo/TOOLS/REBUILD_NEMO/src/build  # where make gets called to build the tile rebuild execs
+nemo_rbld_build_dir=${nemo_source_path}/nemo/${tooldir}/REBUILD_NEMO/src/build  # where make gets called to build the tile rebuild execs
 
 # define which build directories just use `make`
 # make_build_dirs="$nemo_diag_build_dir $nemo_rtd_build_dir $nemo_rbld_build_dir"
