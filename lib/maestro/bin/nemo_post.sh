@@ -115,6 +115,8 @@ cp -f ${runwrk}/namelist_ice_ref rs_namelist_ice_ref    || :
 if [ $pisces_offline -eq 0 ]; then
   [ -s ${cn_exp}_${chunk_nn_itend}_restart.nc ] && 
      tarlist="$tarlist ${cn_exp}_${chunk_nn_itend}_restart.nc"
+  [ -s ${cn_exp}_icebergs_${chunk_nn_itend}_restart.nc ] &&
+     tarlist="$tarlist ${cn_exp}_icebergs_${chunk_nn_itend}_restart.nc"
   [ -s ${cn_exp}_${chunk_nn_itend}_restart_ice.nc ]  && 
      tarlist="$tarlist ${cn_exp}_${chunk_nn_itend}_restart_ice.nc"
   [ -s nemo_physical_rtd.nc ]  && tarlist="$tarlist nemo_physical_rtd.nc"
