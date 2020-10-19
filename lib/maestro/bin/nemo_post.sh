@@ -146,7 +146,11 @@ if [ $nemo_carbon -eq 1 ]; then
   fi
 fi
 
-# Save a copy of the executable that was just run to the restart archive
+# Save a copy of the XIOS executable that was just run to the restart archive
+cp -f ${runwrk}/xios_server.exe rs_xios_exec || :
+[ -s rs_xios_exec ] && tarlist="$tarlist rs_xios_exec"
+
+# Save a copy of the NEMO executable that was just run to the restart archive
 cp -f ${runwrk}/nemo.exe rs_nemo_exec || :
 [ -s rs_nemo_exec ] && tarlist="$tarlist rs_nemo_exec"
 
