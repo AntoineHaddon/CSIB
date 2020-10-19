@@ -100,10 +100,15 @@ rm *[0-9][0-9].nc
 # tarlist contains a list of additional files to add to the restart archive
 tarlist=''
 
-cp -f ${runwrk}/namelist        rs_namelist        || :
-cp -f ${runwrk}/namelist_ice    rs_namelist_ice    || :
-[ -s rs_namelist ]         && tarlist="$tarlist rs_namelist"
-[ -s rs_namelist_ice ]     && tarlist="$tarlist rs_namelist_ice"
+cp -f ${runwrk}/namelist_cfg     rs_namelist_cfg        || :
+cp -f ${runwrk}/namelist_ref     rs_namelist_ref        || :
+cp -f ${runwrk}/namelist_ice_cfg rs_namelist_ice_cfg    || :
+cp -f ${runwrk}/namelist_ice_ref rs_namelist_ice_ref    || :
+
+[ -s rs_namelist_cfg ]     && tarlist="$tarlist rs_namelist_cfg"
+[ -s rs_namelist_ref ]     && tarlist="$tarlist rs_namelist_ref"
+[ -s rs_namelist_ice_cfg ] && tarlist="$tarlist rs_namelist_ice_cfg"
+[ -s rs_namelist_ice_ref ] && tarlist="$tarlist rs_namelist_ice_ref"
 
 if [ $pisces_offline -eq 0 ]; then
   [ -s ${cn_exp}_${chunk_nn_itend}_restart.nc ] && 
@@ -115,19 +120,25 @@ if [ $pisces_offline -eq 0 ]; then
 fi
 
 if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
-  cp -f ${runwrk}/namelist_top    rs_namelist_top    || :
-  [ -s rs_namelist_top ]     && tarlist="$tarlist rs_namelist_top"
+  cp -f ${runwrk}/namelist_top_cfg rs_namelist_top_cfg    || :
+  cp -f ${runwrk}/namelist_top_ref rs_namelist_top_ref    || :
+  [ -s rs_namelist_top_cfg ] && tarlist="$tarlist rs_namelist_top_cfg"
+  [ -s rs_namelist_top_ref ] && tarlist="$tarlist rs_namelist_top_ref"
   tarlist="$tarlist ${cn_exp}_${chunk_nn_itend}_restart_trc.nc"
 fi
 
 if [ $nemo_carbon -eq 1 ]; then
-  cp -f ${runwrk}/namelist_pisces rs_namelist_pisces || :
-  [ -s rs_namelist_pisces ]  && tarlist="$tarlist rs_namelist_pisces"
+  cp -f ${runwrk}/namelist_pisces_cfg rs_namelist_pisces_cfg || :
+  cp -f ${runwrk}/namelist_pisces_ref rs_namelist_pisces_ref || :
+  [ -s rs_namelist_pisces_cfg ] && tarlist="$tarlist rs_namelist_pisces_cfg"
+  [ -s rs_namelist_pisces_ref ] && tarlist="$tarlist rs_namelist_pisces_ref"
   [ -s nemo_carbon_rtd.nc ]  && tarlist="$tarlist nemo_carbon_rtd.nc"
 
   if [ $nemo_cmoc -eq 1 ]; then
-    cp -f ${runwrk}/namelist_cmoc rs_namelist_cmoc || :
-    [ -s rs_namelist_cmoc ]  && tarlist="$tarlist rs_namelist_cmoc"
+    cp -f ${runwrk}/namelist_cmoc_cfg rs_namelist_cmoc_cfg || :
+    cp -f ${runwrk}/namelist_cmoc_ref rs_namelist_cmoc_ref || :
+    [ -s rs_namelist_cmoc_cfg ]  && tarlist="$tarlist rs_namelist_cmoc_cfg"
+    [ -s rs_namelist_cmoc_ref ]  && tarlist="$tarlist rs_namelist_cmoc_ref"
   fi
 fi
 
