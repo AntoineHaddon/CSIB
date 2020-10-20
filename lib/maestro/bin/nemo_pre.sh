@@ -369,6 +369,7 @@
 
             cp ${nemo_seq_workbase}/${nemo_seq_container}/nemo_run+${lm1}/work/namelist* .
             cp ${nemo_seq_workbase}/${nemo_seq_container}/nemo_run+${lm1}/work/nemo.exe .
+	    cp ${nemo_seq_workbase}/${nemo_seq_container}/nemo_run+${lm1}/work/xios_server.exe .
 
             nn_it000=${chunk_nn_it000}
     else
