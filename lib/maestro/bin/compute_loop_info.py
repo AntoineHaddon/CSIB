@@ -11,6 +11,8 @@
    	   NOT FOR PRODUCTION
 
    NCS, 05/2017. 
+
+   Adapted for NEMO4.0.3 (D. Yang, OCT 2020)
 """
 import math
 # dictionary mapper to get days in month

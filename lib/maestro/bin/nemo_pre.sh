@@ -14,6 +14,8 @@
 #
 #  This script is peeled off from nemo_pre.tsk and adapted to facilitate migrations
 #  (D. Yang, Aug 2020).
+#
+#  This script is adapted for NEMO4.0.3 (D. Yang, OCT 2020)
 #============================================================================
 
   # nemo_rs is the restart file name that will be used below
@@ -144,6 +146,9 @@
       # When starting a new run from an existing restart the ocean and ice restart
       # file names found in the restart tar file will be prefixed with the runid used
       # in the previous run.
+    
+      # Note: input_*_restart_file_names below are not used anywhere
+      # and sfx is not defined (D. Yang)
 
       # Ocean restart files
       if [ $pisces_offline -ne 1 ]; then

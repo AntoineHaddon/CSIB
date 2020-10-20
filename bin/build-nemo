@@ -1,4 +1,8 @@
 #!/bin/bash
+#=====================================
+# This script is adapted for NEMO4.0.3
+# (D. Yang, OCT 2020)
+#=====================================
 set -e
 #
 #   Usage: build-nemo [options] exec=name cfg=CONFIG \

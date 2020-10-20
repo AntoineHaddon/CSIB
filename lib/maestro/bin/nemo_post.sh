@@ -6,6 +6,8 @@
 # 
 # This script is peeled off from nemo_post.tsk and adapted 
 # to facilitate migrations (D. Yang, Sep 2020).
+# 
+# This script is adapted for NEMO4.0.3 (D. Yang, OCT 2020)
 #=========================================================
  
 # Get input files and executables

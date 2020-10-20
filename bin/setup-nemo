@@ -1,5 +1,9 @@
 #!/bin/bash
 #
+#==========================================
+# Adapted for NEMO4.0.3 (D. Yang, OCT 2020)
+#==========================================
+#
 #   Usage: setup-nemo [options] ver=tag runid=name config=config \
 #                     [repo=dirpath] \
 #                     [maestro_repo=url] \

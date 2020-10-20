@@ -1,8 +1,11 @@
 #!/bin/bash
+#======================================================================
 # Setup script for nemo only mode:
 #   - gets sourced by setup-nemo after it clones down the CanNEMO repo
 #   - all inherited variables come from setup-nemo
 #   - the bail function is inherited from setup-nemo
+#
+# This script is adapted for NEMO4.0.3 (D. Yang, OCT 2020)
 #======================================================================
 set -e
 #=====================

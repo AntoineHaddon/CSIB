@@ -1,4 +1,9 @@
 #!/bin/bash
+#=====================================
+# This script is adapted for NEMO4.0.3
+# (D. Yang, OCT 2020)
+#=====================================
+
 set -e
 # 
 # Extracted compilation script used during the ocean-only build process
