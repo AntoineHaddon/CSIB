@@ -191,9 +191,9 @@
         mv rs_xios_exec xios_server.exe
       else
         # Otherwise use the executable pointed to by xios_exec
-        cp ${storage_dir}/executables/${xios_exec} xios.exe
+        cp ${storage_dir}/executables/${xios_exec} xios_server.exe
       fi
-      [ ! -s xios.exe ] && bail "Unable to find xios executable."
+      [ ! -s xios_server.exe ] && bail "Unable to find xios executable."
 
       # Get a local copy of the NEMO executable
       rm -f nemo.exe
