@@ -147,7 +147,7 @@
 
       # Ocean restart files
       if [ $pisces_offline -ne 1 ]; then
-        found_rs=`(ls -1 *_${cn_ocerst_out}.nc || : ) 2>/dev/null`
+        found_rs=`(ls -1 *_${cn_ocerst_out}.nc |grep -v icebergs || : ) 2>/dev/null`
         [ -z "$found_rs" ] && bail "No ocean restart files were found in $nemo_rs "
         rm -f input_ocn_restart_file_names
         touch input_ocn_restart_file_names
