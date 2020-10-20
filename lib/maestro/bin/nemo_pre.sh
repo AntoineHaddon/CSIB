@@ -346,7 +346,7 @@
             outdir_lm1=${nemo_seq_workbase}/${nemo_seq_container}/nemo_run+${lm1}/output
 
             # Ocean restart files
-            found_rs=`(ls -1 ${outdir_lm1}/*_${cn_ocerst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
+            found_rs=`(ls -1 ${outdir_lm1}/*_${cn_ocerst_out}_[0-9][0-9][0-9][0-9].nc | grep -v icebergs || : ) 2>/dev/null`
             for rsfile in $found_rs; do
                 sfx=`echo $rsfile|sed 's/^.*\(_[0-9][0-9][0-9][0-9].nc\).*$/\1/'`
                 #[ "x$sfx" = "x$rsfile" ] && sfx=`echo $rsfile|sed 's/^.*\(\.nc\).*$/\1/'`
