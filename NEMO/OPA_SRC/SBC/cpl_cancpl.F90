@@ -336,6 +336,7 @@ contains
      !--- and return an ocean intra-communicator as local_ocn_comm
      !--- NOTE: ocn_master is the rank in MPI_COMM_WORLD not the rank in local_ocn_comm
      local_ocn_comm = -1
+     call init_cplr_sizes()
      call define_group('ocn', local_ocn_comm)
 
      kl_comm  = local_ocn_comm
