@@ -450,6 +450,7 @@
 &namctl        !   Control prints                                       (default: OFF)
    ln_ctl = .FALSE.                 ! Toggle all report printing on/off (T/F); Ignored if sn_cfctl%l_config is T
    nn_print    =    0      !  level of print (0 no extra print)
+   ln_timing   = .true.    !  timing by routine write out in timing.output file
 !-----------------------------------------------------------------------
 /
 !-----------------------------------------------------------------------
