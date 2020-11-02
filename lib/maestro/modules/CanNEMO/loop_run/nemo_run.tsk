@@ -9,7 +9,10 @@ ln -sf ../input/modfiles/* .
 
 # Run the model
 ulimit -s unlimited
-aprun -n ${jpnij} -j 1 ./nemo.exe : -n ${xios_jpnij} ./xios_server.exe
+
+pesnode=$pesnode  # Number of cores per node
+tnemonode=$(($jpnij - $jpnij % $pesnode)) # Total number of nodes used for NEMO only
+PMI_NO_FORK=1 aprun -n $pesnode ${TASK_BIN}/nemoxios.sh $xios_jpnij : -n $tnemonode -N $pesnode ./nemo.exe
 
 # Verify that run has completed, else exit
 time_step=`cat time.step`
