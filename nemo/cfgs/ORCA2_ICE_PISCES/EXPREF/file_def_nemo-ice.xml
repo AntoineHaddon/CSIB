@@ -9,10 +9,10 @@
 ============================================================================================================
  -->
     
- <file_definition type="one_file" name="@expname@_@freq@_@startdate@_@enddate@" sync_freq="1mo" min_digits="4">
+ <file_definition type="one_file" name="@expname@_@freq@_@startdate@_@enddate@" min_digits="4">
    
-   <file_group id="5d" output_freq="5d"  output_level="10" enabled=".TRUE.">  <!-- 5d files -->   	
-     <file id="file21" name_suffix="_icemod" description="ice variables" enabled=".true." >
+   <file_group id="1m" output_freq="1mo"  output_level="10" enabled=".TRUE.">  <!-- real monthly files -->   	
+     <file id="file21" name_suffix="_icemod" description="ice variables">
 
        <!-- ice mask -->
        <field field_ref="icemask"          name="simsk"   />
@@ -90,7 +90,7 @@
 
      </file>
      
-     <file id="file22" name_suffix="_SBC_scalar" description="scalar variables" enabled=".true." >
+     <file id="file22" name_suffix="_SBC_scalar" description="scalar variables" enabled=".FALSE." >
        <!-- global contents -->
        <field field_ref="ibgvol_tot"     name="ibgvol_tot"   />
        <field field_ref="sbgvol_tot"     name="sbgvol_tot"   />
@@ -117,24 +117,6 @@
      
    </file_group>
 
-   <file_group id="1m"  output_freq="1mo" output_level="10" enabled=".TRUE."> <!-- real monthly files -->
-     <!-- To compute transport through straits : need to read ice mask at ice iteration at freq_offset = 1mo - nn_fsbc
-        <file id="file23" name_suffix="_strait_ice" description="transport variables through straits" >
-          <field field_ref="strait_mifl"      name="simassacrossline"  freq_offset="1mo-4ts" />
-          <field field_ref="strait_msfl"      name="snmassacrossline"  freq_offset="1mo-4ts" />
-          <field field_ref="strait_arfl"      name="siareaacrossline"  freq_offset="1mo-4ts" />
-        </file>
-     -->
-    </file_group>
-
-   <!-- To compute transport through straits : need to read ice mask at ice iteration at freq_offset = - nn_fsbc + 1
-     <file id="maskMFO" name="maskMFO" enabled="true" mode="read" output_freq="1mo" cyclic="true"  >
-      <field id="maskMFO_u_ice" operation="instant"  freq_offset="-3ts"  grid_ref="grid_U_4strait_ice" />
-      <field id="maskMFO_v_ice" operation="instant"  freq_offset="-3ts"  grid_ref="grid_V_4strait_ice" />
-     </file>
-     -->
-
-   
    <file_group id="1ts" output_freq="1ts" output_level="10" enabled=".TRUE."/> <!-- 1 time step files -->
    <file_group id="1h"  output_freq="1h"  output_level="10" enabled=".TRUE."/> <!-- 1h files -->
    <file_group id="2h"  output_freq="2h"  output_level="10" enabled=".TRUE."/> <!-- 2h files -->
