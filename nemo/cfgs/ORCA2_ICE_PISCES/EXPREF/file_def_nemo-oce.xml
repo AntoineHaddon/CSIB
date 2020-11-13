@@ -13,36 +13,36 @@
       <file_group id="1m" output_freq="1mo" output_level="10" enabled=".TRUE."> <!-- real monthly files -->
 
         <file id="file11" name_suffix="_grid_T" description="ocean T grid variables">
-          <field field_ref="toce"        name="votemper" level="0" />
-	  <field field_ref="soce"        name="vosaline" level="0" />
-	  <field field_ref="sst"         name="sosstsst" level="0" />
-	  <field field_ref="ssh"         name="sossheig" level="0" />
-	  <field field_ref="empmr"       name="sowaflup" level="0" />
-	  <field field_ref="qt_oce"      name="sohefldo" level="0" />
-	  <field field_ref="mldr10_1"    name="somxl010" level="0" />
-	  <field field_ref="erp"         name="sowafldp" level="0" />
-	  <field field_ref="mlddzt"      name="sothedep" level="0" />
-	  <field field_ref="qns_oce"     name="qns"      level="0" />
-	  <field field_ref="qsr_oce"     name="qsr"      level="0" />
+          <field field_ref="toce"        name="thetao"   level="0" />
+	  <field field_ref="soce"        name="so"       level="0" />
+	  <field field_ref="sst"         name="tos"      level="0" />
+	  <field field_ref="ssh"         name="ssh"      level="0" />
+	  <field field_ref="empmr"       name="wfo"      level="0" />
+	  <field field_ref="qt_oce"      name="qt_oce"   level="0" />
+	  <field field_ref="mldr10_1"    name="mldr10_1" level="0" />
+	  <field field_ref="erp"         name="erp"      level="0" />
+	  <field field_ref="mlddzt"      name="mlddzt"   level="0" />
+	  <field field_ref="qns_oce"     name="qns_oce"  level="0" />
+	  <field field_ref="qsr_oce"     name="qsr_oce"  level="0" />
 	  <field field_ref="isnwmlt_cea" name="isnwmlt_cea" level="0" />
 	  <field field_ref="snowmel_cea" name="snowmel_cea" level="0" />
         </file>
 
 	<file id="file12" name_suffix="_grid_U" description="ocean U grid variables">
-	  <field field_ref="uoce"        name="vozocrtx" level="0" />
-	  <field field_ref="uoce_eiv"    name="vozoeivu" level="8" />
-	  <field field_ref="utau"        name="sozotaux" level="0" />
+	  <field field_ref="uoce"        name="uo"       level="0" />
+	  <field field_ref="uoce_eiv"    name="uoce_eiv" level="8" />
+	  <field field_ref="utau"        name="tauuo"    level="0" />
         </file>		
 
 	<file id="file13" name_suffix="_grid_V" description="ocean V grid variables">
-	  <field field_ref="voce"        name="vomecrty" level="0" />
-	  <field field_ref="voce_eiv"    name="vomeeivv" level="0" />
-	  <field field_ref="vtau"        name="sometauy" level="0" />
+	  <field field_ref="voce"        name="vo"       level="0" />
+	  <field field_ref="voce_eiv"    name="voce_eiv" level="0" />
+	  <field field_ref="vtau"        name="tauvo"    level="0" />
         </file>
 
 	<file id="file14" name_suffix="_grid_W" description="ocean W grid variables">
-	  <field field_ref="woce"        name="vovecrtz" level="0" />
-	  <field field_ref="woce_eiv"    name="voveeivw" level="8" />
+	  <field field_ref="woce"        name="wo"       level="0" />
+	  <field field_ref="woce_eiv"    name="woce_eiv" level="8" />
        </file>
 
         <file id="file16" name_suffix="_diaptr2D" description="zonal mean variables" enabled=".FALSE.">
