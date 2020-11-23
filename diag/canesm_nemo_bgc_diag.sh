@@ -2,6 +2,9 @@
 # nemo diagnostics & time mean (1d -> 1m) & time series
 # D. Yang, Nov 2018, A. Shao, S.Kharin
 #
+# Change annual mean computation from cdo yearmean to
+# cdo yearmonmean (weighted) - D. Yang, 23/NOV/2020
+#
 # This script is sourced in CanESM/CCCma_tools/cccjob_dir/
 # lib/jobdefs/canesm_nemo_bgc_diag_jobdef
 #########################################################
@@ -133,7 +136,7 @@ set -e
       release tmp.nc
       access  tmp.nc ${cmoc_src_file}_$f.nc na
       if [ -s tmp.nc ] ; then
-        cdo yearmean tmp.nc ann_$f.nc
+        cdo yearmonmean tmp.nc ann_$f.nc
         save ann_$f.nc ${cmoc_dest_file}_$f.nc
         release tmp.nc
       fi
@@ -145,7 +148,7 @@ set -e
       release tmp.nc
       access  tmp.nc ${cmoc_src_file}_$f.nc na
       if [ -s tmp.nc ] ; then
-        cdo yearmean tmp.nc ann_$f.nc
+        cdo yearmonmean tmp.nc ann_$f.nc
         save ann_$f.nc ${cmoc_dest_file}_$f.nc
         release tmp.nc
       fi
@@ -190,7 +193,7 @@ set -e
       release tmp.nc
       access  tmp.nc ${canoe_src_file}_$f.nc na
       if [ -s tmp.nc ] ; then
-        cdo yearmean tmp.nc ann_$f.nc
+        cdo yearmonmean tmp.nc ann_$f.nc
         save ann_$f.nc ${canoe_dest_file}_$f.nc
         release tmp.nc
       fi
@@ -202,7 +205,7 @@ set -e
       release tmp.nc
       access  tmp.nc ${canoe_src_file}_$f.nc na
       if [ -s tmp.nc ] ; then
-        cdo yearmean tmp.nc ann_$f.nc
+        cdo yearmonmean tmp.nc ann_$f.nc
         save ann_$f.nc ${canoe_dest_file}_$f.nc
         release tmp.nc
       fi
