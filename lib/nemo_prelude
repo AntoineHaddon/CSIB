@@ -695,7 +695,7 @@ echo "#################### Start NEMO pre-processing #################"
     # file names found in the restart tar file will be prefixed with the runid used
     # in the previous run.
 
-    if [ "$runmode" == "NEMO-AGCM-dcpp-assim-spin" -o "$runmode" == "NEMO-AGCM-dcpp-assim" \
+    if [ "$runmode" == "NEMO-AGCM-dcpp-assim-spin"             -o "$runmode" == "NEMO-AGCM-dcpp-assim" -o \
          "$runmode" == "NEMO-AGCM-dcpp-assim-spin-relaxed-co2" -o "$runmode" == "NEMO-AGCM-dcpp-assim-relaxed-co2" ] ; then
       if [ -s "rs_EMPave.dat" ] ; then
         cp rs_EMPave.dat EMPave_old.dat
