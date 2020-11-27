@@ -218,8 +218,8 @@
       cp -f nemo.exe rs_nemo_exec || :
       [ -s rs_nemo_exec ] && tarlist="$tarlist rs_nemo_exec"
 
-      if [ "$runmode" == "NEMO-AGCM-dcpp-assim-spin"             -o "$runmode" == "NEMO-AGCM-dcpp-assim" -o \
-           "$runmode" == "NEMO-AGCM-dcpp-assim-spin-relaxed-co2" -o "$runmode" == "NEMO-AGCM-dcpp-assim-relaxed-co2" ] ; then
+      if [ "$runmode" == "NEMO-AGCM-dcpp-assim-spin" -o "$runmode" == "NEMO-AGCM-dcpp-assim-relaxed-co2-spin" -o \
+           "$runmode" == "NEMO-AGCM-dcpp-assim"      -o "$runmode" == "NEMO-AGCM-dcpp-assim-relaxed-co2" ] ; then
         # Add a EMPave data for nn_fwb=2
         cp -f EMPave.dat rs_EMPave.dat || :
         [ -s rs_EMPave.dat ] && tarlist="$tarlist rs_EMPave.dat"

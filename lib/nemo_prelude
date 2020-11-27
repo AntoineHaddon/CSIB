@@ -695,8 +695,8 @@ echo "#################### Start NEMO pre-processing #################"
     # file names found in the restart tar file will be prefixed with the runid used
     # in the previous run.
 
-    if [ "$runmode" == "NEMO-AGCM-dcpp-assim-spin"             -o "$runmode" == "NEMO-AGCM-dcpp-assim" -o \
-         "$runmode" == "NEMO-AGCM-dcpp-assim-spin-relaxed-co2" -o "$runmode" == "NEMO-AGCM-dcpp-assim-relaxed-co2" ] ; then
+    if [ "$runmode" == "NEMO-AGCM-dcpp-assim-spin" -o "$runmode" == "NEMO-AGCM-dcpp-assim-relaxed-co2-spin" -o \
+         "$runmode" == "NEMO-AGCM-dcpp-assim"      -o "$runmode" == "NEMO-AGCM-dcpp-assim-relaxed-co2" ] ; then
       if [ -s "rs_EMPave.dat" ] ; then
         cp rs_EMPave.dat EMPave_old.dat
       fi
@@ -1090,8 +1090,8 @@ echo "#################### Start NEMO pre-processing #################"
   nemo_subbasins=${nemo_subbasins:=nemo_3.4_orca1_basinmask_050308_ukmo_modified.nc}
   nemo_o2=${nemo_o2:=urdy_fafmip_hfds_orca1_record.nc}
 
-if [ "$runmode" == "NEMO-AGCM-dcpp-assim-spin"             -o "$runmode" == "NEMO-AGCM-dcpp-assim" -o \
-     "$runmode" == "NEMO-AGCM-dcpp-assim-spin-relaxed-co2" -o "$runmode" == "NEMO-AGCM-dcpp-assim-relaxed-co2" ] ; then
+if [ "$runmode" == "NEMO-AGCM-dcpp-assim-spin" -o "$runmode" == "NEMO-AGCM-dcpp-assim-relaxed-co2-spin" -o \
+     "$runmode" == "NEMO-AGCM-dcpp-assim"      -o "$runmode" == "NEMO-AGCM-dcpp-assim-relaxed-co2" ] ; then
   nemo_weights_bilinear1=${nemo_weights_bilinear1:=uws_orca1_oisst_weights_bilin.nc}
   nemo_weights_bicubic1=${nemo_weights_bicubic1:=uws_orca1_oisst_weights_bicubic.nc}
   nemo_dist_coast=uws_orca1_dist_coast.nc
@@ -1128,7 +1128,7 @@ if [ "$runmode" == "NEMO-AGCM-dcpp-assim" -o "$runmode" == "NEMO-AGCM-dcpp-assim
   acc_cp data_1m_potential_temperature_y${after_current_year}.nc  ${nemo_data_1m_potential_temperature}_jan_y${after_current_year}.nc
   acc_cp data_1m_salinity_y${after_current_year}.nc               ${nemo_data_1m_salinity}_jan_y${after_current_year}.nc
 
-elif [ "$runmode" == "NEMO-AGCM-dcpp-assim-spin" -o "$runmode" == "NEMO-AGCM-dcpp-assim-spin-relaxed-co2" ] ; then
+elif [ "$runmode" == "NEMO-AGCM-dcpp-assim-spin" -o "$runmode" == "NEMO-AGCM-dcpp-assim-relaxed-co2-spin" ] ; then
 
   nemo_data_1m_potential_temperature=uws_oras5_thetao_spin
   nemo_data_1m_salinity=uws_oras5_so_spin
@@ -1186,8 +1186,8 @@ fi
     [ -s kmt ]  || acc_cp kmt   $nemo_cice_kmt
   fi
 
-if [ "$runmode" == "NEMO-AGCM-dcpp-assim-spin"             -o "$runmode" == "NEMO-AGCM-dcpp-assim" -o \
-     "$runmode" == "NEMO-AGCM-dcpp-assim-spin-relaxed-co2" -o "$runmode" == "NEMO-AGCM-dcpp-assim-relaxed-co2" ] ; then
+if [ "$runmode" == "NEMO-AGCM-dcpp-assim-spin" -o "$runmode" == "NEMO-AGCM-dcpp-assim-relaxed-co2-spin" -o \
+     "$runmode" == "NEMO-AGCM-dcpp-assim"      -o "$runmode" == "NEMO-AGCM-dcpp-assim-relaxed-co2" ] ; then
   nemo_data_1m_potential_temperature_nomask=${nemo_data_1m_potential_temperature_nomask:=nemo_3.4_orca1_potemp_1m_z46_nomask.nc}
   nemo_data_1m_salinity_nomask=${nemo_data_1m_salinity_nomask:=nemo_3.4_orca1_salin_1m_z46_nomask.nc}
 else
