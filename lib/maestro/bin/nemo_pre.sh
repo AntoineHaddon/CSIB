@@ -502,6 +502,7 @@
         acc_cp qlw_y${yearc}.nc              ${nemo_qlw}_y${forcing_year}.nc
         acc_cp precip_y${yearc}.nc           ${nemo_precip}_y${forcing_year}.nc
         acc_cp snow_y${yearc}.nc             ${nemo_snow}_y${forcing_year}.nc
+	acc_cp slp_y${yearc}.nc              ${nemo_slp}_y${forcing_year}.nc
       done
     elif [ x"$nemo_forcing" = "xflux" ]; then
       acc_cp utau.nc             $nemo_utau
