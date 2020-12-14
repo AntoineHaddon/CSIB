@@ -461,6 +461,7 @@
     acc_cp sss_data.nc            $nemo_sss_data
     acc_cp sst_data.nc            $nemo_sst_data
     acc_cp chlorophyll.nc         $nemo_chlorophyll
+    acc_cp calving.nc             $nemo_calving
     acc_cp subbasins.nc           $nemo_subbasins
     acc_cp data_1m_potential_temperature_nomask.nc $nemo_data_1m_potential_temperature_nomask
     acc_cp data_1m_salinity_nomask.nc              $nemo_data_1m_salinity_nomask
