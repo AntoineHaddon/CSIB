@@ -448,7 +448,7 @@
     acc_cp eddy_viscosity_3D.nc   $nemo_eddy_viscosity_3D
     acc_cp resto.nc               $nemo_resto
     acc_cp EMPave_old.dat         $nemo_empave_old
-    acc_cp domcfg_cfg.nc          $nemo_coordinates
+    acc_cp domain_cfg.nc          $nemo_coordinates
     #acc_cp ahmcoef                $nemo_ahmcoef
     #acc_cp coordinates.nc         $nemo_coordinates
     #acc_cp bathy_meter.nc         $nemo_bathy_meter
