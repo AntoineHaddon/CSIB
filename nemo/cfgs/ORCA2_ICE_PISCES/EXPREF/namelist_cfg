@@ -41,7 +41,7 @@
 &namcfg        !   parameters of the configuration                      (default: use namusr_def in namelist_cfg)
 !-----------------------------------------------------------------------
    ln_read_cfg = .true.    !  (=T) read the domain configuration file
-      cn_domcfg = "domcfg_cfg"  ! domain configuration filename
+      cn_domcfg = "domain_cfg"  ! domain configuration filename
       !
       ln_closea    = .false.    !  F => suppress closed seas (defined by closea_mask field) 
       !                         !       from the bathymetry at runtime.
