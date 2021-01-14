@@ -7,6 +7,10 @@
 # Move in inputs
 ln -sf ../input/modfiles/* .
 
+# source run environment to be consistent with the compilation environment
+source ${TASK_BIN}/nemo_comp_env ||
+    bail "Failed to source the nemo compilation environment! Are the modules available?"
+
 # Run the model
 ulimit -s unlimited
 
