@@ -260,18 +260,10 @@ echo "=================================="
 echo "      Compiling the Model!        "
 echo "=================================="
 
-# source compilation environment
-cd $nemo_model_build_dir
-source nemo_comp_env ||
-    bail "Failed to source the nemo compilation environment! Are the modules available?"
-
-# Output the environment for the xios compilation
-echo "modules used during the XIOS compilation"
-module list
-
 # Compiling xios first
 echo "Compiling in:  ${nemo_xios_build_dir}"
 cd ${nemo_xios_build_dir}
+
 # build command line args into a bash array
 ARGS=( --job $xios_comp_np --arch $xios_arch )
 [[ -n $xios_full ]] && ARGS+=( $xios_full )
@@ -279,13 +271,17 @@ ARGS=( --job $xios_comp_np --arch $xios_arch )
 [[ -n $xios_dev ]] && ARGS+=( $xios_dev )
 [[ -n $xios_netcdf_lib ]] && ARGS+=( $xios_netcdf_lib )
 
-# Create xios executable
+# Create xios executable (note that arch.env is sourced inside make_xios)
 echo 'make_xios '"${ARGS[@]}"
 ./make_xios "${ARGS[@]}"
 
 # Compiling nemo
 echo "Compiling in:  ${nemo_model_build_dir}"
 cd $nemo_model_build_dir
+
+# source nemo compilation environment
+source nemo_comp_env ||
+    bail "Failed to source the nemo compilation environment! Are the modules available?"
 
 # clean temporary dirs if this is a "clean" compile
 if (( clean_compile == 1 )); then
@@ -297,10 +293,6 @@ ARGS=( -j $comp_np -m $nemo_arch -n $nemo_config )
 [[ -n "$nemo_ref_config" ]]     && ARGS+=( -r $nemo_ref_config )
 [[ -n "$nemo_add_cpp_keys" ]]   && ARGS+=( add_key "$nemo_add_cpp_keys" )
 [[ -n "$nemo_del_cpp_keys" ]]   && ARGS+=( del_key "$nemo_del_cpp_keys" )
-
-# Output the environment for the nemo compilation
-echo "modules used during the NEMO compilation"
-module list
 
 # Create model executable
 echo 'makenemo '"${ARGS[@]}"
