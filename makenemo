@@ -365,6 +365,11 @@ grep key_agrif ${COMPIL_DIR}/cpp.fcm && export AGRIFUSE=1 && export USEBLD=${USE
 #-
 #- Compile ---
 
+echo "=== Inside makenemo ==="
+echo "modules used in the NEMO compilation"
+module list
+
+
 if [ "${NBR_PRC}" -gt 0 ]; then
 	cd ${NEMO_TDIR}/${NEW_CONF} || cd -
 
