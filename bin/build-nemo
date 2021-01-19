@@ -182,6 +182,20 @@ if (( debug == 1 )); then
   nemo_exec="$nemo_exec-debug"
 fi
 
+# determine what compilation environment we use
+# NOTE: if we add `platform` to the maestro `experiment.cfg`, we can have
+#       separate nemo comp_envs. This works for now, as maestro only runs
+#       on the eccc platform
+if [[ -z "$WRK_DIR" ]]; then
+    if [[ -f "$WRK_DIR/config/comp_env" ]]; then 
+        env_file=$WRK_DIR/config/comp_env
+    else
+        env_file=${nemo_source_path}/nemo/ARCH/comp_env
+    fi
+else
+    env_file=${nemo_source_path}/nemo/ARCH/comp_env
+fi
+
 #======================================
 # Coupled consideration for model comp
 #======================================
@@ -240,8 +254,8 @@ echo "Compiling in:  ${nemo_model_build_dir}"
 cd $nemo_model_build_dir
 
 # source compilation environment
-source comp_env ||
-    bail "Failed to source the nemo compilation environment! Are the modules available?"
+source $env_file ||
+    bail "Failed to source the nemo compilation environment file - $env_file! Does it exist? Are the modules available?"
 
 # clean temporary dirs if this is a "clean" compile
 if (( clean_compile == 1 )); then
@@ -282,10 +296,6 @@ for build_dir in $make_build_dirs; do
     echo "    Compiling executables in $build_dir       "
     echo "=============================================="
     cd $build_dir
-
-    # source environment
-    source comp_env || 
-        bail "Failed to source the compilation environment in ${build_dir}! Are the modules available?"
 
     # compile
     if (( clean_compile == 1 )); then 
