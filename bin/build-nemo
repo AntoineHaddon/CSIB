@@ -140,12 +140,13 @@ if [[ -n "$storage_loc" ]]; then
     mkdir -p $storage_loc
 fi
 
-# Make sure the required arguments were given
+# make sure the required arguments were given
 [[ -z "$nemo_source_path" ]]    && bail "srcpath must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
 [[ -z "$nemo_exec" ]]           && bail "exec must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
 [[ -z "$nemo_config" ]]         && bail "cfg must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
 [[ -z "$nemo_arch" ]]           && bail "arch must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
 
+# make sure the source directory exists
 [[ -d "$nemo_source_path" ]] || bail "The given srcpath ---> $nemo_source_path <--- doesn't exist!"
 
 #========================
@@ -182,16 +183,21 @@ if (( debug == 1 )); then
   nemo_exec="$nemo_exec-debug"
 fi
 
-# determine what compilation environment we use
-# NOTE: if we add `platform` to the maestro `experiment.cfg`, we can have
-#       separate nemo comp_envs. This works for now, as maestro only runs
-#       on the eccc platform
+# set the working directory if it hasn't been set
 if [[ -z "$WRK_DIR" ]]; then
-    if [[ -f "$WRK_DIR/config/comp_env" ]]; then 
-        env_file=$WRK_DIR/config/comp_env
+    if [[ -n $SEQ_EXP_HOME ]]; then
+        # if working within maestro use SEQ_EXP_HOME
+        WRK_DIR=${SEQ_EXP_HOME}
     else
-        env_file=${nemo_source_path}/nemo/ARCH/comp_env
+        # use working directory
+        WRK_DIR=$(pwd)
     fi
+if 
+
+# determine the compilation env file
+# TODO : we should add a platform argument to the maestro system
+if [[ -f "$WRK_DIR/config/comp_env" ]]; then 
+    env_file=$WRK_DIR/config/comp_env
 else
     env_file=${nemo_source_path}/nemo/ARCH/comp_env
 fi
@@ -201,10 +207,8 @@ fi
 #======================================
 [[ "$nemo_config" == "CCC_CANCPL_"* ]] && is_coupled=1
 if (( is_coupled == 1 )); then
-    # we must get code from the coupler repo, assumed to be housed in $CCRNSRC
-    #  and cpp header files that should be contained in $WRK_DIR - confirm this
-    [[ -z "$CCRNSRC" ]] && 
-        bail "You are trying to compile for a coupled config and CCRNSRC isn't set! Has the coupled env been set up?"
+    # we must get code from the coupler repo, assumed to be clone besides the nemo source code
+    canesm_source="${nemo_source_path}/../"
 
     # define header files and check that they exist
     cppdef_config_file=${WRK_DIR}/cppdef_config.h
@@ -224,7 +228,7 @@ if (( is_coupled == 1 )); then
     nemo_external_src_dir=${nemo_source_path}/nemo/NEMO/external                                # where the "external" code sits
     nemo_cppdef_config_link=${nemo_external_src_dir}/$(basename $cppdef_config_file .h).h90     # linked cpp config file
     nemo_cppdef_sizes_link=${nemo_external_src_dir}/$(basename $cppdef_sizes_file .h).h90       # linked cpp sizes file
-    needed_cpl_src_file=${CCRNSRC}/CanESM/CanCPL/src/comm/com_cpl.F90                           # orig. needed cplr src file
+    needed_cpl_src_file=${canesm_source}/CanCPL/src/comm/com_cpl.F90                            # orig. needed cplr src file
     nemo_cpl_src_file=${nemo_external_src_dir}/com_cpl.F90                                      # copied (and modified) cplr src file
 
     # link in the cpp files (cleaning if they already exist)
