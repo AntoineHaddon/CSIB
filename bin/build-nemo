@@ -158,8 +158,9 @@ nemo_diag_build_dir=${nemo_source_path}/diag/build                         # whe
 nemo_rtd_build_dir=${nemo_source_path}/rtd/build                           # where make gets called to build the rtd execs
 nemo_rbld_build_dir=${nemo_source_path}/nemo/TOOLS/REBUILD_NEMO/src/build  # where make gets called to build the tile rebuild execs
 
-# define which build directories just use `make`
+# define which build directories just use `make` and what compiler template they use
 make_build_dirs="$nemo_diag_build_dir $nemo_rtd_build_dir $nemo_rbld_build_dir"
+compiler_template=$nemo_arch
 
 # define target executables (must be consistent with makenemo and other makefiles)
 target_model_exec=${nemo_model_build_dir}/${nemo_config}/BLD/bin/nemo.exe
@@ -305,7 +306,7 @@ for build_dir in $make_build_dirs; do
     if (( clean_compile == 1 )); then 
         make clean
     fi
-    make
+    make COMPILER_TEMPLATE=${compiler_template}
 done
 
 #---------------------------------

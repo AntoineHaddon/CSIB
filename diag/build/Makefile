@@ -1,7 +1,8 @@
-# define compiler options
-#	- cray-netcdf must be loaded to handle netcdf linking
-FC      := ftn
-FFLAGS  := -static
+# define default compiler template
+COMPILER_TEMPLATE ?= compile.intel.xc50
+
+# bring in compiler settings (flags/compiler)
+include $(COMPILER_TEMPLATE)
 
 # define source files which will be brought in from $SRCDIR
 SRCDIR              := $(realpath $(CURDIR)/..)
