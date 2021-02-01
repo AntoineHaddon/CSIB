@@ -306,7 +306,7 @@ for build_dir in $make_build_dirs; do
     if (( clean_compile == 1 )); then 
         make clean
     fi
-    make COMPILER_TEMPLATE=${compiler_template}
+    make COMPILER_TEMPLATE=compile.${compiler_template}
 done
 
 #---------------------------------
