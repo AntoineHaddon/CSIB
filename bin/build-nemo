@@ -209,7 +209,7 @@ fi
 [[ "$nemo_config" == "CCC_CANCPL_"* ]] && is_coupled=1
 if (( is_coupled == 1 )); then
     # we must get code from the coupler repo, assumed to be clone besides the nemo source code
-    canesm_source="${nemo_source_path}/../"
+    CANESM_SRC_ROOT="${nemo_source_path}/../"
 
     # define header files and check that they exist
     cppdef_config_file=${WRK_DIR}/cppdef_config.h
@@ -229,7 +229,7 @@ if (( is_coupled == 1 )); then
     nemo_external_src_dir=${nemo_source_path}/nemo/NEMO/external                                # where the "external" code sits
     nemo_cppdef_config_link=${nemo_external_src_dir}/$(basename $cppdef_config_file .h).h90     # linked cpp config file
     nemo_cppdef_sizes_link=${nemo_external_src_dir}/$(basename $cppdef_sizes_file .h).h90       # linked cpp sizes file
-    needed_cpl_src_file=${canesm_source}/CanCPL/src/comm/com_cpl.F90                            # orig. needed cplr src file
+    needed_cpl_src_file=${CANESM_SRC_ROOT}/CanCPL/src/comm/com_cpl.F90                            # orig. needed cplr src file
     nemo_cpl_src_file=${nemo_external_src_dir}/com_cpl.F90                                      # copied (and modified) cplr src file
 
     # link in the cpp files (cleaning if they already exist)
