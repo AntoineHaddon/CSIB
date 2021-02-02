@@ -28,15 +28,15 @@ CANOE_DIAG_OBJS := $(CANOE_DIAG_FILES:.F90=.o)
 
 # physical diagnostics
 nemo_diag.exe: $(PHYS_DIAG_OBJS) $(NETCDF_OBJ)
-	$(FC) $(FFLAGS) -o $@ $(PHYS_DIAG_OBJS) $(NETCDF_OBJ)
+	$(FC) $(FFLAGS) -o $@ $(PHYS_DIAG_OBJS) $(NETCDF_OBJ) $(LDFLAGS)
 
 # cmoc diagnostics
 nemo_diag_cmoc.exe: $(CMOC_DIAG_OBJS) $(NETCDF_OBJ)
-	$(FC) $(FFLAGS) -o $@ $(CMOC_DIAG_OBJS) $(NETCDF_OBJ)
+	$(FC) $(FFLAGS) -o $@ $(CMOC_DIAG_OBJS) $(NETCDF_OBJ) $(LDFLAGS)
 
 # canoe diagnostics
 nemo_diag_canoe.exe: $(CANOE_DIAG_OBJS) $(NETCDF_OBJ)
-	$(FC) $(FFLAGS) -o $@ $(CANOE_DIAG_OBJS) $(NETCDF_OBJ)
+	$(FC) $(FFLAGS) -o $@ $(CANOE_DIAG_OBJS) $(NETCDF_OBJ) $(LDFLAGS)
 
 all : nemo_diag.exe nemo_diag_canoe.exe nemo_diag_cmoc.exe
 

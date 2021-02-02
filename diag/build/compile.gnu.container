@@ -1,8 +1,7 @@
-
 # Make variables for the gnu compiler in the canesm container
 #============================================================
 # - is a "static" flag required?
-# TODO figure out how to link in the netcdf libraries
-FC		:= gfortran
-FFLAGS	:= -openmp 
+FC		:= mpifort
+FFLAGS	:= -fopenmp 
+LDFLAGS := -I/usr/include -L/usr/lib -lnetcdf -lnetcdff
 

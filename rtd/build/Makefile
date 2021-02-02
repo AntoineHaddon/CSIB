@@ -30,19 +30,19 @@ ICE_RTD_OBJS    := $(ICE_RTD_FILES:.F90=.o)
 
 # physical rtds
 nemo_physical_rtd.exe: $(PHYS_RTD_OBJS) $(NETCDF_OBJ)
-	$(FC) $(FFLAGS) -o $@ $(PHYS_RTD_OBJS) $(NETCDF_OBJ)
+	$(FC) $(FFLAGS) -o $@ $(PHYS_RTD_OBJS) $(NETCDF_OBJ) $(LDFLAGS)
 
 # cmoc rtds
 nemo_carbon-cmoc_rtd.exe: $(CMOC_RTD_OBJS) $(NETCDF_OBJ)
-	$(FC) $(FFLAGS) -o $@ $(CMOC_RTD_OBJS) $(NETCDF_OBJ)
+	$(FC) $(FFLAGS) -o $@ $(CMOC_RTD_OBJS) $(NETCDF_OBJ) $(LDFLAGS)
 
 # canoe rtds
 nemo_carbon-canoe_rtd.exe: $(CANOE_RTD_OBJS) $(NETCDF_OBJ)
-	$(FC) $(FFLAGS) -o $@ $(CANOE_RTD_OBJS) $(NETCDF_OBJ)
+	$(FC) $(FFLAGS) -o $@ $(CANOE_RTD_OBJS) $(NETCDF_OBJ) $(LDFLAGS)
 
 # ice rtds
 nemo_ice_rtd.exe: $(ICE_RTD_OBJS) $(NETCDF_OBJ)
-	$(FC) $(FFLAGS) -o $@ $(ICE_RTD_OBJS) $(NETCDF_OBJ)
+	$(FC) $(FFLAGS) -o $@ $(ICE_RTD_OBJS) $(NETCDF_OBJ) $(LDFLAGS)
 
 all : nemo_physical_rtd.exe nemo_carbon-cmoc_rtd.exe nemo_carbon-canoe_rtd.exe nemo_ice_rtd.exe
 
