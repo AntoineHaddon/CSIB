@@ -47,8 +47,8 @@ if [ "0" -eq "0" ] ; then
   if [ $pisces_offline -eq 0 ]; then
       rebuild_list="$rebuild_list ${cn_exp}_${end_step}_restart"
       n_rebuild=$(($n_rebuild + 1))
-      rebuild_list="$rebuild_list ${cn_exp}_icebergs_${end_step}_restart"
-      n_rebuild=$(($n_rebuild + 1))
+      [ -s ${cn_exp}_icebergs_${end_step}_restart ] && rebuild_list="$rebuild_list ${cn_exp}_icebergs_${end_step}_restart"
+      [ -s ${cn_exp}_icebergs_${end_step}_restart ] && n_rebuild=$(($n_rebuild + 1))
       if [ $nn_ice -eq 2 ]; then
           rebuild_list="$rebuild_list ${cn_exp}_${end_step}_restart_ice"
           n_rebuild=$(($n_rebuild + 1))
