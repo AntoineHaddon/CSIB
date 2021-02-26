@@ -8,6 +8,7 @@ MODULE sbcrnf
    !!            3.0  ! 2006-07  (G. Madec)  Surface module
    !!            3.2  ! 2009-04  (B. Lemaire)  Introduce iom_put
    !!            3.3  ! 2010-10  (R. Furner, G. Madec) runoff distributed over ocean levels
+   !!          4.0.3  ! 2021-02  (D. Yang) Add lrowattr=ln_use_jattr for reading runoff
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -357,7 +358,7 @@ CONTAINS
             IF( sn_dep_rnf%cltype == 'monthly' )   WRITE(rn_dep_file, '(a,"m",i2)'  ) TRIM( rn_dep_file ), nmonth   ! add month 
          ENDIF
          CALL iom_open ( rn_dep_file, inum )                           ! open file
-         CALL iom_get  ( inum, jpdom_data, sn_dep_rnf%clvar, h_rnf )   ! read the river mouth array
+         CALL iom_get  ( inum, jpdom_data, sn_dep_rnf%clvar, h_rnf, lrowattr=ln_use_jattr )   ! read the river mouth array
          CALL iom_close( inum )                                        ! close file
          !
          nk_rnf(:,:) = 0                               ! set the number of level over which river runoffs are applied
@@ -397,7 +398,7 @@ CONTAINS
          nbrec = iom_getszuld( inum )
          zrnfcl(:,:,1) = 0._wp                                                          ! init the max to 0. in 1
          DO jm = 1, nbrec
-            CALL iom_get( inum, jpdom_data, TRIM( sn_rnf%clvar ), zrnfcl(:,:,2), jm )   ! read the value in 2
+            CALL iom_get( inum, jpdom_data, TRIM( sn_rnf%clvar ), zrnfcl(:,:,2), jm, lrowattr=ln_use_jattr )   ! read the value in 2
             zrnfcl(:,:,1) = MAXVAL( zrnfcl(:,:,:), DIM=3 )                              ! store the maximum value in time in 1
          END DO
          CALL iom_close( inum )
@@ -534,7 +535,7 @@ CONTAINS
       !
       ! horizontal mask (read in NetCDF file)
       CALL iom_open ( cl_rnfile, inum )                           ! open file
-      CALL iom_get  ( inum, jpdom_data, sn_cnf%clvar, rnfmsk )    ! read the river mouth array
+      CALL iom_get  ( inum, jpdom_data, sn_cnf%clvar, rnfmsk, lrowattr=ln_use_jattr )    ! read the river mouth array
       CALL iom_close( inum )                                      ! close file
       !
       IF( l_clo_rnf )   CALL clo_rnf( rnfmsk )   ! closed sea inflow set as river mouth
