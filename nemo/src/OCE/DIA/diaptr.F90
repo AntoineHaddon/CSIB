@@ -10,6 +10,7 @@ MODULE diaptr
    !!            3.6  ! 2014-12  (C. Ethe) use of IOM
    !!            3.6  ! 2016-06  (T. Graham) Addition of diagnostics for CMIP6
    !!            4.0  ! 2010-08  ( C. Ethe, J. Deshayes ) Improvment
+   !!          4.0.3  ! 2021-02  (D. Yang) Add lrowattr=ln_use_jattr for reading subbasins.nc
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -360,9 +361,9 @@ CONTAINS
 
          btmsk(:,:,1) = tmask_i(:,:)                 
          CALL iom_open( 'subbasins', inum,  ldstop = .FALSE.  )
-         CALL iom_get( inum, jpdom_data, 'atlmsk', btmsk(:,:,2) )   ! Atlantic basin
-         CALL iom_get( inum, jpdom_data, 'pacmsk', btmsk(:,:,3) )   ! Pacific  basin
-         CALL iom_get( inum, jpdom_data, 'indmsk', btmsk(:,:,4) )   ! Indian   basin
+         CALL iom_get( inum, jpdom_data, 'atlmsk', btmsk(:,:,2), lrowattr=ln_use_jattr )   ! Atlantic basin
+         CALL iom_get( inum, jpdom_data, 'pacmsk', btmsk(:,:,3), lrowattr=ln_use_jattr )   ! Pacific  basin
+         CALL iom_get( inum, jpdom_data, 'indmsk', btmsk(:,:,4), lrowattr=ln_use_jattr )   ! Indian   basin
          CALL iom_close( inum )
          btmsk(:,:,5) = MAX ( btmsk(:,:,3), btmsk(:,:,4) )          ! Indo-Pacific basin
          DO jn = 2, nptr
