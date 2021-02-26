@@ -7,6 +7,7 @@ MODULE fldread
    !!            3.0  !  2008-05  (S. Alderson)  Modified for Interpolation in memory from input grid to model grid
    !!            3.4  !  2013-10  (D. Delrosso, P. Oddo)  suppression of land point prior to interpolation
    !!                 !  12-2015  (J. Harle) Adding BDY on-the-fly interpolation
+   !!          4.0.3  !  2021-02  (D. Yang) Add lrowattr=ln_use_jattr for reading weights, IC and sss.
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -650,8 +651,8 @@ CONTAINS
                   CALL lbc_lnk( 'fldread', sdjf%fnow(:,:,1  ),'Z',1. )
                ENDIF
             ELSE
-               IF( sdjf%ln_tint ) THEN   ;   CALL iom_get( sdjf%num, ipdom, sdjf%clvar, sdjf%fdta(:,:,1,2), sdjf%nrec_a(1) )
-               ELSE                      ;   CALL iom_get( sdjf%num, ipdom, sdjf%clvar, sdjf%fnow(:,:,1  ), sdjf%nrec_a(1) )
+               IF( sdjf%ln_tint ) THEN   ;   CALL iom_get( sdjf%num, ipdom, sdjf%clvar, sdjf%fdta(:,:,1,2), sdjf%nrec_a(1), lrowattr=ln_use_jattr )
+               ELSE                      ;   CALL iom_get( sdjf%num, ipdom, sdjf%clvar, sdjf%fnow(:,:,1  ), sdjf%nrec_a(1), lrowattr=ln_use_jattr )
                ENDIF
             ENDIF
          CASE DEFAULT
@@ -664,8 +665,8 @@ CONTAINS
                   CALL lbc_lnk( 'fldread', sdjf%fnow(:,:,:  ),'Z',1. )
                ENDIF
             ELSE
-               IF( sdjf%ln_tint ) THEN   ;   CALL iom_get( sdjf%num, ipdom, sdjf%clvar, sdjf%fdta(:,:,:,2), sdjf%nrec_a(1) )
-               ELSE                      ;   CALL iom_get( sdjf%num, ipdom, sdjf%clvar, sdjf%fnow(:,:,:  ), sdjf%nrec_a(1) )
+               IF( sdjf%ln_tint ) THEN   ;   CALL iom_get( sdjf%num, ipdom, sdjf%clvar, sdjf%fdta(:,:,:,2), sdjf%nrec_a(1), lrowattr=ln_use_jattr )
+               ELSE                      ;   CALL iom_get( sdjf%num, ipdom, sdjf%clvar, sdjf%fnow(:,:,:  ), sdjf%nrec_a(1), lrowattr=ln_use_jattr )
                ENDIF
             ENDIF
          END SELECT
@@ -1361,7 +1362,7 @@ CONTAINS
             aname = ' '
             WRITE(aname,'(a3,i2.2)') 'src',jn
             data_tmp(:,:) = 0
-            CALL iom_get ( inum, jpdom_data, aname, data_tmp(:,:) )
+            CALL iom_get ( inum, jpdom_data, aname, data_tmp(:,:), lrowattr=ln_use_jattr )
             data_src(:,:) = INT(data_tmp(:,:))
             ref_wgts(nxt_wgt)%data_jpj(:,:,jn) = 1 + (data_src(:,:)-1) / ref_wgts(nxt_wgt)%ddims(1)
             ref_wgts(nxt_wgt)%data_jpi(:,:,jn) = data_src(:,:) - ref_wgts(nxt_wgt)%ddims(1)*(ref_wgts(nxt_wgt)%data_jpj(:,:,jn)-1)
@@ -1371,7 +1372,7 @@ CONTAINS
             aname = ' '
             WRITE(aname,'(a3,i2.2)') 'wgt',jn
             ref_wgts(nxt_wgt)%data_wgt(:,:,jn) = 0.0
-            CALL iom_get ( inum, jpdom_data, aname, ref_wgts(nxt_wgt)%data_wgt(:,:,jn) )
+            CALL iom_get ( inum, jpdom_data, aname, ref_wgts(nxt_wgt)%data_wgt(:,:,jn), lrowattr=ln_use_jattr )
          END DO
          CALL iom_close (inum)
  
