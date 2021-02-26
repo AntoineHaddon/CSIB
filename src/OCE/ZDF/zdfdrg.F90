@@ -11,6 +11,7 @@ MODULE zdfdrg
    !!                 ! 2012-06  (H. Liu) implementation of Log Layer bottom friction option
    !!            4.0  ! 2017-05  (G. Madec) zdfbfr becomes zdfdrg + variable names change
    !!                                     + drag defined at t-point + new user interface + top drag (ocean cavities)
+   !!          4.0.3  ! 2021-02  (D. Yang) Add lrowattr=ln_use_jattr for reading bfr_coef.nc
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -382,7 +383,7 @@ CONTAINS
          IF(lwp) WRITE(numout,*) '           using enhancement factor of ', rn_boost
          ! cl_varname is a coefficient in [0,1] giving where to apply the regional boost
          CALL iom_open ( TRIM(cl_file), inum )
-         CALL iom_get  ( inum, jpdom_data, TRIM(cl_varname), zmsk_boost, 1 )
+         CALL iom_get  ( inum, jpdom_data, TRIM(cl_varname), zmsk_boost, 1, lrowattr=ln_use_jattr )
          CALL iom_close( inum)
          zmsk_boost(:,:) = 1._wp + rn_boost * zmsk_boost(:,:)
          !
