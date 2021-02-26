@@ -14,6 +14,7 @@ MODULE domain
    !!            3.6  !  2013     ( J. Simeon, C. Calone, G. Madec, C. Ethe ) Online coarsening of outputs
    !!            3.7  !  2015-11  (G. Madec, A. Coward)  time varying zgr by default
    !!            4.0  !  2016-10  (G. Madec, S. Flavoni)  domain configuration / user defined interface
+   !!          4.0.3  !  2021-02  (D. Yang) Add a patch to read jpjglo and then overwrite kpj for jstart
    !!----------------------------------------------------------------------
    
    !!----------------------------------------------------------------------
@@ -530,7 +531,7 @@ CONTAINS
       !
       INTEGER ::   inum   ! local integer
       REAL(wp) ::   zorca_res                     ! local scalars
-      REAL(wp) ::   zperio                        !   -      -
+      REAL(wp) ::   zjglo, zperio                 !   -      -
       INTEGER, DIMENSION(4) ::   idvar, idimsz    ! size   of dimensions
       !!----------------------------------------------------------------------
       !
@@ -571,6 +572,7 @@ CONTAINS
       kpi = idimsz(1)
       kpj = idimsz(2)
       kpk = idimsz(3)
+      CALL iom_get( inum, 'jpjglo', zjglo  )   ;   kpj = NINT( zjglo )
       CALL iom_get( inum, 'jperio', zperio )   ;   kperio = NINT( zperio )
       CALL iom_close( inum )
       !
