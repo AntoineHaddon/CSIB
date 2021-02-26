@@ -7,6 +7,7 @@ MODULE ldfdyn
    !!   NEMO     1.0  ! 2002-09  (G. Madec)  F90: Free form and module
    !!            3.7  ! 2014-01  (F. Lemarie, G. Madec)  restructuration/simplification of ahm specification,
    !!                 !                                  add velocity dependent coefficient and optional read in file
+   !!          4.0.3  ! 2021-02  (D. Yang)   Add lrowattr=ln_use_jattr for reading eddy_viscosity_3D.nc
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -285,8 +286,8 @@ CONTAINS
          CASE( -30  )      !== fixed 3D shape read in file  ==!
             IF(lwp) WRITE(numout,*) '   ==>>>   eddy viscosity = F(i,j,k) read in eddy_viscosity_3D.nc file'
             CALL iom_open( 'eddy_viscosity_3D.nc', inum )
-            CALL iom_get ( inum, jpdom_data, 'ahmt_3d', ahmt )
-            CALL iom_get ( inum, jpdom_data, 'ahmf_3d', ahmf )
+            CALL iom_get ( inum, jpdom_data, 'ahmt_3d', ahmt, lrowattr=ln_use_jattr )
+            CALL iom_get ( inum, jpdom_data, 'ahmf_3d', ahmf, lrowattr=ln_use_jattr )
             CALL iom_close( inum )
             !
          CASE(  30  )       !==  fixed 3D shape  ==!
