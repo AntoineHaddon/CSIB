@@ -197,10 +197,10 @@ fi
 
 # determine the compilation env file
 # TODO : we should add a platform argument to the maestro system
-if [[ -f "$WRK_DIR/config/comp_env" ]]; then 
-    env_file=$WRK_DIR/config/comp_env
+if [[ -f "$WRK_DIR/config/compilation_environment" ]]; then 
+    compilation_environment=$WRK_DIR/config/compilation_environment
 else
-    env_file=${nemo_source_path}/nemo/ARCH/comp_env
+    compilation_environment=${nemo_source_path}/nemo/ARCH/compilation_environment
 fi
 
 #======================================
@@ -259,8 +259,8 @@ echo "Compiling in:  ${nemo_model_build_dir}"
 cd $nemo_model_build_dir
 
 # source compilation environment
-source $env_file ||
-    bail "Failed to source the nemo compilation environment file - $env_file! Does it exist? Are the modules available?"
+source $compilation_environment ||
+    bail "Failed to source the nemo compilation environment file - $compilation_environment! Does it exist? Are the modules available?"
 
 # clean temporary dirs if this is a "clean" compile
 if (( clean_compile == 1 )); then

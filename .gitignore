@@ -18,10 +18,7 @@ rtd/build/*
 nemo/TOOLS/REBUILD_NEMO/src/build/*
 !diag/build/Makefile
 !diag/build/compile.*
-!diag/build/comp_env
 !rtd/build/Makefile
 !rtd/build/compile.*
-!rtd/build/comp_env
 !nemo/TOOLS/REBUILD_NEMO/src/build/Makefile
 !nemo/TOOLS/REBUILD_NEMO/src/build/compile.*
-!nemo/TOOLS/REBUILD_NEMO/src/build/comp_env
