@@ -1,8 +1,10 @@
-# define default compiler template
-COMPILER_TEMPLATE ?= compile.intel.xc50
+# define default compiler template - should be provided at call line
+COMPILER_TEMPLATE ?= 
 
 # bring in compiler settings (flags/compiler)
 include $(COMPILER_TEMPLATE)
+FFLAGS = $(FFLAGS_STATIC) $(FFLAGS_OMP)
+LDFLAGS = $(INCLUDEFLAGS_USR) $(LDFLAGS_USR) $(LDFLAGS_NETCDF)
 
 # define source files which will be brought in from $SRCDIR
 SRCDIR              := $(realpath $(CURDIR)/..)

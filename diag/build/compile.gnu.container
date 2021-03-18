@@ -1,7 +1,0 @@
-# Make variables for the gnu compiler in the canesm container
-#============================================================
-# - is a "static" flag required?
-FC      := mpifort
-FFLAGS	:= -fopenmp 
-LDFLAGS := -I/usr/include -L/usr/lib -lnetcdf -lnetcdff
-
