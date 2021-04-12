@@ -45,6 +45,8 @@
       !
       ln_closea    = .false.    !  F => suppress closed seas (defined by closea_mask field) 
       !                         !       from the bathymetry at runtime.
+      ln_use_jattr = .true.     !  use (T) the file attribute: open_ocean_jstart, if present
+   !                       !  in netcdf input files, as the start j-row for reading
 /
 !-----------------------------------------------------------------------
 &namtsd        !    Temperature & Salinity Data  (init/dmp)             (default: OFF)
