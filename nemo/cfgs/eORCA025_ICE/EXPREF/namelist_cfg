@@ -84,7 +84,7 @@
 !-----------------------------------------------------------------------
 &namsbc        !   Surface Boundary Condition manager                   (default: NO selection)
 !-----------------------------------------------------------------------
-   nn_fsbc     = 4         !  frequency of SBC module call
+   nn_fsbc     = 1         !  frequency of SBC module call
                            !     (also = the frequency of sea-ice & iceberg model call)
                      ! Type of air-sea fluxes 
    ln_flx      = .false.   !  flux formulation                          (T => fill namsbc_flx )
@@ -198,7 +198,7 @@
 !-----------------------------------------------------------------------
 &namberg       !   iceberg parameters                                   (default: OFF)
 !-----------------------------------------------------------------------
-   ln_icebergs = .true.    ! activate iceberg floats (force =F with "key_agrif")
+   ln_icebergs = .false.   ! activate iceberg floats (force =F with "key_agrif")
 
    cn_dir = './'  !  root directory for the location of drag coefficient files
    !______!___________!___________________!______________!______________!_________!___________!__________!__________!_______________!
@@ -294,22 +294,22 @@
 !-----------------------------------------------------------------------
    ln_traldf_lap   = .true.    !    laplacian operator
    ln_traldf_iso   = .true.    !  iso-neutral (Standard operator)
-   ln_traldf_msc   = .true.    !  Method of Stabilizing Correction      (both operators)
+   ln_traldf_msc   = .false.   !  Method of Stabilizing Correction      (both operators)
    !                       !  Coefficients:
    nn_aht_ijk_t    = 20        !  space/time variation of eddy coef
       !                             !   = 20     aht = 1/2  Ud. max(e1,e2)
-      rn_Ud        = 0.018          !  lateral diffusive velocity [m/s] (nn_aht_ijk_t= 0, 10, 20, 30)
+      rn_Ud        = 0.011          !  lateral diffusive velocity [m/s] (nn_aht_ijk_t= 0, 10, 20, 30)
       rn_Ld        = 200.e+3        !  lateral diffusive length   [m]   (nn_aht_ijk_t= 0, 10)
 /
 !-----------------------------------------------------------------------
 &namtra_mle    !   mixed layer eddy parametrisation (Fox-Kemper)        (default: OFF)
 !-----------------------------------------------------------------------
-   ln_mle      = .true.   ! (T) use the Mixed Layer Eddy (MLE) parameterisation
+   ln_mle      = .false.   ! (T) use the Mixed Layer Eddy (MLE) parameterisation
 /
 !-----------------------------------------------------------------------
 &namtra_eiv    !   eddy induced velocity param.                         (default: OFF)
 !-----------------------------------------------------------------------
-   ln_ldfeiv   = .true.    ! use eddy induced velocity parameterization
+   ln_ldfeiv   = .false.       ! use eddy induced velocity parameterization
       !                        !  Coefficients:
       nn_aei_ijk_t  = 21          ! space/time variation of the eiv coeficient
       !                                !   = 21 F(i,j,t)  =Treguier et al. JPO 1997 formulation
@@ -362,9 +362,13 @@
 !-----------------------------------------------------------------------
 &namdyn_ldf    !   lateral diffusion on momentum                        (default: NO selection)
 !-----------------------------------------------------------------------
-   ln_dynldf_lap =  .true.     !    laplacian operator
+   ln_dynldf_lap =  .false.    !  laplacian operator
+   ln_dynldf_blp =  .true.     !  bilaplacian operator
    ln_dynldf_lev =  .true.     !  iso-level
-   nn_ahm_ijk_t  = -30         !  =-30  3D coeff. read in eddy_diffusivity_3D.nc
+   nn_ahm_ijk_t  =  20         !  =-30  3D coeff. read in eddy_diffusivity_3D.nc
+                               !  = 20  F(i,j)=F(grid spacing)=c2d
+   rn_Uv = 0.0838
+   rn_Lv = 10.e+3              !  lateral viscous length   [m]   (nn_ahm_ijk_t= 0, 10)
 /
 !!======================================================================
 !!                     vertical physics namelists                     !!
@@ -383,7 +387,7 @@
    ln_zdftke   = .true.       !  Turbulent Kinetic Energy closure       (T =>   fill namzdf_tke)
    ln_zdfevd   = .true.       !  Enhanced Vertical Diffusion scheme
       nn_evdm  =    0            !  evd apply on tracer (=0) or on tracer and momentum (=1)
-      rn_evd   =  100.           !  evd mixing coefficient [m2/s]
+      rn_evd   =   10.           !  evd mixing coefficient [m2/s]
    ln_zdfddm   = .true.    ! double diffusive mixing
       rn_avts  =    1.e-4     !  maximum avs (vertical mixing on salinity)
       rn_hsbfr =    1.6       !  heat/salt buoyancy flux ratio
