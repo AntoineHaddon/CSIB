@@ -26,23 +26,31 @@
 	  <field field_ref="qsr_oce"     name="qsr_oce"  level="0" />
 	  <field field_ref="isnwmlt_cea" name="isnwmlt_cea" level="0" />
 	  <field field_ref="snowmel_cea" name="snowmel_cea" level="0" />
+	  <field field_ref="ahmt_3d"     name="ahmt_3d"  level="0" />
         </file>
 
 	<file id="file12" name_suffix="_grid_U" description="ocean U grid variables">
 	  <field field_ref="uoce"        name="uo"       level="0" />
-	  <field field_ref="uoce_eiv"    name="uoce_eiv" level="8" />
+	  <field field_ref="uoce_eiv"    name="uoce_eiv" level="0" />
 	  <field field_ref="utau"        name="tauuo"    level="0" />
+	  <field field_ref="ahtu_3d"     name="ahtu_3d"  level="0" />
+          <field field_ref="aeiu_3d"     name="aeiu_3d"  level="0" />
         </file>		
 
 	<file id="file13" name_suffix="_grid_V" description="ocean V grid variables">
 	  <field field_ref="voce"        name="vo"       level="0" />
 	  <field field_ref="voce_eiv"    name="voce_eiv" level="0" />
 	  <field field_ref="vtau"        name="tauvo"    level="0" />
+	  <field field_ref="ahtv_3d"     name="ahtv_3d"  level="0" />
+          <field field_ref="aeiv_3d"     name="aeiv_3d"  level="0" />
         </file>
 
 	<file id="file14" name_suffix="_grid_W" description="ocean W grid variables">
 	  <field field_ref="woce"        name="wo"       level="0" />
-	  <field field_ref="woce_eiv"    name="woce_eiv" level="8" />
+	  <field field_ref="woce_eiv"    name="woce_eiv" level="0" />
+          <field field_ref="avt"         name="avt"      level="0" />
+	  <field field_ref="avm"         name="avm"      level="0" />
+	  <field field_ref="avs"         name="avs"      level="0" />
        </file>
 
         <file id="file16" name_suffix="_diaptr2D" description="zonal mean variables" enabled=".FALSE.">
