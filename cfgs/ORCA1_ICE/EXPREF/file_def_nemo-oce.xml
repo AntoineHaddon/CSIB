@@ -26,7 +26,7 @@
 	  <field field_ref="qsr_oce"     name="qsr_oce"  level="0" />
 	  <field field_ref="isnwmlt_cea" name="isnwmlt_cea" level="0" />
 	  <field field_ref="snowmel_cea" name="snowmel_cea" level="0" />
-	  <field field_ref="ahmt_3d"     name="ahmt_3d"  level="0" />
+	  <field field_ref="ahmt_2d"     name="ahmt_2d"  level="0" />
         </file>
 
 	<file id="file12" name_suffix="_grid_U" description="ocean U grid variables">
