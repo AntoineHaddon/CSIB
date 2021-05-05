@@ -36,7 +36,7 @@
 
 	<file id="file13" name_suffix="_grid_V" description="ocean V grid variables">
 	  <field field_ref="voce"        name="vo"       level="0" />
-	  <field field_ref="voce_eiv"    name="voce_eiv" level="0" />
+	  <field field_ref="voce_eiv"    name="voce_eiv" level="8" />
 	  <field field_ref="vtau"        name="tauvo"    level="0" />
         </file>
 
