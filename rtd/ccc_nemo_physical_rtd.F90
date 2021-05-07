@@ -319,17 +319,17 @@ PROGRAM nemo_ocean_diag
 !---------------------------------------------------
       call getvara ('nav_lon', iou0, imt*jmt, (/1,1,1/), (/imt,jmt,1/), lon2d, 1., 0.)
       call getvara ('nav_lat', iou0, imt*jmt, (/1,1,1/), (/imt,jmt,1/), lat2d, 1., 0.)
-      call getvara ('deptht', iou0, km, (/1/), (/km/), deptht, 1., 0.)
-      call getvara ('depthw', iou3, km, (/1/), (/km/), depthw, 1., 0.)
+      call getvara ('deptht_1d', iou0, km, (/1/), (/km/), deptht, 1., 0.)
+      call getvara ('depthw_1d', iou3, km, (/1/), (/km/), depthw, 1., 0.)
       call getvara ('e1t', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1t , 1., 0.)
       call getvara ('e2t', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e2t , 1., 0.)
-      call getvara ('e3t', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3t , 1., 0.)
+      call getvara ('e3t_0', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3t , 1., 0.)
       call getvara ('e1v', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1v , 1., 0.)
       call getvara ('e2v', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e2v , 1., 0.)
-      call getvara ('e3v', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3v , 1., 0.)
+      call getvara ('e3v_0', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3v , 1., 0.)
       call getvara ('e1u', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1u , 1., 0.)
       call getvara ('e2u', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e2u , 1., 0.)
-      call getvara ('e3u', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3u , 1., 0.)
+      call getvara ('e3u_0', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3u , 1., 0.)
       call getvara ('tmask', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),t_mask , 1., 0.)
       call getvara ('umask', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),u_mask , 1., 0.)
       call getvara ('vmask', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),v_mask , 1., 0.)
@@ -420,33 +420,33 @@ PROGRAM nemo_ocean_diag
          ! Read in the monthly data from NetCDF
          !---------------------------------------------------
          ! temperature
-          CALL getvara ('votemper', iou0, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), theta, 1., 0.)
+          CALL getvara ('thetao', iou0, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), theta, 1., 0.)
          ! salinity
-          CALL getvara ('vosaline', iou0, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), salt, 1., 0.)
+          CALL getvara ('so', iou0, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), salt, 1., 0.)
          ! net heat flux
-          CALL getvara ('sohefldo', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflux, 1., 0.)
+          CALL getvara ('qt_oce', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflux, 1., 0.)
          ! net water flux
-          CALL getvara ('sowaflup', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), wflux, 1., 0.)
+          CALL getvara ('erp', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), wflux, 1., 0.)
          ! u-velocity 
-          CALL getvara ('vozocrtx', iou1, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), u, 1., 0.)
+          CALL getvara ('uo', iou1, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), u, 1., 0.)
          ! v-velocity 
-          CALL getvara ('vomecrty', iou2, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), v, 1., 0.)
+          CALL getvara ('vo', iou2, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), v, 1., 0.)
          ! w-velocity 
-          CALL getvara ('vovecrtz', iou3, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), w, 1., 0.)
+          CALL getvara ('wo', iou3, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), w, 1., 0.)
          ! EI u-velocity 
-          CALL getvara ('vozoeivu', iou1, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmu, 1., 0.)
+          CALL getvara ('aeiu_3d', iou1, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmu, 1., 0.)
          ! EI v-velocity 
-          CALL getvara ('vomeeivv', iou2, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmv, 1., 0.)
+          CALL getvara ('aeiv_3d', iou2, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmv, 1., 0.)
          ! EI w-velocity 
-          CALL getvara ('voveeivw', iou3, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmw, 1., 0.)
+          CALL getvara ('woce_eiv', iou3, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmw, 1., 0.)
          ! Wind Stress along i-axis
-          CALL getvara ('sozotaux', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), tau_x, 1., 0.)
+          CALL getvara ('tauuo', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), tau_x, 1., 0.)
          ! Wind Stress along j-axis
-          CALL getvara ('sometauy', iou2, imt*jmt, (/1,1,l/), (/imt,jmt,1/), tau_y, 1., 0.)
+          CALL getvara ('tauvo', iou2, imt*jmt, (/1,1,l/), (/imt,jmt,1/), tau_y, 1., 0.)
          ! Sea surface height
-          CALL getvara ('sossheig', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), ssh, 1., 0.)
+          CALL getvara ('ssh', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), ssh, 1., 0.)
          ! Mixed Layer Depth 0.01 ref.10m
-          CALL getvara ('somxl010', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), mld10, 1., 0.)
+          CALL getvara ('mldr10_1', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), mld10, 1., 0.)
 
           CALL getvara ('snow_ai_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), snow_ai_cea, 1., 0.)
           CALL getvara ('snow_ao_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), snow_ao_cea, 1., 0.)
