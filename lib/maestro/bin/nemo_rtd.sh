@@ -77,19 +77,20 @@ if [ $nemo_rtd -eq 1 ]; then
         if [[ -e "$ice_rtd_exe_path" ]]; then 
             cp $ice_rtd_exe_path .
         else
-            bail "$ice_rtd_exe does not exist in $(dirname $ice_rtd_exe_path)! Has it been compiled?"
+            #bail "$ice_rtd_exe does not exist in $(dirname $ice_rtd_exe_path)! Has it been compiled?"
+	    echo "$ice_rtd_exe does not exist temperarily"
         fi
 
         # If nemo_ice_rtd.nc exists, append to it. Else start it, and add version attribute.
-        if [ -f "nemo_ice_rtd.nc" ]; then 
+        #if [ -f "nemo_ice_rtd.nc" ]; then 
             # Create run time diagnostics for carbon variables
-            ./$ice_rtd_exe ${chunk_start_year} ${chunk_start_month}
+        #    ./$ice_rtd_exe ${chunk_start_year} ${chunk_start_month}
               #echo $curr_rtd_file >> $rtd_file_del_list
-        else
+        #else
             # Create run time diagnostics for carbon variables
-            ./$ice_rtd_exe ${chunk_start_year} ${chunk_start_month}
+        #    ./$ice_rtd_exe ${chunk_start_year} ${chunk_start_month}
             #${NCATTED} -O -a RTD_version,global,a,c,"${ice_rtd_exe}" nemo_ice_rtd.nc
-        fi
+        #fi
 
         # Save the rtd file created by carbon_rtd_exe
         #new_rtd_file=sc_${runid}_${stop_date}_nemo_ice_rtd.nc
