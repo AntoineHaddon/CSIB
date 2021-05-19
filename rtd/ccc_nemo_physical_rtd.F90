@@ -269,7 +269,7 @@ PROGRAM nemo_ocean_diag
       else if ( imt == 362 ) then
         print *, "Using ORCA1 configuration"
         j_20N   = 182; j_20S   = 112; j_eq    = 147
-        k60     =  20; k500    =  40; k2000   =  54
+        k60     =  20; k500    =  39; k2000   =  54
         i_DP    = 221; j_DP_S  =  41; j_DP_N  =  66
         i_IN_E1 =   1; i_IN_W1 =  49
         i_IN_E2 = 322; i_IN_W2 = imt-2
@@ -280,7 +280,7 @@ PROGRAM nemo_ocean_diag
       else if ( imt == 1442 ) then
         print *, "Using ORCA0.25 configuration"
         j_20N   =  581; j_20S  =  419; j_eq    = 499
-        k60     =    8; k500    =  20; k2000   =  29
+        k60     =   20; k500    =  39; k2000   =  54
         i_DP    =  880; j_DP_S  = 132; j_DP_N  = 238
         i_IN_E1 =    1; i_IN_W1 = 194
         i_IN_E2 = 1284; i_IN_W2 = imt-2
