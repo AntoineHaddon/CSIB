@@ -279,7 +279,7 @@ PROGRAM nemo_ocean_diag
 !     ORCA0.25
       else if ( imt == 1442 ) then
         print *, "Using ORCA0.25 configuration"
-        j_20N   =  581; j_20S  =  419; j_eq    = 499
+        j_20N   =  767; j_20S  =  603; j_eq    = 685
         k60     =   20; k500    =  39; k2000   =  54
         i_DP    =  880; j_DP_S  = 132; j_DP_N  = 238
         i_IN_E1 =    1; i_IN_W1 = 194
