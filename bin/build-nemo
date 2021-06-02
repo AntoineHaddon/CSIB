@@ -264,16 +264,16 @@ cd $nemo_model_build_dir
 source $compilation_env_file ||
     bail "Failed to source the nemo compilation environment file - $compilation_env_file! Does it exist? Are the modules available?"
 
-# clean temporary dirs if this is a "clean" compile
-if (( clean_compile == 1 )); then
-    ./makenemo -n $nemo_config clean
-fi
-
 # build command line args into a bash array -> array needed for potential space delim list in add_key/del_key
 ARGS=( -j $comp_np -m $nemo_arch_identifier -n $nemo_config )
 [[ -n "$nemo_ref_config" ]]     && ARGS+=( -r $nemo_ref_config )
 [[ -n "$nemo_add_cpp_keys" ]]   && ARGS+=( add_key "$nemo_add_cpp_keys" )
 [[ -n "$nemo_del_cpp_keys" ]]   && ARGS+=( del_key "$nemo_del_cpp_keys" )
+
+# clean temporary dirs if this is a "clean" compile
+if (( clean_compile == 1 )); then
+    ./makenemo clean "${ARGS[@]}"
+fi
 
 # Create model executable
 echo 'makenemo '"${ARGS[@]}"
