@@ -3,7 +3,9 @@ set -e
 #
 #   Usage: build-nemo [options] exec=name cfg=CONFIG \
 #                     srcpath=SRCPATH \
-#                     arch=ARCH_FILE \
+#                     nemo_arch=NEMO_ARCH_IDENTIFIER \
+#                     util_arch=MAKE_TEMPLATE \
+#                     comp_env=ENVIRONMENT_FILE \
 #                     [refcfg=cfgdir] \
 #                     [add_key=keys] \
 #                     [del_key=keys] 
@@ -32,8 +34,12 @@ set -e
 #                           which will contain details of the model configuration (e.g. ORCA2_LIM)
 #   refcfg=name         ...name is the name of a subdir under the CONFIG dir in the repository
 #                           which will contain a reference configuration
-#   arch=name           ...name is the name of an arch specific make include file found in the ARCH
-#                           subdir that is used to define compiler switches and libs etc
+#   nemo_arch=name      ...name is used by makenemo to identify the arch specific make include file found in the ARCH
+#                           subdir that is used to define compiler switches and libs etc for the compilation
+#                           of the nemo executable
+#   util_arch=name      ...name is the make template file to be used in the compilation of nemo diagnostic/rtd/utility
+#                           tools
+#   comp_env=name       ...name is the file containing any necessary environment considerations for the compilation
 #   add_key=keys        ...A whitespace separated list of cpp preprocessor keys to be added
 #                           for this complie. If there is more than one then keys will need
 #                           to be quoted. (e.g. add_keys="key_mpp_mpi key_vectopt_loop")
@@ -42,10 +48,11 @@ set -e
 #                           to be quoted. (e.g. del_keys="key_nproci key_nprocj")
 #
 # Examples:
-#   build-nemo exec=nemo_v3.4_orca2_lim_exe cfg=ORCA2_LIM srcpath=/path/to/code/
+#   build-nemo exec=nemo_v3.4_orca2_lim_exe cfg=ORCA2_LIM srcpath=/path/to/code/ \
+#              nemo_arch=intel.eccc-xc50 util_arch=/path/to/make-template comp_env=/path/to/env/file
 #
 #     -- Build an ORCA2_LIM configuration that uses the nemo code define in srcpath (with
-#        a dir structure the same as the default).
+#        a dir structure the same as the default), using the intel.eccc-xc50 archfile.
 #
 ########################################################################
 
@@ -113,13 +120,15 @@ for arg in "$@"; do
             var=$(echo $arg | awk -F\= '{printf "%s",$1}')
             val=$(echo $arg | awk -F\= '{printf "%s",$2}')
             case $var in
-                srcpath)    nemo_source_path="$val" ;;  # location of code in a dir structure (instead of cloning)
-                exec)       nemo_exec="$val" ;;         # name for the executable created here
-                cfg)        nemo_config="$val" ;;       # name of subdir in which config lives
-                refcfg)     nemo_ref_config="$val" ;;   # name of subdir in which ref config lives
-                arch)       nemo_arch="$val" ;;         # name of file with arch specific make defs
-                add_key)    nemo_add_cpp_keys="$val" ;; # a list of cpp keys to add before compiling nemo
-                del_key)    nemo_del_cpp_keys="$val" ;; # a list of cpp keys to remove before compiling nemo
+                srcpath)    nemo_source_path="$val" ;;      # location of code in a dir structure (instead of cloning)
+                exec)       nemo_exec="$val" ;;             # name for the executable created here
+                cfg)        nemo_config="$val" ;;           # name of subdir in which config lives
+                refcfg)     nemo_ref_config="$val" ;;       # name of subdir in which ref config lives
+                nemo_arch)  nemo_arch_identifier="$val" ;;  # makenemo identifier for file with arch specific make defs
+                util_arch)  nemo_util_arch_file="$val" ;;   # filename of the make template for nemo utilities
+                comp_env)   compilation_env_file="$val";;   # filename containing the compilation environment
+                add_key)    nemo_add_cpp_keys="$val" ;;     # a list of cpp keys to add before compiling nemo
+                del_key)    nemo_del_cpp_keys="$val" ;;     # a list of cpp keys to remove before compiling nemo
                 *)          usage "Invalid command line arg --> $arg <--"; exit 1  ;;
              esac
              ;;
@@ -141,10 +150,12 @@ if [[ -n "$storage_loc" ]]; then
 fi
 
 # make sure the required arguments were given
-[[ -z "$nemo_source_path" ]]    && bail "srcpath must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
-[[ -z "$nemo_exec" ]]           && bail "exec must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
-[[ -z "$nemo_config" ]]         && bail "cfg must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
-[[ -z "$nemo_arch" ]]           && bail "arch must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
+[[ -z "$nemo_source_path" ]]        && bail "srcpath must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
+[[ -z "$nemo_exec" ]]               && bail "exec must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
+[[ -z "$nemo_config" ]]             && bail "cfg must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
+[[ -z "$nemo_arch_identifier" ]]    && bail "nemo_arch must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
+[[ -z "$nemo_util_arch_file" ]]     && bail "util_arch must be given at the command line! See ${THIS_SCRIPT_PATH} -h"
+[[ -z "$compilation_env_file" ]]    && bail "comp_env must be given at the command line! See ${THIS_SCRIPT_PATH} -h"
 
 # make sure the source directory exists
 [[ -d "$nemo_source_path" ]] || bail "The given srcpath ---> $nemo_source_path <--- doesn't exist!"
@@ -160,7 +171,6 @@ nemo_rbld_build_dir=${nemo_source_path}/nemo/TOOLS/REBUILD_NEMO/src/build  # whe
 
 # define which build directories just use `make` and what compiler template they use
 make_build_dirs="$nemo_diag_build_dir $nemo_rtd_build_dir $nemo_rbld_build_dir"
-compiler_template=$nemo_arch
 
 # define target executables (must be consistent with makenemo and other makefiles)
 target_model_exec=${nemo_model_build_dir}/${nemo_config}/BLD/bin/nemo.exe
@@ -180,7 +190,7 @@ non_model_execs="$target_diag_execs $target_rtd_execs $target_rbld_execs"
 
 # When debugging is requested, use the debug arch and update the name of the executable
 if (( debug == 1 )); then
-  nemo_arch="$nemo_arch-debug"
+  nemo_arch_identifier="$nemo_arch_identifier-debug"
   nemo_exec="$nemo_exec-debug"
 fi
 
@@ -194,14 +204,6 @@ if [[ -z "$WRK_DIR" ]]; then
         WRK_DIR=$(pwd)
     fi
 fi 
-
-# determine the compilation env file
-# TODO : we should add a platform argument to the maestro system
-if [[ -f "$WRK_DIR/config/compilation_environment" ]]; then 
-    compilation_environment=$WRK_DIR/config/compilation_environment
-else
-    compilation_environment=${nemo_source_path}/nemo/ARCH/compilation_environment
-fi
 
 #======================================
 # Coupled consideration for model comp
@@ -259,8 +261,8 @@ echo "Compiling in:  ${nemo_model_build_dir}"
 cd $nemo_model_build_dir
 
 # source compilation environment
-source $compilation_environment ||
-    bail "Failed to source the nemo compilation environment file - $compilation_environment! Does it exist? Are the modules available?"
+source $compilation_env_file ||
+    bail "Failed to source the nemo compilation environment file - $compilation_env_file! Does it exist? Are the modules available?"
 
 # clean temporary dirs if this is a "clean" compile
 if (( clean_compile == 1 )); then
@@ -268,7 +270,7 @@ if (( clean_compile == 1 )); then
 fi
 
 # build command line args into a bash array -> array needed for potential space delim list in add_key/del_key
-ARGS=( -j $comp_np -m $nemo_arch -n $nemo_config )
+ARGS=( -j $comp_np -m $nemo_arch_identifier -n $nemo_config )
 [[ -n "$nemo_ref_config" ]]     && ARGS+=( -r $nemo_ref_config )
 [[ -n "$nemo_add_cpp_keys" ]]   && ARGS+=( add_key "$nemo_add_cpp_keys" )
 [[ -n "$nemo_del_cpp_keys" ]]   && ARGS+=( del_key "$nemo_del_cpp_keys" )
@@ -301,12 +303,15 @@ for build_dir in $make_build_dirs; do
     echo "    Compiling executables in $build_dir       "
     echo "=============================================="
     cd $build_dir
+   
+    # get make template file
+    ln -s ${nemo_util_arch_file} $(basename ${nemo_util_arch_file})
 
     # compile
     if (( clean_compile == 1 )); then 
         make clean
     fi
-    make COMPILER_TEMPLATE=compile.${compiler_template}
+    make COMPILER_TEMPLATE=$(basename ${nemo_util_arch_file})
 done
 
 #---------------------------------
