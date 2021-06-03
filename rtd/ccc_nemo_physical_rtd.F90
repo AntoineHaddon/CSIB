@@ -281,7 +281,7 @@ PROGRAM nemo_ocean_diag
         print *, "Using ORCA0.25 configuration"
         j_20N   =  767; j_20S  =  603; j_eq    = 685
         k60     =   20; k500    =  39; k2000   =  54
-        i_DP    =  880; j_DP_S  = 132; j_DP_N  = 238
+        i_DP    =  880; j_DP_S  = 318; j_DP_N  = 424
         i_IN_E1 =    1; i_IN_W1 = 194
         i_IN_E2 = 1284; i_IN_W2 = imt-2
         i_AN_E  =  798; i_AN_W  = 1090
@@ -323,13 +323,13 @@ PROGRAM nemo_ocean_diag
       call getvara ('depthw', iou3, km, (/1/), (/km/), depthw, 1., 0.)
       call getvara ('e1t', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1t , 1., 0.)
       call getvara ('e2t', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e2t , 1., 0.)
-      call getvara ('e3t', iou0, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3t , 1., 0.)
+      call getvara ('e3t_0', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3t , 1., 0.)
       call getvara ('e1v', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1v , 1., 0.)
       call getvara ('e2v', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e2v , 1., 0.)
-      call getvara ('e3v', iou2, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3v , 1., 0.)
+      call getvara ('e3v_0', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3v , 1., 0.)
       call getvara ('e1u', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1u , 1., 0.)
       call getvara ('e2u', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e2u , 1., 0.)
-      call getvara ('e3u', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3u , 1., 0.)
+      call getvara ('e3u_0', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3u , 1., 0.)
       call getvara ('tmask', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),t_mask , 1., 0.)
       call getvara ('umask', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),u_mask , 1., 0.)
       call getvara ('vmask', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),v_mask , 1., 0.)
@@ -343,7 +343,7 @@ PROGRAM nemo_ocean_diag
               trop_up_mask(i,j) = 0. 
               if (lon2d(i,10).ge.150..or.lon2d(i,10).le.-75.) then 
                   if (lat2d(10,j).gt.-2..and.lat2d(10,j).lt.2.) then 
-                      if (t_mask(i,j,8).eq.1.) then ! ~ 60m
+                      if (t_mask(i,j,k60).eq.1.) then ! ~ 60m
                           trop_up_mask(i,j) = 1. 
                       endif
                   endif           
