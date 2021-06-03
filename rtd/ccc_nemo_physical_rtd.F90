@@ -5,6 +5,8 @@ PROGRAM nemo_ocean_diag
 !
 ! HISTORY
 !--------
+! D. Yang  Jun 2021         Adapt to NEMO4.0.3.
+!
 ! N. Swart    Dec    2015   Abstract all calculations to ccc_nemo_rtd_utils
 !                           module, which is shared between all rtd.
 !
