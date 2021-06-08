@@ -1,8 +1,15 @@
 # define default compiler template - should be provided at call line
 COMPILER_TEMPLATE ?= 
 
-# bring in compiler settings (flags/compiler)
+# warn if no compiler template was given
+ifndef COMPILER_TEMPLATE
+$(warning For all targets but 'clean' COMPILER_TEMPLATE must be given to the make call)
+else
+# bring in compiler flags
 include $(COMPILER_TEMPLATE)
+endif
+
+# define flags to be used 
 FFLAGS = $(FFLAGS_STATIC) $(FFLAGS_OMP)
 LDFLAGS = $(INCLUDEFLAGS_USR) $(LDFLAGS_USR) $(LDFLAGS_NETCDF)
 
