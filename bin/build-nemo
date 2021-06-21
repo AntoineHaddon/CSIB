@@ -18,7 +18,7 @@ set -e
 # Options:
 # All options begin with a dash (-) and must appear before any other command line arg
 #   -j num_proc     ...number of cpus to use for parallel compilation
-#   -p storage_loc  ...instead of linking into CWD, link the executables into storage_loc
+#   -p storage_loc  ...instead of storing executables in the CWD, store them in storage_loc
 #   -h              ...show this usage message
 #   -d              ...compile an executable with debugging symbols (for use with DDT or GDB)
 #   -x              ...run this script with 'set -x'
