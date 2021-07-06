@@ -14,6 +14,7 @@ MODULE sbcmod
    !!            3.5  ! 2012-11  (A. Coward, G. Madec) Rethink of heat, mass and salt surface fluxes
    !!            3.6  ! 2014-11  (P. Mathiot, C. Harris) add ice shelves melting
    !!            4.0  ! 2016-06  (L. Brodeau) new general bulk formulation
+   !!            4.0.3! 2021-06  (D. Yang) Constrain SSS not dropping below 5 psu
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -97,7 +98,7 @@ CONTAINS
          &             ln_traqsr, ln_dm2dc ,                                         &
          &             ln_rnf   , nn_fwb   , ln_ssr   , ln_isf    , ln_apr_dyn ,     &
          &             ln_wave  , ln_cdgw  , ln_sdw   , ln_tauwoc  , ln_stcor   ,     &
-         &             ln_tauw  , nn_lsm, nn_sdrift
+         &             ln_tauw  , nn_lsm, nn_sdrift, ln_minsal, rn_minsal
       !!----------------------------------------------------------------------
       !
       IF(lwp) THEN
@@ -161,6 +162,9 @@ CONTAINS
          WRITE(numout,*) '               wave modified ocean stress component ln_tauw       = ', ln_tauw
          WRITE(numout,*) '               Stokes coriolis term                 ln_stcor      = ', ln_stcor
          WRITE(numout,*) '               neutral drag coefficient (CORE,NCAR) ln_cdgw       = ', ln_cdgw
+         WRITE(numout,*) '               constrain SSS not dropping below 5 psu             = ', ln_minsal
+         WRITE(numout,*) '               min SSS
+                = ', minsal
       ENDIF
       !
       IF( .NOT.ln_wave ) THEN
@@ -387,12 +391,12 @@ CONTAINS
       !!              - updte the ice fraction : fr_i
       !!----------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt   ! ocean time step
+      INTEGER ::    jj, ji
       !
       LOGICAL ::   ll_sas, ll_opa   ! local logical
       !
       REAL(wp) ::     zthscl        ! wd  tanh scale
       REAL(wp), DIMENSION(jpi,jpj) ::  zwdht, zwght  ! wd dep over wd limit, wgt  
-
       !!---------------------------------------------------------------------
       !
       IF( ln_timing )   CALL timing_start('sbc')
@@ -421,6 +425,14 @@ CONTAINS
       !
       ll_sas = nn_components == jp_iam_sas               ! component flags
       ll_opa = nn_components == jp_iam_opa
+      ! Constrain SSS from dropping below 5. psu
+      IF( ln_minsal ) THEN
+        DO jj = 1, jpj
+          DO ji = 1, jpi
+            tsn(ji,jj,1,jp_sal) = MAX( tsn(ji,jj,1,jp_sal), rn_minsal ) * tmask(ji,jj,1)
+          END DO
+        END DO
+      ENDIF
       !
       IF( .NOT.ll_sas )   CALL sbc_ssm ( kt )            ! mean ocean sea surface variables (sst_m, sss_m, ssu_m, ssv_m)
       IF( ln_wave     )   CALL sbc_wave( kt )            ! surface waves
