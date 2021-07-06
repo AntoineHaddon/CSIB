@@ -163,8 +163,7 @@ CONTAINS
          WRITE(numout,*) '               Stokes coriolis term                 ln_stcor      = ', ln_stcor
          WRITE(numout,*) '               neutral drag coefficient (CORE,NCAR) ln_cdgw       = ', ln_cdgw
          WRITE(numout,*) '               constrain SSS not dropping below 5 psu             = ', ln_minsal
-         WRITE(numout,*) '               min SSS
-                = ', minsal
+         WRITE(numout,*) '               min SSS                                            = ', rn_minsal
       ENDIF
       !
       IF( .NOT.ln_wave ) THEN
