@@ -234,6 +234,8 @@
    ln_stcor    = .false.   !  Activate Stokes Coriolis term (T => ln_wave=.true. & ln_sdw=.true. & fill namsbc_wave)
    nn_lsm      = 0         !  =0 land/sea mask for input fields is not applied (keep empty land/sea mask filename field) ,
                            !  =1:n number of iterations of land/sea mask application for input fields (fill land/sea mask filename field)
+   ln_minsal   = .false.   !  Constrain SSS not dropping below 5 psu
+   ln_minsal   = 5         !  Min SSS in psu
 /
 !-----------------------------------------------------------------------
 &namsbc_flx    !   surface boundary condition : flux formulation        (ln_flx =T)
