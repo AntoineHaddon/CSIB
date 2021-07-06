@@ -70,7 +70,7 @@ MODULE sbc_oce
    !                                   !!* namsbc_cpl namelist *
    INTEGER , PUBLIC ::   nn_cats_cpl    !: Number of sea ice categories over which the coupling is carried out
    LOGICAL , PUBLIC ::   ln_minsal      ! true if constrain SSS not dropping below 5 psu
-   INTEGER , PUBLIC ::   rn_minsal      ! min SSS
+   REAL(wp), PUBLIC ::   rn_minsal      ! min SSS
 
    !!----------------------------------------------------------------------
    !!           switch definition (improve readability)
