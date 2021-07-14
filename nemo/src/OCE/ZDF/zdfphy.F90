@@ -4,6 +4,7 @@ MODULE zdfphy
    !! Vertical ocean physics :   manager of all vertical physics packages
    !!======================================================================
    !! History :  4.0  !  2017-04  (G. Madec)  original code
+   !!            4.0.3!  2021-07  (D. Yang)   add old tidal mixing scheme (Simmons et al 2004)
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -21,6 +22,7 @@ MODULE zdfphy
    USE zdfddm         ! vertical physics: double diffusion mixing      
    USE zdfevd         ! vertical physics: convection via enhanced vertical diffusion  
    USE zdfiwm         ! vertical physics: internal wave-induced mixing  
+   USE zdftmx         ! vertical physics: old tidal mixing scheme (Simmons et al 2004)
    USE zdfswm         ! vertical physics: surface  wave-induced mixing
    USE zdfmxl         ! vertical physics: mixed layer
    USE tranpc         ! convection: non penetrative adjustment
@@ -80,6 +82,7 @@ CONTAINS
          &             ln_zdfddm, rn_avts, rn_hsbfr,                 &     ! double diffusion
          &             ln_zdfswm,                                    &     ! surface  wave-induced mixing
          &             ln_zdfiwm,                                    &     ! internal  -      -      -
+         &             ln_zdftmx,                                    &     ! old tidal mixing scheme (Simmons et al 2004)
          &             ln_zad_Aimp,                                  &     ! apdative-implicit vertical advection
          &             rn_avm0, rn_avt0, nn_avb, nn_havtb                  ! coefficients
       !!----------------------------------------------------------------------
@@ -207,6 +210,7 @@ CONTAINS
 
       !                          !== gravity wave-driven mixing  ==!
       IF( ln_zdfiwm )   CALL zdf_iwm_init       ! internal wave-driven mixing
+      IF( ln_zdftmx )   CALL zdf_tmx_init       ! old tidal mixing scheme (Simmons et al)
       IF( ln_zdfswm )   CALL zdf_swm_init       ! surface  wave-driven mixing
 
       !                          !== top/bottom friction  ==!
@@ -303,6 +307,7 @@ CONTAINS
       !                                         !* wave-induced mixing 
       IF( ln_zdfswm )   CALL zdf_swm( kt, avm, avt, avs )   ! surface  wave (Qiao et al. 2004) 
       IF( ln_zdfiwm )   CALL zdf_iwm( kt, avm, avt, avs )   ! internal wave (de Lavergne et al 2017)
+      IF( ln_zdftmx )   CALL zdf_tmx( kt, avm, avt, avs )   ! old tidal mixing scheme (Simmons et al 2004)
 
 #if defined key_agrif 
       ! interpolation parent grid => child grid for avm_k ( ex : at west border: update column 1 and 2)
