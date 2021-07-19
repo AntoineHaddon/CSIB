@@ -452,9 +452,9 @@
     #acc_cp ahmcoef                $nemo_ahmcoef
     #acc_cp coordinates.nc         $nemo_coordinates
     #acc_cp bathy_meter.nc         $nemo_bathy_meter
-    #acc_cp mask_itf.nc            $nemo_mask_itf
-    #acc_cp M2rowdrg.nc            $nemo_M2rowdrg
-    #acc_cp K1rowdrg.nc            $nemo_K1rowdrg
+    acc_cp mask_itf.nc            $nemo_mask_itf
+    acc_cp M2rowdrg.nc            $nemo_M2rowdrg
+    acc_cp K1rowdrg.nc            $nemo_K1rowdrg
     #acc_cp Eddyengf.nc            $nemo_Eddyengf
     acc_cp geothermal_heating.nc  $nemo_geothermal_heating
     acc_cp runoff_core_monthly.nc $nemo_runoff_core_monthly
