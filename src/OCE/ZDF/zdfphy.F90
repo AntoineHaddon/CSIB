@@ -126,6 +126,7 @@ CONTAINS
          WRITE(numout,*) '      gravity wave-induced mixing'
          WRITE(numout,*) '         surface  wave (Qiao et al 2010)         ln_zdfswm = ', ln_zdfswm                                          ! surface wave induced mixing
          WRITE(numout,*) '         internal wave (de Lavergne et al 2017)  ln_zdfiwm = ', ln_zdfiwm
+         WRITE(numout,*) '         old tidal mixing scheme (Simmons et al 2004) ln_zdftmx = ', ln_zdftmx
          WRITE(numout,*) '      coefficients : '
          WRITE(numout,*) '         vertical eddy viscosity                 rn_avm0   = ', rn_avm0
          WRITE(numout,*) '         vertical eddy diffusivity               rn_avt0   = ', rn_avt0
@@ -172,6 +173,7 @@ CONTAINS
 
       !                          !==  Convection  ==!
       !
+      IF( ln_zdftmx .AND. ln_zdfiwm )   CALL ctl_stop( 'zdf_phy_init: chose between ln_zdftmx .AND. ln_zdfiwm' )
       IF( ln_zdfnpc .AND. ln_zdfevd )   CALL ctl_stop( 'zdf_phy_init: chose between ln_zdfnpc and ln_zdfevd' )
       IF( ln_zdfosm .AND. ln_zdfevd )   CALL ctl_stop( 'zdf_phy_init: chose between ln_zdfosm and ln_zdfevd' )
       IF( lk_top    .AND. ln_zdfnpc )   CALL ctl_stop( 'zdf_phy_init: npc scheme is not working with key_top' )
