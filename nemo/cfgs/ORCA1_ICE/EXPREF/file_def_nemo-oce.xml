@@ -57,6 +57,7 @@
           <field field_ref="avt"         name="avt"      level="0" />
 	  <field field_ref="avm"         name="avm"      level="0" />
 	  <field field_ref="avs"         name="avs"      level="0" />
+	  <field field_ref="av_tmx"      name="av_tmx"   level="0" />
        </file>
 
         <file id="file16" name_suffix="_diaptr2D" description="zonal mean variables" enabled=".FALSE.">
