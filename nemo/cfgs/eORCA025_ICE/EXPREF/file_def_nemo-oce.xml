@@ -42,7 +42,8 @@
         </file>
 
 	<file id="file14" name_suffix="_grid_W" description="ocean W grid variables">
-          <field field_ref="woce"        name="wo"       level="0" />
+		<field field_ref="woce"        name="wo"       level="0" />
+		<field field_ref="av_tmx"      name="av_tmx"   level="0" />
        </file>
 
         <file id="file16" name_suffix="_diaptr2D" description="zonal mean variables" enabled=".FALSE.">
