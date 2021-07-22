@@ -12,13 +12,6 @@ echo "#################### Start NEMO pre-processing #################"
   # bail is a simple error exit routine
   error_out="${JHOME:-$HOME}/.queue/error_nemo_processing_${runid}_${this_host}_$stamp"
   [ -z "$error_out" ] || rm -f $error_out
-  bail_prefix="nemo prelude"
-  bail(){
-    echo `date`" $this_host $runid --- ${bail_prefix}: $*"
-    echo `date`" $this_host $runid --- ${bail_prefix}: $*" >>$error_out
-    [ -n "$model" ] && echo `date`" $this_host $runid --- ${bail_prefix}: $*" >>haltit
-    exit 1
-  }
 
 # Identify the location of the NEMO git repository and the commit within
 # that repository that is associated with the current run
