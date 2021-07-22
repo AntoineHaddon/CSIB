@@ -9,22 +9,6 @@ echo "#################### Start NEMO pre-processing #################"
   # this_host will simply be the output from uname
   this_host=`uname -n|awk -F\. '{print \$1}' -`
 
-  # this_mach will be a known alias (or possibly the actual machine name)
-  this_mach=$this_host
-  ROUTE_SSH=''
-  case $this_mach in
-             xc1*) this_mach=hare;   ROUTE_SSH='ssh hare'  ;;
-             xc2*) this_mach=brooks; ROUTE_SSH='ssh brooks'  ;;
-             xc3*) this_mach=banting; ROUTE_SSH='ssh banting'  ;;
-             xc4*) this_mach=daley; ROUTE_SSH='ssh daley'  ;;
-      eccc1-ppp1*) this_mach=ppp1;   ROUTE_SSH='ssh ppp1'  ;;
-      eccc1-ppp2*) this_mach=ppp2;   ROUTE_SSH='ssh ppp2'  ;;
-      hpcr3*|cs3*|ppp3*|eccc*-ppp3*) this_mach=ppp3;   ROUTE_SSH='ssh ppp3'  ;;
-      hpcr4*|cs4*|ppp4*|eccc*-ppp4*) this_mach=ppp4;   ROUTE_SSH='ssh ppp4'  ;;
-     ib3*) this_mach=pollux; ROUTE_SSH='ssh pollux' ;;
-   joule*) this_mach=joule;  ROUTE_SSH='ssh joule'  ;;
-  esac
-
   # bail is a simple error exit routine
   error_out="${JHOME:-$HOME}/.queue/error_nemo_processing_${runid}_${this_host}_$stamp"
   [ -z "$error_out" ] || rm -f $error_out
@@ -198,83 +182,6 @@ echo "#################### Start NEMO pre-processing #################"
     eval $1=$ToF_var
   }
 
-  # mod_nl is used to change namelist values for the current job
-  mod_nl(){
-    # Modify a text file containing namelists
-    # Each variable definition in this input namelist file must be on a line by itself
-    # and be the of the form var =.* which will be replaced with var = value
-    #
-    # Usage: mod_nl namelist_file_in var1 [var2 ...]
-    #   namelist_file_in  ...is an existing text file containing the namelists
-    #   var1 var2 ...     ...names of variables to be changed
-    #                        these variables must be defined in the current environment
-    #
-    [ -z "$1" ] && bail "mod_nl requires a namelist file as the first arg"
-    [ -z "$2" ] && bail "mod_nl requires at least 1 variable name on the command line"
-    nlfile=$1
-    [ ! -s $nlfile ] && bail "mod_nl input namelist file --> $nlfile <-- is missing or empty"
-    shift
-
-    # Create a backup copy of the input namelist file, overwriting any existing backup
-    cp -f $nlfile ${nlfile}.bak
-
-    # Write a sed program to make the requested substitutions
-    sprog=mod_nl_cmd
-    rm -f $sprog
-    touch $sprog
-    for var in $*; do
-      ischar=0
-      # This assumes the nemo naming convention (char variables start with "c")
-      [ x`echo $var|sed -n '/^ *c/p'` != x ] && ischar=1
-      # Any variable name beginning with _char_ is assumed to contain a string value
-      # The leading _char_ prefix is removed from this name before further processing
-      if [ x`echo $var|sed -n '/^ *_char_/p'` != x ]; then
-        ischar=1
-        var=`echo $var|sed 's/^_char_//'`
-      fi
-      eval val=\$$var
-      [ -z "$val" ] && bail "mod_nl $var is not defined or null"
-      if [ $ischar -eq 1 ]; then
-        # This is a character variable that needs to be quoted
-        vsub='s/^ *'$var' *=.*/'"  ${var} = \"$val\""'/'
-      else
-        vsub='s/^ *'$var' *=.*/'"  ${var} = $val"'/'
-      fi
-      # Add this command to the file
-      # Note, the quotes are required to preserve white space
-      echo "$vsub" >> $sprog
-
-      # Echo the changes to stdout (useful for debugging runs)
-      echo "${nlfile}: RESET $var = $val"
-    done
-
-    # Make the substitutions in situ, overwriting the input file
-    sed -f $sprog $nlfile > mod_nl_tmp
-    mv mod_nl_tmp $nlfile
-    rm $sprog
-  }
-
-  days_in_month() {
-    # Determine the number of days in a given month (assuming 365 day year)
-    [ -z "$1" ] && bail "--> days_in_month <-- requires an integer as the first arg"
-    case $1 in
-      1|01) days_this_month=31 ;;
-      2|02) days_this_month=28 ;;
-      3|03) days_this_month=31 ;;
-      4|04) days_this_month=30 ;;
-      5|05) days_this_month=31 ;;
-      6|06) days_this_month=30 ;;
-      7|07) days_this_month=31 ;;
-      8|08) days_this_month=31 ;;
-      9|09) days_this_month=30 ;;
-        10) days_this_month=31 ;;
-        11) days_this_month=30 ;;
-        12) days_this_month=31 ;;
-         *) days_this_month=0
-            bail "month = $1 is out of range" ;;
-    esac
-  }
-
   acc_cp() {
     # Attempt to access a file and if that fails attempt to copy it
     [ -z "$1" ] && bail "--> acc_cp <-- requires a local file name as the first arg"
@@ -433,21 +340,7 @@ echo "#################### Start NEMO pre-processing #################"
   fi
 
   # Determine the number of days in the last month of the previous restart
-  case $rs_mon in
-    1|01) rs_day=31 ;;
-    2|02) rs_day=28 ;;
-    3|03) rs_day=31 ;;
-    4|04) rs_day=30 ;;
-    5|05) rs_day=31 ;;
-    6|06) rs_day=30 ;;
-    7|07) rs_day=31 ;;
-    8|08) rs_day=31 ;;
-    9|09) rs_day=30 ;;
-      10) rs_day=31 ;;
-      11) rs_day=30 ;;
-      12) rs_day=31 ;;
-       *) bail "rs_mon=$rs_mon is out of range" ;;
-  esac
+  rs_mon=$( days_in_month $rs_mon )
 
   # Calendar date (YYYYMMDD) for the previous restart
   rs_date=`echo $rs_year $rs_mon $rs_day|awk '{printf "%04d%02d%02d",$1,$2,$3}' -`
@@ -622,32 +515,8 @@ echo "#################### Start NEMO pre-processing #################"
     prev_date0="010101"
 
     # Use input namelist files from a user supplied location
-
-    # The input ocean namelist is hard coded as "namelist" in nemo source
-    find_nemo_config_EXP00 namelist $nemo_namelist
-
-    # The input ice namelist is hard coded in nemo source
-      if [ $nn_ice -eq 4 ]; then
-        # Using CICE
-        find_nemo_config_EXP00 ice_in $nemo_namelist_ice
-      else
-        find_nemo_config_EXP00 namelist_ice $nemo_namelist_ice
-      fi
-
-    if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
-      # The input top namelist is hard coded as "namelist_top" in nemo source
-      find_nemo_config_EXP00 namelist_top $nemo_namelist_top
-    fi
-
-    if [ $nemo_carbon -eq 1 ]; then
-      # The input pisces namelist is hard coded as "namelist_pisces" in nemo source
-      find_nemo_config_EXP00 namelist_pisces $nemo_namelist_pisces
-
-      if [ $nemo_cmoc -eq 1 ]; then
-        # The input cmoc namelist is hard coded as "namelist_pisces" in nemo source
-        find_nemo_config_EXP00 namelist_cmoc $nemo_namelist_cmoc
-      fi
-    fi
+    # (all nemo namelists currently follow "namelist*" convention.)
+    cp ${WRK_DIR}/config/namelists/namelist* .
 
     if [ ! -x nemo.exe ]; then
       # Get a local copy of the NEMO executable
@@ -856,39 +725,9 @@ echo "#################### Start NEMO pre-processing #################"
     ToF nemo_force_namelist
     if [ $nemo_force_namelist -eq 1 ]; then
       # Override the namelist files found in the restart archive with
-      # files supplied by the user
-
-      # The input ocean namelist is hard coded as "namelist" in nemo source
-      rm -f namelist
-      find_nemo_config_EXP00 namelist $nemo_namelist
-
-        # The input ice namelist is hard coded in nemo source
-        if [ $nn_ice -eq 4 ]; then
-          # Using CICE
-          rm -f ice_in
-          find_nemo_config_EXP00 ice_in $nemo_namelist_ice
-        else
-          rm -f namelist_ice
-          find_nemo_config_EXP00 namelist_ice $nemo_namelist_ice
-        fi
-
-      if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
-        # The input top namelist is hard coded as "namelist_top" in nemo source
-        rm -f namelist_top
-        find_nemo_config_EXP00 namelist_top $nemo_namelist_top
-      fi
-
-      if [ $nemo_carbon -eq 1 ]; then
-        # The input pisces namelist is hard coded as "namelist_pisces" in nemo source
-        rm -f namelist_pisces
-        find_nemo_config_EXP00 namelist_pisces $nemo_namelist_pisces
-
-        if [ $nemo_cmoc -eq 1 ]; then
-          # The input cmoc namelist is hard coded as "namelist_cmoc" in nemo source
-          rm -f namelist_cmoc
-          find_nemo_config_EXP00 namelist_cmoc $nemo_namelist_cmoc
-        fi
-      fi
+      # files supplied by the user (all nemo namelists currently follow "namelist*" 
+      # convention.
+      cp ${WRK_DIR}/config/namelists/namelist* .
     else
       # Use the namelist files found in the restart archive
       [ ! -s rs_namelist ] && bail "Missing rs_namelist from $nemo_rs"
@@ -1044,23 +883,23 @@ echo "#################### Start NEMO pre-processing #################"
   ice_ic=${cice_ice_ic:=none}
 
   # Modify specified parameter values in the input ocean namelist
-  mod_nl namelist nn_it000 nn_itend nn_istate nn_stock nn_write jpni jpnj jpnij \
-    rn_rdt cn_exp nn_date0 ln_rstart nn_rstctl nn_no cn_ocerst_in cn_ocerst_out \
-    ln_ctl nn_print nn_ice ln_rnf ln_rnf_emp ln_tsd_init nn_fsbc nn_closea nn_msh \
-    ln_diaptr ln_diaznl nn_fwri
+  #mod_nl namelist nn_it000 nn_itend nn_istate nn_stock nn_write jpni jpnj jpnij \
+  #  rn_rdt cn_exp nn_date0 ln_rstart nn_rstctl nn_no cn_ocerst_in cn_ocerst_out \
+  #  ln_ctl nn_print nn_ice ln_rnf ln_rnf_emp ln_tsd_init nn_fsbc nn_closea nn_msh \
+  #  ln_diaptr ln_diaznl nn_fwri
 
   # Modify specified parameter values in the namelist read by the ice module
   # NOTE: If character variables do not follow the NEMO naming convention (that their names begin with the letter "c")
   #       then these variable names must be prefixed with "_char_" on the mod_nl command line below
-    [ -s namelist_ice ] &&
-        mod_nl namelist_ice cn_icerst_in cn_icerst_out
-    [ -s ice_in ] &&
-        mod_nl ice_in days_per_year use_leap_years year_init istep0 dt npt restart nprocs _char_runtype _char_ice_ic
+  #  [ -s namelist_ice ] &&
+  #      mod_nl namelist_ice cn_icerst_in cn_icerst_out
+  #  [ -s ice_in ] &&
+  #      mod_nl ice_in days_per_year use_leap_years year_init istep0 dt npt restart nprocs _char_runtype _char_ice_ic
 
   # Modify the input top namelist
-  if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
-    mod_nl namelist_top ln_rsttr cn_trcrst_in cn_trcrst_out
-  fi
+  #if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
+  #  mod_nl namelist_top ln_rsttr cn_trcrst_in cn_trcrst_out
+  #fi
 
   # Access files required to run NEMO
 
@@ -1204,7 +1043,7 @@ fi
     ln_fafemp=${ln_fafemp:=.false.}
     ln_fafhflx=${ln_fafhflx:=.true.}
     ln_fafheat=${ln_fafheat:=.false.}
-    mod_nl namelist ln_faftau ln_fafemp ln_fafhflx ln_fafheat
+    #mod_nl namelist ln_faftau ln_fafemp ln_fafhflx ln_fafheat
 
     # Set specified or default names for fafmip forcing files
     nemo_fafmip_qtot=${nemo_fafmip_qtot:=cmip6_fafmip_hfds_orca1.nc}
@@ -1273,7 +1112,7 @@ fi
       [ ! -z $nemo_weights_bicubic2  ] && acc_cp weights_bic2.nc $nemo_weights_bicubic2
       [ ! -z $nemo_weights_bilinear2 ] && acc_cp weights_bil2.nc $nemo_weights_bilinear2
 
-      mod_nl namelist sn_wndi sn_wndj sn_qsr sn_qlw sn_tair sn_humi sn_prec sn_snow sn_tdif sn_rnf sn_cnf
+      #mod_nl namelist sn_wndi sn_wndj sn_qsr sn_qlw sn_tair sn_humi sn_prec sn_snow sn_tdif sn_rnf sn_cnf
   fi
 
   if [ $nemo_carbon -eq 1 ]; then
@@ -1346,7 +1185,7 @@ fi
 
     if [ "$nemo_cfc" -eq 1 ]; then
       [ -s nemo_cfc_atmhist.nc ]      ||  acc_cp nemo_cfc_atmhist.nc       $nemo_cfc_atmhist
-      [ -n "$cfc_offset_year"  ]      &&  mod_nl namelist_cfc offset_cfc_year
+      #[ -n "$cfc_offset_year"  ]      &&  mod_nl namelist_cfc offset_cfc_year
     fi
 
     # Modify the pisces namelist to read CO2 from file, if specified in makefile
@@ -1354,13 +1193,13 @@ fi
     if [ "$ln_co2int" = ".true." ]; then
       [ -s co2atm.nc ] ||  acc_cp omip6_co2atm.nc       $nemo_data_atcco2
     fi
-    mod_nl namelist_pisces ln_co2int ln_c14int
+    #mod_nl namelist_pisces ln_co2int ln_c14int
 
     # Reset sn_rcv_co2 and sn_snd_co2 in namelist if requested by the user
     if [ $nemo_trans_co2 -eq 0 ]; then
       sn_rcv_co2=" 'none' , 'no' , '' , '' , '' "
       sn_snd_co2=" 'none' , 'no' , '' , '' , '' "
-      mod_nl namelist sn_rcv_co2 sn_snd_co2
+      #mod_nl namelist sn_rcv_co2 sn_snd_co2
     fi
   fi
 
