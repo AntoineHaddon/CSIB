@@ -389,7 +389,7 @@ CONTAINS
       ! Total tidal energy ( M2, S2 and K1  with S2=(1/2)^2 * M2 )
       ! only the energy available for mixing is taken into account,
       ! (mixing efficiency tidal dissipation efficiency)
-      en_tmx(:,:) = - rn_tfe * rn_me * ( zem2(:,:) * 1.25 + zek1(:,:) ) * ssmask(:,:)
+      en_tmx(:,:) = - rn_tfe * rn_me * ( min(0.,zem2(:,:)) * 1.25 + min(0.,zek1(:,:)) ) * ssmask(:,:)
 
 !============
 !TG: Bug for VVL? Should this section be moved out of _init and be updated at every timestep?
