@@ -7,6 +7,7 @@ MODULE zdftmx
    !!             -   !  2006-08  (A. Koch-Larrouy) Indonesian strait
    !!            3.3  !  2010-10  (C. Ethe, G. Madec) reorganisation of initialisation phase
    !!            4.0.3!  2021-07  (D. Yang)   add old tidal mixing scheme (Simmons et al 2004)
+   !!            4.0.3!  2021-07  (D. Yang)   Constrain tidal energy to be positive
    !!----------------------------------------------------------------------
    !!----------------------------------------------------------------------
    !!   'key_zdftmx'                                  Tidal vertical mixing
