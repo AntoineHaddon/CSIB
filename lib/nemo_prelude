@@ -325,15 +325,15 @@ echo "#################### Start NEMO pre-processing #################"
     if [ $start_year -eq 1 ]; then
       rs_year=0
     else
-      rs_year=`expr $start_year - 1`
+      rs_year=$(( start_year - 1 ))
     fi
   else
-    rs_mon=`expr $start_mon - 1`
+    rs_mon=$(( start_mon - 1 ))
     rs_year=$start_year
   fi
 
   # Determine the number of days in the last month of the previous restart
-  rs_mon=$( days_in_month $rs_mon )
+  rs_day=$( days_in_month $rs_mon )
 
   # Calendar date (YYYYMMDD) for the previous restart
   rs_date=`echo $rs_year $rs_mon $rs_day|awk '{printf "%04d%02d%02d",$1,$2,$3}' -`
