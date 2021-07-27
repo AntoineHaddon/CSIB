@@ -139,7 +139,7 @@
         mkdir NEXT_RESTART_ARC
 
         # Identify the last NEMO timestep, which will be in the rs names
-        end_step=$(echo $nn_itend | awk '{printf "%8.8d",$1}')
+        end_step=$(get_namelist_var nn_itend namelist | awk '{printf "%8.8d",$1}')
 
         eval ofnpatt=${cn_exp}_${end_step}_${cn_ocerst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
         found_rs=`(ls -1 $ofnpatt || : ) 2>/dev/null`
