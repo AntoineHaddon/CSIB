@@ -431,9 +431,10 @@ echo "#################### Start NEMO pre-processing #################"
     # Initial date
     prev_date0="010101"
 
-    # Use input namelist files from a user supplied location
-    # (all nemo namelists currently follow "namelist*" convention.)
-    cp ${WRK_DIR}/config/namelists/namelist* .
+    # get run namelists
+    for f in $nemo_namelists; do
+        cp ${WRK_DIR}/config/namelists/${f} .
+    done
 
     if [ ! -x nemo.exe ]; then
       # Get a local copy of the NEMO executable
