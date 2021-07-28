@@ -431,9 +431,9 @@ echo "#################### Start NEMO pre-processing #################"
     # Initial date
     prev_date0="010101"
 
-    # get run namelists
+    # get run namelists if not already pulled in by a previous chunk
     for f in $nemo_namelists; do
-        cp ${WRK_DIR}/config/namelists/${f} .
+        ! is_file $f && cp ${WRK_DIR}/config/namelists/${f} .
     done
 
     if [ ! -x nemo.exe ]; then
@@ -625,10 +625,10 @@ echo "#################### Start NEMO pre-processing #################"
     fi
     [ ! -s nemo.exe ] && bail "Unable to find nemo executable."
 
-    # Get user defined/configured namelists
-    # (all nemo namelists currently follow "namelist*" 
-    # convention.
-    cp ${WRK_DIR}/config/namelists/namelist* .
+    # get run namelists if not already pulled in by a previous chunk
+    for f in $nemo_namelists; do
+        ! is_file $f && cp ${WRK_DIR}/config/namelists/${f} .
+    done
   fi
 
   # Access files required to run NEMO
