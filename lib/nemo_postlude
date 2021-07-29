@@ -232,6 +232,9 @@
       cp -f ocean.output rs_ocean.output || :
       [ -s rs_ocean.output ] && tarlist="$tarlist rs_ocean.output"
 
+      cp -f final.state rs_final.state || :
+      [ -s rs_final.state ] && tarlist="$tarlist rs_final.state"
+
       cp -f timing.output rs_timing.output || :
       [ -s rs_timing.output ] && tarlist="$tarlist rs_timing.output"
 
