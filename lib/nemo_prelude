@@ -46,11 +46,6 @@ echo "#################### Start NEMO pre-processing #################"
 # Either define nemo_restart or set nemo_from_rest = on but not both.
   nemo_from_rest=${nemo_from_rest:=off}
 
-# nemo_exec identifies the nemo executable
-# This file is saved in the reastart archive.
-# If nemo_exec is not defined then the executable found in the restart will be used.
-  nemo_exec=${nemo_exec:=''}
-
 # nemo_forcing identifies the type of forcing to use
 # Currenlty the only valid values are "bulk", "bulk_iaf", "flux", "flux_iaf" or "coupled"
   nemo_forcing=${nemo_forcing:=coupled}
@@ -436,12 +431,9 @@ echo "#################### Start NEMO pre-processing #################"
         ! is_file $f && cp ${WRK_DIR}/config/namelists/${f} .
     done
 
-    if [ ! -x nemo.exe ]; then
-      # Get a local copy of the NEMO executable
-      [ -z "$nemo_exec" ] && bail "nemo_exec must be defined."
-      cp ${CCRNSRC}/executables/$nemo_exec nemo.exe
-    fi
-
+    # get nemo executable
+    ! is_defined $nemo_exec && bail "nemo_exec must be defined!"
+    ! is_file $nemo_exec    && cp ${CCRNSRC}/executables/$nemo_exec .
   else
     #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
     #=#=#=#   Start from a restart  #=#=#=#
@@ -612,23 +604,14 @@ echo "#################### Start NEMO pre-processing #################"
       [ -s input_trc_restart_file_names ] && cat input_trc_restart_file_names | xargs rm -f
 
     fi
-
-    # Get a local copy of the NEMO executable
-    rm -f nemo.exe
-    if [ -z "$nemo_exec" ]; then
-      # If nemo_exec is not defined then use the executable found in the restart archive
-      [ ! -s rs_nemo_exec ] && bail "rs_nemo_exec is missing from $nemo_rs"
-      mv rs_nemo_exec nemo.exe
-    else
-      # Otherwise use the executable pointed to by nemo_exec
-      cp ${CCRNSRC}/executables/$nemo_exec nemo.exe
-    fi
-    [ ! -s nemo.exe ] && bail "Unable to find nemo executable."
-
     # get run namelists if not already pulled in by a previous chunk
     for f in $nemo_namelists; do
         ! is_file $f && cp ${WRK_DIR}/config/namelists/${f} .
     done
+
+    # get nemo executable
+    ! is_defined $nemo_exec && bail "nemo_exec must be defined!"
+    ! is_file $nemo_exec    && cp ${CCRNSRC}/executables/$nemo_exec .
   fi
 
   # Access files required to run NEMO
