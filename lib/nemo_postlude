@@ -58,9 +58,6 @@
   nemo_save_rs=${nemo_save_rs:-on}
   ToF nemo_save_rs
 
-  # tarlist contains a list of additional files to add to the restart archive
-  tarlist=''
-
     # The file saved_history_file_names will contain a list of saved files to be archived.
     # Since "save" will blindly transpose all file name characters to lower case before
     # saving to DATAPATH, we must keep track of the case of these files in some way.
