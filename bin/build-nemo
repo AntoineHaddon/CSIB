@@ -23,7 +23,7 @@ set -e
 #   -d              ...compile an executable with debugging symbols (for use with DDT or GDB)
 #   -x              ...run this script with 'set -x'
 #   -c              ...copy executables instead of linking them after building is complete
-#   -f              ...force a "clean" compile - previous temporary files will be purged and recreated
+#   -f              ...force a "clean" compile
 #
 # Variable definitions:
 #   srcpath=srcpath     ...location of the NEMO source code. 
