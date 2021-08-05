@@ -213,7 +213,7 @@
 
       # Save a copy of the executable that was just run to the restart archive
       cp -f ${nemo_exec} rs_${nemo_exec} || :
-      [ -s rs_nemo_exec ] && tarlist="$tarlist rs_${nemo_exec}"
+      [ -s rs_${nemo_exec} ] && tarlist="$tarlist rs_${nemo_exec}"
 
       if [[ "$runmode" == NEMO-AGCM-dcpp-assim* ]] ; then
         # Add a EMPave data for nn_fwb=2
