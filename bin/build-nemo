@@ -292,6 +292,7 @@ done
 #-------------------------------
 # compile exec's using makefiles
 #-------------------------------
+nemo_util_arch_file_basename=$(basename ${nemo_util_arch_file})
 for build_dir in $make_build_dirs; do 
     echo ""
     echo "=============================================="
@@ -300,13 +301,13 @@ for build_dir in $make_build_dirs; do
     cd $build_dir
    
     # get make template file
-    ln -s ${nemo_util_arch_file} $(basename ${nemo_util_arch_file})
+    ln -sf ${nemo_util_arch_file} ${nemo_util_arch_file_basename}
 
     # compile
     if (( clean_compile == 1 )); then 
         make clean
     fi
-    make COMPILER_TEMPLATE=$(basename ${nemo_util_arch_file})
+    make COMPILER_TEMPLATE=${nemo_util_arch_file_basename}
 done
 
 #---------------------------------
