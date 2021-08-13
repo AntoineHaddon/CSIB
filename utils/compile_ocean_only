@@ -12,7 +12,10 @@ source experiment.cfg
 
 # build argument list
 build_nemo_opts=("-p $storage_dir/executables" "-j 12")
-build_nemo_opts+=( srcpath=${storage_dir}/CanNEMO_tmp_src cfg=${config} exec=${nemo_exec} arch=${nemo_arch} )
+build_nemo_opts+=( srcpath=${storage_dir}/CanNEMO_tmp_src cfg=${config} exec=${nemo_exec} )
+build_nemo_opts+=( nemo_arch=${COMPILER}.${PLATFORM} )
+build_nemo_opts+=( util_arch=${storage_dir}/CanNEMO_tmp_src/nemo/ARCH/make.template.${COMPILER}.${PLATFORM} )
+build_nemo_opts+=( comp_env=${storage_dir}/CanNEMO_tmp_src/nemo/ARCH/compilation_environment.${COMPILER}.${PLATFORM} )
 [[ -n "${add_cpp_keys}" ]] && build_nemo_addkeys='add_key="'${add_cpp_keys}'"'
 [[ -n "${del_cpp_keys}" ]] && build_nemo_delkeys='del_key="'${del_cpp_keys}'"'
 
