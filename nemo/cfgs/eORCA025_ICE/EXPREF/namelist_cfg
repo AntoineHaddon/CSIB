@@ -287,8 +287,8 @@
 &namtra_adv    !   advection scheme for tracer                          (default: NO selection)
 !-----------------------------------------------------------------------
    ln_traadv_fct = .true.     !  FCT scheme
-      nn_fct_h   =  2               !  =2/4, horizontal 2nd / 4th order 
-      nn_fct_v   =  2               !  =2/4, vertical   2nd / COMPACT 4th order 
+      nn_fct_h   =  4               !  =2/4, horizontal 2nd / 4th order 
+      nn_fct_v   =  4               !  =2/4, vertical   2nd / COMPACT 4th order 
 /
 !-----------------------------------------------------------------------
 &namtra_ldf    !   lateral diffusion scheme for tracers                 (default: NO selection)
