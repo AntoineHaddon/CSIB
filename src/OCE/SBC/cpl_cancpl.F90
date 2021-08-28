@@ -9,7 +9,6 @@ MODULE cpl_cancpl
   !!
   !! Larry Solheim Aug,2015
   !!=======================================================================
-#if defined key_cancpl
   !!-----------------------------------------------------------------------
   !!   'key_cancpl'                    coupled Ocean/Atmosphere via CanCPL
   !!-----------------------------------------------------------------------
@@ -29,11 +28,8 @@ MODULE cpl_cancpl
   use in_out_manager               ! I/O manager
   use lbclnk                       ! ocean lateral boundary conditions (or mpp link)
   use timing
-  !??? should this be use associated ??? use sbc_oce, only: nn_ice
-#if defined key_cice
-  use ice_domain_size, only: ncat
-#endif
-  use lib_mpp, only: mpi_comm_opa
+  use par_kind, only : wp
+  use lib_mpp, only: mpi_comm_oce, ctl_stop, mppgather, mppsync, mppscatter, mppstop
 
   implicit none
   private
@@ -61,8 +57,8 @@ MODULE cpl_cancpl
   !--- Derived type used to contain coupling field information
   type, public :: fld_cpl
      logical               ::   laction   ! To be coupled or not
-     character(len = 8)    ::   clname    ! Name of the coupling field   
-     character(len = 1)    ::   clgrid    ! Grid type  
+     character(len = 8)    ::   clname    ! Name of the coupling field
+     character(len = 1)    ::   clgrid    ! Grid type
      real(wp)              ::   nsgn      ! Control of the sign change
      integer, dimension(9) ::   nid = 0  ! Id of the field (no more than 9 categories)
      integer               ::   nct       ! Number of categories in field
@@ -79,7 +75,7 @@ MODULE cpl_cancpl
      CHARACTER(len = 32) ::   clvgrd                 ! grids on which is located the vector fields
   END TYPE FLD_C
   ! Send to the atmosphere                           !
-  TYPE(FLD_C) ::   sn_snd_temp, sn_snd_alb, sn_snd_thick, sn_snd_crt, sn_snd_co2                        
+  TYPE(FLD_C) ::   sn_snd_temp, sn_snd_alb, sn_snd_thick, sn_snd_crt, sn_snd_co2
   ! Received from the atmosphere                     !
   TYPE(FLD_C) ::   sn_rcv_w10m, sn_rcv_taumod, sn_rcv_tau, sn_rcv_dqnsdt, sn_rcv_qsr, sn_rcv_qns, sn_rcv_emp, sn_rcv_rnf
   TYPE(FLD_C) ::   sn_rcv_cal, sn_rcv_iceflx, sn_rcv_co2
@@ -245,8 +241,8 @@ contains
     real(wp) :: var(:,:)
     integer, optional :: pos
     integer :: lpos, iu
-    logical :: exists  
-    character(256) :: strng 
+    logical :: exists
+    character(256) :: strng
     if ( present(pos) ) then
       lpos = pos
     else
@@ -354,7 +350,7 @@ contains
   end subroutine cpl_cancpl_init
 
 
-  subroutine cpl_cancpl_define( krcv, ksnd )
+  subroutine cpl_cancpl_define( krcv, ksnd, kcplmodel )
      !!-------------------------------------------------------------------
      !!             ***  ROUTINE cpl_cancpl_define  ***
      !!
@@ -363,6 +359,8 @@ contains
      !!--------------------------------------------------------------------
      integer, intent(in) :: krcv   ! Number of all possible fields received
      integer, intent(in) :: ksnd   ! Number of all possible fields sent
+     integer, intent(in) :: kcplmodel ! Number of models to send too. Note this is a dummy argument for now
+                                      ! so that the interface matches the oasis equivalent
 
      !--- Local
      integer :: ji,jc,jx
@@ -427,7 +425,7 @@ contains
      var_list_info(:)%rank  = 0
      var_list_info(:)%used  = .false.
      do ji = 1, ksnd
-        if ( ssnd(ji)%laction ) then 
+        if ( ssnd(ji)%laction ) then
            do jc = 1, ssnd(ji)%nct
               if ( ssnd(ji)%nct .gt. 1 ) then
                  write(zclname,'( a7, i1)') ssnd(ji)%clname,jc
@@ -518,7 +516,7 @@ contains
      var_list_info(:)%rank  = 0
      var_list_info(:)%used  = .false.
      do ji = 1, krcv
-        if ( srcv(ji)%laction ) then 
+        if ( srcv(ji)%laction ) then
            do jc = 1, srcv(ji)%nct
               if ( srcv(ji)%nct .gt. 1 ) then
                  write(zclname,'( a7, i1)') srcv(ji)%clname,jc
@@ -577,8 +575,10 @@ contains
        call flush(numout)
      endif
 
-     REWIND( numnam )                    ! ... read namlist namsbc
-     READ  ( numnam, namsbc )
+     REWIND( numnam_ref )                    ! ... read namlist namsbc
+     READ  ( numnam_ref, namsbc )
+     REWIND( numnam_cfg )                    ! ... read namlist namsbc
+     READ  ( numnam_cfg, namsbc )
 
      !--- Set a value for nemo_nn_ice, defined in com_cpl
      nemo_nn_ice = nn_ice
@@ -615,14 +615,14 @@ contains
      !--- Assign nemo_namsbc_cpl_cldes with namelist parameters read into namsbc_cpl
      !--- These values will be used by the coupler
      !--- Set defaults
-     sn_snd_temp   = FLD_C( 'weighted oce and ice',    'no'    ,     ''      ,         ''           ,   ''   ) 
-     sn_snd_alb    = FLD_C( 'weighted ice'        ,    'no'    ,     ''      ,         ''           ,   ''   ) 
-     sn_snd_thick  = FLD_C( 'none'                ,    'no'    ,     ''      ,         ''           ,   ''   ) 
-     sn_snd_crt    = FLD_C( 'none'                ,    'no'    , 'spherical' , 'eastward-northward' ,  'T'   )     
-     sn_snd_co2    = FLD_C( 'none'                ,    'no'    ,     ''      ,         ''           ,   ''   )     
+     sn_snd_temp   = FLD_C( 'weighted oce and ice',    'no'    ,     ''      ,         ''           ,   ''   )
+     sn_snd_alb    = FLD_C( 'weighted ice'        ,    'no'    ,     ''      ,         ''           ,   ''   )
+     sn_snd_thick  = FLD_C( 'none'                ,    'no'    ,     ''      ,         ''           ,   ''   )
+     sn_snd_crt    = FLD_C( 'none'                ,    'no'    , 'spherical' , 'eastward-northward' ,  'T'   )
+     sn_snd_co2    = FLD_C( 'none'                ,    'no'    ,     ''      ,         ''           ,   ''   )
      sn_rcv_w10m   = FLD_C( 'none'                ,    'no'    ,     ''      ,         ''          ,   ''    )
      sn_rcv_taumod = FLD_C( 'coupled'             ,    'no'    ,     ''      ,         ''          ,   ''    )
-     sn_rcv_tau    = FLD_C( 'oce only'            ,    'no'    , 'cartesian' , 'eastward-northward',  'U,V'  )  
+     sn_rcv_tau    = FLD_C( 'oce only'            ,    'no'    , 'cartesian' , 'eastward-northward',  'U,V'  )
      sn_rcv_dqnsdt = FLD_C( 'coupled'             ,    'no'    ,     ''      ,         ''          ,   ''    )
      sn_rcv_qsr    = FLD_C( 'oce and ice'         ,    'no'    ,     ''      ,         ''          ,   ''    )
      sn_rcv_qns    = FLD_C( 'oce and ice'         ,    'no'    ,     ''      ,         ''          ,   ''    )
@@ -637,8 +637,10 @@ contains
        call flush(6)
      endif
 
-     REWIND( numnam )                    ! ... read namlist namsbc_cpl
-     READ  ( numnam, namsbc_cpl )
+     REWIND( numnam_ref )                    ! ... read namlist namsbc_cpl
+     READ  ( numnam_ref, namsbc_cpl )
+     REWIND( numnam_cfg )                    ! ... read namlist namsbc_cpl
+     READ  ( numnam_cfg, namsbc_cpl )
 
      nemo_namsbc_cpl_cldes(:) = " "
      nemo_namsbc_cpl_cldes(1) = trim(sn_snd_temp%cldes)
@@ -1295,12 +1297,12 @@ contains
          write(numout,*) '****************'
        endif
 
-       if ( nn_timing == 1 ) call timing_start('cplsend_gather')
+       call timing_start('cplsend_gather')
        !--- Gather data into the global array png
        call mppsync
        call mppgather (pdata(:,:,jc),0,png)
        call mppsync
-       if ( nn_timing == 1 ) call timing_stop('cplsend_gather')
+       call timing_stop('cplsend_gather')
 
        !--- Skip the rest of this loop unless this is the master task
        if ( rank /= ocn_master ) cycle
@@ -1349,7 +1351,7 @@ contains
   end subroutine cpl_cancpl_snd
 
 
-  subroutine cpl_cancpl_rcv( kid, kstep, pdata, kinfo )
+  subroutine cpl_cancpl_rcv( kid, kstep, pdata, pmask, kinfo )
      !!---------------------------------------------------------------------
      !!              ***  ROUTINE cpl_cancpl_rcv  ***
      !!
@@ -1368,6 +1370,8 @@ contains
      !--- pdata contains data on the local domain (local MPI task) to be received
      !--- It will be dimensioned pdata(jpi, jpj, srcv(kid)%nct)
      real(wp), intent(inout) :: pdata(:,:,:)
+
+     REAL(wp), DIMENSION(:,:,:), INTENT(in   ) ::   pmask     ! coupling mask
 
      !--- Integer flag to indicate if srcv(kid) was recieved or not
      !--- kinfo = OASIS_idle means the field was not received from the coupler
@@ -1440,12 +1444,12 @@ contains
 !xxx call dump_array3d(trim(strng),png)
        endif
 
-       if ( nn_timing == 1 ) call timing_start('cplrecv_scatter')
+       call timing_start('cplrecv_scatter')
        !--- Scatter the global array onto each NEMO task
        call mppsync
-       call mppscatter (png,0,pdata(:,:,jc)) 
+       call mppscatter (png,0,pdata(:,:,jc))
        call mppsync
-       if ( nn_timing == 1 ) call timing_stop('cplrecv_scatter')
+       call timing_stop('cplrecv_scatter')
 
 !xxx !DBG
 !xxx strng = " "
@@ -1463,7 +1467,7 @@ contains
        endif
 
        !--- Fill overlap areas and extra hallows and check periodicity
-       call lbc_lnk( pdata(:,:,jc), srcv(kid)%clgrid, srcv(kid)%nsgn )
+       call lbc_lnk( 'cpl_cancpl', pdata(:,:,jc), srcv(kid)%clgrid, srcv(kid)%nsgn )
 
        if ( rank == ocn_master .and. verbose > 2 ) then
          !--- Count the number of NaNs in the global png array
@@ -1494,7 +1498,7 @@ contains
              trim(srcv(kid)%clname),'  ',trim(strng)
          call flush(numout)
        endif
-         
+
      enddo
 
   end subroutine cpl_cancpl_rcv
@@ -1543,24 +1547,4 @@ contains
 
   end subroutine cpl_cancpl_finalize
 
-#else
-   !!----------------------------------------------------------------------
-   !!  Serial mode (no MPI)       Dummy module      Forced Ocean/Atmosphere
-   !!----------------------------------------------------------------------
-   use in_out_manager               ! i/o manager
-   logical, public, parameter :: lk_cpl = .false.   !: coupled flag
-   public cpl_cancpl_init
-   public cpl_cancpl_finalize
-contains
-   subroutine cpl_cancpl_init (kl_comm) 
-      integer, intent(out)   :: kl_comm
-      kl_comm = -1
-      write(numout,*) 'cpl_cancpl_init: Called in serial mode, MPI not in use.'
-   end subroutine cpl_cancpl_init
-   subroutine cpl_cancpl_finalize
-      write(numout,*) 'cpl_cancpl_finalize: Called in serial mode, MPI not in use.'
-   end subroutine cpl_cancpl_finalize
-#endif
-
-   !!=====================================================================
 end module cpl_cancpl
