@@ -1,0 +1,29 @@
+module cpl_types
+
+use par_kind, only : wp
+
+implicit none; private
+
+INTEGER, PUBLIC, PARAMETER ::   nmaxfld=60   ! Maximum number of coupling fields
+INTEGER, PUBLIC, PARAMETER ::   nmaxcat=5    ! Maximum number of coupling fields
+INTEGER, PUBLIC, PARAMETER ::   nmaxcpl=5    ! Maximum number of coupling fields
+
+TYPE, PUBLIC ::   FLD_CPL               !: Type for coupling field information
+   LOGICAL               ::   laction   ! To be coupled or not
+   CHARACTER(len = 8)    ::   clname    ! Name of the coupling field
+   CHARACTER(len = 1)    ::   clgrid    ! Grid type
+   REAL(wp)              ::   nsgn      ! Control of the sign change
+   INTEGER, DIMENSION(nmaxcat,nmaxcpl) ::   nid   ! Id of the field (no more than 9 categories and 9 extrena models)
+   INTEGER               ::   nct       ! Number of categories in field
+   INTEGER               ::   ncplmodel ! Maximum number of models to/from which this variable may be sent/received
+END TYPE FLD_CPL
+
+TYPE(FLD_CPL), DIMENSION(nmaxfld), PUBLIC ::   srcv, ssnd   !: Coupling fields
+
+INTEGER, PUBLIC, SAVE :: COUPLER_Rcv
+INTEGER, PUBLIC, SAVE :: COUPLER_idle
+
+
+
+
+end module cpl_types

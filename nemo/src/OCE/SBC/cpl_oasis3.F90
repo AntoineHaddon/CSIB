@@ -13,7 +13,7 @@ MODULE cpl_oasis3
    !!            3.4  !  2011-11  (C. Harris) Changes to allow mutiple category fields
    !!            3.6  !  2014-11  (S. Masson) OASIS3-MCT
    !!----------------------------------------------------------------------
-   
+
    !!----------------------------------------------------------------------
    !!   'key_oasis3'                    coupled Ocean/Atmosphere via OASIS3-MCT
    !!   'key_oa3mct_v3'                 to be added for OASIS3-MCT version 3
@@ -27,6 +27,7 @@ MODULE cpl_oasis3
 #if defined key_oasis3
    USE mod_oasis                    ! OASIS3-MCT module
 #endif
+   USE cpl_types, only : FLD_CPL, nmaxcat, nmaxcpl, nmaxfld, srcv, ssnd
    USE par_oce                      ! ocean parameters
    USE dom_oce                      ! ocean space and time domain
    USE in_out_manager               ! I/O manager
@@ -62,28 +63,12 @@ MODULE cpl_oasis3
    INTEGER                    ::   OASIS_FromRestOut = -1
 #endif
 
-   INTEGER                    ::   nrcv         ! total number of fields received 
-   INTEGER                    ::   nsnd         ! total number of fields sent 
+   INTEGER                    ::   nrcv         ! total number of fields received
+   INTEGER                    ::   nsnd         ! total number of fields sent
    INTEGER                    ::   ncplmodel    ! Maximum number of models to/from which NEMO is potentialy sending/receiving data
-   INTEGER, PUBLIC, PARAMETER ::   nmaxfld=60   ! Maximum number of coupling fields
-   INTEGER, PUBLIC, PARAMETER ::   nmaxcat=5    ! Maximum number of coupling fields
-   INTEGER, PUBLIC, PARAMETER ::   nmaxcpl=5    ! Maximum number of coupling fields
-   LOGICAL, PARAMETER         ::   ltmp_wapatch = .TRUE.   ! patch to restore wraparound rows in cpl_send, cpl_rcv, cpl_define  
+   LOGICAL, PARAMETER         ::   ltmp_wapatch = .TRUE.   ! patch to restore wraparound rows in cpl_send, cpl_rcv, cpl_define
    INTEGER                    ::   nldi_save, nlei_save
    INTEGER                    ::   nldj_save, nlej_save
-   
-   TYPE, PUBLIC ::   FLD_CPL               !: Type for coupling field information
-      LOGICAL               ::   laction   ! To be coupled or not
-      CHARACTER(len = 8)    ::   clname    ! Name of the coupling field   
-      CHARACTER(len = 1)    ::   clgrid    ! Grid type  
-      REAL(wp)              ::   nsgn      ! Control of the sign change
-      INTEGER, DIMENSION(nmaxcat,nmaxcpl) ::   nid   ! Id of the field (no more than 9 categories and 9 extrena models)
-      INTEGER               ::   nct       ! Number of categories in field
-      INTEGER               ::   ncplmodel ! Maximum number of models to/from which this variable may be sent/received
-   END TYPE FLD_CPL
-
-   TYPE(FLD_CPL), DIMENSION(nmaxfld), PUBLIC ::   srcv, ssnd   !: Coupling fields
-
    REAL(wp), DIMENSION(:,:), ALLOCATABLE ::   exfld   ! Temporary buffer for receiving
 
    !!----------------------------------------------------------------------
@@ -100,7 +85,7 @@ CONTAINS
       !! ** Purpose :   Initialize coupled mode communication for ocean
       !!    exchange between AGCM, OGCM and COUPLER. (OASIS3 software)
       !!
-      !! ** Method  :   OASIS3 MPI communication 
+      !! ** Method  :   OASIS3 MPI communication
       !!--------------------------------------------------------------------
       CHARACTER(len = *), INTENT(in   ) ::   cd_modname   ! model name as set in namcouple file
       INTEGER           , INTENT(  out) ::   kl_comm      ! local communicator of the model
@@ -134,7 +119,7 @@ CONTAINS
       !! ** Purpose :   Define grid and field information for ocean
       !!    exchange between AGCM, OGCM and COUPLER. (OASIS3 software)
       !!
-      !! ** Method  :   OASIS3 MPI communication 
+      !! ** Method  :   OASIS3 MPI communication
       !!--------------------------------------------------------------------
       INTEGER, INTENT(in) ::   krcv, ksnd     ! Number of received and sent coupling fields
       INTEGER, INTENT(in) ::   kcplmodel      ! Maximum number of models to/from which NEMO is potentialy sending/receiving data
@@ -155,7 +140,7 @@ CONTAINS
          IF( nimpp + jpi - 1 == jpiglo ) nlei = jpi
          IF( njmpp           ==      1 ) nldj = 1
          IF( njmpp + jpj - 1 == jpjglo ) nlej = jpj
-      ENDIF 
+      ENDIF
       IF(lwp) WRITE(numout,*)
       IF(lwp) WRITE(numout,*) 'cpl_define : initialization in coupled ocean/atmosphere case'
       IF(lwp) WRITE(numout,*) '~~~~~~~~~~~~~~~~~'
@@ -193,25 +178,25 @@ CONTAINS
       ENDIF
       !
       ! -----------------------------------------------------------------
-      ! ... Define the partition 
+      ! ... Define the partition
       ! -----------------------------------------------------------------
-      
+
       paral(1) = 2                                              ! box partitioning
-      paral(2) = jpiglo * (nldj-1+njmpp-1) + (nldi-1+nimpp-1)   ! NEMO lower left corner global offset    
-      paral(3) = nlei-nldi+1                                    ! local extent in i 
+      paral(2) = jpiglo * (nldj-1+njmpp-1) + (nldi-1+nimpp-1)   ! NEMO lower left corner global offset
+      paral(3) = nlei-nldi+1                                    ! local extent in i
       paral(4) = nlej-nldj+1                                    ! local extent in j
       paral(5) = jpiglo                                         ! global extent in x
-      
+
       IF( ln_ctl ) THEN
          WRITE(numout,*) ' multiexchg: paral (1:5)', paral
          WRITE(numout,*) ' multiexchg: jpi, jpj =', jpi, jpj
          WRITE(numout,*) ' multiexchg: nldi, nlei, nimpp =', nldi, nlei, nimpp
          WRITE(numout,*) ' multiexchg: nldj, nlej, njmpp =', nldj, nlej, njmpp
       ENDIF
-   
+
       CALL oasis_def_partition ( id_part, paral, nerror, jpiglo*jpjglo )
       !
-      ! ... Announce send variables. 
+      ! ... Announce send variables.
       !
       ssnd(:)%ncplmodel = kcplmodel
       !
@@ -223,7 +208,7 @@ CONTAINS
                   &              TRIM(ssnd(ji)%clname)//' is larger than nmaxcat, increase nmaxcat' )
                RETURN
             ENDIF
-            
+
             DO jc = 1, ssnd(ji)%nct
                DO jm = 1, kcplmodel
 
@@ -238,7 +223,7 @@ CONTAINS
                      zclname = 'model'//cli2//'_'//TRIM(zclname)
                   ENDIF
 #if defined key_agrif
-                  IF( agrif_fixed() /= 0 ) THEN 
+                  IF( agrif_fixed() /= 0 ) THEN
                      zclname=TRIM(Agrif_CFixed())//'_'//TRIM(zclname)
                   END IF
 #endif
@@ -256,22 +241,22 @@ CONTAINS
          ENDIF
       END DO
       !
-      ! ... Announce received variables. 
+      ! ... Announce received variables.
       !
       srcv(:)%ncplmodel = kcplmodel
       !
       DO ji = 1, krcv
-         IF ( srcv(ji)%laction ) THEN 
-            
+         IF ( srcv(ji)%laction ) THEN
+
             IF( srcv(ji)%nct > nmaxcat ) THEN
                CALL oasis_abort ( ncomp_id, 'cpl_define', 'Number of categories of '//   &
                   &              TRIM(srcv(ji)%clname)//' is larger than nmaxcat, increase nmaxcat' )
                RETURN
             ENDIF
-            
+
             DO jc = 1, srcv(ji)%nct
                DO jm = 1, kcplmodel
-                  
+
                   IF ( srcv(ji)%nct .GT. 1 ) THEN
                      WRITE(cli2,'(i2.2)') jc
                      zclname = TRIM(srcv(ji)%clname)//'_cat'//cli2
@@ -283,7 +268,7 @@ CONTAINS
                      zclname = 'model'//cli2//'_'//TRIM(zclname)
                   ENDIF
 #if defined key_agrif
-                  IF( agrif_fixed() /= 0 ) THEN 
+                  IF( agrif_fixed() /= 0 ) THEN
                      zclname=TRIM(Agrif_CFixed())//'_'//TRIM(zclname)
                   END IF
 #endif
@@ -301,11 +286,11 @@ CONTAINS
             END DO
          ENDIF
       END DO
-      
+
       !------------------------------------------------------------------
       ! End of definition phase
       !------------------------------------------------------------------
-      !     
+      !
 #if defined key_agrif
       IF( agrif_fixed() == Agrif_Nb_Fine_Grids() ) THEN
 #endif
@@ -320,8 +305,8 @@ CONTAINS
          nldj = nldj_save   ;   nlej = nlej_save
       ENDIF
    END SUBROUTINE cpl_define
-   
-   
+
+
    SUBROUTINE cpl_snd( kid, kstep, pdata, kinfo )
       !!---------------------------------------------------------------------
       !!              ***  ROUTINE cpl_snd  ***
@@ -350,11 +335,11 @@ CONTAINS
       !
       DO jc = 1, ssnd(kid)%nct
          DO jm = 1, ssnd(kid)%ncplmodel
-        
+
             IF( ssnd(kid)%nid(jc,jm) /= -1 ) THEN
                CALL oasis_put ( ssnd(kid)%nid(jc,jm), kstep, pdata(nldi:nlei, nldj:nlej,jc), kinfo )
-               
-               IF ( ln_ctl ) THEN        
+
+               IF ( ln_ctl ) THEN
                   IF ( kinfo == OASIS_Sent     .OR. kinfo == OASIS_ToRest .OR.   &
                      & kinfo == OASIS_SentOut  .OR. kinfo == OASIS_ToRestOut ) THEN
                      WRITE(numout,*) '****************'
@@ -368,9 +353,9 @@ CONTAINS
                      WRITE(numout,*) '****************'
                   ENDIF
                ENDIF
-               
+
             ENDIF
-            
+
          ENDDO
       ENDDO
       IF ( ltmp_wapatch ) THEN
@@ -420,24 +405,24 @@ CONTAINS
 
             IF( srcv(kid)%nid(jc,jm) /= -1 ) THEN
 
-               CALL oasis_get ( srcv(kid)%nid(jc,jm), kstep, exfld, kinfo )         
-               
+               CALL oasis_get ( srcv(kid)%nid(jc,jm), kstep, exfld, kinfo )
+
                llaction =  kinfo == OASIS_Recvd   .OR. kinfo == OASIS_FromRest .OR.   &
                   &        kinfo == OASIS_RecvOut .OR. kinfo == OASIS_FromRestOut
-               
+
                IF ( ln_ctl )   WRITE(numout,*) "llaction, kinfo, kstep, ivarid: " , llaction, kinfo, kstep, srcv(kid)%nid(jc,jm)
-               
+
                IF ( llaction ) THEN
-                  
+
                   kinfo = OASIS_Rcv
-                  IF( llfisrt ) THEN 
+                  IF( llfisrt ) THEN
                      pdata(nldi:nlei,nldj:nlej,jc) =                                 exfld(:,:) * pmask(nldi:nlei,nldj:nlej,jm)
                      llfisrt = .FALSE.
                   ELSE
                      pdata(nldi:nlei,nldj:nlej,jc) = pdata(nldi:nlei,nldj:nlej,jc) + exfld(:,:) * pmask(nldi:nlei,nldj:nlej,jm)
                   ENDIF
-                  
-                  IF ( ln_ctl ) THEN        
+
+                  IF ( ln_ctl ) THEN
                      WRITE(numout,*) '****************'
                      WRITE(numout,*) 'oasis_get: Incoming ', srcv(kid)%clname
                      WRITE(numout,*) 'oasis_get: ivarid '  , srcv(kid)%nid(jc,jm)
@@ -448,11 +433,11 @@ CONTAINS
                      WRITE(numout,*) '     -     Sum value is ',    SUM(pdata(nldi:nlei,nldj:nlej,jc))
                      WRITE(numout,*) '****************'
                   ENDIF
-                  
+
                ENDIF
-               
+
             ENDIF
-            
+
          ENDDO
 
          IF ( ltmp_wapatch ) THEN
@@ -462,15 +447,15 @@ CONTAINS
          !--- Fill the overlap areas and extra hallows (mpp)
          !--- check periodicity conditions (all cases)
          IF( .not. llfisrt ) THEN
-            CALL lbc_lnk( 'cpl_oasis3', pdata(:,:,jc), srcv(kid)%clgrid, srcv(kid)%nsgn )   
+            CALL lbc_lnk( 'cpl_oasis3', pdata(:,:,jc), srcv(kid)%clgrid, srcv(kid)%nsgn )
          ENDIF
- 
+
       ENDDO
       !
    END SUBROUTINE cpl_rcv
 
 
-   INTEGER FUNCTION cpl_freq( cdfieldname )  
+   INTEGER FUNCTION cpl_freq( cdfieldname )
       !!---------------------------------------------------------------------
       !!              ***  ROUTINE cpl_freq  ***
       !!
@@ -535,10 +520,10 @@ CONTAINS
       !
       DEALLOCATE( exfld )
       IF (nstop == 0) THEN
-         CALL oasis_terminate( nerror )         
+         CALL oasis_terminate( nerror )
       ELSE
          CALL oasis_abort( ncomp_id, "cpl_finalize", "NEMO ABORT STOP" )
-      ENDIF       
+      ENDIF
       !
    END SUBROUTINE cpl_finalize
 
@@ -588,7 +573,7 @@ CONTAINS
       k1 = -1
       WRITE(numout,*) 'oasis_enddef: Error you sould not be there...'
    END SUBROUTINE oasis_enddef
-  
+
    SUBROUTINE oasis_put(k1,k2,p1,k3)
       REAL(wp), DIMENSION(:,:), INTENT(in   ) ::  p1
       INTEGER                 , INTENT(in   ) ::  k1,k2
@@ -618,7 +603,7 @@ CONTAINS
       k1 = -1
       WRITE(numout,*) 'oasis_terminate: Error you sould not be there...'
    END SUBROUTINE oasis_terminate
-   
+
 #endif
 
    !!=====================================================================
