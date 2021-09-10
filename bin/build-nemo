@@ -333,7 +333,7 @@ if (( copy_execs == 1 )); then
         cp -f $executable $stored_exec
     done
 else 
-    echo "Linking build-nemo target executables to $link_loc"
+    echo "Linking build-nemo target executables to $storage_loc"
     rm -f ${storage_loc}/${nemo_exec} ; ln -s $target_model_exec ${storage_loc}/${nemo_exec}
     for executable in $non_model_execs; do
         linked_exec=${storage_loc}/$(basename $executable)
