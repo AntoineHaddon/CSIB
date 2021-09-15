@@ -30,6 +30,7 @@ MODULE cpl_cancpl
   use timing
   use par_kind, only : wp
   use lib_mpp, only: mpi_comm_oce, ctl_stop, mppgather, mppsync, mppscatter, mppstop
+  use cpl_types, only : srcv, ssnd, FLD_C, FLD_CPL, nmaxfld
 
   implicit none
   private
@@ -40,7 +41,9 @@ MODULE cpl_cancpl
   public :: cpl_cancpl_rcv
   public :: cpl_cancpl_freq
   public :: cpl_cancpl_finalize
+  public :: set_cancpl_params
   public :: check_value2d, check_value3d
+  public :: query_start_cpl2ocn
 
   logical, public, parameter ::   lk_cpl = .true.   !: coupled flag
   integer, public, save      ::   oasis_idle = 0    !: return code if no send or recv
@@ -52,44 +55,8 @@ MODULE cpl_cancpl
   public :: bcast_inter, cpl_time_string, cpl_elapsed_time_secs, cpl_master
 
   integer            ::   nerror        ! return error code
-  integer, parameter ::   nmaxfld=40    ! maximum number of coupling fields
 
-  !--- Derived type used to contain coupling field information
-  type, public :: fld_cpl
-     logical               ::   laction   ! To be coupled or not
-     character(len = 8)    ::   clname    ! Name of the coupling field
-     character(len = 1)    ::   clgrid    ! Grid type
-     real(wp)              ::   nsgn      ! Control of the sign change
-     integer, dimension(9) ::   nid = 0  ! Id of the field (no more than 9 categories)
-     integer               ::   nct       ! Number of categories in field
-  end type fld_cpl
-
-  !--- Lists of all fields that are to be coupled
-  type(fld_cpl), save, dimension(nmaxfld), public ::   srcv, ssnd
-
-  TYPE :: FLD_C
-     CHARACTER(len = 32) ::   cldes                  ! desciption of the coupling strategy
-     CHARACTER(len = 32) ::   clcat                  ! multiple ice categories strategy
-     CHARACTER(len = 32) ::   clvref                 ! reference of vector ('spherical' or 'cartesian')
-     CHARACTER(len = 32) ::   clvor                  ! orientation of vector fields ('eastward-northward' or 'local grid')
-     CHARACTER(len = 32) ::   clvgrd                 ! grids on which is located the vector fields
-  END TYPE FLD_C
-  ! Send to the atmosphere                           !
-  TYPE(FLD_C) ::   sn_snd_temp, sn_snd_alb, sn_snd_thick, sn_snd_crt, sn_snd_co2
-  ! Received from the atmosphere                     !
-  TYPE(FLD_C) ::   sn_rcv_w10m, sn_rcv_taumod, sn_rcv_tau, sn_rcv_dqnsdt, sn_rcv_qsr, sn_rcv_qns, sn_rcv_emp, sn_rcv_rnf
-  TYPE(FLD_C) ::   sn_rcv_cal, sn_rcv_iceflx, sn_rcv_co2
-
-  NAMELIST /namsbc_cpl/ sn_snd_temp, sn_snd_alb   , sn_snd_thick, sn_snd_crt   , sn_snd_co2,   &
-                        sn_rcv_w10m, sn_rcv_taumod, sn_rcv_tau  , sn_rcv_dqnsdt, sn_rcv_qsr,   &
-                        sn_rcv_qns , sn_rcv_emp   , sn_rcv_rnf  , sn_rcv_cal   , sn_rcv_iceflx  , sn_rcv_co2
-
-  integer :: nn_fsbc, nn_ice, nn_fwb
-  logical :: ln_ana, ln_flx, ln_blk_clio, ln_blk_core, ln_cpl, ln_blk_mfs, ln_apr_dyn, ln_dm2dc, ln_rnf, ln_ssr, ln_cdgw
-  real(wp) :: rn_minsal
-  NAMELIST/namsbc/ nn_fsbc, ln_ana, ln_flx, ln_blk_clio, ln_blk_core, ln_cpl,   &
-                   ln_blk_mfs, ln_apr_dyn, nn_ice, ln_dm2dc, ln_rnf, ln_ssr, nn_fwb, ln_cdgw, rn_minsal
-
+  integer :: nn_fsbc, nn_ice
   !--- tmp space for use with MPI gather/scatter operations
   real(wp), allocatable, save, dimension(:,:,:), private :: png
 
@@ -570,16 +537,6 @@ contains
      !--- rn_rdt is defined in the module dom_oce
      nemo_rn_rdt = nint(rn_rdt,8)
 
-     if ( rank == ocn_master .and. verbose > 1 ) then
-       write(numout,*) 'cpl_cancpl_define : read namsbc namelist'
-       call flush(numout)
-     endif
-
-     REWIND( numnam_ref )                    ! ... read namlist namsbc
-     READ  ( numnam_ref, namsbc )
-     REWIND( numnam_cfg )                    ! ... read namlist namsbc
-     READ  ( numnam_cfg, namsbc )
-
      !--- Set a value for nemo_nn_ice, defined in com_cpl
      nemo_nn_ice = nn_ice
 
@@ -612,53 +569,10 @@ contains
      nemo_jpiglo = jpiglo
      nemo_jpjglo = jpjglo
 
-     !--- Assign nemo_namsbc_cpl_cldes with namelist parameters read into namsbc_cpl
-     !--- These values will be used by the coupler
-     !--- Set defaults
-     sn_snd_temp   = FLD_C( 'weighted oce and ice',    'no'    ,     ''      ,         ''           ,   ''   )
-     sn_snd_alb    = FLD_C( 'weighted ice'        ,    'no'    ,     ''      ,         ''           ,   ''   )
-     sn_snd_thick  = FLD_C( 'none'                ,    'no'    ,     ''      ,         ''           ,   ''   )
-     sn_snd_crt    = FLD_C( 'none'                ,    'no'    , 'spherical' , 'eastward-northward' ,  'T'   )
-     sn_snd_co2    = FLD_C( 'none'                ,    'no'    ,     ''      ,         ''           ,   ''   )
-     sn_rcv_w10m   = FLD_C( 'none'                ,    'no'    ,     ''      ,         ''          ,   ''    )
-     sn_rcv_taumod = FLD_C( 'coupled'             ,    'no'    ,     ''      ,         ''          ,   ''    )
-     sn_rcv_tau    = FLD_C( 'oce only'            ,    'no'    , 'cartesian' , 'eastward-northward',  'U,V'  )
-     sn_rcv_dqnsdt = FLD_C( 'coupled'             ,    'no'    ,     ''      ,         ''          ,   ''    )
-     sn_rcv_qsr    = FLD_C( 'oce and ice'         ,    'no'    ,     ''      ,         ''          ,   ''    )
-     sn_rcv_qns    = FLD_C( 'oce and ice'         ,    'no'    ,     ''      ,         ''          ,   ''    )
-     sn_rcv_emp    = FLD_C( 'conservative'        ,    'no'    ,     ''      ,         ''          ,   ''    )
-     sn_rcv_rnf    = FLD_C( 'coupled'             ,    'no'    ,     ''      ,         ''          ,   ''    )
-     sn_rcv_cal    = FLD_C( 'coupled'             ,    'no'    ,     ''      ,         ''          ,   ''    )
-     sn_rcv_iceflx = FLD_C( 'none'                ,    'no'    ,     ''      ,         ''          ,   ''    )
-     sn_rcv_co2    = FLD_C( 'none'                ,    'no'    ,     ''      ,         ''          ,   ''    )
-
      if ( rank == ocn_master .and. verbose > 1 ) then
        write(6,*)"cpl_cancpl_define: READ namsbc_cpl namelist"
        call flush(6)
      endif
-
-     REWIND( numnam_ref )                    ! ... read namlist namsbc_cpl
-     READ  ( numnam_ref, namsbc_cpl )
-     REWIND( numnam_cfg )                    ! ... read namlist namsbc_cpl
-     READ  ( numnam_cfg, namsbc_cpl )
-
-     nemo_namsbc_cpl_cldes(:) = " "
-     nemo_namsbc_cpl_cldes(1) = trim(sn_snd_temp%cldes)
-     nemo_namsbc_cpl_cldes(2) = trim(sn_snd_alb%cldes)
-     nemo_namsbc_cpl_cldes(3) = trim(sn_snd_thick%cldes)
-     nemo_namsbc_cpl_cldes(4) = trim(sn_snd_crt%cldes)
-     nemo_namsbc_cpl_cldes(5) = trim(sn_snd_co2%cldes)
-     nemo_namsbc_cpl_cldes(6) = trim(sn_rcv_w10m%cldes)
-     nemo_namsbc_cpl_cldes(7) = trim(sn_rcv_taumod%cldes)
-     nemo_namsbc_cpl_cldes(8) = trim(sn_rcv_tau%cldes)
-     nemo_namsbc_cpl_cldes(9) = trim(sn_rcv_dqnsdt%cldes)
-     nemo_namsbc_cpl_cldes(10) = trim(sn_rcv_qsr%cldes)
-     nemo_namsbc_cpl_cldes(11) = trim(sn_rcv_qns%cldes)
-     nemo_namsbc_cpl_cldes(12) = trim(sn_rcv_emp%cldes)
-     nemo_namsbc_cpl_cldes(13) = trim(sn_rcv_rnf%cldes)
-     nemo_namsbc_cpl_cldes(14) = trim(sn_rcv_cal%cldes)
-     nemo_namsbc_cpl_cldes(15) = trim(sn_rcv_iceflx%cldes)
-     nemo_namsbc_cpl_cldes(16) = trim(sn_rcv_co2%cldes)
 
      !--- Gather glamt into nemo_glamt (found in com_cpl)
      !--- glamt is found in module dom_oce
@@ -767,11 +681,11 @@ contains
      if ( nemo_n_send_var > 0 ) then
        do ji=1,nemo_n_send_var
          cpl_vinfo = find_cpl_vinfo( name=trim(nemo_send_var(ji)) )
-         do jx=1,40
+         do jx=1,nmaxfld
            if ( trim(adjustl(nemo_send_var(ji))) .eq. trim(adjustl(ssnd(jx)%clname)) ) then
              !--- jx is the index in ssnd for this name
              do jc=1,ssnd(jx)%nct
-               ssnd(jx)%nid(jc) = cpl_vinfo%tag
+               ssnd(jx)%nid(jc,1) = cpl_vinfo%tag
              enddo
            endif
          enddo
@@ -796,7 +710,7 @@ contains
            if ( trim(adjustl(nemo_recv_var(ji))) .eq. trim(adjustl(srcv(jx)%clname)) ) then
              !--- jx is the index in srcv for this name
              do jc=1,srcv(jx)%nct
-               srcv(jx)%nid(jc) = cpl_vinfo%tag
+               srcv(jx)%nid(jc,1) = cpl_vinfo%tag
              enddo
            endif
          enddo
@@ -1254,7 +1168,7 @@ contains
        kinfo = OASIS_idle
 
        !--- Ensure that this variable was configured
-       if ( ssnd(kid)%nid(jc) <= 0 ) then
+       if ( ssnd(kid)%nid(jc,1) <= 0 ) then
          write(numout,*)'cpl_cancpl_snd: ',trim(ssnd(kid)%clname), &
            ' is not sent in this configuration.  kid = ',kid
          call ctl_stop("STOP", "cpl_cancpl_snd", &
@@ -1262,7 +1176,7 @@ contains
        endif
 
        !--- Determine if this variable should be coupled now
-       cpl_vinfo = find_cpl_vinfo( tag=ssnd(kid)%nid(jc) )
+       cpl_vinfo = find_cpl_vinfo( tag=ssnd(kid)%nid(jc,1) )
        freq = cpl_vinfo%freq
 
        !--- Ignore the rest of this loop if this is not a coupling time step
@@ -1288,7 +1202,7 @@ contains
          !--- Write info for each sub-domain to the ocean output file
          write(numout,*) '****************'
          write(numout,*) 'cpl_cancpl_snd: Outgoing ', ssnd(kid)%clname
-         write(numout,*) 'cpl_cancpl_snd:      tag ', ssnd(kid)%nid(jc)
+         write(numout,*) 'cpl_cancpl_snd:      tag ', ssnd(kid)%nid(jc,1)
          write(numout,*) 'cpl_cancpl_snd:    kstep ', kstep
          write(numout,*) 'cpl_cancpl_snd: mpi task ', rank
          write(numout,*) '      - minimum value is ', minval(pdata(:,:,jc))
@@ -1402,10 +1316,10 @@ contains
        !--- srcv(:)%nid(:) is initialized to zero then defined in
        !--- cpl_cancpl_define for variables that are to be coupled and so
        !--- it will only be non-zero for fields that are coupled
-       if ( srcv(kid)%nid(jc) <= 0 ) cycle
+       if ( srcv(kid)%nid(jc,1) <= 0 ) cycle
 
        !--- Determine if this variable should be coupled now
-       cpl_vinfo = find_cpl_vinfo( tag=srcv(kid)%nid(jc) )
+       cpl_vinfo = find_cpl_vinfo( tag=srcv(kid)%nid(jc,1) )
        freq = cpl_vinfo%freq
 
        !--- Ignore the rest of this loop if this is not a coupling time step
@@ -1425,7 +1339,7 @@ contains
          if ( verbose > 2 ) then
            write(numout,'(3a,i2,a,i4,a,i8,a,i8)') 'cpl_cancpl_rcv: NEMO receiving ', &
              trim(srcv(kid)%clname),' from task ',cpl_master, &
-             '  tag=',srcv(kid)%nid(jc),'  kstep=',kstep,'  freq=',freq
+             '  tag=',srcv(kid)%nid(jc,1),'  kstep=',kstep,'  freq=',freq
            call flush(numout)
          endif
 
@@ -1483,7 +1397,7 @@ contains
          !--- Write info for each sub-domain to the ocean output file
          write(numout,*) '****************'
          write(numout,*) 'cpl_cancpl_rcv: Incoming ', srcv(kid)%clname
-         write(numout,*) 'cpl_cancpl_rcv: ivarid ',   srcv(kid)%nid(jc)
+         write(numout,*) 'cpl_cancpl_rcv: ivarid ',   srcv(kid)%nid(jc,1)
          write(numout,*) 'cpl_cancpl_rcv:   kstep', kstep
          write(numout,*) 'cpl_cancpl_rcv:   info ', kinfo
          write(numout,*) '     - minimum value is ', minval(pdata(:,:,jc))
@@ -1546,5 +1460,45 @@ contains
     !--- TODO --- Also tell coupler that the ocean has stopped
 
   end subroutine cpl_cancpl_finalize
+
+  !> Propagate parameters from NEMO to CanCPL
+  subroutine set_cancpl_params( coupled_fields, num_ice_steps, num_boundary_calls )
+    type(FLD_C), dimension(:), intent(in) :: coupled_fields !< Contains all the field descriptors for coupled fields
+    integer,                   intent(in) :: num_ice_steps  !< How many dynamics timesteps per ice timestep
+    integer,                   intent(in) :: num_boundary_calls !< How many dynamics timesteps per surface boundary call
+
+    integer :: i
+
+    ! Set the coupling strategy
+    !! Note that for now this retains the need for a static mapping between the incoming fields and what cancpl expects
+    nemo_namsbc_cpl_cldes(:) = " "
+    do i = 1,SIZE(coupled_fields,1)
+      nemo_namsbc_cpl_cldes(i) = trim(coupled_fields(i)%cldes)
+    enddo
+
+    ! Set other
+    nn_ice = num_ice_steps
+    nn_fsbc = num_boundary_calls
+
+  end subroutine set_cancpl_params
+
+  !> Subroutine to detect when the ocean should get ready to receive fields from teh coupler
+  subroutine query_start_cpl2ocn( isec )
+    integer, intent(in) :: isec
+
+    type(cpl_vinfo_t) :: cpl_vinfo
+
+      cpl_vinfo = find_cpl_vinfo( name="start_cpl2ocn" )
+      if ( mod(isec,cpl_vinfo%freq) == 0 ) then
+        !--- Receive cpl_time_string from the coupler
+        !--- cpl_time_string is found in the com_cpl module
+        call bcast_inter(cpl_time_string, cpl_master, "ocn")
+        !--- Send elapsed coupler time in seconds from the coupler to the ocean
+        !--- cpl_elapsed_time_secs is found in the com_cpl module
+        call bcast_inter(cpl_elapsed_time_secs, cpl_master, "ocn")
+        write(numout,*)"isec=",isec,"  cpl_elapsed_time_secs=",cpl_elapsed_time_secs
+        call flush(numout)
+      endif
+  end subroutine query_start_cpl2ocn
 
 end module cpl_cancpl
