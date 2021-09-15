@@ -30,7 +30,8 @@ MODULE sbccpl
    USE ice            ! ice variables
 #endif
    USE cpl_interface, ONLY : cpl_rcv, cpl_snd, cpl_define, cpl_freq
-   use cpl_types,     ONLY : srcv, ssnd, COUPLER_Rcv, COUPLER_idle
+   use cpl_types,     ONLY : srcv, ssnd, COUPLER_Rcv, COUPLER_idle, FLD_C
+   use cpl_cancpl,    ONLY : set_cancpl_params, query_start_cpl2ocn
    USE geo2ocean      !
    USE oce     , ONLY : tsn, un, vn, sshn, ub, vb, sshb, fraqsr_1lev
    USE ocealb         !
@@ -48,6 +49,7 @@ MODULE sbccpl
    USE iom            ! NetCDF library
    USE lib_mpp        ! distribued memory computing library
    USE lbclnk         ! ocean lateral boundary conditions (or mpp link)
+
 
 #if defined key_oasis3
    USE mod_oasis, ONLY : OASIS_Sent, OASIS_ToRest, OASIS_SentOut, OASIS_ToRestOut
@@ -171,15 +173,7 @@ MODULE sbccpl
    INTEGER                    ::   OASIS_ToRest      = -1
    INTEGER                    ::   OASIS_ToRestOut   = -1
 #endif
-
    !                                  !!** namelist namsbc_cpl **
-   TYPE ::   FLD_C                     !
-      CHARACTER(len = 32) ::   cldes      ! desciption of the coupling strategy
-      CHARACTER(len = 32) ::   clcat      ! multiple ice categories strategy
-      CHARACTER(len = 32) ::   clvref     ! reference of vector ('spherical' or 'cartesian')
-      CHARACTER(len = 32) ::   clvor      ! orientation of vector fields ('eastward-northward' or 'local grid')
-      CHARACTER(len = 32) ::   clvgrd     ! grids on which is located the vector fields
-   END TYPE FLD_C
    !                                   ! Send to the atmosphere
    TYPE(FLD_C) ::   sn_snd_temp  , sn_snd_alb , sn_snd_thick, sn_snd_crt   , sn_snd_co2,  &
       &             sn_snd_thick1, sn_snd_cond, sn_snd_mpnd , sn_snd_sstfrz, sn_snd_ttilyr
@@ -349,6 +343,15 @@ CONTAINS
 
       !                                   ! allocate sbccpl arrays
       IF( sbc_cpl_alloc() /= 0 )   CALL ctl_stop( 'STOP', 'sbc_cpl_alloc : unable to allocate arrays' )
+
+      ! For now, we need to set the coupling strategy in the FLD_CPL portion of the field for cancpl
+      if (lk_cancpl) then
+         call set_cancpl_params( [ &
+                        sn_snd_temp, sn_snd_alb   , sn_snd_thick, sn_snd_crt   , sn_snd_co2,   &
+                        sn_rcv_w10m, sn_rcv_taumod, sn_rcv_tau  , sn_rcv_dqnsdt, sn_rcv_qsr,   &
+                        sn_rcv_qns , sn_rcv_emp   , sn_rcv_rnf  , sn_rcv_cal   , sn_rcv_iceflx, sn_rcv_co2 ], &
+                        nn_ice, nn_fsbc )
+      endif
 
       ! ================================ !
       !   Define the receive interface   !
@@ -815,12 +818,15 @@ CONTAINS
       ssnd(jps_ht_p)%clname  = 'OPndTck'
       ssnd(jps_hsnw)%clname  = 'OSnwTck'
       ssnd(jps_fice1)%clname = 'OIceFrd'
-      IF( k_ice /= 0 ) THEN
+      IF( k_ice /= 0 .and. .not. lk_cancpl ) THEN
          ssnd(jps_fice)%laction  = .TRUE.                 ! if ice treated in the ocean (even in climato case)
          ssnd(jps_fice1)%laction = .TRUE.                 ! First-order regridded ice concentration, to be used producing atmos-to-ice fluxes (Met Office requirement)
 ! Currently no namelist entry to determine sending of multi-category ice fraction so use the thickness entry for now
          IF ( TRIM( sn_snd_thick%clcat  ) == 'yes' ) ssnd(jps_fice)%nct  = nn_cats_cpl
          IF ( TRIM( sn_snd_thick1%clcat ) == 'yes' ) ssnd(jps_fice1)%nct = nn_cats_cpl
+      ELSEIF (lk_cancpl) then
+         ssnd(jps_fice)%laction  = .TRUE.                 ! if ice treated in the ocean (even in climato case)
+         IF ( TRIM( sn_snd_thick%clcat  ) == 'yes' ) ssnd(jps_fice)%nct  = nn_cats_cpl
       ENDIF
 
       IF (TRIM( sn_snd_ifrac%cldes )  == 'coupled') ssnd(jps_ficet)%laction = .TRUE.
@@ -835,6 +841,9 @@ CONTAINS
       CASE ( 'weighted ice and snow' )
          ssnd(jps_hice:jps_hsnw)%laction = .TRUE.
          IF ( TRIM( sn_snd_thick%clcat ) == 'yes' ) ssnd(jps_hice:jps_hsnw)%nct = nn_cats_cpl
+       CASE ( 'weighted iwe and swe' )
+          ssnd(jps_hice:jps_hsnw)%laction = .TRUE.
+          IF ( TRIM( sn_snd_thick%clcat ) == 'yes' ) ssnd(jps_hice:jps_hsnw)%nct = jpl
       CASE default   ;   CALL ctl_stop( 'sbc_cpl_init: wrong definition of sn_snd_thick%cldes' )
       END SELECT
 
@@ -1141,6 +1150,10 @@ CONTAINS
       ENDIF
       !
       IF( ln_mixcpl )   zmsk(:,:) = 1. - xcplmask(:,:,0)
+
+      if (lk_cancpl) then
+         call query_start_cpl2ocn( isec )
+      endif
       !
       !                                                      ! ======================================================= !
       !                                                      ! Receive all the atmos. fields (including ice information)
@@ -2379,6 +2392,20 @@ CONTAINS
                  ztmp4(:,:,1) = 0.
                END WHERE
             CASE default                  ;   CALL ctl_stop( 'sbc_cpl_snd: wrong definition of sn_snd_thick%clcat' )
+            END SELECT
+         CASE( 'weighted iwe and swe' )
+         !--- Cell average ice water equivalent and snow water equivalent
+            SELECT CASE( sn_snd_thick%clcat )
+               CASE( 'yes' )
+                  ztmp3(:,:,1:jpl) =  rhoi * h_i(:,:,1:jpl) * a_i(:,:,1:jpl)
+                  ztmp4(:,:,1:jpl) =  rhos * h_s(:,:,1:jpl) * a_i(:,:,1:jpl)
+               CASE( 'no' )
+                  ztmp3(:,:,:) = 0.0   ;  ztmp4(:,:,:) = 0.0
+                  DO jl=1,jpl
+                     ztmp3(:,:,1) = ztmp3(:,:,1) + rhoi * h_i(:,:,jl) * a_i(:,:,jl)
+                     ztmp4(:,:,1) = ztmp4(:,:,1) + rhos * h_s(:,:,jl) * a_i(:,:,jl)
+                  ENDDO
+               CASE default                  ;   CALL ctl_stop( 'sbc_cpl_snd: wrong definition of sn_snd_thick%clcat' )
             END SELECT
          CASE default                     ;   CALL ctl_stop( 'sbc_cpl_snd: wrong definition of sn_snd_thick%cldes' )
          END SELECT
