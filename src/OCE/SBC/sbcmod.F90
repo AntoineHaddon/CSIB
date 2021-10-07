@@ -98,7 +98,7 @@ CONTAINS
          &             ln_traqsr, ln_dm2dc ,                                         &
          &             ln_rnf   , nn_fwb   , ln_ssr   , ln_isf    , ln_apr_dyn ,     &
          &             ln_wave  , ln_cdgw  , ln_sdw   , ln_tauwoc  , ln_stcor   ,     &
-         &             ln_tauw  , nn_lsm, nn_sdrift, ln_minsal, rn_minsal
+         &             ln_tauw  , nn_lsm, nn_sdrift, ln_minsal, rn_minsal, ln_vertsflx
       !!----------------------------------------------------------------------
       !
       IF(lwp) THEN
@@ -164,6 +164,7 @@ CONTAINS
          WRITE(numout,*) '               neutral drag coefficient (CORE,NCAR) ln_cdgw       = ', ln_cdgw
          WRITE(numout,*) '               constrain SSS not dropping below 5 psu             = ', ln_minsal
          WRITE(numout,*) '               min SSS                                            = ', rn_minsal
+         WRITE(numout,*) '         Vertical distribution of salt ice-fluxes   ln_vertsflx   = ', ln_vertsflx
       ENDIF
       !
       IF( .NOT.ln_wave ) THEN
