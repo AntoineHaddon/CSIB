@@ -71,6 +71,7 @@ MODULE sbc_oce
    INTEGER , PUBLIC ::   nn_cats_cpl    !: Number of sea ice categories over which the coupling is carried out
    LOGICAL , PUBLIC ::   ln_minsal      ! true if constrain SSS not dropping below 5 psu
    REAL(wp), PUBLIC ::   rn_minsal      ! min SSS
+   LOGICAL , PUBLIC ::   ln_vertsflx    ! If true, distribute the salt flux due to ice processes within the boundary layer
 
    !!----------------------------------------------------------------------
    !!           switch definition (improve readability)
