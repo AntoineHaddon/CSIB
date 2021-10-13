@@ -1,12 +1,12 @@
 MODULE zdfmxl
    !!======================================================================
    !!                       ***  MODULE  zdfmxl  ***
-   !! Ocean physics: mixed layer depth 
+   !! Ocean physics: mixed layer depth
    !!======================================================================
    !! History :  1.0  ! 2003-08  (G. Madec)  original code
    !!            3.2  ! 2009-07  (S. Masson, G. Madec)  IOM + merge of DO-loop
-   !!            3.7  ! 2012-03  (G. Madec)  make public the density criteria for trdmxl 
-   !!             -   ! 2014-02  (F. Roquet)  mixed layer depth calculated using N2 instead of rhop 
+   !!            3.7  ! 2012-03  (G. Madec)  make public the density criteria for trdmxl
+   !!             -   ! 2014-02  (F. Roquet)  mixed layer depth calculated using N2 instead of rhop
    !!----------------------------------------------------------------------
    !!   zdf_mxl      : Compute the turbocline and mixed layer depths.
    !!----------------------------------------------------------------------
@@ -36,7 +36,7 @@ MODULE zdfmxl
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: zdfmxl.F90 10425 2018-12-19 21:54:16Z smasson $ 
+   !! $Id: zdfmxl.F90 10425 2018-12-19 21:54:16Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -56,14 +56,14 @@ CONTAINS
    END FUNCTION zdf_mxl_alloc
 
 
-   SUBROUTINE zdf_mxl( kt )
+   SUBROUTINE zdf_mxl( kt, rho_c_in )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE zdfmxl  ***
-      !!                   
+      !!
       !! ** Purpose :   Compute the turbocline depth and the mixed layer depth
       !!              with density criteria.
       !!
-      !! ** Method  :   The mixed layer depth is the shallowest W depth with 
+      !! ** Method  :   The mixed layer depth is the shallowest W depth with
       !!      the density of the corresponding T point (just bellow) bellow a
       !!      given value defined locally as rho(10m) + rho_c
       !!               The turbocline depth is the depth at which the vertical
@@ -73,12 +73,14 @@ CONTAINS
       !!
       !! ** Action  :   nmln, hmld, hmlp, hmlpt
       !!----------------------------------------------------------------------
-      INTEGER, INTENT(in) ::   kt   ! ocean time-step index
+      INTEGER, INTENT(in)        ::   kt   ! ocean time-step index
+      REAL, OPTIONAL, INTENT(IN) ::   rho_c_in ! Density criterion
       !
       INTEGER  ::   ji, jj, jk      ! dummy loop indices
       INTEGER  ::   iikn, iiki, ikt ! local integer
-      REAL(wp) ::   zN2_c           ! local scalar
+      REAL(wp) ::   zN2_c, rho_c_loc ! local scalar
       INTEGER, DIMENSION(jpi,jpj) ::   imld   ! 2D workspace
+
       !!----------------------------------------------------------------------
       !
       IF( kt == nit000 ) THEN
@@ -88,13 +90,16 @@ CONTAINS
          !                             ! allocate zdfmxl arrays
          IF( zdf_mxl_alloc() /= 0 )   CALL ctl_stop( 'STOP', 'zdf_mxl : unable to allocate arrays' )
       ENDIF
+
+      rho_c_loc = rho_c
+      IF (PRESENT(rho_c_in)) rho_c_loc = rho_c_in
       !
       ! w-level of the mixing and mixed layers
       nmln(:,:)  = nlb10               ! Initialization to the number of w ocean point
       hmlp(:,:)  = 0._wp               ! here hmlp used as a dummy variable, integrating vertically N^2
-      zN2_c = grav * rho_c * r1_rau0   ! convert density criteria into N^2 criteria
+      zN2_c = grav * rho_c_loc * r1_rau0   ! convert density criteria into N^2 criteria
       DO jk = nlb10, jpkm1
-         DO jj = 1, jpj                ! Mixed layer level: w-level 
+         DO jj = 1, jpj                ! Mixed layer level: w-level
             DO ji = 1, jpi
                ikt = mbkt(ji,jj)
                hmlp(ji,jj) = hmlp(ji,jj) + MAX( rn2b(ji,jj,jk) , 0._wp ) * e3w_n(ji,jj,jk)
@@ -105,10 +110,10 @@ CONTAINS
       !
       ! w-level of the turbocline and mixing layer (iom_use)
       imld(:,:) = mbkt(:,:) + 1        ! Initialization to the number of w ocean point
-      DO jk = jpkm1, nlb10, -1         ! from the bottom to nlb10 
+      DO jk = jpkm1, nlb10, -1         ! from the bottom to nlb10
          DO jj = 1, jpj
             DO ji = 1, jpi
-               IF( avt (ji,jj,jk) < avt_c * wmask(ji,jj,jk) )   imld(ji,jj) = jk      ! Turbocline 
+               IF( avt (ji,jj,jk) < avt_c * wmask(ji,jj,jk) )   imld(ji,jj) = jk      ! Turbocline
             END DO
          END DO
       END DO
@@ -117,7 +122,7 @@ CONTAINS
          DO ji = 1, jpi
             iiki = imld(ji,jj)
             iikn = nmln(ji,jj)
-            hmld (ji,jj) = gdepw_n(ji,jj,iiki  ) * ssmask(ji,jj)    ! Turbocline depth 
+            hmld (ji,jj) = gdepw_n(ji,jj,iiki  ) * ssmask(ji,jj)    ! Turbocline depth
             hmlp (ji,jj) = gdepw_n(ji,jj,iikn  ) * ssmask(ji,jj)    ! Mixed layer depth
             hmlpt(ji,jj) = gdept_n(ji,jj,iikn-1) * ssmask(ji,jj)    ! depth of the last T-point inside the mixed layer
          END DO
