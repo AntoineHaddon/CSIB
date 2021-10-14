@@ -86,6 +86,8 @@
     nemo_save_hist=${nemo_save_hist:-on}
     ToF nemo_save_hist
 
+    nemo_start_date=$(printf "%04d%02d%02" $chunk_start_year $chunk_start_month 1)
+    nemo_stop_date=$(printf "%04d%02d%02" $chunk_stop_year $chunk_stop_month $chunk_stop_day)
     if [ $nemo_save_hist -eq 1 ] ; then
       # Define the list of history files to rebuild
       for i in $(seq 0 $(($n_suffix-1))); do
@@ -99,11 +101,11 @@
              rm -rf $pfx
              mkdir $pfx
              mv ${pfx}_[0-9]*.nc $pfx
-             ncsave=${cn_exp}_${nemo_start_year}_m${nemo_start_mon}_${freq}_${sfx}
+             ncsave=${cn_exp}_${chunk_start_year}_m${chunk_start_month}_${freq}_${sfx}
              save $pfx ${uxxx}_$ncsave && echo "${uxxx}_$ncsave" >> saved_history_FILE_NAMES
           elif [ -s "${pfx}.nc" ]; then
              echo "found ${pfx}.nc"
-             ncsave=${cn_exp}_${nemo_start_year}_m${nemo_start_mon}_${freq}_${sfx}
+             ncsave=${cn_exp}_${chunk_start_year}_m${chunk_start_month}_${freq}_${sfx}
              save ${pfx}.nc ${uxxx}_${ncsave}.nc && echo "${uxxx}_${ncsave}.nc" >> saved_history_FILE_NAMES
           fi
        done
@@ -115,7 +117,7 @@
          rm -rf $pfx
          mkdir $pfx
          mv $pfx*.nc $pfx
-         ncsave=${cn_exp}_${nemo_start_year}_m${nemo_start_mon}_mesh_mask
+         ncsave=${cn_exp}_${nemo_start_year}_m${nemo_start_month}_mesh_mask
          save $pfx ${uxxx}_$ncsave && echo "${uxxx}_$ncsave" >> saved_history_FILE_NAMES
       fi
     fi
