@@ -174,7 +174,7 @@ echo "#################### Start NEMO pre-processing #################"
     *) bail "Invalid value for nemo_forcing = $nemo_forcing" ;;
   esac
 
-  # Switch 'nemo_from_rest' off if this isn't the first job in the run as it was 
+  # Switch 'nemo_from_rest' off if this isn't the first job in the run as it was
   #   _already_ started from rest
   if [[ "$chunk_start_date" == "$run_start_date" ]] && (( nemo_from_rest == 1 )); then
     nemo_from_rest=0
@@ -249,14 +249,14 @@ echo "#################### Start NEMO pre-processing #################"
       rs_mon=$(( chunk_start_mon - 1 ))
       rs_year=$start_year
     fi
-  
+
     # Restart file name
     rs_sfx="nemors.tar"
     rs_file=${uxxx}_${runid}_${rs_year_mon}_$rs_sfx
-    
+
     # Set the name of the restart file that is ACTUALLY used (can be overridden by user)
     nemo_rs=${nemo_restart:-$rs_file}
-  
+
     # Access the restart and process it as necessary
     # ----------------------------------------------
     echo "##########################"
@@ -286,7 +286,7 @@ echo "#################### Start NEMO pre-processing #################"
     # - When starting a new run from an existing restart the ocean and ice restart
     #   file names found in the restart tar file will be prefixed with the runid used
     #   in the previous run.
-    
+
     # Define the names that nemo will look for
     # - these files get extracted from the 'nemo_rs' file
     # - for INPUT files each domain's specific file will look like ${cn_*rst_in}_MMMM.nc
@@ -395,7 +395,7 @@ echo "#################### Start NEMO pre-processing #################"
     is_zero_size weights_bil1.nc && acc_cp weights_bil1.nc     $nemo_weights_bilinear1
     is_zero_size weights_bic1.nc && acc_cp weights_bic1.nc     $nemo_weights_bicubic1
     is_zero_size dist.coast.nc   && acc_cp dist.coast.nc       $nemo_dist_coast
-  
+
     nemo_sst=uws_oisst_daily
   fi
 
@@ -404,61 +404,61 @@ echo "#################### Start NEMO pre-processing #################"
     nemo_data_1m_salinity=uws_oras5_so
     nemo_hicif_damping=uws_hicif_damping
     nemo_frld_damping=uws_frld_damping
-  
+
     before_current_year=`expr $current_year - 1 | awk  '{printf "%04d",$1}'`
     after_current_year=`expr $current_year + 1 | awk  '{printf "%04d",$1}'`
-  
+
     acc_cp sst_y${current_year}.nc                                  ${nemo_sst}_y${current_year}.nc
-  
+
     acc_cp hicif_damping_y${current_year}.nc                        ${nemo_hicif_damping}_1m_y${current_year}.nc
     acc_cp frld_damping_y${current_year}.nc                         ${nemo_frld_damping}_1m_y${current_year}.nc
     acc_cp data_1m_potential_temperature_y${current_year}.nc        ${nemo_data_1m_potential_temperature}_1m_y${current_year}.nc
     acc_cp data_1m_salinity_y${current_year}.nc                     ${nemo_data_1m_salinity}_1m_y${current_year}.nc
-  
+
     acc_cp hicif_damping_y${before_current_year}.nc                 ${nemo_hicif_damping}_dec_y${before_current_year}.nc
     acc_cp frld_damping_y${before_current_year}.nc                  ${nemo_frld_damping}_dec_y${before_current_year}.nc
     acc_cp data_1m_potential_temperature_y${before_current_year}.nc ${nemo_data_1m_potential_temperature}_dec_y${before_current_year}.nc
     acc_cp data_1m_salinity_y${before_current_year}.nc              ${nemo_data_1m_salinity}_dec_y${before_current_year}.nc
-  
+
     acc_cp hicif_damping_y${after_current_year}.nc                  ${nemo_hicif_damping}_jan_y${after_current_year}.nc
     acc_cp frld_damping_y${after_current_year}.nc                   ${nemo_frld_damping}_jan_y${after_current_year}.nc
     acc_cp data_1m_potential_temperature_y${after_current_year}.nc  ${nemo_data_1m_potential_temperature}_jan_y${after_current_year}.nc
     acc_cp data_1m_salinity_y${after_current_year}.nc               ${nemo_data_1m_salinity}_jan_y${after_current_year}.nc
-  
+
   elif [[ "$runmode" == NEMO-AGCM-dcpp-assim*-spin* ]] ; then
-  
+
     nemo_data_1m_potential_temperature=uws_oras5_thetao_spin
     nemo_data_1m_salinity=uws_oras5_so_spin
     nemo_hicif_damping=uws_hicif_damping_spin
     nemo_frld_damping=uws_frld_damping_spin
-  
+
     spin_year=${current_year}
     while [ $spin_year -gt 1967 ] ; do
       spin_year=`expr $spin_year - 10`
     done
-  
+
     before_current_year=`expr $current_year - 1 | awk  '{printf "%04d",$1}'`
     after_current_year=`expr $current_year + 1 | awk  '{printf "%04d",$1}'`
     before_spin_year=`expr ${spin_year} - 1 | awk  '{printf "%04d",$1}'`
     after_spin_year=`expr ${spin_year} + 1 | awk  '{printf "%04d",$1}'`
-  
+
     acc_cp sst_y${current_year}.nc                                  ${nemo_sst}_y${spin_year}.nc
-  
+
     acc_cp hicif_damping_y${current_year}.nc                        ${nemo_hicif_damping}_1m_y${spin_year}.nc
     acc_cp frld_damping_y${current_year}.nc                         ${nemo_frld_damping}_1m_y${spin_year}.nc
     acc_cp data_1m_potential_temperature_y${current_year}.nc        ${nemo_data_1m_potential_temperature}_1m_y${spin_year}.nc
     acc_cp data_1m_salinity_y${current_year}.nc                     ${nemo_data_1m_salinity}_1m_y${spin_year}.nc
-  
+
     acc_cp hicif_damping_y${before_current_year}.nc                 ${nemo_hicif_damping}_dec_y${before_spin_year}.nc
     acc_cp frld_damping_y${before_current_year}.nc                  ${nemo_frld_damping}_dec_y${before_spin_year}.nc
     acc_cp data_1m_potential_temperature_y${before_current_year}.nc ${nemo_data_1m_potential_temperature}_dec_y${before_spin_year}.nc
     acc_cp data_1m_salinity_y${before_current_year}.nc              ${nemo_data_1m_salinity}_dec_y${before_spin_year}.nc
-  
+
     acc_cp hicif_damping_y${after_current_year}.nc                  ${nemo_hicif_damping}_jan_y${after_spin_year}.nc
     acc_cp frld_damping_y${after_current_year}.nc                   ${nemo_frld_damping}_jan_y${after_spin_year}.nc
     acc_cp data_1m_potential_temperature_y${after_current_year}.nc  ${nemo_data_1m_potential_temperature}_jan_y${after_spin_year}.nc
     acc_cp data_1m_salinity_y${after_current_year}.nc               ${nemo_data_1m_salinity}_jan_y${after_spin_year}.nc
-  
+
   fi
 
   is_zero_size ahmcoef                && acc_cp ahmcoef                $nemo_ahmcoef
