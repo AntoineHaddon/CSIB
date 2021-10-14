@@ -209,8 +209,8 @@ if (( is_coupled == 1 )); then
     canesm_src="${nemo_source_path}/../"
 
     # define header files and check that they exist
-    cppdef_config_file=${WRK_DIR}/config/cppdef_config.h
-    cppdef_sizes_file=${WRK_DIR}/config/cppdef_sizes.h
+    cppdef_config_file=${WRK_DIR}/config/CanNEMO/compilation/cppdef_config.h
+    cppdef_sizes_file=${WRK_DIR}/config/CanNEMO/compilation/cppdef_sizes.h
     if [[ ! -f "$cppdef_config_file" ]] ; then
         bail_msg="You are trying to compile a coupled config but ${cppdef_config_file} doesn't exist!"
         bail "$bail_msg"
