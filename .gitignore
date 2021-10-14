@@ -8,6 +8,9 @@ tmp/
 *.bak
 deploy.git/
 
+nemo/cfgs/*/BLD
+nemo/cfgs/*/BLD/EXP00
+
 # ignore everything in nemo/NEMO/external/ except the README file
 nemo/NEMO/external/*
 !nemo/NEMO/external/README

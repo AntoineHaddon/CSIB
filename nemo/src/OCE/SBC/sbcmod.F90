@@ -42,7 +42,7 @@ MODULE sbcmod
    USE cpl_oasis3     ! OASIS routines for coupling
    USE sbcssr         ! surface boundary condition: sea surface restoring
    USE sbcrnf         ! surface boundary condition: runoffs
-   USE sbcapr         ! surface boundary condition: atmo pressure 
+   USE sbcapr         ! surface boundary condition: atmo pressure
    USE sbcisf         ! surface boundary condition: ice shelf
    USE sbcfwb         ! surface boundary condition: freshwater budget
    USE icbstp         ! Icebergs
@@ -60,6 +60,7 @@ MODULE sbcmod
    USE timing         ! Timing
    USE wet_dry
    USE diurnal_bulk, ONLY:   ln_diurnal_only   ! diurnal SST diagnostic
+   USE traspp, ONLY : nn_power, rn_spp_rho_c
 
    IMPLICIT NONE
    PRIVATE
@@ -97,8 +98,9 @@ CONTAINS
          &             nn_ice   , ln_ice_embd,                                       &
          &             ln_traqsr, ln_dm2dc ,                                         &
          &             ln_rnf   , nn_fwb   , ln_ssr   , ln_isf    , ln_apr_dyn ,     &
-         &             ln_wave  , ln_cdgw  , ln_sdw   , ln_tauwoc  , ln_stcor   ,     &
-         &             ln_tauw  , nn_lsm, nn_sdrift, ln_minsal, rn_minsal, ln_vertsflx
+         &             ln_wave  , ln_cdgw  , ln_sdw   , ln_tauwoc  , ln_stcor   ,    &
+         &             ln_tauw  , nn_lsm, nn_sdrift, ln_minsal, rn_minsal,           &
+         &             ln_vertsflx, rn_spp_rho_c, nn_power
       !!----------------------------------------------------------------------
       !
       IF(lwp) THEN
@@ -140,7 +142,7 @@ CONTAINS
          WRITE(numout,*) '      Type of coupling (Ocean/Ice/Atmosphere) : '
          WRITE(numout,*) '         ocean-atmosphere coupled formulation       ln_cpl        = ', ln_cpl
          WRITE(numout,*) '         mixed forced-coupled     formulation       ln_mixcpl     = ', ln_mixcpl
-!!gm  lk_oasis is controlled by key_oasis3  ===>>>  It shoud be removed from the namelist 
+!!gm  lk_oasis is controlled by key_oasis3  ===>>>  It shoud be removed from the namelist
          WRITE(numout,*) '         OASIS coupling (with atm or sas)           lk_oasis      = ', lk_oasis
          WRITE(numout,*) '         components of your executable              nn_components = ', nn_components
          WRITE(numout,*) '      Sea-ice : '
@@ -164,12 +166,16 @@ CONTAINS
          WRITE(numout,*) '               neutral drag coefficient (CORE,NCAR) ln_cdgw       = ', ln_cdgw
          WRITE(numout,*) '               constrain SSS not dropping below 5 psu             = ', ln_minsal
          WRITE(numout,*) '               min SSS                                            = ', rn_minsal
-         WRITE(numout,*) '         Vertical distribution of salt ice-fluxes   ln_vertsflx   = ', ln_vertsflx
+         WRITE(numout,*) '         Salt plume parameterization                ln_vertsflx   = ', ln_vertsflx
+         IF (ln_vertsflx) THEN
+            WRITE(numout,*) '               Shape parameter for vertical         nn_power      = ', nn_power
+            WRITE(numout,*) '               Density criterion for salt plume     rn_spp_rho_c  = ', rn_spp_rho_c
+         ENDIF
       ENDIF
       !
       IF( .NOT.ln_wave ) THEN
          ln_sdw = .false. ; ln_cdgw = .false. ; ln_tauwoc = .false. ; ln_tauw = .false. ; ln_stcor = .false.
-      ENDIF 
+      ENDIF
       IF( ln_sdw ) THEN
          IF( .NOT.(nn_sdrift==jp_breivik_2014 .OR. nn_sdrift==jp_li_2017 .OR. nn_sdrift==jp_peakfr) ) &
             CALL ctl_stop( 'The chosen nn_sdrift for Stokes drift vertical velocity must be 0, 1, or 2' )
@@ -194,7 +200,7 @@ CONTAINS
       ENDIF
       !                       !**  check option consistency
       !
-      IF(lwp) WRITE(numout,*)       !* Single / Multi - executable (NEMO / OPA+SAS) 
+      IF(lwp) WRITE(numout,*)       !* Single / Multi - executable (NEMO / OPA+SAS)
       SELECT CASE( nn_components )
       CASE( jp_iam_nemo )
          IF(lwp) WRITE(numout,*) '   ==>>>   NEMO configured as a single executable (i.e. including both OPA and Surface module)'
@@ -226,11 +232,11 @@ CONTAINS
       !                             !* sea-ice
       SELECT CASE( nn_ice )
       CASE( 0 )                        !- no ice in the domain
-      CASE( 1 )                        !- Ice-cover climatology ("Ice-if" model)  
+      CASE( 1 )                        !- Ice-cover climatology ("Ice-if" model)
       CASE( 2 )                        !- SI3  ice model
       CASE( 3 )                        !- CICE ice model
          IF( .NOT.( ln_blk .OR. ln_cpl ) )   CALL ctl_stop( 'sbc_init : CICE sea-ice model requires ln_blk or ln_cpl = T' )
-         IF( lk_agrif                    )   CALL ctl_stop( 'sbc_init : CICE sea-ice model not currently available with AGRIF' ) 
+         IF( lk_agrif                    )   CALL ctl_stop( 'sbc_init : CICE sea-ice model not currently available with AGRIF' )
       CASE DEFAULT                     !- not supported
       END SELECT
       !
@@ -249,7 +255,7 @@ CONTAINS
       END IF
       !
       IF( sbc_ssr_alloc() /= 0 )   CALL ctl_stop( 'STOP', 'sbc_init : unable to allocate sbc_ssr arrays' )
-      IF( .NOT.ln_ssr ) THEN               !* Initialize qrp and erp if no restoring 
+      IF( .NOT.ln_ssr ) THEN               !* Initialize qrp and erp if no restoring
          qrp(:,:) = 0._wp
          erp(:,:) = 0._wp
       ENDIF
@@ -335,7 +341,7 @@ CONTAINS
       IF( ln_dm2dc .AND. NINT(rday) / ( nn_fsbc * NINT(rdt) ) < 8  )   &
          &   CALL ctl_warn( 'sbc_init : diurnal cycle for qsr: the sampling of the diurnal cycle is too small...' )
       !
-   
+
       !                       !**  associated modules : initialization
       !
                           CALL sbc_ssm_init            ! Sea-surface mean fields initialization
@@ -396,7 +402,7 @@ CONTAINS
       LOGICAL ::   ll_sas, ll_opa   ! local logical
       !
       REAL(wp) ::     zthscl        ! wd  tanh scale
-      REAL(wp), DIMENSION(jpi,jpj) ::  zwdht, zwght  ! wd dep over wd limit, wgt  
+      REAL(wp), DIMENSION(jpi,jpj) ::  zwdht, zwght  ! wd dep over wd limit, wgt
       !!---------------------------------------------------------------------
       !
       IF( ln_timing )   CALL timing_start('sbc')
@@ -414,8 +420,8 @@ CONTAINS
             rnf_tsc_b(:,:,:) = rnf_tsc(:,:,:)
          ENDIF
          IF( ln_isf )  THEN
-            fwfisf_b  (:,:  ) = fwfisf  (:,:  )               
-            risf_tsc_b(:,:,:) = risf_tsc(:,:,:)              
+            fwfisf_b  (:,:  ) = fwfisf  (:,:  )
+            risf_tsc_b(:,:,:) = risf_tsc(:,:,:)
          ENDIF
         !
       ENDIF
@@ -439,10 +445,10 @@ CONTAINS
 
       !
       !                                            !==  sbc formulation  ==!
-      !                                                   
+      !
       SELECT CASE( nsbc )                                ! Compute ocean surface boundary condition
       !                                                  ! (i.e. utau,vtau, qns, qsr, emp, sfx)
-      CASE( jp_usr   )     ;   CALL usrdef_sbc_oce( kt )                    ! user defined formulation 
+      CASE( jp_usr   )     ;   CALL usrdef_sbc_oce( kt )                    ! user defined formulation
       CASE( jp_flx     )   ;   CALL sbc_flx       ( kt )                    ! flux formulation
       CASE( jp_blk     )
          IF( ll_sas    )       CALL sbc_cpl_rcv   ( kt, nn_fsbc, nn_ice )   ! OPA-SAS coupling: SAS receiving fields from OPA
@@ -455,7 +461,7 @@ CONTAINS
       !
       IF( ln_mixcpl )          CALL sbc_cpl_rcv   ( kt, nn_fsbc, nn_ice )   ! forced-coupled mixed formulation after forcing
       !
-      IF ( ln_wave .AND. (ln_tauwoc .OR. ln_tauw) ) CALL sbc_wstress( )      ! Wind stress provided by waves 
+      IF ( ln_wave .AND. (ln_tauwoc .OR. ln_tauw) ) CALL sbc_wstress( )      ! Wind stress provided by waves
       !
       !                                            !==  Misc. Options  ==!
       !
@@ -484,13 +490,13 @@ CONTAINS
 
       ! Special treatment of freshwater fluxes over closed seas in the model domain
       ! Should not be run if ln_diurnal_only
-      IF( l_sbc_clo .AND. (.NOT. ln_diurnal_only) )   CALL sbc_clo( kt )   
+      IF( l_sbc_clo .AND. (.NOT. ln_diurnal_only) )   CALL sbc_clo( kt )
 
 !!$!RBbug do not understand why see ticket 667
 !!$!clem: it looks like it is necessary for the north fold (in certain circumstances). Don't know why.
 !!$      CALL lbc_lnk( 'sbcmod', emp, 'T', 1. )
       IF ( ll_wd ) THEN     ! If near WAD point limit the flux for now
-         zthscl = atanh(rn_wd_sbcfra)                     ! taper frac default is .999 
+         zthscl = atanh(rn_wd_sbcfra)                     ! taper frac default is .999
          zwdht(:,:) = sshn(:,:) + ht_0(:,:) - rn_wdmin1   ! do this calc of water
                                                      ! depth above wd limit once
          WHERE( zwdht(:,:) <= 0.0 )
