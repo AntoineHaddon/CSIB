@@ -111,7 +111,6 @@
    ln_tauw     = .false.   !  Activate ocean stress components from wave model
    ln_stcor    = .false.   !  Activate Stokes Coriolis term (T => ln_wave=.true. & ln_sdw=.true. & fill namsbc_wave)
    ln_minsal   = .false.   !  Constrain SSS not dropping below 5 psu
-   ln_vertsflx = .false.   !  If True, turn on the salt plume parameterization (Nguyen et al. 2009, JGR) for brine rejection
 /
 !-----------------------------------------------------------------------
 &namsbc_flx    !   surface boundary condition : flux formulation        (ln_flx =T)
