@@ -28,9 +28,7 @@ echo "#################### Start NEMO pre-processing #################"
   is_defined $uxxx                  || bail "nemo_prelude: uxxx must be defined"
   is_defined $nemo_exec             || bail "nemo_prelude: nemo_exec must be defined"
   is_defined $nemo_namelists        || bail "nemo_prelude: nemo_namelists must be defined"
-  is_defined $nemo_iodef            || bail "nemo_prelude: nemo_iodef must be defined"
   is_defined $output_level          || bail "nemo_prelude: output_level must be defined"
-  is_defined $nemo_xmlio_server_def || bail "nemo_prelude: nemo_xmlio_server_def must be defined"
   is_defined $runmode               || bail "nemo_prelude: runmode must be defined"
 
   # Identify the location of the NEMO git repository and the commit within
@@ -86,6 +84,11 @@ echo "#################### Start NEMO pre-processing #################"
   # nemo_carbon = 0 means use physical ocean only
   # nemo_carbon = 1 means include PISCES
   nemo_carbon=${nemo_carbon:=0}
+
+  # IO specification files
+  #     If not defined a default version will be pulled for the given nemo_config
+  nemo_iodef=${nemo_iodef:=''}
+  nemo_xmlio_server_def=${nemo_xmlio_server_def:=''}
 
   # Miscelaneous local definitions
   ToF(){
@@ -252,7 +255,7 @@ echo "#################### Start NEMO pre-processing #################"
 
     # Restart file name
     rs_sfx="nemors.tar"
-    rs_file=${uxxx}_${runid}_${rs_year_mon}_$rs_sfx
+    rs_file=${uxxx}_${runid}_${rs_year}_m${rs_mon}_$rs_sfx
 
     # Set the name of the restart file that is ACTUALLY used (can be overridden by user)
     nemo_rs=${nemo_restart:-$rs_file}
@@ -502,9 +505,7 @@ echo "#################### Start NEMO pre-processing #################"
     is_zero_size fafmip_tauv.nc && acc_cp fafmip_tauv.nc $nemo_fafmip_tauv
     is_zero_size fafmip_wfo.nc  && acc_cp fafmip_wfo.nc $nemo_fafmip_wfo
   fi
-  is_zero_size o2.nc && acc_cp o2.nc nemo_o2
-
-
+  is_zero_size o2.nc && acc_cp o2.nc $nemo_o2
 
   if [[ "$nemo_forcing" == "bulk_iaf" ]]; then
       # Forcing files to be accessed
