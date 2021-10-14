@@ -13,7 +13,6 @@ MODULE traspp
    USE sbc_oce        ! surface boundary condition: ocean
    USE dom_oce        ! ocean space domain variables
    USE phycst         ! physical constant
-   USE sbcmod         ! ln_rnf
    USE trd_oce        ! trends: ocean variables
    USE trdtra         ! trends manager: tracers
    !
@@ -24,12 +23,12 @@ MODULE traspp
    USE timing         ! Timing
    USE zdfmxl, only : nmln, hmlp, zdf_mxl
 
-   REAL(wp) :: rn_spp_rho_c = 0.02_wp ! Density criterion to determine mixed layer depth
-   INTEGER  :: nn_power     = 5       ! Affects the shape of the power law. 0: uniform distribution
+   REAL(wp), PUBLIC :: rn_spp_rho_c = 0.2_wp ! Density criterion to determine mixed layer depth
+   INTEGER , PUBLIC :: nn_power     = 5       ! Affects the shape of the power law. 0: uniform distribution
 
 CONTAINS
 
-   SUBROUTINE tra_spp( kt )
+   SUBROUTINE tra_spp( zfact )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE zdfmxl  ***
       !!
@@ -46,16 +45,28 @@ CONTAINS
       !!                 rejection parameterization, JGR
       !!
       !! ** Action  : tsa(:,:,:,jp_sal)
+      REAL(wp), INTENT(IN) :: zfact
 
-      real(wp) :: power_z
-      real(wp) :: dimension(jpk)
+      real(wp) :: wt
+      integer :: ji, jj, jk
 
+      ! Calculate mixed layers based on the density criterion specifically for this
+      ! parameterization
       call zdf_mxl( kt, rn_spp_rho_c )
 
+      DO jj = 2, jpj
+         DO ji = fs_2, fs_jpim1
+            ! Calculate coefficient used in the (Eq. 9)
+            wt = ((zfact*r1_rau0)*(nn_power+1))/(hmlp(ji,jj)**(nn_power+1))
+            wt = wt*(sfx_b(ji,jj) + sfx(ji,jj))
+            DO jk = 1,nmln(ji,jj)
+               tsa(ji,jj,jk,jp_sal) = tsa(ji,jj,jk,jp_sal) + wt*gdept_n(ji,jj,jk)**nn_power
+            END DO
+         END DO
+      END DO
 
-
+      ! Reset mixed layer depth calculations to avoid interfering with other parts of the code
       call zdf_mxl( kt )
-
 
    END SUBROUTINE tra_spp
 

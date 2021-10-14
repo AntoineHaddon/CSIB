@@ -35,11 +35,8 @@ MODULE trasbc
    USE iom            ! xIOS server
    USE lbclnk         ! ocean lateral boundary conditions (or mpp link)
    USE timing         ! Timing
-<<<<<<< HEAD
-   USE zdfmxl, only : nmln, hmlp
-=======
    USE zdfmxl, only : nmln, hmlp, zdf_mxl
->>>>>>> 3ebac2be02d5f6d94db2abac5afc5f6112867981
+   USE traspp, only : tra_spp
 
    IMPLICIT NONE
    PRIVATE
@@ -82,11 +79,7 @@ CONTAINS
       INTEGER  ::   ikt, ikb                    ! local integers
       REAL(wp) ::   zfact, z1_e3t, zdep, ztim   ! local scalar
       REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) ::  ztrdt, ztrds
-<<<<<<< HEAD
-      REAL(wp) :: sfx_col, sfx_tmp
-=======
       REAL(wp) :: sfx_col, sfx_tmp, sfx_tot
->>>>>>> 3ebac2be02d5f6d94db2abac5afc5f6112867981
       !!----------------------------------------------------------------------
       !
       IF( ln_timing )   CALL timing_start('tra_sbc')
@@ -134,13 +127,9 @@ CONTAINS
       DO jj = 2, jpj
          DO ji = fs_2, fs_jpim1   ! vector opt.
             sbc_tsc(ji,jj,jp_tem) = r1_rau0_rcp * qns(ji,jj)   ! non solar heat flux
-<<<<<<< HEAD
-            IF (.not. ln_vertsflx) then
-=======
             IF (ln_vertsflx) THEN
                sbc_tsc(ji,jj,jp_sal) = 0.
             ELSE
->>>>>>> 3ebac2be02d5f6d94db2abac5afc5f6112867981
                sbc_tsc(ji,jj,jp_sal) = r1_rau0     * sfx(ji,jj)   ! salt flux due to freezing/melting
             ENDIF
          END DO
@@ -167,29 +156,7 @@ CONTAINS
       ! Distribute the salt flux within the boundary layer weighted by the proportion that each layer contributes
       ! to the boundary layer
       IF (ln_vertsflx) then
-<<<<<<< HEAD
-         DO jj = 2, jpj
-            DO ji = fs_2, fs_jpim1   ! vector opt.
-               sfx_col = sfx_b(ji,jj) + sfx(ji,jj)
-               DO jk = 1,nmln(ji,jj)-1
-                  sfx_tmp = (e3t_n(ji,jj,jk)/hmlp(ji,jj)) * (sfx_b(ji,jj) + sfx(ji,jj))
-                  tsa(ji,jj,jk,jp_sal) = tsa(ji,jj,jk,jp_sal) + (zfact*r1_rau0) * ( sfx_tmp / e3t_n(ji,jj,1) )
-                  sfx_col = sfx_col - sfx_tmp
-               ENDDO
-               ! Deposit the remaining flux into the last year
-               tsa(ji,jj,nmln(ji,jj),jp_sal) = tsa(ji,jj,jk,jp_sal) + (zfact*r1_rau0) * ( sfx_col / e3t_n(ji,jj,1) )
-=======
-         CALL zdf_mxl( kt )
-         DO jj = 2, jpj
-            DO ji = fs_2, fs_jpim1   ! vector opt.
-               ikt = nmln(ji,jj)
-               sfx_col = (zfact*r1_rau0)*(sfx_b(ji,jj) + sfx(ji,jj))/MAX(hmlp(ji,jj),e3t_n(ji,jj,1))
-               DO jk = 1,ikt
-                  tsa(ji,jj,jk,jp_sal) = tsa(ji,jj,jk,jp_sal) + sfx_col
-               ENDDO
->>>>>>> 3ebac2be02d5f6d94db2abac5afc5f6112867981
-            END DO
-         END DO
+         call tra_spp( zfact )
       ENDIF
       !
       IF( lrst_oce ) THEN           !==  write sbc_tsc in the ocean restart file  ==!
