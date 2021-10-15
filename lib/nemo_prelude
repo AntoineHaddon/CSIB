@@ -9,9 +9,44 @@
 # NOTE:
 #   - this script relies on CanESM_shell_functions.sh
 
+# Local Functions (these should be revaluated
+  function acc_cp() {
+    # Attempt to access a file and if that fails attempt to copy it
+    [ -z "$1" ] && bail "--> acc_cp <-- requires a local file name as the first arg"
+    local_file=$1
+    [ -z "$2" ] && bail "--> acc_cp $1 <-- requires a remote file name as the second arg"
+    remote_file=$2
+    shift 2
+    access $local_file $remote_file $*
+      #cp $remote_file $local_file ||
+      #bail "--> acc_cp $local_file $remote_file $* <-- Unable to locate $remote_file"
+
+    # sha1sum $local_file >> xnemo_access_log
+  }
+
+  function find_nemo_config_EXP00() {
+    # Find a file in a CONFIG subdir of a NEMO repository
+    [ -z "$1" ] && bail "find_nemo_config_EXP00: requires a file name as the first arg"
+    if [ -n "$2" ]; then
+      # If there is a second argument then assume it is the file name on DATAPATH
+      acc_cp $1 $2 nocp=no
+    else
+      # Otherwise look for a configuration specific file in the NEMO repository
+      # nemo_repo, nemo_ver and nemo_config must be defined in this case
+      [ -z "$nemo_repo" -o -z "$nemo_ver" -o -z "$nemo_config" ] &&
+        bail "find_nemo_config_EXP00: One or more of nemo_repo, nemo_ver, nemo_config are undefined"
+      # Attempt to extract this file from the NEMO repository
+      rm -f $1
+      cp ${nemo_repo}/nemo/CONFIG/$nemo_config/EXP00/$1 .
+      [ -s $1 ] || bail "find_nemo_config_EXP00: Unable to copy $1 from $nemo_repo"
+    fi
+  }
+
 echo "#################### Start NEMO pre-processing #################"
 
+  # ======================================================
   # Make sure we have necessary variables from parent code
+  # ======================================================
   is_defined $chunk_start_date      || bail "nemo_prelude: chunk_start_date must be defined"
   is_defined $chunk_start_year      || bail "nemo_prelude: chunk_start_year must be defined"
   is_defined $chunk_start_month     || bail "nemo_prelude: chunk_start_month must be defined"
@@ -31,23 +66,12 @@ echo "#################### Start NEMO pre-processing #################"
   is_defined $output_level          || bail "nemo_prelude: output_level must be defined"
   is_defined $runmode               || bail "nemo_prelude: runmode must be defined"
 
-  # Identify the location of the NEMO git repository and the commit within
-  #   that repository that is associated with the current run
-  nemo_repo=${nemo_repo:=$CCRNSRC/ocean_dir/nemo-CCCma.git}
+  # ================================
+  # Set overrideable default values
+  # ================================
+  # location of the source code
   nemo_repo=${nemo_repo:=$CCRNSRC/CanESM/CanNEMO}
-  if is_definied $nemo_ver; then
-    # Dereference this commit and ensure we have a full sha1 hash
-    nemo_ver=`(cd $nemo_repo; git rev-parse $nemo_ver)` ||
-        bail "Unable to validate runtime nemo_ver"
-  fi
-
-  # Identify the NEMO configuration associated with the current run
-  #     (e.g. CCC_ORCA1_LIM, CCC_ORCA1_LIM_CMOC, CCC_ORCA1_LIM_CANOE, ...)
-  export nemo_ver nemo_repo nemo_config
-  echo "### NEMO runtime: nemo_repo   = $nemo_repo"
-  echo "### NEMO runtime: nemo_ver    = $nemo_ver"
-  echo "### NEMO runtime: nemo_config = $nemo_config"
-
+  
   # The name of a tar file containing the NEMO restart files
   # This must be set for the first job of a run unless nemo_from_rest = on
   # Restart files created by the submission job will have names of the form
@@ -57,10 +81,6 @@ echo "#################### Start NEMO pre-processing #################"
   # nemo_from_rest is used to flag starting nemo from rest rather than a restart
   #     Either define nemo_restart or set nemo_from_rest = on but not both.
   nemo_from_rest=${nemo_from_rest:=0}
-
-  # nemo_forcing identifies the type of forcing to use
-  #     Currenlty the only valid values are "bulk", "bulk_iaf", "flux", "flux_iaf" or "coupled"
-  nemo_forcing=${nemo_forcing:=coupled}
 
   # For interannual forcing, iaf_year_offset gives the offset between
   #     the current nemo year and the desired year in the forcing dataset
@@ -85,120 +105,62 @@ echo "#################### Start NEMO pre-processing #################"
   # nemo_carbon = 1 means include PISCES
   nemo_carbon=${nemo_carbon:=0}
 
+  # Forcing method (coupled or bulk_iaf is supported)
+  nemo_forcing=${nemo_forcing:-coupled}
+
   # IO specification files
   #     If not defined a default version will be pulled for the given nemo_config
   nemo_iodef=${nemo_iodef:=''}
   nemo_xmlio_server_def=${nemo_xmlio_server_def:=''}
 
-  # Miscelaneous local definitions
-  ToF(){
-    #   usage: ToF var_name
-    # purpose: Possibly reset the value of var_name to "0" (false) or "1" (true)
-    #          If var_name is null or has a value of "off" or "no" then reset to "0"
-    #          If var_name has a value of "on" or "yes" then reset to "1"
-    #          Otherwise return with var_name unchanged
-    [ -z "$1" ] && bail "ToF requires a variable name as an argument"
-    eval ToF_var\=\$$1
-    XXX=$(echo $ToF_var|sed 's/ //g')
-    eval ToF_var\=$XXX
-    if [ -n "$ToF_var" ]; then
-      if   [ "$ToF_var" = 'on'  ]; then eval ToF_var\=1
-      elif [ "$ToF_var" = 'off' ]; then eval ToF_var\=0
-      elif [ "$ToF_var" = 'yes' ]; then eval ToF_var\=1
-      elif [ "$ToF_var" = 'no'  ]; then eval ToF_var\=0
-      else
-        eval ToF_var\=\$$1
-      fi
-    else
-      eval ToF_var\=0
-    fi
-    eval $1=$ToF_var
-  }
+  # Switch to decide if we're using CFCs or not
+  nemo_cfc=${nemo_cfc:=0}
 
-  acc_cp() {
-    # Attempt to access a file and if that fails attempt to copy it
-    [ -z "$1" ] && bail "--> acc_cp <-- requires a local file name as the first arg"
-    local_file=$1
-    [ -z "$2" ] && bail "--> acc_cp $1 <-- requires a remote file name as the second arg"
-    remote_file=$2
-    shift 2
-    access $local_file $remote_file $*
-      #cp $remote_file $local_file ||
-      #bail "--> acc_cp $local_file $remote_file $* <-- Unable to locate $remote_file"
+  # Define nn_ice which identifies the ice model used in NEMO
+  #     0 : no ice boundary condition (does this mean NO ice?)
+  #     1 : observed ice cover
+  #     2 : LIM2 ice-model
+  #     3 : LIM3 ice-model
+  nn_ice=${nemo_nn_ice:=2}
 
-    # sha1sum $local_file >> xnemo_access_log
-  }
+  # Default input files
+  nemo_ahmcoef=${nemo_ahmcoef:=nemo_3.4_orca1_ahmcoef}
+  nemo_coordinates=${nemo_coordinates:=nemo_3.4_orca1_coordinates_ukorca1.nc}
+  nemo_bathy_meter=${nemo_bathy_meter:=nemo_3.4_orca1_bathy_meter_050308_ukmo_mod.nc}
+  nemo_mask_itf=${nemo_mask_itf:=nemo_3.4_orca1_mask_itf_orca1_new.nc}
+  nemo_M2rowdrg=${nemo_M2rowdrg:=nemo_3.4_orca1_m2rowdrg_r1_modif.nc}
+  nemo_K1rowdrg=${nemo_K1rowdrg:=nemo_3.4_orca1_k1rowdrg_r1_modif.nc}
+  nemo_Eddyengf=${nemo_Eddyengf:=nemo_3.4_orca1_eddy_mix.nc}
+#  nemo_geothermal_heating=${nemo_geothermal_heating:=nemo_3.3_orca2_geothermal_heating.nc}
+  nemo_runoff_core_monthly=${nemo_runoff_core_monthly:=nemo_3.4_orca1_runoff_1m_orca1.nc}
+  nemo_sst_data=${nemo_sst_data:=nemo_3.4_orca1_sst_1m_orca1.nc}
+  nemo_sss_data=${nemo_sss_data:=omip6_orca1_data_sss_nomask.nc}
+  nemo_chlorophyll=${nemo_chlorophyll:=nemo_3.4_orca1_chlorophyll-orca1_1m.nc}
+  nemo_subbasins=${nemo_subbasins:=nemo_3.4_orca1_basinmask_050308_ukmo_modified.nc}
+  nemo_o2=${nemo_o2:=urdy_fafmip_hfds_orca1_record.nc}
 
-  find_nemo_config_EXP00() {
-    # Find a file in a CONFIG subdir of a NEMO repository
-    [ -z "$1" ] && bail "find_nemo_config_EXP00: requires a file name as the first arg"
-    if [ -n "$2" ]; then
-      # If there is a second argument then assume it is the file name on DATAPATH
-      acc_cp $1 $2 nocp=no
-    else
-      # Otherwise look for a configuration specific file in the NEMO repository
-      # nemo_repo, nemo_ver and nemo_config must be defined in this case
-      [ -z "$nemo_repo" -o -z "$nemo_ver" -o -z "$nemo_config" ] &&
-        bail "find_nemo_config_EXP00: One or more of nemo_repo, nemo_ver, nemo_config are undefined"
-      # Attempt to extract this file from the NEMO repository
-      rm -f $1
-      cp ${nemo_repo}/nemo/CONFIG/$nemo_config/EXP00/$1 .
-      [ -s $1 ] || bail "find_nemo_config_EXP00: Unable to copy $1 from $nemo_repo"
-    fi
-  }
-
-  run_start_day=1
-  run_start_date=$( printf "%04d-%02d-%02d" $run_start_year $run_start_month $run_start_day )
-  run_stop_day=$(days_in_month $run_stop_month)
-  run_start_date=$( printf "%04d-%02d-%02d" $run_stop_year $run_stop_month $run_stop_day )
-
-  echo "nemo_prelude: chunk_start_date=$chunk_start_date"
-  echo "nemo_prelude: chunk_stop_date=$chunk_stop_date"
-  echo "nemo_prelude: run_start_date=$run_start_date"
-  echo "nemo_prelude: run_stop_date=$run_stop_date"
-
-  # Translate switches into 0/1 booleans - NOTE THAT THIS WILL SET TO 0 IF UNDEFINED
-  ToF nemo_from_rest
-  ToF nemo_carbon
-  ToF nemo_trans_co2
-  ToF nemo_trc
-  ToF nemo_cfc
+  # ==============================
+  # High level consistency checks
+  # ==============================
+  # Switch 'nemo_from_rest' off if this isn't the first job in the run as it was
+  #   _already_ started from rest
+  if [[ "$chunk_start_date" != "$run_start_date" ]] && (( nemo_from_rest == 1 )); then
+    nemo_from_rest=0
+  fi
 
   # bail if use asked to use a specific restart and start from rest
   if is_defined $nemo_restart && (( nemo_from_rest == 1 )); then
     bail "nemo_prelude: nemo_restart=$nemo_restart and nemo_from_rest=1 are mutually exclusive"
   fi
 
-  # Identify the type of forcing to use
-  nemo_forcing=${nemo_forcing:-coupled}
+  # make sure we got a valid forcing setting
   case $nemo_forcing in
     coupled) ;; # These are valid values
     bulk_iaf) ;;
     *) bail "Invalid value for nemo_forcing = $nemo_forcing" ;;
   esac
 
-  # Switch 'nemo_from_rest' off if this isn't the first job in the run as it was
-  #   _already_ started from rest
-  if [[ "$chunk_start_date" == "$run_start_date" ]] && (( nemo_from_rest == 1 )); then
-    nemo_from_rest=0
-  fi
-
-  nemo_cmoc=0
-  nemo_canoe=0
-  case $nemo_config in
-    *_CANOE*) nemo_canoe=1 ;; # use CANOE carbon in NEMO
-     *_CMOC*) nemo_cmoc=1  ;; # use CMOC carbon in NEMO
-  esac
-
-  # Use CFCs or not
-  nemo_cfc=${nemo_cfc:=0}
-
-  # Touch xnemo_access_log so that it will exist even if it never gets apppended to
-  rm -f xnemo_access_log
-  touch xnemo_access_log
-
-  # Define nn_ice which identifies the ice model used in NEMO
-  nn_ice=${nemo_nn_ice:=2}
+  # confirm a valid ice settings
   case $nn_ice in
     0) ;; # no ice boundary condition
     1) ;; # observed ice cover
@@ -207,22 +169,56 @@ echo "#################### Start NEMO pre-processing #################"
     *) bail "Invalid value for nn_ice = $nn_ice" ;;
   esac
 
+  # =====================
+  # Set Inherited params
+  # =====================
+  # Translate switches into 0/1 booleans - NOTE THAT THIS WILL SET TO 0 IF UNDEFINED
+  ToF nemo_from_rest
+  ToF nemo_carbon
+  ToF nemo_trans_co2
+  ToF nemo_trc
+  ToF nemo_cfc
+
+  # Identify the location of the NEMO git repository and the commit within
+  #   that repository that is associated with the current run
+  if is_defined $nemo_ver; then
+    # Dereference this commit and ensure we have a full sha1 hash
+    nemo_ver=`(cd $nemo_repo; git rev-parse $nemo_ver)` ||
+        bail "Unable to validate runtime nemo_ver"
+  fi
+  export nemo_ver nemo_repo nemo_config
+  echo "### NEMO runtime: nemo_repo   = $nemo_repo"
+  echo "### NEMO runtime: nemo_ver    = $nemo_ver"
+  echo "### NEMO runtime: nemo_config = $nemo_config"
+
+  run_start_day=1
+  run_start_date=$( printf "%04d-%02d-%02d" $run_start_year $run_start_month $run_start_day )
+  run_stop_day=$(days_in_month $run_stop_month)
+  run_start_date=$( printf "%04d-%02d-%02d" $run_stop_year $run_stop_month $run_stop_day )
+  echo "nemo_prelude: chunk_start_date=$chunk_start_date"
+  echo "nemo_prelude: chunk_stop_date=$chunk_stop_date"
+  echo "nemo_prelude: run_start_date=$run_start_date"
+  echo "nemo_prelude: run_stop_date=$run_stop_date"
+
+  nemo_cmoc=0
+  nemo_canoe=0
+  case $nemo_config in
+    *_CANOE*) nemo_canoe=1 ;; # use CANOE carbon in NEMO
+     *_CMOC*) nemo_cmoc=1  ;; # use CMOC carbon in NEMO
+  esac
+
+  # Touch xnemo_access_log so that it will exist even if it never gets apppended to
+  rm -f xnemo_access_log
+  touch xnemo_access_log
+
+
   # Ignore missing ice restart files when with_ice = off
   if (( nn_ice >= 2 )); then
-    with_ice=on
+    with_ice=1
   else
-    with_ice=off
+    with_ice=0
   fi
-  ToF with_ice
 
-  # If do_nemo_run=on then access all the required files and do the run.
-  # Using do_nemo_run=off can be used, for example, to process RTD for a
-  # run that has already been done.
-  do_nemo_run=${do_nemo_run:=on}
-  ToF do_nemo_run
-
-  [ -z "$nemo_from_rest" ] && bail "nemo_from_rest is not defined"
-  ToF nemo_from_rest
   if (( nemo_from_rest == 1 )); then
     #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
     #=#=#=#    Start from rest    #=#=#=#
@@ -357,9 +353,11 @@ echo "#################### Start NEMO pre-processing #################"
     fi
   fi
 
-  # Access additional files required to run NEMO
-  # --------------------------------------------
+  # ===================
+  # Access input files
+  # ===================
   # - many are only pulled in they don't already exist
+  # - the main defaults are defined at the top of this script (should we move other runmode specific files?)
 
   # run namelists
   for f in $nemo_namelists; do
@@ -374,22 +372,6 @@ echo "#################### Start NEMO pre-processing #################"
   sed -i "s/output_level=\"\([0-9]\+\)\"/output_level=\"${output_level}\"/" iodef.xml
 
   is_zero_size xmlio_server.def && find_nemo_config_EXP00 xmlio_server.def $nemo_xmlio_server_def
-
-  # NOTE: we should think on where to move defaults for this...
-  nemo_ahmcoef=${nemo_ahmcoef:=nemo_3.4_orca1_ahmcoef}
-  nemo_coordinates=${nemo_coordinates:=nemo_3.4_orca1_coordinates_ukorca1.nc}
-  nemo_bathy_meter=${nemo_bathy_meter:=nemo_3.4_orca1_bathy_meter_050308_ukmo_mod.nc}
-  nemo_mask_itf=${nemo_mask_itf:=nemo_3.4_orca1_mask_itf_orca1_new.nc}
-  nemo_M2rowdrg=${nemo_M2rowdrg:=nemo_3.4_orca1_m2rowdrg_r1_modif.nc}
-  nemo_K1rowdrg=${nemo_K1rowdrg:=nemo_3.4_orca1_k1rowdrg_r1_modif.nc}
-  nemo_Eddyengf=${nemo_Eddyengf:=nemo_3.4_orca1_eddy_mix.nc}
-#  nemo_geothermal_heating=${nemo_geothermal_heating:=nemo_3.3_orca2_geothermal_heating.nc}
-  nemo_runoff_core_monthly=${nemo_runoff_core_monthly:=nemo_3.4_orca1_runoff_1m_orca1.nc}
-  nemo_sst_data=${nemo_sst_data:=nemo_3.4_orca1_sst_1m_orca1.nc}
-  nemo_sss_data=${nemo_sss_data:=omip6_orca1_data_sss_nomask.nc}
-  nemo_chlorophyll=${nemo_chlorophyll:=nemo_3.4_orca1_chlorophyll-orca1_1m.nc}
-  nemo_subbasins=${nemo_subbasins:=nemo_3.4_orca1_basinmask_050308_ukmo_modified.nc}
-  nemo_o2=${nemo_o2:=urdy_fafmip_hfds_orca1_record.nc}
 
   if [[ "$runmode" == NEMO-AGCM-dcpp-assim* ]] ; then
     nemo_weights_bilinear1=${nemo_weights_bilinear1:=uws_orca1_oisst_weights_bilin.nc}
@@ -619,7 +601,7 @@ echo "#################### Start NEMO pre-processing #################"
 
     # Modify the pisces namelist to read CO2 from file, if specified in makefile
     if [[ "$nemo_ln_co2int" == ".true." ]]; then
-      [ -s co2atm.nc ] ||  acc_cp omip6_co2atm.nc       $nemo_data_atcco2
+      is_zero_size co2atm.nc &&  acc_cp omip6_co2atm.nc       $nemo_data_atcco2
     fi
   fi
   rm -f mesh_mask*.nc
