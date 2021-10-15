@@ -86,8 +86,8 @@
     nemo_save_hist=${nemo_save_hist:-on}
     ToF nemo_save_hist
 
-    nemo_start_date=$(printf "%04d%02d%02" $chunk_start_year $chunk_start_month 1)
-    nemo_stop_date=$(printf "%04d%02d%02" $chunk_stop_year $chunk_stop_month $chunk_stop_day)
+    nemo_start_date=$(printf "%04d%02d%02d" $chunk_start_year $chunk_start_month 1)
+    nemo_stop_date=$(printf "%04d%02d%02d" $chunk_stop_year $chunk_stop_month $chunk_stop_day)
     if [ $nemo_save_hist -eq 1 ] ; then
       # Define the list of history files to rebuild
       for i in $(seq 0 $(($n_suffix-1))); do
