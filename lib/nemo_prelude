@@ -9,7 +9,7 @@
 # NOTE:
 #   - this script relies on CanESM_shell_functions.sh
 
-# Local Functions (these should be revaluated
+# Local Functions (these should be revaluated)
   function acc_cp() {
     # Attempt to access a file and if that fails attempt to copy it
     [ -z "$1" ] && bail "--> acc_cp <-- requires a local file name as the first arg"
@@ -239,11 +239,7 @@ echo "#################### Start NEMO pre-processing #################"
     # -----------------------------
     if (( chunk_start_month == 1 )); then
       rs_mon=12
-      if (( chunk_start_year == 1 )); then
-        rs_year=0
-      else
-        rs_year=$(( chunk_start_year - 1 ))
-      fi
+      rs_year=$(( chunk_start_year - 1 ))
     else
       rs_mon=$(( chunk_start_mon - 1 ))
       rs_year=$start_year
