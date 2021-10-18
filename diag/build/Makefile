@@ -1,7 +1,17 @@
-# define compiler options
-#	- cray-netcdf must be loaded to handle netcdf linking
-FC      := ftn
-FFLAGS  := -static
+# define default compiler template - should be provided at call line
+COMPILER_TEMPLATE ?= 
+
+# warn if no compiler template was given
+ifndef COMPILER_TEMPLATE
+$(warning For all targets but 'clean' COMPILER_TEMPLATE must be given to the make call)
+else
+# bring in compiler flags
+include $(COMPILER_TEMPLATE)
+endif
+
+# define flags to be used 
+FFLAGS = $(FFLAGS_STATIC) $(FFLAGS_OMP)
+LDFLAGS = $(INCLUDEFLAGS_USR) $(LDFLAGS_USR) $(LDFLAGS_NETCDF)
 
 # define source files which will be brought in from $SRCDIR
 SRCDIR              := $(realpath $(CURDIR)/..)
@@ -27,15 +37,15 @@ CANOE_DIAG_OBJS := $(CANOE_DIAG_FILES:.F90=.o)
 
 # physical diagnostics
 nemo_diag.exe: $(PHYS_DIAG_OBJS) $(NETCDF_OBJ)
-	$(FC) $(FFLAGS) -o $@ $(PHYS_DIAG_OBJS) $(NETCDF_OBJ)
+	$(FC) $(FFLAGS) -o $@ $(PHYS_DIAG_OBJS) $(NETCDF_OBJ) $(LDFLAGS)
 
 # cmoc diagnostics
 nemo_diag_cmoc.exe: $(CMOC_DIAG_OBJS) $(NETCDF_OBJ)
-	$(FC) $(FFLAGS) -o $@ $(CMOC_DIAG_OBJS) $(NETCDF_OBJ)
+	$(FC) $(FFLAGS) -o $@ $(CMOC_DIAG_OBJS) $(NETCDF_OBJ) $(LDFLAGS)
 
 # canoe diagnostics
 nemo_diag_canoe.exe: $(CANOE_DIAG_OBJS) $(NETCDF_OBJ)
-	$(FC) $(FFLAGS) -o $@ $(CANOE_DIAG_OBJS) $(NETCDF_OBJ)
+	$(FC) $(FFLAGS) -o $@ $(CANOE_DIAG_OBJS) $(NETCDF_OBJ) $(LDFLAGS)
 
 all : nemo_diag.exe nemo_diag_canoe.exe nemo_diag_cmoc.exe
 

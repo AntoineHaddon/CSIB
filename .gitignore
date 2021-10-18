@@ -19,10 +19,8 @@ diag/build/*
 rtd/build/*
 nemo/TOOLS/REBUILD_NEMO/src/build/*
 !diag/build/Makefile
-!diag/build/comp_env
+!diag/build/compile.*
 !rtd/build/Makefile
-!rtd/build/comp_env
+!rtd/build/compile.*
 !nemo/TOOLS/REBUILD_NEMO/src/build/Makefile
-!nemo/TOOLS/REBUILD_NEMO/src/build/comp_env
-
 .svn
