@@ -65,6 +65,7 @@ echo "#################### Start NEMO pre-processing #################"
   is_defined $nemo_namelists        || bail "nemo_prelude: nemo_namelists must be defined"
   is_defined $output_level          || bail "nemo_prelude: output_level must be defined"
   is_defined $runmode               || bail "nemo_prelude: runmode must be defined"
+  is_defined $input_rs_date_string  || bail "nemo_prelude: input_rs_date_string must be defined"
 
   # ================================
   # Set overrideable default values
@@ -237,18 +238,9 @@ echo "#################### Start NEMO pre-processing #################"
 
     # Determine what restart to use
     # -----------------------------
-    if (( chunk_start_month == 1 )); then
-      rs_mon=12
-      rs_year=$(( chunk_start_year - 1 ))
-    else
-      rs_mon=$(( chunk_start_month - 1 ))
-      rs_year=$chunk_start_year
-    fi
-
-    # Restart file name
+    # Default restart file name (this will be used unless user provided nemo_restart)
     rs_sfx="nemors.tar"
-    rs_date_string=$(printf "%04d_m%02d" $rs_year $rs_mon) # YYYY_mMM
-    rs_file=${uxxx}_${runid}_${rs_date_string}_${rs_sfx}
+    rs_file=${uxxx}_${runid}_${input_rs_date_string}_${rs_sfx}
 
     # Set the name of the restart file that is ACTUALLY used (can be overridden by user)
     nemo_rs=${nemo_restart:-$rs_file}
