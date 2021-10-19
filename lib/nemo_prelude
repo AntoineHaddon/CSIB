@@ -194,7 +194,7 @@ echo "#################### Start NEMO pre-processing #################"
   run_start_day=1
   run_start_date=$( printf "%04d-%02d-%02d" $run_start_year $run_start_month $run_start_day )
   run_stop_day=$(days_in_month $run_stop_month)
-  run_start_date=$( printf "%04d-%02d-%02d" $run_stop_year $run_stop_month $run_stop_day )
+  run_stop_date=$( printf "%04d-%02d-%02d" $run_stop_year $run_stop_month $run_stop_day )
   echo "nemo_prelude: chunk_start_date=$chunk_start_date"
   echo "nemo_prelude: chunk_stop_date=$chunk_stop_date"
   echo "nemo_prelude: run_start_date=$run_start_date"
@@ -241,8 +241,8 @@ echo "#################### Start NEMO pre-processing #################"
       rs_mon=12
       rs_year=$(( chunk_start_year - 1 ))
     else
-      rs_mon=$(( chunk_start_mon - 1 ))
-      rs_year=$start_year
+      rs_mon=$(( chunk_start_month - 1 ))
+      rs_year=$chunk_start_year
     fi
 
     # Restart file name
