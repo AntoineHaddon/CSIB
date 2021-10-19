@@ -247,7 +247,8 @@ echo "#################### Start NEMO pre-processing #################"
 
     # Restart file name
     rs_sfx="nemors.tar"
-    rs_file=${uxxx}_${runid}_${rs_year}_m${rs_mon}_$rs_sfx
+    rs_date_string=$(printf "%04d_m%02d" $rs_year $rs_mon) # YYYY_mMM
+    rs_file=${uxxx}_${runid}_${rs_date_string}_${rs_sfx}
 
     # Set the name of the restart file that is ACTUALLY used (can be overridden by user)
     nemo_rs=${nemo_restart:-$rs_file}
