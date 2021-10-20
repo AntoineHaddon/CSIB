@@ -170,9 +170,7 @@ echo "#################### Start NEMO pre-processing #################"
         bail "find_nemo_config_EXP00: One or more of nemo_repo, nemo_ver, nemo_config are undefined"
       # Attempt to extract this file from the NEMO repository
       rm -f $1
-      #gitrip $nemo_ver nemo/CONFIG/$nemo_config/EXP00/$1 repo=$nemo_repo
-      cp ${nemo_repo}/nemo/CONFIG/$nemo_config/EXP00/$1 .
-      #sleep 1
+      cp ${nemo_repo}/nemo/cfgs/$nemo_config/EXPREF/$1 .
       [ -s $1 ] || bail "find_nemo_config_EXP00: Unable to copy $1 from $nemo_repo"
     fi
   }
@@ -617,149 +615,23 @@ echo "#################### Start NEMO pre-processing #################"
   fi
 
   # Access files required to run NEMO
+  xios_files = ( axis_def_nemo.xml \
+                 context_nemo.xml \
+                 domain_def_nemo.xml \
+                 field_def_nemo-ice.xml \
+                 field_def_nemo-oce.xml \
+                 field_def_nemo-pisces.xml \
+                 file_def_nemo-ice.xml \
+                 file_def_nemo-oce.xml \
+                 file_def_nemo-pisces.xml \
+                 grid_def_nemo.xml \
+                 iodef.xml )
 
-  nemo_iodef=${nemo_iodef:=''}
-  [ -s iodef.xml ] || find_nemo_config_EXP00 iodef.xml $nemo_iodef
-
-  # Update NEMO priority level of output variables: output_level
-  output_level=${output_level}
-  sed -i "s/output_level=\"\([0-9]\+\)\"/output_level=\"${output_level}\"/" iodef.xml
-
-  nemo_xmlio_server_def=${nemo_xmlio_server_def:=''}
-  [ -s xmlio_server.def ] || find_nemo_config_EXP00 xmlio_server.def $nemo_xmlio_server_def
-
-  nemo_ahmcoef=${nemo_ahmcoef:=nemo_3.4_orca1_ahmcoef}
-  nemo_coordinates=${nemo_coordinates:=nemo_3.4_orca1_coordinates_ukorca1.nc}
-  nemo_bathy_meter=${nemo_bathy_meter:=nemo_3.4_orca1_bathy_meter_050308_ukmo_mod.nc}
-  nemo_mask_itf=${nemo_mask_itf:=nemo_3.4_orca1_mask_itf_orca1_new.nc}
-  nemo_M2rowdrg=${nemo_M2rowdrg:=nemo_3.4_orca1_m2rowdrg_r1_modif.nc}
-  nemo_K1rowdrg=${nemo_K1rowdrg:=nemo_3.4_orca1_k1rowdrg_r1_modif.nc}
-  nemo_Eddyengf=${nemo_Eddyengf:=nemo_3.4_orca1_eddy_mix.nc}
-#  nemo_geothermal_heating=${nemo_geothermal_heating:=nemo_3.3_orca2_geothermal_heating.nc}
-  nemo_runoff_core_monthly=${nemo_runoff_core_monthly:=nemo_3.4_orca1_runoff_1m_orca1.nc}
-  nemo_sst_data=${nemo_sst_data:=nemo_3.4_orca1_sst_1m_orca1.nc}
-  nemo_sss_data=${nemo_sss_data:=omip6_orca1_data_sss_nomask.nc}
-  nemo_chlorophyll=${nemo_chlorophyll:=nemo_3.4_orca1_chlorophyll-orca1_1m.nc}
-  nemo_subbasins=${nemo_subbasins:=nemo_3.4_orca1_basinmask_050308_ukmo_modified.nc}
-  nemo_o2=${nemo_o2:=urdy_fafmip_hfds_orca1_record.nc}
-
-if [[ "$runmode" == NEMO-AGCM-dcpp-assim* ]] ; then
-  nemo_weights_bilinear1=${nemo_weights_bilinear1:=uws_orca1_oisst_weights_bilin.nc}
-  nemo_weights_bicubic1=${nemo_weights_bicubic1:=uws_orca1_oisst_weights_bicubic.nc}
-  nemo_dist_coast=uws_orca1_dist_coast.nc
-  [ -s weights_bil1.nc ] || acc_cp weights_bil1.nc     $nemo_weights_bilinear1
-  [ -s weights_bic1.nc ] || acc_cp weights_bic1.nc     $nemo_weights_bicubic1
-  [ -s dist.coast.nc ]   || acc_cp dist.coast.nc       $nemo_dist_coast
-
-  nemo_sst=uws_oisst_daily
-fi
-
-if [ "$runmode" == "NEMO-AGCM-dcpp-assim" -o "$runmode" == "NEMO-AGCM-dcpp-assim-relaxed-co2" ] ; then
-  nemo_data_1m_potential_temperature=uws_oras5_thetao
-  nemo_data_1m_salinity=uws_oras5_so
-  nemo_hicif_damping=uws_hicif_damping
-  nemo_frld_damping=uws_frld_damping
-
-  before_current_year=`expr $current_year - 1 | awk  '{printf "%04d",$1}'`
-  after_current_year=`expr $current_year + 1 | awk  '{printf "%04d",$1}'`
-
-  acc_cp sst_y${current_year}.nc                                  ${nemo_sst}_y${current_year}.nc
-
-  acc_cp hicif_damping_y${current_year}.nc                        ${nemo_hicif_damping}_1m_y${current_year}.nc
-  acc_cp frld_damping_y${current_year}.nc                         ${nemo_frld_damping}_1m_y${current_year}.nc
-  acc_cp data_1m_potential_temperature_y${current_year}.nc        ${nemo_data_1m_potential_temperature}_1m_y${current_year}.nc
-  acc_cp data_1m_salinity_y${current_year}.nc                     ${nemo_data_1m_salinity}_1m_y${current_year}.nc
-
-  acc_cp hicif_damping_y${before_current_year}.nc                 ${nemo_hicif_damping}_dec_y${before_current_year}.nc
-  acc_cp frld_damping_y${before_current_year}.nc                  ${nemo_frld_damping}_dec_y${before_current_year}.nc
-  acc_cp data_1m_potential_temperature_y${before_current_year}.nc ${nemo_data_1m_potential_temperature}_dec_y${before_current_year}.nc
-  acc_cp data_1m_salinity_y${before_current_year}.nc              ${nemo_data_1m_salinity}_dec_y${before_current_year}.nc
-
-  acc_cp hicif_damping_y${after_current_year}.nc                  ${nemo_hicif_damping}_jan_y${after_current_year}.nc
-  acc_cp frld_damping_y${after_current_year}.nc                   ${nemo_frld_damping}_jan_y${after_current_year}.nc
-  acc_cp data_1m_potential_temperature_y${after_current_year}.nc  ${nemo_data_1m_potential_temperature}_jan_y${after_current_year}.nc
-  acc_cp data_1m_salinity_y${after_current_year}.nc               ${nemo_data_1m_salinity}_jan_y${after_current_year}.nc
-
-elif [[ "$runmode" == NEMO-AGCM-dcpp-assim*-spin* ]] ; then
-
-  nemo_data_1m_potential_temperature=uws_oras5_thetao_spin
-  nemo_data_1m_salinity=uws_oras5_so_spin
-  nemo_hicif_damping=uws_hicif_damping_spin
-  nemo_frld_damping=uws_frld_damping_spin
-
-  spin_year=${current_year}
-  while [ $spin_year -gt 1967 ] ; do
-    spin_year=`expr $spin_year - 10`
+  for file in $xios_files; do
+    find_nemo_config_EXP00 $file
   done
 
-  before_current_year=`expr $current_year - 1 | awk  '{printf "%04d",$1}'`
-  after_current_year=`expr $current_year + 1 | awk  '{printf "%04d",$1}'`
-  before_spin_year=`expr ${spin_year} - 1 | awk  '{printf "%04d",$1}'`
-  after_spin_year=`expr ${spin_year} + 1 | awk  '{printf "%04d",$1}'`
-
-  acc_cp sst_y${current_year}.nc                                  ${nemo_sst}_y${spin_year}.nc
-
-  acc_cp hicif_damping_y${current_year}.nc                        ${nemo_hicif_damping}_1m_y${spin_year}.nc
-  acc_cp frld_damping_y${current_year}.nc                         ${nemo_frld_damping}_1m_y${spin_year}.nc
-  acc_cp data_1m_potential_temperature_y${current_year}.nc        ${nemo_data_1m_potential_temperature}_1m_y${spin_year}.nc
-  acc_cp data_1m_salinity_y${current_year}.nc                     ${nemo_data_1m_salinity}_1m_y${spin_year}.nc
-
-  acc_cp hicif_damping_y${before_current_year}.nc                 ${nemo_hicif_damping}_dec_y${before_spin_year}.nc
-  acc_cp frld_damping_y${before_current_year}.nc                  ${nemo_frld_damping}_dec_y${before_spin_year}.nc
-  acc_cp data_1m_potential_temperature_y${before_current_year}.nc ${nemo_data_1m_potential_temperature}_dec_y${before_spin_year}.nc
-  acc_cp data_1m_salinity_y${before_current_year}.nc              ${nemo_data_1m_salinity}_dec_y${before_spin_year}.nc
-
-  acc_cp hicif_damping_y${after_current_year}.nc                  ${nemo_hicif_damping}_jan_y${after_spin_year}.nc
-  acc_cp frld_damping_y${after_current_year}.nc                   ${nemo_frld_damping}_jan_y${after_spin_year}.nc
-  acc_cp data_1m_potential_temperature_y${after_current_year}.nc  ${nemo_data_1m_potential_temperature}_jan_y${after_spin_year}.nc
-  acc_cp data_1m_salinity_y${after_current_year}.nc               ${nemo_data_1m_salinity}_jan_y${after_spin_year}.nc
-
-fi
-
-  [ -s ahmcoef ]                || acc_cp ahmcoef                $nemo_ahmcoef
-  [ -s coordinates.nc ]         || acc_cp coordinates.nc         $nemo_coordinates
-  [ -s bathy_meter.nc ]         || acc_cp bathy_meter.nc         $nemo_bathy_meter
-  [ -s mask_itf.nc ]            || acc_cp mask_itf.nc            $nemo_mask_itf
-  [ -s M2rowdrg.nc ]            || acc_cp M2rowdrg.nc            $nemo_M2rowdrg
-  [ -s K1rowdrg.nc ]            || acc_cp K1rowdrg.nc            $nemo_K1rowdrg
-  [ -s Eddyengf.nc ]            || acc_cp Eddyengf.nc            $nemo_Eddyengf
-#  [ -s geothermal_heating.nc ]  || acc_cp geothermal_heating.nc  $nemo_geothermal_heating
-  [ -s runoff_core_monthly.nc ] || acc_cp runoff_core_monthly.nc $nemo_runoff_core_monthly
-  [ -s sss_data.nc ]            || acc_cp sss_data.nc            $nemo_sss_data
-  [ -s sst_data.nc ]            || acc_cp sst_data.nc            $nemo_sst_data
-  [ -s chlorophyll.nc ]         || acc_cp chlorophyll.nc         $nemo_chlorophyll
-  [ -s subbasins.nc ]           || acc_cp subbasins.nc           $nemo_subbasins
-
-if [[ "$runmode" == NEMO-AGCM-dcpp-assim* ]] ; then
-  nemo_data_1m_potential_temperature_nomask=${nemo_data_1m_potential_temperature_nomask:=nemo_3.4_orca1_potemp_1m_z46_nomask.nc}
-  nemo_data_1m_salinity_nomask=${nemo_data_1m_salinity_nomask:=nemo_3.4_orca1_salin_1m_z46_nomask.nc}
-else
-  nemo_data_1m_potential_temperature_nomask=${nemo_data_1m_potential_temperature_nomask:=omip6_orca1_data_ptmp_nomask.nc}
-  nemo_data_1m_salinity_nomask=${nemo_data_1m_salinity_nomask:=omip6_orca1_data_salt_nomask.nc}
-fi
-
-  [ -s data_1m_potential_temperature_nomask.nc ] ||
-      acc_cp data_1m_potential_temperature_nomask.nc $nemo_data_1m_potential_temperature_nomask
-  [ -s data_1m_salinity_nomask.nc ]              ||
-      acc_cp data_1m_salinity_nomask.nc              $nemo_data_1m_salinity_nomask
-
-  # Modify all FAFMIP related quantities
-  if [[ $nemo_config == *"_FAFMIP"* ]]; then
-
-    # Set specified or default names for fafmip forcing files
-    nemo_fafmip_qtot=${nemo_fafmip_qtot:=cmip6_fafmip_hfds_orca1.nc}
-    nemo_fafmip_tauu=${nemo_fafmip_tauu:=cmip6_fafmip_tauu_orca1.nc}
-    nemo_fafmip_tauv=${nemo_fafmip_tauv:=cmip6_fafmip_tauv_orca1.nc}
-    nemo_fafmip_wfo=${nemo_fafmip_wfo:=cmip6_fafmip_wfo_orca1.nc}
-    # Access all the forcing files
-    [ -s fafmip_qtot.nc ] || acc_cp fafmip_qtot.nc $nemo_fafmip_qtot
-    [ -s fafmip_tauu.nc ] || acc_cp fafmip_tauu.nc $nemo_fafmip_tauu
-    [ -s fafmip_tauv.nc ] || acc_cp fafmip_tauv.nc $nemo_fafmip_tauv
-    [ -s fafmip_wfo.nc ]  || acc_cp fafmip_wfo.nc $nemo_fafmip_wfo
-  fi
-  [ -s o2.nc ]                  || acc_cp o2.nc                  $nemo_o2
-
-
+    
 
   if [ x"$nemo_forcing" = "xbulk_iaf" ]; then
 
@@ -799,84 +671,5 @@ fi
       [ ! -z $nemo_weights_bicubic2  ] && acc_cp weights_bic2.nc $nemo_weights_bicubic2
       [ ! -z $nemo_weights_bilinear2 ] && acc_cp weights_bil2.nc $nemo_weights_bilinear2
   fi
-
-  if [ $nemo_carbon -eq 1 ]; then
-    # Access PISCES files
-
-    nemo_presatm=${nemo_presatm:=uncs_orca1_presatm.nc}
-    nemo_dust_orca=${nemo_dust_orca:=uncs_orca1_dust.orca.nc}
-    nemo_river_orca=${nemo_river_orca:=nemo_3.4_orca2_river.orca.nc}
-    nemo_ndeposition_orca=${nemo_ndeposition_orca:=uncs_orca1_ndeposition.orca.nc}
-    nemo_bathy_orca=${nemo_bathy_orca:=uncs_orca1_bathy.orca.nc}
-
-    [ -s presatm.nc ]          || acc_cp presatm.nc           $nemo_presatm
-    [ -s dust.orca.nc ]        || acc_cp dust.orca.nc         $nemo_dust_orca
-    [ -s river.orca.nc ]       || acc_cp river.orca.nc        $nemo_river_orca
-    [ -s ndeposition.orca.nc ] || acc_cp ndeposition.orca.nc  $nemo_ndeposition_orca
-    [ -s bathy.orca.nc ]       || acc_cp bathy.orca.nc        $nemo_bathy_orca
-
-    if [ $nemo_cmoc -eq 1 ]; then
-      nemo_fermask_orca=${nemo_fermask_orca:=nemo_3.4_orca1_femask.orca.nc}
-      [ -s fermask.orca.nc ] || acc_cp fermask.orca.nc $nemo_fermask_orca
-    fi
-
-    if [ x"$nemo_forcing" = "xbulk_iaf" ]; then
-        nemo_data_si_nomask=${nemo_data_si_nomask:=omip6_orca1_data_si_nomask.nc}
-    else
-        nemo_data_si_nomask=${nemo_data_si_nomask:=uncs_orca1_data_si_nomask.nc}
-    fi
-
-    nemo_data_dic_nomask=omip6_orca1_data_ct_preind_nomask.nc
-    nemo_data_alkalini_nomask=omip6_orca1_data_at_nomask.nc
-    nemo_data_o2_nomask=omip6_orca1_data_o2_nomask.nc
-    nemo_data_po4_nomask=omip6_orca1_data_po4_nomask.nc
-    nemo_data_no3_nomask=omip6_orca1_data_no3_nomask.nc
-    nemo_data_doc_nomask=urjc_orca1_data_doc_nomask.nc
-    nemo_data_fer_nomask=urjc_orca1_data_fer_nomask.nc
-    nemo_data_atcco2=omip6_co2atm_annual.nc
-    nemo_data_atc14c=omip6_Delta14co2.nc
-
-    # Abiotic BGC
-    nemo_data_at_abio_nomask=omip6_orca1_data_at_abio_nomask.nc
-    nemo_data_c14t_abio_nomask=omip6_orca1_data_c14t_abio_nomask.nc
-    nemo_data_ct_abio_nomask=omip6_orca1_data_ct_abio_nomask.nc
-    nemo_data_o2_abio_nomask=omip6_orca1_data_o2abio_nomask.nc
-
-    #cfc atmospheric history
-    nemo_cfc_atmhist=ras003_nemo_cfc_atmhist.nc
-
-    #c14 atmospheric history
-    nemo_data_atc14c=omip6_delta14co2.nc
-
-    [ -s data_dic_nomask.nc ]      || acc_cp data_dic_nomask.nc        $nemo_data_dic_nomask
-    [ -s data_alkalini_nomask.nc ] || acc_cp data_alkalini_nomask.nc   $nemo_data_alkalini_nomask
-    [ -s data_o2_nomask.nc ]       || acc_cp data_o2_nomask.nc         $nemo_data_o2_nomask
-    [ -s data_po4_nomask.nc ]      || acc_cp data_po4_nomask.nc        $nemo_data_po4_nomask
-    [ -s data_si_nomask.nc ]       || acc_cp data_si_nomask.nc         $nemo_data_si_nomask
-    [ -s data_doc_nomask.nc ]      || acc_cp data_doc_nomask.nc        $nemo_data_doc_nomask
-    [ -s data_fer_nomask.nc ]      || acc_cp data_fer_nomask.nc        $nemo_data_fer_nomask
-    [ -s data_no3_nomask.nc ]      || acc_cp data_no3_nomask.nc        $nemo_data_no3_nomask
-
-    # Abiotic biogeochemistry
-    [ -s data_at_abio_nomask.nc ]   ||  acc_cp data_at_abio_nomask.nc    $nemo_data_at_abio_nomask
-    [ -s data_c14t_abio_nomask.nc ] ||  acc_cp data_c14t_abio_nomask.nc  $nemo_data_c14t_abio_nomask
-    [ -s data_ct_abio_nomask.nc ]   ||  acc_cp data_ct_abio_nomask.nc    $nemo_data_ct_abio_nomask
-    [ -s data_o2abio_nomask.nc ]    ||  acc_cp data_o2abio_nomask.nc     $nemo_data_o2_abio_nomask
-
-    if [ "$nemo_ln_c14int" = ".true." ]; then
-      [ -s omip6_Delta14co2.nc ] ||  acc_cp omip6_Delta14co2.nc       $nemo_data_atc14c
-    fi
-
-    if [ "$nemo_cfc" -eq 1 ]; then
-      [ -s nemo_cfc_atmhist.nc ]      ||  acc_cp nemo_cfc_atmhist.nc       $nemo_cfc_atmhist
-    fi
-
-    # Modify the pisces namelist to read CO2 from file, if specified in makefile
-    if [ "$nemo_ln_co2int" = ".true." ]; then
-      [ -s co2atm.nc ] ||  acc_cp omip6_co2atm.nc       $nemo_data_atcco2
-    fi
-  fi
-
-  rm -f mesh_mask*.nc
 
 echo "#################### Stop NEMO pre-processing #################"
