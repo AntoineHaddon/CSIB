@@ -21,14 +21,23 @@ MODULE traspp
    USE iom            ! xIOS server
    USE lbclnk         ! ocean lateral boundary conditions (or mpp link)
    USE timing         ! Timing
-   USE zdfmxl, only : nmln, hmlp, zdf_mxl
 
-   REAL(wp), PUBLIC :: rn_spp_rho_c = 0.2_wp ! Density criterion to determine mixed layer depth
+   IMPLICIT NONE
+   PRIVATE
+
+   PUBLIC tra_spp
+
+   LOGICAL,  PUBLIC :: ln_vertspp = .false.   ! If true, use the salt plume parameterization
+   LOGICAL,  PUBLIC :: ln_spp_c_grad = .true. ! If true, the density criterion is a local gradient as opposed
+                                              ! to a density change from the surface
+   REAL(wp), PUBLIC :: rn_spp_rho_c = 0.02_wp ! Density criterion to determine mixed layer depth
    INTEGER , PUBLIC :: nn_power     = 5       ! Affects the shape of the power law. 0: uniform distribution
+
+#  include "vectopt_loop_substitute.h90"
 
 CONTAINS
 
-   SUBROUTINE tra_spp( zfact )
+   SUBROUTINE tra_spp( kt, zfact )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE zdfmxl  ***
       !!
@@ -45,28 +54,84 @@ CONTAINS
       !!                 rejection parameterization, JGR
       !!
       !! ** Action  : tsa(:,:,:,jp_sal)
+      INTEGER,  INTENT(IN) :: kt
       REAL(wp), INTENT(IN) :: zfact
 
-      real(wp) :: wt
-      integer :: ji, jj, jk
+      REAL(wp) :: wt, density_criterion, h_salt_plume, n2_crit
+      REAL(wp), DIMENSION(jpk) :: z_power, tend_col
+      REAL(wp) :: z_power_sum
+      real(wp), DIMENSION(jpi,jpj,jpk) :: spp_tend_3d
+      real(wp), DIMENSION(jpi,jpj)     :: spp_thick
 
-      ! Calculate mixed layers based on the density criterion specifically for this
-      ! parameterization
-      call zdf_mxl( kt, rn_spp_rho_c )
+      INTEGER :: ji, jj, jk
+      INTEGER :: ki_salt_plume ! Interface index of the salt plume
+      INTEGER :: kl_salt_plume ! Index of last layer within the salt plume
 
+      ! Convert density criterion to an equivalent N2 criterion
+      n2_crit = grav*rn_spp_rho_c*r1_rau0
+      IF (iom_use("spp_tend")) THEN
+         spp_tend_3d(:,:,:) = 0.
+      ENDIF
+      IF (iom_use("spp_thick")) THEN
+         spp_thick(:,:) = 0.
+      ENDIF
       DO jj = 2, jpj
          DO ji = fs_2, fs_jpim1
-            ! Calculate coefficient used in the (Eq. 9)
-            wt = ((zfact*r1_rau0)*(nn_power+1))/(hmlp(ji,jj)**(nn_power+1))
-            wt = wt*(sfx_b(ji,jj) + sfx(ji,jj))
-            DO jk = 1,nmln(ji,jj)
-               tsa(ji,jj,jk,jp_sal) = tsa(ji,jj,jk,jp_sal) + wt*gdept_n(ji,jj,jk)**nn_power
-            END DO
+            ! Only distribute salt flux if ice is being formed in this or the previous time step. Note that
+            ! this could lead to a freshening at depth if sfx + sfx_b < 0., but is necessary to ensure
+            ! symmetry in the leap frog timestepping
+
+            IF (sfx(ji,jj) > 0. .or. sfx_b(ji,jj) > 0.) THEN
+               ! Determine the depth of the salt plume based on either a local gradient density criterion
+               ! or density difference from the surface
+               tend_col(:) = 0.
+               IF (ln_spp_c_grad) THEN
+                  DO jk = 2,jpk
+                     IF ( rn2b(ji,jj,jk) >= n2_crit) THEN
+                        ki_salt_plume = jk
+                        exit
+                     ENDIF
+                  ENDDO
+               ELSE
+                  density_criterion = 0.
+                  DO jk=2,jpk
+                     density_criterion = density_criterion + MAX(rn2b(ji,jj,jk), 0.)*e3w_n(ji,jj,jk)
+                     IF ( density_criterion >= n2_crit) THEN
+                        ki_salt_plume = jk
+                        exit
+                     ENDIF
+                  ENDDO
+               ENDIF
+               IF (iom_use("spp_thick")) THEN
+                  spp_thick(ji,jj) = gdepw_n(ji,jj,ki_salt_plume)
+               ENDIF
+               kl_salt_plume = ki_salt_plume - 1
+
+               ! Calculate coefficient used in the (Eq. 9) by discretizing the constraint in Eq. 10
+               z_power_sum = 0.
+               do jk=1,kl_salt_plume
+                 z_power(jk) = gdept_n(ji,jj,jk)**nn_power
+                 z_power_sum = z_power_sum + z_power(jk)
+               enddo
+               wt = zfact*(sfx_b(ji,jj)+sfx(ji,jj))
+               wt = wt/z_power_sum
+               wt = wt*r1_rau0
+
+               ! Distribute tendencies in the vertical
+               DO jk = 1,kl_salt_plume
+                  tend_col(jk) = wt*z_power(jk)/e3t_n(ji,jj,jk)
+                  tsa(ji,jj,jk,jp_sal) = tsa(ji,jj,jk,jp_sal) + tend_col(jk)
+               END DO
+
+               IF (iom_use("spp_tend")) THEN
+                  spp_tend_3d(ji,jj,:) = tend_col(:)
+               ENDIF
+            ENDIF
          END DO
       END DO
 
-      ! Reset mixed layer depth calculations to avoid interfering with other parts of the code
-      call zdf_mxl( kt )
+      CALL iom_put("spp_tend" , spp_tend_3d)
+      CALL iom_put("spp_thick", spp_thick)
 
    END SUBROUTINE tra_spp
 
