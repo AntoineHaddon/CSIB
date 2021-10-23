@@ -56,7 +56,7 @@ CONTAINS
    END FUNCTION zdf_mxl_alloc
 
 
-   SUBROUTINE zdf_mxl( kt, rho_c_in )
+   SUBROUTINE zdf_mxl( kt )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE zdfmxl  ***
       !!
@@ -74,7 +74,6 @@ CONTAINS
       !! ** Action  :   nmln, hmld, hmlp, hmlpt
       !!----------------------------------------------------------------------
       INTEGER, INTENT(in)        ::   kt   ! ocean time-step index
-      REAL, OPTIONAL, INTENT(IN) ::   rho_c_in ! Density criterion
       !
       INTEGER  ::   ji, jj, jk      ! dummy loop indices
       INTEGER  ::   iikn, iiki, ikt ! local integer
@@ -91,13 +90,10 @@ CONTAINS
          IF( zdf_mxl_alloc() /= 0 )   CALL ctl_stop( 'STOP', 'zdf_mxl : unable to allocate arrays' )
       ENDIF
 
-      rho_c_loc = rho_c
-      IF (PRESENT(rho_c_in)) rho_c_loc = rho_c_in
-      !
       ! w-level of the mixing and mixed layers
       nmln(:,:)  = nlb10               ! Initialization to the number of w ocean point
       hmlp(:,:)  = 0._wp               ! here hmlp used as a dummy variable, integrating vertically N^2
-      zN2_c = grav * rho_c_loc * r1_rau0   ! convert density criteria into N^2 criteria
+      zN2_c = grav * rho_c * r1_rau0   ! convert density criteria into N^2 criteria
       DO jk = nlb10, jpkm1
          DO jj = 1, jpj                ! Mixed layer level: w-level
             DO ji = 1, jpi

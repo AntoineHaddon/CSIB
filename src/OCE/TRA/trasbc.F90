@@ -36,7 +36,7 @@ MODULE trasbc
    USE lbclnk         ! ocean lateral boundary conditions (or mpp link)
    USE timing         ! Timing
    USE zdfmxl, only : nmln, hmlp, zdf_mxl
-   USE traspp, only : tra_spp
+   USE traspp, only : tra_spp, ln_vertspp
 
    IMPLICIT NONE
    PRIVATE
@@ -127,8 +127,17 @@ CONTAINS
       DO jj = 2, jpj
          DO ji = fs_2, fs_jpim1   ! vector opt.
             sbc_tsc(ji,jj,jp_tem) = r1_rau0_rcp * qns(ji,jj)   ! non solar heat flux
-            IF (ln_vertsflx) THEN
-               sbc_tsc(ji,jj,jp_sal) = 0.
+            sbc_tsc(ji,jj,jp_sal) = r1_rau0 * sfx(ji,jj) * 0.
+
+            IF (ln_vertspp) THEN
+               ! In the case of ice melt, the trend should only be supplied at the surface
+               ! Otherwise, the salt plume parameterization will be used to distribute the
+               ! salt flux in the vertical
+               IF (sfx(ji,jj)>0.) THEN
+                  sbc_tsc(ji,jj,jp_sal) = 0.
+               ELSE
+                  sbc_tsc(ji,jj,jp_sal) = r1_rau0 * sfx(ji,jj)
+               ENDIF
             ELSE
                sbc_tsc(ji,jj,jp_sal) = r1_rau0     * sfx(ji,jj)   ! salt flux due to freezing/melting
             ENDIF
@@ -155,8 +164,8 @@ CONTAINS
 
       ! Distribute the salt flux within the boundary layer weighted by the proportion that each layer contributes
       ! to the boundary layer
-      IF (ln_vertsflx) then
-         call tra_spp( zfact )
+      IF (ln_vertspp) then
+         call tra_spp( kt, zfact )
       ENDIF
       !
       IF( lrst_oce ) THEN           !==  write sbc_tsc in the ocean restart file  ==!
