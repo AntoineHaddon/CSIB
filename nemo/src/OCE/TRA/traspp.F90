@@ -32,6 +32,7 @@ MODULE traspp
                                               ! to a density change from the surface
    REAL(wp), PUBLIC :: rn_spp_rho_c = 0.02_wp ! Density criterion to determine mixed layer depth
    INTEGER , PUBLIC :: nn_power     = 5       ! Affects the shape of the power law. 0: uniform distribution
+   REAL(wp), PUBLIC :: rn_spp_z_max = 1000.   ! Maximum depth of the salt plume
 
 #  include "vectopt_loop_substitute.h90"
 
@@ -57,7 +58,7 @@ CONTAINS
       INTEGER,  INTENT(IN) :: kt
       REAL(wp), INTENT(IN) :: zfact
 
-      REAL(wp) :: wt, density_criterion, h_salt_plume, n2_crit
+      REAL(wp) :: wt, density_criterion, h_salt_plume, n2_crit, z_crit
       REAL(wp), DIMENSION(jpk) :: z_power, tend_col
       REAL(wp) :: z_power_sum
       real(wp), DIMENSION(jpi,jpj,jpk) :: spp_tend_3d
@@ -82,21 +83,23 @@ CONTAINS
             ! symmetry in the leap frog timestepping
 
             IF (sfx(ji,jj) > 0. .or. sfx_b(ji,jj) > 0.) THEN
+               z_crit = MIN(rn_spp_z_max,gdepw_n(ji,jj,mbkt(ji,jj)))
                ! Determine the depth of the salt plume based on either a local gradient density criterion
                ! or density difference from the surface
                tend_col(:) = 0.
+
                IF (ln_spp_c_grad) THEN
-                  DO jk = 2,jpk
-                     IF ( rn2b(ji,jj,jk) >= n2_crit) THEN
+                  DO jk = 2,jpk-1
+                     IF ( rn2b(ji,jj,jk) >= n2_crit .or. gdepw_n(ji,jj,jk) >= z_crit) THEN
                         ki_salt_plume = jk
                         exit
                      ENDIF
                   ENDDO
                ELSE
                   density_criterion = 0.
-                  DO jk=2,jpk
+                  DO jk=2,jpk-1
                      density_criterion = density_criterion + MAX(rn2b(ji,jj,jk), 0.)*e3w_n(ji,jj,jk)
-                     IF ( density_criterion >= n2_crit) THEN
+                     IF ( density_criterion >= n2_crit .or. gdepw_n(ji,jj,jk) >= z_crit ) THEN
                         ki_salt_plume = jk
                         exit
                      ENDIF
@@ -119,8 +122,8 @@ CONTAINS
 
                ! Distribute tendencies in the vertical
                DO jk = 1,kl_salt_plume
-                  tend_col(jk) = wt*z_power(jk)/e3t_n(ji,jj,jk)
-                  tsa(ji,jj,jk,jp_sal) = tsa(ji,jj,jk,jp_sal) + tend_col(jk)
+                  tend_col(jk) = wt*z_power(jk)
+                  tsa(ji,jj,jk,jp_sal) = tsa(ji,jj,jk,jp_sal) + tend_col(jk)/e3t_n(ji,jj,jk)
                END DO
 
                IF (iom_use("spp_tend")) THEN

@@ -127,7 +127,6 @@ CONTAINS
       DO jj = 2, jpj
          DO ji = fs_2, fs_jpim1   ! vector opt.
             sbc_tsc(ji,jj,jp_tem) = r1_rau0_rcp * qns(ji,jj)   ! non solar heat flux
-            sbc_tsc(ji,jj,jp_sal) = r1_rau0 * sfx(ji,jj) * 0.
 
             IF (ln_vertspp) THEN
                ! In the case of ice melt, the trend should only be supplied at the surface
