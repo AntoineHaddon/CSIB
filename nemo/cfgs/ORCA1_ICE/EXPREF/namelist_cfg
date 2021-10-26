@@ -98,7 +98,7 @@
    ln_traqsr   = .true.    !  Light penetration in the ocean            (T => fill namtra_qsr)
    ln_ssr      = .true.    !  Sea Surface Restoring on T and/or S       (T => fill namsbc_ssr)
    ln_rnf      = .true.    !  runoffs                                   (T => fill namsbc_rnf)
-   nn_fwb      = 2         !  FreshWater Budget:
+   nn_fwb      = 3         !  FreshWater Budget:
    !                       !    =2 annual global mean of e-p-r set to zero
    ln_wave     = .false.   !  Activate coupling with wave  (T => fill namsbc_wave)
    ln_cdgw     = .false.   !  Neutral drag coefficient read from wave model (T => ln_wave=.true. & fill namsbc_wave)
@@ -112,6 +112,7 @@
    ln_stcor    = .false.   !  Activate Stokes Coriolis term (T => ln_wave=.true. & ln_sdw=.true. & fill namsbc_wave)
    ln_minsal   = .false.   !  Constrain SSS not dropping below 5 psu
 
+   ln_vertspp = .true.
    ln_spp_c_grad = .true.  !    If true, the density criterion is based on the local gradient, otherwise it represents
                            !      a density change from the surface of the ocean
    rn_spp_rho_c = 0.02     !    The density criterion used to determine the depth of the salt plume
