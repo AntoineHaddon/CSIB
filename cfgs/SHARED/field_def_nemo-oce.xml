@@ -24,7 +24,7 @@
         <field id="e3tb"         long_name="bottom T-cell thickness"             standard_name="bottom_cell_thickness" unit="m"   grid_ref="grid_T_2D"/>
         <field id="e3t_300"      field_ref="e3t"                grid_ref="grid_T_zoom_300"       detect_missing_value="true" />
         <field id="e3t_vsum300"  field_ref="e3t_300"            grid_ref="grid_T_vsum"   detect_missing_value="true" />
-	<field id="masscello"    long_name="Sea Water Mass per unit area"   standard_name="sea_water_mass_per_unit_area"   unit="kg/m2"   grid_ref="grid_T_3D"/>
+        <field id="masscello"    long_name="Sea Water Mass per unit area"   standard_name="sea_water_mass_per_unit_area"   unit="kg/m2"   grid_ref="grid_T_3D"/>
         <field id="volcello"     long_name="Ocean Volume"                   standard_name="ocean_volume"   unit="m3"       grid_ref="grid_T_3D"/>
         <field id="toce"         long_name="temperature"                         standard_name="sea_water_potential_temperature"   unit="degC"     grid_ref="grid_T_3D"/>
         <field id="toce_e3t"     long_name="temperature (thickness weighted)"                                                      unit="degC"     grid_ref="grid_T_3D" > toce * e3t </field >
@@ -35,7 +35,7 @@
         <field id="toce_e3t_vsum300"  field_ref="toce_e3t_300"      unit="degress_C*m"  grid_ref="grid_T_vsum"  detect_missing_value="true" />
         <field id="toce_vmean300"     field_ref="toce_e3t_vsum300"  unit="degree_C"     grid_ref="grid_T_vsum"  detect_missing_value="true" > toce_e3t_vsum300/e3t_vsum300 </field>
 
-	<!--- additions to diawri.F90 --->
+  <!--- additions to diawri.F90 --->
         <field id="socegrad"    long_name="module of salinity gradient"              unit="psu/m"   grid_ref="grid_T_3D"/>
         <field id="socegrad2"   long_name="square of module of salinity gradient"    unit="psu2/m2" grid_ref="grid_T_3D"/>
         <field id="eken_int"    long_name="vertical integration of kinetic energy"   unit="m3/s2"   />
@@ -45,8 +45,8 @@
         <field id="salt2c"      long_name="Salt content vertically integrated"       unit="1e-3*kg/m2" />
 
         <!-- t-eddy viscosity coefficients (ldfdyn) -->
-	<field id="ahmt_2d"      long_name=" surface t-eddy viscosity coefficient"   unit="m2/s or m4/s"                      />
-	<field id="ahmt_3d"      long_name=" 3D      t-eddy viscosity coefficient"   unit="m2/s or m4/s"  grid_ref="grid_T_3D"/>
+  <field id="ahmt_2d"      long_name=" surface t-eddy viscosity coefficient"   unit="m2/s or m4/s"                      />
+  <field id="ahmt_3d"      long_name=" 3D      t-eddy viscosity coefficient"   unit="m2/s or m4/s"  grid_ref="grid_T_3D"/>
 
         <field id="sst"          long_name="sea surface temperature"                            standard_name="sea_surface_temperature"             unit="degC"     />
         <field id="sst2"         long_name="square of sea surface temperature"                  standard_name="square_of_sea_surface_temperature"   unit="degC2"     > sst * sst </field >
@@ -58,7 +58,7 @@
         <field id="tosmint"      long_name="vertical integral of temperature times density"     standard_name="integral_wrt_depth_of_product_of_density_and_potential_temperature"  unit="(kg m2) degree_C" />
         <field id="sst_wl"       long_name="Delta SST of warm layer"                                                                                unit="degC"     />
         <field id="sst_cs"       long_name="Delta SST of cool skin"                                                                                 unit="degC"     />
-	<field id="temp_3m"      long_name="temperature at 3m"                                                                                      unit="degC"     />
+  <field id="temp_3m"      long_name="temperature at 3m"                                                                                      unit="degC"     />
 
         <field id="sss"          long_name="sea surface salinity"                               standard_name="sea_surface_salinity"                unit="1e-3"     />
         <field id="sss2"         long_name="square of sea surface salinity"                                                                         unit="1e-6"      > sss * sss </field >
@@ -69,8 +69,8 @@
 
         <field id="taubot"       long_name="bottom stress module"                                                                                   unit="N/m2"     />
 
-         <!-- Case EOS = TEOS-10 : output potential temperature -->
-	<field id="toce_pot"     long_name="Sea Water Potential Temperature"              standard_name="sea_water_potential_temperature"   unit="degC"     grid_ref="grid_T_3D"/>
+        <!-- Case EOS = TEOS-10 : output potential temperature -->
+        <field id="toce_pot"     long_name="Sea Water Potential Temperature"              standard_name="sea_water_potential_temperature"   unit="degC"     grid_ref="grid_T_3D"/>
         <field id="sst_pot"      long_name="potential sea surface temperature"             standard_name="sea_surface_temperature"             unit="degC"     />
         <field id="tosmint_pot"  long_name="vertical integral of potential temperature times density"   standard_name="integral_wrt_depth_of_product_of_density_and_potential_temperature"  unit="(kg m2) degree_C" />
 
@@ -116,7 +116,7 @@
         <field id="BLT"          long_name="Barrier Layer Thickness"                                                                                                                          unit="m"   > topthdep - pycndep </field>
         <field id="tinv"         long_name="Max of vertical invertion of temperature"                                                                                                         unit="degC"                      />
         <field id="depti"        long_name="Depth of max. vert. inv. of temperature"                                                                                                          unit="m"                         />
-	<field id="20d"          long_name="Depth of 20C isotherm"                          standard_name="depth_of_isosurface_of_sea_water_potential_temperature"                            unit="m"   axis_ref="iax_20C" />
+  <field id="20d"          long_name="Depth of 20C isotherm"                          standard_name="depth_of_isosurface_of_sea_water_potential_temperature"                            unit="m"   axis_ref="iax_20C" />
         <field id="26d"          long_name="Depth of 26C isotherm"                          standard_name="depth_of_isosurface_of_sea_water_potential_temperature"                            unit="m"   axis_ref="iax_26C"   />
         <field id="28d"          long_name="Depth of 28C isotherm"                          standard_name="depth_of_isosurface_of_sea_water_potential_temperature"                            unit="m"   axis_ref="iax_28C" />
         <field id="hc300"        long_name="Heat content 0-300m"                            standard_name="integral_of_sea_water_potential_temperature_wrt_depth_expressed_as_heat_content"   unit="J/m2"                      />
@@ -330,7 +330,7 @@
 
 
           <!-- available if key_oasis3 + conservative method -->
-	  <field id="rain"          long_name="Liquid precipitation"                                     standard_name="rainfall_flux"                                                                 unit="kg/m2/s"  />
+    <field id="rain"          long_name="Liquid precipitation"                                     standard_name="rainfall_flux"                                                                 unit="kg/m2/s"  />
           <field id="rain_ao_cea"   long_name="Liquid precipitation over ice-free ocean (cell average)"  standard_name="rainfall_flux"                                                                 unit="kg/m2/s"  />
           <field id="evap_ao_cea"   long_name="Evaporation over ice-free ocean (cell average)"           standard_name="water_evaporation_flux"                                                        unit="kg/m2/s"  />
           <field id="isnwmlt_cea"   long_name="Snow over Ice melting (cell average)"                     standard_name="surface_snow_melt_flux"                                                        unit="kg/m2/s"  />
@@ -362,7 +362,7 @@
           <field id="rnf_x_sst"    long_name="Runoff term on SST"                                                                                                              unit="kg*degC/m2/s" />
           <field id="rnf_x_sss"    long_name="Runoff term on SSS"                                                                                                              unit="kg*1e-3/m2/s" />
 
-	  <!-- sbcssm variables -->
+    <!-- sbcssm variables -->
           <field id="sst_m"    unit="degC" />
           <field id="sss_m"    unit="psu"  />
           <field id="ssu_m"    unit="m/s"  />
@@ -371,11 +371,11 @@
           <field id="e3t_m"    unit="m"    />
           <field id="frq_m"    unit="-"    />
 
-	</field_group>
+  </field_group>
 
-	<!-- scalar variables -->
-	<field_group id="SBC_0D"  grid_ref="grid_1point" >
-	</field_group>
+  <!-- scalar variables -->
+  <field_group id="SBC_0D"  grid_ref="grid_1point" >
+  </field_group>
 
       </field_group> <!-- SBC -->
 
@@ -387,8 +387,8 @@
         <field id="e3u_0"         long_name="Initial U-cell thickness"                               standard_name="ref_cell_thickness"          unit="m"          grid_ref="grid_U_3D"/>
         <field id="utau"          long_name="Wind Stress along i-axis"                               standard_name="surface_downward_x_stress"   unit="N/m2"                            />
         <field id="uoce"          long_name="ocean current along i-axis"                             standard_name="sea_water_x_velocity"        unit="m/s"        grid_ref="grid_U_3D" />
-    	<field id="uoce_e3u"      long_name="ocean current along i-axis  (thickness weighted)"                                                   unit="m/s"        grid_ref="grid_U_3D"  > uoce * e3u </field>
-    	<field id="uoce_e3u_vsum" long_name="ocean current along i-axis * e3u summed on the vertical"  field_ref="uoce_e3u"    unit="m3/s"       grid_ref="grid_U_vsum"/>
+      <field id="uoce_e3u"      long_name="ocean current along i-axis  (thickness weighted)"                                                   unit="m/s"        grid_ref="grid_U_3D"  > uoce * e3u </field>
+      <field id="uoce_e3u_vsum" long_name="ocean current along i-axis * e3u summed on the vertical"  field_ref="uoce_e3u"    unit="m3/s"       grid_ref="grid_U_vsum"/>
         <field id="uocetr_vsum"   long_name="ocean transport along i-axis  summed on the vertical"         field_ref="e2u"       unit="m3/s"> this * uoce_e3u_vsum  </field>
 
         <field id="uocetr_vsum_op"    long_name="ocean current along i-axis * e3u * e2u summed on the vertical"  read_access="true"  freq_op="1mo"    field_ref="e2u"       unit="m3/s"> @uocetr_vsum </field>
@@ -414,7 +414,7 @@
         <field id="psiu_mle"     long_name="MLE streamfunction along i-axis"   unit="m3/s"   grid_ref="grid_U_3D" />
 
         <!-- uoce_eiv: available EIV (ln_ldfeiv=T and ln_ldfeiv_dia=T) -->
-    	<field id="uoce_eiv"      long_name="EIV ocean current along i-axis"                                  standard_name="bolus_sea_water_x_velocity"                     unit="m/s"   grid_ref="grid_U_3D" />
+      <field id="uoce_eiv"      long_name="EIV ocean current along i-axis"                                  standard_name="bolus_sea_water_x_velocity"                     unit="m/s"   grid_ref="grid_U_3D" />
         <field id="ueiv_masstr"   long_name="EIV Ocean Mass X Transport"                                      standard_name="bolus_ocean_mass_x_transport"                   unit="kg/s"  grid_ref="grid_U_3D" />
         <field id="ueiv_heattr"   long_name="ocean bolus heat transport along i-axis"                         standard_name="ocean_heat_x_transport_due_to_bolus_advection"  unit="W"                         />
         <field id="ueiv_salttr"   long_name="ocean bolus salt transport along i-axis"                         standard_name="ocean_salt_x_transport_due_to_bolus_advection"  unit="Kg"                        />
@@ -471,7 +471,7 @@
         <field id="psiv_mle"     long_name="MLE streamfunction along j-axis"   unit="m3/s"   grid_ref="grid_V_3D" />
 
         <!-- voce_eiv: available EIV (ln_ldfeiv=T and ln_ldfeiv_dia=T)  -->
-	<field id="voce_eiv"     long_name="EIV ocean current along j-axis"  standard_name="bolus_sea_water_y_velocity"     unit="m/s"   grid_ref="grid_V_3D" />
+  <field id="voce_eiv"     long_name="EIV ocean current along j-axis"  standard_name="bolus_sea_water_y_velocity"     unit="m/s"   grid_ref="grid_V_3D" />
         <field id="veiv_masstr"  long_name="EIV Ocean Mass Y Transport"      standard_name="bolus_ocean_mass_y_transport"   unit="kg/s"  grid_ref="grid_V_3D" />
         <field id="veiv_heattr"   long_name="ocean bolus heat transport along j-axis"       standard_name="ocean_heat_y_transport_due_to_bolus_advection"   unit="W"                         />
         <field id="veiv_salttr"   long_name="ocean bolus salt transport along j-axis"       standard_name="ocean_salt_x_transport_due_to_bolus_advection"   unit="Kg"                        />
@@ -505,8 +505,8 @@
 
       <field_group id="grid_W" grid_ref="grid_W_3D">
         <field id="e3w"          long_name="W-cell thickness"                              standard_name="cell_thickness"                         unit="m"    />
-	<field id="woce"         long_name="ocean vertical velocity"                       standard_name="upward_sea_water_velocity"              unit="m/s"  />
-	<field id="woce_e3w"     long_name="ocean vertical velocity * e3w"                                                                        unit="m2/s"  > woce * e3w </field>
+  <field id="woce"         long_name="ocean vertical velocity"                       standard_name="upward_sea_water_velocity"              unit="m/s"  />
+  <field id="woce_e3w"     long_name="ocean vertical velocity * e3w"                                                                        unit="m2/s"  > woce * e3w </field>
         <field id="wocetr_eff"   long_name="effective ocean vertical transport"                                                                   unit="m3/s" />
 
         <!-- woce_eiv: available with EIV  (ln_ldfeiv=T and ln_ldfeiv_dia=T)  -->
@@ -515,7 +515,7 @@
         <field id="weiv_heattr3d" long_name="ocean bolus heat transport"    standard_name="ocean_heat_z_transport_due_to_bolus_advection"   unit="W"    />
         <field id="weiv_salttr3d" long_name="ocean bolus salt transport"    standard_name="ocean_salt_z_transport_due_to_bolus_advection"   unit="kg"   />
 
-	<field id="avt"          long_name="vertical eddy diffusivity"                      standard_name="ocean_vertical_heat_diffusivity"       unit="m2/s" />
+  <field id="avt"          long_name="vertical eddy diffusivity"                      standard_name="ocean_vertical_heat_diffusivity"       unit="m2/s" />
         <field id="avt_e3w"      long_name="vertical heat diffusivity * e3w"                unit="m3/s" > avt * e3w </field>
         <field id="logavt"       long_name="logarithm of vertical eddy diffusivity"         standard_name="ocean_vertical_heat_diffusivity"       unit="m2/s" />
         <field id="avm"          long_name="vertical eddy viscosity"                        standard_name="ocean_vertical_momentum_diffusivity"   unit="m2/s" />
@@ -524,12 +524,12 @@
         <!-- avs: /= avt with ln_zdfddm=T -->
         <field id="avs"          long_name="salt vertical eddy diffusivity"                 standard_name="ocean_vertical_salt_diffusivity"       unit="m2/s" />
         <field id="avs_e3w"      long_name="vertical salt diffusivity * e3w"   unit="m3/s" > avs * e3w </field>
-	<field id="logavs"       long_name="logarithm of salt vertical eddy diffusivity"    standard_name="ocean_vertical_heat_diffusivity"       unit="m2/s" />
+  <field id="logavs"       long_name="logarithm of salt vertical eddy diffusivity"    standard_name="ocean_vertical_heat_diffusivity"       unit="m2/s" />
 
         <!-- avt_evd and avm_evd: available with ln_zdfevd -->
         <field id="avt_evd"      long_name="convective enhancement of vertical diffusivity" standard_name="ocean_vertical_tracer_diffusivity_due_to_convection"     unit="m2/s" />
         <field id="avt_evd_e3w"  long_name="convective enhancement to vertical diffusivity * e3w "    unit="m3/s" > avt_evd * e3w </field>
-	<field id="avm_evd"      long_name="convective enhancement of vertical viscosity"   standard_name="ocean_vertical_momentum_diffusivity_due_to_convection"   unit="m2/s" />
+  <field id="avm_evd"      long_name="convective enhancement of vertical viscosity"   standard_name="ocean_vertical_momentum_diffusivity_due_to_convection"   unit="m2/s" />
 
         <!-- avt_tide: available with ln_zdfiwm=T -->
         <field id="av_ratio"     long_name="S over T diffusivity ratio"                     standard_name="salinity_over_temperature_diffusivity_ratio"                     unit="1"    />
@@ -556,19 +556,19 @@
       <field id="ahmf_3d"      long_name=" 3D      f-eddy viscosity coefficient"   unit="m2/s or m4/s"  grid_ref="grid_T_3D"/>
 
       <field_group id="scalar"  grid_ref="grid_scalar"  >
-      	<!-- Need to have a salinity reference climatological file : sali_ref_clim_monthly -->
+        <!-- Need to have a salinity reference climatological file : sali_ref_clim_monthly -->
         <field id="voltot"     long_name="global total volume"                          standard_name="sea_water_volume"                               unit="m3"   />
         <field id="sshtot"     long_name="global mean ssh"                              standard_name="global_average_sea_level_change"                unit="m"    />
         <field id="sshsteric"  long_name="global mean ssh steric"                       standard_name="global_average_steric_sea_level_change"         unit="m"    />
         <field id="sshthster"  long_name="global mean ssh thermosteric"                 standard_name="global_average_thermosteric_sea_level_change"   unit="m"    />
         <field id="masstot"    long_name="global total mass"                            standard_name="sea_water_mass"                                 unit="kg"   />
         <field id="temptot"    long_name="global mean temperature"                      standard_name="sea_water_potential_temperature"                unit="degC" />
-	<field id="saltot"     long_name="global mean salinity"                         standard_name="sea_water_salinity"                             unit="1e-3" />
+  <field id="saltot"     long_name="global mean salinity"                         standard_name="sea_water_salinity"                             unit="1e-3" />
         <field id="ssttot"     long_name="global mean sea surface temperature"          standard_name="sea_water_conservative_temperature"             unit="degC" />
          <!-- EOS = TEOS-10 -->
         <field id="temptot_pot" long_name="global mean potential temperature"            standard_name="sea_water_potential_temperature"               unit="degC" />
 
-      	<!-- available with ln_diahsb -->
+        <!-- available with ln_diahsb -->
         <field id="bgtemper"     long_name="drift in global mean temperature wrt timestep 1"                 standard_name="change_over_time_in_sea_water_potential_temperature"   unit="degC"     />
         <field id="bgsaline"     long_name="drift in global mean salinity wrt timestep 1"                    standard_name="change_over_time_in_sea_water_practical_salinity"      unit="1e-3"     />
         <field id="bgheatco"     long_name="drift in global mean heat content wrt timestep 1"                                                                                      unit="1.e20J"   />
@@ -653,9 +653,9 @@
         <field id="sopstvtr"      long_name="Salt Transport : All basins"                                  unit="Giga g/s"   grid_ref="grid_znl_T_2D" />
         <field id="sophteiv"      long_name="Heat Transport from mesoscale eddy advection: All basins"     unit="PW"         grid_ref="grid_znl_T_2D" />
         <field id="sopsteiv"      long_name="Salt Transport from mesoscale eddy advection : All basins"    unit="Giga g/s"   grid_ref="grid_znl_T_2D" />
-	<field id="sopstadv"      long_name="Advective Salt Transport"                                     unit="Giga g/s"   grid_ref="grid_znl_T_2D" />
+  <field id="sopstadv"      long_name="Advective Salt Transport"                                     unit="Giga g/s"   grid_ref="grid_znl_T_2D" />
         <field id="sophtgyre"     long_name="Overturning heat transport due to gyre" field_ref="sophtove"  unit="W"          grid_ref="grid_znl_T_2D" > sophtvtr - sophtove  </field>
-	<field id="sopstgyre"     long_name="Overturning salt transport due to gyre" field_ref="sopstove"  unit="kg/s"       grid_ref="grid_znl_T_2D" > sophtvtr - sopstove  </field>
+  <field id="sopstgyre"     long_name="Overturning salt transport due to gyre" field_ref="sopstove"  unit="kg/s"       grid_ref="grid_znl_T_2D" > sophtvtr - sopstove  </field>
        </field_group>
 
        <field_group id="constant_fields"  grid_ref="grid_T_2D"  operation="once" >
