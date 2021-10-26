@@ -92,15 +92,16 @@ CONTAINS
       INTEGER ::   ios, icpt                         ! local integer
       LOGICAL ::   ll_purecpl, ll_opa, ll_not_nemo   ! local logical
       !!
-      NAMELIST/namsbc/ nn_fsbc  ,                                                    &
-         &             ln_usr   , ln_flx   , ln_blk       ,                          &
-         &             ln_cpl   , ln_mixcpl, nn_components,                          &
-         &             nn_ice   , ln_ice_embd,                                       &
-         &             ln_traqsr, ln_dm2dc ,                                         &
-         &             ln_rnf   , nn_fwb   , ln_ssr   , ln_isf    , ln_apr_dyn ,     &
-         &             ln_wave  , ln_cdgw  , ln_sdw   , ln_tauwoc  , ln_stcor   ,    &
-         &             ln_tauw  , nn_lsm, nn_sdrift, ln_minsal, rn_minsal,           &
-         &             ln_vertspp, ln_spp_c_grad, rn_spp_rho_c, nn_power, rn_spp_z_max
+      NAMELIST/namsbc/ nn_fsbc  ,                                                       &
+         &             ln_usr   , ln_flx   , ln_blk       ,                             &
+         &             ln_cpl   , ln_mixcpl, nn_components,                             &
+         &             nn_ice   , ln_ice_embd,                                          &
+         &             ln_traqsr, ln_dm2dc ,                                            &
+         &             ln_rnf   , nn_fwb   , ln_ssr   , ln_isf    , ln_apr_dyn ,        &
+         &             ln_wave  , ln_cdgw  , ln_sdw   , ln_tauwoc  , ln_stcor   ,       &
+         &             ln_tauw  , nn_lsm, nn_sdrift, ln_minsal, rn_minsal,              &
+         &             ln_vertspp, ln_spp_c_grad, rn_spp_rho_c, nn_power, rn_spp_z_max, &
+         &             nn_sfx_sign
       !!----------------------------------------------------------------------
       !
       IF(lwp) THEN
@@ -166,6 +167,7 @@ CONTAINS
          WRITE(numout,*) '               neutral drag coefficient (CORE,NCAR) ln_cdgw       = ', ln_cdgw
          WRITE(numout,*) '               constrain SSS not dropping below 5 psu             = ', ln_minsal
          WRITE(numout,*) '               min SSS                                            = ', rn_minsal
+         WRITE(numout,*) '         BUGFIX: Change the sign of sfx (-1)        nn_sfx_sign   = ', nn_sfx_sign
          WRITE(numout,*) '         Salt plume parameterization                ln_vertspp    = ', ln_vertspp
          IF (ln_vertspp) THEN
             WRITE(numout,*) '               Local (T) or bulk density criterion  ln_spp_c_grad = ', ln_spp_c_grad
