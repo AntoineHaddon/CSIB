@@ -38,7 +38,7 @@ MODULE traspp
 
 CONTAINS
 
-   SUBROUTINE tra_spp( kt, zfact )
+   SUBROUTINE tra_spp( kt, zfact, nn_sfx_sign )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE zdfmxl  ***
       !!
@@ -57,6 +57,7 @@ CONTAINS
       !! ** Action  : tsa(:,:,:,jp_sal)
       INTEGER,  INTENT(IN) :: kt
       REAL(wp), INTENT(IN) :: zfact
+      INTEGER,  INTENT(IN) :: nn_sfx_sign
 
       REAL(wp) :: wt, density_criterion, h_salt_plume, n2_crit, z_crit
       REAL(wp), DIMENSION(jpk) :: z_power, tend_col
@@ -82,7 +83,7 @@ CONTAINS
             ! this could lead to a freshening at depth if sfx + sfx_b < 0., but is necessary to ensure
             ! symmetry in the leap frog timestepping
 
-            IF (sfx(ji,jj) > 0. .or. sfx_b(ji,jj) > 0.) THEN
+            IF (nn_sfx_sign*sfx(ji,jj) > 0. .or. nn_sfx_sign*sfx_b(ji,jj) > 0.) THEN
                z_crit = MIN(rn_spp_z_max,gdepw_n(ji,jj,mbkt(ji,jj)))
                ! Determine the depth of the salt plume based on either a local gradient density criterion
                ! or density difference from the surface
@@ -116,7 +117,7 @@ CONTAINS
                  z_power(jk) = gdept_n(ji,jj,jk)**nn_power
                  z_power_sum = z_power_sum + z_power(jk)
                enddo
-               wt = zfact*(sfx_b(ji,jj)+sfx(ji,jj))
+               wt = nn_sfx_sign*zfact*(sfx_b(ji,jj)+sfx(ji,jj))
                wt = wt/z_power_sum
                wt = wt*r1_rau0
 
