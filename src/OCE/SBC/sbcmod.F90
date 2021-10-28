@@ -100,8 +100,7 @@ CONTAINS
          &             ln_rnf   , nn_fwb   , ln_ssr   , ln_isf    , ln_apr_dyn ,        &
          &             ln_wave  , ln_cdgw  , ln_sdw   , ln_tauwoc  , ln_stcor   ,       &
          &             ln_tauw  , nn_lsm, nn_sdrift, ln_minsal, rn_minsal,              &
-         &             ln_vertspp, ln_spp_c_grad, rn_spp_rho_c, nn_power, rn_spp_z_max, &
-         &             nn_sfx_sign
+         &             ln_vertspp, ln_spp_c_grad, rn_spp_rho_c, nn_power, rn_spp_z_max
       !!----------------------------------------------------------------------
       !
       IF(lwp) THEN
@@ -167,7 +166,6 @@ CONTAINS
          WRITE(numout,*) '               neutral drag coefficient (CORE,NCAR) ln_cdgw       = ', ln_cdgw
          WRITE(numout,*) '               constrain SSS not dropping below 5 psu             = ', ln_minsal
          WRITE(numout,*) '               min SSS                                            = ', rn_minsal
-         WRITE(numout,*) '         BUGFIX: Change the sign of sfx (-1)        nn_sfx_sign   = ', nn_sfx_sign
          WRITE(numout,*) '         Salt plume parameterization                ln_vertspp    = ', ln_vertspp
          IF (ln_vertspp) THEN
             WRITE(numout,*) '               Local (T) or bulk density criterion  ln_spp_c_grad = ', ln_spp_c_grad

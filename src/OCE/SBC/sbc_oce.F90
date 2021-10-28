@@ -71,7 +71,6 @@ MODULE sbc_oce
    INTEGER , PUBLIC ::   nn_cats_cpl    !: Number of sea ice categories over which the coupling is carried out
    LOGICAL , PUBLIC ::   ln_minsal      ! true if constrain SSS not dropping below 5 psu
    REAL(wp), PUBLIC ::   rn_minsal      ! min SSS
-   INTEGER,  PUBLIC ::   nn_sfx_sign = -1 ! Make hte sign of sfx consistent with the salinity tendency
 
    !!----------------------------------------------------------------------
    !!           switch definition (improve readability)

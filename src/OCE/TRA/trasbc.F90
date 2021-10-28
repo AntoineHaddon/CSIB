@@ -134,13 +134,13 @@ CONTAINS
                ! In the case of ice melt, the trend should only be supplied at the surface
                ! Otherwise, the salt plume parameterization will be used to distribute the
                ! salt flux in the vertical
-               IF (nn_sfx_sign*sfx(ji,jj)>0.) THEN
+               IF (sfx(ji,jj)>0.) THEN
                   sbc_tsc(ji,jj,jp_sal) = 0.
                ELSE
-                  sbc_tsc(ji,jj,jp_sal) = nn_sfx_sign*r1_rau0 * sfx(ji,jj)
+                  sbc_tsc(ji,jj,jp_sal) = r1_rau0 * sfx(ji,jj)
                ENDIF
             ELSE
-               sbc_tsc(ji,jj,jp_sal) = nn_sfx_sign*r1_rau0     * sfx(ji,jj)   ! salt flux due to freezing/melting
+               sbc_tsc(ji,jj,jp_sal) = r1_rau0     * sfx(ji,jj)   ! salt flux due to freezing/melting
             ENDIF
          END DO
       END DO
