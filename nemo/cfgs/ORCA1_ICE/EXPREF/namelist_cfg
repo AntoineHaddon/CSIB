@@ -111,12 +111,6 @@
    ln_tauw     = .false.   !  Activate ocean stress components from wave model
    ln_stcor    = .false.   !  Activate Stokes Coriolis term (T => ln_wave=.true. & ln_sdw=.true. & fill namsbc_wave)
    ln_minsal   = .false.   !  Constrain SSS not dropping below 5 psu
-
-   ln_vertspp = .true.
-   ln_spp_c_grad = .true.  !    If true, the density criterion is based on the local gradient, otherwise it represents
-                           !      a density change from the surface of the ocean
-   rn_spp_rho_c = 0.02     !    The density criterion used to determine the depth of the salt plume
-   nn_power     = 5        !    A shape parameter for the power law profile. 0 = uniform, 5 = Nguyen et al. 2009,
 /
 !-----------------------------------------------------------------------
 &namsbc_flx    !   surface boundary condition : flux formulation        (ln_flx =T)
