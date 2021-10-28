@@ -289,7 +289,6 @@
 
           <!-- * variables related to ice shelf forcing * -->
           <field id="spp_tend"     long_name="Salinity tendency due to salt plume"           unit="PSU/s"    grid_ref="grid_T_3D" />
-          <field id="spp_thick"    long_name="The thickness of the salt plume"               unit="m"      />
 
           <!-- * variable related to ice shelf forcing * -->
           <field id="fwfisf"       long_name="Ice shelf melting"                             unit="kg/m2/s"  />
