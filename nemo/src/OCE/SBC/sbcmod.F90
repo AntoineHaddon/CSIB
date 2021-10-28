@@ -60,7 +60,7 @@ MODULE sbcmod
    USE timing         ! Timing
    USE wet_dry
    USE diurnal_bulk, ONLY:   ln_diurnal_only   ! diurnal SST diagnostic
-   USE traspp, ONLY : nn_power, rn_spp_rho_c, ln_vertspp, ln_spp_c_grad, rn_spp_z_max
+   USE sbcspp, ONLY : nn_power, rn_spp_rho_c, ln_vertspp, ln_spp_c_grad, rn_spp_z_max
 
    IMPLICIT NONE
    PRIVATE

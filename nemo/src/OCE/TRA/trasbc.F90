@@ -36,7 +36,7 @@ MODULE trasbc
    USE lbclnk         ! ocean lateral boundary conditions (or mpp link)
    USE timing         ! Timing
    USE zdfmxl, only : nmln, hmlp, zdf_mxl
-   USE traspp, only : tra_spp, ln_vertspp
+   USE sbcspp, only : tra_spp, ln_vertspp
 
    IMPLICIT NONE
    PRIVATE
@@ -165,8 +165,8 @@ CONTAINS
 
       ! Distribute the salt flux within the boundary layer weighted by the proportion that each layer contributes
       ! to the boundary layer
-      IF (ln_vertspp) then
-         call tra_spp( kt, zfact, nn_sfx_sign )
+      IF (ln_vertspp) THEN
+         call tra_spp( kt, zfact )
       ENDIF
       !
       IF( lrst_oce ) THEN           !==  write sbc_tsc in the ocean restart file  ==!
