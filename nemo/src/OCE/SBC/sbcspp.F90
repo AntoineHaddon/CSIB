@@ -33,71 +33,11 @@ MODULE sbcspp
                                               ! to a density change from the surface
    REAL(wp), PUBLIC :: rn_spp_rho_c = 0.02_wp ! Density criterion to determine mixed layer depth
    INTEGER , PUBLIC :: nn_power     = 5       ! Affects the shape of the power law. 0: uniform distribution
-   REAL(wp), PUBLIC :: rn_spp_z_max = 1000.   ! Maximum depth of the salt plume
+   REAL(wp), PUBLIC :: rn_spp_z_max = 100.   ! Maximum depth of the salt plume
 
 #  include "vectopt_loop_substitute.h90"
 
 CONTAINS
-
-   SUBROUTINE tra_spp( kt, zfact )
-      !!----------------------------------------------------------------------
-      !!                  ***  ROUTINE tra_spp ***
-      !!
-      !! ** Purpose : Distribute the salt flux due to sea-ice processes
-      !!              within the surface boundary layer. This routine
-      !!              handles the salt rejected due to freshwater melt
-      !!
-      !! ** Method  : As a parameterization of the salt plumes that form
-      !!              due to brine rejection during sea-ice formation
-      !!              spread the salt flux vertically following a power
-      !!              power law distribution after
-      !!              Nguyen, A. T., D. Menemenlis, and R. Kwok (2009),
-      !!              Improved modeling of the Arctic halocline with a subgrid-scale brine
-      !!                 rejection parameterization, JGR
-      !!
-      !! ** Action  : tsa(:,:,:,jp_sal)
-      !!----------------------------------------------------------------------
-      INTEGER,  INTENT(IN) :: kt
-      REAL(wp), INTENT(IN) :: zfact
-
-      REAL(wp) :: wt
-      REAL(wp), DIMENSION(jpk) :: z_power, tend_col
-      real(wp), DIMENSION(jpi,jpj,jpk) :: spp_tend_3d
-      real(wp), DIMENSION(jpi,jpj)     :: spp_thick
-
-      INTEGER :: ji, jj, jk
-      INTEGER :: kl_salt_plume ! Index of last layer within the salt plume
-
-      ! Convert density criterion to an equivalent N2 criterion
-      IF (iom_use("spp_tend")) THEN
-         spp_tend_3d(:,:,:) = 0.
-      ENDIF
-      DO jj = 2, jpj
-         DO ji = fs_2, fs_jpim1
-            ! Only distribute salt flux if flux is positive in this or the previous time step. Note that
-            ! this could lead to a freshening at depth if sfx + sfx_b < 0., but is necessary to ensure
-            ! symmetry in the leap frog timestepping
-
-            IF (sfx(ji,jj) > 0. .or. sfx_b(ji,jj) > 0.) THEN
-               CALL spp_coeffs_col( ji, jj, kl_salt_plume, z_power )
-               wt = (zfact*r1_rau0)*(sfx_b(ji,jj)+sfx(ji,jj))
-
-               ! Distribute tendencies in the vertical
-               DO jk = 1,kl_salt_plume
-                  tend_col(jk) = wt*z_power(jk)
-                  tsa(ji,jj,jk,jp_sal) = tsa(ji,jj,jk,jp_sal) + tend_col(jk)/e3t_n(ji,jj,jk)
-               END DO
-
-               IF (iom_use("spp_tend")) THEN
-                  spp_tend_3d(ji,jj,:) = tend_col(:)
-               ENDIF
-            ENDIF
-         END DO
-      END DO
-
-      CALL iom_put("spp_tend" , spp_tend_3d)
-
-   END SUBROUTINE tra_spp
 
    SUBROUTINE sbc_spp_div( phdivn )
       !!----------------------------------------------------------------------
