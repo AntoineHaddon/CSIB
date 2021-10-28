@@ -1,10 +1,10 @@
-MODULE sshwzv   
+MODULE sshwzv
    !!==============================================================================
    !!                       ***  MODULE  sshwzv  ***
    !! Ocean dynamics : sea surface height and vertical velocity
    !!==============================================================================
    !! History :  3.1  !  2009-02  (G. Madec, M. Leclair)  Original code
-   !!            3.3  !  2010-04  (M. Leclair, G. Madec)  modified LF-RA 
+   !!            3.3  !  2010-04  (M. Leclair, G. Madec)  modified LF-RA
    !!             -   !  2010-05  (K. Mogensen, A. Weaver, M. Martin, D. Lea) Assimilation interface
    !!             -   !  2010-09  (D.Storkey and E.O'Dea) bug fixes for BDY module
    !!            3.3  !  2011-10  (M. Leclair) split former ssh_wzv routine and remove all vvl related work
@@ -17,7 +17,7 @@ MODULE sshwzv
    !!   wzv           : compute now vertical velocity
    !!----------------------------------------------------------------------
    USE oce            ! ocean dynamics and tracers variables
-   USE dom_oce        ! ocean space and time domain variables 
+   USE dom_oce        ! ocean space and time domain variables
    USE sbc_oce        ! surface boundary condition: ocean
    USE domvvl         ! Variable volume
    USE divhor         ! horizontal divergence
@@ -28,7 +28,7 @@ MODULE sshwzv
    USE agrif_oce_interp
 #endif
    !
-   USE iom 
+   USE iom
    USE in_out_manager ! I/O manager
    USE restart        ! only for lrst_oce
    USE prtctl         ! Print control
@@ -57,7 +57,7 @@ CONTAINS
    SUBROUTINE ssh_nxt( kt )
       !!----------------------------------------------------------------------
       !!                ***  ROUTINE ssh_nxt  ***
-      !!                   
+      !!
       !! ** Purpose :   compute the after ssh (ssha)
       !!
       !! ** Method  : - Using the incompressibility hypothesis, the ssh increment
@@ -69,7 +69,7 @@ CONTAINS
       !! Reference  : Leclair, M., and G. Madec, 2009, Ocean Modelling.
       !!----------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt   ! time step
-      ! 
+      !
       INTEGER  ::   jk            ! dummy loop indice
       REAL(wp) ::   z2dt, zcoef   ! local scalars
       REAL(wp), DIMENSION(jpi,jpj) ::   zhdiv   ! 2D workspace
@@ -103,7 +103,7 @@ CONTAINS
       !                                                ! Sea surface elevation time stepping
       ! In time-split case we need a first guess of the ssh after (using the baroclinic timestep) in order to
       ! compute the vertical velocity which can be used to compute the non-linear terms of the momentum equations.
-      ! 
+      !
       ssha(:,:) = (  sshb(:,:) - z2dt * ( zcoef * ( emp_b(:,:) + emp(:,:) ) + zhdiv(:,:) )  ) * ssmask(:,:)
       !
 #if defined key_agrif
@@ -126,15 +126,15 @@ CONTAINS
       !
    END SUBROUTINE ssh_nxt
 
-   
+
    SUBROUTINE wzv( kt )
       !!----------------------------------------------------------------------
       !!                ***  ROUTINE wzv  ***
-      !!                   
+      !!
       !! ** Purpose :   compute the now vertical velocity
       !!
-      !! ** Method  : - Using the incompressibility hypothesis, the vertical 
-      !!      velocity is computed by integrating the horizontal divergence  
+      !! ** Method  : - Using the incompressibility hypothesis, the vertical
+      !!      velocity is computed by integrating the horizontal divergence
       !!      from the bottom to the surface minus the scale factor evolution.
       !!        The boundary conditions are w=0 at the bottom (no flux) and.
       !!
@@ -165,7 +165,7 @@ CONTAINS
       IF( neuler == 0 .AND. kt == nit000 )   z1_2dt = 1. / rdt
       !
       IF( ln_vvl_ztilde .OR. ln_vvl_layer ) THEN      ! z_tilde and layer cases
-         ALLOCATE( zhdiv(jpi,jpj,jpk) ) 
+         ALLOCATE( zhdiv(jpi,jpj,jpk) )
          !
          DO jk = 1, jpkm1
             ! horizontal divergence of thickness diffusion transport ( velocity multiplied by e3t)
@@ -185,7 +185,7 @@ CONTAINS
                &                         + z1_2dt * ( e3t_a(:,:,jk) - e3t_b(:,:,jk) )     ) * tmask(:,:,jk)
          END DO
          !          IF( ln_vvl_layer ) wn(:,:,:) = 0.e0
-         DEALLOCATE( zhdiv ) 
+         DEALLOCATE( zhdiv )
       ELSE   ! z_star and linear free surface cases
          DO jk = jpkm1, 1, -1                       ! integrate from the bottom the hor. divergence
             ! computation of w
@@ -200,14 +200,14 @@ CONTAINS
          END DO
       ENDIF
       !
-#if defined key_agrif 
-      IF( .NOT. AGRIF_Root() ) THEN 
-         IF ( l_Eastedge )  wn(nlci-1 , :     ,:) = 0.e0      ! east 
-         IF ( l_Westedge )  wn(2      , :     ,:) = 0.e0      ! west 
-         IF ( l_Northedge ) wn(:      ,nlcj-1 ,:) = 0.e0      ! north 
-         IF ( l_Southedge ) wn(:      ,2      ,:) = 0.e0      ! south 
-      ENDIF 
-#endif 
+#if defined key_agrif
+      IF( .NOT. AGRIF_Root() ) THEN
+         IF ( l_Eastedge )  wn(nlci-1 , :     ,:) = 0.e0      ! east
+         IF ( l_Westedge )  wn(2      , :     ,:) = 0.e0      ! west
+         IF ( l_Northedge ) wn(:      ,nlcj-1 ,:) = 0.e0      ! north
+         IF ( l_Southedge ) wn(:      ,2      ,:) = 0.e0      ! south
+      ENDIF
+#endif
       !
       IF( ln_timing )   CALL timing_stop('wzv')
       !
@@ -218,9 +218,9 @@ CONTAINS
       !!----------------------------------------------------------------------
       !!                    ***  ROUTINE ssh_nxt  ***
       !!
-      !! ** Purpose :   achieve the sea surface  height time stepping by 
+      !! ** Purpose :   achieve the sea surface  height time stepping by
       !!              applying Asselin time filter and swapping the arrays
-      !!              ssha  already computed in ssh_nxt  
+      !!              ssha  already computed in ssh_nxt
       !!
       !! ** Method  : - apply Asselin time fiter to now ssh (excluding the forcing
       !!              from the filter, see Leclair and Madec 2010) and swap :
@@ -255,6 +255,9 @@ CONTAINS
          IF( .NOT.ln_linssh ) THEN                          ! before <-- with forcing removed
             zcoef = atfp * rdt * r1_rau0
             sshb(:,:) = sshb(:,:) - zcoef * (     emp_b(:,:) - emp   (:,:)   &
+#if defined key_si3
+               &                             + fmmflx_b(:,:) - fmmflx(:,:)   &
+#endif
                &                             -    rnf_b(:,:) + rnf   (:,:)   &
                &                             + fwfisf_b(:,:) - fwfisf(:,:)   ) * ssmask(:,:)
          ENDIF
@@ -270,17 +273,17 @@ CONTAINS
    SUBROUTINE wAimp( kt )
       !!----------------------------------------------------------------------
       !!                ***  ROUTINE wAimp  ***
-      !!                   
+      !!
       !! ** Purpose :   compute the Courant number and partition vertical velocity
       !!                if a proportion needs to be treated implicitly
       !!
-      !! ** Method  : - 
+      !! ** Method  : -
       !!
       !! ** action  :   wn      : now vertical velocity (to be handled explicitly)
       !!            :   wi      : now vertical velocity (for implicit treatment)
       !!
       !! Reference  : Shchepetkin, A. F. (2015): An adaptive, Courant-number-dependent
-      !!              implicit scheme for vertical advection in oceanic modeling. 
+      !!              implicit scheme for vertical advection in oceanic modeling.
       !!              Ocean Modelling, 91, 38-69.
       !!----------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt   ! time step
@@ -309,7 +312,7 @@ CONTAINS
                DO ji = 2, fs_jpim1   ! vector opt.
                   z1_e3t = 1._wp / e3t_n(ji,jj,jk)
                   ! 2*rdt and not r2dt (for restartability)
-                  Cu_adv(ji,jj,jk) = 2._wp * rdt * ( ( MAX( wn(ji,jj,jk) , 0._wp ) - MIN( wn(ji,jj,jk+1) , 0._wp ) )                       &  
+                  Cu_adv(ji,jj,jk) = 2._wp * rdt * ( ( MAX( wn(ji,jj,jk) , 0._wp ) - MIN( wn(ji,jj,jk+1) , 0._wp ) )                       &
                      &                             + ( MAX( e2u(ji  ,jj)*e3u_n(ji  ,jj,jk)*un(ji  ,jj,jk) + un_td(ji  ,jj,jk), 0._wp ) -   &
                      &                                 MIN( e2u(ji-1,jj)*e3u_n(ji-1,jj,jk)*un(ji-1,jj,jk) + un_td(ji-1,jj,jk), 0._wp ) )   &
                      &                               * r1_e1e2t(ji,jj)                                                                     &
@@ -326,7 +329,7 @@ CONTAINS
                DO ji = 2, fs_jpim1   ! vector opt.
                   z1_e3t = 1._wp / e3t_n(ji,jj,jk)
                   ! 2*rdt and not r2dt (for restartability)
-                  Cu_adv(ji,jj,jk) = 2._wp * rdt * ( ( MAX( wn(ji,jj,jk) , 0._wp ) - MIN( wn(ji,jj,jk+1) , 0._wp ) )   & 
+                  Cu_adv(ji,jj,jk) = 2._wp * rdt * ( ( MAX( wn(ji,jj,jk) , 0._wp ) - MIN( wn(ji,jj,jk+1) , 0._wp ) )   &
                      &                             + ( MAX( e2u(ji  ,jj)*e3u_n(ji  ,jj,jk)*un(ji  ,jj,jk), 0._wp ) -   &
                      &                                 MIN( e2u(ji-1,jj)*e3u_n(ji-1,jj,jk)*un(ji-1,jj,jk), 0._wp ) )   &
                      &                               * r1_e1e2t(ji,jj)                                                 &
@@ -349,11 +352,11 @@ CONTAINS
                   !
                   zCu = MAX( Cu_adv(ji,jj,jk) , Cu_adv(ji,jj,jk-1) )
 ! alt:
-!                  IF ( wn(ji,jj,jk) > 0._wp ) THEN 
-!                     zCu =  Cu_adv(ji,jj,jk) 
+!                  IF ( wn(ji,jj,jk) > 0._wp ) THEN
+!                     zCu =  Cu_adv(ji,jj,jk)
 !                  ELSE
 !                     zCu =  Cu_adv(ji,jj,jk-1)
-!                  ENDIF 
+!                  ENDIF
                   !
                   IF( zCu <= Cu_min ) THEN              !<-- Fully explicit
                      zcff = 0._wp
@@ -372,13 +375,13 @@ CONTAINS
                END DO
             END DO
          END DO
-         Cu_adv(:,:,1) = 0._wp 
+         Cu_adv(:,:,1) = 0._wp
       ELSE
          ! Fully explicit everywhere
          Cu_adv(:,:,:) = 0._wp                          ! Reuse array to output coefficient below and in stp_ctl
          wi    (:,:,:) = 0._wp
       ENDIF
-      CALL iom_put("wimp",wi) 
+      CALL iom_put("wimp",wi)
       CALL iom_put("wi_cff",Cu_adv)
       CALL iom_put("wexp",wn)
       !
