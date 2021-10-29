@@ -236,6 +236,12 @@
                            !  =1:n number of iterations of land/sea mask application for input fields (fill land/sea mask filename field)
    ln_minsal   = .false.   !  Constrain SSS not dropping below 5 psu
    rn_minsal   = 5         !  Min SSS in psu
+   ln_vertspp  = .false.   !  If true, turn on the salt plume parameterization (Nguyen et al. 2009, JGR) for brine rejection
+   ln_spp_c_grad = .true.  !    If true, the density criterion is based on the local gradient, otherwise it represents
+                           !      a density change from the surface of the ocean
+   rn_spp_rho_c = 0.02     !    The density criterion used to determine the depth of the salt plume
+   nn_power     = 5        !    A shape parameter for the power law profile. 0 = uniform, 5 = Nguyen et al. 2009,
+   rn_spp_z_max = 100.     !  Maximum depth of the salt plume
 /
 !-----------------------------------------------------------------------
 &namsbc_flx    !   surface boundary condition : flux formulation        (ln_flx =T)
