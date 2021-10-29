@@ -173,7 +173,7 @@ echo "#################### Start NEMO pre-processing #################"
   # =====================
   # Set Inherited params
   # =====================
-  # Translate switches into 0/1 booleans - NOTE THAT THIS WILL SET TO 0 IF UNDEFINED
+  # Translate switches into 0/1 booleans
   ToF nemo_from_rest
   ToF nemo_carbon
   ToF nemo_trans_co2
