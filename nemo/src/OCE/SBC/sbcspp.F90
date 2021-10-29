@@ -25,7 +25,6 @@ MODULE sbcspp
    IMPLICIT NONE
    PRIVATE
 
-   PUBLIC tra_spp
    PUBLIC sbc_spp_div
 
    LOGICAL,  PUBLIC :: ln_vertspp = .false.   ! If true, use the salt plume parameterization
