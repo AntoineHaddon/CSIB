@@ -3,6 +3,25 @@
 # Revised NEMO history file pattens to be consistent with those in AGCM
 #                                                    - Jan/2018, D.Yang
 #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+#
+# Summary of tasks:
+#   - save history files
+#   - create restart archive
+#       - includes the main netcdf files and many other extra files added for 
+#         logging purposes
+#
+  # ======================================================
+  # Make sure we have necessary variables from parent code
+  # ======================================================
+  is_defined $nemo_hist_file_suffix_list_save   || bail "nemo_postlude: nemo_hist_file_suffix_list_save must be defined!"
+  is_defined $nemo_hist_file_freq_list_save     || bail "nemo_postlude: nemo_hist_file_freq_list_save must be defined!"
+  is_defined $runid                             || bail "nemo_postlude: runid must be defined!"
+  is_defined $chunk_start_year                  || bail "nemo_postlude: chunk_start_year must be defined!"
+  is_defined $chunk_start_month                 || bail "nemo_postlude: chunk_start_month must be defined!"
+  is_defined $chunk_stop_year                   || bail "nemo_postlude: chunk_stop_year must be defined!"
+  is_defined $chunk_stop_month                  || bail "nemo_postlude: chunk_stop_month must be defined!"
+  is_defined $chunk_stop_day                    || bail "nemo_postlude: chunk_stop_day must be definied!"
+  is_defined $uxxx                              || bail "nemo_postlude: uxxx must be defined!"
 
   #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
   #=#=#=#     Post processing     #=#=#=#
@@ -10,9 +29,6 @@
 
   echo " "
   echo "#################### NEMO post processing #################"
-
-  # bail_prefix is used in the error exit function bail (defined in nemo_prelude)
-  bail_prefix="nemo postlude"
 
   # The job name
   cn_exp=$runid
@@ -52,11 +68,7 @@
   [ -s input_ice_restart_file_names ] && cat input_ice_restart_file_names | xargs rm -f
   [ -s input_trc_restart_file_names ] && cat input_trc_restart_file_names | xargs rm -f
 
-  ######## Save history and restart files #######
-
   # Should we save the NEMO restart to DATAPATH
-  nemo_save_rs=${nemo_save_rs:-on}
-  ToF nemo_save_rs
 
     # The file saved_history_file_names will contain a list of saved files to be archived.
     # Since "save" will blindly transpose all file name characters to lower case before
@@ -68,26 +80,24 @@
     rm -f saved_history_FILE_NAMES
     touch saved_history_FILE_NAMES
 
-    # History file suffix and frequency lists
-    nemo_hist_file_suffix_list_save=${nemo_hist_file_suffix_list_save}
-    nemo_hist_file_freq_list_save=${nemo_hist_file_freq_list_save}
-
+    # Translate history file suffix/freq lists into arrays and compare lengths
     nemo_hist_file_suffix_list_array_save=($nemo_hist_file_suffix_list_save)
     nemo_hist_file_freq_list_array_save=($nemo_hist_file_freq_list_save)
-
-    # Check that the lists are the same length. Use this number to loop below..
     n_suffix=${#nemo_hist_file_suffix_list_array_save[@]}
     n_freq=${#nemo_hist_file_freq_list_array_save[@]}
     if [ "$n_suffix" -ne "$n_freq" ]; then
       bail "ERROR: nemo_hist_file_suffix_list_array_save and nemo_hist_file_freq_list_array_save MUST have the same number of elements."
     fi
 
-    # Collect history files into directories and save
+    # ====================
+    # Save History Files
+    # ====================
     nemo_save_hist=${nemo_save_hist:-on}
     ToF nemo_save_hist
 
+    nemo_start_date=$(printf "%04d%02d%02d" $chunk_start_year $chunk_start_month 1)
+    nemo_stop_date=$(printf "%04d%02d%02d" $chunk_stop_year $chunk_stop_month $chunk_stop_day)
     if [ $nemo_save_hist -eq 1 ] ; then
-      # Define the list of history files to rebuild
       for i in $(seq 0 $(($n_suffix-1))); do
           sfx=${nemo_hist_file_suffix_list_array_save[$i]}
           freq=${nemo_hist_file_freq_list_array_save[$i]}
@@ -99,11 +109,13 @@
              rm -rf $pfx
              mkdir $pfx
              mv ${pfx}_[0-9]*.nc $pfx
-             ncsave=${cn_exp}_${nemo_start_year}_m${nemo_start_mon}_${freq}_${sfx}
+             date_string=$(printf "%04d_m%02d" $chunk_start_year $chunk_start_month)
+             ncsave=${cn_exp}_${date_string}_${freq}_${sfx}
              save $pfx ${uxxx}_$ncsave && echo "${uxxx}_$ncsave" >> saved_history_FILE_NAMES
           elif [ -s "${pfx}.nc" ]; then
              echo "found ${pfx}.nc"
-             ncsave=${cn_exp}_${nemo_start_year}_m${nemo_start_mon}_${freq}_${sfx}
+             date_string=$(printf "%04d_m%02d" $chunk_start_year $chunk_start_month)
+             ncsave=${cn_exp}_${date_string}_${freq}_${sfx}
              save ${pfx}.nc ${uxxx}_${ncsave}.nc && echo "${uxxx}_${ncsave}.nc" >> saved_history_FILE_NAMES
           fi
        done
@@ -115,21 +127,27 @@
          rm -rf $pfx
          mkdir $pfx
          mv $pfx*.nc $pfx
-         ncsave=${cn_exp}_${nemo_start_year}_m${nemo_start_mon}_mesh_mask
+         date_string=$(printf "%04d_m%02d" $chunk_start_year $chunk_start_month)
+         ncsave=${cn_exp}_${date_string}_mesh_mask
          save $pfx ${uxxx}_$ncsave && echo "${uxxx}_$ncsave" >> saved_history_FILE_NAMES
       fi
     fi
 
     if [ -s saved_history_FILE_NAMES ]; then
-      # Once files have been rebuilt and saved to DATAPATH create a file that is
+      # Once files have saved to DATAPATH create a file that is
       # equivalent to the file saved_history_FILE_NAMES except that all file names
       # contained therein are lower case.
       rm -f saved_history_file_names
       cat saved_history_FILE_NAMES | tr '[A-Z]' '[a-z]' > saved_history_file_names
     fi
 
-    #=#=#=# Save the current restart files.
+    # ================================
+    # Save the current restart files.
+    # ================================
+    nemo_save_rs=${nemo_save_rs:-on}
+    ToF nemo_save_rs
 
+    # MAIN RESTART FILES
     if [ $nemo_save_rs -eq 1 ]; then
         # Collect up the current restarts and save them to DATAPATH
         rm -rf NEXT_RESTART_ARC
@@ -138,6 +156,7 @@
         # Identify the last NEMO timestep, which will be in the rs names
         end_step=$(get_namelist_var nn_itend namelist | awk '{printf "%8.8d",$1}')
 
+        # Look for ocean restart files matching the pattern below
         eval ofnpatt=${cn_exp}_${end_step}_${cn_ocerst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
         found_rs=`(ls -1 $ofnpatt || : ) 2>/dev/null`
         if [ -z "$found_rs" ]; then
@@ -148,7 +167,7 @@
         fi
 
         if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
-          # Deal with Pisces restarts
+          # Look for pisces restart files matching the pattern below
           eval pfnpatt=${cn_exp}_${end_step}_${cn_trcrst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
           found_rs=`(ls -1 $pfnpatt || : ) 2>/dev/null`
           if [ -z "$found_rs" ]; then
@@ -160,7 +179,7 @@
         fi
 
       if [ $with_ice -eq 1 ]; then
-         # Anything but CICE
+         # Look for ice restart files
          eval ifnpatt=${cn_exp}_${end_step}_${cn_icerst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
          found_rs=`(ls -1 $ifnpatt || : ) 2>/dev/null`
          if [ -z "$found_rs" ]; then
@@ -171,33 +190,16 @@
          fi
       fi
 
-      # tarlist contains a list of additional files to add to the restart archive
+      # ADD ADDITIONAL FILES
       tarlist=''
 
-      # Create copies of the namelists used and include them in the tar file
+      # namelist files
       cp -f namelist rs_namelist || :
       [ -s rs_namelist ] && tarlist="$tarlist rs_namelist"
-      cp -f namelist_top    rs_namelist_top    || :
-      [ -s rs_namelist_top ]     && tarlist="$tarlist rs_namelist_top"
-
-      case $nn_ice in
-        0) ;; # no ice boundary condition
-        1) ;; # use observed ice cover
-        2) # LIM2 ice-model
-           cp -f namelist_ice rs_namelist_ice || :
-           [ -s rs_namelist_ice ] && tarlist="$tarlist rs_namelist_ice"
-           ;;
-        3) # LIM3 ice-model
-           cp -f namelist_ice rs_namelist_ice || :
-           [ -s rs_namelist_ice ] && tarlist="$tarlist rs_namelist_ice"
-           ;;
-        4) # CICE ice-model
-           cp -f ice_in rs_ice_in || :
-           [ -s rs_ice_in ] && tarlist="$tarlist rs_ice_in"
-           ;;
-        *) bail "Invalid value for nn_ice = $nn_ice" ;;
-      esac
-
+      cp -f namelist_top rs_namelist_top || :
+      [ -s rs_namelist_top ] && tarlist="$tarlist rs_namelist_top"
+      cp -f namelist_ice rs_namelist_ice || :
+      [ -s rs_namelist_ice ] && tarlist="$tarlist rs_namelist_ice"
       if [ $nemo_carbon -eq 1 ]; then
         cp -f namelist_pisces rs_namelist_pisces || :
         [ -s rs_namelist_pisces ]  && tarlist="$tarlist rs_namelist_pisces"
@@ -211,7 +213,8 @@
         fi
       fi
 
-      # Save a copy of the executable that was just run to the restart archive
+      # current executable
+      rm -f rs_${nemo_exec}
       cp -f ${nemo_exec} rs_${nemo_exec} || :
       [ -s rs_${nemo_exec} ] && tarlist="$tarlist rs_${nemo_exec}"
 
@@ -221,41 +224,38 @@
         [ -s rs_EMPave.dat ] && tarlist="$tarlist rs_EMPave.dat"
       fi
 
-      # Add a file containing the time step
+      # time step file
       cp -f time.step rs_time.step || :
       [ -s rs_time.step ] && tarlist="$tarlist rs_time.step"
 
-      # Add ocean output and timing info
+      # ocean output file
       cp -f ocean.output rs_ocean.output || :
       [ -s rs_ocean.output ] && tarlist="$tarlist rs_ocean.output"
 
+      # checksum file of ocean prognostic state (for bit identity checks)
       cp -f final.state rs_final.state || :
       [ -s rs_final.state ] && tarlist="$tarlist rs_final.state"
 
+      # ocean timing stats
       cp -f timing.output rs_timing.output || :
       [ -s rs_timing.output ] && tarlist="$tarlist rs_timing.output"
 
+      # list of history files that are saved (Needed?)
       cp -f saved_history_file_names rs_saved_history_file_names || :
       [ -s rs_saved_history_file_names ] && tarlist="$tarlist rs_saved_history_file_names"
 
+      # Access log for nemo? (Needed?)
       cp -f xnemo_access_log rs_xnemo_access_log || :
       [ -s rs_xnemo_access_log ] && tarlist="$tarlist rs_xnemo_access_log"
 
-      cp -f nemo_prelude rs_nemo_prelude || :
-      [ -s rs_nemo_prelude ] && tarlist="$tarlist rs_nemo_prelude"
-
-      cp -f nemo_postlude rs_nemo_postlude || :
-      [ -s rs_nemo_postlude ] && tarlist="$tarlist rs_nemo_postlude"
-
+      # the mesh mask file
       [ -s rs_mesh_mask.nc ] && tarlist="$tarlist rs_mesh_mask.nc"
 
+      # MOVE ADDITIONAL FILES INTO ARCHIVE
       mv -f $tarlist NEXT_RESTART_ARC || :
 
+      # SAVE
       if [ -n "$model_rs" ]; then
-        # Assume we are running from gcmrun
-        rs_out=${model_rs}nemors
-      elif [ -n "$model" ]; then
-        # Assume we are running from gcmjcl
         rs_out=${model_rs}nemors
       else
         rs_out=${uxxx}_${cn_exp}_${nemo_stop_date}_restart.tar
