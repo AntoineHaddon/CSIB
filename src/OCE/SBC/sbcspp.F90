@@ -25,7 +25,6 @@ MODULE sbcspp
    IMPLICIT NONE
    PRIVATE
 
-   PUBLIC tra_spp
    PUBLIC sbc_spp_div
 
    LOGICAL,  PUBLIC :: ln_vertspp = .false.   ! If true, use the salt plume parameterization
@@ -34,6 +33,7 @@ MODULE sbcspp
    REAL(wp), PUBLIC :: rn_spp_rho_c = 0.02_wp ! Density criterion to determine mixed layer depth
    INTEGER , PUBLIC :: nn_power     = 5       ! Affects the shape of the power law. 0: uniform distribution
    REAL(wp), PUBLIC :: rn_spp_z_max = 100.   ! Maximum depth of the salt plume
+   REAL(wp), PUBLIC :: rn_spp_z_min = 10.   ! Maximum depth of the salt plume
 
 #  include "vectopt_loop_substitute.h90"
 
@@ -109,30 +109,36 @@ CONTAINS
       INTEGER, INTENT(  OUT) :: kl_salt_plume ! Index of last layer within the salt plume
       REAL   , DIMENSION(jpk), INTENT(  OUT) :: z_power       ! Weighting factor used to distribute flux
 
-      REAL(wp) :: density_criterion, h_salt_plume, n2_crit, z_crit
+      REAL(wp) :: rhoc, h_salt_plume, n2_crit, z_crit_min, z_crit_max
       REAL(wp) :: z_power_sum
 
-      INTEGER :: jk, ki_salt_plume
+      INTEGER :: jk, ki_salt_plume, ki_z_min, ki_z_max
 
-      z_crit = MIN(rn_spp_z_max,gdepw_n(ji,jj,mbkt(ji,jj)))
-      ! Determine the depth of the salt plume based on either a local gradient density criterion
-      ! or density difference from the surface
+      ! Set a maximum bound to the depth of the salt plume
+      z_crit_max = MIN(rn_spp_z_max, gdepw_n(ji,jj,mbkt(ji,jj)))
+      ! Set a minimum bound on the depth of the salt plume
+      z_crit_min = MIN(rn_spp_z_min, gdepw_n(ji,jj,mbkt(ji,jj)))
 
       n2_crit = grav*rn_spp_rho_c*r1_rau0
+      ki_salt_plume = 2
       IF (ln_spp_c_grad) THEN
-         DO jk = 2,jpk-1
-            IF ( rn2b(ji,jj,jk) >= n2_crit .or. gdepw_n(ji,jj,jk) >= z_crit) THEN
+         DO jk=2,jpk
+            IF ( gdepw_n(ji,jj,jk) < z_crit_min ) THEN
+               CYCLE
+            ELSEIF ( rn2b(ji,jj,jk) >= n2_crit .or. gdepw_n(ji,jj,jk+1) >= z_crit_max ) THEN
                ki_salt_plume = jk
-               exit
+               EXIT
             ENDIF
          ENDDO
       ELSE
-         density_criterion = 0.
-         DO jk=2,jpk-1
-            density_criterion = density_criterion + MAX(rn2b(ji,jj,jk), 0.)*e3w_n(ji,jj,jk)
-            IF ( density_criterion >= n2_crit .or. gdepw_n(ji,jj,jk) >= z_crit ) THEN
+         rhoc = 0.
+         DO jk=2,jpk
+            rhoc = rhoc + MAX(rn2b(ji,jj,jk), 0.)*e3w_n(ji,jj,jk)
+            IF ( gdepw_n(ji,jj,jk) < z_crit_min ) THEN
+               CYCLE
+            ELSEIF ( rhoc >= n2_crit           .or. gdepw_n(ji,jj,jk+1) >= z_crit_max ) THEN
                ki_salt_plume = jk
-               exit
+               EXIT
             ENDIF
          ENDDO
       ENDIF
