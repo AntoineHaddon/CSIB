@@ -60,7 +60,8 @@ MODULE sbcmod
    USE timing         ! Timing
    USE wet_dry
    USE diurnal_bulk, ONLY:   ln_diurnal_only   ! diurnal SST diagnostic
-   USE sbcspp, ONLY : nn_power, rn_spp_rho_c, ln_vertspp, ln_spp_c_grad, rn_spp_z_max
+   USE sbcspp, ONLY : nn_power, rn_spp_rho_c, ln_vertspp, ln_spp_c_grad
+   USE sbcspp, ONLY : rn_spp_z_max, rn_spp_z_min
 
    IMPLICIT NONE
    PRIVATE
@@ -172,6 +173,7 @@ CONTAINS
             WRITE(numout,*) '               Shape parameter for vertical         nn_power      = ', nn_power
             WRITE(numout,*) '               Density criterion for salt plume     rn_spp_rho_c  = ', rn_spp_rho_c
             WRITE(numout,*) '               Maximum depth of the salt plume      rn_spp_z_max  = ', rn_spp_z_max
+            WRITE(numout,*) '               Minimum depth of the salt plume      rn_spp_z_min  = ', rn_spp_z_min
          ENDIF
       ENDIF
       !
