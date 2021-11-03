@@ -9,7 +9,6 @@ set -e
 #                     srcpath=SRCPATH \
 #                     nemo_arch=NEMO_ARCH_IDENTIFIER \
 #                     util_arch=MAKE_TEMPLATE \
-#                     comp_env=ENVIRONMENT_FILE \
 #                     [refcfg=cfgdir] \
 #                     [add_key=keys] \
 #                     [del_key=keys]
@@ -43,7 +42,6 @@ set -e
 #                           of the nemo executable
 #   util_arch=name      ...name is the make template file to be used in the compilation of nemo diagnostic/rtd/utility
 #                           tools
-#   comp_env=name       ...name is the file containing any necessary environment considerations for the compilation
 #   add_key=keys        ...A whitespace separated list of cpp preprocessor keys to be added
 #                           for this complie. If there is more than one then keys will need
 #                           to be quoted. (e.g. add_keys="key_mpp_mpi key_vectopt_loop")
@@ -53,7 +51,7 @@ set -e
 #
 # Examples:
 #   build-nemo exec=nemo_v3.4_orca2_lim_exe cfg=ORCA2_LIM srcpath=/path/to/code/ \
-#              nemo_arch=intel.eccc-xc50 util_arch=/path/to/make-template comp_env=/path/to/env/file
+#              nemo_arch=intel.eccc-xc50 util_arch=/path/to/make-template 
 #
 #     -- Build an ORCA2_LIM configuration that uses the nemo code define in srcpath (with
 #        a dir structure the same as the default), using the intel.eccc-xc50 archfile.
@@ -136,8 +134,7 @@ for arg in "$@"; do
                 cfg)        nemo_config="$val" ;;           # name of subdir in which config lives
                 refcfg)     nemo_ref_config="$val" ;;       # name of subdir in which ref config lives
                 nemo_arch)  nemo_arch_identifier="$val" ;;  # makenemo identifier for file with arch specific make defs
-                util_arch)  nemo_util_arch_file="$val" ;;   # filename of the make template for nemo utilities
-                comp_env)   compilation_env_file="$val";;   # filename containing the compilation environment
+                xios_comp_np) xios_comp_np="$val";;         # Number of processes to use for xios compilation
                 add_key)    nemo_add_cpp_keys="$val" ;;     # a list of cpp keys to add before compiling nemo
                 del_key)    nemo_del_cpp_keys="$val" ;;     # a list of cpp keys to remove before compiling nemo
                 xios_arch)  xios_arch="$val"  ;;        # xios arch name
@@ -164,8 +161,6 @@ fi
 [[ -z "$nemo_exec" ]]               && bail "exec must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
 [[ -z "$nemo_config" ]]             && bail "cfg must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
 [[ -z "$nemo_arch_identifier" ]]    && bail "nemo_arch must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
-[[ -z "$nemo_util_arch_file" ]]     && bail "util_arch must be given at the command line! See ${THIS_SCRIPT_PATH} -h"
-[[ -z "$compilation_env_file" ]]    && bail "comp_env must be given at the command line! See ${THIS_SCRIPT_PATH} -h"
 
 # make sure the source directory exists
 [[ -d "$nemo_source_path" ]] || bail "The given srcpath ---> $nemo_source_path <--- doesn't exist!"
@@ -340,27 +335,6 @@ for f in $files_to_reset; do
     fi
 done
 
-#-------------------------------
-# compile exec's using makefiles
-#-------------------------------
-nemo_util_arch_file_basename=$(basename ${nemo_util_arch_file})
-for build_dir in $make_build_dirs; do
-    echo ""
-    echo "=============================================="
-    echo "    Compiling executables in $build_dir       "
-    echo "=============================================="
-    [[ -n "$build_dir" ]] && cd $build_dir
-
-    # source environment
-    [[ -n "$build_dir" ]] && source comp_env ||
-        bail "Failed to source the compilation environment in ${build_dir}! Are the modules available?"
-
-    # compile
-    if (( clean_compile == 1 )); then
-        make clean
-    fi
-    [[ -n "$build_dir" ]] && make
-done
 
 #---------------------------------
 # confirm that compilation worked
