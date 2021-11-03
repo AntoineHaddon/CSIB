@@ -10,17 +10,8 @@ cfg/
 config.fcm
 done/
 etc/
-extern/blitz/
-extern/boost/
-extern/netcdf4
-extern/rapidxml/
 fcm_env.ksh
 fcm_env.sh
 flags/
 inc/
 ppsrc/
-tools/FCM/
-tools/archive/FCM.tar
-tools/archive/blitz.tar
-tools/archive/boost.tar
-tools/archive/rapidxml.tar
