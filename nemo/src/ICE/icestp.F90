@@ -7,7 +7,7 @@ MODULE icestp
    !! The sea ice model SI3 (Sea Ice modelling Integrated Initiative),
    !!                        aka Sea Ice cube for its nickname
    !!
-   !!    is originally based on LIM3, developed in Louvain-la-Neuve by: 
+   !!    is originally based on LIM3, developed in Louvain-la-Neuve by:
    !!       * Martin Vancoppenolle (UCL-ASTR, Belgium)
    !!       * Sylvain Bouillon (UCL-ASTR, Belgium)
    !!       * Miguel Angel Morales Maqueda (NOC-L, UK)
@@ -139,7 +139,7 @@ CONTAINS
          !                              ! nbstep_ice ranges from 1 to the nb of child ocean steps inside one parent ice step
          IF( .NOT. Agrif_Root() )       nbstep_ice = MOD( nbstep_ice, Agrif_irhot() * Agrif_Parent(nn_fsbc) / nn_fsbc ) + 1
          !                              ! these calls must remain here for restartability purposes
-                                        CALL agrif_interp_ice( 'T' ) 
+                                        CALL agrif_interp_ice( 'T' )
                                         CALL agrif_interp_ice( 'U' )
                                         CALL agrif_interp_ice( 'V' )
 #endif
@@ -151,12 +151,12 @@ CONTAINS
          ! It provides the following fields used in sea ice model:
          !    utau_ice, vtau_ice = surface ice stress [N/m2]
          !------------------------------------------------!
-                                        CALL ice_sbc_tau( kt, ksbc, utau_ice, vtau_ice )          
+                                        CALL ice_sbc_tau( kt, ksbc, utau_ice, vtau_ice )
          !-------------------------------------!
          ! --- ice dynamics and advection  --- !
          !-------------------------------------!
                                         CALL diag_set0                ! set diag of mass, heat and salt fluxes to 0
-                                        CALL ice_rst_opn( kt )        ! Open Ice restart file (if necessary) 
+                                        CALL ice_rst_opn( kt )        ! Open Ice restart file (if necessary)
          !
          IF( ln_icedyn .AND. .NOT.lk_c1d )   &
             &                           CALL ice_dyn( kt )            ! -- Ice dynamics
@@ -166,7 +166,7 @@ CONTAINS
          !
          !                          !==  previous lead fraction and ice volume for flux calculations
                                         CALL ice_var_glo2eqv          ! h_i and h_s for ice albedo calculation
-                                        CALL ice_var_agg(1)           ! at_i for coupling 
+                                        CALL ice_var_agg(1)           ! at_i for coupling
                                         CALL store_fields             ! Store now ice values
          !
          !------------------------------------------------------!
@@ -186,7 +186,7 @@ CONTAINS
          !----------------------------!
          ! --- ice thermodynamics --- !
          !----------------------------!
-         IF( ln_icethd )                CALL ice_thd( kt )            ! -- Ice thermodynamics      
+         IF( ln_icethd )                CALL ice_thd( kt )            ! -- Ice thermodynamics
          !
                                         CALL ice_cor( kt , 2 )        ! -- Corrections
          !
@@ -195,11 +195,11 @@ CONTAINS
          !
                                         CALL ice_update_flx( kt )     ! -- Update ocean surface mass, heat and salt fluxes
          !
-         IF( ln_icediahsb )             CALL ice_dia( kt )            ! -- Diagnostics outputs 
+         IF( ln_icediahsb )             CALL ice_dia( kt )            ! -- Diagnostics outputs
          !
-                                        CALL ice_wri( kt )            ! -- Ice outputs 
+                                        CALL ice_wri( kt )            ! -- Ice outputs
          !
-         IF( lrst_ice )                 CALL ice_rst_write( kt )      ! -- Ice restart file 
+         IF( lrst_ice )                 CALL ice_rst_write( kt )      ! -- Ice restart file
          !
          IF( ln_icectl )                CALL ice_ctl( kt )            ! -- Control checks
          !
@@ -225,10 +225,10 @@ CONTAINS
       INTEGER :: jl, ierr
       !!----------------------------------------------------------------------
       IF(lwp) WRITE(numout,*)
-      IF(lwp) WRITE(numout,*) 'Sea Ice Model: SI3 (Sea Ice modelling Integrated Initiative)' 
+      IF(lwp) WRITE(numout,*) 'Sea Ice Model: SI3 (Sea Ice modelling Integrated Initiative)'
       IF(lwp) WRITE(numout,*) '~~~~~~~~~~~~~'
       IF(lwp) WRITE(numout,*)
-      IF(lwp) WRITE(numout,*) 'ice_init: Arrays allocation & Initialization of all routines & init state' 
+      IF(lwp) WRITE(numout,*) 'ice_init: Arrays allocation & Initialization of all routines & init state'
       IF(lwp) WRITE(numout,*) '~~~~~~~~'
       !
       !                                ! Open the reference and configuration namelist files and namelist output file
@@ -240,7 +240,7 @@ CONTAINS
       !
       !                                ! Allocate the ice arrays (sbc_ice already allocated in sbc_init)
       ierr =        ice_alloc        ()      ! ice variables
-      ierr = ierr + sbc_ice_alloc    ()      ! surface boundary conditions 
+      ierr = ierr + sbc_ice_alloc    ()      ! surface boundary conditions
       ierr = ierr + ice1D_alloc      ()      ! thermodynamics
       !
       CALL mpp_sum( 'icestp', ierr )
@@ -319,7 +319,7 @@ CONTAINS
          WRITE(numout,*) '         virtual ITD param for jpl=1 (T) or not (F)     ln_virtual_itd = ', ln_virtual_itd
          WRITE(numout,*) '         Ice dynamics       (T) or not (F)                   ln_icedyn = ', ln_icedyn
          WRITE(numout,*) '         Ice thermodynamics (T) or not (F)                   ln_icethd = ', ln_icethd
-         WRITE(numout,*) '         maximum ice concentration for NH                              = ', rn_amax_n 
+         WRITE(numout,*) '         maximum ice concentration for NH                              = ', rn_amax_n
          WRITE(numout,*) '         maximum ice concentration for SH                              = ', rn_amax_s
       ENDIF
       !                                        !--- change max ice concentration for roundoff errors
@@ -376,6 +376,9 @@ CONTAINS
       at_i_b(:,:)  = SUM( a_i_b(:,:,:), dim=3 )
       u_ice_b(:,:) = u_ice(:,:)
       v_ice_b(:,:) = v_ice(:,:)
+
+      ! Mass fluxes at ocean-ice interface
+      fmmflx_b(:,:) = fmmflx(:,:)
       !
    END SUBROUTINE store_fields
 
@@ -401,10 +404,10 @@ CONTAINS
       wfx_bog(:,:) = 0._wp   ;   wfx_dyn(:,:) = 0._wp
       wfx_bom(:,:) = 0._wp   ;   wfx_sum(:,:) = 0._wp
       wfx_res(:,:) = 0._wp   ;   wfx_sub(:,:) = 0._wp
-      wfx_spr(:,:) = 0._wp   ;   wfx_lam(:,:) = 0._wp  
+      wfx_spr(:,:) = 0._wp   ;   wfx_lam(:,:) = 0._wp
       wfx_snw_dyn(:,:) = 0._wp ; wfx_snw_sum(:,:) = 0._wp
       wfx_snw_sub(:,:) = 0._wp ; wfx_ice_sub(:,:) = 0._wp
-      wfx_snw_sni(:,:) = 0._wp 
+      wfx_snw_sni(:,:) = 0._wp
       wfx_pnd(:,:) = 0._wp
 
       hfx_thd(:,:) = 0._wp   ;
@@ -433,7 +436,7 @@ CONTAINS
       diag_trp_vi(:,:) = 0._wp   ;   diag_trp_vs(:,:) = 0._wp
       diag_trp_ei(:,:) = 0._wp   ;   diag_trp_es(:,:) = 0._wp
       diag_trp_sv(:,:) = 0._wp
-      
+
    END SUBROUTINE diag_set0
 
 #else

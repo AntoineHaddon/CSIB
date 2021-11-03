@@ -20,11 +20,12 @@ MODULE divhor
    USE oce             ! ocean dynamics and tracers
    USE dom_oce         ! ocean space and time domain
    USE sbc_oce, ONLY : ln_rnf, ln_isf ! surface boundary condition: ocean
-   USE sbcrnf          ! river runoff 
+   USE sbcrnf          ! river runoff
    USE sbcisf          ! ice shelf
+   USE sbcspp,  ONLY : sbc_spp_div, ln_vertspp
    USE iscplhsb        ! ice sheet / ocean coupling
    USE iscplini        ! ice sheet / ocean coupling
-#if defined key_asminc   
+#if defined key_asminc
    USE asminc          ! Assimilation increment
 #endif
    !
@@ -42,7 +43,7 @@ MODULE divhor
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: divhor.F90 12737 2020-04-10 17:55:11Z jchanut $ 
+   !! $Id: divhor.F90 12737 2020-04-10 17:55:11Z jchanut $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -50,12 +51,12 @@ CONTAINS
    SUBROUTINE div_hor( kt )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE div_hor  ***
-      !!                    
+      !!
       !! ** Purpose :   compute the horizontal divergence at now time-step
       !!
       !! ** Method  :   the now divergence is computed as :
       !!         hdivn = 1/(e1e2t*e3t) ( di[e2u*e3u un] + dj[e1v*e3v vn] )
-      !!      and correct with runoff inflow (div_rnf) and cross land flow (div_cla) 
+      !!      and correct with runoff inflow (div_rnf) and cross land flow (div_cla)
       !!
       !! ** Action  : - update hdivn, the now horizontal divergence
       !!----------------------------------------------------------------------
@@ -82,8 +83,8 @@ CONTAINS
                   &               + e1v(ji,jj  ) * e3v_n(ji,jj  ,jk) * vn(ji,jj  ,jk)      &
                   &               - e1v(ji,jj-1) * e3v_n(ji,jj-1,jk) * vn(ji,jj-1,jk)  )   &
                   &            * r1_e1e2t(ji,jj) / e3t_n(ji,jj,jk)
-            END DO  
-         END DO  
+            END DO
+         END DO
       END DO
 #if defined key_agrif
       IF( .NOT. Agrif_Root() ) THEN
@@ -96,11 +97,13 @@ CONTAINS
       !
       IF( ln_rnf )   CALL sbc_rnf_div( hdivn )              !==  runoffs    ==!   (update hdivn field)
       !
-#if defined key_asminc 
+#if defined key_asminc
       IF( ln_sshinc .AND. ln_asmiau )   CALL ssh_asm_div( kt, hdivn )   !==  SSH assimilation  ==!   (update hdivn field)
-      ! 
+      !
 #endif
       IF( ln_isf )   CALL sbc_isf_div( hdivn )      !==  ice shelf  ==!   (update hdivn field)
+
+      IF( ln_vertspp ) CALL sbc_spp_div( hdivn )  !==  salt plume  ==!   (update hdivn field)
       !
       IF( ln_iscpl .AND. ln_hsb )   CALL iscpl_div( hdivn ) !==  ice sheet  ==!   (update hdivn field)
       !
@@ -109,6 +112,6 @@ CONTAINS
       IF( ln_timing )   CALL timing_stop('div_hor')
       !
    END SUBROUTINE div_hor
-   
+
    !!======================================================================
 END MODULE divhor

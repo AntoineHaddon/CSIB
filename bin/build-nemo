@@ -385,9 +385,22 @@ if (( copy_execs == 1 )); then
         cp -f $executable $stored_exec
     done
 else
-    echo "Linking build-nemo target executables to $storage_loc"
-    rm -f ${storage_loc}/${nemo_exec} ; ln -s $target_model_exec ${storage_loc}/${nemo_exec}
-    rm -f ${storage_loc}/${xios_exec} ; ln -s $target_model_exec ${storage_loc}/${xios_exec}
+    # determine link location
+    if [[ -n "$storage_loc" ]]; then
+        link_loc=$storage_loc
+    else
+        link_loc=${CWD}
+    fi
+    echo "Linking build-nemo target executables to $link_loc"
+
+    # model exec (has the ability to be renamed via nemo_exec, which is why it is linked differently)
+    for executable in $model_execs; do
+        [[ -f "${link_loc}/${nemo_exec}" ]] && rm ${link_loc}/${nemo_exec}
+    done
+    ln -sf $target_xios_exec ${link_loc}/${xios_exec}
+    ln -sf $target_model_exec ${link_loc}/${nemo_exec}
+
+    # remaining execs, which can't be renamed
     for executable in $non_model_execs; do
         linked_exec=${storage_loc}/$(basename $executable)
         rm -rf $linked_exec ; ln -s $executable $linked_exec
