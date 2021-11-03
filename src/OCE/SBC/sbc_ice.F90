@@ -19,7 +19,7 @@ MODULE sbc_ice
    USE ice              ! SI3 parameters
 # endif
 # if defined key_cice
-   USE ice_domain_size, only: ncat 
+   USE ice_domain_size, only: ncat
 #endif
    USE lib_mpp          ! MPP library
    USE in_out_manager   ! I/O manager
@@ -31,7 +31,7 @@ MODULE sbc_ice
 
 # if defined  key_si3
    LOGICAL         , PUBLIC, PARAMETER ::   lk_si3     = .TRUE.   !: SI3 ice model
-   LOGICAL         , PUBLIC, PARAMETER ::   lk_cice    = .FALSE.  !: no CICE 
+   LOGICAL         , PUBLIC, PARAMETER ::   lk_cice    = .FALSE.  !: no CICE
 # endif
 # if defined  key_cice
    LOGICAL         , PUBLIC, PARAMETER ::   lk_si3     = .FALSE.  !: no SI3
@@ -46,8 +46,8 @@ MODULE sbc_ice
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   tn_ice         !: ice surface temperature                          [K]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   alb_ice        !: ice albedo                                       [-]
 
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qml_ice        !: heat available for snow / ice surface melting     [W/m2] 
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qcn_ice        !: heat conduction flux in the layer below surface   [W/m2] 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qml_ice        !: heat available for snow / ice surface melting     [W/m2]
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qcn_ice        !: heat conduction flux in the layer below surface   [W/m2]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qtr_ice_top    !: solar flux transmitted below the ice surface      [W/m2]
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   utau_ice       !: atmos-ice u-stress. VP: I-pt ; EVP: U,V-pts   [N/m2]
@@ -86,11 +86,11 @@ MODULE sbc_ice
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   nfrzmlt            !: NEMO frzmlt
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   fr_iu              !: ice fraction at NEMO U point
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   fr_iv              !: ice fraction at NEMO V point
-   
+
    ! variables used in the coupled interface
    INTEGER , PUBLIC, PARAMETER ::   jpl = ncat
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   u_ice, v_ice 
-   
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   u_ice, v_ice
+
    ! already defined in ice.F90 for SI3
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::  a_i
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::  h_i, h_s
@@ -108,7 +108,7 @@ MODULE sbc_ice
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: sbc_ice.F90 13284 2020-07-09 15:12:23Z smasson $ 
+   !! $Id: sbc_ice.F90 13284 2020-07-09 15:12:23Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -145,7 +145,7 @@ CONTAINS
       IF( ln_cpl )   ALLOCATE( u_ice(jpi,jpj)        , tn_ice (jpi,jpj,1)    , &
          &                     v_ice(jpi,jpj)        , alb_ice(jpi,jpj,1)    , &
          &                     emp_ice(jpi,jpj)      , qns_ice(jpi,jpj,1)    , dqns_ice(jpi,jpj,1)   , &
-         &                     STAT= ierr(3) )      
+         &                     STAT= ierr(3) )
       IF( ln_cpl )   ALLOCATE( h_i(jpi,jpj,jpl) , h_s(jpi,jpj,jpl) , STAT=ierr(4) )
 #endif
 
@@ -169,7 +169,7 @@ CONTAINS
    LOGICAL         , PUBLIC, PARAMETER ::   lk_si3     = .FALSE.  !: no SI3 ice model
    LOGICAL         , PUBLIC, PARAMETER ::   lk_cice    = .FALSE.  !: no CICE ice model
    REAL(wp)        , PUBLIC, PARAMETER ::   pp_cldf    = 0.81     !: cloud fraction over sea ice, summer CLIO value   [-]
-   INTEGER         , PUBLIC, PARAMETER ::   jpl = 1 
+   INTEGER         , PUBLIC, PARAMETER ::   jpl = 1
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   u_ice, v_ice                        ! jpi, jpj
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   tn_ice, alb_ice, qns_ice, dqns_ice  ! (jpi,jpj,jpl)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   a_i
@@ -178,8 +178,8 @@ CONTAINS
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   h_i, h_s
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   topmelt, botmelt
    !
-   !! arrays related to embedding ice in the ocean. 
-   !! These arrays need to be declared even if no ice model is required. 
+   !! arrays related to embedding ice in the ocean.
+   !! These arrays need to be declared even if no ice model is required.
    !! In the no ice model or traditional levitating ice cases they contain only zeros
    !! ---------------------
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   snwice_mass        !: mass of snow and ice at current  ice time step   [Kg/m2]
