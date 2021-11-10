@@ -354,7 +354,7 @@ echo "#################### Start NEMO pre-processing #################"
   done
 
   # nemo executable
-  ! is_file $nemo_exec && cp ${CCRNSRC}/executables/$nemo_exec .
+  ! is_file $nemo_exec && cp ${EXEC_STORAGE_DIR}/$nemo_exec .
 
   # i/o definition file (bring it in and update output_level)
   is_zero_size iodef.xml && find_nemo_config_EXP00 iodef.xml $nemo_iodef
