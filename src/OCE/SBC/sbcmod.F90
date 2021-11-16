@@ -101,7 +101,7 @@ CONTAINS
          &             ln_rnf   , nn_fwb   , ln_ssr   , ln_isf    , ln_apr_dyn ,        &
          &             ln_wave  , ln_cdgw  , ln_sdw   , ln_tauwoc  , ln_stcor   ,       &
          &             ln_tauw  , nn_lsm, nn_sdrift, ln_minsal, rn_minsal,              &
-         &             ln_vertspp, ln_spp_c_grad, rn_spp_rho_c, nn_power, rn_spp_z_max  &
+         &             ln_vertspp, ln_spp_c_grad, rn_spp_rho_c, nn_power, rn_spp_z_max, &
          &             lk_cancpl, lk_oasis
       !!----------------------------------------------------------------------
       !

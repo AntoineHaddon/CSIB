@@ -1151,14 +1151,14 @@ CONTAINS
       !
       IF( ln_mixcpl )   zmsk(:,:) = 1. - xcplmask(:,:,0)
 
-      if (lk_cancpl) then
-         call query_start_cpl2ocn( isec )
-      endif
       !
       !                                                      ! ======================================================= !
       !                                                      ! Receive all the atmos. fields (including ice information)
       !                                                      ! ======================================================= !
       isec = ( kt - nit000 ) * NINT( rdt )                      ! date of exchanges
+      IF (lk_cancpl) THEN
+         call query_start_cpl2ocn( isec )
+      ENDIF
       DO jn = 1, jprcv                                          ! received fields sent by the atmosphere
          IF( srcv(jn)%laction )   CALL cpl_rcv( jn, isec, frcv(jn)%z3, xcplmask(:,:,1:nn_cplmodel), nrcvinfo(jn) )
       END DO
