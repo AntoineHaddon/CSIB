@@ -10,10 +10,10 @@ MODULE mpp_map
    !!  mppmap_init : Initialize mppmap.
    !!----------------------------------------------------------------------
    USE par_kind, ONLY :   wp            ! Precision variables
-   USE par_oce , ONLY :   jpi, jpj      ! Ocean parameters
-   USE dom_oce , ONLY :   mig, mjg, nldi, nlei, nldj, nlej, nlci, nlcj, narea   ! Ocean space and time domain variables
-#if defined key_mpp_mpi
-   USE lib_mpp, ONLY :   mpi_comm_oce   ! MPP library
+   USE par_oce , ONLY :   jpi, jpj, Nis0, Nie0, Njs0, Nje0   ! Ocean parameters
+   USE dom_oce , ONLY :   mig, mjg, narea                    ! Ocean space and time domain variables
+#if ! defined key_mpi_off
+   USE lib_mpp , ONLY :   mpi_comm_oce   ! MPP library
 #endif
    USE in_out_manager   ! I/O manager
 
@@ -26,7 +26,7 @@ MODULE mpp_map
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: mpp_map.F90 10068 2018-08-28 14:09:04Z nicolasmartin $
+   !! $Id: mpp_map.F90 14229 2020-12-20 12:45:55Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -44,7 +44,7 @@ CONTAINS
       !! References : http://www.mpi-forum.org
       !!----------------------------------------------------------------------
       INTEGER, DIMENSION(:,:), ALLOCATABLE ::   imppmap   !
-#if defined key_mpp_mpi
+#if ! defined key_mpi_off
       INTEGER :: ierr
 
 INCLUDE 'mpif.h'
@@ -64,11 +64,11 @@ INCLUDE 'mpif.h'
       imppmap(:,:) = 0
 
 !      ! Setup local grid points
-      imppmap(mig(1):mig(nlci),mjg(1):mjg(nlcj)) = narea
+      imppmap(mig(1):mig(jpi),mjg(1):mjg(jpj)) = narea
       
       ! Get global data
 
-#if defined key_mpp_mpi
+#if ! defined key_mpi_off
 
       ! Call the MPI library to find the max across processors
       CALL mpi_allreduce( imppmap, mppmap, jpiglo*jpjglo, mpi_integer,   &

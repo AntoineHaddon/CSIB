@@ -30,17 +30,18 @@ MODULE trcdta
    PUBLIC   trc_dta         ! called in trcini.F90 and trcdmp.F90
    PUBLIC   trc_dta_ini     ! called in trcini.F90 
 
-   INTEGER  , SAVE, PUBLIC                             :: nb_trcdta   ! number of tracers to be initialised with data
-   INTEGER  , SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:)  :: n_trc_index ! indice of tracer which is initialised with data
-   INTEGER  , SAVE, PUBLIC                             :: ntra        ! MAX( 1, nb_trcdta ) to avoid compilation error with bounds checking
-   REAL(wp) , SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:)  :: rf_trfac    ! multiplicative factor for tracer values
-!$AGRIF_DO_NOT_TREAT
-   TYPE(FLD), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:)  :: sf_trcdta   ! structure of input SST (file informations, fields read)
-!$AGRIF_END_DO_NOT_TREAT
+   INTEGER  , PUBLIC                             :: nb_trcdta   ! number of tracers to be initialised with data
+   INTEGER  , PUBLIC, ALLOCATABLE, DIMENSION(:)  :: n_trc_index ! indice of tracer which is initialised with data
+   INTEGER  , PUBLIC                             :: ntra        ! MAX( 1, nb_trcdta ) to avoid compilation error with bounds checking
+   REAL(wp) ,         ALLOCATABLE, DIMENSION(:)  :: rf_trfac    ! multiplicative factor for tracer values
+   TYPE(FLD),         ALLOCATABLE, DIMENSION(:)  :: sf_trcdta   ! structure of input SST (file informations, fields read)
 
+   !! Substitutions
+#include "do_loop_substitute.h90"
+#include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: trcdta.F90 11536 2019-09-11 13:54:18Z smasson $ 
+   !! $Id: trcdta.F90 15446 2021-10-26 14:34:38Z cetlod $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -97,10 +98,8 @@ CONTAINS
          WRITE(numout,*) '   number of passive tracers to be initialize by data :', ntra
       ENDIF
       !
-      REWIND( numnat_ref )              ! Namelist namtrc_dta in reference namelist : Passive tracer input data
       READ  ( numnat_ref, namtrc_dta, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namtrc_dta_ini in reference namelist' )
-      REWIND( numnat_cfg )              ! Namelist namtrc_dta in configuration namelist : Passive tracer input data
       READ  ( numnat_cfg, namtrc_dta, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namtrc_dta_ini in configuration namelist' )
       IF(lwm) WRITE ( numont, namtrc_dta )
@@ -153,7 +152,7 @@ CONTAINS
    END SUBROUTINE trc_dta_ini
 
 
-   SUBROUTINE trc_dta( kt, sf_trcdta, ptrcfac, ptrcdta)
+   SUBROUTINE trc_dta( kt, kjl, ptrcdta)
       !!----------------------------------------------------------------------
       !!                   ***  ROUTINE trc_dta  ***
       !!                    
@@ -166,8 +165,7 @@ CONTAINS
       !! ** Action  :   sf_trcdta   passive tracer data on meld mesh and interpolated at time-step kt
       !!----------------------------------------------------------------------
       INTEGER                          , INTENT(in   )   ::   kt         ! ocean time-step
-      TYPE(FLD), DIMENSION(1)          , INTENT(inout)   ::   sf_trcdta  ! array of information on the field to read
-      REAL(wp)                         , INTENT(in   )   ::   ptrcfac    ! multiplication factor
+      INTEGER                          , INTENT(in   )   ::   kjl        ! tracer index
       REAL(wp),  DIMENSION(jpi,jpj,jpk), INTENT(inout  ) ::   ptrcdta    ! 3D data array
       !
       INTEGER ::   ji, jj, jk, jl, jkk, ik    ! dummy loop indices
@@ -178,65 +176,68 @@ CONTAINS
       !
       IF( ln_timing )   CALL timing_start('trc_dta')
       !
+      IF( kt == nit000 .AND. lwp) THEN
+         WRITE(numout,*)
+         WRITE(numout,*) 'trc_dta : passive tracers data for IC'
+         WRITE(numout,*) '~~~~~~~ '
+      ENDIF
+      !
       IF( nb_trcdta > 0 ) THEN
          !
          ! read data at kt time step
          CALL fld_read( kt, 1, sf_trcdta )
-         ptrcdta(:,:,:) = sf_trcdta(1)%fnow(:,:,:) * tmask(:,:,:)
+         ptrcdta(:,:,:) = sf_trcdta(kjl)%fnow(:,:,:) * tmask(:,:,:)
          ! 
+#if ! defined key_sed_off
          IF( ln_sco ) THEN                !== s- or mixed s-zps-coordinate  ==!
             !
             IF( kt == nit000 .AND. lwp )THEN
                WRITE(numout,*)
                WRITE(numout,*) 'trc_dta: interpolates passive tracer data onto the s- or mixed s-z-coordinate mesh'
             ENDIF
-            DO jj = 1, jpj                         ! vertical interpolation of T & S
-               DO ji = 1, jpi
-                  DO jk = 1, jpk                        ! determines the intepolated T-S profiles at each (i,j) points
-                     zl = gdept_n(ji,jj,jk)
-                     IF(     zl < gdept_1d(1  ) ) THEN         ! above the first level of data
-                        ztp(jk) = ptrcdta(ji,jj,1)
-                     ELSEIF( zl > gdept_1d(jpk) ) THEN         ! below the last level of data
-                        ztp(jk) = ptrcdta(ji,jj,jpkm1)
-                     ELSE                                      ! inbetween : vertical interpolation between jkk & jkk+1
-                        DO jkk = 1, jpkm1                                  ! when  gdept(jkk) < zl < gdept(jkk+1)
-                           IF( (zl-gdept_1d(jkk)) * (zl-gdept_1d(jkk+1)) <= 0._wp ) THEN
-                              zi = ( zl - gdept_1d(jkk) ) / (gdept_1d(jkk+1)-gdept_1d(jkk))
-                              ztp(jk) = ptrcdta(ji,jj,jkk) + ( ptrcdta(ji,jj,jkk+1) - ptrcdta(ji,jj,jkk) ) * zi
-                           ENDIF
-                        END DO
-                     ENDIF
-                  END DO
-                  DO jk = 1, jpkm1
-                     ptrcdta(ji,jj,jk) = ztp(jk) * tmask(ji,jj,jk)     ! mask required for mixed zps-s-coord
-                  END DO
-                  ptrcdta(ji,jj,jpk) = 0._wp
-                END DO
-            END DO
+            DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )                 ! vertical interpolation of T & S
+               DO jk = 1, jpk                        ! determines the intepolated T-S profiles at each (i,j) points
+                  zl = gdept_0(ji,jj,jk)
+                  IF(     zl < gdept_1d(1  ) ) THEN         ! above the first level of data
+                     ztp(jk) = ptrcdta(ji,jj,1)
+                  ELSEIF( zl > gdept_1d(jpk) ) THEN         ! below the last level of data
+                     ztp(jk) = ptrcdta(ji,jj,jpkm1)
+                  ELSE                                      ! inbetween : vertical interpolation between jkk & jkk+1
+                     DO jkk = 1, jpkm1                                  ! when  gdept_1d(jkk) < zl < gdept_1d(jkk+1)
+                        IF( (zl-gdept_1d(jkk)) * (zl-gdept_1d(jkk+1)) <= 0._wp ) THEN
+                           zi = ( zl - gdept_1d(jkk) ) / (gdept_1d(jkk+1)-gdept_1d(jkk))
+                           ztp(jk) = ptrcdta(ji,jj,jkk) + ( ptrcdta(ji,jj,jkk+1) - ptrcdta(ji,jj,jkk) ) * zi
+                        ENDIF
+                     END DO
+                  ENDIF
+               END DO
+               DO jk = 1, jpkm1
+                  ptrcdta(ji,jj,jk) = ztp(jk) * tmask(ji,jj,jk)     ! mask required for mixed zps-s-coord
+               END DO
+               ptrcdta(ji,jj,jpk) = 0._wp
+            END_2D
             ! 
          ELSE                                !==   z- or zps- coordinate   ==!
             ! zps-coordinate (partial steps) interpolation at the last ocean level
-!            IF( ln_zps ) THEN
-!               DO jj = 1, jpj
-!                  DO ji = 1, jpi
-!                     ik = mbkt(ji,jj) 
-!                     IF( ik > 1 ) THEN
-!                        zl = ( gdept_1d(ik) - gdept_0(ji,jj,ik) ) / ( gdept_1d(ik) - gdept_1d(ik-1) )
-!                        ptrcdta(ji,jj,ik) = (1.-zl) * ptrcdta(ji,jj,ik) + zl * ptrcdta(ji,jj,ik-1)
-!                     ENDIF
-!                     ik = mikt(ji,jj)
-!                     IF( ik > 1 ) THEN
-!                        zl = ( gdept_0(ji,jj,ik) - gdept_1d(ik) ) / ( gdept_1d(ik+1) - gdept_1d(ik) )
-!                        ptrcdta(ji,jj,ik) = (1.-zl) * ptrcdta(ji,jj,ik) + zl * ptrcdta(ji,jj,ik+1)
-!                     ENDIF
-!                  END DO
-!              END DO
-!            ENDIF
+            IF( ln_zps ) THEN
+                DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
+                   ik = mbkt(ji,jj)
+                   IF( ik > 1 .AND. gdept_0(ji,jj,ik) < gdept_1d(ik) ) THEN
+                      zl = ( gdept_1d(ik) - gdept_0(ji,jj,ik) ) / ( gdept_1d(ik) - gdept_1d(ik-1) )
+                      ptrcdta(ji,jj,ik) = (1.-zl) * ptrcdta(ji,jj,ik) + zl * ptrcdta(ji,jj,ik-1)
+                   ENDIF
+                   ik = mikt(ji,jj)
+                   IF( ik > 1 ) THEN
+                      zl = ( gdept_0(ji,jj,ik) - gdept_1d(ik) ) / ( gdept_1d(ik+1) - gdept_1d(ik) )
+                      ptrcdta(ji,jj,ik) = (1.-zl) * ptrcdta(ji,jj,ik) + zl * ptrcdta(ji,jj,ik+1)
+                   ENDIF
+                 END_2D
+            ENDIF
             !
          ENDIF
-         !
+#endif
          ! Scale by multiplicative factor
-         ptrcdta(:,:,:) = ptrcdta(:,:,:) * ptrcfac
+         ptrcdta(:,:,:) = ptrcdta(:,:,:) * rf_trfac(kjl)
          !
       ENDIF
       !
@@ -249,7 +250,7 @@ CONTAINS
    !!   Dummy module                              NO 3D passive tracer data
    !!----------------------------------------------------------------------
 CONTAINS
-   SUBROUTINE trc_dta( kt, sf_trcdta, ptrcfac, ptrcdta)        ! Empty routine
+   SUBROUTINE trc_dta( kt, kjl, ptrcdta)        ! Empty routine
       WRITE(*,*) 'trc_dta: You should not have seen this print! error?', kt
    END SUBROUTINE trc_dta
 #endif

@@ -15,6 +15,7 @@ MODULE trcdmp
    !!   trc_dmp      : update the tracer trend with the internal damping
    !!   trc_dmp_init : initialization, namlist read, parameters control
    !!----------------------------------------------------------------------
+   USE par_trc        ! need jptra, number of passive tracers
    USE oce_trc         ! ocean dynamics and tracers variables
    USE trc             ! ocean passive tracers variables
    USE trcdta
@@ -23,7 +24,7 @@ MODULE trcdmp
    USE trd_oce
    !
    USE iom
-   USE prtctl_trc      ! Print control for debbuging
+   USE prtctl          ! Print control for debbuging
 
    IMPLICIT NONE
    PRIVATE
@@ -43,10 +44,11 @@ MODULE trcdmp
    INTEGER, DIMENSION(npncts) ::   nctsi2, nctsj2   ! north-east closed sea limits (i,j)
 
    !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
+#  include "do_loop_substitute.h90"
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: trcdmp.F90 11536 2019-09-11 13:54:18Z smasson $ 
+   !! $Id: trcdmp.F90 15023 2021-06-18 14:35:25Z gsamson $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -62,7 +64,7 @@ CONTAINS
    END FUNCTION trc_dmp_alloc
 
 
-   SUBROUTINE trc_dmp( kt )
+   SUBROUTINE trc_dmp( kt, Kbb, Kmm, ptr, Krhs )
       !!----------------------------------------------------------------------
       !!                   ***  ROUTINE trc_dmp  ***
       !!                  
@@ -72,16 +74,18 @@ CONTAINS
       !!
       !! ** Method  :   Newtonian damping towards trdta computed 
       !!      and add to the general tracer trends:
-      !!                     trn = tra + restotr * (trdta - trb)
+      !!                     tr(Kmm) = tr(Krhs) + restotr * (trdta - tr(Kbb))
       !!         The trend is computed either throughout the water column
       !!      (nlmdmptr=0) or in area of weak vertical mixing (nlmdmptr=1) or
       !!      below the well mixed layer (nlmdmptr=2)
       !!
-      !! ** Action  : - update the tracer trends tra with the newtonian 
+      !! ** Action  : - update the tracer trends tr(:,:,:,:,Krhs) with the newtonian 
       !!                damping trends.
       !!              - save the trends ('key_trdmxl_trc')
       !!----------------------------------------------------------------------
-      INTEGER, INTENT(in) ::   kt   ! ocean time-step index
+      INTEGER,                                    INTENT(in   ) :: kt              ! ocean time-step index
+      INTEGER,                                    INTENT(in   ) :: Kbb, Kmm, Krhs  ! time level indices
+      REAL(wp), DIMENSION(jpi,jpj,jpk,jptra,jpt), INTENT(inout) :: ptr             ! passive tracers and RHS of tracer equation
       !
       INTEGER ::   ji, jj, jk, jn, jl   ! dummy loop indices
       CHARACTER (len=22) ::   charout
@@ -99,53 +103,41 @@ CONTAINS
          !                                                          ! ===========
          DO jn = 1, jptra                                           ! tracer loop
             !                                                       ! ===========
-            IF( l_trdtrc ) ztrtrd(:,:,:) = tra(:,:,:,jn)    ! save trends 
+            IF( l_trdtrc ) ztrtrd(:,:,:) = ptr(:,:,:,jn,Krhs)    ! save trends 
             !
             IF( ln_trc_ini(jn) ) THEN      ! update passive tracers arrays with input data read from file
                !
                jl = n_trc_index(jn) 
-               CALL trc_dta( kt, sf_trcdta(jl), rf_trfac(jl), ztrcdta )   ! read tracer data at nit000
+               CALL trc_dta( kt, jl, ztrcdta )   ! read tracer data at nit000
                !
                SELECT CASE ( nn_zdmp_tr )
                !
                CASE( 0 )                !==  newtonian damping throughout the water column  ==!
-                  DO jk = 1, jpkm1
-                     DO jj = 2, jpjm1
-                        DO ji = fs_2, fs_jpim1   ! vector opt.
-                           tra(ji,jj,jk,jn) = tra(ji,jj,jk,jn) + restotr(ji,jj,jk) * ( ztrcdta(ji,jj,jk) - trb(ji,jj,jk,jn) )
-                        END DO
-                     END DO
-                  END DO
+                  DO_3D( 0, 0, 0, 0, 1, jpkm1 )
+                     ptr(ji,jj,jk,jn,Krhs) = ptr(ji,jj,jk,jn,Krhs) + restotr(ji,jj,jk) * ( ztrcdta(ji,jj,jk) - ptr(ji,jj,jk,jn,Kbb) )
+                  END_3D
                   !
                CASE ( 1 )                !==  no damping in the turbocline (avt > 5 cm2/s)  ==!
-                  DO jk = 1, jpkm1
-                     DO jj = 2, jpjm1
-                        DO ji = fs_2, fs_jpim1   ! vector opt.
-                           IF( avt(ji,jj,jk) <= avt_c )  THEN 
-                              tra(ji,jj,jk,jn) = tra(ji,jj,jk,jn) + restotr(ji,jj,jk) * ( ztrcdta(ji,jj,jk) - trb(ji,jj,jk,jn) )
-                           ENDIF
-                        END DO
-                     END DO
-                  END DO
+                  DO_3D( 0, 0, 0, 0, 1, jpkm1 )
+                     IF( avt(ji,jj,jk) <= avt_c )  THEN 
+                        ptr(ji,jj,jk,jn,Krhs) = ptr(ji,jj,jk,jn,Krhs) + restotr(ji,jj,jk) * ( ztrcdta(ji,jj,jk) - ptr(ji,jj,jk,jn,Kbb) )
+                     ENDIF
+                  END_3D
                   !
                CASE ( 2 )               !==  no damping in the mixed layer   ==! 
-                  DO jk = 1, jpkm1
-                     DO jj = 2, jpjm1
-                        DO ji = fs_2, fs_jpim1   ! vector opt.
-                           IF( gdept_n(ji,jj,jk) >= hmlp (ji,jj) ) THEN
-                              tra(ji,jj,jk,jn) = tra(ji,jj,jk,jn) + restotr(ji,jj,jk) * ( ztrcdta(ji,jj,jk) - trb(ji,jj,jk,jn) )
-                           END IF
-                        END DO
-                     END DO
-                  END DO
+                  DO_3D( 0, 0, 0, 0, 1, jpkm1 )
+                     IF( gdept(ji,jj,jk,Kmm) >= hmlp (ji,jj) ) THEN
+                        ptr(ji,jj,jk,jn,Krhs) = ptr(ji,jj,jk,jn,Krhs) + restotr(ji,jj,jk) * ( ztrcdta(ji,jj,jk) - ptr(ji,jj,jk,jn,Kbb) )
+                     END IF
+                  END_3D
                   !  
                END SELECT
                ! 
             ENDIF
             !
             IF( l_trdtrc ) THEN
-               ztrtrd(:,:,:) = tra(:,:,:,jn) -  ztrtrd(:,:,:)
-               CALL trd_tra( kt, 'TRC', jn, jptra_dmp, ztrtrd )
+               ztrtrd(:,:,:) = ptr(:,:,:,jn,Krhs) -  ztrtrd(:,:,:)
+               CALL trd_tra( kt, Kmm, Krhs, 'TRC', jn, jptra_dmp, ztrtrd )
             END IF
             !                                                       ! ===========
          END DO                                                     ! tracer loop
@@ -155,10 +147,10 @@ CONTAINS
       !
       IF( l_trdtrc )  DEALLOCATE( ztrtrd )
       !                                          ! print mean trends (used for debugging)
-      IF( ln_ctl ) THEN
+      IF( sn_cfctl%l_prttrc ) THEN
          WRITE(charout, FMT="('dmp ')")
-         CALL prt_ctl_trc_info(charout)
-         CALL prt_ctl_trc( tab4d=tra, mask=tmask, clinfo=ctrcnm, clinfo2='trd' )
+         CALL prt_ctl_info( charout, cdcomp = 'top' )
+         CALL prt_ctl( tab4d_1=ptr(:,:,:,:,Krhs), mask1=tmask, clinfo=ctrcnm, clinfo3='trd' )
       ENDIF
       !
       IF( ln_timing )   CALL timing_stop('trc_dmp')
@@ -180,10 +172,8 @@ CONTAINS
       NAMELIST/namtrc_dmp/ nn_zdmp_tr , cn_resto_tr
       !!----------------------------------------------------------------------
       !
-      REWIND( numnat_ref )              ! Namelist namtrc_dmp in reference namelist : Passive tracers newtonian damping
       READ  ( numnat_ref, namtrc_dmp, IOSTAT = ios, ERR = 909)
 909   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namtrc_dmp in reference namelist' )
-      REWIND( numnat_cfg )              ! Namelist namtrc_dmp in configuration namelist : Passive tracers newtonian damping
       READ  ( numnat_cfg, namtrc_dmp, IOSTAT = ios, ERR = 910)
 910   IF( ios >  0 )   CALL ctl_nam ( ios , 'namtrc_dmp in configuration namelist' )
       IF(lwm) WRITE ( numont, namtrc_dmp )
@@ -208,14 +198,14 @@ CONTAINS
          CALL ctl_stop(ctmp1)
       END SELECT
 
-      IF( .NOT.lk_c1d ) THEN
+      IF( .NOT.ln_c1d ) THEN
          IF( .NOT.ln_tradmp )   &
             &   CALL ctl_stop( 'passive tracer damping need ln_tradmp to compute damping coef.' )
          !
          !                          ! Read damping coefficients from file
          !Read in mask from file
          CALL iom_open ( cn_resto_tr, imask)
-         CALL iom_get  ( imask, jpdom_autoglo, 'resto', restotr)
+         CALL iom_get  ( imask, jpdom_auto, 'resto', restotr)
          CALL iom_close( imask )
          !
       ENDIF
@@ -223,7 +213,7 @@ CONTAINS
    END SUBROUTINE trc_dmp_ini
 
 
-   SUBROUTINE trc_dmp_clo( kt )
+   SUBROUTINE trc_dmp_clo( kt, Kbb, Kmm )
       !!---------------------------------------------------------------------
       !!                  ***  ROUTINE trc_dmp_clo  ***
       !!
@@ -235,7 +225,8 @@ CONTAINS
       !! ** Action  :   nctsi1(), nctsj1() : south-west closed sea limits (i,j)
       !!                nctsi2(), nctsj2() : north-east Closed sea limits (i,j)
       !!----------------------------------------------------------------------
-      INTEGER, INTENT( in ) ::   kt      ! ocean time-step index
+      INTEGER, INTENT( in ) ::   kt           ! ocean time-step index
+      INTEGER, INTENT( in ) ::   Kbb, Kmm     ! time level indices
       !
       INTEGER :: ji , jj, jk, jn, jl, jc                    ! dummy loop indicesa
       INTEGER :: isrow                                      ! local index
@@ -255,34 +246,35 @@ CONTAINS
             SELECT CASE ( nn_cfg )
             !                                           ! =======================
             CASE ( 1 )                                  ! eORCA_R1 configuration
-            !                                           ! =======================
-            isrow = 332 - jpjglo
-            !
-            nctsi1(1)   = 333  ; nctsj1(1)   = 243 - isrow   ! Caspian Sea
-            nctsi2(1)   = 342  ; nctsj2(1)   = 274 - isrow
-            !                                        
-            nctsi1(2)   = 198  ; nctsj1(2)   = 258 - isrow   ! Lake Superior
-            nctsi2(2)   = 204  ; nctsj2(2)   = 262 - isrow
-            !                                         
-            nctsi1(3)   = 201  ; nctsj1(3)   = 250 - isrow   ! Lake Michigan
-            nctsi2(3)   = 203  ; nctsj2(3)   = 256 - isrow
-            !                                        
-            nctsi1(4)   = 204  ; nctsj1(4)   = 252 - isrow   ! Lake Huron
-            nctsi2(4)   = 209  ; nctsj2(4)   = 256 - isrow
-            !                                        
-            nctsi1(5)   = 206  ; nctsj1(5)   = 249 - isrow   ! Lake Erie
-            nctsi2(5)   = 209  ; nctsj2(5)   = 251 - isrow
-            !                                        
-            nctsi1(6)   = 210  ; nctsj1(6)   = 252 - isrow   ! Lake Ontario
-            nctsi2(6)   = 212  ; nctsj2(6)   = 252 - isrow
-            !                                        
-            nctsi1(7)   = 321  ; nctsj1(7)   = 180 - isrow   ! Victoria Lake
-            nctsi2(7)   = 322  ; nctsj2(7)   = 189 - isrow
-            !                                        
-            nctsi1(8)   = 297  ; nctsj1(8)   = 270 - isrow   ! Baltic Sea
-            nctsi2(8)   = 308  ; nctsj2(8)   = 293 - isrow
-            !                                        
-            !                                           ! =======================
+               !                                        ! =======================
+               !
+               isrow = 332 - (Nj0glo + 1)   ! was 332 - jpjglo -> jpjglo_old_version = Nj0glo + 1
+               !
+               nctsi1(1)   = 333  ; nctsj1(1)   = 243 - isrow   ! Caspian Sea
+               nctsi2(1)   = 342  ; nctsj2(1)   = 274 - isrow
+               !                                        
+               nctsi1(2)   = 198  ; nctsj1(2)   = 258 - isrow   ! Lake Superior
+               nctsi2(2)   = 204  ; nctsj2(2)   = 262 - isrow
+               !                                         
+               nctsi1(3)   = 201  ; nctsj1(3)   = 250 - isrow   ! Lake Michigan
+               nctsi2(3)   = 203  ; nctsj2(3)   = 256 - isrow
+               !                                        
+               nctsi1(4)   = 204  ; nctsj1(4)   = 252 - isrow   ! Lake Huron
+               nctsi2(4)   = 209  ; nctsj2(4)   = 256 - isrow
+               !                                        
+               nctsi1(5)   = 206  ; nctsj1(5)   = 249 - isrow   ! Lake Erie
+               nctsi2(5)   = 209  ; nctsj2(5)   = 251 - isrow
+               !                                        
+               nctsi1(6)   = 210  ; nctsj1(6)   = 252 - isrow   ! Lake Ontario
+               nctsi2(6)   = 212  ; nctsj2(6)   = 252 - isrow
+               !                                        
+               nctsi1(7)   = 321  ; nctsj1(7)   = 180 - isrow   ! Victoria Lake
+               nctsi2(7)   = 322  ; nctsj2(7)   = 189 - isrow
+               !                                        
+               nctsi1(8)   = 297  ; nctsj1(8)   = 270 - isrow   ! Baltic Sea
+               nctsi2(8)   = 308  ; nctsj2(8)   = 293 - isrow
+               !
+               !                                        ! =======================
             CASE ( 2 )                                  !  ORCA_R2 configuration
                !                                        ! =======================
                !                                      
@@ -295,11 +287,12 @@ CONTAINS
                nctsi1(3)   = 174  ;  nctsj1(3)   = 107       ! Black Sea 1 : west part of the Black Sea
                nctsi2(3)   = 181  ;  nctsj2(3)   = 112
               !                                      
-               nctsi1(4)   =   2  ;  nctsj1(4)   = 107      ! Black Sea 2 : est part of the Black Sea
+               nctsi1(4)   =   2  ;  nctsj1(4)   = 107       ! Black Sea 2 : est part of the Black Sea
                nctsi2(4)   =   6  ;  nctsj2(4)   = 112
                !                                     
                nctsi1(5)   =  145 ;  nctsj1(5)   = 116       ! Baltic Sea
                nctsi2(5)   =  150 ;  nctsj2(5)   = 126
+               !
                !                                        ! =======================
             CASE ( 4 )                                  !  ORCA_R4 configuration
                !                                        ! =======================
@@ -315,6 +308,7 @@ CONTAINS
                !                                   
                nctsi1(4)   = 75  ;  nctsj1(4)   = 59         ! Baltic Sea
                nctsi2(4)   = 76  ;  nctsj2(4)   = 61
+               !
                !                                        ! =======================
             CASE ( 025 )                                ! ORCA_R025 configuration
                !                                        ! =======================
@@ -328,6 +322,9 @@ CONTAINS
             END SELECT
             !
          ENDIF
+         !
+         nctsi1(:) = nctsi1(:) + nn_hls - 1   ;   nctsi2(:) = nctsi2(:) + nn_hls - 1   ! -1 as x-perio included in old input files
+         nctsj1(:) = nctsj1(:) + nn_hls       ;   nctsj2(:) = nctsj2(:) + nn_hls
          !
          ! convert the position in local domain indices
          ! --------------------------------------------
@@ -353,13 +350,13 @@ CONTAINS
          DO jn = 1, jptra
             IF( ln_trc_ini(jn) ) THEN      ! update passive tracers arrays with input data read from file
                 jl = n_trc_index(jn)
-                CALL trc_dta( kt, sf_trcdta(jl), rf_trfac(jl), ztrcdta )   ! read tracer data at nit000
+                CALL trc_dta( kt, jl, ztrcdta )   ! read tracer data at nit000
                 DO jc = 1, npncts
                    DO jk = 1, jpkm1
                       DO jj = nctsj1(jc), nctsj2(jc)
                          DO ji = nctsi1(jc), nctsi2(jc)
-                            trn(ji,jj,jk,jn) = ztrcdta(ji,jj,jk)
-                            trb(ji,jj,jk,jn) = trn(ji,jj,jk,jn)
+                            tr(ji,jj,jk,jn,Kmm) = ztrcdta(ji,jj,jk)
+                            tr(ji,jj,jk,jn,Kbb) = tr(ji,jj,jk,jn,Kmm)
                          END DO
                       END DO
                    END DO

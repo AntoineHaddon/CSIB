@@ -16,7 +16,7 @@ MODULE icetab
    !!----------------------------------------------------------------------
    USE par_oce
    USE ice, ONLY : jpl
-   
+
    IMPLICIT NONE
    PRIVATE
 
@@ -27,7 +27,7 @@ MODULE icetab
 
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icetab.F90 13714 2020-11-02 15:59:55Z clem $
+   !! $Id: icetab.F90 14072 2020-12-04 07:48:38Z laurent $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS

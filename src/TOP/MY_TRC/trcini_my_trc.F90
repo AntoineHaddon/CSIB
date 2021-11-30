@@ -22,12 +22,12 @@ MODULE trcini_my_trc
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: trcini_my_trc.F90 10068 2018-08-28 14:09:04Z nicolasmartin $ 
+   !! $Id: trcini_my_trc.F90 12377 2020-02-12 14:39:06Z acc $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE trc_ini_my_trc
+   SUBROUTINE trc_ini_my_trc( Kmm )
       !!----------------------------------------------------------------------
       !!                     ***  trc_ini_my_trc  ***  
       !!
@@ -35,6 +35,7 @@ CONTAINS
       !!
       !! ** Method  : - Read the namcfc namelist and check the parameter values
       !!----------------------------------------------------------------------
+      INTEGER, INTENT(in) ::   Kmm  ! time level indices
       !
       CALL trc_nam_my_trc
       !
@@ -49,7 +50,7 @@ CONTAINS
       IF(lwp) WRITE(numout,*) '   3 - precipitation and evaporation equal to 1 : E=P=1 ' 
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~'
       
-      IF( .NOT. ln_rsttr ) trn(:,:,:,jp_myt0:jp_myt1) = 1.
+      IF( .NOT. ln_rsttr ) tr(:,:,:,jp_myt0:jp_myt1,Kmm) = 1.
       !
    END SUBROUTINE trc_ini_my_trc
 

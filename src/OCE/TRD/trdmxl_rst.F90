@@ -26,7 +26,7 @@ MODULE trdmxl_rst
 
    !!---------------------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: trdmxl_rst.F90 11536 2019-09-11 13:54:18Z smasson $
+   !! $Id: trdmxl_rst.F90 13286 2020-07-09 15:48:29Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!---------------------------------------------------------------------------------
 CONTAINS
@@ -148,38 +148,38 @@ CONTAINS
 
       IF( ln_trdmxl_instant ) THEN 
          !-- Temperature
-         CALL iom_get( inum, jpdom_autoglo, 'tmlbb'           , tmlbb          )
-         CALL iom_get( inum, jpdom_autoglo, 'tmlbn'           , tmlbn          )
-         CALL iom_get( inum, jpdom_autoglo, 'tmlatfb'         , tmlatfb        )
+         CALL iom_get( inum, jpdom_auto, 'tmlbb'           , tmlbb          )
+         CALL iom_get( inum, jpdom_auto, 'tmlbn'           , tmlbn          )
+         CALL iom_get( inum, jpdom_auto, 'tmlatfb'         , tmlatfb        )
          !
          !-- Salinity
-         CALL iom_get( inum, jpdom_autoglo, 'smlbb'           , smlbb          )
-         CALL iom_get( inum, jpdom_autoglo, 'smlbn'           , smlbn          )
-         CALL iom_get( inum, jpdom_autoglo, 'smlatfb'         , smlatfb        )
+         CALL iom_get( inum, jpdom_auto, 'smlbb'           , smlbb          )
+         CALL iom_get( inum, jpdom_auto, 'smlbn'           , smlbn          )
+         CALL iom_get( inum, jpdom_auto, 'smlatfb'         , smlatfb        )
       ELSE
-         CALL iom_get( inum, jpdom_autoglo, 'hmxlbn'          , hmxlbn         ) ! needed for hmxl_sum
+         CALL iom_get( inum, jpdom_auto, 'hmxlbn'          , hmxlbn         ) ! needed for hmxl_sum
          !
          !-- Temperature
-         CALL iom_get( inum, jpdom_autoglo, 'tmlbn'           , tmlbn          ) ! needed for tml_sum
-         CALL iom_get( inum, jpdom_autoglo, 'tml_sumb'        , tml_sumb       )
+         CALL iom_get( inum, jpdom_auto, 'tmlbn'           , tmlbn          ) ! needed for tml_sum
+         CALL iom_get( inum, jpdom_auto, 'tml_sumb'        , tml_sumb       )
          DO jk = 1, jpltrd
             IF( jk < 10 ) THEN   ;   WRITE(charout,FMT="('tmltrd_csum_ub_', I1)")   jk
             ELSE                 ;   WRITE(charout,FMT="('tmltrd_csum_ub_', I2)")   jk
             ENDIF
-            CALL iom_get( inum, jpdom_autoglo, charout, tmltrd_csum_ub(:,:,jk) )
+            CALL iom_get( inum, jpdom_auto, charout, tmltrd_csum_ub(:,:,jk) )
          END DO
-         CALL iom_get( inum, jpdom_autoglo, 'tmltrd_atf_sumb' , tmltrd_atf_sumb)
+         CALL iom_get( inum, jpdom_auto, 'tmltrd_atf_sumb' , tmltrd_atf_sumb)
          !
          !-- Salinity
-         CALL iom_get( inum, jpdom_autoglo, 'smlbn'           , smlbn          ) ! needed for sml_sum
-         CALL iom_get( inum, jpdom_autoglo, 'sml_sumb'        , sml_sumb       )
+         CALL iom_get( inum, jpdom_auto, 'smlbn'           , smlbn          ) ! needed for sml_sum
+         CALL iom_get( inum, jpdom_auto, 'sml_sumb'        , sml_sumb       )
          DO jk = 1, jpltrd
             IF( jk < 10 ) THEN   ;   WRITE(charout,FMT="('smltrd_csum_ub_', I1)")   jk
             ELSE                 ;   WRITE(charout,FMT="('smltrd_csum_ub_', I2)")   jk
             ENDIF
-            CALL iom_get( inum, jpdom_autoglo, charout, smltrd_csum_ub(:,:,jk) )
+            CALL iom_get( inum, jpdom_auto, charout, smltrd_csum_ub(:,:,jk) )
          END DO
-         CALL iom_get( inum, jpdom_autoglo, 'smltrd_atf_sumb' , smltrd_atf_sumb)
+         CALL iom_get( inum, jpdom_auto, 'smltrd_atf_sumb' , smltrd_atf_sumb)
          !
          CALL iom_close( inum )
       ENDIF

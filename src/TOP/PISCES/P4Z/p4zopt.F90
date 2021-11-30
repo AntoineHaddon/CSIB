@@ -15,7 +15,7 @@ MODULE p4zopt
    USE sms_pisces     ! Source Minus Sink of PISCES
    USE iom            ! I/O manager
    USE fldread        !  time interpolation
-   USE prtctl_trc     !  print control for debugging
+   USE prtctl         !  print control for debugging
 
    IMPLICIT NONE
    PRIVATE
@@ -36,15 +36,18 @@ MODULE p4zopt
    INTEGER  :: ntimes_par                ! number of time steps in a file
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   par_varsw      ! PAR fraction of shortwave
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   ekb, ekg, ekr  ! wavelength (Red-Green-Blue)
-
+   
+   !! * Substitutions
+#  include "do_loop_substitute.h90"
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: p4zopt.F90 15613 2021-12-22 09:35:54Z cetlod $ 
+   !! $Id: p4zopt.F90 15459 2021-10-29 08:19:18Z cetlod $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE p4z_opt( kt, knt )
+   SUBROUTINE p4z_opt( kt, knt, Kbb, Kmm )
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE p4z_opt  ***
       !!
@@ -54,6 +57,7 @@ CONTAINS
       !! ** Method  : - ???
       !!---------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt, knt   ! ocean time step
+      INTEGER, INTENT(in) ::   Kbb, Kmm  ! time level indices
       !
       INTEGER  ::   ji, jj, jk
       INTEGER  ::   irgb
@@ -62,7 +66,7 @@ CONTAINS
       REAL(wp), ALLOCATABLE, DIMENSION(:,:  ) :: zetmp5
       REAL(wp), DIMENSION(jpi,jpj    ) :: zdepmoy, zetmp1, zetmp2, zetmp3, zetmp4
       REAL(wp), DIMENSION(jpi,jpj    ) :: zqsr100, zqsr_corr
-      REAL(wp), DIMENSION(jpi,jpj,jpk) :: zpar, ze0, ze1, ze2, ze3, zchl3d
+      REAL(wp), DIMENSION(jpi,jpj,jpk) :: zpar, ze0, ze1, ze2, ze3
       !!---------------------------------------------------------------------
       !
       IF( ln_timing )   CALL timing_start('p4z_opt')
@@ -74,75 +78,151 @@ CONTAINS
       ze1(:,:,:) = 0._wp
       ze2(:,:,:) = 0._wp
       ze3(:,:,:) = 0._wp
+
       !
-      !                                        !* attenuation coef. function of Chlorophyll and wavelength (Red-Green-Blue)
-      !                                        !  --------------------------------------------------------
-                     zchl3d(:,:,:) = trb(:,:,:,jpnch) + trb(:,:,:,jpdch)
-      IF( ln_p5z )   zchl3d(:,:,:) = zchl3d(:,:,:)    + trb(:,:,:,jppch)
+      ! Attenuation coef. function of Chlorophyll and wavelength (Red-Green-Blue)
+      ! Thus the light penetration scheme is based on a decomposition of PAR
+      ! into three wave length domains. This was first officially published
+      ! in Lengaigne et al. (2007).
+      ! --------------------------------------------------------
       !
-      DO jk = 1, jpkm1   
-         DO jj = 1, jpj
-            DO ji = 1, jpi
-               zchl = ( zchl3d(ji,jj,jk) + rtrn ) * 1.e6
-               zchl = MIN(  10. , MAX( 0.05, zchl )  )
-               irgb = NINT( 41 + 20.* LOG10( zchl ) + rtrn )
-               !                                                         
-               ekb(ji,jj,jk) = rkrgb(1,irgb) * e3t_n(ji,jj,jk)
-               ekg(ji,jj,jk) = rkrgb(2,irgb) * e3t_n(ji,jj,jk)
-               ekr(ji,jj,jk) = rkrgb(3,irgb) * e3t_n(ji,jj,jk)
+      ! Computation of the light attenuation parameters based on a 
+      ! look-up table
+      DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, jpkm1)
+         zchl =  ( tr(ji,jj,jk,jpnch,Kbb) + tr(ji,jj,jk,jpdch,Kbb) + rtrn ) * 1.e6
+         IF( ln_p5z )   zchl = zchl + tr(ji,jj,jk,jppch,Kbb) * 1.e6
+         zchl = MIN(  10. , MAX( 0.05, zchl )  )
+         irgb = NINT( 41 + 20.* LOG10( zchl ) + rtrn )
+         !                                                         
+         ekb(ji,jj,jk) = rkrgb(1,irgb) * e3t(ji,jj,jk,Kmm)
+         ekg(ji,jj,jk) = rkrgb(2,irgb) * e3t(ji,jj,jk,Kmm)
+         ekr(ji,jj,jk) = rkrgb(3,irgb) * e3t(ji,jj,jk,Kmm)
+      END_3D
+
+
+      ! Photosynthetically Available Radiation (PAR)
+      ! Two cases are considered in the following : 
+      ! (1) An explicit diunal cycle is activated. In that case, mean 
+      ! QSR is used as PISCES in its current state has not been parameterized
+      ! for an explicit diurnal cycle
+      ! (2) no diurnal cycle of SW is active and in that case, QSR is used.
+      ! --------------------------------------------
+      IF( l_trcdm2dc ) THEN                     !  diurnal cycle
+         IF ( ln_p4z_dcyc ) THEN   ! Diurnal cycle in PISCES
+            !
+            !
+            ! SW over the ice free zone of the grid cell. This assumes that
+            ! SW is zero below sea ice which is a very crude assumption that is 
+            ! not fully correct with LIM3 and SI3 but no information is 
+            ! currently available to do a better job. SHould be improved in the 
+            ! (near) future.
+            zqsr_corr(:,:) = qsr_mean(:,:) / ( 1.-fr_i(:,:) + rtrn )
+            !
+            CALL p4z_opt_par( kt, Kmm, zqsr_corr, ze1, ze2, ze3, pqsr100 = zqsr100 )
+            !
+            ! Used PAR is computed for each phytoplankton species
+            ! etot_ndcy is PAR at level jk averaged over 24h.
+            ! Due to their size, they have different light absorption characteristics
+            DO jk = 1, nksr
+               etot_ndcy(:,:,jk) =        ze1(:,:,jk) +        ze2(:,:,jk) +       ze3(:,:,jk)
             END DO
-         END DO
-      END DO
-      !                                        !* Photosynthetically Available Radiation (PAR)
-      !                                        !  --------------------------------------
-      IF( ln_trcdc2dm ) THEN                     !  diurnal cycle
-         !
-         zqsr_corr(:,:) = qsr_mean(:,:) / ( 1.-fr_i(:,:) + rtrn )
-         !
-         CALL p4z_opt_par( kt, zqsr_corr, ze1, ze2, ze3, pqsr100 = zqsr100 ) 
-         !
-         DO jk = 1, nksr      
-            etot_ndcy(:,:,jk) =        ze1(:,:,jk) +        ze2(:,:,jk) +       ze3(:,:,jk)
-            enano    (:,:,jk) =  1.85 * ze1(:,:,jk) + 0.69 * ze2(:,:,jk) + 0.46 * ze3(:,:,jk)
-            ediat    (:,:,jk) =  1.62 * ze1(:,:,jk) + 0.74 * ze2(:,:,jk) + 0.63 * ze3(:,:,jk)
-         END DO
-         IF( ln_p5z ) THEN
+            !
+            ! SW over the ice free zone of the grid cell. This assumes that
+            ! SW is zero below sea ice which is a very crude assumption that is 
+            ! not fully correct with LIM3 and SI3 but no information is 
+            ! currently available to do a better job. SHould be improved in the 
+            ! (near) future.
+            zqsr_corr(:,:) = qsr(:,:) / ( 1.-fr_i(:,:) + rtrn )
+            !
+            CALL p4z_opt_par( kt, Kmm, zqsr_corr, ze1, ze2, ze3 )
+            !
+            ! Total PAR computation at level jk that includes the diurnal cycle
+            DO jk = 1, nksr
+               etot (:,:,jk) =  ze1(:,:,jk) + ze2(:,:,jk) + ze3(:,:,jk)
+               enano(:,:,jk) =  1.85 * ze1(:,:,jk) + 0.69 * ze2(:,:,jk) + 0.46 * ze3(:,:,jk)
+               ediat(:,:,jk) =  1.62 * ze1(:,:,jk) + 0.74 * ze2(:,:,jk) + 0.63 * ze3(:,:,jk)
+            END DO
+            IF( ln_p5z ) THEN
+               DO jk = 1, nksr
+                  epico  (:,:,jk) =  1.94 * ze1(:,:,jk) + 0.66 * ze2(:,:,jk) + 0.4 * ze3(:,:,jk)
+               END DO
+            ENDIF
+
+         ELSE ! No diurnal cycle in PISCES
+
+            !
+            !
+            ! SW over the ice free zone of the grid cell. This assumes that
+            ! SW is zero below sea ice which is a very crude assumption that is 
+            ! not fully correct with LIM3 and SI3 but no information is 
+            ! currently available to do a better job. SHould be improved in the 
+            ! (near) future.
+            zqsr_corr(:,:) = qsr_mean(:,:) / ( 1.-fr_i(:,:) + rtrn )
+            !
+            CALL p4z_opt_par( kt, Kmm, zqsr_corr, ze1, ze2, ze3, pqsr100 = zqsr100 ) 
+            !
+            ! Used PAR is computed for each phytoplankton species
+            ! etot_ndcy is PAR at level jk averaged over 24h.
+            ! Due to their size, they have different light absorption characteristics
             DO jk = 1, nksr      
-              epico  (:,:,jk) =  1.94 * ze1(:,:,jk) + 0.66 * ze2(:,:,jk) + 0.4 * ze3(:,:,jk)
+               etot_ndcy(:,:,jk) =        ze1(:,:,jk) +        ze2(:,:,jk) +       ze3(:,:,jk)
+               enano    (:,:,jk) =  1.85 * ze1(:,:,jk) + 0.69 * ze2(:,:,jk) + 0.46 * ze3(:,:,jk)
+               ediat    (:,:,jk) =  1.62 * ze1(:,:,jk) + 0.74 * ze2(:,:,jk) + 0.63 * ze3(:,:,jk)
+            END DO
+            IF( ln_p5z ) THEN
+               DO jk = 1, nksr      
+                  epico  (:,:,jk) =  1.94 * ze1(:,:,jk) + 0.66 * ze2(:,:,jk) + 0.4 * ze3(:,:,jk)
+               END DO
+            ENDIF
+            !
+            ! SW over the ice free zone of the grid cell. This assumes that
+            ! SW is zero below sea ice which is a very crude assumption that is 
+            ! not fully correct with LIM3 and SI3 but no information is 
+            ! currently available to do a better job. SHould be improved in the 
+            ! (near) future.
+            zqsr_corr(:,:) = qsr(:,:) / ( 1.-fr_i(:,:) + rtrn )
+            !
+            CALL p4z_opt_par( kt, Kmm, zqsr_corr, ze1, ze2, ze3 ) 
+            !
+            ! Total PAR computation at level jk that includes the diurnal cycle
+            DO jk = 1, nksr      
+               etot(:,:,jk) =  ze1(:,:,jk) + ze2(:,:,jk) + ze3(:,:,jk)
             END DO
          ENDIF
          !
+      ELSE   ! no diurnal cycle
+         !
+         !
+         ! SW over the ice free zone of the grid cell. This assumes that
+         ! SW is zero below sea ice which is a very crude assumption that is 
+         ! not fully correct with LIM3 and SI3 but no information is 
+         ! currently available to do a better job. SHould be improved in the 
+         ! (near) future.
          zqsr_corr(:,:) = qsr(:,:) / ( 1.-fr_i(:,:) + rtrn )
          !
-         CALL p4z_opt_par( kt, zqsr_corr, ze1, ze2, ze3 ) 
+         CALL p4z_opt_par( kt, Kmm, zqsr_corr, ze1, ze2, ze3, pqsr100 = zqsr100  ) 
          !
+
+         ! Used PAR is computed for each phytoplankton species
+         ! Due to their size, they have different light absorption characteristics
          DO jk = 1, nksr      
-            etot(:,:,jk) =  ze1(:,:,jk) + ze2(:,:,jk) + ze3(:,:,jk)
-         END DO
-         !
-      ELSE
-         !
-         zqsr_corr(:,:) = qsr(:,:) / ( 1.-fr_i(:,:) + rtrn )
-         !
-         CALL p4z_opt_par( kt, zqsr_corr, ze1, ze2, ze3, pqsr100 = zqsr100  ) 
-         !
-         DO jk = 1, nksr      
-            etot (:,:,jk) =         ze1(:,:,jk) +        ze2(:,:,jk) +       ze3(:,:,jk)
-            enano(:,:,jk) =  1.85 * ze1(:,:,jk) + 0.69 * ze2(:,:,jk) + 0.46 * ze3(:,:,jk)
-            ediat(:,:,jk) =  1.62 * ze1(:,:,jk) + 0.74 * ze2(:,:,jk) + 0.63 * ze3(:,:,jk)
+            etot (:,:,jk) =        ze1(:,:,jk) +        ze2(:,:,jk) +       ze3(:,:,jk)    ! Total PAR
+            enano(:,:,jk) =  1.85 * ze1(:,:,jk) + 0.69 * ze2(:,:,jk) + 0.46 * ze3(:,:,jk)  ! Nanophytoplankton
+            ediat(:,:,jk) =  1.62 * ze1(:,:,jk) + 0.74 * ze2(:,:,jk) + 0.63 * ze3(:,:,jk)  ! Diatoms
          END DO
          IF( ln_p5z ) THEN
             DO jk = 1, nksr      
-              epico(:,:,jk) =  1.94 * ze1(:,:,jk) + 0.66 * ze2(:,:,jk) + 0.4 * ze3(:,:,jk)
+              epico(:,:,jk) =  1.94 * ze1(:,:,jk) + 0.66 * ze2(:,:,jk) + 0.4 * ze3(:,:,jk)  ! Picophytoplankton (PISCES-QUOTA)
             END DO
          ENDIF
          etot_ndcy(:,:,:) =  etot(:,:,:) 
       ENDIF
 
 
+      ! Biophysical feedback part (computation of vertical penetration of SW)
       IF( ln_qsr_bio ) THEN                    !* heat flux accros w-level (used in the dynamics)
          !                                     !  ------------------------
-         CALL p4z_opt_par( kt, qsr, ze1, ze2, ze3, pe0=ze0 )
+         CALL p4z_opt_par( kt, Kmm, qsr, ze1, ze2, ze3, pe0=ze0 )
          !
          etot3(:,:,1) =  qsr(:,:) * tmask(:,:,1)
          DO jk = 2, nksr + 1
@@ -150,114 +230,97 @@ CONTAINS
          END DO
          !                                     !  ------------------------
       ENDIF
-      !                                        !* Euphotic depth and level
-      neln   (:,:) = 1                            !  ------------------------
-      heup   (:,:) = gdepw_n(:,:,2)
-      heup_01(:,:) = gdepw_n(:,:,2)
+      
+      ! Euphotic depth and level
+      ! Two definitions of the euphotic zone are used here. 
+      ! (1) The classical definition based on the relative threshold value
+      ! (2) An alternative definition based on a absolute threshold value.
+      ! -------------------------------------------------------------------
+      neln(:,:) = 1
+      heup   (:,:) = gdepw(:,:,2,Kmm)
+      heup_01(:,:) = gdepw(:,:,2,Kmm)
 
-      DO jk = 2, nksr
-         DO jj = 1, jpj
-           DO ji = 1, jpi
-              IF( etot_ndcy(ji,jj,jk) * tmask(ji,jj,jk) >=  zqsr100(ji,jj) )  THEN
-                 neln(ji,jj) = jk+1                    ! Euphotic level : 1rst T-level strictly below Euphotic layer
-                 !                                     ! nb: ensure the compatibility with nmld_trc definition in trd_mld_trc_zint
-                 heup(ji,jj) = gdepw_n(ji,jj,jk+1)     ! Euphotic layer depth
-              ENDIF
-              IF( etot_ndcy(ji,jj,jk) * tmask(ji,jj,jk) >= 0.50 )  THEN
-                 heup_01(ji,jj) = gdepw_n(ji,jj,jk+1)  ! Euphotic layer depth (light level definition)
-              ENDIF
-           END DO
-        END DO
-      END DO
+      DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 2, nksr)
+        IF( etot_ndcy(ji,jj,jk) * tmask(ji,jj,jk) >=  zqsr100(ji,jj) )  THEN
+           neln(ji,jj) = jk+1                    ! Euphotic level : 1rst T-level strictly below Euphotic layer
+           !                                     ! nb: ensure the compatibility with nmld_trc definition in trd_mld_trc_zint
+           heup(ji,jj) = gdepw(ji,jj,jk+1,Kmm)     ! Euphotic layer depth
+        ENDIF
+        IF( etot_ndcy(ji,jj,jk) * tmask(ji,jj,jk) >= 0.10 )  THEN
+           heup_01(ji,jj) = gdepw(ji,jj,jk+1,Kmm)  ! Euphotic layer depth (light level definition)
+        ENDIF
+      END_3D
       !
+      ! The euphotic depth can not exceed 300 meters.
       heup   (:,:) = MIN( 300., heup   (:,:) )
       heup_01(:,:) = MIN( 300., heup_01(:,:) )
-      !                                        !* mean light over the mixed layer
-      zdepmoy(:,:)   = 0.e0                    !  -------------------------------
+      
+      ! Mean PAR over the mixed layer
+      ! -----------------------------
+      zdepmoy(:,:)   = 0.e0             
       zetmp1 (:,:)   = 0.e0
       zetmp2 (:,:)   = 0.e0
 
-      DO jk = 1, nksr
-         DO jj = 1, jpj
-            DO ji = 1, jpi
-               IF( gdepw_n(ji,jj,jk+1) <= hmld(ji,jj) ) THEN
-                  zetmp1 (ji,jj) = zetmp1 (ji,jj) + etot     (ji,jj,jk) * e3t_n(ji,jj,jk) ! remineralisation
-                  zetmp2 (ji,jj) = zetmp2 (ji,jj) + etot_ndcy(ji,jj,jk) * e3t_n(ji,jj,jk) ! production
-                  zdepmoy(ji,jj) = zdepmoy(ji,jj) +                       e3t_n(ji,jj,jk)
-               ENDIF
-            END DO
-         END DO
-      END DO
+      DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, nksr)
+         IF( gdepw(ji,jj,jk+1,Kmm) <= hmld(ji,jj) ) THEN
+            zetmp1 (ji,jj) = zetmp1 (ji,jj) + etot     (ji,jj,jk) * e3t(ji,jj,jk,Kmm) ! Actual PAR for remineralisation
+            zetmp2 (ji,jj) = zetmp2 (ji,jj) + etot_ndcy(ji,jj,jk) * e3t(ji,jj,jk,Kmm) ! Par averaged over 24h for production
+            zdepmoy(ji,jj) = zdepmoy(ji,jj) +                       e3t(ji,jj,jk,Kmm)
+         ENDIF
+      END_3D
       !
       emoy(:,:,:) = etot(:,:,:)       ! remineralisation
       zpar(:,:,:) = etot_ndcy(:,:,:)  ! diagnostic : PAR with no diurnal cycle 
       !
-      DO jk = 1, nksr
-         DO jj = 1, jpj
-            DO ji = 1, jpi
-               IF( gdepw_n(ji,jj,jk+1) <= hmld(ji,jj) ) THEN
-                  z1_dep = 1. / ( zdepmoy(ji,jj) + rtrn )
-                  emoy (ji,jj,jk) = zetmp1(ji,jj) * z1_dep
-                  zpar (ji,jj,jk) = zetmp2(ji,jj) * z1_dep
-               ENDIF
-            END DO
-         END DO
-      END DO
-      !
+      DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, nksr)
+         IF( gdepw(ji,jj,jk+1,Kmm) <= hmld(ji,jj) ) THEN
+            z1_dep = 1. / ( zdepmoy(ji,jj) + rtrn )
+            emoy (ji,jj,jk) = zetmp1(ji,jj) * z1_dep
+            zpar (ji,jj,jk) = zetmp2(ji,jj) * z1_dep
+         ENDIF
+      END_3D
+
+      ! Computation of the mean usable light for the different phytoplankton
+      ! groups based on their absorption characteristics.
       zdepmoy(:,:)   = 0.e0
       zetmp3 (:,:)   = 0.e0
       zetmp4 (:,:)   = 0.e0
       !
-      DO jk = 1, nksr
-         DO jj = 1, jpj
-            DO ji = 1, jpi
-               IF( gdepw_n(ji,jj,jk+1) <= MIN(hmld(ji,jj), heup_01(ji,jj)) ) THEN
-                  zetmp3 (ji,jj) = zetmp3 (ji,jj) + enano    (ji,jj,jk) * e3t_n(ji,jj,jk) ! production
-                  zetmp4 (ji,jj) = zetmp4 (ji,jj) + ediat    (ji,jj,jk) * e3t_n(ji,jj,jk) ! production
-                  zdepmoy(ji,jj) = zdepmoy(ji,jj) +                       e3t_n(ji,jj,jk)
-               ENDIF
-            END DO
-         END DO
-      END DO
+      DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, nksr)
+         IF( gdepw(ji,jj,jk+1,Kmm) <= MIN(hmld(ji,jj), heup_01(ji,jj)) ) THEN
+            zetmp3 (ji,jj) = zetmp3 (ji,jj) + enano    (ji,jj,jk) * e3t(ji,jj,jk,Kmm) ! Nanophytoplankton
+            zetmp4 (ji,jj) = zetmp4 (ji,jj) + ediat    (ji,jj,jk) * e3t(ji,jj,jk,Kmm) ! Diatoms
+            zdepmoy(ji,jj) = zdepmoy(ji,jj) +                       e3t(ji,jj,jk,Kmm)
+         ENDIF
+      END_3D
       enanom(:,:,:) = enano(:,:,:)
       ediatm(:,:,:) = ediat(:,:,:)
       !
-      DO jk = 1, nksr
-         DO jj = 1, jpj
-            DO ji = 1, jpi
-               IF( gdepw_n(ji,jj,jk+1) <= hmld(ji,jj) ) THEN
-                  z1_dep = 1. / ( zdepmoy(ji,jj) + rtrn )
-                  enanom(ji,jj,jk) = zetmp3(ji,jj) * z1_dep
-                  ediatm(ji,jj,jk) = zetmp4(ji,jj) * z1_dep
-               ENDIF
-            END DO
-         END DO
-      END DO
+      DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, nksr)
+         IF( gdepw(ji,jj,jk+1,Kmm) <= hmld(ji,jj) ) THEN
+            z1_dep = 1. / ( zdepmoy(ji,jj) + rtrn )
+            enanom(ji,jj,jk) = zetmp3(ji,jj) * z1_dep
+            ediatm(ji,jj,jk) = zetmp4(ji,jj) * z1_dep
+         ENDIF
+      END_3D
       !
       IF( ln_p5z ) THEN
+         ! Picophytoplankton when using PISCES-QUOTA
          ALLOCATE( zetmp5(jpi,jpj) )  ;   zetmp5 (:,:) = 0.e0
-         DO jk = 1, nksr
-            DO jj = 1, jpj
-               DO ji = 1, jpi
-                  IF( gdepw_n(ji,jj,jk+1) <= MIN(hmld(ji,jj), heup_01(ji,jj)) ) THEN
-                     zetmp5(ji,jj)  = zetmp5 (ji,jj) + epico(ji,jj,jk) * e3t_n(ji,jj,jk) ! production
-                  ENDIF
-               END DO
-            END DO
-         END DO
+         DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, nksr)
+            IF( gdepw(ji,jj,jk+1,Kmm) <= MIN(hmld(ji,jj), heup_01(ji,jj)) ) THEN
+               zetmp5(ji,jj)  = zetmp5 (ji,jj) + epico(ji,jj,jk) * e3t(ji,jj,jk,Kmm)
+            ENDIF
+         END_3D
          !
          epicom(:,:,:) = epico(:,:,:)
          !
-         DO jk = 1, nksr
-            DO jj = 1, jpj
-               DO ji = 1, jpi
-                  IF( gdepw_n(ji,jj,jk+1) <= hmld(ji,jj) ) THEN
-                     z1_dep = 1. / ( zdepmoy(ji,jj) + rtrn )
-                     epicom(ji,jj,jk) = zetmp5(ji,jj) * z1_dep
-                  ENDIF
-               END DO
-            END DO
-         END DO
+         DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, nksr)
+            IF( gdepw(ji,jj,jk+1,Kmm) <= hmld(ji,jj) ) THEN
+               z1_dep = 1. / ( zdepmoy(ji,jj) + rtrn )
+               epicom(ji,jj,jk) = zetmp5(ji,jj) * z1_dep
+            ENDIF
+         END_3D
          DEALLOCATE( zetmp5 )
       ENDIF
       !
@@ -274,7 +337,7 @@ CONTAINS
    END SUBROUTINE p4z_opt
 
 
-   SUBROUTINE p4z_opt_par( kt, pqsr, pe1, pe2, pe3, pe0, pqsr100 ) 
+   SUBROUTINE p4z_opt_par( kt, Kmm, pqsr, pe1, pe2, pe3, pe0, pqsr100 ) 
       !!----------------------------------------------------------------------
       !!                  ***  routine p4z_opt_par  ***
       !!
@@ -283,6 +346,7 @@ CONTAINS
       !!
       !!----------------------------------------------------------------------
       INTEGER                         , INTENT(in)              ::   kt                ! ocean time-step
+      INTEGER                         , INTENT(in)              ::   Kmm               ! ocean time-index
       REAL(wp), DIMENSION(jpi,jpj)    , INTENT(in   )           ::   pqsr              ! shortwave
       REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(inout)           ::   pe1 , pe2 , pe3   ! PAR ( R-G-B)
       REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(inout), OPTIONAL ::   pe0               !
@@ -307,18 +371,12 @@ CONTAINS
          pe2(:,:,1) = zqsr(:,:)
          pe3(:,:,1) = zqsr(:,:)
          !
-         DO jk = 2, nksr + 1
-            DO jj = 1, jpj
-               DO ji = 1, jpi
-                  pe0(ji,jj,jk) = pe0(ji,jj,jk-1) * EXP( -e3t_n(ji,jj,jk-1) * xsi0r )
-                  pe1(ji,jj,jk) = pe1(ji,jj,jk-1) * EXP( -ekb  (ji,jj,jk-1 )        )
-                  pe2(ji,jj,jk) = pe2(ji,jj,jk-1) * EXP( -ekg  (ji,jj,jk-1 )        )
-                  pe3(ji,jj,jk) = pe3(ji,jj,jk-1) * EXP( -ekr  (ji,jj,jk-1 )        )
-               END DO
-              !
-            END DO
-            !
-         END DO
+         DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 2, nksr + 1)
+            pe0(ji,jj,jk) = pe0(ji,jj,jk-1) * EXP( -e3t(ji,jj,jk-1,Kmm) * xsi0r )
+            pe1(ji,jj,jk) = pe1(ji,jj,jk-1) * EXP( -ekb  (ji,jj,jk-1 )        )
+            pe2(ji,jj,jk) = pe2(ji,jj,jk-1) * EXP( -ekg  (ji,jj,jk-1 )        )
+            pe3(ji,jj,jk) = pe3(ji,jj,jk-1) * EXP( -ekr  (ji,jj,jk-1 )        )
+        END_3D
         !
       ELSE   ! T- level
         !
@@ -326,15 +384,11 @@ CONTAINS
         pe2(:,:,1) = zqsr(:,:) * EXP( -0.5 * ekg(:,:,1) )
         pe3(:,:,1) = zqsr(:,:) * EXP( -0.5 * ekr(:,:,1) )
         !
-        DO jk = 2, nksr      
-           DO jj = 1, jpj
-              DO ji = 1, jpi
-                 pe1(ji,jj,jk) = pe1(ji,jj,jk-1) * EXP( -0.5 * ( ekb(ji,jj,jk-1) + ekb(ji,jj,jk) ) )
-                 pe2(ji,jj,jk) = pe2(ji,jj,jk-1) * EXP( -0.5 * ( ekg(ji,jj,jk-1) + ekg(ji,jj,jk) ) )
-                 pe3(ji,jj,jk) = pe3(ji,jj,jk-1) * EXP( -0.5 * ( ekr(ji,jj,jk-1) + ekr(ji,jj,jk) ) )
-              END DO
-           END DO
-        END DO    
+        DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 2, nksr)
+           pe1(ji,jj,jk) = pe1(ji,jj,jk-1) * EXP( -0.5 * ( ekb(ji,jj,jk-1) + ekb(ji,jj,jk) ) )
+           pe2(ji,jj,jk) = pe2(ji,jj,jk-1) * EXP( -0.5 * ( ekg(ji,jj,jk-1) + ekg(ji,jj,jk) ) )
+           pe3(ji,jj,jk) = pe3(ji,jj,jk-1) * EXP( -0.5 * ( ekr(ji,jj,jk-1) + ekr(ji,jj,jk) ) )
+        END_3D
         !
       ENDIF
       ! 
@@ -388,31 +442,36 @@ CONTAINS
       CHARACTER(len=100) ::  cn_dir          ! Root directory for location of ssr files
       TYPE(FLD_N) ::   sn_par                ! informations about the fields to be read
       !
-      NAMELIST/nampisopt/cn_dir, sn_par, ln_varpar, parlux
+      NAMELIST/nampisopt/cn_dir, sn_par, ln_varpar, parlux, ln_p4z_dcyc
       !!----------------------------------------------------------------------
       IF(lwp) THEN
          WRITE(numout,*)
          WRITE(numout,*) 'p4z_opt_init : '
          WRITE(numout,*) '~~~~~~~~~~~~ '
       ENDIF
-
-      REWIND( numnatp_ref )
       READ  ( numnatp_ref, nampisopt, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'nampisopt in reference namelist' )
-
-      REWIND( numnatp_cfg )
       READ  ( numnatp_cfg, nampisopt, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'nampisopt in configuration namelist' )
       IF(lwm) WRITE ( numonp, nampisopt )
 
       IF(lwp) THEN
          WRITE(numout,*) '   Namelist : nampisopt '
-         WRITE(numout,*) '      PAR as a variable fraction of SW     ln_varpar      = ', ln_varpar
-         WRITE(numout,*) '      Default value for the PAR fraction   parlux         = ', parlux
+         WRITE(numout,*) '      PAR as a variable fraction of SW       ln_varpar      = ', ln_varpar
+         WRITE(numout,*) '      Default value for the PAR fraction     parlux         = ', parlux
+         WRITE(numout,*) '      Activate the diurnal cycle in PISCES   ln_p4z_dcyc    = ', ln_p4z_dcyc
       ENDIF
       !
       xparsw = parlux / 3.0
       xsi0r  = 1.e0 / rn_si0
+
+      ! Warning : activate the diurnal cycle with no diurnal cycle in the forcing fields makes no sense
+      ! That does not produce a bug because the model does not use the flag but a warning is necessary
+      ! ----------------------------------------------------------------------------------------------
+      IF ( ln_p4z_dcyc .AND. l_trcdm2dc ) THEN
+         IF (lwp) WRITE(numout,*) 'No diurnal cycle in the PAR forcing field '
+         IF (lwp) WRITE(numout,*) 'Activating the diurnal cycle in PISCES has no effect'
+      ENDIF
       !
       ! Variable PAR at the surface of the ocean
       ! ----------------------------------------

@@ -34,10 +34,10 @@ MODULE icecor
    PUBLIC   ice_cor   ! called by icestp.F90
 
    !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
+#  include "do_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icecor.F90 13640 2020-10-19 17:15:09Z clem $
+   !! $Id: icecor.F90 15334 2021-10-05 21:18:34Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -52,7 +52,7 @@ CONTAINS
       INTEGER, INTENT(in) ::   kt    ! number of iteration
       INTEGER, INTENT(in) ::   kn    ! 1 = after dyn ; 2 = after thermo
       !
-      INTEGER  ::   ji, jj, jk, jl   ! dummy loop indices
+      INTEGER  ::   ji, jj, jl       ! dummy loop indices
       REAL(wp) ::   zsal, zzc
       !!----------------------------------------------------------------------
       ! controls
@@ -88,42 +88,27 @@ CONTAINS
       !                             !-----------------------------------------------------
       IF ( nn_icesal == 2 ) THEN    !  salinity must stay in bounds [Simin,Simax]        !
          !                          !-----------------------------------------------------
-         zzc = rhoi * r1_rdtice
+         zzc = rhoi * r1_Dt_ice
          DO jl = 1, jpl
-            DO jj = 1, jpj 
-               DO ji = 1, jpi
-                  zsal = sv_i(ji,jj,jl)
-                  sv_i(ji,jj,jl) = MIN(  MAX( rn_simin*v_i(ji,jj,jl) , sv_i(ji,jj,jl) ) , rn_simax*v_i(ji,jj,jl)  )
-                  IF( kn /= 0 ) & ! no ice-ocean exchanges if kn=0 (for bdy for instance) otherwise conservation diags will fail
-                     &   sfx_res(ji,jj) = sfx_res(ji,jj) - ( sv_i(ji,jj,jl) - zsal ) * zzc   ! associated salt flux
-               END DO
-            END DO
+            DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
+               zsal = sv_i(ji,jj,jl)
+               sv_i(ji,jj,jl) = MIN(  MAX( rn_simin*v_i(ji,jj,jl) , sv_i(ji,jj,jl) ) , rn_simax*v_i(ji,jj,jl)  )
+               IF( kn /= 0 ) & ! no ice-ocean exchanges if kn=0 (for bdy for instance) otherwise conservation diags will fail
+                  &   sfx_res(ji,jj) = sfx_res(ji,jj) - ( sv_i(ji,jj,jl) - zsal ) * zzc   ! associated salt flux
+            END_2D
          END DO
       ENDIF
-
+      !
       IF( kn /= 0 ) THEN   ! no zapsmall if kn=0 (for bdy for instance) because we do not want ice-ocean exchanges (wfx,sfx,hfx)
          !                                                              otherwise conservation diags will fail
          !                          !-----------------------------------------------------
          CALL ice_var_zapsmall      !  Zap small values                                  !
          !                          !-----------------------------------------------------
       ENDIF
-      !                             !-----------------------------------------------------
-      IF( kn == 2 ) THEN            !  Ice drift case: Corrections to avoid wrong values !
-         DO jj = 2, jpjm1           !-----------------------------------------------------
-            DO ji = 2, jpim1
-               IF ( at_i(ji,jj) == 0._wp ) THEN    ! what to do if there is no ice
-                  IF ( at_i(ji+1,jj) == 0._wp )   u_ice(ji  ,jj) = 0._wp   ! right side
-                  IF ( at_i(ji-1,jj) == 0._wp )   u_ice(ji-1,jj) = 0._wp   ! left side
-                  IF ( at_i(ji,jj+1) == 0._wp )   v_ice(ji,jj  ) = 0._wp   ! upper side
-                  IF ( at_i(ji,jj-1) == 0._wp )   v_ice(ji,jj-1) = 0._wp   ! bottom side
-               ENDIF
-            END DO
-         END DO
-         CALL lbc_lnk_multi( 'icecor', u_ice, 'U', -1._wp, v_ice, 'V', -1._wp )
-      ENDIF
       !
       ! controls
-      IF( ln_ctl       )   CALL ice_prt3D   ('icecor')                                                             ! prints
+      IF( sn_cfctl%l_prtctl ) &
+         &                 CALL ice_prt3D   ('icecor')                                                             ! prints
       IF( ln_icectl .AND. kn == 2 ) &
          &                 CALL ice_prt     ( kt, iiceprt, jiceprt, 2, ' - Final state - ' )                       ! prints
       IF( ln_icediachk )   CALL ice_cons_hsm(1, 'icecor', rdiag_v, rdiag_s, rdiag_t, rdiag_fv, rdiag_fs, rdiag_ft) ! conservation

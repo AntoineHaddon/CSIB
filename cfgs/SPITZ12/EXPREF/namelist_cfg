@@ -11,9 +11,9 @@
 !!   namwad       Wetting and drying                                    (default: OFF)
 !!   namtsd       data: temperature & salinity                          (default: OFF)
 !!   namcrs       coarsened grid (for outputs and/or TOP)               (ln_crs =T)
-!!   namc1d       1D configuration options                              ("key_c1d")
-!!   namc1d_dyndmp 1D newtonian damping applied on currents             ("key_c1d")
-!!   namc1d_uvd   1D data (currents)                                    ("key_c1d")
+!!   namc1d       1D configuration options                              (ln_c1d =T)
+!!   namc1d_dyndmp 1D newtonian damping applied on currents             (ln_c1d =T)
+!!   namc1d_uvd   1D data (currents)                                    (ln_c1d =T)
 !!======================================================================
 !
 !-----------------------------------------------------------------------
@@ -26,7 +26,7 @@
 !-----------------------------------------------------------------------
 &namdom        !   time and space domain
 !-----------------------------------------------------------------------
-   rn_rdt      =  720.     !  time step for the dynamics and tracer
+   rn_Dt      =  720.     !  time step for the dynamics and tracer
    !
 /
 !-----------------------------------------------------------------------
@@ -35,6 +35,10 @@
    ln_read_cfg = .true.    !  (=T) read the domain configuration file
       !                    !  (=F) user defined configuration           (F => create/check namusr_def)
       cn_domcfg = "domain_cfg"  ! domain configuration filename
+/
+!-----------------------------------------------------------------------
+&namtile        !   parameters of the tiling
+!-----------------------------------------------------------------------
 /
 !-----------------------------------------------------------------------
 &namtsd        !    Temperature & Salinity Data  (init/dmp)             (default: OFF)
@@ -106,7 +110,6 @@
    sn_prec     = 'MARv3.6-9km-Svalbard-2hourly_spitz' ,  2. ,  'precip'  ,   .true.    , .false. , 'yearly'  , 'weights_bilin', '' , ''
    sn_snow     = 'MARv3.6-9km-Svalbard-2hourly_spitz' ,  2. ,  'snow'    ,   .true.    , .false. , 'yearly'  , 'weights_bilin', '' , ''
    sn_slp      = 'MARv3.6-9km-Svalbard-2hourly_spitz' ,  2. ,  'slp'     ,   .true.    , .false. , 'yearly'  , 'weights_bilin', '' , ''
-   sn_tdif     = 'MARv3.6-9km-Svalbard-2hourly_spitz' ,  2. ,  'tdif'    ,   .true.    , .false. , 'yearly'  , 'weights_bilin', '' , ''
 /
 !-----------------------------------------------------------------------
 &namsbc_sas    !   Stand-Alone Surface module: ocean data               (SAS_SRC  only)
@@ -138,16 +141,16 @@
 !-----------------------------------------------------------------------
 &nam_tide      !   tide parameters                                      (default: OFF)
 !-----------------------------------------------------------------------
-   ln_tide     = .true.      ! Activate tides
-      ln_tide_pot   = .false.                !  use tidal potential forcing
-      clname(1)     =   'M2'    !  name of constituent
-      clname(2)     =   'S2'
-      clname(3)     =   'N2'
-      clname(4)     =   'K2'
-      clname(5)     =   'K1'
-      clname(6)     =   'O1'
-      clname(7)     =   'P1'
-      clname(8)     =   'Q1'
+   ln_tide     = .true.           ! Activate tides
+      ln_tide_pot       = .false. !  use tidal potential forcing
+      sn_tide_cnames(1) =   'M2'  !  name of constituent
+      sn_tide_cnames(2) =   'S2'
+      sn_tide_cnames(3) =   'N2'
+      sn_tide_cnames(4) =   'K2'
+      sn_tide_cnames(5) =   'K1'
+      sn_tide_cnames(6) =   'O1'
+      sn_tide_cnames(7) =   'P1'
+      sn_tide_cnames(8) =   'Q1'
 /
 !-----------------------------------------------------------------------
 &nambdy        !  unstructured open boundaries                          (default: OFF)
@@ -359,12 +362,10 @@
 !!                  ***  Diagnostics namelists  ***                   !!
 !!                                                                    !!
 !!   namtrd       dynamics and/or tracer trends                         (default: OFF)
-!!   namptr       Poleward Transport Diagnostics                        (default: OFF)
 !!   namhsb       Heat and salt budgets                                 (default: OFF)
 !!   namdiu       Cool skin and warm layer models                       (default: OFF)
 !!   namdiu       Cool skin and warm layer models                       (default: OFF)
 !!   namflo       float parameters                                      (default: OFF)
-!!   nam_diaharm  Harmonic analysis of tidal constituents               (default: OFF)
 !!   nam_diadct   transports through some sections                      (default: OFF)
 !!   nam_dia25h   25h Mean Output                                       (default: OFF)
 !!   namnc4       netcdf4 chunking and compression settings             ("key_netcdf4")
@@ -392,13 +393,13 @@
 !!======================================================================
 !!                  ***  Miscellaneous namelists  ***                 !!
 !!                                                                    !!
-!!   nammpp            Massively Parallel Processing                    ("key_mpp_mpi")
+!!   nammpp            Massively Parallel Processing
 !!   namctl            Control prints                                   (default: OFF)
 !!   namsto            Stochastic parametrization of EOS                (default: OFF)
 !!======================================================================
 !
 !-----------------------------------------------------------------------
-&nammpp        !   Massively Parallel Processing                        ("key_mpp_mpi")
+&nammpp        !   Massively Parallel Processing
 !-----------------------------------------------------------------------
 /
 !-----------------------------------------------------------------------

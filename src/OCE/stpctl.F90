@@ -17,38 +17,38 @@ MODULE stpctl
    !!----------------------------------------------------------------------
    USE oce             ! ocean dynamics and tracers variables
    USE dom_oce         ! ocean space and time domain variables 
-   USE c1d             ! 1D vertical configuration
+   USE zdf_oce ,  ONLY : ln_zad_Aimp       ! ocean vertical physics variables
+   USE wet_dry,   ONLY : ll_wd, ssh_ref    ! reference depth for negative bathy
+   !  
    USE diawri          ! Standard run outputs       (dia_wri_state routine)
-   !
    USE in_out_manager  ! I/O manager
    USE lbclnk          ! ocean lateral boundary conditions (or mpp link)
    USE lib_mpp         ! distributed memory computing
-   USE zdf_oce ,  ONLY : ln_zad_Aimp       ! ocean vertical physics variables
-   USE wet_dry,   ONLY : ll_wd, ssh_ref    ! reference depth for negative bathy
-
-   USE lib_fortran     ! Fortran utilities
+   USE eosbn2, ONLY: ln_SEOS, rn_b0
+   !
    USE netcdf          ! NetCDF library
    IMPLICIT NONE
    PRIVATE
 
    PUBLIC stp_ctl           ! routine called by step.F90
 
-   INTEGER  ::   idrun, idtime, idssh, idu, ids1, ids2, idt1, idt2, idc1, idw1, istatus
+   INTEGER, PARAMETER         ::   jpvar = 8
+   INTEGER                    ::   nrunid   ! netcdf file id
+   INTEGER, DIMENSION(jpvar)  ::   nvarid   ! netcdf variable id
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: stpctl.F90 15371 2021-10-14 15:02:36Z smueller $
+   !! $Id: stpctl.F90 15023 2021-06-18 14:35:25Z gsamson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE stp_ctl( kt )
+   SUBROUTINE stp_ctl( kt, Kmm )
       !!----------------------------------------------------------------------
       !!                    ***  ROUTINE stp_ctl  ***
-      !!                     
+      !!
       !! ** Purpose :   Control the run
       !!
       !! ** Method  : - Save the time step in numstp
-      !!              - Print it each 50 time steps
       !!              - Stop the run IF problem encountered by setting nstop > 0
       !!                Problems checked: |ssh| maximum larger than 10 m
       !!                                  |U|   maximum larger than 10 m/s 
@@ -59,20 +59,24 @@ CONTAINS
       !!                 nstop indicator sheared among all local domain
       !!----------------------------------------------------------------------
       INTEGER, INTENT(in   ) ::   kt       ! ocean time-step index
+      INTEGER, INTENT(in   ) ::   Kmm      ! ocean time level index
       !!
-      INTEGER                ::   ji, jj, jk          ! dummy loop indices
-      INTEGER,  DIMENSION(3) ::   ih, iu, is1, is2    ! min/max loc indices
-      INTEGER,  DIMENSION(9) ::   iareasum, iareamin, iareamax
-      REAL(wp)               ::   zzz                 ! local real 
-      REAL(wp), DIMENSION(9) ::   zmax, zmaxlocal
-      LOGICAL                ::   ll_wrtstp, ll_colruns, ll_wrtruns
+      INTEGER, PARAMETER              ::   jptst = 4
+      INTEGER                         ::   ji                                    ! dummy loop indices
+      INTEGER                         ::   idtime, istatus
+      INTEGER , DIMENSION(jptst)      ::   iareasum, iareamin, iareamax
+      INTEGER , DIMENSION(3,jptst)    ::   iloc                                  ! min/max loc indices
+      REAL(wp)                        ::   zzz, zminsal, zmaxsal                 ! local real 
+      REAL(wp), DIMENSION(jpvar+1)    ::   zmax
+      REAL(wp), DIMENSION(jptst)      ::   zmaxlocal
+      LOGICAL                         ::   ll_wrtstp, ll_colruns, ll_wrtruns, ll_0oce
       LOGICAL, DIMENSION(jpi,jpj,jpk) ::   llmsk
-      CHARACTER(len=20) :: clname
+      CHARACTER(len=20)               ::   clname
       !!----------------------------------------------------------------------
       IF( nstop > 0 .AND. ngrdstop > -1 )   RETURN   !   stpctl was already called by a child grid
       !
       ll_wrtstp  = ( MOD( kt-nit000, sn_cfctl%ptimincr ) == 0 ) .OR. ( kt == nitend )
-      ll_colruns = ll_wrtstp .AND. sn_cfctl%l_runstat .AND. jpnij > 1 
+      ll_colruns = ll_wrtstp .AND. sn_cfctl%l_runstat .AND. jpnij > 1
       ll_wrtruns = ( ll_colruns .OR. jpnij == 1 ) .AND. lwm
       !
       IF( kt == nit000 ) THEN
@@ -82,107 +86,133 @@ CONTAINS
             WRITE(numout,*) 'stp_ctl : time-stepping control'
             WRITE(numout,*) '~~~~~~~'
          ENDIF
-         !                                ! open time.step file
-         IF( lwm ) CALL ctl_opn( numstp, 'time.step', 'REPLACE', 'FORMATTED', 'SEQUENTIAL', -1, numout, lwp, narea )
-         !                                ! open run.stat file(s) at start whatever
-         !                                ! the value of sn_cfctl%ptimincr
+         !                                ! open time.step    ascii file, done only by 1st subdomain
+         IF( lwm )   CALL ctl_opn( numstp, 'time.step', 'REPLACE', 'FORMATTED', 'SEQUENTIAL', -1, numout, lwp, narea )
+         !
          IF( ll_wrtruns ) THEN
+            !                             ! open run.stat     ascii file, done only by 1st subdomain
             CALL ctl_opn( numrun, 'run.stat', 'REPLACE', 'FORMATTED', 'SEQUENTIAL', -1, numout, lwp, narea )
+            !                             ! open run.stat.nc netcdf file, done only by 1st subdomain
             clname = 'run.stat.nc'
             IF( .NOT. Agrif_Root() )   clname = TRIM(Agrif_CFixed())//"_"//TRIM(clname)
-            istatus = NF90_CREATE( TRIM(clname), NF90_CLOBBER, idrun )
-            istatus = NF90_DEF_DIM( idrun, 'time', NF90_UNLIMITED, idtime )
-            istatus = NF90_DEF_VAR( idrun, 'abs_ssh_max', NF90_DOUBLE, (/ idtime /), idssh )
-            istatus = NF90_DEF_VAR( idrun,   'abs_u_max', NF90_DOUBLE, (/ idtime /), idu   )
-            istatus = NF90_DEF_VAR( idrun,       's_min', NF90_DOUBLE, (/ idtime /), ids1  )
-            istatus = NF90_DEF_VAR( idrun,       's_max', NF90_DOUBLE, (/ idtime /), ids2  )
-            istatus = NF90_DEF_VAR( idrun,       't_min', NF90_DOUBLE, (/ idtime /), idt1  )
-            istatus = NF90_DEF_VAR( idrun,       't_max', NF90_DOUBLE, (/ idtime /), idt2  )
+            istatus = NF90_CREATE( TRIM(clname), NF90_CLOBBER, nrunid )
+            istatus = NF90_DEF_DIM( nrunid, 'time', NF90_UNLIMITED, idtime )
+            istatus = NF90_DEF_VAR( nrunid, 'abs_ssh_max', NF90_DOUBLE, (/ idtime /), nvarid(1) )
+            istatus = NF90_DEF_VAR( nrunid,   'abs_u_max', NF90_DOUBLE, (/ idtime /), nvarid(2) )
+            istatus = NF90_DEF_VAR( nrunid,       's_min', NF90_DOUBLE, (/ idtime /), nvarid(3) )
+            istatus = NF90_DEF_VAR( nrunid,       's_max', NF90_DOUBLE, (/ idtime /), nvarid(4) )
+            istatus = NF90_DEF_VAR( nrunid,       't_min', NF90_DOUBLE, (/ idtime /), nvarid(5) )
+            istatus = NF90_DEF_VAR( nrunid,       't_max', NF90_DOUBLE, (/ idtime /), nvarid(6) )
             IF( ln_zad_Aimp ) THEN
-               istatus = NF90_DEF_VAR( idrun,   'abs_wi_max', NF90_DOUBLE, (/ idtime /), idw1  )
-               istatus = NF90_DEF_VAR( idrun,       'Cf_max', NF90_DOUBLE, (/ idtime /), idc1  )
+               istatus = NF90_DEF_VAR( nrunid,   'Cf_max', NF90_DOUBLE, (/ idtime /), nvarid(7) )
+               istatus = NF90_DEF_VAR( nrunid,'abs_wi_max',NF90_DOUBLE, (/ idtime /), nvarid(8) )
             ENDIF
-            istatus = NF90_ENDDEF(idrun)
+            istatus = NF90_ENDDEF(nrunid)
          ENDIF
+         !
       ENDIF
       !
-      IF(lwm .AND. ll_wrtstp) THEN        !==  current time step  ==!   ("time.step" file)
+      !                                   !==              write current time step              ==!
+      !                                   !==  done only by 1st subdomain at writting timestep  ==!
+      IF( lwm .AND. ll_wrtstp ) THEN
          WRITE ( numstp, '(1x, i8)' )   kt
          REWIND( numstp )
       ENDIF
+      !                                   !==            test of local extrema           ==!
+      !                                   !==  done by all processes at every time step  ==!
       !
-      !                                   !==  test of extrema  ==!
+      llmsk(     1:nn_hls,:,:) = .FALSE.                                          ! exclude halos from the checked region
+      llmsk(Nie0+1:   jpi,:,:) = .FALSE.
+      llmsk(:,     1:nn_hls,:) = .FALSE.
+      llmsk(:,Nje0+1:   jpj,:) = .FALSE.
       !
-      ! define zmax default value. needed for land processors
-      IF( ll_colruns ) THEN    ! default value: must not be kept when calling mpp_max -> must be as small as possible
-         zmax(:) = -HUGE(1._wp)
-      ELSE                     ! default value: must not give true for any of the tests bellow (-> avoid manipulating HUGE...)
-         zmax(:) =  0._wp
-         zmax(3) = -1._wp      ! avoid salinity minimum at 0.
-      ENDIF
+      llmsk(Nis0:Nie0,Njs0:Nje0,1) = ssmask(Nis0:Nie0,Njs0:Nje0) == 1._wp         ! define only the inner domain
+      !
+      ll_0oce = .NOT. ANY( llmsk(:,:,1) )                                         ! no ocean point in the inner domain?
       !
       IF( ll_wd ) THEN
-         zmax(1) = MAXVAL(  ABS( sshn(:,:) + ssh_ref*tmask(:,:,1) )  )        ! ssh max 
+         zmax(1) = MAXVAL( ABS( ssh(:,:,Kmm) + ssh_ref ), mask = llmsk(:,:,1) )   ! ssh max
       ELSE
-         zmax(1) = MAXVAL(  ABS( sshn(:,:) )  )                               ! ssh max
+         zmax(1) = MAXVAL( ABS( ssh(:,:,Kmm)           ), mask = llmsk(:,:,1) )   ! ssh max
       ENDIF
-      zmax(2) = MAXVAL(  ABS( un(:,:,:) )  )                                  ! velocity max (zonal only)
-      llmsk(:,:,:) = tmask(:,:,:) == 1._wp
-      IF( COUNT( llmsk(:,:,:) ) > 0 ) THEN   ! avoid huge values sent back for land processors...      
-         zmax(3) = MAXVAL( -tsn(:,:,:,jp_sal) , mask = llmsk )   ! minus salinity max
-         zmax(4) = MAXVAL(  tsn(:,:,:,jp_sal) , mask = llmsk )   !       salinity max
-         IF( ll_colruns .OR. jpnij == 1 ) THEN     ! following variables are used only in the netcdf file
-            zmax(5) = MAXVAL( -tsn(:,:,:,jp_tem) , mask = llmsk )   ! minus temperature max
-            zmax(6) = MAXVAL(  tsn(:,:,:,jp_tem) , mask = llmsk )   !       temperature max
-            IF( ln_zad_Aimp ) THEN
-               zmax(9) = MAXVAL(   Cu_adv(:,:,:)   , mask = llmsk ) ! partitioning coeff. max
-               llmsk(:,:,:) = wmask(:,:,:) == 1._wp
-               IF( COUNT( llmsk(:,:,:) ) > 0 ) THEN   ! avoid huge values sent back for land processors...
-                  zmax(8) = MAXVAL(  ABS( wi(:,:,:) ) , mask = wmask(:,:,:) == 1._wp ) ! implicit vertical vel. max
-               ENDIF
-            ENDIF
-         ENDIF
-      ENDIF
-      zmax(7) = REAL( nstop , wp )                                            ! stop indicator
-      !
-      IF( ll_colruns ) THEN
-         zmaxlocal(:) = zmax(:)
-         CALL mpp_max( "stpctl", zmax )          ! max over the global domain
-         nstop = NINT( zmax(7) )                 ! nstop indicator sheared among all local domains
-      ENDIF
-      !                                   !==  run statistics  ==!   ("run.stat" files)
-      IF( ll_wrtruns ) THEN
-         WRITE(numrun,9500) kt, zmax(1), zmax(2), -zmax(3), zmax(4)
-         istatus = NF90_PUT_VAR( idrun, idssh, (/ zmax(1)/), (/kt/), (/1/) )
-         istatus = NF90_PUT_VAR( idrun,   idu, (/ zmax(2)/), (/kt/), (/1/) )
-         istatus = NF90_PUT_VAR( idrun,  ids1, (/-zmax(3)/), (/kt/), (/1/) )
-         istatus = NF90_PUT_VAR( idrun,  ids2, (/ zmax(4)/), (/kt/), (/1/) )
-         istatus = NF90_PUT_VAR( idrun,  idt1, (/-zmax(5)/), (/kt/), (/1/) )
-         istatus = NF90_PUT_VAR( idrun,  idt2, (/ zmax(6)/), (/kt/), (/1/) )
+      llmsk(Nis0:Nie0,Njs0:Nje0,:) = umask(Nis0:Nie0,Njs0:Nje0,:) == 1._wp        ! define only the inner domain
+      zmax(2) = MAXVAL(  ABS( uu(:,:,:,Kmm) ), mask = llmsk )                     ! velocity max (zonal only)
+      llmsk(Nis0:Nie0,Njs0:Nje0,:) = tmask(Nis0:Nie0,Njs0:Nje0,:) == 1._wp        ! define only the inner domain
+      zmax(3) = MAXVAL( -ts(:,:,:,jp_sal,Kmm), mask = llmsk )                     ! minus salinity max
+      zmax(4) = MAXVAL(  ts(:,:,:,jp_sal,Kmm), mask = llmsk )                     !       salinity max
+      IF( ll_colruns .OR. jpnij == 1 ) THEN     ! following variables are used only in the netcdf file
+         zmax(5) = MAXVAL( -ts(:,:,:,jp_tem,Kmm), mask = llmsk )                  ! minus temperature max
+         zmax(6) = MAXVAL(  ts(:,:,:,jp_tem,Kmm), mask = llmsk )                  !       temperature max
          IF( ln_zad_Aimp ) THEN
-            istatus = NF90_PUT_VAR( idrun,  idw1, (/ zmax(8)/), (/kt/), (/1/) )
-            istatus = NF90_PUT_VAR( idrun,  idc1, (/ zmax(9)/), (/kt/), (/1/) )
+            zmax(7) = MAXVAL(   Cu_adv(:,:,:)   , mask = llmsk )                  ! partitioning coeff. max
+            llmsk(:,:,:) = wmask(:,:,:) == 1._wp
+            zmax(8) = MAXVAL(  ABS( wi(:,:,:) ) , mask = llmsk )                  ! implicit vertical vel. max
+         ELSE
+            zmax(7:8) = 0._wp
          ENDIF
-         IF( kt == nitend ) istatus = NF90_CLOSE(idrun)
+      ELSE
+         zmax(5:8) = 0._wp
+      ENDIF
+      zmax(jpvar+1) = REAL( nstop, wp )                                           ! stop indicator
+      !
+      !                                   !==               get global extrema             ==!
+      !                                   !==  done by all processes if writting run.stat  ==!
+      IF( ll_colruns ) THEN
+         zmaxlocal(:) = zmax(1:jptst)
+         CALL mpp_max( "stpctl", zmax )          ! max over the global domain: ok even of ll_0oce = .true. 
+         nstop = NINT( zmax(jpvar+1) )           ! update nstop indicator (now sheared among all local domains)
+      ELSE
+         ! if no ocean point: MAXVAL returns -HUGE => we must overwrite this value to avoid error handling bellow.
+         IF( ll_0oce )   zmax(1:jptst) = (/ 0._wp, 0._wp, -1._wp, 1._wp /)   ! default "valid" values...
+      ENDIF
+      !
+      zmax(3) = -zmax(3)                              ! move back from max(-zz) to min(zz) : easier to manage! 
+      zmax(5) = -zmax(5)                              ! move back from max(-zz) to min(zz) : easier to manage!
+      IF( ll_colruns ) zmaxlocal(3) = -zmaxlocal(3)   ! move back from max(-zz) to min(zz) : easier to manage!
+      !
+      !                                   !==              write "run.stat" files              ==!
+      !                                   !==  done only by 1st subdomain at writting timestep  ==!
+      IF( ll_wrtruns ) THEN
+         WRITE(numrun,9500) kt, zmax(1:jptst)
+         DO ji = 1, jpvar - 2 * COUNT( .NOT. (/ln_zad_Aimp/) )
+            istatus = NF90_PUT_VAR( nrunid, nvarid(ji), (/zmax(ji)/), (/kt/), (/1/) )
+         END DO
+         IF( kt == nitend )   istatus = NF90_CLOSE(nrunid)
       END IF
-      !                                   !==  error handling  ==!
-      IF(   zmax(1) >   20._wp .OR.   &                    ! too large sea surface height ( > 20 m )
-         &  zmax(2) >   10._wp .OR.   &                    ! too large velocity ( > 10 m/s)
-         &  zmax(3) >=   0._wp .OR.   &                    ! negative or zero sea surface salinity
-         &  zmax(4) >= 100._wp .OR.   &                    ! too large sea surface salinity ( > 100 )
-         &  zmax(4) <    0._wp .OR.   &                    ! too large sea surface salinity (keep this line for sea-ice)
-         &  ISNAN( zmax(1) + zmax(2) + zmax(3) ) .OR.  &   ! NaN encounter in the tests
-         &  ABS(   zmax(1) + zmax(2) + zmax(3) ) > HUGE(1._wp) ) THEN    ! Infinity encounter in the tests
-         IF( ll_colruns ) THEN
+      !                                   !==               error handling               ==!
+      !                                   !==  done by all processes at every time step  ==!
+      !
+      IF ( ln_SEOS.AND.(rn_b0==0._wp) ) THEN             ! Discard checks on salinity
+         zmaxsal =  HUGE(1._wp)                               ! if not used in eos
+         zminsal = -HUGE(1._wp)
+      ELSE
+         zmaxsal = 100._wp
+         zminsal =   0._wp
+      ENDIF 
+      ! 
+      IF(  zmax(1) >   20._wp .OR.   &                        ! too large sea surface height ( > 20 m )
+         & zmax(2) >   10._wp .OR.   &                        ! too large velocity ( > 10 m/s)
+         & zmax(3) <= zminsal .OR.   &                        ! negative or zero sea surface salinity
+         & zmax(4) >= zmaxsal .OR.   &                        ! too large sea surface salinity ( > 100 )
+         & zmax(4) <  zminsal .OR.   &                        ! too large sea surface salinity (keep this line for sea-ice)
+         & ISNAN( SUM(zmax(1:jptst)) ) .OR.   &               ! NaN encounter in the tests
+         & ABS(   SUM(zmax(1:jptst)) ) > HUGE(1._wp) ) THEN   ! Infinity encounter in the tests
+         !
+         iloc(:,:) = 0
+         IF( ll_colruns ) THEN   ! zmax is global, so it is the same on all subdomains -> no dead lock with mpp_maxloc
             ! first: close the netcdf file, so we can read it
-            IF( lwm .AND. kt /= nitend )   istatus = NF90_CLOSE(idrun)
-            CALL mpp_maxloc( 'stpctl', ABS(sshn)        , ssmask(:,:)  , zzz, ih(1:2)  )   ;   ih(3) = 0
-            CALL mpp_maxloc( 'stpctl', ABS(un)          , umask (:,:,:), zzz, iu  )
-            CALL mpp_minloc( 'stpctl', tsn(:,:,:,jp_sal), tmask (:,:,:), zzz, is1 )
-            CALL mpp_maxloc( 'stpctl', tsn(:,:,:,jp_sal), tmask (:,:,:), zzz, is2 )
+            IF( lwm .AND. kt /= nitend )   istatus = NF90_CLOSE(nrunid)
+            ! get global loc on the min/max
+            llmsk(Nis0:Nie0,Njs0:Nje0,1) = ssmask(Nis0:Nie0,Njs0:Nje0 ) == 1._wp         ! define only the inner domain
+            CALL mpp_maxloc( 'stpctl', ABS(ssh(:,:,         Kmm)), llmsk(:,:,1), zzz, iloc(1:2,1) )   ! mpp_maxloc ok if mask = F 
+            llmsk(Nis0:Nie0,Njs0:Nje0,:) = umask(Nis0:Nie0,Njs0:Nje0,:) == 1._wp        ! define only the inner domain
+            CALL mpp_maxloc( 'stpctl', ABS( uu(:,:,:,       Kmm)), llmsk(:,:,:), zzz, iloc(1:3,2) )
+            llmsk(Nis0:Nie0,Njs0:Nje0,:) = tmask(Nis0:Nie0,Njs0:Nje0,:) == 1._wp        ! define only the inner domain
+            CALL mpp_minloc( 'stpctl',      ts(:,:,:,jp_sal,Kmm) , llmsk(:,:,:), zzz, iloc(1:3,3) )
+            CALL mpp_maxloc( 'stpctl',      ts(:,:,:,jp_sal,Kmm) , llmsk(:,:,:), zzz, iloc(1:3,4) )
             ! find which subdomain has the max.
             iareamin(:) = jpnij+1   ;   iareamax(:) = 0   ;   iareasum(:) = 0
-            DO ji = 1, 9
+            DO ji = 1, jptst
                IF( zmaxlocal(ji) == zmax(ji) ) THEN
                   iareamin(ji) = narea   ;   iareamax(ji) = narea   ;   iareasum(ji) = 1
                ENDIF
@@ -190,28 +220,35 @@ CONTAINS
             CALL mpp_min( "stpctl", iareamin )         ! min over the global domain
             CALL mpp_max( "stpctl", iareamax )         ! max over the global domain
             CALL mpp_sum( "stpctl", iareasum )         ! sum over the global domain
-         ELSE
-            ih(1:2)= MAXLOC( ABS( sshn(:,:)   )                              ) + (/ nimpp - 1, njmpp - 1    /)   ;   ih(3) = 0
-            iu(:)  = MAXLOC( ABS( un  (:,:,:) )                              ) + (/ nimpp - 1, njmpp - 1, 0 /)
-            is1(:) = MINLOC( tsn(:,:,:,jp_sal), mask = tmask(:,:,:) == 1._wp ) + (/ nimpp - 1, njmpp - 1, 0 /)
-            is2(:) = MAXLOC( tsn(:,:,:,jp_sal), mask = tmask(:,:,:) == 1._wp ) + (/ nimpp - 1, njmpp - 1, 0 /)
+         ELSE                    ! find local min and max locations:
+            ! if we are here, this means that the subdomain contains some oce points -> no need to test the mask used in maxloc
+            llmsk(Nis0:Nie0,Njs0:Nje0,1) = ssmask(Nis0:Nie0,Njs0:Nje0 ) == 1._wp        ! define only the inner domain
+            iloc(1:2,1) = MAXLOC( ABS( ssh(:,:,         Kmm)), mask = llmsk(:,:,1) )
+            llmsk(Nis0:Nie0,Njs0:Nje0,:) = umask(Nis0:Nie0,Njs0:Nje0,:) == 1._wp        ! define only the inner domain
+            iloc(1:3,2) = MAXLOC( ABS(  uu(:,:,:,       Kmm)), mask = llmsk(:,:,:) )
+            llmsk(Nis0:Nie0,Njs0:Nje0,:) = tmask(Nis0:Nie0,Njs0:Nje0,:) == 1._wp        ! define only the inner domain
+            iloc(1:3,3) = MINLOC(       ts(:,:,:,jp_sal,Kmm) , mask = llmsk(:,:,:) )
+            iloc(1:3,4) = MAXLOC(       ts(:,:,:,jp_sal,Kmm) , mask = llmsk(:,:,:) )
+            DO ji = 1, jptst   ! local domain indices ==> global domain indices, excluding halos
+               iloc(1:2,ji) = (/ mig0(iloc(1,ji)), mjg0(iloc(2,ji)) /)
+            END DO
             iareamin(:) = narea   ;   iareamax(:) = narea   ;   iareasum(:) = 1         ! this is local information
          ENDIF
          !
          WRITE(ctmp1,*) ' stp_ctl: |ssh| > 20 m  or  |U| > 10 m/s  or  S <= 0  or  S >= 100  or  NaN encounter in the tests'
-         CALL wrt_line(ctmp2, kt, ' |ssh| max ',   zmax(1), ih , iareasum(1), iareamin(1), iareamax(1) ) 
-         CALL wrt_line(ctmp3, kt, ' |U|   max ',   zmax(2), iu , iareasum(2), iareamin(2), iareamax(2) ) 
-         CALL wrt_line(ctmp4, kt, ' Sal   min ', - zmax(3), is1, iareasum(3), iareamin(3), iareamax(3) ) 
-         CALL wrt_line(ctmp5, kt, ' Sal   max ',   zmax(4), is2, iareasum(4), iareamin(4), iareamax(4) ) 
+         CALL wrt_line( ctmp2, kt, '|ssh| max', zmax(1), iloc(:,1), iareasum(1), iareamin(1), iareamax(1) )
+         CALL wrt_line( ctmp3, kt, '|U|   max', zmax(2), iloc(:,2), iareasum(2), iareamin(2), iareamax(2) )
+         CALL wrt_line( ctmp4, kt, 'Sal   min', zmax(3), iloc(:,3), iareasum(3), iareamin(3), iareamax(3) )
+         CALL wrt_line( ctmp5, kt, 'Sal   max', zmax(4), iloc(:,4), iareasum(4), iareamin(4), iareamax(4) )
          IF( Agrif_Root() ) THEN
             WRITE(ctmp6,*) '      ===> output of last computed fields in output.abort* files'
          ELSE
             WRITE(ctmp6,*) '      ===> output of last computed fields in '//TRIM(Agrif_CFixed())//'_output.abort* files'
          ENDIF
          !
-         CALL dia_wri_state( 'output.abort' )    ! create an output.abort file
+         CALL dia_wri_state( Kmm, 'output.abort' )     ! create an output.abort file
          !
-         IF( ll_colruns .or. jpnij == 1 ) THEN   ! all processes synchronized -> use lwp to print in opened ocean.output files
+         IF( ll_colruns .OR. jpnij == 1 ) THEN   ! all processes synchronized -> use lwp to print in opened ocean.output files
             IF(lwp) THEN   ;   CALL ctl_stop( ctmp1, ' ', ctmp2, ctmp3, ctmp4, ctmp5, ' ', ctmp6 )
             ELSE           ;   nstop = MAX(1, nstop)   ! make sure nstop > 0 (automatically done when calling ctl_stop)
             ENDIF

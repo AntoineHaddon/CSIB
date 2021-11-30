@@ -25,17 +25,17 @@ MODULE lib_fortran
    IMPLICIT NONE
    PRIVATE
 
-   PUBLIC   glob_sum      ! used in many places (masked with tmask_i)
-   PUBLIC   glob_sum_full ! used in many places (masked with tmask_h, ie only over the halos)
+   PUBLIC   glob_sum      ! used in many places (masked with tmask_i = ssmask * tmask_h)
+   PUBLIC   glob_sum_full ! used in many places (masked with tmask_h, excluding all duplicated points halos+periodicity)
    PUBLIC   local_sum     ! used in trcrad, local operation before glob_sum_delay
    PUBLIC   sum3x3        ! used in trcrad, do a sum over 3x3 boxes
    PUBLIC   DDPDD         ! also used in closea module
    PUBLIC   glob_min, glob_max
+   PUBLIC   glob_sum_vec
+   PUBLIC   glob_sum_full_vec
+   PUBLIC   glob_min_vec, glob_max_vec
 #if defined key_nosignedzero
    PUBLIC SIGN
-#endif
-#if defined key_noisnan
-   PUBLIC ISNAN
 #endif
 
    INTERFACE glob_sum
@@ -56,6 +56,18 @@ MODULE lib_fortran
    INTERFACE glob_max
       MODULE PROCEDURE glob_max_2d, glob_max_3d
    END INTERFACE
+   INTERFACE glob_sum_vec
+      MODULE PROCEDURE glob_sum_vec_3d, glob_sum_vec_4d
+   END INTERFACE
+   INTERFACE glob_sum_full_vec
+      MODULE PROCEDURE glob_sum_full_vec_3d, glob_sum_full_vec_4d
+   END INTERFACE
+   INTERFACE glob_min_vec
+      MODULE PROCEDURE glob_min_vec_3d, glob_min_vec_4d
+   END INTERFACE
+   INTERFACE glob_max_vec
+      MODULE PROCEDURE glob_max_vec_3d, glob_max_vec_4d
+   END INTERFACE
 
 #if defined key_nosignedzero
    INTERFACE SIGN
@@ -65,9 +77,11 @@ MODULE lib_fortran
    END INTERFACE
 #endif
 
+   !! * Substitutions
+#  include "do_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: lib_fortran.F90 15371 2021-10-14 15:02:36Z smueller $
+   !! $Id: lib_fortran.F90 15376 2021-10-14 20:41:23Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -143,11 +157,11 @@ CONTAINS
    FUNCTION local_sum_2d( ptab )
       !!----------------------------------------------------------------------
       REAL(wp),  INTENT(in   ) ::   ptab(:,:) ! array on which operation is applied
-      COMPLEX(wp)              ::  local_sum_2d
+      COMPLEX(dp)              ::  local_sum_2d
       !
       !!-----------------------------------------------------------------------
       !
-      COMPLEX(wp)::   ctmp
+      COMPLEX(dp)::   ctmp
       REAL(wp)   ::   ztmp
       INTEGER    ::   ji, jj    ! dummy loop indices
       INTEGER    ::   ipi, ipj  ! dimensions
@@ -161,7 +175,7 @@ CONTAINS
       DO jj = 1, ipj
          DO ji = 1, ipi
             ztmp =  ptab(ji,jj) * tmask_i(ji,jj)
-            CALL DDPDD( CMPLX( ztmp, 0.e0, wp ), ctmp )
+            CALL DDPDD( CMPLX( ztmp, 0.e0, dp ), ctmp )
          END DO
       END DO
       !
@@ -172,11 +186,11 @@ CONTAINS
    FUNCTION local_sum_3d( ptab )
       !!----------------------------------------------------------------------
       REAL(wp),  INTENT(in   ) ::   ptab(:,:,:) ! array on which operation is applied
-      COMPLEX(wp)              ::  local_sum_3d
+      COMPLEX(dp)              ::  local_sum_3d
       !
       !!-----------------------------------------------------------------------
       !
-      COMPLEX(wp)::   ctmp
+      COMPLEX(dp)::   ctmp
       REAL(wp)   ::   ztmp
       INTEGER    ::   ji, jj, jk   ! dummy loop indices
       INTEGER    ::   ipi, ipj, ipk    ! dimensions
@@ -192,7 +206,7 @@ CONTAINS
         DO jj = 1, ipj
           DO ji = 1, ipi
              ztmp =  ptab(ji,jj,jk) * tmask_i(ji,jj)
-             CALL DDPDD( CMPLX( ztmp, 0.e0, wp ), ctmp )
+             CALL DDPDD( CMPLX( ztmp, 0.e0, dp ), ctmp )
           END DO
         END DO
       END DO
@@ -217,35 +231,41 @@ CONTAINS
       IF( SIZE(p2d,1) /= jpi ) CALL ctl_stop( 'STOP', 'wrong call of sum3x3_2d, the first dimension is not equal to jpi' ) 
       IF( SIZE(p2d,2) /= jpj ) CALL ctl_stop( 'STOP', 'wrong call of sum3x3_2d, the second dimension is not equal to jpj' ) 
       !
-      DO jj = 1, jpj
-         DO ji = 1, jpi 
-            IF( MOD(mig(ji), 3) == 1 .AND. MOD(mjg(jj), 3) == 1 ) THEN   ! bottom left corber of a 3x3 box
-               ji2 = MIN(mig(ji)+2, jpiglo) - nimpp + 1                  ! right position of the box
-               jj2 = MIN(mjg(jj)+2, jpjglo) - njmpp + 1                  ! upper position of the box
-               IF( ji2 <= jpi .AND. jj2 <= jpj ) THEN                    ! the box is fully included in the local mpi domain
-                  p2d(ji:ji2,jj:jj2) = SUM(p2d(ji:ji2,jj:jj2))
-               ENDIF
+      ! work over the whole domain (guarantees all internal cells are set when nn_hls=2)
+      !
+      DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
+         IF( MOD(mig(ji), 3) == MOD(nn_hls, 3) .AND.   &              ! 1st bottom left corner always at (Nis0-1, Njs0-1)
+           & MOD(mjg(jj), 3) == MOD(nn_hls, 3)         ) THEN         ! bottom left corner of a 3x3 box
+            ji2 = MIN(mig(ji)+2, jpiglo) - nimpp + 1                  ! right position of the box
+            jj2 = MIN(mjg(jj)+2, jpjglo) - njmpp + 1                  ! upper position of the box
+            IF( ji2 <= jpi .AND. jj2 <= jpj ) THEN                    ! the box is fully included in the local mpi domain
+               p2d(ji:ji2,jj:jj2) = SUM(p2d(ji:ji2,jj:jj2))
             ENDIF
-         END DO
-      END DO
-      CALL lbc_lnk( 'lib_fortran', p2d, 'T', 1. )
-      IF( nbondi /= -1 ) THEN
-         IF( MOD(mig(    1), 3) == 1 )   p2d(    1,:) = p2d(    2,:)
-         IF( MOD(mig(    1), 3) == 2 )   p2d(    2,:) = p2d(    1,:)
+         ENDIF
+      END_2D
+      CALL lbc_lnk( 'lib_fortran', p2d, 'T', 1.0_wp )
+      ! no need for 2nd exchange when nn_hls > 1
+      IF( nn_hls == 1 ) THEN
+         IF( mpiRnei(nn_hls,jpwe) > -1 ) THEN   ! 1st column was changed during the previous call to lbc_lnk
+            IF( MOD(mig(    1), 3) == 1 )   &   ! 1st box start at i=1 -> column 1 to 3 correctly computed locally
+               p2d(    1,:) = p2d(    2,:)      ! previous lbc_lnk corrupted column 1 -> put it back using column 2 
+            IF( MOD(mig(    1), 3) == 2 )   &   ! 1st box start at i=3 -> column 1 and 2 correctly computed on west neighbourh
+               p2d(    2,:) = p2d(    1,:)      !  previous lbc_lnk fix column 1 -> copy it to column 2 
+         ENDIF
+         IF( mpiRnei(nn_hls,jpea) > -1 ) THEN
+            IF( MOD(mig(jpi-2), 3) == 1 )   p2d(  jpi,:) = p2d(jpi-1,:)
+            IF( MOD(mig(jpi-2), 3) == 0 )   p2d(jpi-1,:) = p2d(  jpi,:)
+         ENDIF
+         IF( mpiRnei(nn_hls,jpso) > -1 ) THEN
+            IF( MOD(mjg(    1), 3) == 1 )   p2d(:,    1) = p2d(:,    2)
+            IF( MOD(mjg(    1), 3) == 2 )   p2d(:,    2) = p2d(:,    1)
+         ENDIF
+         IF( mpiRnei(nn_hls,jpno) > -1 ) THEN
+            IF( MOD(mjg(jpj-2), 3) == 1 )   p2d(:,  jpj) = p2d(:,jpj-1)
+            IF( MOD(mjg(jpj-2), 3) == 0 )   p2d(:,jpj-1) = p2d(:,  jpj)
+         ENDIF
+         CALL lbc_lnk( 'lib_fortran', p2d, 'T', 1.0_wp )
       ENDIF
-      IF( nbondi /=  1 ) THEN
-         IF( MOD(mig(jpi-2), 3) == 1 )   p2d(  jpi,:) = p2d(jpi-1,:)
-         IF( MOD(mig(jpi-2), 3) == 0 )   p2d(jpi-1,:) = p2d(  jpi,:)
-      ENDIF
-      IF( nbondj /= -1 ) THEN
-         IF( MOD(mjg(    1), 3) == 1 )   p2d(:,    1) = p2d(:,    2)
-         IF( MOD(mjg(    1), 3) == 2 )   p2d(:,    2) = p2d(:,    1)
-      ENDIF
-      IF( nbondj /=  1 ) THEN
-         IF( MOD(mjg(jpj-2), 3) == 1 )   p2d(:,  jpj) = p2d(:,jpj-1)
-         IF( MOD(mjg(jpj-2), 3) == 0 )   p2d(:,jpj-1) = p2d(:,  jpj)
-      ENDIF
-      CALL lbc_lnk( 'lib_fortran', p2d, 'T', 1. )
 
    END SUBROUTINE sum3x3_2d
 
@@ -266,40 +286,313 @@ CONTAINS
       ipn = SIZE(p3d,3)
       !
       DO jn = 1, ipn
-         DO jj = 1, jpj
-            DO ji = 1, jpi 
-               IF( MOD(mig(ji), 3) == 1 .AND. MOD(mjg(jj), 3) == 1 ) THEN   ! bottom left corber of a 3x3 box
-                  ji2 = MIN(mig(ji)+2, jpiglo) - nimpp + 1                  ! right position of the box
-                  jj2 = MIN(mjg(jj)+2, jpjglo) - njmpp + 1                  ! upper position of the box
-                  IF( ji2 <= jpi .AND. jj2 <= jpj ) THEN                    ! the box is fully included in the local mpi domain
-                     p3d(ji:ji2,jj:jj2,jn) = SUM(p3d(ji:ji2,jj:jj2,jn))
-                  ENDIF
+         !
+         ! work over the whole domain (guarantees all internal cells are set when nn_hls=2)
+         !
+         DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
+            IF( MOD(mig(ji), 3) == MOD(nn_hls, 3) .AND.   &              ! 1st bottom left corner always at (Nis0-1, Njs0-1)
+              & MOD(mjg(jj), 3) == MOD(nn_hls, 3)         ) THEN         ! bottom left corner of a 3x3 box
+               ji2 = MIN(mig(ji)+2, jpiglo) - nimpp + 1                  ! right position of the box
+               jj2 = MIN(mjg(jj)+2, jpjglo) - njmpp + 1                  ! upper position of the box
+               IF( ji2 <= jpi .AND. jj2 <= jpj ) THEN                    ! the box is fully included in the local mpi domain
+                  p3d(ji:ji2,jj:jj2,jn) = SUM(p3d(ji:ji2,jj:jj2,jn))
                ENDIF
-            END DO
-         END DO
+            ENDIF
+         END_2D
       END DO
-      CALL lbc_lnk( 'lib_fortran', p3d, 'T', 1. )
-      IF( nbondi /= -1 ) THEN
-         IF( MOD(mig(    1), 3) == 1 )   p3d(    1,:,:) = p3d(    2,:,:)
-         IF( MOD(mig(    1), 3) == 2 )   p3d(    2,:,:) = p3d(    1,:,:)
+      CALL lbc_lnk( 'lib_fortran', p3d, 'T', 1.0_wp )
+      ! no need for 2nd exchange when nn_hls > 1
+      IF( nn_hls == 1 ) THEN
+         IF( mpiRnei(nn_hls,jpwe) > -1 ) THEN    ! 1st column was changed during the previous call to lbc_lnk
+            IF( MOD(mig(    1), 3) == 1 )   &    ! 1st box start at i=1 -> column 1 to 3 correctly computed locally
+               p3d(    1,:,:) = p3d(    2,:,:)   ! previous lbc_lnk corrupted column 1 -> put it back using column 2 
+            IF( MOD(mig(    1), 3) == 2 )   &    ! 1st box start at i=3 -> column 1 and 2 correctly computed on west neighbourh
+               p3d(    2,:,:) = p3d(    1,:,:)   !  previous lbc_lnk fix column 1 -> copy it to column 2 
+         ENDIF
+         IF( mpiRnei(nn_hls,jpea) > -1 ) THEN
+            IF( MOD(mig(jpi-2), 3) == 1 )   p3d(  jpi,:,:) = p3d(jpi-1,:,:)
+            IF( MOD(mig(jpi-2), 3) == 0 )   p3d(jpi-1,:,:) = p3d(  jpi,:,:)
+         ENDIF
+         IF( mpiRnei(nn_hls,jpso) > -1 ) THEN
+            IF( MOD(mjg(    1), 3) == 1 )   p3d(:,    1,:) = p3d(:,    2,:)
+            IF( MOD(mjg(    1), 3) == 2 )   p3d(:,    2,:) = p3d(:,    1,:)
+         ENDIF
+         IF( mpiRnei(nn_hls,jpno) > -1 ) THEN
+            IF( MOD(mjg(jpj-2), 3) == 1 )   p3d(:,  jpj,:) = p3d(:,jpj-1,:)
+            IF( MOD(mjg(jpj-2), 3) == 0 )   p3d(:,jpj-1,:) = p3d(:,  jpj,:)
+         ENDIF
+         CALL lbc_lnk( 'lib_fortran', p3d, 'T', 1.0_wp )
       ENDIF
-      IF( nbondi /=  1 ) THEN
-         IF( MOD(mig(jpi-2), 3) == 1 )   p3d(  jpi,:,:) = p3d(jpi-1,:,:)
-         IF( MOD(mig(jpi-2), 3) == 0 )   p3d(jpi-1,:,:) = p3d(  jpi,:,:)
-      ENDIF
-      IF( nbondj /= -1 ) THEN
-         IF( MOD(mjg(    1), 3) == 1 )   p3d(:,    1,:) = p3d(:,    2,:)
-         IF( MOD(mjg(    1), 3) == 2 )   p3d(:,    2,:) = p3d(:,    1,:)
-      ENDIF
-      IF( nbondj /=  1 ) THEN
-         IF( MOD(mjg(jpj-2), 3) == 1 )   p3d(:,  jpj,:) = p3d(:,jpj-1,:)
-         IF( MOD(mjg(jpj-2), 3) == 0 )   p3d(:,jpj-1,:) = p3d(:,  jpj,:)
-      ENDIF
-      CALL lbc_lnk( 'lib_fortran', p3d, 'T', 1. )
 
    END SUBROUTINE sum3x3_3d
 
 
+   FUNCTION glob_sum_vec_3d( cdname, ptab ) RESULT( ptmp )
+      !!----------------------------------------------------------------------
+      CHARACTER(len=*),  INTENT(in) ::   cdname      ! name of the calling subroutine
+      REAL(wp),          INTENT(in) ::   ptab(:,:,:) ! array on which operation is applied
+      REAL(wp), DIMENSION(SIZE(ptab,3)) ::   ptmp
+      !
+      COMPLEX(dp), DIMENSION(:), ALLOCATABLE ::   ctmp
+      REAL(wp)    ::   ztmp
+      INTEGER     ::   ji , jj , jk     ! dummy loop indices
+      INTEGER     ::   ipi, ipj, ipk    ! dimensions
+      INTEGER     ::   iis, iie, ijs, ije   ! loop start and end
+      !!-----------------------------------------------------------------------
+      !
+      ipi = SIZE(ptab,1)   ! 1st dimension
+      ipj = SIZE(ptab,2)   ! 2nd dimension
+      ipk = SIZE(ptab,3)   ! 3rd dimension
+      !
+      IF( ipi == jpi .AND. ipj == jpj ) THEN   ! do 2D loop only over the inner domain (-> avoid to use undefined values)
+         iis = Nis0   ;   iie = Nie0
+         ijs = Njs0   ;   ije = Nje0
+      ELSE                                     ! I think we are never in this case...
+         iis = 1   ;   iie = jpi
+         ijs = 1   ;   ije = jpj
+      ENDIF
+      !
+      ALLOCATE( ctmp(ipk) )
+      !
+      DO jk = 1, ipk
+         ctmp(jk) = CMPLX( 0.e0, 0.e0, dp )   ! warning ctmp is cumulated
+         DO jj = ijs, ije
+            DO ji = iis, iie
+               ztmp =  ptab(ji,jj,jk) * tmask_i(ji,jj)
+               CALL DDPDD( CMPLX( ztmp, 0.e0, dp ), ctmp(jk) )
+            END DO
+         END DO
+      END DO
+      CALL mpp_sum( cdname, ctmp(:) )   ! sum over the global domain
+      !
+      ptmp = REAL( ctmp(:), wp )
+      !
+      DEALLOCATE( ctmp )
+      !
+   END FUNCTION glob_sum_vec_3d
+
+   FUNCTION glob_sum_vec_4d( cdname, ptab ) RESULT( ptmp )
+      !!----------------------------------------------------------------------
+      CHARACTER(len=*),  INTENT(in) ::   cdname        ! name of the calling subroutine
+      REAL(wp),          INTENT(in) ::   ptab(:,:,:,:) ! array on which operation is applied
+      REAL(wp), DIMENSION(SIZE(ptab,4)) ::   ptmp
+      !
+      COMPLEX(dp), DIMENSION(:), ALLOCATABLE ::   ctmp
+      REAL(wp)    ::   ztmp
+      INTEGER     ::   ji , jj , jk , jl     ! dummy loop indices
+      INTEGER     ::   ipi, ipj, ipk, ipl    ! dimensions
+      INTEGER     ::   iis, iie, ijs, ije    ! loop start and end
+      !!-----------------------------------------------------------------------
+      !
+      ipi = SIZE(ptab,1)   ! 1st dimension
+      ipj = SIZE(ptab,2)   ! 2nd dimension
+      ipk = SIZE(ptab,3)   ! 3rd dimension
+      ipl = SIZE(ptab,4)   ! 4th dimension
+      !
+      IF( ipi == jpi .AND. ipj == jpj ) THEN   ! do 2D loop only over the inner domain (-> avoid to use undefined values)
+         iis = Nis0   ;   iie = Nie0
+         ijs = Njs0   ;   ije = Nje0
+      ELSE                                     ! I think we are never in this case...
+         iis = 1   ;   iie = jpi
+         ijs = 1   ;   ije = jpj
+      ENDIF
+      !
+      ALLOCATE( ctmp(ipl) )
+      !
+      DO jl = 1, ipl
+         ctmp(jl) = CMPLX( 0.e0, 0.e0, dp )   ! warning ctmp is cumulated
+         DO jk = 1, ipk
+            DO jj = ijs, ije
+               DO ji = iis, iie
+                  ztmp =  ptab(ji,jj,jk,jl) * tmask_i(ji,jj)
+                  CALL DDPDD( CMPLX( ztmp, 0.e0, dp ), ctmp(jl) )
+               END DO
+            END DO
+         END DO
+      END DO
+      CALL mpp_sum( cdname, ctmp(:) )   ! sum over the global domain
+      !
+      ptmp = REAL( ctmp(:), wp )
+      !
+      DEALLOCATE( ctmp )
+      !
+   END FUNCTION glob_sum_vec_4d
+   
+   FUNCTION glob_sum_full_vec_3d( cdname, ptab ) RESULT( ptmp )
+      !!----------------------------------------------------------------------
+      CHARACTER(len=*),  INTENT(in) ::   cdname      ! name of the calling subroutine
+      REAL(wp),          INTENT(in) ::   ptab(:,:,:) ! array on which operation is applied
+      REAL(wp), DIMENSION(SIZE(ptab,3)) ::   ptmp
+      !
+      COMPLEX(dp), DIMENSION(:), ALLOCATABLE ::   ctmp
+      REAL(wp)    ::   ztmp
+      INTEGER     ::   ji , jj , jk     ! dummy loop indices
+      INTEGER     ::   ipi, ipj, ipk    ! dimensions
+      INTEGER     ::   iis, iie, ijs, ije   ! loop start and end
+      !!-----------------------------------------------------------------------
+      !
+      ipi = SIZE(ptab,1)   ! 1st dimension
+      ipj = SIZE(ptab,2)   ! 2nd dimension
+      ipk = SIZE(ptab,3)   ! 3rd dimension
+      !
+      IF( ipi == jpi .AND. ipj == jpj ) THEN   ! do 2D loop only over the inner domain (-> avoid to use undefined values)
+         iis = Nis0   ;   iie = Nie0
+         ijs = Njs0   ;   ije = Nje0
+      ELSE                                     ! I think we are never in this case...
+         iis = 1   ;   iie = jpi
+         ijs = 1   ;   ije = jpj
+      ENDIF
+      !
+      ALLOCATE( ctmp(ipk) )
+      !
+      DO jk = 1, ipk
+         ctmp(jk) = CMPLX( 0.e0, 0.e0, dp )   ! warning ctmp is cumulated
+         DO jj = ijs, ije
+            DO ji = iis, iie
+               ztmp =  ptab(ji,jj,jk) * tmask_h(ji,jj)
+               CALL DDPDD( CMPLX( ztmp, 0.e0, dp ), ctmp(jk) )
+            END DO
+         END DO
+      END DO
+      CALL mpp_sum( cdname, ctmp(:) )   ! sum over the global domain
+      !
+      ptmp = REAL( ctmp(:), wp )
+      !
+      DEALLOCATE( ctmp )
+      !
+   END FUNCTION glob_sum_full_vec_3d
+
+   FUNCTION glob_sum_full_vec_4d( cdname, ptab ) RESULT( ptmp )
+      !!----------------------------------------------------------------------
+      CHARACTER(len=*),  INTENT(in) ::   cdname        ! name of the calling subroutine
+      REAL(wp),          INTENT(in) ::   ptab(:,:,:,:) ! array on which operation is applied
+      REAL(wp), DIMENSION(SIZE(ptab,4)) ::   ptmp
+      !
+      COMPLEX(dp), DIMENSION(:), ALLOCATABLE ::   ctmp
+      REAL(wp)    ::   ztmp
+      INTEGER     ::   ji , jj , jk , jl     ! dummy loop indices
+      INTEGER     ::   ipi, ipj, ipk, ipl    ! dimensions
+      INTEGER     ::   iis, iie, ijs, ije    ! loop start and end
+      !!-----------------------------------------------------------------------
+      !
+      ipi = SIZE(ptab,1)   ! 1st dimension
+      ipj = SIZE(ptab,2)   ! 2nd dimension
+      ipk = SIZE(ptab,3)   ! 3rd dimension
+      ipl = SIZE(ptab,4)   ! 4th dimension
+      !
+      IF( ipi == jpi .AND. ipj == jpj ) THEN   ! do 2D loop only over the inner domain (-> avoid to use undefined values)
+         iis = Nis0   ;   iie = Nie0
+         ijs = Njs0   ;   ije = Nje0
+      ELSE                                     ! I think we are never in this case...
+         iis = 1   ;   iie = jpi
+         ijs = 1   ;   ije = jpj
+      ENDIF
+      !
+      ALLOCATE( ctmp(ipl) )
+      !
+      DO jl = 1, ipl
+         ctmp(jl) = CMPLX( 0.e0, 0.e0, dp )   ! warning ctmp is cumulated
+         DO jk = 1, ipk
+            DO jj = ijs, ije
+               DO ji = iis, iie
+                  ztmp =  ptab(ji,jj,jk,jl) * tmask_h(ji,jj)
+                  CALL DDPDD( CMPLX( ztmp, 0.e0, dp ), ctmp(jl) )
+               END DO
+            END DO
+         END DO
+      END DO
+      CALL mpp_sum( cdname, ctmp(:) )   ! sum over the global domain
+      !
+      ptmp = REAL( ctmp(:), wp )
+      !
+      DEALLOCATE( ctmp )
+      !
+   END FUNCTION glob_sum_full_vec_4d
+
+   FUNCTION glob_min_vec_3d( cdname, ptab ) RESULT( ptmp )
+      !!----------------------------------------------------------------------
+      CHARACTER(len=*),  INTENT(in) ::   cdname        ! name of the calling subroutine
+      REAL(wp),          INTENT(in) ::   ptab(:,:,:)   ! array on which operation is applied
+      REAL(wp), DIMENSION(SIZE(ptab,3)) ::   ptmp
+      !
+      INTEGER     ::   jk    ! dummy loop indice & dimension
+      INTEGER     ::   ipk   ! dimension
+      !!-----------------------------------------------------------------------
+      !
+      ipk = SIZE(ptab,3)
+      DO jk = 1, ipk
+         ptmp(jk) = MINVAL( ptab(:,:,jk) * tmask_i(:,:) )
+      ENDDO
+      !
+      CALL mpp_min( cdname, ptmp (:) )
+      !
+   END FUNCTION glob_min_vec_3d
+
+   FUNCTION glob_min_vec_4d( cdname, ptab ) RESULT( ptmp )
+      !!----------------------------------------------------------------------
+      CHARACTER(len=*),  INTENT(in) ::   cdname          ! name of the calling subroutine
+      REAL(wp),          INTENT(in) ::   ptab(:,:,:,:)   ! array on which operation is applied
+      REAL(wp), DIMENSION(SIZE(ptab,4)) ::   ptmp
+      !
+      INTEGER     ::   jk , jl    ! dummy loop indice & dimension
+      INTEGER     ::   ipk, ipl   ! dimension
+      !!-----------------------------------------------------------------------
+      !
+      ipk = SIZE(ptab,3)
+      ipl = SIZE(ptab,4)
+      DO jl = 1, ipl
+            ptmp(jl) = MINVAL( ptab(:,:,1,jl) * tmask_i(:,:) )         
+         DO jk = 2, ipk
+            ptmp(jl) = MIN( ptmp(jl), MINVAL( ptab(:,:,jk,jl) * tmask_i(:,:) ) )
+         ENDDO
+      ENDDO
+      !
+      CALL mpp_min( cdname, ptmp (:) )
+      !
+   END FUNCTION glob_min_vec_4d
+   
+   FUNCTION glob_max_vec_3d( cdname, ptab ) RESULT( ptmp )
+      !!----------------------------------------------------------------------
+      CHARACTER(len=*),  INTENT(in) ::   cdname        ! name of the calling subroutine
+      REAL(wp),          INTENT(in) ::   ptab(:,:,:)   ! array on which operation is applied
+      REAL(wp), DIMENSION(SIZE(ptab,3)) ::   ptmp
+      !
+      INTEGER     ::   jk    ! dummy loop indice & dimension
+      INTEGER     ::   ipk   ! dimension
+      !!-----------------------------------------------------------------------
+      !
+      ipk = SIZE(ptab,3)
+      DO jk = 1, ipk
+         ptmp(jk) = MAXVAL( ptab(:,:,jk) * tmask_i(:,:) )
+      ENDDO
+      !
+      CALL mpp_max( cdname, ptmp (:) )
+      !
+   END FUNCTION glob_max_vec_3d
+
+   FUNCTION glob_max_vec_4d( cdname, ptab ) RESULT( ptmp )
+      !!----------------------------------------------------------------------
+      CHARACTER(len=*),  INTENT(in) ::   cdname          ! name of the calling subroutine
+      REAL(wp),          INTENT(in) ::   ptab(:,:,:,:)   ! array on which operation is applied
+      REAL(wp), DIMENSION(SIZE(ptab,4)) ::   ptmp
+      !
+      INTEGER     ::   jk , jl    ! dummy loop indice & dimension
+      INTEGER     ::   ipk, ipl   ! dimension
+      !!-----------------------------------------------------------------------
+      !
+      ipk = SIZE(ptab,3)
+      ipl = SIZE(ptab,4)
+      DO jl = 1, ipl
+            ptmp(jl) = MAXVAL( ptab(:,:,1,jl) * tmask_i(:,:) )         
+         DO jk = 2, ipk
+            ptmp(jl) = MAX( ptmp(jl), MAXVAL( ptab(:,:,jk,jl) * tmask_i(:,:) ) )
+         ENDDO
+      ENDDO
+      !
+      CALL mpp_max( cdname, ptmp (:) )
+      !
+   END FUNCTION glob_max_vec_4d
+   
    SUBROUTINE DDPDD( ydda, yddb )
       !!----------------------------------------------------------------------
       !!               ***  ROUTINE DDPDD ***
@@ -317,10 +610,10 @@ CONTAINS
       !!              Reproducibility and Sability in Parallel Applications
       !!              Yun HE and Chris H. Q. DING, Journal of Supercomputing 18, 259-277, 2001
       !!----------------------------------------------------------------------
-      COMPLEX(wp), INTENT(in   ) ::   ydda
-      COMPLEX(wp), INTENT(inout) ::   yddb
+      COMPLEX(dp), INTENT(in   ) ::   ydda
+      COMPLEX(dp), INTENT(inout) ::   yddb
       !
-      REAL(wp) :: zerr, zt1, zt2  ! local work variables
+      REAL(dp) :: zerr, zt1, zt2  ! local work variables
       !!-----------------------------------------------------------------------
       !
       ! Compute ydda + yddb using Knuth's trick.
@@ -486,26 +779,6 @@ CONTAINS
       ELSE                    ;   SIGN_ARRAY_3D_B =-ABS(pa)
       ENDIF
    END FUNCTION SIGN_ARRAY_3D_B
-#endif
-
-#if defined key_noisnan
-!$AGRIF_DO_NOT_TREAT
-   FUNCTION ISNAN(pa)
-      !!-----------------------------------------------------------------------
-      !!                  ***  FUNCTION ISNAN  ***
-      !!
-      !! ** Purpose: provide an alternative to non-standard intrinsic function
-      !!             ISNAN
-      !!-----------------------------------------------------------------------
-      USE, INTRINSIC ::   ieee_arithmetic
-      !!
-      REAL(wp), INTENT(in) ::   pa
-      LOGICAL              ::   ISNAN
-      !!-----------------------------------------------------------------------
-      !
-      ISNAN = ieee_is_nan(pa)
-   END FUNCTION ISNAN
-!$AGRIF_END_DO_NOT_TREAT
 #endif
 
    !!======================================================================

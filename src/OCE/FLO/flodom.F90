@@ -32,14 +32,16 @@ MODULE flodom
    INTEGER , ALLOCATABLE, DIMENSION(:) ::   idomfl, ivtest, ihtest    !   -     
    REAL(wp), ALLOCATABLE, DIMENSION(:) ::   zgifl, zgjfl,  zgkfl      ! distances in indexes
 
+   !! * Substitutions
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: flodom.F90 15231 2021-09-08 07:58:57Z clem $ 
+   !! $Id: flodom.F90 15235 2021-09-08 14:07:36Z clem $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE flo_dom
+   SUBROUTINE flo_dom( Kmm )
       !! ---------------------------------------------------------------------
       !!                  ***  ROUTINE flo_dom  ***
       !!                 
@@ -48,6 +50,8 @@ CONTAINS
       !!  ** Method  :   We put the floats  in the domain with the latitude,
       !!               the longitude (degree) and the depth (m).
       !!----------------------------------------------------------------------      
+      INTEGER, INTENT(in) ::  Kmm    ! ocean time level index
+      !
       INTEGER            ::   jfl    ! dummy loop  
       INTEGER            ::   inum   ! logical unit for file read
       !!---------------------------------------------------------------------
@@ -89,7 +93,7 @@ CONTAINS
             IF( ln_ariane )THEN  !Add new floats with ariane convention
                 CALL flo_add_new_ariane_floats(jpnrstflo+1,jpnfl) 
             ELSE                 !Add new floats with long/lat convention
-                CALL flo_add_new_floats(jpnrstflo+1,jpnfl)
+                CALL flo_add_new_floats(Kmm,jpnrstflo+1,jpnfl)
             ENDIF
          ENDIF
 
@@ -101,14 +105,14 @@ CONTAINS
          IF( ln_ariane )THEN       !Add new floats with ariane convention
             CALL flo_add_new_ariane_floats(1,jpnfl)
          ELSE                      !Add new floats with long/lat convention
-            CALL flo_add_new_floats(1,jpnfl)
+            CALL flo_add_new_floats(Kmm,1,jpnfl)
          ENDIF
 
       ENDIF
             
    END SUBROUTINE flo_dom
 
-   SUBROUTINE flo_add_new_floats(kfl_start, kfl_end)
+   SUBROUTINE flo_add_new_floats(Kmm, kfl_start, kfl_end)
       !! -------------------------------------------------------------
       !!                 ***  SUBROUTINE add_new_arianefloats  ***
       !!          
@@ -123,6 +127,7 @@ CONTAINS
       !!               
       !! ** Method  : 
       !!----------------------------------------------------------------------
+      INTEGER, INTENT(in) :: Kmm
       INTEGER, INTENT(in) :: kfl_start, kfl_end
       !!
       INTEGER           :: inum ! file unit
@@ -150,9 +155,9 @@ CONTAINS
          ihtest(jfl) = 0
          ivtest(jfl) = 0
          ikmfl(jfl) = 0
-# if   defined key_mpp_mpi
-         DO ji = MAX(nldi,2), nlei
-            DO jj = MAX(nldj,2), nlej   ! NO vector opt.
+# if ! defined key_mpi_off
+         DO ji = MAX(Nis0,2), Nie0
+            DO jj = MAX(Njs0,2), Nje0   ! NO vector opt.
 # else         
          DO ji = 2, jpi
             DO jj = 2, jpj   ! NO vector opt.
@@ -169,7 +174,7 @@ CONTAINS
                   ijmfl(jfl) = jj
                   ihtest(jfl) = ihtest(jfl)+1
                   DO jk = 1, jpk-1
-                     IF( (gdepw_n(ji,jj,jk) <= flzz(jfl)) .AND. (gdepw_n(ji,jj,jk+1) > flzz(jfl)) ) THEN
+                     IF( (gdepw(ji,jj,jk,Kmm) <= flzz(jfl)) .AND. (gdepw(ji,jj,jk+1,Kmm) > flzz(jfl)) ) THEN
                         ikmfl(jfl) = jk
                         ivtest(jfl) = ivtest(jfl) + 1
                      ENDIF
@@ -231,12 +236,12 @@ CONTAINS
             ! Translation of this distances (in meter) in indexes
             zgifl(jfl)= (iimfl(jfl)-0.5) + zdxab/e1u(iimfl(jfl)-1,ijmfl(jfl)) + (mig(1)-1)
             zgjfl(jfl)= (ijmfl(jfl)-0.5) + zdyad/e2v(iimfl(jfl),ijmfl(jfl)-1) + (mjg(1)-1)
-            zgkfl(jfl) = (( gdepw_n(iimfl(jfl),ijmfl(jfl),ikmfl(jfl)+1) - flzz(jfl) )* ikmfl(jfl))   &
-               &                 / (  gdepw_n(iimfl(jfl),ijmfl(jfl),ikmfl(jfl)+1)                              &
-               &                    - gdepw_n(iimfl(jfl),ijmfl(jfl),ikmfl(jfl) ) )                             &
-               &                 + (( flzz(jfl)-gdepw_n(iimfl(jfl),ijmfl(jfl),ikmfl(jfl)) ) *(ikmfl(jfl)+1))   &
-               &                 / (  gdepw_n(iimfl(jfl),ijmfl(jfl),ikmfl(jfl)+1)                              &
-               &                    - gdepw_n(iimfl(jfl),ijmfl(jfl),ikmfl(jfl)) )
+            zgkfl(jfl) = (( gdepw(iimfl(jfl),ijmfl(jfl),ikmfl(jfl)+1,Kmm) - flzz(jfl) )* ikmfl(jfl))   &
+               &                 / (  gdepw(iimfl(jfl),ijmfl(jfl),ikmfl(jfl)+1,Kmm)                              &
+               &                    - gdepw(iimfl(jfl),ijmfl(jfl),ikmfl(jfl) ,Kmm) )                             &
+               &                 + (( flzz(jfl)-gdepw(iimfl(jfl),ijmfl(jfl),ikmfl(jfl),Kmm) ) *(ikmfl(jfl)+1))   &
+               &                 / (  gdepw(iimfl(jfl),ijmfl(jfl),ikmfl(jfl)+1,Kmm)                              &
+               &                    - gdepw(iimfl(jfl),ijmfl(jfl),ikmfl(jfl),Kmm) )
          ELSE
             zgifl(jfl) = 0.e0
             zgjfl(jfl) = 0.e0
@@ -414,7 +419,7 @@ CONTAINS
          &   + psax *   psby - psay * psbx
       !
    END FUNCTION fsline
-
+ 
    FUNCTION flo_dstnce( pla1, phi1, pla2, phi2 )
       !! -------------------------------------------------------------
       !!                 ***  Function dstnce  ***

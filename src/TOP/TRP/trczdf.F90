@@ -13,15 +13,13 @@ MODULE trczdf
    !!----------------------------------------------------------------------
    !!   trc_zdf      : update the tracer trend with the vertical diffusion
    !!----------------------------------------------------------------------
+   USE par_trc        ! need jptra, number of passive tracers
    USE trc           ! ocean passive tracers variables
    USE oce_trc       ! ocean dynamics and active tracers
    USE trd_oce       ! trends: ocean variables
    USE trazdf        ! tracer: vertical diffusion
-!!gm do we really need this ?
-   USE trcldf        ! passive tracers: lateral diffusion
-!!gm
    USE trdtra        ! trends manager: tracers 
-   USE prtctl_trc    ! Print control
+   USE prtctl        ! Print control
 
    IMPLICIT NONE
    PRIVATE
@@ -30,19 +28,21 @@ MODULE trczdf
    
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: trczdf.F90 10068 2018-08-28 14:09:04Z nicolasmartin $ 
+   !! $Id: trczdf.F90 14086 2020-12-04 11:37:14Z cetlod $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE trc_zdf( kt )
+   SUBROUTINE trc_zdf( kt, Kbb, Kmm, Krhs, ptr, Kaa )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE trc_zdf  ***
       !!
       !! ** Purpose :   compute the vertical ocean tracer physics using
       !!              an implicit time-stepping scheme.
       !!---------------------------------------------------------------------
-      INTEGER, INTENT( in ) ::  kt      ! ocean time-step index
+      INTEGER                                   , INTENT(in   ) ::   kt                   ! ocean time-step index
+      INTEGER                                   , INTENT(in   ) ::   Kbb, Kmm, Krhs, Kaa  ! ocean time level indices
+      REAL(wp), DIMENSION(jpi,jpj,jpk,jptra,jpt), INTENT(inout) ::   ptr                  ! passive tracers and RHS of tracer equation
       !
       INTEGER               ::  jk, jn
       CHARACTER (len=22)    :: charout
@@ -51,23 +51,23 @@ CONTAINS
       !
       IF( ln_timing )   CALL timing_start('trc_zdf')
       !
-      IF( l_trdtrc )   ztrtrd(:,:,:,:)  = tra(:,:,:,:)
+      IF( l_trdtrc )   ztrtrd(:,:,:,:)  = ptr(:,:,:,:,Krhs)
       !
-      CALL tra_zdf_imp( kt, nittrc000, 'TRC', r2dttrc, trb, tra, jptra )    !   implicit scheme          
+      CALL tra_zdf_imp( kt, nittrc000, 'TRC', rDt_trc, Kbb, Kmm, Krhs, ptr, Kaa, jptra )    !   implicit scheme          
       !
       IF( l_trdtrc )   THEN                      ! save the vertical diffusive trends for further diagnostics
          DO jn = 1, jptra
             DO jk = 1, jpkm1
-               ztrtrd(:,:,jk,jn) = ( ( tra(:,:,jk,jn) - trb(:,:,jk,jn) ) / r2dttrc ) - ztrtrd(:,:,jk,jn)
+               ztrtrd(:,:,jk,jn) = ( ( ptr(:,:,jk,jn,Kaa) - ptr(:,:,jk,jn,Kbb) ) / rDt_trc ) - ztrtrd(:,:,jk,jn)
             END DO
-            CALL trd_tra( kt, 'TRC', jn, jptra_zdf, ztrtrd(:,:,:,jn) )
+            CALL trd_tra( kt, Kmm, Krhs, 'TRC', jn, jptra_zdf, ztrtrd(:,:,:,jn) )
          END DO
       ENDIF
       !                                          ! print mean trends (used for debugging)
-      IF( ln_ctl )   THEN
+      IF( sn_cfctl%l_prttrc )   THEN
          WRITE(charout, FMT="('zdf ')")
-         CALL prt_ctl_trc_info(charout)
-         CALL prt_ctl_trc( tab4d=tra, mask=tmask, clinfo=ctrcnm, clinfo2='trd' )
+         CALL prt_ctl_info( charout, cdcomp = 'top' )
+         CALL prt_ctl( tab4d_1=tr(:,:,:,:,Kaa), mask1=tmask, clinfo=ctrcnm, clinfo3='trd' )
       END IF
       !
       IF( ln_timing )  CALL timing_stop('trc_zdf')

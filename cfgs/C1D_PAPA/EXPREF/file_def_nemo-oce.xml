@@ -52,7 +52,6 @@
 
         <file id="file4" name_suffix="_grid_W" description="ocean W grid variables" >
           <field field_ref="e3w" />
-          <field field_ref="woce"         name="wo"       />
           <field field_ref="avt"          name="difvho"   />
         </file>
 

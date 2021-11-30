@@ -12,7 +12,7 @@ MODULE usrdef_hgr
    !!----------------------------------------------------------------------
    !!   usr_def_hgr   : initialize the horizontal mesh 
    !!----------------------------------------------------------------------
-   USE dom_oce  , ONLY: nimpp, njmpp       ! ocean space and time domain
+   USE dom_oce        ! ocean space and time domain
    USE par_oce        ! ocean space and time domain
    USE phycst         ! physical constants
    USE usrdef_nam     !
@@ -25,9 +25,11 @@ MODULE usrdef_hgr
 
    PUBLIC   usr_def_hgr   ! called in domhgr.F90
 
+   !! * Substitutions
+#  include "do_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: usrdef_hgr.F90 10069 2018-08-28 14:12:24Z nicolasmartin $ 
+   !! $Id: usrdef_hgr.F90 14223 2020-12-19 10:22:45Z smasson $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -87,16 +89,17 @@ CONTAINS
       zsin_alpha = - SQRT( 2._wp ) * 0.5_wp     ! angle: 45 degrees
       zcos_alpha =   SQRT( 2._wp ) * 0.5_wp
       ze1deg = ze1 / (ra * rad)
-      zlam0 = zlam1 + zcos_alpha * ze1deg * REAL( jpjglo-2 , wp )
-      zphi0 = zphi1 + zsin_alpha * ze1deg * REAL( jpjglo-2 , wp )
+      zlam0 = zlam1 + zcos_alpha * ze1deg * REAL( Ni0glo - 2, wp )
+      zphi0 = zphi1 + zsin_alpha * ze1deg * REAL( Nj0glo - 2, wp )
 
 #if defined key_agrif
       ! ! Upper left longitude and latitude from parent:
+      ! Laurent: Should be modify in case of an east-west cyclic parent grid
       IF (.NOT.Agrif_root()) THEN
-         zlam0 = zlam1 + Agrif_irhox() * REAL(Agrif_Parent(jpjglo)-2 , wp) * ze1deg * zcos_alpha  &
+         zlam0 = zlam1 + Agrif_irhox() * REAL(Agrif_Parent(Ni0glo) -2, wp) * ze1deg * zcos_alpha  &
                    &   + ( Agrif_Ix()*Agrif_irhox()-(0.5_wp+nbghostcells)) * ze1deg * zcos_alpha  &
                    &   + ( Agrif_Iy()*Agrif_irhoy()-(0.5_wp+nbghostcells)) * ze1deg * zsin_alpha
-         zphi0 = zphi1 + Agrif_irhoy() * REAL(Agrif_Parent(jpjglo)-2 , wp) * ze1deg * zsin_alpha  &
+         zphi0 = zphi1 + Agrif_irhoy() * REAL(Agrif_Parent(Nj0glo) -2, wp) * ze1deg * zsin_alpha  &
                    &   - ( Agrif_Ix()*Agrif_irhox()-nbghostcells )         * ze1deg * zsin_alpha  &
                    &   + ( Agrif_Iy()*Agrif_irhoy()-nbghostcells )         * ze1deg * zcos_alpha
       ENDIF 
@@ -104,39 +107,37 @@ CONTAINS
       !   
       IF( ln_bench ) THEN     ! benchmark: forced the resolution to be 106 km 
          ze1 = 106000._wp     ! but keep (lat,lon) at the right nn_GYRE resolution
-         CALL ctl_warn( ' GYRE used as Benchmark: e1=e2=106km, no need to adjust rdt, ahm,aht ' )
+         CALL ctl_warn( ' GYRE used as Benchmark: e1=e2=106km, no need to adjust rn_Dt, ahm,aht ' )
       ENDIF
-      IF( nprint==1 .AND. lwp )   THEN
+      IF( lwp )   THEN
          WRITE(numout,*) 'ze1', ze1, 'cosalpha', zcos_alpha, 'sinalpha', zsin_alpha
          WRITE(numout,*) 'ze1deg', ze1deg, 'zlam0', zlam0, 'zphi0', zphi0
       ENDIF
       !   
-      DO jj = 1, jpj 
-         DO ji = 1, jpi 
-            zim1 = REAL( ji + nimpp - 1 ) - 1.   ;   zim05 = REAL( ji + nimpp - 1 ) - 1.5 
-            zjm1 = REAL( jj + njmpp - 1 ) - 1.   ;   zjm05 = REAL( jj + njmpp - 1 ) - 1.5 
-            !   
-            !glamt(i,j) longitude at T-point
-            !gphit(i,j) latitude at T-point  
-            plamt(ji,jj) = zlam0 + zim05 * ze1deg * zcos_alpha + zjm05 * ze1deg * zsin_alpha
-            pphit(ji,jj) = zphi0 - zim05 * ze1deg * zsin_alpha + zjm05 * ze1deg * zcos_alpha
-            !   
-            !glamu(i,j) longitude at U-point
-            !gphiu(i,j) latitude at U-point
-            plamu(ji,jj) = zlam0 + zim1  * ze1deg * zcos_alpha + zjm05 * ze1deg * zsin_alpha
-            pphiu(ji,jj) = zphi0 - zim1  * ze1deg * zsin_alpha + zjm05 * ze1deg * zcos_alpha
-            !   
-            !glamv(i,j) longitude at V-point
-            !gphiv(i,j) latitude at V-point
-            plamv(ji,jj) = zlam0 + zim05 * ze1deg * zcos_alpha + zjm1  * ze1deg * zsin_alpha
-            pphiv(ji,jj) = zphi0 - zim05 * ze1deg * zsin_alpha + zjm1  * ze1deg * zcos_alpha
-            !
-            !glamf(i,j) longitude at F-point
-            !gphif(i,j) latitude at F-point 
-            plamf(ji,jj) = zlam0 + zim1  * ze1deg * zcos_alpha + zjm1  * ze1deg * zsin_alpha
-            pphif(ji,jj) = zphi0 - zim1  * ze1deg * zsin_alpha + zjm1  * ze1deg * zcos_alpha
-         END DO
-      END DO
+      DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
+         zim1 = REAL( mig0(ji), wp ) - 1.   ;   zim05 = REAL( mig0(ji), wp ) - 1.5
+         zjm1 = REAL( mjg0(jj), wp ) - 1.   ;   zjm05 = REAL( mjg0(jj), wp ) - 1.5
+         !   
+         !glamt(i,j) longitude at T-point
+         !gphit(i,j) latitude at T-point  
+         plamt(ji,jj) = zlam0 + zim05 * ze1deg * zcos_alpha + zjm05 * ze1deg * zsin_alpha
+         pphit(ji,jj) = zphi0 - zim05 * ze1deg * zsin_alpha + zjm05 * ze1deg * zcos_alpha
+         !   
+         !glamu(i,j) longitude at U-point
+         !gphiu(i,j) latitude at U-point
+         plamu(ji,jj) = zlam0 + zim1  * ze1deg * zcos_alpha + zjm05 * ze1deg * zsin_alpha
+         pphiu(ji,jj) = zphi0 - zim1  * ze1deg * zsin_alpha + zjm05 * ze1deg * zcos_alpha
+         !   
+         !glamv(i,j) longitude at V-point
+         !gphiv(i,j) latitude at V-point
+         plamv(ji,jj) = zlam0 + zim05 * ze1deg * zcos_alpha + zjm1  * ze1deg * zsin_alpha
+         pphiv(ji,jj) = zphi0 - zim05 * ze1deg * zsin_alpha + zjm1  * ze1deg * zcos_alpha
+         !
+         !glamf(i,j) longitude at F-point
+         !gphif(i,j) latitude at F-point 
+         plamf(ji,jj) = zlam0 + zim1  * ze1deg * zcos_alpha + zjm1  * ze1deg * zsin_alpha
+         pphif(ji,jj) = zphi0 - zim1  * ze1deg * zsin_alpha + zjm1  * ze1deg * zcos_alpha
+      END_2D
       !
       !                       !== Horizontal scale factors ==! (in meters)
       !                     

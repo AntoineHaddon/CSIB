@@ -14,6 +14,7 @@ MODULE trcldf
    !!   trc_ldf       : update the tracer trend with the lateral diffusion
    !!   trc_ldf_ini   : initialization, namelist read, and parameters control
    !!----------------------------------------------------------------------
+   USE par_trc        ! need jptra, number of passive tracers
    USE trc            ! ocean passive tracers variables
    USE oce_trc        ! ocean dynamics and active tracers
    USE ldftra         ! lateral diffusion: eddy diffusivity & EIV coeff.
@@ -24,7 +25,7 @@ MODULE trcldf
    USE trd_oce        ! trends: ocean variables
    USE trdtra         ! trends manager: tracers
    !
-   USE prtctl_trc     ! Print control
+   USE prtctl         ! Print control
 
    IMPLICIT NONE
    PRIVATE
@@ -42,28 +43,31 @@ MODULE trcldf
    REAL(wp) ::   rldf           ! multiplier between active and passive tracers eddy diffusivity   [-]
    
    !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
+#  include "do_loop_substitute.h90"
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: trcldf.F90 11536 2019-09-11 13:54:18Z smasson $
+   !! $Id: trcldf.F90 14834 2021-05-11 09:24:44Z hadcv $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE trc_ldf( kt )
+   SUBROUTINE trc_ldf( kt, Kbb, Kmm, ptr, Krhs )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE tra_ldf  ***
       !!
       !! ** Purpose :   compute the lateral ocean tracer physics.
       !!
       !!----------------------------------------------------------------------
-      INTEGER, INTENT( in ) ::   kt   ! ocean time-step index
+      INTEGER,                                    INTENT(in   ) :: kt              ! ocean time-step index
+      INTEGER,                                    INTENT(in   ) :: Kbb, Kmm, Krhs  ! ocean time-level index
+      REAL(wp), DIMENSION(jpi,jpj,jpk,jptra,jpt), INTENT(inout) :: ptr             ! passive tracers and RHS of tracer equation
       !
       INTEGER            :: ji, jj, jk, jn
       REAL(wp)           :: zdep
       CHARACTER (len=22) :: charout
-      REAL(wp), DIMENSION(jpi,jpj,jpk)   ::   zahu, zahv
-      REAL(wp), POINTER, DIMENSION(:,:,:,:) ::   ztrtrd
+      REAL(wp),          DIMENSION(jpi,jpj,jpk) ::   zahu, zahv
+      REAL(wp), POINTER, DIMENSION(:,:,:,:)     ::   ztrtrd
       !!----------------------------------------------------------------------
       !
       IF( ln_trcldf_OFF )   RETURN        ! not lateral diffusion applied on passive tracers
@@ -72,47 +76,47 @@ CONTAINS
       !
       IF( l_trdtrc )  THEN
          ALLOCATE( ztrtrd(jpi,jpj,jpk,jptra) )
-         ztrtrd(:,:,:,:)  = tra(:,:,:,:)
+         ztrtrd(:,:,:,:)  = ptr(:,:,:,:,Krhs)
       ENDIF
       !                                  !* set the lateral diffusivity coef. for passive tracer      
       zahu(:,:,:) = rldf * ahtu(:,:,:) 
       zahv(:,:,:) = rldf * ahtv(:,:,:)
       !                                  !* Enhanced zonal diffusivity coefficent in the equatorial domain
-      DO jk= 1, jpk
-         DO jj = 1, jpj
-            DO ji = 1, jpi
-               IF( gdept_n(ji,jj,jk) > 200. .AND. gphit(ji,jj) < 5. .AND. gphit(ji,jj) > -5. ) THEN
-                  zdep = MAX( gdept_n(ji,jj,jk) - 1000., 0. ) / 1000.
-                  zahu(ji,jj,jk) = zahu(ji,jj,jk) * MAX( 1., rn_fact_lap * EXP( -zdep ) )
-               ENDIF
-            END DO
-         END DO
-      END DO
+      DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, jpk )
+         IF( gdept(ji,jj,jk,Kmm) > 200. .AND. gphit(ji,jj) < 5. .AND. gphit(ji,jj) > -5. ) THEN
+            zdep = MAX( gdept(ji,jj,jk,Kmm) - 1000., 0. ) / 1000.
+            zahu(ji,jj,jk) = zahu(ji,jj,jk) * MAX( 1., rn_fact_lap * EXP( -zdep ) )
+         ENDIF
+      END_3D
       !
       SELECT CASE ( nldf_trc )                 !* compute lateral mixing trend and add it to the general trend
       !
-      CASE ( np_lap   )                               ! iso-level laplacian
-         CALL tra_ldf_lap  ( kt, nittrc000,'TRC', zahu, zahv, gtru, gtrv, gtrui, gtrvi, trb,      tra, jptra,    1     )
-      CASE ( np_lap_i )                               ! laplacian : standard iso-neutral operator (Madec)
-         CALL tra_ldf_iso  ( kt, nittrc000,'TRC', zahu, zahv, gtru, gtrv, gtrui, gtrvi, trb, trb, tra, jptra,    1     )
-      CASE ( np_lap_it )                              ! laplacian : triad iso-neutral operator (griffies)
-         CALL tra_ldf_triad( kt, nittrc000,'TRC', zahu, zahv, gtru, gtrv, gtrui, gtrvi, trb, trb, tra, jptra,    1     )
-      CASE ( np_blp , np_blp_i , np_blp_it )          ! bilaplacian: all operator (iso-level, -neutral)
-         CALL tra_ldf_blp  ( kt, nittrc000,'TRC', zahu, zahv, gtru, gtrv, gtrui, gtrvi, trb     , tra, jptra, nldf_trc )
+      CASE ( np_lap   )                                                                                    ! iso-level laplacian
+         CALL tra_ldf_lap  ( kt, Kmm, nittrc000,'TRC', zahu, zahv, gtru, gtrv, gtrui, gtrvi,            &
+           &                     ptr(:,:,:,:,Kbb), ptr(:,:,:,:,Krhs),                   jptra, 1 )
+      CASE ( np_lap_i )                                                                                    ! laplacian : standard iso-neutral operator (Madec)
+         CALL tra_ldf_iso  ( kt, Kmm, nittrc000,'TRC', zahu, zahv, gtru, gtrv, gtrui, gtrvi,            &
+           &                     ptr(:,:,:,:,Kbb), ptr(:,:,:,:,Kbb), ptr(:,:,:,:,Krhs), jptra, 1 )
+      CASE ( np_lap_it )                                                                                   ! laplacian : triad iso-neutral operator (griffies)
+         CALL tra_ldf_triad( kt, Kmm, nittrc000,'TRC', zahu, zahv, gtru, gtrv, gtrui, gtrvi,            &
+           &                     ptr(:,:,:,:,Kbb), ptr(:,:,:,:,Kbb), ptr(:,:,:,:,Krhs), jptra, 1 )
+      CASE ( np_blp , np_blp_i , np_blp_it )                                                               ! bilaplacian: all operator (iso-level, -neutral)
+         CALL tra_ldf_blp  ( kt, Kmm, nittrc000,'TRC', zahu, zahv, gtru, gtrv, gtrui, gtrvi,            &
+           &                     ptr(:,:,:,:,Kbb) , ptr(:,:,:,:,Krhs),                 jptra, nldf_trc )
       END SELECT
       !
       IF( l_trdtrc )   THEN                    ! send the trends for further diagnostics
         DO jn = 1, jptra
-           ztrtrd(:,:,:,jn) = tra(:,:,:,jn) - ztrtrd(:,:,:,jn)
-           CALL trd_tra( kt, 'TRC', jn, jptra_ldf, ztrtrd(:,:,:,jn) )
+           ztrtrd(:,:,:,jn) = ptr(:,:,:,jn,Krhs) - ztrtrd(:,:,:,jn)
+           CALL trd_tra( kt, Kmm, Krhs, 'TRC', jn, jptra_ldf, ztrtrd(:,:,:,jn) )
         END DO
         DEALLOCATE( ztrtrd )
       ENDIF
       !                
-      IF( ln_ctl ) THEN                        ! print mean trends (used for debugging)
+      IF( sn_cfctl%l_prttrc ) THEN ! print mean trends (used for debugging)
          WRITE(charout, FMT="('ldf ')")
-         CALL prt_ctl_trc_info(charout)
-         CALL prt_ctl_trc( tab4d=tra, mask=tmask, clinfo=ctrcnm, clinfo2='trd' )
+         CALL prt_ctl_info( charout, cdcomp = 'top' )
+         CALL prt_ctl( tab4d_1=ptr(:,:,:,:,Krhs), mask1=tmask, clinfo=ctrcnm, clinfo3='trd' )
       ENDIF
       !
       IF( ln_timing )   CALL timing_stop('trc_ldf')
@@ -142,11 +146,9 @@ CONTAINS
          WRITE(numout,*) '~~~~~~~~~~~'
       ENDIF
       !
-      REWIND( numnat_ref )             !  namtrc_ldf in reference namelist 
       READ  ( numnat_ref, namtrc_ldf, IOSTAT = ios, ERR = 903)
 903   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namtrc_ldf in reference namelist' )
       !
-      REWIND( numnat_cfg )             !  namtrc_ldf in configuration namelist 
       READ  ( numnat_cfg, namtrc_ldf, IOSTAT = ios, ERR = 904 )
 904   IF( ios >  0 )   CALL ctl_nam ( ios , 'namtrc_ldf in configuration namelist' )
       IF(lwm) WRITE ( numont, namtrc_ldf )
@@ -166,7 +168,7 @@ CONTAINS
       ioptio   = 0
       IF( ln_trcldf_OFF  ) THEN   ;   nldf_trc = np_no_ldf   ;   ioptio = ioptio + 1   ;   ENDIF
       IF( ln_trcldf_tra  ) THEN   ;   nldf_trc = nldf_tra    ;   ioptio = ioptio + 1   ;   ENDIF
-      IF( ioptio /=  1   )   CALL ctl_stop( 'trc_ldf_ini: use ONE of the 2 operator options (NONE/tra)' )
+      IF( ioptio /=  1   )   CALL ctl_stop( 'trc_ldf_ini: use ONE of the 2 operator options (OFF/tra)' )
       
       !                                ! multiplier : passive/active tracers ration
       IF( ln_traldf_lap ) THEN               ! laplacian operator

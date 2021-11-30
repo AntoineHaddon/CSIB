@@ -11,9 +11,9 @@
 !!   namwad       Wetting and drying                                    (default: OFF)
 !!   namtsd       data: temperature & salinity                          (default: OFF)
 !!   namcrs       coarsened grid (for outputs and/or TOP)               (ln_crs =T)
-!!   namc1d       1D configuration options                              ("key_c1d")
-!!   namc1d_dyndmp 1D newtonian damping applied on currents             ("key_c1d")
-!!   namc1d_uvd   1D data (currents)                                    ("key_c1d")
+!!   namc1d       1D configuration options                              (ln_c1d =T)
+!!   namc1d_dyndmp 1D newtonian damping applied on currents             (ln_c1d =T)
+!!   namc1d_uvd   1D data (currents)                                    (ln_c1d =T)
 !!======================================================================
 !
 !-----------------------------------------------------------------------
@@ -21,25 +21,28 @@
 !-----------------------------------------------------------------------
    cn_exp      =  "AMM12"  !  experience name
    nn_it000    =       1   !  first time step
-   nn_itend    =    1728   !  last  time step (std 1 day = 144)
+   nn_itend    =    1296   !  last  time step (std 1 day = 144)
    nn_date0    =  20120102 !  date at nit_0000 (format yyyymmdd) used if ln_rstart=F or (ln_rstart=T and nn_rstctl=0 or 1)
    nn_leapy    =       1   !  Leap year calendar (1) or not (0)
    cn_ocerst_in   = "amm12_restart_oce"   !  suffix of ocean restart name (input)
    cn_ocerst_out  = "restart"             !  suffix of ocean restart name (input)
-   nn_stock    =    1728   !  frequency of creation of a restart file (modulo referenced to 1)
-   nn_write    =     192   !  frequency of write in the output file   (modulo referenced to nit000) 
-   ln_rstart   =  .true.   !  start from rest (F) or from a restart file (T)
+   nn_stock    =    1296   !  frequency of creation of a restart file (modulo referenced to 1)
+   nn_write    =     144   !  frequency of write in the output file   (modulo referenced to nit000) 
 /
 !-----------------------------------------------------------------------
 &namdom        !   time and space domain
 !-----------------------------------------------------------------------
-   rn_rdt      =   450.    !  time step for the dynamics (and tracer if nn_acc=0)
+   rn_Dt      =   600.    !  time step for the dynamics (and tracer if nn_acc=0)
 /
 !-----------------------------------------------------------------------
 &namcfg        !   parameters of the configuration                      (default: user defined GYRE)
 !-----------------------------------------------------------------------
    ln_read_cfg = .true.   !  (=T) read the domain configuration file
       cn_domcfg = "AMM_R12_sco_domcfg" ! domain configuration filename
+/
+!-----------------------------------------------------------------------
+&namtile        !   parameters of the tiling
+!-----------------------------------------------------------------------
 /
 !!======================================================================
 !!            ***  Surface Boundary Condition namelists  ***          !!
@@ -154,24 +157,23 @@
 !-----------------------------------------------------------------------
 &nam_tide      !   tide parameters                                      (default: OFF)
 !-----------------------------------------------------------------------
-   ln_tide     = .true.    ! Activate tides
-      ln_tide_pot   = .true.  !  use tidal potential forcing
-
-   clname(1)     =   'Q1'   !  name of constituent
-   clname(2)     =   'O1'
-   clname(3)     =   'P1'
-   clname(4)     =   'S1'
-   clname(5)     =   'K1'
-   clname(6)     =   '2N2'
-   clname(7)     =   'MU2'
-   clname(8)     =   'N2'
-   clname(9)     =   'NU2'
-   clname(10)    =   'M2'
-   clname(11)    =   'L2'
-   clname(12)    =   'T2'
-   clname(13)    =   'S2'
-   clname(14)    =   'K2'
-   clname(15)    =   'M4'
+   ln_tide     = .true.        ! Activate tides
+      ln_tide_pot     = .true. !  use tidal potential forcing
+   sn_tide_cnames(1)  = 'Q1'   !  name of constituent
+   sn_tide_cnames(2)  = 'O1'
+   sn_tide_cnames(3)  = 'P1'
+   sn_tide_cnames(4)  = 'S1'
+   sn_tide_cnames(5)  = 'K1'
+   sn_tide_cnames(6)  = '2N2'
+   sn_tide_cnames(7)  = 'MU2'
+   sn_tide_cnames(8)  = 'N2'
+   sn_tide_cnames(9)  = 'NU2'
+   sn_tide_cnames(10) = 'M2'
+   sn_tide_cnames(11) = 'L2'
+   sn_tide_cnames(12) = 'T2'
+   sn_tide_cnames(13) = 'S2'
+   sn_tide_cnames(14) = 'K2'
+   sn_tide_cnames(15) = 'M4'
 /
 !-----------------------------------------------------------------------
 &nambdy        !  unstructured open boundaries                          (default: OFF)
@@ -292,7 +294,7 @@
 &namdyn_vor    !   Vorticity / Coriolis scheme                          (default: NO selection)
 !-----------------------------------------------------------------------
    ln_dynvor_een = .true.  !  energy & enstrophy scheme
-      nn_een_e3f = 1             !  e3f = masked averaging of e3t divided by 4 (=0) or by the sum of mask (=1)
+   nn_e3f_typ = 1          !  e3f = masked averaging of e3t divided by 4 (=0) or by the sum of mask (=1)
 /
 !-----------------------------------------------------------------------
 &namdyn_hpg    !   Hydrostatic pressure gradient option                 (default: NO selection)
@@ -304,7 +306,7 @@
 !-----------------------------------------------------------------------
    ln_dynspg_ts = .true.   ! split-explicit free surface
    ln_bt_auto   = .false.  ! Number of sub-step defined from:
-   nn_baro      = 30       ! =F : the number of sub-step in rn_rdt seconds
+   nn_e      = 30       ! =F : the number of sub-step in rn_Dt seconds
 /
 !-----------------------------------------------------------------------
 &namdyn_ldf    !   lateral diffusion on momentum                        (default: NO selection)
@@ -346,12 +348,10 @@
 !!                  ***  Diagnostics namelists  ***                   !!
 !!                                                                    !!
 !!   namtrd       dynamics and/or tracer trends                         (default: OFF)
-!!   namptr       Poleward Transport Diagnostics                        (default: OFF)
 !!   namhsb       Heat and salt budgets                                 (default: OFF)
 !!   namdiu       Cool skin and warm layer models                       (default: OFF)
 !!   namdiu       Cool skin and warm layer models                       (default: OFF)
 !!   namflo       float parameters                                      (default: OFF)
-!!   nam_diaharm  Harmonic analysis of tidal constituents               (default: OFF)
 !!   nam_diadct   transports through some sections                      (default: OFF)
 !!   nam_dia25h   25h Mean Output                                       (default: OFF)
 !!   namnc4       netcdf4 chunking and compression settings             ("key_netcdf4")
@@ -372,13 +372,13 @@
 !!======================================================================
 !!                  ***  Miscellaneous namelists  ***                 !!
 !!                                                                    !!
-!!   nammpp            Massively Parallel Processing                    ("key_mpp_mpi")
+!!   nammpp            Massively Parallel Processing
 !!   namctl            Control prints                                   (default: OFF)
 !!   namsto            Stochastic parametrization of EOS                (default: OFF)
 !!======================================================================
 !
 !-----------------------------------------------------------------------
-&nammpp        !   Massively Parallel Processing                        ("key_mpp_mpi")
+&nammpp        !   Massively Parallel Processing
 !-----------------------------------------------------------------------
 /
 !-----------------------------------------------------------------------

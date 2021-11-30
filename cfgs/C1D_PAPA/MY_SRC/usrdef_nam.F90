@@ -33,12 +33,12 @@ MODULE usrdef_nam
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: usrdef_nam.F90 11536 2019-09-11 13:54:18Z smasson $
+   !! $Id: usrdef_nam.F90 15023 2021-06-18 14:35:25Z gsamson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE usr_def_nam( cd_cfg, kk_cfg, kpi, kpj, kpk, kperio )
+   SUBROUTINE usr_def_nam( cd_cfg, kk_cfg, kpi, kpj, kpk, ldIperio, ldJperio, ldNFold, cdNFtype )
       !!----------------------------------------------------------------------
       !!                     ***  ROUTINE dom_nam  ***
       !!                    
@@ -50,17 +50,18 @@ CONTAINS
       !!
       !! ** input   : - namusr_def namelist found in namelist_cfg
       !!----------------------------------------------------------------------
-      CHARACTER(len=*)              , INTENT(out) ::   cd_cfg          ! configuration name
-      INTEGER                       , INTENT(out) ::   kk_cfg          ! configuration resolution
-      INTEGER                       , INTENT(out) ::   kpi, kpj, kpk   ! global domain sizes 
-      INTEGER                       , INTENT(out) ::   kperio          ! lateral global domain b.c. 
+      CHARACTER(len=*), INTENT(out) ::   cd_cfg               ! configuration name
+      INTEGER         , INTENT(out) ::   kk_cfg               ! configuration resolution
+      INTEGER         , INTENT(out) ::   kpi, kpj, kpk        ! global domain sizes
+      LOGICAL         , INTENT(out) ::   ldIperio, ldJperio   ! i- and j- periodicity
+      LOGICAL         , INTENT(out) ::   ldNFold              ! North pole folding
+      CHARACTER(len=1), INTENT(out) ::   cdNFtype             ! Folding type: T or F
       !
       INTEGER ::   ios   ! Local integer
       !!
       NAMELIST/namusr_def/ rn_bathy
       !!----------------------------------------------------------------------
       !
-      REWIND( numnam_cfg )          ! Namelist namusr_def (exist in namelist_cfg only)
       READ  ( numnam_cfg, namusr_def, IOSTAT = ios, ERR = 902 )
 902   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namusr_def in configuration namelist' )
       !
@@ -69,12 +70,13 @@ CONTAINS
       cd_cfg = 'C1D'               ! name & resolution (not used)
       kk_cfg = 0
 
-      ! Global Domain size:  C1D domain is 3 x 3 grid-points x 75 or vertical levels
-      kpi = 3
-      kpj = 3
-      kpk = 75 
+      ! Global Domain size:  C1D domain is 1 x 1 grid-points x 75 or vertical levels
+      kpi = 1
+      kpj = 1
+      kpk = 75
       !                             ! Set the lateral boundary condition of the global domain
-      kperio =  7                   ! C1D configuration : 3x3 basin with cyclic Est-West and Norht-South condition
+      ldIperio =  .TRUE.   ;   ldJperio = .TRUE.   ! C1D configuration : 1x1 basin with cyclic Est-West and Norht-South condition
+      ldNFold  = .FALSE.   ;   cdNFtype = '-'
       !
       !                             ! control print
       IF(lwp) THEN
@@ -86,12 +88,11 @@ CONTAINS
          WRITE(numout,*) '         z-coordinate flag                     ln_zco = ', ln_zco
          WRITE(numout,*) '         z-partial-step coordinate flag        ln_zps = ', ln_zps
          WRITE(numout,*) '         s-coordinate flag                     ln_sco = ', ln_sco
-         WRITE(numout,*) '      C1D domain = 3 x 3 x75 grid-points                '
+         WRITE(numout,*) '      C1D domain = 1 x 1 x 75 grid-points                '
          WRITE(numout,*) '         resulting global domain size :        jpiglo = ', kpi
          WRITE(numout,*) '                                               jpjglo = ', kpj
          WRITE(numout,*) '                                               jpkglo = ', kpk
-         WRITE(numout,*) '   Lateral boundary condition of the global domain'
-         WRITE(numout,*) '      C1D : closed basin                       jperio = ', kperio
+         WRITE(numout,*) '   '
       ENDIF
       !
    END SUBROUTINE usr_def_nam

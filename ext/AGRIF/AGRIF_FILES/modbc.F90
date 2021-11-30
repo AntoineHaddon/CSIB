@@ -1,5 +1,5 @@
 !
-! $Id: modbc.F90 5656 2015-07-31 08:55:56Z timgraham $
+! $Id: modbc.F90 14975 2021-06-11 09:05:32Z jchanut $
 !
 !     AGRIF (Adaptive Grid Refinement In Fortran)
 !
@@ -60,8 +60,8 @@ subroutine Agrif_CorrectVariable ( parent, child, pweight, weight, procname )
     integer, dimension(6)  :: posvartab_child   ! Position of the variable on the cell
     integer, dimension(6)  :: loctab_child      ! Indicates if the child grid has a common border
                                                 !    with the root grid
-    real, dimension(6)     :: s_child, s_parent   ! Positions of the parent and child grids
-    real, dimension(6)     :: ds_child, ds_parent ! Space steps of the parent and child grids
+    real(kind=8), dimension(6)     :: s_child, s_parent   ! Positions of the parent and child grids
+    real(kind=8), dimension(6)     :: ds_child, ds_parent ! Space steps of the parent and child grids
 !
     call PreProcessToInterpOrUpdate( parent,   child,       &
                                      nb_child, ub_child,    &
@@ -72,7 +72,7 @@ subroutine Agrif_CorrectVariable ( parent, child, pweight, weight, procname )
     Agrif_Child_Gr => Agrif_Curgrid
     Agrif_Parent_Gr => Agrif_Curgrid % parent
 !
-    loctab_child(:) = 0
+    loctab_child(1:nbdim) = 0
     posvartab_child(1:nbdim) = root_var % posvar(1:nbdim)
 !
     do n = 1,nbdim
@@ -144,8 +144,8 @@ subroutine Agrif_Correctnd ( parent, child, pweight, weight,                    
     INTEGER, DIMENSION(nbdim)   :: nbtab_Child          !< Number of cells of the child grid
     INTEGER, DIMENSION(nbdim)   :: posvartab_Child      !< Position of the grid variable (1 or 2)
     INTEGER, DIMENSION(nbdim)   :: loctab_Child         !< Indicates if the child grid has a common border with the root grid
-    REAL   , DIMENSION(nbdim)   :: s_Child,  s_Parent   !< Positions of the parent and child grids
-    REAL   , DIMENSION(nbdim)   :: ds_Child, ds_Parent  !< Space steps of the parent and child grids
+    REAL(kind=8)   , DIMENSION(nbdim)   :: s_Child,  s_Parent   !< Positions of the parent and child grids
+    REAL(kind=8)   , DIMENSION(nbdim)   :: ds_Child, ds_Parent  !< Space steps of the parent and child grids
     INTEGER                             :: nbdim        !< Number of dimensions of the grid variable
     procedure()                         :: procname     !< Data recovery procedure
 !
@@ -187,7 +187,7 @@ subroutine Agrif_Correctnd ( parent, child, pweight, weight,                    
         indtab(1:nbdim,1,2) = indtab(1:nbdim,1,2) - 1
     END WHERE
 !
-    call Agrif_get_var_global_bounds(child,lubglob,nbdim)
+    call Agrif_get_var_global_bounds(child,lubglob,nbdim,parent)
 !
     indtruetab(1:nbdim,1,1) = max(indtab(1:nbdim,1,1), lubglob(1:nbdim,1))
     indtruetab(1:nbdim,1,2) = max(indtab(1:nbdim,1,2), lubglob(1:nbdim,1))
@@ -228,7 +228,7 @@ subroutine Agrif_Correctnd ( parent, child, pweight, weight,                    
 
 !
 #if defined AGRIF_MPI
-                call Agrif_get_var_bounds_array(child,lower,upper,nbdim)
+                call Agrif_get_var_bounds_array(child,lower,upper,nbdim,parent)
 
                 do i = 1,nbdim
 !

@@ -12,10 +12,11 @@ MODULE domwri
 
    !!----------------------------------------------------------------------
    !!   dom_wri        : create and write mesh and mask file(s)
-   !!   dom_uniq       : identify unique point of a grid (TUVF)
    !!   dom_stiff      : diagnose maximum grid stiffness/hydrostatic consistency (s-coordinate)
    !!----------------------------------------------------------------------
+   !
    USE dom_oce         ! ocean space and time domain
+   USE domutl          ! 
    USE phycst ,   ONLY :   rsmall
    USE wet_dry,   ONLY :   ll_wd  ! Wetting and drying
    !
@@ -23,8 +24,6 @@ MODULE domwri
    USE iom             ! I/O library
    USE lbclnk          ! lateral boundary conditions - mpp exchanges
    USE lib_mpp         ! MPP library
-   USE sbc_oce, ONLY : nn_ice
-   USE ice, ONLY : jpl,hi_max   ! need the number of ice  categories and their limit
 
    IMPLICIT NONE
    PRIVATE
@@ -33,10 +32,10 @@ MODULE domwri
    PUBLIC   dom_stiff            ! routine called by inidom.F90
 
    !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
+#  include "do_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: domwri.F90 11532 2019-09-11 13:30:16Z smasson $ 
+   !! $Id: domwri.F90 15033 2021-06-21 10:24:45Z smasson $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -58,8 +57,6 @@ CONTAINS
       INTEGER           ::   inum    ! temprary units for 'mesh_mask.nc' file
       CHARACTER(len=21) ::   clnam   ! filename (mesh and mask informations)
       INTEGER           ::   ji, jj, jk   ! dummy loop indices
-      INTEGER           ::   izco, izps, isco, icav
-      !                               
       REAL(wp), DIMENSION(jpi,jpj)     ::   zprt, zprw     ! 2D workspace
       REAL(wp), DIMENSION(jpi,jpj,jpk) ::   zdepu, zdepv   ! 3D workspace
       !!----------------------------------------------------------------------
@@ -73,30 +70,21 @@ CONTAINS
       !                                  ! ============================
       !                                  !  create 'mesh_mask.nc' file
       !                                  ! ============================
-      IF( nn_ice.eq.2) THEN
-        CALL iom_open( TRIM(clnam), inum, ldwrt = .TRUE. , kdlev = jpl )
-      ELSE
-        CALL iom_open( TRIM(clnam), inum, ldwrt = .TRUE. )
-      ENDIF
-      !
-      !                                                         ! global domain size
-      CALL iom_rstput( 0, 0, inum, 'jpiglo', REAL( jpiglo, wp), ktype = jp_i4 )
-      CALL iom_rstput( 0, 0, inum, 'jpjglo', REAL( jpjglo, wp), ktype = jp_i4 )
-      CALL iom_rstput( 0, 0, inum, 'jpkglo', REAL( jpkglo, wp), ktype = jp_i4 )
-
-      !                                                         ! domain characteristics
-      CALL iom_rstput( 0, 0, inum, 'jperio', REAL( jperio, wp), ktype = jp_i4 )
+      CALL iom_open( TRIM(clnam), inum, ldwrt = .TRUE. )
+      !                                                         ! Configuration specificities
+      CALL iom_putatt( inum,  'CfgName', TRIM(cn_cfg) )
+      CALL iom_putatt( inum, 'CfgIndex',      nn_cfg  )
+      !                                                         ! lateral boundary of the global domain
+      CALL iom_putatt( inum,   'Iperio', COUNT( (/l_Iperio/) ) )
+      CALL iom_putatt( inum,   'Jperio', COUNT( (/l_Jperio/) ) )
+      CALL iom_putatt( inum,    'NFold', COUNT( (/l_NFold /) ) )
+      CALL iom_putatt( inum,   'NFtype',          c_NFtype     )
       !                                                         ! type of vertical coordinate
-      IF( ln_zco    ) THEN   ;   izco = 1   ;   ELSE   ;   izco = 0   ;   ENDIF
-      IF( ln_zps    ) THEN   ;   izps = 1   ;   ELSE   ;   izps = 0   ;   ENDIF
-      IF( ln_sco    ) THEN   ;   isco = 1   ;   ELSE   ;   isco = 0   ;   ENDIF
-      CALL iom_rstput( 0, 0, inum, 'ln_zco'   , REAL( izco, wp), ktype = jp_i4 )
-      CALL iom_rstput( 0, 0, inum, 'ln_zps'   , REAL( izps, wp), ktype = jp_i4 )
-      CALL iom_rstput( 0, 0, inum, 'ln_sco'   , REAL( isco, wp), ktype = jp_i4 )
+      IF(ln_zco)   CALL iom_putatt( inum, 'VertCoord', 'zco' )
+      IF(ln_zps)   CALL iom_putatt( inum, 'VertCoord', 'zps' )
+      IF(ln_sco)   CALL iom_putatt( inum, 'VertCoord', 'sco' )
       !                                                         ! ocean cavities under iceshelves
-      IF( ln_isfcav ) THEN   ;   icav = 1   ;   ELSE   ;   icav = 0   ;   ENDIF
-      CALL iom_rstput( 0, 0, inum, 'ln_isfcav', REAL( icav, wp), ktype = jp_i4 )
-  
+      CALL iom_putatt( inum,   'IsfCav', COUNT( (/ln_isfcav/) ) )  
       !                                                         ! masks
       CALL iom_rstput( 0, 0, inum, 'tmask', tmask, ktype = jp_i1 )     !    ! land-sea mask
       CALL iom_rstput( 0, 0, inum, 'umask', umask, ktype = jp_i1 )
@@ -104,25 +92,19 @@ CONTAINS
       CALL iom_rstput( 0, 0, inum, 'fmask', fmask, ktype = jp_i1 )
       
       CALL dom_uniq( zprw, 'T' )
-      DO jj = 1, jpj
-         DO ji = 1, jpi
-            zprt(ji,jj) = ssmask(ji,jj) * zprw(ji,jj)                        !    ! unique point mask
-         END DO
-      END DO                             !    ! unique point mask
+      DO_2D( 1, 1, 1, 1 )
+         zprt(ji,jj) = ssmask(ji,jj) * zprw(ji,jj)                        !    ! unique point mask
+      END_2D
       CALL iom_rstput( 0, 0, inum, 'tmaskutil', zprt, ktype = jp_i1 )  
       CALL dom_uniq( zprw, 'U' )
-      DO jj = 1, jpj
-         DO ji = 1, jpi
-            zprt(ji,jj) = ssumask(ji,jj) * zprw(ji,jj)                        !    ! unique point mask
-         END DO
-      END DO
+      DO_2D( 1, 1, 1, 1 )
+         zprt(ji,jj) = ssumask(ji,jj) * zprw(ji,jj)                        !    ! unique point mask
+      END_2D
       CALL iom_rstput( 0, 0, inum, 'umaskutil', zprt, ktype = jp_i1 )  
       CALL dom_uniq( zprw, 'V' )
-      DO jj = 1, jpj
-         DO ji = 1, jpi
-            zprt(ji,jj) = ssvmask(ji,jj) * zprw(ji,jj)                        !    ! unique point mask
-         END DO
-      END DO
+      DO_2D( 1, 1, 1, 1 )
+         zprt(ji,jj) = ssvmask(ji,jj) * zprw(ji,jj)                        !    ! unique point mask
+      END_2D
       CALL iom_rstput( 0, 0, inum, 'vmaskutil', zprt, ktype = jp_i1 )  
 !!gm  ssfmask has been removed  ==>> find another solution to defined fmaskutil
 !!    Here we just remove the output of fmaskutil.
@@ -160,12 +142,10 @@ CONTAINS
       CALL iom_rstput( 0, 0, inum, 'ff_t', ff_t, ktype = jp_r8 )
       
       ! note that mbkt is set to 1 over land ==> use surface tmask
-      zprt(:,:) = ssmask(:,:) * REAL( mbkt(:,:) , wp )
+      zprt(:,:) = REAL( mbkt(:,:) , wp )
       CALL iom_rstput( 0, 0, inum, 'mbathy', zprt, ktype = jp_i4 )     !    ! nb of ocean T-points
-      zprt(:,:) = ssmask(:,:) * REAL( mikt(:,:) , wp )
+      zprt(:,:) = REAL( mikt(:,:) , wp )
       CALL iom_rstput( 0, 0, inum, 'misf', zprt, ktype = jp_i4 )       !    ! nb of ocean T-points
-      zprt(:,:) = ssmask(:,:) * REAL( risfdep(:,:) , wp )
-      CALL iom_rstput( 0, 0, inum, 'isfdraft', zprt, ktype = jp_r8 )   !    ! nb of ocean T-points
       !															             ! vertical mesh
       CALL iom_rstput( 0, 0, inum, 'e3t_1d', e3t_1d, ktype = jp_r8  )    !    ! scale factors
       CALL iom_rstput( 0, 0, inum, 'e3w_1d', e3w_1d, ktype = jp_r8  )
@@ -190,46 +170,10 @@ CONTAINS
       !
       IF( ll_wd ) CALL iom_rstput( 0, 0, inum, 'ht_0'   , ht_0   , ktype = jp_r8 )
 
-      IF( nn_ice.eq.2) CALL iom_rstput( 0, 0, inum, 'hi_max'   , hi_max(1:jpl)   , ktype = jp_r8 ) ! hi_max(0) = 0.
       !                                     ! ============================
       CALL iom_close( inum )                !        close the files 
       !                                     ! ============================
    END SUBROUTINE dom_wri
-
-
-   SUBROUTINE dom_uniq( puniq, cdgrd )
-      !!----------------------------------------------------------------------
-      !!                  ***  ROUTINE dom_uniq  ***
-      !!                   
-      !! ** Purpose :   identify unique point of a grid (TUVF)
-      !!
-      !! ** Method  :   1) aplly lbc_lnk on an array with different values for each element
-      !!                2) check which elements have been changed
-      !!----------------------------------------------------------------------
-      CHARACTER(len=1)        , INTENT(in   ) ::   cdgrd   ! 
-      REAL(wp), DIMENSION(:,:), INTENT(inout) ::   puniq   ! 
-      !
-      REAL(wp) ::  zshift   ! shift value link to the process number
-      INTEGER  ::  ji       ! dummy loop indices
-      LOGICAL, DIMENSION(SIZE(puniq,1),SIZE(puniq,2),1) ::  lldbl  ! store whether each point is unique or not
-      REAL(wp), DIMENSION(jpi,jpj) ::   ztstref
-      !!----------------------------------------------------------------------
-      !
-      ! build an array with different values for each element 
-      ! in mpp: make sure that these values are different even between process
-      ! -> apply a shift value according to the process number
-      zshift = jpi * jpj * ( narea - 1 )
-      ztstref(:,:) = RESHAPE( (/ (zshift + REAL(ji,wp), ji = 1, jpi*jpj) /), (/ jpi, jpj /) )
-      !
-      puniq(:,:) = ztstref(:,:)                   ! default definition
-      CALL lbc_lnk( 'domwri', puniq, cdgrd, 1. )            ! apply boundary conditions
-      lldbl(:,:,1) = puniq(:,:) == ztstref(:,:)   ! check which values have been changed 
-      !
-      puniq(:,:) = 1.                             ! default definition
-      ! fill only the inner part of the cpu with llbl converted into real 
-      puniq(nldi:nlei,nldj:nlej) = REAL( COUNT( lldbl(nldi:nlei,nldj:nlej,:), dim = 3 ) , wp )
-      !
-   END SUBROUTINE dom_uniq
 
 
    SUBROUTINE dom_stiff( px1 )
@@ -255,35 +199,31 @@ CONTAINS
       zrxmax   = 0._wp
       zr1(:)   = 0._wp
       !
-      DO ji = 2, jpim1
-         DO jj = 2, jpjm1
-            DO jk = 1, jpkm1
-!!gm   remark: dk(gdepw) = e3t   ===>>>  possible simplification of the following calculation....
-!!             especially since it is gde3w which is used to compute the pressure gradient
-!!             furthermore, I think gdept_0 should be used below instead of w point in the numerator
-!!             so that the ratio is computed at the same point (i.e. uw and vw) ....
-               zr1(1) = ABS(  ( gdepw_0(ji  ,jj,jk  )-gdepw_0(ji-1,jj,jk  )               & 
-                    &          +gdepw_0(ji  ,jj,jk+1)-gdepw_0(ji-1,jj,jk+1) )             &
-                    &       / ( gdepw_0(ji  ,jj,jk  )+gdepw_0(ji-1,jj,jk  )               &
-                    &          -gdepw_0(ji  ,jj,jk+1)-gdepw_0(ji-1,jj,jk+1) + rsmall )  ) * umask(ji-1,jj,jk)
-               zr1(2) = ABS(  ( gdepw_0(ji+1,jj,jk  )-gdepw_0(ji  ,jj,jk  )               &
-                    &          +gdepw_0(ji+1,jj,jk+1)-gdepw_0(ji  ,jj,jk+1) )             &
-                    &       / ( gdepw_0(ji+1,jj,jk  )+gdepw_0(ji  ,jj,jk  )               &
-                    &          -gdepw_0(ji+1,jj,jk+1)-gdepw_0(ji  ,jj,jk+1) + rsmall )  ) * umask(ji  ,jj,jk)
-               zr1(3) = ABS(  ( gdepw_0(ji,jj+1,jk  )-gdepw_0(ji,jj  ,jk  )               &
-                    &          +gdepw_0(ji,jj+1,jk+1)-gdepw_0(ji,jj  ,jk+1) )             &
-                    &       / ( gdepw_0(ji,jj+1,jk  )+gdepw_0(ji,jj  ,jk  )               &
-                    &          -gdepw_0(ji,jj+1,jk+1)-gdepw_0(ji,jj  ,jk+1) + rsmall )  ) * vmask(ji,jj  ,jk)
-               zr1(4) = ABS(  ( gdepw_0(ji,jj  ,jk  )-gdepw_0(ji,jj-1,jk  )               &
-                    &          +gdepw_0(ji,jj  ,jk+1)-gdepw_0(ji,jj-1,jk+1) )             &
-                    &       / ( gdepw_0(ji,jj  ,jk  )+gdepw_0(ji,jj-1,jk  )               &
-                    &          -gdepw_0(ji,jj  ,jk+1)-gdepw_0(ji,jj-1,jk+1) + rsmall )  ) * vmask(ji,jj-1,jk)
-               zrxmax = MAXVAL( zr1(1:4) )
-               zx1(ji,jj) = MAX( zx1(ji,jj) , zrxmax )
-            END DO
-         END DO
-      END DO
-      CALL lbc_lnk( 'domwri', zx1, 'T', 1. )
+      DO_3D( 0, 0, 0, 0, 1, jpkm1 )
+         !!gm   remark: dk(gdepw) = e3t   ===>>>  possible simplification of the following calculation....
+         !!             especially since it is gde3w which is used to compute the pressure gradient
+         !!             furthermore, I think gdept_0 should be used below instead of w point in the numerator
+         !!             so that the ratio is computed at the same point (i.e. uw and vw) ....
+         zr1(1) = ABS(  ( gdepw_0(ji  ,jj,jk  )-gdepw_0(ji-1,jj,jk  )               & 
+            &            +gdepw_0(ji  ,jj,jk+1)-gdepw_0(ji-1,jj,jk+1) )             &
+            &         / ( gdepw_0(ji  ,jj,jk  )+gdepw_0(ji-1,jj,jk  )               &
+            &            -gdepw_0(ji  ,jj,jk+1)-gdepw_0(ji-1,jj,jk+1) + rsmall )  ) * umask(ji-1,jj,jk)
+         zr1(2) = ABS(  ( gdepw_0(ji+1,jj,jk  )-gdepw_0(ji  ,jj,jk  )               &
+            &            +gdepw_0(ji+1,jj,jk+1)-gdepw_0(ji  ,jj,jk+1) )             &
+            &         / ( gdepw_0(ji+1,jj,jk  )+gdepw_0(ji  ,jj,jk  )               &
+            &            -gdepw_0(ji+1,jj,jk+1)-gdepw_0(ji  ,jj,jk+1) + rsmall )  ) * umask(ji  ,jj,jk)
+         zr1(3) = ABS(  ( gdepw_0(ji,jj+1,jk  )-gdepw_0(ji,jj  ,jk  )               &
+            &            +gdepw_0(ji,jj+1,jk+1)-gdepw_0(ji,jj  ,jk+1) )             &
+            &         / ( gdepw_0(ji,jj+1,jk  )+gdepw_0(ji,jj  ,jk  )               &
+            &            -gdepw_0(ji,jj+1,jk+1)-gdepw_0(ji,jj  ,jk+1) + rsmall )  ) * vmask(ji,jj  ,jk)
+         zr1(4) = ABS(  ( gdepw_0(ji,jj  ,jk  )-gdepw_0(ji,jj-1,jk  )               &
+            &            +gdepw_0(ji,jj  ,jk+1)-gdepw_0(ji,jj-1,jk+1) )             &
+            &         / ( gdepw_0(ji,jj  ,jk  )+gdepw_0(ji,jj-1,jk  )               &
+            &            -gdepw_0(ji,jj  ,jk+1)-gdepw_0(ji,jj-1,jk+1) + rsmall )  ) * vmask(ji,jj-1,jk)
+         zrxmax = MAXVAL( zr1(1:4) )
+         zx1(ji,jj) = MAX( zx1(ji,jj) , zrxmax )
+      END_3D
+      CALL lbc_lnk( 'domwri', zx1, 'T', 1.0_wp )
       !
       IF( PRESENT( px1 ) )    px1 = zx1
       !

@@ -19,7 +19,7 @@ MODULE p4zlys
    USE trc             !  passive tracers common variables 
    USE sms_pisces      !  PISCES Source Minus Sink variables
    USE p4zche          !  Chemical model
-   USE prtctl_trc      !  print control for debugging
+   USE prtctl          !  print control for debugging
    USE iom             !  I/O manager
 
    IMPLICIT NONE
@@ -34,15 +34,17 @@ MODULE p4zlys
    INTEGER  ::   rmtss              ! number of seconds per month 
    REAL(wp) ::   calcon = 1.03E-2   ! mean calcite concentration [Ca2+] in sea water [mole/kg solution]
  
+   !! * Substitutions
+#  include "do_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: p4zlys.F90 12276 2019-12-20 11:14:26Z cetlod $ 
+   !! $Id: p4zlys.F90 15287 2021-09-24 11:11:02Z cetlod $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 
 CONTAINS
 
-   SUBROUTINE p4z_lys( kt, knt )
+   SUBROUTINE p4z_lys( kt, knt, Kbb, Krhs )
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE p4z_lys  ***
       !!
@@ -53,10 +55,11 @@ CONTAINS
       !! ** Method  : - ???
       !!---------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt, knt   ! ocean time step and ???
+      INTEGER, INTENT(in)  ::  Kbb, Krhs ! time level indices
       !
       INTEGER  ::   ji, jj, jk, jn
       REAL(wp) ::   zdispot, zfact, zcalcon
-      REAL(wp) ::   zomegaca, zexcess, zexcess0
+      REAL(wp) ::   zomegaca, zexcess, zexcess0, zkd
       CHARACTER (len=25) ::   charout
       REAL(wp), DIMENSION(jpi,jpj,jpk) ::   zco3, zcaldiss, zhinit, zhi, zco3sat
       !!---------------------------------------------------------------------
@@ -69,17 +72,12 @@ CONTAINS
       !     COMPUTE [CO3--] and [H+] CONCENTRATIONS
       !     -------------------------------------------
 
-      CALL solve_at_general( zhinit, zhi )
-
-      DO jk = 1, jpkm1
-         DO jj = 1, jpj
-            DO ji = 1, jpi
-               zco3(ji,jj,jk) = trb(ji,jj,jk,jpdic) * ak13(ji,jj,jk) * ak23(ji,jj,jk) / (zhi(ji,jj,jk)**2   &
-                  &             + ak13(ji,jj,jk) * zhi(ji,jj,jk) + ak13(ji,jj,jk) * ak23(ji,jj,jk) + rtrn )
-               hi  (ji,jj,jk) = zhi(ji,jj,jk) * rhop(ji,jj,jk) / 1000.
-            END DO
-         END DO
-      END DO
+      CALL solve_at_general( zhinit, zhi, Kbb )
+      DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, jpkm1)
+         zco3(ji,jj,jk) = tr(ji,jj,jk,jpdic,Kbb) * ak13(ji,jj,jk) * ak23(ji,jj,jk) / (zhi(ji,jj,jk)**2   &
+            &             + ak13(ji,jj,jk) * zhi(ji,jj,jk) + ak13(ji,jj,jk) * ak23(ji,jj,jk) + rtrn )
+         hi  (ji,jj,jk) = zhi(ji,jj,jk) * rhop(ji,jj,jk) / 1000.
+      END_3D
 
       !     ---------------------------------------------------------
       !        CALCULATE DEGREE OF CACO3 SATURATION AND CORRESPONDING
@@ -87,40 +85,41 @@ CONTAINS
       !        MGCO3)
       !     ---------------------------------------------------------
 
-      DO jk = 1, jpkm1
-         DO jj = 1, jpj
-            DO ji = 1, jpi
+      DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, jpkm1)
 
-               ! DEVIATION OF [CO3--] FROM SATURATION VALUE
-               ! Salinity dependance in zomegaca and divide by rhop/1000 to have good units
-               zcalcon  = calcon * ( salinprac(ji,jj,jk) / 35._wp )
-               zfact    = rhop(ji,jj,jk) / 1000._wp
-               zomegaca = ( zcalcon * zco3(ji,jj,jk) ) / ( aksp(ji,jj,jk) * zfact + rtrn )
-               zco3sat(ji,jj,jk) = aksp(ji,jj,jk) * zfact / ( zcalcon + rtrn )
+         ! DEVIATION OF [CO3--] FROM SATURATION VALUE
+         ! Salinity dependance in zomegaca and divide by rhop/1000 to have good units
+         zcalcon  = calcon * ( salinprac(ji,jj,jk) / 35._wp )
+         zfact    = rhop(ji,jj,jk) / 1000._wp
+         zomegaca = ( zcalcon * zco3(ji,jj,jk) ) / ( aksp(ji,jj,jk) * zfact + rtrn )
+         zco3sat(ji,jj,jk) = aksp(ji,jj,jk) * zfact / ( zcalcon + rtrn )
 
-               ! SET DEGREE OF UNDER-/SUPERSATURATION
-               excess(ji,jj,jk) = 1._wp - zomegaca
-               zexcess0 = MAX( 0., excess(ji,jj,jk) )
-               zexcess  = zexcess0**nca
+         ! SET DEGREE OF UNDER-/SUPERSATURATION
+         excess(ji,jj,jk) = 1._wp - zomegaca
+         zexcess0 = MAX( 0., excess(ji,jj,jk) )
 
-               ! AMOUNT CACO3 (12C) THAT RE-ENTERS SOLUTION
-               !       (ACCORDING TO THIS FORMULATION ALSO SOME PARTICULATE
-               !       CACO3 GETS DISSOLVED EVEN IN THE CASE OF OVERSATURATION)
-               zdispot = kdca * zexcess * trb(ji,jj,jk,jpcal)
-              !  CHANGE OF [CO3--] , [ALK], PARTICULATE [CACO3],
-              !       AND [SUM(CO2)] DUE TO CACO3 DISSOLUTION/PRECIPITATION
-              zcaldiss(ji,jj,jk)  = zdispot * rfact2 / rmtss ! calcite dissolution
-              !
-              tra(ji,jj,jk,jptal) = tra(ji,jj,jk,jptal) + 2. * zcaldiss(ji,jj,jk)
-              tra(ji,jj,jk,jpcal) = tra(ji,jj,jk,jpcal) -      zcaldiss(ji,jj,jk)
-              tra(ji,jj,jk,jpdic) = tra(ji,jj,jk,jpdic) +      zcaldiss(ji,jj,jk)
-            END DO
-         END DO
-      END DO
+         IF( zomegaca < 0.8 ) THEN
+            zexcess = zexcess0**nca
+            ! AMOUNT CACO3 THAT RE-ENTERS SOLUTION
+            zdispot = kdca * zexcess * tr(ji,jj,jk,jpcal,Kbb)
+         ELSE
+            zkd = kdca * 0.2**(nca - 0.11)
+            zexcess = zexcess0**0.11
+            zdispot = zkd * zexcess * tr(ji,jj,jk,jpcal,Kbb)
+        ENDIF
+
+        !  CHANGE OF [CO3--] , [ALK], PARTICULATE [CACO3],
+        !       AND [SUM(CO2)] DUE TO CACO3 DISSOLUTION/PRECIPITATION
+        zcaldiss(ji,jj,jk)  = zdispot * rfact2 / rmtss ! calcite dissolution
+        !
+        tr(ji,jj,jk,jptal,Krhs) = tr(ji,jj,jk,jptal,Krhs) + 2. * zcaldiss(ji,jj,jk)
+        tr(ji,jj,jk,jpcal,Krhs) = tr(ji,jj,jk,jpcal,Krhs) -      zcaldiss(ji,jj,jk)
+        tr(ji,jj,jk,jpdic,Krhs) = tr(ji,jj,jk,jpdic,Krhs) +      zcaldiss(ji,jj,jk)
+      END_3D
       !
 
       IF( lk_iomput .AND. knt == nrdttrc ) THEN
-         CALL iom_put( "PH"  , -1. * LOG10( MAX( hi(:,:,:), rtrn ) ) * tmask(:,:,:) )
+         CALL iom_put( "PH" , -1. * LOG10( MAX( hi(:,:,:), rtrn ) ) * tmask(:,:,:) )
          IF( iom_use( "CO3" ) ) THEN
             zco3(:,:,jpk) = 0.    ; CALL iom_put( "CO3"   , zco3(:,:,:)     * 1.e+3           * tmask(:,:,:) )
          ENDIF
@@ -129,13 +128,13 @@ CONTAINS
          ENDIF
          IF( iom_use( "DCAL" ) ) THEN
            zcaldiss(:,:,jpk) = 0. ; CALL iom_put( "DCAL"  , zcaldiss(:,:,:) * 1.e+3 * rfact2r * tmask(:,:,:) )
-         ENDIF
+         ENDIF              
       ENDIF
       !
-      IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
+      IF(sn_cfctl%l_prttrc)   THEN  ! print mean trends (used for debugging)
         WRITE(charout, FMT="('lys ')")
-        CALL prt_ctl_trc_info(charout)
-        CALL prt_ctl_trc(tab4d=tra, mask=tmask, clinfo=ctrcnm)
+        CALL prt_ctl_info( charout, cdcomp = 'top' )
+        CALL prt_ctl(tab4d_1=tr(:,:,:,:,Krhs), mask1=tmask, clinfo=ctrcnm)
       ENDIF
       !
       IF( ln_timing )   CALL timing_stop('p4z_lys')
@@ -165,11 +164,8 @@ CONTAINS
          WRITE(numout,*) '~~~~~~~~~~~~'
       ENDIF
       !
-      REWIND( numnatp_ref )
       READ  ( numnatp_ref, nampiscal, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'nampiscal in reference namelist' )
-
-      REWIND( numnatp_cfg )
       READ  ( numnatp_cfg, nampiscal, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'nampiscal in configuration namelist' )
       IF(lwm) WRITE( numonp, nampiscal )

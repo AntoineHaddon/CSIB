@@ -7,15 +7,21 @@ MODULE oce_trc
    !!             2.0  !  2007-12 (C. Ethe, G. Madec)  rewritting
    !!----------------------------------------------------------------------
    !                                            !* Domain size *
+   USE par_oce , ONLY :   jpt      =>   jpt        !: time dimension
    USE par_oce , ONLY :   jpi      =>   jpi        !: first  dimension of grid --> i 
    USE par_oce , ONLY :   jpj      =>   jpj        !: second dimension of grid --> j  
    USE par_oce , ONLY :   jpk      =>   jpk        !: number of levels  
-   USE par_oce , ONLY :   jpim1    =>   jpim1      !: jpi - 1
-   USE par_oce , ONLY :   jpjm1    =>   jpjm1      !: jpj - 1 
    USE par_oce , ONLY :   jpkm1    =>   jpkm1      !: jpk - 1  
    USE par_oce , ONLY :   jpij     =>   jpij       !: jpi x jpj
    USE par_oce , ONLY :   jp_tem   =>   jp_tem     !: indice for temperature
    USE par_oce , ONLY :   jp_sal   =>   jp_sal     !: indice for salinity
+   USE par_oce , ONLY :   nn_hls   =>   nn_hls     !: 
+   USE par_oce , ONLY :   Nis0     =>   Nis0       !: 
+   USE par_oce , ONLY :   Njs0     =>   Njs0       !: 
+   USE par_oce , ONLY :   Nie0     =>   Nie0       !: 
+   USE par_oce , ONLY :   Nje0     =>   Nje0       !: 
+   USE par_oce , ONLY :   Ni_0     =>   Ni_0       !: 
+   USE par_oce , ONLY :   Nj_0     =>   Nj_0       !: 
 
    USE in_out_manager                           !* IO manager *
    USE timing                                   !* Timing * 
@@ -32,19 +38,15 @@ MODULE oce_trc
    USE domvvl, ONLY : ln_vvl_layer          !: level  vertical coordinate
 
    !* ocean fields: here now and after fields *
-   USE oce , ONLY :   un      =>    un      !: i-horizontal velocity (m s-1) 
-   USE oce , ONLY :   vn      =>    vn      !: j-horizontal velocity (m s-1)
-   USE oce , ONLY :   wn      =>    wn      !: vertical velocity (m s-1)  
-   USE oce , ONLY :   tsn     =>    tsn     !: 4D array contaning ( tn, sn )
-   USE oce , ONLY :   tsb     =>    tsb     !: 4D array contaning ( tb, sb )
-   USE oce , ONLY :   tsa     =>    tsa     !: 4D array contaning ( ta, sa )
-   USE oce , ONLY :   rhop    =>    rhop    !: potential volumic mass (kg m-3) 
-   USE oce , ONLY :   rhd     =>    rhd     !: in situ density anomalie rhd=(rho-rau0)/rau0 (no units)
-   USE oce , ONLY :   hdivn   =>    hdivn   !: horizontal divergence (1/s)
-   USE oce , ONLY :   sshn    =>    sshn    !: sea surface height at t-point [m]   
-   USE oce , ONLY :   sshb    =>    sshb    !: sea surface height at t-point [m]   
-   USE oce , ONLY :   ssha    =>    ssha    !: sea surface height at t-point [m]   
-   USE oce , ONLY :   rab_n   =>    rab_n   !: local thermal/haline expension ratio at T-points
+   USE oce , ONLY :   uu     =>    uu     !: i-horizontal velocity (m s-1) 
+   USE oce , ONLY :   vv     =>    vv     !: j-horizontal velocity (m s-1)
+   USE oce , ONLY :   ww     =>    ww     !: vertical velocity (m s-1)  
+   USE oce , ONLY :   ts     =>    ts     !: 4D array contaning ( tn, sn )
+   USE oce , ONLY :   rhop   =>    rhop   !: potential volumic mass (kg m-3) 
+   USE oce , ONLY :   rhd    =>    rhd    !: in situ density anomalie rhd=(rho-rho0)/rho0 (no units)
+   USE oce , ONLY :   hdiv   =>    hdiv   !: horizontal divergence (1/s)
+   USE oce , ONLY :   ssh    =>    ssh    !: sea surface height at t-point [m]   
+   USE oce , ONLY :   rab_n  =>    rab_n  !: local thermal/haline expension ratio at T-points
 
    !* surface fluxes *
    USE sbc_oce , ONLY :   utau       =>    utau       !: i-surface stress component

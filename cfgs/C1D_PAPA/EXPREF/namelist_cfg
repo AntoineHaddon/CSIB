@@ -25,9 +25,9 @@
 !!   namwad       Wetting and drying                                    (default: OFF)
 !!   namtsd       data: temperature & salinity                          (default: OFF)
 !!   namcrs       coarsened grid (for outputs and/or TOP)               (ln_crs =T)
-!!   namc1d       1D configuration options                              ("key_c1d")
-!!   namc1d_dyndmp 1D newtonian damping applied on currents             ("key_c1d")
-!!   namc1d_uvd   1D data (currents)                                    ("key_c1d")
+!!   namc1d       1D configuration options                              (ln_c1d =T)
+!!   namc1d_dyndmp 1D newtonian damping applied on currents             (ln_c1d =T)
+!!   namc1d_uvd   1D data (currents)                                    (ln_c1d =T)
 !!======================================================================
 !
 !-----------------------------------------------------------------------
@@ -48,10 +48,18 @@
 !-----------------------------------------------------------------------
 &namdom        !   time and space domain
 !-----------------------------------------------------------------------
-   rn_rdt      =  360.     !  time step for the dynamics and tracer
+   ln_linssh   = .true.   !  =T  linear free surface  ==>>  model level are fixed in time
+   !
+   rn_Dt       =  360.     !  time step for the dynamics and tracer
+   !
+   ln_c1d      = .true.    !  Single column domain (1x1pt)              (T => fill namc1d)
 /
 !-----------------------------------------------------------------------
 &namcfg        !   parameters of the configuration                      (default: use namusr_def in namelist_cfg)
+!-----------------------------------------------------------------------
+/
+!-----------------------------------------------------------------------
+&namtile        !   parameters of the tiling
 !-----------------------------------------------------------------------
 /
 !-----------------------------------------------------------------------
@@ -76,19 +84,18 @@
 !-----------------------------------------------------------------------
 /
 !-----------------------------------------------------------------------
-&namc1d        !   1D configuration options                             ("key_c1d" default: PAPA station)
+&namc1d        !   1D configuration options                             (ln_c1d =T default: PAPA station)
 !-----------------------------------------------------------------------
-   rn_lat1d    =      50   !  Column latitude
-   rn_lon1d    =    -145   !  Column longitude
-   ln_c1d_locpt =  .true.   ! Localization of 1D config in a grid (T) or independant point (F)
+   rn_lat1d    =    50.    !  Column latitude
+   rn_lon1d    =  -145.    !  Column longitude
 /
 !-----------------------------------------------------------------------
-&namc1d_dyndmp !   U & V newtonian damping                              ("key_c1d" default: OFF)
+&namc1d_dyndmp !   U & V newtonian damping                              (ln_c1d =T default: OFF)
 !-----------------------------------------------------------------------
    ln_dyndmp   =  .false.  !  add a damping term (T) or not (F)
 /
 !-----------------------------------------------------------------------
-&namc1d_uvd    !   data: U & V currents                                 ("key_c1d" default: OFF)
+&namc1d_uvd    !   data: U & V currents                                 (ln_c1d =T default: OFF)
 !-----------------------------------------------------------------------
    !                       !  =T read U-V fields for:
    ln_uvd_init   = .false.       !  ocean initialisation
@@ -158,7 +165,6 @@
    sn_prec     = 'forcing_C1D_PAPA'   ,  3.   , 'sowaprec',   .false.    , .false. , 'yearly'  , ''  , ''   , ''
    sn_snow     = 'forcing_C1D_PAPA'   ,  3.   , 'sososnow',   .false.    , .false. , 'yearly'  , ''  , ''   , ''
    sn_slp      = 'forcing_C1D_PAPA'   ,  3.   , 'somslpre',   .true.     , .false. , 'yearly'  , ''  , ''   , ''
-   sn_tdif     = 'forcing_C1D_PAPA'   , 24.   , 'taudif'  ,   .false.    , .false. , 'yearly'  , ''  , ''   , ''
 
 /
 !-----------------------------------------------------------------------
@@ -358,9 +364,6 @@
 !-----------------------------------------------------------------------
 &namdyn_spg    !   surface pressure gradient                            (default: NO selection)
 !-----------------------------------------------------------------------
-   ln_dynspg_ts   = .true.   ! split-explicit free surface
-      ln_bt_fw      = .false.     ! Forward integration of barotropic Eqs.
-      ln_bt_av      = .true.     ! Time filtering of barotropic variables
 /
 !-----------------------------------------------------------------------
 &namdyn_ldf    !   lateral diffusion on momentum                        (default: NO selection)
@@ -415,12 +418,10 @@
 !!                  ***  Diagnostics namelists  ***                   !!
 !!                                                                    !!
 !!   namtrd       dynamics and/or tracer trends                         (default: OFF)
-!!   namptr       Poleward Transport Diagnostics                        (default: OFF)
 !!   namhsb       Heat and salt budgets                                 (default: OFF)
 !!   namdiu       Cool skin and warm layer models                       (default: OFF)
 !!   namdiu       Cool skin and warm layer models                       (default: OFF)
 !!   namflo       float parameters                                      (default: OFF)
-!!   nam_diaharm  Harmonic analysis of tidal constituents               (default: OFF)
 !!   nam_diadct   transports through some sections                      (default: OFF)
 !!   nam_dia25h   25h Mean Output                                       (default: OFF)
 !!   namnc4       netcdf4 chunking and compression settings             ("key_netcdf4")
@@ -428,10 +429,6 @@
 !
 !-----------------------------------------------------------------------
 &namtrd        !   trend diagnostics                                    (default: OFF)
-!-----------------------------------------------------------------------
-/
-!-----------------------------------------------------------------------
-&namptr        !   Poleward Transport Diagnostic                        (default: OFF)
 !-----------------------------------------------------------------------
 /
 !-----------------------------------------------------------------------
@@ -444,10 +441,6 @@
 /
 !-----------------------------------------------------------------------
 &namflo        !   float parameters                                     (default: OFF)
-!-----------------------------------------------------------------------
-/
-!-----------------------------------------------------------------------
-&nam_diaharm   !   Harmonic analysis of tidal constituents              (default: OFF)
 !-----------------------------------------------------------------------
 /
 !-----------------------------------------------------------------------
@@ -482,13 +475,13 @@
 !!======================================================================
 !!                  ***  Miscellaneous namelists  ***                 !!
 !!                                                                    !!
-!!   nammpp            Massively Parallel Processing                    ("key_mpp_mpi")
+!!   nammpp            Massively Parallel Processing
 !!   namctl            Control prints                                   (default: OFF)
 !!   namsto            Stochastic parametrization of EOS                (default: OFF)
 !!======================================================================
 !
 !-----------------------------------------------------------------------
-&nammpp        !   Massively Parallel Processing                        ("key_mpp_mpi")
+&nammpp        !   Massively Parallel Processing
 !-----------------------------------------------------------------------
 /
 !-----------------------------------------------------------------------

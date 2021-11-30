@@ -11,9 +11,9 @@
 !!   namwad       Wetting and drying                                    (default: OFF)
 !!   namtsd       data: temperature & salinity                          (default: OFF)
 !!   namcrs       coarsened grid (for outputs and/or TOP)               (ln_crs =T)
-!!   namc1d       1D configuration options                              ("key_c1d")
-!!   namc1d_dyndmp 1D newtonian damping applied on currents             ("key_c1d")
-!!   namc1d_uvd   1D data (currents)                                    ("key_c1d")
+!!   namc1d       1D configuration options                              (ln_c1d =T)
+!!   namc1d_dyndmp 1D newtonian damping applied on currents             (ln_c1d =T)
+!!   namc1d_uvd   1D data (currents)                                    (ln_c1d =T)
 !!======================================================================
 !
 !-----------------------------------------------------------------------
@@ -30,7 +30,7 @@
 !-----------------------------------------------------------------------
    ln_linssh   = .false.   !  =T  linear free surface  ==>>  model level are fixed in time
    !
-   rn_rdt      = 450.     !  time step for the dynamics (and tracer if nn_acc=0)
+   rn_Dt      = 450.     !  time step for the dynamics (and tracer if nn_acc=0)
 /
 !-----------------------------------------------------------------------
 &namcfg        !   parameters of the configuration                      (default: user defined GYRE)
@@ -39,18 +39,12 @@
       cn_domcfg = "ORCA_R017_zps_domcfg_agrif"    ! domain configuration filename
 /
 !-----------------------------------------------------------------------
+&namtile        !   parameters of the tiling
+!-----------------------------------------------------------------------
+/
+!-----------------------------------------------------------------------
 &namtsd        !    Temperature & Salinity Data                         (default: OFF)
 !-----------------------------------------------------------------------
-   !                       ! =T  read T-S fields for:
-   ln_tsd_init = .true.          !  ocean initialisation
-   ln_tsd_dmp  = .false.         !  T-S restoring   (see namtra_dmp)
-
-   cn_dir = './'     !  root directory for the T-S data location
-   !___________!_________________________!___________________!___________!_____________!________!___________!__________________!__________!_______________!
-   !           !  file name              ! frequency (hours) ! variable  ! time interp.!  clim  ! 'yearly'/ ! weights filename ! rotation ! land/sea mask !
-   !           !                         !  (if <0  months)  !   name    !   (logical) !  (T/F) ! 'monthly' !                  ! pairing  !    filename   !
-   sn_tem = 'data_1m_potential_temperature_nomask',     -1.     ,'votemper',   .true.    , .true. , 'yearly'  ,    ''    ,    ''    ,    ''
-   sn_sal = 'data_1m_salinity_nomask'             ,     -1.     ,'vosaline',   .true.    , .true. , 'yearly'  ,    ''    ,    ''    ,    ''
 /
 !!======================================================================
 !!            ***  Surface Boundary Condition namelists  ***          !!
@@ -77,7 +71,9 @@
                      ! Type of air-sea fluxes 
    ln_blk      = .true.    !  Bulk formulation                          (T => fill namsbc_blk )
                      ! Sea-ice :
-   nn_ice      = 2         !  =0   Use SI3 model
+   nn_ice      = 2         !  =0 no ice boundary condition
+      !                    !  =1 use observed ice-cover                 (  => fill namsbc_iif )
+      !                    !  =2 or 3 for SI3 and CICE, respectively
                      ! Misc. options of sbc : 
    ln_traqsr   = .true.    !  Light penetration in the ocean            (T => fill namtra_qsr)
    ln_rnf      = .false.   !  runoffs                                   (T => fill namsbc_rnf)
@@ -103,22 +99,24 @@
    sn_prec     = 'ncar_precip.15JUNE2009_fill',   -1.        , 'PRC_MOD1',   .false.   , .true. , 'yearly'  , 'weights_core2_nordic2_bilin.nc'     , ''       , ''
    sn_snow     = 'ncar_precip.15JUNE2009_fill',   -1.        , 'SNOW'    ,   .false.   , .true. , 'yearly'  , 'weights_core2_nordic2_bilin.nc'     , ''       , ''
    sn_slp      = 'slp.15JUNE2009_fill'        ,    6.        , 'SLP'     ,   .false.   , .true. , 'yearly'  , 'weights_core2_nordic2_bilin.nc'     , ''       , ''
-   sn_tdif     = 'taudif_core'                ,   24.        , 'taudif'  ,   .false.   , .true. , 'yearly'  , 'weights_core2_nordic2_bilin.nc'     , ''       , ''
 
 /
 !-----------------------------------------------------------------------
 &namtra_qsr    !   penetrative solar radiation                          (ln_traqsr =T)
 !-----------------------------------------------------------------------
    !                       ! type of penetration                        (default: NO selection)
-   ln_qsr_rgb  = .true.       !  RGB light penetration (Red-Green-Blue)
+   ln_qsr_2bd  = .true.    !  2BD light penetration (two bands)
+   !                       !  RGB & 2BD choices:
+   rn_si1      =   10.0       !  2BD : longest depth of extinction
+   ln_qsr_rgb  = .false.      !  RGB light penetration (Red-Green-Blue)
    !
-   nn_chldta   =      1       !  RGB : Chl data (=1) or cst value (=0)
+   nn_chldta   =      0       !  RGB : Chl data (=1) or cst value (=0)
 
    cn_dir      = './'      !  root directory for the chlorophyl data location
-   !___________!_________________________!___________________!___________!_____________!________!___________!______________________________________!__________!_______________!
-   !           !  file name              ! frequency (hours) ! variable  ! time interp.!  clim  ! 'yearly'/ !          weights filename            ! rotation ! land/sea mask !
-   !           !                         !  (if <0  months)  !   name    !   (logical) !  (T/F) ! 'monthly' !                                      ! pairing  !    filename   !
-   sn_chl      ='chlorophyll'            ,        -1.        , 'CHLA'    ,   .true.    , .true. , 'yearly'  , ''                                   , ''       , ''
+   !___________!_________________________!___________________!___________!_____________!________!___________!_______________________________!__________!_______________!
+   !           !  file name              ! frequency (hours) ! variable  ! time interp.!  clim  ! 'yearly'/ !          weights filename     ! rotation ! land/sea mask !
+   !           !                         !  (if <0  months)  !   name    !   (logical) !  (T/F) ! 'monthly' !                               ! pairing  !    filename   !
+   sn_chl      ='chlorophyll'            ,        -1.        , 'CHLA'    ,   .true.    , .true. , 'yearly'  , 'weights_ORCA2_nordic2_bilin' , ''       , ''
 /
 !-----------------------------------------------------------------------
 &namsbc_rnf    !   runoffs                                              (ln_rnf =T)
@@ -155,10 +153,7 @@
 !-----------------------------------------------------------------------
 &namagrif      !  AGRIF zoom                                            ("key_agrif")
 !-----------------------------------------------------------------------
-   ln_spc_dyn    = .true.  !  use 0 as special value for dynamics
-   rn_sponge_tra =  480.   !  coefficient for tracer   sponge layer [m2/s]
-   rn_sponge_dyn =  480.   !  coefficient for dynamics sponge layer [m2/s]
-   ln_chk_bathy  = .true.  !  =T  check the parent bathymetry
+   ln_init_chfrpar = .true. !  initialize child grids from parent
 /
 !-----------------------------------------------------------------------
 &namdrg        !   top/bottom drag coefficient                          (default: NO selection)
@@ -307,12 +302,10 @@
 !!                  ***  Diagnostics namelists  ***                   !!
 !!                                                                    !!
 !!   namtrd       dynamics and/or tracer trends                         (default: OFF)
-!!   namptr       Poleward Transport Diagnostics                        (default: OFF)
 !!   namhsb       Heat and salt budgets                                 (default: OFF)
 !!   namdiu       Cool skin and warm layer models                       (default: OFF)
 !!   namdiu       Cool skin and warm layer models                       (default: OFF)
 !!   namflo       float parameters                                      (default: OFF)
-!!   nam_diaharm  Harmonic analysis of tidal constituents               (default: OFF)
 !!   nam_diadct   transports through some sections                      (default: OFF)
 !!   nam_dia25h   25h Mean Output                                       (default: OFF)
 !!   namnc4       netcdf4 chunking and compression settings             ("key_netcdf4")
@@ -328,13 +321,13 @@
 !!======================================================================
 !!                  ***  Miscellaneous namelists  ***                 !!
 !!                                                                    !!
-!!   nammpp            Massively Parallel Processing                    ("key_mpp_mpi")
+!!   nammpp            Massively Parallel Processing
 !!   namctl            Control prints                                   (default: OFF)
 !!   namsto            Stochastic parametrization of EOS                (default: OFF)
 !!======================================================================
 !
 !-----------------------------------------------------------------------
-&nammpp        !   Massively Parallel Processing                        ("key_mpp_mpi")
+&nammpp        !   Massively Parallel Processing
 !-----------------------------------------------------------------------
 /
 !-----------------------------------------------------------------------

@@ -6,7 +6,6 @@ MODULE seddiff
    !!=====================================================================
    !! * Modules used
    USE sed     ! sediment global variable
-   USE sed_oce
    USE sedmat  ! linear system of equations
    USE sedini
    USE lib_mpp         ! distribued memory computing library
@@ -41,80 +40,8 @@ CONTAINS
       !!----------------------------------------------------------------------
       !! Arguments
       INTEGER, INTENT(in) ::   kt, knt       ! number of iteration
-      ! --- local variables
-      INTEGER :: ji, jk, js   ! dummy looop indices
-
-      REAL(wp), DIMENSION(jpoce,jpksed) :: zrearat1, zrearat2   ! reaction rate in pore water
-      !!
-      !!----------------------------------------------------------------------
-
-      IF( ln_timing )  CALL timing_start('sed_diff')
-!
-      IF( kt == nitsed000 .AND. knt == 1 ) THEN
-         IF (lwp) THEN
-            WRITE(numsed,*) ' sed_diff : pore-water diffusion '
-            WRITE(numsed,*) ' '
-         ENDIF
-      ENDIF
-
-     ! Initializations
-     !----------------------
-      zrearat1(:,:)   = 0.
-      zrearat2(:,:) = 0.
-
-      !---------------------------
-      ! Solves PO4 diffusion 
-      !----------------------------
-
-      ! solves tridiagonal system
-      CALL sed_mat( jwpo4, jpoce, jpksed, zrearat1, zrearat2, pwcp(:,:,jwpo4), dtsed2 / 2.0 )
-
-      !---------------------------
-      ! Solves NH4 diffusion 
-      !----------------------------
-
-      ! solves tridiagonal system
-      CALL sed_mat( jwnh4, jpoce, jpksed, zrearat1, zrearat2, pwcp(:,:,jwnh4), dtsed2 / 2.0 )
-
-      !---------------------------
-      ! Solves Fe2+ diffusion 
-      !----------------------------
-
-      ! solves tridiagonal system
-      CALL sed_mat( jwfe2, jpoce, jpksed, zrearat1, zrearat2, pwcp(:,:,jwfe2), dtsed2 / 2.0 )
-
-      !---------------------------
-      ! Solves H2S diffusion 
-      !----------------------------
-
-      ! solves tridiagonal system
-      CALL sed_mat( jwh2s, jpoce, jpksed, zrearat1, zrearat2, pwcp(:,:,jwh2s), dtsed2 / 2.0  )
-
-      !---------------------------
-      ! Solves SO4 diffusion 
-      !----------------------------
-
-      ! solves tridiagonal system
-      CALL sed_mat( jwso4, jpoce, jpksed, zrearat1, zrearat2, pwcp(:,:,jwso4), dtsed2 / 2.0 )
-
-      !---------------------------
-      ! Solves O2 diffusion
-      !----------------------------
-
-      ! solves tridiagonal system
-      CALL sed_mat( jwoxy, jpoce, jpksed, zrearat1, zrearat2, pwcp(:,:,jwoxy), dtsed2 / 2.0 )
-
-      !---------------------------
-      ! Solves NO3 diffusion
-      !----------------------------
-
-      ! solves tridiagonal system
-      CALL sed_mat( jwno3, jpoce, jpksed, zrearat1, zrearat2, pwcp(:,:,jwno3), dtsed2 / 2.0 )
-
-      CALL sed_mat( jwdic, jpoce, jpksed, zrearat1, zrearat2, sedligand(:,:), dtsed2 / 2.0 )
-
-      IF( ln_timing )  CALL timing_stop('sed_diff')
 !      
+
    END SUBROUTINE sed_diff
 
 END MODULE seddiff

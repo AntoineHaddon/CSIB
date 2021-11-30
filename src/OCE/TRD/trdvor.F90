@@ -55,10 +55,11 @@ MODULE trdvor
    CHARACTER(len=12) ::   cvort
 
    !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
+#  include "do_loop_substitute.h90"
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: trdvor.F90 11536 2019-09-11 13:54:18Z smasson $ 
+   !! $Id: trdvor.F90 15033 2021-06-21 10:24:45Z smasson $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -77,7 +78,7 @@ CONTAINS
    END FUNCTION trd_vor_alloc
 
 
-   SUBROUTINE trd_vor( putrd, pvtrd, ktrd, kt )
+   SUBROUTINE trd_vor( putrd, pvtrd, ktrd, kt, Kmm )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE trd_vor  ***
       !! 
@@ -87,41 +88,40 @@ CONTAINS
       REAL(wp), DIMENSION(:,:,:), INTENT(inout) ::   putrd, pvtrd   ! U and V trends 
       INTEGER                   , INTENT(in   ) ::   ktrd           ! trend index
       INTEGER                   , INTENT(in   ) ::   kt             ! time step
+      INTEGER                   , INTENT(in   ) ::   Kmm            ! time level index
       !
       INTEGER ::   ji, jj   ! dummy loop indices
       REAL(wp), DIMENSION(jpi,jpj) ::   ztswu, ztswv    ! 2D workspace 
       !!----------------------------------------------------------------------
 
+      CALL lbc_lnk( 'trdvor', putrd, 'U', -1.0_wp , pvtrd, 'V', -1.0_wp )      ! lateral boundary condition
+
       SELECT CASE( ktrd ) 
-      CASE( jpdyn_hpg )   ;   CALL trd_vor_zint( putrd, pvtrd, jpvor_prg )   ! Hydrostatique Pressure Gradient 
-      CASE( jpdyn_keg )   ;   CALL trd_vor_zint( putrd, pvtrd, jpvor_keg )   ! KE Gradient 
-      CASE( jpdyn_rvo )   ;   CALL trd_vor_zint( putrd, pvtrd, jpvor_rvo )   ! Relative Vorticity 
-      CASE( jpdyn_pvo )   ;   CALL trd_vor_zint( putrd, pvtrd, jpvor_pvo )   ! Planetary Vorticity Term 
-      CASE( jpdyn_ldf )   ;   CALL trd_vor_zint( putrd, pvtrd, jpvor_ldf )   ! Horizontal Diffusion 
-      CASE( jpdyn_zad )   ;   CALL trd_vor_zint( putrd, pvtrd, jpvor_zad )   ! Vertical Advection 
-      CASE( jpdyn_spg )   ;   CALL trd_vor_zint( putrd, pvtrd, jpvor_spg )   ! Surface Pressure Grad. 
-      CASE( jpdyn_zdf )                                                      ! Vertical Diffusion 
-         ztswu(:,:) = 0.e0   ;   ztswv(:,:) = 0.e0
-         DO jj = 2, jpjm1                                                             ! wind stress trends
-            DO ji = fs_2, fs_jpim1   ! vector opt.
-               ztswu(ji,jj) = 0.5 * ( utau_b(ji,jj) + utau(ji,jj) ) / ( e3u_n(ji,jj,1) * rau0 )
-               ztswv(ji,jj) = 0.5 * ( vtau_b(ji,jj) + vtau(ji,jj) ) / ( e3v_n(ji,jj,1) * rau0 )
-            END DO
-         END DO
-         !
-         CALL trd_vor_zint( putrd, pvtrd, jpvor_zdf )                             ! zdf trend including surf./bot. stresses 
-         CALL trd_vor_zint( ztswu, ztswv, jpvor_swf )                             ! surface wind stress 
+      CASE( jpdyn_hpg )   ;   CALL trd_vor_zint( putrd, pvtrd, jpvor_prg, Kmm )   ! Hydrostatique Pressure Gradient 
+      CASE( jpdyn_keg )   ;   CALL trd_vor_zint( putrd, pvtrd, jpvor_keg, Kmm )   ! KE Gradient 
+      CASE( jpdyn_rvo )   ;   CALL trd_vor_zint( putrd, pvtrd, jpvor_rvo, Kmm )   ! Relative Vorticity 
+      CASE( jpdyn_pvo )   ;   CALL trd_vor_zint( putrd, pvtrd, jpvor_pvo, Kmm )   ! Planetary Vorticity Term 
+      CASE( jpdyn_ldf )   ;   CALL trd_vor_zint( putrd, pvtrd, jpvor_ldf, Kmm )   ! Horizontal Diffusion 
+      CASE( jpdyn_zad )   ;   CALL trd_vor_zint( putrd, pvtrd, jpvor_zad, Kmm )   ! Vertical Advection 
+      CASE( jpdyn_spg )   ;   CALL trd_vor_zint( putrd, pvtrd, jpvor_spg, Kmm )   ! Surface Pressure Grad. 
+      CASE( jpdyn_zdf )                                                           ! Vertical Diffusion 
+         DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )                                                               ! wind stress trends
+            ztswu(ji,jj) = 0.5 * ( utau_b(ji,jj) + utau(ji,jj) ) / ( e3u(ji,jj,1,Kmm) * rho0 )
+            ztswv(ji,jj) = 0.5 * ( vtau_b(ji,jj) + vtau(ji,jj) ) / ( e3v(ji,jj,1,Kmm) * rho0 )
+         END_2D
+         CALL trd_vor_zint( putrd, pvtrd, jpvor_zdf, Kmm )                             ! zdf trend including surf./bot. stresses 
+         CALL trd_vor_zint( ztswu, ztswv, jpvor_swf, Kmm )                             ! surface wind stress 
       CASE( jpdyn_bfr )
-         CALL trd_vor_zint( putrd, pvtrd, jpvor_bfr )                             ! Bottom stress
+         CALL trd_vor_zint( putrd, pvtrd, jpvor_bfr, Kmm )                             ! Bottom stress
          !
       CASE( jpdyn_atf )       ! last trends: perform the output of 2D vorticity trends
-         CALL trd_vor_iom( kt )
+         CALL trd_vor_iom( kt, Kmm )
       END SELECT
       !
    END SUBROUTINE trd_vor
 
 
-   SUBROUTINE trd_vor_zint_2d( putrdvor, pvtrdvor, ktrd )
+   SUBROUTINE trd_vor_zint_2d( putrdvor, pvtrdvor, ktrd, Kmm )
       !!----------------------------------------------------------------------------
       !!                  ***  ROUTINE trd_vor_zint  ***
       !!
@@ -141,27 +141,22 @@ CONTAINS
       !!                  vortrd (,, 8) = Surface Pressure Grad. Trend
       !!                  vortrd (,, 9) = Beta V
       !!                  vortrd (,,10) = forcing term
-      !!		              vortrd (,,11) = bottom friction term
+      !!		  vortrd (,,11) = bottom friction term
       !!                  rotot(,) : total cumulative trends over nn_write-1 time steps
       !!                  vor_avrtot(,) : first membre of vrticity equation
       !!                  vor_avrres(,) : residual = dh/dt entrainment
       !!
       !!      trends output in netCDF format using ioipsl
       !!----------------------------------------------------------------------
-      INTEGER                     , INTENT(in   ) ::   ktrd       ! ocean trend index
-      REAL(wp), DIMENSION(jpi,jpj), INTENT(inout) ::   putrdvor   ! u vorticity trend 
-      REAL(wp), DIMENSION(jpi,jpj), INTENT(inout) ::   pvtrdvor   ! v vorticity trend
+      INTEGER                     , INTENT(in) ::   ktrd       ! ocean trend index
+      INTEGER                     , INTENT(in) ::   Kmm        ! time level index
+      REAL(wp), DIMENSION(jpi,jpj), INTENT(in) ::   putrdvor   ! u vorticity trend 
+      REAL(wp), DIMENSION(jpi,jpj), INTENT(in) ::   pvtrdvor   ! v vorticity trend
       !
       INTEGER ::   ji, jj       ! dummy loop indices
       INTEGER ::   ikbu, ikbv   ! local integers
       REAL(wp), DIMENSION(jpi,jpj) :: zudpvor, zvdpvor  ! total cmulative trends
       !!----------------------------------------------------------------------
-
-      !
-
-      zudpvor(:,:) = 0._wp                 ;   zvdpvor(:,:) = 0._wp                    ! Initialisation
-      CALL lbc_lnk_multi( 'trdvor', putrdvor, 'U', -1. , pvtrdvor, 'V', -1. )      ! lateral boundary condition
-      
 
       !  =====================================
       !  I vertical integration of 2D trends
@@ -170,33 +165,29 @@ CONTAINS
       SELECT CASE( ktrd ) 
       !
       CASE( jpvor_bfr )        ! bottom friction
-         DO jj = 2, jpjm1
-            DO ji = fs_2, fs_jpim1 
-               ikbu = mbkv(ji,jj)
-               ikbv = mbkv(ji,jj)            
-               zudpvor(ji,jj) = putrdvor(ji,jj) * e3u_n(ji,jj,ikbu) * e1u(ji,jj) * umask(ji,jj,ikbu)
-               zvdpvor(ji,jj) = pvtrdvor(ji,jj) * e3v_n(ji,jj,ikbv) * e2v(ji,jj) * vmask(ji,jj,ikbv)
-            END DO
-         END DO
+         DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
+            ikbu = mbkv(ji,jj)
+            ikbv = mbkv(ji,jj)            
+            zudpvor(ji,jj) = putrdvor(ji,jj) * e3u(ji,jj,ikbu,Kmm) * e1u(ji,jj) * umask(ji,jj,ikbu)
+            zvdpvor(ji,jj) = pvtrdvor(ji,jj) * e3v(ji,jj,ikbv,Kmm) * e2v(ji,jj) * vmask(ji,jj,ikbv)
+         END_2D
          !
       CASE( jpvor_swf )        ! wind stress
-         zudpvor(:,:) = putrdvor(:,:) * e3u_n(:,:,1) * e1u(:,:) * umask(:,:,1)
-         zvdpvor(:,:) = pvtrdvor(:,:) * e3v_n(:,:,1) * e2v(:,:) * vmask(:,:,1)
+         zudpvor(:,:) = putrdvor(:,:) * e3u(:,:,1,Kmm) * e1u(:,:) * umask(:,:,1)
+         zvdpvor(:,:) = pvtrdvor(:,:) * e3v(:,:,1,Kmm) * e2v(:,:) * vmask(:,:,1)
          !
       END SELECT
 
       ! Average except for Beta.V
-      zudpvor(:,:) = zudpvor(:,:) * r1_hu_n(:,:)
-      zvdpvor(:,:) = zvdpvor(:,:) * r1_hv_n(:,:)
+      zudpvor(:,:) = zudpvor(:,:) * r1_hu(:,:,Kmm)
+      zvdpvor(:,:) = zvdpvor(:,:) * r1_hv(:,:,Kmm)
    
       ! Curl
-      DO ji = 1, jpim1
-         DO jj = 1, jpjm1
-            vortrd(ji,jj,ktrd) = (    zvdpvor(ji+1,jj) - zvdpvor(ji,jj)       &
-                 &                - ( zudpvor(ji,jj+1) - zudpvor(ji,jj) )   ) / ( e1f(ji,jj) * e2f(ji,jj) )
-         END DO
-      END DO
-      vortrd(:,:,ktrd) = vortrd(:,:,ktrd) * fmask(:,:,1)      ! Surface mask
+      DO_2D( 0, 0, 0, 0 )
+         vortrd(ji,jj,ktrd) = (    zvdpvor(ji+1,jj) - zvdpvor(ji,jj)       &
+            &                  - ( zudpvor(ji,jj+1) - zudpvor(ji,jj) )   ) &
+            &                  / ( e1f(ji,jj) * e2f(ji,jj) ) * fmask(ji,jj,1)
+      END_2D
 
       IF( ndebug /= 0 ) THEN
          IF(lwp) WRITE(numout,*) ' debuging trd_vor_zint: I done'
@@ -206,7 +197,7 @@ CONTAINS
    END SUBROUTINE trd_vor_zint_2d
 
 
-   SUBROUTINE trd_vor_zint_3d( putrdvor, pvtrdvor, ktrd )
+   SUBROUTINE trd_vor_zint_3d( putrdvor, pvtrdvor, ktrd , Kmm )
       !!----------------------------------------------------------------------------
       !!                  ***  ROUTINE trd_vor_zint  ***
       !!
@@ -234,60 +225,44 @@ CONTAINS
       !!      trends output in netCDF format using ioipsl
       !!----------------------------------------------------------------------
       !
-      INTEGER                         , INTENT(in   ) ::   ktrd       ! ocean trend index
-      REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(inout) ::   putrdvor   ! u vorticity trend 
-      REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(inout) ::   pvtrdvor   ! v vorticity trend
+      INTEGER                         , INTENT(in) ::   ktrd       ! ocean trend index
+      INTEGER                         , INTENT(in) ::   Kmm        ! time level index
+      REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(in) ::   putrdvor   ! u vorticity trend 
+      REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(in) ::   pvtrdvor   ! v vorticity trend
       !
       INTEGER ::   ji, jj, jk   ! dummy loop indices
-      REAL(wp), DIMENSION(jpi,jpj) :: zubet  , zvbet    ! Beta.V   
       REAL(wp), DIMENSION(jpi,jpj) :: zudpvor, zvdpvor  ! total cmulative trends
       !!----------------------------------------------------------------------
-     
-      ! Initialization
-      zubet  (:,:) = 0._wp
-      zvbet  (:,:) = 0._wp
-      zudpvor(:,:) = 0._wp
-      zvdpvor(:,:) = 0._wp
-      !                            ! lateral boundary condition on input momentum trends
-      CALL lbc_lnk_multi( 'trdvor', putrdvor, 'U', -1. , pvtrdvor, 'V', -1. )
 
       !  =====================================
       !  I vertical integration of 3D trends
       !  =====================================
       ! putrdvor and pvtrdvor terms
       DO jk = 1,jpk
-        zudpvor(:,:) = zudpvor(:,:) + putrdvor(:,:,jk) * e3u_n(:,:,jk) * e1u(:,:) * umask(:,:,jk)
-        zvdpvor(:,:) = zvdpvor(:,:) + pvtrdvor(:,:,jk) * e3v_n(:,:,jk) * e2v(:,:) * vmask(:,:,jk)
+        zudpvor(:,:) = zudpvor(:,:) + putrdvor(:,:,jk) * e3u(:,:,jk,Kmm) * e1u(:,:) * umask(:,:,jk)
+        zvdpvor(:,:) = zvdpvor(:,:) + pvtrdvor(:,:,jk) * e3v(:,:,jk,Kmm) * e2v(:,:) * vmask(:,:,jk)
       END DO
 
       ! Planetary vorticity: 2nd computation (Beta.V term) store the vertical sum
       ! as Beta.V term need intergration, not average
       IF( ktrd == jpvor_pvo ) THEN 
-         zubet(:,:) = zudpvor(:,:)
-         zvbet(:,:) = zvdpvor(:,:)
-         DO ji = 1, jpim1
-            DO jj = 1, jpjm1
-               vortrd(ji,jj,jpvor_bev) = (    zvbet(ji+1,jj) - zvbet(ji,jj)     &
-                  &                       - ( zubet(ji,jj+1) - zubet(ji,jj) ) ) / ( e1f(ji,jj) * e2f(ji,jj) )
-            END DO
-         END DO
-         ! Average of the Curl and Surface mask
-         vortrd(:,:,jpvor_bev) = vortrd(:,:,jpvor_bev) * r1_hu_n(:,:) * fmask(:,:,1)
+         DO_2D( 0, 0, 0, 0 )
+            vortrd(ji,jj,jpvor_bev) = (    zvdpvor(ji+1,jj) - zvdpvor(ji,jj)     &
+               &                       - ( zudpvor(ji,jj+1) - zudpvor(ji,jj) ) ) &
+               &                           / ( e1f(ji,jj) * e2f(ji,jj) ) * r1_hu(ji,jj,Kmm) * fmask(ji,jj,1)
+         END_2D
       ENDIF
       !
       ! Average 
-      zudpvor(:,:) = zudpvor(:,:) * r1_hu_n(:,:)
-      zvdpvor(:,:) = zvdpvor(:,:) * r1_hv_n(:,:)
+      zudpvor(:,:) = zudpvor(:,:) * r1_hu(:,:,Kmm)
+      zvdpvor(:,:) = zvdpvor(:,:) * r1_hv(:,:,Kmm)
       !
       ! Curl
-      DO ji=1,jpim1
-         DO jj=1,jpjm1
-            vortrd(ji,jj,ktrd) = (    zvdpvor(ji+1,jj) - zvdpvor(ji,jj)     &
-               &                  - ( zudpvor(ji,jj+1) - zudpvor(ji,jj) ) ) / ( e1f(ji,jj) * e2f(ji,jj) )
-         END DO
-      END DO
-      ! Surface mask
-      vortrd(:,:,ktrd) = vortrd(:,:,ktrd) * fmask(:,:,1)
+      DO_2D( 0, 0, 0, 0 )
+         vortrd(ji,jj,ktrd) = (    zvdpvor(ji+1,jj) - zvdpvor(ji,jj)     &
+            &                  - ( zudpvor(ji,jj+1) - zudpvor(ji,jj) ) ) &
+            &                         / ( e1f(ji,jj) * e2f(ji,jj) ) * fmask(ji,jj,1)
+      END_2D
    
       IF( ndebug /= 0 ) THEN
          IF(lwp) WRITE(numout,*) ' debuging trd_vor_zint: I done'
@@ -297,7 +272,7 @@ CONTAINS
    END SUBROUTINE trd_vor_zint_3d
 
 
-   SUBROUTINE trd_vor_iom( kt )
+   SUBROUTINE trd_vor_iom( kt , Kmm )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE trd_vor  ***
       !! 
@@ -305,11 +280,12 @@ CONTAINS
       !!               and make outputs (NetCDF format)
       !!----------------------------------------------------------------------
       INTEGER                   , INTENT(in   ) ::   kt             ! time step
+      INTEGER                   , INTENT(in   ) ::   Kmm            ! time level index
       !
       INTEGER  ::   ji, jj, jk, jl   ! dummy loop indices
       INTEGER  ::   it, itmod        ! local integers
       REAL(wp) ::   zmean            ! local scalars
-      REAL(wp), DIMENSION(jpi,jpj) :: zun, zvn
+      REAL(wp), DIMENSION(jpi,jpj) :: zuu, zvv
       !!----------------------------------------------------------------------
 
       !  =================
@@ -326,27 +302,26 @@ CONTAINS
       !  ----------------------------------
 
       vor_avr   (:,:) = 0._wp
-      zun       (:,:) = 0._wp
-      zvn       (:,:) = 0._wp
+      zuu       (:,:) = 0._wp
+      zvv       (:,:) = 0._wp
       vor_avrtot(:,:) = 0._wp
       vor_avrres(:,:) = 0._wp
       
       ! Vertically averaged velocity
       DO jk = 1, jpk - 1
-         zun(:,:) = zun(:,:) + e1u(:,:) * un(:,:,jk) * e3u_n(:,:,jk)
-         zvn(:,:) = zvn(:,:) + e2v(:,:) * vn(:,:,jk) * e3v_n(:,:,jk)
+         zuu(:,:) = zuu(:,:) + e1u(:,:) * uu(:,:,jk,Kmm) * e3u(:,:,jk,Kmm)
+         zvv(:,:) = zvv(:,:) + e2v(:,:) * vv(:,:,jk,Kmm) * e3v(:,:,jk,Kmm)
       END DO
  
-      zun(:,:) = zun(:,:) * r1_hu_n(:,:)
-      zvn(:,:) = zvn(:,:) * r1_hv_n(:,:)
+      zuu(:,:) = zuu(:,:) * r1_hu(:,:,Kmm)
+      zvv(:,:) = zvv(:,:) * r1_hv(:,:,Kmm)
 
       ! Curl
-      DO ji = 1, jpim1
-         DO jj = 1, jpjm1
-            vor_avr(ji,jj) = (  ( zvn(ji+1,jj) - zvn(ji,jj) )    &
-               &              - ( zun(ji,jj+1) - zun(ji,jj) ) ) / ( e1f(ji,jj) * e2f(ji,jj) ) * fmask(ji,jj,1)
-         END DO
-      END DO
+      DO_2D( 0, 0, 0, 0 )
+         vor_avr(ji,jj) = (  ( zvv(ji+1,jj) - zvv(ji,jj) )    &
+            &              - ( zuu(ji,jj+1) - zuu(ji,jj) ) )  &
+            &             / ( e1f(ji,jj) * e2f(ji,jj) ) * fmask(ji,jj,1)
+      END_2D
       
       !  =================================
       !   II. Cumulated trends
@@ -384,7 +359,7 @@ CONTAINS
 
          ! III.1 compute total trend
          ! ------------------------
-         zmean = 1._wp / (  REAL( nmoydpvor, wp ) * 2._wp * rdt  )
+         zmean = 1._wp / (  REAL( nmoydpvor, wp ) * 2._wp * rn_Dt  )
          vor_avrtot(:,:) = (  vor_avr(:,:) - vor_avrbn(:,:) + vor_avrb(:,:) - vor_avrbb(:,:) ) * zmean
 
 
@@ -394,7 +369,7 @@ CONTAINS
          vor_avrres(:,:) = vor_avrtot(:,:) - rotot(:,:) / zmean
 
          ! Boundary conditions
-         CALL lbc_lnk_multi( 'trdvor', vor_avrtot, 'F', 1. , vor_avrres, 'F', 1. )
+         CALL lbc_lnk( 'trdvor', vor_avrtot, 'F', 1.0_wp , vor_avrres, 'F', 1.0_wp )
 
 
          ! III.3 time evolution array swap
@@ -503,19 +478,19 @@ CONTAINS
       ELSE                      ;   clop = "x"         ! no use of the mask value (require less cpu time)
       ENDIF
 #if defined key_diainstant
-      zsto = nn_write*rdt
+      zsto = nn_write*rn_Dt
       clop = "inst("//TRIM(clop)//")"
 #else
-      zsto = rdt
+      zsto = rn_Dt
       clop = "ave("//TRIM(clop)//")"
 #endif
-      zout = nn_trd*rdt
+      zout = nn_trd*rn_Dt
 
       IF(lwp) WRITE(numout,*) '               netCDF initialization'
 
       ! II.2 Compute julian date from starting date of the run
       ! ------------------------
-      CALL ymds2ju( nyear, nmonth, nday, rdt, zjulian )
+      CALL ymds2ju( nyear, nmonth, nday, rn_Dt, zjulian )
       zjulian = zjulian - adatrj   !   set calendar origin to the beginning of the experiment
       IF(lwp) WRITE(numout,*)' '  
       IF(lwp) WRITE(numout,*)'               Date 0 used :',nit000,    &
@@ -527,7 +502,7 @@ CONTAINS
       CALL dia_nam( clhstnam, nn_trd, 'vort' )                  ! filename
       IF(lwp) WRITE(numout,*) ' Name of NETCDF file ', clhstnam
       CALL histbeg( clhstnam, jpi, glamf, jpj, gphif,1, jpi,   &  ! Horizontal grid : glamt and gphit
-         &          1, jpj, nit000-1, zjulian, rdt, nh_t, nidvor, domain_id=nidom, snc4chunks=snc4set )
+         &          1, jpj, nit000-1, zjulian, rn_Dt, nh_t, nidvor, domain_id=nidom, snc4chunks=snc4set )
       CALL wheneq( jpi*jpj, fmask, 1, 1., ndexvor1, ndimvor1 )    ! surface
 
       ! Declare output fields as netCDF variables

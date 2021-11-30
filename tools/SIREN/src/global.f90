@@ -31,7 +31,7 @@ MODULE global
    PUBLIC :: cp_sep          !< list of separator
    PUBLIC :: cp_com          !< list of comment character
 
-   PUBLIC :: ip_npoint       !< number of point on ARAKAWA C-grid 
+   PUBLIC :: ip_npoint       !< number of point on ARAKAWA C-grid
    PUBLIC :: jp_T            !< indice for T-point on ARAKAWA C-grid
    PUBLIC :: jp_U            !< indice for U-point on ARAKAWA C-grid
    PUBLIC :: jp_V            !< indice for V-point on ARAKAWA C-grid
@@ -52,10 +52,10 @@ MODULE global
 
    PUBLIC :: ip_ninterp      !< number of available interpolation method
    PUBLIC :: cp_interp_list  !< list of interpolation name
-   
+
    PUBLIC :: ip_nextrap      !< number of available extrapolation method
    PUBLIC :: cp_extrap_list  !< list of extrapolation name
-   
+
    PUBLIC :: ip_nfilter      !< number of available filter
    PUBLIC :: cp_filter_list  !< list of filter name
 
@@ -70,6 +70,8 @@ MODULE global
    PUBLIC :: ip_maxdumcfg    !< maximum dummy variable in configuration file
    PUBLIC :: cp_url          !< svn url
 
+   PUBLIC :: ip_kddim        !< kd-tree dimension number
+
    ! NOTE_avoid_public_variables_if_possible
 
    INTEGER(i4)                             , PARAMETER :: ip_maxvar =200   !< maximum number of variable
@@ -77,11 +79,11 @@ MODULE global
    INTEGER(i4)                             , PARAMETER :: ip_maxseg =10    !< maximum number of segment for each boundary
 
    INTEGER(i4)                             , PARAMETER :: ip_nsep=2        !< number of separator listed
-   CHARACTER(1)     , DIMENSION(ip_nsep)   , PARAMETER :: cp_sep = (/'.','_'/) !< list of separator 
+   CHARACTER(1)     , DIMENSION(ip_nsep)   , PARAMETER :: cp_sep = (/'.','_'/) !< list of separator
 
    INTEGER(i4)                             , PARAMETER :: ip_ncom=2        !< number of comment character listed
-   CHARACTER(1)     , DIMENSION(ip_ncom)   , PARAMETER :: cp_com = (/'#','!'/) !< list of comment character 
-    
+   CHARACTER(1)     , DIMENSION(ip_ncom)   , PARAMETER :: cp_com = (/'#','!'/) !< list of comment character
+
    INTEGER(i4)                             , PARAMETER :: ip_ghost=1       !< number of ghost cell
 
    INTEGER(i4)                             , PARAMETER :: ip_ninterp=3
@@ -138,13 +140,15 @@ MODULE global
    INTEGER(i4)                             , PARAMETER :: jp_east =3
    INTEGER(i4)                             , PARAMETER :: jp_west =4
 
-   INTEGER(i4)                             , PARAMETER :: ip_maxdumcfg = 10 !< maximum dummy variable, dimension, or attribute 
+   INTEGER(i4)                             , PARAMETER :: ip_maxdumcfg = 10 !< maximum dummy variable, dimension, or attribute
                                                                             !< in configuration file
 
-   CHARACTER(LEN=lc)                       , PARAMETER :: cp_url="$URL: https://forge.ipsl.jussieu.fr/nemo/svn/utils/tools_r4.0-HEAD/SIREN/src/global.f90 $"    !< svn url
-   CHARACTER(LEN=lc)                       , PARAMETER :: cp_version = "$Revision: 12080 $"
+   INTEGER(i4)                             , PARAMETER :: ip_kddim = 3 !<  kd-tree dimensions (x/y/z)
+
+   CHARACTER(LEN=lc)                       , PARAMETER :: cp_url="$URL: https://forge.ipsl.jussieu.fr/nemo/svn/utils/tools/SIREN/src/global.f90 $"    !< svn url
+   CHARACTER(LEN=lc)                       , PARAMETER :: cp_version = "$Revision: 13369 $"
    CHARACTER(LEN=lc)                       , PARAMETER :: cp_author = "$Author: jpaul $"
-   CHARACTER(LEN=lc)                       , PARAMETER :: cp_date = "$Date: 2019-12-06 09:30:14 +0000 (Fri, 06 Dec 2019) $"
+   CHARACTER(LEN=lc)                       , PARAMETER :: cp_date = "$Date: 2020-07-31 10:50:52 +0200 (Fri, 31 Jul 2020) $"
 
 END MODULE global
 

@@ -4,7 +4,7 @@ Build the framework
 
 .. todo::
 
-
+   TBD
 
 .. contents::
    :local:
@@ -121,7 +121,7 @@ Checkout the NEMO sources
 
 .. code:: console
 
-   $ svn co https://forge.ipsl.jussieu.fr/nemo/svn/NEMO/releases/r4.0/r4.0-HEAD
+   $ svn co https://forge.ipsl.jussieu.fr/nemo/svn/NEMO/trunk
 
 Description of 1\ :sup:`st` level tree structure
 ------------------------------------------------
@@ -267,4 +267,4 @@ the list of active CPP keys can be found in :file:`./cfgs/'MYCONFIG'/cpp_MY_CONF
 This text file can be edited by hand or with :file:`makenemo` to change the list of active CPP keys.
 Once changed, one needs to recompile ``nemo`` in order for this change to be taken in account.
 Note that most NEMO configurations will need to specify the following CPP keys:
-``key_iomput`` for IOs and ``key_mpp_mpi`` for parallelism.
+``key_xios`` for IOs. MPI parallelism is activated by default. Use ``key_mpi_off`` to compile without MPI.

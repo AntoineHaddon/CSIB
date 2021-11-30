@@ -31,12 +31,12 @@ MODULE trcsms_age
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: trcsms_age.F90 10070 2018-08-28 14:30:54Z nicolasmartin $
+   !! $Id: trcsms_age.F90 14173 2020-12-15 12:44:07Z cetlod $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE trc_sms_age( kt )
+   SUBROUTINE trc_sms_age( kt, Kbb, Kmm, Krhs )
       !!----------------------------------------------------------------------
       !!                     ***  trc_sms_age  ***
       !!
@@ -44,7 +44,8 @@ CONTAINS
       !!
       !! ** Method  : -
       !!----------------------------------------------------------------------
-      INTEGER, INTENT(in) ::   kt   ! ocean time-step index
+      INTEGER, INTENT(in) ::   kt              ! ocean time-step index
+      INTEGER, INTENT(in) ::   Kbb, Kmm, Krhs  ! ocean time level
       INTEGER ::   jn, jk   ! dummy loop index
       !!----------------------------------------------------------------------
       !
@@ -54,19 +55,23 @@ CONTAINS
       IF(lwp) WRITE(numout,*) ' trc_sms_age:  AGE model'
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~'
 
+      IF( l_1st_euler .OR. ln_top_euler ) THEN
+         tr(:,:,:,jp_age,Kbb) = tr(:,:,:,jp_age,Kmm)
+      ENDIF
+
 
       DO jk = 1, nla_age
-         tra(:,:,jk,jp_age) = rn_age_kill_rate * trb(:,:,jk,jp_age)
+         tr(:,:,jk,jp_age,Krhs) = rn_age_kill_rate * tr(:,:,jk,jp_age,Kbb)
       END DO
       !
-      tra(:,:,nl_age,jp_age) = frac_kill_age * rn_age_kill_rate * trb(:,:,nl_age,jp_age)  &
+      tr(:,:,nl_age,jp_age,Krhs) = frac_kill_age * rn_age_kill_rate * tr(:,:,nl_age,jp_age,Kbb)  &
           &                   + frac_add_age  * rryear * tmask(:,:,nl_age)
       !
       DO jk = nlb_age, jpk
-         tra(:,:,jk,jp_age) = tmask(:,:,jk) * rryear
+         tr(:,:,jk,jp_age,Krhs) = tmask(:,:,jk) * rryear
       END DO
       !
-      IF( l_trdtrc ) CALL trd_trc( tra(:,:,:,jp_age), jn, jptra_sms, kt )   ! save trends
+      IF( l_trdtrc ) CALL trd_trc( tr(:,:,:,jp_age,Krhs), jn, jptra_sms, kt, Kmm )   ! save trends
       !
       IF( ln_timing )   CALL timing_stop('trc_sms_age')
       !

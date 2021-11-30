@@ -15,6 +15,7 @@ MODULE trcadv
    !!   trc_adv       : compute ocean tracer advection trend
    !!   trc_adv_ini   : control the different options of advection scheme
    !!----------------------------------------------------------------------
+   USE par_trc        ! need jptra, number of passive tracers
    USE oce_trc        ! ocean dynamics and active tracers
    USE trc            ! ocean passive tracers variables
    USE sbcwave        ! wave module
@@ -28,7 +29,7 @@ MODULE trcadv
    USE ldftra         ! lateral diffusion: eddy diffusivity & EIV coeff.
    USE ldfslp         ! Lateral diffusion: slopes of neutral surfaces
    !
-   USE prtctl_trc     ! control print
+   USE prtctl         ! control print
    USE timing         ! Timing
 
    IMPLICIT NONE
@@ -59,85 +60,102 @@ MODULE trcadv
    INTEGER, PARAMETER ::   np_QCK     = 5   ! QUICK scheme
    
    !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
+#  include "do_loop_substitute.h90"
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: trcadv.F90 11536 2019-09-11 13:54:18Z smasson $ 
+   !! $Id: trcadv.F90 15073 2021-07-02 14:20:14Z clem $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE trc_adv( kt )
+   SUBROUTINE trc_adv( kt, Kbb, Kmm, ptr, Krhs  )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE trc_adv  ***
       !!
       !! ** Purpose :   compute the ocean tracer advection trend.
       !!
-      !! ** Method  : - Update after tracers (tra) with the advection term following nadv
+      !! ** Method  : - Update after tracers (tr(Krhs)) with the advection term following nadv
       !!----------------------------------------------------------------------
-      INTEGER, INTENT(in) ::   kt   ! ocean time-step index
+      INTEGER                                   , INTENT(in)    :: kt   ! ocean time-step index
+      INTEGER                                   , INTENT(in)    :: Kbb, Kmm, Krhs ! time level indices
+      REAL(wp), DIMENSION(jpi,jpj,jpk,jptra,jpt), INTENT(inout) :: ptr            ! passive tracers and RHS of tracer equation
       !
-      INTEGER ::   jk   ! dummy loop index
+      INTEGER ::   ji, jj, jk   ! dummy loop index
       CHARACTER (len=22) ::   charout
-      REAL(wp), DIMENSION(jpi,jpj,jpk) ::   zun, zvn, zwn  ! effective velocity
+      REAL(wp), DIMENSION(jpi,jpj,jpk) ::   zuu, zvv, zww  ! effective velocity
       !!----------------------------------------------------------------------
       !
       IF( ln_timing )   CALL timing_start('trc_adv')
       !
       !                                         !==  effective transport  ==!
       IF( l_offline ) THEN
-         zun(:,:,:) = un(:,:,:)                    ! already in (un,vn,wn)
-         zvn(:,:,:) = vn(:,:,:)
-         zwn(:,:,:) = wn(:,:,:)
+         DO_3D( nn_hls, nn_hls-1, nn_hls, nn_hls-1, 1, jpk )
+            zuu(ji,jj,jk) = uu(ji,jj,jk,Kmm)             ! already in (uu(Kmm),vv(Kmm),ww)
+            zvv(ji,jj,jk) = vv(ji,jj,jk,Kmm)
+         END_3D
+         DO_3D( nn_hls-1, nn_hls-1, nn_hls-1, nn_hls-1, 1, jpk )
+            zww(ji,jj,jk) = ww(ji,jj,jk)
+         END_3D
       ELSE                                         ! build the effective transport
-         zun(:,:,jpk) = 0._wp
-         zvn(:,:,jpk) = 0._wp
-         zwn(:,:,jpk) = 0._wp
+         DO_2D( nn_hls, nn_hls-1, nn_hls, nn_hls-1 )
+            zuu(ji,jj,jpk) = 0._wp
+            zvv(ji,jj,jpk) = 0._wp
+         END_2D
+         DO_2D( nn_hls-1, nn_hls-1, nn_hls-1, nn_hls-1 )
+            zww(ji,jj,jpk) = 0._wp
+         END_2D
          IF( ln_wave .AND. ln_sdw )  THEN
-            DO jk = 1, jpkm1                                                       ! eulerian transport + Stokes Drift
-               zun(:,:,jk) = e2u  (:,:) * e3u_n(:,:,jk) * ( un(:,:,jk) + usd(:,:,jk) )
-               zvn(:,:,jk) = e1v  (:,:) * e3v_n(:,:,jk) * ( vn(:,:,jk) + vsd(:,:,jk) )
-               zwn(:,:,jk) = e1e2t(:,:)                 * ( wn(:,:,jk) + wsd(:,:,jk) )
-            END DO
+            DO_3D( nn_hls, nn_hls-1, nn_hls, nn_hls-1, 1, jpkm1 )                            ! eulerian transport + Stokes Drift
+               zuu(ji,jj,jk) = e2u  (ji,jj) * e3u(ji,jj,jk,Kmm) * ( uu(ji,jj,jk,Kmm) + usd(ji,jj,jk) )
+               zvv(ji,jj,jk) = e1v  (ji,jj) * e3v(ji,jj,jk,Kmm) * ( vv(ji,jj,jk,Kmm) + vsd(ji,jj,jk) )
+            END_3D
+            DO_3D( nn_hls-1, nn_hls-1, nn_hls-1, nn_hls-1, 1, jpkm1 )
+               zww(ji,jj,jk) = e1e2t(ji,jj)                     * ( ww(ji,jj,jk)     + wsd(ji,jj,jk) )
+            END_3D
          ELSE
-            DO jk = 1, jpkm1
-               zun(:,:,jk) = e2u  (:,:) * e3u_n(:,:,jk) * un(:,:,jk)                   ! eulerian transport
-               zvn(:,:,jk) = e1v  (:,:) * e3v_n(:,:,jk) * vn(:,:,jk)
-               zwn(:,:,jk) = e1e2t(:,:)                 * wn(:,:,jk)
-            END DO
+            DO_3D( nn_hls, nn_hls-1, nn_hls, nn_hls-1, 1, jpkm1 )
+               zuu(ji,jj,jk) = e2u  (ji,jj) * e3u(ji,jj,jk,Kmm) * uu(ji,jj,jk,Kmm)           ! eulerian transport
+               zvv(ji,jj,jk) = e1v  (ji,jj) * e3v(ji,jj,jk,Kmm) * vv(ji,jj,jk,Kmm)
+            END_3D
+            DO_3D( nn_hls-1, nn_hls-1, nn_hls-1, nn_hls-1, 1, jpkm1 )
+               zww(ji,jj,jk) = e1e2t(ji,jj)                     * ww(ji,jj,jk)
+            END_3D
          ENDIF
          !
-         IF( ln_vvl_ztilde .OR. ln_vvl_layer ) THEN                                 ! add z-tilde and/or vvl corrections
-            zun(:,:,:) = zun(:,:,:) + un_td(:,:,:)
-            zvn(:,:,:) = zvn(:,:,:) + vn_td(:,:,:)
+         IF( ln_vvl_ztilde .OR. ln_vvl_layer ) THEN                                          ! add z-tilde and/or vvl corrections
+            DO_3D( nn_hls, nn_hls-1, nn_hls, nn_hls-1, 1, jpkm1 )
+               zuu(ji,jj,jk) = zuu(ji,jj,jk) + un_td(ji,jj,jk)
+               zvv(ji,jj,jk) = zvv(ji,jj,jk) + vn_td(ji,jj,jk)
+            END_3D
          ENDIF
          !
          IF( ln_ldfeiv .AND. .NOT. ln_traldf_triad )   & 
-            &              CALL ldf_eiv_trp( kt, nittrc000, zun, zvn, zwn, 'TRC' )  ! add the eiv transport
+            &              CALL ldf_eiv_trp( kt, nittrc000, zuu, zvv, zww, 'TRC', Kmm, Krhs )  ! add the eiv transport
          !
-         IF( ln_mle    )   CALL tra_mle_trp( kt, nittrc000, zun, zvn, zwn, 'TRC' )  ! add the mle transport
+         IF( ln_mle    )   CALL tra_mle_trp( kt, nittrc000, zuu, zvv, zww, 'TRC', Kmm       )  ! add the mle transport
          !
       ENDIF
       !
       SELECT CASE ( nadv )                      !==  compute advection trend and add it to general trend  ==!
       !
       CASE ( np_CEN )                                 ! Centered : 2nd / 4th order
-         CALL tra_adv_cen( kt, nittrc000,'TRC',          zun, zvn, zwn     , trn, tra, jptra, nn_cen_h, nn_cen_v )
+         CALL tra_adv_cen   ( kt, nittrc000,'TRC',          zuu, zvv, zww,      Kmm, ptr, jptra, Krhs, nn_cen_h, nn_cen_v )
       CASE ( np_FCT )                                 ! FCT      : 2nd / 4th order
-         CALL tra_adv_fct( kt, nittrc000,'TRC', r2dttrc, zun, zvn, zwn, trb, trn, tra, jptra, nn_fct_h, nn_fct_v )
+            CALL tra_adv_fct( kt, nittrc000,'TRC', rDt_trc, zuu, zvv, zww, Kbb, Kmm, ptr, jptra, Krhs, nn_fct_h, nn_fct_v )
       CASE ( np_MUS )                                 ! MUSCL
-         CALL tra_adv_mus( kt, nittrc000,'TRC', r2dttrc, zun, zvn, zwn, trb,      tra, jptra        , ln_mus_ups ) 
+            CALL tra_adv_mus( kt, nittrc000,'TRC', rDt_trc, zuu, zvv, zww, Kbb, Kmm, ptr, jptra, Krhs, ln_mus_ups         )
       CASE ( np_UBS )                                 ! UBS
-         CALL tra_adv_ubs( kt, nittrc000,'TRC', r2dttrc, zun, zvn, zwn, trb, trn, tra, jptra          , nn_ubs_v )
+         CALL tra_adv_ubs   ( kt, nittrc000,'TRC', rDt_trc, zuu, zvv, zww, Kbb, Kmm, ptr, jptra, Krhs, nn_ubs_v           )
       CASE ( np_QCK )                                 ! QUICKEST
-         CALL tra_adv_qck( kt, nittrc000,'TRC', r2dttrc, zun, zvn, zwn, trb, trn, tra, jptra                     )
+         CALL tra_adv_qck   ( kt, nittrc000,'TRC', rDt_trc, zuu, zvv, zww, Kbb, Kmm, ptr, jptra, Krhs                     )
       !
       END SELECT
       !                  
-      IF( ln_ctl ) THEN                         !== print mean trends (used for debugging)
+      IF( sn_cfctl%l_prttrc ) THEN        !== print mean trends (used for debugging)
          WRITE(charout, FMT="('adv ')")
-         CALL prt_ctl_trc_info(charout)
-         CALL prt_ctl_trc( tab4d=tra, mask=tmask, clinfo=ctrcnm, clinfo2='trd' )
+         CALL prt_ctl_info( charout, cdcomp = 'top' )
+         CALL prt_ctl( tab4d_1=tr(:,:,:,:,Krhs), mask1=tmask, clinfo=ctrcnm, clinfo3='trd' )
       END IF
       !
       IF( ln_timing )   CALL timing_stop('trc_adv')
@@ -163,10 +181,8 @@ CONTAINS
       !!----------------------------------------------------------------------
       !
       !                                !==  Namelist  ==!
-      REWIND( numnat_ref )                   !  namtrc_adv in reference namelist 
       READ  ( numnat_ref, namtrc_adv, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namtrc_adv in reference namelist' )
-      REWIND( numnat_cfg )                   ! namtrc_adv in configuration namelist
       READ  ( numnat_cfg, namtrc_adv, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namtrc_adv in configuration namelist' )
       IF(lwm) WRITE ( numont, namtrc_adv )

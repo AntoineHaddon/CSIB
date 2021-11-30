@@ -67,9 +67,12 @@ MODULE trdmxl
    INTEGER ::   ndimtrd1                        
    INTEGER ::   ionce, icount                   
 
+   !! * Substitutions
+#  include "do_loop_substitute.h90"
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: trdmxl.F90 11536 2019-09-11 13:54:18Z smasson $ 
+   !! $Id: trdmxl.F90 15104 2021-07-07 14:36:00Z clem $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -85,7 +88,7 @@ CONTAINS
    END FUNCTION trd_mxl_alloc
 
 
-   SUBROUTINE trd_tra_mxl( ptrdx, ptrdy, ktrd, kt, p2dt, kmxln )
+   SUBROUTINE trd_tra_mxl( ptrdx, ptrdy, ktrd, kt, p2dt, kmxln, Kmm )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE trd_tra_mng  ***
       !! 
@@ -97,6 +100,7 @@ CONTAINS
       REAL(wp), DIMENSION(:,:,:), INTENT(inout) ::   ptrdy   ! Salinity    or V trend
       INTEGER                   , INTENT(in   ) ::   ktrd    ! tracer trend index
       INTEGER                   , INTENT(in   ) ::   kt      ! time step index
+      INTEGER                   , INTENT(in   ) ::   Kmm     ! time level index
       REAL(wp)                  , INTENT(in   ) ::   p2dt    ! time step  [s]
       REAL(wp), DIMENSION(:,:)  , INTENT(in   ) ::   kmxln   ! number of t-box for the vertical average 
       !
@@ -115,13 +119,11 @@ CONTAINS
          
          !
          wkx(:,:,:) = 0._wp         !==  now ML weights for vertical averaging  ==!
-         DO jk = 1, jpktrd               ! initialize wkx with vertical scale factor in mixed-layer
-            DO jj = 1,jpj
-               DO ji = 1,jpi
-                  IF( jk - kmxln(ji,jj) < 0 )   wkx(ji,jj,jk) = e3t_n(ji,jj,jk) * tmask(ji,jj,jk)
-               END DO
-            END DO
-         END DO
+         DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, jpktrd )  ! initialize wkx with vertical scale factor in mixed-layer
+            IF( jk - kmxln(ji,jj) < 0 )   THEN
+               wkx(ji,jj,jk) = e3t(ji,jj,jk,Kmm) * tmask(ji,jj,jk)
+            ENDIF
+         END_3D
          hmxl(:,:) = 0._wp               ! NOW mixed-layer depth
          DO jk = 1, jpktrd
             hmxl(:,:) = hmxl(:,:) + wkx(:,:,jk)
@@ -135,8 +137,8 @@ CONTAINS
          !                          !==  Vertically averaged T and S  ==!
          tml(:,:) = 0._wp   ;   sml(:,:) = 0._wp
          DO jk = 1, jpktrd
-            tml(:,:) = tml(:,:) + wkx(:,:,jk) * tsn(:,:,jk,jp_tem)
-            sml(:,:) = sml(:,:) + wkx(:,:,jk) * tsn(:,:,jk,jp_sal)
+            tml(:,:) = tml(:,:) + wkx(:,:,jk) * ts(:,:,jk,jp_tem,Kmm)
+            sml(:,:) = sml(:,:) + wkx(:,:,jk) * ts(:,:,jk,jp_sal,Kmm)
          END DO
          !
       ENDIF
@@ -151,7 +153,7 @@ CONTAINS
  
 !!gm to be put juste before the output !
 !      ! Lateral boundary conditions
-!      CALL lbc_lnk_multi( 'trdmxl', tmltrd(:,:,jl), 'T', 1. , smltrd(:,:,jl), 'T', 1. )
+!      CALL lbc_lnk( 'trdmxl', tmltrd(:,:,jl), 'T', 1.0_wp , smltrd(:,:,jl), 'T', 1.0_wp )
 !!gm end
 
 
@@ -370,7 +372,7 @@ CONTAINS
 
          hmxlbn(:,:) = hmxl(:,:)
 
-         IF( ln_ctl ) THEN
+         IF( sn_cfctl%l_prtctl ) THEN
             WRITE(numout,*) '             we reach kt == nit000 + 1 = ', nit000+1
             CALL prt_ctl(tab2d_1=tmlbb   , clinfo1=' tmlbb   -   : ', mask1=tmask)
             CALL prt_ctl(tab2d_1=tmlbn   , clinfo1=' tmlbn   -   : ', mask1=tmask)
@@ -379,7 +381,7 @@ CONTAINS
          !
       END IF
 
-      IF( ( ln_rstart ) .AND. ( kt == nit000 ) .AND. ( ln_ctl ) ) THEN
+      IF( ( ln_rstart ) .AND. ( kt == nit000 ) .AND. sn_cfctl%l_prtctl ) THEN
          IF( ln_trdmxl_instant ) THEN
             WRITE(numout,*) '             restart from kt == nit000 = ', nit000
             CALL prt_ctl(tab2d_1=tmlbb   , clinfo1=' tmlbb   -   : ', mask1=tmask)
@@ -469,9 +471,9 @@ CONTAINS
          
          !-- Lateral boundary conditions
          !         ... temperature ...                    ... salinity ...
-         CALL lbc_lnk_multi( 'trdmxl', ztmltot , 'T', 1., zsmltot , 'T', 1., &
-                  &          ztmlres , 'T', 1., zsmlres , 'T', 1., &
-                  &          ztmlatf , 'T', 1., zsmlatf , 'T', 1. )
+         CALL lbc_lnk( 'trdmxl', ztmltot , 'T', 1.0_wp, zsmltot , 'T', 1.0_wp, &
+            &                    ztmlres , 'T', 1.0_wp, zsmlres , 'T', 1.0_wp, &
+            &                    ztmlatf , 'T', 1.0_wp, zsmlatf , 'T', 1.0_wp )
 
 
          ! III.2 Prepare fields for output ("mean" diagnostics) 
@@ -520,10 +522,10 @@ CONTAINS
 
          !-- Lateral boundary conditions
          !         ... temperature ...                    ... salinity ...
-         CALL lbc_lnk_multi( 'trdmxl', ztmltot2, 'T', 1., zsmltot2, 'T', 1., &
-                  &          ztmlres2, 'T', 1., zsmlres2, 'T', 1. )
+         CALL lbc_lnk( 'trdmxl', ztmltot2, 'T', 1.0_wp, zsmltot2, 'T', 1.0_wp, &
+            &                    ztmlres2, 'T', 1.0_wp, zsmlres2, 'T', 1.0_wp )
          !
-         CALL lbc_lnk_multi( 'trdmxl', ztmltrd2(:,:,:), 'T', 1., zsmltrd2(:,:,:), 'T', 1. ) ! /  in the NetCDF trends file
+         CALL lbc_lnk( 'trdmxl', ztmltrd2(:,:,:), 'T', 1.0_wp, zsmltrd2(:,:,:), 'T', 1.0_wp ) ! /  in the NetCDF trends file
          
          ! III.3 Time evolution array swap
          ! -------------------------------
@@ -547,7 +549,7 @@ CONTAINS
          ! ML depth
          hmxlbn         (:,:)   = hmxl    (:,:)
          
-         IF( ln_ctl ) THEN
+         IF( sn_cfctl%l_prtctl ) THEN
             IF( ln_trdmxl_instant ) THEN
                CALL prt_ctl(tab2d_1=tmlbb   , clinfo1=' tmlbb   -   : ', mask1=tmask)
                CALL prt_ctl(tab2d_1=tmlbn   , clinfo1=' tmlbn   -   : ', mask1=tmask)
@@ -731,11 +733,9 @@ CONTAINS
          &                 nn_ctls, cn_trdrst_out, ln_trdmxl_instant, rn_ucf, rn_rho_c
       !!----------------------------------------------------------------------
       !
-      REWIND( numnam_ref )              ! Namelist namtrd_mxl in reference namelist : mixed layer trends diagnostic
       READ  ( numnam_ref, namtrd_mxl, IOSTAT = ios, ERR = 901 )
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namtrd_mxl in reference namelist' )
 
-      REWIND( numnam_cfg )              ! Namelist namtrd_mxl in configuration namelist : mixed layer trends diagnostic
       READ  ( numnam_cfg, namtrd_mxl, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namtrd_mxl in configuration namelist' )
       IF(lwm) WRITE( numond, namtrd_mxl )

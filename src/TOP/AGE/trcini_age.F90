@@ -19,18 +19,19 @@ MODULE trcini_age
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: trcini_age.F90 10070 2018-08-28 14:30:54Z nicolasmartin $ 
+   !! $Id: trcini_age.F90 12377 2020-02-12 14:39:06Z acc $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE trc_ini_age
+   SUBROUTINE trc_ini_age( Kmm )
       !!----------------------------------------------------------------------
       !!                     ***  trc_ini_age  ***  
       !!
       !! ** Purpose :   initialization for AGE model
       !!
       !!----------------------------------------------------------------------
+      INTEGER, INTENT(in) ::   Kmm ! time level indices
       INTEGER    ::  jn
       CHARACTER(len = 20)  ::  cltra
       !!----------------------------------------------------------------------
@@ -56,7 +57,7 @@ CONTAINS
       frac_add_age  = 1._wp -  frac_kill_age                                    ! fraction of level nl_age below age_depth
 
       
-      IF( .NOT. ln_rsttr ) trn(:,:,:,jp_age) = 0.
+      IF( .NOT. ln_rsttr ) tr(:,:,:,jp_age,Kmm) = 0.
       !
    END SUBROUTINE trc_ini_age
 

@@ -90,7 +90,7 @@ MODULE icbdia
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: icbdia.F90 14772 2021-04-30 10:22:29Z clem $
+   !! $Id: icbdia.F90 14773 2021-04-30 10:23:51Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS

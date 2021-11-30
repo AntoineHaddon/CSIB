@@ -12,11 +12,12 @@ MODULE trdtrc
    !!----------------------------------------------------------------------
    !!   trdtrc      : passive tracer trends 
    !!----------------------------------------------------------------------
-   USE trc               ! tracer definitions (trn, trb, tra, etc.)
+   USE trc               ! tracer definitions (tr(:,:,:,:,Kmm), tr(:,:,:,:,Kbb), tr(:,:,:,:,Krhs), etc.)
    USE trd_oce
    USE trdtrc_oce       ! definition of main arrays used for trends computations
    USE trdmxl_trc        ! Mixed layer trends diag.
    USE iom               ! I/O library
+   USE par_kind
 
    IMPLICIT NONE
    PRIVATE
@@ -25,17 +26,18 @@ MODULE trdtrc
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: trdtrc.F90 10096 2018-09-07 11:38:22Z cetlod $ 
+   !! $Id: trdtrc.F90 13226 2020-07-02 14:24:31Z orioltp $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 
 CONTAINS
 
-   SUBROUTINE trd_trc( ptrtrd, kjn, ktrd, kt )
+   SUBROUTINE trd_trc( ptrtrd, kjn, ktrd, kt, Kmm )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE trd_trc  ***
       !!----------------------------------------------------------------------
       INTEGER, INTENT( in )  ::   kt                                  ! time step
+      INTEGER, INTENT( in )  ::   Kmm                                 ! time level index
       INTEGER, INTENT( in )  ::   kjn                                 ! tracer index
       INTEGER, INTENT( in )  ::   ktrd                                ! tracer trend index
       REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT( inout )  ::   ptrtrd  ! Temperature or U trend
@@ -55,23 +57,23 @@ CONTAINS
       IF( lk_trdmxl_trc .AND. ln_trdtrc( kjn ) ) THEN
          !
          SELECT CASE ( ktrd )
-         CASE ( jptra_xad     )   ;   CALL trd_mxl_trc_zint( ptrtrd, jpmxl_trc_xad, '3D', kjn )
-         CASE ( jptra_yad     )   ;   CALL trd_mxl_trc_zint( ptrtrd, jpmxl_trc_yad, '3D', kjn )
-         CASE ( jptra_zad     )   ;   CALL trd_mxl_trc_zint( ptrtrd, jpmxl_trc_zad, '3D', kjn )
-         CASE ( jptra_ldf     )   ;   CALL trd_mxl_trc_zint( ptrtrd, jpmxl_trc_ldf, '3D', kjn )
-         CASE ( jptra_bbl     )   ;   CALL trd_mxl_trc_zint( ptrtrd, jpmxl_trc_bbl, '3D', kjn )
+         CASE ( jptra_xad     )   ;   CALL trd_mxl_trc_zint( ptrtrd, jpmxl_trc_xad, '3D', kjn, Kmm )
+         CASE ( jptra_yad     )   ;   CALL trd_mxl_trc_zint( ptrtrd, jpmxl_trc_yad, '3D', kjn, Kmm )
+         CASE ( jptra_zad     )   ;   CALL trd_mxl_trc_zint( ptrtrd, jpmxl_trc_zad, '3D', kjn, Kmm )
+         CASE ( jptra_ldf     )   ;   CALL trd_mxl_trc_zint( ptrtrd, jpmxl_trc_ldf, '3D', kjn, Kmm )
+         CASE ( jptra_bbl     )   ;   CALL trd_mxl_trc_zint( ptrtrd, jpmxl_trc_bbl, '3D', kjn, Kmm )
          CASE ( jptra_zdf     )
             IF( ln_trcldf_iso ) THEN
-               CALL trd_mxl_trc_zint( ptrtrd, jpmxl_trc_ldf, '3D', kjn )
+               CALL trd_mxl_trc_zint( ptrtrd, jpmxl_trc_ldf, '3D', kjn, Kmm )
             ELSE
-               CALL trd_mxl_trc_zint( ptrtrd, jpmxl_trc_zdf, '3D', kjn )
+               CALL trd_mxl_trc_zint( ptrtrd, jpmxl_trc_zdf, '3D', kjn, Kmm )
             ENDIF
-         CASE ( jptra_dmp     )   ;   CALL trd_mxl_trc_zint( ptrtrd, jpmxl_trc_dmp , '3D', kjn )
-         CASE ( jptra_nsr     )   ;   CALL trd_mxl_trc_zint( ptrtrd, jpmxl_trc_sbc , '2D', kjn )
-         CASE ( jptra_sms     )   ;   CALL trd_mxl_trc_zint( ptrtrd, jpmxl_trc_sms , '3D', kjn )
-         CASE ( jptra_radb    )   ;   CALL trd_mxl_trc_zint( ptrtrd, jpmxl_trc_radb, '3D', kjn )
-         CASE ( jptra_radn    )   ;   CALL trd_mxl_trc_zint( ptrtrd, jpmxl_trc_radn, '3D', kjn )
-         CASE ( jptra_atf     )   ;   CALL trd_mxl_trc_zint( ptrtrd, jpmxl_trc_atf , '3D', kjn )
+         CASE ( jptra_dmp     )   ;   CALL trd_mxl_trc_zint( ptrtrd, jpmxl_trc_dmp , '3D', kjn, Kmm )
+         CASE ( jptra_nsr     )   ;   CALL trd_mxl_trc_zint( ptrtrd, jpmxl_trc_sbc , '2D', kjn, Kmm )
+         CASE ( jptra_sms     )   ;   CALL trd_mxl_trc_zint( ptrtrd, jpmxl_trc_sms , '3D', kjn, Kmm )
+         CASE ( jptra_radb    )   ;   CALL trd_mxl_trc_zint( ptrtrd, jpmxl_trc_radb, '3D', kjn, Kmm )
+         CASE ( jptra_radn    )   ;   CALL trd_mxl_trc_zint( ptrtrd, jpmxl_trc_radn, '3D', kjn, Kmm )
+         CASE ( jptra_atf     )   ;   CALL trd_mxl_trc_zint( ptrtrd, jpmxl_trc_atf , '3D', kjn, Kmm )
          END SELECT
          !
       END IF
@@ -105,15 +107,18 @@ CONTAINS
    !!   Default option :                                       Empty module
    !!----------------------------------------------------------------------
 
+   USE par_kind
+
    PUBLIC trd_trc
 
 CONTAINS
 
-   SUBROUTINE trd_trc( ptrtrd, kjn, ktrd, kt )
+   SUBROUTINE trd_trc( ptrtrd, kjn, ktrd, kt, Kmm )
       INTEGER               , INTENT( in )     ::   kt      ! time step
+      INTEGER               , INTENT( in )     ::   Kmm     ! time level index
       INTEGER               , INTENT( in )     ::   kjn     ! tracer index
       INTEGER               , INTENT( in )     ::   ktrd    ! tracer trend index
-      REAL, DIMENSION(:,:,:), INTENT( inout )  ::   ptrtrd  ! Temperature or U trend
+      REAL(wp), DIMENSION(:,:,:), INTENT( inout )  ::   ptrtrd  ! Temperature or U trend
       WRITE(*,*) 'trd_trc : You should not have seen this print! error?', ptrtrd(1,1,1)
       WRITE(*,*) '  "      "      : You should not have seen this print! error?', kjn
       WRITE(*,*) '  "      "      : You should not have seen this print! error?', ktrd

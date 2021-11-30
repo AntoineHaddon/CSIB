@@ -13,7 +13,7 @@ MODULE usrdef_nam
    !!   usr_def_nam   : read user defined namelist and set global domain size
    !!   usr_def_hgr   : initialize the horizontal mesh 
    !!----------------------------------------------------------------------
-   USE dom_oce  , ONLY: nimpp , njmpp            ! i- & j-indices of the local domain
+   USE dom_oce
    USE par_oce        ! ocean space and time domain
    USE phycst         ! physical constants
    !
@@ -49,16 +49,15 @@ MODULE usrdef_nam
    INTEGER , PUBLIC ::   nn_initcase=    0   ! initial condition case (0=rest, 1=zonal current, 2=canal)
    LOGICAL , PUBLIC ::   ln_sshnoise=.false. ! add random noise on initial ssh
    REAL(wp), PUBLIC ::   rn_lambda  = 50.    ! gaussian lambda
-   INTEGER , PUBLIC ::   nn_perio   =    0   ! periodicity of the channel (0=closed, 1=E-W)
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: usrdef_nam.F90 13284 2020-07-09 15:12:23Z smasson $ 
+   !! $Id: usrdef_nam.F90 15119 2021-07-13 14:43:22Z jchanut $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE usr_def_nam( cd_cfg, kk_cfg, kpi, kpj, kpk, kperio )
+   SUBROUTINE usr_def_nam( cd_cfg, kk_cfg, kpi, kpj, kpk, ldIperio, ldJperio, ldNFold, cdNFtype )
       !!----------------------------------------------------------------------
       !!                     ***  ROUTINE dom_nam  ***
       !!                    
@@ -70,21 +69,23 @@ CONTAINS
       !!
       !! ** input   : - namusr_def namelist found in namelist_cfg
       !!----------------------------------------------------------------------
-      CHARACTER(len=*)              , INTENT(out) ::   cd_cfg          ! configuration name
-      INTEGER                       , INTENT(out) ::   kk_cfg          ! configuration resolution
-      INTEGER                       , INTENT(out) ::   kpi, kpj, kpk   ! global domain sizes 
-      INTEGER                       , INTENT(out) ::   kperio          ! lateral global domain b.c. 
+      CHARACTER(len=*), INTENT(out) ::   cd_cfg               ! configuration name
+      INTEGER         , INTENT(out) ::   kk_cfg               ! configuration resolution
+      INTEGER         , INTENT(out) ::   kpi, kpj, kpk        ! global domain sizes
+      LOGICAL         , INTENT(out) ::   ldIperio, ldJperio   ! i- and j- periodicity
+      LOGICAL         , INTENT(out) ::   ldNFold              ! North pole folding
+      CHARACTER(len=1), INTENT(out) ::   cdNFtype             ! Folding type: T or F
       !
       INTEGER ::   ios      ! Local integer
       REAL(wp)::   zh       ! Local scalars
+      LOGICAL ::   ln_Iperio, ln_Jperio
       !!
       NAMELIST/namusr_def/  rn_domszx, rn_domszy, rn_domszz, rn_dx, rn_dy, rn_dz, rn_0xratio, rn_0yratio   &
          &                 , nn_fcase, rn_ppgphi0, rn_u10, rn_windszx, rn_windszy & !!, rn_uofac   &
          &                 , rn_vtxmax, rn_uzonal, rn_ujetszx, rn_ujetszy  &
-         &                 , nn_botcase, nn_initcase, ln_sshnoise, rn_lambda, nn_perio
+         &                 , nn_botcase, nn_initcase, ln_sshnoise, rn_lambda, ln_Iperio, ln_Jperio
       !!----------------------------------------------------------------------
       !
-      REWIND( numnam_cfg )          ! Namelist namusr_def (exist in namelist_cfg only)
       READ  ( numnam_cfg, namusr_def, IOSTAT = ios, ERR = 902 )
 902   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namusr_def in configuration namelist' )
       !
@@ -102,25 +103,19 @@ CONTAINS
       rn_0yratio = 0.5
 #endif
       !
-      IF(lwm)   WRITE( numond, namusr_def )
-      !
       cd_cfg = 'EW_CANAL'             ! name & resolution (not used)
       kk_cfg = INT( rn_dx )
       !
-      ! Global Domain size:  EW_CANAL global domain is  1800 km x 1800 Km x 5000 m
-      kpi = NINT( rn_domszx / rn_dx ) + 1
-      kpj = NINT( rn_domszy / rn_dy ) + 3
-      kpk = NINT( rn_domszz / rn_dz ) + 1
-#if defined key_agrif
-      IF( .NOT. Agrif_Root() ) THEN
-         kpi  = nbcellsx + 2 + 2*nbghostcells
-         kpj  = nbcellsy + 2 + 2*nbghostcells
+      IF( Agrif_Root() ) THEN        ! Global Domain size:  EW_CANAL global domain is  1800 km x 1800 Km x 5000 m
+         kpi = NINT( rn_domszx / rn_dx ) + 1
+         kpj = NINT( rn_domszy / rn_dy ) + 1
+      ELSE                           ! Global Domain size: add nbghostcells + 1 "land" point on each side
+         kpi  = nbcellsx + nbghostcells_x_w + nbghostcells_x_e + 2
+         kpj  = nbcellsy + nbghostcells_y_s + nbghostcells_y_n + 2
       ENDIF
-#endif
+      kpk = MAX( 2, NINT( rn_domszz / rn_dz ) + 1 )
       !
       zh  = (kpk-1)*rn_dz
-      !                             ! Set the lateral boundary condition of the global domain
-      kperio = 1                    ! EW_CANAL configuration : closed basin
       !                             ! control print
       IF(lwp) THEN
          WRITE(numout,*) '   '
@@ -151,10 +146,12 @@ CONTAINS
          WRITE(numout,*) '                   (0:rest, 1:zonal current, 10:shear)'
          WRITE(numout,*) '      add random noise on initial ssh   ln_sshnoise= ', ln_sshnoise
          WRITE(numout,*) '      Gaussian lambda parameter          rn_lambda = ', rn_lambda
-         WRITE(numout,*) '      Periodicity of the basin            nn_perio = ', nn_perio
+         WRITE(numout,*) '      i and j Periodicity     ln_Iperio, ln_Jperio = ', ln_Iperio, ln_Jperio
+         WRITE(numout,*) '   '
       ENDIF
       !                             ! Set the lateral boundary condition of the global domain
-      kperio = nn_perio                    ! EW_CANAL configuration : closed basin
+      ldIperio = ln_Iperio   ;   ldJperio = ln_Jperio   ! CANAL configuration
+      ldNFold  =  .FALSE.    ;   cdNFtype = '-'
       !
    END SUBROUTINE usr_def_nam
 

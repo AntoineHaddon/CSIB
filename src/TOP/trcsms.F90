@@ -22,31 +22,22 @@ MODULE trcsms
    USE trcsms_c14         ! C14 
    USE trcsms_age         ! AGE
    USE trcsms_my_trc      ! MY_TRC  tracers
-   
-   USE prtctl_trc         ! Print control for debbuging
-
-   ! TOP-level processes time integration
-   USE par_trc            ! TOP parameters
-   USE trd_oce			      ! Ocean trends :   set tracer and momentum trend variables	
-                          ! contains logical switches and jp_*** style tracer/var. indices
-   USE trdtrc			        ! Dummy module??? O Riche July 5th 2022 not sure what's that doing.
-
+   USE prtctl             ! Print control for debbuging
    USE sms_top_canbgc
 
    IMPLICIT NONE
    PRIVATE
 
-   PUBLIC   trc_sms       ! called in trcstp.F90
-   PUBLIC   trc_sms_alloc ! called by trcini.F90?
+   PUBLIC   trc_sms    ! called in trcstp.F90
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: trcsms.F90 10068 2018-08-28 14:09:04Z nicolasmartin $ 
+   !! $Id: trcsms.F90 13286 2020-07-09 15:48:29Z smasson $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE trc_sms( kt )
+   SUBROUTINE trc_sms( kt, Kbb, Kmm , Krhs )
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE trc_sms  ***
       !!
@@ -54,11 +45,10 @@ CONTAINS
       !!
       !! ** Method  : -  call the main routine of of each defined tracer model
       !! -------------------------------------------------------------------------------------
-      !!
-      !!
-      INTEGER, INTENT( in ) ::   kt      ! ocean time-step index
-      INTEGER               ::   jn      ! BGC tracer indexocean time-step index
+      INTEGER, INTENT( in ) ::   kt        ! ocean time-step index      
+      INTEGER, INTENT( in ) ::   Kbb, Kmm, Krhs ! time level indices
       INTEGER               ::   jp_tot  ! total number of BGC tracers (shared TOP + activated CanBGC model)
+      !!
       CHARACTER (len=25) :: charout
       !!---------------------------------------------------------------------
       !
@@ -101,7 +91,7 @@ CONTAINS
         ! (but) starting from rest (not from restart).
         IF( ( neuler == 0 .AND. kt == nittrc000 ) .OR. ln_top_euler ) THEN
            DO jn = 1, jp_tot               !   SMS on tracer without Asselin time-filter
-              trb(:,:,:,jn) = trn(:,:,:,jn)
+              tr(:,:,:,jn,Kbb) = tr(:,:,:,jn,Kmm)
            END DO
         ENDIF
       ENDIF
@@ -109,43 +99,21 @@ CONTAINS
       !
       IF( ln_canoe   )   CALL trc_sms_canoe  ( kt )    ! main program of CANOE  
       IF( ln_cmoc    )   CALL trc_sms_cmoc   ( kt )    ! main program of CMOC   
-      IF( ln_pisces  )   CALL trc_sms_pisces ( kt )    ! main program of PISCES 
-      IF( ll_cfc     )   CALL trc_sms_cfc    ( kt )    ! surface fluxes of CFC
-      IF( ln_c14     )   CALL trc_sms_c14    ( kt )    ! surface fluxes of C14
-      IF( ln_age     )   CALL trc_sms_age    ( kt )    ! Age tracer
-      IF( ln_my_trc  )   CALL trc_sms_my_trc ( kt )    ! MY_TRC  tracers
+      IF( ln_pisces  )   CALL trc_sms_pisces ( kt, Kbb, Kmm, Krhs )    ! main program of PISCES 
+      IF( ll_cfc     )   CALL trc_sms_cfc    ( kt, Kbb, Kmm, Krhs )    ! surface fluxes of CFC
+      IF( ln_c14     )   CALL trc_sms_c14    ( kt, Kbb, Kmm, Krhs )    ! surface fluxes of C14
+      IF( ln_age     )   CALL trc_sms_age    ( kt, Kbb, Kmm, Krhs )    ! Age tracer
+      IF( ln_my_trc  )   CALL trc_sms_my_trc ( kt, Kbb, Kmm, Krhs )    ! MY_TRC  tracers
 
-      ! O Riche Oct 25th 2022
-      ! test value of jp_tot to see if jp_age is involved
-      IF( lwp .AND. kt == nittrc000 ) THEN
-        WRITE(numout,*) 'trc_sms: jp_age and jp_tot check'
-        WRITE(numout,*) 'jp_age = ', jp_age
-        WRITE(numout,*) 'jp_tot = ', jp_tot
-      ENDIF
-  
-      IF(ln_ctl) THEN      ! print mean trends (used for debugging)
-        WRITE(charout, FMT="('sms ')")
-        CALL prt_ctl_trc_info( charout )
-        CALL prt_ctl_trc( tab4d=trn, mask=tmask, clinfo=ctrcnm )
+      IF(sn_cfctl%l_prttrc) THEN                       ! print mean trends (used for debugging)
+         WRITE(charout, FMT="('sms ')")
+         CALL prt_ctl_info( charout, cdcomp = 'top' )
+         CALL prt_ctl( tab4d_1=tr(:,:,:,:,Kmm), mask1=tmask, clinfo=ctrcnm )
       ENDIF
       !
       IF( ln_timing )   CALL timing_stop('trc_sms')
       !
    END SUBROUTINE trc_sms
-
-
-   INTEGER FUNCTION trc_sms_alloc()
-      !!----------------------------------------------------------------------
-      !!              ***  ROUTINE trc_sms_alloc  ***
-      !!----------------------------------------------------------------------
-      !
-      ! ALLOCATE here the arrays specific to TOP
-      ! ALLOCATE( tab(...) , STAT=trc_sms_alloc )
-      trc_sms_alloc = 0      ! set to zero if no array to be allocated
-      !
-      IF( trc_sms_alloc /= 0 ) CALL ctl_stop( 'STOP', 'trc_sms_alloc : failed to allocate arrays' )
-      !
-   END FUNCTION trc_sms_alloc
 
 #else
    !!======================================================================

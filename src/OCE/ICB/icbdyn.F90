@@ -26,7 +26,7 @@ MODULE icbdyn
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: icbdyn.F90 14372 2021-02-02 17:42:36Z mathiot $
+   !! $Id: icbdyn.F90 15088 2021-07-06 13:03:34Z acc $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -97,8 +97,8 @@ CONTAINS
          zxi2 = zxi1 + zdt_2 * zu1          ;   zuvel2 = zuvel1 + zdt_2 * zax1
          zyj2 = zyj1 + zdt_2 * zv1          ;   zvvel2 = zvvel1 + zdt_2 * zay1
          !
-         CALL icb_ground( zxi2, zxi1, zu1,   &
-            &             zyj2, zyj1, zv1, ll_bounced )
+         CALL icb_ground( berg, zxi2, zxi1, zu1,   &
+            &                   zyj2, zyj1, zv1, ll_bounced )
 
          !                                         !**   A2 = A(X2,V2)
          CALL icb_accel( kt, berg , zxi2, ze1, zuvel2, zuvel1, zax2,    &
@@ -113,8 +113,8 @@ CONTAINS
          zxi3  = zxi1  + zdt_2 * zu2   ;   zuvel3 = zuvel1 + zdt_2 * zax2
          zyj3  = zyj1  + zdt_2 * zv2   ;   zvvel3 = zvvel1 + zdt_2 * zay2
          !
-         CALL icb_ground( zxi3, zxi1, zu2,   &
-            &             zyj3, zyj1, zv2, ll_bounced )
+         CALL icb_ground( berg, zxi3, zxi1, zu2,   &
+            &                   zyj3, zyj1, zv2, ll_bounced )
 
          !                                         !**   A3 = A(X3,V3)
          CALL icb_accel( kt, berg , zxi3, ze1, zuvel3, zuvel1, zax3,    &
@@ -129,8 +129,8 @@ CONTAINS
          zxi4 = zxi1 + zdt * zu3   ;   zuvel4 = zuvel1 + zdt * zax3
          zyj4 = zyj1 + zdt * zv3   ;   zvvel4 = zvvel1 + zdt * zay3
 
-         CALL icb_ground( zxi4, zxi1, zu3,   &
-            &             zyj4, zyj1, zv3, ll_bounced )
+         CALL icb_ground( berg, zxi4, zxi1, zu3,   &
+            &                   zyj4, zyj1, zv3, ll_bounced )
 
          !                                         !**   A4 = A(X4,V4)
          CALL icb_accel( kt, berg , zxi4, ze1, zuvel4, zuvel1, zax4,    &
@@ -148,17 +148,13 @@ CONTAINS
          zuvel_n = pt%uvel + zdt_6 * (  zax1 + 2.*(zax2 + zax3) + zax4 )
          zvvel_n = pt%vvel + zdt_6 * (  zay1 + 2.*(zay2 + zay3) + zay4 )
 
-         CALL icb_ground( zxi_n, zxi1, zuvel_n,   &
-            &             zyj_n, zyj1, zvvel_n, ll_bounced )
+         CALL icb_ground( berg, zxi_n, zxi1, zuvel_n,   &
+            &                   zyj_n, zyj1, zvvel_n, ll_bounced )
 
          pt%uvel = zuvel_n                        !** save in berg structure
          pt%vvel = zvvel_n
          pt%xi   = zxi_n
          pt%yj   = zyj_n
-
-         ! update actual position
-         pt%lon  = icb_utl_bilin_x(glamt, pt%xi, pt%yj )
-         pt%lat  = icb_utl_bilin(gphit, pt%xi, pt%yj, 'T' )
 
          berg => berg%next                         ! switch to the next berg
          !
@@ -167,8 +163,8 @@ CONTAINS
    END SUBROUTINE icb_dyn
 
 
-   SUBROUTINE icb_ground( pi, pi0, pu,   &
-      &                   pj, pj0, pv, ld_bounced )
+   SUBROUTINE icb_ground( berg, pi, pi0, pu,   &
+      &                         pj, pj0, pv, ld_bounced )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE icb_ground  ***
       !!
@@ -177,6 +173,8 @@ CONTAINS
       !! ** Method  : - adjust velocity and then put iceberg back to start position
       !!                NB two possibilities available one of which is hard-coded here
       !!----------------------------------------------------------------------
+      TYPE(iceberg ), POINTER, INTENT(in   ) ::   berg             ! berg
+      !
       REAL(wp), INTENT(inout) ::   pi , pj      ! current iceberg position
       REAL(wp), INTENT(in   ) ::   pi0, pj0     ! previous iceberg position
       REAL(wp), INTENT(inout) ::   pu  , pv     ! current iceberg velocities
@@ -184,13 +182,17 @@ CONTAINS
       !
       INTEGER  ::   ii, ii0
       INTEGER  ::   ij, ij0
+      INTEGER  ::   ikb
       INTEGER  ::   ibounce_method
+      !
+      REAL(wp) :: zD 
+      REAL(wp), DIMENSION(jpk) :: ze3t
       !!----------------------------------------------------------------------
       !
       ld_bounced = .FALSE.
       !
-      ii0 = INT( pi0+0.5 )   ;   ij0 = INT( pj0+0.5 )       ! initial gridpoint position (T-cell)
-      ii  = INT( pi +0.5 )   ;   ij  = INT( pj +0.5 )       ! current     -         -
+      ii0 = INT( pi0+0.5 ) + (nn_hls-1)   ;   ij0 = INT( pj0+0.5 ) + (nn_hls-1)      ! initial gridpoint position (T-cell)
+      ii  = INT( pi +0.5 ) + (nn_hls-1)   ;   ij  = INT( pj +0.5 ) + (nn_hls-1)      ! current     -         -
       !
       IF( ii == ii0  .AND.  ij == ij0  )   RETURN           ! berg remains in the same cell
       !
@@ -200,7 +202,25 @@ CONTAINS
       ii  = mi1( ii  )
       ij  = mj1( ij  )
       !
-      IF(  tmask(ii,ij,1)  /=   0._wp  )   RETURN           ! berg reach a new t-cell, but an ocean one
+      ! assume icb is grounded if tmask(ii,ij,1) or tmask(ii,ij,ikb), depending of the option is not 0
+      IF ( ln_M2016 .AND. ln_icb_grd ) THEN
+         !
+         ! draught (keel depth)
+         zD = rho_berg_1_oce * berg%current_point%thickness
+         !
+         ! interpol needed data
+         CALL icb_utl_interp( pi, pj, pe3t=ze3t )
+         ! 
+         !compute bottom level
+         CALL icb_utl_getkb( ikb, ze3t, zD )
+         !
+         ! berg reach a new t-cell, but an ocean one
+         ! .AND. needed in case berg hit an isf (tmask(ii,ij,1) == 0 and tmask(ii,ij,ikb) /= 0)
+         IF(  tmask(ii,ij,ikb) /= 0._wp .AND. tmask(ii,ij,1) /= 0._wp ) RETURN
+         !
+      ELSE
+         IF(  tmask(ii,ij,1)  /=   0._wp  )   RETURN           ! berg reach a new t-cell, but an ocean one
+      END IF
       !
       ! From here, berg have reach land: treat grounding/bouncing
       ! -------------------------------
@@ -259,73 +279,95 @@ CONTAINS
       REAL(wp), PARAMETER ::   pp_accel_lim = 1.e-2_wp   ! max allowed berg acceleration
       REAL(wp), PARAMETER ::   pp_Cr0       = 0.06_wp    !
       !
-      INTEGER  ::   itloop
-      REAL(wp) ::   zuo, zui, zua, zuwave, zssh_x, zsst, zcn, zhi, zsss
-      REAL(wp) ::   zvo, zvi, zva, zvwave, zssh_y
+      INTEGER  ::   itloop, ikb, jk
+      REAL(wp) ::   zuo, zssu, zui, zua, zuwave, zssh_x, zcn, zhi
+      REAL(wp) ::   zvo, zssv, zvi, zva, zvwave, zssh_y
       REAL(wp) ::   zff, zT, zD, zW, zL, zM, zF
       REAL(wp) ::   zdrag_ocn, zdrag_atm, zdrag_ice, zwave_rad
-      REAL(wp) ::   z_ocn, z_atm, z_ice
+      REAL(wp) ::   z_ocn, z_atm, z_ice, zdep
       REAL(wp) ::   zampl, zwmod, zCr, zLwavelength, zLcutoff, zLtop
       REAL(wp) ::   zlambda, zdetA, zA11, zA12, zaxe, zaye, zD_hi
       REAL(wp) ::   zuveln, zvveln, zus, zvs, zspeed, zloc_dx, zspeed_new
+      REAL(wp), DIMENSION(jpk) :: zuoce, zvoce, ze3t, zdepw
       !!----------------------------------------------------------------------
 
       ! Interpolate gridded fields to berg
       nknberg = berg%number(1)
-      CALL icb_utl_interp( pxi, pe1, zuo, zui, zua, zssh_x,                     &
-         &                 pyj, pe2, zvo, zvi, zva, zssh_y, zsst, zcn, zhi, zff, zsss )
+      CALL icb_utl_interp( pxi, pyj, pe1=pe1, pe2=pe2,     &   ! scale factor
+         &                 pssu=zssu, pui=zui, pua=zua,    &   ! oce/ice/atm velocities
+         &                 pssv=zssv, pvi=zvi, pva=zva,    &   ! oce/ice/atm velocities
+         &                 pssh_i=zssh_x, pssh_j=zssh_y,   &   ! ssh gradient
+         &                 phi=zhi, pff=zff)                   ! ice thickness and coriolis
 
       zM = berg%current_point%mass
       zT = berg%current_point%thickness               ! total thickness
-      zD = ( rn_rho_bergs / pp_rho_seawater ) * zT    ! draught (keel depth)
+      zD = rho_berg_1_oce * zT                        ! draught (keel depth)
       zF = zT - zD                                    ! freeboard
       zW = berg%current_point%width
       zL = berg%current_point%length
 
       zhi   = MIN( zhi   , zD    )
       zD_hi = MAX( 0._wp, zD-zhi )
-
-      ! Wave radiation
-      zuwave = zua - zuo   ;   zvwave = zva - zvo     ! Use wind speed rel. to ocean for wave model
+ 
+     ! Wave radiation
+      zuwave = zua - zssu   ;   zvwave = zva - zssv   ! Use wind speed rel. to ocean for wave model
       zwmod  = zuwave*zuwave + zvwave*zvwave          ! The wave amplitude and length depend on the  current;
       !                                               ! wind speed relative to the ocean. Actually wmod is wmod**2 here.
-      zampl        = 0.5 * 0.02025 * zwmod            ! This is "a", the wave amplitude
-      zLwavelength =       0.32    * zwmod            ! Surface wave length fitted to data in table at
+      zampl        = 0.5_wp * 0.02025_wp * zwmod      ! This is "a", the wave amplitude
+      zLwavelength =       0.32_wp    * zwmod         ! Surface wave length fitted to data in table at
       !                                               ! http://www4.ncsu.edu/eos/users/c/ceknowle/public/chapter10/part2.html
-      zLcutoff     = 0.125 * zLwavelength
-      zLtop        = 0.25  * zLwavelength
-      zCr          = pp_Cr0 * MIN(  MAX( 0., (zL-zLcutoff) / ((zLtop-zLcutoff)+1.e-30)) , 1.)  ! Wave radiation coefficient
+      zLcutoff     = 0.125_wp * zLwavelength
+      zLtop        = 0.25_wp  * zLwavelength
+      zCr          = pp_Cr0 * MIN(  MAX( 0._wp, (zL-zLcutoff) / ((zLtop-zLcutoff)+1.e-30)) , 1._wp)  ! Wave radiation coefficient
       !                                               ! fitted to graph from Carrieres et al.,  POAC Drift Model.
-      zwave_rad    = 0.5 * pp_rho_seawater / zM * zCr * grav * zampl * MIN( zampl,zF ) * (2.*zW*zL) / (zW+zL)
+      zwave_rad    = 0.5_wp * pp_rho_seawater / zM * zCr * grav * zampl * MIN( zampl,zF ) * (2._wp*zW*zL) / (zW+zL)
       zwmod        = SQRT( zua*zua + zva*zva )        ! Wind speed
       IF( zwmod /= 0._wp ) THEN
          zuwave = zua/zwmod   ! Wave radiation force acts in wind direction ...       !!gm  this should be the wind rel. to ocean ?
          zvwave = zva/zwmod
       ELSE
-         zuwave = 0.   ;    zvwave=0.   ;    zwave_rad=0. ! ... and only when wind is present.     !!gm  wave_rad=0. is useless
+         zuwave = 0._wp   ;    zvwave=0._wp   ;    zwave_rad=0._wp ! ... and only when wind is present.     !!gm  wave_rad=0. is useless
       ENDIF
 
       ! Weighted drag coefficients
-      z_ocn = pp_rho_seawater / zM * (0.5*pp_Cd_wv*zW*(zD_hi)+pp_Cd_wh*zW*zL)
-      z_atm = pp_rho_air      / zM * (0.5*pp_Cd_av*zW*zF     +pp_Cd_ah*zW*zL)
-      z_ice = pp_rho_ice      / zM * (0.5*pp_Cd_iv*zW*zhi              )
+      z_ocn = pp_rho_seawater / zM * (0.5_wp*pp_Cd_wv*zW*(zD_hi)+pp_Cd_wh*zW*zL)
+      z_atm = pp_rho_air      / zM * (0.5_wp*pp_Cd_av*zW*zF     +pp_Cd_ah*zW*zL)
+      z_ice = pp_rho_ice      / zM * (0.5_wp*pp_Cd_iv*zW*zhi              )
       IF( abs(zui) + abs(zvi) == 0._wp )   z_ice = 0._wp
+
+      ! lateral velocities
+      ! default ssu and ssv
+      ! ln_M2016: mean velocity along the profile
+      IF ( ln_M2016 ) THEN
+         ! interpol needed data
+         CALL icb_utl_interp( pxi, pyj, puoce=zuoce, pvoce=zvoce, pe3t=ze3t )   ! 3d velocities
+        
+         !compute bottom level
+         CALL icb_utl_getkb( ikb, ze3t, zD )
+         
+         ! compute mean velocity 
+         CALL icb_utl_zavg(zuo, zuoce, ze3t, zD, ikb)
+         CALL icb_utl_zavg(zvo, zvoce, ze3t, zD, ikb)
+      ELSE
+         zuo = zssu
+         zvo = zssv
+      END IF
 
       zuveln = puvel   ;   zvveln = pvvel ! Copy starting uvel, vvel
       !
       DO itloop = 1, 2  ! Iterate on drag coefficients
          !
-         zus = 0.5 * ( zuveln + puvel )
-         zvs = 0.5 * ( zvveln + pvvel )
+         zus = 0.5_wp * ( zuveln + puvel )
+         zvs = 0.5_wp * ( zvveln + pvvel )
          zdrag_ocn = z_ocn * SQRT( (zus-zuo)*(zus-zuo) + (zvs-zvo)*(zvs-zvo) )
          zdrag_atm = z_atm * SQRT( (zus-zua)*(zus-zua) + (zvs-zva)*(zvs-zva) )
          zdrag_ice = z_ice * SQRT( (zus-zui)*(zus-zui) + (zvs-zvi)*(zvs-zvi) )
          !
          ! Explicit accelerations
          !zaxe= zff*pvvel -grav*zssh_x +zwave_rad*zuwave &
-         !    -zdrag_ocn*(puvel-zuo) -zdrag_atm*(puvel-zua) -zdrag_ice*(puvel-zui)
+         !    -zdrag_ocn*(puvel-zssu) -zdrag_atm*(puvel-zua) -zdrag_ice*(puvel-zui)
          !zaye=-zff*puvel -grav*zssh_y +zwave_rad*zvwave &
-         !    -zdrag_ocn*(pvvel-zvo) -zdrag_atm*(pvvel-zva) -zdrag_ice*(pvvel-zvi)
+         !    -zdrag_ocn*(pvvel-zssv) -zdrag_atm*(pvvel-zva) -zdrag_ice*(pvvel-zvi)
          zaxe = -grav * zssh_x + zwave_rad * zuwave
          zaye = -grav * zssh_y + zwave_rad * zvwave
          IF( pp_alpha > 0._wp ) THEN   ! If implicit, use time-level (n) rather than RK4 latest

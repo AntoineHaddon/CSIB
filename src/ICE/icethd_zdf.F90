@@ -38,7 +38,7 @@ MODULE icethd_zdf
 
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icethd_zdf.F90 13284 2020-07-09 15:12:23Z smasson $
+   !! $Id: icethd_zdf.F90 13472 2020-09-16 13:05:19Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -88,10 +88,8 @@ CONTAINS
          &                 rn_kappa_i, rn_kappa_s, rn_kappa_smlt, rn_kappa_sdry, ln_zdf_chkcvg
       !!-------------------------------------------------------------------
       !
-      REWIND( numnam_ice_ref )              ! Namelist namthd_zdf in reference namelist : Ice thermodynamics
       READ  ( numnam_ice_ref, namthd_zdf, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namthd_zdf in reference namelist' )
-      REWIND( numnam_ice_cfg )              ! Namelist namthd_zdf in configuration namelist : Ice thermodynamics
       READ  ( numnam_ice_cfg, namthd_zdf, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namthd_zdf in configuration namelist' )
       IF(lwm) WRITE( numoni, namthd_zdf )

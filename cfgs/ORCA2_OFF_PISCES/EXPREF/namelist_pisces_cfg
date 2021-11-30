@@ -80,7 +80,15 @@
 !-----------------------------------------------------------------------
 /
 !-----------------------------------------------------------------------
-&nampissbc     !   parameters for inputs deposition
+&nampisbc      !   parameters for inputs deposition
+!-----------------------------------------------------------------------
+   sn_dust     = 'dust.orca.new'       ,     -1            , 'dust'        ,  .true.      , .true. , 'yearly'  , ''       , ''    , ''
+   ln_ironsed  =  .true.   ! boolean for Fe input from sediments
+   ln_ironice  =  .true.   ! boolean for Fe input from sea ice
+   ln_hydrofe  =  .true.   ! boolean for from hydrothermal vents
+/
+!-----------------------------------------------------------------------
+&nampissed     !   parameters for sediments mobilization
 !-----------------------------------------------------------------------
 /
 !-----------------------------------------------------------------------

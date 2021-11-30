@@ -31,15 +31,16 @@ MODULE crsfld
    PUBLIC   crs_fld                 ! routines called by step.F90
 
    !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
+#  include "do_loop_substitute.h90"
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: crsfld.F90 10425 2018-12-19 21:54:16Z smasson $
+   !! $Id: crsfld.F90 13472 2020-09-16 13:05:19Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE crs_fld( kt )
+   SUBROUTINE crs_fld( kt, Kmm )
       !!---------------------------------------------------------------------
       !!                  ***  ROUTINE crs_fld  ***
       !!                   
@@ -53,6 +54,7 @@ CONTAINS
       !! ** Method  :  
       !!----------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt   ! ocean time-step index
+      INTEGER, INTENT(in) ::   Kmm  ! time level index
       !
       INTEGER  ::   ji, jj, jk        ! dummy loop indices
       REAL(wp) ::   z2dcrsu, z2dcrsv  ! local scalars
@@ -66,10 +68,12 @@ CONTAINS
       IF( ln_timing )   CALL timing_start('crs_fld')
 
       ! Depth work arrrays
-      ze3t(:,:,:) = e3t_n(:,:,:)
-      ze3u(:,:,:) = e3u_n(:,:,:)
-      ze3v(:,:,:) = e3v_n(:,:,:)
-      ze3w(:,:,:) = e3w_n(:,:,:)
+      DO jk = 1 , jpk 
+         ze3t(:,:,jk) = e3t(:,:,jk,Kmm)
+         ze3u(:,:,jk) = e3u(:,:,jk,Kmm)
+         ze3v(:,:,jk) = e3v(:,:,jk,Kmm)
+         ze3w(:,:,jk) = e3w(:,:,jk,Kmm)
+      END DO
 
       IF( kt == nit000  ) THEN
          tsn_crs  (:,:,:,:) = 0._wp    ! temp/sal  array, now 
@@ -95,8 +99,8 @@ CONTAINS
       ! --------------------------------------------------------
 
       !  Temperature
-      zt(:,:,:) = tsn(:,:,:,jp_tem)  ;      zt_crs(:,:,:) = 0._wp
-      CALL crs_dom_ope( zt, 'VOL', 'T', tmask, zt_crs, p_e12=e1e2t, p_e3=ze3t, psgn=1.0 )
+      zt(:,:,:) = ts(:,:,:,jp_tem,Kmm)  ;      zt_crs(:,:,:) = 0._wp
+      CALL crs_dom_ope( zt, 'VOL', 'T', tmask, zt_crs, p_e12=e1e2t, p_e3=ze3t, psgn=1.0_wp )
       tsn_crs(:,:,:,jp_tem) = zt_crs(:,:,:)
 
       CALL iom_put( "toce", tsn_crs(:,:,:,jp_tem) )    ! temp
@@ -104,69 +108,57 @@ CONTAINS
 
       
       !  Salinity
-      zs(:,:,:) = tsn(:,:,:,jp_sal)  ;      zs_crs(:,:,:) = 0._wp
-      CALL crs_dom_ope( zs, 'VOL', 'T', tmask, zs_crs, p_e12=e1e2t, p_e3=ze3t, psgn=1.0 )
+      zs(:,:,:) = ts(:,:,:,jp_sal,Kmm)  ;      zs_crs(:,:,:) = 0._wp
+      CALL crs_dom_ope( zs, 'VOL', 'T', tmask, zs_crs, p_e12=e1e2t, p_e3=ze3t, psgn=1.0_wp )
       tsn_crs(:,:,:,jp_sal) = zt_crs(:,:,:)
 
       CALL iom_put( "soce" , tsn_crs(:,:,:,jp_sal) )    ! sal
       CALL iom_put( "sss"  , tsn_crs(:,:,1,jp_sal) )    ! sss
 
       !  U-velocity
-      CALL crs_dom_ope( un, 'SUM', 'U', umask, un_crs, p_e12=e2u, p_e3=ze3u, p_surf_crs=e2e3u_msk, psgn=-1.0 )
+      CALL crs_dom_ope( uu(:,:,:,Kmm), 'SUM', 'U', umask, un_crs, p_e12=e2u, p_e3=ze3u, p_surf_crs=e2e3u_msk, psgn=-1.0_wp )
       !
       zt(:,:,:) = 0._wp     ;    zs(:,:,:) = 0._wp  ;   zt_crs(:,:,:) = 0._wp   ;    zs_crs(:,:,:) = 0._wp
-      DO jk = 1, jpkm1
-         DO jj = 2, jpjm1
-            DO ji = 2, jpim1   
-               zt(ji,jj,jk)  = un(ji,jj,jk) * 0.5 * ( tsn(ji,jj,jk,jp_tem) + tsn(ji+1,jj,jk,jp_tem) ) 
-               zs(ji,jj,jk)  = un(ji,jj,jk) * 0.5 * ( tsn(ji,jj,jk,jp_sal) + tsn(ji+1,jj,jk,jp_sal) ) 
-            END DO
-         END DO
-      END DO
-      CALL crs_dom_ope( zt, 'SUM', 'U', umask, zt_crs, p_e12=e2u, p_e3=ze3u, p_surf_crs=e2e3u_msk, psgn=-1.0 )
-      CALL crs_dom_ope( zs, 'SUM', 'U', umask, zs_crs, p_e12=e2u, p_e3=ze3u, p_surf_crs=e2e3u_msk, psgn=-1.0 )
+      DO_3D( 0, 0, 0, 0, 1, jpkm1 )
+         zt(ji,jj,jk)  = uu(ji,jj,jk,Kmm) * 0.5 * ( ts(ji,jj,jk,jp_tem,Kmm) + ts(ji+1,jj,jk,jp_tem,Kmm) ) 
+         zs(ji,jj,jk)  = uu(ji,jj,jk,Kmm) * 0.5 * ( ts(ji,jj,jk,jp_sal,Kmm) + ts(ji+1,jj,jk,jp_sal,Kmm) ) 
+      END_3D
+      CALL crs_dom_ope( zt, 'SUM', 'U', umask, zt_crs, p_e12=e2u, p_e3=ze3u, p_surf_crs=e2e3u_msk, psgn=-1.0_wp )
+      CALL crs_dom_ope( zs, 'SUM', 'U', umask, zs_crs, p_e12=e2u, p_e3=ze3u, p_surf_crs=e2e3u_msk, psgn=-1.0_wp )
 
       CALL iom_put( "uoce"  , un_crs )   ! i-current 
       CALL iom_put( "uocet" , zt_crs )   ! uT
       CALL iom_put( "uoces" , zs_crs )   ! uS
 
       !  V-velocity
-      CALL crs_dom_ope( vn, 'SUM', 'V', vmask, vn_crs, p_e12=e1v, p_e3=ze3v, p_surf_crs=e1e3v_msk, psgn=-1.0 )
+      CALL crs_dom_ope( vv(:,:,:,Kmm), 'SUM', 'V', vmask, vn_crs, p_e12=e1v, p_e3=ze3v, p_surf_crs=e1e3v_msk, psgn=-1.0_wp )
       !                                                                                 
       zt(:,:,:) = 0._wp     ;    zs(:,:,:) = 0._wp  ;   zt_crs(:,:,:) = 0._wp   ;    zs_crs(:,:,:) = 0._wp
-      DO jk = 1, jpkm1
-         DO jj = 2, jpjm1
-            DO ji = 2, jpim1   
-               zt(ji,jj,jk)  = vn(ji,jj,jk) * 0.5 * ( tsn(ji,jj,jk,jp_tem) + tsn(ji,jj+1,jk,jp_tem) ) 
-               zs(ji,jj,jk)  = vn(ji,jj,jk) * 0.5 * ( tsn(ji,jj,jk,jp_sal) + tsn(ji,jj+1,jk,jp_sal) ) 
-            END DO
-         END DO
-      END DO
-      CALL crs_dom_ope( zt, 'SUM', 'V', vmask, zt_crs, p_e12=e1v, p_e3=ze3v, p_surf_crs=e1e3v_msk, psgn=-1.0 )
-      CALL crs_dom_ope( zs, 'SUM', 'V', vmask, zs_crs, p_e12=e1v, p_e3=ze3v, p_surf_crs=e1e3v_msk, psgn=-1.0 )
+      DO_3D( 0, 0, 0, 0, 1, jpkm1 )
+         zt(ji,jj,jk)  = vv(ji,jj,jk,Kmm) * 0.5 * ( ts(ji,jj,jk,jp_tem,Kmm) + ts(ji,jj+1,jk,jp_tem,Kmm) ) 
+         zs(ji,jj,jk)  = vv(ji,jj,jk,Kmm) * 0.5 * ( ts(ji,jj,jk,jp_sal,Kmm) + ts(ji,jj+1,jk,jp_sal,Kmm) ) 
+      END_3D
+      CALL crs_dom_ope( zt, 'SUM', 'V', vmask, zt_crs, p_e12=e1v, p_e3=ze3v, p_surf_crs=e1e3v_msk, psgn=-1.0_wp )
+      CALL crs_dom_ope( zs, 'SUM', 'V', vmask, zs_crs, p_e12=e1v, p_e3=ze3v, p_surf_crs=e1e3v_msk, psgn=-1.0_wp )
  
       CALL iom_put( "voce"  , vn_crs )   ! i-current 
       CALL iom_put( "vocet" , zt_crs )   ! vT
       CALL iom_put( "voces" , zs_crs )   ! vS
 
-      IF( iom_use( "eken") ) THEN     !      kinetic energy
+      IF( iom_use( "ke") ) THEN     !      kinetic energy
          z3d(:,:,jk) = 0._wp 
-         DO jk = 1, jpkm1
-            DO jj = 2, jpjm1
-               DO ji = fs_2, fs_jpim1   ! vector opt.
-                  zztmp  = r1_e1e2t(ji,jj) / e3t_n(ji,jj,jk)
-                  z3d(ji,jj,jk) = 0.25_wp * zztmp * (                                    &
-                     &            un(ji-1,jj,jk)**2 * e2u(ji-1,jj) * e3u_n(ji-1,jj,jk)   &
-                     &          + un(ji  ,jj,jk)**2 * e2u(ji  ,jj) * e3u_n(ji  ,jj,jk)   &
-                     &          + vn(ji,jj-1,jk)**2 * e1v(ji,jj-1) * e3v_n(ji,jj-1,jk)   &
-                     &          + vn(ji,jj  ,jk)**2 * e1v(ji,jj  ) * e3v_n(ji,jj  ,jk)   )
-               END DO
-            END DO
-         END DO
-         CALL lbc_lnk( 'crsfld', z3d, 'T', 1. )
+         DO_3D( 0, 0, 0, 0, 1, jpkm1 )
+            zztmp  = r1_e1e2t(ji,jj) / e3t(ji,jj,jk,Kmm)
+            z3d(ji,jj,jk) = 0.25_wp * zztmp * (                                    &
+               &            uu(ji-1,jj,jk,Kmm)**2 * e2u(ji-1,jj) * e3u(ji-1,jj,jk,Kmm)   &
+               &          + uu(ji  ,jj,jk,Kmm)**2 * e2u(ji  ,jj) * e3u(ji  ,jj,jk,Kmm)   &
+               &          + vv(ji,jj-1,jk,Kmm)**2 * e1v(ji,jj-1) * e3v(ji,jj-1,jk,Kmm)   &
+               &          + vv(ji,jj  ,jk,Kmm)**2 * e1v(ji,jj  ) * e3v(ji,jj  ,jk,Kmm)   )
+         END_3D
+         CALL lbc_lnk( 'crsfld', z3d, 'T', 1.0_wp )
          !
-         CALL crs_dom_ope( z3d, 'VOL', 'T', tmask, zt_crs, p_e12=e1e2t, p_e3=ze3t, psgn=1.0 )
-         CALL iom_put( "eken", zt_crs )
+         CALL crs_dom_ope( z3d, 'VOL', 'T', tmask, zt_crs, p_e12=e1e2t, p_e3=ze3t, psgn=1.0_wp )
+         CALL iom_put( "ke", zt_crs )
       ENDIF
       !  Horizontal divergence ( following OCE/DYN/divhor.F90 ) 
       DO jk = 1, jpkm1
@@ -183,15 +175,15 @@ CONTAINS
             END DO
          END DO
       END DO
-      CALL crs_lbc_lnk( hdivn_crs, 'T', 1.0 )
+      CALL crs_lbc_lnk( hdivn_crs, 'T', 1.0_wp )
       !
       CALL iom_put( "hdiv", hdivn_crs )  
 
 
       !  W-velocity
       IF( ln_crs_wn ) THEN
-         CALL crs_dom_ope( wn, 'SUM', 'W', tmask, wn_crs, p_e12=e1e2t, p_surf_crs=e1e2w_msk, psgn=1.0 )
-       !  CALL crs_dom_ope( wn, 'VOL', 'W', tmask, wn_crs, p_e12=e1e2t, p_e3=ze3w )
+         CALL crs_dom_ope( ww, 'SUM', 'W', tmask, wn_crs, p_e12=e1e2t, p_surf_crs=e1e2w_msk, psgn=1.0_wp )
+       !  CALL crs_dom_ope( ww, 'VOL', 'W', tmask, wn_crs, p_e12=e1e2t, p_e3=ze3w )
       ELSE
         wn_crs(:,:,jpk) = 0._wp
         DO jk = jpkm1, 1, -1
@@ -204,30 +196,30 @@ CONTAINS
       !  avs
       SELECT CASE ( nn_crs_kz )
          CASE ( 0 )
-            CALL crs_dom_ope( avt, 'VOL', 'W', tmask, avt_crs, p_e12=e1e2t, p_e3=ze3w, psgn=1.0 )
-            CALL crs_dom_ope( avs, 'VOL', 'W', tmask, avs_crs, p_e12=e1e2t, p_e3=ze3w, psgn=1.0 )
+            CALL crs_dom_ope( avt, 'VOL', 'W', tmask, avt_crs, p_e12=e1e2t, p_e3=ze3w, psgn=1.0_wp )
+            CALL crs_dom_ope( avs, 'VOL', 'W', tmask, avs_crs, p_e12=e1e2t, p_e3=ze3w, psgn=1.0_wp )
          CASE ( 1 )
-            CALL crs_dom_ope( avt, 'MAX', 'W', tmask, avt_crs, p_e12=e1e2t, p_e3=ze3w, psgn=1.0 )
-            CALL crs_dom_ope( avs, 'MAX', 'W', tmask, avs_crs, p_e12=e1e2t, p_e3=ze3w, psgn=1.0 )
+            CALL crs_dom_ope( avt, 'MAX', 'W', tmask, avt_crs, p_e12=e1e2t, p_e3=ze3w, psgn=1.0_wp )
+            CALL crs_dom_ope( avs, 'MAX', 'W', tmask, avs_crs, p_e12=e1e2t, p_e3=ze3w, psgn=1.0_wp )
          CASE ( 2 )
-            CALL crs_dom_ope( avt, 'MIN', 'W', tmask, avt_crs, p_e12=e1e2t, p_e3=ze3w, psgn=1.0 )
-            CALL crs_dom_ope( avs, 'MIN', 'W', tmask, avs_crs, p_e12=e1e2t, p_e3=ze3w, psgn=1.0 )
+            CALL crs_dom_ope( avt, 'MIN', 'W', tmask, avt_crs, p_e12=e1e2t, p_e3=ze3w, psgn=1.0_wp )
+            CALL crs_dom_ope( avs, 'MIN', 'W', tmask, avs_crs, p_e12=e1e2t, p_e3=ze3w, psgn=1.0_wp )
       END SELECT
       !
       CALL iom_put( "avt", avt_crs )   !  Kz on T
       CALL iom_put( "avs", avs_crs )   !  Kz on S
       
       !  sbc fields  
-      CALL crs_dom_ope( sshn , 'VOL', 'T', tmask, sshn_crs , p_e12=e1e2t, p_e3=ze3t           , psgn=1.0 )  
-      CALL crs_dom_ope( utau , 'SUM', 'U', umask, utau_crs , p_e12=e2u  , p_surf_crs=e2u_crs  , psgn=1.0 )
-      CALL crs_dom_ope( vtau , 'SUM', 'V', vmask, vtau_crs , p_e12=e1v  , p_surf_crs=e1v_crs  , psgn=1.0 )
-      CALL crs_dom_ope( wndm , 'SUM', 'T', tmask, wndm_crs , p_e12=e1e2t, p_surf_crs=e1e2t_crs, psgn=1.0 )
-      CALL crs_dom_ope( rnf  , 'MAX', 'T', tmask, rnf_crs                                     , psgn=1.0 )
-      CALL crs_dom_ope( qsr  , 'SUM', 'T', tmask, qsr_crs  , p_e12=e1e2t, p_surf_crs=e1e2t_crs, psgn=1.0 )
-      CALL crs_dom_ope( emp_b, 'SUM', 'T', tmask, emp_b_crs, p_e12=e1e2t, p_surf_crs=e1e2t_crs, psgn=1.0 )
-      CALL crs_dom_ope( emp  , 'SUM', 'T', tmask, emp_crs  , p_e12=e1e2t, p_surf_crs=e1e2t_crs, psgn=1.0 )
-      CALL crs_dom_ope( sfx  , 'SUM', 'T', tmask, sfx_crs  , p_e12=e1e2t, p_surf_crs=e1e2t_crs, psgn=1.0 )
-      CALL crs_dom_ope( fr_i , 'SUM', 'T', tmask, fr_i_crs , p_e12=e1e2t, p_surf_crs=e1e2t_crs, psgn=1.0 )
+      CALL crs_dom_ope( ssh(:,:,Kmm) , 'VOL', 'T', tmask, sshn_crs , p_e12=e1e2t, p_e3=ze3t           , psgn=1.0_wp )  
+      CALL crs_dom_ope( utau , 'SUM', 'U', umask, utau_crs , p_e12=e2u  , p_surf_crs=e2u_crs  , psgn=1.0_wp )
+      CALL crs_dom_ope( vtau , 'SUM', 'V', vmask, vtau_crs , p_e12=e1v  , p_surf_crs=e1v_crs  , psgn=1.0_wp )
+      CALL crs_dom_ope( wndm , 'SUM', 'T', tmask, wndm_crs , p_e12=e1e2t, p_surf_crs=e1e2t_crs, psgn=1.0_wp )
+      CALL crs_dom_ope( rnf  , 'MAX', 'T', tmask, rnf_crs                                     , psgn=1.0_wp )
+      CALL crs_dom_ope( qsr  , 'SUM', 'T', tmask, qsr_crs  , p_e12=e1e2t, p_surf_crs=e1e2t_crs, psgn=1.0_wp )
+      CALL crs_dom_ope( emp_b, 'SUM', 'T', tmask, emp_b_crs, p_e12=e1e2t, p_surf_crs=e1e2t_crs, psgn=1.0_wp )
+      CALL crs_dom_ope( emp  , 'SUM', 'T', tmask, emp_crs  , p_e12=e1e2t, p_surf_crs=e1e2t_crs, psgn=1.0_wp )
+      CALL crs_dom_ope( sfx  , 'SUM', 'T', tmask, sfx_crs  , p_e12=e1e2t, p_surf_crs=e1e2t_crs, psgn=1.0_wp )
+      CALL crs_dom_ope( fr_i , 'SUM', 'T', tmask, fr_i_crs , p_e12=e1e2t, p_surf_crs=e1e2t_crs, psgn=1.0_wp )
 
       CALL iom_put( "ssh"      , sshn_crs )   ! ssh output 
       CALL iom_put( "utau"     , utau_crs )   ! i-tau output 

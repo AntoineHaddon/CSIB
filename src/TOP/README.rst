@@ -61,7 +61,7 @@ all submodules preprocessing macros from previous versions were removed.
 
 Here below the list of preprocessing keys that applies to the TOP interface (beside ``key_top``):
 
-``key_iomput``
+``key_xios``
    use XIOS I/O
 
 ``key_agrif``
@@ -319,7 +319,7 @@ and the related ``cpp_MYBGC.fcm`` content will be
 
 .. code-block:: perl
 
-   bld::tool::fppkeys key_iomput key_mpp_mpi key_top
+   bld::tool::fppkeys key_xios key_top
 
 the compilation with :file:`makenemo` will be executed through the following syntax
 
@@ -347,7 +347,7 @@ it will be necessary to extend the configuration :file:`cpp_NEMO_MYBGC.fcm` file
 
 .. code-block:: perl
 
-   bld::tool::fppkeys  key_iomput key_mpp_mpi key_top
+   bld::tool::fppkeys  key_xios key_top
 
    src::MYBGC::initialization         <MYBGCPATH>/initialization
    src::MYBGC::pelagic                <MYBGCPATH>/pelagic
@@ -375,7 +375,7 @@ The compilation will be performed similarly to in the previous case with the fol
 
    .. code-block:: perl
 
-      bld::tool::fppkeys  key_zdftke key_dynspg_ts key_iomput key_mpp_mpi key_top
+      bld::tool::fppkeys key_xios key_top
       inc <MYBGCPATH>/MYBGC.fcm
 
    This will enable a more portable compilation structure for all MYBGC related configurations.

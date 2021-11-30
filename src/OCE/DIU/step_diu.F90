@@ -5,8 +5,7 @@ MODULE step_diu
    !!======================================================================
    !! History :  3.7  ! 2015-11  (J. While)  Original code
 
-   USE diurnal_bulk    ! diurnal SST bulk routines  (diurnal_sst_takaya routine) 
-   USE cool_skin       ! diurnal cool skin correction (diurnal_sst_coolskin routine)   
+   USE diu_layers      ! diurnal SST bulk and coolskin routines
    USE iom
    USE sbc_oce
    USE sbcmod           ! surface boundary condition       (sbc     routine)
@@ -23,7 +22,7 @@ MODULE step_diu
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: step_diu.F90 10069 2018-08-28 14:12:24Z nicolasmartin $
+   !! $Id: step_diu.F90 12377 2020-02-12 14:39:06Z acc $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 
@@ -48,6 +47,7 @@ MODULE step_diu
       INTEGER ::   jk       ! dummy loop indices
       INTEGER ::   indic    ! error indicator if < 0 
       REAL(wp), DIMENSION(jpi,jpj) :: z_fvel_bkginc, z_hflux_bkginc     
+      INTEGER :: Nbb, Nnn, Naa, Nrhs    ! local definitions as placeholders for now
       !! --------------------------------------------------------------------- 
       
       IF(ln_diurnal_only) THEN
@@ -59,31 +59,20 @@ MODULE step_diu
             CALL iom_setkt( kstp - nit000 + 1, TRIM(cxios_context)//"_crs" ) ! tell iom we are at time step kstp
          ENDIF
        
-            CALL sbc    ( kstp )                      ! Sea Boundary Conditions 
+            CALL sbc    ( kstp, Nbb, Nnn )            ! Sea Boundary Conditions 
       ENDIF
      
-      ! Cool skin
-      IF( .NOT.ln_diurnal )   CALL ctl_stop( "stp_diurnal: ln_diurnal not set" )
-         
-      IF( .NOT. ln_blk    )   CALL ctl_stop( "stp_diurnal: diurnal flux processing only implemented for bulk forcing" ) 
-
-      CALL diurnal_sst_coolskin_step( qns, taum, rhop(:,:,1), rdt)
-
-      CALL iom_put( "sst_wl"   , x_dsst               )    ! warm layer (write out before update below).
-      CALL iom_put( "sst_cs"   , x_csdsst             )    ! cool skin
-
-      ! Diurnal warm layer model       
-      CALL diurnal_sst_takaya_step( kstp, & 
-      &    qsr, qns, taum, rhop(:,:,1), rdt) 
+      call diurnal_layers( kstp )                     ! coolskin and warm layer calculations
 
       IF( ln_diurnal_only ) THEN
-         IF( ln_diaobs )         CALL dia_obs( kstp )         ! obs-minus-model (assimilation) diagnostics (call after dynamics update)
+         ! WILL HAVE TO INCREMENT Nbb and Nnn here in ln_diurnal_only case !
+         IF( ln_diaobs )         CALL dia_obs( kstp, Nnn )    ! obs-minus-model (assimilation) diagnostics (call after dynamics update)
      
          !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 
          ! Control and restarts 
          !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< 
          IF( kstp == nit000   )   CALL iom_close( numror )     ! close input  ocean restart file 
-         IF( lrst_oce         )   CALL rst_write    ( kstp )   ! write output ocean restart file
+         IF( lrst_oce         )   CALL rst_write    ( kstp, Nbb, Nnn )   ! write output ocean restart file
      
          IF( ln_timing .AND.  kstp == nit000  )   CALL timing_reset 
       ENDIF

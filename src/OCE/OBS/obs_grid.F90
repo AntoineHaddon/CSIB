@@ -86,7 +86,7 @@ MODULE obs_grid
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: obs_grid.F90 10068 2018-08-28 14:09:04Z nicolasmartin $
+   !! $Id: obs_grid.F90 14275 2021-01-07 12:13:16Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 
@@ -128,29 +128,29 @@ CONTAINS
          ELSE
             IF ( cdgrid == 'T' ) THEN
                CALL obs_grd_bruteforce( jpi, jpj, jpiglo, jpjglo, &
-                  &                             1, nlci, 1, nlcj,         &
-                  &                             nproc, jpnij,             &
+                  &                             1, jpi, 1, jpj,           &
+                  &                             narea-1, jpnij,           &
                   &                             glamt, gphit, tmask,      &
                   &                             kobsin, plam, pphi,       &
                   &                             kobsi, kobsj, kproc )
             ELSEIF ( cdgrid == 'U' ) THEN
                CALL obs_grd_bruteforce( jpi, jpj, jpiglo, jpjglo, &
-                  &                             1, nlci, 1, nlcj,         &
-                  &                             nproc, jpnij,             &
+                  &                             1, jpi, 1, jpj,           &
+                  &                             narea-1, jpnij,           &
                   &                             glamu, gphiu, umask,      &
                   &                             kobsin, plam, pphi,       &
                   &                             kobsi, kobsj, kproc )
             ELSEIF ( cdgrid == 'V' ) THEN
                CALL obs_grd_bruteforce( jpi, jpj, jpiglo, jpjglo, &
-                  &                             1, nlci, 1, nlcj,         &
-                  &                             nproc, jpnij,             &
+                  &                             1, jpi, 1, jpj,           &
+                  &                             narea-1, jpnij,           &
                   &                             glamv, gphiv, vmask,      &
                   &                             kobsin, plam, pphi,       &
                   &                             kobsi, kobsj, kproc )
             ELSEIF ( cdgrid == 'F' ) THEN
                CALL obs_grd_bruteforce( jpi, jpj, jpiglo, jpjglo, &
-                  &                             1, nlci, 1, nlcj,         &
-                  &                             nproc, jpnij,             &
+                  &                             1, jpi, 1, jpj,           &
+                  &                             narea-1, jpnij,           &
                   &                             glamf, gphif, fmask,      &
                   &                             kobsin, plam, pphi,       &
                   &                             kobsi, kobsj, kproc )
@@ -175,7 +175,7 @@ CONTAINS
       !! ** Method  : Call to linquad
       !!
       !! ** Action  : Return kproc holding the observation and kiobsi,kobsj
-      !!              valid on kproc=nproc processor only.
+      !!              valid on kproc=narea-1 processor only.
       !!   
       !! History :
       !!        !  2007-12 (D. Lea) new routine based on obs_grid_search
@@ -247,7 +247,7 @@ CONTAINS
       IF (ln_grid_global) THEN
          jlon     = jpiglo
          jlat     = jpjglo
-         joffset  = nproc
+         joffset  = narea-1
          jostride = jpnij
       ELSE
          jlon     = jpi
@@ -278,8 +278,8 @@ CONTAINS
          zphig(:,:) = -1.e+10
          zmskg(:,:) = -1.e+10
          ! Add various grids here.
-         DO jj = 1, nlcj
-            DO ji = 1, nlci
+         DO jj = 1, jpj
+            DO ji = 1, jpi
                zlamg(mig(ji),mjg(jj)) = glamt(ji,jj)
                zphig(mig(ji),mjg(jj)) = gphit(ji,jj)
                zmskg(mig(ji),mjg(jj)) = tmask(ji,jj,1)
@@ -512,12 +512,12 @@ CONTAINS
                         IF ( zlam > 360.0_wp ) zlam = zlam - 360.0_wp
                         IF ( ABS( zlam - zplam(jo) ) < 1e-6 ) THEN
                            IF ( llinvalidcell(ji,jj) ) THEN
-                              kproc(jo) = nproc + 1000000
+                              kproc(jo) = narea-1 + 1000000
                               kobsi(jo) = ji + 1
                               kobsj(jo) = jj + 1
                               CYCLE
                            ELSE
-                              kproc(jo) = nproc
+                              kproc(jo) = narea-1
                               kobsi(jo) = ji + 1
                               kobsj(jo) = jj + 1
                               EXIT gridloop
@@ -551,12 +551,12 @@ CONTAINS
                         IF ( linquad( zplam(jo), pphi(jo), &
                            &          zlamtm(:,ji,jj), zphitm(:,ji,jj) ) ) THEN
                            IF ( llinvalidcell(ji,jj) ) THEN
-                              kproc(jo) = nproc + 1000000
+                              kproc(jo) = narea-1 + 1000000
                               kobsi(jo) = ji + 1
                               kobsj(jo) = jj + 1
                               CYCLE
                            ELSE
-                              kproc(jo) = nproc
+                              kproc(jo) = narea-1
                               kobsi(jo) = ji + 1
                               kobsj(jo) = jj + 1
                               EXIT gridpoints
@@ -583,12 +583,12 @@ CONTAINS
                         IF ( linquad( zplam(jo)+360.0_wp, pphi(jo), &
                            &          zlamtm(:,ji,jj), zphitm(:,ji,jj) ) ) THEN
                            IF ( llinvalidcell(ji,jj) ) THEN
-                              kproc(jo) = nproc + 1000000
+                              kproc(jo) = narea-1 + 1000000
                               kobsi(jo) = ji + 1
                               kobsj(jo) = jj + 1
                               CYCLE
                            ELSE
-                              kproc(jo) = nproc
+                              kproc(jo) = narea-1
                               kobsi(jo) = ji + 1
                               kobsj(jo) = jj + 1
                               EXIT gridpoints_greenwich
@@ -683,7 +683,9 @@ CONTAINS
       REAL, DIMENSION(histsize) :: &
          & fhistx1, fhistx2, fhisty1, fhisty2
       REAL(wp) :: histtol
-      
+      CHARACTER(LEN=26) :: clfmt            ! writing format
+      INTEGER           :: idg              ! number of digits
+ 
       IF (ln_grid_search_lookup) THEN
          
          WRITE(numout,*) 'Calling obs_grid_setup'
@@ -708,11 +710,12 @@ CONTAINS
          ENDIF
 
          IF ( ln_grid_global ) THEN
-            WRITE(cfname, FMT="(A,'_',A)") &
-               &          TRIM(cn_gridsearchfile), 'global.nc'
+            WRITE(cfname, FMT="(A,'_',A)") TRIM(cn_gridsearchfile), 'global.nc'
          ELSE
-            WRITE(cfname, FMT="(A,'_',I4.4,'of',I4.4,'by',I4.4,'.nc')") &
-               &          TRIM(cn_gridsearchfile), nproc, jpni, jpnj
+            idg = MAX( INT(LOG10(REAL(jpnij,wp))) + 1, 4 )        ! how many digits to we need to write? min=4, max=9
+            ! define the following format: "(a,a,ix.x,a,ix.x,a,ix.x,a)"
+            WRITE(clfmt, "('(a,a,i', i1, '.', i1',a,i', i1, '.', i1',a,i', i1, '.', i1',a)')") idg, idg, idg, idg, idg, idg
+            WRITE(cfname,      clfmt     ) TRIM(cn_gridsearchfile),'_', narea-1,'of', jpni,'by', jpnj,'.nc'
          ENDIF
 
          fileexist=nf90_open( TRIM( cfname ), nf90_nowrite, &
@@ -815,8 +818,8 @@ CONTAINS
             END DO
             
             CALL obs_grd_bruteforce( jpi, jpj, jpiglo, jpjglo,  &
-               &                     1, nlci, 1, nlcj,          &
-               &                     nproc, jpnij,              &
+               &                     1, jpi, 1, jpj,            &
+               &                     narea-1, jpnij,            &
                &                     glamt, gphit, tmask,       &
                &                     nlons*nlats, lonsi, latsi, &
                &                     ixposi, iyposi, iproci )
@@ -1066,7 +1069,7 @@ CONTAINS
             ! Write out data
 
             IF ( ( .NOT. ln_grid_global ) .OR. &
-               & ( ( ln_grid_global ) .AND. ( nproc==0 ) ) ) THEN
+               & ( ( ln_grid_global ) .AND. ( narea-1==0 ) ) ) THEN
 
                CALL chkerr( nf90_create (TRIM(cfname), nf90_clobber, idfile), &
                   &         cpname, __LINE__ )

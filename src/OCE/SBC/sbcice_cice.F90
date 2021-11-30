@@ -11,8 +11,12 @@ MODULE sbcice_cice
    !!----------------------------------------------------------------------
    USE oce             ! ocean dynamics and tracers
    USE dom_oce         ! ocean space and time domain
-   USE domvvl
-   USE phycst, only : rcp, rau0, r1_rau0, rhos, rhoi
+# if defined key_qco
+   USE domqco         ! Variable volume
+# else
+   USE domvvl         ! Variable volume
+# endif
+   USE phycst, only : rcp, rho0, r1_rho0, rhos, rhoi
    USE in_out_manager  ! I/O manager
    USE iom, ONLY : iom_put,iom_use              ! I/O manager library !!Joakim edit
    USE lib_mpp         ! distributed memory computing library
@@ -87,9 +91,11 @@ MODULE sbcice_cice
 
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:), PRIVATE ::   png     ! local array used in sbc_cice_ice
 
+   !! * Substitutions
+#  include "do_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: sbcice_cice.F90 14590 2021-03-05 13:21:05Z clem $
+   !! $Id: sbcice_cice.F90 14595 2021-03-05 22:36:50Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -131,7 +137,7 @@ CONTAINS
          ! Make sure any fluxes required for CICE are set
          IF      ( ksbc == jp_flx ) THEN
             CALL cice_sbc_force(kt)
-         ELSE IF ( ksbc == jp_purecpl ) THEN
+         ELSE IF( ksbc == jp_purecpl ) THEN
             CALL sbc_cpl_ice_flx( kt, fr_i )
          ENDIF
 
@@ -139,20 +145,21 @@ CONTAINS
          CALL CICE_Run
          CALL cice_sbc_out ( kt, ksbc )
 
-         IF ( ksbc == jp_purecpl )  CALL cice_sbc_hadgam(kt+1)
+         IF( ksbc == jp_purecpl )  CALL cice_sbc_hadgam(kt+1)
 
       ENDIF                                          ! End sea-ice time step only
       !
    END SUBROUTINE sbc_ice_cice
 
 
-   SUBROUTINE cice_sbc_init( ksbc )
+   SUBROUTINE cice_sbc_init( ksbc, Kbb, Kmm )
       !!---------------------------------------------------------------------
       !!                    ***  ROUTINE cice_sbc_init  ***
       !! ** Purpose: Initialise ice related fields for NEMO and coupling
       !!
       !!---------------------------------------------------------------------
       INTEGER, INTENT( in  ) ::   ksbc                ! surface forcing type
+      INTEGER, INTENT( in  ) ::   Kbb, Kmm            ! time level indices
       REAL(wp), DIMENSION(jpi,jpj) :: ztmp1, ztmp2
       REAL(wp) ::   zcoefu, zcoefv, zcoeff            ! local scalar
       INTEGER  ::   ji, jj, jl, jk                    ! dummy loop indices
@@ -167,8 +174,8 @@ CONTAINS
       ! Pass initial SST from NEMO to CICE so ice is initialised correctly if
       ! there is no restart file.
       ! Values from a CICE restart file would overwrite this
-      IF ( .NOT. ln_rstart ) THEN    
-         CALL nemo2cice( tsn(:,:,1,jp_tem) , sst , 'T' , 1.) 
+      IF( .NOT. ln_rstart ) THEN    
+         CALL nemo2cice( ts(:,:,1,jp_tem,Kmm) , sst , 'T' , 1.) 
       ENDIF  
 #endif
 
@@ -176,12 +183,12 @@ CONTAINS
       CALL CICE_Initialize
 
 ! Do some CICE consistency checks
-      IF ( (ksbc == jp_flx) .OR. (ksbc == jp_purecpl) ) THEN
-         IF ( calc_strair .OR. calc_Tsfc ) THEN
+      IF( (ksbc == jp_flx) .OR. (ksbc == jp_purecpl) ) THEN
+         IF( calc_strair .OR. calc_Tsfc ) THEN
             CALL ctl_stop( 'STOP', 'cice_sbc_init : Forcing option requires calc_strair=F and calc_Tsfc=F in ice_in' )
          ENDIF
-      ELSEIF (ksbc == jp_blk) THEN
-         IF ( .NOT. (calc_strair .AND. calc_Tsfc) ) THEN
+      ELSEIF(ksbc == jp_blk) THEN
+         IF( .NOT. (calc_strair .AND. calc_Tsfc) ) THEN
             CALL ctl_stop( 'STOP', 'cice_sbc_init : Forcing option requires calc_strair=T and calc_Tsfc=T in ice_in' )
          ENDIF
       ENDIF
@@ -193,15 +200,15 @@ CONTAINS
 
 ! Ensure ocean temperatures are nowhere below freezing if not a NEMO restart
       IF( .NOT. ln_rstart ) THEN
-         tsn(:,:,:,jp_tem) = MAX (tsn(:,:,:,jp_tem),Tocnfrz)
-         tsb(:,:,:,jp_tem) = tsn(:,:,:,jp_tem)
+         ts(:,:,:,jp_tem,Kmm) = MAX (ts(:,:,:,jp_tem,Kmm),Tocnfrz)
+         ts(:,:,:,jp_tem,Kbb) = ts(:,:,:,jp_tem,Kmm)
       ENDIF
 
       fr_iu(:,:)=0.0
       fr_iv(:,:)=0.0
 
       CALL cice2nemo(aice,fr_i, 'T', 1. )
-      IF ( (ksbc == jp_flx) .OR. (ksbc == jp_purecpl) ) THEN
+      IF( (ksbc == jp_flx) .OR. (ksbc == jp_purecpl) ) THEN
          DO jl=1,ncat
             CALL cice2nemo(aicen(:,:,jl,:),a_i(:,:,jl), 'T', 1. )
          ENDDO
@@ -209,14 +216,12 @@ CONTAINS
 
 ! T point to U point
 ! T point to V point
-      DO jj=1,jpjm1
-         DO ji=1,jpim1
-            fr_iu(ji,jj)=0.5*(fr_i(ji,jj)+fr_i(ji+1,jj))*umask(ji,jj,1)
-            fr_iv(ji,jj)=0.5*(fr_i(ji,jj)+fr_i(ji,jj+1))*vmask(ji,jj,1)
-         ENDDO
-      ENDDO
+      DO_2D( 1, 0, 1, 0 )
+         fr_iu(ji,jj)=0.5*(fr_i(ji,jj)+fr_i(ji+1,jj))*umask(ji,jj,1)
+         fr_iv(ji,jj)=0.5*(fr_i(ji,jj)+fr_i(ji,jj+1))*vmask(ji,jj,1)
+      END_2D
 
-      CALL lbc_lnk_multi( 'sbcice_cice', fr_iu , 'U', 1.,  fr_iv , 'V', 1. )
+      CALL lbc_lnk( 'sbcice_cice', fr_iu , 'U', 1.0_wp,  fr_iv , 'V', 1.0_wp )
 
       ! set the snow+ice mass
       CALL cice2nemo(vsno(:,:,:),ztmp1,'T', 1. )
@@ -226,45 +231,49 @@ CONTAINS
 
       IF( .NOT.ln_rstart ) THEN
          IF( ln_ice_embd ) THEN            ! embedded sea-ice: deplete the initial ssh below sea-ice area
-            sshn(:,:) = sshn(:,:) - snwice_mass(:,:) * r1_rau0
-            sshb(:,:) = sshb(:,:) - snwice_mass(:,:) * r1_rau0
+            ssh(:,:,Kmm) = ssh(:,:,Kmm) - snwice_mass(:,:) * r1_rho0
+            ssh(:,:,Kbb) = ssh(:,:,Kbb) - snwice_mass(:,:) * r1_rho0
 
 !!gm This should be put elsewhere....   (same remark for limsbc)
 !!gm especially here it is assumed zstar coordinate, but it can be ztilde....
+#if defined key_qco
+            IF( .NOT.ln_linssh )   CALL dom_qco_zgr( Kbb, Kmm )   ! interpolation scale factor, depth and water column
+#else
             IF( .NOT.ln_linssh ) THEN
                !
                DO jk = 1,jpkm1                     ! adjust initial vertical scale factors
-                  e3t_n(:,:,jk) = e3t_0(:,:,jk)*( 1._wp + sshn(:,:)*tmask(:,:,1)/(ht_0(:,:) + 1.0 - tmask(:,:,1)) )
-                  e3t_b(:,:,jk) = e3t_0(:,:,jk)*( 1._wp + sshb(:,:)*tmask(:,:,1)/(ht_0(:,:) + 1.0 - tmask(:,:,1)) )
+                  e3t(:,:,jk,Kmm) = e3t_0(:,:,jk)*( 1._wp + ssh(:,:,Kmm)*r1_ht_0(:,:)*tmask(:,:,jk) )
+                  e3t(:,:,jk,Kbb) = e3t_0(:,:,jk)*( 1._wp + ssh(:,:,Kbb)*r1_ht_0(:,:)*tmask(:,:,jk) )
                ENDDO
-               e3t_a(:,:,:) = e3t_b(:,:,:)
+               e3t(:,:,:,Krhs) = e3t(:,:,:,Kbb)
                ! Reconstruction of all vertical scale factors at now and before time-steps
                ! =============================================================================
                ! Horizontal scale factor interpolations
                ! --------------------------------------
-               CALL dom_vvl_interpol( e3t_b(:,:,:), e3u_b(:,:,:), 'U' )
-               CALL dom_vvl_interpol( e3t_b(:,:,:), e3v_b(:,:,:), 'V' )
-               CALL dom_vvl_interpol( e3t_n(:,:,:), e3u_n(:,:,:), 'U' )
-               CALL dom_vvl_interpol( e3t_n(:,:,:), e3v_n(:,:,:), 'V' )
-               CALL dom_vvl_interpol( e3u_n(:,:,:), e3f_n(:,:,:), 'F' )
+               CALL dom_vvl_interpol( e3t(:,:,:,Kbb), e3u(:,:,:,Kbb), 'U' )
+               CALL dom_vvl_interpol( e3t(:,:,:,Kbb), e3v(:,:,:,Kbb), 'V' )
+               CALL dom_vvl_interpol( e3t(:,:,:,Kmm), e3u(:,:,:,Kmm), 'U' )
+               CALL dom_vvl_interpol( e3t(:,:,:,Kmm), e3v(:,:,:,Kmm), 'V' )
+               CALL dom_vvl_interpol( e3u(:,:,:,Kmm), e3f(:,:,:), 'F' )
                ! Vertical scale factor interpolations
                ! ------------------------------------
-               CALL dom_vvl_interpol( e3t_n(:,:,:), e3w_n (:,:,:), 'W'  )
-               CALL dom_vvl_interpol( e3u_n(:,:,:), e3uw_n(:,:,:), 'UW' )
-               CALL dom_vvl_interpol( e3v_n(:,:,:), e3vw_n(:,:,:), 'VW' )
-               CALL dom_vvl_interpol( e3u_b(:,:,:), e3uw_b(:,:,:), 'UW' )
-               CALL dom_vvl_interpol( e3v_b(:,:,:), e3vw_b(:,:,:), 'VW' )
+               CALL dom_vvl_interpol( e3t(:,:,:,Kmm), e3w (:,:,:,Kmm), 'W'  )
+               CALL dom_vvl_interpol( e3u(:,:,:,Kmm), e3uw(:,:,:,Kmm), 'UW' )
+               CALL dom_vvl_interpol( e3v(:,:,:,Kmm), e3vw(:,:,:,Kmm), 'VW' )
+               CALL dom_vvl_interpol( e3u(:,:,:,Kbb), e3uw(:,:,:,Kbb), 'UW' )
+               CALL dom_vvl_interpol( e3v(:,:,:,Kbb), e3vw(:,:,:,Kbb), 'VW' )
                ! t- and w- points depth
                ! ----------------------
-               gdept_n(:,:,1) = 0.5_wp * e3w_n(:,:,1)
-               gdepw_n(:,:,1) = 0.0_wp
-               gde3w_n(:,:,1) = gdept_n(:,:,1) - sshn(:,:)
+               gdept(:,:,1,Kmm) = 0.5_wp * e3w(:,:,1,Kmm)
+               gdepw(:,:,1,Kmm) = 0.0_wp
+               gde3w(:,:,1)     = gdept(:,:,1,Kmm) - ssh(:,:,Kmm)
                DO jk = 2, jpk
-                  gdept_n(:,:,jk) = gdept_n(:,:,jk-1) + e3w_n(:,:,jk)
-                  gdepw_n(:,:,jk) = gdepw_n(:,:,jk-1) + e3t_n(:,:,jk-1)
-                  gde3w_n(:,:,jk) = gdept_n(:,:,jk  ) - sshn   (:,:)
+                  gdept(:,:,jk,Kmm) = gdept(:,:,jk-1,Kmm) + e3w(:,:,jk,Kmm)
+                  gdepw(:,:,jk,Kmm) = gdepw(:,:,jk-1,Kmm) + e3t(:,:,jk-1,Kmm)
+                  gde3w(:,:,jk)     = gdept(:,:,jk  ,Kmm) - sshn   (:,:)
                END DO
             ENDIF
+#endif
          ENDIF
       ENDIF
       !
@@ -296,32 +305,28 @@ CONTAINS
 
 ! forced and coupled case 
 
-      IF ( (ksbc == jp_flx).OR.(ksbc == jp_purecpl) ) THEN
+      IF( (ksbc == jp_flx).OR.(ksbc == jp_purecpl) ) THEN
 
          ztmpn(:,:,:)=0.0
 
 ! x comp of wind stress (CI_1)
 ! U point to F point
-         DO jj=1,jpjm1
-            DO ji=1,jpi
-               ztmp(ji,jj) = 0.5 * (  fr_iu(ji,jj) * utau(ji,jj)      &
-                                    + fr_iu(ji,jj+1) * utau(ji,jj+1) ) * fmask(ji,jj,1)
-            ENDDO
-         ENDDO
+         DO_2D( 1, 1, 1, 0 )
+            ztmp(ji,jj) = 0.5 * (  fr_iu(ji,jj) * utau(ji,jj)      &
+                                 + fr_iu(ji,jj+1) * utau(ji,jj+1) ) * fmask(ji,jj,1)
+         END_2D
          CALL nemo2cice(ztmp,strax,'F', -1. )
 
 ! y comp of wind stress (CI_2)
 ! V point to F point
-         DO jj=1,jpj
-            DO ji=1,jpim1
-               ztmp(ji,jj) = 0.5 * (  fr_iv(ji,jj) * vtau(ji,jj)      &
-                                    + fr_iv(ji+1,jj) * vtau(ji+1,jj) ) * fmask(ji,jj,1)
-            ENDDO
-         ENDDO
+         DO_2D( 1, 0, 1, 1 )
+            ztmp(ji,jj) = 0.5 * (  fr_iv(ji,jj) * vtau(ji,jj)      &
+                                 + fr_iv(ji+1,jj) * vtau(ji+1,jj) ) * fmask(ji,jj,1)
+         END_2D
          CALL nemo2cice(ztmp,stray,'F', -1. )
 
 ! Surface downward latent heat flux (CI_5)
-         IF (ksbc == jp_flx) THEN
+         IF(ksbc == jp_flx) THEN
             DO jl=1,ncat
                ztmpn(:,:,jl)=qla_ice(:,:,1)*a_i(:,:,jl)
             ENDDO
@@ -329,28 +334,26 @@ CONTAINS
 ! emp_ice is set in sbc_cpl_ice_flx as sublimation-snow
             qla_ice(:,:,1)= - ( emp_ice(:,:)+sprecip(:,:) ) * rLsub
 ! End of temporary code
-            DO jj=1,jpj
-               DO ji=1,jpi
-                  IF (fr_i(ji,jj).eq.0.0) THEN
-                     DO jl=1,ncat
-                        ztmpn(ji,jj,jl)=0.0
-                     ENDDO
-                     ! This will then be conserved in CICE
-                     ztmpn(ji,jj,1)=qla_ice(ji,jj,1)
-                  ELSE
-                     DO jl=1,ncat
-                        ztmpn(ji,jj,jl)=qla_ice(ji,jj,1)*a_i(ji,jj,jl)/fr_i(ji,jj)
-                     ENDDO
-                  ENDIF
-               ENDDO
-            ENDDO
+            DO_2D( 1, 1, 1, 1 )
+               IF(fr_i(ji,jj).eq.0.0) THEN
+                  DO jl=1,ncat
+                     ztmpn(ji,jj,jl)=0.0
+                  ENDDO
+                  ! This will then be conserved in CICE
+                  ztmpn(ji,jj,1)=qla_ice(ji,jj,1)
+               ELSE
+                  DO jl=1,ncat
+                     ztmpn(ji,jj,jl)=qla_ice(ji,jj,1)*a_i(ji,jj,jl)/fr_i(ji,jj)
+                  ENDDO
+               ENDIF
+            END_2D
          ENDIF
          DO jl=1,ncat
             CALL nemo2cice(ztmpn(:,:,jl),flatn_f(:,:,jl,:),'T', 1. )
 
 ! GBM conductive flux through ice (CI_6)
 !  Convert to GBM
-            IF (ksbc == jp_flx) THEN
+            IF(ksbc == jp_flx) THEN
                ztmp(:,:) = botmelt(:,:,jl)*a_i(:,:,jl)
             ELSE
                ztmp(:,:) = botmelt(:,:,jl)
@@ -359,7 +362,7 @@ CONTAINS
 
 ! GBM surface heat flux (CI_7)
 !  Convert to GBM
-            IF (ksbc == jp_flx) THEN
+            IF(ksbc == jp_flx) THEN
                ztmp(:,:) = (topmelt(:,:,jl)+botmelt(:,:,jl))*a_i(:,:,jl) 
             ELSE
                ztmp(:,:) = (topmelt(:,:,jl)+botmelt(:,:,jl))
@@ -367,7 +370,7 @@ CONTAINS
             CALL nemo2cice(ztmp,fsurfn_f(:,:,jl,:),'T', 1. )
          ENDDO
 
-      ELSE IF (ksbc == jp_blk) THEN
+      ELSE IF(ksbc == jp_blk) THEN
 
 ! Pass bulk forcing fields to CICE (which will calculate heat fluxes etc itself)
 ! x comp and y comp of atmosphere surface wind (CICE expects on T points)
@@ -421,7 +424,7 @@ CONTAINS
 
 ! Freezing/melting potential
 ! Calculated over NEMO leapfrog timestep (hence 2*dt)
-      nfrzmlt(:,:) = rau0 * rcp * e3t_m(:,:) * ( Tocnfrz-sst_m(:,:) ) / ( 2.0*dt )
+      nfrzmlt(:,:) = rho0 * rcp * e3t_m(:,:) * ( Tocnfrz-sst_m(:,:) ) / ( 2.0*dt )
 
       ztmp(:,:) = nfrzmlt(:,:)
       CALL nemo2cice(ztmp,frzmlt,'T', 1. )
@@ -433,19 +436,15 @@ CONTAINS
 
 ! x comp and y comp of surface ocean current
 ! U point to F point
-      DO jj=1,jpjm1
-         DO ji=1,jpi
-            ztmp(ji,jj)=0.5*(ssu_m(ji,jj)+ssu_m(ji,jj+1))*fmask(ji,jj,1)
-         ENDDO
-      ENDDO
+      DO_2D( 1, 1, 1, 0 )
+         ztmp(ji,jj)=0.5*(ssu_m(ji,jj)+ssu_m(ji,jj+1))*fmask(ji,jj,1)
+      END_2D
       CALL nemo2cice(ztmp,uocn,'F', -1. )
 
 ! V point to F point
-      DO jj=1,jpj
-         DO ji=1,jpim1
-            ztmp(ji,jj)=0.5*(ssv_m(ji,jj)+ssv_m(ji+1,jj))*fmask(ji,jj,1)
-         ENDDO
-      ENDDO
+      DO_2D( 1, 0, 1, 1 )
+         ztmp(ji,jj)=0.5*(ssv_m(ji,jj)+ssv_m(ji+1,jj))*fmask(ji,jj,1)
+      END_2D
       CALL nemo2cice(ztmp,vocn,'F', -1. )
 
       IF( ln_ice_embd ) THEN             !== embedded sea ice: compute representative ice top surface ==!
@@ -458,7 +457,7 @@ CONTAINS
           !                                               = (1/nn_fsbc)^2 * (nn_fsbc^2 - {SUM[n], n=0,nn_fsbc-1})
          zintb = REAL( nn_fsbc + 1 ) / REAL( nn_fsbc ) * 0.5_wp
           !
-         zpice(:,:) = ssh_m(:,:) + (  zintn * snwice_mass(:,:) +  zintb * snwice_mass_b(:,:)  ) * r1_rau0
+         zpice(:,:) = ssh_m(:,:) + (  zintn * snwice_mass(:,:) +  zintb * snwice_mass_b(:,:)  ) * r1_rho0
           !
          !
       ELSE                                    !== non-embedded sea ice: use ocean surface for slope calculation ==!
@@ -467,21 +466,17 @@ CONTAINS
 
 ! x comp and y comp of sea surface slope (on F points)
 ! T point to F point
-      DO jj = 1, jpjm1
-         DO ji = 1, jpim1
-            ztmp(ji,jj)=0.5 * (  (zpice(ji+1,jj  )-zpice(ji,jj  )) * r1_e1u(ji,jj  )    &
-               &               + (zpice(ji+1,jj+1)-zpice(ji,jj+1)) * r1_e1u(ji,jj+1)  ) * fmask(ji,jj,1)
-         END DO
-      END DO
+      DO_2D( 1, 0, 1, 0 )
+         ztmp(ji,jj)=0.5 * (  (zpice(ji+1,jj  )-zpice(ji,jj  )) * r1_e1u(ji,jj  )    &
+            &               + (zpice(ji+1,jj+1)-zpice(ji,jj+1)) * r1_e1u(ji,jj+1)  ) * fmask(ji,jj,1)
+      END_2D
       CALL nemo2cice( ztmp,ss_tltx,'F', -1. )
 
 ! T point to F point
-      DO jj = 1, jpjm1
-         DO ji = 1, jpim1
-            ztmp(ji,jj)=0.5 * (  (zpice(ji  ,jj+1)-zpice(ji  ,jj)) * r1_e2v(ji  ,jj)    &
-               &               + (zpice(ji+1,jj+1)-zpice(ji+1,jj)) * r1_e2v(ji+1,jj)  ) *  fmask(ji,jj,1)
-         END DO
-      END DO
+      DO_2D( 1, 0, 1, 0 )
+         ztmp(ji,jj)=0.5 * (  (zpice(ji  ,jj+1)-zpice(ji  ,jj)) * r1_e2v(ji  ,jj)    &
+            &               + (zpice(ji+1,jj+1)-zpice(ji+1,jj)) * r1_e2v(ji+1,jj)  ) *  fmask(ji,jj,1)
+      END_2D
       CALL nemo2cice(ztmp,ss_tlty,'F', -1. )
       !
    END SUBROUTINE cice_sbc_in
@@ -507,24 +502,20 @@ CONTAINS
       CALL cice2nemo(strocnx,ztmp1,'F', -1. )
       ss_iou(:,:)=0.0
 ! F point to U point
-      DO jj=2,jpjm1
-         DO ji=2,jpim1
-            ss_iou(ji,jj) = 0.5 * ( ztmp1(ji,jj-1) + ztmp1(ji,jj) ) * umask(ji,jj,1)
-         ENDDO
-      ENDDO
-      CALL lbc_lnk( 'sbcice_cice', ss_iou , 'U', -1. )
+      DO_2D( 0, 0, 0, 0 )
+         ss_iou(ji,jj) = 0.5 * ( ztmp1(ji,jj-1) + ztmp1(ji,jj) ) * umask(ji,jj,1)
+      END_2D
+      CALL lbc_lnk( 'sbcice_cice', ss_iou , 'U', -1.0_wp )
 
 ! y comp of ocean-ice stress 
       CALL cice2nemo(strocny,ztmp1,'F', -1. )
       ss_iov(:,:)=0.0
 ! F point to V point
 
-      DO jj=1,jpjm1
-         DO ji=2,jpim1
-            ss_iov(ji,jj) = 0.5 * ( ztmp1(ji-1,jj) + ztmp1(ji,jj) ) * vmask(ji,jj,1)
-         ENDDO
-      ENDDO
-      CALL lbc_lnk( 'sbcice_cice', ss_iov , 'V', -1. )
+      DO_2D( 0, 0, 1, 0 )
+         ss_iov(ji,jj) = 0.5 * ( ztmp1(ji-1,jj) + ztmp1(ji,jj) ) * vmask(ji,jj,1)
+      END_2D
+      CALL lbc_lnk( 'sbcice_cice', ss_iov , 'V', -1.0_wp )
 
 ! x and y comps of surface stress
 ! Combine wind stress and ocean-ice stress
@@ -545,15 +536,15 @@ taum(:,:)=(1.0-fr_i(:,:))*taum(:,:)+fr_i(:,:)*SQRT(ztmp1*ztmp1 + ztmp2*ztmp2)
 
 ! Freshwater fluxes 
 
-      IF (ksbc == jp_flx) THEN
+      IF(ksbc == jp_flx) THEN
 ! Note that emp from the forcing files is evap*(1-aice)-(tprecip-aice*sprecip)
 ! What we want here is evap*(1-aice)-tprecip*(1-aice) hence manipulation below
 ! Not ideal since aice won't be the same as in the atmosphere.  
 ! Better to use evap and tprecip? (but for now don't read in evap in this case)
          emp(:,:)  = emp(:,:)+fr_i(:,:)*(tprecip(:,:)-sprecip(:,:))
-      ELSE IF (ksbc == jp_blk) THEN
+      ELSE IF(ksbc == jp_blk) THEN
          emp(:,:)  = (1.0-fr_i(:,:))*emp(:,:)        
-      ELSE IF (ksbc == jp_purecpl) THEN
+      ELSE IF(ksbc == jp_purecpl) THEN
 ! emp_tot is set in sbc_cpl_ice_flx (called from cice_sbc_in above) 
 ! This is currently as required with the coupling fields from the UM atmosphere
          emp(:,:) = emp_tot(:,:)+tprecip(:,:)*fr_i(:,:) 
@@ -577,18 +568,18 @@ taum(:,:)=(1.0-fr_i(:,:))*taum(:,:)+fr_i(:,:)*SQRT(ztmp1*ztmp1 + ztmp2*ztmp2)
       emp(:,:)=emp(:,:)-ztmp1(:,:)
       fmmflx(:,:) = ztmp1(:,:) !!Joakim edit
       
-      CALL lbc_lnk_multi( 'sbcice_cice', emp , 'T', 1., sfx , 'T', 1. )
+      CALL lbc_lnk( 'sbcice_cice', emp , 'T', 1.0_wp, sfx , 'T', 1.0_wp )
 
 ! Solar penetrative radiation and non solar surface heat flux
 
 ! Scale qsr and qns according to ice fraction (bulk formulae only)
 
-      IF (ksbc == jp_blk) THEN
+      IF(ksbc == jp_blk) THEN
          qsr(:,:)=qsr(:,:)*(1.0-fr_i(:,:))
          qns(:,:)=qns(:,:)*(1.0-fr_i(:,:))
       ENDIF
 ! Take into account snow melting except for fully coupled when already in qns_tot
-      IF (ksbc == jp_purecpl) THEN
+      IF(ksbc == jp_purecpl) THEN
          qsr(:,:)= qsr_tot(:,:)
          qns(:,:)= qns_tot(:,:)
       ELSE
@@ -603,13 +594,11 @@ taum(:,:)=(1.0-fr_i(:,:))*taum(:,:)+fr_i(:,:)*SQRT(ztmp1*ztmp1 + ztmp2*ztmp2)
       CALL cice2nemo(fswthru_ai,ztmp1,'T', 1. )
 #endif
       qsr(:,:)=qsr(:,:)+ztmp1(:,:)
-      CALL lbc_lnk( 'sbcice_cice', qsr , 'T', 1. )
+      CALL lbc_lnk( 'sbcice_cice', qsr , 'T', 1.0_wp )
 
-      DO jj=1,jpj
-         DO ji=1,jpi
-            nfrzmlt(ji,jj)=MAX(nfrzmlt(ji,jj),0.0)
-         ENDDO
-      ENDDO
+      DO_2D( 1, 1, 1, 1 )
+         nfrzmlt(ji,jj)=MAX(nfrzmlt(ji,jj),0.0)
+      END_2D
 
 #if defined key_cice4
       CALL cice2nemo(fhocn_gbm,ztmp1,'T', 1. )
@@ -618,12 +607,12 @@ taum(:,:)=(1.0-fr_i(:,:))*taum(:,:)+fr_i(:,:)*SQRT(ztmp1*ztmp1 + ztmp2*ztmp2)
 #endif
       qns(:,:)=qns(:,:)+nfrzmlt(:,:)+ztmp1(:,:)
 
-      CALL lbc_lnk( 'sbcice_cice', qns , 'T', 1. )
+      CALL lbc_lnk( 'sbcice_cice', qns , 'T', 1.0_wp )
 
 ! Prepare for the following CICE time-step
 
       CALL cice2nemo(aice,fr_i,'T', 1. )
-      IF ( (ksbc == jp_flx).OR.(ksbc == jp_purecpl) ) THEN
+      IF( (ksbc == jp_flx).OR.(ksbc == jp_purecpl) ) THEN
          DO jl=1,ncat
             CALL cice2nemo(aicen(:,:,jl,:),a_i(:,:,jl), 'T', 1. )
          ENDDO
@@ -631,14 +620,12 @@ taum(:,:)=(1.0-fr_i(:,:))*taum(:,:)+fr_i(:,:)*SQRT(ztmp1*ztmp1 + ztmp2*ztmp2)
 
 ! T point to U point
 ! T point to V point
-      DO jj=1,jpjm1
-         DO ji=1,jpim1
-            fr_iu(ji,jj)=0.5*(fr_i(ji,jj)+fr_i(ji+1,jj))*umask(ji,jj,1)
-            fr_iv(ji,jj)=0.5*(fr_i(ji,jj)+fr_i(ji,jj+1))*vmask(ji,jj,1)
-         ENDDO
-      ENDDO
+      DO_2D( 1, 0, 1, 0 )
+         fr_iu(ji,jj)=0.5*(fr_i(ji,jj)+fr_i(ji+1,jj))*umask(ji,jj,1)
+         fr_iv(ji,jj)=0.5*(fr_i(ji,jj)+fr_i(ji,jj+1))*vmask(ji,jj,1)
+      END_2D
 
-      CALL lbc_lnk_multi( 'sbcice_cice', fr_iu , 'U', 1., fr_iv , 'V', 1. )
+      CALL lbc_lnk( 'sbcice_cice', fr_iu , 'U', 1.0_wp, fr_iv , 'V', 1.0_wp )
 
       ! set the snow+ice mass
       CALL cice2nemo(vsno(:,:,:),ztmp1,'T', 1. )
@@ -761,11 +748,9 @@ taum(:,:)=(1.0-fr_i(:,:))*taum(:,:)+fr_i(:,:)*SQRT(ztmp1*ztmp1 + ztmp2*ztmp2)
          sn_bot4 = FLD_N( 'botmeltn4_1m' ,    -1.    ,  'botmeltn4' ,  .true.    , .true.  ,  ' yearly'  , ''       , ''         ,  ''    )
          sn_bot5 = FLD_N( 'botmeltn5_1m' ,    -1.    ,  'botmeltn5' ,  .true.    , .true.  ,  ' yearly'  , ''       , ''         ,  ''    )
 
-         REWIND( numnam_ref )              ! Namelist namsbc_cice in reference namelist : 
          READ  ( numnam_ref, namsbc_cice, IOSTAT = ios, ERR = 901)
 901      IF( ios /= 0 )   CALL ctl_nam ( ios , 'namsbc_cice in reference namelist' )
 
-         REWIND( numnam_cfg )              ! Namelist namsbc_cice in configuration namelist : Parameters of the run
          READ  ( numnam_cfg, namsbc_cice, IOSTAT = ios, ERR = 902 )
 902      IF( ios >  0 )   CALL ctl_nam ( ios , 'namsbc_cice in configuration namelist' )
          IF(lwm) WRITE ( numond, namsbc_cice )
@@ -878,7 +863,7 @@ taum(:,:)=(1.0-fr_i(:,:))*taum(:,:)+fr_i(:,:)*SQRT(ztmp1*ztmp1 + ztmp2*ztmp2)
 
 !     B. Gather pn into global array (png)
 
-      IF ( jpnij > 1) THEN
+      IF( jpnij > 1) THEN
          CALL mppsync
          CALL mppgather (pn,0,png) 
          CALL mppsync
@@ -891,11 +876,11 @@ taum(:,:)=(1.0-fr_i(:,:))*taum(:,:)+fr_i(:,:)*SQRT(ztmp1*ztmp1 + ztmp2*ztmp2)
 ! Need to make sure this is robust to changes in NEMO halo rows....
 ! (may be OK but not 100% sure)
 
-      IF (nproc==0) THEN     
+      IF(narea==1) THEN     
 !        pcg(:,:)=0.0
          DO jn=1,jpnij
-            DO jj=nldjt(jn),nlejt(jn)
-               DO ji=nldit(jn),nleit(jn)
+            DO jj=njs0all(jn),nje0all(jn)
+               DO ji=nis0all(jn),nie0all(jn)
                   png2(ji+nimppt(jn)-1,jj+njmppt(jn)-1)=png(ji,jj,jn)
                ENDDO
             ENDDO
@@ -995,11 +980,9 @@ taum(:,:)=(1.0-fr_i(:,:))*taum(:,:)+fr_i(:,:)*SQRT(ztmp1*ztmp1 + ztmp2*ztmp2)
 
 
       pn(:,:)=0.0
-      DO jj=1,jpjm1
-         DO ji=1,jpim1
-            pn(ji,jj)=pc(ji+1-ji_off,jj+1-jj_off,1)
-         ENDDO
-      ENDDO
+      DO_2D( 1, 0, 1, 0 )
+         pn(ji,jj)=pc(ji+1-ji_off,jj+1-jj_off,1)
+      END_2D
 
 #else
 
@@ -1014,11 +997,11 @@ taum(:,:)=(1.0-fr_i(:,:))*taum(:,:)+fr_i(:,:)*SQRT(ztmp1*ztmp1 + ztmp2*ztmp2)
 ! Note that non-existent pcg elements may be used below, but
 ! the lbclnk call on pn will replace these with sensible values
 
-      IF (nproc==0) THEN
+      IF(narea==1) THEN
          png(:,:,:)=0.0
          DO jn=1,jpnij
-            DO jj=nldjt(jn),nlejt(jn)
-               DO ji=nldit(jn),nleit(jn)
+            DO jj=njs0all(jn),nje0all(jn)
+               DO ji=nis0all(jn),nie0all(jn)
                   png(ji,jj,jn)=pcg(ji+nimppt(jn)-1-ji_off,jj+njmppt(jn)-1-jj_off)
                ENDDO
             ENDDO
@@ -1027,7 +1010,7 @@ taum(:,:)=(1.0-fr_i(:,:))*taum(:,:)+fr_i(:,:)*SQRT(ztmp1*ztmp1 + ztmp2*ztmp2)
 
 !     C. Scatter png into NEMO field (pn) for each processor
 
-      IF ( jpnij > 1) THEN
+      IF( jpnij > 1) THEN
          CALL mppsync
          CALL mppscatter (png,0,pn) 
          CALL mppsync
@@ -1055,9 +1038,10 @@ CONTAINS
       WRITE(*,*) 'sbc_ice_cice: You should not have seen this print! error?', kt
    END SUBROUTINE sbc_ice_cice
 
-   SUBROUTINE cice_sbc_init (ksbc)    ! Dummy routine
+   SUBROUTINE cice_sbc_init (ksbc, Kbb, Kmm)    ! Dummy routine
       IMPLICIT NONE
       INTEGER, INTENT( in ) :: ksbc
+      INTEGER, INTENT( in ) :: Kbb, Kmm
       WRITE(*,*) 'cice_sbc_init: You should not have seen this print! error?', ksbc
    END SUBROUTINE cice_sbc_init
 

@@ -169,7 +169,7 @@ MODULE ice1D
    
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: ice1d.F90 13642 2020-10-19 22:58:34Z clem $
+   !! $Id: ice1d.F90 13643 2020-10-19 23:41:14Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS

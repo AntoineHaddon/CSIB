@@ -17,10 +17,10 @@ MODULE bdydyn2d
    USE bdy_oce         ! ocean open boundary conditions
    USE bdylib          ! BDY library routines
    USE phycst          ! physical constants
+   USE lib_mpp
    USE lbclnk          ! ocean lateral boundary conditions (or mpp link)
    USE wet_dry         ! Use wet dry to get reference ssh level
    USE in_out_manager  !
-   USE lib_mpp, ONLY: ctl_stop
 
    IMPLICIT NONE
    PRIVATE
@@ -30,7 +30,7 @@ MODULE bdydyn2d
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: bdydyn2d.F90 11536 2019-09-11 13:54:18Z smasson $ 
+   !! $Id: bdydyn2d.F90 15368 2021-10-14 08:25:34Z smasson $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -48,9 +48,12 @@ CONTAINS
       REAL(wp), DIMENSION(jpi,jpj), INTENT(in   ) :: phur, phvr
       REAL(wp), DIMENSION(jpi,jpj), INTENT(in   ) :: pssh
       !!
-      INTEGER  ::   ib_bdy, ir     ! BDY set index, rim index
-      LOGICAL  ::   llrim0         ! indicate if rim 0 is treated
-      LOGICAL, DIMENSION(4) :: llsend2, llrecv2, llsend3, llrecv3  ! indicate how communications are to be carried out
+      INTEGER               ::   ib_bdy, ir     ! BDY set index, rim index
+      INTEGER, DIMENSION(3) ::   idir3
+      INTEGER, DIMENSION(6) ::   idir6
+      LOGICAL               ::   llrim0         ! indicate if rim 0 is treated
+      LOGICAL, DIMENSION(8) ::   llsend2, llrecv2, llsend3, llrecv3  ! indicate how communications are to be carried out
+      !!----------------------------------------------------------------------
       
       llsend2(:) = .false.   ;   llrecv2(:) = .false.
       llsend3(:) = .false.   ;   llrecv3(:) = .false.
@@ -85,26 +88,32 @@ CONTAINS
          DO ib_bdy=1, nb_bdy
             SELECT CASE( cn_dyn2d(ib_bdy) )
             CASE('flather')
-               llsend2(1:2) = llsend2(1:2) .OR. lsend_bdyint(ib_bdy,2,1:2,ir)   ! west/east, U points
-               llsend2(1)   = llsend2(1)   .OR. lsend_bdyext(ib_bdy,2,1,ir)     ! neighbour might search point towards its east bdy
-               llrecv2(1:2) = llrecv2(1:2) .OR. lrecv_bdyint(ib_bdy,2,1:2,ir)   ! west/east, U points
-               llrecv2(2)   = llrecv2(2)   .OR. lrecv_bdyext(ib_bdy,2,2,ir)     ! might search point towards bdy on the east
-               llsend3(3:4) = llsend3(3:4) .OR. lsend_bdyint(ib_bdy,3,3:4,ir)   ! north/south, V points
-               llsend3(3)   = llsend3(3)   .OR. lsend_bdyext(ib_bdy,3,3,ir)     ! neighbour might search point towards its north bdy 
-               llrecv3(3:4) = llrecv3(3:4) .OR. lrecv_bdyint(ib_bdy,3,3:4,ir)   ! north/south, V points
-               llrecv3(4)   = llrecv3(4)   .OR. lrecv_bdyext(ib_bdy,3,4,ir)     ! might search point towards bdy on the north
+               idir6 = (/ jpwe, jpea, jpsw, jpse, jpnw, jpne /)
+               llsend2(idir6) = llsend2(idir6) .OR. lsend_bdyint(ib_bdy,2,idir6,ir)   ! west/east, U points
+               idir3 = (/ jpwe, jpsw, jpnw /)
+               llsend2(idir3) = llsend2(idir3) .OR. lsend_bdyext(ib_bdy,2,idir3,ir)   ! nei might search point towards its east bdy
+               llrecv2(idir6) = llrecv2(idir6) .OR. lrecv_bdyint(ib_bdy,2,idir6,ir)   ! west/east, U points
+               idir3 = (/ jpea, jpse, jpne /)
+               llrecv2(idir3) = llrecv2(idir3) .OR. lrecv_bdyext(ib_bdy,2,idir3,ir)   ! might search point towards bdy on the east
+               idir6 = (/ jpso, jpno, jpsw, jpse, jpnw, jpne /)
+               llsend3(idir6) = llsend3(idir6) .OR. lsend_bdyint(ib_bdy,3,idir6,ir)   ! north/south, V points
+               idir3 = (/ jpso, jpsw, jpse /)
+               llsend3(idir3) = llsend3(idir3) .OR. lsend_bdyext(ib_bdy,3,idir3,ir)   ! nei might search point towards its north bdy
+               llrecv3(idir6) = llrecv3(idir6) .OR. lrecv_bdyint(ib_bdy,3,idir6,ir)   ! north/south, V points
+               idir3 = (/ jpno, jpnw, jpne /)
+               llrecv3(idir3) = llrecv3(idir3) .OR. lrecv_bdyext(ib_bdy,3,idir3,ir)   ! might search point towards bdy on the north
             CASE('orlanski', 'orlanski_npo')
-               llsend2(:) = llsend2(:) .OR. lsend_bdy(ib_bdy,2,:,ir)   ! possibly every direction, U points
-               llrecv2(:) = llrecv2(:) .OR. lrecv_bdy(ib_bdy,2,:,ir)   ! possibly every direction, U points
-               llsend3(:) = llsend3(:) .OR. lsend_bdy(ib_bdy,3,:,ir)   ! possibly every direction, V points
-               llrecv3(:) = llrecv3(:) .OR. lrecv_bdy(ib_bdy,3,:,ir)   ! possibly every direction, V points
+               llsend2(:) = llsend2(:) .OR. lsend_bdyolr(ib_bdy,2,:,ir)   ! possibly every direction, U points
+               llrecv2(:) = llrecv2(:) .OR. lrecv_bdyolr(ib_bdy,2,:,ir)   ! possibly every direction, U points
+               llsend3(:) = llsend3(:) .OR. lsend_bdyolr(ib_bdy,3,:,ir)   ! possibly every direction, V points
+               llrecv3(:) = llrecv3(:) .OR. lrecv_bdyolr(ib_bdy,3,:,ir)   ! possibly every direction, V points
             END SELECT
          END DO
          IF( ANY(llsend2) .OR. ANY(llrecv2) ) THEN   ! if need to send/recv in at least one direction
-            CALL lbc_lnk( 'bdydyn2d', pua2d, 'U', -1., kfillmode=jpfillnothing ,lsend=llsend2, lrecv=llrecv2 )
+            CALL lbc_lnk( 'bdydyn2d', pua2d, 'U', -1.0_wp, kfillmode=jpfillnothing ,lsend=llsend2, lrecv=llrecv2 )
          END IF
          IF( ANY(llsend3) .OR. ANY(llrecv3) ) THEN   ! if need to send/recv in at least one direction
-            CALL lbc_lnk( 'bdydyn2d', pva2d, 'V', -1., kfillmode=jpfillnothing ,lsend=llsend3, lrecv=llrecv3 )
+            CALL lbc_lnk( 'bdydyn2d', pva2d, 'V', -1.0_wp, kfillmode=jpfillnothing ,lsend=llsend3, lrecv=llrecv3 )
          END IF
          !
       END DO   ! ir
@@ -308,7 +317,7 @@ CONTAINS
       INTEGER ::   ib_bdy, ir      ! bdy index, rim index
       INTEGER ::   ibeg, iend      ! length of rim to be treated (rim 0 or rim 1)
       LOGICAL ::   llrim0          ! indicate if rim 0 is treated
-      LOGICAL, DIMENSION(4) :: llsend1, llrecv1  ! indicate how communications are to be carried out
+      LOGICAL, DIMENSION(8) :: llsend1, llrecv1  ! indicate how communications are to be carried out
       !!----------------------------------------------------------------------
       llsend1(:) = .false.   ;   llrecv1(:) = .false.
       DO ir = 1, 0, -1   ! treat rim 1 before rim 0
@@ -323,7 +332,7 @@ CONTAINS
          END DO
          IF( nn_hls > 1 .AND. ir == 1 ) CYCLE   ! at least 2 halos will be corrected -> no need to correct rim 1 before rim 0
          IF( ANY(llsend1) .OR. ANY(llrecv1) ) THEN   ! if need to send/recv in at least one direction
-            CALL lbc_lnk( 'bdydyn2d', zssh(:,:,1), 'T',  1., kfillmode=jpfillnothing ,lsend=llsend1, lrecv=llrecv1 )
+            CALL lbc_lnk( 'bdydyn2d', zssh(:,:,1), 'T',  1.0_wp, kfillmode=jpfillnothing ,lsend=llsend1, lrecv=llrecv1 )
          END IF
       END DO
       !

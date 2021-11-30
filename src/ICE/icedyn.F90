@@ -1,7 +1,7 @@
 MODULE icedyn
    !!======================================================================
    !!                     ***  MODULE  icedyn  ***
-   !!   Sea-Ice dynamics : master routine for sea ice dynamics 
+   !!   Sea-Ice dynamics : master routine for sea ice dynamics
    !!======================================================================
    !! history :  4.0  ! 2018  (C. Rousset)  original code SI3 [aka Sea Ice cube]
    !!----------------------------------------------------------------------
@@ -28,17 +28,18 @@ MODULE icedyn
    USE lib_fortran    ! fortran utilities (glob_sum + no signed zero)
    USE lbclnk         ! lateral boundary conditions (or mpp links)
    USE timing         ! Timing
+   USE fldread        ! read input fields
 
    IMPLICIT NONE
    PRIVATE
 
    PUBLIC   ice_dyn        ! called by icestp.F90
    PUBLIC   ice_dyn_init   ! called by icestp.F90
-   
+
    INTEGER ::              nice_dyn   ! choice of the type of dynamics
    !                                        ! associated indices:
    INTEGER, PARAMETER ::   np_dynALL     = 1   ! full ice dynamics               (rheology + advection + ridging/rafting + correction)
-   INTEGER, PARAMETER ::   np_dynRHGADV  = 2   ! pure dynamics                   (rheology + advection) 
+   INTEGER, PARAMETER ::   np_dynRHGADV  = 2   ! pure dynamics                   (rheology + advection)
    INTEGER, PARAMETER ::   np_dynADV1D   = 3   ! only advection 1D - test case from Schar & Smolarkiewicz 1996
    INTEGER, PARAMETER ::   np_dynADV2D   = 4   ! only advection 2D w prescribed vel.(rn_uvice + advection)
    !
@@ -49,20 +50,22 @@ MODULE icedyn
    LOGICAL  ::   ln_dynADV2D      ! only advection in 2D w prescribed vel. (rn_uvice + advection)
    REAL(wp) ::   rn_uice          !    prescribed u-vel (case np_dynADV1D & np_dynADV2D)
    REAL(wp) ::   rn_vice          !    prescribed v-vel (case np_dynADV1D & np_dynADV2D)
-   
+
+   TYPE(FLD), ALLOCATABLE, DIMENSION(:) ::   sf_icbmsk   ! structure of input grounded icebergs mask (file informations, fields read)
+
    !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
+#  include "do_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icedyn.F90 14026 2020-12-03 08:48:10Z clem $
+   !! $Id: icedyn.F90 14997 2021-06-16 06:43:57Z smasson $
    !! Software governed by the CeCILL licence     (./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE ice_dyn( kt )
+   SUBROUTINE ice_dyn( kt, Kmm )
       !!-------------------------------------------------------------------
       !!               ***  ROUTINE ice_dyn  ***
-      !!               
+      !!
       !! ** Purpose :   this routine manages sea ice dynamics
       !!
       !! ** Action : - calculation of friction in case of landfast ice
@@ -72,6 +75,7 @@ CONTAINS
       !!             - call ice_cor        = corrections if fields are out of bounds
       !!--------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt     ! ice time step
+      INTEGER, INTENT(in) ::   Kmm    ! ocean time level index
       !!
       INTEGER  ::   ji, jj        ! dummy loop indices
       REAL(wp) ::   zcoefu, zcoefv
@@ -86,7 +90,7 @@ CONTAINS
          WRITE(numout,*)'ice_dyn: sea-ice dynamics'
          WRITE(numout,*)'~~~~~~~'
       ENDIF
-      !                      
+      !
       ! retrieve thickness from volume for landfast param. and UMx advection scheme
       WHERE( a_i(:,:,:) >= epsi20 )
          h_i(:,:,:) = v_i(:,:,:) / a_i_b(:,:,:)
@@ -104,19 +108,23 @@ CONTAINS
          h_il(:,:,:) = 0._wp
       END WHERE
       !
+      IF( ln_landfast_L16 ) THEN
+         CALL fld_read( kt, 1, sf_icbmsk )
+         icb_mask(:,:) = sf_icbmsk(1)%fnow(:,:,1)
+      ENDIF
       !
       SELECT CASE( nice_dyn )          !-- Set which dynamics is running
 
       CASE ( np_dynALL )           !==  all dynamical processes  ==!
          !
-         CALL ice_dyn_rhg   ( kt )                                          ! -- rheology  
+         CALL ice_dyn_rhg   ( kt, Kmm )                                     ! -- rheology
          CALL ice_dyn_adv   ( kt )                                          ! -- advection of ice
-         CALL ice_dyn_rdgrft( kt )                                          ! -- ridging/rafting 
+         CALL ice_dyn_rdgrft( kt )                                          ! -- ridging/rafting
          CALL ice_cor       ( kt , 1 )                                      ! -- Corrections
          !
       CASE ( np_dynRHGADV  )       !==  no ridge/raft & no corrections ==!
          !
-         CALL ice_dyn_rhg   ( kt )                                          ! -- rheology  
+         CALL ice_dyn_rhg   ( kt, Kmm )                                     ! -- rheology
          CALL ice_dyn_adv   ( kt )                                          ! -- advection of ice
          CALL Hpiling                                                       ! -- simple pile-up (replaces ridging/rafting)
          CALL ice_var_zapsmall                                              ! -- zap small areas
@@ -125,15 +133,13 @@ CONTAINS
          !
          ! --- monotonicity test from Schar & Smolarkiewicz 1996 --- !
          ! CFL = 0.5 at a distance from the bound of 1/6 of the basin length
-         ! Then for dx = 2m and dt = 1s => rn_uice = u (1/6th) = 1m/s 
-         DO jj = 1, jpj
-            DO ji = 1, jpi
-               zcoefu = ( REAL(jpiglo+1)*0.5 - REAL(ji+nimpp-1) ) / ( REAL(jpiglo+1)*0.5 - 1. )
-               zcoefv = ( REAL(jpjglo+1)*0.5 - REAL(jj+njmpp-1) ) / ( REAL(jpjglo+1)*0.5 - 1. )
-               u_ice(ji,jj) = rn_uice * 1.5 * SIGN( 1., zcoefu ) * ABS( zcoefu ) * umask(ji,jj,1)
-               v_ice(ji,jj) = rn_vice * 1.5 * SIGN( 1., zcoefv ) * ABS( zcoefv ) * vmask(ji,jj,1)
-            END DO
-         END DO
+         ! Then for dx = 2m and dt = 1s => rn_uice = u (1/6th) = 1m/s
+         DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
+            zcoefu = ( REAL(jpiglo+1)*0.5_wp - REAL(ji+nimpp-1) ) / ( REAL(jpiglo+1)*0.5_wp - 1._wp )
+            zcoefv = ( REAL(jpjglo+1)*0.5_wp - REAL(jj+njmpp-1) ) / ( REAL(jpjglo+1)*0.5_wp - 1._wp )
+            u_ice(ji,jj) = rn_uice * 1.5_wp * SIGN( 1.0_wp, zcoefu ) * ABS( zcoefu ) * umask(ji,jj,1)
+            v_ice(ji,jj) = rn_vice * 1.5_wp * SIGN( 1.0_wp, zcoefv ) * ABS( zcoefv ) * vmask(ji,jj,1)
+         END_2D
          ! ---
          CALL ice_dyn_adv   ( kt )                                          ! -- advection of ice
          !
@@ -149,7 +155,7 @@ CONTAINS
       END SELECT
       !
       !
-      ! diagnostics: divergence at T points 
+      ! diagnostics: divergence at T points
       IF( iom_use('icediv') ) THEN
          !
          SELECT CASE( nice_dyn )
@@ -157,13 +163,11 @@ CONTAINS
          CASE ( np_dynADV1D , np_dynADV2D )
 
             ALLOCATE( zdivu_i(jpi,jpj) )
-            DO jj = 2, jpjm1
-               DO ji = 2, jpim1
-                  zdivu_i(ji,jj) = ( e2u(ji,jj) * u_ice(ji,jj) - e2u(ji-1,jj) * u_ice(ji-1,jj)   &
-                     &             + e1v(ji,jj) * v_ice(ji,jj) - e1v(ji,jj-1) * v_ice(ji,jj-1) ) * r1_e1e2t(ji,jj)
-               END DO
-            END DO
-            CALL lbc_lnk( 'icedyn', zdivu_i, 'T', 1. )
+            DO_2D( 0, 0, 0, 0 )
+               zdivu_i(ji,jj) = ( e2u(ji,jj) * u_ice(ji,jj) - e2u(ji-1,jj) * u_ice(ji-1,jj)   &
+                  &             + e1v(ji,jj) * v_ice(ji,jj) - e1v(ji,jj-1) * v_ice(ji,jj-1) ) * r1_e1e2t(ji,jj)
+            END_2D
+            CALL lbc_lnk( 'icedyn', zdivu_i, 'T', 1.0_wp )
             ! output
             CALL iom_put( 'icediv' , zdivu_i )
 
@@ -218,17 +222,19 @@ CONTAINS
       !!
       !! ** input   :   Namelist namdyn
       !!-------------------------------------------------------------------
-      INTEGER ::   ios, ioptio   ! Local integer output status for namelist read
+      INTEGER ::   ios, ioptio, ierror   ! Local integer output status for namelist read
+      !
+      CHARACTER(len=256) ::   cn_dir     ! Root directory for location of ice files
+      TYPE(FLD_N)        ::   sn_icbmsk  ! informations about the grounded icebergs field to be read
       !!
       NAMELIST/namdyn/ ln_dynALL, ln_dynRHGADV, ln_dynADV1D, ln_dynADV2D, rn_uice, rn_vice,  &
          &             rn_ishlat ,                                                           &
-         &             ln_landfast_L16, rn_lf_depfra, rn_lf_bfr, rn_lf_relax, rn_lf_tensile
+         &             ln_landfast_L16, rn_lf_depfra, rn_lf_bfr, rn_lf_relax, rn_lf_tensile, &
+         &             sn_icbmsk, cn_dir
       !!-------------------------------------------------------------------
       !
-      REWIND( numnam_ice_ref )         ! Namelist namdyn in reference namelist : Ice dynamics
       READ  ( numnam_ice_ref, namdyn, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namdyn in reference namelist' )
-      REWIND( numnam_ice_cfg )         ! Namelist namdyn in configuration namelist : Ice dynamics
       READ  ( numnam_ice_cfg, namdyn, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namdyn in configuration namelist' )
       IF(lwm) WRITE( numoni, namdyn )
@@ -252,7 +258,7 @@ CONTAINS
          WRITE(numout,*)
       ENDIF
       !                             !== set the choice of ice dynamics ==!
-      ioptio = 0 
+      ioptio = 0
       !      !--- full dynamics                               (rheology + advection + ridging/rafting + correction)
       IF( ln_dynALL    ) THEN   ;   ioptio = ioptio + 1   ;   nice_dyn = np_dynALL       ;   ENDIF
       !      !--- dynamics without ridging/rafting and corr   (rheology + advection)
@@ -273,6 +279,23 @@ CONTAINS
       !                                      !--- Landfast ice
       IF( .NOT.ln_landfast_L16 )   tau_icebfr(:,:) = 0._wp
       !
+      !                                      !--- allocate and fill structure for grounded icebergs mask
+      IF( ln_landfast_L16 ) THEN
+         ALLOCATE( sf_icbmsk(1), STAT=ierror )
+         IF( ierror > 0 ) THEN
+            CALL ctl_stop( 'ice_dyn_init: unable to allocate sf_icbmsk structure' ) ; RETURN
+         ENDIF
+         !
+         CALL fld_fill( sf_icbmsk, (/ sn_icbmsk /), cn_dir, 'ice_dyn_init',   &
+            &                                               'landfast ice is a function of read grounded icebergs', 'icedyn' )
+         !
+         ALLOCATE( sf_icbmsk(1)%fnow(jpi,jpj,1) )
+         IF( sf_icbmsk(1)%ln_tint )   ALLOCATE( sf_icbmsk(1)%fdta(jpi,jpj,1,2) )
+         IF( TRIM(sf_icbmsk(1)%clrootname) == 'NOT USED' ) sf_icbmsk(1)%fnow(:,:,1) = 0._wp   ! not used field  (set to 0)
+      ELSE
+         icb_mask(:,:) = 0._wp
+      ENDIF
+      !                                      !--- other init
       CALL ice_dyn_rdgrft_init          ! set ice ridging/rafting parameters
       CALL ice_dyn_rhg_init             ! set ice rheology parameters
       CALL ice_dyn_adv_init             ! set ice advection parameters
@@ -283,7 +306,7 @@ CONTAINS
    !!----------------------------------------------------------------------
    !!   Default option         Empty module           NO SI3 sea-ice model
    !!----------------------------------------------------------------------
-#endif 
+#endif
 
    !!======================================================================
 END MODULE icedyn

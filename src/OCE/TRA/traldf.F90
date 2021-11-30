@@ -1,10 +1,10 @@
 MODULE traldf
    !!======================================================================
    !!                       ***  MODULE  traldf  ***
-   !! Ocean Active tracers : lateral diffusive trends 
+   !! Ocean Active tracers : lateral diffusive trends
    !!=====================================================================
    !! History :  9.0  ! 2005-11  (G. Madec)  Original code
-   !!  NEMO      3.0  ! 2008-01  (C. Ethe, G. Madec)  merge TRC-TRA 
+   !!  NEMO      3.0  ! 2008-01  (C. Ethe, G. Madec)  merge TRC-TRA
    !!            3.7  ! 2013-12  (G. Madec) remove the optional computation from T & S anomaly profiles and traldf_bilapg
    !!             -   ! 2013-12  (F. Lemarie, G. Madec)  triad operator (Griffies) + Method of Stabilizing Correction
    !!             -   ! 2014-01  (G. Madec, S. Masson)  restructuration/simplification of lateral diffusive operators
@@ -34,25 +34,25 @@ MODULE traldf
    IMPLICIT NONE
    PRIVATE
 
-   PUBLIC   tra_ldf        ! called by step.F90 
-   PUBLIC   tra_ldf_init   ! called by nemogcm.F90 
-   
-   !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
+   PUBLIC   tra_ldf        ! called by step.F90
+   PUBLIC   tra_ldf_init   ! called by nemogcm.F90
+
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: traldf.F90 10068 2018-08-28 14:09:04Z nicolasmartin $ 
+   !! $Id: traldf.F90 14834 2021-05-11 09:24:44Z hadcv $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE tra_ldf( kt )
+   SUBROUTINE tra_ldf( kt, Kbb, Kmm, pts, Krhs )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE tra_ldf  ***
-      !! 
+      !!
       !! ** Purpose :   compute the lateral ocean tracer physics.
       !!----------------------------------------------------------------------
-      INTEGER, INTENT( in ) ::   kt   ! ocean time-step index
+      INTEGER,                                   INTENT(in   ) :: kt              ! ocean time-step index
+      INTEGER,                                   INTENT(in   ) :: Kbb, Kmm, Krhs  ! ocean time level indices
+      REAL(wp), DIMENSION(jpi,jpj,jpk,jpts,jpt), INTENT(inout) :: pts             ! active tracers and RHS of tracer equation
       !!
       REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) ::   ztrdt, ztrds
       !!----------------------------------------------------------------------
@@ -60,32 +60,32 @@ CONTAINS
       IF( ln_timing )   CALL timing_start('tra_ldf')
       !
       IF( l_trdtra )   THEN                    !* Save ta and sa trends
-         ALLOCATE( ztrdt(jpi,jpj,jpk) , ztrds(jpi,jpj,jpk) ) 
-         ztrdt(:,:,:) = tsa(:,:,:,jp_tem) 
-         ztrds(:,:,:) = tsa(:,:,:,jp_sal)
+         ALLOCATE( ztrdt(jpi,jpj,jpk) , ztrds(jpi,jpj,jpk) )
+         ztrdt(:,:,:) = pts(:,:,:,jp_tem,Krhs)
+         ztrds(:,:,:) = pts(:,:,:,jp_sal,Krhs)
       ENDIF
       !
       SELECT CASE ( nldf_tra )                 !* compute lateral mixing trend and add it to the general trend
       CASE ( np_lap   )                                  ! laplacian: iso-level operator
-         CALL tra_ldf_lap  ( kt, nit000,'TRA', ahtu, ahtv, gtsu, gtsv, gtui, gtvi, tsb,      tsa, jpts,  1   )
+         CALL tra_ldf_lap  ( kt, Kmm, nit000,'TRA', ahtu, ahtv, gtsu, gtsv, gtui, gtvi, pts(:,:,:,:,Kbb), pts(:,:,:,:,Krhs),                   jpts,  1 )
       CASE ( np_lap_i )                                  ! laplacian: standard iso-neutral operator (Madec)
-         CALL tra_ldf_iso  ( kt, nit000,'TRA', ahtu, ahtv, gtsu, gtsv, gtui, gtvi, tsb, tsb, tsa, jpts,  1   )
+         CALL tra_ldf_iso  ( kt, Kmm, nit000,'TRA', ahtu, ahtv, gtsu, gtsv, gtui, gtvi, pts(:,:,:,:,Kbb), pts(:,:,:,:,Kbb), pts(:,:,:,:,Krhs), jpts,  1 )
       CASE ( np_lap_it )                                 ! laplacian: triad iso-neutral operator (griffies)
-         CALL tra_ldf_triad( kt, nit000,'TRA', ahtu, ahtv, gtsu, gtsv, gtui, gtvi, tsb, tsb, tsa, jpts,  1   )
+         CALL tra_ldf_triad( kt, Kmm, nit000,'TRA', ahtu, ahtv, gtsu, gtsv, gtui, gtvi, pts(:,:,:,:,Kbb), pts(:,:,:,:,Kbb), pts(:,:,:,:,Krhs), jpts,  1 )
       CASE ( np_blp , np_blp_i , np_blp_it )             ! bilaplacian: iso-level & iso-neutral operators
-         CALL tra_ldf_blp  ( kt, nit000,'TRA', ahtu, ahtv, gtsu, gtsv, gtui, gtvi, tsb      , tsa, jpts, nldf_tra )
+         CALL tra_ldf_blp  ( kt, Kmm, nit000,'TRA', ahtu, ahtv, gtsu, gtsv, gtui, gtvi, pts(:,:,:,:,Kbb), pts(:,:,:,:,Krhs),             jpts, nldf_tra )
       END SELECT
       !
       IF( l_trdtra )   THEN                    !* save the horizontal diffusive trends for further diagnostics
-         ztrdt(:,:,:) = tsa(:,:,:,jp_tem) - ztrdt(:,:,:)
-         ztrds(:,:,:) = tsa(:,:,:,jp_sal) - ztrds(:,:,:)
-         CALL trd_tra( kt, 'TRA', jp_tem, jptra_ldf, ztrdt )
-         CALL trd_tra( kt, 'TRA', jp_sal, jptra_ldf, ztrds )
-         DEALLOCATE( ztrdt, ztrds ) 
+         ztrdt(:,:,:) = pts(:,:,:,jp_tem,Krhs) - ztrdt(:,:,:)
+         ztrds(:,:,:) = pts(:,:,:,jp_sal,Krhs) - ztrds(:,:,:)
+         CALL trd_tra( kt, Kmm, Krhs, 'TRA', jp_tem, jptra_ldf, ztrdt )
+         CALL trd_tra( kt, Kmm, Krhs, 'TRA', jp_sal, jptra_ldf, ztrds )
+         DEALLOCATE( ztrdt, ztrds )
       ENDIF
       !                                        !* print mean trends (used for debugging)
-      IF(ln_ctl)   CALL prt_ctl( tab3d_1=tsa(:,:,:,jp_tem), clinfo1=' ldf  - Ta: ', mask1=tmask,               &
-         &                       tab3d_2=tsa(:,:,:,jp_sal), clinfo2=       ' Sa: ', mask2=tmask, clinfo3='tra' )
+      IF(sn_cfctl%l_prtctl)   CALL prt_ctl( tab3d_1=pts(:,:,:,jp_tem,Krhs), clinfo1=' ldf  - Ta: ', mask1=tmask, &
+         &                                  tab3d_2=pts(:,:,:,jp_sal,Krhs), clinfo2=       ' Sa: ', mask2=tmask, clinfo3='tra' )
       !
       IF( ln_timing )   CALL timing_stop('tra_ldf')
       !
@@ -95,12 +95,12 @@ CONTAINS
    SUBROUTINE tra_ldf_init
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE tra_ldf_init  ***
-      !! 
+      !!
       !! ** Purpose :   Choice of the operator for the lateral tracer diffusion
       !!
       !! ** Method  :   set nldf_tra from the namtra_ldf logicals
       !!----------------------------------------------------------------------
-      INTEGER ::   ioptio, ierr   ! temporary integers 
+      INTEGER ::   ioptio, ierr   ! temporary integers
       !!----------------------------------------------------------------------
       !
       IF(lwp) THEN                     !==  Namelist print  ==!

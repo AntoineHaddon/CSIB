@@ -1,5 +1,5 @@
 !
-! $Id: modmpp.F90 5656 2015-07-31 08:55:56Z timgraham $
+! $Id: modmpp.F90 14107 2020-12-04 17:02:20Z nicolasmartin $
 !
 !     AGRIF (Adaptive Grid Refinement In Fortran)
 !
@@ -165,7 +165,7 @@ end subroutine Agrif_Init_ProcList
 !---------------------------------------------------------------------------------------------------
 subroutine Get_External_Data_first ( pttruetab, cetruetab, pttruetabwhole, cetruetabwhole,  &
                                      nbdim, memberoutall, coords, sendtoproc, recvfromproc, &
-                                     imin, imax, imin_recv, imax_recv )
+                                     imin, imax, imin_recv, imax_recv, bornesmin, bornesmax )
 !---------------------------------------------------------------------------------------------------
     include 'mpif.h'
 !
@@ -178,6 +178,7 @@ subroutine Get_External_Data_first ( pttruetab, cetruetab, pttruetabwhole, cetru
     logical, dimension(0:Agrif_Nbprocs-1),       intent(out) :: recvfromproc
     integer, dimension(nbdim,0:Agrif_NbProcs-1), intent(out) :: imin,imax
     integer, dimension(nbdim,0:Agrif_NbProcs-1), intent(out) :: imin_recv,imax_recv
+    integer, dimension(nbdim,0:Agrif_NbProcs-1), intent(in) :: bornesmin, bornesmax
 !
     integer :: imintmp, imaxtmp, i, j, k, i1
     integer :: imin1,imax1
@@ -189,9 +190,26 @@ subroutine Get_External_Data_first ( pttruetab, cetruetab, pttruetabwhole, cetru
 !
     pttruetab2(:,Agrif_Procrank) = pttruetab(:,Agrif_Procrank)
     cetruetab2(:,Agrif_Procrank) = cetruetab(:,Agrif_Procrank)
+
+        if (agrif_debug_interp) then
+            print *,'DANS Get_External_Data_first avec proc : ',Agrif_Procrank
+            do k=0,Agrif_Nbprocs-1
+                print *,'Processeur ',k
+                do i=1,nbdim
+                print *,'ptcetretab      = ',i,pttruetab(i,k),cetruetab(i,k)
+                print *,'ptcetretabwhole = ',i,pttruetabwhole(i,k),cetruetabwhole(i,k)
+               enddo
+            enddo
+        endif
 !
     do k = 0,Agrif_Nbprocs-1
+        if (agrif_debug_interp) then
+            print *,'Proc : ',k
+        endif
     do i = 1,nbdim
+        if (agrif_debug_interp) then
+            print *,'Direction : ',i
+        endif
         tochangebis = .TRUE.
         DO i1 = 1,nbdim
             IF (i /= i1) THEN
@@ -202,15 +220,24 @@ subroutine Get_External_Data_first ( pttruetab, cetruetab, pttruetabwhole, cetru
                 ENDIF
             ENDIF
         ENDDO
+        ! Strange CASE
+        if ((pttruetab(i,k)>=pttruetab(i,Agrif_Procrank)).AND. &
+            (cetruetab(i,k)<=cetruetab(i,Agrif_Procrank))) tochangebis = .FALSE.
+
+        if (agrif_debug_interp) then
+            print *,'tochangebis= ',tochangebis
+        endif
         IF (tochangebis) THEN
             imin1 = max(pttruetab(i,Agrif_Procrank), pttruetab(i,k))
             imax1 = min(cetruetab(i,Agrif_Procrank), cetruetab(i,k))
 ! Always send the most interior points
-
+        if (agrif_debug_interp) then
+            print *,'imin1imax1= ',imin1,imax1
+        endif
             tochange = .false.
             IF (cetruetab(i,Agrif_Procrank) > cetruetab(i,k)) THEN
                 DO j=imin1,imax1
-                    IF ((cetruetab(i,k)-j) > (j-pttruetab(i,Agrif_Procrank))) THEN
+                    IF ((bornesmax(i,k)-j) > (j-bornesmin(i,Agrif_Procrank))) THEN
                         imintmp = j+1
                         tochange = .TRUE.
                     ELSE
@@ -227,7 +254,7 @@ subroutine Get_External_Data_first ( pttruetab, cetruetab, pttruetabwhole, cetru
             imaxtmp=0
             IF (pttruetab(i,Agrif_Procrank) < pttruetab(i,k)) THEN
                 DO j=imax1,imin1,-1
-                    IF ((j-pttruetab(i,k)) > (cetruetab(i,Agrif_Procrank)-j)) THEN
+                    IF ((j-bornesmin(i,k)) > (bornesmax(i,Agrif_Procrank)-j)) THEN
                         imaxtmp = j-1
                         tochange = .TRUE.
                     ELSE
@@ -243,10 +270,22 @@ subroutine Get_External_Data_first ( pttruetab, cetruetab, pttruetabwhole, cetru
     enddo
     enddo
 
+        if (agrif_debug_interp) then
+            do k=0,Agrif_Nbprocs-1
+                print *,'Processeur ',k
+                do i=1,nbdim
+                print *,'ptcetretab2      = ',i,pttruetab2(i,k),cetruetab2(i,k)
+               enddo
+            enddo
+        endif
+
     do k = 0,Agrif_NbProcs-1
 !
         sendtoproc(k) = .true.
 !
+        IF ( .not. memberoutall(k) ) THEN
+            sendtoproc(k) = .false.
+        ELSE
 !CDIR SHORTLOOP
         do i = 1,nbdim
             imin(i,k) = max(pttruetab2(i,Agrif_Procrank), pttruetabwhole(i,k))
@@ -256,8 +295,6 @@ subroutine Get_External_Data_first ( pttruetab, cetruetab, pttruetabwhole, cetru
                 sendtoproc(k) = .false.
             endif
         enddo
-        IF ( .not. memberoutall(k) ) THEN
-            sendtoproc(k) = .false.
         ENDIF
     enddo
 !
@@ -383,6 +420,13 @@ subroutine ExchangeSameLevel ( sendtoproc, recvfromproc, nbdim,    &
         call Agrif_var_set_array_tozero(tempCextend,nbdim)
     ENDIF
 !
+    if (agrif_debug_interp) then
+        print *,'PROCESSEUR = ',Agrif_Procrank
+        print *,'SENDTOPROC = ',sendtoproc(Agrif_Procrank)
+        if (sendtoproc(Agrif_Procrank)) then
+            print *,'imin imax = ',imin(:,Agrif_Procrank),imax(:,Agrif_Procrank)
+        endif
+        endif
     IF (sendtoproc(Agrif_ProcRank)) THEN
         call Agrif_var_copy_array(tempCextend,imin(:,Agrif_Procrank),imax(:,Agrif_Procrank), &
                                   tempC,      imin(:,Agrif_Procrank),imax(:,Agrif_Procrank), &

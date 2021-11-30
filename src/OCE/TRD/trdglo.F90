@@ -50,15 +50,16 @@ MODULE trdglo
    REAL(wp), DIMENSION(jptot_dyn) ::   hke        ! kinetic energy trends (u^2+v^2) 
 
    !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
+#  include "do_loop_substitute.h90"
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: trdglo.F90 10425 2018-12-19 21:54:16Z smasson $
+   !! $Id: trdglo.F90 13497 2020-09-21 12:37:46Z techene $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE trd_glo( ptrdx, ptrdy, ktrd, ctype, kt )
+   SUBROUTINE trd_glo( ptrdx, ptrdy, ktrd, ctype, kt, Kmm )
       !!---------------------------------------------------------------------
       !!                  ***  ROUTINE trd_glo  ***
       !! 
@@ -71,10 +72,11 @@ CONTAINS
       INTEGER                   , INTENT(in   ) ::   ktrd    ! tracer trend index
       CHARACTER(len=3)          , INTENT(in   ) ::   ctype   ! momentum or tracers trends type (='DYN'/'TRA')
       INTEGER                   , INTENT(in   ) ::   kt      ! time step
+      INTEGER                   , INTENT(in   ) ::   Kmm     ! time level index
       !!
       INTEGER ::   ji, jj, jk      ! dummy loop indices
       INTEGER ::   ikbu, ikbv      ! local integers
-      REAL(wp)::   zvm, zvt, zvs, z1_2rau0   ! local scalars
+      REAL(wp)::   zvm, zvt, zvs, z1_2rho0   ! local scalars
       REAL(wp), DIMENSION(jpi,jpj)  :: ztswu, ztswv, z2dx, z2dy   ! 2D workspace 
       !!----------------------------------------------------------------------
       !
@@ -83,25 +85,21 @@ CONTAINS
       	SELECT CASE( ctype )
       	!
       	CASE( 'TRA' )          !==  Tracers (T & S)  ==!
-      	   DO jk = 1, jpkm1       ! global sum of mask volume trend and trend*T (including interior mask)
-      	      DO jj = 1, jpj
-      	         DO ji = 1, jpi        
-      	            zvm = e1e2t(ji,jj) * e3t_n(ji,jj,jk) * tmask(ji,jj,jk) * tmask_i(ji,jj)
-      	            zvt = ptrdx(ji,jj,jk) * zvm
-      	            zvs = ptrdy(ji,jj,jk) * zvm
-         	         tmo(ktrd) = tmo(ktrd) + zvt   
-         	         smo(ktrd) = smo(ktrd) + zvs
-         	         t2 (ktrd) = t2(ktrd)  + zvt * tsn(ji,jj,jk,jp_tem)
-         	         s2 (ktrd) = s2(ktrd)  + zvs * tsn(ji,jj,jk,jp_sal)
-                  END DO
-               END DO
-            END DO
+      	   DO_3D( 1, 1, 1, 1, 1, jpkm1 )   ! global sum of mask volume trend and trend*T (including interior mask)
+	            zvm = e1e2t(ji,jj) * e3t(ji,jj,jk,Kmm) * tmask(ji,jj,jk) * tmask_i(ji,jj)
+	            zvt = ptrdx(ji,jj,jk) * zvm
+	            zvs = ptrdy(ji,jj,jk) * zvm
+   	         tmo(ktrd) = tmo(ktrd) + zvt   
+   	         smo(ktrd) = smo(ktrd) + zvs
+   	         t2 (ktrd) = t2(ktrd)  + zvt * ts(ji,jj,jk,jp_tem,Kmm)
+   	         s2 (ktrd) = s2(ktrd)  + zvs * ts(ji,jj,jk,jp_sal,Kmm)
+      	   END_3D
             !                       ! linear free surface: diagnose advective flux trough the fixed k=1 w-surface
             IF( ln_linssh .AND. ktrd == jptra_zad ) THEN  
-               tmo(jptra_sad) = SUM( wn(:,:,1) * tsn(:,:,1,jp_tem) * e1e2t(:,:) * tmask_i(:,:) )
-               smo(jptra_sad) = SUM( wn(:,:,1) * tsn(:,:,1,jp_sal) * e1e2t(:,:) * tmask_i(:,:)  )
-               t2 (jptra_sad) = SUM( wn(:,:,1) * tsn(:,:,1,jp_tem) * tsn(:,:,1,jp_tem) * e1e2t(:,:) * tmask_i(:,:)  )
-               s2 (jptra_sad) = SUM( wn(:,:,1) * tsn(:,:,1,jp_sal) * tsn(:,:,1,jp_sal) * e1e2t(:,:) * tmask_i(:,:)  )
+               tmo(jptra_sad) = SUM( ww(:,:,1) * ts(:,:,1,jp_tem,Kmm) * e1e2t(:,:) * tmask_i(:,:) )
+               smo(jptra_sad) = SUM( ww(:,:,1) * ts(:,:,1,jp_sal,Kmm) * e1e2t(:,:) * tmask_i(:,:)  )
+               t2 (jptra_sad) = SUM( ww(:,:,1) * ts(:,:,1,jp_tem,Kmm) * ts(:,:,1,jp_tem,Kmm) * e1e2t(:,:) * tmask_i(:,:)  )
+               s2 (jptra_sad) = SUM( ww(:,:,1) * ts(:,:,1,jp_sal,Kmm) * ts(:,:,1,jp_sal,Kmm) * e1e2t(:,:) * tmask_i(:,:)  )
             ENDIF
             !
             IF( ktrd == jptra_atf ) THEN     ! last trend (asselin time filter)
@@ -116,49 +114,43 @@ CONTAINS
             ENDIF
             !
          CASE( 'DYN' )          !==  Momentum and KE  ==!        
-            DO jk = 1, jpkm1
-               DO jj = 1, jpjm1
-                  DO ji = 1, jpim1
-                     zvt = ptrdx(ji,jj,jk) * tmask_i(ji+1,jj) * tmask_i(ji,jj) * umask(ji,jj,jk)   &
-                        &                                     * e1e2u  (ji,jj) * e3u_n(ji,jj,jk)
-                     zvs = ptrdy(ji,jj,jk) * tmask_i(ji,jj+1) * tmask_i(ji,jj) * vmask(ji,jj,jk)   &
-                        &                                     * e1e2v  (ji,jj) * e3u_n(ji,jj,jk)
-                     umo(ktrd) = umo(ktrd) + zvt
-                     vmo(ktrd) = vmo(ktrd) + zvs
-                     hke(ktrd) = hke(ktrd) + un(ji,jj,jk) * zvt + vn(ji,jj,jk) * zvs
-                  END DO
-               END DO
-            END DO
+            DO_3D( 1, 0, 1, 0, 1, jpkm1 )
+               zvt = ptrdx(ji,jj,jk) * tmask_i(ji+1,jj) * tmask_i(ji,jj) * umask(ji,jj,jk)   &
+                  &                                     * e1e2u  (ji,jj) * e3u(ji,jj,jk,Kmm)
+               zvs = ptrdy(ji,jj,jk) * tmask_i(ji,jj+1) * tmask_i(ji,jj) * vmask(ji,jj,jk)   &
+                  &                                     * e1e2v  (ji,jj) * e3u(ji,jj,jk,Kmm)
+               umo(ktrd) = umo(ktrd) + zvt
+               vmo(ktrd) = vmo(ktrd) + zvs
+               hke(ktrd) = hke(ktrd) + uu(ji,jj,jk,Kmm) * zvt + vv(ji,jj,jk,Kmm) * zvs
+            END_3D
             !                 
             IF( ktrd == jpdyn_zdf ) THEN      ! zdf trend: compute separately the surface forcing trend
-               z1_2rau0 = 0.5_wp / rau0
-               DO jj = 1, jpjm1
-                  DO ji = 1, jpim1
-                     zvt = ( utau_b(ji,jj) + utau(ji,jj) ) * tmask_i(ji+1,jj) * tmask_i(ji,jj) * umask(ji,jj,jk)   &
-                        &                                                     * z1_2rau0       * e1e2u(ji,jj)
-                     zvs = ( vtau_b(ji,jj) + vtau(ji,jj) ) * tmask_i(ji,jj+1) * tmask_i(ji,jj) * vmask(ji,jj,jk)   &
-                        &                                                     * z1_2rau0       * e1e2v(ji,jj)
-                     umo(jpdyn_tau) = umo(jpdyn_tau) + zvt
-                     vmo(jpdyn_tau) = vmo(jpdyn_tau) + zvs
-                     hke(jpdyn_tau) = hke(jpdyn_tau) + un(ji,jj,1) * zvt + vn(ji,jj,1) * zvs
-                  END DO
-               END DO
+               z1_2rho0 = 0.5_wp / rho0
+               DO_2D( 1, 0, 1, 0 )
+                  zvt = ( utau_b(ji,jj) + utau(ji,jj) ) * tmask_i(ji+1,jj) * tmask_i(ji,jj) * umask(ji,jj,jk)   &
+                     &                                                     * z1_2rho0       * e1e2u(ji,jj)
+                  zvs = ( vtau_b(ji,jj) + vtau(ji,jj) ) * tmask_i(ji,jj+1) * tmask_i(ji,jj) * vmask(ji,jj,jk)   &
+                     &                                                     * z1_2rho0       * e1e2v(ji,jj)
+                  umo(jpdyn_tau) = umo(jpdyn_tau) + zvt
+                  vmo(jpdyn_tau) = vmo(jpdyn_tau) + zvs
+                  hke(jpdyn_tau) = hke(jpdyn_tau) + uu(ji,jj,1,Kmm) * zvt + vv(ji,jj,1,Kmm) * zvs
+               END_2D
             ENDIF
             !                       
 !!gm  miss placed calculation   ===>>>> to be done in dynzdf.F90
 !            IF( ktrd == jpdyn_atf ) THEN     ! last trend (asselin time filter)
 !               !
 !               IF( ln_drgimp ) THEN                   ! implicit drag case: compute separately the bottom friction 
-!                  z1_2rau0 = 0.5_wp / rau0
+!                  z1_2rho0 = 0.5_wp / rho0
 !                  DO jj = 1, jpjm1
 !                     DO ji = 1, jpim1
 !                        ikbu = mbku(ji,jj)                  ! deepest ocean u- & v-levels
 !                        ikbv = mbkv(ji,jj)
-!                        zvt = 0.5*( rCdU_bot(ji+1,jj)+rCdU_bot(ji,jj) ) * un(ji,jj,ikbu) * e1e2u(ji,jj)
-!                        zvs = 0.5*( rCdU_bot(ji,jj+1)+rCdU_bot(ji,jj) ) * vn(ji,jj,ikbv) * e1e2v(ji,jj)
+!                        zvt = 0.5*( rCdU_bot(ji+1,jj)+rCdU_bot(ji,jj) ) * uu(ji,jj,ikbu,Kmm) * e1e2u(ji,jj)
+!                        zvs = 0.5*( rCdU_bot(ji,jj+1)+rCdU_bot(ji,jj) ) * vv(ji,jj,ikbv,Kmm) * e1e2v(ji,jj)
 !                        umo(jpdyn_bfri) = umo(jpdyn_bfri) + zvt
 !                        vmo(jpdyn_bfri) = vmo(jpdyn_bfri) + zvs
-!                        hke(jpdyn_bfri) = hke(jpdyn_bfri) + un(ji,jj,ikbu) * zvt + vn(ji,jj,ikbv) * zvs
+!                        hke(jpdyn_bfri) = hke(jpdyn_bfri) + uu(ji,jj,ikbu,Kmm) * zvt + vv(ji,jj,ikbv,Kmm) * zvs
 !                     END DO
 !                  END DO
 !               ENDIF
@@ -182,13 +174,14 @@ CONTAINS
    END SUBROUTINE trd_glo
 
 
-   SUBROUTINE glo_dyn_wri( kt )
+   SUBROUTINE glo_dyn_wri( kt, Kmm )
       !!---------------------------------------------------------------------
       !!                  ***  ROUTINE glo_dyn_wri  ***
       !! 
       !! ** Purpose :  write global averaged U, KE, PE<->KE trends in ocean.output 
       !!----------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt   ! ocean time-step index
+      INTEGER, INTENT(in) ::   Kmm  ! time level index
       !
       INTEGER  ::   ji, jj, jk   ! dummy loop indices
       REAL(wp) ::   zcof         ! local scalar
@@ -208,40 +201,35 @@ CONTAINS
          zkz  (:,:,:) = 0._wp
          zkepe(:,:,:) = 0._wp
    
-         CALL eos( tsn, rhd, rhop )       ! now potential density
+         CALL eos( ts(:,:,:,:,Kmm), rhd, rhop )       ! now potential density
 
-         zcof = 0.5_wp / rau0             ! Density flux at w-point
+         zcof = 0.5_wp / rho0             ! Density flux at w-point
          zkz(:,:,1) = 0._wp
          DO jk = 2, jpk
-            zkz(:,:,jk) = zcof * e1e2t(:,:) * wn(:,:,jk) * ( rhop(:,:,jk) + rhop(:,:,jk-1) ) * tmask_i(:,:)
+            zkz(:,:,jk) = zcof * e1e2t(:,:) * ww(:,:,jk) * ( rhop(:,:,jk) + rhop(:,:,jk-1) ) * tmask_i(:,:)
          END DO
          
-         zcof   = 0.5_wp / rau0           ! Density flux at u and v-points
-         DO jk = 1, jpkm1
-            DO jj = 1, jpjm1
-               DO ji = 1, jpim1
-                  zkx(ji,jj,jk) = zcof * e2u(ji,jj) * e3u_n(ji,jj,jk) * un(ji,jj,jk) * ( rhop(ji,jj,jk) + rhop(ji+1,jj,jk) )
-                  zky(ji,jj,jk) = zcof * e1v(ji,jj) * e3v_n(ji,jj,jk) * vn(ji,jj,jk) * ( rhop(ji,jj,jk) + rhop(ji,jj+1,jk) )
-               END DO
-            END DO
-         END DO
+         zcof   = 0.5_wp / rho0           ! Density flux at u and v-points
+         DO_3D( 1, 0, 1, 0, 1, jpkm1 )
+            zkx(ji,jj,jk) = zcof * e2u(ji,jj) * e3u(ji,jj,jk,Kmm)   &
+               &                              *  uu(ji,jj,jk,Kmm) * ( rhop(ji,jj,jk) + rhop(ji+1,jj,jk) )
+            zky(ji,jj,jk) = zcof * e1v(ji,jj) * e3v(ji,jj,jk,Kmm)   &
+               &                              *  vv(ji,jj,jk,Kmm) * ( rhop(ji,jj,jk) + rhop(ji,jj+1,jk) )
+         END_3D
          
-         DO jk = 1, jpkm1                 ! Density flux divergence at t-point
-            DO jj = 2, jpjm1
-               DO ji = 2, jpim1
-                  zkepe(ji,jj,jk) = - (  zkz(ji,jj,jk) - zkz(ji  ,jj  ,jk+1)               &
-                     &                 + zkx(ji,jj,jk) - zkx(ji-1,jj  ,jk  )               &
-                     &                 + zky(ji,jj,jk) - zky(ji  ,jj-1,jk  )   )           &
-                     &              / ( e1e2t(ji,jj) * e3t_n(ji,jj,jk) ) * tmask(ji,jj,jk) * tmask_i(ji,jj)
-               END DO
-            END DO
-         END DO
+         DO_3D( 0, 0, 0, 0, 1, jpkm1 )    ! Density flux divergence at t-point
+            zkepe(ji,jj,jk) = - (  zkz(ji,jj,jk) - zkz(ji  ,jj  ,jk+1)               &
+               &                 + zkx(ji,jj,jk) - zkx(ji-1,jj  ,jk  )               &
+               &                 + zky(ji,jj,jk) - zky(ji  ,jj-1,jk  )   )           &
+               &              / ( e1e2t(ji,jj) * e3t(ji,jj,jk,Kmm) ) * tmask(ji,jj,jk) * tmask_i(ji,jj)
+         END_3D
 
          ! I.2 Basin averaged kinetic energy trend
          ! ----------------------------------------
          peke = 0._wp
          DO jk = 1, jpkm1
-            peke = peke + SUM( zkepe(:,:,jk) * gdept_n(:,:,jk) * e1e2t(:,:) * e3t_n(:,:,jk) )
+            peke = peke + SUM( zkepe(:,:,jk) * gdept(:,:,jk,Kmm) * e1e2t(:,:)   &
+               &                               * e3t(:,:,jk,Kmm) )
          END DO
          peke = grav * peke
 
@@ -362,7 +350,7 @@ CONTAINS
  9545    FORMAT(' 0 = surface pressure gradient  ???                        : ', e20.13)
  9546    FORMAT(' 0 < horizontal diffusion                                  : ', e20.13)
  9547    FORMAT(' 0 < vertical diffusion                                    : ', e20.13)
- 9548    FORMAT(' pressure gradient u2 = - 1/rau0 u.dz(rhop)                : ', e20.13, '  u.dz(rhop) =', e20.13)
+ 9548    FORMAT(' pressure gradient u2 = - 1/rho0 u.dz(rhop)                : ', e20.13, '  u.dz(rhop) =', e20.13)
          !
          ! Save potential to kinetic energy conversion for next time step
          rpktrd = peke
@@ -505,12 +493,13 @@ CONTAINS
    END SUBROUTINE glo_tra_wri
 
 
-   SUBROUTINE trd_glo_init
+   SUBROUTINE trd_glo_init( Kmm )
       !!---------------------------------------------------------------------
       !!                  ***  ROUTINE trd_glo_init  ***
       !! 
       !! ** Purpose :   Read the namtrd namelist
       !!----------------------------------------------------------------------
+      INTEGER, INTENT(in) ::   Kmm   ! time level index
       INTEGER  ::   ji, jj, jk   ! dummy loop indices
       !!----------------------------------------------------------------------
 
@@ -523,7 +512,7 @@ CONTAINS
       ! Total volume at t-points:
       tvolt = 0._wp
       DO jk = 1, jpkm1
-         tvolt = tvolt + SUM( e1e2t(:,:) * e3t_n(:,:,jk) * tmask(:,:,jk) * tmask_i(:,:) )
+         tvolt = tvolt + SUM( e1e2t(:,:) * e3t(:,:,jk,Kmm) * tmask(:,:,jk) * tmask_i(:,:) )
       END DO
       CALL mpp_sum( 'trdglo', tvolt )   ! sum over the global domain
 
@@ -537,14 +526,12 @@ CONTAINS
       tvolu = 0._wp
       tvolv = 0._wp
 
-      DO jk = 1, jpk
-         DO jj = 2, jpjm1
-            DO ji = fs_2, fs_jpim1   ! vector opt.
-               tvolu = tvolu + e1u(ji,jj) * e2u(ji,jj) * e3u_n(ji,jj,jk) * tmask_i(ji+1,jj  ) * tmask_i(ji,jj) * umask(ji,jj,jk)
-               tvolv = tvolv + e1v(ji,jj) * e2v(ji,jj) * e3v_n(ji,jj,jk) * tmask_i(ji  ,jj+1) * tmask_i(ji,jj) * vmask(ji,jj,jk)
-            END DO
-         END DO
-      END DO
+      DO_3D( 0, 0, 0, 0, 1, jpk )
+         tvolu = tvolu + e1u(ji,jj) * e2u(ji,jj) * e3u(ji,jj,jk,Kmm)   &
+            &                                       * tmask_i(ji+1,jj  ) * tmask_i(ji,jj) * umask(ji,jj,jk)
+         tvolv = tvolv + e1v(ji,jj) * e2v(ji,jj) * e3v(ji,jj,jk,Kmm)   &
+            &                                       * tmask_i(ji  ,jj+1) * tmask_i(ji,jj) * vmask(ji,jj,jk)
+      END_3D
       CALL mpp_sum( 'trdglo', tvolu )   ! sums over the global domain
       CALL mpp_sum( 'trdglo', tvolv )
 

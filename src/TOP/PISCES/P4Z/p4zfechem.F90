@@ -14,8 +14,8 @@ MODULE p4zfechem
    USE trc             ! passive tracers common variables 
    USE sms_pisces      ! PISCES Source Minus Sink variables
    USE p4zche          ! chemical model
-   USE p4zsbc           ! Boundary conditions from sediments
-   USE prtctl_trc      ! print control for debugging
+   USE p4zbc           ! Boundary conditions from sediments
+   USE prtctl          ! print control for debugging
    USE iom             ! I/O manager
 
    IMPLICIT NONE
@@ -29,15 +29,19 @@ MODULE p4zfechem
    REAL(wp), PUBLIC ::   xlamdust     !: scavenging rate of Iron by dust 
    REAL(wp), PUBLIC ::   ligand       !: ligand concentration in the ocean 
    REAL(wp), PUBLIC ::   kfep         !: rate constant for nanoparticle formation
+   REAL(wp), PUBLIC ::   scaveff      !: Fraction of scavenged iron that is considered as being subject to solubilization
 
+   !! * Substitutions
+#  include "do_loop_substitute.h90"
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: p4zfechem.F90 13284 2020-07-09 15:12:23Z smasson $ 
+   !! $Id: p4zfechem.F90 15459 2021-10-29 08:19:18Z cetlod $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE p4z_fechem( kt, knt )
+   SUBROUTINE p4z_fechem( kt, knt, Kbb, Kmm, Krhs )
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE p4z_fechem  ***
       !!
@@ -47,187 +51,174 @@ CONTAINS
       !!                based on one ligand and one inorganic form
       !!---------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt, knt   ! ocean time step
+      INTEGER, INTENT(in) ::   Kbb, Kmm, Krhs  ! time level indices
       !
       INTEGER  ::   ji, jj, jk, jic, jn
-      REAL(wp) ::   zdep, zlam1a, zlam1b, zlamfac
-      REAL(wp) ::   zkeq, zfeequi, zfesatur, zfecoll, fe3sol
-      REAL(wp) ::   zdenom1, zscave, zaggdfea, zaggdfeb, zcoag
-      REAL(wp) ::   ztrc, zdust
-      REAL(wp) ::   zdenom2
-      REAL(wp) ::   zzFeL1, zzFeL2, zzFe2, zzFeP, zzFe3, zzstrn2
-      REAL(wp) ::   zrum, zcodel, zargu, zlight
-      REAL(wp) ::   zkox, zkph1, zkph2, zph, zionic, ztligand
-      REAL(wp) ::   za, zb, zc, zkappa1, zkappa2, za0, za1, za2
-      REAL(wp) ::   zxs, zfunc, zp, zq, zd, zr, zphi, zfff, zp3, zq2
-      REAL(wp) ::   ztfe, zoxy, zhplus, zxlam
-      REAL(wp) ::   zaggliga, zaggligb
-      REAL(wp) ::   dissol, zligco
-      REAL(wp) :: zrfact2
+      REAL(wp) ::   zlam1a, zlam1b
+      REAL(wp) ::   zkeq, zfesatur, fe3sol, zligco
+      REAL(wp) ::   zscave, zaggdfea, zaggdfeb, ztrc, zdust, zklight
+      REAL(wp) ::   ztfe, zhplus, zxlam, zaggliga, zaggligb
+      REAL(wp) ::   zprecip, zprecipno3,  zconsfe, za1
+      REAL(wp) ::   zrfact2
       CHARACTER (len=25) :: charout
-      REAL(wp), DIMENSION(jpi,jpj,jpk) ::   zTL1, zFe3, ztotlig, precip, zFeL1
+      REAL(wp), DIMENSION(jpi,jpj,jpk) ::   zTL1, zFe3, ztotlig, zfeprecip, zFeL1, zfecoll
       REAL(wp), DIMENSION(jpi,jpj,jpk) ::   zcoll3d, zscav3d, zlcoll3d
       !!---------------------------------------------------------------------
       !
       IF( ln_timing )   CALL timing_start('p4z_fechem')
       !
-
+      zFe3     (:,:,jpk) = 0.
+      zFeL1    (:,:,jpk) = 0.
+      zTL1     (:,:,jpk) = 0.
+      zfeprecip(:,:,jpk) = 0.
+      zcoll3d  (:,:,jpk) = 0.
+      zscav3d  (:,:,jpk) = 0.
+      zlcoll3d (:,:,jpk) = 0.
+      zfecoll  (:,:,jpk) = 0.
+      xfecolagg(:,:,jpk) = 0.
+      xcoagfe  (:,:,jpk) = 0.
+      !
       ! Total ligand concentration : Ligands can be chosen to be constant or variable
-      ! Parameterization from Tagliabue and Voelker (2011)
+      ! Parameterization from Pham and Ito (2018)
       ! -------------------------------------------------
+      xfecolagg(:,:,:) = ligand * 1E9 + MAX(0., chemo2(:,:,:) - tr(:,:,:,jpoxy,Kbb) ) / 400.E-6
       IF( ln_ligvar ) THEN
-         ztotlig(:,:,:) =  0.09 * trb(:,:,:,jpdoc) * 1E6 + ligand * 1E9
+         ztotlig(:,:,:) =  0.09 * 0.667 * tr(:,:,:,jpdoc,Kbb) * 1E6 + xfecolagg(:,:,:)
          ztotlig(:,:,:) =  MIN( ztotlig(:,:,:), 10. )
       ELSE
-        IF( ln_ligand ) THEN  ;   ztotlig(:,:,:) = trb(:,:,:,jplgw) * 1E9
-        ELSE                  ;   ztotlig(:,:,:) = ligand * 1E9
+        IF( ln_ligand ) THEN  ;   ztotlig(:,:,:) = tr(:,:,:,jplgw,Kbb) * 1E9
+        ELSE                  ;   ztotlig(:,:,:) = ligand * 1E9 
         ENDIF
       ENDIF
 
       ! ------------------------------------------------------------
       !  from Aumont and Bopp (2006)
-      ! This model is based on one ligand and Fe' 
+      ! This model is based on one ligand, Fe2+ and Fe3+ 
       ! Chemistry is supposed to be fast enough to be at equilibrium
       ! ------------------------------------------------------------
-      DO jk = 1, jpkm1
-         DO jj = 1, jpj
-            DO ji = 1, jpi
-               zTL1(ji,jj,jk)  = ztotlig(ji,jj,jk)
-               zkeq            = fekeq(ji,jj,jk)
-               zfesatur        = zTL1(ji,jj,jk) * 1E-9
-               ztfe            = trb(ji,jj,jk,jpfer) 
-               ! Fe' is the root of a 2nd order polynom
-               zFe3 (ji,jj,jk) = ( -( 1. + zfesatur * zkeq - zkeq * ztfe )               &
-                  &              + SQRT( ( 1. + zfesatur * zkeq - zkeq * ztfe )**2       &
-                  &              + 4. * ztfe * zkeq) ) / ( 2. * zkeq )
-               zFe3 (ji,jj,jk) = zFe3(ji,jj,jk) * 1E9
-               zFeL1(ji,jj,jk) = MAX( 0., trb(ji,jj,jk,jpfer) * 1E9 - zFe3(ji,jj,jk) )
-           END DO
-         END DO
-      END DO
-         !
-
+      DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, jpkm1)
+          zTL1(ji,jj,jk)  = ztotlig(ji,jj,jk)
+          zkeq            = fekeq(ji,jj,jk)
+          zklight         = 4.77E-7 * etot(ji,jj,jk) * 0.5 / ( 10**(-6.3) )
+          zconsfe         = consfe3(ji,jj,jk) / ( 10**(-6.3) )
+          zfesatur        = zTL1(ji,jj,jk) * 1E-9
+          ztfe            = (1.0 + zklight) * tr(ji,jj,jk,jpfer,Kbb) 
+          ! Fe' is the root of a 2nd order polynom
+          za1 =  1. + zfesatur * zkeq + zklight +  zconsfe - zkeq * tr(ji,jj,jk,jpfer,Kbb)
+          zFe3 (ji,jj,jk) = ( -1 * za1 + SQRT( za1**2 + 4. * ztfe * zkeq) ) / ( 2. * zkeq + rtrn )
+          zFeL1(ji,jj,jk) = MAX( 0., tr(ji,jj,jk,jpfer,Kbb) - zFe3(ji,jj,jk) )
+      END_3D
+      !
+      plig(:,:,:) =  MAX( 0., ( zFeL1(:,:,:) / ( tr(:,:,:,jpfer,Kbb) + rtrn ) ) )
+      !
       zdust = 0.         ! if no dust available
-      DO jk = 1, jpkm1
-         DO jj = 1, jpj
-            DO ji = 1, jpi
-               ! Scavenging rate of iron. This scavenging rate depends on the load of particles of sea water. 
-               ! This parameterization assumes a simple second order kinetics (k[Particles][Fe]).
-               ! Scavenging onto dust is also included as evidenced from the DUNE experiments.
-               ! --------------------------------------------------------------------------------------
-               zhplus  = max( rtrn, hi(ji,jj,jk) )
-               fe3sol  = fesol(ji,jj,jk,1) * ( zhplus**3 + fesol(ji,jj,jk,2) * zhplus**2  &
-               &         + fesol(ji,jj,jk,3) * zhplus + fesol(ji,jj,jk,4)     &
-               &         + fesol(ji,jj,jk,5) / zhplus )
-               !
-               zfeequi = zFe3(ji,jj,jk) * 1E-9
-               zfecoll = 0.5 * zFeL1(ji,jj,jk) * 1E-9
-               ! precipitation of Fe3+, creation of nanoparticles
-               precip(ji,jj,jk) = MAX( 0., ( zFe3(ji,jj,jk) * 1E-9 - fe3sol ) ) * kfep * xstep
-               !
-               ztrc   = ( trb(ji,jj,jk,jppoc) + trb(ji,jj,jk,jpgoc) + trb(ji,jj,jk,jpcal) + trb(ji,jj,jk,jpgsi) ) * 1.e6 
-               IF( ln_dust )  zdust  = dust(ji,jj) / ( wdust / rday ) * tmask(ji,jj,jk) &
-               &  * EXP( -gdept_n(ji,jj,jk) / 540. )
-               IF (ln_ligand) THEN
-                  zxlam  = xlam1 * MAX( 1.E-3, EXP(-2 * etot(ji,jj,jk) / 10. ) * (1. - EXP(-2 * trb(ji,jj,jk,jpoxy) / 100.E-6 ) ))
-               ELSE
-                  zxlam  = xlam1 * 1.0
-               ENDIF
-               zlam1b = 3.e-5 + xlamdust * zdust + zxlam * ztrc
-               zscave = zfeequi * zlam1b * xstep
 
-               ! Compute the different ratios for scavenging of iron
-               ! to later allocate scavenged iron to the different organic pools
-               ! ---------------------------------------------------------
-               zdenom1 = zxlam * trb(ji,jj,jk,jppoc) / zlam1b
-               zdenom2 = zxlam * trb(ji,jj,jk,jpgoc) / zlam1b
-
-               !  Increased scavenging for very high iron concentrations found near the coasts 
-               !  due to increased lithogenic particles and let say it is unknown processes (precipitation, ...)
-               !  -----------------------------------------------------------
-               zlamfac = MAX( 0.e0, ( gphit(ji,jj) + 55.) / 30. )
-               zlamfac = MIN( 1.  , zlamfac )
-               zdep    = MIN( 1., 1000. / gdept_n(ji,jj,jk) )
-               zcoag   = 1E-4 * ( 1. - zlamfac ) * zdep * xstep * trb(ji,jj,jk,jpfer)
-
-               !  Compute the coagulation of colloidal iron. This parameterization 
-               !  could be thought as an equivalent of colloidal pumping.
-               !  It requires certainly some more work as it is very poorly constrained.
-               !  ----------------------------------------------------------------
-               zlam1a   = ( 0.369  * 0.3 * trb(ji,jj,jk,jpdoc) + 102.4  * trb(ji,jj,jk,jppoc) ) * xdiss(ji,jj,jk)    &
-                   &      + ( 114.   * 0.3 * trb(ji,jj,jk,jpdoc) )
-               zaggdfea = zlam1a * xstep * zfecoll
-               !
-               zlam1b   = 3.53E3 * trb(ji,jj,jk,jpgoc) * xdiss(ji,jj,jk)
-               zaggdfeb = zlam1b * xstep * zfecoll
-               !
-               tra(ji,jj,jk,jpfer) = tra(ji,jj,jk,jpfer) - zscave - zaggdfea - zaggdfeb &
-               &                     - zcoag - precip(ji,jj,jk)
-               tra(ji,jj,jk,jpsfe) = tra(ji,jj,jk,jpsfe) + zscave * zdenom1 + zaggdfea
-               tra(ji,jj,jk,jpbfe) = tra(ji,jj,jk,jpbfe) + zscave * zdenom2 + zaggdfeb
-               zscav3d(ji,jj,jk)   = zscave
-               zcoll3d(ji,jj,jk)   = zaggdfea + zaggdfeb
-               !
-            END DO
-         END DO
-      END DO
-      !
-      !  Define the bioavailable fraction of iron
-      !  ----------------------------------------
-      biron(:,:,:) = trb(:,:,:,jpfer) 
-      !
-      IF( ln_ligand ) THEN
-         !
-         DO jk = 1, jpkm1
-            DO jj = 1, jpj
-               DO ji = 1, jpi
-                  zlam1a   = ( 0.369  * 0.3 * trb(ji,jj,jk,jpdoc) + 102.4  * trb(ji,jj,jk,jppoc) ) * xdiss(ji,jj,jk)    &
-                      &    + ( 114.   * 0.3 * trb(ji,jj,jk,jpdoc) )
-                  !
-                  zlam1b   = 3.53E3 *   trb(ji,jj,jk,jpgoc) * xdiss(ji,jj,jk)
-                  zligco   = 0.5 * trn(ji,jj,jk,jplgw)
-                  zaggliga = zlam1a * xstep * zligco
-                  zaggligb = zlam1b * xstep * zligco
-                  tra(ji,jj,jk,jplgw) = tra(ji,jj,jk,jplgw) - zaggliga - zaggligb
-                  zlcoll3d(ji,jj,jk)  = zaggliga + zaggligb
-               END DO
-            END DO
-         END DO
-         !
-         plig(:,:,:) =  MAX( 0., ( ( zFeL1(:,:,:) * 1E-9 ) / ( trb(:,:,:,jpfer) +rtrn ) ) )
-         !
-      ENDIF
-      !  Output of some diagnostics variables
-      !     ---------------------------------
-      IF( lk_iomput ) THEN
-         IF( knt == nrdttrc ) THEN
-            zrfact2 = 1.e3 * rfact2r  ! conversion from mol/L/timestep into mol/m3/s
-            IF( iom_use("Fe3")  )  THEN
-               zFe3(:,:,jpk) = 0.  ;  CALL iom_put("Fe3" , zFe3(:,:,:) * tmask(:,:,:) )   ! Fe3+
-            ENDIF
-            IF( iom_use("FeL1") )  THEN
-              zFeL1(:,:,jpk) = 0.  ;  CALL iom_put("FeL1", zFeL1(:,:,:) * tmask(:,:,:) )   ! FeL1
-            ENDIF
-            IF( iom_use("TL1")  )  THEN
-              zTL1(:,:,jpk) = 0.   ;  CALL iom_put("TL1" , zTL1(:,:,:) * tmask(:,:,:) )   ! TL1
-            ENDIF
-            CALL iom_put("Totlig" , ztotlig(:,:,:)       * tmask(:,:,:) )   ! TL
-            CALL iom_put("Biron"  , biron  (:,:,:)  * 1e9 * tmask(:,:,:) )   ! biron
-            IF( iom_use("FESCAV") )  THEN
-               zscav3d (:,:,jpk) = 0.  ;  CALL iom_put("FESCAV" , zscav3d(:,:,:)  * 1e9 * tmask(:,:,:) * zrfact2 )
-            ENDIF
-            IF( iom_use("FECOLL") ) THEN
-               zcoll3d (:,:,jpk) = 0.  ;   CALL iom_put("FECOLL" , zcoll3d(:,:,:)  * 1e9 * tmask(:,:,:) * zrfact2 )
-            ENDIF
-            IF( iom_use("LGWCOLL")) THEN
-               zlcoll3d(:,:,jpk) = 0.  ;  CALL iom_put("LGWCOLL", zlcoll3d(:,:,:) * 1e9 * tmask(:,:,:) * zrfact2 )
-            ENDIF
+      ! Computation of the colloidal fraction that is subjecto to coagulation
+      ! The assumption is that 50% of complexed iron is colloidal. Furthermore
+      ! The refractory part is supposed to be non sticky. The refractory
+      ! fraction is supposed to equal to the background concentration + 
+      ! the fraction that accumulates in the deep ocean. AOU is taken as a 
+      ! proxy of that accumulation following numerous studies showing 
+      ! some relationship between weak ligands and AOU.
+      ! An issue with that parameterization is that when ligands are not
+      ! prognostic or non variable, all the colloidal fraction is supposed
+      ! to coagulate
+      ! ----------------------------------------------------------------------
+      IF (ln_ligand) THEN
+         zfecoll(:,:,:) = 0.5 * zFeL1(:,:,:) * MAX(0., tr(:,:,:,jplgw,Kbb) - xfecolagg(:,:,:) * 1.0E-9 ) / ( tr(:,:,:,jplgw,Kbb) + rtrn ) 
+      ELSE
+         IF (ln_ligvar) THEN
+            zfecoll(:,:,:) = 0.5 * zFeL1(:,:,:) * MAX(0., tr(:,:,:,jplgw,Kbb) - xfecolagg(:,:,:) * 1.0E-9 ) / ( tr(:,:,:,jplgw,Kbb) + rtrn )   
+         ELSE
+            zfecoll(:,:,:) = 0.5 * zFeL1(:,:,:)
          ENDIF
       ENDIF
 
-      IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
+      DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, jpkm1)
+         ! Scavenging rate of iron. This scavenging rate depends on the load of particles of sea water. 
+         ! This parameterization assumes a simple second order kinetics (k[Particles][Fe]).
+         ! Scavenging onto dust is also included as evidenced from the DUNE experiments.
+         ! --------------------------------------------------------------------------------------
+         zhplus  = max( rtrn, hi(ji,jj,jk) )
+         fe3sol  = fesol(ji,jj,jk,1) * ( zhplus**3 + fesol(ji,jj,jk,2) * zhplus**2  &
+         &         + fesol(ji,jj,jk,3) * zhplus + fesol(ji,jj,jk,4)     &
+         &         + fesol(ji,jj,jk,5) / zhplus )
+         !
+         ! precipitation of Fe3+, creation of nanoparticles
+         zprecip = MAX( 0., ( zFe3(ji,jj,jk) - fe3sol ) ) * kfep * xstep * ( 1.0 - nitrfac(ji,jj,jk) ) 
+         ! Precipitation of Fe2+ due to oxidation by NO3 (Croot et al., 2019)
+         ! This occurs in anoxic waters only
+         zprecipno3 = 2.0 * 130.0 * tr(ji,jj,jk,jpno3,Kbb) * nitrfac(ji,jj,jk) * xstep * zFe3(ji,jj,jk)
+         !
+         zfeprecip(ji,jj,jk) = zprecip + zprecipno3
+         !
+         ztrc   = ( tr(ji,jj,jk,jppoc,Kbb) + tr(ji,jj,jk,jpgoc,Kbb) + tr(ji,jj,jk,jpcal,Kbb) + tr(ji,jj,jk,jpgsi,Kbb) ) * 1.e6 
+         ztrc = MAX( rtrn, ztrc )
+         IF( ll_dust )  zdust  = dust(ji,jj) / ( wdust / rday ) * tmask(ji,jj,jk)
+         zxlam  = MAX( 1.E-3, (1. - EXP(-2 * tr(ji,jj,jk,jpoxy,Kbb) / 100.E-6 ) ))
+         zlam1b = 3.e-5 + ( xlamdust * zdust + xlam1 * ztrc ) * zxlam
+         zscave = zFe3(ji,jj,jk) * zlam1b * xstep
+
+         !  Compute the coagulation of colloidal iron. This parameterization 
+         !  could be thought as an equivalent of colloidal pumping.
+         !  It requires certainly some more work as it is very poorly constrained.
+         !  ----------------------------------------------------------------
+         zlam1a   = ( 12.0  * 0.3 * tr(ji,jj,jk,jpdoc,Kbb) + 9.05  * tr(ji,jj,jk,jppoc,Kbb) ) * xdiss(ji,jj,jk)    &
+             &    + ( 2.49  * tr(ji,jj,jk,jppoc,Kbb) )     &
+             &    + ( 127.8 * 0.3 * tr(ji,jj,jk,jpdoc,Kbb) + 725.7 * tr(ji,jj,jk,jppoc,Kbb) )
+         zaggdfea = zlam1a * xstep * zfecoll(ji,jj,jk)
+               !
+         zlam1b   = ( 1.94 * xdiss(ji,jj,jk) + 1.37 ) * tr(ji,jj,jk,jpgoc,Kbb)
+         zaggdfeb = zlam1b * xstep * zfecoll(ji,jj,jk)
+         xcoagfe(ji,jj,jk) = zlam1a + zlam1b
+         !
+         tr(ji,jj,jk,jpfer,Krhs) = tr(ji,jj,jk,jpfer,Krhs) - zscave - zaggdfea - zaggdfeb &
+         &                       - zfeprecip(ji,jj,jk)
+
+         tr(ji,jj,jk,jpsfe,Krhs) = tr(ji,jj,jk,jpsfe,Krhs) + zscave * scaveff * tr(ji,jj,jk,jppoc,Kbb) / ztrc
+         tr(ji,jj,jk,jpbfe,Krhs) = tr(ji,jj,jk,jpbfe,Krhs) + zscave * scaveff * tr(ji,jj,jk,jppoc,Kbb) / ztrc
+
+
+          ! Precipitated iron is supposed to be permanently lost.
+          ! Scavenged iron is supposed to be released back to seawater
+          ! when POM is solubilized. This is highly uncertain as probably
+          ! a significant part of it may be rescavenged back onto 
+          ! the particles. An efficiency factor is applied that is read
+          ! in the namelist. 
+          ! See for instance Tagliabue et al. (2019).
+          ! Aggregated FeL is considered as biogenic Fe as it 
+          ! probably remains  complexed when the particle is solubilized.
+          ! -------------------------------------------------------------
+          tr(ji,jj,jk,jpsfe,Krhs) = tr(ji,jj,jk,jpsfe,Krhs) + zaggdfea
+          tr(ji,jj,jk,jpbfe,Krhs) = tr(ji,jj,jk,jpbfe,Krhs) + zaggdfeb
+          !
+          zscav3d(ji,jj,jk)   = zscave 
+          zcoll3d(ji,jj,jk)   = zaggdfea + zaggdfeb
+         !
+      END_3D
+      !
+      !  Define the bioavailable fraction of iron
+      !  ----------------------------------------
+      biron(:,:,:) = tr(:,:,:,jpfer,Kbb) 
+      !
+      !  Output of some diagnostics variables
+      !     ---------------------------------
+      IF( lk_iomput .AND. knt == nrdttrc ) THEN
+         zrfact2 = 1.e3 * rfact2r  ! conversion from mol/L/timestep into mol/m3/s
+         IF( iom_use("Fe3")    )  CALL iom_put("Fe3"    , zFe3   (:,:,:)       * tmask(:,:,:) )   ! Fe3+
+         IF( iom_use("FeL1")   )  CALL iom_put("FeL1"   , zFeL1  (:,:,:)       * tmask(:,:,:) )   ! FeL1
+         IF( iom_use("TL1")    )  CALL iom_put("TL1"    , zTL1   (:,:,:)       * tmask(:,:,:) )   ! TL1
+         IF( iom_use("Totlig") )  CALL iom_put("Totlig" , ztotlig(:,:,:)       * tmask(:,:,:) )   ! TL
+         IF( iom_use("Biron")  )  CALL iom_put("Biron"  , biron  (:,:,:)  * 1e9 * tmask(:,:,:) )   ! biron
+         IF( iom_use("FESCAV") )  CALL iom_put("FESCAV" , zscav3d(:,:,:)  * 1e9 * tmask(:,:,:) * zrfact2 )
+         IF( iom_use("FECOLL") )  CALL iom_put("FECOLL" , zcoll3d(:,:,:)  * 1e9 * tmask(:,:,:) * zrfact2 )
+         IF( iom_use("FEPREC") )  CALL iom_put("FEPREC" , zfeprecip(:,:,:) *1e9*tmask(:,:,:)*zrfact2 )
+      ENDIF
+
+      IF(sn_cfctl%l_prttrc)   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('fechem')")
-         CALL prt_ctl_trc_info(charout)
-         CALL prt_ctl_trc(tab4d=tra, mask=tmask, clinfo=ctrcnm)
+         CALL prt_ctl_info( charout, cdcomp = 'top' )
+         CALL prt_ctl(tab4d_1=tr(:,:,:,:,Krhs), mask1=tmask, clinfo=ctrcnm)
       ENDIF
       !
       IF( ln_timing )   CALL timing_stop('p4z_fechem')
@@ -249,7 +240,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       INTEGER ::   ios   ! Local integer 
       !!
-      NAMELIST/nampisfer/ ln_ligvar, xlam1, xlamdust, ligand, kfep 
+      NAMELIST/nampisfer/ ln_ligvar, xlam1, xlamdust, ligand, kfep, scaveff 
       !!----------------------------------------------------------------------
       !
       IF(lwp) THEN
@@ -258,11 +249,8 @@ CONTAINS
          WRITE(numout,*) '~~~~~~~~~~~~'
       ENDIF
       !
-      REWIND( numnatp_ref )
       READ  ( numnatp_ref, nampisfer, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'nampisfer in reference namelist' )
-
-      REWIND( numnatp_cfg )
       READ  ( numnatp_cfg, nampisfer, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'nampisfer in configuration namelist' )
       IF(lwm) WRITE( numonp, nampisfer )
@@ -274,8 +262,9 @@ CONTAINS
          WRITE(numout,*) '      scavenging rate of Iron by dust           xlamdust     =', xlamdust
          WRITE(numout,*) '      ligand concentration in the ocean         ligand       =', ligand
          WRITE(numout,*) '      rate constant for nanoparticle formation  kfep         =', kfep
+         WRITE(numout,*) '      Scavenged iron that is added to POFe      scaveff      =', scaveff
       ENDIF
-      ! 
+      !
    END SUBROUTINE p4z_fechem_init
    
    !!======================================================================

@@ -13,29 +13,77 @@ MODULE agrif_ice_interp
    !!   'key_agrif'                                       AGRIF library
    !!----------------------------------------------------------------------
    !!  agrif_interp_ice    : interpolation of ice at "after" sea-ice time step
-   !!  agrif_interp_u_ice   : atomic routine to interpolate u_ice 
-   !!  agrif_interp_v_ice   : atomic routine to interpolate v_ice 
-   !!  agrif_interp_tra_ice : atomic routine to interpolate ice properties 
+   !!  interp_u_ice   : atomic routine to interpolate u_ice 
+   !!  interp_v_ice   : atomic routine to interpolate v_ice 
+   !!  interp_tra_ice : atomic routine to interpolate ice properties 
    !!----------------------------------------------------------------------
    USE par_oce
    USE dom_oce
    USE sbc_oce
    USE ice
    USE agrif_ice
+   USE agrif_oce
    USE phycst , ONLY: rt0
-   
+   USE icevar
+   USE sbc_ice, ONLY : tn_ice
+   USE lbclnk  
+ 
    IMPLICIT NONE
    PRIVATE
 
    PUBLIC   agrif_interp_ice   ! called by agrif_user.F90
+   PUBLIC   agrif_istate_ice   ! called by icerst.F90
 
    !!----------------------------------------------------------------------
    !! NEMO/NST 4.0 , NEMO Consortium (2018)
-   !! $Id: agrif_ice_interp.F90 13479 2020-09-16 16:56:46Z clem $
+   !! $Id: agrif_ice_interp.F90 15031 2021-06-21 10:05:41Z jchanut $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 
 CONTAINS
+
+   SUBROUTINE agrif_istate_ice
+      !!-----------------------------------------------------------------------
+      !!                 *** ROUTINE agrif_istate_ice  ***
+      !!
+      !!  ** Method  : Set initial ice fields from parent grid
+      !!
+      !!-----------------------------------------------------------------------
+      IF(lwp) WRITE(numout,*) ' '
+      IF(lwp) WRITE(numout,*) 'Agrif_istate_ice : interp child ice initial state from parent'
+      IF(lwp) WRITE(numout,*) '~~~~~~~~~~~~~~~~'
+      IF(lwp) WRITE(numout,*) ' '
+
+      ! Set a_i, v_i, v_s, sv_i, oa_i, a_ip, v_ip, t_su, e_s, e_i:
+      Agrif_SpecialValue    = -9999.
+      Agrif_UseSpecialValue = .TRUE.
+      CALL Agrif_init_variable(tra_iceini_id,procname=interp_tra_ice)
+      !
+      CALL lbc_lnk( 'agrif_istate_ice',  a_i,'T',1._wp,  v_i,'T',1._wp, &
+               &         v_s,'T',1._wp, sv_i,'T',1._wp, oa_i,'T',1._wp, &
+               &        a_ip,'T',1._wp, v_ip,'T',1._wp, v_il,'T',1._wp )
+      CALL lbc_lnk( 'agrif_istate_ice', t_su,'T',1._wp )
+      CALL lbc_lnk( 'agrif_istate_ice',  e_s,'T',1._wp )
+      CALL lbc_lnk( 'agrif_istate_ice',  e_i,'T',1._wp )
+      !
+      ! Set u_ice, v_ice:
+      use_sign_north = .TRUE.
+      sign_north = -1.
+      ! JC: setting special value to -9999. with north Fold crossing
+      !     does not work probably because of the sign change.
+      !     it's likely that the same issue could occur at boundaries
+      !     but leave it as is for the time being
+      Agrif_SpecialValue = 0._wp
+      CALL Agrif_init_variable(u_iceini_id  ,procname=interp_u_ice)
+      CALL Agrif_init_variable(v_iceini_id  ,procname=interp_v_ice)
+      use_sign_north = .FALSE.
+      Agrif_UseSpecialValue = .FALSE.
+      ! 
+      CALL lbc_lnk( 'agrif_istate_ice', u_ice, 'U', -1._wp, v_ice, 'V', -1._wp )
+      !
+      CALL ice_var_glo2eqv
+      !
+   END SUBROUTINE agrif_istate_ice
 
    SUBROUTINE agrif_interp_ice( cd_type, kiter, kitermax )
       !!-----------------------------------------------------------------------
@@ -67,6 +115,11 @@ CONTAINS
       !
       Agrif_SpecialValue    = -9999.
       Agrif_UseSpecialValue = .TRUE.
+
+      use_sign_north = .TRUE.
+      sign_north = -1.
+      if (cd_type == 'T') use_sign_north = .FALSE.
+
       SELECT CASE( cd_type )
       CASE('U')   ;   CALL Agrif_Bc_variable( u_ice_id  , procname=interp_u_ice  , calledweight=zbeta )
       CASE('V')   ;   CALL Agrif_Bc_variable( v_ice_id  , procname=interp_v_ice  , calledweight=zbeta )
@@ -74,6 +127,8 @@ CONTAINS
       END SELECT
       Agrif_SpecialValue    = 0._wp
       Agrif_UseSpecialValue = .FALSE.
+      
+      use_sign_north = .FALSE.
       !
    END SUBROUTINE agrif_interp_ice
 
@@ -95,7 +150,7 @@ CONTAINS
       !!-----------------------------------------------------------------------
       !
       IF( before ) THEN  ! parent grid
-         ptab(:,:) = e2u(i1:i2,j1:j2) * u_ice(i1:i2,j1:j2)
+         ptab(i1:i2,j1:j2) = e2u(i1:i2,j1:j2) * u_ice(i1:i2,j1:j2)
          WHERE( umask(i1:i2,j1:j2,1) == 0. )   ptab(i1:i2,j1:j2) = Agrif_SpecialValue
       ELSE               ! child grid
          zrhoy = Agrif_Rhoy()
@@ -122,7 +177,7 @@ CONTAINS
       !!-----------------------------------------------------------------------
       !
       IF( before ) THEN  ! parent grid
-         ptab(:,:) = e1v(i1:i2,j1:j2) * v_ice(i1:i2,j1:j2)
+         ptab(i1:i2,j1:j2) = e1v(i1:i2,j1:j2) * v_ice(i1:i2,j1:j2)
          WHERE( vmask(i1:i2,j1:j2,1) == 0. )   ptab(i1:i2,j1:j2) = Agrif_SpecialValue
       ELSE               ! child grid
          zrhox = Agrif_Rhox()
@@ -155,7 +210,7 @@ CONTAINS
       ! tracers are not multiplied by grid cell here => before: * e1e2t ; after: * r1_e1e2t / rhox / rhoy
       ! and it is ok since we conserve tracers (same as in the ocean).
       ALLOCATE( ztab(SIZE(a_i,1),SIZE(a_i,2),SIZE(ptab,3)) )
-     
+
       IF( before ) THEN  ! parent grid
          jm = 1
          DO jl = 1, jpl
@@ -262,34 +317,34 @@ CONTAINS
 !            ! Remove corners
 !            imin = i1  ;  imax = i2  ;  jmin = j1  ;  jmax = j2
 !            IF( (nbondj == -1) .OR. (nbondj == 2) )   jmin = 3
-!            IF( (nbondj == +1) .OR. (nbondj == 2) )   jmax = nlcj-2
+!            IF( (nbondj == +1) .OR. (nbondj == 2) )   jmax = jpj-2
 !            IF( (nbondi == -1) .OR. (nbondi == 2) )   imin = 3
-!            IF( (nbondi == +1) .OR. (nbondi == 2) )   imax = nlci-2
+!            IF( (nbondi == +1) .OR. (nbondi == 2) )   imax = jpi-2
 !
 !            ! smoothed fields
 !            IF( eastern_side ) THEN
-!               ztab(nlci,j1:j2,:) = z1 * ptab(nlci,j1:j2,:) + z2 * ptab(nlci-1,j1:j2,:)
+!               ztab(jpi,j1:j2,:) = z1 * ptab(jpi,j1:j2,:) + z2 * ptab(jpi-1,j1:j2,:)
 !               DO jj = jmin, jmax
 !                  rswitch = 0.
-!                  IF( u_ice(nlci-2,jj) > 0._wp ) rswitch = 1.
-!                  ztab(nlci-1,jj,:) = ( 1. - umask(nlci-2,jj,1) ) * ztab(nlci,jj,:)  &
-!                     &                +      umask(nlci-2,jj,1)   *  &
-!                     &                ( ( 1. - rswitch ) * ( z4 * ztab(nlci,jj,:)   + z3 * ztab(nlci-2,jj,:) )  &
-!                     &                  +      rswitch   * ( z6 * ztab(nlci-2,jj,:) + z5 * ztab(nlci,jj,:) + z7 * ztab(nlci-3,jj,:) ) )
-!                  ztab(nlci-1,jj,:) = ztab(nlci-1,jj,:) * tmask(nlci-1,jj,1)
+!                  IF( u_ice(jpi-2,jj) > 0._wp ) rswitch = 1.
+!                  ztab(jpi-1,jj,:) = ( 1. - umask(jpi-2,jj,1) ) * ztab(jpi,jj,:)  &
+!                     &               +      umask(jpi-2,jj,1)   *  &
+!                     &               ( (1. - rswitch) * ( z4 * ztab(jpi  ,jj,:) + z3 * ztab(jpi-2,jj,:) )  &
+!                     &                 +     rswitch  * ( z6 * ztab(jpi-2,jj,:) + z5 * ztab(jpi  ,jj,:) + z7 * ztab(jpi-3,jj,:) ) )
+!                  ztab(jpi-1,jj,:) = ztab(jpi-1,jj,:) * tmask(jpi-1,jj,1)
 !               END DO
 !            ENDIF
 !            ! 
 !            IF( northern_side ) THEN
-!               ztab(i1:i2,nlcj,:) = z1 * ptab(i1:i2,nlcj,:) + z2 * ptab(i1:i2,nlcj-1,:)
+!               ztab(i1:i2,jpj,:) = z1 * ptab(i1:i2,jpj,:) + z2 * ptab(i1:i2,jpj-1,:)
 !               DO ji = imin, imax
 !                  rswitch = 0.
-!                  IF( v_ice(ji,nlcj-2) > 0._wp ) rswitch = 1.
-!                  ztab(ji,nlcj-1,:) = ( 1. - vmask(ji,nlcj-2,1) ) * ztab(ji,nlcj,:)  &
-!                     &                +      vmask(ji,nlcj-2,1)   *  &
-!                     &                ( ( 1. - rswitch ) * ( z4 * ztab(ji,nlcj,:)   + z3 * ztab(ji,nlcj-2,:) ) &
-!                     &                  +      rswitch   * ( z6 * ztab(ji,nlcj-2,:) + z5 * ztab(ji,nlcj,:) + z7 * ztab(ji,nlcj-3,:) ) )
-!                  ztab(ji,nlcj-1,:) = ztab(ji,nlcj-1,:) * tmask(ji,nlcj-1,1)
+!                  IF( v_ice(ji,jpj-2) > 0._wp ) rswitch = 1.
+!                  ztab(ji,jpj-1,:) = ( 1. - vmask(ji,jpj-2,1) ) * ztab(ji,jpj,:)  &
+!                     &               +      vmask(ji,jpj-2,1)   *  &
+!                     &               ( (1. - rswitch) * ( z4 * ztab(ji,jpj  ,:) + z3 * ztab(ji,jpj-2,:) ) &
+!                     &                 +     rswitch  * ( z6 * ztab(ji,jpj-2,:) + z5 * ztab(ji,jpj  ,:) + z7 * ztab(ji,jpj-3,:) ) )
+!                  ztab(ji,jpj-1,:) = ztab(ji,jpj-1,:) * tmask(ji,jpj-1,1)
 !               END DO
 !            END IF
 !            !
@@ -320,10 +375,10 @@ CONTAINS
 !            END IF
 !            !
 !            ! Treatment of corners
-!            IF( (eastern_side) .AND. ((nbondj == -1).OR.(nbondj == 2)) )  ztab(nlci-1,2,:)      = ptab(nlci-1,2,:)      ! East south
-!            IF( (eastern_side) .AND. ((nbondj ==  1).OR.(nbondj == 2)) )  ztab(nlci-1,nlcj-1,:) = ptab(nlci-1,nlcj-1,:) ! East north
-!            IF( (western_side) .AND. ((nbondj == -1).OR.(nbondj == 2)) )  ztab(2,2,:)           = ptab(2,2,:)           ! West south
-!            IF( (western_side) .AND. ((nbondj ==  1).OR.(nbondj == 2)) )  ztab(2,nlcj-1,:)      = ptab(2,nlcj-1,:)      ! West north
+!            IF( (eastern_side) .AND. ((nbondj == -1).OR.(nbondj == 2)) )  ztab(jpi-1,2    ,:) = ptab(jpi-1,    2,:)   ! East south
+!            IF( (eastern_side) .AND. ((nbondj ==  1).OR.(nbondj == 2)) )  ztab(jpi-1,jpj-1,:) = ptab(jpi-1,jpj-1,:)   ! East north
+!            IF( (western_side) .AND. ((nbondj == -1).OR.(nbondj == 2)) )  ztab(    2,    2,:) = ptab(    2,    2,:)   ! West south
+!            IF( (western_side) .AND. ((nbondj ==  1).OR.(nbondj == 2)) )  ztab(    2,jpj-1,:) = ptab(    2,jpj-1,:)   ! West north
 !            
 !            ! retrieve ice tracers
 !            jm = 1

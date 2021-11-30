@@ -15,8 +15,7 @@ MODULE obs_read_altbias
       & sp
    USE par_oce, ONLY : &        ! Domain parameters
       & jpi, &
-      & jpj, &
-      & jpim1
+      & jpj
    USE in_out_manager, ONLY : & ! I/O manager
       & lwp,    &
       & numout 
@@ -28,7 +27,7 @@ MODULE obs_read_altbias
       & e2t,   &
       & gphit
    USE oce, ONLY : &           ! Model variables
-      & sshn
+      & ssh
    USE obs_inter_h2d
    USE obs_utils               ! Various observation tools
    USE obs_inter_sup
@@ -42,7 +41,7 @@ MODULE obs_read_altbias
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: obs_read_altbias.F90 10068 2018-08-28 14:09:04Z nicolasmartin $
+   !! $Id: obs_read_altbias.F90 15033 2021-06-21 10:24:45Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 
@@ -124,7 +123,7 @@ CONTAINS
 
          ! Get the Alt bias data
          
-         CALL iom_get( numaltbias, jpdom_data, 'altbias', z_altbias(:,:), 1, lrowattr=ln_use_jattr )
+         CALL iom_get( numaltbias, jpdom_global, 'altbias', z_altbias(:,:) )
          
          ! Close the file
          

@@ -31,12 +31,12 @@ MODULE floats
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: floats.F90 11536 2019-09-11 13:54:18Z smasson $ 
+   !! $Id: floats.F90 12377 2020-02-12 14:39:06Z acc $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE flo_stp( kt )
+   SUBROUTINE flo_stp( kt, Kbb, Kmm )
       !!----------------------------------------------------------------------
       !!                   ***  ROUTINE flo_stp  ***
       !!                    
@@ -47,34 +47,37 @@ CONTAINS
       !!        algorithm by default and with a 4th order Runge-Kutta scheme
       !!        if ln_flork4 =T
       !!----------------------------------------------------------------------
-      INTEGER, INTENT( in  ) ::   kt   ! ocean time step
+      INTEGER, INTENT( in  ) ::   kt        ! ocean time step
+      INTEGER, INTENT( in  ) ::   Kbb, Kmm  ! ocean time level indices 
       !!----------------------------------------------------------------------
       !
       IF( ln_timing )   CALL timing_start('flo_stp')
       !
-      IF( ln_flork4 ) THEN   ;   CALL flo_4rk( kt )        ! Trajectories using a 4th order Runge Kutta scheme
-      ELSE                   ;   CALL flo_blk( kt )        ! Trajectories using Blanke' algorithme
+      IF( ln_flork4 ) THEN   ;   CALL flo_4rk( kt, Kbb, Kmm )  ! Trajectories using a 4th order Runge Kutta scheme
+      ELSE                   ;   CALL flo_blk( kt, Kbb, Kmm )  ! Trajectories using Blanke' algorithme
       ENDIF
       !
       IF( lk_mpp )   CALL mppsync   ! synchronization of all the processor
       !
-      CALL flo_wri( kt )      ! trajectories ouput 
+      CALL flo_wri( kt, Kmm ) ! trajectories ouput 
       !
       CALL flo_rst( kt )      ! trajectories restart
       !
-      wb(:,:,:) = wn(:,:,:)         ! Save the old vertical velocity field
+      wb(:,:,:) = ww(:,:,:)         ! Save the old vertical velocity field
       !
       IF( ln_timing )   CALL timing_stop('flo_stp')
       !
    END SUBROUTINE flo_stp
 
 
-   SUBROUTINE flo_init
+   SUBROUTINE flo_init( Kmm )
       !!----------------------------------------------------------------
       !!                 ***  ROUTINE flo_init  ***
       !!                   
       !! ** Purpose :   Read the namelist of floats
       !!----------------------------------------------------------------------
+      INTEGER, INTENT(in) :: Kmm       ! ocean time level index
+      !
       INTEGER ::   jfl
       INTEGER ::   ios                 ! Local integer output status for namelist read
       !
@@ -85,11 +88,9 @@ CONTAINS
       IF(lwp) WRITE(numout,*) 'flo_stp : call floats routine '
       IF(lwp) WRITE(numout,*) '~~~~~~~'
 
-      REWIND( numnam_ref )              ! Namelist namflo in reference namelist : Floats
       READ  ( numnam_ref, namflo, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namflo in reference namelist' )
 
-      REWIND( numnam_cfg )              ! Namelist namflo in configuration namelist : Floats
       READ  ( numnam_cfg, namflo, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namflo in configuration namelist' )
       IF(lwm) WRITE ( numond, namflo )
@@ -129,12 +130,11 @@ CONTAINS
             nfloat(jfl) = jfl 
          END DO
          !
-         CALL flo_dom                  ! compute/read initial position of floats
+         CALL flo_dom( Kmm )           ! compute/read initial position of floats
          !
-         wb(:,:,:) = wn(:,:,:)         ! set wb for computation of floats trajectories at the first time step
+         wb(:,:,:) = ww(:,:,:)         ! set wb for computation of floats trajectories at the first time step
          !
       ENDIF
-      !
    END SUBROUTINE flo_init
 
    !!======================================================================

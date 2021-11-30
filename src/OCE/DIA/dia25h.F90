@@ -31,14 +31,16 @@ MODULE dia25h
    REAL(wp), SAVE, ALLOCATABLE, DIMENSION(:,:,:) ::   avt_25h , avm_25h
    REAL(wp), SAVE, ALLOCATABLE, DIMENSION(:,:,:) ::   en_25h  , rmxln_25h
 
+!! * Substitutions
+#  include "do_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: dia25h.F90 11536 2019-09-11 13:54:18Z smasson $
+   !! $Id: dia25h.F90 15249 2021-09-13 09:59:09Z hadcv $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE dia_25h_init 
+   SUBROUTINE dia_25h_init( Kbb )
       !!---------------------------------------------------------------------------
       !!                  ***  ROUTINE dia_25h_init  ***
       !!     
@@ -46,16 +48,17 @@ CONTAINS
       !!        
       !! ** Method : Read namelist
       !!---------------------------------------------------------------------------
+      INTEGER, INTENT(in) :: Kbb       ! Time level index
+      !
       INTEGER ::   ios                 ! Local integer output status for namelist read
       INTEGER ::   ierror              ! Local integer for memory allocation
+      INTEGER ::   ji, jj, jk
       !
       NAMELIST/nam_dia25h/ ln_dia25h
       !!----------------------------------------------------------------------
       !
-      REWIND ( numnam_ref )              ! Read Namelist nam_dia25h in reference namelist : 25hour mean diagnostics
       READ   ( numnam_ref, nam_dia25h, IOSTAT=ios, ERR= 901 )
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'nam_dia25h in reference namelist' )
-      REWIND( numnam_cfg )              ! Namelist nam_dia25h in configuration namelist  25hour diagnostics
       READ  ( numnam_cfg, nam_dia25h, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'nam_dia25h in configuration namelist' )
       IF(lwm) WRITE ( numond, nam_dia25h )
@@ -72,20 +75,20 @@ CONTAINS
       ! 1 - Allocate memory !
       ! ------------------- !
       !                                ! ocean arrays
-      ALLOCATE( tn_25h (jpi,jpj,jpk), sn_25h (jpi,jpj,jpk), sshn_25h(jpi,jpj)  ,     &
-         &      un_25h (jpi,jpj,jpk), vn_25h (jpi,jpj,jpk), wn_25h(jpi,jpj,jpk),     &
-         &      avt_25h(jpi,jpj,jpk), avm_25h(jpi,jpj,jpk),                      STAT=ierror )
+      ALLOCATE( tn_25h (A2D(0),jpk), sn_25h (A2D(0),jpk), sshn_25h(A2D(0))  ,     &
+         &      un_25h (A2D(0),jpk), vn_25h (A2D(0),jpk), wn_25h(A2D(0),jpk),     &
+         &      avt_25h(A2D(0),jpk), avm_25h(A2D(0),jpk),                      STAT=ierror )
       IF( ierror > 0 ) THEN
          CALL ctl_stop( 'dia_25h: unable to allocate ocean arrays' )   ;   RETURN
       ENDIF
       IF( ln_zdftke ) THEN             ! TKE physics
-         ALLOCATE( en_25h(jpi,jpj,jpk), STAT=ierror )
+         ALLOCATE( en_25h(A2D(0),jpk), STAT=ierror )
          IF( ierror > 0 ) THEN
             CALL ctl_stop( 'dia_25h: unable to allocate en_25h' )   ;   RETURN
          ENDIF
       ENDIF
       IF( ln_zdfgls ) THEN             ! GLS physics
-         ALLOCATE( en_25h(jpi,jpj,jpk), rmxln_25h(jpi,jpj,jpk), STAT=ierror )
+         ALLOCATE( en_25h(A2D(0),jpk), rmxln_25h(A2D(0),jpk), STAT=ierror )
          IF( ierror > 0 ) THEN
             CALL ctl_stop( 'dia_25h: unable to allocate en_25h and rmxln_25h' )   ;   RETURN
          ENDIF
@@ -93,20 +96,28 @@ CONTAINS
       ! ------------------------- !
       ! 2 - Assign Initial Values !
       ! ------------------------- !
-      cnt_25h = 1  ! sets the first value of sum at timestep 1 (note - should strictly be at timestep zero so before values used where possible) 
-      tn_25h  (:,:,:) = tsb (:,:,:,jp_tem)
-      sn_25h  (:,:,:) = tsb (:,:,:,jp_sal)
-      sshn_25h(:,:)   = sshb(:,:)
-      un_25h  (:,:,:) = ub  (:,:,:)
-      vn_25h  (:,:,:) = vb  (:,:,:)
-      avt_25h (:,:,:) = avt (:,:,:)
-      avm_25h (:,:,:) = avm (:,:,:)
+      cnt_25h = 1  ! sets the first value of sum at timestep 1 (note - should strictly be at timestep zero so before values used where possible)
+      DO_3D( 0, 0, 0, 0, 1, jpk )
+         tn_25h (ji,jj,jk) = ts (ji,jj,jk,jp_tem,Kbb)
+         sn_25h (ji,jj,jk) = ts (ji,jj,jk,jp_sal,Kbb)
+         un_25h (ji,jj,jk) = uu (ji,jj,jk,Kbb)
+         vn_25h (ji,jj,jk) = vv (ji,jj,jk,Kbb)
+         avt_25h(ji,jj,jk) = avt(ji,jj,jk)
+         avm_25h(ji,jj,jk) = avm(ji,jj,jk)
+      END_3D
+      DO_2D( 0, 0, 0, 0 )
+         sshn_25h(ji,jj) = ssh(ji,jj,Kbb)
+      END_2D
       IF( ln_zdftke ) THEN
-         en_25h(:,:,:) = en(:,:,:)
+         DO_3D( 0, 0, 0, 0, 1, jpk )
+            en_25h(ji,jj,jk) = en(ji,jj,jk)
+         END_3D
       ENDIF
       IF( ln_zdfgls ) THEN
-         en_25h   (:,:,:) = en    (:,:,:)
-         rmxln_25h(:,:,:) = hmxl_n(:,:,:)
+         DO_3D( 0, 0, 0, 0, 1, jpk )
+            en_25h   (ji,jj,jk) = en    (ji,jj,jk)
+            rmxln_25h(ji,jj,jk) = hmxl_n(ji,jj,jk)
+         END_3D
       ENDIF
 #if defined key_si3
       CALL ctl_stop('STOP', 'dia_25h not setup yet to do tidemean ice')
@@ -115,7 +126,7 @@ CONTAINS
    END SUBROUTINE dia_25h_init
 
 
-   SUBROUTINE dia_25h( kt )  
+   SUBROUTINE dia_25h( kt, Kmm )  
       !!----------------------------------------------------------------------
       !!                 ***  ROUTINE dia_25h  ***
       !!         
@@ -124,24 +135,25 @@ CONTAINS
       !! ** Method  :   25hr mean outputs for shelf seas
       !!----------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt   ! ocean time-step index
+      INTEGER, INTENT(in) ::   Kmm  ! ocean time level index
       !!
       INTEGER ::   ji, jj, jk
       INTEGER                          ::   iyear0, nimonth0,iday0            ! start year,imonth,day
       LOGICAL ::   ll_print = .FALSE.    ! =T print and flush numout
       REAL(wp)                         ::   zsto, zout, zmax, zjulian, zmdi   ! local scalars
       INTEGER                          ::   i_steps                           ! no of timesteps per hour
-      REAL(wp), DIMENSION(jpi,jpj    ) ::   zw2d, un_dm, vn_dm                ! workspace
-      REAL(wp), DIMENSION(jpi,jpj,jpk) ::   zw3d                              ! workspace
-      REAL(wp), DIMENSION(jpi,jpj,3)   ::   zwtmb                             ! workspace
+      REAL(wp), DIMENSION(A2D(0)    )  ::   zw2d, un_dm, vn_dm                ! workspace
+      REAL(wp), DIMENSION(A2D(0),jpk)  ::   zw3d                              ! workspace
+      REAL(wp), DIMENSION(A2D(0),3)    ::   zwtmb                             ! workspace
       !!----------------------------------------------------------------------
 
       ! 0. Initialisation
       ! -----------------
       ! Define frequency of summing to create 25 h mean
-      IF( MOD( 3600,NINT(rdt) ) == 0 ) THEN
-         i_steps = 3600/NINT(rdt)
+      IF( MOD( 3600,NINT(rn_Dt) ) == 0 ) THEN
+         i_steps = 3600/NINT(rn_Dt)
       ELSE
-         CALL ctl_stop('STOP', 'dia_wri_tide: timestep must give MOD(3600,rdt) = 0 otherwise no hourly values are possible')
+         CALL ctl_stop('STOP', 'dia_wri_tide: timestep must give MOD(3600,rn_Dt) = 0 otherwise no hourly values are possible')
       ENDIF
 
       ! local variable for debugging
@@ -149,7 +161,9 @@ CONTAINS
 
       ! wn_25h could not be initialised in dia_25h_init, so we do it here instead
       IF( kt == nn_it000 ) THEN
-         wn_25h(:,:,:) = wn(:,:,:)
+         DO_3D( 0, 0, 0, 0, 1, jpk )
+            wn_25h(ji,jj,jk) = ww(ji,jj,jk)
+         END_3D
       ENDIF
 
       ! Sum of 25 hourly instantaneous values to give a 25h mean from 24hours every day
@@ -160,20 +174,28 @@ CONTAINS
               WRITE(numout,*) '~~~~~~~~~~~~ '
          ENDIF
 
-         tn_25h  (:,:,:)     = tn_25h  (:,:,:) + tsn (:,:,:,jp_tem)
-         sn_25h  (:,:,:)     = sn_25h  (:,:,:) + tsn (:,:,:,jp_sal)
-         sshn_25h(:,:)       = sshn_25h(:,:)   + sshn(:,:)
-         un_25h  (:,:,:)     = un_25h  (:,:,:) + un  (:,:,:)
-         vn_25h  (:,:,:)     = vn_25h  (:,:,:) + vn  (:,:,:)
-         wn_25h  (:,:,:)     = wn_25h  (:,:,:) + wn  (:,:,:)
-         avt_25h (:,:,:)     = avt_25h (:,:,:) + avt (:,:,:)
-         avm_25h (:,:,:)     = avm_25h (:,:,:) + avm (:,:,:)
+         DO_3D( 0, 0, 0, 0, 1, jpk )
+            tn_25h  (ji,jj,jk) = tn_25h  (ji,jj,jk) + ts (ji,jj,jk,jp_tem,Kmm)
+            sn_25h  (ji,jj,jk) = sn_25h  (ji,jj,jk) + ts (ji,jj,jk,jp_sal,Kmm)
+            un_25h  (ji,jj,jk) = un_25h  (ji,jj,jk) + uu (ji,jj,jk,Kmm)
+            vn_25h  (ji,jj,jk) = vn_25h  (ji,jj,jk) + vv (ji,jj,jk,Kmm)
+            wn_25h  (ji,jj,jk) = wn_25h  (ji,jj,jk) + ww (ji,jj,jk)
+            avt_25h (ji,jj,jk) = avt_25h (ji,jj,jk) + avt(ji,jj,jk)
+            avm_25h (ji,jj,jk) = avm_25h (ji,jj,jk) + avm(ji,jj,jk)
+         END_3D
+         DO_2D( 0, 0, 0, 0 )
+            sshn_25h(ji,jj)    = sshn_25h(ji,jj)    + ssh(ji,jj,Kmm)
+         END_2D
          IF( ln_zdftke ) THEN
-            en_25h(:,:,:)    = en_25h  (:,:,:) + en(:,:,:)
+            DO_3D( 0, 0, 0, 0, 1, jpk )
+               en_25h(ji,jj,jk) = en_25h(ji,jj,jk) + en(ji,jj,jk)
+            END_3D
          ENDIF
          IF( ln_zdfgls ) THEN
-            en_25h   (:,:,:) = en_25h   (:,:,:) + en    (:,:,:)
-            rmxln_25h(:,:,:) = rmxln_25h(:,:,:) + hmxl_n(:,:,:)
+            DO_3D( 0, 0, 0, 0, 1, jpk )
+               en_25h   (ji,jj,jk) = en_25h   (ji,jj,jk) + en    (ji,jj,jk)
+               rmxln_25h(ji,jj,jk) = rmxln_25h(ji,jj,jk) + hmxl_n(ji,jj,jk)
+            END_3D
          ENDIF
          cnt_25h = cnt_25h + 1
          !
@@ -210,54 +232,84 @@ CONTAINS
          IF(lwp)  WRITE(numout,*) 'dia_wri_tide : Mean calculated by dividing 25 hour sums and writing output'
          zmdi=1.e+20 !missing data indicator for masking
          ! write tracers (instantaneous)
-         zw3d(:,:,:) = tn_25h(:,:,:)*tmask(:,:,:) + zmdi*(1.0-tmask(:,:,:))
+         DO_3D( 0, 0, 0, 0, 1, jpk )
+            zw3d(ji,jj,jk) = tn_25h(ji,jj,jk)*tmask(ji,jj,jk) + zmdi*(1.0-tmask(ji,jj,jk))
+         END_3D
          CALL iom_put("temper25h", zw3d)   ! potential temperature
-         zw3d(:,:,:) = sn_25h(:,:,:)*tmask(:,:,:) + zmdi*(1.0-tmask(:,:,:))
+         DO_3D( 0, 0, 0, 0, 1, jpk )
+            zw3d(ji,jj,jk) = sn_25h(ji,jj,jk)*tmask(ji,jj,jk) + zmdi*(1.0-tmask(ji,jj,jk))
+         END_3D
          CALL iom_put( "salin25h", zw3d  )   ! salinity
-         zw2d(:,:) = sshn_25h(:,:)*tmask(:,:,1) + zmdi*(1.0-tmask(:,:,1))
+         DO_2D( 0, 0, 0, 0 )
+            zw2d(ji,jj) = sshn_25h(ji,jj)*tmask(ji,jj,1) + zmdi*(1.0-tmask(ji,jj,1))
+         END_2D
          IF( ll_wd ) THEN
             CALL iom_put( "ssh25h", zw2d+ssh_ref )   ! sea surface 
          ELSE
             CALL iom_put( "ssh25h", zw2d )   ! sea surface
          ENDIF
          ! Write velocities (instantaneous)
-         zw3d(:,:,:) = un_25h(:,:,:)*umask(:,:,:) + zmdi*(1.0-umask(:,:,:))
+         DO_3D( 0, 0, 0, 0, 1, jpk )
+            zw3d(ji,jj,jk) = un_25h(ji,jj,jk)*umask(ji,jj,jk) + zmdi*(1.0-umask(ji,jj,jk))
+         END_3D
          CALL iom_put("vozocrtx25h", zw3d)    ! i-current
-         zw3d(:,:,:) = vn_25h(:,:,:)*vmask(:,:,:) + zmdi*(1.0-vmask(:,:,:))
+         DO_3D( 0, 0, 0, 0, 1, jpk )
+            zw3d(ji,jj,jk) = vn_25h(ji,jj,jk)*vmask(ji,jj,jk) + zmdi*(1.0-vmask(ji,jj,jk))
+         END_3D
          CALL iom_put("vomecrty25h", zw3d  )   ! j-current
-         zw3d(:,:,:) = wn_25h(:,:,:)*wmask(:,:,:) + zmdi*(1.0-tmask(:,:,:))
+         DO_3D( 0, 0, 0, 0, 1, jpk )
+            zw3d(ji,jj,jk) = wn_25h(ji,jj,jk)*wmask(ji,jj,jk) + zmdi*(1.0-tmask(ji,jj,jk))
+         END_3D
          CALL iom_put("vovecrtz25h", zw3d )   ! k-current
          ! Write vertical physics
-         zw3d(:,:,:) = avt_25h(:,:,:)*wmask(:,:,:) + zmdi*(1.0-tmask(:,:,:))
+         DO_3D( 0, 0, 0, 0, 1, jpk )
+            zw3d(ji,jj,jk) = avt_25h(ji,jj,jk)*wmask(ji,jj,jk) + zmdi*(1.0-tmask(ji,jj,jk))
+         END_3D
          CALL iom_put("avt25h", zw3d )   ! diffusivity
-         zw3d(:,:,:) = avm_25h(:,:,:)*wmask(:,:,:) + zmdi*(1.0-tmask(:,:,:))
+         DO_3D( 0, 0, 0, 0, 1, jpk )
+            zw3d(ji,jj,jk) = avm_25h(ji,jj,jk)*wmask(ji,jj,jk) + zmdi*(1.0-tmask(ji,jj,jk))
+         END_3D
          CALL iom_put("avm25h", zw3d)   ! viscosity
          IF( ln_zdftke ) THEN
-            zw3d(:,:,:) = en_25h(:,:,:)*wmask(:,:,:) + zmdi*(1.0-tmask(:,:,:))
+            DO_3D( 0, 0, 0, 0, 1, jpk )
+               zw3d(ji,jj,jk) = en_25h(ji,jj,jk)*wmask(ji,jj,jk) + zmdi*(1.0-tmask(ji,jj,jk))
+            END_3D
             CALL iom_put("tke25h", zw3d)   ! tke
          ENDIF
          IF( ln_zdfgls ) THEN
-            zw3d(:,:,:) = en_25h(:,:,:)*wmask(:,:,:) + zmdi*(1.0-tmask(:,:,:))
+            DO_3D( 0, 0, 0, 0, 1, jpk )
+               zw3d(ji,jj,jk) = en_25h(ji,jj,jk)*wmask(ji,jj,jk) + zmdi*(1.0-tmask(ji,jj,jk))
+            END_3D
             CALL iom_put("tke25h", zw3d)   ! tke
-            zw3d(:,:,:) = rmxln_25h(:,:,:)*wmask(:,:,:) + zmdi*(1.0-tmask(:,:,:))
+            DO_3D( 0, 0, 0, 0, 1, jpk )
+               zw3d(ji,jj,jk) = rmxln_25h(ji,jj,jk)*wmask(ji,jj,jk) + zmdi*(1.0-tmask(ji,jj,jk))
+            END_3D
             CALL iom_put( "mxln25h",zw3d)
          ENDIF
          !
          ! After the write reset the values to cnt=1 and sum values equal current value 
-         tn_25h  (:,:,:) = tsn (:,:,:,jp_tem)
-         sn_25h  (:,:,:) = tsn (:,:,:,jp_sal)
-         sshn_25h(:,:)   = sshn(:,:)
-         un_25h  (:,:,:) = un  (:,:,:)
-         vn_25h  (:,:,:) = vn  (:,:,:)
-         wn_25h  (:,:,:) = wn  (:,:,:)
-         avt_25h (:,:,:) = avt (:,:,:)
-         avm_25h (:,:,:) = avm (:,:,:)
+         DO_3D( 0, 0, 0, 0, 1, jpk )
+            tn_25h  (ji,jj,jk) = ts (ji,jj,jk,jp_tem,Kmm)
+            sn_25h  (ji,jj,jk) = ts (ji,jj,jk,jp_sal,Kmm)
+            un_25h  (ji,jj,jk) = uu (ji,jj,jk,Kmm)
+            vn_25h  (ji,jj,jk) = vv (ji,jj,jk,Kmm)
+            wn_25h  (ji,jj,jk) = ww (ji,jj,jk)
+            avt_25h (ji,jj,jk) = avt(ji,jj,jk)
+            avm_25h (ji,jj,jk) = avm(ji,jj,jk)
+         END_3D
+         DO_2D( 0, 0, 0, 0 )
+            sshn_25h(ji,jj)    = ssh(ji,jj,Kmm)
+         END_2D
          IF( ln_zdftke ) THEN
-            en_25h(:,:,:) = en(:,:,:)
+            DO_3D( 0, 0, 0, 0, 1, jpk )
+               en_25h(ji,jj,jk) = en(ji,jj,jk)
+            END_3D
          ENDIF
          IF( ln_zdfgls ) THEN
-            en_25h   (:,:,:) = en    (:,:,:)
-            rmxln_25h(:,:,:) = hmxl_n(:,:,:)
+            DO_3D( 0, 0, 0, 0, 1, jpk )
+               en_25h   (ji,jj,jk) = en    (ji,jj,jk)
+               rmxln_25h(ji,jj,jk) = hmxl_n(ji,jj,jk)
+            END_3D
          ENDIF
          cnt_25h = 1
          IF(lwp)  WRITE(numout,*) 'dia_wri_tide :   &

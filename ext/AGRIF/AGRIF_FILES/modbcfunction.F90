@@ -1,5 +1,5 @@
 !
-! $Id: modbcfunction.F90 5656 2015-07-31 08:55:56Z timgraham $
+! $Id: modbcfunction.F90 14975 2021-06-11 09:05:32Z jchanut $
 !
 !     AGRIF (Adaptive Grid Refinement In Fortran)
 !
@@ -29,6 +29,7 @@ module Agrif_BcFunction
     use Agrif_Boundary
     use Agrif_Update
     use Agrif_Save
+    use Agrif_Arrays
 !
     implicit none
 !
@@ -52,12 +53,27 @@ contains
 !
 !> To set the TYPE of the variable
 !---------------------------------------------------------------------------------------------------
-subroutine Agrif_Set_parent_int(tabvarsindic,value)
+subroutine Agrif_Set_parent_int(integer_variable,value)
 !---------------------------------------------------------------------------------------------------
-    integer, intent(in)     :: tabvarsindic !< indice of the variable in tabvars
+    integer, intent(in)     :: integer_variable !< indice of the variable in tabvars
     integer, intent(in)     :: value        !< input value
 !
-    Agrif_Curgrid % parent % tabvars_i(tabvarsindic) % iarray0 = value
+    
+integer :: i
+logical :: i_found
+
+i_found = .FALSE.
+
+do i=1,Agrif_NbVariables(4)
+  if (LOC(integer_variable) == LOC(agrif_curgrid%tabvars_i(i)%iarray0)) then
+     agrif_curgrid%tabvars_i(i)%parent_var%iarray0 = value
+     i_found = .TRUE.
+     EXIT
+  endif
+enddo
+
+if (.NOT.i_found) STOP 'Agrif_Set_Integer : Variable not found'
+
 !---------------------------------------------------------------------------------------------------
 end subroutine Agrif_Set_parent_int
 !===================================================================================================
@@ -65,15 +81,40 @@ end subroutine Agrif_Set_parent_int
 !===================================================================================================
 !  subroutine Agrif_Set_parent_real4
 !---------------------------------------------------------------------------------------------------
-!> To set the TYPE of the variable
+!> To set the parent value of a real variable
 !---------------------------------------------------------------------------------------------------
-subroutine Agrif_Set_parent_real4 ( tabvarsindic, value )
+subroutine Agrif_Set_parent_real4 ( real_variable, value )
 !---------------------------------------------------------------------------------------------------
-    integer, intent(in)     :: tabvarsindic !< indice of the variable in tabvars
-    real(kind=4),intent(in) :: value        !< input value
-!
-    Agrif_Curgrid % parent % tabvars_r(tabvarsindic) % array0 = value
-    Agrif_Curgrid % parent % tabvars_r(tabvarsindic) % sarray0 = value
+    real(kind=4), intent(in)     :: real_variable !< input variable
+    real(kind=4),intent(in) :: value        !< input value for the parent grid
+
+integer :: i
+logical :: i_found
+
+i_found = .FALSE.
+
+do i=1,Agrif_NbVariables(2)
+  if (LOC(real_variable) == LOC(agrif_curgrid%tabvars_r(i)%array0)) then
+     agrif_curgrid%tabvars_r(i)%parent_var%array0 = value
+     agrif_curgrid%tabvars_r(i)%parent_var%sarray0 = value
+     i_found = .TRUE.
+     EXIT
+  endif
+enddo
+
+IF (.NOT.i_found) THEN
+do i=1,Agrif_NbVariables(2)
+  if (LOC(real_variable) == LOC(agrif_curgrid%tabvars_r(i)%sarray0)) then
+     agrif_curgrid%tabvars_r(i)%parent_var%array0 = value
+     agrif_curgrid%tabvars_r(i)%parent_var%sarray0 = value
+     i_found = .TRUE.
+     EXIT
+  endif
+enddo
+ENDIF
+
+if (.NOT.i_found) STOP 'Agrif_Set_parent_real4 : Variable not found'
+
 !---------------------------------------------------------------------------------------------------
 end subroutine Agrif_Set_parent_real4
 !===================================================================================================
@@ -81,14 +122,40 @@ end subroutine Agrif_Set_parent_real4
 !===================================================================================================
 !  subroutine Agrif_Set_parent_real8
 !---------------------------------------------------------------------------------------------------
-!> To set the TYPE of the variable
+!> To set the parent value of a real variable
 !---------------------------------------------------------------------------------------------------
-subroutine Agrif_Set_parent_real8 ( tabvarsindic, value )
+subroutine Agrif_Set_parent_real8 ( real_variable, value )
 !---------------------------------------------------------------------------------------------------
-    integer, intent(in)     :: tabvarsindic !< indice of the variable in tabvars
-    real(kind=8),intent(in) :: value        !< input value
-!
-    Agrif_Curgrid % parent % tabvars_r(tabvarsindic) % darray0 = value
+    real(kind=8), intent(in)     :: real_variable !< input variable
+    real(kind=8),intent(in) :: value        !< input value for the parent grid
+
+integer :: i
+logical :: i_found
+
+i_found = .FALSE.
+
+do i=1,Agrif_NbVariables(2)
+  if (LOC(real_variable) == LOC(agrif_curgrid%tabvars_r(i)%array0)) then
+     agrif_curgrid%tabvars_r(i)%parent_var%darray0 = value
+     agrif_curgrid%tabvars_r(i)%parent_var%array0 = value
+     i_found = .TRUE.
+     EXIT
+  endif
+enddo
+
+IF (.NOT.i_found) THEN
+do i=1,Agrif_NbVariables(2)
+  if (LOC(real_variable) == LOC(agrif_curgrid%tabvars_r(i)%darray0)) then
+     agrif_curgrid%tabvars_r(i)%parent_var%darray0 = value
+     agrif_curgrid%tabvars_r(i)%parent_var%array0 = value
+     i_found = .TRUE.
+     EXIT
+  endif
+enddo
+ENDIF
+
+if (.NOT.i_found) STOP 'Agrif_Set_parent_real8 : Variable not found'
+
 !---------------------------------------------------------------------------------------------------
 end subroutine Agrif_Set_parent_real8
 !===================================================================================================
@@ -105,15 +172,7 @@ subroutine Agrif_Set_bc ( tabvarsindic, bcinfsup, Interpolationshouldbemade )
     integer                         :: indic ! indice of the variable in tabvars
     type(Agrif_Variable),  pointer  :: var
 !
-    indic = Agrif_Curgrid % tabvars_i(tabvarsindic) % iarray0
-!
-    if (indic <= 0) then
-        var => Agrif_Search_Variable(Agrif_Curgrid,-indic)
-    else
-        print*,"Agrif_Set_bc : warning indic >= 0 !!!"
-        var => Agrif_Curgrid % tabvars(indic)
-    endif
-
+    var => Agrif_Search_Variable(Agrif_Curgrid,tabvarsindic)
     if (.not.associated(var)) return ! Grand mother grid case
 !
     if ( Agrif_Curgrid % fixedrank /= 0 ) then
@@ -144,14 +203,8 @@ subroutine Agrif_Set_interp ( tabvarsindic, interp, interp1, interp2, interp3 , 
     integer                         :: indic ! indice of the variable in tabvars
     type(Agrif_Variable), pointer   :: var
 !
-    indic = Agrif_Curgrid % tabvars_i(tabvarsindic) % iarray0
-!
-    if (indic <= 0) then
-        var => Agrif_Search_Variable(Agrif_Mygrid,-indic)
-    else
-        print*,"Agrif_Set_interp : warning indic >= 0 !!!"
-        var => Agrif_Mygrid % tabvars(indic)
-    endif
+    var => Agrif_Search_Variable(Agrif_Curgrid,tabvarsindic)
+    if (.not.associated(var)) return ! Grand mother grid case
 !
     var % type_interp = Agrif_Constant
 !
@@ -177,14 +230,7 @@ subroutine Agrif_Set_bcinterp ( tabvarsindic, interp,   interp1,  interp2,  inte
     INTEGER                         :: indic ! indice of the variable in tabvars
     TYPE(Agrif_Variable), pointer   :: var
 !
-    indic = Agrif_Curgrid%tabvars_i(tabvarsindic)%iarray0
-!
-    if (indic <= 0) then
-        var => Agrif_Search_Variable(Agrif_Mygrid,-indic)
-    else
-        print*,"Agrif_Set_bcinterp : warning indic >= 0 !!!"
-        var => Agrif_Mygrid % tabvars(indic)
-    endif
+    var => Agrif_Search_Variable(Agrif_Curgrid,tabvarsindic)
 !
     var % type_interp_bc = Agrif_Constant
 !
@@ -213,14 +259,9 @@ subroutine Agrif_Set_UpdateType ( tabvarsindic, update,  update1, update2, &
     INTEGER                         :: indic ! indice of the variable in tabvars
     type(Agrif_Variable),  pointer  :: root_var
 !
-    indic = Agrif_Curgrid%tabvars_i(tabvarsindic)%iarray0
-!
-    if (indic <= 0) then
-        root_var => Agrif_Search_Variable(Agrif_Mygrid,-indic)
-    else
-        print*,"Agrif_Set_UpdateType : warning indic >= 0 !!!"
-        root_var => Agrif_Mygrid % tabvars(indic)
-    endif
+
+        root_var => Agrif_Search_Variable(Agrif_Mygrid,tabvarsindic)
+
 !
     root_var % type_update = Agrif_Update_Copy
     if (present(update))    root_var % type_update    = update
@@ -242,6 +283,9 @@ subroutine Agrif_Set_restore ( tabvarsindic )
 !
     INTEGER :: indic  !  indice of the variable in tabvars
 !
+print *,'CURRENTLY BROKEN'
+STOP
+
     indic = Agrif_Curgrid%tabvars_i(tabvarsindic)%iarray0
 !
     Agrif_Mygrid%tabvars(indic) % restore = .TRUE.
@@ -282,10 +326,11 @@ subroutine Agrif_Bc_variable ( tabvarsindic, procname, calledweight )
     type(Agrif_Variable), pointer :: parent_var
     type(Agrif_Variable), pointer :: child_var
     type(Agrif_Variable), pointer :: child_tmp      ! Temporary variable on the child grid
+    integer :: i
+    integer,dimension(7) :: lb, ub
 !
     if ( Agrif_Curgrid%level <= 0 ) return
 !
-    indic = Agrif_Curgrid%tabvars_i(tabvarsindic)%iarray0
 !
     if ( present(calledweight) ) then
         weight  = calledweight
@@ -295,53 +340,57 @@ subroutine Agrif_Bc_variable ( tabvarsindic, procname, calledweight )
         pweight = .false.
     endif
 !
-    if (indic <= 0) then
-        child_var  => Agrif_Search_Variable(Agrif_Curgrid,-indic)
+        child_var  => Agrif_Search_Variable(Agrif_Curgrid,tabvarsindic)
         parent_var => child_var % parent_var
         root_var   => child_var % root_var
-    else
-        print*,"Agrif_Bc_variable : warning indic >= 0 !!!"
-        child_var  => Agrif_Curgrid % tabvars(indic)
-        parent_var => Agrif_Curgrid % parent % tabvars(indic)
-        root_var   => Agrif_Mygrid % tabvars(indic)
-    endif
 !
     nbdim = root_var % nbdim
 !
+    do i=1,nbdim
+      if (root_var%coords(i) == 0) then
+        lb(i) = parent_var%lb(i)
+        ub(i) = parent_var%ub(i)
+      else
+        lb(i) = child_var%lb(i)
+        ub(i) = child_var%ub(i)
+      endif
+    enddo
+
     select case( nbdim )
     case(1)
-        allocate(parray1(child_var%lb(1):child_var%ub(1)))
+        allocate(parray1(lb(1):ub(1)))
     case(2)
-        allocate(parray2(child_var%lb(1):child_var%ub(1), &
-                         child_var%lb(2):child_var%ub(2) ))
+        allocate(parray2(lb(1):ub(1), &
+                         lb(2):ub(2) ))
     case(3)
-        allocate(parray3(child_var%lb(1):child_var%ub(1), &
-                         child_var%lb(2):child_var%ub(2), &
-                         child_var%lb(3):child_var%ub(3) ))
+        allocate(parray3(lb(1):ub(1), &
+                         lb(2):ub(2), &
+                         lb(3):ub(3) ))
     case(4)
-        allocate(parray4(child_var%lb(1):child_var%ub(1), &
-                         child_var%lb(2):child_var%ub(2), &
-                         child_var%lb(3):child_var%ub(3), &
-                         child_var%lb(4):child_var%ub(4) ))
+        allocate(parray4(lb(1):ub(1), &
+                         lb(2):ub(2), &
+                         lb(3):ub(3), &
+                         lb(4):ub(4) ))
     case(5)
-        allocate(parray5(child_var%lb(1):child_var%ub(1), &
-                         child_var%lb(2):child_var%ub(2), &
-                         child_var%lb(3):child_var%ub(3), &
-                         child_var%lb(4):child_var%ub(4), &
-                         child_var%lb(5):child_var%ub(5) ))
+        allocate(parray5(lb(1):ub(1), &
+                         lb(2):ub(2), &
+                         lb(3):ub(3), &
+                         lb(4):ub(4), &
+                         lb(5):ub(5) ))
     case(6)
-        allocate(parray6(child_var%lb(1):child_var%ub(1), &
-                         child_var%lb(2):child_var%ub(2), &
-                         child_var%lb(3):child_var%ub(3), &
-                         child_var%lb(4):child_var%ub(4), &
-                         child_var%lb(5):child_var%ub(5), &
-                         child_var%lb(6):child_var%ub(6) ))
+        allocate(parray6(lb(1):ub(1), &
+                         lb(2):ub(2), &
+                         lb(3):ub(3), &
+                         lb(4):ub(4), &
+                         lb(5):ub(5), &
+                         lb(6):ub(6) ))
     end select
 !
 !   Create temporary child variable
     allocate(child_tmp)
 !
     child_tmp % root_var => root_var
+    child_tmp % parent_var => parent_var
     child_tmp % oldvalues2D => child_var % oldvalues2D
 !
 !   Index indicating if a space interpolation is necessary
@@ -382,6 +431,57 @@ subroutine Agrif_Bc_variable ( tabvarsindic, procname, calledweight )
 !---------------------------------------------------------------------------------------------------
 end subroutine Agrif_Bc_variable
 !===================================================================================================
+!===================================================================================================
+!  subroutine Agrif_Find_Nearest : find nearest point on the parent grid
+!---------------------------------------------------------------------------------------------------
+subroutine Agrif_Find_Nearest ( tabvarsindic, fineloc, parentloc )
+!---------------------------------------------------------------------------------------------------
+    integer,        intent(in) :: tabvarsindic     !< indice of the variable in tabvars
+    integer,dimension(:), intent(in)    :: fineloc
+    integer,dimension(:,:), intent(out) :: parentloc
+
+!
+
+    integer :: indic
+
+    type(Agrif_Variable), pointer :: parent_var
+    type(Agrif_Variable), pointer :: child_var
+    integer :: i
+    integer, dimension(6)           :: nb_child     !< Number of cells on the child grid
+    integer, dimension(6)           :: ub_child     !< Upper bound on the child grid
+    integer, dimension(6)           :: lb_child     !< Lower bound on the child grid
+    integer, dimension(6)           :: lb_parent    !< Lower bound on the parent grid
+    real, dimension(6)              :: s_child      !< Child  grid position (s_root = 0)
+    real, dimension(6)              :: s_parent     !< Parent grid position (s_root = 0)
+    real, dimension(6)              :: ds_child     !< Child  grid dx (ds_root = 1)
+    real, dimension(6)              :: ds_parent    !< Parent grid dx (ds_root = 1)
+    integer                         :: nbdim        !< Number of dimensions
+    real, dimension(6) :: xfineloc
+!
+    if ( Agrif_Curgrid%level <= 0 ) return
+!
+!
+!
+        child_var  => Agrif_Search_Variable(Agrif_Curgrid,tabvarsindic)
+        parent_var => child_var % parent_var
+!
+
+    call PreProcessToInterpOrUpdate( parent_var,   child_var,       &
+                                     nb_child, ub_child,    &
+                                     lb_child, lb_parent,   &
+                                      s_child,  s_parent,   &
+                                     ds_child, ds_parent, nbdim, interp=.true.)
+
+    do i=1,nbdim
+      xfineloc(i) = s_Child(i) + (fineloc(i) - lb_Child(i)) * ds_Child(i)
+
+      parentloc(1,i) = lb_parent(i) + agrif_int((xfineloc(i)-s_Parent(i))/ds_Parent(i))
+      parentloc(2,i) = lb_parent(i) + agrif_ceiling((xfineloc(i)-s_Parent(i))/ds_Parent(i))
+    enddo 
+!
+!---------------------------------------------------------------------------------------------------
+end subroutine Agrif_Find_Nearest
+!===================================================================================================
 !
 !===================================================================================================
 !  subroutine Agrif_Interp_variable
@@ -399,20 +499,14 @@ subroutine Agrif_Interp_variable ( tabvarsindic, procname )
     type(Agrif_Variable), pointer   :: child_var        ! Variable on the parent grid
     type(Agrif_Variable), pointer   :: child_tmp        ! Temporary variable on the child grid
 !
+
     if ( Agrif_Curgrid%level <= 0 ) return
 !
-    indic = Agrif_Curgrid%tabvars_i(tabvarsindic)%iarray0
-!
-    if (indic <= 0) then
-        child_var  => Agrif_Search_Variable(Agrif_Curgrid,-indic)
+
+        child_var  => Agrif_Search_Variable(Agrif_Curgrid,tabvarsindic)
         parent_var => child_var % parent_var
         root_var   => child_var % root_var
-    else
-        print*,"Agrif_Interp_variable : warning indic >= 0 !!!"
-        child_var  => Agrif_Curgrid % tabvars(indic)
-        parent_var => Agrif_Curgrid % parent % tabvars(indic)
-        root_var   => Agrif_Mygrid % tabvars(indic)
-    endif
+
 !
     nbdim     = root_var % nbdim
     torestore = root_var % restore
@@ -420,6 +514,7 @@ subroutine Agrif_Interp_variable ( tabvarsindic, procname )
     allocate(child_tmp)
 !
     child_tmp % root_var => root_var
+    child_tmp % parent_var => parent_var
     child_tmp % nbdim = root_var % nbdim
     child_tmp % point = child_var % point
     child_tmp % lb = child_var % lb
@@ -485,25 +580,18 @@ subroutine Agrif_Update_Variable ( tabvarsindic, procname, &
     if ( Agrif_Root() .AND. (.not.agrif_coarse) ) return
     if (agrif_curgrid%grand_mother_grid) return
 !
-    indic = Agrif_Curgrid%tabvars_i(tabvarsindic)%iarray0
-!
-    if (indic <= 0) then
-        child_var  => Agrif_Search_Variable(Agrif_Curgrid, -indic)
+
+        child_var  => Agrif_Search_Variable(Agrif_Curgrid, tabvarsindic)
         parent_var => child_var % parent_var
 
         if (.not.associated(parent_var)) then
           ! can occur during the first update of Agrif_Coarsegrid (if any)
-          parent_var => Agrif_Search_Variable(Agrif_Curgrid % parent, -indic)
+          parent_var => Agrif_Search_Variable(Agrif_Curgrid % parent, tabvarsindic)
           child_var % parent_var => parent_var
         endif
 
         root_var   => child_var % root_var
-    else
-        print*,"Agrif_Update_Variable : warning indic >= 0 !!!"
-        root_var   => Agrif_Mygrid  % tabvars(indic)
-        child_var  => Agrif_Curgrid % tabvars(indic)
-        parent_var => Agrif_Curgrid % parent % tabvars(indic)
-    endif
+
 !
     nbdim = root_var % nbdim
 !
@@ -550,6 +638,8 @@ subroutine Agrif_Save_ForRestore0D ( tabvarsindic0, tabvarsindic )
     type(Agrif_Variable), pointer   :: root_var, save_var
     integer :: nbdim
 !
+print *,'CURRENTLY BROKEN'
+STOP
     root_var => Agrif_Mygrid % tabvars(tabvarsindic0)
     save_var => Agrif_Curgrid % tabvars(tabvarsindic0)
     nbdim =  root_var % nbdim
@@ -574,6 +664,8 @@ subroutine Agrif_Save_ForRestore2D ( q, tabvarsindic )
     type(Agrif_Variable),  pointer  :: root_var, save_var
     integer                         :: indic
 !
+print *,'CURRENTLY BROKEN'
+STOP
     indic = tabvarsindic
     if (tabvarsindic >= 0) then
         if (Agrif_Curgrid%tabvars_i(tabvarsindic)%nbdim == 0) then
@@ -611,6 +703,9 @@ subroutine Agrif_Save_ForRestore3D ( q, tabvarsindic )
     type(Agrif_Variable),  pointer  :: root_var, save_var
     integer                         :: indic
 !
+print *,'CURRENTLY BROKEN'
+STOP
+
     indic = tabvarsindic
     if (tabvarsindic >= 0) then
         if (Agrif_Curgrid%tabvars_i(tabvarsindic)%nbdim == 0) then
@@ -649,6 +744,8 @@ subroutine Agrif_Save_ForRestore4D ( q, tabvarsindic )
     type(Agrif_Variable),  pointer  :: root_var, save_var
     integer                         :: indic
 !
+print *,'CURRENTLY BROKEN'
+STOP
     indic = tabvarsindic
     if (tabvarsindic >= 0) then
         if (Agrif_Curgrid%tabvars_i(tabvarsindic)%nbdim == 0) then

@@ -30,7 +30,7 @@ MODULE timing
    PUBLIC   timing_reset                   ! called in step module
    PUBLIC   timing_start, timing_stop      ! called in each routine to time
 
-#if defined key_mpp_mpi
+#if ! defined key_mpi_off
    INCLUDE 'mpif.h'
 #endif
 
@@ -81,7 +81,7 @@ MODULE timing
    LOGICAL :: lwriter
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: timing.F90 15599 2021-12-14 16:07:32Z emmafiedler $
+   !! $Id: timing.F90 14834 2021-05-11 09:24:44Z hadcv $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -108,14 +108,14 @@ CONTAINS
       ENDIF
 
       s_timer%l_tdone = .FALSE.
-      s_timer%niter = s_timer%niter + 1
+      IF( .NOT. l_istiled .OR. ntile == 1 ) s_timer%niter = s_timer%niter + 1      ! All tiles count as one iteration
       s_timer%t_cpu = 0.
       s_timer%t_clock = 0.
 
       ! CPU time collection
       CALL CPU_TIME( s_timer%t_cpu  )
       ! clock time collection
-#if defined key_mpp_mpi
+#if ! defined key_mpi_off
       s_timer%t_clock= MPI_Wtime()
 #else
       CALL SYSTEM_CLOCK(COUNT_RATE=s_timer%ncount_rate, COUNT_MAX=s_timer%ncount_max)
@@ -141,7 +141,7 @@ CONTAINS
       s_wrk => NULL()
 
       ! clock time collection
-#if defined key_mpp_mpi
+#if ! defined key_mpi_off
       zmpitime = MPI_Wtime()
 #else
       CALL SYSTEM_CLOCK(COUNT = ifinal_count)
@@ -165,7 +165,7 @@ CONTAINS
   !    IF(s_timer%cname==trim('lbc_lnk_2d'))  write(*,*) s_timer%tsub_cpu,zcpu_end
 
       ! clock time correction
-#if defined key_mpp_mpi
+#if ! defined key_mpi_off
       zclock_raw = zmpitime - s_timer%t_clock - t_overclock ! total time including child
       s_timer%t_clock = zclock_raw - t_overclock - s_timer%tsub_clock
 #else
@@ -212,7 +212,7 @@ CONTAINS
    END SUBROUTINE timing_stop
 
 
-   SUBROUTINE timing_init
+   SUBROUTINE timing_init( clname )
       !!----------------------------------------------------------------------
       !!               ***  ROUTINE timing_init  ***
       !! ** Purpose :   open timing output file
@@ -220,12 +220,18 @@ CONTAINS
       INTEGER :: iperiods, istart_count, ifinal_count
       REAL(wp) :: zdum
       LOGICAL :: ll_f
+      CHARACTER(len=*), INTENT(in), OPTIONAL :: clname
+      CHARACTER(len=20)                      :: cln
+
+      IF( PRESENT(clname) ) THEN   ;   cln = clname
+      ELSE                         ;   cln = 'timing.output'
+      ENDIF
 
       IF( ln_onefile ) THEN
-         IF( lwp) CALL ctl_opn( numtime, 'timing.output', 'REPLACE', 'FORMATTED', 'SEQUENTIAL', -1, numout,.TRUE., narea )
+         IF( lwp) CALL ctl_opn( numtime, cln, 'REPLACE', 'FORMATTED', 'SEQUENTIAL', -1, numout,.TRUE., narea )
          lwriter = lwp
       ELSE
-         CALL ctl_opn( numtime, 'timing.output', 'REPLACE', 'FORMATTED', 'SEQUENTIAL', -1, numout,.FALSE., narea )
+         CALL ctl_opn( numtime, cln, 'REPLACE', 'FORMATTED', 'SEQUENTIAL', -1, numout,.FALSE., narea )
          lwriter = .TRUE.
       ENDIF
 
@@ -242,7 +248,7 @@ CONTAINS
       ENDIF
 
       ! Compute clock function overhead
-#if defined key_mpp_mpi
+#if ! defined key_mpi_off
       t_overclock = MPI_WTIME()
       t_overclock = MPI_WTIME() - t_overclock
 #else
@@ -267,7 +273,7 @@ CONTAINS
       CALL DATE_AND_TIME(cdate(1),ctime(1),czone,nvalues)
 
       CALL CPU_TIME(t_cpu(1))
-#if defined key_mpp_mpi
+#if ! defined key_mpi_off
       ! Start elapsed and CPU time counters
       t_elaps(1) = MPI_WTIME()
 #else
@@ -298,7 +304,7 @@ CONTAINS
       ! total CPU and elapse
       CALL CPU_TIME(t_cpu(2))
       t_cpu(2)   = t_cpu(2)    - t_cpu(1)   - t_overcpu
-#if defined key_mpp_mpi
+#if ! defined key_mpi_off
       t_elaps(2) = MPI_WTIME() - t_elaps(1) - t_overclock
 #else
       CALL SYSTEM_CLOCK(COUNT = nfinal_count)
@@ -329,7 +335,7 @@ CONTAINS
          ll_averep = .FALSE.
       ENDIF
 
-#if defined key_mpp_mpi
+#if ! defined key_mpi_off
       ! in MPI gather some info
       ALLOCATE( all_etime(jpnij), all_ctime(jpnij) )
       CALL MPI_ALLGATHER(t_elaps(2), 1, MPI_DOUBLE_PRECISION,   &
@@ -353,7 +359,7 @@ CONTAINS
       IF( lwriter ) WRITE(numtime,"('Elapsed Time (s)  CPU Time (s)')")
       IF( lwriter ) WRITE(numtime,'(5x,f12.3,1x,f12.3)')  tot_etime, tot_ctime
       IF( lwriter ) WRITE(numtime,*)
-#if defined key_mpp_mpi
+#if ! defined key_mpi_off
       IF( ll_averep ) CALL waver_info
       CALL wmpi_info
 #endif
@@ -370,10 +376,8 @@ CONTAINS
       &       ctime(2)(1:2), ctime(2)(3:4), ctime(2)(5:6),   &
       &       czone(1:3),    czone(4:5)
 
-#if defined key_mpp_mpi
+#if ! defined key_mpi_off
       ALLOCATE(timing_glob(4*jpnij), stat=icode)
-      ! initialise zperc
-      zperc = 0.
       CALL MPI_GATHER( (/compute_time, waiting_time(1), waiting_time(2), elapsed_time/),   &
          &             4, MPI_DOUBLE_PRECISION, timing_glob, 4, MPI_DOUBLE_PRECISION, 0, MPI_COMM_OCE, icode)
       IF( narea == 1 ) THEN
@@ -391,11 +395,7 @@ CONTAINS
             IF ( ztot /= 0. ) zperc = timing_glob(4*ji-1) / ztot * 100.
             WRITE(numtime,'(A28,F11.6,A2, F4.1,A3,A25,I8)') 'Waiting  global time : ',timing_glob(4*ji-1)   &
                &                                                         , ' (',      zperc,' %)',   ' on MPI rank : ', ji
-            IF (timing_glob(4*ji) /= 0.) THEN
-               zsypd = rn_rdt * REAL(nitend-nit000-1, wp) / (timing_glob(4*ji) * 365.)
-            ELSE
-               zsypd = 0.
-            ENDIF
+            zsypd = rn_Dt * REAL(nitend-nit000-1, wp) / (timing_glob(4*ji) * 365.)
             WRITE(numtime,'(A28,F11.6,A7,F10.3,A2,A15,I8)') 'Total           time : ',timing_glob(4*ji  )   &
                &                                                         , ' (SYPD: ', zsypd, ')',   ' on MPI rank : ', ji
          END DO
@@ -423,7 +423,7 @@ CONTAINS
          ll_ord = .TRUE.
          s_timer => s_timer_root
          DO WHILE ( ASSOCIATED( s_timer%next ) )
-         IF (.NOT. ASSOCIATED(s_timer%next)) EXIT
+            IF (.NOT. ASSOCIATED(s_timer%next)) EXIT
             IF ( s_timer%tsum_clock < s_timer%next%tsum_clock ) THEN
                ALLOCATE(s_wrk)
                s_wrk = s_timer%next
@@ -432,7 +432,7 @@ CONTAINS
                ll_ord = .FALSE.
                CYCLE
             ENDIF
-         IF( ASSOCIATED(s_timer%next) ) s_timer => s_timer%next
+            IF( ASSOCIATED(s_timer%next) ) s_timer => s_timer%next
          END DO
          IF( ll_ord ) EXIT
       END DO
@@ -440,23 +440,24 @@ CONTAINS
       ! write current info
       WRITE(numtime,*) 'Detailed timing for proc :', narea-1
       WRITE(numtime,*) '--------------------------'
-      WRITE(numtime,'(7a)') 'Section             ',            &
+      WRITE(numtime,*) 'Section             ',            &
       &   'Elapsed Time (s)  ','Elapsed Time (%)  ',   &
       &   'CPU Time(s)  ','CPU Time (%)  ','CPU/Elapsed  ','Frequency'
       s_timer => s_timer_root
       clfmt = '(1x,a,4x,f12.3,6x,f12.3,x,f12.3,2x,f12.3,6x,f7.3,2x,i9)'
       DO WHILE ( ASSOCIATED(s_timer) )
-         WRITE(numtime,TRIM(clfmt))   s_timer%cname,   &
-         &   s_timer%tsum_clock,s_timer%tsum_clock*100./t_elaps(2),            &
-         &   s_timer%tsum_cpu  ,s_timer%tsum_cpu*100./t_cpu(2)    ,            &
-         &   s_timer%tsum_cpu/s_timer%tsum_clock, s_timer%niter
+         IF( s_timer%tsum_clock > 0._wp )                                &
+            WRITE(numtime,TRIM(clfmt))   s_timer%cname,                  &
+            &   s_timer%tsum_clock,s_timer%tsum_clock*100./t_elaps(2),   &
+            &   s_timer%tsum_cpu  ,s_timer%tsum_cpu*100./t_cpu(2)    ,   &
+            &   s_timer%tsum_cpu/s_timer%tsum_clock, s_timer%niter
          s_timer => s_timer%next
       END DO
       WRITE(numtime,*)
       !
    END SUBROUTINE wcurrent_info
 
-#if defined key_mpp_mpi
+#if ! defined key_mpi_off
    SUBROUTINE waver_info
       !!----------------------------------------------------------------------
       !!               ***  ROUTINE wcurrent_info ***
@@ -612,13 +613,14 @@ CONTAINS
          sl_timer_ave => sl_timer_ave_root
          clfmt = '((A),E15.7,2x,f6.2,5x,f12.2,5x,f6.2,5x,f7.2,2x,f12.2,4x,f6.2,2x,f9.2)'
          DO WHILE ( ASSOCIATED(sl_timer_ave) )
-            WRITE(numtime,TRIM(clfmt))   sl_timer_ave%cname(1:18),                            &
-            &   sl_timer_ave%tsum_clock,sl_timer_ave%tsum_clock*100.*jpnij/tot_etime,   &
-            &   sl_timer_ave%tsum_cpu  ,sl_timer_ave%tsum_cpu*100.*jpnij/tot_ctime  ,   &
-            &   sl_timer_ave%tsum_cpu/sl_timer_ave%tsum_clock,                          &
-            &   sl_timer_ave%tmax_clock*100.*jpnij/tot_etime,                           &
-            &   sl_timer_ave%tmin_clock*100.*jpnij/tot_etime,                           &
-            &   sl_timer_ave%niter/REAL(jpnij)
+            IF( sl_timer_ave%tsum_clock > 0. )                                             &
+               WRITE(numtime,TRIM(clfmt))   sl_timer_ave%cname(1:18),                      &
+               &   sl_timer_ave%tsum_clock,sl_timer_ave%tsum_clock*100.*jpnij/tot_etime,   &
+               &   sl_timer_ave%tsum_cpu  ,sl_timer_ave%tsum_cpu*100.*jpnij/tot_ctime  ,   &
+               &   sl_timer_ave%tsum_cpu/sl_timer_ave%tsum_clock,                          &
+               &   sl_timer_ave%tmax_clock*100.*jpnij/tot_etime,                           &
+               &   sl_timer_ave%tmin_clock*100.*jpnij/tot_etime,                           &
+               &   sl_timer_ave%niter/REAL(jpnij)
             sl_timer_ave => sl_timer_ave%next
          END DO
          WRITE(numtime,*)

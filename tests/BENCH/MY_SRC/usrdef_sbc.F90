@@ -29,10 +29,12 @@ MODULE usrdef_sbc
    IMPLICIT NONE
    PRIVATE
 
-   PUBLIC   usrdef_sbc_oce      ! routine called in sbcmod module
-   PUBLIC   usrdef_sbc_ice_tau  ! routine called by sbcice_lim.F90 for ice dynamics
-   PUBLIC   usrdef_sbc_ice_flx  ! routine called by sbcice_lim.F90 for ice thermo
+   PUBLIC   usrdef_sbc_oce      ! routine called by sbcmod.F90 for sbc ocean
+   PUBLIC   usrdef_sbc_ice_tau  ! routine called by icestp.F90 for ice dynamics
+   PUBLIC   usrdef_sbc_ice_flx  ! routine called by icestp.F90 for ice thermo
 
+   !! * Substitutions
+#  include "do_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 4.0 , NEMO Consortium (2016)
    !! $Id$
@@ -40,7 +42,7 @@ MODULE usrdef_sbc
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE usrdef_sbc_oce( kt )
+   SUBROUTINE usrdef_sbc_oce( kt, Kbb )
       !!---------------------------------------------------------------------
       !!                    ***  ROUTINE usr_def_sbc  ***
       !!              
@@ -55,6 +57,7 @@ CONTAINS
       !!
       !!----------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt   ! ocean time step
+      INTEGER, INTENT(in) ::   Kbb  ! ocean time index
       !!---------------------------------------------------------------------
       !     
       IF( kt == nit000 ) THEN
@@ -79,7 +82,6 @@ CONTAINS
          qns_b (:,:) = 0._wp
          !
       ENDIF
-      
       !
    END SUBROUTINE usrdef_sbc_oce
 
@@ -93,22 +95,21 @@ CONTAINS
       !!---------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt   ! ocean time step
       !
-      REAL(wp), DIMENSION(jpi,jpj) ::   z2d   ! 2D workspace
+      REAL(wp) ::   zztmp
       INTEGER  ::   ji, jj
       !!---------------------------------------------------------------------
 #if defined key_si3
       IF( kt==nit000 .AND. lwp)   WRITE(numout,*)' usrdef_sbc_ice : BENCH case: constant stress forcing'
       !
       ! define unique value on each point. z2d ranging from 0.05 to -0.05
-      DO jj = 1, jpj
-         DO ji = 1, jpi
-            z2d(ji,jj) = 0.1 * ( 0.5 - REAL( nimpp + ji - 1 + ( njmpp + jj - 2 ) * jpiglo, wp ) / REAL( jpiglo * jpjglo, wp ) )
-         ENDDO
-      ENDDO
-      utau_ice(:,:) = 0.1_wp +  z2d(:,:)
-      vtau_ice(:,:) = 0.1_wp +  z2d(:,:)
+      !
+      DO_2D( 0, 0, 0, 0 )
+         zztmp = 0.1 * ( 0.5 - REAL( mig0(ji) + (mjg0(jj)-1) * Ni0glo, wp ) / REAL( Ni0glo * Nj0glo, wp ) )
+         utau_ice(ji,jj) = 0.1_wp + zztmp
+         vtau_ice(ji,jj) = 0.1_wp + zztmp
+      END_2D
 
-      CALL lbc_lnk_multi( 'usrdef_sbc', utau_ice, 'U', -1., vtau_ice, 'V', -1. )
+      CALL lbc_lnk( 'usrdef_sbc', utau_ice, 'U', -1., vtau_ice, 'V', -1. )
 #endif
       !
    END SUBROUTINE usrdef_sbc_ice_tau
@@ -118,8 +119,7 @@ CONTAINS
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE usrdef_sbc_ice_flx  ***
       !!
-      !! ** Purpose :   provide the surface boundary (flux) condition over
-      !sea-ice
+      !! ** Purpose :   provide the surface boundary (flux) condition over sea-ice
       !!---------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt   ! ocean time step
       REAL(wp), DIMENSION(:,:,:), INTENT(in)  ::   phs    ! snow thickness
@@ -127,24 +127,26 @@ CONTAINS
       !!
       REAL(wp), DIMENSION(jpi,jpj) ::   zsnw   ! snw distribution after wind blowing
       !!---------------------------------------------------------------------
-      !
 #if defined key_si3
+      !
       IF( kt==nit000 .AND. lwp)   WRITE(numout,*)' usrdef_sbc_ice : BENCH case: NO flux forcing'
       !
       ! ocean variables (renaming)
       emp_oce (:,:)   = 0._wp   ! uniform value for freshwater budget (E-P)
       qsr_oce (:,:)   = 0._wp   ! uniform value for     solar radiation
-      qns_oce (:,:)   = 0._wp   ! uniform value for non-solar radiation
+      qns_oce (:,:)   = 0._wp   ! uniform value for non-solar heat flux
 
       ! ice variables
       alb_ice (:,:,:) = 0.7_wp  ! useless
       qsr_ice (:,:,:) = 0._wp   ! uniform value for     solar radiation
-      qns_ice (:,:,:) = 0._wp   ! uniform value for non-solar radiation
+      qns_ice (:,:,:) = 0._wp   ! uniform value for non-solar heat flux
+      dqns_ice(:,:,:) = 0._wp   ! uniform value for non solar heat flux sensitivity for ice
       sprecip (:,:)   = 0._wp   ! uniform value for snow precip
       evap_ice(:,:,:) = 0._wp   ! uniform value for sublimation
 
       ! ice fields deduced from above
       zsnw(:,:) = 1._wp
+      !!CALL lim_thd_snwblow( at_i_b, zsnw )  ! snow distribution over ice after wind blowing 
       emp_ice  (:,:)   = SUM( a_i_b(:,:,:) * evap_ice(:,:,:), dim=3 ) - sprecip(:,:) * zsnw(:,:)
       emp_oce  (:,:)   = emp_oce(:,:) - sprecip(:,:) * (1._wp - zsnw(:,:) )
       qevap_ice(:,:,:) =   0._wp
@@ -157,7 +159,7 @@ CONTAINS
       qns_tot (:,:) = at_i_b(:,:) * qns_oce(:,:) + SUM( a_i_b(:,:,:) * qns_ice(:,:,:), dim=3 ) + qemp_ice(:,:) + qemp_oce(:,:)
       qsr_tot (:,:) = at_i_b(:,:) * qsr_oce(:,:) + SUM( a_i_b(:,:,:) * qsr_ice(:,:,:), dim=3 )
 
-      ! --- shortwave radiation transmitted below the surface (W/m2)
+      ! --- shortwave radiation transmitted thru the surface scattering layer (W/m2) --- !
       qtr_ice_top(:,:,:) = 0._wp
 #endif
 

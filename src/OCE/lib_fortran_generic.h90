@@ -37,25 +37,33 @@
       !
       !!-----------------------------------------------------------------------
       !
-      REAL(wp)                              ::   FUNCTION_GLOB_OP   ! global sum
+      REAL(wp) ::   FUNCTION_GLOB_OP   ! global sum
       !!
-      COMPLEX(wp)::   ctmp
+      COMPLEX(dp)::   ctmp
       REAL(wp)   ::   ztmp
-      INTEGER    ::   ji, jj, jk   ! dummy loop indices
-      INTEGER    ::   ipi, ipj, ipk    ! dimensions
+      INTEGER    ::   ji, jj, jk           ! dummy loop indices
+      INTEGER    ::   ipi,ipj, ipk         ! dimensions
+      INTEGER    ::   iis, iie, ijs, ije   ! loop start and end
       !!-----------------------------------------------------------------------
       !
       ipi = SIZE(ptab,1)   ! 1st dimension
       ipj = J_SIZE(ptab)   ! 2nd dimension
       ipk = K_SIZE(ptab)   ! 3rd dimension
       !
-      ctmp = CMPLX( 0.e0, 0.e0, wp )   ! warning ctmp is cumulated
-   
+      IF( ipi == jpi .AND. ipj == jpj ) THEN   ! do 2D loop only over the inner domain (-> avoid to use undefined values)
+         iis = Nis0   ;   iie = Nie0
+         ijs = Njs0   ;   ije = Nje0
+      ELSE
+         iis = 1   ;   iie = jpi
+         ijs = 1   ;   ije = jpj
+      ENDIF
+      !
+      ctmp = CMPLX( 0.e0, 0.e0, dp )   ! warning ctmp is cumulated
       DO jk = 1, ipk
-        DO jj = 1, ipj
-          DO ji = 1, ipi
+        DO jj = ijs, ije
+          DO ji = iis, iie
              ztmp =  ARRAY_IN(ji,jj,jk) * MASK_ARRAY(ji,jj)
-             CALL DDPDD( CMPLX( ztmp, 0.e0, wp ), ctmp )
+             CALL DDPDD( CMPLX( ztmp, 0.e0, dp ), ctmp )
           END DO
         END DO
       END DO
@@ -108,7 +116,7 @@
       !
       REAL(wp)                              ::   FUNCTION_GLOB_OP   ! global sum
       !!
-      COMPLEX(wp)::   ctmp
+      COMPLEX(dp)::   ctmp
       REAL(wp)   ::   ztmp
       INTEGER    ::   jk       ! dummy loop indices
       INTEGER    ::   ipk      ! dimensions

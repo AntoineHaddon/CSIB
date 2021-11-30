@@ -23,6 +23,9 @@ MODULE trcsink
 
    INTEGER, PUBLIC :: nitermax      !: Maximum number of iterations for sinking
 
+   !! * Substitutions
+#  include "do_loop_substitute.h90"
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
    !! $Id: trcsink.F90 10069 2018-08-28 14:12:24Z nicolasmartin $ 
@@ -34,7 +37,7 @@ CONTAINS
    !!   'standard sinking parameterisation'                  ???
    !!----------------------------------------------------------------------
 
-   SUBROUTINE trc_sink ( kt, pwsink, psinkflx, jp_tra, rsfact )
+   SUBROUTINE trc_sink ( kt, Kbb, Kmm, pwsink, psinkflx, jp_tra, rsfact )
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE trc_sink  ***
       !!
@@ -44,6 +47,7 @@ CONTAINS
       !! ** Method  : - ???
       !!---------------------------------------------------------------------
       INTEGER , INTENT(in)  :: kt
+      INTEGER , INTENT(in)  :: Kbb, Kmm
       INTEGER , INTENT(in)  :: jp_tra    ! tracer index index      
       REAL(wp), INTENT(in)  :: rsfact    ! time step duration
       REAL(wp), INTENT(in)   , DIMENSION(jpi,jpj,jpk) :: pwsink
@@ -69,33 +73,27 @@ CONTAINS
       IF( nitermax == 1 ) THEN
          iiter(:,:) = 1
       ELSE
-         DO jj = 1, jpj
-            DO ji = 1, jpi
-               iiter(ji,jj) = 1
-               DO jk = 1, jpkm1
-                  IF( tmask(ji,jj,jk) == 1.0 ) THEN
-                      zwsmax =  0.5 * e3t_n(ji,jj,jk) * rday / rsfact
-                      iiter(ji,jj) =  MAX( iiter(ji,jj), INT( pwsink(ji,jj,jk) / zwsmax ) )
-                  ENDIF
-               END DO
+         DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
+            iiter(ji,jj) = 1
+            DO jk = 1, jpkm1
+               IF( tmask(ji,jj,jk) == 1.0 ) THEN
+                   zwsmax =  0.5 * e3t(ji,jj,jk,Kmm) * rday / rsfact
+                   iiter(ji,jj) =  MAX( iiter(ji,jj), INT( pwsink(ji,jj,jk) / zwsmax ) + 1 )
+               ENDIF
             END DO
-         END DO
+         END_2D
          iiter(:,:) = MIN( iiter(:,:), nitermax )
       ENDIF
 
-      DO jk = 1,jpkm1
-         DO jj = 1, jpj
-            DO ji = 1, jpi
-               IF( tmask(ji,jj,jk) == 1.0 ) THEN
-                 zwsmax = 0.5 * e3t_n(ji,jj,jk) * rday / rsfact
-                 zwsink(ji,jj,jk) = MIN( pwsink(ji,jj,jk), zwsmax * REAL( iiter(ji,jj), wp ) )
-               ELSE
-                 ! provide a default value so there is no use of undefinite value in trc_sink2 for zwsink2 initialization
-                 zwsink(ji,jj,jk) = 0.
-               ENDIF
-            END DO
-         END DO
-      END DO
+      DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, jpkm1 )
+         IF( tmask(ji,jj,jk) == 1.0 ) THEN
+           zwsmax = 0.5 * e3t(ji,jj,jk,Kmm) * rday / rsfact
+           zwsink(ji,jj,jk) = MIN( pwsink(ji,jj,jk), zwsmax * REAL( iiter(ji,jj), wp ) )
+         ELSE
+           ! provide a default value so there is no use of undefinite value in trc_sink2 for zwsink2 initialization
+           zwsink(ji,jj,jk) = 0.
+         ENDIF
+      END_3D
 
       !  Initializa to zero all the sinking arrays 
       !  -----------------------------------------
@@ -103,13 +101,13 @@ CONTAINS
 
       !   Compute the sedimentation term using trc_sink2 for the considered sinking particle
       !   -----------------------------------------------------
-      CALL trc_sink2( zwsink, psinkflx, jp_tra, iiter, rsfact )
+      CALL trc_sink2( Kbb, Kmm, zwsink, psinkflx, jp_tra, iiter, rsfact )
       !
       IF( ln_timing )   CALL timing_stop('trc_sink')
       !
    END SUBROUTINE trc_sink
 
-   SUBROUTINE trc_sink2( pwsink, psinkflx, jp_tra, kiter, rsfact )
+   SUBROUTINE trc_sink2( Kbb, Kmm, pwsink, psinkflx, jp_tra, kiter, rsfact )
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE trc_sink2  ***
       !!
@@ -120,85 +118,77 @@ CONTAINS
       !! ** Method  : - this ROUTINE compute not exactly the advection but the
       !!      transport term, i.e.  div(u*tra).
       !!---------------------------------------------------------------------
+      INTEGER,  INTENT(in   )                         ::   Kbb, Kmm  ! time level indices
       INTEGER,  INTENT(in   )                         ::   jp_tra    ! tracer index index      
       REAL(wp), INTENT(in   )                         ::   rsfact    ! duration of time step
       INTEGER,  INTENT(in   ), DIMENSION(jpi,jpj)     ::   kiter     ! number of iterations for time-splitting 
       REAL(wp), INTENT(in   ), DIMENSION(jpi,jpj,jpk) ::   pwsink    ! sinking speed
       REAL(wp), INTENT(inout), DIMENSION(jpi,jpj,jpk) ::   psinkflx  ! sinking fluxe
       !
-      INTEGER  ::   ji, jj, jk, jn
+      INTEGER  ::   ji, jj, jk, jn, jt
       REAL(wp) ::   zigma,zew,zign, zflx, zstep
-      REAL(wp), DIMENSION(jpi,jpj,jpk) :: ztraz, zakz, zwsink2, ztrb 
+      REAL(wp), DIMENSION(jpi,jpj,jpk) :: ztraz, zakz, zwsink2, ztrb, psinking 
       !!---------------------------------------------------------------------
       !
       IF( ln_timing )   CALL timing_start('trc_sink2')
       !
-      ztraz(:,:,:) = 0.e0
-      zakz (:,:,:) = 0.e0
-      ztrb (:,:,:) = trb(:,:,:,jp_tra)
-
       DO jk = 1, jpkm1
          zwsink2(:,:,jk+1) = -pwsink(:,:,jk) / rday * tmask(:,:,jk+1) 
       END DO
       zwsink2(:,:,1) = 0.e0
 
-
-      ! Vertical advective flux
-      DO jn = 1, 2
-         !  first guess of the slopes interior values
-         DO jj = 1, jpj
-            DO ji = 1, jpi
-               !
-               zstep = rsfact / REAL( kiter(ji,jj), wp ) / 2.
+      DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
+         ! Vertical advective flux
+         zstep = rsfact / REAL( kiter(ji,jj), wp ) / 2.
+         DO jt = 1, kiter(ji,jj)
+            ztraz(ji,jj,:) = 0.e0
+            zakz (ji,jj,:) = 0.e0
+            ztrb (ji,jj,:) = tr(ji,jj,:,jp_tra,Kbb)
+            DO jn = 1, 2
                !              
                DO jk = 2, jpkm1
-                  ztraz(ji,jj,jk) = ( trb(ji,jj,jk-1,jp_tra) - trb(ji,jj,jk,jp_tra) ) * tmask(ji,jj,jk)
+                  ztraz(ji,jj,jk) = ( tr(ji,jj,jk-1,jp_tra,Kbb) - tr(ji,jj,jk,jp_tra,Kbb) ) * tmask(ji,jj,jk)
                END DO
                ztraz(ji,jj,1  ) = 0.0
                ztraz(ji,jj,jpk) = 0.0
 
                ! slopes
                DO jk = 2, jpkm1
-                  zign = 0.25 + SIGN( 0.25, ztraz(ji,jj,jk) * ztraz(ji,jj,jk+1) )
+                  zign = 0.25 + SIGN( 0.25_wp, ztraz(ji,jj,jk) * ztraz(ji,jj,jk+1) )
                   zakz(ji,jj,jk) = ( ztraz(ji,jj,jk) + ztraz(ji,jj,jk+1) ) * zign
                END DO
-         
+      
                ! Slopes limitation
                DO jk = 2, jpkm1
-                  zakz(ji,jj,jk) = SIGN( 1., zakz(ji,jj,jk) ) *        &
+                  zakz(ji,jj,jk) = SIGN( 1.0_wp, zakz(ji,jj,jk) ) *        &
                      &             MIN( ABS( zakz(ji,jj,jk) ), 2. * ABS(ztraz(ji,jj,jk+1)), 2. * ABS(ztraz(ji,jj,jk) ) )
                END DO
-         
+      
                ! vertical advective flux
                DO jk = 1, jpkm1
-                  zigma = zwsink2(ji,jj,jk+1) * zstep / e3w_n(ji,jj,jk+1)
+                  zigma = zwsink2(ji,jj,jk+1) * zstep / e3w(ji,jj,jk+1,Kmm)
                   zew   = zwsink2(ji,jj,jk+1)
-                  psinkflx(ji,jj,jk+1) = -zew * ( trb(ji,jj,jk,jp_tra) - 0.5 * ( 1 + zigma ) * zakz(ji,jj,jk) ) * zstep
+                  psinking(ji,jj,jk+1) = -zew * ( tr(ji,jj,jk,jp_tra,Kbb) - 0.5 * ( 1 + zigma ) * zakz(ji,jj,jk) ) * zstep
                END DO
                !
                ! Boundary conditions
-               psinkflx(ji,jj,1  ) = 0.e0
-               psinkflx(ji,jj,jpk) = 0.e0
-         
-               DO jk=1,jpkm1
-                  zflx = ( psinkflx(ji,jj,jk) - psinkflx(ji,jj,jk+1) ) / e3t_n(ji,jj,jk)
-                  trb(ji,jj,jk,jp_tra) = trb(ji,jj,jk,jp_tra) + zflx
+               psinking(ji,jj,1  ) = 0.e0
+               psinking(ji,jj,jpk) = 0.e0
+      
+               DO jk = 1, jpkm1
+                  zflx = ( psinking(ji,jj,jk) - psinking(ji,jj,jk+1) ) / e3t(ji,jj,jk,Kmm)
+                  tr(ji,jj,jk,jp_tra,Kbb) = tr(ji,jj,jk,jp_tra,Kbb) + zflx
                END DO
             END DO
-         END DO
-      END DO
-
-      DO jk = 1,jpkm1
-         DO jj = 1,jpj
-            DO ji = 1, jpi
-               zflx = ( psinkflx(ji,jj,jk) - psinkflx(ji,jj,jk+1) ) / e3t_n(ji,jj,jk)
+            DO jk = 1, jpkm1
+               zflx = ( psinking(ji,jj,jk) - psinking(ji,jj,jk+1) ) / e3t(ji,jj,jk,Kmm)
                ztrb(ji,jj,jk) = ztrb(ji,jj,jk) + 2. * zflx
             END DO
-         END DO
-      END DO
 
-      trb(:,:,:,jp_tra) = ztrb(:,:,:)
-      psinkflx(:,:,:)   = 2. * psinkflx(:,:,:)
+            tr(ji,jj,:,jp_tra,Kbb) = ztrb(ji,jj,:)
+            psinkflx(ji,jj,:)   = psinkflx(ji,jj,:) + 2. * psinking(ji,jj,:)
+         END DO
+      END_2D
       !
       IF( ln_timing )  CALL timing_stop('trc_sink2')
       !
@@ -215,10 +205,8 @@ CONTAINS
       NAMELIST/namtrc_snk/ nitermax
       !!----------------------------------------------------------------------
       !
-      REWIND( numnat_ref )              ! namtrc_rad in reference namelist 
       READ  ( numnat_ref, namtrc_snk, IOSTAT = ios, ERR = 907)
 907   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namtrc_snk in reference namelist' )
-      REWIND( numnat_cfg )              ! namtrc_rad in configuration namelist 
       READ  ( numnat_cfg, namtrc_snk, IOSTAT = ios, ERR = 908 )
 908   IF( ios > 0 )   CALL ctl_nam ( ios , 'namtrc_snk in configuration namelist' )
       IF(lwm) WRITE( numont, namtrc_snk )

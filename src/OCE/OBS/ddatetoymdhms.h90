@@ -1,6 +1,6 @@
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: ddatetoymdhms.h90 10068 2018-08-28 14:09:04Z nicolasmartin $
+   !! $Id: ddatetoymdhms.h90 13226 2020-07-02 14:24:31Z orioltp $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 
@@ -20,7 +20,7 @@
       !! * Modules used
 
       !! * Arguments
-      real(wp), INTENT(IN) :: ddate
+      real(dp), INTENT(IN) :: ddate
       INTEGER, INTENT(OUT) :: kyea
       INTEGER, INTENT(OUT) :: kmon
       INTEGER, INTENT(OUT) :: kday

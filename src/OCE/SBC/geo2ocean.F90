@@ -42,10 +42,10 @@ MODULE geo2ocean
    LOGICAL ::   lmust_init = .TRUE.        !: used to initialize the cos/sin variables (see above)
 
    !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
+#  include "do_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: geo2ocean.F90 10425 2018-12-19 21:54:16Z smasson $ 
+   !! $Id: geo2ocean.F90 14433 2021-02-11 08:06:49Z smasson $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -159,124 +159,120 @@ CONTAINS
       ! ============================= !
       ! (computation done on the north stereographic polar plane)
       !
-      DO jj = 2, jpjm1
-         DO ji = fs_2, jpi   ! vector opt.
-            !                  
-            zlam = plamt(ji,jj)     ! north pole direction & modulous (at t-point)
-            zphi = pphit(ji,jj)
-            zxnpt = 0. - 2. * COS( rad*zlam ) * TAN( rpi/4. - rad*zphi/2. )
-            zynpt = 0. - 2. * SIN( rad*zlam ) * TAN( rpi/4. - rad*zphi/2. )
-            znnpt = zxnpt*zxnpt + zynpt*zynpt
-            !
-            zlam = plamu(ji,jj)     ! north pole direction & modulous (at u-point)
-            zphi = pphiu(ji,jj)
-            zxnpu = 0. - 2. * COS( rad*zlam ) * TAN( rpi/4. - rad*zphi/2. )
-            zynpu = 0. - 2. * SIN( rad*zlam ) * TAN( rpi/4. - rad*zphi/2. )
-            znnpu = zxnpu*zxnpu + zynpu*zynpu
-            !
-            zlam = plamv(ji,jj)     ! north pole direction & modulous (at v-point)
-            zphi = pphiv(ji,jj)
-            zxnpv = 0. - 2. * COS( rad*zlam ) * TAN( rpi/4. - rad*zphi/2. )
-            zynpv = 0. - 2. * SIN( rad*zlam ) * TAN( rpi/4. - rad*zphi/2. )
-            znnpv = zxnpv*zxnpv + zynpv*zynpv
-            !
-            zlam = plamf(ji,jj)     ! north pole direction & modulous (at f-point)
-            zphi = pphif(ji,jj)
-            zxnpf = 0. - 2. * COS( rad*zlam ) * TAN( rpi/4. - rad*zphi/2. )
-            zynpf = 0. - 2. * SIN( rad*zlam ) * TAN( rpi/4. - rad*zphi/2. )
-            znnpf = zxnpf*zxnpf + zynpf*zynpf
-            !
-            zlam = plamv(ji,jj  )   ! j-direction: v-point segment direction (around t-point)
-            zphi = pphiv(ji,jj  )
-            zlan = plamv(ji,jj-1)
-            zphh = pphiv(ji,jj-1)
-            zxvvt =  2. * COS( rad*zlam ) * TAN( rpi/4. - rad*zphi/2. )   &
-               &  -  2. * COS( rad*zlan ) * TAN( rpi/4. - rad*zphh/2. )
-            zyvvt =  2. * SIN( rad*zlam ) * TAN( rpi/4. - rad*zphi/2. )   &
-               &  -  2. * SIN( rad*zlan ) * TAN( rpi/4. - rad*zphh/2. )
-            znvvt = SQRT( znnpt * ( zxvvt*zxvvt + zyvvt*zyvvt )  )
-            znvvt = MAX( znvvt, 1.e-14 )
-            !
-            zlam = plamf(ji,jj  )   ! j-direction: f-point segment direction (around u-point)
-            zphi = pphif(ji,jj  )
-            zlan = plamf(ji,jj-1)
-            zphh = pphif(ji,jj-1)
-            zxffu =  2. * COS( rad*zlam ) * TAN( rpi/4. - rad*zphi/2. )   &
-               &  -  2. * COS( rad*zlan ) * TAN( rpi/4. - rad*zphh/2. )
-            zyffu =  2. * SIN( rad*zlam ) * TAN( rpi/4. - rad*zphi/2. )   &
-               &  -  2. * SIN( rad*zlan ) * TAN( rpi/4. - rad*zphh/2. )
-            znffu = SQRT( znnpu * ( zxffu*zxffu + zyffu*zyffu )  )
-            znffu = MAX( znffu, 1.e-14 )
-            !
-            zlam = plamf(ji  ,jj)   ! i-direction: f-point segment direction (around v-point)
-            zphi = pphif(ji  ,jj)
-            zlan = plamf(ji-1,jj)
-            zphh = pphif(ji-1,jj)
-            zxffv =  2. * COS( rad*zlam ) * TAN( rpi/4. - rad*zphi/2. )   &
-               &  -  2. * COS( rad*zlan ) * TAN( rpi/4. - rad*zphh/2. )
-            zyffv =  2. * SIN( rad*zlam ) * TAN( rpi/4. - rad*zphi/2. )   &
-               &  -  2. * SIN( rad*zlan ) * TAN( rpi/4. - rad*zphh/2. )
-            znffv = SQRT( znnpv * ( zxffv*zxffv + zyffv*zyffv )  )
-            znffv = MAX( znffv, 1.e-14 )
-            !
-            zlam = plamu(ji,jj+1)   ! j-direction: u-point segment direction (around f-point)
-            zphi = pphiu(ji,jj+1)
-            zlan = plamu(ji,jj  )
-            zphh = pphiu(ji,jj  )
-            zxuuf =  2. * COS( rad*zlam ) * TAN( rpi/4. - rad*zphi/2. )   &
-               &  -  2. * COS( rad*zlan ) * TAN( rpi/4. - rad*zphh/2. )
-            zyuuf =  2. * SIN( rad*zlam ) * TAN( rpi/4. - rad*zphi/2. )   &
-               &  -  2. * SIN( rad*zlan ) * TAN( rpi/4. - rad*zphh/2. )
-            znuuf = SQRT( znnpf * ( zxuuf*zxuuf + zyuuf*zyuuf )  )
-            znuuf = MAX( znuuf, 1.e-14 )
-            !
-            !                       ! cosinus and sinus using dot and cross products
-            gsint(ji,jj) = ( zxnpt*zyvvt - zynpt*zxvvt ) / znvvt
-            gcost(ji,jj) = ( zxnpt*zxvvt + zynpt*zyvvt ) / znvvt
-            !
-            gsinu(ji,jj) = ( zxnpu*zyffu - zynpu*zxffu ) / znffu
-            gcosu(ji,jj) = ( zxnpu*zxffu + zynpu*zyffu ) / znffu
-            !
-            gsinf(ji,jj) = ( zxnpf*zyuuf - zynpf*zxuuf ) / znuuf
-            gcosf(ji,jj) = ( zxnpf*zxuuf + zynpf*zyuuf ) / znuuf
-            !
-            gsinv(ji,jj) = ( zxnpv*zxffv + zynpv*zyffv ) / znffv
-            gcosv(ji,jj) =-( zxnpv*zyffv - zynpv*zxffv ) / znffv     ! (caution, rotation of 90 degres)
-            !
-         END DO
-      END DO
+      DO_2D( 0, 1, 0, 0 )
+         !                  
+         zlam = plamt(ji,jj)     ! north pole direction & modulous (at t-point)
+         zphi = pphit(ji,jj)
+         zxnpt = 0. - 2. * COS( rad*zlam ) * TAN( rpi/4. - rad*zphi/2. )
+         zynpt = 0. - 2. * SIN( rad*zlam ) * TAN( rpi/4. - rad*zphi/2. )
+         znnpt = zxnpt*zxnpt + zynpt*zynpt
+         !
+         zlam = plamu(ji,jj)     ! north pole direction & modulous (at u-point)
+         zphi = pphiu(ji,jj)
+         zxnpu = 0. - 2. * COS( rad*zlam ) * TAN( rpi/4. - rad*zphi/2. )
+         zynpu = 0. - 2. * SIN( rad*zlam ) * TAN( rpi/4. - rad*zphi/2. )
+         znnpu = zxnpu*zxnpu + zynpu*zynpu
+         !
+         zlam = plamv(ji,jj)     ! north pole direction & modulous (at v-point)
+         zphi = pphiv(ji,jj)
+         zxnpv = 0. - 2. * COS( rad*zlam ) * TAN( rpi/4. - rad*zphi/2. )
+         zynpv = 0. - 2. * SIN( rad*zlam ) * TAN( rpi/4. - rad*zphi/2. )
+         znnpv = zxnpv*zxnpv + zynpv*zynpv
+         !
+         zlam = plamf(ji,jj)     ! north pole direction & modulous (at f-point)
+         zphi = pphif(ji,jj)
+         zxnpf = 0. - 2. * COS( rad*zlam ) * TAN( rpi/4. - rad*zphi/2. )
+         zynpf = 0. - 2. * SIN( rad*zlam ) * TAN( rpi/4. - rad*zphi/2. )
+         znnpf = zxnpf*zxnpf + zynpf*zynpf
+         !
+         zlam = plamv(ji,jj  )   ! j-direction: v-point segment direction (around t-point)
+         zphi = pphiv(ji,jj  )
+         zlan = plamv(ji,jj-1)
+         zphh = pphiv(ji,jj-1)
+         zxvvt =  2. * COS( rad*zlam ) * TAN( rpi/4. - rad*zphi/2. )   &
+            &  -  2. * COS( rad*zlan ) * TAN( rpi/4. - rad*zphh/2. )
+         zyvvt =  2. * SIN( rad*zlam ) * TAN( rpi/4. - rad*zphi/2. )   &
+            &  -  2. * SIN( rad*zlan ) * TAN( rpi/4. - rad*zphh/2. )
+         znvvt = SQRT( znnpt * ( zxvvt*zxvvt + zyvvt*zyvvt )  )
+         znvvt = MAX( znvvt, 1.e-14 )
+         !
+         zlam = plamf(ji,jj  )   ! j-direction: f-point segment direction (around u-point)
+         zphi = pphif(ji,jj  )
+         zlan = plamf(ji,jj-1)
+         zphh = pphif(ji,jj-1)
+         zxffu =  2. * COS( rad*zlam ) * TAN( rpi/4. - rad*zphi/2. )   &
+            &  -  2. * COS( rad*zlan ) * TAN( rpi/4. - rad*zphh/2. )
+         zyffu =  2. * SIN( rad*zlam ) * TAN( rpi/4. - rad*zphi/2. )   &
+            &  -  2. * SIN( rad*zlan ) * TAN( rpi/4. - rad*zphh/2. )
+         znffu = SQRT( znnpu * ( zxffu*zxffu + zyffu*zyffu )  )
+         znffu = MAX( znffu, 1.e-14 )
+         !
+         zlam = plamf(ji  ,jj)   ! i-direction: f-point segment direction (around v-point)
+         zphi = pphif(ji  ,jj)
+         zlan = plamf(ji-1,jj)
+         zphh = pphif(ji-1,jj)
+         zxffv =  2. * COS( rad*zlam ) * TAN( rpi/4. - rad*zphi/2. )   &
+            &  -  2. * COS( rad*zlan ) * TAN( rpi/4. - rad*zphh/2. )
+         zyffv =  2. * SIN( rad*zlam ) * TAN( rpi/4. - rad*zphi/2. )   &
+            &  -  2. * SIN( rad*zlan ) * TAN( rpi/4. - rad*zphh/2. )
+         znffv = SQRT( znnpv * ( zxffv*zxffv + zyffv*zyffv )  )
+         znffv = MAX( znffv, 1.e-14 )
+         !
+         zlam = plamu(ji,jj+1)   ! j-direction: u-point segment direction (around f-point)
+         zphi = pphiu(ji,jj+1)
+         zlan = plamu(ji,jj  )
+         zphh = pphiu(ji,jj  )
+         zxuuf =  2. * COS( rad*zlam ) * TAN( rpi/4. - rad*zphi/2. )   &
+            &  -  2. * COS( rad*zlan ) * TAN( rpi/4. - rad*zphh/2. )
+         zyuuf =  2. * SIN( rad*zlam ) * TAN( rpi/4. - rad*zphi/2. )   &
+            &  -  2. * SIN( rad*zlan ) * TAN( rpi/4. - rad*zphh/2. )
+         znuuf = SQRT( znnpf * ( zxuuf*zxuuf + zyuuf*zyuuf )  )
+         znuuf = MAX( znuuf, 1.e-14 )
+         !
+         !                       ! cosinus and sinus using dot and cross products
+         gsint(ji,jj) = ( zxnpt*zyvvt - zynpt*zxvvt ) / znvvt
+         gcost(ji,jj) = ( zxnpt*zxvvt + zynpt*zyvvt ) / znvvt
+         !
+         gsinu(ji,jj) = ( zxnpu*zyffu - zynpu*zxffu ) / znffu
+         gcosu(ji,jj) = ( zxnpu*zxffu + zynpu*zyffu ) / znffu
+         !
+         gsinf(ji,jj) = ( zxnpf*zyuuf - zynpf*zxuuf ) / znuuf
+         gcosf(ji,jj) = ( zxnpf*zxuuf + zynpf*zyuuf ) / znuuf
+         !
+         gsinv(ji,jj) = ( zxnpv*zxffv + zynpv*zyffv ) / znffv
+         gcosv(ji,jj) =-( zxnpv*zyffv - zynpv*zxffv ) / znffv     ! (caution, rotation of 90 degres)
+         !
+      END_2D
 
       ! =============== !
       ! Geographic mesh !
       ! =============== !
 
-      DO jj = 2, jpjm1
-         DO ji = fs_2, jpi   ! vector opt.
-            IF( MOD( ABS( plamv(ji,jj) - plamv(ji,jj-1) ), 360. ) < 1.e-8 ) THEN
-               gsint(ji,jj) = 0.
-               gcost(ji,jj) = 1.
-            ENDIF
-            IF( MOD( ABS( plamf(ji,jj) - plamf(ji,jj-1) ), 360. ) < 1.e-8 ) THEN
-               gsinu(ji,jj) = 0.
-               gcosu(ji,jj) = 1.
-            ENDIF
-            IF(      ABS( pphif(ji,jj) - pphif(ji-1,jj) )         < 1.e-8 ) THEN
-               gsinv(ji,jj) = 0.
-               gcosv(ji,jj) = 1.
-            ENDIF
-            IF( MOD( ABS( plamu(ji,jj) - plamu(ji,jj+1) ), 360. ) < 1.e-8 ) THEN
-               gsinf(ji,jj) = 0.
-               gcosf(ji,jj) = 1.
-            ENDIF
-         END DO
-      END DO
+      DO_2D( 0, 1, 0, 0 )
+         IF( MOD( ABS( plamv(ji,jj) - plamv(ji,jj-1) ), 360. ) < 1.e-8 ) THEN
+            gsint(ji,jj) = 0.
+            gcost(ji,jj) = 1.
+         ENDIF
+         IF( MOD( ABS( plamf(ji,jj) - plamf(ji,jj-1) ), 360. ) < 1.e-8 ) THEN
+            gsinu(ji,jj) = 0.
+            gcosu(ji,jj) = 1.
+         ENDIF
+         IF(      ABS( pphif(ji,jj) - pphif(ji-1,jj) )         < 1.e-8 ) THEN
+            gsinv(ji,jj) = 0.
+            gcosv(ji,jj) = 1.
+         ENDIF
+         IF( MOD( ABS( plamu(ji,jj) - plamu(ji,jj+1) ), 360. ) < 1.e-8 ) THEN
+            gsinf(ji,jj) = 0.
+            gcosf(ji,jj) = 1.
+         ENDIF
+      END_2D
 
       ! =========================== !
       ! Lateral boundary conditions !
       ! =========================== !
       !           ! lateral boundary cond.: T-, U-, V-, F-pts, sgn
-      CALL lbc_lnk_multi( 'geo2ocean', gcost, 'T', -1., gsint, 'T', -1., gcosu, 'U', -1., gsinu, 'U', -1., & 
-                      &   gcosv, 'V', -1., gsinv, 'V', -1., gcosf, 'F', -1., gsinf, 'F', -1.  )
+      CALL lbc_lnk( 'geo2ocean', gcost, 'T', -1.0_wp, gsint, 'T', -1.0_wp, gcosu, 'U', -1.0_wp, gsinu, 'U', -1.0_wp, & 
+         &                       gcosv, 'V', -1.0_wp, gsinv, 'V', -1.0_wp, gcosf, 'F', -1.0_wp, gsinf, 'F', -1.0_wp  )
       !
    END SUBROUTINE angle
 

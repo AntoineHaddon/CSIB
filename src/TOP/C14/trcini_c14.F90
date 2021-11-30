@@ -25,12 +25,12 @@ MODULE trcini_c14
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: trcini_c14.F90 10069 2018-08-28 14:12:24Z nicolasmartin $ 
+   !! $Id: trcini_c14.F90 13286 2020-07-09 15:48:29Z smasson $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE trc_ini_c14
+   SUBROUTINE trc_ini_c14( Kmm )
       !!----------------------------------------------------------------------
       !!                     ***  trc_ini_c14  ***  
       !!
@@ -39,6 +39,7 @@ CONTAINS
       !! ** Method  : 
       !!----------------------------------------------------------------------
       !
+      INTEGER, INTENT(in)  ::  Kmm  ! time level indices
       REAL(wp) :: ztrai
       INTEGER  :: jn
       CHARACTER(len = 20)  ::  cltra
@@ -56,7 +57,7 @@ CONTAINS
          IF(lwp) WRITE(numout,*) '                      ==>    PRESCRIBED initial VALUES'
          IF(lwp) WRITE(numout,*) '                      ==>    Ocean C14/C :', rc14init 
          !
-         trn(:,:,:,jp_c14) = rc14init * tmask(:,:,:)
+         tr(:,:,:,jp_c14,Kmm) = rc14init * tmask(:,:,:)
          !
          qtr_c14(:,:) = 0._wp           ! Init of air-sea BC
          !
@@ -67,10 +68,10 @@ CONTAINS
         IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~'
         ! 
         CALL iom_get( numrtr, 'co2sbc', co2sbc ) 
-        CALL iom_get( numrtr, jpdom_autoglo, 'c14sbc', c14sbc ) 
-        CALL iom_get( numrtr, jpdom_autoglo, 'exch_co2', exch_co2 ) 
-        CALL iom_get( numrtr, jpdom_autoglo, 'exch_c14', exch_c14 ) 
-        CALL iom_get( numrtr, jpdom_autoglo, 'qtr_c14', qtr_c14 )
+        CALL iom_get( numrtr, jpdom_auto, 'c14sbc', c14sbc ) 
+        CALL iom_get( numrtr, jpdom_auto, 'exch_co2', exch_co2 ) 
+        CALL iom_get( numrtr, jpdom_auto, 'exch_c14', exch_c14 ) 
+        CALL iom_get( numrtr, jpdom_auto, 'qtr_c14', qtr_c14 )
         !
       END IF
       !
@@ -83,7 +84,7 @@ CONTAINS
       !
       ELSE
         !
-        CALL iom_get( numrtr, jpdom_autoglo, 'qint_c14', qint_c14 ) 
+        CALL iom_get( numrtr, jpdom_auto, 'qint_c14', qint_c14 ) 
         !
       ENDIF
       !

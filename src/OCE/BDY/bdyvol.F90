@@ -13,9 +13,9 @@ MODULE bdyvol
    USE oce            ! ocean dynamics and tracers 
    USE bdy_oce        ! ocean open boundary conditions
    USE sbc_oce        ! ocean surface boundary conditions
+   USE isf_oce, ONLY : fwfisf_cav, fwfisf_par  ! ice shelf
    USE dom_oce        ! ocean space and time domain 
    USE phycst         ! physical constants
-   USE sbcisf         ! ice shelf
    !
    USE in_out_manager ! I/O manager
    USE lib_mpp        ! for mppsum
@@ -28,7 +28,7 @@ MODULE bdyvol
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: bdyvol.F90 12148 2019-12-10 13:59:27Z smasson $ 
+   !! $Id: bdyvol.F90 15004 2021-06-16 10:33:18Z mathiot $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -76,7 +76,7 @@ CONTAINS
       !
       ! Calculate the cumulate surface Flux z_cflxemp (m3/s) over all the domain
       ! -----------------------------------------------------------------------
-      IF ( kc == 1 ) z_cflxemp = glob_sum( 'bdyvol', ( emp(:,:) - rnf(:,:) + fwfisf(:,:) ) * bdytmask(:,:) * e1e2t(:,:)  ) / rau0
+      IF ( kc == 1 ) z_cflxemp = glob_sum( 'bdyvol', ( emp(:,:) - rnf(:,:) - fwfisf_cav(:,:) - fwfisf_par(:,:) ) * bdytmask(:,:) * e1e2t(:,:)  ) / rho0
 
       ! Compute bdy surface each cycle if non linear free surface
       ! ---------------------------------------------------------

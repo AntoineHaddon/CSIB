@@ -1,1 +1,1 @@
-../../doc/rst/source/coupling.rst
+../../doc/rst/source/cplg.rst

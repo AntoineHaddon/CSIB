@@ -1,6 +1,6 @@
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: obsinter_z1d.h90 10068 2018-08-28 14:09:04Z nicolasmartin $
+   !! $Id: obsinter_z1d.h90 13226 2020-07-02 14:24:31Z orioltp $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 
@@ -61,31 +61,35 @@
          !---------------------------------------------------------------------
          z1dm = ( pdep(kkco(jdep)) - pobsdep(jdep)      )
          z1dp = ( pobsdep(jdep)    - pdep(kkco(jdep)-1) )
-         IF ( pobsmask(kkco(jdep)) == 0.0_wp ) z1dp = 0.0_wp
-
-         zsum = z1dm + z1dp
          
-         IF ( k1dint == 0 ) THEN
+         ! If kkco(jdep) is masked then set pobs(jdep) to the lowest value located above bathymetry
+         IF ( pobsmask(kkco(jdep)) == 0.0_wp ) THEN
+            pobs(jdep) = pobsk(kkco(jdep)-1)
+         ELSE
+            zsum = z1dm + z1dp
 
-            !-----------------------------------------------------------------
-            !  Linear interpolation
-            !-----------------------------------------------------------------
-            pobs(jdep) = (   z1dm * pobsk(kkco(jdep)-1) &
-               &           + z1dp * pobsk(kkco(jdep)  ) ) / zsum
+            IF ( k1dint == 0 ) THEN
 
-         ELSEIF ( k1dint == 1 ) THEN
+               !-----------------------------------------------------------------
+               !  Linear interpolation
+               !-----------------------------------------------------------------
+               pobs(jdep) = (   z1dm * pobsk(kkco(jdep)-1) &
+                  &           + z1dp * pobsk(kkco(jdep)  ) ) / zsum
 
-            !-----------------------------------------------------------------
-            ! Cubic spline interpolation
-            !-----------------------------------------------------------------
-            zsum2 = zsum * zsum
-            pobs(jdep)  = (  z1dm                             * pobsk (kkco(jdep)-1) &
-               &           + z1dp                             * pobsk (kkco(jdep)  ) &
-               &           + ( z1dm * ( z1dm * z1dm - zsum2 ) * pobs2k(kkco(jdep)-1) &
-               &           +   z1dp * ( z1dp * z1dp - zsum2 ) * pobs2k(kkco(jdep)  ) &
-               &             ) / 6.0_wp                                              &
-               &          ) / zsum
+            ELSEIF ( k1dint == 1 ) THEN
 
+               !-----------------------------------------------------------------
+               ! Cubic spline interpolation
+               !-----------------------------------------------------------------
+               zsum2 = zsum * zsum
+               pobs(jdep)  = (  z1dm                             * pobsk (kkco(jdep)-1) &
+                  &           + z1dp                             * pobsk (kkco(jdep)  ) &
+                  &           + ( z1dm * ( z1dm * z1dm - zsum2 ) * pobs2k(kkco(jdep)-1) &
+                  &           +   z1dp * ( z1dp * z1dp - zsum2 ) * pobs2k(kkco(jdep)  ) &
+                  &             ) / 6.0_wp                                              &
+                  &          ) / zsum
+
+            ENDIF
          ENDIF
       END DO
 

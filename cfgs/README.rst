@@ -130,13 +130,13 @@ the northern-eastern Pacific Ocean at 50.1°N, 144.9°W.
 See :gmd:`Reffray et al. (2015) <8/69/2015>` for the description of
 its physical and numerical turbulent-mixing behaviour.
 
-| The water column setup, called NEMO1D, is activated with
-  the inclusion of the CPP key ``key_c1d`` and
-  has a horizontal domain of 3x3 grid points.
+| The water column setup, called NEMO1D, is activated by  
+  setting ``ln_c1d = .true.`` in ``namdom`` and
+  has a horizontal domain of 1x1 grid point.
 | This reference configuration uses 75 vertical levels grid (1m at the surface),
   GLS turbulence scheme with K-epsilon closure and the NCAR bulk formulae.
 
-Data provided with ``INPUTS_C1D_PAPA_v4.0.tar`` file account for:
+Data provided with ``INPUTS_C1D_PAPA_v4.2.tar`` file account for:
 
 - :file:`forcing_PAPASTATION_1h_y201[0-1].nc`:
   ECMWF operational analysis atmospheric forcing rescaled to 1h

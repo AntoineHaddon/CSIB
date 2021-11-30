@@ -32,7 +32,7 @@ MODULE icethd_ent
 
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icethd_ent.F90 14777 2021-05-03 08:57:28Z clem $
+   !! $Id: icethd_ent.F90 14778 2021-05-03 08:58:22Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -128,7 +128,7 @@ CONTAINS
       ! comment: if input h_i_old and eh_i_old are already multiplied by a_i (as in icethd_do), 
       ! then we should not (* a_i) again but not important since this is just to check that remap error is ~0
       !DO ji = 1, npti
-      !   hfx_err_rem_1d(ji) = hfx_err_rem_1d(ji) + a_i_1d(ji) * r1_rdtice *  &
+      !   hfx_err_rem_1d(ji) = hfx_err_rem_1d(ji) + a_i_1d(ji) * r1_Dt_ice *  &
       !      &               ( SUM( qnew(ji,1:nlay_i) ) * zhnew(ji) - SUM( eh_i_old(ji,0:nlay_i+1) ) ) 
       !END DO
       

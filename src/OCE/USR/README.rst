@@ -36,7 +36,7 @@ For this either add ``add_key`` or ``del_key`` keys as required; e.g.
 
 .. code-block:: console
 
-   $ ./makenemo –n 'ORCA2_ICE_PISCES_MINE' -r 'ORCA2_ICE_PISCES' -m 'my_arch' del_key 'key_iomput' add_key 'key_diahth'
+   $ ./makenemo –n 'ORCA2_ICE_PISCES_MINE' -r 'ORCA2_ICE_PISCES' -m 'my_arch' del_key 'key_xios' add_key 'key_diahth'
 
 Option 3: Use the SIREN tools to subset an existing model
 ---------------------------------------------------------
@@ -115,10 +115,8 @@ Create the :file:`domain_cfg.nc` file which must contain the following fields
 
    /* configuration name, configuration resolution                 */
    int    ORCA, ORCA_index
-   /* global domain sizes                                          */
-   int    jpiglo, jpjglo, jpkglo
    /* lateral global domain b.c.                                   */
-   int    jperio
+   int    Iperio, Jperio, NFoldT, NFoldF
    /* flags for z-coord, z-coord with partial steps and s-coord    */
    int    ln_zco, ln_zps, ln_sco
    /* flag  for ice shelf cavities                                 */

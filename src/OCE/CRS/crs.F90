@@ -31,66 +31,40 @@ MODULE crs
 
       INTEGER  ::  jpi_crsm1, jpj_crsm1         !: loop indices      
       INTEGER  ::  jpiglo_crsm1, jpjglo_crsm1   !: loop indices      
-      INTEGER  ::  nperio_full, nperio_crs      !: jperio of parent and coarse grids
-      INTEGER  ::  npolj_full, npolj_crs        !: north fold mark
+!!$      INTEGER  ::  nperio_full, nperio_crs      !: jperio of parent and coarse grids
+!!$      INTEGER  ::  npolj_full, npolj_crs        !: north fold mark
       INTEGER  ::  jpiglo_full, jpjglo_full     !: jpiglo / jpjglo
       INTEGER  ::  npiglo, npjglo               !: jpjglo
-      INTEGER  ::  nlci_full, nlcj_full         !: i-, j-dimension of local or sub domain on parent grid
-      INTEGER  ::  nldi_full, nldj_full         !: starting indices of internal sub-domain on parent grid
-      INTEGER  ::  nlei_full, nlej_full         !: ending indices of internal sub-domain on parent grid
-      INTEGER  ::  nlci_crs, nlcj_crs           !: i-, j-dimension of local or sub domain on coarse grid
-      INTEGER  ::  nldi_crs, nldj_crs           !: starting indices of internal sub-domain on coarse grid
-      INTEGER  ::  nlei_crs, nlej_crs           !: ending indices of internal sub-domain on coarse grid
+      INTEGER  ::  Nis0_full, Njs0_full         !: starting indices of internal sub-domain on parent grid
+      INTEGER  ::  Nie0_full, Nje0_full         !: ending indices of internal sub-domain on parent grid
+      INTEGER  ::  Nis0_crs , Njs0_crs          !: starting indices of internal sub-domain on coarse grid
+      INTEGER  ::  Nie0_crs , Nje0_crs          !: ending indices of internal sub-domain on coarse grid
 
       INTEGER  ::  narea_full, narea_crs        !: node
       INTEGER  ::  jpnij_full, jpnij_crs        !: =jpni*jpnj, the pe decomposition
-      INTEGER  ::  jpim1_full, jpjm1_full       !: 
+!!$      INTEGER  ::  jpim1_full, jpjm1_full       !: 
       INTEGER  ::  nimpp_full, njmpp_full       !: global position of point (1,1) of subdomain on parent grid
       INTEGER  ::  nimpp_crs, njmpp_crs         !: set to 1,1 for now .  Valid only for monoproc
-      INTEGER  ::  nreci_full, nrecj_full
-      INTEGER  ::  nreci_crs, nrecj_crs
-      !cc
-      INTEGER ::   noea_full, nowe_full        !: index of the local neighboring processors in
-      INTEGER ::   noso_full, nono_full        !: east, west, south and north directions
-      INTEGER ::   npne_full, npnw_full        !: index of north east and north west processor
-      INTEGER ::   npse_full, npsw_full        !: index of south east and south west processor
-      INTEGER ::   nbne_full, nbnw_full        !: logical of north east & north west processor
-      INTEGER ::   nbse_full, nbsw_full        !: logical of south east & south west processor
-      INTEGER ::   nidom_full                  !: ???
-      INTEGER ::   nproc_full                  !:number for local processor
-      INTEGER ::   nbondi_full, nbondj_full    !: mark of i- and j-direction local boundaries
-      INTEGER ::   noea_crs, nowe_crs          !: index of the local neighboring processors in
-      INTEGER ::   noso_crs, nono_crs          !: east, west, south and north directions
-      INTEGER ::   npne_crs, npnw_crs          !: index of north east and north west processor
-      INTEGER ::   npse_crs, npsw_crs          !: index of south east and south west processor
-      INTEGER ::   nbne_crs, nbnw_crs          !: logical of north east & north west processor
-      INTEGER ::   nbse_crs, nbsw_crs          !: logical of south east & south west processor
-      INTEGER ::   nidom_crs                   !: ???
-      INTEGER ::   nproc_crs                   !:number for local processor
-      INTEGER ::   nbondi_crs, nbondj_crs      !: mark of i- and j-direction local boundaries
-      
-
+     
       INTEGER, DIMENSION(:), ALLOCATABLE :: mis_crs, mie_crs, mis2_crs, mie2_crs  ! starting and ending i-indices of parent subset
       INTEGER, DIMENSION(:), ALLOCATABLE :: mjs_crs, mje_crs, mjs2_crs, mje2_crs ! starting and ending  j-indices of parent subset
       INTEGER, DIMENSION(:), ALLOCATABLE :: mjg_crs, mig_crs
       INTEGER, DIMENSION(:), ALLOCATABLE :: mi0_crs, mi1_crs, mj0_crs, mj1_crs
       INTEGER  :: mxbinctr, mybinctr            ! central point in grid box
-      INTEGER, DIMENSION(:), ALLOCATABLE ::   nlcit_crs, nlcit_full  !: dimensions of every subdomain
-      INTEGER, DIMENSION(:), ALLOCATABLE ::   nldit_crs, nldit_full     !: first, last indoor index for each i-domain
-      INTEGER, DIMENSION(:), ALLOCATABLE ::   nleit_crs, nleit_full    !: first, last indoor index for each j-domain
-      INTEGER, DIMENSION(:), ALLOCATABLE ::   nimppt_crs, nimppt_full    !: first, last indoor index for each j-domain
-      INTEGER, DIMENSION(:), ALLOCATABLE ::   nlcjt_crs, nlcjt_full  !: dimensions of every subdomain
-      INTEGER, DIMENSION(:), ALLOCATABLE ::   nldjt_crs, nldjt_full     !: first, last indoor index for each i-domain
-      INTEGER, DIMENSION(:), ALLOCATABLE ::   nlejt_crs, nlejt_full    !: first, last indoor index for each j-domain
-      INTEGER, DIMENSION(:), ALLOCATABLE ::   njmppt_crs, njmppt_full    !: first, last indoor index for each j-domain
+!!$      INTEGER, DIMENSION(:), ALLOCATABLE ::    jpiall_crs,  jpiall_full   !: dimensions of every subdomain
+!!$      INTEGER, DIMENSION(:), ALLOCATABLE ::   nis0all_crs, nis0all_full   !: first, last indoor index for each i-domain
+!!$      INTEGER, DIMENSION(:), ALLOCATABLE ::   nie0all_crs, nie0all_full   !: first, last indoor index for each j-domain
+!!$      INTEGER, DIMENSION(:), ALLOCATABLE ::    nimppt_crs,  nimppt_full   !: first, last indoor index for each j-domain
+!!$      INTEGER, DIMENSION(:), ALLOCATABLE ::    jpjall_crs,  jpjall_full   !: dimensions of every subdomain
+!!$      INTEGER, DIMENSION(:), ALLOCATABLE ::   njs0all_crs, njs0all_full   !: first, last indoor index for each i-domain
+!!$      INTEGER, DIMENSION(:), ALLOCATABLE ::   nje0all_crs, nje0all_full   !: first, last indoor index for each j-domain
+!!$      INTEGER, DIMENSION(:), ALLOCATABLE ::    njmppt_crs,  njmppt_full   !: first, last indoor index for each j-domain
 
  
       ! Masks
       REAL(wp), DIMENSION(:,:,:), ALLOCATABLE :: tmask_crs, umask_crs, vmask_crs, fmask_crs
-      REAL(wp), DIMENSION(:,:)  , ALLOCATABLE :: tmask_i_crs, rnfmsk_crs, tpol_crs, fpol_crs
+      REAL(wp), DIMENSION(:,:)  , ALLOCATABLE :: rnfmsk_crs
       
-  !    REAL(wp), DIMENSION(:,:),   ALLOCATABLE :: tmask_i_crs, tpol, fpol      
-
       ! Scale factors
       REAL(wp), DIMENSION(:,:),   ALLOCATABLE :: e1t_crs, e2t_crs, e1e2t_crs ! horizontal scale factors grid type T
       REAL(wp), DIMENSION(:,:),   ALLOCATABLE :: e1u_crs, e2u_crs ! horizontal scale factors grid type U
@@ -154,7 +128,7 @@ MODULE crs
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: crs.F90 10068 2018-08-28 14:09:04Z nicolasmartin $
+   !! $Id: crs.F90 15033 2021-06-21 10:24:45Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -181,8 +155,7 @@ CONTAINS
       ALLOCATE( tmask_crs(jpi_crs,jpj_crs,jpk) , fmask_crs(jpi_crs,jpj_crs,jpk) ,  &
          &      umask_crs(jpi_crs,jpj_crs,jpk) , vmask_crs(jpi_crs,jpj_crs,jpk) , STAT=ierr(2))
 
-      ALLOCATE( tmask_i_crs(jpi_crs,jpj_crs)   , rnfmsk_crs(jpi_crs,jpj_crs), &
-      &         tpol_crs(jpiglo_crs,jpjglo_crs), fpol_crs(jpiglo_crs,jpjglo_crs), STAT=ierr(3) )
+      ALLOCATE( rnfmsk_crs(jpi_crs,jpj_crs), STAT=ierr(3) )
 
       ALLOCATE( gphit_crs(jpi_crs,jpj_crs) , glamt_crs(jpi_crs,jpj_crs) , & 
          &      gphiu_crs(jpi_crs,jpj_crs) , glamu_crs(jpi_crs,jpj_crs) , &
@@ -237,10 +210,10 @@ CONTAINS
       ALLOCATE( nmln_crs(jpi_crs,jpj_crs) , hmld_crs(jpi_crs,jpj_crs) , &
          &      hmlp_crs(jpi_crs,jpj_crs) , hmlpt_crs(jpi_crs,jpj_crs) , STAT=ierr(14) )
          
-      ALLOCATE( nimppt_crs (jpnij) , nlcit_crs (jpnij) , nldit_crs (jpnij) , nleit_crs (jpnij),   &
-         &      nimppt_full(jpnij) , nlcit_full(jpnij) , nldit_full(jpnij) , nleit_full(jpnij),   &
-                njmppt_crs (jpnij) , nlcjt_crs (jpnij) , nldjt_crs (jpnij) , nlejt_crs (jpnij),   &
-         &      njmppt_full(jpnij) , nlcjt_full(jpnij) , nldjt_full(jpnij) , nlejt_full(jpnij)  , STAT=ierr(15) )
+!!$      ALLOCATE( nimppt_crs (jpnij) , jpiall_crs (jpnij) , nis0all_crs (jpnij) , nie0all_crs (jpnij),   &
+!!$         &      nimppt_full(jpnij) , jpiall_full(jpnij) , nis0all_full(jpnij) , nie0all_full(jpnij),   &
+!!$                njmppt_crs (jpnij) , jpjall_crs (jpnij) , njs0all_crs (jpnij) , nje0all_crs (jpnij),   &
+!!$         &      njmppt_full(jpnij) , jpjall_full(jpnij) , njs0all_full(jpnij) , nje0all_full(jpnij)  , STAT=ierr(15) )
    
       crs_dom_alloc = MAXVAL(ierr)
       !
@@ -257,7 +230,7 @@ CONTAINS
 
       ierr(:) = 0
       
-      ALLOCATE( mjs_crs(nlej_crs) , mje_crs(nlej_crs), mis_crs(nlei_crs) , mie_crs(nlei_crs), STAT=ierr(1) )
+      ALLOCATE( mjs_crs(Nje0_crs) , mje_crs(Nje0_crs), mis_crs(Nie0_crs) , mie_crs(Nie0_crs), STAT=ierr(1) )
       crs_dom_alloc2 = MAXVAL(ierr)
 
    END FUNCTION crs_dom_alloc2
@@ -273,31 +246,31 @@ CONTAINS
       !                         Return to parent grid domain
       jpi    = jpi_full
       jpj    = jpj_full
-      jpim1  = jpim1_full
-      jpjm1  = jpjm1_full
-      jperio = nperio_full
+!!$      jpim1  = jpim1_full
+!!$      jpjm1  = jpjm1_full
+!!$      jperio = nperio_full
 
-      npolj  = npolj_full
+!!$      npolj  = npolj_full
       jpiglo = jpiglo_full
       jpjglo = jpjglo_full
 
-      nlci   = nlci_full
-      nlcj   = nlcj_full
-      nldi   = nldi_full
-      nldj   = nldj_full
-      nlei   = nlei_full
-      nlej   = nlej_full
-      nimpp  = nimpp_full
-      njmpp  = njmpp_full
+      jpi   = jpi_full
+      jpj   = jpj_full
+      Nis0  = Nis0_full
+      Njs0  = Njs0_full
+      Nie0  = Nie0_full
+      Nje0  = Nje0_full
+      nimpp = nimpp_full
+      njmpp = njmpp_full
       
-      nlcit(:)  = nlcit_full(:)
-      nldit(:)  = nldit_full(:)
-      nleit(:)  = nleit_full(:)
-      nimppt(:) = nimppt_full(:)
-      nlcjt(:)  = nlcjt_full(:)
-      nldjt(:)  = nldjt_full(:)
-      nlejt(:)  = nlejt_full(:)
-      njmppt(:) = njmppt_full(:)
+!!$      jpiall (:) = jpiall_full (:)
+!!$      nis0all(:) = nis0all_full(:)
+!!$      nie0all(:) = nie0all_full(:)
+!!$      nimppt (:) = nimppt_full (:)
+!!$      jpjall (:) = jpjall_full (:)
+!!$      njs0all(:) = njs0all_full(:)
+!!$      nje0all(:) = nje0all_full(:)
+!!$      njmppt (:) = njmppt_full (:)
 
    END SUBROUTINE dom_grid_glo
 
@@ -312,32 +285,32 @@ CONTAINS
       !                        Switch to coarse grid domain
       jpi    = jpi_crs
       jpj    = jpj_crs
-      jpim1  = jpi_crsm1
-      jpjm1  = jpj_crsm1
-      jperio = nperio_crs
+!!$      jpim1  = jpi_crsm1
+!!$      jpjm1  = jpj_crsm1
+!!$      jperio = nperio_crs
 
-      npolj  = npolj_crs
+!!$      npolj  = npolj_crs
       jpiglo = jpiglo_crs
       jpjglo = jpjglo_crs
 
 
-      nlci   = nlci_crs
-      nlcj   = nlcj_crs
-      nldi   = nldi_crs
-      nlei   = nlei_crs
-      nlej   = nlej_crs
-      nldj   = nldj_crs
-      nimpp  = nimpp_crs
-      njmpp  = njmpp_crs
+      jpi   = jpi_crs
+      jpj   = jpj_crs
+      Nis0  = Nis0_crs
+      Nie0  = Nie0_crs
+      Nje0  = Nje0_crs
+      Njs0  = Njs0_crs
+      nimpp = nimpp_crs
+      njmpp = njmpp_crs
       
-      nlcit(:)  = nlcit_crs(:)
-      nldit(:)  = nldit_crs(:)
-      nleit(:)  = nleit_crs(:)
-      nimppt(:) = nimppt_crs(:)
-      nlcjt(:)  = nlcjt_crs(:)
-      nldjt(:)  = nldjt_crs(:)
-      nlejt(:)  = nlejt_crs(:)
-      njmppt(:) = njmppt_crs(:)
+!!$      jpiall (:) = jpiall_crs (:)
+!!$      nis0all(:) = nis0all_crs(:)
+!!$      nie0all(:) = nie0all_crs(:)
+!!$      nimppt (:) = nimppt_crs (:)
+!!$      jpjall (:) = jpjall_crs (:)
+!!$      njs0all(:) = njs0all_crs(:)
+!!$      nje0all(:) = nje0all_crs(:)
+!!$      njmppt (:) = njmppt_crs (:)
       !
    END SUBROUTINE dom_grid_crs
    

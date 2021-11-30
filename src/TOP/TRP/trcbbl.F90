@@ -19,23 +19,24 @@ MODULE trcbbl
    !!----------------------------------------------------------------------
    !!    trc_bbl      : update the tracer trends due to the bottom boundary layer (advective and/or diffusive)
    !!----------------------------------------------------------------------
-   USE oce_trc        ! ocean dynamics and active tracers variables
+   USE par_trc        ! need jptra, number of passive tracers
+   USE oce_trc        ! ocean dynamics and passive tracers variables
    USE trc            ! ocean passive tracers variables
    USE trd_oce        ! trends: ocean variables
    USE trdtra         ! tracer trends
    USE trabbl         ! bottom boundary layer 
-   USE prtctl_trc     ! Print control for debbuging
+   USE prtctl         ! Print control for debbuging
 
    PUBLIC   trc_bbl   !  routine called by trctrp.F90
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: trcbbl.F90 10068 2018-08-28 14:09:04Z nicolasmartin $ 
+   !! $Id: trcbbl.F90 14086 2020-12-04 11:37:14Z cetlod $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE trc_bbl( kt )
+   SUBROUTINE trc_bbl( kt, Kbb, Kmm, ptr, Krhs )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE bbl  ***
       !!                   
@@ -44,7 +45,9 @@ CONTAINS
       !!     of tracer equations.
       !!
       !!----------------------------------------------------------------------  
-      INTEGER, INTENT( in ) ::   kt   ! ocean time-step 
+      INTEGER,                                    INTENT( in  ) :: kt              ! ocean time-step 
+      INTEGER,                                    INTENT( in  ) :: Kbb, Kmm, Krhs  ! time level indices
+      REAL(wp), DIMENSION(jpi,jpj,jpk,jptra,jpt), INTENT(inout) :: ptr             ! passive tracers and RHS of tracer equation
       INTEGER :: jn                   ! loop index
       CHARACTER (len=22) :: charout
       REAL(wp), ALLOCATABLE, DIMENSION(:,:,:,:) ::   ztrtrd
@@ -52,23 +55,23 @@ CONTAINS
       !
       IF( ln_timing )   CALL timing_start('trc_bbl')
       !
-      IF( .NOT. l_offline .AND. nn_dttrc == 1 ) THEN
-         CALL bbl( kt, nittrc000, 'TRC' )      ! Online coupling with dynamics  : Computation of bbl coef and bbl transport
-         l_bbl = .FALSE.                       ! Offline coupling with dynamics : Read bbl coef and bbl transport from input files
+      IF( .NOT. l_offline ) THEN
+         CALL bbl( kt, nittrc000, 'TRC', Kbb, Kmm )  ! Online coupling with dynamics  : Computation of bbl coef and bbl transport
+         l_bbl = .FALSE.                             ! Offline coupling with dynamics : Read bbl coef and bbl transport from input files
       ENDIF
 
       IF( l_trdtrc )  THEN
          ALLOCATE( ztrtrd(jpi,jpj,jpk,jptra) ) ! temporary save of trends
-         ztrtrd(:,:,:,:)  = tra(:,:,:,:)
+         ztrtrd(:,:,:,:)  = ptr(:,:,:,:,Krhs)
       ENDIF
 
       !* Diffusive bbl :
       IF( nn_bbl_ldf == 1 ) THEN
          !
-         CALL tra_bbl_dif( trb, tra, jptra )  
-         IF( ln_ctl )   THEN
-            WRITE(charout, FMT="(' bbl_dif')")  ;  CALL prt_ctl_trc_info(charout)
-            CALL prt_ctl_trc( tab4d=tra, mask=tmask, clinfo=ctrcnm, clinfo2='trd' )
+         CALL tra_bbl_dif( ptr(:,:,:,:,Kbb), ptr(:,:,:,:,Krhs), jptra, Kmm )  
+         IF( sn_cfctl%l_prttrc )   THEN
+            WRITE(charout, FMT="(' bbl_dif')")  ;  CALL prt_ctl_info( charout, cdcomp = 'top' )
+            CALL prt_ctl( tab4d_1=ptr(:,:,:,:,Krhs), mask1=tmask, clinfo=ctrcnm, clinfo3='trd' )
          ENDIF
          !
       ENDIF
@@ -76,18 +79,18 @@ CONTAINS
       !* Advective bbl : bbl upstream advective trends added to the tracer trends
       IF( nn_bbl_adv /= 0 ) THEN
          !
-         CALL tra_bbl_adv( trb, tra, jptra )  
-         IF( ln_ctl )   THEN
-            WRITE(charout, FMT="(' bbl_adv')")  ;  CALL prt_ctl_trc_info(charout)
-            CALL prt_ctl_trc( tab4d=tra, mask=tmask, clinfo=ctrcnm, clinfo2='trd' )
+         CALL tra_bbl_adv( ptr(:,:,:,:,Kbb), ptr(:,:,:,:,Krhs), jptra, Kmm )  
+         IF( sn_cfctl%l_prttrc )   THEN
+            WRITE(charout, FMT="(' bbl_adv')")  ;  CALL prt_ctl_info( charout, cdcomp = 'top' )
+            CALL prt_ctl( tab4d_1=ptr(:,:,:,:,Krhs), mask1=tmask, clinfo=ctrcnm, clinfo3='trd' )
          ENDIF
          !
       ENDIF
 
       IF( l_trdtrc )   THEN                      ! save the horizontal diffusive trends for further diagnostics
         DO jn = 1, jptra
-           ztrtrd(:,:,:,jn) = tra(:,:,:,jn) - ztrtrd(:,:,:,jn)
-           CALL trd_tra( kt, 'TRC', jn, jptra_bbl, ztrtrd(:,:,:,jn) )
+           ztrtrd(:,:,:,jn) = ptr(:,:,:,jn,Krhs) - ztrtrd(:,:,:,jn)
+           CALL trd_tra( kt, Kmm, Krhs, 'TRC', jn, jptra_bbl, ztrtrd(:,:,:,jn) )
         END DO
         DEALLOCATE( ztrtrd ) ! temporary save of trends
       ENDIF

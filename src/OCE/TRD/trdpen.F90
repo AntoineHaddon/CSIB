@@ -35,12 +35,13 @@ MODULE trdpen
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   rab_pe   ! partial derivatives of PE anomaly with respect to T and S
 
    !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: trdpen.F90 10425 2018-12-19 21:54:16Z smasson $
+   !! $Id: trdpen.F90 13237 2020-07-03 09:12:53Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
+
 CONTAINS
 
    INTEGER FUNCTION trd_pen_alloc()
@@ -54,7 +55,7 @@ CONTAINS
    END FUNCTION trd_pen_alloc
 
 
-   SUBROUTINE trd_pen( ptrdx, ptrdy, ktrd, kt, pdt )
+   SUBROUTINE trd_pen( ptrdx, ptrdy, ktrd, kt, pdt, Kmm )
       !!---------------------------------------------------------------------
       !!                  ***  ROUTINE trd_tra_mng  ***
       !! 
@@ -65,6 +66,7 @@ CONTAINS
       REAL(wp), DIMENSION(:,:,:), INTENT(in) ::   ptrdx, ptrdy   ! Temperature & Salinity trends
       INTEGER                   , INTENT(in) ::   ktrd           ! tracer trend index
       INTEGER                   , INTENT(in) ::   kt             ! time step index
+      INTEGER                   , INTENT(in) ::   Kmm            ! time level index
       REAL(wp)                  , INTENT(in) ::   pdt            ! time step [s]
       !
       INTEGER ::   jk                                            ! dummy loop indices
@@ -76,7 +78,7 @@ CONTAINS
       !
       IF( kt /= nkstp ) THEN     ! full eos: set partial derivatives at the 1st call of kt time step
          nkstp = kt
-         CALL eos_pen( tsn, rab_PE, zpe )
+         CALL eos_pen( ts(:,:,:,:,Kmm), rab_PE, zpe, Kmm )
          CALL iom_put( "alphaPE", rab_pe(:,:,:,jp_tem) )
          CALL iom_put( "betaPE" , rab_pe(:,:,:,jp_sal) )
          CALL iom_put( "PEanom" , zpe )
@@ -94,10 +96,10 @@ CONTAINS
       CASE ( jptra_zad  )   ;   CALL iom_put( "petrd_zad", zpe )   ! vertical advection
                                 IF( ln_linssh ) THEN                   ! cst volume : adv flux through z=0 surface
                                    ALLOCATE( z2d(jpi,jpj) )
-                                   z2d(:,:) = wn(:,:,1) * ( &
-                                     &   - ( rab_n(:,:,1,jp_tem) + rab_pe(:,:,1,jp_tem) ) * tsn(:,:,1,jp_tem)    &
-                                     &   + ( rab_n(:,:,1,jp_sal) + rab_pe(:,:,1,jp_sal) ) * tsn(:,:,1,jp_sal)    &
-                                     & ) / e3t_n(:,:,1)
+                                   z2d(:,:) = ww(:,:,1) * ( &
+                                     &   - ( rab_n(:,:,1,jp_tem) + rab_pe(:,:,1,jp_tem) ) * ts(:,:,1,jp_tem,Kmm)    &
+                                     &   + ( rab_n(:,:,1,jp_sal) + rab_pe(:,:,1,jp_sal) ) * ts(:,:,1,jp_sal,Kmm)    &
+                                     & ) / e3t(:,:,1,Kmm)
                                    CALL iom_put( "petrd_sad" , z2d )
                                    DEALLOCATE( z2d )
                                 ENDIF
@@ -111,14 +113,6 @@ CONTAINS
       CASE ( jptra_qsr  )   ;   CALL iom_put( "petrd_qsr" , zpe )   ! air-sea : penetrative sol radiat
       CASE ( jptra_bbc  )   ;   CALL iom_put( "petrd_bbc" , zpe )   ! bottom bound cond (geoth flux)
       CASE ( jptra_atf  )   ;   CALL iom_put( "petrd_atf" , zpe )   ! asselin time filter (last trend)
-                                !IF( ln_linssh ) THEN                   ! cst volume : ssh term (otherwise include in e3t variation)
-                                !   ALLOCATE( z2d(jpi,jpj) )
-                                !   z2d(:,:) = ( ssha(:,:) - sshb(:,:) )                 &
-                                !      &     * (   dPE_dt(:,:,1) * tsn(:,:,1,jp_tem)    &
-                                !      &         + dPE_ds(:,:,1) * tsn(:,:,1,jp_sal)  ) / ( e3t_n(:,:,1) * pdt )
-                                !   CALL iom_put( "petrd_sad" , z2d )
-                                !   DEALLOCATE( z2d )
-                                !ENDIF
          !
       END SELECT
       !

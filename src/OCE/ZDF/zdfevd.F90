@@ -30,14 +30,16 @@ MODULE zdfevd
 
    PUBLIC   zdf_evd    ! called by step.F90
 
+   !! * Substitutions
+#  include "do_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: zdfevd.F90 10068 2018-08-28 14:09:04Z nicolasmartin $
+   !! $Id: zdfevd.F90 15298 2021-09-28 10:06:42Z cetlod $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE zdf_evd( kt, p_avm, p_avt )
+   SUBROUTINE zdf_evd( kt, Kmm, Krhs, p_avm, p_avt )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE zdf_evd  ***
       !!                   
@@ -55,27 +57,38 @@ CONTAINS
       !! ** Action  :   avt, avm   enhanced where static instability occurs
       !!----------------------------------------------------------------------
       INTEGER                    , INTENT(in   ) ::   kt             ! ocean time-step indexocean time step
+      INTEGER                    , INTENT(in   ) ::   Kmm, Krhs      ! time level indices
       REAL(wp), DIMENSION(:,:,:) , INTENT(inout) ::   p_avm, p_avt   !  momentum and tracer Kz (w-points)
       !
       INTEGER ::   ji, jj, jk   ! dummy loop indices
-      REAL(wp), DIMENSION(jpi,jpj,jpk) ::   zavt_evd, zavm_evd
+      ! NOTE: [tiling] use a SAVE array to store diagnostics, then send after all tiles are finished. This is necessary because p_avt/p_avm are modified on adjacent tiles when using nn_hls > 1. zavt_evd/zavm_evd are then zero on some points when subsequently calculated for these tiles.
+      REAL(wp), SAVE, ALLOCATABLE, DIMENSION(:,:,:) ::   zavt_evd, zavm_evd
       !!----------------------------------------------------------------------
       !
-      IF( kt == nit000 ) THEN
-         IF(lwp) WRITE(numout,*)
-         IF(lwp) WRITE(numout,*) 'zdf_evd : Enhanced Vertical Diffusion (evd)'
-         IF(lwp) WRITE(numout,*) '~~~~~~~ '
-         IF(lwp) WRITE(numout,*)
+      IF( .NOT. l_istiled .OR. ntile == 1 )  THEN                       ! Do only on the first tile
+         IF( kt == nit000 ) THEN
+            IF(lwp) WRITE(numout,*)
+            IF(lwp) WRITE(numout,*) 'zdf_evd : Enhanced Vertical Diffusion (evd)'
+            IF(lwp) WRITE(numout,*) '~~~~~~~ '
+            IF(lwp) WRITE(numout,*)
+         ENDIF
+
+         ALLOCATE( zavt_evd(jpi,jpj,jpk) )
+         IF( nn_evdm == 1 ) ALLOCATE( zavm_evd(jpi,jpj,jpk) )
       ENDIF
       !
       !
-      zavt_evd(:,:,:) = p_avt(:,:,:)         ! set avt prior to evd application
+      DO_3D_OVR( nn_hls-1, nn_hls-1, nn_hls-1, nn_hls-1, 1, jpk )
+         zavt_evd(ji,jj,jk) = p_avt(ji,jj,jk)         ! set avt prior to evd application
+      END_3D
       !
       SELECT CASE ( nn_evdm )
       !
       CASE ( 1 )           !==  enhance tracer & momentum Kz  ==!   (if rn2<-1.e-12)
          !
-         zavm_evd(:,:,:) = p_avm(:,:,:)      ! set avm prior to evd application
+         DO_3D_OVR( nn_hls-1, nn_hls-1, nn_hls-1, nn_hls-1, 1, jpk )
+            zavm_evd(ji,jj,jk) = p_avm(ji,jj,jk)      ! set avm prior to evd application
+         END_3D
          !
 !! change last digits results
 !         WHERE( MAX( rn2(2:jpi,2:jpj,2:jpkm1), rn2b(2:jpi,2:jpj,2:jpkm1) )  <= -1.e-12 ) THEN
@@ -83,19 +96,20 @@ CONTAINS
 !            p_avm(2:jpi,2:jpj,2:jpkm1) = rn_evd * wmask(2:jpi,2:jpj,2:jpkm1)
 !         END WHERE
          !
-         DO jk = 1, jpkm1 
-            DO jj = 2, jpjm1
-               DO ji = 2, jpim1
-                  IF(  MIN( rn2(ji,jj,jk), rn2b(ji,jj,jk) ) <= -1.e-12 ) THEN
-                     p_avt(ji,jj,jk) = rn_evd * wmask(ji,jj,jk)
-                     p_avm(ji,jj,jk) = rn_evd * wmask(ji,jj,jk)
-                  ENDIF
-               END DO
-            END DO
-         END DO 
+         DO_3D_OVR( nn_hls-1, nn_hls-1, nn_hls-1, nn_hls-1, 1, jpkm1 )
+            IF(  MIN( rn2(ji,jj,jk), rn2b(ji,jj,jk) ) <= -1.e-12 ) THEN
+               p_avt(ji,jj,jk) = rn_evd * wmask(ji,jj,jk)
+               p_avm(ji,jj,jk) = rn_evd * wmask(ji,jj,jk)
+            ENDIF
+         END_3D
          !
-         zavm_evd(:,:,:) = p_avm(:,:,:) - zavm_evd(:,:,:)   ! change in avm due to evd
-         CALL iom_put( "avm_evd", zavm_evd )                ! output this change
+         DO_3D_OVR( nn_hls-1, nn_hls-1, nn_hls-1, nn_hls-1, 1, jpk )
+            zavm_evd(ji,jj,jk) = p_avm(ji,jj,jk) - zavm_evd(ji,jj,jk)   ! change in avm due to evd
+         END_3D
+         IF( .NOT. l_istiled .OR. ntile == nijtile ) THEN                       ! Do only on the last tile
+            CALL iom_put( "avm_evd", zavm_evd )                ! output this change
+            DEALLOCATE( zavm_evd )
+         ENDIF
          !
       CASE DEFAULT         !==  enhance tracer Kz  ==!   (if rn2<-1.e-12) 
 !! change last digits results
@@ -103,20 +117,23 @@ CONTAINS
 !            p_avt(2:jpi,2:jpj,2:jpkm1) = rn_evd * wmask(2:jpi,2:jpj,2:jpkm1)
 !         END WHERE
 
-         DO jk = 1, jpkm1
-            DO jj = 2, jpjm1
-               DO ji = 2, jpim1
-                  IF(  MIN( rn2(ji,jj,jk), rn2b(ji,jj,jk) ) <= -1.e-12 )   &
-                     p_avt(ji,jj,jk) = rn_evd * wmask(ji,jj,jk)
-               END DO
-            END DO
-         END DO
+         DO_3D_OVR( nn_hls-1, nn_hls-1, nn_hls-1, nn_hls-1, 1, jpkm1 )
+            IF(  MIN( rn2(ji,jj,jk), rn2b(ji,jj,jk) ) <= -1.e-12 )   &
+               p_avt(ji,jj,jk) = rn_evd * wmask(ji,jj,jk)
+         END_3D
          !
       END SELECT 
       !
-      zavt_evd(:,:,:) = p_avt(:,:,:) - zavt_evd(:,:,:)   ! change in avt due to evd
-      CALL iom_put( "avt_evd", zavt_evd )              ! output this change
-      IF( l_trdtra ) CALL trd_tra( kt, 'TRA', jp_tem, jptra_evd, zavt_evd )
+      DO_3D_OVR( nn_hls-1, nn_hls-1, nn_hls-1, nn_hls-1, 1, jpk )
+         zavt_evd(ji,jj,jk) = p_avt(ji,jj,jk) - zavt_evd(ji,jj,jk)   ! change in avt due to evd
+      END_3D
+      !
+      IF( l_trdtra ) CALL trd_tra( kt, Kmm, Krhs, 'TRA', jp_tem, jptra_evd, zavt_evd )
+      !
+      IF( .NOT. l_istiled .OR. ntile == nijtile ) THEN                       ! Do only on the last tile
+         CALL iom_put( "avt_evd", zavt_evd )              ! output this change
+         DEALLOCATE( zavt_evd )
+      ENDIF
       !
    END SUBROUTINE zdf_evd
 

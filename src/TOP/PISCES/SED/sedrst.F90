@@ -9,7 +9,7 @@ MODULE sedrst
    !! ==============
    USE sed
    USE sedarr
-   USE trc_oce, ONLY : l_offline, nn_dttrc
+   USE trc_oce, ONLY : l_offline
    USE phycst , ONLY : rday
    USE iom
    USE daymod
@@ -26,7 +26,7 @@ MODULE sedrst
    PUBLIC sed_rst_wri
    PUBLIC sed_rst_cal
 
-   !! $Id: sedrst.F90 11536 2019-09-11 13:54:18Z smasson $
+   !! $Id: sedrst.F90 15450 2021-10-27 14:32:08Z cetlod $
 CONTAINS
 
 
@@ -41,6 +41,7 @@ CONTAINS
       CHARACTER(LEN=20)   ::   clkt     ! ocean time-step define as a character
       CHARACTER(LEN=50)   ::   clname   ! trc output restart file name
       CHARACTER(LEN=256)  ::   clpath   ! full path to ocean output restart file
+      CHARACTER(LEN=3)    ::   cdcomp
       !!----------------------------------------------------------------------
       !
       IF( l_offline ) THEN
@@ -63,11 +64,10 @@ CONTAINS
       ENDIF
 
       IF( .NOT. ln_rst_list .AND. nn_stock == -1 )   RETURN   ! we will never do any restart
-
       ! to get better performances with NetCDF format:
       ! we open and define the tracer restart file one tracer time step before writing the data (-> at nitrst - 2*nn_dttrc + 1)
       ! except if we write tracer restart files every tracer time step or if a tracer restart file was writen at nitend - 2*nn_dttrc + 1
-      IF( kt == nitrst - 2*nn_dtsed .OR. nn_stock == nn_dtsed .OR. ( kt == nitend - nn_dtsed .AND. .NOT. lrst_sed ) ) THEN
+      IF( kt == nitrst - 1 .OR. nn_stock == 1 .OR. ( kt == nitend - 1 .AND. .NOT. lrst_sed ) ) THEN
          ! beware of the format used to write kt (default is i8.8, that should be large enough)
          IF( nitrst > 1.0e9 ) THEN   ;   WRITE(clkt,*       ) nitrst
          ELSE                        ;   WRITE(clkt,'(i8.8)') nitrst
@@ -79,7 +79,8 @@ CONTAINS
          IF( clpath(LEN_TRIM(clpath):) /= '/' ) clpath = TRIM(clpath) // '/'
          IF(lwp) WRITE(numsed,*) &
              '             open sed restart.output NetCDF file: ',TRIM(clpath)//clname
-         CALL iom_open( TRIM(clpath)//TRIM(clname), numrsw, ldwrt = .TRUE., kdlev = jpksed )
+         cdcomp ='SED'
+         CALL iom_open( TRIM(clpath)//TRIM(clname), numrsw, ldwrt = .TRUE., kdlev = jpksed, cdcomp = cdcomp )
          lrst_sed = .TRUE.
       ENDIF
       !
@@ -122,7 +123,7 @@ CONTAINS
       DO jn = 1, jptrased
          cltra = TRIM(sedtrcd(jn))
          IF( iom_varid( numrsr, TRIM(cltra) , ldstop = .FALSE. ) > 0 ) THEN
-            CALL iom_get( numrsr, jpdom_autoglo, TRIM(cltra), zdta(:,:,:,jn) )
+            CALL iom_get( numrsr, jpdom_auto, TRIM(cltra), zdta(:,:,:,jn) )
          ELSE
             zdta(:,:,:,jn) = 0.0
          ENDIF
@@ -141,7 +142,7 @@ CONTAINS
       DO jn = 1, 2
          cltra = TRIM(seddia3d(jn))
          IF( iom_varid( numrsr, TRIM(cltra) , ldstop = .FALSE. ) > 0 ) THEN
-            CALL iom_get( numrsr, jpdom_autoglo, TRIM(cltra), zdta1(:,:,:,jn) )
+            CALL iom_get( numrsr, jpdom_auto, TRIM(cltra), zdta1(:,:,:,jn) )
          ELSE
             zdta1(:,:,:,jn) = 0.0
          ENDIF
@@ -168,7 +169,7 @@ CONTAINS
 
       cltra = "dbioturb"
       IF( iom_varid( numrsr, TRIM(cltra) , ldstop = .FALSE. ) > 0 ) THEN
-         CALL iom_get( numrsr, jpdom_autoglo, TRIM(cltra), zdta2(:,:,:) )
+         CALL iom_get( numrsr, jpdom_auto, TRIM(cltra), zdta2(:,:,:) )
       ELSE
          zdta2(:,:,:) = 0.0
       ENDIF
@@ -178,22 +179,12 @@ CONTAINS
 
       cltra = "irrig"
       IF( iom_varid( numrsr, TRIM(cltra) , ldstop = .FALSE. ) > 0 ) THEN
-         CALL iom_get( numrsr, jpdom_autoglo, TRIM(cltra), zdta2(:,:,:) )
+         CALL iom_get( numrsr, jpdom_auto, TRIM(cltra), zdta2(:,:,:) )
       ELSE
          zdta2(:,:,:) = 0.0
       ENDIF
 
       CALL pack_arr( jpoce, irrig(1:jpoce,1:jpksed), &
-         &             zdta2(1:jpi,1:jpj,1:jpksed), iarroce(1:jpoce) )
-
-      cltra = "sedligand"
-      IF( iom_varid( numrsr, TRIM(cltra) , ldstop = .FALSE. ) > 0 ) THEN
-         CALL iom_get( numrsr, jpdom_autoglo, TRIM(cltra), zdta2(:,:,:) )
-      ELSE
-         zdta2(:,:,:) = 0.0
-      ENDIF
-
-      CALL pack_arr( jpoce, sedligand(1:jpoce,1:jpksed), &
          &             zdta2(1:jpi,1:jpj,1:jpksed), iarroce(1:jpoce) )
 
       IF( ln_timing )  CALL timing_stop('sed_rst_read')
@@ -230,28 +221,27 @@ CONTAINS
             'at it= ',kt
       IF(lwp) WRITE(numsed,*) '~~~~~~~~~'
 
-
-      trcsedi(:,:,:,:)   = 0.0
-      flxsedi3d(:,:,:,:) = 0.0
       zdta(:,:)          = 1.0
       zdta2(:,:,:)       = 0.0
-
          
       !! 1. WRITE in nutwrs
       !! ------------------
-
       zinfo(1) = REAL( kt)
       CALL iom_rstput( kt, nitrst, numrsw, 'kt', zinfo  )
 
       ! Back to 2D geometry
       DO jn = 1, jpsol
-         CALL unpack_arr( jpoce, trcsedi(1:jpi,1:jpj,1:jpksed,jn) , iarroce(1:jpoce), &
+         CALL unpack_arr( jpoce, zdta2(1:jpi,1:jpj,1:jpksed) , iarroce(1:jpoce), &
          &                       solcp(1:jpoce,1:jpksed,jn ) )
+         cltra = TRIM(sedtrcd(jn))
+         CALL iom_rstput( kt, nitrst, numrsw, TRIM(cltra), zdta2(:,:,:) )
       END DO
 
       DO jn = 1, jpwat
-         CALL unpack_arr( jpoce, trcsedi(1:jpi,1:jpj,1:jpksed,jpsol+jn) , iarroce(1:jpoce), &
+         CALL unpack_arr( jpoce, zdta2(1:jpi,1:jpj,1:jpksed) , iarroce(1:jpoce), &
          &                       pwcp(1:jpoce,1:jpksed,jn  )  )
+         cltra = TRIM(sedtrcd(jpsol+jn))
+         CALL iom_rstput( kt, nitrst, numrsw, TRIM(cltra), zdta2(:,:,:) )
       END DO
       ! pH
       DO jk = 1, jpksed
@@ -260,24 +250,18 @@ CONTAINS
          ENDDO
       ENDDO
 
-      CALL unpack_arr( jpoce, flxsedi3d(1:jpi,1:jpj,1:jpksed,1)  , iarroce(1:jpoce), &
+      CALL unpack_arr( jpoce, zdta2(1:jpi,1:jpj,1:jpksed)  , iarroce(1:jpoce), &
       &                   zdta(1:jpoce,1:jpksed)  )
+      cltra = TRIM(seddia3d(1))
+      CALL iom_rstput( kt, nitrst, numrsw, TRIM(cltra), zdta2(:,:,:) )
          
-      CALL unpack_arr( jpoce, flxsedi3d(1:jpi,1:jpj,1:jpksed,2)  , iarroce(1:jpoce), &
+      CALL unpack_arr( jpoce, zdta2(1:jpi,1:jpj,1:jpksed)  , iarroce(1:jpoce), &
       &                   co3por(1:jpoce,1:jpksed)  )
+      cltra = TRIM(seddia3d(2))
+      CALL iom_rstput( kt, nitrst, numrsw, TRIM(cltra), zdta2(:,:,:) )
 
       ! prognostic variables
       ! --------------------
-
-      DO jn = 1, jptrased
-         cltra = TRIM(sedtrcd(jn))
-         CALL iom_rstput( kt, nitrst, numrsw, TRIM(cltra), trcsedi(:,:,:,jn) )
-      ENDDO
-
-      DO jn = 1, 2
-         cltra = TRIM(seddia3d(jn))
-         CALL iom_rstput( kt, nitrst, numrsw, TRIM(cltra), flxsedi3d(:,:,:,jn) )
-      ENDDO
 
       CALL unpack_arr( jpoce, zdta2(1:jpi,1:jpj,1:jpksed)  , iarroce(1:jpoce), &
       &                   db(1:jpoce,1:jpksed)  )
@@ -289,12 +273,6 @@ CONTAINS
       &                   irrig(1:jpoce,1:jpksed)  )
 
       cltra = "irrig"
-      CALL iom_rstput( kt, nitrst, numrsw, TRIM(cltra), zdta2(:,:,:) )
-
-      CALL unpack_arr( jpoce, zdta2(1:jpi,1:jpj,1:jpksed)  , iarroce(1:jpoce), &
-      &                   sedligand(1:jpoce,1:jpksed)  )
-
-      cltra = "sedligand"
       CALL iom_rstput( kt, nitrst, numrsw, TRIM(cltra), zdta2(:,:,:) )
 
       IF( kt == nitrst ) THEN
@@ -367,7 +345,7 @@ CONTAINS
                WRITE(numsed,*)
             ENDIF
             ! Control of date 
-            IF( nittrc000  - NINT( zkt ) /= nn_dtsed .AND.  nn_rstsed /= 0 )                                  &
+            IF( nittrc000  - NINT( zkt ) /= 1 .AND.  nn_rstsed /= 0 )                                  &
                &   CALL ctl_stop( ' ===>>>> : problem with nittrc000 for the restart',                 &
                &                  ' verify the restart file or rerun with nn_rsttr = 0 (namelist)' )
          ENDIF

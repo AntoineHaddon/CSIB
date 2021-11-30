@@ -11,6 +11,7 @@ MODULE trcice
    !!----------------------------------------------------------------------
    !!   trc_ice       :  Call the appropriate sea ice tracer subroutine
    !!----------------------------------------------------------------------
+   USE par_trc         ! need jptra, number of passive tracers
    USE oce_trc        ! shared variables between ocean and passive tracers
    USE trc            ! passive tracers common variables
    USE trcice_cfc     ! CFC      initialisation
@@ -28,7 +29,7 @@ MODULE trcice
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: trcice.F90 11536 2019-09-11 13:54:18Z smasson $ 
+   !! $Id: trcice.F90 14086 2020-12-04 11:37:14Z cetlod $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -88,10 +89,8 @@ CONTAINS
          WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
       ENDIF
       !
-      REWIND( numnat_ref )              ! Namelist namtrc_ice in reference namelist : Passive tracer input data
       READ  ( numnat_ref, namtrc_ice, IOSTAT = ios, ERR = 901)
  901  IF( ios /= 0 )   CALL ctl_nam ( ios , ' namtrc_ice in reference namelist ' )
-      REWIND( numnat_cfg )              ! Namelist namtrc_ice in configuration namelist : Pisces external sources of nutrients
       READ  ( numnat_cfg, namtrc_ice, IOSTAT = ios, ERR = 902 )
  902  IF( ios >  0 )   CALL ctl_nam ( ios , 'namtrc_ice in configuration namelist' )
 

@@ -7,14 +7,12 @@ MODULE sedstp
    USE seddta   ! data read
    USE sedchem  ! chemical constant
    USE sedco3   ! carbonate in sediment pore water
-   USE sedorg   ! Organic reactions and diffusion
-   USE sedinorg ! Inorganic dissolution
-   USE sedbtb   ! bioturbation
+   USE sedsol   ! Organic reactions and diffusion
    USE sedadv   ! vertical advection
-   USE sedmbc   ! mass balance calculation
    USE sedsfc   ! sediment surface data
    USE sedrst   ! restart
    USE sedwri   ! outputs
+   USE sedini
    USE trcdmp_sed
    USE lib_mpp         ! distribued memory computing library
    USE iom
@@ -25,10 +23,14 @@ MODULE sedstp
    !! * Routine accessibility
    PUBLIC sed_stp  ! called by step.F90
 
-   !! $Id: sedstp.F90 10222 2018-10-25 09:42:23Z aumont $
+   !! * Substitutions
+#  include "do_loop_substitute.h90"
+#  include "domzgr_substitute.h90"
+
+   !! $Id: sedstp.F90 15450 2021-10-27 14:32:08Z cetlod $
 CONTAINS
 
-   SUBROUTINE sed_stp ( kt )
+   SUBROUTINE sed_stp ( kt, Kbb, Kmm, Krhs )
       !!---------------------------------------------------------------------
       !!                  ***  ROUTINE sed_stp  ***
       !!
@@ -44,19 +46,20 @@ CONTAINS
       !!        !  06-04 (C. Ethe)  Re-organization
       !!----------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt       ! number of iteration
-      INTEGER :: ji,jk,js,jn,jw
+      INTEGER, INTENT(in) ::   Kbb, Kmm, Krhs  ! time level indices
+
+      INTEGER :: ji,jk,js,jn,jw,jkmax,jsmax
       !!----------------------------------------------------------------------
-      IF( ln_timing )      CALL timing_start('sed_stp')
+      IF( ln_timing )           CALL timing_start('sed_stp')
         !
                                 CALL sed_rst_opn  ( kt )       ! Open tracer restart file 
       IF( lrst_sed )            CALL sed_rst_cal  ( kt, 'WRITE' )   ! calenda
 
-      IF(ln_sediment_offline)   CALL trc_dmp_sed  ( kt )
+      IF(ln_sediment_offline)   CALL trc_dmp_sed  ( kt, Kbb, Kmm, Krhs )
 
-      dtsed  = r2dttrc
-!      dtsed2 = dtsed
+      dtsed  = rDt_trc
       IF (kt /= nitsed000) THEN
-         CALL sed_dta( kt )       ! Load  Data for bot. wat. Chem and fluxes
+         CALL sed_dta( kt, Kbb, Kmm )    ! Load  Data for bot. wat. Chem and fluxes
       ENDIF
 
       IF (sedmask == 1. ) THEN
@@ -64,22 +67,11 @@ CONTAINS
            CALL sed_chem( kt )      ! update of chemical constant to account for salinity, temperature changes
          ENDIF
 
-         CALL sed_btb( kt )         ! 1st pass of bioturbation at t+1/2
-         CALL sed_org( kt )         ! Organic related reactions and diffusion
-         CALL sed_inorg( kt )       ! Dissolution reaction
-         CALL sed_btb( kt )         ! 2nd pass of bioturbation at t+1
-         tokbot(:,:) = 0.0
-         DO jw = 1, jpwat
-            DO ji = 1, jpoce
-               tokbot(ji,jw) = pwcp(ji,1,jw) * 1.e-3 * dzkbot(ji)
-            END DO
-         ENDDO
+         CALL sed_sol( kt )        ! Solute diffusion and reactions 
          CALL sed_adv( kt )         ! advection
          CALL sed_co3( kt )         ! pH actualization for saving
-         ! This routine is commented out since it does not work at all
-         CALL sed_mbc( kt )         ! cumulation for mass balance calculation
 
-         IF (ln_sed_2way) CALL sed_sfc( kt )         ! Give back new bottom wat chem to tracer model
+         IF (ln_sed_2way) CALL sed_sfc( kt, Kbb )   ! Give back new bottom wat chem to tracer model
       ENDIF
       CALL sed_wri( kt )         ! outputs
       IF( kt == nitsed000 ) THEN
@@ -88,9 +80,9 @@ CONTAINS
       ENDIF
       IF( lrst_sed )            CALL sed_rst_wri( kt )   ! restart file output
 
-      IF( kt == nitsedend )  CLOSE( numsed )
+      IF( kt == nitsedend )     CLOSE( numsed )
 
-      IF( ln_timing )   CALL timing_stop('sed_stp')
+      IF( ln_timing )           CALL timing_stop('sed_stp')
 
    END SUBROUTINE sed_stp
 

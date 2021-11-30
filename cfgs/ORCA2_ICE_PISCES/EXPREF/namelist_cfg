@@ -11,9 +11,9 @@
 !!   namwad       Wetting and drying                                    (default: OFF)
 !!   namtsd       data: temperature & salinity                          (default: OFF)
 !!   namcrs       coarsened grid (for outputs and/or TOP)               (ln_crs =T)
-!!   namc1d       1D configuration options                              ("key_c1d")
-!!   namc1d_dyndmp 1D newtonian damping applied on currents             ("key_c1d")
-!!   namc1d_uvd   1D data (currents)                                    ("key_c1d")
+!!   namc1d       1D configuration options                              (ln_c1d =T)
+!!   namc1d_dyndmp 1D newtonian damping applied on currents             (ln_c1d =T)
+!!   namc1d_uvd   1D data (currents)                                    (ln_c1d =T)
 !!======================================================================
 !
 !-----------------------------------------------------------------------
@@ -23,28 +23,24 @@
    nn_it000    =       1   !  first time step
    nn_itend    =    5840   !  last  time step (std 5475)
    nn_istate   =       0   !  output the initial state (1) or not (0)
-   nn_date0    =  010101   !  date at nit_0000 (format yyyymmdd) used if ln_rstart=F or (ln_rstart=T and nn_rstctl=0 or 1)
-   ln_rstart   = .false.   !  start from rest (F) or from a restart file (T)
-   nn_rstctl   =    0      !  restart control ==> activated only if ln_rstart=T
-      !                          !    = 0 nn_date0 read in namelist ; nn_it000 : read in namelist
-      !                          !    = 1 nn_date0 read in namelist ; nn_it000 : check consistancy between namelist and restart
-      !                          !    = 2 nn_date0 read in restart  ; nn_it000 : check consistancy between namelist and restart
-   cn_ocerst_in    = "restart"   !  suffix of ocean restart name (input)
-   cn_ocerst_out   = "restart"   !  suffix of ocean restart name (output)
 /
 !-----------------------------------------------------------------------
 &namdom        !   time and space domain
 !-----------------------------------------------------------------------
-   rn_rdt      = 5400.     !  time step for the dynamics and tracer
+   rn_Dt       = 5400.     !  time step for the dynamics and tracer
 /
 !-----------------------------------------------------------------------
 &namcfg        !   parameters of the configuration                      (default: use namusr_def in namelist_cfg)
 !-----------------------------------------------------------------------
    ln_read_cfg = .true.    !  (=T) read the domain configuration file
-      cn_domcfg = "domain_cfg"  ! domain configuration filename
+      cn_domcfg = "ORCA_R2_zps_domcfg"    ! domain configuration filename
       !
       ln_closea    = .false.    !  F => suppress closed seas (defined by closea_mask field) 
       !                         !       from the bathymetry at runtime.
+/
+!-----------------------------------------------------------------------
+&namtile        !   parameters of the tiling
+!-----------------------------------------------------------------------
 /
 !-----------------------------------------------------------------------
 &namtsd        !    Temperature & Salinity Data  (init/dmp)             (default: OFF)
@@ -85,13 +81,11 @@
    nn_fsbc     = 4         !  frequency of SBC module call
                            !     (also = the frequency of sea-ice & iceberg model call)
                      ! Type of air-sea fluxes 
-   ln_flx      = .false.   !  flux formulation                          (T => fill namsbc_flx )
    ln_blk      = .true.    !  Bulk formulation                          (T => fill namsbc_blk )
-      !              ! Type of coupling (Ocean/Ice/Atmosphere) :
-   ln_cpl      = .false.   !  atmosphere coupled   formulation          ( requires key_oasis3 )
                      ! Sea-ice :
-   nn_ice      = 2         !  =2 or 3 automatically for SI3 or CICE    ("key_si3" or "key_cice")
-                           !          except in AGRIF zoom where it has to be specified
+   nn_ice      = 2         !  =0 no ice boundary condition
+      !                    !  =1 use observed ice-cover                 (  => fill namsbc_iif )
+      !                    !  =2 or 3 for SI3 and CICE, respectively
                      ! Misc. options of sbc : 
    ln_traqsr   = .true.    !  Light penetration in the ocean            (T => fill namtra_qsr)
    ln_ssr      = .true.    !  Sea Surface Restoring on T and/or S       (T => fill namsbc_ssr)
@@ -99,28 +93,6 @@
    nn_fwb      = 2         !  FreshWater Budget: 
    !                       !    =2 annual global mean of e-p-r set to zero
    ln_wave     = .false.   !  Activate coupling with wave  (T => fill namsbc_wave)
-   ln_cdgw     = .false.   !  Neutral drag coefficient read from wave model (T => ln_wave=.true. & fill namsbc_wave)
-   ln_sdw      = .false.   !  Read 2D Surf Stokes Drift & Computation of 3D stokes drift (T => ln_wave=.true. & fill namsbc_wave) 
-   nn_sdrift   =  0        !  Parameterization for the calculation of 3D-Stokes drift from the surface Stokes drift
-      !                    !   = 0 Breivik 2015 parameterization: v_z=v_0*[exp(2*k*z)/(1-8*k*z)]
-      !                    !   = 1 Phillips:                      v_z=v_o*[exp(2*k*z)-beta*sqrt(-2*k*pi*z)*erfc(sqrt(-2*k*z))]
-      !                    !   = 2 Phillips as (1) but using the wave frequency from a wave model
-   ln_tauwoc   = .false.   !  Activate ocean stress modified by external wave induced stress (T => ln_wave=.true. & fill namsbc_wave)
-   ln_tauw     = .false.   !  Activate ocean stress components from wave model
-   ln_stcor    = .false.   !  Activate Stokes Coriolis term (T => ln_wave=.true. & ln_sdw=.true. & fill namsbc_wave)
-/
-!-----------------------------------------------------------------------
-&namsbc_flx    !   surface boundary condition : flux formulation        (ln_flx =T)
-!-----------------------------------------------------------------------
-   cn_dir      = './'      !  root directory for the fluxes data location
-   !___________!_________________________!___________________!___________!_____________!________!___________!__________________!__________!_______________!
-   !           !  file name              ! frequency (hours) ! variable  ! time interp.!  clim  ! 'yearly'/ ! weights filename ! rotation ! land/sea mask !
-   !           !                         !  (if <0  months)  !   name    !   (logical) !  (T/F) ! 'monthly' !                  ! pairing  !    filename   !
-   sn_utau     = 'utau'                  ,        24.        , 'utau'    , .false.     , .false., 'yearly'  , ''               , ''       , ''
-   sn_vtau     = 'vtau'                  ,        24.        , 'vtau'    , .false.     , .false., 'yearly'  , ''               , ''       , ''
-   sn_qtot     = 'qtot'                  ,        24.        , 'qtot'    , .false.     , .false., 'yearly'  , ''               , ''       , ''
-   sn_qsr      = 'qsr'                   ,        24.        , 'qsr'     , .false.     , .false., 'yearly'  , ''               , ''       , ''
-   sn_emp      = 'emp'                   ,        24.        , 'emp'     , .false.     , .false., 'yearly'  , ''               , ''       , ''
 /
 !-----------------------------------------------------------------------
 &namsbc_blk    !   namsbc_blk  generic Bulk formula                     (ln_blk =T)
@@ -132,16 +104,19 @@
    !___________!_________________________!___________________!___________!_____________!________!___________!______________________________________!__________!_______________!
    !           !  file name              ! frequency (hours) ! variable  ! time interp.!  clim  ! 'yearly'/ !          weights filename            ! rotation ! land/sea mask !
    !           !                         !  (if <0  months)  !   name    !   (logical) !  (T/F) ! 'monthly' !                                      ! pairing  !    filename   !
-   sn_wndi     = 'u_10.15JUNE2009_fill'       ,    6.        , 'U_10_MOD',   .false.   , .true. , 'yearly'  , 'weights_core_orca2_bicubic_noc.nc'  , 'Uwnd'   , ''
-   sn_wndj     = 'v_10.15JUNE2009_fill'       ,    6.        , 'V_10_MOD',   .false.   , .true. , 'yearly'  , 'weights_core_orca2_bicubic_noc.nc'  , 'Vwnd'   , ''
-   sn_qsr      = 'ncar_rad.15JUNE2009_fill'   ,   24.        , 'SWDN_MOD',   .false.   , .true. , 'yearly'  , 'weights_core_orca2_bilinear_noc.nc' , ''       , ''
-   sn_qlw      = 'ncar_rad.15JUNE2009_fill'   ,   24.        , 'LWDN_MOD',   .false.   , .true. , 'yearly'  , 'weights_core_orca2_bilinear_noc.nc' , ''       , ''
-   sn_tair     = 't_10.15JUNE2009_fill'       ,    6.        , 'T_10_MOD',   .false.   , .true. , 'yearly'  , 'weights_core_orca2_bilinear_noc.nc' , ''       , ''
-   sn_humi     = 'q_10.15JUNE2009_fill'       ,    6.        , 'Q_10_MOD',   .false.   , .true. , 'yearly'  , 'weights_core_orca2_bilinear_noc.nc' , ''       , ''
-   sn_prec     = 'ncar_precip.15JUNE2009_fill',   -1.        , 'PRC_MOD1',   .false.   , .true. , 'yearly'  , 'weights_core_orca2_bilinear_noc.nc' , ''       , ''
-   sn_snow     = 'ncar_precip.15JUNE2009_fill',   -1.        , 'SNOW'    ,   .false.   , .true. , 'yearly'  , 'weights_core_orca2_bilinear_noc.nc' , ''       , ''
-   sn_slp      = 'slp.15JUNE2009_fill'        ,    6.        , 'SLP'     ,   .false.   , .true. , 'yearly'  , 'weights_core_orca2_bilinear_noc.nc' , ''       , ''
-   sn_tdif     = 'taudif_core'                ,   24.        , 'taudif'  ,   .false.   , .true. , 'yearly'  , 'weights_core_orca2_bilinear_noc.nc' , ''       , ''
+   sn_wndi     = 'u_10.15JUNE2009_fill'       ,    6.        , 'U_10_MOD',   .false.   , .true. , 'yearly'  , 'weights_core2_orca2_bicub'  , 'Uwnd'   , ''
+   sn_wndj     = 'v_10.15JUNE2009_fill'       ,    6.        , 'V_10_MOD',   .false.   , .true. , 'yearly'  , 'weights_core2_orca2_bicub'  , 'Vwnd'   , ''
+   sn_qsr      = 'ncar_rad.15JUNE2009_fill'   ,   24.        , 'SWDN_MOD',   .false.   , .true. , 'yearly'  , 'weights_core2_orca2_bilin' , ''       , ''
+   sn_qlw      = 'ncar_rad.15JUNE2009_fill'   ,   24.        , 'LWDN_MOD',   .false.   , .true. , 'yearly'  , 'weights_core2_orca2_bilin' , ''       , ''
+   sn_tair     = 't_10.15JUNE2009_fill'       ,    6.        , 'T_10_MOD',   .false.   , .true. , 'yearly'  , 'weights_core2_orca2_bilin' , ''       , ''
+   sn_humi     = 'q_10.15JUNE2009_fill'       ,    6.        , 'Q_10_MOD',   .false.   , .true. , 'yearly'  , 'weights_core2_orca2_bilin' , ''       , ''
+   sn_prec     = 'ncar_precip.15JUNE2009_fill',   -1.        , 'PRC_MOD1',   .false.   , .true. , 'yearly'  , 'weights_core2_orca2_bilin' , ''       , ''
+   sn_snow     = 'ncar_precip.15JUNE2009_fill',   -1.        , 'SNOW'    ,   .false.   , .true. , 'yearly'  , 'weights_core2_orca2_bilin' , ''       , ''
+   sn_slp      = 'slp.15JUNE2009_fill'        ,    6.        , 'SLP'     ,   .false.   , .true. , 'yearly'  , 'weights_core2_orca2_bilin' , ''       , ''
+/
+!-----------------------------------------------------------------------
+&namsbc_abl    !   Atmospheric Boundary Layer formulation           (ln_abl = T)
+!-----------------------------------------------------------------------
 /
 !-----------------------------------------------------------------------
 &namtra_qsr    !   penetrative solar radiation                          (ln_traqsr =T)
@@ -186,6 +161,29 @@
 !-----------------------------------------------------------------------
 &namsbc_wave   ! External fields from wave model                        (ln_wave=T)
 !-----------------------------------------------------------------------
+   ln_sdw      = .false.    !  get the 2D Surf Stokes Drift & Compute the 3D stokes drift
+   ln_stcor    = .false.    !  add Stokes Coriolis and tracer advection terms
+   ln_cdgw     = .false.    !  Neutral drag coefficient read from wave model
+   ln_tauoc    = .false.    !  ocean stress is modified by wave induced stress
+   ln_wave_test= .false.    !  Test case with constant wave fields
+!
+   ln_charn    = .false.     !  Charnock coefficient read from wave model (IFS only)
+   ln_taw      = .false.     !  ocean stress is modified by wave induced stress (coupled mode)
+   ln_phioc    = .false.     !  TKE flux from wave model
+   ln_bern_srfc= .false.     ! wave induced pressure. Bernoulli head J term
+   ln_breivikFV_2016 = .false. ! breivik 2016 vertical stokes profile
+   ln_vortex_force = .false.
+!
+   cn_dir      = './'      !  root directory for the waves data location
+   !___________!_________________________!___________________!___________!_____________!________!___________!__________________!__________!_______________!
+   !           !  file name              ! frequency (hours) ! variable  ! time interp.!  clim  ! 'yearly'/ ! weights filename ! rotation ! land/sea mask !
+   !           !                         !  (if <0  months)  !   name    !   (logical) !  (T/F) ! 'monthly' !                  ! pairing  !    filename   !
+   sn_cdg      =  'sdw_ecwaves_orca2'    ,        6.         , 'drag_coeff' ,  .true.  , .true. , 'yearly'  ,  ''              , ''       , ''
+   sn_usd      =  'sdw_ecwaves_orca2'    ,        6.         , 'u_sd2d'     ,  .true.  , .true. , 'yearly'  ,  ''              , ''       , ''
+   sn_vsd      =  'sdw_ecwaves_orca2'    ,        6.         , 'v_sd2d'     ,  .true.  , .true. , 'yearly'  ,  ''              , ''       , ''
+   sn_hsw      =  'sdw_ecwaves_orca2'    ,        6.         , 'hs'         ,  .true.  , .true. , 'yearly'  ,  ''              , ''       , ''
+   sn_wmp      =  'sdw_ecwaves_orca2'    ,        6.         , 'wmp'        ,  .true.  , .true. , 'yearly'  ,  ''              , ''       , ''
+   sn_wnum     =  'sdw_ecwaves_orca2'    ,        6.         , 'wave_num'   ,  .true.  , .true. , 'yearly'  ,  ''              , ''       , ''
 /
 !-----------------------------------------------------------------------
 &namberg       !   iceberg parameters                                   (default: OFF)
@@ -339,7 +337,6 @@
 &namdyn_vor    !   Vorticity / Coriolis scheme                          (default: NO selection)
 !-----------------------------------------------------------------------
    ln_dynvor_een = .true.  !  energy & enstrophy scheme
-      nn_een_e3f = 0          ! =0   e3f = mean masked e3t divided by 4
 /
 !-----------------------------------------------------------------------
 &namdyn_hpg    !   Hydrostatic pressure gradient option                 (default: NO selection)
@@ -394,9 +391,10 @@
       !                       !                 = 2 first vertical derivative of mixing length bounded by 1
       !                       !                 = 3 as =2 with distinct dissipative an mixing length scale
       nn_etau     =   1       !  penetration of tke below the mixed layer (ML) due to NIWs
-                               !        = 0 none ; = 1 add a tke source below the ML
-                               !        = 2 add a tke source just at the base of the ML
-                               !        = 3 as = 1 applied on HF part of the stress           (ln_cpl=T)
+      !                       !        = 0 none ; = 1 add a tke source below the ML
+      !                       !        = 2 add a tke source just at the base of the ML
+      !                       !        = 3 as = 1 applied on HF part of the stress           (ln_cpl=T)
+      ln_mxhsw    = .false.   !  surface mixing length scale = F(wave height)
 /
 !-----------------------------------------------------------------------
 &namzdf_iwm    !    internal wave-driven mixing parameterization        (ln_zdfiwm =T)
@@ -404,27 +402,30 @@
    nn_zpyc     = 2         !  pycnocline-intensified dissipation scales as N (=1) or N^2 (=2)
    ln_mevar    = .true.    !  variable (T) or constant (F) mixing efficiency
    ln_tsdiff   = .true.    !  account for differential T/S mixing (T) or not (F)
+
+   cn_dir      = './'      !  root directory for the iwm data location                                                                           
+   !___________!_________________________!___________________!___________!_____________!________!___________!__________________!__________!_______________!
+   !           !  file name              ! frequency (hours) ! variable  ! time interp.!  clim  ! 'yearly'/ ! weights filename ! rotation ! land/sea mask !
+   !           !                         !  (if <0  months)  !   name    !   (logical) !  (T/F) ! 'monthly' !                  ! pairing  !    filename   !
+   sn_mpb      = 'int_wave_mix'      , -12.       , 'mixing_power_bot'   , .false.  , .true. , 'yearly' , '' , ''  , ''
+   sn_mpp      = 'int_wave_mix'      , -12.       , 'mixing_power_pyc'   , .false.  , .true. , 'yearly' , '' , ''  , ''
+   sn_mpc      = 'int_wave_mix'      , -12.       , 'mixing_power_cri'   , .false.  , .true. , 'yearly' , '' , ''  , ''
+   sn_dsb      = 'int_wave_mix'      , -12.       , 'decay_scale_bot'    , .false.  , .true. , 'yearly' , '' , ''  , ''
+   sn_dsc      = 'int_wave_mix'      , -12.       , 'decay_scale_cri'    , .false.  , .true. , 'yearly' , '' , ''  , ''
 /
 !!======================================================================
 !!                  ***  Diagnostics namelists  ***                   !!
 !!                                                                    !!
 !!   namtrd       dynamics and/or tracer trends                         (default: OFF)
-!!   namptr       Poleward Transport Diagnostics                        (default: OFF)
 !!   namhsb       Heat and salt budgets                                 (default: OFF)
 !!   namdiu       Cool skin and warm layer models                       (default: OFF)
 !!   namdiu       Cool skin and warm layer models                       (default: OFF)
 !!   namflo       float parameters                                      (default: OFF)
-!!   nam_diaharm  Harmonic analysis of tidal constituents               (default: OFF)
 !!   nam_diadct   transports through some sections                      (default: OFF)
 !!   nam_dia25h   25h Mean Output                                       (default: OFF)
 !!   namnc4       netcdf4 chunking and compression settings             ("key_netcdf4")
 !!======================================================================
 !
-!-----------------------------------------------------------------------
-&namptr        !   Poleward Transport Diagnostic                        (default: OFF)
-!-----------------------------------------------------------------------
-   ln_diaptr   = .false.   !  Poleward heat and salt transport (T) or not (F)
-/
 !!======================================================================
 !!               ***  Observation & Assimilation  ***                 !!
 !!                                                                    !!
@@ -435,22 +436,17 @@
 !!======================================================================
 !!                  ***  Miscellaneous namelists  ***                 !!
 !!                                                                    !!
-!!   nammpp            Massively Parallel Processing                    ("key_mpp_mpi")
+!!   nammpp            Massively Parallel Processing
 !!   namctl            Control prints                                   (default: OFF)
 !!   namsto            Stochastic parametrization of EOS                (default: OFF)
 !!======================================================================
 !
 !-----------------------------------------------------------------------
-&nammpp        !   Massively Parallel Processing                        ("key_mpp_mpi")
+&nammpp        !   Massively Parallel Processing
 !-----------------------------------------------------------------------
-   jpni        =   0       !  number of processors following i (set automatically if < 1), see also ln_listonly = T
-   jpnj        =   0       !  number of processors following j (set automatically if < 1), see also ln_listonly = T
 /
 !-----------------------------------------------------------------------
 &namctl        !   Control prints                                       (default: OFF)
-   ln_ctl = .FALSE.                 ! Toggle all report printing on/off (T/F); Ignored if sn_cfctl%l_config is T
-   nn_print    =    0      !  level of print (0 no extra print)
-   ln_timing   = .true.    !  timing by routine write out in timing.output file
 !-----------------------------------------------------------------------
 /
 !-----------------------------------------------------------------------

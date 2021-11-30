@@ -7,17 +7,16 @@ MODULE fldread
    !!            3.0  !  2008-05  (S. Alderson)  Modified for Interpolation in memory from input grid to model grid
    !!            3.4  !  2013-10  (D. Delrosso, P. Oddo)  suppression of land point prior to interpolation
    !!                 !  12-2015  (J. Harle) Adding BDY on-the-fly interpolation
-   !!          4.0.3  !  2021-02  (D. Yang) Add lrowattr=ln_use_jattr for reading weights, IC and sss.
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
    !!   fld_read      : read input fields used for the computation of the surface boundary condition
    !!   fld_init      : initialization of field read
-   !!   fld_rec       : determined the record(s) to be read
+   !!   fld_def       : define the record(s) of the file and its name
    !!   fld_get       : read the data
    !!   fld_map       : read global data from file and map onto local data using a general mapping (use for open boundaries)
    !!   fld_rot       : rotate the vector fields onto the local grid direction
-   !!   fld_clopn     : update the data file name and close/open the files
+   !!   fld_clopn     : close/open the files
    !!   fld_fill      : fill the data structure with the associated information read in namelist
    !!   wgt_list      : manage the weights used for interpolation
    !!   wgt_print     : print the list of known weights
@@ -25,7 +24,8 @@ MODULE fldread
    !!   apply_seaoverland : fill land with ocean values
    !!   seaoverland   : create shifted matrices for seaoverland application
    !!   fld_interp    : apply weights to input gridded data to create data on model grid
-   !!   ksec_week     : function returning the first 3 letters of the first day of the weekly file
+   !!   fld_filename  : define the filename according to a given date
+   !!   ksec_week     : function returning seconds between 00h of the beginning of the week and half of the current time step
    !!----------------------------------------------------------------------
    USE oce            ! ocean dynamics and tracers
    USE dom_oce        ! ocean space and time domain
@@ -37,14 +37,14 @@ MODULE fldread
    USE iom            ! I/O manager library
    USE ioipsl  , ONLY : ymds2ju, ju2ymds   ! for calendar
    USE lib_mpp        ! MPP library
-   USE lbclnk         ! ocean lateral boundary conditions (C1D case)
+   USE lbclnk         ! ocean lateral boundary conditions (online interpolation case)
    
    IMPLICIT NONE
    PRIVATE   
  
    PUBLIC   fld_map    ! routine called by tides_init
    PUBLIC   fld_read, fld_fill   ! called by sbc... modules
-   PUBLIC   fld_clopn
+   PUBLIC   fld_def
 
    TYPE, PUBLIC ::   FLD_N      !: Namelist field informations
       CHARACTER(len = 256) ::   clname      ! generic name of the NetCDF flux file
@@ -52,7 +52,7 @@ MODULE fldread
       CHARACTER(len = 34)  ::   clvar       ! generic name of the variable in the NetCDF flux file
       LOGICAL              ::   ln_tint     ! time interpolation or not (T/F)
       LOGICAL              ::   ln_clim     ! climatology or not (T/F)
-      CHARACTER(len = 8)   ::   cltype      ! type of data file 'daily', 'monthly' or yearly'
+      CHARACTER(len = 8)   ::   clftyp      ! type of data file 'daily', 'monthly' or yearly'
       CHARACTER(len = 256) ::   wname       ! generic name of a NetCDF weights file to be used, blank if not
       CHARACTER(len = 34)  ::   vcomp       ! symbolic component name if a vector that needs rotation
       !                                     ! a string starting with "U" or "V" for each component   
@@ -68,12 +68,16 @@ MODULE fldread
       CHARACTER(len = 34)             ::   clvar        ! generic name of the variable in the NetCDF flux file
       LOGICAL                         ::   ln_tint      ! time interpolation or not (T/F)
       LOGICAL                         ::   ln_clim      ! climatology or not (T/F)
-      CHARACTER(len = 8)              ::   cltype       ! type of data file 'daily', 'monthly' or yearly'
+      CHARACTER(len = 8)              ::   clftyp       ! type of data file 'daily', 'monthly' or yearly'
+      CHARACTER(len = 1)              ::   cltype       ! nature of grid-points: T, U, V...
+      REAL(wp)                        ::   zsgn         ! -1. the sign change across the north fold, =  1. otherwise
       INTEGER                         ::   num          ! iom id of the jpfld files to be read
-      INTEGER , DIMENSION(2)          ::   nrec_b       ! before record (1: index, 2: second since Jan. 1st 00h of nit000 year)
-      INTEGER , DIMENSION(2)          ::   nrec_a       ! after  record (1: index, 2: second since Jan. 1st 00h of nit000 year)
-      REAL(wp) , ALLOCATABLE, DIMENSION(:,:,:  ) ::   fnow   ! input fields interpolated to now time step
-      REAL(wp) , ALLOCATABLE, DIMENSION(:,:,:,:) ::   fdta   ! 2 consecutive record of input fields
+      INTEGER , DIMENSION(2,2)        ::   nrec         ! before/after record (1: index, 2: second since Jan. 1st 00h of yr nit000)
+      INTEGER                         ::   nbb          ! index of before values
+      INTEGER                         ::   naa          ! index of after  values
+      INTEGER , ALLOCATABLE, DIMENSION(:) ::   nrecsec   ! 
+      REAL(wp), POINTER, DIMENSION(:,:,:  ) ::   fnow   ! input fields interpolated to now time step
+      REAL(wp), POINTER, DIMENSION(:,:,:,:) ::   fdta   ! 2 consecutive record of input fields
       CHARACTER(len = 256)            ::   wgtname      ! current name of the NetCDF weight file acting as a key
       !                                                 ! into the WGTLIST structure
       CHARACTER(len = 34)             ::   vcomp        ! symbolic name for a vector component that needs rotation
@@ -118,18 +122,22 @@ MODULE fldread
    INTEGER,     PARAMETER             ::   tot_wgts = 20
    TYPE( WGT ), DIMENSION(tot_wgts)   ::   ref_wgts     ! array of wgts
    INTEGER                            ::   nxt_wgt = 1  ! point to next available space in ref_wgts array
+   INTEGER                            ::   nflag = 0
    REAL(wp), PARAMETER                ::   undeff_lsm = -999.00_wp
 
 !$AGRIF_END_DO_NOT_TREAT
 
+   !! * Substitutions
+#  include "do_loop_substitute.h90"
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: fldread.F90 12367 2020-02-11 18:37:34Z clem $
+   !! $Id: fldread.F90 15023 2021-06-18 14:35:25Z gsamson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE fld_read( kt, kn_fsbc, sd, kit, kt_offset )
+   SUBROUTINE fld_read( kt, kn_fsbc, sd, kit, pt_offset, Kmm )
       !!---------------------------------------------------------------------
       !!                    ***  ROUTINE fld_read  ***
       !!                   
@@ -145,21 +153,15 @@ CONTAINS
       INTEGER  , INTENT(in   )               ::   kn_fsbc   ! sbc computation period (in time step) 
       TYPE(FLD), INTENT(inout), DIMENSION(:) ::   sd        ! input field related variables
       INTEGER  , INTENT(in   ), OPTIONAL     ::   kit       ! subcycle timestep for timesplitting option
-      INTEGER  , INTENT(in   ), OPTIONAL     ::   kt_offset ! provide fields at time other than "now"
-      !                                                     !   kt_offset = -1 => fields at "before" time level
-      !                                                     !   kt_offset = +1 => fields at "after"  time level
-      !                                                     !   etc.
+      REAL(wp) , INTENT(in   ), OPTIONAL     ::   pt_offset ! provide fields at time other than "now"
+      INTEGER  , INTENT(in   ), OPTIONAL     ::   Kmm       ! ocean time level index
       !!
-      INTEGER  ::   itmp         ! local variable
       INTEGER  ::   imf          ! size of the structure sd
       INTEGER  ::   jf           ! dummy indices
-      INTEGER  ::   isecend      ! number of second since Jan. 1st 00h of nit000 year at nitend
       INTEGER  ::   isecsbc      ! number of seconds between Jan. 1st 00h of nit000 year and the middle of sbc time step
-      INTEGER  ::   it_offset    ! local time offset variable
-      LOGICAL  ::   llnxtyr      ! open next year  file?
-      LOGICAL  ::   llnxtmth     ! open next month file?
-      LOGICAL  ::   llstop       ! stop is the file does not exist
+      INTEGER  ::   ibb, iaa     ! shorter name for sd(jf)%nbb and sd(jf)%naa
       LOGICAL  ::   ll_firstcall ! true if this is the first call to fld_read for this set of fields
+      REAL(wp) ::   zt_offset    ! local time offset variable
       REAL(wp) ::   ztinta       ! ratio applied to after  records when doing time interpolation
       REAL(wp) ::   ztintb       ! ratio applied to before records when doing time interpolation
       CHARACTER(LEN=1000) ::   clfmt  ! write format
@@ -167,23 +169,24 @@ CONTAINS
       ll_firstcall = kt == nit000
       IF( PRESENT(kit) )   ll_firstcall = ll_firstcall .and. kit == 1
 
-      IF ( nn_components == jp_iam_sas ) THEN   ;   it_offset = nn_fsbc
-      ELSE                                      ;   it_offset = 0
+      IF( nn_components == jp_iam_sas ) THEN   ;   zt_offset = REAL( nn_fsbc, wp )
+      ELSE                                     ;   zt_offset = 0.
       ENDIF
-      IF( PRESENT(kt_offset) )   it_offset = kt_offset
+      IF( PRESENT(pt_offset) )   zt_offset = pt_offset
 
-      ! Note that shifting time to be centrered in the middle of sbc time step impacts only nsec_* variables of the calendar 
-      IF( present(kit) ) THEN   ! ignore kn_fsbc in this case
-         isecsbc = nsec_year + nsec1jan000 + (kit+it_offset)*NINT( rdt/REAL(nn_baro,wp) )
+      ! Note that all varibles starting by nsec_* are shifted time by +1/2 time step to be centrered
+      IF( PRESENT(kit) ) THEN   ! ignore kn_fsbc in this case
+         isecsbc = nsec_year + nsec1jan000 + NINT( (     REAL(      kit,wp) + zt_offset ) * rn_Dt / REAL(nn_e,wp) )
       ELSE                      ! middle of sbc time step
-         isecsbc = nsec_year + nsec1jan000 + NINT(0.5 * REAL(kn_fsbc - 1,wp) * rdt) + it_offset * NINT(rdt)
+         ! note: we use kn_fsbc-1 because nsec_year is defined at the middle of the current time step
+         isecsbc = nsec_year + nsec1jan000 + NINT( ( 0.5*REAL(kn_fsbc-1,wp) + zt_offset ) * rn_Dt )
       ENDIF
       imf = SIZE( sd )
       !
       IF( ll_firstcall ) THEN                      ! initialization
          DO jf = 1, imf 
             IF( TRIM(sd(jf)%clrootname) == 'NOT USED' )   CYCLE
-            CALL fld_init( kn_fsbc, sd(jf) )       ! read each before field (put them in after as they will be swapped)
+            CALL fld_init( isecsbc, sd(jf) )       ! read each before field (put them in after as they will be swapped)
          END DO
          IF( lwp ) CALL wgt_print()                ! control print
       ENDIF
@@ -192,92 +195,10 @@ CONTAINS
          !                                         ! ====================================== !
          !
          DO jf = 1, imf                            ! ---   loop over field   --- !
-
+            !
             IF( TRIM(sd(jf)%clrootname) == 'NOT USED' )   CYCLE
-                      
-            IF( isecsbc > sd(jf)%nrec_a(2) .OR. ll_firstcall ) THEN    ! read/update the after data?
-
-               sd(jf)%nrec_b(:) = sd(jf)%nrec_a(:)                                  ! swap before record informations
-               sd(jf)%rotn(1) = sd(jf)%rotn(2)                                      ! swap before rotate informations
-               IF( sd(jf)%ln_tint )   sd(jf)%fdta(:,:,:,1) = sd(jf)%fdta(:,:,:,2)   ! swap before record field
-
-               CALL fld_rec( kn_fsbc, sd(jf), kt_offset = it_offset, kit = kit )    ! update after record informations
-
-               ! if kn_fsbc*rdt is larger than freqh (which is kind of odd),
-               ! it is possible that the before value is no more the good one... we have to re-read it
-               ! if before is not the last record of the file currently opened and after is the first record to be read
-               ! in a new file which means after = 1 (the file to be opened corresponds to the current time)
-               ! or after = nreclast + 1 (the file to be opened corresponds to a future time step)
-               IF( .NOT. ll_firstcall .AND. sd(jf)%ln_tint .AND. sd(jf)%nrec_b(1) /= sd(jf)%nreclast &
-                  &                   .AND. MOD( sd(jf)%nrec_a(1), sd(jf)%nreclast ) == 1 ) THEN
-                  itmp = sd(jf)%nrec_a(1)                       ! temporary storage
-                  sd(jf)%nrec_a(1) = sd(jf)%nreclast            ! read the last record of the file currently opened
-                  CALL fld_get( sd(jf) )                        ! read after data
-                  sd(jf)%fdta(:,:,:,1) = sd(jf)%fdta(:,:,:,2)   ! re-swap before record field
-                  sd(jf)%nrec_b(1) = sd(jf)%nrec_a(1)           ! update before record informations
-                  sd(jf)%nrec_b(2) = sd(jf)%nrec_a(2) - NINT( sd(jf)%freqh * 3600. )  ! assume freq to be in hours in this case
-                  sd(jf)%rotn(1)   = sd(jf)%rotn(2)             ! update before rotate informations
-                  sd(jf)%nrec_a(1) = itmp                       ! move back to after record 
-               ENDIF
-
-               CALL fld_clopn( sd(jf) )   ! Do we need to open a new year/month/week/day file?
-               
-               IF( sd(jf)%ln_tint ) THEN
-                  
-                  ! if kn_fsbc*rdt is larger than freqh (which is kind of odd),
-                  ! it is possible that the before value is no more the good one... we have to re-read it
-                  ! if before record is not just just before the after record...
-                  IF( .NOT. ll_firstcall .AND. MOD( sd(jf)%nrec_a(1), sd(jf)%nreclast ) /= 1 &
-                     &                   .AND. sd(jf)%nrec_b(1) /= sd(jf)%nrec_a(1) - 1 ) THEN   
-                     sd(jf)%nrec_a(1) = sd(jf)%nrec_a(1) - 1       ! move back to before record
-                     CALL fld_get( sd(jf) )                        ! read after data
-                     sd(jf)%fdta(:,:,:,1) = sd(jf)%fdta(:,:,:,2)   ! re-swap before record field
-                     sd(jf)%nrec_b(1) = sd(jf)%nrec_a(1)           ! update before record informations
-                     sd(jf)%nrec_b(2) = sd(jf)%nrec_a(2) - NINT( sd(jf)%freqh * 3600. )  ! assume freq to be in hours in this case
-                     sd(jf)%rotn(1)   = sd(jf)%rotn(2)             ! update before rotate informations
-                     sd(jf)%nrec_a(1) = sd(jf)%nrec_a(1) + 1       ! move back to after record
-                  ENDIF
-               ENDIF ! temporal interpolation?
-
-               ! do we have to change the year/month/week/day of the forcing field?? 
-               ! if we do time interpolation we will need to open next year/month/week/day file before the end of the current
-               ! one. If so, we are still before the end of the year/month/week/day when calling fld_rec so sd(jf)%nrec_a(1)
-               ! will be larger than the record number that should be read for current year/month/week/day
-               ! do we need next file data?
-               ! This applies to both cases with or without time interpolation
-               IF( sd(jf)%nrec_a(1) > sd(jf)%nreclast ) THEN
-                  
-                  sd(jf)%nrec_a(1) = sd(jf)%nrec_a(1) - sd(jf)%nreclast   ! 
-                  
-                  IF( .NOT. ( sd(jf)%ln_clim .AND. sd(jf)%cltype == 'yearly' ) ) THEN   ! close/open the current/new file
-                     
-                     llnxtmth = sd(jf)%cltype == 'monthly' .OR. nday == nmonth_len(nmonth)      ! open next month file?
-                     llnxtyr  = sd(jf)%cltype == 'yearly'  .OR. (nmonth == 12 .AND. llnxtmth)   ! open next year  file?
-
-                     ! if the run finishes at the end of the current year/month/week/day, we will allow next
-                     ! year/month/week/day file to be not present. If the run continue further than the current
-                     ! year/month/week/day, next year/month/week/day file must exist
-                     isecend = nsec_year + nsec1jan000 + (nitend - kt) * NINT(rdt)   ! second at the end of the run
-                     llstop = isecend > sd(jf)%nrec_a(2)                             ! read more than 1 record of next year
-                     ! we suppose that the date of next file is next day (should be ok even for weekly files...)
-                     CALL fld_clopn( sd(jf), nyear  + COUNT((/llnxtyr /))                                           ,         &
-                        &                    nmonth + COUNT((/llnxtmth/)) - 12                 * COUNT((/llnxtyr /)),         &
-                        &                    nday   + 1                   - nmonth_len(nmonth) * COUNT((/llnxtmth/)), llstop )
-
-                     IF( sd(jf)%num <= 0 .AND. .NOT. llstop ) THEN    ! next year file does not exist
-                        CALL ctl_warn('next year/month/week/day file: '//TRIM(sd(jf)%clname)//     &
-                           &     ' not present -> back to current year/month/day')
-                        CALL fld_clopn( sd(jf) )               ! back to the current year/month/day
-                        sd(jf)%nrec_a(1) = sd(jf)%nreclast     ! force to read the last record in the current year file
-                     ENDIF
-                     
-                  ENDIF
-               ENDIF   ! open need next file?
-                  
-               ! read after data
-               CALL fld_get( sd(jf) )
-               
-            ENDIF   ! read new data?
+            CALL fld_update( isecsbc, sd(jf), Kmm )
+            !
          END DO                                    ! --- end loop over field --- !
 
          CALL fld_rot( kt, sd )                    ! rotate vector before/now/after fields if needed
@@ -286,24 +207,26 @@ CONTAINS
             !
             IF( TRIM(sd(jf)%clrootname) == 'NOT USED' )   CYCLE
             !
+            ibb = sd(jf)%nbb   ;   iaa = sd(jf)%naa
+            !
             IF( sd(jf)%ln_tint ) THEN              ! temporal interpolation
-               IF(lwp .AND. kt - nit000 <= 100 ) THEN 
+               IF(lwp .AND. ( kt - nit000 <= 20 .OR. nitend - kt <= 20 ) ) THEN 
                   clfmt = "('   fld_read: var ', a, ' kt = ', i8, ' (', f9.4,' days), Y/M/D = ', i4.4,'/', i2.2,'/', i2.2," //   &
                      &    "', records b/a: ', i6.4, '/', i6.4, ' (days ', f9.4,'/', f9.4, ')')"
                   WRITE(numout, clfmt)  TRIM( sd(jf)%clvar ), kt, REAL(isecsbc,wp)/rday, nyear, nmonth, nday,   &            
-                     & sd(jf)%nrec_b(1), sd(jf)%nrec_a(1), REAL(sd(jf)%nrec_b(2),wp)/rday, REAL(sd(jf)%nrec_a(2),wp)/rday
-                  WRITE(numout, *) '      it_offset is : ',it_offset
+                     & sd(jf)%nrec(1,ibb), sd(jf)%nrec(1,iaa), REAL(sd(jf)%nrec(2,ibb),wp)/rday, REAL(sd(jf)%nrec(2,iaa),wp)/rday
+                  IF( zt_offset /= 0._wp )   WRITE(numout, *) '      zt_offset is : ', zt_offset
                ENDIF
                ! temporal interpolation weights
-               ztinta =  REAL( isecsbc - sd(jf)%nrec_b(2), wp ) / REAL( sd(jf)%nrec_a(2) - sd(jf)%nrec_b(2), wp )
+               ztinta =  REAL( isecsbc - sd(jf)%nrec(2,ibb), wp ) / REAL( sd(jf)%nrec(2,iaa) - sd(jf)%nrec(2,ibb), wp )
                ztintb =  1. - ztinta
-               sd(jf)%fnow(:,:,:) = ztintb * sd(jf)%fdta(:,:,:,1) + ztinta * sd(jf)%fdta(:,:,:,2)
+               sd(jf)%fnow(:,:,:) = ztintb * sd(jf)%fdta(:,:,:,ibb) + ztinta * sd(jf)%fdta(:,:,:,iaa)
             ELSE   ! nothing to do...
-               IF(lwp .AND. kt - nit000 <= 100 ) THEN
+               IF(lwp .AND. ( kt - nit000 <= 20 .OR. nitend - kt <= 20 ) ) THEN
                   clfmt = "('   fld_read: var ', a, ' kt = ', i8,' (', f9.4,' days), Y/M/D = ', i4.4,'/', i2.2,'/', i2.2," //   &
                      &    "', record: ', i6.4, ' (days ', f9.4, ' <-> ', f9.4, ')')"
                   WRITE(numout, clfmt) TRIM(sd(jf)%clvar), kt, REAL(isecsbc,wp)/rday, nyear, nmonth, nday,    &
-                     &                 sd(jf)%nrec_a(1), REAL(sd(jf)%nrec_b(2),wp)/rday, REAL(sd(jf)%nrec_a(2),wp)/rday
+                     &                 sd(jf)%nrec(1,iaa), REAL(sd(jf)%nrec(2,ibb),wp)/rday, REAL(sd(jf)%nrec(2,iaa),wp)/rday
                ENDIF
             ENDIF
             !
@@ -316,368 +239,152 @@ CONTAINS
    END SUBROUTINE fld_read
 
 
-   SUBROUTINE fld_init( kn_fsbc, sdjf )
+   SUBROUTINE fld_init( ksecsbc, sdjf )
       !!---------------------------------------------------------------------
       !!                    ***  ROUTINE fld_init  ***
       !!
-      !! ** Purpose :  - first call to fld_rec to define before values
-      !!               - if time interpolation, read before data 
+      !! ** Purpose :  - first call(s) to fld_def to define before values
+      !!               - open file
       !!----------------------------------------------------------------------
-      INTEGER  , INTENT(in   ) ::   kn_fsbc      ! sbc computation period (in time step) 
+      INTEGER  , INTENT(in   ) ::   ksecsbc   ! 
       TYPE(FLD), INTENT(inout) ::   sdjf         ! input field related variables
-      !!
-      LOGICAL :: llprevyr              ! are we reading previous year  file?
-      LOGICAL :: llprevmth             ! are we reading previous month file?
-      LOGICAL :: llprevweek            ! are we reading previous week  file?
-      LOGICAL :: llprevday             ! are we reading previous day   file?
-      LOGICAL :: llprev                ! llprevyr .OR. llprevmth .OR. llprevweek .OR. llprevday
-      INTEGER :: idvar                 ! variable id 
-      INTEGER :: inrec                 ! number of record existing for this variable
-      INTEGER :: iyear, imonth, iday   ! first day of the current file in yyyy mm dd
-      INTEGER :: isec_week             ! number of seconds since start of the weekly file
-      CHARACTER(LEN=1000) ::   clfmt   ! write format
       !!---------------------------------------------------------------------
       !
-      llprevyr   = .FALSE.
-      llprevmth  = .FALSE.
-      llprevweek = .FALSE.
-      llprevday  = .FALSE.
-      isec_week  = 0
+      IF( nflag == 0 )   nflag = -HUGE(0)
       !
-      ! define record informations
-      CALL fld_rec( kn_fsbc, sdjf, ldbefore = .TRUE. )  ! return before values in sdjf%nrec_a (as we will swap it later)
+      CALL fld_def( sdjf )
+      IF( sdjf%ln_tint .AND. ksecsbc < sdjf%nrecsec(1) )   CALL fld_def( sdjf, ldprev = .TRUE. )
       !
-      ! Note that shifting time to be centrered in the middle of sbc time step impacts only nsec_* variables of the calendar 
-      !
-      IF( sdjf%ln_tint ) THEN ! we need to read the previous record and we will put it in the current record structure
-         !
-         IF( sdjf%nrec_a(1) == 0  ) THEN   ! we redefine record sdjf%nrec_a(1) with the last record of previous year file
-            IF    ( NINT(sdjf%freqh) == -12 ) THEN   ! yearly mean
-               IF( sdjf%cltype == 'yearly' ) THEN             ! yearly file
-                  sdjf%nrec_a(1) = 1                                                       ! force to read the unique record
-                  llprevyr  = .NOT. sdjf%ln_clim                                           ! use previous year  file?
-               ELSE
-                  CALL ctl_stop( "fld_init: yearly mean file must be in a yearly type of file: "//TRIM(sdjf%clrootname) )
-               ENDIF
-            ELSEIF( NINT(sdjf%freqh) ==  -1 ) THEN   ! monthly mean
-               IF( sdjf%cltype == 'monthly' ) THEN            ! monthly file
-                  sdjf%nrec_a(1) = 1                                                       ! force to read the unique record
-                  llprevmth = .TRUE.                                                       ! use previous month file?
-                  llprevyr  = llprevmth .AND. nmonth == 1                                  ! use previous year  file?
-               ELSE                                           ! yearly file
-                  sdjf%nrec_a(1) = 12                                                      ! force to read december mean
-                  llprevyr = .NOT. sdjf%ln_clim                                            ! use previous year  file?
-               ENDIF
-            ELSE                                     ! higher frequency mean (in hours) 
-               IF    ( sdjf%cltype      == 'monthly' ) THEN   ! monthly file
-                  sdjf%nrec_a(1) = NINT( 24. * REAL(nmonth_len(nmonth-1),wp) / sdjf%freqh )! last record of previous month
-                  llprevmth = .TRUE.                                                       ! use previous month file?
-                  llprevyr  = llprevmth .AND. nmonth == 1                                  ! use previous year  file?
-               ELSEIF( sdjf%cltype(1:4) == 'week'    ) THEN   ! weekly file
-                  llprevweek = .TRUE.                                                      ! use previous week  file?
-                  sdjf%nrec_a(1) = NINT( 24. * 7. / sdjf%freqh )                           ! last record of previous week
-                  isec_week = NINT(rday) * 7                                               ! add a shift toward previous week
-               ELSEIF( sdjf%cltype      == 'daily'   ) THEN   ! daily file
-                  sdjf%nrec_a(1) = NINT( 24. / sdjf%freqh )                                ! last record of previous day
-                  llprevday = .TRUE.                                                       ! use previous day   file?
-                  llprevmth = llprevday .AND. nday   == 1                                  ! use previous month file?
-                  llprevyr  = llprevmth .AND. nmonth == 1                                  ! use previous year  file?
-               ELSE                                           ! yearly file
-                  sdjf%nrec_a(1) = NINT( 24. * REAL(nyear_len(0),wp) / sdjf%freqh )        ! last record of previous year 
-                  llprevyr = .NOT. sdjf%ln_clim                                            ! use previous year  file?
-               ENDIF
-            ENDIF
-         ENDIF
-         !
-         IF ( sdjf%cltype(1:4) == 'week' ) THEN
-            isec_week = isec_week + ksec_week( sdjf%cltype(6:8) )   ! second since the beginning of the week
-            llprevmth = isec_week > nsec_month                      ! longer time since the beginning of the week than the month
-            llprevyr  = llprevmth .AND. nmonth == 1
-         ENDIF
-         llprev = llprevyr .OR. llprevmth .OR. llprevweek .OR. llprevday
-         !
-         iyear  = nyear  - COUNT((/llprevyr /))
-         imonth = nmonth - COUNT((/llprevmth/)) + 12 * COUNT((/llprevyr /))
-         iday   = nday   - COUNT((/llprevday/)) + nmonth_len(nmonth-1) * COUNT((/llprevmth/)) - isec_week / NINT(rday)
-         !
-         CALL fld_clopn( sdjf, iyear, imonth, iday, .NOT. llprev )
-         !
-         ! if previous year/month/day file does not exist, we switch to the current year/month/day
-         IF( llprev .AND. sdjf%num <= 0 ) THEN
-            CALL ctl_warn( 'previous year/month/week/day file: '//TRIM(sdjf%clrootname)//   &
-               &           ' not present -> back to current year/month/week/day' )
-            ! we force to read the first record of the current year/month/day instead of last record of previous year/month/day
-            llprev = .FALSE.
-            sdjf%nrec_a(1) = 1
-            CALL fld_clopn( sdjf )
-         ENDIF
-         !
-         IF( llprev ) THEN   ! check if the record sdjf%nrec_a(1) exists in the file
-            idvar = iom_varid( sdjf%num, sdjf%clvar )                                        ! id of the variable sdjf%clvar
-            IF( idvar <= 0 )   RETURN
-            inrec = iom_file( sdjf%num )%dimsz( iom_file( sdjf%num )%ndims(idvar), idvar )   ! size of the last dim of idvar
-            sdjf%nrec_a(1) = MIN( sdjf%nrec_a(1), inrec )   ! make sure we select an existing record
-         ENDIF
-         !
-         ! read before data in after arrays(as we will swap it later)
-         CALL fld_get( sdjf )
-         !
-         clfmt = "('   fld_init : time-interpolation for ', a, ' read previous record = ', i6, ' at time = ', f7.2, ' days')"
-         IF(lwp) WRITE(numout, clfmt) TRIM(sdjf%clvar), sdjf%nrec_a(1), REAL(sdjf%nrec_a(2),wp)/rday
-         !
-      ENDIF
+      CALL fld_clopn( sdjf )
+      sdjf%nrec(:,sdjf%naa) = (/ 1, nflag /)  ! default definition to force flp_update to read the file.
       !
    END SUBROUTINE fld_init
 
 
-   SUBROUTINE fld_rec( kn_fsbc, sdjf, ldbefore, kit, kt_offset )
+   SUBROUTINE fld_update( ksecsbc, sdjf, Kmm )
       !!---------------------------------------------------------------------
-      !!                    ***  ROUTINE fld_rec  ***
+      !!                    ***  ROUTINE fld_update  ***
       !!
       !! ** Purpose : Compute
       !!              if sdjf%ln_tint = .TRUE.
-      !!                  nrec_a: record number and its time (nrec_b is obtained from nrec_a when swapping)
+      !!                  nrec(:,iaa): record number and its time (nrec(:,ibb) is obtained from nrec(:,iaa) when swapping)
       !!              if sdjf%ln_tint = .FALSE.
-      !!                  nrec_a(1): record number
-      !!                  nrec_b(2) and nrec_a(2): time of the beginning and end of the record
+      !!                  nrec(1,iaa): record number
+      !!                  nrec(2,ibb) and nrec(2,iaa): time of the beginning and end of the record
       !!----------------------------------------------------------------------
-      INTEGER  , INTENT(in   )           ::   kn_fsbc   ! sbc computation period (in time step) 
-      TYPE(FLD), INTENT(inout)           ::   sdjf      ! input field related variables
-      LOGICAL  , INTENT(in   ), OPTIONAL ::   ldbefore  ! sent back before record values (default = .FALSE.)
-      INTEGER  , INTENT(in   ), OPTIONAL ::   kit       ! index of barotropic subcycle
-      !                                                 ! used only if sdjf%ln_tint = .TRUE.
-      INTEGER  , INTENT(in   ), OPTIONAL ::   kt_offset ! Offset of required time level compared to "now"
-      !                                                 !   time level in units of time steps.
+      INTEGER  ,           INTENT(in   ) ::   ksecsbc   ! 
+      TYPE(FLD),           INTENT(inout) ::   sdjf      ! input field related variables
+      INTEGER  , OPTIONAL, INTENT(in   ) ::   Kmm    ! ocean time level index
       !
-      LOGICAL  ::   llbefore    ! local definition of ldbefore
-      INTEGER  ::   iendrec     ! end of this record (in seconds)
-      INTEGER  ::   imth        ! month number
-      INTEGER  ::   ifreq_sec   ! frequency mean (in seconds)
-      INTEGER  ::   isec_week   ! number of seconds since the start of the weekly file
-      INTEGER  ::   it_offset   ! local time offset variable
-      REAL(wp) ::   ztmp        ! temporary variable
+      INTEGER  ::   ja           ! end of this record (in seconds)
+      INTEGER  ::   ibb, iaa     ! shorter name for sdjf%nbb and sdjf%naa
       !!----------------------------------------------------------------------
+      ibb = sdjf%nbb   ;   iaa = sdjf%naa
       !
-      ! Note that shifting time to be centrered in the middle of sbc time step impacts only nsec_* variables of the calendar 
-      !
-      IF( PRESENT(ldbefore) ) THEN   ;   llbefore = ldbefore .AND. sdjf%ln_tint   ! needed only if sdjf%ln_tint = .TRUE.
-      ELSE                           ;   llbefore = .FALSE.
-      ENDIF
-      !
-      IF ( nn_components == jp_iam_sas ) THEN   ;   it_offset = nn_fsbc
-      ELSE                                      ;   it_offset = 0
-      ENDIF
-      IF( PRESENT(kt_offset) )      it_offset = kt_offset
-      IF( PRESENT(kit) ) THEN   ;   it_offset = ( kit + it_offset ) * NINT( rdt/REAL(nn_baro,wp) )
-      ELSE                      ;   it_offset =         it_offset   * NINT(       rdt            )
-      ENDIF
-      !
-      !                                           ! =========== !
-      IF    ( NINT(sdjf%freqh) == -12 ) THEN      ! yearly mean
-         !                                        ! =========== !
-         !
-         IF( sdjf%ln_tint ) THEN                  ! time interpolation, shift by 1/2 record
-            !
-            !                  INT( ztmp )
-            !                     /|\
-            !                    1 |    *----
-            !                    0 |----(              
-            !                      |----+----|--> time
-            !                      0   /|\   1   (nday/nyear_len(1))
-            !                           |   
-            !                           |   
-            !       forcing record :    1 
-            !                            
-            ztmp =  REAL( nsec_year, wp ) / ( REAL( nyear_len(1), wp ) * rday ) + 0.5 &
-               &  + REAL( it_offset, wp ) / ( REAL( nyear_len(1), wp ) * rday )
-            sdjf%nrec_a(1) = 1 + INT( ztmp ) - COUNT((/llbefore/))
-            ! swap at the middle of the year
-            IF( llbefore ) THEN   ;   sdjf%nrec_a(2) = nsec1jan000 - (1 - INT(ztmp)) * NINT(0.5 * rday) * nyear_len(0) + &
-                                    & INT(ztmp) * NINT( 0.5 * rday) * nyear_len(1) 
-            ELSE                  ;   sdjf%nrec_a(2) = nsec1jan000 + (1 - INT(ztmp)) * NINT(0.5 * rday) * nyear_len(1) + &
-                                    & INT(ztmp) * INT(rday) * nyear_len(1) + INT(ztmp) * NINT( 0.5 * rday) * nyear_len(2) 
-            ENDIF
-         ELSE                                     ! no time interpolation
-            sdjf%nrec_a(1) = 1
-            sdjf%nrec_a(2) = NINT(rday) * nyear_len(1) + nsec1jan000   ! swap at the end    of the year
-            sdjf%nrec_b(2) = nsec1jan000                               ! beginning of the year (only for print)
-         ENDIF
-         !
-         !                                        ! ============ !
-      ELSEIF( NINT(sdjf%freqh) ==  -1 ) THEN      ! monthly mean !
-         !                                        ! ============ !
-         !
-         IF( sdjf%ln_tint ) THEN                  ! time interpolation, shift by 1/2 record
-            !
-            !                  INT( ztmp )
-            !                     /|\
-            !                    1 |    *----
-            !                    0 |----(              
-            !                      |----+----|--> time
-            !                      0   /|\   1   (nday/nmonth_len(nmonth))
-            !                           |   
-            !                           |   
-            !       forcing record :  nmonth 
-            !                            
-            ztmp =  REAL( nsec_month, wp ) / ( REAL( nmonth_len(nmonth), wp ) * rday ) + 0.5 &
-           &      + REAL(  it_offset, wp ) / ( REAL( nmonth_len(nmonth), wp ) * rday )
-            imth = nmonth + INT( ztmp ) - COUNT((/llbefore/))
-            IF( sdjf%cltype == 'monthly' ) THEN   ;   sdjf%nrec_a(1) = 1 + INT( ztmp ) - COUNT((/llbefore/))
-            ELSE                                  ;   sdjf%nrec_a(1) = imth
-            ENDIF
-            sdjf%nrec_a(2) = nmonth_half(   imth ) + nsec1jan000   ! swap at the middle of the month
-         ELSE                                    ! no time interpolation
-            IF( sdjf%cltype == 'monthly' ) THEN   ;   sdjf%nrec_a(1) = 1
-            ELSE                                  ;   sdjf%nrec_a(1) = nmonth
-            ENDIF
-            sdjf%nrec_a(2) =  nmonth_end(nmonth  ) + nsec1jan000   ! swap at the end    of the month
-            sdjf%nrec_b(2) =  nmonth_end(nmonth-1) + nsec1jan000   ! beginning of the month (only for print)
-         ENDIF
-         !
-         !                                        ! ================================ !
-      ELSE                                        ! higher frequency mean (in hours)
-         !                                        ! ================================ !
-         !
-         ifreq_sec = NINT( sdjf%freqh * 3600. )                                         ! frequency mean (in seconds)
-         IF( sdjf%cltype(1:4) == 'week' )   isec_week = ksec_week( sdjf%cltype(6:8) )   ! since the first day of the current week
-         ! number of second since the beginning of the file
-         IF(     sdjf%cltype      == 'monthly' ) THEN   ;   ztmp = REAL(nsec_month,wp)  ! since the first day of the current month
-         ELSEIF( sdjf%cltype(1:4) == 'week'    ) THEN   ;   ztmp = REAL(isec_week ,wp)  ! since the first day of the current week
-         ELSEIF( sdjf%cltype      == 'daily'   ) THEN   ;   ztmp = REAL(nsec_day  ,wp)  ! since 00h of the current day
-         ELSE                                           ;   ztmp = REAL(nsec_year ,wp)  ! since 00h on Jan 1 of the current year
-         ENDIF
-         ztmp = ztmp + 0.5 * REAL(kn_fsbc - 1, wp) * rdt + REAL( it_offset, wp )        ! centrered in the middle of sbc time step
-         ztmp = ztmp + 0.01 * rdt                                                       ! avoid truncation error 
-         IF( sdjf%ln_tint ) THEN                 ! time interpolation, shift by 1/2 record
-            !
-            !          INT( ztmp/ifreq_sec + 0.5 )
-            !                     /|\
-            !                    2 |        *-----(
-            !                    1 |  *-----(
-            !                    0 |--(              
-            !                      |--+--|--+--|--+--|--> time
-            !                      0 /|\ 1 /|\ 2 /|\ 3    (ztmp/ifreq_sec)
-            !                         |     |     |
-            !                         |     |     |
-            !       forcing record :  1     2     3
-            !                   
-            ztmp= ztmp / REAL(ifreq_sec, wp) + 0.5
-         ELSE                                    ! no time interpolation
-            !
-            !           INT( ztmp/ifreq_sec )
-            !                     /|\
-            !                    2 |           *-----(
-            !                    1 |     *-----(
-            !                    0 |-----(              
-            !                      |--+--|--+--|--+--|--> time
-            !                      0 /|\ 1 /|\ 2 /|\ 3    (ztmp/ifreq_sec)
-            !                         |     |     |
-            !                         |     |     |
-            !       forcing record :  1     2     3
-            !                            
-            ztmp= ztmp / REAL(ifreq_sec, wp)
-         ENDIF
-         sdjf%nrec_a(1) = 1 + INT( ztmp ) - COUNT((/llbefore/))   ! record number to be read
+      IF( ksecsbc > sdjf%nrec(2,iaa) ) THEN     ! --> we need to update after data
+        
+         ! find where is the new after record... (it is not necessary sdjf%nrec(1,iaa)+1 )
+         ja = sdjf%nrec(1,iaa)
+         DO WHILE ( ksecsbc >= sdjf%nrecsec(ja) .AND. ja < sdjf%nreclast )   ! Warning: make sure ja <= sdjf%nreclast in this test
+            ja = ja + 1
+         END DO
+         IF( ksecsbc > sdjf%nrecsec(ja) )   ja = ja + 1   ! in case ksecsbc > sdjf%nrecsec(sdjf%nreclast)
 
-         iendrec = ifreq_sec * sdjf%nrec_a(1) + nsec1jan000       ! end of this record (in second)
-         ! add the number of seconds between 00h Jan 1 and the end of previous month/week/day (ok if nmonth=1)
-         IF( sdjf%cltype      == 'monthly' )   iendrec = iendrec + NINT(rday) * SUM(nmonth_len(1:nmonth -1))
-         IF( sdjf%cltype(1:4) == 'week'    )   iendrec = iendrec + ( nsec_year - isec_week )
-         IF( sdjf%cltype      == 'daily'   )   iendrec = iendrec + NINT(rday) * ( nday_year - 1 )
-         IF( sdjf%ln_tint ) THEN
-             sdjf%nrec_a(2) = iendrec - ifreq_sec / 2        ! swap at the middle of the record
-         ELSE
-             sdjf%nrec_a(2) = iendrec                        ! swap at the end    of the record
-             sdjf%nrec_b(2) = iendrec - ifreq_sec            ! beginning of the record (only for print)
+         ! if ln_tint and if the new after is not ja+1, we need also to update after data before the swap
+         ! so, after the swap, sdjf%nrec(2,ibb) will still be the closest value located just before ksecsbc
+         IF( sdjf%ln_tint .AND. ( ja > sdjf%nrec(1,iaa) + 1 .OR. sdjf%nrec(2,iaa) == nflag ) ) THEN
+            sdjf%nrec(:,iaa) = (/ ja-1, sdjf%nrecsec(ja-1) /)   ! update nrec(:,iaa) with before information
+            CALL fld_get( sdjf, Kmm )                           ! read after data that will be used as before data
          ENDIF
-         !
+            
+         ! if after is in the next file...
+         IF( ja > sdjf%nreclast ) THEN
+            
+            CALL fld_def( sdjf )
+            IF( ksecsbc > sdjf%nrecsec(sdjf%nreclast) )   CALL fld_def( sdjf, ldnext = .TRUE. )
+            CALL fld_clopn( sdjf )           ! open next file
+            
+            ! find where is after in this new file
+            ja = 1
+            DO WHILE ( ksecsbc > sdjf%nrecsec(ja) .AND. ja < sdjf%nreclast )
+               ja = ja + 1
+            END DO
+            IF( ksecsbc > sdjf%nrecsec(ja) )   ja = ja + 1   ! in case ksecsbc > sdjf%nrecsec(sdjf%nreclast)
+            
+            IF( ja > sdjf%nreclast ) THEN
+               CALL ctl_stop( "STOP", "fld_def: need next-next file? we should not be there... file: "//TRIM(sdjf%clrootname) )
+            ENDIF
+            
+            ! if ln_tint and if after is not the first record, we must (potentially again) update after data before the swap
+            IF( sdjf%ln_tint .AND. ja > 1 ) THEN
+               IF( sdjf%nrecsec(0) /= nflag ) THEN                    ! no trick used: after file is not the current file
+                  sdjf%nrec(:,iaa) = (/ ja-1, sdjf%nrecsec(ja-1) /)   ! update nrec(:,iaa) with before information
+                  CALL fld_get( sdjf, Kmm )                           ! read after data that will be used as before data
+               ENDIF
+            ENDIF
+            
+         ENDIF
+
+         IF( sdjf%ln_tint ) THEN                                ! Swap data
+            sdjf%nbb = sdjf%naa                                 !    swap indices
+            sdjf%naa = 3 - sdjf%naa                             !    = 2(1) if naa == 1(2)
+         ELSE                                                   ! No swap
+            sdjf%nrec(:,ibb) = (/ ja-1, sdjf%nrecsec(ja-1) /)   !    only for print 
+         ENDIF
+            
+         ! read new after data
+         sdjf%nrec(:,sdjf%naa) = (/ ja, sdjf%nrecsec(ja) /)     ! update nrec(:,naa) as it is used by fld_get
+         CALL fld_get( sdjf, Kmm )                              ! read after data (with nrec(:,naa) informations)
+        
       ENDIF
       !
-      IF( .NOT. sdjf%ln_tint ) sdjf%nrec_a(2) = sdjf%nrec_a(2) - 1   ! last second belongs to bext record : *----(
-      !
-   END SUBROUTINE fld_rec
+   END SUBROUTINE fld_update
 
 
-   SUBROUTINE fld_get( sdjf )
+   SUBROUTINE fld_get( sdjf, Kmm )
       !!---------------------------------------------------------------------
       !!                    ***  ROUTINE fld_get  ***
       !!
       !! ** Purpose :   read the data
       !!----------------------------------------------------------------------
-      TYPE(FLD)        , INTENT(inout) ::   sdjf   ! input field related variables
+      TYPE(FLD),           INTENT(inout) ::   sdjf   ! input field related variables
+      INTEGER  , OPTIONAL, INTENT(in   ) ::   Kmm    ! ocean time level index
       !
       INTEGER ::   ipk      ! number of vertical levels of sdjf%fdta ( 2D: ipk=1 ; 3D: ipk=jpk )
+      INTEGER ::   iaa      ! shorter name for sdjf%naa
       INTEGER ::   iw       ! index into wgts array
-      INTEGER ::   ipdom    ! index of the domain
       INTEGER ::   idvar    ! variable ID
       INTEGER ::   idmspc   ! number of spatial dimensions
-      LOGICAL ::   lmoor    ! C1D case: point data
+      REAL(wp), DIMENSION(:,:,:), POINTER ::   dta_alias   ! short cut
       !!---------------------------------------------------------------------
+      iaa = sdjf%naa
       !
-      ipk = SIZE( sdjf%fnow, 3 )
+      IF( sdjf%ln_tint ) THEN   ;   dta_alias => sdjf%fdta(:,:,:,iaa)
+      ELSE                      ;   dta_alias => sdjf%fnow(:,:,:    )
+      ENDIF
+      ipk = SIZE( dta_alias, 3 )
       !
-      IF( ASSOCIATED(sdjf%imap) ) THEN
-         IF( sdjf%ln_tint ) THEN   ;   CALL fld_map( sdjf%num, sdjf%clvar, sdjf%fdta(:,:,:,2), sdjf%nrec_a(1),   &
-            &                                        sdjf%imap, sdjf%igrd, sdjf%ibdy, sdjf%ltotvel, sdjf%lzint )
-         ELSE                      ;   CALL fld_map( sdjf%num, sdjf%clvar, sdjf%fnow(:,:,:  ), sdjf%nrec_a(1),   &
-            &                                        sdjf%imap, sdjf%igrd, sdjf%ibdy, sdjf%ltotvel, sdjf%lzint )
-         ENDIF
-      ELSE IF( LEN(TRIM(sdjf%wgtname)) > 0 ) THEN
+      IF( ASSOCIATED(sdjf%imap) ) THEN              ! BDY case 
+         CALL fld_map( sdjf%num, sdjf%clvar, dta_alias(:,:,:), sdjf%nrec(1,iaa),   &
+            &          sdjf%imap, sdjf%igrd, sdjf%ibdy, sdjf%ltotvel, sdjf%lzint, Kmm )
+      ELSE IF( LEN(TRIM(sdjf%wgtname)) > 0 ) THEN   ! On-the-fly interpolation
          CALL wgt_list( sdjf, iw )
-         IF( sdjf%ln_tint ) THEN   ;   CALL fld_interp( sdjf%num, sdjf%clvar, iw, ipk, sdjf%fdta(:,:,:,2),          & 
-            &                                                                          sdjf%nrec_a(1), sdjf%lsmname )
-         ELSE                      ;   CALL fld_interp( sdjf%num, sdjf%clvar, iw, ipk, sdjf%fnow(:,:,:  ),          &
-            &                                                                          sdjf%nrec_a(1), sdjf%lsmname )
-         ENDIF
-      ELSE
-         IF( SIZE(sdjf%fnow, 1) == jpi ) THEN   ;   ipdom = jpdom_data
-         ELSE                                   ;   ipdom = jpdom_unknown
-         ENDIF
-         ! C1D case: If product of spatial dimensions == ipk, then x,y are of
-         ! size 1 (point/mooring data): this must be read onto the central grid point
+         CALL fld_interp( sdjf%num, sdjf%clvar, iw, ipk, dta_alias(:,:,:), sdjf%nrec(1,iaa), sdjf%lsmname )
+         CALL lbc_lnk( 'fldread', dta_alias(:,:,:), sdjf%cltype, sdjf%zsgn, kfillmode = jpfillcopy )
+      ELSE                                          ! default case
          idvar  = iom_varid( sdjf%num, sdjf%clvar )
          idmspc = iom_file ( sdjf%num )%ndims( idvar )
-         IF( iom_file( sdjf%num )%luld( idvar ) )   idmspc = idmspc - 1
-         lmoor  = (  idmspc == 0 .OR. PRODUCT( iom_file( sdjf%num )%dimsz( 1:MAX(idmspc,1) ,idvar ) ) == ipk  )
-         !
-         SELECT CASE( ipk )
-         CASE(1)
-            IF( lk_c1d .AND. lmoor ) THEN
-               IF( sdjf%ln_tint ) THEN
-                  CALL iom_get( sdjf%num, sdjf%clvar, sdjf%fdta(2,2,1,2), sdjf%nrec_a(1) )
-                  CALL lbc_lnk( 'fldread', sdjf%fdta(:,:,1,2),'Z',1. )
-               ELSE
-                  CALL iom_get( sdjf%num, sdjf%clvar, sdjf%fnow(2,2,1  ), sdjf%nrec_a(1) )
-                  CALL lbc_lnk( 'fldread', sdjf%fnow(:,:,1  ),'Z',1. )
-               ENDIF
-            ELSE
-               IF( sdjf%ln_tint ) THEN   ;   CALL iom_get( sdjf%num, ipdom, sdjf%clvar, sdjf%fdta(:,:,1,2), sdjf%nrec_a(1), lrowattr=ln_use_jattr )
-               ELSE                      ;   CALL iom_get( sdjf%num, ipdom, sdjf%clvar, sdjf%fnow(:,:,1  ), sdjf%nrec_a(1), lrowattr=ln_use_jattr )
-               ENDIF
-            ENDIF
-         CASE DEFAULT
-            IF (lk_c1d .AND. lmoor ) THEN
-               IF( sdjf%ln_tint ) THEN
-                  CALL iom_get( sdjf%num, jpdom_unknown, sdjf%clvar, sdjf%fdta(2,2,:,2), sdjf%nrec_a(1) )
-                  CALL lbc_lnk( 'fldread', sdjf%fdta(:,:,:,2),'Z',1. )
-               ELSE
-                  CALL iom_get( sdjf%num, jpdom_unknown, sdjf%clvar, sdjf%fnow(2,2,:  ), sdjf%nrec_a(1) )
-                  CALL lbc_lnk( 'fldread', sdjf%fnow(:,:,:  ),'Z',1. )
-               ENDIF
-            ELSE
-               IF( sdjf%ln_tint ) THEN   ;   CALL iom_get( sdjf%num, ipdom, sdjf%clvar, sdjf%fdta(:,:,:,2), sdjf%nrec_a(1), lrowattr=ln_use_jattr )
-               ELSE                      ;   CALL iom_get( sdjf%num, ipdom, sdjf%clvar, sdjf%fnow(:,:,:  ), sdjf%nrec_a(1), lrowattr=ln_use_jattr )
-               ENDIF
-            ENDIF
-         END SELECT
+         IF( iom_file( sdjf%num )%luld( idvar ) )   idmspc = idmspc - 1   ! id of the last spatial dimension
+         CALL iom_get( sdjf%num,  jpdom_global, sdjf%clvar, dta_alias(:,:,:), sdjf%nrec(1,iaa),   &
+            &          sdjf%cltype, sdjf%zsgn, kfill = jpfillcopy )
       ENDIF
       !
-      sdjf%rotn(2) = .false.   ! vector not yet rotated
+      sdjf%rotn(iaa) = .false.   ! vector not yet rotated
       !
    END SUBROUTINE fld_get
 
    
-   SUBROUTINE fld_map( knum, cdvar, pdta, krec, kmap, kgrd, kbdy, ldtotvel, ldzint )
+   SUBROUTINE fld_map( knum, cdvar, pdta, krec, kmap, kgrd, kbdy, ldtotvel, ldzint, Kmm )
       !!---------------------------------------------------------------------
       !!                    ***  ROUTINE fld_map  ***
       !!
@@ -694,6 +401,7 @@ CONTAINS
       INTEGER, OPTIONAL         , INTENT(in   ) ::   kbdy         ! bdy number
       LOGICAL, OPTIONAL         , INTENT(in   ) ::   ldtotvel     ! true if total ( = barotrop + barocline) velocity
       LOGICAL, OPTIONAL         , INTENT(in   ) ::   ldzint       ! true if 3D variable requires a vertical interpolation
+      INTEGER, OPTIONAL         , INTENT(in   ) ::   Kmm          ! ocean time level index 
       !!
       INTEGER                                   ::   ipi          ! length of boundary data on local process
       INTEGER                                   ::   ipj          ! length of dummy dimension ( = 1 )
@@ -707,12 +415,12 @@ CONTAINS
       REAL(wp), ALLOCATABLE, DIMENSION(:,:,:)   ::   zdta_read    ! work space local data requiring vertical interpolation
       REAL(wp), ALLOCATABLE, DIMENSION(:,:,:)   ::   zdta_read_z  ! work space local data requiring vertical interpolation
       REAL(wp), ALLOCATABLE, DIMENSION(:,:,:)   ::   zdta_read_dz ! work space local data requiring vertical interpolation
-      CHARACTER(LEN=1),DIMENSION(3)             ::   clgrid
+      CHARACTER(LEN=1),DIMENSION(3)             ::   cltype
       LOGICAL                                   ::   lluld        ! is the variable using the unlimited dimension
       LOGICAL                                   ::   llzint       ! local value of ldzint
       !!---------------------------------------------------------------------
       !
-      clgrid = (/'t','u','v'/)
+      cltype = (/'t','u','v'/)
       !
       ipi = SIZE( pdta, 1 )
       ipj = SIZE( pdta, 2 )   ! must be equal to 1
@@ -747,25 +455,25 @@ CONTAINS
          !
          IF( ipkb /= ipk .OR. llzint ) THEN   ! boundary data not on model vertical grid : vertical interpolation
             !
-            IF( ipk == jpk .AND. iom_varid(knum,'gdep'//clgrid(kgrd)) /= -1 .AND. iom_varid(knum,'e3'//clgrid(kgrd)) /= -1 ) THEN
+            IF( ipk == jpk .AND. iom_varid(knum,'gdep'//cltype(kgrd)) /= -1 .AND. iom_varid(knum,'e3'//cltype(kgrd)) /= -1 ) THEN
                
                ALLOCATE( zdta_read(ipi,ipj,ipkb), zdta_read_z(ipi,ipj,ipkb), zdta_read_dz(ipi,ipj,ipkb) )
                 
                CALL fld_map_core( zz_read, kmap, zdta_read )
-               CALL iom_get ( knum, jpdom_unknown, 'gdep'//clgrid(kgrd), zz_read )   ! read only once? Potential temporal evolution?
+               CALL iom_get ( knum, jpdom_unknown, 'gdep'//cltype(kgrd), zz_read )   ! read only once? Potential temporal evolution?
                CALL fld_map_core( zz_read, kmap, zdta_read_z )
-               CALL iom_get ( knum, jpdom_unknown,   'e3'//clgrid(kgrd), zz_read )   ! read only once? Potential temporal evolution?
+               CALL iom_get ( knum, jpdom_unknown,   'e3'//cltype(kgrd), zz_read )   ! read only once? Potential temporal evolution?
                CALL fld_map_core( zz_read, kmap, zdta_read_dz )
                
                CALL iom_getatt(knum, '_FillValue', zfv, cdvar=cdvar )
-               CALL fld_bdy_interp(zdta_read, zdta_read_z, zdta_read_dz, pdta, kgrd, kbdy, zfv, ldtotvel)
+               CALL fld_bdy_interp(zdta_read, zdta_read_z, zdta_read_dz, pdta, kgrd, kbdy, zfv, ldtotvel, Kmm)
                DEALLOCATE( zdta_read, zdta_read_z, zdta_read_dz )
                
             ELSE
                IF( ipk /= jpk ) CALL ctl_stop( 'fld_map : this should be an impossible case...' )
                WRITE(ctmp1,*) 'fld_map : vertical interpolation for bdy variable '//TRIM(cdvar)//' requires ' 
-               IF( iom_varid(knum, 'gdep'//clgrid(kgrd)) == -1 ) CALL ctl_stop( ctmp1//'gdep'//clgrid(kgrd)//' variable' )
-               IF( iom_varid(knum,   'e3'//clgrid(kgrd)) == -1 ) CALL ctl_stop( ctmp1//  'e3'//clgrid(kgrd)//' variable' )
+               IF( iom_varid(knum, 'gdep'//cltype(kgrd)) == -1 ) CALL ctl_stop( ctmp1//'gdep'//cltype(kgrd)//' variable' )
+               IF( iom_varid(knum,   'e3'//cltype(kgrd)) == -1 ) CALL ctl_stop( ctmp1//  'e3'//cltype(kgrd)//' variable' )
 
             ENDIF
             !
@@ -822,8 +530,7 @@ CONTAINS
       
    END SUBROUTINE fld_map_core
    
-   
-   SUBROUTINE fld_bdy_interp(pdta_read, pdta_read_z, pdta_read_dz, pdta, kgrd, kbdy, pfv, ldtotvel)
+   SUBROUTINE fld_bdy_interp(pdta_read, pdta_read_z, pdta_read_dz, pdta, kgrd, kbdy, pfv, ldtotvel, Kmm )
       !!---------------------------------------------------------------------
       !!                    ***  ROUTINE fld_bdy_interp  ***
       !!
@@ -840,6 +547,7 @@ CONTAINS
       LOGICAL                   , INTENT(in   ) ::   ldtotvel        ! true if toal ( = barotrop + barocline) velocity
       INTEGER                   , INTENT(in   ) ::   kgrd            ! grid type (t, u, v)
       INTEGER                   , INTENT(in   ) ::   kbdy            ! bdy number
+      INTEGER, OPTIONAL         , INTENT(in   ) ::   Kmm             ! ocean time level index
       !!
       INTEGER                  ::   ipi                 ! length of boundary data on local process
       INTEGER                  ::   ipkb                ! number of vertical levels in boundary data file
@@ -866,34 +574,34 @@ CONTAINS
          ! --- calculate depth at t,u,v points --- !
          SELECT CASE( kgrd )                         
          CASE(1)            ! depth of T points:
-            zdepth(:) = gdept_n(ji,jj,:)
+            zdepth(:) = gdept(ji,jj,:,Kmm)
          CASE(2)            ! depth of U points: we must not use gdept_n as we don't want to do a communication
             !                 --> copy what is done for gdept_n in domvvl...
             zdhalf(1) = 0.0_wp
-            zdepth(1) = 0.5_wp * e3uw_n(ji,jj,1)
+            zdepth(1) = 0.5_wp * e3uw(ji,jj,1,Kmm)
             DO jk = 2, jpk                               ! vertical sum
                !    zcoef = umask - wumask    ! 0 everywhere tmask = wmask, ie everywhere expect at jk = mikt
                !                              ! 1 everywhere from mbkt to mikt + 1 or 1 (if no isf)
                !                              ! 0.5 where jk = mikt     
                !!gm ???????   BUG ?  gdept_n as well as gde3w_n  does not include the thickness of ISF ??
                zcoef = ( umask(ji,jj,jk) - wumask(ji,jj,jk) )
-               zdhalf(jk) = zdhalf(jk-1) + e3u_n(ji,jj,jk-1)
-               zdepth(jk) =       zcoef  * ( zdhalf(jk  ) + 0.5 * e3uw_n(ji,jj,jk))  &
-                  &         + (1.-zcoef) * ( zdepth(jk-1) +       e3uw_n(ji,jj,jk))
+               zdhalf(jk) = zdhalf(jk-1) + e3u(ji,jj,jk-1,Kmm)
+               zdepth(jk) =          zcoef  * ( zdhalf(jk  ) + 0.5_wp * e3uw(ji,jj,jk,Kmm))  &
+                  &         + (1._wp-zcoef) * ( zdepth(jk-1) +          e3uw(ji,jj,jk,Kmm))
             END DO
          CASE(3)            ! depth of V points: we must not use gdept_n as we don't want to do a communication
             !                 --> copy what is done for gdept_n in domvvl...
             zdhalf(1) = 0.0_wp
-            zdepth(1) = 0.5_wp * e3vw_n(ji,jj,1)
+            zdepth(1) = 0.5_wp * e3vw(ji,jj,1,Kmm)
             DO jk = 2, jpk                               ! vertical sum
                !    zcoef = vmask - wvmask    ! 0 everywhere tmask = wmask, ie everywhere expect at jk = mikt
                !                              ! 1 everywhere from mbkt to mikt + 1 or 1 (if no isf)
                !                              ! 0.5 where jk = mikt     
                !!gm ???????   BUG ?  gdept_n as well as gde3w_n  does not include the thickness of ISF ??
                zcoef = ( vmask(ji,jj,jk) - wvmask(ji,jj,jk) )
-               zdhalf(jk) = zdhalf(jk-1) + e3v_n(ji,jj,jk-1)
-               zdepth(jk) =       zcoef  * ( zdhalf(jk  ) + 0.5 * e3vw_n(ji,jj,jk))  &
-                  &         + (1.-zcoef) * ( zdepth(jk-1) +       e3vw_n(ji,jj,jk))
+               zdhalf(jk) = zdhalf(jk-1) + e3v(ji,jj,jk-1,Kmm)
+               zdepth(jk) =          zcoef  * ( zdhalf(jk  ) + 0.5_wp * e3vw(ji,jj,jk,Kmm))  &
+                     + (1._wp-zcoef) * ( zdepth(jk-1) +          e3vw(ji,jj,jk,Kmm))
             END DO
          END SELECT
          !         
@@ -911,7 +619,7 @@ CONTAINS
                   ENDIF
                END DO
             ENDIF
-         END DO
+         END DO   ! jpk
          !
       END DO   ! ipi
 
@@ -937,13 +645,13 @@ CONTAINS
             ENDDO
             ztrans_new = 0._wp
             DO jk = 1, jpk                                ! calculate transport on model grid
-               ztrans_new = ztrans_new + pdta(jb,1,jk ) * e3u_n(ji,jj,jk) * umask(ji,jj,jk)
+               ztrans_new = ztrans_new +      pdta(jb,1,jk ) * e3u(ji,jj,jk,Kmm ) * umask(ji,jj,jk)
             ENDDO
             DO jk = 1, jpk                                ! make transport correction
                IF(ldtotvel) THEN ! bdy data are total velocity so adjust bt transport term to match input data
-                  pdta(jb,1,jk) = ( pdta(jb,1,jk) + ( ztrans - ztrans_new ) * r1_hu_n(ji,jj) ) * umask(ji,jj,jk)
+                  pdta(jb,1,jk) = ( pdta(jb,1,jk) + ( ztrans - ztrans_new ) * r1_hu(ji,jj,Kmm) ) * umask(ji,jj,jk)
                ELSE              ! we're just dealing with bc velocity so bt transport term should sum to zero
-                  pdta(jb,1,jk) = ( pdta(jb,1,jk) + (  0._wp - ztrans_new ) * r1_hu_n(ji,jj) ) * umask(ji,jj,jk)
+                  pdta(jb,1,jk) =   pdta(jb,1,jk) + (  0._wp - ztrans_new ) * r1_hu(ji,jj,Kmm)   * umask(ji,jj,jk)
                ENDIF
             ENDDO
          ENDDO
@@ -958,21 +666,21 @@ CONTAINS
             ENDDO
             ztrans_new = 0._wp
             DO jk = 1, jpk                                ! calculate transport on model grid
-               ztrans_new = ztrans_new + pdta(jb,1,jk ) * e3v_n(ji,jj,jk) * vmask(ji,jj,jk)
+               ztrans_new = ztrans_new +      pdta(jb,1,jk ) * e3v(ji,jj,jk,Kmm ) * vmask(ji,jj,jk)
             ENDDO
             DO jk = 1, jpk                                ! make transport correction
                IF(ldtotvel) THEN ! bdy data are total velocity so adjust bt transport term to match input data
-                  pdta(jb,1,jk) = ( pdta(jb,1,jk) + ( ztrans - ztrans_new ) * r1_hv_n(ji,jj) ) * vmask(ji,jj,jk)
+                  pdta(jb,1,jk) = ( pdta(jb,1,jk) + ( ztrans - ztrans_new ) * r1_hv(ji,jj,Kmm) ) * vmask(ji,jj,jk)
                ELSE              ! we're just dealing with bc velocity so bt transport term should sum to zero
-                  pdta(jb,1,jk) = ( pdta(jb,1,jk) + (  0._wp - ztrans_new ) * r1_hv_n(ji,jj) ) * vmask(ji,jj,jk)
+                  pdta(jb,1,jk) =   pdta(jb,1,jk) + (  0._wp - ztrans_new ) * r1_hv(ji,jj,Kmm)   * vmask(ji,jj,jk)
                ENDIF
             ENDDO
          ENDDO
       END SELECT
-
+      
    END SUBROUTINE fld_bdy_interp
 
-   
+
    SUBROUTINE fld_rot( kt, sd )
       !!---------------------------------------------------------------------
       !!                    ***  ROUTINE fld_rot  ***
@@ -988,6 +696,7 @@ CONTAINS
       INTEGER ::   iv              ! indice of V component
       CHARACTER (LEN=100)          ::   clcomp       ! dummy weight name
       REAL(wp), DIMENSION(jpi,jpj) ::   utmp, vtmp   ! temporary arrays for vector rotation
+      REAL(wp), DIMENSION(:,:,:), POINTER ::   dta_u, dta_v    ! short cut
       !!---------------------------------------------------------------------
       !
       !! (sga: following code should be modified so that pairs arent searched for each time
@@ -1007,16 +716,13 @@ CONTAINS
                      IF( TRIM(sd(jv)%vcomp) == TRIM(clcomp) )   iv = jv
                   END DO
                   IF( iv > 0 ) THEN   ! fields ju and iv are two components which need to be rotated together
+                     IF( sd(ju)%ln_tint ) THEN   ;   dta_u => sd(ju)%fdta(:,:,:,jn)   ;   dta_v => sd(iv)%fdta(:,:,:,jn) 
+                     ELSE                        ;   dta_u => sd(ju)%fnow(:,:,:   )   ;   dta_v => sd(iv)%fnow(:,:,:   )
+                     ENDIF
                      DO jk = 1, SIZE( sd(ju)%fnow, 3 )
-                        IF( sd(ju)%ln_tint )THEN
-                           CALL rot_rep( sd(ju)%fdta(:,:,jk,jn), sd(iv)%fdta(:,:,jk,jn), 'T', 'en->i', utmp(:,:) )
-                           CALL rot_rep( sd(ju)%fdta(:,:,jk,jn), sd(iv)%fdta(:,:,jk,jn), 'T', 'en->j', vtmp(:,:) )
-                           sd(ju)%fdta(:,:,jk,jn) = utmp(:,:)   ;   sd(iv)%fdta(:,:,jk,jn) = vtmp(:,:)
-                        ELSE 
-                           CALL rot_rep( sd(ju)%fnow(:,:,jk  ), sd(iv)%fnow(:,:,jk  ), 'T', 'en->i', utmp(:,:) )
-                           CALL rot_rep( sd(ju)%fnow(:,:,jk  ), sd(iv)%fnow(:,:,jk  ), 'T', 'en->j', vtmp(:,:) )
-                           sd(ju)%fnow(:,:,jk   ) = utmp(:,:)   ;   sd(iv)%fnow(:,:,jk   ) = vtmp(:,:)
-                        ENDIF
+                        CALL rot_rep( dta_u(:,:,jk), dta_v(:,:,jk), 'T', 'en->i', utmp(:,:) )
+                        CALL rot_rep( dta_u(:,:,jk), dta_v(:,:,jk), 'T', 'en->j', vtmp(:,:) )
+                        dta_u(:,:,jk) = utmp(:,:)   ;   dta_v(:,:,jk) = vtmp(:,:)
                      END DO
                      sd(ju)%rotn(jn) = .TRUE.               ! vector was rotated 
                      IF( lwp .AND. kt == nit000 )   WRITE(numout,*)   &
@@ -1030,95 +736,200 @@ CONTAINS
    END SUBROUTINE fld_rot
 
 
-   SUBROUTINE fld_clopn( sdjf, kyear, kmonth, kday, ldstop )
+   SUBROUTINE fld_def( sdjf, ldprev, ldnext )
+      !!---------------------------------------------------------------------
+      !!                    ***  ROUTINE fld_def  ***
+      !!
+      !! ** Purpose :   define the record(s) of the file and its name
+      !!----------------------------------------------------------------------
+      TYPE(FLD)        , INTENT(inout) ::   sdjf       ! input field related variables
+      LOGICAL, OPTIONAL, INTENT(in   ) ::   ldprev     ! 
+      LOGICAL, OPTIONAL, INTENT(in   ) ::   ldnext     ! 
+      !
+      INTEGER  :: jt
+      INTEGER  :: idaysec               ! number of seconds in 1 day = NINT(rday)
+      INTEGER  :: iyr, imt, idy, isecwk
+      INTEGER  :: indexyr, indexmt
+      INTEGER  :: ireclast
+      INTEGER  :: ishift, istart
+      INTEGER, DIMENSION(2)  :: isave
+      REAL(wp) :: zfreqs
+      LOGICAL  :: llprev, llnext, llstop
+      LOGICAL  :: llprevmt, llprevyr
+      LOGICAL  :: llnextmt, llnextyr
+      !!----------------------------------------------------------------------
+      idaysec = NINT(rday)
+      !
+      IF( PRESENT(ldprev) ) THEN   ;   llprev = ldprev
+      ELSE                         ;   llprev = .FALSE.
+      ENDIF
+      IF( PRESENT(ldnext) ) THEN   ;   llnext = ldnext
+      ELSE                         ;   llnext = .FALSE.
+      ENDIF
+
+      ! current file parameters
+      IF( sdjf%clftyp(1:4) == 'week' ) THEN         ! find the day of the beginning of the current week
+         isecwk = ksec_week( sdjf%clftyp(6:8) )     ! seconds between the beginning of the week and half of current time step
+         llprevmt = isecwk > nsec_month             ! longer time since beginning of the current week than the current month
+         llprevyr = llprevmt .AND. nmonth == 1
+         iyr = nyear  - COUNT((/llprevyr/))
+         imt = nmonth - COUNT((/llprevmt/)) + 12 * COUNT((/llprevyr/))
+         idy = nday + nmonth_len(nmonth-1) * COUNT((/llprevmt/)) - isecwk / idaysec
+         isecwk = nsec_year - isecwk                ! seconds between 00h jan 1st of current year and current week beginning
+      ELSE
+         iyr = nyear
+         imt = nmonth
+         idy = nday
+         isecwk  = 0
+      ENDIF
+
+      ! previous file parameters
+      IF( llprev ) THEN
+         IF( sdjf%clftyp(1:4) == 'week'    ) THEN   ! find the day of the beginning of previous week
+            isecwk = isecwk + 7 * idaysec           ! seconds between the beginning of previous week and half of the time step
+            llprevmt = isecwk > nsec_month          ! longer time since beginning of the previous week than the current month
+            llprevyr = llprevmt .AND. nmonth == 1
+            iyr = nyear  - COUNT((/llprevyr/))
+            imt = nmonth - COUNT((/llprevmt/)) + 12 * COUNT((/llprevyr/))
+            idy = nday + nmonth_len(nmonth-1) * COUNT((/llprevmt/)) - isecwk / idaysec
+            isecwk = nsec_year - isecwk             ! seconds between 00h jan 1st of current year and previous week beginning
+         ELSE
+            idy = nday   - COUNT((/ sdjf%clftyp == 'daily'                 /))
+            imt = nmonth - COUNT((/ sdjf%clftyp == 'monthly' .OR. idy == 0 /))
+            iyr = nyear  - COUNT((/ sdjf%clftyp == 'yearly'  .OR. imt == 0 /))
+            IF( idy == 0 ) idy = nmonth_len(imt)
+            IF( imt == 0 ) imt = 12
+            isecwk = 0
+         ENDIF
+      ENDIF
+
+      ! next file parameters
+      IF( llnext ) THEN
+         IF( sdjf%clftyp(1:4) == 'week'    ) THEN   ! find the day of the beginning of next week
+            isecwk = 7 * idaysec - isecwk           ! seconds between half of the time step and the beginning of next week
+            llnextmt = isecwk > ( nmonth_len(nmonth)*idaysec - nsec_month )   ! larger than the seconds to the end of the month
+            llnextyr = llnextmt .AND. nmonth == 12
+            iyr = nyear  + COUNT((/llnextyr/))
+            imt = nmonth + COUNT((/llnextmt/)) - 12 * COUNT((/llnextyr/))
+            idy = nday - nmonth_len(nmonth) * COUNT((/llnextmt/)) + isecwk / idaysec + 1
+            isecwk = nsec_year + isecwk             ! seconds between 00h jan 1st of current year and next week beginning
+         ELSE
+            idy = nday   + COUNT((/ sdjf%clftyp == 'daily'                                 /))
+            imt = nmonth + COUNT((/ sdjf%clftyp == 'monthly' .OR. idy > nmonth_len(nmonth) /))
+            iyr = nyear  + COUNT((/ sdjf%clftyp == 'yearly'  .OR. imt == 13                /))
+            IF( idy > nmonth_len(nmonth) )   idy = 1
+            IF( imt == 13                )   imt = 1
+            isecwk = 0
+         ENDIF
+      ENDIF
+      !
+      ! find the last record to be read -> update sdjf%nreclast
+      indexyr = iyr - nyear + 1                 ! which  year are we looking for? previous(0), current(1) or next(2)?
+      indexmt = imt + 12 * ( indexyr - 1 )      ! which month are we looking for (relatively to current year)? 
+      !
+      ! Last record to be read in the current file
+      ! Predefine the number of record in the file according of its type.
+      ! We could compare this number with the number of records in the file and make a stop if the 2 numbers do not match...
+      ! However this would be much less fexible (e.g. for tests) and will force to rewite input files according to nleapy...
+      IF    ( NINT(sdjf%freqh) == -12 ) THEN            ;   ireclast = 1    ! yearly mean: consider only 1 record
+      ELSEIF( NINT(sdjf%freqh) ==  -1 ) THEN                                ! monthly mean:
+         IF(     sdjf%clftyp      == 'monthly' ) THEN   ;   ireclast = 1    !  consider that the file has  1 record
+         ELSE                                           ;   ireclast = 12   !  consider that the file has 12 record
+         ENDIF
+      ELSE                                                                  ! higher frequency mean (in hours)
+         IF(     sdjf%clftyp      == 'monthly' ) THEN   ;   ireclast = NINT( 24. * REAL(nmonth_len(indexmt), wp) / sdjf%freqh )
+         ELSEIF( sdjf%clftyp(1:4) == 'week'    ) THEN   ;   ireclast = NINT( 24. * 7.                            / sdjf%freqh )
+         ELSEIF( sdjf%clftyp      == 'daily'   ) THEN   ;   ireclast = NINT( 24.                                 / sdjf%freqh )
+         ELSE                                           ;   ireclast = NINT( 24. * REAL( nyear_len(indexyr), wp) / sdjf%freqh )
+         ENDIF
+      ENDIF
+
+      sdjf%nreclast = ireclast
+      ! Allocate arrays for beginning/middle/end of each record (seconds since Jan. 1st 00h of nit000 year)
+      IF( ALLOCATED(sdjf%nrecsec) )   DEALLOCATE( sdjf%nrecsec )
+      ALLOCATE( sdjf%nrecsec( 0:ireclast ) )
+      !
+      IF    ( NINT(sdjf%freqh) == -12 ) THEN                                     ! yearly mean and yearly file
+         SELECT CASE( indexyr )
+         CASE(0)   ;   sdjf%nrecsec(0) = nsec1jan000 - nyear_len( 0 ) * idaysec
+         CASE(1)   ;   sdjf%nrecsec(0) = nsec1jan000
+         CASE(2)   ;   sdjf%nrecsec(0) = nsec1jan000 + nyear_len( 1 ) * idaysec
+         ENDSELECT
+         sdjf%nrecsec(1) = sdjf%nrecsec(0) + nyear_len( indexyr ) * idaysec
+      ELSEIF( NINT(sdjf%freqh) ==  -1 ) THEN                                     ! monthly mean:
+         IF(     sdjf%clftyp      == 'monthly' ) THEN                            !    monthly file
+            sdjf%nrecsec(0   ) = nsec1jan000 + nmonth_beg(indexmt  )
+            sdjf%nrecsec(1   ) = nsec1jan000 + nmonth_beg(indexmt+1)
+         ELSE                                                                    !    yearly  file
+            ishift = 12 * ( indexyr - 1 )
+            sdjf%nrecsec(0:12) = nsec1jan000 + nmonth_beg(1+ishift:13+ishift)
+         ENDIF
+      ELSE                                                                       ! higher frequency mean (in hours)
+         IF(     sdjf%clftyp      == 'monthly' ) THEN   ;   istart = nsec1jan000 + nmonth_beg(indexmt)
+         ELSEIF( sdjf%clftyp(1:4) == 'week'    ) THEN   ;   istart = nsec1jan000 + isecwk
+         ELSEIF( sdjf%clftyp      == 'daily'   ) THEN   ;   istart = nsec1jan000 + nmonth_beg(indexmt) + ( idy - 1 ) * idaysec
+         ELSEIF( indexyr          == 0         ) THEN   ;   istart = nsec1jan000 - nyear_len( 0 ) * idaysec
+         ELSEIF( indexyr          == 2         ) THEN   ;   istart = nsec1jan000 + nyear_len( 1 ) * idaysec
+         ELSE                                           ;   istart = nsec1jan000
+         ENDIF
+         zfreqs = sdjf%freqh * rhhmm * rmmss
+         DO jt = 0, sdjf%nreclast
+            sdjf%nrecsec(jt) = istart + NINT( zfreqs * REAL(jt,wp) )
+         END DO
+      ENDIF
+      !
+      IF( sdjf%ln_tint ) THEN   ! record time defined in the middle of the record, computed using an implementation
+                                ! of the rounded average that is valid over the full integer range
+         sdjf%nrecsec(1:sdjf%nreclast) = sdjf%nrecsec(0:sdjf%nreclast-1) / 2 + sdjf%nrecsec(1:sdjf%nreclast) / 2 + &
+            & MAX( MOD( sdjf%nrecsec(0:sdjf%nreclast-1), 2 ), MOD( sdjf%nrecsec(1:sdjf%nreclast), 2 ) )
+      END IF
+      !
+      sdjf%clname = fld_filename( sdjf, idy, imt, iyr )
+      !
+   END SUBROUTINE fld_def
+
+   
+   SUBROUTINE fld_clopn( sdjf )
       !!---------------------------------------------------------------------
       !!                    ***  ROUTINE fld_clopn  ***
       !!
-      !! ** Purpose :   update the file name and close/open the files
+      !! ** Purpose :   close/open the files
       !!----------------------------------------------------------------------
-      TYPE(FLD)        , INTENT(inout) ::   sdjf     ! input field related variables
-      INTEGER, OPTIONAL, INTENT(in   ) ::   kyear    ! year value
-      INTEGER, OPTIONAL, INTENT(in   ) ::   kmonth   ! month value
-      INTEGER, OPTIONAL, INTENT(in   ) ::   kday     ! day value
-      LOGICAL, OPTIONAL, INTENT(in   ) ::   ldstop   ! stop if open to read a non-existing file (default = .TRUE.)
+      TYPE(FLD)        , INTENT(inout) ::   sdjf       ! input field related variables
       !
-      LOGICAL  :: llprevyr              ! are we reading previous year  file?
-      LOGICAL  :: llprevmth             ! are we reading previous month file?
-      INTEGER  :: iyear, imonth, iday   ! first day of the current file in yyyy mm dd
-      INTEGER  :: isec_week             ! number of seconds since start of the weekly file
-      INTEGER  :: indexyr               ! year undex (O/1/2: previous/current/next)
-      REAL(wp) :: zyear_len, zmonth_len ! length (days) of iyear and imonth             ! 
-      CHARACTER(len = 256) ::   clname  ! temporary file name
+      INTEGER  :: isave
+      LOGICAL  :: llprev, llnext, llstop
       !!----------------------------------------------------------------------
-      IF( PRESENT(kyear) ) THEN                             ! use given values 
-         iyear = kyear
-         imonth = kmonth
-         iday = kday
-         IF ( sdjf%cltype(1:4) == 'week' ) THEN             ! find the day of the beginning of the week
-            isec_week = ksec_week( sdjf%cltype(6:8) )- (86400 * 8 )  
-            llprevmth  = isec_week > nsec_month             ! longer time since beginning of the week than the month
-            llprevyr   = llprevmth .AND. nmonth == 1
-            iyear  = nyear  - COUNT((/llprevyr /))
-            imonth = nmonth - COUNT((/llprevmth/)) + 12 * COUNT((/llprevyr /))
-            iday   = nday   + nmonth_len(nmonth-1) * COUNT((/llprevmth/)) - isec_week / NINT(rday)
-         ENDIF
-      ELSE                                                  ! use current day values
-         IF ( sdjf%cltype(1:4) == 'week' ) THEN             ! find the day of the beginning of the week
-            isec_week  = ksec_week( sdjf%cltype(6:8) )      ! second since the beginning of the week
-            llprevmth  = isec_week > nsec_month             ! longer time since beginning of the week than the month
-            llprevyr   = llprevmth .AND. nmonth == 1
-         ELSE
-            isec_week  = 0
-            llprevmth  = .FALSE.
-            llprevyr   = .FALSE.
-         ENDIF
-         iyear  = nyear  - COUNT((/llprevyr /))
-         imonth = nmonth - COUNT((/llprevmth/)) + 12 * COUNT((/llprevyr /))
-         iday   = nday   + nmonth_len(nmonth-1) * COUNT((/llprevmth/)) - isec_week / NINT(rday)
-      ENDIF
+      !
+      llprev = sdjf%nrecsec(sdjf%nreclast) < nsec000_1jan000   ! file ends before the beginning of the job -> file may not exist
+      llnext = sdjf%nrecsec(      1      ) > nsecend_1jan000   ! file begins after the end of the job -> file may not exist 
 
-      ! build the new filename if not climatological data
-      clname=TRIM(sdjf%clrootname)
-      !
-      ! note that sdjf%ln_clim is is only acting on the presence of the year in the file name
-      IF( .NOT. sdjf%ln_clim ) THEN   
-                                         WRITE(clname, '(a,"_y",i4.4)' ) TRIM( sdjf%clrootname ), iyear    ! add year
-         IF( sdjf%cltype /= 'yearly' )   WRITE(clname, '(a,"m" ,i2.2)' ) TRIM( clname          ), imonth   ! add month
-      ELSE
-         ! build the new filename if climatological data
-         IF( sdjf%cltype /= 'yearly' )   WRITE(clname, '(a,"_m",i2.2)' ) TRIM( sdjf%clrootname ), imonth   ! add month
+      llstop = sdjf%ln_clim .OR. .NOT. ( llprev .OR. llnext )
+
+      IF( sdjf%num <= 0 .OR. .NOT. sdjf%ln_clim  ) THEN
+         IF( sdjf%num > 0 )   CALL iom_close( sdjf%num )   ! close file if already open
+         CALL iom_open( sdjf%clname, sdjf%num, ldstop = llstop, ldiof = LEN_TRIM(sdjf%wgtname) > 0 )
       ENDIF
-      IF( sdjf%cltype == 'daily' .OR. sdjf%cltype(1:4) == 'week' ) &
-            &                            WRITE(clname, '(a,"d" ,i2.2)' ) TRIM( clname          ), iday     ! add day
       !
-      IF( TRIM(clname) /= TRIM(sdjf%clname) .OR. sdjf%num == 0 ) THEN   ! new file to be open 
+      IF( sdjf%num <= 0 .AND. .NOT. llstop ) THEN   ! file not found but we do accept this...
          !
-         sdjf%clname = TRIM(clname)
-         IF( sdjf%num /= 0 )   CALL iom_close( sdjf%num )   ! close file if already open
-         CALL iom_open( sdjf%clname, sdjf%num, ldstop = ldstop, ldiof =  LEN(TRIM(sdjf%wgtname)) > 0 )
-         !
-         ! find the last record to be read -> update sdjf%nreclast
-         indexyr = iyear - nyear + 1
-         zyear_len = REAL(nyear_len( indexyr ), wp)
-         SELECT CASE ( indexyr )
-         CASE ( 0 )   ;   zmonth_len = 31.   ! previous year -> imonth = 12
-         CASE ( 1 )   ;   zmonth_len = REAL(nmonth_len(imonth), wp)
-         CASE ( 2 )   ;   zmonth_len = 31.   ! next     year -> imonth = 1
-         END SELECT
-         !
-         ! last record to be read in the current file
-         IF    ( sdjf%freqh == -12. ) THEN                 ;   sdjf%nreclast = 1    !  yearly mean
-         ELSEIF( sdjf%freqh ==  -1. ) THEN                                          ! monthly mean
-            IF(     sdjf%cltype      == 'monthly' ) THEN   ;   sdjf%nreclast = 1
-            ELSE                                           ;   sdjf%nreclast = 12
-            ENDIF
-         ELSE                                                                       ! higher frequency mean (in hours)
-            IF(     sdjf%cltype      == 'monthly' ) THEN   ;   sdjf%nreclast = NINT( 24. * zmonth_len / sdjf%freqh )
-            ELSEIF( sdjf%cltype(1:4) == 'week'    ) THEN   ;   sdjf%nreclast = NINT( 24. * 7.         / sdjf%freqh )
-            ELSEIF( sdjf%cltype      == 'daily'   ) THEN   ;   sdjf%nreclast = NINT( 24.              / sdjf%freqh )
-            ELSE                                           ;   sdjf%nreclast = NINT( 24. * zyear_len  / sdjf%freqh )
-            ENDIF
+         IF( llprev ) THEN   ! previous file does not exist : go back to current and accept to read only the first record
+            CALL ctl_warn('previous file: '//TRIM(sdjf%clname)//' not found -> go back to current year/month/week/day file')
+            isave = sdjf%nrecsec(sdjf%nreclast)   ! save previous file info
+            CALL fld_def( sdjf )                  ! go back to current file
+            sdjf%nreclast = 1                     ! force to use only the first record (do as if other were not existing...)
          ENDIF
+         !
+         IF( llnext ) THEN   ! next     file does not exist : go back to current and accept to read only the last  record 
+            CALL ctl_warn('next file: '//TRIM(sdjf%clname)//' not found -> go back to current year/month/week/day file')
+            isave = sdjf%nrecsec(1)               ! save next file info
+            CALL fld_def( sdjf )                  ! go back to current file
+         ENDIF
+         ! -> read "last" record but keep record info from the first record of next file
+         sdjf%nrecsec(  sdjf%nreclast  ) = isave
+         sdjf%nrecsec(0:sdjf%nreclast-1) = nflag
+         !
+         CALL iom_open( sdjf%clname, sdjf%num, ldiof = LEN_TRIM(sdjf%wgtname) > 0 )   
          !
       ENDIF
       !
@@ -1151,17 +962,21 @@ CONTAINS
          sdf(jf)%clvar      = sdf_n(jf)%clvar
          sdf(jf)%ln_tint    = sdf_n(jf)%ln_tint
          sdf(jf)%ln_clim    = sdf_n(jf)%ln_clim
-         sdf(jf)%cltype     = sdf_n(jf)%cltype
+         sdf(jf)%clftyp     = sdf_n(jf)%clftyp
+         sdf(jf)%cltype     = 'T'   ! by default don't do any call to lbc_lnk in iom_get
+         sdf(jf)%zsgn       = 1.    ! by default don't do change signe across the north fold
          sdf(jf)%num        = -1
+         sdf(jf)%nbb        = 1  ! start with before data in 1
+         sdf(jf)%naa        = 2  ! start with after  data in 2
          sdf(jf)%wgtname    = " "
          IF( LEN( TRIM(sdf_n(jf)%wname) ) > 0 )   sdf(jf)%wgtname = TRIM( cdir )//sdf_n(jf)%wname
          sdf(jf)%lsmname = " "
          IF( LEN( TRIM(sdf_n(jf)%lname) ) > 0 )   sdf(jf)%lsmname = TRIM( cdir )//sdf_n(jf)%lname
          sdf(jf)%vcomp      = sdf_n(jf)%vcomp
          sdf(jf)%rotn(:)    = .TRUE.   ! pretend to be rotated -> won't try to rotate data before the first call to fld_get
-         IF( sdf(jf)%cltype(1:4) == 'week' .AND. nn_leapy == 0  )   &
+         IF( sdf(jf)%clftyp(1:4) == 'week' .AND. nn_leapy == 0  )   &
             &   CALL ctl_stop('fld_clopn: weekly file ('//TRIM(sdf(jf)%clrootname)//') needs nn_leapy = 1')
-         IF( sdf(jf)%cltype(1:4) == 'week' .AND. sdf(jf)%ln_clim )   &
+         IF( sdf(jf)%clftyp(1:4) == 'week' .AND. sdf(jf)%ln_clim )   &
             &   CALL ctl_stop('fld_clopn: weekly file ('//TRIM(sdf(jf)%clrootname)//') needs ln_clim = .FALSE.')
          sdf(jf)%nreclast   = -1 ! Set to non zero default value to avoid errors, is updated to meaningful value during fld_clopn
          sdf(jf)%igrd       = 0
@@ -1187,7 +1002,7 @@ CONTAINS
                &                  '   climatology: '    ,       sdf(jf)%ln_clim
             WRITE(numout,*) '         weights: '        , TRIM( sdf(jf)%wgtname    ),   &
                &                  '   pairing: '        , TRIM( sdf(jf)%vcomp      ),   &
-               &                  '   data type: '      ,       sdf(jf)%cltype      ,   &
+               &                  '   data type: '      ,       sdf(jf)%clftyp      ,   &
                &                  '   land/sea mask:'   , TRIM( sdf(jf)%lsmname    )
             call flush(numout)
          END DO
@@ -1205,15 +1020,13 @@ CONTAINS
       !!                the weights data is read in and restructured (fld_weight)
       !!----------------------------------------------------------------------
       TYPE( FLD ), INTENT(in   ) ::   sd        ! field with name of weights file
-      INTEGER    , INTENT(inout) ::   kwgt      ! index of weights
+      INTEGER    , INTENT(  out) ::   kwgt      ! index of weights
       !
       INTEGER ::   kw, nestid   ! local integer
-      LOGICAL ::   found        ! local logical
       !!----------------------------------------------------------------------
       !
       !! search down linked list 
       !! weights filename is either present or we hit the end of the list
-      found = .FALSE.
       !
       !! because agrif nest part of filenames are now added in iom_open
       !! to distinguish between weights files on the different grids, need to track
@@ -1223,17 +1036,14 @@ CONTAINS
       nestid = Agrif_Fixed()
 #endif
       DO kw = 1, nxt_wgt-1
-         IF( TRIM(ref_wgts(kw)%wgtname) == TRIM(sd%wgtname) .AND. &
-             ref_wgts(kw)%nestid == nestid) THEN
+         IF( ref_wgts(kw)%wgtname == sd%wgtname .AND. &
+             ref_wgts(kw)%nestid  == nestid) THEN
             kwgt = kw
-            found = .TRUE.
-            EXIT
+            RETURN
          ENDIF
       END DO
-      IF( .NOT.found ) THEN
-         kwgt = nxt_wgt
-         CALL fld_weight( sd )
-      ENDIF
+      kwgt = nxt_wgt
+      CALL fld_weight( sd )
       !
    END SUBROUTINE wgt_list
 
@@ -1276,15 +1086,15 @@ CONTAINS
       !!----------------------------------------------------------------------
       TYPE( FLD ), INTENT(in) ::   sd   ! field with name of weights file
       !!
-      INTEGER ::   jn         ! dummy loop indices
+      INTEGER ::   ji,jj,jn   ! dummy loop indices
       INTEGER ::   inum       ! local logical unit
       INTEGER ::   id         ! local variable id
       INTEGER ::   ipk        ! local vertical dimension
       INTEGER ::   zwrap      ! local integer
       LOGICAL ::   cyclical   ! 
-      CHARACTER (len=5) ::   aname   !
-      INTEGER , DIMENSION(:), ALLOCATABLE ::   ddims
-      INTEGER,  DIMENSION(jpi,jpj) ::   data_src
+      CHARACTER (len=5) ::   clname   !
+      INTEGER , DIMENSION(4) ::   ddims
+      INTEGER                ::   isrc
       REAL(wp), DIMENSION(jpi,jpj) ::   data_tmp
       !!----------------------------------------------------------------------
       !
@@ -1297,24 +1107,12 @@ CONTAINS
       !! input data file is representative of all other files to be opened and processed with the
       !! current weights file
 
-      !! open input data file (non-model grid)
-      CALL iom_open( sd%clname, inum, ldiof =  LEN(TRIM(sd%wgtname)) > 0 )
-
-      !! get dimensions
-      IF ( SIZE(sd%fnow, 3) > 1 ) THEN
-         ALLOCATE( ddims(4) )
-      ELSE
-         ALLOCATE( ddims(3) )
-      ENDIF
-      id = iom_varid( inum, sd%clvar, ddims )
-
-      !! close it
-      CALL iom_close( inum )
+      !! get data grid dimensions
+      id = iom_varid( sd%num, sd%clvar, ddims )
 
       !! now open the weights file
-
       CALL iom_open ( sd%wgtname, inum )   ! interpolation weights
-      IF ( inum > 0 ) THEN
+      IF( inum > 0 ) THEN
 
          !! determine whether we have an east-west cyclic grid
          !! from global attribute called "ew_wrap" in the weights file
@@ -1348,37 +1146,36 @@ CONTAINS
 
          !! two possible cases: bilinear (4 weights) or bicubic (16 weights)
          id = iom_varid(inum, 'src05', ldstop=.FALSE.)
-         IF( id <= 0) THEN
-            ref_wgts(nxt_wgt)%numwgt = 4
-         ELSE
-            ref_wgts(nxt_wgt)%numwgt = 16
+         IF( id <= 0 ) THEN   ;   ref_wgts(nxt_wgt)%numwgt = 4
+         ELSE                 ;   ref_wgts(nxt_wgt)%numwgt = 16
          ENDIF
 
-         ALLOCATE( ref_wgts(nxt_wgt)%data_jpi(jpi,jpj,4) )
-         ALLOCATE( ref_wgts(nxt_wgt)%data_jpj(jpi,jpj,4) )
-         ALLOCATE( ref_wgts(nxt_wgt)%data_wgt(jpi,jpj,ref_wgts(nxt_wgt)%numwgt) )
+         ALLOCATE( ref_wgts(nxt_wgt)%data_jpi(Nis0:Nie0,Njs0:Nje0,4) )
+         ALLOCATE( ref_wgts(nxt_wgt)%data_jpj(Nis0:Nie0,Njs0:Nje0,4) )
+         ALLOCATE( ref_wgts(nxt_wgt)%data_wgt(Nis0:Nie0,Njs0:Nje0,ref_wgts(nxt_wgt)%numwgt) )
 
          DO jn = 1,4
-            aname = ' '
-            WRITE(aname,'(a3,i2.2)') 'src',jn
-            data_tmp(:,:) = 0
-            CALL iom_get ( inum, jpdom_data, aname, data_tmp(:,:), lrowattr=ln_use_jattr )
-            data_src(:,:) = INT(data_tmp(:,:))
-            ref_wgts(nxt_wgt)%data_jpj(:,:,jn) = 1 + (data_src(:,:)-1) / ref_wgts(nxt_wgt)%ddims(1)
-            ref_wgts(nxt_wgt)%data_jpi(:,:,jn) = data_src(:,:) - ref_wgts(nxt_wgt)%ddims(1)*(ref_wgts(nxt_wgt)%data_jpj(:,:,jn)-1)
+            WRITE(clname,'(a3,i2.2)') 'src',jn
+            CALL iom_get ( inum, jpdom_global, clname, data_tmp(:,:), cd_type = 'Z' )   !  no call to lbc_lnk
+            DO_2D( 0, 0, 0, 0 )
+               isrc = NINT(data_tmp(ji,jj)) - 1
+               ref_wgts(nxt_wgt)%data_jpi(ji,jj,jn) = 1 + MOD(isrc,  ref_wgts(nxt_wgt)%ddims(1))
+               ref_wgts(nxt_wgt)%data_jpj(ji,jj,jn) = 1 +     isrc / ref_wgts(nxt_wgt)%ddims(1)
+            END_2D
          END DO
 
          DO jn = 1, ref_wgts(nxt_wgt)%numwgt
-            aname = ' '
-            WRITE(aname,'(a3,i2.2)') 'wgt',jn
-            ref_wgts(nxt_wgt)%data_wgt(:,:,jn) = 0.0
-            CALL iom_get ( inum, jpdom_data, aname, ref_wgts(nxt_wgt)%data_wgt(:,:,jn), lrowattr=ln_use_jattr )
+            WRITE(clname,'(a3,i2.2)') 'wgt',jn
+            CALL iom_get ( inum, jpdom_global, clname, data_tmp(:,:), cd_type = 'Z' )   !  no call to lbc_lnk
+            DO_2D( 0, 0, 0, 0 )
+               ref_wgts(nxt_wgt)%data_wgt(ji,jj,jn) = data_tmp(ji,jj)
+            END_2D
          END DO
          CALL iom_close (inum)
  
          ! find min and max indices in grid
-         ref_wgts(nxt_wgt)%botleft(1) = MINVAL(ref_wgts(nxt_wgt)%data_jpi(:,:,:))
-         ref_wgts(nxt_wgt)%botleft(2) = MINVAL(ref_wgts(nxt_wgt)%data_jpj(:,:,:))
+         ref_wgts(nxt_wgt)%botleft( 1) = MINVAL(ref_wgts(nxt_wgt)%data_jpi(:,:,:))
+         ref_wgts(nxt_wgt)%botleft( 2) = MINVAL(ref_wgts(nxt_wgt)%data_jpj(:,:,:))
          ref_wgts(nxt_wgt)%topright(1) = MAXVAL(ref_wgts(nxt_wgt)%data_jpi(:,:,:))
          ref_wgts(nxt_wgt)%topright(2) = MAXVAL(ref_wgts(nxt_wgt)%data_jpj(:,:,:))
 
@@ -1402,8 +1199,6 @@ CONTAINS
       ELSE 
          CALL ctl_stop( '    fld_weight : unable to read the file ' )
       ENDIF
-
-      DEALLOCATE (ddims )
       !
    END SUBROUTINE fld_weight
 
@@ -1436,9 +1231,11 @@ CONTAINS
       CALL iom_open( clmaskfile, inum )
       SELECT CASE( SIZE(zfieldo(jpi1_lsm:jpi2_lsm,jpj1_lsm:jpj2_lsm,:),3) )
       CASE(1)
-         CALL iom_get( inum, jpdom_unknown, 'LSM', zslmec1(jpi1_lsm:jpi2_lsm,jpj1_lsm:jpj2_lsm,1), 1, rec1_lsm, recn_lsm)
+         CALL iom_get( inum, jpdom_unknown, 'LSM', zslmec1(jpi1_lsm:jpi2_lsm,jpj1_lsm:jpj2_lsm,1),   &
+            &          1, kstart = rec1_lsm, kcount = recn_lsm)
       CASE DEFAULT
-         CALL iom_get( inum, jpdom_unknown, 'LSM', zslmec1(jpi1_lsm:jpi2_lsm,jpj1_lsm:jpj2_lsm,:), 1, rec1_lsm, recn_lsm)
+         CALL iom_get( inum, jpdom_unknown, 'LSM', zslmec1(jpi1_lsm:jpi2_lsm,jpj1_lsm:jpj2_lsm,:),   &
+            &          1, kstart = rec1_lsm, kcount = recn_lsm)
       END SELECT
       CALL iom_close( inum )
       !
@@ -1481,16 +1278,16 @@ CONTAINS
       !! ** Purpose :   create shifted matrices for seaoverland application  
       !!      D. Delrosso INGV
       !!---------------------------------------------------------------------- 
-      INTEGER                      , INTENT(in   ) :: ileni,ilenj   ! lengths 
-      REAL, DIMENSION (ileni,ilenj), INTENT(in   ) :: zfieldn       ! array of forcing field with undeff for land points
-      REAL, DIMENSION (ileni,ilenj), INTENT(  out) :: zfield        ! array of forcing field
+      INTEGER                          , INTENT(in   ) :: ileni,ilenj   ! lengths 
+      REAL(wp), DIMENSION (ileni,ilenj), INTENT(in   ) :: zfieldn       ! array of forcing field with undeff for land points
+      REAL(wp), DIMENSION (ileni,ilenj), INTENT(  out) :: zfield        ! array of forcing field
       !
-      REAL   , DIMENSION (ileni,ilenj)   :: zmat1, zmat2, zmat3, zmat4  ! local arrays 
-      REAL   , DIMENSION (ileni,ilenj)   :: zmat5, zmat6, zmat7, zmat8  !   -     - 
-      REAL   , DIMENSION (ileni,ilenj)   :: zlsm2d                      !   -     - 
-      REAL   , DIMENSION (ileni,ilenj,8) :: zlsm3d                      !   -     -
-      LOGICAL, DIMENSION (ileni,ilenj,8) :: ll_msknan3d                 ! logical mask for undeff detection
-      LOGICAL, DIMENSION (ileni,ilenj)   :: ll_msknan2d                 ! logical mask for undeff detection
+      REAL(wp) , DIMENSION (ileni,ilenj)   :: zmat1, zmat2, zmat3, zmat4  ! local arrays 
+      REAL(wp) , DIMENSION (ileni,ilenj)   :: zmat5, zmat6, zmat7, zmat8  !   -     - 
+      REAL(wp) , DIMENSION (ileni,ilenj)   :: zlsm2d                      !   -     - 
+      REAL(wp) , DIMENSION (ileni,ilenj,8) :: zlsm3d                      !   -     -
+      LOGICAL  , DIMENSION (ileni,ilenj,8) :: ll_msknan3d                 ! logical mask for undeff detection
+      LOGICAL  , DIMENSION (ileni,ilenj)   :: ll_msknan2d                 ! logical mask for undeff detection
       !!---------------------------------------------------------------------- 
       zmat8 = eoshift( zfieldn , SHIFT=-1 , BOUNDARY = (/zfieldn(:,1)/)     , DIM=2 )
       zmat1 = eoshift( zmat8   , SHIFT=-1 , BOUNDARY = (/zmat8(1,:)/)       , DIM=1 )
@@ -1511,8 +1308,7 @@ CONTAINS
    END SUBROUTINE seaoverland
 
 
-   SUBROUTINE fld_interp( num, clvar, kw, kk, dta,  &
-                          &         nrec, lsmfile)      
+   SUBROUTINE fld_interp( num, clvar, kw, kk, dta, nrec, lsmfile)      
       !!---------------------------------------------------------------------
       !!                    ***  ROUTINE fld_interp  ***
       !!
@@ -1530,7 +1326,8 @@ CONTAINS
       INTEGER, DIMENSION(3) ::   rec1, recn           ! temporary arrays for start and length
       INTEGER, DIMENSION(3) ::   rec1_lsm, recn_lsm   ! temporary arrays for start and length in case of seaoverland
       INTEGER ::   ii_lsm1,ii_lsm2,ij_lsm1,ij_lsm2    ! temporary indices
-      INTEGER ::   jk, jn, jm, jir, jjr               ! loop counters
+      INTEGER ::   ji, jj, jk, jn, jir, jjr           ! loop counters
+      INTEGER ::   ipk
       INTEGER ::   ni, nj                             ! lengths
       INTEGER ::   jpimin,jpiwid                      ! temporary indices
       INTEGER ::   jpimin_lsm,jpiwid_lsm              ! temporary indices
@@ -1541,6 +1338,7 @@ CONTAINS
       INTEGER ::   itmpi,itmpj,itmpz                     ! lengths
       REAL(wp),DIMENSION(:,:,:), ALLOCATABLE ::   ztmp_fly_dta                 ! local array of values on input grid     
       !!----------------------------------------------------------------------
+      ipk = SIZE(dta, 3)
       !
       !! for weighted interpolation we have weights at four corners of a box surrounding 
       !! a model grid point, each weight is multiplied by a grid value (bilinear case)
@@ -1570,7 +1368,7 @@ CONTAINS
       jpj2 = jpj1 + recn(2) - 1
 
 
-      IF( LEN( TRIM(lsmfile) ) > 0 ) THEN
+      IF( LEN_TRIM(lsmfile) > 0 ) THEN
       !! indeces for ztmp_fly_dta
       ! --------------------------
          rec1_lsm(1)=MAX(rec1(1)-nn_lsm,1)  ! starting index for enlarged external data, x direction
@@ -1600,10 +1398,10 @@ CONTAINS
          SELECT CASE( SIZE(ztmp_fly_dta(jpi1_lsm:jpi2_lsm,jpj1_lsm:jpj2_lsm,:),3) )
          CASE(1)
               CALL iom_get( num, jpdom_unknown, clvar, ztmp_fly_dta(jpi1_lsm:jpi2_lsm,jpj1_lsm:jpj2_lsm,1),   &
-                 &                                                                nrec, rec1_lsm, recn_lsm)
+                 &          nrec, kstart = rec1_lsm, kcount = recn_lsm)
          CASE DEFAULT
               CALL iom_get( num, jpdom_unknown, clvar, ztmp_fly_dta(jpi1_lsm:jpi2_lsm,jpj1_lsm:jpj2_lsm,:),   &
-                 &                                                                nrec, rec1_lsm, recn_lsm)
+                 &          nrec, kstart = rec1_lsm, kcount = recn_lsm)
          END SELECT
          CALL apply_seaoverland(lsmfile,ztmp_fly_dta(jpi1_lsm:jpi2_lsm,jpj1_lsm:jpj2_lsm,:),                  &
                  &                                      jpi1_lsm,jpi2_lsm,jpj1_lsm,jpj2_lsm,                  &
@@ -1623,122 +1421,147 @@ CONTAINS
       ELSE
          
          ref_wgts(kw)%fly_dta(:,:,:) = 0.0
-         SELECT CASE( SIZE(ref_wgts(kw)%fly_dta(jpi1:jpi2,jpj1:jpj2,:),3) )
-         CASE(1)
-              CALL iom_get( num, jpdom_unknown, clvar, ref_wgts(kw)%fly_dta(jpi1:jpi2,jpj1:jpj2,1), nrec, rec1, recn)
-         CASE DEFAULT
-              CALL iom_get( num, jpdom_unknown, clvar, ref_wgts(kw)%fly_dta(jpi1:jpi2,jpj1:jpj2,:), nrec, rec1, recn)
-         END SELECT 
+         CALL iom_get( num, jpdom_unknown, clvar, ref_wgts(kw)%fly_dta(jpi1:jpi2,jpj1:jpj2,:), nrec, kstart = rec1, kcount = recn)
       ENDIF
       
 
       !! first four weights common to both bilinear and bicubic
       !! data_jpi, data_jpj have already been shifted to (1,1) corresponding to botleft
-      !! note that we have to offset by 1 into fly_dta array because of halo
-      dta(:,:,:) = 0.0
-      DO jk = 1,4
-        DO jn = 1, jpj
-          DO jm = 1,jpi
-            ni = ref_wgts(kw)%data_jpi(jm,jn,jk)
-            nj = ref_wgts(kw)%data_jpj(jm,jn,jk)
-            dta(jm,jn,:) = dta(jm,jn,:) + ref_wgts(kw)%data_wgt(jm,jn,jk) * ref_wgts(kw)%fly_dta(ni+1,nj+1,:)
-          END DO
-        END DO
+      !! note that we have to offset by 1 into fly_dta array because of halo added to fly_dta (rec1 definition)
+      dta(:,:,:) = 0._wp
+      DO jn = 1,4
+         DO_3D( 0, 0, 0, 0, 1,ipk )
+            ni = ref_wgts(kw)%data_jpi(ji,jj,jn) + 1
+            nj = ref_wgts(kw)%data_jpj(ji,jj,jn) + 1
+            dta(ji,jj,jk) = dta(ji,jj,jk) + ref_wgts(kw)%data_wgt(ji,jj,jn) * ref_wgts(kw)%fly_dta(ni,nj,jk)
+         END_3D
       END DO
 
-      IF (ref_wgts(kw)%numwgt .EQ. 16) THEN
+      IF(ref_wgts(kw)%numwgt .EQ. 16) THEN
 
-        !! fix up halo points that we couldnt read from file
-        IF( jpi1 == 2 ) THEN
-           ref_wgts(kw)%fly_dta(jpi1-1,:,:) = ref_wgts(kw)%fly_dta(jpi1,:,:)
-        ENDIF
-        IF( jpi2 + jpimin - 1 == ref_wgts(kw)%ddims(1)+1 ) THEN
-           ref_wgts(kw)%fly_dta(jpi2+1,:,:) = ref_wgts(kw)%fly_dta(jpi2,:,:)
-        ENDIF
-        IF( jpj1 == 2 ) THEN
-           ref_wgts(kw)%fly_dta(:,jpj1-1,:) = ref_wgts(kw)%fly_dta(:,jpj1,:)
-        ENDIF
-        IF( jpj2 + jpjmin - 1 == ref_wgts(kw)%ddims(2)+1 .AND. jpj2 .lt. jpjwid+2 ) THEN
-           ref_wgts(kw)%fly_dta(:,jpj2+1,:) = 2.0*ref_wgts(kw)%fly_dta(:,jpj2,:) - ref_wgts(kw)%fly_dta(:,jpj2-1,:)
-        ENDIF
-
-        !! if data grid is cyclic we can do better on east-west edges
-        !! but have to allow for whether first and last columns are coincident
-        IF( ref_wgts(kw)%cyclic ) THEN
-           rec1(2) = MAX( jpjmin-1, 1 )
-           recn(1) = 1
-           recn(2) = MIN( jpjwid+2, ref_wgts(kw)%ddims(2)-rec1(2)+1 )
-           jpj1 = 2 + rec1(2) - jpjmin
-           jpj2 = jpj1 + recn(2) - 1
-           IF( jpi1 == 2 ) THEN
-              rec1(1) = ref_wgts(kw)%ddims(1) - ref_wgts(kw)%overlap
-              SELECT CASE( SIZE( ref_wgts(kw)%col(:,jpj1:jpj2,:),3) )
-              CASE(1)
-                   CALL iom_get( num, jpdom_unknown, clvar, ref_wgts(kw)%col(:,jpj1:jpj2,1), nrec, rec1, recn)
-              CASE DEFAULT
-                   CALL iom_get( num, jpdom_unknown, clvar, ref_wgts(kw)%col(:,jpj1:jpj2,:), nrec, rec1, recn)
-              END SELECT      
-              ref_wgts(kw)%fly_dta(jpi1-1,jpj1:jpj2,:) = ref_wgts(kw)%col(1,jpj1:jpj2,:)
-           ENDIF
-           IF( jpi2 + jpimin - 1 == ref_wgts(kw)%ddims(1)+1 ) THEN
-              rec1(1) = 1 + ref_wgts(kw)%overlap
-              SELECT CASE( SIZE( ref_wgts(kw)%col(:,jpj1:jpj2,:),3) )
-              CASE(1)
-                   CALL iom_get( num, jpdom_unknown, clvar, ref_wgts(kw)%col(:,jpj1:jpj2,1), nrec, rec1, recn)
-              CASE DEFAULT
-                   CALL iom_get( num, jpdom_unknown, clvar, ref_wgts(kw)%col(:,jpj1:jpj2,:), nrec, rec1, recn)
-              END SELECT
-              ref_wgts(kw)%fly_dta(jpi2+1,jpj1:jpj2,:) = ref_wgts(kw)%col(1,jpj1:jpj2,:)
-           ENDIF
-        ENDIF
-
-        ! gradient in the i direction
-        DO jk = 1,4
-          DO jn = 1, jpj
-            DO jm = 1,jpi
-              ni = ref_wgts(kw)%data_jpi(jm,jn,jk)
-              nj = ref_wgts(kw)%data_jpj(jm,jn,jk)
-              dta(jm,jn,:) = dta(jm,jn,:) + ref_wgts(kw)%data_wgt(jm,jn,jk+4) * 0.5 *         &
-                               (ref_wgts(kw)%fly_dta(ni+2,nj+1,:) - ref_wgts(kw)%fly_dta(ni,nj+1,:))
-            END DO
-          END DO
-        END DO
-
-        ! gradient in the j direction
-        DO jk = 1,4
-          DO jn = 1, jpj
-            DO jm = 1,jpi
-              ni = ref_wgts(kw)%data_jpi(jm,jn,jk)
-              nj = ref_wgts(kw)%data_jpj(jm,jn,jk)
-              dta(jm,jn,:) = dta(jm,jn,:) + ref_wgts(kw)%data_wgt(jm,jn,jk+8) * 0.5 *         &
-                               (ref_wgts(kw)%fly_dta(ni+1,nj+2,:) - ref_wgts(kw)%fly_dta(ni+1,nj,:))
-            END DO
-          END DO
-        END DO
-
-         ! gradient in the ij direction
-         DO jk = 1,4
-            DO jn = 1, jpj
-               DO jm = 1,jpi
-                  ni = ref_wgts(kw)%data_jpi(jm,jn,jk)
-                  nj = ref_wgts(kw)%data_jpj(jm,jn,jk)
-                  dta(jm,jn,:) = dta(jm,jn,:) + ref_wgts(kw)%data_wgt(jm,jn,jk+12) * 0.25 * ( &
-                               (ref_wgts(kw)%fly_dta(ni+2,nj+2,:) - ref_wgts(kw)%fly_dta(ni  ,nj+2,:)) -   &
-                               (ref_wgts(kw)%fly_dta(ni+2,nj  ,:) - ref_wgts(kw)%fly_dta(ni  ,nj  ,:)))
-               END DO
-            END DO
+         !! fix up halo points that we couldnt read from file
+         IF( jpi1 == 2 ) THEN
+            ref_wgts(kw)%fly_dta(jpi1-1,:,:) = ref_wgts(kw)%fly_dta(jpi1,:,:)
+         ENDIF
+         IF( jpi2 + jpimin - 1 == ref_wgts(kw)%ddims(1)+1 ) THEN
+            ref_wgts(kw)%fly_dta(jpi2+1,:,:) = ref_wgts(kw)%fly_dta(jpi2,:,:)
+         ENDIF
+         IF( jpj1 == 2 ) THEN
+            ref_wgts(kw)%fly_dta(:,jpj1-1,:) = ref_wgts(kw)%fly_dta(:,jpj1,:)
+         ENDIF
+         IF( jpj2 + jpjmin - 1 == ref_wgts(kw)%ddims(2)+1 .AND. jpj2 .LT. jpjwid+2 ) THEN
+            ref_wgts(kw)%fly_dta(:,jpj2+1,:) = 2.0*ref_wgts(kw)%fly_dta(:,jpj2,:) - ref_wgts(kw)%fly_dta(:,jpj2-1,:)
+         ENDIF
+         
+         !! if data grid is cyclic we can do better on east-west edges
+         !! but have to allow for whether first and last columns are coincident
+         IF( ref_wgts(kw)%cyclic ) THEN
+            rec1(2) = MAX( jpjmin-1, 1 )
+            recn(1) = 1
+            recn(2) = MIN( jpjwid+2, ref_wgts(kw)%ddims(2)-rec1(2)+1 )
+            jpj1 = 2 + rec1(2) - jpjmin
+            jpj2 = jpj1 + recn(2) - 1
+            IF( jpi1 == 2 ) THEN
+               rec1(1) = ref_wgts(kw)%ddims(1) - ref_wgts(kw)%overlap
+               CALL iom_get( num, jpdom_unknown, clvar, ref_wgts(kw)%col(:,jpj1:jpj2,:), nrec, kstart = rec1, kcount = recn)
+               ref_wgts(kw)%fly_dta(jpi1-1,jpj1:jpj2,:) = ref_wgts(kw)%col(1,jpj1:jpj2,:)
+            ENDIF
+            IF( jpi2 + jpimin - 1 == ref_wgts(kw)%ddims(1)+1 ) THEN
+               rec1(1) = 1 + ref_wgts(kw)%overlap
+               CALL iom_get( num, jpdom_unknown, clvar, ref_wgts(kw)%col(:,jpj1:jpj2,:), nrec, kstart = rec1, kcount = recn)
+               ref_wgts(kw)%fly_dta(jpi2+1,jpj1:jpj2,:) = ref_wgts(kw)%col(1,jpj1:jpj2,:)
+            ENDIF
+         ENDIF
+         !
+!!$         DO jn = 1,4
+!!$            DO_3D( 0, 0, 0, 0, 1,ipk )
+!!$               ni = ref_wgts(kw)%data_jpi(ji,jj,jn) + 1
+!!$               nj = ref_wgts(kw)%data_jpj(ji,jj,jn) + 1
+!!$               dta(ji,jj,jk) = dta(ji,jj,jk)   &
+!!$                  ! gradient in the i direction
+!!$                  &            + ref_wgts(kw)%data_wgt(ji,jj,jn+4) * 0.5_wp *                                    &
+!!$                  &                (ref_wgts(kw)%fly_dta(ni+1,nj  ,jk) - ref_wgts(kw)%fly_dta(ni-1,nj  ,jk))     &
+!!$                  ! gradient in the j direction
+!!$                  &            + ref_wgts(kw)%data_wgt(ji,jj,jn+8) * 0.5_wp *                                    &
+!!$                  &                (ref_wgts(kw)%fly_dta(ni  ,nj+1,jk) - ref_wgts(kw)%fly_dta(ni  ,nj-1,jk))     &
+!!$                  ! gradient in the ij direction
+!!$                  &            + ref_wgts(kw)%data_wgt(ji,jj,jn+12) * 0.25_wp *                                  &
+!!$                  &               ((ref_wgts(kw)%fly_dta(ni+1,nj+1,jk) - ref_wgts(kw)%fly_dta(ni-1,nj+1,jk)) -   &
+!!$                  &                (ref_wgts(kw)%fly_dta(ni+1,nj-1,jk) - ref_wgts(kw)%fly_dta(ni-1,nj-1,jk)))
+!!$            END_3D
+!!$         END DO
+         !
+         DO jn = 1,4
+            DO_3D( 0, 0, 0, 0, 1,ipk )
+               ni = ref_wgts(kw)%data_jpi(ji,jj,jn)
+               nj = ref_wgts(kw)%data_jpj(ji,jj,jn)
+               ! gradient in the i direction
+               dta(ji,jj,jk) = dta(ji,jj,jk) + ref_wgts(kw)%data_wgt(ji,jj,jn+4) * 0.5_wp *         &
+                  &                (ref_wgts(kw)%fly_dta(ni+2,nj+1,jk) - ref_wgts(kw)%fly_dta(ni  ,nj+1,jk))
+            END_3D
+         END DO
+         DO jn = 1,4
+            DO_3D( 0, 0, 0, 0, 1,ipk )
+               ni = ref_wgts(kw)%data_jpi(ji,jj,jn)
+               nj = ref_wgts(kw)%data_jpj(ji,jj,jn)
+               ! gradient in the j direction
+               dta(ji,jj,jk) = dta(ji,jj,jk) + ref_wgts(kw)%data_wgt(ji,jj,jn+8) * 0.5_wp *         &
+                  &                (ref_wgts(kw)%fly_dta(ni+1,nj+2,jk) - ref_wgts(kw)%fly_dta(ni+1,nj  ,jk))
+            END_3D
+         END DO
+         DO jn = 1,4
+            DO_3D( 0, 0, 0, 0, 1,ipk )
+               ni = ref_wgts(kw)%data_jpi(ji,jj,jn)
+               nj = ref_wgts(kw)%data_jpj(ji,jj,jn)
+               ! gradient in the ij direction
+               dta(ji,jj,jk) = dta(ji,jj,jk) + ref_wgts(kw)%data_wgt(ji,jj,jn+12) * 0.25_wp * (     &
+                  &                (ref_wgts(kw)%fly_dta(ni+2,nj+2,jk) - ref_wgts(kw)%fly_dta(ni  ,nj+2,jk)) -   &
+                  &                (ref_wgts(kw)%fly_dta(ni+2,nj  ,jk) - ref_wgts(kw)%fly_dta(ni  ,nj  ,jk)))
+            END_3D
          END DO
          !
-      END IF
+      ENDIF
       !
    END SUBROUTINE fld_interp
 
 
+   FUNCTION fld_filename( sdjf, kday, kmonth, kyear )
+      !!---------------------------------------------------------------------
+      !!                    ***  FUNCTION fld_filename *** 
+      !!
+      !! ** Purpose :   define the filename according to a given date
+      !!---------------------------------------------------------------------
+      TYPE(FLD), INTENT(in) ::   sdjf         ! input field related variables
+      INTEGER  , INTENT(in) ::   kday, kmonth, kyear
+      !
+      CHARACTER(len = 256) ::   clname, fld_filename
+      !!---------------------------------------------------------------------
+
+      
+      ! build the new filename if not climatological data
+      clname=TRIM(sdjf%clrootname)
+      !
+      ! note that sdjf%ln_clim is is only acting on the presence of the year in the file name
+      IF( .NOT. sdjf%ln_clim ) THEN   
+                                         WRITE(clname, '(a,"_y",i4.4)' ) TRIM( sdjf%clrootname ), kyear    ! add year
+         IF( sdjf%clftyp /= 'yearly' )   WRITE(clname, '(a, "m",i2.2)' ) TRIM( clname          ), kmonth   ! add month
+      ELSE
+         ! build the new filename if climatological data
+         IF( sdjf%clftyp /= 'yearly' )   WRITE(clname, '(a,"_m",i2.2)' ) TRIM( sdjf%clrootname ), kmonth   ! add month
+      ENDIF
+      IF(    sdjf%clftyp == 'daily' .OR. sdjf%clftyp(1:4) == 'week' ) &
+         &                               WRITE(clname, '(a,"d" ,i2.2)' ) TRIM( clname          ), kday     ! add day
+
+      fld_filename = clname
+      
+   END FUNCTION fld_filename
+
+
    FUNCTION ksec_week( cdday )
       !!---------------------------------------------------------------------
-      !!                    ***  FUNCTION kshift_week *** 
+      !!                    ***  FUNCTION ksec_week *** 
       !!
-      !! ** Purpose :   return the first 3 letters of the first day of the weekly file
+      !! ** Purpose :   seconds between 00h of the beginning of the week and half of the current time step
       !!---------------------------------------------------------------------
       CHARACTER(len=*), INTENT(in)   ::   cdday   ! first 3 letters of the first day of the weekly file
       !!
@@ -1750,11 +1573,11 @@ CONTAINS
       DO ijul = 1, 7
          IF( cl_week(ijul) == TRIM(cdday) ) EXIT
       END DO
-      IF( ijul .GT. 7 )   CALL ctl_stop( 'ksec_week: wrong day for sdjf%cltype(6:8): '//TRIM(cdday) )
+      IF( ijul .GT. 7 )   CALL ctl_stop( 'ksec_week: wrong day for sdjf%clftyp(6:8): '//TRIM(cdday) )
       !
       ishift = ijul * NINT(rday)
       ! 
-      ksec_week = nsec_week + ishift
+      ksec_week = nsec_monday + ishift
       ksec_week = MOD( ksec_week, 7*NINT(rday) )
       ! 
    END FUNCTION ksec_week

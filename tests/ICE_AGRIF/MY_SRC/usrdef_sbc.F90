@@ -19,6 +19,7 @@ MODULE usrdef_sbc
    USE phycst          ! physical constants
    USE ice, ONLY       : at_i_b, a_i_b
    USE icethd_dh       ! for CALL ice_thd_snwblow
+   USE sbc_phy, ONLY : pp_cldf
    !
    USE in_out_manager  ! I/O manager
    USE lib_mpp         ! distribued memory computing library
@@ -32,16 +33,14 @@ MODULE usrdef_sbc
    PUBLIC   usrdef_sbc_ice_tau  ! routine called by icestp.F90 for ice dynamics
    PUBLIC   usrdef_sbc_ice_flx  ! routine called by icestp.F90 for ice thermo
 
-   !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: usrdef_sbc.F90 13284 2020-07-09 15:12:23Z smasson $
+   !! $Id: usrdef_sbc.F90 14273 2021-01-06 10:57:45Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE usrdef_sbc_oce( kt )
+   SUBROUTINE usrdef_sbc_oce( kt, Kbb )
       !!---------------------------------------------------------------------
       !!                    ***  ROUTINE usr_def_sbc  ***
       !!              
@@ -56,6 +55,7 @@ CONTAINS
       !!
       !!----------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt   ! ocean time step
+      INTEGER, INTENT(in) ::   Kbb  ! ocean time index
       !!---------------------------------------------------------------------
       !
       IF( kt == nit000 ) THEN
@@ -118,12 +118,13 @@ CONTAINS
       ! ocean variables (renaming)
       emp_oce (:,:)   = 0._wp   ! uniform value for freshwater budget (E-P)
       qsr_oce (:,:)   = 0._wp   ! uniform value for     solar radiation
-      qns_oce (:,:)   = 0._wp   ! uniform value for non-solar radiation
+      qns_oce (:,:)   = 0._wp   ! uniform value for non-solar heat flux
 
       ! ice variables
       alb_ice (:,:,:) = 0.7_wp  ! useless
       qsr_ice (:,:,:) = 0._wp   ! uniform value for     solar radiation
-      qns_ice (:,:,:) = 0._wp   ! uniform value for non-solar radiation
+      qns_ice (:,:,:) = 0._wp   ! uniform value for non-solar heat flux
+      dqns_ice(:,:,:) = 0._wp   ! uniform value for non solar heat flux sensitivity for ice
       sprecip (:,:)   = 0._wp   ! uniform value for snow precip
       evap_ice(:,:,:) = 0._wp   ! uniform value for sublimation
 

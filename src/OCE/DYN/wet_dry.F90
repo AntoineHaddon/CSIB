@@ -30,6 +30,9 @@ MODULE wet_dry
    IMPLICIT NONE
    PRIVATE
 
+   !! * Substitutions
+#  include "do_loop_substitute.h90"
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! critical depths,filters, limiters,and masks for  Wetting and Drying
    !! ---------------------------------------------------------------------
@@ -53,14 +56,13 @@ MODULE wet_dry
    LOGICAL,  PUBLIC  ::  ln_wd_dl_rmp !: use a ramp for the dl flux limiter between 2 rn_wdmin1 and rn_wdmin1 (rather than a cut-off at rn_wdmin1)      
    REAL(wp), PUBLIC  ::   ssh_ref     !: height of z=0 with respect to the geoid; 
 
-   LOGICAL,  PUBLIC  ::   ll_wd       !: Wetting/drying activation switch if either ln_wd_il or ln_wd_dl
+   LOGICAL,  PUBLIC  ::   ll_wd = .FALSE. !: Wetting/drying activation switch (ln_wd_il or ln_wd_dl) <- default def if wad_init not called
 
    PUBLIC   wad_init                  ! initialisation routine called by step.F90
    PUBLIC   wad_lmt                   ! routine called by sshwzv.F90
    PUBLIC   wad_lmt_bt                ! routine called by dynspg_ts.F90
 
    !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
 CONTAINS
 
@@ -78,10 +80,8 @@ CONTAINS
          &             nn_wdit , ln_wd_dl_bc, ln_wd_dl_rmp, rn_wd_sbcdep,rn_wd_sbcfra
       !!----------------------------------------------------------------------
       !
-      REWIND( numnam_ref )              ! Namelist namwad in reference namelist : Parameters for Wetting/Drying
       READ  ( numnam_ref, namwad, IOSTAT = ios, ERR = 905)
 905   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namwad in reference namelist' ) 
-      REWIND( numnam_cfg )              ! Namelist namwad in configuration namelist : Parameters for Wetting/Drying
       READ  ( numnam_cfg, namwad, IOSTAT = ios, ERR = 906)
 906   IF( ios >  0 )   CALL ctl_nam ( ios , 'namwad in configuration namelist' )
       IF(lwm) WRITE ( numond, namwad )
@@ -110,18 +110,19 @@ CONTAINS
       ENDIF
 
       r_rn_wdmin1 = 1 / rn_wdmin1
-      ll_wd = .FALSE.
       IF( ln_wd_il .OR. ln_wd_dl ) THEN
          ll_wd = .TRUE.
          ALLOCATE( wdmask(jpi,jpj),   STAT=ierr )
          ALLOCATE( wdramp(jpi,jpj), wdrampu(jpi,jpj), wdrampv(jpi,jpj), STAT=ierr ) 
          IF( ierr /= 0 ) CALL ctl_stop('STOP', 'wad_init : Array allocation error')
       ENDIF
+
+      IF( ln_tile .AND. ln_wd_il ) CALL ctl_warn('Tiling has not been tested with ln_wd_il = T')
       !
    END SUBROUTINE wad_init
 
 
-   SUBROUTINE wad_lmt( sshb1, sshemp, z2dt )
+   SUBROUTINE wad_lmt( psshb1, psshemp, z2dt, Kmm, puu, pvv )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE wad_lmt  ***
       !!                    
@@ -131,9 +132,11 @@ CONTAINS
       !!
       !! ** Action  : - calculate flux limiter and W/D flag
       !!----------------------------------------------------------------------
-      REAL(wp), DIMENSION(:,:), INTENT(inout) ::   sshb1        !!gm DOCTOR names: should start with p !
-      REAL(wp), DIMENSION(:,:), INTENT(in   ) ::   sshemp
-      REAL(wp)                , INTENT(in   ) ::   z2dt
+      REAL(wp), DIMENSION(:,:)            , INTENT(inout) ::   psshb1
+      REAL(wp), DIMENSION(:,:)            , INTENT(in   ) ::   psshemp
+      REAL(wp)                            , INTENT(in   ) ::   z2dt
+      INTEGER                             , INTENT(in   ) ::   Kmm       ! time level index
+      REAL(wp), DIMENSION(jpi,jpj,jpk,jpt), INTENT(inout) ::   puu, pvv  ! velocity arrays
       !
       INTEGER  ::   ji, jj, jk, jk1     ! dummy loop indices
       INTEGER  ::   jflag               ! local scalar
@@ -149,8 +152,8 @@ CONTAINS
       IF( ln_timing )   CALL timing_start('wad_lmt')      !
       !
       DO jk = 1, jpkm1
-         un(:,:,jk) = un(:,:,jk) * zwdlmtu(:,:) 
-         vn(:,:,jk) = vn(:,:,jk) * zwdlmtv(:,:) 
+         puu(:,:,jk,Kmm) = puu(:,:,jk,Kmm) * zwdlmtu(:,:) 
+         pvv(:,:,jk,Kmm) = pvv(:,:,jk,Kmm) * zwdlmtv(:,:) 
       END DO
       jflag  = 0
       zdepwd = 50._wp      ! maximum depth on which that W/D could possibly happen
@@ -164,45 +167,41 @@ CONTAINS
       zwdlmtv(:,:) = 1._wp
       !
       DO jk = 1, jpkm1     ! Horizontal Flux in u and v direction
-         zflxu(:,:) = zflxu(:,:) + e3u_n(:,:,jk) * un(:,:,jk) * umask(:,:,jk)
-         zflxv(:,:) = zflxv(:,:) + e3v_n(:,:,jk) * vn(:,:,jk) * vmask(:,:,jk)
+         zflxu(:,:) = zflxu(:,:) + e3u(:,:,jk,Kmm) * puu(:,:,jk,Kmm) * umask(:,:,jk)
+         zflxv(:,:) = zflxv(:,:) + e3v(:,:,jk,Kmm) * pvv(:,:,jk,Kmm) * vmask(:,:,jk)
       END DO
       zflxu(:,:) = zflxu(:,:) * e2u(:,:)
       zflxv(:,:) = zflxv(:,:) * e1v(:,:)
       !
       wdmask(:,:) = 1._wp
-      DO jj = 2, jpj
-         DO ji = 2, jpi 
-            !
-            IF( tmask(ji,jj,1)        < 0.5_wp )   CYCLE    ! we don't care about land cells
-            IF( ht_0(ji,jj) - ssh_ref > zdepwd )   CYCLE    ! and cells which are unlikely to dry
-            !
-            zflxp(ji,jj) = MAX( zflxu(ji,jj) , 0._wp ) - MIN( zflxu(ji-1,jj  ) , 0._wp )   &
-               &         + MAX( zflxv(ji,jj) , 0._wp ) - MIN( zflxv(ji,  jj-1) , 0._wp ) 
-            zflxn(ji,jj) = MIN( zflxu(ji,jj) , 0._wp ) - MAX( zflxu(ji-1,jj  ) , 0._wp )   &
-               &         + MIN( zflxv(ji,jj) , 0._wp ) - MAX( zflxv(ji,  jj-1) , 0._wp ) 
-            !
-            zdep2 = ht_0(ji,jj) + sshb1(ji,jj) - rn_wdmin1
-            IF( zdep2 <= 0._wp ) THEN     ! add more safty, but not necessary
-               sshb1(ji,jj) = rn_wdmin1 - ht_0(ji,jj)
-               IF(zflxu(ji,  jj) > 0._wp) zwdlmtu(ji  ,jj) = 0._wp
-               IF(zflxu(ji-1,jj) < 0._wp) zwdlmtu(ji-1,jj) = 0._wp
-               IF(zflxv(ji,  jj) > 0._wp) zwdlmtv(ji  ,jj) = 0._wp
-               IF(zflxv(ji,jj-1) < 0._wp) zwdlmtv(ji,jj-1) = 0._wp 
-               wdmask(ji,jj) = 0._wp
-            END IF
-         END DO
-      END DO
+      DO_2D( 0, 1, 0, 1 )
+         !
+         IF( tmask(ji,jj,1)        < 0.5_wp )   CYCLE    ! we don't care about land cells
+         IF( ht_0(ji,jj) - ssh_ref > zdepwd )   CYCLE    ! and cells which are unlikely to dry
+         !
+         zflxp(ji,jj) = MAX( zflxu(ji,jj) , 0._wp ) - MIN( zflxu(ji-1,jj  ) , 0._wp )   &
+            &         + MAX( zflxv(ji,jj) , 0._wp ) - MIN( zflxv(ji,  jj-1) , 0._wp ) 
+         zflxn(ji,jj) = MIN( zflxu(ji,jj) , 0._wp ) - MAX( zflxu(ji-1,jj  ) , 0._wp )   &
+            &         + MIN( zflxv(ji,jj) , 0._wp ) - MAX( zflxv(ji,  jj-1) , 0._wp ) 
+         !
+         zdep2 = ht_0(ji,jj) + psshb1(ji,jj) - rn_wdmin1
+         IF( zdep2 <= 0._wp ) THEN     ! add more safty, but not necessary
+            psshb1(ji,jj) = rn_wdmin1 - ht_0(ji,jj)
+            IF(zflxu(ji,  jj) > 0._wp) zwdlmtu(ji  ,jj) = 0._wp
+            IF(zflxu(ji-1,jj) < 0._wp) zwdlmtu(ji-1,jj) = 0._wp
+            IF(zflxv(ji,  jj) > 0._wp) zwdlmtv(ji  ,jj) = 0._wp
+            IF(zflxv(ji,jj-1) < 0._wp) zwdlmtv(ji,jj-1) = 0._wp 
+            wdmask(ji,jj) = 0._wp
+         END IF
+      END_2D
       !
       !           ! HPG limiter from jholt
-      wdramp(:,:) = min((ht_0(:,:) + sshb1(:,:) - rn_wdmin1)/(rn_wdmin0 - rn_wdmin1),1.0_wp)
+      wdramp(:,:) = min((ht_0(:,:) + psshb1(:,:) - rn_wdmin1)/(rn_wdmin0 - rn_wdmin1),1.0_wp)
       !jth assume don't need a lbc_lnk here
-      DO jj = 1, jpjm1
-         DO ji = 1, jpim1
-            wdrampu(ji,jj) = MIN( wdramp(ji,jj) , wdramp(ji+1,jj) )
-            wdrampv(ji,jj) = MIN( wdramp(ji,jj) , wdramp(ji,jj+1) )
-         END DO
-      END DO
+      DO_2D( 1, 0, 1, 0 )
+         wdrampu(ji,jj) = MIN( wdramp(ji,jj) , wdramp(ji+1,jj) )
+         wdrampv(ji,jj) = MIN( wdramp(ji,jj) , wdramp(ji,jj+1) )
+      END_2D
       !           ! end HPG limiter
       !
       !
@@ -212,40 +211,38 @@ CONTAINS
          zflxv1(:,:) = zflxv(:,:) * zwdlmtv(:,:)
          jflag = 0     ! flag indicating if any further iterations are needed
          !
-         DO jj = 2, jpj
-            DO ji = 2, jpi 
-               IF( tmask(ji, jj, 1) < 0.5_wp )   CYCLE 
-               IF( ht_0(ji,jj)      > zdepwd )   CYCLE
-               !
-               ztmp = e1e2t(ji,jj)
-               !
-               zzflxp = MAX( zflxu1(ji,jj) , 0._wp ) - MIN( zflxu1(ji-1,jj  ) , 0._wp)   &
-                  &   + MAX( zflxv1(ji,jj) , 0._wp ) - MIN( zflxv1(ji,  jj-1) , 0._wp) 
-               zzflxn = MIN( zflxu1(ji,jj) , 0._wp ) - MAX( zflxu1(ji-1,jj  ) , 0._wp)   &
-                  &   + MIN( zflxv1(ji,jj) , 0._wp ) - MAX( zflxv1(ji,  jj-1) , 0._wp) 
-               !
-               zdep1 = (zzflxp + zzflxn) * z2dt / ztmp
-               zdep2 = ht_0(ji,jj) + sshb1(ji,jj) - rn_wdmin1 - z2dt * sshemp(ji,jj)
-               !
-               IF( zdep1 > zdep2 ) THEN
-                  wdmask(ji, jj) = 0._wp
-                  zcoef = ( ( zdep2 - rn_wdmin2 ) * ztmp - zzflxn * z2dt ) / ( zflxp(ji,jj) * z2dt )
-                  !zcoef = ( ( zdep2 - rn_wdmin2 ) * ztmp - zzflxn * z2dt ) / ( zzflxp * z2dt )
-                  ! flag if the limiter has been used but stop flagging if the only
-                  ! changes have zeroed the coefficient since further iterations will
-                  ! not change anything
-                  IF( zcoef > 0._wp ) THEN   ;   jflag = 1 
-                  ELSE                       ;   zcoef = 0._wp
-                  ENDIF
-                  IF( jk1 > nn_wdit )   zcoef = 0._wp
-                  IF( zflxu1(ji  ,jj  ) > 0._wp )   zwdlmtu(ji  ,jj  ) = zcoef
-                  IF( zflxu1(ji-1,jj  ) < 0._wp )   zwdlmtu(ji-1,jj  ) = zcoef
-                  IF( zflxv1(ji  ,jj  ) > 0._wp )   zwdlmtv(ji  ,jj  ) = zcoef
-                  IF( zflxv1(ji  ,jj-1) < 0._wp )   zwdlmtv(ji  ,jj-1) = zcoef
+         DO_2D( 0, 1, 0, 1 )
+            IF( tmask(ji, jj, 1) < 0.5_wp )   CYCLE 
+            IF( ht_0(ji,jj)      > zdepwd )   CYCLE
+            !
+            ztmp = e1e2t(ji,jj)
+            !
+            zzflxp = MAX( zflxu1(ji,jj) , 0._wp ) - MIN( zflxu1(ji-1,jj  ) , 0._wp)   &
+               &   + MAX( zflxv1(ji,jj) , 0._wp ) - MIN( zflxv1(ji,  jj-1) , 0._wp) 
+            zzflxn = MIN( zflxu1(ji,jj) , 0._wp ) - MAX( zflxu1(ji-1,jj  ) , 0._wp)   &
+               &   + MIN( zflxv1(ji,jj) , 0._wp ) - MAX( zflxv1(ji,  jj-1) , 0._wp) 
+            !
+            zdep1 = (zzflxp + zzflxn) * z2dt / ztmp
+            zdep2 = ht_0(ji,jj) + psshb1(ji,jj) - rn_wdmin1 - z2dt * psshemp(ji,jj)
+            !
+            IF( zdep1 > zdep2 ) THEN
+               wdmask(ji, jj) = 0._wp
+               zcoef = ( ( zdep2 - rn_wdmin2 ) * ztmp - zzflxn * z2dt ) / ( zflxp(ji,jj) * z2dt )
+               !zcoef = ( ( zdep2 - rn_wdmin2 ) * ztmp - zzflxn * z2dt ) / ( zzflxp * z2dt )
+               ! flag if the limiter has been used but stop flagging if the only
+               ! changes have zeroed the coefficient since further iterations will
+               ! not change anything
+               IF( zcoef > 0._wp ) THEN   ;   jflag = 1 
+               ELSE                       ;   zcoef = 0._wp
                ENDIF
-            END DO
-         END DO
-         CALL lbc_lnk_multi( 'wet_dry', zwdlmtu, 'U', 1., zwdlmtv, 'V', 1. )
+               IF( jk1 > nn_wdit )   zcoef = 0._wp
+               IF( zflxu1(ji  ,jj  ) > 0._wp )   zwdlmtu(ji  ,jj  ) = zcoef
+               IF( zflxu1(ji-1,jj  ) < 0._wp )   zwdlmtu(ji-1,jj  ) = zcoef
+               IF( zflxv1(ji  ,jj  ) > 0._wp )   zwdlmtv(ji  ,jj  ) = zcoef
+               IF( zflxv1(ji  ,jj-1) < 0._wp )   zwdlmtv(ji  ,jj-1) = zcoef
+            ENDIF
+         END_2D
+         CALL lbc_lnk( 'wet_dry', zwdlmtu, 'U', 1.0_wp, zwdlmtv, 'V', 1.0_wp )
          !
          CALL mpp_max('wet_dry', jflag)   !max over the global domain
          !
@@ -254,27 +251,27 @@ CONTAINS
       END DO  ! jk1 loop
       !
       DO jk = 1, jpkm1
-         un(:,:,jk) = un(:,:,jk) * zwdlmtu(:,:) 
-         vn(:,:,jk) = vn(:,:,jk) * zwdlmtv(:,:) 
+         puu(:,:,jk,Kmm) = puu(:,:,jk,Kmm) * zwdlmtu(:,:) 
+         pvv(:,:,jk,Kmm) = pvv(:,:,jk,Kmm) * zwdlmtv(:,:) 
       END DO
-      un_b(:,:) = un_b(:,:) * zwdlmtu(:, :)
-      vn_b(:,:) = vn_b(:,:) * zwdlmtv(:, :)
+      uu_b(:,:,Kmm) = uu_b(:,:,Kmm) * zwdlmtu(:, :)
+      vv_b(:,:,Kmm) = vv_b(:,:,Kmm) * zwdlmtv(:, :)
       !
 !!gm TO BE SUPPRESSED ?  these lbc_lnk are useless since zwdlmtu and zwdlmtv are defined everywhere !
-      CALL lbc_lnk_multi( 'wet_dry', un  , 'U', -1., vn  , 'V', -1. )
-      CALL lbc_lnk_multi( 'wet_dry', un_b, 'U', -1., vn_b, 'V', -1. )
+      CALL lbc_lnk( 'wet_dry', puu(:,:,:,Kmm)  , 'U', -1.0_wp, pvv(:,:,:,Kmm)  , 'V', -1.0_wp )
+      CALL lbc_lnk( 'wet_dry', uu_b(:,:,Kmm), 'U', -1.0_wp, vv_b(:,:,Kmm), 'V', -1.0_wp )
 !!gm
       !
       IF(jflag == 1 .AND. lwp)   WRITE(numout,*) 'Need more iterations in wad_lmt!!!'
       !
-      !IF( ln_rnf      )   CALL sbc_rnf_div( hdivn )          ! runoffs (update hdivn field)
+      !IF( ln_rnf      )   CALL sbc_rnf_div( hdiv )          ! runoffs (update hdiv field)
       !
       IF( ln_timing )   CALL timing_stop('wad_lmt')      !
       !
    END SUBROUTINE wad_lmt
 
 
-   SUBROUTINE wad_lmt_bt( zflxu, zflxv, sshn_e, zssh_frc, rdtbt )
+   SUBROUTINE wad_lmt_bt( zflxu, zflxv, sshn_e, zssh_frc, rDt_e )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE wad_lmt  ***
       !!                    
@@ -284,7 +281,7 @@ CONTAINS
       !!
       !! ** Action  : - calculate flux limiter and W/D flag
       !!----------------------------------------------------------------------
-      REAL(wp)                , INTENT(in   ) ::   rdtbt    ! ocean time-step index
+      REAL(wp)                , INTENT(in   ) ::   rDt_e    ! ocean time-step index
       REAL(wp), DIMENSION(:,:), INTENT(inout) ::   zflxu,  zflxv, sshn_e, zssh_frc  
       !
       INTEGER  ::   ji, jj, jk, jk1     ! dummy loop indices
@@ -303,34 +300,32 @@ CONTAINS
       jflag  = 0
       zdepwd = 50._wp   ! maximum depth that ocean cells can have W/D processes
       !
-      z2dt = rdtbt   
+      z2dt = rDt_e   
       !
       zflxp(:,:)   = 0._wp
       zflxn(:,:)   = 0._wp
       zwdlmtu(:,:) = 1._wp
       zwdlmtv(:,:) = 1._wp
       !
-      DO jj = 2, jpj      ! Horizontal Flux in u and v direction
-         DO ji = 2, jpi 
-            !
-            IF( tmask(ji, jj, 1 ) < 0.5_wp) CYCLE   ! we don't care about land cells
-            IF( ht_0(ji,jj) > zdepwd )      CYCLE   ! and cells which are unlikely to dry
-            !
-            zflxp(ji,jj) = MAX( zflxu(ji,jj) , 0._wp ) - MIN( zflxu(ji-1,jj  ) , 0._wp )   &
-               &         + MAX( zflxv(ji,jj) , 0._wp ) - MIN( zflxv(ji,  jj-1) , 0._wp ) 
-            zflxn(ji,jj) = MIN( zflxu(ji,jj) , 0._wp ) - MAX( zflxu(ji-1,jj  ) , 0._wp )   &
-               &         + MIN( zflxv(ji,jj) , 0._wp ) - MAX( zflxv(ji,  jj-1) , 0._wp ) 
-            !
-            zdep2 = ht_0(ji,jj) + sshn_e(ji,jj) - rn_wdmin1
-            IF( zdep2 <= 0._wp ) THEN  !add more safety, but not necessary
-              sshn_e(ji,jj) = rn_wdmin1 - ht_0(ji,jj)
-              IF( zflxu(ji  ,jj  ) > 0._wp)   zwdlmtu(ji  ,jj  ) = 0._wp
-              IF( zflxu(ji-1,jj  ) < 0._wp)   zwdlmtu(ji-1,jj  ) = 0._wp
-              IF( zflxv(ji  ,jj  ) > 0._wp)   zwdlmtv(ji  ,jj  ) = 0._wp
-              IF( zflxv(ji  ,jj-1) < 0._wp)   zwdlmtv(ji  ,jj-1) = 0._wp 
-            ENDIF
-         END DO
-      END DO
+      DO_2D( 0, 1, 0, 1 )      ! Horizontal Flux in u and v direction
+         !
+         IF( tmask(ji, jj, 1 ) < 0.5_wp) CYCLE   ! we don't care about land cells
+         IF( ht_0(ji,jj) > zdepwd )      CYCLE   ! and cells which are unlikely to dry
+         !
+         zflxp(ji,jj) = MAX( zflxu(ji,jj) , 0._wp ) - MIN( zflxu(ji-1,jj  ) , 0._wp )   &
+            &         + MAX( zflxv(ji,jj) , 0._wp ) - MIN( zflxv(ji,  jj-1) , 0._wp ) 
+         zflxn(ji,jj) = MIN( zflxu(ji,jj) , 0._wp ) - MAX( zflxu(ji-1,jj  ) , 0._wp )   &
+            &         + MIN( zflxv(ji,jj) , 0._wp ) - MAX( zflxv(ji,  jj-1) , 0._wp ) 
+         !
+         zdep2 = ht_0(ji,jj) + sshn_e(ji,jj) - rn_wdmin1
+         IF( zdep2 <= 0._wp ) THEN  !add more safety, but not necessary
+           sshn_e(ji,jj) = rn_wdmin1 - ht_0(ji,jj)
+           IF( zflxu(ji  ,jj  ) > 0._wp)   zwdlmtu(ji  ,jj  ) = 0._wp
+           IF( zflxu(ji-1,jj  ) < 0._wp)   zwdlmtu(ji-1,jj  ) = 0._wp
+           IF( zflxv(ji  ,jj  ) > 0._wp)   zwdlmtv(ji  ,jj  ) = 0._wp
+           IF( zflxv(ji  ,jj-1) < 0._wp)   zwdlmtv(ji  ,jj-1) = 0._wp 
+         ENDIF
+      END_2D
       !
       DO jk1 = 1, nn_wdit + 1      !! start limiter iterations 
          !
@@ -338,43 +333,41 @@ CONTAINS
          zflxv1(:,:) = zflxv(:,:) * zwdlmtv(:,:)
          jflag = 0     ! flag indicating if any further iterations are needed
          !
-         DO jj = 2, jpj
-            DO ji = 2, jpi 
-               !
-               IF( tmask(ji, jj, 1 ) < 0.5_wp )   CYCLE 
-               IF( ht_0(ji,jj)       > zdepwd )   CYCLE
-               !
-               ztmp = e1e2t(ji,jj)
-               !
-               zzflxp = max(zflxu1(ji,jj), 0._wp) - min(zflxu1(ji-1,jj),   0._wp)   &
-                  &   + max(zflxv1(ji,jj), 0._wp) - min(zflxv1(ji,  jj-1), 0._wp) 
-               zzflxn = min(zflxu1(ji,jj), 0._wp) - max(zflxu1(ji-1,jj),   0._wp)   &
-                  &   + min(zflxv1(ji,jj), 0._wp) - max(zflxv1(ji,  jj-1), 0._wp) 
-          
-               zdep1 = (zzflxp + zzflxn) * z2dt / ztmp
-               zdep2 = ht_0(ji,jj) + sshn_e(ji,jj) - rn_wdmin1 - z2dt * zssh_frc(ji,jj)
-          
-               IF(zdep1 > zdep2) THEN
-                 zcoef = ( ( zdep2 - rn_wdmin2 ) * ztmp - zzflxn * z2dt ) / ( zflxp(ji,jj) * z2dt )
-                 !zcoef = ( ( zdep2 - rn_wdmin2 ) * ztmp - zzflxn * z2dt ) / ( zzflxp * z2dt )
-                 ! flag if the limiter has been used but stop flagging if the only
-                 ! changes have zeroed the coefficient since further iterations will
-                 ! not change anything
-                 IF( zcoef > 0._wp ) THEN
-                    jflag = 1 
-                 ELSE
-                    zcoef = 0._wp
-                 ENDIF
-                 IF(jk1 > nn_wdit) zcoef = 0._wp
-                 IF(zflxu1(ji,  jj) > 0._wp) zwdlmtu(ji  ,jj) = zcoef
-                 IF(zflxu1(ji-1,jj) < 0._wp) zwdlmtu(ji-1,jj) = zcoef
-                 IF(zflxv1(ji,  jj) > 0._wp) zwdlmtv(ji  ,jj) = zcoef
-                 IF(zflxv1(ji,jj-1) < 0._wp) zwdlmtv(ji,jj-1) = zcoef
-               END IF
-            END DO ! ji loop
-         END DO  ! jj loop
+         DO_2D( 0, 1, 0, 1 )
+            !
+            IF( tmask(ji, jj, 1 ) < 0.5_wp )   CYCLE 
+            IF( ht_0(ji,jj)       > zdepwd )   CYCLE
+            !
+            ztmp = e1e2t(ji,jj)
+            !
+            zzflxp = max(zflxu1(ji,jj), 0._wp) - min(zflxu1(ji-1,jj),   0._wp)   &
+               &   + max(zflxv1(ji,jj), 0._wp) - min(zflxv1(ji,  jj-1), 0._wp) 
+            zzflxn = min(zflxu1(ji,jj), 0._wp) - max(zflxu1(ji-1,jj),   0._wp)   &
+               &   + min(zflxv1(ji,jj), 0._wp) - max(zflxv1(ji,  jj-1), 0._wp) 
+       
+            zdep1 = (zzflxp + zzflxn) * z2dt / ztmp
+            zdep2 = ht_0(ji,jj) + sshn_e(ji,jj) - rn_wdmin1 - z2dt * zssh_frc(ji,jj)
+       
+            IF(zdep1 > zdep2) THEN
+              zcoef = ( ( zdep2 - rn_wdmin2 ) * ztmp - zzflxn * z2dt ) / ( zflxp(ji,jj) * z2dt )
+              !zcoef = ( ( zdep2 - rn_wdmin2 ) * ztmp - zzflxn * z2dt ) / ( zzflxp * z2dt )
+              ! flag if the limiter has been used but stop flagging if the only
+              ! changes have zeroed the coefficient since further iterations will
+              ! not change anything
+              IF( zcoef > 0._wp ) THEN
+                 jflag = 1 
+              ELSE
+                 zcoef = 0._wp
+              ENDIF
+              IF(jk1 > nn_wdit) zcoef = 0._wp
+              IF(zflxu1(ji,  jj) > 0._wp) zwdlmtu(ji  ,jj) = zcoef
+              IF(zflxu1(ji-1,jj) < 0._wp) zwdlmtu(ji-1,jj) = zcoef
+              IF(zflxv1(ji,  jj) > 0._wp) zwdlmtv(ji  ,jj) = zcoef
+              IF(zflxv1(ji,jj-1) < 0._wp) zwdlmtv(ji,jj-1) = zcoef
+            END IF
+         END_2D
          !
-         CALL lbc_lnk_multi( 'wet_dry', zwdlmtu, 'U', 1., zwdlmtv, 'V', 1. )
+         CALL lbc_lnk( 'wet_dry', zwdlmtu, 'U', 1.0_wp, zwdlmtv, 'V', 1.0_wp )
          !
          CALL mpp_max('wet_dry', jflag)   !max over the global domain
          !
@@ -386,12 +379,12 @@ CONTAINS
       zflxv(:,:) = zflxv(:,:) * zwdlmtv(:, :) 
       !
 !!gm THIS lbc_lnk is useless since it is already done at the end of the jk1-loop
-      CALL lbc_lnk_multi( 'wet_dry', zflxu, 'U', -1., zflxv, 'V', -1. )
+      CALL lbc_lnk( 'wet_dry', zflxu, 'U', -1.0_wp, zflxv, 'V', -1.0_wp )
 !!gm end
       !
       IF( jflag == 1 .AND. lwp )   WRITE(numout,*) 'Need more iterations in wad_lmt_bt!!!'
       !
-      !IF( ln_rnf      )   CALL sbc_rnf_div( hdivn )          ! runoffs (update hdivn field)
+      !IF( ln_rnf      )   CALL sbc_rnf_div( hdiv )          ! runoffs (update hdiv field)
       !
       IF( ln_timing )   CALL timing_stop('wad_lmt_bt')      !
       !

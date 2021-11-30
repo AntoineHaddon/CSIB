@@ -1,5 +1,5 @@
 !
-! $Id: modarrays.F90 5656 2015-07-31 08:55:56Z timgraham $
+! $Id: modarrays.F90 14975 2021-06-11 09:05:32Z jchanut $
 !
 !     AGRIF (Adaptive Grid Refinement In Fortran)
 !
@@ -54,21 +54,31 @@ subroutine Agrif_Childbounds ( nbdim,           &
                                lb_tab, ub_tab,  &
                                proc_id,         &
                                coords,          &
-                               lb_tab_true, ub_tab_true, memberin )
+                               lb_tab_true, ub_tab_true, memberin,  &
+                               indminglob3,indmaxglob3,check_perio)
 !---------------------------------------------------------------------------------------------------
     integer,                   intent(in)  :: nbdim         !< Number of dimensions
     integer, dimension(nbdim), intent(in)  :: lb_var        !< Local lower boundary on the current processor
     integer, dimension(nbdim), intent(in)  :: ub_var        !< Local upper boundary on the current processor
     integer, dimension(nbdim), intent(in)  :: lb_tab        !< Global lower boundary of the variable
+    integer, dimension(nbdim),OPTIONAL     :: indminglob3,indmaxglob3 !< True bounds for MPI USE
     integer, dimension(nbdim), intent(in)  :: ub_tab        !< Global upper boundary of the variable
     integer,                   intent(in)  :: proc_id       !< Current processor
     integer, dimension(nbdim), intent(in)  :: coords
     integer, dimension(nbdim), intent(out) :: lb_tab_true   !< Global value of lb_var on the current processor
     integer, dimension(nbdim), intent(out) :: ub_tab_true   !< Global value of ub_var on the current processor
     logical,                   intent(out) :: memberin
+    logical,optional,          intent(in)  :: check_perio   !< check for periodicity
+    logical :: check_perio_local
 !
     integer :: i, coord_i
     integer :: lb_glob_index, ub_glob_index ! Lower and upper global indices
+    
+    if (present(check_perio)) then
+       check_perio_local=check_perio
+    else
+       check_perio_local = .FALSE.
+    endif
 !
     do i = 1, nbdim
 !
@@ -77,12 +87,34 @@ subroutine Agrif_Childbounds ( nbdim,           &
 #if defined AGRIF_MPI
         call Agrif_InvLoc( lb_var(i), proc_id, coord_i, lb_glob_index )
         call Agrif_InvLoc( ub_var(i), proc_id, coord_i, ub_glob_index )
+        if (agrif_debug_interp .or. agrif_debug_update) then
+        print *,'direction ',i,' lblogb ubglob = ',lb_glob_index,ub_glob_index
+        endif
+        if (check_perio_local .AND. agrif_curgrid%periodicity(i)) then
+          if (lb_tab(i)>=lb_glob_index) then
+          else if (lb_tab(i)<ub_glob_index-agrif_curgrid%periodicity_decal(i)) then
+            lb_glob_index = lb_glob_index - agrif_curgrid%periodicity_decal(i)
+            ub_glob_index = ub_glob_index - agrif_curgrid%periodicity_decal(i)
+          endif
+        endif
+        
+        if (present(indminglob3)) then
+          indminglob3(i)=lb_glob_index
+          indmaxglob3(i)=ub_glob_index
+        endif
 #else
         lb_glob_index = lb_var(i)
+        if (check_perio_local .AND. agrif_curgrid%periodicity(i)) then
+          lb_glob_index = lb_tab(i)
+        endif
         ub_glob_index = ub_var(i)
 #endif
         lb_tab_true(i) = max(lb_tab(i), lb_glob_index)
         ub_tab_true(i) = min(ub_tab(i), ub_glob_index)
+        if (agrif_debug_interp .or. agrif_debug_update) then
+        print *,'childbounds = ',i,lb_tab(i),lb_glob_index,lb_tab_true(i), &
+        ub_tab(i),ub_glob_index,ub_tab_true(i)
+        endif
     enddo
 !
     memberin = .true.
@@ -92,14 +124,18 @@ subroutine Agrif_Childbounds ( nbdim,           &
             exit
         endif
     enddo
+    if (agrif_debug_interp) then
+    print *,'memberin = ',memberin
+    endif
 !---------------------------------------------------------------------------------------------------
 end subroutine Agrif_Childbounds
 !===================================================================================================
 !
 !===================================================================================================
-subroutine Agrif_get_var_global_bounds( var, lubglob, nbdim )
+subroutine Agrif_get_var_global_bounds( var, lubglob, nbdim, pvar )
 !---------------------------------------------------------------------------------------------------
-    type(Agrif_Variable),        intent(in)  :: var
+    type(Agrif_Variable),          intent(in)  :: var
+    type(Agrif_Variable),optional, intent(in)  :: pvar
     integer, dimension(nbdim,2), intent(out) :: lubglob
     integer,                     intent(in)  :: nbdim
 !
@@ -111,9 +147,17 @@ subroutine Agrif_get_var_global_bounds( var, lubglob, nbdim )
 #endif
 !
 #if !defined AGRIF_MPI
-    call Agrif_get_var_bounds_array(var, lubglob(:,1), lubglob(:,2), nbdim)
+    if (present(pvar)) then
+      call Agrif_get_var_bounds_array(var, lubglob(:,1), lubglob(:,2), nbdim, pvar)
+    else
+      call Agrif_get_var_bounds_array(var, lubglob(:,1), lubglob(:,2), nbdim)
+    endif
 #else
-    call Agrif_get_var_bounds_array(var, lb, ub, nbdim)
+    if (present(pvar)) then
+      call Agrif_get_var_bounds_array(var, lb, ub, nbdim, pvar)
+    else
+      call Agrif_get_var_bounds_array(var, lb, ub, nbdim)
+    endif
 
     do i = 1,nbdim
         coord_i = var % root_var % coords(i)
@@ -122,7 +166,8 @@ subroutine Agrif_get_var_global_bounds( var, lubglob, nbdim )
     enddo
 !
     iminmaxg(1:nbdim,2) = - iminmaxg(1:nbdim,2)
-    call MPI_ALLREDUCE(iminmaxg, lubglob, 2*nbdim, MPI_INTEGER, MPI_MIN, Agrif_mpi_comm, code)
+    call MPI_ALLREDUCE(iminmaxg, lubglob, 2*nbdim, MPI_INTEGER, MPI_MIN, &
+                       Agrif_mpi_comm, code)
     lubglob(1:nbdim,2)  = - lubglob(1:nbdim,2)
 #endif
 !---------------------------------------------------------------------------------------------------
@@ -134,15 +179,35 @@ end subroutine Agrif_get_var_global_bounds
 !
 !> Gets the lower and the upper boundaries of a variable, for one particular direction.
 !---------------------------------------------------------------------------------------------------
-subroutine Agrif_get_var_bounds ( variable, lower, upper, index )
+!  subroutine Agrif_get_var_bounds
+!
+!> Gets the lower and the upper boundaries of a variable, for one particular direction.
 !---------------------------------------------------------------------------------------------------
-    type(Agrif_Variable), intent(in)    :: variable   !< Variable for which we want to extract boundaries
+subroutine Agrif_get_var_bounds ( variable, lower, upper, index, pvariable )
+!---------------------------------------------------------------------------------------------------
+    type(Agrif_Variable),           intent(in)    :: variable   !< Variable for which we want to extract boundaries
+    type(Agrif_Variable), optional, intent(in)    :: pvariable   !< parent Variable for which we want to extract boundaries
     integer,              intent(out)   :: lower      !< Lower bound
     integer,              intent(out)   :: upper      !< Upper bound
     integer,              intent(in)    :: index      !< Direction for wich we want to know the boundaries
 !
-    lower = variable % lb(index)
-    upper = variable % ub(index)
+
+
+    if (present(pvariable)) then
+    	lower=-1
+    	upper=-1
+     if (variable%root_var%interptab(index) == 'N') then
+        lower = pvariable%lb(index)
+        upper = pvariable%ub(index)
+      else
+       lower = variable % lb(index)
+       upper = variable % ub(index)
+      endif
+    else
+      lower = variable % lb(index)
+      upper = variable % ub(index)      
+    endif
+
 !---------------------------------------------------------------------------------------------------
 end subroutine Agrif_get_var_bounds
 !===================================================================================================
@@ -152,15 +217,27 @@ end subroutine Agrif_get_var_bounds
 !
 !> Gets the lower and the upper boundaries of a table.
 !---------------------------------------------------------------------------------------------------
-subroutine Agrif_get_var_bounds_array ( variable, lower, upper, nbdim )
+subroutine Agrif_get_var_bounds_array ( variable, lower, upper, nbdim, pvariable )
 !---------------------------------------------------------------------------------------------------
-    type(Agrif_Variable),      intent(in)   :: variable   !< Variable for which we want to extract boundaries
+    type(Agrif_Variable),               intent(in)   :: variable   !< Variable for which we want to extract boundaries
+    type(Agrif_Variable), optional,     intent(in)   :: pvariable   !< Parent Variable for which we want to extract boundaries
     integer, dimension(nbdim), intent(out)  :: lower      !< Lower bounds array
     integer, dimension(nbdim), intent(out)  :: upper      !< Upper bounds array
     integer, intent(in)                     :: nbdim      !< Numer of dimensions of the variable
 !
+    integer :: nb
+
     lower = variable % lb(1:nbdim)
     upper = variable % ub(1:nbdim)
+
+    if (present(pvariable)) then
+        do nb=1,nbdim
+            if (variable%root_var%interptab(nb) == 'N') then
+                lower(nb) = pvariable%lb(nb)
+                upper(nb) = pvariable%ub(nb)
+            endif
+        enddo
+    endif
 !---------------------------------------------------------------------------------------------------
 end subroutine Agrif_get_var_bounds_array
 !===================================================================================================
@@ -630,10 +707,10 @@ subroutine PreProcessToInterpOrUpdate ( parent, child,              &
     integer, dimension(6), intent(out)          :: ub_child     !< Upper bound on the child grid
     integer, dimension(6), intent(out)          :: lb_child     !< Lower bound on the child grid
     integer, dimension(6), intent(out)          :: lb_parent    !< Lower bound on the parent grid
-    real, dimension(6),    intent(out)          :: s_child      !< Child  grid position (s_root = 0)
-    real, dimension(6),    intent(out)          :: s_parent     !< Parent grid position (s_root = 0)
-    real, dimension(6),    intent(out)          :: ds_child     !< Child  grid dx (ds_root = 1)
-    real, dimension(6),    intent(out)          :: ds_parent    !< Parent grid dx (ds_root = 1)
+    real(kind=8), dimension(6),    intent(out)  :: s_child      !< Child  grid position (s_root = 0)
+    real(kind=8), dimension(6),    intent(out)  :: s_parent     !< Parent grid position (s_root = 0)
+    real(kind=8), dimension(6),    intent(out)  :: ds_child     !< Child  grid dx (ds_root = 1)
+    real(kind=8), dimension(6),    intent(out)  :: ds_parent    !< Parent grid dx (ds_root = 1)
     integer,               intent(out)          :: nbdim        !< Number of dimensions
     logical,               intent(in)           :: interp       !< .true. if preprocess for interpolation, \n
                                                                 !! .false. if preprocess for update
@@ -658,49 +735,55 @@ subroutine PreProcessToInterpOrUpdate ( parent, child,              &
 !
         case('x')
 !
-            lb_child(n)  = root_var % point(n)
-            lb_parent(n) = root_var % point(n)
+            lb_child(n)  = child%point(n)
+            lb_parent(n) = child%parent_var%point(n)
             nb_child(n)  = Agrif_Child_Gr % nb(1)
             s_child(n)   = Agrif_Child_Gr  % Agrif_x(1)
             s_parent(n)  = Agrif_Parent_Gr % Agrif_x(1)
             ds_child(n)  = Agrif_Child_Gr  % Agrif_dx(1)
             ds_parent(n) = Agrif_Parent_Gr % Agrif_dx(1)
+            ! Take into account potential difference of first points
+           ! s_parent(n) = s_parent(n) + (lb_parent(n)-lb_child(n))*ds_parent(n)
 !
             if ( root_var % posvar(n) == 1 ) then
                 ub_child(n) = lb_child(n) + Agrif_Child_Gr % nb(1)
             else
                 ub_child(n) = lb_child(n) + Agrif_Child_Gr % nb(1) - 1
-                s_child(n)  = s_child(n)  + 0.5*ds_child(n)
-                s_parent(n) = s_parent(n) + 0.5*ds_parent(n)
+                s_child(n)  = s_child(n)  + 0.5d0*ds_child(n)
+                s_parent(n) = s_parent(n) + 0.5d0*ds_parent(n)
             endif
 !
         case('y')
 !
-            lb_child(n)  = root_var % point(n)
-            lb_parent(n) = root_var % point(n)
+            lb_child(n)  = child%point(n)
+            lb_parent(n) = child%parent_var%point(n)
             nb_child(n)  = Agrif_Child_Gr % nb(2)
             s_child(n)   = Agrif_Child_Gr  % Agrif_x(2)
             s_parent(n)  = Agrif_Parent_Gr % Agrif_x(2)
             ds_child(n)  = Agrif_Child_Gr  % Agrif_dx(2)
             ds_parent(n) = Agrif_Parent_Gr % Agrif_dx(2)
+            ! Take into account potential difference of first points
+           ! s_parent(n) = s_parent(n) + (lb_parent(n)-lb_child(n))*ds_parent(n)
 !
             if (root_var % posvar(n)==1) then
                 ub_child(n) = lb_child(n) + Agrif_Child_Gr % nb(2)
             else
                 ub_child(n) = lb_child(n) + Agrif_Child_Gr % nb(2) - 1
-                s_child(n)  = s_child(n)  + 0.5*ds_child(n)
-                s_parent(n) = s_parent(n) + 0.5*ds_parent(n)
+                s_child(n)  = s_child(n)  + 0.5d0*ds_child(n)
+                s_parent(n) = s_parent(n) + 0.5d0*ds_parent(n)
             endif
 !
         case('z')
 !
-            lb_child(n)  = root_var % point(n)
-            lb_parent(n) = root_var % point(n)
+            lb_child(n)  = child%point(n)
+            lb_parent(n) = child%parent_var%point(n)
             nb_child(n)  = Agrif_Child_Gr % nb(3)
             s_child(n)   = Agrif_Child_Gr  % Agrif_x(3)
             s_parent(n)  = Agrif_Parent_Gr % Agrif_x(3)
             ds_child(n)  = Agrif_Child_Gr  % Agrif_dx(3)
             ds_parent(n) = Agrif_Parent_Gr % Agrif_dx(3)
+            ! Take into account potential difference of first points
+           ! s_parent(n) = s_parent(n) + (lb_parent(n)-lb_child(n))*ds_parent(n)
 !
             if (root_var % posvar(n)==1) then
                 ub_child(n) = lb_child(n) + Agrif_Child_Gr % nb(3)
@@ -726,10 +809,10 @@ subroutine PreProcessToInterpOrUpdate ( parent, child,              &
 !
 !           No interpolation but only a copy of the values of the grid variable
             lb_parent(n) = lb_child(n)
-            s_child(n)   = 0.
-            s_parent(n)  = 0.
-            ds_child(n)  = 1.
-            ds_parent(n) = 1.
+            s_child(n)   = 0.d0
+            s_parent(n)  = 0.d0
+            ds_child(n)  = 1.d0
+            ds_parent(n) = 1.d0
 !
         end select
 !
@@ -780,7 +863,7 @@ end subroutine Agrif_GetLocalBoundaries
 !> For a global index located on the current processor, tabarray gives the corresponding local index
 !---------------------------------------------------------------------------------------------------
 subroutine Agrif_GlobalToLocalBounds ( locbounds, lb_var, ub_var, lb_glob, ub_glob,    &
-                                       coords, nbdim, rank, member )
+                                       coords, nbdim, rank, member,check_perio )
 !---------------------------------------------------------------------------------------------------
     integer, dimension(nbdim,2,2), intent(out)   :: locbounds   !< Local values of \b lb_glob and \b ub_glob
     integer, dimension(nbdim),     intent(in)    :: lb_var      !< Local lower boundary on the current processor
@@ -791,9 +874,19 @@ subroutine Agrif_GlobalToLocalBounds ( locbounds, lb_var, ub_var, lb_glob, ub_gl
     integer,                       intent(in)    :: nbdim       !< Dimension of the array
     integer,                       intent(in)    :: rank        !< Rank of the processor
     logical,                       intent(out)   :: member
+    logical,optional,          intent(in)  :: check_perio   !< check for periodicity
+    logical :: check_perio_local
 !
-    integer     :: i, i1, k
+    integer     :: i, i1, k, idecal
     integer     :: nbloc(nbdim)
+    
+    if (present(check_perio)) then
+       check_perio_local=check_perio
+    else
+       check_perio_local = .FALSE.
+    endif
+!
+
 !
     locbounds(:,1,:) =  HUGE(1)
     locbounds(:,2,:) = -HUGE(1)
@@ -802,19 +895,33 @@ subroutine Agrif_GlobalToLocalBounds ( locbounds, lb_var, ub_var, lb_glob, ub_gl
 !
     do i = 1,nbdim
 !
+     if (coords(i) == 0) then
+       nbloc(i) = 1
+       locbounds(i,1,1) = lb_glob(i)
+       locbounds(i,2,1) = ub_glob(i)
+       locbounds(i,1,2) = lb_glob(i)
+       locbounds(i,2,2) = ub_glob(i)
+     else
         call Agrif_InvLoc(lb_var(i), rank, coords(i), i1)
+        if ((i1>ub_glob(i)).AND.check_perio_local) then
+          idecal = agrif_curgrid%periodicity_decal(i)
+        else
+          idecal = 0
+        endif
 !
         do k = lb_glob(i)+lb_var(i)-i1,ub_glob(i)+lb_var(i)-i1
 !
-            if ( (k >= lb_var(i)) .AND. (k <= ub_var(i)) ) then
+            if ( (k + idecal >= lb_var(i)) .AND. (k + idecal <= ub_var(i)) ) then
+!            if ((k<=ub_var(i)).AND.((k>=lb_var(i).OR.check_perio_local))) then
                 nbloc(i) = 1
                 locbounds(i,1,1) = min(locbounds(i,1,1),k-lb_var(i)+i1)
                 locbounds(i,2,1) = max(locbounds(i,2,1),k-lb_var(i)+i1)
 
-                locbounds(i,1,2) = min(locbounds(i,1,2),k)
-                locbounds(i,2,2) = max(locbounds(i,2,2),k)
+                locbounds(i,1,2) = min(locbounds(i,1,2),k + idecal)
+                locbounds(i,2,2) = max(locbounds(i,2,2),k + idecal)
             endif
         enddo
+     endif
     enddo
 
     member = ( sum(nbloc) == nbdim )

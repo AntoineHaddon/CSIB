@@ -29,12 +29,12 @@ MODULE bdylib
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: bdylib.F90 11536 2019-09-11 13:54:18Z smasson $ 
+   !! $Id: bdylib.F90 13527 2020-09-25 16:00:14Z smasson $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE bdy_frs( idx, pta, dta )
+   SUBROUTINE bdy_frs( idx, phia, dta )
       !!----------------------------------------------------------------------
       !!                 ***  SUBROUTINE bdy_frs  ***
       !!
@@ -43,8 +43,8 @@ CONTAINS
       !! Reference : Engedahl H., 1995, Tellus, 365-382.
       !!----------------------------------------------------------------------
       TYPE(OBC_INDEX),                     INTENT(in) ::   idx  ! OBC indices
-      REAL(wp), DIMENSION(:,:),            INTENT(in) ::   dta  ! OBC external data
-      REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(inout) ::   pta  ! tracer trend
+      REAL(wp), DIMENSION(:,:), POINTER,   INTENT(in) ::   dta  ! OBC external data
+      REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(inout) ::   phia  ! tracer trend
       !!
       REAL(wp) ::   zwgt           ! boundary weight
       INTEGER  ::   ib, ik, igrd   ! dummy loop indices
@@ -57,14 +57,14 @@ CONTAINS
             ii = idx%nbi(ib,igrd) 
             ij = idx%nbj(ib,igrd)
             zwgt = idx%nbw(ib,igrd)
-            pta(ii,ij,ik) = ( pta(ii,ij,ik) + zwgt * (dta(ib,ik) - pta(ii,ij,ik) ) ) * tmask(ii,ij,ik)
+            phia(ii,ij,ik) = ( phia(ii,ij,ik) + zwgt * (dta(ib,ik) - phia(ii,ij,ik) ) ) * tmask(ii,ij,ik)
          END DO
       END DO
       !
    END SUBROUTINE bdy_frs
 
 
-   SUBROUTINE bdy_spe( idx, pta, dta )
+   SUBROUTINE bdy_spe( idx, phia, dta )
       !!----------------------------------------------------------------------
       !!                 ***  SUBROUTINE bdy_spe  ***
       !!
@@ -72,8 +72,8 @@ CONTAINS
       !!
       !!----------------------------------------------------------------------
       TYPE(OBC_INDEX),                     INTENT(in) ::   idx  ! OBC indices
-      REAL(wp), DIMENSION(:,:),            INTENT(in) ::   dta  ! OBC external data
-      REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(inout) ::   pta  ! tracer trend
+      REAL(wp), DIMENSION(:,:), POINTER,   INTENT(in) ::   dta  ! OBC external data
+      REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(inout) ::   phia  ! tracer trend
       !!
       INTEGER  ::   ib, ik, igrd   ! dummy loop indices
       INTEGER  ::   ii, ij         ! 2D addresses
@@ -84,14 +84,14 @@ CONTAINS
          ii = idx%nbi(ib,igrd)
          ij = idx%nbj(ib,igrd)
          DO ik = 1, jpkm1
-            pta(ii,ij,ik) = dta(ib,ik) * tmask(ii,ij,ik)
+            phia(ii,ij,ik) = dta(ib,ik) * tmask(ii,ij,ik)
          END DO
       END DO
       !
    END SUBROUTINE bdy_spe
 
 
-   SUBROUTINE bdy_orl( idx, ptb, pta, dta, lrim0, ll_npo )
+   SUBROUTINE bdy_orl( idx, phib, phia, dta, lrim0, ll_npo )
       !!----------------------------------------------------------------------
       !!                 ***  SUBROUTINE bdy_orl  ***
       !!
@@ -99,19 +99,19 @@ CONTAINS
       !!              This is a wrapper routine for bdy_orlanski_3d below
       !!
       !!----------------------------------------------------------------------
-      TYPE(OBC_INDEX),                     INTENT(in) ::   idx  ! OBC indices
-      REAL(wp), DIMENSION(:,:),            INTENT(in) ::   dta  ! OBC external data
-      REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(inout) ::   ptb  ! before tracer field
-      REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(inout) ::   pta  ! tracer trend
-      LOGICAL                 , OPTIONAL,  INTENT(in) ::   lrim0   ! indicate if rim 0 is treated
-      LOGICAL,                             INTENT(in) ::   ll_npo  ! switch for NPO version
+      TYPE(OBC_INDEX),                   INTENT(in   ) ::   idx  ! OBC indices
+      REAL(wp), DIMENSION(:,:), POINTER, INTENT(in   ) ::   dta  ! OBC external data
+      REAL(wp), DIMENSION(jpi,jpj,jpk),  INTENT(inout) ::   phib  ! before tracer field
+      REAL(wp), DIMENSION(jpi,jpj,jpk),  INTENT(inout) ::   phia  ! tracer trend
+      LOGICAL ,                          INTENT(in   ) ::   lrim0   ! indicate if rim 0 is treated
+      LOGICAL ,                          INTENT(in   ) ::   ll_npo  ! switch for NPO version
       !!
       INTEGER  ::   igrd                                    ! grid index
       !!----------------------------------------------------------------------
       !
       igrd = 1                       ! Everything is at T-points here
       !
-      CALL bdy_orlanski_3d( idx, igrd, ptb(:,:,:), pta(:,:,:), dta, lrim0, ll_npo )
+      CALL bdy_orlanski_3d( idx, igrd, phib(:,:,:), phia(:,:,:), dta, lrim0, ll_npo )
       !
    END SUBROUTINE bdy_orl
 
@@ -127,13 +127,13 @@ CONTAINS
       !!
       !! References:  Marchesiello, McWilliams and Shchepetkin, Ocean Modelling vol. 3 (2001)    
       !!----------------------------------------------------------------------
-      TYPE(OBC_INDEX),          INTENT(in   ) ::   idx      ! BDY indices
-      INTEGER ,                 INTENT(in   ) ::   igrd     ! grid index
-      REAL(wp), DIMENSION(:,:), INTENT(in   ) ::   phib     ! model before 2D field
-      REAL(wp), DIMENSION(:,:), INTENT(inout) ::   phia     ! model after 2D field (to be updated)
-      REAL(wp), DIMENSION(:)  , INTENT(in   ) ::   phi_ext  ! external forcing data
-      LOGICAL, OPTIONAL,        INTENT(in   ) ::   lrim0    ! indicate if rim 0 is treated
-      LOGICAL ,                 INTENT(in   ) ::   ll_npo   ! switch for NPO version
+      TYPE(OBC_INDEX),                   INTENT(in   ) ::   idx      ! BDY indices
+      INTEGER ,                          INTENT(in   ) ::   igrd     ! grid index
+      REAL(wp), DIMENSION(:,:),          INTENT(in   ) ::   phib     ! model before 2D field
+      REAL(wp), DIMENSION(:,:),          INTENT(inout) ::   phia     ! model after 2D field (to be updated)
+      REAL(wp), DIMENSION(:  ), POINTER, INTENT(in   ) ::   phi_ext  ! external forcing data
+      LOGICAL ,                          INTENT(in   ) ::   lrim0    ! indicate if rim 0 is treated
+      LOGICAL ,                          INTENT(in   ) ::   ll_npo   ! switch for NPO version
       !
       INTEGER  ::   jb                                     ! dummy loop indices
       INTEGER  ::   ii, ij, iibm1, iibm2, ijbm1, ijbm2     ! 2D addresses
@@ -187,12 +187,9 @@ CONTAINS
          CASE DEFAULT ;   CALL ctl_stop( 'unrecognised value for igrd in bdy_orlanksi_2d' )
       END SELECT
       !
-      IF( PRESENT(lrim0) ) THEN
-         IF( lrim0 ) THEN   ;   ibeg = 1                       ;   iend = idx%nblenrim0(igrd)   ! rim 0
-         ELSE               ;   ibeg = idx%nblenrim0(igrd)+1   ;   iend = idx%nblenrim(igrd)    ! rim 1
-         END IF
-      ELSE                  ;   ibeg = 1                       ;   iend = idx%nblenrim(igrd)    ! both
-      END IF
+      IF( lrim0 ) THEN   ;   ibeg = 1                       ;   iend = idx%nblenrim0(igrd)   ! rim 0
+      ELSE               ;   ibeg = idx%nblenrim0(igrd)+1   ;   iend = idx%nblenrim(igrd)    ! rim 1
+      ENDIF
       !
       DO jb = ibeg, iend
          ii  = idx%nbi(jb,igrd)
@@ -239,7 +236,7 @@ CONTAINS
          ! Mask derivatives to ensure correct land boundary conditions for each variable.
          ! Centred derivative is calculated as average of "left" and "right" derivatives for 
          ! this reason. 
-         ! Note no rdt factor in expression for zdt because it cancels in the expressions for 
+         ! Note no rn_Dt factor in expression for zdt because it cancels in the expressions for 
          ! zrx and zry.
          zdt   =     phia(iibm1   ,ijbm1   ) - phib(iibm1   ,ijbm1   )
          zdx   = ( ( phia(iibm1   ,ijbm1   ) - phia(iibm2   ,ijbm2   ) ) / zex2 ) * zmask_x 
@@ -248,7 +245,7 @@ CONTAINS
          zdy_centred = 0.5 * ( zdy_1 + zdy_2 )
 !!$         zdy_centred = phib(iibm1jp1,ijbm1jp1) - phib(iibm1jm1,ijbm1jm1)
          ! upstream differencing for tangential derivatives
-         zsign_ups = sign( 1., zdt * zdy_centred )
+         zsign_ups = sign( 1.0_wp, zdt * zdy_centred )
          zsign_ups = 0.5*( zsign_ups + abs(zsign_ups) )
          zdy = zsign_ups * zdy_1 + (1. - zsign_ups) * zdy_2
          znor2 = zdx * zdx + zdy * zdy
@@ -256,16 +253,16 @@ CONTAINS
          !
          zrx = zdt * zdx / ( zex1 * znor2 ) 
 !!$         zrx = min(zrx,2.0_wp)
-         zout = sign( 1., zrx )
+         zout = sign( 1.0_wp, zrx )
          zout = 0.5*( zout + abs(zout) )
-         zwgt = 2.*rdt*( (1.-zout) * idx%nbd(jb,igrd) + zout * idx%nbdout(jb,igrd) )
+         zwgt = 2.*rn_Dt*( (1.-zout) * idx%nbd(jb,igrd) + zout * idx%nbdout(jb,igrd) )
          ! only apply radiation on outflow points 
          if( ll_npo ) then     !! NPO version !!
             phia(ii,ij) = (1.-zout) * ( phib(ii,ij) + zwgt * ( phi_ext(jb) - phib(ii,ij) ) )        &
            &            + zout      * ( phib(ii,ij) + zrx*phia(iibm1,ijbm1)                         &
            &                            + zwgt * ( phi_ext(jb) - phib(ii,ij) ) ) / ( 1. + zrx ) 
          else                  !! full oblique radiation !!
-            zsign_ups = sign( 1., zdt * zdy )
+            zsign_ups = sign( 1.0_wp, zdt * zdy )
             zsign_ups = 0.5*( zsign_ups + abs(zsign_ups) )
             zey = zsign_ups * zey1 + (1.-zsign_ups) * zey2 
             zry = zdt * zdy / ( zey * znor2 ) 
@@ -274,7 +271,7 @@ CONTAINS
            &                    - zsign_ups      * zry * ( phib(ii   ,ij   ) - phib(iijm1,ijjm1 ) ) &
            &                    - (1.-zsign_ups) * zry * ( phib(iijp1,ijjp1) - phib(ii   ,ij    ) ) &
            &                    + zwgt * ( phi_ext(jb) - phib(ii,ij) ) ) / ( 1. + zrx ) 
-         end if
+         endif
          phia(ii,ij) = phia(ii,ij) * zmask(ii,ij)
       END DO
       !
@@ -292,13 +289,13 @@ CONTAINS
       !!
       !! References:  Marchesiello, McWilliams and Shchepetkin, Ocean Modelling vol. 3 (2001)    
       !!----------------------------------------------------------------------
-      TYPE(OBC_INDEX),            INTENT(in   ) ::   idx      ! BDY indices
-      INTEGER ,                   INTENT(in   ) ::   igrd     ! grid index
-      REAL(wp), DIMENSION(:,:,:), INTENT(in   ) ::   phib     ! model before 3D field
-      REAL(wp), DIMENSION(:,:,:), INTENT(inout) ::   phia     ! model after 3D field (to be updated)
-      REAL(wp), DIMENSION(:,:)  , INTENT(in   ) ::   phi_ext  ! external forcing data
-      LOGICAL, OPTIONAL,          INTENT(in   ) ::   lrim0    ! indicate if rim 0 is treated
-      LOGICAL ,                   INTENT(in   ) ::   ll_npo   ! switch for NPO version
+      TYPE(OBC_INDEX),                     INTENT(in   ) ::   idx      ! BDY indices
+      INTEGER ,                            INTENT(in   ) ::   igrd     ! grid index
+      REAL(wp), DIMENSION(:,:,:),          INTENT(in   ) ::   phib     ! model before 3D field
+      REAL(wp), DIMENSION(:,:,:),          INTENT(inout) ::   phia     ! model after 3D field (to be updated)
+      REAL(wp), DIMENSION(:,:  ), POINTER, INTENT(in   ) ::   phi_ext  ! external forcing data
+      LOGICAL ,                            INTENT(in   ) ::   lrim0    ! indicate if rim 0 is treated
+      LOGICAL ,                            INTENT(in   ) ::   ll_npo   ! switch for NPO version
       !
       INTEGER  ::   jb, jk                                 ! dummy loop indices
       INTEGER  ::   ii, ij, iibm1, iibm2, ijbm1, ijbm2     ! 2D addresses
@@ -352,12 +349,9 @@ CONTAINS
          CASE DEFAULT ;   CALL ctl_stop( 'unrecognised value for igrd in bdy_orlanksi_2d' )
       END SELECT
       !
-      IF( PRESENT(lrim0) ) THEN
-         IF( lrim0 ) THEN   ;   ibeg = 1                       ;   iend = idx%nblenrim0(igrd)   ! rim 0
-         ELSE               ;   ibeg = idx%nblenrim0(igrd)+1   ;   iend = idx%nblenrim(igrd)    ! rim 1
-         END IF
-      ELSE                  ;   ibeg = 1                       ;   iend = idx%nblenrim(igrd)    ! both
-      END IF
+      IF( lrim0 ) THEN   ;   ibeg = 1                       ;   iend = idx%nblenrim0(igrd)   ! rim 0
+      ELSE               ;   ibeg = idx%nblenrim0(igrd)+1   ;   iend = idx%nblenrim(igrd)    ! rim 1
+      ENDIF
       !
       DO jk = 1, jpk
          !            
@@ -413,7 +407,7 @@ CONTAINS
             zdy_centred = 0.5 * ( zdy_1 + zdy_2 )
 !!$            zdy_centred = phib(iibm1jp1,ijbm1jp1,jk) - phib(iibm1jm1,ijbm1jm1,jk)
             ! upstream differencing for tangential derivatives
-            zsign_ups = sign( 1., zdt * zdy_centred )
+            zsign_ups = sign( 1.0_wp, zdt * zdy_centred )
             zsign_ups = 0.5*( zsign_ups + abs(zsign_ups) )
             zdy = zsign_ups * zdy_1 + (1. - zsign_ups) * zdy_2
             znor2 = zdx * zdx + zdy * zdy
@@ -422,16 +416,16 @@ CONTAINS
             ! update boundary value:
             zrx = zdt * zdx / ( zex1 * znor2 )
 !!$            zrx = min(zrx,2.0_wp)
-            zout = sign( 1., zrx )
+            zout = sign( 1.0_wp, zrx )
             zout = 0.5*( zout + abs(zout) )
-            zwgt = 2.*rdt*( (1.-zout) * idx%nbd(jb,igrd) + zout * idx%nbdout(jb,igrd) )
+            zwgt = 2.*rn_Dt*( (1.-zout) * idx%nbd(jb,igrd) + zout * idx%nbdout(jb,igrd) )
             ! only apply radiation on outflow points 
             if( ll_npo ) then     !! NPO version !!
                phia(ii,ij,jk) = (1.-zout) * ( phib(ii,ij,jk) + zwgt * ( phi_ext(jb,jk) - phib(ii,ij,jk) ) ) &
               &               + zout      * ( phib(ii,ij,jk) + zrx*phia(iibm1,ijbm1,jk)                     &
               &                            + zwgt * ( phi_ext(jb,jk) - phib(ii,ij,jk) ) ) / ( 1. + zrx ) 
             else                  !! full oblique radiation !!
-               zsign_ups = sign( 1., zdt * zdy )
+               zsign_ups = sign( 1.0_wp, zdt * zdy )
                zsign_ups = 0.5*( zsign_ups + abs(zsign_ups) )
                zey = zsign_ups * zey1 + (1.-zsign_ups) * zey2 
                zry = zdt * zdy / ( zey * znor2 ) 
@@ -440,7 +434,7 @@ CONTAINS
               &                       - zsign_ups      * zry * ( phib(ii   ,ij   ,jk) - phib(iijm1,ijjm1,jk) ) &
               &                       - (1.-zsign_ups) * zry * ( phib(iijp1,ijjp1,jk) - phib(ii   ,ij   ,jk) ) &
               &                       + zwgt * ( phi_ext(jb,jk) - phib(ii,ij,jk) ) ) / ( 1. + zrx ) 
-            end if
+            endif
             phia(ii,ij,jk) = phia(ii,ij,jk) * zmask(ii,ij,jk)
          END DO
          !
@@ -465,7 +459,7 @@ CONTAINS
       INTEGER,                    INTENT(in   )  ::   igrd     ! grid index
       REAL(wp), DIMENSION(:,:,:), INTENT(inout)  ::   phia     ! model after 3D field (to be updated), must be masked
       TYPE(OBC_INDEX),            INTENT(in   )  ::   idx      ! OBC indices
-      LOGICAL, OPTIONAL,          INTENT(in   )  ::   lrim0    ! indicate if rim 0 is treated
+      LOGICAL ,                   INTENT(in   )  ::   lrim0    ! indicate if rim 0 is treated
       !! 
       REAL(wp) ::   zweight
       REAL(wp), POINTER, DIMENSION(:,:,:)      :: zmask         ! land/sea mask for field
@@ -485,12 +479,9 @@ CONTAINS
          CASE DEFAULT ;   CALL ctl_stop( 'unrecognised value for igrd in bdy_nmn' )
       END SELECT
       !
-      IF( PRESENT(lrim0) ) THEN
-         IF( lrim0 ) THEN   ;   ibeg = 1                       ;   iend = idx%nblenrim0(igrd)   ! rim 0
-         ELSE               ;   ibeg = idx%nblenrim0(igrd)+1   ;   iend = idx%nblenrim(igrd)    ! rim 1
-         END IF
-      ELSE                  ;   ibeg = 1                       ;   iend = idx%nblenrim(igrd)    ! both
-      END IF
+      IF( lrim0 ) THEN   ;   ibeg = 1                       ;   iend = idx%nblenrim0(igrd)   ! rim 0
+      ELSE               ;   ibeg = idx%nblenrim0(igrd)+1   ;   iend = idx%nblenrim(igrd)    ! rim 1
+      ENDIF
       !
       DO ib = ibeg, iend
          ii = idx%nbi(ib,igrd)

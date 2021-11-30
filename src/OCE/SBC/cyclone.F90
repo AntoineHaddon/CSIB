@@ -36,10 +36,10 @@ MODULE cyclone
    TYPE(FLD), ALLOCATABLE, DIMENSION(:) ::   sf   ! structure of input fields (file informations, fields read)
 
    !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
+#  include "do_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: cyclone.F90 10068 2018-08-28 14:09:04Z nicolasmartin $ 
+   !! $Id: cyclone.F90 13295 2020-07-10 18:24:21Z acc $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 
@@ -136,7 +136,7 @@ CONTAINS
             zrlat = rad * ztct(jtc,jp_lat )
             zhemi = SIGN( 1. , zrlat )
             zinfl = 15.* rad                             ! clim inflow angle in Tropical Cyclones
-         IF ( vortex == 0 ) THEN
+         IF( vortex == 0 ) THEN
 
             ! Vortex Holland reconstruct wind at each lon-lat position
             ! ********************************************************
@@ -146,56 +146,54 @@ CONTAINS
             ! fitted B parameter (Willoughby 2004)
             zb = 2.
 
-            DO jj = 1, jpj
-               DO ji = 1, jpi
+            DO_2D( 1, 1, 1, 1 )
 
-                  ! calc distance between TC center and any point following great circle
-                  ! source : http://www.movable-type.co.uk/scripts/latlong.html
-                  zzrglam = rad * glamt(ji,jj) - zrlon
-                  zzrgphi = rad * gphit(ji,jj)
-                  zdist = ra * ACOS(  SIN( zrlat ) * SIN( zzrgphi )   &
-                     &              + COS( zrlat ) * COS( zzrgphi ) * COS( zzrglam ) )
+               ! calc distance between TC center and any point following great circle
+               ! source : http://www.movable-type.co.uk/scripts/latlong.html
+               zzrglam = rad * glamt(ji,jj) - zrlon
+               zzrgphi = rad * gphit(ji,jj)
+               zdist = ra * ACOS(  SIN( zrlat ) * SIN( zzrgphi )   &
+                  &              + COS( zrlat ) * COS( zzrgphi ) * COS( zzrglam ) )
 
-                 IF (zdist < zrout2) THEN ! calculation of wind only to a given max radius
-                  ! shape of the wind profile
-                  zztmp = ( zrmw / ( zdist + 1.e-12 ) )**zb
-                  zztmp =  zvmax * SQRT( zztmp * EXP(1. - zztmp) )    
+              IF(zdist < zrout2) THEN ! calculation of wind only to a given max radius
+               ! shape of the wind profile
+               zztmp = ( zrmw / ( zdist + 1.e-12 ) )**zb
+               zztmp =  zvmax * SQRT( zztmp * EXP(1. - zztmp) )    
 
-                  IF (zdist > zrout1) THEN ! bring to zero between r_out1 and r_out2
-                     zztmp = zztmp * ( (zrout2-zdist)*1.e-6 )
-                  ENDIF
+               IF(zdist > zrout1) THEN ! bring to zero between r_out1 and r_out2
+                  zztmp = zztmp * ( (zrout2-zdist)*1.e-6 )
+               ENDIF
 
-                  ! !!! KILL EQ WINDS
-                  ! IF (SIGN( 1. , zrlat ) /= zhemi) THEN
-                  !    zztmp = 0.                              ! winds in other hemisphere
-                  !    IF (ABS(gphit(ji,jj)) <= 5.) zztmp=0.   ! kill between 5N-5S
-                  ! ENDIF
-                  ! IF (ABS(gphit(ji,jj)) <= 10. .and. ABS(gphit(ji,jj)) > 5.) THEN
-                  !    zztmp = zztmp * ( 1./5. * (ABS(gphit(ji,jj)) - 5.) ) 
-                  !    !linear to zero between 10 and 5
-                  ! ENDIF
-                  ! !!! / KILL EQ
+               ! !!! KILL EQ WINDS
+               ! IF(SIGN( 1. , zrlat ) /= zhemi) THEN
+               !    zztmp = 0.                              ! winds in other hemisphere
+               !    IF(ABS(gphit(ji,jj)) <= 5.) zztmp=0.   ! kill between 5N-5S
+               ! ENDIF
+               ! IF(ABS(gphit(ji,jj)) <= 10. .and. ABS(gphit(ji,jj)) > 5.) THEN
+               !    zztmp = zztmp * ( 1./5. * (ABS(gphit(ji,jj)) - 5.) ) 
+               !    !linear to zero between 10 and 5
+               ! ENDIF
+               ! !!! / KILL EQ
 
-                  IF (ABS(gphit(ji,jj)) >= 55.) zztmp = 0. ! kill weak spurious winds at high latitude
+               IF(ABS(gphit(ji,jj)) >= 55.) zztmp = 0. ! kill weak spurious winds at high latitude
 
-                  zwnd_t =   COS( zinfl ) * zztmp    
-                  zwnd_r = - SIN( zinfl ) * zztmp
+               zwnd_t =   COS( zinfl ) * zztmp    
+               zwnd_r = - SIN( zinfl ) * zztmp
 
-                  ! Project radial-tangential components on zonal-meridional components
-                  ! -------------------------------------------------------------------
-                  
-                  ! ztheta = azimuthal angle of the great circle between two points
-                  zztmp = COS( zrlat ) * SIN( zzrgphi ) &
-                     &  - SIN( zrlat ) * COS( zzrgphi ) * COS( zzrglam )
-                  ztheta = ATAN2(        COS( zzrgphi ) * SIN( zzrglam ) , zztmp )
+               ! Project radial-tangential components on zonal-meridional components
+               ! -------------------------------------------------------------------
+               
+               ! ztheta = azimuthal angle of the great circle between two points
+               zztmp = COS( zrlat ) * SIN( zzrgphi ) &
+                  &  - SIN( zrlat ) * COS( zzrgphi ) * COS( zzrglam )
+               ztheta = ATAN2(        COS( zzrgphi ) * SIN( zzrglam ) , zztmp )
 
-                  zwnd_x(ji,jj) = zwnd_x(ji,jj) - zhemi * COS(ztheta)*zwnd_t + SIN(ztheta)*zwnd_r
-                  zwnd_y(ji,jj) = zwnd_y(ji,jj) + zhemi * SIN(ztheta)*zwnd_t + COS(ztheta)*zwnd_r
-                 ENDIF
-               END DO
-            END DO
+               zwnd_x(ji,jj) = zwnd_x(ji,jj) - zhemi * COS(ztheta)*zwnd_t + SIN(ztheta)*zwnd_r
+               zwnd_y(ji,jj) = zwnd_y(ji,jj) + zhemi * SIN(ztheta)*zwnd_t + COS(ztheta)*zwnd_r
+              ENDIF
+            END_2D
          
-         ELSE IF ( vortex == 1 ) THEN
+         ELSE IF( vortex == 1 ) THEN
 
             ! Vortex Willoughby reconstruct wind at each lon-lat position
             ! ***********************************************************
@@ -205,61 +203,59 @@ CONTAINS
             zXX1 = ( 287.6  - 1.942 *zvmax + 7.799 *LOG(zrmw/1000.) + 1.819 *ABS( ztct(jtc,jp_lat) ) )*1000.    
             zn   =   2.1340 + 0.0077*zvmax - 0.4522*LOG(zrmw/1000.) - 0.0038*ABS( ztct(jtc,jp_lat) )            
             zA   =   0.5913 + 0.0029*zvmax - 0.1361*LOG(zrmw/1000.) - 0.0042*ABS( ztct(jtc,jp_lat) )  
-            IF (zA < 0) THEN 
+            IF(zA < 0) THEN 
                zA=0
             ENDIF           
         
-            DO jj = 1, jpj
-               DO ji = 1, jpi
-                                  
-                  zzrglam = rad * glamt(ji,jj) - zrlon
-                  zzrgphi = rad * gphit(ji,jj)
-                  zdist = ra * ACOS(  SIN( zrlat ) * SIN( zzrgphi )   &
-                     &              + COS( zrlat ) * COS( zzrgphi ) * COS( zzrglam ) )
+            DO_2D( 1, 1, 1, 1 )
+                               
+               zzrglam = rad * glamt(ji,jj) - zrlon
+               zzrgphi = rad * gphit(ji,jj)
+               zdist = ra * ACOS(  SIN( zrlat ) * SIN( zzrgphi )   &
+                  &              + COS( zrlat ) * COS( zzrgphi ) * COS( zzrglam ) )
 
-                 IF (zdist < zrout2) THEN ! calculation of wind only to a given max radius
+              IF(zdist < zrout2) THEN ! calculation of wind only to a given max radius
+            
+               ! shape of the wind profile                     
+               IF(zdist <= zrmw) THEN     ! inside the Radius of Maximum Wind
+                  zztmp  = zvmax * (zdist/zrmw)**zn
+               ELSE 
+                  zztmp  = zvmax * ( (1-zA) * EXP(- (zdist-zrmw)/zXX1 ) + zA * EXP(- (zdist-zrmw)/zXX2 ) )
+               ENDIF
+
+               IF(zdist > zrout1) THEN ! bring to zero between r_out1 and r_out2
+                  zztmp = zztmp * ( (zrout2-zdist)*1.e-6 )
+               ENDIF
+
+               ! !!! KILL EQ WINDS
+               ! IF(SIGN( 1. , zrlat ) /= zhemi) THEN
+               !    zztmp = 0.                              ! winds in other hemisphere
+               !    IF(ABS(gphit(ji,jj)) <= 5.) zztmp=0.   ! kill between 5N-5S
+               ! ENDIF
+               ! IF(ABS(gphit(ji,jj)) <= 10. .and. ABS(gphit(ji,jj)) > 5.) THEN
+               !    zztmp = zztmp * ( 1./5. * (ABS(gphit(ji,jj)) - 5.) ) 
+               !    !linear to zero between 10 and 5
+               ! ENDIF
+               ! !!! / KILL EQ
+
+               IF(ABS(gphit(ji,jj)) >= 55.) zztmp = 0. ! kill weak spurious winds at high latitude
+
+               zwnd_t =   COS( zinfl ) * zztmp    
+               zwnd_r = - SIN( zinfl ) * zztmp
+
+               ! Project radial-tangential components on zonal-meridional components
+               ! -------------------------------------------------------------------
                
-                  ! shape of the wind profile                     
-                  IF (zdist <= zrmw) THEN     ! inside the Radius of Maximum Wind
-                     zztmp  = zvmax * (zdist/zrmw)**zn
-                  ELSE 
-                     zztmp  = zvmax * ( (1-zA) * EXP(- (zdist-zrmw)/zXX1 ) + zA * EXP(- (zdist-zrmw)/zXX2 ) )
-                  ENDIF
+               ! ztheta = azimuthal angle of the great circle between two points
+               zztmp = COS( zrlat ) * SIN( zzrgphi ) &
+                  &  - SIN( zrlat ) * COS( zzrgphi ) * COS( zzrglam )
+               ztheta = ATAN2(        COS( zzrgphi ) * SIN( zzrglam ) , zztmp )
 
-                  IF (zdist > zrout1) THEN ! bring to zero between r_out1 and r_out2
-                     zztmp = zztmp * ( (zrout2-zdist)*1.e-6 )
-                  ENDIF
-
-                  ! !!! KILL EQ WINDS
-                  ! IF (SIGN( 1. , zrlat ) /= zhemi) THEN
-                  !    zztmp = 0.                              ! winds in other hemisphere
-                  !    IF (ABS(gphit(ji,jj)) <= 5.) zztmp=0.   ! kill between 5N-5S
-                  ! ENDIF
-                  ! IF (ABS(gphit(ji,jj)) <= 10. .and. ABS(gphit(ji,jj)) > 5.) THEN
-                  !    zztmp = zztmp * ( 1./5. * (ABS(gphit(ji,jj)) - 5.) ) 
-                  !    !linear to zero between 10 and 5
-                  ! ENDIF
-                  ! !!! / KILL EQ
-
-                  IF (ABS(gphit(ji,jj)) >= 55.) zztmp = 0. ! kill weak spurious winds at high latitude
-
-                  zwnd_t =   COS( zinfl ) * zztmp    
-                  zwnd_r = - SIN( zinfl ) * zztmp
-
-                  ! Project radial-tangential components on zonal-meridional components
-                  ! -------------------------------------------------------------------
-                  
-                  ! ztheta = azimuthal angle of the great circle between two points
-                  zztmp = COS( zrlat ) * SIN( zzrgphi ) &
-                     &  - SIN( zrlat ) * COS( zzrgphi ) * COS( zzrglam )
-                  ztheta = ATAN2(        COS( zzrgphi ) * SIN( zzrglam ) , zztmp )
-
-                  zwnd_x(ji,jj) = zwnd_x(ji,jj) - zhemi * COS(ztheta)*zwnd_t + SIN(ztheta)*zwnd_r
-                  zwnd_y(ji,jj) = zwnd_y(ji,jj) + zhemi * SIN(ztheta)*zwnd_t + COS(ztheta)*zwnd_r
-                  
-                 ENDIF
-               END DO
-            END DO
+               zwnd_x(ji,jj) = zwnd_x(ji,jj) - zhemi * COS(ztheta)*zwnd_t + SIN(ztheta)*zwnd_r
+               zwnd_y(ji,jj) = zwnd_y(ji,jj) + zhemi * SIN(ztheta)*zwnd_t + COS(ztheta)*zwnd_r
+               
+              ENDIF
+            END_2D
          ENDIF                                         ! / vortex Holland or Wiloughby
          ENDIF                                           ! / cyclone is defined in this slot ? yes--> begin
       END DO ! / end simultaneous cyclones loop

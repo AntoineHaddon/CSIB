@@ -17,10 +17,9 @@ MODULE obs_mpp
    !! obs_mpp_sum_integers  : Sum an integer array from all processors
    !! obs_mpp_sum_integer   : Sum an integer from all processors
    !!----------------------------------------------------------------------
-   USE dom_oce, ONLY :   nproc, mig, mjg   ! Ocean space and time domain variables
    USE mpp_map, ONLY :   mppmap
    USE in_out_manager
-#if defined key_mpp_mpi
+#if ! defined key_mpi_off
    USE lib_mpp, ONLY :   mpi_comm_oce      ! MPP library
 #endif
    IMPLICIT NONE
@@ -38,7 +37,7 @@ MODULE obs_mpp
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: obs_mpp.F90 10068 2018-08-28 14:09:04Z nicolasmartin $
+   !! $Id: obs_mpp.F90 14275 2021-01-07 12:13:16Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -60,7 +59,7 @@ CONTAINS
       INTEGER                , INTENT(in   ) ::   kroot   ! Processor to send data
       INTEGER, DIMENSION(kno), INTENT(inout) ::   kvals   ! Array to send on kroot, receive for non-kroot
       !
-#if defined key_mpp_mpi
+#if ! defined key_mpi_off
       !
       INTEGER :: ierr 
       !
@@ -94,7 +93,7 @@ INCLUDE 'mpif.h'
       INTEGER                , INTENT(in   ) ::   kno     ! Number of elements in array
       INTEGER, DIMENSION(kno), INTENT(inout) ::   kvals   ! Array to send on kroot, receive for non-kroot  
       !
-#if defined key_mpp_mpi
+#if ! defined key_mpi_off
       !
       INTEGER :: ierr 
       INTEGER, DIMENSION(kno) ::   ivals
@@ -133,7 +132,7 @@ INCLUDE 'mpif.h'
       INTEGER                , INTENT(in   ) ::   kno
       INTEGER, DIMENSION(kno), INTENT(inout) ::   kobsp
       !
-#if defined key_mpp_mpi
+#if ! defined key_mpi_off
       !
       !
       INTEGER :: ji, isum
@@ -191,7 +190,7 @@ INCLUDE 'mpif.h'
       INTEGER, DIMENSION(kno), INTENT(in   ) ::   kvalsin
       INTEGER, DIMENSION(kno), INTENT(  out) ::   kvalsout
       !
-#if defined key_mpp_mpi
+#if ! defined key_mpi_off
       !
       INTEGER :: ierr
       !
@@ -229,7 +228,7 @@ INCLUDE 'mpif.h'
       INTEGER, INTENT(in   ) ::   kvalin
       INTEGER, INTENT(  out) ::   kvalout
       !
-#if defined key_mpp_mpi
+#if ! defined key_mpi_off
       !
       INTEGER :: ierr
       !
@@ -269,7 +268,7 @@ INCLUDE 'mpif.h'
       !
       INTEGER :: ierr
       !
-#if defined key_mpp_mpi
+#if ! defined key_mpi_off
       !
 INCLUDE 'mpif.h'
       REAL(KIND=wp), DIMENSION(:,:), ALLOCATABLE ::   zcp
@@ -317,7 +316,7 @@ INCLUDE 'mpif.h'
       !!
       INTEGER :: ierr
       !
-#if defined key_mpp_mpi
+#if ! defined key_mpi_off
       !
 INCLUDE 'mpif.h'
       !-----------------------------------------------------------------------
@@ -359,7 +358,7 @@ INCLUDE 'mpif.h'
       INTEGER :: ierr
       INTEGER :: jproc
       !
-#if defined key_mpp_mpi
+#if ! defined key_mpi_off
       !
 INCLUDE 'mpif.h'
       INTEGER, DIMENSION(jpnij) ::   irdsp, isdsp
@@ -411,7 +410,7 @@ INCLUDE 'mpif.h'
       INTEGER :: ierr
       INTEGER :: jproc
       !
-#if defined key_mpp_mpi
+#if ! defined key_mpi_off
       !
 INCLUDE 'mpif.h'
       INTEGER, DIMENSION(jpnij) ::   irdsp, isdsp

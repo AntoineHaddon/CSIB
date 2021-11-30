@@ -1,4 +1,4 @@
-!  Cray subroutines or functions used by OPA model and possibly 
+!  Cray subroutines or functions used by OCE model and possibly 
 !  not found on other platforms.
 !
 !  check their existence
@@ -6,7 +6,7 @@
 !  wheneq
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: lib_cray.f90 10070 2018-08-28 14:30:54Z nicolasmartin $ 
+   !! $Id: lib_cray.f90 14227 2020-12-20 11:57:00Z smasson $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 SUBROUTINE lib_cray

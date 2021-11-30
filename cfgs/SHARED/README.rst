@@ -16,7 +16,7 @@ parallel to the NEMO model run.
 This page gives a basic introduction to using XIOS with NEMO.
 Much more information is available from the :xios:`XIOS homepage<>` above and from the NEMO manual.
 
-Use of XIOS for diagnostics is activated using the pre-compiler key ``key_iomput``.
+Use of XIOS for diagnostics is activated using the pre-compiler key ``key_xios``.
 
 Extracting and installing XIOS
 ==============================

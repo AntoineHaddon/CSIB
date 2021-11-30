@@ -24,7 +24,7 @@ MODULE trcnam_pisces
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: trcnam_pisces.F90 11536 2019-09-11 13:54:18Z smasson $ 
+   !! $Id: trcnam_pisces.F90 12377 2020-02-12 14:39:06Z acc $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -50,14 +50,12 @@ CONTAINS
 
       IF(lwp) WRITE(numout,*) 'trc_nam_pisces : read PISCES namelist'
       IF(lwp) WRITE(numout,*) '~~~~~~~~~~~~~~'
-      CALL ctl_opn( numnatp_ref, TRIM( clname )//'_ref', 'OLD'    , 'FORMATTED', 'SEQUENTIAL', -1, numout, .FALSE. )
-      CALL ctl_opn( numnatp_cfg, TRIM( clname )//'_cfg', 'OLD'    , 'FORMATTED', 'SEQUENTIAL', -1, numout, .FALSE. )
+      CALL load_nml( numnatp_ref, TRIM( clname )//'_ref', numout, lwm )
+      CALL load_nml( numnatp_cfg, TRIM( clname )//'_cfg', numout, lwm )
       IF(lwm) CALL ctl_opn( numonp     , 'output.namelist.pis' , 'UNKNOWN', 'FORMATTED', 'SEQUENTIAL', -1, numout, .FALSE. )
       !
-      REWIND( numnatp_ref )              ! Namelist nampisbio in reference namelist : Pisces variables
       READ  ( numnatp_ref, nampismod, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'nampismod in reference namelist' )
-      REWIND( numnatp_cfg )              ! Namelist nampisbio in configuration namelist : Pisces variables
       READ  ( numnatp_cfg, nampismod, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'nampismod in configuration namelist' )
       IF(lwm) WRITE( numonp, nampismod )

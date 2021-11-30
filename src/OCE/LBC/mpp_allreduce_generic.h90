@@ -1,8 +1,14 @@
 !                          !==  IN: ptab is an array  ==!
 #   if defined REAL_TYPE
-#      define ARRAY_TYPE(i)    REAL(wp)         , INTENT(inout) ::   ARRAY_IN(i)
-#      define TMP_TYPE(i)      REAL(wp)         , ALLOCATABLE   ::   work(i)
-#      define MPI_TYPE mpi_double_precision
+#      if defined SINGLE_PRECISION
+#         define ARRAY_TYPE(i)    REAL(sp)         , INTENT(inout) ::   ARRAY_IN(i)
+#         define TMP_TYPE(i)      REAL(sp)         , ALLOCATABLE   ::   work(i)
+#         define MPI_TYPE mpi_real
+#      else
+#         define ARRAY_TYPE(i)    REAL(dp)         , INTENT(inout) ::   ARRAY_IN(i)
+#         define TMP_TYPE(i)      REAL(dp)         , ALLOCATABLE   ::   work(i)
+#         define MPI_TYPE mpi_double_precision
+#      endif 
 #   endif
 #   if defined INTEGER_TYPE
 #      define ARRAY_TYPE(i)    INTEGER          , INTENT(inout) ::   ARRAY_IN(i)
@@ -10,8 +16,8 @@
 #      define MPI_TYPE mpi_integer
 #   endif
 #   if defined COMPLEX_TYPE
-#      define ARRAY_TYPE(i)    COMPLEX          , INTENT(inout) ::   ARRAY_IN(i)
-#      define TMP_TYPE(i)      COMPLEX          , ALLOCATABLE   ::   work(i)
+#      define ARRAY_TYPE(i)    COMPLEX(dp)       , INTENT(inout) ::   ARRAY_IN(i)
+#      define TMP_TYPE(i)      COMPLEX(dp)       , ALLOCATABLE   ::   work(i)
 #      define MPI_TYPE mpi_double_complex
 #   endif
 #   if defined DIM_0d
@@ -41,7 +47,7 @@
       ARRAY_TYPE(:)   ! array or pointer of arrays on which the boundary condition is applied
       INTEGER, OPTIONAL, INTENT(in   ) ::   kdim        ! optional pointer dimension
       INTEGER, OPTIONAL, INTENT(in   ) ::   kcom        ! optional communicator
-#if defined key_mpp_mpi
+#if ! defined key_mpi_off
       !
       INTEGER :: ipi, ii, ierr
       INTEGER :: ierror, ilocalcomm
@@ -74,6 +80,7 @@
 
    END SUBROUTINE ROUTINE_ALLREDUCE
 
+#undef PRECISION
 #undef ARRAY_TYPE
 #undef ARRAY_IN
 #undef I_SIZE

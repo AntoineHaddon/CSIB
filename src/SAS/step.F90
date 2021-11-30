@@ -11,7 +11,7 @@ MODULE step
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
-   !!   stp             : OPA system time-stepping
+   !!   stp             : OCE system time-stepping
    !!----------------------------------------------------------------------
    USE oce              ! ocean dynamics and tracers variables
    USE dom_oce          ! ocean space and time domain variables 
@@ -31,7 +31,7 @@ MODULE step
    USE iom              !
    USE lbclnk           !
    USE timing           ! Timing            
-#if defined key_iomput
+#if defined key_xios
    USE xios
 #endif
 
@@ -48,8 +48,12 @@ MODULE step
    PUBLIC   stp   ! called by nemogcm.F90
 
    !!----------------------------------------------------------------------
+   !! time level indices
+   !!----------------------------------------------------------------------
+   INTEGER, PUBLIC :: Nbb, Nnn, Naa, Nrhs          !! used by nemo_init
+   !!----------------------------------------------------------------------
    !! NEMO/SAS 4.0 , NEMO Consortium (2018)
-   !! $Id: step.F90 12651 2020-04-03 07:51:14Z smasson $
+   !! $Id: step.F90 14239 2020-12-23 08:57:16Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -69,53 +73,64 @@ CONTAINS
       !! ** Method  : -1- Update forcings and data  
       !!              -2- Outputs and diagnostics
       !!----------------------------------------------------------------------
-      INTEGER ::   indic    ! error indicator if < 0
-      !! ---------------------------------------------------------------------
 
 #if defined key_agrif
-      IF( nstop > 0 ) return   ! avoid to go further if an error was detected during previous time step 
+      IF( nstop > 0 ) RETURN   ! avoid to go further if an error was detected during previous time step (child grid)
       kstp = nit000 + Agrif_Nb_Step()
-      IF ( lk_agrif_debug ) THEN
-         IF ( Agrif_Root() .and. lwp) Write(*,*) '---'
-         IF (lwp) Write(*,*) 'Grid Number',Agrif_Fixed(),' time step ',kstp, 'int tstep',Agrif_NbStepint()
+      Kbb_a = Nbb; Kmm_a = Nnn; Krhs_a = Nrhs   ! agrif_oce module copies of time level indices
+      IF( lk_agrif_debug ) THEN
+         IF( Agrif_Root() .and. lwp)   WRITE(*,*) '---'
+         IF(lwp)   WRITE(*,*) 'Grid Number', Agrif_Fixed(),' time step ', kstp, 'int tstep', Agrif_NbStepint()
       ENDIF
-
-      IF ( kstp == (nit000 + 1) ) lk_agrif_fstep = .FALSE.
-
-# if defined key_iomput
+      IF( kstp == nit000 + 1 )   lk_agrif_fstep = .FALSE.
+# if defined key_xios
       IF( Agrif_Nbstepint() == 0 )   CALL iom_swap( cxios_context )
 # endif   
 #endif   
-                             indic = 0                    ! although indic is not changed in stp_ctl
-                                                          ! need to keep the same interface 
       IF( kstp == nit000 )   CALL iom_init( cxios_context ) ! iom_put initialization (must be done after nemo_init for AGRIF+XIOS+OASIS)
-      IF( kstp /= nit000 )   CALL day( kstp )             ! Calendar (day was already called at nit000 in day_init)
                              CALL iom_setkt( kstp - nit000 + 1, cxios_context )   ! tell iom we are at time step kstp
+      IF((kstp == nitrst) .AND. lwxios) THEN
+         CALL iom_swap(      cw_ocerst_cxt          )
+         CALL iom_init_closedef(cw_ocerst_cxt)
+         CALL iom_setkt( kstp - nit000 + 1,      cw_ocerst_cxt          )
+#if defined key_top
+         CALL iom_swap(      cw_toprst_cxt          )
+         CALL iom_init_closedef(cw_toprst_cxt)
+         CALL iom_setkt( kstp - nit000 + 1,      cw_toprst_cxt          )
+#endif
+      ENDIF
+      IF( kstp /= nit000 )   CALL day( kstp )             ! Calendar (day was already called at nit000 in day_init)
+
+#if defined key_si3
+      IF(((kstp + nn_fsbc - 1) == nitrst) .AND. lwxios) THEN
+         CALL iom_swap(      cw_icerst_cxt          )
+         CALL iom_init_closedef(cw_icerst_cxt)
+         CALL iom_setkt( kstp - nit000 + 1,      cw_icerst_cxt          )
+      ENDIF
+#endif
 
       ! ==> clem: open boundaries is mandatory for sea-ice because ice BDY is not decoupled from  
-      !           the environment of ocean BDY. Therefore bdy is called in both OPA and SAS modules.
+      !           the environment of ocean BDY. Therefore bdy is called in both OCE and SAS modules.
       !           From SAS: ocean bdy data are wrong  (but we do not care) and ice bdy data are OK.  
       !           This is not clean and should be changed in the future. 
-      IF( ln_bdy     )       CALL bdy_dta ( kstp, kt_offset=+1 )   ! update dynamic & tracer data at open boundaries
       ! ==>
-                             CALL sbc    ( kstp )         ! Sea Boundary Condition (including sea-ice)
+      IF( ln_bdy     )       CALL bdy_dta( kstp,      Nnn )                   ! update dynamic & tracer data at open boundaries
+                             CALL sbc    ( kstp, Nbb, Nnn )                   ! Sea Boundary Condition (including sea-ice)
 
-                             CALL dia_wri( kstp )         ! ocean model: outputs
+                             CALL dia_wri( kstp,      Nnn )                   ! ocean model: outputs
 
 #if defined key_agrif
       !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
       ! AGRIF recursive integration
       !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<      
-                             CALL Agrif_Integrate_ChildGrids( stp )  
-#endif                 
+                             CALL Agrif_Integrate_ChildGrids( stp )
+                             
+#endif                             
       !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
       ! Control
       !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-                             CALL stp_ctl( kstp, indic )
-      IF( indic < 0  )  THEN
-                             CALL ctl_stop( 'step: indic < 0' )
-                             CALL dia_wri_state( 'output.abort' )
-      ENDIF
+                             CALL stp_ctl( kstp, Nnn )
+
 #if defined key_agrif
       !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
       ! AGRIF update
@@ -125,28 +140,34 @@ CONTAINS
                              CALL Agrif_Update_ice( )   ! update sea-ice
 #endif
       ENDIF
+
 #endif
       !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
       ! File manipulation at the end of the first time step
       !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                         
-      IF( kstp == nit000   ) CALL iom_close( numror )                          ! close input  ocean restart file
+      IF( kstp == nit000   ) THEN
+            CALL iom_close( numror )                          ! close input  ocean restart file
+            IF( lrxios )     CALL iom_context_finalize(      cr_ocerst_cxt      )
+      ENDIF
       
       !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
       ! Coupled mode
       !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-      IF( lk_oasis    )  CALL sbc_cpl_snd( kstp )     ! coupled mode : field exchanges if OASIS-coupled ice
+      IF( lk_oasis .AND. nstop == 0 ) CALL sbc_cpl_snd( kstp, Nbb, Nnn )       ! coupled mode : field exchanges if OASIS-coupled ice
 
-#if defined key_iomput
+#if defined key_xios
       IF( kstp == nitrst ) THEN
          IF(.NOT.lwxios) THEN
             CALL iom_close( numrow )     
          ELSE
-            CALL iom_context_finalize( cwxios_context )
+            CALL iom_context_finalize( cw_ocerst_cxt )
+            iom_file(numrow)%nfid       = 0
+            numrow = 0
          ENDIF
          lrst_oce = .FALSE.
       ENDIF
-      IF( kstp == nitend .OR. indic < 0 ) THEN
-                             CALL iom_context_finalize( cxios_context ) ! needed for XIOS+AGRIF
+      IF( kstp == nitend .OR. nstop > 0 ) THEN
+         CALL iom_context_finalize( cxios_context ) ! needed for XIOS+AGRIF
       ENDIF
 #endif
       !

@@ -17,15 +17,12 @@ MODULE trcnam
    !!----------------------------------------------------------------------
    !!   trc_nam    :  Read and print options for the passive tracer run (namelist)
    !!----------------------------------------------------------------------
+   USE par_trc        ! need jptra, number of passive tracers
    USE oce_trc     ! shared variables between ocean and passive tracers
    USE trc         ! passive tracers common variables
    USE trd_oce     !       
    USE trdtrc_oce  !
    USE iom         ! I/O manager
-#if defined key_mpp_mpi
-   USE lib_mpp, ONLY: ncom_dttrc
-#endif
-
    USE sms_top_canbgc, ONLY: qnrdttrc ! access to qnrdttrc declaration
 
    IMPLICIT NONE
@@ -34,15 +31,14 @@ MODULE trcnam
    PUBLIC   trc_nam_run  ! called in trcini
    PUBLIC   trc_nam      ! called in trcini
 
-   TYPE(PTRACER), DIMENSION(jpmaxtrc), PUBLIC  :: sn_tracer    !: type of tracer for saving if not key_iomput
+   TYPE(PTRACER), DIMENSION(jpmaxtrc), PUBLIC  :: sn_tracer  !: type of tracer for saving if not key_xios
    TYPE(PTRACER), DIMENSION(jpmaxtrc), PUBLIC  :: canoe_tracer 
    TYPE(PTRACER), DIMENSION(jpmaxtrc), PUBLIC  :: cmoc_tracer 
    TYPE(DIAG),    DIMENSION(jpmaxdia), PUBLIC  :: sn_dia     !: type of diagnostics
 
-
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: trcnam.F90 15613 2021-12-22 09:35:54Z cetlod $
+   !! $Id: trcnam.F90 14239 2020-12-23 08:57:16Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -84,14 +80,10 @@ CONTAINS
          ENDIF
       ENDIF
       !
-      rdttrc = rdt * FLOAT( nn_dttrc )          ! passive tracer time-step      
-      ! 
       IF(lwp) THEN                              ! control print
         WRITE(numout,*) 
-        WRITE(numout,*) '   ==>>>   Passive Tracer  time step    rdttrc = nn_dttrc*rdt = ', rdttrc
+        WRITE(numout,*) '   ==>>>   Passive Tracer time step = rn_Dt = ', rn_Dt
       ENDIF
-      !
-                            CALL trc_nam_opt    ! Optical
       !
       IF( l_trdtrc )        CALL trc_nam_trd    ! Passive tracer trends
       !
@@ -107,8 +99,8 @@ CONTAINS
       !!---------------------------------------------------------------------
       INTEGER  ::   ios   ! Local integer
       !!
-      NAMELIST/namtrc_run/ nn_dttrc, ln_rsttr, nn_rsttr, ln_top_euler,                     &
-        &                  cn_trcrst_indir, cn_trcrst_outdir, cn_trcrst_in, cn_trcrst_out, &
+      NAMELIST/namtrc_run/ ln_rsttr, nn_rsttr, ln_top_euler, &
+        &                  cn_trcrst_indir, cn_trcrst_outdir, cn_trcrst_in, cn_trcrst_out  &
         &                  qnrdttrc
       !!---------------------------------------------------------------------
       !
@@ -116,33 +108,26 @@ CONTAINS
       IF(lwp) WRITE(numout,*) 'trc_nam_run : read the passive tracer namelists'
       IF(lwp) WRITE(numout,*) '~~~~~~~~~~~'
       !
-      CALL ctl_opn( numnat_ref, 'namelist_top_ref'   , 'OLD'    , 'FORMATTED', 'SEQUENTIAL', -1, numout, .FALSE. )
-      CALL ctl_opn( numnat_cfg, 'namelist_top_cfg'   , 'OLD'    , 'FORMATTED', 'SEQUENTIAL', -1, numout, .FALSE. )
+      CALL load_nml( numnat_ref, 'namelist_top_ref' , numout, lwm )
+      CALL load_nml( numnat_cfg, 'namelist_top_cfg' , numout, lwm )
       IF(lwm) CALL ctl_opn( numont, 'output.namelist.top', 'UNKNOWN', 'FORMATTED', 'SEQUENTIAL', -1, numout, .FALSE., 1 )
       !
-      REWIND( numnat_ref )              ! Namelist namtrc in reference namelist : Passive tracer variables
       READ  ( numnat_ref, namtrc_run, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namtrc in reference namelist' )
-      REWIND( numnat_cfg )              ! Namelist namtrc in configuration namelist : Passive tracer variables
       READ  ( numnat_cfg, namtrc_run, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namtrc in configuration namelist' )
       IF(lwm) WRITE( numont, namtrc_run )
 
-      nittrc000 = nit000 + nn_dttrc - 1      ! first time step of tracer model
+      nittrc000 = nit000             ! first time step of tracer model
 
       IF(lwp) THEN                   ! control print
          WRITE(numout,*) '   Namelist : namtrc_run'
-         WRITE(numout,*) '      time step freq. for passive tracer           nn_dttrc      = ', nn_dttrc
          WRITE(numout,*) '      restart  for passive tracer                  ln_rsttr      = ', ln_rsttr
          WRITE(numout,*) '      control of time step for passive tracer      nn_rsttr      = ', nn_rsttr
          WRITE(numout,*) '      first time step for pass. trac.              nittrc000     = ', nittrc000
-         WRITE(numout,*) '      use euler integration for TRC (y/n)          ln_top_euler  = ', ln_top_euler
-         WRITE(numout,*) 'CanBGC time step splitting for BGC models          qnrdttrc      = ', qnrdttrc !! OR Jan 19th 2023
+         WRITE(numout,*) '      Use euler integration for TRC (y/n)          ln_top_euler  = ', ln_top_euler
+         WRITE(numout,*) 'CanBGC time step splitting for BGC models          qnrdttrc      = ', qnrdttrc 
       ENDIF
-      !
-#if defined key_mpp_mpi
-      ncom_dttrc = nn_dttrc    ! make nn_fsbc available for lib_mpp
-#endif
       !
    END SUBROUTINE trc_nam_run
 
@@ -164,20 +149,16 @@ CONTAINS
       !                  !   name   !   title   !   unit   !   init  !   sbc   !   cbc   !   obc  !
       jp_bgc = 0
       sn_tracer = PTRACER( 'NONAME' , 'NOTITLE' , 'NOUNIT' , .false. , .false. , .false. , .false.)
-	    sn_dia    = DIAG('NONAME','NOTITLE','NOUNIT')
-      jp_canoe    = 0
+      sn_dia    = DIAG('NONAME','NOTITLE','NOUNIT')
       canoe_tracer= PTRACER( 'NONAME' , 'NOTITLE' , 'NOUNIT' , .false. , .false. , .false. , .false.)
-      jp_cmoc     = 0
       cmoc_tracer = PTRACER( 'NONAME' , 'NOTITLE' , 'NOUNIT' , .false. , .false. , .false. , .false.)
       !
       IF(lwp) WRITE(numout,*)
       IF(lwp) WRITE(numout,*) 'trc_nam_trc : read the passive tracer namelists'
       IF(lwp) WRITE(numout,*) '~~~~~~~~~~~'
 
-      REWIND( numnat_ref )              ! Namelist namtrc in reference namelist : Passive tracer variables
       READ  ( numnat_ref, namtrc, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namtrc in reference namelist' )
-      REWIND( numnat_cfg )              ! Namelist namtrc in configuration namelist : Passive tracer variables
       READ  ( numnat_cfg, namtrc, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namtrc in configuration namelist' )
       IF(lwm) WRITE( numont, namtrc )
@@ -190,8 +171,8 @@ CONTAINS
       !
       jptra       =  0
       jp_pisces   =  0    ;   jp_pcs0  =  0    ;   jp_pcs1  = 0
-      ! jp_canoe    =  0    
-      ! jp_cmoc     =  0    
+      jp_canoe    =  0    
+      jp_cmoc     =  0    
       jp_my_trc   =  0    ;   jp_myt0  =  0    ;   jp_myt1  = 0
       jp_cfc      =  0    ;   jp_cfc0  =  0    ;   jp_cfc1  = 0
       jp_age      =  0    ;   jp_c14   =  0
@@ -254,51 +235,21 @@ CONTAINS
          WRITE(numout,*) '      Total number of CFCs tracers                 jp_cfc        = ', jp_cfc
          WRITE(numout,*) '      Simulating C14   passive tracer              ln_c14        = ', ln_c14
          WRITE(numout,*) '      Read inputs data from file (y/n)             ln_trcdta     = ', ln_trcdta
+         WRITE(numout,*) '      Enable surface, lateral or open boundaries conditions (y/n)  ln_trcbc  = ', ln_trcbc
+         WRITE(numout,*) '      Enable Antarctic Ice Sheet nutrient supply   ln_trcais     = ', ln_trcais
          WRITE(numout,*) '      Damping of passive tracer (y/n)              ln_trcdmp     = ', ln_trcdmp
          WRITE(numout,*) '      Restoring of tracer on closed seas           ln_trcdmp_clo = ', ln_trcdmp_clo
       ENDIF
       !
       IF( ll_cfc .OR. ln_c14 ) THEN
         !                             ! Open namelist files
-        CALL ctl_opn( numtrc_ref, 'namelist_trc_ref'   ,     'OLD', 'FORMATTED', 'SEQUENTIAL', -1, numout, .FALSE. )
-        CALL ctl_opn( numtrc_cfg, 'namelist_trc_cfg'   ,     'OLD', 'FORMATTED', 'SEQUENTIAL', -1, numout, .FALSE. )
+        CALL load_nml( numtrc_ref, 'namelist_trc_ref' , numout, lwm )
+        CALL load_nml( numtrc_cfg, 'namelist_trc_cfg' , numout, lwm )
         IF(lwm) CALL ctl_opn( numonr, 'output.namelist.trc', 'UNKNOWN', 'FORMATTED', 'SEQUENTIAL', -1, numout, .FALSE. )
         !
       ENDIF
       !
    END SUBROUTINE trc_nam_trc
-
-   SUBROUTINE trc_nam_opt
-      !!---------------------------------------------------------------------
-      !!                     ***  ROUTINE trc_nam_opt  ***
-      !!
-      !! ** Purpose :   read options for the passive tracer diagnostics
-      !!
-      !!---------------------------------------------------------------------
-      INTEGER  ::   ios, ierr                 ! Local integer
-      !!
-      NAMELIST/namtrc_opt/ ln_trcdc2dm
-      !!---------------------------------------------------------------------
-      !
-      IF(lwp) WRITE(numout,*)
-      IF(lwp) WRITE(numout,*) 'trc_nam_opt : read the passive tracer optical options'
-      IF(lwp) WRITE(numout,*) '~~~~~~~~~~~'
-      !
-      !
-      REWIND( numnat_ref )              ! Namelist namtrc_opt in reference namelist : Passive tracer trends
-      READ  ( numnat_ref, namtrc_opt, IOSTAT = ios, ERR = 905)
-905   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namtrc_opt in reference namelist' )
-      REWIND( numnat_cfg )              ! Namelist namtrc_trd in configuration namelist : Passive tracer trends
-      READ  ( numnat_cfg, namtrc_opt, IOSTAT = ios, ERR = 906 )
-906   IF( ios >  0 )   CALL ctl_nam ( ios , 'namtrc_opt in configuration namelist' )
-      IF(lwm) WRITE( numont, namtrc_opt )
-
-      IF(lwp) THEN
-         WRITE(numout,*) '   Namelist : namtrc_opt                    '
-         WRITE(numout,*) '      Diurnal cycle for TOP ln_trcdc2dm    = ', ln_trcdc2dm
-      ENDIF
-
-   END SUBROUTINE trc_nam_opt
 
 
    SUBROUTINE trc_nam_trd
@@ -325,10 +276,8 @@ CONTAINS
       !
       ALLOCATE( ln_trdtrc(jptra) ) 
       !
-      REWIND( numnat_ref )              ! Namelist namtrc_trd in reference namelist : Passive tracer trends
       READ  ( numnat_ref, namtrc_trd, IOSTAT = ios, ERR = 905)
 905   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namtrc_trd in reference namelist' )
-      REWIND( numnat_cfg )              ! Namelist namtrc_trd in configuration namelist : Passive tracer trends
       READ  ( numnat_cfg, namtrc_trd, IOSTAT = ios, ERR = 906 )
 906   IF( ios >  0 )   CALL ctl_nam ( ios , 'namtrc_trd in configuration namelist' )
       IF(lwm) WRITE( numont, namtrc_trd )

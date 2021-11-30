@@ -29,7 +29,7 @@ MODULE icealb
    PUBLIC   ice_alb_init   ! called in icestp
    PUBLIC   ice_alb        ! called in icesbc.F90 and iceupdate.F90
 
-   REAL(wp), PUBLIC, PARAMETER ::   rn_alb_oce = 0.066   !: ocean or lead albedo (Pegau and Paulson, Ann. Glac. 2001)
+   REAL(wp), PUBLIC, PARAMETER ::   rn_alb_oce = 0.066_wp   !: ocean or lead albedo (Pegau and Paulson, Ann. Glac. 2001)
    !
    !                             !!* albedo namelist (namalb)
    REAL(wp) ::   rn_alb_sdry      ! dry snow albedo
@@ -37,10 +37,13 @@ MODULE icealb
    REAL(wp) ::   rn_alb_idry      ! dry ice albedo
    REAL(wp) ::   rn_alb_imlt      ! bare puddled ice albedo
    REAL(wp) ::   rn_alb_dpnd      ! ponded ice albedo
+   REAL(wp) ::   rn_alb_hpiv      ! pivotal ice thickness in meters (above which albedo is constant)
 
+   !! * Substitutions
+#  include "do_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icealb.F90 13284 2020-07-09 15:12:23Z smasson $
+   !! $Id: icealb.F90 15549 2021-11-28 20:00:36Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -56,8 +59,8 @@ CONTAINS
       !!                  1) Albedo dependency on ice thickness follows the findings from Brandt et al (2005)
       !!                     which are an update of Allison et al. (JGR 1993) ; Brandt et al. 1999
       !!                     0-5cm  : linear function of ice thickness
-      !!                     5-150cm: log    function of ice thickness
-      !!                     > 150cm: constant
+      !!                     5-100cm: log    function of ice thickness
+      !!                     > 100cm: constant
       !!                  2) Albedo dependency on snow thickness follows the findings from Grenfell & Perovich (2004)
       !!                     i.e. it increases as -EXP(-snw_thick/0.02) during freezing and -EXP(-snw_thick/0.03) during melting
       !!                  3) Albedo dependency on clouds is speculated from measurements of Grenfell and Perovich (2004)
@@ -112,66 +115,64 @@ CONTAINS
       !
       IF( ln_timing )   CALL timing_start('icealb')
       !
-      z1_href_pnd = 1. / 0.05
-      z1_c1 = 1. / ( LOG(1.5) - LOG(0.05) ) 
-      z1_c2 = 1. / 0.05
-      z1_c3 = 1. / 0.02
-      z1_c4 = 1. / 0.03
+      z1_href_pnd = 1._wp / 0.05_wp
+      z1_c1 = 1._wp / ( LOG(rn_alb_hpiv) - LOG(0.05_wp) ) 
+      z1_c2 = 1._wp / 0.05_wp
+      z1_c3 = 1._wp / 0.02_wp
+      z1_c4 = 1._wp / 0.03_wp
       !
       CALL ice_var_snwfra( ph_snw, za_s_fra )   ! calculate ice fraction covered by snow
       !
       DO jl = 1, jpl
-         DO jj = 1, jpj
-            DO ji = 1, jpi
-               !
-               !---------------------------------------------!
-               !--- Specific snow, ice and pond fractions ---!
-               !---------------------------------------------!               
-               zafrac_snw = za_s_fra(ji,jj,jl)
-               IF( ld_pnd_alb ) THEN
-                  zafrac_pnd = MIN( pafrac_pnd(ji,jj,jl), 1._wp - zafrac_snw ) ! make sure (a_ip_eff + a_s_fra) <= 1
-               ELSE
-                  zafrac_pnd = 0._wp
-               ENDIF
-               zafrac_ice = MAX( 0._wp, 1._wp - zafrac_pnd - zafrac_snw ) ! max for roundoff errors
-               !
-               !---------------!
-               !--- Albedos ---!
-               !---------------!               
-               !                       !--- Bare ice albedo (for hi > 150cm)
-               IF( ld_pnd_alb ) THEN
-                  zalb_ice = rn_alb_idry
-               ELSE
-                  IF( ph_snw(ji,jj,jl) == 0._wp .AND. pt_su(ji,jj,jl) >= rt0 ) THEN   ;   zalb_ice = rn_alb_imlt
-                  ELSE                                                                ;   zalb_ice = rn_alb_idry   ;   ENDIF
-               ENDIF
-               !                       !--- Bare ice albedo (for hi < 150cm)
-               IF( 0.05 < ph_ice(ji,jj,jl) .AND. ph_ice(ji,jj,jl) <= 1.5 ) THEN      ! 5cm < hi < 150cm
-                  zalb_ice = zalb_ice    + ( 0.18 - zalb_ice   ) * z1_c1 * ( LOG(1.5) - LOG(ph_ice(ji,jj,jl)) )
-               ELSEIF( ph_ice(ji,jj,jl) <= 0.05 ) THEN                               ! 0cm < hi < 5cm
-                  zalb_ice = rn_alb_oce  + ( 0.18 - rn_alb_oce ) * z1_c2 * ph_ice(ji,jj,jl)
-               ENDIF
-               !
-               !                       !--- Snow-covered ice albedo (freezing, melting cases)
-               IF( pt_su(ji,jj,jl) < rt0 ) THEN
-                  zalb_snw = rn_alb_sdry - ( rn_alb_sdry - zalb_ice ) * EXP( - ph_snw(ji,jj,jl) * z1_c3 )
-               ELSE
-                  zalb_snw = rn_alb_smlt - ( rn_alb_smlt - zalb_ice ) * EXP( - ph_snw(ji,jj,jl) * z1_c4 )
-               ENDIF
-               !                       !--- Ponded ice albedo
-               zalb_pnd = rn_alb_dpnd - ( rn_alb_dpnd - zalb_ice ) * EXP( - ph_pnd(ji,jj,jl) * z1_href_pnd ) 
-               !
-               !                       !--- Surface albedo is weighted mean of snow, ponds and bare ice contributions
-               zalb_os = ( zafrac_snw * zalb_snw + zafrac_pnd * zalb_pnd + zafrac_ice * zalb_ice ) * tmask(ji,jj,1)
-               !
-               zalb_cs = zalb_os - ( - 0.1010 * zalb_os * zalb_os  &
-                  &                  + 0.1933 * zalb_os - 0.0148 ) * tmask(ji,jj,1)
-               !
-               ! albedo depends on cloud fraction because of non-linear spectral effects
-               palb_ice(ji,jj,jl) = ( 1._wp - pcloud_fra(ji,jj) ) * zalb_cs + pcloud_fra(ji,jj) * zalb_os
+         DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )   ! palb_ice used over the full domain in icesbc
+            !
+            !---------------------------------------------!
+            !--- Specific snow, ice and pond fractions ---!
+            !---------------------------------------------!               
+            zafrac_snw = za_s_fra(ji,jj,jl)
+            IF( ld_pnd_alb ) THEN
+               zafrac_pnd = MIN( pafrac_pnd(ji,jj,jl), 1._wp - zafrac_snw ) ! make sure (a_ip_eff + a_s_fra) <= 1
+            ELSE
+               zafrac_pnd = 0._wp
+            ENDIF
+            zafrac_ice = MAX( 0._wp, 1._wp - zafrac_pnd - zafrac_snw ) ! max for roundoff errors
+            !
+            !---------------!
+            !--- Albedos ---!
+            !---------------!               
+            !                       !--- Bare ice albedo (for hi > 100cm)
+            IF( ld_pnd_alb ) THEN
+               zalb_ice = rn_alb_idry
+            ELSE
+               IF( ph_snw(ji,jj,jl) == 0._wp .AND. pt_su(ji,jj,jl) >= rt0 ) THEN   ;   zalb_ice = rn_alb_imlt
+               ELSE                                                                ;   zalb_ice = rn_alb_idry   ;   ENDIF
+            ENDIF
+            !                       !--- Bare ice albedo (for hi < 100cm)
+            IF( 0.05 < ph_ice(ji,jj,jl) .AND. ph_ice(ji,jj,jl) <= rn_alb_hpiv ) THEN      ! 5cm < hi < 100cm
+               zalb_ice = zalb_ice    + ( 0.18_wp - zalb_ice   ) * z1_c1 * ( LOG(rn_alb_hpiv) - LOG(ph_ice(ji,jj,jl)) )
+            ELSEIF( ph_ice(ji,jj,jl) <= 0.05_wp ) THEN                                    ! 0cm < hi < 5cm
+               zalb_ice = rn_alb_oce  + ( 0.18_wp - rn_alb_oce ) * z1_c2 * ph_ice(ji,jj,jl)
+            ENDIF
+            !
+            !                       !--- Snow-covered ice albedo (freezing, melting cases)
+            IF( pt_su(ji,jj,jl) < rt0 ) THEN
+               zalb_snw = rn_alb_sdry - ( rn_alb_sdry - zalb_ice ) * EXP( - ph_snw(ji,jj,jl) * z1_c3 )
+            ELSE
+               zalb_snw = rn_alb_smlt - ( rn_alb_smlt - zalb_ice ) * EXP( - ph_snw(ji,jj,jl) * z1_c4 )
+            ENDIF
+            !                       !--- Ponded ice albedo
+            zalb_pnd = rn_alb_dpnd - ( rn_alb_dpnd - zalb_ice ) * EXP( - ph_pnd(ji,jj,jl) * z1_href_pnd ) 
+            !
+            !                       !--- Surface albedo is weighted mean of snow, ponds and bare ice contributions
+            zalb_os = ( zafrac_snw * zalb_snw + zafrac_pnd * zalb_pnd + zafrac_ice * zalb_ice ) * tmask(ji,jj,1)
+            !
+            zalb_cs = zalb_os - ( - 0.1010_wp * zalb_os * zalb_os  &
+               &                  + 0.1933_wp * zalb_os - 0.0148_wp ) * tmask(ji,jj,1)
+            !
+            ! albedo depends on cloud fraction because of non-linear spectral effects
+            palb_ice(ji,jj,jl) = ( 1._wp - pcloud_fra(ji,jj) ) * zalb_cs + pcloud_fra(ji,jj) * zalb_os
 
-            END DO
-         END DO
+         END_2D
       END DO
       !
       !
@@ -190,13 +191,11 @@ CONTAINS
       !!----------------------------------------------------------------------
       INTEGER ::   ios   ! Local integer output status for namelist read
       !!
-      NAMELIST/namalb/ rn_alb_sdry, rn_alb_smlt, rn_alb_idry, rn_alb_imlt, rn_alb_dpnd
+      NAMELIST/namalb/ rn_alb_sdry, rn_alb_smlt, rn_alb_idry, rn_alb_imlt, rn_alb_dpnd, rn_alb_hpiv
       !!----------------------------------------------------------------------
       !
-      REWIND( numnam_ice_ref )              ! Namelist namalb in reference namelist : Albedo parameters
       READ  ( numnam_ice_ref, namalb, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namalb in reference namelist' )
-      REWIND( numnam_ice_cfg )              ! Namelist namalb in configuration namelist : Albedo parameters
       READ  ( numnam_ice_cfg, namalb, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namalb in configuration namelist' )
       IF(lwm) WRITE( numoni, namalb )
@@ -211,6 +210,7 @@ CONTAINS
          WRITE(numout,*) '      albedo of dry ice                    rn_alb_idry = ', rn_alb_idry
          WRITE(numout,*) '      albedo of bare puddled ice           rn_alb_imlt = ', rn_alb_imlt
          WRITE(numout,*) '      albedo of ponded ice                 rn_alb_dpnd = ', rn_alb_dpnd
+         WRITE(numout,*) '      pivotal ice thickness (m)            rn_alb_hpiv = ', rn_alb_hpiv
       ENDIF
       !
    END SUBROUTINE ice_alb_init

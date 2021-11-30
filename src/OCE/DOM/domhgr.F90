@@ -30,6 +30,7 @@ MODULE domhgr
    USE in_out_manager ! I/O manager
    USE iom            ! I/O library
    USE lib_mpp        ! MPP library
+   USE lbclnk         ! lateal boundary condition / mpp exchanges
    USE timing         ! Timing
 
    IMPLICIT NONE
@@ -39,7 +40,7 @@ MODULE domhgr
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: domhgr.F90 10068 2018-08-28 14:09:04Z nicolasmartin $ 
+   !! $Id: domhgr.F90 15056 2021-06-25 07:37:44Z smasson $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -87,8 +88,8 @@ CONTAINS
          WRITE(numout,*) '   namcfg : read (=T) or user defined (=F) configuration    ln_read_cfg  = ', ln_read_cfg
       ENDIF
       !
-      !
       IF( ln_read_cfg ) THEN        !==  read in mesh_mask.nc file  ==!
+         !
          IF(lwp) WRITE(numout,*)
          IF(lwp) WRITE(numout,*) '   ==>>>   read horizontal mesh in ', TRIM( cn_domcfg ), ' file'
          !
@@ -110,22 +111,29 @@ CONTAINS
             &              e2t   , e2u   , e2v   , e2f   ,   &    !
             &              ie1e2u_v      , e1e2u , e1e2v     )    ! u- & v-surfaces (if gridsize reduction is used in strait(s))
          !
+         ! make sure that periodicities are properly applied 
+         CALL lbc_lnk( 'dom_hgr', glamt, 'T', 1._wp, glamu, 'U', 1._wp, glamv, 'V', 1._wp, glamf, 'F', 1._wp,   &
+            &                     gphit, 'T', 1._wp, gphiu, 'U', 1._wp, gphiv, 'V', 1._wp, gphif, 'F', 1._wp,   &
+            &                       e1t, 'T', 1._wp,   e1u, 'U', 1._wp,   e1v, 'V', 1._wp,   e1f, 'F', 1._wp,   &   
+            &                       e2t, 'T', 1._wp,   e2u, 'U', 1._wp,   e2v, 'V', 1._wp,   e2f, 'F', 1._wp,   &
+            &                     kfillmode = jpfillcopy )   ! do not put 0 over closed boundaries
+         !
       ENDIF
       !
       !                             !==  Coriolis parameter  ==!   (if necessary)
       !
       IF( iff == 0 ) THEN                 ! Coriolis parameter has not been defined 
          IF(lwp) WRITE(numout,*) '          Coriolis parameter calculated on the sphere from gphif & gphit'
-         ff_f(:,:) = 2. * omega * SIN( rad * gphif(:,:) )     ! compute it on the sphere at f-point
-         ff_t(:,:) = 2. * omega * SIN( rad * gphit(:,:) )     !    -        -       -    at t-point
+         ff_f(:,:) = 2._wp * omega * SIN( rad * gphif(:,:) )     ! compute it on the sphere at f-point
+         ff_t(:,:) = 2._wp * omega * SIN( rad * gphit(:,:) )     !    -        -       -    at t-point
       ELSE
          IF( ln_read_cfg ) THEN
             IF(lwp) WRITE(numout,*) '          Coriolis parameter have been read in ', TRIM( cn_domcfg ), ' file'
          ELSE
+            CALL lbc_lnk( 'dom_hgr', ff_t, 'T', 1._wp, ff_f, 'F', 1._wp, kfillmode = jpfillcopy )   ! do not put 0 if closed
             IF(lwp) WRITE(numout,*) '          Coriolis parameter have been set in usr_def_hgr routine'
          ENDIF
       ENDIF
-
       !
       !                             !==  associated horizontal metrics  ==!
       !
@@ -141,15 +149,19 @@ CONTAINS
          e1e2u (:,:) = e1u(:,:) * e2u(:,:)         ! compute them
          e1e2v (:,:) = e1v(:,:) * e2v(:,:) 
       ELSE
-         IF(lwp) WRITE(numout,*) '          u- & v-surfaces have been read in "mesh_mask" file:'
-         IF(lwp) WRITE(numout,*) '                     grid size reduction in strait(s) is used'
+         IF( ln_read_cfg ) THEN
+            IF(lwp) WRITE(numout,*) '          u- & v-surfaces have been read in ', TRIM( cn_domcfg ), ' file:'
+            IF(lwp) WRITE(numout,*) '                     grid size reduction in strait(s) is used'
+         ELSE
+            CALL lbc_lnk( 'dom_hgr', e1e2u, 'U', 1._wp, e1e2v, 'V', 1._wp, kfillmode = jpfillcopy )   ! do not put 0 if closed
+            IF(lwp) WRITE(numout,*) '          u- & v-surfaces have been have been set in usr_def_hgr routine'
+         ENDIF
       ENDIF
       r1_e1e2u(:,:) = 1._wp / e1e2u(:,:)     ! compute their invert in any cases
       r1_e1e2v(:,:) = 1._wp / e1e2v(:,:)
       !   
       e2_e1u(:,:) = e2u(:,:) / e1u(:,:)
       e1_e2v(:,:) = e1v(:,:) / e2v(:,:)
-      !
       !
       IF( ln_timing )   CALL timing_stop('dom_hgr')
       !
@@ -188,31 +200,31 @@ CONTAINS
       !
       CALL iom_open( cn_domcfg, inum )
       !
-      CALL iom_get( inum, jpdom_data, 'glamt', plamt, lrowattr=ln_use_jattr )
-      CALL iom_get( inum, jpdom_data, 'glamu', plamu, lrowattr=ln_use_jattr )
-      CALL iom_get( inum, jpdom_data, 'glamv', plamv, lrowattr=ln_use_jattr )
-      CALL iom_get( inum, jpdom_data, 'glamf', plamf, lrowattr=ln_use_jattr )
+      CALL iom_get( inum, jpdom_global, 'glamt', plamt, cd_type = 'T', psgn = 1._wp, kfill = jpfillcopy )
+      CALL iom_get( inum, jpdom_global, 'glamu', plamu, cd_type = 'U', psgn = 1._wp, kfill = jpfillcopy )
+      CALL iom_get( inum, jpdom_global, 'glamv', plamv, cd_type = 'V', psgn = 1._wp, kfill = jpfillcopy )
+      CALL iom_get( inum, jpdom_global, 'glamf', plamf, cd_type = 'F', psgn = 1._wp, kfill = jpfillcopy )
       !
-      CALL iom_get( inum, jpdom_data, 'gphit', pphit, lrowattr=ln_use_jattr )
-      CALL iom_get( inum, jpdom_data, 'gphiu', pphiu, lrowattr=ln_use_jattr )
-      CALL iom_get( inum, jpdom_data, 'gphiv', pphiv, lrowattr=ln_use_jattr )
-      CALL iom_get( inum, jpdom_data, 'gphif', pphif, lrowattr=ln_use_jattr )
+      CALL iom_get( inum, jpdom_global, 'gphit', pphit, cd_type = 'T', psgn = 1._wp, kfill = jpfillcopy )
+      CALL iom_get( inum, jpdom_global, 'gphiu', pphiu, cd_type = 'U', psgn = 1._wp, kfill = jpfillcopy )
+      CALL iom_get( inum, jpdom_global, 'gphiv', pphiv, cd_type = 'V', psgn = 1._wp, kfill = jpfillcopy )
+      CALL iom_get( inum, jpdom_global, 'gphif', pphif, cd_type = 'F', psgn = 1._wp, kfill = jpfillcopy )
       !
-      CALL iom_get( inum, jpdom_data, 'e1t'  , pe1t  , lrowattr=ln_use_jattr )
-      CALL iom_get( inum, jpdom_data, 'e1u'  , pe1u  , lrowattr=ln_use_jattr )
-      CALL iom_get( inum, jpdom_data, 'e1v'  , pe1v  , lrowattr=ln_use_jattr )
-      CALL iom_get( inum, jpdom_data, 'e1f'  , pe1f  , lrowattr=ln_use_jattr )
+      CALL iom_get( inum, jpdom_global, 'e1t'  , pe1t , cd_type = 'T', psgn = 1._wp, kfill = jpfillcopy )
+      CALL iom_get( inum, jpdom_global, 'e1u'  , pe1u , cd_type = 'U', psgn = 1._wp, kfill = jpfillcopy )
+      CALL iom_get( inum, jpdom_global, 'e1v'  , pe1v , cd_type = 'V', psgn = 1._wp, kfill = jpfillcopy )
+      CALL iom_get( inum, jpdom_global, 'e1f'  , pe1f , cd_type = 'F', psgn = 1._wp, kfill = jpfillcopy )
       !
-      CALL iom_get( inum, jpdom_data, 'e2t'  , pe2t  , lrowattr=ln_use_jattr )
-      CALL iom_get( inum, jpdom_data, 'e2u'  , pe2u  , lrowattr=ln_use_jattr )
-      CALL iom_get( inum, jpdom_data, 'e2v'  , pe2v  , lrowattr=ln_use_jattr )
-      CALL iom_get( inum, jpdom_data, 'e2f'  , pe2f  , lrowattr=ln_use_jattr )
+      CALL iom_get( inum, jpdom_global, 'e2t'  , pe2t , cd_type = 'T', psgn = 1._wp, kfill = jpfillcopy )
+      CALL iom_get( inum, jpdom_global, 'e2u'  , pe2u , cd_type = 'U', psgn = 1._wp, kfill = jpfillcopy )
+      CALL iom_get( inum, jpdom_global, 'e2v'  , pe2v , cd_type = 'V', psgn = 1._wp, kfill = jpfillcopy )
+      CALL iom_get( inum, jpdom_global, 'e2f'  , pe2f , cd_type = 'F', psgn = 1._wp, kfill = jpfillcopy )
       !
       IF(  iom_varid( inum, 'ff_f', ldstop = .FALSE. ) > 0  .AND.  &
          & iom_varid( inum, 'ff_t', ldstop = .FALSE. ) > 0    ) THEN
          IF(lwp) WRITE(numout,*) '           Coriolis factor at f- and t-points read in ', TRIM( cn_domcfg ), ' file'
-         CALL iom_get( inum, jpdom_data, 'ff_f'  , pff_f  , lrowattr=ln_use_jattr )
-         CALL iom_get( inum, jpdom_data, 'ff_t'  , pff_t  , lrowattr=ln_use_jattr )
+         CALL iom_get( inum, jpdom_global, 'ff_f', pff_f, cd_type = 'F', psgn = 1._wp, kfill = jpfillcopy )
+         CALL iom_get( inum, jpdom_global, 'ff_t', pff_t, cd_type = 'T', psgn = 1._wp, kfill = jpfillcopy )
          kff = 1
       ELSE
          kff = 0
@@ -220,8 +232,8 @@ CONTAINS
       !
       IF( iom_varid( inum, 'e1e2u', ldstop = .FALSE. ) > 0 ) THEN
          IF(lwp) WRITE(numout,*) '           e1e2u & e1e2v read in ', TRIM( cn_domcfg ), ' file'
-         CALL iom_get( inum, jpdom_data, 'e1e2u'  , pe1e2u  , lrowattr=ln_use_jattr )
-         CALL iom_get( inum, jpdom_data, 'e1e2v'  , pe1e2v  , lrowattr=ln_use_jattr )
+         CALL iom_get( inum, jpdom_global, 'e1e2u', pe1e2u, cd_type = 'U', psgn = 1._wp, kfill = jpfillcopy )
+         CALL iom_get( inum, jpdom_global, 'e1e2v', pe1e2v, cd_type = 'V', psgn = 1._wp, kfill = jpfillcopy )
          ke1e2u_v = 1
       ELSE
          ke1e2u_v = 0

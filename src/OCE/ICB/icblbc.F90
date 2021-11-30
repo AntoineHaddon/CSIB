@@ -35,7 +35,7 @@ MODULE icblbc
    IMPLICIT NONE
    PRIVATE
 
-#if defined key_mpp_mpi
+#if ! defined key_mpi_off
 
 !$AGRIF_DO_NOT_TREAT
    INCLUDE 'mpif.h'
@@ -62,9 +62,11 @@ MODULE icblbc
    PUBLIC   icb_lbc
    PUBLIC   icb_lbc_mpp
 
+   !! * Substitutions
+#  include "do_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: icblbc.F90 11536 2019-09-11 13:54:18Z smasson $
+   !! $Id: icblbc.F90 15088 2021-07-06 13:03:34Z acc $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -78,7 +80,6 @@ CONTAINS
       !!----------------------------------------------------------------------
       TYPE(iceberg), POINTER ::   this
       TYPE(point)  , POINTER ::   pt
-      INTEGER                ::   iine
       !!----------------------------------------------------------------------
 
       !! periodic east/west boundaries
@@ -89,10 +90,9 @@ CONTAINS
          this => first_berg
          DO WHILE( ASSOCIATED(this) )
             pt => this%current_point
-            iine = INT( pt%xi + 0.5 )
-            IF( iine > mig(nicbei) ) THEN
+            IF( pt%xi > REAL(mig(nicbei),wp) + 0.5_wp ) THEN
                pt%xi = ricb_right + MOD(pt%xi, 1._wp ) - 1._wp
-            ELSE IF( iine < mig(nicbdi) ) THEN
+            ELSE IF( pt%xi < REAL(mig(nicbdi),wp) - 0.5_wp ) THEN
                pt%xi = ricb_left + MOD(pt%xi, 1._wp )
             ENDIF
             this => this%next
@@ -104,7 +104,7 @@ CONTAINS
       !! ======================
       IF( l_Jperio)      CALL ctl_stop(' north-south periodicity not implemented for icebergs')
       ! north fold
-      IF( npolj /= 0 )   CALL icb_lbc_nfld()
+      IF( l_IdoNFold )   CALL icb_lbc_nfld()
       !
    END SUBROUTINE icb_lbc
 
@@ -125,7 +125,7 @@ CONTAINS
       DO WHILE( ASSOCIATED(this) )
          pt => this%current_point
          ijne = INT( pt%yj + 0.5 )
-         IF( ijne .GT. mjg(nicbej) ) THEN
+         IF( pt%yj > REAL(mjg(nicbej),wp) + 0.5_wp ) THEN
             !
             iine = INT( pt%xi + 0.5 )
             ipts  = nicbfldpts (mi1(iine))
@@ -144,9 +144,9 @@ CONTAINS
       !
    END SUBROUTINE icb_lbc_nfld
 
-#if defined key_mpp_mpi
+#if ! defined key_mpi_off
    !!----------------------------------------------------------------------
-   !!   'key_mpp_mpi'             MPI massively parallel processing library
+   !!            MPI massively parallel processing library
    !!----------------------------------------------------------------------
 
    SUBROUTINE icb_lbc_mpp()
@@ -167,7 +167,6 @@ CONTAINS
       INTEGER                             ::   ibergs_rcvd_from_e, ibergs_rcvd_from_w
       INTEGER                             ::   ibergs_rcvd_from_n, ibergs_rcvd_from_s
       INTEGER                             ::   i, ibergs_start, ibergs_end
-      INTEGER                             ::   iine, ijne
       INTEGER                             ::   ipe_N, ipe_S, ipe_W, ipe_E
       REAL(wp), DIMENSION(2)              ::   zewbergs, zwebergs, znsbergs, zsnbergs
       INTEGER                             ::   iml_req1, iml_req2, iml_req3, iml_req4
@@ -179,13 +178,13 @@ CONTAINS
       ipe_S = -1
       ipe_W = -1
       ipe_E = -1
-      IF( nbondi .EQ.  0 .OR. nbondi .EQ. 1) ipe_W = nowe
-      IF( nbondi .EQ. -1 .OR. nbondi .EQ. 0) ipe_E = noea
-      IF( nbondj .EQ.  0 .OR. nbondj .EQ. 1) ipe_S = noso
-      IF( nbondj .EQ. -1 .OR. nbondj .EQ. 0) ipe_N = nono
+      IF( mpinei(jpwe) >= 0 ) ipe_W = mpinei(jpwe)
+      IF( mpinei(jpea) >= 0 ) ipe_E = mpinei(jpea)
+      IF( mpinei(jpso) >= 0 ) ipe_S = mpinei(jpso)
+      IF( mpinei(jpno) >= 0 ) ipe_N = mpinei(jpno)
       !
       ! at northern line of processors with north fold handle bergs differently
-      IF( npolj > 0 ) ipe_N = -1
+      IF( l_IdoNFold )   ipe_N = -1
 
       ! if there's only one processor in x direction then don't let mpp try to handle periodicity
       IF( jpni == 1 ) THEN
@@ -200,8 +199,6 @@ CONTAINS
          WRITE(numicb,*) 'processor south : ', ipe_S
          WRITE(numicb,*) 'processor nimpp : ', nimpp
          WRITE(numicb,*) 'processor njmpp : ', njmpp
-         WRITE(numicb,*) 'processor nbondi: ', nbondi
-         WRITE(numicb,*) 'processor nbondj: ', nbondj
          CALL flush( numicb )
       ENDIF
 
@@ -231,8 +228,7 @@ CONTAINS
          this => first_berg
          DO WHILE (ASSOCIATED(this))
             pt => this%current_point
-            iine = INT( pt%xi + 0.5 )
-            IF( ipe_E >= 0 .AND. iine > mig(nicbei) ) THEN
+            IF( ipe_E >= 0 .AND. pt%xi > REAL(mig(nicbei),wp) + 0.5_wp - (nn_hls-1) ) THEN
                tmpberg => this
                this => this%next
                ibergs_to_send_e = ibergs_to_send_e + 1
@@ -245,7 +241,7 @@ CONTAINS
                ! now pack it into buffer and delete from list
                CALL icb_pack_into_buffer( tmpberg, obuffer_e, ibergs_to_send_e)
                CALL icb_utl_delete(first_berg, tmpberg)
-            ELSE IF( ipe_W >= 0 .AND. iine < mig(nicbdi) ) THEN
+            ELSE IF( ipe_W >= 0 .AND. pt%xi < REAL(mig(nicbdi),wp) - 0.5_wp - (nn_hls-1) ) THEN
                tmpberg => this
                this => this%next
                ibergs_to_send_w = ibergs_to_send_w + 1
@@ -272,93 +268,48 @@ CONTAINS
 
       ! pattern here is copied from lib_mpp code
 
-      SELECT CASE ( nbondi )
-      CASE( -1 )
-         zwebergs(1) = ibergs_to_send_e
-         CALL mppsend( 12, zwebergs(1), 1, ipe_E, iml_req1)
-         CALL mpprecv( 11, zewbergs(2), 1, ipe_E )
-         CALL mpi_wait( iml_req1, iml_stat, iml_err )
-         ibergs_rcvd_from_e = INT( zewbergs(2) )
-      CASE(  0 )
-         zewbergs(1) = ibergs_to_send_w
-         zwebergs(1) = ibergs_to_send_e
-         CALL mppsend( 11, zewbergs(1), 1, ipe_W, iml_req2)
-         CALL mppsend( 12, zwebergs(1), 1, ipe_E, iml_req3)
-         CALL mpprecv( 11, zewbergs(2), 1, ipe_E )
-         CALL mpprecv( 12, zwebergs(2), 1, ipe_W )
-         CALL mpi_wait( iml_req2, iml_stat, iml_err )
-         CALL mpi_wait( iml_req3, iml_stat, iml_err )
-         ibergs_rcvd_from_e = INT( zewbergs(2) )
-         ibergs_rcvd_from_w = INT( zwebergs(2) )
-      CASE(  1 )
-         zewbergs(1) = ibergs_to_send_w
-         CALL mppsend( 11, zewbergs(1), 1, ipe_W, iml_req4)
-         CALL mpprecv( 12, zwebergs(2), 1, ipe_W )
-         CALL mpi_wait( iml_req4, iml_stat, iml_err )
-         ibergs_rcvd_from_w = INT( zwebergs(2) )
-      END SELECT
+      IF( mpinei(jpwe) >= 0  )   zewbergs(1) = ibergs_to_send_w
+      IF( mpinei(jpea) >= 0  )   zwebergs(1) = ibergs_to_send_e
+      IF( mpinei(jpwe) >= 0  )   CALL mppsend( 11, zewbergs(1), 1, ipe_W, iml_req2)
+      IF( mpinei(jpea) >= 0  )   CALL mppsend( 12, zwebergs(1), 1, ipe_E, iml_req3)
+      IF( mpinei(jpea) >= 0  )   CALL mpprecv( 11, zewbergs(2), 1, ipe_E )
+      IF( mpinei(jpwe) >= 0  )   CALL mpprecv( 12, zwebergs(2), 1, ipe_W )
+      IF( mpinei(jpwe) >= 0  )   CALL mpi_wait( iml_req2, iml_stat, iml_err )
+      IF( mpinei(jpea) >= 0  )   CALL mpi_wait( iml_req3, iml_stat, iml_err )
+      IF( mpinei(jpea) >= 0  )   ibergs_rcvd_from_e = INT( zewbergs(2) )
+      IF( mpinei(jpwe) >= 0  )   ibergs_rcvd_from_w = INT( zwebergs(2) )
+      
       IF( nn_verbose_level >= 3) THEN
          WRITE(numicb,*) 'bergstep ',nktberg,' recv ew: ', ibergs_rcvd_from_w, ibergs_rcvd_from_e
          CALL flush(numicb)
       ENDIF
-
-      SELECT CASE ( nbondi )
-      CASE( -1 )
-         IF( ibergs_to_send_e > 0 ) CALL mppsend( 14, obuffer_e%data, ibergs_to_send_e*jp_buffer_width, ipe_E, iml_req1 )
-         IF( ibergs_rcvd_from_e > 0 ) THEN
-            CALL icb_increase_ibuffer(ibuffer_e, ibergs_rcvd_from_e)
-            CALL mpprecv( 13, ibuffer_e%data, ibergs_rcvd_from_e*jp_buffer_width )
+      
+      IF( ibergs_to_send_w > 0 ) CALL mppsend( 13, obuffer_w%data, ibergs_to_send_w*jp_buffer_width, ipe_W, iml_req2 )
+      IF( ibergs_to_send_e > 0 ) CALL mppsend( 14, obuffer_e%data, ibergs_to_send_e*jp_buffer_width, ipe_E, iml_req3 )
+      IF( ibergs_rcvd_from_e > 0 ) THEN
+         CALL icb_increase_ibuffer(ibuffer_e, ibergs_rcvd_from_e)
+         CALL mpprecv( 13, ibuffer_e%data, ibergs_rcvd_from_e*jp_buffer_width )
+      ENDIF
+      IF( ibergs_rcvd_from_w > 0 ) THEN
+         CALL icb_increase_ibuffer(ibuffer_w, ibergs_rcvd_from_w)
+         CALL mpprecv( 14, ibuffer_w%data, ibergs_rcvd_from_w*jp_buffer_width )
+      ENDIF
+      IF( ibergs_to_send_w > 0 ) CALL mpi_wait( iml_req2, iml_stat, iml_err )
+      IF( ibergs_to_send_e > 0 ) CALL mpi_wait( iml_req3, iml_stat, iml_err )
+      DO i = 1, ibergs_rcvd_from_e
+         IF( nn_verbose_level >= 4 ) THEN
+            WRITE(numicb,*) 'bergstep ',nktberg,' unpacking berg ',INT(ibuffer_e%data(16,i)),' from east'
+            CALL FLUSH( numicb )
          ENDIF
-         IF( ibergs_to_send_e > 0 ) CALL mpi_wait( iml_req1, iml_stat, iml_err )
-         DO i = 1, ibergs_rcvd_from_e
-            IF( nn_verbose_level >= 4 ) THEN
-               WRITE(numicb,*) 'bergstep ',nktberg,' unpacking berg ',INT(ibuffer_e%data(16,i)),' from east'
-               CALL flush( numicb )
-            ENDIF
-            CALL icb_unpack_from_buffer(first_berg, ibuffer_e, i)
-         ENDDO
-      CASE(  0 )
-         IF( ibergs_to_send_w > 0 ) CALL mppsend( 13, obuffer_w%data, ibergs_to_send_w*jp_buffer_width, ipe_W, iml_req2 )
-         IF( ibergs_to_send_e > 0 ) CALL mppsend( 14, obuffer_e%data, ibergs_to_send_e*jp_buffer_width, ipe_E, iml_req3 )
-         IF( ibergs_rcvd_from_e > 0 ) THEN
-            CALL icb_increase_ibuffer(ibuffer_e, ibergs_rcvd_from_e)
-            CALL mpprecv( 13, ibuffer_e%data, ibergs_rcvd_from_e*jp_buffer_width )
+         CALL icb_unpack_from_buffer(first_berg, ibuffer_e, i)
+      END DO
+      DO i = 1, ibergs_rcvd_from_w
+         IF( nn_verbose_level >= 4 ) THEN
+            WRITE(numicb,*) 'bergstep ',nktberg,' unpacking berg ',INT(ibuffer_w%data(16,i)),' from west'
+            CALL FLUSH( numicb )
          ENDIF
-         IF( ibergs_rcvd_from_w > 0 ) THEN
-            CALL icb_increase_ibuffer(ibuffer_w, ibergs_rcvd_from_w)
-            CALL mpprecv( 14, ibuffer_w%data, ibergs_rcvd_from_w*jp_buffer_width )
-         ENDIF
-         IF( ibergs_to_send_w > 0 ) CALL mpi_wait( iml_req2, iml_stat, iml_err )
-         IF( ibergs_to_send_e > 0 ) CALL mpi_wait( iml_req3, iml_stat, iml_err )
-         DO i = 1, ibergs_rcvd_from_e
-            IF( nn_verbose_level >= 4 ) THEN
-               WRITE(numicb,*) 'bergstep ',nktberg,' unpacking berg ',INT(ibuffer_e%data(16,i)),' from east'
-               CALL flush( numicb )
-            ENDIF
-            CALL icb_unpack_from_buffer(first_berg, ibuffer_e, i)
-         END DO
-         DO i = 1, ibergs_rcvd_from_w
-            IF( nn_verbose_level >= 4 ) THEN
-               WRITE(numicb,*) 'bergstep ',nktberg,' unpacking berg ',INT(ibuffer_w%data(16,i)),' from west'
-               CALL flush( numicb )
-            ENDIF
-            CALL icb_unpack_from_buffer(first_berg, ibuffer_w, i)
-         ENDDO
-      CASE(  1 )
-         IF( ibergs_to_send_w > 0 ) CALL mppsend( 13, obuffer_w%data, ibergs_to_send_w*jp_buffer_width, ipe_W, iml_req4 )
-         IF( ibergs_rcvd_from_w > 0 ) THEN
-            CALL icb_increase_ibuffer(ibuffer_w, ibergs_rcvd_from_w)
-            CALL mpprecv( 14, ibuffer_w%data, ibergs_rcvd_from_w*jp_buffer_width )
-         ENDIF
-         IF( ibergs_to_send_w > 0 ) CALL mpi_wait( iml_req4, iml_stat, iml_err )
-         DO i = 1, ibergs_rcvd_from_w
-            IF( nn_verbose_level >= 4 ) THEN
-               WRITE(numicb,*) 'bergstep ',nktberg,' unpacking berg ',INT(ibuffer_w%data(16,i)),' from west'
-               CALL flush( numicb )
-            ENDIF
-            CALL icb_unpack_from_buffer(first_berg, ibuffer_w, i)
-         END DO
-      END SELECT
+         CALL icb_unpack_from_buffer(first_berg, ibuffer_w, i)
+      END DO
 
       ! Find number of bergs that headed north/south
       ! (note: this block should technically go ahead of the E/W recv block above
@@ -369,8 +320,7 @@ CONTAINS
          this => first_berg
          DO WHILE (ASSOCIATED(this))
             pt => this%current_point
-            ijne = INT( pt%yj + 0.5 )
-            IF( ipe_N >= 0 .AND. ijne .GT. mjg(nicbej) ) THEN
+            IF( ipe_N >= 0 .AND. pt%yj > REAL(mjg(nicbej),wp) + 0.5_wp - (nn_hls-1) ) THEN
                tmpberg => this
                this => this%next
                ibergs_to_send_n = ibergs_to_send_n + 1
@@ -380,7 +330,7 @@ CONTAINS
                ENDIF
                CALL icb_pack_into_buffer( tmpberg, obuffer_n, ibergs_to_send_n)
                CALL icb_utl_delete(first_berg, tmpberg)
-            ELSE IF( ipe_S >= 0 .AND. ijne .LT. mjg(nicbdj) ) THEN
+            ELSE IF( ipe_S >= 0 .AND. pt%yj < REAL(mjg(nicbdj),wp) - 0.5_wp - (nn_hls-1) ) THEN
                tmpberg => this
                this => this%next
                ibergs_to_send_s = ibergs_to_send_s + 1
@@ -402,95 +352,50 @@ CONTAINS
 
       ! send bergs north
       ! and receive bergs from south (ie ones sent north)
+      
+      IF( mpinei(jpso) >= 0  )   znsbergs(1) = ibergs_to_send_s
+      IF( mpinei(jpno) >= 0  )   zsnbergs(1) = ibergs_to_send_n
+      IF( mpinei(jpso) >= 0  )   CALL mppsend( 15, znsbergs(1), 1, ipe_S, iml_req2)
+      IF( mpinei(jpno) >= 0  )   CALL mppsend( 16, zsnbergs(1), 1, ipe_N, iml_req3)
+      IF( mpinei(jpno) >= 0  )   CALL mpprecv( 15, znsbergs(2), 1, ipe_N )
+      IF( mpinei(jpso) >= 0  )   CALL mpprecv( 16, zsnbergs(2), 1, ipe_S )
+      IF( mpinei(jpso) >= 0  )   CALL mpi_wait( iml_req2, iml_stat, iml_err )
+      IF( mpinei(jpno) >= 0  )   CALL mpi_wait( iml_req3, iml_stat, iml_err )
+      IF( mpinei(jpno) >= 0  )   ibergs_rcvd_from_n = INT( znsbergs(2) )
+      IF( mpinei(jpso) >= 0  )   ibergs_rcvd_from_s = INT( zsnbergs(2) )
+      
+      IF( nn_verbose_level >= 3) THEN
+         WRITE(numicb,*) 'bergstep ',nktberg,' recv ns: ', ibergs_rcvd_from_s, ibergs_rcvd_from_n
+         CALL FLUSH(numicb)
+      ENDIF
 
-      SELECT CASE ( nbondj )
-      CASE( -1 )
-         zsnbergs(1) = ibergs_to_send_n
-         CALL mppsend( 16, zsnbergs(1), 1, ipe_N, iml_req1)
-         CALL mpprecv( 15, znsbergs(2), 1, ipe_N )
-         CALL mpi_wait( iml_req1, iml_stat, iml_err )
-         ibergs_rcvd_from_n = INT( znsbergs(2) )
-      CASE(  0 )
-         znsbergs(1) = ibergs_to_send_s
-         zsnbergs(1) = ibergs_to_send_n
-         CALL mppsend( 15, znsbergs(1), 1, ipe_S, iml_req2)
-         CALL mppsend( 16, zsnbergs(1), 1, ipe_N, iml_req3)
-         CALL mpprecv( 15, znsbergs(2), 1, ipe_N )
-         CALL mpprecv( 16, zsnbergs(2), 1, ipe_S )
-         CALL mpi_wait( iml_req2, iml_stat, iml_err )
-         CALL mpi_wait( iml_req3, iml_stat, iml_err )
-         ibergs_rcvd_from_n = INT( znsbergs(2) )
-         ibergs_rcvd_from_s = INT( zsnbergs(2) )
-      CASE(  1 )
-         znsbergs(1) = ibergs_to_send_s
-         CALL mppsend( 15, znsbergs(1), 1, ipe_S, iml_req4)
-         CALL mpprecv( 16, zsnbergs(2), 1, ipe_S )
-         CALL mpi_wait( iml_req4, iml_stat, iml_err )
-         ibergs_rcvd_from_s = INT( zsnbergs(2) )
-      END SELECT
-      if( nn_verbose_level >= 3) then
-         write(numicb,*) 'bergstep ',nktberg,' recv ns: ', ibergs_rcvd_from_s, ibergs_rcvd_from_n
-         call flush(numicb)
-      endif
-
-      SELECT CASE ( nbondj )
-      CASE( -1 )
-         IF( ibergs_to_send_n > 0 ) CALL mppsend( 18, obuffer_n%data, ibergs_to_send_n*jp_buffer_width, ipe_N, iml_req1 )
-         IF( ibergs_rcvd_from_n > 0 ) THEN
-            CALL icb_increase_ibuffer(ibuffer_n, ibergs_rcvd_from_n)
-            CALL mpprecv( 17, ibuffer_n%data, ibergs_rcvd_from_n*jp_buffer_width )
+      IF( ibergs_to_send_s > 0 ) CALL mppsend( 17, obuffer_s%data, ibergs_to_send_s*jp_buffer_width, ipe_S, iml_req2 )
+      IF( ibergs_to_send_n > 0 ) CALL mppsend( 18, obuffer_n%data, ibergs_to_send_n*jp_buffer_width, ipe_N, iml_req3 )
+      IF( ibergs_rcvd_from_n > 0 ) THEN
+         CALL icb_increase_ibuffer(ibuffer_n, ibergs_rcvd_from_n)
+         CALL mpprecv( 17, ibuffer_n%data, ibergs_rcvd_from_n*jp_buffer_width )
+      ENDIF
+      IF( ibergs_rcvd_from_s > 0 ) THEN
+         CALL icb_increase_ibuffer(ibuffer_s, ibergs_rcvd_from_s)
+         CALL mpprecv( 18, ibuffer_s%data, ibergs_rcvd_from_s*jp_buffer_width )
+      ENDIF
+      IF( ibergs_to_send_s > 0 ) CALL mpi_wait( iml_req2, iml_stat, iml_err )
+      IF( ibergs_to_send_n > 0 ) CALL mpi_wait( iml_req3, iml_stat, iml_err )
+      DO i = 1, ibergs_rcvd_from_n
+         IF( nn_verbose_level >= 4 ) THEN
+            WRITE(numicb,*) 'bergstep ',nktberg,' unpacking berg ',INT(ibuffer_n%data(16,i)),' from north'
+            CALL FLUSH( numicb )
          ENDIF
-         IF( ibergs_to_send_n > 0 ) CALL mpi_wait( iml_req1, iml_stat, iml_err )
-         DO i = 1, ibergs_rcvd_from_n
-            IF( nn_verbose_level >= 4 ) THEN
-               WRITE(numicb,*) 'bergstep ',nktberg,' unpacking berg ',INT(ibuffer_n%data(16,i)),' from north'
-               CALL flush( numicb )
-            ENDIF
-            CALL icb_unpack_from_buffer(first_berg, ibuffer_n, i)
-         END DO
-      CASE(  0 )
-         IF( ibergs_to_send_s > 0 ) CALL mppsend( 17, obuffer_s%data, ibergs_to_send_s*jp_buffer_width, ipe_S, iml_req2 )
-         IF( ibergs_to_send_n > 0 ) CALL mppsend( 18, obuffer_n%data, ibergs_to_send_n*jp_buffer_width, ipe_N, iml_req3 )
-         IF( ibergs_rcvd_from_n > 0 ) THEN
-            CALL icb_increase_ibuffer(ibuffer_n, ibergs_rcvd_from_n)
-            CALL mpprecv( 17, ibuffer_n%data, ibergs_rcvd_from_n*jp_buffer_width )
+         CALL icb_unpack_from_buffer(first_berg, ibuffer_n, i)
+      END DO
+      DO i = 1, ibergs_rcvd_from_s
+         IF( nn_verbose_level >= 4 ) THEN
+            WRITE(numicb,*) 'bergstep ',nktberg,' unpacking berg ',INT(ibuffer_s%data(16,i)),' from south'
+            CALL FLUSH( numicb )
          ENDIF
-         IF( ibergs_rcvd_from_s > 0 ) THEN
-            CALL icb_increase_ibuffer(ibuffer_s, ibergs_rcvd_from_s)
-            CALL mpprecv( 18, ibuffer_s%data, ibergs_rcvd_from_s*jp_buffer_width )
-         ENDIF
-         IF( ibergs_to_send_s > 0 ) CALL mpi_wait( iml_req2, iml_stat, iml_err )
-         IF( ibergs_to_send_n > 0 ) CALL mpi_wait( iml_req3, iml_stat, iml_err )
-         DO i = 1, ibergs_rcvd_from_n
-            IF( nn_verbose_level >= 4 ) THEN
-               WRITE(numicb,*) 'bergstep ',nktberg,' unpacking berg ',INT(ibuffer_n%data(16,i)),' from north'
-               CALL flush( numicb )
-            ENDIF
-            CALL icb_unpack_from_buffer(first_berg, ibuffer_n, i)
-         END DO
-         DO i = 1, ibergs_rcvd_from_s
-            IF( nn_verbose_level >= 4 ) THEN
-               WRITE(numicb,*) 'bergstep ',nktberg,' unpacking berg ',INT(ibuffer_s%data(16,i)),' from south'
-               CALL flush( numicb )
-            ENDIF
-            CALL icb_unpack_from_buffer(first_berg, ibuffer_s, i)
-         ENDDO
-      CASE(  1 )
-         IF( ibergs_to_send_s > 0 ) CALL mppsend( 17, obuffer_s%data, ibergs_to_send_s*jp_buffer_width, ipe_S, iml_req4 )
-         IF( ibergs_rcvd_from_s > 0 ) THEN
-            CALL icb_increase_ibuffer(ibuffer_s, ibergs_rcvd_from_s)
-            CALL mpprecv( 18, ibuffer_s%data, ibergs_rcvd_from_s*jp_buffer_width )
-         ENDIF
-         IF( ibergs_to_send_s > 0 ) CALL mpi_wait( iml_req4, iml_stat, iml_err )
-         DO i = 1, ibergs_rcvd_from_s
-            IF( nn_verbose_level >= 4 ) THEN
-               WRITE(numicb,*) 'bergstep ',nktberg,' unpacking berg ',INT(ibuffer_s%data(16,i)),' from south'
-               CALL flush( numicb )
-            ENDIF
-            CALL icb_unpack_from_buffer(first_berg, ibuffer_s, i)
-         END DO
-      END SELECT
-
+         CALL icb_unpack_from_buffer(first_berg, ibuffer_s, i)
+      END DO
+      
       IF( nn_verbose_level > 0 ) THEN
          ! compare the number of icebergs on this processor from the start to the end
          ibergs_end = icb_utl_count()
@@ -529,21 +434,19 @@ CONTAINS
 
       ! deal with north fold if we necessary when there is more than one top row processor
       ! note that for jpni=1 north fold has been dealt with above in call to icb_lbc
-      IF( npolj /= 0 .AND. jpni > 1 ) CALL icb_lbc_mpp_nfld( )
+      IF( l_IdoNFold .AND. jpni > 1 ) CALL icb_lbc_mpp_nfld( )
 
       IF( nn_verbose_level > 0 ) THEN
          i = 0
          this => first_berg
          DO WHILE (ASSOCIATED(this))
             pt => this%current_point
-            iine = INT( pt%xi + 0.5 )
-            ijne = INT( pt%yj + 0.5 )
-            IF( iine .LT. mig(nicbdi) .OR. &
-                iine .GT. mig(nicbei) .OR. &
-                ijne .LT. mjg(nicbdj) .OR. &
-                ijne .GT. mjg(nicbej)) THEN
+            IF( pt%xi < REAL(mig(nicbdi),wp) - 0.5_wp - (nn_hls-1) .OR. &
+                pt%xi > REAL(mig(nicbei),wp) + 0.5_wp - (nn_hls-1) .OR. &
+                pt%yj < REAL(mjg(nicbdj),wp) - 0.5_wp - (nn_hls-1) .OR. &
+                pt%yj > REAL(mjg(nicbej),wp) + 0.5_wp - (nn_hls-1) ) THEN
                i = i + 1
-               WRITE(numicb,*) 'berg lost in halo: ', this%number(:),iine,ijne
+               WRITE(numicb,*) 'berg lost in halo: ', this%number(:)
                WRITE(numicb,*) '                   ', nimpp, njmpp
                WRITE(numicb,*) '                   ', nicbdi, nicbei, nicbdj, nicbej
                CALL flush( numicb )
@@ -610,10 +513,9 @@ CONTAINS
                this => first_berg
                DO WHILE (ASSOCIATED(this))
                   pt => this%current_point
-                  iine = INT( pt%xi + 0.5 )
-                  ijne = INT( pt%yj + 0.5 )
+                  iine = INT( pt%xi + 0.5 ) + (nn_hls-1)
                   iproc = nicbflddest(mi1(iine))
-                  IF( ijne .GT. mjg(nicbej) ) THEN
+                  IF( pt%yj > REAL(mjg(nicbej),wp) + 0.5_wp - (nn_hls-1) ) THEN
                      IF( iproc == ifldproc ) THEN
                         !
                         IF( iproc /= narea ) THEN
@@ -689,11 +591,11 @@ CONTAINS
                this => first_berg
                DO WHILE (ASSOCIATED(this))
                   pt => this%current_point
-                  iine = INT( pt%xi + 0.5 )
-                  ijne = INT( pt%yj + 0.5 )
+                  iine = INT( pt%xi + 0.5 ) + (nn_hls-1)
+                  ijne = INT( pt%yj + 0.5 ) + (nn_hls-1)
                   ipts  = nicbfldpts (mi1(iine))
                   iproc = nicbflddest(mi1(iine))
-                  IF( ijne .GT. mjg(nicbej) ) THEN
+                  IF( pt%yj > REAL(mjg(nicbej),wp) + 0.5_wp - (nn_hls-1) ) THEN
                      IF( iproc == ifldproc ) THEN
                         !
                         ! moving across the cut line means both position and

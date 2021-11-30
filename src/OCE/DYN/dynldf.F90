@@ -33,22 +33,22 @@ MODULE dynldf
    PUBLIC   dyn_ldf       ! called by step module 
    PUBLIC   dyn_ldf_init  ! called by opa  module 
 
-   !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: dynldf.F90 10068 2018-08-28 14:09:04Z nicolasmartin $
+   !! $Id: dynldf.F90 12377 2020-02-12 14:39:06Z acc $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE dyn_ldf( kt )
+   SUBROUTINE dyn_ldf( kt, Kbb, Kmm, puu, pvv, Krhs )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE dyn_ldf  ***
       !! 
       !! ** Purpose :   compute the lateral ocean dynamics physics.
       !!----------------------------------------------------------------------
-      INTEGER, INTENT(in) ::   kt   ! ocean time-step index
+      INTEGER                             , INTENT( in )  ::  kt               ! ocean time-step index
+      INTEGER                             , INTENT( in )  ::  Kbb, Kmm, Krhs   ! ocean time level indices
+      REAL(wp), DIMENSION(jpi,jpj,jpk,jpt), INTENT(inout) ::  puu, pvv         ! ocean velocities and RHS of momentum equation
       !
       REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) ::   ztrdu, ztrdv
       !!----------------------------------------------------------------------
@@ -57,27 +57,30 @@ CONTAINS
       !
       IF( l_trddyn )   THEN                      ! temporary save of momentum trends
          ALLOCATE( ztrdu(jpi,jpj,jpk) , ztrdv(jpi,jpj,jpk) )
-         ztrdu(:,:,:) = ua(:,:,:) 
-         ztrdv(:,:,:) = va(:,:,:) 
+         ztrdu(:,:,:) = puu(:,:,:,Krhs) 
+         ztrdv(:,:,:) = pvv(:,:,:,Krhs) 
       ENDIF
 
       SELECT CASE ( nldf_dyn )                   ! compute lateral mixing trend and add it to the general trend
       !
-      CASE ( np_lap   )    ;   CALL dyn_ldf_lap( kt, ub, vb, ua, va, 1 )      ! iso-level    laplacian
-      CASE ( np_lap_i )    ;   CALL dyn_ldf_iso( kt )                         ! rotated      laplacian
-      CASE ( np_blp   )    ;   CALL dyn_ldf_blp( kt, ub, vb, ua, va    )      ! iso-level bi-laplacian
+      CASE ( np_lap   )  
+         CALL dyn_ldf_lap( kt, Kbb, Kmm, puu(:,:,:,Kbb), pvv(:,:,:,Kbb), puu(:,:,:,Krhs), pvv(:,:,:,Krhs), 1 ) ! iso-level    laplacian
+      CASE ( np_lap_i ) 
+         CALL dyn_ldf_iso( kt, Kbb, Kmm, puu, pvv, Krhs    )                                                   ! rotated      laplacian
+      CASE ( np_blp   )  
+         CALL dyn_ldf_blp( kt, Kbb, Kmm, puu(:,:,:,Kbb), pvv(:,:,:,Kbb), puu(:,:,:,Krhs), pvv(:,:,:,Krhs)    ) ! iso-level bi-laplacian
       !
       END SELECT
 
       IF( l_trddyn ) THEN                        ! save the horizontal diffusive trends for further diagnostics
-         ztrdu(:,:,:) = ua(:,:,:) - ztrdu(:,:,:)
-         ztrdv(:,:,:) = va(:,:,:) - ztrdv(:,:,:)
-         CALL trd_dyn( ztrdu, ztrdv, jpdyn_ldf, kt )
+         ztrdu(:,:,:) = puu(:,:,:,Krhs) - ztrdu(:,:,:)
+         ztrdv(:,:,:) = pvv(:,:,:,Krhs) - ztrdv(:,:,:)
+         CALL trd_dyn( ztrdu, ztrdv, jpdyn_ldf, kt, Kmm )
          DEALLOCATE ( ztrdu , ztrdv )
       ENDIF
       !                                          ! print sum trends (used for debugging)
-      IF(ln_ctl)   CALL prt_ctl( tab3d_1=ua, clinfo1=' ldf  - Ua: ', mask1=umask,   &
-         &                       tab3d_2=va, clinfo2=       ' Va: ', mask2=vmask, clinfo3='dyn' )
+      IF(sn_cfctl%l_prtctl)   CALL prt_ctl( tab3d_1=puu(:,:,:,Krhs), clinfo1=' ldf  - Ua: ', mask1=umask,   &
+         &                                  tab3d_2=pvv(:,:,:,Krhs), clinfo2=       ' Va: ', mask2=vmask, clinfo3='dyn' )
       !
       IF( ln_timing )   CALL timing_stop('dyn_ldf')
       !

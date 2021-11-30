@@ -23,7 +23,7 @@ MODULE florst
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: florst.F90 11536 2019-09-11 13:54:18Z smasson $
+   !! $Id: florst.F90 13286 2020-07-09 15:48:29Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -97,10 +97,10 @@ CONTAINS
          !
          IF( lk_mpp ) THEN
             DO jfl = 1, jpnfl
-               IF( (INT(tpifl(jfl)) >= mig(nldi)) .AND.   &
-                  &(INT(tpifl(jfl)) <= mig(nlei)) .AND.   &
-                  &(INT(tpjfl(jfl)) >= mjg(nldj)) .AND.   &
-                  &(INT(tpjfl(jfl)) <= mjg(nlej)) ) THEN
+               IF( (INT(tpifl(jfl)) >= mig(Nis0)) .AND.   &
+                  &(INT(tpifl(jfl)) <= mig(Nie0)) .AND.   &
+                  &(INT(tpjfl(jfl)) >= mjg(Njs0)) .AND.   &
+                  &(INT(tpjfl(jfl)) <= mjg(Nje0)) ) THEN
                   iperproc(narea) = iperproc(narea)+1
                ENDIF
             END DO

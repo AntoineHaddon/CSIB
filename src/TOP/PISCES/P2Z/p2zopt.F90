@@ -17,7 +17,7 @@ MODULE p2zopt
    USE oce_trc         !
    USE trc
    USE sms_pisces
-   USE prtctl_trc      ! Print control for debbuging
+   USE prtctl          ! Print control for debbuging
 
    IMPLICIT NONE
    PRIVATE
@@ -37,14 +37,17 @@ MODULE p2zopt
    REAL(wp), PUBLIC ::  redf      ! redfield ratio (C:N) for phyto
    REAL(wp), PUBLIC ::  reddom    ! redfield ratio (C:N) for DOM
 
+   !! * Substitutions
+#  include "do_loop_substitute.h90"
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: p2zopt.F90 11536 2019-09-11 13:54:18Z smasson $ 
+   !! $Id: p2zopt.F90 15090 2021-07-06 14:25:18Z cetlod $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE p2z_opt( kt )
+   SUBROUTINE p2z_opt( kt, Kmm )
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE p2z_opt  ***
       !!
@@ -60,6 +63,7 @@ CONTAINS
       !!---------------------------------------------------------------------
       !!
       INTEGER, INTENT( in ) ::   kt   ! index of the time stepping
+      INTEGER, INTENT( in ) ::   Kmm  ! time level index
       !!
       INTEGER  ::   ji, jj, jk          ! dummy loop indices
       CHARACTER (len=25) ::   charout   ! temporary character
@@ -90,52 +94,38 @@ CONTAINS
 
       !                                          ! Photosynthetically Available Radiation (PAR)
       zcoef = 12 * redf / rcchl / rpig           ! --------------------------------------
-      DO jk = 2, jpk                                  ! local par at w-levels
-         DO jj = 1, jpj
-            DO ji = 1, jpi
-               zpig = LOG(  MAX( TINY(0.), trn(ji,jj,jk-1,jpphy) ) * zcoef  )
-               zkr  = xkr0 + xkrp * EXP( xlr * zpig )
-               zkg  = xkg0 + xkgp * EXP( xlg * zpig )
-               zparr(ji,jj,jk) = zparr(ji,jj,jk-1) * EXP( -zkr * e3t_n(ji,jj,jk-1) )
-               zparg(ji,jj,jk) = zparg(ji,jj,jk-1) * EXP( -zkg * e3t_n(ji,jj,jk-1) )
-            END DO
-        END DO
-      END DO
-      DO jk = 1, jpkm1                                ! mean par at t-levels
-         DO jj = 1, jpj
-            DO ji = 1, jpi
-               zpig = LOG(  MAX( TINY(0.), trn(ji,jj,jk,jpphy) ) * zcoef  )
-               zkr  = xkr0 + xkrp * EXP( xlr * zpig )
-               zkg  = xkg0 + xkgp * EXP( xlg * zpig )
-               zparr(ji,jj,jk) = zparr(ji,jj,jk) / ( zkr * e3t_n(ji,jj,jk) ) * ( 1 - EXP( -zkr * e3t_n(ji,jj,jk) ) )
-               zparg(ji,jj,jk) = zparg(ji,jj,jk) / ( zkg * e3t_n(ji,jj,jk) ) * ( 1 - EXP( -zkg * e3t_n(ji,jj,jk) ) )
-               etot (ji,jj,jk) = MAX( zparr(ji,jj,jk) + zparg(ji,jj,jk), 1.e-15 )
-            END DO
-         END DO
-      END DO
+      DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 2, jpk )
+         zpig = LOG(  MAX( TINY(0.), tr(ji,jj,jk-1,jpphy,Kmm) ) * zcoef  )
+         zkr  = xkr0 + xkrp * EXP( xlr * zpig )
+         zkg  = xkg0 + xkgp * EXP( xlg * zpig )
+         zparr(ji,jj,jk) = zparr(ji,jj,jk-1) * EXP( -zkr * e3t(ji,jj,jk-1,Kmm) )
+         zparg(ji,jj,jk) = zparg(ji,jj,jk-1) * EXP( -zkg * e3t(ji,jj,jk-1,Kmm) )
+      END_3D
+      DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, jpkm1 ) ! mean par at t-levels
+         zpig = LOG(  MAX( TINY(0.), tr(ji,jj,jk,jpphy,Kmm) ) * zcoef  )
+         zkr  = xkr0 + xkrp * EXP( xlr * zpig )
+         zkg  = xkg0 + xkgp * EXP( xlg * zpig )
+         zparr(ji,jj,jk) = zparr(ji,jj,jk) / ( zkr * e3t(ji,jj,jk,Kmm) ) * ( 1 - EXP( -zkr * e3t(ji,jj,jk,Kmm) ) )
+         zparg(ji,jj,jk) = zparg(ji,jj,jk) / ( zkg * e3t(ji,jj,jk,Kmm) ) * ( 1 - EXP( -zkg * e3t(ji,jj,jk,Kmm) ) )
+         etot (ji,jj,jk) = MAX( zparr(ji,jj,jk) + zparg(ji,jj,jk), 1.e-15 )
+      END_3D
 
       !                                          ! Euphotic layer
       !                                          ! --------------
       neln(:,:) = 1                                   ! euphotic layer level
-      DO jk = 1, jpkm1                                ! (i.e. 1rst T-level strictly below EL bottom)
-         DO jj = 1, jpj
-           DO ji = 1, jpi
-              IF( etot(ji,jj,jk) >= zpar100(ji,jj) )   neln(ji,jj) = jk + 1 
-           END DO
-         END DO
-      END DO
+      DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, jpkm1 )  ! (i.e. 1rst T-level strictly below EL bottom)
+        IF( etot(ji,jj,jk) >= zpar100(ji,jj) )   neln(ji,jj) = jk + 1 
+      END_3D
       !                                               ! Euphotic layer depth
-      DO jj = 1, jpj
-         DO ji = 1, jpi
-            heup(ji,jj) = gdepw_n(ji,jj,neln(ji,jj))
-         END DO
-      END DO 
+      DO_2D( nn_hls, nn_hls, nn_hls, nn_hls ) 
+         heup(ji,jj) = gdepw(ji,jj,neln(ji,jj),Kmm)
+      END_2D
 
 
-      IF(ln_ctl) THEN      ! print mean trends (used for debugging)
+      IF(sn_cfctl%l_prttrc) THEN      ! print mean trends (used for debugging)
          WRITE(charout, FMT="('opt')")
-         CALL prt_ctl_trc_info( charout )
-         CALL prt_ctl_trc( tab4d=trn, mask=tmask, clinfo=ctrcnm )
+         CALL prt_ctl_info( charout, cdcomp = 'top' )
+         CALL prt_ctl( tab4d_1=tr(:,:,:,:,Kmm), mask1=tmask, clinfo=ctrcnm )
       ENDIF
       !
       IF( ln_timing )   CALL timing_stop('p2z_opt')
@@ -158,11 +148,9 @@ CONTAINS
       NAMELIST/namlobrat/ rcchl, redf, reddom
       !!----------------------------------------------------------------------
 
-      REWIND( numnatp_ref )              ! Namelist namlobopt in reference namelist : Lobster options
       READ  ( numnatp_ref, namlobopt, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 ) CALL ctl_nam ( ios , 'namlobopt in reference namelist' )
 
-      REWIND( numnatp_cfg )              ! Namelist namlobopt in configuration namelist : Lobster options
       READ  ( numnatp_cfg, namlobopt, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 ) CALL ctl_nam ( ios , 'namlobopt in configuration namelist' )
       IF(lwm) WRITE ( numonp, namlobopt )
@@ -180,11 +168,9 @@ CONTAINS
          WRITE(numout,*) ' '
       ENDIF
       !
-      REWIND( numnatp_ref )              ! Namelist namlobrat in reference namelist : Lobster ratios
       READ  ( numnatp_ref, namlobrat, IOSTAT = ios, ERR = 903)
 903   IF( ios /= 0 ) CALL ctl_nam ( ios , 'namlobrat in reference namelist' )
 
-      REWIND( numnatp_cfg )              ! Namelist namlobrat in configuration namelist : Lobster ratios
       READ  ( numnatp_cfg, namlobrat, IOSTAT = ios, ERR = 904 )
 904   IF( ios >  0 ) CALL ctl_nam ( ios , 'namlobrat in configuration namelist' )
       IF(lwm) WRITE ( numonp, namlobrat )

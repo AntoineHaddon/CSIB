@@ -13,7 +13,6 @@
 !-----------------------------------------------------------------------
 &namtrc_run      !   run information
 !-----------------------------------------------------------------------
-   nn_dttrc      =  1        !  time step frequency for passive sn_tracers
    ln_top_euler  = .false.   !  use Euler time-stepping for TOP
    ln_rsttr      = .false.   !  start from a restart file (T) or not (F)
    nn_rsttr      =   0       !  restart control = 0 initial time step is not compared to the restart file value
@@ -23,7 +22,6 @@
    cn_trcrst_indir = "."           !  directory from which to read input passive tracer restarts
    cn_trcrst_out = "restart_trc"   !  suffix of pass. sn_tracer restart name (output)
    cn_trcrst_outdir = "."          !  directory to which to write output passive tracer restarts
-   !   
    qnrdttrc = 4    ! time splitting factor
 /
 !-----------------------------------------------------------------------
@@ -44,6 +42,8 @@
    ln_trcdta     =  .false.  !  Initialisation from data input file (T) or not (F)
    ln_trcdmp     =  .false.  !  add a damping termn (T) or not (F)
    ln_trcdmp_clo =  .false.  !  damping term (T) or not (F) on closed seas
+   ln_trcbc      =  .false.  !  Surface, Lateral or Open Boundaries conditions
+   ln_trcais     =  .false.  !  Antarctic Ice Sheet nutrient supply
    !
    jp_dia3d      = 0         ! Number of 3D diagnostic variables
    jp_dia2d      = 0         ! Number of 2D diagnostic variables
@@ -103,9 +103,21 @@
    nitermax      =  2   !  number of iterations for sedimentation
 /
 !-----------------------------------------------------------------------
-&namtrc_opt      !  Optical
+&namtrc_opt      !  light availability in the water column
 !-----------------------------------------------------------------------
-   ln_trcdc2dm   =  .false.   !  Diurnal cycle for TOP
+!              !  file name       ! frequency (hours) ! variable  ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation ! land/sea mask !
+!              !                  !  (if <0  months)  !   name    !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  ! filename      !
+   sn_par      = 'par.orca'       ,     24            , 'fr_par'  ,  .true.      , .true. , 'yearly'  , ''       , ''       , ''
+   cn_dir      = './'        ! root directory for the location of the dynamical files
+   ln_varpar   =  .true.     ! Read PAR from file
+   parlux      =  0.43       ! Fraction of shortwave as PAR
+   light_loc   = 'center'    ! Light location in the water cell ('center', 'integral')
+! 1-band PAR
+   kw_cmoc     =  0.04          ! PAR attenuation coefficient for seawater (m^-1)
+   kchl_cmoc   =  0.03          ! PAR attenuation for chlorophyll          (m^-1) (mgChl m^-3)^-1
+! par stairs profile for test purposes
+   parval      = 100.           ! surface PAR constant
+   zlevel      = 5              ! vertical level where PAR is non-zero
 /
 !-----------------------------------------------------------------------
 &namtrc_dmp      !   passive tracer newtonian damping                   (ln_trcdmp=T)
@@ -130,13 +142,11 @@
    nn_trd_trc    =  5475     !  time step frequency and tracers trends
    nn_ctls_trc   =   0       !  control surface type in mixed-layer trends (0,1 or n<jpk)
    rn_ucf_trc    =   1       !  unit conversion factor (=1 -> /seconds ; =86400. -> /day)
-   ln_trdmxl_trc_restart = .false.   !  restart for ML diagnostics
-   ln_trdmxl_trc_instant = .true.    !  flag to diagnose trends of instantantaneous or mean ML T/S
-   cn_trdrst_trc_in  = 'restart_trd' !  suffix of pass. tracer trends restart name (input)
-   cn_trdrst_trc_out = 'restart_trd' !  suffix of pass. tracer trends restart name (output)
-   ! ln_trdtrc( 1) = .true.
-   ! ln_trdtrc( 2) = .true.
-   ! ln_trdtrc(23) = .true.
+   ln_trdmld_trc_restart = .false. !  restart for ML diagnostics
+   ln_trdmld_trc_instant = .true.  !  flag to diagnose trends of instantantaneous or mean ML T/S
+   ln_trdtrc( 1) = .true.
+   ln_trdtrc( 2) = .true.
+   ln_trdtrc(23) = .true.
 /
 !----------------------------------------------------------------------
 &namtrc_bc       !   data for boundary conditions
@@ -145,7 +155,8 @@
    cn_dir_cbc    =  './'     !  root directory for the location of COASTAL data files
    cn_dir_obc    =  './'     !  root directory for the location of OPEN data files
    ln_rnf_ctl    = .false.   !  Remove runoff dilution on tracers with absent river load
-   rn_bc_time    =  86400.   !  Time scaling factor for SBC and CBC data (seconds in a day)
+   rn_sbc_time   =  86400.   !  Time scaling factor for SBC data (seconds in a day)
+   rn_cbc_time   =  86400.   !  Time scaling factor for CBC data (seconds in a day)
 /
 !----------------------------------------------------------------------
 &namtrc_bdy      !   Setup of tracer boundary conditions
@@ -159,18 +170,10 @@
                              !  = 2 Damping applied to all tracers
 /
 !-----------------------------------------------------------------------
-&namtrc_opt    !   parameters for optics
+&namtrc_ais      !  Representation of Antarctic Ice Sheet tracers supply
 !-----------------------------------------------------------------------
-!              !  file name       ! frequency (hours) ! variable  ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation ! land/sea mask !
-!              !                  !  (if <0  months)  !   name    !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  ! filename      !
-   sn_par      = 'par.orca'       ,     24.           , 'fr_par'  ,  .true.      , .true. , 'yearly'  , ''       , ''       , ''
-   cn_dir      = './'      !  root directory for the location of the dynamical files
-   ln_varpar   =  .false.  ! boolean for PAR variable
-   parlux      =  0.43     ! Fraction of shortwave as PAR
-! 1-band PAR
-   kw_cmoc     =  0.04          ! PAR attenuation coefficient for seawater (m^-1)
-   kchl_cmoc   =  0.03          ! PAR attenuation for chlorophyll          (m^-1) (mgChl m^-3)^-1
-! par stairs profile for test purposes
-   parval      = 100.           ! surface PAR constant
-   zlevel      = 5              ! vertical level where PAR is non-zero
+   nn_ais_tr     =  1        !  tracer concentration in iceberg and ice shelf
+                             !    = 0 (null concentrations)
+                             !    = 1 prescribed concentrations
+   rn_icbdep     =  120.     ! Mean underwater depth of iceberg (m)
 /
