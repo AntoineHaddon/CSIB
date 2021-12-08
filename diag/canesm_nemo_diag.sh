@@ -7,9 +7,13 @@
 #########################################################
 
 set -x
-
-# NEMO priority level
-  output_level=${output_level}
+err_exit() {
+    # create signal file to tell parent process an error occurred
+    echo "Error occurred!"
+    touch $signal_file
+    exit 1
+}
+trap 'err_exit' ERR
 
 # Note that nemo_rtd_mons used below is first month of the time chunk. 
 # nemo_rtd_mons=1 for a run starting from January in a single 12-month chunk;
@@ -35,7 +39,7 @@ set -x
 
 # copy in the nemo diag executable
   diag_exe=nemo_diag.exe
-  cp $CCRNSRC/executables/${diag_exe} .
+  cp ${EXEC_STORAGE_DIR}/${diag_exe} .
 
 # Access file containing grid information
   mask_mon=$(echo $nemo_rtd_mons | awk '{printf "%02d", $NF}')  # get last element of nemo_rtd_mons, printed as 2 digit number
