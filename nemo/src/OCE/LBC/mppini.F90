@@ -8,7 +8,7 @@ MODULE mppini
    !!            8.0  !  1998-05  (M. Imbard, J. Escobar, L. Colombet )  SHMEM and MPI versions
    !!  NEMO      1.0  !  2004-01  (G. Madec, J.M Molines)  F90 : free form , north fold jpni > 1
    !!            3.4  ! 2011-10  (A. C. Coward, NOCS & J. Donners, PRACE) add mpp_init_nfdcom
-   !!            3.   ! 2013-06  (I. Epicoco, S. Mocavero, CMCC) mpp_init_nfdcom: setup avoiding MPI communication 
+   !!            3.   ! 2013-06  (I. Epicoco, S. Mocavero, CMCC) mpp_init_nfdcom: setup avoiding MPI communication
    !!            4.0  !  2016-06  (G. Madec)  use domain configuration file instead of bathymetry file
    !!            4.0  !  2017-06  (J.M. Molines, T. Lovato) merge of mppini and mppini_2
    !!----------------------------------------------------------------------
@@ -16,19 +16,20 @@ MODULE mppini
    !!----------------------------------------------------------------------
    !!  mpp_init          : Lay out the global domain over processors with/without land processor elimination
    !!  mpp_init_mask     : Read global bathymetric information to facilitate land suppression
-   !!  mpp_init_ioipsl   : IOIPSL initialization in mpp 
+   !!  mpp_init_ioipsl   : IOIPSL initialization in mpp
    !!  mpp_init_partition: Calculate MPP domain decomposition
    !!  factorise         : Calculate the factors of the no. of MPI processes
    !!  mpp_init_nfdcom   : Setup for north fold exchanges with explicit point-to-point messaging
    !!----------------------------------------------------------------------
    USE dom_oce        ! ocean space and time domain
-   USE bdy_oce        ! open BounDarY  
+   USE bdy_oce        ! open BounDarY
    !
-   USE lbcnfd  , ONLY : isendto, nsndto, nfsloop, nfeloop   ! Setup of north fold exchanges 
+   USE lbcnfd  , ONLY : isendto, nsndto, nfsloop, nfeloop   ! Setup of north fold exchanges
    USE lib_mpp        ! distribued memory computing library
-   USE iom            ! nemo I/O library 
+   USE iom            ! nemo I/O library
    USE ioipsl         ! I/O IPSL library
    USE in_out_manager ! I/O Manager
+   USE mpi
 
    IMPLICIT NONE
    PRIVATE
@@ -37,10 +38,10 @@ MODULE mppini
 
    INTEGER :: numbot = -1  ! 'bottom_level' local logical unit
    INTEGER :: numbdy = -1  ! 'bdy_msk'      local logical unit
-   
+
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: mppini.F90 12737 2020-04-10 17:55:11Z jchanut $ 
+   !! $Id: mppini.F90 12737 2020-04-10 17:55:11Z jchanut $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -72,7 +73,7 @@ CONTAINS
       jpni   = 1
       jpnj   = 1
       jpnij  = jpni*jpnj
-      nimpp  = 1           ! 
+      nimpp  = 1           !
       njmpp  = 1
       nlci   = jpi
       nlcj   = jpj
@@ -96,7 +97,7 @@ CONTAINS
          WRITE(numout,*)
          WRITE(numout,*) 'mpp_init : NO massively parallel processing'
          WRITE(numout,*) '~~~~~~~~ '
-         WRITE(numout,*) '   l_Iperio = ', l_Iperio, '    l_Jperio = ', l_Jperio 
+         WRITE(numout,*) '   l_Iperio = ', l_Iperio, '    l_Jperio = ', l_Jperio
          WRITE(numout,*) '     npolj  = ',   npolj , '      njmpp  = ', njmpp
       ENDIF
       !
@@ -115,7 +116,7 @@ CONTAINS
    SUBROUTINE mpp_init
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE mpp_init  ***
-      !!                    
+      !!
       !! ** Purpose :   Lay out the global domain over processors.
       !!      If land processors are to be eliminated, this program requires the
       !!      presence of the domain configuration file. Land processors elimination
@@ -129,7 +130,7 @@ CONTAINS
       !!      Type :         jperio global periodic condition
       !!
       !! ** Action : - set domain parameters
-      !!                    nimpp     : longitudinal index 
+      !!                    nimpp     : longitudinal index
       !!                    njmpp     : latitudinal  index
       !!                    narea     : number for local area
       !!                    nlci      : first dimension
@@ -152,7 +153,7 @@ CONTAINS
       INTEGER ::   iino, ijno, iiso, ijso     !   -       -
       INTEGER ::   iiea, ijea, iiwe, ijwe     !   -       -
       INTEGER ::   iarea0                     !   -       -
-      INTEGER ::   ierr, ios                  ! 
+      INTEGER ::   ierr, ios                  !
       INTEGER ::   inbi, inbj, iimax,  ijmax, icnt1, icnt2
       LOGICAL ::   llbest, llauto
       LOGICAL ::   llwrtlay
@@ -167,7 +168,7 @@ CONTAINS
       LOGICAL, ALLOCATABLE, DIMENSION(:,:) ::   lliswest, lliseast, llisnorth, llissouth  !  -     -
       NAMELIST/nambdy/ ln_bdy, nb_bdy, ln_coords_file, cn_coords_file,           &
            &             ln_mask_file, cn_mask_file, cn_dyn2d, nn_dyn2d_dta,     &
-           &             cn_dyn3d, nn_dyn3d_dta, cn_tra, nn_tra_dta,             &  
+           &             cn_dyn3d, nn_dyn3d_dta, cn_tra, nn_tra_dta,             &
            &             ln_tra_dmp, ln_dyn3d_dmp, rn_time_dmp, rn_time_dmp_out, &
            &             cn_ice, nn_ice_dta,                                     &
            &             ln_vol, nn_volctl, nn_rimwidth
@@ -184,7 +185,7 @@ CONTAINS
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'nammpp in reference namelist' )
       REWIND( numnam_cfg )              ! Namelist nammpp in confguration namelist
       READ  ( numnam_cfg, nammpp, IOSTAT = ios, ERR = 902 )
-902   IF( ios >  0 )   CALL ctl_nam ( ios , 'nammpp in configuration namelist' )   
+902   IF( ios >  0 )   CALL ctl_nam ( ios , 'nammpp in configuration namelist' )
       !
       IF(lwp) THEN
             WRITE(numout,*) '   Namelist nammpp'
@@ -260,7 +261,7 @@ CONTAINS
             llbest = .TRUE.
          ENDIF
       ENDIF
-      
+
       ! look for land mpi subdomains...
       ALLOCATE( llisoce(jpni,jpnj) )
       CALL mpp_init_isoce( jpni, jpnj, llisoce )
@@ -323,11 +324,11 @@ CONTAINS
 
       IF( numbot /= -1 )   CALL iom_close( numbot )
       IF( numbdy /= -1 )   CALL iom_close( numbdy )
-    
-      ALLOCATE(  nfiimpp(jpni,jpnj), nfipproc(jpni,jpnj), nfilcit(jpni,jpnj) ,    &
-         &       nimppt(jpnij) , ibonit(jpnij) , nlcit(jpnij) , nlcjt(jpnij) ,    &
-         &       njmppt(jpnij) , ibonjt(jpnij) , nldit(jpnij) , nldjt(jpnij) ,    &
-         &                                       nleit(jpnij) , nlejt(jpnij) ,    &
+
+      ALLOCATE(  nfiimpp(jpni,jpnj), nfipproc(jpni,jpnj), nfilcit(jpni,jpnj) ,     &
+         &       nimppt(jpnij) ,  ibonit(jpnij) , nlcit(jpnij) , nlcjt(jpnij) ,    &
+         &       njmppt(jpnij) ,  ibonjt(jpnij) , nldit(jpnij) , nldjt(jpnij) ,    &
+         &       offsetst(jpnij), jpdtott(jpnij), nleit(jpnij) , nlejt(jpnij) ,    &
          &       iin(jpnij), ii_nono(jpnij), ii_noea(jpnij),   &
          &       ijn(jpnij), ii_noso(jpnij), ii_nowe(jpnij),   &
          &       iimppt(jpni,jpnj), ilci(jpni,jpnj), ibondi(jpni,jpnj), ipproc(jpni,jpnj),   &
@@ -335,13 +336,13 @@ CONTAINS
          &       ilei(jpni,jpnj), ildi(jpni,jpnj), iono(jpni,jpnj), ioea(jpni,jpnj),   &
          &       ilej(jpni,jpnj), ildj(jpni,jpnj), ioso(jpni,jpnj), iowe(jpni,jpnj),   &
 #if defined key_agrif
-                 lliswest(jpni,jpnj), lliseast(jpni,jpnj),  & 
+                 lliswest(jpni,jpnj), lliseast(jpni,jpnj),  &
          &       llisnorth(jpni,jpnj),llissouth(jpni,jpnj), &
 #endif
          &       STAT=ierr )
       CALL mpp_sum( 'mppini', ierr )
       IF( ierr /= 0 )   CALL ctl_stop( 'STOP', 'mpp_init: unable to allocate standard ocean arrays' )
-      
+
 #if defined key_agrif
       IF( .NOT. Agrif_Root() ) THEN       ! AGRIF children: specific setting (cf. agrif_user.F90)
          IF( jpiglo /= nbcellsx + 2 + 2*nbghostcells )   &
@@ -367,20 +368,20 @@ CONTAINS
          WRITE(numout,*) 'MPI Message Passing MPI - domain lay out over processors'
          WRITE(numout,*)
          WRITE(numout,*) '   defines mpp subdomains'
-         WRITE(numout,*) '      jpni = ', jpni  
+         WRITE(numout,*) '      jpni = ', jpni
          WRITE(numout,*) '      jpnj = ', jpnj
          WRITE(numout,*)
          WRITE(numout,*) '      sum ilci(i,1) = ', sum(ilci(:,1)), ' jpiglo = ', jpiglo
          WRITE(numout,*) '      sum ilcj(1,j) = ', sum(ilcj(1,:)), ' jpjglo = ', jpjglo
       ENDIF
-     
+
       ! 3. Subdomain description in the Regular Case
       ! --------------------------------------------
       ! specific cases where there is no communication -> must do the periodicity by itself
-      ! Warning: because of potential land-area suppression, do not use nbond[ij] == 2  
+      ! Warning: because of potential land-area suppression, do not use nbond[ij] == 2
       l_Iperio = jpni == 1 .AND. (jperio == 1 .OR. jperio == 4 .OR. jperio == 6 .OR. jperio == 7)
       l_Jperio = jpnj == 1 .AND. (jperio == 2 .OR. jperio == 7)
-      
+
       DO jarea = 1, jpni*jpnj
          !
          iarea0 = jarea - 1
@@ -439,10 +440,10 @@ CONTAINS
          ENDIF
          !
 #if defined key_agrif
-         IF ((ibondi(ii,ij) ==  1).OR.(ibondi(ii,ij) == 2)) lliseast(ii,ij)  = .true.      ! east 
-         IF ((ibondi(ii,ij) == -1).OR.(ibondi(ii,ij) == 2)) lliswest(ii,ij)  = .true.      ! west 
-         IF ((ibondj(ii,ij) ==  1).OR.(ibondj(ii,ij) == 2)) llisnorth(ii,ij) = .true.      ! north 
-         IF ((ibondj(ii,ij) == -1).OR.(ibondj(ii,ij) == 2)) llissouth(ii,ij) = .true.      ! south 
+         IF ((ibondi(ii,ij) ==  1).OR.(ibondi(ii,ij) == 2)) lliseast(ii,ij)  = .true.      ! east
+         IF ((ibondi(ii,ij) == -1).OR.(ibondi(ii,ij) == 2)) lliswest(ii,ij)  = .true.      ! west
+         IF ((ibondj(ii,ij) ==  1).OR.(ibondj(ii,ij) == 2)) llisnorth(ii,ij) = .true.      ! north
+         IF ((ibondj(ii,ij) == -1).OR.(ibondj(ii,ij) == 2)) llissouth(ii,ij) = .true.      ! south
 #endif
       END DO
       ! 4. deal with land subdomains
@@ -488,7 +489,7 @@ CONTAINS
             ijno = 1 +      iono(ii,ij) / jpni                      ! ij index of this n neigbour
             ! In case of north fold exchange: I am the n neigbour of my n neigbour!! (#1057)
             ! --> for northern neighbours of northern row processors (in case of north-fold)
-            !     need to reverse the LOGICAL direction of communication 
+            !     need to reverse the LOGICAL direction of communication
             idir = 1                                           ! we are indeed the s neigbour of this n neigbour
             IF( ij == jpnj .AND. ijno == jpnj )   idir = -1    ! both are on the last row, we are in fact the n neigbour
             IF( ibondj(iino,ijno) == idir     )   ibondj(iino,ijno) =   2     ! this n neigbour had only a s/n neigbour -> no more
@@ -527,7 +528,7 @@ CONTAINS
          IF( ibondj(ii,ij) == -1 .OR. ibondj(ii,ij) == 2 ) ildj(ii,ij) =  1
          IF( ibondj(ii,ij) ==  1 .OR. ibondj(ii,ij) == 2 ) ilej(ii,ij) = ilcj(ii,ij)
       END DO
-      
+
       ! 5. Subdomain print
       ! ------------------
       IF(lwp) THEN
@@ -553,14 +554,14 @@ CONTAINS
  9402    FORMAT('       ',i3,' *  ',20(i3,'  x',i3,'   *   ') )
  9404    FORMAT('           *  '   ,20('     ' ,i4,'   *   ') )
       ENDIF
-         
+
       ! just to save nono etc for all proc
       ! warning ii*ij (zone) /= nproc (processors)!
       ! ioso = zone number, ii_noso = proc number
       ii_noso(:) = -1
       ii_nono(:) = -1
       ii_noea(:) = -1
-      ii_nowe(:) = -1 
+      ii_nowe(:) = -1
       DO jproc = 1, jpnij
          ii = iin(jproc)
          ij = ijn(jproc)
@@ -585,7 +586,7 @@ CONTAINS
             ii_nono(jproc)= ipproc(iino,ijno)
          ENDIF
       END DO
-    
+
       ! 6. Change processor name
       ! ------------------------
       ii = iin(narea)
@@ -596,28 +597,28 @@ CONTAINS
       nowe = ii_nowe(narea)
       noea = ii_noea(narea)
       nono = ii_nono(narea)
-      nlci = ilci(ii,ij)  
+      nlci = ilci(ii,ij)
       nldi = ildi(ii,ij)
       nlei = ilei(ii,ij)
-      nlcj = ilcj(ii,ij)  
+      nlcj = ilcj(ii,ij)
       nldj = ildj(ii,ij)
       nlej = ilej(ii,ij)
       nbondi = ibondi(ii,ij)
       nbondj = ibondj(ii,ij)
-      nimpp = iimppt(ii,ij)  
+      nimpp = iimppt(ii,ij)
       njmpp = ijmppt(ii,ij)
       jpi = nlci
       jpj = nlcj
       jpk = jpkglo                                             ! third dim
 #if defined key_agrif
-      ! simple trick to use same vertical grid as parent but different number of levels: 
+      ! simple trick to use same vertical grid as parent but different number of levels:
       ! Save maximum number of levels in jpkglo, then define all vertical grids with this number.
       ! Suppress once vertical online interpolation is ok
 !!$      IF(.NOT.Agrif_Root())   jpkglo = Agrif_Parent( jpkglo )
       l_Westedge  = lliswest(ii,ij)
       l_Eastedge  = lliseast(ii,ij)
       l_Northedge = llisnorth(ii,ij)
-      l_Southedge = llissouth(ii,ij) 
+      l_Southedge = llissouth(ii,ij)
 #endif
       jpim1 = jpi-1                                            ! inner domain indices
       jpjm1 = jpj-1                                            !   "           "
@@ -634,8 +635,8 @@ CONTAINS
          nlejt(jproc) = ilej(ii,ij)
          ibonit(jproc) = ibondi(ii,ij)
          ibonjt(jproc) = ibondj(ii,ij)
-         nimppt(jproc) = iimppt(ii,ij)  
-         njmppt(jproc) = ijmppt(ii,ij) 
+         nimppt(jproc) = iimppt(ii,ij)
+         njmppt(jproc) = ijmppt(ii,ij)
       END DO
 
       ! Save processor layout in ascii file
@@ -651,10 +652,10 @@ CONTAINS
             WRITE(inum,'(13i5,2i7)')   jproc-1, nlcit  (jproc), nlcjt  (jproc),   &
                &                                nldit  (jproc), nldjt  (jproc),   &
                &                                nleit  (jproc), nlejt  (jproc),   &
-               &                                nimppt (jproc), njmppt (jproc),   & 
+               &                                nimppt (jproc), njmppt (jproc),   &
                &                                ii_nono(jproc), ii_noso(jproc),   &
                &                                ii_nowe(jproc), ii_noea(jproc),   &
-               &                                ibonit (jproc), ibonjt (jproc) 
+               &                                ibonit (jproc), ibonjt (jproc)
          END DO
       END IF
 
@@ -688,11 +689,21 @@ CONTAINS
          WRITE(numout,*) '      nlcj   = ', nlcj
          WRITE(numout,*) '      nimpp  = ', nimpp
          WRITE(numout,*) '      njmpp  = ', njmpp
-         WRITE(numout,*) '      nreci  = ', nreci  
-         WRITE(numout,*) '      nrecj  = ', nrecj  
-         WRITE(numout,*) '      nn_hls = ', nn_hls 
+         WRITE(numout,*) '      nreci  = ', nreci
+         WRITE(numout,*) '      nrecj  = ', nrecj
+         WRITE(numout,*) '      nn_hls = ', nn_hls
       ENDIF
 
+      ! Calculate additional parameters for the domain decomposition
+      DO jproc=1,jpnij
+         jpdtott(jproc) = nlcit(jproc)*nlcjt(jproc)
+      ENDDO
+      jpdtot_glo = SUM(jpdtott)
+
+      offsetst(:) = 0
+      DO jproc=2,jpnij
+         offsetst(jproc) = offsetst(jproc-1) + jpdtott(jproc-1)
+      ENDDO
       !                          ! Prepare mpp north fold
       IF( jperio >= 3 .AND. jperio <= 6 .AND. jpni > 1 ) THEN
          CALL mpp_ini_north
@@ -713,7 +724,7 @@ CONTAINS
       ENDIF
       !
       CALL mpp_init_ioipsl       ! Prepare NetCDF output file (if necessary)
-      !      
+      !
       IF (( jperio >= 3 .AND. jperio <= 6 .AND. jpni > 1 ).AND.( ln_nnogather )) THEN
          CALL mpp_init_nfdcom     ! northfold neighbour lists
          IF (llwrtlay) THEN
@@ -727,7 +738,7 @@ CONTAINS
          ENDIF
       ENDIF
       !
-      IF (llwrtlay) CLOSE(inum)   
+      IF (llwrtlay) CLOSE(inum)
       !
       DEALLOCATE(iin, ijn, ii_nono, ii_noea, ii_noso, ii_nowe,    &
          &       iimppt, ijmppt, ibondi, ibondj, ipproc, ipolj,   &
@@ -743,7 +754,7 @@ CONTAINS
     SUBROUTINE mpp_basic_decomposition( knbi, knbj, kimax, kjmax, kimppt, kjmppt, klci, klcj)
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE mpp_basic_decomposition  ***
-      !!                    
+      !!
       !! ** Purpose :   Lay out the global domain over processors.
       !!
       !! ** Method  :   Global domain is distributed in smaller local domains.
@@ -766,7 +777,7 @@ CONTAINS
       !
 #if defined key_nemocice_decomp
       kimax = ( nx_global+2-2*nn_hls + (knbi-1) ) / knbi + 2*nn_hls    ! first  dim.
-      kjmax = ( ny_global+2-2*nn_hls + (knbj-1) ) / knbj + 2*nn_hls    ! second dim. 
+      kjmax = ( ny_global+2-2*nn_hls + (knbj-1) ) / knbj + 2*nn_hls    ! second dim.
 #else
       kimax = ( jpiglo - 2*nn_hls + (knbi-1) ) / knbi + 2*nn_hls    ! first  dim.
       kjmax = ( jpjglo - 2*nn_hls + (knbj-1) ) / knbj + 2*nn_hls    ! second dim.
@@ -806,8 +817,8 @@ CONTAINS
          IF( jperio == 5 .OR. jperio == 6 )   ijpjmin = 4   ! V and F folding involves line jpj-2 that must not be south boundary
          irm = knbj - irestj                                    ! total number of lines to be removed
          klcj(:,            knbj) = MAX( ijpjmin, kjmax-irm )   ! we must have jpj >= ijpjmin in the last row
-         irm = irm - ( kjmax - klcj(1,knbj) )                   ! remaining number of lines to remove 
-         irestj = knbj - 1 - irm                        
+         irm = irm - ( kjmax - klcj(1,knbj) )                   ! remaining number of lines to remove
+         irestj = knbj - 1 - irm
          klcj(:,        1:irestj) = kjmax
          klcj(:, irestj+1:knbj-1) = kjmax-1
       ELSE
@@ -842,7 +853,7 @@ CONTAINS
             END DO
          END DO
       ENDIF
-      
+
    END SUBROUTINE mpp_basic_decomposition
 
 
@@ -895,7 +906,7 @@ CONTAINS
       !
       ! get the list of knbi that gives a smaller jpimax than knbi-1
       ! get the list of knbj that gives a smaller jpjmax than knbj-1
-      DO ji = 1, inbijmax      
+      DO ji = 1, inbijmax
 #if defined key_nemocice_decomp
          iszitst = ( nx_global+2-2*nn_hls + (ji-1) ) / ji + 2*nn_hls    ! first  dim.
 #else
@@ -963,7 +974,7 @@ CONTAINS
 
       ! extract only the partitions which reduce the subdomain size in comparison with smaller partitions
       ALLOCATE( indexok(isz1) )                                 ! to store indices of the best partitions
-      isz0 = 0                                                  ! number of best partitions     
+      isz0 = 0                                                  ! number of best partitions
       inbij = 1                                                 ! start with the min value of inbij1 => 1
       iszij = jpiglo*jpjglo+1                                   ! default: larger than global domain
       DO WHILE( inbij <= inbijmax )                             ! if we did not reach the max of inbij1
@@ -1022,12 +1033,12 @@ CONTAINS
          CALL mppsync
          CALL mppstop( ld_abort = .TRUE. )
       ENDIF
-      
+
       DEALLOCATE( iszi0, iszj0 )
       inbij = inbijmax + 1        ! default: larger than possible
       ii = isz0+1                 ! start from the end of the list (smaller subdomains)
       DO WHILE( inbij > knbij )   ! while the number of ocean subdomains exceed the number of procs
-         ii = ii -1 
+         ii = ii -1
          ALLOCATE( llisoce(inbi0(ii), inbj0(ii)) )
          CALL mpp_init_isoce( inbi0(ii), inbj0(ii), llisoce )            ! must be done by all core
          inbij = COUNT(llisoce)
@@ -1039,8 +1050,8 @@ CONTAINS
       DEALLOCATE( inbi0, inbj0 )
       !
    END SUBROUTINE mpp_init_bestpartition
-   
-   
+
+
    SUBROUTINE mpp_init_landprop( propland )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE mpp_init_landprop  ***
@@ -1063,9 +1074,9 @@ CONTAINS
          RETURN
       ENDIF
 
-      ! number of processes reading the bathymetry file 
+      ! number of processes reading the bathymetry file
       iproc = MINVAL( (/mppsize, jpjglo/2, 100/) )  ! read a least 2 lines, no more that 100 processes reading at the same time
-      
+
       ! we want to read iproc strips of the land-sea mask. -> pick up iproc processes every idiv processes starting at 1
       IF( iproc == 1 ) THEN   ;   idiv = mppsize
       ELSE                    ;   idiv = ( mppsize - 1 ) / ( iproc - 1 )
@@ -1088,11 +1099,11 @@ CONTAINS
       ENDIF
       CALL mpp_sum( 'mppini', inboce )   ! total number of ocean points over the global domain
       !
-      propland = REAL( jpiglo*jpjglo - inboce, wp ) / REAL( jpiglo*jpjglo, wp ) 
+      propland = REAL( jpiglo*jpjglo - inboce, wp ) / REAL( jpiglo*jpjglo, wp )
       !
    END SUBROUTINE mpp_init_landprop
-   
-   
+
+
    SUBROUTINE mpp_init_isoce( knbi, knbj, ldisoce )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE mpp_init_nboce  ***
@@ -1103,13 +1114,13 @@ CONTAINS
       !! ** Method  : read knbj strips (of length jpiglo) of the land-sea mask
       !!----------------------------------------------------------------------
       INTEGER,                       INTENT(in   ) ::   knbi, knbj     ! domain decomposition
-      LOGICAL, DIMENSION(knbi,knbj), INTENT(  out) ::   ldisoce        ! .true. if a sub domain constains 1 ocean point 
+      LOGICAL, DIMENSION(knbi,knbj), INTENT(  out) ::   ldisoce        ! .true. if a sub domain constains 1 ocean point
       !
       INTEGER, DIMENSION(knbi,knbj) ::   inboce                        ! number oce oce pint in each mpi subdomain
       INTEGER, DIMENSION(knbi*knbj) ::   inboce_1d
       INTEGER :: idiv, iimax, ijmax, iarea
       INTEGER :: ji, jn
-      LOGICAL, ALLOCATABLE, DIMENSION(:,:) ::   lloce                  ! lloce(i,j) = .true. if the point (i,j) is ocean 
+      LOGICAL, ALLOCATABLE, DIMENSION(:,:) ::   lloce                  ! lloce(i,j) = .true. if the point (i,j) is ocean
       INTEGER, ALLOCATABLE, DIMENSION(:,:) ::   iimppt, ilci
       INTEGER, ALLOCATABLE, DIMENSION(:,:) ::   ijmppt, ilcj
       !!----------------------------------------------------------------------
@@ -1145,15 +1156,15 @@ CONTAINS
             !
          ENDIF
       END DO
-   
+
       inboce_1d = RESHAPE(inboce, (/ knbi*knbj /))
       CALL mpp_sum( 'mppini', inboce_1d )
       inboce = RESHAPE(inboce_1d, (/knbi, knbj/))
       ldisoce(:,:) = inboce(:,:) /= 0
       !
    END SUBROUTINE mpp_init_isoce
-   
-   
+
+
    SUBROUTINE mpp_init_readbot_strip( kjstr, kjcnt, ldoce )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE mpp_init_readbot_strip  ***
@@ -1166,10 +1177,10 @@ CONTAINS
       !!----------------------------------------------------------------------
       INTEGER                         , INTENT(in   ) :: kjstr       ! starting j position of the reading
       INTEGER                         , INTENT(in   ) :: kjcnt       ! number of lines to read
-      LOGICAL, DIMENSION(jpiglo,kjcnt), INTENT(  out) :: ldoce       ! ldoce(i,j) = .true. if the point (i,j) is ocean 
+      LOGICAL, DIMENSION(jpiglo,kjcnt), INTENT(  out) :: ldoce       ! ldoce(i,j) = .true. if the point (i,j) is ocean
       !
       INTEGER                           ::   inumsave                ! local logical unit
-      REAL(wp), DIMENSION(jpiglo,kjcnt) ::   zbot, zbdy 
+      REAL(wp), DIMENSION(jpiglo,kjcnt) ::   zbot, zbdy
       !!----------------------------------------------------------------------
       !
       inumsave = numout   ;   numout = numnul   !   redirect all print to /dev/null
@@ -1180,7 +1191,7 @@ CONTAINS
          zbot(:,:) = 1.                         ! put a non-null value
       ENDIF
 
-       IF( numbdy /= -1 ) THEN                  ! Adjust with bdy_msk if it exists    
+       IF( numbdy /= -1 ) THEN                  ! Adjust with bdy_msk if it exists
          CALL iom_get ( numbdy, jpdom_unknown, 'bdy_msk', zbdy, kstart = (/1,kjstr/), kcount = (/jpiglo, kjcnt/) )
          zbot(:,:) = zbot(:,:) * zbdy(:,:)
       ENDIF
@@ -1195,12 +1206,12 @@ CONTAINS
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE mpp_init_ioipsl  ***
       !!
-      !! ** Purpose :   
+      !! ** Purpose :
       !!
-      !! ** Method  :   
+      !! ** Method  :
       !!
       !! History :
-      !!   9.0  !  04-03  (G. Madec )  MPP-IOIPSL 
+      !!   9.0  !  04-03  (G. Madec )  MPP-IOIPSL
       !!   " "  !  08-12  (A. Coward)  addition in case of jpni*jpnj < jpnij
       !!----------------------------------------------------------------------
       INTEGER, DIMENSION(2) ::   iglo, iloc, iabsf, iabsl, ihals, ihale, idid
@@ -1234,19 +1245,19 @@ CONTAINS
       !
       CALL flio_dom_set ( jpnij, nproc, idid, iglo, iloc, iabsf, iabsl, ihals, ihale, 'BOX', nidom)
       !
-   END SUBROUTINE mpp_init_ioipsl  
+   END SUBROUTINE mpp_init_ioipsl
 
 
    SUBROUTINE mpp_init_nfdcom
       !!----------------------------------------------------------------------
       !!                     ***  ROUTINE  mpp_init_nfdcom  ***
-      !! ** Purpose :   Setup for north fold exchanges with explicit 
+      !! ** Purpose :   Setup for north fold exchanges with explicit
       !!                point-to-point messaging
       !!
       !! ** Method :   Initialization of the northern neighbours lists.
       !!----------------------------------------------------------------------
       !!    1.0  ! 2011-10  (A. C. Coward, NOCS & J. Donners, PRACE)
-      !!    2.0  ! 2013-06 Setup avoiding MPI communication (I. Epicoco, S. Mocavero, CMCC) 
+      !!    2.0  ! 2013-06 Setup avoiding MPI communication (I. Epicoco, S. Mocavero, CMCC)
       !!----------------------------------------------------------------------
       INTEGER  ::   sxM, dxM, sxT, dxT, jn
       INTEGER  ::   njmppmax
