@@ -28,6 +28,7 @@ MODULE tranxt
    USE sbc_oce         ! surface boundary condition: ocean
    USE sbcrnf          ! river runoffs
    USE sbcisf          ! ice shelf melting
+   USE sbcspp  , ONLY : ln_vertspp
    USE zdf_oce         ! ocean vertical mixing
    USE domvvl          ! variable volume
    USE trd_oce         ! trends: ocean variables
@@ -313,9 +314,7 @@ CONTAINS
                   !
                   zscale = zfact2 * e3t_n(ji,jj,jk) / ( ht_n(ji,jj) + 1._wp - ssmask(ji,jj) )
                   ze3t_f = ze3t_f - zscale * ( emp_b(ji,jj) - emp(ji,jj) )
-#if defined key_si3
-                  ze3t_f = ze3t_f - zscale * ( fmmflx_b(ji,jj) - fmmflx(ji,jj) )
-#endif
+                  IF (ln_vertspp)  ze3t_f = ze3t_f - zscale * ( fmmflx_b(ji,jj) - fmmflx(ji,jj) )
                   IF ( ll_rnf ) ze3t_f = ze3t_f + zscale * (    rnf_b(ji,jj) -    rnf(ji,jj) )
                   IF ( ll_isf ) ze3t_f = ze3t_f - zscale * ( fwfisf_b(ji,jj) - fwfisf(ji,jj) )
 
