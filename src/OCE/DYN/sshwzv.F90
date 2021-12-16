@@ -22,6 +22,7 @@ MODULE sshwzv
    USE domvvl         ! Variable volume
    USE divhor         ! horizontal divergence
    USE phycst         ! physical constants
+   USE sbcspp  , ONLY : ln_vertspp
    USE bdy_oce , ONLY : ln_bdy, bdytmask   ! Open BounDarY
    USE bdydyn2d       ! bdy_ssh routine
 #if defined key_agrif
@@ -255,11 +256,9 @@ CONTAINS
          IF( .NOT.ln_linssh ) THEN                          ! before <-- with forcing removed
             zcoef = atfp * rdt * r1_rau0
             sshb(:,:) = sshb(:,:) - zcoef * (     emp_b(:,:) - emp   (:,:)   &
-#if defined key_si3
-               &                             + fmmflx_b(:,:) - fmmflx(:,:)   &
-#endif
                &                             -    rnf_b(:,:) + rnf   (:,:)   &
                &                             + fwfisf_b(:,:) - fwfisf(:,:)   ) * ssmask(:,:)
+            IF (ln_vertspp) sshb(:,:) = sshb(:,:) - zcoef * (fmmflx_b(:,:) - fmmflx(:,:))
          ENDIF
          sshn(:,:) = ssha(:,:)                              ! now <-- after
       ENDIF
