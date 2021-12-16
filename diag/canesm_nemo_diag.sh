@@ -7,13 +7,6 @@
 #########################################################
 
 set -x
-err_exit() {
-    # create signal file to tell parent process an error occurred
-    echo "Error occurred!"
-    touch $signal_file
-    exit 1
-}
-trap 'err_exit' ERR
 
 # Note that nemo_rtd_mons used below is first month of the time chunk. 
 # nemo_rtd_mons=1 for a run starting from January in a single 12-month chunk;

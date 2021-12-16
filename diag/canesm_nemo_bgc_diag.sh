@@ -10,13 +10,6 @@
 #########################################################
 
 set -x
-err_exit() {
-    # create signal file to tell parent process an error occurred
-    echo "Error occurred!"
-    touch $signal_file
-    exit 1
-}
-trap 'err_exit' ERR
 
 # NEMO priority level
   output_level=${output_level}
