@@ -67,7 +67,6 @@ echo "#################### Start NEMO pre-processing #################"
   is_defined $runid                 || bail "nemo_prelude: runid must be defined"
   is_defined $uxxx                  || bail "nemo_prelude: uxxx must be defined"
   is_defined $nemo_exec             || bail "nemo_prelude: nemo_exec must be defined"
-  is_defined $xios_exec             || bail "xios_prelude: xios_exec must be defined"
   is_defined $output_level          || bail "nemo_prelude: output_level must be defined"
   is_defined $runmode               || bail "nemo_prelude: runmode must be defined"
 
@@ -115,7 +114,7 @@ echo "#################### Start NEMO pre-processing #################"
   nemo_empave_old=empave_old.dat
   nemo_coordinates=urdy_eorca1_domcfg_eorca1v2.2x_orca_jstart.nc
   nemo_geothermal_heating=urdy_eorca1_goutorbe_1x1_0360_eorca1_v2.2x_jstart.nc
-  nemo_runoff_core_monthly=ukmo_eorca1_runoff_v2.2x_jstart.nc
+  nemo_runoff_core_monthly=urdy_eorca1_runoff_v2.2x_jstart.nc
   nemo_sss_data=urdy_eorca1_sss_1m_en4_eorca1_blackseapatch_northfoldfix_jstart.nc
   nemo_sst_data=uros_sst_1m_en4_eorca1_blackseapatch_northfoldfix_jstart.nc
   nemo_chlorophyll=nemo_4.0.1_orca2_chlorophyll.nc
@@ -150,19 +149,19 @@ echo "#################### Start NEMO pre-processing #################"
   acc_cp data_1m_salinity_nomask.nc              $nemo_data_1m_salinity_nomask
 
   # Access files required to run NEMO
-  xios_files = ( axis_def_nemo.xml \
-                 context_nemo.xml \
-                 domain_def_nemo.xml \
-                 field_def_nemo-ice.xml \
-                 field_def_nemo-oce.xml \
-                 field_def_nemo-pisces.xml \
-                 file_def_nemo-ice.xml \
-                 file_def_nemo-oce.xml \
-                 file_def_nemo-pisces.xml \
-                 grid_def_nemo.xml \
-                 iodef.xml )
+  xios_files=( axis_def_nemo.xml \
+               context_nemo.xml \
+               domain_def_nemo.xml \
+               field_def_nemo-ice.xml \
+               field_def_nemo-oce.xml \
+               field_def_nemo-pisces.xml \
+               file_def_nemo-ice.xml \
+               file_def_nemo-oce.xml \
+               file_def_nemo-pisces.xml \
+               grid_def_nemo.xml \
+               iodef.xml )
 
-  for file in $xios_files; do
+  for file in "${xios_files[@]}"; do
     find_nemo_config_EXP00 $file
   done
 
@@ -340,14 +339,14 @@ echo "#################### Start NEMO pre-processing #################"
   # - the main defaults are defined at the top of this script (should we move other runmode specific files?)
 
   # run namelists
-  for f in $nemo_namelists; do
+  for f in "${nemo_namelists[@]}"; do
       ! is_file $f && cp ${WRK_DIR}/config/namelists/${f} .
   done
 
   # nemo executable
   ! is_file $nemo_exec && cp ${CCRNSRC}/executables/$nemo_exec .
-  # xios executable
-  ! is_file $xios_exec && cp ${CCRNSRC}/executables/$xios_exec .
+  # # xios executable
+  # ! is_file $xios_exec && cp ${CCRNSRC}/executables/$xios_exec .
 
   rm -f mesh_mask*.nc
 

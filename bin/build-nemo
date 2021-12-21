@@ -132,16 +132,16 @@ for arg in "$@"; do
                 del_key)    nemo_del_cpp_keys="$val" ;; # a list of cpp keys to remove before compiling nemo
                 exec)       nemo_exec="$val" ;;             # name for the executable created here
                 cfg)        nemo_config="$val" ;;           # name of subdir in which config lives
-                refcfg)     nemo_ref_config="$val" ;;       # name of subdir in which ref config lives
                 nemo_arch)  nemo_arch_identifier="$val" ;;  # makenemo identifier for file with arch specific make defs
+                util_arch)  nemo_util_arch_file="$val";;
                 xios_comp_np) xios_comp_np="$val";;         # Number of processes to use for xios compilation
                 add_key)    nemo_add_cpp_keys="$val" ;;     # a list of cpp keys to add before compiling nemo
                 del_key)    nemo_del_cpp_keys="$val" ;;     # a list of cpp keys to remove before compiling nemo
                 xios_arch)  xios_arch="$val"  ;;        # xios arch name
                 xios_netcdf_lib)  xios_netcdf_lib="$val" ;; # choice of netcdf library (netcdf4_par or netcdf4_seq)
-            	xios_full)  xios_full="--full" ;;           # The full compilation of xios
-            	xios_dev)   xios_dev="--dev" ;;             # A developer mode for xios
-            	is_coupled) is_coupled=1 ;;             # If set, bring in additional files needed for coupled model
+            	  xios_full)  xios_full="--full" ;;           # The full compilation of xios
+            	  xios_dev)   xios_dev="--dev" ;;             # A developer mode for xios
+            	  is_coupled) is_coupled="$val" ;;             # If set, bring in additional files needed for coupled model
                 *)          usage "Invalid command line arg --> $arg <--"; exit 1  ;;
              esac
              ;;
@@ -162,6 +162,7 @@ fi
 [[ -z "$nemo_exec" ]]               && bail "exec must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
 [[ -z "$nemo_config" ]]             && bail "cfg must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
 [[ -z "$nemo_arch_identifier" ]]    && bail "nemo_arch must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
+[[ -z "$nemo_util_arch_file" ]]     && bail "util_arch must be given at the command line! See ${THIS_SCRIPT_PATH} -h"
 
 # make sure the source directory exists
 [[ -d "$nemo_source_path" ]] || bail "The given srcpath ---> $nemo_source_path <--- doesn't exist!"
@@ -258,8 +259,8 @@ if (( $is_coupled == 1 )); then
     ln -s $cppdef_sizes_file $nemo_cppdef_sizes_link
 
     # copy in external coupler file, and alter inlcude statements to use the .h90 links
-    sed -i "s/$(basename $cppdef_config_file)/$(basename $nemo_cppdef_config_link)/g" $nemo_cpl_src_file
-    sed -i "s/$(basename $cppdef_sizes_file)/$(basename $nemo_cppdef_sizes_link)/g" $nemo_cpl_src_file
+    sed -i "s/$(basename $cppdef_config_file)\b/$(basename $nemo_cppdef_config_link)/g" $nemo_cpl_src_file
+    sed -i "s/$(basename $cppdef_sizes_file)\b/$(basename $nemo_cppdef_sizes_link)/g" $nemo_cpl_src_file
 fi
 
 #===========
@@ -287,7 +288,7 @@ ARGS=( --job $xios_comp_np --arch $xios_arch )
 
 # Create xios executable (note that arch.env is sourced inside make_xios)
 echo 'make_xios '"${ARGS[@]}"
-./make_xios "${ARGS[@]}"
+#./make_xios "${ARGS[@]}"
 
 # Compiling nemo
 echo "Compiling in:  ${nemo_model_build_dir}"
@@ -299,7 +300,7 @@ source nemo_comp_env ||
 
 # clean temporary dirs if this is a "clean" compile
 if (( clean_compile == 1 )); then
-    ./makenemo -n $nemo_config clean
+    ./makenemo -r $nemo_config clean
 fi
 
 # build command line args into a bash array -> array needed for potential space delim list in add_key/del_key
@@ -312,9 +313,31 @@ ARGS=( -j $comp_np -m $nemo_arch_identifier -n $nemo_config )
 echo 'makenemo '"${ARGS[@]}"
 ./makenemo "${ARGS[@]}"
 
+ #-------------------------------
+ # compile exec's using makefiles
+ #-------------------------------
+ nemo_util_arch_file_basename=$(basename ${nemo_util_arch_file})
+ for build_dir in $make_build_dirs; do
+     echo ""
+     echo "=============================================="
+     echo "    Compiling executables in $build_dir       "
+     echo "=============================================="
+     cd $build_dir
+
+     # get make template file
+     ln -sf ${nemo_util_arch_file} ${nemo_util_arch_file_basename}
+
+     # compile
+     if (( clean_compile == 1 )); then
+         make clean
+     fi
+     make COMPILER_TEMPLATE=${nemo_util_arch_file_basename}
+ done
+
 # reset the cfg.txt and cpp_${CONFIG}.fcm files to avoid dirtying the repo
 # files_to_reset="cfg.txt ${nemo_config}/cpp_${nemo_config}.fcm"
 files_to_reset="${cfgdir}/${nemo_config}/cpp_${nemo_config}.fcm"
+files_to_reset=
 
 # log cpp_${nemo_config}.fcm
 echo "${files_to_reset}:"
