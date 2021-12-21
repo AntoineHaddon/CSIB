@@ -695,12 +695,13 @@ CONTAINS
       ENDIF
 
       ! Calculate additional parameters for the domain decomposition
+      jpdtot = nlci*nlcj
       DO jproc=1,jpnij
          jpdtott(jproc) = nlcit(jproc)*nlcjt(jproc)
       ENDDO
       jpdtot_glo = SUM(jpdtott)
 
-      offsetst(:) = 0
+      offsetst(1) = 0
       DO jproc=2,jpnij
          offsetst(jproc) = offsetst(jproc-1) + jpdtott(jproc-1)
       ENDDO

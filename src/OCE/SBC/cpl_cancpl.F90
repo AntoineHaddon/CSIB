@@ -30,7 +30,7 @@ MODULE cpl_cancpl
   use timing
   use par_kind, only : wp
   use lib_mpp, only : mpi_comm_oce, ctl_stop, mppgather, mppsync, mppscatter, mppstop, mpp_max
-  use lib_mpp, only : reconstruct_global_2d, reconstruct_global_2d_ptr, mppgather_scalar_integer
+  use lib_mpp, only : reconstruct_global_2d, mppgather_scalar_integer
   use cpl_types, only : srcv, ssnd, FLD_C, FLD_CPL, nmaxfld
 
   implicit none
@@ -355,7 +355,6 @@ contains
      !--- jps_ivx1=12, jps_ivy1=13, jps_ivz1=14
      integer, dimension(15) :: send_order = &
          (/ 2, 3, 4, 5, 6, 1, 7, 8, 15, 9, 10, 11, 12, 13, 14 /)
-     integer :: jpimax, jpjmax
      !!--------------------------------------------------------------------
 
      !--- Determine the rank of the calling process in MPI_COMM_WORLD
@@ -367,15 +366,6 @@ contains
        write(numout,*) '~~~~~~~~~~~~~~~~~'
        write(numout,*)
        call flush(numout)
-     endif
-
-     !--- Allocate temporary space used with MPI gather/scatter ops below
-     jpimax = jpi; jpjmax = jpj
-     call mpp_max("cpl_cancpl_define",jpimax)
-     call mpp_max("cpl_cancpl_define",jpjmax)
-     allocate( png(jpimax,jpjmax,jpnij), stat=nerror )
-     if( nerror > 0 ) then
-       call ctl_stop("STOP", " cpl_cancpl_define", "Problem allocating png")
      endif
 
      if ( rank == ocn_master .and. verbose > 1 ) then
@@ -579,69 +569,69 @@ contains
        call flush(6)
      endif
 
-     !--- Gather glamt into nemo_glamt (found in com_cpl)
-     !--- glamt is found in module dom_oce
-     call cpl_gather("glamt", rank)
+    !--- Gather glamt into nemo_glamt (found in com_cpl)
+    !--- glamt is found in module dom_oce
+    call cpl_gather("glamt", rank)
 
-     !--- Gather glamu into nemo_glamu (found in com_cpl)
-     !--- glamu is found in module dom_oce
-     call cpl_gather("glamu", rank)
+    !--- Gather glamu into nemo_glamu (found in com_cpl)
+    !--- glamu is found in module dom_oce
+    call cpl_gather("glamu", rank)
 
-     !--- Gather glamv into nemo_glamv (found in com_cpl)
-     !--- glamv is found in module dom_oce
-     call cpl_gather("glamv", rank)
+    !--- Gather glamv into nemo_glamv (found in com_cpl)
+    !--- glamv is found in module dom_oce
+    call cpl_gather("glamv", rank)
 
-     !--- Gather glamf into nemo_glamf (found in com_cpl)
-     !--- glamf is found in module dom_oce
-     call cpl_gather("glamf", rank)
+    !--- Gather glamf into nemo_glamf (found in com_cpl)
+    !--- glamf is found in module dom_oce
+    call cpl_gather("glamf", rank)
 
-     !--- Gather gphit into nemo_gphit (found in com_cpl)
-     !--- gphit is found in module dom_oce
-     call cpl_gather("gphit", rank)
+    !--- Gather gphit into nemo_gphit (found in com_cpl)
+    !--- gphit is found in module dom_oce
+    call cpl_gather("gphit", rank)
 
-     !--- Gather gphiu into nemo_gphiu (found in com_cpl)
-     !--- gphiu is found in module dom_oce
-     call cpl_gather("gphiu", rank)
+    !--- Gather gphiu into nemo_gphiu (found in com_cpl)
+    !--- gphiu is found in module dom_oce
+    call cpl_gather("gphiu", rank)
 
-     !--- Gather gphiv into nemo_gphiv (found in com_cpl)
-     !--- gphiv is found in module dom_oce
-     call cpl_gather("gphiv", rank)
+    !--- Gather gphiv into nemo_gphiv (found in com_cpl)
+    !--- gphiv is found in module dom_oce
+    call cpl_gather("gphiv", rank)
 
-     !--- Gather gphif into nemo_gphif (found in com_cpl)
-     !--- gphif is found in module dom_oce
-     call cpl_gather("gphif", rank)
+    !--- Gather gphif into nemo_gphif (found in com_cpl)
+    !--- gphif is found in module dom_oce
+    call cpl_gather("gphif", rank)
 
-     !--- Gather e1t into nemo_e1t (found in com_cpl)
-     !--- e1t is found in module dom_oce
-     call cpl_gather("e1t", rank)
+    !--- Gather e1t into nemo_e1t (found in com_cpl)
+    !--- e1t is found in module dom_oce
+    call cpl_gather("e1t", rank)
 
-     !--- Gather e1u into nemo_e1u (found in com_cpl)
-     !--- e1u is found in module dom_oce
-     call cpl_gather("e1u", rank)
+    !--- Gather e1u into nemo_e1u (found in com_cpl)
+    !--- e1u is found in module dom_oce
+    call cpl_gather("e1u", rank)
 
-     !--- Gather e1v into nemo_e1v (found in com_cpl)
-     !--- e1v is found in module dom_oce
-     call cpl_gather("e1v", rank)
+    !--- Gather e1v into nemo_e1v (found in com_cpl)
+    !--- e1v is found in module dom_oce
+    call cpl_gather("e1v", rank)
 
-     !--- Gather e1f into nemo_e1f (found in com_cpl)
-     !--- e1f is found in module dom_oce
-     call cpl_gather("e1f", rank)
+    !--- Gather e1f into nemo_e1f (found in com_cpl)
+    !--- e1f is found in module dom_oce
+    call cpl_gather("e1f", rank)
 
-     !--- Gather e2t into nemo_e2t (found in com_cpl)
-     !--- e2t is found in module dom_oce
-     call cpl_gather("e2t", rank)
+    !--- Gather e2t into nemo_e2t (found in com_cpl)
+    !--- e2t is found in module dom_oce
+    call cpl_gather("e2t", rank)
 
-     !--- Gather e2u into nemo_e2u (found in com_cpl)
-     !--- e2u is found in module dom_oce
-     call cpl_gather("e2u", rank)
+    !--- Gather e2u into nemo_e2u (found in com_cpl)
+    !--- e2u is found in module dom_oce
+    call cpl_gather("e2u", rank)
 
-     !--- Gather e2v into nemo_e2v (found in com_cpl)
-     !--- e2v is found in module dom_oce
-     call cpl_gather("e2v", rank)
+    !--- Gather e2v into nemo_e2v (found in com_cpl)
+    !--- e2v is found in module dom_oce
+    call cpl_gather("e2v", rank)
 
-     !--- Gather e2f into nemo_e2f (found in com_cpl)
-     !--- e2f is found in module dom_oce
-     call cpl_gather("e2f", rank)
+    !--- Gather e2f into nemo_e2f (found in com_cpl)
+    !--- e2f is found in module dom_oce
+    call cpl_gather("e2f", rank)
 
      !--- Gather tmask_i into nemo_tmask (found in com_cpl)
      !--- tmask_i is found in module dom_oce
@@ -744,7 +734,7 @@ contains
 
     select case (trim(adjustl(vname)))
       case ("glamt")
-        call reconstruct_global_2d_ptr(glamt,0,nemo_glamt)
+        call reconstruct_global_2d_ptr(glamt,0,nemo_glamt,'T')
 
       case ("glamu")
         call reconstruct_global_2d_ptr(glamu,0,nemo_glamu)
@@ -756,7 +746,7 @@ contains
         call reconstruct_global_2d_ptr(glamf,0,nemo_glamf)
 
       case ("gphit")
-        call reconstruct_global_2d_ptr(gphit,0,nemo_gphit)
+        call reconstruct_global_2d_ptr(gphit,0,nemo_gphit,'T')
 
       case ("gphiu")
         call reconstruct_global_2d_ptr(gphiu,0,nemo_gphiu)
@@ -768,7 +758,7 @@ contains
         call reconstruct_global_2d_ptr(gphif,0,nemo_gphif)
 
       case ("e1t")
-        call reconstruct_global_2d_ptr(e1t,0,nemo_e1t)
+        call reconstruct_global_2d_ptr(e1t,0,nemo_e1t,'T')
 
       case ("e1u")
         call reconstruct_global_2d_ptr(e1u,0,nemo_e1u)
@@ -780,7 +770,7 @@ contains
         call reconstruct_global_2d_ptr(e1f,0,nemo_e1f)
 
       case ("e2t")
-        call reconstruct_global_2d_ptr(e2t,0,nemo_e2t)
+        call reconstruct_global_2d_ptr(e2t,0,nemo_e2t,'T')
 
       case ("e2u")
         call reconstruct_global_2d_ptr(e2u,0,nemo_e2u)
@@ -792,10 +782,10 @@ contains
         call reconstruct_global_2d_ptr(e2f,0,nemo_e2f)
 
       case ("tmask_i")
-        call reconstruct_global_2d_ptr(tmask_i,0,nemo_tmask)
+        call reconstruct_global_2d_ptr(tmask_i,0,nemo_tmask, 'T')
 
       case ("tmask")
-        call reconstruct_global_2d_ptr(tmask(:,:,1),0,nemo_tmask)
+        call reconstruct_global_2d_ptr(tmask(:,:,1),0,nemo_tmask, 'T')
 
       case ("umask")
         call reconstruct_global_2d_ptr(umask(:,:,1),0,nemo_umask)
@@ -812,6 +802,35 @@ contains
 
     end select
   end subroutine cpl_gather
+
+  SUBROUTINE reconstruct_global_2d_ptr( ptab, kp, pio, grid )
+      !!----------------------------------------------------------------------
+      !!                  ***  routine mppscatter  ***
+      !!
+      !! ** Purpose :   Reconstruct a global 2d array from each subdomain.
+      !!                This wrapper is needed for cpl_cancpl which might need
+      !!                to allocate memory
+      !!
+      !!----------------------------------------------------------------------
+      REAL(wp), DIMENSION(jpi,jpj)      , INTENT(IN   )  ::   ptab   ! subdomain array input
+      INTEGER                           , INTENT(IN   )  ::   kp     ! Tag (not used with MPI
+      REAL(wp), DIMENSION(:,:), POINTER , INTENT(  OUT)  ::   pio    ! output array
+      CHARACTER(LEN=1),         OPTIONAL, INTENT(IN)     ::   grid   ! grid type    (T,U,V,F)
+
+      REAL, DIMENSION(jpi,jpj) :: ptab_local
+
+      IF (.NOT. ASSOCIATED(pio)) ALLOCATE(pio(jpiglo,jpjglo))
+      IF (PRESENT(grid))  THEN
+         ptab_local(:,:) = ptab(:,:)
+         call lbc_lnk('cpl_cancpl_snd', ptab_local, grid, 1.)
+         CALL reconstruct_global_2d(ptab_local, kp, pio)
+      ELSE
+         CALL reconstruct_global_2d(ptab, kp, pio)
+      ENDIF
+
+
+  END SUBROUTINE reconstruct_global_2d_ptr
+
 
   subroutine copy_1d_to_3d_global(wrk, png)
     !------------------------------------------------------------------------
@@ -931,7 +950,7 @@ contains
 
      !--- pdata contains data on the local domain (local MPI task) to be sent
      !--- It will be dimensioned pdata(jpi, jpj, ssnd(kid)%nct)
-     real(wp), intent(in)  :: pdata(:,:,:)
+     real(wp), intent(inout)  :: pdata(:,:,:)
 
      !--- Integer flag to indicate if srcv(kid) was sent or not
      !--- kinfo = OASIS_idle means the field was not sent to the coupler
@@ -1004,6 +1023,7 @@ contains
 
        call timing_start('cplsend_gather')
        !--- Gather data into the global array png
+       call lbc_lnk('cpl_cancpl_snd', pdata(:,:,jc), 'T', 1.)
        call reconstruct_global_2d(pdata(:,:,jc),0,global_array)
        call timing_stop('cplsend_gather')
 
@@ -1089,6 +1109,7 @@ contains
      integer(kind=impi) :: rank, ierr, sz, tag
      integer :: verbose=1
      integer (kind=impi) :: status(MPI_status_size)
+     real, dimension(jpiglo,jpjglo) :: wrk2d
      !!--------------------------------------------------------------------
 
      !---Determine the rank of the calling process in MPI_COMM_WORLD
@@ -1135,30 +1156,18 @@ contains
 
          !--- Receive the global array from the coupler
          call recv_data_rec(wrk, ibuf, cpl_master, trim(srcv(kid)%clname), dbg=ldbg)
-!xxx !DBG
-!xxx strng = " "
-!xxx strng=trim(srcv(kid)%clname)//"-wrk"
-!xxx call dump_array1d(trim(strng),wrk(1:cpl_vinfo%size))
 
          !--- Map the 1D wrk array onto the global 3D array png
         !  call copy_1d_to_3d_global(wrk, png)
-!xxx !DBG
-!xxx strng = " "
-!xxx strng=trim(srcv(kid)%clname)//"-png"
-!xxx call dump_array3d(trim(strng),png)
        endif
 
        call timing_start('cplrecv_scatter')
        !--- Scatter the global array onto each NEMO task
+       wrk2d = RESHAPE(wrk,[jpiglo,jpjglo])
        call mppsync
-       call mppscatter(wrk(1:jpiglo*jpjglo),0,pdata(:,:,jc))
+       call mppscatter(wrk2d, 0, pdata(:,:,jc))
        call mppsync
        call timing_stop('cplrecv_scatter')
-
-!xxx !DBG
-!xxx strng = " "
-!xxx strng=trim(srcv(kid)%clname)//"-pdata"
-!xxx call dump_array3d(trim(strng),pdata)
 
        if ( rank == ocn_master .and. verbose > 2 ) then
          !--- Count the number of NaNs in the global png array
