@@ -107,6 +107,7 @@ MODULE dom_oce
    INTEGER, PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   nleit , nlejt    !: first, last indoor index for each j-domain
    INTEGER, PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) :: nfiimpp, nfipproc, nfilcit
    INTEGER, PUBLIC, SAVE                              :: jpdtot_glo  !: Total number  of computed points (sum of all subdomain points)
+   INTEGER, PUBLIC, SAVE                              :: jpdtot      !! Number of indoor points
    INTEGER, PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:)   :: jpdtott !: Total number  of computed points (sum of all subdomain points) on every task
    INTEGER, PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:)   :: offsetst!: The offsets to use for each task when doing an mpi_gather
                                                                  !! based on the number of points in the 'indoor' domain. Note
