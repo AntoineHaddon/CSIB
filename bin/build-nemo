@@ -50,7 +50,7 @@ set -e
 #
 # Examples:
 #   build-nemo exec=nemo_v3.4_orca2_lim_exe cfg=ORCA2_LIM srcpath=/path/to/code/ \
-#              nemo_arch=intel.eccc-xc50 util_arch=/path/to/make-template 
+#              nemo_arch=intel.eccc-xc50 util_arch=/path/to/make-template
 #
 #     -- Build an ORCA2_LIM configuration that uses the nemo code define in srcpath (with
 #        a dir structure the same as the default), using the intel.eccc-xc50 archfile.
@@ -103,10 +103,10 @@ printf " ------------------- \n"
 # Flags
 while getopts p:j:hxdcf opt; do
     case $opt in
+        p) storage_loc="$OPTARG" ;;
         j) comp_np="$OPTARG" ;;
         x) set -x ;;
         c) copy_execs=1 ;;
-        p) storage_loc="$OPTARG" ;;
         h) usage ; exit 0 ;;
         f) clean_compile=1 ;;
         ?) usage ; exit 1 ;;
@@ -121,7 +121,7 @@ for arg in "$@"; do
             var=$(echo $arg | awk -F\= '{printf "%s",$1}')
             val=$(echo $arg | awk -F\= '{printf "%s",$2}')
             case $var in
-                srcpath)    nemo_source_path="$val" ;;  # location of code in a dir structure (instead of cloning)
+                srcpath)    nemo_source_path="$val" ;;
                 exec)       nemo_exec="$val" ;;         # name for the executable created here
                 cfg)        nemo_config="$val" ;;       # name of subdir in which config lives
                 refcfg)     nemo_ref_config="$val" ;;   # name of subdir in which ref config lives
@@ -282,19 +282,19 @@ ARGS=( --job $xios_comp_np --arch $xios_arch )
 [[ -n $xios_full ]] && ARGS+=( $xios_full )
 [[ -n $xios_debug ]] && ARGS+=( $xios_debug )
 [[ -n $xios_dev ]] && ARGS+=( $xios_dev )
-[[ -n $xios_netcdf_lib ]] && ARGS+=( $xios_netcdf_lib )
+[[ -n $xios_netcdf_lib ]] && ARGS+=( --netcdf_lib $xios_netcdf_lib )
 
 # Create xios executable (note that arch.env is sourced inside make_xios)
 echo 'make_xios '"${ARGS[@]}"
-#./make_xios "${ARGS[@]}"
+./make_xios "${ARGS[@]}"
 
 # Compiling nemo
 echo "Compiling in:  ${nemo_model_build_dir}"
 cd $nemo_model_build_dir
 
-# source nemo compilation environment
-source nemo_comp_env ||
-    bail "Failed to source the nemo compilation environment! Are the modules available?"
+# # source nemo compilation environment
+# source nemo_comp_env ||
+#     bail "Failed to source the nemo compilation environment! Are the modules available?"
 
 # clean temporary dirs if this is a "clean" compile
 if (( clean_compile == 1 )); then
