@@ -1,7 +1,7 @@
 MODULE zdftke
    !!======================================================================
    !!                       ***  MODULE  zdftke  ***
-   !! Ocean physics:  vertical mixing coefficient computed from the tke 
+   !! Ocean physics:  vertical mixing coefficient computed from the tke
    !!                 turbulent closure parameterization
    !!=====================================================================
    !! History :  OPA  !  1991-03  (b. blanke)  Original code
@@ -21,12 +21,12 @@ MODULE zdftke
    !!                 !           - Langmuir cells
    !!             -   !  2008-05  (J.-M. Molines, G. Madec)  2D form of avtb
    !!             -   !  2008-06  (G. Madec)  style + DOCTOR name for namelist parameters
-   !!             -   !  2008-12  (G. Reffray) stable discretization of the production term 
-   !!            3.2  !  2009-06  (G. Madec, S. Masson) TKE restart compatible with key_cpl 
+   !!             -   !  2008-12  (G. Reffray) stable discretization of the production term
+   !!            3.2  !  2009-06  (G. Madec, S. Masson) TKE restart compatible with key_cpl
    !!                 !                                + cleaning of the parameters + bugs correction
    !!            3.3  !  2010-10  (C. Ethe, G. Madec) reorganisation of initialisation phase
    !!            3.6  !  2014-11  (P. Mathiot) add ice shelf capability
-   !!            4.0  !  2017-04  (G. Madec)  remove CPP ddm key & avm at t-point only 
+   !!            4.0  !  2017-04  (G. Madec)  remove CPP ddm key & avm at t-point only
    !!             -   !  2017-05  (G. Madec)  add top/bottom friction as boundary condition
    !!----------------------------------------------------------------------
 
@@ -56,7 +56,7 @@ MODULE zdftke
    USE lib_mpp        ! MPP library
    USE lbclnk         ! ocean lateral boundary conditions (or mpp link)
    USE prtctl         ! Print control
-   USE lib_fortran    ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)  
+   USE lib_fortran    ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
 
    IMPLICIT NONE
    PRIVATE
@@ -73,7 +73,7 @@ MODULE zdftke
    REAL(wp) ::   rn_mxl0   ! surface  min value of mixing length (kappa*z_o=0.4*0.1 m)  [m]
    INTEGER  ::   nn_pdl    ! Prandtl number or not (ratio avt/avm) (=0/1)
    REAL(wp) ::   rn_ediff  ! coefficient for avt: avt=rn_ediff*mxl*sqrt(e)
-   REAL(wp) ::   rn_ediss  ! coefficient of the Kolmogoroff dissipation 
+   REAL(wp) ::   rn_ediss  ! coefficient of the Kolmogoroff dissipation
    REAL(wp) ::   rn_ebb    ! coefficient of the surface input of tke
    REAL(wp) ::   rn_emin   ! minimum value of tke           [m2/s2]
    REAL(wp) ::   rn_emin0  ! surface minimum value of tke   [m2/s2]
@@ -83,7 +83,7 @@ MODULE zdftke
    REAL(wp) ::      rn_efr    ! fraction of TKE surface value which penetrates in the ocean
    LOGICAL  ::   ln_lc     ! Langmuir cells (LC) as a source term of TKE or not
    REAL(wp) ::      rn_lc     ! coef to compute vertical velocity of Langmuir cells
-   INTEGER  ::   nn_eice   ! attenutaion of langmuir & surface wave breaking under ice (=0/1/2/3)   
+   INTEGER  ::   nn_eice   ! attenutaion of langmuir & surface wave breaking under ice (=0/1/2/3)
 
    REAL(wp) ::   ri_cri    ! critic Richardson number (deduced from rn_ediff and rn_ediss values)
    REAL(wp) ::   rmxl_min  ! minimum mixing length value (deduced from rn_ediff and rn_emin values)  [m]
@@ -131,12 +131,12 @@ CONTAINS
       !!      with the boundary conditions:
       !!         surface: en = max( rn_emin0, rn_ebb * taum )
       !!         bottom : en = rn_emin
-      !!      The associated critical Richardson number is: ri_cri = 2/(2+rn_ediss/rn_ediff) 
+      !!      The associated critical Richardson number is: ri_cri = 2/(2+rn_ediss/rn_ediff)
       !!
-      !!        The now Turbulent kinetic energy is computed using the following 
+      !!        The now Turbulent kinetic energy is computed using the following
       !!      time stepping: implicit for vertical diffusion term, linearized semi
-      !!      implicit for kolmogoroff dissipation term, and explicit forward for 
-      !!      both buoyancy and shear production terms. Therefore a tridiagonal 
+      !!      implicit for kolmogoroff dissipation term, and explicit forward for
+      !!      both buoyancy and shear production terms. Therefore a tridiagonal
       !!      linear system is solved. Note that buoyancy and shear terms are
       !!      discretized in a energy conserving form (Bruchard 2002).
       !!
@@ -144,12 +144,12 @@ CONTAINS
       !!      the stratification (see tke_avn)
       !!
       !!        The now vertical eddy vicosity and diffusivity coefficients are
-      !!      given by: 
+      !!      given by:
       !!              avm = max( avtb, rn_ediff * zmxlm * en^1/2 )
-      !!              avt = max( avmb, pdl * avm                 )  
+      !!              avt = max( avmb, pdl * avm                 )
       !!              eav = max( avmb, avm )
       !!      where pdl, the inverse of the Prandtl number is 1 if nn_pdl=0 and
-      !!      given by an empirical funtion of the localRichardson number if nn_pdl=1 
+      !!      given by an empirical funtion of the localRichardson number if nn_pdl=1
       !!
       !! ** Action  :   compute en (now turbulent kinetic energy)
       !!                update avt, avm (before vertical eddy coef.)
@@ -184,9 +184,9 @@ CONTAINS
       !!              - Now TKE : resolution of the TKE equation by inverting
       !!                a tridiagonal linear system by a "methode de chasse"
       !!              - increase TKE due to surface and internal wave breaking
-      !!             NB: when sea-ice is present, both LC parameterization 
-      !!                 and TKE penetration are turned off when the ice fraction 
-      !!                 is smaller than 0.25 
+      !!             NB: when sea-ice is present, both LC parameterization
+      !!                 and TKE penetration are turned off when the ice fraction
+      !!                 is smaller than 0.25
       !!
       !! ** Action  : - en : now turbulent kinetic energy)
       !! ---------------------------------------------------------------------
@@ -214,7 +214,7 @@ CONTAINS
       !
       zbbrau  =  rn_ebb / rau0       ! Local constant initialisation
       zbbirau =  3.75_wp / rau0
-      zfact1  = -0.5_wp * rdt 
+      zfact1  = -0.5_wp * rdt
       zfact2  =  1.5_wp * rdt * rn_ediss
       zfact3  =  0.5_wp       * rn_ediss
       !
@@ -233,7 +233,7 @@ CONTAINS
       DO jj = 2, jpjm1            ! en(1)   = rn_ebb taum / rau0  (min value rn_emin0)
          DO ji = fs_2, fs_jpim1   ! vector opt.
 !! clem: this should be the right formulation but it makes the model unstable unless drags are calculated implicitly
-!!       one way around would be to increase zbbirau 
+!!       one way around would be to increase zbbirau
 !!          en(ji,jj,1) = MAX( rn_emin0, ( ( 1._wp - fr_i(ji,jj) ) * zbbrau + &
 !!             &                                     fr_i(ji,jj)   * zbbirau ) * taum(ji,jj) ) * tmask(ji,jj,1)
             en(ji,jj,1) = MAX( rn_emin0, zbbrau * taum(ji,jj) ) * tmask(ji,jj,1)
@@ -268,7 +268,7 @@ CONTAINS
                   !                             ! where 0.001875 = (rn_ebb0/rau0) * 0.5 = 3.75*0.5/1000.  (CAUTION CdU<0)
                   zetop = - 0.001875_wp * rCdU_top(ji,jj) * SQRT(  ( zmsku*( ub(ji,jj,mikt(ji,jj))+ub(ji-1,jj,mikt(ji,jj)) ) )**2  &
                      &                                           + ( zmskv*( vb(ji,jj,mikt(ji,jj))+vb(ji,jj-1,mikt(ji,jj)) ) )**2  )
-                  en(ji,jj,mikt(ji,jj)) = en(ji,jj,1)           * tmask(ji,jj,1) &     
+                  en(ji,jj,mikt(ji,jj)) = en(ji,jj,1)           * tmask(ji,jj,1) &
                      &                  + MAX( zetop, rn_emin ) * (1._wp - tmask(ji,jj,1)) * ssmask(ji,jj)
                END DO
             END DO
@@ -289,7 +289,7 @@ CONTAINS
          zcof = 0.5 * 0.016 * 0.016 / ( zrhoa * zcdrag )
          imlc(:,:) = mbkt(:,:) + 1       ! Initialization to the number of w ocean point (=2 over land)
          DO jk = jpkm1, 2, -1
-            DO jj = 1, jpj               ! Last w-level at which zpelc>=0.5*us*us 
+            DO jj = 1, jpj               ! Last w-level at which zpelc>=0.5*us*us
                DO ji = 1, jpi            !      with us=0.016*wind(starting from jpk-1)
                   zus  = zcof * taum(ji,jj)
                   IF( zpelc(ji,jj,jk) > zus )   imlc(ji,jj) = jk
@@ -297,7 +297,7 @@ CONTAINS
             END DO
          END DO
          !                               ! finite LC depth
-         DO jj = 1, jpj 
+         DO jj = 1, jpj
             DO ji = 1, jpi
                zhlc(ji,jj) = pdepw(ji,jj,imlc(ji,jj))
             END DO
@@ -308,12 +308,12 @@ CONTAINS
                zus  = zcof * SQRT( taum(ji,jj) )           ! Stokes drift
                zus3(ji,jj) = MAX( 0._wp, 1._wp - zice_fra(ji,jj) ) * zus * zus * zus * tmask(ji,jj,1) ! zus > 0. ok
             END DO
-         END DO         
+         END DO
          DO jk = 2, jpkm1         !* TKE Langmuir circulation source term added to en
             DO jj = 2, jpjm1
                DO ji = fs_2, fs_jpim1   ! vector opt.
-                  IF ( zus3(ji,jj) /= 0._wp ) THEN               
-                     ! vertical velocity due to LC   
+                  IF ( zus3(ji,jj) /= 0._wp ) THEN
+                     ! vertical velocity due to LC
                      IF ( pdepw(ji,jj,jk) - zhlc(ji,jj) < 0 .AND. wmask(ji,jj,jk) /= 0. ) THEN
                         !                                           ! vertical velocity due to LC
                         zwlc = rn_lc * SIN( rpi * pdepw(ji,jj,jk) / zhlc(ji,jj) )
@@ -346,7 +346,7 @@ CONTAINS
             END DO
          END DO
       ENDIF
-      !         
+      !
       DO jk = 2, jpkm1           !* Matrix and right hand side in en
          DO jj = 2, jpjm1
             DO ji = fs_2, fs_jpim1   ! vector opt.
@@ -374,7 +374,8 @@ CONTAINS
       DO jk = 3, jpkm1                             ! First recurrence : Dk = Dk - Lk * Uk-1 / Dk-1
          DO jj = 2, jpjm1
             DO ji = fs_2, fs_jpim1    ! vector opt.
-               zdiag(ji,jj,jk) = zdiag(ji,jj,jk) - zd_lw(ji,jj,jk) * zd_up(ji,jj,jk-1) / zdiag(ji,jj,jk-1)
+               zdiag(ji,jj,jk) = zdiag(ji,jj,jk) - zd_lw(ji,jj,jk) * zd_up(ji,jj,jk-1) / &
+                                 (zdiag(ji,jj,jk-1)+EPSILON(zdiag(ji,jj,jk-1)))
             END DO
          END DO
       END DO
@@ -386,7 +387,8 @@ CONTAINS
       DO jk = 3, jpkm1
          DO jj = 2, jpjm1
             DO ji = fs_2, fs_jpim1    ! vector opt.
-               zd_lw(ji,jj,jk) = en(ji,jj,jk) - zd_lw(ji,jj,jk) / zdiag(ji,jj,jk-1) *zd_lw(ji,jj,jk-1)
+               zd_lw(ji,jj,jk) = en(ji,jj,jk) - zd_lw(ji,jj,jk) / (zdiag(ji,jj,jk-1) + EPSILON(zdiag(ji,jj,jk-1)))*&
+                                                zd_lw(ji,jj,jk-1)
             END DO
          END DO
       END DO
@@ -415,8 +417,8 @@ CONTAINS
       !                            !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 !!gm BUG : in the exp  remove the depth of ssh !!!
 !!gm       i.e. use gde3w in argument (pdepw)
-      
-      
+
+
       IF( nn_etau == 1 ) THEN           !* penetration below the mixed layer (rn_efr fraction)
          DO jk = 2, jpkm1                       ! nn_eice=0 : ON below sea-ice ; nn_eice>0 : partly OFF
             DO jj = 2, jpjm1
@@ -440,8 +442,8 @@ CONTAINS
                DO ji = fs_2, fs_jpim1   ! vector opt.
                   ztx2 = utau(ji-1,jj  ) + utau(ji,jj)
                   zty2 = vtau(ji  ,jj-1) + vtau(ji,jj)
-                  ztau = 0.5_wp * SQRT( ztx2 * ztx2 + zty2 * zty2 ) * tmask(ji,jj,1)    ! module of the mean stress 
-                  zdif = taum(ji,jj) - ztau                            ! mean of modulus - modulus of the mean 
+                  ztau = 0.5_wp * SQRT( ztx2 * ztx2 + zty2 * zty2 ) * tmask(ji,jj,1)    ! module of the mean stress
+                  zdif = taum(ji,jj) - ztau                            ! mean of modulus - modulus of the mean
                   zdif = rhftau_scl * MAX( 0._wp, zdif + rhftau_add )  ! apply some modifications...
                   en(ji,jj,jk) = en(ji,jj,jk) + zbbrau * zdif * EXP( -pdepw(ji,jj,jk) / htau(ji,jj) )   &
                      &                                 * MAX( 0._wp, 1._wp - zice_fra(ji,jj) ) * wmask(ji,jj,jk) * tmask(ji,jj,1)
@@ -459,30 +461,30 @@ CONTAINS
       !!
       !! ** Purpose :   Compute the vertical eddy viscosity and diffusivity
       !!
-      !! ** Method  :   At this stage, en, the now TKE, is known (computed in 
-      !!              the tke_tke routine). First, the now mixing lenth is 
+      !! ** Method  :   At this stage, en, the now TKE, is known (computed in
+      !!              the tke_tke routine). First, the now mixing lenth is
       !!      computed from en and the strafification (N^2), then the mixings
       !!      coefficients are computed.
       !!              - Mixing length : a first evaluation of the mixing lengh
       !!      scales is:
-      !!                      mxl = sqrt(2*en) / N  
+      !!                      mxl = sqrt(2*en) / N
       !!      where N is the brunt-vaisala frequency, with a minimum value set
       !!      to rmxl_min (rn_mxl0) in the interior (surface) ocean.
-      !!        The mixing and dissipative length scale are bound as follow : 
+      !!        The mixing and dissipative length scale are bound as follow :
       !!         nn_mxl=0 : mxl bounded by the distance to surface and bottom.
       !!                        zmxld = zmxlm = mxl
       !!         nn_mxl=1 : mxl bounded by the e3w and zmxld = zmxlm = mxl
-      !!         nn_mxl=2 : mxl bounded such that the vertical derivative of mxl is 
+      !!         nn_mxl=2 : mxl bounded such that the vertical derivative of mxl is
       !!                    less than 1 (|d/dz(mxl)|<1) and zmxld = zmxlm = mxl
       !!         nn_mxl=3 : mxl is bounded from the surface to the bottom usings
-      !!                    |d/dz(xml)|<1 to obtain lup, and from the bottom to 
-      !!                    the surface to obtain ldown. the resulting length 
+      !!                    |d/dz(xml)|<1 to obtain lup, and from the bottom to
+      !!                    the surface to obtain ldown. the resulting length
       !!                    scales are:
-      !!                        zmxld = sqrt( lup * ldown ) 
+      !!                        zmxld = sqrt( lup * ldown )
       !!                        zmxlm = min ( lup , ldown )
       !!              - Vertical eddy viscosity and diffusivity:
       !!                      avm = max( avtb, rn_ediff * zmxlm * en^1/2 )
-      !!                      avt = max( avmb, pdlr * avm )  
+      !!                      avt = max( avmb, pdlr * avm )
       !!      with pdlr=1 if nn_pdl=0, pdlr=1/pdl=F(Ri) otherwise.
       !!
       !! ** Action  : - avt, avm : now vertical eddy diffusivity and viscosity (w-point)
@@ -507,9 +509,9 @@ CONTAINS
       !                     !* Buoyancy length scale: l=sqrt(2*e/n**2)
       !
       ! initialisation of interior minimum value (avoid a 2d loop with mikt)
-      zmxlm(:,:,:)  = rmxl_min    
+      zmxlm(:,:,:)  = rmxl_min
       zmxld(:,:,:)  = rmxl_min
-      ! 
+      !
       IF( ln_mxl0 ) THEN            ! surface mixing length = F(stress) : l=vkarmn*2.e5*taum/(rau0*g)
          !
          zraug = vkarmn * 2.e5_wp / ( rau0 * grav )
@@ -585,7 +587,7 @@ CONTAINS
       !
       !                     !* Physical limits for the mixing length
       !
-      zmxld(:,:, 1 ) = zmxlm(:,:,1)   ! surface set to the minimum value 
+      zmxld(:,:, 1 ) = zmxlm(:,:,1)   ! surface set to the minimum value
       zmxld(:,:,jpk) = rmxl_min       ! last level  set to the minimum value
       !
       SELECT CASE ( nn_mxl )
@@ -699,8 +701,8 @@ CONTAINS
    SUBROUTINE zdf_tke_init
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE zdf_tke_init  ***
-      !!                     
-      !! ** Purpose :   Initialization of the vertical eddy diffivity and 
+      !!
+      !! ** Purpose :   Initialization of the vertical eddy diffivity and
       !!              viscosity when using a tke turbulent closure scheme
       !!
       !! ** Method  :   Read the namzdf_tke namelist and check the parameters
@@ -719,7 +721,7 @@ CONTAINS
          &                 rn_emin0, rn_bshear, nn_mxl   , ln_mxl0  ,  &
          &                 rn_mxl0 , nn_mxlice, rn_mxlice,             &
          &                 nn_pdl  , ln_lc    , rn_lc,                 &
-         &                 nn_etau , nn_htau  , rn_efr   , nn_eice  
+         &                 nn_etau , nn_htau  , rn_efr   , nn_eice
       !!----------------------------------------------------------------------
       !
       REWIND( numnam_ref )              ! Namelist namzdf_tke in reference namelist : Turbulent Kinetic Energy
@@ -767,14 +769,14 @@ CONTAINS
          WRITE(numout,*) '          type of tke penetration profile            nn_htau   = ', nn_htau
          WRITE(numout,*) '          fraction of TKE that penetrates            rn_efr    = ', rn_efr
          WRITE(numout,*) '      langmuir & surface wave breaking under ice  nn_eice = ', nn_eice
-         SELECT CASE( nn_eice ) 
+         SELECT CASE( nn_eice )
          CASE( 0 )   ;   WRITE(numout,*) '   ==>>>   no impact of ice cover on langmuir & surface wave breaking'
          CASE( 1 )   ;   WRITE(numout,*) '   ==>>>   weigthed by 1-TANH( fr_i(:,:) * 10 )'
          CASE( 2 )   ;   WRITE(numout,*) '   ==>>>   weighted by 1-fr_i(:,:)'
          CASE( 3 )   ;   WRITE(numout,*) '   ==>>>   weighted by 1-MIN( 1, 4 * fr_i(:,:) )'
          CASE DEFAULT
             CALL ctl_stop( 'zdf_tke_init: wrong value for nn_eice, should be 0,1,2, or 3')
-         END SELECT      
+         END SELECT
          IF( .NOT.ln_drg_OFF ) THEN
             WRITE(numout,*)
             WRITE(numout,*) '   Namelist namdrg_top/_bot:   used values:'
@@ -809,20 +811,20 @@ CONTAINS
          IF(lwp) WRITE(numout,*) '   ==>>>   use a surface mixing length = F(stress) :   set rn_mxl0 = rmxl_min'
          rn_mxl0 = rmxl_min
       ENDIF
-      
-      IF( nn_etau == 2  )   CALL zdf_mxl( nit000 )      ! Initialization of nmln 
+
+      IF( nn_etau == 2  )   CALL zdf_mxl( nit000 )      ! Initialization of nmln
 
       !                               !* depth of penetration of surface tke
-      IF( nn_etau /= 0 ) THEN      
+      IF( nn_etau /= 0 ) THEN
          SELECT CASE( nn_htau )             ! Choice of the depth of penetration
          CASE( 0 )                                 ! constant depth penetration (here 10 meters)
             htau(:,:) = 10._wp
          CASE( 1 )                                 ! F(latitude) : 0.5m to 30m poleward of 40 degrees
-            htau(:,:) = MAX(  0.5_wp, MIN( 30._wp, 45._wp* ABS( SIN( rpi/180._wp * gphit(:,:) ) ) )   )            
+            htau(:,:) = MAX(  0.5_wp, MIN( 30._wp, 45._wp* ABS( SIN( rpi/180._wp * gphit(:,:) ) ) )   )
          END SELECT
       ENDIF
       !                                !* read or initialize all required files
-      CALL tke_rst( nit000, 'READ' )      ! (en, avt_k, avm_k, dissl) 
+      CALL tke_rst( nit000, 'READ' )      ! (en, avt_k, avm_k, dissl)
       !
       IF( lwxios ) THEN
          CALL iom_set_rstw_var_active('en')
@@ -836,12 +838,12 @@ CONTAINS
    SUBROUTINE tke_rst( kt, cdrw )
       !!---------------------------------------------------------------------
       !!                   ***  ROUTINE tke_rst  ***
-      !!                     
+      !!
       !! ** Purpose :   Read or write TKE file (en) in restart file
       !!
       !! ** Method  :   use of IOM library
-      !!                if the restart does not contain TKE, en is either 
-      !!                set to rn_emin or recomputed 
+      !!                if the restart does not contain TKE, en is either
+      !!                set to rn_emin or recomputed
       !!----------------------------------------------------------------------
       USE zdf_oce , ONLY : en, avt_k, avm_k   ! ocean vertical physics
       !!
@@ -852,7 +854,7 @@ CONTAINS
       INTEGER ::   id1, id2, id3, id4   ! local integers
       !!----------------------------------------------------------------------
       !
-      IF( TRIM(cdrw) == 'READ' ) THEN        ! Read/initialise 
+      IF( TRIM(cdrw) == 'READ' ) THEN        ! Read/initialise
          !                                   ! ---------------
          IF( ln_rstart ) THEN                   !* Read the restart file
             id1 = iom_varid( numror, 'en'   , ldstop = .FALSE. )
@@ -883,7 +885,7 @@ CONTAINS
       ELSEIF( TRIM(cdrw) == 'WRITE' ) THEN   ! Create restart file
          !                                   ! -------------------
          IF(lwp) WRITE(numout,*) '---- tke_rst ----'
-         IF( lwxios ) CALL iom_swap(      cwxios_context          ) 
+         IF( lwxios ) CALL iom_swap(      cwxios_context          )
          CALL iom_rstput( kt, nitrst, numrow, 'en'   , en   , ldxios = lwxios )
          CALL iom_rstput( kt, nitrst, numrow, 'avt_k', avt_k, ldxios = lwxios )
          CALL iom_rstput( kt, nitrst, numrow, 'avm_k', avm_k, ldxios = lwxios )

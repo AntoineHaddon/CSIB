@@ -8,15 +8,15 @@ MODULE traqsr
    !!                 !  1996-01  (G. Madec)  s-coordinates
    !!   NEMO     1.0  !  2002-06  (G. Madec)  F90: Free form and module
    !!             -   !  2005-11  (G. Madec) zco, zps, sco coordinate
-   !!            3.2  !  2009-04  (G. Madec & NEMO team) 
-   !!            3.6  !  2012-05  (C. Rousset) store attenuation coef for use in ice model 
+   !!            3.2  !  2009-04  (G. Madec & NEMO team)
+   !!            3.6  !  2012-05  (C. Rousset) store attenuation coef for use in ice model
    !!            3.6  !  2015-12  (O. Aumont, J. Jouanno, C. Ethe) use vertical profile of chlorophyll
-   !!            3.7  !  2015-11  (G. Madec, A. Coward)  remove optimisation for fix volume 
+   !!            3.7  !  2015-11  (G. Madec, A. Coward)  remove optimisation for fix volume
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
-   !!   tra_qsr       : temperature trend due to the penetration of solar radiation 
-   !!   tra_qsr_init  : initialization of the qsr penetration 
+   !!   tra_qsr       : temperature trend due to the penetration of solar radiation
+   !!   tra_qsr_init  : initialization of the qsr penetration
    !!----------------------------------------------------------------------
    USE oce            ! ocean dynamics and active tracers
    USE phycst         ! physical constants
@@ -43,7 +43,7 @@ MODULE traqsr
 
    !                                 !!* Namelist namtra_qsr: penetrative solar radiation
    LOGICAL , PUBLIC ::   ln_traqsr    !: light absorption (qsr) flag
-   LOGICAL , PUBLIC ::   ln_qsr_rgb   !: Red-Green-Blue light absorption flag  
+   LOGICAL , PUBLIC ::   ln_qsr_rgb   !: Red-Green-Blue light absorption flag
    LOGICAL , PUBLIC ::   ln_qsr_2bd   !: 2 band         light absorption flag
    LOGICAL , PUBLIC ::   ln_qsr_bio   !: bio-model      light absorption flag
    INTEGER , PUBLIC ::   nn_chldta    !: use Chlorophyll data (=1) or not (=0)
@@ -52,7 +52,7 @@ MODULE traqsr
    REAL(wp), PUBLIC ::   rn_si1       !: deepest depth of extinction (water type I)       (2 bands)
    !
    INTEGER , PUBLIC ::   nksr         !: levels below which the light cannot penetrate (depth larger than 391 m)
- 
+
    INTEGER, PARAMETER ::   np_RGB  = 1   ! R-G-B     light penetration with constant Chlorophyll
    INTEGER, PARAMETER ::   np_RGBc = 2   ! R-G-B     light penetration with Chlorophyll data
    INTEGER, PARAMETER ::   np_2BD  = 3   ! 2 bands   light penetration
@@ -85,13 +85,13 @@ CONTAINS
       !!      through 2 wavebands (rn_si0,rn_si1) or 3 wavebands (RGB) and a ratio rn_abs
       !!      Considering the 2 wavebands case:
       !!         I(k) = Qsr*( rn_abs*EXP(z(k)/rn_si0) + (1.-rn_abs)*EXP(z(k)/rn_si1) )
-      !!         The temperature trend associated with the solar radiation penetration 
+      !!         The temperature trend associated with the solar radiation penetration
       !!         is given by : zta = 1/e3t dk[ I ] / (rau0*Cp)
       !!         At the bottom, boudary condition for the radiation is no flux :
       !!      all heat which has not been absorbed in the above levels is put
       !!      in the last ocean level.
-      !!         The computation is only done down to the level where 
-      !!      I(k) < 1.e-15 W/m2 (i.e. over the top nksr levels) . 
+      !!         The computation is only done down to the level where
+      !!      I(k) < 1.e-15 W/m2 (i.e. over the top nksr levels) .
       !!
       !! ** Action  : - update ta with the penetrative solar radiation trend
       !!              - send  trend for further diagnostics (l_trdtra=T)
@@ -109,7 +109,7 @@ CONTAINS
       REAL(wp) ::   zzc0, zzc1, zzc2, zzc3   !    -         -
       REAL(wp) ::   zz0 , zz1                !    -         -
       REAL(wp) ::   zCb, zCmax, zze, zpsi, zpsimax, zdelpsi, zCtot, zCze
-      REAL(wp) ::   zlogc, zlogc2, zlogc3 
+      REAL(wp) ::   zlogc, zlogc2, zlogc3
       REAL(wp), ALLOCATABLE, DIMENSION(:,:)   :: zekb, zekg, zekr
       REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: ze0, ze1, ze2, ze3, zea, ztrdt
       REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zetot, zchl3d
@@ -124,7 +124,7 @@ CONTAINS
       ENDIF
       !
       IF( l_trdtra ) THEN      ! trends diagnostic: save the input temperature trend
-         ALLOCATE( ztrdt(jpi,jpj,jpk) ) 
+         ALLOCATE( ztrdt(jpi,jpj,jpk) )
          ztrdt(:,:,:) = tsa(:,:,:,jp_tem)
       ENDIF
       !
@@ -160,7 +160,7 @@ CONTAINS
          !
          ALLOCATE( zekb(jpi,jpj)     , zekg(jpi,jpj)     , zekr  (jpi,jpj)     , &
             &      ze0 (jpi,jpj,jpk) , ze1 (jpi,jpj,jpk) , ze2   (jpi,jpj,jpk) , &
-            &      ze3 (jpi,jpj,jpk) , zea (jpi,jpj,jpk) , zchl3d(jpi,jpj,jpk)   ) 
+            &      ze3 (jpi,jpj,jpk) , zea (jpi,jpj,jpk) , zchl3d(jpi,jpj,jpk)   )
          !
          IF( nqsr == np_RGBc ) THEN          !*  Variable Chlorophyll
             CALL fld_read( kt, 1, sf_chl )         ! Read Chl data and provides it at the current time step
@@ -180,7 +180,7 @@ CONTAINS
                      zCmax   = 0.299 - 0.289 * zlogc + 0.579 * zlogc2
                      zpsimax = 0.6   - 0.640 * zlogc + 0.021 * zlogc2 + 0.115 * zlogc3
                      zdelpsi = 0.710 + 0.159 * zlogc + 0.021 * zlogc2
-                     zCze    = 1.12  * (zchl)**0.803 
+                     zCze    = 1.12  * (zchl)**0.803
                      !
                      zchl3d(ji,jj,jk) = zCze * ( zCb + zCmax * EXP( -( (zpsi - zpsimax) / zdelpsi )**2 ) )
                   END DO
@@ -189,7 +189,7 @@ CONTAINS
             END DO
          ELSE                                !* constant chrlorophyll
            DO jk = 1, nksr + 1
-              zchl3d(:,:,jk) = 0.05 
+              zchl3d(:,:,jk) = 0.05
             ENDDO
          ENDIF
          !
@@ -238,18 +238,18 @@ CONTAINS
             END DO
          END DO
          !
-         DEALLOCATE( zekb , zekg , zekr , ze0 , ze1 , ze2 , ze3 , zea , zchl3d ) 
+         DEALLOCATE( zekb , zekg , zekr , ze0 , ze1 , ze2 , ze3 , zea , zchl3d )
          !
       CASE( np_2BD  )            !==  2-bands fluxes  ==!
          !
          zz0 =        rn_abs   * r1_rau0_rcp      ! surface equi-partition in 2-bands
          zz1 = ( 1. - rn_abs ) * r1_rau0_rcp
-         DO jk = 1, nksr                          ! solar heat absorbed at T-point in the top 400m 
+         DO jk = 1, nksr                          ! solar heat absorbed at T-point in the top 400m
             DO jj = 2, jpjm1
                DO ji = fs_2, fs_jpim1
                   zc0 = zz0 * EXP( -gdepw_n(ji,jj,jk  )*xsi0r ) + zz1 * EXP( -gdepw_n(ji,jj,jk  )*xsi1r )
                   zc1 = zz0 * EXP( -gdepw_n(ji,jj,jk+1)*xsi0r ) + zz1 * EXP( -gdepw_n(ji,jj,jk+1)*xsi1r )
-                  qsr_hc(ji,jj,jk) = qsr(ji,jj) * ( zc0 * wmask(ji,jj,jk) - zc1 * wmask(ji,jj,jk+1) ) 
+                  qsr_hc(ji,jj,jk) = qsr(ji,jj) * ( zc0 * wmask(ji,jj,jk) - zc1 * wmask(ji,jj,jk+1) )
                END DO
             END DO
          END DO
@@ -261,13 +261,14 @@ CONTAINS
          DO jj = 2, jpjm1        !-----------------------------!
             DO ji = fs_2, fs_jpim1   ! vector opt.
                tsa(ji,jj,jk,jp_tem) = tsa(ji,jj,jk,jp_tem)   &
-                  &                 + z1_2 * ( qsr_hc_b(ji,jj,jk) + qsr_hc(ji,jj,jk) ) / e3t_n(ji,jj,jk)
+                  &                 + z1_2 * ( qsr_hc_b(ji,jj,jk) + qsr_hc(ji,jj,jk) ) / &
+                                      (e3t_n(ji,jj,jk) + EPSILON(e3t_n))
             END DO
          END DO
       END DO
       !
       ! sea-ice: store the 1st ocean level attenuation coefficient
-      DO jj = 2, jpjm1 
+      DO jj = 2, jpjm1
          DO ji = fs_2, fs_jpim1   ! vector opt.
             IF( qsr(ji,jj) /= 0._wp ) THEN   ;   fraqsr_1lev(ji,jj) = qsr_hc(ji,jj,1) / ( r1_rau0_rcp * qsr(ji,jj) )
             ELSE                             ;   fraqsr_1lev(ji,jj) = 1._wp
@@ -281,22 +282,22 @@ CONTAINS
          zetot(:,:,nksr+1:jpk) = 0._wp     ! below ~400m set to zero
          DO jk = nksr, 1, -1
             zetot(:,:,jk) = zetot(:,:,jk+1) + qsr_hc(:,:,jk) * rau0_rcp
-         END DO         
+         END DO
          CALL iom_put( 'qsr3d', zetot )   ! 3D distribution of shortwave Radiation
-         DEALLOCATE( zetot ) 
+         DEALLOCATE( zetot )
       ENDIF
       !
       IF( lrst_oce ) THEN     ! write in the ocean restart file
          IF( lwxios ) CALL iom_swap(      cwxios_context          )
          CALL iom_rstput( kt, nitrst, numrow, 'qsr_hc_b'   , qsr_hc     , ldxios = lwxios )
-         CALL iom_rstput( kt, nitrst, numrow, 'fraqsr_1lev', fraqsr_1lev, ldxios = lwxios ) 
+         CALL iom_rstput( kt, nitrst, numrow, 'fraqsr_1lev', fraqsr_1lev, ldxios = lwxios )
          IF( lwxios ) CALL iom_swap(      cxios_context          )
       ENDIF
       !
       IF( l_trdtra ) THEN     ! qsr tracers trends saved for diagnostics
          ztrdt(:,:,:) = tsa(:,:,:,jp_tem) - ztrdt(:,:,:)
          CALL trd_tra( kt, 'TRA', jp_tem, jptra_qsr, ztrdt )
-         DEALLOCATE( ztrdt ) 
+         DEALLOCATE( ztrdt )
       ENDIF
       !                       ! print mean trends (used for debugging)
       IF(ln_ctl)   CALL prt_ctl( tab3d_1=tsa(:,:,:,jp_tem), clinfo1=' qsr  - Ta: ', mask1=tmask, clinfo3='tra-ta' )
@@ -315,7 +316,7 @@ CONTAINS
       !! ** Method  :   The profile of solar radiation within the ocean is set
       !!      from two length scale of penetration (rn_si0,rn_si1) and a ratio
       !!      (rn_abs). These parameters are read in the namtra_qsr namelist. The
-      !!      default values correspond to clear water (type I in Jerlov' 
+      !!      default values correspond to clear water (type I in Jerlov'
       !!      (1968) classification.
       !!         called by tra_qsr at the first timestep (nit000)
       !!
@@ -367,7 +368,7 @@ CONTAINS
       IF( ioptio /= 1 )   CALL ctl_stop( 'Choose ONE type of light penetration in namelist namtra_qsr',  &
          &                               ' 2 bands, 3 RGB bands or bio-model light penetration' )
       !
-      IF( ln_qsr_rgb .AND. nn_chldta == 0 )   nqsr = np_RGB 
+      IF( ln_qsr_rgb .AND. nn_chldta == 0 )   nqsr = np_RGB
       IF( ln_qsr_rgb .AND. nn_chldta == 1 )   nqsr = np_RGBc
       IF( ln_qsr_2bd                      )   nqsr = np_2BD
       IF( ln_qsr_bio                      )   nqsr = np_BIO
@@ -377,13 +378,13 @@ CONTAINS
       xsi1r = 1._wp / rn_si1
       !
       SELECT CASE( nqsr )
-      !                               
+      !
       CASE( np_RGB , np_RGBc )         !==  Red-Green-Blue light penetration  ==!
-         !                             
+         !
          IF(lwp)   WRITE(numout,*) '   ==>>>   R-G-B   light penetration '
          !
          CALL trc_oce_rgb( rkrgb )                 ! tabulated attenuation coef.
-         !                                   
+         !
          nksr = trc_oce_ext_lev( r_si2, 33._wp )   ! level of light extinction
          !
          IF(lwp) WRITE(numout,*) '        level of light extinction = ', nksr, ' ref depth = ', gdepw_1d(nksr+1), ' m'
@@ -415,9 +416,9 @@ CONTAINS
          !
          IF(lwp) WRITE(numout,*) '   ==>>>   bio-model light penetration'
          IF( .NOT.lk_top )   CALL ctl_stop( 'No bio model : ln_qsr_bio = true impossible ' )
-         !                                   
+         !
          CALL trc_oce_rgb( rkrgb )                 ! tabulated attenuation coef.
-         !                                   
+         !
          nksr = trc_oce_ext_lev( r_si2, 33._wp )   ! level of light extinction
          !
          IF(lwp) WRITE(numout,*) '        level of light extinction = ', nksr, ' ref depth = ', gdepw_1d(nksr+1), ' m'

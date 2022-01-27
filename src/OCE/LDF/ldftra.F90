@@ -1,19 +1,19 @@
 MODULE ldftra
    !!======================================================================
    !!                       ***  MODULE  ldftra  ***
-   !! Ocean physics:  lateral diffusivity coefficients 
+   !! Ocean physics:  lateral diffusivity coefficients
    !!=====================================================================
    !! History :       ! 1997-07  (G. Madec)  from inimix.F split in 2 routines
    !!   NEMO     1.0  ! 2002-09  (G. Madec)  F90: Free form and module
-   !!            2.0  ! 2005-11  (G. Madec)  
+   !!            2.0  ! 2005-11  (G. Madec)
    !!            3.7  ! 2013-12  (F. Lemarie, G. Madec)  restructuration/simplification of aht/aeiv specification,
    !!                 !                                  add velocity dependent coefficient and optional read in file
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
    !!   ldf_tra_init : initialization, namelist read, and parameters control
-   !!   ldf_tra      : update lateral eddy diffusivity coefficients at each time step 
-   !!   ldf_eiv_init : initialization of the eiv coeff. from namelist choices 
+   !!   ldf_tra      : update lateral eddy diffusivity coefficients at each time step
+   !!   ldf_eiv_init : initialization of the eiv coeff. from namelist choices
    !!   ldf_eiv      : time evolution of the eiv coefficients (function of the growth rate of baroclinic instability)
    !!   ldf_eiv_trp  : add to the input ocean transport the contribution of the EIV parametrization
    !!   ldf_eiv_dia  : diagnose the eddy induced velocity from the eiv streamfunction
@@ -22,7 +22,7 @@ MODULE ldftra
    USE dom_oce         ! ocean space and time domain
    USE phycst          ! physical constants
    USE ldfslp          ! lateral diffusion: slope of iso-neutral surfaces
-   USE ldfc1d_c2d      ! lateral diffusion: 1D & 2D cases 
+   USE ldfc1d_c2d      ! lateral diffusion: 1D & 2D cases
    USE diaptr
    !
    USE in_out_manager  ! I/O manager
@@ -39,8 +39,8 @@ MODULE ldftra
    PUBLIC   ldf_eiv        ! called by step.F90
    PUBLIC   ldf_eiv_trp    ! called by traadv.F90
    PUBLIC   ldf_eiv_dia    ! called by traldf_iso and traldf_iso_triad.F90
-   
-   !                                   !!* Namelist namtra_ldf : lateral mixing on tracers * 
+
+   !                                   !!* Namelist namtra_ldf : lateral mixing on tracers *
    !                                    != Operator type =!
    LOGICAL , PUBLIC ::   ln_traldf_OFF       !: no operator: No explicit diffusion
    LOGICAL , PUBLIC ::   ln_traldf_lap       !: laplacian operator
@@ -51,14 +51,14 @@ MODULE ldftra
 !  LOGICAL , PUBLIC ::   ln_traldf_iso       !: iso-neutral direction                    (see ldfslp)
    !		       	                      != iso-neutral options =!
 !  LOGICAL , PUBLIC ::   ln_traldf_triad     !: griffies triad scheme                    (see ldfslp)
-   LOGICAL , PUBLIC ::   ln_traldf_msc       !: Method of Stabilizing Correction 
+   LOGICAL , PUBLIC ::   ln_traldf_msc       !: Method of Stabilizing Correction
 !  LOGICAL , PUBLIC ::   ln_triad_iso        !: pure horizontal mixing in ML             (see ldfslp)
 !  LOGICAL , PUBLIC ::   ln_botmix_triad     !: mixing on bottom                         (see ldfslp)
 !  REAL(wp), PUBLIC ::   rn_sw_triad         !: =1/0 switching triad / all 4 triads used (see ldfslp)
 !  REAL(wp), PUBLIC ::   rn_slpmax           !: slope limit                              (see ldfslp)
    !                                    !=  Coefficients =!
    INTEGER , PUBLIC ::   nn_aht_ijk_t        !: choice of time & space variations of the lateral eddy diffusivity coef.
-   !                                            !  time invariant coefficients:  aht_0 = 1/2  Ud*Ld   (lap case) 
+   !                                            !  time invariant coefficients:  aht_0 = 1/2  Ud*Ld   (lap case)
    !                                            !                                bht_0 = 1/12 Ud*Ld^3 (blp case)
    REAL(wp), PUBLIC ::      rn_Ud               !: lateral diffusive velocity  [m/s]
    REAL(wp), PUBLIC ::      rn_Ld               !: lateral diffusive length    [m]
@@ -71,7 +71,7 @@ MODULE ldftra
    INTEGER , PUBLIC ::   nn_aei_ijk_t        !: choice of time/space variation of the eiv coeff.
    REAL(wp), PUBLIC ::      rn_Ue               !: lateral diffusive velocity  [m/s]
    REAL(wp), PUBLIC ::      rn_Le               !: lateral diffusive length    [m]
-   
+
    !                                  ! Flag to control the type of lateral diffusive operator
    INTEGER, PARAMETER, PUBLIC ::   np_ERROR  =-10   ! error in specification of lateral diffusion
    INTEGER, PARAMETER, PUBLIC ::   np_no_ldf = 00   ! without operator (i.e. no lateral diffusive trend)
@@ -104,7 +104,7 @@ CONTAINS
    SUBROUTINE ldf_tra_init
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE ldf_tra_init  ***
-      !! 
+      !!
       !! ** Purpose :   initializations of the tracer lateral mixing coeff.
       !!
       !! ** Method  : * the eddy diffusivity coef. specification depends on:
@@ -114,7 +114,7 @@ CONTAINS
       !!
       !!    nn_aht_ijk_t  =  0 => = constant
       !!                  !
-      !!                  = 10 => = F(z) : constant with a reduction of 1/4 with depth 
+      !!                  = 10 => = F(z) : constant with a reduction of 1/4 with depth
       !!                  !
       !!                  =-20 => = F(i,j)   = shape read in 'eddy_diffusivity.nc' file
       !!                  = 20    = F(i,j)   = F(e1,e2) or F(e1^3,e2^3) (lap or bilap case)
@@ -124,8 +124,8 @@ CONTAINS
       !!                  = 30    = F(i,j,k)   = 2D (case 20) + decrease with depth (case 10)
       !!                  = 31    = F(i,j,k,t) = F(local velocity) (  1/2  |u|e     laplacian operator
       !!                                                           or 1/12 |u|e^3 bilaplacian operator )
-      !!              * initialisation of the eddy induced velocity coefficient by a call to ldf_eiv_init 
-      !!            
+      !!              * initialisation of the eddy induced velocity coefficient by a call to ldf_eiv_init
+      !!
       !! ** action  : ahtu, ahtv initialized one for all or l_ldftra_time set to true
       !!              aeiu, aeiv initialized one for all or l_ldfeiv_time set to true
       !!----------------------------------------------------------------------
@@ -146,7 +146,7 @@ CONTAINS
          WRITE(numout,*) 'ldf_tra_init : lateral tracer diffusion'
          WRITE(numout,*) '~~~~~~~~~~~~ '
       ENDIF
-      
+
       !
       !  Choice of lateral tracer physics
       ! =================================
@@ -183,7 +183,7 @@ CONTAINS
       ENDIF
       !
       !
-      ! Operator and its acting direction   (set nldf_tra)  
+      ! Operator and its acting direction   (set nldf_tra)
       ! =================================
       !
       nldf_tra = np_ERROR
@@ -211,7 +211,7 @@ CONTAINS
                IF ( ln_traldf_triad )   nldf_tra = np_lap_it  ! iso-neutral: triad     (   rotation)
             ENDIF
             IF ( ln_zps ) THEN                  ! z-coordinate with partial step
-               IF ( ln_traldf_lev   )   ierr     = 1          ! iso-level not allowed 
+               IF ( ln_traldf_lev   )   ierr     = 1          ! iso-level not allowed
                IF ( ln_traldf_hor   )   nldf_tra = np_lap     ! horizontal             (no rotation)
                IF ( ln_traldf_iso   )   nldf_tra = np_lap_i   ! iso-neutral: standard     (rotation)
                IF ( ln_traldf_triad )   nldf_tra = np_lap_it  ! iso-neutral: triad        (rotation)
@@ -232,7 +232,7 @@ CONTAINS
                IF ( ln_traldf_triad )   nldf_tra = np_blp_it  ! iso-neutral: triad     (   rotation)
             ENDIF
             IF ( ln_zps ) THEN                  ! z-coordinate with partial step
-               IF ( ln_traldf_lev   )   ierr     = 1          ! iso-level not allowed 
+               IF ( ln_traldf_lev   )   ierr     = 1          ! iso-level not allowed
                IF ( ln_traldf_hor   )   nldf_tra = np_blp     ! horizontal             (no rotation)
                IF ( ln_traldf_iso   )   nldf_tra = np_blp_i   ! iso-neutral: standard  (   rotation)
                IF ( ln_traldf_triad )   nldf_tra = np_blp_it  ! iso-neutral: triad     (   rotation)
@@ -253,7 +253,7 @@ CONTAINS
            &            CALL ctl_stop( ' ice shelf cavity and traldf_triad not tested' )
            !
       IF(  nldf_tra == np_lap_i .OR. nldf_tra == np_lap_it .OR. &
-         & nldf_tra == np_blp_i .OR. nldf_tra == np_blp_it  )   l_ldfslp = .TRUE.    ! slope of neutral surfaces required 
+         & nldf_tra == np_blp_i .OR. nldf_tra == np_blp_it  )   l_ldfslp = .TRUE.    ! slope of neutral surfaces required
       !
       IF( ln_traldf_blp .AND. ( ln_traldf_iso .OR. ln_traldf_triad) ) THEN     ! iso-neutral bilaplacian need MSC
          IF( .NOT.ln_traldf_msc )   CALL ctl_stop( 'tra_ldf_init: iso-neutral bilaplacian requires ln_traldf_msc=.true.' )
@@ -274,7 +274,7 @@ CONTAINS
       ENDIF
 
       !
-      !  Space/time variation of eddy coefficients 
+      !  Space/time variation of eddy coefficients
       ! ===========================================
       !
       l_ldftra_time = .FALSE.                ! no time variation except in case defined below
@@ -290,7 +290,7 @@ CONTAINS
          ALLOCATE( ahtu(jpi,jpj,jpk) , ahtv(jpi,jpj,jpk) , STAT=ierr )
          IF( ierr /= 0 )   CALL ctl_stop( 'STOP', 'ldf_tra_init: failed to allocate arrays')
          !
-         ahtu(:,:,jpk) = 0._wp                     ! last level always 0  
+         ahtu(:,:,jpk) = 0._wp                     ! last level always 0
          ahtv(:,:,jpk) = 0._wp
          !.
          !                                         ! value of lap/blp eddy mixing coef.
@@ -367,7 +367,7 @@ CONTAINS
             CALL ctl_stop('ldf_tra_init: wrong choice for nn_aht_ijk_t, the type of space-time variation of aht')
          END SELECT
          !
-         IF( .NOT.l_ldftra_time ) THEN             !* No time variation 
+         IF( .NOT.l_ldftra_time ) THEN             !* No time variation
             IF(     ln_traldf_lap ) THEN                 !   laplacian operator (mask only)
                ahtu(:,:,1:jpkm1) =       ahtu(:,:,1:jpkm1)   * umask(:,:,1:jpkm1)
                ahtv(:,:,1:jpkm1) =       ahtv(:,:,1:jpkm1)   * vmask(:,:,1:jpkm1)
@@ -385,7 +385,7 @@ CONTAINS
    SUBROUTINE ldf_tra( kt )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE ldf_tra  ***
-      !! 
+      !!
       !! ** Purpose :   update at kt the tracer lateral mixing coeff. (aht and aeiv)
       !!
       !! ** Method  : * time varying eddy diffusivity coefficients:
@@ -399,8 +399,8 @@ CONTAINS
       !!
       !!              * time varying EIV coefficients: call to ldf_eiv routine
       !!
-      !! ** action  :   ahtu, ahtv   update at each time step   
-      !!                aeiu, aeiv      -       -     -    -   (if ln_ldfeiv=T) 
+      !! ** action  :   ahtu, ahtv   update at each time step
+      !!                aeiu, aeiv      -       -     -    -   (if ln_ldfeiv=T)
       !!----------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt   ! time step
       !
@@ -423,13 +423,13 @@ CONTAINS
          IF( ln_ldfeiv .AND. nn_aei_ijk_t == 21 ) THEN   ! use the already computed aei.
             ahtu(:,:,1) = aeiu(:,:,1)
             ahtv(:,:,1) = aeiv(:,:,1)
-         ELSE                                            ! compute aht. 
+         ELSE                                            ! compute aht.
             CALL ldf_eiv( kt, aht0, ahtu, ahtv )
          ENDIF
          !
-         z1_f20   = 1._wp / (  2._wp * omega * SIN( rad * 20._wp )  )   ! 1 / ff(20 degrees)   
+         z1_f20   = 1._wp / (  2._wp * omega * SIN( rad * 20._wp )  )   ! 1 / ff(20 degrees)
          zaht_min = 0.2_wp * aht0                                       ! minimum value for aht
-         zDaht    = aht0 - zaht_min                                      
+         zDaht    = aht0 - zaht_min
          DO jj = 1, jpj
             DO ji = 1, jpi
                !!gm CAUTION : here we assume lat/lon grid in 20deg N/S band (like all ORCA cfg)
@@ -484,7 +484,7 @@ CONTAINS
       !! ** Method  :   the eiv diffusivity coef. specification depends on:
       !!    nn_aei_ijk_t  =  0 => = constant
       !!                  !
-      !!                  = 10 => = F(z) : constant with a reduction of 1/4 with depth 
+      !!                  = 10 => = F(z) : constant with a reduction of 1/4 with depth
       !!                  !
       !!                  =-20 => = F(i,j)   = shape read in 'eddy_diffusivity.nc' file
       !!                  = 20    = F(i,j)   = F(e1,e2) or F(e1^3,e2^3) (lap or bilap case)
@@ -551,7 +551,7 @@ CONTAINS
          !
          !                                != Specification of space-time variations of eaiu, aeiv
          !
-         aeiu(:,:,jpk) = 0._wp               ! last level always 0  
+         aeiu(:,:,jpk) = 0._wp               ! last level always 0
          aeiv(:,:,jpk) = 0._wp
          !                                   ! value of EIV coef. (laplacian operator)
          zUfac = r1_2 *rn_Ue                    ! velocity factor
@@ -613,7 +613,7 @@ CONTAINS
             CALL ctl_stop('ldf_tra_init: wrong choice for nn_aei_ijk_t, the type of space-time variation of aei')
          END SELECT
          !
-         IF( .NOT.l_ldfeiv_time ) THEN             !* mask if No time variation 
+         IF( .NOT.l_ldfeiv_time ) THEN             !* mask if No time variation
             DO jk = 1, jpkm1
                aeiu(:,:,jk) = aeiu(:,:,jk) * umask(:,:,jk)
                ahtv(:,:,jk) = ahtv(:,:,jk) * vmask(:,:,jk)
@@ -621,7 +621,7 @@ CONTAINS
          ENDIF
          !
       ENDIF
-      !                    
+      !
    END SUBROUTINE ldf_eiv_init
 
 
@@ -654,13 +654,13 @@ CONTAINS
          DO jk = 1, jpk
             DO jj = 2, jpjm1
                DO ji = 2, jpim1
-                  ! Take the max of N^2 and zero then take the vertical sum 
-                  ! of the square root of the resulting N^2 ( required to compute 
-                  ! internal Rossby radius Ro = .5 * sum_jpk(N) / f 
+                  ! Take the max of N^2 and zero then take the vertical sum
+                  ! of the square root of the resulting N^2 ( required to compute
+                  ! internal Rossby radius Ro = .5 * sum_jpk(N) / f
                   zn2 = MAX( rn2b(ji,jj,jk), 0._wp )
                   zn(ji,jj) = zn(ji,jj) + SQRT( zn2 ) * e3w_n(ji,jj,jk)
                   ! Compute elements required for the inverse time scale of baroclinic
-                  ! eddies using the isopycnal slopes calculated in ldfslp.F : 
+                  ! eddies using the isopycnal slopes calculated in ldfslp.F :
                   ! T^-1 = sqrt(m_jpk(N^2*(r1^2+r2^2)*e3w))
                   ze3w = e3w_n(ji,jj,jk) * wmask(ji,jj,jk)
                   zah(ji,jj) = zah(ji,jj) + zn2 * wslp2(ji,jj,jk) * ze3w
@@ -672,13 +672,13 @@ CONTAINS
          DO jk = 1, jpk
             DO jj = 2, jpjm1
                DO ji = 2, jpim1
-                  ! Take the max of N^2 and zero then take the vertical sum 
-                  ! of the square root of the resulting N^2 ( required to compute 
-                  ! internal Rossby radius Ro = .5 * sum_jpk(N) / f 
+                  ! Take the max of N^2 and zero then take the vertical sum
+                  ! of the square root of the resulting N^2 ( required to compute
+                  ! internal Rossby radius Ro = .5 * sum_jpk(N) / f
                   zn2 = MAX( rn2b(ji,jj,jk), 0._wp )
                   zn(ji,jj) = zn(ji,jj) + SQRT( zn2 ) * e3w_n(ji,jj,jk)
                   ! Compute elements required for the inverse time scale of baroclinic
-                  ! eddies using the isopycnal slopes calculated in ldfslp.F : 
+                  ! eddies using the isopycnal slopes calculated in ldfslp.F :
                   ! T^-1 = sqrt(m_jpk(N^2*(r1^2+r2^2)*e3w))
                   ze3w = e3w_n(ji,jj,jk) * wmask(ji,jj,jk)
                   zah(ji,jj) = zah(ji,jj) + zn2 * ( wslpi(ji,jj,jk) * wslpi(ji,jj,jk)   &
@@ -708,33 +708,33 @@ CONTAINS
          END DO
       END DO
       CALL lbc_lnk( 'ldftra', zaeiw(:,:), 'W', 1. )       ! lateral boundary condition
-      !               
+      !
       DO jj = 2, jpjm1                          !== aei at u- and v-points  ==!
          DO ji = fs_2, fs_jpim1   ! vector opt.
             paeiu(ji,jj,1) = 0.5_wp * ( zaeiw(ji,jj) + zaeiw(ji+1,jj  ) ) * umask(ji,jj,1)
             paeiv(ji,jj,1) = 0.5_wp * ( zaeiw(ji,jj) + zaeiw(ji  ,jj+1) ) * vmask(ji,jj,1)
-         END DO 
-      END DO 
+         END DO
+      END DO
       CALL lbc_lnk_multi( 'ldftra', paeiu(:,:,1), 'U', 1. , paeiv(:,:,1), 'V', 1. )      ! lateral boundary condition
 
       DO jk = 2, jpkm1                          !==  deeper values equal the surface one  ==!
          paeiu(:,:,jk) = paeiu(:,:,1) * umask(:,:,jk)
          paeiv(:,:,jk) = paeiv(:,:,1) * vmask(:,:,jk)
       END DO
-      !  
+      !
    END SUBROUTINE ldf_eiv
 
 
    SUBROUTINE ldf_eiv_trp( kt, kit000, pun, pvn, pwn, cdtype )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE ldf_eiv_trp  ***
-      !! 
-      !! ** Purpose :   add to the input ocean transport the contribution of 
+      !!
+      !! ** Purpose :   add to the input ocean transport the contribution of
       !!              the eddy induced velocity parametrization.
       !!
       !! ** Method  :   The eddy induced transport is computed from a flux stream-
       !!              function which depends on the slope of iso-neutral surfaces
-      !!              (see ldf_slp). For example, in the i-k plan : 
+      !!              (see ldf_slp). For example, in the i-k plan :
       !!                   psi_uw = mk(aeiu) e2u mi(wslpi)   [in m3/s]
       !!                   Utr_eiv = - dk[psi_uw]
       !!                   Vtr_eiv = + di[psi_uw]
@@ -762,7 +762,7 @@ CONTAINS
          IF(lwp) WRITE(numout,*) '~~~~~~~~~~~   add to velocity fields the eiv component'
       ENDIF
 
-      
+
       zpsi_uw(:,:, 1 ) = 0._wp   ;   zpsi_vw(:,:, 1 ) = 0._wp
       zpsi_uw(:,:,jpk) = 0._wp   ;   zpsi_vw(:,:,jpk) = 0._wp
       !
@@ -779,7 +779,7 @@ CONTAINS
       !
       DO jk = 1, jpkm1
          DO jj = 1, jpjm1
-            DO ji = 1, fs_jpim1   ! vector opt.               
+            DO ji = 1, fs_jpim1   ! vector opt.
                pun(ji,jj,jk) = pun(ji,jj,jk) - ( zpsi_uw(ji,jj,jk) - zpsi_uw(ji,jj,jk+1) )
                pvn(ji,jj,jk) = pvn(ji,jj,jk) - ( zpsi_vw(ji,jj,jk) - zpsi_vw(ji,jj,jk+1) )
             END DO
@@ -819,7 +819,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       !
 !!gm I don't like this routine....   Crazy  way of doing things, not optimal at all...
-!!gm     to be redesigned....   
+!!gm     to be redesigned....
       !                                                  !==  eiv stream function: output  ==!
       CALL lbc_lnk_multi( 'ldftra', psi_uw, 'U', -1. , psi_vw, 'V', -1. )
       !
@@ -831,12 +831,12 @@ CONTAINS
       zw3d(:,:,jpk) = 0._wp                                    ! bottom value always 0
       !
       DO jk = 1, jpkm1                                         ! e2u e3u u_eiv = -dk[psi_uw]
-         zw3d(:,:,jk) = ( psi_uw(:,:,jk+1) - psi_uw(:,:,jk) ) / ( e2u(:,:) * e3u_n(:,:,jk) )
+         zw3d(:,:,jk) = ( psi_uw(:,:,jk+1) - psi_uw(:,:,jk) ) / ( e2u(:,:) * e3u_n(:,:,jk) +EPSILON(e2u)*EPSILON(e3u_n))
       END DO
       CALL iom_put( "uoce_eiv", zw3d )
       !
       DO jk = 1, jpkm1                                         ! e1v e3v v_eiv = -dk[psi_vw]
-         zw3d(:,:,jk) = ( psi_vw(:,:,jk+1) - psi_vw(:,:,jk) ) / ( e1v(:,:) * e3v_n(:,:,jk) )
+         zw3d(:,:,jk) = ( psi_vw(:,:,jk+1) - psi_vw(:,:,jk) ) / ( e1v(:,:) * e3v_n(:,:,jk) +EPSILON(e1v)*EPSILON(e3v_n))
       END DO
       CALL iom_put( "voce_eiv", zw3d )
       !
@@ -856,26 +856,26 @@ CONTAINS
          DO jk = 1, jpk
             zw3d(:,:,jk) = zw3d(:,:,jk) * zw2d(:,:)
          END DO
-         CALL iom_put( "weiv_masstr" , zw3d )  
+         CALL iom_put( "weiv_masstr" , zw3d )
       ENDIF
       !
       IF( iom_use('ueiv_masstr') ) THEN
          zw3d(:,:,:) = 0.e0
          DO jk = 1, jpkm1
-            zw3d(:,:,jk) = rau0 * ( psi_uw(:,:,jk+1) - psi_uw(:,:,jk) ) 
+            zw3d(:,:,jk) = rau0 * ( psi_uw(:,:,jk+1) - psi_uw(:,:,jk) )
          END DO
          CALL iom_put( "ueiv_masstr", zw3d )                  ! mass transport in i-direction
       ENDIF
       !
-      zztmp = 0.5_wp * rau0 * rcp 
+      zztmp = 0.5_wp * rau0 * rcp
       IF( iom_use('ueiv_heattr') .OR. iom_use('ueiv_heattr3d') ) THEN
-        zw2d(:,:)   = 0._wp 
-        zw3d(:,:,:) = 0._wp 
+        zw2d(:,:)   = 0._wp
+        zw3d(:,:,:) = 0._wp
         DO jk = 1, jpkm1
            DO jj = 2, jpjm1
               DO ji = fs_2, fs_jpim1   ! vector opt.
                  zw3d(ji,jj,jk) = zw3d(ji,jj,jk) + ( psi_uw(ji,jj,jk+1)      - psi_uw(ji,jj,jk)          )   &
-                    &                            * ( tsn   (ji,jj,jk,jp_tem) + tsn   (ji+1,jj,jk,jp_tem) ) 
+                    &                            * ( tsn   (ji,jj,jk,jp_tem) + tsn   (ji+1,jj,jk,jp_tem) )
                  zw2d(ji,jj) = zw2d(ji,jj) + zw3d(ji,jj,jk)
               END DO
            END DO
@@ -889,18 +889,18 @@ CONTAINS
       IF( iom_use('veiv_masstr') ) THEN
          zw3d(:,:,:) = 0.e0
          DO jk = 1, jpkm1
-            zw3d(:,:,jk) = rau0 * ( psi_vw(:,:,jk+1) - psi_vw(:,:,jk) ) 
+            zw3d(:,:,jk) = rau0 * ( psi_vw(:,:,jk+1) - psi_vw(:,:,jk) )
          END DO
          CALL iom_put( "veiv_masstr", zw3d )                  ! mass transport in i-direction
       ENDIF
       !
-      zw2d(:,:)   = 0._wp 
-      zw3d(:,:,:) = 0._wp 
+      zw2d(:,:)   = 0._wp
+      zw3d(:,:,:) = 0._wp
       DO jk = 1, jpkm1
          DO jj = 2, jpjm1
             DO ji = fs_2, fs_jpim1   ! vector opt.
                zw3d(ji,jj,jk) = zw3d(ji,jj,jk) + ( psi_vw(ji,jj,jk+1)      - psi_vw(ji,jj,jk)          )   &
-                  &                            * ( tsn   (ji,jj,jk,jp_tem) + tsn   (ji,jj+1,jk,jp_tem) ) 
+                  &                            * ( tsn   (ji,jj,jk,jp_tem) + tsn   (ji,jj+1,jk,jp_tem) )
                zw2d(ji,jj) = zw2d(ji,jj) + zw3d(ji,jj,jk)
             END DO
          END DO
@@ -913,13 +913,13 @@ CONTAINS
       !
       zztmp = 0.5_wp * 0.5
       IF( iom_use('ueiv_salttr') .OR. iom_use('ueiv_salttr3d')) THEN
-        zw2d(:,:) = 0._wp 
-        zw3d(:,:,:) = 0._wp 
+        zw2d(:,:) = 0._wp
+        zw3d(:,:,:) = 0._wp
         DO jk = 1, jpkm1
            DO jj = 2, jpjm1
               DO ji = fs_2, fs_jpim1   ! vector opt.
                  zw3d(ji,jj,jk) = zw3d(ji,jj,jk) * ( psi_uw(ji,jj,jk+1)      - psi_uw(ji,jj,jk)          )   &
-                    &                            * ( tsn   (ji,jj,jk,jp_sal) + tsn   (ji+1,jj,jk,jp_sal) ) 
+                    &                            * ( tsn   (ji,jj,jk,jp_sal) + tsn   (ji+1,jj,jk,jp_sal) )
                  zw2d(ji,jj) = zw2d(ji,jj) + zw3d(ji,jj,jk)
               END DO
            END DO
@@ -929,13 +929,13 @@ CONTAINS
         CALL iom_put( "ueiv_salttr", zztmp * zw2d )                  ! salt transport in i-direction
         CALL iom_put( "ueiv_salttr3d", zztmp * zw3d )                  ! salt transport in i-direction
       ENDIF
-      zw2d(:,:) = 0._wp 
-      zw3d(:,:,:) = 0._wp 
+      zw2d(:,:) = 0._wp
+      zw3d(:,:,:) = 0._wp
       DO jk = 1, jpkm1
          DO jj = 2, jpjm1
             DO ji = fs_2, fs_jpim1   ! vector opt.
                zw3d(ji,jj,jk) = zw3d(ji,jj,jk) + ( psi_vw(ji,jj,jk+1)      - psi_vw(ji,jj,jk)          )   &
-                  &                            * ( tsn   (ji,jj,jk,jp_sal) + tsn   (ji,jj+1,jk,jp_sal) ) 
+                  &                            * ( tsn   (ji,jj,jk,jp_sal) + tsn   (ji,jj+1,jk,jp_sal) )
                zw2d(ji,jj) = zw2d(ji,jj) + zw3d(ji,jj,jk)
             END DO
          END DO
