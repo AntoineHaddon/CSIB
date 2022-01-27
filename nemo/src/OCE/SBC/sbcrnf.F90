@@ -34,7 +34,7 @@ MODULE sbcrnf
    PUBLIC   sbc_rnf_div   ! called in divhor module
    PUBLIC   sbc_rnf_alloc ! called in sbcmod module
    PUBLIC   sbc_rnf_init  ! called in sbcmod module
-   
+
    !                                                !!* namsbc_rnf namelist *
    CHARACTER(len=100)         ::   cn_dir            !: Root directory for location of rnf files
    LOGICAL           , PUBLIC ::   ln_rnf_depth      !: depth       river runoffs attribute specified in a file
@@ -58,18 +58,18 @@ MODULE sbcrnf
 
    LOGICAL , PUBLIC ::   l_rnfcpl = .false.   !: runoffs recieved from oasis
    INTEGER , PUBLIC ::   nkrnf = 0            !: nb of levels over which Kz is increased at river mouths
-   
+
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   rnfmsk              !: river mouth mask (hori.)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:)     ::   rnfmsk_z            !: river mouth mask (vert.)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   h_rnf               !: depth of runoff in m
    INTEGER,  PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   nk_rnf              !: depth of runoff in model levels
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   rnf_tsc_b, rnf_tsc  !: before and now T & S runoff contents   [K.m/s & PSU.m/s]   
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   rnf_tsc_b, rnf_tsc  !: before and now T & S runoff contents   [K.m/s & PSU.m/s]
 
    TYPE(FLD),        ALLOCATABLE, DIMENSION(:) ::   sf_rnf       ! structure: river runoff (file information, fields read)
    TYPE(FLD),        ALLOCATABLE, DIMENSION(:) ::   sf_i_rnf     ! structure: iceberg flux (file information, fields read)
-   TYPE(FLD),        ALLOCATABLE, DIMENSION(:) ::   sf_s_rnf     ! structure: river runoff salinity (file information, fields read)  
-   TYPE(FLD),        ALLOCATABLE, DIMENSION(:) ::   sf_t_rnf     ! structure: river runoff temperature (file information, fields read)  
- 
+   TYPE(FLD),        ALLOCATABLE, DIMENSION(:) ::   sf_s_rnf     ! structure: river runoff salinity (file information, fields read)
+   TYPE(FLD),        ALLOCATABLE, DIMENSION(:) ::   sf_t_rnf     ! structure: river runoff temperature (file information, fields read)
+
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
    !! $Id: sbcrnf.F90 13255 2020-07-06 15:41:29Z acc $
@@ -228,7 +228,7 @@ CONTAINS
          ENDIF
       ELSE                       !==   runoff put only at the surface   ==!
          h_rnf (:,:)   = e3t_n (:,:,1)        ! update h_rnf to be depth of top box
-         phdivn(:,:,1) = phdivn(:,:,1) - ( rnf(:,:) + rnf_b(:,:) ) * zfact * r1_rau0 / e3t_n(:,:,1)
+         phdivn(:,:,1) = phdivn(:,:,1) - ( rnf(:,:) + rnf_b(:,:) ) * zfact * r1_rau0 / (e3t_n(:,:,1)+EPSILON(e3t_n))
       ENDIF
       !
    END SUBROUTINE sbc_rnf_div
@@ -249,8 +249,8 @@ CONTAINS
       INTEGER           ::   ierror, inum  ! temporary integer
       INTEGER           ::   ios           ! Local integer output status for namelist read
       INTEGER           ::   nbrec         ! temporary integer
-      REAL(wp)          ::   zacoef  
-      REAL(wp), DIMENSION(jpi,jpj,2) :: zrnfcl    
+      REAL(wp)          ::   zacoef
+      REAL(wp), DIMENSION(jpi,jpj,2) :: zrnfcl
       !!
       NAMELIST/namsbc_rnf/ cn_dir            , ln_rnf_depth, ln_rnf_tem, ln_rnf_sal, ln_rnf_icb,   &
          &                 sn_rnf, sn_cnf    , sn_i_rnf, sn_s_rnf    , sn_t_rnf  , sn_dep_rnf,   &
@@ -261,7 +261,7 @@ CONTAINS
       !                                         !==  allocate runoff arrays
       IF( sbc_rnf_alloc() /= 0 )   CALL ctl_stop( 'STOP', 'sbc_rnf_alloc : unable to allocate arrays' )
       !
-      IF( .NOT. ln_rnf ) THEN                      ! no specific treatment in vicinity of river mouths 
+      IF( .NOT. ln_rnf ) THEN                      ! no specific treatment in vicinity of river mouths
          ln_rnf_mouth  = .FALSE.                   ! default definition needed for example by sbc_ssr or by tra_adv_muscl
          nkrnf         = 0
          rnf     (:,:) = 0.0_wp
@@ -299,7 +299,7 @@ CONTAINS
       !                                   !   Type of runoff
       !                                   ! ==================
       !
-      IF( .NOT. l_rnfcpl ) THEN                    
+      IF( .NOT. l_rnfcpl ) THEN
          ALLOCATE( sf_rnf(1), STAT=ierror )         ! Create sf_rnf structure (runoff inflow)
          IF(lwp) WRITE(numout,*)
          IF(lwp) WRITE(numout,*) '   ==>>>   runoffs inflow read in a file'
@@ -354,8 +354,8 @@ CONTAINS
          IF(lwp) WRITE(numout,*)
          IF(lwp) WRITE(numout,*) '   ==>>>   runoffs depth read in a file'
          rn_dep_file = TRIM( cn_dir )//TRIM( sn_dep_rnf%clname )
-         IF( .NOT. sn_dep_rnf%ln_clim ) THEN   ;   WRITE(rn_dep_file, '(a,"_y",i4)' ) TRIM( rn_dep_file ), nyear    ! add year 
-            IF( sn_dep_rnf%cltype == 'monthly' )   WRITE(rn_dep_file, '(a,"m",i2)'  ) TRIM( rn_dep_file ), nmonth   ! add month 
+         IF( .NOT. sn_dep_rnf%ln_clim ) THEN   ;   WRITE(rn_dep_file, '(a,"_y",i4)' ) TRIM( rn_dep_file ), nyear    ! add year
+            IF( sn_dep_rnf%cltype == 'monthly' )   WRITE(rn_dep_file, '(a,"m",i2)'  ) TRIM( rn_dep_file ), nmonth   ! add month
          ENDIF
          CALL iom_open ( rn_dep_file, inum )                           ! open file
          CALL iom_get  ( inum, jpdom_data, sn_dep_rnf%clvar, h_rnf, lrowattr=ln_use_jattr )   ! read the river mouth array

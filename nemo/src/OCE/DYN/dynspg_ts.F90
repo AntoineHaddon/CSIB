@@ -1143,7 +1143,7 @@ CONTAINS
             DO jj = 1, jpjm1
                DO ji = 1, jpim1
                   zwz(ji,jj) =   ( ht_n(ji  ,jj+1) + ht_n(ji+1,jj+1) +                    &
-                       &             ht_n(ji  ,jj  ) + ht_n(ji+1,jj  )   ) * 0.25_wp
+                       &             ht_n(ji  ,jj  ) + ht_n(ji+1,jj  )   ) * 0.25_wp + EPSILON(zwz)
                   IF( zwz(ji,jj) /= 0._wp )   zwz(ji,jj) = ff_f(ji,jj) / zwz(ji,jj)
                END DO
             END DO
@@ -1153,7 +1153,8 @@ CONTAINS
                   zwz(ji,jj) =             (  ht_n  (ji  ,jj+1) + ht_n  (ji+1,jj+1)      &
                        &                      + ht_n  (ji  ,jj  ) + ht_n  (ji+1,jj  )  )   &
                        &       / ( MAX( 1._wp,  ssmask(ji  ,jj+1) + ssmask(ji+1,jj+1)      &
-                       &                      + ssmask(ji  ,jj  ) + ssmask(ji+1,jj  )  )   )
+                       &                      + ssmask(ji  ,jj  ) + ssmask(ji+1,jj  )  )   ) + &
+                       EPSILON(zwz)
                   IF( zwz(ji,jj) /= 0._wp )   zwz(ji,jj) = ff_f(ji,jj) / zwz(ji,jj)
                END DO
             END DO
