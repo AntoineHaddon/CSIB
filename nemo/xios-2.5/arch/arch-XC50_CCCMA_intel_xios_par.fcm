@@ -24,7 +24,7 @@
 
 %PROD_CFLAGS    -O3
 %DEV_CFLAGS     -O2
-%DEBUG_CFLAGS   -g 
+%DEBUG_CFLAGS   -g -O0
 
 %BASE_FFLAGS    -free -fpp -D_IMPI_=4 -D_Cray_XC30 -Qoption,link,--noinhibit-exec -list -traceback -assume buffered_stdout,protect_parens -convert big_endian -r8 -align array64byte -xSKYLAKE-AVX512
 %PROD_FFLAGS    -O3

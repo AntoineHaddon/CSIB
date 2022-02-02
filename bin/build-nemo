@@ -87,8 +87,8 @@ nemo_ref_config=''      # The reference configuration to be used with nemo_confi
 copy_execs=0            # to copy the execcutable or link (0=link, 1=copy)
 storage_loc=$(pwd)      # tells build-nemo where to store executables
 is_coupled=0            # Is this nemo build for a coupled model (0=ocean only, 1=coupled)
-comp_np=12              # Number of processors to use during nemo compilation
-xios_comp_np=4          # Number of processors to use during xios compilation
+comp_np=24              # Number of processors to use during nemo compilation
+xios_comp_np=12          # Number of processors to use during xios compilation
 debug=0                 # Set debug to 0 (turned off, regular optimizations used)
 clean_compile=0         # force build-nemo to run make clean on the diag/rtds and clean the temp NEMO comp dirs
 CWD=$(pwd)
@@ -293,6 +293,8 @@ echo "Compiling in:  ${nemo_model_build_dir}"
 cd $nemo_model_build_dir
 
 # # source nemo compilation environment
+source ${nemo_model_build_dir}/arch/CCCMA/arch-${nemo_arch_identifier}.env
+
 # source nemo_comp_env ||
 #     bail "Failed to source the nemo compilation environment! Are the modules available?"
 

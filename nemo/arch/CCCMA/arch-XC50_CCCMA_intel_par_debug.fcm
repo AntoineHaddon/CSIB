@@ -55,8 +55,8 @@
 %CPP                 cpp
 %FC                  ftn
 
-%FCFLAGS             -free -fpp -D_IMPI_=4 -D_Cray_XC30 -Qoption,link,--noinhibit-exec -list -traceback -O0 -init=arrays -init=zero -fp-model precise -assume buffered_stdout,protect_parens -convert big_endian -r8 -align array64byte -xSKYLAKE-AVX512 -g
-%FFLAGS              -fixed -fpp -D_IMPI_=4 -D_Cray_XC30 -Qoption,link,--noinhibit-exec -list -traceback -O0 -init=arrays -init=zero -fp-model precise -assume buffered_stdout,protect_parens -convert big_endian -r8 -align array64byte -xSKYLAKE-AVX512 -g
+%FCFLAGS             -free -fpp -D_IMPI_=4 -D_Cray_XC30 -Qoption,link,--noinhibit-exec -list -traceback -O0 -init=arrays -init=zero -fp-model precise -assume buffered_stdout,protect_parens -convert big_endian -r8 -align array64byte -xSKYLAKE-AVX512 -g -fpe0
+%FFLAGS              -fixed -fpp -D_IMPI_=4 -D_Cray_XC30 -Qoption,link,--noinhibit-exec -list -traceback -O0 -init=arrays -init=zero -fp-model precise -assume buffered_stdout,protect_parens -convert big_endian -r8 -align array64byte -xSKYLAKE-AVX512 -g -fpe0
 %LDFLAGS    
 %LD                  ftn
 %FPPFLAGS            -P -C
