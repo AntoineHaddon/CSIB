@@ -7,7 +7,7 @@
 # Summary of tasks:
 #   - save history files
 #   - create restart archive
-#       - includes the main netcdf files and many other extra files added for 
+#       - includes the main netcdf files and many other extra files added for
 #         logging purposes
 #
   # ======================================================
@@ -154,7 +154,7 @@
         mkdir NEXT_RESTART_ARC
 
         # Identify the last NEMO timestep, which will be in the rs names
-        end_step=$(get_namelist_var nn_itend namelist | awk '{printf "%8.8d",$1}')
+        end_step=$(get_namelist_var nn_itend namelist_cfg | awk '{printf "%8.8d",$1}')
 
         # Look for ocean restart files matching the pattern below
         eval ofnpatt=${cn_exp}_${end_step}_${cn_ocerst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
@@ -194,24 +194,11 @@
       tarlist=''
 
       # namelist files
-      cp -f namelist rs_namelist || :
-      [ -s rs_namelist ] && tarlist="$tarlist rs_namelist"
-      cp -f namelist_top rs_namelist_top || :
-      [ -s rs_namelist_top ] && tarlist="$tarlist rs_namelist_top"
-      cp -f namelist_ice rs_namelist_ice || :
-      [ -s rs_namelist_ice ] && tarlist="$tarlist rs_namelist_ice"
-      if [ $nemo_carbon -eq 1 ]; then
-        cp -f namelist_pisces rs_namelist_pisces || :
-        [ -s rs_namelist_pisces ]  && tarlist="$tarlist rs_namelist_pisces"
-
-        if [ $nemo_cmoc -eq 1 ]; then
-          cp -f namelist_cmoc rs_namelist_cmoc || :
-          if [ -s rs_namelist_cmoc ]; then
-            chmod u+rw rs_namelist_cmoc
-            tarlist="$tarlist rs_namelist_cmoc"
-          fi
-        fi
-      fi
+      namelists="namelist_ref namelist_cfg namelist_ice_ref namelist_ice_cfg"
+      for namelist in $namelists; do
+        cp -f $namelist rs_$namelist || :
+        [ -s rs_$namelist ] && tarlist="$tarlist rs_$namelist"
+      done
 
       # current executable
       rm -f rs_${nemo_exec}
@@ -233,8 +220,8 @@
       [ -s rs_ocean.output ] && tarlist="$tarlist rs_ocean.output"
 
       # checksum file of ocean prognostic state (for bit identity checks)
-      cp -f final.state rs_final.state || :
-      [ -s rs_final.state ] && tarlist="$tarlist rs_final.state"
+      #cp -f final.state rs_final.state || :
+      #[ -s rs_final.state ] && tarlist="$tarlist rs_final.state"
 
       # ocean timing stats
       cp -f timing.output rs_timing.output || :
@@ -251,6 +238,7 @@
       # the mesh mask file
       [ -s rs_mesh_mask.nc ] && tarlist="$tarlist rs_mesh_mask.nc"
 
+      echo "Moving the following files to the archive: $tarlist"
       # MOVE ADDITIONAL FILES INTO ARCHIVE
       mv -f $tarlist NEXT_RESTART_ARC || :
 
