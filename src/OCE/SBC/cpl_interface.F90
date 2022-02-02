@@ -86,6 +86,8 @@ MODULE CPL_INTERFACE
         cpl_freq => cpl_cancpl_freq
         cpl_define => cpl_cancpl_define
         cpl_finalize => cpl_cancpl_finalize
+        COUPLER_idle = OASIS_idle
+        COUPLER_Rcv  = OASIS_Rcv
       elseif (lk_oasis) then
         call cpl_oasis3_init( cd_modname, kl_comm )
         cpl_snd => cpl_cancpl_snd

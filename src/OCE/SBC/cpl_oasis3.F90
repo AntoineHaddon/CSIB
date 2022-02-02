@@ -317,7 +317,7 @@ CONTAINS
       INTEGER                   , INTENT(in   ) ::   kid       ! variable index in the array
       INTEGER                   , INTENT(  out) ::   kinfo     ! OASIS3 info argument
       INTEGER                   , INTENT(in   ) ::   kstep     ! ocean time-step in seconds
-      REAL(wp), DIMENSION(:,:,:), INTENT(in   ) ::   pdata
+      REAL(wp), DIMENSION(:,:,:), INTENT(inout) ::   pdata
       !!
       INTEGER                                   ::   jc,jm     ! local loop index
       !!--------------------------------------------------------------------

@@ -1,4 +1,5 @@
 MODULE lib_mpp
+!DIR$ NOOPTIMIZE
    !!======================================================================
    !!                       ***  MODULE  lib_mpp  ***
    !! Ocean numerics:  massively parallel processing library
@@ -390,7 +391,6 @@ CONTAINS
       REAL(wp), DIMENSION(jpdtot)  :: ptab_1d
       INTEGER :: itaille, ierror   ! temporary integer
       INTEGER :: ji_glo, jj_glo, jproc, ji, jj, j1d
-      INTEGER, DIMENSION(jpiglo,jpjglo) :: written_by
       !!---------------------------------------------------------------------
       !
       itaille = nlci*nlcj
@@ -403,7 +403,6 @@ CONTAINS
       pio(:,:) = 0.
       IF (kp == nproc) THEN
          ! Loop over every processor and reconstruct the global array
-         written_by(:,:) = 0
          DO jproc=1,jpnij
             ! Find the starting point in 1d array for this processor
             j1d = offsetst(jproc)
@@ -416,7 +415,6 @@ CONTAINS
                   ji_glo = ji + nimppt(jproc) - 1
                   jj_glo = jj + njmppt(jproc) - 1
                   pio(ji_glo,jj_glo) = pio1d(j1d)
-                  written_by(ji_glo,jj_glo) = jproc
                ENDDO
             ENDDO
          ENDDO
