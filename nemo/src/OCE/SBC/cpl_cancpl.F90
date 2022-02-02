@@ -1,4 +1,5 @@
 MODULE cpl_cancpl
+!DIR$ NOOPTIMIZE
   !!=======================================================================
   !!                    ***  MODULE cpl_cancpl  ***
   !!
@@ -950,7 +951,7 @@ contains
 
      !--- pdata contains data on the local domain (local MPI task) to be sent
      !--- It will be dimensioned pdata(jpi, jpj, ssnd(kid)%nct)
-     real(wp), intent(inout)  :: pdata(:,:,:)
+     real(wp), intent(in   )  :: pdata(:,:,:)
 
      !--- Integer flag to indicate if srcv(kid) was sent or not
      !--- kinfo = OASIS_idle means the field was not sent to the coupler
@@ -1023,7 +1024,7 @@ contains
 
        call timing_start('cplsend_gather')
        !--- Gather data into the global array png
-       call lbc_lnk('cpl_cancpl_snd', pdata(:,:,jc), 'T', 1.)
+      !  call lbc_lnk('cpl_cancpl_snd', pdata(:,:,jc), 'T', 1.)
        call reconstruct_global_2d(pdata(:,:,jc),0,global_array)
        call timing_stop('cplsend_gather')
 
@@ -1109,25 +1110,29 @@ contains
      integer(kind=impi) :: rank, ierr, sz, tag
      integer :: verbose=1
      integer (kind=impi) :: status(MPI_status_size)
+     type(FLD_CPL), pointer :: cpl_ptr
      real, dimension(jpiglo,jpjglo) :: wrk2d
      !!--------------------------------------------------------------------
 
      !---Determine the rank of the calling process in MPI_COMM_WORLD
      call mpi_comm_rank ( MPI_COMM_WORLD, rank, ierr )
-
+     cpl_ptr => srcv(kid)
      !--- Loop over all "catagories" (normally only 1) for this variable
      !--- receiving separate data from the coupler for each catagory
+
      do jc = 1, srcv(kid)%nct
        !--- The MPI tag associated with this transfer is srcv(kid)%nid(jc)
 
        kinfo = OASIS_idle
 
-       !--- This routine is called for every variable that could be coupled
-       !--- so ignore variables that are not to be coupled
-       !--- srcv(:)%nid(:) is initialized to zero then defined in
-       !--- cpl_cancpl_define for variables that are to be coupled and so
-       !--- it will only be non-zero for fields that are coupled
-       if ( srcv(kid)%nid(jc,1) <= 0 ) cycle
+       ! The following is no longer true. srcv(kid)%laction determines whether
+       ! it should be received
+      !  !--- This routine is called for every variable that could be coupled
+      !  !--- so ignore variables that are not to be coupled
+      !  !--- srcv(:)%nid(:) is initialized to zero then defined in
+      !  !--- cpl_cancpl_define for variables that are to be coupled and so
+      !  !--- it will only be non-zero for fields that are coupled
+      !  if ( srcv(kid)%nid(jc,1) <= 0 ) cycle
 
        !--- Determine if this variable should be coupled now
        cpl_vinfo = find_cpl_vinfo( tag=srcv(kid)%nid(jc,1) )

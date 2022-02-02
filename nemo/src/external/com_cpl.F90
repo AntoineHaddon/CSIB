@@ -4,6 +4,7 @@
 
 !> Common MPI initialization and communication routines and data
 module com_cpl
+!DIR$ NOOPTIMIZE
 
 #ifdef use_mpi
   use mpi

@@ -26,10 +26,10 @@ TYPE, PUBLIC ::   FLD_CPL               !: Type for coupling field information
    CHARACTER(len = 32)   ::   cldes      ! desciption of the coupling strategy
 END TYPE FLD_CPL
 
-TYPE(FLD_CPL), DIMENSION(nmaxfld), PUBLIC, SAVE ::   srcv, ssnd   !: Coupling fields
+TYPE(FLD_CPL), DIMENSION(nmaxfld), PUBLIC, TARGET, SAVE ::   srcv, ssnd   !: Coupling fields
 
-INTEGER, PUBLIC, SAVE :: COUPLER_Rcv
-INTEGER, PUBLIC, SAVE :: COUPLER_idle
+INTEGER, PUBLIC, SAVE :: COUPLER_Rcv = 1
+INTEGER, PUBLIC, SAVE :: COUPLER_idle = 0
 
 
 

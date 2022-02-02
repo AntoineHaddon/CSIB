@@ -1,4 +1,5 @@
 MODULE sbccpl
+!DIR$ NOOPTIMIZE
    !!======================================================================
    !!                       ***  MODULE  sbccpl  ***
    !! Surface Boundary Condition :  momentum, heat and freshwater fluxes in coupled mode
@@ -30,7 +31,7 @@ MODULE sbccpl
    USE ice            ! ice variables
 #endif
    USE cpl_interface, ONLY : cpl_rcv, cpl_snd, cpl_define, cpl_freq
-   use cpl_types,     ONLY : srcv, ssnd, COUPLER_Rcv, COUPLER_idle, FLD_C
+   use cpl_types,     ONLY : srcv, ssnd, COUPLER_Rcv, COUPLER_idle, FLD_C, FLD_CPL
    use cpl_cancpl,    ONLY : set_cancpl_params, query_start_cpl2ocn
    USE geo2ocean      !
    USE oce     , ONLY : tsn, un, vn, sshn, ub, vb, sshb, fraqsr_1lev
@@ -849,7 +850,7 @@ CONTAINS
 
       ! Initialise ice fractions from last coupling time to zero (needed by Met-Office)
 #if defined key_si3 || defined key_cice
-       a_i_last_couple(:,:,:) = 0._wp
+       IF (ALLOCATED(a_i_last_couple)) a_i_last_couple(:,:,:) = 0._wp
 #endif
       !                                                      ! ------------------------- !
       !                                                      !      Ice Meltponds        !
@@ -1139,6 +1140,7 @@ CONTAINS
       REAL(wp) ::   zcdrag = 1.5e-3        ! drag coefficient
       REAL(wp) ::   zzx, zzy               ! temporary variables
       REAL(wp), DIMENSION(jpi,jpj) ::   ztx, zty, zmsk, zemp, zqns, zqsr, zcloud_fra
+      type(FLD_CPL), pointer :: fld_ptr
       !!----------------------------------------------------------------------
       !
       IF( kt == nit000 ) THEN
@@ -1166,6 +1168,7 @@ CONTAINS
       !                                                      ! ========================= !
       IF( srcv(jpr_otx1)%laction ) THEN                      !  ocean stress components  !
          !                                                   ! ========================= !
+         fld_ptr => srcv(jpr_otx1)
          ! define frcv(jpr_otx1)%z3(:,:,1) and frcv(jpr_oty1)%z3(:,:,1): stress at U/V point along model grid
          ! => need to be done only when we receive the field
          IF(  nrcvinfo(jpr_otx1) == COUPLER_Rcv ) THEN
@@ -2255,9 +2258,18 @@ CONTAINS
             CASE default                     ;   CALL ctl_stop( 'sbc_cpl_snd: wrong definition of sn_snd_temp%cldes' )
             END SELECT
          ENDIF
-         IF( ssnd(jps_toce)%laction )   CALL cpl_snd( jps_toce, isec, RESHAPE ( ztmp1, (/jpi,jpj,1/) ), info )
-         IF( ssnd(jps_tice)%laction )   CALL cpl_snd( jps_tice, isec, ztmp3, info )
-         IF( ssnd(jps_tmix)%laction )   CALL cpl_snd( jps_tmix, isec, RESHAPE ( ztmp1, (/jpi,jpj,1/) ), info )
+         IF( ssnd(jps_toce)%laction )   THEN
+            CALL lbc_lnk('sbccpl', ztmp1, 'T', 1.)
+            CALL cpl_snd( jps_toce, isec, RESHAPE ( ztmp1, (/jpi,jpj,1/) ), info )
+         ENDIF
+         IF( ssnd(jps_tice)%laction )   THEN
+            CALL lbc_lnk('sbccpl', ztmp3, 'T', 1.)
+            CALL cpl_snd( jps_tice, isec, ztmp3, info )
+         ENDIF
+         IF( ssnd(jps_tmix)%laction )   THEN
+            CALL lbc_lnk('sbccpl', ztmp1, 'T', 1.)
+            CALL cpl_snd( jps_tmix, isec, RESHAPE ( ztmp1, (/jpi,jpj,1/) ), info )
+         ENDIF
       ENDIF
       !
       !                                                      ! ------------------------- !
@@ -2271,6 +2283,7 @@ CONTAINS
             ztmp3(:,:,1:jpl) = t1_ice(:,:,1:jpl) * a_i(:,:,1:jpl)
          CASE default                     ;   CALL ctl_stop( 'sbc_cpl_snd: wrong definition of sn_snd_ttilyr%cldes' )
          END SELECT
+         CALL lbc_lnk('sbccpl', ztmp3, 'T', 1.)
          IF( ssnd(jps_ttilyr)%laction )   CALL cpl_snd( jps_ttilyr, isec, ztmp3, info )
       ENDIF
 #endif
@@ -2308,8 +2321,10 @@ CONTAINS
 
          SELECT CASE( sn_snd_alb%clcat )
             CASE( 'yes' )
+               CALL lbc_lnk('sbccpl', ztmp3, 'T', 1.)
                CALL cpl_snd( jps_albice, isec, ztmp3, info )      !-> MV this has never been checked in coupled mode
             CASE( 'no'  )
+               CALL lbc_lnk('sbccpl', ztmp1, 'T', 1.)
                CALL cpl_snd( jps_albice, isec, RESHAPE ( ztmp1, (/jpi,jpj,1/) ), info )
          END SELECT
       ENDIF
@@ -2319,6 +2334,7 @@ CONTAINS
          DO jl = 1, jpl
             ztmp1(:,:) = ztmp1(:,:) + alb_ice(:,:,jl) * a_i(:,:,jl)
          END DO
+         CALL lbc_lnk('sbccpl', ztmp1, 'T', 1.)
          CALL cpl_snd( jps_albmix, isec, RESHAPE ( ztmp1, (/jpi,jpj,1/) ), info )
       ENDIF
       !                                                      ! ------------------------- !
@@ -2331,6 +2347,7 @@ CONTAINS
          CASE( 'no'  )   ;   ztmp3(:,:,1    ) = fr_i(:,:      )
          CASE default    ;   CALL ctl_stop( 'sbc_cpl_snd: wrong definition of sn_snd_thick%clcat' )
          END SELECT
+         CALL lbc_lnk('sbccpl', ztmp3, 'T', 1.)
          CALL cpl_snd( jps_fice, isec, ztmp3, info )
       ENDIF
 
@@ -2352,12 +2369,14 @@ CONTAINS
          CASE( 'no'  )   ;   ztmp3(:,:,1    ) = fr_i(:,:      )
          CASE default    ;   CALL ctl_stop( 'sbc_cpl_snd: wrong definition of sn_snd_thick1%clcat' )
          END SELECT
+         CALL lbc_lnk('sbccpl', ztmp3, 'T', 1.)
          CALL cpl_snd( jps_fice1, isec, ztmp3, info )
       ENDIF
 
       ! Send ice fraction field to OPA (sent by SAS in SAS-OPA coupling)
       IF( ssnd(jps_fice2)%laction ) THEN
          ztmp3(:,:,1) = fr_i(:,:)
+         CALL lbc_lnk('sbccpl', ztmp3, 'T', 1.)
          IF( ssnd(jps_fice2)%laction )   CALL cpl_snd( jps_fice2, isec, ztmp3, info )
       ENDIF
 
@@ -2409,8 +2428,14 @@ CONTAINS
             END SELECT
          CASE default                     ;   CALL ctl_stop( 'sbc_cpl_snd: wrong definition of sn_snd_thick%cldes' )
          END SELECT
-         IF( ssnd(jps_hice)%laction )   CALL cpl_snd( jps_hice, isec, ztmp3, info )
-         IF( ssnd(jps_hsnw)%laction )   CALL cpl_snd( jps_hsnw, isec, ztmp4, info )
+         IF( ssnd(jps_hice)%laction )   THEN
+            CALL lbc_lnk('sbccpl', ztmp3, 'T', 1.)
+            CALL cpl_snd( jps_hice, isec, ztmp3, info )
+         ENDIF
+         IF( ssnd(jps_hsnw)%laction )   THEN
+            CALL lbc_lnk('sbccpl', ztmp4, 'T', 1.)
+            CALL cpl_snd( jps_hsnw, isec, ztmp4, info )
+         ENDIF
       ENDIF
 
 #if defined key_si3
@@ -2461,7 +2486,10 @@ CONTAINS
            ztmp3(:,:,1:jpl) = cnd_ice(:,:,1:jpl)
          CASE default      ;   CALL ctl_stop( 'sbc_cpl_snd: wrong definition of sn_snd_cond%cldes' )
          END SELECT
-         IF( ssnd(jps_kice)%laction )   CALL cpl_snd( jps_kice, isec, ztmp3, info )
+         IF( ssnd(jps_kice)%laction )   THEN
+            CALL lbc_lnk('sbccpl', ztmp3, 'T', 1.)
+            CALL cpl_snd( jps_kice, isec, ztmp3, info )
+         ENDIF
       ENDIF
 #endif
 
@@ -2470,6 +2498,7 @@ CONTAINS
       !                                                      ! ------------------------- !
       IF( ssnd(jps_co2)%laction .AND. l_co2cpl )   THEN
          ztmp1(:,:) = oce_co2(:,:) * 1000.  ! conversion in molC/m2/s
+         CALL lbc_lnk('sbccpl', ztmp1, 'T', 1.)
          CALL cpl_snd( jps_co2, isec, RESHAPE ( ztmp1, (/jpi,jpj,1/) ) , info )
       ENDIF
       !

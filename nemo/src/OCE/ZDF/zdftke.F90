@@ -1,4 +1,5 @@
 MODULE zdftke
+!DIR$ NOOPTIMIZE
    !!======================================================================
    !!                       ***  MODULE  zdftke  ***
    !! Ocean physics:  vertical mixing coefficient computed from the tke
