@@ -414,9 +414,6 @@ CONTAINS
                   ! Mapping from local index on processor to global index is based on the NEMO book
                   ji_glo = ji + nimppt(jproc) - 1
                   jj_glo = jj + njmppt(jproc) - 1
-                  if (written_by(ji_glo,jj_glo)>0) then
-                     write(*,*) 'reconstruct_global_2d: duplicate point ',ji_glo,jj_glo
-                  endif
                   pio(ji_glo,jj_glo) = pio1d(j1d)
                ENDDO
             ENDDO
