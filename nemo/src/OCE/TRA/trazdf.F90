@@ -12,13 +12,13 @@ MODULE trazdf
    !!   tra_zdf       : Update the tracer trend with the vertical diffusion
    !!----------------------------------------------------------------------
    USE oce            ! ocean dynamics and tracers variables
-   USE dom_oce        ! ocean space and time domain variables
+   USE dom_oce        ! ocean space and time domain variables 
    USE domvvl         ! variable volume
    USE phycst         ! physical constant
    USE zdf_oce        ! ocean vertical physics variables
    USE sbc_oce        ! surface boundary condition: ocean
    USE ldftra         ! lateral diffusion: eddy diffusivity
-   USE ldfslp         ! lateral diffusion: iso-neutral slope
+   USE ldfslp         ! lateral diffusion: iso-neutral slope 
    USE trd_oce        ! trends: ocean variables
    USE trdtra         ! trends: tracer trend manager
    !
@@ -74,7 +74,7 @@ CONTAINS
       ENDIF
       !
       !                                      !* compute lateral mixing trend and add it to the general trend
-      CALL tra_zdf_imp( kt, nit000, 'TRA', r2dt, tsb, tsa, jpts )
+      CALL tra_zdf_imp( kt, nit000, 'TRA', r2dt, tsb, tsa, jpts ) 
 
 !!gm WHY here !   and I don't like that !
       ! DRAKKAR SSS control {
@@ -105,15 +105,15 @@ CONTAINS
       !
    END SUBROUTINE tra_zdf
 
-
-   SUBROUTINE tra_zdf_imp( kt, kit000, cdtype, p2dt, ptb, pta, kjpt )
+ 
+   SUBROUTINE tra_zdf_imp( kt, kit000, cdtype, p2dt, ptb, pta, kjpt ) 
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE tra_zdf_imp  ***
       !!
       !! ** Purpose :   Compute the after tracer through a implicit computation
-      !!     of the vertical tracer diffusion (including the vertical component
-      !!     of lateral mixing (only for 2nd order operator, for fourth order
-      !!     it is already computed and add to the general trend in traldf)
+      !!     of the vertical tracer diffusion (including the vertical component 
+      !!     of lateral mixing (only for 2nd order operator, for fourth order 
+      !!     it is already computed and add to the general trend in traldf) 
       !!
       !! ** Method  :  The vertical diffusion of a tracer ,t , is given by:
       !!          difft = dz( avt dz(t) ) = 1/e3t dk+1( avt/e3w dk(t) )
@@ -155,12 +155,12 @@ CONTAINS
             ENDIF
             zwt(:,:,1) = 0._wp
             !
-            IF( l_ldfslp ) THEN            ! isoneutral diffusion: add the contribution
-               IF( ln_traldf_msc  ) THEN     ! MSC iso-neutral operator
+            IF( l_ldfslp ) THEN            ! isoneutral diffusion: add the contribution 
+               IF( ln_traldf_msc  ) THEN     ! MSC iso-neutral operator 
                   DO jk = 2, jpkm1
                      DO jj = 2, jpjm1
                         DO ji = fs_2, fs_jpim1   ! vector opt.
-                           zwt(ji,jj,jk) = zwt(ji,jj,jk) + akz(ji,jj,jk)
+                           zwt(ji,jj,jk) = zwt(ji,jj,jk) + akz(ji,jj,jk)  
                         END DO
                      END DO
                   END DO
@@ -217,7 +217,7 @@ CONTAINS
             !   and "superior" (above diagonal) components of the tridiagonal system.
             !   The solution will be in the 4d array pta.
             !   The 3d array zwt is used as a work space array.
-            !   En route to the solution pta is used a to evaluate the rhs and then
+            !   En route to the solution pta is used a to evaluate the rhs and then 
             !   used as a work space array: its value is modified.
             !
             DO jj = 2, jpjm1        !* 1st recurrence:   Tk = Dk - Ik Sk-1 / Tk-1   (increasing k)
@@ -228,17 +228,13 @@ CONTAINS
             DO jk = 2, jpkm1
                DO jj = 2, jpjm1
                   DO ji = fs_2, fs_jpim1
-                     IF (zwt(ji,jj,jk-1) /= 0.) THEN
-                        zwt(ji,jj,jk) = zwd(ji,jj,jk) - zwi(ji,jj,jk) * zws(ji,jj,jk-1) / zwt(ji,jj,jk-1)
-                     ELSE
-                        zwt(ji,jj,jk) = 0.
-                     ENDIF
+                     zwt(ji,jj,jk) = zwd(ji,jj,jk) - zwi(ji,jj,jk) * zws(ji,jj,jk-1) / zwt(ji,jj,jk-1)
                   END DO
                END DO
             END DO
             !
-         ENDIF
-         !
+         ENDIF 
+         !         
          DO jj = 2, jpjm1           !* 2nd recurrence:    Zk = Yk - Ik / Tk-1  Zk-1
             DO ji = fs_2, fs_jpim1
                pta(ji,jj,1,jn) = e3t_b(ji,jj,1) * ptb(ji,jj,1,jn) + p2dt * e3t_n(ji,jj,1) * pta(ji,jj,1,jn)
@@ -248,33 +244,21 @@ CONTAINS
             DO jj = 2, jpjm1
                DO ji = fs_2, fs_jpim1
                   zrhs = e3t_b(ji,jj,jk) * ptb(ji,jj,jk,jn) + p2dt * e3t_n(ji,jj,jk) * pta(ji,jj,jk,jn)   ! zrhs=right hand side
-                  IF (zwt(ji,jj,jk-1) /= 0.) THEN
-                     pta(ji,jj,jk,jn) = zrhs - zwi(ji,jj,jk) / (zwt(ji,jj,jk-1)) * pta(ji,jj,jk-1,jn)
-                  ELSE
-                     pta(ji,jj,jk,jn) = 0.
-                  ENDIF
+                  pta(ji,jj,jk,jn) = zrhs - zwi(ji,jj,jk) / zwt(ji,jj,jk-1) * pta(ji,jj,jk-1,jn)
                END DO
             END DO
          END DO
          !
          DO jj = 2, jpjm1           !* 3d recurrence:    Xk = (Zk - Sk Xk+1 ) / Tk   (result is the after tracer)
             DO ji = fs_2, fs_jpim1
-               IF (zwt(ji,jj,jpkm1) /= 0.) THEN
-                  pta(ji,jj,jpkm1,jn) = pta(ji,jj,jpkm1,jn) / (zwt(ji,jj,jpkm1) * tmask(ji,jj,jpkm1))
-               ELSE
-                  pta(ji,jj,jpkm1,jn) = 0.
-               ENDIF
+               pta(ji,jj,jpkm1,jn) = pta(ji,jj,jpkm1,jn) / zwt(ji,jj,jpkm1) * tmask(ji,jj,jpkm1)
             END DO
          END DO
          DO jk = jpk-2, 1, -1
             DO jj = 2, jpjm1
                DO ji = fs_2, fs_jpim1
-                  IF (zwt(ji,jj,jk) /= 0.) THEN
-                     pta(ji,jj,jk,jn) = ( pta(ji,jj,jk,jn) - zws(ji,jj,jk) * pta(ji,jj,jk+1,jn) )   &
-                        &             / (zwt(ji,jj,jk) * tmask(ji,jj,jk))
-                  ELSE
-                     pta(ji,jj,jk,jn) = 0.
-                  ENDIF
+                  pta(ji,jj,jk,jn) = ( pta(ji,jj,jk,jn) - zws(ji,jj,jk) * pta(ji,jj,jk+1,jn) )   &
+                     &             / zwt(ji,jj,jk) * tmask(ji,jj,jk)
                END DO
             END DO
          END DO

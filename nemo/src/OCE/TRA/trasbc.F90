@@ -143,7 +143,7 @@ CONTAINS
       DO jn = 1, jpts               !==  update tracer trend  ==!
          DO jj = 2, jpj
             DO ji = fs_2, fs_jpim1   ! vector opt.
-               tsa(ji,jj,1,jn) = tsa(ji,jj,1,jn) + zfact * ( sbc_tsc_b(ji,jj,jn) + sbc_tsc(ji,jj,jn) ) / (e3t_n(ji,jj,1)+EPSILON(e3t_n))
+               tsa(ji,jj,1,jn) = tsa(ji,jj,1,jn) + zfact * ( sbc_tsc_b(ji,jj,jn) + sbc_tsc(ji,jj,jn) ) / e3t_n(ji,jj,1)
             END DO
          END DO
       END DO
