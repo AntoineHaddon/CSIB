@@ -14,7 +14,7 @@ MODULE traldf_iso
 
    !!----------------------------------------------------------------------
    !!   tra_ldf_iso   : update the tracer trend with the horizontal component of a iso-neutral laplacian operator
-   !!                   and with the vertical part of the isopycnal or geopotential s-coord. operator
+   !!                   and with the vertical part of the isopycnal or geopotential s-coord. operator 
    !!----------------------------------------------------------------------
    USE oce            ! ocean dynamics and active tracers
    USE dom_oce        ! ocean space and time domain
@@ -53,11 +53,11 @@ CONTAINS
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE tra_ldf_iso  ***
       !!
-      !! ** Purpose :   Compute the before horizontal tracer (t & s) diffusive
-      !!      trend for a laplacian tensor (ezxcept the dz[ dz[.] ] term) and
+      !! ** Purpose :   Compute the before horizontal tracer (t & s) diffusive 
+      !!      trend for a laplacian tensor (ezxcept the dz[ dz[.] ] term) and 
       !!      add it to the general trend of tracer equation.
       !!
-      !! ** Method  :   The horizontal component of the lateral diffusive trends
+      !! ** Method  :   The horizontal component of the lateral diffusive trends 
       !!      is provided by a 2nd order operator rotated along neural or geopo-
       !!      tential surfaces to which an eddy induced advection can be added
       !!      It is computed using before fields (forward in time) and isopyc-
@@ -68,7 +68,7 @@ CONTAINS
       !!                  with top     cell update if ln_isfcav
       !!
       !!      2nd part :  horizontal fluxes of the lateral mixing operator
-      !!      ========
+      !!      ========    
       !!         zftu =  pahu e2u*e3u/e1u di[ tb ]
       !!               - pahu e2u*uslp    dk[ mi(mk(tb)) ]
       !!         zftv =  pahv e1v*e3v/e2v dj[ tb ]
@@ -109,7 +109,7 @@ CONTAINS
       REAL(wp) ::  zmskv, zahv_w, zabe2, zcof2, zcoef4   !   -      -
       REAL(wp) ::  zcoef0, ze3w_2, zsign, z2dt, z1_2dt   !   -      -
       REAL(wp), DIMENSION(jpi,jpj)     ::   zdkt, zdk1t, z2d
-      REAL(wp), DIMENSION(jpi,jpj,jpk) ::   zdit, zdjt, zftu, zftv, ztfw
+      REAL(wp), DIMENSION(jpi,jpj,jpk) ::   zdit, zdjt, zftu, zftv, ztfw 
       !!----------------------------------------------------------------------
       !
       IF( kpass == 1 .AND. kt == kit000 )  THEN
@@ -117,13 +117,13 @@ CONTAINS
          IF(lwp) WRITE(numout,*) 'tra_ldf_iso : rotated laplacian diffusion operator on ', cdtype
          IF(lwp) WRITE(numout,*) '~~~~~~~~~~~'
          !
-         akz     (:,:,:) = 0._wp
+         akz     (:,:,:) = 0._wp      
          ah_wslp2(:,:,:) = 0._wp
       ENDIF
-      !
+      !   
       l_hst = .FALSE.
       l_ptr = .FALSE.
-      IF( cdtype == 'TRA' .AND. ln_diaptr )                                                 l_ptr = .TRUE.
+      IF( cdtype == 'TRA' .AND. ln_diaptr )                                                 l_ptr = .TRUE. 
       IF( cdtype == 'TRA' .AND. ( iom_use("uadv_heattr") .OR. iom_use("vadv_heattr") .OR. &
          &                        iom_use("uadv_salttr") .OR. iom_use("vadv_salttr")  ) )   l_hst = .TRUE.
       !
@@ -136,7 +136,7 @@ CONTAINS
       IF( kpass == 1 ) THEN   ;   zsign =  1._wp      ! bilaplacian operator require a minus sign (eddy diffusivity >0)
       ELSE                    ;   zsign = -1._wp
       ENDIF
-
+         
       !!----------------------------------------------------------------------
       !!   0 - calculate  ah_wslp2 and akz
       !!----------------------------------------------------------------------
@@ -198,23 +198,23 @@ CONTAINS
            ENDIF
            !
          ELSE                                    ! 33 flux set to zero with akz=ah_wslp2 ==>> computed in full implicit
-            akz(:,:,:) = ah_wslp2(:,:,:)
+            akz(:,:,:) = ah_wslp2(:,:,:)      
          ENDIF
       ENDIF
       !
       !                                                          ! ===========
       DO jn = 1, kjpt                                            ! tracer loop
          !                                                       ! ===========
-         !
+         !                                               
          !!----------------------------------------------------------------------
-         !!   I - masked horizontal derivative
+         !!   I - masked horizontal derivative 
          !!----------------------------------------------------------------------
 !!gm : bug.... why (x,:,:)?   (1,jpj,:) and (jpi,1,:) should be sufficient....
          zdit (1,:,:) = 0._wp     ;     zdit (jpi,:,:) = 0._wp
          zdjt (1,:,:) = 0._wp     ;     zdjt (jpi,:,:) = 0._wp
          !!end
 
-         ! Horizontal tracer gradient
+         ! Horizontal tracer gradient 
          DO jk = 1, jpkm1
             DO jj = 1, jpjm1
                DO ji = 1, fs_jpim1   ! vector opt.
@@ -226,15 +226,15 @@ CONTAINS
          IF( ln_zps ) THEN      ! botton and surface ocean correction of the horizontal gradient
             DO jj = 1, jpjm1              ! bottom correction (partial bottom cell)
                DO ji = 1, fs_jpim1   ! vector opt.
-                  zdit(ji,jj,mbku(ji,jj)) = pgu(ji,jj,jn)
+                  zdit(ji,jj,mbku(ji,jj)) = pgu(ji,jj,jn)          
                   zdjt(ji,jj,mbkv(ji,jj)) = pgv(ji,jj,jn)
                END DO
             END DO
             IF( ln_isfcav ) THEN      ! first wet level beneath a cavity
                DO jj = 1, jpjm1
                   DO ji = 1, fs_jpim1   ! vector opt.
-                     IF( miku(ji,jj) > 1 )   zdit(ji,jj,miku(ji,jj)) = pgui(ji,jj,jn)
-                     IF( mikv(ji,jj) > 1 )   zdjt(ji,jj,mikv(ji,jj)) = pgvi(ji,jj,jn)
+                     IF( miku(ji,jj) > 1 )   zdit(ji,jj,miku(ji,jj)) = pgui(ji,jj,jn)          
+                     IF( mikv(ji,jj) > 1 )   zdjt(ji,jj,mikv(ji,jj)) = pgvi(ji,jj,jn)     
                   END DO
                END DO
             ENDIF
@@ -271,7 +271,7 @@ CONTAINS
                      &                          + zdk1t(ji+1,jj) + zdkt (ji,jj)  )  ) * umask(ji,jj,jk)
                   zftv(ji,jj,jk) = (  zabe2 * zdjt(ji,jj,jk)   &
                      &               + zcof2 * (  zdkt (ji,jj+1) + zdk1t(ji,jj)      &
-                     &                          + zdk1t(ji,jj+1) + zdkt (ji,jj)  )  ) * vmask(ji,jj,jk)
+                     &                          + zdk1t(ji,jj+1) + zdkt (ji,jj)  )  ) * vmask(ji,jj,jk)                  
                END DO
             END DO
             !
@@ -279,10 +279,10 @@ CONTAINS
                DO ji = fs_2, fs_jpim1   ! vector opt.
                   pta(ji,jj,jk,jn) = pta(ji,jj,jk,jn) + zsign * (  zftu(ji,jj,jk) - zftu(ji-1,jj,jk)      &
                      &                                           + zftv(ji,jj,jk) - zftv(ji,jj-1,jk)  )   &
-                     &                                        * r1_e1e2t(ji,jj) / (e3t_n(ji,jj,jk) + EPSILON(e3t_n))
+                     &                                        * r1_e1e2t(ji,jj) / e3t_n(ji,jj,jk)
                END DO
             END DO
-         END DO                                        !   End of slab
+         END DO                                        !   End of slab  
 
          !!----------------------------------------------------------------------
          !!   III - vertical trend (full)
@@ -294,7 +294,7 @@ CONTAINS
          ! ---------------
          !                          ! Surface and bottom vertical fluxes set to zero
          ztfw(:,:, 1 ) = 0._wp      ;      ztfw(:,:,jpk) = 0._wp
-
+         
          DO jk = 2, jpkm1           ! interior (2=<jk=<jpk-1)
             DO jj = 2, jpjm1
                DO ji = fs_2, fs_jpim1   ! vector opt.
@@ -321,20 +321,20 @@ CONTAINS
          END DO
          !                                !==  add the vertical 33 flux  ==!
          IF( ln_traldf_lap ) THEN               ! laplacian case: eddy coef = ah_wslp2 - akz
-            DO jk = 2, jpkm1
+            DO jk = 2, jpkm1       
                DO jj = 2, jpjm1
                   DO ji = fs_2, fs_jpim1
-                     ztfw(ji,jj,jk) = ztfw(ji,jj,jk) + e1e2t(ji,jj) / (e3w_n(ji,jj,jk) * wmask(ji,jj,jk)+EPSILON(e1e2t))&
+                     ztfw(ji,jj,jk) = ztfw(ji,jj,jk) + e1e2t(ji,jj) / e3w_n(ji,jj,jk) * wmask(ji,jj,jk)   &
                         &                            * ( ah_wslp2(ji,jj,jk) - akz(ji,jj,jk) )             &
                         &                            * ( ptb(ji,jj,jk-1,jn) - ptb(ji,jj,jk,jn) )
                   END DO
                END DO
             END DO
             !
-         ELSE                                   ! bilaplacian
+         ELSE                                   ! bilaplacian 
             SELECT CASE( kpass )
             CASE(  1  )                            ! 1st pass : eddy coef = ah_wslp2
-               DO jk = 2, jpkm1
+               DO jk = 2, jpkm1 
                   DO jj = 2, jpjm1
                      DO ji = fs_2, fs_jpim1
                         ztfw(ji,jj,jk) = ztfw(ji,jj,jk)    &
@@ -342,9 +342,9 @@ CONTAINS
                            &           * ( ptb(ji,jj,jk-1,jn) - ptb(ji,jj,jk,jn) ) / e3w_n(ji,jj,jk) * wmask(ji,jj,jk)
                      END DO
                   END DO
-               END DO
+               END DO 
             CASE(  2  )                         ! 2nd pass : eddy flux = ah_wslp2 and akz applied on ptb  and ptbb gradients, resp.
-               DO jk = 2, jpkm1
+               DO jk = 2, jpkm1 
                   DO jj = 2, jpjm1
                      DO ji = fs_2, fs_jpim1
                         ztfw(ji,jj,jk) = ztfw(ji,jj,jk) + e1e2t(ji,jj) / e3w_n(ji,jj,jk) * wmask(ji,jj,jk)                      &
@@ -355,12 +355,12 @@ CONTAINS
                END DO
             END SELECT
          ENDIF
-         !
+         !         
          DO jk = 1, jpkm1                 !==  Divergence of vertical fluxes added to pta  ==!
             DO jj = 2, jpjm1
                DO ji = fs_2, fs_jpim1   ! vector opt.
                   pta(ji,jj,jk,jn) = pta(ji,jj,jk,jn) + zsign * (  ztfw (ji,jj,jk) - ztfw(ji,jj,jk+1)  )   &
-                     &                                        * r1_e1e2t(ji,jj) / (e3t_n(ji,jj,jk)+EPSILON(e3t_n))
+                     &                                        * r1_e1e2t(ji,jj) / e3t_n(ji,jj,jk)
                END DO
             END DO
          END DO
