@@ -146,7 +146,7 @@ CONTAINS
          END DO
       END SELECT
       !                                                ! convert density into buoyancy
-      zbm(:,:) = + grav * zbm(:,:) / MAX( e3t_n(:,:,1), zmld(:,:), EPSILON(e3t_n) )
+      zbm(:,:) = + grav * zbm(:,:) / MAX( e3t_n(:,:,1), zmld(:,:) )
       !
       !
       !                                      !==  Magnitude of the MLE stream function  ==!
