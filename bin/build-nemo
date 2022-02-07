@@ -189,7 +189,7 @@ target_xios_exec=${nemo_xios_build_dir}/bin/xios_server.exe
 target_model_exec=${nemo_model_build_dir}/${cfgdir}/${nemo_config}/BLD/bin/nemo.exe
 target_diag_execs="nemo_diag.exe nemo_diag_cmoc.exe nemo_diag_canoe.exe"
 #target_rtd_execs="nemo_physical_rtd.exe nemo_carbon-cmoc_rtd.exe nemo_carbon-canoe_rtd.exe nemo_ice_rtd.exe"
-target_rtd_execs="nemo_physical_rtd.exe"
+target_rtd_execs="nemo_physical_rtd.exe nemo_ice_rtd.exe"
 target_rbld_execs="rebuild_nemo.exe rebuild_nemo_mpi.exe"
 
 # prepends paths to diag/rtd/rbld exec lists
