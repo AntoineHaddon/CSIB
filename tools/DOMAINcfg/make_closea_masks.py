@@ -362,7 +362,7 @@ def make_closea_masks(config=None,domcfg_file=None,mask=None):
             min_rnf = ma.amin(temp_mask_rnf[ma.where(temp_mask_rnf > 0)])
             max_rnf = ma.amax(temp_mask_rnf[ma.where(temp_mask_rnf > 0)])
             if min_rnf != max_rnf:
-                print 'min_rnf, max_rnf : ',min_rnf,max_rnf
+                print('min_rnf, max_rnf : ',min_rnf,max_rnf)
                 raise Exception('Partially overlapping target rnf areas for two closed seas.')
             else:
                 # source area:
