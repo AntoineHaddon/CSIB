@@ -46,7 +46,7 @@
       !
       ln_use_jattr = .true.     !  use (T) the file attribute: open_ocean_jstart, if present
    !                       !  in netcdf input files, as the start j-row for reading
-      ln_closea    = .false.    !  T => keep closed seas (defined by closea_mask field) in the
+      ln_closea    = .true.    !  T => keep closed seas (defined by closea_mask field) in the
       !                         !       domain and apply special treatment of freshwater fluxes.
       !                         !  F => suppress closed seas (defined by closea_mask field)
       !                         !       from the bathymetry at runtime.
