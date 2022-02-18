@@ -408,12 +408,13 @@ def make_closea_masks(config=None,domcfg_file=None,mask=None):
 
     domcfg.createVariable('closea_mask',datatype='i',dimensions=('y','x'),fill_value=closea_mask.fill_value,chunksizes=(1000,1000))
     domcfg.variables['closea_mask'][:]=closea_mask
-    if rnf_count > 0:
-        domcfg.createVariable('closea_mask_rnf',datatype='i',dimensions=('y','x'),fill_value=closea_mask_rnf.fill_value,chunksizes=(1000,1000))
-        domcfg.variables['closea_mask_rnf'][:]=closea_mask_rnf
-    if empmr_count > 0:
-        domcfg.createVariable('closea_mask_empmr',datatype='i',dimensions=('y','x'),fill_value=closea_mask_empmr.fill_value,chunksizes=(1000,1000))
-        domcfg.variables['closea_mask_empmr'][:]=closea_mask_empmr
+    # Andrew Shao: These seem like they should be made regardless? NEMO4 at least complains that they don't exist
+    # if rnf_count > 0:
+    domcfg.createVariable('closea_mask_rnf',datatype='i',dimensions=('y','x'),fill_value=closea_mask_rnf.fill_value,chunksizes=(1000,1000))
+    domcfg.variables['closea_mask_rnf'][:]=closea_mask_rnf
+    #if empmr_count > 0:
+    domcfg.createVariable('closea_mask_empmr',datatype='i',dimensions=('y','x'),fill_value=closea_mask_empmr.fill_value,chunksizes=(1000,1000))
+    domcfg.variables['closea_mask_empmr'][:]=closea_mask_empmr
 
     domcfg.close()
 
