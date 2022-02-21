@@ -403,6 +403,8 @@ CONTAINS
       emp (:,:) = emp (:,:) * tmask(:,:,1)
       !
       CALL lbc_lnk( 'closea', emp , 'T', 1._wp )
+
+      IF( ln_timing )  CALL timing_stop('sbc_clo')
       !
    END SUBROUTINE sbc_clo
 
