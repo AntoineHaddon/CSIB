@@ -3,15 +3,15 @@
 '''
 Routine to create closea mask fields based on old NEMO closea index definitions.
 Details of the grid and the bathymetry are read in from the domain_cfg.nc file and
-the closea_mask* fields are appended to the same domain_cfg.nc file. 
+the closea_mask* fields are appended to the same domain_cfg.nc file.
 
 To use this routine:
 
   1. Provide domain_cfg.nc file for your configuration.
 
-  2. Define closed seas for your configuration in Section 2 
-     using indices in the old NEMO style. (Read the comments on 
-     indexing in Section 2!). Examples are given for eORCA025 
+  2. Define closed seas for your configuration in Section 2
+     using indices in the old NEMO style. (Read the comments on
+     indexing in Section 2!). Examples are given for eORCA025
      (UK version) for the three different options:
         - just defining closed seas (and distribute fluxes over global ocean)
         - defining closed seas with a RNF mapping for the American Great Lakes to the St Laurence Seaway
@@ -21,7 +21,7 @@ To use this routine:
      but makes the fields easier to check.
 
   4. Module can be run in python or from linux command line if you
-     change the top line to point to your python installation. If 
+     change the top line to point to your python installation. If
      using from command line, type "make_closea_masks.py --help"
      for usage.
 
@@ -63,18 +63,18 @@ def make_closea_masks(config=None,domcfg_file=None,mask=None):
     ii1d = np.arange(nx)+1
     jj1d = np.arange(ny)+1
     ii2d = ii1d * ones_2d
-    jj2d = np.transpose(jj1d*np.transpose(ones_2d)) 
- 
+    jj2d = np.transpose(jj1d*np.transpose(ones_2d))
+
 #=====================================
 # 2. Closea definitions (old style)
 #=====================================
 
-    # NB. The model i and j indices defined here are Fortran indices, 
+    # NB. The model i and j indices defined here are Fortran indices,
     #     ie. counting from 1 as in the NEMO code. Also the indices
     #     of the arrays (ncsi1 etc) count from 1 in order to match
     #     the Fortran code.
     #     This means that you can cut and paste the definitions from
-    #     the NEMO code and change round brackets to square brackets. 
+    #     the NEMO code and change round brackets to square brackets.
     #     But BEWARE: Fortran array(a:b) == Python array[a:b+1] !!!
     #
 
@@ -95,29 +95,29 @@ def make_closea_masks(config=None,domcfg_file=None,mask=None):
         ncsir = np.zeros((num_closea+1,max_runoff_points+1),dtype=np.int) ; ncsjr = np.zeros((num_closea+1,max_runoff_points+1),dtype=np.int)
 
         # Caspian Sea (spread over globe)
-        ncsnr[1]   =   1  ;  ncstt[1]   =   0   
+        ncsnr[1]   =   1  ;  ncstt[1]   =   0
         ncsi1[1]   =  11  ;  ncsj1[1]   = 103
         ncsi2[1]   =  17  ;  ncsj2[1]   = 112
 
         # Great Lakes - North America - put at St Laurent mouth
-        ncsnr[2]   =   1  ;  ncstt[2]   =   2 
+        ncsnr[2]   =   1  ;  ncstt[2]   =   2
         ncsi1[2]   =  97  ;  ncsj1[2]   = 107
         ncsi2[2]   = 103  ;  ncsj2[2]   = 111
-        ncsir[2,1] = 110  ;  ncsjr[2,1] = 111           
+        ncsir[2,1] = 110  ;  ncsjr[2,1] = 111
 
         # Black Sea (crossed by the cyclic boundary condition)
         # put in Med Sea (north of Aegean Sea)
-        ncsnr[3:5] =   4  ;  ncstt[3:5] =   2           
-        ncsir[3:5,1] = 171;  ncsjr[3:5,1] = 106     
-        ncsir[3:5,2] = 170;  ncsjr[3:5,2] = 106 
-        ncsir[3:5,3] = 171;  ncsjr[3:5,3] = 105 
-        ncsir[3:5,4] = 170;  ncsjr[3:5,4] = 105 
-        # west part of the Black Sea      
-        ncsi1[3]   = 174  ;  ncsj1[3]   = 107      
-        ncsi2[3]   = 181  ;  ncsj2[3]   = 112      
-        # east part of the Black Sea      
-        ncsi1[4]   =   2  ;  ncsj1[4]   = 107      
-        ncsi2[4]   =   6  ;  ncsj2[4]   = 112      
+        ncsnr[3:5] =   4  ;  ncstt[3:5] =   2
+        ncsir[3:5,1] = 171;  ncsjr[3:5,1] = 106
+        ncsir[3:5,2] = 170;  ncsjr[3:5,2] = 106
+        ncsir[3:5,3] = 171;  ncsjr[3:5,3] = 105
+        ncsir[3:5,4] = 170;  ncsjr[3:5,4] = 105
+        # west part of the Black Sea
+        ncsi1[3]   = 174  ;  ncsj1[3]   = 107
+        ncsi2[3]   = 181  ;  ncsj2[3]   = 112
+        # east part of the Black Sea
+        ncsi1[4]   =   2  ;  ncsj1[4]   = 107
+        ncsi2[4]   =   6  ;  ncsj2[4]   = 112
 
     #================================================================
     elif config == 'eORCA1':
@@ -131,7 +131,7 @@ def make_closea_masks(config=None,domcfg_file=None,mask=None):
         ncsir = np.zeros((num_closea+1,max_runoff_points+1),dtype=np.int) ; ncsjr = np.zeros((num_closea+1,max_runoff_points+1),dtype=np.int)
 
         # Caspian Sea  (spread over the globe)
-        ncsnr[1]   = 1    ; ncstt[1]   = 0           
+        ncsnr[1]   = 1    ; ncstt[1]   = 0
         ncsi1[1]   = 332  ; ncsj1[1]   = 243
         ncsi2[1]   = 344  ; ncsj2[1]   = 275
 
@@ -147,54 +147,54 @@ def make_closea_masks(config=None,domcfg_file=None,mask=None):
         ncsir = np.zeros((num_closea+1,max_runoff_points+1),dtype=np.int) ; ncsjr = np.zeros((num_closea+1,max_runoff_points+1),dtype=np.int)
 
         # Caspian Sea
-        ncsnr[1]   = 1    ; ncstt[1]   = 0     
+        ncsnr[1]   = 1    ; ncstt[1]   = 0
         ncsi1[1]   = 1330 ; ncsj1[1]   = 831
         ncsi2[1]   = 1375 ; ncsj2[1]   = 981
 
         # Aral Sea
-        ncsnr[2]   = 1    ; ncstt[2]   = 0     
+        ncsnr[2]   = 1    ; ncstt[2]   = 0
         ncsi1[2]   = 1376 ; ncsj1[2]   = 900
         ncsi2[2]   = 1400 ; ncsj2[2]   = 981
 
         # Azov Sea
-        ncsnr[3]   = 1    ; ncstt[3]   = 0     
+        ncsnr[3]   = 1    ; ncstt[3]   = 0
         ncsi1[3]   = 1284 ; ncsj1[3]   = 908
         ncsi2[3]   = 1304 ; ncsj2[3]   = 933
 
         # Lake Superior
-        ncsnr[4]   = 1    ; ncstt[4]   = 0     
-        ncsi1[4]   = 781  ; ncsj1[4]   = 905 
-        ncsi2[4]   = 815  ; ncsj2[4]   = 926 
+        ncsnr[4]   = 1    ; ncstt[4]   = 0
+        ncsi1[4]   = 781  ; ncsj1[4]   = 905
+        ncsi2[4]   = 815  ; ncsj2[4]   = 926
 
         # Lake Michigan
-        ncsnr[5]   = 1    ; ncstt[5]   = 0     
-        ncsi1[5]   = 795  ; ncsj1[5]   = 871             
-        ncsi2[5]   = 813  ; ncsj2[5]   = 905 
+        ncsnr[5]   = 1    ; ncstt[5]   = 0
+        ncsi1[5]   = 795  ; ncsj1[5]   = 871
+        ncsi2[5]   = 813  ; ncsj2[5]   = 905
 
         # Lake Huron part 1
-        ncsnr[6]   = 1    ; ncstt[6]   = 0     
-        ncsi1[6]   = 814  ; ncsj1[6]   = 882             
-        ncsi2[6]   = 825  ; ncsj2[6]   = 905 
+        ncsnr[6]   = 1    ; ncstt[6]   = 0
+        ncsi1[6]   = 814  ; ncsj1[6]   = 882
+        ncsi2[6]   = 825  ; ncsj2[6]   = 905
 
         # Lake Huron part 2
-        ncsnr[7]   = 1    ; ncstt[7]   = 0     
-        ncsi1[7]   = 826  ; ncsj1[7]   = 889             
-        ncsi2[7]   = 833  ; ncsj2[7]   = 905 
+        ncsnr[7]   = 1    ; ncstt[7]   = 0
+        ncsi1[7]   = 826  ; ncsj1[7]   = 889
+        ncsi2[7]   = 833  ; ncsj2[7]   = 905
 
         # Lake Erie
-        ncsnr[8]   = 1    ; ncstt[8]   = 0     
-        ncsi1[8]   = 816  ; ncsj1[8]   = 871             
-        ncsi2[8]   = 837  ; ncsj2[8]   = 881 
+        ncsnr[8]   = 1    ; ncstt[8]   = 0
+        ncsi1[8]   = 816  ; ncsj1[8]   = 871
+        ncsi2[8]   = 837  ; ncsj2[8]   = 881
 
         # Lake Ontario
-        ncsnr[9]   = 1    ; ncstt[9]   = 0     
-        ncsi1[9]   = 831  ; ncsj1[9]   = 882             
-        ncsi2[9]   = 847  ; ncsj2[9]   = 889 
+        ncsnr[9]   = 1    ; ncstt[9]   = 0
+        ncsi1[9]   = 831  ; ncsj1[9]   = 882
+        ncsi2[9]   = 847  ; ncsj2[9]   = 889
 
         # Lake Victoria
-        ncsnr[10]   = 1    ; ncstt[10]   = 0   
-        ncsi1[10]   = 1274 ; ncsj1[10]   = 672 
-        ncsi2[10]   = 1289 ; ncsj2[10]   = 687 
+        ncsnr[10]   = 1    ; ncstt[10]   = 0
+        ncsi1[10]   = 1274 ; ncsj1[10]   = 672
+        ncsi2[10]   = 1289 ; ncsj2[10]   = 687
 
     #================================================================
     elif config == 'eORCA025_UK_rnf':
@@ -211,57 +211,57 @@ def make_closea_masks(config=None,domcfg_file=None,mask=None):
         ncsir = np.zeros((num_closea+1,max_runoff_points+1),dtype=np.int) ; ncsjr = np.zeros((num_closea+1,max_runoff_points+1),dtype=np.int)
 
         # Caspian Sea
-        ncsnr[1]   = 1    ; ncstt[1]   = 0     
+        ncsnr[1]   = 1    ; ncstt[1]   = 0
         ncsi1[1]   = 1330 ; ncsj1[1]   = 831
         ncsi2[1]   = 1375 ; ncsj2[1]   = 981
 
         # Aral Sea
-        ncsnr[2]   = 1    ; ncstt[2]   = 0     
+        ncsnr[2]   = 1    ; ncstt[2]   = 0
         ncsi1[2]   = 1376 ; ncsj1[2]   = 900
         ncsi2[2]   = 1400 ; ncsj2[2]   = 981
 
         # Azov Sea
-        ncsnr[3]   = 1    ; ncstt[3]   = 0     
+        ncsnr[3]   = 1    ; ncstt[3]   = 0
         ncsi1[3]   = 1284 ; ncsj1[3]   = 908
         ncsi2[3]   = 1304 ; ncsj2[3]   = 933
 
         # Lake Superior
-        ncsnr[4]   = 1    ; ncstt[4]   = 1     
-        ncsi1[4]   = 781  ; ncsj1[4]   = 905 
-        ncsi2[4]   = 815  ; ncsj2[4]   = 926 
+        ncsnr[4]   = 1    ; ncstt[4]   = 1
+        ncsi1[4]   = 781  ; ncsj1[4]   = 905
+        ncsi2[4]   = 815  ; ncsj2[4]   = 926
         # runff points the St Laurence Seaway for all Great Lakes
-        ncsir1[4:10]   = 873 ; ncsjr1[4:10]   = 909 
-        ncsir2[4:10]   = 884 ; ncsjr2[4:10]   = 920 
+        ncsir1[4:10]   = 873 ; ncsjr1[4:10]   = 909
+        ncsir2[4:10]   = 884 ; ncsjr2[4:10]   = 920
 
         # Lake Michigan
-        ncsnr[5]   = 1    ; ncstt[5]   = 1     
-        ncsi1[5]   = 795  ; ncsj1[5]   = 871             
-        ncsi2[5]   = 813  ; ncsj2[5]   = 905 
+        ncsnr[5]   = 1    ; ncstt[5]   = 1
+        ncsi1[5]   = 795  ; ncsj1[5]   = 871
+        ncsi2[5]   = 813  ; ncsj2[5]   = 905
 
         # Lake Huron part 1
-        ncsnr[6]   = 1    ; ncstt[6]   = 1     
-        ncsi1[6]   = 814  ; ncsj1[6]   = 882             
-        ncsi2[6]   = 825  ; ncsj2[6]   = 905 
+        ncsnr[6]   = 1    ; ncstt[6]   = 1
+        ncsi1[6]   = 814  ; ncsj1[6]   = 882
+        ncsi2[6]   = 825  ; ncsj2[6]   = 905
 
         # Lake Huron part 2
-        ncsnr[7]   = 1    ; ncstt[7]   = 1     
-        ncsi1[7]   = 826  ; ncsj1[7]   = 889             
-        ncsi2[7]   = 833  ; ncsj2[7]   = 905 
+        ncsnr[7]   = 1    ; ncstt[7]   = 1
+        ncsi1[7]   = 826  ; ncsj1[7]   = 889
+        ncsi2[7]   = 833  ; ncsj2[7]   = 905
 
         # Lake Erie
-        ncsnr[8]   = 1    ; ncstt[8]   = 1     
-        ncsi1[8]   = 816  ; ncsj1[8]   = 871             
-        ncsi2[8]   = 837  ; ncsj2[8]   = 881 
+        ncsnr[8]   = 1    ; ncstt[8]   = 1
+        ncsi1[8]   = 816  ; ncsj1[8]   = 871
+        ncsi2[8]   = 837  ; ncsj2[8]   = 881
 
         # Lake Ontario
-        ncsnr[9]   = 1    ; ncstt[9]   = 1     
-        ncsi1[9]   = 831  ; ncsj1[9]   = 882             
-        ncsi2[9]   = 847  ; ncsj2[9]   = 889 
+        ncsnr[9]   = 1    ; ncstt[9]   = 1
+        ncsi1[9]   = 831  ; ncsj1[9]   = 882
+        ncsi2[9]   = 847  ; ncsj2[9]   = 889
 
         # Lake Victoria
-        ncsnr[10]   = 1    ; ncstt[10]   = 0   
-        ncsi1[10]   = 1274 ; ncsj1[10]   = 672 
-        ncsi2[10]   = 1289 ; ncsj2[10]   = 687 
+        ncsnr[10]   = 1    ; ncstt[10]   = 0
+        ncsi1[10]   = 1274 ; ncsj1[10]   = 672
+        ncsi2[10]   = 1289 ; ncsj2[10]   = 687
 
     #================================================================
     elif config == 'eORCA025_UK_empmr':
@@ -278,57 +278,57 @@ def make_closea_masks(config=None,domcfg_file=None,mask=None):
         ncsir = np.zeros((num_closea+1,max_runoff_points+1),dtype=np.int) ; ncsjr = np.zeros((num_closea+1,max_runoff_points+1),dtype=np.int)
 
         # Caspian Sea
-        ncsnr[1]   = 1    ; ncstt[1]   = 0     
+        ncsnr[1]   = 1    ; ncstt[1]   = 0
         ncsi1[1]   = 1330 ; ncsj1[1]   = 831
         ncsi2[1]   = 1375 ; ncsj2[1]   = 981
 
         # Aral Sea
-        ncsnr[2]   = 1    ; ncstt[2]   = 0     
+        ncsnr[2]   = 1    ; ncstt[2]   = 0
         ncsi1[2]   = 1376 ; ncsj1[2]   = 900
         ncsi2[2]   = 1400 ; ncsj2[2]   = 981
 
         # Azov Sea
-        ncsnr[3]   = 1    ; ncstt[3]   = 0     
+        ncsnr[3]   = 1    ; ncstt[3]   = 0
         ncsi1[3]   = 1284 ; ncsj1[3]   = 908
         ncsi2[3]   = 1304 ; ncsj2[3]   = 933
 
         # Lake Superior
-        ncsnr[4]   = 1    ; ncstt[4]   = 2     
+        ncsnr[4]   = 1    ; ncstt[4]   = 2
         ncsi1[4]   = 781  ; ncsj1[4]   = 905
-        ncsi2[4]   = 815  ; ncsj2[4]   = 926 
+        ncsi2[4]   = 815  ; ncsj2[4]   = 926
         # runff points the St Laurence Seaway for all Great Lakes
-        ncsir1[4:10]   = 873 ; ncsjr1[4:10]   = 909 
-        ncsir2[4:10]   = 884 ; ncsjr2[4:10]   = 920 
+        ncsir1[4:10]   = 873 ; ncsjr1[4:10]   = 909
+        ncsir2[4:10]   = 884 ; ncsjr2[4:10]   = 920
 
         # Lake Michigan
-        ncsnr[5]   = 1    ; ncstt[5]   = 2     
-        ncsi1[5]   = 795  ; ncsj1[5]   = 871             
-        ncsi2[5]   = 813  ; ncsj2[5]   = 905 
+        ncsnr[5]   = 1    ; ncstt[5]   = 2
+        ncsi1[5]   = 795  ; ncsj1[5]   = 871
+        ncsi2[5]   = 813  ; ncsj2[5]   = 905
 
         # Lake Huron part 1
-        ncsnr[6]   = 1    ; ncstt[6]   = 2     
-        ncsi1[6]   = 814  ; ncsj1[6]   = 882             
-        ncsi2[6]   = 825  ; ncsj2[6]   = 905 
+        ncsnr[6]   = 1    ; ncstt[6]   = 2
+        ncsi1[6]   = 814  ; ncsj1[6]   = 882
+        ncsi2[6]   = 825  ; ncsj2[6]   = 905
 
         # Lake Huron part 2
-        ncsnr[7]   = 1    ; ncstt[7]   = 2     
-        ncsi1[7]   = 826  ; ncsj1[7]   = 889             
-        ncsi2[7]   = 833  ; ncsj2[7]   = 905 
+        ncsnr[7]   = 1    ; ncstt[7]   = 2
+        ncsi1[7]   = 826  ; ncsj1[7]   = 889
+        ncsi2[7]   = 833  ; ncsj2[7]   = 905
 
         # Lake Erie
-        ncsnr[8]   = 1    ; ncstt[8]   = 2     
-        ncsi1[8]   = 816  ; ncsj1[8]   = 871             
-        ncsi2[8]   = 837  ; ncsj2[8]   = 881 
+        ncsnr[8]   = 1    ; ncstt[8]   = 2
+        ncsi1[8]   = 816  ; ncsj1[8]   = 871
+        ncsi2[8]   = 837  ; ncsj2[8]   = 881
 
         # Lake Ontario
-        ncsnr[9]   = 1    ; ncstt[9]   = 2     
-        ncsi1[9]   = 831  ; ncsj1[9]   = 882             
-        ncsi2[9]   = 847  ; ncsj2[9]   = 889 
+        ncsnr[9]   = 1    ; ncstt[9]   = 2
+        ncsi1[9]   = 831  ; ncsj1[9]   = 882
+        ncsi2[9]   = 847  ; ncsj2[9]   = 889
 
         # Lake Victoria
-        ncsnr[10]   = 1    ; ncstt[10]   = 0   
-        ncsi1[10]   = 1274 ; ncsj1[10]   = 672 
-        ncsi2[10]   = 1289 ; ncsj2[10]   = 687 
+        ncsnr[10]   = 1    ; ncstt[10]   = 0
+        ncsi1[10]   = 1274 ; ncsj1[10]   = 672
+        ncsi2[10]   = 1289 ; ncsj2[10]   = 687
 
 #=====================================
 # 3. Generate mask fields
@@ -357,7 +357,7 @@ def make_closea_masks(config=None,domcfg_file=None,mask=None):
             else:
                 for ir in range(ncsnr[ics+1]):
                     temp_mask_rnf[ncsjr[ics+1],ncsjr[ics+1]] = rnf_count
- 
+
             temp_mask_rnf = ma.where( closea_mask_rnf > 0, ma.minimum(temp_mask_rnf,closea_mask_rnf), temp_mask_rnf)
             min_rnf = ma.amin(temp_mask_rnf[ma.where(temp_mask_rnf > 0)])
             max_rnf = ma.amax(temp_mask_rnf[ma.where(temp_mask_rnf > 0)])
@@ -371,7 +371,7 @@ def make_closea_masks(config=None,domcfg_file=None,mask=None):
                 closea_mask_rnf[ma.where(temp_mask_rnf>0)] = min_rnf
                 # reset rnf_count:
                 rnf_count = min_rnf
-                    
+
         if ncstt[ics+1] == 2:
             empmr_count = empmr_count + 1
             temp_mask_empmr[:] = 0
@@ -395,7 +395,7 @@ def make_closea_masks(config=None,domcfg_file=None,mask=None):
                 closea_mask_empmr[ma.where(temp_mask_empmr>0)] = min_empmr
                 # reset empmr_count:
                 empmr_count = min_empmr
-                    
+
     if mask:
         # apply land-sea mask if required
         closea_mask.mask = np.where(top_level==0,True,False)
@@ -406,15 +406,14 @@ def make_closea_masks(config=None,domcfg_file=None,mask=None):
 # 4. Append masks to domain_cfg file.
 #=====================================
 
-    domcfg.createVariable('closea_mask',datatype='i',dimensions=('y','x'),fill_value=closea_mask.fill_value,chunksizes=(1000,1000))
+    domcfg.createVariable('closea_mask',datatype='i',dimensions=('y','x'),fill_value=-1,chunksizes=(1000,1000))
     domcfg.variables['closea_mask'][:]=closea_mask
-    # Andrew Shao: These seem like they should be made regardless? NEMO4 at least complains that they don't exist
-    # if rnf_count > 0:
-    domcfg.createVariable('closea_mask_rnf',datatype='i',dimensions=('y','x'),fill_value=closea_mask_rnf.fill_value,chunksizes=(1000,1000))
-    domcfg.variables['closea_mask_rnf'][:]=closea_mask_rnf
-    #if empmr_count > 0:
-    domcfg.createVariable('closea_mask_empmr',datatype='i',dimensions=('y','x'),fill_value=closea_mask_empmr.fill_value,chunksizes=(1000,1000))
-    domcfg.variables['closea_mask_empmr'][:]=closea_mask_empmr
+    if rnf_count > 0:
+        domcfg.createVariable('closea_mask_rnf',datatype='i',dimensions=('y','x'),fill_value=-1,chunksizes=(1000,1000))
+        domcfg.variables['closea_mask_rnf'][:]=closea_mask_rnf
+    if empmr_count > 0:
+        domcfg.createVariable('closea_mask_empmr',datatype='i',dimensions=('y','x'),fill_value=-1,chunksizes=(1000,1000))
+        domcfg.variables['closea_mask_empmr'][:]=closea_mask_empmr
 
     domcfg.close()
 
