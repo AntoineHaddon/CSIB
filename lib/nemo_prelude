@@ -112,7 +112,7 @@ echo "#################### Start NEMO pre-processing #################"
   nemo_eddy_viscosity_3D=urdy_eorca1_eddy_viscosity_3d_eorca1_jstart.nc
   nemo_resto=nemo_4.0.1_orca2_resto.nc
   nemo_empave_old=empave_old.dat
-  nemo_coordinates=urdy_eorca1_domcfg_eorca1v2.2x_orca_jstart.nc
+  nemo_coordinates=eorca1_domcfg_eorca1v2.2x_orca_jstart_closea.nc
   nemo_geothermal_heating=urdy_eorca1_goutorbe_1x1_0360_eorca1_v2.2x_jstart.nc
   nemo_runoff_core_monthly=urdy_eorca1_runoff_v2.2x_jstart.nc
   nemo_sss_data=urdy_eorca1_sss_1m_en4_eorca1_blackseapatch_northfoldfix_jstart.nc
