@@ -13,6 +13,7 @@
    NCS, 05/2017. 
 
    Adapted for NEMO4.0.3 (D. Yang, OCT 2020)
+   Adapted for U2 (D. Yang, APR 2022)
 """
 import math
 # dictionary mapper to get days in month
@@ -66,8 +67,8 @@ def calc_chunk_nloops(start, stop, nemo_freq):
     if em not in range(1,13):
         raise ValueError('End month must be 1-12')
 
-    print 'Start year, month', sy, sm
-    print 'End year, month', ey, em
+    print ('Start year, month', sy, sm)
+    print ('End year, month', ey, em)
  
     if 'y' in nemo_freq:
         nf = int(nemo_freq.replace('y',''))*12 
@@ -76,20 +77,20 @@ def calc_chunk_nloops(start, stop, nemo_freq):
     else:
         raise ValueError('nemo_freq must have a format such as 3m or 2y')
 
-    print 'nemo_freq in months:', nf
+    print ('nemo_freq in months:', nf)
 
     # Number of months in the run
     # run_nmonth0 = (sy-1)*12 + sm
     nmonths = (ey - sy)*12 + (em -sm) + 1
     dyears = nmonths / 12.0
 
-    print 'Months in run:', nmonths , '(which is {dyears} years)'.format(dyears=dyears)
+    print ('Months in run:', nmonths , '(which is {dyears} years)'.format(dyears=dyears))
 
     # Number of steps/loops to complete the run
     nloops = nmonths / nf
-    print 'Number of loop iterations is:', nloops
+    print ('Number of loop iterations is:', nloops)
     if nmonths%nf != 0:
-      print 'Should be exiting here with sensible error'
+      print ('Should be exiting here with sensible error')
       raise ValueError('\n\n ERROR: nemo_freq must divide evenly into the number of months in the run')
 
     return '{:04d}'.format(sy), '{:02d}'.format(sm), nloops, nf
@@ -137,7 +138,13 @@ if __name__ == '__main__':
         hall = subprocess.check_output(['getdef', 'experiment.cfg', 'hall']).strip()
         nemo_wallclock = subprocess.check_output(['getdef', 'experiment.cfg', 'nemo_wallclock']).strip()
         nprocs = subprocess.check_output(['getdef', 'experiment.cfg', 'tjpnij']).strip()
-  
+
+        # Decode from a byte-like object to string due to Python 2 -> 3
+        start = start.decode()
+        end = end.decode()
+        nemo_freq = nemo_freq.decode()
+        hall = hall.decode()
+
         # Compute how many loops are required in total
         run_start_year, run_start_month, nloops, nemo_freq_months = calc_chunk_nloops(start, end, nemo_freq)
         
