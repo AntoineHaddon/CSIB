@@ -148,15 +148,7 @@ if __name__ == '__main__':
         # Compute how many loops are required in total
         run_start_year, run_start_month, nloops, nemo_freq_months = calc_chunk_nloops(start, end, nemo_freq)
         
-        if hall == "hall1":
-            frontend='eccc-ppp1'
-            backend='hare'
-            seq_default_machine='eccc-ppp1'
-        elif hall == "hall2":
-            frontend='eccc-ppp2'
-            backend='brooks'
-            seq_default_machine='eccc-ppp2'
-        elif hall == "hall3":    
+        if hall == "hall3":
             frontend='eccc-ppp3'
             backend='banting'
             seq_default_machine='eccc-ppp3'
@@ -164,8 +156,16 @@ if __name__ == '__main__':
             frontend='eccc-ppp4'
             backend='daley'
             seq_default_machine='eccc-ppp4'
+        elif hall == "hall5":    
+            frontend='ppp5'
+            backend='underhill'
+            seq_default_machine='ppp5'
+        elif hall == "hall6":
+            frontend='ppp6'
+            backend='robert'
+            seq_default_machine='ppp6'
         else:
-            raise ValueError('Hall be must hall[1-4] in experiment.cfg')
+            raise ValueError('Hall be must hall[3-6] in experiment.cfg')
 
         modstr = "NEMO_LOOP_END={0}".format(nloops)
         setdef('resources/resources.def', modstr)
