@@ -24,35 +24,18 @@
     [ -z "$2" ] && bail "rtd_staging requires a file name as the second arg."
     [ -e $1 ] || bail "rtd_staging: File --> $1 <-- is missing."
 
-    # Do not abort if the copy fails
 
-    # Identify the staging directory
+    rtd_staging_dir=$cannemo_rtd_staging_dir
 
-    HOSTID=$(hostname | cut -d'.' -f1 )
-    case ${HOSTID} in
-      hpcr3*|cs3*|ppp3*|eccc*-ppp3*) # ppp3
-            rtd_staging_dir=/space/hall3/sitestore/eccc/crd/rtdfiles_nemo
-            ;;
-      hpcr4*|cs4*|ppp4*|eccc*-ppp4*) # ppp4
-            rtd_staging_dir=/space/hall4/sitestore/eccc/crd/rtdfiles_nemo
-            ;;
-        *) bail "unsupported host!"
-            ;;
-    esac
-
-    echo "staging" $rtd_staging_dir
-    [ -z $rtd_staging_dir ] && bail "rtd_staging_dir not defined"
-    cp $1 $rtd_staging_dir/$2
+    echo "staging" $cannemo_rtd_staging_dir
+    [ -z $cannemo_rtd_staging_dir ] && bail "rtd_staging_dir not defined"
+    cp $1 $cannemo_rtd_staging_dir/$2
   }
 
   # bail is a simple error exit routine
-  error_out="${JHOME:-$HOME}/.queue/error_nemo_processing_${runid}_${this_host}_$stamp"
-  [ -z "$error_out" ] || rm -f $error_out
   bail_prefix="NEMO RTD"
   bail(){
-    echo `date`" $this_host $runid --- ${bail_prefix}: $*"
-    echo `date`" $this_host $runid --- ${bail_prefix}: $*" >>$error_out
-    [ -n "$model" ] && echo `date`" $this_host $runid --- ${bail_prefix}: $*" >>haltit
+    echo `date`" $runid --- ${bail_prefix}: $*"
     exit 1
   }
 
