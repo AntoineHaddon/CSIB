@@ -1,0 +1,45 @@
+# Robert environment file
+# TODO: 
+#   - assess moving stuff into the PLATFORM directory.
+#   - we should probably get the compiler from the same file as the main compilation environment
+
+# load site profile for u2
+source ${CCRNSRC}/generic/nemo_u2_site_profile
+
+# set -x
+HDNODE='robert' ; export HDNODE
+TRUEHOST='robert' ; export TRUEHOST
+RUNPATH_ROOT="/space/hall6/sitestore/eccc/crd/ccrn" ; export RUNPATH_ROOT
+SITESTORE_ROOT="$RUNPATH_ROOT" ; export SITESTORE_ROOT
+RUNID_ROOT="$RUNPATH_ROOT/users/$(whoami)/${runid_env}" ; export RUNID_ROOT
+RUNPATH="$RUNID_ROOT/data" ; export RUNPATH
+CCRNTMP="$RUNPATH_ROOT/ccrn_tmp" ; export CCRNTMP
+RTEXTBLS="$WRK_DIR/executables" ; export RTEXTBLS
+USER=$(/usr/bin/whoami) ; export  USER
+GRP=$(id | sed -e 's/^.* gid=[0-9]*(//' | sed -e 's/) .*$//g')
+NAME=$(/usr/bin/whoami) ; export NAME
+HOSTHW="$(uname -m | tr '[a-z]' '[A-Z]')" ; export HOSTHW
+HOSTID=$(/bin/hostname| cut -d'.' -f1 ) ; export HOSTID
+HOSTIDf=$(echo $HOSTID | sed -e 's/eccc.*-ppp/cs/g' -e 's/^ppp/cs/g' | cut -c 1-3) ; export HOSTIDf
+OS=$(/bin/uname -s) ; export OS
+TMPSAVE='on' ; export TMPSAVE
+DEFFGRP='eccc_ccrn_shr' ; export DEFFGRP
+DEFDGRP='eccc_ccrn_shr' ; export DEFDGRP
+AWK='awk' ; export AWK
+
+if [ -z "$F_UFMTENDIAN" ] ; then
+ F_UFMTENDIAN='big' ; export F_UFMTENDIAN
+fi
+#PATH=$($SCRIPTS/subproc/clnstrng "$CCRNSRC/CanESM/CCCma_tools/tools:$RUNID_BIN:$SCRIPTS/comm:$SCRIPTS/subproc:$SCRIPTS/sx:$RTEXTBLS/bin_diag:$CCRNOPTBIN:$CCRNSRC/CanESM/CanDIAG/$DEFDIAG:.:$PATH" ':') ; export PATH
+#!!!!!
+# NONQS='yes'
+# export NONQS
+#!!!!!
+
+if [ -n "$SSH_TTY" ] ; then
+ alias ll='/bin/ls -al'
+ alias h='history'
+ alias cls=' clear'
+ alias cdferd='cd $RUNPATH'
+ alias cdfetmp='cd $CCRNTMP'
+fi
