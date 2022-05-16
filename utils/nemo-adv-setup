@@ -88,6 +88,12 @@ else
     #--------------------------------------------------------------------
     # copy in experiment file and set values according to setup-nemo args
     #--------------------------------------------------------------------
+    # populate rest of the environment file
+    cp ${src_dir}/generic/nemo_raw_env_setup_file nemo_env_setup_file
+    sed -i "s#^runid_env=.*;#runid_env=${nemo_runid};#" nemo_env_setup_file
+    sed -i "s#^WRK_DIR=.*;#WRK_DIR=${SEQ_EXP_HOME};#" nemo_env_setup_file
+    sed -i "s#^CCRNSRC=.*;#CCRNSRC=$storage_dir;#" nemo_env_setup_file
+
     cfgdir=cfgs; expdir=EXPREF
     cp ${src_dir}/nemo/${cfgdir}/${nemo_config}/${expdir}/experiment.cfg .
     sed -i "s#^storage_dir=.*#storage_dir=${storage_dir}#g" experiment.cfg
