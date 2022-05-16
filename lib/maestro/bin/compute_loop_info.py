@@ -140,8 +140,6 @@ if __name__ == '__main__':
         nprocs = subprocess.check_output(['getdef', 'experiment.cfg', 'tjpnij']).strip()
         nemo_wallclock = nemo_wallclock.decode()
         nprocs = nprocs.decode()
-        print ("type of nemo_wallclock", type(nemo_wallclock))
-        print ("type of nprocs", type(nprocs))
 
         # Decode from a byte-like object to string due to Python 2 -> 3
         start = start.decode()
@@ -152,10 +150,6 @@ if __name__ == '__main__':
         # Compute how many loops are required in total
         run_start_year, run_start_month, nloops, nemo_freq_months = calc_chunk_nloops(start, end, nemo_freq)
         nloops = int(nloops)
-        print("type of run_start_year", type(run_start_year))
-        print("type of run_start_month", type(run_start_month))
-        print("type of nloops", type(nloops))
-        print("type of nemo_freq_months", type(nemo_freq_months))
         
         if hall == "hall3":
             frontend='eccc-ppp3'
