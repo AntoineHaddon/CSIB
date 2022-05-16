@@ -127,7 +127,10 @@ for arg in "$@"; do
                 exec)       nemo_exec="$val" ;;         # name for the executable created here
                 cfg)        nemo_config="$val" ;;       # name of subdir in which config lives
                 refcfg)     nemo_ref_config="$val" ;;   # name of subdir in which ref config lives
-                arch)       nemo_arch="$val" ;;         # nemo arch name
+                nemo_arch)  nemo_arch="$val" ;;         # nemo arch name
+		util_arch)  util_arch="$val" ;;         # utility arch name (for RTD, REBUILD and so on)
+		nemo_env)   nemo_env="$val";;           # filename containing the nemo compilation & execution environment
+		util_env)   util_env="$val";;           # filename containing the utility (e.g., RTD, REBUILD, etc) environment
                 add_key)    nemo_add_cpp_keys="$val" ;; # a list of cpp keys to add before compiling nemo
                 del_key)    nemo_del_cpp_keys="$val" ;; # a list of cpp keys to remove before compiling nemo
                 *)          usage "Invalid command line arg --> $arg <--"; exit 1  ;;
@@ -154,8 +157,10 @@ fi
 [[ -z "$nemo_source_path" ]]    && bail "srcpath must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
 [[ -z "$nemo_exec" ]]           && bail "exec must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
 [[ -z "$nemo_config" ]]         && bail "cfg must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
-[[ -z "$nemo_arch" ]]           && bail "arch must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
-
+[[ -z "$nemo_arch" ]]           && bail "nemo_arch must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
+[[ -z "$util_arch" ]]           && bail "util_arch must be given at the command line! See ${THIS_SCRIPT_PATH} -h"
+[[ -z "$nemo_env" ]]            && bail "nemo_env must be given at the command line! See ${THIS_SCRIPT_PATH} -h"
+[[ -z "$util_env" ]]            && bail "util_env must be given at the command line! See ${THIS_SCRIPT_PATH} -h"
 [[ -d "$nemo_source_path" ]] || bail "The given srcpath ---> $nemo_source_path <--- doesn't exist!"
 
 #========================
@@ -281,7 +286,7 @@ echo "Compiling in:  ${nemo_model_build_dir}"
 cd $nemo_model_build_dir
 
 # source nemo compilation environment
-source nemo_comp_env ||
+source nemo_env ||
     bail "Failed to source the nemo compilation environment! Are the modules available?"
 
 # clean temporary dirs if this is a "clean" compile
@@ -323,6 +328,16 @@ done
 #-------------------------------
 # compile exec's using makefiles
 #-------------------------------
+# source utility compilation environment
+util_compilation_env_file=${nemo_source_path}/nemo/arch/CCCMA/$util_env
+echo $util_compilation_env_file
+source $util_compilation_env_file ||
+	            bail "Failed to source the nemo compilation environment file - $util_compilation_env_file! Does it exist? Are the modules available?"
+
+nemo_util_arch_file_basename=$(basename ${util_arch_file})
+echo $nemo_util_arch_file_basename
+util_arch_file=${nemo_source_path}/nemo/arch/CCCMA/$util_arch_file
+
 for build_dir in $make_build_dirs; do 
     echo ""
     echo "=============================================="
