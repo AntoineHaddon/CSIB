@@ -30,7 +30,7 @@
 %DEBUG_FFLAGS   -O0 -g
 
 %BASE_INC       -D__NONE__
-%BASE_LD        -lstdc++ $(nf-config --flibs)
+%BASE_LD        -lstdc++ $(shell nf-config --flibs)
 
 %CPP            cpp
 %FPP            cpp -P
