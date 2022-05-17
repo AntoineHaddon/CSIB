@@ -286,8 +286,12 @@ echo "Compiling in:  ${nemo_model_build_dir}"
 cd $nemo_model_build_dir
 
 # source nemo compilation environment
-source nemo_env ||
-    bail "Failed to source the nemo compilation environment! Are the modules available?"
+echo "NEMO compilation environment file = $nemo_env"
+source ${nemo_source_path}/nemo/arch/CCCMA/$nemo_env ||
+    bail "Failed to source the nemo compilation environment! Is $nemo_env available?"
+
+# nemo compilation environment
+echo "NEMO arch file = $nemo_arch"
 
 # clean temporary dirs if this is a "clean" compile
 if (( clean_compile == 1 )); then
@@ -330,13 +334,13 @@ done
 #-------------------------------
 # source utility compilation environment
 util_compilation_env_file=${nemo_source_path}/nemo/arch/CCCMA/$util_env
-echo $util_compilation_env_file
+echo "Utility compilation environment file = $util_env"
 source $util_compilation_env_file ||
 	            bail "Failed to source the nemo compilation environment file - $util_compilation_env_file! Does it exist? Are the modules available?"
 
-nemo_util_arch_file_basename=$(basename ${util_arch_file})
-echo $nemo_util_arch_file_basename
-util_arch_file=${nemo_source_path}/nemo/arch/CCCMA/$util_arch_file
+# COMPILER_TEMPLATE (utility arch file) is Makefile argument
+COMPILER_TEMPLATE=${nemo_source_path}/nemo/arch/CCCMA/$util_arch
+echo "Utility arch file = $util_arch"
 
 for build_dir in $make_build_dirs; do 
     echo ""
@@ -345,14 +349,11 @@ for build_dir in $make_build_dirs; do
     echo "=============================================="
     [[ -n "$build_dir" ]] && cd $build_dir
 
-    # source environment
-    [[ -n "$build_dir" ]] && source comp_env || 
-        bail "Failed to source the compilation environment in ${build_dir}! Are the modules available?"
-
     # compile
     if (( clean_compile == 1 )); then 
         make clean
     fi
+    make COMPILER_TEMPLATE=$COMPILER_TEMPLATE
     [[ -n "$build_dir" ]] && make
 done
 
