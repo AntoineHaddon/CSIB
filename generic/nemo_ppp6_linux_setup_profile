@@ -4,16 +4,15 @@
 #   - we should probably get the compiler from the same file as the main compilation environment
 
 # load site profile for u2
-source ${CCRNSRC}/generic/nemo_u2_site_profile
+source ${CCRNSRC}/CanNEMO_tmp_src/generic/nemo_u2_site_profile
 
 # set -x
 HDNODE='ppp6' ; export HDNODE
 TRUEHOST='ppp6' ; export TRUEHOST
 RUNPATH_ROOT="/space/hall6/sitestore/eccc/crd/ccrn" ; export RUNPATH_ROOT
 SITESTORE_ROOT="$RUNPATH_ROOT" ; export SITESTORE_ROOT
-RUNID_ROOT="$RUNPATH_ROOT/users/$(whoami)/${runid_env}" ; export RUNID_ROOT
-RUNPATH="$RUNID_ROOT/data" ; export RUNPATH
-CCRNTMP="$RUNPATH_ROOT/ccrn_tmp" ; export CCRNTMP
+RUNPATH="$RUNPATH_ROOT/users/$(whoami)" ; export RUNPATH
+CCRNTMP="$RUNPATH_ROOT/ccrn_tmp/$(whoami)" ; export CCRNTMP
 RTEXTBLS="$WRK_DIR/executables" ; export RTEXTBLS
 USER=$(/usr/bin/whoami) ; export  USER
 GRP=$(id | sed -e 's/^.* gid=[0-9]*(//' | sed -e 's/) .*$//g')

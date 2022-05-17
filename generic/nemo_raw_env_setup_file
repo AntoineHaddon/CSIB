@@ -41,10 +41,10 @@ if [ -n "${HOSTID}" ] ; then
          xc4*) . $CCRNSRC/CanESM/CCCma_tools/generic/daley_linux_setup_profile ;;
         hpcr3*|cs3*|ppp3*|eccc*-ppp3*) . $CCRNSRC/CanESM/CCCma_tools/generic/ppp3_linux_setup_profile ;;
         hpcr4*|cs4*|ppp4*|eccc*-ppp4*) . $CCRNSRC/CanESM/CCCma_tools/generic/ppp4_linux_setup_profile ;;
-        sc5*)   . $CCRNSRC/CanESM/CCCma_tools/generic/underhill_linux_setup_profile ;;
-        sc6*)   . $CCRNSRC/CanESM/CCCma_tools/generic/robert_linux_setup_profile ;;
-        hpcr5*|*ppp5*) . $CCRNSRC/CanESM/CCCma_tools/generic/ppp5_linux_setup_profile ;;
-        hpcr6*|*ppp6*) . $CCRNSRC/CanESM/CCCma_tools/generic/ppp6_linux_setup_profile ;;
+        sc5*)   . $CCRNSRC/CanNEMO_tmp_src/generic/nemo_underhill_linux_setup_profile ;;
+        sc6*)   . $CCRNSRC/CanNEMO_tmp_src/generic/nemo_robert_linux_setup_profile ;;
+        hpcr5*|*ppp5*) . $CCRNSRC/CanNEMO_tmp_src/generic/nemo_ppp5_linux_setup_profile ;;
+        hpcr6*|*ppp6*) . $CCRNSRC/CanNEMO_tmp_src/generic/nemo_ppp6_linux_setup_profile ;;
 
             *) echo "env_setup_file: Sorry, no standard setup support yet for hostname --> $HOSTID  <-- !" ;;
   esac
