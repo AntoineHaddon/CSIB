@@ -11,8 +11,6 @@ ln -sf ../input/modfiles/* .
 source ${TASK_BIN}/nemo_env ||
     bail "Failed to source the nemo compilation & execution environment! Are the modules available?"
 
-module list
-
 # Run the model
 ulimit -s unlimited
 
