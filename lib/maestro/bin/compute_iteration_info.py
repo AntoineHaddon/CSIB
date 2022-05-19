@@ -80,12 +80,7 @@ def calc_nemo_chunk_dates(run_start_year, run_start_month, loop, nemo_freq_month
     cl_end_cal_year = int(math.ceil((sm + (ll+1)*nf -1)/12.0)) + sy -1
 
     cl_start_cal_day = 0o1
-    print ("cl_start_cal_day", type(cl_start_cal_day) )
     cl_end_cal_day = days_in_month[cl_end_cal_month]
-    print ("cl_end_cal_month", type(cl_end_cal_month) )
-    print ("cl_end_cal_day", type(cl_end_cal_day) )
-    print ("cl_start_cal_year", type(cl_start_cal_year) )
-    print ("cl_end_cal_year", type(cl_end_cal_year) )
     
     # List of all years in this chunk
     chunk_years = range(cl_start_cal_year, cl_end_cal_year+1,1)
