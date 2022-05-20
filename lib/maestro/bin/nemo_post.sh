@@ -73,7 +73,7 @@ if [ "0" -eq "0" ] ; then
   done
 
   # Parallel rebuild execution
-  aprun -j 1 -n $n_rebuild -N $n_rebuild -d ${OMP_NUM_THREADS} ${task_work_dir}/rebuild_nemo_mpi.exe
+  mpirun -n $n_rebuild -env OMP_NUM_THREADS ${OMP_NUM_THREADS} ${task_work_dir}/rebuild_nemo_mpi.exe
   wait
 fi
 
@@ -86,7 +86,7 @@ if [ $with_nemo_diag -eq 1 ]; then
    # setup the rebuild namelist
    ${task_work_dir}/mpi_rebuild "${rebuild_list2}" $n_diaptr
    # rebuild diaptr file
-   aprun -j 1 -n 1 -N 1 -d ${OMP_NUM_THREADS} ${task_work_dir}/rebuild_nemo_mpi.exe
+   mpirun -n 1 -env ${OMP_NUM_THREADS} ${task_work_dir}/rebuild_nemo_mpi.exe
    # add scalar and diaptr files to the list being copied to sitestore. 
    histfile_list="$histfile_list ${cn_exp}_1d_${chunk_start_date}_${chunk_end_date}_diaptr"
    if [ ${output_level} -ge 1 ] ; then
