@@ -342,7 +342,7 @@ CONTAINS
                ntimes_riv = iom_getszuld( numriv )
                ALLOCATE( zriver(jpi,jpj,ntimes_riv) )
                DO jm = 1, ntimes_riv
-                  CALL iom_get( numriv, jpdom_data, TRIM( slf_river(ifpr)%clvar ), zriver(:,:,jm), jm )
+                  CALL iom_get( numriv, jpdom_data, TRIM( slf_river(ifpr)%clvar ), zriver(:,:,jm), jm, lrowattr=ln_use_jattr)
                END DO
                CALL iom_close( numriv )
                ztimes_riv = 1._wp / REAL(ntimes_riv, wp) 
@@ -401,7 +401,7 @@ CONTAINS
          !
          CALL iom_open ( TRIM( sn_ironsed%clname ), numiron )
          ALLOCATE( zcmask(jpi,jpj,jpk) )
-         CALL iom_get  ( numiron, jpdom_data, TRIM( sn_ironsed%clvar ), zcmask(:,:,:), 1 )
+         CALL iom_get  ( numiron, jpdom_data, TRIM( sn_ironsed%clvar ), zcmask(:,:,:), 1, lrowattr=ln_use_jattr)
          CALL iom_close( numiron )
          !
          ik50 = 5        !  last level where depth less than 50 m
@@ -458,7 +458,7 @@ CONTAINS
          ALLOCATE( hydrofe(jpi,jpj,jpk) )    ! allocation
          !
          CALL iom_open ( TRIM( sn_hydrofe%clname ), numhydro )
-         CALL iom_get  ( numhydro, jpdom_data, TRIM( sn_hydrofe%clvar ), hydrofe(:,:,:), 1 )
+         CALL iom_get  ( numhydro, jpdom_data, TRIM( sn_hydrofe%clvar ), hydrofe(:,:,:), 1, lrowattr=ln_use_jattr)
          CALL iom_close( numhydro )
          !
          DO jk = 1, jpk

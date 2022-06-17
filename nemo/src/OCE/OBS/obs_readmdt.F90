@@ -86,7 +86,7 @@ CONTAINS
 
       CALL iom_open( mdtname, nummdt )       ! Open the file
       !                                      ! Get the MDT data
-      CALL iom_get ( nummdt, jpdom_data, 'sossheig', z_mdt(:,:), 1 )
+      CALL iom_get ( nummdt, jpdom_data, 'sossheig', z_mdt(:,:), 1, lrowattr=ln_use_jattr )
       CALL iom_close(nummdt)                 ! Close the file
       
       ! Read in the fill value
