@@ -181,7 +181,7 @@ else
         "ccc_orca1_lim_cmoc")   frq="5y"    ;;
         "ccc_orca1_lim_canoe")  frq="2y"    ;;
         "ccc_orca025_lim")      frq="4m"    ;;
-	"eorca025_ice")         frq="4m"    ;;
+	"eorca025_ice")         frq="3m"    ;;
         *) 
             echo "There is currently no recommended nemo_freq for config ${nemo_config}"
             echo "Value set to 1y. Alter if desired"
