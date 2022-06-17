@@ -255,7 +255,7 @@ CONTAINS
          CALL iom_open ( cl_sdist, inum )                              ! open file
          ivar = iom_varid( inum, 'maxclass', ldstop=.FALSE. )
          IF( ivar > 0 ) THEN
-            CALL iom_get  ( inum, jpdom_data, 'maxclass', src_calving )   ! read the max distribution array
+            CALL iom_get  ( inum, jpdom_data, 'maxclass', src_calving, lrowattr=ln_use_jattr )   ! read the max distribution array
             berg_grid%maxclass(:,:) = INT( src_calving )
             src_calving(:,:) = 0._wp
          ENDIF

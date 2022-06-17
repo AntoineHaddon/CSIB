@@ -138,7 +138,7 @@ CONTAINS
                'obs_rea_sstbias : Cannot read bias type from file '// &
                cl_bias_files(jtype) )
             ! Get the SST bias data
-            CALL iom_get( numsstbias, jpdom_data, 'tn', z_sstbias_2d(:,:), 1 )
+            CALL iom_get( numsstbias, jpdom_data, 'tn', z_sstbias_2d(:,:), 1, lrowattr=ln_use_jattr )
             z_sstbias(:,:,jtype) = z_sstbias_2d(:,:)       
             ! Close the file
             CALL iom_close(numsstbias)       
