@@ -124,7 +124,7 @@ CONTAINS
 
          ! Get the Alt bias data
          
-         CALL iom_get( numaltbias, jpdom_data, 'altbias', z_altbias(:,:), 1 )
+         CALL iom_get( numaltbias, jpdom_data, 'altbias', z_altbias(:,:), 1, lrowattr=ln_use_jattr )
          
          ! Close the file
          
