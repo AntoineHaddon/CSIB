@@ -269,8 +269,8 @@ CONTAINS
          CASE ( -20 )      !== fixed horizontal shape read in file  ==!
             IF(lwp) WRITE(numout,*) '   ==>>>   eddy viscosity = F(i,j) read in eddy_viscosity.nc file'
             CALL iom_open( 'eddy_viscosity_2D.nc', inum )
-            CALL iom_get ( inum, jpdom_data, 'ahmt_2d', ahmt(:,:,1) )
-            CALL iom_get ( inum, jpdom_data, 'ahmf_2d', ahmf(:,:,1) )
+            CALL iom_get ( inum, jpdom_data, 'ahmt_2d', ahmt(:,:,1), lrowattr=ln_use_jattr)
+            CALL iom_get ( inum, jpdom_data, 'ahmf_2d', ahmf(:,:,1), lrowattr=ln_use_jattr)
             CALL iom_close( inum )
             DO jk = 2, jpkm1
                ahmt(:,:,jk) = ahmt(:,:,1)

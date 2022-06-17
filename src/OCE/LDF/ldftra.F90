@@ -318,8 +318,8 @@ CONTAINS
          CASE ( -20 )      !== fixed horizontal shape and magnitude read in file  ==!
             IF(lwp) WRITE(numout,*) '   ==>>>   eddy diffusivity = F(i,j) read in eddy_diffusivity.nc file'
             CALL iom_open( 'eddy_diffusivity_2D.nc', inum )
-            CALL iom_get ( inum, jpdom_data, 'ahtu_2D', ahtu(:,:,1) )
-            CALL iom_get ( inum, jpdom_data, 'ahtv_2D', ahtv(:,:,1) )
+            CALL iom_get ( inum, jpdom_data, 'ahtu_2D', ahtu(:,:,1), lrowattr=ln_use_jattr)
+            CALL iom_get ( inum, jpdom_data, 'ahtv_2D', ahtv(:,:,1), lrowattr=ln_use_jattr)
             CALL iom_close( inum )
             DO jk = 2, jpkm1
                ahtu(:,:,jk) = ahtu(:,:,1)
@@ -346,8 +346,8 @@ CONTAINS
          CASE( -30  )      !== fixed 3D shape read in file  ==!
             IF(lwp) WRITE(numout,*) '   ==>>>   eddy diffusivity = F(i,j,k) read in eddy_diffusivity.nc file'
             CALL iom_open( 'eddy_diffusivity_3D.nc', inum )
-            CALL iom_get ( inum, jpdom_data, 'ahtu_3D', ahtu )
-            CALL iom_get ( inum, jpdom_data, 'ahtv_3D', ahtv )
+            CALL iom_get ( inum, jpdom_data, 'ahtu_3D', ahtu, lrowattr=ln_use_jattr)
+            CALL iom_get ( inum, jpdom_data, 'ahtv_3D', ahtv, lrowattr=ln_use_jattr)
             CALL iom_close( inum )
             !
          CASE(  30  )      !==  fixed 3D shape  ==!
@@ -576,8 +576,8 @@ CONTAINS
          CASE ( -20 )                        !--  fixed horizontal shape read in file  --!
             IF(lwp) WRITE(numout,*) '   ==>>>   eddy induced velocity coef. = F(i,j) read in eddy_diffusivity_2D.nc file'
             CALL iom_open ( 'eddy_induced_velocity_2D.nc', inum )
-            CALL iom_get  ( inum, jpdom_data, 'aeiu', aeiu(:,:,1) )
-            CALL iom_get  ( inum, jpdom_data, 'aeiv', aeiv(:,:,1) )
+            CALL iom_get  ( inum, jpdom_data, 'aeiu', aeiu(:,:,1), lrowattr=ln_use_jattr)
+            CALL iom_get  ( inum, jpdom_data, 'aeiv', aeiv(:,:,1), lrowattr=ln_use_jattr)
             CALL iom_close( inum )
             DO jk = 2, jpkm1
                aeiu(:,:,jk) = aeiu(:,:,1)
@@ -600,8 +600,8 @@ CONTAINS
          CASE( -30  )                        !-- fixed 3D shape read in file  --!
             IF(lwp) WRITE(numout,*) '   ==>>>   eddy induced velocity coef. = F(i,j,k) read in eddy_diffusivity_3D.nc file'
             CALL iom_open ( 'eddy_induced_velocity_3D.nc', inum )
-            CALL iom_get  ( inum, jpdom_data, 'aeiu', aeiu )
-            CALL iom_get  ( inum, jpdom_data, 'aeiv', aeiv )
+            CALL iom_get  ( inum, jpdom_data, 'aeiu', aeiu, lrowattr=ln_use_jattr)
+            CALL iom_get  ( inum, jpdom_data, 'aeiv', aeiv, lrowattr=ln_use_jattr)
             CALL iom_close( inum )
             !
          CASE(  30  )                        !--  fixed 3D shape  --!

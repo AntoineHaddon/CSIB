@@ -328,7 +328,7 @@ CONTAINS
             IF(lwp) WRITE(numout,*) '      ==>>>   bg03 parametrisation (nn_isf = 2)'
             CALL iom_open( sn_Leff_isf%clname, inum )
             cvarLeff = TRIM(sn_Leff_isf%clvar)
-            CALL iom_get( inum, jpdom_data, cvarLeff, risfLeff , 1)
+            CALL iom_get( inum, jpdom_data, cvarLeff, risfLeff , 1, lrowattr=ln_use_jattr)
             CALL iom_close(inum)
             !
             risfLeff = risfLeff*1000.0_wp           !: convertion in m
@@ -339,12 +339,12 @@ CONTAINS
          ! read depth of the top and bottom of the isf top boundary layer (in this case, isf front depth and grounding line depth)
          CALL iom_open( sn_depmax_isf%clname, inum )
          cvarhisf = TRIM(sn_depmax_isf%clvar)
-         CALL iom_get( inum, jpdom_data, cvarhisf, rhisf_tbl, 1) !: depth of deepest point of the ice shelf base
+         CALL iom_get( inum, jpdom_data, cvarhisf, rhisf_tbl, 1, lrowattr=ln_use_jattr) !: depth of deepest point of the ice shelf base
          CALL iom_close(inum)
          !
          CALL iom_open( sn_depmin_isf%clname, inum )
          cvarzisf = TRIM(sn_depmin_isf%clvar)
-         CALL iom_get( inum, jpdom_data, cvarzisf, rzisf_tbl, 1) !: depth of shallowest point of the ice shelves base
+         CALL iom_get( inum, jpdom_data, cvarzisf, rzisf_tbl, 1, lrowattr=ln_use_jattr) !: depth of shallowest point of the ice shelves base
          CALL iom_close(inum)
          !
          rhisf_tbl(:,:) = rhisf_tbl(:,:) - rzisf_tbl(:,:)        !: tickness isf boundary layer
