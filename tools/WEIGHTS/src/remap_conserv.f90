@@ -169,6 +169,10 @@
             max_add = max(max_add, bin_addr2(2,n))
           endif
         end do
+        if (max_add.eq.1) then 
+           min_add = 1
+           max_add = grid2_size
+        endif 
 
         !***
         !*** further restrict searches using bounding boxes
