@@ -148,8 +148,6 @@ then
   source ${install_dir}/arch.env
   source ${install_dir}/arch.path
   echo "=== Inside make_xios ==="
-  echo "modules used in the XIOS compilation"
-  module list
 else
       echo "Please choose a target achitecture --> list all available architecture using make_xios --avail!"
       exit 1

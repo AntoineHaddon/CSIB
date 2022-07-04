@@ -1,7 +1,17 @@
-# define compiler options
-#	- cray-netcdf must be loaded to handle netcdf linking
-FC      := ftn
-FFLAGS  := -static
+# define default compiler template - should be provided at call line
+COMPILER_TEMPLATE ?= 
+
+# warn if no compiler template was given
+ifndef COMPILER_TEMPLATE
+$(warning For all targets but 'clean' COMPILER_TEMPLATE must be given to the make call)
+else
+# bring in compiler flags
+include $(COMPILER_TEMPLATE)
+endif
+
+# define flags to be used 
+FFLAGS = $(FFLAGS_STATIC) $(FFLAGS_OMP)
+LDFLAGS = $(INCLUDEFLAGS_USR) $(LDFLAGS_USR) $(LDFLAGS_NETCDF)
 
 # define source files which will be brought in from $SRCDIR
 SRCDIR				:= $(realpath $(CURDIR)/..)
@@ -29,19 +39,19 @@ ICE_RTD_OBJS    := $(ICE_RTD_FILES:.F90=.o)
 
 # physical rtds
 nemo_physical_rtd.exe: $(PHYS_RTD_OBJS) $(NETCDF_OBJ)
-	$(FC) $(FFLAGS) -o $@ $(PHYS_RTD_OBJS) $(NETCDF_OBJ)
+	$(FC) $(FFLAGS) -o $@ $(PHYS_RTD_OBJS) $(NETCDF_OBJ) $(LDFLAGS)
 
 # cmoc rtds
 nemo_carbon-cmoc_rtd.exe: $(CMOC_RTD_OBJS) $(NETCDF_OBJ)
-	$(FC) $(FFLAGS) -o $@ $(CMOC_RTD_OBJS) $(NETCDF_OBJ)
+	$(FC) $(FFLAGS) -o $@ $(CMOC_RTD_OBJS) $(NETCDF_OBJ) $(LDFLAGS)
 
 # canoe rtds
 nemo_carbon-canoe_rtd.exe: $(CANOE_RTD_OBJS) $(NETCDF_OBJ)
-	$(FC) $(FFLAGS) -o $@ $(CANOE_RTD_OBJS) $(NETCDF_OBJ)
+	$(FC) $(FFLAGS) -o $@ $(CANOE_RTD_OBJS) $(NETCDF_OBJ) $(LDFLAGS)
 
 # ice rtds
 nemo_ice_rtd.exe: $(ICE_RTD_OBJS) $(NETCDF_OBJ)
-	$(FC) $(FFLAGS) -o $@ $(ICE_RTD_OBJS) $(NETCDF_OBJ)
+	$(FC) $(FFLAGS) -o $@ $(ICE_RTD_OBJS) $(NETCDF_OBJ) $(LDFLAGS)
 
 all : nemo_physical_rtd.exe nemo_carbon-cmoc_rtd.exe nemo_carbon-canoe_rtd.exe nemo_ice_rtd.exe
 

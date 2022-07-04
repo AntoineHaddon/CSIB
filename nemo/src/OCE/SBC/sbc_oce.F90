@@ -1,14 +1,14 @@
 MODULE sbc_oce
    !!======================================================================
    !!                       ***  MODULE  sbc_oce  ***
-   !! Surface module :   variables defined in core memory 
+   !! Surface module :   variables defined in core memory
    !!======================================================================
    !! History :  3.0  ! 2006-06  (G. Madec)  Original code
    !!             -   ! 2008-08  (G. Madec)  namsbc moved from sbcmod
    !!            3.3  ! 2010-04  (M. Leclair, G. Madec)  Forcing averaged over 2 time steps
    !!             -   ! 2010-11  (G. Madec) ice-ocean stress always computed at each ocean time-step
    !!            3.3  ! 2010-10  (J. Chanut, C. Bricaud)  add the surface pressure forcing
-   !!            4.0  ! 2012-05  (C. Rousset) add attenuation coef for use in ice model 
+   !!            4.0  ! 2012-05  (C. Rousset) add attenuation coef for use in ice model
    !!            4.0  ! 2016-06  (L. Brodeau) new unified bulk routine (based on AeroBulk)
    !!----------------------------------------------------------------------
 
@@ -25,7 +25,7 @@ MODULE sbc_oce
 
    PUBLIC   sbc_oce_alloc   ! routine called in sbcmod.F90
    PUBLIC   sbc_tau2wnd     ! routine called in several sbc modules
-   
+
    !!----------------------------------------------------------------------
    !!           Namelist for the Ocean Surface Boundary Condition
    !!----------------------------------------------------------------------
@@ -43,15 +43,15 @@ MODULE sbc_oce
    LOGICAL , PUBLIC ::   ln_dm2dc       !: Daily mean to Diurnal Cycle short wave (qsr)
    LOGICAL , PUBLIC ::   ln_rnf         !: runoffs / runoff mouths
    LOGICAL , PUBLIC ::   ln_isf         !: ice shelf melting
-   LOGICAL , PUBLIC ::   ln_ssr         !: Sea Surface restoring on SST and/or SSS      
+   LOGICAL , PUBLIC ::   ln_ssr         !: Sea Surface restoring on SST and/or SSS
    LOGICAL , PUBLIC ::   ln_apr_dyn     !: Atmospheric pressure forcing used on dynamics (ocean & ice)
    INTEGER , PUBLIC ::   nn_ice         !: flag for ice in the surface boundary condition (=0/1/2/3)
    LOGICAL , PUBLIC ::   ln_ice_embd    !: flag for levitating/embedding sea-ice in the ocean
    !                                             !: =F levitating ice (no presure effect) with mass and salt exchanges
    !                                             !: =T embedded sea-ice (pressure effect + mass and salt exchanges)
-   INTEGER , PUBLIC ::   nn_components  !: flag for sbc module (including sea-ice) coupling mode (see component definition below) 
-   INTEGER , PUBLIC ::   nn_fwb         !: FreshWater Budget: 
-   !                                             !:  = 0 unchecked 
+   INTEGER , PUBLIC ::   nn_components  !: flag for sbc module (including sea-ice) coupling mode (see component definition below)
+   INTEGER , PUBLIC ::   nn_fwb         !: FreshWater Budget:
+   !                                             !:  = 0 unchecked
    !                                             !:  = 1 global mean of e-p-r set to zero at each nn_fsbc time step
    !                                             !:  = 2 annual global mean of e-p-r set to zero
    LOGICAL , PUBLIC ::   ln_wave        !: true if some coupling with wave model
@@ -71,7 +71,6 @@ MODULE sbc_oce
    INTEGER , PUBLIC ::   nn_cats_cpl    !: Number of sea ice categories over which the coupling is carried out
    LOGICAL , PUBLIC ::   ln_minsal      ! true if constrain SSS not dropping below 5 psu
    REAL(wp), PUBLIC ::   rn_minsal      ! min SSS
-   LOGICAL , PUBLIC ::   ln_vertsflx    ! If true, distribute the salt flux due to ice processes within the boundary layer
 
    !!----------------------------------------------------------------------
    !!           switch definition (improve readability)
@@ -81,14 +80,14 @@ MODULE sbc_oce
    INTEGER , PUBLIC, PARAMETER ::   jp_blk     = 3        !: bulk                          formulation
    INTEGER , PUBLIC, PARAMETER ::   jp_purecpl = 4        !: Pure ocean-atmosphere Coupled formulation
    INTEGER , PUBLIC, PARAMETER ::   jp_none    = 5        !: for OPA when doing coupling via SAS module
-   
+
    !!----------------------------------------------------------------------
-   !!           Stokes drift parametrization definition 
+   !!           Stokes drift parametrization definition
    !!----------------------------------------------------------------------
    INTEGER , PUBLIC, PARAMETER ::   jp_breivik_2014 = 0     !: Breivik  2014: v_z=v_0*[exp(2*k*z)/(1-8*k*z)]
-   INTEGER , PUBLIC, PARAMETER ::   jp_li_2017      = 1     !: Li et al 2017: Stokes drift based on Phillips spectrum (Breivik 2016) 
+   INTEGER , PUBLIC, PARAMETER ::   jp_li_2017      = 1     !: Li et al 2017: Stokes drift based on Phillips spectrum (Breivik 2016)
                                                             !  with depth averaged profile
-   INTEGER , PUBLIC, PARAMETER ::   jp_peakfr       = 2     !: Li et al 2017: using the peak wave number read from wave model instead 
+   INTEGER , PUBLIC, PARAMETER ::   jp_peakfr       = 2     !: Li et al 2017: using the peak wave number read from wave model instead
                                                             !  of the inverse depth scale
    LOGICAL , PUBLIC            ::   ll_st_bv2014  = .FALSE. !  logical indicator, .true. if Breivik 2014 parameterisation is active.
    LOGICAL , PUBLIC            ::   ll_st_li2017  = .FALSE. !  logical indicator, .true. if Li 2017 parameterisation is active.
@@ -98,7 +97,7 @@ MODULE sbc_oce
    !!----------------------------------------------------------------------
    !!           component definition
    !!----------------------------------------------------------------------
-   INTEGER , PUBLIC, PARAMETER ::   jp_iam_nemo = 0      !: Initial single executable configuration 
+   INTEGER , PUBLIC, PARAMETER ::   jp_iam_nemo = 0      !: Initial single executable configuration
                                                          !  (no internal OASIS coupling)
    INTEGER , PUBLIC, PARAMETER ::   jp_iam_opa  = 1      !: Multi executable configuration - OPA component
                                                          !  (internal OASIS coupling)
@@ -113,7 +112,7 @@ MODULE sbc_oce
    !!                                   !!   now    ! before   !!
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   utau   , utau_b   !: sea surface i-stress (ocean referential)     [N/m2]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   vtau   , vtau_b   !: sea surface j-stress (ocean referential)     [N/m2]
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   taum              !: module of sea surface stress (at T-point)    [N/m2] 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   taum              !: module of sea surface stress (at T-point)    [N/m2]
    !! wndm is used onmpute surface gases exchanges in ice-free ocean or leads
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   wndm              !: wind speed module at T-point (=|U10m-Uoce|)  [m/s]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   qsr               !: sea heat flux:     solar                     [W/m2]
@@ -123,10 +122,10 @@ MODULE sbc_oce
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   emp    , emp_b    !: freshwater budget: volume flux               [Kg/m2/s]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   sfx    , sfx_b    !: salt flux                                    [PSS.kg/m2/s]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   emp_tot           !: total E-P over ocean and ice                 [Kg/m2/s]
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   fmmflx            !: freshwater budget: freezing/melting          [Kg/m2/s]
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   rnf    , rnf_b    !: river runoff        [Kg/m2/s]  
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   fwfisf , fwfisf_b !: ice shelf melting   [Kg/m2/s]  
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   fwficb , fwficb_b !: iceberg melting [Kg/m2/s]  
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   fmmflx , fmmflx_b !: freshwater budget: freezing/melting          [Kg/m2/s]
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   rnf    , rnf_b    !: river runoff        [Kg/m2/s]
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   fwfisf , fwfisf_b !: ice shelf melting   [Kg/m2/s]
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   fwficb , fwficb_b !: iceberg melting [Kg/m2/s]
 
    !!
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::  sbc_tsc, sbc_tsc_b  !: sbc content trend                      [K.m/s] jpi,jpj,jpts
@@ -170,12 +169,13 @@ CONTAINS
       ierr(:) = 0
       !
       ALLOCATE( utau(jpi,jpj) , utau_b(jpi,jpj) , taum(jpi,jpj) ,     &
-         &      vtau(jpi,jpj) , vtau_b(jpi,jpj) , wndm(jpi,jpj) , STAT=ierr(1) ) 
+         &      vtau(jpi,jpj) , vtau_b(jpi,jpj) , wndm(jpi,jpj) , STAT=ierr(1) )
          !
       ALLOCATE( qns_tot(jpi,jpj) , qns  (jpi,jpj) , qns_b(jpi,jpj),        &
          &      qsr_tot(jpi,jpj) , qsr  (jpi,jpj) ,                        &
          &      emp    (jpi,jpj) , emp_b(jpi,jpj) ,                        &
-         &      sfx    (jpi,jpj) , sfx_b(jpi,jpj) , emp_tot(jpi,jpj), fmmflx(jpi,jpj), STAT=ierr(2) )
+         &      sfx    (jpi,jpj) , sfx_b(jpi,jpj) , emp_tot(jpi,jpj),      &
+         &      fmmflx(jpi,jpj)  , fmmflx_b(jpi,jpj), STAT=ierr(2) )
          !
       ALLOCATE( fwfisf  (jpi,jpj), rnf  (jpi,jpj) , sbc_tsc  (jpi,jpj,jpts) , qsr_hc  (jpi,jpj,jpk) ,  &
          &      fwfisf_b(jpi,jpj), rnf_b(jpi,jpj) , sbc_tsc_b(jpi,jpj,jpts) , qsr_hc_b(jpi,jpj,jpk) ,  &
@@ -198,8 +198,8 @@ CONTAINS
    SUBROUTINE sbc_tau2wnd
       !!---------------------------------------------------------------------
       !!                    ***  ROUTINE sbc_tau2wnd  ***
-      !!                   
-      !! ** Purpose : Estimation of wind speed as a function of wind stress   
+      !!
+      !! ** Purpose : Estimation of wind speed as a function of wind stress
       !!
       !! ** Method  : |tau|=rhoa*Cd*|U|^2
       !!---------------------------------------------------------------------
@@ -210,11 +210,11 @@ CONTAINS
       REAL(wp) ::   ztx, zty, ztau, zcoef ! temporary variables
       INTEGER  ::   ji, jj                ! dummy indices
       !!---------------------------------------------------------------------
-      zcoef = 0.5 / ( zrhoa * zcdrag ) 
+      zcoef = 0.5 / ( zrhoa * zcdrag )
       DO jj = 2, jpjm1
          DO ji = fs_2, fs_jpim1   ! vect. opt.
-            ztx = utau(ji-1,jj  ) + utau(ji,jj) 
-            zty = vtau(ji  ,jj-1) + vtau(ji,jj) 
+            ztx = utau(ji-1,jj  ) + utau(ji,jj)
+            zty = vtau(ji  ,jj-1) + vtau(ji,jj)
             ztau = SQRT( ztx * ztx + zty * zty )
             wndm(ji,jj) = SQRT ( ztau * zcoef ) * tmask(ji,jj,1)
          END DO
