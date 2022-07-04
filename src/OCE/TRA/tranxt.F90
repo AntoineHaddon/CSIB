@@ -24,14 +24,15 @@ MODULE tranxt
    !!   tra_nxt_vvl   : time stepping on tracers : variable volume case
    !!----------------------------------------------------------------------
    USE oce             ! ocean dynamics and tracers variables
-   USE dom_oce         ! ocean space and time domain variables 
+   USE dom_oce         ! ocean space and time domain variables
    USE sbc_oce         ! surface boundary condition: ocean
    USE sbcrnf          ! river runoffs
    USE sbcisf          ! ice shelf melting
+   USE sbcspp  , ONLY : ln_vertspp
    USE zdf_oce         ! ocean vertical mixing
    USE domvvl          ! variable volume
    USE trd_oce         ! trends: ocean variables
-   USE trdtra          ! trends manager: tracers 
+   USE trdtra          ! trends manager: tracers
    USE traqsr          ! penetrative solar radiation (needed for nksr)
    USE phycst          ! physical constant
    USE ldftra          ! lateral physics : tracers
@@ -67,17 +68,17 @@ CONTAINS
       !!----------------------------------------------------------------------
       !!                   ***  ROUTINE tranxt  ***
       !!
-      !! ** Purpose :   Apply the boundary condition on the after temperature  
+      !! ** Purpose :   Apply the boundary condition on the after temperature
       !!             and salinity fields, achieved the time stepping by adding
       !!             the Asselin filter on now fields and swapping the fields.
-      !! 
-      !! ** Method  :   At this stage of the computation, ta and sa are the 
+      !!
+      !! ** Method  :   At this stage of the computation, ta and sa are the
       !!             after temperature and salinity as the time stepping has
       !!             been performed in trazdf_imp or trazdf_exp module.
       !!
-      !!              - Apply lateral boundary conditions on (ta,sa) 
-      !!             at the local domain   boundaries through lbc_lnk call, 
-      !!             at the one-way open boundaries (ln_bdy=T), 
+      !!              - Apply lateral boundary conditions on (ta,sa)
+      !!             at the local domain   boundaries through lbc_lnk call,
+      !!             at the one-way open boundaries (ln_bdy=T),
       !!             at the AGRIF zoom   boundaries (lk_agrif=T)
       !!
       !!              - Update lateral boundary conditions on AGRIF children
@@ -101,7 +102,7 @@ CONTAINS
       ENDIF
 
       ! Update after tracer on domain lateral boundaries
-      ! 
+      !
 #if defined key_agrif
       CALL Agrif_tra                     ! AGRIF zoom boundaries
 #endif
@@ -109,22 +110,22 @@ CONTAINS
       CALL lbc_lnk_multi( 'tranxt', tsa(:,:,:,jp_tem), 'T', 1., tsa(:,:,:,jp_sal), 'T', 1. )
       !
       IF( ln_bdy )   CALL bdy_tra( kt )  ! BDY open boundaries
- 
+
       ! set time step size (Euler/Leapfrog)
       IF( neuler == 0 .AND. kt == nit000 ) THEN   ;   r2dt =        rdt   ! at nit000             (Euler)
       ELSEIF( kt <= nit000 + 1 )           THEN   ;   r2dt = 2._wp* rdt   ! at nit000 or nit000+1 (Leapfrog)
       ENDIF
 
       ! trends computation initialisation
-      IF( l_trdtra )   THEN                    
+      IF( l_trdtra )   THEN
          ALLOCATE( ztrdt(jpi,jpj,jpk) , ztrds(jpi,jpj,jpk) )
          ztrdt(:,:,jpk) = 0._wp
          ztrds(:,:,jpk) = 0._wp
-         IF( ln_traldf_iso ) THEN              ! diagnose the "pure" Kz diffusive trend 
+         IF( ln_traldf_iso ) THEN              ! diagnose the "pure" Kz diffusive trend
             CALL trd_tra( kt, 'TRA', jp_tem, jptra_zdfp, ztrdt )
             CALL trd_tra( kt, 'TRA', jp_sal, jptra_zdfp, ztrds )
          ENDIF
-         ! total trend for the non-time-filtered variables. 
+         ! total trend for the non-time-filtered variables.
          zfact = 1.0 / rdt
          ! G Nurser 23 Mar 2017. Recalculate trend as Delta(e3t*T)/e3tn; e3tn cancel from tsn terms
          DO jk = 1, jpkm1
@@ -134,9 +135,9 @@ CONTAINS
          CALL trd_tra( kt, 'TRA', jp_tem, jptra_tot, ztrdt )
          CALL trd_tra( kt, 'TRA', jp_sal, jptra_tot, ztrds )
          IF( ln_linssh ) THEN       ! linear sea surface height only
-            ! Store now fields before applying the Asselin filter 
+            ! Store now fields before applying the Asselin filter
             ! in order to calculate Asselin filter trend later.
-            ztrdt(:,:,:) = tsn(:,:,:,jp_tem) 
+            ztrdt(:,:,:) = tsn(:,:,:,jp_tem)
             ztrds(:,:,:) = tsn(:,:,:,jp_sal)
          ENDIF
       ENDIF
@@ -144,7 +145,7 @@ CONTAINS
       IF( neuler == 0 .AND. kt == nit000 ) THEN       ! Euler time-stepping at first time-step (only swap)
          DO jn = 1, jpts
             DO jk = 1, jpkm1
-               tsn(:,:,jk,jn) = tsa(:,:,jk,jn)    
+               tsn(:,:,jk,jn) = tsa(:,:,jk,jn)
             END DO
          END DO
          IF (l_trdtra .AND. .NOT. ln_linssh ) THEN   ! Zero Asselin filter contribution must be explicitly written out since for vvl
@@ -157,7 +158,7 @@ CONTAINS
          !
       ELSE                                            ! Leap-Frog + Asselin filter time stepping
          !
-         IF( ln_linssh ) THEN   ;   CALL tra_nxt_fix( kt, nit000,      'TRA', tsb, tsn, tsa, jpts )  ! linear free surface 
+         IF( ln_linssh ) THEN   ;   CALL tra_nxt_fix( kt, nit000,      'TRA', tsb, tsn, tsa, jpts )  ! linear free surface
          ELSE                   ;   CALL tra_nxt_vvl( kt, nit000, rdt, 'TRA', tsb, tsn, tsa,   &
            &                                                                sbc_tsc, sbc_tsc_b, jpts )  ! non-linear free surface
          ENDIF
@@ -166,10 +167,10 @@ CONTAINS
                   &          tsn(:,:,:,jp_tem), 'T', 1., tsn(:,:,:,jp_sal), 'T', 1., &
                   &          tsa(:,:,:,jp_tem), 'T', 1., tsa(:,:,:,jp_sal), 'T', 1.  )
          !
-      ENDIF     
+      ENDIF
       !
-      IF( l_trdtra .AND. ln_linssh ) THEN      ! trend of the Asselin filter (tb filtered - tb)/dt     
-         zfact = 1._wp / r2dt             
+      IF( l_trdtra .AND. ln_linssh ) THEN      ! trend of the Asselin filter (tb filtered - tb)/dt
+         zfact = 1._wp / r2dt
          DO jk = 1, jpkm1
             ztrdt(:,:,jk) = ( tsb(:,:,jk,jp_tem) - ztrdt(:,:,jk) ) * zfact
             ztrds(:,:,jk) = ( tsb(:,:,jk,jp_sal) - ztrds(:,:,jk) ) * zfact
@@ -192,9 +193,9 @@ CONTAINS
       !!----------------------------------------------------------------------
       !!                   ***  ROUTINE tra_nxt_fix  ***
       !!
-      !! ** Purpose :   fixed volume: apply the Asselin time filter and 
+      !! ** Purpose :   fixed volume: apply the Asselin time filter and
       !!                swap the tracer fields.
-      !! 
+      !!
       !! ** Method  : - Apply a Asselin time filter on now fields.
       !!              - swap tracer fields to prepare the next time_step.
       !!
@@ -223,10 +224,10 @@ CONTAINS
          DO jk = 1, jpkm1
             DO jj = 2, jpjm1
                DO ji = fs_2, fs_jpim1
-                  ztn = ptn(ji,jj,jk,jn)                                    
+                  ztn = ptn(ji,jj,jk,jn)
                   ztd = pta(ji,jj,jk,jn) - 2._wp * ztn + ptb(ji,jj,jk,jn)  ! time laplacian on tracers
                   !
-                  ptb(ji,jj,jk,jn) = ztn + atfp * ztd                      ! ptb <-- filtered ptn 
+                  ptb(ji,jj,jk,jn) = ztn + atfp * ztd                      ! ptb <-- filtered ptn
                   ptn(ji,jj,jk,jn) = pta(ji,jj,jk,jn)                      ! ptn <-- pta
                END DO
            END DO
@@ -241,14 +242,14 @@ CONTAINS
       !!----------------------------------------------------------------------
       !!                   ***  ROUTINE tra_nxt_vvl  ***
       !!
-      !! ** Purpose :   Time varying volume: apply the Asselin time filter  
+      !! ** Purpose :   Time varying volume: apply the Asselin time filter
       !!                and swap the tracer fields.
-      !! 
+      !!
       !! ** Method  : - Apply a thickness weighted Asselin time filter on now fields.
       !!              - swap tracer fields to prepare the next time_step.
       !!             tb  = ( e3t_n*tn + atfp*[ e3t_b*tb - 2 e3t_n*tn + e3t_a*ta ] )
       !!                  /( e3t_n    + atfp*[ e3t_b    - 2 e3t_n    + e3t_a    ] )
-      !!             tn  = ta 
+      !!             tn  = ta
       !!
       !! ** Action  : - tsb & tsn ready for the next time step
       !!----------------------------------------------------------------------
@@ -276,14 +277,14 @@ CONTAINS
          IF(lwp) WRITE(numout,*) '~~~~~~~~~~~'
       ENDIF
       !
-      IF( cdtype == 'TRA' )  THEN   
+      IF( cdtype == 'TRA' )  THEN
          ll_traqsr  = ln_traqsr        ! active  tracers case  and  solar penetration
          ll_rnf     = ln_rnf           ! active  tracers case  and  river runoffs
          ll_isf     = ln_isf           ! active  tracers case  and  ice shelf melting
       ELSE                          ! passive tracers case
          ll_traqsr  = .FALSE.          ! NO solar penetration
-         ll_rnf     = .FALSE.          ! NO river runoffs ????          !!gm BUG ?  
-         ll_isf     = .FALSE.          ! NO ice shelf melting/freezing  !!gm BUG ?? 
+         ll_rnf     = .FALSE.          ! NO river runoffs ????          !!gm BUG ?
+         ll_isf     = .FALSE.          ! NO ice shelf melting/freezing  !!gm BUG ??
       ENDIF
       !
       IF( ( l_trdtra .AND. cdtype == 'TRA' ) .OR. ( l_trdtrc .AND. cdtype == 'TRC' ) )   THEN
@@ -293,7 +294,7 @@ CONTAINS
       zfact = 1._wp / p2dt
       zfact1 = atfp * p2dt
       zfact2 = zfact1 * r1_rau0
-      DO jn = 1, kjpt      
+      DO jn = 1, kjpt
          DO jk = 1, jpkm1
             DO jj = 2, jpjm1
                DO ji = fs_2, fs_jpim1
@@ -313,20 +314,21 @@ CONTAINS
                   !
                   zscale = zfact2 * e3t_n(ji,jj,jk) / ( ht_n(ji,jj) + 1._wp - ssmask(ji,jj) )
                   ze3t_f = ze3t_f - zscale * ( emp_b(ji,jj) - emp(ji,jj) )
+                  IF (ln_vertspp)  ze3t_f = ze3t_f - zscale * ( fmmflx_b(ji,jj) - fmmflx(ji,jj) )
                   IF ( ll_rnf ) ze3t_f = ze3t_f + zscale * (    rnf_b(ji,jj) -    rnf(ji,jj) )
                   IF ( ll_isf ) ze3t_f = ze3t_f - zscale * ( fwfisf_b(ji,jj) - fwfisf(ji,jj) )
 
-                  IF( jk == mikt(ji,jj) ) THEN           ! first level 
+                  IF( jk == mikt(ji,jj) ) THEN           ! first level
                      ztc_f  = ztc_f  - zfact1 * ( psbc_tc(ji,jj,jn) - psbc_tc_b(ji,jj,jn) )
                   ENDIF
                   !
                   ! solar penetration (temperature only)
-                  IF( ll_traqsr .AND. jn == jp_tem .AND. jk <= nksr )                            & 
-                     &     ztc_f  = ztc_f  - zfact1 * ( qsr_hc(ji,jj,jk) - qsr_hc_b(ji,jj,jk) ) 
+                  IF( ll_traqsr .AND. jn == jp_tem .AND. jk <= nksr )                            &
+                     &     ztc_f  = ztc_f  - zfact1 * ( qsr_hc(ji,jj,jk) - qsr_hc_b(ji,jj,jk) )
                      !
                   ! river runoff
                   IF( ll_rnf .AND. jk <= nk_rnf(ji,jj) )                                          &
-                     &     ztc_f  = ztc_f  - zfact1 * ( rnf_tsc(ji,jj,jn) - rnf_tsc_b(ji,jj,jn) ) & 
+                     &     ztc_f  = ztc_f  - zfact1 * ( rnf_tsc(ji,jj,jn) - rnf_tsc_b(ji,jj,jn) ) &
                      &                              * e3t_n(ji,jj,jk) / h_rnf(ji,jj)
                      !
                   ! ice shelf
@@ -335,7 +337,7 @@ CONTAINS
                      IF ( jk >= misfkt(ji,jj) .AND. jk < misfkb(ji,jj) )                          &
                         ztc_f  = ztc_f  - zfact1 * ( risf_tsc(ji,jj,jn) - risf_tsc_b(ji,jj,jn) )  &
                                &                 * e3t_n(ji,jj,jk) * r1_hisf_tbl (ji,jj)
-                     ! level partially include in Losch_2008 ice shelf boundary layer 
+                     ! level partially include in Losch_2008 ice shelf boundary layer
                      IF ( jk == misfkb(ji,jj) )                                                   &
                         ztc_f  = ztc_f  - zfact1 * ( risf_tsc(ji,jj,jn) - risf_tsc_b(ji,jj,jn) )  &
                                &                 * e3t_n(ji,jj,jk) * r1_hisf_tbl (ji,jj) * ralpha(ji,jj)
@@ -352,11 +354,11 @@ CONTAINS
                END DO
             END DO
          END DO
-         ! 
+         !
       END DO
       !
       IF( ( l_trdtra .AND. cdtype == 'TRA' ) .OR. ( l_trdtrc .AND. cdtype == 'TRC' ) )   THEN
-         IF( l_trdtra .AND. cdtype == 'TRA' ) THEN 
+         IF( l_trdtra .AND. cdtype == 'TRA' ) THEN
             CALL trd_tra( kt, cdtype, jp_tem, jptra_atf, ztrd_atf(:,:,:,jp_tem) )
             CALL trd_tra( kt, cdtype, jp_sal, jptra_atf, ztrd_atf(:,:,:,jp_sal) )
          ENDIF

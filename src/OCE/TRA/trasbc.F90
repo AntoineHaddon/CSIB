@@ -126,11 +126,7 @@ CONTAINS
       DO jj = 2, jpj
          DO ji = fs_2, fs_jpim1   ! vector opt.
             sbc_tsc(ji,jj,jp_tem) = r1_rau0_rcp * qns(ji,jj)   ! non solar heat flux
-            IF (ln_vertsflx) THEN
-               sbc_tsc(ji,jj,jp_sal) = 0.
-            ELSE
-               sbc_tsc(ji,jj,jp_sal) = r1_rau0     * sfx(ji,jj)   ! salt flux due to freezing/melting
-            ENDIF
+            sbc_tsc(ji,jj,jp_sal) = r1_rau0     * sfx(ji,jj)   ! salt flux due to freezing/melting
          END DO
       END DO
       IF( ln_linssh ) THEN                !* linear free surface
@@ -152,21 +148,6 @@ CONTAINS
          END DO
       END DO
 
-      ! Distribute the salt flux within the boundary layer weighted by the proportion that each layer contributes
-      ! to the boundary layer
-      IF (ln_vertsflx) then
-         CALL zdf_mxl( kt )
-         DO jj = 2, jpj
-            DO ji = fs_2, fs_jpim1   ! vector opt.
-               ikt = nmln(ji,jj)
-               sfx_col = (zfact*r1_rau0)*(sfx_b(ji,jj) + sfx(ji,jj))/MAX(hmlp(ji,jj),e3t_n(ji,jj,1))
-               DO jk = 1,ikt
-                  tsa(ji,jj,jk,jp_sal) = tsa(ji,jj,jk,jp_sal) + sfx_col
-               ENDDO
-            END DO
-         END DO
-      ENDIF
-      !
       IF( lrst_oce ) THEN           !==  write sbc_tsc in the ocean restart file  ==!
          IF( lwxios ) CALL iom_swap(      cwxios_context          )
          CALL iom_rstput( kt, nitrst, numrow, 'sbc_hc_b', sbc_tsc(:,:,jp_tem), ldxios = lwxios )
