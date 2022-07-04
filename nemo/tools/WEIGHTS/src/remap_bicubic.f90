@@ -575,6 +575,10 @@
           max_add = max(max_add, src_bin_add(2,n))
         endif
       end do
+      if (max_add.eq.1) then 
+         min_add = 1
+         max_add = size(src_center_lat)
+      endif 
  
 !-----------------------------------------------------------------------
 !
