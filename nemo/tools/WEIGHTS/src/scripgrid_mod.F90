@@ -251,8 +251,8 @@ CONTAINS
 
     ! then the tricky boundary points
     imid = (nx-1)/2 + 1
-    DO j = 1,ny+1,ny
-      DO i = 1,nx+1,nx
+    DO j = 1,ny+1
+      DO i = 1,nx+1
         ic = i + off(1) - 1
         jc = j + off(2) - 1
         if (ic == 0 .and. jc == 0) then
@@ -285,6 +285,20 @@ CONTAINS
         endif
       ENDDO
     ENDDO
+  
+    ! - left and right column of longitudes 
+    write(6,*) 'columns'
+    clon(nx+1,1:ny+1) = 1.5*glam(nx,:)-0.5*glam(nx-1,:)
+    clon( 1,1:ny+1) = 1.5*glam(1,:)-0.5*glam(2,:)
+    !clon(nx+1, 1) = glamc(nx,1)
+    !clon( 1, 1) = glamc( 0,1)
+
+    ! - top and bottom row of latitudes by extrapolation
+    write(6,*) 'rows'
+    clat(1:nx+1,ny+1) = 1.5*gphi(:,ny)-0.5*gphi(:,ny-1)
+    clat(1:nx+1, 1) = 1.5*gphi(:,1)-0.5*gphi(:,2)
+    !clat( 1,ny+1) = gphic(1,ny)
+    !clat( 1, 1) = gphic(1, 0)
 
     ALLOCATE ( corner_lon(4,nx,ny), corner_lat(4,nx,ny) )
   
@@ -394,6 +408,7 @@ CONTAINS
     INTEGER (kind=int_kind) :: jdim, nspace
     INTEGER (kind=int_kind), dimension(4) :: grid_dimids  ! input fields have 4 dims
     REAL (kind=dbl_kind) :: tmplon, dxt, dyt
+    CHARACTER(char_len) :: name_lat_bnds,name_lon_bnds
   
     !-----------------------------------------------------------------------
     !     read in grid info
@@ -446,6 +461,7 @@ CONTAINS
       write(6,*) shape(lam),shape(phi)
       glam(:,:) = SPREAD(lam,2,ny)
       gphi(:,:) = SPREAD(phi,1,nx)
+      DEALLOCATE(lam,phi)
     else
 
       ncstat = nf90_inquire_variable( ncid_in, varid_lam, dimids=grid_dimids(:2) )
@@ -536,7 +552,68 @@ CONTAINS
     ! - top-left corner
     corner_lon(4,:,:) = glamc(0:nx-1, 1:ny )
     corner_lat(4,:,:) = gphic(0:nx-1, 1:ny )
+
+    DEALLOCATE(glamc,gphic)
+
+    ! if lat_bnds exist, redo the corner_lat (and lon too)
+    iunit=0
+    name_lat_bnds=trim(name_lat)//"_bnds" 
+    ncstat = nf90_inq_varid( ncid_in, name_lat_bnds, varid_phi )
+    if (ncstat.ne.0) then
+         WRITE(*,*) 'bnds not available, keep previous corner_lon.'
+         iunit=1
+    endif
+    name_lon_bnds=trim(name_lon)//"_bnds" 
+    ncstat = nf90_inq_varid( ncid_in, name_lon_bnds, varid_lam )
+    if (ncstat.ne.0) then
+         WRITE(*,*) 'bnds not available, keep previous corner_lon.'
+         iunit=1
+    endif
   
+    if (iunit==0) then
+      ncstat = nf90_inquire_variable( ncid_in, varid_lam, ndims=nspace )
+      call netcdf_error_handler(ncstat)
+
+      if (nspace == 2) then
+        ncstat = nf90_inquire_variable( ncid_in, varid_lam, dimids=grid_dimids(:2) )
+        call netcdf_error_handler(ncstat)
+        ncstat = nf90_inquire_dimension( ncid_in, grid_dimids(2), len=grid_dims(1) )
+        call netcdf_error_handler(ncstat)
+        ncstat = nf90_inquire_variable( ncid_in, varid_phi, dimids=grid_dimids(:2) )
+        call netcdf_error_handler(ncstat)
+        ncstat = nf90_inquire_dimension( ncid_in, grid_dimids(2), len=grid_dims(2) )
+        call netcdf_error_handler(ncstat)
+        nx = grid_dims(1)
+        ny = grid_dims(2)
+        grid_size = nx * ny
+      
+        ALLOCATE( glamc(2,nx), gphic(2,ny) )
+        write(6,*) 'double'
+        ncstat = nf90_get_var( ncid_in, varid_lam, glamc )
+        call netcdf_error_handler(ncstat)
+        ncstat = nf90_get_var( ncid_in, varid_phi, gphic )
+        call netcdf_error_handler(ncstat)
+      
+        write(6,*) 'corner shape : ',shape(glamc),shape(gphic)
+        corner_lat(4,:,:)=SPREAD(gphic(2,:),1,nx)
+        corner_lat(3,:,:)=SPREAD(gphic(2,:),1,nx)
+        corner_lat(2,:,:)=SPREAD(gphic(1,:),1,nx)
+        corner_lat(1,:,:)=SPREAD(gphic(1,:),1,nx)
+        corner_lon(4,:,:)=SPREAD(glamc(1,:),2,ny)
+        corner_lon(3,:,:)=SPREAD(glamc(2,:),2,ny)
+        corner_lon(2,:,:)=SPREAD(glamc(2,:),2,ny)
+        corner_lon(1,:,:)=SPREAD(glamc(1,:),2,ny)
+        DEALLOCATE(glamc,gphic)
+      else
+  
+        ncstat = nf90_get_var( ncid_in, varid_lam, corner_lon )
+        call netcdf_error_handler(ncstat)
+        ncstat = nf90_get_var( ncid_in, varid_phi, corner_lat )
+        call netcdf_error_handler(ncstat)
+
+      endif
+    endif
+    
   ! For [N, E, W]-ward extrapolation near the poles, should we use stereographic (or
   ! similar) projection?  This issue will come for V,F interpolation, and for all
   ! grids with non-cyclic grids.
@@ -564,7 +641,7 @@ CONTAINS
     grid_center_lon(:) = RESHAPE( glam(:,:), (/ grid_size /) )
     grid_center_lat(:) = RESHAPE( gphi(:,:), (/ grid_size /) )
   
-    DEALLOCATE( glam, gphi, glamc, gphic )
+    DEALLOCATE( glam, gphi)
   
     ALLOCATE( grid_corner_lon(4, grid_size), grid_corner_lat(4, grid_size) )
   
