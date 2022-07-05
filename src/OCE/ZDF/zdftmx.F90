@@ -6,9 +6,10 @@ MODULE zdftmx
    !! History :  1.0  !  2004-04  (L. Bessieres, G. Madec)  Original code
    !!             -   !  2006-08  (A. Koch-Larrouy) Indonesian strait
    !!            3.3  !  2010-10  (C. Ethe, G. Madec) reorganisation of initialisation phase
-   !!            4.0.3!  2021-07  (D. Yang)   add old tidal mixing scheme (Simmons et al 2004)
+   !!            4.0.3!  2021-07  (D. Yang)   add tidal mixing scheme by Simmons et al 2004
    !!            4.0.3!  2021-07  (D. Yang)   Constrain tidal energy to be positive
    !!            4.0.3!  2021-08  (D. Yang)   Vertical diffusivity resulting from internal tide breaking is now capped by 20 cm2/s
+   !!            4.0.3!  2022-07  (D. Yang)   Add two flags (ln_s2004 & ln_sm2005) to make computations of zav_tide from Simmons et al (2004) and Saenko and Merryfield (2005) optionally available
    !!----------------------------------------------------------------------
    !!----------------------------------------------------------------------
    !!   'key_zdftmx'                                  Tidal vertical mixing
@@ -45,6 +46,8 @@ MODULE zdftmx
    REAL(wp) ::  rn_me       ! mixing efficiency (Osborn 1980)
    LOGICAL  ::  ln_tmx_itf  ! Indonesian Through Flow (ITF): Koch-Larrouy et al. (2007) parameterization
    REAL(wp) ::  rn_tfe_itf  ! ITF tidal dissipation efficiency (St Laurent et al. 2002)
+   LOGICAL  ::  ln_s2004    ! Compute zav_tide following Simmons et al (2004)
+   LOGICAL  ::  ln_sm2005   ! Compute zav_tide following Saenko and Merryfield (2005)
 
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   en_tmx     ! energy available for tidal mixing (W/m2)
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   mask_itf   ! mask to use over Indonesian area
@@ -115,27 +118,40 @@ CONTAINS
       !                          ! ----------------------- !
       !                          !  Standard tidal mixing  !  (compute zav_tide)
       !                          ! ----------------------- !
+      ! --------------------------------------------------------!
+      ! original computation of zav_tide by Simmons et al. 2004 !
+      ! --------------------------------------------------------!
+      IF( ln_s2004 ) THEN           
       !                             !* First estimation (with n2 bound by rn_n2min) bounded by 60 cm2/s
-      zav_tide(:,:,:) = MIN(  20.e-4, az_tmx(:,:,:) / MAX( rn_n2min, rn2(:,:,:) )  )
+         zav_tide(:,:,:) = MIN(  60.e-4, az_tmx(:,:,:) / MAX( rn_n2min, rn2(:,:,:) )  )
 
-      !zkz(:,:) = 0.e0               !* Associated potential energy consummed over the whole water column
-      !DO jk = 2, jpkm1
-      !   zkz(:,:) = zkz(:,:) + e3w_n(:,:,jk) * MAX( 0.e0, rn2(:,:,jk) ) * rau0 * zav_tide(:,:,jk) * wmask(:,:,jk)
-      !END DO
+         zkz(:,:) = 0.e0               !* Associated potential energy consummed over the whole water column
+         DO jk = 2, jpkm1
+            zkz(:,:) = zkz(:,:) + e3w_n(:,:,jk) * MAX( 0.e0, rn2(:,:,jk) ) * rau0 * zav_tide(:,:,jk) * wmask(:,:,jk)
+         END DO
 
-      !DO jj = 1, jpj                !* Here zkz should be equal to en_tmx ==> multiply by en_tmx/zkz to recover en_tmx
-      !   DO ji = 1, jpi
-      !      IF( zkz(ji,jj) /= 0.e0 )   zkz(ji,jj) = en_tmx(ji,jj) / zkz(ji,jj)
-      !   END DO
-      !END DO
+         DO jj = 1, jpj                !* Here zkz should be equal to en_tmx ==> multiply by en_tmx/zkz to recover en_tmx
+            DO ji = 1, jpi
+               IF( zkz(ji,jj) /= 0.e0 )   zkz(ji,jj) = en_tmx(ji,jj) / zkz(ji,jj)
+            END DO
+         END DO
 
-      !DO jk = 2, jpkm1     !* Mutiply by zkz to recover en_tmx, BUT bound by 30/6 ==> zav_tide bound by 300 cm2/s
-      !   DO jj = 1, jpj                !* Here zkz should be equal to en_tmx ==> multiply by en_tmx/zkz to recover en_tmx
-      !      DO ji = 1, jpi
-      !         zav_tide(ji,jj,jk) = zav_tide(ji,jj,jk) * MIN( zkz(ji,jj), 30./6. ) * wmask(ji,jj,jk)  !kz max = 300 cm2/s
-      !      END DO
-      !   END DO
-      !END DO
+         DO jk = 2, jpkm1     !* Mutiply by zkz to recover en_tmx, BUT bound by 30/6 ==> zav_tide bound by 300 cm2/s
+            DO jj = 1, jpj                !* Here zkz should be equal to en_tmx ==> multiply by en_tmx/zkz to recover en_tmx
+               DO ji = 1, jpi
+                  zav_tide(ji,jj,jk) = zav_tide(ji,jj,jk) * MIN( zkz(ji,jj), 30./6. ) * wmask(ji,jj,jk)  !kz max = 300 cm2/s
+               END DO
+            END DO
+         END DO
+      ENDIF   
+
+      ! ------------------------------------------------------- !
+      ! Compute zav_tide following Saenko and Merryfield (2005) !
+      ! ------------------------------------------------------- !
+
+      IF( ln_sm2005 ) THEN
+         zav_tide(:,:,:) = MIN(  20.e-4, az_tmx(:,:,:) / MAX( rn_n2min, rn2(:,:,:) )  )
+      ENDIF
 
       IF( kt == nit000 ) THEN       !* check at first time-step: diagnose the energy consumed by zav_tide
          ztpc = 0.e0
