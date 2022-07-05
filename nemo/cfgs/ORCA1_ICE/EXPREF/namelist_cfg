@@ -424,6 +424,8 @@
    rn_me       = 0.2       !  mixing efficiency
    ln_tmx_itf  = .true.    !  ITF specific parameterisation
    rn_tfe_itf  = 1.        !  ITF tidal dissipation efficiency
+   ln_s2004    = .false.   !  Compute zav_tide following Simmons et al (2004) 
+   ln_sm2005   = .true.    !  Compute zav_tide following Saenko and Merryfield (2005)
 /
 !!======================================================================
 !!                  ***  Diagnostics namelists  ***                   !!
