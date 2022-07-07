@@ -359,7 +359,7 @@ CONTAINS
       REAL(wp), DIMENSION(jpi,jpj,jpk) ::  zpc        ! power consumption
       REAL(wp), DIMENSION(jpi,jpj,jpk) ::  zav_tide   ! tidal mixing coefficient
       !!
-      NAMELIST/namzdf_tmx/ rn_htmx, rn_n2min, rn_tfe, rn_me, ln_tmx_itf, rn_tfe_itf
+      NAMELIST/namzdf_tmx/ rn_htmx, rn_n2min, rn_tfe, rn_me, ln_tmx_itf, rn_tfe_itf, ln_s2004, ln_sm2005
       !!----------------------------------------------------------------------
       !
       
@@ -383,6 +383,8 @@ CONTAINS
          WRITE(numout,*) '      Mixing efficiency                     = ', rn_me
          WRITE(numout,*) '      ITF specific parameterisation         = ', ln_tmx_itf
          WRITE(numout,*) '      ITF tidal dissipation efficiency      = ', rn_tfe_itf
+          WRITE(numout,*) '     zav_tide computed following Simmons et al =', ln_s2004
+          WRITE(numout,*) '     zav_tide computed following Saenko and Merryfield =', ln_sm2005
       ENDIF
 
       !                              ! allocate tmx arrays
