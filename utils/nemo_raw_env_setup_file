@@ -39,11 +39,16 @@ else
   exit 2
 fi
 
+hall=hall5
+echo "WARNING : hall=hall5 is forced for now"
+
 # set RUNPATH & CCRNTMP & DATAPATH_DB
 RUNPATH_ROOT="/space/${hall}/sitestore/eccc/crd/ccrn" ; export RUNPATH_ROOT
 RUNPATH="${RUNPATH_ROOT}/users/$(whoami)" ;             export RUNPATH
 CCRNTMP="${RUNPATH_ROOT}/ccrn_tmp/$(whoami)" ;          export CCRNTMP
-DATAPATH_DB="${RUNPATH_ROOT}/forcing/databases/datapath.db" ; export DATAPATH_DB
+# DATAPATH_DB="${RUNPATH_ROOT}/forcing/databases/datapath.db" ; export DATAPATH_DB
+echo " DATAPATH_DB change to my personnal database file"
+DATAPATH_DB="${RUNPATH}/forcing/databases/datapath.db" ; export DATAPATH_DB
 
 # aliases
 if [ -n "$SSH_TTY" ] ; then
