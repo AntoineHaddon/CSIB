@@ -43,7 +43,7 @@
   }
 
 echo "#################### Start NEMO pre-processing #################"
-
+  # TODO CanOE : add the top and CanEO namlist if activer
   nemo_namelists=( namelist_ref     \
                    namelist_cfg     \
                    namelist_ice_ref \
@@ -67,6 +67,7 @@ echo "#################### Start NEMO pre-processing #################"
   is_defined $runid                 || bail "nemo_prelude: runid must be defined"
   is_defined $uxxx                  || bail "nemo_prelude: uxxx must be defined"
   is_defined $nemo_exec             || bail "nemo_prelude: nemo_exec must be defined"
+  is_defined $xios_exec             || bail "nemo_prelude: xios_exec must be defined"
   is_defined $output_level          || bail "nemo_prelude: output_level must be defined"
   is_defined $runmode               || bail "nemo_prelude: runmode must be defined"
 
@@ -84,7 +85,7 @@ echo "#################### Start NEMO pre-processing #################"
 
   # nemo_from_rest is used to flag starting nemo from rest rather than a restart
   #     Either define nemo_restart or set nemo_from_rest = on but not both.
-  nemo_from_rest=${nemo_from_rest:=0}
+  nemo_from_rest=${nemo_from_rest:=off}
 
   # This is the start of the simulation
   year_run_start=${run_start_time[0]:-1}
@@ -92,57 +93,53 @@ echo "#################### Start NEMO pre-processing #################"
   # Forcing method (coupled or bulk_iaf is supported)
   nemo_forcing=${nemo_forcing:-coupled}
 
-  # IO specification files
-  #     If not defined a default version will be pulled for the given nemo_config
-  nemo_iodef=${nemo_iodef:=''}
-
   # Define nn_ice which identifies the ice model used in NEMO
   #     0 : no ice boundary condition (does this mean NO ice?)
   #     1 : observed ice cover
-  #     2 : LIM2 ice-model
-  #     3 : LIM3 ice-model
+  #     2 : SI3 ice-model
+  #     3 : CICE ice-model
   nn_ice=${nemo_nn_ice:=2}
 
   # Default input files
-  nemo_mixing_power_bot=nemo_4.0.1_orca2_mixing_power_bot.nc
-  nemo_mixing_power_pyc=nemo_4.0.1_orca2_mixing_power_pyc.nc
-  nemo_mixing_power_cri=nemo_4.0.1_orca2_mixing_power_cri.nc
-  nemo_decay_scale_bot=nemo_4.0.1_orca2_decay_scale_bot.nc
-  nemo_decay_scale_cri=nemo_4.0.1_orca2_decay_scale_cri.nc
-  nemo_eddy_viscosity_3D=urdy_eorca1_eddy_viscosity_3d_eorca1_jstart.nc
-  nemo_resto=nemo_4.0.1_orca2_resto.nc
-  nemo_empave_old=empave_old.dat
-  nemo_coordinates=eorca1_domcfg_eorca1v2.2x_orca_jstart_closea.nc
-  nemo_geothermal_heating=urdy_eorca1_goutorbe_1x1_0360_eorca1_v2.2x_jstart.nc
-  nemo_runoff_core_monthly=urdy_eorca1_runoff_v2.2x_jstart.nc
-  nemo_sss_data=urdy_eorca1_sss_1m_en4_eorca1_blackseapatch_northfoldfix_jstart.nc
-  nemo_sst_data=uros_sst_1m_en4_eorca1_blackseapatch_northfoldfix_jstart.nc
-  nemo_chlorophyll=nemo_4.0.1_orca2_chlorophyll.nc
-  nemo_calving=urdy_eorca1_ecalving_v2.2x_jstart.nc
-  nemo_bfr_coef=urdy_eorca1_bfr_coef01_jstart.nc
-  nemo_subbasins=urdy_eorca1_subbasins_cmip6_jstart.nc
-  nemo_weights_bicubic2=urdy_weights_canamgrid_bicubic_eorca1_jstart.nc
-  nemo_weights_bilinear2=urdy_weights_canamgrid_bilinear_eorca1_jstart.nc
-  nemo_data_1m_potential_temperature_nomask=urdy_eorca1_en4_v1.1.1995_2014.monthlymean_eorca1t_nemo_l75_jstart.nc
-  nemo_data_1m_salinity_nomask=urdy_eorca1_en4_v1.1.1995_2014.monthlymean_eorca1t_nemo_l75_jstart.nc
+  nemo_mixing_power_bot=${nemo_mixing_power_bot:=nemo_4.0.1_orca2_mixing_power_bot.nc}
+  nemo_mixing_power_pyc=${nemo_mixing_power_pyc:=nemo_4.0.1_orca2_mixing_power_pyc.nc}
+  nemo_mixing_power_cri=${nemo_mixing_power_cri:=nemo_4.0.1_orca2_mixing_power_cri.nc}
+  nemo_decay_scale_bot=${nemo_decay_scale_bot:=nemo_4.0.1_orca2_decay_scale_bot.nc}
+  nemo_decay_scale_cri=${nemo_decay_scale_cri:=nemo_4.0.1_orca2_decay_scale_cri.nc}
+  nemo_eddy_viscosity_3D=${nemo_eddy_viscosity_3D:=urdy_eorca1_eddy_viscosity_3d_eorca1_jstart.nc}
+  nemo_resto=${nemo_resto:=nemo_4.0.1_orca2_resto.nc}
+  nemo_empave_old=${nemo_empave_old:=empave_old.dat}
+  #nemo_coordinates=${nemo_coordinates:=eorca1_domcfg_eorca1v2.2x_orca_jstart_closea.nc}
+  nemo_geothermal_heating=${nemo_geothermal_heating:=urdy_eorca1_goutorbe_1x1_0360_eorca1_v2.2x_jstart.nc}
+  #nemo_runoff_core_monthly=${nemo_runoff_core_monthly:=urdy_eorca1_runoff_v2.2x_jstart.nc}
+  nemo_sss_data=${nemo_sss_data:=urdy_eorca1_sss_1m_en4_eorca1_blackseapatch_northfoldfix_jstart.nc}
+  nemo_sst_data=${nemo_sst_data:=uros_sst_1m_en4_eorca1_blackseapatch_northfoldfix_jstart.nc}
+  nemo_chlorophyll=${nemo_chlorophyll:=nemo_4.0.1_orca2_chlorophyll.nc}
+  nemo_calving=${nemo_calving:=urdy_eorca1_ecalving_v2.2x_jstart.nc}
+  nemo_bfr_coef=${nemo_bfr_coef:=urdy_eorca1_bfr_coef01_jstart.nc}
+  nemo_subbasins=${nemo_subbasins:=urdy_eorca1_subbasins_cmip6_jstart.nc}
+  nemo_weights_bicubic2=${nemo_weights_bicubic2:=urdy_weights_canamgrid_bicubic_eorca1_jstart.nc}
+  nemo_weights_bilinear2=${nemo_weights_bilinear2:=urdy_weights_canamgrid_bilinear_eorca1_jstart.nc}
+  nemo_data_1m_potential_temperature_nomask=${nemo_data_1m_potential_temperature_nomask:=urdy_eorca1_en4_v1.1.1995_2014.monthlymean_eorca1t_nemo_l75_jstart.nc}
+  nemo_data_1m_salinity_nomask=${nemo_data_1m_salinity_nomask:=urdy_eorca1_en4_v1.1.1995_2014.monthlymean_eorca1t_nemo_l75_jstart.nc}
 
-  acc_cp mixing_power_bot.nc       $nemo_mixing_power_bot
-  acc_cp mixing_power_pyc.nc       $nemo_mixing_power_pyc
-  acc_cp mixing_power_cri.nc       $nemo_mixing_power_cri
-  acc_cp decay_scale_bot.nc        $nemo_decay_scale_bot
-  acc_cp decay_scale_cri.nc        $nemo_decay_scale_cri
-  acc_cp eddy_viscosity_3D.nc      $nemo_eddy_viscosity_3D
-  acc_cp resto.nc                  $nemo_resto
-  acc_cp EMPave_old.dat            $nemo_empave_old
+  acc_cp mixing_power_bot.nc       $nemo_mixing_power_bot # still used ?
+  acc_cp mixing_power_pyc.nc       $nemo_mixing_power_pyc # still used ?
+  acc_cp mixing_power_cri.nc       $nemo_mixing_power_cri # still used ?
+  acc_cp decay_scale_bot.nc        $nemo_decay_scale_bot # still used ?
+  acc_cp decay_scale_cri.nc        $nemo_decay_scale_cri # still used ?
+  acc_cp eddy_viscosity_3D.nc      $nemo_eddy_viscosity_3D # still used ?
+  acc_cp resto.nc                  $nemo_resto # still used ?
+  acc_cp EMPave_old.dat            $nemo_empave_old # still used ?
   acc_cp domain_cfg.nc             $nemo_coordinates
   acc_cp geothermal_heating.nc     $nemo_geothermal_heating
   acc_cp runoff_core_monthly.nc    $nemo_runoff_core_monthly
   acc_cp sss_data.nc               $nemo_sss_data
   acc_cp sst_data.nc               $nemo_sst_data
   acc_cp chlorophyll.nc            $nemo_chlorophyll
-  acc_cp calving.nc                $nemo_calving
+  acc_cp calving.nc                $nemo_calving # still used ?
   acc_cp bfr_coef.nc               $nemo_bfr_coef
-  acc_cp subbasins.nc              $nemo_subbasins
+  acc_cp subbasins.nc              $nemo_subbasins  # still used ?  
   acc_cp weights_bic2.nc           $nemo_weights_bicubic2   # weights for bulk mode
   acc_cp weights_bil2.nc           $nemo_weights_bilinear2  # weights for bulk mode
   acc_cp data_1m_potential_temperature_nomask.nc $nemo_data_1m_potential_temperature_nomask
@@ -181,7 +178,7 @@ echo "#################### Start NEMO pre-processing #################"
 
   # confirm a valid ice settings
   case $nn_ice in
-    2) ;; # LIM2 ice-model
+    2) ;; # SI3 ice-model
     *) bail "Invalid value for nn_ice = $nn_ice" ;;
   esac
 
@@ -344,10 +341,8 @@ echo "#################### Start NEMO pre-processing #################"
   done
 
   # nemo executable
-  ! is_file $nemo_exec && cp ${CCRNSRC}/executables/$nemo_exec .
+  ! is_file $nemo_exec && cp ${EXEC_STORAGE_DIR}/$nemo_exec .
   # # xios executable
-  # ! is_file $xios_exec && cp ${CCRNSRC}/executables/$xios_exec .
-
-  rm -f mesh_mask*.nc
+  ! is_file $xios_exec && cp ${EXEC_STORAGE_DIR}/$xios_exec .
 
 echo "#################### Stop NEMO pre-processing #################"
