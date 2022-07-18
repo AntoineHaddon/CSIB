@@ -20,32 +20,32 @@
   # Part of the input ocean restart name (default restart)
   # The input ocean restart file name will be ${cn_ocerst_in}_MMMM.nc
   # where MMMM is the MPI task number (I4.4)
-  cn_ocerst_in="restart"
+  cn_ocerst_in=${nemo_cn_ocerst_in:="restart"}
 
   # Part of output ocean restart name (default restart)
   # The output ocean restart file name will be ${cn_exp}_NNNNNNNN_${cn_ocerst_out}_MMMM.nc
   # where NNNNNNNN is the time step (I8.8) and MMMM is the MPI task number (I4.4)
-  cn_ocerst_out="restart"
+  cn_ocerst_out=${nemo_cn_ocerst_out:="restart"}
 
   # Part of input ice restart name (default restart_ice_in)
   # The input ice restart file name will be ${cn_icerst_in}_MMMM.nc
   # where MMMM is the MPI task number (I4.4)
-  cn_icerst_in="restart_ice_in"
+  cn_icerst_in=${nemo_cn_icerst_in:="restart_ice_in"}
 
   # Part of output ice restart name (default restart_ice)
   # The output ice restart file name will be ${cn_exp}_NNNNNNNN_${cn_icerst_out}_NNNN.nc
   # where NNNNNNNN is the time step (I8.8) and MMMM is the MPI task number (I4.4)
-  cn_icerst_out="restart_ice"
+  cn_icerst_out=${nemo_cn_icerst_out:="restart_ice"}
 
   # Part of input pisces restart name (default restart_trc_in)
   # The input pisces restart file name will be ${cn_trcrst_in}_MMMM.nc
   # where MMMM is the MPI task number (I4.4)
-  cn_trcrst_in="restart_trc_in"
+  cn_trcrst_in=${nemo_cn_trcrst_in:="restart_trc_in"}
 
   # Part of output pisces restart name (default restart_trc)
   # The output pisces restart file name will be ${cn_exp}_NNNNNNNN_${cn_trcrst_out}_NNNN.nc
   # where NNNNNNNN is the time step (I8.8) and MMMM is the MPI task number (I4.4)
-  cn_trcrst_out="restart_trc"
+  cn_trcrst_out=${nemo_cn_trcrst_out:="restart_trc"}
 
   # After the job has run remove input restart files (if any)
   [ -s input_ocn_restart_file_names ] && cat input_ocn_restart_file_names | xargs rm -f
@@ -94,7 +94,7 @@
       for i in $(seq 0 $(($n_suffix-1))); do
           sfx=${nemo_hist_file_suffix_list_array_save[$i]}
           freq=${nemo_hist_file_freq_list_array_save[$i]}
-          pfx=${cn_exp}_${freq}_${nemo_start_date}_${nemo_stop_date}_$sfx
+          pfx=${cn_exp}_${freq}_${run_start_date}_${run_stop_date}_$sfx
           echo $pfx
           fnpatt=${pfx}_0000.nc
           if [ -s "$fnpatt" ]; then
@@ -102,11 +102,11 @@
              rm -rf $pfx
              mkdir $pfx
              mv ${pfx}_[0-9]*.nc $pfx
- 	     ncsave=${cn_exp}_${nemo_start_year}_m${nemo_start_mon}_${freq}_${sfx}
+ 	         ncsave=${cn_exp}_${run_start_year}_m$( printf "%02d" $run_start_month )_${freq}_${sfx}
              save $pfx ${uxxx}_$ncsave && echo "${uxxx}_$ncsave" >> saved_history_FILE_NAMES
           elif [ -s "${pfx}.nc" ]; then
              echo "found ${pfx}.nc"
-             ncsave=${cn_exp}_${nemo_start_year}_m${nemo_start_mon}_${freq}_${sfx}    
+             ncsave=${cn_exp}_${run_start_year}_m$( printf "%02d" $run_start_month )_${freq}_${sfx}    
              save ${pfx}.nc ${uxxx}_${ncsave}.nc && echo "${uxxx}_${ncsave}.nc" >> saved_history_FILE_NAMES
           fi   
        done
@@ -118,7 +118,7 @@
          rm -rf $pfx
          mkdir $pfx
          mv $pfx*.nc $pfx
-	 ncsave=${cn_exp}_${nemo_start_year}_m${nemo_start_mon}_mesh_mask
+	     ncsave=${cn_exp}_${run_start_year}_m$( printf "%02d" $run_start_month )_mesh_mask
          save $pfx ${uxxx}_$ncsave && echo "${uxxx}_$ncsave" >> saved_history_FILE_NAMES
       fi
     fi
@@ -139,6 +139,8 @@
         mkdir NEXT_RESTART_ARC
     
         # Identify the last NEMO timestep, which will be in the rs names
+        # model_status = 0 so the last NEMO timestep sould be in `time.step`
+        nn_itend=`cat time.step` 
         end_step=$(echo $nn_itend | awk '{printf "%8.8d",$1}')
 
         eval ofnpatt=${cn_exp}_${end_step}_${cn_ocerst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
@@ -178,39 +180,45 @@
       tarlist=''
 
       # Create copies of the namelists used and include them in the tar file
-      cp -f namelist rs_namelist || :
-      [ -s rs_namelist ] && tarlist="$tarlist rs_namelist"
-      cp -f namelist_top    rs_namelist_top    || :
-      [ -s rs_namelist_top ]     && tarlist="$tarlist rs_namelist_top"
+      cp -f namelist_cfg rs_namelist_cfg || :
+      [ -s rs_namelist_cfg ] && tarlist="$tarlist rs_namelist_cfg"
+      cp -f namelist_ref rs_namelist_ref || :
+      [ -s rs_namelist_ref ] && tarlist="$tarlist rs_namelist_ref"
 
       case $nn_ice in
         0) ;; # no ice boundary condition
         1) ;; # use observed ice cover
-        2) # LIM2 ice-model
-           cp -f namelist_ice rs_namelist_ice || :
-           [ -s rs_namelist_ice ] && tarlist="$tarlist rs_namelist_ice"
+        2) # SI3  ice-model
+           cp -f namelist_ice_cfg rs_namelist_ice_cfg || :
+           [ -s rs_namelist_ice_cfg ] && tarlist="$tarlist rs_namelist_ice_cfg"
+           cp -f namelist_ice_ref rs_namelist_ice_ref || :
+           [ -s rs_namelist_ice_ref ] && tarlist="$tarlist rs_namelist_ice_ref"
            ;;
-        3) # LIM3 ice-model
-           cp -f namelist_ice rs_namelist_ice || :
-           [ -s rs_namelist_ice ] && tarlist="$tarlist rs_namelist_ice"
-           ;;
-        4) # CICE ice-model
+        3) # CICE ice-model (_cfg and _ref namelist for CICE ? )
            cp -f ice_in rs_ice_in || :
            [ -s rs_ice_in ] && tarlist="$tarlist rs_ice_in"
            ;;
         *) bail "Invalid value for nn_ice = $nn_ice" ;;
       esac
 
+      if [ $nemo_trc -eq 1 ]; then
+        cp -f namelist_top_cfg    rs_namelist_top_cfg    || :
+        [ -s rs_namelist_top_cfg ]     && tarlist="$tarlist rs_namelist_top_cfg"
+        cp -f namelist_top_ref    rs_namelist_top_ref    || :
+        [ -s rs_namelist_top_ref ]     && tarlist="$tarlist rs_namelist_top_ref"
+      fi
+
       if [ $nemo_carbon -eq 1 ]; then
-	cp -f namelist_pisces rs_namelist_pisces || :
-	[ -s rs_namelist_pisces ]  && tarlist="$tarlist rs_namelist_pisces"
+    	cp -f namelist_pisces_cfg rs_namelist_pisces_cfg || :
+    	[ -s rs_namelist_pisces_cfg ]  && tarlist="$tarlist rs_namelist_pisces_cfg"
+    	cp -f namelist_pisces_ref rs_namelist_pisces_ref || :
+    	[ -s rs_namelist_pisces_ref ]  && tarlist="$tarlist rs_namelist_pisces_ref"
 
         if [ $nemo_cmoc -eq 1 ]; then
-	  cp -f namelist_cmoc rs_namelist_cmoc || :
-	  if [ -s rs_namelist_cmoc ]; then
-            chmod u+rw rs_namelist_cmoc
-            tarlist="$tarlist rs_namelist_cmoc"
-          fi
+    	  cp -f namelist_cmoc_cfg rs_namelist_cmoc_cfg || :
+	      [ -s rs_namelist_cmoc_cfg ] &&  tarlist="$tarlist rs_namelist_cmoc_cfg"
+    	  cp -f namelist_cmoc_ref rs_namelist_cmoc_ref || :
+	      [ -s rs_namelist_cmoc_ref ] &&  tarlist="$tarlist rs_namelist_cmoc_ref"
         fi
       fi
 
@@ -246,20 +254,20 @@
       mv -f $tarlist NEXT_RESTART_ARC || :
 
       if [ -n "$model_rs" ]; then
-	# Assume we are running from gcmrun
-	rs_out=${model_rs}nemors
+	    # Assume we are running from gcmrun
+	    rs_out=${model_rs}nemors
       elif [ -n "$model" ]; then
-	# Assume we are running from gcmjcl
-	rs_out=${model_rs}nemors
+	    # Assume we are running from gcmjcl
+	    rs_out=${model_rs}nemors
       else
-	rs_out=${uxxx}_${cn_exp}_${nemo_stop_date}_restart.tar
+	    rs_out=${uxxx}_${cn_exp}_${run_stop_date}_restart.tar
       fi
       save NEXT_RESTART_ARC $rs_out
       release NEXT_RESTART_ARC
     fi
 
     # Echo ocean output to stdout, if requested
-    nemo_write_stdout=on
+    nemo_write_stdout=0
     ToF nemo_write_stdout
     if [ $nemo_write_stdout -eq 1 ]; then
       if [ -s ocean.output ]; then

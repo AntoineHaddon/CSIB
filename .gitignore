@@ -5,6 +5,7 @@
 \#*#
 tmp/
 *.swp*
+*.sw?
 *.bak
 deploy.git/
 

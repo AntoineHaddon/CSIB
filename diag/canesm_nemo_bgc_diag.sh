@@ -2,15 +2,23 @@
 # nemo diagnostics & time mean (1d -> 1m) & time series
 # D. Yang, Nov 2018, A. Shao, S.Kharin
 #
+# Change annual mean computation from cdo yearmean to
+# cdo yearmonmean (weighted) - D. Yang, 23/NOV/2020
+#
 # This script is sourced in CanESM/CCCma_tools/cccjob_dir/
 # lib/jobdefs/canesm_nemo_bgc_diag_jobdef
 #########################################################
 
 set -x
-set -e
 
 # NEMO priority level
   output_level=${output_level}
+
+# Note that nemo_rtd_mons used below is first month of the time chunk. 
+# nemo_rtd_mons=1 for a run starting from January in a single 12-month chunk;
+# nemo_rtd_mons=6 for a run starting from June in a single 12-month chunk;
+# nemo_rtd_mons='1 7' for a run starting from January in two 6-month chunks;
+# nemo_rtd_mons='6 12' for a run starting from June in two 6-month chunks.  
 
 # First and last month/year of 12-month period
   fmon=`echo $nemo_rtd_mons | cut -f1 -d' '`
@@ -87,14 +95,19 @@ set -e
     esac
 
     # copy in diagnostics exec
-    cp $CCRNSRC/executables/nemo_diag_cmoc.exe .
+    cp ${EXEC_STORAGE_DIR}/nemo_diag_cmoc.exe .
 
     # Get all auxiliary files needed before running the offline diagnostics
     access si.nc uncs_orca1_data_si_nomask.nc
     # Get globally averaged surface salinity from previous year
     if [ $process_abio -gt 0 ]; then
       # Access the nemo restart files
-      diag_rs1="mc_${runid}_${yearm1}_m${lmon}_nemors.tar" # previous year
+      if [ $lmon -eq 12 ]; then
+        # previous year
+        diag_rs1="mc_${runid}_${yearm1}_m${lmon}_nemors.tar" # previous year
+      else
+        diag_rs1="mc_${runid}_${year}_m${lmon}_nemors.tar" # previous year
+      fi	      
       access rsp $diag_rs1 || ( echo "$diag_rs1 does not exist" ; exit 1 )
     fi
     if [ -L rsp ] ; then
@@ -120,36 +133,38 @@ set -e
     done
 
 # Calculate annual averages for select variables
-    cmoc_annual_ptrc=""
-    if [[ ${output_level} -gt 3 ]]; then
+    if [ $fmon -eq 1 ] ; then
+      cmoc_annual_ptrc=""
+      if [[ ${output_level} -gt 3 ]]; then
         cmoc_annual_ptrc="cfc11 cfc12 sf6"
+      fi
+      cmoc_annual_ptrc+=" nchl di14c dic dicabio dicnat no3 o2 alkalini poc zoo phy"
+      cmoc_annual_diad="cflx_14c cflx cflx_abio cflx_nat ph3d phabio phnat co3 co3sata co3satc ppphy co3abio co3nat o2sol"
+
+      cmoc_src_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1m_ptrc_t
+      cmoc_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_ptrc_t
+      for f in ${cmoc_annual_ptrc}; do
+        release tmp.nc
+        access  tmp.nc ${cmoc_src_file}_$f.nc na
+        if [ -s tmp.nc ] ; then
+          cdo yearmonmean tmp.nc ann_$f.nc
+          save ann_$f.nc ${cmoc_dest_file}_$f.nc
+          release tmp.nc
+        fi
+      done
+
+      cmoc_src_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1m_diad_t
+      cmoc_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_diad_t
+      for f in ${cmoc_annual_diad}; do
+        release tmp.nc
+        access  tmp.nc ${cmoc_src_file}_$f.nc na
+        if [ -s tmp.nc ] ; then
+          cdo yearmonmean tmp.nc ann_$f.nc
+          save ann_$f.nc ${cmoc_dest_file}_$f.nc
+          release tmp.nc
+        fi
+      done
     fi
-    cmoc_annual_ptrc+=" nchl di14c dic dicabio dicnat no3 o2 alkalini poc zoo phy"
-    cmoc_annual_diad="cflx_14c cflx cflx_abio cflx_nat ph3d phabio phnat co3 co3sata co3satc ppphy co3abio co3nat o2sol"
-
-    cmoc_src_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1m_ptrc_t
-    cmoc_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_ptrc_t
-    for f in ${cmoc_annual_ptrc}; do
-      release tmp.nc
-      access  tmp.nc ${cmoc_src_file}_$f.nc na
-      if [ -s tmp.nc ] ; then
-        cdo yearmean tmp.nc ann_$f.nc
-        save ann_$f.nc ${cmoc_dest_file}_$f.nc
-        release tmp.nc
-      fi
-    done
-
-    cmoc_src_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1m_diad_t
-    cmoc_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_diad_t
-    for f in ${cmoc_annual_diad}; do
-      release tmp.nc
-      access  tmp.nc ${cmoc_src_file}_$f.nc na
-      if [ -s tmp.nc ] ; then
-        cdo yearmean tmp.nc ann_$f.nc
-        save ann_$f.nc ${cmoc_dest_file}_$f.nc
-        release tmp.nc
-      fi
-    done
 
   # Similar but for CANOE configurations
   elif [[ $nemo_config == *'CANOE'* && ${output_level} -gt 0 ]]; then
@@ -165,7 +180,7 @@ set -e
     canoe_destfile="1m_diad_t"
 
     # copy in executable
-    cp $CCRNSRC/executables/nemo_diag_canoe.exe .
+    cp ${EXEC_STORAGE_DIR}/executables/nemo_diag_canoe.exe .
 
     # Get all auxiliary files needed before running the offline diagnostics
     access si.nc uncs_orca1_data_si_nomask.nc
@@ -181,31 +196,33 @@ set -e
       save $f.nc sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_${canoe_destfile}_${f}.nc
     done
 
-    canoe_annual_ptrc="nchl dchl dfe dic no3 o2 talk caco3 nh4 zoo zoo2 phy2c phyc phyn phy2n phyfe phy2fe poc goc"
-    canoe_annual_diad="cflx ph3d co3 co3sata co3satc dcal graz1 graz2 pfen pfed pcal ppphy ppphy2 o2sol irondep"
+    if [ $fmon -eq 1 ] ; then
+      canoe_annual_ptrc="nchl dchl dfe dic no3 o2 talk caco3 nh4 zoo zoo2 phy2c phyc phyn phy2n phyfe phy2fe poc goc"
+      canoe_annual_diad="cflx ph3d co3 co3sata co3satc dcal graz1 graz2 pfen pfed pcal ppphy ppphy2 o2sol irondep"
 
-    canoe_src_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1m_ptrc_t
-    canoe_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_ptrc_t
-    for f in ${canoe_annual_ptrc}; do
-      release tmp.nc
-      access  tmp.nc ${canoe_src_file}_$f.nc na
-      if [ -s tmp.nc ] ; then
-        cdo yearmean tmp.nc ann_$f.nc
-        save ann_$f.nc ${canoe_dest_file}_$f.nc
+      canoe_src_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1m_ptrc_t
+      canoe_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_ptrc_t
+      for f in ${canoe_annual_ptrc}; do
         release tmp.nc
-      fi
-    done
+        access  tmp.nc ${canoe_src_file}_$f.nc na
+        if [ -s tmp.nc ] ; then
+          cdo yearmonmean tmp.nc ann_$f.nc
+          save ann_$f.nc ${canoe_dest_file}_$f.nc
+          release tmp.nc
+        fi
+      done
 
-    canoe_src_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1m_diad_t
-    canoe_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_diad_t
-    for f in ${canoe_annual_diad}; do
-      release tmp.nc
-      access  tmp.nc ${canoe_src_file}_$f.nc na
-      if [ -s tmp.nc ] ; then
-        cdo yearmean tmp.nc ann_$f.nc
-        save ann_$f.nc ${canoe_dest_file}_$f.nc
+      canoe_src_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1m_diad_t
+      canoe_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_diad_t
+      for f in ${canoe_annual_diad}; do
         release tmp.nc
-      fi
-    done
+        access  tmp.nc ${canoe_src_file}_$f.nc na
+        if [ -s tmp.nc ] ; then
+          cdo yearmonmean tmp.nc ann_$f.nc
+          save ann_$f.nc ${canoe_dest_file}_$f.nc
+          release tmp.nc
+        fi
+      done
+    fi
 
   fi

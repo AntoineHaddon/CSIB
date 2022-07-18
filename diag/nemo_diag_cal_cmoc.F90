@@ -253,7 +253,9 @@ CONTAINS
       !!----------------
       !! Allocate Arrays
       !!----------------
-      ALLOCATE(  hi(imt,jmt,km,lm),borat(imt,jmt,km,lm),ak13(imt,jmt,km,lm),ak23(imt,jmt,km,lm),akb3(imt,jmt,km,lm),akw3(imt,jmt,km,lm),akp13(imt,jmt,km,lm),akp23(imt,jmt,km,lm),akp33(imt,jmt,km,lm),aksi3(imt,jmt,km,lm), STAT=ierr(1) )
+      ALLOCATE( hi(imt,jmt,km,lm),borat(imt,jmt,km,lm),ak13(imt,jmt,km,lm),ak23(imt,jmt,km,lm),     &
+                akb3(imt,jmt,km,lm),akw3(imt,jmt,km,lm),akp13(imt,jmt,km,lm),akp23(imt,jmt,km,lm),  &
+                akp33(imt,jmt,km,lm),aksi3(imt,jmt,km,lm), STAT=ierr(1) )
 
       IF (MAXVAL(ierr) /=0) THEN
          STOP 'Memory allocation error in cmip6_cchem'
@@ -395,7 +397,8 @@ CONTAINS
 
                ! CALCULATE P AND Si ION CONCENTRATIONS AS PER ORR ET AL (BPG EQUATIONS 43-47)
                ! zp3 = H3PO4, zp1 = HPO4(2-), zp0 = PO4(3-): denominator is the same for all 3 equations
-               zpd = 1./ ( zph3 + akp13(i,j,k,l)*zph2 + akp13(i,j,k,l)*akp23(i,j,k,l)*zph + akp13(i,j,k,l)*akp23(i,j,k,l)*akp33(i,j,k,l) )
+               zpd = 1./ ( zph3 + akp13(i,j,k,l)*zph2 + akp13(i,j,k,l)*akp23(i,j,k,l)*zph + &
+                            akp13(i,j,k,l)*akp23(i,j,k,l)*akp33(i,j,k,l) )
                zp3 = zph3*zpo4 * zpd
                zp1 = zph*zpo4*akp13(i,j,k,l)*akp23(i,j,k,l) * zpd
                zp0 = zpo4*akp13(i,j,k,l)*akp23(i,j,k,l)*akp33(i,j,k,l) * zpd
@@ -425,7 +428,8 @@ CONTAINS
               ! convert [H+] to  mol kg^-1 (XDIC is in mmol m^-3; CO3 is in mol m^-3; hion and ak* are in mol kg^-1)
               zfact = prhop(i,j,k,l)*0.001 + (1.-tmask(i,j,k))
               hion=hi(i,j,k,l)/zfact
-              CO3(i,j,k,l)=XDIC(i,j,k,l)*ak13(i,j,k,l)*ak23(i,j,k,l)/(hion*hion + ak13(i,j,k,l)*hion + ak13(i,j,k,l)*ak23(i,j,k,l))*0.001
+              CO3(i,j,k,l)=XDIC(i,j,k,l)*ak13(i,j,k,l)*ak23(i,j,k,l)/ &
+                            (hion*hion + ak13(i,j,k,l)*hion + ak13(i,j,k,l)*ak23(i,j,k,l))*0.001
               CO3(i,j,k,l)=CO3(i,j,k,l)*tmask(i,j,k)
               zca     = Ca*SS(i,j,k,l)/35.                   ! [Ca++] in mol kg-1
               Om_A(i,j,k,l) = zca * (CO3(i,j,k,l) * 0.001 / zfact) / Kspa(i,j,k,l)      ! to calculate Omega, [CO3--] must be in mol kg^-1
