@@ -186,6 +186,8 @@ echo "#################### Start NEMO pre-processing #################"
   # ==============================
   # High level consistency checks
   # ==============================
+  # Translate switches into 0/1 booleans
+  ToF nemo_from_rest
   # Switch 'nemo_from_rest' off if this isn't the first job in the run as it was
   #   _already_ started from rest
   if [[ $chunk_start_date != $run_start_date ]] && (( nemo_from_rest == 1 )); then
@@ -206,8 +208,6 @@ echo "#################### Start NEMO pre-processing #################"
   # =====================
   # Set Inherited params
   # =====================
-  # Translate switches into 0/1 booleans
-  #ToF nemo_from_rest
 
   # Identify the location of the NEMO git repository and the commit within
   #   that repository that is associated with the current run
