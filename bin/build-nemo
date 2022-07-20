@@ -120,20 +120,19 @@ for arg in "$@"; do
             var=$(echo $arg | awk -F\= '{printf "%s",$1}')
             val=$(echo $arg | awk -F\= '{printf "%s",$2}')
             case $var in
-		        xios_comp_np) xios_comp_np="$val"   ;;  # number of processors to use during xios compilation    
-		        xios_arch)  xios_arch="$val"  ;;        # xios arch name
-		        xios_netcdf_lib)  xios_netcdf_lib="$val" ;; # choice of netcdf library (netcdf4_par or netcdf4_seq)
+		xios_comp_np) xios_comp_np="$val"   ;;  # number of processors to use during xios compilation    
+		xios_arch)  xios_arch="$val"  ;;        # xios arch name
+		xios_netcdf_lib)  xios_netcdf_lib="$val" ;; # choice of netcdf library (netcdf4_par or netcdf4_seq)
                 srcpath)    nemo_source_path="$val" ;;  # location of code in a dir structure (instead of cloning)
                 exec)       nemo_exec="$val" ;;         # name for the executable created here
                 cfg)        nemo_config="$val" ;;       # name of subdir in which config lives
                 refcfg)     nemo_ref_config="$val" ;;   # name of subdir in which ref config lives
                 nemo_arch)  nemo_arch="$val" ;;         # nemo arch name
-		        util_arch)  util_arch="$val" ;;         # utility arch name (for RTD, REBUILD and so on)
-        		nemo_env)   nemo_env="$val";;           # filename containing the nemo compilation & execution environment
-		        util_env)   util_env="$val";;           # filename containing the utility (e.g., RTD, REBUILD, etc) environment
+		util_arch)  util_arch="$val" ;;         # utility arch name (for RTD, REBUILD and so on)
+		nemo_env)   nemo_env="$val";;           # filename containing the nemo compilation & execution environment
+		util_env)   util_env="$val";;           # filename containing the utility (e.g., RTD, REBUILD, etc) environment
                 add_key)    nemo_add_cpp_keys="$val" ;; # a list of cpp keys to add before compiling nemo
                 del_key)    nemo_del_cpp_keys="$val" ;; # a list of cpp keys to remove before compiling nemo
-                is_coupled) is_coupled="$val" ;;             # If set, bring in additional files needed for coupled model
                 *)          usage "Invalid command line arg --> $arg <--"; exit 1  ;;
              esac
              ;;
@@ -212,11 +211,16 @@ fi
 #======================================
 # Coupled consideration for model comp
 #======================================
+[[ "$nemo_config" == "CCC_CANCPL_"* ]] && is_coupled=1
 if (( is_coupled == 1 )); then
+    # we must get code from the coupler repo, assumed to be housed in $CCRNSRC
+    #  and cpp header files that should be contained in $WRK_DIR - confirm this
+    [[ -z "$CCRNSRC" ]] && 
+        bail "You are trying to compile for a coupled config and CCRNSRC isn't set! Has the coupled env been set up?"
 
     # define header files and check that they exist
-    cppdef_config_file=${WRK_DIR}/config/cppdef_config.h
-    cppdef_sizes_file=${WRK_DIR}/config/cppdef_sizes.h
+    cppdef_config_file=${WRK_DIR}/cppdef_config.h
+    cppdef_sizes_file=${WRK_DIR}/cppdef_sizes.h
     if [[ ! -f "$cppdef_config_file" ]] ; then
         bail_msg="You are trying to compile a coupled config but ${cppdef_config_file} doesn't exist!"
         bail "$bail_msg"
@@ -229,9 +233,10 @@ if (( is_coupled == 1 )); then
     # define other needed locations/files
     #   - Note: we must alter the extension of the linked cpp header files to be ".h90", as the
     #           the nemo compilation tools don't respect ".h" files.
-    nemo_external_src_dir=${nemo_source_path}/nemo/src/external                                 # where the "external" code sits
+    nemo_external_src_dir=${nemo_source_path}/nemo/NEMO/external                                # where the "external" code sits
     nemo_cppdef_config_link=${nemo_external_src_dir}/$(basename $cppdef_config_file .h).h90     # linked cpp config file
     nemo_cppdef_sizes_link=${nemo_external_src_dir}/$(basename $cppdef_sizes_file .h).h90       # linked cpp sizes file
+    needed_cpl_src_file=${CCRNSRC}/CanESM/CanCPL/src/comm/com_cpl.F90                           # orig. needed cplr src file
     nemo_cpl_src_file=${nemo_external_src_dir}/com_cpl.F90                                      # copied (and modified) cplr src file
 
     # link in the cpp files (cleaning if they already exist)
@@ -241,8 +246,9 @@ if (( is_coupled == 1 )); then
     ln -s $cppdef_sizes_file $nemo_cppdef_sizes_link
 
     # copy in external coupler file, and alter inlcude statements to use the .h90 links
-    sed -i "s/$(basename $cppdef_config_file)\b/$(basename $nemo_cppdef_config_link)/g" $nemo_cpl_src_file
-    sed -i "s/$(basename $cppdef_sizes_file)\b/$(basename $nemo_cppdef_sizes_link)/g" $nemo_cpl_src_file
+    cp -f $needed_cpl_src_file $nemo_cpl_src_file
+    sed -i "s/$(basename $cppdef_config_file)/$(basename $nemo_cppdef_config_link)/g" $nemo_cpl_src_file
+    sed -i "s/$(basename $cppdef_sizes_file)/$(basename $nemo_cppdef_sizes_link)/g" $nemo_cpl_src_file
 fi
 
 #===========
