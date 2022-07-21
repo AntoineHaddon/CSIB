@@ -33,11 +33,8 @@ MODULE sbc_oce
    LOGICAL , PUBLIC ::   ln_usr         !: user defined formulation
    LOGICAL , PUBLIC ::   ln_flx         !: flux      formulation
    LOGICAL , PUBLIC ::   ln_blk         !: bulk formulation
-#if defined key_oasis3
-   LOGICAL , PUBLIC ::   lk_oasis = .TRUE.  !: OASIS used
-#else
    LOGICAL , PUBLIC ::   lk_oasis = .FALSE. !: OASIS unused
-#endif
+   LOGICAL , PUBLIC ::   lk_cancpl = .FALSE. !: If true, use the CanCPL coupler interface
    LOGICAL , PUBLIC ::   ln_cpl         !: ocean-atmosphere coupled formulation
    LOGICAL , PUBLIC ::   ln_mixcpl      !: ocean-atmosphere forced-coupled mixed formulation
    LOGICAL , PUBLIC ::   ln_dm2dc       !: Daily mean to Diurnal Cycle short wave (qsr)

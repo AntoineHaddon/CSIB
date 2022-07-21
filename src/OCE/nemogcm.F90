@@ -28,7 +28,7 @@ MODULE nemogcm
    !!             -   ! 2010-10  (C. Ethe, G. Madec) reorganisation of initialisation phase
    !!            3.3.1! 2011-01  (A. R. Porter, STFC Daresbury) dynamical allocation
    !!             -   ! 2011-11  (C. Harris) decomposition changes for running with CICE
-   !!            3.6  ! 2012-05  (C. Calone, J. Simeon, G. Madec, C. Ethe) Add grid coarsening 
+   !!            3.6  ! 2012-05  (C. Calone, J. Simeon, G. Madec, C. Ethe) Add grid coarsening
    !!             -   ! 2014-12  (G. Madec) remove KPP scheme and cross-land advection (cla)
    !!            4.0  ! 2016-10  (G. Madec, S. Flavoni)  domain configuration / user defined interface
    !!----------------------------------------------------------------------
@@ -52,7 +52,7 @@ MODULE nemogcm
    USE ldfdyn         ! lateral viscosity setting      (ldfdyn_init routine)
    USE ldftra         ! lateral diffusivity setting    (ldftra_init routine)
    USE trdini         ! dyn/tra trends initialization     (trd_init routine)
-   USE asminc         ! assimilation increments     
+   USE asminc         ! assimilation increments
    USE asmbkg         ! writing out state trajectory
    USE diaptr         ! poleward transports           (dia_ptr_init routine)
    USE diadct         ! sections transports           (dia_dct_init routine)
@@ -62,13 +62,13 @@ MODULE nemogcm
    USE step           ! NEMO time-stepping                 (stp     routine)
    USE icbini         ! handle bergs, initialisation
    USE icbstp         ! handle bergs, calving, themodynamics and transport
-   USE cpl_oasis3     ! OASIS3 coupling
+   USE cpl_interface, only : cpl_init, cpl_finalize     ! OASIS3 coupling
    USE c1d            ! 1D configuration
    USE step_c1d       ! Time stepping loop for the 1D configuration
    USE dyndmp         ! Momentum damping
    USE stopar         ! Stochastic param.: ???
    USE stopts         ! Stochastic param.: ???
-   USE diurnal_bulk   ! diurnal bulk SST 
+   USE diurnal_bulk   ! diurnal bulk SST
    USE step_diu       ! diurnal bulk SST timestepping (called from here if run offline)
    USE crsini         ! initialise grid coarsening utility
    USE dia25h         ! 25h mean output
@@ -84,7 +84,7 @@ MODULE nemogcm
    USE in_out_manager ! I/O manager
    USE lib_mpp        ! distributed memory computing
    USE mppini         ! shared/distributed memory setting (mpp_init routine)
-   USE lbcnfd  , ONLY : isendto, nsndto, nfsloop, nfeloop   ! Setup of north fold exchanges 
+   USE lbcnfd  , ONLY : isendto, nsndto, nfsloop, nfeloop   ! Setup of north fold exchanges
    USE lib_fortran    ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
 #if defined key_iomput
    USE xios           ! xIOserver
@@ -92,6 +92,7 @@ MODULE nemogcm
 #if defined key_agrif
    USE agrif_all_update   ! Master Agrif update
 #endif
+   use cpl_cancpl, only : cpl_cancpl_init
 
    IMPLICIT NONE
    PRIVATE
@@ -140,7 +141,7 @@ CONTAINS
       !                            !-----------------------!
 #if defined key_agrif
       CALL Agrif_Declare_Var_dom   ! AGRIF: set the meshes for DOM
-      CALL Agrif_Declare_Var       !  "      "   "   "      "  DYN/TRA 
+      CALL Agrif_Declare_Var       !  "      "   "   "      "  DYN/TRA
 # if defined key_top
       CALL Agrif_Declare_Var_top   !  "      "   "   "      "  TOP
 # endif
@@ -190,8 +191,8 @@ CONTAINS
                IF ( istp == ( nit000 + 1 ) ) elapsed_time = zstptiming
                IF ( istp ==         nitend ) elapsed_time = zstptiming - elapsed_time
             ENDIF
-            
-            CALL stp        ( istp ) 
+
+            CALL stp        ( istp )
             istp = istp + 1
 
             IF( lwp .AND. ln_timing )   WRITE(numtime,*) 'timing step ', istp-1, ' : ', MPI_Wtime() - zstptiming
@@ -201,7 +202,7 @@ CONTAINS
       ELSE                                            !==  diurnal SST time-steeping only  ==!
          !
          DO WHILE( istp <= nitend .AND. nstop == 0 )
-            CALL stp_diurnal( istp )   ! time step only the diurnal SST 
+            CALL stp_diurnal( istp )   ! time step only the diurnal SST
             istp = istp + 1
          END DO
          !
@@ -239,9 +240,9 @@ CONTAINS
       !
 #if defined key_iomput
                                     CALL xios_finalize  ! end mpp communications with xios
-      IF( lk_oasis     )            CALL cpl_finalize   ! end coupling and mpp communications with OASIS
+      IF( lk_oasis .or. lk_cancpl )            CALL cpl_finalize   ! end coupling and mpp communications with OASIS
 #else
-      IF    ( lk_oasis ) THEN   ;   CALL cpl_finalize   ! end coupling and mpp communications with OASIS
+      IF    ( lk_oasis .or. lk_cancpl ) THEN   ;   CALL cpl_finalize   ! end coupling and mpp communications with OASIS
       ELSEIF( lk_mpp   ) THEN   ;   CALL mppstop      ! end mpp communications
       ENDIF
 #endif
@@ -278,8 +279,8 @@ CONTAINS
       !
 #if defined key_iomput
       IF( Agrif_Root() ) THEN
-         IF( lk_oasis ) THEN
-            CALL cpl_init( "oceanx", ilocal_comm )                               ! nemo local communicator given by oasis
+         IF( lk_oasis .or. lk_cancpl ) THEN
+            CALL cpl_init( "oceanx", ilocal_comm )               ! nemo local communicator given by oasis
             CALL xios_initialize( "not used"       , local_comm =ilocal_comm )   ! send nemo communicator to xios
          ELSE
             CALL xios_initialize( "for_xios_mpi_id", return_comm=ilocal_comm )   ! nemo local communicator given by xios
@@ -287,9 +288,9 @@ CONTAINS
       ENDIF
       CALL mpp_start( ilocal_comm )
 #else
-      IF( lk_oasis ) THEN
+      IF( lk_oasis .or. lk_cancpl ) THEN
          IF( Agrif_Root() ) THEN
-            CALL cpl_init( "oceanx", ilocal_comm )          ! nemo local communicator given by oasis
+            CALL cpl_init( "oceanx", ilocal_comm )               ! nemo local communicator given by oasis
          ENDIF
          CALL mpp_start( ilocal_comm )
       ELSE
@@ -386,7 +387,7 @@ CONTAINS
 903   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namcfg in reference namelist' )
       REWIND( numnam_cfg )              ! Namelist namcfg in confguration namelist
       READ  ( numnam_cfg, namcfg, IOSTAT = ios, ERR = 904 )
-904   IF( ios >  0 )   CALL ctl_nam ( ios , 'namcfg in configuration namelist' )   
+904   IF( ios >  0 )   CALL ctl_nam ( ios , 'namcfg in configuration namelist' )
       !
       IF( ln_read_cfg ) THEN            ! Read sizes in domain configuration file
          CALL domain_cfg ( cn_cfg, nn_cfg, jpiglo, jpjglo, jpkglo, jperio )
@@ -419,12 +420,12 @@ CONTAINS
       IF( lk_c1d       )   CALL     c1d_init        ! 1D column configuration
                            CALL     wad_init        ! Wetting and drying options
                            CALL     dom_init("OPA") ! Domain
-      IF( ln_crs       )   CALL     crs_init        ! coarsened grid: domain initialization 
+      IF( ln_crs       )   CALL     crs_init        ! coarsened grid: domain initialization
       IF( ln_ctl       )   CALL prt_ctl_init        ! Print control
-      
+
       CALL diurnal_sst_bulk_init                ! diurnal sst
-      IF( ln_diurnal   )   CALL diurnal_sst_coolskin_init   ! cool skin   
-      !                            
+      IF( ln_diurnal   )   CALL diurnal_sst_coolskin_init   ! cool skin
+      !
       IF( ln_diurnal_only ) THEN                   ! diurnal only: a subset of the initialisation routines
          CALL  istate_init                            ! ocean initial state (Dynamics and tracers)
          CALL     sbc_init                            ! Forcings : surface module
@@ -432,22 +433,22 @@ CONTAINS
          IF( ln_diaobs ) THEN                         ! Observation & model comparison
             CALL dia_obs_init                            ! Initialize observational data
             CALL dia_obs( nit000 - 1 )                   ! Observation operator for restart
-         ENDIF     
+         ENDIF
          IF( lk_asminc )   CALL asm_inc_init          ! Assimilation increments
          !
          RETURN                                       ! end of initialization
       ENDIF
-      
+
                            CALL  istate_init    ! ocean initial state (Dynamics and tracers)
 
-      !                                      ! external forcing 
+      !                                      ! external forcing
                            CALL    tide_init    ! tidal harmonics
                            CALL     sbc_init    ! surface boundary conditions (including sea-ice)
                            CALL     bdy_init    ! Open boundaries initialisation
 
       !                                      ! Ocean physics
                            CALL zdf_phy_init    ! Vertical physics
-                                     
+
       !                                         ! Lateral physics
                            CALL ldf_tra_init      ! Lateral ocean tracer physics
                            CALL ldf_eiv_init      ! eddy induced velocity param.
@@ -481,7 +482,7 @@ CONTAINS
       !                                      ! Misc. options
                            CALL sto_par_init    ! Stochastic parametrization
       IF( ln_sto_eos   )   CALL sto_pts_init    ! RRandom T/S fluctuations
-     
+
       !                                      ! Diagnostics
                            CALL     flo_init    ! drifting Floats
       IF( ln_diacfl    )   CALL dia_cfl_init    ! Initialise CFL diagnostics
@@ -526,10 +527,10 @@ CONTAINS
          WRITE(numout,*) '                              sn_cfctl%l_layout  = ', sn_cfctl%l_layout
          WRITE(numout,*) '                              sn_cfctl%l_mppout  = ', sn_cfctl%l_mppout
          WRITE(numout,*) '                              sn_cfctl%l_mpptop  = ', sn_cfctl%l_mpptop
-         WRITE(numout,*) '                              sn_cfctl%procmin   = ', sn_cfctl%procmin  
-         WRITE(numout,*) '                              sn_cfctl%procmax   = ', sn_cfctl%procmax  
-         WRITE(numout,*) '                              sn_cfctl%procincr  = ', sn_cfctl%procincr 
-         WRITE(numout,*) '                              sn_cfctl%ptimincr  = ', sn_cfctl%ptimincr 
+         WRITE(numout,*) '                              sn_cfctl%procmin   = ', sn_cfctl%procmin
+         WRITE(numout,*) '                              sn_cfctl%procmax   = ', sn_cfctl%procmax
+         WRITE(numout,*) '                              sn_cfctl%procincr  = ', sn_cfctl%procincr
+         WRITE(numout,*) '                              sn_cfctl%ptimincr  = ', sn_cfctl%ptimincr
          WRITE(numout,*) '      level of print                  nn_print   = ', nn_print
          WRITE(numout,*) '      Start i indice for SUM control  nn_ictls   = ', nn_ictls
          WRITE(numout,*) '      End i indice for SUM control    nn_ictle   = ', nn_ictle
@@ -657,7 +658,7 @@ CONTAINS
       INTEGER :: ierr
       !!----------------------------------------------------------------------
       !
-      ierr =        oce_alloc    ()    ! ocean 
+      ierr =        oce_alloc    ()    ! ocean
       ierr = ierr + dia_wri_alloc()
       ierr = ierr + dom_oce_alloc()    ! ocean domain
       ierr = ierr + zdf_oce_alloc()    ! ocean vertical physics
@@ -669,7 +670,7 @@ CONTAINS
       !
    END SUBROUTINE nemo_alloc
 
-   
+
    SUBROUTINE nemo_set_cfctl(sn_cfctl, setto, for_all )
       !!----------------------------------------------------------------------
       !!                     ***  ROUTINE nemo_set_cfctl  ***

@@ -39,7 +39,6 @@ MODULE sbcmod
    USE sbcice_cice    ! surface boundary condition: CICE sea-ice model
    USE sbcisf         ! surface boundary condition: ice-shelf
    USE sbccpl         ! surface boundary condition: coupled formulation
-   USE cpl_oasis3     ! OASIS routines for coupling
    USE sbcssr         ! surface boundary condition: sea surface restoring
    USE sbcrnf         ! surface boundary condition: runoffs
    USE sbcapr         ! surface boundary condition: atmo pressure
@@ -60,7 +59,9 @@ MODULE sbcmod
    USE timing         ! Timing
    USE wet_dry
    USE diurnal_bulk, ONLY:   ln_diurnal_only   ! diurnal SST diagnostic
-   USE sbcspp, ONLY : nn_power, rn_spp_rho_c, ln_vertspp, ln_spp_c_grad, rn_spp_z_max
+   USE cpl_interface, only : cpl_freq
+   USE sbcspp, ONLY : nn_power, rn_spp_rho_c, ln_vertspp, ln_spp_c_grad
+   USE sbcspp, ONLY : rn_spp_z_max, rn_spp_z_min
 
    IMPLICIT NONE
    PRIVATE
@@ -100,7 +101,8 @@ CONTAINS
          &             ln_rnf   , nn_fwb   , ln_ssr   , ln_isf    , ln_apr_dyn ,        &
          &             ln_wave  , ln_cdgw  , ln_sdw   , ln_tauwoc  , ln_stcor   ,       &
          &             ln_tauw  , nn_lsm, nn_sdrift, ln_minsal, rn_minsal,              &
-         &             ln_vertspp, ln_spp_c_grad, rn_spp_rho_c, nn_power, rn_spp_z_max
+         &             ln_vertspp, ln_spp_c_grad, rn_spp_rho_c, nn_power, rn_spp_z_max, &
+         &             lk_cancpl, lk_oasis
       !!----------------------------------------------------------------------
       !
       IF(lwp) THEN
@@ -142,7 +144,6 @@ CONTAINS
          WRITE(numout,*) '      Type of coupling (Ocean/Ice/Atmosphere) : '
          WRITE(numout,*) '         ocean-atmosphere coupled formulation       ln_cpl        = ', ln_cpl
          WRITE(numout,*) '         mixed forced-coupled     formulation       ln_mixcpl     = ', ln_mixcpl
-!!gm  lk_oasis is controlled by key_oasis3  ===>>>  It shoud be removed from the namelist
          WRITE(numout,*) '         OASIS coupling (with atm or sas)           lk_oasis      = ', lk_oasis
          WRITE(numout,*) '         components of your executable              nn_components = ', nn_components
          WRITE(numout,*) '      Sea-ice : '
@@ -172,6 +173,7 @@ CONTAINS
             WRITE(numout,*) '               Shape parameter for vertical         nn_power      = ', nn_power
             WRITE(numout,*) '               Density criterion for salt plume     rn_spp_rho_c  = ', rn_spp_rho_c
             WRITE(numout,*) '               Maximum depth of the salt plume      rn_spp_z_max  = ', rn_spp_z_max
+            WRITE(numout,*) '               Minimum depth of the salt plume      rn_spp_z_min  = ', rn_spp_z_min
          ENDIF
       ENDIF
       !
@@ -208,24 +210,24 @@ CONTAINS
          IF(lwp) WRITE(numout,*) '   ==>>>   NEMO configured as a single executable (i.e. including both OPA and Surface module)'
       CASE( jp_iam_opa  )
          IF(lwp) WRITE(numout,*) '   ==>>>   Multi executable configuration. Here, OPA component'
-         IF( .NOT.lk_oasis )   CALL ctl_stop( 'sbc_init : OPA-SAS coupled via OASIS, but key_oasis3 disabled' )
+         IF( .NOT.lk_oasis )   CALL ctl_stop( 'sbc_init : OPA-SAS coupled via OASIS, but lk_oasis = F ' )
          IF( ln_cpl        )   CALL ctl_stop( 'sbc_init : OPA-SAS coupled via OASIS, but ln_cpl = T in OPA'   )
          IF( ln_mixcpl     )   CALL ctl_stop( 'sbc_init : OPA-SAS coupled via OASIS, but ln_mixcpl = T in OPA' )
       CASE( jp_iam_sas  )
          IF(lwp) WRITE(numout,*) '   ==>>>   Multi executable configuration. Here, SAS component'
-         IF( .NOT.lk_oasis )   CALL ctl_stop( 'sbc_init : OPA-SAS coupled via OASIS, but key_oasis3 disabled' )
+         IF( .NOT.lk_oasis )   CALL ctl_stop( 'sbc_init : OPA-SAS coupled via OASIS, but lk_oasis = F ' )
          IF( ln_mixcpl     )   CALL ctl_stop( 'sbc_init : OPA-SAS coupled via OASIS, but ln_mixcpl = T in OPA' )
       CASE DEFAULT
          CALL ctl_stop( 'sbc_init : unsupported value for nn_components' )
       END SELECT
       !                             !* coupled options
       IF( ln_cpl ) THEN
-         IF( .NOT. lk_oasis )   CALL ctl_stop( 'sbc_init : coupled mode with an atmosphere model (ln_cpl=T)',   &
-            &                                  '           required to defined key_oasis3' )
+         IF( .NOT. (lk_oasis .or. lk_cancpl) )   CALL ctl_stop( 'sbc_init : coupled mode with an atmosphere model (ln_cpl=T)',   &
+            &                                  '           required to defined lk_oasis = T ' )
       ENDIF
       IF( ln_mixcpl ) THEN
-         IF( .NOT. lk_oasis )   CALL ctl_stop( 'sbc_init : mixed forced-coupled mode (ln_mixcpl=T) ',   &
-            &                                  '           required to defined key_oasis3' )
+         IF( .NOT. (lk_oasis .or. lk_cancpl) )   CALL ctl_stop( 'sbc_init : mixed forced-coupled mode (ln_mixcpl=T) ',   &
+            &                                  '           required to defined lk_oasis = T ' )
          IF( .NOT.ln_cpl    )   CALL ctl_stop( 'sbc_init : mixed forced-coupled mode (ln_mixcpl=T) requires ln_cpl = T' )
          IF( nn_components /= jp_iam_nemo )    &
             &                   CALL ctl_stop( 'sbc_init : the mixed forced-coupled mode (ln_mixcpl=T) ',   &
@@ -310,7 +312,7 @@ CONTAINS
       !
       !                             !* OASIS initialization
       !
-      IF( lk_oasis )   CALL sbc_cpl_init( nn_ice )   ! Must be done before: (1) first time step
+      IF( lk_oasis .or. lk_cancpl )   CALL sbc_cpl_init( nn_ice )   ! Must be done before: (1) first time step
       !                                              !                      (2) the use of nn_fsbc
       !     nn_fsbc initialization if OPA-SAS coupling via OASIS
       !     SAS time-step has to be declared in OASIS (mandatory) -> nn_fsbc has to be modified accordingly

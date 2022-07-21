@@ -26,7 +26,7 @@ MODULE step
    !!            3.6  !  2012-07  (J. Simeon, G. Madec. C. Ethe)  Online coarsening of outputs
    !!            3.6  !  2014-04  (F. Roquet, G. Madec) New equations of state
    !!            3.6  !  2014-10  (E. Clementi, P. Oddo) Add Qiao vertical mixing in case of waves
-   !!            3.7  !  2014-10  (G. Madec)  LDF simplication 
+   !!            3.7  !  2014-10  (G. Madec)  LDF simplication
    !!             -   !  2014-12  (G. Madec) remove KPP scheme
    !!             -   !  2015-11  (J. Chanut) free surface simplification (remove filtered free surface)
    !!            4.0  !  2017-05  (G. Madec)  introduction of the vertical physics manager (zdfphy)
@@ -94,7 +94,7 @@ CONTAINS
       IF( ln_timing )   CALL timing_start('stp')
       !
       !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-      ! update I/O and calendar 
+      ! update I/O and calendar
       !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
       IF( kstp == nit000 ) THEN                       ! initialize IOM context (must be done after nemo_init for AGRIF+XIOS+OASIS)
                              CALL iom_init(      cxios_context          )  ! for model grid (including passible AGRIF zoom)
@@ -108,7 +108,7 @@ CONTAINS
       ! Update external forcing (tides, open boundaries, and surface boundary condition (including sea-ice)
       !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
       IF( ln_tide    )   CALL sbc_tide( kstp )                   ! update tide potential
-      IF( ln_apr_dyn )   CALL sbc_apr ( kstp )                   ! atmospheric pressure (NB: call before bdy_dta which needs ssh_ib) 
+      IF( ln_apr_dyn )   CALL sbc_apr ( kstp )                   ! atmospheric pressure (NB: call before bdy_dta which needs ssh_ib)
       IF( ln_bdy     )   CALL bdy_dta ( kstp, kt_offset = +1 )   ! update dynamic & tracer data at open boundaries
                          CALL sbc     ( kstp )                   ! Sea Boundary Condition (including sea-ice)
 
@@ -142,26 +142,26 @@ CONTAINS
          IF( ln_zps .AND.       ln_isfcav)                               &
             &            CALL zps_hde_isf( kstp, jpts, tsb, gtsu, gtsv, gtui, gtvi,  &  ! Partial steps for top cell (ISF)
             &                                          rhd, gru , grv , grui, grvi   )  ! of t, s, rd at the first ocean level
-         IF( ln_traldf_triad ) THEN 
+         IF( ln_traldf_triad ) THEN
                          CALL ldf_slp_triad( kstp )                       ! before slope for triad operator
-         ELSE     
+         ELSE
                          CALL ldf_slp     ( kstp, rhd, rn2b )             ! before slope for standard operator
          ENDIF
       ENDIF
       !                                                                   ! eddy diffusivity coeff.
       IF( l_ldftra_time .OR. l_ldfeiv_time )   CALL ldf_tra( kstp )       !       and/or eiv coeff.
-      IF( l_ldfdyn_time                    )   CALL ldf_dyn( kstp )       ! eddy viscosity coeff. 
+      IF( l_ldfdyn_time                    )   CALL ldf_dyn( kstp )       ! eddy viscosity coeff.
       !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
       !  Ocean dynamics : hdiv, ssh, e3, u, v, w
       !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
                             CALL ssh_nxt       ( kstp )  ! after ssh (includes call to div_hor)
-      IF( .NOT.ln_linssh )  CALL dom_vvl_sf_nxt( kstp )  ! after vertical scale factors 
-                            CALL wzv           ( kstp )  ! now cross-level velocity 
+      IF( .NOT.ln_linssh )  CALL dom_vvl_sf_nxt( kstp )  ! after vertical scale factors
+                            CALL wzv           ( kstp )  ! now cross-level velocity
       IF( ln_zad_Aimp )     CALL wAimp         ( kstp )  ! Adaptive-implicit vertical advection partitioning
                             CALL eos    ( tsn, rhd, rhop, gdept_n(:,:,:) )  ! now in situ density for hpg computation
-                            
-                            
+
+
                          ua(:,:,:) = 0._wp            ! set dynamics trends to zero
                          va(:,:,:) = 0._wp
 
@@ -169,7 +169,7 @@ CONTAINS
                &         CALL dyn_asm_inc   ( kstp )  ! apply dynamics assimilation increment
       IF( ln_bdy     )   CALL bdy_dyn3d_dmp ( kstp )  ! bdy damping trends
 #if defined key_agrif
-      IF(.NOT. Agrif_Root())  & 
+      IF(.NOT. Agrif_Root())  &
                &         CALL Agrif_Sponge_dyn        ! momentum sponge
 #endif
                          CALL dyn_adv       ( kstp )  ! advection (vector or flux form)
@@ -186,16 +186,16 @@ CONTAINS
       ENDIF
                             CALL dyn_zdf    ( kstp )  ! vertical diffusion
       IF( ln_dynspg_ts ) THEN                         ! vertical scale factors and vertical velocity need to be updated
-                            CALL wzv        ( kstp )              ! now cross-level velocity 
+                            CALL wzv        ( kstp )              ! now cross-level velocity
          IF( ln_zad_Aimp )  CALL wAimp      ( kstp )  ! Adaptive-implicit vertical advection partitioning
       ENDIF
-      
+
 
       !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
       ! cool skin
-      !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<      
+      !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
       IF ( ln_diurnal )  CALL stp_diurnal( kstp )
-      
+
       !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
       ! diagnostics and outputs
       !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -209,7 +209,7 @@ CONTAINS
                          CALL dia_wri ( kstp )        ! ocean model: outputs
       !
       IF( ln_crs     )   CALL crs_fld       ( kstp )  ! ocean model: online field coarsening & output
-      
+
 #if defined key_top
       !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
       ! Passive Tracer Model
@@ -218,7 +218,7 @@ CONTAINS
 #endif
 
       !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-      ! Active tracers                              
+      ! Active tracers
       !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
                          tsa(:,:,:,:) = 0._wp         ! set tracer trends to zero
 
@@ -231,7 +231,7 @@ CONTAINS
       IF( ln_tradmp  )   CALL tra_dmp       ( kstp )  ! internal damping trends
       IF( ln_bdy     )   CALL bdy_tra_dmp   ( kstp )  ! bdy damping trends
 #if defined key_agrif
-      IF(.NOT. Agrif_Root())  & 
+      IF(.NOT. Agrif_Root())  &
                &         CALL Agrif_Sponge_tra        ! tracers sponge
 #endif
                          CALL tra_adv       ( kstp )  ! horizontal & vertical advection
@@ -246,19 +246,19 @@ CONTAINS
       !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
       ! Set boundary conditions and Swap
       !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-!!jc1: For agrif, it would be much better to finalize tracers/momentum here (e.g. bdy conditions) and move the swap 
-!!    (and time filtering) after Agrif update. Then restart would be done after and would contain updated fields. 
-!!    If so: 
+!!jc1: For agrif, it would be much better to finalize tracers/momentum here (e.g. bdy conditions) and move the swap
+!!    (and time filtering) after Agrif update. Then restart would be done after and would contain updated fields.
+!!    If so:
 !!    (i) no need to call agrif update at initialization time
-!!    (ii) no need to update "before" fields 
+!!    (ii) no need to update "before" fields
 !!
-!!    Apart from creating new tra_swp/dyn_swp routines, this however: 
-!!    (i) makes boundary conditions at initialization time computed from updated fields which is not the case between 
-!!    two restarts => restartability issue. One can circumvent this, maybe, by assuming "interface separation", 
-!!    e.g. a shift of the feedback interface inside child domain. 
+!!    Apart from creating new tra_swp/dyn_swp routines, this however:
+!!    (i) makes boundary conditions at initialization time computed from updated fields which is not the case between
+!!    two restarts => restartability issue. One can circumvent this, maybe, by assuming "interface separation",
+!!    e.g. a shift of the feedback interface inside child domain.
 !!    (ii) requires that all restart outputs of updated variables by agrif (e.g. passive tracers/tke/barotropic arrays) are done at the same
 !!    place.
-!! 
+!!
 !!jc2: dynnxt must be the latest call. e3t_b are indeed updated in that routine
                          CALL tra_nxt       ( kstp )  ! finalize (bcs) tracer fields at next time step and swap
                          CALL dyn_nxt       ( kstp )  ! finalize (bcs) velocities at next time step and swap (always called after tra_nxt)
@@ -278,18 +278,18 @@ CONTAINS
 #if defined key_agrif
       !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
       ! AGRIF recursive integration
-      !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<      
+      !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
                          CALL Agrif_Integrate_ChildGrids( stp )  ! allows to finish all the Child Grids before updating
 #endif
       !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
       ! Control
       !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
                          CALL stp_ctl      ( kstp )
-                         
+
 #if defined key_agrif
       !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
       ! AGRIF update
-      !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<      
+      !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
       IF( Agrif_NbStepint() == 0 .AND. nstop == 0 ) THEN
                          CALL Agrif_update_all( )                  ! Update all components
       ENDIF
@@ -299,7 +299,7 @@ CONTAINS
 
       !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
       ! File manipulation at the end of the first time step
-      !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                         
+      !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
       IF( kstp == nit000 ) THEN                          ! 1st time step only
                                         CALL iom_close( numror )   ! close input  ocean restart file
          IF(lwm)                        CALL FLUSH    ( numond )   ! flush output namelist oce
@@ -310,16 +310,16 @@ CONTAINS
       ! Coupled mode
       !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 !!gm why lk_oasis and not lk_cpl ????
-      IF( lk_oasis .AND. nstop == 0 )   CALL sbc_cpl_snd( kstp )     ! coupled mode : field exchanges
+      IF( ln_cpl .AND. nstop == 0 )   CALL sbc_cpl_snd( kstp )     ! coupled mode : field exchanges
       !
 #if defined key_iomput
       !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
       ! Finalize contextes if end of simulation or error detected
-      !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                         
-      IF( kstp == nitend .OR. nstop > 0 ) THEN 
+      !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+      IF( kstp == nitend .OR. nstop > 0 ) THEN
                       CALL iom_context_finalize(       cxios_context         ) ! needed for XIOS+AGRIF
          IF( lrxios ) CALL iom_context_finalize(      crxios_context         )
-         IF( ln_crs ) CALL iom_context_finalize( trim(cxios_context)//"_crs" ) ! 
+         IF( ln_crs ) CALL iom_context_finalize( trim(cxios_context)//"_crs" ) !
       ENDIF
 #endif
       !
