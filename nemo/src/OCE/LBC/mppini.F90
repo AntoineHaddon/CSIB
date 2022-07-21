@@ -29,6 +29,7 @@ MODULE mppini
    USE iom            ! nemo I/O library 
    USE ioipsl         ! I/O IPSL library
    USE in_out_manager ! I/O Manager
+   USE mpi
 
    IMPLICIT NONE
    PRIVATE
@@ -327,7 +328,7 @@ CONTAINS
       ALLOCATE(  nfiimpp(jpni,jpnj), nfipproc(jpni,jpnj), nfilcit(jpni,jpnj) ,    &
          &       nimppt(jpnij) , ibonit(jpnij) , nlcit(jpnij) , nlcjt(jpnij) ,    &
          &       njmppt(jpnij) , ibonjt(jpnij) , nldit(jpnij) , nldjt(jpnij) ,    &
-         &                                       nleit(jpnij) , nlejt(jpnij) ,    &
+         &       offsetst(jpnij), jpdtott(jpnij), nleit(jpnij) , nlejt(jpnij) ,    &
          &       iin(jpnij), ii_nono(jpnij), ii_noea(jpnij),   &
          &       ijn(jpnij), ii_noso(jpnij), ii_nowe(jpnij),   &
          &       iimppt(jpni,jpnj), ilci(jpni,jpnj), ibondi(jpni,jpnj), ipproc(jpni,jpnj),   &
@@ -693,6 +694,17 @@ CONTAINS
          WRITE(numout,*) '      nn_hls = ', nn_hls 
       ENDIF
 
+      ! Calculate additional parameters for the domain decomposition
+      jpdtot = nlci*nlcj
+      DO jproc=1,jpnij
+         jpdtott(jproc) = nlcit(jproc)*nlcjt(jproc)
+      ENDDO
+      jpdtot_glo = SUM(jpdtott)
+
+      offsetst(1) = 0
+      DO jproc=2,jpnij
+         offsetst(jproc) = offsetst(jproc-1) + jpdtott(jproc-1)
+      ENDDO
       !                          ! Prepare mpp north fold
       IF( jperio >= 3 .AND. jperio <= 6 .AND. jpni > 1 ) THEN
          CALL mpp_ini_north
@@ -703,7 +715,7 @@ CONTAINS
          ENDIF
          IF (llwrtlay) THEN
             WRITE(inum,*)
-            WRITE(inum,*)
+        WRITE(inum,*)
             WRITE(inum,*) 'number of subdomains located along the north fold : ', ndim_rank_north
             WRITE(inum,*) 'Rank of the subdomains located along the north fold : ', ndim_rank_north
             DO jproc = 1, ndim_rank_north, 5
