@@ -145,7 +145,7 @@
     # Bundle the ocean stdout/stderr files
     # =====================================
     mkdir ocn_stdout_stderr_files
-    for rank in $(seq ${agcm_rank_range//:/ }); do
+    for rank in $(seq ${ocn_rank_range//:/ }); do
         cp ${RANK_OUTPUT_PRFX}.${rank}.${RANK_OUTPUT_SFX} ocn_stdout_stderr_files/
     done
     tar -czf ocn_stdout_stderr_files.tar.gz ocn_stdout_stderr_files
