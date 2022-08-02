@@ -394,7 +394,7 @@
       rn_hsbfr =    1.6       !  heat/salt buoyancy flux ratio
    ln_zdfiwm   = .false.      ! internal wave-induced mixing            (T =>   fill namzdf_iwm)
    !                       !  Coefficients
-   ln_zdftmx   = .true.       !  old tidal mixing scheme (Simmons et al 2004) (T => fill namzdf_tmx)
+   ln_zdftmx   = .false.      !  old tidal mixing scheme (Simmons et al 2004) (T => fill namzdf_tmx)
    rn_avm0     =   1.2e-4     !  vertical eddy viscosity   [m2/s]       (background Kz if ln_zdfcst=F)
    rn_avt0     =   1.2e-5     !  vertical eddy diffusivity [m2/s]       (background Kz if ln_zdfcst=F)
    nn_avb      =    0         !  profile for background avt & avm (=1) or not (=0)
