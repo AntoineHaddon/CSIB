@@ -141,16 +141,6 @@
       cat saved_history_FILE_NAMES | tr '[A-Z]' '[a-z]' > saved_history_file_names
     fi
 
-    # =====================================
-    # Bundle the ocean stdout/stderr files
-    # =====================================
-    mkdir ocn_stdout_stderr_files
-    for rank in $(seq ${ocn_rank_range//:/ }); do
-        cp ${RANK_OUTPUT_PRFX}.${rank}.${RANK_OUTPUT_SFX} ocn_stdout_stderr_files/
-    done
-    tar -czf ocn_stdout_stderr_files.tar.gz ocn_stdout_stderr_files
-    rm -rf ocn_stdout_stderr_files
-
     # ================================
     # Save the current restart files.
     # ================================
@@ -227,10 +217,6 @@
       rm -f rs_${nemo_exec}
       cp -f ${nemo_exec} rs_${nemo_exec} || :
       [ -s rs_${nemo_exec} ] && tarlist="$tarlist rs_${nemo_exec}"
-
-      # stdout/stderr files
-      cp -r ocn_stdout_stderr_files.tar.gz rs_ocn_stdout_stderr_files.tar.gz
-      tarlist="$tarlist rs_ocn_stdout_stderr_files.tar.gz"
 
       if [[ "$runmode" == NEMO-AGCM-dcpp-assim* ]] ; then
         # Add a EMPave data for nn_fwb=2
