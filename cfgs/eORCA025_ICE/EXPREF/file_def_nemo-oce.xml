@@ -29,16 +29,19 @@
 	  <field field_ref="qsr_oce"     name="qsr_oce"  level="0" />
 	  <field field_ref="isnwmlt_cea" name="isnwmlt_cea" level="0" />
 	  <field field_ref="snowmel_cea" name="snowmel_cea" level="0" />
+	  <field field_ref="e3t"         name="e3t"      level="0" />
         </file>
 
 	<file id="file12" name_suffix="_grid_U" description="ocean U grid variables">
 	  <field field_ref="uoce"        name="uo"       level="0" />
 	  <field field_ref="utau"        name="tauuo"    level="0" />
+	  <field field_ref="e3u"         name="e3u"      level="0" />
         </file>		
 
 	<file id="file13" name_suffix="_grid_V" description="ocean V grid variables">
 	  <field field_ref="voce"        name="vo"       level="0" />
 	  <field field_ref="vtau"        name="tauvo"    level="0" />
+	  <field field_ref="e3v"         name="e3v"      level="0" />
         </file>
 
 	<file id="file14" name_suffix="_grid_W" description="ocean W grid variables">
