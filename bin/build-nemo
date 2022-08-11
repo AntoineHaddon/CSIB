@@ -215,6 +215,7 @@ fi
 if (( is_coupled == 1 )); then
     # we must get code from the coupler repo, assumed to be housed in $CCRNSRC
     #  and cpp header files that should be contained in $WRK_DIR - confirm this
+    #  This have to be done because different CanESM config could different header files (true?)
     [[ -z "$CCRNSRC" ]] && 
         bail "You are trying to compile for a coupled config and CCRNSRC isn't set! Has the coupled env been set up?"
 
@@ -231,24 +232,15 @@ if (( is_coupled == 1 )); then
     fi
 
     # define other needed locations/files
-    #   - Note: we must alter the extension of the linked cpp header files to be ".h90", as the
-    #           the nemo compilation tools don't respect ".h" files.
-    nemo_external_src_dir=${nemo_source_path}/nemo/src/external                                # where the "external" code sits
-    nemo_cppdef_config_link=${nemo_external_src_dir}/$(basename $cppdef_config_file .h).h90     # linked cpp config file
-    nemo_cppdef_sizes_link=${nemo_external_src_dir}/$(basename $cppdef_sizes_file .h).h90       # linked cpp sizes file
-    #needed_cpl_src_file=${CCRNSRC}/CanESM/CanCPL/src/comm/com_cpl.F90                           # orig. needed cplr src file
-    nemo_cpl_src_file=${nemo_external_src_dir}/com_cpl.F90                                      # copied (and modified) cplr src file
+    nemo_CanCPL_src_dir=${nemo_source_path}/nemo/src/CanCPL                                # where the "CanCPL" code sits
+    nemo_cppdef_config_link=${nemo_CanCPL_src_dir}/$(basename $cppdef_config_file .h).h90     # linked cpp config file
+    nemo_cppdef_sizes_link=${nemo_CanCPL_src_dir}/$(basename $cppdef_sizes_file .h).h90       # linked cpp sizes file
 
     # link in the cpp files (cleaning if they already exist)
     rm -f $nemo_cppdef_config_link
     rm -f $nemo_cppdef_sizes_link
     ln -s $cppdef_config_file $nemo_cppdef_config_link
     ln -s $cppdef_sizes_file $nemo_cppdef_sizes_link
-
-    # copy in external coupler file, and alter inlcude statements to use the .h90 links
-    #cp -f $needed_cpl_src_file $nemo_cpl_src_file
-    sed -i "s/$(basename $cppdef_config_file)\b/$(basename $nemo_cppdef_config_link)/g" $nemo_cpl_src_file
-    sed -i "s/$(basename $cppdef_sizes_file)\b/$(basename $nemo_cppdef_sizes_link)/g" $nemo_cpl_src_file
 
 fi
 
