@@ -251,17 +251,6 @@
       # the mesh mask file
       [ -s rs_mesh_mask.nc ] && tarlist="$tarlist rs_mesh_mask.nc"
 
-      # stdout/stderr files
-      if (( include_model_output_in_restart == 1 )); then
-          mkdir ocn_stdout_stderr_files
-          for rank in $(seq ${ocn_rank_range//:/ }); do
-              cp ${RANK_OUTPUT_PRFX}.${rank}.${RANK_OUTPUT_SFX} ocn_stdout_stderr_files/
-          done
-          tar -czf ocn_stdout_stderr_files.tar.gz ocn_stdout_stderr_files
-          rm -rf ocn_stdout_stderr_files
-          tarlist+=" ocn_stdout_stderr_files.tar.gz"
-      fi
-
       # MOVE ADDITIONAL FILES INTO ARCHIVE
       mv -f $tarlist NEXT_RESTART_ARC || :
 
