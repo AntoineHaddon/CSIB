@@ -47,7 +47,7 @@
       !
       ln_closea    = .false.    !  F => suppress closed seas (defined by closea_mask field)
       !                         !       from the bathymetry at runtime.
-      ln_use_jattr = .false.     !  use (T) the file attribute: open_ocean_jstart, if present
+      ln_use_jattr = .true.     !  use (T) the file attribute: open_ocean_jstart, if present
       !                       !  in netcdf input files, as the start j-row for reading
 /
 !-----------------------------------------------------------------------
@@ -86,21 +86,23 @@
 !-----------------------------------------------------------------------
 &namsbc        !   Surface Boundary Condition manager                   (default: NO selection)
 !-----------------------------------------------------------------------
-   nn_fsbc     = 1         !  frequency of SBC module call
+   nn_fsbc     = 4         !  frequency of SBC module call
                            !     (also = the frequency of sea-ice & iceberg model call)
                      ! Type of air-sea fluxes
+                     !   ln_blk or ln_cpl will be set to true by config-canesm
    ln_flx      = .false.   !  flux formulation                          (T => fill namsbc_flx )
-   ln_blk      = .true.    !  Bulk formulation                          (T => fill namsbc_blk )
+   ln_blk      = .false.    !  Bulk formulation                          (T => fill namsbc_blk )
       !              ! Type of coupling (Ocean/Ice/Atmosphere) :
    ln_cpl      = .false.   !  atmosphere coupled   formulation          ( requires key_oasis3 )
+     lk_cancpl   = .true.    !  CanCPL coupler 
                      ! Sea-ice :
    nn_ice      = 2         !  =2 or 3 automatically for SI3 or CICE    ("key_si3" or "key_cice")
                            !          except in AGRIF zoom where it has to be specified
                      ! Misc. options of sbc :
    ln_traqsr   = .true.    !  Light penetration in the ocean            (T => fill namtra_qsr)
-   ln_ssr      = .true.    !  Sea Surface Restoring on T and/or S       (T => fill namsbc_ssr)
-   ln_rnf      = .true.    !  runoffs                                   (T => fill namsbc_rnf)
-   nn_fwb      = 3         !  FreshWater Budget:
+   ln_ssr      = .false.    !  Sea Surface Restoring on T and/or S       (T => fill namsbc_ssr)
+   ln_rnf      = .false.    !  runoffs                                   (T => fill namsbc_rnf)
+   nn_fwb      = 0         !  FreshWater Budget:
    !                       !    =2 annual global mean of e-p-r set to zero
    ln_wave     = .false.   !  Activate coupling with wave  (T => fill namsbc_wave)
    ln_cdgw     = .false.   !  Neutral drag coefficient read from wave model (T => ln_wave=.true. & fill namsbc_wave)
@@ -147,6 +149,36 @@
    sn_snow     = 'ncar_precip.15JUNE2009_fill',   -1.        , 'SNOW'    ,   .false.   , .true. , 'yearly'  , 'weights_core_orca2_bilinear_noc.nc' , ''       , ''
    sn_slp      = 'slp.15JUNE2009_fill'        ,    6.        , 'SLP'     ,   .false.   , .true. , 'yearly'  , 'weights_core_orca2_bilinear_noc.nc' , ''       , ''
    sn_tdif     = 'taudif_core'                ,   24.        , 'taudif'  ,   .false.   , .true. , 'yearly'  , 'weights_core_orca2_bilinear_noc.nc' , ''       , ''
+/
+!-----------------------------------------------------------------------
+&namsbc_cpl        ! Stochastic parametrization of EOS                      (default: OFF)
+!-----------------------------------------------------------------------
+nn_cats_cpl = 1
+sn_snd_temp   =       'oce and ice'          ,    'no'    ,     ''      ,         ''           ,   ''    
+sn_snd_alb    =       'none'                 ,    'no'    ,     ''      ,         ''           ,   ''    
+sn_snd_thick  =       'weighted iwe and swe' ,    'no'    ,     ''      ,         ''           ,   ''    
+sn_snd_crt    =       'none'                 ,    'no'    , 'spherical' , 'eastward-northward' ,  'T'       
+sn_snd_co2    =       'coupled'              ,    'no'    ,     ''      ,         ''           ,   ''        
+sn_snd_crtw   =   'none'                     ,    'no'    ,     ''      ,         ''           , 'U,V'
+sn_snd_ifrac  =   'none'                     ,    'no'    ,     ''      ,         ''           ,   ''
+sn_snd_wlev   =   'none'                     ,    'no'    ,     ''      ,         ''           ,   ''
+sn_snd_cond   =   'none'                     ,    'no'    ,     ''      ,         ''           ,   ''
+sn_snd_thick1 =   'none'                     ,    'no'    ,     ''      ,         ''           ,   ''
+sn_snd_mpnd   =   'none'                     ,    'no'    ,     ''      ,         ''           ,   ''
+sn_snd_sstfrz =   'none'                     ,    'no'    ,     ''      ,         ''           ,   ''
+sn_snd_ttilyr =   'none'                     ,    'no'    ,     ''      ,         ''           ,   ''
+! receive
+sn_rcv_w10m   =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_taumod =       'none'                 ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_tau    =       'oce and ice'          ,    'no'    , 'spherical' , 'eastward-northward',  'T'   
+sn_rcv_dqnsdt =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_qsr    =       'conservative'         ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_qns    =       'conservative'         ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_emp    =       'conservative'         ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_rnf    =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_cal    =       'none'                 ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
+
 /
 !-----------------------------------------------------------------------
 &namtra_qsr    !   penetrative solar radiation                          (ln_traqsr =T)

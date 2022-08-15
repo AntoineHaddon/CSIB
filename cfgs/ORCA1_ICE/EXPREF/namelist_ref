@@ -199,12 +199,14 @@
    ln_flx      = .false.   !  flux formulation                          (T => fill namsbc_flx )
    ln_blk      = .false.   !  Bulk formulation                          (T => fill namsbc_blk )
       !              ! Type of coupling (Ocean/Ice/Atmosphere) :
-   ln_cpl      = .false.   !  atmosphere coupled   formulation          ( requires key_oasis3 )
-   ln_mixcpl   = .false.   !  forced-coupled mixed formulation          ( requires key_oasis3 )
-   nn_components = 0       !  configuration of the opa-sas OASIS coupling
-      !                    !  =0 no opa-sas OASIS coupling: default single executable config.
-      !                    !  =1 opa-sas OASIS coupling: multi executable config., OPA component
-      !                    !  =2 opa-sas OASIS coupling: multi executable config., SAS component
+   ln_cpl      = .false.   !  atmosphere coupled   formulation          ( requires key_oasis3 or key_cancpl )
+     lk_oasis    = .false.   !  ( requires key_oasis3 )
+     lk_cancpl   = .true.    !  Choose only one coupler, oasis3 or cancpl.( requires key_cancpl )
+     ln_mixcpl   = .false.   !  forced-coupled mixed formulation          ( requires key_oasis3 )
+     nn_components = 0       !  configuration of the opa-sas OASIS coupling
+        !                    !  =0 no opa-sas OASIS coupling: default single executable config.
+        !                    !  =1 opa-sas OASIS coupling: multi executable config., OPA component
+        !                    !  =2 opa-sas OASIS coupling: multi executable config., SAS component
                      ! Sea-ice :
    nn_ice      = 0         !  =0 no ice boundary condition
       !                    !  =1 use observed ice-cover                 (  => fill namsbc_iif )
@@ -292,7 +294,7 @@
    sn_tdif     = 'taudif_core'                ,   24         , 'taudif'  ,   .false.   , .true. , 'yearly'  , 'weights_core_orca2_bilinear_noc.nc' , ''       , ''
 /
 !-----------------------------------------------------------------------
-&namsbc_cpl    !   coupled ocean/atmosphere model                       ("key_oasis3")
+&namsbc_cpl    !   coupled ocean/atmosphere model                       ("key_oasis3 or key_cancpl")
 !-----------------------------------------------------------------------
    nn_cplmodel       =     1   !  Maximum number of models to/from which NEMO is potentially sending/receiving data
    ln_usecplmask     = .false. !  use a coupling mask file to merge data received from several models
