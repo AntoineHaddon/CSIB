@@ -232,15 +232,23 @@ if (( is_coupled == 1 )); then
     fi
 
     # define other needed locations/files
-    nemo_CanCPL_src_dir=${nemo_source_path}/nemo/src/CanCPL                                # where the "CanCPL" code sits
+    #   - Note: we must alter the extension of the linked cpp header files to be ".h90", as the
+    #           the nemo compilation tools don't respect ".h" files.
+    nemo_CanCPL_src_dir=${nemo_source_path}/nemo/src/CanCPL                                 # where the "CanCPL" code sits
     nemo_cppdef_config_link=${nemo_CanCPL_src_dir}/$(basename $cppdef_config_file .h).h90     # linked cpp config file
     nemo_cppdef_sizes_link=${nemo_CanCPL_src_dir}/$(basename $cppdef_sizes_file .h).h90       # linked cpp sizes file
+    nemo_cpl_src_file=${nemo_CanCPL_src_dir}/com_cpl.F90                                      # copied (and modified) cplr src file
 
     # link in the cpp files (cleaning if they already exist)
     rm -f $nemo_cppdef_config_link
     rm -f $nemo_cppdef_sizes_link
     ln -s $cppdef_config_file $nemo_cppdef_config_link
     ln -s $cppdef_sizes_file $nemo_cppdef_sizes_link
+
+    # copy in CanCPL coupler file, and alter inlcude statements to use the .h90 links
+    sed -i "s/$(basename $cppdef_config_file)\b/$(basename $nemo_cppdef_config_link)/g" $nemo_cpl_src_file
+    sed -i "s/$(basename $cppdef_sizes_file)\b/$(basename $nemo_cppdef_sizes_link)/g" $nemo_cpl_src_file
+
 
 fi
 
