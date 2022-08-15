@@ -86,7 +86,7 @@ echo "#################### Start NEMO pre-processing #################"
   year_run_start=${run_start_time[0]:-1}
 
   # Forcing method (coupled or bulk_iaf is supported)
-  nemo_forcing=${nemo_forcing:-coupled}
+  nemo_forcing=${nemo_forcing:coupled}
 
   # Define nn_ice which identifies the ice model used in NEMO
   #     0 : no ice boundary condition (does this mean NO ice?)
@@ -116,7 +116,9 @@ echo "#################### Start NEMO pre-processing #################"
   nemo_data_1m_salinity_nomask=${nemo_data_1m_salinity_nomask:=urdy_eorca1_en4_v1.1.1995_2014.monthlymean_eorca1t_nemo_l75_jstart.nc}
 
   # Interannual forcing consideration (TODO : add "coupled" mayby)
-  if [[ $nemo_forcing == "bulk_iaf" ]]; then
+  if [[ $nemo_forcing == "coupled" ]]; then
+    echo $nemo_forcing == "coupled": no files needed, fields from CanCPL
+  elif [[ $nemo_forcing == "bulk_iaf" ]]; then
     nemo_runoff_core_monthly=${nemo_runoff_core_monthly:=urdy_eorca1_runoff_v2.2x_jstart.nc}
     nemo_weights_bicubic2=${nemo_weights_bicubic2:=urdy_weights_canamgrid_bicubic_eorca1_jstart.nc}
     nemo_weights_bilinear2=${nemo_weights_bilinear2:=urdy_weights_canamgrid_bilinear_eorca1_jstart.nc}
