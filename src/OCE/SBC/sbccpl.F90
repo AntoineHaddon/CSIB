@@ -166,6 +166,7 @@ MODULE sbccpl
    INTEGER, PARAMETER ::   jps_ttilyr = 38   ! sea ice top layer temp
 
    INTEGER, PARAMETER ::   jpsnd      = 38   ! total number of fields sent
+         !(/ 2*, 3*, 4-, 5*, 6-, 1*, 7*, 8*, 15*, 9*, 10*, 11*, 12*, 13*, 14* /)
 
 #if ! defined key_oasis3
    ! Dummy variables to enable compilation when oasis3 is not being used
@@ -488,7 +489,7 @@ CONTAINS
          l_rnfcpl              = .TRUE.                      ! -> no need to read runoffs in sbcrnf
          ln_rnf                = nn_components /= jp_iam_sas ! -> force to go through sbcrnf if not sas
          IF(lwp) WRITE(numout,*)
-         IF(lwp) WRITE(numout,*) '   runoffs received from oasis -> force ln_rnf = ', ln_rnf
+         IF(lwp) WRITE(numout,*) '   runoffs received from the coupler -> force ln_rnf = ', ln_rnf
       ENDIF
       !
       srcv(jpr_cal)%clname = 'OCalving'   ;  IF( TRIM( sn_rcv_cal%cldes) == 'coupled' )   srcv(jpr_cal)%laction = .TRUE.
@@ -1064,7 +1065,7 @@ CONTAINS
       !   initialisation of the coupler  !
       ! ================================ !
 
-      CALL cpl_define(jprcv, jpsnd, nn_cplmodel)
+      CALL cpl_define(jprcv, jpsnd, nn_cplmodel) !! ICI 
 
       IF (ln_usecplmask) THEN
          xcplmask(:,:,:) = 0.

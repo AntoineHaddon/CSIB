@@ -146,6 +146,7 @@ CONTAINS
          WRITE(numout,*) '         mixed forced-coupled     formulation       ln_mixcpl     = ', ln_mixcpl
          WRITE(numout,*) '         OASIS coupling (with atm or sas)           lk_oasis      = ', lk_oasis
          WRITE(numout,*) '         components of your executable              nn_components = ', nn_components
+         WRITE(numout,*) '         CanCPL coupling (with CanAM)               lk_cancpl     = ', lk_cancpl
          WRITE(numout,*) '      Sea-ice : '
          WRITE(numout,*) '         ice management in the sbc (=0/1/2/3)       nn_ice        = ', nn_ice
          WRITE(numout,*) '         ice embedded into ocean                    ln_ice_embd   = ', ln_ice_embd
@@ -222,12 +223,14 @@ CONTAINS
       END SELECT
       !                             !* coupled options
       IF( ln_cpl ) THEN
-         IF( .NOT. (lk_oasis .or. lk_cancpl) )   CALL ctl_stop( 'sbc_init : coupled mode with an atmosphere model (ln_cpl=T)',   &
-            &                                  '           required to defined lk_oasis = T ' )
+         IF( .NOT. (lk_oasis .or. lk_cancpl) .or. (lk_oasis .and. lk_cancpl) )   &
+            &                   CALL ctl_stop( 'sbc_init : coupled mode with an atmosphere model (ln_cpl=T)',   &
+            &                                  '           required to defined lk_oasis = .true. or lk_cancpl = .true.' )
       ENDIF
       IF( ln_mixcpl ) THEN
-         IF( .NOT. (lk_oasis .or. lk_cancpl) )   CALL ctl_stop( 'sbc_init : mixed forced-coupled mode (ln_mixcpl=T) ',   &
-            &                                  '           required to defined lk_oasis = T ' )
+         IF( .NOT. (lk_oasis .or. lk_cancpl) .or. (lk_oasis .and. lk_cancpl) )   & 
+                                CALL ctl_stop( 'sbc_init : mixed forced-coupled mode (ln_mixcpl=T) ',   &
+            &                                  '           required to defined lk_oasis = .true. or lk_cancpl = .true. ' )
          IF( .NOT.ln_cpl    )   CALL ctl_stop( 'sbc_init : mixed forced-coupled mode (ln_mixcpl=T) requires ln_cpl = T' )
          IF( nn_components /= jp_iam_nemo )    &
             &                   CALL ctl_stop( 'sbc_init : the mixed forced-coupled mode (ln_mixcpl=T) ',   &
