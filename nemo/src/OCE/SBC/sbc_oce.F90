@@ -33,8 +33,18 @@ MODULE sbc_oce
    LOGICAL , PUBLIC ::   ln_usr         !: user defined formulation
    LOGICAL , PUBLIC ::   ln_flx         !: flux      formulation
    LOGICAL , PUBLIC ::   ln_blk         !: bulk formulation
+   ! the switch for the copupler need to be set here because it is used in nemogcm
+   !   before it could be read in the namelists, Nicolas Lambert 
+#if defined key_oasis3
+   LOGICAL , PUBLIC ::   lk_oasis = .TRUE. !: OASIS enable
+#else
    LOGICAL , PUBLIC ::   lk_oasis = .FALSE. !: OASIS unused
-   LOGICAL , PUBLIC ::   lk_cancpl = .FALSE. !: If true, use the CanCPL coupler interface
+#endif
+#if defined key_cancpl
+   LOGICAL , PUBLIC ::   lk_cancpl = .TRUE. !: true, use the CanCPL coupler interface
+#else
+   LOGICAL , PUBLIC ::   lk_cancpl = .FALSE. !: false, CanCPL unused
+#endif
    LOGICAL , PUBLIC ::   ln_cpl         !: ocean-atmosphere coupled formulation
    LOGICAL , PUBLIC ::   ln_mixcpl      !: ocean-atmosphere forced-coupled mixed formulation
    LOGICAL , PUBLIC ::   ln_dm2dc       !: Daily mean to Diurnal Cycle short wave (qsr)

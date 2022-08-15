@@ -11,7 +11,7 @@ MODULE cpl_cancpl
   !! Larry Solheim Aug,2015
   !!=======================================================================
   !!-----------------------------------------------------------------------
-  !!   'key_cancpl'                    coupled Ocean/Atmosphere via CanCPL
+  !!   'lk_cancpl'                    coupled Ocean/Atmosphere via CanCPL
   !!-----------------------------------------------------------------------
   !!   cpl_cancpl_init     : initialize coupled mode communication
   !!   cpl_cancpl_define   : define all fields to be sent of received
@@ -417,6 +417,10 @@ contains
                           trim(var_list_info(nemo_n_send_var)%name)
                 call flush(6)
                 call ctl_stop("STOP", " cpl_cancpl_define", "Unable to determine send rank")
+              elseif ( rank == ocn_master ) then
+                write(6,*)"cpl_cancpl_define: rank for ", &
+                          trim(var_list_info(nemo_n_send_var)%name),' is ',var_list_info(nemo_n_send_var)%rank
+                call flush(6)
               endif
 
            end do
