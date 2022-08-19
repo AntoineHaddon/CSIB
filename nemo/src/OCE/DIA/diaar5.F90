@@ -415,8 +415,8 @@ CONTAINS
          IF( iom_use( 'sshthster' ) ) THEN
             ALLOCATE( zsaldta(jpi,jpj,jpk,jpts) )
             CALL iom_open ( 'sali_ref_clim_monthly', inum )
-            CALL iom_get  ( inum, jpdom_data, 'vosaline' , zsaldta(:,:,:,1), 1  )
-            CALL iom_get  ( inum, jpdom_data, 'vosaline' , zsaldta(:,:,:,2), 12 )
+            CALL iom_get  ( inum, jpdom_data, 'vosaline' , zsaldta(:,:,:,1), 1 , lrowattr=ln_use_jattr)
+            CALL iom_get  ( inum, jpdom_data, 'vosaline' , zsaldta(:,:,:,2), 12, lrowattr=ln_use_jattr)
             CALL iom_close( inum )
 
             sn0(:,:,:) = 0.5_wp * ( zsaldta(:,:,:,1) + zsaldta(:,:,:,2) )        

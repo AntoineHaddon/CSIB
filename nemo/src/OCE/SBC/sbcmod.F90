@@ -144,9 +144,9 @@ CONTAINS
          WRITE(numout,*) '      Type of coupling (Ocean/Ice/Atmosphere) : '
          WRITE(numout,*) '         ocean-atmosphere coupled formulation       ln_cpl        = ', ln_cpl
          WRITE(numout,*) '         mixed forced-coupled     formulation       ln_mixcpl     = ', ln_mixcpl
-!!gm  lk_oasis is controlled by key_oasis3  ===>>>  It shoud be removed from the namelist
          WRITE(numout,*) '         OASIS coupling (with atm or sas)           lk_oasis      = ', lk_oasis
          WRITE(numout,*) '         components of your executable              nn_components = ', nn_components
+         WRITE(numout,*) '         CanCPL coupling (with CanAM)               lk_cancpl     = ', lk_cancpl
          WRITE(numout,*) '      Sea-ice : '
          WRITE(numout,*) '         ice management in the sbc (=0/1/2/3)       nn_ice        = ', nn_ice
          WRITE(numout,*) '         ice embedded into ocean                    ln_ice_embd   = ', ln_ice_embd
@@ -211,24 +211,26 @@ CONTAINS
          IF(lwp) WRITE(numout,*) '   ==>>>   NEMO configured as a single executable (i.e. including both OPA and Surface module)'
       CASE( jp_iam_opa  )
          IF(lwp) WRITE(numout,*) '   ==>>>   Multi executable configuration. Here, OPA component'
-         IF( .NOT.lk_oasis )   CALL ctl_stop( 'sbc_init : OPA-SAS coupled via OASIS, but key_oasis3 disabled' )
+         IF( .NOT.lk_oasis )   CALL ctl_stop( 'sbc_init : OPA-SAS coupled via OASIS, but lk_oasis = F ' )
          IF( ln_cpl        )   CALL ctl_stop( 'sbc_init : OPA-SAS coupled via OASIS, but ln_cpl = T in OPA'   )
          IF( ln_mixcpl     )   CALL ctl_stop( 'sbc_init : OPA-SAS coupled via OASIS, but ln_mixcpl = T in OPA' )
       CASE( jp_iam_sas  )
          IF(lwp) WRITE(numout,*) '   ==>>>   Multi executable configuration. Here, SAS component'
-         IF( .NOT.lk_oasis )   CALL ctl_stop( 'sbc_init : OPA-SAS coupled via OASIS, but key_oasis3 disabled' )
+         IF( .NOT.lk_oasis )   CALL ctl_stop( 'sbc_init : OPA-SAS coupled via OASIS, but lk_oasis = F ' )
          IF( ln_mixcpl     )   CALL ctl_stop( 'sbc_init : OPA-SAS coupled via OASIS, but ln_mixcpl = T in OPA' )
       CASE DEFAULT
          CALL ctl_stop( 'sbc_init : unsupported value for nn_components' )
       END SELECT
       !                             !* coupled options
       IF( ln_cpl ) THEN
-         IF( .NOT. (lk_oasis .or. lk_cancpl) )   CALL ctl_stop( 'sbc_init : coupled mode with an atmosphere model (ln_cpl=T)',   &
-            &                                  '           required to defined key_oasis3' )
+         IF( .NOT. (lk_oasis .or. lk_cancpl) .or. (lk_oasis .and. lk_cancpl) )   &
+            &                   CALL ctl_stop( 'sbc_init : coupled mode with an atmosphere model (ln_cpl=T)',   &
+            &                                  '           required to defined lk_oasis = .true. or lk_cancpl = .true.' )
       ENDIF
       IF( ln_mixcpl ) THEN
-         IF( .NOT. (lk_oasis .or. lk_cancpl) )   CALL ctl_stop( 'sbc_init : mixed forced-coupled mode (ln_mixcpl=T) ',   &
-            &                                  '           required to defined key_oasis3' )
+         IF( .NOT. (lk_oasis .or. lk_cancpl) .or. (lk_oasis .and. lk_cancpl) )   & 
+                                CALL ctl_stop( 'sbc_init : mixed forced-coupled mode (ln_mixcpl=T) ',   &
+            &                                  '           required to defined lk_oasis = .true. or lk_cancpl = .true. ' )
          IF( .NOT.ln_cpl    )   CALL ctl_stop( 'sbc_init : mixed forced-coupled mode (ln_mixcpl=T) requires ln_cpl = T' )
          IF( nn_components /= jp_iam_nemo )    &
             &                   CALL ctl_stop( 'sbc_init : the mixed forced-coupled mode (ln_mixcpl=T) ',   &

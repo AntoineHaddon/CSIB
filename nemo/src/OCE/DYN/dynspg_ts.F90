@@ -33,6 +33,7 @@ MODULE dynspg_ts
    USE zdf_oce         ! vertical physics: variables
    USE zdfdrg          ! vertical physics: top/bottom drag coef.
    USE sbcisf          ! ice shelf variable (fwfisf)
+   USE sbcspp  , ONLY : ln_vertspp
    USE sbcapr          ! surface boundary condition: atmospheric pressure
    USE dynadv    , ONLY: ln_dynadv_vec
    USE dynvor          ! vortivity scheme indicators
@@ -330,18 +331,12 @@ CONTAINS
       !                                   !=  Net water flux forcing applied to a water column  =!
       !                                   ! ---------------------------------------------------  !
       IF (ln_bt_fw) THEN                          ! FORWARD integration: use kt+1/2 fluxes (NOW+1/2)
-         zssh_frc(:,:) = r1_rau0 * ( emp(:,:)             - rnf(:,:)              + fwfisf(:,:)                  &
-#if defined key_si3
-                       &            + fmmflx(:,:)                                                                 &
-#endif
-                       &           )
+         zssh_frc(:,:) = r1_rau0 * ( emp(:,:)             - rnf(:,:)              + fwfisf(:,:) )
+         IF (ln_vertspp) zssh_frc(:,:) = zssh_frc(:,:) + r1_rau0*fmmflx(:,:)
       ELSE                                        ! CENTRED integration: use kt-1/2 + kt+1/2 fluxes (NOW)
          zztmp = r1_rau0 * r1_2
-         zssh_frc(:,:) = zztmp * (  emp(:,:) + emp_b(:,:) - rnf(:,:) - rnf_b(:,:) + fwfisf(:,:) + fwfisf_b(:,:) &
-#if defined key_si3
-                       &          + fmmflx(:,:) + fmmflx_b                                                      &
-#endif
-                       &         )
+         zssh_frc(:,:) = zztmp * (  emp(:,:) + emp_b(:,:) - rnf(:,:) - rnf_b(:,:) + fwfisf(:,:) + fwfisf_b(:,:) )
+         IF (ln_vertspp) zssh_frc(:,:) = zssh_frc(:,:) + zztmp * (fmmflx(:,:) + fmmflx_b(:,:))
       ENDIF
       !                                   !=  Add Stokes drift divergence  =!   (if exist)
       IF( ln_sdw ) THEN                   !  -----------------------------  !

@@ -488,7 +488,7 @@ CONTAINS
          l_rnfcpl              = .TRUE.                      ! -> no need to read runoffs in sbcrnf
          ln_rnf                = nn_components /= jp_iam_sas ! -> force to go through sbcrnf if not sas
          IF(lwp) WRITE(numout,*)
-         IF(lwp) WRITE(numout,*) '   runoffs received from oasis -> force ln_rnf = ', ln_rnf
+         IF(lwp) WRITE(numout,*) '   runoffs received from the coupler -> force ln_rnf = ', ln_rnf
       ENDIF
       !
       srcv(jpr_cal)%clname = 'OCalving'   ;  IF( TRIM( sn_rcv_cal%cldes) == 'coupled' )   srcv(jpr_cal)%laction = .TRUE.

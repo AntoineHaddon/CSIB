@@ -1,5 +1,5 @@
 <NODE_RESOURCES>
-  <BATCH machine="${BACKEND}" queue="${BACKEND_XFER_Q}" memory="500M" mpi="0" wallclock="10" cpu="1" soumet_args="-waste 99 -shell /bin/bash"/>
+  <BATCH machine="${FRONTEND}" queue="${FRONTEND_DEFAULT_Q}" memory="500M" wallclock="10" soumet_args="-shell bash"/>
 
   <!-- comment section batch resource definition 
   <BATCH machine="${BACKEND}" queue="${BACKEND_XFER_Q}" memory="500M" mpi="0" wallclock="10" cpu="1" soumet_args="-waste 99 -smt -norset -shell /bin/bash"/>

@@ -27,6 +27,7 @@ MODULE dynnxt
    USE oce            ! ocean dynamics and tracers
    USE dom_oce        ! ocean space and time domain
    USE sbc_oce        ! Surface boundary condition: ocean fields
+   USE sbcspp  , ONLY : ln_vertspp
    USE sbcrnf         ! river runoffs
    USE sbcisf         ! ice shelf
    USE phycst         ! physical constants
@@ -245,12 +246,12 @@ CONTAINS
                END DO
             ENDIF
 
-#if defined key_si3
-            DO jk=1,jpkm1
-               e3t_b(:,:,jk) = e3t_b(:,:,jk) - zcoef * ( fmmflx_b(:,:) - fmmflx(:,:) ) * tmask(:,:,jk) &
-                             &                       * e3t_n(:,:,jk) /  ( ht_n(:,:) + 1._wp - ssmask(:,:) )
-            ENDDO
-#endif
+            IF (ln_vertspp) THEN
+               DO jk=1,jpkm1
+                  e3t_b(:,:,jk) = e3t_b(:,:,jk) - zcoef * ( fmmflx_b(:,:) - fmmflx(:,:) ) * tmask(:,:,jk) &
+                                &                       * e3t_n(:,:,jk) /  ( ht_n(:,:) + 1._wp - ssmask(:,:) )
+               ENDDO
+            ENDIF
             !
             IF( ln_dynadv_vec ) THEN      ! Asselin filter applied on velocity
                ! Before filtered scale factor at (u/v)-points

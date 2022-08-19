@@ -121,25 +121,20 @@ for arg in "$@"; do
             var=$(echo $arg | awk -F\= '{printf "%s",$1}')
             val=$(echo $arg | awk -F\= '{printf "%s",$2}')
             case $var in
-                srcpath)    nemo_source_path="$val" ;;
+		        xios_comp_np) xios_comp_np="$val"   ;;  # number of processors to use during xios compilation    
+        		xios_arch)  xios_arch="$val"  ;;        # xios arch name
+        		xios_netcdf_lib)  xios_netcdf_lib="$val" ;; # choice of netcdf library (netcdf4_par or netcdf4_seq)
+                srcpath)    nemo_source_path="$val" ;;  # location of code in a dir structure (instead of cloning)
                 exec)       nemo_exec="$val" ;;         # name for the executable created here
                 cfg)        nemo_config="$val" ;;       # name of subdir in which config lives
                 refcfg)     nemo_ref_config="$val" ;;   # name of subdir in which ref config lives
-                arch)       nemo_arch="$val" ;;         # nemo arch name
+                nemo_arch)  nemo_arch="$val" ;;         # nemo arch name
+        		util_arch)  util_arch="$val" ;;         # utility arch name (for RTD, REBUILD and so on)
+		        nemo_env)   nemo_env="$val";;           # filename containing the nemo compilation & execution environment
+        		util_env)   util_env="$val";;           # filename containing the utility (e.g., RTD, REBUILD, etc) environment
                 add_key)    nemo_add_cpp_keys="$val" ;; # a list of cpp keys to add before compiling nemo
                 del_key)    nemo_del_cpp_keys="$val" ;; # a list of cpp keys to remove before compiling nemo
-                exec)       nemo_exec="$val" ;;             # name for the executable created here
-                cfg)        nemo_config="$val" ;;           # name of subdir in which config lives
-                nemo_arch)  nemo_arch_identifier="$val" ;;  # makenemo identifier for file with arch specific make defs
-                util_arch)  nemo_util_arch_file="$val";;
-                xios_comp_np) xios_comp_np="$val";;         # Number of processes to use for xios compilation
-                add_key)    nemo_add_cpp_keys="$val" ;;     # a list of cpp keys to add before compiling nemo
-                del_key)    nemo_del_cpp_keys="$val" ;;     # a list of cpp keys to remove before compiling nemo
-                xios_arch)  xios_arch="$val"  ;;        # xios arch name
-                xios_netcdf_lib)  xios_netcdf_lib="$val" ;; # choice of netcdf library (netcdf4_par or netcdf4_seq)
-            	  xios_full)  xios_full="--full" ;;           # The full compilation of xios
-            	  xios_dev)   xios_dev="--dev" ;;             # A developer mode for xios
-            	  is_coupled) is_coupled="$val" ;;             # If set, bring in additional files needed for coupled model
+                is_coupled) is_coupled="$val" ;;             # If set, bring in additional files needed for coupled model
                 *)          usage "Invalid command line arg --> $arg <--"; exit 1  ;;
              esac
              ;;
@@ -155,14 +150,14 @@ if [[ -n "$storage_loc" ]]; then
     mkdir -p $storage_loc
 fi
 
-# make sure the required arguments were given
-[[ -z "$nemo_source_path" ]]        && bail "srcpath must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
-[[ -z "$nemo_exec" ]]               && bail "exec must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
-[[ -z "$nemo_config" ]]             && bail "cfg must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
-[[ -z "$nemo_arch_identifier" ]]    && bail "nemo_arch must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
-[[ -z "$nemo_util_arch_file" ]]     && bail "util_arch must be given at the command line! See ${THIS_SCRIPT_PATH} -h"
-
-# make sure the source directory exists
+# Make sure the required arguments were given
+[[ -z "$nemo_source_path" ]]    && bail "srcpath must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
+[[ -z "$nemo_exec" ]]           && bail "exec must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
+[[ -z "$nemo_config" ]]         && bail "cfg must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
+[[ -z "$nemo_arch" ]]           && bail "nemo_arch must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
+[[ -z "$util_arch" ]]           && bail "util_arch must be given at the command line! See ${THIS_SCRIPT_PATH} -h"
+[[ -z "$nemo_env" ]]            && bail "nemo_env must be given at the command line! See ${THIS_SCRIPT_PATH} -h"
+[[ -z "$util_env" ]]            && bail "util_env must be given at the command line! See ${THIS_SCRIPT_PATH} -h"
 [[ -d "$nemo_source_path" ]] || bail "The given srcpath ---> $nemo_source_path <--- doesn't exist!"
 
 #========================
@@ -181,15 +176,14 @@ nemo_diag_build_dir=${nemo_source_path}/diag/build                         # whe
 nemo_rtd_build_dir=${nemo_source_path}/rtd/build                           # where make gets called to build the rtd execs
 nemo_rbld_build_dir=${nemo_source_path}/nemo/${tooldir}/REBUILD_NEMO/src/build  # where make gets called to build the tile rebuild execs
 
-# define which build directories just use `make` and what compiler template they use
+# define which build directories just use `make`
 make_build_dirs="$nemo_diag_build_dir $nemo_rtd_build_dir $nemo_rbld_build_dir"
 
 # define target executables (must be consistent with make_xios, makenemo and other makefiles)
 target_xios_exec=${nemo_xios_build_dir}/bin/xios_server.exe
 target_model_exec=${nemo_model_build_dir}/${cfgdir}/${nemo_config}/BLD/bin/nemo.exe
 target_diag_execs="nemo_diag.exe nemo_diag_cmoc.exe nemo_diag_canoe.exe"
-#target_rtd_execs="nemo_physical_rtd.exe nemo_carbon-cmoc_rtd.exe nemo_carbon-canoe_rtd.exe nemo_ice_rtd.exe"
-target_rtd_execs="nemo_physical_rtd.exe nemo_ice_rtd.exe"
+target_rtd_execs="nemo_physical_rtd.exe nemo_carbon-cmoc_rtd.exe nemo_carbon-canoe_rtd.exe nemo_ice_rtd.exe"
 target_rbld_execs="rebuild_nemo.exe rebuild_nemo_mpi.exe"
 
 # prepends paths to diag/rtd/rbld exec lists
@@ -202,8 +196,7 @@ target_rbld_execs=$(echo $target_rbld_execs | sed "s#[^ ]*#${nemo_rbld_build_dir
 model_execs="$target_xios_exec $target_model_exec"
 
 # all non-model executables get saved without renamining, store in list
-# non_model_execs="$target_diag_execs $target_rtd_execs $target_rbld_execs"
-non_model_execs="$target_rtd_execs $target_rbld_execs"
+non_model_execs="$target_diag_execs $target_rtd_execs $target_rbld_execs" 
 
 # When debugging is requested, use the debug arch and update the name of the executable
 if (( debug == 1 )); then
@@ -226,9 +219,12 @@ fi
 #======================================
 # Coupled consideration for model comp
 #======================================
-if (( $is_coupled == 1 )); then
-    # we must get code from the coupler repo, assumed to be clone besides the nemo source code
-    canesm_src="${nemo_source_path}/../"
+if (( is_coupled == 1 )); then
+    # we must get code from the coupler repo, assumed to be housed in $CCRNSRC
+    #  and cpp header files that should be contained in $WRK_DIR - confirm this
+    #  This have to be done because different CanESM config could different header files (true?)
+    [[ -z "$CCRNSRC" ]] && 
+        bail "You are trying to compile for a coupled config and CCRNSRC isn't set! Has the coupled env been set up?"
 
     # define header files and check that they exist
     cppdef_config_file=${WRK_DIR}/config/cppdef_config.h
@@ -245,10 +241,10 @@ if (( $is_coupled == 1 )); then
     # define other needed locations/files
     #   - Note: we must alter the extension of the linked cpp header files to be ".h90", as the
     #           the nemo compilation tools don't respect ".h" files.
-    nemo_external_src_dir=${nemo_source_path}/nemo/src/external                                 # where the "external" code sits
-    nemo_cppdef_config_link=${nemo_external_src_dir}/$(basename $cppdef_config_file .h).h90     # linked cpp config file
-    nemo_cppdef_sizes_link=${nemo_external_src_dir}/$(basename $cppdef_sizes_file .h).h90       # linked cpp sizes file
-    nemo_cpl_src_file=${nemo_external_src_dir}/com_cpl.F90                                      # copied (and modified) cplr src file
+    nemo_CanCPL_src_dir=${nemo_source_path}/nemo/src/CanCPL                                 # where the "CanCPL" code sits
+    nemo_cppdef_config_link=${nemo_CanCPL_src_dir}/$(basename $cppdef_config_file .h).h90     # linked cpp config file
+    nemo_cppdef_sizes_link=${nemo_CanCPL_src_dir}/$(basename $cppdef_sizes_file .h).h90       # linked cpp sizes file
+    nemo_cpl_src_file=${nemo_CanCPL_src_dir}/com_cpl.F90                                      # copied (and modified) cplr src file
 
     # link in the cpp files (cleaning if they already exist)
     rm -f $nemo_cppdef_config_link
@@ -256,9 +252,11 @@ if (( $is_coupled == 1 )); then
     ln -s $cppdef_config_file $nemo_cppdef_config_link
     ln -s $cppdef_sizes_file $nemo_cppdef_sizes_link
 
-    # copy in external coupler file, and alter inlcude statements to use the .h90 links
+    # copy in CanCPL coupler file, and alter inlcude statements to use the .h90 links
     sed -i "s/$(basename $cppdef_config_file)\b/$(basename $nemo_cppdef_config_link)/g" $nemo_cpl_src_file
     sed -i "s/$(basename $cppdef_sizes_file)\b/$(basename $nemo_cppdef_sizes_link)/g" $nemo_cpl_src_file
+
+
 fi
 
 #===========
@@ -292,11 +290,13 @@ echo 'make_xios '"${ARGS[@]}"
 echo "Compiling in:  ${nemo_model_build_dir}"
 cd $nemo_model_build_dir
 
-# # source nemo compilation environment
-source ${nemo_model_build_dir}/arch/CCCMA/arch-${nemo_arch_identifier}.env
+# source nemo compilation environment
+echo "NEMO compilation environment file = $nemo_env"
+source ${nemo_source_path}/nemo/arch/CCCMA/$nemo_env ||
+    bail "Failed to source the nemo compilation environment! Is $nemo_env available?"
 
-# source nemo_comp_env ||
-#     bail "Failed to source the nemo compilation environment! Are the modules available?"
+# nemo compilation environment
+echo "NEMO arch file = $nemo_arch"
 
 # clean temporary dirs if this is a "clean" compile
 if (( clean_compile == 1 )); then
@@ -354,6 +354,34 @@ for f in $files_to_reset; do
         echo "Resetting $f to HEAD"
         git checkout HEAD $f
     fi
+done 
+
+#-------------------------------
+# compile exec's using makefiles
+#-------------------------------
+# source utility compilation environment
+util_compilation_env_file=${nemo_source_path}/nemo/arch/CCCMA/$util_env
+echo "Utility compilation environment file = $util_env"
+source $util_compilation_env_file ||
+	            bail "Failed to source the nemo compilation environment file - $util_compilation_env_file! Does it exist? Are the modules available?"
+
+# COMPILER_TEMPLATE (utility arch file) is Makefile argument
+COMPILER_TEMPLATE=${nemo_source_path}/nemo/arch/CCCMA/$util_arch
+echo "Utility arch file = $util_arch"
+
+for build_dir in $make_build_dirs; do 
+    echo ""
+    echo "=============================================="
+    echo "    Compiling executables in $build_dir       "
+    echo "=============================================="
+    [[ -n "$build_dir" ]] && cd $build_dir
+
+    # compile
+    if (( clean_compile == 1 )); then 
+        make clean
+    fi
+    make COMPILER_TEMPLATE=$COMPILER_TEMPLATE
+    [[ -n "$build_dir" ]] && make
 done
 
 
@@ -397,8 +425,9 @@ else
 
     # remaining execs, which can't be renamed
     for executable in $non_model_execs; do
-        linked_exec=${storage_loc}/$(basename $executable)
-        rm -rf $linked_exec ; ln -s $executable $linked_exec
+        linked_exec=${link_loc}/$(basename $executable)
+        [[ -f "$linked_exec" ]] && rm $linked_exec
+        ln -sf $executable $linked_exec
     done
 fi
 

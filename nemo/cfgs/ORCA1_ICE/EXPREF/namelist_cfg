@@ -31,12 +31,13 @@
       !                          !    = 2 nn_date0 read in restart  ; nn_it000 : check consistancy between namelist and restart
    cn_ocerst_in    = "restart"   !  suffix of ocean restart name (input)
    cn_ocerst_out   = "restart"   !  suffix of ocean restart name (output)
+   ln_clobber  = .true.    !  clobber (overwrite) an existing file
 /
 !-----------------------------------------------------------------------
 &namdom        !   time and space domain
 !-----------------------------------------------------------------------
    rn_rdt      = 2700.     !  time step for the dynamics and tracer
-   ln_meshmask = .true.
+   ln_meshmask = .false.   !  =T create a mesh file
 /
 !-----------------------------------------------------------------------
 &namcfg        !   parameters of the configuration                      (default: use namusr_def in namelist_cfg)
@@ -58,7 +59,7 @@
 !-----------------------------------------------------------------------
    !                       ! =T  read T-S fields for:
    ln_tsd_init = .true.          !  ocean initialisation
-   ln_tsd_dmp  = .true.          !  T-S restoring   (see namtra_dmp)
+   ln_tsd_dmp  = .false.          !  T-S restoring   (see namtra_dmp)
 
    cn_dir = './'     !  root directory for the T-S data location
    !___________!_________________________!___________________!___________!_____________!________!___________!__________________!__________!_______________!
@@ -92,11 +93,12 @@
    nn_fsbc     = 4         !  frequency of SBC module call
                            !     (also = the frequency of sea-ice & iceberg model call)
                      ! Type of air-sea fluxes
+                     !   ln_blk or ln_cpl will be set to true by config-canesm
    ln_flx      = .false.   !  flux formulation                          (T => fill namsbc_flx )
    ln_blk      = .false.    !  Bulk formulation                          (T => fill namsbc_blk )
       !              ! Type of coupling (Ocean/Ice/Atmosphere) :
-   ln_cpl      = .true.   !  atmosphere coupled   formulation          ( requires key_oasis3 )
-   lk_cancpl = .true.
+   ln_cpl      = .false.   !  atmosphere coupled   formulation          ( requires key_oasis3 )
+     lk_cancpl   = .true.    !  CanCPL coupler 
                      ! Sea-ice :
    nn_ice      = 2         !  =2 or 3 automatically for SI3 or CICE    ("key_si3" or "key_cice")
                            !          except in AGRIF zoom where it has to be specified
@@ -151,6 +153,36 @@
    sn_snow     = 'ncar_precip.15JUNE2009_fill',   -1.        , 'SNOW'    ,   .false.   , .true. , 'yearly'  , 'weights_core_orca2_bilinear_noc.nc' , ''       , ''
    sn_slp      = 'slp.15JUNE2009_fill'        ,    6.        , 'SLP'     ,   .false.   , .true. , 'yearly'  , 'weights_core_orca2_bilinear_noc.nc' , ''       , ''
    sn_tdif     = 'taudif_core'                ,   24.        , 'taudif'  ,   .false.   , .true. , 'yearly'  , 'weights_core_orca2_bilinear_noc.nc' , ''       , ''
+/
+!-----------------------------------------------------------------------
+&namsbc_cpl        ! Stochastic parametrization of EOS                      (default: OFF)
+!-----------------------------------------------------------------------
+nn_cats_cpl = 1
+sn_snd_temp   =       'oce and ice'          ,    'no'    ,     ''      ,         ''           ,   ''    
+sn_snd_alb    =       'none'                 ,    'no'    ,     ''      ,         ''           ,   ''    
+sn_snd_thick  =       'weighted iwe and swe' ,    'no'    ,     ''      ,         ''           ,   ''    
+sn_snd_crt    =       'none'                 ,    'no'    , 'spherical' , 'eastward-northward' ,  'T'       
+sn_snd_co2    =       'coupled'              ,    'no'    ,     ''      ,         ''           ,   ''        
+sn_snd_crtw   =   'none'                     ,    'no'    ,     ''      ,         ''           , 'U,V'
+sn_snd_ifrac  =   'none'                     ,    'no'    ,     ''      ,         ''           ,   ''
+sn_snd_wlev   =   'none'                     ,    'no'    ,     ''      ,         ''           ,   ''
+sn_snd_cond   =   'none'                     ,    'no'    ,     ''      ,         ''           ,   ''
+sn_snd_thick1 =   'none'                     ,    'no'    ,     ''      ,         ''           ,   ''
+sn_snd_mpnd   =   'none'                     ,    'no'    ,     ''      ,         ''           ,   ''
+sn_snd_sstfrz =   'none'                     ,    'no'    ,     ''      ,         ''           ,   ''
+sn_snd_ttilyr =   'none'                     ,    'no'    ,     ''      ,         ''           ,   ''
+! receive
+sn_rcv_w10m   =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_taumod =       'none'                 ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_tau    =       'oce and ice'          ,    'no'    , 'spherical' , 'eastward-northward',  'T'   
+sn_rcv_dqnsdt =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_qsr    =       'conservative'         ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_qns    =       'conservative'         ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_emp    =       'conservative'         ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_rnf    =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_cal    =       'none'                 ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
+
 /
 !-----------------------------------------------------------------------
 &namtra_qsr    !   penetrative solar radiation                          (ln_traqsr =T)

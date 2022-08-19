@@ -76,9 +76,10 @@ def calc_nemo_chunk_dates(run_start_year, run_start_month, loop, nemo_freq_month
     cl_start_cal_month = (cl_start_nmonth)%12 if cl_start_nmonth%12 > 0 else 12
     cl_end_cal_month =  cl_end_nmonth%12 if cl_end_nmonth%12 > 0 else 12
     # Get the calendar start/end year for each loop segment
-    cl_start_cal_year = (sm + ll*nf-1)/12 + sy
+    cl_start_cal_year = int((sm + ll*nf-1)/12 + sy)
     cl_end_cal_year = int(math.ceil((sm + (ll+1)*nf -1)/12.0)) + sy -1
-    cl_start_cal_day = 01
+
+    cl_start_cal_day = 0o1
     cl_end_cal_day = days_in_month[cl_end_cal_month]
     
     # List of all years in this chunk
@@ -113,9 +114,9 @@ def calc_nemo_iters(chunk_start_month, chunk_start_year, chunk_end_month, chunk_
     nemo_n_iters = total_days_in_chunk * sec_per_day / nemo_rdt
 
     # Compute how many days have been run up until now.
-    print [1 + i%12 for i in range(chunk_start_month-1)]
+    print ( [1 + i%12 for i in range(chunk_start_month-1)] )
     months_before_chunk = [1 + i%12  for i in range(chunk_start_month-1)]
-    print months_before_chunk
+    print ( months_before_chunk )
     days_permonth_before_chunk = [ days_in_month[m] for m in months_before_chunk ]
     total_days_before_chunk = sum(days_permonth_before_chunk) + 365*(chunk_start_year-1)
     
@@ -165,9 +166,9 @@ if __name__ == '__main__':
         raise TypeError("compute_iteration_info FAILURE: Loop index must be an integer")
 
     # Get some run information from resources.def
-    if not os.environ.has_key("SEQ_EXP_HOME"):
+    if not "SEQ_EXP_HOME" in os.environ:
         raise SystemExit("compute_iteration_info FAILURE:: SEQ_EXP_HOME must be defined")     
-    
+
 #    try:
     if True:
         run_start_year = subprocess.Popen(['getdef', 'resources', 'NEMO_RUN_START_YEAR'],stdout=subprocess.PIPE).communicate()[0].strip()

@@ -369,7 +369,7 @@ CONTAINS
          IF(lwp) WRITE(numout,*) 
          IF(lwp) WRITE(numout,*) ' read in the file depht over which runoffs are distributed'
          CALL iom_open ( "runoffs", inum )                           ! open file
-         CALL iom_get  ( inum, jpdom_data, 'rodepth', h_rnf )   ! read the river mouth array
+         CALL iom_get  ( inum, jpdom_data, 'rodepth', h_rnf, lrowattr=ln_use_jattr )   ! read the river mouth array
          CALL iom_close( inum )                                        ! close file
          !
          nk_rnf(:,:) = 0                               ! set the number of level over which river runoffs are applied

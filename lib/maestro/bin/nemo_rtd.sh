@@ -157,7 +157,7 @@ if [ $nemo_rtd -eq 1 ]; then
   for i in *rtd.nc; do
      mv $i sc_${cn_exp}_$i
      cp sc_${cn_exp}_$i $OUTPUT_PATH/sc_${cn_exp}_$i
-     cp sc_${cn_exp}_$i ${SITESTORE_ROOT}/prod/rtd/nemo_rtd/sc_${cn_exp}_$i
+     cp sc_${cn_exp}_$i ${SITESTORE_ROOT}/rtd_files/cannemo/sc_${cn_exp}_$i
      tar -rvf $OUTPUT_PATH/${cn_exp}_${chunk_end_date}_restart.tar sc_${cn_exp}_$i
   done
 

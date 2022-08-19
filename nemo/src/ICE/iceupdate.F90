@@ -163,7 +163,7 @@ CONTAINS
             ! See sbc_spp_div in sbcspp
             IF (.not. ln_vertspp) THEN
                ! Mass flux + F/M mass flux (always ice/ocean mass exchange)
-               emp(ji,jj)    = emp_oce(ji,jj) + fmmflx(ji,jj)
+               emp(ji,jj)    = emp_oce(ji,jj) - wfx_ice(ji,jj) - wfx_snw(ji,jj) - wfx_err_sub(ji,jj)   ! mass flux + F/M mass flux (always ice/ocean mass exchange)
             ENDIF
 
             ! Salt flux at the ocean surface

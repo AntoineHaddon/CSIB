@@ -113,15 +113,8 @@ CONTAINS
             ALLOCATE( closea_mask(jpi,jpj) , STAT=ierr )
             IF( ierr /= 0 )   CALL ctl_stop( 'STOP', 'dom_clo: failed to allocate closea_mask array')
             zdata_in(:,:) = 0.0
-            CALL iom_get ( inum, jpdom_data, 'closea_mask', zdata_in )
-            closea_mask(:,:) = zdata_in(:,:)
-            ! The following line seems to have a problem, possibly because tmask doesn't mask the halo points and
-            ! the IOM routine does return the fill values for the land-masked regions.
-            ! In any case, with the default fill value of 99999, this ends up meaning that jncs ends up being 99999
-            ! which is very clearly incorrect. The NINT also seems unnecessary since zdata_in is already an integer
-            ! closea_mask(:,:) = NINT(zdata_in(:,:)) * tmask(:,:,1)
-
-
+            CALL iom_get ( inum, jpdom_data, 'closea_mask', zdata_in, lrowattr=ln_use_jattr)
+            closea_mask(:,:) = NINT(zdata_in(:,:)) * tmask(:,:,1)
             ! number of closed seas = global maximum value in closea_mask field
             jncs = maxval(closea_mask(:,:))
             CALL mpp_max('closea', jncs)
@@ -148,7 +141,7 @@ CONTAINS
                l_clo_rnf = .true.
                ALLOCATE( closea_mask_rnf(jpi,jpj) , STAT=ierr )
                IF( ierr /= 0 )   CALL ctl_stop( 'STOP', 'dom_clo: failed to allocate closea_mask_rnf array')
-               CALL iom_get ( inum, jpdom_data, 'closea_mask_rnf', zdata_in )
+               CALL iom_get ( inum, jpdom_data, 'closea_mask_rnf', zdata_in, lrowattr=ln_use_jattr)
                closea_mask_rnf(:,:) = NINT(zdata_in(:,:)) * tmask(:,:,1)
                ! number of closed seas rnf mappings = global maximum in closea_mask_rnf field
                jncsr = maxval(closea_mask_rnf(:,:))
@@ -168,7 +161,7 @@ CONTAINS
                l_clo_rnf = .true.
                ALLOCATE( closea_mask_empmr(jpi,jpj) , STAT=ierr )
                IF( ierr /= 0 )   CALL ctl_stop( 'STOP', 'dom_clo: failed to allocate closea_mask_empmr array')
-               CALL iom_get ( inum, jpdom_data, 'closea_mask_empmr', zdata_in )
+               CALL iom_get ( inum, jpdom_data, 'closea_mask_empmr', zdata_in, lrowattr=ln_use_jattr)
                closea_mask_empmr(:,:) = NINT(zdata_in(:,:)) * tmask(:,:,1)
                ! number of closed seas empmr mappings = global maximum value in closea_mask_empmr field
                jncse = maxval(closea_mask_empmr(:,:))
@@ -406,6 +399,8 @@ CONTAINS
 
       IF( ln_timing )  CALL timing_stop('sbc_clo')
       !
+      IF( ln_timing )  CALL timing_stop('sbc_clo')
+
    END SUBROUTINE sbc_clo
 
    SUBROUTINE clo_rnf( p_rnfmsk )
@@ -470,7 +465,7 @@ CONTAINS
          id = iom_varid(inum, 'closea_mask', ldstop = .false.)
          IF( id > 0 ) THEN
             IF( lwp ) WRITE(numout,*) 'Suppressing closed seas in bathymetry based on closea_mask field,'
-            CALL iom_get ( inum, jpdom_data, 'closea_mask', zdata_in )
+            CALL iom_get ( inum, jpdom_data, 'closea_mask', zdata_in, lrowattr=ln_use_jattr)
             closea_mask(:,:) = NINT(zdata_in(:,:))
             WHERE( closea_mask(:,:) > 0 )
                k_top(:,:) = 0

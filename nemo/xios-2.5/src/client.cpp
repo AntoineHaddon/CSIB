@@ -260,7 +260,6 @@ namespace xios
         if (CXios::usingOasis) oasis_finalize();
         else MPI_Finalize() ;
       }
-      
       info(20) << "Client side context is finalized"<<endl ;
       report(0) <<" Performance report : Whole time from XIOS init and finalize: "<< CTimer::get("XIOS init/finalize").getCumulatedTime()<<" s"<<endl ;
       report(0) <<" Performance report : total time spent for XIOS : "<< CTimer::get("XIOS").getCumulatedTime()<<" s"<<endl ;
@@ -272,6 +271,7 @@ namespace xios
       report(0)<< " Memory report : Minimum buffer size required : " << CClientBuffer::maxRequestSize << " bytes" << endl ;
       report(0)<< " Memory report : increasing it by a factor will increase performance, depending of the volume of data wrote in file at each time step of the file"<<endl ;
       report(100)<<CTimer::getAllCumulatedTime()<<endl ;
+ 
    }
 
     /*!

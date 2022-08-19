@@ -468,6 +468,7 @@
     acc_cp data_1m_salinity_nomask.nc              $nemo_data_1m_salinity_nomask
     acc_cp weights_bic2.nc        $nemo_weights_bicubic2   # weights for bulk mode
     acc_cp weights_bil2.nc        $nemo_weights_bilinear2  # weights for bulk mode
+    acc_cp LandMask.nc            $nemo_LandMask           # LandMask for bulk mode
     #acc_cp weights_bic3.nc        $nemo_weights_bicubic3   # weights for flux mode
     #acc_cp weights_bil3.nc        $nemo_weights_bilinear3  # weights for flux mode
 
@@ -495,6 +496,7 @@
         yd=`expr ${iaf_loop_year} - ${iaf_year_offset}`
         fyl=`expr ${fy} - '(' '(' ${yearc} - 1 ')' / ${yd} ')' \* ${yd}`           
         forcing_year=`expr ${fyl} | awk  '{printf "%04d",$1}'`
+
       
         acc_cp tair10m_y${yearc}.nc          ${nemo_t}_y${forcing_year}.nc
         acc_cp uwnd10m_y${yearc}.nc          ${nemo_u}_y${forcing_year}.nc

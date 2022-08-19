@@ -533,6 +533,7 @@ CONTAINS
       REAL(wp) ::   zorca_res                     ! local scalars
       REAL(wp) ::   zjglo, zperio                 !   -      -
       INTEGER, DIMENSION(4) ::   idvar, idimsz    ! size   of dimensions
+      INTEGER                           ::   jstartrow               ! start point for 2nd dimension (local)
       !!----------------------------------------------------------------------
       !
       IF(lwp) THEN
@@ -572,7 +573,14 @@ CONTAINS
       kpi = idimsz(1)
       kpj = idimsz(2)
       kpk = idimsz(3)
-      CALL iom_get( inum, 'jpjglo', zjglo  )   ;   kpj = NINT( zjglo )
+      !CALL iom_get( inum, 'jpjglo', zjglo  )   ;   kpj = NINT( zjglo )
+      ! adjust kpj when ln_use_jattr is true
+      jstartrow = 1
+      IF (ln_use_jattr) THEN 
+         CALL iom_getatt(inum, 'open_ocean_jstart', jstartrow ) ! -999 is returned if the attribute is not found
+         jstartrow = MAX(1,jstartrow)
+      ENDIF
+      kpj = kpj - jstartrow +1 
       CALL iom_get( inum, 'jperio', zperio )   ;   kperio = NINT( zperio )
       CALL iom_close( inum )
       !

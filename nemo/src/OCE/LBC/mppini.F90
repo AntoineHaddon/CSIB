@@ -324,10 +324,10 @@ CONTAINS
 
       IF( numbot /= -1 )   CALL iom_close( numbot )
       IF( numbdy /= -1 )   CALL iom_close( numbdy )
-
-      ALLOCATE(  nfiimpp(jpni,jpnj), nfipproc(jpni,jpnj), nfilcit(jpni,jpnj) ,     &
-         &       nimppt(jpnij) ,  ibonit(jpnij) , nlcit(jpnij) , nlcjt(jpnij) ,    &
-         &       njmppt(jpnij) ,  ibonjt(jpnij) , nldit(jpnij) , nldjt(jpnij) ,    &
+    
+      ALLOCATE(  nfiimpp(jpni,jpnj), nfipproc(jpni,jpnj), nfilcit(jpni,jpnj) ,    &
+         &       nimppt(jpnij) , ibonit(jpnij) , nlcit(jpnij) , nlcjt(jpnij) ,    &
+         &       njmppt(jpnij) , ibonjt(jpnij) , nldit(jpnij) , nldjt(jpnij) ,    &
          &       offsetst(jpnij), jpdtott(jpnij), nleit(jpnij) , nlejt(jpnij) ,    &
          &       iin(jpnij), ii_nono(jpnij), ii_noea(jpnij),   &
          &       ijn(jpnij), ii_noso(jpnij), ii_nowe(jpnij),   &
@@ -715,7 +715,7 @@ CONTAINS
          ENDIF
          IF (llwrtlay) THEN
             WRITE(inum,*)
-            WRITE(inum,*)
+        WRITE(inum,*)
             WRITE(inum,*) 'number of subdomains located along the north fold : ', ndim_rank_north
             WRITE(inum,*) 'Rank of the subdomains located along the north fold : ', ndim_rank_north
             DO jproc = 1, ndim_rank_north, 5
@@ -1181,19 +1181,28 @@ CONTAINS
       LOGICAL, DIMENSION(jpiglo,kjcnt), INTENT(  out) :: ldoce       ! ldoce(i,j) = .true. if the point (i,j) is ocean
       !
       INTEGER                           ::   inumsave                ! local logical unit
-      REAL(wp), DIMENSION(jpiglo,kjcnt) ::   zbot, zbdy
+      INTEGER                           ::   jstartrow               ! start point for 2nd dimension (local)
+      REAL(wp), DIMENSION(jpiglo,kjcnt) ::   zbot, zbdy 
       !!----------------------------------------------------------------------
       !
       inumsave = numout   ;   numout = numnul   !   redirect all print to /dev/null
+      ! NL : add the open_ocean_jstart to the loading of the bottom_level/bdy_msk if present in domain_cfg.nc
+      !      and ln_use_jattr = .true. in the namelist_cfg. Use what is done in iom.F90 as a reference.
+      !
+      jstartrow = 1
+      IF (ln_use_jattr) THEN 
+         CALL iom_getatt(numbot, 'open_ocean_jstart', jstartrow ) ! -999 is returned if the attribute is not found
+         jstartrow = MAX(1,jstartrow)
+      ENDIF
       !
       IF( numbot /= -1 ) THEN
-         CALL iom_get( numbot, jpdom_unknown, 'bottom_level', zbot, kstart = (/1,kjstr/), kcount = (/jpiglo, kjcnt/) )
+         CALL iom_get( numbot, jpdom_unknown, 'bottom_level', zbot, kstart = (/1,kjstr + jstartrow -1 /), kcount = (/jpiglo, kjcnt/) )
       ELSE
          zbot(:,:) = 1.                         ! put a non-null value
       ENDIF
 
-       IF( numbdy /= -1 ) THEN                  ! Adjust with bdy_msk if it exists
-         CALL iom_get ( numbdy, jpdom_unknown, 'bdy_msk', zbdy, kstart = (/1,kjstr/), kcount = (/jpiglo, kjcnt/) )
+       IF( numbdy /= -1 ) THEN                  ! Adjust with bdy_msk if it exists    
+         CALL iom_get ( numbdy, jpdom_unknown, 'bdy_msk', zbdy, kstart = (/1,kjstr + jstartrow -1 /), kcount = (/jpiglo, kjcnt/) )
          zbot(:,:) = zbot(:,:) * zbdy(:,:)
       ENDIF
       !

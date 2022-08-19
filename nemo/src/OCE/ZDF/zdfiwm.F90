@@ -457,23 +457,23 @@ CONTAINS
       !
       !                             ! read necessary fields
       CALL iom_open('mixing_power_bot',inum)       ! energy flux for high-mode wave breaking [W/m2]
-      CALL iom_get  (inum, jpdom_data, 'field', ebot_iwm, 1 ) 
+      CALL iom_get  (inum, jpdom_data, 'field', ebot_iwm, 1 , lrowattr=ln_use_jattr )
       CALL iom_close(inum)
       !
       CALL iom_open('mixing_power_pyc',inum)       ! energy flux for pynocline-intensified wave breaking [W/m2]
-      CALL iom_get  (inum, jpdom_data, 'field', epyc_iwm, 1 )
+      CALL iom_get  (inum, jpdom_data, 'field', epyc_iwm, 1, lrowattr=ln_use_jattr )
       CALL iom_close(inum)
       !
       CALL iom_open('mixing_power_cri',inum)       ! energy flux for critical slope wave breaking [W/m2]
-      CALL iom_get  (inum, jpdom_data, 'field', ecri_iwm, 1 )
+      CALL iom_get  (inum, jpdom_data, 'field', ecri_iwm, 1, lrowattr=ln_use_jattr )
       CALL iom_close(inum)
       !
       CALL iom_open('decay_scale_bot',inum)        ! spatially variable decay scale for high-mode wave breaking [m]
-      CALL iom_get  (inum, jpdom_data, 'field', hbot_iwm, 1 )
+      CALL iom_get  (inum, jpdom_data, 'field', hbot_iwm, 1, lrowattr=ln_use_jattr )
       CALL iom_close(inum)
       !
       CALL iom_open('decay_scale_cri',inum)        ! spatially variable decay scale for critical slope wave breaking [m]
-      CALL iom_get  (inum, jpdom_data, 'field', hcri_iwm, 1 )
+      CALL iom_get  (inum, jpdom_data, 'field', hcri_iwm, 1, lrowattr=ln_use_jattr )
       CALL iom_close(inum)
 
       ebot_iwm(:,:) = ebot_iwm(:,:) * ssmask(:,:)

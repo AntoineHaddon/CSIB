@@ -149,8 +149,8 @@ CONTAINS
       CALL iom_open ( cn_tide_load , inum )
       !
       DO itide = 1, nb_harmo
-         CALL iom_get  ( inum, jpdom_data,TRIM(Wave(ntide(itide))%cname_tide)//'_z1', ztr(:,:) )
-         CALL iom_get  ( inum, jpdom_data,TRIM(Wave(ntide(itide))%cname_tide)//'_z2', zti(:,:) )
+         CALL iom_get  ( inum, jpdom_data,TRIM(Wave(ntide(itide))%cname_tide)//'_z1', ztr(:,:), lrowattr=ln_use_jattr )
+         CALL iom_get  ( inum, jpdom_data,TRIM(Wave(ntide(itide))%cname_tide)//'_z2', zti(:,:), lrowattr=ln_use_jattr )
          !
          DO ji=1,jpi
             DO jj=1,jpj

@@ -43,7 +43,7 @@
   }
 
 echo "#################### Start NEMO pre-processing #################"
-
+  # TODO CanOE : add the top and CanOE namlist if activer
   nemo_namelists=( namelist_ref     \
                    namelist_cfg     \
                    namelist_ice_ref \
@@ -55,10 +55,6 @@ echo "#################### Start NEMO pre-processing #################"
   is_defined $chunk_start_date      || bail "nemo_prelude: chunk_start_date must be defined"
   is_defined $chunk_start_year      || bail "nemo_prelude: chunk_start_year must be defined"
   is_defined $chunk_start_month     || bail "nemo_prelude: chunk_start_month must be defined"
-  is_defined $chunk_stop_date       || bail "nemo_prelude: chunk_stop_date must be defined"
-  is_defined $chunk_stop_year       || bail "nemo_prelude: chunk_stop_year must be defined"
-  is_defined $chunk_stop_month      || bail "nemo_prelude: chunk_stop_month must be defined"
-  is_defined $current_year          || bail "nemo_prelude: current_year must be defined"
   is_defined $run_start_year        || bail "nemo_prelude: run_start_year must be defined"
   is_defined $run_start_month       || bail "nemo_prelude: run_start_month must be defined"
   is_defined $run_stop_year         || bail "nemo_prelude: run_stop_year must be defined"
@@ -67,7 +63,7 @@ echo "#################### Start NEMO pre-processing #################"
   is_defined $runid                 || bail "nemo_prelude: runid must be defined"
   is_defined $uxxx                  || bail "nemo_prelude: uxxx must be defined"
   is_defined $nemo_exec             || bail "nemo_prelude: nemo_exec must be defined"
-  is_defined $output_level          || bail "nemo_prelude: output_level must be defined"
+  is_defined $xios_exec             || bail "nemo_prelude: xios_exec must be defined"
   is_defined $runmode               || bail "nemo_prelude: runmode must be defined"
 
   # ================================
@@ -84,67 +80,91 @@ echo "#################### Start NEMO pre-processing #################"
 
   # nemo_from_rest is used to flag starting nemo from rest rather than a restart
   #     Either define nemo_restart or set nemo_from_rest = on but not both.
-  nemo_from_rest=${nemo_from_rest:=0}
+  nemo_from_rest=${nemo_from_rest:=off}
 
   # This is the start of the simulation
   year_run_start=${run_start_time[0]:-1}
 
   # Forcing method (coupled or bulk_iaf is supported)
-  nemo_forcing=${nemo_forcing:-coupled}
-
-  # IO specification files
-  #     If not defined a default version will be pulled for the given nemo_config
-  nemo_iodef=${nemo_iodef:=''}
+  nemo_forcing=${nemo_forcing:coupled}
 
   # Define nn_ice which identifies the ice model used in NEMO
   #     0 : no ice boundary condition (does this mean NO ice?)
   #     1 : observed ice cover
-  #     2 : LIM2 ice-model
-  #     3 : LIM3 ice-model
+  #     2 : SI3 ice-model
+  #     3 : CICE ice-model
   nn_ice=${nemo_nn_ice:=2}
 
   # Default input files
-  nemo_mixing_power_bot=nemo_4.0.1_orca2_mixing_power_bot.nc
-  nemo_mixing_power_pyc=nemo_4.0.1_orca2_mixing_power_pyc.nc
-  nemo_mixing_power_cri=nemo_4.0.1_orca2_mixing_power_cri.nc
-  nemo_decay_scale_bot=nemo_4.0.1_orca2_decay_scale_bot.nc
-  nemo_decay_scale_cri=nemo_4.0.1_orca2_decay_scale_cri.nc
-  nemo_eddy_viscosity_3D=urdy_eorca1_eddy_viscosity_3d_eorca1_jstart.nc
-  nemo_resto=nemo_4.0.1_orca2_resto.nc
-  nemo_empave_old=empave_old.dat
-  nemo_coordinates=eorca1_domcfg_eorca1v2.2x_orca_jstart_closea.nc
-  nemo_geothermal_heating=urdy_eorca1_goutorbe_1x1_0360_eorca1_v2.2x_jstart.nc
-  nemo_runoff_core_monthly=urdy_eorca1_runoff_v2.2x_jstart.nc
-  nemo_sss_data=urdy_eorca1_sss_1m_en4_eorca1_blackseapatch_northfoldfix_jstart.nc
-  nemo_sst_data=uros_sst_1m_en4_eorca1_blackseapatch_northfoldfix_jstart.nc
-  nemo_chlorophyll=nemo_4.0.1_orca2_chlorophyll.nc
-  nemo_calving=urdy_eorca1_ecalving_v2.2x_jstart.nc
-  nemo_bfr_coef=urdy_eorca1_bfr_coef01_jstart.nc
-  nemo_subbasins=urdy_eorca1_subbasins_cmip6_jstart.nc
-  nemo_weights_bicubic2=urdy_weights_canamgrid_bicubic_eorca1_jstart.nc
-  nemo_weights_bilinear2=urdy_weights_canamgrid_bilinear_eorca1_jstart.nc
-  nemo_data_1m_potential_temperature_nomask=urdy_eorca1_en4_v1.1.1995_2014.monthlymean_eorca1t_nemo_l75_jstart.nc
-  nemo_data_1m_salinity_nomask=urdy_eorca1_en4_v1.1.1995_2014.monthlymean_eorca1t_nemo_l75_jstart.nc
+  nemo_coordinates=${nemo_coordinates:=eorca1_domcfg_eorca1v2.2x_orca_jstart_closea.nc}
+  nemo_mixing_power_bot=${nemo_mixing_power_bot:=nemo_4.0.1_orca2_mixing_power_bot.nc}
+  nemo_mixing_power_pyc=${nemo_mixing_power_pyc:=nemo_4.0.1_orca2_mixing_power_pyc.nc}
+  nemo_mixing_power_cri=${nemo_mixing_power_cri:=nemo_4.0.1_orca2_mixing_power_cri.nc}
+  nemo_decay_scale_bot=${nemo_decay_scale_bot:=nemo_4.0.1_orca2_decay_scale_bot.nc}
+  nemo_decay_scale_cri=${nemo_decay_scale_cri:=nemo_4.0.1_orca2_decay_scale_cri.nc}
+  nemo_eddy_viscosity_3D=${nemo_eddy_viscosity_3D:=urdy_eorca1_eddy_viscosity_3d_eorca1_jstart.nc}
+  nemo_resto=${nemo_resto:=nemo_4.0.1_orca2_resto.nc}
+  nemo_empave_old=${nemo_empave_old:=empave_old.dat}
+  nemo_geothermal_heating=${nemo_geothermal_heating:=urdy_eorca1_goutorbe_1x1_0360_eorca1_v2.2x_jstart.nc}
+  nemo_sss_data=${nemo_sss_data:=urdy_eorca1_sss_1m_en4_eorca1_blackseapatch_northfoldfix_jstart.nc}
+  nemo_sst_data=${nemo_sst_data:=uros_sst_1m_en4_eorca1_blackseapatch_northfoldfix_jstart.nc}
+  nemo_chlorophyll=${nemo_chlorophyll:=nemo_4.0.1_orca2_chlorophyll.nc}
+  nemo_calving=${nemo_calving:=urdy_eorca1_ecalving_v2.2x_jstart.nc}
+  nemo_bfr_coef=${nemo_bfr_coef:=urdy_eorca1_bfr_coef01_jstart.nc}
+  nemo_subbasins=${nemo_subbasins:=urdy_eorca1_subbasins_cmip6_jstart.nc}
+  nemo_data_1m_potential_temperature_nomask=${nemo_data_1m_potential_temperature_nomask:=urdy_eorca1_en4_v1.1.1995_2014.monthlymean_eorca1t_nemo_l75_jstart.nc}
+  nemo_data_1m_salinity_nomask=${nemo_data_1m_salinity_nomask:=urdy_eorca1_en4_v1.1.1995_2014.monthlymean_eorca1t_nemo_l75_jstart.nc}
 
-  acc_cp mixing_power_bot.nc       $nemo_mixing_power_bot
-  acc_cp mixing_power_pyc.nc       $nemo_mixing_power_pyc
-  acc_cp mixing_power_cri.nc       $nemo_mixing_power_cri
-  acc_cp decay_scale_bot.nc        $nemo_decay_scale_bot
-  acc_cp decay_scale_cri.nc        $nemo_decay_scale_cri
-  acc_cp eddy_viscosity_3D.nc      $nemo_eddy_viscosity_3D
-  acc_cp resto.nc                  $nemo_resto
-  acc_cp EMPave_old.dat            $nemo_empave_old
+  # Interannual forcing consideration (TODO : add "coupled" mayby)
+  if [[ $nemo_forcing == "coupled" ]]; then
+    echo $nemo_forcing == "coupled": no files needed, fields from CanCPL
+  elif [[ $nemo_forcing == "bulk_iaf" ]]; then
+    nemo_runoff_core_monthly=${nemo_runoff_core_monthly:=urdy_eorca1_runoff_v2.2x_jstart.nc}
+    nemo_weights_bicubic2=${nemo_weights_bicubic2:=urdy_weights_canamgrid_bicubic_eorca1_jstart.nc}
+    nemo_weights_bilinear2=${nemo_weights_bilinear2:=urdy_weights_canamgrid_bilinear_eorca1_jstart.nc}
+
+    # loop the forching for yyyy-1  to  yyyy+1  to do the interpolation with dec 31st of yyyy-1 and Jan 1st yyyy+1
+    for current_year in `seq $(( $chunk_start_year -1 )) $(( $chunk_stop_year +1 )) `; do
+        ## first and last year won't find the yyyy-1 and yyyy+1 (respectivelly).
+        [[ $current_year -lt run_start_year || $current_year -gt run_stop_year ]] && continue
+
+        yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
+        fy=`expr ${yearc} + ${iaf_year_offset} | awk  '{printf "%04d",$1}'`
+        yd=`expr ${iaf_loop_year} - ${iaf_year_offset}`
+        fyl=`expr ${fy} - '(' '(' ${yearc} - 1 ')' / ${yd} ')' \* ${yd}`           
+        forcing_year=`expr ${fyl} | awk  '{printf "%04d",$1}'`
+        acc_cp tair10m_y${yearc}.nc          ${nemo_t}_y${forcing_year}.nc
+        acc_cp uwnd10m_y${yearc}.nc          ${nemo_u}_y${forcing_year}.nc
+        acc_cp vwnd10m_y${yearc}.nc          ${nemo_v}_y${forcing_year}.nc
+        acc_cp humi10m_y${yearc}.nc          ${nemo_q}_y${forcing_year}.nc
+        acc_cp qsr_y${yearc}.nc              ${nemo_qsr}_y${forcing_year}.nc
+        acc_cp qlw_y${yearc}.nc              ${nemo_qlw}_y${forcing_year}.nc
+        acc_cp precip_y${yearc}.nc           ${nemo_precip}_y${forcing_year}.nc
+        acc_cp snow_y${yearc}.nc             ${nemo_snow}_y${forcing_year}.nc
+	    acc_cp slp_y${yearc}.nc              ${nemo_slp}_y${forcing_year}.nc
+    done
+    acc_cp weights_bic2.nc           $nemo_weights_bicubic2   # weights for bulk mode
+    acc_cp weights_bil2.nc           $nemo_weights_bilinear2  # weights for bulk mode
+
+    acc_cp runoff.nc    $nemo_runoff_core_monthly
+  fi
+
   acc_cp domain_cfg.nc             $nemo_coordinates
+  acc_cp mixing_power_bot.nc       $nemo_mixing_power_bot # still used ?
+  acc_cp mixing_power_pyc.nc       $nemo_mixing_power_pyc # still used ?
+  acc_cp mixing_power_cri.nc       $nemo_mixing_power_cri # still used ?
+  acc_cp decay_scale_bot.nc        $nemo_decay_scale_bot # still used ?
+  acc_cp decay_scale_cri.nc        $nemo_decay_scale_cri # still used ?
+  acc_cp eddy_viscosity_3D.nc      $nemo_eddy_viscosity_3D # still used ?
+  acc_cp resto.nc                  $nemo_resto # still used ?
+  acc_cp EMPave_old.dat            $nemo_empave_old # still used ?
   acc_cp geothermal_heating.nc     $nemo_geothermal_heating
-  acc_cp runoff_core_monthly.nc    $nemo_runoff_core_monthly
   acc_cp sss_data.nc               $nemo_sss_data
   acc_cp sst_data.nc               $nemo_sst_data
   acc_cp chlorophyll.nc            $nemo_chlorophyll
-  acc_cp calving.nc                $nemo_calving
+  acc_cp calving.nc                $nemo_calving # still used ?
   acc_cp bfr_coef.nc               $nemo_bfr_coef
-  acc_cp subbasins.nc              $nemo_subbasins
-  acc_cp weights_bic2.nc           $nemo_weights_bicubic2   # weights for bulk mode
-  acc_cp weights_bil2.nc           $nemo_weights_bilinear2  # weights for bulk mode
+  acc_cp subbasins.nc              $nemo_subbasins  # still used ?  
   acc_cp data_1m_potential_temperature_nomask.nc $nemo_data_1m_potential_temperature_nomask
   acc_cp data_1m_salinity_nomask.nc              $nemo_data_1m_salinity_nomask
 
@@ -168,9 +188,11 @@ echo "#################### Start NEMO pre-processing #################"
   # ==============================
   # High level consistency checks
   # ==============================
+  # Translate switches into 0/1 booleans
+  ToF nemo_from_rest
   # Switch 'nemo_from_rest' off if this isn't the first job in the run as it was
   #   _already_ started from rest
-  if [[ "$chunk_start_date" != "$run_start_date" ]] && (( nemo_from_rest == 1 )); then
+  if [[ $chunk_start_date != $run_start_date ]] && (( nemo_from_rest == 1 )); then
     nemo_from_rest=0
   fi
 
@@ -181,15 +203,13 @@ echo "#################### Start NEMO pre-processing #################"
 
   # confirm a valid ice settings
   case $nn_ice in
-    2) ;; # LIM2 ice-model
+    2) ;; # SI3 ice-model
     *) bail "Invalid value for nn_ice = $nn_ice" ;;
   esac
 
   # =====================
   # Set Inherited params
   # =====================
-  # Translate switches into 0/1 booleans
-  ToF nemo_from_rest
 
   # Identify the location of the NEMO git repository and the commit within
   #   that repository that is associated with the current run
@@ -269,11 +289,11 @@ echo "#################### Start NEMO pre-processing #################"
     # Deal with "old" tar archives, or new directory based restarts
     if ! tar tf RESTART_ARC &> /dev/null; then
         # This is the directory. checksum the contents
-        sha1sum RESTART_ARC/* >> xnemo_access_log
+        #sha1sum RESTART_ARC/* >> xnemo_access_log
         mv RESTART_ARC/* . || bail "Cannot get files from restart directory"
     else
         # this is the tar file. checksum it.
-        sha1sum RESTART_ARC >> xnemo_access_log
+        #sha1sum RESTART_ARC >> xnemo_access_log
         # Ensure that we can overwrite existing files with files from the restart
         # Ignore any netcdf files in the restart
         tar tf RESTART_ARC | grep -v '\.nc$' | xargs -I'{}' chmod u+rw {} || :
@@ -292,12 +312,12 @@ echo "#################### Start NEMO pre-processing #################"
     # - for INPUT files each domain's specific file will look like ${cn_*rst_in}_MMMM.nc
     #   while for OUTPUT files, each domain's specific file will look like ${runid}_NNNNNNN_${cn_*rst_out}_MMMM.nc
     #       - where MMMM is the MPI task number and NNNNNNNN is the timestep
-    cn_ocerst_in="restart"          # ocean input
-    cn_ocerst_out="restart"         # ocean output
-    cn_icerst_in="restart_ice_in"   # ice input
-    cn_icerst_out="restart_ice"     # ice output
-    cn_trcrst_in="restart_trc_in"   # pisces input
-    cn_trcrst_out="restart_trc"     # pisces output
+    cn_ocerst_in=${nemo_cn_ocerst_in:="restart"}
+    cn_ocerst_out=${nemo_cn_ocerst_out:="restart"}
+    cn_icerst_in=${nemo_cn_icerst_in:="restart_ice_in"}
+    cn_icerst_out=${nemo_cn_icerst_out:="restart_ice"}
+    cn_trcrst_in=${nemo_cn_trcrst_in:="restart_trc_in"}
+    cn_trcrst_out=${nemo_cn_trcrst_out:="restart_trc"}
 
     # Ocean restart files
     found_rs=`(ls -1 *_${cn_ocerst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
@@ -330,6 +350,24 @@ echo "#################### Start NEMO pre-processing #################"
         echo "${cn_icerst_in}$sfx" >> input_ice_restart_file_names
       done
     fi
+
+    # trc restart files
+    rm -f input_trc_restart_file_names
+    touch input_trc_restart_file_names
+    found_rs=`(ls -1 *_${cn_trcrst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
+    [ -z "$found_rs" ] && found_rs=`(ls -1 *_${cn_trcrst_out}.nc || : ) 2>/dev/null`
+    if [ -z "$found_rs" ]; then
+      [ $nemo_carbon -eq 1 ] && bail "No trc restart files were found in $nemo_rs"
+      with_trc=off
+    else
+      for rsfile in $found_rs; do
+        [ $rsfile = 'cpl_restart.nc' ] && continue
+        sfx=`echo $rsfile|sed 's/^.*\(_[0-9][0-9][0-9][0-9].nc\).*$/\1/'`
+        [ "x$sfx" = "x$rsfile" ] && sfx=`echo $rsfile|sed 's/^.*\(\.nc\).*$/\1/'`
+        mv $rsfile ${cn_icerst_in}$sfx
+        echo "${cn_icerst_in}$sfx" >> input_ice_restart_file_names
+      done
+    fi
   fi
 
   # ===================
@@ -348,6 +386,20 @@ echo "#################### Start NEMO pre-processing #################"
   # # xios executable
   # ! is_file $xios_exec && cp ${CCRNSRC}/executables/$xios_exec .
 
-  rm -f mesh_mask*.nc
+  # ===================
+  # Access input files
+  # ===================
+  # - many are only pulled in they don't already exist
+  # - the main defaults are defined at the top of this script (should we move other runmode specific files?)
+
+  # run namelists
+  for f in "${nemo_namelists[@]}"; do
+      ! is_file $f && cp ${WRK_DIR}/config/namelists/${f} .
+  done
+
+  # nemo executable
+  ! is_file $nemo_exec && cp ${EXEC_STORAGE_DIR}/$nemo_exec .
+  # # xios executable
+  ! is_file $xios_exec && cp ${EXEC_STORAGE_DIR}/$xios_exec .
 
 echo "#################### Stop NEMO pre-processing #################"

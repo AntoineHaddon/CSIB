@@ -155,7 +155,7 @@ CONTAINS
       ! ------------------------
       IF ( ln_bdy .AND. ln_mask_file ) THEN
          CALL iom_open( cn_mask_file, inum )
-         CALL iom_get ( inum, jpdom_data, 'bdy_msk', bdytmask(:,:) )
+         CALL iom_get ( inum, jpdom_data, 'bdy_msk', bdytmask(:,:), lrowattr=ln_use_jattr )
          CALL iom_close( inum )
          DO jk = 1, jpkm1
             DO jj = 1, jpj
