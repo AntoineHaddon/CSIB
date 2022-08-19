@@ -65,7 +65,8 @@ namespace xios
         }
       
       }
-      
+
+#pragma optimize( "", off )      
       void CAverage::final(void)
       {
         if (hasMissingValue)
@@ -85,5 +86,6 @@ namespace xios
         this->nbcall = 0; 
 
       }
+#pragma optimize( "", on )
    } // namespace func
 } // namespace xios

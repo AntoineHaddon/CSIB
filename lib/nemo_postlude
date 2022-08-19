@@ -58,9 +58,6 @@
   nemo_save_rs=${nemo_save_rs:-on}
   ToF nemo_save_rs
 
-  # tarlist contains a list of additional files to add to the restart archive
-  tarlist=''
-
     # The file saved_history_file_names will contain a list of saved files to be archived.
     # Since "save" will blindly transpose all file name characters to lower case before
     # saving to DATAPATH, we must keep track of the case of these files in some way.
@@ -94,7 +91,7 @@
       for i in $(seq 0 $(($n_suffix-1))); do
           sfx=${nemo_hist_file_suffix_list_array_save[$i]}
           freq=${nemo_hist_file_freq_list_array_save[$i]}
-          pfx=${cn_exp}_${freq}_${run_start_date}_${run_stop_date}_$sfx
+          pfx=${cn_exp}_${freq}_${chunk_start_date//-/}_${chunk_stop_date//-/}_$sfx
           echo $pfx
           fnpatt=${pfx}_0000.nc
           if [ -s "$fnpatt" ]; then
@@ -102,11 +99,11 @@
              rm -rf $pfx
              mkdir $pfx
              mv ${pfx}_[0-9]*.nc $pfx
- 	         ncsave=${cn_exp}_${run_start_year}_m$( printf "%02d" $run_start_month )_${freq}_${sfx}
+ 	         ncsave=${cn_exp}_${chunk_start_year}_m$( printf "%02d" $chunk_start_month )_${freq}_${sfx}
              save $pfx ${uxxx}_$ncsave && echo "${uxxx}_$ncsave" >> saved_history_FILE_NAMES
           elif [ -s "${pfx}.nc" ]; then
              echo "found ${pfx}.nc"
-             ncsave=${cn_exp}_${run_start_year}_m$( printf "%02d" $run_start_month )_${freq}_${sfx}    
+             ncsave=${cn_exp}_${chunk_start_year}_m$( printf "%02d" $chunk_start_month )_${freq}_${sfx}    
              save ${pfx}.nc ${uxxx}_${ncsave}.nc && echo "${uxxx}_${ncsave}.nc" >> saved_history_FILE_NAMES
           fi   
        done
@@ -118,7 +115,7 @@
          rm -rf $pfx
          mkdir $pfx
          mv $pfx*.nc $pfx
-	     ncsave=${cn_exp}_${run_start_year}_m$( printf "%02d" $run_start_month )_mesh_mask
+	     ncsave=${cn_exp}_${chunk_start_year}_m$( printf "%02d" $chunk_start_month )_mesh_mask
          save $pfx ${uxxx}_$ncsave && echo "${uxxx}_$ncsave" >> saved_history_FILE_NAMES
       fi
     fi
@@ -132,6 +129,8 @@
     fi
 
     #=#=#=# Save the current restart files.
+    ToF nemo_trc
+    ToF nemo_carbon 
 
     if [ $nemo_save_rs -eq 1 ]; then
         # Collect up the current restarts and save them to DATAPATH
@@ -260,7 +259,7 @@
 	    # Assume we are running from gcmjcl
 	    rs_out=${model_rs}nemors
       else
-	    rs_out=${uxxx}_${cn_exp}_${run_stop_date}_restart.tar
+	    rs_out=${uxxx}_${cn_exp}_${chunk_stop_date//-/}_restart.tar
       fi
       save NEXT_RESTART_ARC $rs_out
       release NEXT_RESTART_ARC
