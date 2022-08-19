@@ -6,7 +6,7 @@ namespace xios
 {
    namespace func
    {
-      /// ////////////////////// Définitions ////////////////////// ///
+      /// ////////////////////// Dfinitions ////////////////////// ///
 
       CAverage::CAverage(CArray<double,1>& doutput)
          : SuperClass(StdString("average"), doutput)
@@ -65,8 +65,8 @@ namespace xios
         }
       
       }
-
-#pragma optimize( "", off )      
+      
+#pragma optimize( "", off )
       void CAverage::final(void)
       {
         if (hasMissingValue)
@@ -75,9 +75,9 @@ namespace xios
           double* out= doutput.dataFirst();
           int* nc=nbcalls.dataFirst() ;
           for (i=0; i<n; ++i, ++out,++nc) 
-            if (*nc!=0) 
+            if (*nc != 0) 
             {
-              *out  /= *nc;
+              *out/=*nc;
               *nc = 0 ;
             }
         

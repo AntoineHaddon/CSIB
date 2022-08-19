@@ -224,14 +224,15 @@ echo "#################### Start NEMO pre-processing #################"
   echo "### NEMO runtime: nemo_config = $nemo_config"
 
   run_start_day=1
-  run_start_date=$( printf "%04d%02d%02d" $run_start_year $run_start_month $run_start_day )
+  run_start_date=$( printf "%04d-%02d-%02d" $run_start_year $run_start_month $run_start_day )
   run_stop_day=$(days_in_month $run_stop_month)
-  run_stop_date=$( printf "%04d%02d%02d" $run_stop_year $run_stop_month $run_stop_day )
+  run_stop_date=$( printf "%04d-%02d-%02d" $run_stop_year $run_stop_month $run_stop_day )
   echo "nemo_prelude: chunk_start_date=$chunk_start_date"
+  echo "nemo_prelude: chunk_stop_date=$chunk_stop_date"
   echo "nemo_prelude: run_start_date=$run_start_date"
   echo "nemo_prelude: run_stop_date=$run_stop_date"
 
-  # Touch xnemo_access_log so that it will exist even if it never gets appended to
+  # Touch xnemo_access_log so that it will exist even if it never gets apppended to
   rm -f xnemo_access_log
   touch xnemo_access_log
 
@@ -363,11 +364,27 @@ echo "#################### Start NEMO pre-processing #################"
         [ $rsfile = 'cpl_restart.nc' ] && continue
         sfx=`echo $rsfile|sed 's/^.*\(_[0-9][0-9][0-9][0-9].nc\).*$/\1/'`
         [ "x$sfx" = "x$rsfile" ] && sfx=`echo $rsfile|sed 's/^.*\(\.nc\).*$/\1/'`
-        mv $rsfile ${cn_trcrst_in}$sfx
-        echo "${cn_trcrst_in}$sfx" >> input_trc_restart_file_names
+        mv $rsfile ${cn_icerst_in}$sfx
+        echo "${cn_icerst_in}$sfx" >> input_ice_restart_file_names
       done
     fi
   fi
+
+  # ===================
+  # Access input files
+  # ===================
+  # - many are only pulled in they don't already exist
+  # - the main defaults are defined at the top of this script (should we move other runmode specific files?)
+
+  # run namelists
+  for f in "${nemo_namelists[@]}"; do
+      ! is_file $f && cp ${WRK_DIR}/config/namelists/${f} .
+  done
+
+  # nemo executable
+  ! is_file $nemo_exec && cp ${CCRNSRC}/executables/$nemo_exec .
+  # # xios executable
+  # ! is_file $xios_exec && cp ${CCRNSRC}/executables/$xios_exec .
 
   # ===================
   # Access input files

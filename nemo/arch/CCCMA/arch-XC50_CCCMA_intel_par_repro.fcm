@@ -41,13 +41,13 @@
 # CFLAGS      compiler flags used with CC
 #
 
-%NCDF_HOME           /opt/cray/pe/netcdf-hdf5parallel/4.6.1.3/intel/16.0
-%HDF5_HOME           
+%NCDF_HOME
+%HDF5_HOME
 %XIOS_HOME           ${XIOS_DIR}
-%OASIS_HOME          
+%OASIS_HOME
 
-%NCDF_INC            
-%NCDF_LIB             
+%NCDF_INC
+%NCDF_LIB
 
 %XIOS_INC            -I%XIOS_HOME/inc
 %XIOS_LIB            -L%XIOS_HOME/lib -lxios -lstdc++
@@ -55,8 +55,8 @@
 %CPP                 cpp
 %FC                  ftn
 
-%FCFLAGS             -free -fpp -D_IMPI_=4 -D_Cray_XC30 -Qoption,link,--noinhibit-exec -list -traceback -O2 -init=arrays -init=zero -fp-model precise -assume buffered_stdout,protect_parens -convert big_endian -r8 -align array32byte
-%FFLAGS              -fixed -fpp -D_IMPI_=4 -D_Cray_XC30 -Qoption,link,--noinhibit-exec -list -traceback -O2 -init=arrays -init=zero -fp-model precise -assume buffered_stdout,protect_parens -convert big_endian -r8 -align array32byte
+%FCFLAGS             -free -fpp -D_IMPI_=4 -D_Cray_XC30 -Qoption,link,--noinhibit-exec -list -traceback -O1 -init=arrays -init=zero -fp-model precise -assume buffered_stdout,protect_parens -convert big_endian -r8 -align array32byte -g
+%FFLAGS              -fixed -fpp -D_IMPI_=4 -D_Cray_XC30 -Qoption,link,--noinhibit-exec -list -traceback -O1 -init=arrays -init=zero -fp-model precise -assume buffered_stdout,protect_parens -convert big_endian -r8 -align array32byte -g
 %LDFLAGS    
 %LD                  ftn
 %FPPFLAGS            -P -C

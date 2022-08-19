@@ -166,7 +166,6 @@ MODULE sbccpl
    INTEGER, PARAMETER ::   jps_ttilyr = 38   ! sea ice top layer temp
 
    INTEGER, PARAMETER ::   jpsnd      = 38   ! total number of fields sent
-         !(/ 2*, 3*, 4-, 5*, 6-, 1*, 7*, 8*, 15*, 9*, 10*, 11*, 12*, 13*, 14* /)
 
 #if ! defined key_oasis3
    ! Dummy variables to enable compilation when oasis3 is not being used
@@ -1065,7 +1064,7 @@ CONTAINS
       !   initialisation of the coupler  !
       ! ================================ !
 
-      CALL cpl_define(jprcv, jpsnd, nn_cplmodel) !! ICI 
+      CALL cpl_define(jprcv, jpsnd, nn_cplmodel)
 
       IF (ln_usecplmask) THEN
          xcplmask(:,:,:) = 0.

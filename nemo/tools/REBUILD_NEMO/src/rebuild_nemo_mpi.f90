@@ -932,7 +932,8 @@ PROGRAM rebuild_nemo
                         DO jk = 1, indimlens(dimids(3))
                            DO jj = jdomain(1), jdomain(2)
                               DO ji = idomain(1), idomain(2)
-                                 globaldata_4d_i1(start_pos(di) + ji - 1, start_pos(dj) + jj - 1, jk, jl) = localdata_4d_i1(ji,jj,jk,jl)
+                                 globaldata_4d_i1(start_pos(di) + ji - 1, start_pos(dj) + jj - 1, jk, jl) = &
+                                    localdata_4d_i1(ji,jj,jk,jl)
                               END DO
                            END DO
                         END DO
@@ -953,7 +954,8 @@ PROGRAM rebuild_nemo
                         DO jk = 1, indimlens(dimids(3))
                            DO jj = jdomain(1), jdomain(2) 
                               DO ji = idomain(1), idomain(2)
-                                 globaldata_4d_i2(start_pos(di) + ji - 1, start_pos(dj) + jj - 1, jk, jl) = localdata_4d_i2(ji,jj,jk,jl)
+                                 globaldata_4d_i2(start_pos(di) + ji - 1, start_pos(dj) + jj - 1, jk, jl) = &
+                                    localdata_4d_i2(ji,jj,jk,jl)
                               END DO
                            END DO
                         END DO
@@ -974,7 +976,8 @@ PROGRAM rebuild_nemo
                         DO jk = 1, indimlens(dimids(3))
                            DO jj = jdomain(1), jdomain(2) 
                               DO ji = idomain(1), idomain(2)
-                                 globaldata_4d_i4(start_pos(di) + ji - 1, start_pos(dj) + jj - 1, jk, jl) = localdata_4d_i4(ji,jj,jk,jl)
+                                 globaldata_4d_i4(start_pos(di) + ji - 1, start_pos(dj) + jj - 1, jk, jl) = &
+                                    localdata_4d_i4(ji,jj,jk,jl)
                               END DO
                            END DO
                         END DO
@@ -995,7 +998,8 @@ PROGRAM rebuild_nemo
                         DO jk = 1, indimlens(dimids(3))
                            DO jj = jdomain(1), jdomain(2) 
                               DO ji = idomain(1), idomain(2)
-                                 globaldata_4d_sp(start_pos(di) + ji - 1, start_pos(dj) + jj - 1, jk, jl) = localdata_4d_sp(ji,jj,jk,jl)
+                                 globaldata_4d_sp(start_pos(di) + ji - 1, start_pos(dj) + jj - 1, jk, jl) = &
+                                    localdata_4d_sp(ji,jj,jk,jl)
                               END DO
                            END DO
                         END DO
@@ -1016,7 +1020,8 @@ PROGRAM rebuild_nemo
                         DO jk = 1, indimlens(dimids(3))
                            DO jj = jdomain(1), jdomain(2) 
                               DO ji = idomain(1), idomain(2)
-                                 globaldata_4d_dp(start_pos(di) + ji - 1, start_pos(dj) + jj - 1, jk, jl) = localdata_4d_dp(ji,jj,jk,jl)
+                                 globaldata_4d_dp(start_pos(di) + ji - 1, start_pos(dj) + jj - 1, jk, jl) = &
+                                    localdata_4d_dp(ji,jj,jk,jl)
                               END DO
                            END DO
                         END DO

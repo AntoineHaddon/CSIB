@@ -14,6 +14,12 @@ set -x
 # nemo_rtd_mons='1 7' for a run starting from January in two 6-month chunks;
 # nemo_rtd_mons='6 12' for a run starting from June in two 6-month chunks.
 
+# Note that nemo_rtd_mons used below is first month of the time chunk. 
+# nemo_rtd_mons=1 for a run starting from January in a single 12-month chunk;
+# nemo_rtd_mons=6 for a run starting from June in a single 12-month chunk;
+# nemo_rtd_mons='1 7' for a run starting from January in two 6-month chunks;
+# nemo_rtd_mons='6 12' for a run starting from June in two 6-month chunks.
+
 # First and last month/year of 12-month period
   fmon=`echo $nemo_rtd_mons | cut -f1 -d' '`
   nmon=`echo $nemo_rtd_mons | wc -w` # number of chunks in 12-month period
@@ -81,9 +87,9 @@ set -x
       # Run offline computation only if starting from January 
       if [ $fmon -eq 1 ] ; then 
 # Access the nemo restart files
-        #diag_rs1="mc_${runid}_${yearm1}_m${lmon}_nemors.tar" # previous year
+        diag_rs1="mc_${runid}_${yearm1}_m${lmon}_nemors.tar" # previous year
         diag_rs2="mc_${runid}_${year}_m${lmon}_nemors.tar"   # current year
-        #access rsp $diag_rs1 || ( echo "$diag_rs1 does not exist" ; exit 1 )
+        access rsp $diag_rs1 || ( echo "$diag_rs1 does not exist" ; exit 1 )
         access rsc $diag_rs2 || ( echo "$diag_rs2 does not exist" ; exit 1 )
 
 # Get tn and sn from the last step of previous year

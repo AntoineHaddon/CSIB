@@ -51,14 +51,14 @@ MODULE closea
    INTEGER, PUBLIC :: jncs       !: number of closed seas (inferred from closea_mask field)
    INTEGER, PUBLIC :: jncsr      !: number of closed seas rnf mappings (inferred from closea_mask_rnf field)
    INTEGER, PUBLIC :: jncse      !: number of closed seas empmr mappings (inferred from closea_mask_empmr field)
-   
+
    INTEGER, PUBLIC, ALLOCATABLE, DIMENSION(:,:) ::  closea_mask       !: mask of integers defining closed seas
    INTEGER, PUBLIC, ALLOCATABLE, DIMENSION(:,:) ::  closea_mask_rnf   !: mask of integers defining closed seas rnf mappings
    INTEGER, PUBLIC, ALLOCATABLE, DIMENSION(:,:) ::  closea_mask_empmr !: mask of integers defining closed seas empmr mappings
-   REAL(wp), PUBLIC, ALLOCATABLE, DIMENSION(:)  ::   surf         !: closed sea surface areas 
-                                                                  !: (and residual global surface area) 
-   REAL(wp), PUBLIC, ALLOCATABLE, DIMENSION(:)  ::   surfr        !: closed sea target rnf surface areas 
-   REAL(wp), PUBLIC, ALLOCATABLE, DIMENSION(:)  ::   surfe        !: closed sea target empmr surface areas 
+   REAL(wp), PUBLIC, ALLOCATABLE, DIMENSION(:)  ::   surf         !: closed sea surface areas
+                                                                  !: (and residual global surface area)
+   REAL(wp), PUBLIC, ALLOCATABLE, DIMENSION(:)  ::   surfr        !: closed sea target rnf surface areas
+   REAL(wp), PUBLIC, ALLOCATABLE, DIMENSION(:)  ::   surfe        !: closed sea target empmr surface areas
 
    !! * Substitutions
 #  include "vectopt_loop_substitute.h90"
@@ -72,7 +72,7 @@ CONTAINS
    SUBROUTINE dom_clo()
       !!---------------------------------------------------------------------
       !!                  ***  ROUTINE dom_clo  ***
-      !!        
+      !!
       !! ** Purpose :   Closed sea domain initialization
       !!
       !! ** Method  :   if a closed sea is located only in a model grid point
@@ -108,7 +108,7 @@ CONTAINS
          CALL iom_open( cn_domcfg, inum )
          !
          id = iom_varid(inum, 'closea_mask', ldstop = .false.)
-         IF( id > 0 ) THEN 
+         IF( id > 0 ) THEN
             l_sbc_clo = .true.
             ALLOCATE( closea_mask(jpi,jpj) , STAT=ierr )
             IF( ierr /= 0 )   CALL ctl_stop( 'STOP', 'dom_clo: failed to allocate closea_mask array')
@@ -123,13 +123,13 @@ CONTAINS
             ELSE
                CALL ctl_stop( 'Problem with closea_mask field in domain_cfg file. Has no values > 0 so no closed seas defined.')
             ENDIF
-         ELSE 
+         ELSE
             IF( lwp ) WRITE(numout,*)
             IF( lwp ) WRITE(numout,*) '   ==>>>   closea_mask field not found in domain_cfg file.'
             IF( lwp ) WRITE(numout,*) '           No closed seas defined.'
             IF( lwp ) WRITE(numout,*)
             l_sbc_clo = .false.
-            jncs = 0 
+            jncs = 0
          ENDIF
 
          l_clo_rnf = .false.
@@ -137,8 +137,8 @@ CONTAINS
          IF( l_sbc_clo ) THEN ! No point reading in closea_mask_rnf or closea_mask_empmr fields if no closed seas defined.
 
             id = iom_varid(inum, 'closea_mask_rnf', ldstop = .false.)
-            IF( id > 0 ) THEN 
-               l_clo_rnf = .true.            
+            IF( id > 0 ) THEN
+               l_clo_rnf = .true.
                ALLOCATE( closea_mask_rnf(jpi,jpj) , STAT=ierr )
                IF( ierr /= 0 )   CALL ctl_stop( 'STOP', 'dom_clo: failed to allocate closea_mask_rnf array')
                CALL iom_get ( inum, jpdom_data, 'closea_mask_rnf', zdata_in, lrowattr=ln_use_jattr)
@@ -151,14 +151,14 @@ CONTAINS
                ELSE
                   CALL ctl_stop( 'Problem with closea_mask_rnf field in domain_cfg file. Has no values > 0 so no closed seas rnf mappings defined.')
                ENDIF
-            ELSE 
+            ELSE
                IF( lwp ) WRITE(numout,*) 'closea_mask_rnf field not found in domain_cfg file. No closed seas rnf mappings defined.'
                jncsr = 0
             ENDIF
- 
+
             id = iom_varid(inum, 'closea_mask_empmr', ldstop = .false.)
-            IF( id > 0 ) THEN 
-               l_clo_rnf = .true.            
+            IF( id > 0 ) THEN
+               l_clo_rnf = .true.
                ALLOCATE( closea_mask_empmr(jpi,jpj) , STAT=ierr )
                IF( ierr /= 0 )   CALL ctl_stop( 'STOP', 'dom_clo: failed to allocate closea_mask_empmr array')
                CALL iom_get ( inum, jpdom_data, 'closea_mask_empmr', zdata_in, lrowattr=ln_use_jattr)
@@ -166,12 +166,12 @@ CONTAINS
                ! number of closed seas empmr mappings = global maximum value in closea_mask_empmr field
                jncse = maxval(closea_mask_empmr(:,:))
                CALL mpp_max('closea', jncse)
-               IF( jncse > 0 ) THEN 
+               IF( jncse > 0 ) THEN
                   IF( lwp ) WRITE(numout,*) 'Number of closed seas empmr mappings : ',jncse
                ELSE
                   CALL ctl_stop( 'Problem with closea_mask_empmr field in domain_cfg file. Has no values > 0 so no closed seas empmr mappings defined.')
                ENDIF
-            ELSE 
+            ELSE
                IF( lwp ) WRITE(numout,*) 'closea_mask_empmr field not found in domain_cfg file. No closed seas empmr mappings defined.'
                jncse = 0
             ENDIF
@@ -192,7 +192,7 @@ CONTAINS
    SUBROUTINE sbc_clo( kt )
       !!---------------------------------------------------------------------
       !!                  ***  ROUTINE sbc_clo  ***
-      !!                    
+      !!
       !! ** Purpose :   Special handling of closed seas
       !!
       !! ** Method  :   Water flux is forced to zero over closed sea
@@ -206,16 +206,16 @@ CONTAINS
       INTEGER             ::   ierr
       INTEGER             ::   jc, jcr, jce   ! dummy loop indices
       REAL(wp), PARAMETER ::   rsmall = 1.e-20_wp    ! Closed sea correction epsilon
-      REAL(wp)            ::   zfwf_total, zcoef, zcoef1         ! 
+      REAL(wp)            ::   zfwf_total, zcoef, zcoef1         !
       REAL(wp), DIMENSION(jncs)    ::   zfwf      !:
       REAL(wp), DIMENSION(jncsr+1) ::   zfwfr     !: freshwater fluxes over closed seas
-      REAL(wp), DIMENSION(jncse+1) ::   zfwfe     !: 
+      REAL(wp), DIMENSION(jncse+1) ::   zfwfe     !:
       REAL(wp), DIMENSION(jpi,jpj) ::   ztmp2d   ! 2D workspace
       !!----------------------------------------------------------------------
       !
       IF( ln_timing )  CALL timing_start('sbc_clo')
       !
-      !                                                   !------------------! 
+      !                                                   !------------------!
       IF( kt == nit000 ) THEN                             !  Initialisation  !
          !                                                !------------------!
          IF(lwp) WRITE(numout,*)
@@ -238,7 +238,7 @@ CONTAINS
          !
          surf(jncs+1) = glob_sum( 'closea', e1e2t(:,:) )   ! surface of the global ocean
          !
-         !                                        ! surface areas of closed seas 
+         !                                        ! surface areas of closed seas
          DO jc = 1, jncs
             ztmp2d(:,:) = 0.e0_wp
             WHERE( closea_mask(:,:) == jc ) ztmp2d(:,:) = e1e2t(:,:) * tmask_i(:,:)
@@ -266,25 +266,25 @@ CONTAINS
             END DO
          ENDIF
          !
-         IF(lwp) WRITE(numout,*)'     Closed sea surface areas (km2)'
-         DO jc = 1, jncs
-            IF(lwp) WRITE(numout,FMT='(1I3,5X,ES12.2)') jc, surf(jc) * 1.0e-6
-         END DO
-         IF(lwp) WRITE(numout,FMT='(A,ES12.2)') 'Global surface area excluding closed seas (km2): ', surf(jncs+1) * 1.0e-6
-         !
-         IF(jncsr > 0) THEN
-            IF(lwp) WRITE(numout,*)'     Closed sea target rnf surface areas (km2)'
-            DO jcr = 1, jncsr
-               IF(lwp) WRITE(numout,FMT='(1I3,5X,ES12.2)') jcr, surfr(jcr) * 1.0e-6
-            END DO
-         ENDIF
-         !
-         IF(jncse > 0) THEN
-            IF(lwp) WRITE(numout,*)'     Closed sea target empmr surface areas (km2)'
-            DO jce = 1, jncse
-               IF(lwp) WRITE(numout,FMT='(1I3,5X,ES12.2)') jce, surfe(jce) * 1.0e-6
-            END DO
-         ENDIF
+         !IF(lwp) WRITE(numout,*)'     Closed sea surface areas (km2)'
+         !DO jc = 1, jncs
+         !   IF(lwp) WRITE(numout,FMT='(1I3,5X,ES12.2)') jc, surf(jc) * 1.0e-6
+         !END DO
+         !IF(lwp) WRITE(numout,FMT='(A,ES12.2)') 'Global surface area excluding closed seas (km2): ', surf(jncs+1) * 1.0e-6
+         !!
+         !IF(jncsr > 0) THEN
+         !   IF(lwp) WRITE(numout,*)'     Closed sea target rnf surface areas (km2)'
+         !   DO jcr = 1, jncsr
+         !      IF(lwp) WRITE(numout,FMT='(1I3,5X,ES12.2)') jcr, surfr(jcr) * 1.0e-6
+         !   END DO
+         !ENDIF
+         !!
+         !IF(jncse > 0) THEN
+         !   IF(lwp) WRITE(numout,*)'     Closed sea target empmr surface areas (km2)'
+         !   DO jce = 1, jncse
+         !      IF(lwp) WRITE(numout,FMT='(1I3,5X,ES12.2)') jce, surfe(jce) * 1.0e-6
+         !   END DO
+         !ENDIF
       ENDIF
       !
       !                                                      !--------------------!
@@ -296,7 +296,7 @@ CONTAINS
       !
       ! 1. Work out total freshwater fluxes over closed seas from EMP - RNF.
       !
-      zfwf(:) = 0.e0_wp           
+      zfwf(:) = 0.e0_wp
       DO jc = 1, jncs
          ztmp2d(:,:) = 0.e0_wp
          WHERE( closea_mask(:,:) == jc ) ztmp2d(:,:) = e1e2t(:,:) * ( emp(:,:)-rnf(:,:) ) * tmask_i(:,:)
@@ -304,10 +304,10 @@ CONTAINS
       END DO
       zfwf_total = SUM(zfwf)
 
-      zfwfr(:) = 0.e0_wp           
+      zfwfr(:) = 0.e0_wp
       IF( jncsr > 0 ) THEN
          !
-         ! 2. Work out total FW fluxes over rnf source areas and add to rnf target areas. 
+         ! 2. Work out total FW fluxes over rnf source areas and add to rnf target areas.
          !    Where zfwf is negative add flux at specified runoff points and subtract from fluxes for global redistribution.
          !    Where positive leave in global redistribution total.
          !
@@ -321,7 +321,7 @@ CONTAINS
             IF ( ABS(zfwfr(jcr) / surf(jncs+1) ) > rsmall) THEN
                !
                ! Add residuals to target runoff points if negative and subtract from total to be added globally
-               IF( zfwfr(jcr) < 0.0 ) THEN 
+               IF( zfwfr(jcr) < 0.0 ) THEN
                   zfwf_total = zfwf_total - zfwfr(jcr)
                   zcoef    = zfwfr(jcr) / surfr(jcr)
                   zcoef1   = rcp * zcoef
@@ -333,12 +333,12 @@ CONTAINS
                !
             ENDIF
          END DO
-      ENDIF  ! jncsr > 0    
+      ENDIF  ! jncsr > 0
       !
-      zfwfe(:) = 0.e0_wp           
+      zfwfe(:) = 0.e0_wp
       IF( jncse > 0 ) THEN
          !
-         ! 3. Work out total fluxes over empmr source areas and add to empmr target areas. 
+         ! 3. Work out total fluxes over empmr source areas and add to empmr target areas.
          !
          DO jce = 1, jncse
             !
@@ -360,10 +360,10 @@ CONTAINS
                !
             ENDIF
          END DO
-      ENDIF ! jncse > 0    
+      ENDIF ! jncse > 0
 
       !
-      ! 4. Spread residual flux over global ocean. 
+      ! 4. Spread residual flux over global ocean.
       !
       ! The following if avoids the redistribution of the round off
       IF ( ABS(zfwf_total / surf(jncs+1) ) > rsmall) THEN
@@ -396,6 +396,8 @@ CONTAINS
       emp (:,:) = emp (:,:) * tmask(:,:,1)
       !
       CALL lbc_lnk( 'closea', emp , 'T', 1._wp )
+
+      IF( ln_timing )  CALL timing_stop('sbc_clo')
       !
       IF( ln_timing )  CALL timing_stop('sbc_clo')
 
@@ -404,7 +406,7 @@ CONTAINS
    SUBROUTINE clo_rnf( p_rnfmsk )
       !!---------------------------------------------------------------------
       !!                  ***  ROUTINE sbc_rnf  ***
-      !!                    
+      !!
       !! ** Purpose :   allow the treatment of closed sea outflow grid-points
       !!                to be the same as river mouth grid-points
       !!
@@ -429,17 +431,17 @@ CONTAINS
       ENDIF
       !
    END SUBROUTINE clo_rnf
-   
-      
+
+
    SUBROUTINE clo_bat( k_top, k_bot )
       !!---------------------------------------------------------------------
       !!                  ***  ROUTINE clo_bat  ***
-      !!                    
+      !!
       !! ** Purpose :   Suppress closed sea from the domain
       !!
       !! ** Method  :   Read in closea_mask field (if it exists) from domain_cfg file.
       !!                Where closea_mask > 0 set first and last ocean level to 0
-      !!                (As currently coded you can't define a closea_mask field in 
+      !!                (As currently coded you can't define a closea_mask field in
       !!                usr_def_zgr).
       !!
       !! ** Action  :   set k_top=0 and k_bot=0 over closed seas
@@ -460,14 +462,14 @@ CONTAINS
          !
          CALL iom_open( cn_domcfg, inum )
          !
-         id = iom_varid(inum, 'closea_mask', ldstop = .false.)      
+         id = iom_varid(inum, 'closea_mask', ldstop = .false.)
          IF( id > 0 ) THEN
             IF( lwp ) WRITE(numout,*) 'Suppressing closed seas in bathymetry based on closea_mask field,'
             CALL iom_get ( inum, jpdom_data, 'closea_mask', zdata_in, lrowattr=ln_use_jattr)
             closea_mask(:,:) = NINT(zdata_in(:,:))
             WHERE( closea_mask(:,:) > 0 )
-               k_top(:,:) = 0   
-               k_bot(:,:) = 0   
+               k_top(:,:) = 0
+               k_bot(:,:) = 0
             ENDWHERE
          ELSE
             IF( lwp ) WRITE(numout,*) 'No closea_mask field found in domain_cfg file. No suppression of closed seas.'
