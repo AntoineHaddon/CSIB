@@ -48,8 +48,10 @@
 %CPP                 cpp
 %FC                  mpif90
 
-%FCFLAGS             -free -fpp -D_IMPI_=4 -D_Cray_XC30 -Qoption,link,--noinhibit-exec -list -traceback -O2 -init=arrays -init=zero -fp-model precise -assume buffered_stdout,protect_parens -convert big_endian -r8 -align array64byte -fpe0
-%FFLAGS              -fixed -fpp -D_IMPI_=4 -D_Cray_XC30 -Qoption,link,--noinhibit-exec -list -traceback -O2 -init=arrays -init=zero -fp-model precise -assume buffered_stdout,protect_parens -convert big_endian -r8 -align array64byte -fpe0
+%FCFLAGS             -free -fpp -D_IMPI_=4 -D_Cray_XC30 -Qoption,link,--noinhibit-exec -list -traceback -O2 -init=arrays -init=zero -fp-model precise -assume buffered_stdout,protect_parens -convert big_endian -r8 -align array64byte -ftrap=common
+%FFLAGS              -fixed -fpp -D_IMPI_=4 -D_Cray_XC30 -Qoption,link,--noinhibit-exec -list -traceback -O2 -init=arrays -init=zero -fp-model precise -assume buffered_stdout,protect_parens -convert big_endian -r8 -align array64byte -ftrap=common
+#%FCFLAGS             -free -fpp -D_IMPI_=4 -D_Cray_XC30 -Qoption,link,--noinhibit-exec -list -traceback -O0 -init=arrays -init=zero -fp-model precise -assume buffered_stdout,protect_parens -convert big_endian -r8 -align array64byte -xSKYLAKE-AVX512 -g -check all -fp-stack-check
+#%FFLAGS              -fixed -fpp -D_IMPI_=4 -D_Cray_XC30 -Qoption,link,--noinhibit-exec -list -traceback -O0 -init=arrays -init=zero -fp-model precise -assume buffered_stdout,protect_parens -convert big_endian -r8 -align array64byte -xSKYLAKE-AVX512 -g -check all -fp-stack-check
 %LDFLAGS    
 %LD                  mpif90
 %FPPFLAGS            -P -C
@@ -61,4 +63,4 @@
 %USER_LIB            %NCDF_LIB %XIOS_LIB
 
 %CC                  mpicxx -std=c++98
-%CFLAGS              -O2
+%CFLAGS              -O0 
