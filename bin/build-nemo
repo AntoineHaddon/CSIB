@@ -7,7 +7,7 @@ set -e
 #
 #   Usage: build-nemo [options] exec=name cfg=CONFIG \
 #                     srcpath=SRCPATH \
-#                     nemo_arch=NEMO_ARCH_IDENTIFIER \
+#                     nemo_arch=NEMO_ARCH \
 #                     util_arch=MAKE_TEMPLATE \
 #                     [refcfg=cfgdir] \
 #                     [add_key=keys] \
@@ -129,7 +129,7 @@ for arg in "$@"; do
                 cfg)        nemo_config="$val" ;;       # name of subdir in which config lives
                 refcfg)     nemo_ref_config="$val" ;;   # name of subdir in which ref config lives
                 nemo_arch)  nemo_arch="$val" ;;         # nemo arch name
-        		util_arch)  util_arch="$val" ;;         # utility arch name (for RTD, REBUILD and so on)
+        		util_arch)  nemo_util_arch="$val" ;; # utility arch name (for RTD, REBUILD and so on)
 		        nemo_env)   nemo_env="$val";;           # filename containing the nemo compilation & execution environment
         		util_env)   util_env="$val";;           # filename containing the utility (e.g., RTD, REBUILD, etc) environment
                 add_key)    nemo_add_cpp_keys="$val" ;; # a list of cpp keys to add before compiling nemo
@@ -155,7 +155,7 @@ fi
 [[ -z "$nemo_exec" ]]           && bail "exec must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
 [[ -z "$nemo_config" ]]         && bail "cfg must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
 [[ -z "$nemo_arch" ]]           && bail "nemo_arch must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
-[[ -z "$util_arch" ]]           && bail "util_arch must be given at the command line! See ${THIS_SCRIPT_PATH} -h"
+[[ -z "$nemo_util_arch" ]]           && bail "nemo_util_arch must be given at the command line! See ${THIS_SCRIPT_PATH} -h"
 [[ -z "$nemo_env" ]]            && bail "nemo_env must be given at the command line! See ${THIS_SCRIPT_PATH} -h"
 [[ -z "$util_env" ]]            && bail "util_env must be given at the command line! See ${THIS_SCRIPT_PATH} -h"
 [[ -d "$nemo_source_path" ]] || bail "The given srcpath ---> $nemo_source_path <--- doesn't exist!"
@@ -201,7 +201,7 @@ non_model_execs="$target_diag_execs $target_rtd_execs $target_rbld_execs"
 # When debugging is requested, use the debug arch and update the name of the executable
 if (( debug == 1 )); then
   xios_debug="--debug"
-  nemo_arch_identifier="$nemo_arch_identifier-debug"
+  nemo_arch="$nemo_arch-debug"
   nemo_exec="$nemo_exec-debug"
 fi
 
@@ -304,7 +304,7 @@ if (( clean_compile == 1 )); then
 fi
 
 # build command line args into a bash array -> array needed for potential space delim list in add_key/del_key
-ARGS=( -j $comp_np -m $nemo_arch_identifier -n $nemo_config )
+ARGS=( -j $comp_np -m $nemo_arch -n $nemo_config )
 [[ -n "$nemo_ref_config" ]]     && ARGS+=( -r $nemo_ref_config )
 [[ -n "$nemo_add_cpp_keys" ]]   && ARGS+=( add_key "$nemo_add_cpp_keys" )
 [[ -n "$nemo_del_cpp_keys" ]]   && ARGS+=( del_key "$nemo_del_cpp_keys" )
@@ -312,27 +312,6 @@ ARGS=( -j $comp_np -m $nemo_arch_identifier -n $nemo_config )
 # Create model executable
 echo 'makenemo '"${ARGS[@]}"
 ./makenemo "${ARGS[@]}"
-
- #-------------------------------
- # compile exec's using makefiles
- #-------------------------------
- nemo_util_arch_file_basename=$(basename ${nemo_util_arch_file})
- for build_dir in $make_build_dirs; do
-     echo ""
-     echo "=============================================="
-     echo "    Compiling executables in $build_dir       "
-     echo "=============================================="
-     cd $build_dir
-
-     # get make template file
-     ln -sf ${nemo_util_arch_file} ${nemo_util_arch_file_basename}
-
-     # compile
-     if (( clean_compile == 1 )); then
-         make clean
-     fi
-     make COMPILER_TEMPLATE=${nemo_util_arch_file_basename}
- done
 
 # reset the cfg.txt and cpp_${CONFIG}.fcm files to avoid dirtying the repo
 # files_to_reset="cfg.txt ${nemo_config}/cpp_${nemo_config}.fcm"
@@ -366,8 +345,8 @@ source $util_compilation_env_file ||
 	            bail "Failed to source the nemo compilation environment file - $util_compilation_env_file! Does it exist? Are the modules available?"
 
 # COMPILER_TEMPLATE (utility arch file) is Makefile argument
-COMPILER_TEMPLATE=${nemo_source_path}/nemo/arch/CCCMA/$util_arch
-echo "Utility arch file = $util_arch"
+COMPILER_TEMPLATE=${nemo_source_path}/nemo/arch/CCCMA/$nemo_util_arch
+echo "Utility arch file = $nemo_util_arch"
 
 for build_dir in $make_build_dirs; do 
     echo ""

@@ -382,22 +382,6 @@ echo "#################### Start NEMO pre-processing #################"
   done
 
   # nemo executable
-  ! is_file $nemo_exec && cp ${CCRNSRC}/executables/$nemo_exec .
-  # # xios executable
-  # ! is_file $xios_exec && cp ${CCRNSRC}/executables/$xios_exec .
-
-  # ===================
-  # Access input files
-  # ===================
-  # - many are only pulled in they don't already exist
-  # - the main defaults are defined at the top of this script (should we move other runmode specific files?)
-
-  # run namelists
-  for f in "${nemo_namelists[@]}"; do
-      ! is_file $f && cp ${WRK_DIR}/config/namelists/${f} .
-  done
-
-  # nemo executable
   ! is_file $nemo_exec && cp ${EXEC_STORAGE_DIR}/$nemo_exec .
   # # xios executable
   ! is_file $xios_exec && cp ${EXEC_STORAGE_DIR}/$xios_exec .
