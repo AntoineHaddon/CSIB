@@ -45,10 +45,14 @@
    ln_read_cfg = .true.    !  (=T) read the domain configuration file
       cn_domcfg = "domain_cfg"  ! domain configuration filename
       !
-      ln_closea    = .false.    !  F => suppress closed seas (defined by closea_mask field)
-      !                         !       from the bathymetry at runtime.
       ln_use_jattr = .true.     !  use (T) the file attribute: open_ocean_jstart, if present
-      !                       !  in netcdf input files, as the start j-row for reading
+   !                       !  in netcdf input files, as the start j-row for reading
+      ln_closea    = .true.    !  T => keep closed seas (defined by closea_mask field) in the
+      !                         !       domain and apply special treatment of freshwater fluxes.
+      !                         !  F => suppress closed seas (defined by closea_mask field)
+      !                         !       from the bathymetry at runtime.
+      !                         !  If closea_mask field doesn't exist in the domain_cfg file
+      !                         !       then this logical does nothing.
 /
 !-----------------------------------------------------------------------
 &namtsd        !    Temperature & Salinity Data  (init/dmp)             (default: OFF)
@@ -500,4 +504,34 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
 &namsto        ! Stochastic parametrization of EOS                      (default: OFF)
 !-----------------------------------------------------------------------
+/
+
+!-----------------------------------------------------------------------
+&namsbc_cpl        ! Stochastic parametrization of EOS                      (default: OFF)
+!-----------------------------------------------------------------------
+nn_cats_cpl = 1
+sn_snd_temp   =       'oce and ice'          ,    'no'    ,     ''      ,         ''           ,   ''    
+sn_snd_alb    =       'none'                 ,    'no'    ,     ''      ,         ''           ,   ''    
+sn_snd_thick  =       'weighted iwe and swe' ,    'no'    ,     ''      ,         ''           ,   ''    
+sn_snd_crt    =       'none'                 ,    'no'    , 'spherical' , 'eastward-northward' ,  'T'       
+sn_snd_co2    =       'coupled'              ,    'no'    ,     ''      ,         ''           ,   ''        
+sn_snd_crtw   =   'none'                     ,    'no'    ,     ''      ,         ''           , 'U,V'
+sn_snd_ifrac  =   'none'                     ,    'no'    ,     ''      ,         ''           ,   ''
+sn_snd_wlev   =   'none'                     ,    'no'    ,     ''      ,         ''           ,   ''
+sn_snd_cond   =   'none'                     ,    'no'    ,     ''      ,         ''           ,   ''
+sn_snd_thick1 =   'none'                     ,    'no'    ,     ''      ,         ''           ,   ''
+sn_snd_mpnd   =   'none'                     ,    'no'    ,     ''      ,         ''           ,   ''
+sn_snd_sstfrz =   'none'                     ,    'no'    ,     ''      ,         ''           ,   ''
+sn_snd_ttilyr =   'none'                     ,    'no'    ,     ''      ,         ''           ,   ''
+! receive
+sn_rcv_w10m   =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_taumod =       'none'                 ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_tau    =       'oce and ice'          ,    'no'    , 'spherical' , 'eastward-northward',  'T'   
+sn_rcv_dqnsdt =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_qsr    =       'conservative'         ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_qns    =       'conservative'         ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_emp    =       'conservative'         ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_rnf    =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_cal    =       'none'                 ,    'no'    ,     ''      ,         ''          ,   ''    
+sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
 /

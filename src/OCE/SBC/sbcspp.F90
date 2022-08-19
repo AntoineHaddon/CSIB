@@ -112,12 +112,13 @@ CONTAINS
       REAL(wp) :: rhoc, h_salt_plume, n2_crit, z_crit_min, z_crit_max
       REAL(wp) :: z_power_sum
 
-      INTEGER :: jk, ki_salt_plume
+      INTEGER :: jk, ki_salt_plume, ki_z_min, ki_z_max
 
-      z_crit_max = MIN(rn_spp_z_max,gdepw_n(ji,jj,mbkt(ji,jj)))
+      ! Set a maximum bound to the depth of the salt plume
+      z_crit_max = MIN(rn_spp_z_max, gdepw_n(ji,jj,mbkt(ji,jj)))
+      ! Set a minimum bound on the depth of the salt plume
       z_crit_min = MIN(rn_spp_z_min, gdepw_n(ji,jj,mbkt(ji,jj)))
-      ! Determine the depth of the salt plume based on either a local gradient density criterion
-      ! or density difference from the surface
+
       n2_crit = grav*rn_spp_rho_c*r1_rau0
       ki_salt_plume = 2
       IF (ln_spp_c_grad) THEN
