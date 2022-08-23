@@ -455,7 +455,7 @@
     acc_cp mask_itf.nc            $nemo_mask_itf
     acc_cp M2rowdrg.nc            $nemo_M2rowdrg
     acc_cp K1rowdrg.nc            $nemo_K1rowdrg
-    #acc_cp Eddyengf.nc            $nemo_Eddyengf
+    acc_cp Eddyengf.nc            $nemo_Eddyengf
     acc_cp geothermal_heating.nc  $nemo_geothermal_heating
     acc_cp runoff_core_monthly.nc $nemo_runoff_core_monthly
     acc_cp sss_data.nc            $nemo_sss_data
