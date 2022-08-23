@@ -506,32 +506,3 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
 /
 
-!-----------------------------------------------------------------------
-&namsbc_cpl        ! Stochastic parametrization of EOS                      (default: OFF)
-!-----------------------------------------------------------------------
-nn_cats_cpl = 1
-sn_snd_temp   =       'oce and ice'          ,    'no'    ,     ''      ,         ''           ,   ''    
-sn_snd_alb    =       'none'                 ,    'no'    ,     ''      ,         ''           ,   ''    
-sn_snd_thick  =       'weighted iwe and swe' ,    'no'    ,     ''      ,         ''           ,   ''    
-sn_snd_crt    =       'none'                 ,    'no'    , 'spherical' , 'eastward-northward' ,  'T'       
-sn_snd_co2    =       'coupled'              ,    'no'    ,     ''      ,         ''           ,   ''        
-sn_snd_crtw   =   'none'                     ,    'no'    ,     ''      ,         ''           , 'U,V'
-sn_snd_ifrac  =   'none'                     ,    'no'    ,     ''      ,         ''           ,   ''
-sn_snd_wlev   =   'none'                     ,    'no'    ,     ''      ,         ''           ,   ''
-sn_snd_cond   =   'none'                     ,    'no'    ,     ''      ,         ''           ,   ''
-sn_snd_thick1 =   'none'                     ,    'no'    ,     ''      ,         ''           ,   ''
-sn_snd_mpnd   =   'none'                     ,    'no'    ,     ''      ,         ''           ,   ''
-sn_snd_sstfrz =   'none'                     ,    'no'    ,     ''      ,         ''           ,   ''
-sn_snd_ttilyr =   'none'                     ,    'no'    ,     ''      ,         ''           ,   ''
-! receive
-sn_rcv_w10m   =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
-sn_rcv_taumod =       'none'                 ,    'no'    ,     ''      ,         ''          ,   ''    
-sn_rcv_tau    =       'oce and ice'          ,    'no'    , 'spherical' , 'eastward-northward',  'T'   
-sn_rcv_dqnsdt =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
-sn_rcv_qsr    =       'conservative'         ,    'no'    ,     ''      ,         ''          ,   ''    
-sn_rcv_qns    =       'conservative'         ,    'no'    ,     ''      ,         ''          ,   ''    
-sn_rcv_emp    =       'conservative'         ,    'no'    ,     ''      ,         ''          ,   ''    
-sn_rcv_rnf    =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
-sn_rcv_cal    =       'none'                 ,    'no'    ,     ''      ,         ''          ,   ''    
-sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,         ''          ,   ''    
-/
