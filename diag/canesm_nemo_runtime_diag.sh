@@ -106,7 +106,11 @@
   if [ $yr1 -gt ${year_rtdiag_start} ] ; then
     access nemo_physical_rtd_old.nc $physical_rtdfile1 nocp=off ; cp nemo_physical_rtd_old.nc nemo_physical_rtd.nc ; chmod +w nemo_physical_rtd.nc
     access nemo_ice_rtd_old.nc $ice_rtdfile1 nocp=off ; cp nemo_ice_rtd_old.nc nemo_ice_rtd.nc ; chmod +w nemo_ice_rtd.nc
-    [ "$nemo_carbon" = "on" ] && access nemo_carbon_rtd_old.nc $carbon_rtdfile1 nocp=off na ; [ -s nemo_carbon_rtd_old.nc ] && cp nemo_carbon_rtd_old.nc nemo_carbon_rtd.nc ; chmod +w nemo_carbon_rtd.nc
+    if [ "$nemo_carbon" = "on" ] ; then
+       access nemo_carbon_rtd_old.nc $carbon_rtdfile1 nocp=off na 
+       [ -s nemo_carbon_rtd_old.nc ] && cp nemo_carbon_rtd_old.nc nemo_carbon_rtd.nc 
+       chmod +w nemo_carbon_rtd.nc
+    fi
   fi
 
 # Get the RTD executables

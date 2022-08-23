@@ -92,20 +92,25 @@ if (( canesm_nemo_rbld_save_hist == 1 )) ; then
       freq=${nemo_hist_file_freq_list_array[$i]}
       lsfx=$(echo "$sfx" | tr '[:upper:]' '[:lower:]')
       indir=${model1}_${freq}_${lsfx}
-      access $indir $indir nocp=off
-      dir_del_list+=" $indir"
-      cd $indir
+      access $indir $indir nocp=off na 
+      if [ -d "$indir" ] ; then 
+        # if don't exist, re-tile probably done by NEMO
+        dir_del_list+=" $indir"
+        cd $indir
 
-      # Define the pattern, get the exe, do the rbld, and save.
-      pfx=${runid}_${freq}_${start_date}_${stop_date}_$sfx
-      ln -s ../rebuild_nemo.exe .
-      rebuild_nemo_tiles
-      ncsave=${model1}_${freq}_${sfx}.nc
-      save ${pfx}.nc $ncsave
+        # Define the pattern, get the exe, do the rbld, and save.
+        pfx=${runid}_${freq}_${start_date}_${stop_date}_$sfx
+        ln -s ../rebuild_nemo.exe .
+        rebuild_nemo_tiles
+        ncsave=${model1}_${freq}_${sfx}.nc
+        save ${pfx}.nc $ncsave
 
-      # Move back up and cleanup
-      cd $wrkdir
-      rm -rf $indir
+        # Move back up and cleanup
+        cd $wrkdir
+        rm -rf $indir
+      elif [ -e "$indir}.nc" ] ; then
+        echo $indir}.nc is on a global scale, no need to use "rebuild_nemo_tiles"
+      fi
    done
 fi
 
@@ -140,6 +145,7 @@ dir_del_list+=" $inrs"
 cd $inrs
 ln -s ../rebuild_nemo.exe .
 # Figure out the last time step, which is needed for the rs tile names.
+ls -l  rs_time.step
 nn_itend=$(cat rs_time.step)
 end_step=$(echo $nn_itend | awk '{printf "%8.8d",$1}')
 

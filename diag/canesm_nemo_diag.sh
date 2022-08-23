@@ -68,7 +68,7 @@ set -x
       mp=$mm
     done
 # Merge sub-yearly files
-    if [ $nmon -gt 1 ] ; then
+    if [ $nmon -gt 1 -a -e ${sfx}_m$fmon ] ; then
       cdo mergetime ${sfx}_?? ${sfx}_m$fmon
       rm -f ${sfx}_??
       mv ${sfx}_m$fmon ${sfx}_$fmon
