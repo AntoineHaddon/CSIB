@@ -1152,6 +1152,8 @@
    rn_tfe_itf  = 1.        !  ITF tidal dissipation efficiency
    ln_s2004    = .false.   !  Compute zav_tide following Simmons et al (2004)
    ln_sm2005   = .false.   !  Compute zav_tide following Saenko and Merryfield (2005)
+   ln_leewmx   = .false.   !  addition of Lee Wave mixing (.true.) or not (.false.)
+   rn_lwm      = 0.3       !  lee wave mixing scaling
 /
 
 !!======================================================================
