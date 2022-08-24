@@ -1,5 +1,5 @@
 <NODE_RESOURCES>
-    <BATCH machine="${BACKEND}" memory="1000M" mpi="1" wallclock="30" cpu="36" soumet_args="-waste 99 -shell /bin/bash"/>
+    <BATCH machine="${BACKEND}" memory="1000M" mpi="1" wallclock="30" cpu="36" soumet_args="-shell bash"/>
    
   <!-- comment section batch resource definition 
   supported attributes: machine, queue, memory, mpi, wallclock, catchup, cpu, soumet_args

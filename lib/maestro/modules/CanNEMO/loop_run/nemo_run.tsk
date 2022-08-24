@@ -8,17 +8,15 @@
 ln -sf ../input/modfiles/* .
 
 # source run environment to be consistent with the compilation environment
-source ${TASK_BIN}/nemo_comp_env ||
-    bail "Failed to source the nemo compilation environment! Are the modules available?"
-
-module list
+source ${TASK_BIN}/nemo_env ||
+    bail "Failed to source the nemo compilation & execution environment! Are the modules available?"
 
 # Run the model
 ulimit -s unlimited
 
-pesnode=$pesnode  # Number of cores per node
-tnemonode=$(($jpnij - $jpnij % $pesnode)) # Total number of nodes used for NEMO only
-PMI_NO_FORK=1 aprun -n $pesnode ${TASK_BIN}/nemoxios.sh $xios_jpnij : -n $tnemonode -N $pesnode ./nemo.exe
+# jpnij: number of total local NEMO domains
+# xios_jpnij: number of total cores used for XIOS
+PMI_NO_FORK=1 mpirun -n $jpnij ./nemo.exe : -n $xios_jpnij ./xios_server.exe
 
 # Verify that run has completed, else exit
 time_step=`cat time.step`

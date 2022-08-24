@@ -88,6 +88,11 @@ else
     #--------------------------------------------------------------------
     # copy in experiment file and set values according to setup-nemo args
     #--------------------------------------------------------------------
+    # populate rest of the environment file
+    cp ${src_dir}/utils/nemo_raw_env_setup_file nemo_env_setup_file
+    sed -i "s#^runid_env=.*;#runid_env=${nemo_runid};#" nemo_env_setup_file
+    sed -i "s#^WRK_DIR=.*;#WRK_DIR=${SEQ_EXP_HOME};#" nemo_env_setup_file
+
     cfgdir=cfgs; expdir=EXPREF
     cp ${src_dir}/nemo/${cfgdir}/${nemo_config}/${expdir}/experiment.cfg .
     sed -i "s#^storage_dir=.*#storage_dir=${storage_dir}#g" experiment.cfg
@@ -176,7 +181,7 @@ else
         "ccc_orca1_lim_cmoc")   frq="5y"    ;;
         "ccc_orca1_lim_canoe")  frq="2y"    ;;
         "ccc_orca025_lim")      frq="4m"    ;;
-	"eorca025_ice")         frq="4m"    ;;
+	"eorca025_ice")         frq="3m"    ;;
         *) 
             echo "There is currently no recommended nemo_freq for config ${nemo_config}"
             echo "Value set to 1y. Alter if desired"

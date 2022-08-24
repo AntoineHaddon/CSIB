@@ -57,9 +57,10 @@
           <field field_ref="woce"        name="wo"       level="0" />
           <field field_ref="woce_eiv"    name="woce_eiv" level="0" />
           <field field_ref="avt"         name="avt"      level="0" />
-          <field field_ref="avm"         name="avm"      level="0" />
+	  <field field_ref="av_tmx"      name="av_tmx"   level="0" />
+	  <field field_ref="avm"         name="avm"      level="0" />
           <field field_ref="avs"         name="avs"      level="0" />
-        </file>
+       </file>
 
         <file id="file16" name_suffix="_diaptr2D" description="zonal mean variables" enabled=".FALSE.">
           <field field_ref="sophtove"    name="htovovrt"      grid_ref="grid_ptr_T_2D"  />

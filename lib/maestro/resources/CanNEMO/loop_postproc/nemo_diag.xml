@@ -1,5 +1,5 @@
 <NODE_RESOURCES>
-  <BATCH machine="${FRONTEND}" queue="${FRONTEND_DEFAULT_Q}" memory="15G" mpi="0" wallclock="30" cpu="1" soumet_args="-waste 10 -shell /bin/bash"/>
+  <BATCH machine="${FRONTEND}" queue="${FRONTEND_DEFAULT_Q}" memory="15G" wallclock="30" soumet_args="-shell bash"/>
   <!-- comment section batch resource definition 
   supported attributes: machine, queue, memory, mpi, wallclock, catchup, cpu, soumet_args
 
