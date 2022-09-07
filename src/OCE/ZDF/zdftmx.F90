@@ -397,18 +397,18 @@ CONTAINS
 
       IF( ln_tmx_itf ) THEN          ! read the Indonesian Through Flow mask
          CALL iom_open('mask_itf',inum)
-         CALL iom_get (inum, jpdom_data, 'tmaskitf',mask_itf,1) ! 
+         CALL iom_get (inum, jpdom_data, 'tmaskitf',mask_itf,1,lrowattr=ln_use_jattr) ! 
          CALL iom_close(inum)
       ENDIF
 
       ! read M2 tidal energy flux : W/m2  ( zem2 < 0 )
       CALL iom_open('M2rowdrg',inum)
-      CALL iom_get (inum, jpdom_data, 'field',zem2,1) ! 
+      CALL iom_get (inum, jpdom_data, 'field',zem2,1,lrowattr=ln_use_jattr) ! 
       CALL iom_close(inum)
 
       ! read K1 tidal energy flux : W/m2  ( zek1 < 0 )
       CALL iom_open('K1rowdrg',inum)
-      CALL iom_get (inum, jpdom_data, 'field',zek1,1) ! 
+      CALL iom_get (inum, jpdom_data, 'field',zek1,1,lrowattr=ln_use_jattr) ! 
       CALL iom_close(inum)
 
       IF( ln_leewmx ) THEN ! read mesoscale eddy energy flux : W/m2  ( zeef < 0 )
