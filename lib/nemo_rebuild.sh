@@ -140,8 +140,16 @@ fi
 # Access the restart directory, and cd into it.
 modellast="mc_${runid}_${yearlast}_m${monlast}";
 inrs=${modellast}_nemors
-access $inrs $inrs nocp=off
-dir_del_list+=" $inrs"
+access ${inrs}.tar ${inrs}.tar nocp=off na
+if [ -s "${inrs}.tar" ]; then
+  mkdir  ${inrs} 
+  tar -xf ${inrs}.tar -C ${inrs}
+  dir_del_list+=" ${inrs}.tar"
+else
+  access $inrs $inrs nocp=off na
+  dir_del_list+=" $inrs"
+fi
+[ -s "${inrs}" ]|| bail "Could not find ${inrs}"
 cd $inrs
 ln -s ../rebuild_nemo.exe .
 # Figure out the last time step, which is needed for the rs tile names.
@@ -152,7 +160,7 @@ end_step=$(echo $nn_itend | awk '{printf "%8.8d",$1}')
 # The physics rs file
 pfx=${runid}_${end_step}_restart
 
-if [ ! -s "${pfx}_0000.nc" ]; then
+if [ ! -s "${pfx}_0000.nc" -a ! -e "${pfx}.nc" ]; then
    # Look for files, which might not have the same name as the run
    found_rs=`(ls -1 *_restart_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
    # Rename them
@@ -174,7 +182,7 @@ fi
 
 # The ice rs file
 pfx=${runid}_${end_step}_restart_ice
-if [ ! -s "${pfx}_0000.nc" ]; then
+if [ ! -s "${pfx}_0000.nc"  -a ! -e "${pfx}.nc" ]; then
    # Look for files, which might not have the same name as the run
    found_rs=`(ls -1 *_restart_ice_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
    # Rename them
@@ -185,7 +193,7 @@ if [ ! -s "${pfx}_0000.nc" ]; then
     done
    # an already rebuilt rs with a different name
    found_rs=`(ls -1 *_restart_ice.nc || : ) 2>/dev/null`
-   [ -z "$found_rs" ] || mv $found_rs $pfx.nc
+   [ -z "$found_rs"  ] || mv $found_rs $pfx.nc
 fi
 
 fnpatt=${pfx}_0000.nc
@@ -195,7 +203,7 @@ fi
 
 # The trc rs file
 pfx=${runid}_${end_step}_restart_trc
-if [ ! -s "${pfx}_0000.nc" ]; then
+if [ ! -s "${pfx}_0000.nc"  -a ! -e "${pfx}.nc" ]; then
    # Look for files, which might not have the same name as the run
    found_rs=`(ls -1 *_restart_trc_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
    # Rename them
