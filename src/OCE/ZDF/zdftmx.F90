@@ -413,7 +413,7 @@ CONTAINS
 
       IF( ln_leewmx ) THEN ! read mesoscale eddy energy flux : W/m2  ( zeef < 0 )
          CALL iom_open('Eddyengf',inum)
-         CALL iom_get (inum, jpdom_data, 'field',zeef,1) !
+         CALL iom_get (inum, jpdom_data, 'field',zeef,1,lrowattr=ln_use_jattr) !
          CALL iom_close(inum)
       ENDIF
  
