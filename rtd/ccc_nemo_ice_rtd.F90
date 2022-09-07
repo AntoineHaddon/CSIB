@@ -74,7 +74,7 @@ SUBROUTINE calc (imt, jmt, lm)
 !     Monthly snow fields: snow thickness, snow precip, snow precip 
 !                          over ice
       REAL, DIMENSION(imt, jmt, lm) :: isnowthi, isnowpre, & 
-          &  snow_over_sea_ice, aicesflx, aicenflx, iicesflx, iicenflx
+          &  snow_over_sea_ice, aicesflx, aicenflx, iicesflx, iicetflx
 ! ======================================================================
 !     Output data 
 ! ======================================================================
@@ -91,7 +91,7 @@ SUBROUTINE calc (imt, jmt, lm)
       REAL, DIMENSION(lm)      :: iohflx_nh, iohflx_sh
       REAL, DIMENSION(lm)      :: test_calc
       REAL, DIMENSION(lm)      :: aicesflx_ave, aicenflx_ave
-      REAL, DIMENSION(lm)      :: iicesflx_ave, iicenflx_ave
+      REAL, DIMENSION(lm)      :: iicesflx_ave, iicetflx_ave
 
 ! ======================================================================
 !     Working Arrays
@@ -183,7 +183,7 @@ SUBROUTINE calc (imt, jmt, lm)
       call getvara ('iicevelu', iou0, imt*jmt*lm                       &
           & ,(/1,1,1/), (/imt,jmt,lm/), iicevelu, 1., 0.)
 ! Ice velocity along j-axis at I-point (ice presence average)
-      call getvara ('iicevelv', iou0, imt*jmt*lm                       &
+      call getvara ('siv', iou0, imt*jmt*lm                       &
           & ,(/1,1,1/), (/imt,jmt,lm/), iicevelv, 1., 0.)
 ! Wind stress along i-axis over the ice at i-point
       call getvara ('iicestru', iou0, imt*jmt*lm                       &
@@ -191,9 +191,9 @@ SUBROUTINE calc (imt, jmt, lm)
 ! Wind stress along j-axis over the ice at i-point
       call getvara ('iicestrv', iou0, imt*jmt*lm                       &
           & ,(/1,1,1/), (/imt,jmt,lm/), iicestrv, 1., 0.)
-! Oceanic heat flux at ice base
-      call getvara ('ioceflxb', iou0, imt*jmt*lm                       &
-          & ,(/1,1,1/), (/imt,jmt,lm/), ioceflxb, 1., 0.)
+! Oceanic heat flux at ice base (remove for now, variable not in SI3, NL)
+     call getvara ('qt_ice_oce', iou0, imt*jmt*lm                       &
+         & ,(/1,1,1/), (/imt,jmt,lm/), ioceflxb, 1., 0.)
 ! Snow thickness (cell average)
       call getvara ('isnowthi', iou0, imt*jmt*lm                       &
           & ,(/1,1,1/), (/imt,jmt,lm/), isnowthi, 1., 0.)
@@ -203,12 +203,12 @@ SUBROUTINE calc (imt, jmt, lm)
 ! Non Solar heat flux over ice
       call getvara ('aicenflx', iou0, imt*jmt*lm                       &
           & ,(/1,1,1/), (/imt,jmt,lm/), aicenflx, 1., 0.)
-! Solar heat flux over ice
-      call getvara ('iicesflx', iou0, imt*jmt*lm                       &
+! Solar heat flux under the ice 
+      call getvara ('qtr_ice_bot', iou0, imt*jmt*lm                       &
           & ,(/1,1,1/), (/imt,jmt,lm/), iicesflx, 1., 0.)
-! Non Solar heat flux over ice
-      call getvara ('iicenflx', iou0, imt*jmt*lm                       &
-          & ,(/1,1,1/), (/imt,jmt,lm/), iicenflx, 1., 0.)
+! total heat flux under the ice 
+      call getvara ('qt_ice_oce', iou0, imt*jmt*lm                       &
+          & ,(/1,1,1/), (/imt,jmt,lm/), iicetflx, 1., 0.)
 
 ! Hold these for now.
 ! Sublimation over sea-ice (cell average)
@@ -335,13 +335,13 @@ SUBROUTINE calc (imt, jmt, lm)
           CALL area_ave_flx(e1t, e2t, ipres_mask_sh*soicecov(:,:,cur_mon),                    &
               & iicestrv(:, :, cur_mon), imt, jmt,                      &
               & itauv_sh(cur_mon), ss)
-! calculate oceanic heat flux at ice base
-          CALL area_ave_flx(e1t, e2t, ipres_mask_nh*soicecov(:,:,cur_mon),                    &
-              &  ioceflxb(:, :, cur_mon), imt, jmt                      &
-              &            , iohflx_nh(cur_mon), ss)
-          CALL area_ave_flx(e1t, e2t, ipres_mask_sh*soicecov(:,:,cur_mon),                    &
-              & ioceflxb(:, :, cur_mon), imt, jmt,                      &
-              & iohflx_sh(cur_mon), ss)
+! calculate oceanic heat flux at ice base  (remove for now, variable not in SI3 , NL)
+         CALL area_ave_flx(e1t, e2t, ipres_mask_nh*soicecov(:,:,cur_mon),                    &
+             &  ioceflxb(:, :, cur_mon), imt, jmt                      &
+             &            , iohflx_nh(cur_mon), ss)
+         CALL area_ave_flx(e1t, e2t, ipres_mask_sh*soicecov(:,:,cur_mon),                    &
+             & ioceflxb(:, :, cur_mon), imt, jmt,                      &
+             & iohflx_sh(cur_mon), ss)
 !  Solar and non solar heat fluxes from atmosphere
           CALL area_ave_flx(e1t, e2t, t_mask,                    &
               & aicenflx(:, :, cur_mon), imt, jmt,                      &
@@ -349,10 +349,10 @@ SUBROUTINE calc (imt, jmt, lm)
           CALL area_ave_flx(e1t, e2t, t_mask,                    &
               & aicesflx(:, :, cur_mon), imt, jmt,                      &
               & aicesflx_ave(cur_mon), ss)
-!  Solar and non solar heat fluxes from ice to ocean 
+!  Solar and non solar heat fluxes from ice to ocean (remove for now, variable not in SI3, NL ) 
           CALL area_ave_flx(e1t, e2t, t_mask,                    &
-              & iicenflx(:, :, cur_mon), imt, jmt,                      &
-              & iicenflx_ave(cur_mon), ss)
+              & iicetflx(:, :, cur_mon), imt, jmt,                      &
+              & iicetflx_ave(cur_mon), ss)
           CALL area_ave_flx(e1t, e2t, t_mask,                    &
               & iicesflx(:, :, cur_mon), imt, jmt,                      &
               & iicesflx_ave(cur_mon), ss)
@@ -427,8 +427,8 @@ SUBROUTINE calc (imt, jmt, lm)
       print*,'   ICE-OCE Solar/nonsolar flux  (W/m^2) '
       print*,'-------------------------------------'
       print*,'S      ', iicesflx_ave
-      print*,'NS     ', iicenflx_ave
-      print*,'NET    ', iicenflx_ave + iicesflx_ave
+      print*,'NS     ', iicetflx_ave - iicesflx_ave
+      print*,'NET    ', iicetflx_ave
      
 
 !---------------------------------------------------------
@@ -575,7 +575,7 @@ SUBROUTINE calc (imt, jmt, lm)
 !       Heat fluxes
         call putvars ('aicenflx', iou, ntrec2, aicenflx_ave(cur_mon), 1., 0.)
         call putvars ('aicesflx', iou, ntrec2, aicesflx_ave(cur_mon), 1., 0.)
-        call putvars ('iicenflx', iou, ntrec2, iicenflx_ave(cur_mon), 1., 0.)
+        call putvars ('iicenflx', iou, ntrec2, iicetflx_ave(cur_mon) - iicesflx_ave(cur_mon), 1., 0.)
         call putvars ('iicesflx', iou, ntrec2, iicesflx_ave(cur_mon), 1., 0.)
       enddo
         

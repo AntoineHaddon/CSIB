@@ -133,23 +133,35 @@ set -x
         [ -s tstend.nc ] && chmod u+w tstend.nc || bail "tstend.nc does not exist"
 
 # Append mfo.nc to 1m_scalar_ar6_${fmon}
-        cp 1m_scalar_ar6_${fmon} 1m_scalar_ar6.nc && chmod u+w 1m_scalar_ar6.nc || bail "1m_scalar_ar6_${fmon} does not exist"
-        ncks -A mfo.nc 1m_scalar_ar6.nc
-        rm -f 1m_scalar_ar6_${fmon}
-        mv 1m_scalar_ar6.nc 1m_scalar_ar6_${fmon}
+        if [ -e 1m_scalar_ar6_${fmon} ]; then
+          cp 1m_scalar_ar6_${fmon} 1m_scalar_ar6.nc && chmod u+w 1m_scalar_ar6.nc || bail "1m_scalar_ar6_${fmon} does not exist"
+          ncks -A mfo.nc 1m_scalar_ar6.nc
+          rm -f 1m_scalar_ar6_${fmon}
+          mv 1m_scalar_ar6.nc 1m_scalar_ar6_${fmon}
+        else
+          echo  "1m_scalar_ar6_${fmon} does not exist"
+        fi
 
 # Append msftbarot.nc to 1m_grid_u_ar6_${fmon}
-        cp 1m_grid_u_ar6_${fmon} 1m_grid_u_ar6.nc && chmod u+w 1m_grid_u_ar6.nc || bail "1m_grid_u_ar6_${fmon} does not exist"
-        ncks -A msftbarot.nc 1m_grid_u_ar6.nc
-        rm -f 1m_grid_u_ar6_${fmon}
-        mv 1m_grid_u_ar6.nc 1m_grid_u_ar6_${fmon}
+        if [ -e 1m_grid_u_ar6_${fmon} ]; then
+          cp 1m_grid_u_ar6_${fmon} 1m_grid_u_ar6.nc && chmod u+w 1m_grid_u_ar6.nc || bail "1m_grid_u_ar6_${fmon} does not exist"
+          ncks -A msftbarot.nc 1m_grid_u_ar6.nc
+          rm -f 1m_grid_u_ar6_${fmon}
+          mv 1m_grid_u_ar6.nc 1m_grid_u_ar6_${fmon}
+        else
+          echo  "1m_grid_u_ar6_${fmon} does not exist"
+        fi
 
 # Append tstend.nc to 1y_grid_t_ar6_${fmon}
-        if [ ${nmon} -eq 1 -a $fmon -eq 1 ] ; then
-          cp 1y_grid_t_ar6_${fmon} 1y_grid_t_ar6.nc && chmod u+w 1y_grid_t_ar6.nc || bail "1y_grid_t_ar6_${fmon} does not exist"
-          ncks -A tstend.nc 1y_grid_t_ar6.nc
-          rm -f 1y_grid_t_ar6_${fmon}
-          mv 1y_grid_t_ar6.nc 1y_grid_t_ar6_${fmon}
+        if [ -e 1y_grid_t_ar6_${fmon} ]; then
+          if [ ${nmon} -eq 1 -a $fmon -eq 1 ] ; then
+            cp 1y_grid_t_ar6_${fmon} 1y_grid_t_ar6.nc && chmod u+w 1y_grid_t_ar6.nc || bail "1y_grid_t_ar6_${fmon} does not exist"
+            ncks -A tstend.nc 1y_grid_t_ar6.nc
+            rm -f 1y_grid_t_ar6_${fmon}
+            mv 1y_grid_t_ar6.nc 1y_grid_t_ar6_${fmon}
+          fi
+        else
+          echo "1y_grid_t_ar6_${fmon} does not exist"
         fi
       fi
 
@@ -173,6 +185,8 @@ set -x
 
 # Split to time series
   for sfx in $nemo_diag_file_suffix_list ; do
+    [ ! -e ${sfx}_${fmon} ] && continue
+    ncks -O -C -x -v time_centered_bounds,time_centered ${sfx}_${fmon} ${sfx}_${fmon} 
     cdo splitname ${sfx}_${fmon} xxx-${sfx}_
   done
 

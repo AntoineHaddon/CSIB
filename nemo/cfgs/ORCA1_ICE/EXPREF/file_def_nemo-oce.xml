@@ -31,8 +31,13 @@
           <field field_ref="ahmt_2d"     name="ahmt_2d"  level="0" />
           <field field_ref="spp_tend"    name="spp_tend" level="0" />
           <field field_ref="fmmflx"      name="fmmflx"   level="0" />
-	  <field field_ref="e3t"         name="e3t"      level="0" />
-	  <field field_ref="saltflx"     name="saltflx"  level="0" />
+    	  <field field_ref="e3t"         name="e3t"      level="0" />
+    	  <field field_ref="saltflx"     name="saltflx"  level="0" />
+          <field field_ref="snow_ai_cea"    name="snow_ai_cea"  level="0" />
+          <field field_ref="snow_ao_cea"    name="snow_ao_cea"  level="0" />
+          <field field_ref="hflx_rain_cea"  name="hflx_rain_cea"  level="0" />
+          <field field_ref="hflx_snow_cea"  name="hflx_snow_cea"  level="0" />
+          <field field_ref="hflx_rnf_cea"   name="hflx_rnf_cea"  level="0" />
         </file>
 
         <file id="file12" name_suffix="_grid_U" description="ocean U grid variables">

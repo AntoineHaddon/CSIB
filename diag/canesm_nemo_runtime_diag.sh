@@ -121,8 +121,8 @@
   [ -z "$nemo_ice_rtd_exe" ] && bail "ice_rtd_exe is not defined."
   cp ${EXEC_STORAGE_DIR}/${nemo_ice_rtd_exe} .
 
-  [ -z "$nemo_carbon_rtd_exe" ] && bail "nemo_carbon_rtd_exe is not defined."
-  cp ${EXEC_STORAGE_DIR}/${nemo_carbon_rtd_exe} .
+  [ "$nemo_carbon" = "on" -a -z "$nemo_carbon_rtd_exe" ] && bail "nemo_carbon_rtd_exe is not defined."
+  [ "$nemo_carbon" = "on" ] &&cp ${EXEC_STORAGE_DIR}/${nemo_carbon_rtd_exe} .
 
   ######## Compute the rt diagnostics #######
 
@@ -156,27 +156,28 @@
       access grid_w $rtd_hist4 na #|| bail "NEMO rdt cannot access $rtd_hist4"
       access orca_mesh_mask $rtd_hist5 na
 
+      # Access additional annual history files containing ICE related variables (needed for qsr_ice anbd qns_ice)
+      rtd_hist7="mc_${runid}_${yearm}_m${mon}_1m_icemod.nc"
+      access icemod $rtd_hist7 na
+
       # Create run time diagnostics for physical ocean variables
       $nemo_physical_rtd_exe ${yearm} ${mon}
 
                    # Sea-ice run time diagnostics
 
-      # Access additional annual history files containing PISCES related variables
-      rtd_hist7="mc_${runid}_${yearm}_m${mon}_1m_icemod.nc"
-      access icemod $rtd_hist7 na
-
       # Create run time diagnostics for ice variables
       [ -s icemod ] && $nemo_ice_rtd_exe ${yearm} ${mon}
 
+      if [ "$nemo_carbon" = "on" ]; then
                    # Carbon run time diagnostics
+        # Access additional annual history files containing PISCES related variables
+        rtd_hist8="mc_${runid}_${yearm}_m${mon}_1m_ptrc_t.nc"
+        rtd_hist9="mc_${runid}_${yearm}_m${mon}_1m_diad_t.nc"
+        access ptrc_t $rtd_hist8 na
+        access diad_t $rtd_hist9 na
 
-      # Access additional annual history files containing PISCES related variables
-      rtd_hist8="mc_${runid}_${yearm}_m${mon}_1m_ptrc_t.nc"
-      rtd_hist9="mc_${runid}_${yearm}_m${mon}_1m_diad_t.nc"
-      access ptrc_t $rtd_hist8 na
-      access diad_t $rtd_hist9 na
-
-      [ -s ptrc_t ] && [ -s diad_t ] && $nemo_carbon_rtd_exe ${yearm} ${mon}
+        [ -s ptrc_t ] && [ -s diad_t ] && $nemo_carbon_rtd_exe ${yearm} ${mon}
+      fi
 
       # Clean up
       release grid_t

@@ -75,7 +75,7 @@ PROGRAM nemo_diag
    Do i = 1, ntdim
       CALL getdimnm  (dimnm, iou, i, ndim)
       print*, 'DIM',i,':',dimnm, 'length:', ndim
-      IF (dimnm .eq. 'tbnds' .or. dimnm .eq. 'bnds') ntbnds = ndim
+      IF (dimnm .eq. 'tbnds' .or. dimnm .eq. 'axis_nbounds') ntbnds = ndim
    END DO
 
    ly = lm / 12
@@ -140,9 +140,9 @@ PROGRAM nemo_diag
    !!-------------------
    CALL getvara ('e2u', iou1, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e2u , 1., 0.)
    CALL getvara ('e1v', iou1, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1v , 1., 0.)
-   CALL getvara ('e3u', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3u , 1., 0.)
-   CALL getvara ('e3v', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3v , 1., 0.)
-   CALL getvara ('e3t', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3t , 1., 0.)
+   CALL getvara ('e3u_0', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3u , 1., 0.)
+   CALL getvara ('e3v_0', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3v , 1., 0.)
+   CALL getvara ('e3t_0', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3t , 1., 0.)
    CALL getvara ('umask', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),umask , 1., 0.)
    CALL getvara ('vmask', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),vmask , 1., 0.)
    CALL getvara ('tmask', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),tmask , 1., 0.)
@@ -169,8 +169,8 @@ PROGRAM nemo_diag
    CALL getatttext (iou2, 'time_counter', 'long_name', long_name)
    CALL getatttext (iou2, 'time_counter', 'time_origin', time_origin)
    CALL getatttext (iou2, 'time_counter', 'bounds', bounds)
-   ! time_counter_bnds
-   CALL getvara ('time_counter_bnds', iou2, ntbnds*lm, (/1,1/), (/ntbnds,lm/), time_bnds, 1., 0.)
+   ! time_counter_bounds
+   CALL getvara ('time_counter_bounds', iou2, ntbnds*lm, (/1,1/), (/ntbnds,lm/), time_bnds, 1., 0.)
    !WRITE(*,*) 'time_bnds'
    !WRITE(*,*) time_bnds
    ! nav_lon on grid_U
@@ -178,13 +178,13 @@ PROGRAM nemo_diag
    ! nav_lat on grid_U
    CALL getvara ('nav_lat', iou2, imt*jmt, (/1,1/), (/imt,jmt/), nav_lat_u, 1., 0.)
    ! u-velocity
-   CALL getvara ('vozocrtx', iou2, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), u, 1., 0.)
-   ! WRITE(*,*) 'vozocrtx'
+   CALL getvara ('uo', iou2, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), u, 1., 0.)
+   ! WRITE(*,*) 'uo'
    ! u(144,45,1,1)=0.0234638 m/s
    ! WRITE(*,*) u(144,45,1,1)
    ! v-velocity 
-   CALL getvara ('vomecrty', iou3, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), v, 1., 0.)
-   ! WRITE(*,*) 'vomecrty'
+   CALL getvara ('vo', iou3, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), v, 1., 0.)
+   ! WRITE(*,*) 'vo'
    ! v(144,45,1,1)=-0.0440831 m/s     
    ! WRITE(*,*) v(144,45,1,1) 
    ! nav_lon on grid_T
@@ -196,8 +196,8 @@ PROGRAM nemo_diag
    ! deptht 
    CALL getvara ('deptht', iou4, km, (/1/), (/km/), deptht, 1., 0.)
    ! ssh
-   CALL getvara ('sossheig', iou4, imt*jmt*lm, (/1,1,1/), (/imt,jmt,lm/), ssh, 1., 0.)
-   ! WRITE(*,*) 'sossheig'
+   CALL getvara ('ssh', iou4, imt*jmt*lm, (/1,1,1/), (/imt,jmt,lm/), ssh, 1., 0.)
+   ! WRITE(*,*) 'ssh'
    ! ssh(144,45,1,1)=-1.77589 m
    ! WRITE(*,*) ssh(144,45,1)
    ! tn from last time step of previous year
@@ -276,7 +276,7 @@ PROGRAM nemo_diag
       CALL putatttext (iou, 'time_counter', 'title', title)
       CALL putatttext (iou, 'time_counter', 'time_origin', time_origin)
       CALL putatttext (iou, 'time_counter', 'bounds', bounds)
-      CALL defvar ('time_counter_bnds', iou, 2, (/id_tbnds, id_time/), 0., 0., ' ', 'D' &
+      CALL defvar ('time_counter_bounds', iou, 2, (/id_tbnds, id_time/), 0., 0., ' ', 'D' &
                    , '', '', '')
       !CALL defvar ('passage', iou, 2, (/id_s, id_l/), 1, 1, 'Y', 'Tstrlen'     &
      !&            , 'ocean passage', 'region', ' ')
@@ -292,7 +292,7 @@ PROGRAM nemo_diag
      &              , line, 1., 0.)
 
       CALL putvara ('time_counter', iou, lm, (/1/), (/lm/), time, 1., 0.)
-      CALL putvara ('time_counter_bnds', iou, ntbnds*lm, (/1,1/), (/ntbnds,lm/), time_bnds, 1., 0.)
+      CALL putvara ('time_counter_bounds', iou, ntbnds*lm, (/1,1/), (/ntbnds,lm/), time_bnds, 1., 0.)
       ! WRITE(*,*) 'time_bnds'
       ! WRITE(*,*) time_bnds
       ! mfo    
@@ -327,7 +327,7 @@ PROGRAM nemo_diag
       CALL putatttext (iou, 'time_counter', 'title', title)
       CALL putatttext (iou, 'time_counter', 'time_origin', time_origin)
       CALL putatttext (iou, 'time_counter', 'bounds', bounds)
-      CALL defvar ('time_counter_bnds', iou, 2, (/id_tbnds, id_time/), 0., 0., ' ', 'D' &
+      CALL defvar ('time_counter_bounds', iou, 2, (/id_tbnds, id_time/), 0., 0., ' ', 'D' &
                    , '', '', '')
       !CALL defvar ('nav_lon', iou, 2, (/id_x, id_y/), 0., 0., ' ', 'F', &
       !             'Longitude', 'longitude', 'degrees_east')
@@ -348,7 +348,7 @@ PROGRAM nemo_diag
       !CALL putvara ('nav_lon', iou, imt*jmt, (/1,1/), (/imt, jmt/), nav_lon_u(:,:), 1., 0.)
       !CALL putvara ('nav_lat', iou, imt*jmt, (/1,1/), (/imt, jmt/), nav_lat_u(:,:), 1., 0.)
       CALL putvara ('time_counter', iou, lm, (/1/), (/lm/), time, 1., 0.)
-      CALL putvara ('time_counter_bnds', iou, ntbnds*lm, (/1,1/), (/ntbnds,lm/), time_bnds, 1., 0.)
+      CALL putvara ('time_counter_bounds', iou, ntbnds*lm, (/1,1/), (/ntbnds,lm/), time_bnds, 1., 0.)
       CALL putvara ('msftbarot', iou, imt*jmt*lm, (/1,1,1/), (/imt, jmt, lm/), &
                      msftbarot(:,:,:), 1., 0.)
       print*, '------------------------'
@@ -381,7 +381,7 @@ PROGRAM nemo_diag
       CALL putatttext (iou, 'time_counter', 'title', title)
       CALL putatttext (iou, 'time_counter', 'time_origin', time_origin)
       CALL putatttext (iou, 'time_counter', 'bounds', bounds)
-      CALL defvar ('time_counter_bnds', iou, 2, (/id_tbnds, id_time/), 0., 0., ' ', 'D' &
+      CALL defvar ('time_counter_bounds', iou, 2, (/id_tbnds, id_time/), 0., 0., ' ', 'D' &
              , '', '', '')
       !CALL defvar ('nav_lon', iou, 2, (/id_x, id_y/), 0., 0, ' ', 'F', &
       !             'Longitude', 'longitude', 'degrees_east')
@@ -413,7 +413,7 @@ PROGRAM nemo_diag
       !CALL putvara ('nav_lat', iou, imt*jmt, (/1,1/), (/imt, jmt/), nav_lat_t(:,:), 1., 0.)
       CALL putvara ('deptht', iou, km, (/1/), (/km/), deptht(:), 1., 0.)
       CALL putvara ('time_counter', iou, ly, (/1/), (/ly/), ytime, 1., 0.)
-      CALL putvara ('time_counter_bnds', iou, ntbnds*ly, (/1,1/), (/ntbnds,ly/), time_bnds, 1., 0.)
+      CALL putvara ('time_counter_bounds', iou, ntbnds*ly, (/1,1/), (/ntbnds,ly/), time_bnds, 1., 0.)
       CALL putvara ('opottemptend', iou, imt*jmt*km*ly, (/1,1,1,1/), (/imt, jmt, km, ly/), opottemptend(:,:,:,:), 1., 0.)
       CALL putvara ('osalttend', iou, imt*jmt*km*ly, (/1,1,1,1/), (/imt, jmt, km, ly/), osalttend(:,:,:,:), 1., 0.)
       print*, '---------------------'
