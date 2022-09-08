@@ -76,7 +76,7 @@ set -x
   done
 
 # Execute the following lines when output_level -ge 1
-  if [ $output_level -ge 1 && $with_nemo_diag == 1 ] ; then
+  if [ $output_level -ge 1 ] ; then
       if [ $nmon -eq 1 -a $fmon -eq 1 ] ; then
         for sfx in $nemo_diag_file_1y_suffix_list ; do
           diag_hist="mc_${runid}_${fyear}_m${fmon}_${sfx}.nc"
