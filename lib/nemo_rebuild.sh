@@ -134,7 +134,7 @@ if [ -s "$indir" ] ; then
    rm -rf $indir
 fi
 
-# Rebuild the restart files. These will be tarred below and saved alltogether, as
+# Rebuild the restart files. These will be saved alltogether, as
 # is custom for NEMO rs' historically.
 
 # Access the restart directory, and cd into it.
@@ -144,14 +144,15 @@ access ${inrs}.tar ${inrs}.tar nocp=off na
 if [ -s "${inrs}.tar" ]; then
   mkdir  ${inrs} 
   tar -xf ${inrs}.tar -C ${inrs}
-  dir_del_list+=" ${inrs}.tar"
+  dir_del_list+=" ${inrs}.tar" #delete the tar and save the directory
 else
-  access $inrs $inrs nocp=off na
-  dir_del_list+=" $inrs"
+  access $inrs $inrs nocp=on na #make a link to update the files in the directory 
+  #dir_del_list+=" $inrs" # DON'T delete the directory, files inside updated
 fi
 [ -s "${inrs}" ]|| bail "Could not find ${inrs}"
+
+cp rebuild_nemo.exe ${inrs}/
 cd $inrs
-ln -s ../rebuild_nemo.exe .
 # Figure out the last time step, which is needed for the rs tile names.
 ls -l  rs_time.step
 nn_itend=$(cat rs_time.step)
@@ -175,8 +176,7 @@ if [ ! -s "${pfx}_0000.nc" -a ! -e "${pfx}.nc" ]; then
 fi
 
 # Check if the RS is already rebuilt, in which case do nothing.
-fnpatt=${pfx}_0000.nc
-if [ -s "$fnpatt" ]; then
+if [ -s "${pfx}_0000.nc" ]; then
    rebuild_nemo_tiles
 fi
 
@@ -196,8 +196,7 @@ if [ ! -s "${pfx}_0000.nc"  -a ! -e "${pfx}.nc" ]; then
    [ -z "$found_rs"  ] || mv $found_rs $pfx.nc
 fi
 
-fnpatt=${pfx}_0000.nc
-if [ -s "$fnpatt" ]; then
+if [ -s "${pfx}_0000.nc" ]; then
    rebuild_nemo_tiles
 fi
 
@@ -217,19 +216,14 @@ if [ ! -s "${pfx}_0000.nc"  -a ! -e "${pfx}.nc" ]; then
    [ -z "$found_rs" ] || mv $found_rs $pfx.nc
 fi
 
-fnpatt=${pfx}_0000.nc
-if [ -s "$fnpatt" ]; then
+if [ -s "${pfx}_0000.nc" ]; then
    rebuild_nemo_tiles
 fi
 
-# Create the tar archive for the nemors and save it.
-release rebuild_nemo.exe $rbnl_file
-tar -cf ${inrs}.tar *
-# preserve time stamp from restart.nc
-touch -r ${runid}_${end_step}_restart.nc $fnpatt ${inrs}.tar
-save ${inrs}.tar ${inrs}.tar || bail "Could not save ${indir}.tar"
 cd $wrkdir
-rm -rf $inrs
+
+#save the new untar ${inrs} (if already untar, file in direcotory are just kept)
+ [ -e "${inrs}.tar" ] && ( save ${inrs} ${inrs} || bail "Could not save ${inrs}" )
 
 # since everything has gone successfully, cleanup tile directories from RUNPATH
 mkdir cleanup
