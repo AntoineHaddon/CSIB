@@ -171,31 +171,31 @@ SUBROUTINE calc (imt, jmt, lm)
 !    Load ice data from NetCDF
 !---------------------------------------------------
 ! Ice Fraction
-      call getvara ('soicecov', iou0, imt*jmt*lm, (/1,1,1/)            &
+      call getvara ('siconc', iou0, imt*jmt*lm, (/1,1,1/)            &
           & , (/imt,jmt,lm/), soicecov, 1., 0.)
 ! Ice thickness (cell average)
-      call getvara ('iicethic', iou0, imt*jmt*lm, (/1,1,1/)            &
+      call getvara ('sithick', iou0, imt*jmt*lm, (/1,1,1/)            &
           & , (/imt,jmt,lm/), iicethic, 1., 0.)
 ! Ice surface temperature (cell average)
       call getvara ('iicetemp', iou0, imt*jmt*lm           &
           & ,(/1,1,1/), (/imt,jmt,lm/), iicetemp, 1., 0.)
 ! Ice velocity along i-axis at I-point (ice presence average)
-      call getvara ('iicevelu', iou0, imt*jmt*lm                       &
+      call getvara ('siu', iou0, imt*jmt*lm                       &
           & ,(/1,1,1/), (/imt,jmt,lm/), iicevelu, 1., 0.)
 ! Ice velocity along j-axis at I-point (ice presence average)
       call getvara ('siv', iou0, imt*jmt*lm                       &
           & ,(/1,1,1/), (/imt,jmt,lm/), iicevelv, 1., 0.)
 ! Wind stress along i-axis over the ice at i-point
-      call getvara ('iicestru', iou0, imt*jmt*lm                       &
+      call getvara ('sistrxdtop', iou0, imt*jmt*lm                       &
           & ,(/1,1,1/), (/imt,jmt,lm/), iicestru, 1., 0.)
 ! Wind stress along j-axis over the ice at i-point
-      call getvara ('iicestrv', iou0, imt*jmt*lm                       &
+      call getvara ('sistrydtop', iou0, imt*jmt*lm                       &
           & ,(/1,1,1/), (/imt,jmt,lm/), iicestrv, 1., 0.)
 ! Oceanic heat flux at ice base (remove for now, variable not in SI3, NL)
      call getvara ('qt_ice_oce', iou0, imt*jmt*lm                       &
          & ,(/1,1,1/), (/imt,jmt,lm/), ioceflxb, 1., 0.)
 ! Snow thickness (cell average)
-      call getvara ('isnowthi', iou0, imt*jmt*lm                       &
+      call getvara ('sisnthick', iou0, imt*jmt*lm                       &
           & ,(/1,1,1/), (/imt,jmt,lm/), isnowthi, 1., 0.)
 ! Solar heat flux over ice
       call getvara ('aicesflx', iou0, imt*jmt*lm                       &

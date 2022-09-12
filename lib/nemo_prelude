@@ -183,6 +183,10 @@ echo "#################### Start NEMO pre-processing #################"
 
   for file in "${xios_files[@]}"; do
     find_nemo_config_EXP00 $file
+    # Update NEMO priority level of output variables in each file: output_level 
+    # Not all have the output_level, but this is a secure way to have the same
+    # output_level everywhere (should be in "context_nemo.mxl")
+    sed -i "s/output_level=\"\([0-9]\+\)\"/output_level=\"${output_level}\"/" $file
   done
 
   # ==============================

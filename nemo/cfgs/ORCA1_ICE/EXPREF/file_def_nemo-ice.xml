@@ -96,8 +96,6 @@
        <field field_ref="corstry"          name="siforcecorioly"    level="3"  />
        <field field_ref="intstrx"          name="siforceintstrx"    level="3"  />
        <field field_ref="intstry"          name="siforceintstry"    level="3"  />
-       <field field_ref="xmtrptot"         name="sidmasstranx"      level="2"  />
-       <field field_ref="ymtrptot"         name="sidmasstrany"      level="2"  />
        <field field_ref="normstr"          name="sistresave"       operation="instant"  level="3"  />
        <field field_ref="sheastr"          name="sistremax"        operation="instant"  level="3"  />
        <field field_ref="icediv"           name="sidivvel"         operation="instant"  level="2"  />

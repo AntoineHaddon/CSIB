@@ -97,7 +97,7 @@ PROGRAM nemo_ocean_diag
 !     and mixed layer depth (MLD) 
       REAL, DIMENSION(:, :), ALLOCATABLE  :: hflux, wflux, tau_x, tau_y
       REAL, DIMENSION(:, :), ALLOCATABLE  :: mld10, ssh
-      REAL, DIMENSION(:, :), ALLOCATABLE  :: snow_ai_cea, snow_ao_cea
+      REAL, DIMENSION(:, :), ALLOCATABLE  :: snow_ai_cea, snow_ao_cea,sitimefrac
       REAL, DIMENSION(:, :), ALLOCATABLE  :: hflx_rain_cea, hflx_snow_cea, hflx_ice_cea, hflx_rnf_cea
       REAL, DIMENSION(:, :), ALLOCATABLE  :: isnwmlt_cea, snowmel_cea
       REAL, DIMENSION(:, :), ALLOCATABLE  :: hflx_qsr_tot, hflx_qns_tot, hflx_qsr_ice, hflx_qns_ice
@@ -186,7 +186,7 @@ PROGRAM nemo_ocean_diag
       LOGICAL :: exists, exists1, notopen
       REAL    :: tyear, tdays_elapsed
       CHARACTER :: fname01*100,fname02*100, fname03*100
-      CHARACTER :: fname04*100, fname05*100
+      CHARACTER :: fname04*100, fname05*100, fname06*100
       CHARACTER(len=32) :: year_arg_in, mon_arg_in
       integer, dimension(8) :: ierr
 ! Constants
@@ -217,7 +217,7 @@ PROGRAM nemo_ocean_diag
          &      mld10_win(imt,jmt), mld10_sum(imt,jmt),                   &
          &      wind_x(imt,jmt), wind_y(imt,jmt), STAT=ierr(5) )
       ALLOCATE(snow_ai_cea(imt,jmt), snow_ao_cea(imt,jmt), hflx_rain_cea(imt,jmt), &
-         &     hflx_snow_cea(imt,jmt), hflx_ice_cea(imt,jmt),                      &
+         &     hflx_snow_cea(imt,jmt), hflx_ice_cea(imt,jmt),sitimefrac(imt,jmt), &
          &     hflx_rnf_cea(imt,jmt), isnwmlt_cea(imt,jmt), snowmel_cea(imt,jmt),  & 
          &     hflx_qsr_tot(imt,jmt), hflx_qns_tot(imt,jmt), hflx_qsr_ice(imt,jmt), hflx_qns_ice(imt,jmt), &
          &     STAT=ierr(5) )
@@ -304,6 +304,7 @@ PROGRAM nemo_ocean_diag
         fname03='grid_v'
         fname04='grid_w'
         fname05='orca_mesh_mask'
+        fname06='icemod'
 
 !---------------------------------------------------
 !    Open the defined NetCDF files   
@@ -313,6 +314,7 @@ PROGRAM nemo_ocean_diag
       call openfile (fname02,iou1)
       call openfile (fname03,iou2)
       call openfile (fname04,iou3)
+      call openfile (fname06,iou5)
 ! open file with mask/grid info
       call openfile (fname05,iou4)
 
@@ -454,15 +456,16 @@ PROGRAM nemo_ocean_diag
           CALL getvara ('snow_ao_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), snow_ao_cea, 1., 0.)
           CALL getvara ('hflx_rain_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_rain_cea, 1., 0.)
           CALL getvara ('hflx_snow_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_snow_cea, 1., 0.)
-          CALL getvara ('hflx_ice_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_ice_cea, 1., 0.)
+          CALL getvara ('qt_ice_oce', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_ice_cea, 1., 0.)
           CALL getvara ('hflx_rnf_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_rnf_cea, 1., 0.)
-          CALL getvara ('isnwmlt_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), isnwmlt_cea, 1., 0.)
-          CALL getvara ('snowmel_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), snowmel_cea, 1., 0.)
+          CALL getvara ('sitimefrac', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), sitimefrac, 1., 0.)
+          CALL getvara ('vfxsnw', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), snowmel_cea, 1., 0.)
+          isnwmlt_cea = snowmel_cea*sitimefrac*t_mask(:,:,1)
 
-          CALL getvara ('hflx_qsr_tot', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qsr_tot, 1., 0.)
-          CALL getvara ('hflx_qns_tot', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qns_tot, 1., 0.)
-          CALL getvara ('hflx_qsr_ice', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qsr_ice, 1., 0.)
-          CALL getvara ('hflx_qns_ice', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qns_ice, 1., 0.)
+          CALL getvara ('qsr', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qsr_tot, 1., 0.)
+          CALL getvara ('qns', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qns_tot, 1., 0.)
+          CALL getvara ('aicesflx', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qsr_ice, 1., 0.)
+          CALL getvara ('aicenflx', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qns_ice, 1., 0.)
 
          ! Wind enery input
           wind_x =  tau_x(:,:)*u(:,:,1)
@@ -525,7 +528,7 @@ PROGRAM nemo_ocean_diag
           call area_ave_flx(e1t, e2t, g_mask, wflux(:, :), imt      &
             &              , jmt, wglo(l), dum)
     !DY      call area_ave_flx (e1t,e2t,g_mask,ssh_ann,sshglo,dum)
-          wglo(l)   = wglo(l)*1.e+7   !  1.e-7 kg/m2/s
+    !NL      wglo(l)   = wglo(l)*1.e+7   !  1.e-7 kg/m2/s
     !DY      sshglo = sshglo*1.e+2 ! cm         
 
     !---------------------------------------------------
