@@ -54,27 +54,6 @@ set -x
 # suffix list for yearly nemo historical files.
   nemo_diag_file_1y_suffix_list=${nemo_diag_file_1y_suffix_list}
 
-# Access the history files
-  for sfx in $nemo_diag_file_suffix_list ; do
-    yr=$fyear
-    mp=0
-    for mm in $nemo_rtd_mons ; do
-      if [ $mm -lt $mp ] ; then
-        # increment year by 1 if the current month is smaller than the previous month
-        yr=`echo $yr | awk '{printf "%04d", $1 + 1}'`;
-      fi
-      diag_hist="mc_${runid}_${yr}_m${mm}_${sfx}.nc"
-      access ${sfx}_${mm} $diag_hist na
-      mp=$mm
-    done
-# Merge sub-yearly files
-    if [ $nmon -gt 1 -a -e ${sfx}_m$fmon ] ; then
-      cdo mergetime ${sfx}_?? ${sfx}_m$fmon
-      rm -f ${sfx}_??
-      mv ${sfx}_m$fmon ${sfx}_$fmon
-    fi
-  done
-
 # Execute the following lines when output_level -ge 1
   if [ $output_level -ge 1 ] ; then
       if [ $nmon -eq 1 -a $fmon -eq 1 ] ; then
