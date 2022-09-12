@@ -1,11 +1,11 @@
 # Where to run
-FRONTEND=eccc-ppp4
-BACKEND=daley
+FRONTEND=ppp6
+BACKEND=robert
 
-SEQ_DEFAULT_MACHINE=eccc-ppp4
+SEQ_DEFAULT_MACHINE=ppp6
 
 # Prefix to job/file names
-SEQ_JOBNAME_PREFIX=oka-001-
+SEQ_JOBNAME_PREFIX=nemo4-integration-iat2-
 
 # Maestro submission method
 SEQ_CONTAINER_METHOD=immediate
@@ -23,10 +23,10 @@ FRONTEND_DEFAULT_Q=development
 # NEMO related info, used for looping in maestro and setting resources.
 NEMO_LOOP_START=1
 NEMO_LOOP_STEP=1
-NEMO_LOOP_END=1
-NEMO_FREQ_MONTHS=24
+NEMO_LOOP_END=2
+NEMO_FREQ_MONTHS=60
 NEMO_RUN_START_MONTH=01
 NEMO_RUN_START_YEAR=0001
-NEMO_NPROC=288
-NEMO_RDT=3600
+NEMO_NPROC=240
+NEMO_RDT=2700
 NEMO_WALLCLOCK=180
