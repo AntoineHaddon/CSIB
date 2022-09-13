@@ -114,14 +114,16 @@
   fi
 
 # Get the RTD executables
+  nemo_physical_rtd_exe=nemo_physical_rtd.exe   
+  nemo_ice_rtd_exe=nemo_ice_rtd.exe            
+  nemo_carbon_rtd_exe=nemo_carbon-cmoc_rtd.exe 
+  [[ $nemo_config == *"CMOC" ]] && nemo_carbon_rtd_exe=nemo_carbon-cmoc_rtd.exe
+  [[ $nemo_config == *"CANOE" ]] && nemo_carbon_rtd_exe=nemo_carbon-canoe_rtd.exe
 
-  [ -z "$nemo_physical_rtd_exe" ] && bail "nemo_physical_rtd_exe is not defined."
   cp ${EXEC_STORAGE_DIR}/${nemo_physical_rtd_exe} .
 
-  [ -z "$nemo_ice_rtd_exe" ] && bail "ice_rtd_exe is not defined."
   cp ${EXEC_STORAGE_DIR}/${nemo_ice_rtd_exe} .
 
-  [ "$nemo_carbon" = "on" -a -z "$nemo_carbon_rtd_exe" ] && bail "nemo_carbon_rtd_exe is not defined."
   [ "$nemo_carbon" = "on" ] &&cp ${EXEC_STORAGE_DIR}/${nemo_carbon_rtd_exe} .
 
   ######## Compute the rt diagnostics #######
