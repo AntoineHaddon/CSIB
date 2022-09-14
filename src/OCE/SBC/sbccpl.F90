@@ -346,7 +346,7 @@ CONTAINS
       IF( sbc_cpl_alloc() /= 0 )   CALL ctl_stop( 'STOP', 'sbc_cpl_alloc : unable to allocate arrays' )
 
       ! For now, we need to set the coupling strategy in the FLD_CPL portion of the field for cancpl
-      if (lk_cancpl) then
+      if (ln_cpl.and.lk_cancpl) then
          call set_cancpl_params( [ &
                         sn_snd_temp, sn_snd_alb   , sn_snd_thick, sn_snd_crt   , sn_snd_co2,   &
                         sn_rcv_w10m, sn_rcv_taumod, sn_rcv_tau  , sn_rcv_dqnsdt, sn_rcv_qsr,   &
@@ -359,7 +359,7 @@ CONTAINS
       ! ================================ !
       nrcvinfo(:) = COUPLER_idle   ! needed by nrcvinfo(jpr_otx1) if we do not receive ocean stress
 
-      ! for each field: define the OASIS name                              (srcv(:)%clname)
+      ! for each field: define the coupler name                              (srcv(:)%clname)
       !                 define receive or not from the namelist parameters (srcv(:)%laction)
       !                 define the north fold type of lbc                  (srcv(:)%nsgn)
 
@@ -498,7 +498,7 @@ CONTAINS
       IF( srcv(jpr_isf)%laction .AND. ln_isf ) THEN
          l_isfcpl             = .TRUE.                      ! -> no need to read isf in sbcisf
          IF(lwp) WRITE(numout,*)
-         IF(lwp) WRITE(numout,*) '   iceshelf received from oasis '
+         IF(lwp) WRITE(numout,*) '   iceshelf received from coupler '
       ENDIF
       !
       !                                                      ! ------------------------- !
@@ -564,7 +564,7 @@ CONTAINS
          srcv(jpr_co2 )%laction = .TRUE.
          l_co2cpl = .TRUE.
          IF(lwp) WRITE(numout,*)
-         IF(lwp) WRITE(numout,*) '   Atmospheric pco2 received from oasis '
+         IF(lwp) WRITE(numout,*) '   Atmospheric pco2 received from coupler '
          IF(lwp) WRITE(numout,*)
       ENDIF
       !
@@ -765,7 +765,7 @@ CONTAINS
       ! ================================ !
       !     Define the send interface    !
       ! ================================ !
-      ! for each field: define the OASIS name                           (ssnd(:)%clname)
+      ! for each field: define the coupler name                           (ssnd(:)%clname)
       !                 define send or not from the namelist parameters (ssnd(:)%laction)
       !                 define the north fold type of lbc               (ssnd(:)%nsgn)
 
@@ -1088,7 +1088,7 @@ CONTAINS
       !!                provide the ocean heat and freshwater fluxes.
       !!
       !! ** Method  : - Receive all the atmospheric fields (stored in frcv array). called at each time step.
-      !!                OASIS controls if there is something do receive or not. nrcvinfo contains the info
+      !!                The coupler controls if there is something do receive or not. nrcvinfo contains the info
       !!                to know if the field was really received or not
       !!
       !!              --> If ocean stress was really received:

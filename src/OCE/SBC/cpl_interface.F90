@@ -5,12 +5,12 @@ MODULE CPL_INTERFACE
    use par_kind, only : wp
    use lib_mpp,  only : ctl_stop
 
-   use cpl_oasis3, only : cpl_oasis3_init     => cpl_init
-   use cpl_oasis3, only : cpl_oasis3_define   => cpl_define
-   use cpl_oasis3, only : cpl_oasis3_snd      => cpl_snd
-   use cpl_oasis3, only : cpl_oasis3_rcv      => cpl_rcv
-   use cpl_oasis3, only : cpl_oasis3_freq     => cpl_freq
-   use cpl_oasis3, only : cpl_oasis3_finalize => cpl_finalize
+   use cpl_oasis3, only : cpl_oasis3_init  => cpl_init
+   use cpl_oasis3, only : cpl_define
+   use cpl_oasis3, only : cpl_snd
+   use cpl_oasis3, only : cpl_rcv
+   use cpl_oasis3, only : cpl_freq
+   use cpl_oasis3, only : cpl_finalize
    use cpl_oasis3, only : OASIS_idle, OASIS_Rcv
 
    use cpl_cancpl, only : cpl_cancpl_init
@@ -19,8 +19,9 @@ MODULE CPL_INTERFACE
    use cpl_cancpl, only : cpl_cancpl_rcv
    use cpl_cancpl, only : cpl_cancpl_freq
    use cpl_cancpl, only : cpl_cancpl_finalize
+   use cpl_cancpl, only : cancpl_idle, cancpl_rcv, cancpl_snd 
 
-   use cpl_types, only : COUPLER_idle, COUPLER_Rcv
+   use cpl_types, only : COUPLER_idle, COUPLER_Rcv, COUPLER_Snd
 
    implicit none; private
 
@@ -86,15 +87,11 @@ MODULE CPL_INTERFACE
         cpl_freq => cpl_cancpl_freq
         cpl_define => cpl_cancpl_define
         cpl_finalize => cpl_cancpl_finalize
-        COUPLER_idle = OASIS_idle
-        COUPLER_Rcv  = OASIS_Rcv
+        COUPLER_idle = cancpl_idle
+        COUPLER_Rcv  = cancpl_rcv
+        COUPLER_Snd  = cancpl_snd
       elseif (lk_oasis) then
         call cpl_oasis3_init( cd_modname, kl_comm )
-        cpl_snd => cpl_cancpl_snd
-        cpl_rcv => cpl_cancpl_rcv
-        cpl_freq => cpl_cancpl_freq
-        cpl_define => cpl_cancpl_define
-        cpl_finalize => cpl_cancpl_finalize
         COUPLER_idle = OASIS_idle
         COUPLER_Rcv  = OASIS_Rcv
       else

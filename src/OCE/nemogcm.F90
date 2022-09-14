@@ -92,7 +92,6 @@ MODULE nemogcm
 #if defined key_agrif
    USE agrif_all_update   ! Master Agrif update
 #endif
-   use cpl_cancpl, only : cpl_cancpl_init
 
    IMPLICIT NONE
    PRIVATE
