@@ -9,6 +9,7 @@ MODULE cpl_cancpl
   !! in nemo v3.4.1, except (of course) it will communicate with CanCPL
   !!
   !! Larry Solheim Aug,2015
+#if defined key_cancpl
   !!=======================================================================
   !!-----------------------------------------------------------------------
   !!   'lk_cancpl'                    coupled Ocean/Atmosphere via CanCPL
@@ -48,9 +49,9 @@ MODULE cpl_cancpl
   public :: query_start_cpl2ocn
 
   logical, public, parameter ::   lk_cpl = .true.   !: coupled flag
-  integer, public, save      ::   oasis_idle = 0    !: return code if no send or recv
-  integer, public, save      ::   oasis_rcv  = 1    !: return code if field received
-  integer, public, save      ::   oasis_snd  = 2    !: return code if field sent
+  integer, public, save      ::   cancpl_idle = 0    !: return code if no send or recv
+  integer, public, save      ::   cancpl_rcv  = 1    !: return code if field received
+  integer, public, save      ::   cancpl_snd  = 2    !: return code if field sent
 
   !--- These are defined in com_cpl
   public :: cpl_vinfo_t, find_cpl_vinfo
@@ -958,8 +959,8 @@ contains
      real(wp), intent(in   )  :: pdata(:,:,:)
 
      !--- Integer flag to indicate if srcv(kid) was sent or not
-     !--- kinfo = OASIS_idle means the field was not sent to the coupler
-     !--- kinfo = OASIS_snd  means the field was sent to the coupler
+     !--- kinfo = cancpl_idle means the field was not sent to the coupler
+     !--- kinfo = cancpl_snd  means the field was sent to the coupler
      integer,  intent(out) :: kinfo
 
      !-- Local
@@ -980,7 +981,7 @@ contains
      do jc = 1, ssnd(kid)%nct
        !--- The MPI tag associated with this transfer is ssnd(kid)%nid(jc)
 
-       kinfo = OASIS_idle
+       kinfo = cancpl_idle
 
        !--- Ensure that this variable was configured
        if ( ssnd(kid)%nid(jc,1) <= 0 ) then
@@ -1011,7 +1012,7 @@ contains
          call flush(numout)
        endif
 
-       kinfo = OASIS_Snd
+       kinfo = cancpl_Snd
 
        if ( ln_ctl .and. verbose > 1 ) then
          !--- Write info for each sub-domain to the ocean output file
@@ -1103,8 +1104,8 @@ contains
      REAL(wp), DIMENSION(:,:,:), INTENT(in   ) ::   pmask     ! coupling mask
 
      !--- Integer flag to indicate if srcv(kid) was recieved or not
-     !--- kinfo = OASIS_idle means the field was not received from the coupler
-     !--- kinfo = OASIS_rcv  means the field was received from the coupler
+     !--- kinfo = cancpl_idle means the field was not received from the coupler
+     !--- kinfo = cancpl_rcv  means the field was received from the coupler
      integer,  intent(  out) :: kinfo
 
      !--- Local
@@ -1127,7 +1128,7 @@ contains
      do jc = 1, srcv(kid)%nct
        !--- The MPI tag associated with this transfer is srcv(kid)%nid(jc)
 
-       kinfo = OASIS_idle
+       kinfo = cancpl_idle
 
        ! The following is no longer true. srcv(kid)%laction determines whether
        ! it should be received
@@ -1152,7 +1153,7 @@ contains
          cycle
        endif
 
-       kinfo = OASIS_Rcv
+       kinfo = cancpl_Rcv
 
        if ( rank == ocn_master ) then
          !--- This is the ocean master task
@@ -1308,5 +1309,101 @@ contains
         call flush(numout)
       endif
   end subroutine query_start_cpl2ocn
+
+#else
+
+
+  use par_kind, only : wp
+  use cpl_types, only : FLD_C
+
+  public :: cpl_cancpl_init
+  public :: cpl_cancpl_define
+  public :: cpl_cancpl_snd
+  public :: cpl_cancpl_rcv
+  public :: cpl_cancpl_freq
+  public :: cpl_cancpl_finalize
+  public :: set_cancpl_params
+  public :: query_start_cpl2ocn
+  logical, public, parameter ::   lk_cpl = .false.   !: coupled flag
+  integer, public, save      ::   cancpl_idle = 0    !: return code if no send or recv
+  integer, public, save      ::   cancpl_rcv  = 1    !: return code if field received
+  integer, public, save      ::   cancpl_snd  = 2    !: return code if field sent
+
+contains
+
+  subroutine cpl_cancpl_init( kl_comm )
+     !!-------------------------------------------------------------------
+     !!             ***  ROUTINE cpl_cancpl_init  ***
+     !!
+     !!--------------------------------------------------------------------------
+     integer, intent(out) ::   kl_comm   ! MPI group ID for the ocean comm_world
+     kl_comm = 0
+     WRITE(numout,*) 'cpl_cancpl_init: Error you sould not be there...'
+  end subroutine cpl_cancpl_init
+  subroutine cpl_cancpl_define( krcv, ksnd, kcplmodel )
+     !!-------------------------------------------------------------------
+     !!             ***  ROUTINE cpl_cancpl_define  ***
+     !!
+     !!--------------------------------------------------------------------
+     integer, intent(in) :: krcv   ! Number of all possible fields received
+     integer, intent(in) :: ksnd   ! Number of all possible fields sent
+     integer, intent(in) :: kcplmodel ! Number of models to send too. Note this is a dummy argument for now
+     WRITE(numout,*) 'cpl_cancpl_define: Error you sould not be there...'
+  end subroutine cpl_cancpl_define
+  subroutine cpl_cancpl_snd( kid, kstep, pdata, kinfo )
+     !!---------------------------------------------------------------------
+     !!              ***  ROUTINE cpl_cancpl_snd  ***
+     !!
+     !!----------------------------------------------------------------------
+     !--- Index in the array ssnd of the variable to be sent to the coupler
+     integer,  intent(in)  :: kid
+     integer,  intent(in)  :: kstep
+     real(wp), intent(in   )  :: pdata(:,:,:)
+     integer,  intent(out) :: kinfo
+     kinfo=0 
+     WRITE(numout,*) 'cpl_cancpl_snd: Error you sould not be there...'
+  end subroutine cpl_cancpl_snd
+  subroutine cpl_cancpl_rcv( kid, kstep, pdata, pmask, kinfo )
+     !!---------------------------------------------------------------------
+     !!              ***  ROUTINE cpl_cancpl_rcv  ***
+     !!
+     !!----------------------------------------------------------------------
+     integer,  intent(in   ) :: kid
+     integer,  intent(in   ) :: kstep
+     real(wp), intent(inout) :: pdata(:,:,:)
+     REAL(wp), DIMENSION(:,:,:), INTENT(in   ) ::   pmask     ! coupling mask
+     integer,  intent(  out) :: kinfo
+     kinfo=0; pdtata=0. 
+     WRITE(numout,*) 'cpl_cancpl_rcv: Error you sould not be there...'
+  end subroutine cpl_cancpl_rcv
+  function cpl_cancpl_freq( vname ) result(freq)
+    !!---------------------------------------------------------------------
+    !!              ***  ROUTINE cpl_cancpl_freq  ***
+    !!
+    !!----------------------------------------------------------------------
+    character(*), intent(in) :: vname
+    integer :: freq
+    freq=0
+     WRITE(numout,*) 'cpl_cancpl_freq: Error you sould not be there...'
+  end function cpl_cancpl_freq
+  subroutine cpl_cancpl_finalize
+    !!---------------------------------------------------------------------
+    !!              ***  ROUTINE cpl_cancpl_finalize  ***
+    !!
+    !!----------------------------------------------------------------------
+     WRITE(numout,*) 'cpl_cancpl_finalize: Error you sould not be there...'
+  end subroutine cpl_cancpl_finalize
+  subroutine set_cancpl_params( coupled_fields, num_ice_steps, num_boundary_calls )
+    type(FLD_C), dimension(:), intent(in) :: coupled_fields !< Contains all the field descriptors for coupled fields
+    integer,                   intent(in) :: num_ice_steps  !< How many dynamics timesteps per ice timestep
+    integer,                   intent(in) :: num_boundary_calls !< How many dynamics timesteps per surface boundary call
+    WRITE(numout,*) 'set_cancpl_params: Error you sould not be there...'
+  end subroutine set_cancpl_params
+  subroutine query_start_cpl2ocn( isec )
+    integer, intent(in) :: isec
+    WRITE(numout,*) 'query_start_cpl2ocn: Error you sould not be there...'
+  end subroutine query_start_cpl2ocn
+
+#endif
 
 end module cpl_cancpl

@@ -315,7 +315,7 @@ CONTAINS
       !
       !                             !* OASIS initialization
       !
-      IF( lk_oasis .or. lk_cancpl )   CALL sbc_cpl_init( nn_ice )   ! Must be done before: (1) first time step
+      IF( ln_cpl )   CALL sbc_cpl_init( nn_ice )   ! Must be done before: (1) first time step
       !                                              !                      (2) the use of nn_fsbc
       !     nn_fsbc initialization if OPA-SAS coupling via OASIS
       !     SAS time-step has to be declared in OASIS (mandatory) -> nn_fsbc has to be modified accordingly
