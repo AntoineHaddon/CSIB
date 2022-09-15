@@ -49,9 +49,9 @@ MODULE cpl_cancpl
   public :: query_start_cpl2ocn
 
   logical, public, parameter ::   lk_cpl = .true.   !: coupled flag
-  integer, public, save      ::   cancpl_idle = 0    !: return code if no send or recv
-  integer, public, save      ::   cancpl_rcv  = 1    !: return code if field received
-  integer, public, save      ::   cancpl_snd  = 2    !: return code if field sent
+  integer, public, save      ::   oasis_idle = 0    !: return code if no send or recv
+  integer, public, save      ::   oasis_rcv  = 1    !: return code if field received
+  integer, public, save      ::   oasis_snd  = 2    !: return code if field sent
 
   !--- These are defined in com_cpl
   public :: cpl_vinfo_t, find_cpl_vinfo
@@ -959,8 +959,8 @@ contains
      real(wp), intent(in   )  :: pdata(:,:,:)
 
      !--- Integer flag to indicate if srcv(kid) was sent or not
-     !--- kinfo = cancpl_idle means the field was not sent to the coupler
-     !--- kinfo = cancpl_snd  means the field was sent to the coupler
+     !--- kinfo = OASIS_idle means the field was not sent to the coupler
+     !--- kinfo = OASIS_snd  means the field was sent to the coupler
      integer,  intent(out) :: kinfo
 
      !-- Local
@@ -981,7 +981,7 @@ contains
      do jc = 1, ssnd(kid)%nct
        !--- The MPI tag associated with this transfer is ssnd(kid)%nid(jc)
 
-       kinfo = cancpl_idle
+       kinfo = OASIS_idle
 
        !--- Ensure that this variable was configured
        if ( ssnd(kid)%nid(jc,1) <= 0 ) then
@@ -1012,7 +1012,7 @@ contains
          call flush(numout)
        endif
 
-       kinfo = cancpl_Snd
+       kinfo = OASIS_Snd
 
        if ( ln_ctl .and. verbose > 1 ) then
          !--- Write info for each sub-domain to the ocean output file
@@ -1104,8 +1104,8 @@ contains
      REAL(wp), DIMENSION(:,:,:), INTENT(in   ) ::   pmask     ! coupling mask
 
      !--- Integer flag to indicate if srcv(kid) was recieved or not
-     !--- kinfo = cancpl_idle means the field was not received from the coupler
-     !--- kinfo = cancpl_rcv  means the field was received from the coupler
+     !--- kinfo = OASIS_idle means the field was not received from the coupler
+     !--- kinfo = OASIS_rcv  means the field was received from the coupler
      integer,  intent(  out) :: kinfo
 
      !--- Local
@@ -1128,7 +1128,7 @@ contains
      do jc = 1, srcv(kid)%nct
        !--- The MPI tag associated with this transfer is srcv(kid)%nid(jc)
 
-       kinfo = cancpl_idle
+       kinfo = OASIS_idle
 
        ! The following is no longer true. srcv(kid)%laction determines whether
        ! it should be received
@@ -1153,7 +1153,7 @@ contains
          cycle
        endif
 
-       kinfo = cancpl_Rcv
+       kinfo = OASIS_Rcv
 
        if ( rank == ocn_master ) then
          !--- This is the ocean master task
@@ -1325,9 +1325,6 @@ contains
   public :: set_cancpl_params
   public :: query_start_cpl2ocn
   logical, public, parameter ::   lk_cpl = .false.   !: coupled flag
-  integer, public, save      ::   cancpl_idle = 0    !: return code if no send or recv
-  integer, public, save      ::   cancpl_rcv  = 1    !: return code if field received
-  integer, public, save      ::   cancpl_snd  = 2    !: return code if field sent
 
 contains
 
