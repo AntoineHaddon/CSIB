@@ -19,9 +19,8 @@ MODULE CPL_INTERFACE
    use cpl_cancpl, only : cpl_cancpl_rcv
    use cpl_cancpl, only : cpl_cancpl_freq
    use cpl_cancpl, only : cpl_cancpl_finalize
-   use cpl_cancpl, only : cancpl_idle, cancpl_rcv, cancpl_snd 
 
-   use cpl_types, only : COUPLER_idle, COUPLER_Rcv, COUPLER_Snd
+   use cpl_types, only : COUPLER_idle, COUPLER_Rcv
 
    implicit none; private
 
@@ -87,9 +86,8 @@ MODULE CPL_INTERFACE
         cpl_freq => cpl_cancpl_freq
         cpl_define => cpl_cancpl_define
         cpl_finalize => cpl_cancpl_finalize
-        COUPLER_idle = cancpl_idle
-        COUPLER_Rcv  = cancpl_rcv
-        COUPLER_Snd  = cancpl_snd
+        COUPLER_idle = OASIS_idle
+        COUPLER_Rcv  = OASIS_Rcv
       elseif (lk_oasis) then
         call cpl_oasis3_init( cd_modname, kl_comm )
         COUPLER_idle = OASIS_idle
