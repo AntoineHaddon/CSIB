@@ -67,7 +67,7 @@ while (($# > 0))
    done
 
 # Installation des sources
-nb_files_gz=`ls $install_dir/tools/archive | grep tar.gz | wc -l`
+nb_files_gz=`ls $install_dir/tools/archive | grep .tar | wc -l`
 if [ ${nb_files_gz} -ne 0 ]		   
 then
     echo -e "- uncompress archives ..."		
@@ -77,7 +77,10 @@ then
                 continue
         fi
 	gunzip -f "$tarname"
-	tar -xf ${tarname%.gz}
+    done
+    echo -e "- untar archives ..."		
+    for tarname in `ls $install_dir/tools/archive/*.tar` ; do
+	tar -xf ${tarname}
     done
 fi
 
