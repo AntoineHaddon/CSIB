@@ -118,7 +118,7 @@ echo "#################### Start NEMO pre-processing #################"
   # Interannual forcing consideration (TODO : add "coupled" mayby)
   if [[ $nemo_forcing == "coupled" ]]; then
     echo $nemo_forcing == "coupled": no files needed, fields from CanCPL
-  elif [[ $nemo_forcing == "bulk_iaf" ]]; then
+  elif [[ $nemo_forcing == "bulk" ]]; then
     nemo_runoff_core_monthly=${nemo_runoff_core_monthly:=urdy_eorca1_runoff_v2.2x_jstart.nc}
     nemo_weights_bicubic2=${nemo_weights_bicubic2:=urdy_weights_canamgrid_bicubic_eorca1_jstart.nc}
     nemo_weights_bilinear2=${nemo_weights_bilinear2:=urdy_weights_canamgrid_bilinear_eorca1_jstart.nc}
