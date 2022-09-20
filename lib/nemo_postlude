@@ -82,6 +82,9 @@
     rm -f saved_history_FILE_NAMES
     touch saved_history_FILE_NAMES
 
+    # Creat the RUNPATH directory (if not done in "save_restart_files" because nemo_from_rest = on). 
+    [ ! -d $RUNPATH ] && mkdir -p $RUNPATH
+
     # Translate history file suffix/freq lists into arrays and compare lengths
     nemo_hist_file_suffix_list_array_save=($nemo_hist_file_suffix_list_save)
     nemo_hist_file_freq_list_array_save=($nemo_hist_file_freq_list_save)
