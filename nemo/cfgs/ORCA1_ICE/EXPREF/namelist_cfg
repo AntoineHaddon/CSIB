@@ -19,6 +19,7 @@
 !-----------------------------------------------------------------------
 &namrun        !   parameters of the run
 !-----------------------------------------------------------------------
+   nn_no       =       0   !  Assimilation cycle index
    cn_exp      =  "ORCA1"  !  experience name
    nn_it000    =       1   !  first time step
    nn_itend    =    5840   !  last  time step (std 5475)
@@ -32,6 +33,8 @@
    cn_ocerst_in    = "restart"   !  suffix of ocean restart name (input)
    cn_ocerst_out   = "restart"   !  suffix of ocean restart name (output)
    ln_clobber  = .true.    !  clobber (overwrite) an existing file
+   nn_stock    =       0   
+   nn_write    =       0   
 /
 !-----------------------------------------------------------------------
 &namdom        !   time and space domain

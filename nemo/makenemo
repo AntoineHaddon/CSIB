@@ -256,7 +256,7 @@ else
 fi
 
 ## Test if ref. cfg or demo case does exist
-if [[ ! $( grep "${TML_CONF} " ${CONFIG_DIR}/*_cfgs.txt ) ]]; then
+if [[ ! $( grep -w ${TML_CONF} ${CONFIG_DIR}/*_cfgs.txt ) ]]; then
 	echo -e "\033[0;31m\nThe reference configuration ('-r'), demonstration case ('-a') or "
 	echo -e "remote configuration ('-u') selected is not available!!!"
 	echo -e "Check the option used and the available items in .txt files\033[0m"
@@ -266,7 +266,7 @@ if [[ ! $( grep "${TML_CONF} " ${CONFIG_DIR}/*_cfgs.txt ) ]]; then
 else
 
 	## Reuse a working cfg
-	if [[ -f ${CONFIG_DIR}/work_cfgs.txt && $( grep "${TML_CONF} " ${CONFIG_DIR}/work_cfgs.txt ) ]]; then
+	if [[ -f ${CONFIG_DIR}/work_cfgs.txt && $( grep -w ${TML_CONF} ${CONFIG_DIR}/work_cfgs.txt ) ]]; then
 		conf_file=work_cfgs.txt
 	fi
 
@@ -275,7 +275,8 @@ else
 
 	## Update sub-comps if needed
 	if [ -z "${NEM_SUBDIR}" ]; then
-			NEM_SUBDIR=$( grep "${TML_CONF} " ${CONFIG_DIR}/${conf_file}  | awk '{$1 = ""; print $0}' )
+			NEM_SUBDIR=$( grep -w ${TML_CONF} ${CONFIG_DIR}/${conf_file}  | awk '{$1 = ""; print $0}' )
+            echo "grep -w ${TML_CONF} ${CONFIG_DIR}/${conf_file}  | awk '{$1 = ""; print $0}'"
 	fi
 
 fi
