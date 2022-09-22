@@ -81,9 +81,13 @@ export OMP_NUM_THREADS=2
 # the tmpdir we are working in
 wrkdir=$(pwd)
 
+#access the coordinates files (used for lat/lon later)
+access coor.nc $nemo_coordinates  nocp=no  #force copy because we make temporary changes
+ncrename -h -O -d t,time_counter coor.nc coor.nc || true #no error if already done
+
 # A list of directories to delete from RUNPATH at the end
 dir_del_list=""
-if (( canesm_nemo_rbld_save_hist == 1 )) ; then
+if [ $nemo_save_hist == "on" ] ; then
    # Loop over the list of history files/freqs to rebuild
    for i in $(seq 0 $(($n_suffix-1))); do
       cd $wrkdir
@@ -92,7 +96,7 @@ if (( canesm_nemo_rbld_save_hist == 1 )) ; then
       freq=${nemo_hist_file_freq_list_array[$i]}
       lsfx=$(echo "$sfx" | tr '[:upper:]' '[:lower:]')
       indir=${model1}_${freq}_${lsfx}
-      access $indir $indir nocp=off na 
+      access $indir $indir.nc nocp=off na 
       if [ -d "$indir" ] ; then 
         # if don't exist, re-tile probably done by NEMO
         dir_del_list+=" $indir"
@@ -102,14 +106,31 @@ if (( canesm_nemo_rbld_save_hist == 1 )) ; then
         pfx=${runid}_${freq}_${start_date}_${stop_date}_$sfx
         ln -s ../rebuild_nemo.exe .
         rebuild_nemo_tiles
-        ncsave=${model1}_${freq}_${sfx}.nc
-        save ${pfx}.nc $ncsave
+        save ${pfx}.nc $indir.nc
 
         # Move back up and cleanup
         cd $wrkdir
         rm -rf $indir
-      elif [ -e "$indir}.nc" ] ; then
-        echo $indir}.nc is on a global scale, no need to use "rebuild_nemo_tiles"
+      fi
+         # Replace the lat/lon to remove the hold made by the land processors elimination
+        ncsave=${freq}_${lsfx}
+        access  $ncsave.nc $indir.nc nocp=no na 
+      if [ -e "$ncsave.nc" ] ; then
+        [[ ${sfx,,} == *"grid_t"* || ${sfx,,} == *"icemod"* ||  ${sfx,,} == *"ptrc_t"* || 
+           ${sfx,,} == *"diad_t"* ||  ${sfx,,} == *"grid_w"* ]] &&  
+                  ( ncks -A -h -v glamt,gphit coor.nc $ncsave.nc && 
+                    ncap2 -h -O -s "nav_lon=glamt;nav_lat=gphit"  $ncsave.nc  $ncsave.nc )
+        [[ ${sfx,,} == *"grid_u"*  ]] &&
+                  ( ncks -A -h -v glamu,gphiu coor.nc $ncsave.nc && 
+                    ncap2 -h -O -s "nav_lon=glamu;nav_lat=gphiu"  $ncsave.nc  $ncsave.nc )
+        [[ ${sfx,,} == *"grid_v"*  ]] &&
+                  ( ncks -A -h -v glamv,gphiv coor.nc $ncsave.nc && 
+                    ncap2 -h -O -s "nav_lon=glamv;nav_lat=gphiv"  $ncsave.nc  $ncsave.nc )
+        ncks -h -O -x -v gphi.,glam.  $ncsave.nc  $ncsave.nc
+        access $indir.nc $indir.nc nocp=off na 
+        delete  $indir.nc #delete and re-save to avoid new version
+        save $ncsave.nc $indir.nc
+        release $ncsave.nc
       fi
    done
 fi
@@ -117,16 +138,19 @@ fi
 # Rebuild the mesh_mask file created by the model, if present
 # Access the directory, if it is successfull, cd into it
 indir=${model1}_mesh_mask
+pfx=mesh_mask
+ncsave=${model1}_${pfx}.nc
 access $indir $indir nocp=off na
 if [ -s "$indir" ] ; then
    cd $indir
    dir_del_list+=" $indir"
 
    # Define the pattern and do the rebld
-   pfx=mesh_mask
    ln -s ../rebuild_nemo.exe .
    rebuild_nemo_tiles
-   ncsave=${model1}_${pfx}.nc
+        # Replace the global lat/lon to remove the hold made by the land processors elimination
+   ncks -x -h -O -v  nav_lon,nav_lat,glamf,gphif,glamv,gphiv,glamu,gphiu,glamt,gphit ${pfx}.nc ${pfx}.nc 
+   ncks -A -h -v nav_lon,nav_lat,glamf,gphif,glamv,gphiv,glamu,gphiu,glamt,gphit  ${wrkdir}/coor.nc ${pfx}.nc  
    save ${pfx}.nc $ncsave
 
    # cleanup
@@ -178,6 +202,9 @@ fi
 # Check if the RS is already rebuilt, in which case do nothing.
 if [ -s "${pfx}_0000.nc" ]; then
    rebuild_nemo_tiles
+   # Replace the global lat/lon to remove the hold made by the land processors elimination
+   ncks -x -h -O -v  nav_lon,nav_lat $pfx.nc $pfx.nc
+   ncks -A -h -v nav_lon,nav_lat ${wrkdir}/coor.nc $pfx.nc
 fi
 
 # The ice rs file
@@ -198,7 +225,11 @@ fi
 
 if [ -s "${pfx}_0000.nc" ]; then
    rebuild_nemo_tiles
+        # Replace the global lat/lon to remove the hold made by the land processors elimination
+   ncks -x -h -O -v  nav_lon,nav_lat $pfx.nc $pfx.nc
+   ncks -A -h -v nav_lon,nav_lat ${wrkdir}/coor.nc $pfx.nc
 fi
+
 
 # The trc rs file
 pfx=${runid}_${end_step}_restart_trc
@@ -218,6 +249,9 @@ fi
 
 if [ -s "${pfx}_0000.nc" ]; then
    rebuild_nemo_tiles
+        # Replace the global lat/lon to remove the hold made by the land processors elimination
+   ncks -x -h -O -v  nav_lon,nav_lat $pfx.nc $pfx.nc
+   ncks -A -h -v nav_lon,nav_lat ${wrkdir}/coor.nc $pfx.nc
 fi
 
 cd $wrkdir

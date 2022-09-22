@@ -267,12 +267,23 @@ PROGRAM nemo_ocean_diag
         i_AN_E  =  92; i_AN_W  = 135
         i_AS_E  = 121; i_AS_W  = 149
         i_PN_E  =  16; i_PN_W  = 91
-!     ORCA1
-      else if ( imt == 362 ) then
-        print *, "Using ORCA1 configuration"
-        j_20N   = 182; j_20S   = 112; j_eq    = 147
+!     ORCA1 (with ln_use_jattr = .true.)
+      else if ( imt == 362.and.jmt == 282 ) then
+        print *, "Using ORCA1 configuration (cuted)"
+        j_20N   = 222-40; j_20S   = 152-40; j_eq    = 187-40
         k60     =  20; k500    =  39; k2000   =  54
-        i_DP    = 221; j_DP_S  =  41; j_DP_N  =  66
+        i_DP    = 221; j_DP_S  =  81-40; j_DP_N  = 106-40
+        i_IN_E1 =   1; i_IN_W1 =  49
+        i_IN_E2 = 322; i_IN_W2 = imt-2
+        i_AN_E  = 191; i_AN_W  = 274
+        i_AS_E  = 247; i_AS_W  = 302
+        i_PN_E  =  34; i_PN_W  = 185
+!     ORCA1 (standart)
+      else if ( imt == 362.and.jmt == 332 ) then
+        print *, "Using ORCA1 configuration"
+        j_20N   = 222; j_20S   = 152; j_eq    = 187
+        k60     =  20; k500    =  39; k2000   =  54
+        i_DP    = 221; j_DP_S  =  81; j_DP_N  = 106
         i_IN_E1 =   1; i_IN_W1 =  49
         i_IN_E2 = 322; i_IN_W2 = imt-2
         i_AN_E  = 191; i_AN_W  = 274
