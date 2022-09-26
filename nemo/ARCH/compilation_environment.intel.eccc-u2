@@ -1,0 +1,4 @@
+# CanAM/CanCPL/CanDIAG compilation environment
+#   NOTE: the way we have this right now doesn't support gnu
+. ssmuse-sh -x main/opt/intelcomp/inteloneapi-2022.1.2/intelcomp+mpi+mkl >> /dev/null 2>&1 || echo "IntelOneApi already loaded" # intel compiler
+. ssmuse-sh -x /fs/ssm/main/opt/hdf5-netcdf4/serial/static/inteloneapi-2022.1.2/01  # netcdf libraries

@@ -10,7 +10,6 @@
 #########################################################
 
 set -x
-set -e
 
 # NEMO priority level
   output_level=${output_level}
@@ -96,7 +95,7 @@ set -e
     esac
 
     # copy in diagnostics exec
-    cp $CCRNSRC/executables/nemo_diag_cmoc.exe .
+    cp ${EXEC_STORAGE_DIR}/nemo_diag_cmoc.exe .
 
     # Get all auxiliary files needed before running the offline diagnostics
     access si.nc uncs_orca1_data_si_nomask.nc
@@ -181,7 +180,7 @@ set -e
     canoe_destfile="1m_diad_t"
 
     # copy in executable
-    cp $CCRNSRC/executables/nemo_diag_canoe.exe .
+    cp ${EXEC_STORAGE_DIR}/executables/nemo_diag_canoe.exe .
 
     # Get all auxiliary files needed before running the offline diagnostics
     access si.nc uncs_orca1_data_si_nomask.nc
