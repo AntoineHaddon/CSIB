@@ -198,6 +198,9 @@
       # ADD ADDITIONAL FILES
       tarlist=''
 
+      # Copy init files if exist
+      [ $nemo_nn_istate == 1 ] && mv output.init_[0-9][0-9][0-9][0-9].nc NEXT_RESTART_ARC
+
       # Create copies of the namelists used and include them in the tar file
       cp -f namelist_cfg rs_namelist_cfg || :
       [ -s rs_namelist_cfg ] && tarlist="$tarlist rs_namelist_cfg"
