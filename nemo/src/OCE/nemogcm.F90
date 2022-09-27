@@ -72,7 +72,7 @@ MODULE nemogcm
    USE step_diu       ! diurnal bulk SST timestepping (called from here if run offline)
    USE crsini         ! initialise grid coarsening utility
    USE dia25h         ! 25h mean output
-   USE sbc_oce , ONLY : ln_cpl
+   USE sbc_oce , ONLY : lk_cancpl,lk_oasis
    USE wet_dry        ! Wetting and drying setting   (wad_init routine)
 #if defined key_top
    USE trcini         ! passive tracer initialisation
@@ -239,9 +239,9 @@ CONTAINS
       !
 #if defined key_iomput
                                     CALL xios_finalize  ! end mpp communications with xios
-      IF( ln_cpl )            CALL cpl_finalize   ! end coupling and mpp communications with OASIS
+      IF( lk_cancpl.or.lk_oasis )            CALL cpl_finalize   ! end coupling and mpp communications with OASIS
 #else
-      IF    ( ln_cpl ) THEN   ;   CALL cpl_finalize   ! end coupling and mpp communications with OASIS
+      IF    ( lk_cancpl.or.lk_oasis ) THEN   ;   CALL cpl_finalize   ! end coupling and mpp communications with OASIS
       ELSEIF( lk_mpp   ) THEN   ;   CALL mppstop      ! end mpp communications
       ENDIF
 #endif
@@ -278,7 +278,8 @@ CONTAINS
       !
 #if defined key_iomput
       IF( Agrif_Root() ) THEN
-         IF( ln_cpl ) THEN
+         IF( lk_cancpl.or.lk_oasis ) THEN  ! at this point, lk_cancpl and lk_oasis values are set at declaration in sbc_oce.
+                                           ! This can be different than the namelist (but should not be). 
             CALL cpl_init( "oceanx", ilocal_comm )               ! nemo local communicator given by oasis
             CALL xios_initialize( "not used"       , local_comm =ilocal_comm )   ! send nemo communicator to xios
          ELSE
@@ -287,7 +288,7 @@ CONTAINS
       ENDIF
       CALL mpp_start( ilocal_comm )
 #else
-      IF( ln_cpl ) THEN
+      IF( lk_cancpl.or.lk_oasis ) THEN
          IF( Agrif_Root() ) THEN
             CALL cpl_init( "oceanx", ilocal_comm )               ! nemo local communicator given by oasis
          ENDIF
