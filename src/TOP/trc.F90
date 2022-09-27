@@ -107,8 +107,11 @@ MODULE trc
    END TYPE DIAG
    !
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   trc3d   !: 3D diagnostics for tracers
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   trc2d   !: 2D diagnostics for tracers
-
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,  :) ::   trc2d   !: 2D diagnostics for tracers
+   !
+   CHARACTER(len=20), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   cdianm   !: diag name 
+   CHARACTER(len=80), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   cdialn   !: diag field long name
+   CHARACTER(len=20), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   cdiaun   !: diag unit
    !! information for inputs
    !! --------------------------------------------------
    LOGICAL , PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   ln_trc_ini    !: Initialisation from data input file
@@ -142,7 +145,7 @@ CONTAINS
       !!-------------------------------------------------------------------
       USE lib_mpp, ONLY: ctl_stop
       !!-------------------------------------------------------------------
-      INTEGER :: ierr(4)
+      INTEGER :: ierr(5)
       !!-------------------------------------------------------------------
       ierr(:) = 0
       !
@@ -158,11 +161,16 @@ CONTAINS
          &      ln_trc_sbc(jptra)     , ln_trc_cbc(jptra)     , ln_trc_obc(jptra)     ,       &
          &      STAT = ierr(1)  )
       !
-      IF( ln_bdy       )   ALLOCATE( trcdta_bdy(jptra, jp_bdy)  , STAT = ierr(2) )
+      IF( ln_bdy       )   ALLOCATE( trcdta_bdy(jptra, jp_bdy)   , STAT = ierr(2) )
       !
-      IF (jp_dia3d > 0 )   ALLOCATE( trc3d(jpi,jpj,jpk,jp_dia3d), STAT = ierr(3) )
+      IF (jp_dia3d > 0 )   ALLOCATE( trc3d(jpi,jpj,jpk,jp_dia3d) , STAT = ierr(3) )
       !
-      IF (jp_dia2d > 0 )   ALLOCATE( trc2d(jpi,jpj,jpk,jp_dia2d), STAT = ierr(4) )
+      IF (jp_dia2d > 0 )   ALLOCATE( trc2d(jpi,jpj,jp_dia2d)     , STAT = ierr(4) )
+      !
+      IF (jp_dia3d + jp_dia2d > 0 )  ALLOCATE( cdianm(jp_dia3d+jp_dia2d),         &
+      &                                        cdialn(jp_dia3d+jp_dia2d),         &
+      &                                        cdiaun(jp_dia3d+jp_dia2d),         &
+      &                                                            STAT = ierr(5) )
       ! 
       trc_alloc = MAXVAL( ierr )
       IF( trc_alloc /= 0 )   CALL ctl_stop( 'STOP', 'trc_alloc: failed to allocate arrays' )

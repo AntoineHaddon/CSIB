@@ -33,6 +33,7 @@ MODULE trcnam
    PUBLIC   trc_nam      ! called in trcini
 
    TYPE(PTRACER), DIMENSION(jpmaxtrc), PUBLIC  :: sn_tracer  !: type of tracer for saving if not key_iomput
+   TYPE(DIAG),    DIMENSION(jpmaxdia), PUBLIC  :: sn_dia     !: type of diagnostics
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
@@ -144,14 +145,15 @@ CONTAINS
       !! ** Purpose :   read options for the passive tracer run (namelist) 
       !!
       !!---------------------------------------------------------------------
-      INTEGER ::   ios, ierr, icfc       ! Local integer
+      INTEGER ::   ios, ierr, icfc, nb_bgcms       ! Local integer
       !!
-      NAMELIST/namtrc/jp_bgc, ln_pisces, ln_my_trc, ln_age, ln_cfc11, ln_cfc12, ln_sf6, ln_c14, &
-         &            sn_tracer, ln_trcdta, ln_trcdmp, ln_trcdmp_clo, jp_dia3d, jp_dia2d
+      NAMELIST/namtrc/jp_bgc, ln_canoe, ln_cmoc, ln_pisces, ln_my_trc, ln_age, ln_cfc11, ln_cfc12, ln_sf6, ln_c14, &
+         &            ln_trcdta, ln_trcdmp, ln_trcdmp_clo, jp_dia3d, jp_dia2d, sn_tracer, sn_dia
       !!---------------------------------------------------------------------
       ! Dummy settings to fill tracers data structure
       !                  !   name   !   title   !   unit   !   init  !   sbc   !   cbc   !   obc  !
       sn_tracer = PTRACER( 'NONAME' , 'NOTITLE' , 'NOUNIT' , .false. , .false. , .false. , .false.)
+	    sn_dia    = DIAG('NONAME','NOTITLE','NOUNIT')
       !
       IF(lwp) WRITE(numout,*)
       IF(lwp) WRITE(numout,*) 'trc_nam_trc : read the passive tracer namelists'
@@ -166,15 +168,26 @@ CONTAINS
       IF(lwm) WRITE( numont, namtrc )
 
       ! Control settings
-      IF( ln_pisces .AND. ln_my_trc )   CALL ctl_stop( 'Choose only ONE BGC model - PISCES or MY_TRC' )
-      IF( .NOT. ln_pisces .AND. .NOT. ln_my_trc )   jp_bgc = 0
+      nb_bgcms = COUNT( (/ ln_canoe, ln_cmoc, ln_pisces, ln_my_trc /) )
+      IF( nb_bgcms>1 ) CALL ctl_stop( 'Choose only ONE BGC model, e.g. PISCES or MY_TRC' )
+      IF( nb_bgcms<1 ) jp_bgc = 0
       ll_cfc = ln_cfc11 .OR. ln_cfc12 .OR. ln_sf6
       !
       jptra       =  0
       jp_pisces   =  0    ;   jp_pcs0  =  0    ;   jp_pcs1  = 0
+      jp_canoe    =  0    
+      jp_cmoc     =  0    
       jp_my_trc   =  0    ;   jp_myt0  =  0    ;   jp_myt1  = 0
       jp_cfc      =  0    ;   jp_cfc0  =  0    ;   jp_cfc1  = 0
       jp_age      =  0    ;   jp_c14   =  0
+      !
+      IF( ln_canoe  )  THEN
+          jp_canoe  = jp_bgc
+      ENDIF
+      !
+      IF( ln_cmoc   )  THEN
+          jp_cmoc   = jp_bgc
+      ENDIF
       !
       IF( ln_pisces )  THEN
          jp_pisces = jp_bgc
@@ -212,6 +225,8 @@ CONTAINS
          WRITE(numout,*) '   Namelist : namtrc'
          WRITE(numout,*) '      Total number of passive tracers              jptra         = ', jptra
          WRITE(numout,*) '      Total number of BGC tracers                  jp_bgc        = ', jp_bgc
+         WRITE(numout,*) '      Simulating CANOE  model                      ln_canoe      = ', ln_canoe 
+         WRITE(numout,*) '      Simulating CMOC   model                      ln_cmoc       = ', ln_cmoc  
          WRITE(numout,*) '      Simulating PISCES model                      ln_pisces     = ', ln_pisces
          WRITE(numout,*) '      Simulating MY_TRC  model                     ln_my_trc     = ', ln_my_trc
          WRITE(numout,*) '      Simulating water mass age                    ln_age        = ', ln_age

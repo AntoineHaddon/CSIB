@@ -75,13 +75,26 @@ CONTAINS
       IF( kt == nittrc000 .AND. lk_trdmxl_trc )  CALL trd_mxl_trc_init    ! trends: Mixed-layer
       !
       IF( .NOT.ln_linssh ) THEN                                           ! update ocean volume due to ssh temporal evolution
-         DO jk = 1, jpk
-            cvol(:,:,jk) = e1e2t(:,:) * e3t_n(:,:,jk) * tmask(:,:,jk)
-         END DO
-         IF ( ll_trcstat .OR. kt == nitrst .OR. ( ln_check_mass .AND. kt == nitend )          &
+        DO jk = 1, jpk
+          cvol(:,:,jk) = e1e2t(:,:) * e3t_n(:,:,jk) * tmask(:,:,jk)
+        END DO
+        IF (ln_pisces) THEN
+           IF ( ll_trcstat .OR. kt == nitrst .OR. ( ln_check_mass .AND. kt == nitend )          &
             & .OR. iom_use( "pno3tot" ) .OR. iom_use( "ppo4tot" ) .OR. iom_use( "psiltot" )   &
             & .OR. iom_use( "palktot" ) .OR. iom_use( "pfertot" ) )                           &
             &     areatot = glob_sum( 'trcstp', cvol(:,:,:) )
+        ENDIF
+        
+        ! ! O Riche Aug 24th 2022
+        ! ! Maybe use this for a second conservation check
+        ! ! With a repeat of run dev26
+        ! IF ( ln_canoe ) THEN
+        
+          ! IF ( ln_check_mass_canoe .AND. kt == nitend )
+            ! areatot = glob_sum( 'trcstp', cvol(:,:,:) )
+          ! END IF
+        ! ENDIF
+    
       ENDIF
       !
       IF( l_trcdm2dc )   CALL trc_mean_qsr( kt )

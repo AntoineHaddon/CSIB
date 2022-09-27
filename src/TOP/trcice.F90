@@ -14,6 +14,8 @@ MODULE trcice
    USE oce_trc        ! shared variables between ocean and passive tracers
    USE trc            ! passive tracers common variables
    USE trcice_cfc     ! CFC      initialisation
+   USE trcice_canoe   ! CANOE    initialisation
+   USE trcice_cmoc    ! CMOC     initialisation
    USE trcice_pisces  ! PISCES   initialisation
    USE trcice_c14     ! C14 bomb initialisation
    USE trcice_age     ! AGE      initialisation
@@ -52,6 +54,8 @@ CONTAINS
       trc_o(:,:,:) = 0._wp   ! by default
       !
       IF ( nn_ice_tr == 1 ) THEN
+         IF( ln_canoe   )    CALL trc_ice_ini_canoe        ! CANOE   bio-model
+         IF( ln_cmoc    )    CALL trc_ice_ini_cmoc         ! CMOC    bio-model
          IF( ln_pisces  )    CALL trc_ice_ini_pisces       ! PISCES  bio-model
          IF( ll_cfc     )    CALL trc_ice_ini_cfc          ! CFC     tracers
          IF( ln_c14     )    CALL trc_ice_ini_c14          ! C14     tracer
