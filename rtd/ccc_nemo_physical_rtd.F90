@@ -268,7 +268,7 @@ PROGRAM nemo_ocean_diag
         i_AS_E  = 121; i_AS_W  = 149
         i_PN_E  =  16; i_PN_W  = 91
 !     ORCA1 (with ln_use_jattr = .true.)
-      else if ( imt == 362.and.jmt == 282 ) then
+      else if ( imt == 362.and.jmt == 292 ) then
         print *, "Using ORCA1 configuration (cuted)"
         j_20N   = 222-40; j_20S   = 152-40; j_eq    = 187-40
         k60     =  20; k500    =  39; k2000   =  54
