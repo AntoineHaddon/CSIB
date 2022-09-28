@@ -173,6 +173,7 @@ SUBROUTINE calc (imt, jmt, lm)
 ! Ice Fraction
       call getvara ('siconc', iou0, imt*jmt*lm, (/1,1,1/)            &
           & , (/imt,jmt,lm/), soicecov, 1., 0.)
+      soicecov=soicecov/100 ! from % to factor
 ! Ice thickness (cell average)
       call getvara ('sithick', iou0, imt*jmt*lm, (/1,1,1/)            &
           & , (/imt,jmt,lm/), iicethic, 1., 0.)
