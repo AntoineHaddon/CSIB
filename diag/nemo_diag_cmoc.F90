@@ -128,6 +128,8 @@ PROGRAM nemo_diag_cmoc
    ! Mask out Caspian in CCCma ORCA1 grid
    IF ( (imt == 362) .AND. (jmt == 292) ) THEN
      tmask( 332:344, 203:235, 1:km ) = 0.
+   ELSEIF ( (imt == 362) .AND. (jmt == 332) ) THEN ! eORCA1 grid (no jstart)
+     tmask( 332:344, 243:275, 1:km ) = 0.
    ELSE
      stop "NEMO BGC diagnostic deck expects ORCA R1 grid"
    ENDIF
