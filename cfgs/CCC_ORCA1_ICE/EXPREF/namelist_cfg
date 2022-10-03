@@ -101,7 +101,7 @@
    ln_blk      = .false.    !  Bulk formulation                          (T => fill namsbc_blk )
       !              ! Type of coupling (Ocean/Ice/Atmosphere) :
    ln_cpl      = .false.   !  atmosphere coupled   formulation          ( requires key_oasis3 )
-     lk_cancpl   = .true.    !  CanCPL coupler 
+     lk_cancpl   = .false.    !  CanCPL coupler 
                      ! Sea-ice :
    nn_ice      = 2         !  =2 or 3 automatically for SI3 or CICE    ("key_si3" or "key_cice")
                            !          except in AGRIF zoom where it has to be specified
