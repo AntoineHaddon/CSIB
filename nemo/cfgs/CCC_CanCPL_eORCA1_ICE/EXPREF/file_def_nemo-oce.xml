@@ -33,14 +33,12 @@
           <field field_ref="fmmflx"           name="fmmflx"   level="0" />
     	  <field field_ref="e3t"              name="e3t"      level="0" />
     	  <field field_ref="saltflx"          name="saltflx"  level="0" />
-          <!--
           <field field_ref="snow_ai_cea"      name="snow_ai_cea"   level="0" />
           <field field_ref="snow_ao_cea"      name="snow_ao_cea"   level="0" />
           <field field_ref="hflx_rain_cea"    name="hflx_rain_cea" level="0" />
           <field field_ref="hflx_snow_cea"    name="hflx_snow_cea" level="0" />
           <field field_ref="hflx_rnf_cea"     name="hflx_rnf_cea"  level="0" />
           <field field_ref="hflx_ice_cea"     name="hflx_ice_cea"  level="0" />
-          -->
           <!--
           <field field_ref="hflx_qsr_tot"     name="hflx_qsr_tot"  level="0" />
           <field field_ref="hflx_qnr_tot"     name="hflx_qnr_tot"  level="0" />
