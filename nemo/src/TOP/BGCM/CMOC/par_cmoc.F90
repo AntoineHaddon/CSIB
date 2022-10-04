@@ -15,8 +15,8 @@ MODULE par_cmoc
    ! Starting/ending PISCES do-loop indices (N.B. no PISCES : jpl_pcs < jpf_pcs the do-loop are never done)
    ! INTEGER, PUBLIC ::   jp_knu0             !: First index of CMOC passive tracers
    ! INTEGER, PUBLIC ::   jp_knu1             !: Last  index of CMOC passive tracers
-   ! INTEGER, PUBLIC ::   jpdic_can           !: DIC
+   ! INTEGER, PUBLIC ::   jqdic_can           !: DIC
    ! INTEGER, PUBLIC ::   jpalk_can           !: TA
-   ! INTEGER, PUBLIC ::   jpoxy_can           !: O2 
+   ! INTEGER, PUBLIC ::   jqoxy_can           !: O2 
    !!======================================================================
 END MODULE par_cmoc
