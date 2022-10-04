@@ -67,17 +67,17 @@ CONTAINS
       DO jn = 1,jp_cmoc
        write(numout,*) ctrcnm(jn)
        cltra = ctrcnm(jn)
-       IF( cltra == 'DIC'      )   jpdic = jn      !: dissolved inorganic carbon concentration
-       IF( cltra == 'Alkalini' )   jptal = jn      !: total alkalinity
-       IF( cltra == 'O2'       )   jpoxy = jn      !: oxygen concentration
-       IF( cltra == 'NO3'      )   jpno3 = jn      !: NO3 concentration
+       IF( cltra == 'DIC'      )   jqdic = jn      !: dissolved inorganic carbon concentration
+       IF( cltra == 'Alkalini' )   jqtal = jn      !: total alkalinity
+       IF( cltra == 'O2'       )   jqoxy = jn      !: oxygen concentration
+       IF( cltra == 'NO3'      )   jqno3 = jn      !: NO3 concentration
       END DO
       !
       IF( .NOT. ln_rsttr ) THEN
-        trn(:,:,:,jpdic) = sco2
-        trn(:,:,:,jptal) = alka0 
-        trn(:,:,:,jpoxy) = oxyg0
-        trn(:,:,:,jpno3) = no30
+        trn(:,:,:,jqdic) = sco2
+        trn(:,:,:,jqtal) = alka0 
+        trn(:,:,:,jqoxy) = oxyg0
+        trn(:,:,:,jqno3) = no30
       ENDIF
       !
       ! closea mask for BGCM

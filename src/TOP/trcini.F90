@@ -145,7 +145,7 @@ CONTAINS
       USE trcini_c14     ! C14  initialisation
       USE trcini_age     ! age initialisation
       USE trcini_my_trc  ! MY_TRC   initialisation
-	    USE par_trc        ! jpdic, etc. common indices for tracers
+	    USE par_trc        ! jqdic, etc. common indices for tracers
 
       !
       INTEGER :: jn

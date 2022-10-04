@@ -89,9 +89,9 @@ CONTAINS
                ! DUMMY VARIABLES FOR DIC, H+, AND BORATE
                zbot  = borat(ji,jj,1)
                zfact = rhop(ji,jj,1) / 1000. + rtrn
-               zdic  = trn(ji,jj,1,jpdic) / zfact
+               zdic  = trn(ji,jj,1,jqdic) / zfact
                zph   = MAX( hi(ji,jj,1), 1.e-10 ) / zfact
-               zalka = trn(ji,jj,1,jptal) / zfact
+               zalka = trn(ji,jj,1,jqtal) / zfact
                zph2  = zph*zph
                zph3  = zph*zph2
                ! zpo4 = (trn(ji,jj,1,jpno3)+trn(ji,jj,1,jpnh4)) / 16. *0.000001 / zfact
@@ -171,7 +171,7 @@ CONTAINS
 
       DO jj = 1, jpj
          DO ji = 1, jpi
-			! zh2co3(ji,jj) = trn(ji,jj,1,jpdic)*.01_wp           ! set up fraction (1%) of DIC as a proxy for [H2CO3*]sw and convert in M
+			! zh2co3(ji,jj) = trn(ji,jj,1,jqdic)*.01_wp           ! set up fraction (1%) of DIC as a proxy for [H2CO3*]sw and convert in M
 			! 1% seems to be a reasonable fraction based on Zeebe et al textbook Fig. 1.6.27
 			! to represent total dissolved CO2g in seawater?	  
 			! CO2(g) <=> H2CO3 Zeebe Eqs 1.1.1 and H2CO3 in equilibrium with DIC (HCO3 and CO3 2-)
@@ -186,15 +186,15 @@ CONTAINS
 
             oce_co2g(ji,jj) = ( zfld - zflu ) * rfact * e1e2t(ji,jj) * tmask_bgc_closea(ji,jj,1) * 1000. ! convert L^-1 to m^-3
             zco2flx(ji,jj)  = ( zfld - zflu ) * tmask_bgc_closea(ji,jj,1)
-            tra(ji,jj,1,jpdic) = tra(ji,jj,1,jpdic) + zco2flx(ji,jj) / e3t_n(ji,jj,1)
+            tra(ji,jj,1,jqdic) = tra(ji,jj,1,jqdic) + zco2flx(ji,jj) / e3t_n(ji,jj,1)
 			
             ! Compute O2 flux 
             zfld16 = satmo2g(ji,jj) * chemc(ji,jj,2) * tmask_bgc_closea(ji,jj,1) * zkgo2(ji,jj)     ! (mol/L) * (m/s)
-            zflu16 = trn(ji,jj,1,jpoxy) * tmask_bgc_closea(ji,jj,1) * zkgo2(ji,jj)                  ! (mol/L) * (m/s)
+            zflu16 = trn(ji,jj,1,jqoxy) * tmask_bgc_closea(ji,jj,1) * zkgo2(ji,jj)                  ! (mol/L) * (m/s)
 
             oce_o2g(ji,jj) = ( zfld16 - zflu16 ) * rfact * e1e2t(ji,jj) * tmask_bgc_closea(ji,jj,1) * 1000. ! convert L^-1 to m^-3
             zo2flx(ji,jj)  = ( zfld16 - zflu16 ) * tmask_bgc_closea(ji,jj,1)
-            tra(ji,jj,1,jpoxy) = tra(ji,jj,1,jpoxy) + zo2flx(ji,jj) / e3t_n(ji,jj,1)
+            tra(ji,jj,1,jqoxy) = tra(ji,jj,1,jqoxy) + zo2flx(ji,jj) / e3t_n(ji,jj,1)
          END DO
       END DO
 
@@ -210,8 +210,8 @@ CONTAINS
       ! partial pressures
       CALL iom_put("DpCO2", ( satmco2g(:,:) - zh2co3(:,:) / ( chemc(:,:,1) + rtrn ) ) * tmask_bgc_closea(:,:,1) )
       CALL iom_put("pCO2" ,                 ( zh2co3(:,:) / ( chemc(:,:,1) + rtrn ) ) * tmask_bgc_closea(:,:,1) )
-      CALL iom_put("DpO2" , ( satmo2g(:,:) - trn(:,:,1,jpoxy) / ( chemc(:,:,2) + rtrn ) ) * tmask_bgc_closea(:,:,1) )
-      CALL iom_put("pO2"  ,                ( trn(:,:,1,jpoxy) / ( chemc(:,:,2) + rtrn ) ) * tmask_bgc_closea(:,:,1) )
+      CALL iom_put("DpO2" , ( satmo2g(:,:) - trn(:,:,1,jqoxy) / ( chemc(:,:,2) + rtrn ) ) * tmask_bgc_closea(:,:,1) )
+      CALL iom_put("pO2"  ,                ( trn(:,:,1,jqoxy) / ( chemc(:,:,2) + rtrn ) ) * tmask_bgc_closea(:,:,1) )
       ! Carbonate system
       zph0(:,:,:) = rtrn
       zph0(:,:,1) = hi(:,:,1) + rtrn   ! [H+] is 2D for now so just set to epsilon if deeper than level 1 
