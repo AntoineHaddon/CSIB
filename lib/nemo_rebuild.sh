@@ -110,6 +110,7 @@ if [ $( get_namelist_var ln_use_jattr $inrs/rs_namelist_cfg ) ];then
   # cut coor.nc according to open_ocean_jstart
   # remember that coor.nc is a temporary file
   ncks -h -O -d y,$(expr $jstart - 1), coor.nc coor.nc 
+  ncwa -h -O -a time_counter coor.nc coor.nc
 fi
 
 # A list of directories to delete from RUNPATH at the end
