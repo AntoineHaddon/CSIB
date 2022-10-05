@@ -109,7 +109,7 @@ if [ $nemo_rtd -eq 1 ]; then
     [ -s $OLD_RTD_LOC/sc_${cn_exp}_nemo_carbon_rtd.nc ] && cp $OLD_RTD_LOC/sc_${cn_exp}_nemo_carbon_rtd.nc ./nemo_carbon_rtd.nc 
 
     # Rename files for RTD
-    ln -s  ${cn_exp}_1m_${chunk_start_date}_${chunk_end_date}_ptrc_T.nc ptrc_t
+    ln -s  ${cn_exp}_1m_${chunk_start_date}_${chunk_end_date}_btrc_T.nc ptrc_t
     ln -s  ${cn_exp}_1m_${chunk_start_date}_${chunk_end_date}_diad_T.nc diad_t
     [ -e ptrc_t ] || bail "Failed in carbon RTD: ptrc_t missing"
     [ -e diad_t ] || bail "Failed in carbon RTD: diad_t missing"

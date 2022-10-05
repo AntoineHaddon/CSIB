@@ -146,6 +146,13 @@ if [ $nemo_carbon -eq 1 ]; then
     [ -s rs_namelist_cmoc_cfg ]  && tarlist="$tarlist rs_namelist_cmoc_cfg"
     [ -s rs_namelist_cmoc_ref ]  && tarlist="$tarlist rs_namelist_cmoc_ref"
   fi
+  
+  if [ $nemo_canoe -eq 1 ]; then
+    cp -f ${runwrk}/namelist_canoe_cfg rs_namelist_canoe_cfg || :
+    cp -f ${runwrk}/namelist_canoe_ref rs_namelist_canoe_ref || :
+    [ -s rs_namelist_canoe_cfg ]  && tarlist="$tarlist rs_namelist_canoe_cfg"
+    [ -s rs_namelist_canoe_ref ]  && tarlist="$tarlist rs_namelist_canoe_ref"
+  fi
 fi
 
 # Save a copy of the XIOS executable that was just run to the restart archive

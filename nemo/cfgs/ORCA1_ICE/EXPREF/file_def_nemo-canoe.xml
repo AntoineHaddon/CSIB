@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+
+<!--
+============================================================================================================
+=                                           output files definition                                        =
+=                                            Define your own filesfor ocean dynamics context               =
+=                                         put the variables you want...                                    =
+============================================================================================================
+    -->
+   
+    <file_definition type="one_file" name="@expname@_@freq@_@startdate@_@enddate@" sync_freq="1mo" min_digits="4">
+    
+      <file_group id="1m" output_freq="1mo" output_level="10" enabled=".TRUE."> <!-- real monthly files -->
+
+        <file id="file32" name_suffix="_btrc_T" description="CanOE sms variables + TOP tracers" >
+          <field field_ref="DIC"      />
+          <field field_ref="Alkalini" />
+          <field field_ref="O2"       />
+          <field field_ref="NO3"      />
+        </file>
+
+        <file id="file33" name_suffix="_diad_T" description="additional CanOE diagnostics" >
+          <!-- 3D fields here -->
+          <field field_ref="pH"          />
+          <!-- <field field_ref="CO3"         /> -->
+          <!-- <field field_ref="CO3sat"      /> -->
+          <!-- <field field_ref="HCO3"        /> -->
+
+          <field field_ref="PAR"         />
+          <field field_ref="PARDM"       />
+          <field field_ref="PAR3"        />
+
+          <field field_ref="PAR2BIO"     />
+          <!-- PAR that we want to use in CanOE or CMOC production (1 or 3 bands) -->
+
+          <field field_ref="tmask"       />
+          <field field_ref="closea"      />
+
+          <field field_ref="Irondep"     />    
+          <field field_ref="Ironsed"     />    
+
+         <!-- 2D fields here -->
+          <field field_ref="Cflx"        />
+          <field field_ref="Oflx"        />
+          
+          <field field_ref="Kg"          />
+          <field field_ref="KgCO2"       />
+          <field field_ref="KgO2"        />
+          
+          <field field_ref="DpCO2"       />
+          <field field_ref="DpO2"        />
+          
+          <field field_ref="pCO2"        />
+          <field field_ref="pO2"         />
+
+          <field field_ref="Heup"        />
+          <field field_ref="surf_chla"   />
+      
+        </file>
+
+      </file_group>
+
+   </file_definition>
+    
