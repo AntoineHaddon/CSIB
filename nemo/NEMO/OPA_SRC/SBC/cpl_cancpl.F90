@@ -332,12 +332,13 @@ contains
      !!============================================
 
      !--- Initialize groups for cpl, atm, ocn, ice, ...
-     !--- This will, among other things, define cpl_master, atm_master, ocn_master
-     !--- and return an ocean intra-communicator as local_ocn_comm
-     !--- NOTE: ocn_master is the rank in model_communicator not the rank in local_ocn_comm
+     !    This will, among other things, define the communicator for all model components,
+     !      as well as cpl_master, atm_master, ocn_master
+     !      It also returns an local ocean only communicator as local_ocn_comm
+     !    NOTE: ocn_master is the rank in model_communicator not the rank in local_ocn_comm
      local_ocn_comm = -1
-     call init_common_coupler_parameters()
      call define_group('ocn', local_ocn_comm)
+     call init_common_coupler_parameters()
 
      kl_comm  = local_ocn_comm
 
