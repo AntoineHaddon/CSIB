@@ -33,6 +33,9 @@
           <field field_ref="fmmflx"      name="fmmflx"   level="0" />
 	  <field field_ref="e3t"         name="e3t"      level="0" />
 	  <field field_ref="saltflx"     name="saltflx"  level="0" />
+          <!-- Ideal Age Tracer (IAT) from TOP -->
+          <field field_ref="Age"         name="Age"      level="0" />
+
         </file>
 
         <file id="file12" name_suffix="_grid_U" description="ocean U grid variables">

@@ -17,7 +17,7 @@
 
       <!-- ptrc on T grid -->
 
-     <field_group id="ptrc_T" grid_ref="grid_T_3D">
+     <field_group id="btrc_T" grid_ref="grid_T_3D">
        <!-- PISCES standard : variables available with ln_p4z  -->
        <field id="DIC"          long_name="Dissolved inorganic Concentration"        unit="mmol/m3" />
        <field id="DIC_e3t"      long_name="DIC * e3t"                                unit="mmol/m2" > DIC * e3t </field >

@@ -90,11 +90,20 @@
         
         if [ $nemo_cmoc -eq 1 ]; then
           # The input cmoc namelist is hard coded as "namelist_cmoc_cfg" &
-	  # "namelist_cmoc_ref" in nemo source
+          # "namelist_cmoc_ref" in nemo source
           [ -z "$nemo_namelist_cmoc_cfg" ] && bail "nemo_namelist_cmoc_cfg is not defined"
           acc_cp namelist_cmoc_cfg $nemo_namelist_cmoc_cfg 
-	  [ -z "$nemo_namelist_cmoc_ref" ] && bail "nemo_namelist_cmoc_ref is not defined"
+          [ -z "$nemo_namelist_cmoc_ref" ] && bail "nemo_namelist_cmoc_ref is not defined"
           acc_cp namelist_cmoc_ref $nemo_namelist_cmoc_ref
+        fi
+
+       if [ $nemo_canoe -eq 1 ]; then
+          # The input canoe namelist is hard coded as "namelist_canoe_cfg" &
+          # "namelist_canoe_ref" in nemo source
+          [ -z "$nemo_namelist_canoe_cfg" ] && bail "nemo_namelist_canoe_cfg is not defined"
+          acc_cp namelist_canoe_cfg $nemo_namelist_canoe_cfg 
+          [ -z "$nemo_namelist_canoe_ref" ] && bail "nemo_namelist_canoe_ref is not defined"
+          acc_cp namelist_canoe_ref $nemo_namelist_canoe_ref
         fi
       fi
 
@@ -289,10 +298,15 @@
 	  [ ! -s rs_namelist_pisces_cfg ] && bail "Missing rs_namelist_pisces_cfg from $nemo_rs"
 	  [ ! -s rs_namelist_pisces_ref ] && bail "Missing rs_namelist_pisces_ref from $nemo_rs"
 
-          if [ $nemo_cmoc -eq 1 ]; then
+        if [ $nemo_cmoc -eq 1 ]; then
 	    [ ! -s rs_namelist_cmoc_cfg ] && bail "Missing rs_namelist_cmoc_cfg from $nemo_rs"
 	    [ ! -s rs_namelist_cmoc_ref ] && bail "Missing rs_namelist_cmoc_ref from $nemo_rs"
-          fi
+        fi
+
+        if [ $nemo_canoe -eq 1 ]; then
+	    [ ! -s rs_namelist_canoe_cfg ] && bail "Missing rs_namelist_canoe_cfg from $nemo_rs"
+	    [ ! -s rs_namelist_canoe_ref ] && bail "Missing rs_namelist_canoe_ref from $nemo_rs"
+        fi
 	fi
 
 	# The input ocean namelist_cfg is hard coded as "namelist_cfg" &
@@ -321,12 +335,20 @@
 	  cp -f rs_namelist_pisces_cfg namelist_pisces_cfg
 	  cp -f rs_namelist_pisces_ref namelist_pisces_ref
 
-          if [ $nemo_cmoc -eq 1 ]; then
-    	    # The input cmoc namelist is hard coded as "namelist_cmoc_cfg" &
+        if [ $nemo_cmoc -eq 1 ]; then
+    	# The input cmoc namelist is hard coded as "namelist_cmoc_cfg" &
 	    # "namelist_cmoc_ref" in nemo source
 	    cp -f rs_namelist_cmoc_cfg namelist_cmoc_cfg
 	    cp -f rs_namelist_cmoc_ref namelist_cmoc_ref
-          fi
+        fi
+		
+        if [ $nemo_canoe -eq 1 ]; then
+    	# The input canoe namelist is hard coded as "namelist_canoe_cfg" &
+	    # "namelist_canoe_ref" in nemo source
+	    cp -f rs_namelist_canoe_cfg namelist_canoe_cfg
+	    cp -f rs_namelist_canoe_ref namelist_canoe_ref
+        fi
+		
 	fi
       fi 
 
@@ -436,6 +458,10 @@
     acc_cp file_def_nemo-oce.xml  $nemo_file_def_nemo_oce
     acc_cp file_def_nemo-ice.xml  $nemo_file_def_nemo_ice
     acc_cp file_def_nemo-pisces.xml  $nemo_file_def_nemo_pisces
+    acc_cp file_def_nemo-cmoc.xml  $nemo_file_def_nemo_cmoc
+    acc_cp field_def_nemo-cmoc.xml  $nemo_field_def_nemo_cmoc
+    acc_cp file_def_nemo-canoe.xml  $nemo_file_def_nemo_canoe
+    acc_cp field_def_nemo-canoe.xml  $nemo_field_def_nemo_canoe
     acc_cp axis_def_nemo.xml      $nemo_axis_def_nemo
     acc_cp domain_def_nemo.xml    $nemo_domain_def_nemo
     acc_cp grid_def_nemo.xml      $nemo_grid_def_nemo
@@ -460,7 +486,9 @@
     acc_cp runoff_core_monthly.nc $nemo_runoff_core_monthly
     acc_cp sss_data.nc            $nemo_sss_data
     acc_cp sst_data.nc            $nemo_sst_data
-    acc_cp chlorophyll.nc         $nemo_chlorophyll
+    
+    acc_cp chlorophyll.nc        $nemo_chlorophyll
+    
     acc_cp calving.nc             $nemo_calving
     acc_cp bfr_coef.nc            $nemo_bfr_coef
     acc_cp subbasins.nc           $nemo_subbasins
@@ -567,21 +595,33 @@
       acc_cp presatm.nc           $nemo_presatm
       acc_cp dust.orca.nc         $nemo_dust_orca
       acc_cp river.orca.nc        $nemo_river_orca
+      acc_cp river.orca.pisces.nc $nemo_river_orca_pisces
+
+      # acc_cp ndeposition.orca.nc  $nemo_ndeposition_orca
+      # O Riche Aug 01st 2022
       acc_cp ndeposition.orca.nc  $nemo_ndeposition_orca
+      
+
       acc_cp bathy.orca.nc        $nemo_bathy_orca
       acc_cp par.orca.nc          $nemo_par_orca
+      
       acc_cp solubility.orca.nc   $nemo_solubility_orca
       acc_cp hydrofe.orca.nc      $nemo_hydrofe_orca
 
-      if [ $nemo_cmoc -eq 1 ]; then
-        acc_cp fermask.orca.nc $nemo_fermask_orca
-      fi
+      # if [ $nemo_cmoc -eq 1 ]; then
+        # acc_cp fermask.orca.nc $nemo_fermask_orca
+      # fi
+
+      # O Riche Aug 01st 2022
+      acc_cp femask.nc $nemo_fermask_orca
 
       acc_cp data_DIC_nomask.nc        $nemo_data_dic_nomask
       acc_cp data_Alkalini_nomask.nc   $nemo_data_alkalini_nomask
       acc_cp data_O2_nomask.nc         $nemo_data_o2_nomask
       acc_cp data_PO4_nomask.nc        $nemo_data_po4_nomask
-      acc_cp data_Si_nomask.nc         $nemo_data_si_nomask
+
+      acc_cp data_Si_nomask.nc        $nemo_data_si_nomask
+
       acc_cp data_DOC_nomask.nc        $nemo_data_doc_nomask
       acc_cp data_Fer_nomask.nc        $nemo_data_fer_nomask
       acc_cp data_NO3_nomask.nc        $nemo_data_no3_nomask
@@ -596,4 +636,7 @@
       # Modify the pisces namelist to read CO2 from file, if specified in makefile
       ln_co2int=$ln_co2int # read atm pco2 from a file (T) or constant (F) 
       mod_nl namelist_pisces_cfg ln_co2int
+      
+      acc_cp atcco2.txt uror_nemo_atcco2.txt
+      
     fi 
