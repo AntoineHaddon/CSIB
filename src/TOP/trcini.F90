@@ -145,10 +145,10 @@ CONTAINS
       USE trcini_c14     ! C14  initialisation
       USE trcini_age     ! age initialisation
       USE trcini_my_trc  ! MY_TRC   initialisation
-	    USE par_trc        ! jqdic, etc. common indices for tracers
+      USE par_trc        ! jqdic, etc. common indices for tracers
 
       !
-      INTEGER :: jn
+      INTEGER :: jn, jp
       !
       !!----------------------------------------------------------------------
       !
@@ -161,6 +161,17 @@ CONTAINS
          ln_trc_sbc(jn) =       sn_tracer(jn)%llsbc
          ln_trc_cbc(jn) =       sn_tracer(jn)%llcbc
          ln_trc_obc(jn) =       sn_tracer(jn)%llobc
+      END DO
+      !
+      DO jp = 1, jp_cmoc
+         jn = jp + jp_bgc
+         ctrcnm    (jn) = TRIM( cmoc_tracer(jp)%clsname )
+         ctrcln    (jn) = TRIM( cmoc_tracer(jp)%cllname )
+         ctrcun    (jn) = TRIM( cmoc_tracer(jp)%clunit  )
+         ln_trc_ini(jn) =       cmoc_tracer(jp)%llinit
+         ln_trc_sbc(jn) =       cmoc_tracer(jp)%llsbc
+         ln_trc_cbc(jn) =       cmoc_tracer(jp)%llcbc
+         ln_trc_obc(jn) =       cmoc_tracer(jp)%llobc
       END DO
       !
       DO jn = 1, jp_dia3d +jp_dia2d

@@ -26,14 +26,18 @@ MODULE trcnam
    USE lib_mpp, ONLY: ncom_dttrc
 #endif
 
+   USE sms_top, ONLY: nrdttrc ! access to nrdttrc declaration
+
    IMPLICIT NONE
    PRIVATE 
 
    PUBLIC   trc_nam_run  ! called in trcini
    PUBLIC   trc_nam      ! called in trcini
 
-   TYPE(PTRACER), DIMENSION(jpmaxtrc), PUBLIC  :: sn_tracer  !: type of tracer for saving if not key_iomput
+   TYPE(PTRACER), DIMENSION(jpmaxtrc), PUBLIC  :: sn_tracer    !: type of tracer for saving if not key_iomput
+   TYPE(PTRACER), DIMENSION(jpmaxtrc), PUBLIC  :: cmoc_tracer 
    TYPE(DIAG),    DIMENSION(jpmaxdia), PUBLIC  :: sn_dia     !: type of diagnostics
+
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
@@ -100,8 +104,9 @@ CONTAINS
       !!---------------------------------------------------------------------
       INTEGER  ::   ios   ! Local integer
       !!
-      NAMELIST/namtrc_run/ nn_dttrc, ln_rsttr, nn_rsttr, ln_top_euler, &
-        &                  cn_trcrst_indir, cn_trcrst_outdir, cn_trcrst_in, cn_trcrst_out
+      NAMELIST/namtrc_run/ nn_dttrc, ln_rsttr, nn_rsttr, ln_top_euler,                     &
+        &                  cn_trcrst_indir, cn_trcrst_outdir, cn_trcrst_in, cn_trcrst_out, &
+        &                  nrdttrc
       !!---------------------------------------------------------------------
       !
       IF(lwp) WRITE(numout,*)
@@ -148,12 +153,14 @@ CONTAINS
       INTEGER ::   ios, ierr, icfc, nb_bgcms       ! Local integer
       !!
       NAMELIST/namtrc/jp_bgc, ln_canoe, ln_cmoc, ln_pisces, ln_my_trc, ln_age, ln_cfc11, ln_cfc12, ln_sf6, ln_c14, &
-         &            ln_trcdta, ln_trcdmp, ln_trcdmp_clo, jp_dia3d, jp_dia2d, sn_tracer, sn_dia
+         &            ln_trcdta, ln_trcdmp, ln_trcdmp_clo, jp_dia3d, jp_dia2d, sn_tracer, sn_dia, jp_cmoc, cmoc_tracer
       !!---------------------------------------------------------------------
       ! Dummy settings to fill tracers data structure
       !                  !   name   !   title   !   unit   !   init  !   sbc   !   cbc   !   obc  !
       sn_tracer = PTRACER( 'NONAME' , 'NOTITLE' , 'NOUNIT' , .false. , .false. , .false. , .false.)
 	    sn_dia    = DIAG('NONAME','NOTITLE','NOUNIT')
+      jp_cmoc     = 0
+      cmoc_tracer = PTRACER( 'NONAME' , 'NOTITLE' , 'NOUNIT' , .false. , .false. , .false. , .false.)
       !
       IF(lwp) WRITE(numout,*)
       IF(lwp) WRITE(numout,*) 'trc_nam_trc : read the passive tracer namelists'
@@ -176,7 +183,7 @@ CONTAINS
       jptra       =  0
       jp_pisces   =  0    ;   jp_pcs0  =  0    ;   jp_pcs1  = 0
       jp_canoe    =  0    
-      jp_cmoc     =  0    
+      ! jp_cmoc     =  0    
       jp_my_trc   =  0    ;   jp_myt0  =  0    ;   jp_myt1  = 0
       jp_cfc      =  0    ;   jp_cfc0  =  0    ;   jp_cfc1  = 0
       jp_age      =  0    ;   jp_c14   =  0
@@ -186,7 +193,7 @@ CONTAINS
       ENDIF
       !
       IF( ln_cmoc   )  THEN
-          jp_cmoc   = jp_bgc
+          jptra  = jp_bgc + jp_cmoc ! O Riche Sept 13th 2022
       ENDIF
       !
       IF( ln_pisces )  THEN
@@ -200,7 +207,7 @@ CONTAINS
           jp_myt1   = jp_my_trc
       ENDIF
       !
-      jptra  = jp_bgc
+      ! jptra  = jp_bgc
       !
       IF( ln_age )    THEN
          jptra     = jptra + 1
@@ -227,6 +234,7 @@ CONTAINS
          WRITE(numout,*) '      Total number of BGC tracers                  jp_bgc        = ', jp_bgc
          WRITE(numout,*) '      Simulating CANOE  model                      ln_canoe      = ', ln_canoe 
          WRITE(numout,*) '      Simulating CMOC   model                      ln_cmoc       = ', ln_cmoc  
+         WRITE(numout,*) '      Total number of added CMOC tracers           jp_cmoc       = ', jp_cmoc
          WRITE(numout,*) '      Simulating PISCES model                      ln_pisces     = ', ln_pisces
          WRITE(numout,*) '      Simulating MY_TRC  model                     ln_my_trc     = ', ln_my_trc
          WRITE(numout,*) '      Simulating water mass age                    ln_age        = ', ln_age
