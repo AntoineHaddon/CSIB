@@ -99,10 +99,13 @@ fi
 [ -s "${inrs}" ]|| bail "Could not find ${inrs}"
 
 #access the coordinates files (used for lat/lon later)
-access coor.nc $nemo_coordinates  nocp=no  #force copy because we make temporary changes
+access tmp.nc $nemo_coordinates  nocp=no  #force copy because we make temporary changes
+cp tmp.nc coor.nc && rm tmp.nc
 ncrename -h -O -d t,time_counter coor.nc coor.nc || true #no error if already done
+ncwa -h -O -a time_counter coor.nc coor.nc && ncks -h -O -x -v  time_counter coor.nc coor.nc
+
 # remove the jstart if  ln_use_jatt is true in the namelist
-if [ $( get_namelist_var ln_use_jattr $inrs/rs_namelist_cfg ) ];then
+if [ $( get_namelist_var ln_use_jattr $inrs/rs_namelist_cfg ) == ".true." ];then
   jstart=$( ncdump -h coor.nc | grep  --color=never "open_ocean_jstart\s*=" )
   jstart=${jstart##*=}
   jstart=$( trim_whitespace $jstart )
@@ -110,7 +113,6 @@ if [ $( get_namelist_var ln_use_jattr $inrs/rs_namelist_cfg ) ];then
   # cut coor.nc according to open_ocean_jstart
   # remember that coor.nc is a temporary file
   ncks -h -O -d y,$(expr $jstart - 1), coor.nc coor.nc 
-  ncwa -h -O -a time_counter coor.nc coor.nc
 fi
 
 # A list of directories to delete from RUNPATH at the end
