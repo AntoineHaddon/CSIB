@@ -87,19 +87,20 @@
   yearmo=`echo $year $keep_old_rtdiag_number | awk '{printf "%04d", $1 - $2}'`
 
   # current year rtd file names
-  physical_rtdfile="sc_${runid}_${year_rtdiag_start}${mon1}_${year}${mon2}_nemo_physical_rtd.nc"
-  ice_rtdfile="sc_${runid}_${year_rtdiag_start}${mon1}_${year}${mon2}_nemo_ice_rtd.nc"
-  carbon_rtdfile="sc_${runid}_${year_rtdiag_start}${mon1}_${year}${mon2}_nemo_carbon_rtd.nc"
+  year0=$(pad_integer $year_rtdiag_start 4)
+  physical_rtdfile="sc_${runid}_${year0}${mon1}_${year}${mon2}_nemo_physical_rtd.nc"
+  ice_rtdfile="sc_${runid}_${year0}${mon1}_${year}${mon2}_nemo_ice_rtd.nc"
+  carbon_rtdfile="sc_${runid}_${year0}${mon1}_${year}${mon2}_nemo_carbon_rtd.nc"
 
   # previous year rtd file names
-  physical_rtdfile1="sc_${runid}_${year_rtdiag_start}${mon1}_${yearm1}${mon2}_nemo_physical_rtd.nc"
-  ice_rtdfile1="sc_${runid}_${year_rtdiag_start}${mon1}_${yearm1}${mon2}_nemo_ice_rtd.nc"
-  carbon_rtdfile1="sc_${runid}_${year_rtdiag_start}${mon1}_${yearm1}${mon2}_nemo_carbon_rtd.nc"
+  physical_rtdfile1="sc_${runid}_${year0}${mon1}_${yearm1}${mon2}_nemo_physical_rtd.nc"
+  ice_rtdfile1="sc_${runid}_${year0}${mon1}_${yearm1}${mon2}_nemo_ice_rtd.nc"
+  carbon_rtdfile1="sc_${runid}_${year0}${mon1}_${yearm1}${mon2}_nemo_carbon_rtd.nc"
 
   # older rtd file to be deleted (depends on keep_old_rtdiag_number)
-  physical_rtdfileo="sc_${runid}_${year_rtdiag_start}${mon1}_${yearmo}${mon2}_nemo_physical_rtd.nc"
-  ice_rtdfileo="sc_${runid}_${year_rtdiag_start}${mon1}_${yearmo}${mon2}_nemo_ice_rtd.nc"
-  carbon_rtdfileo="sc_${runid}_${year_rtdiag_start}${mon1}_${yearmo}${mon2}_nemo_carbon_rtd.nc"
+  physical_rtdfileo="sc_${runid}_${year0}${mon1}_${yearmo}${mon2}_nemo_physical_rtd.nc"
+  ice_rtdfileo="sc_${runid}_${year0}${mon1}_${yearmo}${mon2}_nemo_ice_rtd.nc"
+  carbon_rtdfileo="sc_${runid}_${year0}${mon1}_${yearmo}${mon2}_nemo_carbon_rtd.nc"
 
 # Access old RTD files from last year. Note, if these files exist, the RTD programs
 # below will automatically append to them.
