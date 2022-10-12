@@ -18,12 +18,22 @@
       <!-- btrc on T grid -->
 
      <field_group id="btrc_T" grid_ref="grid_T_3D">
-       <!-- CanOE standard : variables available with ln_p4z  -->
+       <!-- BGCM standard : variables available with TOP activated alone  -->
        <field id="DIC"          long_name="Dissolved inorganic Concentration"        unit="mmol/m3" />
        <field id="Alkalini"     long_name="Total Alkalinity Concentration"           unit="mmol/m3" />
        <field id="O2"           long_name="Oxygen Concentration"                     unit="mmol/m3" />
        <field id="NO3"          long_name="NO3    Concentration"                     unit="mmol/m3" />
-       <field id="Age"          long_name="Seawater age since contact with surface"  unit="years"   />
+       <!-- CMOC specific -->
+       <field id="POC"          long_name="Detritus CMOC"                            unit="mmolN/m3"  />
+       <field id="PHY"          long_name="Phytoplankton Concentration CMOC"         unit="mmolN/m3"  />
+       <field id="ZOO"          long_name="Zooplankton Concentration CMOC"           unit="mmolN/m3"  />
+       <field id="NCHL"         long_name="Chlorophyll Concentration CMOC"           unit="mgChl/m3"  />
+       <!-- <field id="DICabio"      long_name="Abiotic DIC"                              unit="mmolC/m3"  /> -->
+       <!-- <field id="ALKabio"      long_name="Abiotic Alkalinity"                       unit="mmoleq/m3" /> -->
+       <!-- <field id="O2abio"       long_name="Abiotic Oxygen"                           unit="umolO2/L"  /> -->
+       <!-- <field id="DICnat"       long_name="Natural DIC"                              unit="mmolC/m3"  /> -->
+       <!-- <field id="DI14C"        long_name="Radiocarbon DIC"                          unit="mmolC/m3"  /> -->
+       
      </field_group>
 
      <!-- Additional diagnostics on T grid --> 
