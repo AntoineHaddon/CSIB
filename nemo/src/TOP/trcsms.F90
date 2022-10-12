@@ -95,7 +95,11 @@ CONTAINS
       ! nrdttrc enables biology components of BGCMs to integrate over extra shorter time steps.
       ! not to confuse with nn_dttrc (subdivide physics time steps to drive BGCMs) and rdttrc
       ! the new time step for BGCM tracers if nn_dtrc/=1
-      nrdttrc = 4 ! should be read from namelist_pisces (or _canoe) by trcnam_pisces (or _canoe) or perhaps moved to namelist_top
+      ! nrdttrc = 4 ! should be read from namelist_pisces (or _canoe) by trcnam_pisces (or _canoe) or perhaps moved to namelist_top
+      !
+      ! O Riche Sept 13th 2022
+      ! added nrdttrc in namelist_top_* in &namtrc_run section
+      
       !
       IF( ( ln_top_euler .AND. kt == nittrc000 )  .OR. ( .NOT.ln_top_euler .AND. kt <= nittrc000 + nn_dttrc ) ) THEN
         rfactr  = 1. / rfact
