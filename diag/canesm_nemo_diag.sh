@@ -156,14 +156,17 @@ set -x
 # Replace 1d_diaptr with 1m_diaptr after doing time mean
       nemo_diag_file_suffix_list=`echo $nemo_diag_file_suffix_list | sed -e "s/1d_diaptr/1m_diaptr/"`
 
-# Append yearly diagnostics
-      if [ $nmon -eq 1 -a $fmon -eq 1 ] ; then
-        nemo_diag_file_suffix_list="$nemo_diag_file_suffix_list $nemo_diag_file_1y_suffix_list"
-      fi
   fi # end of "output_level -ge 1"
+
+# Append yearly diagnostics
+  if [ $nmon -eq 1 -a $fmon -eq 1 ] ; then
+    nemo_diag_file_suffix_list="$nemo_diag_file_suffix_list $nemo_diag_file_1y_suffix_list"
+  fi
 
 # Split to time series
   for sfx in $nemo_diag_file_suffix_list ; do
+    diag_hist="mc_${runid}_${fyear}_m${fmon}_${sfx}.nc"
+    access ${sfx}_${fmon} $diag_hist na
     [ ! -e ${sfx}_${fmon} ] && continue
     ncks -O -C -x -v time_centered_bounds,time_centered ${sfx}_${fmon} ${sfx}_${fmon} 
     cdo splitname ${sfx}_${fmon} xxx-${sfx}_
