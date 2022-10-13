@@ -16,6 +16,17 @@
 #  (D. Yang, Aug 2020).
 #
 #  This script is adapted for NEMO4.0.3 (D. Yang, OCT 2020)
+# 
+#  O Riche, Apr-Aug 2022
+#  Some changes to be able to read CanOE/CMOC namelists
+#  O Riche Oct 11th 2022
+#  Modify nemo_carbon/ nemo_cmoc/nemo_canoe conditional
+#  structure and add nemo_pisces branch to account for
+#  the new configuration system (excluding anything not
+#  relevant to one specific BGCM).
+#  now pisces files are accessed/read if only nemo_pisces
+#  has been set to on/1.
+#
 #============================================================================
 
   # nemo_rs is the restart file name that will be used below
@@ -81,12 +92,14 @@
       fi
 
       if [ $nemo_carbon -eq 1 ]; then
-	# The input pisces namelist is hard coded as "namelist_pisces_cfg" & 
-	# "namelist_pisces_ref" in nemo source
-	[ -z "$nemo_namelist_pisces_cfg" ] && bail "nemo_namelist_pisces_cfg is not defined"
-	acc_cp namelist_pisces_cfg $nemo_namelist_pisces_cfg
-        [ -z "$nemo_namelist_pisces_ref" ] && bail "nemo_namelist_pisces_ref is not defined"
-        acc_cp namelist_pisces_ref $nemo_namelist_pisces_ref
+     	# The input pisces namelist is hard coded as "namelist_pisces_cfg" & 
+     	# "namelist_pisces_ref" in nemo source
+        if [ $nemo_pisces -eq 1 ]; then
+     	    [ -z "$nemo_namelist_pisces_cfg" ] && bail "nemo_namelist_pisces_cfg is not defined"
+     	    acc_cp namelist_pisces_cfg $nemo_namelist_pisces_cfg
+          [ -z "$nemo_namelist_pisces_ref" ] && bail "nemo_namelist_pisces_ref is not defined"
+          acc_cp namelist_pisces_ref $nemo_namelist_pisces_ref
+        fi
         
         if [ $nemo_cmoc -eq 1 ]; then
           # The input cmoc namelist is hard coded as "namelist_cmoc_cfg" &
@@ -119,13 +132,13 @@
       # and namelist_cfc_cfg & namelist_cfc_ref 
       if [ $nemo_cfc -eq 1 ]; then
         [ -z "$config_dir/EXP00/namelist_cfc_cfg" ] && bail "namelist_cfc_cfg not found in configuration directory"
-	[ -z "$config_dir/EXP00/namelist_cfc_ref" ] && bail "namelist_cfc_ref not found in configuration directory"
+        [ -z "$config_dir/EXP00/namelist_cfc_ref" ] && bail "namelist_cfc_ref not found in configuration directory"
         [ -z "$config_dir/EXP00/namelist_top_cfc_cfg" ] && bail "namelist_top_cfc_cfg not found in configuration directory"
-	[ -z "$config_dir/EXP00/namelist_top_cfc_ref" ] && bail "namelist_top_cfc_ref not found in configuration directory"
+        [ -z "$config_dir/EXP00/namelist_top_cfc_ref" ] && bail "namelist_top_cfc_ref not found in configuration directory"
         acc_cp namelist_top_cfg $config_dir/EXP00/namelist_top_cfc_cfg
-	acc_cp namelist_top_ref $config_dir/EXP00/namelist_top_cfc_ref
+        acc_cp namelist_top_ref $config_dir/EXP00/namelist_top_cfc_ref
         acc_cp namelist_cfc_cfg $config_dir/EXP00/namelist_cfc_cfg
-	acc_cp namelist_cfc_ref $config_dir/EXP00/namelist_cfc_ref
+        acc_cp namelist_cfc_ref $config_dir/EXP00/namelist_cfc_ref
       fi
 
     elif [ "${nemo_loop_index}" -eq "${loop_start}" ]; then
@@ -166,8 +179,8 @@
         rm -f input_ocn_restart_file_names
         touch input_ocn_restart_file_names
         for rsfile in $found_rs; do
-	  mv $rsfile ${cn_ocerst_in}.nc
-	  echo "${cn_ocerst_in}$sfx" >> input_ocn_restart_file_names
+        mv $rsfile ${cn_ocerst_in}.nc
+	      echo "${cn_ocerst_in}$sfx" >> input_ocn_restart_file_names
         done
 
         # Ice restart files
@@ -175,13 +188,13 @@
         touch input_ice_restart_file_names
         found_rs=`(ls -1 *_${cn_icerst_out}.nc || : ) 2>/dev/null`
         if [ -z "$found_rs" ]; then
-	  [ $nn_ice -ge 2 ] && bail "No ice restart files were found in $nemo_rs "
-	  with_ice=off
-        else
-	  for rsfile in $found_rs; do
-	    mv $rsfile ${cn_icerst_in}.nc
-	    echo "${cn_icerst_in}$sfx" >> input_ice_restart_file_names
-	  done
+	        [ $nn_ice -ge 2 ] && bail "No ice restart files were found in $nemo_rs "
+	        with_ice=off
+          else
+	        for rsfile in $found_rs; do
+	        mv $rsfile ${cn_icerst_in}.nc
+	        echo "${cn_icerst_in}$sfx" >> input_ice_restart_file_names
+	        done
         fi
       fi
 
@@ -251,13 +264,25 @@
         fi
 
 	if [ $nemo_carbon -eq 1 ]; then
-	  # The input pisces namelist is hard coded as "namelist_pisces_cfg" & 
-	  # "namelist_pisces_ref" in nemo source
-	  [ -z "$nemo_namelist_pisces_cfg" ] && bail "nemo_namelist_pisces_cfg is not defined"
-	  acc_cp namelist_pisces_cfg $nemo_namelist_pisces_cfg nocp=no
-	  [ -z "$nemo_namelist_pisces_ref" ] && bail "nemo_namelist_pisces_ref is not defined"
+  
+          if [ $nemo_pisces -eq 1 ]; then
+	        # The input pisces namelist is hard coded as "namelist_pisces_cfg" & 
+	        # "namelist_pisces_ref" in nemo source
+	        [ -z "$nemo_namelist_pisces_cfg" ] && bail "nemo_namelist_pisces_cfg is not defined"
+	        acc_cp namelist_pisces_cfg $nemo_namelist_pisces_cfg nocp=no
+	        [ -z "$nemo_namelist_pisces_ref" ] && bail "nemo_namelist_pisces_ref is not defined"
           acc_cp namelist_pisces_ref $nemo_namelist_pisces_ref nocp=no
-        
+          fi
+
+          if [ $nemo_canoe -eq 1 ]; then
+	        # The input canoe namelist is hard coded as "namelist_canoe_cfg" & 
+	        # "namelist_canoe_ref" in nemo source
+	        [ -z "$nemo_namelist_canoe_cfg" ] && bail "nemo_namelist_canoe_cfg is not defined"
+	        acc_cp namelist_canoe_cfg $nemo_namelist_canoe_cfg nocp=no
+	        [ -z "$nemo_namelist_canoe_ref" ] && bail "nemo_namelist_canoe_ref is not defined"
+          acc_cp namelist_canoe_ref $nemo_namelist_canoe_ref nocp=no
+          fi
+
           if [ $nemo_cmoc -eq 1 ]; then
 	    # The input cmoc namelist is hard coded as "namelist_cmoc_cfg" &
 	    # "namelist_cmoc_ref" in nemo source
@@ -266,6 +291,8 @@
 	    [ -z "$nemo_namelist_cmoc_ref" ] && bail "nemo_namelist_cmoc_ref is not defined"
             acc_cp namelist_cmoc_ref $nemo_namelist_cmoc_ref nocp=no
           fi
+          
+          
           # If CFCs are enabled we need to override namelist_top_cfg & namelist_top_ref,
 	  #  and namelist_cfc_cfg & namelist_cfc_ref
           if [ $nemo_cfc -eq 1 ]; then
@@ -295,8 +322,11 @@
         fi 
 
 	if [ $nemo_carbon -eq 1 ]; then
-	  [ ! -s rs_namelist_pisces_cfg ] && bail "Missing rs_namelist_pisces_cfg from $nemo_rs"
-	  [ ! -s rs_namelist_pisces_ref ] && bail "Missing rs_namelist_pisces_ref from $nemo_rs"
+
+        if [ $nemo_pisces -eq 1 ]; then
+	    [ ! -s rs_namelist_pisces_cfg ] && bail "Missing rs_namelist_pisces_cfg from $nemo_rs"
+	    [ ! -s rs_namelist_pisces_ref ] && bail "Missing rs_namelist_pisces_ref from $nemo_rs"
+        fi
 
         if [ $nemo_cmoc -eq 1 ]; then
 	    [ ! -s rs_namelist_cmoc_cfg ] && bail "Missing rs_namelist_cmoc_cfg from $nemo_rs"
@@ -330,10 +360,12 @@
 
 	if [ $nemo_carbon -eq 1 ]; then
 
-	  # The input pisces namelist is hard coded as "namelist_pisces_cfg" &
-	  # "namelist_pisces_ref" in nemo source
-	  cp -f rs_namelist_pisces_cfg namelist_pisces_cfg
-	  cp -f rs_namelist_pisces_ref namelist_pisces_ref
+        if [ $nemo_pisces -eq 1 ]; then
+	    # The input pisces namelist is hard coded as "namelist_pisces_cfg" &
+	    # "namelist_pisces_ref" in nemo source
+	    cp -f rs_namelist_pisces_cfg namelist_pisces_cfg
+	    cp -f rs_namelist_pisces_ref namelist_pisces_ref
+        fi
 
         if [ $nemo_cmoc -eq 1 ]; then
     	# The input cmoc namelist is hard coded as "namelist_cmoc_cfg" &
@@ -454,14 +486,22 @@
     acc_cp context_nemo.xml       $nemo_context_nemo
     acc_cp field_def_nemo-oce.xml $nemo_field_def_nemo_oce
     acc_cp field_def_nemo-ice.xml $nemo_field_def_nemo_ice
-    acc_cp field_def_nemo-pisces.xml $nemo_field_def_nemo_pisces
     acc_cp file_def_nemo-oce.xml  $nemo_file_def_nemo_oce
     acc_cp file_def_nemo-ice.xml  $nemo_file_def_nemo_ice
+
+    if [ $nemo_pisces -eq 1 ]; then
+    acc_cp field_def_nemo-pisces.xml $nemo_field_def_nemo_pisces
     acc_cp file_def_nemo-pisces.xml  $nemo_file_def_nemo_pisces
+    fi
+    if [ $nemo_cmoc -eq 1 ]; then
     acc_cp file_def_nemo-cmoc.xml  $nemo_file_def_nemo_cmoc
     acc_cp field_def_nemo-cmoc.xml  $nemo_field_def_nemo_cmoc
+    fi
+    if [ $nemo_canoe -eq 1 ]; then
     acc_cp file_def_nemo-canoe.xml  $nemo_file_def_nemo_canoe
     acc_cp field_def_nemo-canoe.xml  $nemo_field_def_nemo_canoe
+    fi
+
     acc_cp axis_def_nemo.xml      $nemo_axis_def_nemo
     acc_cp domain_def_nemo.xml    $nemo_domain_def_nemo
     acc_cp grid_def_nemo.xml      $nemo_grid_def_nemo
@@ -635,7 +675,7 @@
     
       # Modify the pisces namelist to read CO2 from file, if specified in makefile
       ln_co2int=$ln_co2int # read atm pco2 from a file (T) or constant (F) 
-      mod_nl namelist_pisces_cfg ln_co2int
+      # mod_nl namelist_pisces_cfg ln_co2int
       
       acc_cp atcco2.txt uror_nemo_atcco2.txt
       
