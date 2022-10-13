@@ -5,6 +5,7 @@ MODULE trcsms_cmoc
    !!======================================================================
    !! History :      !  2007  (C. Ethe, G. Madec)  Original code
    !!                !  2016  (C. Ethe, T. Lovato) Revised architecture
+   !!                !  2022  (O. Riche) NEMO4 integration  
    !!----------------------------------------------------------------------
    !! trc_sms_cmoc       : CMOC model main routine
    !! trc_sms_cmoc_alloc : allocate arrays specific to CMOC sms
@@ -20,11 +21,15 @@ MODULE trcsms_cmoc
    USE trcflx             ! air-flux gas exch.
    USE sms_top            ! basic shared TOP variables, also contains ext. src array declarations
 
+   USE cmocprod           ! CMOC PP module
+
    IMPLICIT NONE
    PRIVATE
 
    PUBLIC   trc_sms_cmoc       ! called by trcsms.F90 module
-   PUBLIC   trc_sms_cmoc_alloc ! called by trcini_cmoc.F90 module
+   PUBLIC   trc_sms_cmoc_alloc ! called by trcini_cmoc.F90 module 
+   
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: xnegtr     ! Array used to indicate negative tracer values 
 
    ! Defined HERE the arrays specific to CMOC sms and ALLOCATE them in trc_sms_cmoc_alloc
 
@@ -48,8 +53,11 @@ CONTAINS
       USE trcsrc                    ! loading external files/sources
       !
       INTEGER, INTENT(in) ::   kt   ! ocean time-step index
-      INTEGER ::   jn				        ! dummy loop index
-      INTEGER ::   zrfact           ! working variable
+      INTEGER  ::  jnt			        ! time (-step) splitting index
+      INTEGER  ::  jn, ji, jj, jk   ! dummy loop indices
+      INTEGER  ::  zrfact           ! working variable
+      REAL(wp) ::  ztra
+      
       REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: ztrmyt
       !!----------------------------------------------------------------------
       !
@@ -86,66 +94,117 @@ CONTAINS
         CALL FLUSH(numout)
       ENDIF
 
-      ! ! O Riche Aug 16th 2022
-      ! ! for now this is a placeholder
-      ! ! surface chlorophyll (and phosphate will in trcflx)
-      ! ! are the only fields used so far
-      ! zrfact = 86400 / rdttrc * 14 !!!! time steps per 2 weeks
-      ! IF ( MOD(kt,zrfact) == 0 ) THEN
-        ! CALL trc_src3d( kt, js3d_si    )    
-        ! CALL trc_src3d( kt, js3d_no3   )   
-        ! CALL trc_src3d( kt, js3d_po4   )   
-        ! CALL trc_src3d( kt, js3d_doc   )   
-        ! CALL trc_src3d( kt, js3d_fe    )    
-        ! CALL trc_src3d( kt, js3d_hyfe  )  
-        ! !
-        ! CALL trc_src2d( kt, js2d_chla  )      
-        ! CALL trc_src2d( kt, js2d_par   )      
-        ! CALL trc_src2d( kt, js2d_dust  )     
-        ! CALL trc_src2d( kt, js2d_femask)    
-        ! CALL trc_src2d( kt, js2d_ndep  )     
-        ! CALL trc_src2d( kt, js2d_rdoc  )      
-        ! CALL trc_src2d( kt, js2d_rdic  )      
-        ! CALL trc_src2d( kt, js2d_rpoc  )      
-        ! CALL trc_src2d( kt, js2d_fsol1 )      
-        ! CALL trc_src2d( kt, js2d_fsol2 )      
-      ! END IF
+      IF( kt == nittrc000 ) THEN
+        !
+        ALLOCATE( xnegtr(jpi,jpj,jpk) )
+        !
+        IF( .NOT. ln_rsttr ) THEN
+          !
+          ndayflxtr = nday_year
+          !
+          IF(lwp) write(numout,*)
+          IF(lwp) write(numout,*) ' New chemical constants and various rates for biogeochemistry at new day : ', nday_year
+          IF(lwp) write(numout,*) '~~~~~~'
+          !
+          CALL trc_che           ! computation of carbon chemistry constants
+          !
+          ! initialize the chemical constants
+            !  
+          ELSE
+              WRITE(numout,*) ''
+              WRITE(numout,*) 'Should do something in restart mode but nothing coded yet.'
+              WRITE(numout,*) ''
+              ! ?CALL p4z_rst( nittrc000, 'READ' )         !* read or initialize all required fields
+              ! There is a trcrst.F90 module too, what to do here?
+          ENDIF
+          !
+      ENDIF
+      !
+      IF( ( neuler == 0 .AND. kt == nittrc000 ) .OR. ln_top_euler ) THEN
+         DO jn = jp_bgc+1, jp_bgc+jp_cmoc       !   SMS on tracer without Asselin time-filter
+            trb(:,:,:,jn) = trn(:,:,:,jn)
+         END DO
+      ENDIF
 
+      ! Do we need this or is this covered at least partly by all the new
+      ! external sources subroutines, e.g. trcsrc.F90 modules.
+      ! anything else to add?
+      ! ?IF( ll_sbc ) CALL p4z_sbc( kt )   ! external sources of nutrients
+      ! Do we need a CMOC- and CanOE-specific *_sbc.F90 file?
+      !
       IF( ndayflxtr /= nday_year ) THEN      ! New days
         !
         ndayflxtr = nday_year
-  
+
         IF(lwp) write(numout,*)
         IF(lwp) write(numout,*) ' New chemical constants and various rates for biogeochemistry at new day : ', nday_year
         IF(lwp) write(numout,*) '~~~~~~'
-  
+
         CALL trc_che           ! computation of carbon chemistry constants
-            !
-      ENDIF
-  
+      !
+      ENDIF                            ! initialize the chemical constants
+
+      !
+      ! O Riche Sept 14th 2022
+      ! Move here before cmoc_prod as issue with PAR being set to 0s
+      ! at initialization (current state)
+      ! also need to add time splitting loop 1=> nrdttrc
+      ! and so trc_opt_1band and trc_opt (CanOE)
+      ! needs jnt index/input arg along with kt see below
+      ! for cmoc_prod.
+      CALL trc_opt_1band( kt )        ! 1-band PAR attenuation
+      !
+      DO jnt = 1, nrdttrc             ! Potential time splitting if requested
+        !
+        CALL cmoc_prod( kt, jnt )    ! PP subroutine
+        !
+      END DO
+      !
       CALL trc_flx( kt )     ! compute air-sea gas exchange    
       !
-      CALL trc_opt_1band( kt )     ! test PAR attenuation
+      ! O Riche Sept 14th 2022
+      ! Moved to before call to cmoc_prod because trc_opt_init
+      ! only initialize to 0 all the PAR fields
+      ! CALL trc_opt_1band( kt )     ! 1-band PAR attenuation
       !
-      ! ! O Riche Aug 26th 2022
-      ! ! test trc_src_fe
-            zrfact = 86400 / rdttrc * 14 !!!! time steps per 2 weeks
-      CALL trc_src_fedep( kt )
-      ! IF ( kt == nit000 .OR. MOD(kt,zrfact) == 0 )  CALL trc_src_fedep( kt )
-      CALL trc_src_fesed        ! This source does not vary with time
-      ! IF ( kt == nit000 .OR. MOD(kt,zrfact) == 0 )  CALL trc_src_fesed        ! This source does not vary with time    
+      ! Is this below necessary? (NEMO3.4.1 code)
+      ! DO jn = jp_bgc+1, jp_bgc+jp_cmoc
+        ! CALL lbc_lnk( trn(:,:,:,jn), 'T', 1. )
+        ! CALL lbc_lnk( trb(:,:,:,jn), 'T', 1. )
+        ! CALL lbc_lnk( tra(:,:,:,jn), 'T', 1. )
+      ! END DO
       !
       IF( l_trdtrc )  ALLOCATE( ztrmyt(jpi,jpj,jpk) )
-
+      !
       ! Save the trends in the mixed layer
       IF( l_trdtrc ) THEN
-          DO jn = 1, jp_cmoc
+          DO jn = jp_bgc+1, jp_bgc+jp_cmoc
             ztrmyt(:,:,:) = tra(:,:,:,jn)
             CALL trd_trc( ztrmyt, jn, jptra_sms, kt )   ! save trends
           END DO
           DEALLOCATE( ztrmyt )
       END IF
-	  
+
+      !
+      xnegtr(:,:,:) = 1.e0
+      DO jn = jp_pcs0, jp_pcs1
+        DO jk = 1, jpk
+           DO jj = 1, jpj
+              DO ji = 1, jpi
+                 IF( ( trb(ji,jj,jk,jn) + tra(ji,jj,jk,jn) ) < 0.e0 ) THEN
+                    ztra             = ABS( trb(ji,jj,jk,jn) ) / ( ABS( tra(ji,jj,jk,jn) ) + rtrn )
+                    xnegtr(ji,jj,jk) = MIN( xnegtr(ji,jj,jk),  ztra )
+                 ENDIF
+             END DO
+           END DO
+        END DO
+      END DO
+      !                                ! where at least 1 tracer concentration becomes negative
+      !                                ! and by tracer we mean only the CMOC or shared BGC tracer.
+      DO jn = 1, jp_bgc
+       trb(:,:,:,jn) = trb(:,:,:,jn) + xnegtr(:,:,:) * tra(:,:,:,jn)
+      END DO
+      ! 
       !
       IF( ln_timing )   CALL timing_stop('trc_sms_cmoc')
       !
@@ -164,6 +223,5 @@ CONTAINS
       IF( trc_sms_cmoc_alloc /= 0 ) CALL ctl_stop( 'STOP', 'trc_sms_cmoc_alloc : failed to allocate arrays' )
       !
    END FUNCTION trc_sms_cmoc_alloc
-
-   !!======================================================================
+    
 END MODULE trcsms_cmoc

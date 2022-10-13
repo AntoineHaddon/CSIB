@@ -66,6 +66,10 @@ MODULE sms_top
   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)  ::   src3d_dta       !: 3d source arrays
   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,  :)  ::   src2d_dta       !: 2d source arrays
 
+  ! CMOC-specific arrays
+  ! PP
+  REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)      ::   xlimnfecmoc     !: iron mask
+
 !========================================================
 ! sms_bgcm section
 !========================================================
@@ -139,13 +143,16 @@ MODULE sms_top
 				&   aphscale(jpi,jpj,jpk)      , excess(jpi,jpj,jpk)  ,     &  
         &  	    STAT=ierr(1) )
 
+    !* CMOC PP terms/factors
+    ALLOCATE( xlimnfecmoc(jpi,jpj)     , STAT=ierr(2))
+
       ! ALLOCATE( etotb(jpi,jpj,jpk), nelnb(jpi,jpj), heupb(jpi,jpj),    &
-        ! &       heup_01b(jpi,jpj) , STAT=ierr(2) )
+        ! &       heup_01b(jpi,jpj) , STAT=ierr(3) )
         ! ! &       heup_01b(jpi,jpj) , xksib(jpi,jpj)               ,  STAT=ierr(2) )
       ! !
   
       ! !*  Biological fluxes for light 
-      ! ALLOCATE(  etot_ndcyb(jpi,jpj,jpk), emoyb(jpi,jpj,jpk)  ,  STAT=ierr(3) ) 
+      ! ALLOCATE(  etot_ndcyb(jpi,jpj,jpk), emoyb(jpi,jpj,jpk)  ,  STAT=ierr(4) ) 
 
 		!
 		sms_top_alloc = MAXVAL( ierr )

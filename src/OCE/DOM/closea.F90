@@ -52,9 +52,10 @@ MODULE closea
    INTEGER, PUBLIC :: jncsr      !: number of closed seas rnf mappings (inferred from closea_mask_rnf field)
    INTEGER, PUBLIC :: jncse      !: number of closed seas empmr mappings (inferred from closea_mask_empmr field)
    
-   INTEGER, PUBLIC, ALLOCATABLE, DIMENSION(:,:) ::  closea_mask       !: mask of integers defining closed seas
-   INTEGER, PUBLIC, ALLOCATABLE, DIMENSION(:,:) ::  closea_mask_rnf   !: mask of integers defining closed seas rnf mappings
-   INTEGER, PUBLIC, ALLOCATABLE, DIMENSION(:,:) ::  closea_mask_empmr !: mask of integers defining closed seas empmr mappings
+   INTEGER, PUBLIC, ALLOCATABLE, DIMENSION(:,:)   ::  closea_mask       !: mask of integers defining closed seas
+   INTEGER, PUBLIC, ALLOCATABLE, DIMENSION(:,:)   ::  closea_mask_rnf   !: mask of integers defining closed seas rnf mappings
+   INTEGER, PUBLIC, ALLOCATABLE, DIMENSION(:,:)   ::  closea_mask_empmr !: mask of integers defining closed seas empmr mappings
+
    REAL(wp), PUBLIC, ALLOCATABLE, DIMENSION(:)  ::   surf         !: closed sea surface areas 
                                                                   !: (and residual global surface area) 
    REAL(wp), PUBLIC, ALLOCATABLE, DIMENSION(:)  ::   surfr        !: closed sea target rnf surface areas 
@@ -93,7 +94,7 @@ CONTAINS
       INTEGER ::   ierr    ! error code
       INTEGER ::   id      ! netcdf variable ID
 
-      REAL(wp), DIMENSION(jpi,jpj) :: zdata_in ! temporary real array for input
+      REAL(wp), DIMENSION(jpi,jpj) :: zdata_in  ! temporary real array for input
       !!----------------------------------------------------------------------
       !
       IF(lwp) WRITE(numout,*)
@@ -113,7 +114,7 @@ CONTAINS
             ALLOCATE( closea_mask(jpi,jpj) , STAT=ierr )
             IF( ierr /= 0 )   CALL ctl_stop( 'STOP', 'dom_clo: failed to allocate closea_mask array')
             zdata_in(:,:) = 0.0
-            CALL iom_get ( inum, jpdom_data, 'closea_mask', zdata_in )
+            CALL iom_get ( inum, jpdom_data, 'closea_mask', zdata_in(:,:) )
             closea_mask(:,:) = NINT(zdata_in(:,:)) * tmask(:,:,1)
             ! number of closed seas = global maximum value in closea_mask field
             jncs = maxval(closea_mask(:,:))
@@ -444,8 +445,8 @@ CONTAINS
       !!----------------------------------------------------------------------
       INTEGER, DIMENSION(:,:), INTENT(inout) ::   k_top, k_bot   ! ocean first and last level indices
       INTEGER                           :: inum, id
-      INTEGER,  DIMENSION(jpi,jpj) :: closea_mask ! closea_mask field
-      REAL(wp), DIMENSION(jpi,jpj) :: zdata_in ! temporary real array for input
+      INTEGER,  DIMENSION(jpi,jpj)      :: closea_mask     ! closea_mask field
+      REAL(wp), DIMENSION(jpi,jpj)      :: zdata_in ! temporary real array for input
       !!----------------------------------------------------------------------
       !
       IF(lwp) THEN                     ! Control print
@@ -462,7 +463,7 @@ CONTAINS
          IF( id > 0 ) THEN
             IF( lwp ) WRITE(numout,*) 'Suppressing closed seas in bathymetry based on closea_mask field,'
             CALL iom_get ( inum, jpdom_data, 'closea_mask', zdata_in )
-            closea_mask(:,:) = NINT(zdata_in(:,:))
+            closea_mask(:,:) = NINT(zdata_in(:,:)) * tmask(:,:,1)
             WHERE( closea_mask(:,:) > 0 )
                k_top(:,:) = 0   
                k_bot(:,:) = 0   
