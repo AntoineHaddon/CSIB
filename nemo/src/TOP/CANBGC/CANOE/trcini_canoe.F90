@@ -15,13 +15,13 @@ MODULE trcini_canoe
    USE trcnam_canoe     ! CANOE SMS namelist
    USE trcsms_canoe
 
-   USE trc_closeabgc   ! bgc closea mask
-   USE trcflx          ! air-sea gas exch.
-   USE trcche          ! carbon chemistry 
-   USE trcsrc          ! external sources/other data 
-   USE sms_top         ! access ext. source arrays declaration
+   USE trc_closea_canbgc ! bgc closea mask
+   USE trcflx_canbgc     ! air-sea gas exch.
+   USE trcche_canbgc     ! carbon chemistry 
+   USE trcsrc_canbgc     ! external sources/other data 
+   USE sms_top_canbgc    ! access ext. source arrays declaration
 
-   USE trcopt          ! PAR attenuation
+   USE trcopt_canbgc     ! PAR attenuation
    
    IMPLICIT NONE
    PRIVATE

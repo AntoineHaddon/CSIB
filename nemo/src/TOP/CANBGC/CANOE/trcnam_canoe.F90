@@ -13,7 +13,7 @@ MODULE trcnam_canoe
    USE trc             ! TOP variables
 
    USE iom             ! IO manager
-   USE sms_top         ! shared arrays across BGCM code
+   USE sms_top_canbgc  ! shared arrays across BGCM code
 
    IMPLICIT NONE
    PRIVATE

@@ -9,23 +9,23 @@ MODULE trcini_cmoc
    !!----------------------------------------------------------------------
    !! trc_ini_cmoc   : cmoc model initialisation
    !!----------------------------------------------------------------------
-   USE par_trc         ! TOP parameters
+   USE par_trc             ! TOP parameters
    USE oce_trc
    USE trc
    ! CMOC modules
    USE par_cmoc
-   USE trcnam_cmoc     ! cmoc SMS namelist
+   USE trcnam_cmoc         ! cmoc SMS namelist
    USE trcsms_cmoc
    ! BGCM modules
-   USE trc_closeabgc   ! bgc closea mask
-   USE trcflx          ! air-sea gas exch.
-   USE trcche          ! carbon chemistry 
-   USE trcsrc          ! external sources/other data 
-   USE sms_top         ! access ext. source arrays declaration
+   USE trc_closea_canbgc   ! bgc closea mask
+   USE trcflx_canbgc       ! air-sea gas exch.
+   USE trcche_canbgc       ! carbon chemistry 
+   USE trcsrc_canbgc       ! external sources/other data 
+   USE sms_top_canbgc      ! access ext. source arrays declaration
    !
-   USE trcopt          ! PAR attenuation
+   USE trcopt_canbgc       ! PAR attenuation
 
-   USE cmocprod        ! CMOC PP module
+   USE cmocprod            ! CMOC PP module
    
    IMPLICIT NONE
    PRIVATE

@@ -21,11 +21,11 @@ MODULE cmocprod
    
    ! O Riche Sept 13th 2022
    ! sms_top needed?
-   USE sms_top         !  TOP Source Minus Sink variables
-   USE sms_cmoc        !  CMOC specific parameters declaration
+   USE sms_top_canbgc     !  TOP Source Minus Sink variables
+   USE sms_cmoc_canbgc    !  CMOC specific parameters declaration
 
-   USE trc_closeabgc   !  tmask_bgc_closea
-   USE trcopt
+   USE trc_closea_canbgc  !  tmask_bgc_closea
+   USE trcopt_canbgc
    ! access par_1band array and requires trcsms_cmoc to call trc_opt_1band
    ! to update par_1band every time step
    

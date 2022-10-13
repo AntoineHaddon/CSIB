@@ -12,8 +12,8 @@ MODULE trcwri_canoe
    USE trc              ! passive tracers common variables 
    USE iom              ! I/O manager
    
-   USE sms_top          ! access src2d/3d_dta
-   USE trc_closeabgc    ! bgc-specific closea mask
+   USE sms_top_canbgc      ! access src2d/3d_dta
+   USE trc_closea_canbgc   ! bgc-specific closea mask
 
    IMPLICIT NONE
    PRIVATE

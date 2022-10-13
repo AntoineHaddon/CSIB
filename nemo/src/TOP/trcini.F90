@@ -236,7 +236,7 @@ CONTAINS
       USE zpshde          ! partial step: hor. derivative   (zps_hde routine)
       USE trcrst          ! passive tracers restart
       USE trcdta          ! initialisation from files
-	    USE trcsrc          ! testing reading files
+	    ! USE trcsrc_canbgc          ! testing reading files
       !
       INTEGER :: jn, jl   ! dummy loop indices
       !!----------------------------------------------------------------------
