@@ -22,7 +22,7 @@ MODULE trcopt
 
    ! read external file
    USE sms_top
-   USE trcsrc
+   USE trcsrc         ! access to surface chlorophyll array from external file
    
    USE trc_closeabgc  ! bgc-specific closea mask
 
@@ -92,6 +92,10 @@ CONTAINS
       REAL(wp), DIMENSION(jpi,jpj    ) :: zdepmoy, zetmp1, zetmp2
       REAL(wp), DIMENSION(jpi,jpj    ) :: zqsr100, zqsr_corr
       REAL(wp), DIMENSION(jpi,jpj,jpk) :: zpar, ze0, ze1, ze2, ze3, zchl3d
+      ! O Riche Sept 13th 2022
+      ! add an intermediate/working array to track total chla
+      ! regardless of the BGCM used.
+      REAL(wp), DIMENSION(jpi,jpj,jpk) :: ztotchla
       !!---------------------------------------------------------------------
       !
       IF( ln_timing )   CALL timing_start('trc_opt')
@@ -121,7 +125,22 @@ CONTAINS
       ! for now read surface chlorophyll external file and 
       ! apply an e-folding of 30 m.
       !  zchl3d(:,:,:) = trb(:,:,:,jpnch) + trb(:,:,:,jpdch)
-      CALL trc_src2d( kt, js2d_chla  )
+      !  CALL trc_src2d( kt, js2d_chla  )
+      ! O Riche Sept 13th 2022
+      ! this assumes that chlorophyll can be max 2 sizes
+      ! and netcdf variable names are either NCHL or DCHL
+      ! and NCHL is common to both CMOC and CanOE.
+      !
+      ! IFs can later be replaced by cpp key activation statements
+      !
+      ! Failsafe case
+      CALL trc_src2d( kt, js2d_chla )
+      DO jk = 1, jpkm1
+        ztotchla(:,:,jk) = src2d_dta(:,:,js2d_chla)*exp(-gdept_n(:,:,jk)/30.)
+      ENDDO
+      !
+      IF( iom_use("NCHL") )  ztotchla(:,:,:) = trn(:,:,:,jqnch)
+      ! IF( iom_use("DCHL") )  ztotchla(:,:,:) = ztotchla(:,:,:) + trn(:,:,:,jqdch)    
       !
       DO jk = 1, jpkm1   
          DO jj = 1, jpj
@@ -132,7 +151,10 @@ CONTAINS
                ! the surface chlorophyll file. It has 61 rows for values varying between 0.01 to 10.
                ! O Riche Aug 17th 2022
                ! chl-a in the file is already in mg Chla m^-3 (ranging between 0.01 and 1)
-               zchl = src2d_dta(ji,jj,js2d_chla)*exp(-gdept_n(ji,jj,jk)/30.)
+               ! zchl = src2d_dta(ji,jj,js2d_chla)*exp(-gdept_n(ji,jj,jk)/30.)
+               ! O Riche Sept 13th 2022
+               ! use chla arrays instead of mockup array
+               zchl = ztotchla(ji,jj,jk)
                zchl = zchl + rtrn
                ! the exponential is an ad-hoc e-folding as mentioned above
                ! O Riche Aug 30th 2022
@@ -271,6 +293,10 @@ CONTAINS
       REAL(wp), ALLOCATABLE, DIMENSION(:,:  ) :: zparsw  ! PAR/SW ratio  
       REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zetot   ! temporary SW downwelling rad. array
                                                          ! use qsr, penetrative solar radiation
+      ! O Riche Sept 13th 2022
+      ! add an intermediate/working array to track total chla
+      ! regardless of the BGCM used.
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: ztotchla                                                         
       !
       IF( ln_timing )  CALL timing_start('trc_opt_1band')
       !
@@ -279,7 +305,7 @@ CONTAINS
       IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
       IF( lwp ) CALL FLUSH(numout)  
       !
-      ALLOCATE( zetot(jpi,jpj,jpk), zparsw(jpi,jpj), STAT=ierr)
+      ALLOCATE( zetot(jpi,jpj,jpk), zparsw(jpi,jpj), ztotchla(jpi,jpj,jpk), STAT=ierr)
       IF( ierr > 0 )   CALL ctl_stop( 'STOP', 'trc_opt_1band: unable to allocate zetot' )
       !
       ! O Riche Aug 16th 2022
@@ -291,6 +317,21 @@ CONTAINS
       ELSE                  ;  zparsw(:,:) = .43_wp
       ENDIF
       zetot(:,:,:) = 0._wp
+      ! O Riche Sept 13th 2022
+      ! this assumes that chlorophyll can be max 2 sizes
+      ! and netcdf variable names are either NCHL or DCHL
+      ! and NCHL is common to both CMOC and CanOE.
+      !
+      ! IFs can later be replaced by cpp key activation statements
+      !
+      ! Failsafe case
+      CALL trc_src2d( kt, js2d_chla )
+      DO jk = 1, jpkm1
+        ztotchla(:,:,jk) = src2d_dta(:,:,js2d_chla)*exp(-gdept_n(:,:,jk)/30.)
+      ENDDO
+      !
+      IF( iom_use("NCHL") )  ztotchla(:,:,:) = trn(:,:,:,jqnch)
+      ! IF( iom_use("DCHL") )  ztotchla(:,:,:) = ztotchla(:,:,:) + trn(:,:,:,jqdch)      
       !
       DO jk = 1, jpkm1
         DO jj = 1, jpj
@@ -299,11 +340,14 @@ CONTAINS
             ! chl-a in the file is already in mg Chla m^-3 (ranging between 0.01 and 1)
             ! This is temporary as zchl/1st line should be replaced by
             ! trn(ji,jj,jk,jpdch) + trn(ji,jj,jk,jpnch) once they are available.
-            zchl = src2d_dta(ji,jj,js2d_chla)*exp(-gdept_n(ji,jj,jk)/30._wp)
+            ! zchl = src2d_dta(ji,jj,js2d_chla)*exp(-gdept_n(ji,jj,jk)/30._wp)
+            ! O Riche Sept 13th 2022
+            ! use chla arrays instead of mockup array
+            zchl = ztotchla(ji,jj,jk)
             zchl = zchl + rtrn
             zchl = zchl * tmask(ji,jj,jk)
             zetot(ji,jj,jk) = qsr(ji,jj) * zparsw(ji,jj)     & 
-            &               * exp ( - ( (0.04_wp + 0.03_wp * zchl * 1e6_wp) * gdept_n(ji,jj,jk) ) ) 
+            &               * exp ( - ( (kw_cmoc + kchl_cmoc * zchl * 1e6_wp) * gdept_n(ji,jj,jk) ) ) 
             !        
           ENDDO
         ENDDO
@@ -427,7 +471,8 @@ CONTAINS
       CHARACTER(len=100) ::  cn_dir   ! Root directory for location of ssr files
       TYPE(FLD_N)        ::   sn_par  ! informations about the fields to be read
       !
-      NAMELIST/namtrc_opt/ sn_par, cn_dir, ln_varpar, parlux
+      NAMELIST/namtrc_opt/ sn_par, cn_dir, ln_varpar, parlux,      &
+      &                    kw_cmoc, kchl_cmoc                      ! 1-band PAR parameters  
       !!----------------------------------------------------------------------
       IF(lwp) THEN
          WRITE(numout,*)

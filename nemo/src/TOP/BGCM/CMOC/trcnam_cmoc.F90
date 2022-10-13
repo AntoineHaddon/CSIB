@@ -5,6 +5,7 @@ MODULE trcnam_cmoc
    !!======================================================================
    !! History :      !  2007  (C. Ethe, G. Madec) Original code
    !!                !  2016  (C. Ethe, T. Lovato) Revised architecture
+   !!                !  2022  (O. Riche) NEMO4 integration 
    !!----------------------------------------------------------------------
    !! trc_nam_cmoc      : CMOC model initialisation
    !!----------------------------------------------------------------------
@@ -36,8 +37,6 @@ CONTAINS
       !!
       !!----------------------------------------------------------------------
       !
-      INTEGER :: jl, jn
-      INTEGER :: ios, ioptio         ! Local integer
       CHARACTER(LEN=20)::   clname
       !!----------------------------------------------------------------------
 
@@ -51,7 +50,6 @@ CONTAINS
       CALL ctl_opn( numnatp_refb, TRIM( clname )//'_ref', 'OLD'    , 'FORMATTED', 'SEQUENTIAL', -1, numout, .FALSE. )
       CALL ctl_opn( numnatp_cfgb, TRIM( clname )//'_cfg', 'OLD'    , 'FORMATTED', 'SEQUENTIAL', -1, numout, .FALSE. )
       IF(lwm) CALL ctl_opn( numonpb     , 'output.namelist.cmoc' , 'UNKNOWN', 'FORMATTED', 'SEQUENTIAL', -1, numout, .FALSE. )
-      !
       !
    END SUBROUTINE trc_nam_cmoc
    

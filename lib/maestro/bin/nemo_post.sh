@@ -134,12 +134,13 @@ if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
 fi
 
 if [ $nemo_carbon -eq 1 ]; then
+  if [ $nemo_pisces -eq 1 ]; then
   cp -f ${runwrk}/namelist_pisces_cfg rs_namelist_pisces_cfg || :
   cp -f ${runwrk}/namelist_pisces_ref rs_namelist_pisces_ref || :
   [ -s rs_namelist_pisces_cfg ] && tarlist="$tarlist rs_namelist_pisces_cfg"
   [ -s rs_namelist_pisces_ref ] && tarlist="$tarlist rs_namelist_pisces_ref"
   [ -s nemo_carbon_rtd.nc ]  && tarlist="$tarlist nemo_carbon_rtd.nc"
-
+  fi
   if [ $nemo_cmoc -eq 1 ]; then
     cp -f ${runwrk}/namelist_cmoc_cfg rs_namelist_cmoc_cfg || :
     cp -f ${runwrk}/namelist_cmoc_ref rs_namelist_cmoc_ref || :
