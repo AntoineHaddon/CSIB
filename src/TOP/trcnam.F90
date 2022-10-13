@@ -26,7 +26,7 @@ MODULE trcnam
    USE lib_mpp, ONLY: ncom_dttrc
 #endif
 
-   USE sms_top, ONLY: nrdttrc ! access to nrdttrc declaration
+   USE sms_top_canbgc, ONLY: nrdttrc ! access to nrdttrc declaration
 
    IMPLICIT NONE
    PRIVATE 

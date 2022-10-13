@@ -16,10 +16,10 @@ MODULE trcsms_cmoc
    USE trd_oce
    USE trdtrc
 
-   USE trcopt             ! PAR attenuation
-   USE trcche             ! carbon chemistry eq. constants
-   USE trcflx             ! air-flux gas exch.
-   USE sms_top            ! basic shared TOP variables, also contains ext. src array declarations
+   USE trcopt_canbgc      ! PAR attenuation
+   USE trcche_canbgc      ! carbon chemistry eq. constants
+   USE trcflx_canbgc      ! air-flux gas exch.
+   USE sms_top_canbgc     ! basic shared TOP variables, also contains ext. src array declarations
 
    USE cmocprod           ! CMOC PP module
 
@@ -50,7 +50,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       !
 	    USE par_cmoc
-      USE trcsrc                    ! loading external files/sources
+      USE trcsrc_canbgc             ! loading external files/sources
       !
       INTEGER, INTENT(in) ::   kt   ! ocean time-step index
       INTEGER  ::  jnt			        ! time (-step) splitting index
