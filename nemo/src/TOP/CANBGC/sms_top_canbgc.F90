@@ -1,4 +1,4 @@
-MODULE sms_top
+MODULE sms_top_canbgc
 	!!----------------------------------------------------------------------
 	!!                     ***  sms_bgcm.F90  ***  
 	!! TOP :   All common variables to all BGCMs
@@ -164,4 +164,4 @@ MODULE sms_top
 		END FUNCTION sms_top_alloc
 
 
-END MODULE sms_top
+END MODULE sms_top_canbgc

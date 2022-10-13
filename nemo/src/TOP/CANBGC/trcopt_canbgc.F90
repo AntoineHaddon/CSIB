@@ -1,4 +1,4 @@
-MODULE trcopt
+MODULE trcopt_canbgc
    !!======================================================================
    !!                         ***  MODULE trcopt  ***
    !! TOP - PISCES : Compute the light availability in the water column
@@ -21,10 +21,10 @@ MODULE trcopt
    USE prtctl_trc     !  print control for debugging
 
    ! read external file
-   USE sms_top
-   USE trcsrc         ! access to surface chlorophyll array from external file
+   USE sms_top_canbgc
+   USE trcsrc_canbgc     ! access to surface chlorophyll array from external file
    
-   USE trc_closeabgc  ! bgc-specific closea mask
+   USE trc_closea_canbgc ! bgc-specific closea mask
 
    IMPLICIT NONE
    PRIVATE
@@ -124,7 +124,7 @@ CONTAINS
       ! as a tracer
       ! for now read surface chlorophyll external file and 
       ! apply an e-folding of 30 m.
-      !  zchl3d(:,:,:) = trb(:,:,:,jpnch) + trb(:,:,:,jpdch)
+      !  zchl3d(:,:,:) = trb(:,:,:,jqnch) + trb(:,:,:,jqdch)
       !  CALL trc_src2d( kt, js2d_chla  )
       ! O Riche Sept 13th 2022
       ! this assumes that chlorophyll can be max 2 sizes
@@ -158,7 +158,7 @@ CONTAINS
                zchl = zchl + rtrn
                ! the exponential is an ad-hoc e-folding as mentioned above
                ! O Riche Aug 30th 2022
-               ! trn(ji,jj,jk,jpdch)+trn(ji,jj,jk,jpnch) will replace src2d_dta(ji,jj,jk,js2d_chla)
+               ! trn(ji,jj,jk,jqdch)+trn(ji,jj,jk,jqnch) will replace src2d_dta(ji,jj,jk,js2d_chla)
                ! once they are available. 
                zchl = zchl * tmask(ji,jj,jk)
                zchl = MIN(  10. , MAX( 0.05, zchl )  )
@@ -339,7 +339,7 @@ CONTAINS
             ! O Riche Aug 17th 2022
             ! chl-a in the file is already in mg Chla m^-3 (ranging between 0.01 and 1)
             ! This is temporary as zchl/1st line should be replaced by
-            ! trn(ji,jj,jk,jpdch) + trn(ji,jj,jk,jpnch) once they are available.
+            ! trn(ji,jj,jk,jqdch) + trn(ji,jj,jk,jqnch) once they are available.
             ! zchl = src2d_dta(ji,jj,js2d_chla)*exp(-gdept_n(ji,jj,jk)/30._wp)
             ! O Riche Sept 13th 2022
             ! use chla arrays instead of mockup array
@@ -549,4 +549,4 @@ CONTAINS
 
    !!======================================================================
    
-END MODULE trcopt
+END MODULE trcopt_canbgc

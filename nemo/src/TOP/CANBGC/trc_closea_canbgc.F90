@@ -1,4 +1,4 @@
-MODULE trc_closeabgc
+MODULE trc_closea_canbgc
 
 	!!----------------------------------------------------------------------
 	!!                     ***  trc_closeabgc.F90  ***  
@@ -85,4 +85,4 @@ CONTAINS
 
     END SUBROUTINE trc_closea_bgc
      
-END MODULE trc_closeabgc
+END MODULE trc_closea_canbgc
