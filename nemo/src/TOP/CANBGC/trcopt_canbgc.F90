@@ -38,6 +38,8 @@ MODULE trcopt_canbgc
    REAL(wp) ::   parlux          ! Fraction of shortwave as PAR
    REAL(wp) ::   xparsw          ! parlux/3
    REAL(wp) ::   xsi0r           ! 1. /rn_si0
+   
+   REAL(wp) ::   kw_cmoc, kchl_cmoc ! 1-band PAR parameters
 
    TYPE(FLD), ALLOCATABLE, DIMENSION(:) ::   sf_par      ! structure of input par
    INTEGER , PARAMETER :: nbtimes = 366  !: maximum number of times record in a file
