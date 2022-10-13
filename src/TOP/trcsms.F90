@@ -30,7 +30,7 @@ MODULE trcsms
                           ! contains logical switches and jp_*** style tracer/var. indices
    USE trdtrc			        ! Dummy module??? O Riche July 5th 2022 not sure what's that doing.
 
-   USE sms_top
+   USE sms_top_canbgc
 
    IMPLICIT NONE
    PRIVATE
