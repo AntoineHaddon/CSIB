@@ -1,4 +1,4 @@
-MODULE trcsrc
+MODULE trcsrc_canbgc
    !!======================================================================
    !!                         ***  MODULE trcsrc  ***
    !! TOP :   TOP external inputs of nutrients
@@ -20,8 +20,8 @@ MODULE trcsrc
    USE lib_mpp         ! distribued memory computing library
    USE lbclnk          ! ocean lateral boundary conditions (or mpp link)
 
-   USE sms_top         ! access index/array definitions for ext. sources
-   USE trc_closeabgc   ! tmask_bgc_closea
+   USE sms_top_canbgc    ! access index/array definitions for ext. sources
+   USE trc_closea_canbgc ! tmask_bgc_closea
       
    IMPLICIT NONE
    PRIVATE
@@ -425,4 +425,4 @@ CONTAINS
   END SUBROUTINE trc_src_fesed
  
 
-END MODULE trcsrc
+END MODULE trcsrc_canbgc

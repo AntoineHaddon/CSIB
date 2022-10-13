@@ -1,4 +1,4 @@
-MODULE trcche
+MODULE trcche_canbgc
    !!======================================================================
    !!                         ***  MODULE trcche  ***
    !! TOP :   CANOE Sea water chemistry computed following OCMIP protocol
@@ -13,14 +13,14 @@ MODULE trcche
    !!----------------------------------------------------------------------
    !!   trc_che      :  Sea water chemistry computed following OCMIP protocol
    !!----------------------------------------------------------------------
-   USE oce_trc       !  shared variables between ocean and passive tracers
-   USE trc           !  passive tracers common variables
-   USE sms_top       !  TOP Source Minus Sink variables and miscellaneous.
-   USE lib_mpp       !  MPP library
+   USE oce_trc           !  shared variables between ocean and passive tracers
+   USE trc               !  passive tracers common variables
+   USE sms_top_canbgc    !  TOP Source Minus Sink variables and miscellaneous.
+   USE lib_mpp           !  MPP library
 
-   USE in_out_manager   ! in_out_manager grants access to numout file ID
+   USE in_out_manager    ! in_out_manager grants access to numout file ID
 
-   USE trc_closeabgc    ! bgc-specific closea mask
+   USE trc_closea_canbgc ! bgc-specific closea mask
 
    IMPLICIT NONE
    PRIVATE
@@ -359,4 +359,4 @@ CONTAINS
    END FUNCTION trc_che_alloc
 
    !!======================================================================
-END MODULE  trcche
+END MODULE  trcche_canbgc

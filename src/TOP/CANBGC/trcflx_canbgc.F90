@@ -1,4 +1,4 @@
-MODULE trcflx
+MODULE trcflx_canbgc
    !!======================================================================
    !!                         ***  MODULE trcflx  ***
    !! TOP :   COMPUTES GAS EXCHANGE AND CHEMISTRY AT SEA SURFACE
@@ -12,9 +12,9 @@ MODULE trcflx
 ! Module calls section
 	! internal calls to 
 	USE trc                       ! time step in seconds whether or not euler is activated
-  USE oce_trc                 ! give access to active tracers, wndm, tsn, and fr_i (wind @10m, T/S, and ice fraction)
+  USE oce_trc                   ! give access to active tracers, wndm, tsn, and fr_i (wind @10m, T/S, and ice fraction)
                                 ! oce_trc calls common OCE and TOP indices, e.g. jpi,jpj dimensions
-	USE sms_top 								  ! contains all common variables to BGCMs
+	USE sms_top_canbgc            ! contains all common variables to Canadian BGCMs
 	USE dom_oce									  ! give access to domain grid and z-levels
                              	  ! grid cell area and tmask
 	USE par_trc                   ! par_trc calls par_kind and par among others, wp defined
@@ -22,8 +22,8 @@ MODULE trcflx
 
   USE iom                       ! to access iom_put for diagnostics
 
-  USE trcche							      ! Carbon chemistry module
-  USE trc_closeabgc             ! bgc-specific closea mask
+  USE trcche_canbgc  			      ! Carbon chemistry module
+  USE trc_closea_canbgc         ! bgc-specific closea mask
 
 ! General scope section
     IMPLICIT NONE
@@ -94,7 +94,7 @@ CONTAINS
                zalka = trn(ji,jj,1,jqtal) / zfact
                zph2  = zph*zph
                zph3  = zph*zph2
-               ! zpo4 = (trn(ji,jj,1,jpno3)+trn(ji,jj,1,jpnh4)) / 16. *0.000001 / zfact
+               ! zpo4 = (trn(ji,jj,1,jqno3)+trn(ji,jj,1,jqnh4)) / 16. *0.000001 / zfact
                zpo4  = (5+.5) / 16. *0.000001 / zfact  
                ! O Riche Aug 16th 2022
                ! 5. and .5 are placeholder for nitrate and ammonium trn arrays
@@ -257,4 +257,4 @@ CONTAINS
 
 
    !!======================================================================
-END MODULE  trcflx
+END MODULE  trcflx_canbgc
