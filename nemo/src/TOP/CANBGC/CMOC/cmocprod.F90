@@ -22,7 +22,7 @@ MODULE cmocprod
    ! O Riche Sept 13th 2022
    ! sms_top needed?
    USE sms_top_canbgc     !  TOP Source Minus Sink variables
-   USE sms_cmoc_canbgc    !  CMOC specific parameters declaration
+   USE sms_cmoc           !  CMOC specific parameters declaration
 
    USE trc_closea_canbgc  !  tmask_bgc_closea
    USE trcopt_canbgc
