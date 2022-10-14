@@ -205,7 +205,7 @@ CONTAINS
      ! have been added to xml definition files
      ! zrfact2 = 1.e3 * rfact2r  ! conversion from mol L^-1 timestep^-1 into mol m^-3 s^-1
      ! IF( lk_iomput ) THEN
-       ! IF( jnt == nrdttrc ) THEN
+       ! IF( jnt == qnrdttrc ) THEN
           ! CALL iom_put( "PPPHY"   , zprorca (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )
           ! CALL iom_put( "Mumax"   , zpislopead  (:,:,:) * rday * tmask_bgc_closea(:,:,:) )
           ! CALL iom_put( "LNnut"   , zlimn   (:,:,:) * tmask_bgc_closea(:,:,:) )

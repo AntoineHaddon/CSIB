@@ -29,7 +29,7 @@ MODULE trcsms_cmoc
    PUBLIC   trc_sms_cmoc       ! called by trcsms.F90 module
    PUBLIC   trc_sms_cmoc_alloc ! called by trcini_cmoc.F90 module 
    
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: xnegtr     ! Array used to indicate negative tracer values 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: qnegtr     ! Array used to indicate negative tracer values 
 
    ! Defined HERE the arrays specific to CMOC sms and ALLOCATE them in trc_sms_cmoc_alloc
 
@@ -96,11 +96,11 @@ CONTAINS
 
       IF( kt == nittrc000 ) THEN
         !
-        ALLOCATE( xnegtr(jpi,jpj,jpk) )
+        ALLOCATE( qnegtr(jpi,jpj,jpk) )
         !
         IF( .NOT. ln_rsttr ) THEN
           !
-          ndayflxtr = nday_year
+          qndayflxtr = nday_year
           !
           IF(lwp) write(numout,*)
           IF(lwp) write(numout,*) ' New chemical constants and various rates for biogeochemistry at new day : ', nday_year
@@ -132,9 +132,9 @@ CONTAINS
       ! ?IF( ll_sbc ) CALL p4z_sbc( kt )   ! external sources of nutrients
       ! Do we need a CMOC- and CanOE-specific *_sbc.F90 file?
       !
-      IF( ndayflxtr /= nday_year ) THEN      ! New days
+      IF( qndayflxtr /= nday_year ) THEN      ! New days
         !
-        ndayflxtr = nday_year
+        qndayflxtr = nday_year
 
         IF(lwp) write(numout,*)
         IF(lwp) write(numout,*) ' New chemical constants and various rates for biogeochemistry at new day : ', nday_year
@@ -148,13 +148,13 @@ CONTAINS
       ! O Riche Sept 14th 2022
       ! Move here before cmoc_prod as issue with PAR being set to 0s
       ! at initialization (current state)
-      ! also need to add time splitting loop 1=> nrdttrc
+      ! also need to add time splitting loop 1=> qnrdttrc
       ! and so trc_opt_1band and trc_opt (CanOE)
       ! needs jnt index/input arg along with kt see below
       ! for cmoc_prod.
       CALL trc_opt_1band( kt )        ! 1-band PAR attenuation
       !
-      DO jnt = 1, nrdttrc             ! Potential time splitting if requested
+      DO jnt = 1, qnrdttrc             ! Potential time splitting if requested
         !
         CALL cmoc_prod( kt, jnt )    ! PP subroutine
         !
@@ -186,14 +186,14 @@ CONTAINS
       END IF
 
       !
-      xnegtr(:,:,:) = 1.e0
+      qnegtr(:,:,:) = 1.e0
       DO jn = jp_pcs0, jp_pcs1
         DO jk = 1, jpk
            DO jj = 1, jpj
               DO ji = 1, jpi
                  IF( ( trb(ji,jj,jk,jn) + tra(ji,jj,jk,jn) ) < 0.e0 ) THEN
                     ztra             = ABS( trb(ji,jj,jk,jn) ) / ( ABS( tra(ji,jj,jk,jn) ) + rtrn )
-                    xnegtr(ji,jj,jk) = MIN( xnegtr(ji,jj,jk),  ztra )
+                    qnegtr(ji,jj,jk) = MIN( qnegtr(ji,jj,jk),  ztra )
                  ENDIF
              END DO
            END DO
@@ -202,7 +202,7 @@ CONTAINS
       !                                ! where at least 1 tracer concentration becomes negative
       !                                ! and by tracer we mean only the CMOC or shared BGC tracer.
       DO jn = 1, jp_bgc
-       trb(:,:,:,jn) = trb(:,:,:,jn) + xnegtr(:,:,:) * tra(:,:,:,jn)
+       trb(:,:,:,jn) = trb(:,:,:,jn) + qnegtr(:,:,:) * tra(:,:,:,jn)
       END DO
       ! 
       !

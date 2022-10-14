@@ -88,27 +88,27 @@ CONTAINS
       ! or double it if Leap-Frog and not Euler has been selected as
       ! the time integration scheme
       !
-      rfact = r2dttrc
+      qfact = r2dttrc
       ! O Riche July 5th 2022
       ! mitigating the impact of this line for now but might want to keep it
       ! or upgrade it in the final version of the code.
-      ! nrdttrc enables biology components of BGCMs to integrate over extra shorter time steps.
+      ! qnrdttrc enables biology components of BGCMs to integrate over extra shorter time steps.
       ! not to confuse with nn_dttrc (subdivide physics time steps to drive BGCMs) and rdttrc
       ! the new time step for BGCM tracers if nn_dtrc/=1
-      ! nrdttrc = 4 ! should be read from namelist_pisces (or _canoe) by trcnam_pisces (or _canoe) or perhaps moved to namelist_top
+      ! qnrdttrc = 4 ! should be read from namelist_pisces (or _canoe) by trcnam_pisces (or _canoe) or perhaps moved to namelist_top
       !
       ! O Riche Sept 13th 2022
       ! added nrdttrc in namelist_top_* in &namtrc_run section
       
       !
       IF( ( ln_top_euler .AND. kt == nittrc000 )  .OR. ( .NOT.ln_top_euler .AND. kt <= nittrc000 + nn_dttrc ) ) THEN
-        rfactr  = 1. / rfact
-        rfact2  = rfact / REAL( nrdttrc, wp )
-        rfact2r = 1. / rfact2
+        qfactr  = 1. / qfact
+        qfact2  = qfact / REAL( qnrdttrc, wp )
+        qfact2r = 1. / qfact2
   
         IF(lwp) WRITE(numout,*) 
-        IF(lwp) WRITE(numout,*) '    Passive Tracer  time step    rfact  = ', rfact, ' rdt = ', rdt
-        IF(lwp) write(numout,*) '            Biology time step    rfact2 = ', rfact2
+        IF(lwp) WRITE(numout,*) '    Passive Tracer  time step    qfact  = ', qfact, ' rdt = ', rdt
+        IF(lwp) write(numout,*) '            Biology time step    qfact2 = ', qfact2
         IF(lwp) WRITE(numout,*)
 
       ENDIF

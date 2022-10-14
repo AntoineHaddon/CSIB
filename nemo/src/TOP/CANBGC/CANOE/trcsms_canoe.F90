@@ -111,9 +111,9 @@ CONTAINS
         ! CALL trc_src2d( kt, js2d_fsol2 )      
       ! END IF
 
-      IF( ndayflxtr /= nday_year ) THEN      ! New days
+      IF( qndayflxtr /= nday_year ) THEN      ! New days
         !
-        ndayflxtr = nday_year
+        qndayflxtr = nday_year
   
         IF(lwp) write(numout,*)
         IF(lwp) write(numout,*) ' New chemical constants and various rates for biogeochemistry at new day : ', nday_year
