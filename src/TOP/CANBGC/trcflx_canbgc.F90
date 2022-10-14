@@ -184,7 +184,7 @@ CONTAINS
             zfld = satmco2g(ji,jj) * chemc(ji,jj,1) * tmask_bgc_closea(ji,jj,1) * zkgco2(ji,jj)     ! (mol/L) * (m/s)
             zflu = zh2co3(ji,jj) * tmask_bgc_closea(ji,jj,1) * zkgco2(ji,jj)                        ! (mol/L) * (m/s) 
 
-            oce_co2g(ji,jj) = ( zfld - zflu ) * qrfact * e1e2t(ji,jj) * tmask_bgc_closea(ji,jj,1) * 1000. ! convert L^-1 to m^-3
+            oce_co2g(ji,jj) = ( zfld - zflu ) * qfact * e1e2t(ji,jj) * tmask_bgc_closea(ji,jj,1) * 1000. ! convert L^-1 to m^-3
             zco2flx(ji,jj)  = ( zfld - zflu ) * tmask_bgc_closea(ji,jj,1)
             tra(ji,jj,1,jqdic) = tra(ji,jj,1,jqdic) + zco2flx(ji,jj) / e3t_n(ji,jj,1)
 			
@@ -192,7 +192,7 @@ CONTAINS
             zfld16 = satmo2g(ji,jj) * chemc(ji,jj,2) * tmask_bgc_closea(ji,jj,1) * zkgo2(ji,jj)     ! (mol/L) * (m/s)
             zflu16 = trn(ji,jj,1,jqoxy) * tmask_bgc_closea(ji,jj,1) * zkgo2(ji,jj)                  ! (mol/L) * (m/s)
 
-            oce_o2g(ji,jj) = ( zfld16 - zflu16 ) * qrfact * e1e2t(ji,jj) * tmask_bgc_closea(ji,jj,1) * 1000. ! convert L^-1 to m^-3
+            oce_o2g(ji,jj) = ( zfld16 - zflu16 ) * qfact * e1e2t(ji,jj) * tmask_bgc_closea(ji,jj,1) * 1000. ! convert L^-1 to m^-3
             zo2flx(ji,jj)  = ( zfld16 - zflu16 ) * tmask_bgc_closea(ji,jj,1)
             tra(ji,jj,1,jqoxy) = tra(ji,jj,1,jqoxy) + zo2flx(ji,jj) / e3t_n(ji,jj,1)
          END DO
@@ -205,8 +205,8 @@ CONTAINS
       CALL iom_put("KgCO2", zkgco2(:,:) )
       CALL iom_put("KgO2" ,  zkgo2(:,:) )
       ! net flux to the ocean
-      CALL iom_put("Cflx", zco2flx(:,:) / qrfact / e1e2t(:,:) )
-      CALL iom_put("Oflx",  zo2flx(:,:) / qrfact / e1e2t(:,:) )
+      CALL iom_put("Cflx", zco2flx(:,:) / qfact / e1e2t(:,:) )
+      CALL iom_put("Oflx",  zo2flx(:,:) / qfact / e1e2t(:,:) )
       ! partial pressures
       CALL iom_put("DpCO2", ( satmco2g(:,:) - zh2co3(:,:) / ( chemc(:,:,1) + rtrn ) ) * tmask_bgc_closea(:,:,1) )
       CALL iom_put("pCO2" ,                 ( zh2co3(:,:) / ( chemc(:,:,1) + rtrn ) ) * tmask_bgc_closea(:,:,1) )

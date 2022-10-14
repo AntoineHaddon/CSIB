@@ -20,8 +20,8 @@ MODULE sms_top_canbgc
 	!!*  Time variables
 	INTEGER  ::   qnrdttrc           !: BGCM time-step multiplier, i.e. ocean time step * qnrdttrc = BGCM time step
 	INTEGER  ::   qndayflxtr         !: use to check for new day when updating carbon chemistry state in CANOE    
-	REAL(wp) ::   qfact , qfactr    !: BGCM time-step qrfact, and its inverse, both used if Euler scheme is in use
-	REAL(wp) ::   qfact2, qfact2r   !: BGCM time-step qrfact2, and inverse,    both used if Leap-Frog scheme is in use   
+	REAL(wp) ::   qfact , qfactr    !: BGCM time-step qfact, and its inverse, both used if Euler scheme is in use
+	REAL(wp) ::   qfact2, qfact2r   !: BGCM time-step qfact2, and inverse,    both used if Leap-Frog scheme is in use   
 
   !!* Mass conservation
   ! LOGICAL  ::  ln_check_mass_canoe  !: Flag to check mass conservation
