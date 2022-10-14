@@ -111,6 +111,9 @@ CONTAINS
       ! closea mask for BGCM
       CALL trc_closea_bgc(read_var_flag=.true.)
       !
+      ! Test allocation of space for CMOC arrays before initialization
+      CALL cmoc_alloc ! allocate arrays space, see end of this module
+      !
       ! O Riche Aug 4th 2022
       ! Initialise external sources reading
       ! Check namelist_top_cfg for &trcsrc_dta section
@@ -127,9 +130,6 @@ CONTAINS
       !
       ! O Riche Sept 13th 2022
       CALL cmoc_prod_init ! mostly read namelist_cmoc_* files
-      !
-      ! Test allocation of space for cmoc arrays before initialization
-      CALL cmoc_alloc ! allocate arrays space, see end of this module
       ! !
    END SUBROUTINE trc_ini_cmoc
 

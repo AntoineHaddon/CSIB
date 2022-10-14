@@ -83,6 +83,8 @@ CONTAINS
       ! closea mask for BGCM
       CALL trc_closea_bgc(read_var_flag=.true.)
       !
+      ! Test allocation of space for CanOE arrays before initialization
+      CALL canoe_alloc ! allocate arrays space, see end of this module
       !
       ! O Riche Aug 4th 2022
       ! Initialise external sources reading
@@ -98,8 +100,6 @@ CONTAINS
       ! O Riche Aug 16th 2022
       CALL trc_opt_init
       !
-      ! Test allocation of space for CANOE arrays before initialization
-      CALL canoe_alloc ! allocate arrays space, see end of this module
       ! !
    END SUBROUTINE trc_ini_canoe
 
