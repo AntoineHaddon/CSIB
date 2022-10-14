@@ -87,10 +87,10 @@ CONTAINS
             DO ji = 1, jpi
 
                ! DUMMY VARIABLES FOR DIC, H+, AND BORATE
-               zbot  = borat(ji,jj,1)
+               zbot  = qborat(ji,jj,1)
                zfact = rhop(ji,jj,1) / 1000. + rtrn
                zdic  = trn(ji,jj,1,jqdic) / zfact
-               zph   = MAX( hi(ji,jj,1), 1.e-10 ) / zfact
+               zph   = MAX( qhi(ji,jj,1), 1.e-10 ) / zfact
                zalka = trn(ji,jj,1,jqtal) / zfact
                zph2  = zph*zph
                zph3  = zph*zph2
@@ -101,25 +101,25 @@ CONTAINS
                ! which eventually will be used 
                ! in the meantime we can do better and assigned the phosphate IC
                ! values instead of these
-               zsi   = asi3(ji,jj,1) * 0.000001 / zfact                        ! silica is a static array based on initialization file, not a carried tracer
+               zsi   = qasi3(ji,jj,1) * 0.000001 / zfact                        ! silica is a static array based on initialization file, not a carried tracer
 
                ! CALCULATE P AND Si ION CONCENTRATIONS AS PER ORR ET AL (BPG EQUATIONS 43-47)
                ! zp3 = H3PO4, zp1 = HPO4(2-), zp0 = PO4(3-): denominator is the same for all 3 equations
-               zpd = 1./ ( zph3 + akp13(ji,jj,1)*zph2 + akp13(ji,jj,1)*akp23(ji,jj,1)*zph + akp13(ji,jj,1)*akp23(ji,jj,1)*akp33(ji,jj,1) )
+               zpd = 1./ ( zph3 + qakp13(ji,jj,1)*zph2 + qakp13(ji,jj,1)*qakp23(ji,jj,1)*zph + qakp13(ji,jj,1)*qakp23(ji,jj,1)*qakp33(ji,jj,1) )
                zp3 = zph3*zpo4 * zpd
-               zp1 = zph*zpo4*akp13(ji,jj,1)*akp23(ji,jj,1) * zpd
-               zp0 = zpo4*akp13(ji,jj,1)*akp23(ji,jj,1)*akp33(ji,jj,1) * zpd
-               zsi = zsi / (1. + zph / aksi3(ji,jj,1))
+               zp1 = zph*zpo4*qakp13(ji,jj,1)*qakp23(ji,jj,1) * zpd
+               zp0 = zpo4*qakp13(ji,jj,1)*qakp23(ji,jj,1)*qakp33(ji,jj,1) * zpd
+               zsi = zsi / (1. + zph / qaksi3(ji,jj,1))
 
                ! CALCULATE [ALK]([CO3--], [HCO3-])
-               zalk  = zalka - (  akw3(ji,jj,1) / zph - zph + zbot / ( 1.+ zph / akb3(ji,jj,1) ) + 2.*zp0 + zp1 - zp3 + zsi )
+               zalk  = zalka - (  qakw3(ji,jj,1) / zph - zph + zbot / ( 1.+ zph / qakb3(ji,jj,1) ) + 2.*zp0 + zp1 - zp3 + zsi )
 
                ! CALCULATE [H+] AND [H2CO3]
-               zah2   = SQRT(  (zdic-zalk)*(zdic-zalk) + 4.* ( zalk * ak23(ji,jj,1)   &
-                  &                                        / ak13(ji,jj,1) ) * ( 2.* zdic - zalk )  )
-               zah2   = 0.5 * ak13(ji,jj,1) / zalk * ( ( zdic - zalk ) + zah2 )
-               zh2co3(ji,jj) = ( 2.* zdic - zalk ) / ( 2.+ ak13(ji,jj,1) / zah2 ) * zfact
-               hi(ji,jj,1)   = zah2 * zfact
+               zah2   = SQRT(  (zdic-zalk)*(zdic-zalk) + 4.* ( zalk * qak23(ji,jj,1)   &
+                  &                                        / qak13(ji,jj,1) ) * ( 2.* zdic - zalk )  )
+               zah2   = 0.5 * qak13(ji,jj,1) / zalk * ( ( zdic - zalk ) + zah2 )
+               zh2co3(ji,jj) = ( 2.* zdic - zalk ) / ( 2.+ qak13(ji,jj,1) / zah2 ) * zfact
+               qhi(ji,jj,1)   = zah2 * zfact
             END DO
          END DO
       END DO
@@ -214,7 +214,7 @@ CONTAINS
       CALL iom_put("pO2"  ,                ( trn(:,:,1,jqoxy) / ( chemc(:,:,2) + rtrn ) ) * tmask_bgc_closea(:,:,1) )
       ! Carbonate system
       zph0(:,:,:) = rtrn
-      zph0(:,:,1) = hi(:,:,1) + rtrn   ! [H+] is 2D for now so just set to epsilon if deeper than level 1 
+      zph0(:,:,1) = qhi(:,:,1) + rtrn   ! [H+] is 2D for now so just set to epsilon if deeper than level 1 
       CALL iom_put("pH",  -1. * LOG10( MAX( zph0(:,:,:), rtrn ) ) * tmask(:,:,:))
       ! other fields will be set to 0s by default (compilation setting)
       ! CALL iom_put("CO3",      )

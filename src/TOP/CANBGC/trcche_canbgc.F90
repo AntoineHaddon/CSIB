@@ -51,7 +51,7 @@ MODULE trcche_canbgc
    REAL(wp) ::   rgas   = 83.143         ! universal gas constants
    REAL(wp) ::   oxyco  = 1. / 22.4144   ! converts from liters of an ideal gas to moles
 
-   REAL(wp) ::   bor1   = 0.000232       ! borat constants
+   REAL(wp) ::   bor1   = 0.000232       ! qborat constants
    REAL(wp) ::   bor2   = 1. / 10.811
 
    REAL(wp) ::   ca0    = -160.7333   ! WEISS & PRICE 1980, units mol/(kg atm)
@@ -308,36 +308,36 @@ CONTAINS
 
                zbuf1  =     - ( devk1(1) + devk2(1) * ztc + devk3(1) * ztc * ztc )
                zbuf2  = 0.5 * ( devk4(1) + devk5(1) * ztc )
-               ak13(ji,jj,jk) = zak1 * EXP( zbuf1 * zcpexp + zbuf2 * zcpexp2 )
+               qak13(ji,jj,jk) = zak1 * EXP( zbuf1 * zcpexp + zbuf2 * zcpexp2 )
 
                zbuf1  =     - ( devk1(2) + devk2(2) * ztc + devk3(2) * ztc * ztc )
                zbuf2  = 0.5 * ( devk4(2) + devk5(2) * ztc )
-               ak23(ji,jj,jk) = zak2 * EXP( zbuf1 * zcpexp + zbuf2 * zcpexp2 )
+               qak23(ji,jj,jk) = zak2 * EXP( zbuf1 * zcpexp + zbuf2 * zcpexp2 )
 
                zbuf1  =     - ( devk1(3) + devk2(3) * ztc + devk3(3) * ztc * ztc )
                zbuf2  = 0.5 * ( devk4(3) + devk5(3) * ztc )
-               akb3(ji,jj,jk) = zakb * EXP( zbuf1 * zcpexp + zbuf2 * zcpexp2 )
+               qakb3(ji,jj,jk) = zakb * EXP( zbuf1 * zcpexp + zbuf2 * zcpexp2 )
 
                zbuf1  =     - ( devk1(4) + devk2(4) * ztc + devk3(4) * ztc * ztc )
                zbuf2  = 0.5 * ( devk4(4) + devk5(4) * ztc )
-               akw3(ji,jj,jk) = zakw * EXP( zbuf1 * zcpexp + zbuf2 * zcpexp2 )
+               qakw3(ji,jj,jk) = zakw * EXP( zbuf1 * zcpexp + zbuf2 * zcpexp2 )
 
                ! K_Px and K_Si (NO PRESSURE CORRECTION)
-               akp13(ji,jj,jk) = zakp1
-               akp23(ji,jj,jk) = zakp2
-               akp33(ji,jj,jk) = zakp3
-               aksi3(ji,jj,jk) = zaksi
+               qakp13(ji,jj,jk) = zakp1
+               qakp23(ji,jj,jk) = zakp2
+               qakp33(ji,jj,jk) = zakp3
+               qaksi3(ji,jj,jk) = zaksi
 
                ! APPARENT SOLUBILITY PRODUCT K'SP OF CALCITE 
                !        AS FUNCTION OF PRESSURE FOLLOWING MILLERO
                !        (P. 1285) AND BERNER (1976)
                zbuf1  =     - ( devk1(5) + devk2(5) * ztc + devk3(5) * ztc * ztc )
                zbuf2  = 0.5 * ( devk4(5) + devk5(5) * ztc )
-               aksp(ji,jj,jk) = zaksp1 * EXP( zbuf1 * zcpexp + zbuf2 * zcpexp2 )
+               qaksp(ji,jj,jk) = zaksp1 * EXP( zbuf1 * zcpexp + zbuf2 * zcpexp2 )
 
 
                ! TOTAL BORATE CONCENTR. [MOLES/L]
-               borat(ji,jj,jk) = bor1 * zcl * bor2
+               qborat(ji,jj,jk) = bor1 * zcl * bor2
 
             END DO
          END DO

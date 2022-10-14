@@ -26,7 +26,7 @@ MODULE trcnam
    USE lib_mpp, ONLY: ncom_dttrc
 #endif
 
-   USE sms_top_canbgc, ONLY: nrdttrc ! access to nrdttrc declaration
+   USE sms_top_canbgc, ONLY: qnrdttrc ! access to qnrdttrc declaration
 
    IMPLICIT NONE
    PRIVATE 
@@ -106,7 +106,7 @@ CONTAINS
       !!
       NAMELIST/namtrc_run/ nn_dttrc, ln_rsttr, nn_rsttr, ln_top_euler,                     &
         &                  cn_trcrst_indir, cn_trcrst_outdir, cn_trcrst_in, cn_trcrst_out, &
-        &                  nrdttrc
+        &                  qnrdttrc
       !!---------------------------------------------------------------------
       !
       IF(lwp) WRITE(numout,*)

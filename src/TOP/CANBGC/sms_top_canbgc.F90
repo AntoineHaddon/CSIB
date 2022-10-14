@@ -18,30 +18,30 @@ MODULE sms_top_canbgc
 	PUBLIC
 
 	!!*  Time variables
-	INTEGER  ::   nrdttrc           !: BGCM time-step multiplier, i.e. ocean time step * nrdttrc = BGCM time step
-	INTEGER  ::   ndayflxtr         !: use to check for new day when updating carbon chemistry state in CANOE    
-	REAL(wp) ::   rfact , rfactr    !: BGCM time-step rfact, and its inverse, both used if Euler scheme is in use
-	REAL(wp) ::   rfact2, rfact2r   !: BGCM time-step rfact2, and inverse,    both used if Leap-Frog scheme is in use   
+	INTEGER  ::   qnrdttrc           !: BGCM time-step multiplier, i.e. ocean time step * qnrdttrc = BGCM time step
+	INTEGER  ::   qndayflxtr         !: use to check for new day when updating carbon chemistry state in CANOE    
+	REAL(wp) ::   qfact , qfactr    !: BGCM time-step rfact, and its inverse, both used if Euler scheme is in use
+	REAL(wp) ::   qfact2, qfact2r   !: BGCM time-step rfact2, and inverse,    both used if Leap-Frog scheme is in use   
 
   !!* Mass conservation
   ! LOGICAL  ::  ln_check_mass_canoe  !: Flag to check mass conservation
 
 	!!* Variable for chemistry of the CO2 cycle
-	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   akb3       !: ???
-	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   ak13       !: ???
-	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   ak23       !: ???
-	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   aksp       !: ???
-	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   akw3       !: ???
-	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   akp13
-	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   akp23
-	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   akp33
-	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   aksi3      !: [Si(OH)4-]
-	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   asi3		    !: [Si(OH)4-]
-	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   borat      !: Borate conc.
-	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   hi         !: [H+] to compute pH and alkalinity
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qakb3       !: ???
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qak13       !: ???
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qak23       !: ???
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qaksp       !: ???
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qakw3       !: ???
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qakp13
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qakp23
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qakp33
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qaksi3      !: [Si(OH)4-]
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qasi3		    !: [Si(OH)4-]
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qborat      !: Borate conc.
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qhi         !: [H+] to compute pH and alkalinity
 
-	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   excess     !: needed in sms_pisces/CanOE, excess in phyto as zoop food wrt Redfield ratios
-	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   aphscale   !: absolute pH scale   
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qexcess     !: needed in sms_pisces/CanOE, excess in phyto as zoop food wrt Redfield ratios
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qaphscale   !: absolute pH scale   
 
   ! External sources, fluxes, and quantities for BGCMs
   ! 3d array indices
@@ -134,13 +134,13 @@ MODULE sms_top_canbgc
 		!!----------------------------------------------------------------------
 		ierr(:) = 0
 		!* Variable for chemistry of the CO2 cycle
-		ALLOCATE( 	ak13(jpi,jpj,jpk)      ,  akb3(jpi,jpj,jpk)   ,     &
-				&       ak23(jpi,jpj,jpk)      ,  aksp(jpi,jpj,jpk)   ,     &
-				&       hi  (jpi,jpj,jpk)      ,  akw3(jpi,jpj,jpk)   ,     &
-				&      akp13(jpi,jpj,jpk)      , akp23(jpi,jpj,jpk)   ,     &
-				&      akp33(jpi,jpj,jpk)      , aksi3(jpi,jpj,jpk)   ,     &
-				&      borat(jpi,jpj,jpk)      ,  asi3(jpi,jpj,jpk)   ,     &
-				&   aphscale(jpi,jpj,jpk)      , excess(jpi,jpj,jpk)  ,     &  
+		ALLOCATE( 	qak13(jpi,jpj,jpk)      ,  qakb3(jpi,jpj,jpk)   ,     &
+				&       qak23(jpi,jpj,jpk)      ,  qaksp(jpi,jpj,jpk)   ,     &
+				&       qhi  (jpi,jpj,jpk)      ,  qakw3(jpi,jpj,jpk)   ,     &
+				&      qakp13(jpi,jpj,jpk)      , qakp23(jpi,jpj,jpk)   ,     &
+				&      qakp33(jpi,jpj,jpk)      , qaksi3(jpi,jpj,jpk)   ,     &
+				&      qborat(jpi,jpj,jpk)      ,  qasi3(jpi,jpj,jpk)   ,     &
+				&   qaphscale(jpi,jpj,jpk)      , qexcess(jpi,jpj,jpk)  ,     &  
         &  	    STAT=ierr(1) )
 
     !* CMOC PP terms/factors
