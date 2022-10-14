@@ -28,7 +28,7 @@ MODULE trcche_canbgc
    PUBLIC   trc_che         !
    PUBLIC   trc_che_alloc   !
 
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   chemc    ! Solubilities of O2 and CO2
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qchemc    ! Solubilities of O2 and CO2
 
 ! Constants and conversion factors
    REAL(wp), PUBLIC ::     xconv0   = 0.01_wp / 3600._wp !: coefficients for conversion 
@@ -218,8 +218,8 @@ CONTAINS
 
             !                             ! SET SOLUBILITIES OF O2 AND CO2 
 			!
-            chemc(ji,jj,1) = EXP( zcek1 ) * 1.e-6 * rhop(ji,jj,1) / 1000.  ! mol/(L uatm)
-            chemc(ji,jj,2) = ( EXP( zoxy  ) * o2atm ) * oxyco              ! mol/(L atm)
+            qchemc(ji,jj,1) = EXP( zcek1 ) * 1.e-6 * rhop(ji,jj,1) / 1000.  ! mol/(L uatm)
+            qchemc(ji,jj,2) = ( EXP( zoxy  ) * o2atm ) * oxyco              ! mol/(L atm)
             !
          END DO
       END DO
@@ -352,7 +352,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       !!                     ***  ROUTINE trc_che_alloc  ***
       !!----------------------------------------------------------------------
-      ALLOCATE( chemc (jpi,jpj,2), STAT=trc_che_alloc )
+      ALLOCATE( qchemc (jpi,jpj,2), STAT=trc_che_alloc )
       !
       IF( trc_che_alloc /= 0 )   CALL ctl_warn('trc_che_alloc : failed to allocate arrays.')
       !

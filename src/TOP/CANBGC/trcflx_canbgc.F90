@@ -181,7 +181,7 @@ CONTAINS
 			! partial pressure in air is converted to seawater concentration in mol L^-1
 
 
-            zfld = satmco2g(ji,jj) * chemc(ji,jj,1) * tmask_bgc_closea(ji,jj,1) * zkgco2(ji,jj)     ! (mol/L) * (m/s)
+            zfld = satmco2g(ji,jj) * qchemc(ji,jj,1) * tmask_bgc_closea(ji,jj,1) * zkgco2(ji,jj)     ! (mol/L) * (m/s)
             zflu = zh2co3(ji,jj) * tmask_bgc_closea(ji,jj,1) * zkgco2(ji,jj)                        ! (mol/L) * (m/s) 
 
             oce_co2g(ji,jj) = ( zfld - zflu ) * qfact * e1e2t(ji,jj) * tmask_bgc_closea(ji,jj,1) * 1000. ! convert L^-1 to m^-3
@@ -189,7 +189,7 @@ CONTAINS
             tra(ji,jj,1,jqdic) = tra(ji,jj,1,jqdic) + zco2flx(ji,jj) / e3t_n(ji,jj,1)
 			
             ! Compute O2 flux 
-            zfld16 = satmo2g(ji,jj) * chemc(ji,jj,2) * tmask_bgc_closea(ji,jj,1) * zkgo2(ji,jj)     ! (mol/L) * (m/s)
+            zfld16 = satmo2g(ji,jj) * qchemc(ji,jj,2) * tmask_bgc_closea(ji,jj,1) * zkgo2(ji,jj)     ! (mol/L) * (m/s)
             zflu16 = trn(ji,jj,1,jqoxy) * tmask_bgc_closea(ji,jj,1) * zkgo2(ji,jj)                  ! (mol/L) * (m/s)
 
             oce_o2g(ji,jj) = ( zfld16 - zflu16 ) * qfact * e1e2t(ji,jj) * tmask_bgc_closea(ji,jj,1) * 1000. ! convert L^-1 to m^-3
@@ -208,10 +208,10 @@ CONTAINS
       CALL iom_put("Cflx", zco2flx(:,:) / qfact / e1e2t(:,:) )
       CALL iom_put("Oflx",  zo2flx(:,:) / qfact / e1e2t(:,:) )
       ! partial pressures
-      CALL iom_put("DpCO2", ( satmco2g(:,:) - zh2co3(:,:) / ( chemc(:,:,1) + rtrn ) ) * tmask_bgc_closea(:,:,1) )
-      CALL iom_put("pCO2" ,                 ( zh2co3(:,:) / ( chemc(:,:,1) + rtrn ) ) * tmask_bgc_closea(:,:,1) )
-      CALL iom_put("DpO2" , ( satmo2g(:,:) - trn(:,:,1,jqoxy) / ( chemc(:,:,2) + rtrn ) ) * tmask_bgc_closea(:,:,1) )
-      CALL iom_put("pO2"  ,                ( trn(:,:,1,jqoxy) / ( chemc(:,:,2) + rtrn ) ) * tmask_bgc_closea(:,:,1) )
+      CALL iom_put("DpCO2", ( satmco2g(:,:) - zh2co3(:,:) / ( qchemc(:,:,1) + rtrn ) ) * tmask_bgc_closea(:,:,1) )
+      CALL iom_put("pCO2" ,                 ( zh2co3(:,:) / ( qchemc(:,:,1) + rtrn ) ) * tmask_bgc_closea(:,:,1) )
+      CALL iom_put("DpO2" , ( satmo2g(:,:) - trn(:,:,1,jqoxy) / ( qchemc(:,:,2) + rtrn ) ) * tmask_bgc_closea(:,:,1) )
+      CALL iom_put("pO2"  ,                ( trn(:,:,1,jqoxy) / ( qchemc(:,:,2) + rtrn ) ) * tmask_bgc_closea(:,:,1) )
       ! Carbonate system
       zph0(:,:,:) = rtrn
       zph0(:,:,1) = qhi(:,:,1) + rtrn   ! [H+] is 2D for now so just set to epsilon if deeper than level 1 
