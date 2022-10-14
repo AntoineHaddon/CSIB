@@ -169,13 +169,13 @@ CONTAINS
             !
             ! phytoplankton production term over a time step
             ! zprbio is photosynthetic growth rate in s^-1 (only)
-            zprorca(ji,jj,jk) =  zprbio(ji,jj,jk)  * trn(ji,jj,jk,jqphy) * qrfact2
+            zprorca(ji,jj,jk) =  zprbio(ji,jj,jk)  * trn(ji,jj,jk,jqphy) * qfact2
             ! chlorophyll production term   over a time step
-            zprod =              zprbio(ji,jj,jk)  * trn(ji,jj,jk,jqnch) * qrfact2
+            zprod =              zprbio(ji,jj,jk)  * trn(ji,jj,jk,jqnch) * qfact2
             ! nudge chlorophyll back to balanced growth, Zahariev et al 2008
             zprochln(ji,jj,jk) = zprod + (zprnch (ji,jj,jk) * trn(ji,jj,jk,jqphy) - &
             &                             trn(ji,jj,jk,jqnch)                       &
-            &                            ) * itau_cmoc * r1_rday * qrfact2                
+            &                            ) * itau_cmoc * r1_rday * qfact2                
           END DO
         END DO
       END DO
@@ -203,7 +203,7 @@ CONTAINS
      ! O Riche Sept 14th 2022
      ! Can be uncommented when diagnostics below
      ! have been added to xml definition files
-     ! zrfact2 = 1.e3 * qrfact2r  ! conversion from mol L^-1 timestep^-1 into mol m^-3 s^-1
+     ! zrfact2 = 1.e3 * qfact2r  ! conversion from mol L^-1 timestep^-1 into mol m^-3 s^-1
      ! IF( lk_iomput ) THEN
        ! IF( jnt == qnrdttrc ) THEN
           ! CALL iom_put( "PPPHY"   , zprorca (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )
