@@ -65,7 +65,7 @@ CONTAINS
 
       ! assign an index in trc array for each prognostic variable
       DO jn = 1,jp_canoe
-       IF( lwp )
+       IF( lwp ) THEN
          write(numout,*) ctrcnm(jn)
        ENDIF
        !

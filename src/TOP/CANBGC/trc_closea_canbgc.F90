@@ -11,7 +11,8 @@ MODULE trc_closea_canbgc
   !!                  !  location ./CanNEMO_tmp_src/nemo/tools/DOMAINcfg/
 	!!----------------------------------------------------------------------
 
-  USE par_oce
+  USE par_oce         !: access jq* indices declaration
+  USE dom_oce         !: access tmask declaration
 
 	IMPLICIT NONE
   PRIVATE
