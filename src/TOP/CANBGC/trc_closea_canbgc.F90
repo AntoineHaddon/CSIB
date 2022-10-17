@@ -64,6 +64,18 @@ CONTAINS
     ALLOCATE( tmask_bgc_closea(jpi,jpj,jpk) , STAT=ierr )
     IF( ierr /= 0 )   CALL ctl_stop( 'STOP', 'trc_closea_bgc: failed to allocate tmask_bgc_closea array')
     tmask_bgc_closea(:,:,:) = tmask(:,:,:)
+    ! OR Oct 17th 2022 dbg 1
+    IF( lwp ) THEN
+      WRITE(numout,*) 'trc_closea_bgc: check dims of tmask*'
+      WRITE(numout,*) 'tmask_bgc_closea dim 1 size = ', SIZE(tmask_bgc_closea,1)
+      WRITE(numout,*) 'tmask_bgc_closea dim 2 size = ', SIZE(tmask_bgc_closea,2)
+      WRITE(numout,*) 'tmask_bgc_closea dim 3 size = ', SIZE(tmask_bgc_closea,3)
+      WRITE(numout,*) 'tmask dim 1 size = ', SIZE(tmask,1)
+      WRITE(numout,*) 'tmask dim 2 size = ', SIZE(tmask,2)
+      WRITE(numout,*) 'tmask dim 3 size = ', SIZE(tmask,3)
+      CALL FLUSH(numout)
+    ENDIF
+    !
     !
     IF ( lwp )  WRITE(numout,*) 'trc_closea_bgc: tmask_bgc_closea initialized as tmask'
     IF ( lwp )  WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
