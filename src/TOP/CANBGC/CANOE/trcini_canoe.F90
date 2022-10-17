@@ -66,7 +66,7 @@ CONTAINS
       ! assign an index in trc array for each prognostic variable
       DO jn = 1,jp_canoe
        IF( lwp ) THEN
-         write(numout,*) ctrcnm(jn)
+         WRITE(numout,*) ctrcnm(jn)
        ENDIF
        !
        cltra = ctrcnm(jn)
@@ -98,7 +98,7 @@ CONTAINS
         trn(:,:,:,jqtal) = alka0 
         trn(:,:,:,jqoxy) = oxyg0
         trn(:,:,:,jqno3) = no30
-      ENDIF
+
         ! OR Oct 17th 2022 DBG1
         IF( lwp ) THEN
           WRITE(numout,*) 'trcini_canoe: trn size after init at rest.'
@@ -116,7 +116,7 @@ CONTAINS
           CALL FLUSH(numout)
         ENDIF
         !
-      END
+      ENDIF
       !     
       ! OR Oct 17th 2022 DBG1
       WRITE(numout,*) 'trcini_canoe: b4 trc_closea_bgc'
