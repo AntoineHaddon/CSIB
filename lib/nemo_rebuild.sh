@@ -143,7 +143,8 @@ if [ $nemo_save_hist == "on" ] ; then
       fi
          # Replace the lat/lon to remove the hold made by the land processors elimination
         ncsave=${freq}_${lsfx}
-        access  $ncsave.nc $indir.nc nocp=no na 
+        access tmp.nc $ncsave.nc $indir.nc nocp=no na #force copy because we make temporary changes
+        cp tmp.nc $ncsave.nc && rm tmp.nc
       if [ -e "$ncsave.nc" ] ; then
         [[ ${sfx,,} == *"grid_t"* || ${sfx,,} == *"icemod"* ||  ${sfx,,} == *"ptrc_t"* || 
            ${sfx,,} == *"diad_t"* ||  ${sfx,,} == *"grid_w"* ]] &&  
