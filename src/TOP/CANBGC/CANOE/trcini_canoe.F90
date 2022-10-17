@@ -79,7 +79,7 @@ CONTAINS
       !
       IF( .NOT. ln_rsttr ) THEN
       ! OR Oct 17th 2022 DBG1
-      WRITE(numout,*) 'trcini_canoe: b4 trc_closea_bgc'
+      WRITE(numout,*) 'trcini_canoe: trn size b4 init at rest.'
       WRITE(numout,*) 'trn ji size = ' , SIZE(trn,1)
       WRITE(numout,*) 'trn jj size = ' , SIZE(trn,2)
       WRITE(numout,*) 'trn jk size = ' , SIZE(trn,3)
@@ -91,6 +91,14 @@ CONTAINS
         trn(:,:,:,jqoxy) = oxyg0
         trn(:,:,:,jqno3) = no30
       ENDIF
+      ! OR Oct 17th 2022 DBG1
+      WRITE(numout,*) 'trcini_canoe: trn size after init at rest.'
+      WRITE(numout,*) 'jqdic = ' , jqdic
+      WRITE(numout,*) 'jqtal = ' , jqtal
+      WRITE(numout,*) 'jqoxy = ' , jqoxy
+      WRITE(numout,*) 'jqno3 = ' , jqno3
+      CALL FLUSH(numout)
+      !     
       !
       ! OR Oct 17th 2022 DBG1
       WRITE(numout,*) 'trcini_canoe: b4 trc_closea_bgc'
