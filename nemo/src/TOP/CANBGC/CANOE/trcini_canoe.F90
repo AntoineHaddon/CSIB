@@ -65,41 +65,59 @@ CONTAINS
 
       ! assign an index in trc array for each prognostic variable
       DO jn = 1,jp_canoe
-       write(numout,*) ctrcnm(jn)
+       IF( lwp )
+         write(numout,*) ctrcnm(jn)
+       ENDIF
+       !
        cltra = ctrcnm(jn)
        IF( cltra == 'DIC'      )   jqdic = jn      !: dissolved inorganic carbon concentration
        IF( cltra == 'Alkalini' )   jqtal = jn      !: total alkalinity
        IF( cltra == 'O2'       )   jqoxy = jn      !: oxygen concentration
        IF( cltra == 'NO3'      )   jqno3 = jn      !: NO3 concentration
-      ! OR Oct 17th 2022 DBG1
-      WRITE(numout,*) 'jn = ' , jn
-      CALL FLUSH(numout)
-      !       
+       !
+       IF( lwp ) THEN
+        ! OR Oct 17th 2022 DBG1
+        WRITE(numout,*) 'jn = ' , jn
+        CALL FLUSH(numout)
+       ENDIF
+       !       
       END DO
       !
       IF( .NOT. ln_rsttr ) THEN
-      ! OR Oct 17th 2022 DBG1
-      WRITE(numout,*) 'trcini_canoe: trn size b4 init at rest.'
-      WRITE(numout,*) 'trn ji size = ' , SIZE(trn,1)
-      WRITE(numout,*) 'trn jj size = ' , SIZE(trn,2)
-      WRITE(numout,*) 'trn jk size = ' , SIZE(trn,3)
-      WRITE(numout,*) 'trn jn size = ' , SIZE(trn,4)
-      CALL FLUSH(numout)
-      !     
+        IF( lwp ) THEN
+          ! OR Oct 17th 2022 DBG1
+          WRITE(numout,*) 'trcini_canoe: trn size b4 init at rest.'
+          WRITE(numout,*) 'trn ji size = ' , SIZE(trn,1)
+          WRITE(numout,*) 'trn jj size = ' , SIZE(trn,2)
+          WRITE(numout,*) 'trn jk size = ' , SIZE(trn,3)
+          WRITE(numout,*) 'trn jn size = ' , SIZE(trn,4)
+          CALL FLUSH(numout)
+        ENDIF
+        !     
         trn(:,:,:,jqdic) = sco2
         trn(:,:,:,jqtal) = alka0 
         trn(:,:,:,jqoxy) = oxyg0
         trn(:,:,:,jqno3) = no30
       ENDIF
-      ! OR Oct 17th 2022 DBG1
-      WRITE(numout,*) 'trcini_canoe: trn size after init at rest.'
-      WRITE(numout,*) 'jqdic = ' , jqdic
-      WRITE(numout,*) 'jqtal = ' , jqtal
-      WRITE(numout,*) 'jqoxy = ' , jqoxy
-      WRITE(numout,*) 'jqno3 = ' , jqno3
-      CALL FLUSH(numout)
+        ! OR Oct 17th 2022 DBG1
+        IF( lwp ) THEN
+          WRITE(numout,*) 'trcini_canoe: trn size after init at rest.'
+          WRITE(numout,*) 'jqdic = ' , jqdic
+          WRITE(numout,*) 'jqtal = ' , jqtal
+          WRITE(numout,*) 'jqoxy = ' , jqoxy
+          WRITE(numout,*) 'jqno3 = ' , jqno3
+          CALL FLUSH(numout)
+          !
+          ! OR Oct 17th 2022 DBG1
+          WRITE(numout,*) 'trn ji size = ' , SIZE(trn,1)
+          WRITE(numout,*) 'trn jj size = ' , SIZE(trn,2)
+          WRITE(numout,*) 'trn jk size = ' , SIZE(trn,3)
+          WRITE(numout,*) 'trn jn size = ' , SIZE(trn,4)
+          CALL FLUSH(numout)
+        ENDIF
+        !
+      END
       !     
-      !
       ! OR Oct 17th 2022 DBG1
       WRITE(numout,*) 'trcini_canoe: b4 trc_closea_bgc'
       CALL FLUSH(numout)
