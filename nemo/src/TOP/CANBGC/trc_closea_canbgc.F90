@@ -82,6 +82,11 @@ CONTAINS
         END DO
       ENDIF
     ENDIF
+    !
+    ! OR Oct 17th 2022 DBG1
+    WRITE(numout,*) 'trc_closea_bgc: end of the subroutine'
+    CALL FLUSH(numout)
+    !
 
     END SUBROUTINE trc_closea_bgc
      

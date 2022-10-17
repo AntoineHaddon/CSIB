@@ -71,9 +71,21 @@ CONTAINS
        IF( cltra == 'Alkalini' )   jqtal = jn      !: total alkalinity
        IF( cltra == 'O2'       )   jqoxy = jn      !: oxygen concentration
        IF( cltra == 'NO3'      )   jqno3 = jn      !: NO3 concentration
+      ! OR Oct 17th 2022 DBG1
+      WRITE(numout,*) 'jn = ' , jn
+      CALL FLUSH(numout)
+      !       
       END DO
       !
       IF( .NOT. ln_rsttr ) THEN
+      ! OR Oct 17th 2022 DBG1
+      WRITE(numout,*) 'trcini_canoe: b4 trc_closea_bgc'
+      WRITE(numout,*) 'trn ji size = ' , SIZE(trn,1)
+      WRITE(numout,*) 'trn jj size = ' , SIZE(trn,2)
+      WRITE(numout,*) 'trn jk size = ' , SIZE(trn,3)
+      WRITE(numout,*) 'trn jn size = ' , SIZE(trn,4)
+      CALL FLUSH(numout)
+      !     
         trn(:,:,:,jqdic) = sco2
         trn(:,:,:,jqtal) = alka0 
         trn(:,:,:,jqoxy) = oxyg0
@@ -117,7 +129,6 @@ CONTAINS
       WRITE(numout,*) 'trcini_canoe: b4 trc_opt_init'
       CALL FLUSH(numout)
       !
-      ! O Riche Aug 16th 2022
       CALL trc_opt_init
       !
       ! !
