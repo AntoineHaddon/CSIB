@@ -80,12 +80,24 @@ CONTAINS
         trn(:,:,:,jqno3) = no30
       ENDIF
       !
+      ! OR Oct 17th 2022 DBG1
+      WRITE(numout,*) 'trcini_canoe: b4 trc_closea_bgc'
+      CALL FLUSH(numout)
+      !
       ! closea mask for BGCM
       CALL trc_closea_bgc(read_var_flag=.true.)
+      !
+      ! OR Oct 17th 2022 DBG1
+      WRITE(numout,*) 'trcini_canoe: b4 canoe_alloc'
+      CALL FLUSH(numout)
       !
       ! Test allocation of space for CanOE arrays before initialization
       CALL canoe_alloc ! allocate arrays space, see end of this module
       !
+      ! OR Oct 17th 2022 DBG1
+      WRITE(numout,*) 'trcini_canoe: b4 trc_src_init'
+      CALL FLUSH(numout)
+      !      
       ! O Riche Aug 4th 2022
       ! Initialise external sources reading
       ! Check namelist_top_cfg for &trcsrc_dta section
@@ -94,8 +106,16 @@ CONTAINS
       ! open the files
       CALL trc_src_init
       !
+      ! OR Oct 17th 2022 DBG1
+      WRITE(numout,*) 'trcini_canoe: b4 trc_flx_init'
+      CALL FLUSH(numout)
+      !
       ! call all the BGC initialization subroutines in TOP tier
       CALL trc_flx_init
+      !
+      ! OR Oct 17th 2022 DBG1
+      WRITE(numout,*) 'trcini_canoe: b4 trc_opt_init'
+      CALL FLUSH(numout)
       !
       ! O Riche Aug 16th 2022
       CALL trc_opt_init
