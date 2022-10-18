@@ -18,7 +18,7 @@ MODULE par_canoe
    ! ! INTEGER, PUBLIC ::   jqdic_can           !: DIC
    ! INTEGER, PUBLIC ::   jpalk_can           !: TA
    ! INTEGER, PUBLIC ::   jqoxy_can           !: O2
-   INTEGER, PUBLIC :: jrnch !    
-   INTEGER, PUBLIC :: jrdch !    
+   ! INTEGER, PUBLIC :: jrnch !    
+   ! INTEGER, PUBLIC :: jrdch !    
    !!======================================================================
 END MODULE par_canoe

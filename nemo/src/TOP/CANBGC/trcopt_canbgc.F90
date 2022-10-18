@@ -144,10 +144,10 @@ CONTAINS
       IF( ln_cmoc ) THEN
         IF( iom_use("NCHL") )  ztotchla(:,:,:) = trn(:,:,:,jqnch)
       ENDIF
-      IF( ln_canoe ) THEN
-        IF( iom_use("NCHL") )  ztotchla(:,:,:) = trn(:,:,:,jrnch)
-        IF( iom_use("DCHL") )  ztotchla(:,:,:) = ztotchla(:,:,:) + trn(:,:,:,jrdch)    
-      ENDIF
+      ! IF( ln_canoe ) THEN
+        ! IF( iom_use("NCHL") )  ztotchla(:,:,:) = trn(:,:,:,jrnch)
+        ! IF( iom_use("DCHL") )  ztotchla(:,:,:) = ztotchla(:,:,:) + trn(:,:,:,jrdch)    
+      ! ENDIF
       !
       DO jk = 1, jpkm1   
          DO jj = 1, jpj
@@ -340,10 +340,10 @@ CONTAINS
       IF( ln_cmoc ) THEN
         IF( iom_use("NCHL") )  ztotchla(:,:,:) = trn(:,:,:,jqnch)
       ENDIF
-      IF( ln_canoe ) THEN
-        IF( iom_use("NCHL") )  ztotchla(:,:,:) = trn(:,:,:,jrnch)
-        IF( iom_use("DCHL") )  ztotchla(:,:,:) = ztotchla(:,:,:) + trn(:,:,:,jrdch)    
-      ENDIF
+      ! IF( ln_canoe ) THEN
+        ! IF( iom_use("NCHL") )  ztotchla(:,:,:) = trn(:,:,:,jrnch)
+        ! IF( iom_use("DCHL") )  ztotchla(:,:,:) = ztotchla(:,:,:) + trn(:,:,:,jrdch)    
+      ! ENDIF
       !
       DO jk = 1, jpkm1
         DO jj = 1, jpj
