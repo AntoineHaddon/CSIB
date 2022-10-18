@@ -59,6 +59,12 @@
    sn_tracer(4)   = 'NO3     ' , 'Nitrate Concentration                  ',  'mmol-N/L' ,  .true.
    sn_tracer(5)   = 'Age     ' , 'Seawater age since contact w/ surface  ',  'years'    ,  .false.
    !_____________!___________!_________________________________________!____________!________________!
+   !  CanOE-specific tracers   
+   !_____________!___________!_________________________________________!____________!________________!
+   !             !    name   !           title of the field            !   units    ! init from file !
+   jp_canoe = 0
+   ! canoe_tracer(1) =  = 'POC     ' , 'Particulate Organic Carbon             ',  'mmol-C/L' , .false.    
+   !_____________!___________!_________________________________________!____________!________________!
    !  CMOC-specific tracers   
    !_____________!___________!_________________________________________!____________!________________!
    !             !    name   !           title of the field            !   units    ! init from file !
