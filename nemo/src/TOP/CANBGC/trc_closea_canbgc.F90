@@ -74,18 +74,6 @@ CONTAINS
     !
     IF( ierr /= 0 )   CALL ctl_stop( 'STOP', 'trc_closea_init: failed to allocate tmask_bgc_closea array')
     tmask_bgc_closea(:,:,:) = tmask(:,:,:)
-    ! OR Oct 17th 2022 dbg 1
-    IF( lwp ) THEN
-      WRITE(numout,*) 'trc_closea_init: check dims of tmask*'
-      WRITE(numout,*) 'tmask_bgc_closea dim 1 size = ', SIZE(tmask_bgc_closea,1)
-      WRITE(numout,*) 'tmask_bgc_closea dim 2 size = ', SIZE(tmask_bgc_closea,2)
-      WRITE(numout,*) 'tmask_bgc_closea dim 3 size = ', SIZE(tmask_bgc_closea,3)
-      WRITE(numout,*) 'tmask dim 1 size = ', SIZE(tmask,1)
-      WRITE(numout,*) 'tmask dim 2 size = ', SIZE(tmask,2)
-      WRITE(numout,*) 'tmask dim 3 size = ', SIZE(tmask,3)
-      CALL FLUSH(numout)
-    ENDIF
-    !
     !
     IF ( lwp )  WRITE(numout,*) 'trc_closea_init: tmask_bgc_closea initialized as tmask'
     IF ( lwp )  WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
@@ -105,10 +93,6 @@ CONTAINS
         END DO
       ENDIF
     ENDIF
-    !
-    ! OR Oct 17th 2022 DBG1
-    WRITE(numout,*) 'trc_closea_init: end of the subroutine'
-    CALL FLUSH(numout)
     !
 
     END SUBROUTINE trc_closea_init
