@@ -17,6 +17,8 @@ MODULE par_canoe
    ! INTEGER, PUBLIC ::   jp_knu1             !: Last  index of CANOE passive tracers
    ! ! INTEGER, PUBLIC ::   jqdic_can           !: DIC
    ! INTEGER, PUBLIC ::   jpalk_can           !: TA
-   ! INTEGER, PUBLIC ::   jqoxy_can           !: O2 
+   ! INTEGER, PUBLIC ::   jqoxy_can           !: O2
+   INTEGER, PUBLIC :: jrnch !    
+   INTEGER, PUBLIC :: jrdch !    
    !!======================================================================
 END MODULE par_canoe
