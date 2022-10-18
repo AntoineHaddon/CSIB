@@ -109,7 +109,7 @@ CONTAINS
       ENDIF
       !
       ! closea mask for BGCM
-      CALL trc_closea_bgc(read_var_flag=.true.)
+      CALL trc_closea_init(read_var_flag=.true.)
       !
       ! Test allocation of space for CMOC arrays before initialization
       CALL cmoc_alloc ! allocate arrays space, see end of this module

@@ -19,11 +19,11 @@ MODULE trc_closea_canbgc
   
     REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: tmask_bgc_closea !: make the mask real(wp)
 
-    PUBLIC trc_closea_bgc
+    PUBLIC trc_closea_init
 
 CONTAINS
      
-    SUBROUTINE trc_closea_bgc(read_var_flag)
+    SUBROUTINE trc_closea_init(read_var_flag)
     !
     USE iom
     USE lib_mpp , ONLY: ctl_stop
@@ -62,21 +62,21 @@ CONTAINS
     ENDIF
     !
     IF( lwp ) THEN
-      WRITE(numout,*) 'trc_closea_canbgc: b4 allocate tmask_bgc_closea'
+      WRITE(numout,*) 'trc_closea_init: b4 allocate tmask_bgc_closea'
       CALL FLUSH(numout)
     ENDIF
     !
     ALLOCATE( tmask_bgc_closea(jpi,jpj,jpk) , STAT=ierr )
     IF( lwp ) THEN
-      WRITE(numout,*) 'trc_closea_canbgc: after allocate tmask_bgc_closea'
+      WRITE(numout,*) 'trc_closea_init: after allocate tmask_bgc_closea'
       CALL FLUSH(numout)
     ENDIF
     !
-    IF( ierr /= 0 )   CALL ctl_stop( 'STOP', 'trc_closea_bgc: failed to allocate tmask_bgc_closea array')
+    IF( ierr /= 0 )   CALL ctl_stop( 'STOP', 'trc_closea_init: failed to allocate tmask_bgc_closea array')
     tmask_bgc_closea(:,:,:) = tmask(:,:,:)
     ! OR Oct 17th 2022 dbg 1
     IF( lwp ) THEN
-      WRITE(numout,*) 'trc_closea_bgc: check dims of tmask*'
+      WRITE(numout,*) 'trc_closea_init: check dims of tmask*'
       WRITE(numout,*) 'tmask_bgc_closea dim 1 size = ', SIZE(tmask_bgc_closea,1)
       WRITE(numout,*) 'tmask_bgc_closea dim 2 size = ', SIZE(tmask_bgc_closea,2)
       WRITE(numout,*) 'tmask_bgc_closea dim 3 size = ', SIZE(tmask_bgc_closea,3)
@@ -87,12 +87,12 @@ CONTAINS
     ENDIF
     !
     !
-    IF ( lwp )  WRITE(numout,*) 'trc_closea_bgc: tmask_bgc_closea initialized as tmask'
+    IF ( lwp )  WRITE(numout,*) 'trc_closea_init: tmask_bgc_closea initialized as tmask'
     IF ( lwp )  WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
     IF ( lwp )  WRITE(numout,*)
     !
     IF ( read_var_flag0 ) THEN
-      IF ( lwp )  WRITE(numout,*) 'trc_closea_bgc: prepping closed sea mask for BGCMs'
+      IF ( lwp )  WRITE(numout,*) 'trc_closea_init: prepping closed sea mask for BGCMs'
       IF ( lwp )  WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
       IF ( lwp )  WRITE(numout,*)
       CALL iom_open('domain_cfg.nc', inum)
@@ -107,10 +107,10 @@ CONTAINS
     ENDIF
     !
     ! OR Oct 17th 2022 DBG1
-    WRITE(numout,*) 'trc_closea_bgc: end of the subroutine'
+    WRITE(numout,*) 'trc_closea_init: end of the subroutine'
     CALL FLUSH(numout)
     !
 
-    END SUBROUTINE trc_closea_bgc
+    END SUBROUTINE trc_closea_init
      
 END MODULE trc_closea_canbgc
