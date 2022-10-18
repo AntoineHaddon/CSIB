@@ -44,7 +44,7 @@ CONTAINS
       !! ** Method  : - Read the namcfc namelist and check the parameter values
       !!----------------------------------------------------------------------
       !
-      INTEGER  :: jn
+      INTEGER  :: jn, jp
       CHARACTER(len = 20)  ::  cltra
       REAL(wp), SAVE ::   sco2   =  2.312e-3_wp
       REAL(wp), SAVE ::   alka0  =  2.426e-3_wp
@@ -64,7 +64,7 @@ CONTAINS
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~'
 
       ! assign an index in trc array for each prognostic variable
-      DO jn = 1,jp_canoe
+      DO jn = 1,jp_bgc
        IF( lwp ) THEN
          WRITE(numout,*) ctrcnm(jn)
        ENDIF
@@ -119,11 +119,11 @@ CONTAINS
       ENDIF
       !     
       ! OR Oct 17th 2022 DBG1
-      WRITE(numout,*) 'trcini_canoe: b4 trc_closea_bgc'
+      WRITE(numout,*) 'trcini_canoe: b4 trc_closea_init'
       CALL FLUSH(numout)
       !
       ! closea mask for BGCM
-      CALL trc_closea_bgc(read_var_flag=.true.)
+      CALL trc_closea_init(read_var_flag=.true.)
       !
       ! OR Oct 17th 2022 DBG1
       WRITE(numout,*) 'trcini_canoe: b4 canoe_alloc'
