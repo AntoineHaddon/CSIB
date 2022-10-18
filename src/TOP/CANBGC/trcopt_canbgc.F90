@@ -141,8 +141,12 @@ CONTAINS
         ztotchla(:,:,jk) = src2d_dta(:,:,js2d_chla)*exp(-gdept_n(:,:,jk)/30.)
       ENDDO
       !
-      IF( iom_use("NCHL") )  ztotchla(:,:,:) = trn(:,:,:,jqnch)
-      ! IF( iom_use("DCHL") )  ztotchla(:,:,:) = ztotchla(:,:,:) + trn(:,:,:,jqdch)    
+      IF( ln_cmoc .OR. ln_canoe ) THEN
+        IF( iom_use("NCHL") )  ztotchla(:,:,:) = trn(:,:,:,jqnch)
+        IF( ln_canoe ) THEN
+          IF( iom_use("DCHL") )  ztotchla(:,:,:) = ztotchla(:,:,:) + trn(:,:,:,jqdch)    
+        ENDIF
+      ENDIF
       !
       DO jk = 1, jpkm1   
          DO jj = 1, jpj
@@ -332,8 +336,12 @@ CONTAINS
         ztotchla(:,:,jk) = src2d_dta(:,:,js2d_chla)*exp(-gdept_n(:,:,jk)/30.)
       ENDDO
       !
-      IF( iom_use("NCHL") )  ztotchla(:,:,:) = trn(:,:,:,jqnch)
-      ! IF( iom_use("DCHL") )  ztotchla(:,:,:) = ztotchla(:,:,:) + trn(:,:,:,jqdch)      
+      IF( ln_cmoc .OR. ln_canoe ) THEN
+        IF( iom_use("NCHL") )  ztotchla(:,:,:) = trn(:,:,:,jqnch)
+        IF( ln_canoe ) THEN
+          IF( iom_use("DCHL") )  ztotchla(:,:,:) = ztotchla(:,:,:) + trn(:,:,:,jqdch)    
+        ENDIF
+      ENDIF
       !
       DO jk = 1, jpkm1
         DO jj = 1, jpj

@@ -74,67 +74,23 @@ CONTAINS
        IF( cltra == 'Alkalini' )   jqtal = jn      !: total alkalinity
        IF( cltra == 'O2'       )   jqoxy = jn      !: oxygen concentration
        IF( cltra == 'NO3'      )   jqno3 = jn      !: NO3 concentration
-       !
-       IF( lwp ) THEN
-        ! OR Oct 17th 2022 DBG1
-        WRITE(numout,*) 'jn = ' , jn
-        CALL FLUSH(numout)
-       ENDIF
        !       
       END DO
       !
       IF( .NOT. ln_rsttr ) THEN
-        IF( lwp ) THEN
-          ! OR Oct 17th 2022 DBG1
-          WRITE(numout,*) 'trcini_canoe: trn size b4 init at rest.'
-          WRITE(numout,*) 'trn ji size = ' , SIZE(trn,1)
-          WRITE(numout,*) 'trn jj size = ' , SIZE(trn,2)
-          WRITE(numout,*) 'trn jk size = ' , SIZE(trn,3)
-          WRITE(numout,*) 'trn jn size = ' , SIZE(trn,4)
-          CALL FLUSH(numout)
-        ENDIF
-        !     
+        !
         trn(:,:,:,jqdic) = sco2
         trn(:,:,:,jqtal) = alka0 
         trn(:,:,:,jqoxy) = oxyg0
         trn(:,:,:,jqno3) = no30
-
-        ! OR Oct 17th 2022 DBG1
-        IF( lwp ) THEN
-          WRITE(numout,*) 'trcini_canoe: trn size after init at rest.'
-          WRITE(numout,*) 'jqdic = ' , jqdic
-          WRITE(numout,*) 'jqtal = ' , jqtal
-          WRITE(numout,*) 'jqoxy = ' , jqoxy
-          WRITE(numout,*) 'jqno3 = ' , jqno3
-          CALL FLUSH(numout)
-          !
-          ! OR Oct 17th 2022 DBG1
-          WRITE(numout,*) 'trn ji size = ' , SIZE(trn,1)
-          WRITE(numout,*) 'trn jj size = ' , SIZE(trn,2)
-          WRITE(numout,*) 'trn jk size = ' , SIZE(trn,3)
-          WRITE(numout,*) 'trn jn size = ' , SIZE(trn,4)
-          CALL FLUSH(numout)
-        ENDIF
         !
       ENDIF
       !     
-      ! OR Oct 17th 2022 DBG1
-      WRITE(numout,*) 'trcini_canoe: b4 trc_closea_init'
-      CALL FLUSH(numout)
-      !
       ! closea mask for BGCM
       CALL trc_closea_init(read_var_flag=.true.)
       !
-      ! OR Oct 17th 2022 DBG1
-      WRITE(numout,*) 'trcini_canoe: b4 canoe_alloc'
-      CALL FLUSH(numout)
-      !
       ! Test allocation of space for CanOE arrays before initialization
       CALL canoe_alloc ! allocate arrays space, see end of this module
-      !
-      ! OR Oct 17th 2022 DBG1
-      WRITE(numout,*) 'trcini_canoe: b4 trc_src_init'
-      CALL FLUSH(numout)
       !      
       ! O Riche Aug 4th 2022
       ! Initialise external sources reading
@@ -144,16 +100,8 @@ CONTAINS
       ! open the files
       CALL trc_src_init
       !
-      ! OR Oct 17th 2022 DBG1
-      WRITE(numout,*) 'trcini_canoe: b4 trc_flx_init'
-      CALL FLUSH(numout)
-      !
       ! call all the BGC initialization subroutines in TOP tier
       CALL trc_flx_init
-      !
-      ! OR Oct 17th 2022 DBG1
-      WRITE(numout,*) 'trcini_canoe: b4 trc_opt_init'
-      CALL FLUSH(numout)
       !
       CALL trc_opt_init
       !
