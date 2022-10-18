@@ -34,8 +34,8 @@
 !-----------------------------------------------------------------------
    jp_bgc        =  4 !24          !  Number of passive tracers of the BGC model
    !
-   ln_canoe      =  .true.      !  Run CANOE  BGC model 
-   ln_cmoc       =  .false.     !  Run CMOC   BGC model 
+   ln_canoe      =  .false.     !  Run CANOE  BGC model 
+   ln_cmoc       =  .true.      !  Run CMOC   BGC model 
    ln_pisces     =  .false.     !  Run PISCES BGC model 
    ln_my_trc     =  .false.     !  Run MY_TRC BGC model
    ln_age        =  .true.      !  Run the sea water age tracer
