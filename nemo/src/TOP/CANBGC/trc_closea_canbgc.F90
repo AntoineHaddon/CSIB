@@ -61,7 +61,17 @@ CONTAINS
       read_var_flag0 = read_var_flag
     ENDIF
     !
+    IF( lwp ) THEN
+      WRITE(numout,*) 'trc_closea_canbgc: b4 allocate tmask_bgc_closea'
+      CALL FLUSH(numout)
+    ENDIF
+    !
     ALLOCATE( tmask_bgc_closea(jpi,jpj,jpk) , STAT=ierr )
+    IF( lwp ) THEN
+      WRITE(numout,*) 'trc_closea_canbgc: after allocate tmask_bgc_closea'
+      CALL FLUSH(numout)
+    ENDIF
+    !
     IF( ierr /= 0 )   CALL ctl_stop( 'STOP', 'trc_closea_bgc: failed to allocate tmask_bgc_closea array')
     tmask_bgc_closea(:,:,:) = tmask(:,:,:)
     ! OR Oct 17th 2022 dbg 1
