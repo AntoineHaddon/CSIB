@@ -40,13 +40,17 @@ CONTAINS
  
       ! write the tracer concentrations in the file
       ! ---------------------------------------
-      DO jn = 1, jp_cmoc
+      DO jn = 1, jp_bgc+jp_cmoc
       cltra = TRIM( ctrcnm(jn) )                  ! short title for tracer
       zfact = 1._wp
       IF ( cltra == 'DIC'      ) zfact = 1.e06_wp
       IF ( cltra == 'Alkalini' ) zfact = 1.e06_wp
       IF ( cltra == 'O2' )       zfact = 1.e06_wp
       IF ( cltra == 'NO3')       zfact = 1.e06_wp
+      IF ( cltra == 'POC')       zfact = 1.e06_wp
+      IF ( cltra == 'PHY')       zfact = 1.e06_wp
+      IF ( cltra == 'ZOO')       zfact = 1.e06_wp
+      IF ( cltra == 'NCH')       zfact = 1.e06_wp
       CALL iom_put( cltra, trn(:,:,:,jn)*zfact ) ! O Riche June 6th 2022, manual scaling here as xml file issue not solved yet
       END DO
       !

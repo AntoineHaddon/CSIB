@@ -40,7 +40,7 @@ CONTAINS
  
       ! write the tracer concentrations in the file
       ! ---------------------------------------
-      DO jn = 1, jp_canoe
+      DO jn = 1, jp_bgc+jp_canoe
       cltra = TRIM( ctrcnm(jn) )                  ! short title for tracer
       zfact = 1._wp
       IF ( cltra == 'DIC'      ) zfact = 1.e06_wp
