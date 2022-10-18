@@ -35,6 +35,7 @@ MODULE trcnam
    PUBLIC   trc_nam      ! called in trcini
 
    TYPE(PTRACER), DIMENSION(jpmaxtrc), PUBLIC  :: sn_tracer    !: type of tracer for saving if not key_iomput
+   TYPE(PTRACER), DIMENSION(jpmaxtrc), PUBLIC  :: canoe_tracer 
    TYPE(PTRACER), DIMENSION(jpmaxtrc), PUBLIC  :: cmoc_tracer 
    TYPE(DIAG),    DIMENSION(jpmaxdia), PUBLIC  :: sn_dia     !: type of diagnostics
 
