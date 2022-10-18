@@ -254,16 +254,18 @@ CONTAINS
       !!----------------------------------------------------------------------
       NAMELIST/namcmocrr/ cnrr_cmoc, ncrr_cmoc
 
-      REWIND( numnat_ref )              ! Namelist namcmocphy in reference namelist : Passive tracer variables
-      READ  ( numnat_ref, namcmocphy, IOSTAT = ios, ERR = 901)
+      REWIND( numnatp_refb )              ! Namelist namcmocphy in reference namelist : Passive tracer variables
+      READ  ( numnatp_refb, namcmocphy, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namcmocphy in reference namelist_cmoc' )
       REWIND( numnatp_cfgb )              ! Namelist namcmocphy in configuration namelist : Passive tracer variables
       READ  ( numnatp_cfgb, namcmocphy, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namcmocphy in configuration namelist_cmoc' )
 
-      IF(lwm) WRITE( numonpb, namcmocrr )
-      REWIND( numnat_ref )              ! Namelist namcmocrr in reference namelist : Passive tracer variables
-      READ  ( numnat_ref, namcmocrr, IOSTAT = ios, ERR = 903)
+      IF(lwm) WRITE( numonpb, namcmocphy )
+      
+
+      REWIND( numnatp_refb )              ! Namelist namcmocrr in reference namelist : Passive tracer variables
+      READ  ( numnatp_refb, namcmocrr, IOSTAT = ios, ERR = 903)
 903   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namcmocrr in reference namelist_cmoc' )
       REWIND( numnatp_cfgb )              ! Namelist namcmocrr in configuration namelist : Passive tracer variables
       READ  ( numnatp_cfgb, namcmocrr, IOSTAT = ios, ERR = 904 )
