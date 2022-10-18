@@ -154,9 +154,9 @@ else
     nemo_config_lower=$(echo ${nemo_config} | tr '[:upper:]' '[:lower:]')
     if [[ $nemo_config_lower == *"cmoc"* ]] || [[ $nemo_config_lower == *"canoe"* ]]; then
         sed -i "s#nemo_carbon=.*#nemo_carbon=on#" experiment.cfg
-        if [[ $nemo_config_lower == *"cmoc"* ]]; then
-            sed -i "s#nemo_cmoc=.*#nemo_cmoc=on#" experiment.cfg
-        fi
+        # if [[ $nemo_config_lower == *"cmoc"* ]]; then
+            # sed -i "s#nemo_cmoc=.*#nemo_cmoc=on#" experiment.cfg
+        # fi
         if [[ $nemo_config_lower == *"off"* ]]; then
             sed -i 's#nemo_hist_file_suffix_list=.*#nemo_hist_file_suffix_list="ptrc_T diad_T"#' experiment.cfg
             sed -i 's#nemo_hist_file_freq_list=.*#nemo_hist_file_freq_list="1m     1m"#' experiment.cfg
