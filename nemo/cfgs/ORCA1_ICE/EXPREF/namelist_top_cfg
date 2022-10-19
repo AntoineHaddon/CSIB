@@ -50,7 +50,6 @@
    !_____________!___________!_________________________________________!____________!________________!
    !             !    name   !           title of the field            !   units    ! init from file ! 
 !  sn_tracer(1)  = 'tracer  ', 'Tracer  Concentration                 ',   ' - '    ,   .false.
-   sn_tracer(1)   = 'Age     ' , 'Seawater age since contact w/ surface  ',  'years'    ,  .false.
 /
 !-----------------------------------------------------------------------
 &namage          !   AGE 

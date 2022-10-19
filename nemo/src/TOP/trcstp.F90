@@ -83,18 +83,7 @@ CONTAINS
             & .OR. iom_use( "pno3tot" ) .OR. iom_use( "ppo4tot" ) .OR. iom_use( "psiltot" )   &
             & .OR. iom_use( "palktot" ) .OR. iom_use( "pfertot" ) )                           &
             &     areatot = glob_sum( 'trcstp', cvol(:,:,:) )
-        ENDIF
-        
-        ! ! O Riche Aug 24th 2022
-        ! ! Maybe use this for a second conservation check
-        ! ! With a repeat of run dev26
-        ! IF ( ln_canoe ) THEN
-        
-          ! IF ( ln_check_mass_canoe .AND. kt == nitend )
-            ! areatot = glob_sum( 'trcstp', cvol(:,:,:) )
-          ! END IF
-        ! ENDIF
-    
+        ENDIF   
       ENDIF
       !
       IF( l_trcdm2dc )   CALL trc_mean_qsr( kt )

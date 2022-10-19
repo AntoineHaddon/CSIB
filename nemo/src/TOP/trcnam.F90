@@ -198,7 +198,7 @@ CONTAINS
       ENDIF
       !
       IF( ln_cmoc   )  THEN
-          jptra  = jp_bgc + jp_cmoc ! O Riche Sept 13th 2022
+          jptra  = jp_bgc + jp_cmoc
       ENDIF
       !
       IF( ln_pisces )  THEN

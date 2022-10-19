@@ -50,7 +50,9 @@ CONTAINS
       !
       INTEGER, INTENT(in) ::   kt   ! ocean time-step index
       INTEGER ::   jn				        ! dummy loop index
-      INTEGER ::   zrfact           ! working variable
+      INTEGER  ::  jp_tot           ! jp_bgc+jp_cmoc
+      REAL(wp) ::  ztra
+
       REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: ztrmyt
       !!----------------------------------------------------------------------
       !
@@ -59,7 +61,10 @@ CONTAINS
       IF(lwp) WRITE(numout,*)
       IF(lwp) WRITE(numout,*) ' trc_sms_canoe:  CANOE model'
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-
+      !
+      ! Sum of all the tracers shared TOP + CMOC
+      jp_tot = jp_bgc + jp_canoe
+      !
       IF ( kt == nit000) THEN
         ! Calling external sources
         IF(lwp) WRITE(numout,*)
@@ -110,14 +115,12 @@ CONTAINS
       ! IF ( kt == nit000 .OR. MOD(kt,zrfact) == 0 )  CALL trc_src_fedep( kt )
       CALL trc_src_fesed        ! This source does not vary with time
       ! IF ( kt == nit000 .OR. MOD(kt,zrfact) == 0 )  CALL trc_src_fesed        ! This source does not vary with time
-      
-      
       !
       IF( l_trdtrc )  ALLOCATE( ztrmyt(jpi,jpj,jpk) )
 
       ! Save the trends in the mixed layer
       IF( l_trdtrc ) THEN
-          DO jn = 1, jp_canoe
+          DO jn = 1, jp_tot
             ztrmyt(:,:,:) = tra(:,:,:,jn)
             CALL trd_trc( ztrmyt, jn, jptra_sms, kt )   ! save trends
           END DO

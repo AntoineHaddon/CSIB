@@ -56,6 +56,7 @@ CONTAINS
       INTEGER  ::  jnt			        ! time (-step) splitting index
       INTEGER  ::  jn, ji, jj, jk   ! dummy loop indices
       INTEGER  ::  zrfact           ! working variable
+      INTEGER  ::  jp_tot           ! jp_bgc+jp_cmoc
       REAL(wp) ::  ztra
       
       REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: ztrmyt
@@ -66,7 +67,10 @@ CONTAINS
       IF(lwp) WRITE(numout,*)
       IF(lwp) WRITE(numout,*) ' trc_sms_cmoc:  CMOC model'
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-
+      !
+      ! Sum of all the tracers shared TOP + CMOC
+      jp_tot = jp_bgc + jp_cmoc
+      !
       IF ( kt == nit000) THEN
         ! Calling external sources
         IF(lwp) WRITE(numout,*)
@@ -119,7 +123,7 @@ CONTAINS
       ENDIF
       !
       IF( ( neuler == 0 .AND. kt == nittrc000 ) .OR. ln_top_euler ) THEN
-         DO jn = 1, jp_bgc       !   SMS on tracer without Asselin time-filter
+         DO jn = 1, jp_tot       !   SMS on tracer without Asselin time-filter
             trb(:,:,:,jn) = trn(:,:,:,jn)
          END DO
       ENDIF
@@ -176,7 +180,7 @@ CONTAINS
       !
       ! Save the trends in the mixed layer
       IF( l_trdtrc ) THEN
-          DO jn = jp_bgc+1, jp_bgc+jp_cmoc
+          DO jn = 1, jp_tot
             ztrmyt(:,:,:) = tra(:,:,:,jn)
             CALL trd_trc( ztrmyt, jn, jptra_sms, kt )   ! save trends
           END DO
@@ -185,7 +189,7 @@ CONTAINS
 
       !
       qnegtr(:,:,:) = 1.e0
-      DO jn = 1, jp_bgc
+      DO jn = 1, jp_tot
         DO jk = 1, jpk
            DO jj = 1, jpj
               DO ji = 1, jpi
@@ -199,7 +203,7 @@ CONTAINS
       END DO
       !                                ! where at least 1 tracer concentration becomes negative
       !                                ! and by tracer we mean only the CMOC or shared BGC tracer.
-      DO jn = 1, jp_bgc
+      DO jn = 1, jp_tot 
        trb(:,:,:,jn) = trb(:,:,:,jn) + qnegtr(:,:,:) * tra(:,:,:,jn)
       END DO
       ! 

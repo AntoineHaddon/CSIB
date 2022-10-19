@@ -57,7 +57,6 @@
    sn_tracer(2)   = 'Alkalini' , 'Total Alkalinity Concentration         ',  'mmoleq/L ',  .true.
    sn_tracer(3)   = 'O2      ' , 'Dissolved Oxygen Concentration         ',  'mmol-O2/L',  .true.
    sn_tracer(4)   = 'NO3     ' , 'Nitrate Concentration                  ',  'mmol-N/L' ,  .true.
-   sn_tracer(5)   = 'Age     ' , 'Seawater age since contact w/ surface  ',  'years'    ,  .false.
    !_____________!___________!_________________________________________!____________!________________!
    !  CanOE-specific tracers   
    !_____________!___________!_________________________________________!____________!________________!
