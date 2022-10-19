@@ -50,6 +50,7 @@ CONTAINS
       !
       INTEGER, INTENT(in) ::   kt   ! ocean time-step index
       INTEGER ::   jn				        ! dummy loop index
+      INTEGER  ::  zrfact           ! working variable      
       INTEGER  ::  jp_tot           ! jp_bgc+jp_cmoc
       REAL(wp) ::  ztra
 
