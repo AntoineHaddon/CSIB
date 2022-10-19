@@ -74,9 +74,9 @@ MODULE sms_top_canbgc
 ! sms_bgcm section
 !========================================================
 
-   INTEGER ::   numnatp_refb = -1           !! Logical units for namelist top
-   INTEGER ::   numnatp_cfgb = -1           !! Logical units for namelist top
-   INTEGER ::   numonpb      = -1           !! Logical unit for namelist top output
+   INTEGER ::   numnatp_refb = -1           !! Logical unit for the ref namelist for the parameters of one of the CANBGC models
+   INTEGER ::   numnatp_cfgb = -1           !! Logical unit for the cfg namelist for the parameters of one of the CANBGC models
+   INTEGER ::   numonpb      = -1           !! Logical unit for the above ref/cfg namelists output
 
    !!* Model used
 

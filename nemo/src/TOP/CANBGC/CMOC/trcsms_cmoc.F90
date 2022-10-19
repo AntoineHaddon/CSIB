@@ -111,17 +111,15 @@ CONTAINS
           ! initialize the chemical constants
             !  
           ELSE
-              WRITE(numout,*) ''
-              WRITE(numout,*) 'Should do something in restart mode but nothing coded yet.'
-              WRITE(numout,*) ''
-              ! ?CALL p4z_rst( nittrc000, 'READ' )         !* read or initialize all required fields
-              ! There is a trcrst.F90 module too, what to do here?
+              WRITE(numout,*)
+              WRITE(numout,*) 'Should something be done for the restart mode here? Nothing coded here yet, some code exists in TOP/trcini.F90 to take care of this though.'
+              WRITE(numout,*)
           ENDIF
           !
       ENDIF
       !
       IF( ( neuler == 0 .AND. kt == nittrc000 ) .OR. ln_top_euler ) THEN
-         DO jn = jp_bgc+1, jp_bgc+jp_cmoc       !   SMS on tracer without Asselin time-filter
+         DO jn = 1, jp_bgc       !   SMS on tracer without Asselin time-filter
             trb(:,:,:,jn) = trn(:,:,:,jn)
          END DO
       ENDIF
@@ -144,6 +142,7 @@ CONTAINS
       !
       ENDIF                            ! initialize the chemical constants
 
+      CALL trc_flx( kt )     ! compute air-sea gas exchange    
       !
       ! O Riche Sept 14th 2022
       ! Move here before cmoc_prod as issue with PAR being set to 0s
@@ -152,6 +151,7 @@ CONTAINS
       ! and so trc_opt_1band and trc_opt (CanOE)
       ! needs jnt index/input arg along with kt see below
       ! for cmoc_prod.
+      !
       CALL trc_opt_1band( kt )        ! 1-band PAR attenuation
       !
       DO jnt = 1, qnrdttrc             ! Potential time splitting if requested
@@ -159,8 +159,6 @@ CONTAINS
         CALL cmoc_prod( kt, jnt )    ! PP subroutine
         !
       END DO
-      !
-      CALL trc_flx( kt )     ! compute air-sea gas exchange    
       !
       ! O Riche Sept 14th 2022
       ! Moved to before call to cmoc_prod because trc_opt_init
@@ -187,7 +185,7 @@ CONTAINS
 
       !
       qnegtr(:,:,:) = 1.e0
-      DO jn = jp_pcs0, jp_pcs1
+      DO jn = 1, jp_bgc
         DO jk = 1, jpk
            DO jj = 1, jpj
               DO ji = 1, jpi
