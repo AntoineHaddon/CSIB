@@ -13,20 +13,14 @@ MODULE par_cmoc
 
    IMPLICIT NONE
 
-   ! Starting/ending PISCES do-loop indices (N.B. no PISCES : jpl_pcs < jpf_pcs the do-loop are never done)
-   ! INTEGER, PUBLIC ::   jp_knu0             !: First index of CMOC passive tracers
-   ! INTEGER, PUBLIC ::   jp_knu1             !: Last  index of CMOC passive tracers
-   ! INTEGER, PUBLIC ::   jqdic_can           !: DIC
-   ! INTEGER, PUBLIC ::   jpalk_can           !: TA
-   ! INTEGER, PUBLIC ::   jqoxy_can           !: O2 
    INTEGER, PUBLIC :: jqpoc !
    INTEGER, PUBLIC :: jqphy !
    INTEGER, PUBLIC :: jqzoo !
    INTEGER, PUBLIC :: jqnch !
-   ! INTEGER, PUBLIC :: jpdab !: abiotic DIC 
-   ! INTEGER, PUBLIC :: jpaab !: abiotic Alkalinity
-   ! INTEGER, PUBLIC :: jpoab !: abiotic oxygen
-   ! INTEGER, PUBLIC :: jpdnt !: natural DIC
-   ! INTEGER, PUBLIC :: jpdrc !: abiotic DI14C
+   ! INTEGER, PUBLIC :: jqdab !: abiotic DIC 
+   ! INTEGER, PUBLIC :: jqaab !: abiotic Alkalinity
+   ! INTEGER, PUBLIC :: jqoab !: abiotic oxygen
+   ! INTEGER, PUBLIC :: jqdnt !: natural DIC
+   ! INTEGER, PUBLIC :: jqdrc !: abiotic DI14C
    !!======================================================================
 END MODULE par_cmoc

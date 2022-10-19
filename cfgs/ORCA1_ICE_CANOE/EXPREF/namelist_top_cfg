@@ -255,6 +255,9 @@ wdust0       =  2.0      ! Dust sinking speed
    cn_dir      = './'      !  root directory for the location of the dynamical files
    ln_varpar   =  .false.  ! boolean for PAR variable
    parlux      =  0.43     ! Fraction of shortwave as PAR
+! 1-band PAR
+   kw_cmoc     =  0.04          ! PAR attenuation coefficient for seawater (m^-1)
+   kchl_cmoc   =  0.03          ! PAR attenuation for chlorophyll          (m^-1) (mgChl m^-3)^-1
 /
 !-----------------------------------------------------------------------
 &namtrc_1band  !     1-band PAR attenuation parameters (CMOC mainly)

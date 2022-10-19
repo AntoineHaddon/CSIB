@@ -5,6 +5,7 @@ MODULE trcini_canoe
    !!======================================================================
    !! History :        !  2007  (C. Ethe, G. Madec) Original code
    !!                  !  2016  (C. Ethe, T. Lovato) Revised architecture
+   !!                  !  2022  (O. Riche) NEMO4 integration
    !!----------------------------------------------------------------------
    !! trc_ini_canoe   : CANOE model initialisation
    !!----------------------------------------------------------------------

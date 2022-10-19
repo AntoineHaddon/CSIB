@@ -5,6 +5,7 @@ MODULE trcsms_canoe
    !!======================================================================
    !! History :      !  2007  (C. Ethe, G. Madec)  Original code
    !!                !  2016  (C. Ethe, T. Lovato) Revised architecture
+   !!                !  2022  (O. Riche) NEMO4 integration  
    !!----------------------------------------------------------------------
    !! trc_sms_canoe       : CANOE model main routine
    !! trc_sms_canoe_alloc : allocate arrays specific to CANOE sms
@@ -86,31 +87,6 @@ CONTAINS
         CALL FLUSH(numout)
       ENDIF
 
-      ! ! O Riche Aug 16th 2022
-      ! ! for now this is a placeholder
-      ! ! surface chlorophyll (and phosphate will in trcflx)
-      ! ! are the only fields used so far
-      ! zrfact = 86400 / rdttrc * 14 !!!! time steps per 2 weeks
-      ! IF ( MOD(kt,zrfact) == 0 ) THEN
-        ! CALL trc_src3d( kt, js3d_si    )    
-        ! CALL trc_src3d( kt, js3d_no3   )   
-        ! CALL trc_src3d( kt, js3d_po4   )   
-        ! CALL trc_src3d( kt, js3d_doc   )   
-        ! CALL trc_src3d( kt, js3d_fe    )    
-        ! CALL trc_src3d( kt, js3d_hyfe  )  
-        ! !
-        ! CALL trc_src2d( kt, js2d_chla  )      
-        ! CALL trc_src2d( kt, js2d_par   )      
-        ! CALL trc_src2d( kt, js2d_dust  )     
-        ! CALL trc_src2d( kt, js2d_femask)    
-        ! CALL trc_src2d( kt, js2d_ndep  )     
-        ! CALL trc_src2d( kt, js2d_rdoc  )      
-        ! CALL trc_src2d( kt, js2d_rdic  )      
-        ! CALL trc_src2d( kt, js2d_rpoc  )      
-        ! CALL trc_src2d( kt, js2d_fsol1 )      
-        ! CALL trc_src2d( kt, js2d_fsol2 )      
-      ! END IF
-
       IF( qndayflxtr /= nday_year ) THEN      ! New days
         !
         qndayflxtr = nday_year
@@ -125,7 +101,7 @@ CONTAINS
   
       CALL trc_flx( kt )     ! compute air-sea gas exchange    
       !
-      CALL trc_opt( kt )     ! test PAR attenuation
+      CALL trc_opt( kt )     ! 3-band PAR attenuation
 
       ! ! O Riche Aug 26th 2022
       ! ! test trc_src_fedep and trc_src_fesed

@@ -504,8 +504,10 @@ CONTAINS
 
       IF(lwp) THEN
          WRITE(numout,*) '   Namelist : namtrc_opt '
-         WRITE(numout,*) '      PAR as a variable fraction of SW     ln_varpar      = ', ln_varpar
-         WRITE(numout,*) '      Default value for the PAR fraction   parlux         = ', parlux
+         WRITE(numout,*) '      PAR as a variable fraction of SW                      ln_varpar = ', ln_varpar
+         WRITE(numout,*) '      Default value for the PAR fraction                    parlux    = ', parlux
+         WRITE(numout,*) '      1-band PAR att. coefficient by seawater  (m^-1)       kw_cmoc   = ', kw_cmoc
+         WRITE(numout,*) '      1-band PAR att. coeff. by chla (m^-1) (mgChl m^-3)^-1 kchl_cmoc = ', kchl_cmoc
          WRITE(numout,*)
       ENDIF
       !
