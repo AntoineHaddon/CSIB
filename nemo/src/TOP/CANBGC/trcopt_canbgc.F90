@@ -493,9 +493,9 @@ CONTAINS
          WRITE(numout,*)
       ENDIF
 
-      ! REWIND( numnat_ref )
-      ! READ  ( numnat_ref, namtrc_opt, IOSTAT = ios, ERR = 901)
-! 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namtrc_opt in reference namelist' )
+      REWIND( numnat_ref )
+      READ  ( numnat_ref, namtrc_opt, IOSTAT = ios, ERR = 901)
+901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namtrc_opt in reference namelist' )
 
       REWIND( numnat_cfg )
       READ  ( numnat_cfg, namtrc_opt, IOSTAT = ios, ERR = 902 )

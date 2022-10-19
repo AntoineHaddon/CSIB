@@ -1,5 +1,15 @@
-!!>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 !! CMOC reference namelist 
+!>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+!! CMOC  :      1  - Phytoplankton growth                     (namcmocphy)
+!! namelists    2  - Phytoplankton mortality                  (namcmocmor)
+!!              3  - Zooplankton grazing, mortality           (namcmoczoo)
+!!              4  - Detritus remineralization                (namcmocpoc)
+!!              5  - Detritus sinking speed                   (namcmocws) 
+!!              6  - Calcite parametrization                  (namcmoccal)
+!!              7  - Dinitrogen fixation                      (namcmocnfx)
+!!              8  - Redfield ratios                          (namcmocrr)
+!!              9  - Euphotic depth                           (namcmocdeu)
+!!>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 !-----------------------------------------------------------------------
 &namcmocmass    !   Mass conservation
 !-----------------------------------------------------------------------
@@ -27,17 +37,6 @@
    ln_presatm    = .false.   ! constant atmopsheric pressure (F) or from a file (T)
    ln_presatmco2 = .false.   ! Read spatialized atm co2 files [ppm] if TRUE
 /
-=======
-!! CMOC  :      1  - Phytoplankton growth                     (namcmocphy)
-!! namelists    2  - Phytoplankton mortality                  (namcmocmor)
-!!              3  - Zooplankton grazing, mortality           (namcmoczoo)
-!!              4  - Detritus remineralization                (namcmocpoc)
-!!              5  - Detritus sinking speed                   (namcmocws) 
-!!              6  - Calcite parametrization                  (namcmoccal)
-!!              7  - Dinitrogen fixation                      (namcmocnfx)
-!!              8  - Redfield ratios                          (namcmocrr)
-!!              9  - Euphotic depth                           (namcmocdeu)
-!>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &namcmocphy    !   Phytoplankton Growth
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
