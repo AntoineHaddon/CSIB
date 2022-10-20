@@ -100,6 +100,19 @@ CONTAINS
       zlimn   (:,:,:) = 0._wp
       zliml   (:,:,:) = 0._wp
       !
+      ! OR Oct 20th 2022 DBG1
+      IF( lwp ) THEN
+      WRITE(numout,*)
+      WRITE(numout,*) '                qfact2 = ', qfact2
+      WRITE(numout,*) '                  rtrn = ', rtrn
+      WRITE(numout,*) '               r1_rday = ', r1_rday
+      WRITE(numout,*) '               ep_cmoc = ', ep_cmoc
+      WRITE(numout,*) '             cnrr_cmoc = ', cnrr_cmoc
+      WRITE(numout,*) '  par_1band(100,100,1) = ', par_1band(100,100,1)
+      WRITE(numout,*) ' tsn(100,100,1,jp_tem) = ', tsn(100,100,1,jp_tem)
+      WRITE(numout,*)
+      ENDIF
+      !
       DO jk = 1, jpkm1
       !
         DO jj = 1, jpj
@@ -181,6 +194,7 @@ CONTAINS
       END DO
       ! OR Oct 19th 2022 DBG1
       IF( lwp ) THEN
+        WRITE(numout,*) '    zeto(100,100,1) = ',     zeto(100,100,1)
         WRITE(numout,*) '  zprbio(100,100,1) = ',   zprbio(100,100,1)
         WRITE(numout,*) ' zprorca(100,100,1) = ',  zprorca(100,100,1)
         WRITE(numout,*) 'zprochln(100,100,1) = ', zprochln(100,100,1)
