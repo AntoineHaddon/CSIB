@@ -302,7 +302,7 @@ CONTAINS
       r1_rday   = 1._wp / rday 
       !
       ! initialize iron mask with IC file saved in the 2d src arrays stack
-      CALL trc_src2d( kt, js2d_femask )
+      CALL trc_src2d( nittrc000, js2d_femask )       ! 1st time step / nittrc000 same nit000 in ocean physics
       xlimnfecmoc(:,:) = src2d_dta(:,:,js2d_femask)
       !
       ! OR Oct 19th 2022 DBG1
