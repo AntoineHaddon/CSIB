@@ -161,16 +161,8 @@ CONTAINS
       ! OR Oct 20th 2022
       ! Not sure yet if we need time step splitting
       ! DO jnt = 1, qnrdttrc             ! Potential time splitting if requested
-        !
-        ! OR Oct 20th 2022 DBG1
-        ! CALL cmoc_prod( kt, jnt )    ! PP subroutine
-        !
+        CALL cmoc_prod( kt, jnt )      ! PP subroutine
       ! END DO
-      !
-      ! O Riche Sept 14th 2022
-      ! Moved to before call to cmoc_prod because trc_opt_init
-      ! only initialize to 0 all the PAR fields
-      ! CALL trc_opt_1band( kt )     ! 1-band PAR attenuation
       !
       ! Is this below necessary? (NEMO3.4.1 code)
       ! DO jn = jp_bgc+1, jp_bgc+jp_cmoc

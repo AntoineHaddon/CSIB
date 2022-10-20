@@ -160,6 +160,7 @@ CONTAINS
       !!---------------------------------------------------------------------
       ! Dummy settings to fill tracers data structure
       !                  !   name   !   title   !   unit   !   init  !   sbc   !   cbc   !   obc  !
+      jp_bgc = 0
       sn_tracer = PTRACER( 'NONAME' , 'NOTITLE' , 'NOUNIT' , .false. , .false. , .false. , .false.)
 	    sn_dia    = DIAG('NONAME','NOTITLE','NOUNIT')
       jp_canoe    = 0
@@ -211,8 +212,6 @@ CONTAINS
           jp_myt0   = 1
           jp_myt1   = jp_my_trc
       ENDIF
-      !
-      ! jptra  = jp_bgc
       !
       IF( ln_age )    THEN
          jptra     = jptra + 1
