@@ -42,7 +42,7 @@ MODULE cmocprod
    PUBLIC   cmoc_prod         ! called in trcsms_cmoc.F90
    PUBLIC   cmoc_prod_init    ! called in trcini_cmoc.F90
 
-   REAL(wp) :: r1_rday                !: 1 / rday
+   REAL(wp), SAVE :: r1_rday                !: 1 / rday
    
 
    !!* Substitution
@@ -251,6 +251,7 @@ CONTAINS
       !! ** input   :   Namelist nampisprod
       !!----------------------------------------------------------------------
       !
+      USE trcsrc_canbgc
       ! <CMOC code OR 09/13/2022> add extra integer to handle NEMO4-style namelists
       INTEGER ::   ios       ! Local integer
       ! <CMOC code OR 10/20/2015> CMOC namelist
@@ -301,6 +302,7 @@ CONTAINS
       r1_rday   = 1._wp / rday 
       !
       ! initialize iron mask with IC file saved in the 2d src arrays stack
+      CALL trc_src2d( kt, js2d_femask )
       xlimnfecmoc(:,:) = src2d_dta(:,:,js2d_femask)
       !
       ! OR Oct 19th 2022 DBG1
