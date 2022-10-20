@@ -49,7 +49,7 @@ CONTAINS
       !! ** Method  : -
       !!----------------------------------------------------------------------
       !
-      USE par_cmoc
+	    USE par_cmoc
       USE trcsrc_canbgc             ! loading external files/sources
       !
       INTEGER, INTENT(in) ::   kt   ! ocean time-step index
@@ -158,11 +158,14 @@ CONTAINS
       !
       CALL trc_opt_1band( kt )        ! 1-band PAR attenuation
       !
-      DO jnt = 1, qnrdttrc             ! Potential time splitting if requested
+      ! OR Oct 20th 2022
+      ! Not sure yet if we need time step splitting
+      ! DO jnt = 1, qnrdttrc             ! Potential time splitting if requested
         !
-        CALL cmoc_prod( kt, jnt )    ! PP subroutine
+        ! OR Oct 20th 2022 DBG1
+        ! CALL cmoc_prod( kt, jnt )    ! PP subroutine
         !
-      END DO
+      ! END DO
       !
       ! O Riche Sept 14th 2022
       ! Moved to before call to cmoc_prod because trc_opt_init
