@@ -102,15 +102,16 @@ CONTAINS
       !
       ! OR Oct 20th 2022 DBG1
       IF( lwp ) THEN
-      WRITE(numout,*)
-      WRITE(numout,*) '                qfact2 = ', qfact2
-      WRITE(numout,*) '                  rtrn = ', rtrn
-      WRITE(numout,*) '               r1_rday = ', r1_rday
-      WRITE(numout,*) '               ep_cmoc = ', ep_cmoc
-      WRITE(numout,*) '             cnrr_cmoc = ', cnrr_cmoc
-      WRITE(numout,*) '  par_1band(100,100,1) = ', par_1band(100,100,1)
-      WRITE(numout,*) ' tsn(100,100,1,jp_tem) = ', tsn(100,100,1,jp_tem)
-      WRITE(numout,*)
+        WRITE(numout,*)
+        WRITE(numout,*) '                qfact2 = ', qfact2
+        WRITE(numout,*) '                  rtrn = ', rtrn
+        WRITE(numout,*) '               r1_rday = ', r1_rday
+        WRITE(numout,*) '               ep_cmoc = ', ep_cmoc
+        WRITE(numout,*) '             cnrr_cmoc = ', cnrr_cmoc
+        WRITE(numout,*) '  par_1band(100,100,1) = ', par_1band(100,100,1)
+        WRITE(numout,*) ' tsn(100,100,1,jp_tem) = ', tsn(100,100,1,jp_tem)
+        WRITE(numout,*)
+        CALL FLUSH(numout)
       ENDIF
       !
       DO jk = 1, jpkm1
@@ -194,10 +195,11 @@ CONTAINS
       END DO
       ! OR Oct 19th 2022 DBG1
       IF( lwp ) THEN
-        WRITE(numout,*) '   zetot(100,100,1) = ',    zetot(100,100,1)
-        WRITE(numout,*) '  zprbio(100,100,1) = ',   zprbio(100,100,1)
-        WRITE(numout,*) ' zprorca(100,100,1) = ',  zprorca(100,100,1)
-        WRITE(numout,*) 'zprochln(100,100,1) = ', zprochln(100,100,1)
+        WRITE(numout,*) '   zetot(100,100,1) = ',    zetot(1,1,1)
+        WRITE(numout,*) '  zprbio(100,100,1) = ',   zprbio(1,1,1)
+        WRITE(numout,*) ' zprorca(100,100,1) = ',  zprorca(1,1,1)
+        WRITE(numout,*) 'zprochln(100,100,1) = ', zprochln(1,1,1)
+        CALL FLUSH(numout)
       ENDIF
       !
       !   Update the arrays TRA which contain the biological sources and sinks
