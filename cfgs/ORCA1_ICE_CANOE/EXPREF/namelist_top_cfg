@@ -27,7 +27,7 @@
    cn_trcrst_out = "restart_trc"   !  suffix of pass. sn_tracer restart name (output)
    cn_trcrst_outdir = "."          !  directory to which to write output passive tracer restarts
    !   
-   qnrdttrc = 4    ! time splitting factor
+   qnrdttrc = 1 ! 4    ! time splitting factor
 /
 !-----------------------------------------------------------------------
 &namtrc          !   tracers definition
@@ -197,9 +197,9 @@
    sn_src3d(1)   = 'data_NO3_nomask' ,        -1        ,  'NO3'    ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
    sn_src3d(2)   = 'data_Si_nomask'  ,        -1        ,  'Si'     ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
    sn_src3d(3)   = 'data_PO4_nomask' ,        -1        ,  'PO4'    ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src3d(4)   = 'data_DOC_nomask' ,        -12       ,  'DOC'    ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src3d(5)   = 'data_Fer_nomask' ,        -12       ,  'Fer'    ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src3d(6)   = 'hydrofe.orca'    ,        -12       ,  'epsdb'  ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src3d(4)   = 'data_DOC_nomask' ,        -12       ,  'DOC'    ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src3d(5)   = 'data_Fer_nomask' ,        -12       ,  'Fer'    ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src3d(6)   = 'hydrofe.orca'    ,        -12       ,  'epsdb'  ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
    !
    rn_src3d(1)   =   1.0e-06   ! model is in mol/L
    rn_src3d(2)   =   1.0e-06   ! model is in mol/L
@@ -219,13 +219,13 @@
    sn_src2d(1)   = 'chlorophyll'    ,        -1        ,  'CHLA'   ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
    sn_src2d(2)   = 'dust.orca'      ,        -1        ,  'dust'   ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
    sn_src2d(3)   = 'par.orca'       ,         24       ,  'fr_par' ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src2d(4)   = 'femask'         ,        -12       ,  'femask' ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src2d(5)   = 'ndeposition.orca',       -12       ,  'ndep'   ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src2d(6)   = 'river.orca'     ,        -12       ,  'riverdic',   .true.    , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src2d(7)   = 'river.orca'     ,        -12       ,  'riverdoc',   .true.    , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src2d(8)   = 'river.orca'     ,        -12       ,  'riverpoc',   .true.    , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src2d(9)   = 'solubility.orca',        -12       ,'solubility1',  .true.    , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src2d(10)  = 'solubility.orca',        -12       ,'solubility2',  .true.    , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src2d(4)   = 'femask'         ,        -12       ,  'femask' ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src2d(5)   = 'ndeposition.orca',       -12       ,  'ndep'   ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src2d(6)   = 'river.orca'     ,        -12       ,  'riverdic',   .false.   , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src2d(7)   = 'river.orca'     ,        -12       ,  'riverdoc',   .false.   , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src2d(8)   = 'river.orca'     ,        -12       ,  'riverpoc',   .false.   , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src2d(9)   = 'solubility.orca',        -12       ,'solubility1',  .false.   , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src2d(10)  = 'solubility.orca',        -12       ,'solubility2',  .false.   , .true. , 'yearly'  , ''       , ''       , ''
    !
    rn_src2d(1)   =   1.        !                   
    rn_src2d(2)   =   1.        !                   
