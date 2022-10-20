@@ -194,7 +194,7 @@ CONTAINS
       END DO
       ! OR Oct 19th 2022 DBG1
       IF( lwp ) THEN
-        WRITE(numout,*) '    zeto(100,100,1) = ',     zeto(100,100,1)
+        WRITE(numout,*) '   zetot(100,100,1) = ',    zetot(100,100,1)
         WRITE(numout,*) '  zprbio(100,100,1) = ',   zprbio(100,100,1)
         WRITE(numout,*) ' zprorca(100,100,1) = ',  zprorca(100,100,1)
         WRITE(numout,*) 'zprochln(100,100,1) = ', zprochln(100,100,1)
