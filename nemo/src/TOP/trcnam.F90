@@ -243,6 +243,7 @@ CONTAINS
          WRITE(numout,*) '      Simulating PISCES model                      ln_pisces     = ', ln_pisces
          WRITE(numout,*) '      Simulating MY_TRC  model                     ln_my_trc     = ', ln_my_trc
          WRITE(numout,*) '      Simulating water mass age                    ln_age        = ', ln_age
+         WRITE(numout,*) '      Assigned IAT index                           jp_age        = ', jp_age
          WRITE(numout,*) '      Simulating CFC11 passive tracer              ln_cfc11      = ', ln_cfc11
          WRITE(numout,*) '      Simulating CFC12 passive tracer              ln_cfc12      = ', ln_cfc12
          WRITE(numout,*) '      Simulating SF6 passive tracer                ln_sf6        = ', ln_sf6
