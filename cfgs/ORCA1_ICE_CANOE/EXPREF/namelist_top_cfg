@@ -230,7 +230,7 @@
    rn_src2d(1)   =   1.        !                   
    rn_src2d(2)   =   1.        !                   
    rn_src2d(3)   =   1.        !                   
-   rn_src2d(4)   =   1.0e-06   ! convert to mol L^-1
+   rn_src2d(4)   =   1.        !
    rn_src2d(5)   =   1.        !                   
    rn_src2d(6)   =   1.        !                   
    rn_src2d(7)   =   1.        !                   

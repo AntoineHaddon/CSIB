@@ -49,7 +49,7 @@ CONTAINS
       !! ** Method  : -
       !!----------------------------------------------------------------------
       !
-	    USE par_cmoc
+      USE par_cmoc
       USE trcsrc_canbgc             ! loading external files/sources
       !
       INTEGER, INTENT(in) ::   kt   ! ocean time-step index

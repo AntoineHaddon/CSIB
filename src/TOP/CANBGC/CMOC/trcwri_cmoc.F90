@@ -35,7 +35,7 @@ CONTAINS
       !!---------------------------------------------------------------------
       CHARACTER (len=20)   :: cltra
       INTEGER              :: jn
-	    REAL(wp)             :: zfact
+      REAL(wp)             :: zfact
       !!---------------------------------------------------------------------
  
       ! write the tracer concentrations in the file
