@@ -179,6 +179,12 @@ CONTAINS
           END DO
         END DO
       END DO
+      ! OR Oct 19th 2022 DBG1
+      IF( lwp ) THEN
+        WRITE(numout,*) '  zprbio(100,100,1) = ',   zprbio(100,100,1)
+        WRITE(numout,*) ' zprorca(100,100,1) = ',  zprorca(100,100,1)
+        WRITE(numout,*) 'zprochln(100,100,1) = ', zprochln(100,100,1)
+      ENDIF
       !
       !   Update the arrays TRA which contain the biological sources and sinks
       !   --------------------------------------------------------------------
@@ -296,6 +302,9 @@ CONTAINS
       !
       ! initialize iron mask with IC file saved in the 2d src arrays stack
       xlimnfecmoc(:,:) = src2d_dta(:,:,js2d_femask)
+      !
+      ! OR Oct 19th 2022 DBG1
+      IF( lwp ) WRITE(numout,*) 'xlimnfecmoc(100,100) = ', xlimnfecmoc(100,100)
       !
    END SUBROUTINE cmoc_prod_init
 
