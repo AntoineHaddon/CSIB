@@ -323,7 +323,10 @@ CONTAINS
       xlimnfecmoc(:,:) = src2d_dta(:,:,js2d_femask)
       !
       ! OR Oct 19th 2022 DBG1
-      IF( lwp ) WRITE(numout,*) 'xlimnfecmoc(100,100) = ', xlimnfecmoc(100,100)
+      IF( lwp ) THEN
+        WRITE(numout,*) 'xlimnfecmoc(100,100) = ', xlimnfecmoc(100,100)
+        CALL FLUSH(numout)
+      ENDIF
       !
    END SUBROUTINE cmoc_prod_init
 
