@@ -136,10 +136,12 @@ CONTAINS
       ! IFs can later be replaced by cpp key activation statements
       !
       ! Failsafe case
-      CALL trc_src2d( kt, js2d_chla )
-      DO jk = 1, jpkm1
-        ztotchla(:,:,jk) = src2d_dta(:,:,js2d_chla)*exp(-gdept_n(:,:,jk)/30.)
-      ENDDO
+      IF( .NOT. ln_cmoc .AND. .NOT. ln_canoe) THEN
+        CALL trc_src2d( kt, js2d_chla )
+        DO jk = 1, jpkm1
+          ztotchla(:,:,jk) = src2d_dta(:,:,js2d_chla)*exp(-gdept_n(:,:,jk)/30.)
+        ENDDO
+      ENDIF
       !
       IF( ln_cmoc ) THEN
         IF( iom_use("NCHL") )  ztotchla(:,:,:) = trn(:,:,:,jqnch)
@@ -332,10 +334,12 @@ CONTAINS
       ! IFs can later be replaced by cpp key activation statements
       !
       ! Failsafe case
-      CALL trc_src2d( kt, js2d_chla )
-      DO jk = 1, jpkm1
-        ztotchla(:,:,jk) = src2d_dta(:,:,js2d_chla)*exp(-gdept_n(:,:,jk)/30.)
-      ENDDO
+      IF( .NOT. ln_cmoc .AND. .NOT. ln_canoe) THEN
+        CALL trc_src2d( kt, js2d_chla )
+        DO jk = 1, jpkm1
+          ztotchla(:,:,jk) = src2d_dta(:,:,js2d_chla)*exp(-gdept_n(:,:,jk)/30.)
+        ENDDO
+      ENDIF
       !
       IF( ln_cmoc ) THEN
         IF( iom_use("NCHL") )  ztotchla(:,:,:) = trn(:,:,:,jqnch)
