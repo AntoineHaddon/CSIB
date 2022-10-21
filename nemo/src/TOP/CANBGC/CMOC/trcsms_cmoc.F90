@@ -122,11 +122,13 @@ CONTAINS
           !
       ENDIF
       !
-      IF( ( neuler == 0 .AND. kt == nittrc000 ) .OR. ln_top_euler ) THEN
-         DO jn = 1, jp_tot       !   SMS on tracer without Asselin time-filter
-            trb(:,:,:,jn) = trn(:,:,:,jn)
-         END DO
-      ENDIF
+      ! O Riche Oct 21st 2022
+      ! Removing Euler/Leapfrog cmoc inherited code
+      ! IF( ( neuler == 0 .AND. kt == nittrc000 ) .OR. ln_top_euler ) THEN
+         ! DO jn = 1, jp_tot       !   SMS on tracer without Asselin time-filter
+            ! trb(:,:,:,jn) = trn(:,:,:,jn)
+         ! END DO
+      ! ENDIF
 
       ! Do we need this or is this covered at least partly by all the new
       ! external sources subroutines, e.g. trcsrc.F90 modules.
@@ -196,9 +198,11 @@ CONTAINS
       END DO
       !                                ! where at least 1 tracer concentration becomes negative
       !                                ! and by tracer we mean only the CMOC or shared BGC tracer.
-      DO jn = 1, jp_tot 
-       trb(:,:,:,jn) = trb(:,:,:,jn) + qnegtr(:,:,:) * tra(:,:,:,jn)
-      END DO
+      ! O Riche Oct 21st 2022
+      ! Removing Euler/Leapfrog cmoc inherited code
+      ! DO jn = 1, jp_tot 
+      ! trb(:,:,:,jn) = trb(:,:,:,jn) + qnegtr(:,:,:) * tra(:,:,:,jn)
+      ! END DO
       ! 
       !
       IF( ln_timing )   CALL timing_stop('trc_sms_cmoc')
