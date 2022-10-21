@@ -67,6 +67,14 @@
 
           <field field_ref="Heup"        />
           <field field_ref="surf_chla"   />
+
+          <!-- CMOC PP diagnostics -->
+          <field field_ref="PPPHY"   />
+          <field field_ref="Mumax"   />
+          <field field_ref="LNnut"   />
+          <field field_ref="LNFe"    />
+          <field field_ref="LNlight" />
+          <field field_ref="PAR"     />
           
         </file>
 

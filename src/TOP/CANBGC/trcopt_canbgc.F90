@@ -349,18 +349,6 @@ CONTAINS
         ! IF( iom_use("DCHL") )  ztotchla(:,:,:) = ztotchla(:,:,:) + trn(:,:,:,jrdch)    
       ! ENDIF
       !
-      ! OR Oct 20th 2022 DBG2
-      IF( lwp ) THEN
-        IF ( ln_varpar )  WRITE(numout,*) '          par_varsw(1,1) = ', par_varsw(1,1)
-        WRITE(numout,*)
-        WRITE(numout,*) '             zparsw(1,1) = ',    zparsw(1,1)
-        WRITE(numout,*) 'src2d_dta(1,1,js2d_chla) = ', src2d_dta(1,1,js2d_chla)
-        WRITE(numout,*) '        trn(1,1,1,jqnch) = ',       trn(1,1,1,jqnch)
-        WRITE(numout,*) '         ztotchla(1,1,1) = ',  ztotchla(1,1,1)
-        WRITE(numout,*)
-        CALL FLUSH(numout)
-      ENDIF
-      !
       DO jk = 1, jpkm1
         DO jj = 1, jpj
           DO ji = 1, jpi
@@ -382,14 +370,7 @@ CONTAINS
       ENDDO
       !
       par_1band(:,:,:) = zetot(:,:,:)
-            ! OR Oct 20th 2022 DBG2
-      IF( lwp ) THEN
-        WRITE(numout,*)
-        WRITE(numout,*) '         par_1band(1,1,1) = ',        par_1band(1,1,1)
-        WRITE(numout,*) '             zetot(1,1,1) = ',            zetot(1,1,1)
-        WRITE(numout,*) '  tmask_bgc_closea(1,1,1) = ', tmask_bgc_closea(1,1,1)
-        CALL FLUSH(numout)
-      ENDIF
+      !
       IF( lk_iomput )  CALL iom_put("PAR2BIO", par_1band(:,:,:) * tmask_bgc_closea(:,:,:) ) ! PAR to use for CMOC (or CanOE)
       !
       IF( ln_timing )  CALL timing_stop('trc_opt_1band')      
