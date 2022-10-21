@@ -347,12 +347,12 @@ CONTAINS
       !
       ! OR Oct 20th 2022 DBG2
       IF( lwp ) THEN
+        IF ( ln_varpar )  WRITE(numout,*) '          par_varsw(100,100) = ', par_varsw(100,100)
         WRITE(numout,*)
-        WRITE(numout,*) '          par_varsw(1,1) = ', par_varsw(1,1)
-        WRITE(numout,*) '             zparsw(1,1) = ',    zparsw(1,1)
-        WRITE(numout,*) 'src2d_dta(1,1,js2d_chla) = ', src2d_dta(1,1,js2d_chla)
-        WRITE(numout,*) '        trn(1,1,1,jqnch) = ',       trn(1,1,1,jqnch)
-        WRITE(numout,*) '         ztotchla(1,1,1) = ',  ztotchla(1,1,1)
+        WRITE(numout,*) '             zparsw(100,100) = ',    zparsw(100,100)
+        WRITE(numout,*) 'src2d_dta(100,100,js2d_chla) = ', src2d_dta(100,100,js2d_chla)
+        WRITE(numout,*) '        trn(100,100,1,jqnch) = ',       trn(100,100,1,jqnch)
+        WRITE(numout,*) '         ztotchla(100,100,1) = ',  ztotchla(100,100,1)
         WRITE(numout,*)
         CALL FLUSH(numout)
       ENDIF
@@ -381,9 +381,9 @@ CONTAINS
             ! OR Oct 20th 2022 DBG2
       IF( lwp ) THEN
         WRITE(numout,*)
-        WRITE(numout,*) '         par_1band(1,1,1) = ',        par_1band(1,1,1)
-        WRITE(numout,*) '             zetot(1,1,1) = ',            zetot(1,1,1)
-        WRITE(numout,*) '  tmask_bgc_closea(1,1,1) = ', tmask_bgc_closea(1,1,1)
+        WRITE(numout,*) '         par_1band(100,100,1) = ',        par_1band(100,100,1)
+        WRITE(numout,*) '             zetot(100,100,1) = ',            zetot(100,100,1)
+        WRITE(numout,*) '  tmask_bgc_closea(100,100,1) = ', tmask_bgc_closea(100,100,1)
         CALL FLUSH(numout)
       ENDIF
       IF( lk_iomput )  CALL iom_put("PAR2BIO", par_1band(:,:,:) * tmask_bgc_closea(:,:,:) ) ! PAR to use for CMOC (or CanOE)
