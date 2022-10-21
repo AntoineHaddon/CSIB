@@ -8,7 +8,7 @@ set -e
 #                     comp_env=ENVIRONMENT_FILE \
 #                     [refcfg=cfgdir] \
 #                     [add_key=keys] \
-#                     [del_key=keys] 
+#                     [del_key=keys]
 #          Quantities in square brackets are optional
 #
 # Purpose: Create a nemo executable, along with associated diagnostic/rtd executables. Note that
@@ -25,7 +25,7 @@ set -e
 #   -f              ...force a "clean" compile
 #
 # Variable definitions:
-#   srcpath=srcpath     ...location of the NEMO source code. 
+#   srcpath=srcpath     ...location of the NEMO source code.
 #   exec=name           ...name is the name of the nemo executable to be created
 #                           On successful compilation, a file by this name will be linked [by default] into the CWD.
 #                           Use -p to have them linked to a dif. location, or -s to have them saved to RUNPATH.
@@ -104,7 +104,7 @@ while getopts p:j:hxdcf opt; do
         c) copy_execs=1 ;;
         p) storage_loc="$OPTARG" ;;
         h) usage ; exit 0 ;;
-        f) clean_compile=1 ;; 
+        f) clean_compile=1 ;;
         ?) usage ; exit 1 ;;
     esac
 done
@@ -113,7 +113,7 @@ shift $(( OPTIND - 1 ))
 # Arguments
 for arg in "$@"; do
     case $arg in
-        *=*) 
+        *=*)
             var=$(echo $arg | awk -F\= '{printf "%s",$1}')
             val=$(echo $arg | awk -F\= '{printf "%s",$2}')
             case $var in
@@ -170,15 +170,15 @@ target_diag_execs="nemo_diag.exe nemo_diag_cmoc.exe nemo_diag_canoe.exe"
 target_rtd_execs="nemo_physical_rtd.exe nemo_carbon-cmoc_rtd.exe nemo_carbon-canoe_rtd.exe nemo_ice_rtd.exe"
 target_rbld_execs="rebuild_nemo.exe rebuild_nemo_mpi.exe"
 
-# prepends paths to diag/rtd/rbld exec lists 
+# prepends paths to diag/rtd/rbld exec lists
 #   - Note: "[^ ]*" -> matches words (strngs w/o interior spaces)
-#           "&"     -> represents the matched pattern 
+#           "&"     -> represents the matched pattern
 target_diag_execs=$(echo $target_diag_execs | sed "s#[^ ]*#${nemo_diag_build_dir}/&#g")
 target_rtd_execs=$(echo $target_rtd_execs | sed "s#[^ ]*#${nemo_rtd_build_dir}/&#g")
 target_rbld_execs=$(echo $target_rbld_execs | sed "s#[^ ]*#${nemo_rbld_build_dir}/&#g")
 
 # all non-model executables get saved without renamining, store in list
-non_model_execs="$target_diag_execs $target_rtd_execs $target_rbld_execs" 
+non_model_execs="$target_diag_execs $target_rtd_execs $target_rbld_execs"
 
 # set the working directory if it hasn't been set
 if [[ -z "$WRK_DIR" ]]; then
@@ -189,7 +189,7 @@ if [[ -z "$WRK_DIR" ]]; then
         # use working directory
         WRK_DIR=$(pwd)
     fi
-fi 
+fi
 
 #======================================
 # Coupled consideration for model comp
@@ -201,12 +201,7 @@ if (( is_coupled == 1 )); then
 
     # define header files and check that they exist
     cppdef_config_file=${WRK_DIR}/config/cppdef_config.h
-    cppdef_sizes_file=${WRK_DIR}/config/cppdef_sizes.h
     if [[ ! -f "$cppdef_config_file" ]] ; then
-        bail_msg="You are trying to compile a coupled config but ${cppdef_config_file} doesn't exist!"
-        bail "$bail_msg"
-    fi
-    if [[ ! -f "$cppdef_sizes_file" ]]; then
         bail_msg="You are trying to compile a coupled config but ${cppdef_config_file} doesn't exist!"
         bail "$bail_msg"
     fi
@@ -216,20 +211,16 @@ if (( is_coupled == 1 )); then
     #           the nemo compilation tools don't respect ".h" files.
     nemo_external_src_dir=${nemo_source_path}/nemo/NEMO/external                                # where the "external" code sits
     nemo_cppdef_config_link=${nemo_external_src_dir}/$(basename $cppdef_config_file .h).h90     # linked cpp config file
-    nemo_cppdef_sizes_link=${nemo_external_src_dir}/$(basename $cppdef_sizes_file .h).h90       # linked cpp sizes file
     needed_cpl_src_file=${canesm_src}/CanCPL/src/comm/com_cpl.F90                               # orig. needed cplr src file
     nemo_cpl_src_file=${nemo_external_src_dir}/com_cpl.F90                                      # copied (and modified) cplr src file
 
     # link in the cpp files (cleaning if they already exist)
     rm -f $nemo_cppdef_config_link
-    rm -f $nemo_cppdef_sizes_link
     ln -s $cppdef_config_file $nemo_cppdef_config_link
-    ln -s $cppdef_sizes_file $nemo_cppdef_sizes_link
 
     # copy in external coupler file, and alter inlcude statements to use the .h90 links
     cp -f $needed_cpl_src_file $nemo_cpl_src_file
     sed -i "s/$(basename $cppdef_config_file)/$(basename $nemo_cppdef_config_link)/g" $nemo_cpl_src_file
-    sed -i "s/$(basename $cppdef_sizes_file)/$(basename $nemo_cppdef_sizes_link)/g" $nemo_cpl_src_file
 fi
 
 #===========
@@ -269,33 +260,33 @@ echo 'makenemo '"${ARGS[@]}"
 files_to_reset="cfg.txt ${nemo_config}/cpp_${nemo_config}.fcm"
 for f in $files_to_reset; do
     is_diff=0
-    
+
     # check if the file has been changed
     git diff -s --exit-code $f || is_diff=1
-    
+
     # reset if changed
     if (( is_diff == 1 )); then
         echo "Resetting $f to HEAD"
         git checkout HEAD $f
     fi
-done 
+done
 
 #-------------------------------
 # compile exec's using makefiles
 #-------------------------------
 nemo_util_arch_file_basename=$(basename ${nemo_util_arch_file})
-for build_dir in $make_build_dirs; do 
+for build_dir in $make_build_dirs; do
     echo ""
     echo "=============================================="
     echo "    Compiling executables in $build_dir       "
     echo "=============================================="
     cd $build_dir
-   
+
     # get make template file
     ln -sf ${nemo_util_arch_file} ${nemo_util_arch_file_basename}
 
     # compile
-    if (( clean_compile == 1 )); then 
+    if (( clean_compile == 1 )); then
         make clean
     fi
     make COMPILER_TEMPLATE=${nemo_util_arch_file_basename}
@@ -323,7 +314,7 @@ if (( copy_execs == 1 )); then
         stored_exec=${storage_loc}/$(basename $executable)
         cp -f $executable $stored_exec
     done
-else 
+else
     echo "Linking build-nemo target executables to $storage_loc"
     rm -f ${storage_loc}/${nemo_exec} ; ln -s $target_model_exec ${storage_loc}/${nemo_exec}
     for executable in $non_model_execs; do
