@@ -160,9 +160,9 @@ CONTAINS
       !
       CALL trc_opt_1band( kt )        ! 1-band PAR attenuation
       !
-      ! DO jnt = 1, qnrdttrc             ! Potential time splitting if requested
-        ! CALL cmoc_prod( kt, jnt )      ! PP subroutine
-      ! END DO
+      DO jnt = 1, qnrdttrc             ! Potential time splitting if requested
+        CALL cmoc_prod( kt, jnt )      ! PP subroutine
+      END DO
       !
       ! Is this below necessary? (NEMO3.4.1 code)
       ! DO jn = jp_bgc+1, jp_bgc+jp_cmoc
@@ -181,7 +181,22 @@ CONTAINS
           END DO
           DEALLOCATE( ztrmyt )
       END IF
-
+      !
+      ! O Riche DBG Oct 21st 2022
+      IF( lwp ) THEN
+        WRITE(numout,*)
+        WRITE(numout,*) 'Checking trn index attribution:'
+        WRITE(numout,*) 'jqdic = ', jqdic
+        WRITE(numout,*) 'jqtal = ', jqtal
+        WRITE(numout,*) 'jqoxy = ', jqoxy
+        WRITE(numout,*) 'jqno3 = ', jqno3
+        WRITE(numout,*) 'jqpoc = ', jqpoc
+        WRITE(numout,*) 'jqphy = ', jqphy
+        WRITE(numout,*) 'jqnch = ', jqnch
+        WRITE(numout,*) 'jqzoo = ', jqzoo
+        WRITE(numout,*) 'jp_age =', jp_age
+      CALL FLUSH(numout)
+      ENDIF
       !
       qnegtr(:,:,:) = 1.e0
       DO jn = 1, jp_tot

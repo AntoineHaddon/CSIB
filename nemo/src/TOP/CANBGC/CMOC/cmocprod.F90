@@ -100,20 +100,6 @@ CONTAINS
       zlimn   (:,:,:) = 0._wp
       zliml   (:,:,:) = 0._wp
       !
-      ! OR Oct 20th 2022 DBG1
-      IF( lwp ) THEN
-        WRITE(numout,*)
-        WRITE(numout,*) '                qfact2 = ', qfact2
-        WRITE(numout,*) '                  rtrn = ', rtrn
-        WRITE(numout,*) '               r1_rday = ', r1_rday
-        WRITE(numout,*) '               ep_cmoc = ', ep_cmoc
-        WRITE(numout,*) '             cnrr_cmoc = ', cnrr_cmoc
-        WRITE(numout,*) '  par_1band(1,1,1) = ', par_1band(1,1,1)
-        WRITE(numout,*) ' tsn(1,1,1,jp_tem) = ', tsn(1,1,1,jp_tem)
-        WRITE(numout,*)
-        CALL FLUSH(numout)
-      ENDIF
-      !
       DO jk = 1, jpkm1
       !
         DO jj = 1, jpj
@@ -193,15 +179,6 @@ CONTAINS
           END DO
         END DO
       END DO
-      ! OR Oct 19th 2022 DBG1
-      IF( lwp ) THEN
-        WRITE(numout,*) '      zetot(1,1,1) = ',       zetot(1,1,1)
-        WRITE(numout,*) '     zprbio(1,1,1) = ',      zprbio(1,1,1)
-        WRITE(numout,*) '    zprorca(1,1,1) = ',     zprorca(1,1,1)
-        WRITE(numout,*) '   zprochln(1,1,1) = ',    zprochln(1,1,1)
-        WRITE(numout,*) 'xlimnfecmoc(1,1)   = ', xlimnfecmoc(1,1)
-        CALL FLUSH(numout)
-      ENDIF
       !
       !   Update the arrays TRA which contain the biological sources and sinks
       !   --------------------------------------------------------------------
@@ -226,18 +203,18 @@ CONTAINS
      ! O Riche Sept 14th 2022
      ! Can be uncommented when diagnostics below
      ! have been added to xml definition files
-     ! zrfact2 = 1.e3 * qfact2r  ! conversion from mol L^-1 timestep^-1 into mol m^-3 s^-1
-     ! IF( lk_iomput ) THEN
-       ! IF( jnt == qnrdttrc ) THEN
-          ! CALL iom_put( "PPPHY"   , zprorca (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )
-          ! CALL iom_put( "Mumax"   , zpislopead  (:,:,:) * rday * tmask_bgc_closea(:,:,:) )
-          ! CALL iom_put( "LNnut"   , zlimn   (:,:,:) * tmask_bgc_closea(:,:,:) )
-          ! CALL iom_put( "LNFe"    , xlimnfecmoc (:,:) * tmask_bgc_closea(:,:,1) )
-          ! CALL iom_put( "LNlight" , zliml   (:,:,:) * tmask_bgc_closea(:,:,:) )
-          ! CALL iom_put( "PAR"   , zetot   (:,:,:) * tmask_bgc_closea(:,:,:) )
-       ! ENDIF
+     zrfact2 = 1.e3 * qfact2r  ! conversion from mol L^-1 timestep^-1 into mol m^-3 s^-1
+     IF( lk_iomput ) THEN
+       IF( jnt == qnrdttrc ) THEN
+          CALL iom_put( "PPPHY"   , zprorca (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )
+          CALL iom_put( "Mumax"   , zpislopead  (:,:,:) * rday * tmask_bgc_closea(:,:,:) )
+          CALL iom_put( "LNnut"   , zlimn   (:,:,:) * tmask_bgc_closea(:,:,:) )
+          CALL iom_put( "LNFe"    , xlimnfecmoc (:,:) * tmask_bgc_closea(:,:,1) )
+          CALL iom_put( "LNlight" , zliml   (:,:,:) * tmask_bgc_closea(:,:,:) )
+          CALL iom_put( "PAR"     , zetot   (:,:,:) * tmask_bgc_closea(:,:,:) )
+       ENDIF
        
-      ! ENDIF
+      ENDIF
 
       IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('prod')")
@@ -321,12 +298,6 @@ CONTAINS
       ! initialize iron mask with IC file saved in the 2d src arrays stack
       CALL trc_src2d( nittrc000, js2d_femask )       ! 1st time step / nittrc000 same nit000 in ocean physics
       xlimnfecmoc(:,:) = src2d_dta(:,:,js2d_femask)
-      !
-      ! OR Oct 19th 2022 DBG1
-      IF( lwp ) THEN
-        WRITE(numout,*) 'xlimnfecmoc(1,1) = ', xlimnfecmoc(1,1)
-        CALL FLUSH(numout)
-      ENDIF
       !
    END SUBROUTINE cmoc_prod_init
 
