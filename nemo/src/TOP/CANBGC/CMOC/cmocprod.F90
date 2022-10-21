@@ -108,8 +108,8 @@ CONTAINS
         WRITE(numout,*) '               r1_rday = ', r1_rday
         WRITE(numout,*) '               ep_cmoc = ', ep_cmoc
         WRITE(numout,*) '             cnrr_cmoc = ', cnrr_cmoc
-        WRITE(numout,*) '  par_1band(100,100,1) = ', par_1band(100,100,1)
-        WRITE(numout,*) ' tsn(100,100,1,jp_tem) = ', tsn(100,100,1,jp_tem)
+        WRITE(numout,*) '  par_1band(1,1,1) = ', par_1band(1,1,1)
+        WRITE(numout,*) ' tsn(1,1,1,jp_tem) = ', tsn(1,1,1,jp_tem)
         WRITE(numout,*)
         CALL FLUSH(numout)
       ENDIF
@@ -195,11 +195,11 @@ CONTAINS
       END DO
       ! OR Oct 19th 2022 DBG1
       IF( lwp ) THEN
-        WRITE(numout,*) '      zetot(100,100,1) = ',       zetot(100,100,1)
-        WRITE(numout,*) '     zprbio(100,100,1) = ',      zprbio(100,100,1)
-        WRITE(numout,*) '    zprorca(100,100,1) = ',     zprorca(100,100,1)
-        WRITE(numout,*) '   zprochln(100,100,1) = ',    zprochln(100,100,1)
-        WRITE(numout,*) 'xlimnfecmoc(100,100)   = ', xlimnfecmoc(100,100)
+        WRITE(numout,*) '      zetot(1,1,1) = ',       zetot(1,1,1)
+        WRITE(numout,*) '     zprbio(1,1,1) = ',      zprbio(1,1,1)
+        WRITE(numout,*) '    zprorca(1,1,1) = ',     zprorca(1,1,1)
+        WRITE(numout,*) '   zprochln(1,1,1) = ',    zprochln(1,1,1)
+        WRITE(numout,*) 'xlimnfecmoc(1,1)   = ', xlimnfecmoc(1,1)
         CALL FLUSH(numout)
       ENDIF
       !
@@ -324,7 +324,7 @@ CONTAINS
       !
       ! OR Oct 19th 2022 DBG1
       IF( lwp ) THEN
-        WRITE(numout,*) 'xlimnfecmoc(100,100) = ', xlimnfecmoc(100,100)
+        WRITE(numout,*) 'xlimnfecmoc(1,1) = ', xlimnfecmoc(1,1)
         CALL FLUSH(numout)
       ENDIF
       !
