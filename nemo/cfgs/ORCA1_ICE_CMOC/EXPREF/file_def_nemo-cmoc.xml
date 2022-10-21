@@ -74,7 +74,7 @@
           <field field_ref="LNnut"   />
           <field field_ref="LNFe"    />
           <field field_ref="LNlight" />
-          <field field_ref="PAR"     />
+          <field field_ref="PARCMOC" />
           
         </file>
 

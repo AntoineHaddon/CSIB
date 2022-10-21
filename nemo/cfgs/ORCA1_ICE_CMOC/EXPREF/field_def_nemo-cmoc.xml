@@ -82,7 +82,7 @@
        <field id="LNnut"       long_name="Nitrogen limitation term in Nanophyto"  unit="-"                   grid_ref="grid_T_3D" />
        <field id="LNFe"        long_name="Iron limitation term in Nanophyto"      unit="-"                   grid_ref="grid_T_2D" />
        <field id="LNlight"     long_name="Light limitation term in Nanophyto"     unit="-"                   grid_ref="grid_T_3D" />
-       <field id="PAR"         long_name="Photosynthetically Available Radiation" unit="W/m2"                grid_ref="grid_T_3D" />
+       <field id="PARCMOC"     long_name="Photosynthetically Available Radiation" unit="W/m2"                grid_ref="grid_T_3D" />
 
      </field_group>
 
