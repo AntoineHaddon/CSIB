@@ -83,6 +83,7 @@ MODULE sms_top_canbgc
 
    !!*  Time variables
    REAL(wp) ::   xstepb             !: Time step duration for biology
+   REAL(wp) ::   xfactb             !: possibly useful as 1 thousand divided by biology/BGC time step
    REAL(wp) ::   ryyssb             !: number of seconds per year 
    REAL(wp) ::   r1_ryyssb          !: inverse number of seconds per year 
 

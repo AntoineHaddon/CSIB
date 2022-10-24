@@ -111,14 +111,14 @@ CONTAINS
           IF(lwp) write(numout,*) '~~~~~~'
           !
           CALL trc_che           ! computation of carbon chemistry constants
-          !
           ! initialize the chemical constants
-            !  
-          ELSE
-              WRITE(numout,*)
-              WRITE(numout,*) 'Should something be done for the restart mode here? Nothing coded here yet, some code exists in TOP/trcini.F90 to take care of this though.'
-              WRITE(numout,*)
-          ENDIF
+          !
+        !  
+        ELSE
+            WRITE(numout,*)
+            WRITE(numout,*) 'Should something be done for the restart mode here? Nothing coded here yet, some code exists in TOP/trcini.F90 to take care of this though.'
+            WRITE(numout,*)
+        ENDIF
           !
       ENDIF
       !
@@ -213,12 +213,9 @@ CONTAINS
       END DO
       !                                ! where at least 1 tracer concentration becomes negative
       !                                ! and by tracer we mean only the CMOC or shared BGC tracer.
-      ! O Riche Oct 21st 2022
-      ! Removing Euler/Leapfrog cmoc inherited code
-      ! DO jn = 1, jp_tot 
-      ! trb(:,:,:,jn) = trb(:,:,:,jn) + qnegtr(:,:,:) * tra(:,:,:,jn)
-      ! END DO
-      ! 
+      DO jn = 1, jp_tot 
+        trb(:,:,:,jn) = trb(:,:,:) + qnegtr(:,:,:) * tra(:,:,:,jn)
+      END DO
       !
       IF( ln_timing )   CALL timing_stop('trc_sms_cmoc')
       !

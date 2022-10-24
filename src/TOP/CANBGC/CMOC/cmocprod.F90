@@ -131,7 +131,7 @@ CONTAINS
             !
             ! phytoplankton photoacclimation used in light limitation
             ! trn(...,jqnchl) / trn(...,jqphy) / 12. is theta in gChl per gC
-            ! ztheta is set to a maximum of thm_cmoc so as prevent appearance of light-saturation in case when zetot is small but trn(ji,jj,jk,jqphy) is 0
+            ! ztheta is set to a maximum of thm_cmoc so as to prevent appearance of light-saturation in case zetot is small but trn(ji,jj,jk,jqphy) is 0
             ztheta = MIN(thm_cmoc,trn(ji,jj,jk,jqnch)/(trn(ji,jj,jk,jqphy)*12._wp+rtrn))
             zpislopen =  achl_cmoc * ztheta / ( zpislopead(ji,jj,jk) * rday  + rtrn )
             ! zpislopead * rday is growth rate in d^-1 at temperature ToC as achl_cmoc is in d^-1

@@ -56,6 +56,8 @@ CONTAINS
       !!
       !!
       INTEGER, INTENT( in ) ::   kt      ! ocean time-step index
+      INTEGER               ::   jn      ! BGC tracer indexocean time-step index
+      INTEGER               ::   jp_tot  ! total number of BGC tracers (shared TOP + activated CanBGC model)
       CHARACTER (len=25) :: charout
       !!---------------------------------------------------------------------
       !
@@ -98,22 +100,36 @@ CONTAINS
       ! qnrdttrc = 4 ! should be read from namelist_pisces (or _canoe) by trcnam_pisces (or _canoe) or perhaps moved to namelist_top
       !
       ! O Riche Sept 13th 2022
-      ! added nrdttrc in namelist_top_* in &namtrc_run section
-      
+      ! added nrdttrc in namelist_top_* in &namtrc_run section    
       !
-      IF( ( ln_top_euler .AND. kt == nittrc000 )  .OR. ( .NOT.ln_top_euler .AND. kt <= nittrc000 + nn_dttrc ) ) THEN
-        qfactr  = 1. / qfact
-        qfact2  = qfact / REAL( qnrdttrc, wp )
-        qfact2r = 1. / qfact2
-  
-        IF(lwp) WRITE(numout,*) 
-        IF(lwp) WRITE(numout,*) '    Passive Tracer  time step    qfact  = ', qfact, ' rdt = ', rdt
-        IF(lwp) write(numout,*) '            Biology time step    qfact2 = ', qfact2
-        IF(lwp) WRITE(numout,*)
-
+      ! O Riche Oct 24th 2022
+      ! CanBGC BGCMS - adding ln_cmoc/ln_canoe conditional branching
+      IF( ln_cmoc .OR. ln_canoe) THEN
+        ! total number of shared TOP + CanBGC tracers
+        jp_tot = jp_bgc + jp_cmoc                     ! assume CMOC has benen activated
+        IF( ln_canoe )  jp_tot = jp_bgc + jp_canoe    ! if assumption above is wrong
+        !
+        IF( ( ln_top_euler .AND. kt == nittrc000 )  .OR. ( .NOT.ln_top_euler .AND. kt <= nittrc000 + nn_dttrc ) ) THEN
+          qfactr  = 1. / qfact
+          qfact2  = qfact / REAL( qnrdttrc, wp )
+          qfact2r = 1. / qfact2
+          xsetpb  = qfact2 / rday    ! time step converted to per day (using in-sec values of time step and day duration)
+          xfactb  = 1.e3 * qfact2r   ! 1 thousand divided by time step for BGC/biology (could be useful?)
+          
+          IF(lwp) WRITE(numout,*) 
+          IF(lwp) WRITE(numout,*) '    Passive Tracer  time step    qfact  = ', qfact, ' rdt = ', rdt
+          IF(lwp) write(numout,*) '            Biology time step    qfact2 = ', qfact2
+          IF(lwp) WRITE(numout,*)
+        ENDIF
+        ! O Riche Oct 24th 2022 - adding trb/trn swap as appearing in p4zsms.F90 / PISCES BGC
+        ! according to comment in p4zsms.F90 this is for restart mode (neuler == 0 in particular)
+        IF( ( neuler == 0 .AND. kt == nittrc000 ) .OR. ln_top_euler ) THEN
+           DO jn = 1, jp_tot               !   SMS on tracer without Asselin time-filter
+              trb(:,:,:,jn) = trn(:,:,:,jn)
+           END DO
+        ENDIF
       ENDIF
-      !
-      !
+      ! End of CanBGC BGCMs
       !
       IF( ln_canoe   )   CALL trc_sms_canoe  ( kt )    ! main program of CANOE  
       IF( ln_cmoc    )   CALL trc_sms_cmoc   ( kt )    ! main program of CMOC   

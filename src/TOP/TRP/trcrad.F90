@@ -62,6 +62,8 @@ CONTAINS
       IF( ll_cfc     )   CALL trc_rad_sms( kt, trb, trn, jp_cfc0, jp_cfc1               )  !  CFC model
       IF( ln_c14     )   CALL trc_rad_sms( kt, trb, trn, jp_c14 , jp_c14                )  !  C14
       IF( ln_pisces  )   CALL trc_rad_sms( kt, trb, trn, jp_pcs0, jp_pcs1, cpreserv='Y' )  !  PISCES model
+      IF( ln_cmoc    )   CALL trc_rad_sms( kt, trb, trn, 1, jp_bgc + jp_cmoc,  cpreserv='Y' )  !  CMOC CanBGC model
+      IF( ln_canoe   )   CALL trc_rad_sms( kt, trb, trn, 1, jp_bgc + jp_canoe, cpreserv='Y' )  !  CanOE CanBGC model
       IF( ln_my_trc  )   CALL trc_rad_sms( kt, trb, trn, jp_myt0, jp_myt1               )  !  MY_TRC model
       !
       IF(ln_ctl) THEN      ! print mean trends (used for debugging)

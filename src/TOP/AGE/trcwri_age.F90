@@ -33,6 +33,14 @@ CONTAINS
       ! write the tracer concentrations in the file
 
       cltra = TRIM( ctrcnm(jp_age) )                  ! short title for tracer
+      ! O Riche DBG marker Oct 24th 2022
+      IF( lwp ) THEN
+        WRITE(numout,*)
+        WRITE(numout,*) 'trc_wri_age: Age debugging NaNf'
+        WRITE(numout,*) 'checking label cltra/ctrcnm(jp_age) = ', cltra
+        WRITE(numout,*) 'checking jp_age index value         = ', jp_age
+        WRITE(numout,*)
+      ENDIF
       CALL iom_put( cltra, trn(:,:,:,jp_age) )
 
       !
