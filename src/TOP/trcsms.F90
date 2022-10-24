@@ -113,7 +113,7 @@ CONTAINS
           qfactr  = 1. / qfact
           qfact2  = qfact / REAL( qnrdttrc, wp )
           qfact2r = 1. / qfact2
-          xsetpb  = qfact2 / rday    ! time step converted to per day (using in-sec values of time step and day duration)
+          xstepb  = qfact2 / rday    ! time step converted to per day (using in-sec values of time step and day duration)
           xfactb  = 1.e3 * qfact2r   ! 1 thousand divided by time step for BGC/biology (could be useful?)
           
           IF(lwp) WRITE(numout,*) 
