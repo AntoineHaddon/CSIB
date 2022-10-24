@@ -214,7 +214,7 @@ CONTAINS
       !                                ! where at least 1 tracer concentration becomes negative
       !                                ! and by tracer we mean only the CMOC or shared BGC tracer.
       DO jn = 1, jp_tot 
-        trb(:,:,:,jn) = trb(:,:,:) + qnegtr(:,:,:) * tra(:,:,:,jn)
+        trb(:,:,:,jn) = trb(:,:,:,jn) + qnegtr(:,:,:) * tra(:,:,:,jn)
       END DO
       !
       IF( ln_timing )   CALL timing_stop('trc_sms_cmoc')
