@@ -273,13 +273,19 @@ echo "#################### Start NEMO pre-processing #################"
     # bail if use asked to use a specific restart and start from rest
     is_defined $nemo_restart && 
         bail "nemo_prelude: nemo_restart=$nemo_restart and nemo_from_rest=1 are mutually exclusive"
+  
+    # starting from rest, NOT a restart
+    ln_rstart=.false.
+    [[ $nemo_trc -eq 'on' ]] && ln_rsttr=.false.
 
-    # Initial date
-    prev_date0="010101"
   else
     #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
     #=#=#=#   Start from a restart  #=#=#=#
     #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+
+    # starting from restart
+    ln_rstart=.true.
+    [[ $nemo_trc -eq 'on' ]] && ln_rsttr=.true.
 
     # Determine what restart to use
     # -----------------------------
@@ -384,8 +390,7 @@ echo "#################### Start NEMO pre-processing #################"
     found_rs=`(ls -1 *_${cn_trcrst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
     [ -z "$found_rs" ] && found_rs=`(ls -1 *_${cn_trcrst_out}.nc || : ) 2>/dev/null`
     if [ -z "$found_rs" ]; then
-      [ $nemo_carbon -eq 1 ] && bail "No trc restart files were found in $nemo_rs"
-      with_trc=off
+      [ $nemo_trc -eq 'on' ] && bail "No trc restart files were found in $nemo_rs"
     else
       for rsfile in $found_rs; do
         [ $rsfile = 'cpl_restart.nc' ] && continue
@@ -407,6 +412,9 @@ echo "#################### Start NEMO pre-processing #################"
   for f in "${nemo_namelists[@]}"; do
       ! is_file $f && cp ${WRK_DIR}/config/namelists/${f} .
   done
+  # make namelist mods foir the restart switch 
+    mod_nl namelist_cfg ln_rstart
+    [[ $nemo_trc -eq 'on' ]] && mod_nl namelist_top_cfg ln_rsttr
 
   # nemo executable
   ! is_file $nemo_exec && cp ${EXEC_STORAGE_DIR}/$nemo_exec .
