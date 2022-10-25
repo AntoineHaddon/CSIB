@@ -258,10 +258,3 @@ wdust0       =  2.0      ! Dust sinking speed
    kw_cmoc     =  0.04          ! PAR attenuation coefficient for seawater (m^-1)
    kchl_cmoc   =  0.03          ! PAR attenuation for chlorophyll          (m^-1) (mgChl m^-3)^-1
 /
-!-----------------------------------------------------------------------
-&namtrc_1band  !     1-band PAR attenuation parameters (CMOC mainly)
-!-----------------------------------------------------------------------
-! for now everything is hardwired in trc_opt_1band s/routine.
-! 0.04 as water attenuation and 0.03 as phytoplankton attenuation
-! 0.43 is the PAR/SW ratio but there is a variable PAR/SW ratio available
-/

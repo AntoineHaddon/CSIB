@@ -129,9 +129,9 @@
    ln_trdmxl_trc_instant = .true.    !  flag to diagnose trends of instantantaneous or mean ML T/S
    cn_trdrst_trc_in  = 'restart_trd' !  suffix of pass. tracer trends restart name (input)
    cn_trdrst_trc_out = 'restart_trd' !  suffix of pass. tracer trends restart name (output)
-   ln_trdtrc( 1) = .true.
-   ln_trdtrc( 2) = .true.
-   ln_trdtrc(23) = .true.
+   ! ln_trdtrc( 1) = .true.
+   ! ln_trdtrc( 2) = .true.
+   ! ln_trdtrc(23) = .true.
 /
 !----------------------------------------------------------------------
 &namtrc_bc       !   data for boundary conditions

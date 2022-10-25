@@ -78,7 +78,10 @@
 
        <!-- CMOC PP diagnostics -->
        <field id="PPPHY"       long_name="Primary production"                     unit="mol/m3/s"            grid_ref="grid_T_3D" />
+       <field id="chlaP"       long_name="Chl-a   production"                     unit="mg chla m^-3 s^-1"   grid_ref="grid_T_3D" />
+       <field id="photor"      long_name="Photosynthetic rate"                    unit="d^-1"                grid_ref="grid_T_3D" />
        <field id="Mumax"       long_name="Phyto growth rate"                      unit="d^-1"                grid_ref="grid_T_3D" />
+       <field id="thchl2C"     long_name="Balanced chla:C ratio"                  unit="mg chla mg C^-3"     grid_ref="grid_T_3D" />
        <field id="LNnut"       long_name="Nitrogen limitation term in Nanophyto"  unit="-"                   grid_ref="grid_T_3D" />
        <field id="LNFe"        long_name="Iron limitation term in Nanophyto"      unit="-"                   grid_ref="grid_T_2D" />
        <field id="LNlight"     long_name="Light limitation term in Nanophyto"     unit="-"                   grid_ref="grid_T_3D" />

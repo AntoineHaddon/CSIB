@@ -70,7 +70,10 @@
 
           <!-- CMOC PP diagnostics -->
           <field field_ref="PPPHY"   />
+          <field field_ref="chlaP"   />
+          <field field_ref="photor"  />
           <field field_ref="Mumax"   />
+          <field field_ref="thchl2C" />
           <field field_ref="LNnut"   />
           <field field_ref="LNFe"    />
           <field field_ref="LNlight" />
