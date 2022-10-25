@@ -119,6 +119,7 @@ CONTAINS
           IF(lwp) WRITE(numout,*) 
           IF(lwp) WRITE(numout,*) '    Passive Tracer  time step    qfact  = ', qfact, ' rdt = ', rdt
           IF(lwp) write(numout,*) '            Biology time step    qfact2 = ', qfact2
+          IF(lwp) WRITE(numout,*) '                    time step    rdt    = ', rdt
           IF(lwp) WRITE(numout,*)
         ENDIF
         ! O Riche Oct 24th 2022 - adding trb/trn swap as appearing in p4zsms.F90 / PISCES BGC

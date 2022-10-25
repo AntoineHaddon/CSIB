@@ -152,9 +152,9 @@ CONTAINS
       !
       CALL trc_opt_1band( kt )        ! 1-band PAR attenuation
       !
-      DO jnt = 1, qnrdttrc             ! Potential time splitting if requested
-        CALL cmoc_prod( kt, jnt )      ! PP subroutine
-      END DO
+      ! DO jnt = 1, qnrdttrc             ! Potential time splitting if requested
+        ! CALL cmoc_prod( kt, jnt )      ! PP subroutine
+      ! END DO
       !
       ! Is this below necessary? (NEMO3.4.1 code)
       ! DO jn = jp_bgc+1, jp_bgc+jp_cmoc
