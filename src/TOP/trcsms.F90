@@ -138,6 +138,14 @@ CONTAINS
       IF( ln_c14     )   CALL trc_sms_c14    ( kt )    ! surface fluxes of C14
       IF( ln_age     )   CALL trc_sms_age    ( kt )    ! Age tracer
       IF( ln_my_trc  )   CALL trc_sms_my_trc ( kt )    ! MY_TRC  tracers
+
+      ! O Riche Oct 25th 2022
+      ! test value of jp_tot to see if jp_age is involved
+      IF( lwp ) THEN
+        WRITE(numout,*) 'trc_sms_cmoc: jp_age and jp_tot check'
+        WRITE(numout,*) 'jp_age = ', jp_age
+        WRITE(numout,*) 'jp_tot = ', jp_tot
+      ENDIF
   
       IF(ln_ctl) THEN      ! print mean trends (used for debugging)
         WRITE(charout, FMT="('sms ')")

@@ -165,10 +165,6 @@ CONTAINS
                ! use chla arrays instead of mockup array
                zchl = ztotchla(ji,jj,jk)
                zchl = zchl + rtrn
-               ! the exponential is an ad-hoc e-folding as mentioned above
-               ! O Riche Aug 30th 2022
-               ! trn(ji,jj,jk,jqdch)+trn(ji,jj,jk,jqnch) will replace src2d_dta(ji,jj,jk,js2d_chla)
-               ! once they are available. 
                zchl = zchl * tmask(ji,jj,jk)
                zchl = MIN(  10. , MAX( 0.05, zchl )  )
                irgb = NINT( 41 + 20.* LOG10( zchl ) + rtrn )
@@ -370,6 +366,11 @@ CONTAINS
       ENDDO
       !
       par_1band(:,:,:) = zetot(:,:,:)
+      ! O Riche DBG Oct 25th 2022
+      ! set par_1band to a constant value to test
+      ! if NaNf error comes from the trcopt.F90 modules
+      par_1band(:,:,1:10)   = 50._wp
+      par_1band(:,:,11:jpk) = 0._wp
       !
       IF( lk_iomput )  CALL iom_put("PAR2BIO", par_1band(:,:,:) * tmask_bgc_closea(:,:,:) ) ! PAR to use for CMOC (or CanOE)
       !

@@ -130,7 +130,7 @@ CONTAINS
             zpislopead (ji,jj,jk) = vm_cmoc * r1_rday * zfact
             !
             ! phytoplankton photoacclimation used in light limitation
-            ! trn(...,jqnchl) / trn(...,jqphy) / 12. is theta in gChl per gC
+            ! trn(...,jqnch) / trn(...,jqphy) / 12. is theta in gChl per gC
             ! ztheta is set to a maximum of thm_cmoc so as to prevent appearance of light-saturation in case zetot is small but trn(ji,jj,jk,jqphy) is 0
             ztheta = MIN(thm_cmoc,trn(ji,jj,jk,jqnch)/(trn(ji,jj,jk,jqphy)*12._wp+rtrn))
             zpislopen =  achl_cmoc * ztheta / ( zpislopead(ji,jj,jk) * rday  + rtrn )
@@ -207,7 +207,10 @@ CONTAINS
      IF( lk_iomput ) THEN
        IF( jnt == qnrdttrc ) THEN
           CALL iom_put( "PPPHY"   , zprorca (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )
+          CALL iom_put( "chlaP"   , zprochln(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )
+          CALL iom_put( "photor"  , zprbio(:,:,:)             * tmask_bgc_closea(:,:,:) )
           CALL iom_put( "Mumax"   , zpislopead  (:,:,:) * rday * tmask_bgc_closea(:,:,:) )
+          CALL iom_put( "thchl2C" , zprnch  (:,:,:)            * tmask_bgc_closea(:,:,:) )
           CALL iom_put( "LNnut"   , zlimn   (:,:,:) * tmask_bgc_closea(:,:,:) )
           CALL iom_put( "LNFe"    , xlimnfecmoc (:,:) * tmask_bgc_closea(:,:,1) )
           CALL iom_put( "LNlight" , zliml   (:,:,:) * tmask_bgc_closea(:,:,:) )

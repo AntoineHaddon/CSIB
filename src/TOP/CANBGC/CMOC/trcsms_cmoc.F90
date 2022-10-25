@@ -121,15 +121,7 @@ CONTAINS
         ENDIF
           !
       ENDIF
-      !
-      ! O Riche Oct 21st 2022
-      ! Removing Euler/Leapfrog cmoc inherited code
-      ! IF( ( neuler == 0 .AND. kt == nittrc000 ) .OR. ln_top_euler ) THEN
-         ! DO jn = 1, jp_tot       !   SMS on tracer without Asselin time-filter
-            ! trb(:,:,:,jn) = trn(:,:,:,jn)
-         ! END DO
-      ! ENDIF
-
+      ! 
       ! Do we need this or is this covered at least partly by all the new
       ! external sources subroutines, e.g. trcsrc.F90 modules.
       ! anything else to add?
@@ -199,6 +191,14 @@ CONTAINS
       ENDIF
       !
       qnegtr(:,:,:) = 1.e0
+      ! O Riche Oct 25th 2022
+      ! test value of jp_tot to see if jp_age is involved
+      IF( lwp ) THEN
+        WRITE(numout,*) 'trc_sms_cmoc: jp_age and jp_tot check'
+        WRITE(numout,*) 'jp_age = ', jp_age
+        WRITE(numout,*) 'jp_tot = ', jp_tot
+      ENDIF
+      
       DO jn = 1, jp_tot
         DO jk = 1, jpk
            DO jj = 1, jpj
