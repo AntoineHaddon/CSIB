@@ -229,12 +229,18 @@ echo "#################### Start NEMO pre-processing #################"
     echo "###   Starting from rest.   ###"
     echo "###############################"
 
-    # Initial date
-    prev_date0="010101"
+    # starting from rest, NOT a restart
+    ln_rstart=.false.
+    [[ $nemo_trc -eq 1 ]] && ln_rsttr=.false.
+
   else
     #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
     #=#=#=#   Start from a restart  #=#=#=#
     #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+
+    # starting from restart
+    ln_rstart=.true.
+    [[ $nemo_trc -eq 1 ]] && ln_rsttr=.true.
 
     # Determine what restart to use
     # -----------------------------
@@ -352,6 +358,10 @@ echo "#################### Start NEMO pre-processing #################"
   for f in $nemo_namelists; do
       ! is_file $f && cp ${WRK_DIR}/config/namelists/${f} .
   done
+
+  # make namelist mods foir the restart switch 
+    mod_nl namelist ln_rstart
+    [[ $nemo_trc -eq 1 ]] && mod_nl namelist_top ln_rsttr
 
   # nemo executable
   ! is_file $nemo_exec && cp ${EXEC_STORAGE_DIR}/$nemo_exec .
