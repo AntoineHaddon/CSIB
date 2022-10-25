@@ -180,25 +180,25 @@ CONTAINS
         END DO
       END DO
       !
-      !   Update the arrays TRA which contain the biological sources and sinks
-      !   --------------------------------------------------------------------
-      !
-      DO jk = 1, jpkm1
-         DO jj = 1, jpj
-           DO ji =1 ,jpi
-            !
-            tra(ji,jj,jk,jqno3) = tra(ji,jj,jk,jqno3) - zprorca(ji,jj,jk)
-            tra(ji,jj,jk,jqphy) = tra(ji,jj,jk,jqphy) + zprorca(ji,jj,jk)
-            tra(ji,jj,jk,jqnch) = tra(ji,jj,jk,jqnch) + zprochln(ji,jj,jk)
-            tra(ji,jj,jk,jqoxy) = tra(ji,jj,jk,jqoxy) + zprorca(ji,jj,jk)
-            tra(ji,jj,jk,jqdic) = tra(ji,jj,jk,jqdic) - zprorca(ji,jj,jk)
-            tra(ji,jj,jk,jqtal) = tra(ji,jj,jk,jqtal) + ncrr_cmoc * zprorca(ji,jj,jk)
-            ! O Riche Sept 14th can be uncommented or moved to TOP
-            ! tra(ji,jj,jk,jqdnt) = tra(ji,jj,jk,jqdnt) - zprorca(ji,jj,jk)
-            !
-          END DO
-        END DO
-     END DO
+      ! !   Update the arrays TRA which contain the biological sources and sinks
+      ! !   --------------------------------------------------------------------
+      ! !
+      ! DO jk = 1, jpkm1
+         ! DO jj = 1, jpj
+           ! DO ji =1 ,jpi
+            ! !
+            ! tra(ji,jj,jk,jqno3) = tra(ji,jj,jk,jqno3) - zprorca(ji,jj,jk)
+            ! tra(ji,jj,jk,jqphy) = tra(ji,jj,jk,jqphy) + zprorca(ji,jj,jk)
+            ! tra(ji,jj,jk,jqnch) = tra(ji,jj,jk,jqnch) + zprochln(ji,jj,jk)
+            ! tra(ji,jj,jk,jqoxy) = tra(ji,jj,jk,jqoxy) + zprorca(ji,jj,jk)
+            ! tra(ji,jj,jk,jqdic) = tra(ji,jj,jk,jqdic) - zprorca(ji,jj,jk)
+            ! tra(ji,jj,jk,jqtal) = tra(ji,jj,jk,jqtal) + ncrr_cmoc * zprorca(ji,jj,jk)
+            ! ! O Riche Sept 14th can be uncommented or moved to TOP
+            ! ! tra(ji,jj,jk,jqdnt) = tra(ji,jj,jk,jqdnt) - zprorca(ji,jj,jk)
+            ! !
+          ! END DO
+        ! END DO
+     ! END DO
      !
      ! O Riche Sept 14th 2022
      ! Can be uncommented when diagnostics below

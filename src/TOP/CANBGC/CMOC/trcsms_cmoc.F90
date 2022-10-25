@@ -10,7 +10,6 @@ MODULE trcsms_cmoc
    !! trc_sms_cmoc       : CMOC model main routine
    !! trc_sms_cmoc_alloc : allocate arrays specific to CMOC sms
    !!----------------------------------------------------------------------
-   USE par_trc         ! TOP parameters
    USE oce_trc         ! Ocean variables
    USE trc             ! TOP variables
    USE trd_oce
@@ -152,9 +151,9 @@ CONTAINS
       !
       CALL trc_opt_1band( kt )        ! 1-band PAR attenuation
       !
-      ! DO jnt = 1, qnrdttrc             ! Potential time splitting if requested
-        ! CALL cmoc_prod( kt, jnt )      ! PP subroutine
-      ! END DO
+      DO jnt = 1, qnrdttrc             ! Potential time splitting if requested
+        CALL cmoc_prod( kt, jnt )      ! PP subroutine
+      END DO
       !
       ! Is this below necessary? (NEMO3.4.1 code)
       ! DO jn = jp_bgc+1, jp_bgc+jp_cmoc
