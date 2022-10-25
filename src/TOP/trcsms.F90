@@ -142,7 +142,7 @@ CONTAINS
       ! O Riche Oct 25th 2022
       ! test value of jp_tot to see if jp_age is involved
       IF( lwp ) THEN
-        WRITE(numout,*) 'trc_sms_cmoc: jp_age and jp_tot check'
+        WRITE(numout,*) 'trc_sms: jp_age and jp_tot check'
         WRITE(numout,*) 'jp_age = ', jp_age
         WRITE(numout,*) 'jp_tot = ', jp_tot
       ENDIF

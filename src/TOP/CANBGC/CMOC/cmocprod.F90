@@ -209,12 +209,12 @@ CONTAINS
           CALL iom_put( "PPPHY"   , zprorca (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )
           CALL iom_put( "chlaP"   , zprochln(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )
           CALL iom_put( "photor"  , zprbio(:,:,:)             * tmask_bgc_closea(:,:,:) )
-          CALL iom_put( "Mumax"   , zpislopead  (:,:,:) * rday * tmask_bgc_closea(:,:,:) )
-          CALL iom_put( "thchl2C" , zprnch  (:,:,:)            * tmask_bgc_closea(:,:,:) )
-          CALL iom_put( "LNnut"   , zlimn   (:,:,:) * tmask_bgc_closea(:,:,:) )
-          CALL iom_put( "LNFe"    , xlimnfecmoc (:,:) * tmask_bgc_closea(:,:,1) )
-          CALL iom_put( "LNlight" , zliml   (:,:,:) * tmask_bgc_closea(:,:,:) )
-          CALL iom_put( "PARCMOC" , zetot   (:,:,:) * tmask_bgc_closea(:,:,:) )
+          CALL iom_put( "Mumax"   , zpislopead(:,:,:) * rday  * tmask_bgc_closea(:,:,:) )
+          CALL iom_put( "thchl2C" , zprnch  (:,:,:)           * tmask_bgc_closea(:,:,:) )
+          CALL iom_put( "LNnut"   , zlimn   (:,:,:)           * tmask_bgc_closea(:,:,:) )
+          CALL iom_put( "LNFe"    , xlimnfecmoc (:,:)         * tmask_bgc_closea(:,:,1) )
+          CALL iom_put( "LNlight" , zliml   (:,:,:)           * tmask_bgc_closea(:,:,:) )
+          CALL iom_put( "PARCMOC" , zetot   (:,:,:)           * tmask_bgc_closea(:,:,:) )
        ENDIF
        
       ENDIF
