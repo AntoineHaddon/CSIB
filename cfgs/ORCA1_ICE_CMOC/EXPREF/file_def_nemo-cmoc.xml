@@ -81,6 +81,11 @@
           <field field_ref="chlaP"   />
           <field field_ref="photor"  />
           
+          <!-- Temporary addition -->
+          <!-- Ideal Age Tracer (IAT) from TOP -->
+          <field field_ref="Age"     />
+
+          
         </file>
 
       </file_group>
