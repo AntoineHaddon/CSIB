@@ -276,7 +276,7 @@ echo "#################### Start NEMO pre-processing #################"
   
     # starting from rest, NOT a restart
     ln_rstart=.false.
-    [[ $nemo_trc -eq 'on' ]] && ln_rsttr=.false.
+    [ $nemo_trc -eq 'on' ] && ln_rsttr=.false.
 
   else
     #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
@@ -285,7 +285,7 @@ echo "#################### Start NEMO pre-processing #################"
 
     # starting from restart
     ln_rstart=.true.
-    [[ $nemo_trc -eq 'on' ]] && ln_rsttr=.true.
+    [ $nemo_trc -eq 'on' ] && ln_rsttr=.true.
 
     # Determine what restart to use
     # -----------------------------
@@ -414,7 +414,7 @@ echo "#################### Start NEMO pre-processing #################"
   done
   # make namelist mods foir the restart switch 
     mod_nl namelist_cfg ln_rstart
-    [[ $nemo_trc -eq 'on' ]] && mod_nl namelist_top_cfg ln_rsttr
+    [ $nemo_trc -eq 'on' ] && mod_nl namelist_top_cfg ln_rsttr
 
   # nemo executable
   ! is_file $nemo_exec && cp ${EXEC_STORAGE_DIR}/$nemo_exec .
