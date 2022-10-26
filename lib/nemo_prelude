@@ -140,6 +140,16 @@ echo "#################### Start NEMO pre-processing #################"
   nemo_subbasins=${nemo_subbasins:=nemo_3.4_orca1_basinmask_050308_ukmo_modified.nc}
   nemo_o2=${nemo_o2:=urdy_fafmip_hfds_orca1_record.nc}
 
+  # =====================
+  # Set Inherited params
+  # =====================
+  # Translate switches into 0/1 booleans
+  ToF nemo_from_rest
+  ToF nemo_carbon
+  ToF nemo_trans_co2
+  ToF nemo_trc
+  ToF nemo_cfc
+
   # ==============================
   # High level consistency checks
   # ==============================
@@ -169,16 +179,6 @@ echo "#################### Start NEMO pre-processing #################"
     3) ;; # LIM3 ice-model
     *) bail "Invalid value for nn_ice = $nn_ice" ;;
   esac
-
-  # =====================
-  # Set Inherited params
-  # =====================
-  # Translate switches into 0/1 booleans
-  ToF nemo_from_rest
-  ToF nemo_carbon
-  ToF nemo_trans_co2
-  ToF nemo_trc
-  ToF nemo_cfc
 
   # Identify the location of the NEMO git repository and the commit within
   #   that repository that is associated with the current run
