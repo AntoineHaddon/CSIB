@@ -161,17 +161,17 @@ CONTAINS
         ! CALL lbc_lnk( trb(:,:,:,jn), 'T', 1. )
         ! CALL lbc_lnk( tra(:,:,:,jn), 'T', 1. )
       ! END DO
-      !
-      IF( l_trdtrc )  ALLOCATE( ztrmyt(jpi,jpj,jpk) )
-      !
-      ! Save the trends in the mixed layer
-      IF( l_trdtrc ) THEN
-          DO jn = 1, jp_tot
-            ztrmyt(:,:,:) = tra(:,:,:,jn)
-            CALL trd_trc( ztrmyt, jn, jptra_sms, kt )   ! save trends
-          END DO
-          DEALLOCATE( ztrmyt )
-      END IF
+      ! !
+      ! IF( l_trdtrc )  ALLOCATE( ztrmyt(jpi,jpj,jpk) )
+      ! !
+      ! ! Save the trends in the mixed layer
+      ! IF( l_trdtrc ) THEN
+          ! DO jn = 1, jp_tot
+            ! ztrmyt(:,:,:) = tra(:,:,:,jn)
+            ! CALL trd_trc( ztrmyt, jn, jptra_sms, kt )   ! save trends
+          ! END DO
+          ! DEALLOCATE( ztrmyt )
+      ! END IF
       !
       ! O Riche DBG Oct 21st 2022
       IF( lwp ) THEN

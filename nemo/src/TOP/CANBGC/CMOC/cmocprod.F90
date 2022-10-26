@@ -187,14 +187,23 @@ CONTAINS
          DO jj = 1, jpj
            DO ji =1 ,jpi
             !
-            ! tra(ji,jj,jk,jqno3) = tra(ji,jj,jk,jqno3) - zprorca(ji,jj,jk)
+            tra(ji,jj,jk,jqno3) = tra(ji,jj,jk,jqno3) - zprorca(ji,jj,jk)
             tra(ji,jj,jk,jqphy) = tra(ji,jj,jk,jqphy) + zprorca(ji,jj,jk)
             tra(ji,jj,jk,jqnch) = tra(ji,jj,jk,jqnch) + zprochln(ji,jj,jk)
             tra(ji,jj,jk,jqoxy) = tra(ji,jj,jk,jqoxy) + zprorca(ji,jj,jk)
-            ! tra(ji,jj,jk,jqdic) = tra(ji,jj,jk,jqdic) - zprorca(ji,jj,jk)
+            tra(ji,jj,jk,jqdic) = tra(ji,jj,jk,jqdic) - zprorca(ji,jj,jk)
             tra(ji,jj,jk,jqtal) = tra(ji,jj,jk,jqtal) + ncrr_cmoc * zprorca(ji,jj,jk)
             ! O Riche Sept 14th can be uncommented or moved to TOP
             ! tra(ji,jj,jk,jqdnt) = tra(ji,jj,jk,jqdnt) - zprorca(ji,jj,jk)
+            !
+            ! O Riche Oct 26th 2022
+            ! Test if any trend is too large
+            IF( ABS(tra(ji,jj,jk,jqno3)) > HUGE(1._wp) ) WRITE(numout,*) 'jqno3 has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
+            IF( ABS(tra(ji,jj,jk,jqphy)) > HUGE(1._wp) ) WRITE(numout,*) 'jqphy has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
+            IF( ABS(tra(ji,jj,jk,jqnch)) > HUGE(1._wp) ) WRITE(numout,*) 'jqnch has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
+            IF( ABS(tra(ji,jj,jk,jqoxy)) > HUGE(1._wp) ) WRITE(numout,*) 'jqoxy has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
+            IF( ABS(tra(ji,jj,jk,jqdic)) > HUGE(1._wp) ) WRITE(numout,*) 'jqdic has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
+            IF( ABS(tra(ji,jj,jk,jqtal)) > HUGE(1._wp) ) WRITE(numout,*) 'jqtal has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
             !
           END DO
         END DO
@@ -204,21 +213,21 @@ CONTAINS
      ! Can be uncommented when diagnostics below
      ! have been added to xml definition files
      zrfact2 = 1.e3 * qfact2r  ! conversion from mol L^-1 timestep^-1 into mol m^-3 s^-1
-     IF( lk_iomput ) THEN
-       IF( jnt == qnrdttrc ) THEN
-          CALL iom_put( "PPPHY"   , zprorca (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )
-          CALL iom_put( "chlaP"   , zprochln(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )
-          CALL iom_put( "photor"  , zprbio(:,:,:)             * tmask_bgc_closea(:,:,:) )
-          CALL iom_put( "Mumax"   , zpislopead(:,:,:) * rday  * tmask_bgc_closea(:,:,:) )
-          CALL iom_put( "thchl2C" , zprnch  (:,:,:)           * tmask_bgc_closea(:,:,:) )
-          CALL iom_put( "LNnut"   , zlimn   (:,:,:)           * tmask_bgc_closea(:,:,:) )
-          CALL iom_put( "LNFe"    , xlimnfecmoc (:,:)         * tmask_bgc_closea(:,:,1) )
-          CALL iom_put( "LNlight" , zliml   (:,:,:)           * tmask_bgc_closea(:,:,:) )
-          CALL iom_put( "PARCMOC" , zetot   (:,:,:)           * tmask_bgc_closea(:,:,:) )
-       ENDIF
-       
-      ENDIF
-
+     !
+     ! IF( lk_iomput ) THEN
+       ! IF( jnt == qnrdttrc ) THEN
+          ! CALL iom_put( "PPPHY"   , zprorca (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )
+          ! CALL iom_put( "chlaP"   , zprochln(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )
+          ! CALL iom_put( "photor"  , zprbio(:,:,:)             * tmask_bgc_closea(:,:,:) )
+          ! CALL iom_put( "Mumax"   , zpislopead(:,:,:) * rday  * tmask_bgc_closea(:,:,:) )
+          ! CALL iom_put( "thchl2C" , zprnch  (:,:,:)           * tmask_bgc_closea(:,:,:) )
+          ! CALL iom_put( "LNnut"   , zlimn   (:,:,:)           * tmask_bgc_closea(:,:,:) )
+          ! CALL iom_put( "LNFe"    , xlimnfecmoc (:,:)         * tmask_bgc_closea(:,:,1) )
+          ! CALL iom_put( "LNlight" , zliml   (:,:,:)           * tmask_bgc_closea(:,:,:) )
+          ! CALL iom_put( "PARCMOC" , zetot   (:,:,:)           * tmask_bgc_closea(:,:,:) )
+       ! ENDIF
+      ! ENDIF
+      !
       IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('prod')")
          CALL prt_ctl_trc_info(charout)
