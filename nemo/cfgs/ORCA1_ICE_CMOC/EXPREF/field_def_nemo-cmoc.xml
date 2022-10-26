@@ -87,6 +87,11 @@
        <field id="chlaP"       long_name="Chl-a   production"                     unit="mg chla m^-3 s^-1"   grid_ref="grid_T_3D" />
        <field id="photor"      long_name="Photosynthetic rate"                    unit="d^-1"                grid_ref="grid_T_3D" />
 
+       <!-- Temporary addition -->
+       <!-- Ideal Age Tracer (IAT) from TOP -->
+       <field id="Age"         long_name="Seawater age since contact with surface"  unit="years"             grid_ref="grid_T_3D"  /> -->
+
+
      </field_group>
 
    </field_definition>
