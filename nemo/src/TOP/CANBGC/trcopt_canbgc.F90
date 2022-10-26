@@ -366,13 +366,6 @@ CONTAINS
       ENDDO
       !
       par_1band(:,:,:) = zetot(:,:,:)
-      ! O Riche DBG Oct 25th 2022
-      ! set par_1band to a constant value to test
-      ! if NaNf error comes from the trcopt.F90 modules
-      par_1band(:,:,:) = 0._wp
-      DO jk = 1, 10
-        par_1band(:,:,jk) = 50._wp
-      ENDDO
       !
       IF( lk_iomput )  CALL iom_put("PAR2BIO", par_1band(:,:,:) * tmask_bgc_closea(:,:,:) ) ! PAR to use for CMOC (or CanOE)
       !
