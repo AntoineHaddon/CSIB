@@ -21,7 +21,7 @@ MODULE trcsms_cmoc
    USE sms_top_canbgc     ! basic shared TOP variables, also contains ext. src array declarations
 
    USE cmocprod           ! CMOC PP module
-   USE cmocmort           ! CMOC mortality module
+   USE cmocmort           ! CMOC phyto mortality module
 
    IMPLICIT NONE
    PRIVATE

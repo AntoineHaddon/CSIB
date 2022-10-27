@@ -60,9 +60,9 @@ CONTAINS
       !!                     ***  ROUTINE cmoc_prod  ***
       !!
       !! ** Purpose :   Compute the phytoplankton production depending on
-      !!              light, temperature and nutrient availability
+      !!                light, temperature and nutrient availability
       !!
-      !! ** Method  : - ???
+      !! ** Method  : - forward time integration (Euler or Leapfrog)
       !!---------------------------------------------------------------------
       !
       INTEGER, INTENT(in) :: kt, jnt
