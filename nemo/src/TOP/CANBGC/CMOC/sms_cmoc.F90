@@ -25,6 +25,10 @@ MODULE sms_cmoc
 
    !   Redfield ratio and euphotic zone
    REAL(wp), SAVE :: cnrr_cmoc  
-   REAL(wp), SAVE :: ncrr_cmoc  
+   REAL(wp), SAVE :: ncrr_cmoc
+
+   ! Mortality module
+   REAL(wp), SAVE :: mpd_cmoc
+   REAL(wp), SAVE :: mpd2_cmoc
  
 END MODULE sms_cmoc

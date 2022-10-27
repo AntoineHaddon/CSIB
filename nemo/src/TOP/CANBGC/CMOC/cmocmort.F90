@@ -19,6 +19,8 @@ MODULE cmocmort
    USE sms_top_canbgc     !  TOP Source Minus Sink variables
    USE sms_cmoc           !  CMOC specific parameters declaration
 
+   USE trc_closea_canbgc  !  tmask_bgc_closea
+
    USE prtctl_trc      !  print control for debugging
    USE iom             !  I/O manager
 
