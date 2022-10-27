@@ -21,6 +21,7 @@ MODULE trcsms_cmoc
    USE sms_top_canbgc     ! basic shared TOP variables, also contains ext. src array declarations
 
    USE cmocprod           ! CMOC PP module
+   USE cmocmort           ! CMOC mortality module
 
    IMPLICIT NONE
    PRIVATE
@@ -154,6 +155,8 @@ CONTAINS
       DO jnt = 1, qnrdttrc             ! Potential time splitting if requested
         CALL cmoc_prod( kt, jnt )      ! PP subroutine
       END DO
+      !
+      CALL cmoc_mort( kt )
       !
       ! Is this below necessary? (NEMO3.4.1 code)
       ! DO jn = jp_bgc+1, jp_bgc+jp_cmoc

@@ -30,5 +30,9 @@ MODULE sms_cmoc
    ! Mortality module
    REAL(wp), SAVE :: mpd_cmoc
    REAL(wp), SAVE :: mpd2_cmoc
+
+   ! Remineralization module
+   REAL(wp), SAVE :: ed_cmoc
+   REAL(wp), SAVE :: reref_cmoc
  
 END MODULE sms_cmoc

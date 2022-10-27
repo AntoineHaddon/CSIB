@@ -129,7 +129,11 @@ CONTAINS
       CALL trc_opt_init
       !
       ! O Riche Sept 13th 2022
-      CALL cmoc_prod_init ! mostly read namelist_cmoc_* files
+      CALL cmoc_prod_init
+      !
+      ! O Riche Oct 27th 2022
+      CALL cmoc_mort_init
+      !
       ! !
    END SUBROUTINE trc_ini_cmoc
 

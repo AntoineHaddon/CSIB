@@ -1,7 +1,7 @@
 MODULE cmocmort
    !!======================================================================
    !!                         ***  MODULE p4zmort  ***
-   !! TOP :   PISCES Compute the mortality terms for phytoplankton
+   !! TOP/CANBGC :   CMOC Compute the mortality terms for phytoplankton
    !!======================================================================
    !! History :   1.0  !  2002     (O. Aumont)  Original code
    !!             2.0  !  2007-12  (C. Ethe, G. Madec)  F90
