@@ -174,7 +174,7 @@ CONTAINS
       ! END IF
       !
       ! O Riche DBG Oct 21st 2022
-      IF( lwp ) THEN
+      IF( lwp .AND. kt == nittrc000 ) THEN
         WRITE(numout,*)
         WRITE(numout,*) 'Checking trn index attribution:'
         WRITE(numout,*) 'jqdic = ', jqdic
@@ -192,7 +192,7 @@ CONTAINS
       qnegtr(:,:,:) = 1.e0
       ! O Riche Oct 25th 2022
       ! test value of jp_tot to see if jp_age is involved
-      IF( lwp ) THEN
+      IF( lwp .AND. kt == nittrc000 ) THEN
         WRITE(numout,*) 'trc_sms_cmoc: jp_age and jp_tot check'
         WRITE(numout,*) 'jp_age = ', jp_age
         WRITE(numout,*) 'jp_tot = ', jp_tot

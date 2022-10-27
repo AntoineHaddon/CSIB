@@ -123,7 +123,7 @@ CONTAINS
             !                  IF( zetot(ji,jj,jk) > 1.E-3 ) THEN
             ztn    = tsn(ji,jj,jk,jp_tem) + 273.15_wp
             ! ep_cmoc is in kJ mol^-1 and 8.31 is the ideal gas constant in J mol^-1 K^-1
-            zadap  = ep_cmoc * 1e+3_wp / 8.31_wp * ( 1._wp / ( ztn + rtrn ) - 1._wp / ( tvm_cmoc + 273.15_wp) )
+            zadap  = ep_cmoc * 1.e3_wp / 8.31_wp * ( 1._wp / ( ztn + rtrn ) - 1._wp / ( tvm_cmoc + 273.15_wp) )
             zfact  = EXP ( -zadap )
             ! zfact is the Arrhenius function, vm_cmoc the growth rate at 30oC in d^-1
             ! zpislopead is the photosynthetic growth in s^-1
@@ -213,21 +213,21 @@ CONTAINS
      ! Can be uncommented when diagnostics below
      ! have been added to xml definition files
      zrfact2 = 1.e3 * qfact2r  ! conversion from mol L^-1 timestep^-1 into mol m^-3 s^-1
-     !
-     ! IF( lk_iomput ) THEN
-       ! IF( jnt == qnrdttrc ) THEN
-          ! CALL iom_put( "PPPHY"   , zprorca (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )
-          ! CALL iom_put( "chlaP"   , zprochln(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )
-          ! CALL iom_put( "photor"  , zprbio(:,:,:)             * tmask_bgc_closea(:,:,:) )
-          ! CALL iom_put( "Mumax"   , zpislopead(:,:,:) * rday  * tmask_bgc_closea(:,:,:) )
-          ! CALL iom_put( "thchl2C" , zprnch  (:,:,:)           * tmask_bgc_closea(:,:,:) )
-          ! CALL iom_put( "LNnut"   , zlimn   (:,:,:)           * tmask_bgc_closea(:,:,:) )
-          ! CALL iom_put( "LNFe"    , xlimnfecmoc (:,:)         * tmask_bgc_closea(:,:,1) )
-          ! CALL iom_put( "LNlight" , zliml   (:,:,:)           * tmask_bgc_closea(:,:,:) )
-          ! CALL iom_put( "PARCMOC" , zetot   (:,:,:)           * tmask_bgc_closea(:,:,:) )
-       ! ENDIF
-      ! ENDIF
-      !
+     
+     IF( lk_iomput ) THEN
+       IF( jnt == qnrdttrc ) THEN
+          CALL iom_put( "PPPHY"   , zprorca (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )
+          CALL iom_put( "chlaP"   , zprochln(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )
+          CALL iom_put( "photor"  , zprbio(:,:,:)             * tmask_bgc_closea(:,:,:) )
+          CALL iom_put( "Mumax"   , zpislopead(:,:,:) * rday  * tmask_bgc_closea(:,:,:) )
+          CALL iom_put( "thchl2C" , zprnch  (:,:,:)           * tmask_bgc_closea(:,:,:) )
+          CALL iom_put( "LNnut"   , zlimn   (:,:,:)           * tmask_bgc_closea(:,:,:) )
+          CALL iom_put( "LNFe"    , xlimnfecmoc (:,:)         * tmask_bgc_closea(:,:,1) )
+          CALL iom_put( "LNlight" , zliml   (:,:,:)           * tmask_bgc_closea(:,:,:) )
+          CALL iom_put( "PARCMOC" , zetot   (:,:,:)           * tmask_bgc_closea(:,:,:) )
+       ENDIF
+      ENDIF
+      
       IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('prod')")
          CALL prt_ctl_trc_info(charout)
