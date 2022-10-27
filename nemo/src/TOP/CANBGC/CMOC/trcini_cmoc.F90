@@ -27,6 +27,7 @@ MODULE trcini_cmoc
 
    USE cmocprod            ! CMOC PP module
    USE cmocmort            ! CMOC phyto mortality module
+   USE cmocrem            ! CMOC carbon remineralization
    
    IMPLICIT NONE
    PRIVATE
@@ -134,6 +135,9 @@ CONTAINS
       !
       ! O Riche Oct 27th 2022
       CALL cmoc_mort_init
+      !
+      ! O Riche Oct 27th 2022
+      CALL cmoc_rem_init
       !
       ! !
    END SUBROUTINE trc_ini_cmoc

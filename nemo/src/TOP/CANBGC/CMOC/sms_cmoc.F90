@@ -32,6 +32,10 @@ MODULE sms_cmoc
    REAL(wp), SAVE :: mpd2_cmoc
 
    ! Remineralization module
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)  ::  redet          !: detritus remineralization
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:)    ::  redettot       !: detritus remineralization integrated below the euphotic zone
+   
+   
    REAL(wp), SAVE :: ed_cmoc
    REAL(wp), SAVE :: reref_cmoc
  
