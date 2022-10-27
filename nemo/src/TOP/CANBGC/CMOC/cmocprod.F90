@@ -198,12 +198,12 @@ CONTAINS
             !
             ! O Riche Oct 26th 2022
             ! Test if any trend is too large
-            IF( ABS(tra(ji,jj,jk,jqno3)) > HUGE(1._wp) ) WRITE(numout,*) 'jqno3 has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
-            IF( ABS(tra(ji,jj,jk,jqphy)) > HUGE(1._wp) ) WRITE(numout,*) 'jqphy has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
-            IF( ABS(tra(ji,jj,jk,jqnch)) > HUGE(1._wp) ) WRITE(numout,*) 'jqnch has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
-            IF( ABS(tra(ji,jj,jk,jqoxy)) > HUGE(1._wp) ) WRITE(numout,*) 'jqoxy has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
-            IF( ABS(tra(ji,jj,jk,jqdic)) > HUGE(1._wp) ) WRITE(numout,*) 'jqdic has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
-            IF( ABS(tra(ji,jj,jk,jqtal)) > HUGE(1._wp) ) WRITE(numout,*) 'jqtal has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
+            IF( lwp .AND. ABS(tra(ji,jj,jk,jqno3)) > HUGE(1._wp) ) WRITE(numout,*) 'jqno3 has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
+            IF( lwp .AND. ABS(tra(ji,jj,jk,jqphy)) > HUGE(1._wp) ) WRITE(numout,*) 'jqphy has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
+            IF( lwp .AND. ABS(tra(ji,jj,jk,jqnch)) > HUGE(1._wp) ) WRITE(numout,*) 'jqnch has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
+            IF( lwp .AND. ABS(tra(ji,jj,jk,jqoxy)) > HUGE(1._wp) ) WRITE(numout,*) 'jqoxy has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
+            IF( lwp .AND. ABS(tra(ji,jj,jk,jqdic)) > HUGE(1._wp) ) WRITE(numout,*) 'jqdic has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
+            IF( lwp .AND. ABS(tra(ji,jj,jk,jqtal)) > HUGE(1._wp) ) WRITE(numout,*) 'jqtal has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
             !
           END DO
         END DO
