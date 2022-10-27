@@ -22,7 +22,30 @@ CONTAINS
   
   
   SUBROUTINE cmoc_rem_init
-  
+      !!----------------------------------------------------------------------
+      !!                  ***  ROUTINE p4z_rem_init  ***
+      !!
+      !! ** Purpose :   Initialization of remineralization parameters
+      !!
+      !! ** Method  :   Read the namcmocpoc namelist and check the parameters
+      !!                called at the first timestep
+      !!
+      !! ** input   :   Namelist namcmocpoc
+      !!
+      !!----------------------------------------------------------------------
+
+      ! <CMOC code OR 10/15/2015> CMOC namelist
+
+
+      ! control print
+      IF(lwp) THEN
+         WRITE(numout,*) ' Namelist parameters for remineralization, namcmocpoc'
+         WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+         WRITE(numout,*) '    Remineralisation rate of POC              reref_cmoc=', reref_cmoc
+         WRITE(numout,*) '    Activation energy for remineralization    ed_cmoc   =', ed_cmoc   
+         WRITE(numout,*) ' '
+      ENDIF
+      ! 
   END SUBROUTINE cmoc_rem_init
 
 END MODULE cmocrem

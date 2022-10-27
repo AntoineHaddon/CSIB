@@ -26,6 +26,7 @@ MODULE trcini_cmoc
    USE trcopt_canbgc       ! PAR attenuation
 
    USE cmocprod            ! CMOC PP module
+   USE cmocmort            ! CMOC phyto mortality module
    
    IMPLICIT NONE
    PRIVATE

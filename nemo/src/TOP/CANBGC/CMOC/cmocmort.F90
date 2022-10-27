@@ -52,7 +52,7 @@ CONTAINS
       !! ** Purpose :   Calls the different subroutine to initialize and compute
       !!                the different phytoplankton mortality terms
       !!
-      !! ** Method  : - ???
+      !! ** Method  : - forward time integration (Euler or Leapfrog)
       !!---------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt ! ocean time step
       !!---------------------------------------------------------------------
@@ -110,10 +110,10 @@ CONTAINS
       !!
       !! ** Purpose :   Initialization of phytoplankton parameters
       !!
-      !! ** Method  :   Read the nampismort namelist and check the parameters
-      !!      called at the first timestep
+      !! ** Method  :   Read the namcmocmor namelist and check the parameters
+      !!                called at the first timestep
       !!
-      !! ** input   :   Namelist nampismort
+      !! ** input   :   Namelist namcmocmor
       !!
       !!----------------------------------------------------------------------
       INTEGER ::   ios       ! Local integer
