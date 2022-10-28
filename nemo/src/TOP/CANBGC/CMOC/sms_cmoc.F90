@@ -33,10 +33,18 @@ MODULE sms_cmoc
 
    ! Remineralization module
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)  ::  redet          !: detritus remineralization
-   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:)    ::  redettot       !: detritus remineralization integrated below the euphotic zone
-   
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:)    ::  redettot       !: detritus remineralization integrated below the euphotic zone 
    
    REAL(wp), SAVE :: ed_cmoc
    REAL(wp), SAVE :: reref_cmoc
+
+   ! Zooplankton grazing/mortality
+   REAL(wp), SAVE :: rm_cmoc
+   REAL(wp), SAVE :: kp_cmoc
+   REAL(wp), SAVE :: ga_cmoc
+   REAL(wp), SAVE :: mzn_cmoc
+   REAL(wp), SAVE :: mzd_cmoc
+   REAL(wp), SAVE :: mz2_cmoc
+   REAL(wp), SAVE :: xthreshphy      
  
 END MODULE sms_cmoc
