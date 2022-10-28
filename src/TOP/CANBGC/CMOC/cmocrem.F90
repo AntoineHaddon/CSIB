@@ -57,7 +57,7 @@ CONTAINS
       !!
       !! ** Method  : - forward time integration (Euler or Leapfrog)
       !!---------------------------------------------------------------------
-      INTEGER  :: ji, jj, jk
+      INTEGER  :: ji, jj, jk, kt
       REAL(wp) :: zcompaph , ztortp , zrespp , zmortp , zfactch
       CHARACTER (len=25) :: charout
       !!---------------------------------------------------------------------
@@ -72,7 +72,7 @@ CONTAINS
       DO jk = 1, jpk
          DO jj = 1, jpj
             DO ji = 1, jpi
-               redet (ji,jj,jk) = reref_cmoc * xstep &
+               redet (ji,jj,jk) = reref_cmoc * xstepb &
                &                 * exp ( -ed_cmoc * 1e3_wp / 8.31_wp *        &
                &                ( 1._wp / ( tsn(ji,jj,jk,jp_tem) + 273.15_wp  &
                &                 + rtrn ) - 1._wp / ( tvm_cmoc + 273.15_wp )  &
@@ -134,7 +134,7 @@ CONTAINS
       !! ** input   :   Namelist namcmocpoc
       !!
       !!----------------------------------------------------------------------
-
+      INTEGER ::   ios       ! Local integer
       ! <CMOC code OR 10/15/2015> CMOC namelist
       NAMELIST/namcmocpoc/ ed_cmoc, reref_cmoc
 
