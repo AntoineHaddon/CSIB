@@ -134,10 +134,10 @@ CONTAINS
       CALL cmoc_prod_init
       !
       ! ! O Riche Oct 27th 2022
-      ! CALL cmoc_mort_init
+      CALL cmoc_mort_init
       ! !
       ! ! O Riche Oct 27th 2022
-      ! CALL cmoc_rem_init
+      CALL cmoc_rem_init
       !
       ! !
    END SUBROUTINE trc_ini_cmoc
