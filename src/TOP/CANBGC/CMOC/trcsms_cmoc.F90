@@ -161,6 +161,8 @@ CONTAINS
       !
       CALL cmoc_rem( kt )
       !
+      CALL cmoc_zoo( kt )
+      !
       ! Is this below necessary? (NEMO3.4.1 code)
       ! DO jn = jp_bgc+1, jp_bgc+jp_cmoc
         ! CALL lbc_lnk( trn(:,:,:,jn), 'T', 1. )
@@ -209,7 +211,8 @@ CONTAINS
            DO jj = 1, jpj
               DO ji = 1, jpi
                  IF( ( trb(ji,jj,jk,jn) + tra(ji,jj,jk,jn) ) < 0.e0 ) THEN
-                    ztra             = ABS( trb(ji,jj,jk,jn) ) / ( ABS( tra(ji,jj,jk,jn) ) + rtrn )
+                    ztra             = ABS( ( trb(ji,jj,jk,jn) - rtrn ) & 
+                    &                     / ( tra(ji,jj,jk,jn) + rtrn ) )
                     qnegtr(ji,jj,jk) = MIN( qnegtr(ji,jj,jk),  ztra )
                  ENDIF
              END DO

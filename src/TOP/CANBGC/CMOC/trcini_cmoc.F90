@@ -135,9 +135,12 @@ CONTAINS
       !
       ! ! O Riche Oct 27th 2022
       CALL cmoc_mort_init
-      ! !
+      !
       ! ! O Riche Oct 27th 2022
       CALL cmoc_rem_init
+      !
+      ! ! O Riche Oct 28th 2022
+      CALL cmoc_zoo_init
       !
       ! !
    END SUBROUTINE trc_ini_cmoc
