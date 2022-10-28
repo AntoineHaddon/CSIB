@@ -140,6 +140,16 @@ echo "#################### Start NEMO pre-processing #################"
   nemo_subbasins=${nemo_subbasins:=nemo_3.4_orca1_basinmask_050308_ukmo_modified.nc}
   nemo_o2=${nemo_o2:=urdy_fafmip_hfds_orca1_record.nc}
 
+  # =====================
+  # Set Inherited params
+  # =====================
+  # Translate switches into 0/1 booleans
+  ToF nemo_from_rest
+  ToF nemo_carbon
+  ToF nemo_trans_co2
+  ToF nemo_trc
+  ToF nemo_cfc
+
   # ==============================
   # High level consistency checks
   # ==============================
@@ -169,16 +179,6 @@ echo "#################### Start NEMO pre-processing #################"
     3) ;; # LIM3 ice-model
     *) bail "Invalid value for nn_ice = $nn_ice" ;;
   esac
-
-  # =====================
-  # Set Inherited params
-  # =====================
-  # Translate switches into 0/1 booleans
-  ToF nemo_from_rest
-  ToF nemo_carbon
-  ToF nemo_trans_co2
-  ToF nemo_trc
-  ToF nemo_cfc
 
   # Identify the location of the NEMO git repository and the commit within
   #   that repository that is associated with the current run
@@ -229,12 +229,18 @@ echo "#################### Start NEMO pre-processing #################"
     echo "###   Starting from rest.   ###"
     echo "###############################"
 
-    # Initial date
-    prev_date0="010101"
+    # starting from rest, NOT a restart
+    ln_rstart=.false.
+    [ $nemo_trc -eq 1 ] && ln_rsttr=.false.
+
   else
     #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
     #=#=#=#   Start from a restart  #=#=#=#
     #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+
+    # starting from restart
+    ln_rstart=.true.
+    [ $nemo_trc -eq 1 ] && ln_rsttr=.true.
 
     # Determine what restart to use
     # -----------------------------
@@ -352,6 +358,10 @@ echo "#################### Start NEMO pre-processing #################"
   for f in $nemo_namelists; do
       ! is_file $f && cp ${WRK_DIR}/config/namelists/${f} .
   done
+
+  # make namelist mods foir the restart switch 
+    mod_nl namelist ln_rstart
+    [ $nemo_trc -eq 1 ] && mod_nl namelist_top ln_rsttr
 
   # nemo executable
   ! is_file $nemo_exec && cp ${EXEC_STORAGE_DIR}/$nemo_exec .
