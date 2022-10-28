@@ -27,7 +27,8 @@ MODULE trcini_cmoc
 
    USE cmocprod            ! CMOC PP module
    USE cmocmort            ! CMOC phyto mortality module
-   USE cmocrem            ! CMOC carbon remineralization
+   USE cmocrem             ! CMOC carbon remineralization
+   USE cmoczoo             ! CMOC zooplankton grazing
    
    IMPLICIT NONE
    PRIVATE
