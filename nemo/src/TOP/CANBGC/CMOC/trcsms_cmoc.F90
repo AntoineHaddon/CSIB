@@ -157,9 +157,9 @@ CONTAINS
         CALL cmoc_prod( kt, jnt )      ! PP subroutine
       END DO
       !
-      CALL cmoc_mort( kt )
+      ! CALL cmoc_mort( kt )
       !
-      CALL cmoc_rem( kt )
+      ! CALL cmoc_rem( kt )
       !
       ! Is this below necessary? (NEMO3.4.1 code)
       ! DO jn = jp_bgc+1, jp_bgc+jp_cmoc
