@@ -55,11 +55,11 @@ CONTAINS
       REAL(wp), SAVE ::   sco2   =  2.312e-3_wp
       REAL(wp), SAVE ::   alka0  =  2.426e-3_wp
       REAL(wp), SAVE ::   oxyg0  =  177.6e-6_wp
-      REAL(wp), SAVE ::   no30   =    5.0e-6_wp
+      REAL(wp), SAVE ::   no30   =   31.04e-6_wp * 6.625_wp ! match value in CCC*CMOC/trcini_pisces.F90
       REAL(wp), SAVE ::   poc0   =    1.0e-8_wp
       REAL(wp), SAVE ::   phy0   =    1.0e-8_wp
       REAL(wp), SAVE ::   zoo0   =    1.0e-8_wp
-      REAL(wp), SAVE ::   nch0   =    1.0e-8_wp
+      REAL(wp), SAVE ::   nch0   =    1.0e-8_wp * 12. / 55. ! match value in CCC*CMOC/trcini_pisces.F90
       !
       ! Load namelists for shared parameters
       CALL trc_nam_cmoc
@@ -133,11 +133,11 @@ CONTAINS
       ! O Riche Sept 13th 2022
       CALL cmoc_prod_init
       !
-      ! O Riche Oct 27th 2022
-      CALL cmoc_mort_init
-      !
-      ! O Riche Oct 27th 2022
-      CALL cmoc_rem_init
+      ! ! O Riche Oct 27th 2022
+      ! CALL cmoc_mort_init
+      ! !
+      ! ! O Riche Oct 27th 2022
+      ! CALL cmoc_rem_init
       !
       ! !
    END SUBROUTINE trc_ini_cmoc

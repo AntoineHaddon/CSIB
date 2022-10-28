@@ -367,6 +367,8 @@ CONTAINS
       !
       par_1band(:,:,:) = zetot(:,:,:)
       !
+      DEALLOCATE(zetot, zparsw)
+      !
       IF( lk_iomput )  CALL iom_put("PAR2BIO", par_1band(:,:,:) * tmask_bgc_closea(:,:,:) ) ! PAR to use for CMOC (or CanOE)
       !
       IF( ln_timing )  CALL timing_stop('trc_opt_1band')      
