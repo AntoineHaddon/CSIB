@@ -71,6 +71,7 @@
    mzn_cmoc   =  0.2           ! Zooplankton loss to nitrogen             (d^-1)
    mzd_cmoc   =  0.05          ! Zooplankton loss to detritus             (d^-1)
    mz2_cmoc   =  0.1           ! Zooplankton quadratic mortality          (d^-1) (molN m^-3)^-1
+   xthreshphy =  1.e-8         ! Zooplankton feeding threshold on phyto   (mmolC m^-3) 
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &namcmocpoc    !   Detritus remineralization
@@ -111,9 +112,9 @@
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &namcmocdeu     !   Euphotic zone
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-   jk_eud_cmoc  =  11          ! Scale of euphotic zone ~100 m with jk = jk_eud_cmoc = 11
+   jk_eud_cmoc  =  11          ! Scale of euphotic zone ~100 m with jk = jk_eud_cmoc = 11 ! OR Oct 28th 2022 this should be adjusted with the 75 z-levels available
    nk_bal_cmoc  =  15          ! Open ocean criterion: 
-   				   ! Number of vertical layers required to calculate balance
-                               ! for the calcite fluxes and DNF/denitrification ~ 150 m
+! Number of vertical layers required to calculate balance
+                               ! for the calcite fluxes and DNF/denitrification ~ 150 m ! OR Oct 28th 2022 same comment as for jk_eud_cmoc
                                ! with nk_bal_cmoc = 15 
 /
