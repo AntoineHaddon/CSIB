@@ -157,9 +157,9 @@ CONTAINS
         CALL cmoc_prod( kt, jnt )      ! PP subroutine
       END DO
       !
-      ! CALL cmoc_mort( kt )
+      CALL cmoc_mort( kt )
       !
-      ! CALL cmoc_rem( kt )
+      CALL cmoc_rem( kt )
       !
       ! Is this below necessary? (NEMO3.4.1 code)
       ! DO jn = jp_bgc+1, jp_bgc+jp_cmoc
@@ -171,13 +171,13 @@ CONTAINS
       ! IF( l_trdtrc )  ALLOCATE( ztrmyt(jpi,jpj,jpk) )
       ! !
       ! ! Save the trends in the mixed layer
-      ! IF( l_trdtrc ) THEN
-          ! DO jn = 1, jp_tot
-            ! ztrmyt(:,:,:) = tra(:,:,:,jn)
-            ! CALL trd_trc( ztrmyt, jn, jptra_sms, kt )   ! save trends
-          ! END DO
-          ! DEALLOCATE( ztrmyt )
-      ! END IF
+      IF( l_trdtrc ) THEN
+          DO jn = 1, jp_tot
+            ztrmyt(:,:,:) = tra(:,:,:,jn)
+            CALL trd_trc( ztrmyt, jn, jptra_sms, kt )   ! save trends
+          END DO
+          DEALLOCATE( ztrmyt )
+      END IF
       !
       ! O Riche DBG Oct 21st 2022
       IF( lwp .AND. kt == nittrc000 ) THEN
@@ -220,6 +220,7 @@ CONTAINS
       !                                ! and by tracer we mean only the CMOC or shared BGC tracer.
       DO jn = 1, jp_tot 
         trb(:,:,:,jn) = trb(:,:,:,jn) + qnegtr(:,:,:) * tra(:,:,:,jn)
+        tra(:,:,:,jn) = 0._wp
       END DO
       !
       IF( ln_timing )   CALL timing_stop('trc_sms_cmoc')
