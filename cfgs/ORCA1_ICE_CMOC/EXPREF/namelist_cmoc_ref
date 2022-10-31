@@ -71,7 +71,7 @@
    mzn_cmoc   =  0.2           ! Zooplankton loss to nitrogen             (d^-1)
    mzd_cmoc   =  0.05          ! Zooplankton loss to detritus             (d^-1)
    mz2_cmoc   =  0.1           ! Zooplankton quadratic mortality          (d^-1) (molN m^-3)^-1
-   xthreshphy =  1.e-8         ! Zooplankton feeding threshold on phyto   (mmolC m^-3) 
+   xthreshphy =  1.e-8         ! Phyto biomass threshold on zooplankton feeding  (mmolC m^-3) 
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &namcmocpoc    !   Detritus remineralization

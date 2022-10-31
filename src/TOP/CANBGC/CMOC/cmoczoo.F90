@@ -156,10 +156,6 @@ CONTAINS
       ! control print
       IF(lwp) THEN
          WRITE(numout,*) ' '
-         WRITE(numout,*) ' Namelist parameters for microzooplankton, nampiszoo'
-         WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-         WRITE(numout,*) '    nanophyto feeding threshold for microzoo        xthreshphy  =', xthreshphy
-         WRITE(numout,*) ' '
          WRITE(numout,*) ' Namelist parameters for microzooplankton, namcmoczoo'
          WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
          WRITE(numout,*) '    Maximum grazing rate                            rm_cmoc     =', rm_cmoc
@@ -168,6 +164,7 @@ CONTAINS
          WRITE(numout,*) '    Loss to nitrogen                                mzn_cmoc    =', mzn_cmoc
          WRITE(numout,*) '    Loss to detritus                                mzd_cmoc    =', mzd_cmoc
          WRITE(numout,*) '    Quadratic mortality                             mz2_cmoc    =', mz2_cmoc
+         WRITE(numout,*) '    Phyto biomass threshold on zooplankton feeding  xthreshphy  =', xthreshphy
       ENDIF
       
   END SUBROUTINE cmoc_zoo_init
