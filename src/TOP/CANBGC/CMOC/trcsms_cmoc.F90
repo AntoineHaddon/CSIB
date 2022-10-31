@@ -15,6 +15,8 @@ MODULE trcsms_cmoc
    USE trd_oce
    USE trdtrc
 
+   USE lbclnk             ! exchange fields over tile boundaries
+
    USE trcopt_canbgc      ! PAR attenuation
    USE trcche_canbgc      ! carbon chemistry eq. constants
    USE trcflx_canbgc      ! air-flux gas exch.
@@ -189,24 +191,17 @@ CONTAINS
       !
       CALL trc_flx( kt )               ! compute air-sea gas exchange
       !      
-
+      ! Exchange tracers at the tile boundaries
+      !
       DO jn = 1, jp_tot
-        CALL lbc_lnk( trn(:,:,:,jn), 'T', 1. )
-        CALL lbc_lnk( trb(:,:,:,jn), 'T', 1. )
-        CALL lbc_lnk( tra(:,:,:,jn), 'T', 1. )
+        CALL lbc_lnk( 'trcs_cmoc', trn(:,:,:,jn), 'T', 1. )
+        CALL lbc_lnk( 'trcs_cmoc', trb(:,:,:,jn), 'T', 1. )
+        CALL lbc_lnk( 'trcs_cmoc', tra(:,:,:,jn), 'T', 1. )
       END DO
       !
-      ! Is this below necessary? (NEMO3.4.1 code)
-      ! DO jn = jp_bgc+1, jp_bgc+jp_cmoc
-        ! CALL lbc_lnk( trn(:,:,:,jn), 'T', 1. )
-        ! CALL lbc_lnk( trb(:,:,:,jn), 'T', 1. )
-        ! CALL lbc_lnk( tra(:,:,:,jn), 'T', 1. )
-      ! END DO
-      ! !
-      ! IF( l_trdtrc )  ALLOCATE( ztrmyt(jpi,jpj,jpk) )
-      ! !
-      ! ! Save the trends in the mixed layer
+      ! Save the trends in the mixed layer
       IF( l_trdtrc ) THEN
+          ALLOCATE( ztrmyt(jpi,jpj,jpk) )
           DO jn = 1, jp_tot
             ztrmyt(:,:,:) = tra(:,:,:,jn)
             CALL trd_trc( ztrmyt, jn, jptra_sms, kt )   ! save trends
