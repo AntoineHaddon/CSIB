@@ -231,6 +231,7 @@ echo "#################### Start NEMO pre-processing #################"
 
     # starting from rest, NOT a restart
     ln_rstart=.false.
+    nn_istate=1
     [ $nemo_trc -eq 1 ] && ln_rsttr=.false.
 
   else
@@ -240,6 +241,7 @@ echo "#################### Start NEMO pre-processing #################"
 
     # starting from restart
     ln_rstart=.true.
+    nn_istate=0
     [ $nemo_trc -eq 1 ] && ln_rsttr=.true.
 
     # Determine what restart to use
@@ -360,7 +362,7 @@ echo "#################### Start NEMO pre-processing #################"
   done
 
   # make namelist mods foir the restart switch 
-    mod_nl namelist ln_rstart
+    mod_nl namelist ln_rstart nn_istate
     [ $nemo_trc -eq 1 ] && mod_nl namelist_top ln_rsttr
 
   # nemo executable

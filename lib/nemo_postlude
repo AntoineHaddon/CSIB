@@ -120,6 +120,17 @@
           fi
        done
 
+      # Add the output.init file created by the model, if present
+      if [ -s output.init_0000.nc ]; then
+         rm -f rs_output.init.nc
+         pfx=output.init
+         rm -rf $pfx
+         mkdir $pfx
+         mv $pfx*.nc $pfx
+         date_string=$(printf "%04d_m%02d" $chunk_start_year $chunk_start_month)
+         ncsave=${cn_exp}_${date_string}_init
+         save $pfx ${uxxx}_$ncsave && echo "${uxxx}_$ncsave" >> saved_history_FILE_NAMES
+      fi
       # Add the mesh_mask file created by the model, if present
       if [ -s mesh_mask_0000.nc ]; then
          rm -f rs_mesh_mask.nc
