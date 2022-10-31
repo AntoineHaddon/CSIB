@@ -141,8 +141,6 @@ CONTAINS
         CALL trc_che           ! computation of carbon chemistry constants
       !
       ENDIF                            ! initialize the chemical constants
-
-      CALL trc_flx( kt )     ! compute air-sea gas exchange    
       !
       ! O Riche Sept 14th 2022
       ! Move here before cmoc_prod as issue with PAR being set to 0s
@@ -160,9 +158,43 @@ CONTAINS
       !
       CALL cmoc_mort( kt )
       !
+      CALL cmoc_zoo( kt )
+      !
       CALL cmoc_rem( kt )
       !
-      CALL cmoc_zoo( kt )
+      ! Fix tra / trend at the end of all the pelagic sources/sinks
+      qnegtr(:,:,:) = 1.e0      
+      !
+      DO jn = 1, jp_tot
+        DO jk = 1, jpk
+           DO jj = 1, jpj
+              DO ji = 1, jpi
+                 IF( ( trb(ji,jj,jk,jn) + tra(ji,jj,jk,jn) ) < 0.e0 ) THEN
+                    ztra             = ABS( ( trb(ji,jj,jk,jn) - rtrn ) & 
+                    &                     / ( tra(ji,jj,jk,jn) + rtrn ) )
+                    qnegtr(ji,jj,jk) = MIN( qnegtr(ji,jj,jk),  ztra )
+                 ENDIF
+             END DO
+           END DO
+        END DO
+      END DO
+      !
+      !                                ! where at least 1 tracer concentration becomes negative
+      !                                ! and by tracer we mean only the CMOC or shared BGC tracer.
+      !
+      DO jn = 1, jp_tot 
+        trb(:,:,:,jn) = trb(:,:,:,jn) + qnegtr(:,:,:) * tra(:,:,:,jn)
+        tra(:,:,:,jn) = 0._wp
+      END DO
+      !
+      CALL trc_flx( kt )               ! compute air-sea gas exchange
+      !      
+
+      DO jn = 1, jp_tot
+        CALL lbc_lnk( trn(:,:,:,jn), 'T', 1. )
+        CALL lbc_lnk( trb(:,:,:,jn), 'T', 1. )
+        CALL lbc_lnk( tra(:,:,:,jn), 'T', 1. )
+      END DO
       !
       ! Is this below necessary? (NEMO3.4.1 code)
       ! DO jn = jp_bgc+1, jp_bgc+jp_cmoc
@@ -198,7 +230,6 @@ CONTAINS
       CALL FLUSH(numout)
       ENDIF
       !
-      qnegtr(:,:,:) = 1.e0
       ! O Riche Oct 25th 2022
       ! test value of jp_tot to see if jp_age is involved
       IF( lwp .AND. kt == nittrc000 ) THEN
@@ -206,26 +237,6 @@ CONTAINS
         WRITE(numout,*) 'jp_age = ', jp_age
         WRITE(numout,*) 'jp_tot = ', jp_tot
       ENDIF
-      
-      DO jn = 1, jp_tot
-        DO jk = 1, jpk
-           DO jj = 1, jpj
-              DO ji = 1, jpi
-                 IF( ( trb(ji,jj,jk,jn) + tra(ji,jj,jk,jn) ) < 0.e0 ) THEN
-                    ztra             = ABS( ( trb(ji,jj,jk,jn) - rtrn ) & 
-                    &                     / ( tra(ji,jj,jk,jn) + rtrn ) )
-                    qnegtr(ji,jj,jk) = MIN( qnegtr(ji,jj,jk),  ztra )
-                 ENDIF
-             END DO
-           END DO
-        END DO
-      END DO
-      !                                ! where at least 1 tracer concentration becomes negative
-      !                                ! and by tracer we mean only the CMOC or shared BGC tracer.
-      DO jn = 1, jp_tot 
-        trb(:,:,:,jn) = trb(:,:,:,jn) + qnegtr(:,:,:) * tra(:,:,:,jn)
-        tra(:,:,:,jn) = 0._wp
-      END DO
       !
       IF( ln_timing )   CALL timing_stop('trc_sms_cmoc')
       !

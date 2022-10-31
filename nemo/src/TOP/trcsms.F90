@@ -123,7 +123,7 @@ CONTAINS
           IF(lwp) WRITE(numout,*)
         ENDIF
         ! O Riche Oct 24th 2022 - adding trb/trn swap as appearing in p4zsms.F90 / PISCES BGC
-        ! according to comment in p4zsms.F90 this is for restart mode (neuler == 0 in particular)
+        ! according to comment in p4zsms.F90 this is for restart mode (neuler == 0 which means starts from rest with Euler)
         IF( ( neuler == 0 .AND. kt == nittrc000 ) .OR. ln_top_euler ) THEN
            DO jn = 1, jp_tot               !   SMS on tracer without Asselin time-filter
               trb(:,:,:,jn) = trn(:,:,:,jn)
