@@ -260,6 +260,9 @@
       [ -s rs_xnemo_access_log ] && tarlist="$tarlist rs_xnemo_access_log"
 
       # the mesh mask file
+      [ -s rs_output.init.nc ] && tarlist="$tarlist rs_output.init.nc"
+
+      # the mesh mask file
       [ -s rs_mesh_mask.nc ] && tarlist="$tarlist rs_mesh_mask.nc"
 
       # MOVE ADDITIONAL FILES INTO ARCHIVE
