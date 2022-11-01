@@ -120,20 +120,9 @@
           fi
        done
 
-      # Add the output.init file created by the model, if present
-      if [ -s output.init_0000.nc ]; then
-         rm -f rs_output.init.nc
-         pfx=output.init
-         rm -rf $pfx
-         mkdir $pfx
-         mv $pfx*.nc $pfx
-         date_string=$(printf "%04d_m%02d" $chunk_start_year $chunk_start_month)
-         ncsave=${cn_exp}_${date_string}_init
-         save $pfx ${uxxx}_$ncsave && echo "${uxxx}_$ncsave" >> saved_history_FILE_NAMES
-      fi
       # Add the mesh_mask file created by the model, if present
       if [ -s mesh_mask_0000.nc ]; then
-         rm -f rs_mesh_mask.nc
+         rm -f mesh_mask.nc
          pfx=mesh_mask
          rm -rf $pfx
          mkdir $pfx
@@ -177,7 +166,7 @@
           mv $found_rs NEXT_RESTART_ARC
         fi
 
-        if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
+      if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
           # Look for pisces restart files matching the pattern below
           eval pfnpatt=${cn_exp}_${end_step}_${cn_trcrst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
           found_rs=`(ls -1 $pfnpatt || : ) 2>/dev/null`
@@ -187,7 +176,7 @@
           else
             mv $found_rs NEXT_RESTART_ARC
           fi
-        fi
+      fi
 
       if [ $with_ice -eq 1 ]; then
          # Look for ice restart files
@@ -259,11 +248,18 @@
       cp -f xnemo_access_log rs_xnemo_access_log || :
       [ -s rs_xnemo_access_log ] && tarlist="$tarlist rs_xnemo_access_log"
 
-      # the mesh mask file
-      [ -s rs_output.init.nc ] && tarlist="$tarlist rs_output.init.nc"
+      # Add the output.init file created by the model, if present
+      eval ifnpatt=output.init*.nc
+      found_rs=`(ls -1 $ifnpatt || : ) 2>/dev/null`
+      [  -n "$found_rs" ]  && tarlist="$tarlist $found_rs"
+
+      # Add the output_trc.init file created by the model, if present
+      eval ifnpatt=output_trc.init*.nc
+      found_rs=`(ls -1 $ifnpatt || : ) 2>/dev/null`
+      [  -n "$found_rs" ]  && tarlist="$tarlist $found_rs"
 
       # the mesh mask file
-      [ -s rs_mesh_mask.nc ] && tarlist="$tarlist rs_mesh_mask.nc"
+      [ -s mesh_mask ] && tarlist="$tarlist mesh_mask"
 
       # MOVE ADDITIONAL FILES INTO ARCHIVE
       mv -f $tarlist NEXT_RESTART_ARC || :
