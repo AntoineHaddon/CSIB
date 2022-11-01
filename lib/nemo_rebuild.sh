@@ -128,26 +128,6 @@ if [ -s "$indir" ] ; then
    rm -rf $indir
 fi
 
-# Rebuild the output.init file created by the model, if present
-# Access the directory, if it is successfull, cd into it
-indir=${model1}_init
-access $indir $indir nocp=off na
-if [ -s "$indir" ] ; then
-   cd $indir
-   dir_del_list+=" $indir"
-
-   # Define the pattern and do the rebld
-   pfx=output.init
-   ln -s ../rebuild_nemo.exe .
-   rebuild_nemo_tiles
-   ncsave=${model1}_init.nc
-   save ${pfx}.nc $ncsave
-
-   # cleanup
-   cd $wrkdir
-   rm -rf $indir
-fi
-
 # Rebuild the restart files. These will be tarred below and saved alltogether, as
 # is custom for NEMO rs' historically.
 

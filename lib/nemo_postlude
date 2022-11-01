@@ -122,7 +122,7 @@
 
       # Add the mesh_mask file created by the model, if present
       if [ -s mesh_mask_0000.nc ]; then
-         rm -f mesh_mask.nc
+         rm -f rs_mesh_mask.nc
          pfx=mesh_mask
          rm -rf $pfx
          mkdir $pfx
@@ -259,7 +259,7 @@
       [  -n "$found_rs" ]  && tarlist="$tarlist $found_rs"
 
       # the mesh mask file
-      [ -s mesh_mask ] && tarlist="$tarlist mesh_mask"
+      [ -s rs_mesh_mask ] && tarlist="$tarlist rs_mesh_mask"
 
       # MOVE ADDITIONAL FILES INTO ARCHIVE
       mv -f $tarlist NEXT_RESTART_ARC || :
