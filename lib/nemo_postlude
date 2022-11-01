@@ -259,7 +259,7 @@
       [  -n "$found_rs" ]  && tarlist="$tarlist $found_rs"
 
       # the mesh mask file
-      [ -s rs_mesh_mask.nc ] && tarlist="$tarlist rs_mesh_mask"
+      [ -s rs_mesh_mask.nc ] && tarlist="$tarlist rs_mesh_mask.nc"
 
       # MOVE ADDITIONAL FILES INTO ARCHIVE
       mv -f $tarlist NEXT_RESTART_ARC || :
