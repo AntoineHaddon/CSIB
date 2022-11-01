@@ -152,6 +152,10 @@ CONTAINS
       ! needs jnt index/input arg along with kt see below
       ! for cmoc_prod.
       !
+      !!!!!!! Start of "p4zbio" block !!!!!!! 
+      ! This is the equivalent of p4z_bio call
+      ! in trcsms_pisces.F90/CanESM5/CMOC
+      !
       CALL trc_opt_1band( kt )        ! 1-band PAR attenuation
       !
       DO jnt = 1, qnrdttrc             ! Potential time splitting if requested
@@ -164,7 +168,8 @@ CONTAINS
       !
       CALL cmoc_rem( kt )
       !
-      ! Fix tra / trend at the end of all the pelagic sources/sinks
+      ! Enforce conservation and positive values of tracers
+      ! by adjusting the time step using tra trend
       qnegtr(:,:,:) = 1.e0      
       !
       DO jn = 1, jp_tot
@@ -187,6 +192,15 @@ CONTAINS
       DO jn = 1, jp_tot 
         trb(:,:,:,jn) = trb(:,:,:,jn) + qnegtr(:,:,:) * tra(:,:,:,jn)
         tra(:,:,:,jn) = 0._wp
+      END DO
+      !
+      !!!!!!! End   of "p4zbio" block !!!!!!!        
+      !
+      !!!!!!! Start of "p4zsed" block !!!!!!!
+      !!!!!!! End   of "p4zsed" block !!!!!!!
+      !
+      DO jn = 1, jp_tot 
+        trb(:,:,:,jn) = trn(:,:,:,jn)
       END DO
       !
       CALL trc_flx( kt )               ! compute air-sea gas exchange
