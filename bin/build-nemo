@@ -8,7 +8,7 @@ set -e
 #                     comp_env=ENVIRONMENT_FILE \
 #                     [refcfg=cfgdir] \
 #                     [add_key=keys] \
-#                     [del_key=keys] 
+#                     [del_key=keys]
 #          Quantities in square brackets are optional
 #
 # Purpose: Create a nemo executable, along with associated diagnostic/rtd executables. Note that
@@ -25,7 +25,7 @@ set -e
 #   -f                  ...force a "clean" compile
 #
 # Variable definitions:
-#   srcpath=srcpath     ...location of the NEMO source code. 
+#   srcpath=srcpath     ...location of the NEMO source code.
 #   exec=name           ...name is the name of the nemo executable to be created
 #                           On successful compilation, a file by this name will be linked [by default] into the CWD.
 #                           Use -p to have them linked to a dif. location, or -s to have them saved to RUNPATH.
@@ -103,7 +103,7 @@ while getopts p:j:s:hxdf opt; do
         p) storage_loc="$OPTARG" ;;
         s) storage_method="$OPTARG" ;;
         h) usage ; exit 0 ;;
-        f) clean_compile=1 ;; 
+        f) clean_compile=1 ;;
         ?) usage ; exit 1 ;;
     esac
 done
@@ -112,7 +112,7 @@ shift $(( OPTIND - 1 ))
 # Arguments
 for arg in "$@"; do
     case $arg in
-        *=*) 
+        *=*)
             var=$(echo $arg | awk -F\= '{printf "%s",$1}')
             val=$(echo $arg | awk -F\= '{printf "%s",$2}')
             case $var in
@@ -172,15 +172,15 @@ target_diag_execs="nemo_diag.exe nemo_diag_cmoc.exe nemo_diag_canoe.exe"
 target_rtd_execs="nemo_physical_rtd.exe nemo_carbon-cmoc_rtd.exe nemo_carbon-canoe_rtd.exe nemo_ice_rtd.exe"
 target_rbld_execs="rebuild_nemo.exe rebuild_nemo_mpi.exe"
 
-# prepends paths to diag/rtd/rbld exec lists 
+# prepends paths to diag/rtd/rbld exec lists
 #   - Note: "[^ ]*" -> matches words (strngs w/o interior spaces)
-#           "&"     -> represents the matched pattern 
+#           "&"     -> represents the matched pattern
 target_diag_execs=$(echo $target_diag_execs | sed "s#[^ ]*#${nemo_diag_build_dir}/&#g")
 target_rtd_execs=$(echo $target_rtd_execs | sed "s#[^ ]*#${nemo_rtd_build_dir}/&#g")
 target_rbld_execs=$(echo $target_rbld_execs | sed "s#[^ ]*#${nemo_rbld_build_dir}/&#g")
 
 # all non-model executables get saved without renamining, store in list
-non_model_execs="$target_diag_execs $target_rtd_execs $target_rbld_execs" 
+non_model_execs="$target_diag_execs $target_rtd_execs $target_rbld_execs"
 
 # set the working directory if it hasn't been set
 if [[ -z "$WRK_DIR" ]]; then
@@ -191,7 +191,7 @@ if [[ -z "$WRK_DIR" ]]; then
         # use working directory
         WRK_DIR=$(pwd)
     fi
-fi 
+fi
 
 #===========
 # Compile !
@@ -230,33 +230,33 @@ echo 'makenemo '"${ARGS[@]}"
 files_to_reset="cfg.txt ${nemo_config}/cpp_${nemo_config}.fcm"
 for f in $files_to_reset; do
     is_diff=0
-    
+
     # check if the file has been changed
     git diff -s --exit-code $f || is_diff=1
-    
+
     # reset if changed
     if (( is_diff == 1 )); then
         echo "Resetting $f to HEAD"
         git checkout HEAD $f
     fi
-done 
+done
 
 #-------------------------------
 # compile exec's using makefiles
 #-------------------------------
 nemo_util_arch_file_basename=$(basename ${nemo_util_arch_file})
-for build_dir in $make_build_dirs; do 
+for build_dir in $make_build_dirs; do
     echo ""
     echo "=============================================="
     echo "    Compiling executables in $build_dir       "
     echo "=============================================="
     cd $build_dir
-   
+
     # get make template file
     ln -sf ${nemo_util_arch_file} ${nemo_util_arch_file_basename}
 
     # compile
-    if (( clean_compile == 1 )); then 
+    if (( clean_compile == 1 )); then
         make clean
     fi
     make COMPILER_TEMPLATE=${nemo_util_arch_file_basename}
