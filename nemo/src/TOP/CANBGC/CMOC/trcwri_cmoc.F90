@@ -46,7 +46,7 @@ CONTAINS
       IF ( cltra == 'DIC'      ) zfact = 1.e06_wp
       IF ( cltra == 'Alkalini' ) zfact = 1.e06_wp
       IF ( cltra == 'O2' )       zfact = 1.e06_wp
-      IF ( cltra == 'NO3')       zfact = 1.e06_wp
+      IF ( cltra == 'NO3')       zfact = 1.e06_wp * ncrr_cmoc
       IF ( cltra == 'POC')       zfact = 1.e06_wp
       IF ( cltra == 'PHY')       zfact = 1.e06_wp
       IF ( cltra == 'ZOO')       zfact = 1.e06_wp
