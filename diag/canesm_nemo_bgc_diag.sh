@@ -34,7 +34,7 @@ set -x
   fi
 
 # Previous year
-  if [[ $lmon -eq 12 ]] && [[ "$year" == "$run_start_year" ]] && (( $nemo_from_rest == 'on' )); then
+  if [[ $lmon -eq 12 ]] && [[ "$year" == "$run_start_year" ]] && [[ $nemo_from_rest == 'on' ]]; then
     # use the current year because output.init.nc is used in that case (below)
     yearm1=`echo $year | awk '{printf "%04d", $1}'`
     file_state="initial_trc"

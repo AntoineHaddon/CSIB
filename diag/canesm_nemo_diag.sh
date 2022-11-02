@@ -28,7 +28,7 @@ set -x
   fi
 
 # Previous year
-  if [[ "$year" == "$run_start_year" ]] && (( $nemo_from_rest == 'on' )); then
+  if [[ "$year" == "$run_start_year" ]] && [[ $nemo_from_rest == 'on' ]]; then
     # use the current year because output.init.nc is used in that case (below)
     yearm1=`echo $year | awk '{printf "%04d", $1}'`
     file_state="initial"
@@ -38,7 +38,7 @@ set -x
     yearm1=`echo $year | awk '{printf "%04d", $1 - 1}'`
     file_state="restart"
     t_state="tn"
-    s_state="ts"
+    s_state="sn"
   fi
 
 # copy in the nemo diag executable
