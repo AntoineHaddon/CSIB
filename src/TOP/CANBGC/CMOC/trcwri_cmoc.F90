@@ -12,8 +12,9 @@ MODULE trcwri_cmoc
    USE trc         ! passive tracers common variables 
    USE iom         ! I/O manager
    
-   USE sms_top_canbgc     ! access src2d/3d_dta
-   USE trc_closea_canbgc  ! bgc-specific closea mask
+   USE sms_top_canbgc             ! access src2d/3d_dta
+   USE trc_closea_canbgc          ! bgc-specific closea mask
+   USE sms_cmoc, ONLY: ncrr_cmoc  !  CMOC specific parameters declaration   
 
    IMPLICIT NONE
    PRIVATE
