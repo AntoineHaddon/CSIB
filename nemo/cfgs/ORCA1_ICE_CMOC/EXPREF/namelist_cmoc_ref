@@ -112,9 +112,11 @@
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &namcmocdeu     !   Euphotic zone
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-   jk_eud_cmoc  =  11          ! Scale of euphotic zone ~100 m with jk = jk_eud_cmoc = 11 ! OR Oct 28th 2022 this should be adjusted with the 75 z-levels available
-   nk_bal_cmoc  =  15          ! Open ocean criterion: 
-! Number of vertical layers required to calculate balance
-                               ! for the calcite fluxes and DNF/denitrification ~ 150 m ! OR Oct 28th 2022 same comment as for jk_eud_cmoc
-                               ! with nk_bal_cmoc = 15 
+   jk_eud_cmoc  =  24          ! Scale of euphotic zone ~100 m with jk = jk_eud_cmoc = 24
+                               ! OR Oct 28th 2022 this is adjusted with the 75 z-levels available,
+                               ! 24 is about 97.04 m with 100 m within the layer
+   nk_bal_cmoc  =  28          ! Open ocean criterion: Number of vertical layers required to calculate balance
+                               ! for the calcite fluxes and DNF/denitrification ~ 150 m
+                               ! OR Oct 28th 2022 same comment as for jk_eud_cmoc
+                               ! nk_bal_cmoc = 28 is about 147.4 m with 150 m within the layer
 /

@@ -34,6 +34,7 @@ MODULE cmocrem
    PRIVATE
 
    PUBLIC   cmoc_rem          ! called in trcsms_cmoc.F90
+   PUBLIC   cmoc_rem_denit    ! called in trcsms_cmoc.F90
    PUBLIC   cmoc_rem_init     ! called in trcini_cmoc.F90    
 
    !!* Substitution
@@ -50,10 +51,10 @@ CONTAINS
 
   SUBROUTINE cmoc_rem( kt )
       !!---------------------------------------------------------------------
-      !!                     ***  ROUTINE p4z_mort  ***
+      !!                     ***  ROUTINE p4z_rem  ***
       !!
       !! ** Purpose :   Calls the different subroutine to initialize and compute
-      !!                the different phytoplankton mortality terms
+      !!                the remineralization term
       !!
       !! ** Method  : - forward time integration (Euler or Leapfrog)
       !!---------------------------------------------------------------------
@@ -83,23 +84,6 @@ CONTAINS
          END DO 
       END DO         
       !
-      !!!
-      ! O Riche Oct 27th 2022
-      ! This is a block for denitrification, using the rem rate as a proxy
-      ! The code also requires jk_eud_cmoc the z-level for the bottom of
-      ! euphotic layer
-      !!!
-      ! Integration of remineralization below the euphotic zone (used for dentrification scaling)
-      ! DO jk = jk_eud_cmoc+1, jpk
-         ! DO jj = 1, jpj
-            ! DO ji = 1, jpi
-                ! redettot(ji,jj) = redettot(ji,jj) + redet(ji,jj,jk)         &
-                ! &                                 * e3t_n(ji,jj,jk)         &
-                ! &                                 * tmask_bgc_closea(ji,jj,jk)
-            ! END DO
-          ! END DO 
-      ! END DO  
-      !!!
       !     --------------------------------------------------------------------
       !     Update the arrays TRA which contain the biological sources and sinks
       !     --------------------------------------------------------------------
@@ -122,7 +106,34 @@ CONTAINS
       IF( ln_timing )  CALL timing_stop('cmoc_rem')
       !  
   END SUBROUTINE cmoc_rem
+
   
+  SUBROUTINE cmoc_rem_denit( redet, redettot )
+      !!---------------------------------------------------------------------
+      REAL(wp), DIMENSION(jpi,jp,jpk), intent( in    ) ::    redet
+      REAL(wp), DIMENSION(jpi,jp,jpk), intent(   out ) :: redettot
+      !!---------------------------------------------------------------------
+      INTEGER  :: ji, jj, jk         
+      !!!
+      ! O Riche Oct 27th 2022
+      ! This is a block for denitrification, using the rem. rate as a proxy
+      ! The code also requires jk_eud_cmoc the z-level for the bottom of
+      ! euphotic layer
+      !!!
+      ! Integration of remineralization below the euphotic zone (used for dentrification scaling)
+      DO jk = jk_eud_cmoc+1, jpk
+         DO jj = 1, jpj
+            DO ji = 1, jpi
+                redettot(ji,jj) = redettot(ji,jj) + redet(ji,jj,jk)         &
+                &                                 * e3t_n(ji,jj,jk)         &
+                &                                 * tmask_bgc_closea(ji,jj,jk)
+            END DO
+          END DO 
+      END DO  
+      !!!
+  
+  END SUBROUTINE cmoc_rem_denit
+
   
   SUBROUTINE cmoc_rem_init
       !!----------------------------------------------------------------------
@@ -139,6 +150,7 @@ CONTAINS
       INTEGER ::   ios       ! Local integer
       ! <CMOC code OR 10/15/2015> CMOC namelist
       NAMELIST/namcmocpoc/ ed_cmoc, reref_cmoc
+      NAMELIST/namcmocdeu/ jk_eud_cmoc, nk_bal_cmoc
 
       REWIND( numnatp_refb )              ! Namelist namcmocpoc in reference namelist : Passive tracer variables
       READ  ( numnatp_refb, namcmocpoc, IOSTAT = ios, ERR = 901)
@@ -149,6 +161,15 @@ CONTAINS
 
       IF(lwm) WRITE( numonpb, namcmocpoc )
 
+      REWIND( numnatp_refb )              ! Namelist namcmocdeu in reference namelist : Passive tracer variables
+      READ  ( numnatp_refb, namcmocdeu, IOSTAT = ios, ERR = 903)
+903   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namcmocdeu in reference namelist_cmoc' )
+      REWIND( numnatp_cfgb )              ! Namelist namcmocdeu in configuration namelist : Passive tracer variables
+      READ  ( numnatp_cfgb, namcmocdeu, IOSTAT = ios, ERR = 904 )
+904   IF( ios >  0 )   CALL ctl_nam ( ios , 'namcmocdeu in configuration namelist_cmoc' )
+
+      IF(lwm) WRITE( numonpb, namcmocdeu )
+
 
       ! control print
       IF(lwp) THEN
@@ -157,11 +178,19 @@ CONTAINS
          WRITE(numout,*) '    Remineralisation rate of POC              reref_cmoc=', reref_cmoc
          WRITE(numout,*) '    Activation energy for remineralization    ed_cmoc   =', ed_cmoc   
          WRITE(numout,*) ' '
+         WRITE(numout,*) ' Namelist parameters for remineralization, namcmocdeu'
+         WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+         WRITE(numout,*) '    Scale of euphotic zone ~100 m with jk = 25              jk_eud_cmoc=', jk_eud_cmoc
+         WRITE(numout,*) '    Open ocean criterion:  '
+         WRITE(numout,*) '    Number of vertical layers required to calculate balance'
+         WRITE(numout,*) '    for the calcite fluxes and DNF/denitrification ~ 150 m '
+         WRITE(numout,*) '    with nk_bal_cmoc = 28    nk_bal_cmoc   =', nk_bal_cmoc   
+         WRITE(numout,*) ' '
       ENDIF
       ! 
       ! Allocate arrays
       ALLOCATE( redet( jpi, jpj, jpk ) )   ! Remineralization rate
-      ! ALLOCATE( redettot( jpi, jpj ) )   ! Denitrification rate
+      ALLOCATE( redettot( jpi, jpj ) )     ! Denitrification rate
       !
   END SUBROUTINE cmoc_rem_init
 
