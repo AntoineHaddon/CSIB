@@ -432,7 +432,7 @@ CONTAINS
       
   END SUBROUTINE trc_src_fesed
  
-  SUBROUTINE trc_src_criver
+  SUBROUTINE trc_src_criver( kt )
       ! compute dic and doc sources from rivers
       !                       based on CanESM5/CanOE code.
       INTEGER  :: kt
