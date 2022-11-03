@@ -110,8 +110,8 @@ CONTAINS
   
   SUBROUTINE cmoc_rem_denit( redet, redettot )
       !!---------------------------------------------------------------------
-      REAL(wp), DIMENSION(jpi,jp,jpk), intent( in    ) ::    redet
-      REAL(wp), DIMENSION(jpi,jp,jpk), intent(   out ) :: redettot
+      REAL(wp), DIMENSION(:,:,:), intent( in    ) ::    redet
+      REAL(wp), DIMENSION(:,:, ), intent(   out ) :: redettot
       !!---------------------------------------------------------------------
       INTEGER  :: ji, jj, jk         
       !!!

@@ -37,6 +37,9 @@ MODULE sms_cmoc
    
    REAL(wp), SAVE :: ed_cmoc
    REAL(wp), SAVE :: reref_cmoc
+   
+   INTEGER, SAVE  :: jk_eud_cmoc
+   INTEGER, SAVE  :: nk_bal_cmoc
 
    ! Zooplankton grazing/mortality
    REAL(wp), SAVE :: rm_cmoc
