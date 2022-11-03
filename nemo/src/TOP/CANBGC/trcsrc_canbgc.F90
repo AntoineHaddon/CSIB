@@ -31,6 +31,7 @@ MODULE trcsrc_canbgc
    PUBLIC trc_src2d
    PUBLIC trc_src_fedep
    PUBLIC trc_src_fesed
+   PUBLIC trc_src_criver
 
    TYPE(FLD), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:)    ::  sf_src3d   ! structure of input 3D fields (file informations, fields read)
    TYPE(FLD), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:)    ::  sf_src2d   ! structure of input 2D fields (file informations, fields read)
@@ -40,6 +41,9 @@ MODULE trcsrc_canbgc
 
    REAL(wp), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:,:,:)   ::  irondep_src
    REAL(wp), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:,:,:)   ::  ironsed_src
+
+   REAL(wp), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:,:  )   ::  cotdep_src
+   REAL(wp), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:,:  )   ::  rivinp_src   
    
    REAL(wp), SAVE, PUBLIC :: dustsolub0   = 0.014_wp      !: dust0 solubility      (fraction?)
    REAL(wp), SAVE, PUBLIC :: wdust0       = 2.0_wp        !: dust0 sinking speed   (m s^-1)
@@ -188,6 +192,10 @@ CONTAINS
       ! These are used only to store values of the iron sources. See trc_src_fe
       ALLOCATE( irondep_src(jpi,jpj,jpk),ironsed_src(jpi,jpj,jpk), STAT=ierr0 )
       IF( ierr0 /= 0 )   CALL ctl_stop( 'STOP', 'trc_src_init: failed to allocate trc_src_fe arrays for trc_src' ) 
+      !
+      ! These are used only to store values of the rivers sources. See trc_src_criver
+      ALLOCATE( cotdep_src(jpi,jpj),rivinp_src(jpi,jpj), STAT=ierr0 )
+      IF( ierr0 /= 0 )   CALL ctl_stop( 'STOP', 'trc_src_init: failed to allocate trc_src_criver arrays for trc_src' ) 
       !
       ! Now allocate space for the 3D and 2D ext. source arrays
       ALLOCATE( src3d_dta(jpi,jpj,jpk,nb_src3d), STAT=ierr0 )
@@ -424,5 +432,31 @@ CONTAINS
       
   END SUBROUTINE trc_src_fesed
  
+  SUBROUTINE trc_src_criver
+      ! compute dic and doc sources from rivers
+      !                       based on CanESM5/CanOE code.
+      INTEGER  :: kt
+      !
+      REAL(wp), DIMENSION(jpi,jpj) :: zcoeff
+      !
+      IF( ln_timing )   CALL timing_start('trc_src_criver')
+      !
+      IF (lwp) THEN
+        WRITE(numout,*)
+        WRITE(numout,*) 'trc_src: calling trc_src_criver
+        WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+        WRITE(numout,*)
+      ENDIF
+      !
+      CALL trc_src2d( kt , js2d_rdic )
+      CALL trc_src2d( kt , js2d_rdoc )
+      !
+      zcoef(:,:)      =   ryyssb * cvol(:,:,1)
+      cotdep_src(:,:) =   src2d_dta(:,:,js2d_rdic)                            * 1.e9 / (12. zcoef + rtrn )
+      rivinp_src(:,:) = ( src2d_dta(:,:,js2d_rdic) + src2d_dta(:,:,js2d_rdoc) * 1.e9 / (12. zcoef + rtrn )
+      !
+      IF( ln_timing )   CALL timing_stop('trc_src_criver')
+      !    
+  END SUBROUTINE trc_src_criver
 
 END MODULE trcsrc_canbgc
