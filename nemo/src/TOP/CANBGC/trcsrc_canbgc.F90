@@ -437,13 +437,13 @@ CONTAINS
       !                       based on CanESM5/CanOE code.
       INTEGER  :: kt
       !
-      REAL(wp), DIMENSION(jpi,jpj) :: zcoeff
+      REAL(wp), DIMENSION(jpi,jpj) :: zcoef
       !
       IF( ln_timing )   CALL timing_start('trc_src_criver')
       !
       IF (lwp) THEN
         WRITE(numout,*)
-        WRITE(numout,*) 'trc_src: calling trc_src_criver
+        WRITE(numout,*) 'trc_src: calling trc_src_criver'
         WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
         WRITE(numout,*)
       ENDIF
@@ -452,8 +452,8 @@ CONTAINS
       CALL trc_src2d( kt , js2d_rdoc )
       !
       zcoef(:,:)      =   ryyssb * cvol(:,:,1)
-      cotdep_src(:,:) =   src2d_dta(:,:,js2d_rdic)                            * 1.e9 / (12. zcoef + rtrn )
-      rivinp_src(:,:) = ( src2d_dta(:,:,js2d_rdic) + src2d_dta(:,:,js2d_rdoc) * 1.e9 / (12. zcoef + rtrn )
+      cotdep_src(:,:) =   src2d_dta(:,:,js2d_rdic)                            * 1.e9 / (12.  * zcoef(:,:) + rtrn )
+      rivinp_src(:,:) = ( src2d_dta(:,:,js2d_rdic) + src2d_dta(:,:,js2d_rdoc) * 1.e9 / (31.6 * zcoef(:,:) + rtrn )
       !
       IF( ln_timing )   CALL timing_stop('trc_src_criver')
       !    
