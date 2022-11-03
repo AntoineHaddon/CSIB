@@ -108,10 +108,10 @@ CONTAINS
   END SUBROUTINE cmoc_rem
 
   
-  SUBROUTINE cmoc_rem_denit( redet, redettot )
+  SUBROUTINE cmoc_rem_denit( redet0, redettot0 )
       !!---------------------------------------------------------------------
-      REAL(wp), DIMENSION(:,:,:), intent( in    ) ::    redet
-      REAL(wp), DIMENSION(:,:, ), intent(   out ) :: redettot
+      REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT( in    ) ::    redet0
+      REAL(wp), DIMENSION(jpi,jpj    ), INTENT(   out ) :: redettot0
       !!---------------------------------------------------------------------
       INTEGER  :: ji, jj, jk         
       !!!
@@ -124,9 +124,9 @@ CONTAINS
       DO jk = jk_eud_cmoc+1, jpk
          DO jj = 1, jpj
             DO ji = 1, jpi
-                redettot(ji,jj) = redettot(ji,jj) + redet(ji,jj,jk)         &
-                &                                 * e3t_n(ji,jj,jk)         &
-                &                                 * tmask_bgc_closea(ji,jj,jk)
+                redettot0(ji,jj) = redettot0(ji,jj) + redet0(ji,jj,jk)        &
+                &                                   * e3t_n(ji,jj,jk)         &
+                &                                   * tmask_bgc_closea(ji,jj,jk)
             END DO
           END DO 
       END DO  
@@ -189,8 +189,8 @@ CONTAINS
       ENDIF
       ! 
       ! Allocate arrays
-      ALLOCATE( redet( jpi, jpj, jpk ) )   ! Remineralization rate
-      ALLOCATE( redettot( jpi, jpj ) )     ! Denitrification rate
+      ALLOCATE(    redet( jpi, jpj, jpk ) )   ! Remineralization rate
+      ALLOCATE( redettot( jpi, jpj ) )        ! Denitrification rate
       !
   END SUBROUTINE cmoc_rem_init
 
