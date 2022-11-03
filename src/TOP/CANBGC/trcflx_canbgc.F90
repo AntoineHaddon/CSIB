@@ -24,6 +24,7 @@ MODULE trcflx_canbgc
 
   USE trcche_canbgc  			      ! Carbon chemistry module
   USE trc_closea_canbgc         ! bgc-specific closea mask
+  USE trcsrc_canbgc
 
 ! General scope section
     IMPLICIT NONE
@@ -94,13 +95,7 @@ CONTAINS
                zalka = trn(ji,jj,1,jqtal) / zfact
                zph2  = zph*zph
                zph3  = zph*zph2
-               ! zpo4 = (trn(ji,jj,1,jqno3)+trn(ji,jj,1,jqnh4)) / 16. *0.000001 / zfact
-               zpo4  = (5+.5) / 16. *0.000001 / zfact  
-               ! O Riche Aug 16th 2022
-               ! 5. and .5 are placeholder for nitrate and ammonium trn arrays
-               ! which eventually will be used 
-               ! in the meantime we can do better and assigned the phosphate IC
-               ! values instead of these
+               zpo4 = trn(ji,jj,1,jqno3) / 16. *0.000001 / zfact
                zsi   = qasi3(ji,jj,1) * 0.000001 / zfact                        ! silica is a static array based on initialization file, not a carried tracer
 
                ! CALCULATE P AND Si ION CONCENTRATIONS AS PER ORR ET AL (BPG EQUATIONS 43-47)
@@ -238,6 +233,11 @@ CONTAINS
        IF(lwp) WRITE(numout,*)
        IF(lwp) WRITE(numout,*) ' trc_flx_init : initialization'
        IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~'
+
+       ! Silic acid clim
+       ! qasi3 is used in CO2 flux calculation using
+       CALL trc_src3d( kt , js3d_si)
+       qasi3 = src3d_dta(:,:,1,js3d_si)
     
    END SUBROUTINE trc_flx_init
  
