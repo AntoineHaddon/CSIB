@@ -303,8 +303,10 @@ CONTAINS
       ! compute iron sources: surface deposition from the atm. 
       !                       based on CanESM5/CanOE code.
       !
+      INTEGER, INTENT(in) :: kt
+      !
       INTEGER  :: jk                          !: loop variables
-      INTEGER  :: ierr, ios, kt               !: working variables
+      INTEGER  :: ierr, ios                   !: working variables
       REAL(wp) :: ryyss                       !: number of seconds per year
       REAL(wp) :: rmtss                       !: number of seconds per month
       !
@@ -390,7 +392,6 @@ CONTAINS
       ALLOCATE( zironsed(jpi,jpj,jpk), zbfe(jpi,jpj,jpk), zcmask(jpi,jpj,jpk), STAT=ierr )
       IF( ierr /= 0 )   CALL ctl_stop( 'STOP', 'trc_src_fesed: failed to allocate 3d arrays for trc_src_fesed' )
       !
-
       ! Iron coastal flux
       ! -------------------------
       ! coastal and island masks
@@ -457,10 +458,13 @@ CONTAINS
       
   END SUBROUTINE trc_src_fesed
  
-  SUBROUTINE trc_src_criver( kt )
+  SUBROUTINE trc_src_criver( kt, read_var_flag )
       ! compute dic and doc sources from rivers
       !                       based on CanESM5/CanOE code.
-      INTEGER  :: kt
+      INTEGER, INTENT(in)  :: kt
+      !
+      LOGICAL, OPTIONAL, INTENT(in) :: read_var_flag   ! 
+      LOGICAL                       :: read_var_flag0  ! 
       !
       REAL(wp), DIMENSION(jpi,jpj) :: zcoef
       !
@@ -484,13 +488,28 @@ CONTAINS
       dicriver_cmoc(:,:) =   rivinp_cmoc(:,:) * 2.631
       talriver_cmoc(:,:) = ( cotdep_cmoc(:,:) - rivinp_cmoc(:,:) * ncrr_cmoc)
       !
+      IF ( .NOT. PRESENT(read_var_flag) ) THEN
+        read_var_flag0 = .false.
+      ELSE
+        read_var_flag0 = read_var_flag
+      ENDIF
+      !
+      IF( read_var_flag0 )
+        trn(:,:,1,jqno3) = trn(:,:,1,jqno3) + no3river_cmoc(:,:)
+        trn(:,:,1,jqdic) = trn(:,:,1,jqdic) + dicriver_cmoc(:,:)
+        trn(:,:,1,jqtal) = trn(:,:,1,jqtal) + talriver_cmoc(:,:)
+      END IF
       IF( ln_timing )   CALL timing_stop('trc_src_criver')
       !    
   END SUBROUTINE trc_src_criver
 
-  SUBROUTINE trc_bott_cmoc
+  SUBROUTINE trc_bott_cmoc( read_var_flag )
       ! Fate of POC reaching the ocean floor: complete remineralization
       ! into DIC, DIN and sink of O2 and TALK
+      !
+      LOGICAL, OPTIONAL, INTENT(in) :: read_var_flag   ! 
+      LOGICAL                       :: read_var_flag0  ! 
+      !      
       INTEGER  :: ji, jj, jk, ikt             !: loop variables
       INTEGER  :: ierr                        !: working variables
       !
@@ -520,17 +539,31 @@ CONTAINS
             END DO
          END DO
       END DO
-
+      !
+      IF ( .NOT. PRESENT(read_var_flag) ) THEN
+        read_var_flag0 = .false.
+      ELSE
+        read_var_flag0 = read_var_flag
+      ENDIF
+      !
       DO jj = 1, jpj
          DO ji = 1, jpi
             ikt  = mbkt(ji,jj)
             zdep = xstepb / gdept_n(ji,jj,ikt)
             zwsbio32 = zwsbio3(ji,jj,ikt) * zdep
-            dicbott_cmoc(:,:) =  trn(ji,jj,ikt,jppoc) * zwsbio32 
-            talbott_cmoc(:,:) = -trn(ji,jj,ikt,jppoc) * zwsbio32 * ncrr_cmoc
-            no3bott_cmoc(:,:) =  trn(ji,jj,ikt,jppoc) * zwsbio32 
-            oxybott_cmoc(:,:) = -trn(ji,jj,ikt,jppoc) * zwsbio32 
-            pocbott_cmoc(:,:) = -trn(ji,jj,ikt,jppoc) * zwsbio32 
+            dicbott_cmoc(:,:) =  trn(ji,jj,ikt,jqpoc) * zwsbio32 
+            talbott_cmoc(:,:) = -trn(ji,jj,ikt,jqpoc) * zwsbio32 * ncrr_cmoc
+            no3bott_cmoc(:,:) =  trn(ji,jj,ikt,jqpoc) * zwsbio32 
+            oxybott_cmoc(:,:) = -trn(ji,jj,ikt,jqpoc) * zwsbio32 
+            pocbott_cmoc(:,:) = -trn(ji,jj,ikt,jqpoc) * zwsbio32 
+            IF( read_var_flag0 )
+              trn(:,:,ikt,jqdic) = trn(:,:,ikt,jqdic) + dicbott_cmoc(:,:)
+              trn(:,:,ikt,jqtal) = trn(:,:,ikt,jqtal) + talbott_cmoc(:,:)
+              trn(:,:,ikt,jqno3) = trn(:,:,ikt,jqno3) + no3bott_cmoc(:,:)
+              trn(:,:,ikt,jqoxy) = trn(:,:,ikt,jqoxy) + oxybott_cmoc(:,:)
+              trn(:,:,ikt,jqpoc) = trn(:,:,ikt,jqpoc) + pocbott_cmoc(:,:)
+            END IF      
+            !
          END DO
       END DO
       !
