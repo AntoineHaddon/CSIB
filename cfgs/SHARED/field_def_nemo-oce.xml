@@ -36,7 +36,7 @@
         <field id="toce_vmean300"     field_ref="toce_e3t_vsum300"  unit="degree_C"     grid_ref="grid_T_vsum"  detect_missing_value="true" > toce_e3t_vsum300/e3t_vsum300 </field>
 
 	<!-- Ideal Age Tracer (IAT) from TOP -->
-        <!-- <field id="Age"          long_name="Seawater age since contact with surface"  unit="years"    grid_ref="grid_T_3D"  /> -->
+        <field id="Age"          long_name="Seawater age since contact with surface"  unit="years"    grid_ref="grid_T_3D"  />
 
   <!--- additions to diawri.F90 --->
         <field id="socegrad"    long_name="module of salinity gradient"              unit="psu/m"   grid_ref="grid_T_3D"/>

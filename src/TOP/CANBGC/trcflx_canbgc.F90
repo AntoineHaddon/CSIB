@@ -95,8 +95,8 @@ CONTAINS
                zalka = trn(ji,jj,1,jqtal) / zfact
                zph2  = zph*zph
                zph3  = zph*zph2
-               zpo4 = trn(ji,jj,1,jqno3) / 16. *0.000001 / zfact
-               zsi   = qasi3(ji,jj,1) * 0.000001 / zfact                        ! silica is a static array based on initialization file, not a carried tracer
+               zpo4 = trn(ji,jj,1,jqno3) / 16. * 0.000001 / zfact
+               zsi  = qasi3(ji,jj,1)           * 0.000001 / zfact                        ! silica is a static array based on initialization file, not a carried tracer
 
                ! CALCULATE P AND Si ION CONCENTRATIONS AS PER ORR ET AL (BPG EQUATIONS 43-47)
                ! zp3 = H3PO4, zp1 = HPO4(2-), zp0 = PO4(3-): denominator is the same for all 3 equations
