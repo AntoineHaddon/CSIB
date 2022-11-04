@@ -53,5 +53,8 @@ MODULE sms_cmoc
    ! Particles sinking speed
    REAL(wp), SAVE :: ws_cmoc
    REAL(wp), SAVE :: wsbio
- 
+
+   ! qnegtr block skipping switch
+   LOGICAL, SAVE :: ln_cmocnegtr
+
 END MODULE sms_cmoc
