@@ -34,7 +34,14 @@ set -x
   fi
 
 # Previous year
-  yearm1=`echo $year | awk '{printf "%04d", $1 - 1}'`
+  if [[ $lmon -eq 12 ]] && [[ "$year" == "$run_start_year" ]] && [[ $nemo_from_rest == 'on' ]]; then
+    # use the current year because output.init.nc is used in that case (below)
+    yearm1=`echo $year | awk '{printf "%04d", $1}'`
+    file_state="initial_trc"
+  else
+    yearm1=`echo $year | awk '{printf "%04d", $1 - 1}'`
+    file_state="restart_trc"
+  fi
 
 # Access file containing grid information
   mask_mon=$(echo $nemo_rtd_mons | awk '{printf "%02d", $NF}')  # get last element of nemo_rtd_mons, printed as 2 digit number
@@ -113,7 +120,7 @@ set -x
     if [ -L rsp ] ; then
        mkdir dir_rsp; cd dir_rsp
        tar -xvf ../rsp
-       ncks -v sss_glob_avg *_restart_trc.nc ../sss_glob_avg.nc
+       ncks -v sss_glob_avg *_$file_state.nc ../sss_glob_avg.nc
        cd ..
        release rsp
        rm -f -r dir_rsp

@@ -207,6 +207,24 @@ if [ -s "$fnpatt" ]; then
    rebuild_nemo_tiles
 fi
 
+# The physics init file
+pfx=output.init
+# Check if the init files are present 
+fnpatt=${pfx}_0000.nc
+if [ -s "$fnpatt" ]; then
+   rebuild_nemo_tiles
+   mv $pfx.nc ${runid}_initial.nc
+fi
+
+# The trc init file
+pfx=output_trc.init
+# Check if the init files are present 
+fnpatt=${pfx}_0000.nc
+if [ -s "$fnpatt" ]; then
+   rebuild_nemo_tiles
+   mv $pfx.nc ${runid}_initial_trc.nc
+fi
+
 # Create the tar archive for the nemors and save it.
 release rebuild_nemo.exe $rbnl_file
 tar -cf ${inrs}.tar *

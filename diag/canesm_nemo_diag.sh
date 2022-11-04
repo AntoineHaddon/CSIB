@@ -28,7 +28,18 @@ set -x
   fi
 
 # Previous year
-  yearm1=`echo $year | awk '{printf "%04d", $1 - 1}'`
+  if [[ "$year" == "$run_start_year" ]] && [[ $nemo_from_rest == 'on' ]]; then
+    # use the current year because output.init.nc is used in that case (below)
+    yearm1=`echo $year | awk '{printf "%04d", $1}'`
+    file_state="initial"
+    t_state="votemper"
+    s_state="vosaline"
+  else
+    yearm1=`echo $year | awk '{printf "%04d", $1 - 1}'`
+    file_state="restart"
+    t_state="tn"
+    s_state="sn"
+  fi
 
 # copy in the nemo diag executable
   diag_exe=nemo_diag.exe
@@ -90,8 +101,8 @@ set -x
         if [ -L rsp ] ; then
           mkdir dir_rsp; cd dir_rsp
           tar -xvf ../rsp
-          cdo select,name=tn,timestep=-1 *_restart.nc ../tnp.nc
-          cdo select,name=sn,timestep=-1 *_restart.nc ../snp.nc
+          cdo select,name=$t_state,timestep=-1 *_$file_state.nc ../tnp.nc
+          cdo select,name=$s_state,timestep=-1 *_$file_state.nc ../snp.nc
           cd ..
           release rsp
           rm -f -r dir_rsp

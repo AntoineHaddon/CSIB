@@ -166,7 +166,7 @@
           mv $found_rs NEXT_RESTART_ARC
         fi
 
-        if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
+      if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
           # Look for pisces restart files matching the pattern below
           eval pfnpatt=${cn_exp}_${end_step}_${cn_trcrst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
           found_rs=`(ls -1 $pfnpatt || : ) 2>/dev/null`
@@ -176,7 +176,7 @@
           else
             mv $found_rs NEXT_RESTART_ARC
           fi
-        fi
+      fi
 
       if [ $with_ice -eq 1 ]; then
          # Look for ice restart files
@@ -247,6 +247,16 @@
       # Access log for nemo? (Needed?)
       cp -f xnemo_access_log rs_xnemo_access_log || :
       [ -s rs_xnemo_access_log ] && tarlist="$tarlist rs_xnemo_access_log"
+
+      # Add the output.init file created by the model, if present
+      eval ifnpatt=output.init*.nc
+      found_rs=`(ls -1 $ifnpatt || : ) 2>/dev/null`
+      [  -n "$found_rs" ]  && tarlist="$tarlist $found_rs"
+
+      # Add the output_trc.init file created by the model, if present
+      eval ifnpatt=output_trc.init*.nc
+      found_rs=`(ls -1 $ifnpatt || : ) 2>/dev/null`
+      [  -n "$found_rs" ]  && tarlist="$tarlist $found_rs"
 
       # the mesh mask file
       [ -s rs_mesh_mask.nc ] && tarlist="$tarlist rs_mesh_mask.nc"
