@@ -21,7 +21,8 @@ MODULE trcsms_cmoc
    USE trcche_canbgc      ! carbon chemistry eq. constants
    USE trcflx_canbgc      ! air-flux gas exch.
    USE sms_top_canbgc     ! basic shared TOP variables, also contains ext. src array declarations
-
+   USE sms_cmoc, ONLY     : ln_cmocnegtr
+   
    USE cmocprod           ! CMOC PP module
    USE cmocmort           ! CMOC phyto mortality module
    USE cmocrem            ! CMOC carbon remineralization
@@ -30,8 +31,8 @@ MODULE trcsms_cmoc
    IMPLICIT NONE
    PRIVATE
 
-   PUBLIC   trc_sms_cmoc       ! called by trcsms.F90 module
-   PUBLIC   trc_sms_cmoc_alloc ! called by trcini_cmoc.F90 module 
+   PUBLIC trc_sms_cmoc       ! called by trcsms.F90 module
+   PUBLIC trc_sms_cmoc_alloc ! called by trcini_cmoc.F90 module 
    
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: qnegtr     ! Array used to indicate negative tracer values 
 
