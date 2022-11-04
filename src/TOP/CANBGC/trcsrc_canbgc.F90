@@ -489,7 +489,7 @@ CONTAINS
       talriver_cmoc(:,:) = ( cotdep_cmoc(:,:) - rivinp_cmoc(:,:) * ncrr_cmoc)
       !
       IF ( .NOT. PRESENT(read_var_flag) ) THEN
-        read_var_flag0 = .false.
+        read_var_flag0 = .true.
       ELSE
         read_var_flag0 = read_var_flag
       ENDIF
@@ -503,12 +503,12 @@ CONTAINS
       !    
   END SUBROUTINE trc_src_criver
 
-  SUBROUTINE trc_bott_cmoc( read_var_flag )
+  SUBROUTINE trc_bott_cmoc( write_rhs_flag )
       ! Fate of POC reaching the ocean floor: complete remineralization
-      ! into DIC, DIN and sink of O2 and TALK
+      ! into DIC, DIN and sink of O2 and TALK 
       !
-      LOGICAL, OPTIONAL, INTENT(in) :: read_var_flag   ! 
-      LOGICAL                       :: read_var_flag0  ! 
+      LOGICAL, OPTIONAL, INTENT(in) :: write_rhs_flag   ! 
+      LOGICAL                       :: write_rhs_flag0  ! 
       !      
       INTEGER  :: ji, jj, jk, ikt             !: loop variables
       INTEGER  :: ierr                        !: working variables
@@ -540,10 +540,10 @@ CONTAINS
          END DO
       END DO
       !
-      IF ( .NOT. PRESENT(read_var_flag) ) THEN
-        read_var_flag0 = .false.
+      IF ( .NOT. PRESENT(write_rhs_flag) ) THEN
+        write_rhs_flag0 = .true.
       ELSE
-        read_var_flag0 = read_var_flag
+        write_rhs_flag0 = write_rhs_flag
       ENDIF
       !
       DO jj = 1, jpj
@@ -556,7 +556,7 @@ CONTAINS
             no3bott_cmoc(:,:) =  trn(ji,jj,ikt,jqpoc) * zwsbio32 
             oxybott_cmoc(:,:) = -trn(ji,jj,ikt,jqpoc) * zwsbio32 
             pocbott_cmoc(:,:) = -trn(ji,jj,ikt,jqpoc) * zwsbio32 
-            IF( read_var_flag0 )
+            IF( write_rhs_flag0 )
               trn(:,:,ikt,jqdic) = trn(:,:,ikt,jqdic) + dicbott_cmoc(:,:)
               trn(:,:,ikt,jqtal) = trn(:,:,ikt,jqtal) + talbott_cmoc(:,:)
               trn(:,:,ikt,jqno3) = trn(:,:,ikt,jqno3) + no3bott_cmoc(:,:)
