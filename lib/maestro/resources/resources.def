@@ -5,7 +5,7 @@ BACKEND=daley
 SEQ_DEFAULT_MACHINE=eccc-ppp4
 
 # Prefix to job/file names
-SEQ_JOBNAME_PREFIX=oka-001-
+SEQ_JOBNAME_PREFIX=
 
 # Maestro submission method
 SEQ_CONTAINER_METHOD=immediate
