@@ -20,7 +20,7 @@ MODULE trcsrc_canbgc
    USE lib_mpp         ! distribued memory computing library
    USE lbclnk          ! ocean lateral boundary conditions (or mpp link)
 
-   USE sms_cmoc, ONLY  : ncrr_cmoc
+   USE sms_cmoc, ONLY    : ncrr_cmoc, ws_cmoc
    USE sms_top_canbgc    ! access index/array definitions for ext. sources
    USE trc_closea_canbgc ! tmask_bgc_closea
       
@@ -35,7 +35,8 @@ MODULE trcsrc_canbgc
    PUBLIC trc_src_fedep
    PUBLIC trc_src_fesed
    PUBLIC trc_src_criver
-   PUBLIC trc_cmoc_bott
+   PUBLIC trc_bott_cmoc
+   PUBLIC trc_n2fx_cmoc
 
    TYPE(FLD), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:)    ::  sf_src3d   ! structure of input 3D fields (file informations, fields read)
    TYPE(FLD), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:)    ::  sf_src2d   ! structure of input 2D fields (file informations, fields read)
@@ -487,26 +488,26 @@ CONTAINS
       !    
   END SUBROUTINE trc_src_criver
 
-  SUBROUTINE trc_cmoc_bott
+  SUBROUTINE trc_bott_cmoc
       ! Fate of POC reaching the ocean floor: complete remineralization
       ! into DIC, DIN and sink of O2 and TALK
-      INTEGER  :: ji, jj, ikt                 !: loop variables
+      INTEGER  :: ji, jj, jk, ikt             !: loop variables
       INTEGER  :: ierr                        !: working variables
       !
-      REAL(wp) :: zwsbio32, zwsmax, zdep      !: working variables
-      REAL(wp), DIMENSION(:,:,:) :: zwsbio3   !: working variables
+      REAL(wp) :: zwsbio32, zwsmax, zdep                   !: working variables
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zwsbio3   !: working variables
       !
-      IF( ln_timing )   CALL timing_start('trc_cmoc_bott')
+      IF( ln_timing )   CALL timing_start('trc_bott_cmoc')
       !
       IF (lwp) THEN
         WRITE(numout,*)
-        WRITE(numout,*) 'trc_src: calling trc_cmoc_bott'
+        WRITE(numout,*) 'trc_src: calling trc_bott_cmoc'
         WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
         WRITE(numout,*)
       ENDIF
       !      
       ALLOCATE( zwsbio3(jpi,jpj,jpk), STAT=ierr )
-      IF( ierr /= 0 )   CALL ctl_stop( 'STOP', 'trc_cmoc_bott: failed to allocate 3d array for trc_cmoc_bott' )
+      IF( ierr /= 0 )   CALL ctl_stop( 'STOP', 'trc_bott_cmoc: failed to allocate 3d array' )
       !      
       ! limit the values of the sinking speeds to avoid numerical instabilities
       zwsbio3(:,:,:) = ws_cmoc
@@ -538,5 +539,11 @@ CONTAINS
       IF( ln_timing )   CALL timing_stop('trc_cmoc_bott')
       !
   END SUBROUTINE trc_bott_cmoc
+
+
+  SUBROUTINE trc_n2fx_cmoc
+  
+  
+  END SUBROUTINE trc_n2fx_cmoc
 
 END MODULE trcsrc_canbgc
