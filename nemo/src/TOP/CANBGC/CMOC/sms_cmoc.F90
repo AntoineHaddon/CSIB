@@ -49,5 +49,9 @@ MODULE sms_cmoc
    REAL(wp), SAVE :: mzd_cmoc
    REAL(wp), SAVE :: mz2_cmoc
    REAL(wp), SAVE :: xthreshphy      
+
+   ! Particles sinking speed
+   REAL(wp), SAVE :: ws_cmoc
+   REAL(wp), SAVE :: wsbio
  
 END MODULE sms_cmoc

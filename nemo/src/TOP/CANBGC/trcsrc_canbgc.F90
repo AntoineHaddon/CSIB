@@ -39,11 +39,18 @@ MODULE trcsrc_canbgc
    INTEGER, SAVE, PUBLIC :: nb_src3d
    INTEGER, SAVE, PUBLIC :: nb_src2d
 
-   REAL(wp), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:,:,:)   ::  irondep_src
-   REAL(wp), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:,:,:)   ::  ironsed_src
+   ! External CMOC iron sources
+   REAL(wp), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:,:,:)   ::  irondep_cmoc
+   REAL(wp), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:,:,:)   ::  ironsed_cmoc
 
-   REAL(wp), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:,:  )   ::  cotdep_src
-   REAL(wp), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:,:  )   ::  rivinp_src   
+   ! External CMOC river DIC/DOC sources
+   REAL(wp), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:,:  )   ::  cotdep_cmoc
+   REAL(wp), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:,:  )   ::  rivinp_cmoc   
+
+   ! specific CMOC RHS terms derived from cotdep_cmoc and rivinp_cmoc
+   REAL(wp), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:,:  )   ::  no3river_cmoc
+   REAL(wp), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:,:  )   ::  dicriver_cmoc   
+   REAL(wp), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:,:  )   ::  talriver_cmoc
    
    REAL(wp), SAVE, PUBLIC :: dustsolub0   = 0.014_wp      !: dust0 solubility      (fraction?)
    REAL(wp), SAVE, PUBLIC :: wdust0       = 2.0_wp        !: dust0 sinking speed   (m s^-1)
@@ -80,10 +87,10 @@ CONTAINS
       !
       CHARACTER(len=100) :: cn_dir   ! Root directory for location of external source files
       ! set max number of files to a set value (<=100) but will very unlikely reach that high of a number
-      TYPE(FLD_N), DIMENSION(25)        ::   sn_src3d    ! informations about the 3D external sources
-      REAL(wp)   , DIMENSION(25)        ::   rn_src3d    ! scaling factors
-      TYPE(FLD_N), DIMENSION(25)        ::   sn_src2d    ! informations about the 2D external sources
-      REAL(wp)   , DIMENSION(25)        ::   rn_src2d    ! scaling factors
+      TYPE(FLD_N), DIMENSION(25)  ::   sn_src3d    ! informations about the 3D external sources
+      REAL(wp)   , DIMENSION(25)  ::   rn_src3d    ! scaling factors
+      TYPE(FLD_N), DIMENSION(25)  ::   sn_src2d    ! informations about the 2D external sources
+      REAL(wp)   , DIMENSION(25)  ::   rn_src2d    ! scaling factors
       !!
       !!----------------------------------------------------------------------
       !
@@ -190,12 +197,15 @@ CONTAINS
       IF(lwm) WRITE ( numont, namtrc_src2d )
       !
       ! These are used only to store values of the iron sources. See trc_src_fe
-      ALLOCATE( irondep_src(jpi,jpj,jpk),ironsed_src(jpi,jpj,jpk), STAT=ierr0 )
+      ALLOCATE( irondep_cmoc(jpi,jpj,jpk),ironsed_cmoc(jpi,jpj,jpk), STAT=ierr0 )
       IF( ierr0 /= 0 )   CALL ctl_stop( 'STOP', 'trc_src_init: failed to allocate trc_src_fe arrays for trc_src' ) 
       !
       ! These are used only to store values of the rivers sources. See trc_src_criver
-      ALLOCATE( cotdep_src(jpi,jpj),rivinp_src(jpi,jpj), STAT=ierr0 )
+      ALLOCATE( cotdep_cmoc(jpi,jpj),rivinp_cmoc(jpi,jpj), STAT=ierr0 )
       IF( ierr0 /= 0 )   CALL ctl_stop( 'STOP', 'trc_src_init: failed to allocate trc_src_criver arrays for trc_src' ) 
+      ALLOCATE( no3river_cmoc(jpi,jpj), dicriver_cmoc(jpi,jpj), &
+              & talriver_cmoc(jpi,jpj),          STAT=ierr0 )
+      IF( ierr0 /= 0 )   CALL ctl_stop( 'STOP', 'trc_src_init: failed to allocate CMOC RHS trc_src_criver arrays for trc_src' ) 
       !
       ! Now allocate space for the 3D and 2D ext. source arrays
       ALLOCATE( src3d_dta(jpi,jpj,jpk,nb_src3d), STAT=ierr0 )
@@ -337,7 +347,7 @@ CONTAINS
         zafe(:,:,:) = zirondep(:,:,:) * 1.E-9 * tmask_bgc_closea(:,:,:)      ! zirondep and ironsed are in nmol m^-3 s^-1
         CALL iom_put( "Irondep", zafe  )  ! surface downward net flux of iron
       ENDIF  
-      irondep_src(:,:,:) = zirondep(:,:,:)  
+      irondep_cmoc(:,:,:) = zirondep(:,:,:)  
 
       IF( ln_timing )   CALL timing_stop('trc_src_fedep')
   
@@ -424,7 +434,7 @@ CONTAINS
         zbfe(:,:,:) = zironsed(:,:,:) * 1.E-9 * tmask_bgc_closea(:,:,:)
         CALL iom_put( "Ironsed", zbfe  )  ! iron from sediments        
       ENDIF  
-      ironsed_src(:,:,:) = zironsed(:,:,:)
+      ironsed_cmoc(:,:,:) = zironsed(:,:,:)
       !
       DEALLOCATE( zcmask )
 
@@ -451,9 +461,13 @@ CONTAINS
       CALL trc_src2d( kt , js2d_rdic )
       CALL trc_src2d( kt , js2d_rdoc )
       !
-      zcoef(:,:)      =   ryyssb * cvol(:,:,1)
-      cotdep_src(:,:) =   src2d_dta(:,:,js2d_rdic)                              * 1.e9 / (12.  * zcoef(:,:) + rtrn )
-      rivinp_src(:,:) = ( src2d_dta(:,:,js2d_rdic) + src2d_dta(:,:,js2d_rdoc) ) * 1.e9 / (31.6 * zcoef(:,:) + rtrn )
+      zcoef(:,:)       =   ryyssb * cvol(:,:,1)
+      cotdep_cmoc(:,:) =   src2d_dta(:,:,js2d_rdic)                              * 1.e9 / (12.  * zcoef(:,:) + rtrn )
+      rivinp_cmoc(:,:) = ( src2d_dta(:,:,js2d_rdic) + src2d_dta(:,:,js2d_rdoc) ) * 1.e9 / (31.6 * zcoef(:,:) + rtrn )
+      ! RHS terms derived from above external sources
+      no3river_cmoc(:,:) =   rivinp_cmoc(:,:)
+      dicriver_cmoc(:,:) =   rivinp_cmoc(:,:) * 2.631
+      talriver_cmoc(:,:) = ( cotdep_cmoc(:,:) - rivinp_cmoc(:,:) * ncrr_cmoc)
       !
       IF( ln_timing )   CALL timing_stop('trc_src_criver')
       !    
