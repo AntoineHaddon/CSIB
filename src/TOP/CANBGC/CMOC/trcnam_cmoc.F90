@@ -15,7 +15,7 @@ MODULE trcnam_cmoc
 
    USE iom             ! IO manager
    USE sms_top_canbgc  ! shared arrays across BGCM code
-   USE sms_cmoc, ONLY  : ws_cmoc
+   USE sms_cmoc, ONLY  : ws_cmoc, ln_cmocnegtr
 
    IMPLICIT NONE
    PRIVATE
