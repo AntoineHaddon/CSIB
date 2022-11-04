@@ -54,7 +54,7 @@ CONTAINS
       CALL ctl_opn( numnatp_cfgb, TRIM( clname )//'_cfg', 'OLD'    , 'FORMATTED', 'SEQUENTIAL', -1, numout, .FALSE. )
       IF(lwm) CALL ctl_opn( numonpb     , 'output.namelist.cmoc' , 'UNKNOWN', 'FORMATTED', 'SEQUENTIAL', -1, numout, .FALSE. )
       !
-      ! Reading particles sinking speed here as it is used in both cmocsink.F90 and trcsrc_canbgc.F90/sink_cmoc_bott subroutine
+      ! Reading particles sinking speed here as it is used in both cmocsink.F90 and trcsrc_canbgc.F90/trc_bott_cmoc subroutines
       REWIND( numnatp_refb )              ! Namelist namcmocws in reference namelist : Passive tracer variables
       READ  ( numnatp_refb, namcmocws, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namcmocws in reference namelist_cmoc' )
@@ -62,9 +62,7 @@ CONTAINS
       READ  ( numnatp_cfgb, namcmocws, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namcmocws in configuration namelist_cmoc' )
 
-      IF(lwm) WRITE( numonpb, namcmocws )
-      
-
+      IF(lwm) WRITE( numonpb, namcmocws )    
       !
    END SUBROUTINE trc_nam_cmoc
    
