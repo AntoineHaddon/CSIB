@@ -20,18 +20,22 @@ MODULE trcsrc_canbgc
    USE lib_mpp         ! distribued memory computing library
    USE lbclnk          ! ocean lateral boundary conditions (or mpp link)
 
+   USE sms_cmoc, ONLY  : ncrr_cmoc
    USE sms_top_canbgc    ! access index/array definitions for ext. sources
    USE trc_closea_canbgc ! tmask_bgc_closea
       
    IMPLICIT NONE
    PRIVATE
 
+   ! General external source subroutines
    PUBLIC trc_src_init
    PUBLIC trc_src3d
    PUBLIC trc_src2d
+   ! CMOC specific source subroutines
    PUBLIC trc_src_fedep
    PUBLIC trc_src_fesed
    PUBLIC trc_src_criver
+   PUBLIC trc_cmoc_bott
 
    TYPE(FLD), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:)    ::  sf_src3d   ! structure of input 3D fields (file informations, fields read)
    TYPE(FLD), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:)    ::  sf_src2d   ! structure of input 2D fields (file informations, fields read)
@@ -51,6 +55,12 @@ MODULE trcsrc_canbgc
    REAL(wp), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:,:  )   ::  no3river_cmoc
    REAL(wp), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:,:  )   ::  dicriver_cmoc   
    REAL(wp), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:,:  )   ::  talriver_cmoc
+   ! specific CMOC RHS terms needed for bottom instantaneous remineralization
+   REAL(wp), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:,:  )   ::  dicbott_cmoc
+   REAL(wp), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:,:  )   ::  talbott_cmoc
+   REAL(wp), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:,:  )   ::  no3bott_cmoc
+   REAL(wp), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:,:  )   ::  oxybott_cmoc
+   REAL(wp), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:,:  )   ::  pocbott_cmoc
    
    REAL(wp), SAVE, PUBLIC :: dustsolub0   = 0.014_wp      !: dust0 solubility      (fraction?)
    REAL(wp), SAVE, PUBLIC :: wdust0       = 2.0_wp        !: dust0 sinking speed   (m s^-1)
@@ -206,6 +216,10 @@ CONTAINS
       ALLOCATE( no3river_cmoc(jpi,jpj), dicriver_cmoc(jpi,jpj), &
               & talriver_cmoc(jpi,jpj),          STAT=ierr0 )
       IF( ierr0 /= 0 )   CALL ctl_stop( 'STOP', 'trc_src_init: failed to allocate CMOC RHS trc_src_criver arrays for trc_src' ) 
+      ALLOCATE( no3bott_cmoc(jpi,jpj), dicbott_cmoc(jpi,jpj), &
+              & talbott_cmoc(jpi,jpj), oxybott_cmoc(jpi,jpj), &
+              & pocbott_cmoc(jpi,jpj),                        STAT=ierr0 )
+      IF( ierr0 /= 0 )   CALL ctl_stop( 'STOP', 'trc_src_init: failed to allocate CMOC RHS trc_bott_cmoc arrays for trc_src' ) 
       !
       ! Now allocate space for the 3D and 2D ext. source arrays
       ALLOCATE( src3d_dta(jpi,jpj,jpk,nb_src3d), STAT=ierr0 )
@@ -472,5 +486,57 @@ CONTAINS
       IF( ln_timing )   CALL timing_stop('trc_src_criver')
       !    
   END SUBROUTINE trc_src_criver
+
+  SUBROUTINE trc_cmoc_bott
+      ! Fate of POC reaching the ocean floor: complete remineralization
+      ! into DIC, DIN and sink of O2 and TALK
+      INTEGER  :: ji, jj, ikt                 !: loop variables
+      INTEGER  :: ierr                        !: working variables
+      !
+      REAL(wp) :: zwsbio32, zwsmax, zdep      !: working variables
+      REAL(wp), DIMENSION(:,:,:) :: zwsbio3   !: working variables
+      !
+      IF( ln_timing )   CALL timing_start('trc_cmoc_bott')
+      !
+      IF (lwp) THEN
+        WRITE(numout,*)
+        WRITE(numout,*) 'trc_src: calling trc_cmoc_bott'
+        WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+        WRITE(numout,*)
+      ENDIF
+      !      
+      ALLOCATE( zwsbio3(jpi,jpj,jpk), STAT=ierr )
+      IF( ierr /= 0 )   CALL ctl_stop( 'STOP', 'trc_cmoc_bott: failed to allocate 3d array for trc_cmoc_bott' )
+      !      
+      ! limit the values of the sinking speeds to avoid numerical instabilities
+      zwsbio3(:,:,:) = ws_cmoc
+      !
+      DO jk = 1,jpkm1
+         DO jj = 1, jpj
+            DO ji = 1, jpi
+               zwsmax = 0.8 * gdept_n(ji,jj,jk) / xstepb
+               zwsbio3(ji,jj,jk) = MIN( zwsbio3(ji,jj,jk), zwsmax )
+            END DO
+         END DO
+      END DO
+
+      DO jj = 1, jpj
+         DO ji = 1, jpi
+            ikt  = mbkt(ji,jj)
+            zdep = xstepb / gdept_n(ji,jj,ikt)
+            zwsbio32 = zwsbio3(ji,jj,ikt) * zdep
+            dicbott_cmoc(:,:) =  trn(ji,jj,ikt,jppoc) * zwsbio32 
+            talbott_cmoc(:,:) = -trn(ji,jj,ikt,jppoc) * zwsbio32 * ncrr_cmoc
+            no3bott_cmoc(:,:) =  trn(ji,jj,ikt,jppoc) * zwsbio32 
+            oxybott_cmoc(:,:) = -trn(ji,jj,ikt,jppoc) * zwsbio32 
+            pocbott_cmoc(:,:) = -trn(ji,jj,ikt,jppoc) * zwsbio32 
+         END DO
+      END DO
+      !
+      DEALLOCATE( zwsbio3 )
+      !
+      IF( ln_timing )   CALL timing_stop('trc_cmoc_bott')
+      !
+  END SUBROUTINE trc_bott_cmoc
 
 END MODULE trcsrc_canbgc
