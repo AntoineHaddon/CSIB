@@ -172,22 +172,25 @@ CONTAINS
       ! by adjusting the time step using tra trend
       qnegtr(:,:,:) = 1.e0      
       !
-      DO jn = 1, jp_tot
-        DO jk = 1, jpk
-           DO jj = 1, jpj
-              DO ji = 1, jpi
-                 IF( ( trb(ji,jj,jk,jn) + tra(ji,jj,jk,jn) ) < 0.e0 ) THEN
-                    ztra             = ABS( ( trb(ji,jj,jk,jn) - rtrn ) & 
-                    &                     / ( tra(ji,jj,jk,jn) + rtrn ) )
-                    qnegtr(ji,jj,jk) = MIN( qnegtr(ji,jj,jk),  ztra )
-                 ENDIF
+      IF( ln_cmocnegtr ) THEN
+        DO jn = 1, jp_tot
+          DO jk = 1, jpk
+             DO jj = 1, jpj
+                DO ji = 1, jpi
+                   IF( ( trb(ji,jj,jk,jn) + tra(ji,jj,jk,jn) ) < 0.e0 ) THEN
+                      ztra             = ABS( ( trb(ji,jj,jk,jn) - rtrn ) & 
+                      &                     / ( tra(ji,jj,jk,jn) + rtrn ) )
+                      qnegtr(ji,jj,jk) = MIN( qnegtr(ji,jj,jk),  ztra )
+                   ENDIF
+               END DO
              END DO
-           END DO
+          END DO
         END DO
-      END DO
-      !
-      !                                ! where at least 1 tracer concentration becomes negative
-      !                                ! and by tracer we mean only the CMOC or shared BGC tracer.
+        !
+        !                                ! where at least 1 tracer concentration becomes negative
+        !                                ! and by tracer we mean only the CMOC or shared BGC tracer.
+        !
+      END IF
       !
       DO jn = 1, jp_tot 
         trb(:,:,:,jn) = trb(:,:,:,jn) + qnegtr(:,:,:) * tra(:,:,:,jn)

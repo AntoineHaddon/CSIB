@@ -43,6 +43,7 @@ CONTAINS
       INTEGER ::   ios       ! Local integer
       !!----------------------------------------------------------------------
       NAMELIST/namcmocws/ ws_cmoc
+      NAMELIST/namcmocnegtr/ ln_cmocnegtr
 
       IF(lwp) WRITE(numout,*)
       clname = 'namelist_cmoc'
@@ -64,6 +65,16 @@ CONTAINS
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namcmocws in configuration namelist_cmoc' )
 
       IF(lwm) WRITE( numonpb, namcmocws )    
+      !
+      ! Reading ln_cmocnegtr, if .false. the qnegtr block in trcsms_cmoc.F90 is skipped
+      REWIND( numnatp_refb )              ! Namelist namcmocnegtr in reference namelist : Passive tracer variables
+      READ  ( numnatp_refb, namcmocnegtr, IOSTAT = ios, ERR = 903)
+903   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namcmocnegtr in reference namelist_cmoc' )
+      REWIND( numnatp_cfgb )              ! Namelist namcmocnegtr in configuration namelist : Passive tracer variables
+      READ  ( numnatp_cfgb, namcmocnegtr, IOSTAT = ios, ERR = 904 )
+904   IF( ios >  0 )   CALL ctl_nam ( ios , 'namcmocnegtr in configuration namelist_cmoc' )
+
+      IF(lwm) WRITE( numonpb, namcmocnegtr )    
       !
    END SUBROUTINE trc_nam_cmoc
    
