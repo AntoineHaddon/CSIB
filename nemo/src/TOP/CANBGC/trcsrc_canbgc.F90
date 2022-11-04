@@ -494,7 +494,7 @@ CONTAINS
         read_var_flag0 = read_var_flag
       ENDIF
       !
-      IF( read_var_flag0 )
+      IF( read_var_flag0 ) THEN
         trn(:,:,1,jqno3) = trn(:,:,1,jqno3) + no3river_cmoc(:,:)
         trn(:,:,1,jqdic) = trn(:,:,1,jqdic) + dicriver_cmoc(:,:)
         trn(:,:,1,jqtal) = trn(:,:,1,jqtal) + talriver_cmoc(:,:)
@@ -556,7 +556,7 @@ CONTAINS
             no3bott_cmoc(:,:) =  trn(ji,jj,ikt,jqpoc) * zwsbio32 
             oxybott_cmoc(:,:) = -trn(ji,jj,ikt,jqpoc) * zwsbio32 
             pocbott_cmoc(:,:) = -trn(ji,jj,ikt,jqpoc) * zwsbio32 
-            IF( write_rhs_flag0 )
+            IF( write_rhs_flag0 ) THEN
               trn(:,:,ikt,jqdic) = trn(:,:,ikt,jqdic) + dicbott_cmoc(:,:)
               trn(:,:,ikt,jqtal) = trn(:,:,ikt,jqtal) + talbott_cmoc(:,:)
               trn(:,:,ikt,jqno3) = trn(:,:,ikt,jqno3) + no3bott_cmoc(:,:)
