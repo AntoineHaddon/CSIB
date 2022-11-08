@@ -130,6 +130,8 @@ MODULE sms_top_canbgc
       ! already if this is the 1st time step in the calling
       ! subroutine, i.e. trcsms_cmoc or trcsms_canoe.
       !
+      USE trc, ONLY: trb, tra
+      !
       INTEGER  ::  jn, ji, jj, jk   ! dummy loop indices
       REAL(wp) ::  ztra
       !
@@ -152,6 +154,11 @@ MODULE sms_top_canbgc
       END DO    
       !                                ! where at least 1 tracer concentration becomes negative
       !                                ! and by tracer we mean only the CMOC or shared BGC tracer.
+      !
+      DO jn = jptra0, jptra1
+        trb(:,:,:,jn) = trb(:,:,:,jn) + qnegtr(:,:,:) * tra(:,:,:,jn)
+        tra(:,:,:,jn) = 0._wp
+      END DO
       !
     END SUBROUTINE
 
