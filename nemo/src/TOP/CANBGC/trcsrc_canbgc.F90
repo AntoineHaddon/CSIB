@@ -468,13 +468,13 @@ CONTAINS
       
   END SUBROUTINE trc_src_fesed
  
-  SUBROUTINE trc_src_criver( kt, read_var_flag )
+  SUBROUTINE trc_src_criver( kt, write_rhs_flag )
       ! compute dic and doc sources from rivers
       !                       based on CanESM5/CMOC code.
       INTEGER, INTENT(in)  :: kt
       !
-      LOGICAL, OPTIONAL, INTENT(in) :: read_var_flag   ! 
-      LOGICAL                       :: read_var_flag0  ! 
+      LOGICAL, OPTIONAL, INTENT(in) :: write_rhs_flag   ! 
+      LOGICAL                       :: write_rhs_flag0  ! 
       !
       REAL(wp), DIMENSION(jpi,jpj) :: zcoef
       !
@@ -498,13 +498,13 @@ CONTAINS
       dicriver_cmoc(:,:) =   rivinp_cmoc(:,:) * 2.631
       talriver_cmoc(:,:) = ( cotdep_cmoc(:,:) - rivinp_cmoc(:,:) * ncrr_cmoc)
       !
-      IF ( .NOT. PRESENT(read_var_flag) ) THEN
-        read_var_flag0 = .true.
+      IF ( .NOT. PRESENT(write_rhs_flag) ) THEN
+        write_rhs_flag = .true.
       ELSE
-        read_var_flag0 = read_var_flag
+        write_rhs_flag0 = write_rhs_flag
       ENDIF
       !
-      IF( read_var_flag0 ) THEN
+      IF( write_rhs_flag0 ) THEN
         trn(:,:,1,jqno3) = trn(:,:,1,jqno3) + no3river_cmoc(:,:)
         trn(:,:,1,jqdic) = trn(:,:,1,jqdic) + dicriver_cmoc(:,:)
         trn(:,:,1,jqtal) = trn(:,:,1,jqtal) + talriver_cmoc(:,:)
