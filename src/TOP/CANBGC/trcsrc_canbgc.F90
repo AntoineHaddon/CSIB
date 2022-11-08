@@ -36,7 +36,8 @@ MODULE trcsrc_canbgc
    PUBLIC trc_src_fesed
    PUBLIC trc_src_criver
    PUBLIC trc_bott_cmoc
-   PUBLIC trc_n2fx_cmoc
+   PUBLIC trc_n2fx_denit_cmoc
+   PUBLIC trc_n2fx_init_cmoc
 
    TYPE(FLD), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:)    ::  sf_src3d   ! structure of input 3D fields (file informations, fields read)
    TYPE(FLD), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:)    ::  sf_src2d   ! structure of input 2D fields (file informations, fields read)
@@ -66,7 +67,12 @@ MODULE trcsrc_canbgc
    REAL(wp), SAVE, PUBLIC :: dustsolub0   = 0.014_wp      !: dust0 solubility      (fraction?)
    REAL(wp), SAVE, PUBLIC :: wdust0       = 2.0_wp        !: dust0 sinking speed   (m s^-1)
    REAL(wp), SAVE, PUBLIC :: sedfeinput0  = 1000._wp      !: coastal iron release (?)
-
+   !
+   ! specific CMOC RHS terms needed for N2 fixation and
+   ! denitrification
+   REAL(wp), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:,:,:) :: n2fix_cmoc
+   REAL(wp), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:,:,:) :: denit_cmoc
+   !
    ! O Riche Aug 25th 2022
    ! Should we have this?
    ! code source of trc_srcfe
@@ -214,6 +220,10 @@ CONTAINS
       ! These are used only to store values of the rivers sources. See trc_src_criver
       ALLOCATE( cotdep_cmoc(jpi,jpj),rivinp_cmoc(jpi,jpj), STAT=ierr0 )
       IF( ierr0 /= 0 )   CALL ctl_stop( 'STOP', 'trc_src_init: failed to allocate trc_src_criver arrays for trc_src' ) 
+      ! These are used only to store values of N2 fixation and denitrication. See trc_n2fx_denit_cmoc
+      ALLOCATE( n2fix_cmoc(jpi,jpj,jpk),denit_cmoc(jpi,jpj,jpk), STAT=ierr0 )
+      IF( ierr0 /= 0 )   CALL ctl_stop( 'STOP', 'trc_src_init: failed to allocate trc_n2fx_denit_cmoc arrays for trc_src' ) 
+      !
       ALLOCATE( no3river_cmoc(jpi,jpj), dicriver_cmoc(jpi,jpj), &
               & talriver_cmoc(jpi,jpj),          STAT=ierr0 )
       IF( ierr0 /= 0 )   CALL ctl_stop( 'STOP', 'trc_src_init: failed to allocate CMOC RHS trc_src_criver arrays for trc_src' ) 
@@ -460,7 +470,7 @@ CONTAINS
  
   SUBROUTINE trc_src_criver( kt, read_var_flag )
       ! compute dic and doc sources from rivers
-      !                       based on CanESM5/CanOE code.
+      !                       based on CanESM5/CMOC code.
       INTEGER, INTENT(in)  :: kt
       !
       LOGICAL, OPTIONAL, INTENT(in) :: read_var_flag   ! 
@@ -534,7 +544,7 @@ CONTAINS
       DO jk = 1,jpkm1
          DO jj = 1, jpj
             DO ji = 1, jpi
-               zwsmax = 0.8 * gdept_n(ji,jj,jk) / xstepb
+               zwsmax = 0.8 * e3t_n(ji,jj,jk) / xstepb
                zwsbio3(ji,jj,jk) = MIN( zwsbio3(ji,jj,jk), zwsmax )
             END DO
          END DO
@@ -549,7 +559,7 @@ CONTAINS
       DO jj = 1, jpj
          DO ji = 1, jpi
             ikt  = mbkt(ji,jj)
-            zdep = xstepb / gdept_n(ji,jj,ikt)
+            zdep = xstepb / e3t_n(ji,jj,ikt)
             zwsbio32 = zwsbio3(ji,jj,ikt) * zdep
             dicbott_cmoc(:,:) =  trn(ji,jj,ikt,jqpoc) * zwsbio32 
             talbott_cmoc(:,:) = -trn(ji,jj,ikt,jqpoc) * zwsbio32 * ncrr_cmoc
@@ -574,9 +584,157 @@ CONTAINS
   END SUBROUTINE trc_bott_cmoc
 
 
-  SUBROUTINE trc_n2fx_cmoc
-  
-  
-  END SUBROUTINE trc_n2fx_cmoc
+  SUBROUTINE trc_n2fx_denit_cmoc( read_var_flag )
+      ! compute N2 fixation and denitrification
+      ! as prescribed in CanESM5/CMOC
+      LOGICAL, OPTIONAL, INTENT(in) :: read_var_flag   ! 
+      LOGICAL                       :: read_var_flag0  ! 
+      !
+      INTEGER              :: ji, jj, jk
+      ! <CMOC code OR 10/15/2015> arrays for total water column remineralisation, 
+      ! total euphotic zone nitrogen fixation, temporary array for DNF diagnostics, 
+      ! pon flux (euphotic zone bottom) for PIC burial diagnostics, PIC flux at the 
+      ! bottom, bottom POC
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:  ) :: zn2fixtot, zwork
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:  ) :: zdenittot
+      ! <CMOC code OR 10/15/2015> arrays for depth-dependent rates, zJNd is used to 
+      !compute the balance between denitrification and nitrogen fixation
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zn2fix,   zJNd
+      REAL(wp)   :: zrtn
+      !
+      ALLOCATE( zn2fix(jpi, jpj, jpk), zJNd (jpi, jpj, jpk) )
+      ALLOCATE( zn2fixtot(jpi, jpj  ), zdenittot(jpi, jpj ), zwork(jpi, jpj ) )
+      ! Nitrogen fixation and denitrification
+      ! ----------------------------------------------------------
+
+      ! <CMOC code OR 10/15/2015> Initialization of CMOC arrays
+      zn2fix   (:,:,:) = 0._wp
+      zn2fixtot(:,:)   = 0._wp
+      ! <CMOC code OR 12/11/2015> Total denitrification diagnostics
+      zdenittot(:,:)   = 0._wp
+      zJNd     (:,:,:) = 0._wp
+      zwork    (:,:)   = 0._wp
+      !
+      DO jk = 1, jk_eud_cmoc
+         DO jj = 1, jpj
+            DO ji = 1, jpi
+                   zn2fix(ji,jj,jk) = pnf_cmoc * cnrr_cmoc * 1e-12_wp / 3600._wp * qrfact2        & ! reference rate
+                   !
+                   &                 * kn_cmoc * 1e-6_wp / ( kn_cmoc * 1e-6_wp                    &
+                   &                                         + trn(ji,jj,jk,jqno3) + rtrn)        & ! N inhibition
+                   !
+                   &                 * par_1band(ji,jj,jk) / inf_cmoc                             & ! ligh sensitivity
+                   !
+                   &                 * ( max(tsn(ji,jj,jk,jp_tem), tnfmi_cmoc ) - tnfmi_cmoc )    &
+                   &                 / ( tnfMa_cmoc - tnfmi_cmoc ) &                               ! temperature dependence
+                   !
+                   &                 * ( phinf_cmoc * exp( 1._wp ) * anf_cmoc * gdept_n(ji,jj,jk) &
+                   &                 * exp ( -anf_cmoc * gdept_n(ji,jj,jk) ) + phi0_cmoc )        & ! diazotroph abundance dependence
+                   &                 * oomask(ji,jj) * tmask_bgc_closea(ji,jj,jk)                             ! open ocean / land mask
+                   !
+                   ! total nitrogen fixation on the current 1/4 time step, is this still true, depends on qnrdttrc
+                   zn2fixtot(ji,jj) = zn2fixtot(ji,jj) + zn2fix(ji,jj,jk) * e3t_n(ji,jj,jk)     
+                   zJNd(ji,jj,jk)   = zn2fix(ji,jj,jk)
+               END DO
+          END DO
+      END DO
+      !
+      ! Store 3D N2 fixation rate
+      n2fix_cmoc(:,:,:) = zJNd(:,:,:)
+      !
+      ! Denitrication prescribed by N2 fixation and remineralization rates
+      DO jk = jk_eud_cmoc+1, jpkm1
+         DO jj = 1, jpj
+            DO ji = 1, jpi
+                  zJNd(ji,jj,jk)  =  -zn2fixtot(ji,jj) *                                &
+                   &                 ( redet(ji,jj,jk) / (redettot(ji,jj) + rtrn) )     & 
+                   &                                   * tmask_bgc_closea(ji,jj,jk) * oomask(ji,jj)
+
+                  zdenittot(ji,jj) = zdenittot(ji,jj) + zJNd(ji,jj,jk) * e3t_n(ji,jj,jk)                           
+               END DO
+          END DO
+      END DO
+      !
+      ! Store 3D denitrication rate
+      denit_cmoc(:,:,:) = zJNd(:,:,:)
+      !
+      ! WRITE(numout,*) 'DNF sum:', SUM(zn2fixtot(:,:)) + SUM(zdenittot(:,:))
+
+      !     --------------------------------------------------------------------
+      !     Update the arrays TRA which contain the biological sources and sinks
+      !     --------------------------------------------------------------------
+      !
+      IF ( .NOT. PRESENT(write_rhs_flag) ) THEN
+        write_rhs_flag0 = .true.
+      ELSE
+        write_rhs_flag0 = write_rhs_flag
+      ENDIF
+      !
+      DO jk = 1, jpkm1
+        IF( write_rhs_flag0 ) THEN  
+          trn(:,:,jk,jqno3) = trn(:,:,jk,jqno3) +  zJNd(:,:,jk)
+        END IF
+      END DO
+      !
+      ! ! print mean trends (used for debugging)
+      ! IF(ln_ctl)   THEN
+         ! WRITE(charout, FMT="('rem6')")
+         ! CALL prt_ctl_trc_info(charout)
+         ! CALL prt_ctl_trc(tab4d=tra, mask=tmask_bgc_closea, clinfo=ctrcnm)
+      ! ENDIF
+      !
+      ! IF( ln_diatrc ) THEN
+        ! IF( lk_iomput ) THEN
+           ! IF( jnt == nrdttrc ) THEN
+              ! ! <CMOC code OR 10/15/2015> 1.e+3_wp is to convert from L^-1 to m^-3
+              ! !  (left in the sum line #119); the diagnostics has to be rescaled 
+              ! ! to per second by dividing by rfact2.
+              ! zwork(:,:)  =  zn2fixtot(:,:) * ncrr_cmoc * 1.e+3_wp * rfact2r * tmask_bgc_closea(:,:,1)
+              ! ! nitrogen fixation in molN m^-2 s^-1 
+              ! CALL iom_put( "Nfix"   , zwork )
+              ! ! <CMOC code OR 12/11/2015> 1.e+3_wp is to convert from L^-1 to 
+              ! ! m^-3 (left in the sum line #119); the diagnostics has to be 
+              ! ! rescaled to per second by dividing by rfact2; NOTE: land mask 
+              ! ! already taken into account
+              ! zwork(:,:)  = -zdenittot(:,:) * ncrr_cmoc * 1.e+3_wp * rfact2r
+              ! CALL iom_put( "Denit"  , zwork ) ! denitrification in molN m^-2 s^-1 
+         ! ENDIF
+        ! ENDIF
+      ! ENDIF 
+      !
+      DEALLOCATE(zJNd, zdenittot, zn2fix, zn2fixtot, zwork)
+      !
+  END SUBROUTINE trc_n2fx_denit_cmoc
+
+
+  SUBROUTINE trc_n2fx_init_cmoc
+      !
+      INTEGER ::   ios  
+      ! 
+      NAMELIST/namcmocnfx/ phinf_cmoc, phi0_cmoc, anf_cmoc, pnf_cmoc, inf_cmoc, tnfMa_cmoc, tnfmi_cmoc
+      REWIND( numnatp_refb )              ! Namelist namcmocnfx in reference namelist : Passive tracer variables
+      READ  ( numnatp_refb, namcmocnfx, IOSTAT = ios, ERR = 901)
+901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namcmocnfx in reference namelist_cmoc' )
+      REWIND( numnatp_cfgb )              ! Namelist namcmocnfx in configuration namelist : Passive tracer variables
+      READ  ( numnatp_cfgb, namcmocnfx, IOSTAT = ios, ERR = 902 )
+902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namcmocnfx in configuration namelist_cmoc' )
+      !
+      IF(lwm) WRITE( numonpb, namcmocnfx )      
+      !
+      IF(lwp) THEN
+         WRITE(numout,*) ' '
+         WRITE(numout,*) ' Namelist parameters for dinitrogen fix. , namcmocnfx'
+         WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+         WRITE(numout,*) '    Maximum ref. diazotroph concentration    phinf_cmoc =',  phinf_cmoc
+         WRITE(numout,*) '    Surface ref. diazotroph concentration     phi0_cmoc =',   phi0_cmoc
+         WRITE(numout,*) '    Inverse depth of diazotroph conc.max.      anf_cmoc =',    anf_cmoc
+         WRITE(numout,*) '    Maximum ref. rate of dinitrogen fix.       pnf_cmoc =',    pnf_cmoc
+         WRITE(numout,*) '    Maximum ref. dinitrogen fix surf. irr.     inf_cmoc =',    inf_cmoc
+         WRITE(numout,*) '    Maximum ref. dinitrogen fix SST          tnfMa_cmoc =',  tnfMa_cmoc
+         WRITE(numout,*) '    Minimum ref. dinitrogen fix SST          tnfmi_cmoc =',  tnfmi_cmoc
+         WRITE(numout,*) ' '
+      END IF   
+      !
+  END SUBROUTINE trc_n2fx_init_cmoc
 
 END MODULE trcsrc_canbgc

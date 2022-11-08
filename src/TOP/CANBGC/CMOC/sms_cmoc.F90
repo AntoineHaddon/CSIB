@@ -57,4 +57,22 @@ MODULE sms_cmoc
    ! qnegtr block skipping switch
    LOGICAL, SAVE :: ln_cmocnegtr
 
+   ! N2 fixation
+   REAL(wp), SAVE :: phinf_cmoc
+   REAL(wp), SAVE :: phi0_cmoc
+   REAL(wp), SAVE :: anf_cmoc
+   REAL(wp), SAVE :: pnf_cmoc
+   REAL(wp), SAVE :: inf_cmoc   
+   REAL(wp), SAVE :: tnfMa_cmoc
+   REAL(wp), SAVE :: tnfmi_cmoc
+
+   ! PIC/Calcite export
+   REAL(wp), SAVE :: rmcico_cmoc
+   REAL(wp), SAVE :: trcico_cmoc
+   REAL(wp), SAVE :: aci_cmoc
+   REAL(wp), SAVE :: dci_cmoc   
+
+   ! Open ocean mask
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: oomask
+
 END MODULE sms_cmoc
