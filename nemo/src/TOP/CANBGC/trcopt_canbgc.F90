@@ -357,7 +357,7 @@ CONTAINS
         DO jk = 1, jpkm1
           ztotchla(:,:,jk) = src2d_dta(:,:,js2d_chla)*exp(-gdept_n(:,:,jk)/30.)
         ENDDO
-      ! ENDIF
+      ENDIF
       !
       IF( ln_cmoc ) THEN
         IF( lwp ) WRITE(numout,*) 'trc_opt_1band: CMOC selected:'

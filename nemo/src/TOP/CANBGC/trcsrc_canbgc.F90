@@ -584,10 +584,10 @@ CONTAINS
   END SUBROUTINE trc_bott_cmoc
 
 
-  SUBROUTINE trc_n2fx_denit_cmoc( read_var_flag )
+  SUBROUTINE trc_n2fx_denit_cmoc( zpar, read_var_flag )
       ! compute N2 fixation and denitrification
       ! as prescribed in CanESM5/CMOC
-      USE trcopt_canbgc, ONLY: par_1band
+      REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(in) :: zpar  ! any PAR array
       !
       LOGICAL, OPTIONAL, INTENT(in) :: read_var_flag   ! 
       LOGICAL                       :: read_var_flag0  ! 
@@ -625,7 +625,7 @@ CONTAINS
                    &                 * kn_cmoc * 1e-6_wp / ( kn_cmoc * 1e-6_wp                    &
                    &                                         + trn(ji,jj,jk,jqno3) + rtrn)        & ! N inhibition
                    !
-                   &                 * par_1band(ji,jj,jk) / inf_cmoc                             & ! ligh sensitivity
+                   &                 * zpar(ji,jj,jk) / inf_cmoc                                  & ! ligh sensitivity
                    !
                    &                 * ( max(tsn(ji,jj,jk,jp_tem), tnfmi_cmoc ) - tnfmi_cmoc )    &
                    &                 / ( tnfMa_cmoc - tnfmi_cmoc ) &                               ! temperature dependence
