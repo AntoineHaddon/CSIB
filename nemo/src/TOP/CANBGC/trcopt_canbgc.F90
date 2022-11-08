@@ -137,6 +137,12 @@ CONTAINS
       !
       ! Failsafe case
       IF( .NOT. ln_cmoc .AND. .NOT. ln_canoe) THEN
+        IF( lwp ) WRITE(numout,*) 'trc_opt: no CanBGC selected:'
+        IF( lwp ) WRITE(numout,*) 'prescribed 30-m e-folding chla'
+        IF( lwp ) WRITE(numout,*) 'as a place holder here.'
+        IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+        IF( lwp ) WRITE(numout,*)
+        IF( lwp ) CALL FLUSH(numout)      
         CALL trc_src2d( kt, js2d_chla )
         DO jk = 1, jpkm1
           ztotchla(:,:,jk) = src2d_dta(:,:,js2d_chla)*exp(-gdept_n(:,:,jk)/30.)
@@ -144,9 +150,19 @@ CONTAINS
       ENDIF
       !
       IF( ln_cmoc ) THEN
+        IF( lwp ) WRITE(numout,*) 'trc_opt: CMOC selected:'
+        IF( lwp ) WRITE(numout,*) 'using CMOC chla-a tracer'
+        IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~'
+        IF( lwp ) WRITE(numout,*)
+        IF( lwp ) CALL FLUSH(numout)           
         IF( iom_use("NCHL") )  ztotchla(:,:,:) = trn(:,:,:,jqnch)
       ENDIF
       ! IF( ln_canoe ) THEN
+        ! IF( lwp ) WRITE(numout,*) 'trc_opt: CanOE selected:'
+        ! IF( lwp ) WRITE(numout,*) 'using both CanOE chla-a tracers'
+        ! IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+        ! IF( lwp ) WRITE(numout,*)
+        ! IF( lwp ) CALL FLUSH(numout)       
         ! IF( iom_use("NCHL") )  ztotchla(:,:,:) = trn(:,:,:,jrnch)
         ! IF( iom_use("DCHL") )  ztotchla(:,:,:) = ztotchla(:,:,:) + trn(:,:,:,jrdch)    
       ! ENDIF
@@ -330,7 +346,13 @@ CONTAINS
       ! IFs can later be replaced by cpp key activation statements
       !
       ! Failsafe case
-      ! IF( .NOT. ln_cmoc .AND. .NOT. ln_canoe) THEN
+      IF( .NOT. ln_cmoc .AND. .NOT. ln_canoe) THEN
+        IF( lwp ) WRITE(numout,*) 'trc_opt_1band: no CanBGC selected:'
+        IF( lwp ) WRITE(numout,*) 'prescribed 30-m e-folding chla'
+        IF( lwp ) WRITE(numout,*) 'as a place holder here.'
+        IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+        IF( lwp ) WRITE(numout,*)
+        IF( lwp ) CALL FLUSH(numout)       
         CALL trc_src2d( kt, js2d_chla )
         DO jk = 1, jpkm1
           ztotchla(:,:,jk) = src2d_dta(:,:,js2d_chla)*exp(-gdept_n(:,:,jk)/30.)
@@ -338,9 +360,19 @@ CONTAINS
       ! ENDIF
       !
       IF( ln_cmoc ) THEN
+        IF( lwp ) WRITE(numout,*) 'trc_opt_1band: CMOC selected:'
+        IF( lwp ) WRITE(numout,*) 'using CMOC chla-a tracer'
+        IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+        IF( lwp ) WRITE(numout,*)
+        IF( lwp ) CALL FLUSH(numout)      
         IF( iom_use("NCHL") )  ztotchla(:,:,:) = trn(:,:,:,jqnch)
       ENDIF
       ! IF( ln_canoe ) THEN
+        ! IF( lwp ) WRITE(numout,*) 'trc_opt_1band: CanOE selected:'
+        ! IF( lwp ) WRITE(numout,*) 'using both CanOE chla-a tracers'
+        ! IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+        ! IF( lwp ) WRITE(numout,*)
+        ! IF( lwp ) CALL FLUSH(numout)         
         ! IF( iom_use("NCHL") )  ztotchla(:,:,:) = trn(:,:,:,jrnch)
         ! IF( iom_use("DCHL") )  ztotchla(:,:,:) = ztotchla(:,:,:) + trn(:,:,:,jrdch)    
       ! ENDIF
