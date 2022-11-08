@@ -584,13 +584,13 @@ CONTAINS
   END SUBROUTINE trc_bott_cmoc
 
 
-  SUBROUTINE trc_n2fx_denit_cmoc( zpar, read_var_flag )
+  SUBROUTINE trc_n2fx_denit_cmoc( zpar, write_rhs_flag )
       ! compute N2 fixation and denitrification
       ! as prescribed in CanESM5/CMOC
       REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(in) :: zpar  ! any PAR array
       !
-      LOGICAL, OPTIONAL, INTENT(in) :: read_var_flag   ! 
-      LOGICAL                       :: read_var_flag0  ! 
+      LOGICAL, OPTIONAL, INTENT(in) :: write_rhs_flag   ! 
+      LOGICAL                       :: write_rhs_flag0  ! 
       !
       INTEGER                       :: ji, jj, jk      ! nested loop indices
       ! <CMOC code OR 10/15/2015> arrays for total water column remineralisation, 
