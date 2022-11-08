@@ -132,8 +132,9 @@ MODULE sms_top_canbgc
       !
       USE trc, ONLY: trb, tra
       !
-      INTEGER  ::  jn, ji, jj, jk   ! dummy loop indices
-      REAL(wp) ::  ztra
+      INTEGER, INTENT(in) ::  jptra0, jptra1   !: tracer indices
+      INTEGER             ::  jn, ji, jj, jk   !: dummy loop indices
+      REAL(wp)            ::  ztra
       !
       REAL(wp), DIMENSION(jpi,jpj,jpk) :: qnegtr
       !
