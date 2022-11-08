@@ -17,12 +17,20 @@ MODULE cmocsink
    USE oce_trc         !  shared variables between ocean and passive tracers
    USE trc             !  passive tracers common variables 
    
-   USE sms_top_canbgc
-   USE sms_cmoc
-   
    USE prtctl_trc      !  print control for debugging
    USE iom             !  I/O manager
    USE lib_fortran     ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
+
+   USE in_out_manager  ! I/O manager
+   USE dom_oce         ! ocean space and time domain 
+   USE timing          ! Timing
+   USE lib_mpp         ! distribued memory computing library
+   USE lbclnk          ! ocean lateral boundary conditions (or mpp link)
+
+   USE sms_top_canbgc
+   USE sms_cmoc
+   USE trc_closea_canbgc ! tmask_bgc_closea
+
 
    IMPLICIT NONE
    PRIVATE
@@ -93,6 +101,7 @@ CONTAINS
       ! Move to here instead of p4z_sink2 in the original CanESM5/CMOC code, since this only needs to be defined
       ! once
       !
+      ALLOCATE( oomask(jpi, jpj) )
       oomask(:,:) = 0.0_wp
       !
       DO jj = 1, jpj

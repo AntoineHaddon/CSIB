@@ -73,6 +73,6 @@ MODULE sms_cmoc
    REAL(wp), SAVE :: dci_cmoc   
 
    ! Open ocean mask
-   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: oomask
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:) :: oomask
 
 END MODULE sms_cmoc
