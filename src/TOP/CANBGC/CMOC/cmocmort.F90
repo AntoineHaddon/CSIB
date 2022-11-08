@@ -62,7 +62,14 @@ CONTAINS
       !
       IF( ln_timing )  CALL timing_start('cmoc_mort')
       !
-      ! <CMOC code OR 10/19/2015> Note: replacing zstep (and removing facvol/key_grad instances) by xstep time step in days
+      !
+      IF( lwp ) THEN
+        WRITE(numout,*)
+        WRITE(numout,*), 'cmoc_mort: compute phytoplankton mortality terms'
+        WRITE(numout,*), '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+        WRITE(numout,*)
+        CALL FLUSH(numout)
+      END IF      ! <CMOC code OR 10/19/2015> Note: replacing zstep (and removing facvol/key_grad instances) by xstep time step in days
       ! O Riche Oct 27th 2022, xstep is xstepb in TOP/CANBGC
       DO jk = 1, jpkm1
          DO jj = 1, jpj

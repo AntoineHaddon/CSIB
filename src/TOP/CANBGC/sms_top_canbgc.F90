@@ -138,6 +138,15 @@ MODULE sms_top_canbgc
       !
       REAL(wp), DIMENSION(jpi,jpj,jpk) :: qnegtr
       !
+      IF( lwp ) THEN
+        WRITE(numout,*)
+        WRITE(numout,*), 'trc_xnegtr: correct offshooting tra trend array'
+        WRITE(numout,*), 'by reducing the time step for all the tracers. '
+        WRITE(numout,*), '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+        WRITE(numout,*)
+        CALL FLUSH(numout)
+      END IF
+      !
       qnegtr(:,:,:) = 1.e0      
       !
       DO jn = jptra0, jptra1

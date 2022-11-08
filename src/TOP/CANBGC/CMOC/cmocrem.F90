@@ -67,6 +67,15 @@ CONTAINS
       !
       IF( ln_timing )  CALL timing_start('cmoc_rem')
       !
+      !
+      IF( lwp ) THEN
+        WRITE(numout,*)
+        WRITE(numout,*), 'cmoc_rem: compute organic remineralization'
+        WRITE(numout,*), '          and prime denitrication rate    '
+        WRITE(numout,*), '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+        WRITE(numout,*)
+        CALL FLUSH(numout)
+      END IF      
       ! Initialization of CMOC arrays
        redet   (:,:,:) = 0._wp
        redettot(:,:)   = 0._wp

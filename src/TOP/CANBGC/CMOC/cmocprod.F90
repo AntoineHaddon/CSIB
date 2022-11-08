@@ -84,6 +84,13 @@ CONTAINS
       !
       IF( ln_timing )  CALL timing_start('cmoc_prod')
       !
+      IF( lwp ) THEN
+        WRITE(numout,*)
+        WRITE(numout,*), 'cmoc_prod: compute phytoplankton and chlorophyl production'
+        WRITE(numout,*), '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+        WRITE(numout,*)
+        CALL FLUSH(numout)
+      END IF
       !  Allocate temporary workspace
       ALLOCATE( zpislopead(jpi, jpj, jpk), zprbio(jpi, jpj, jpk), zprnch(jpi, jpj, jpk)  )
       ALLOCATE( zprorca(jpi, jpj, jpk), zprochln(jpi, jpj, jpk) )
