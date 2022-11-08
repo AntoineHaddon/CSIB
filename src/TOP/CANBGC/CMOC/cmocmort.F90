@@ -71,7 +71,7 @@ CONTAINS
                zcompaph = MAX( ( trn(ji,jj,jk,jqphy) - 1e-8 ), 0.e0 )
                
                ! Quadratic mortality
-               ! <CMOC code OR 10/19/2015> 1e.3_wp convert L^-1 to m^-3 (); use xstepb the global constant to convert to d^-1
+               ! <CMOC code OR 10/19/2015> 1e.3_wp convert (umol? OR Nov 2022) L^-1 to (mol ? OR Nov 2022) m^-3 ; use xstepb the global constant to convert to d^-1
                zrespp = mpd2_cmoc * ncrr_cmoc * 1.e3_wp * xstepb * zcompaph * trn(ji,jj,jk,jqphy)
 
                !  Linear mortality

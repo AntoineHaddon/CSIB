@@ -103,9 +103,7 @@ CONTAINS
         CALL FLUSH(numout)
       ENDIF
 
-      IF( kt == nittrc000 ) THEN
-        !
-        ALLOCATE( qnegtr(jpi,jpj,jpk) )
+      IF( kt == nittrc000 ) THEN       
         !
         IF( .NOT. ln_rsttr ) THEN
           !
@@ -169,29 +167,13 @@ CONTAINS
       !
       CALL cmoc_rem( kt )
       !
+      !!!!!! O Riche Nov 8th 2022
+      !!!!!! replace this by a call to trc_xnegtr subroutine
+      !!!!!! sitting higher in CANBGC
       ! Enforce conservation and positive values of tracers
       ! by adjusting the time step using tra trend
-      qnegtr(:,:,:) = 1.e0      
       !
-      IF( ln_cmocnegtr ) THEN
-        DO jn = 1, jp_tot
-          DO jk = 1, jpk
-             DO jj = 1, jpj
-                DO ji = 1, jpi
-                   IF( ( trb(ji,jj,jk,jn) + tra(ji,jj,jk,jn) ) < 0.e0 ) THEN
-                      ztra             = ABS( ( trb(ji,jj,jk,jn) - rtrn ) & 
-                      &                     / ( tra(ji,jj,jk,jn) + rtrn ) )
-                      qnegtr(ji,jj,jk) = MIN( qnegtr(ji,jj,jk),  ztra )
-                   ENDIF
-               END DO
-             END DO
-          END DO
-        END DO
-        !
-        !                                ! where at least 1 tracer concentration becomes negative
-        !                                ! and by tracer we mean only the CMOC or shared BGC tracer.
-        !
-      END IF
+      IF( ln_cmocnegtr )  CALL trc_xnegtr( 1, jp_tot )   !!! O Riche Nov 8th 2022 ! reside in sms_top_canbgc.F90
       !
       DO jn = 1, jp_tot 
         trb(:,:,:,jn) = trb(:,:,:,jn) + qnegtr(:,:,:) * tra(:,:,:,jn)
@@ -200,21 +182,21 @@ CONTAINS
       !
       !!!!!!! End   of "p4zbio" block !!!!!!!        
       !
-      !!!!!!! Start of "p4zsed" block !!!!!!!
-      ! Here CMOC would call the new subroutines that
-      ! compute the various sources that were scattered
-      ! within CanESM5/CMOC p4zsed.F90 code, e.g.
-      ! river sources
-      CALL trc_src_criver( kt )
-      ! POC bottom instant. rem
-      CALL trc_bott_cmoc
-      ! n2 fixation/denitrification
-      CALL trc_n2fx_denit_cmoc( par_1band )
-      ! some of these subroutines have a write_rhs_flag
-      ! set to .true. by default to control whether or 
-      ! not to update the trn array.
-      !!!!!!! End   of "p4zsed" block !!!!!!!
-      !
+      ! !!!!!!! Start of "p4zsed" block !!!!!!!
+      ! ! Here CMOC would call the new subroutines that
+      ! ! compute the various sources that were scattered
+      ! ! within CanESM5/CMOC p4zsed.F90 code, e.g.
+      ! ! river sources
+      ! CALL trc_src_criver( kt )
+      ! ! POC bottom instant. rem
+      ! CALL trc_bott_cmoc
+      ! ! n2 fixation/denitrification
+      ! CALL trc_n2fx_denit_cmoc( par_1band )
+      ! ! some of these subroutines have a write_rhs_flag
+      ! ! set to .true. by default to control whether or 
+      ! ! not to update the trn array.
+      ! !!!!!!! End   of "p4zsed" block !!!!!!!
+      ! !
       DO jn = 1, jp_tot 
         trb(:,:,:,jn) = trn(:,:,:,jn)
       END DO
