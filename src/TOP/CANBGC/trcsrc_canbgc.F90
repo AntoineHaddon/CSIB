@@ -20,7 +20,7 @@ MODULE trcsrc_canbgc
    USE lib_mpp         ! distribued memory computing library
    USE lbclnk          ! ocean lateral boundary conditions (or mpp link)
 
-   USE sms_cmoc, ONLY    : ncrr_cmoc, ws_cmoc
+   USE sms_cmoc          ! shared variables
    USE sms_top_canbgc    ! access index/array definitions for ext. sources
    USE trc_closea_canbgc ! tmask_bgc_closea
       
@@ -587,6 +587,7 @@ CONTAINS
   SUBROUTINE trc_n2fx_denit_cmoc( read_var_flag )
       ! compute N2 fixation and denitrification
       ! as prescribed in CanESM5/CMOC
+      USE trcopt_canbgc, ONLY: par_1band
       !
       LOGICAL, OPTIONAL, INTENT(in) :: read_var_flag   ! 
       LOGICAL                       :: read_var_flag0  ! 
@@ -619,7 +620,7 @@ CONTAINS
       DO jk = 1, jk_eud_cmoc
          DO jj = 1, jpj
             DO ji = 1, jpi
-                   zn2fix(ji,jj,jk) = pnf_cmoc * cnrr_cmoc * 1e-12_wp / 3600._wp * qrfact2        & ! reference rate
+                   zn2fix(ji,jj,jk) = pnf_cmoc * cnrr_cmoc * 1e-12_wp / 3600._wp * qfact2         & ! reference rate
                    !
                    &                 * kn_cmoc * 1e-6_wp / ( kn_cmoc * 1e-6_wp                    &
                    &                                         + trn(ji,jj,jk,jqno3) + rtrn)        & ! N inhibition
