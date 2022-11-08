@@ -116,8 +116,45 @@ MODULE sms_top_canbgc
 
    ! !!* Temperature dependancy of SMS terms
 
+   PUBLIC sms_top_alloc
+   PUBLIC trc_xnegtr
 
 	CONTAINS
+
+    SUBROUTINE trc_xnegtr( jptra0 , jptra1 )
+      ! 
+      ! Check the effect of the trend on the current array
+      ! and if any tracer goes beyond zero reduce the time step
+      ! inside the whole trn array
+      ! Assume a Leapfrog scheme, but trb will be set to trn
+      ! already if this is the 1st time step in the calling
+      ! subroutine, i.e. trcsms_cmoc or trcsms_canoe.
+      !
+      INTEGER  ::  jn, ji, jj, jk   ! dummy loop indices
+      REAL(wp) ::  ztra
+      !
+      REAL(wp), DIMENSION(jpi,jpj,jpk) :: qnegtr
+      !
+      qnegtr(:,:,:) = 1.e0      
+      !
+      DO jn = jptra0, jptra1
+        DO jk = 1, jpk
+           DO jj = 1, jpj
+              DO ji = 1, jpi
+                 IF( ( trb(ji,jj,jk,jn) + tra(ji,jj,jk,jn) ) < 0.e0 ) THEN
+                    ztra             = ABS( ( trb(ji,jj,jk,jn) - rtrn ) & 
+                    &                     / ( tra(ji,jj,jk,jn) + rtrn ) )
+                    qnegtr(ji,jj,jk) = MIN( qnegtr(ji,jj,jk),  ztra )
+                 ENDIF
+             END DO
+           END DO
+        END DO
+      END DO    
+      !                                ! where at least 1 tracer concentration becomes negative
+      !                                ! and by tracer we mean only the CMOC or shared BGC tracer.
+      !
+    END SUBROUTINE
+
 
 		INTEGER FUNCTION sms_top_alloc()
 		!!----------------------------------------------------------------------

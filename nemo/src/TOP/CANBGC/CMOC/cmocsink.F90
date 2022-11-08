@@ -1,7 +1,9 @@
 MODULE cmocsink
+   !!!!!! O Riche Nov 8th 2022
+   !!!!!! move this into CANBGC as trcsink_canbgc.F90
    !!======================================================================
    !!                         ***  MODULE cmocsink  ***
-   !! TOP :  PISCES  vertical flux of particulate matter due to gravitational sinking
+   !! TOP :  CANBGC  vertical flux of particulate matter due to gravitational sinking
    !!======================================================================
    !! History :   1.0  !  2004     (O. Aumont) Original code
    !!             2.0  !  2007-12  (C. Ethe, G. Madec)  F90
@@ -89,13 +91,15 @@ CONTAINS
       IF(lwm) WRITE( numonpb, namcmoccal )
 
       !
-      WRITE(numout,*) ' Namelist parameters for calcite export  , namcmoccal'
-      WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-      WRITE(numout,*) '    Maximum rain ratio                      rmcico_cmoc =', rmcico_cmoc
-      WRITE(numout,*) '    Rain ratio half-point temperature       trcico_cmoc =', trcico_cmoc
-      WRITE(numout,*) '    Rain ratio scaling factor                  aci_cmoc =',    aci_cmoc
-      WRITE(numout,*) '    CaCO3 redissolution depth scale            dci_cmoc =',    dci_cmoc
-      WRITE(numout,*) ' '      
+      IF( lwp ) THEN
+        WRITE(numout,*) ' Namelist parameters for calcite export  , namcmoccal'
+        WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+        WRITE(numout,*) '    Maximum rain ratio                      rmcico_cmoc =', rmcico_cmoc
+        WRITE(numout,*) '    Rain ratio half-point temperature       trcico_cmoc =', trcico_cmoc
+        WRITE(numout,*) '    Rain ratio scaling factor                  aci_cmoc =',    aci_cmoc
+        WRITE(numout,*) '    CaCO3 redissolution depth scale            dci_cmoc =',    dci_cmoc
+        WRITE(numout,*) ' '      
+      END IF
       !
       ! Define an open ocean mask, based on where mbkt > nk_bal_cmoc == 28 (or as define in namelist_cmoc_ref)
       ! Move to here instead of p4z_sink2 in the original CanESM5/CMOC code, since this only needs to be defined
