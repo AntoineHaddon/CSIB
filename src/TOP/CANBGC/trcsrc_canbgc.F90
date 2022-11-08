@@ -587,10 +587,11 @@ CONTAINS
   SUBROUTINE trc_n2fx_denit_cmoc( read_var_flag )
       ! compute N2 fixation and denitrification
       ! as prescribed in CanESM5/CMOC
+      !
       LOGICAL, OPTIONAL, INTENT(in) :: read_var_flag   ! 
       LOGICAL                       :: read_var_flag0  ! 
       !
-      INTEGER              :: ji, jj, jk
+      INTEGER                       :: ji, jj, jk      ! nested loop indices
       ! <CMOC code OR 10/15/2015> arrays for total water column remineralisation, 
       ! total euphotic zone nitrogen fixation, temporary array for DNF diagnostics, 
       ! pon flux (euphotic zone bottom) for PIC burial diagnostics, PIC flux at the 
