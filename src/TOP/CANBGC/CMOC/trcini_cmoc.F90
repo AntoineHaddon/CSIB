@@ -126,7 +126,7 @@ CONTAINS
       ! open the files
       CALL trc_src_init
       !
-      !! O Riche Nov 8th 2022
+      ! O Riche Nov 8th 2022
       CALL trc_n2fx_init_cmoc ! load N2 fixation parameters
       !
       ! call all the BGC initialization subroutines in TOP tier
