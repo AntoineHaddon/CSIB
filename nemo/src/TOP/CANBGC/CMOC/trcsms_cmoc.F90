@@ -167,6 +167,8 @@ CONTAINS
       !
       CALL cmoc_rem( kt )
       !
+      CALL cmoc_rem_denit
+      !      
       !!!!!! O Riche Nov 8th 2022
       !!!!!! replace this by a call to trc_xnegtr subroutine
       !!!!!! sitting higher in CANBGC
@@ -174,11 +176,6 @@ CONTAINS
       ! by adjusting the time step using tra trend
       !
       IF( ln_cmocnegtr )  CALL trc_xnegtr( 1, jp_tot )   !!! O Riche Nov 8th 2022 ! reside in sms_top_canbgc.F90
-      !
-      DO jn = 1, jp_tot 
-        trb(:,:,:,jn) = trb(:,:,:,jn) + qnegtr(:,:,:) * tra(:,:,:,jn)
-        tra(:,:,:,jn) = 0._wp
-      END DO
       !
       !!!!!!! End   of "p4zbio" block !!!!!!!        
       !
