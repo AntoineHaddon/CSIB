@@ -67,28 +67,26 @@ CONTAINS
       !
       IF( ln_timing )  CALL timing_start('cmoc_rem')
       !
-      !
       IF( lwp ) THEN
         WRITE(numout,*)
         WRITE(numout,*), 'cmoc_rem: compute organic remineralization'
-        WRITE(numout,*), '          and prime denitrication rate    '
         WRITE(numout,*), '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
         WRITE(numout,*)
         CALL FLUSH(numout)
-      END IF      
-      ! Initialization of CMOC arrays
-       redet   (:,:,:) = 0._wp
-       redettot(:,:)   = 0._wp
+      END IF
+      !
+      ! Initialization
+      redet(:,:,:) = 0._wp
       !
       ! Remineralisation rate of detritus
       DO jk = 1, jpk
          DO jj = 1, jpj
             DO ji = 1, jpi
-               redet (ji,jj,jk) = reref_cmoc * xstepb &
-               &                 * exp ( -ed_cmoc * 1e3_wp / 8.31_wp *        &
-               &                ( 1._wp / ( tsn(ji,jj,jk,jp_tem) + 273.15_wp  &
-               &                 + rtrn ) - 1._wp / ( tvm_cmoc + 273.15_wp )  &
-               &                )      ) * trn(ji,jj,jk,jqpoc) * tmask_bgc_closea(ji,jj,jk)
+               redet(ji,jj,jk) = reref_cmoc * xstepb &
+               &                 * exp ( -ed_cmoc * 1e3_wp / 8.31_wp *         &
+               &                 ( 1._wp / ( tsn(ji,jj,jk,jp_tem) + 273.15_wp  &
+               &                 + rtrn ) - 1._wp / ( tvm_cmoc + 273.15_wp )   &
+               &                 )      ) * trn(ji,jj,jk,jqpoc) * tmask_bgc_closea(ji,jj,jk)
             END DO
          END DO 
       END DO         
@@ -117,18 +115,26 @@ CONTAINS
   END SUBROUTINE cmoc_rem
 
   
-  SUBROUTINE cmoc_rem_denit( redet0, redettot0 )
-      !!---------------------------------------------------------------------
-      REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT( in    ) ::    redet0
-      REAL(wp), DIMENSION(jpi,jpj    ), INTENT(   out ) :: redettot0
-      !!---------------------------------------------------------------------
+  SUBROUTINE cmoc_rem_denit
+      !
       INTEGER  :: ji, jj, jk         
       !!!
       ! O Riche Oct 27th 2022
       ! This is a block for denitrification, using the rem. rate as a proxy
       ! The code also requires jk_eud_cmoc the z-level for the bottom of
       ! euphotic layer
-      !!!
+      !
+      IF( lwp ) THEN
+        WRITE(numout,*)
+        WRITE(numout,*), 'cmoc_rem_denit: compute  denitrication rate'
+        WRITE(numout,*), '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+        WRITE(numout,*)
+        CALL FLUSH(numout)
+      END IF      
+      !
+      ! Initialization
+      redettot(:,:) = 0._wp
+      !
       ! Integration of remineralization below the euphotic zone (used for dentrification scaling)
       DO jk = jk_eud_cmoc+1, jpk
          DO jj = 1, jpj
