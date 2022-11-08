@@ -29,6 +29,7 @@ MODULE trcini_cmoc
    USE cmocmort            ! CMOC phyto mortality module
    USE cmocrem             ! CMOC carbon remineralization
    USE cmoczoo             ! CMOC zooplankton grazing
+   USE cmocsink            ! CMOC particules sinking
    
    IMPLICIT NONE
    PRIVATE
@@ -125,6 +126,9 @@ CONTAINS
       ! open the files
       CALL trc_src_init
       !
+      !! O Riche Nov 8th 2022
+      CALL trc_n2fx_init_cmoc ! load N2 fixation parameters
+      !
       ! call all the BGC initialization subroutines in TOP tier
       CALL trc_flx_init
       !
@@ -142,6 +146,9 @@ CONTAINS
       !
       ! ! O Riche Oct 28th 2022
       CALL cmoc_zoo_init
+      !
+      !! O Riche Nov 8th 2022
+      CALL cmoc_sink_init ! for now only load oomask
       !
       ! !
    END SUBROUTINE trc_ini_cmoc

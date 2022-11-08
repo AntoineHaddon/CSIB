@@ -205,8 +205,11 @@ CONTAINS
       ! compute the various sources that were scattered
       ! within CanESM5/CMOC p4zsed.F90 code, e.g.
       ! river sources
+      CALL trc_src_criver( kt )
       ! POC bottom instant. rem
+      CALL trc_bott_cmoc
       ! n2 fixation/denitrification
+      CALL trc_n2fx_denit_cmoc( par_1band )
       ! some of these subroutines have a write_rhs_flag
       ! set to .true. by default to control whether or 
       ! not to update the trn array.
@@ -217,7 +220,8 @@ CONTAINS
       END DO
       !
       CALL trc_flx( kt )               ! compute air-sea gas exchange
-      !      
+      ! IF the radioactive tracer was added there would be also a call to p4z_dcy( kt ) equivalent (trc_dcy?) here. 
+      !       
       ! Exchange tracers at the tile boundaries
       !
       DO jn = 1, jp_tot
