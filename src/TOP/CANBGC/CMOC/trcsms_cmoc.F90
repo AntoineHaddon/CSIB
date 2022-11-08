@@ -201,6 +201,15 @@ CONTAINS
       !!!!!!! End   of "p4zbio" block !!!!!!!        
       !
       !!!!!!! Start of "p4zsed" block !!!!!!!
+      ! Here CMOC would call the new subroutines that
+      ! compute the various sources that were scattered
+      ! within CanESM5/CMOC p4zsed.F90 code, e.g.
+      ! river sources
+      ! POC bottom instant. rem
+      ! n2 fixation/denitrification
+      ! some of these subroutines have a write_rhs_flag
+      ! set to .true. by default to control whether or 
+      ! not to update the trn array.
       !!!!!!! End   of "p4zsed" block !!!!!!!
       !
       DO jn = 1, jp_tot 
