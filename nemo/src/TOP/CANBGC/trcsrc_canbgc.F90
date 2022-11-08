@@ -499,7 +499,7 @@ CONTAINS
       talriver_cmoc(:,:) = ( cotdep_cmoc(:,:) - rivinp_cmoc(:,:) * ncrr_cmoc)
       !
       IF ( .NOT. PRESENT(write_rhs_flag) ) THEN
-        write_rhs_flag = .true.
+        write_rhs_flag0 = .true.
       ELSE
         write_rhs_flag0 = write_rhs_flag
       ENDIF
