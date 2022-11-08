@@ -75,7 +75,7 @@ CONTAINS
 
   SUBROUTINE cmoc_sink_init
       !
-      INTEGER :: ji, jj, ikt
+      INTEGER :: ji, jj, ikt, ios     !: working integers for loops and I/O
       !
       NAMELIST/namcmoccal/ rmcico_cmoc, trcico_cmoc, aci_cmoc, dci_cmoc
       !
