@@ -67,6 +67,14 @@ CONTAINS
       !
       IF( ln_timing )  CALL timing_start('cmoc_zoo')
       !
+      IF( lwp ) THEN
+        WRITE(numout,*)
+        WRITE(numout,*), 'cmoc_zoo: compute zooplankton grazing'
+        WRITE(numout,*), '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+        WRITE(numout,*)
+        CALL FLUSH(numout)
+      END IF
+      !
       DO jk = 1, jpkm1
          DO jj = 1, jpj
             DO ji = 1, jpi
