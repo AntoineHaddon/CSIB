@@ -139,9 +139,9 @@ CONTAINS
       DO jk = jk_eud_cmoc+1, jpk
          DO jj = 1, jpj
             DO ji = 1, jpi
-                redettot0(ji,jj) = redettot0(ji,jj) + redet0(ji,jj,jk)        &
-                &                                   * e3t_n(ji,jj,jk)         &
-                &                                   * tmask_bgc_closea(ji,jj,jk)
+                redettot(ji,jj) = redettot(ji,jj) + redet(ji,jj,jk)          &
+                &                                 * e3t_n(ji,jj,jk)          &
+                &                                 * tmask_bgc_closea(ji,jj,jk)
             END DO
           END DO 
       END DO  
