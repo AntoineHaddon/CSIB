@@ -479,8 +479,8 @@ PROGRAM nemo_ocean_diag
           CALL getvara ('aicenflx', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qns_ice, 1., 0.)
 
          ! Wind enery input
-          wind_x =  tau_x(:,:)*u(:,:,1)
-          wind_y =  tau_y(:,:)*v(:,:,1)
+          wind_x =  tau_x(:,:)*u(:,:,1)* u_mask(:, :, 1)
+          wind_y =  tau_y(:,:)*v(:,:,1)* v_mask(:, :, 1)
          ! MLD
          ! Seasonal separation doesnt make sense with monthly RTDs, but define both (as the same),
          ! in order to maintain backwards compatibility in the plotting routine.
