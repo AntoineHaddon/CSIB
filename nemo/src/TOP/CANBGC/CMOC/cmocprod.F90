@@ -115,7 +115,7 @@ CONTAINS
             ! <CMOC code OR 10/30/2015> etot is replaced by zetot = qsr * 0.43 and CMOC light attenuation
             ! zetot(ji,jj,jk) = qsr(ji,jj) * 0.43_wp & 
             ! !
-            ! &               * exp ( - ( (0.04 + 0.03 * trn(ji,jj,1,jqnch) * 1e6_wp) * fsdept(ji,jj,jk) ) )
+            ! &               * exp ( - ( (0.04 + 0.03 * trn(ji,jj,1,jqnch) * 1e6_wp) * gdept_n(ji,jj,jk) ) )
             !
             ! O Riche Sept 13th 2022
             ! use trc_opt_1band; can have a variable PAR/SW ratio (ln_varpar switch set in namelist_top_*).
@@ -205,12 +205,12 @@ CONTAINS
             !
             ! O Riche Oct 26th 2022
             ! Test if any trend is too large
-            IF( lwp .AND. ABS(tra(ji,jj,jk,jqno3)) > HUGE(1._wp) ) WRITE(numout,*) '\ncmoc_prod:\n~~~~~~~~~~~~~~~jqno3 has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
-            IF( lwp .AND. ABS(tra(ji,jj,jk,jqphy)) > HUGE(1._wp) ) WRITE(numout,*) '\ncmoc_prod:\n~~~~~~~~~~~~~~~jqphy has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
-            IF( lwp .AND. ABS(tra(ji,jj,jk,jqnch)) > HUGE(1._wp) ) WRITE(numout,*) '\ncmoc_prod:\n~~~~~~~~~~~~~~~jqnch has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
-            IF( lwp .AND. ABS(tra(ji,jj,jk,jqoxy)) > HUGE(1._wp) ) WRITE(numout,*) '\ncmoc_prod:\n~~~~~~~~~~~~~~~jqoxy has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
-            IF( lwp .AND. ABS(tra(ji,jj,jk,jqdic)) > HUGE(1._wp) ) WRITE(numout,*) '\ncmoc_prod:\n~~~~~~~~~~~~~~~jqdic has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
-            IF( lwp .AND. ABS(tra(ji,jj,jk,jqtal)) > HUGE(1._wp) ) WRITE(numout,*) '\ncmoc_prod:\n~~~~~~~~~~~~~~~jqtal has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
+            IF( lwp .AND. ABS(tra(ji,jj,jk,jqno3)) > HUGE(1._wp) ) WRITE(numout,*) '','cmoc_prod:','~~~~~~~~~~~~~~~jqno3 has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
+            IF( lwp .AND. ABS(tra(ji,jj,jk,jqphy)) > HUGE(1._wp) ) WRITE(numout,*) '','cmoc_prod:','~~~~~~~~~~~~~~~jqphy has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
+            IF( lwp .AND. ABS(tra(ji,jj,jk,jqnch)) > HUGE(1._wp) ) WRITE(numout,*) '','cmoc_prod:','~~~~~~~~~~~~~~~jqnch has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
+            IF( lwp .AND. ABS(tra(ji,jj,jk,jqoxy)) > HUGE(1._wp) ) WRITE(numout,*) '','cmoc_prod:','~~~~~~~~~~~~~~~jqoxy has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
+            IF( lwp .AND. ABS(tra(ji,jj,jk,jqdic)) > HUGE(1._wp) ) WRITE(numout,*) '','cmoc_prod:','~~~~~~~~~~~~~~~jqdic has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
+            IF( lwp .AND. ABS(tra(ji,jj,jk,jqtal)) > HUGE(1._wp) ) WRITE(numout,*) '','cmoc_prod:','~~~~~~~~~~~~~~~jqtal has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
             !
           END DO
         END DO

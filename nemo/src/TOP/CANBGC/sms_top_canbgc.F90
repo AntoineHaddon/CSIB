@@ -166,11 +166,10 @@ MODULE sms_top_canbgc
       !                                ! and by tracer we mean only the CMOC or shared BGC tracer.
       !
       DO jn = jptra0, jptra1
-        trb(:,:,:,jn) = trb(:,:,:,jn) + qnegtr(:,:,:) * tra(:,:,:,jn)
-        tra(:,:,:,jn) = 0._wp
+        tra(:,:,:,jn) = qnegtr(:,:,:) * tra(:,:,:,jn)
       END DO
       !
-    END SUBROUTINE
+    END SUBROUTINE trc_xnegtr
 
 
 		INTEGER FUNCTION sms_top_alloc()
