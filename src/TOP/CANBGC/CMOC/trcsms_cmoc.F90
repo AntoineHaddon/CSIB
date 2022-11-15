@@ -176,7 +176,11 @@ CONTAINS
       ! by adjusting the time step using tra trend
       !
       IF( ln_cmocnegtr )  CALL trc_xnegtr( 1, jp_tot )   !!! O Riche Nov 8th 2022 ! reside in sms_top_canbgc.F90
-      !
+      DO jn = 1, jp_tot
+        trb(:,:,:,jn) = trb(:,:,:,jn) + tra(:,:,:,jn)        
+        tra(:,:,:,jn) = 0._wp
+      END DO
+      !  
       !!!!!!! End   of "p4zbio" block !!!!!!!        
       !
       ! !!!!!!! Start of "p4zsed" block !!!!!!!
