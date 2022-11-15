@@ -2177,11 +2177,13 @@ CONTAINS
       !
 #endif
       ! Diagnostics of total heat fluxes received by NEMO from coupler
-      IF( iom_use('qt'         ) )   CALL iom_put( "qt"    , qns  + qsr )                   ! total heat flux
-      IF( iom_use('qns'        ) )   CALL iom_put( "qns"   , qns        )                   ! solar heat flux
-      IF( iom_use('qsr'        ) )   CALL iom_put( "qsr"   ,       qsr  )                   ! solar heat flux
-      IF( iom_use('qsr_ice'    ) )   CALL iom_put( 'qsr_ice'    , SUM( qsr_ice * a_i_b, dim=3 )                              )   !     solar flux at ice surface
-      IF( iom_use('qns_ice'    ) )   CALL iom_put( 'qns_ice'    , SUM( qns_ice * a_i_b, dim=3 ) + qemp_ice                   )   ! non-solar flux at ice surface
+      IF( iom_use('qt'         ) )   CALL iom_put( "qt"     , qns  + qsr )                   ! total radiation
+      IF( iom_use('qns'        ) )   CALL iom_put( "qns"    , qns        )                   ! non solar radiation 
+      IF( iom_use('qsr'        ) )   CALL iom_put( "qsr"    ,       qsr  )                   ! solar radiation 
+      IF( iom_use('qns_tot'    ) )   CALL iom_put( "qns_tot", qns_tot    )                   ! non-solar heat flux
+      IF( iom_use('qsr_tot'    ) )   CALL iom_put( "qsr_tot",   qsr_tot  )                   ! solar heat flux
+      IF( iom_use('qsr_ice'    ) )   CALL iom_put( 'qsr_ice', SUM( qsr_ice * a_i_b, dim=3 )            )   !     solar flux at ice surface
+      IF( iom_use('qns_ice'    ) )   CALL iom_put( 'qns_ice', SUM( qns_ice * a_i_b, dim=3 ) + qemp_ice )   ! non-solar flux at ice surface
 
       !
    END SUBROUTINE sbc_cpl_ice_flx
