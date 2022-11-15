@@ -25,7 +25,6 @@
        <field field_ref="qtr_ice_bot"     name="qtr_ice_bot"       level="0"  />  <!-- was iicesflx (NL) --> 
        <field field_ref="qt_ice_oce"      name="qt_ice_oce"       level="0"  /> <!-- was iicesflx + iicenflx -->
        <!-- <field field_ref="qns_io_cea"      name="iicenflx"       description="Ice-Oce downward non-solar heat flux"    level="0"  /> Now = qt_ice_oce - qtr_ice_bot --> 
-       <!-- <field field_ref="ioceflxb"        name="ioceflxb"       description="Oceanic [heat??] flux at the ice base"   level="0"  /> replace by qt_ice_oce, NL -->
        <field field_ref="snowpre"         name="isnowpre"       level="0"  />
        <field field_ref="qsr_ice"         name="aicesflx"       level="0"  />
        <field field_ref="qns_ice"         name="aicenflx"       level="0"  />

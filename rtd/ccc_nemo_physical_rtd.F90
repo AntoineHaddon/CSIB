@@ -467,14 +467,14 @@ PROGRAM nemo_ocean_diag
           CALL getvara ('snow_ao_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), snow_ao_cea, 1., 0.)
           CALL getvara ('hflx_rain_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_rain_cea, 1., 0.)
           CALL getvara ('hflx_snow_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_snow_cea, 1., 0.)
-          CALL getvara ('qt_ice_oce', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_ice_cea, 1., 0.)
+          CALL getvara ('hflx_ice_cea', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_ice_cea, 1., 0.)
           CALL getvara ('hflx_rnf_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_rnf_cea, 1., 0.)
           CALL getvara ('sitimefrac', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), sitimefrac, 1., 0.)
           CALL getvara ('vfxsnw', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), snowmel_cea, 1., 0.)
           isnwmlt_cea = snowmel_cea*sitimefrac*t_mask(:,:,1)
 
-          CALL getvara ('qsr', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qsr_tot, 1., 0.)
-          CALL getvara ('qns', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qns_tot, 1., 0.)
+          CALL getvara ('qsr_tot', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qsr_tot, 1., 0.)
+          CALL getvara ('qns_tot', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qns_tot, 1., 0.)
           CALL getvara ('aicesflx', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qsr_ice, 1., 0.)
           CALL getvara ('aicenflx', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qns_ice, 1., 0.)
 
