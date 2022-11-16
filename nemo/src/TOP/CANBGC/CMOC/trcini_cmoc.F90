@@ -24,12 +24,12 @@ MODULE trcini_cmoc
    USE sms_top_canbgc      ! access ext. source arrays declaration
    !
    USE trcopt_canbgc       ! PAR attenuation
-
+   USE trcsink_canbgc      ! CANBGC particules sinking package
+   !
    USE cmocprod            ! CMOC PP module
    USE cmocmort            ! CMOC phyto mortality module
    USE cmocrem             ! CMOC carbon remineralization
    USE cmoczoo             ! CMOC zooplankton grazing
-   USE cmocsink            ! CMOC particules sinking
    
    IMPLICIT NONE
    PRIVATE

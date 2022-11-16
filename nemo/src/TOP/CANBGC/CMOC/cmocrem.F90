@@ -58,7 +58,7 @@ CONTAINS
       !!
       !! ** Method  : - forward time integration (Euler or Leapfrog)
       !!---------------------------------------------------------------------
-      INTEGER, INTENT(in) ::   kt ! ocean time step
+      INTEGER, INTENT(in) ::   kt, jnt ! ocean time step
       !!---------------------------------------------------------------------
       INTEGER  :: ji, jj, jk                                      ! loop indices 
       REAL(wp) :: zcompaph , ztortp , zrespp , zmortp , zfactch

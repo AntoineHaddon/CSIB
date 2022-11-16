@@ -97,7 +97,7 @@ CONTAINS
       !    by data and from the coagulation theory
       !    -----------------------------------------------------------
       ! limit the values of the sinking speeds to avoid numerical instabilities
-      wsbio3(:,:,:) = wsbio   ! was wsbio declared?
+      wsbio3(:,:,:) = ws_cmoc  ! = wsbio   ! OR Nov 18th 2022 ! Was wsbio declared?
       !
       DO jk = 1,jpkm1
          DO jj = 1, jpj
