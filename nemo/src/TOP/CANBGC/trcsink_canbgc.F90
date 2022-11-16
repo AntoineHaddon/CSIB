@@ -29,6 +29,7 @@ MODULE trcsink_canbgc
 
    USE sms_top_canbgc
    USE sms_cmoc
+   USE sms_canoe
    USE trc_closea_canbgc ! tmask_bgc_closea
 
    IMPLICIT NONE
@@ -38,8 +39,18 @@ MODULE trcsink_canbgc
    PUBLIC cmoc_sink_init    ! called in trcsms_cmoc.F90
    PUBLIC cmoc_sink_alloc
 
+   PUBLIC canoe_sink         ! called in trcsms_canoe.F90
+   PUBLIC canoe_sink_init    ! called in trcsms_canoe.F90
+   PUBLIC canoe_sink_alloc
+
+   ! Common CanBGC arrays
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   wsbio3   !: POC sinking speed 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   sinking  !: POC sinking fluxes
+   ! CanOE specific arrays
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   wsbio4   !: GOC sinking speed
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   wscal    !: Calcite sinking speed
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   sinking2 !: POC sinking fluxes 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   sinkcal  !: CaCO3 sinking flux
 
    INTEGER  :: iksed  = 10
 
@@ -71,17 +82,20 @@ CONTAINS
       INTEGER  ::   ji, jj, jk
       REAL(wp) ::   zwsmax, zmax
       REAL(wp) ::   zrfact2
+      !
       REAL(wp), ALLOCATABLE, DIMENSION(:,:  ) ::   zfpon         ! Calcite export flx at the bottom of the euphotic zone
       REAL(wp), ALLOCATABLE, DIMENSION(:,:  ) ::   zcalbotflx    ! Calcite flux to sediments
       REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) ::   zcalflxexp    ! exponential decay of calcite flux with depth
-      REAL(wp) ::   zcaldiv                                  ! divergence of the calcite flux
-      REAL(wp) ::   globvol, globtal                         ! TAL conservation diagnostics
-      REAL(wp) ::   ztaleuz, ztalapz, ztalflxsum,ztalapb     ! TAL conservation diagnostics
-      REAL(wp), ALLOCATABLE, DIMENSION(:) :: zdepw ! computation of depths between t-grid cells.
-      REAL(wp) ::   r_dci_cmoc                               ! inverse length of calcite dissolution.
-      REAL(wp) ::   zdeup, zideup                            ! Euphotic zone depth, inverse depth
-      INTEGER  ::   jk_eud_cmoc_p1                           ! level below the euphotic zone
-      INTEGER  ::   ikt_p1, ikt                              ! bottom index / plus 1
+      REAL(wp) ::   zcaldiv                                      ! divergence of the calcite flux
+      !
+      REAL(wp) ::   globvol, globtal                             ! TAL conservation diagnostics
+      REAL(wp) ::   ztaleuz, ztalapz, ztalflxsum,ztalapb         ! TAL conservation diagnostics
+      !
+      REAL(wp), ALLOCATABLE, DIMENSION(:) :: zdepw               ! computation of depths between t-grid cells.
+      REAL(wp) ::   r_dci_cmoc                                   ! inverse length of calcite dissolution.
+      REAL(wp) ::   zdeup, zideup                                ! Euphotic zone depth, inverse depth
+      INTEGER  ::   jk_eud_cmoc_p1                               ! level below the euphotic zone
+      INTEGER  ::   ikt_p1, ikt                                  ! bottom index / plus 1
       !
       INTEGER  ::   ik1
       CHARACTER (len=25) :: charout
@@ -147,7 +161,7 @@ CONTAINS
             ! Time stepping is included with xstepb, so units are in mol/m2/step
            zfpon(ji,jj) = xrcico(ji,jj) * wsbio3(ji,jj,jk_eud_cmoc) * xstepb                                & 
            &                        * trn(ji,jj,jk_eud_cmoc,jppoc)                                          &
-           &                        *  tmask_bgc_closea(ji,jj,jk_eud_cmoc) * oomask(ji,jj)
+           &                        * tmask_bgc_closea(ji,jj,jk_eud_cmoc) * oomask(ji,jj)
            !
          ENDDO
       ENDDO
@@ -188,8 +202,8 @@ CONTAINS
                !
                trn(ji,jj,jk,jpdic) = trn(ji,jj,jk,jpdic) -                                   &
                &                              zfpon(ji,jj) * zideup 
-               trn(ji,jj,jk,jpdnt) = trn(ji,jj,jk,jpdnt) -                                   &
-               &                              zfpon(ji,jj) * zideup 
+               ! trn(ji,jj,jk,jpdnt) = trn(ji,jj,jk,jpdnt) -                                   &
+               ! &                              zfpon(ji,jj) * zideup 
                !
                trn(ji,jj,jk,jptal) = trn(ji,jj,jk,jptal) -                                   &
                &                      2.0_wp * zfpon(ji,jj) * zideup 
@@ -207,7 +221,7 @@ CONTAINS
                zcaldiv =  ( zcalflxexp(ji,jj,jk) - zcalflxexp(ji,jj,jk+1) ) / e3t_n(ji,jj,jk) * tmask_bgc_closea(ji,jj,jk)
                !
                trn(ji,jj,jk,jpdic) = trn(ji,jj,jk,jpdic) +          zcaldiv 
-               trn(ji,jj,jk,jpdnt) = trn(ji,jj,jk,jpdnt) +          zcaldiv 
+               ! trn(ji,jj,jk,jpdnt) = trn(ji,jj,jk,jpdnt) +          zcaldiv 
                trn(ji,jj,jk,jptal) = trn(ji,jj,jk,jptal) + 2.0_wp * zcaldiv                      
                !
             ENDDO
@@ -221,8 +235,8 @@ CONTAINS
             ikt = mbkt(ji,jj)
             trn(ji,jj,ikt,jpdic) = trn(ji,jj,ikt,jpdic) - zcalbotflx(ji,jj)          / e3t_n(ji,jj, ikt)
             trn(ji,jj,1,jpdic)   = trn(ji,jj,1,jpdic)   + zcalbotflx(ji,jj)          / e3t_n(ji,jj, 1) 
-            trn(ji,jj,ikt,jpdnt) = trn(ji,jj,ikt,jpdnt) - zcalbotflx(ji,jj)          / e3t_n(ji,jj, ikt)
-            trn(ji,jj,1,jpdnt)   = trn(ji,jj,1,jpdnt)   + zcalbotflx(ji,jj)          / e3t_n(ji,jj, 1) 
+            ! trn(ji,jj,ikt,jpdnt) = trn(ji,jj,ikt,jpdnt) - zcalbotflx(ji,jj)          / e3t_n(ji,jj, ikt)
+            ! trn(ji,jj,1,jpdnt)   = trn(ji,jj,1,jpdnt)   + zcalbotflx(ji,jj)          / e3t_n(ji,jj, 1) 
             trn(ji,jj,ikt,jptal) = trn(ji,jj,ikt,jptal) - 2.0_wp * zcalbotflx(ji,jj) / e3t_n(ji,jj,ikt)
             trn(ji,jj,1,jptal)   = trn(ji,jj,1,jptal)   + 2.0_wp * zcalbotflx(ji,jj) / e3t_n(ji,jj, 1) 
          ENDDO
@@ -381,6 +395,93 @@ CONTAINS
     IF( cmoc_sink_alloc /= 0 ) CALL ctl_warn('cmoc_sink_alloc : failed to allocate arrays.')
     !
   END FUNCTION cmoc_sink_alloc
+
+
+  SUBROUTINE canoe_sink ( kt, jnt )
+      !!---------------------------------------------------------------------
+      !!                     ***  ROUTINE canoe_sink  ***
+      !!
+      !! ** Purpose :   Compute vertical flux of particulate matter due to 
+      !!                gravitational sinking
+      !!
+      !! ** Method  : - ???
+      !!---------------------------------------------------------------------
+      INTEGER, INTENT(in) :: kt, jnt
+      INTEGER  ::   ji, jj, jk
+      REAL(wp) ::   zfact, zwsmax, zmax, zstep
+      REAL(wp) ::   zrfact2
+      INTEGER  ::   ik1
+      CHARACTER (len=25) :: charout
+      !!---------------------------------------------------------------------
+      !
+      IF( ln_timing )  CALL timing_start('canoe_sink')
+      !
+      !  Initialize to zero all the sinking arrays 
+      !   -----------------------------------------
+      !
+      sinking (:,:,:) = 0.e0
+      sinking2(:,:,:) = 0.e0
+      sinkcal (:,:,:) = 0.e0
+      !
+      !   Compute the sedimentation term using canoesink2 for all the sinking particles
+      !   -----------------------------------------------------
+      !
+      CALL canoe_sink2( wsbio3, sinking , jppoc )
+      CALL canoe_sink2( wsbio4, sinking2, jpgoc )
+      CALL canoe_sink2( wscal , sinkcal , jpcal )
+      !
+      ! IF( ln_diatrc ) THEN
+         ! zrfact2 = 1.e-3 * rfact2r
+         ! ik1  = iksed + 1
+         ! IF( lk_iomput ) THEN
+           ! IF( jnt == nrdttrc ) THEN
+              ! CALL iom_put( "EPC100"  , ( sinking(:,:,ik1) + sinking2(:,:,ik1) ) * zrfact2 * tmask_bgc_closea(:,:,1) ) ! Export of carbon at 100m
+              ! CALL iom_put( "EPCALC100",  sinkcal(:,:,ik1)                       * zrfact2 * tmask_bgc_closea(:,:,1) ) ! Export of calcite  at 100m
+           ! ENDIF
+         ! ELSE
+           ! trc2d(:,:,jp_pcs0_2d + 4) = sinking (:,:,ik1) * zrfact2 * tmask_bgc_closea(:,:,1)
+           ! trc2d(:,:,jp_pcs0_2d + 5) = sinking2(:,:,ik1) * zrfact2 * tmask_bgc_closea(:,:,1)
+           ! trc2d(:,:,jp_pcs0_2d + 9) = sinkcal (:,:,ik1) * zrfact2 * tmask_bgc_closea(:,:,1)
+         ! ENDIF
+      ! ENDIF
+      ! !
+      ! !
+      IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
+         WRITE(charout, FMT="('sink')")
+         CALL prt_ctl_trc_info(charout)
+         CALL prt_ctl_trc(tab4d=tra, mask=tmask, clinfo=ctrcnm)
+      ENDIF
+      !
+      IF( nn_timing == 1 )  CALL timing_stop('canoe_sink')
+      !
+  END SUBROUTINE canoe_sink
+
+  
+  SUBROUTINE canoe_sink2
+   
+   
+  END SUBROUTINE canoe_sink2
+
+
+  SUBROUTINE canoe_sink_init
+   
+   
+  END SUBROUTINE canoe_sink_init
+   
+   
+  INTEGER FUNCTION canoe_sink_alloc()
+    !!----------------------------------------------------------------------
+    !!                     ***  ROUTINE cmoc_sink_alloc  ***
+    !!----------------------------------------------------------------------
+    !
+    ALLOCATE( wsbio3 (jpi,jpj,jpk),  wsbio4  (jpi,jpj,jpk),        &
+       &      sinking(jpi,jpj,jpk),  sinking2(jpi,jpj,jpk),        &
+       &      sinkcal(jpi,jpj,jpk),          STAT=canoe_sink_alloc )
+       !
+    IF( canoe_sink_alloc /= 0 ) CALL ctl_warn('canoe_sink_alloc : failed to allocate arrays.')
+    !
+  END FUNCTION canoe_sink_alloc
+   
 
 
 END MODULE trcsink_canbgc
