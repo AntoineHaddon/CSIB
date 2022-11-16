@@ -49,7 +49,7 @@ MODULE cmocrem
 CONTAINS
 
 
-  SUBROUTINE cmoc_rem( kt )
+  SUBROUTINE cmoc_rem( kt, jnt )
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE p4z_rem  ***
       !!

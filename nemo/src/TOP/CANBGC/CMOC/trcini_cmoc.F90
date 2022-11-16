@@ -169,6 +169,7 @@ CONTAINS
       ierr = ierr + sms_top_alloc()
       ierr = ierr + trc_che_alloc()
       ierr = ierr + trc_flx_alloc()
+      ierr = ierr + cmoc_sink_alloc()
       !
       IF( lk_mpp    )   CALL mpp_sum( 'cmoc_alloc', ierr )
       IF( ierr /= 0 )   CALL ctl_stop( 'STOP', 'cmoc_alloc: unable to allocate cmoc arrays' )
