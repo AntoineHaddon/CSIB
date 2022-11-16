@@ -13,10 +13,10 @@ MODULE par_cmoc
 
    IMPLICIT NONE
 
-   ! INTEGER, PUBLIC :: jpphy   ! small sized phyto C biomass
-   ! INTEGER, PUBLIC :: jpnch   ! small sized phyto chl-a
-   ! INTEGER, PUBLIC :: jpzoo   ! small sized zoo C biomass
-   ! INTEGER, PUBLIC :: jppoc   ! small sized POC
+   ! INTEGER, PUBLIC :: jqphy   ! small sized phyto C biomass
+   ! INTEGER, PUBLIC :: jqnch   ! small sized phyto chl-a
+   ! INTEGER, PUBLIC :: jqzoo   ! small sized zoo C biomass
+   ! INTEGER, PUBLIC :: jqpoc   ! small sized POC
    ! INTEGER, PUBLIC :: jqdab !: abiotic DIC 
    ! INTEGER, PUBLIC :: jqaab !: abiotic Alkalinity
    ! INTEGER, PUBLIC :: jqoab !: abiotic oxygen

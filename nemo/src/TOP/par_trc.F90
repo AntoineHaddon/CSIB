@@ -52,9 +52,9 @@ MODULE par_trc
    INTEGER, PUBLIC :: jqtal   !: total alkalinity 
    INTEGER, PUBLIC :: jqoxy   !: oxygen concentration 
    INTEGER, PUBLIC :: jqno3   !: no3 concentration 
-   INTEGER, PUBLIC :: jpphy   !: small sized phyto C biomass
-   INTEGER, PUBLIC :: jpnch   !: small sized phyto chl-a
-   INTEGER, PUBLIC :: jpzoo   !: small sized zoo C biomass
-   INTEGER, PUBLIC :: jppoc   !: small sized POC
+   INTEGER, PUBLIC :: jqphy   !: small sized phyto C biomass
+   INTEGER, PUBLIC :: jqnch   !: small sized phyto chl-a
+   INTEGER, PUBLIC :: jqzoo   !: small sized zoo C biomass
+   INTEGER, PUBLIC :: jqpoc   !: small sized POC
 
 END MODULE par_trc

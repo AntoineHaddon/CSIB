@@ -15,15 +15,15 @@ MODULE par_canoe
 
    ! INTEGER, PUBLIC :: jrnch !    
    ! INTEGER, PUBLIC :: jrdch ! 
-   ! INTEGER, PUBLIC :: jpphy   ! small sized phyto C biomass
-   ! INTEGER, PUBLIC :: jpnch   ! small sized phyto chl-a
-   ! INTEGER, PUBLIC :: jpzoo   ! small sized zoo C biomass
-   ! INTEGER, PUBLIC :: jppoc   ! small sized POC
-   INTEGER, PUBLIC :: jpdia   ! large sized phyto C by
-   INTEGER, PUBLIC :: jpdch   ! large sized phyto chl-a
-   INTEGER, PUBLIC :: jpmes   ! large sized zoo C biomass
-   INTEGER, PUBLIC :: jpgoc   ! large sized POC
-   INTEGER, PUBLIC :: jpcal   ! calcite particules
+   ! INTEGER, PUBLIC :: jqphy   ! small sized phyto C biomass
+   ! INTEGER, PUBLIC :: jqnch   ! small sized phyto chl-a
+   ! INTEGER, PUBLIC :: jqzoo   ! small sized zoo C biomass
+   ! INTEGER, PUBLIC :: jqpoc   ! small sized POC
+   INTEGER, PUBLIC :: jqdia   ! large sized phyto C by
+   INTEGER, PUBLIC :: jqdch   ! large sized phyto chl-a
+   INTEGER, PUBLIC :: jqmes   ! large sized zoo C biomass
+   INTEGER, PUBLIC :: jqgoc   ! large sized POC
+   INTEGER, PUBLIC :: jqcal   ! calcite particules
 
    !!======================================================================
 
