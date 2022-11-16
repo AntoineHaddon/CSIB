@@ -166,12 +166,13 @@ CONTAINS
          ENDDO
       ENDDO
       ! Exponential decay of calcite flux with depth, at w-points.
+      !
       r_dci_cmoc = 1.0_wp / dci_cmoc
       zcalflxexp(:,:,:) = 0.0_wp
       DO jk = jk_eud_cmoc_p1, jpk                                                         
          DO jj = 1, jpj
             DO ji = 1,jpi
-               zcalflxexp(ji,jj,jk) = zfpon(ji,jj) * exp(-1.0_wp*(gdepw(ji,jj,jk)-gdepw(ji,jj,jk_eud_cmoc_p1)) * r_dci_cmoc)      &
+               zcalflxexp(ji,jj,jk) = zfpon(ji,jj) * exp(-1.0_wp*(gdepw_n(ji,jj,jk)-gdepw_n(ji,jj,jk_eud_cmoc_p1)) * r_dci_cmoc)      &
                &                                   * tmask_bgc_closea(ji,jj,jk-1)                ! Mask at jk-1 ensures bottom flux
             ENDDO                                                                                ! is included.
          ENDDO
@@ -193,11 +194,12 @@ CONTAINS
       ! Over the levels of the euphotic zone, remove the euphotic-zone averaged
       ! PIC flux (mol/m3) from each level. 
       !ztaleuz = 0._wp
+      !
       DO jk =1, jk_eud_cmoc
          DO jj = 1, jpj
             DO ji = 1,jpi
-               zdeup = gdepw(ji,jj,jk_eud_cmoc_p1) ! w-grid depth at jk_eud_cmoc_p1 defines bottom
-                                                   ! boundary of the mixed layer.                           
+               zdeup = gdepw_n(ji,jj,jk_eud_cmoc_p1) ! w-grid depth at jk_eud_cmoc_p1 defines bottom
+                                                     ! boundary of the mixed layer.                           
                zideup = 1.0_wp / zdeup    
                !
                trn(ji,jj,jk,jpdic) = trn(ji,jj,jk,jpdic) -                                   &
@@ -211,7 +213,7 @@ CONTAINS
             ENDDO
          ENDDO
       END DO
-
+      !
       ! Below the euphotic zone:
       ! Compute the divergence of the calcite flux and distribute it over the t-cell. 
       !
@@ -230,6 +232,7 @@ CONTAINS
       !
       ! Do the bottom sedimentation of calcite. The sedimenting flux is added back
       ! to the surface layer (psuedo "river flux") for conservation.
+      !
       DO jj = 1, jpj
          DO ji = 1,jpi
             ikt = mbkt(ji,jj)
@@ -310,7 +313,7 @@ CONTAINS
         DO jj = 1, jpj      
             DO ji = 1, jpi    
               zew   = zwsink2(ji,jj,jk+1)
-              psinkflx(ji,jj,jk+1) = -zew * trn(ji,jj,jk,jp_tra) * rfact2
+              psinkflx(ji,jj,jk+1) = -zew * trn(ji,jj,jk,jp_tra) * qfact2
             END DO
         END DO
       END DO
@@ -431,7 +434,7 @@ CONTAINS
       CALL canoe_sink2( wscal , sinkcal , jpcal )
       !
       ! IF( ln_diatrc ) THEN
-         ! zrfact2 = 1.e-3 * rfact2r
+         ! zrfact2 = 1.e-3 * qfact2r
          ! ik1  = iksed + 1
          ! IF( lk_iomput ) THEN
            ! IF( jnt == nrdttrc ) THEN

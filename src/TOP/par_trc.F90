@@ -48,10 +48,13 @@ MODULE par_trc
    REAL(wp), PUBLIC            :: rtrn  = 0.5 * EPSILON( 1.e0 )    !: truncation value
 
    ! common BGCM passive tracer indices
-   INTEGER, PUBLIC ::   jqdic     !: dissolved inorganic carbon concentration 
-   INTEGER, PUBLIC ::   jqtal     !: total alkalinity 
-   INTEGER, PUBLIC ::   jqoxy     !: oxygen concentration 
-   INTEGER, PUBLIC ::   jqno3     !: no3 concentration 
-
+   INTEGER, PUBLIC :: jqdic   !: dissolved inorganic carbon concentration 
+   INTEGER, PUBLIC :: jqtal   !: total alkalinity 
+   INTEGER, PUBLIC :: jqoxy   !: oxygen concentration 
+   INTEGER, PUBLIC :: jqno3   !: no3 concentration 
+   INTEGER, PUBLIC :: jpphy   !: small sized phyto C biomass
+   INTEGER, PUBLIC :: jpnch   !: small sized phyto chl-a
+   INTEGER, PUBLIC :: jpzoo   !: small sized zoo C biomass
+   INTEGER, PUBLIC :: jppoc   !: small sized POC
 
 END MODULE par_trc
