@@ -159,13 +159,12 @@ CONTAINS
       !
       DO jnt = 1, qnrdttrc             ! Potential time splitting if requested
         CALL cmoc_prod( kt, jnt )      ! PP subroutine
+        CALL cmoc_rem( kt, jnt )       ! OR Nov 15th 2022, Is rem subroutine here in PISCES? Do we need it here in CMOC?
       END DO
       !
       CALL cmoc_mort( kt )
       !
       CALL cmoc_zoo( kt )
-      !
-      CALL cmoc_rem( kt )
       !
       CALL cmoc_rem_denit
       !      
