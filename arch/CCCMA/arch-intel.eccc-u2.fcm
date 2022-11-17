@@ -48,9 +48,9 @@
 %CPP                 cpp
 %FC                  mpif90
 
-%FCFLAGS             -free -fpp -D_IMPI_=4 -D_Cray_XC30 -Qoption,link,--noinhibit-exec -list -traceback -O2 -init=arrays -init=zero -fp-model precise -assume buffered_stdout,protect_parens -convert big_endian -r8 -align array64byte -fpe0
-%FFLAGS              -fixed -fpp -D_IMPI_=4 -D_Cray_XC30 -Qoption,link,--noinhibit-exec -list -traceback -O2 -init=arrays -init=zero -fp-model precise -assume buffered_stdout,protect_parens -convert big_endian -r8 -align array64byte -fpe0
-%LDFLAGS    
+%FCFLAGS            -free -traceback -fpp -D_IMPI_=4 -Qoption,link,--noinhibit-exec -list -convert big_endian -threads -DIntelFTN -qmkl -r8 -O2 -mp1 -align array64byte 
+%FFLAGS             -fixed -traceback -fpp -D_IMPI_=4 -Qoption,link,--noinhibit-exec -list -convert big_endian -threads -DIntelFTN -qmkl -r8 -O2 -mp1 -align array64byte 
+%LDFLAGS            -qmkl
 %LD                  mpif90
 %FPPFLAGS            -P -C
 %AR                  ar  
