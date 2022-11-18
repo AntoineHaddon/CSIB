@@ -44,13 +44,15 @@ MODULE trcsink_canbgc
    PUBLIC canoe_sink_alloc
 
    ! Common CanBGC arrays
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   wsbio3   !: POC sinking speed 
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   sinking  !: POC sinking fluxes
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: wsbio3   !: POC sinking speed 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: sinking  !: POC sinking fluxes
+   ! CMOC specific array(s)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:  ) :: xrcico   !: rain ratio
    ! CanOE specific arrays
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   wsbio4   !: GOC sinking speed
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   wscal    !: Calcite sinking speed
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   sinking2 !: POC sinking fluxes 
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   sinkcal  !: CaCO3 sinking flux
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: wsbio4   !: GOC sinking speed
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: wscal    !: Calcite sinking speed
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: sinking2 !: POC sinking fluxes 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: sinkcal  !: CaCO3 sinking flux
 
    INTEGER  :: iksed  = 10
 
@@ -65,9 +67,8 @@ MODULE trcsink_canbgc
 
 CONTAINS
       !!----------------------------------------------------------------------
-      !!                  ***  ROUTINE cmoc_sink_init  ***
+      !!!!!!!!!! CMOC subroutines
       !!----------------------------------------------------------------------
- 
   SUBROUTINE cmoc_sink( kt , jnt )
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE cmoc_sink  ***
@@ -393,13 +394,14 @@ CONTAINS
     !
     ALLOCATE( wsbio3 (jpi,jpj,jpk) ,        &
        &      sinking(jpi,jpj,jpk) ,        &
-       &                                    STAT=cmoc_sink_alloc )
+       &      xrcico (jpi,jpj)     ,  STAT=cmoc_sink_alloc )
        !
     IF( cmoc_sink_alloc /= 0 ) CALL ctl_warn('cmoc_sink_alloc : failed to allocate arrays.')
     !
   END FUNCTION cmoc_sink_alloc
-
-
+      !!----------------------------------------------------------------------
+      !!!!!!!!!! CanOE subroutines
+      !!----------------------------------------------------------------------
   SUBROUTINE canoe_sink ( kt, jnt )
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE canoe_sink  ***
@@ -407,7 +409,7 @@ CONTAINS
       !! ** Purpose :   Compute vertical flux of particulate matter due to 
       !!                gravitational sinking
       !!
-      !! ** Method  : - ???
+      !! ** Method  : - Need to be described
       !!---------------------------------------------------------------------
       INTEGER, INTENT(in) :: kt, jnt
       INTEGER  ::   ji, jj, jk
@@ -455,20 +457,96 @@ CONTAINS
          CALL prt_ctl_trc(tab4d=tra, mask=tmask, clinfo=ctrcnm)
       ENDIF
       !
-      IF( nn_timing == 1 )  CALL timing_stop('canoe_sink')
+      IF( ln_timing )  CALL timing_stop('canoe_sink')
       !
   END SUBROUTINE canoe_sink
 
   
-  SUBROUTINE canoe_sink2
-   
-   
+  SUBROUTINE canoe_sink2( pwsink, psinkflx, jp_tra )
+      !!---------------------------------------------------------------------
+      !!                     ***  ROUTINE p4z_sink2  ***
+      !!
+      !! ** Purpose :   Compute the sedimentation terms for the various sinking
+      !!     particles. The scheme used to compute the trends is based
+      !!     on MUSCL.
+      !!
+      !! ** Method  : - this ROUTINE compute not exactly the advection but the
+      !!      transport term, i.e.  div(u*tra).
+      !!---------------------------------------------------------------------
+      !
+      INTEGER , INTENT(in   )                         ::   jp_tra    ! tracer index index      
+      REAL(wp), INTENT(in   ), DIMENSION(jpi,jpj,jpk) ::   pwsink    ! sinking speed
+      REAL(wp), INTENT(inout), DIMENSION(jpi,jpj,jpk) ::   psinkflx  ! sinking fluxe
+      !!
+      INTEGER  ::   ji, jj, jk, jn
+      REAL(wp) ::   zigma,zew,zign, zflx, zstep
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: ztraz, zakz, zwsink2, ztrb 
+      !!---------------------------------------------------------------------
+      !
+      IF( ln_timing )  CALL timing_start('canoe_sink2')
+      !
+      ! Allocate temporary workspace
+      ALLOCATE( ztraz(jpi, jpj, jpk), zakz(jpi, jpj, jpk), zwsink2(jpi, jpj, jpk), ztrb(jpi, jpj, jpk) )
+      !
+      zstep = qfact2 / 2.
+      !
+      ztraz(:,:,:) = 0.e0
+      zakz (:,:,:) = 0.e0
+      ztrb (:,:,:) = trn(:,:,:,jp_tra)
+      !
+      DO jk = 1, jpkm1
+         zwsink2(:,:,jk+1) = -pwsink(:,:,jk) / rday * tmask_bgc_closea(:,:,jk+1) 
+      END DO
+      zwsink2(:,:,1) = 0.e0
+      !
+      ! vertical advective flux
+      DO jk = 1, jpkm1
+        DO jj = 1, jpj      
+           DO ji = 1, jpi    
+              zigma = zwsink2(ji,jj,jk+1) * zstep / e3w_n(ji,jj,jk+1)
+              zew   = zwsink2(ji,jj,jk+1)
+              psinkflx(ji,jj,jk+1) = -zew * trn(ji,jj,jk,jp_tra) * zstep
+           END DO
+        END DO
+      END DO
+      !
+      ! Boundary conditions
+      psinkflx(:,:,1  ) = 0.e0
+      psinkflx(:,:,jpk) = 0.e0
+      !
+      DO jk=1,jpkm1
+         DO jj = 1,jpj
+            DO ji = 1, jpi
+               zflx = ( psinkflx(ji,jj,jk) - psinkflx(ji,jj,jk+1) ) / e3t_n(ji,jj,jk)
+               ztrb(ji,jj,jk) = ztrb(ji,jj,jk) + 2. * zflx
+            END DO
+         END DO
+      END DO
+      !
+      trn     (:,:,:,jp_tra) = ztrb(:,:,:)
+      psinkflx(:,:,:)        = 2. * psinkflx(:,:,:)
+      !
+      DEALLOCATE( ztraz, zakz, zwsink2, ztrb )
+      !
+      IF( ln_timing )  CALL timing_stop('canoe_sink2')
+      !
+      !
   END SUBROUTINE canoe_sink2
 
 
   SUBROUTINE canoe_sink_init
-   
-   
+ 
+      !!----------------------------------------------------------------------
+      !!                  ***  ROUTINE p4z_sink_init  ***
+      !!----------------------------------------------------------------------
+      !
+      INTEGER  ::   ji, jj, jk
+      REAL(wp) ::   zfact
+      !
+      wsbio3(:,:,:) = wsbio
+      wsbio4(:,:,:) = wsbio2
+      wscal(:,:,:)  = wsbioc
+      !
   END SUBROUTINE canoe_sink_init
    
    
@@ -485,6 +563,5 @@ CONTAINS
     !
   END FUNCTION canoe_sink_alloc
    
-
 
 END MODULE trcsink_canbgc
