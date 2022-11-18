@@ -38,7 +38,11 @@ CONTAINS
       !
       CHARACTER(LEN=20)::   clname
       !!----------------------------------------------------------------------
-
+      INTEGER ::   ios       ! Local integer
+      !!----------------------------------------------------------------------
+      NAMELIST/namcanbio/ wsbio, wsbio2, wsbioc
+      NAMELIST/namcanoenegtr/ ln_canoenegtr
+      
       IF(lwp) WRITE(numout,*)
       clname = 'namelist_canoe'
 
@@ -51,8 +55,27 @@ CONTAINS
       IF(lwm) CALL ctl_opn( numonpb     , 'output.namelist.can' , 'UNKNOWN', 'FORMATTED', 'SEQUENTIAL', -1, numout, .FALSE. )
       !
       !
-      
-   END SUBROUTINE trc_nam_canoe
-   
+      ! Reading particles sinking speed here as it is used in both canoesink.F90
+      REWIND( numnatp_refb )              ! Namelist namcanbio in reference namelist : Passive tracer variables
+      READ  ( numnatp_refb, namcanbio, IOSTAT = ios, ERR = 901)
+901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namcanbio in reference namelist_canoe' )
+      REWIND( numnatp_cfgb )              ! Namelist namcanbio in configuration namelist : Passive tracer variables
+      READ  ( numnatp_cfgb, namcanbio, IOSTAT = ios, ERR = 902 )
+902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namcanbio in configuration namelist_canoe' )
+
+      IF(lwm) WRITE( numonpb, namcanbio )    
+      !
+      ! Reading ln_canoenegtr, if .false. the qnegtr block in trcsms_canoe.F90 is skipped
+      REWIND( numnatp_refb )              ! Namelist namcanoenegtr in reference namelist : Passive tracer variables
+      READ  ( numnatp_refb, namcanoenegtr, IOSTAT = ios, ERR = 903)
+903   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namcanoenegtr in reference namelist_canoe' )
+      REWIND( numnatp_cfgb )              ! Namelist namcanoenegtr in configuration namelist : Passive tracer variables
+      READ  ( numnatp_cfgb, namcanoenegtr, IOSTAT = ios, ERR = 904 )
+904   IF( ios >  0 )   CALL ctl_nam ( ios , 'namcanoenegtr in configuration namelist_canoe' )
+
+      IF(lwm) WRITE( numonpb, namcanoenegtr )    
+      !
+      END SUBROUTINE trc_nam_canoe
+      !
    !!======================================================================
 END MODULE trcnam_canoe
