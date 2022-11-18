@@ -13,7 +13,14 @@ MODULE sms_canoe
    IMPLICIT NONE
    PUBLIC
    
-   
+   ! Particles sinking speed
+   REAL(wp), SAVE :: ws_canoe
+   REAL(wp), SAVE :: wsbio, wsbio2, wsbioc
+
+   ! qnegtr block skipping switch
+   LOGICAL, SAVE :: ln_canoenegtr
+
+    
    
    
 END MODULE sms_canoe
