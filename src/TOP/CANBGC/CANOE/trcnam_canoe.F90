@@ -42,7 +42,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       INTEGER ::   ios       ! Local integer
       !!----------------------------------------------------------------------
-      NAMELIST/namcanbio/ ws_canoe, ws_canoe2, ws_canoec
+      NAMELIST/namcanws/ ws_canoe, ws_canoe2, ws_canoec
       NAMELIST/namcanoenegtr/ ln_canoenegtr
       
       IF(lwp) WRITE(numout,*)
@@ -58,14 +58,14 @@ CONTAINS
       !
       !
       ! Reading particles sinking speed here as it is used in both canoesink.F90
-      REWIND( numnatp_refb )              ! Namelist namcanbio in reference namelist : Passive tracer variables
-      READ  ( numnatp_refb, namcanbio, IOSTAT = ios, ERR = 901)
-901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namcanbio in reference namelist_canoe' )
-      REWIND( numnatp_cfgb )              ! Namelist namcanbio in configuration namelist : Passive tracer variables
-      READ  ( numnatp_cfgb, namcanbio, IOSTAT = ios, ERR = 902 )
-902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namcanbio in configuration namelist_canoe' )
+      REWIND( numnatp_refb )              ! Namelist namcanws in reference namelist : Passive tracer variables
+      READ  ( numnatp_refb, namcanws, IOSTAT = ios, ERR = 901)
+901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namcanws in reference namelist_canoe' )
+      REWIND( numnatp_cfgb )              ! Namelist namcanws in configuration namelist : Passive tracer variables
+      READ  ( numnatp_cfgb, namcanws, IOSTAT = ios, ERR = 902 )
+902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namcanws in configuration namelist_canoe' )
 
-      IF(lwm) WRITE( numonpb, namcanbio )    
+      IF(lwm) WRITE( numonpb, namcanws )    
       !
       ! Reading ln_canoenegtr, if .false. the qnegtr block in trcsms_canoe.F90 is skipped
       REWIND( numnatp_refb )              ! Namelist namcanoenegtr in reference namelist : Passive tracer variables
