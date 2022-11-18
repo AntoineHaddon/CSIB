@@ -15,8 +15,8 @@ MODULE sms_canoe
    
    ! Particles sinking speed
    REAL(wp), SAVE :: ws_canoe
-   REAL(wp), SAVE :: wsbio2
-   REAL(wp), SAVE :: wsbioc
+   REAL(wp), SAVE :: ws_canoe2
+   REAL(wp), SAVE :: ws_canoec  
 
    ! qnegtr block skipping switch
    LOGICAL, SAVE :: ln_canoenegtr 
