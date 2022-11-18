@@ -543,9 +543,9 @@ CONTAINS
       INTEGER  ::   ji, jj, jk
       REAL(wp) ::   zfact
       !
-      wsbio3(:,:,:) = wsbio
-      wsbio4(:,:,:) = wsbio2
-      wscal(:,:,:)  = wsbioc
+      wsbio3(:,:,:) = ws_canoe
+      wsbio4(:,:,:) = ws_canoe2
+      wscal(:,:,:)  = ws_canoec
       !
   END SUBROUTINE canoe_sink_init
    

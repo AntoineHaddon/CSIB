@@ -42,7 +42,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       INTEGER ::   ios       ! Local integer
       !!----------------------------------------------------------------------
-      NAMELIST/namcanbio/ ws_canoe, wsbio2, wsbioc
+      NAMELIST/namcanbio/ ws_canoe, ws_canoe2, ws_canoec
       NAMELIST/namcanoenegtr/ ln_canoenegtr
       
       IF(lwp) WRITE(numout,*)

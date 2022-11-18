@@ -43,12 +43,11 @@
    ln_presatm  = .true.   ! constant atmopsheric pressure (F) or from a file (T)
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-&namcanbio     !   biological parameters
+&namcanws     !   particule sinking parameters
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-   qnrdttrc   =  4        ! time step frequency for biology
-   wsbio      =  2.       ! POC sinking speed
-   wsbio2     =  30.      ! Big particles sinking speed
-   wsbioc     =  20.      ! CaCO3 sinking speed
+   ws_canoe   =  2.       ! POC sinking speed
+   ws_canoe2  =  30.      ! Big particles sinking speed
+   ws_canoec  =  20.      ! CaCO3 sinking speed
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &namcantf     !   parameters for temperature-dependence of various rates
