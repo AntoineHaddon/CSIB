@@ -334,7 +334,7 @@ CONTAINS
       !
       trn(:,:,:,jp_tra) = ztrb(:,:,:)
       !
-      CALL DEALLOCATE( zwsink2, ztrb )      
+      DEALLOCATE( zwsink2, ztrb )      
       !
       IF( ln_timing )  CALL timing_stop('cmoc_sink2')
       !
