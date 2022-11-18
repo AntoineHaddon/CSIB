@@ -11,10 +11,12 @@ MODULE trcnam_canoe
    USE oce_trc         ! Ocean variables
    USE par_trc         ! TOP parameters
    USE trc             ! TOP variables
-
+   !
    USE iom             ! IO manager
+   !
    USE sms_top_canbgc  ! shared arrays across BGCM code
-
+   USE sms_canoe
+   !
    IMPLICIT NONE
    PRIVATE
 
@@ -40,7 +42,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       INTEGER ::   ios       ! Local integer
       !!----------------------------------------------------------------------
-      NAMELIST/namcanbio/ wsbio, wsbio2, wsbioc
+      NAMELIST/namcanbio/ ws_canoe, wsbio2, wsbioc
       NAMELIST/namcanoenegtr/ ln_canoenegtr
       
       IF(lwp) WRITE(numout,*)
