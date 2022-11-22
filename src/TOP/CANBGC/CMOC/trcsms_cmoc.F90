@@ -14,20 +14,22 @@ MODULE trcsms_cmoc
    USE trc             ! TOP variables
    USE trd_oce
    USE trdtrc
-
+   !
    USE lbclnk             ! exchange fields over tile boundaries
-
+   !
    USE trcopt_canbgc      ! PAR attenuation
    USE trcche_canbgc      ! carbon chemistry eq. constants
    USE trcflx_canbgc      ! air-flux gas exch.
+   USE trcsink_canbgc     ! particule sinking
+   !
    USE sms_top_canbgc     ! basic shared TOP variables, also contains ext. src array declarations
    USE sms_cmoc, ONLY     : ln_cmocnegtr
-   
+   !
    USE cmocprod           ! CMOC PP module
    USE cmocmort           ! CMOC phyto mortality module
    USE cmocrem            ! CMOC carbon remineralization
    USE cmoczoo            ! CMOC zooplankton grazing
-
+   !
    IMPLICIT NONE
    PRIVATE
 
@@ -37,7 +39,7 @@ MODULE trcsms_cmoc
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: qnegtr     ! Array used to indicate negative tracer values 
 
    ! Defined HERE the arrays specific to CMOC sms and ALLOCATE them in trc_sms_cmoc_alloc
-
+   !
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
    !! $Id: trcsms_cmoc.F90 12841 2020-05-01 10:52:40Z cetlod $
@@ -159,7 +161,9 @@ CONTAINS
         !
         ! trcsink calls go here according to p4z_bio
         !
-        CALL trc_opt_1band( kt )        ! 1-band PAR attenuation
+        CALL trc_opt_1band( kt )       ! 1-band PAR attenuation
+        !
+        CALL cmoc_sink( kt , jnt )     ! particule sinking 
         !
         CALL cmoc_prod( kt, jnt )      ! PP subroutine
         CALL cmoc_rem( kt, jnt )       ! OR Nov 15th 2022, Is rem subroutine here in PISCES? Do we need it here in CMOC?
