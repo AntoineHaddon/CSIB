@@ -115,7 +115,6 @@ CONTAINS
       ! closea mask for BGCM
       CALL trc_closea_init(read_var_flag=.true.)
       !
-      ! Test allocation of space for CMOC arrays before initialization
       CALL cmoc_alloc ! allocate arrays space, see end of this module
       !
       ! O Riche Aug 4th 2022
@@ -126,29 +125,22 @@ CONTAINS
       ! open the files
       CALL trc_src_init
       !
-      ! O Riche Nov 8th 2022
       CALL trc_n2fx_init_cmoc ! load N2 fixation parameters
       !
       ! call all the BGC initialization subroutines in TOP tier
       CALL trc_flx_init
       !
-      ! O Riche Aug 16th 2022
       CALL trc_opt_init
       !
-      ! O Riche Sept 13th 2022
       CALL cmoc_prod_init
       !
-      ! ! O Riche Oct 27th 2022
       CALL cmoc_mort_init
       !
-      ! ! O Riche Oct 27th 2022
       CALL cmoc_rem_init
       !
-      ! ! O Riche Oct 28th 2022
       CALL cmoc_zoo_init
       !
-      !! O Riche Nov 8th 2022
-      CALL cmoc_sink_init ! for now only load oomask
+      CALL cmoc_sink_init !
       !
       ! !
    END SUBROUTINE trc_ini_cmoc
@@ -165,11 +157,11 @@ CONTAINS
       !!----------------------------------------------------------------------
       !
       !ierr =        sms_cmoc_alloc()          ! Start of cmoc-related alloc routines...
-      ierr =        trc_opt_alloc()
-      ierr = ierr + sms_top_alloc()
-      ierr = ierr + trc_che_alloc()
-      ierr = ierr + trc_flx_alloc()
-      ierr = ierr + cmoc_sink_alloc()
+      ierr =           trc_opt_alloc()
+      ierr = ierr +    sms_top_alloc()
+      ierr = ierr +    trc_che_alloc()
+      ierr = ierr +    trc_flx_alloc()
+      ierr = ierr +  cmoc_sink_alloc()
       !
       IF( lk_mpp    )   CALL mpp_sum( 'cmoc_alloc', ierr )
       IF( ierr /= 0 )   CALL ctl_stop( 'STOP', 'cmoc_alloc: unable to allocate cmoc arrays' )
