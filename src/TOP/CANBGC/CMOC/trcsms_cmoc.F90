@@ -140,7 +140,7 @@ CONTAINS
         IF(lwp) write(numout,*) '~~~~~~'
 
         CALL trc_che           ! computation of carbon chemistry constants
-      !
+        !
       ENDIF                            ! initialize the chemical constants
       !
       ! O Riche Sept 14th 2022
@@ -151,54 +151,57 @@ CONTAINS
       ! needs jnt index/input arg along with kt see below
       ! for cmoc_prod.
       !
-      !!!!!!! Start of "p4zbio" block !!!!!!! 
-      ! This is the equivalent of p4z_bio call
-      ! in trcsms_pisces.F90/CanESM5/CMOC
-      !
-      CALL trc_opt_1band( kt )        ! 1-band PAR attenuation
-      !
       DO jnt = 1, qnrdttrc             ! Potential time splitting if requested
+        !
+        !!!!!!! Start of "p4zbio" block !!!!!!! 
+        ! This is the equivalent of p4z_bio call
+        ! in trcsms_pisces.F90/CanESM5/CMOC
+        !
+        ! trcsink calls go here according to p4z_bio
+        !
+        CALL trc_opt_1band( kt )        ! 1-band PAR attenuation
+        !
         CALL cmoc_prod( kt, jnt )      ! PP subroutine
         CALL cmoc_rem( kt, jnt )       ! OR Nov 15th 2022, Is rem subroutine here in PISCES? Do we need it here in CMOC?
-      END DO
-      !
-      CALL cmoc_mort( kt )
-      !
-      CALL cmoc_zoo( kt )
-      !
-      CALL cmoc_rem_denit
-      !      
-      !!!!!! O Riche Nov 8th 2022
-      !!!!!! replace this by a call to trc_xnegtr subroutine
-      !!!!!! sitting higher in CANBGC
-      ! Enforce conservation and positive values of tracers
-      ! by adjusting the time step using tra trend
-      !
-      IF( ln_cmocnegtr )  CALL trc_xnegtr( 1, jp_tot )   !!! O Riche Nov 8th 2022 ! reside in sms_top_canbgc.F90
-      DO jn = 1, jp_tot
-        trb(:,:,:,jn) = trb(:,:,:,jn) + tra(:,:,:,jn)        
-        tra(:,:,:,jn) = 0._wp
-      END DO
-      !  
-      !!!!!!! End   of "p4zbio" block !!!!!!!        
-      !
-      !!!!!!! Start of "p4zsed" block !!!!!!!
-      ! Here CMOC would call the new subroutines that
-      ! compute the various sources that were scattered
-      ! within CanESM5/CMOC p4zsed.F90 code, e.g.
-      ! river sources
-      CALL trc_src_criver( kt )
-      ! POC bottom instant. rem
-      CALL trc_bott_cmoc
-      ! n2 fixation/denitrification
-      CALL trc_n2fx_denit_cmoc( par_1band )
-      ! some of these subroutines have a write_rhs_flag
-      ! set to .true. by default to control whether or 
-      ! not to update the trn array.
-      !!!!!!! End   of "p4zsed" block !!!!!!!
-      ! !
-      DO jn = 1, jp_tot 
-        trb(:,:,:,jn) = trn(:,:,:,jn)
+        !
+        CALL cmoc_mort( kt )
+        !
+        CALL cmoc_zoo( kt )
+        !
+        !!!!!! O Riche Nov 8th 2022
+        !!!!!! replace this by a call to trc_xnegtr subroutine
+        !!!!!! sitting higher in CANBGC
+        ! Enforce conservation and positive values of tracers
+        ! by adjusting the time step using tra trend
+        !
+        IF( ln_cmocnegtr )  CALL trc_xnegtr( 1, jp_tot )   !!! O Riche Nov 8th 2022 ! reside in sms_top_canbgc.F90
+        DO jn = 1, jp_tot
+          trb(:,:,:,jn) = trb(:,:,:,jn) + tra(:,:,:,jn)        
+          tra(:,:,:,jn) = 0._wp
+        END DO
+        !  
+        !!!!!!! End   of "p4zbio" block !!!!!!!        
+        !
+        !!!!!!! Start of "p4zsed" block !!!!!!!
+        ! Here CMOC would call the new subroutines that
+        ! compute the various sources that were scattered
+        ! within CanESM5/CMOC p4zsed.F90 code, e.g.
+        ! river sources
+        CALL trc_src_criver( kt )
+        ! POC bottom instant. rem
+        CALL trc_bott_cmoc
+        ! n2 fixation/denitrification
+        CALL cmoc_rem_denit
+        CALL trc_n2fx_denit_cmoc( par_1band )
+        ! some of these subroutines have a write_rhs_flag
+        ! set to .true. by default to control whether or 
+        ! not to update the trn array.
+        !!!!!!! End   of "p4zsed" block !!!!!!!
+        ! !
+        DO jn = 1, jp_tot 
+          trb(:,:,:,jn) = trn(:,:,:,jn)
+        END DO
+        !  
       END DO
       !
       CALL trc_flx( kt )               ! compute air-sea gas exchange
