@@ -132,7 +132,7 @@ CONTAINS
       !   Compute the sedimentation term using cmocsink2 for POC
       !   -----------------------------------------------------
       !
-      CALL cmoc_sink2( wsbio3, sinking , jppoc )
+      CALL cmoc_sink2( wsbio3, sinking , jqpoc )
       !
       !     Calcite sinking flux
       !     --------------------------------------------------------------------
@@ -161,7 +161,7 @@ CONTAINS
             ! PIC export at the bottom of the euphotic zone based on Zahariev et al 2008 p.59
             ! Time stepping is included with xstepb, so units are in mol/m2/step
            zfpon(ji,jj) = xrcico(ji,jj) * wsbio3(ji,jj,jk_eud_cmoc) * xstepb                                & 
-           &                        * trn(ji,jj,jk_eud_cmoc,jppoc)                                          &
+           &                        * trn(ji,jj,jk_eud_cmoc,jqpoc)                                          &
            &                        * tmask_bgc_closea(ji,jj,jk_eud_cmoc) * oomask(ji,jj)
            !
          ENDDO
@@ -203,12 +203,12 @@ CONTAINS
                                                      ! boundary of the mixed layer.                           
                zideup = 1.0_wp / zdeup    
                !
-               trn(ji,jj,jk,jpdic) = trn(ji,jj,jk,jpdic) -                                   &
+               trn(ji,jj,jk,jqdic) = trn(ji,jj,jk,jqdic) -                                   &
                &                              zfpon(ji,jj) * zideup 
-               ! trn(ji,jj,jk,jpdnt) = trn(ji,jj,jk,jpdnt) -                                   &
+               ! trn(ji,jj,jk,jqdnt) = trn(ji,jj,jk,jqdnt) -                                   &
                ! &                              zfpon(ji,jj) * zideup 
                !
-               trn(ji,jj,jk,jptal) = trn(ji,jj,jk,jptal) -                                   &
+               trn(ji,jj,jk,jqtal) = trn(ji,jj,jk,jqtal) -                                   &
                &                      2.0_wp * zfpon(ji,jj) * zideup 
                !
             ENDDO
@@ -223,9 +223,9 @@ CONTAINS
             DO ji = 1,jpi
                zcaldiv =  ( zcalflxexp(ji,jj,jk) - zcalflxexp(ji,jj,jk+1) ) / e3t_n(ji,jj,jk) * tmask_bgc_closea(ji,jj,jk)
                !
-               trn(ji,jj,jk,jpdic) = trn(ji,jj,jk,jpdic) +          zcaldiv 
-               ! trn(ji,jj,jk,jpdnt) = trn(ji,jj,jk,jpdnt) +          zcaldiv 
-               trn(ji,jj,jk,jptal) = trn(ji,jj,jk,jptal) + 2.0_wp * zcaldiv                      
+               trn(ji,jj,jk,jqdic) = trn(ji,jj,jk,jqdic) +          zcaldiv 
+               ! trn(ji,jj,jk,jqdnt) = trn(ji,jj,jk,jqdnt) +          zcaldiv 
+               trn(ji,jj,jk,jqtal) = trn(ji,jj,jk,jqtal) + 2.0_wp * zcaldiv                      
                !
             ENDDO
          ENDDO
@@ -237,12 +237,12 @@ CONTAINS
       DO jj = 1, jpj
          DO ji = 1,jpi
             ikt = mbkt(ji,jj)
-            trn(ji,jj,ikt,jpdic) = trn(ji,jj,ikt,jpdic) - zcalbotflx(ji,jj)          / e3t_n(ji,jj, ikt)
-            trn(ji,jj,1,jpdic)   = trn(ji,jj,1,jpdic)   + zcalbotflx(ji,jj)          / e3t_n(ji,jj, 1) 
-            ! trn(ji,jj,ikt,jpdnt) = trn(ji,jj,ikt,jpdnt) - zcalbotflx(ji,jj)          / e3t_n(ji,jj, ikt)
-            ! trn(ji,jj,1,jpdnt)   = trn(ji,jj,1,jpdnt)   + zcalbotflx(ji,jj)          / e3t_n(ji,jj, 1) 
-            trn(ji,jj,ikt,jptal) = trn(ji,jj,ikt,jptal) - 2.0_wp * zcalbotflx(ji,jj) / e3t_n(ji,jj,ikt)
-            trn(ji,jj,1,jptal)   = trn(ji,jj,1,jptal)   + 2.0_wp * zcalbotflx(ji,jj) / e3t_n(ji,jj, 1) 
+            trn(ji,jj,ikt,jqdic) = trn(ji,jj,ikt,jqdic) - zcalbotflx(ji,jj)          / e3t_n(ji,jj, ikt)
+            trn(ji,jj,1,jqdic)   = trn(ji,jj,1,jqdic)   + zcalbotflx(ji,jj)          / e3t_n(ji,jj, 1) 
+            ! trn(ji,jj,ikt,jqdnt) = trn(ji,jj,ikt,jqdnt) - zcalbotflx(ji,jj)          / e3t_n(ji,jj, ikt)
+            ! trn(ji,jj,1,jqdnt)   = trn(ji,jj,1,jqdnt)   + zcalbotflx(ji,jj)          / e3t_n(ji,jj, 1) 
+            trn(ji,jj,ikt,jqtal) = trn(ji,jj,ikt,jqtal) - 2.0_wp * zcalbotflx(ji,jj) / e3t_n(ji,jj,ikt)
+            trn(ji,jj,1,jqtal)   = trn(ji,jj,1,jqtal)   + 2.0_wp * zcalbotflx(ji,jj) / e3t_n(ji,jj, 1) 
          ENDDO
       ENDDO
       !
@@ -431,9 +431,9 @@ CONTAINS
       !   Compute the sedimentation term using canoesink2 for all the sinking particles
       !   -----------------------------------------------------
       !
-      CALL canoe_sink2( wsbio3, sinking , jppoc )
-      CALL canoe_sink2( wsbio4, sinking2, jpgoc )
-      CALL canoe_sink2( wscal , sinkcal , jpcal )
+      CALL canoe_sink2( wsbio3, sinking , jqpoc )
+      CALL canoe_sink2( wsbio4, sinking2, jqgoc )
+      CALL canoe_sink2( wscal , sinkcal , jqcal )
       !
       ! IF( ln_diatrc ) THEN
          ! zrfact2 = 1.e-3 * qfact2r
