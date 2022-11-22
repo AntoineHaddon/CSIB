@@ -96,7 +96,7 @@ CONTAINS
       ! mitigating the impact of this line for now but might want to keep it
       ! or upgrade it in the final version of the code.
       ! qnrdttrc enables biology components of BGCMs to integrate over extra shorter time steps.
-      ! not to confuse with nn_dttrc (subdivide physics time steps to drive BGCMs) and rdttrc
+      ! not to confuse with nn_dttrc (lumping physics time steps together drive BGCMs over a longer time step than OCE) and rdttrc
       ! the new time step for BGCM tracers if nn_dtrc/=1
       ! qnrdttrc = 4 ! should be read from namelist_pisces (or _canoe) by trcnam_pisces (or _canoe) or perhaps moved to namelist_top
       !
@@ -112,20 +112,25 @@ CONTAINS
         !
         IF( ( ln_top_euler .AND. kt == nittrc000 )  .OR. ( .NOT.ln_top_euler .AND. kt <= nittrc000 + nn_dttrc ) ) THEN
           qfactr  = 1. / qfact
-          qfact2  = qfact / REAL( qnrdttrc, wp )
+          qfact2  = qfact / REAL( qnrdttrc, wp )  ! time split of BGC time step if qnrdttrc is greater than 1.
           qfact2r = 1. / qfact2
           xstepb  = qfact2 / rday    ! time step converted to per day (using in-sec values of time step and day duration)
                                      ! or the fraction of day that is the current time step
           xfactb  = 1.e3 * qfact2r   ! 1 thousand divided by time step for BGC/biology (could be useful?)
           
           IF(lwp) WRITE(numout,*) 
-          IF(lwp) WRITE(numout,*) '    Passive Tracer  time step    qfact  = ', qfact, ' rdt = ', rdt
-          IF(lwp) write(numout,*) '            Biology time step    qfact2 = ', qfact2
-          IF(lwp) WRITE(numout,*) '                    time step    rdt    = ', rdt
+          IF(lwp) WRITE(numout,*) '                    time step    rdt     = ', rdt
+          IF(lwp) WRITE(numout,*) '    Passive Tracer  time step    qfact   = ', qfact
+          IF(lwp) write(numout,*) '            Biology time step    qfact2  = ', qfact2
+          IF(lwp) WRITE(numout,*) '    Passive Tracer  inverse ts   qfactr  = ', qfactr
+          IF(lwp) write(numout,*) '            Biology inverse ts   qfact2r = ', qfact2r
           IF(lwp) WRITE(numout,*)
         ENDIF
         ! O Riche Oct 24th 2022 - adding trb/trn swap as appearing in p4zsms.F90 / PISCES BGC
-        ! according to comment in p4zsms.F90 this is for restart mode (neuler == 0 which means starts from rest with Euler)
+        ! according to comment in p4zsms.F90 this is for restart mode (neuler == 1 which means
+        ! restarts from with Euler forward otherwise leapfrog) and see namelist for OCE component.
+        ! ln_top_euler is for TOP, and is like the condition neuler == 0 for the 1st time step
+        ! (but) starting from rest (not from restart).
         IF( ( neuler == 0 .AND. kt == nittrc000 ) .OR. ln_top_euler ) THEN
            DO jn = 1, jp_tot               !   SMS on tracer without Asselin time-filter
               trb(:,:,:,jn) = trn(:,:,:,jn)
