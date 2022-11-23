@@ -98,7 +98,7 @@ PROGRAM nemo_ocean_diag
       REAL, DIMENSION(:, :), ALLOCATABLE  :: hflux, wflux, tau_x, tau_y
       REAL, DIMENSION(:, :), ALLOCATABLE  :: mld10, ssh
       REAL, DIMENSION(:, :), ALLOCATABLE  :: snow_ai_cea, snow_ao_cea,sitimefrac
-      REAL, DIMENSION(:, :), ALLOCATABLE  :: hflx_rain_cea, hflx_snow_cea, hflx_ice_cea, hflx_rnf_cea
+      REAL, DIMENSION(:, :), ALLOCATABLE  :: hflx_rain_cea, hflx_snow_ao_cea, hflx_ice_cea, hflx_rnf_cea
       REAL, DIMENSION(:, :), ALLOCATABLE  :: qt_ice_oce, qtr_ice_bot  
       REAL, DIMENSION(:, :), ALLOCATABLE  :: isnwmlt_cea, snowmel_cea
       REAL, DIMENSION(:, :), ALLOCATABLE  :: hflx_qsr_tot, hflx_qns_tot, hflx_qsr_ice, hflx_qns_ice
@@ -218,7 +218,7 @@ PROGRAM nemo_ocean_diag
          &      mld10_win(imt,jmt), mld10_sum(imt,jmt),                   &
          &      wind_x(imt,jmt), wind_y(imt,jmt), STAT=ierr(5) )
       ALLOCATE(snow_ai_cea(imt,jmt), snow_ao_cea(imt,jmt), hflx_rain_cea(imt,jmt), &
-         &     hflx_snow_cea(imt,jmt), hflx_ice_cea(imt,jmt),sitimefrac(imt,jmt), &
+         &     hflx_snow_ao_cea(imt,jmt), hflx_ice_cea(imt,jmt),sitimefrac(imt,jmt), &
          &     qt_ice_oce(imt,jmt),qtr_ice_bot(imt,jmt), & 
          &     hflx_rnf_cea(imt,jmt), isnwmlt_cea(imt,jmt), snowmel_cea(imt,jmt),  & 
          &     hflx_qsr_tot(imt,jmt), hflx_qns_tot(imt,jmt), hflx_qsr_ice(imt,jmt), hflx_qns_ice(imt,jmt), &
@@ -468,7 +468,8 @@ PROGRAM nemo_ocean_diag
           CALL getvara ('snow_ai_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), snow_ai_cea, 1., 0.)
           CALL getvara ('snow_ao_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), snow_ao_cea, 1., 0.)
           CALL getvara ('hflx_rain_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_rain_cea, 1., 0.)
-          CALL getvara ('hflx_snow_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_snow_cea, 1., 0.)
+          CALL getvara ('hflx_snow_ao_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_snow_ao_cea, 1., 0.)
+          hflx_snow_ao_cea = -1*hflx_snow_ao_cea ! Change in the sign convention for NEMO4
           CALL getvara ('iicenflx', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_ice_cea, 1., 0.) 
           !CALL getvara ('qt_ice_oce', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), qt_ice_oce, 1., 0.)
           !CALL getvara ('qtr_ice_bot', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), qtr_ice_bot, 1., 0.)
@@ -769,7 +770,7 @@ PROGRAM nemo_ocean_diag
     
     ! Heat flux from snow over open ocean
           g_mask(:,:) = t_mask(:,:,1)
-          call area_ave_flx(e1t, e2t, g_mask, hflx_snow_cea(:, :), imt      &
+          call area_ave_flx(e1t, e2t, g_mask, hflx_snow_ao_cea(:, :), imt      &
             &                  , jmt, hflx_snow(l), dum)
           call area_ave_flx(e1t, e2t, g_mask, snow_ao_cea(:, :)*lfus*-1.0, imt      &
             &                  , jmt, hflx_snow2(l), dum)

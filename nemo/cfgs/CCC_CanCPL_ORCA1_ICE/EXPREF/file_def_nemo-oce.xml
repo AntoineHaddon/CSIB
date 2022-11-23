@@ -30,7 +30,7 @@
           <field field_ref="snow_ai_cea"      name="snow_ai_cea"   level="0" />
           <field field_ref="snow_ao_cea"      name="snow_ao_cea"   level="0" />
           <field field_ref="hflx_rain_cea"    name="hflx_rain_cea" level="0" />
-          <field field_ref="hflx_snow_cea"    name="hflx_snow_cea" level="0" />
+          <field field_ref="hflx_snow_ao_cea" name="hflx_snow_ao_cea" level="0" />
           <field field_ref="hflx_rnf_cea"     name="hflx_rnf_cea"  level="0" />
           <field field_ref="qt"               name="qt"        level="0" />
           <field field_ref="qns_oce"          name="qns_oce"  level="0" />
