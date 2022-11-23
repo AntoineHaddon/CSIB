@@ -38,6 +38,8 @@ MODULE trcsrc
    INTEGER, SAVE, PUBLIC :: nb_src3d
    INTEGER, SAVE, PUBLIC :: nb_src2d
 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:)  ::   src3d_dta       !: 3d source arrays
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,  :)  ::   src2d_dta       !: 2d source arrays
    REAL(wp), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:,:,:)   ::  irondep_src
    REAL(wp), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:,:,:)   ::  ironsed_src
    
@@ -425,4 +427,4 @@ CONTAINS
   END SUBROUTINE trc_src_fesed
  
 
-END MODULE trcsrc
+END MODULE trcsrc        
