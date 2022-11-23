@@ -115,9 +115,9 @@ CONTAINS
       !
       !ierr =        sms_cmoc_alloc()          ! Start of cmoc-related alloc routines...
       ierr =        trc_opt_alloc()
-      ierr = ierr + sms_top_alloc()
-      ierr = ierr + trc_che_alloc()
-      ierr = ierr + trc_flx_alloc()
+      !ierr = ierr + sms_top_alloc()
+      !ierr = ierr + trc_che_alloc()
+      !ierr = ierr + trc_flx_alloc()
       !
       IF( lk_mpp    )   CALL mpp_sum( 'cmoc_alloc', ierr )
       IF( ierr /= 0 )   CALL ctl_stop( 'STOP', 'cmoc_alloc: unable to allocate cmoc arrays' )

@@ -14,6 +14,7 @@ MODULE trcwri_canoe
    
    USE sms_top          ! access src2d/3d_dta
    USE trc_closeabgc    ! bgc-specific closea mask
+   USE trcsrc
 
    IMPLICIT NONE
    PRIVATE
