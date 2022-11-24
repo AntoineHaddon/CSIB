@@ -79,8 +79,8 @@ CONTAINS
       ! Sum of all the tracers shared TOP + CMOC
       jp_tot = jp_bgc + jp_cmoc
       !
-      IF( ln_dust .OR. ln_river .OR. ln_ndepo ) THEN   ;   ll_sbc = .TRUE.
-      ELSE                                             ;   ll_sbc = .FALSE.
+      IF( ln_dust0 .OR. ln_river0 .OR. ln_ndepo0 ) THEN   ;   ll_sbc = .TRUE.
+      ELSE                                                ;   ll_sbc = .FALSE.
       ENDIF
 
       !
