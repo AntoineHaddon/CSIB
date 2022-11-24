@@ -486,7 +486,8 @@ CONTAINS
   SUBROUTINE trc_src_criver( kt, write_rhs_flag )
       ! compute dic and doc sources from rivers
       !                       based on CanESM5/CMOC code.
-      INTEGER, INTENT(in)  :: ji, jj, kt
+      INTEGER, INTENT(in)  :: kt
+      INTEGER              :: ji, jj
       !
       LOGICAL, OPTIONAL, INTENT(in) :: write_rhs_flag   ! 
       LOGICAL                       :: write_rhs_flag0  ! 
@@ -594,11 +595,11 @@ CONTAINS
             oxybott_cmoc(ji,jj) = -trn(ji,jj,ikt,jqpoc) * zwsbio32 
             pocbott_cmoc(ji,jj) = -trn(ji,jj,ikt,jqpoc) * zwsbio32 
             IF( write_rhs_flag0 ) THEN
-              trn(ji,jj,ikt,jqdic) = trn(ji,jj,ikt,jqdic) + dicbott_cmoc(:,:)
-              trn(ji,jj,ikt,jqtal) = trn(ji,jj,ikt,jqtal) + talbott_cmoc(:,:)
-              trn(ji,jj,ikt,jqno3) = trn(ji,jj,ikt,jqno3) + no3bott_cmoc(:,:)
-              trn(ji,jj,ikt,jqoxy) = trn(ji,jj,ikt,jqoxy) + oxybott_cmoc(:,:)
-              trn(ji,jj,ikt,jqpoc) = trn(ji,jj,ikt,jqpoc) + pocbott_cmoc(:,:)
+              trn(ji,jj,ikt,jqdic) = trn(ji,jj,ikt,jqdic) + dicbott_cmoc(ji,jj)
+              trn(ji,jj,ikt,jqtal) = trn(ji,jj,ikt,jqtal) + talbott_cmoc(ji,jj)
+              trn(ji,jj,ikt,jqno3) = trn(ji,jj,ikt,jqno3) + no3bott_cmoc(ji,jj)
+              trn(ji,jj,ikt,jqoxy) = trn(ji,jj,ikt,jqoxy) + oxybott_cmoc(ji,jj)
+              trn(ji,jj,ikt,jqpoc) = trn(ji,jj,ikt,jqpoc) + pocbott_cmoc(ji,jj)
             END IF      
             !
          END DO
