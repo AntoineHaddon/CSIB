@@ -117,7 +117,11 @@ CONTAINS
       DO jk = 1,jpkm1
          DO jj = 1, jpj
             DO ji = 1, jpi
-               zwsmax = 0.8_wp * e3t_n(ji,jj,jk) / xstepb
+               zwsmax = 0.8_wp * e3t_n(ji,jj,jk) / xstepb           
+               ! 0.8 is a factor (no unit)
+               ! e3t_n the vertical mesh size
+               ! xstepb the size of a day in a time step
+               ! zwsmax the fastest speed allowed
                wsbio3(ji,jj,jk) = MIN( wsbio3(ji,jj,jk), zwsmax )
             END DO
          END DO

@@ -63,10 +63,20 @@ MODULE trcsrc_canbgc
    REAL(wp), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:,:  )   ::  no3bott_cmoc
    REAL(wp), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:,:  )   ::  oxybott_cmoc
    REAL(wp), SAVE, PUBLIC, ALLOCATABLE, DIMENSION(:,:  )   ::  pocbott_cmoc
-   
+
+   ! Iron dust parameters
    REAL(wp), SAVE, PUBLIC :: dustsolub0   = 0.014_wp      !: dust0 solubility      (fraction?)
    REAL(wp), SAVE, PUBLIC :: wdust0       = 2.0_wp        !: dust0 sinking speed   (m s^-1)
    REAL(wp), SAVE, PUBLIC :: sedfeinput0  = 1000._wp      !: coastal iron release (?)
+
+   ! External source switches
+   LOGICAL, SAVE, PUBLIC  :: ln_dust0  = .false. 
+   LOGICAL, SAVE, PUBLIC  :: ln_river0 = .false. 
+   LOGICAL, SAVE, PUBLIC  :: ln_ndepo0 = .false.  
+   !
+   ! Conversion coefficients
+   REAL(wp), SAVE, PUBLIC :: ryyssb   !: number of seconds per year
+   REAL(wp), SAVE, PUBLIC :: rmtssb  !: number of seconds per month
    !
    ! specific CMOC RHS terms needed for N2 fixation and
    ! denitrification
@@ -119,7 +129,13 @@ CONTAINS
         CALL FLUSH(numout)
       ENDIF
       !
+      ! Conversion factors used later in trc_src_fedep and trc_src_criver
+      ryyssb = REAL(nyear_len(1), wp ) * rday ! nyear_len is integer.
+      rmtssb = ryyssb / raamo                 ! raamo, number of months in a year, from USE phycst (called in oce_trc) 
+      !
+      ! Read namelists
       NAMELIST/namtrcsrcfe/ sedfeinput0, dustsolub0, wdust0
+      NAMELIST/namtrcsrclog/ ln_dust0, ln_river0, ln_ndepo0
       NAMELIST/namtrc_src3d/ cn_dir, nb_src3d, sn_src3d, rn_src3d
       NAMELIST/namtrc_src2d/ cn_dir, nb_src2d, sn_src2d, rn_src2d
       !
@@ -136,6 +152,10 @@ CONTAINS
       REWIND( numnml )
       READ  ( numnml, namtrcsrcfe, IOSTAT = ios, ERR = 801)
 801   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namtrcsrcfe in reference namelist' )
+      !       !
+      REWIND( numnml )
+      READ  ( numnml, namtrcsrclog, IOSTAT = ios, ERR = 802)
+802   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namtrcsrclog in reference namelist' )
       !       
       !!!!!!!!!! Read namelist info about external sources
       !     
@@ -317,8 +337,6 @@ CONTAINS
       !
       INTEGER  :: jk                          !: loop variables
       INTEGER  :: ierr, ios                   !: working variables
-      REAL(wp) :: ryyss                       !: number of seconds per year
-      REAL(wp) :: rmtss                       !: number of seconds per month
       !
       REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zirondep, zafe
       !
@@ -334,9 +352,6 @@ CONTAINS
       ALLOCATE( zirondep(jpi,jpj,jpk), zafe(jpi,jpj,jpk), STAT=ierr )
       IF( ierr /= 0 )   CALL ctl_stop( 'STOP', 'trc_src_fedep: failed to allocate 3d arrays for trc_src_fedep' )
       !
-      ryyss    = REAL(nyear_len(1), wp ) * rday ! nyear_len is integer.
-      rmtss    = ryyss / raamo
-      ! 
       IF(lwp) WRITE(numout,*) 'computation of iron aeolian depostion'
       IF(lwp) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
       IF(lwp) WRITE(numout,*)
@@ -361,12 +376,12 @@ CONTAINS
       ! Iron deposition at the surface
       ! -------------------------------------
       ! dust0 is in kgFe m^-2 month^-1; zirondep is in nmolFe m^-3 s^-1
-      zirondep(:,:,1) = dustsolub0 * src2d_dta(:,:,js2d_dust) / ( 55.85 * rmtss * e3t_n(:,:,1) ) * 1.E+12
+      zirondep(:,:,1) = dustsolub0 * src2d_dta(:,:,js2d_dust) / ( 55.85 * rmtssb * e3t_n(:,:,1) ) * 1.E+12
 
       ! Iron solubilization of particles in the water column
       ! ----------------------------------------------------
       DO jk = 2, jpkm1
-         zirondep(:,:,jk) = src2d_dta(:,:,js2d_dust) / ( wdust0 * 55.85 * rmtss ) * 1.e-4 * EXP( -gdept_n(:,:,jk) / 1000. ) * 1.E+12
+         zirondep(:,:,jk) = src2d_dta(:,:,js2d_dust) / ( wdust0 * 55.85 * rmtssb ) * 1.e-4 * EXP( -gdept_n(:,:,jk) / 1000. ) * 1.E+12
       END DO
 
       ! Diagnostics

@@ -37,7 +37,8 @@ MODULE trcsms_cmoc
    PUBLIC trc_sms_cmoc_alloc ! called by trcini_cmoc.F90 module 
    
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: qnegtr     ! Array used to indicate negative tracer values 
-
+   LOGICAL , PUBLIC ::   ll_sbc  ! trigger for external sources (ln_dust0, ln_river0, and ln_ndepo0)
+   
    ! Defined HERE the arrays specific to CMOC sms and ALLOCATE them in trc_sms_cmoc_alloc
    !
    !!----------------------------------------------------------------------
@@ -77,6 +78,11 @@ CONTAINS
       !
       ! Sum of all the tracers shared TOP + CMOC
       jp_tot = jp_bgc + jp_cmoc
+      !
+      IF( ln_dust .OR. ln_river .OR. ln_ndepo ) THEN   ;   ll_sbc = .TRUE.
+      ELSE                                             ;   ll_sbc = .FALSE.
+      ENDIF
+
       !
       IF ( kt == nit000) THEN
         ! Calling external sources
@@ -191,7 +197,8 @@ CONTAINS
         ! compute the various sources that were scattered
         ! within CanESM5/CMOC p4zsed.F90 code, e.g.
         ! river sources
-        CALL trc_src_criver( kt )
+        ! Formely p4z_sbc in p4zsed.F90
+        IF ( jnt == 1 .AND. ll_sbc ) CALL trc_src_criver( kt )
         ! POC bottom instant. rem
         CALL trc_bott_cmoc
         ! n2 fixation/denitrification

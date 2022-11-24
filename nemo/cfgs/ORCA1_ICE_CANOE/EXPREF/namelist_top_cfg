@@ -44,7 +44,7 @@
    ln_sf6        =  .false.     !  Run the SF6 passive tracer
    ln_c14        =  .false.     !  Run the Radiocarbon passive tracer
    !
-   ln_trcdta     =  .true.   !  Initialisation from data input file (T) or not (F)
+   ln_trcdta     =  .false.  !  Initialisation from data input file (T) or not (F)
    ln_trcdmp     =  .false.  !  add a damping termn (T) or not (F)
    ln_trcdmp_clo =  .false.  !  damping term (T) or not (F) on closed seas
    !
@@ -128,7 +128,7 @@
 !-----------------------------------------------------------------------
 &namtrc_rad      !  treatment of negative concentrations 
 !-----------------------------------------------------------------------
-   ln_trcrad     =  .true.   !  artificially correct negative concentrations (T) or not (F)
+   ln_trcrad     =  .false.   !  artificially correct negative concentrations (T) or not (F)
 /
 !-----------------------------------------------------------------------
 &namtrc_snk      !  Sedimentation of particles
@@ -194,12 +194,12 @@
    cn_dir        =  './'     !  root directory for the location of the data files
    !
    nb_src3d      = 6
-   sn_src3d(1)   = 'data_NO3_nomask' ,        -1        ,  'NO3'    ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src3d(2)   = 'data_Si_nomask'  ,        -1        ,  'Si'     ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src3d(3)   = 'data_PO4_nomask' ,        -1        ,  'PO4'    ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src3d(4)   = 'data_DOC_nomask' ,        -12       ,  'DOC'    ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src3d(5)   = 'data_Fer_nomask' ,        -12       ,  'Fer'    ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
-   sn_src3d(6)   = 'hydrofe.orca'    ,        -12       ,  'epsdb'  ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src3d(1)   = 'data_NO3_nomask' ,        -1        ,  'NO3'    ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src3d(2)   = 'data_Si_nomask'  ,        -1        ,  'Si'     ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src3d(3)   = 'data_PO4_nomask' ,        -1        ,  'PO4'    ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src3d(4)   = 'data_DOC_nomask' ,        -12       ,  'DOC'    ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src3d(5)   = 'data_Fer_nomask' ,        -12       ,  'Fer'    ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
+   sn_src3d(6)   = 'hydrofe.orca'    ,        -12       ,  'epsdb'  ,    .true.    , .true. , 'yearly'  , ''       , ''       , ''
    !
    rn_src3d(1)   =   1.0e-06   ! model is in mol/L
    rn_src3d(2)   =   1.0e-06   ! model is in mol/L
@@ -246,6 +246,13 @@ dustsolub0   =  0.01     ! Solubility of the dust
 wdust0       =  2.0      ! Dust sinking speed
 /
 !-----------------------------------------------------------------------
+&namtrcsrclog  !   external source switches
+!-----------------------------------------------------------------------
+   ln_dust0    =  .true.   ! dust input from the atmosphere
+   ln_river0   =  .true.   ! river input of nutrients
+   ln_ndepo0   =  .true.   ! atmospheric deposition of N
+/
+!-----------------------------------------------------------------------
 &namtrc_opt    !   parameters for optics
 !-----------------------------------------------------------------------
 !              !  file name       ! frequency (hours) ! variable  ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation ! land/sea mask !
@@ -257,11 +264,4 @@ wdust0       =  2.0      ! Dust sinking speed
 ! 1-band PAR
    kw_cmoc     =  0.04          ! PAR attenuation coefficient for seawater (m^-1)
    kchl_cmoc   =  0.03          ! PAR attenuation for chlorophyll          (m^-1) (mgChl m^-3)^-1
-/
-!-----------------------------------------------------------------------
-&namtrc_1band  !     1-band PAR attenuation parameters (CMOC mainly)
-!-----------------------------------------------------------------------
-! for now everything is hardwired in trc_opt_1band s/routine.
-! 0.04 as water attenuation and 0.03 as phytoplankton attenuation
-! 0.43 is the PAR/SW ratio but there is a variable PAR/SW ratio available
 /
