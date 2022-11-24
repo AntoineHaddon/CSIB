@@ -127,7 +127,7 @@ CONTAINS
           IF(lwp) WRITE(numout,*)
         ENDIF
         ! O Riche Oct 24th 2022 - adding trb/trn swap as appearing in p4zsms.F90 / PISCES BGC
-        ! according to comment in p4zsms.F90 this is for restart mode (neuler == 1 which means
+        ! according to comment in p4zsms.F90 this is for restart mode (neuler == 0 which means
         ! restarts from with Euler forward otherwise leapfrog) and see namelist for OCE component.
         ! ln_top_euler is for TOP, and is like the condition neuler == 0 for the 1st time step
         ! (but) starting from rest (not from restart).
