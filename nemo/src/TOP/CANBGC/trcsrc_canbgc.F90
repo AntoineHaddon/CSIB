@@ -486,7 +486,7 @@ CONTAINS
   SUBROUTINE trc_src_criver( kt, write_rhs_flag )
       ! compute dic and doc sources from rivers
       !                       based on CanESM5/CMOC code.
-      INTEGER, INTENT(in)  :: kt
+      INTEGER, INTENT(in)  :: ji, jj, kt
       !
       LOGICAL, OPTIONAL, INTENT(in) :: write_rhs_flag   ! 
       LOGICAL                       :: write_rhs_flag0  ! 
@@ -505,13 +505,25 @@ CONTAINS
       CALL trc_src2d( kt , js2d_rdic )
       CALL trc_src2d( kt , js2d_rdoc )
       !
+      ! O Riche Nov 24th 2022
+      ! Test if any external source data point is too large
+      WRITE(numout,*)
+      DO jj = 1, jpj
+        DO ji = 1, jpi
+          IF( lwp .AND. ABS(src2d_dta(ji,jj,js2d_rdic)) > HUGE(1._wp) ) WRITE(numout,*) 'trc_src_criver: js2d_rdic has reached a huge value at ji = ', ji, ' jj =', jj
+          IF( lwp .AND. ABS(src2d_dta(ji,jj,js2d_rdoc)) > HUGE(1._wp) ) WRITE(numout,*) 'trc_src_criver: js2d_rdoc has reached a huge value at ji = ', ji, ' jj =', jj
+          CALL FLUSH(numout)
+        END DO
+      END DO
+      WRITE(numout,*)
+      !
       zcoef(:,:)       =   ryyssb * cvol(:,:,1)
       cotdep_cmoc(:,:) =   src2d_dta(:,:,js2d_rdic)                              * 1.e9 / (12.  * zcoef(:,:) + rtrn )
       rivinp_cmoc(:,:) = ( src2d_dta(:,:,js2d_rdic) + src2d_dta(:,:,js2d_rdoc) ) * 1.e9 / (31.6 * zcoef(:,:) + rtrn )
       ! RHS terms derived from above external sources
-      no3river_cmoc(:,:) =   rivinp_cmoc(:,:)
-      dicriver_cmoc(:,:) =   rivinp_cmoc(:,:) * 2.631
-      talriver_cmoc(:,:) = ( cotdep_cmoc(:,:) - rivinp_cmoc(:,:) * ncrr_cmoc)
+      no3river_cmoc(:,:) = qfact2 *   rivinp_cmoc(:,:)
+      dicriver_cmoc(:,:) = qfact2 *   rivinp_cmoc(:,:) * 2.631
+      talriver_cmoc(:,:) = qfact2 * ( cotdep_cmoc(:,:) - rivinp_cmoc(:,:) * ncrr_cmoc)
       !
       IF ( .NOT. PRESENT(write_rhs_flag) ) THEN
         write_rhs_flag0 = .true.
@@ -576,17 +588,17 @@ CONTAINS
             ikt  = mbkt(ji,jj)
             zdep = xstepb / e3t_n(ji,jj,ikt)
             zwsbio32 = zwsbio3(ji,jj,ikt) * zdep
-            dicbott_cmoc(:,:) =  trn(ji,jj,ikt,jqpoc) * zwsbio32 
-            talbott_cmoc(:,:) = -trn(ji,jj,ikt,jqpoc) * zwsbio32 * ncrr_cmoc
-            no3bott_cmoc(:,:) =  trn(ji,jj,ikt,jqpoc) * zwsbio32 
-            oxybott_cmoc(:,:) = -trn(ji,jj,ikt,jqpoc) * zwsbio32 
-            pocbott_cmoc(:,:) = -trn(ji,jj,ikt,jqpoc) * zwsbio32 
+            dicbott_cmoc(ji,jj) =  trn(ji,jj,ikt,jqpoc) * zwsbio32 
+            talbott_cmoc(ji,jj) = -trn(ji,jj,ikt,jqpoc) * zwsbio32 * ncrr_cmoc
+            no3bott_cmoc(ji,jj) =  trn(ji,jj,ikt,jqpoc) * zwsbio32 
+            oxybott_cmoc(ji,jj) = -trn(ji,jj,ikt,jqpoc) * zwsbio32 
+            pocbott_cmoc(ji,jj) = -trn(ji,jj,ikt,jqpoc) * zwsbio32 
             IF( write_rhs_flag0 ) THEN
-              trn(:,:,ikt,jqdic) = trn(:,:,ikt,jqdic) + dicbott_cmoc(:,:)
-              trn(:,:,ikt,jqtal) = trn(:,:,ikt,jqtal) + talbott_cmoc(:,:)
-              trn(:,:,ikt,jqno3) = trn(:,:,ikt,jqno3) + no3bott_cmoc(:,:)
-              trn(:,:,ikt,jqoxy) = trn(:,:,ikt,jqoxy) + oxybott_cmoc(:,:)
-              trn(:,:,ikt,jqpoc) = trn(:,:,ikt,jqpoc) + pocbott_cmoc(:,:)
+              trn(ji,jj,ikt,jqdic) = trn(ji,jj,ikt,jqdic) + dicbott_cmoc(:,:)
+              trn(ji,jj,ikt,jqtal) = trn(ji,jj,ikt,jqtal) + talbott_cmoc(:,:)
+              trn(ji,jj,ikt,jqno3) = trn(ji,jj,ikt,jqno3) + no3bott_cmoc(:,:)
+              trn(ji,jj,ikt,jqoxy) = trn(ji,jj,ikt,jqoxy) + oxybott_cmoc(:,:)
+              trn(ji,jj,ikt,jqpoc) = trn(ji,jj,ikt,jqpoc) + pocbott_cmoc(:,:)
             END IF      
             !
          END DO
