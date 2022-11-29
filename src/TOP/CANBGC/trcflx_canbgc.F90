@@ -27,7 +27,7 @@ MODULE trcflx_canbgc
                                                ! grid cell area and tmask
    USE par_trc                                   ! par_trc calls par_kind and par among others, wp defined
    USE in_out_manager							  ! in_out_manager grants access to ln_timing variable among others
-   USE trc_closeabgc
+   USE trc_closea_canbgc
  
    USE iom                       ! to access iom_put for diagnostics
  
