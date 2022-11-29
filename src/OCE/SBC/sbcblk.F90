@@ -950,11 +950,13 @@ CONTAINS
          CALL iom_put( 'evap_ao_cea'  , ztmp(:,:) * tmask(:,:,1) )   ! ice-free oce evap (cell average)
          CALL iom_put( 'hflx_evap_cea', ztmp(:,:) * sst_m(:,:) * rcp * tmask(:,:,1) )   ! heat flux from evap (cell average)
       ENDIF
-      IF( iom_use('hflx_rain_cea') ) THEN
+      IF( iom_use('hflx_rain_cea') .OR. iom_use('rain_ao_cea') ) THEN
          ztmp(:,:) = rcp * ( SUM( (ptsu-rt0) * a_i_b, dim=3 ) + sst_m(:,:) * ( 1._wp - at_i_b(:,:) ) )
          CALL iom_put( 'hflx_rain_cea', ( tprecip(:,:) - sprecip(:,:) ) * ztmp(:,:) )   ! heat flux from rain (cell average)
+         CALL iom_put( 'rain_ao_cea' , ( tprecip(:,:) - sprecip(:,:) ) * at_i_b(:,:)         )  ! liquid precipitation over ocean (cell average)
       ENDIF
-      IF( iom_use('hflx_snow_cea') .OR. iom_use('hflx_snow_ao_cea') .OR. iom_use('hflx_snow_ai_cea')  )  THEN
+      IF( iom_use('hflx_snow_cea') .OR. iom_use('hflx_snow_ao_cea') .OR. iom_use('hflx_snow_ai_cea')  &
+          & .OR. iom_use('snow_ao_cea') .OR. iom_use('snow_ai_cea') )  THEN
           WHERE( SUM( a_i_b, dim=3 ) > 1.e-10 ) ;   ztmp(:,:) = rcpi * SUM( (ptsu-rt0) * a_i_b, dim=3 ) / SUM( a_i_b, dim=3 )
           ELSEWHERE                             ;   ztmp(:,:) = rcp * sst_m(:,:)    
           ENDWHERE
@@ -962,7 +964,10 @@ CONTAINS
           CALL iom_put('hflx_snow_cea'   , ztmp2(:,:) ) ! heat flux from snow (cell average)
           CALL iom_put('hflx_snow_ao_cea', ztmp2(:,:) * ( 1._wp - zsnw(:,:) ) ) ! heat flux from snow (over ocean)
           CALL iom_put('hflx_snow_ai_cea', ztmp2(:,:) *           zsnw(:,:)   ) ! heat flux from snow (over ice)
+          CALL iom_put( 'snow_ao_cea' , sprecip(:,:) * ( 1._wp - zsnw(:,:) )                  )  ! Snow over ice-free ocean  (cell average)
+          CALL iom_put( 'snow_ai_cea' , sprecip(:,:) *           zsnw(:,:)                    )  ! Snow over sea-ice         (cell average)
       ENDIF
+      IF( iom_use('subl_ai_cea') )   CALL iom_put( 'subl_ai_cea' , SUM( a_i_b(:,:,:) * evap_ice(:,:,:), dim=3 ) * tmask(:,:,1) )     ! Sublimation over sea-ice (cell average)
       !
       IF(ln_ctl) THEN
          CALL prt_ctl(tab3d_1=qla_ice , clinfo1=' blk_ice: qla_ice  : ', tab3d_2=z_qsb   , clinfo2=' z_qsb    : ', kdim=jpl)
