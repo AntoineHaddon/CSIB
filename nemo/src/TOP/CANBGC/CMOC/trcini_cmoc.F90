@@ -27,10 +27,11 @@ MODULE trcini_cmoc
    USE trcsink_canbgc      ! CANBGC particules sinking package
    !
    USE cmocprod            ! CMOC PP module
-   USE cmocmort            ! CMOC phyto mortality module
-   USE cmocrem             ! CMOC carbon remineralization
-   USE cmoczoo             ! CMOC zooplankton grazing
-   
+   ! USE cmocmort            ! CMOC phyto mortality module
+   ! USE cmocrem             ! CMOC carbon remineralization
+   ! USE cmoczoo             ! CMOC zooplankton grazing
+   USE cmocnzd             ! consolidated module containing remineralization to (N)itrate
+                           ! (Z)ooplankton grazing, and (D)etritus for phytoplankton mortality
    IMPLICIT NONE
    PRIVATE
 
@@ -101,19 +102,19 @@ CONTAINS
        ! IF( cltra == 'O2abio'   )   jqoab = jn      !: abiotic oxygen
        ! IF( cltra == 'DI14C'    )   jqdrc = jn      !: abiotic DI14C
       END DO
-      IF( .NOT. ln_rsttr ) THEN
-        trn(:,:,:,jqdic) = sco2
-        trn(:,:,:,jqtal) = alka0 
-        trn(:,:,:,jqoxy) = oxyg0
-        trn(:,:,:,jqno3) = no30
-        trn(:,:,:,jqpoc) = poc0
-        trn(:,:,:,jqphy) = phy0
-        trn(:,:,:,jqzoo) = zoo0
-        trn(:,:,:,jqnch) = nch0
-      ENDIF
-      !
-      ! closea mask for BGCM
+      !      ! closea mask for BGCM
       CALL trc_closea_init(read_var_flag=.true.)
+      !
+      IF( .NOT. ln_rsttr ) THEN
+        trn(:,:,:,jqdic) = sco2  * tmask_bgc_closea(:,:,:)
+        trn(:,:,:,jqtal) = alka0 * tmask_bgc_closea(:,:,:)
+        trn(:,:,:,jqoxy) = oxyg0 * tmask_bgc_closea(:,:,:)
+        trn(:,:,:,jqno3) = no30  * tmask_bgc_closea(:,:,:)
+        trn(:,:,:,jqpoc) = poc0  * tmask_bgc_closea(:,:,:)
+        trn(:,:,:,jqphy) = phy0  * tmask_bgc_closea(:,:,:)
+        trn(:,:,:,jqzoo) = zoo0  * tmask_bgc_closea(:,:,:)
+        trn(:,:,:,jqnch) = nch0  * tmask_bgc_closea(:,:,:)
+      ENDIF
       !
       CALL cmoc_alloc ! allocate arrays space, see end of this module
       !

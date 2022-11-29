@@ -67,6 +67,78 @@ MODULE trcsink_canbgc
 
 CONTAINS
       !!----------------------------------------------------------------------
+    
+      !!!!!!!!!! CMOC subroutines
+      !!----------------------------------------------------------------------
+      !
+  SUBROUTINE trc_sink2( pwsink, psinkflx, jp_tra )
+      !!---------------------------------------------------------------------
+      !!                     ***  ROUTINE trc_sink2  ***
+      !!
+      !! ** Purpose :   Compute the sedimentation terms for the various sinking
+      !!     particles. The scheme used to compute the trends is based
+      !!     on MUSCL.
+      !!
+      !! ** Method  : - this ROUTINE compute not exactly the advection but the
+      !!      transport term, i.e.  div(u*tra).
+      !!---------------------------------------------------------------------
+      !
+      INTEGER , INTENT(in   )                         ::   jp_tra    ! tracer index index      
+      REAL(wp), INTENT(in   ), DIMENSION(jpi,jpj,jpk) ::   pwsink    ! sinking speed
+      REAL(wp), INTENT(inout), DIMENSION(jpi,jpj,jpk) ::   psinkflx  ! sinking fluxe
+      !!
+      INTEGER  ::   ji, jj, jk, jn
+      REAL(wp) ::   zew, zign, zflx
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: ztraz, zakz, zwsink2, ztrb 
+      !!---------------------------------------------------------------------
+      !
+      IF( ln_timing )  CALL timing_start('trc_sink2')
+      !
+      ! Allocate temporary workspace
+      ALLOCATE( ztraz(jpi, jpj, jpk), zakz(jpi, jpj, jpk), zwsink2(jpi, jpj, jpk), ztrb(jpi, jpj, jpk) )
+      !
+      ztraz(:,:,:) = 0.e0
+      zakz (:,:,:) = 0.e0
+      ztrb (:,:,:) = trn(:,:,:,jp_tra)
+      !
+      DO jk = 1, jpkm1
+         zwsink2(:,:,jk+1) = -pwsink(:,:,jk) / rday * tmask_bgc_closea(:,:,jk+1) 
+      END DO
+      zwsink2(:,:,1) = 0.e0
+      !
+      ! vertical advective flux
+      DO jk = 1, jpkm1
+        DO jj = 1, jpj      
+           DO ji = 1, jpi    
+              zew   = zwsink2(ji,jj,jk+1)
+              psinkflx(ji,jj,jk+1) = -zew * trn(ji,jj,jk,jp_tra) * qfact2
+           END DO
+        END DO
+      END DO
+      !
+      ! Boundary conditions
+      psinkflx(:,:,1  ) = 0.e0
+      psinkflx(:,:,jpk) = 0.e0
+      !
+      DO jk=1,jpkm1
+         DO jj = 1,jpj
+            DO ji = 1, jpi
+               zflx = ( psinkflx(ji,jj,jk) - psinkflx(ji,jj,jk+1) ) / e3t_n(ji,jj,jk)
+               ztrb(ji,jj,jk) = ztrb(ji,jj,jk) + zflx
+            END DO
+         END DO
+      END DO
+      !
+      trn(:,:,:,jp_tra) = ztrb(:,:,:)
+      !
+      DEALLOCATE( ztraz, zakz, zwsink2, ztrb )
+      !
+      IF( ln_timing )  CALL timing_stop('trc_sink2')
+      !
+      !
+  END SUBROUTINE trc_sink2
+      !
+      !!----------------------------------------------------------------------
       !!!!!!!!!! CMOC subroutines
       !!----------------------------------------------------------------------
   SUBROUTINE cmoc_sink( kt , jnt )
@@ -136,11 +208,11 @@ CONTAINS
       !   Compute the sedimentation term using cmocsink2 for POC
       !   -----------------------------------------------------
       !
-      CALL cmoc_sink2( wsbio3, sinking , jqpoc )
+      CALL trc_sink2( wsbio3, sinking , jqpoc )
       !
       !     Calcite sinking flux
       !     --------------------------------------------------------------------
-      ! Define an open ocean mask, based on where mbkt > nk_bal_cmoc == 15 (or as define in namelist)
+      ! Define an open ocean mask, based on where mbkt > nk_bal_cmoc == 28 (or as define in namelist)
       oomask(:,:) = 0.0_wp
       !
       DO jj = 1, jpj
@@ -280,71 +352,6 @@ CONTAINS
   END SUBROUTINE cmoc_sink
 
 
-  SUBROUTINE cmoc_sink2( pwsink, psinkflx, jp_tra )
-      !!---------------------------------------------------------------------
-      !!                     ***  ROUTINE cmoc_sink2  ***
-      !!
-      !! ** Purpose :   Compute the sedimentation terms for the various sinking
-      !!                particles. The scheme used to compute the trends is based
-      !!                on MUSCL.
-      !!
-      !! ** Method  : - this ROUTINE computes not exactly the advection but the
-      !!                transport term, i.e.  div(u*tra).
-      !!---------------------------------------------------------------------
-      !
-      INTEGER , INTENT(in   )                         ::   jp_tra    ! tracer index index
-      REAL(wp), INTENT(in   ), DIMENSION(jpi,jpj,jpk) ::   pwsink    ! sinking speed
-      REAL(wp), INTENT(inout), DIMENSION(jpi,jpj,jpk) ::   psinkflx  ! sinking fluxe
-      !!
-      INTEGER  ::   ji, jj, jk, jn
-      REAL(wp) ::   zew, zflx
-      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zwsink2, ztrb 
-      !!---------------------------------------------------------------------
-      !
-      IF( ln_timing )  CALL timing_start('cmoc_sink2')
-      !
-      ! Allocate temporary workspace
-      ALLOCATE( zwsink2(jpi, jpj, jpk), ztrb(jpi, jpj, jpk) )
-      !
-      ztrb (:,:,:) = trn(:,:,:,jp_tra)
-      !
-      DO jk = 1, jpkm1
-         zwsink2(:,:,jk+1) = -pwsink(:,:,jk) / rday * tmask_bgc_closea(:,:,jk+1) 
-      END DO
-      zwsink2(:,:,1) = 0._wp
-      !
-      ! vertical advective flux
-      DO jk = 1, jpkm1
-        DO jj = 1, jpj      
-            DO ji = 1, jpi    
-              zew   = zwsink2(ji,jj,jk+1)
-              psinkflx(ji,jj,jk+1) = -zew * trn(ji,jj,jk,jp_tra) * qfact2
-            END DO
-        END DO
-      END DO
-      !
-      ! Boundary conditions
-      psinkflx(:,:,1  ) = 0._wp
-      psinkflx(:,:,jpk) = 0._wp
-      !
-      DO jk=1,jpkm1
-         DO jj = 1,jpj
-            DO ji = 1, jpi
-               zflx = ( psinkflx(ji,jj,jk) - psinkflx(ji,jj,jk+1) ) / e3t_n(ji,jj,jk)
-               ztrb(ji,jj,jk) = ztrb(ji,jj,jk) + zflx
-            END DO
-         END DO
-      END DO
-      !
-      trn(:,:,:,jp_tra) = ztrb(:,:,:)
-      !
-      DEALLOCATE( zwsink2, ztrb )      
-      !
-      IF( ln_timing )  CALL timing_stop('cmoc_sink2')
-      !
-  END SUBROUTINE cmoc_sink2
-
-
   SUBROUTINE cmoc_sink_init
       !
       INTEGER :: ji, jj, ikt, ios     !: working integers for loops and I/O
@@ -435,9 +442,9 @@ CONTAINS
       !   Compute the sedimentation term using canoesink2 for all the sinking particles
       !   -----------------------------------------------------
       !
-      CALL canoe_sink2( wsbio3, sinking , jqpoc )
-      CALL canoe_sink2( wsbio4, sinking2, jqgoc )
-      CALL canoe_sink2( wscal , sinkcal , jqcal )
+      CALL trc_sink2( wsbio3, sinking , jqpoc )
+      CALL trc_sink2( wsbio4, sinking2, jqgoc )
+      CALL trc_sink2( wscal , sinkcal , jqcal )
       !
       ! IF( ln_diatrc ) THEN
          ! zrfact2 = 1.e-3 * qfact2r
@@ -464,78 +471,6 @@ CONTAINS
       IF( ln_timing )  CALL timing_stop('canoe_sink')
       !
   END SUBROUTINE canoe_sink
-
-  
-  SUBROUTINE canoe_sink2( pwsink, psinkflx, jp_tra )
-      !!---------------------------------------------------------------------
-      !!                     ***  ROUTINE p4z_sink2  ***
-      !!
-      !! ** Purpose :   Compute the sedimentation terms for the various sinking
-      !!     particles. The scheme used to compute the trends is based
-      !!     on MUSCL.
-      !!
-      !! ** Method  : - this ROUTINE compute not exactly the advection but the
-      !!      transport term, i.e.  div(u*tra).
-      !!---------------------------------------------------------------------
-      !
-      INTEGER , INTENT(in   )                         ::   jp_tra    ! tracer index index      
-      REAL(wp), INTENT(in   ), DIMENSION(jpi,jpj,jpk) ::   pwsink    ! sinking speed
-      REAL(wp), INTENT(inout), DIMENSION(jpi,jpj,jpk) ::   psinkflx  ! sinking fluxe
-      !!
-      INTEGER  ::   ji, jj, jk, jn
-      REAL(wp) ::   zigma,zew,zign, zflx, zstep
-      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: ztraz, zakz, zwsink2, ztrb 
-      !!---------------------------------------------------------------------
-      !
-      IF( ln_timing )  CALL timing_start('canoe_sink2')
-      !
-      ! Allocate temporary workspace
-      ALLOCATE( ztraz(jpi, jpj, jpk), zakz(jpi, jpj, jpk), zwsink2(jpi, jpj, jpk), ztrb(jpi, jpj, jpk) )
-      !
-      zstep = qfact2 / 2.
-      !
-      ztraz(:,:,:) = 0.e0
-      zakz (:,:,:) = 0.e0
-      ztrb (:,:,:) = trn(:,:,:,jp_tra)
-      !
-      DO jk = 1, jpkm1
-         zwsink2(:,:,jk+1) = -pwsink(:,:,jk) / rday * tmask_bgc_closea(:,:,jk+1) 
-      END DO
-      zwsink2(:,:,1) = 0.e0
-      !
-      ! vertical advective flux
-      DO jk = 1, jpkm1
-        DO jj = 1, jpj      
-           DO ji = 1, jpi    
-              zigma = zwsink2(ji,jj,jk+1) * zstep / e3w_n(ji,jj,jk+1)
-              zew   = zwsink2(ji,jj,jk+1)
-              psinkflx(ji,jj,jk+1) = -zew * trn(ji,jj,jk,jp_tra) * zstep
-           END DO
-        END DO
-      END DO
-      !
-      ! Boundary conditions
-      psinkflx(:,:,1  ) = 0.e0
-      psinkflx(:,:,jpk) = 0.e0
-      !
-      DO jk=1,jpkm1
-         DO jj = 1,jpj
-            DO ji = 1, jpi
-               zflx = ( psinkflx(ji,jj,jk) - psinkflx(ji,jj,jk+1) ) / e3t_n(ji,jj,jk)
-               ztrb(ji,jj,jk) = ztrb(ji,jj,jk) + 2. * zflx
-            END DO
-         END DO
-      END DO
-      !
-      trn     (:,:,:,jp_tra) = ztrb(:,:,:)
-      psinkflx(:,:,:)        = 2. * psinkflx(:,:,:)
-      !
-      DEALLOCATE( ztraz, zakz, zwsink2, ztrb )
-      !
-      IF( ln_timing )  CALL timing_stop('canoe_sink2')
-      !
-      !
-  END SUBROUTINE canoe_sink2
 
 
   SUBROUTINE canoe_sink_init
