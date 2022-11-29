@@ -203,7 +203,7 @@ MODULE sms_top_canbgc
 				&       qhi  (jpi,jpj,jpk)      ,  qakw3(jpi,jpj,jpk)   ,     &
 				&      qakp13(jpi,jpj,jpk)      , qakp23(jpi,jpj,jpk)   ,     &
 				&      qakp33(jpi,jpj,jpk)      , qaksi3(jpi,jpj,jpk)   ,     &
-				&      qborat(jpi,jpj,jpk)      ,  qasi3(jpi,jpj,jpk)   ,     &
+				&     qborat3(jpi,jpj,jpk)      ,  qasi3(jpi,jpj,jpk)   ,     &
 				&   qaphscale(jpi,jpj,jpk)      , qexcess(jpi,jpj,jpk)  ,     &  
 		    &       qak12(jpi,jpj)          ,  qakb2(jpi,jpj)       ,     &
 				&       qak22(jpi,jpj)          ,  qakw2(jpi,jpj)       ,     &
