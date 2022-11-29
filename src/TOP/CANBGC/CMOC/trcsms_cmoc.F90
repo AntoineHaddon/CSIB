@@ -41,7 +41,6 @@ MODULE trcsms_cmoc
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: qnegtr     ! Array used to indicate negative tracer values 
    LOGICAL , PUBLIC ::   ll_sbc  ! trigger for external sources (ln_dust0, ln_river0, and ln_ndepo0)
    
-   ! Defined HERE the arrays specific to CMOC sms and ALLOCATE them in trc_sms_cmoc_alloc
    !
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
@@ -59,7 +58,7 @@ CONTAINS
       !! ** Method  : -
       !!----------------------------------------------------------------------
       !
-	    USE par_cmoc
+      USE par_cmoc
       USE trcsrc_canbgc             ! loading external files/sources
       !
       INTEGER, INTENT(in) ::   kt   ! ocean time-step index

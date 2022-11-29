@@ -63,7 +63,6 @@
        <field id="Cflx"        long_name="CO2 flux positivr if ocean gain"        unit="mmol/m2/s"           grid_ref="grid_T_2D" />
        <field id="Oflx"        long_name=" O2 flux positive if ocean gain"        unit="mmol/m2/s"           grid_ref="grid_T_2D" />
        
-       <field id="Kg"          long_name="Piston velocity"                        unit="m/s"                 grid_ref="grid_T_2D" />
        <field id="KgCO2"       long_name="CO2 Piston velocity"                    unit="mol/m2/s/uatm"       grid_ref="grid_T_2D" />
        <field id="KgO2"        long_name="O2  Piston velocity"                    unit="mol/m2/s/uatm"       grid_ref="grid_T_2D" />
        

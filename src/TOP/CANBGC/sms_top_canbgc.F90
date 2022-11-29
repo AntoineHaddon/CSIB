@@ -7,12 +7,13 @@ MODULE sms_top_canbgc
 	!!             3.2  !  2009-04 (C. Ethe & NEMO team) style
 	!!                  !  2022-06 (O. Riche) formerly sms_pisces.F90
 	!!                  !                     necessary and can't be plugged
-	!! 				   !                     in trcsms.F90 without
-	!! 				   !                     circurlar dependency err. in make
+	!! 		    !                     in trcsms.F90 without
+	!! 		    !                     circurlar dependency err. in make
+	!!                  !  2022-11 (J. Christian) 2D and 3D carbon chem modes
 	!!----------------------------------------------------------------------
 	USE par_oce
 	USE par_trc
-  USE oce_trc                       ! O Riche June 29th 2022: to be able to use numout file ID
+  	USE oce_trc                       ! O Riche June 29th 2022: to be able to use numout file ID
 
 	IMPLICIT NONE
 	PUBLIC
@@ -27,18 +28,30 @@ MODULE sms_top_canbgc
   ! LOGICAL  ::  ln_check_mass_canoe  !: Flag to check mass conservation
 
 	!!* Variable for chemistry of the CO2 cycle
-	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qakb3       !: ???
-	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qak13       !: ???
-	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qak23       !: ???
-	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qaksp       !: ???
-	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qakw3       !: ???
-	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qakp13
-	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qakp23
-	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qakp33
-	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qaksi3      !: [Si(OH)4-]
-	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qasi3		    !: [Si(OH)4-]
-	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qborat      !: Borate conc.
+	!! 3D carbon chem
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qakb3       !: K_B
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qak13       !: K1
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qak23       !: K_2
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qaksp       !: K_sp
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qakw3       !: K_w
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qakp13      !: K_PO4_1
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qakp23      !: K_PO4_2
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qakp33      !: K_PO4_3
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qaksi3      !: K_si
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qasi3       !: [Si(OH)4-]
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qborat3     !: Borate conc.
 	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qhi         !: [H+] to compute pH and alkalinity
+	!! 2D carbon chem
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   qakb2  
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   qak12 
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   qak22
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   qakw2
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   qakp12
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   qakp22
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   qakp32
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   qaksi2 
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   qasi2
+	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   qborat2 
 
 	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qexcess     !: needed in sms_pisces/CanOE, excess in phyto as zoop food wrt Redfield ratios
 	REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qaphscale   !: absolute pH scale   
@@ -192,7 +205,12 @@ MODULE sms_top_canbgc
 				&      qakp33(jpi,jpj,jpk)      , qaksi3(jpi,jpj,jpk)   ,     &
 				&      qborat(jpi,jpj,jpk)      ,  qasi3(jpi,jpj,jpk)   ,     &
 				&   qaphscale(jpi,jpj,jpk)      , qexcess(jpi,jpj,jpk)  ,     &  
-        &  	    STAT=ierr(1) )
+		    &       qak12(jpi,jpj)          ,  qakb2(jpi,jpj)       ,     &
+				&       qak22(jpi,jpj)          ,  qakw2(jpi,jpj)       ,     &
+				&      qakp12(jpi,jpj)          , qakp22(jpi,jpj)       ,     &
+				&      qakp32(jpi,jpj)          , qaksi2(jpi,jpj)       ,     &
+				&     qborat2(jpi,jpj)          ,  qasi2(jpi,jpj)       ,     & 
+         			&  	    STAT=ierr(1) )
 
     !* CMOC PP terms/factors
     ALLOCATE( xlimnfecmoc(jpi,jpj)     , STAT=ierr(2))

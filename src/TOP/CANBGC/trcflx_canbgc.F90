@@ -3,28 +3,37 @@ MODULE trcflx_canbgc
    !!                         ***  MODULE trcflx  ***
    !! TOP :   COMPUTES GAS EXCHANGE AND CHEMISTRY AT SEA SURFACE
    !!======================================================================
+   !! History :   OPA  !  1988     (E. Maier-Reimer)  Original code
+   !!              -   !  1998     (O. Aumont)  addition
+   !!              -   !  1999     (C. Le Quere)  modification
+   !!   NEMO      1.0  !  2004     (O. Aumont)  modification
+   !!              -   !  2006     (R. Gangsto)  modification
+   !!             2.0  !  2007-12  (C. Ethe, G. Madec)  F90
+   !!                  !  2011-02  (J. Simeon, J.Orr ) update O2 solubility constants
+   !!                  !  2022-2023(J. Christian, O. Riche) NEMO4 integration
    !!----------------------------------------------------------------------
    !!   trc_flx       :   main code
    !!   trc_flx_init  :   read the namelist
    !!   trc_flx_alloc :   allocate array space in memory
-   !!----------------------------------------------------------------------
-
+   !!======================================================================
 ! Module calls section
-	! internal calls to 
-	USE trc                       ! time step in seconds whether or not euler is activated
-  USE oce_trc                   ! give access to active tracers, wndm, tsn, and fr_i (wind @10m, T/S, and ice fraction)
-                                ! oce_trc calls common OCE and TOP indices, e.g. jpi,jpj dimensions
-	USE sms_top_canbgc            ! contains all common variables to Canadian BGCMs
-	USE dom_oce									  ! give access to domain grid and z-levels
-                             	  ! grid cell area and tmask
-	USE par_trc                   ! par_trc calls par_kind and par among others, wp defined
-	USE in_out_manager					  ! in_out_manager grants access to ln_timing variable among others
-
-  USE iom                       ! to access iom_put for diagnostics
-
-  USE trcche_canbgc  			      ! Carbon chemistry module
-  USE trc_closea_canbgc         ! bgc-specific closea mask
-  USE trcsrc_canbgc
+ 
+   USE trc                       ! time step in seconds whether or not euler is activated
+   USE oce_trc                   ! give access to active tracers, wndm, tsn, and fr_i (wind @10m, T/S, and ice fraction)
+                                 ! oce_trc calls common OCE and TOP indices, e.g. jpi,jpj dimensions
+   USE sms_top_canbgc            ! contains all common variables to Canadian BGCMs
+ 
+   USE dom_oce									  ! give access to domain grid and z-levels
+                                               ! grid cell area and tmask
+   USE par_trc                                   ! par_trc calls par_kind and par among others, wp defined
+   USE in_out_manager							  ! in_out_manager grants access to ln_timing variable among others
+   USE trc_closeabgc
+ 
+   USE iom                       ! to access iom_put for diagnostics
+ 
+   USE trcche_canbgc  			      ! Carbon chemistry module
+   USE trc_closea_canbgc         ! bgc-specific closea mask
+   USE trcsrc_canbgc
 
 ! General scope section
     IMPLICIT NONE
@@ -37,8 +46,8 @@ MODULE trcflx_canbgc
     PUBLIC   trc_flx_alloc 
 
 ! Variables section
-	  ! partial pressures and fluxes
-	  REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) :: patmo      !: atmospheric pressure at kt [N/m2] but later on initialized to 1 atm
+	! partial pressures and fluxes
+    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) :: patmo      !: atmospheric pressure at kt [N/m2] but later on initialized to 1 atm
     REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) :: oce_co2g   !: CO2 flux
     REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) :: satmco2g   !: atmospheric pco2 
     REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) :: oce_o2g    !: O2  flux
@@ -65,69 +74,22 @@ CONTAINS
       INTEGER  ::   ji, jj, jm
       REAL(wp) ::   ztc, ztc2, ztc3, ztc4, zws, zkgwan
       REAL(wp) ::   zfld, zflu, zfld16, zflu16, zfact
-	    REAL(wp) ::   zph, zah2, zbot, zdic, zalk, zalka               ! carbon chemistry wrk variables
-      REAL(wp) ::   zph2, zph3, zpo4, zsi, zpd, zp0, zp1, zp3        ! coefficients added to account for P and Si contribution to TA
       REAL(wp) ::   zsch_o2, zsch_co2
-      REAL(wp), DIMENSION(jpi,jpj)     :: zkg0, zkgco2, zkgo2, zh2co3, zo2flx, zco2flx 
-      REAL(wp), DIMENSION(jpi,jpj,jpk) :: zph0
+      REAL(wp), DIMENSION(jpi,jpj) :: zkgco2, zkgo2, zo2flx, zco2flx 
       !!---------------------------------------------------------------------
       !
       IF( ln_timing )  CALL timing_start('trc_flx')
       IF(lwp) WRITE(numout,*)
-      IF(lwp) WRITE(numout,*) ' trc_flx:  air-sea processes'
+      IF(lwp) WRITE(numout,*) ' trc_flx:  TOP-tier processes'
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
       ! SURFACE CHEMISTRY (PCO2 AND [H+] IN
       !     SURFACE LAYER); THE RESULT OF THIS CALCULATION
       !     IS USED TO COMPUTE AIR-SEA FLUX OF CO2
 
-      DO jm = 1, 10
-	  !
-         DO jj = 1, jpj
-	  !
-            DO ji = 1, jpi
-
-               ! DUMMY VARIABLES FOR DIC, H+, AND BORATE
-               zbot  = qborat(ji,jj,1)
-               zfact = rhop(ji,jj,1) / 1000. + rtrn
-               zdic  = trn(ji,jj,1,jqdic) / zfact
-               zph   = MAX( qhi(ji,jj,1), 1.e-10 ) / zfact
-               zalka = trn(ji,jj,1,jqtal) / zfact
-               zph2  = zph*zph
-               zph3  = zph*zph2
-               zpo4 = trn(ji,jj,1,jqno3) / 16. * 0.000001 / zfact
-               zsi  = qasi3(ji,jj,1)           * 0.000001 / zfact                        ! silica is a static array based on initialization file, not a carried tracer
-
-               ! CALCULATE P AND Si ION CONCENTRATIONS AS PER ORR ET AL (BPG EQUATIONS 43-47)
-               ! zp3 = H3PO4, zp1 = HPO4(2-), zp0 = PO4(3-): denominator is the same for all 3 equations
-               zpd = 1./ ( zph3 + qakp13(ji,jj,1)*zph2 + qakp13(ji,jj,1)*qakp23(ji,jj,1)*zph + qakp13(ji,jj,1)*qakp23(ji,jj,1)*qakp33(ji,jj,1) )
-               zp3 = zph3*zpo4 * zpd
-               zp1 = zph*zpo4*qakp13(ji,jj,1)*qakp23(ji,jj,1) * zpd
-               zp0 = zpo4*qakp13(ji,jj,1)*qakp23(ji,jj,1)*qakp33(ji,jj,1) * zpd
-               zsi = zsi / (1. + zph / qaksi3(ji,jj,1))
-
-               ! CALCULATE [ALK]([CO3--], [HCO3-])
-               zalk  = zalka - (  qakw3(ji,jj,1) / zph - zph + zbot / ( 1.+ zph / qakb3(ji,jj,1) ) + 2.*zp0 + zp1 - zp3 + zsi )
-
-               ! CALCULATE [H+] AND [H2CO3]
-               zah2   = SQRT(  (zdic-zalk)*(zdic-zalk) + 4.* ( zalk * qak23(ji,jj,1)   &
-                  &                                        / qak13(ji,jj,1) ) * ( 2.* zdic - zalk )  )
-               zah2   = 0.5 * qak13(ji,jj,1) / zalk * ( ( zdic - zalk ) + zah2 )
-               zh2co3(ji,jj) = ( 2.* zdic - zalk ) / ( 2.+ qak13(ji,jj,1) / zah2 ) * zfact
-               qhi(ji,jj,1)   = zah2 * zfact
-            END DO
-         END DO
-      END DO
-
-	  !
-	  ! ----------------
-	  ! compute fluxes
-	  ! ----------------
-	   
       ! 1. compute gas exchange velocities
       ! -------------------------------------------
       DO jj = 1, jpj
-
          DO ji = 1, jpi
             ztc  = tsn(ji,jj,1,jp_tem)
             ztc2 = ztc * ztc
@@ -155,9 +117,8 @@ CONTAINS
             zkgwan = 0.251 * zws  
             zkgwan = zkgwan * xconv0 * ( 1.- fr_i(ji,jj) ) * tmask_bgc_closea(ji,jj,1)
             ! compute gas exchange for CO2 and O2
-              zkg0(ji,jj) = zkgwan
             zkgco2(ji,jj) = zkgwan * SQRT( 660./ zsch_co2 )
-            zkgo2 (ji,jj) = zkgwan * SQRT( 660./ zsch_o2  )
+            zkgo2 (ji,jj) = zkgwan * SQRT( 660./ zsch_o2 )
          END DO
       END DO
 
@@ -166,7 +127,7 @@ CONTAINS
 
       DO jj = 1, jpj
          DO ji = 1, jpi
-			! zh2co3(ji,jj) = trn(ji,jj,1,jqdic)*.01_wp           ! set up fraction (1%) of DIC as a proxy for [H2CO3*]sw and convert in M
+            !zh2co3(ji,jj) = trn(ji,jj,1,jqdic)*0.01_wp           ! set up fraction (1%) of DIC as a proxy for [H2CO3*]sw and convert in M
 			! 1% seems to be a reasonable fraction based on Zeebe et al textbook Fig. 1.6.27
 			! to represent total dissolved CO2g in seawater?	  
 			! CO2(g) <=> H2CO3 Zeebe Eqs 1.1.1 and H2CO3 in equilibrium with DIC (HCO3 and CO3 2-)
@@ -175,16 +136,15 @@ CONTAINS
 			! in seawater and the partial pressure of CO2 g (O2 g in air at sea surface level)
 			! partial pressure in air is converted to seawater concentration in mol L^-1
 
-
-            zfld = satmco2g(ji,jj) * qchemc(ji,jj,1) * tmask_bgc_closea(ji,jj,1) * zkgco2(ji,jj)     ! (mol/L) * (m/s)
-            zflu = zh2co3(ji,jj) * tmask_bgc_closea(ji,jj,1) * zkgco2(ji,jj)                        ! (mol/L) * (m/s) 
+            zfld = satmco2g(ji,jj) * K0CO2(ji,jj) * tmask_bgc_closea(ji,jj,1) * zkgco2(ji,jj)     ! (mol/L) * (m/s)
+            zflu = qh2co3(ji,jj) * tmask_bgc_closea(ji,jj,1) * zkgco2(ji,jj)                        ! (mol/L) * (m/s) 
 
             oce_co2g(ji,jj) = ( zfld - zflu ) * qfact * e1e2t(ji,jj) * tmask_bgc_closea(ji,jj,1) * 1000. ! convert L^-1 to m^-3
             zco2flx(ji,jj)  = ( zfld - zflu ) * tmask_bgc_closea(ji,jj,1)
             tra(ji,jj,1,jqdic) = tra(ji,jj,1,jqdic) + zco2flx(ji,jj) / e3t_n(ji,jj,1)
 			
             ! Compute O2 flux 
-            zfld16 = satmo2g(ji,jj) * qchemc(ji,jj,2) * tmask_bgc_closea(ji,jj,1) * zkgo2(ji,jj)     ! (mol/L) * (m/s)
+            zfld16 = satmo2g(ji,jj) * K0O2(ji,jj) * tmask_bgc_closea(ji,jj,1) * zkgo2(ji,jj)     ! (mol/L) * (m/s)
             zflu16 = trn(ji,jj,1,jqoxy) * tmask_bgc_closea(ji,jj,1) * zkgo2(ji,jj)                  ! (mol/L) * (m/s)
 
             oce_o2g(ji,jj) = ( zfld16 - zflu16 ) * qfact * e1e2t(ji,jj) * tmask_bgc_closea(ji,jj,1) * 1000. ! convert L^-1 to m^-3
@@ -196,17 +156,16 @@ CONTAINS
       ! O Riche Sept 7th 2022
       ! Diagnostics
       ! gas exchange rates
-      CALL iom_put("Kg"   ,   zkg0(:,:) )
       CALL iom_put("KgCO2", zkgco2(:,:) )
       CALL iom_put("KgO2" ,  zkgo2(:,:) )
       ! net flux to the ocean
       CALL iom_put("Cflx", zco2flx(:,:) / qfact / e1e2t(:,:) )
       CALL iom_put("Oflx",  zo2flx(:,:) / qfact / e1e2t(:,:) )
       ! partial pressures
-      CALL iom_put("DpCO2", ( satmco2g(:,:) - zh2co3(:,:) / ( qchemc(:,:,1) + rtrn ) ) * tmask_bgc_closea(:,:,1) )
-      CALL iom_put("pCO2" ,                 ( zh2co3(:,:) / ( qchemc(:,:,1) + rtrn ) ) * tmask_bgc_closea(:,:,1) )
-      CALL iom_put("DpO2" , ( satmo2g(:,:) - trn(:,:,1,jqoxy) / ( qchemc(:,:,2) + rtrn ) ) * tmask_bgc_closea(:,:,1) )
-      CALL iom_put("pO2"  ,                ( trn(:,:,1,jqoxy) / ( qchemc(:,:,2) + rtrn ) ) * tmask_bgc_closea(:,:,1) )
+      CALL iom_put("DpCO2", ( satmco2g(:,:) - qh2co3(:,:) / ( K0CO2(:,:) + rtrn ) )   * tmask_bgc_closea(:,:,1) )
+      CALL iom_put("pCO2" ,                 ( qh2co3(:,:) / ( K0CO2(:,:) + rtrn ) )   * tmask_bgc_closea(:,:,1) )
+      CALL iom_put("DpO2" , ( satmo2g(:,:) - trn(:,:,1,jqoxy) / ( K0O2(:,:) + rtrn ) ) * tmask_bgc_closea(:,:,1) )
+      CALL iom_put("pO2"  ,                ( trn(:,:,1,jqoxy) / ( K0O2(:,:) + rtrn ) ) * tmask_bgc_closea(:,:,1) )
       ! Carbonate system
       zph0(:,:,:) = rtrn
       zph0(:,:,1) = qhi(:,:,1) + rtrn   ! [H+] is 2D for now so just set to epsilon if deeper than level 1 
@@ -215,6 +174,7 @@ CONTAINS
       ! CALL iom_put("CO3",      )
       ! CALL iom_put("CO3sat",   )
       ! CALL iom_put("HCO3",     )
+
       !
       IF( ln_timing )  CALL timing_stop('trc_flx')
       ! 
