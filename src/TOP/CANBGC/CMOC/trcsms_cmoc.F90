@@ -26,9 +26,11 @@ MODULE trcsms_cmoc
    USE sms_cmoc, ONLY     : ln_cmocnegtr
    !
    USE cmocprod           ! CMOC PP module
-   USE cmocmort           ! CMOC phyto mortality module
-   USE cmocrem            ! CMOC carbon remineralization
-   USE cmoczoo            ! CMOC zooplankton grazing
+   ! USE cmocmort            ! CMOC phyto mortality module
+   ! USE cmocrem             ! CMOC carbon remineralization
+   ! USE cmoczoo             ! CMOC zooplankton grazing
+   USE cmocnzd             ! consolidated module containing remineralization to (N)itrate
+                           ! (Z)ooplankton grazing, and (D)etritus for phytoplankton mortality
    !
    IMPLICIT NONE
    PRIVATE
