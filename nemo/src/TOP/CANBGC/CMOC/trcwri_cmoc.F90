@@ -51,7 +51,7 @@ CONTAINS
       IF ( cltra == 'POC')       zfact = 1.e06_wp
       IF ( cltra == 'PHY')       zfact = 1.e06_wp
       IF ( cltra == 'ZOO')       zfact = 1.e06_wp
-      IF ( cltra == 'NCH')       zfact = 1.e06_wp
+      IF ( cltra == 'NCHL')      zfact = 1.e06_wp
       CALL iom_put( cltra, trn(:,:,:,jn)*zfact ) ! O Riche June 6th 2022, manual scaling here as xml file issue not solved yet
       END DO
       !
