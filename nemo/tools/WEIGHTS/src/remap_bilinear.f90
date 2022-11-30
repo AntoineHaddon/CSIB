@@ -113,11 +113,13 @@
 
       grid_loop1: do dst_add = 1, grid2_size
 
-        if (.not. grid2_mask(dst_add)) cycle grid_loop1
+        !if (grid2_mask(dst_add)==0) cycle grid_loop1
 
         plat = grid2_center_lat(dst_add)
         plon = grid2_center_lon(dst_add)
 
+        wgts(:) = 0.
+        src_add(:) =0.
         !***
         !*** find nearest square of grid points on source grid
         !***
@@ -133,7 +135,7 @@
 
         if (src_add(1) > 0) then
           do n=1,4
-            if (.not. grid1_mask(src_add(n))) src_add(1) = 0
+            if (grid1_mask(src_add(n))==0) src_add(1) = 0
           end do
         endif
 
@@ -210,7 +212,7 @@
             wgts(3) = iguess*jguess
             wgts(4) = (one-iguess)*jguess
 
-            call store_link_bilin(dst_add, src_add, wgts, nmap)
+            !call store_link_bilin(dst_add, src_add, wgts, nmap)
 
           else
             print *,'Point coords: ',plat,plon
@@ -231,7 +233,7 @@
           src_add = abs(src_add)
           icount = 0
           do n=1,4
-            if (grid1_mask(src_add(n))) then
+            if (grid1_mask(src_add(n))==1) then
               icount = icount + 1
             else
               src_lats(n) = zero
@@ -248,10 +250,12 @@
             wgts(4) = src_lats(4)/sum_wgts
 
             grid2_frac(dst_add) = one
-            call store_link_bilin(dst_add, src_add, wgts, nmap)
+            !call store_link_bilin(dst_add, src_add, wgts, nmap)
           endif
 
         endif
+        ! will store zeros when src is out-of-bounb
+        call store_link_bilin(dst_add, src_add, wgts, nmap)
       end do grid_loop1
 
 !-----------------------------------------------------------------------
@@ -273,11 +277,13 @@
 
       grid_loop2: do dst_add = 1, grid1_size
 
-        if (.not. grid1_mask(dst_add)) cycle grid_loop2
+        !if (grid1_mask(dst_add)==0) cycle grid_loop2
 
         plat = grid1_center_lat(dst_add)
         plon = grid1_center_lon(dst_add)
 
+        wgts(:) = 0.
+        src_add(:) = 0.
         !***
         !*** find nearest square of grid points on source grid
         !***
@@ -293,7 +299,7 @@
 
         if (src_add(1) > 0) then
           do n=1,4
-            if (.not. grid2_mask(src_add(n))) src_add(1) = 0
+            if (grid2_mask(src_add(n))==0) src_add(1) = 0
           end do
         endif
 
@@ -370,7 +376,7 @@
             wgts(3) = iguess*jguess
             wgts(4) = (one-iguess)*jguess
 
-            call store_link_bilin(dst_add, src_add, wgts, nmap)
+            !call store_link_bilin(dst_add, src_add, wgts, nmap)
 
           else
             print *,'Point coords: ',plat,plon
@@ -391,7 +397,7 @@
           src_add = abs(src_add)
           icount = 0
           do n=1,4
-            if (grid2_mask(src_add(n))) then
+            if (grid2_mask(src_add(n))==1) then
               icount = icount + 1
             else
               src_lats(n) = zero
@@ -408,10 +414,12 @@
             wgts(4) = src_lats(4)/sum_wgts
 
             grid1_frac(dst_add) = one
-            call store_link_bilin(dst_add, src_add, wgts, nmap)
+            !call store_link_bilin(dst_add, src_add, wgts, nmap)
           endif
 
         endif
+        ! will store zeros if src is out-of-bound
+        call store_link_bilin(dst_add, src_add, wgts, nmap)
       end do grid_loop2
 
       endif ! nmap=2
@@ -507,10 +515,6 @@
           max_add = max(max_add, src_bin_add(2,n))
         endif
       end do
-      if (max_add.eq.1) then 
-         min_add = 1
-         max_add = size(src_center_lat)
-      endif 
  
 !-----------------------------------------------------------------------
 !

@@ -117,11 +117,13 @@
 
       grid_loop1: do dst_add = 1, grid2_size
 
-        if (.not. grid2_mask(dst_add)) cycle grid_loop1
+        if (grid2_mask(dst_add)==0) cycle grid_loop1
 
         plat = grid2_center_lat(dst_add)
         plon = grid2_center_lon(dst_add)
 
+        src_add(:) = 0.
+        wgts(:,:) = 0.
 !-----------------------------------------------------------------------
 !
 !       find nearest square of grid points on source grid
@@ -139,7 +141,7 @@
 
         if (src_add(1) > 0) then
           do n=1,4
-            if (.not. grid1_mask(src_add(n))) src_add(1) = 0
+            if (grid1_mask(src_add(n))==0) src_add(1) = 0
           end do
         endif
 
@@ -248,7 +250,7 @@
             wgts(4,4) =        iguess*(iguess-one)**2* &
                                jguess**2*(jguess-one)
 
-            call store_link_bicub(dst_add, src_add, wgts, nmap)
+            !call store_link_bicub(dst_add, src_add, wgts, nmap)
 
           else
             stop 'Iteration for i,j exceed max iteration count'
@@ -267,7 +269,7 @@
 
           icount = 0
           do n=1,4
-            if (grid1_mask(src_add(n))) then
+            if (grid1_mask(src_add(n))==1) then
               icount = icount + 1
             else
               src_lats(n) = zero
@@ -285,10 +287,11 @@
             wgts(2:4,:) = zero
 
             grid2_frac(dst_add) = one
-            call store_link_bicub(dst_add, src_add, wgts, nmap)
+            !call store_link_bicub(dst_add, src_add, wgts, nmap)
           endif
 
         endif
+        call store_link_bicub(dst_add, src_add, wgts, nmap)
       end do grid_loop1
 
 !-----------------------------------------------------------------------
@@ -310,11 +313,13 @@
 
       grid_loop2: do dst_add = 1, grid1_size
 
-        if (.not. grid1_mask(dst_add)) cycle grid_loop2
+        if (grid1_mask(dst_add)==0) cycle grid_loop2
 
         plat = grid1_center_lat(dst_add)
         plon = grid1_center_lon(dst_add)
 
+        src_add(:) = 0.
+        wgts(:,:) = 0.
         !***
         !*** find nearest square of grid points on source grid
         !***
@@ -330,7 +335,7 @@
 
         if (src_add(1) > 0) then
           do n=1,4
-            if (.not. grid2_mask(src_add(n))) src_add(1) = 0
+            if (grid2_mask(src_add(n))==0) src_add(1) = 0
           end do
         endif
 
@@ -435,7 +440,7 @@
             wgts(4,4) =        iguess*(iguess-one)**2* &
                                jguess**2*(jguess-one)
 
-            call store_link_bicub(dst_add, src_add, wgts, nmap)
+            !call store_link_bicub(dst_add, src_add, wgts, nmap)
 
           else
             stop 'Iteration for i,j exceed max iteration count'
@@ -452,7 +457,7 @@
 
           icount = 0
           do n=1,4
-            if (grid2_mask(src_add(n))) then
+            if (grid2_mask(src_add(n))==1) then
               icount = icount + 1
             else
               src_lats(n) = zero
@@ -470,10 +475,11 @@
             wgts(2:4,:) = zero
 
             grid1_frac(dst_add) = one
-            call store_link_bicub(dst_add, src_add, wgts, nmap)
+            !call store_link_bicub(dst_add, src_add, wgts, nmap)
           endif
 
         endif
+        call store_link_bicub(dst_add, src_add, wgts, nmap)
       end do grid_loop2
 
       endif ! nmap=2
@@ -569,10 +575,6 @@
           max_add = max(max_add, src_bin_add(2,n))
         endif
       end do
-      if (max_add.eq.1) then 
-         min_add = 1
-         max_add = size(src_center_lat)
-      endif 
  
 !-----------------------------------------------------------------------
 !
