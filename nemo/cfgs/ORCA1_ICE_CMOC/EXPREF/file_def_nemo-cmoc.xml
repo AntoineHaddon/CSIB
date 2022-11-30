@@ -57,7 +57,6 @@
           <field field_ref="Cflx"        />
           <field field_ref="Oflx"        />
           
-          <field field_ref="Kg"          />
           <field field_ref="KgCO2"       />
           <field field_ref="KgO2"        />
           

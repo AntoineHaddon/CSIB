@@ -356,13 +356,13 @@ CONTAINS
       REAL(wp) ::   zpo4, zsi
       REAL(wp) ::   zak1, zak2, zakb, zakw, zakp1, zakp2, zakp3, zaksi
       REAL(wp) ::   ztmas, ztmas1
-      REAL(wp), DIMENSION(jpi,jpj,jpk) :: hi
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: hi
       REAL(wp), DIMENSION(2) :: hion_CA
       !!---------------------------------------------------------------------
       !
       IF( ln_timing )  CALL timing_start('trc_che_3D')
       !
-      !CALL wrk_alloc( jpi, jpj, jpk )     ! is this necessary? this looks like NEMO3.4 stuff
+      ALLOCATE( hi(jpi, jpj, jpk) )
       !
       !     -------------------------------------------
       !     COMPUTE [CO3--] and [H+] CONCENTRATIONS
@@ -413,7 +413,9 @@ CONTAINS
          END DO
          !
       END DO 
-
+      !
+      DEALLOCATE( hi )
+      !
       IF( ln_timing )  CALL timing_stop('trc_che_3D')
 
    END SUBROUTINE trc_che_3D
@@ -678,8 +680,9 @@ CONTAINS
 
       ierr(:)=0
 
-      ALLOCATE( K0CO2 (jpi,jpj), K0O2 (jpi,jpj), qh2co3(jpi,jpj), &
-              & qco3(jpi,jpj,jpk), qaksp(jpi,jpj,jpk),     STAT=ierr(1) )
+      ALLOCATE( K0CO2 (jpi,jpj),    K0O2 (jpi,jpj),    & 
+              & qh2co3(jpi,jpj),    qco3(jpi,jpj,jpk), & 
+              & qaksp(jpi,jpj,jpk),     STAT=ierr(1) )
       !
       trc_che_alloc = MAXVAL( ierr )
 
