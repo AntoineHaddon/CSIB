@@ -19,7 +19,7 @@
 
 %BASE_CFLAGS    
 
-%PROD_CFLAGS    -O2 -mp1 -xCORE-AVX512 -align array64byte -xSKYLAKE-AVX512
+%PROD_CFLAGS    -O2 -mp1 -xCORE-AVX512 
 %DEV_CFLAGS     -O2
 %DEBUG_CFLAGS   -O0 -g 
 
