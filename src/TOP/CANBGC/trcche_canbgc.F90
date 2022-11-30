@@ -23,6 +23,7 @@ MODULE trcche_canbgc
    USE in_out_manager    ! in_out_manager grants access to numout file ID
 
    USE trc_closea_canbgc ! bgc-specific closea mask
+   USE trcsrc_canbgc     ! external sources module
 
    IMPLICIT NONE
    PRIVATE
@@ -256,7 +257,7 @@ CONTAINS
       ! ----------------------------------
 
       hi(:,:)=1.e-9
-      call trc_src3d(kt,js3d_si)
+      CALL trc_src3d(kt,js3d_si)
       qasi3=src3d_dta(:,:,:,js3d_si)
 
        !WRITE(numout,*) 'trc_che_2D'
@@ -371,7 +372,7 @@ CONTAINS
       !     -------------------------------------------
       
       hi(:,:,:)=1.e-9
-      call trc_src3d(kt,js3d_si)
+      CALL trc_src3d(kt,js3d_si)
       qasi3=src3d_dta(:,:,:,js3d_si)
 
       DO jm = 1, 5                              !  BEGINNING OF ITERATION
