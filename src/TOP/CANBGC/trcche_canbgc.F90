@@ -252,15 +252,12 @@ CONTAINS
       !!---------------------------------------------------------------------
 
       IF( ln_timing )  CALL timing_start('trc_che_2D')
-      !IF (lwp) WRITE(numout,*) 'trc_che debug: beginning first loop'
       !
       ! ----------------------------------
 
       hi(:,:)=1.e-9
       CALL trc_src3d(kt,js3d_si)
       qasi3=src3d_dta(:,:,:,js3d_si)
-
-       !WRITE(numout,*) 'trc_che_2D'
 
 ! solubility of CO2 and O2 in seawater (note the names of these arrays are different from the PISCES-based one used in CanESM5)
       DO jj = 1, jpj
@@ -439,7 +436,6 @@ CONTAINS
       !!---------------------------------------------------------------------
 
       IF( ln_timing )  CALL timing_start('trc_che_init_2D')
-      !IF (lwp) WRITE(numout,*) 'trc_che debug: beginning first loop'
       !
       ! ----------------------------------
 
@@ -507,7 +503,6 @@ CONTAINS
           END DO
 
       ! -------------------------------
-      !   IF (lwp) WRITE(numout,*) 'trc_che debug: completed 2nd loop'
       !
       IF( ln_timing )  CALL timing_stop('trc_che_init_2D')
       !
@@ -532,7 +527,6 @@ CONTAINS
       !!---------------------------------------------------------------------
 
       IF( ln_timing )  CALL timing_start('trc_che_init_3D')
-      !IF (lwp) WRITE(numout,*) 'trc_che debug: beginning first loop'
       !
       ! ----------------------------------
 
@@ -642,7 +636,6 @@ CONTAINS
        END DO
 
       ! -------------------------------
-      !   IF (lwp) WRITE(numout,*) 'trc_che debug: completed 2nd loop'
       !
       IF( ln_timing )  CALL timing_stop('trc_che_init_3D')
       !
