@@ -122,8 +122,9 @@ CONTAINS
           IF(lwp) write(numout,*) ' New chemical constants and various rates for biogeochemistry at new day : ', nday_year
           IF(lwp) write(numout,*) '~~~~~~'
           !
-          CALL trc_che           ! computation of carbon chemistry constants
+          CALL trc_che_2D        ! computation of carbon chemistry constants
           ! initialize the chemical constants
+          ! JC's 2D carbon chem mode 
           !
         !  
         ELSE
@@ -148,9 +149,11 @@ CONTAINS
         IF(lwp) write(numout,*) ' New chemical constants and various rates for biogeochemistry at new day : ', nday_year
         IF(lwp) write(numout,*) '~~~~~~'
 
-        CALL trc_che           ! computation of carbon chemistry constants
+        CALL trc_che_2D        ! computation of carbon chemistry constants
+        ! initialize the chemical constants
+        ! JC's 2D carbon chem mode 
         !
-      ENDIF                            ! initialize the chemical constants
+      ENDIF
       !
       ! O Riche Sept 14th 2022
       ! Move here before cmoc_prod as issue with PAR being set to 0s
