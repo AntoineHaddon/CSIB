@@ -82,8 +82,8 @@ CONTAINS
       !
       IF( ln_timing )  CALL timing_start('trc_flx')
       IF(lwp) WRITE(numout,*)
-      IF(lwp) WRITE(numout,*) ' trc_flx:  TOP-tier processes'
-      IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+      IF(lwp) WRITE(numout,*) ' trc_flx:  air-sea processes' 
+      IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
       ! SURFACE CHEMISTRY (PCO2 AND [H+] IN
       !     SURFACE LAYER); THE RESULT OF THIS CALCULATION
