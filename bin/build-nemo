@@ -343,9 +343,7 @@ case $storage_method in
 esac
 
 rm -f ${storage_loc}/${nemo_exec}
-echo ${storage_cmd} $target_model_exec ${storage_loc}/${nemo_exec}
-${storage_cmd} $target_model_exec ${storage_loc}/${nemo_exec}
-for executable in $non_model_execs; do
+for executable in $model_execs $non_model_execs; do
     stored_exec=${storage_loc}/$(basename $executable)
     rm -f $stored_exec
     $storage_cmd $executable $stored_exec
