@@ -255,6 +255,7 @@ echo "#################### Start NEMO pre-processing #################"
   # ==============================
   # Translate switches into 0/1 booleans
   ToF nemo_from_rest
+  ToF nemo_trc
   # Switch 'nemo_from_rest' off if this isn't the first job in the run as it was
   #   _already_ started from rest
   if [[ $chunk_start_date != $run_start_date ]] && (( nemo_from_rest == 1 )); then
@@ -276,7 +277,7 @@ echo "#################### Start NEMO pre-processing #################"
   
     # starting from rest, NOT a restart
     ln_rstart=.false.
-    [ $nemo_trc -eq 'on' ] && ln_rsttr=.false.
+    [ $nemo_trc -eq 1 ] && ln_rsttr=.false.
 
   else
     #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
@@ -285,7 +286,7 @@ echo "#################### Start NEMO pre-processing #################"
 
     # starting from restart
     ln_rstart=.true.
-    [ $nemo_trc -eq 'on' ] && ln_rsttr=.true.
+    [ $nemo_trc -eq 1 ] && ln_rsttr=.true.
 
     # Determine what restart to use
     # -----------------------------
@@ -390,7 +391,7 @@ echo "#################### Start NEMO pre-processing #################"
     found_rs=`(ls -1 *_${cn_trcrst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
     [ -z "$found_rs" ] && found_rs=`(ls -1 *_${cn_trcrst_out}.nc || : ) 2>/dev/null`
     if [ -z "$found_rs" ]; then
-      [ $nemo_trc -eq 'on' ] && bail "No trc restart files were found in $nemo_rs"
+      [ $nemo_trc -eq 1 ] && bail "No trc restart files were found in $nemo_rs"
     else
       for rsfile in $found_rs; do
         [ $rsfile = 'cpl_restart.nc' ] && continue
@@ -414,7 +415,7 @@ echo "#################### Start NEMO pre-processing #################"
   done
   # make namelist mods foir the restart switch 
     mod_nl namelist_cfg ln_rstart
-    [ $nemo_trc -eq 'on' ] && mod_nl namelist_top_cfg ln_rsttr
+    [ $nemo_trc -eq 1 ] && mod_nl namelist_top_cfg ln_rsttr
 
   # nemo executable
   ! is_file $nemo_exec && cp ${EXEC_STORAGE_DIR}/$nemo_exec .
