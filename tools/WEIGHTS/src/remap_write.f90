@@ -158,6 +158,10 @@
         map_method = 'Conservative remapping'
       case(map_type_bilinear)
         map_method = 'Bilinear remapping'
+      case(map_type_nearest)
+        map_method = 'Nearest remapping'
+      case(map_type_fountain)
+        map_method = 'Fountain remapping'
       case(map_type_distwgt)
         map_method = 'Distance weighted avg of nearest neighbors'
       case(map_type_bicubic)
@@ -176,9 +180,11 @@
 !
 !-----------------------------------------------------------------------
 
+      if (map_type .ne. map_type_fountain) then
       call sort_add(grid2_add_map1, grid1_add_map1, wts_map1)
       if (num_maps > 1) then
         call sort_add(grid1_add_map2, grid2_add_map2, wts_map2)
+      endif
       endif
 
 !-----------------------------------------------------------------------
@@ -629,14 +635,18 @@
         allocate (src_mask_int(grid1_size), &
                   dst_mask_int(grid2_size))
 
-        where (grid2_mask)
+        where (grid2_mask==1)
           dst_mask_int = 1
+        elsewhere (grid2_mask==-1)
+          dst_mask_int = -1
         elsewhere
           dst_mask_int = 0
         endwhere
 
-        where (grid1_mask)
+        where (grid1_mask==1)
           src_mask_int = 1
+        elsewhere (grid1_mask==-1)
+          src_mask_int = -1
         elsewhere
           src_mask_int = 0
         endwhere
@@ -644,14 +654,18 @@
         allocate (src_mask_int(grid2_size), &
                   dst_mask_int(grid1_size))
 
-        where (grid1_mask)
+        where (grid1_mask==1)
           dst_mask_int = 1
+        elsewhere (grid1_mask==-1)
+          dst_mask_int = -1
         elsewhere
           dst_mask_int = 0
         endwhere
 
-        where (grid2_mask)
+        where (grid2_mask==1)
           src_mask_int = 1
+        elsewhere (grid2_mask==-1)
+          src_mask_int = -1
         elsewhere
           src_mask_int = 0
         endwhere
@@ -1300,14 +1314,18 @@
         allocate (src_mask_int(grid1_size), &
                   dst_mask_int(grid2_size))
 
-        where (grid2_mask)
+        where (grid2_mask==1)
           dst_mask_int = 1
+        elsewhere (grid2_mask==-1)
+          dst_mask_int = -1
         elsewhere
           dst_mask_int = 0
         endwhere
 
-        where (grid1_mask)
+        where (grid1_mask==1)
           src_mask_int = 1
+        elsewhere (grid1_mask==-1)
+          src_mask_int = -1
         elsewhere
           src_mask_int = 0
         endwhere
@@ -1315,14 +1333,18 @@
         allocate (src_mask_int(grid2_size), &
                   dst_mask_int(grid1_size))
 
-        where (grid1_mask)
+        where (grid1_mask==1)
           dst_mask_int = 1
+        elsewhere (grid1_mask==-1)
+          dst_mask_int = -1
         elsewhere
           dst_mask_int = 0
         endwhere
 
-        where (grid2_mask)
+        where (grid2_mask==1)
           src_mask_int = 1
+        elsewhere (grid2_mask==-1)
+          src_mask_int = -1
         elsewhere
           src_mask_int = 0
         endwhere

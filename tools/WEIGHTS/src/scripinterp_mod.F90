@@ -682,12 +682,12 @@ contains
 
     grid1_imask(:) = 1
     grid2_imask(:) = 1
-    where (grid1_mask)
+    where (grid1_mask==1)
       grid1_imask = 1
     elsewhere
       grid1_imask = 0
     endwhere
-    where (grid2_mask)
+    where (grid2_mask==1)
       grid2_imask = 1
     elsewhere
       grid2_imask = 0
@@ -718,7 +718,7 @@ contains
         grad1_latlon(n) = zero
   
 !       if (n.ge.8000) write(6,*) 0,grid1_mask(n),nx
-        if (grid1_mask(n)) then
+        if (grid1_mask(n)==1) then
   
           delew = half
           delns = half
@@ -754,11 +754,11 @@ contains
   
           ! -  compute i-gradient
   
-          if (.not. grid1_mask(ie)) then
+          if (grid1_mask(ie)==0) then
             ie = n
             delew = one
           endif
-          if (.not. grid1_mask(iw)) then
+          if ( grid1_mask(iw)==0) then
             iw = n
             delew = one
           endif
@@ -768,11 +768,11 @@ contains
   
           ! -  compute j-gradient
   
-          if (.not. grid1_mask(in)) then
+          if (grid1_mask(in)==0) then
             in = n
             delns = one
           endif
-          if (.not. grid1_mask(is)) then
+          if (grid1_mask(is)==0) then
             is = n
             delns = one
           endif
@@ -789,7 +789,7 @@ contains
             delns = half
           endif
   
-          if (.not. grid1_mask(ine)) then
+          if (grid1_mask(ine)==0) then
             if (in /= n) then
               ine = in
               delew = one
@@ -806,7 +806,7 @@ contains
             endif
           endif
   
-          if (.not. grid1_mask(inw)) then
+          if (grid1_mask(inw)==0) then
             if (in /= n) then
               inw = in
               delew = one
@@ -826,7 +826,7 @@ contains
           grad1_lat_zero(n) = delew*(grid1_array(ine) - grid1_array(inw))
 !         if (n.ge.8000) write(6,*) 3,grad1_lat_zero(n)
   
-          if (.not. grid1_mask(ise)) then
+          if (grid1_mask(ise)==0) then
             if (is /= n) then
               ise = is
               delew = one
@@ -843,7 +843,7 @@ contains
             endif
           endif
   
-          if (.not. grid1_mask(isw)) then
+          if (grid1_mask(isw)==0) then
             if (is /= n) then
               isw = is
               delew = one
@@ -888,7 +888,7 @@ contains
   
     else if (map_type /= map_type_conserv .AND.map_type /= map_type_bicubic) then
 
-      write(6,*) 'bilinear or conservative'
+      write(6,*) 'bilinear, conservative or nearest'
   
       call remap(grid2_array, wts_map1, grid2_add_map1, grid1_add_map1,grid1_array)
   
@@ -988,6 +988,7 @@ contains
   
     print *,'number of sparse matrix entries ',num_links_map1
     do n=1,num_links_map1
+      if (grid2_add_map1(n).eq.0) cycle
       grid2_count(grid2_add_map1(n)) = grid2_count(grid2_add_map1(n)) + 1
       if (wts_map1(1,n) > one .or. wts_map1(1,n) < zero) then
         grid2_tmp1(grid2_add_map1(n)) = grid2_tmp1(grid2_add_map1(n)) + 1
