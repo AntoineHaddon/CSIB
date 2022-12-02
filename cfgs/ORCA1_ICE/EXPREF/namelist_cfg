@@ -130,6 +130,8 @@
 !-----------------------------------------------------------------------
    !                    !  bulk algorithm :
    ln_NCAR    = .true.     ! "NCAR"      algorithm   (Large and Yeager 2008)
+   rn_vfac     = 1.        !  multiplicative factor for ocean & ice velocity used to
+   !                       !  calculate the wind stress (0.=absolute or 1.=relative winds)
 
    cn_dir = './'  !  root directory for the bulk data location
    !___________!_________________________!___________________!___________!_____________!________!___________!______________________________________!__________!_______________!
@@ -152,13 +154,13 @@
    !                       ! type of penetration                        (default: NO selection)
    ln_qsr_rgb  = .true.       !  RGB light penetration (Red-Green-Blue)
    !
-   nn_chldta   =      0       !  RGB : Chl data (=1) or cst value (=0)
+   nn_chldta   =      1       !  RGB : Chl data (=1) or cst value (=0)
 
    cn_dir = './'  !  root directory for the chlorophyl data location
    !___________!_________________________!___________________!___________!_____________!________!___________!__________________!__________!_______________!
    !           !  file name              ! frequency (hours) ! variable  ! time interp.!  clim  ! 'yearly'/ ! weights filename ! rotation ! land/sea mask !
    !           !                         !  (if <0  months)  !   name    !   (logical) !  (T/F) ! 'monthly' !                  ! pairing  !    filename   !
-   sn_chl      ='chlorophyll'            ,        -1.        , 'CHLA'    ,   .true.    , .true. , 'yearly'  , ''               , ''       , ''
+   sn_chl      ='chlorophyll'            ,        -1.        , 'CHLA'    ,   .true.    , .true. , 'yearly'  , 'weights_chl.nc' , ''       , ''
 /
 !-----------------------------------------------------------------------
 &namsbc_ssr    !   surface boundary condition : sea surface restoring   (ln_ssr =T)
@@ -263,7 +265,7 @@
 !-----------------------------------------------------------------------
    ln_trabbl   = .true.    !  Bottom Boundary Layer parameterisation flag
       nn_bbl_ldf  =  1        !  diffusive bbl (=1)   or not (=0)
-      nn_bbl_adv  =  0        !  advective bbl (=1/2) or not (=0)
+      nn_bbl_adv  =  1        !  advective bbl (=1/2) or not (=0)
       rn_ahtbbl   =  1000.    !  lateral mixing coefficient in the bbl  [m2/s]
       rn_gambbl   =  10.      !  advective bbl coefficient                 [s]
 /
@@ -295,7 +297,7 @@
 !-----------------------------------------------------------------------
    ln_traldf_lap   = .true.    !    laplacian operator
    ln_traldf_iso   = .true.    !  iso-neutral (Standard operator)
-   ln_traldf_msc   = .true.    !  Method of Stabilizing Correction      (both operators)
+   ln_traldf_msc   = .false.   !  Method of Stabilizing Correction      (both operators)
    !                       !  Coefficients:
    nn_aht_ijk_t    = 20        !  space/time variation of eddy coef
       !                             !   = 20     aht = 1/2  Ud. max(e1,e2)
@@ -384,13 +386,13 @@
    ln_zdftke   = .true.       !  Turbulent Kinetic Energy closure       (T =>   fill namzdf_tke)
    ln_zdfevd   = .true.       !  Enhanced Vertical Diffusion scheme
       nn_evdm  =    0            !  evd apply on tracer (=0) or on tracer and momentum (=1)
-      rn_evd   =  100.           !  evd mixing coefficient [m2/s]
+      rn_evd   =   10.           !  evd mixing coefficient [m2/s]
    ln_zdfddm   = .true.    ! double diffusive mixing
       rn_avts  =    1.e-4     !  maximum avs (vertical mixing on salinity)
       rn_hsbfr =    1.6       !  heat/salt buoyancy flux ratio
    ln_zdfiwm   = .false.      ! internal wave-induced mixing            (T =>   fill namzdf_iwm)
    !                       !  Coefficients
-   ln_zdftmx   = .false.      !  old tidal mixing scheme (Simmons et al 2004) (T =>   fill namzdf_tmx)
+   ln_zdftmx   = .true.       !  old tidal mixing scheme (Simmons et al 2004) (T =>   fill namzdf_tmx)
    rn_avm0     =   1.2e-4     !  vertical eddy viscosity   [m2/s]       (background Kz if ln_zdfcst=F)
    rn_avt0     =   1.2e-5     !  vertical eddy diffusivity [m2/s]       (background Kz if ln_zdfcst=F)
    nn_avb      =    0         !  profile for background avt & avm (=1) or not (=0)
@@ -426,7 +428,7 @@
    rn_tfe_itf  = 1.        !  ITF tidal dissipation efficiency
    ln_s2004    = .false.   !  Compute zav_tide following Simmons et al (2004) 
    ln_sm2005   = .true.    !  Compute zav_tide following Saenko and Merryfield (2005)
-   ln_leewmx   = .false.   !  addition of Lee Wave mixing (.true.) or not (.false.)
+   ln_leewmx   = .true.    !  addition of Lee Wave mixing (.true.) or not (.false.)
    rn_lwm      = 0.3       !  lee wave mixing scaling
 /
 !!======================================================================
