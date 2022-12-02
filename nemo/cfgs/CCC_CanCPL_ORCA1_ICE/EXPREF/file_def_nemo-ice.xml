@@ -23,11 +23,10 @@
        <field field_ref="utau_ai"    name="sistrxdtop"     level="0"  /> <!-- cmip6 requested as priority 2, DY, was iicestru (NL) -->
        <field field_ref="vtau_ai"    name="sistrydtop"     level="0"  /> <!-- cmip6 requested as priority 2, DY, was iicestrv (NL) -->
        <field field_ref="qtr_ice_bot"     name="qtr_ice_bot"       level="0"  />  <!-- was iicesflx (NL) --> 
-       <!-- <field field_ref="qt_ice_oce"      name="qt_ice_oce"       level="0"  /> <!-- was iicesflx + iicenflx --> 
-       <field field_ref="qns_io"      name="iicenflx"           level="0"  />
+       <field field_ref="qt_ice_oce"        name="qt_ice_oce"           level="0"  />
        <field field_ref="snowpre"         name="isnowpre"       level="0"  />
-       <field field_ref="qsr_ice"         name="aicesflx"       level="0"  />
-       <field field_ref="qns_ice"         name="aicenflx"       level="0"  />
+       <field field_ref="qsr_ice"         name="qsr_ice"       level="0"  />
+       <field field_ref="qns_ice"         name="qns_ice"       level="0"  />
        <!-- ==============
             SIMIP monthly fields (that are not in level =0) -->
        <!-- Sea-ice state variables -->

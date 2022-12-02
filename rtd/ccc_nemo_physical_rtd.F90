@@ -470,10 +470,7 @@ PROGRAM nemo_ocean_diag
           CALL getvara ('hflx_rain_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_rain_cea, 1., 0.)
           CALL getvara ('hflx_snow_ao_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_snow_ao_cea, 1., 0.)
           hflx_snow_ao_cea = -1*hflx_snow_ao_cea ! Change in the sign convention for NEMO4
-          CALL getvara ('iicenflx', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_ice_cea, 1., 0.) 
-          !CALL getvara ('qt_ice_oce', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), qt_ice_oce, 1., 0.)
-          !CALL getvara ('qtr_ice_bot', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), qtr_ice_bot, 1., 0.)
-          !hflx_ice_cea =  qt_ice_oce - qtr_ice_bot
+          CALL getvara ('qt_ice_oce', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_ice_cea, 1., 0.)
           CALL getvara ('hflx_rnf_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_rnf_cea, 1., 0.)
           CALL getvara ('sitimefrac', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), sitimefrac, 1., 0.)
           CALL getvara ('vfxsnw', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), snowmel_cea, 1., 0.)
@@ -481,8 +478,8 @@ PROGRAM nemo_ocean_diag
 
           CALL getvara ('qsr_tot', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qsr_tot, 1., 0.)
           CALL getvara ('qns_tot', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qns_tot, 1., 0.)
-          CALL getvara ('aicesflx', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qsr_ice, 1., 0.)
-          CALL getvara ('aicenflx', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qns_ice, 1., 0.)
+          CALL getvara ('qsr_ice', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qsr_ice, 1., 0.)
+          CALL getvara ('qns_ice', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qns_ice, 1., 0.)
 
          ! Wind enery input
           wind_x =  tau_x(:,:)*u(:,:,1)* u_mask(:, :, 1)
@@ -545,7 +542,7 @@ PROGRAM nemo_ocean_diag
           call area_ave_flx(e1t, e2t, g_mask, wflux(:, :), imt      &
             &              , jmt, wglo(l), dum)
     !DY      call area_ave_flx (e1t,e2t,g_mask,ssh_ann,sshglo,dum)
-    !NL      wglo(l)   = wglo(l)*1.e+7   !  1.e-7 kg/m2/s
+          wglo(l)   = wglo(l)*1.e+7   !  1.e-7 kg/m2/s
     !DY      sshglo = sshglo*1.e+2 ! cm         
 
     !---------------------------------------------------

@@ -2180,6 +2180,9 @@ CONTAINS
       IF( iom_use('qt'         ) )   CALL iom_put( "qt"     , qns  + qsr )                   ! total radiation
       IF( iom_use('qns'        ) )   CALL iom_put( "qns"    , qns        )                   ! non solar radiation 
       IF( iom_use('qsr'        ) )   CALL iom_put( "qsr"    ,       qsr  )                   ! solar radiation 
+      IF( iom_use('qt_oce'     ) )   CALL iom_put( "qt_oce" , qns_oce + qsr_oce )            ! total radiation over the ocean
+      IF( iom_use('qns_oce'    ) )   CALL iom_put( "qns_oce", qns_oce           )            ! non solar radiation  over the ocean
+      IF( iom_use('qsr_oce'    ) )   CALL iom_put( "qsr_oce",           qsr_oce )            ! solar radiation  over the ocean
       IF( iom_use('qns_tot'    ) )   CALL iom_put( "qns_tot", qns_tot    )                   ! non-solar heat flux
       IF( iom_use('qsr_tot'    ) )   CALL iom_put( "qsr_tot",   qsr_tot  )                   ! solar heat flux
       IF( iom_use('qsr_ice'    ) )   CALL iom_put( 'qsr_ice', SUM( qsr_ice * a_i_b, dim=3 )            )   !     solar flux at ice surface
