@@ -468,6 +468,7 @@
     acc_cp data_1m_salinity_nomask.nc              $nemo_data_1m_salinity_nomask
     acc_cp weights_bic2.nc        $nemo_weights_bicubic2   # weights for bulk mode
     acc_cp weights_bil2.nc        $nemo_weights_bilinear2  # weights for bulk mode
+    acc_cp weights_chl.nc         $nemo_weights_chl        # weights for chl
     #acc_cp weights_bic3.nc        $nemo_weights_bicubic3   # weights for flux mode
     #acc_cp weights_bil3.nc        $nemo_weights_bilinear3  # weights for flux mode
 
