@@ -70,7 +70,7 @@ SUBROUTINE calc (imt, jmt, lm)
           & iicetemp, iicevelu, iicevelv
 !     Monthly fluxes: uflx, vflx, ocean heat flux at base, sublimation 
       REAL, DIMENSION(imt, jmt, lm) :: iicestru, iicestrv, &
-          & qt_ice_oce, sublim_over_sea_ice
+          & qt_ice_oce, sublim_over_sea_ice, qtr_ice_bot  
 !     Monthly snow fields: snow thickness, snow precip, snow precip 
 !                          over ice
       REAL, DIMENSION(imt, jmt, lm) :: isnowthi, isnowpre, & 
