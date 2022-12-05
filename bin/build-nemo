@@ -241,8 +241,13 @@ ARGS=( --job $xios_comp_np --arch $xios_arch )
 [[ -n $xios_netcdf_lib ]] && ARGS+=( --netcdf_lib $xios_netcdf_lib )
 
 # Create xios executable (note that arch.env is sourced inside make_xios)
+# compile only if doesn't exist or clean_compile
+stored_exec="${storage_loc}/$(basename $target_xios_exec)"
+if [[ -z "$stored_exec" ]] || (( clean_compile == 1 )) ; then
 echo 'make_xios '"${ARGS[@]}"
 ./make_xios "${ARGS[@]}"
+else echo 'Skip make_xios...'
+fi
 
 # Compiling nemo
 echo "Compiling in:  ${nemo_model_build_dir}"
@@ -326,7 +331,7 @@ done
 # confirm that compilation worked
 #---------------------------------
 for executable in $model_execs $non_model_execs; do
-    [[ -f "$executable" ]] || bail "$executable doesn't exist! Did the compilation fail?"
+    [[ -f "$executable" ]] || echo  "WARNING: $executable doesn't exist! Did the compilation fail?"
 done
 
 #==================================
@@ -344,6 +349,7 @@ esac
 
 rm -f ${storage_loc}/${nemo_exec}
 for executable in $model_execs $non_model_execs; do
+    [[ ! -f "$executable" ]] && continue
     stored_exec=${storage_loc}/$(basename $executable)
     rm -f $stored_exec
     $storage_cmd $executable $stored_exec
