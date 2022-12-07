@@ -129,6 +129,9 @@ CONTAINS
       CALL trc_n2fx_init_cmoc ! load N2 fixation parameters
       !
       ! call all the BGC initialization subroutines in TOP tier
+      !
+      CALL trc_che_init_2D
+      !
       CALL trc_flx_init
       !
       CALL trc_opt_init

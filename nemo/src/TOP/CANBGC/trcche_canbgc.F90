@@ -307,7 +307,7 @@ CONTAINS
                ztmas = tmask_bgc_closea(ji,jj,1)
                ztmas1 = 1. - tmask_bgc_closea(ji,jj,1)
                zfact = rhop(ji,jj,1) / 1000. + rtrn
-               zbot = qborat3(ji,jj,1) * ztmas + 0.000416 * ztmas1 
+               zbot = qborat2(ji,jj) * ztmas + 0.000416 * ztmas1 
                zdic = trn(ji,jj,1,jqdic) / zfact * ztmas + 0.002 * ztmas1
                ztalk = trn(ji,jj,1,jqtal) / zfact * ztmas + 0.0024 * ztmas1
 
@@ -339,7 +339,7 @@ CONTAINS
          END DO
       END DO
       !
-      ALLOCATE( hi(jpi, jpj) )
+      DEALLOCATE( hi )
       !
       IF( ln_timing )  CALL timing_stop('trc_che_2D')
       !
