@@ -78,18 +78,18 @@ CONTAINS
        !       
       END DO
       !
-      IF( .NOT. ln_rsttr ) THEN
-        !
-        trn(:,:,:,jqdic) = sco2
-        trn(:,:,:,jqtal) = alka0 
-        trn(:,:,:,jqoxy) = oxyg0
-        trn(:,:,:,jqno3) = no30
-        !
-      ENDIF
-      !     
       ! closea mask for BGCM
       CALL trc_closea_init(read_var_flag=.true.)
       !
+      IF( .NOT. ln_rsttr ) THEN
+        !
+        trn(:,:,:,jqdic) = sco2  * tmask_bgc_closea(:,:,:)
+        trn(:,:,:,jqtal) = alka0 * tmask_bgc_closea(:,:,:)
+        trn(:,:,:,jqoxy) = oxyg0 * tmask_bgc_closea(:,:,:)
+        trn(:,:,:,jqno3) = no30  * tmask_bgc_closea(:,:,:)
+        !
+      ENDIF
+      !     
       ! Test allocation of space for CanOE arrays before initialization
       CALL canoe_alloc ! allocate arrays space, see end of this module
       !      
@@ -122,9 +122,9 @@ CONTAINS
       !
       !ierr =        sms_canoe_alloc()          ! Start of CANOE-related alloc routines...
       ierr =        trc_opt_alloc()
-      !ierr = ierr + sms_top_alloc()
-      !ierr = ierr + trc_che_alloc()
-      !ierr = ierr + trc_flx_alloc()
+      ierr = ierr + sms_top_alloc()
+      ierr = ierr + trc_che_alloc()
+      ierr = ierr + trc_flx_alloc()
       !
       IF( lk_mpp    )   CALL mpp_sum( 'canoe_alloc', ierr )
       IF( ierr /= 0 )   CALL ctl_stop( 'STOP', 'canoe_alloc: unable to allocate CANOE arrays' )

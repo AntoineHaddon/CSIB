@@ -102,7 +102,7 @@ CONTAINS
        ! IF( cltra == 'O2abio'   )   jqoab = jn      !: abiotic oxygen
        ! IF( cltra == 'DI14C'    )   jqdrc = jn      !: abiotic DI14C
       END DO
-      !      ! closea mask for BGCM
+      ! closea mask for BGCM
       CALL trc_closea_init(read_var_flag=.true.)
       !
       IF( .NOT. ln_rsttr ) THEN
