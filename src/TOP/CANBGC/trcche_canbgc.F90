@@ -247,14 +247,16 @@ CONTAINS
       REAL(wp) ::   zpo4, zsi
       REAL(wp) ::   zak1, zak2, zakb, zakw, zakp1, zakp2, zakp3, zaksi
       REAL(wp) ::   ztmas, ztmas1
-      REAL(wp), DIMENSION(jpi,jpj) :: hi
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: hi
       REAL(wp), DIMENSION(2) :: hion_CA
       !!---------------------------------------------------------------------
 
       IF( ln_timing )  CALL timing_start('trc_che_2D')
       !
       ! ----------------------------------
-
+      !
+      ALLOCATE( hi(jpi, jpj) )
+      !
       hi(:,:)=1.e-9
       CALL trc_src3d(kt,js3d_si)
       qasi3=src3d_dta(:,:,:,js3d_si)
@@ -336,7 +338,8 @@ CONTAINS
             END DO
          END DO
       END DO
-
+      !
+      ALLOCATE( hi(jpi, jpj) )
       !
       IF( ln_timing )  CALL timing_stop('trc_che_2D')
       !
