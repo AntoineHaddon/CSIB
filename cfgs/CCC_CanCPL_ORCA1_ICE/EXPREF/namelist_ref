@@ -1032,6 +1032,7 @@
    !
    !                       ! gravity wave-driven vertical mixing
    ln_zdfiwm   = .false.      ! internal wave-induced mixing            (T =>   fill namzdf_iwm)
+   ln_zdftmx   = .false.      ! old tidal mixing scheme (Simmons et al 2004) (T =>   fill namzdf_tmx)
    ln_zdfswm   = .false.      ! surface  wave-induced mixing            (T => ln_wave=ln_sdw=T )
    !
    !                       ! coefficients
@@ -1141,6 +1142,18 @@
    nn_zpyc     = 1         !  pycnocline-intensified dissipation scales as N (=1) or N^2 (=2)
    ln_mevar    = .true.    !  variable (T) or constant (F) mixing efficiency
    ln_tsdiff   = .true.    !  account for differential T/S mixing (T) or not (F)
+/
+!-----------------------------------------------------------------------
+&namzdf_tmx    !   tidal mixing parameterization                        ("ln_zdftmx = T")
+!-----------------------------------------------------------------------
+   rn_htmx     = 500.      !  vertical decay scale for turbulence (meters)
+   rn_n2min    = 1.e-8     !  threshold of the Brunt-Vaisala frequency (s-1)
+   rn_tfe      = 0.333     !  tidal dissipation efficiency
+   rn_me       = 0.2       !  mixing efficiency
+   ln_tmx_itf  = .true.    !  ITF specific parameterisation
+   rn_tfe_itf  = 1.        !  ITF tidal dissipation efficiency
+   ln_s2004    = .false.   !  Compute zav_tide following Simmons et al (2004)
+   ln_sm2005   = .false.   !  Compute zav_tide following Saenko and Merryfield (2005)
 /
 
 !!======================================================================
