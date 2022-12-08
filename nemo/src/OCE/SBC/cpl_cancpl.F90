@@ -75,7 +75,7 @@ MODULE cpl_cancpl
   !--- cpl_vinfo_t is defined in the com_cpl module
   type(cpl_vinfo_t), save :: cpl_vinfo
 
-  !--- NOTE: nproc is not equal to the MPI task in MPI_COMM_WORLD since it will always
+  !--- NOTE: nproc is not equal to the MPI task in model_communicator since it will always
   !--- be one of 0,1,2,...(jpnij-1) and the AGCM gets the first set of MPI tasks.
   !--- However nproc == 0 should still correspond with the ocn_master task
   !--- nproc is use associated through the module dom_oce
@@ -298,17 +298,18 @@ contains
      !!============================================
 
      !--- Initialize groups for cpl, atm, ocn, ice, ...
-     !--- This will, among other things, define cpl_master, atm_master, ocn_master
-     !--- and return an ocean intra-communicator as local_ocn_comm
-     !--- NOTE: ocn_master is the rank in MPI_COMM_WORLD not the rank in local_ocn_comm
+     !    This will, among other things, define the communicator for all model components,
+     !      as well as cpl_master, atm_master, ocn_master
+     !      It also returns an local ocean only communicator as local_ocn_comm
+     !    NOTE: ocn_master is the rank in model_communicator not the rank in local_ocn_comm
      local_ocn_comm = -1
-     call init_common_coupler_parameters()
      call define_group('ocn', local_ocn_comm)
+     call init_common_coupler_parameters()
 
      kl_comm  = local_ocn_comm
 
-     !---Determine the rank of the calling process in MPI_COMM_WORLD
-     call mpi_comm_rank ( MPI_COMM_WORLD, rank, ierr )
+     !---Determine the rank of the calling process in model_communicator
+     call mpi_comm_rank ( model_communicator, rank, ierr )
 
      !--- ocn_master is defined during the call to define_group
      if ( rank == ocn_master ) then
@@ -359,8 +360,8 @@ contains
          (/ 2, 3, 4, 5, 6, 1, 7, 8, 15, 9, 10, 11, 12, 13, 14 /)
      !!--------------------------------------------------------------------
 
-     !--- Determine the rank of the calling process in MPI_COMM_WORLD
-     call mpi_comm_rank ( MPI_COMM_WORLD, rank, ierr )
+     !--- Determine the rank of the calling process in model_communicator
+     call mpi_comm_rank ( model_communicator, rank, ierr )
 
      if ( rank == ocn_master ) then
        write(numout,*)
@@ -664,15 +665,15 @@ contains
      call cpl_initialize_events()
 
      if ( rank == ocn_master .and. verbose > 1 ) then
-       write(6,*)"cpl_cancpl_define: call bcastGroup(cpl_time_string, cpl_master, MPI_COMM_WORLD)"
+       write(6,*)"cpl_cancpl_define: call bcastGroup(cpl_time_string, cpl_master, model_communicator)"
        write(6,*)"cpl_cancpl_define: cpl_master = ",cpl_master
-       write(6,*)"cpl_cancpl_define: MPI_COMM_WORLD = ",MPI_COMM_WORLD
+       write(6,*)"cpl_cancpl_define: model_communicator = ",model_communicator
        call flush(6)
      endif
 
      !--- Broadcast the initial date and time from the coupler to all tasks
      !--- cpl_time_string is defined in com_cpl
-     call bcastGroup(cpl_time_string, cpl_master, MPI_COMM_WORLD)
+     call bcastGroup(cpl_time_string, cpl_master, model_communicator)
 
      ! -----------------------------------------------------------------
      ! ... Assign MPI tags to ssnd and srcv variables
@@ -973,8 +974,8 @@ contains
      real(wp), dimension(jpiglo,jpjglo) :: global_array
      !!--------------------------------------------------------------------
 
-     !--- Determine the rank of the calling process in MPI_COMM_WORLD
-     call mpi_comm_rank ( MPI_COMM_WORLD, rank, ierr )
+     !--- Determine the rank of the calling process in model_communicator
+     call mpi_comm_rank ( model_communicator, rank, ierr )
 
      !--- Loop over all "catagories" (normally only 1) for this variable
      !--- sending separate data to the coupler for each catagory
@@ -1119,8 +1120,8 @@ contains
      real, dimension(jpiglo,jpjglo) :: wrk2d
      !!--------------------------------------------------------------------
 
-     !---Determine the rank of the calling process in MPI_COMM_WORLD
-     call mpi_comm_rank ( MPI_COMM_WORLD, rank, ierr )
+     !---Determine the rank of the calling process in model_communicator
+     call mpi_comm_rank ( model_communicator, rank, ierr )
      cpl_ptr => srcv(kid)
      !--- Loop over all "catagories" (normally only 1) for this variable
      !--- receiving separate data from the coupler for each catagory
