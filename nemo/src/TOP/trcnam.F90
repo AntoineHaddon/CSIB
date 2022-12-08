@@ -26,13 +26,19 @@ MODULE trcnam
    USE lib_mpp, ONLY: ncom_dttrc
 #endif
 
+   USE sms_top_canbgc, ONLY: qnrdttrc ! access to qnrdttrc declaration
+
    IMPLICIT NONE
    PRIVATE 
 
    PUBLIC   trc_nam_run  ! called in trcini
    PUBLIC   trc_nam      ! called in trcini
 
-   TYPE(PTRACER), DIMENSION(jpmaxtrc), PUBLIC  :: sn_tracer  !: type of tracer for saving if not key_iomput
+   TYPE(PTRACER), DIMENSION(jpmaxtrc), PUBLIC  :: sn_tracer    !: type of tracer for saving if not key_iomput
+   TYPE(PTRACER), DIMENSION(jpmaxtrc), PUBLIC  :: canoe_tracer 
+   TYPE(PTRACER), DIMENSION(jpmaxtrc), PUBLIC  :: cmoc_tracer 
+   TYPE(DIAG),    DIMENSION(jpmaxdia), PUBLIC  :: sn_dia     !: type of diagnostics
+
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
@@ -99,8 +105,9 @@ CONTAINS
       !!---------------------------------------------------------------------
       INTEGER  ::   ios   ! Local integer
       !!
-      NAMELIST/namtrc_run/ nn_dttrc, ln_rsttr, nn_rsttr, ln_top_euler, &
-        &                  cn_trcrst_indir, cn_trcrst_outdir, cn_trcrst_in, cn_trcrst_out
+      NAMELIST/namtrc_run/ nn_dttrc, ln_rsttr, nn_rsttr, ln_top_euler,                     &
+        &                  cn_trcrst_indir, cn_trcrst_outdir, cn_trcrst_in, cn_trcrst_out, &
+        &                  qnrdttrc
       !!---------------------------------------------------------------------
       !
       IF(lwp) WRITE(numout,*)
@@ -127,7 +134,8 @@ CONTAINS
          WRITE(numout,*) '      restart  for passive tracer                  ln_rsttr      = ', ln_rsttr
          WRITE(numout,*) '      control of time step for passive tracer      nn_rsttr      = ', nn_rsttr
          WRITE(numout,*) '      first time step for pass. trac.              nittrc000     = ', nittrc000
-         WRITE(numout,*) '      Use euler integration for TRC (y/n)          ln_top_euler  = ', ln_top_euler
+         WRITE(numout,*) '      use euler integration for TRC (y/n)          ln_top_euler  = ', ln_top_euler
+         WRITE(numout,*) '      time step splitting for BGC models           qnrdttrc      = ', qnrdttrc
       ENDIF
       !
 #if defined key_mpp_mpi
@@ -144,14 +152,21 @@ CONTAINS
       !! ** Purpose :   read options for the passive tracer run (namelist) 
       !!
       !!---------------------------------------------------------------------
-      INTEGER ::   ios, ierr, icfc       ! Local integer
+      INTEGER ::   ios, ierr, icfc, nb_bgcms       ! Local integer
       !!
-      NAMELIST/namtrc/jp_bgc, ln_pisces, ln_my_trc, ln_age, ln_cfc11, ln_cfc12, ln_sf6, ln_c14, &
-         &            sn_tracer, ln_trcdta, ln_trcdmp, ln_trcdmp_clo, jp_dia3d, jp_dia2d
+      NAMELIST/namtrc/jp_bgc, ln_canoe, ln_cmoc, ln_pisces, ln_my_trc, ln_age, ln_cfc11, ln_cfc12, ln_sf6, ln_c14, &
+         &            ln_trcdta, ln_trcdmp, ln_trcdmp_clo, jp_dia3d, jp_dia2d, sn_tracer, sn_dia,                  &
+         &            jp_canoe, canoe_tracer, jp_cmoc, cmoc_tracer
       !!---------------------------------------------------------------------
       ! Dummy settings to fill tracers data structure
       !                  !   name   !   title   !   unit   !   init  !   sbc   !   cbc   !   obc  !
+      jp_bgc = 0
       sn_tracer = PTRACER( 'NONAME' , 'NOTITLE' , 'NOUNIT' , .false. , .false. , .false. , .false.)
+	    sn_dia    = DIAG('NONAME','NOTITLE','NOUNIT')
+      jp_canoe    = 0
+      canoe_tracer= PTRACER( 'NONAME' , 'NOTITLE' , 'NOUNIT' , .false. , .false. , .false. , .false.)
+      jp_cmoc     = 0
+      cmoc_tracer = PTRACER( 'NONAME' , 'NOTITLE' , 'NOUNIT' , .false. , .false. , .false. , .false.)
       !
       IF(lwp) WRITE(numout,*)
       IF(lwp) WRITE(numout,*) 'trc_nam_trc : read the passive tracer namelists'
@@ -166,15 +181,26 @@ CONTAINS
       IF(lwm) WRITE( numont, namtrc )
 
       ! Control settings
-      IF( ln_pisces .AND. ln_my_trc )   CALL ctl_stop( 'Choose only ONE BGC model - PISCES or MY_TRC' )
-      IF( .NOT. ln_pisces .AND. .NOT. ln_my_trc )   jp_bgc = 0
+      nb_bgcms = COUNT( (/ ln_canoe, ln_cmoc, ln_pisces, ln_my_trc /) )
+      IF( nb_bgcms>1 ) CALL ctl_stop( 'Choose only ONE BGC model, e.g. PISCES or MY_TRC' )
+      IF( nb_bgcms<1 ) jp_bgc = 0
       ll_cfc = ln_cfc11 .OR. ln_cfc12 .OR. ln_sf6
       !
       jptra       =  0
       jp_pisces   =  0    ;   jp_pcs0  =  0    ;   jp_pcs1  = 0
+      ! jp_canoe    =  0    
+      ! jp_cmoc     =  0    
       jp_my_trc   =  0    ;   jp_myt0  =  0    ;   jp_myt1  = 0
       jp_cfc      =  0    ;   jp_cfc0  =  0    ;   jp_cfc1  = 0
       jp_age      =  0    ;   jp_c14   =  0
+      !
+      IF( ln_canoe  )  THEN
+          jptra  = jp_bgc + jp_canoe
+      ENDIF
+      !
+      IF( ln_cmoc   )  THEN
+          jptra  = jp_bgc + jp_cmoc
+      ENDIF
       !
       IF( ln_pisces )  THEN
          jp_pisces = jp_bgc
@@ -186,8 +212,6 @@ CONTAINS
           jp_myt0   = 1
           jp_myt1   = jp_my_trc
       ENDIF
-      !
-      jptra  = jp_bgc
       !
       IF( ln_age )    THEN
          jptra     = jptra + 1
@@ -211,10 +235,15 @@ CONTAINS
       IF(lwp) THEN                   ! control print
          WRITE(numout,*) '   Namelist : namtrc'
          WRITE(numout,*) '      Total number of passive tracers              jptra         = ', jptra
-         WRITE(numout,*) '      Total number of BGC tracers                  jp_bgc        = ', jp_bgc
+         WRITE(numout,*) '      Total number of shared BGC tracers           jp_bgc        = ', jp_bgc
+         WRITE(numout,*) '      Simulating CANOE  model                      ln_canoe      = ', ln_canoe 
+         WRITE(numout,*) '      Simulating CMOC   model                      ln_cmoc       = ', ln_cmoc  
+         WRITE(numout,*) '      Total number of added CanOE tracers          jp_canoe      = ', jp_canoe
+         WRITE(numout,*) '      Total number of added CMOC tracers           jp_cmoc       = ', jp_cmoc
          WRITE(numout,*) '      Simulating PISCES model                      ln_pisces     = ', ln_pisces
          WRITE(numout,*) '      Simulating MY_TRC  model                     ln_my_trc     = ', ln_my_trc
          WRITE(numout,*) '      Simulating water mass age                    ln_age        = ', ln_age
+         WRITE(numout,*) '      Assigned IAT index                           jp_age        = ', jp_age
          WRITE(numout,*) '      Simulating CFC11 passive tracer              ln_cfc11      = ', ln_cfc11
          WRITE(numout,*) '      Simulating CFC12 passive tracer              ln_cfc12      = ', ln_cfc12
          WRITE(numout,*) '      Simulating SF6 passive tracer                ln_sf6        = ', ln_sf6

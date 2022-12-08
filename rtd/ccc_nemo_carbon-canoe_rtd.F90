@@ -6,6 +6,8 @@ IMPLICIT NONE
 !
 ! HISTORY:
 ! -------
+! O Riche     Jun    2022   Bare-bones version to test global tracer mass cons.
+!                           in NEMO4
 ! N. Swart    Dec    2015   Abstract all calculations to ccc_nemo_rtd_utils
 !                           module, which is shared between all rtd.
 !
@@ -211,7 +213,7 @@ SUBROUTINE calc (imt, jmt, km, lm)
       CALL openfile (fname05,iou4)
       CALL getvara ('e1t', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1t , 1., 0.)
       CALL getvara ('e2t', iou4, imt*jmt, (/1,1,1/),  (/imt,jmt,1/),e2t , 1., 0.)
-      CALL getvara ('e3t', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3t , 1., 0.)
+      CALL getvara ('e3t_0', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3t , 1., 0.)
       CALL getvara ('tmask', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/), t_mask , 1., 0.)
       CALL closefile (iou4)
 
@@ -230,36 +232,40 @@ SUBROUTINE calc (imt, jmt, km, lm)
       CALL openfile (fname06,iou5)
 
 !     read diagnostic variables from the diad_t file, if it exists
-      inquire (file=trim(fname07), exist=exists)                          
+      inquire (file=trim(fname07), exist=exists)
+! O Riche June 6th 2022
+! no diad_t here for this test and for now
+	  exists=.false.
       if (exists) then         
           CALL openfile (fname07,iou6)
       endif
 
 !        DIC, TA, O2 
          CALL getvara('DIC',      iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),   dic, 1., 0.)                                 
-         CALL getvara('CaCO3',    iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), caco3, 1., 0.)  
-         CALL getvara('TAlk',     iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),   tal, 1., 0.)   
+         ! CALL getvara('CaCO3',    iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), caco3, 1., 0.)  
+         ! CALL getvara('TAlk',     iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),   tal, 1., 0.)   
+         CALL getvara('Alkalini',     iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),   tal, 1., 0.)   
 
 !        PH moved below for reading with other diat_t input
 
          CALL getvara('O2', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), oxy, 1., 0.)   
 
 !        POC, GOC
-         CALL getvara('POC', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), poc, 1., 0.)   
-         CALL getvara('GOC', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), goc, 1., 0.)   
+         ! CALL getvara('POC', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), poc, 1., 0.)   
+         ! CALL getvara('GOC', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), goc, 1., 0.)   
 
-!        NO3, NH4, dFe
-         CALL getvara('NO3', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), no3, 1., 0.)
-         CALL getvara('NH4', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), nh4, 1., 0.)    
-         CALL getvara('dFe', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), dfe, 1., 0.)    
+! !        NO3, NH4, dFe
+         ! CALL getvara('NO3', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), no3, 1., 0.)
+         ! CALL getvara('NH4', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), nh4, 1., 0.)    
+         ! CALL getvara('dFe', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), dfe, 1., 0.)    
 
-!        PHY, PHY2, ZOO, ZOO2
-         CALL getvara('PHYC',  iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),  phy, 1., 0.)  
-         CALL getvara('PHY2C', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), phy2, 1., 0.)    
-         CALL getvara('PHYN',  iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), phyn, 1., 0.)  
-         CALL getvara('PHY2N', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),phy2n, 1., 0.)    
-         CALL getvara('ZOO' ,  iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),  zoo, 1., 0.)    
-         CALL getvara('ZOO2',  iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), zoo2, 1., 0.)    
+! !        PHY, PHY2, ZOO, ZOO2
+         ! CALL getvara('PHYC',  iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),  phy, 1., 0.)  
+         ! CALL getvara('PHY2C', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), phy2, 1., 0.)    
+         ! CALL getvara('PHYN',  iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), phyn, 1., 0.)  
+         ! CALL getvara('PHY2N', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),phy2n, 1., 0.)    
+         ! CALL getvara('ZOO' ,  iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),  zoo, 1., 0.)    
+         ! CALL getvara('ZOO2',  iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), zoo2, 1., 0.)    
       
 !        Diagnostic variables
          if (exists) then 
@@ -317,26 +323,26 @@ SUBROUTINE calc (imt, jmt, km, lm)
 
     !        DIC, TA, PH, O2 
              CALL area_ave(e1t, e2t, e3t, g_mask, dic(:, :, k, l),   imt, jmt, km, dicz,   dvol, k)  
-             CALL area_ave(e1t, e2t, e3t, g_mask, caco3(:, :, k, l), imt, jmt, km, caco3z, dvol, k)  
+             ! CALL area_ave(e1t, e2t, e3t, g_mask, caco3(:, :, k, l), imt, jmt, km, caco3z, dvol, k)  
              CALL area_ave(e1t, e2t, e3t, g_mask, tal(:, :, k, l),     imt, jmt, km, talz,   dvol, k)  
              CALL area_ave(e1t, e2t, e3t, g_mask, oxy(:, :, k, l),     imt, jmt, km, oxyz,   dvol, k)
 
-    !        POC, GOC
-             CALL area_ave(e1t, e2t, e3t, g_mask, poc(:, :, k, l), imt, jmt, km, pocz, dvol, k)
-             CALL area_ave(e1t, e2t, e3t, g_mask, goc(:, :, k, l), imt, jmt, km, gocz, dvol, k)
+    ! !        POC, GOC
+             ! CALL area_ave(e1t, e2t, e3t, g_mask, poc(:, :, k, l), imt, jmt, km, pocz, dvol, k)
+             ! CALL area_ave(e1t, e2t, e3t, g_mask, goc(:, :, k, l), imt, jmt, km, gocz, dvol, k)
 
-    !        NO3, NH4
-             CALL area_ave(e1t, e2t, e3t, g_mask, no3(:, :, k, l), imt, jmt, km, no3z, dvol, k)
-             CALL area_ave(e1t, e2t, e3t, g_mask, nh4(:, :, k, l), imt, jmt, km, nh4z, dvol, k)
-             CALL area_ave(e1t, e2t, e3t, g_mask, dfe(:, :, k, l), imt, jmt, km, dfez, dvol, k)  
+    ! !        NO3, NH4
+             ! CALL area_ave(e1t, e2t, e3t, g_mask, no3(:, :, k, l), imt, jmt, km, no3z, dvol, k)
+             ! CALL area_ave(e1t, e2t, e3t, g_mask, nh4(:, :, k, l), imt, jmt, km, nh4z, dvol, k)
+             ! CALL area_ave(e1t, e2t, e3t, g_mask, dfe(:, :, k, l), imt, jmt, km, dfez, dvol, k)  
 
-    !        PHY, PHY2, ZOO, ZOO2
-             CALL area_ave(e1t, e2t, e3t, g_mask, phy(:, :, k, l),   imt, jmt, km, phyz,   dvol, k)  
-             CALL area_ave(e1t, e2t, e3t, g_mask, phy2(:, :, k, l),  imt, jmt, km, phy2z,  dvol, k)  
-             CALL area_ave(e1t, e2t, e3t, g_mask, phyn(:, :, k, l),  imt, jmt, km, phynz,  dvol, k)  
-             CALL area_ave(e1t, e2t, e3t, g_mask, phy2n(:, :, k, l), imt, jmt, km, phy2nz, dvol, k)  
-             CALL area_ave(e1t, e2t, e3t, g_mask, zoo(:, :, k, l),   imt, jmt, km, zooz,   dvol, k)  
-             CALL area_ave(e1t, e2t, e3t, g_mask, zoo2(:, :, k, l),  imt, jmt, km, zoo2z,  dvol, k) 
+    ! !        PHY, PHY2, ZOO, ZOO2
+             ! CALL area_ave(e1t, e2t, e3t, g_mask, phy(:, :, k, l),   imt, jmt, km, phyz,   dvol, k)  
+             ! CALL area_ave(e1t, e2t, e3t, g_mask, phy2(:, :, k, l),  imt, jmt, km, phy2z,  dvol, k)  
+             ! CALL area_ave(e1t, e2t, e3t, g_mask, phyn(:, :, k, l),  imt, jmt, km, phynz,  dvol, k)  
+             ! CALL area_ave(e1t, e2t, e3t, g_mask, phy2n(:, :, k, l), imt, jmt, km, phy2nz, dvol, k)  
+             ! CALL area_ave(e1t, e2t, e3t, g_mask, zoo(:, :, k, l),   imt, jmt, km, zooz,   dvol, k)  
+             ! CALL area_ave(e1t, e2t, e3t, g_mask, zoo2(:, :, k, l),  imt, jmt, km, zoo2z,  dvol, k) 
 
              if (exists) then
     !            PPPHY, PPPHY2      
@@ -351,26 +357,26 @@ SUBROUTINE calc (imt, jmt, km, lm)
     !================================================================
     !        DIC, TA, PH, O2 
              dic_z(k, l)   = dicz     
-             caco3_z(k, l) = caco3z     
+             ! caco3_z(k, l) = caco3z     
              tal_z(k, l)   = talz     
              oxy_z(k, l)   = oxyz    
 
-    !        POC, GOC
-             poc_z(k, l)    = pocz       
-             goc_z(k, l)    = gocz       
+    ! !        POC, GOC
+             ! poc_z(k, l)    = pocz       
+             ! goc_z(k, l)    = gocz       
 
-    !        NO3, NH4
-             no3_z(k, l)   = no3z  
-             nh4_z(k, l)   = nh4z   
-             dfe_z(k, l)   = dfez  
+    ! !        NO3, NH4
+             ! no3_z(k, l)   = no3z  
+             ! nh4_z(k, l)   = nh4z   
+             ! dfe_z(k, l)   = dfez  
 
-    !        PHY, PHY2, ZOO, ZOO2
-             phy_z(k, l)   = phyz
-             phy2_z(k, l)  = phy2z
-             phyn_z(k, l)   = phynz
-             phy2n_z(k, l)  = phy2nz
-             zoo_z(k, l)   = zooz
-             zoo2_z(k, l)  = zoo2z
+    ! !        PHY, PHY2, ZOO, ZOO2
+             ! phy_z(k, l)   = phyz
+             ! phy2_z(k, l)  = phy2z
+             ! phyn_z(k, l)   = phynz
+             ! phy2n_z(k, l)  = phy2nz
+             ! zoo_z(k, l)   = zooz
+             ! zoo2_z(k, l)  = zoo2z
          
              if (exists) then
                  ph_z(k, l)    = phz  
@@ -382,26 +388,26 @@ SUBROUTINE calc (imt, jmt, km, lm)
 
     !        DIC, TA, PH, O2 
              dicvol(l)   = dicvol(l)  + dicz*dvol  
-             caco3vol(l)  = caco3vol(l)  + caco3z*dvol  
+             ! caco3vol(l)  = caco3vol(l)  + caco3z*dvol  
              talvol(l)  = talvol(l)  + talz*dvol  
              oxyvol(l)  = oxyvol(l)  + oxyz*dvol  
 
     !        POC, GOC
-             pocvol(l)  = pocvol(l)  + pocz*dvol  
-             gocvol(l)  = gocvol(l)  + gocz*dvol  
+             ! pocvol(l)  = pocvol(l)  + pocz*dvol  
+             ! gocvol(l)  = gocvol(l)  + gocz*dvol  
 
-    !        NO3, NH4, dFe
-             no3vol(l)  = no3vol(l)  + no3z*dvol  
-             nh4vol(l)  = nh4vol(l)  + nh4z*dvol  
-             dfevol(l)  = dfevol(l)  + dfez*dvol  
+    ! !        NO3, NH4, dFe
+             ! no3vol(l)  = no3vol(l)  + no3z*dvol  
+             ! nh4vol(l)  = nh4vol(l)  + nh4z*dvol  
+             ! dfevol(l)  = dfevol(l)  + dfez*dvol  
 
-    !        PHY, PHY2, ZOO, ZOO2
-             phyvol(l)     = phyvol(l)   + phyz*dvol
-             phy2vol(l)    = phy2vol(l)  + phy2z*dvol 
-             phynvol(l)    = phynvol(l)  + phynz*dvol
-             phy2nvol(l)   = phy2nvol(l) + phy2nz*dvol 
-             zoovol(l)     = zoovol(l)   + zooz*dvol
-             zoo2vol(l)    = zoo2vol(l)  + zoo2z*dvol 
+    ! !        PHY, PHY2, ZOO, ZOO2
+             ! phyvol(l)     = phyvol(l)   + phyz*dvol
+             ! phy2vol(l)    = phy2vol(l)  + phy2z*dvol 
+             ! phynvol(l)    = phynvol(l)  + phynz*dvol
+             ! phy2nvol(l)   = phy2nvol(l) + phy2nz*dvol 
+             ! zoovol(l)     = zoovol(l)   + zooz*dvol
+             ! zoo2vol(l)    = zoo2vol(l)  + zoo2z*dvol 
 
              if (exists) then 
                  phvol(l)      =     phvol(l)  + phz*dvol    
@@ -414,29 +420,29 @@ SUBROUTINE calc (imt, jmt, km, lm)
               vol = vol + dvol
           enddo  ! depth, k        
 
-    !     compute toc and ton
-          toc(l)  = dicvol(l)  + caco3vol(l)  + pocvol(l)  + gocvol(l)                          &
-         &      + phyvol(l)  + phy2vol(l)  + zoovol(l)  + zoo2vol(l) 
-    !     convert from mmol C to Pg C      
-          toc(l)  = toc(l)  * 12.0e-18
-          ton(l)  = no3vol(l) + nh4vol(l) + phynvol(l) + phy2nvol(l)  +                                         &
-         &      (zoovol(l)  + zoo2vol(l)  + pocvol(l)  + gocvol(l)) * 16./106.
-    !     convert to Pg      
-          ton(l)  = ton(l)  * 14.007e-18
+    ! !     compute toc and ton
+          ! toc(l)  = dicvol(l)  + caco3vol(l)  + pocvol(l)  + gocvol(l)                          &
+         ! &      + phyvol(l)  + phy2vol(l)  + zoovol(l)  + zoo2vol(l) 
+    ! !     convert from mmol C to Pg C      
+          ! toc(l)  = toc(l)  * 12.0e-18
+          ! ton(l)  = no3vol(l) + nh4vol(l) + phynvol(l) + phy2nvol(l)  +                                         &
+         ! &      (zoovol(l)  + zoo2vol(l)  + pocvol(l)  + gocvol(l)) * 16./106.
+    ! !     convert to Pg      
+          ! ton(l)  = ton(l)  * 14.007e-18
 
           if (vol.ne.0.) then         
     !        DIC, TA, PH, O2 
              dicvol(l)  = dicvol(l) /vol 
-             caco3vol(l)  = caco3vol(l) /vol 
+             ! caco3vol(l)  = caco3vol(l) /vol 
              talvol(l)  = talvol(l) /vol 
              oxyvol(l)  = oxyvol(l) /vol  
-    !        POC, GOC  
-             pocvol(l)  = pocvol(l) /vol  
-             gocvol(l)  = gocvol(l) /vol  
-    !        NO3, NH4
-             no3vol(l)  = no3vol(l) /vol  
-             nh4vol(l)  = nh4vol(l) /vol 
-             dfevol(l)  = dfevol(l) /vol
+    ! !        POC, GOC  
+             ! pocvol(l)  = pocvol(l) /vol  
+             ! gocvol(l)  = gocvol(l) /vol  
+    ! !        NO3, NH4
+             ! no3vol(l)  = no3vol(l) /vol  
+             ! nh4vol(l)  = nh4vol(l) /vol 
+             ! dfevol(l)  = dfevol(l) /vol
 
              if (exists) then   
                  phvol(l)   = phvol(l) /vol 
@@ -528,13 +534,13 @@ SUBROUTINE calc (imt, jmt, km, lm)
      &        , 'DICz', 'mmol m^-3')
 
 !         CaCO3
-          CALL defvar ('CaCO3', iou, 1, (/id_time/), -1.e4                       &  
-     &        , 1.e4,' ', 'F', 'Global mean calcite Concentration'               & 
-     &        , 'CaCO3', 'mmol m^-3')
+          ! CALL defvar ('CaCO3', iou, 1, (/id_time/), -1.e4                       &  
+     ! &        , 1.e4,' ', 'F', 'Global mean calcite Concentration'               & 
+     ! &        , 'CaCO3', 'mmol m^-3')
 
-          CALL defvar ('CaCO3z', iou, 2, (/id_z, id_time/), -1.e4                &
-     &        , 1.e4,' ', 'F', 'Calcite concentration by level'                  &
-     &        , 'CaCO3z', 'mmol m^-3')
+          ! CALL defvar ('CaCO3z', iou, 2, (/id_z, id_time/), -1.e4                &
+     ! &        , 1.e4,' ', 'F', 'Calcite concentration by level'                  &
+     ! &        , 'CaCO3z', 'mmol m^-3')
 
 !         ALK
           CALL defvar ('TAL', iou, 1, (/id_time/), -1.e4                         &
@@ -554,61 +560,61 @@ SUBROUTINE calc (imt, jmt, km, lm)
      &        , 1.e4,' ', 'F', 'O2 by level'                                     &
      &        , 'O2z', 'uM')
 
-!         POC
-          CALL defvar ('POC', iou, 1, (/id_time/), -1.e4                         &
-     &        , 1.e4,' ', 'F'                                                    & 
-     &        , 'Global mean small Particulate Organic Carbon'                   & 
-     &        , 'POC', 'mmol m^-3')
+! !         POC
+          ! CALL defvar ('POC', iou, 1, (/id_time/), -1.e4                         &
+     ! &        , 1.e4,' ', 'F'                                                    & 
+     ! &        , 'Global mean small Particulate Organic Carbon'                   & 
+     ! &        , 'POC', 'mmol m^-3')
 
-          CALL defvar ('POCz', iou, 2, (/id_z, id_time/), -1.e4                  &
-     &        , 1.e4,' ', 'F', 'Small POC by level'                              &
-     &        , 'POCz', 'mmol m^-3')
+          ! CALL defvar ('POCz', iou, 2, (/id_z, id_time/), -1.e4                  &
+     ! &        , 1.e4,' ', 'F', 'Small POC by level'                              &
+     ! &        , 'POCz', 'mmol m^-3')
 
-!         GOC
-          CALL defvar ('GOC', iou, 1, (/id_time/), -1.e4                         &
-     &        , 1.e4,' ', 'F'                                                    &
-     &        , 'Global mean large Particulate Organic Carbon'                   &
-     &        , 'GOC', 'mmol m^-3')
+! !         GOC
+          ! CALL defvar ('GOC', iou, 1, (/id_time/), -1.e4                         &
+     ! &        , 1.e4,' ', 'F'                                                    &
+     ! &        , 'Global mean large Particulate Organic Carbon'                   &
+     ! &        , 'GOC', 'mmol m^-3')
 
-          CALL defvar ('GOCz', iou, 2, (/id_z, id_time/), -1.e4                  & 
-     &        , 1.e4,' ', 'F', 'Large POC by level'                              &
-     &        , 'GOCz', 'mmol m^-3')
+          ! CALL defvar ('GOCz', iou, 2, (/id_z, id_time/), -1.e4                  & 
+     ! &        , 1.e4,' ', 'F', 'Large POC by level'                              &
+     ! &        , 'GOCz', 'mmol m^-3')
 
-!         NO3
-          CALL defvar ('NO3', iou, 1, (/id_time/), -1.e4                         &
-     &        , 1.e4,' ', 'F', 'Global mean NO3'                                 &  
-     &        , 'NO3', 'uM')
+! !         NO3
+          ! CALL defvar ('NO3', iou, 1, (/id_time/), -1.e4                         &
+     ! &        , 1.e4,' ', 'F', 'Global mean NO3'                                 &  
+     ! &        , 'NO3', 'uM')
 
-          CALL defvar ('NO3z', iou, 2, (/id_z, id_time/), -1.e4                  &
-     &        , 1.e4,' ', 'F', 'NO3 by level'                                    & 
-     &        , 'NO3z', 'uM')
+          ! CALL defvar ('NO3z', iou, 2, (/id_z, id_time/), -1.e4                  &
+     ! &        , 1.e4,' ', 'F', 'NO3 by level'                                    & 
+     ! &        , 'NO3z', 'uM')
 
-!         NH4
-          CALL defvar ('NH4', iou, 1, (/id_time/), -1.e4                         &
-     &        , 1.e4,' ', 'F', 'Global mean NH4'                                 &  
-     &        , 'NH4', 'uM')
+! !         NH4
+          ! CALL defvar ('NH4', iou, 1, (/id_time/), -1.e4                         &
+     ! &        , 1.e4,' ', 'F', 'Global mean NH4'                                 &  
+     ! &        , 'NH4', 'uM')
 
-          CALL defvar ('NH4z', iou, 2, (/id_z, id_time/), -1.e4                  &
-     &        , 1.e4,' ', 'F', 'NH4 by level'                                    &
-     &        , 'NH4z', 'uM')
+          ! CALL defvar ('NH4z', iou, 2, (/id_z, id_time/), -1.e4                  &
+     ! &        , 1.e4,' ', 'F', 'NH4 by level'                                    &
+     ! &        , 'NH4z', 'uM')
 
-!         dFe
-          CALL defvar ('dFe', iou, 1, (/id_time/), -1.e4                         &
-     &        , 1.e4,' ', 'F', 'Global mean dFe'                                 & 
-     &        , 'dFe', 'uM')
+! !         dFe
+          ! CALL defvar ('dFe', iou, 1, (/id_time/), -1.e4                         &
+     ! &        , 1.e4,' ', 'F', 'Global mean dFe'                                 & 
+     ! &        , 'dFe', 'uM')
 
-          CALL defvar ('dFez', iou, 2, (/id_z, id_time/), -1.e4                  &
-     &        , 1.e4,' ', 'F', 'dFe by level'                                    &
-     &        , 'dFez', 'uM')
+          ! CALL defvar ('dFez', iou, 2, (/id_z, id_time/), -1.e4                  &
+     ! &        , 1.e4,' ', 'F', 'dFe by level'                                    &
+     ! &        , 'dFez', 'uM')
 
-!         TC
-          CALL defvar ('TC', iou, 1, (/id_time/), -1.e4                          &
-     &        , 1.e4,' ', 'F', 'Total Ocean Carbon'                              & 
-     &        , 'TC', 'Pg')
-!         TN
-          CALL defvar ('TN', iou, 1, (/id_time/), -1.e4                          & 
-     &        , 1.e4,' ', 'F', 'Total Ocean (fixed) Nitrogen'                    & 
-     &        , 'TN', 'Pg')
+! !         TC
+          ! CALL defvar ('TC', iou, 1, (/id_time/), -1.e4                          &
+     ! &        , 1.e4,' ', 'F', 'Total Ocean Carbon'                              & 
+     ! &        , 'TC', 'Pg')
+! !         TN
+          ! CALL defvar ('TN', iou, 1, (/id_time/), -1.e4                          & 
+     ! &        , 1.e4,' ', 'F', 'Total Ocean (fixed) Nitrogen'                    & 
+     ! &        , 'TN', 'Pg')
 
           if (exists) then
 !             PH
@@ -688,8 +694,8 @@ SUBROUTINE calc (imt, jmt, km, lm)
         CALL putvara ('DICz', iou, km, (/1, ntrec2/), (/km, 1/), dic_z(:, l), 1., 0.) 
 
 !       CaCO3
-        CALL putvars ('CaCO3', iou, ntrec2, caco3vol(l), 1., 0.)
-        CALL putvara ('CaCO3z', iou, km, (/1, ntrec2/), (/km, 1/), caco3_z(:, l), 1., 0.) 
+        ! CALL putvars ('CaCO3', iou, ntrec2, caco3vol(l), 1., 0.)
+        ! CALL putvara ('CaCO3z', iou, km, (/1, ntrec2/), (/km, 1/), caco3_z(:, l), 1., 0.) 
 
 !       ALK
         CALL putvars ('TAL', iou, ntrec2, talvol(l), 1., 0.)
@@ -700,30 +706,30 @@ SUBROUTINE calc (imt, jmt, km, lm)
         CALL putvara ('O2z', iou, km, (/1, ntrec2/), (/km, 1/), oxy_z(:, l), 1., 0.)
 
 !       POC
-        CALL putvars ('POC', iou, ntrec2, pocvol(l), 1., 0.)
-        CALL putvara ('POCz', iou, km, (/1, ntrec2/), (/km, 1/), poc_z(:, l), 1., 0.)
+        ! CALL putvars ('POC', iou, ntrec2, pocvol(l), 1., 0.)
+        ! CALL putvara ('POCz', iou, km, (/1, ntrec2/), (/km, 1/), poc_z(:, l), 1., 0.)
 
-!       GOC
-        CALL putvars ('GOC', iou, ntrec2, gocvol(l), 1., 0.)
-        CALL putvara ('GOCz', iou, km, (/1, ntrec2/), (/km, 1/), goc_z(:, l), 1., 0.)
+! !       GOC
+        ! CALL putvars ('GOC', iou, ntrec2, gocvol(l), 1., 0.)
+        ! CALL putvara ('GOCz', iou, km, (/1, ntrec2/), (/km, 1/), goc_z(:, l), 1., 0.)
 
-!       NO3
-        CALL putvars ('NO3', iou, ntrec2, no3vol(l), 1., 0.)
-        CALL putvara ('NO3z', iou, km, (/1, ntrec2/), (/km, 1/), no3_z(:, l), 1., 0.)
+! !       NO3
+        ! CALL putvars ('NO3', iou, ntrec2, no3vol(l), 1., 0.)
+        ! CALL putvara ('NO3z', iou, km, (/1, ntrec2/), (/km, 1/), no3_z(:, l), 1., 0.)
 
-!       NH4
-        CALL putvars ('NH4', iou, ntrec2, nh4vol(l), 1., 0.)
-        CALL putvara ('NH4z', iou, km, (/1, ntrec2/), (/km, 1/), nh4_z(:, l), 1., 0.)
+! !       NH4
+        ! CALL putvars ('NH4', iou, ntrec2, nh4vol(l), 1., 0.)
+        ! CALL putvara ('NH4z', iou, km, (/1, ntrec2/), (/km, 1/), nh4_z(:, l), 1., 0.)
 
-!       dFe
-        CALL putvars ('dFe', iou, ntrec2, dfevol(l), 1., 0.)
-        CALL putvara ('dFez', iou, km, (/1, ntrec2/), (/km, 1/), dfe_z(:, l), 1., 0.)
+! !       dFe
+        ! CALL putvars ('dFe', iou, ntrec2, dfevol(l), 1., 0.)
+        ! CALL putvara ('dFez', iou, km, (/1, ntrec2/), (/km, 1/), dfe_z(:, l), 1., 0.)
 
-!       Total C
-        CALL putvars ('TC', iou, ntrec2, toc(l), 1., 0.)
+! !       Total C
+        ! CALL putvars ('TC', iou, ntrec2, toc(l), 1., 0.)
 
-!       Total N
-        CALL putvars ('TN', iou, ntrec2, ton(l), 1., 0.)
+! !       Total N
+        ! CALL putvars ('TN', iou, ntrec2, ton(l), 1., 0.)
 
 !       Diagnostic variables
         if (exists) then 

@@ -122,7 +122,9 @@ else
         CCC_ORCA1_OFF_CANOE)  namelists_and_iofiles='namelist namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
         CCC_ORCA1_OFF_CMOC)   namelists_and_iofiles='namelist namelist_pisces namelist_top namelist_cmoc iodef.xml xmlio_server.def'  ;;
 	ORCA2_ICE_PISCES)     namelists_and_iofiles='namelist_cfg namelist_ref namelist_ice_cfg namelist_ice_ref namelist_pisces_cfg namelist_pisces_ref namelist_top_cfg namelist_top_ref iodef.xml context_nemo.xml field_def_nemo-oce.xml field_def_nemo-ice.xml field_def_nemo-pisces.xml file_def_nemo-oce.xml file_def_nemo-ice.xml file_def_nemo-pisces.xml axis_def_nemo.xml domain_def_nemo.xml grid_def_nemo.xml'  ;;
-	ORCA1_ICE)            namelists_and_iofiles='namelist_cfg namelist_ref namelist_ice_cfg namelist_ice_ref iodef.xml context_nemo.xml field_def_nemo-oce.xml field_def_nemo-ice.xml field_def_nemo-pisces.xml file_def_nemo-oce.xml file_def_nemo-ice.xml file_def_nemo-pisces.xml axis_def_nemo.xml domain_def_nemo.xml grid_def_nemo.xml'  ;;
+	ORCA1_ICE)            namelists_and_iofiles='namelist_cfg namelist_ref namelist_ice_cfg namelist_ice_ref iodef.xml context_nemo.xml field_def_nemo-oce.xml field_def_nemo-ice.xml file_def_nemo-oce.xml file_def_nemo-ice.xml axis_def_nemo.xml domain_def_nemo.xml grid_def_nemo.xml namelist_top_ref namelist_top_cfg'  ;;
+	ORCA1_ICE_CMOC)       namelists_and_iofiles='namelist_cfg namelist_ref namelist_ice_cfg namelist_ice_ref iodef.xml context_nemo.xml field_def_nemo-oce.xml field_def_nemo-ice.xml field_def_nemo-pisces.xml file_def_nemo-oce.xml file_def_nemo-ice.xml file_def_nemo-pisces.xml axis_def_nemo.xml domain_def_nemo.xml grid_def_nemo.xml namelist_top_cfg namelist_top_ref field_def_nemo-cmoc.xml  file_def_nemo-cmoc.xml  namelist_cmoc_cfg  namelist_cmoc_ref'  ;;
+	ORCA1_ICE_CANOE)      namelists_and_iofiles='namelist_cfg namelist_ref namelist_ice_cfg namelist_ice_ref iodef.xml context_nemo.xml field_def_nemo-oce.xml field_def_nemo-ice.xml field_def_nemo-pisces.xml file_def_nemo-oce.xml file_def_nemo-ice.xml file_def_nemo-pisces.xml axis_def_nemo.xml domain_def_nemo.xml grid_def_nemo.xml namelist_top_cfg namelist_top_ref field_def_nemo-canoe.xml  file_def_nemo-canoe.xml  namelist_canoe_cfg  namelist_canoe_ref'  ;;
 	eORCA025_ICE)         namelists_and_iofiles='namelist_cfg namelist_ref namelist_ice_cfg namelist_ice_ref iodef.xml context_nemo.xml field_def_nemo-oce.xml field_def_nemo-ice.xml field_def_nemo-pisces.xml file_def_nemo-oce.xml file_def_nemo-ice.xml file_def_nemo-pisces.xml axis_def_nemo.xml domain_def_nemo.xml grid_def_nemo.xml'  ;;
                          # ask user to specify if a non-standard config is used
                          *)get_user_namelist_io_list ;;
@@ -152,9 +154,9 @@ else
     nemo_config_lower=$(echo ${nemo_config} | tr '[:upper:]' '[:lower:]')
     if [[ $nemo_config_lower == *"cmoc"* ]] || [[ $nemo_config_lower == *"canoe"* ]]; then
         sed -i "s#nemo_carbon=.*#nemo_carbon=on#" experiment.cfg
-        if [[ $nemo_config_lower == *"cmoc"* ]]; then
-            sed -i "s#nemo_cmoc=.*#nemo_cmoc=on#" experiment.cfg
-        fi
+        # if [[ $nemo_config_lower == *"cmoc"* ]]; then
+            # sed -i "s#nemo_cmoc=.*#nemo_cmoc=on#" experiment.cfg
+        # fi
         if [[ $nemo_config_lower == *"off"* ]]; then
             sed -i 's#nemo_hist_file_suffix_list=.*#nemo_hist_file_suffix_list="ptrc_T diad_T"#' experiment.cfg
             sed -i 's#nemo_hist_file_freq_list=.*#nemo_hist_file_freq_list="1m     1m"#' experiment.cfg
@@ -181,7 +183,7 @@ else
         "ccc_orca1_lim_cmoc")   frq="5y"    ;;
         "ccc_orca1_lim_canoe")  frq="2y"    ;;
         "ccc_orca025_lim")      frq="4m"    ;;
-	"eorca025_ice")         frq="4m"    ;;
+	"eorca025_ice")         frq="3m"    ;;
         *) 
             echo "There is currently no recommended nemo_freq for config ${nemo_config}"
             echo "Value set to 1y. Alter if desired"
