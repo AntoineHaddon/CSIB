@@ -465,13 +465,8 @@ CONTAINS
          id = iom_varid(inum, 'closea_mask', ldstop = .false.)
          IF( id > 0 ) THEN
             IF( lwp ) WRITE(numout,*) 'Suppressing closed seas in bathymetry based on closea_mask field,'
-<<<<<<< HEAD
             CALL iom_get ( inum, jpdom_data, 'closea_mask', zdata_in, lrowattr=ln_use_jattr)
             closea_mask(:,:) = NINT(zdata_in(:,:))
-=======
-            CALL iom_get ( inum, jpdom_data, 'closea_mask', zdata_in )
-            closea_mask(:,:) = NINT(zdata_in(:,:)) * tmask(:,:,1)
->>>>>>> d5a89d9bad2c586c80c3a7ad64dde89f57b33e68
             WHERE( closea_mask(:,:) > 0 )
                k_top(:,:) = 0
                k_bot(:,:) = 0
