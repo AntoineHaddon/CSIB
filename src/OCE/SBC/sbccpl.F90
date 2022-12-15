@@ -2178,8 +2178,6 @@ CONTAINS
 #endif
       ! Diagnostics of total heat fluxes received by NEMO from coupler
       IF( iom_use('qt'         ) )   CALL iom_put( "qt"     , qns  + qsr )                   ! total radiation
-      IF( iom_use('qns'        ) )   CALL iom_put( "qns"    , qns        )                   ! non solar radiation 
-      IF( iom_use('qsr'        ) )   CALL iom_put( "qsr"    ,       qsr  )                   ! solar radiation 
       IF( iom_use('qt_oce'     ) )   CALL iom_put( "qt_oce" , qns_oce + qsr_oce )            ! total radiation over the ocean
       IF( iom_use('qns_oce'    ) )   CALL iom_put( "qns_oce", qns_oce           )            ! non solar radiation  over the ocean
       IF( iom_use('qsr_oce'    ) )   CALL iom_put( "qsr_oce",           qsr_oce )            ! solar radiation  over the ocean

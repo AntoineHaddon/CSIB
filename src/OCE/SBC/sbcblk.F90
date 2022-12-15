@@ -911,6 +911,13 @@ CONTAINS
       qns_tot(:,:) = ( 1._wp - at_i_b(:,:) ) * qns_oce(:,:) + SUM( a_i_b(:,:,:) * qns_ice(:,:,:), dim=3 )  &
          &           + qemp_ice(:,:) + qemp_oce(:,:)
       qsr_tot(:,:) = ( 1._wp - at_i_b(:,:) ) * qsr_oce(:,:) + SUM( a_i_b(:,:,:) * qsr_ice(:,:,:), dim=3 )
+      IF( iom_use('qt'         ) )   CALL iom_put( "qt"     , qns  + qsr )                   ! total radiation
+      IF( iom_use('qns_oce'    ) )   CALL iom_put( "qns_oce", qns_oce           )            ! non solar radiation  over the ocean
+      IF( iom_use('qsr_oce'    ) )   CALL iom_put( "qsr_oce",           qsr_oce )            ! solar radiation  over the ocean
+      IF( iom_use('qns_tot'    ) )   CALL iom_put( "qns_tot", qns_tot    )                   ! non-solar heat flux
+      IF( iom_use('qsr_tot'    ) )   CALL iom_put( "qsr_tot",   qsr_tot  )                   ! solar heat flux
+      IF( iom_use('qsr_ice'    ) )   CALL iom_put( 'qsr_ice', SUM( qsr_ice * a_i_b, dim=3 )            )   !     solar flux at ice surface
+      IF( iom_use('qns_ice'    ) )   CALL iom_put( 'qns_ice', SUM( qns_ice * a_i_b, dim=3 ) + qemp_ice )   ! non-solar flux at ice surface
 
       ! --- heat content of precip over ice in J/m3 (to be used in 1D-thermo) --- !
       qprec_ice(:,:) = rhos * ( ( MIN( sf(jp_tair)%fnow(:,:,1), rt0 ) - rt0 ) * rcpi * tmask(:,:,1) - rLfus )
