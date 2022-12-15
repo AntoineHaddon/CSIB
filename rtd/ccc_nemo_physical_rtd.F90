@@ -1213,6 +1213,12 @@ PROGRAM nemo_ocean_diag
         call putvars ('h_tran_20SA', iou, ntrec2, h_tran_20SA(l), 1., 0.)
 !--------------------------------------------------------------------------
 !       MEAN HEAT FLUX SURFACE (W/M^2)
+        ! WARNING : in NEMO4 qns_tot include hflx_snow2 and hflx_snow_ice
+        !           They are removed here becvause this RTD expect that
+        !           qns_tot do not include them ( hflx_snow will be added 
+        !           in the RDT server). Same append with qns_ice.
+        hflx_qns_tot_ave(l) = hflx_qns_tot_ave(l) - hflx_snow2(l) - hflx_snow_ice(l)
+        hflx_qns_ice_ave(l) = hflx_qns_ice_ave(l) - hflx_snow_ice(l)
         call putvars ('hglo', iou, ntrec2, hglo(l), 1., 0.)
         call putvars ('hflx_ice', iou, ntrec2, hflx_ice(l), 1., 0.)
         call putvars ('hflx_snow', iou, ntrec2, hflx_snow(l), 1., 0.)
