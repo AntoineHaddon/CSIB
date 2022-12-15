@@ -19,11 +19,11 @@
 
 %BASE_CFLAGS    
 
-%PROD_CFLAGS    -O2 -mp1 -xCORE-AVX512 
+%PROD_CFLAGS    -O2 -fp-model precise -init=arrays -init=zero
 %DEV_CFLAGS     -O2
 %DEBUG_CFLAGS   -O0 -g 
 
-%BASE_FFLAGS    -free -fpp -D_IMPI_=4 -Qoption,link,--noinhibit-exec -list -traceback -assume buffered_stdout,protect_parens -convert big_endian -r8 -align array64byte
+%BASE_FFLAGS    -free -fpp -D_IMPI_=4 -Qoption,link,--noinhibit-exec -list -traceback  -assume buffered_stdout,protect_parens -convert big_endian -r8 -align array64byte
 
 %PROD_FFLAGS    -O2
 %DEV_FFLAGS     -O2
