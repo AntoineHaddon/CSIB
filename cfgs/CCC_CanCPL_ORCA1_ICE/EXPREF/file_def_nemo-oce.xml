@@ -30,6 +30,7 @@
           <field field_ref="qt"               name="qt"  level="0" />
           <field field_ref="qsr_tot"          name="qsr_tot"  level="0" />
           <field field_ref="qns_tot"          name="qns_tot"  level="0" />
+          <field field_ref="qemp_oce"          name="qemp_oce"  level="0" />
           <!-- CMIP6 variables, started by NL, to be completed 
           <field field_ref="masstot"          name="masso"       level="1" />
           <field field_ref="botpres"          name="pbo"         level="1" />
