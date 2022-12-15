@@ -220,6 +220,7 @@ PROGRAM nemo_ocean_diag
          &     hflx_snow_ao_cea(imt,jmt), hflx_ice_cea(imt,jmt),sitimefrac(imt,jmt), &
          &     hflx_rnf_cea(imt,jmt), isnwmlt_cea(imt,jmt), snowmel_cea(imt,jmt),  & 
          &     hflx_qsr_tot(imt,jmt), hflx_qns_tot(imt,jmt), hflx_qsr_ice(imt,jmt), hflx_qns_ice(imt,jmt), &
+         &     hflx_qemp_oce(imt,jmt), hflx_qemp_ice(imt,jmt), &
          &     STAT=ierr(5) )
       ALLOCATE( over_psi(jmt,km), over_psi_eddy(jmt,km), STAT=ierr(6) )
       ALLOCATE( theta_z(km, lm), salt_z(km, lm), STAT=ierr(7) )
@@ -476,9 +477,16 @@ PROGRAM nemo_ocean_diag
 
           CALL getvara ('qsr_tot', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qsr_tot, 1., 0.)
           CALL getvara ('qns_tot', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qns_tot, 1., 0.)
+          CALL getvara ('qemp_oce', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qemp_oce, 1., 0.)
           CALL getvara ('qsr_ice', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qsr_ice, 1., 0.)
           CALL getvara ('qns_ice', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qns_ice, 1., 0.)
-
+          CALL getvara ('qemp_ice', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qemp_ice, 1., 0.)
+        ! WARNING : in NEMO4 qns_tot include qemp_oce and qemp_ice
+        !           They are removed here because this RTD expect that
+        !           qns_tot do not include them. Same append with qns_ice.
+          hflx_qns_tot = hflx_qns_tot - hflx_qemp_oce - hflx_qemp_ice 
+          hflx_qns_ice = hflx_qns_ice - hflx_qemp_ice 
+         
          ! Wind enery input
           wind_x =  tau_x(:,:)*u(:,:,1)* u_mask(:, :, 1)
           wind_y =  tau_y(:,:)*v(:,:,1)* v_mask(:, :, 1)
@@ -1213,10 +1221,6 @@ PROGRAM nemo_ocean_diag
         call putvars ('h_tran_20SA', iou, ntrec2, h_tran_20SA(l), 1., 0.)
 !--------------------------------------------------------------------------
 !       MEAN HEAT FLUX SURFACE (W/M^2)
-        ! WARNING : in NEMO4 qns_tot include hflx_snow2 and hflx_snow_ice
-        !           They are removed here becvause this RTD expect that
-        !           qns_tot do not include them ( hflx_snow will be added 
-        !           in the RDT server). Same append with qns_ice.
         hflx_qns_tot_ave(l) = hflx_qns_tot_ave(l) - hflx_snow2(l) - hflx_snow_ice(l)
         hflx_qns_ice_ave(l) = hflx_qns_ice_ave(l) - hflx_snow_ice(l)
         call putvars ('hglo', iou, ntrec2, hglo(l), 1., 0.)

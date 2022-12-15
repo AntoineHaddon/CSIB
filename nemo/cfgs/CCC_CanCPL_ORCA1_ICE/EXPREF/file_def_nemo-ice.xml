@@ -27,6 +27,7 @@
        <field field_ref="snowpre"         name="isnowpre"       level="0"  />
        <field field_ref="qsr_ice"         name="qsr_ice"       level="0"  />
        <field field_ref="qns_ice"         name="qns_ice"       level="0"  />
+       <field field_ref="qemp_ice"         name="qemp_ice"       level="0"  />
        <!-- ==============
             SIMIP monthly fields (that are not in level =0) -->
        <!-- Sea-ice state variables -->
