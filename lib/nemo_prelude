@@ -49,6 +49,33 @@ echo "#################### Start NEMO pre-processing #################"
                    namelist_ice_ref \
                    namelist_ice_cfg
   )
+  # O Riche Dec 16th 2022
+  # change xios_files to contain references to either CMOC or CanOE and not PISCES
+  # if nemo_config is set to a CMOC or a CanOE config
+  if [[ $nemo_config == *"CANOE" ]] ; then
+  nemo_namelists=( namelist_ref     \
+                   namelist_cfg     \
+                   namelist_ice_ref \
+                   namelist_ice_cfg \
+                   namelist_top_ref \
+                   namelist_top_cfg \
+                   namelist_canoe_ref \
+                   namelist_canoe_cfg \
+  )
+  elif [[ $nemo_config == *"CMOC" ]] ; then
+  nemo_namelists=( namelist_ref     \
+                   namelist_cfg     \
+                   namelist_ice_ref \
+                   namelist_ice_cfg
+                   namelist_top_ref \
+                   namelist_top_cfg \
+                   namelist_cmoc_ref \
+                   namelist_cmoc_cfg \
+  )
+  fi
+  # End of O Riche Dec 16th 2022
+  ################################
+  
   # ======================================================
   # Make sure we have necessary variables from parent code
   # ======================================================
