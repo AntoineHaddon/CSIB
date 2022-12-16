@@ -195,6 +195,36 @@ echo "#################### Start NEMO pre-processing #################"
                file_def_nemo-pisces.xml \
                grid_def_nemo.xml \
                iodef.xml )
+  # O Riche Dec 16th 2022
+  # change xios_files to contain references to either CMOC or CanOE and not PISCES
+  # if nemo_config is set to a CMOC or a CanOE config
+  if [[ $nemo_config == *"CANOE" ]] ; then
+  xios_files=( axis_def_nemo.xml \
+               context_nemo.xml \
+               domain_def_nemo.xml \
+               field_def_nemo-ice.xml \
+               field_def_nemo-oce.xml \
+               field_def_nemo-canoe.xml \
+               file_def_nemo-ice.xml \
+               file_def_nemo-oce.xml \
+               file_def_nemo-canoe.xml \
+               grid_def_nemo.xml \
+               iodef.xml )
+  elif [[ $nemo_config == *"CMOC" ]] ; then
+  xios_files=( axis_def_nemo.xml \
+               context_nemo.xml \
+               domain_def_nemo.xml \
+               field_def_nemo-ice.xml \
+               field_def_nemo-oce.xml \
+               field_def_nemo-cmoc.xml \
+               file_def_nemo-ice.xml \
+               file_def_nemo-oce.xml \
+               file_def_nemo-cmoc.xml \
+               grid_def_nemo.xml \
+               iodef.xml )
+  fi
+  # End of O Riche Dec 16th 2022
+  ################################
 
   for file in "${xios_files[@]}"; do
     find_nemo_config_EXP00 $file
