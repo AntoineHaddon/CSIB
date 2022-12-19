@@ -43,14 +43,14 @@
   }
 
 echo "#################### Start NEMO pre-processing #################"
-  # TODO CanOE : add the top and CanOE namlist if activer
+  # TODO CanOE : add the top and CanOE namlist if activated
   nemo_namelists=( namelist_ref     \
                    namelist_cfg     \
                    namelist_ice_ref \
                    namelist_ice_cfg
   )
   # O Riche Dec 16th 2022
-  # change xios_files to contain references to either CMOC or CanOE and not PISCES
+  # change nemo_namelists to contain references to either CMOC or CanOE and not PISCES
   # if nemo_config is set to a CMOC or a CanOE config
   if [[ $nemo_config == *"CANOE" ]] ; then
   nemo_namelists=( namelist_ref     \
@@ -466,8 +466,26 @@ echo "#################### Start NEMO pre-processing #################"
   # - the main defaults are defined at the top of this script (should we move other runmode specific files?)
 
   # run namelists
+  # O Riche Dec 19th 2022
+  # default namelist folder
+  nemo_config=/config/namelists/
+  # namelists folder if trc and carbon is on
+  if [ $nemo_trc == 'on' ] && [ $nemo_carbon == 'on' ]
+  # PISCES
+    nemo_config=/CanESM_source_link/CanNEMO/nemo/cfgs/
+    if [[ $nemo_config == *"CANOE" ]] ; then
+      nemo_config=${nemo_config}'CCC_ORCA1_ICE_CANOE'
+    elif [[ $nemo_config == *"CMOC" ]] ; then
+      nemo_config=${nemo_config}'CCC_ORCA1_ICE_CMOC'
+    else
+      nemo_config=${nemo_config}'ORCA2_ICE_PISCES'
+    fi
+    nemo_config=${nemo_config}'/EXPREF/'
+  fi
+  # End of O Riche Dec 19th 2022
+  #  
   for f in "${nemo_namelists[@]}"; do
-      ! is_file $f && cp ${WRK_DIR}/config/namelists/${f} .
+      ! is_file $f && cp ${WRK_DIR}${nemo_config}${f} .
   done
   # make namelist mods foir the restart switch 
     mod_nl namelist_cfg ln_rstart
