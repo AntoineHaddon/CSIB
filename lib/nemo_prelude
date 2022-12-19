@@ -480,18 +480,16 @@ echo "#################### Start NEMO pre-processing #################"
   # default namelist folder
   # namelists folder if trc and carbon is on
   if [[ $nemo_trc == "on" ]] && [[ $nemo_carbon == "on" ]]; then
-     if [[ $nemo_config == *"CANOE" ]] || \
-        [[ $nemo_config == *"CMOC" ]]  || \ 
-        [[ $nemo_config == *"PISCES" ]] ; then
+     if [[ $nemo_config == *"CANOE" ]] || [[ $nemo_config == *"CMOC" ]] || [[ $nemo_config == *"PISCES" ]]; then
       nemo_config=${nemo_repo}'/nemo/cfgs/'${nemo_config}'/EXPREF/'
      else
       bail "nemo_prelude: nemo_config: assigned BGCM is not PISCES, CMOC, nor CanOE"
-    fi
+     fi
   fi
   # End of O Riche Dec 19th 2022
   #  
   for f in "${nemo_namelists[@]}"; do
-      ! is_file $f && cp ${WRK_DIR}${nemo_config}${f} .
+      ! is_file $f && cp ${nemo_config}${f} .
   done
   # make namelist mods foir the restart switch 
     mod_nl namelist_cfg ln_rstart
