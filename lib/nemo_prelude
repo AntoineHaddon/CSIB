@@ -72,6 +72,16 @@ echo "#################### Start NEMO pre-processing #################"
                    namelist_cmoc_ref \
                    namelist_cmoc_cfg \
   )
+  elif [[ $nemo_config == *"PISCES" ]] ; then
+  nemo_namelists=( namelist_ref     \
+                   namelist_cfg     \
+                   namelist_ice_ref \
+                   namelist_ice_cfg
+                   namelist_top_ref \
+                   namelist_top_cfg \
+                   namelist_pisces_ref \
+                   namelist_pisces_cfg \
+  )
   fi
   # End of O Riche Dec 16th 2022
   ################################
