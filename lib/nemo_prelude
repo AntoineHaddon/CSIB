@@ -481,14 +481,14 @@ echo "#################### Start NEMO pre-processing #################"
   nemo_config=/config/namelists/
   # namelists folder if trc and carbon is on
   if [[ $nemo_trc == "on" ]] && [[ $nemo_carbon == "on" ]]; then
-  # PISCES
-    nemo_config=/CanESM_source_link/CanNEMO/nemo/cfgs/
     if [[ $nemo_config == *"CANOE" ]] ; then
       nemo_config=${nemo_config}'CCC_ORCA1_ICE_CANOE'
     elif [[ $nemo_config == *"CMOC" ]] ; then
       nemo_config=${nemo_config}'CCC_ORCA1_ICE_CMOC'
-    else
+    elif [[ $nemo_config == *"PISCES" ]] ; then
       nemo_config=${nemo_config}'ORCA2_ICE_PISCES'
+    else
+      bail "nemo_prelude: nemo_config: assigned BGCM is not PISCES, CMOC, nor CanOE"
     fi
     nemo_config=${nemo_config}'/EXPREF/'
   fi
