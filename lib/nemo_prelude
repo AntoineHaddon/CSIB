@@ -470,7 +470,7 @@ echo "#################### Start NEMO pre-processing #################"
   # default namelist folder
   nemo_config=/config/namelists/
   # namelists folder if trc and carbon is on
-  if [ $nemo_trc == 'on' ] && [ $nemo_carbon == 'on' ]
+  if [[ $nemo_trc == 'on' ]] && [[ $nemo_carbon == 'on' ]]; then
   # PISCES
     nemo_config=/CanESM_source_link/CanNEMO/nemo/cfgs/
     if [[ $nemo_config == *"CANOE" ]] ; then
