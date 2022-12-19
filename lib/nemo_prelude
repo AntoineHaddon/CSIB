@@ -478,19 +478,15 @@ echo "#################### Start NEMO pre-processing #################"
   # run namelists
   # O Riche Dec 19th 2022
   # default namelist folder
-  nemo_config0=/config/namelists/
   # namelists folder if trc and carbon is on
   if [[ $nemo_trc == "on" ]] && [[ $nemo_carbon == "on" ]]; then
-    if [[ $nemo_config == *"CANOE" ]] ; then
-      nemo_config=${nemo_config0}'CCC_ORCA1_ICE_CANOE'
-    elif [[ $nemo_config == *"CMOC" ]] ; then
-      nemo_config=${nemo_config0}'CCC_ORCA1_ICE_CMOC'
-    elif [[ $nemo_config == *"PISCES" ]] ; then
-      nemo_config=${nemo_config0}'ORCA2_ICE_PISCES'
-    else
+     if [[ $nemo_config == *"CANOE" ]] || \
+        [[ $nemo_config == *"CMOC" ]]  || \ 
+        [[ $nemo_config == *"PISCES" ]] ; then
+      nemo_config=${nemo_repo}'/nemo/cfgs/'${nemo_config}'/EXPREF/'
+     else
       bail "nemo_prelude: nemo_config: assigned BGCM is not PISCES, CMOC, nor CanOE"
     fi
-    nemo_config=${nemo_config}'/EXPREF/'
   fi
   # End of O Riche Dec 19th 2022
   #  
