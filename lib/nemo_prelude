@@ -147,6 +147,10 @@ echo "#################### Start NEMO pre-processing #################"
   if [[ $nemo_ln_rnf == "on" ]]; then
    is_defined $nemo_runoff_core_monthly  || bail "The variables nemo_runoff_core_monthly must be defined in the configuration file"
    acc_cp runoff.nc    $nemo_runoff_core_monthly
+   # O Riche Dec 20th 2022
+   # Possible naming inconsistency b/w OCE and CanBGC (previous/new NEMO?)
+   acc_cp runoff_core_monthly.nc    $nemo_runoff_core_monthly
+   # End of O Riche Dec 20th 2022
   fi
   if [[ $nemo_ln_zdfiwm == "on" ]]; then
     is_defined $nemo_mixing_power_bot && is_defined $nemo_mixing_power_pyc && is_defined $nemo_mixing_power_cri &&
@@ -219,6 +223,72 @@ echo "#################### Start NEMO pre-processing #################"
     is_defined $nemo_empave_old || bail "The variable nemo_empave_old must be defined in the configuration file."
     acc_cp EMPave_old.dat            $nemo_empave_old 
   fi
+
+  # O Riche Dec 20th 2022
+  # CanBGC IC and forcing files additional section
+  # looked into nemo_pre.sh (see CanNEMO maestro scripts)
+  # for acc_cp, look in experiment.cfg for actual names 
+  # /variables (same location). For CanESM5 they are defined
+  # in canesm.cfg.
+  
+  if [[ "$nemo_trc" == "on"  ]] && [[ "$nemo_carbon" == "on" ]]} ; then
+
+      is_defined $nemo_presatm || bail "The variable nemo_presatm must be defined in canesm.cfg"
+      acc_cp presatm.nc           $nemo_presatm
+      
+      is_defined $nemo_bathy_orca || bail "The variable nemo_bathy_orca must be defined in canesm.cfg"
+      acc_cp bathy.orca.nc        $nemo_bathy_orca
+
+      is_defined $nemo_chlorophyll || bail "The variable nemo_chlorophyll must be defined in canesm.cfg"
+      acc_cp chlorophyll.nc       $nemo_chlorophyll
+
+      is_defined $nemo_dust_orca || bail "The variable nemo_dust_orca must be defined in canesm.cfg"
+      acc_cp dust.orca.nc         $nemo_dust_orca
+      
+      is_defined $nemo_river_orca || bail "The variable nemo_river_orca must be defined in canesm.cfg"
+      acc_cp river.orca.nc        $nemo_river_orca
+      
+      is_defined $nemo_par_orca || bail "The variable nemo_par_orca must be defined in canesm.cfg"      
+      acc_cp par.orca.nc          $nemo_par_orca
+      
+      is_defined $nemo_solubility_orca || bail "The variable nemo_solubility_orca must be defined in canesm.cfg"      
+      acc_cp solubility.orca.nc   $nemo_solubility_orca
+      
+      is_defined $nemo_hydrofe_orca || bail "The variable nemo_hydrofe_orca must be defined in canesm.cfg"      
+      acc_cp hydrofe.orca.nc      $nemo_hydrofe_orca
+
+      is_defined $nemo_ndeposition_orca || bail "The variable nemo_ndeposition_orca must be defined in canesm.cfg"      
+      acc_cp ndeposition.orca.nc  $nemo_ndeposition_orca
+      
+      is_defined $nemo_data_dic_nomask || bail "The variable nemo_data_dic_nomask must be defined in canesm.cfg"      
+      acc_cp data_DIC_nomask.nc        $nemo_data_dic_nomask
+      
+      is_defined $nemo_data_alkalini_nomask || bail "The variable nemo_data_alkalini_nomask must be defined in canesm.cfg"      
+      acc_cp data_Alkalini_nomask.nc   $nemo_data_alkalini_nomask
+      
+      is_defined $nemo_data_o2_nomask || bail "The variable nemo_data_o2_nomask must be defined in canesm.cfg"      
+      acc_cp data_O2_nomask.nc         $nemo_data_o2_nomask
+      
+      is_defined $nemo_data_po4_nomask || bail "The variable nemo_data_po4_nomask must be defined in canesm.cfg"      
+      acc_cp data_PO4_nomask.nc        $nemo_data_po4_nomask
+      
+      is_defined $nemo_data_si_nomask || bail "The variable nemo_data_si_nomask must be defined in canesm.cfg"      
+      acc_cp data_Si_nomask.nc        $nemo_data_si_nomask
+      
+      is_defined $nemo_data_doc_nomask || bail "The variable nemo_data_doc_nomask must be defined in canesm.cfg"      
+      acc_cp data_DOC_nomask.nc        $nemo_data_doc_nomask
+      
+      is_defined $nemo_data_fer_nomask || bail "The variable nemo_data_fer_nomask must be defined in canesm.cfg"      
+      acc_cp data_Fer_nomask.nc        $nemo_data_fer_nomask
+      
+      is_defined $nemo_data_no3_nomask || bail "The variable nemo_data_no3_nomask must be defined in canesm.cfg"      
+      acc_cp data_NO3_nomask.nc        $nemo_data_no3_nomask
+      
+
+  
+  fi
+  # End of O Riche Dec 20th 2022
+
 
   # Access files required to run NEMO
   xios_files=( axis_def_nemo.xml \
