@@ -231,7 +231,7 @@ echo "#################### Start NEMO pre-processing #################"
   # /variables (same location). For CanESM5 they are defined
   # in canesm.cfg.
   
-  if [[ "$nemo_trc" == "on"  ]] && [[ "$nemo_carbon" == "on" ]]} ; then
+  if [[ $nemo_trc == "on"  ]] && [[ $nemo_carbon == "on" ]] ; then
 
       is_defined $nemo_presatm || bail "The variable nemo_presatm must be defined in canesm.cfg"
       acc_cp presatm.nc           $nemo_presatm
