@@ -99,7 +99,7 @@ PROGRAM nemo_ocean_diag
       REAL, DIMENSION(:, :), ALLOCATABLE  :: mld10, ssh
       REAL, DIMENSION(:, :), ALLOCATABLE  :: snow_ai_cea, snow_ao_cea,sitimefrac
       REAL, DIMENSION(:, :), ALLOCATABLE  :: hflx_rain_cea, hflx_snow_ao_cea, hflx_ice_cea, hflx_rnf_cea
-      REAL, DIMENSION(:, :), ALLOCATABLE  :: isnwmlt_cea, snowmel_cea
+      REAL, DIMENSION(:, :), ALLOCATABLE  :: isnwmlt_cea, snowmel_cea, hflx_snow_ai_cea
       REAL, DIMENSION(:, :), ALLOCATABLE  :: hflx_qsr_tot, hflx_qns_tot, hflx_qsr_ice, hflx_qns_ice
 ! ======================================================================
 !     Pre-computed data  
@@ -138,6 +138,7 @@ PROGRAM nemo_ocean_diag
       REAL, DIMENSION(:), ALLOCATABLE :: hflx_snow  ! Heat flux snow over open ocean (w/m2)
       REAL, DIMENSION(:), ALLOCATABLE :: hflx_snow2  ! Heat flux snow over open ocean - computed (w/m2)
       REAL, DIMENSION(:), ALLOCATABLE :: hflx_snow_ice  ! Heat flux snow over ice (w/m2)
+      REAL, DIMENSION(:), ALLOCATABLE :: hflx_snow_ice2  ! Heat flux snow over ice (w/m2)
       REAL, DIMENSION(:), ALLOCATABLE :: hflx_rain  ! Heat flux rain (w/m2)
       REAL, DIMENSION(:), ALLOCATABLE :: hflx_rnf  ! Heat flux runoff (w/m2)
       REAL, DIMENSION(:), ALLOCATABLE :: snow_ai, snow_ao  ! Snow over sea-ice and open ocean
@@ -218,6 +219,7 @@ PROGRAM nemo_ocean_diag
          &      wind_x(imt,jmt), wind_y(imt,jmt), STAT=ierr(5) )
       ALLOCATE(snow_ai_cea(imt,jmt), snow_ao_cea(imt,jmt), hflx_rain_cea(imt,jmt), &
          &     hflx_snow_ao_cea(imt,jmt), hflx_ice_cea(imt,jmt),sitimefrac(imt,jmt), &
+         &     hflx_snow_ai_cea(imt,jmt),                                           &
          &     hflx_rnf_cea(imt,jmt), isnwmlt_cea(imt,jmt), snowmel_cea(imt,jmt),  & 
          &     hflx_qsr_tot(imt,jmt), hflx_qns_tot(imt,jmt), hflx_qsr_ice(imt,jmt), hflx_qns_ice(imt,jmt), &
          &     STAT=ierr(5) )
@@ -233,6 +235,7 @@ PROGRAM nemo_ocean_diag
          &      over_min_SO_eddy(lm), h_tran_20N(lm), h_tran_20NA(lm),            &
          &      h_tran_20S(lm), h_tran_20SA(lm), hflx_ice(lm), hflx_snow(lm),     &
          &      hflx_snow_ice(lm), hflx_rain(lm), hflx_rnf(lm), snow_ao(lm),      & 
+         &      hflx_snow_ice2(lm),                                               &
          &      snow_ai(lm), hflx_snow2(lm), isnwmlt(lm), snowmel(lm),            &
          &      hflx_qsr_tot_ave(lm), hflx_qns_tot_ave(lm),                       &
          &      hflx_qsr_ice_ave(lm), hflx_qns_ice_ave(lm),                       &
@@ -468,6 +471,7 @@ PROGRAM nemo_ocean_diag
           CALL getvara ('hflx_rain_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_rain_cea, 1., 0.)
           CALL getvara ('hflx_snow_ao_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_snow_ao_cea, 1., 0.)
           hflx_snow_ao_cea = -1*hflx_snow_ao_cea ! Change in the sign convention for NEMO4
+          CALL getvara ('hflx_snow_ai_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_snow_ai_cea, 1., 0.)
           CALL getvara ('qt_ice_oce', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_ice_cea, 1., 0.)
           CALL getvara ('hflx_rnf_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_rnf_cea, 1., 0.)
           CALL getvara ('sitimefrac', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), sitimefrac, 1., 0.)
@@ -767,10 +771,12 @@ PROGRAM nemo_ocean_diag
           g_mask(:,:) = t_mask(:,:,1)
           call area_ave_flx(e1t, e2t, g_mask, hflx_snow_ao_cea(:, :), imt      &
             &                  , jmt, hflx_snow(l), dum)
+          call area_ave_flx(e1t, e2t, g_mask, hflx_snow_ai_cea(:, :), imt      &
+            &                  , jmt, hflx_snow_ice(l), dum)
           call area_ave_flx(e1t, e2t, g_mask, snow_ao_cea(:, :)*lfus*-1.0, imt      &
             &                  , jmt, hflx_snow2(l), dum)
           call area_ave_flx(e1t, e2t, g_mask, snow_ai_cea(:, :)*lfus*-1.0, imt      &
-            &                  , jmt, hflx_snow_ice(l), dum)
+            &                  , jmt, hflx_snow_ice2(l), dum)
           call area_ave_flx(e1t, e2t, g_mask, hflx_ice_cea(:, :), imt      &
             &                  , jmt, hflx_ice(l), dum)
           call area_ave_flx(e1t, e2t, g_mask, hflx_rnf_cea(:, :), imt      &
@@ -810,6 +816,7 @@ PROGRAM nemo_ocean_diag
       print*,'Runoff    ', hflx_rnf(l)
       print*,'Snow OOcal', hflx_snow2(l)
       print*,'Snow ice  ', hflx_snow_ice(l)
+      print*,'Snow ice 1', hflx_snow_ice2(l)
       print*,'Below ice ', hflx_ice(l)
       print*,'BEGO-inv  ', hglo(l) - hflx_snow2(l) - hflx_ice(l)
       print*,'isnwmlt   ', isnwmlt(l)
@@ -1217,7 +1224,7 @@ PROGRAM nemo_ocean_diag
         !           They are removed here becvause this RTD expect that
         !           qns_tot do not include them ( hflx_snow will be added 
         !           in the RDT server). Same append with qns_ice.
-        hflx_qns_tot_ave(l) = hflx_qns_tot_ave(l) - hflx_snow2(l) - hflx_snow_ice(l)
+        hflx_qns_tot_ave(l) = hflx_qns_tot_ave(l) + hflx_snow(l) - hflx_snow_ice(l)
         hflx_qns_ice_ave(l) = hflx_qns_ice_ave(l) - hflx_snow_ice(l)
         call putvars ('hglo', iou, ntrec2, hglo(l), 1., 0.)
         call putvars ('hflx_ice', iou, ntrec2, hflx_ice(l), 1., 0.)

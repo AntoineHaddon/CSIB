@@ -74,8 +74,7 @@ SUBROUTINE calc (imt, jmt, lm)
 !     Monthly snow fields: snow thickness, snow precip, snow precip 
 !                          over ice
       REAL, DIMENSION(imt, jmt, lm) :: isnowthi, isnowpre, & 
-          &  snow_over_sea_ice, aicesflx, aicenflx, iicesflx, iicetflx, &
-          &  qns_ice, qemp_ice
+          &  snow_over_sea_ice, aicesflx, aicenflx, iicesflx, iicetflx
 
 ! ======================================================================
 !     Output data 
@@ -206,7 +205,6 @@ SUBROUTINE calc (imt, jmt, lm)
 ! Non Solar heat flux over ice
       call getvara ('qns_ice', iou0, imt*jmt*lm                       &
           & ,(/1,1,1/), (/imt,jmt,lm/), aicenflx, 1., 0.)
-      aicenflx = qns_ice - qemp_ice
 ! Solar heat flux under the ice 
       call getvara ('qtr_ice_bot', iou0, imt*jmt*lm                       &
           & ,(/1,1,1/), (/imt,jmt,lm/), iicesflx, 1., 0.)

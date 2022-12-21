@@ -315,7 +315,6 @@
           <field id="qt_oce"       long_name="total flux at ocean surface"                  standard_name="surface_downward_heat_flux_in_sea_water"            unit="W/m2"  />
           <field id="qsr_oce"      long_name="solar heat flux at ocean surface"             standard_name="net_downward_shortwave_flux_at_sea_water_surface"   unit="W/m2"  />
           <field id="qns_oce"      long_name="non-solar heat flux at ocean surface (including E-P)"                                                            unit="W/m2"  />
-          <field id="iicenflx"     long_name="non-solar heat flux at ocean surface (excluding E-P)" unit="W/m2" > qns_oce - qemp_oce                                  </field > 
           <field id="qsr_tot"      long_name="total non-solar heat flux (including E-P)"                                                                       unit="W/m2"  />
           <field id="qns_tot"      long_name="total non-solar heat flux (including E-P)"                                                                       unit="W/m2"  />
           <field id="qemp_oce"     long_name="Downward Heat Flux from E-P over open ocean"                                                                     unit="W/m2"  />
