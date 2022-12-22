@@ -40,6 +40,13 @@ MODULE zdf_oce
    LOGICAL , PUBLIC ::   ln_zdfswm   !: surface  wave-induced mixing flag
    LOGICAL , PUBLIC ::   ln_zdfiwm   !: internal wave-induced mixing flag
    !                             ! coefficients 
+   LOGICAL , PUBLIC ::   ln_zdftmx   !: old tidal mixing scheme (Simmons et al 2004)
+   REAL(wp), PUBLIC ::   rn_htmx     !: vertical decay scale for turbulence (meters)
+   REAL(wp), PUBLIC ::   rn_n2min    !: threshold of the Brunt-Vaisala frequency (s-1)
+   REAL(wp), PUBLIC ::   rn_tfe      !: tidal dissipation efficiency
+   REAL(wp), PUBLIC ::   rn_me       !: mixing efficiency
+   LOGICAL , PUBLIC ::   ln_tmx_itf  !: ITF specific parameterisation
+   REAL(wp), PUBLIC ::   rn_tfe_itf  !: ITF tidal dissipation efficiency
    REAL(wp), PUBLIC ::   rn_avm0     !: vertical eddy viscosity (m2/s)
    REAL(wp), PUBLIC ::   rn_avt0     !: vertical eddy diffusivity (m2/s)
    INTEGER , PUBLIC ::   nn_avb      !: constant or profile background on avt (=0/1)
