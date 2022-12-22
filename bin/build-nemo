@@ -243,11 +243,11 @@ ARGS=( --job $xios_comp_np --arch $xios_arch )
 # Create xios executable (note that arch.env is sourced inside make_xios)
 # compile only if doesn't exist or clean_compile
 stored_exec="${storage_loc}/$(basename $target_xios_exec)"
-if [[ -z "$stored_exec" ]] || (( clean_compile == 1 )) ; then
+# if [[ -z "$stored_exec" ]] || (( clean_compile == 1 )) ; then
 echo 'make_xios '"${ARGS[@]}"
 ./make_xios "${ARGS[@]}"
-else echo 'Skip make_xios...'
-fi
+# else echo 'Skip make_xios...'
+# fi
 
 # Compiling nemo
 echo "Compiling in:  ${nemo_model_build_dir}"
