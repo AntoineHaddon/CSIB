@@ -483,7 +483,6 @@ PROGRAM nemo_ocean_diag
           CALL getvara ('aicesflx', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qsr_ice, 1., 0.)
           CALL getvara ('aicenflx', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qns_ice, 1., 0.)
 
-<<<<<<< HEAD
          ! Global volume (not counting ssh)
           do k = 1, km
               do j = 1, jmt
@@ -492,14 +491,9 @@ PROGRAM nemo_ocean_diag
                   enddo
               enddo
           enddo
-          ! Wind enery input
-          wind_x =  tau_x(:,:)*u(:,:,1)
-          wind_y =  tau_y(:,:)*v(:,:,1)
-=======
          ! Wind enery input
           wind_x =  tau_x(:,:)*u(:,:,1)* u_mask(:, :, 1)
           wind_y =  tau_y(:,:)*v(:,:,1)* v_mask(:, :, 1)
->>>>>>> nemo4-cancpl-integration
          ! MLD
          ! Seasonal separation doesnt make sense with monthly RTDs, but define both (as the same),
          ! in order to maintain backwards compatibility in the plotting routine.
