@@ -24,7 +24,7 @@ set -e
 #   -p storage_loc  ...instead of storing executables in the CWD, store them in storage_loc
 #   -h              ...show this usage message
 #   -x              ...run this script with 'set -x'
-#   -c              ...copy executables instead of linking them after building is complete
+#   -s              ...executables manipulation when compile. link|copy|move
 #   -f              ...force a "clean" compile
 #
 # Variable definitions:
@@ -84,9 +84,8 @@ bail(){
 nemo_add_cpp_keys=''    # Nemo preprocessing keys to be added or removed at compile time
 nemo_del_cpp_keys=''    # Nemo preprocessing keys to be added or removed at compile time
 nemo_ref_config=''      # The reference configuration to be used with nemo_config
-copy_execs=0            # to copy the execcutable or link (0=link, 1=copy)
+storage_method="link"   # Define how the execs will be stored (copy|link|move)
 storage_loc=$(pwd)      # tells build-nemo where to store executables
-is_coupled=0            # Is this nemo build for a coupled model (0=ocean only, 1=coupled)
 comp_np=24              # Number of processors to use during nemo compilation
 xios_comp_np=12          # Number of processors to use during xios compilation
 debug=0                 # Set debug to 0 (turned off, regular optimizations used)
@@ -101,12 +100,12 @@ printf " ------------------- \n"
 # process command line options/arguments
 #=======================================
 # Flags
-while getopts p:j:hxdcf opt; do
+while getopts p:j:s:hxdcf opt; do
     case $opt in
-        p) storage_loc="$OPTARG" ;;
         j) comp_np="$OPTARG" ;;
         x) set -x ;;
-        c) copy_execs=1 ;;
+        p) storage_loc="$OPTARG" ;;
+        s) storage_method="$OPTARG" ;;
         h) usage ; exit 0 ;;
         f) clean_compile=1 ;;
         ?) usage ; exit 1 ;;
@@ -134,7 +133,6 @@ for arg in "$@"; do
         		util_env)   util_env="$val";;           # filename containing the utility (e.g., RTD, REBUILD, etc) environment
                 add_key)    nemo_add_cpp_keys="$val" ;; # a list of cpp keys to add before compiling nemo
                 del_key)    nemo_del_cpp_keys="$val" ;; # a list of cpp keys to remove before compiling nemo
-                is_coupled) is_coupled="$val" ;;             # If set, bring in additional files needed for coupled model
                 *)          usage "Invalid command line arg --> $arg <--"; exit 1  ;;
              esac
              ;;
@@ -145,12 +143,9 @@ done
 #====================
 # Consistency Checks
 #====================
-# if -p was used, make the directory if needed
-if [[ -n "$storage_loc" ]]; then
-    mkdir -p $storage_loc
-fi
 
 # Make sure the required arguments were given
+[[ -z "$storage_loc" ]]             && bail "-p must be followed by a directory in which to store the execs! See ${THIS_SCRIPT_NAME} -h"
 [[ -z "$nemo_source_path" ]]    && bail "srcpath must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
 [[ -z "$nemo_exec" ]]           && bail "exec must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
 [[ -z "$nemo_config" ]]         && bail "cfg must be given at the command line! See ${THIS_SCRIPT_NAME} -h"
@@ -159,6 +154,12 @@ fi
 [[ -z "$nemo_env" ]]            && bail "nemo_env must be given at the command line! See ${THIS_SCRIPT_PATH} -h"
 [[ -z "$util_env" ]]            && bail "util_env must be given at the command line! See ${THIS_SCRIPT_PATH} -h"
 [[ -d "$nemo_source_path" ]] || bail "The given srcpath ---> $nemo_source_path <--- doesn't exist!"
+
+# make sure a valid storage method was given
+case $storage_method in
+    copy|link|move) : ;; # valid
+    *) bail "Accepted values for the storage method are 'link|copy|move'! See ${THIS_SCRIPT_PATH} -h";;
+esac
 
 #========================
 # Set inherited variables
@@ -216,49 +217,6 @@ if [[ -z "$WRK_DIR" ]]; then
     fi
 fi
 
-#======================================
-# Coupled consideration for model comp
-#======================================
-if (( is_coupled == 1 )); then
-    # we must get code from the coupler repo, assumed to be housed in $CCRNSRC
-    #  and cpp header files that should be contained in $WRK_DIR - confirm this
-    #  This have to be done because different CanESM config could different header files (true?)
-    [[ -z "$CCRNSRC" ]] && 
-        bail "You are trying to compile for a coupled config and CCRNSRC isn't set! Has the coupled env been set up?"
-
-    # define header files and check that they exist
-    cppdef_config_file=${WRK_DIR}/config/cppdef_config.h
-    cppdef_sizes_file=${WRK_DIR}/config/cppdef_sizes.h
-    if [[ ! -f "$cppdef_config_file" ]] ; then
-        bail_msg="You are trying to compile a coupled config but ${cppdef_config_file} doesn't exist!"
-        bail "$bail_msg"
-    fi
-    if [[ ! -f "$cppdef_sizes_file" ]]; then
-        bail_msg="You are trying to compile a coupled config but ${cppdef_config_file} doesn't exist!"
-        bail "$bail_msg"
-    fi
-
-    # define other needed locations/files
-    #   - Note: we must alter the extension of the linked cpp header files to be ".h90", as the
-    #           the nemo compilation tools don't respect ".h" files.
-    nemo_CanCPL_src_dir=${nemo_source_path}/nemo/src/CanCPL                                 # where the "CanCPL" code sits
-    nemo_cppdef_config_link=${nemo_CanCPL_src_dir}/$(basename $cppdef_config_file .h).h90     # linked cpp config file
-    nemo_cppdef_sizes_link=${nemo_CanCPL_src_dir}/$(basename $cppdef_sizes_file .h).h90       # linked cpp sizes file
-    nemo_cpl_src_file=${nemo_CanCPL_src_dir}/com_cpl.F90                                      # copied (and modified) cplr src file
-
-    # link in the cpp files (cleaning if they already exist)
-    rm -f $nemo_cppdef_config_link
-    rm -f $nemo_cppdef_sizes_link
-    ln -s $cppdef_config_file $nemo_cppdef_config_link
-    ln -s $cppdef_sizes_file $nemo_cppdef_sizes_link
-
-    # copy in CanCPL coupler file, and alter inlcude statements to use the .h90 links
-    sed -i "s/$(basename $cppdef_config_file)\b/$(basename $nemo_cppdef_config_link)/g" $nemo_cpl_src_file
-    sed -i "s/$(basename $cppdef_sizes_file)\b/$(basename $nemo_cppdef_sizes_link)/g" $nemo_cpl_src_file
-
-
-fi
-
 #===========
 # Compile !
 #===========
@@ -283,8 +241,13 @@ ARGS=( --job $xios_comp_np --arch $xios_arch )
 [[ -n $xios_netcdf_lib ]] && ARGS+=( --netcdf_lib $xios_netcdf_lib )
 
 # Create xios executable (note that arch.env is sourced inside make_xios)
+# compile only if doesn't exist or clean_compile
+stored_exec="${storage_loc}/$(basename $target_xios_exec)"
+# if [[ -z "$stored_exec" ]] || (( clean_compile == 1 )) ; then
 echo 'make_xios '"${ARGS[@]}"
 ./make_xios "${ARGS[@]}"
+# else echo 'Skip make_xios...'
+# fi
 
 # Compiling nemo
 echo "Compiling in:  ${nemo_model_build_dir}"
@@ -368,49 +331,31 @@ done
 # confirm that compilation worked
 #---------------------------------
 for executable in $model_execs $non_model_execs; do
-    [[ -f "$executable" ]] || bail "$executable doesn't exist! Did the compilation fail?"
+    [[ -f "$executable" ]] || echo  "WARNING: $executable doesn't exist! Did the compilation fail?"
 done
 
-#==============================================
-# copy executables or link to desired directory
-#==============================================
+#==================================
+# store execs in desired directory
+#==================================
 echo ""
 echo "COMPILATION DONE"
 echo ""
+mkdir -p $storage_loc
+case $storage_method in
+    copy) storage_cmd="cp -f";;
+    link) storage_cmd="ln -s";;
+    move) storage_cmd="mv";;
+esac
 
-if (( copy_execs == 1 )); then
-    echo "Copying build-nemo target executables to $storage_loc"
-    cp -f $target_model_exec ${storage_loc}/${nemo_exec}
-    cp -f $target_xios_exec ${storage_loc}/${xios_exec}
-    for executable in $non_model_execs; do
-        stored_exec=${storage_loc}/$(basename $executable)
-        cp -f $executable $stored_exec
-    done
-else
-    # determine link location
-    if [[ -n "$storage_loc" ]]; then
-        link_loc=$storage_loc
-    else
-        link_loc=${CWD}
-    fi
-    echo "Linking build-nemo target executables to $link_loc"
-
-    # model exec (has the ability to be renamed via nemo_exec, which is why it is linked differently)
-    for executable in $model_execs; do
-        [[ -f "${link_loc}/${nemo_exec}" ]] && rm ${link_loc}/${nemo_exec}
-    done
-    ln -sf $target_xios_exec ${link_loc}/${xios_exec}
-    ln -sf $target_model_exec ${link_loc}/${nemo_exec}
-
-    # remaining execs, which can't be renamed
-    for executable in $non_model_execs; do
-        linked_exec=${link_loc}/$(basename $executable)
-        [[ -f "$linked_exec" ]] && rm $linked_exec
-        ln -sf $executable $linked_exec
-    done
-fi
-
+rm -f ${storage_loc}/${nemo_exec}
+for executable in $model_execs $non_model_execs; do
+    [[ ! -f "$executable" ]] && continue
+    stored_exec=${storage_loc}/$(basename $executable)
+    rm -f $stored_exec
+    $storage_cmd $executable $stored_exec
+done
 echo "build-nemo: DONE!"
+
 
 # Return to the invocation directory
 cd $CWD
