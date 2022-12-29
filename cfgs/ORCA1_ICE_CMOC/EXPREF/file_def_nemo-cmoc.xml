@@ -57,10 +57,10 @@
           <field field_ref="Cflx"     name="Cflx"   level="0" />
           <field field_ref="Oflx"     name="Oflx"   level="0" />
                                            
-          <field field_ref="KgCO2"    name="KgCO2   level="0" />
+          <field field_ref="KgCO2"    name="KgCO2"   level="0" />
           <field field_ref="KgO2"     name="KgO2"   level="0" />
                                            
-          <field field_ref="DpCO2"    name="DpCO2   level="0" />
+          <field field_ref="DpCO2"    name="DpCO2"   level="0" />
           <field field_ref="DpO2"     name="DpO2"   level="0" />
                                                  
           <field field_ref="pCO2"     name="pCO2"   level="0" />
