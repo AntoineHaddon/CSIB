@@ -146,7 +146,7 @@ echo "#################### Start NEMO pre-processing #################"
   fi
   if [[ $nemo_ln_rnf == "on" ]]; then
    is_defined $nemo_runoff_core_monthly  || bail "The variables nemo_runoff_core_monthly must be defined in the configuration file"
-   acc_cp runoff_core_monthly.nc    $nemo_runoff_core_monthly
+   acc_cp runoff.nc    $nemo_runoff_core_monthly
   fi
   if [[ $nemo_ln_zdfiwm == "on" ]]; then
     is_defined $nemo_mixing_power_bot && is_defined $nemo_mixing_power_pyc && is_defined $nemo_mixing_power_cri &&
