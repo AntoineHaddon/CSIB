@@ -40,7 +40,7 @@ if [ $with_nemo_diag -eq 1 ]; then
    sfxlst=("grid_T" "grid_U" "grid_V" "grid_W" "icemod")
    frqlst=("1m" "1m" "1m" "1m" "1m")
    if [ ${nemo_carbon} = 1 -a ${pisces_offline} = 0 ] ; then
-     sfxlst=("${sfxlst[@]}" "ptrc_T" "diad_T")
+     sfxlst=("${sfxlst[@]}" "btrc_T" "diad_T")
      frqlst=("${frqlst[@]}" "1m" "1m")
    fi
    if [ $output_level -ge 1 ] ; then
