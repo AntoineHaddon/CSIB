@@ -323,20 +323,18 @@ CONTAINS
       ENDDO
       !
       !
-      ! IF( ln_diatrc ) THEN
-         ! zrfact2 = 1.e3 * rfact2r
-         ! ik1  = iksed + 1
-         ! IF( lk_iomput ) THEN
-           ! IF( jnt == qnrdttrc ) THEN
-              ! CALL iom_put( "oomask", oomask(:,:))
-              ! CALL iom_put( "EPC100", sinking(:,:,ik1) * zrfact2 * tmask_bgc_closea(:,:,1) )
-              ! CALL iom_put( "EPCALC100",    zfpon(:,:) * zrfact2 * tmask_bgc_closea(:,:,1) ) !
-           ! ENDIF
-         ! ELSE
-           ! trc2d(:,:,jp_pcs0_2d + 4) = sinking (:,:,ik1) * zrfact2 * tmask_bgc_closea(:,:,1)
-         ! !
-         ! ENDIF
-      ! ENDIF
+      zrfact2 = 1.e3 * rfact2r
+      ik1  = iksed + 1
+      IF( lk_iomput ) THEN
+       IF( jnt == qnrdttrc ) THEN
+          CALL iom_put( "oomask", oomask(:,:))
+          CALL iom_put( "EPC100", sinking(:,:,ik1) * zrfact2 * tmask_bgc_closea(:,:,1) )
+          CALL iom_put( "EPCALC100",    zfpon(:,:) * zrfact2 * tmask_bgc_closea(:,:,1) ) !
+       ENDIF
+      ! ELSE
+       ! trc2d(:,:,jp_pcs0_2d + 4) = sinking (:,:,ik1) * zrfact2 * tmask_bgc_closea(:,:,1)
+      ! !
+      ENDIF
       !
       IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('cmocsink')")
