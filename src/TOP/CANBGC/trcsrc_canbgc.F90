@@ -718,14 +718,14 @@ CONTAINS
             ! <CMOC code OR 10/15/2015> 1.e+3_wp is to convert from L^-1 to m^-3
             !  (left in the sum line #119); the diagnostics has to be rescaled 
             ! to per second by dividing by rfact2.
-            zwork(:,:)  =  zn2fixtot(:,:) * ncrr_cmoc * 1.e+3_wp * rfact2r * tmask_bgc_closea(:,:,1)
+            zwork(:,:)  =  zn2fixtot(:,:) * ncrr_cmoc * 1.e+3_wp * qfact2r * tmask_bgc_closea(:,:,1)
             ! nitrogen fixation in molN m^-2 s^-1 
             CALL iom_put( "Nfix"   , zwork )
             ! <CMOC code OR 12/11/2015> 1.e+3_wp is to convert from L^-1 to 
             ! m^-3 (left in the sum line #119); the diagnostics has to be 
             ! rescaled to per second by dividing by rfact2; NOTE: land mask 
             ! already taken into account
-            zwork(:,:)  = -zdenittot(:,:) * ncrr_cmoc * 1.e+3_wp * rfact2r
+            zwork(:,:)  = -zdenittot(:,:) * ncrr_cmoc * 1.e+3_wp * qfact2r
             CALL iom_put( "Denit"  , zwork ) ! denitrification in molN m^-2 s^-1 
        ENDIF
       ENDIF
