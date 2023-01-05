@@ -1,9 +1,12 @@
 PROGRAM nemo_ocean_diag
 ! ======================================================================
-!  Purpose: Run-time diagnostics for NEMO (ORCA2) 
+!  New purpose:      Run-time diagnostics in CanESM5 for NEMO4/CanBGC/CMOC (eORCA1)
+!  Obsolete purpose: Run-time diagnostics for NEMO (ORCA2) 
 !
 ! HISTORY:
 ! -------
+! O. Riche    Jan    2023   change PH to pH when reading the variable from the o/p file.
+!
 ! O. Riche    Jan    2016   Fix total N and C RTD, issue: unit problem across 
 !                           variables; outputs are in nitrogen except DIC/TA.
 !
@@ -256,7 +259,7 @@ PROGRAM nemo_ocean_diag
 !  Diagnostic variables
       if (exists) then 
 !       3-D: PH, PPPHY, PPPHY2, EPC100,
-          CALL getvara('PH',       iou6, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), ph, 1., 0.)   
+          CALL getvara('pH',       iou6, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), ph, 1., 0.)   
           CALL getvara('PPPHY',    iou6, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), ppphy, 1., 0.)   
 
 !       2-D :  EPCAL100, DIC flux, Oflux, Nfix, Irondep
