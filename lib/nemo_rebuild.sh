@@ -146,7 +146,7 @@ if [ $nemo_save_hist == "on" ] ; then
         access tmp.nc $indir.nc nocp=no na #force copy because we make temporary changes
         cp tmp.nc $ncsave.nc && rm tmp.nc
       if [ -e "$ncsave.nc" ] ; then
-        [[ ${sfx,,} == *"grid_t"* || ${sfx,,} == *"icemod"* ||  ${sfx,,} == *"ptrc_t"* || 
+        [[ ${sfx,,} == *"grid_t"* || ${sfx,,} == *"icemod"* ||  ${sfx,,} == *"trc_t"* || 
            ${sfx,,} == *"diad_t"* ||  ${sfx,,} == *"grid_w"* ]] &&  
                   ( ncks -A -h -v glamt,gphit coor.nc $ncsave.nc && 
                     ncap2 -h -O -s "nav_lon=glamt;nav_lat=gphit"  $ncsave.nc  $ncsave.nc )
