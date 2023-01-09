@@ -307,12 +307,12 @@
 !-----------------------------------------------------------------------
 &namtra_mle    !   mixed layer eddy parametrisation (Fox-Kemper)        (default: OFF)
 !-----------------------------------------------------------------------
-   ln_mle      = .false.   ! (T) use the Mixed Layer Eddy (MLE) parameterisation
+   ln_mle      = .true.   ! (T) use the Mixed Layer Eddy (MLE) parameterisation
 /
 !-----------------------------------------------------------------------
 &namtra_eiv    !   eddy induced velocity param.                         (default: OFF)
 !-----------------------------------------------------------------------
-   ln_ldfeiv   = .false.       ! use eddy induced velocity parameterization
+   ln_ldfeiv   = .true.       ! use eddy induced velocity parameterization
       !                        !  Coefficients:
       nn_aei_ijk_t  = 21          ! space/time variation of the eiv coeficient
       !                                !   = 21 F(i,j,t)  =Treguier et al. JPO 1997 formulation
