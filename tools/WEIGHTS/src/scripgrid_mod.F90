@@ -496,7 +496,7 @@ CONTAINS
       DEALLOCATE(lam,phi)
     else
 
-      ncstat = nf90_inquire_variable( ncid_in, varid_lam, dimids=grid_dimids(:2) )
+      ncstat = nf90_inquire_variable( ncid_in, varid_lam, dimids=grid_dimids(:) )
       call netcdf_error_handler(ncstat)
       ncstat = nf90_inquire_dimension( ncid_in, grid_dimids(1), len=grid_dims(1) )
       call netcdf_error_handler(ncstat)

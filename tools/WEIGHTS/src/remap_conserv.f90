@@ -152,8 +152,17 @@
 
       print *,'grid1 sweep '
       do grid1_add = 1,grid1_size
+        weights(:)=0.
+        grid2_add =0
+        call store_link_cnsrv(grid1_add, grid2_add, weights)
+      enddo
+      do grid1_add = 1,grid1_size
 
-        if (grid1_mask(grid1_add)==0) cycle 
+        !store zeros to fille the dst array
+        !weights(:)=0.
+        !grid2_add =0
+        !call store_link_cnsrv(grid1_add, grid2_add, weights)
+        if (grid1_mask(grid1_add)==0) cycle
 
         !***
         !*** restrict searches first using search bins
@@ -270,7 +279,8 @@
 
             num_subseg = num_subseg + 1
             if (num_subseg > max_subseg) then
-              stop 'integration stalled #1: num_subseg exceeded limit'
+              !stop 'integration stalled #1: num_subseg exceeded limit'
+              exit 
             endif
 
             !***
@@ -350,6 +360,7 @@
 
           endif
 
+
           !***
           !*** end of segment
           !***
@@ -376,7 +387,16 @@
 
       print *,'grid2 sweep '
       do grid2_add = 1,grid2_size
+        weights(:)=0.
+        grid1_add =0
+        call store_link_cnsrv(grid1_add, grid2_add, weights)
+      enddo
+      do grid2_add = 1,grid2_size
 
+        !store zeros to fill the src array
+        !weights(:)=0.
+        !grid1_add =0
+        !call store_link_cnsrv(grid1_add, grid2_add, weights)
         if (grid2_mask(grid2_add)==0) cycle 
         !***
         !*** restrict searches first using search bins
@@ -480,8 +500,9 @@
 
             num_subseg = num_subseg + 1
             if (num_subseg > max_subseg) then
-              print*,grid2_add,next_corn,beglat,endlat,beglon,endlon
-              stop 'integration stalled#2: num_subseg exceeded limit'
+              !print*,grid2_add,next_corn,beglat,endlat,beglon,endlon
+              !stop 'integration stalled#2: num_subseg exceeded limit'
+              exit
             endif
 
             !***
@@ -529,15 +550,6 @@
             !*** because they have been captured in the previous loop.
             !*** the grid1 mask is the master mask
             !***
-
-            !if (grid1_add == 119247) then
-            !  print *,grid1_add,grid2_add,corner,weights(1)
-            !  print *,grid1_corner_lat(:,grid1_add)
-            !  print *,grid1_corner_lon(:,grid1_add)
-            !  print *,grid2_corner_lat(:,grid2_add)
-            !  print *,grid2_corner_lon(:,grid2_add)
-            !  print *,beglat,beglon,intrsct_lat,intrsct_lon
-            !endif
 
             if (.not. lcoinc .and. grid1_add /= 0) then
               if (grid1_mask(grid1_add)==1) then
@@ -2110,7 +2122,7 @@
 !
 !-----------------------------------------------------------------------
 
-      if (all(weights == zero)) return
+      !if (all(weights == zero)) return
 
 !-----------------------------------------------------------------------
 !

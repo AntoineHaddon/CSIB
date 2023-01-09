@@ -1,5 +1,6 @@
 ! ==========================================================================
 
+#define ARGC
 program scripinterp
 
   use scripinterp_mod
