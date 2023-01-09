@@ -42,7 +42,7 @@ set -x
   [ -s orca_mesh_mask ] || access orca_mesh_mask $orca_grid_info
 
 # sfxlst is a suffix list for some nemo historical files.
-  sfxlst="1m_grid_t 1m_diad_t 1m_ptrc_t"
+  sfxlst="1m_grid_t 1m_diad_t 1m_btrc_t" # OR Jan 09 '23 changed from ptrc_t
 
 # Access the history files
   for sfx in $sfxlst ; do
@@ -70,7 +70,7 @@ set -x
 ##########################
   ln -s 1m_grid_t_${fmon} grid_t  || ( echo "Link to grid_t failed" ; exit 1 )
   ln -s 1m_diad_t_${fmon} diad_t  || ( echo "Link to diad_t failed" ; exit 1 )
-  ln -s 1m_ptrc_t_${fmon} ptrc_t  || ( echo "Link to ptrc_t failed" ; exit 1 )
+  ln -s 1m_btrc_t_${fmon} ptrc_t  || ( echo "Link to ptrc_t failed" ; exit 1 ) # OR Jan 09 '23 changed from ptrc_t 
 
   if [[ $nemo_config == *'CMOC'* && ${output_level} -gt 0 ]]; then
 
@@ -141,8 +141,8 @@ set -x
       cmoc_annual_ptrc+=" nchl di14c dic dicabio dicnat no3 o2 alkalini poc zoo phy"
       cmoc_annual_diad="cflx_14c cflx cflx_abio cflx_nat ph3d phabio phnat co3 co3sata co3satc ppphy co3abio co3nat o2sol"
 
-      cmoc_src_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1m_ptrc_t
-      cmoc_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_ptrc_t
+      cmoc_src_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1m_btrc_t  # OR Jan 09 '23 changed from ptrc_t
+      cmoc_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_btrc_t # OR Jan 09 '23 changed from ptrc_t
       for f in ${cmoc_annual_ptrc}; do
         release tmp.nc
         access  tmp.nc ${cmoc_src_file}_$f.nc na
@@ -200,8 +200,8 @@ set -x
       canoe_annual_ptrc="nchl dchl dfe dic no3 o2 talk caco3 nh4 zoo zoo2 phy2c phyc phyn phy2n phyfe phy2fe poc goc"
       canoe_annual_diad="cflx ph3d co3 co3sata co3satc dcal graz1 graz2 pfen pfed pcal ppphy ppphy2 o2sol irondep"
 
-      canoe_src_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1m_ptrc_t
-      canoe_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_ptrc_t
+      canoe_src_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1m_btrc_t  # OR Jan 09 '23 changed from ptrc_t
+      canoe_dest_file=sc_${runid}_${fyear}${fmon}_${lyear}${lmon}_1y_btrc_t # OR Jan 09 '23 changed from ptrc_t
       for f in ${canoe_annual_ptrc}; do
         release tmp.nc
         access  tmp.nc ${canoe_src_file}_$f.nc na
