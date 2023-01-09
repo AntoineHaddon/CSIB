@@ -1,3 +1,4 @@
+#define ARGC
       PROGRAM scripshape
 !
 ! program to take output from the SCRIP weights generator

@@ -19,12 +19,14 @@
     method = 'regular'
     input_lon = 'glamt'
     input_lat = 'gphit'
+    input_mask = 'top_level'
+    input_mask_value = 0
+    input_area = 'grid_area'
     nemo_lon = 'glamt'
     nemo_lat = 'gphit'
     nemo_mask = 'top_level'
     nemo_mask_value = 0
-    input_mask = 'none'
-    input_mask_value = 10
+    nemo_area =  'grid_area'
 /
 &comments
  -----------------------------------------------------------------------------------
@@ -53,7 +55,7 @@
     map1_name = 'src to orca2 conserv Mapping'
     map2_name = 'orca2 to src conserv Mapping'
     map_method = 'conservative'
-    normalize_opt = 'frac'
+    normalize_opt = 'none'
     output_opt = 'scrip'
     restrict_type = 'latlon'
     num_srch_bins = 10

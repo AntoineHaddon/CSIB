@@ -13,9 +13,9 @@
 /
 &grid_inputs
     input_file = 'src_grid.nc'
-    nemo_file = 'cfg_grid.nc'
+    nemo_file = 'dst_grid.nc'
     datagrid_file = 'remap_src_grid.nc'
-    nemogrid_file = 'remap_nemo_grid.nc'
+    nemogrid_file = 'remap_dst_grid.nc'
     method = 'regular'
     input_lon = 'lon'
     input_lat = 'lat'
@@ -47,9 +47,9 @@
 &remap_inputs
     num_maps = 1
     grid1_file = 'remap_src_grid.nc'
-    grid2_file = 'remap_nemo_grid.nc'
-    interp_file1 = 'src_nemo_bicub.nc'
-    interp_file2 = 'nemo_src_bicub.nc'
+    grid2_file = 'remap_dst_grid.nc'
+    interp_file1 = 'src_dst_bicub.nc'
+    interp_file2 = 'dst_src_bicub.nc'
     map1_name = 'src to orca2 bicub Mapping'
     map2_name = 'orca2 to src bicub Mapping'
     map_method = 'bicubic'
@@ -95,7 +95,7 @@
           that are repeats of those on the opposite side (-1 for not cyclic)
 /
 &shape_inputs
-    interp_file = 'src_nemo_bicub.nc'
+    interp_file = 'src_dst_bicub.nc'
     output_file = 'weights_bicubic.nc'
     ew_wrap     = 0
 /
