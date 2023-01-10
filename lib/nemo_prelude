@@ -108,8 +108,22 @@ echo "#################### Start NEMO pre-processing #################"
 
   fi
   if [[ $nemo_ln_rnf == "on" ]]; then
-   is_defined $nemo_runoff_core_monthly  || bail "The variables nemo_runoff_core_monthly must be defined in the configuration file"
-   acc_cp runoff.nc    $nemo_runoff_core_monthly
+    is_defined $nemo_runoff_core_monthly  || bail "The variables nemo_runoff_core_monthly must be defined in the configuration file"
+    # first try with climatology, if file don't exist in the database, try the yearly vervion (with _yYYYY.nc).
+    acc_cp runoff.nc    $nemo_runoff_core_monthly na
+    if [[ ! -e runoff.nc ]]; then 
+      for current_year in `seq $(( $chunk_start_year -1 )) $(( $chunk_stop_year +1 )) `; do
+        ## first and last year won't find the yyyy-1 and yyyy+1 (respectivelly).
+        [[ $current_year -lt run_start_year || $current_year -gt run_stop_year ]] && continue
+
+        yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
+        fy=`expr ${yearc} + ${iaf_year_offset} | awk  '{printf "%04d",$1}'`
+        yd=`expr ${iaf_loop_year} - ${iaf_year_offset}`
+        fyl=`expr ${fy} - '(' '(' ${yearc} - 1 ')' / ${yd} ')' \* ${yd}`           
+        forcing_year=`expr ${fyl} | awk  '{printf "%04d",$1}'`
+        acc_cp runoff_y${yearc}.nc          ${nemo_runoff_core_monthly}_y${forcing_year}.nc
+      done
+    fi
   fi
   if [[ $nemo_ln_zdfiwm == "on" ]]; then
     is_defined $nemo_mixing_power_bot && is_defined $nemo_mixing_power_pyc && is_defined $nemo_mixing_power_cri &&
