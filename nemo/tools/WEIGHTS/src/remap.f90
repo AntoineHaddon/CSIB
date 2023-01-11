@@ -123,6 +123,7 @@
       case(1)
 
         do n=1,size(dst_add)
+          if (dst_add(n) == 0) cycle
           dst_array(dst_add(n)) = dst_array(dst_add(n)) +  &
                                   src_array(src_add(n))*map_wts(1,n)
         end do
@@ -137,6 +138,7 @@
 
         if (size(map_wts,DIM=1) == 3) then
           do n=1,size(dst_add)
+          if (dst_add(n) == 0) cycle
             dst_array(dst_add(n)) = dst_array(dst_add(n)) + &
                                     src_array(src_add(n))*map_wts(1,n) + &
                                     src_grad1(src_add(n))*map_wts(2,n) + &
@@ -144,6 +146,7 @@
           end do
         else if (size(map_wts,DIM=1) == 4) then
           do n=1,size(dst_add)
+          if (dst_add(n) == 0) cycle
             dst_array(dst_add(n)) = dst_array(dst_add(n)) + &
                                     src_array(src_add(n))*map_wts(1,n) + &
                                     src_grad1(src_add(n))*map_wts(2,n) + &

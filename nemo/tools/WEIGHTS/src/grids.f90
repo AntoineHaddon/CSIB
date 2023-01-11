@@ -76,7 +76,7 @@
 !
 !-----------------------------------------------------------------------
 
-      logical (kind=log_kind), dimension(:), allocatable, save :: &
+      integer (1), dimension(:), allocatable, save :: &
                    grid1_mask,         & ! flag which cells participate
                    grid2_mask         ! flag which cells participate
 
@@ -336,9 +336,9 @@
 !-----------------------------------------------------------------------
 
       where (imask == 1)
-        grid1_mask = .true.
-      elsewhere
-        grid1_mask = .false.
+        grid1_mask = 1
+      elsewhere 
+        grid1_mask = 0
       endwhere
       deallocate(imask)
 
@@ -455,9 +455,9 @@
 !-----------------------------------------------------------------------
 
       where (imask == 1)
-        grid2_mask = .true.
+        grid2_mask = 1
       elsewhere
-        grid2_mask = .false.
+        grid2_mask = 0
       endwhere
       deallocate(imask)
 
