@@ -323,7 +323,7 @@ CONTAINS
       ENDDO
       !
       !
-      zrfact2 = 1.e3 * rfact2r
+      zrfact2 = 1.e3 * qfact2r
       ik1  = iksed + 1
       IF( lk_iomput ) THEN
        IF( jnt == qnrdttrc ) THEN

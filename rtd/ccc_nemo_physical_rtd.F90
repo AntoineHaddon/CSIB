@@ -410,17 +410,17 @@ PROGRAM nemo_ocean_diag
       sum_mld_max(:)   = 0.0_dp
       win_area(:)      = 0.0_dp
       sum_area(:)      = 0.0_dp
-      over_max_20N(:)  = 0.0_dp 
-      over_max_20S(:)  = 0.0_dp
-      over_min_20N     = 0.0_dp 
-      over_min_20S     = 0.0_dp
-      over_max_SO_net  = 0.0_dp 
-      over_min_SO_eddy = 0.0_dp
-      h_tran_20N       = 0.0_dp
-      h_tran_20S       = 0.0_dp
-      h_tran_20NA      = 0.0_dp
-      h_tran_20SA      = 0.0_dp
-      wind_work_so     = 0.0_dp
+      over_max_20N(:)     = 0.0_dp 
+      over_max_20S(:)     = 0.0_dp
+      over_min_20N(:)     = 0.0_dp 
+      over_min_20S(:)     = 0.0_dp
+      over_max_SO_net(:)  = 0.0_dp 
+      over_min_SO_eddy(:) = 0.0_dp
+      h_tran_20N(:)       = 0.0_dp
+      h_tran_20S(:)       = 0.0_dp
+      h_tran_20NA(:)      = 0.0_dp
+      h_tran_20SA(:)      = 0.0_dp
+      wind_work_so(:)      = 0.0_dp
 
     ! ---------------------------- total area    
       tarea(:, :)   = e1t(:, :)*e2t(:, :)*t_mask(:, :, 1)
@@ -736,10 +736,13 @@ PROGRAM nemo_ocean_diag
                       if (over_psi(j, k).gt.over_max_SO_net(l)) then      
                           over_max_SO_net(l) = over_psi(j, k) 
                       endif
-    !
-                      if (over_psi_eddy(j, k).lt.over_min_SO_eddy(l)) then    
+    ! OR Jan 11th 2023: currently returns -Infinity because of ORCA1 grid?, this is to bypass the error and test RTDs
+                      if ( (abs(over_psi_eddy(j,k)).lt.huge(0.0_dp)) .and. (over_psi_eddy(j, k).lt.over_min_SO_eddy(l)) ) then    
                           over_min_SO_eddy(l) = over_psi_eddy(j, k) 
+                      else
+                          over_min_SO_eddy(l) = -9999.9999 
                       endif
+    ! End of OR Jan 11th 2023                      
                   endif
               enddo 
           enddo    
@@ -832,89 +835,89 @@ PROGRAM nemo_ocean_diag
       print*,'Snow OO   ', snow_ao(l) 
       print*,'Snow ice  ', snow_ai(l) 
 
-!      print*,'-------------------------------------'
-!      print*,'    Temperature (C)                  '
-!      print*,'-------------------------------------'      
-!      print*,'SST     ', theta_z(1,l)
-!      print*,'T(220m) ', theta_z(15,l)
-!      print*,'T(450m) ', theta_z(19,l)
-!      print*,'T(850m) ', theta_z(23,l)
-!      print*,'T(1300m)', theta_z(26,l)
-!      print*,'T(2500m)', theta_z(32,l)
-!      print*,'Global T', tvol 
-!
-!      print*,'-------------------------------------'
-!      print*,'    Salinity (g/kg)                  '
-!      print*,'-------------------------------------'     
-!      print*,'SSS     ', salt_z(1,l)
-!      print*,'S(220m) ', salt_z(15,l)
-!      print*,'S(450m) ', salt_z(19,l)
-!      print*,'S(850m) ', salt_z(23,l)
-!      print*,'S(1300m)', salt_z(26,l)
-!      print*,'S(2500m)', salt_z(32,l)
-!      print*,'Global S', svol 
-!      print*,'-------------------------------------'
-!      print*,'  Surface fields (fluxes, SSH, etc)  '
-!      print*,'-------------------------------------' 
-!      print*,'Heat  (W/m2)           ', hglo      
-!      print*,'Water (kg/m2/s)*1.e-7  ', wglo
-!      print*,'Sea surface height (cm)', sshglo
-!
-!      print*,'------------------------------------'
-!      print*,'    Upper MOC (Sv)                  '
-!      print*,'------------------------------------'      
-!      print*,'Max at 20N ', over_max_20N   
-!      print*,'Max at 20S ', over_max_20S   
-!
-!      print*,'------------------------------------'
-!      print*,'    Lower MOC (Sv)                  '
-!      print*,'------------------------------------'      
-!      print*,'Min at 20N ', over_min_20N   
-!      print*,'Min at 20S ', over_min_20S   
-!      print*,'------------------------------------'
-!      print*,'    Upper Southern Ocean MOC (Sv)   '
-!      print*,'------------------------------------'      
-!      print*,'Max net    ', over_max_SO_net   
-!      print*,'Min eddy   ', over_min_SO_eddy  
-!      print*,'------------------------------------'
-!      print*,'    Tropical Pacific                '
-!      print*,'------------------------------------'   
-!      print*,'Upwelling across 60m (Sv)',  trp_up
-!      print*,'Nino3   SST           (C)',  t_nino3
-!      print*,'Nino3.4 SST           (C)',  t_nino34
-!      print*,'Nino4   SST           (C)',  t_nino4
-!      print*,'Max speed of EUC    (m/s)',  euc_max
-!      print*,'------------------------------------'
-!      print*,'    Transports through key passages '
-!      print*,'------------------------------------'   
-!      print*,'Drake Passage              (Sv)',dp_tran
-!      print*,'Indonesian Passage         (Sv)',pi_tran
-!      print*,'Net across 20N in Atlantic (Sv)',be_tran
-!      print*,'Net across 20N in Pacific  (Sv)',be_tran2
-!      print*,'------------------------------------'
-!      print*,'    Deep (>200m) mixed layer        '  
-!      print*,'------------------------------------'
-!      print*,' Winter MLD, mean       (m) ', win_mld
-!      print*,' Summer MLD, mean       (m)' , sum_mld
-!      print*,' Winter MLD area (m2)*1.e+14', win_area
-!      print*,' Summer MLD area (m2)*1.e+14', sum_area
-!      print*,' Winter MLD, max        (m)' , win_mld_max
-!      print*,' Summer MLD, max        (m)' , sum_mld_max
-!      print*,'------------------------------------'
-!      print*,'    Wind energy input (TW)          '  
-!      print*,'------------------------------------'
-!      print*,' Global Ocean ', wind_work_glb
-!      print*,' South of 40S ', wind_work_so
-!      print*,'------------------------------------'
-!      print*,'    Heat transport  (PW)            '  
-!      print*,'------------------------------------'
-!      print*,' Global Ocean   at 20N ', h_tran_20N 
-!      print*,' Atlantic Ocean at 20N ', h_tran_20NA
-!      print*,' Global Ocean   at 20S ', h_tran_20S 
-!      print*,' Atlantic Ocean at 20S ', h_tran_20SA 
-!
-!          print*,''             
-!          print*,'Done'
+     print*,'-------------------------------------'
+     print*,'    Temperature (C)                  '
+     print*,'-------------------------------------'      
+     print*,'SST     ', theta_z(1,l)
+     print*,'T(220m) ', theta_z(15,l)
+     print*,'T(450m) ', theta_z(19,l)
+     print*,'T(850m) ', theta_z(23,l)
+     print*,'T(1300m)', theta_z(26,l)
+     print*,'T(2500m)', theta_z(32,l)
+     print*,'Global T', tvol 
+
+     print*,'-------------------------------------'
+     print*,'    Salinity (g/kg)                  '
+     print*,'-------------------------------------'     
+     print*,'SSS     ', salt_z(1,l)
+     print*,'S(220m) ', salt_z(15,l)
+     print*,'S(450m) ', salt_z(19,l)
+     print*,'S(850m) ', salt_z(23,l)
+     print*,'S(1300m)', salt_z(26,l)
+     print*,'S(2500m)', salt_z(32,l)
+     print*,'Global S', svol 
+     print*,'-------------------------------------'
+     print*,'  Surface fields (fluxes, SSH, etc)  '
+     print*,'-------------------------------------' 
+     print*,'Heat  (W/m2)           ', hglo      
+     print*,'Water (kg/m2/s)*1.e-7  ', wglo
+     print*,'Sea surface height (cm)', sshglo
+
+     print*,'------------------------------------'
+     print*,'    Upper MOC (Sv)                  '
+     print*,'------------------------------------'      
+     print*,'Max at 20N ', over_max_20N   
+     print*,'Max at 20S ', over_max_20S   
+
+     print*,'------------------------------------'
+     print*,'    Lower MOC (Sv)                  '
+     print*,'------------------------------------'      
+     print*,'Min at 20N ', over_min_20N   
+     print*,'Min at 20S ', over_min_20S   
+     print*,'------------------------------------'
+     print*,'    Upper Southern Ocean MOC (Sv)   '
+     print*,'------------------------------------'      
+     print*,'Max net    ', over_max_SO_net   
+     print*,'Min eddy   ', over_min_SO_eddy  
+     print*,'------------------------------------'
+     print*,'    Tropical Pacific                '
+     print*,'------------------------------------'   
+     print*,'Upwelling across 60m (Sv)',  trp_up
+     print*,'Nino3   SST           (C)',  t_nino3
+     print*,'Nino3.4 SST           (C)',  t_nino34
+     print*,'Nino4   SST           (C)',  t_nino4
+     print*,'Max speed of EUC    (m/s)',  euc_max
+     print*,'------------------------------------'
+     print*,'    Transports through key passages '
+     print*,'------------------------------------'   
+     print*,'Drake Passage              (Sv)',dp_tran
+     print*,'Indonesian Passage         (Sv)',pi_tran
+     print*,'Net across 20N in Atlantic (Sv)',be_tran
+     print*,'Net across 20N in Pacific  (Sv)',be_tran2
+     print*,'------------------------------------'
+     print*,'    Deep (>200m) mixed layer        '  
+     print*,'------------------------------------'
+     print*,' Winter MLD, mean       (m) ', win_mld
+     print*,' Summer MLD, mean       (m)' , sum_mld
+     print*,' Winter MLD area (m2)*1.e+14', win_area
+     print*,' Summer MLD area (m2)*1.e+14', sum_area
+     print*,' Winter MLD, max        (m)' , win_mld_max
+     print*,' Summer MLD, max        (m)' , sum_mld_max
+     print*,'------------------------------------'
+     print*,'    Wind energy input (TW)          '  
+     print*,'------------------------------------'
+     print*,' Global Ocean ', wind_work_glb
+     print*,' South of 40S ', wind_work_so
+     print*,'------------------------------------'
+     print*,'    Heat transport  (PW)            '  
+     print*,'------------------------------------'
+     print*,' Global Ocean   at 20N ', h_tran_20N 
+     print*,' Atlantic Ocean at 20N ', h_tran_20NA
+     print*,' Global Ocean   at 20S ', h_tran_20S 
+     print*,' Atlantic Ocean at 20S ', h_tran_20SA 
+
+         print*,''             
+         print*,'Done'
 
       enddo ! Main computing loop
       call closeall
@@ -1179,9 +1182,18 @@ PROGRAM nemo_ocean_diag
 !       Convert the date into days since 01-01-0001        
         CALL noleap_days(iyear, imon+l-1, 1, days_elapsed)
         tdays_elapsed = float(days_elapsed)
-!        print*, days_elapsed
+!       print*,days_elapsed     
 !       time
         ntrec2 = ntrec + l - 1
+! OR Jan 11th 2023
+        print*,"loop #     l  = ", l
+        print*,"tdays_elapsed = ", tdays_elapsed
+        print*,"        iyear = ", iyear           
+        print*,"         imon = ", imon          
+        print*,"           lm = ", lm                         
+        print*,"       ntrec  = ", ntrec           
+        print*,"       ntrec2 = ", ntrec2           
+! End of OR Jan 11th 2023        
         call putvars ('time', iou, ntrec2, tdays_elapsed, 1., 0.)
 
 !       Global volume (not counting ssh)

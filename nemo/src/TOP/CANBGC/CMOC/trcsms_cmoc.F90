@@ -207,7 +207,7 @@ CONTAINS
         CALL trc_bott_cmoc
         ! n2 fixation/denitrification
         CALL cmoc_rem_denit
-        CALL trc_n2fx_denit_cmoc( par_1band )
+        CALL trc_n2fx_denit_cmoc( par_1band, jnt )
         ! some of these subroutines have a write_rhs_flag
         ! set to .true. by default to control whether or 
         ! not to update the trn array.
