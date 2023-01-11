@@ -17,14 +17,16 @@
     datagrid_file = 'remap_src_grid.nc'
     nemogrid_file = 'remap_dst_grid.nc'
     method = 'regular'
-    input_lon = 'lon'
-    input_lat = 'lat'
+    input_lon = 'glamt'
+    input_lat = 'gphit'
+    input_mask = 'top_level'
+    input_mask_value = 0
+    input_area = 'grid_area'
     nemo_lon = 'glamt'
     nemo_lat = 'gphit'
-    nemo_mask = 'none'
-    nemo_mask_value = 10
-    input_mask = 'none'
-    input_mask_value = 10
+    nemo_mask = 'top_level'
+    nemo_mask_value = 0
+    nemo_area =  'grid_area'
 /
 &comments
  -----------------------------------------------------------------------------------
@@ -48,23 +50,23 @@
     num_maps = 1
     grid1_file = 'remap_src_grid.nc'
     grid2_file = 'remap_dst_grid.nc'
-    interp_file1 = 'src_dst_bicub.nc'
-    interp_file2 = 'dst_src_bicub.nc'
-    map1_name = 'src to orca2 bicub Mapping'
-    map2_name = 'orca2 to src bicub Mapping'
-    map_method = 'bicubic'
-    normalize_opt = 'frac'
+    interp_file1 = 'src_dst_conserv.nc'
+    interp_file2 = 'dst_src_conserv.nc'
+    map1_name = 'src to orca2 conserv Mapping'
+    map2_name = 'orca2 to src conserv Mapping'
+    map_method = 'conservative'
+    normalize_opt = 'none'
     output_opt = 'scrip'
-    restrict_type = 'latitude'
-    num_srch_bins = 90 
-    luse_grid1_area = .false.
-    luse_grid2_area = .false.
+    restrict_type = 'latlon'
+    num_srch_bins = 10
+    luse_grid1_area = .true.
+    luse_grid2_area = .true.
 /
 
 &interp_inputs
-    input_file = "u_10.15JUNE2009_fill.nc"
-    interp_file = "core2_nordic1_bicub.nc"
-    input_name = "U_10_MOD"
+    input_file = "t_10.15JUNE2009_fill.nc"
+    interp_file = "core2_nordic1_conserv.nc"
+    input_name = "T_10_MOD"
     input_start = 1,1,1,1
     input_stride = 1,1,1,1
     input_stop = 0,0,0,1
@@ -72,17 +74,17 @@
 /
 
 &interp_outputs
-    output_file = "u_10.15JUNE2009_nordic1.nc"
+    output_file = "t_10.15JUNE2009_nordic1.nc"
     output_mode = "create"
     output_dims = 'x', 'y', 'time_counter'
-    output_scaling = "U_10_MOD|1.0", "time_counter|86400.0"
-    output_name = 'U_10_MOD'
+    output_scaling = "T_10_MOD|1.0", "time_counter|86400.0"
+    output_name = 'T_10_MOD'
     output_lon = 'x'
     output_lat = 'y'
     output_vars = 'time_counter'
     output_attributes = 'time_counter|units|seconds since 1995-00-00 00:00:00',
                         'time_counter|calendar|noleap',
-                        'U_10_MOD|units|mm/s'
+                        'T_10_MOD|units|mm/s'
 /
 
 &comments
@@ -95,7 +97,7 @@
           that are repeats of those on the opposite side (-1 for not cyclic)
 /
 &shape_inputs
-    interp_file = 'src_dst_bicub.nc'
-    output_file = 'weights_bicubic.nc'
+    interp_file = 'src_dst_conserv.nc'
+    output_file = 'weights_conserv.nc'
     ew_wrap     = 0
 /

@@ -1,5 +1,6 @@
 ! ==============================================================================
 
+#define ARGC
 PROGRAM scripgrid
 
   USE scripgrid_mod

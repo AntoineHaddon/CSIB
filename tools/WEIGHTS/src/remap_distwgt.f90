@@ -132,7 +132,7 @@
 
       grid_loop1: do dst_add = 1, grid2_size
 
-        if (.not. grid2_mask(dst_add)) cycle grid_loop1
+        if (grid2_mask(dst_add)==0) cycle grid_loop1
 
         coslat_dst = cos(grid2_center_lat(dst_add))
         coslon_dst = cos(grid2_center_lon(dst_add))
@@ -158,7 +158,7 @@
 
         dist_tot = zero
         do n=1,num_neighbors
-          if (grid1_mask(nbr_add(n))) then
+          if (grid1_mask(nbr_add(n))==1) then
             nbr_dist(n) = one/nbr_dist(n)
             dist_tot = dist_tot + nbr_dist(n)
             nbr_mask(n) = .true.
@@ -212,7 +212,7 @@
 
       grid_loop2: do dst_add = 1, grid1_size
 
-        if (.not. grid1_mask(dst_add)) cycle grid_loop2
+        if (grid1_mask(dst_add)==0) cycle grid_loop2
 
         coslat_dst = cos(grid1_center_lat(dst_add))
         coslon_dst = cos(grid1_center_lon(dst_add))
@@ -238,7 +238,7 @@
 
         dist_tot = zero
         do n=1,num_neighbors
-          if (grid2_mask(nbr_add(n))) then
+          if (grid2_mask(nbr_add(n))==1) then
             nbr_dist(n) = one/nbr_dist(n)
             dist_tot = dist_tot + nbr_dist(n)
             nbr_mask(n) = .true.
