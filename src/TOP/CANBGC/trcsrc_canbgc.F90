@@ -612,7 +612,7 @@ CONTAINS
   END SUBROUTINE trc_bott_cmoc
 
 
-  SUBROUTINE trc_n2fx_denit_cmoc( zpar, write_rhs_flag )
+  SUBROUTINE trc_n2fx_denit_cmoc( zpar, jnt, write_rhs_flag )
       ! compute N2 fixation and denitrification
       ! as prescribed in CanESM5/CMOC
       REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(in) :: zpar  ! any PAR array
@@ -621,6 +621,8 @@ CONTAINS
       LOGICAL                       :: write_rhs_flag0  ! 
       !
       INTEGER                       :: ji, jj, jk      ! nested loop indices
+      CHARACTER (len=22)            :: charout
+      INTEGER                       :: jnt
       ! <CMOC code OR 10/15/2015> arrays for total water column remineralisation, 
       ! total euphotic zone nitrogen fixation, temporary array for DNF diagnostics, 
       ! pon flux (euphotic zone bottom) for PIC burial diagnostics, PIC flux at the 
