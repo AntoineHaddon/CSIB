@@ -177,6 +177,28 @@ module ncdf
   private :: ncdf_add_var_4d_r4
   private :: ncdf_add_var_4d_r8
 
+  interface ncdf_get_att
+    module procedure ncdf_get_att_char
+    module procedure ncdf_get_att_si4
+    module procedure ncdf_get_att_ai4
+    module procedure ncdf_get_att_si8
+    module procedure ncdf_get_att_ai8
+    module procedure ncdf_get_att_sr4
+    module procedure ncdf_get_att_ar4
+    module procedure ncdf_get_att_sr8
+    module procedure ncdf_get_att_ar8
+  end interface
+
+  private :: ncdf_get_att_char
+  private :: ncdf_get_att_si4
+  private :: ncdf_get_att_ai4
+  private :: ncdf_get_att_si8
+  private :: ncdf_get_att_ai8
+  private :: ncdf_get_att_sr4
+  private :: ncdf_get_att_ar4
+  private :: ncdf_get_att_sr8
+  private :: ncdf_get_att_ar8
+
   interface ncdf_add_att
     module procedure ncdf_add_att_char
     module procedure ncdf_add_att_si4
@@ -663,6 +685,249 @@ module ncdf
     end function ncdf_get_varid
 
     !***************************************************************************
+    !--- Get a global or variable character attribute
+    !***************************************************************************
+    subroutine ncdf_get_att_char(fid, varid, name, val)
+      !--- The netcdf file ID
+      integer(kind=4), intent(in) :: fid
+
+      !--- The netcdf variable ID defined here
+      integer(kind=4), intent(in) :: varid
+
+      !--- The name of the attribute
+      character(*), intent(in) :: name
+
+      !--- The value of the attribute
+      character(*), intent(out):: val
+
+      !--- Local
+      integer(kind=4) :: ncstat
+      character(64) :: msg
+
+      ncstat = nf90_get_att( fid, varid, name, val )
+      msg = " "
+      write(msg,'(a,i6)')"ncdf_get_att_char: ncstat = ",ncstat
+      call nc_error_handler(fid, ncstat, 1, msg=msg)
+
+    end subroutine ncdf_get_att_char
+
+    !***************************************************************************
+    !--- Get a global or variable scalar integer*4 attribute
+    !***************************************************************************
+    subroutine ncdf_get_att_si4(fid, varid, name, val)
+      !--- The netcdf file ID
+      integer(kind=4), intent(in) :: fid
+
+      !--- The netcdf variable ID defined here
+      integer(kind=4), intent(in) :: varid
+
+      !--- The name of the attribute
+      character(*), intent(in) :: name
+
+      !--- The value of the attribute
+      integer(kind=4), intent(out):: val
+
+      !--- Local
+      integer(kind=4) :: ncstat
+      character(64) :: msg
+
+      ncstat = nf90_get_att( fid, varid, name, val )
+      msg = " "
+      write(msg,'(a,i6)')"ncdf_get_att_si4: ncstat = ",ncstat
+      call nc_error_handler(fid, ncstat, 1, msg=msg)
+
+    end subroutine ncdf_get_att_si4
+
+    !***************************************************************************
+    !--- Get a global or variable integer*4 array attribute
+    !***************************************************************************
+    subroutine ncdf_get_att_ai4(fid, varid, name, val)
+      !--- The netcdf file ID
+      integer(kind=4), intent(in) :: fid
+
+      !--- The netcdf variable ID defined here
+      integer(kind=4), intent(in) :: varid
+
+      !--- The name of the attribute
+      character(*), intent(in) :: name
+
+      !--- The value of the attribute
+      integer(kind=4), intent(out):: val(:)
+
+      !--- Local
+      integer(kind=4) :: ncstat
+      character(64) :: msg
+
+      ncstat = nf90_get_att( fid, varid, name, val )
+      msg = " "
+      write(msg,'(a,i6)')"ncdf_get_att_ai4: ncstat = ",ncstat
+      call nc_error_handler(fid, ncstat, 1, msg=msg)
+
+    end subroutine ncdf_get_att_ai4
+
+    !***************************************************************************
+    !--- Get a global or variable scalar integer*8 attribute
+    !***************************************************************************
+    subroutine ncdf_get_att_si8(fid, varid, name, val)
+      !--- The netcdf file ID
+      integer(kind=4), intent(in) :: fid
+
+      !--- The netcdf variable ID defined here
+      integer(kind=4), intent(in) :: varid
+
+      !--- The name of the attribute
+      character(*), intent(in) :: name
+
+      !--- The value of the attribute
+      integer(kind=8), intent(out):: val
+
+      !--- Local
+      integer(kind=4) :: ncstat
+      character(64) :: msg
+
+      ncstat = nf90_get_att( fid, varid, name, val )
+      msg = " "
+      write(msg,'(a,i6)')"ncdf_get_att_si8: ncstat = ",ncstat
+      call nc_error_handler(fid, ncstat, 1, msg=msg)
+
+    end subroutine ncdf_get_att_si8
+
+    !***************************************************************************
+    !--- Get a global or variable integer*8 array attribute
+    !***************************************************************************
+    subroutine ncdf_get_att_ai8(fid, varid, name, val)
+      !--- The netcdf file ID
+      integer(kind=4), intent(in) :: fid
+
+      !--- The netcdf variable ID defined here
+      integer(kind=4), intent(in) :: varid
+
+      !--- The name of the attribute
+      character(*), intent(in) :: name
+
+      !--- The value of the attribute
+      integer(kind=8), intent(out):: val(:)
+
+      !--- Local
+      integer(kind=4) :: ncstat
+      character(64) :: msg
+
+      ncstat = nf90_get_att( fid, varid, name, val )
+      msg = " "
+      write(msg,'(a,i6)')"ncdf_get_att_ai8: ncstat = ",ncstat
+      call nc_error_handler(fid, ncstat, 1, msg=msg)
+
+    end subroutine ncdf_get_att_ai8
+
+    !***************************************************************************
+    !--- Get a global or variable scalar real*4 attribute
+    !***************************************************************************
+    subroutine ncdf_get_att_sr4(fid, varid, name, val)
+      !--- The netcdf file ID
+      integer(kind=4), intent(in) :: fid
+
+      !--- The netcdf variable ID defined here
+      integer(kind=4), intent(in) :: varid
+
+      !--- The name of the attribute
+      character(*), intent(in) :: name
+
+      !--- The value of the attribute
+      real(kind=4), intent(out):: val
+
+      !--- Local
+      integer(kind=4) :: ncstat
+      character(64) :: msg
+
+      ncstat = nf90_get_att( fid, varid, name, val )
+      msg = " "
+      write(msg,'(a,i6)')"ncdf_get_att_sr4: ncstat = ",ncstat
+      call nc_error_handler(fid, ncstat, 1, msg=msg)
+
+    end subroutine ncdf_get_att_sr4
+
+    !***************************************************************************
+    !--- Get a global or variable real*4 array attribute
+    !***************************************************************************
+    subroutine ncdf_get_att_ar4(fid, varid, name, val)
+      !--- The netcdf file ID
+      integer(kind=4), intent(in) :: fid
+
+      !--- The netcdf variable ID defined here
+      integer(kind=4), intent(in) :: varid
+
+      !--- The name of the attribute
+      character(*), intent(in) :: name
+
+      !--- The value of the attribute
+      real(kind=4), intent(out):: val(:)
+
+      !--- Local
+      integer(kind=4) :: ncstat
+      character(64) :: msg
+
+      ncstat = nf90_get_att( fid, varid, name, val )
+      msg = " "
+      write(msg,'(a,i6)')"ncdf_get_att_ar4: ncstat = ",ncstat
+      call nc_error_handler(fid, ncstat, 1, msg=msg)
+
+    end subroutine ncdf_get_att_ar4
+
+    !***************************************************************************
+    !--- Get a global or variable scalar real*8 attribute
+    !***************************************************************************
+    subroutine ncdf_get_att_sr8(fid, varid, name, val)
+      !--- The netcdf file ID
+      integer(kind=4), intent(in) :: fid
+
+      !--- The netcdf variable ID defined here
+      integer(kind=4), intent(in) :: varid
+
+      !--- The name of the attribute
+      character(*), intent(in) :: name
+
+      !--- The value of the attribute
+      real(kind=8), intent(out):: val
+
+      !--- Local
+      integer(kind=4) :: ncstat
+      character(64) :: msg
+
+      ncstat = nf90_get_att( fid, varid, name, val )
+      msg = " "
+      write(msg,'(a,i6)')"ncdf_get_att_sr8: ncstat = ",ncstat
+      call nc_error_handler(fid, ncstat, 1, msg=msg)
+
+    end subroutine ncdf_get_att_sr8
+
+    !***************************************************************************
+    !--- Get a global or variable real*8 array attribute
+    !***************************************************************************
+    subroutine ncdf_get_att_ar8(fid, varid, name, val)
+      !--- The netcdf file ID
+      integer(kind=4), intent(in) :: fid
+
+      !--- The netcdf variable ID defined here
+      integer(kind=4), intent(in) :: varid
+
+      !--- The name of the attribute
+      character(*), intent(in) :: name
+
+      !--- The value of the attribute
+      real(kind=8), intent(out):: val(:)
+
+      !--- Local
+      integer(kind=4) :: ncstat
+      character(64) :: msg
+
+      ncstat = nf90_get_att( fid, varid, name, val )
+      msg = " "
+      write(msg,'(a,i6)')"ncdf_get_att_ar8: ncstat = ",ncstat
+      call nc_error_handler(fid, ncstat, 1, msg=msg)
+
+    end subroutine ncdf_get_att_ar8
+
+    !***************************************************************************
     !--- Add a global or variable character attribute
     !***************************************************************************
     subroutine ncdf_add_att_char(fid, varid, name, val)
@@ -958,6 +1223,54 @@ module ncdf
       call ncdf_data_mode(fid)
 
     end subroutine ncdf_add_att_ar8
+
+    !***************************************************************************
+    !--- Copy all the attibute from one file to the others
+    !***************************************************************************
+    subroutine ncdf_copy_all_att(fid_in, varname_in, fid_out, varname_out)
+      !--- The netcdf file ID
+      integer(kind=4), intent(in) :: fid_in, fid_out
+      !--- The name of the variable
+      character(*), intent(in) :: varname_in, varname_out
+
+      !--- Local
+      integer(kind=4) :: ncstat, natt, attid,iatt, varid_in, varid_out
+      character(64) :: msg, attname
+
+      !--- Put the netcdf file into define mode
+      call ncdf_define_mode(fid_out)
+
+      ! get the natt of the input file
+      ncstat = nf90_inq_varid(fid_in, varname_in, varid_in)
+      msg = " "
+      write(msg,'(a,i6)')"ncdf_copy_all_att 1: ncstat = ",ncstat
+      call nc_error_handler(fid_in, ncstat, 1, msg=msg)
+      ncstat = nf90_inquire_variable(fid_in, varid_in, nAtts= natt)
+      msg = " "
+      write(msg,'(a,i6)')"ncdf_copy_all_att 2: ncstat = ",ncstat
+      call nc_error_handler(fid_in, ncstat, 1, msg=msg)
+      ncstat = nf90_inq_varid(fid_out, varname_out, varid_out)
+      msg = " "
+      write(msg,'(a,i6)')"ncdf_copy_all_att 3: ncstat = ",ncstat
+      call nc_error_handler(fid_out, ncstat, 1, msg=msg)
+
+      do iatt=1,natt
+        ncstat = nf90_inq_attname(fid_in, varid_in, iatt, attname)
+        msg = " "
+        write(msg,'(a,a,a,i6)')"ncdf_copy_all_att ",trim(attname),": ncstat = ",ncstat
+        if (trim(attname).eq."_FillValue") cycle
+        call nc_error_handler(fid_in, ncstat, 1, msg=msg)
+        ncstat = nf90_copy_att(fid_in, varid_in, attname, fid_out, varid_out)
+        msg = " "
+        write(msg,'(a,a,a,i6)')"ncdf_copy_all_att ",trim(attname),": ncstat = ",ncstat
+        call nc_error_handler(fid_in, ncstat, 1, msg=msg)
+      enddo
+
+      !--- Put the netcdf file back into data mode
+      call ncdf_data_mode(fid_out)
+
+    end subroutine ncdf_copy_all_att
+
 
     !***************************************************************************
     !--- Define a dimension in an open netcdf file
