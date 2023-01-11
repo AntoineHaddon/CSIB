@@ -27,7 +27,7 @@ program remap
     integer(ESMF_KIND_I4), dimension(:, :), pointer   :: srcdata_mask=> null()
     real(kind=8), dimension(: ), pointer   :: srctime_vals=> null()
     integer srctime_nt
-    character(200) scrtime_units
+    character(200) tmp_char
     ! remaped grid variables
     real(ESMF_KIND_R8), pointer   ::  dstdata_array(:,:) => null()
     real(ESMF_KIND_R8), pointer   ::  dstdata_lat(:,:) => null()
@@ -44,6 +44,7 @@ program remap
     varid_dst_lon,  & 
     varid_dst_lat, &
     varid_dstfrc_orca_dst, &
+    ncstat,varid_src,  & 
     srcgrid_dims(2),dstgrid_dims(2)
     integer(kind=4), ALLOCATABLE, DIMENSION(:) :: xi, yi, xo,yo
 
@@ -138,7 +139,7 @@ program remap
 
     ! open, get the time axis (remaping done on every time step)
     call ncdf_open(src_fid, srcdata_file, "read")
-    call ncdf_get_time(srcdata_file,time_vals=srctime_vals,ntime=srctime_nt,units=scrtime_units)
+    call ncdf_get_time(srcdata_file,time_vals=srctime_vals,ntime=srctime_nt)
 
     ! create the outputs file
     write(6,*)"Outputs fields info:"
@@ -157,20 +158,23 @@ program remap
     call ncdf_add_coord(dst_fid, xid, xdim, "x", vals=xo)
     call ncdf_add_coord(dst_fid, yid, ydim, "y", vals=yo)
     call ncdf_add_coord(dst_fid, tid, tdim, "time",record_dim=.true. )
-    call ncdf_add_att(dst_fid, tid, 'Units', scrtime_units)
+    
+    ! add some attribute to the time variables
+    call ncdf_copy_all_att(src_fid, "time", dst_fid, "time" )
     call ncdf_write_var(dst_fid, tid, srctime_vals)
 
     ! put lat/lon in file
     call read_NEMO_mesh_mask_file(dstgrd_file, mid_lon=dstdata_lon, mid_lat=dstdata_lat )
-    call ncdf_add_var(dst_fid, varid_dst, 'longitude', (/xdim,ydim/))
+    call ncdf_add_var(dst_fid, varid_dst, 'lon', (/xdim,ydim/))
     call ncdf_write_var(dst_fid, varid_dst, dstdata_lon)
 
-    call ncdf_add_var(dst_fid, varid_dst, 'latitude',(/xdim,ydim/))
+    call ncdf_add_var(dst_fid, varid_dst, 'lat',(/xdim,ydim/))
     call ncdf_write_var(dst_fid, varid_dst, dstdata_lat)
 
     call ncdf_add_var(dst_fid, varid_dst, dstdata_field, &
-                      (/xdim,ydim,tdim/))
-    
+                      (/xdim,ydim,tdim/), xtype=NF90_FLOAT)
+    call ncdf_copy_all_att(src_fid,  srcdata_field, dst_fid, dstdata_field )
+
     print*,'Data processing...'
     do nt=1,srctime_nt 
 
