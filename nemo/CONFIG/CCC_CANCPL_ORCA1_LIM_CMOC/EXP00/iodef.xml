@@ -473,7 +473,7 @@
         <group id="1d_grid_T" name="auto" >                                                        <!-- grid T -->
 
           <file id="1d_grid_T"  name_suffix="_ar6"  >
-            <field ref="sst"           name='tos'           description="sea_surface_temperature"                  level="3" />
+            <field ref="sst"           name='tos'           description="sea_surface_temperature"                  level="1" />
             <field ref="sst2"          name='tossq'         description="square_of_sea_surface_temperature"        level="3" />
             <field ref="sss"           name='sos'           description="sea_surface_salinity"                     level="3" />
             <field ref="sss2"          name='sossq'         description="square_of_sea_surface_salinity"           level="3" />
