@@ -174,7 +174,7 @@
    !           !  file name              ! frequency (hours) ! variable  ! time interp.!  clim  ! 'yearly'/ ! weights filename ! rotation ! land/sea mask !
    !           !                         !  (if <0  months)  !   name    !   (logical) !  (T/F) ! 'monthly' !                  ! pairing  !    filename   !
    sn_sst      = 'sst_data'              ,        -1.        , 'temperature', .true.   , .true. , 'yearly'  ,    ''            ,    ''    ,     ''
-   sn_sss      = 'sss_data'              ,        -1.        , 'salinity',    .true.   , .true. , 'yearly'  ,    ''            ,    ''    ,     ''
+   sn_sss      = 'sss_data'              ,        -1.        , 'sos',    .true.   , .true. , 'yearly'  ,    ''            ,    ''    ,     ''
 /
 !-----------------------------------------------------------------------
 &namsbc_rnf    !   runoffs                                              (ln_rnf =T)
