@@ -154,7 +154,7 @@ CONTAINS
         IF( lwp ) WRITE(numout,*) 'using CMOC chla-a tracer'
         IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~'
         IF( lwp ) WRITE(numout,*)
-        IF( lwp ) CALL FLUSH(numout)           
+        IF( lwp ) CALL FLUSH(numout)         
         IF( iom_use("NCHL") )  ztotchla(:,:,:) = trn(:,:,:,jqnch)
       ENDIF
       ! IF( ln_canoe ) THEN
@@ -164,7 +164,7 @@ CONTAINS
         ! IF( lwp ) WRITE(numout,*)
         ! IF( lwp ) CALL FLUSH(numout)       
         ! IF( iom_use("NCHL") )  ztotchla(:,:,:) = trn(:,:,:,jrnch)
-        ! IF( iom_use("DCHL") )  ztotchla(:,:,:) = ztotchla(:,:,:) + trn(:,:,:,jrdch)    
+        ! IF( iom_use("DCHL") )  ztotchla(:,:,:) = ztotchla(:,:,:) + trn(:,:,:,jrdch)
       ! ENDIF
       !
       DO jk = 1, jpkm1   
@@ -317,7 +317,7 @@ CONTAINS
       ! O Riche Sept 13th 2022
       ! add an intermediate/working array to track total chla
       ! regardless of the BGCM used.
-      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: ztotchla                                                         
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: ztotchla                                                         
       !
       IF( ln_timing )  CALL timing_start('trc_opt_1band')
       !
@@ -326,7 +326,7 @@ CONTAINS
       IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
       IF( lwp ) CALL FLUSH(numout)  
       !
-      ALLOCATE( zetot(jpi,jpj,jpk), zparsw(jpi,jpj), ztotchla(jpi,jpj,jpk), STAT=ierr)
+      ALLOCATE( zetot(jpi,jpj,jpk), zparsw(jpi,jpj), ztotchla(jpi,jpj), STAT=ierr)
       IF( ierr > 0 )   CALL ctl_stop( 'STOP', 'trc_opt_1band: unable to allocate zetot' )
       !
       ! O Riche Aug 16th 2022
@@ -335,7 +335,7 @@ CONTAINS
       IF( ln_varpar )   CALL trc_opt_sbc( kt )      !
       !
       IF( ln_varpar ) THEN  ;  zparsw(:,:) = par_varsw(:,:) * 3._wp ! (as it meant for the 3-band PAR)
-      ELSE                  ;  zparsw(:,:) = .43_wp
+      ELSE                  ;  zparsw(:,:) = parlux
       ENDIF
       zetot(:,:,:) = 0._wp
       ! O Riche Sept 13th 2022
@@ -346,35 +346,50 @@ CONTAINS
       ! IFs can later be replaced by cpp key activation statements
       !
       ! Failsafe case
-      IF( .NOT. ln_cmoc .AND. .NOT. ln_canoe) THEN
+      IF ( .NOT. ln_cmoc .AND. .NOT. ln_canoe) THEN
         IF( lwp ) WRITE(numout,*) 'trc_opt_1band: no CanBGC selected:'
         IF( lwp ) WRITE(numout,*) 'prescribed 30-m e-folding chla'
         IF( lwp ) WRITE(numout,*) 'as a place holder here.'
         IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
         IF( lwp ) WRITE(numout,*)
         IF( lwp ) CALL FLUSH(numout)       
+        ! OR Jan 20th 2023
+        ! Temporary changes to test PAR and PP starting off
         CALL trc_src2d( kt, js2d_chla )
-        DO jk = 1, jpkm1
-          ztotchla(:,:,jk) = src2d_dta(:,:,js2d_chla)*exp(-gdept_n(:,:,jk)/30.)
-        ENDDO
+        ztotchla(:,:) = src2d_dta(:,:,js2d_chla)
       ENDIF
       !
-      IF( ln_cmoc ) THEN
+      IF ( ln_cmoc ) THEN
         IF( lwp ) WRITE(numout,*) 'trc_opt_1band: CMOC selected:'
         IF( lwp ) WRITE(numout,*) 'using CMOC chla-a tracer'
         IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
         IF( lwp ) WRITE(numout,*)
         IF( lwp ) CALL FLUSH(numout)      
-        IF( iom_use("NCHL") )  ztotchla(:,:,:) = trn(:,:,:,jqnch)
+        IF( iom_use("NCHL") ) THEN
+          IF( lwp ) WRITE(numout,*), 'trc_opt_1band: NCHL detected by iom_use S/R.'
+          IF( lwp ) WRITE(numout,*), 'trc_opt_1band: ztotchla assigned current trn(:,:,1,jqnch) values'
+          IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'          
+          IF( lwp ) WRITE(numout,*)
+          ztotchla(:,:) = trn(:,:,1,jqnch)  !!! OR Jan 23rd 2023 ! Only use the surface ztotchla values
+          ! IF( .NOT. ln_rsttr .AND. kt <= nittrc000 + nn_dttrc) THEN
+            ! ! OR Jan 20th 2023
+            ! ! Temporary changes to test PAR and PP starting off
+            ! CALL trc_src2d( kt, js2d_chla )
+            ! !
+            ! IF( lwp ) WRITE(numout,*), 'trc_opt_1band: could use surf_chla on 1st time step from rest.'
+            ! IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+            ! ztotchla(:,:) = src2d_dta(:,:,js2d_chla)
+          ! ENDIF
+        ENDIF
       ENDIF
       ! IF( ln_canoe ) THEN
         ! IF( lwp ) WRITE(numout,*) 'trc_opt_1band: CanOE selected:'
         ! IF( lwp ) WRITE(numout,*) 'using both CanOE chla-a tracers'
         ! IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
         ! IF( lwp ) WRITE(numout,*)
-        ! IF( lwp ) CALL FLUSH(numout)         
-        ! IF( iom_use("NCHL") )  ztotchla(:,:,:) = trn(:,:,:,jrnch)
-        ! IF( iom_use("DCHL") )  ztotchla(:,:,:) = ztotchla(:,:,:) + trn(:,:,:,jrdch)    
+        ! IF( lwp ) CALL FLUSH(numout)
+        ! IF( iom_use("NCHL") )  ztotchla(:,:) = trn(:,:,1,jrnch)  !!! OR Jan 23rd 2023 ! Only use the surface ztotchla values
+        ! IF( iom_use("DCHL") )  ztotchla(:,:) = ztotchla(:,:) + trn(:,:,1,jrdch)  !!! OR Jan 23rd 2023 ! Only use the surface ztotchla values    
       ! ENDIF
       !
       DO jk = 1, jpkm1
@@ -387,7 +402,7 @@ CONTAINS
             ! zchl = src2d_dta(ji,jj,js2d_chla)*exp(-gdept_n(ji,jj,jk)/30._wp)
             ! O Riche Sept 13th 2022
             ! use chla arrays instead of mockup array
-            zchl = ztotchla(ji,jj,jk)
+            zchl = ztotchla(ji,jj)  !!! OR Jan 23rd 2023 ! Only use the surface ztotchla values
             zchl = zchl + rtrn
             zchl = zchl * tmask(ji,jj,jk)
             zetot(ji,jj,jk) = qsr(ji,jj) * zparsw(ji,jj)     & 
