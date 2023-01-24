@@ -4,7 +4,7 @@ module file_readers
     use iso_fortran_env, only:  int32, int64, real32, real64
     !use esmf_utils, only : define_esmf_grid, define_esmf_field 
     private
-    public :: read_yg, read_NEMO_mesh_mask_file
+    public :: read_yg, read_NEMO_mesh_mask_file, read_CORE_mesh_mask_file
 
     contains
 
@@ -231,6 +231,210 @@ module file_readers
         where (abs(corn_lat)<1e-20) corn_lat=0.0_8
   
       end subroutine mm_corner_lat
+
+    subroutine read_CORE_mesh_mask_file(file_name, grid, overlap, &
+        mid_lon, mid_lat, corn_lon, corn_lat, &
+        mask, imask, area, &
+        title, grid_size, grid_dims, grid_edges)
+
+        implicit none
+
+        !--- The name of the NEMO mesh_mask file
+        character(*), intent(in)  :: file_name
+
+        !--- The NEMO grid type to extract (T,U,V,F) default is T grid
+        character(*), intent(in), optional :: grid
+
+        !--- If overlap = F then do not include overlaping grid cells in any
+        !--- dimension in the output grid description
+        logical, intent(in), optional :: overlap
+
+        !--- lon/lat of grid cell centers
+        real(kind=8), intent(out), pointer, optional ::  mid_lon(:,:)
+        real(kind=8), intent(out), pointer, optional ::  mid_lat(:,:)
+
+        !--- lon/lat of grid cell corners
+        !--- It is assumed that there are 4 corners per cell
+        real(kind=8), intent(out), pointer, optional :: corn_lon(:,:)
+        real(kind=8), intent(out), pointer, optional :: corn_lat(:,:)
+
+        !--- Land mask at level 1 of the T grid (real or integer)
+        real(kind=8), intent(out), pointer, optional ::  mask(:,:)
+        integer,      intent(out), pointer, optional :: imask(:,:)
+
+        !--- The grid cell area (m2)
+        real(kind=8), intent(out), pointer, optional :: area(:,:)
+
+        !--- The grid title
+        character(*), intent(out), optional :: title
+
+        !--- The total number of points in the grid
+        integer, intent(out), optional :: grid_size
+
+        !--- The shape of the grid ie (nx,ny)
+        integer, intent(out), optional :: grid_dims(2)
+
+        !--- The number of overlap grids (lower and upper) in each dimension
+        integer, intent(out), optional :: grid_edges(2,2)
+
+        !--- Local
+        logical :: exists, resize
+        integer(kind=4) :: fid
+        character(32)  :: lon_name="xc", lat_name="yc"
+        character(32)  :: lon_corn_name="xv", lat_corn_name="yv"
+        character(32)  :: area_name="area", mask_name="mask"
+        real(kind=8), pointer, dimension(:,:,:)   :: clon=>null(), clat=>null()
+        real(kind=8), pointer, dimension(:,:) :: xmask=>null()
+        integer     , pointer, dimension(:,:) :: ximask=>null()
+        integer :: nx, ny, idx
+        integer :: offset(2)
+        character(64),   pointer :: dim_names(:)
+        integer,         pointer :: dim_sizes(:)
+
+        if ( len_trim(file_name) < 1 ) then
+        write(6,*)"read_CORE_mesh_mask_file: file_name is blank"
+        call flush(6)
+        call xit("read_CORE_mesh_mask_file",-1)
+        endif
+
+        inquire(file=trim(file_name), exist=exists)
+        if ( .not. exists ) then
+        write(6,*)"read_CORE_mesh_mask_file: File does not exist ",trim(file_name)
+        call flush(6)
+        call xit("read_CORE_mesh_mask_file",-2)
+        endif
+
+        if ( present(overlap) ) then
+        !--- If overlap = T then keep the overlap longitude in output arrays
+        !--- If overlap = F then remove the overlap longitude before return
+        resize = .not. overlap
+        else
+        !--- Remove the overlap longitude by default
+        resize = .true.
+        endif
+
+        !--- Open the mesh_mask file for reading
+        call ncdf_open(fid, trim(file_name), mode="read")
+
+        !--- Read dimension sizes from the file
+        call ncdf_inquire_dims(fid, dim_names=dim_names, dim_sizes=dim_sizes)
+        nx = -1
+        ny = -1
+        do idx=1,size(dim_names)
+        if ( trim(adjustl(dim_names(idx))) .eq. "ni") nx = dim_sizes(idx)
+        if ( trim(adjustl(dim_names(idx))) .eq. "nj") ny = dim_sizes(idx)
+        enddo
+        if ( nx < 0 .or. ny < 0 ) then
+        write(6,*)"read_CORE_mesh_mask_file: Unable to determine nx/ny from ",trim(file_name)
+        call flush(6)
+        call xit("read_CORE_mesh_mask_file",-4)
+        endif
+
+        write(6,*)"  read_CORE_mesh_mask_file: ",trim(file_name),"   nx=",nx,"   ny=",ny
+        call flush(6)
+
+        if ( present(title) ) then
+        title = " "
+        if ( nx > 999 .or. ny > 999 ) then
+        write(title,'(3a,i4,a,i4)')"CORE "," -- ",nx,"x",ny
+        else
+        write(title,'(3a,i3.3,a,i3.3)')"CORE "," -- ",nx,"x",ny
+        endif
+        write(6,*)"read_CORE_mesh_mask_file: title = ",trim(title)
+        call flush(6)
+        endif
+
+        if ( present(grid_edges) ) then
+        grid_edges = 0
+        !--- Assume 2 overlap logitudes
+        grid_edges(2,1) = 2
+        !write(6,*)"read_CORE_mesh_mask_file: grid_edges = ",grid_edges
+        call flush(6)
+        endif
+
+        if ( present(mid_lon) ) then
+        !--- Read grid cell center longitudes from the file
+        !--- This call will destroy then reallocate mid_lon
+        call ncdf_read_var(fid, trim(lon_name), mid_lon)
+        
+        endif
+
+        if ( present(mid_lat) ) then
+        !--- Read grid cell center latitudes from the file
+        !--- This call will destroy then reallocate mid_lat
+        call ncdf_read_var(fid, trim(lat_name), mid_lat)
+        
+        
+        endif
+
+        if ( present(corn_lon) ) then
+        !--- Read grid cell corner longitudes from the file
+        !--- This call will destroy then reallocate clon
+        call ncdf_read_var(fid, trim(lon_corn_name), clon )
+        !--- Reformat these corner lon values to add missing boundary points
+        !--- corn_lon is returned with 1 more row and 1 more column than clon
+        call mm_corner_lon(clon(:,:,3), offset, corn_lon)
+        
+        endif
+
+        if ( present(corn_lat) ) then
+        !--- Read grid cell corner latitudes from the file
+        !--- This call will destroy then reallocate clat
+        call ncdf_read_var(fid, trim(lat_corn_name), clat)
+        
+        !--- Reformat these corner lat values to add missing boundary points
+        !--- corn_lat is returned with 1 more row and 1 more column than clat
+        call mm_corner_lat(clat(:,:,3), offset, corn_lat)
+        
+        endif
+
+        if ( present(mask) ) then
+        !--- Read T grid land mask from the file
+        call ncdf_read_var(fid, trim(mask_name), xmask)
+        
+        !--- Assign mask with surface (level 1) mask values from
+        !--- the 3D mask that was read from the file
+        if ( associated(mask) ) deallocate(mask)
+        allocate( mask(size(xmask,dim=1),size(xmask,dim=2)) )
+        mask = xmask
+        deallocate(xmask)
+        endif
+
+        if ( present(imask) ) then
+        !--- Read T grid land mask from the file
+        call ncdf_read_var(fid, trim(mask_name), ximask)
+        
+        !--- Assign mask with surface (level 1) mask values from
+        !--- the 3D mask that was read from the file
+        if ( associated(imask) ) deallocate(imask)
+        allocate( imask(size(ximask,dim=1),size(ximask,dim=2)) )
+        imask = ximask
+        deallocate(ximask)
+        
+        endif
+
+        if ( present(area) ) then
+        !--- Read scale lengths from the file
+        
+        call ncdf_read_var(fid, trim(area_name), area)
+        
+        endif
+
+        !--- Define grid_dims and grid_size here so that any changes to nx,ny due to
+        !--- removing overlap longitudes will be reflected in these output values
+        if ( present(grid_dims) ) then
+        grid_dims(1) = nx
+        grid_dims(2) = ny
+        endif
+
+        if ( present(grid_size) ) then
+        grid_size = nx*ny
+        endif
+
+        !--- Close the file
+        call ncdf_close(fid)
+
+    end subroutine read_CORE_mesh_mask_file
 
     subroutine read_NEMO_mesh_mask_file(file_name, grid, overlap, &
         mid_lon, mid_lat, corn_lon, corn_lat, &

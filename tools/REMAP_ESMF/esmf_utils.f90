@@ -5,9 +5,9 @@ module esmf_utils
     use ESMF
     use ncdf
     use iso_fortran_env, only:  int32, int64, real32, real64
-    use file_readers, only: read_yg, read_NEMO_mesh_mask_file
+    use file_readers, only: read_yg, read_NEMO_mesh_mask_file, read_CORE_mesh_mask_file
     private
-    public ::  define_esmf_grid, define_esmf_field, define_yg_grid_from_file, define_orca_grid_from_file
+    public ::  define_esmf_grid, define_esmf_field, define_yg_grid_from_file, define_orca_grid_from_file, define_core_grid_from_file
     
     !implicit none
     integer, parameter :: dp = real64 
@@ -242,4 +242,46 @@ module esmf_utils
         endif
 
     end subroutine define_orca_grid_from_file
+
+    subroutine define_core_grid_from_file(filename, gridname, esmf_coregrid,grid_dims,use_mask)
+        character(*), intent(in) :: filename  
+        character(*), intent(in) :: gridname          ! Name of the grid in the ESMF object
+        type(ESMF_grid), intent(out) :: esmf_coregrid   ! ESMF grid object
+        !--- The shape of the grid ie (nx,ny)
+        integer, intent(out), optional :: grid_dims(2)
+        logical, intent(in), optional :: use_mask
+        real(dp), dimension(:,:), pointer :: mid_lon => null()
+        real(dp), dimension(:,:), pointer :: mid_lat => null()
+        real(dp), dimension(:,:), pointer :: corn_lon => null()
+        real(dp), dimension(:,:), pointer :: corn_lat => null()
+        real(dp), dimension(:,:), pointer :: tmask => null()
+        real(dp), dimension(:,:), pointer :: core_area => null()
+        integer :: core_grid_dims(2), onx, ony
+        integer(ESMF_KIND_I4), dimension(:,:), allocatable :: tmaski
+        logical luse_mask
+        
+        call read_CORE_mesh_mask_file(filename, grid_dims=core_grid_dims)
+        onx=core_grid_dims(1)
+        ony=core_grid_dims(2)
+        allocate(tmaski(onx, ony))!mid_lon(onx, ony), mid_lat(onx, ony), corn_lon(onx+1, ony+1), corn_lat(onx+1, ony+1), tmask(onx, ony), core_area(onx, ony), &
+                 
+
+        call read_CORE_mesh_mask_file(filename,  mask=tmask, &
+            mid_lon=mid_lon, mid_lat=mid_lat,corn_lon=corn_lon, corn_lat=corn_lat, &
+            area=core_area)
+        where (mid_lon<0) mid_lon=mid_lon+360
+        where (corn_lon<0) corn_lon=corn_lon+360
+
+        tmaski = int(tmask)
+        if ( present(use_mask).and..not.use_mask ) then
+          ! set all the mask valule to one if user decide to not use mask. 
+          tmaski=1
+        endif
+        call define_esmf_grid('1peri', gridname, mid_lon, mid_lat, corn_lon, corn_lat, mask=tmaski, area=core_area, my_esmf_grid=esmf_coregrid)
+
+        if ( present(grid_dims) ) then
+        grid_dims = core_grid_dims
+        endif
+
+    end subroutine define_core_grid_from_file
 end module esmf_utils

@@ -6,7 +6,7 @@ program remap
     use ESMF
     use ncdf
     use iso_fortran_env, only:  int8, int16, int32, int64, real32, real64
-    use esmf_utils, only : define_esmf_grid, define_esmf_field, define_yg_grid_from_file, define_orca_grid_from_file 
+    use esmf_utils, only : define_esmf_grid, define_esmf_field, define_yg_grid_from_file, define_orca_grid_from_file, define_core_grid_from_file
     use file_readers, only: read_yg, read_NEMO_mesh_mask_file
     use spreading, only: runoff_push
     implicit none
@@ -98,6 +98,9 @@ program remap
     use_landmask=srcgrd_mask
 
     select case (srcgrd_type)
+    case ("core")
+        ! define CanNEMO like grid
+        call define_core_grid_from_file(srcgrd_file, srcgrd_name, src_grid, grid_dims=srcgrid_dims,use_mask=use_landmask)
     case ("nemo")
         ! define CanNEMO like grid
         call define_orca_grid_from_file(srcgrd_file, srcgrd_name, src_grid, grid_dims=srcgrid_dims,use_mask=use_landmask)
@@ -117,6 +120,9 @@ program remap
     use_landmask=dstgrd_mask
 
     select case (dstgrd_type)
+    case ("core")
+        ! define CanNEMO like grid
+        call define_core_grid_from_file(srcgrd_file, srcgrd_name, src_grid, grid_dims=srcgrid_dims,use_mask=use_landmask)
     case ("nemo")
         ! define CanNEMO like grid
         call define_orca_grid_from_file(dstgrd_file, dstgrd_name, dst_grid, grid_dims=dstgrid_dims,use_mask=use_landmask)
