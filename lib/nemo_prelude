@@ -151,13 +151,9 @@ echo "#################### Start NEMO pre-processing #################"
     acc_cp resto.nc                  $nemo_resto 
   fi 
 
-  if [[ $nemo_nn_sssr == 1 ]]; then
+  if [[ $nemo_nn_sssr != 0 ]]; then
     is_defined $nemo_sss_data || bail "The variable nemo_sss_data must be defined in the configuration file."
     acc_cp sss_data.nc               $nemo_sss_data
-  elif [[ $nemo_nn_sssr == 2 ]]; then
-    is_defined $nemo_sss_data && is_defined $nemo_sst_data || bail "The variable nemo_sss_data and nemo_sst_data must be defined in the configuration file."
-    acc_cp sss_data.nc               $nemo_sss_data
-    acc_cp sst_data.nc               $nemo_sst_data
   fi 
 
   if [[ $nemo_ln_trabbc == "on" ]]; then
