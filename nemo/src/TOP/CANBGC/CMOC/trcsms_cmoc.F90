@@ -69,6 +69,8 @@ CONTAINS
       REAL(wp) ::  ztra
       
       REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: ztrmyt
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:,:) :: qtrbbio
+      
       !!----------------------------------------------------------------------
       !
       IF( ln_timing )   CALL timing_start('trc_sms_cmoc')
@@ -79,6 +81,8 @@ CONTAINS
       !
       ! Sum of all the tracers shared TOP + CMOC
       jp_tot = jp_bgc + jp_cmoc
+      !
+      ALLOCATE(qtrbbio(jpi,jpj,jpk,jp_tot))
       !
       IF( ln_dust0 .OR. ln_river0 .OR. ln_ndepo0 ) THEN   ;   ll_sbc = .TRUE.
       ELSE                                                ;   ll_sbc = .FALSE.
@@ -155,6 +159,10 @@ CONTAINS
         !
       ENDIF
       !
+      DO jn = 1, jp_tot                    !   Store the tracer concentrations before entering CMOC
+        qtrbbio(:,:,:,jn) = trb(:,:,:,jn)
+      END DO
+      !
       ! O Riche Sept 14th 2022
       ! Move here before cmoc_prod as issue with PAR being set to 0s
       ! at initialization (current state)
@@ -171,16 +179,16 @@ CONTAINS
         !
         ! trcsink calls go here according to p4z_bio
         !
-        CALL trc_opt_1band( kt )       ! 1-band PAR attenuation
+        CALL trc_opt_1band( kt )       ! 1-band PAR attenuation ! this is using trn for chl-a
         !
-        CALL cmoc_sink( kt , jnt )     ! particule sinking 
+        CALL cmoc_sink( kt , jnt )     ! particule sinking ! this is applied to trn but this does not work since using qfact2 (leapfrog or euler)
         !
-        CALL cmoc_prod( kt, jnt )      ! PP subroutine
-        CALL cmoc_rem( kt, jnt )       ! OR Nov 15th 2022, Is rem subroutine here in PISCES? Do we need it here in CMOC?
+        CALL cmoc_prod( kt, jnt )      ! PP subroutine     ! this is applied to tra 
+        CALL cmoc_rem( kt, jnt )       ! OR Nov 15th 2022, Is rem subroutine here in PISCES? Do we need it here in CMOC? ! same tra application
         !
-        CALL cmoc_mort( kt )
+        CALL cmoc_mort( kt ) ! applied to tra
         !
-        CALL cmoc_zoo( kt )
+        CALL cmoc_zoo( kt )  ! applied to tra
         !
         !!!!!! O Riche Nov 8th 2022
         !!!!!! replace this by a call to trc_xnegtr subroutine
@@ -202,22 +210,24 @@ CONTAINS
         ! within CanESM5/CMOC p4zsed.F90 code, e.g.
         ! river sources
         ! Formely p4z_sbc in p4zsed.F90
-        IF ( jnt == 1 .AND. ll_sbc ) CALL trc_src_criver( kt )
+        IF ( jnt == 1 .AND. ll_sbc ) CALL trc_src_criver( kt ) !!! applied to trn
         ! POC bottom instant. rem
-        CALL trc_bott_cmoc
+        CALL trc_bott_cmoc                                     !!! applied to trn
         ! n2 fixation/denitrification
-        CALL cmoc_rem_denit
-        CALL trc_n2fx_denit_cmoc( par_1band, jnt )
+        CALL cmoc_rem_denit                                    !!! applied to trn
+        CALL trc_n2fx_denit_cmoc( par_1band, jnt )             !!! applied to trn
         ! some of these subroutines have a write_rhs_flag
         ! set to .true. by default to control whether or 
         ! not to update the trn array.
         !!!!!!! End   of "p4zsed" block !!!!!!!
         ! !
-        DO jn = 1, jp_tot 
-          trb(:,:,:,jn) = trn(:,:,:,jn)
-        END DO
         !  
       END DO
+      !
+      DO jn = 1, jp_tot
+        trn(:,:,:,jn) = trn(:,:,:,jn) + trb(:,:,:,jn) - qtrbbio(:,:,:,jn) ! OR Jan 27th 2023, keep effect of sinking, ext. sources and RHS terms
+        trb(:,:,:,jn) = qtrbbio(:,:,:,jn)
+      ENDDO
       !
       CALL trc_flx( kt )               ! compute air-sea gas exchange
       ! IF the radioactive tracer was added there would be also a call to p4z_dcy( kt ) equivalent (trc_dcy?) here. 
