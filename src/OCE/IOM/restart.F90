@@ -59,9 +59,9 @@ CONTAINS
       INTEGER, INTENT(in) ::   kt     ! ocean time-step
       !!
       CHARACTER(LEN=20)   ::   clkt     ! ocean time-step deine as a character
-      CHARACTER(LEN=50)   ::   clname   ! ocean output restart file name
+      CHARACTER(LEN=256)   ::   clname   ! ocean output restart file name
       CHARACTER(lc)       ::   clpath   ! full path to ocean output restart file
-      CHARACTER(LEN=52)   ::   clpname   ! ocean output restart file name including prefix for AGRIF
+      CHARACTER(LEN=258)   ::   clpname   ! ocean output restart file name including prefix for AGRIF
       CHARACTER(LEN=256)  ::   clinfo    ! info character
       !!----------------------------------------------------------------------
       !
