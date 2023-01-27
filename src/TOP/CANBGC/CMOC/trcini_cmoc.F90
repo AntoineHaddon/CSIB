@@ -134,6 +134,8 @@ CONTAINS
       !
       CALL trc_flx_init
       !
+      qndayflxtr = 0
+      !
       CALL trc_opt_init
       !
       CALL cmoc_prod_init
