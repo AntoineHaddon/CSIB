@@ -44,7 +44,7 @@
    ln_sf6        =  .false.     !  Run the SF6 passive tracer
    ln_c14        =  .false.     !  Run the Radiocarbon passive tracer
    !
-   ln_trcdta     =  .false.  !  Initialisation from data input file (T) or not (F)
+   ln_trcdta     =  .true.   !  Initialisation from data input file (T) or not (F)
    ln_trcdmp     =  .false.  !  add a damping termn (T) or not (F)
    ln_trcdmp_clo =  .false.  !  damping term (T) or not (F) on closed seas
    !

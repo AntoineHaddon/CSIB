@@ -79,6 +79,13 @@
           <field field_ref="thchl2C"  name="thchl2C"   level="0" />
           <field field_ref="chlaP"    name="chlaP"     level="0" />
           <field field_ref="photor"   name="photor"    level="0" />
+          <!-- CMOC export diagnostics -->
+          <field id="oomask"          name="oomask"    level="0" />
+          <field id="EPC100"          name="EPC100"    level="0" />
+          <field id="EPCALC100"       name="EPCALC100" level="0" />
+          <!-- CMOC N2 diagnostics -->                
+          <field id="Nfix"            name="Nfix"      level="0" />
+          <field id="Denit"           name="Denit"     level="0" />
           
           <!-- Temporary addition -->
           <!-- Ideal Age Tracer (IAT) from TOP -->
