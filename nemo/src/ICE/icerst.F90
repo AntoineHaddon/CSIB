@@ -48,7 +48,7 @@ CONTAINS
       INTEGER, INTENT(in) ::   kt       ! number of iteration
       !
       CHARACTER(len=20)   ::   clkt     ! ocean time-step define as a character
-      CHARACTER(len=50)   ::   clname   ! ice output restart file name
+      CHARACTER(len=256)   ::   clname   ! ice output restart file name
       CHARACTER(len=256)  ::   clpath   ! full path to ice output restart file 
       !!----------------------------------------------------------------------
       !
