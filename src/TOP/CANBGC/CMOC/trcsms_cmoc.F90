@@ -179,9 +179,15 @@ CONTAINS
         !
         ! trcsink calls go here according to p4z_bio
         !
+        ! Test print narea
+        WRITE(numout,*)
+        WRITE(numout,*) 'narea = ', narea
+        WRITE(numout,*) '~~~~~~~~~~~~~~~~~'
+        CALL FLUSH(numout)
+        !
         CALL trc_opt_1band( kt )       ! 1-band PAR attenuation ! this is using trn for chl-a
         !
-        CALL cmoc_sink( kt , jnt )     ! particule sinking ! this is applied to trn but this does not work since using qfact2 (leapfrog or euler)
+        !CALL cmoc_sink( kt , jnt )     ! particule sinking ! this is applied to trn but this does not work since using qfact2 (leapfrog or euler)
         !
         CALL cmoc_prod( kt, jnt )      ! PP subroutine     ! this is applied to tra 
         CALL cmoc_rem( kt, jnt )       ! OR Nov 15th 2022, Is rem subroutine here in PISCES? Do we need it here in CMOC? ! same tra application
