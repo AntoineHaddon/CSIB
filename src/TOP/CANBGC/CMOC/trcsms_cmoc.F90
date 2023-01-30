@@ -189,10 +189,10 @@ CONTAINS
         !
         !CALL cmoc_sink( kt , jnt )     ! particule sinking ! this is applied to trn but this does not work since using qfact2 (leapfrog or euler)
         !
-        !CALL cmoc_prod( kt, jnt )      ! PP subroutine     ! this is applied to tra 
+        CALL cmoc_prod( kt, jnt )      ! PP subroutine     ! this is applied to tra 
         !CALL cmoc_rem( kt, jnt )       ! OR Nov 15th 2022, Is rem subroutine here in PISCES? Do we need it here in CMOC? ! same tra application
         !
-        !CALL cmoc_mort( kt ) ! applied to tra
+        CALL cmoc_mort( kt ) ! applied to tra
         !
         !CALL cmoc_zoo( kt )  ! applied to tra
         !
