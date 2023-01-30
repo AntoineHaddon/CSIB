@@ -189,12 +189,12 @@ CONTAINS
         !
         !CALL cmoc_sink( kt , jnt )     ! particule sinking ! this is applied to trn but this does not work since using qfact2 (leapfrog or euler)
         !
-        CALL cmoc_prod( kt, jnt )      ! PP subroutine     ! this is applied to tra 
-        CALL cmoc_rem( kt, jnt )       ! OR Nov 15th 2022, Is rem subroutine here in PISCES? Do we need it here in CMOC? ! same tra application
+        !CALL cmoc_prod( kt, jnt )      ! PP subroutine     ! this is applied to tra 
+        !CALL cmoc_rem( kt, jnt )       ! OR Nov 15th 2022, Is rem subroutine here in PISCES? Do we need it here in CMOC? ! same tra application
         !
-        CALL cmoc_mort( kt ) ! applied to tra
+        !CALL cmoc_mort( kt ) ! applied to tra
         !
-        CALL cmoc_zoo( kt )  ! applied to tra
+        !CALL cmoc_zoo( kt )  ! applied to tra
         !
         !!!!!! O Riche Nov 8th 2022
         !!!!!! replace this by a call to trc_xnegtr subroutine
@@ -202,7 +202,16 @@ CONTAINS
         ! Enforce conservation and positive values of tracers
         ! by adjusting the time step using tra trend
         !
-        IF( ln_cmocnegtr )  CALL trc_xnegtr( 1, jp_tot )   !!! O Riche Nov 8th 2022 ! reside in sms_top_canbgc.F90
+        IF( ln_cmocnegtr ) THEN
+          WRITE(numout,*)
+          WRITE(numout,*) 'trc_sms_cmoc: trc_xnegtr call.'
+          WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'          
+          CALL trc_xnegtr( 1, jp_tot )   !!! O Riche Nov 8th 2022 ! reside in sms_top_canbgc.F90
+        ELSE
+          WRITE(numout,*) 
+          WRITE(numout,*) 'trc_sms_cmoc: no call to trc_xnegtr'
+          WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'          
+        ENDIF
         DO jn = 1, jp_tot
           trb(:,:,:,jn) = trb(:,:,:,jn) + tra(:,:,:,jn)        
           tra(:,:,:,jn) = 0._wp
@@ -216,12 +225,12 @@ CONTAINS
         ! within CanESM5/CMOC p4zsed.F90 code, e.g.
         ! river sources
         ! Formely p4z_sbc in p4zsed.F90
-        IF ( jnt == 1 .AND. ll_sbc ) CALL trc_src_criver( kt ) !!! applied to trn
+        !IF ( jnt == 1 .AND. ll_sbc ) CALL trc_src_criver( kt ) !!! applied to trn
         ! POC bottom instant. rem
-        CALL trc_bott_cmoc                                     !!! applied to trn
+        !CALL trc_bott_cmoc                                     !!! applied to trn
         ! n2 fixation/denitrification
-        CALL cmoc_rem_denit                                    !!! applied to trn
-        CALL trc_n2fx_denit_cmoc( par_1band, jnt )             !!! applied to trn
+        !CALL cmoc_rem_denit                                    !!! applied to trn
+        !CALL trc_n2fx_denit_cmoc( par_1band, jnt )             !!! applied to trn
         ! some of these subroutines have a write_rhs_flag
         ! set to .true. by default to control whether or 
         ! not to update the trn array.
