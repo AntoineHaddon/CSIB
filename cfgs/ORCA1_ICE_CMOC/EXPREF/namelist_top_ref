@@ -153,3 +153,16 @@
                              !  = 1 Only for tracers forced with external data
                              !  = 2 Damping applied to all tracers
 /
+!-----------------------------------------------------------------------
+&namtrc_opt    !   parameters for optics
+!-----------------------------------------------------------------------
+!              !  file name       ! frequency (hours) ! variable  ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation ! land/sea mask !
+!              !                  !  (if <0  months)  !   name    !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  ! filename      !
+   sn_par      = 'par.orca'       ,     24.           , 'fr_par'  ,  .true.      , .true. , 'yearly'  , ''       , ''       , ''
+   cn_dir      = './'      !  root directory for the location of the dynamical files
+   ln_varpar   =  .false.  ! boolean for PAR variable
+   parlux      =  0.43     ! Fraction of shortwave as PAR
+! 1-band PAR
+   kw_cmoc     =  0.04          ! PAR attenuation coefficient for seawater (m^-1)
+   kchl_cmoc   =  0.03          ! PAR attenuation for chlorophyll          (m^-1) (mgChl m^-3)^-1
+/
