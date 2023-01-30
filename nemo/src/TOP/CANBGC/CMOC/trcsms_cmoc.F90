@@ -181,8 +181,10 @@ CONTAINS
         !
         ! Test print narea
         WRITE(numout,*)
-        WRITE(numout,*) 'narea = ', narea
-        WRITE(numout,*) '~~~~~~~~~~~~~~~~~'
+        WRITE(numout,*) 'time step            #', kt
+        WRITE(numout,*) 'split loop iteration #', jnt
+        WRITE(numout,*) 'narea                #', narea
+        WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
         CALL FLUSH(numout)
         !
         CALL trc_opt_1band( kt )       ! 1-band PAR attenuation ! this is using trn for chl-a
@@ -244,7 +246,7 @@ CONTAINS
         trb(:,:,:,jn) = qtrbbio(:,:,:,jn)
       ENDDO
       !
-      CALL trc_flx( kt )               ! compute air-sea gas exchange
+      !CALL trc_flx( kt )               ! compute air-sea gas exchange
       tra(:,:,:,jqdic) = tra(:,:,:,jqdic) * qfactr ! This is necessary if kept here as non-0 tra is going to be scaled up in trc_nxt
       tra(:,:,:,jqoxy) = tra(:,:,:,jqoxy) * qfactr ! This is necessary if kept here as non-0 tra is going to be scaled up in trc_nxt
       !
