@@ -332,8 +332,9 @@ echo "#################### Start NEMO pre-processing #################"
   ################################
 
   # Add pisces files to the list only if nemo_trc is enable
-  [ $nemo_trc -eq 1 ] && xios_files=( "${xios_files[@]}"  field_def_nemo-pisces.xml file_def_nemo-pisces.xml )
-
+  if [[ $nemo_config == *"PISCES" ]] ; then
+	xios_files=( "${xios_files[@]}"  field_def_nemo-pisces.xml file_def_nemo-pisces.xml )
+  fi
   for file in "${xios_files[@]}"; do
     find_nemo_config_EXP00 $file
     # Update NEMO priority level of output variables in each file: output_level 
