@@ -166,7 +166,7 @@ echo "#################### Start NEMO pre-processing #################"
   fi 
 
   if [[ $nemo_nn_chldta == "on" ]]; then
-    is_defined $nemo_chlorophyl || bail "The variable nemo_chlorophyl must be defined in the configuration file."
+    is_defined $nemo_chlorophyll || bail "The variable nemo_chlorophyll must be defined in the configuration file."
     acc_cp chlorophyll.nc            $nemo_chlorophyll
   fi 
 
