@@ -45,7 +45,7 @@
           <field id="icealb"       long_name="Sea-ice or snow albedo"                                  standard_name="sea_ice_albedo"                            unit=""    detect_missing_value="true" />
 	  
 	  <!-- melt ponds -->
-	  <field id="iceapnd"      long_name="melt pond concentration"                                 standard_name="sea_ice_meltpond_concentration"            unit=""  /> 
+          <field id="iceapnd"      long_name="melt pond concentration"                                 standard_name="sea_ice_meltpond_concentration"            unit=""  /> 
           <field id="icehpnd"      long_name="melt pond depth"                                         standard_name="sea_ice_meltpond_depth"                    unit="m" /> 
           <field id="icevpnd"      long_name="melt pond volume"                                        standard_name="sea_ice_meltpond_volume"                   unit="m" /> 
           <field id="icehlid"      long_name="melt pond lid depth"                                     standard_name="sea_ice_meltpondlid_depth"                 unit="m" /> 
@@ -92,14 +92,14 @@
           <field id="qtr_ice_top"  long_name="solar heat flux transmitted through the ice surface"                                                               unit="W/m2" />
           <field id="qt_oce_ai"    long_name="total heat flux at the ocean   surface: interface oce-(ice+atm)"                                                   unit="W/m2" />
           <field id="qt_atm_oi"    long_name="total heat flux at the oce-ice surface: interface atm-(ice+oce)"                                                   unit="W/m2" />
-          <field id="qt_ice_oce"   long_name="total heat flux at the ice bottom     : interface ice-(oce)" unit="W/m2" > ( qt_oce_ai - (qt_atm_oi-qt_ice) ) * icemask </field>
+          <field id="qt_ice_oce"   long_name="total heat flux at the ice bottom     : interface ice-(oce)" unit="W/m2" > ( qt_oce_ai - (qt_atm_oi-qt_ice) )  </field>
           <field id="qemp_ice"     long_name="Downward Heat Flux from E-P over ice"                                                                              unit="W/m2" />
           <field id="albedo"       long_name="Mean albedo over sea ice and ocean"                                                                                unit=""     />
 	  
 	  <!-- trends -->
           <field id="afxthd"       long_name="sea-ice area fraction change from thermodynamics" standard_name="tendency_of_sea_ice_area_fraction_due_to_dynamics" unit="s-1" />
           <field id="afxdyn"       long_name="sea-ice area fraction change from dynamics"       standard_name="tendency_of_sea_ice_area_fraction_due_to_dynamics" unit="s-1" />
-	  <field id="afxtot"       long_name="area tendency (total)"                                                                                              unit="s-1" />
+          <field id="afxtot"       long_name="area tendency (total)"                                                                                              unit="s-1" />
 	  
 	  <!-- momentum (advection) -->
           <field id="icemtrp"      long_name="ice  mass transport"                                          unit="kg/m2/s" />

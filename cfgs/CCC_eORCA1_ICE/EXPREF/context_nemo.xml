@@ -21,12 +21,12 @@
 <!-- Fields definition -->
     <field_definition src="./field_def_nemo-oce.xml"/>    <!--  NEMO ocean dynamics     -->
     <field_definition src="./field_def_nemo-ice.xml"/>    <!--  NEMO sea-ice model      -->
-    <field_definition src="./field_def_nemo-pisces.xml"/> <!--  NEMO ocean biology      -->
+    <!--    <field_definition src="./field_def_nemo-pisces.xml"/> <!--  NEMO ocean biology      --> -->
 
 <!-- Files definition -->
     <file_definition src="./file_def_nemo-oce.xml" output_level="10" />     <!--  NEMO ocean dynamics      -->
     <file_definition src="./file_def_nemo-ice.xml" output_level="10" />     <!--  NEMO sea-ice model       -->
-    <file_definition src="./file_def_nemo-pisces.xml" output_level="10" />  <!--  NEMO ocean biology       -->
+    <!--    <file_definition src="./file_def_nemo-pisces.xml" output_level="10" />  <!--  NEMO ocean biology       --> -->
 
 
 <!-- Axis definition -->
