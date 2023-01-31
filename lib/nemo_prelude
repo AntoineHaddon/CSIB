@@ -47,7 +47,9 @@ echo "#################### Start NEMO pre-processing #################"
   nemo_namelists=( namelist_ref     \
                    namelist_cfg     \
                    namelist_ice_ref \
-                   namelist_ice_cfg
+                   namelist_ice_cfg \
+                   namelist_top_ref \
+                   namelist_top_cfg
   )
   # ======================================================
   # Make sure we have necessary variables from parent code
