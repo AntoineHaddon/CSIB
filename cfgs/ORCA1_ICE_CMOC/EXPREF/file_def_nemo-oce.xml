@@ -27,6 +27,7 @@
           <field field_ref="qns_oce"     name="qns_oce"  level="0" />
           <field field_ref="qsr_oce"     name="qsr_oce"  level="0" />
           <field field_ref="isnwmlt_cea" name="isnwmlt_cea" level="0" />
+	 <field field_ref="vfxsnw"           name="vfxsnw" level="0" />
           <field field_ref="snowmel_cea" name="snowmel_cea" level="0" />
           <field field_ref="ahmt_2d"     name="ahmt_2d"  level="0" />
           <field field_ref="spp_tend"    name="spp_tend" level="0" />
@@ -45,6 +46,12 @@
           <field field_ref="ahtu_3d"     name="ahtu_3d"  level="0" />
           <field field_ref="aeiu_3d"     name="aeiu_3d"  level="0" />
           <field field_ref="e3u"         name="e3u"      level="0" />
+          <!-- CMIP6 variables, started by NL, to be completed 
+          <field field_ref="uoce"        name="uo"       level="1" />
+          <field field_ref="u_masstr"    name="umo"      level="1" />
+          <field field_ref="utau"        name="tauuo"    level="1" />
+          <field field_ref="u_heattr"    name="hfx"      level="2" />
+          <field field_ref="xmtrptot"         name="sidmasstranx"      level="2"  /> -->
         </file>
 
         <file id="file13" name_suffix="_grid_V" description="ocean V grid variables">
@@ -54,6 +61,12 @@
           <field field_ref="ahtv_3d"     name="ahtv_3d"  level="0" />
           <field field_ref="aeiv_3d"     name="aeiv_3d"  level="0" />
           <field field_ref="e3v"         name="e3v"      level="0" />
+          <!-- CMIP6 variables, started by NL, to be completed 
+          <field field_ref="voce"        name="vo"       level="1" />
+          <field field_ref="v_masstr"    name="vmo"      level="1" />
+          <field field_ref="vtau"        name="tauvo"    level="1" />
+          <field field_ref="v_heattr"    name="hfy"      level="2" />
+          <field field_ref="ymtrptot"         name="sidmasstrany"      level="2"  /> -->
         </file>
 
         <file id="file14" name_suffix="_grid_W" description="ocean W grid variables">
@@ -63,9 +76,13 @@
 	  <field field_ref="av_tmx"      name="av_tmx"   level="0" />
 	  <field field_ref="avm"         name="avm"      level="0" />
           <field field_ref="avs"         name="avs"      level="0" />
+          <!-- CMIP6 variables, started by NL, to be completed 
+          <field field_ref="woce"        name="wo"       level="1" />
+          <field field_ref="w_masstr"    name="wmo"      level="1" /> -->
        </file>
 
-        <file id="file16" name_suffix="_diaptr2D" description="zonal mean variables" enabled=".FALSE.">
+      <!--
+        <file id="file96" name_suffix="_diaptr2D" description="zonal mean variables" enabled=".FALSE.">
           <field field_ref="sophtove"    name="htovovrt"      grid_ref="grid_ptr_T_2D"  />
           <field field_ref="sopstove"    name="sltovovrt"     grid_ref="grid_ptr_T_2D"  />
           <field field_ref="sophtgyre"   name="htovgyre"      grid_ref="grid_ptr_T_2D"  />
@@ -83,15 +100,14 @@
         </file>
 
 
-         <file id="file17" name_suffix="_diaptr3D" description="zonal mean variables" enabled=".FALSE.">
+         <file id="file97" name_suffix="_diaptr3D" description="zonal mean variables" enabled=".FALSE.">
           <field field_ref="zomsf"       name="msftyz"        grid_ref="grid_ptr_W_3D"  />
           <field field_ref="zotem"       name="znltem"        grid_ref="grid_ptr_T_3D"  />
           <field field_ref="zosal"       name="znlsal"        grid_ref="grid_ptr_T_3D"  />
           <field field_ref="zosrf"       name="znlsrf"        grid_ref="grid_ptr_T_3D"  />
         </file>
 
-      <!--
-         <file id="file18" name_suffix="_strait_oce" description="transport variables through straits" >
+         <file id="file98" name_suffix="_strait_oce" description="transport variables through straits" >
            <field field_ref="masstr_strait"        name="mfo"               />
          </file>
       -->
@@ -108,22 +124,31 @@
     -->
 
 
-      <file_group id="1y"  output_freq="1y" output_level="10" enabled=".TRUE."> <!-- real yearly files -->
+      <file_group id="1y"  output_freq="1y"  enabled=".TRUE."> <!-- real yearly files -->
+        <file id="file15" name_suffix="_grid_T" description="ocean T grid variables">
+          <!-- CMIP6 variables, started by NL, to be completed 
+          <field field_ref="tosmint"    name="opottempmint"   level="3" />
+          <field field_ref="somint"     name="ocontempmint"   level="3" />
+          <field field_ref="volcello"   name="volcello"       level="1" />
+          <field field_ref="avt"        name="difvho"         level="3" />
+          <field field_ref="avs"        name="difvso"         level="3" />
+          <field field_ref="dispkexyfo" name="dispkexyfo"     level="3" /> -->
+        </file>
       </file_group>
 
 
-      <file_group id="1ts" output_freq="1ts" output_level="10" enabled=".TRUE."/> <!-- 1 time step files -->
-      <file_group id="2h"  output_freq="2h"  output_level="10" enabled=".TRUE."/> <!-- 2h files -->
-      <file_group id="3h"  output_freq="3h"  output_level="10" enabled=".TRUE."/> <!-- 3h files -->
-      <file_group id="4h"  output_freq="4h"  output_level="10" enabled=".TRUE."/> <!-- 4h files -->
-      <file_group id="6h"  output_freq="6h"  output_level="10" enabled=".TRUE."/> <!-- 6h files -->
-      <file_group id="2m"  output_freq="2mo" output_level="10" enabled=".TRUE."/> <!-- real 2m files -->
-      <file_group id="3m"  output_freq="3mo" output_level="10" enabled=".TRUE."/> <!-- real 3m files -->
-      <file_group id="4m"  output_freq="4mo" output_level="10" enabled=".TRUE."/> <!-- real 4m files -->
-      <file_group id="6m"  output_freq="6mo" output_level="10" enabled=".TRUE."/> <!-- real 6m files -->
-      <file_group id="2y"  output_freq="2y"  output_level="10" enabled=".TRUE."/> <!-- real 2y files -->
-      <file_group id="5y"  output_freq="5y"  output_level="10" enabled=".TRUE."/> <!-- real 5y files -->
-      <file_group id="10y" output_freq="10y" output_level="10" enabled=".TRUE."/> <!-- real 10y files -->
+      <file_group id="1ts" output_freq="1ts"  enabled=".TRUE."/> <!-- 1 time step files -->
+      <file_group id="2h"  output_freq="2h"   enabled=".TRUE."/> <!-- 2h files -->
+      <file_group id="3h"  output_freq="3h"   enabled=".TRUE."/> <!-- 3h files -->
+      <file_group id="4h"  output_freq="4h"   enabled=".TRUE."/> <!-- 4h files -->
+      <file_group id="6h"  output_freq="6h"   enabled=".TRUE."/> <!-- 6h files -->
+      <file_group id="2m"  output_freq="2mo"  enabled=".TRUE."/> <!-- real 2m files -->
+      <file_group id="3m"  output_freq="3mo"  enabled=".TRUE."/> <!-- real 3m files -->
+      <file_group id="4m"  output_freq="4mo"  enabled=".TRUE."/> <!-- real 4m files -->
+      <file_group id="6m"  output_freq="6mo"  enabled=".TRUE."/> <!-- real 6m files -->
+      <file_group id="2y"  output_freq="2y"   enabled=".TRUE."/> <!-- real 2y files -->
+      <file_group id="5y"  output_freq="5y"   enabled=".TRUE."/> <!-- real 5y files -->
+      <file_group id="10y" output_freq="10y"  enabled=".TRUE."/> <!-- real 10y files -->
 
    </file_definition>
 
