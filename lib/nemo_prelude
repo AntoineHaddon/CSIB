@@ -205,7 +205,7 @@ echo "#################### Start NEMO pre-processing #################"
                iodef.xml )
 
   # Add pisces files to the list only if nemo_trc is enable
-  [ $nemo_trc -eq 1 ] && xios_files=( "${xios_files[@]}"  field_def_nemo-pisces.xml file_def_nemo-pisces.xml )
+  [ "$nemo_trc" = "on" ] && xios_files=( "${xios_files[@]}"  field_def_nemo-pisces.xml file_def_nemo-pisces.xml )
 
   for file in "${xios_files[@]}"; do
     find_nemo_config_EXP00 $file
