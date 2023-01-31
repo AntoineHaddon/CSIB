@@ -146,16 +146,20 @@ if [ $nemo_save_hist == "on" ] ; then
         access tmp.nc $indir.nc nocp=no na #force copy because we make temporary changes
         cp tmp.nc $ncsave.nc && rm tmp.nc
       if [ -e "$ncsave.nc" ] ; then
-        [[ ${sfx,,} == *"grid_t"* || ${sfx,,} == *"icemod"* ||  ${sfx,,} == *"btrc_t"* || 
-           ${sfx,,} == *"diad_t"* ||  ${sfx,,} == *"grid_w"* ]] &&  
-                  ( ncks -A -h -v glamt,gphit coor.nc $ncsave.nc && 
-                    ncap2 -h -O -s "nav_lon=glamt;nav_lat=gphit"  $ncsave.nc  $ncsave.nc )
-        [[ ${sfx,,} == *"grid_u"*  ]] &&
+        # detect the grid (U/V/F/T) with the suffix
+        if [[ ${sfx,,} == *"grid_u"*  ]];then
                   ( ncks -A -h -v glamu,gphiu coor.nc $ncsave.nc && 
                     ncap2 -h -O -s "nav_lon=glamu;nav_lat=gphiu"  $ncsave.nc  $ncsave.nc )
-        [[ ${sfx,,} == *"grid_v"*  ]] &&
+        elif [[ ${sfx,,} == *"grid_v"*  ]];then
                   ( ncks -A -h -v glamv,gphiv coor.nc $ncsave.nc && 
                     ncap2 -h -O -s "nav_lon=glamv;nav_lat=gphiv"  $ncsave.nc  $ncsave.nc )
+        elif [[ ${sfx,,} == *"grid_f"*  ]];then
+                  ( ncks -A -h -v glamf,gphif coor.nc $ncsave.nc && 
+                    ncap2 -h -O -s "nav_lon=glamf;nav_lat=gphif"  $ncsave.nc  $ncsave.nc )
+        else # grid T is the default 
+                  ( ncks -A -h -v glamt,gphit coor.nc $ncsave.nc && 
+                    ncap2 -h -O -s "nav_lon=glamt;nav_lat=gphit"  $ncsave.nc  $ncsave.nc )
+        fi
         ncks -h -O -x -v gphi.,glam.  $ncsave.nc  $ncsave.nc
         access $indir.nc $indir.nc nocp=off na 
         delete  $indir.nc #delete and re-save to avoid new version
