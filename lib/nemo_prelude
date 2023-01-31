@@ -408,8 +408,8 @@ echo "#################### Start NEMO pre-processing #################"
         [ $rsfile = 'cpl_restart.nc' ] && continue
         sfx=`echo $rsfile|sed 's/^.*\(_[0-9][0-9][0-9][0-9].nc\).*$/\1/'`
         [ "x$sfx" = "x$rsfile" ] && sfx=`echo $rsfile|sed 's/^.*\(\.nc\).*$/\1/'`
-        mv $rsfile ${cn_icerst_in}$sfx
-        echo "${cn_icerst_in}$sfx" >> input_ice_restart_file_names
+        mv $rsfile ${cn_trcrst_in}$sfx
+        echo "${cn_trcrst_in}$sfx" >> input_trc_restart_file_names
       done
     fi
   fi
