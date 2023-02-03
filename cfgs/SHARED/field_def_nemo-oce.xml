@@ -82,6 +82,7 @@
 
         <field id="mldkz5"       long_name="Turbocline depth (Kz = 5e-4)"                       standard_name="ocean_mixed_layer_thickness_defined_by_vertical_tracer_diffusivity"                unit="m"          />
         <field id="mldr10_1"     long_name="Mixed Layer Depth (dsigma = 0.01 wrt 10m)"          standard_name="ocean_mixed_layer_thickness_defined_by_sigma_theta"                                unit="m"          />
+        <field id="mldr10_1_sq"  long_name="Mixed Layer Depth (dsigma = 0.01 wrt 10m)"          standard_name="ocean_mixed_layer_thickness_defined_by_sigma_theta"                                unit="m"          > mldr10_1 * mldr10_1 </field >
         <field id="mldr10_1max"  long_name="Max of Mixed Layer Depth (dsigma = 0.01 wrt 10m)"   field_ref="mldr10_1"   operation="maximum"                                                                          />
         <field id="mldr10_1min"  long_name="Min of Mixed Layer Depth (dsigma = 0.01 wrt 10m)"   field_ref="mldr10_1"   operation="minimum"                                                                          />
         <field id="heatc"        long_name="Heat content vertically integrated"                 standard_name="integral_of_sea_water_potential_temperature_wrt_depth_expressed_as_heat_content"   unit="J/m2"       />
@@ -592,15 +593,15 @@
          <field id="uoce_e3u_ave_vsum"    long_name="Vertical sum of u*e3u"                           field_ref="uoce_e3u_ave"         grid_ref="grid_U_vsum"     />
          <field id="uocetr_vsum_section"  long_name="Total 2D transport in i-direction"               field_ref="uoce_e3u_ave_vsum"    grid_ref="grid_U_scalar"  detect_missing_value="true"> this * e2u </field>
          <field id="uocetr_strait"        long_name="Total transport across lines in i-direction"     field_ref="uocetr_vsum_section"  grid_ref="grid_U_4strait" />
-         <field id="u_masstr_strait"      long_name="Sea water transport across line in i-direction"  field_ref="uocetr_strait"        grid_ref="grid_U_4strait_hsum" unit="kg/s"> this * maskMFO_u * $rau0 </field>
+         <!-- <field id="u_masstr_strait"      long_name="Sea water transport across line in i-direction"  field_ref="uocetr_strait"        grid_ref="grid_U_4strait_hsum" unit="kg/s"> this * maskMFO_u * $rau0 </field> maskMFO_* does not exist -->
 
          <field id="voce_e3v_ave"         long_name="Monthly average of v*e3v"                        field_ref="voce_e3v"                    freq_op="1mo"   freq_offset="_reset_" > @voce_e3v </field>
          <field id="voce_e3v_ave_vsum"    long_name="Vertical sum of v*e3v"                           field_ref="voce_e3v_ave"         grid_ref="grid_V_vsum"      />
          <field id="vocetr_vsum_section"  long_name="Total 2D transport of in j-direction"            field_ref="voce_e3v_ave_vsum"    grid_ref="grid_V_scalar"  detect_missing_value="true"> this * e1v </field>
          <field id="vocetr_strait"        long_name="Total transport across lines in j-direction"     field_ref="vocetr_vsum_section"  grid_ref="grid_V_4strait"  />
-         <field id="v_masstr_strait"      long_name="Sea water transport across line in j-direction"  field_ref="vocetr_strait"        grid_ref="grid_V_4strait_hsum" unit="kg/s"> this * maskMFO_v * $rau0 </field>
+         <!-- <field id="v_masstr_strait"      long_name="Sea water transport across line in j-direction"  field_ref="vocetr_strait"        grid_ref="grid_V_4strait_hsum" unit="kg/s"> this * maskMFO_v * $rau0 </field> maskMFO_* does not exist -->
 
-         <field id="masstr_strait"        long_name="Sea water transport across line"                                                  grid_ref="grid_4strait"  > u_masstr_strait + v_masstr_strait </field>
+         <!-- <field id="masstr_strait"        long_name="Sea water transport across line"                                                  grid_ref="grid_4strait"  > u_masstr_strait + v_masstr_strait </field> maskMFO_* does not exist -->
       </field_group>
 
 
