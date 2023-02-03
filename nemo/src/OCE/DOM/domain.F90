@@ -192,8 +192,12 @@ CONTAINS
       !
       IF( lk_c1d         )   CALL cor_c1d       ! 1D configuration: Coriolis set at T-point
       !
+#if ! defined key_si3
+      ! Will be written in ice_init if SI3 is enable (to put hi_max values)
+      ! We have to use the key_si3 because nn_ice is not defined yet (in sbc_init)
       IF( ln_meshmask .AND. .NOT.ln_iscpl )                        CALL dom_wri     ! Create a domain file
       IF( ln_meshmask .AND.      ln_iscpl .AND. .NOT.ln_rstart )   CALL dom_wri     ! Create a domain file
+#endif
       IF(                                       .NOT.ln_rstart )   CALL dom_ctl     ! Domain control
       !
       IF( ln_write_cfg )   CALL cfg_write         ! create the configuration file
