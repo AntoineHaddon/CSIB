@@ -196,7 +196,7 @@ PROGRAM nemo_diag
    ! deptht 
    CALL getvara ('deptht', iou4, km, (/1/), (/km/), deptht, 1., 0.)
    ! ssh
-   CALL getvara ('ssh', iou4, imt*jmt*lm, (/1,1,1/), (/imt,jmt,lm/), ssh, 1., 0.)
+   CALL getvara ('zos', iou4, imt*jmt*lm, (/1,1,1/), (/imt,jmt,lm/), ssh, 1., 0.)
    ! WRITE(*,*) 'ssh'
    ! ssh(144,45,1,1)=-1.77589 m
    ! WRITE(*,*) ssh(144,45,1)
