@@ -54,7 +54,7 @@ CONTAINS
       !!            3D: u, v, umask, vmask, e3u, e3v
       !! Output:    mfo(15) in kg/s 
       !!-------------------------------------------------------------
-      INTEGER                       :: i, j, k, l       ! dummy loop indices
+      INTEGER                       :: i, j, k, l, i0   ! dummy loop indices
       INTEGER, DIMENSION (1)        :: ierr             ! local variable
       CHARACTER, DIMENSION(imt,jmt) :: secmask          ! section mask for transports
       !!----------------
@@ -69,7 +69,15 @@ CONTAINS
       !! Read in ASCII mfo_line_mask file which defines the sections  
       !!-------------------------------------------------------------
       OPEN (10, file='mfo_line_mask', status='unknown')
-      DO j=jmt,1,-1 
+      if (jmt.eq.292) then
+        i0=1
+      elseif (jmt.eq.332) then
+        i0=41
+      else
+        STOP 'mfo_line_mask made for ORCA1 and eORCA1 only for now'
+      endif
+      secmask='#'
+      DO j=jmt,41,-1 
          READ(10,'(362A1)')(secmask(i,j),i=1,imt)
       ENDDO
       CLOSE(10)
