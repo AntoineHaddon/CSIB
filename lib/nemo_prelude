@@ -198,7 +198,7 @@ echo "#################### Start NEMO pre-processing #################"
   fi
 
   # Access files required to run NEMO
-  xios_files=" axis_def_nemo.xml \
+  xios_files=( axis_def_nemo.xml \
                context_nemo.xml \
                domain_def_nemo.xml \
                field_def_nemo-ice.xml \
@@ -206,10 +206,14 @@ echo "#################### Start NEMO pre-processing #################"
                file_def_nemo-ice.xml \
                file_def_nemo-oce.xml \
                grid_def_nemo.xml \
-               iodef.xml "
+               iodef.xml )
 
   # Add pisces files to the list only if nemo_trc is enable
-  [ "$nemo_trc" == "on" ] && xios_files="${xios_files[@]} field_def_nemo-pisces.xml file_def_nemo-pisces.xml"
+  if [ "$nemo_trc" == "on" ] ; then
+     xios_files=( "${xios_files[@]}" \
+                  field_def_nemo-pisces.xml \
+                  file_def_nemo-pisces.xml )
+  fi
 
   for file in "${xios_files[@]}"; do
     find_nemo_config_EXP00 $file
