@@ -279,7 +279,6 @@ echo "#################### Start NEMO pre-processing #################"
   
     # starting from rest, NOT a restart
     ln_rstart=.false.
-    ln_tsd_init=.true.
     [ "$nemo_trc" = "on" ] && ln_rsttr=.false.
 
     # access the istate files
@@ -294,7 +293,6 @@ echo "#################### Start NEMO pre-processing #################"
 
     # starting from restart
     ln_rstart=.true.
-    ln_tsd_init=.false.
     [ "$nemo_trc" = "on" ] && ln_rsttr=.true.
 
     # Determine what restart to use
@@ -423,7 +421,7 @@ echo "#################### Start NEMO pre-processing #################"
       ! is_file $f && cp ${WRK_DIR}/config/namelists/${f} .
   done
   # make namelist mods foir the restart switch 
-    mod_nl namelist_cfg ln_rstart ln_tsd_init
+    mod_nl namelist_cfg ln_rstart 
     [ "$nemo_trc" = "on" ] && mod_nl namelist_top_cfg ln_rsttr
 
   # nemo executable
