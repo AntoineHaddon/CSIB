@@ -117,13 +117,13 @@ echo "#################### Start NEMO pre-processing #################"
   if [[ $nemo_ln_zdftmx == "on" ]]; then
     is_defined $nemo_mask_itf && is_defined $nemo_M2rowdrg && is_defined $nemo_K1rowdrg ||
         bail "The files for tidal mixing sheme must be defined in the configuration file."
-    acc_cp mask_itf                  $nemo_mask_itf
-    acc_cp M2rowdrg                  $nemo_M2rowdrg
-    acc_cp K1rowdrg                  $nemo_K1rowdrg
+    acc_cp mask_itf.nc               $nemo_mask_itf
+    acc_cp M2rowdrg.nc               $nemo_M2rowdrg
+    acc_cp K1rowdrg.nc               $nemo_K1rowdrg
   fi
   if [[ $nemo_ln_leewmx == "on" ]]; then
     is_defined $nemo_Eddyengf || bail "The file for lee wave mixing scheme must be defined in the configuration file."
-    acc_cp Eddyengf                  $nemo_Eddyengf
+    acc_cp Eddyengf.nc               $nemo_Eddyengf
   fi
   if [[ $nemo_ln_zdfiwm == "on" ]]; then
     is_defined $nemo_mixing_power_bot && is_defined $nemo_mixing_power_pyc && is_defined $nemo_mixing_power_cri &&
@@ -412,8 +412,8 @@ echo "#################### Start NEMO pre-processing #################"
         [ $rsfile = 'cpl_restart.nc' ] && continue
         sfx=`echo $rsfile|sed 's/^.*\(_[0-9][0-9][0-9][0-9].nc\).*$/\1/'`
         [ "x$sfx" = "x$rsfile" ] && sfx=`echo $rsfile|sed 's/^.*\(\.nc\).*$/\1/'`
-        mv $rsfile ${cn_icerst_in}$sfx
-        echo "${cn_icerst_in}$sfx" >> input_ice_restart_file_names
+        mv $rsfile ${cn_trcrst_in}$sfx
+        echo "${cn_trcrst_in}$sfx" >> input_ice_restart_file_names
       done
     fi
   fi
