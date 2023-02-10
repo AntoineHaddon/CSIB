@@ -111,6 +111,9 @@ CONTAINS
          WHERE( z2d < 0._wp )   z2d = 0._wp
                                   CALL iom_put( 'icefrb' , z2d * zmsk00         )
       ENDIF
+      IF( iom_use('sncover'  ) ) THEN
+         CALL iom_put( 'sncover', zmsk00*zmsksn)                                                                           ! Ice area fraction cover by snow
+      ENDIF
       ! melt ponds
       IF( iom_use('iceapnd' ) )   CALL iom_put( 'iceapnd', at_ip  * zmsk00      )                                           ! melt pond total fraction
       IF( iom_use('icehpnd' ) )   CALL iom_put( 'icehpnd', hm_ip  * zmsk00      )                                           ! melt pond depth
