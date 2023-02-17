@@ -44,11 +44,15 @@ set -x
        access ${sfx}_${mm} $diag_hist na
        mp=$mm
      done
- # Merge sub-yearly files
-     if [ $nmon -gt 1 -a -e ${sfx}_m$fmon ] ; then
-       cdo mergetime ${sfx}_?? ${sfx}_m$fmon
-       rm -f ${sfx}_??
-       mv ${sfx}_m$fmon ${sfx}_$fmon
+ # Merge sub-yearly files and save it (delete the sub-year files)
+     if [ $nmon -gt 1 -a -e "${sfx}_$fmon" ] ; then
+       diag_hist="mc_${runid}_${yr}_m${fmon}_${sfx}.nc"
+       cdo mergetime ${sfx}_?? ${sfx}_merged
+       for dfile in $(ls  ${sfx}_??)
+       do
+          delete ${dfile}
+       done
+       save ${sfx}_merged $diag_hist
      fi
    done
 
