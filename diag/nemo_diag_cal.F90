@@ -73,7 +73,7 @@ CONTAINS
       OPEN (10, file='mfo_line_mask', status='unknown')
       if (jmt.eq.292) then
         i0=1
-      elseif (jmt.eq.332) then
+      elseif (jmt.eq.331) then
         i0=41
       else
         Print*, 'WARNING: mfo_line_mask made for ORCA1 and eORCA1 only for now. mfo is empty.'
@@ -87,6 +87,7 @@ CONTAINS
       !!-----------------------------------------
       !! Compute mass transports through sections
       !!-----------------------------------------
+      WRITE(*,*) 'mfo', lm
       DO l=1,lm
          DO j=1,jmt
             DO i=1,imt
@@ -145,10 +146,10 @@ CONTAINS
                ENDDO
             ENDDO
          ENDDO
+         WRITE(*,*) '-----',l
+         WRITE(*,'(15f10.2)')(mfo(i,l)*1.e-9, i=1,15)   !  Sv 
       ENDDO
       ! 
-      !WRITE(*,*) 'mfo'
-      !WRITE(*,'(15f10.2)')(mfo(i,1)*1.e-9, i=1,15)   !  Sv 
    END SUBROUTINE cmip6_mfo
 
    SUBROUTINE cmip6_mfo_ice
@@ -190,7 +191,7 @@ CONTAINS
       OPEN (10, file='mfo_line_mask', status='unknown')
       if (jmt.eq.292) then
         i0=1
-      elseif (jmt.eq.332) then
+      elseif (jmt.eq.331) then
         i0=41
       else
         Print*, 'WARNING: mfo_line_mask made for ORCA1 and eORCA1 only for now. mfo is empty.'
