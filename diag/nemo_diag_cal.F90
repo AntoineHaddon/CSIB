@@ -17,6 +17,7 @@ MODULE nemo_diag_cal
    IMPLICIT NONE
    PRIVATE      
    PUBLIC cmip6_mfo                   ! Called by nemo_diag.F90
+   PUBLIC cmip6_mfo_ice               ! Called by nemo_diag.F90
    PUBLIC cmip6_msftbarot             ! Called by nemo_diag.F90
    PUBLIC cmip6_tstend                ! Called by nemo_diag.F90
 
@@ -148,6 +149,87 @@ CONTAINS
       !WRITE(*,*) 'mfo'
       !WRITE(*,'(15f10.2)')(mfo(i,1)*1.e-9, i=1,15)   !  Sv 
    END SUBROUTINE cmip6_mfo
+
+   SUBROUTINE cmip6_mfo_ice
+      !!
+      !!-------------------------------------------------------------
+      !! Purpose:   Compute sea ice area (siareaacrossline), sea ice mass (simassacrossline) and snow mass () transport throug sections (mfo_ice)
+      !! Reference: Notz et al. 2016: The CMIP6 Sea-Ice Model Intercomparison 
+      !!            Project (SIMIP): understanding sea ice through climate-model 
+      !!            simulations.  doi.org/10.5194/gmd-9-3427-2016
+      !! Section mask file (mfo_line_mask): Provided by O. Saenko
+      !!            mfo(10)- Fram Strait                (pseudo-south)  
+      !!            mfo(3) - Canadian Archipelago       (pseudo-south)
+      !!            mfo(1) - Barents Opening            (pseudo-north) 
+      !!            mfo(2) - Bering Strait              (pseudo-north)
+      !!        ** used the file mfo_line_mask for now, but it needs to
+      !!        ** be separate from the physics in the future
+      !! Input fields: 
+      !!            2D: ymtrpice,ymtrpsnw,yatrp
+      !! Output:    simassacrossline,snmassacrossline,siareaacrossline
+      !!-------------------------------------------------------------
+      INTEGER                       :: i, j, k, l, i0   ! dummy loop indices
+      INTEGER, DIMENSION (1)        :: ierr             ! local variable
+      CHARACTER, DIMENSION(imt,jmt) :: secmask          ! section mask for transports
+      !!----------------
+      !! Allocate Arrays
+      !!----------------
+      ALLOCATE( simassacrossline(nline_ice,lm),snmassacrossline(nline_ice,lm),siareaacrossline(nline_ice,lm), STAT=ierr(1) )
+
+      IF (MAXVAL(ierr) /=0) THEN
+         STOP 'Memory allocation error in cmip6_mfo'
+      ENDIF
+      !!-------------------------------------------------------------
+      !! Read in ASCII mfo_line_mask file which defines the sections  
+      !!-------------------------------------------------------------
+      OPEN (10, file='mfo_line_mask', status='unknown')
+      if (jmt.eq.292) then
+        i0=1
+      elseif (jmt.eq.332) then
+        i0=41
+      else
+        STOP 'mfo_line_mask made for ORCA1 and eORCA1 only for now'
+      endif
+      secmask='#'
+      DO j=jmt,41,-1 
+         READ(10,'(362A1)')(secmask(i,j),i=1,imt)
+      ENDDO
+      CLOSE(10)
+      !!-----------------------------------------
+      !! Compute mass transports through sections
+      !!-----------------------------------------
+      siareaacrossline(:,:) =0.
+      simassacrossline(:,:) =0.
+      snmassacrossline(:,:) =0.
+
+      DO l=1,lm
+         DO j=1,jmt
+            DO i=1,imt
+                  IF (secmask(i,j).eq.'1') THEN !  Barents opening 
+                     siareaacrossline(3,l) = siareaacrossline(3,l)+yatrp(i,j,l)
+                     simassacrossline(3,l) = simassacrossline(3,l)+ymtrpice(i,j,l)
+                     snmassacrossline(3,l) = snmassacrossline(3,l)+ymtrpsnw(i,j,l)
+                  ENDIF 
+                  IF (secmask(i,j).eq.'2') THEN !  Bering Strait  
+                     siareaacrossline(4,l) = siareaacrossline(4,l)+yatrp(i,j,l)
+                     simassacrossline(4,l) = simassacrossline(4,l)+ymtrpice(i,j,l)
+                     snmassacrossline(4,l) = snmassacrossline(4,l)+ymtrpsnw(i,j,l)
+                  ENDIF 
+                  IF (secmask(i,j).eq.'3') THEN !  Canadian Archipelago  
+                     siareaacrossline(2,l) = siareaacrossline(2,l)+yatrp(i,j,l)
+                     simassacrossline(2,l) = simassacrossline(2,l)+ymtrpice(i,j,l)
+                     snmassacrossline(2,l) = snmassacrossline(2,l)+ymtrpsnw(i,j,l)
+                  ENDIF 
+                  IF (secmask(i,j).eq.'a') THEN ! Fram Strait  
+                     siareaacrossline(1,l) = siareaacrossline(1,l)+yatrp(i,j,l)
+                     simassacrossline(1,l) = simassacrossline(1,l)+ymtrpice(i,j,l)
+                     snmassacrossline(1,l) = snmassacrossline(1,l)+ymtrpsnw(i,j,l)
+                  ENDIF 
+            ENDDO
+         ENDDO
+      ENDDO
+      ! 
+   END SUBROUTINE cmip6_mfo_ice
 
    SUBROUTINE cmip6_msftbarot
       !!
