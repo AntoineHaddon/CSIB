@@ -111,9 +111,7 @@ CONTAINS
          WHERE( z2d < 0._wp )   z2d = 0._wp
                                   CALL iom_put( 'icefrb' , z2d * zmsk00         )
       ENDIF
-      IF( iom_use('sncover'  ) ) THEN
-         CALL iom_put( 'sncover', zmsk00*zmsksn)                                                                           ! Ice area fraction cover by snow
-      ENDIF
+      IF( iom_use('sncover'  ) )  CALL iom_put( 'sncover', zmsk00*zmsksn)                                                   ! Ice area fraction cover by snow
       ! melt ponds
       IF( iom_use('iceapnd' ) )   CALL iom_put( 'iceapnd', at_ip  * zmsk00      )                                           ! melt pond total fraction
       IF( iom_use('icehpnd' ) )   CALL iom_put( 'icehpnd', hm_ip  * zmsk00      )                                           ! melt pond depth
@@ -157,6 +155,7 @@ CONTAINS
       IF( iom_use('iceconc_cat' ) )   CALL iom_put( 'iceconc_cat' , a_i            * zmsk00l                                   ) ! area for categories
       IF( iom_use('icethic_cat' ) )   CALL iom_put( 'icethic_cat' , h_i            * zmsk00l + zmiss_val * ( 1._wp - zmsk00l ) ) ! thickness for categories
       IF( iom_use('snwthic_cat' ) )   CALL iom_put( 'snwthic_cat' , h_s            * zmsksnl + zmiss_val * ( 1._wp - zmsksnl ) ) ! snow depth for categories
+      IF( iom_use('sncover_cat' ) )   CALL iom_put( 'sncover_cat' , zmsk00l * zmsksnl                                          ) ! snow cover for categories
       IF( iom_use('icesalt_cat' ) )   CALL iom_put( 'icesalt_cat' , s_i            * zmsk00l + zmiss_val * ( 1._wp - zmsk00l ) ) ! salinity for categories
       IF( iom_use('iceage_cat'  ) )   CALL iom_put( 'iceage_cat'  , o_i / rday     * zmsk00l + zmiss_val * ( 1._wp - zmsk00l ) ) ! ice age
       IF( iom_use('icetemp_cat' ) )   CALL iom_put( 'icetemp_cat' , ( SUM( t_i, dim=3 ) * r1_nlay_i - rt0 ) &
