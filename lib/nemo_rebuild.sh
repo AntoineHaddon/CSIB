@@ -155,6 +155,9 @@ if [ $nemo_save_hist == "on" ] ; then
         elif [[ ${sfx,,} == *"grid_f"*  ]];then
                   ( ncks -A -h -v glamf,gphif coor.nc $ncsave.nc && 
                     ncap2 -h -O -s "nav_lon=glamf;nav_lat=gphif"  $ncsave.nc  $ncsave.nc )
+        elif [[ ${sfx,,} == *"diaptr"*  ]];then
+                  (  release $ncsave.nc &&
+                   continue )
         else # grid T is the default 
                   ( ncks -A -h -v glamt,gphit coor.nc $ncsave.nc && 
                     ncap2 -h -O -s "nav_lon=glamt;nav_lat=gphit"  $ncsave.nc  $ncsave.nc )
