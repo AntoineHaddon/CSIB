@@ -439,9 +439,15 @@
 !!======================================================================
 !
 !-----------------------------------------------------------------------
+&namtrd        !   trend diagnostics                                    (default: OFF)
+!-----------------------------------------------------------------------
+   ln_tra_trd  = .true.   ! (T) 3D tracer trend output (needed var. for ttrd_zdfp, ttrd_zdfp, etc.)
+/
+!-----------------------------------------------------------------------
 &namptr        !   Poleward Transport Diagnostic                        (default: OFF)
 !-----------------------------------------------------------------------
    ln_diaptr   = .false.   !  Poleward heat and salt transport (T) or not (F)
+   ln_subbas   = .false.   !  Atlantic/Pacific/Indian basins computation (T) or not
 /
 !!======================================================================
 !!               ***  Observation & Assimilation  ***                 !!
