@@ -54,14 +54,22 @@ set -x
 # suffix list for yearly nemo historical files.
   nemo_diag_file_1y_suffix_list=${nemo_diag_file_1y_suffix_list}
 
+# Append yearly diagnostics
+  if [ $nmon -eq 1 -a $fmon -eq 1 ] ; then
+    nemo_diag_file_suffix_list="$nemo_diag_file_suffix_list $nemo_diag_file_1y_suffix_list"
+  fi
+
+# access to time series
+  for sfx in $nemo_diag_file_suffix_list ; do
+    diag_hist="mc_${runid}_${fyear}_m${fmon}_${sfx}.nc"
+    access ${sfx}_${fmon} $diag_hist na
+    [ ! -e ${sfx}_${fmon} ] && continue
+    ncks -O -C -x -v time_centered_bounds,time_centered ${sfx}_${fmon} ${sfx}_${fmon} 
+    cdo splitname ${sfx}_${fmon} xxx-${sfx}_
+  done
+
 # Execute the following lines when output_level -ge 1
   if [ $output_level -ge 1 ] ; then
-      if [ $nmon -eq 1 -a $fmon -eq 1 ] ; then
-        for sfx in $nemo_diag_file_suffix_list ; do
-          diag_hist="mc_${runid}_${fyear}_m${fmon}_${sfx}.nc"
-          access ${sfx}_${fmon} $diag_hist na
-        done
-      fi
 
       # Run offline computation only if starting from January 
       if [ $fmon -eq 1 ] ; then 
@@ -145,32 +153,19 @@ set -x
         fi
       fi
 
-######################################
-# Time mean (1d_diaptr -> 1m_diaptr) #
-######################################
-      [ -L 1d_diaptr_${fmon} -o -s 1d_diaptr_${fmon} ] && cdo -b F64 monmean 1d_diaptr_${fmon} 1m_diaptr_${fmon}
+  fi # end of "output_level -ge 1"
 
 #########################################
 # Split historical files to time series #
 #########################################
 
-# Replace 1d_diaptr with 1m_diaptr after doing time mean
-      nemo_diag_file_suffix_list=`echo $nemo_diag_file_suffix_list | sed -e "s/1d_diaptr/1m_diaptr/"`
-
-  fi # end of "output_level -ge 1"
-
-# Append yearly diagnostics
-  if [ $nmon -eq 1 -a $fmon -eq 1 ] ; then
-    nemo_diag_file_suffix_list="$nemo_diag_file_suffix_list $nemo_diag_file_1y_suffix_list"
-  fi
 
 # Split to time series
   for sfx in $nemo_diag_file_suffix_list ; do
-    diag_hist="mc_${runid}_${fyear}_m${fmon}_${sfx}.nc"
-    access ${sfx}_${fmon} $diag_hist na
     [ ! -e ${sfx}_${fmon} ] && continue
     ncks -O -C -x -v time_centered_bounds,time_centered ${sfx}_${fmon} ${sfx}_${fmon} 
     cdo splitname ${sfx}_${fmon} xxx-${sfx}_
+    release ${sfx}_${fmon}
   done
 
 # Save time series
