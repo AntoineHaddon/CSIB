@@ -15,35 +15,40 @@
      <file id="file21" name_suffix="_icemod" description="ice variables">
        <field field_ref="icepres"         name="sitimefrac"     level="0"  /> <!-- cmip6 requested as priority 1, DY, was ice_pres (NL) -->
        <field field_ref="iceconc_pct"     name="siconc"         level="0"  /> <!-- cmip6 requested as priority 1, DY, was soicecov (NL) -->
-       <field field_ref="snwthic"    name="sisnthick"      level="0"  /> <!-- cmip6 requested as priority 1, DY, was isnowthi (NL) -->
-       <field field_ref="icethic"    name="sithick"        level="0"  /> <!-- cmip6 requested as priority 1, DY, was iicethic (NL) -->
+       <field field_ref="snwthic_cmip"    name="sisnthick"      level="0"  /> <!-- cmip6 requested as priority 1, DY, was isnowthi (NL) -->
+       <field field_ref="icethic_cmip"    name="sithick"        level="0"  /> <!-- cmip6 requested as priority 1, DY, was iicethic (NL) -->
        <field field_ref="icetemp"         name="iicetemp"       level="0"  />
-       <field field_ref="uice"       name="siu"            level="0"  /> <!-- cmip6 requested as priority 1, DY, was iicevelu (NL) -->
-       <field field_ref="vice"       name="siv"            level="0"  /> <!-- cmip6 requested as priority 1, DY, was iicevelv (NL) -->
-       <field field_ref="utau_ai"    name="sistrxdtop"     level="0"  /> <!-- cmip6 requested as priority 2, DY, was iicestru (NL) -->
-       <field field_ref="vtau_ai"    name="sistrydtop"     level="0"  /> <!-- cmip6 requested as priority 2, DY, was iicestrv (NL) -->
+       <field field_ref="uice_cmip"       name="siu"            level="0"  /> <!-- cmip6 requested as priority 1, DY, was iicevelu (NL) -->
+       <field field_ref="vice_cmip"       name="siv"            level="0"  /> <!-- cmip6 requested as priority 1, DY, was iicevelv (NL) -->
+       <field field_ref="utau_ai_cmip"    name="sistrxdtop"     level="0"  /> <!-- cmip6 requested as priority 2, DY, was iicestru (NL) -->
+       <field field_ref="vtau_ai_cmip"    name="sistrydtop"     level="0"  /> <!-- cmip6 requested as priority 2, DY, was iicestrv (NL) -->
        <field field_ref="qtr_ice_bot"     name="qtr_ice_bot"       level="0"  />  <!-- was iicesflx (NL) --> 
-       <field field_ref="qt_ice_oce"        name="qt_ice_oce"           level="0"  />
+       <field field_ref="qt_ice_oce"      name="qt_ice_oce"       level="0"  /> <!-- was iicesflx + iicenflx -->
+       <!-- <field field_ref="qns_io_cea"      name="iicenflx"       description="Ice-Oce downward non-solar heat flux"    level="0"  /> Now = qt_ice_oce - qtr_ice_bot --> 
+       <!-- <field field_ref="ioceflxb"        name="ioceflxb"       description="Oceanic [heat??] flux at the ice base"   level="0"  /> replace by qt_ice_oce, NL -->
        <field field_ref="snowpre"         name="isnowpre"       level="0"  />
-       <field field_ref="qsr_ice"         name="qsr_ice"       level="0"  />
-       <field field_ref="qns_ice"         name="qns_ice"       level="0"  />
+       <field field_ref="qsr_ice"         name="aicesflx"       level="0"  />
+       <field field_ref="qns_ice"         name="aicenflx"       level="0"  />
+         <!--<field field_ref="qla_ai_cea"      name="aicelflx"       level="0"  /> not in code AND not needed in rtd or diag, qla_ice
+                                                                                  could be defined in XIOS and outputed if needed-->
+         <!-- <field field_ref="iceprod_cea"     name="iiceprod"       level="0"  />  not in code AND not needed in rtd or diag, NL -->
        <!-- ==============
             SIMIP monthly fields (that are not in level =0) -->
        <!-- Sea-ice state variables -->
-       <field field_ref="icemass"     name="simass"        level="1"  />
+       <field field_ref="icemass_cmip"     name="simass"        level="1"  />
        <field field_ref="icevolu"          name="sivol"         level="1"  />
-       <field field_ref="snwmass"     name="sisnmass"      level="1"  />
+       <field field_ref="snwmass_cmip"     name="sisnmass"      level="1"  />
 	  
        <!-- additional state variables-->
-       <field field_ref="icettop"     name="sitemptop"     level="1"  />
-       <field field_ref="icetsni"     name="sitempsnic"    level="2"  />
-       <field field_ref="icetbot"     name="sitempbot"     level="2"  />
-       <field field_ref="iceage"      name="siage"         level="2"  />
+       <field field_ref="icettop_cmip"     name="sitemptop"     level="1"  />
+       <field field_ref="icetsni_cmip"     name="sitempsnic"    level="2"  />
+       <field field_ref="icetbot_cmip"     name="sitempbot"     level="2"  />
+       <field field_ref="iceage_cmip"      name="siage"         level="2"  />
        <field field_ref="icesalm"          name="sisaltmass"    level="3"  />
-       <field field_ref="icesalt"     name="sisali"        level="3"  />
-       <field field_ref="icefrb"      name="sifb"          level="2"  />
-       <field field_ref="icehc"       name="sihc"          level="2"  />
-       <field field_ref="snwhc"       name="sisnhc"        level="2"  />
+       <field field_ref="icesalt_cmip"     name="sisali"        level="3"  />
+       <field field_ref="icefrb_cmip"      name="sifb"          level="2"  />
+       <field field_ref="icehc_cmip"       name="sihc"          level="2"  />
+       <field field_ref="snwhc_cmip"       name="sisnhc"        level="2"  />
 
        <!-- meltpond --> <!-- (preliminary implementation in 4.0, not in CanESM, to be check, NL) 
        <field field_ref="iceapnd_pct"      name="simpconc"       level="3"  />
@@ -55,8 +60,8 @@
        <field field_ref="sirdgthick"       name="sirdgthick"     level="3"  />
        -->
         <!-- freshwater fluxes -->
-       <field field_ref="vfxice"      name="siflfwbot"     level="2"  />
-       <field field_ref="vfxsum"      name="siflfwdrain"   level="2"  />
+       <field field_ref="vfxice_cmip"      name="siflfwbot"     level="2"  />
+       <field field_ref="vfxsum_cmip"      name="siflfwdrain"   level="2"  />
         <!-- area balance -->
        <field field_ref="afxthd"           name="sidconcth"     level="2"  />
        <field field_ref="afxdyn"           name="sidconcdyn"    level="2"  />
@@ -81,7 +86,7 @@
        <field field_ref="hfxcndbot"        name="siflcondbot"       level="2"  />
        <!-- In SIMIP, but not in field_def, NL : sndmasswindrif,siflswdtop,siflswutop,siflswdbot,sifllwdtop,sifllwutop,siflsenstop,sifllatstop,sipr,sfdsi,siflsaltbot -->
         <!-- sea-ice dynamics -->
-       <field field_ref="icevel"      name="sispeed"           level="1"  />
+       <field field_ref="icevel_cmip"      name="sispeed"           level="1"  />
        <field field_ref="utau_oi"          name="sistrxubot"        level="2"  />
        <field field_ref="vtau_oi"          name="sistryubot"        level="2"  />
        <field field_ref="icestr"           name="sicompstren"       level="2"  />
@@ -98,10 +103,10 @@
        <!-- In SIMIP, but not in field_def, NL : sidragbot,sidragtop -->
 
        <!-- category-dependent fields -->
-       <field field_ref="iceconc_cat_pct" name="siitdconc"     level="3"  />
-       <!-- <field field_ref="snwconc_cat"     name="siitdsnconc" />  In SIMIP, NOT available in SI3, NL -->
-       <field field_ref="icethic_cat"     name="siitdthick"    level="3"  />
-       <field field_ref="snwthic_cat"     name="siitdsnthick"  level="3"  />
+       <field field_ref="iceconc_cat_pct_cmip" name="siitdconc"     level="3"  />
+       <!-- <field field_ref="snwconc_cat_cmip"     name="siitdsnconc" />  In SIMIP, NOT available in SI3, NL -->
+       <field field_ref="icethic_cat_cmip"     name="siitdthick"    level="3"  />
+       <field field_ref="snwthic_cat_cmip"     name="siitdsnthick"  level="3"  />
        <!-- Integrated quantities -->
        <field field_ref="NH_iceextt"           name="siextentn"    level="2"  />
        <field field_ref="SH_iceextt"           name="siextents"    level="2"  />
@@ -116,7 +121,7 @@
 
    <file_group id="1ts" output_freq="1ts" enabled=".TRUE."/> <!-- 1 time step files -->
    <file_group id="1h"  output_freq="1h"  enabled=".TRUE."> <!-- 1h files -->
-     <file id="file22" name_suffix="_icemod" description="ice variables" >
+     <file id="file22" description="ice variables" >
        <field field_ref="iceconc_pct"   name="siconc"       level="8" /> <!-- changed to level="8", 1h freq not in SIMIP -->
      </file>
    </file_group>
@@ -125,15 +130,15 @@
    <file_group id="4h"  output_freq="4h"  enabled=".TRUE."/> <!-- 4h files -->
    <file_group id="6h"  output_freq="6h"  enabled=".TRUE."/> <!-- 6h files -->        
    <file_group id="1d"  output_freq="1d"  enabled=".TRUE."> <!-- 1d files -->        
-     <file id="file23" name_suffix="_icemod" description="ice variables" >
+     <file id="file23" description="ice variables" >
           <field field_ref="icepres"          name="sitimefrac"  level="1" /> 
           <field field_ref="iceconc_pct"      name="siconc"      level="1" /> 
-          <field field_ref="icethic"     name="sithick"     level="1" /> 
-          <field field_ref="snwthic"     name="sisnthick"   level="1" />
-          <field field_ref="icettop"     name="sitemptop"   level="1" />
-          <field field_ref="uice"        name="siu"         level="1" />
-          <field field_ref="vice"        name="siv"         level="1" />
-          <field field_ref="icevel"      name="sispeed"     level="1" />
+          <field field_ref="icethic_cmip"     name="sithick"     level="1" /> 
+          <field field_ref="snwthic_cmip"     name="sisnthick"   level="1" />
+          <field field_ref="icettop_cmip"     name="sitemptop"   level="1" />
+          <field field_ref="uice_cmip"        name="siu"         level="1" />
+          <field field_ref="vice_cmip"        name="siv"         level="1" />
+          <field field_ref="icevel_cmip"      name="sispeed"     level="1" />
      </file>
    </file_group>
 
