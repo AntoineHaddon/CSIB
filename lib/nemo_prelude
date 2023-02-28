@@ -197,17 +197,17 @@ echo "#################### Start NEMO pre-processing #################"
                grid_def_nemo.xml \
                iodef.xml )
 
-  # Add pisces files to the list only if nemo_trc is enable
-  [ "$nemo_trc" = "on" ] && xios_files=( "${xios_files[@]}"  field_def_nemo-pisces.xml file_def_nemo-pisces.xml )
+  # Add pisces files to the list only if nemo_trc is enable "${nemo_namelists} namelist_top"
+  [ "$nemo_trc" = "on" ] &&  xios_files+=( field_def_nemo-pisces.xml file_def_nemo-pisces.xml )
 
   for file in "${xios_files[@]}"; do
+    echo $file
     find_nemo_config_EXP00 $file
     # Update NEMO priority level of output variables in each file: output_level 
     # Not all have the output_level, but this is a secure way to have the same
     # output_level everywhere (should be in "context_nemo.mxl")
     sed -i "s/output_level=\"\([0-9]\+\)\"/output_level=\"${output_level}\"/" $file
   done
-
 
   # =====================
   # Set Inherited params
