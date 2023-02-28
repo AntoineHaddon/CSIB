@@ -49,6 +49,8 @@ echo "#################### Start NEMO pre-processing #################"
                    namelist_ice_ref \
                    namelist_ice_cfg
   )
+  # Add top namelist  to the list only if nemo_trc is enabled "${nemo_namelists} namelist_top"
+  [ "$nemo_trc" = "on" ] &&  nemo_namelists+=( namelist_top_ref namelist_top_cfg )
   # ======================================================
   # Make sure we have necessary variables from parent code
   # ======================================================
@@ -197,8 +199,8 @@ echo "#################### Start NEMO pre-processing #################"
                grid_def_nemo.xml \
                iodef.xml )
 
-  # Add pisces files to the list only if nemo_trc is enable "${nemo_namelists} namelist_top"
-  [ "$nemo_trc" = "on" ] &&  xios_files+=( field_def_nemo-pisces.xml file_def_nemo-pisces.xml )
+  # Add pisces files to the list only if nemo_carbon is enable 
+  [ "$nemo_carbon" = "on" ] &&  xios_files+=( field_def_nemo-pisces.xml file_def_nemo-pisces.xml )
 
   for file in "${xios_files[@]}"; do
     echo $file
