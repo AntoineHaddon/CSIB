@@ -341,13 +341,13 @@ PROGRAM nemo_ocean_diag
       call getvara ('depthw', iou3, km, (/1/), (/km/), depthw, 1., 0.)
       call getvara ('e1t', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1t , 1., 0.)
       call getvara ('e2t', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e2t , 1., 0.)
-      call getvara ('e3t_0', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3t , 1., 0.)
+      !call getvara ('e3t_0', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3t_0 , 1., 0.)
       call getvara ('e1v', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1v , 1., 0.)
       call getvara ('e2v', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e2v , 1., 0.)
-      call getvara ('e3v_0', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3v , 1., 0.)
+      !call getvara ('e3v_0', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3v , 1., 0.)
       call getvara ('e1u', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1u , 1., 0.)
       call getvara ('e2u', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e2u , 1., 0.)
-      call getvara ('e3u_0', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3u , 1., 0.)
+      !call getvara ('e3u_0', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3u , 1., 0.)
       call getvara ('tmask', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),t_mask , 1., 0.)
       call getvara ('umask', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),u_mask , 1., 0.)
       call getvara ('vmask', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),v_mask , 1., 0.)
@@ -426,17 +426,16 @@ PROGRAM nemo_ocean_diag
       tarea(imt, :) = 0. ! sshglo is not identical when using area(imt-1:imt,:)=0.
       area_tot = 0.
       area_tot = SUM(tarea(:, :))
-    ! ---------------------------- Global volume (not counting ssh)
-      vol0 = 0.
-      do k = 1, km
-         vol0 = vol0 + SUM( tarea(:, :)*t_mask(:, :, k)*e3t(:, :, k) )
-      enddo
 
     ! Main loop over all months
       do l = 1, lm 
          !---------------------------------------------------
          ! Read in the monthly data from NetCDF
          !---------------------------------------------------
+         ! layer thinkness (change because we use vvl)
+         call getvara ('e3t', iou0, imt*jmt*km, (/1,1,1,1,l/), (/imt,jmt,km,1/),e3t , 1., 0.)
+         call getvara ('e3u', iou1, imt*jmt*km, (/1,1,1,1,l/), (/imt,jmt,km,1/),e3u , 1., 0.)
+         call getvara ('e3v', iou2, imt*jmt*km, (/1,1,1,1,l/), (/imt,jmt,km,1/),e3v , 1., 0.)
          ! temperature
           CALL getvara ('thetao', iou0, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), theta, 1., 0.)
          ! salinity
@@ -471,7 +470,7 @@ PROGRAM nemo_ocean_diag
           CALL getvara ('hfrainds', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_rain_cea, 1., 0.)
           CALL getvara ('hfsnthermds', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_snow_ao_cea, 1., 0.)
           hflx_snow_ao_cea = -1*hflx_snow_ao_cea ! Change in the sign convention for NEMO4
-          CALL getvara ('hflx_snow_ai_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_snow_ai_cea, 1., 0.)
+          CALL getvara ('hfsnthermds2d', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_snow_ai_cea, 1., 0.)
           CALL getvara ('qt_ice_oce', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_ice_cea, 1., 0.)
           CALL getvara ('hfrunoffds', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_rnf_cea, 1., 0.)
           CALL getvara ('sitimefrac', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), sitimefrac, 1., 0.)
@@ -496,15 +495,16 @@ PROGRAM nemo_ocean_diag
     ! start DY, 11/OCT/2013
     !---------------------------------------------------
     ! (1) Global annual mean T and S and SSH
-    !---------------------------------------------------
-          volssh   = 0.
     ! ---------------------------- volume due to ssh   
           zarea_ssh(:, :) = tarea(:, :)*ssh(:, :)
           volssh = SUM( zarea_ssh(:, :) )
     ! ---------------------------- Global mean ssh (cm)
           sshglo(l) = (volssh/area_tot)*1.0e2
-    ! ---------------------------- Total volume
-          vol = vol0 + volssh
+    ! ---------------------------- Global volume (counting ssh)
+          vol = 0.
+          do k = 1, km
+               vol = vol + SUM( tarea(:, :)*t_mask(:, :, k)*e3t(:, :, k) )
+          enddo
     ! ---------------------------- Global mean temperature (C) & salinity (psu)
           tvol(l) = SUM(zarea_ssh(:, :)*theta(:, :, 1))
           svol(l) = SUM(zarea_ssh(:, :)* salt(:, :, 1))
@@ -952,7 +952,7 @@ PROGRAM nemo_ocean_diag
 
           call defvar ('ocean_area', iou, 0, 0, 0., 0., ' ', 'F'     &
      &       , 'Total ocean surface area', ' ', 'm2')
-          call defvar ('ocean_volume', iou, 0, 0, 0., 0., ' ', 'F'     &
+          call defvar ('ocean_volume', iou, 1, (/id_time/), 0., 0., ' ', 'F'     &
      &       , 'Total ocean volume', ' ', 'm3')
 
           call defvar ('depth', iou, 1, (/id_z/), 0., 0., 'Y', 'F'     &
@@ -1159,8 +1159,7 @@ PROGRAM nemo_ocean_diag
 
           call putvara ('ocean_area', iou, 1, (/1/), (/1/)                     &
      &      , area_tot, 1., 0.)
-          call putvara ('ocean_volume', iou, 1, (/1/), (/1/)                   &
-     &      , vol0, 1., 0.)
+          call putvars ('ocean_volume', iou, ntrec2 , vol, 1., 0.)
 
       else
 !      if the file does exist then open it for writing at the next record

@@ -85,7 +85,7 @@ PROGRAM nemo_diag
    !! Allocate Arrays
    !!----------------
    ALLOCATE( e2u(imt,jmt), e1v(imt,jmt), STAT=ierr(1) )
-   ALLOCATE( e3u(imt,jmt,km), e3v(imt,jmt,km), e3t(imt,jmt,km),    &
+   ALLOCATE( e3u(imt,jmt,km,lm), e3v(imt,jmt,km,lm), e3t(imt,jmt,km,lm),    &
              umask(imt,jmt,km), vmask(imt,jmt,km), tmask(imt,jmt,km), STAT=ierr(2) )
    ALLOCATE( time(lm), ytime(ly), deptht(km), x(imt), y(jmt), STAT=ierr(3) )
    ALLOCATE( nav_lon_u(imt,jmt), nav_lat_u(imt,jmt), STAT=ierr(4) )
@@ -143,9 +143,9 @@ PROGRAM nemo_diag
    !!-------------------
    CALL getvara ('e2u', iou1, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e2u , 1., 0.)
    CALL getvara ('e1v', iou1, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1v , 1., 0.)
-   CALL getvara ('e3u_0', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3u , 1., 0.)
-   CALL getvara ('e3v_0', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3v , 1., 0.)
-   CALL getvara ('e3t_0', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3t , 1., 0.)
+   !CALL getvara ('e3u_0', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3u , 1., 0.)
+   !CALL getvara ('e3v_0', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3v , 1., 0.)
+   !CALL getvara ('e3t_0', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3t , 1., 0.)
    CALL getvara ('umask', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),umask , 1., 0.)
    CALL getvara ('vmask', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),vmask , 1., 0.)
    CALL getvara ('tmask', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),tmask , 1., 0.)
@@ -198,6 +198,9 @@ PROGRAM nemo_diag
    CALL getvara ('tn', iou7, imt*jmt*km*1, (/1,1,1,1/), (/imt,jmt,km,1/), tnc, 1., 0.)
    ! sn from last time step of current year
    CALL getvara ('sn', iou8, imt*jmt*km*1, (/1,1,1,1/), (/imt,jmt,km,1/), snc, 1., 0.)
+   CALL getvara ('e3u', iou2, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),e3u , 1., 0.)
+   CALL getvara ('e3v', iou3, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),e3v , 1., 0.)
+   CALL getvara ('e3t', iou4, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),e3t , 1., 0.)
    print*, '-------------------'
    print*, 'Input data read OK!'
    print*, '-------------------'
