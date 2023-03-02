@@ -243,3 +243,6 @@ for fil in $dir_del_list; do
 done
 cd $wrkdir
 rm -rf cleanup
+
+echo "FINAL-SUCCESS"
+
