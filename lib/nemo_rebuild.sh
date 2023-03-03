@@ -238,8 +238,8 @@ rm -rf $inrs
 mkdir cleanup
 cd cleanup
 for fil in $dir_del_list; do
-   access xxx-to-del $fil
-   delete xxx-to-del
+   access xxx-to-del $fil na
+   delete xxx-to-del na
 done
 cd $wrkdir
 rm -rf cleanup
