@@ -42,6 +42,7 @@ MODULE icestp
    !!----------------------------------------------------------------------
    USE oce            ! ocean dynamics and tracers
    USE dom_oce        ! ocean space and time domain
+   USE domwri         ! to write ocean space domain
    USE c1d            ! 1D vertical configuration
    USE ice            ! sea-ice: variables
    USE ice1D          ! sea-ice: thermodynamical 1D variables
@@ -255,6 +256,8 @@ CONTAINS
       !
       CALL ice_thd_init                ! set ice thermodynics parameters (clem: important to call it first for melt ponds)
       !
+      !                       ! create  a domain file (append here to put the hi_max values)
+      IF( ln_meshmask )   CALL dom_wri
       !                                ! Initial sea-ice state
       IF ( ln_rstart .OR. nn_iceini_file == 2 ) THEN
          CALL ice_rst_read                      ! start from a restart file

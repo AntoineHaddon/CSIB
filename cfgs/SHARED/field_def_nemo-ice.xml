@@ -27,13 +27,15 @@
           <field id="icemask"      long_name="Fraction of time steps with sea ice"                     standard_name="sea_ice_mask"                              unit="" />
           <field id="icemask05"    long_name="Ice mask (0 if ice conc. lower than  5%, 1 otherwise)"   standard_name="sea_ice_mask05"                            unit="" />
           <field id="icemask15"    long_name="Ice mask (0 if ice conc. lower than 15%, 1 otherwise)"   standard_name="sea_ice_mask15"                            unit="" />
-	  <field id="icepres"      long_name="Fraction of time steps with sea ice"                     standard_name="sea_ice_time_fraction"                     unit="" />
+    	  <field id="icepres"      long_name="Fraction of time steps with sea ice"                     standard_name="sea_ice_time_fraction"                     unit="" />
           <field id="fasticepres"  long_name="Fraction of time steps with landfast ice"                standard_name="fast_ice_time_fraction"                    unit="" />
  
 	  <!-- general fields -->
           <field id="icemass"      long_name="Sea-ice mass per gridcell area"                          standard_name="sea_ice_amount"                            unit="kg/m2"/>
           <field id="snwmass"      long_name="Snow mass per area"                                      standard_name="liquid_water_content_of_surface_snow"      unit="kg/m2"/>
           <field id="iceconc"      long_name="Sea-ice area fraction"                                   standard_name="sea_ice_area_fraction"                     unit=""     />
+          <field id="sncover"     long_name="Sea-ice cover by snow area fraction"                     standard_name="snow_cover"                                unit=""     />
+
           <field id="icevolu"      long_name="Sea-ice volume per area"                                 standard_name="sea_ice_thickness"                         unit="m"    />
           <field id="icethic"      long_name="Sea-ice thickness"                                       standard_name="sea_ice_thickness"                         unit="m"    />
           <field id="snwthic"      long_name="Snow thickness"                                          standard_name="snow_thickness"                            unit="m"    />
@@ -180,29 +182,30 @@
 	  <!-- ================= -->
           <!-- Add-ons for SIMIP -->
           <!-- ================= -->
-          <field id="icemass_cmip" long_name="Sea-ice mass per area"                                   standard_name="sea_ice_amount"                          detect_missing_value="true" unit="kg/m2"  > icemass * icemask   </field>
-          <field id="icethic_cmip" long_name="Sea-ice thickness"                                       standard_name="sea_ice_thickness"                       detect_missing_value="true" unit="m"      > icethic * icemask05 </field>
-          <field id="snwmass_cmip" long_name="Snow mass per area"                                      standard_name="liquid_water_content_of_surface_snow"    detect_missing_value="true" unit="kg/m2"  > snwmass * icemask   </field>
-          <field id="snwthic_cmip" long_name="Snow thickness"                                          standard_name="surface_snow_thickness"                  detect_missing_value="true" unit="m"      > snwthic * icemask05 </field>
+          <field id="icemass_cmip" long_name="Sea-ice mass per area"                                   standard_name="sea_ice_amount"                          detect_missing_value="true" unit="kg/m2"  > icemass * icemask  </field>
+          <field id="icethic_cmip" long_name="Sea-ice thickness"                                       standard_name="sea_ice_thickness"                       detect_missing_value="true" unit="m"      > icethic * icemask05</field>
+          <field id="snwmass_cmip" long_name="Snow mass per area"                                      standard_name="liquid_water_content_of_surface_snow"    detect_missing_value="true" unit="kg/m2"  > snwmass * icemask  </field>
+          <field id="snwthic_cmip" long_name="Snow thickness"                                          standard_name="surface_snow_thickness"                  detect_missing_value="true" unit="m"      > snwthic * icemask05</field>
           <field id="iceconc_pct"  long_name="Sea-ice area fraction in percent"                        standard_name="sea_ice_area_fraction_in_percent"                                    unit="%"      > iceconc * 100.                                  </field>
-          <field id="iceage_cmip"  long_name="Age of sea ice"                                          standard_name="age_of_sea_ice"                          detect_missing_value="true" unit="days"   > iceage  * icemask15 </field>
-          <field id="icesalt_cmip" long_name="Sea ice salinity"                                        standard_name="sea_ice_salinity"                        detect_missing_value="true" unit="g/kg"   > icesalt * icemask   </field>
-          <field id="icefrb_cmip"  long_name="Sea-ice freeboard"                                       standard_name="sea_ice_freeboard"                       detect_missing_value="true" unit="m"      > icefrb  * icemask   </field>
+          <field id="sncover_cmip" long_name="Sea-ice cover by snow area fraction"                     standard_name="snow_cover"                              detect_missing_value="true" unit="%"      > sncover * 100.                                  </field>
+          <field id="iceage_cmip"  long_name="Age of sea ice"                                          standard_name="age_of_sea_ice"                          detect_missing_value="true" unit="days"   > iceage  * icemask15</field>
+          <field id="icesalt_cmip" long_name="Sea ice salinity"                                        standard_name="sea_ice_salinity"                        detect_missing_value="true" unit="g/kg"   > icesalt * icemask  </field>
+          <field id="icefrb_cmip"  long_name="Sea-ice freeboard"                                       standard_name="sea_ice_freeboard"                       detect_missing_value="true" unit="m"      > icefrb  * icemask  </field>
 
 	  <!-- heat -->
-          <field id="icettop_cmip" long_name="Surface temperature of sea ice"                          standard_name="sea_ice_surface_temperature"             detect_missing_value="true" unit="K"  > (icettop+273.15) * icemask </field>
-          <field id="icetsni_cmip" long_name="Temperature at snow-ice interface"                       standard_name="sea_ice_snow_interface_temperature"      detect_missing_value="true" unit="K"  > (icetsni+273.15) * icemask </field>
-          <field id="icetbot_cmip" long_name="Temperature at ice-ocean interface"                      standard_name="sea_ice_bottom_temperature"              detect_missing_value="true" unit="K"  > (icetbot+273.15) * icemask </field>
-          <field id="icehc_cmip"   long_name="Sea-ice heat content per unit area"                      standard_name="integral_of_sea_ice_temperature_wrt_depth_expressed_as_heat_content" detect_missing_value="true" unit="J/m2" > icehc * icemask </field>
-          <field id="snwhc_cmip"   long_name="Snow-heat content per unit area"                         standard_name="thermal_energy_content_of_surface_snow"                              detect_missing_value="true" unit="J/m2" > snwhc * icemask </field>
+          <field id="icettop_cmip" long_name="Surface temperature of sea ice"                          standard_name="sea_ice_surface_temperature"             detect_missing_value="true" unit="K"  > (icettop+273.15) * icemask</field>
+          <field id="icetsni_cmip" long_name="Temperature at snow-ice interface"                       standard_name="sea_ice_snow_interface_temperature"      detect_missing_value="true" unit="K"  > (icetsni+273.15) * icemask</field>
+          <field id="icetbot_cmip" long_name="Temperature at ice-ocean interface"                      standard_name="sea_ice_bottom_temperature"              detect_missing_value="true" unit="K"  > (icetbot+273.15) * icemask</field>
+          <field id="icehc_cmip"   long_name="Sea-ice heat content per unit area"                      standard_name="integral_of_sea_ice_temperature_wrt_depth_expressed_as_heat_content" detect_missing_value="true" unit="J/m2" > icehc * icemask</field>
+          <field id="snwhc_cmip"   long_name="Snow-heat content per unit area"                         standard_name="thermal_energy_content_of_surface_snow"                              detect_missing_value="true" unit="J/m2" > snwhc * icemask</field>
 
 	  <!-- fluxes (mass, heat, salt) -->
-          <field id="vfxsum_cmip"    long_name="Freshwater flux from sea-ice surface"                  standard_name="freshwater_flux_from_ice_surface"        detect_missing_value="true" unit="kg/m2/s"  > vfxsum    * icemask </field>
-          <field id="vfxice_cmip"    long_name="Freshwater flux from sea ice"                          standard_name="freshwater_flux_from_ice"                detect_missing_value="true" unit="kg/m2/s"  > vfxice    * icemask </field>
-          <field id="hfxsensib_cmip" long_name="Net sensible heat flux under sea ice"                  standard_name="ice_ocean_heat_flux"                     detect_missing_value="true" unit="W/m2"     > hfxsensib * icemask </field> 
-          <field id="hfxcndtop_cmip" long_name="Net conductive heat flux at the ice surface"           standard_name="conductive_heat_flux_at_sea_ice_surface" detect_missing_value="true" unit="W/m2"     > hfxcndtop * icemask </field> 
-          <field id="hfxcndbot_cmip" long_name="Net conductive heat flux at the ice bottom"            standard_name="conductive_heat_flux_at_sea_ice_bottom"  detect_missing_value="true" unit="W/m2"     > hfxcndbot * icemask </field>
-          <field id="sfxice_cmip"    long_name="Salt flux from sea ice"                                standard_name="salt_flux_from_ice"                      detect_missing_value="true" unit="kg/m2/s"  > sfxice    * icemask </field>
+          <field id="vfxsum_cmip"    long_name="Freshwater flux from sea-ice surface"                  standard_name="freshwater_flux_from_ice_surface"        detect_missing_value="true" unit="kg/m2/s"  > vfxsum    * icemask</field>
+          <field id="vfxice_cmip"    long_name="Freshwater flux from sea ice"                          standard_name="freshwater_flux_from_ice"                detect_missing_value="true" unit="kg/m2/s"  > vfxice    * icemask</field>
+          <field id="hfxsensib_cmip" long_name="Net sensible heat flux under sea ice"                  standard_name="ice_ocean_heat_flux"                     detect_missing_value="true" unit="W/m2"     > hfxsensib * icemask</field> 
+          <field id="hfxcndtop_cmip" long_name="Net conductive heat flux at the ice surface"           standard_name="conductive_heat_flux_at_sea_ice_surface" detect_missing_value="true" unit="W/m2"     > hfxcndtop * icemask</field> 
+          <field id="hfxcndbot_cmip" long_name="Net conductive heat flux at the ice bottom"            standard_name="conductive_heat_flux_at_sea_ice_bottom"  detect_missing_value="true" unit="W/m2"     > hfxcndbot * icemask</field>
+          <field id="sfxice_cmip"    long_name="Salt flux from sea ice"                                standard_name="salt_flux_from_ice"                      detect_missing_value="true" unit="kg/m2/s"  > sfxice    * icemask</field>
 
 	  <!-- trends -->
           <field id="dmithd"       long_name="sea-ice mass change from thermodynamics"                 standard_name="tendency_of_sea_ice_amount_due_to_thermodynamics"                        unit="kg/m2/s" />
@@ -222,11 +225,11 @@
           <field id="dmsssi"       long_name="snow mass change through snow-to-ice conversion"         standard_name="tendency_of_snow_mass_due_to_snow_to_ice_conversion"                     unit="kg/m2/s" />
 
 	  <!-- momentum (rheology) -->
-          <field id="uice_cmip"    long_name="X-component of sea ice velocity"                         standard_name="sea_ice_x_velocity"                    detect_missing_value="true" unit="m/s"   > uice    * icemask </field>
-          <field id="vice_cmip"    long_name="Y-component of sea ice velocity"                         standard_name="sea_ice_y_velocity"                    detect_missing_value="true" unit="m/s"   > vice    * icemask </field>     
-          <field id="icevel_cmip"  long_name="Sea-ice speed"                                           standard_name="sea_ice_speed"                         detect_missing_value="true" unit="m/s"   > icevel  * icemask </field> 
-          <field id="utau_ai_cmip" long_name="X-component of atmospheric stress on sea ice"            standard_name="surface_downward_x_stress"             detect_missing_value="true" unit="N/m2"  > utau_ai * icemask </field>
-          <field id="vtau_ai_cmip" long_name="Y-component of atmospheric stress on sea ice"            standard_name="surface_downward_y_stress"             detect_missing_value="true" unit="N/m2"  > vtau_ai * icemask </field>
+          <field id="uice_cmip"    long_name="X-component of sea ice velocity"                         standard_name="sea_ice_x_velocity"                    detect_missing_value="true" unit="m/s"   > uice    * icemask</field>
+          <field id="vice_cmip"    long_name="Y-component of sea ice velocity"                         standard_name="sea_ice_y_velocity"                    detect_missing_value="true" unit="m/s"   > vice    * icemask</field>     
+          <field id="icevel_cmip"  long_name="Sea-ice speed"                                           standard_name="sea_ice_speed"                         detect_missing_value="true" unit="m/s"   > icevel  * icemask</field> 
+          <field id="utau_ai_cmip" long_name="X-component of atmospheric stress on sea ice"            standard_name="surface_downward_x_stress"             detect_missing_value="true" unit="N/m2"  > utau_ai * icemask</field>
+          <field id="vtau_ai_cmip" long_name="Y-component of atmospheric stress on sea ice"            standard_name="surface_downward_y_stress"             detect_missing_value="true" unit="N/m2"  > vtau_ai * icemask</field>
           <field id="dssh_dx"      long_name="Sea-surface tilt term in force balance (x-component)"    standard_name="sea_surface_tilt_force_on_sea_ice_x"                               unit="N/m2" />
           <field id="dssh_dy"      long_name="Sea-surface tilt term in force balance (y-component)"    standard_name="sea_surface_tilt_force_on_sea_ice_y"                               unit="N/m2" />
           <field id="corstrx"      long_name="Coriolis force term in force balance (x-component)"      standard_name="coriolis_force_on_sea_ice_x"                                       unit="N/m2" />
@@ -285,9 +288,10 @@
         <field_group id="SBC_3D" grid_ref="grid_T_ncatice" >
 
           <!-- standard ice fields -->  
-	  <field id="iceconc_cat"  long_name="Sea-ice concentration per category"                unit=""        />
+      	  <field id="iceconc_cat"  long_name="Sea-ice concentration per category"                unit=""        />
           <field id="icethic_cat"  long_name="Sea-ice thickness per category"                    unit="m"       detect_missing_value="true" />
           <field id="snwthic_cat"  long_name="Snow thickness per category"                       unit="m"       detect_missing_value="true" />
+          <field id="sncover_cat"  long_name="Sea-ice cover by snow in thickness categories"     unit="1"       detect_missing_value="true" />
           <field id="icesalt_cat"  long_name="Sea-Ice Bulk salinity per category"                unit="g/kg"    detect_missing_value="true" />
           <field id="icetemp_cat"  long_name="Ice temperature per category"                      unit="degC"    detect_missing_value="true" />
           <field id="snwtemp_cat"  long_name="Snow temperature per category"                     unit="degC"    detect_missing_value="true" />
@@ -303,10 +307,11 @@
           <field id="icealb_cat"   long_name="Sea-ice or snow albedo"                            unit=""        detect_missing_value="true" />
 
           <!-- Add-ons for SIMIP -->
-          <field id="iceconc_cat_cmip"     long_name="Sea-ice area fractions in thickness categories"  standard_name="sea_ice_area_fraction_over_categories" detect_missing_value="true" unit=""   > iceconc_cat      * icemask_cat </field>
-          <field id="icethic_cat_cmip"     long_name="Sea-ice thickness in thickness categories"       standard_name="sea_ice_thickness_over_categories"     detect_missing_value="true" unit="m"  > icethic_cat      * icemask_cat </field>
-          <field id="snwthic_cat_cmip"     long_name="Snow thickness in thickness categories"          standard_name="snow_thickness_over_categories"        detect_missing_value="true" unit="m"  > snwthic_cat      * icemask_cat </field>
-          <field id="iceconc_cat_pct_cmip" long_name="Sea-ice area fractions in thickness categories"  standard_name="sea_ice_area_fraction_over_categories" detect_missing_value="true" unit="%"  > iceconc_cat*100. * icemask_cat </field>
+          <field id="sncover_cat_cmip"     long_name="Sea-ice cover by snow in thickness categories"   standard_name="sea_ice_area_fraction_over_categories" detect_missing_value="true" unit=""   > sncover_cat*100. * icemask_cat</field>
+          <field id="iceconc_cat_cmip"     long_name="Sea-ice area fractions in thickness categories"  standard_name="sea_ice_area_fraction_over_categories" detect_missing_value="true" unit=""   > iceconc_cat      * icemask_cat</field>
+          <field id="icethic_cat_cmip"     long_name="Sea-ice thickness in thickness categories"       standard_name="sea_ice_thickness_over_categories"     detect_missing_value="true" unit="m"  > icethic_cat      * icemask_cat</field>
+          <field id="snwthic_cat_cmip"     long_name="Snow thickness in thickness categories"          standard_name="snow_thickness_over_categories"        detect_missing_value="true" unit="m"  > snwthic_cat      * icemask_cat</field>
+          <field id="iceconc_cat_pct_cmip" long_name="Sea-ice area fractions in thickness categories"  standard_name="sea_ice_area_fraction_over_categories" detect_missing_value="true" unit="%"  > iceconc_cat*100. * icemask_cat</field>
 
           <!-- heat diffusion convergence tests -->
           <field id="tice_cvgerr" long_name="sea ice temperature convergence error"      standard_name="sea_ice_temperature_convergence_err" unit="K" />
@@ -469,6 +474,7 @@
 	  <!-- categories -->
 	  <field field_ref="icemask_cat"      name="simskcat"/>
 	  <field field_ref="snwthic_cat"      name="snthicat"/>
+	  <field field_ref="sncover_cat"      name="snconcat"/>
 	  <field field_ref="iceconc_cat"      name="siconcat"/>
 	  <field field_ref="icethic_cat"      name="sithicat"/>
 	  <field field_ref="icesalt_cat"      name="sisalcat"/>

@@ -354,8 +354,8 @@ CONTAINS
          IF(lwp) WRITE(numout,*)
          IF(lwp) WRITE(numout,*) '   ==>>>   runoffs depth read in a file'
          rn_dep_file = TRIM( cn_dir )//TRIM( sn_dep_rnf%clname )
-         IF( .NOT. sn_dep_rnf%ln_clim ) THEN   ;   WRITE(rn_dep_file, '(a,"_y",i4)' ) TRIM( rn_dep_file ), nyear    ! add year 
-            IF( sn_dep_rnf%cltype == 'monthly' )   WRITE(rn_dep_file, '(a,"m",i2)'  ) TRIM( rn_dep_file ), nmonth   ! add month 
+         IF( .NOT. sn_dep_rnf%ln_clim ) THEN   ;   WRITE(rn_dep_file, '(a,"_y",i4.4)' ) TRIM( rn_dep_file ), nyear    ! add year 
+            IF( sn_dep_rnf%cltype == 'monthly' )   WRITE(rn_dep_file, '(a,"m",i2.2)'  ) TRIM( rn_dep_file ), nmonth   ! add month 
          ENDIF
          CALL iom_open ( rn_dep_file, inum )                           ! open file
          CALL iom_get  ( inum, jpdom_data, sn_dep_rnf%clvar, h_rnf, lrowattr=ln_use_jattr )   ! read the river mouth array
@@ -529,8 +529,8 @@ CONTAINS
       IF(lwp) WRITE(numout,*) '   ~~~~~~~~~ '
       !
       cl_rnfile = TRIM( cn_dir )//TRIM( sn_cnf%clname )
-      IF( .NOT. sn_cnf%ln_clim ) THEN   ;   WRITE(cl_rnfile, '(a,"_y",i4)' ) TRIM( cl_rnfile ), nyear    ! add year
-         IF( sn_cnf%cltype == 'monthly' )   WRITE(cl_rnfile, '(a,"m",i2)'  ) TRIM( cl_rnfile ), nmonth   ! add month
+      IF( .NOT. sn_cnf%ln_clim ) THEN   ;   WRITE(cl_rnfile, '(a,"_y",i4.4)' ) TRIM( cl_rnfile ), nyear    ! add year
+         IF( sn_cnf%cltype == 'monthly' )   WRITE(cl_rnfile, '(a,"m",i2.2)'  ) TRIM( cl_rnfile ), nmonth   ! add month
       ENDIF
       !
       ! horizontal mask (read in NetCDF file)

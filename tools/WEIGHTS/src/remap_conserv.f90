@@ -91,7 +91,7 @@
 !-----------------------------------------------------------------------
 
       integer (kind=int_kind), parameter ::  &
-              max_subseg = 10000 ! max number of subsegments per segment
+              max_subseg = 20000 ! max number of subsegments per segment
                                  ! to prevent infinite loop
 
       integer (kind=int_kind) ::  &
@@ -152,6 +152,17 @@
 
       print *,'grid1 sweep '
       do grid1_add = 1,grid1_size
+        weights(:)=0.
+        grid2_add =0
+        call store_link_cnsrv(grid1_add, grid2_add, weights)
+      enddo
+      do grid1_add = 1,grid1_size
+
+        !store zeros to fille the dst array
+        !weights(:)=0.
+        !grid2_add =0
+        !call store_link_cnsrv(grid1_add, grid2_add, weights)
+        if (grid1_mask(grid1_add)==0) cycle
 
         !***
         !*** restrict searches first using search bins
@@ -167,6 +178,10 @@
             max_add = max(max_add, bin_addr2(2,n))
           endif
         end do
+        if (max_add.eq.1) then 
+           min_add = 1
+           max_add = grid2_size
+        endif 
 
         !***
         !*** further restrict searches using bounding boxes
@@ -181,7 +196,8 @@
                                  (grid2_bound_box(3,grid2_add) <=  &
                                   grid1_bound_box(4,grid1_add)) .and. &
                                  (grid2_bound_box(4,grid2_add) >=  &
-                                  grid1_bound_box(3,grid1_add))
+                                  grid1_bound_box(3,grid1_add)) .and. &
+                                  grid2_mask(grid2_add)==1
 
           if (srch_mask(grid2_add)) num_srch_cells = num_srch_cells+1
         end do
@@ -263,7 +279,8 @@
 
             num_subseg = num_subseg + 1
             if (num_subseg > max_subseg) then
-              stop 'integration stalled: num_subseg exceeded limit'
+              !stop 'integration stalled #1: num_subseg exceeded limit'
+              exit 
             endif
 
             !***
@@ -314,17 +331,8 @@
             !*** also add contributions to cell areas and centroids.
             !***
 
-            !if (grid1_add == 119247) then
-            !  print *,grid1_add,grid2_add,corner,weights(1)
-            !  print *,grid1_corner_lat(:,grid1_add)
-            !  print *,grid1_corner_lon(:,grid1_add)
-            !  print *,grid2_corner_lat(:,grid2_add)
-            !  print *,grid2_corner_lon(:,grid2_add)
-            !  print *,beglat,beglon,intrsct_lat,intrsct_lon
-            !endif
-
             if (grid2_add /= 0) then
-              if (grid1_mask(grid1_add)) then
+              if (grid1_mask(grid1_add)==1) then
                 call timer_start(4)
                 call store_link_cnsrv(grid1_add, grid2_add, weights)
                 call timer_stop(4)
@@ -352,6 +360,7 @@
 
           endif
 
+
           !***
           !*** end of segment
           !***
@@ -378,7 +387,17 @@
 
       print *,'grid2 sweep '
       do grid2_add = 1,grid2_size
+        weights(:)=0.
+        grid1_add =0
+        call store_link_cnsrv(grid1_add, grid2_add, weights)
+      enddo
+      do grid2_add = 1,grid2_size
 
+        !store zeros to fill the src array
+        !weights(:)=0.
+        !grid1_add =0
+        !call store_link_cnsrv(grid1_add, grid2_add, weights)
+        if (grid2_mask(grid2_add)==0) cycle 
         !***
         !*** restrict searches first using search bins
         !***
@@ -407,7 +426,8 @@
                                  (grid1_bound_box(3,grid1_add) <=  &
                                   grid2_bound_box(4,grid2_add)) .and. &
                                  (grid1_bound_box(4,grid1_add) >=  &
-                                  grid2_bound_box(3,grid2_add))
+                                  grid2_bound_box(3,grid2_add)) .and. &
+                                  grid1_mask(grid1_add)==1
 
           if (srch_mask(grid1_add)) num_srch_cells = num_srch_cells+1
         end do
@@ -480,7 +500,9 @@
 
             num_subseg = num_subseg + 1
             if (num_subseg > max_subseg) then
-              stop 'integration stalled: num_subseg exceeded limit'
+              !print*,grid2_add,next_corn,beglat,endlat,beglon,endlon
+              !stop 'integration stalled#2: num_subseg exceeded limit'
+              exit
             endif
 
             !***
@@ -529,17 +551,8 @@
             !*** the grid1 mask is the master mask
             !***
 
-            !if (grid1_add == 119247) then
-            !  print *,grid1_add,grid2_add,corner,weights(1)
-            !  print *,grid1_corner_lat(:,grid1_add)
-            !  print *,grid1_corner_lon(:,grid1_add)
-            !  print *,grid2_corner_lat(:,grid2_add)
-            !  print *,grid2_corner_lon(:,grid2_add)
-            !  print *,beglat,beglon,intrsct_lat,intrsct_lon
-            !endif
-
             if (.not. lcoinc .and. grid1_add /= 0) then
-              if (grid1_mask(grid1_add)) then
+              if (grid1_mask(grid1_add)==1) then
                 call timer_start(8)
                 call store_link_cnsrv(grid1_add, grid2_add, weights)
                 call timer_stop(8)
@@ -2109,7 +2122,7 @@
 !
 !-----------------------------------------------------------------------
 
-      if (all(weights == zero)) return
+      !if (all(weights == zero)) return
 
 !-----------------------------------------------------------------------
 !

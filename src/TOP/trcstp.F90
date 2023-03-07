@@ -78,10 +78,12 @@ CONTAINS
          DO jk = 1, jpk
             cvol(:,:,jk) = e1e2t(:,:) * e3t_n(:,:,jk) * tmask(:,:,jk)
          END DO
-         IF ( ll_trcstat .OR. kt == nitrst .OR. ( ln_check_mass .AND. kt == nitend )          &
-            & .OR. iom_use( "pno3tot" ) .OR. iom_use( "ppo4tot" ) .OR. iom_use( "psiltot" )   &
-            & .OR. iom_use( "palktot" ) .OR. iom_use( "pfertot" ) )                           &
-            &     areatot = glob_sum( 'trcstp', cvol(:,:,:) )
+         IF( ln_pisces  ) then
+           IF ( ll_trcstat .OR. kt == nitrst .OR. ( ln_check_mass .AND. kt == nitend )          &
+              & .OR. iom_use( "pno3tot" ) .OR. iom_use( "ppo4tot" ) .OR. iom_use( "psiltot" )   &
+              & .OR. iom_use( "palktot" ) .OR. iom_use( "pfertot" ) )                           &
+              &     areatot = glob_sum( 'trcstp', cvol(:,:,:) )
+         ENDIF
       ENDIF
       !
       IF( l_trcdm2dc )   CALL trc_mean_qsr( kt )

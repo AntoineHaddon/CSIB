@@ -23,6 +23,8 @@ MODULE domwri
    USE iom             ! I/O library
    USE lbclnk          ! lateral boundary conditions - mpp exchanges
    USE lib_mpp         ! MPP library
+   USE sbc_oce, ONLY : nn_ice
+   USE ice, ONLY : jpl,hi_max   ! need the number of ice  categories and their limit
 
    IMPLICIT NONE
    PRIVATE
@@ -71,7 +73,11 @@ CONTAINS
       !                                  ! ============================
       !                                  !  create 'mesh_mask.nc' file
       !                                  ! ============================
-      CALL iom_open( TRIM(clnam), inum, ldwrt = .TRUE. )
+      IF( nn_ice.eq.2) THEN
+        CALL iom_open( TRIM(clnam), inum, ldwrt = .TRUE. , kdlev = jpl )
+      ELSE
+        CALL iom_open( TRIM(clnam), inum, ldwrt = .TRUE. )
+      ENDIF
       !
       !                                                         ! global domain size
       CALL iom_rstput( 0, 0, inum, 'jpiglo', REAL( jpiglo, wp), ktype = jp_i4 )
@@ -184,6 +190,7 @@ CONTAINS
       !
       IF( ll_wd ) CALL iom_rstput( 0, 0, inum, 'ht_0'   , ht_0   , ktype = jp_r8 )
 
+      IF( nn_ice.eq.2) CALL iom_rstput( 0, 0, inum, 'hi_max'   , hi_max(1:jpl)   , ktype = jp_r8 ) ! hi_max(0) = 0.
       !                                     ! ============================
       CALL iom_close( inum )                !        close the files 
       !                                     ! ============================
