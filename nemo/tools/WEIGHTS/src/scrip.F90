@@ -34,6 +34,7 @@
 !
 !***********************************************************************
 
+#define ARGC
       program scrip
 
 !-----------------------------------------------------------------------
@@ -48,6 +49,8 @@
       use remap_distance_weight      ! routines for dist-weight remap
       use remap_bilinear             ! routines for bilinear interp
       use remap_bicubic              ! routines for bicubic  interp
+      use remap_nearest              ! routines for nearest interp
+      use remap_fountainhead         ! routines for fountain interp
       use remap_write                ! routines for remap output
 
       implicit none
@@ -154,6 +157,12 @@
       case ('distwgt')
         map_type = map_type_distwgt
         luse_grid_centers = .true.
+      case ('nearest')
+        map_type = map_type_nearest
+        luse_grid_centers = .true.
+      case ('fountain')
+        map_type = map_type_fountain
+        luse_grid_centers = .true.
       case default
         stop 'unknown mapping method'
       end select
@@ -204,6 +213,10 @@
         call remap_distwgt
       case(map_type_bicubic)
         call remap_bicub
+      case(map_type_nearest)
+        call remap_near
+      case(map_type_fountain)
+        call remap_fountain
       case default
         stop 'Invalid Map Type'
       end select

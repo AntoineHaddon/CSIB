@@ -19,6 +19,7 @@
 !-----------------------------------------------------------------------
 &namrun        !   parameters of the run
 !-----------------------------------------------------------------------
+   nn_no       =       0   !  Assimilation cycle index
    cn_exp      =  "ORCA1"  !  experience name
    nn_it000    =       1   !  first time step
    nn_itend    =    5840   !  last  time step (std 5475)
@@ -31,11 +32,15 @@
       !                          !    = 2 nn_date0 read in restart  ; nn_it000 : check consistancy between namelist and restart
    cn_ocerst_in    = "restart"   !  suffix of ocean restart name (input)
    cn_ocerst_out   = "restart"   !  suffix of ocean restart name (output)
+   ln_clobber  = .true.    !  clobber (overwrite) an existing file
+   nn_stock    =       0   
+   nn_write    =       0   
 /
 !-----------------------------------------------------------------------
 &namdom        !   time and space domain
 !-----------------------------------------------------------------------
    rn_rdt      = 2700.     !  time step for the dynamics and tracer
+   ln_meshmask = .false.   !  =T create a mesh file
 /
 !-----------------------------------------------------------------------
 &namcfg        !   parameters of the configuration                      (default: use namusr_def in namelist_cfg)
@@ -52,8 +57,8 @@
 &namtsd        !    Temperature & Salinity Data  (init/dmp)             (default: OFF)
 !-----------------------------------------------------------------------
    !                       ! =T  read T-S fields for:
-   ln_tsd_init = .true.          !  ocean initialisation
-   ln_tsd_dmp  = .true.          !  T-S restoring   (see namtra_dmp)
+   ln_tsd_init = .true.          !  ocean initialisation  (if ln_rstart = .false.)
+   ln_tsd_dmp  = .false.          !  T-S restoring   (see namtra_dmp)
 
    cn_dir = './'     !  root directory for the T-S data location
    !___________!_________________________!___________________!___________!_____________!________!___________!__________________!__________!_______________!
@@ -172,12 +177,12 @@
    !           !  file name              ! frequency (hours) ! variable  ! time interp.!  clim  ! 'yearly'/ ! weights filename ! rotation ! land/sea mask !
    !           !                         !  (if <0  months)  !   name    !   (logical) !  (T/F) ! 'monthly' !                  ! pairing  !    filename   !
    sn_sst      = 'sst_data'              ,        -1.        , 'temperature', .true.   , .true. , 'yearly'  ,    ''            ,    ''    ,     ''
-   sn_sss      = 'sss_data'              ,        -1.        , 'salinity',    .true.   , .true. , 'yearly'  ,    ''            ,    ''    ,     ''
+   sn_sss      = 'sss_data'              ,        -1.        , 'sos',    .true.   , .true. , 'yearly'  ,    ''            ,    ''    ,     ''
 /
 !-----------------------------------------------------------------------
 &namsbc_rnf    !   runoffs                                              (ln_rnf =T)
 !-----------------------------------------------------------------------
-   ln_rnf_mouth = .true.    !  specific treatment at rivers mouths
+   ln_rnf_mouth = .false.    !  specific treatment at rivers mouths
       rn_hrnf     =  15.e0    !  depth over which enhanced vertical mixing is used    (ln_rnf_mouth=T)
       rn_avt_rnf  =   1.e-3   !  value of the additional vertical mixing coef. [m2/s] (ln_rnf_mouth=T)
    rn_rfact    =   1.e0    !  multiplicative factor for runoff
@@ -305,12 +310,12 @@
 !-----------------------------------------------------------------------
 &namtra_mle    !   mixed layer eddy parametrisation (Fox-Kemper)        (default: OFF)
 !-----------------------------------------------------------------------
-   ln_mle      = .false.   ! (T) use the Mixed Layer Eddy (MLE) parameterisation
+   ln_mle      = .true.   ! (T) use the Mixed Layer Eddy (MLE) parameterisation
 /
 !-----------------------------------------------------------------------
 &namtra_eiv    !   eddy induced velocity param.                         (default: OFF)
 !-----------------------------------------------------------------------
-   ln_ldfeiv   = .false.       ! use eddy induced velocity parameterization
+   ln_ldfeiv   = .true.       ! use eddy induced velocity parameterization
       !                        !  Coefficients:
       nn_aei_ijk_t  = 21          ! space/time variation of the eiv coeficient
       !                                !   = 21 F(i,j,t)  =Treguier et al. JPO 1997 formulation
@@ -449,9 +454,15 @@
 !!======================================================================
 !
 !-----------------------------------------------------------------------
+&namtrd        !   trend diagnostics                                    (default: OFF)
+!-----------------------------------------------------------------------
+   ln_tra_trd = .false.   ! (T) 3D tracer trend output (needed var. for ttrd_zdfp, ttrd_zdfp, etc.)
+/
+!-----------------------------------------------------------------------
 &namptr        !   Poleward Transport Diagnostic                        (default: OFF)
 !-----------------------------------------------------------------------
    ln_diaptr   = .false.   !  Poleward heat and salt transport (T) or not (F)
+   ln_subbas   = .false.   !  Atlantic/Pacific/Indian basins computation (T) or not
 /
 !!======================================================================
 !!               ***  Observation & Assimilation  ***                 !!

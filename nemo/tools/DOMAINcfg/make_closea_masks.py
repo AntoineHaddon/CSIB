@@ -1,4 +1,4 @@
-#!/usr/local/sci/bin/python2.7
+#!/usr/bin/python3 
 
 '''
 Routine to create closea mask fields based on old NEMO closea index definitions.
@@ -330,6 +330,70 @@ def make_closea_masks(config=None,domcfg_file=None,mask=None):
         ncsi1[10]   = 1274 ; ncsj1[10]   = 672
         ncsi2[10]   = 1289 ; ncsj2[10]   = 687
 
+    elif config == 'eORCA025_CCCMA':
+
+        num_closea = 10
+        max_runoff_points = 1
+        use_runoff_box = True
+
+        ncsnr = np.zeros(num_closea+1,dtype=np.int)                     ; ncstt = np.zeros(num_closea+1,dtype=np.int)
+        ncsi1 = np.zeros(num_closea+1,dtype=np.int)                     ; ncsj1 = np.zeros(num_closea+1,dtype=np.int)
+        ncsi2 = np.zeros(num_closea+1,dtype=np.int)                     ; ncsj2 = np.zeros(num_closea+1,dtype=np.int)
+        ncsir1 = np.zeros(num_closea+1,dtype=np.int)                    ; ncsjr1 = np.zeros(num_closea+1,dtype=np.int)
+        ncsir2 = np.zeros(num_closea+1,dtype=np.int)                    ; ncsjr2 = np.zeros(num_closea+1,dtype=np.int)
+        ncsir = np.zeros((num_closea+1,max_runoff_points+1),dtype=np.int) ; ncsjr = np.zeros((num_closea+1,max_runoff_points+1),dtype=np.int)
+
+        # Caspian Sea
+        ncsnr[1]   = 1    ; ncstt[1]   = 0
+        ncsi1[1]   = 1330 ; ncsj1[1]   = 831
+        ncsi2[1]   = 1375 ; ncsj2[1]   = 981
+
+        # Aral Sea
+        ncsnr[2]   = 1    ; ncstt[2]   = -1
+        ncsi1[2]   = 1376 ; ncsj1[2]   = 900
+        ncsi2[2]   = 1400 ; ncsj2[2]   = 981
+
+        # Azov Sea
+        ncsnr[3]   = 1    ; ncstt[3]   = -1
+        ncsi1[3]   = 1284 ; ncsj1[3]   = 908
+        ncsi2[3]   = 1304 ; ncsj2[3]   = 933
+
+        # Lake Superior
+        ncsnr[4]   = 1    ; ncstt[4]   = -1
+        ncsi1[4]   = 781  ; ncsj1[4]   = 905
+        ncsi2[4]   = 815  ; ncsj2[4]   = 926
+
+        # Lake Michigan
+        ncsnr[5]   = 1    ; ncstt[5]   = -1
+        ncsi1[5]   = 795  ; ncsj1[5]   = 871
+        ncsi2[5]   = 813  ; ncsj2[5]   = 905
+
+        # Lake Huron part 1
+        ncsnr[6]   = 1    ; ncstt[6]   = -1
+        ncsi1[6]   = 814  ; ncsj1[6]   = 882
+        ncsi2[6]   = 825  ; ncsj2[6]   = 905
+
+        # Lake Huron part 2
+        ncsnr[7]   = 1    ; ncstt[7]   = -1
+        ncsi1[7]   = 826  ; ncsj1[7]   = 889
+        ncsi2[7]   = 833  ; ncsj2[7]   = 905
+
+        # Lake Erie
+        ncsnr[8]   = 1    ; ncstt[8]   = -1
+        ncsi1[8]   = 816  ; ncsj1[8]   = 871
+        ncsi2[8]   = 837  ; ncsj2[8]   = 881
+
+        # Lake Ontario
+        ncsnr[9]   = 1    ; ncstt[9]   = -1
+        ncsi1[9]   = 831  ; ncsj1[9]   = 882
+        ncsi2[9]   = 847  ; ncsj2[9]   = 889
+
+        # Lake Victoria
+        ncsnr[10]   = 1    ; ncstt[10]   = -1
+        ncsi1[10]   = 1274 ; ncsj1[10]   = 672
+        ncsi2[10]   = 1289 ; ncsj2[10]   = 687
+
+
 #=====================================
 # 3. Generate mask fields
 #=====================================
@@ -347,6 +411,10 @@ def make_closea_masks(config=None,domcfg_file=None,mask=None):
         closea_mask = ma.where( ( ii2d[:] >= ncsi1[ics+1] ) & ( ii2d[:] <= ncsi2[ics+1] ) &
                                 ( jj2d[:] >= ncsj1[ics+1] ) & ( jj2d[:] <= ncsj2[ics+1] ) &
                                 ( top_level == 1 ), ics+1, closea_mask)
+        if ncstt[ics+1] == -1:
+            top_level = ma.where( ( ii2d[:] >= ncsi1[ics+1] ) & ( ii2d[:] <= ncsi2[ics+1] ) &
+                                    ( jj2d[:] >= ncsj1[ics+1] ) & ( jj2d[:] <= ncsj2[ics+1] ) &
+                                    ( top_level == 1 ), 0, top_level)
         if ncstt[ics+1] == 1:
             rnf_count = rnf_count + 1
             temp_mask_rnf[:] = 0
@@ -406,13 +474,17 @@ def make_closea_masks(config=None,domcfg_file=None,mask=None):
 # 4. Append masks to domain_cfg file.
 #=====================================
 
-    domcfg.createVariable('closea_mask',datatype='i',dimensions=('y','x'),fill_value=-1,chunksizes=(1000,1000))
+    if 'closea_mask' not in domcfg.variables.keys():
+        domcfg.createVariable('closea_mask',datatype='i',dimensions=('y','x'),fill_value=-1,chunksizes=(1000,1000))
     domcfg.variables['closea_mask'][:]=closea_mask
+    domcfg.variables['top_level'][0][:]=top_level
     if rnf_count > 0:
-        domcfg.createVariable('closea_mask_rnf',datatype='i',dimensions=('y','x'),fill_value=-1,chunksizes=(1000,1000))
+        if 'closea_mask_rnf' not in domcfg.variables.keys():
+            domcfg.createVariable('closea_mask_rnf',datatype='i',dimensions=('y','x'),fill_value=-1,chunksizes=(1000,1000))
         domcfg.variables['closea_mask_rnf'][:]=closea_mask_rnf
     if empmr_count > 0:
-        domcfg.createVariable('closea_mask_empmr',datatype='i',dimensions=('y','x'),fill_value=-1,chunksizes=(1000,1000))
+        if 'closea_mask_empmr' not in domcfg.variables.keys():
+            domcfg.createVariable('closea_mask_empmr',datatype='i',dimensions=('y','x'),fill_value=-1,chunksizes=(1000,1000))
         domcfg.variables['closea_mask_empmr'][:]=closea_mask_empmr
 
     domcfg.close()

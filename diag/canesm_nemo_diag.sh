@@ -54,41 +54,49 @@ set -x
 # suffix list for yearly nemo historical files.
   nemo_diag_file_1y_suffix_list=${nemo_diag_file_1y_suffix_list}
 
+# Append yearly diagnostics
+  if [ $nmon -eq 1 -a $fmon -eq 1 ] ; then
+    nemo_diag_file_suffix_list="$nemo_diag_file_suffix_list $nemo_diag_file_1y_suffix_list"
+  fi
+
+# access to time series
+  for sfx in $nemo_diag_file_suffix_list ; do
+    diag_hist="mc_${runid}_${fyear}_m${fmon}_${sfx}.nc"
+    access ${sfx}_${fmon} $diag_hist na
+    [ ! -e ${sfx}_${fmon} ] && continue
+    ncks -O -C -x -v time_centered_bounds,time_centered ${sfx}_${fmon} ${sfx}_${fmon} 
+    cdo splitname ${sfx}_${fmon} xxx-${sfx}_
+  done
+
 # Execute the following lines when output_level -ge 1
   if [ $output_level -ge 1 ] ; then
-      if [ $nmon -eq 1 -a $fmon -eq 1 ] ; then
-        for sfx in $nemo_diag_file_1y_suffix_list ; do
-          diag_hist="mc_${runid}_${fyear}_m${fmon}_${sfx}.nc"
-          access ${sfx}_${fmon} $diag_hist na
-        done
-      fi
 
       # Run offline computation only if starting from January 
       if [ $fmon -eq 1 ] ; then 
 # Access the nemo restart files
-        diag_rs1="mc_${runid}_${yearm1}_m${lmon}_nemors.tar" # previous year
-        diag_rs2="mc_${runid}_${year}_m${lmon}_nemors.tar"   # current year
+        diag_rs1="mc_${runid}_${yearm1}_m${lmon}_nemors" # previous year
+        diag_rs2="mc_${runid}_${year}_m${lmon}_nemors"   # current year
         access rsp $diag_rs1 || ( echo "$diag_rs1 does not exist" ; exit 1 )
         access rsc $diag_rs2 || ( echo "$diag_rs2 does not exist" ; exit 1 )
 
 # Get tn and sn from the last step of previous year
         if [ -L rsp ] ; then
-          mkdir dir_rsp; cd dir_rsp
-          tar -xvf ../rsp
-          cdo select,name=tn,timestep=-1 *_restart.nc ../tnp.nc
-          cdo select,name=sn,timestep=-1 *_restart.nc ../snp.nc
+          cd rsp
+          cdo select,name=tn,timestep=-1 *_restart.nc tnp.nc
+          cdo select,name=sn,timestep=-1 *_restart.nc snp.nc
           cd ..
+          mv rsp/tnp.nc rsp/snp.nc ./
           release rsp
           rm -f -r dir_rsp
         fi
 
 # Get tn and sn from the last step of current year
         if [ -L rsc ] ; then
-          mkdir dir_rsc; cd dir_rsc
-          tar -xvf ../rsc
-          cdo select,name=tn,timestep=-1 ${runid}_*_restart.nc ../tnc.nc
-          cdo select,name=sn,timestep=-1 ${runid}_*_restart.nc ../snc.nc
+          cd rsc
+          cdo select,name=tn,timestep=-1 ${runid}_*_restart.nc tnc.nc
+          cdo select,name=sn,timestep=-1 ${runid}_*_restart.nc snc.nc
           cd ..
+          mv rsc/tnc.nc rsc/snc.nc ./
           release rsc
           rm -f -r dir_rsc
         fi
@@ -128,7 +136,8 @@ set -x
           rm -f 1m_grid_u_ar6_${fmon}
           mv 1m_grid_u_ar6.nc 1m_grid_u_ar6_${fmon}
         else
-          echo  "1m_grid_u_ar6_${fmon} does not exist"
+          echo  "1m_grid_u_ar6_${fmon} does not exist, created with msftbarot.nc"
+          mv msftbarot.nc 1m_grid_u_ar6_${fmon}
         fi
 
 # Append tstend.nc to 1y_grid_t_ar6_${fmon}
@@ -144,32 +153,19 @@ set -x
         fi
       fi
 
-######################################
-# Time mean (1d_diaptr -> 1m_diaptr) #
-######################################
-      [ -L 1d_diaptr_${fmon} -o -s 1d_diaptr_${fmon} ] && cdo -b F64 monmean 1d_diaptr_${fmon} 1m_diaptr_${fmon}
+  fi # end of "output_level -ge 1"
 
 #########################################
 # Split historical files to time series #
 #########################################
 
-# Replace 1d_diaptr with 1m_diaptr after doing time mean
-      nemo_diag_file_suffix_list=`echo $nemo_diag_file_suffix_list | sed -e "s/1d_diaptr/1m_diaptr/"`
-
-  fi # end of "output_level -ge 1"
-
-# Append yearly diagnostics
-  if [ $nmon -eq 1 -a $fmon -eq 1 ] ; then
-    nemo_diag_file_suffix_list="$nemo_diag_file_suffix_list $nemo_diag_file_1y_suffix_list"
-  fi
 
 # Split to time series
   for sfx in $nemo_diag_file_suffix_list ; do
-    diag_hist="mc_${runid}_${fyear}_m${fmon}_${sfx}.nc"
-    access ${sfx}_${fmon} $diag_hist na
     [ ! -e ${sfx}_${fmon} ] && continue
     ncks -O -C -x -v time_centered_bounds,time_centered ${sfx}_${fmon} ${sfx}_${fmon} 
     cdo splitname ${sfx}_${fmon} xxx-${sfx}_
+    rm  ${sfx}_${fmon}
   done
 
 # Save time series

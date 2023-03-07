@@ -61,7 +61,7 @@
 &namtsd        !    Temperature & Salinity Data  (init/dmp)             (default: OFF)
 !-----------------------------------------------------------------------
    !                       ! =T  read T-S fields for:
-   ln_tsd_init = .true.          !  ocean initialisation
+   ln_tsd_init = .true.          !  ocean initialisation  (if ln_rstart = .false.)
    ln_tsd_dmp  = .false.          !  T-S restoring   (see namtra_dmp)
 
    cn_dir = './'     !  root directory for the T-S data location
@@ -471,9 +471,15 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 !!======================================================================
 !
 !-----------------------------------------------------------------------
+&namtrd        !   trend diagnostics                                    (default: OFF)
+!-----------------------------------------------------------------------
+   ln_tra_trd = .false.   ! (T) 3D tracer trend output (needed var. for ttrd_zdfp, ttrd_zdfp, etc.)
+/
+!-----------------------------------------------------------------------
 &namptr        !   Poleward Transport Diagnostic                        (default: OFF)
 !-----------------------------------------------------------------------
    ln_diaptr   = .false.   !  Poleward heat and salt transport (T) or not (F)
+   ln_subbas   = .false.   !  Atlantic/Pacific/Indian basins computation (T) or not
 /
 !!======================================================================
 !!               ***  Observation & Assimilation  ***                 !!

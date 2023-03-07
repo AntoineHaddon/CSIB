@@ -177,6 +177,10 @@
         map_type = map_type_distwgt
       case('Bicubic remapping')
         map_type = map_type_bicubic
+      case('Nearest remapping')
+        map_type = map_type_nearest
+      case('Fountain remapping')
+        map_type = map_type_fountain
       case default
         print *,'map_type = ',map_method
         stop 'Invalid Map Type'
@@ -586,14 +590,18 @@
 !-----------------------------------------------------------------------
 
       where (grid1_mask_int == 1)
-        grid1_mask = .true.
+        grid1_mask = 1
+      elsewhere (grid1_mask_int == -1)
+        grid1_mask = -1
       elsewhere
-        grid1_mask = .false.
+        grid1_mask = 0
       endwhere
       where (grid2_mask_int == 1)
-        grid2_mask = .true.
+        grid2_mask = 1
+      elsewhere (grid2_mask_int == -1)
+        grid2_mask = -1
       elsewhere
-        grid2_mask = .false.
+        grid2_mask = 0
       endwhere
       deallocate(grid1_mask_int, grid2_mask_int)
 
@@ -996,14 +1004,18 @@
 !-----------------------------------------------------------------------
 
       where (grid1_mask_int == 1)
-        grid1_mask = .true.
+        grid1_mask = 1
+      elsewhere (grid1_mask_int == -1)
+        grid1_mask = -1
       elsewhere
-        grid1_mask = .false.
+        grid1_mask = 0
       endwhere
       where (grid2_mask_int == 1)
-        grid2_mask = .true.
+        grid2_mask = 1
+      elsewhere (grid2_mask_int == -1)
+        grid2_mask = -1
       elsewhere
-        grid2_mask = .false.
+        grid2_mask = 0
       endwhere
       deallocate(grid1_mask_int, grid2_mask_int)
 

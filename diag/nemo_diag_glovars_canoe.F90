@@ -11,7 +11,7 @@ MODULE nemo_diag_glovars_canoe
       INTEGER            :: imt, jmt, km, lm, ly            ! i, j, k and time dimensions
                                                             ! for monthly and yearly
       REAL, DIMENSION(:,:), ALLOCATABLE       :: e2u, e1v
-      REAL, DIMENSION(:,:,:), ALLOCATABLE     :: e3u, e3v, e3t
+      REAL, DIMENSION(:,:,:,:), ALLOCATABLE     :: e3u, e3v, e3t
       REAL, DIMENSION(:,:,:), ALLOCATABLE     :: umask, vmask, tmask, fsdept
       REAL, DIMENSION(:), ALLOCATABLE         :: deptht
       REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: TT, SS, CC, AA

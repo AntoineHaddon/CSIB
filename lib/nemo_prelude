@@ -51,6 +51,8 @@ echo "#################### Start NEMO pre-processing #################"
                    namelist_top_ref \
                    namelist_top_cfg
   )
+  # Add top namelist  to the list only if nemo_trc is enabled "${nemo_namelists} namelist_top"
+  [ "$nemo_trc" = "on" ] &&  nemo_namelists+=( namelist_top_ref namelist_top_cfg )
   # ======================================================
   # Make sure we have necessary variables from parent code
   # ======================================================
@@ -112,8 +114,22 @@ echo "#################### Start NEMO pre-processing #################"
 
   fi
   if [[ $nemo_ln_rnf == "on" ]]; then
-   is_defined $nemo_runoff_core_monthly  || bail "The variables nemo_runoff_core_monthly must be defined in the configuration file"
-   acc_cp runoff.nc    $nemo_runoff_core_monthly
+    is_defined $nemo_runoff_core_monthly  || bail "The variables nemo_runoff_core_monthly must be defined in the configuration file"
+    # first try with climatology, if file don't exist in the database, try the yearly vervion (with _yYYYY.nc).
+    acc_cp runoff.nc    $nemo_runoff_core_monthly na
+    if [[ ! -e runoff.nc ]]; then 
+      for current_year in `seq $(( $chunk_start_year -1 )) $(( $chunk_stop_year +1 )) `; do
+        ## first and last year won't find the yyyy-1 and yyyy+1 (respectivelly).
+        [[ $current_year -lt run_start_year || $current_year -gt run_stop_year ]] && continue
+
+        yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
+        fy=`expr ${yearc} + ${iaf_year_offset} | awk  '{printf "%04d",$1}'`
+        yd=`expr ${iaf_loop_year} - ${iaf_year_offset}`
+        fyl=`expr ${fy} - '(' '(' ${yearc} - 1 ')' / ${yd} ')' \* ${yd}`           
+        forcing_year=`expr ${fyl} | awk  '{printf "%04d",$1}'`
+        acc_cp runoff_y${yearc}.nc          ${nemo_runoff_core_monthly}_y${forcing_year}.nc
+      done
+    fi
   fi
   if [[ $nemo_ln_zdftmx == "on" ]]; then
     is_defined $nemo_mask_itf && is_defined $nemo_M2rowdrg && is_defined $nemo_K1rowdrg ||
@@ -152,13 +168,9 @@ echo "#################### Start NEMO pre-processing #################"
     acc_cp resto.nc                  $nemo_resto 
   fi 
 
-  if [[ $nemo_nn_sssr == 1 ]]; then
+  if [[ $nemo_nn_sssr != 0 ]]; then
     is_defined $nemo_sss_data || bail "The variable nemo_sss_data must be defined in the configuration file."
     acc_cp sss_data.nc               $nemo_sss_data
-  elif [[ $nemo_nn_sssr == 2 ]]; then
-    is_defined $nemo_sss_data && is_defined $nemo_sst_data || bail "The variable nemo_sss_data and nemo_sst_data must be defined in the configuration file."
-    acc_cp sss_data.nc               $nemo_sss_data
-    acc_cp sst_data.nc               $nemo_sst_data
   fi 
 
   if [[ $nemo_ln_trabbc == "on" ]]; then
@@ -186,13 +198,6 @@ echo "#################### Start NEMO pre-processing #################"
     acc_cp subbasins.nc              $nemo_subbasins  
   fi 
   
-  nemo_from_rest=${nemo_from_rest:=off}
-  if [[ "$nemo_from_rest" == "on" ]]; then
-    is_defined $nemo_data_1m_temperature_rest && is_defined $nemo_data_1m_salinty_rest || bail "The variable nemo_sss_data and nemo_sst_data must be defined in the configuration file."
-    acc_cp data_1m_potential_temperature_nomask.nc $nemo_data_1m_temperature_rest
-    acc_cp data_1m_salinity_nomask.nc              $nemo_data_1m_salinty_rest
-  fi
-
   if [[ $nemo_nn_fwb == 2 ]];then
     is_defined $nemo_empave_old || bail "The variable nemo_empave_old must be defined in the configuration file."
     acc_cp EMPave_old.dat            $nemo_empave_old 
@@ -209,21 +214,17 @@ echo "#################### Start NEMO pre-processing #################"
                grid_def_nemo.xml \
                iodef.xml )
 
-  # Add pisces files to the list only if nemo_trc is enable
-  if [ "$nemo_trc" == "on" ] ; then
-     xios_files=( "${xios_files[@]}" \
-                  field_def_nemo-pisces.xml \
-                  file_def_nemo-pisces.xml )
-  fi
+  # Add pisces files to the list only if nemo_carbon is enable 
+  [ "$nemo_carbon" = "on" ] &&  xios_files+=( field_def_nemo-pisces.xml file_def_nemo-pisces.xml )
 
   for file in "${xios_files[@]}"; do
+    echo $file
     find_nemo_config_EXP00 $file
     # Update NEMO priority level of output variables in each file: output_level 
     # Not all have the output_level, but this is a secure way to have the same
     # output_level everywhere (should be in "context_nemo.mxl")
     sed -i "s/output_level=\"\([0-9]\+\)\"/output_level=\"${output_level}\"/" $file
   done
-
 
   # =====================
   # Set Inherited params
@@ -271,18 +272,16 @@ echo "#################### Start NEMO pre-processing #################"
   fi
 
   # ==============================
-  # High level consistency checks
+  # Initial condition vs restart
   # ==============================
-  # Translate switches into 0/1 booleans
-  ToF nemo_from_rest
-  ToF nemo_trc
+  nemo_from_rest=${nemo_from_rest:=off}
   # Switch 'nemo_from_rest' off if this isn't the first job in the run as it was
   #   _already_ started from rest
-  if [[ $chunk_start_date != $run_start_date ]] && (( nemo_from_rest == 1 )); then
-    nemo_from_rest=0
+  if [[ $chunk_start_date != $run_start_date ]] && [[ "$nemo_from_rest" == "on" ]]; then
+    nemo_from_rest='off'
   fi
 
-  if (( nemo_from_rest == 1 )); then
+  if [[ "$nemo_from_rest" == "on" ]]; then
     #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
     #=#=#=#    Start from rest    #=#=#=#
     #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
@@ -293,11 +292,16 @@ echo "#################### Start NEMO pre-processing #################"
 
     # bail if use asked to use a specific restart and start from rest
     is_defined $nemo_restart && 
-        bail "nemo_prelude: nemo_restart=$nemo_restart and nemo_from_rest=1 are mutually exclusive"
+        bail "nemo_prelude: nemo_restart=$nemo_restart and nemo_from_rest='on' are mutually exclusive"
   
     # starting from rest, NOT a restart
     ln_rstart=.false.
-    [ $nemo_trc -eq 1 ] && ln_rsttr=.false.
+    [ "$nemo_trc" = "on" ] && ln_rsttr=.false.
+
+    # access the istate files
+    is_defined $nemo_data_1m_temperature_rest && is_defined $nemo_data_1m_salinty_rest || bail "The variable nemo_sss_data and nemo_sst_data must be defined in the configuration file."
+    acc_cp data_1m_potential_temperature_nomask.nc $nemo_data_1m_temperature_rest
+    acc_cp data_1m_salinity_nomask.nc              $nemo_data_1m_salinty_rest
 
   else
     #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
@@ -306,7 +310,7 @@ echo "#################### Start NEMO pre-processing #################"
 
     # starting from restart
     ln_rstart=.true.
-    [ $nemo_trc -eq 1 ] && ln_rsttr=.true.
+    [ "$nemo_trc" = "on" ] && ln_rsttr=.true.
 
     # Determine what restart to use
     # -----------------------------
@@ -411,14 +415,14 @@ echo "#################### Start NEMO pre-processing #################"
     found_rs=`(ls -1 *_${cn_trcrst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
     [ -z "$found_rs" ] && found_rs=`(ls -1 *_${cn_trcrst_out}.nc || : ) 2>/dev/null`
     if [ -z "$found_rs" ]; then
-      [ $nemo_trc -eq 1 ] && bail "No trc restart files were found in $nemo_rs"
+      [ "$nemo_trc" = "on" ] && bail "No trc restart files were found in $nemo_rs"
     else
       for rsfile in $found_rs; do
         [ $rsfile = 'cpl_restart.nc' ] && continue
         sfx=`echo $rsfile|sed 's/^.*\(_[0-9][0-9][0-9][0-9].nc\).*$/\1/'`
         [ "x$sfx" = "x$rsfile" ] && sfx=`echo $rsfile|sed 's/^.*\(\.nc\).*$/\1/'`
         mv $rsfile ${cn_trcrst_in}$sfx
-        echo "${cn_trcrst_in}$sfx" >> input_ice_restart_file_names
+        echo "${cn_trcrst_in}$sfx" >> input_trc_restart_file_names
       done
     fi
   fi
@@ -434,8 +438,8 @@ echo "#################### Start NEMO pre-processing #################"
       ! is_file $f && cp ${WRK_DIR}/config/namelists/${f} .
   done
   # make namelist mods foir the restart switch 
-    mod_nl namelist_cfg ln_rstart
-    [ $nemo_trc -eq 1 ] && mod_nl namelist_top_cfg ln_rsttr
+    mod_nl namelist_cfg ln_rstart 
+    [ "$nemo_trc" = "on" ] && mod_nl namelist_top_cfg ln_rsttr
 
   # nemo executable
   ! is_file $nemo_exec && cp ${EXEC_STORAGE_DIR}/$nemo_exec .

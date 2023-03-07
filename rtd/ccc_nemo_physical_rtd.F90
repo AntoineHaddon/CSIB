@@ -438,7 +438,7 @@ PROGRAM nemo_ocean_diag
          !---------------------------------------------------
          ! Read in the monthly data from NetCDF
          !---------------------------------------------------
-         ! vertical scale factors
+         ! vertical scale factors (i.e., layer thinkness, change because we use vvl)
           CALL getvara ('e3t', iou0, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), e3t , 1., 0.)
           CALL getvara ('e3u', iou1, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), e3u , 1., 0.)
           CALL getvara ('e3v', iou2, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), e3v , 1., 0.)
@@ -447,7 +447,7 @@ PROGRAM nemo_ocean_diag
          ! salinity
           CALL getvara ('so', iou0, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), salt, 1., 0.)
          ! net heat flux
-          CALL getvara ('qt', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflux, 1., 0.)
+          CALL getvara ('hfds', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflux, 1., 0.)
          ! net water flux
           CALL getvara ('wfo', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), wflux, 1., 0.)
          ! u-velocity 
@@ -467,20 +467,20 @@ PROGRAM nemo_ocean_diag
          ! Wind Stress along j-axis
           CALL getvara ('tauvo', iou2, imt*jmt, (/1,1,l/), (/imt,jmt,1/), tau_y, 1., 0.)
          ! Sea surface height
-          CALL getvara ('ssh', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), ssh, 1., 0.)
+          CALL getvara ('zos', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), ssh, 1., 0.)
          ! Mixed Layer Depth 0.01 ref.10m
-          CALL getvara ('mldr10_1', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), mld10, 1., 0.)
+          CALL getvara ('mlotst', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), mld10, 1., 0.)
 
-          CALL getvara ('snow_ai_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), snow_ai_cea, 1., 0.)
-          CALL getvara ('snow_ao_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), snow_ao_cea, 1., 0.)
-          CALL getvara ('hflx_rain_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_rain_cea, 1., 0.)
-          CALL getvara ('hflx_snow_ao_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_snow_ao_cea, 1., 0.)
+          CALL getvara ('sndmasssnf', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), snow_ai_cea, 1., 0.)
+          CALL getvara ('prsn', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), snow_ao_cea, 1., 0.)
+          CALL getvara ('hfrainds', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_rain_cea, 1., 0.)
+          CALL getvara ('hfsnthermds', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_snow_ao_cea, 1., 0.)
           hflx_snow_ao_cea = -1*hflx_snow_ao_cea ! Change in the sign convention for NEMO4
-          CALL getvara ('hflx_snow_ai_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_snow_ai_cea, 1., 0.)
+          CALL getvara ('hfsnthermds2d', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_snow_ai_cea, 1., 0.)
           CALL getvara ('qt_ice_oce', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_ice_cea, 1., 0.)
-          CALL getvara ('hflx_rnf_cea', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_rnf_cea, 1., 0.)
+          CALL getvara ('hfrunoffds', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_rnf_cea, 1., 0.)
           CALL getvara ('sitimefrac', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), sitimefrac, 1., 0.)
-          CALL getvara ('vfxsnw', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), snowmel_cea, 1., 0.)
+          CALL getvara ('sndmassmelt', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), snowmel_cea, 1., 0.)
           isnwmlt_cea = snowmel_cea*sitimefrac*t_mask(:,:,1)
 
           CALL getvara ('qsr_tot', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qsr_tot, 1., 0.)
@@ -509,9 +509,8 @@ PROGRAM nemo_ocean_diag
     ! start DY, 11/OCT/2013
     !---------------------------------------------------
     ! (1) Global annual mean T and S and SSH
-    !---------------------------------------------------
-          volssh   = 0.
     ! ---------------------------- volume due to ssh   
+          volssh   = 0.
           zarea_ssh(:, :) = tarea(:, :)*ssh(:, :)
           volssh = SUM( zarea_ssh(:, :) )
     ! ---------------------------- Global mean ssh (cm)

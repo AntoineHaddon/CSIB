@@ -56,7 +56,9 @@
             map_type_conserv  = 1 &
       ,     map_type_bilinear = 2 &
       ,     map_type_bicubic  = 3 &
-      ,     map_type_distwgt  = 4
+      ,     map_type_distwgt  = 4 &
+      ,     map_type_nearest  = 5 &
+      ,     map_type_fountain = 6 
 
       integer (kind=int_kind), save ::  &
             max_links_map1   & ! current size of link arrays
@@ -87,6 +89,10 @@
 
       subroutine init_remap_vars
 
+      integer (kind=int_kind) ::  &
+        n       & ! loop counter
+      , i,j     & ! logical 2d addresses
+      , nx, ny
 !-----------------------------------------------------------------------
 !
 !     this routine initializes some variables and provides an initial
@@ -104,6 +110,10 @@
       select case (map_type)
       case(map_type_conserv)
         num_wts = 3
+      case(map_type_fountain)
+        num_wts = 1
+      case(map_type_nearest)
+        num_wts = 1
       case(map_type_bilinear)
         num_wts = 1
       case(map_type_bicubic)
@@ -111,6 +121,31 @@
       case(map_type_distwgt)
         num_wts = 1
       end select
+      IF (map_type .eq. map_type_fountain.or.map_type.eq.map_type_nearest) then
+        write(6,*) 'Fountain or nearest. Outer boundary used as a out-of-bound catcher.' 
+        !'Grid1
+        nx = grid1_dims(1)
+        ny = grid1_dims(2)
+        do n=1,grid1_size
+          j = (n - 1)/nx +1
+          i = n - (j-1)*nx
+          if (i==1) grid1_mask(n)=-1
+          if (j==1) grid1_mask(n)=-1
+          if (i==nx) grid1_mask(n)=-1
+          if (j==ny) grid1_mask(n)=-1
+        enddo
+        ! grid2
+        nx = grid2_dims(1)
+        ny = grid2_dims(2)
+        do n=1,grid2_size
+          j = (n - 1)/nx +1
+          i = n - (j-1)*nx
+          if (i==1) grid2_mask(n)=-1
+          if (j==1) grid2_mask(n)=-1
+          if (i==nx) grid2_mask(n)=-1
+          if (j==ny) grid2_mask(n)=-1
+        enddo
+      ENDIF
 
 !-----------------------------------------------------------------------
 !
@@ -140,6 +175,9 @@
       allocate (grid1_add_map1(max_links_map1), &
                 grid2_add_map1(max_links_map1), &
                 wts_map1(num_wts, max_links_map1))
+        grid1_add_map1 = 0
+        grid2_add_map1 = 0
+         wts_map1 = 0.
 
 !-----------------------------------------------------------------------
 !
@@ -151,6 +189,9 @@
         allocate (grid1_add_map2(max_links_map2), &
                   grid2_add_map2(max_links_map2), &
                   wts_map2(num_wts, max_links_map2))
+        grid1_add_map2 = 0
+        grid2_add_map2 = 0
+         wts_map2 = 0.
       endif
 
 !-----------------------------------------------------------------------

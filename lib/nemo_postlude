@@ -69,8 +69,6 @@
   [ -s input_trc_restart_file_names ] && cat input_trc_restart_file_names | xargs rm -f
 
   # Should we save the NEMO restart to DATAPATH
-  nemo_save_rs=${nemo_save_rs:-on}
-  ToF nemo_save_rs
 
     # The file saved_history_file_names will contain a list of saved files to be archived.
     # Since "save" will blindly transpose all file name characters to lower case before
@@ -98,11 +96,10 @@
     # Save History Files
     # ====================
     nemo_save_hist=${nemo_save_hist:-on}
-    ToF nemo_save_hist
 
     nemo_start_date=$(printf "%04d%02d%02d" $chunk_start_year $chunk_start_month 1)
     nemo_stop_date=$(printf "%04d%02d%02d" $chunk_stop_year $chunk_stop_month $chunk_stop_day)
-    if [ $nemo_save_hist -eq 1 ] ; then
+    if [ "$nemo_save_hist" = "on" ] ; then
       for i in $(seq 0 $(($n_suffix-1))); do
           sfx=${nemo_hist_file_suffix_list_array_save[$i]}
           freq=${nemo_hist_file_freq_list_array_save[$i]}
@@ -147,11 +144,10 @@
     fi
 
     #=#=#=# Save the current restart files.
-    ToF nemo_trc
-    ToF nemo_carbon 
+    nemo_save_rs=${nemo_save_rs:-on}
 
     # MAIN RESTART FILES
-    if [ $nemo_save_rs -eq 1 ]; then
+    if [ "$nemo_save_rs" = "on" ]; then
         # Collect up the current restarts and save them to DATAPATH
         rm -rf NEXT_RESTART_ARC
         mkdir NEXT_RESTART_ARC
@@ -171,7 +167,7 @@
           mv $found_rs NEXT_RESTART_ARC
         fi
 
-        if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
+        if [ "$nemo_trc" = "on" ] || [ "$nemo_carbon" = "on" ]; then
           # Look for pisces restart files matching the pattern below
           eval pfnpatt=${cn_exp}_${end_step}_${cn_trcrst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
           found_rs=`(ls -1 $pfnpatt || : ) 2>/dev/null`
@@ -223,20 +219,20 @@
         *) bail "Invalid value for nn_ice = $nn_ice" ;;
       esac
 
-      if [ $nemo_trc -eq 1 ]; then
+      if [ "$nemo_trc" = "on" ]; then
         cp -f namelist_top_cfg    rs_namelist_top_cfg    || :
         [ -s rs_namelist_top_cfg ]     && tarlist="$tarlist rs_namelist_top_cfg"
         cp -f namelist_top_ref    rs_namelist_top_ref    || :
         [ -s rs_namelist_top_ref ]     && tarlist="$tarlist rs_namelist_top_ref"
       fi
 
-      if [ $nemo_carbon -eq 1 ]; then
+      if [ "$nemo_carbon" = "on" ]; then
     	cp -f namelist_pisces_cfg rs_namelist_pisces_cfg || :
     	[ -s rs_namelist_pisces_cfg ]  && tarlist="$tarlist rs_namelist_pisces_cfg"
     	cp -f namelist_pisces_ref rs_namelist_pisces_ref || :
     	[ -s rs_namelist_pisces_ref ]  && tarlist="$tarlist rs_namelist_pisces_ref"
 
-        if [ $nemo_cmoc -eq 1 ]; then
+        if [ "$nemo_cmoc" = "on" ]; then
     	  cp -f namelist_cmoc_cfg rs_namelist_cmoc_cfg || :
 	      [ -s rs_namelist_cmoc_cfg ] &&  tarlist="$tarlist rs_namelist_cmoc_cfg"
     	  cp -f namelist_cmoc_ref rs_namelist_cmoc_ref || :
@@ -290,9 +286,8 @@
     fi
 
     # Echo ocean output to stdout, if requested
-    nemo_write_stdout=0
-    ToF nemo_write_stdout
-    if [ $nemo_write_stdout -eq 1 ]; then
+    nemo_write_stdout=on
+    if [ "$nemo_write_stdout" = "on" ]; then
       if [ -s ocean.output ]; then
         echo " "
         echo "########################## ocean output ##########################"
