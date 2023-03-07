@@ -235,14 +235,7 @@ cd $wrkdir
 rm -rf $inrs
 
 # since everything has gone successfully, cleanup tile directories from RUNPATH
-mkdir cleanup
-cd cleanup
-for fil in $dir_del_list; do
-   access xxx-to-del $fil na
-   delete xxx-to-del na
-done
-cd $wrkdir
-rm -rf cleanup
+fdb mdelete $dir_del_list || true
 
 echo "FINAL-SUCCESS"
 
