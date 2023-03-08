@@ -131,12 +131,25 @@ fi
 # Rebuild the restart files. These will be tarred below and saved alltogether, as
 # is custom for NEMO rs' historically.
 
-# Access the restart directory, and cd into it.
+# Determine the restart to use
+#   - note that we expect to use tiled_nemors for most executions,
+#       but at the beginning of a run, we may have a restart that has tiled files
+#       but is still using the nemors suffix
 modellast="mc_${runid}_${yearlast}_m${monlast}";
-inrs=${modellast}_tiled_nemors
-access $inrs $inrs nocp=off
+if fdb exists ${modellast}_tiled_nemors; then
+    inrs=${modellast}_tiled_nemors
+else
+    inrs=${modellast}_nemors
+fi
+
+# Access the restart directory, and cd into it.
+#   - we add "in_*" to the input directory to differentiate
+#       between input/output restarts incase we have a tiled restart
+#       that doesn't have the new "tiled_nemors" suffix,
+#       which would result in $inrs=$outrs
+access in_${inrs} $inrs nocp=off
 dir_del_list+=" $inrs"
-cd $inrs
+cd in_${inrs}
 ln -s ../rebuild_nemo.exe .
 # Figure out the last time step, which is needed for the rs tile names.
 nn_itend=$(cat rs_time.step)
@@ -229,10 +242,10 @@ fi
 outrs=${modellast}_nemors
 release rebuild_nemo.exe $rbnl_file
 cd $wrkdir
-mkdir $outrs
-mv ${inrs}/* ${outrs}/
-save ${outrs} ${outrs}
-rm -rf $inrs $outrs
+mkdir out_${outrs}
+mv in_${inrs}/* out_${outrs}/
+save out_${outrs} ${outrs}
+rm -rf in_${inrs} out_${outrs}
 
 # since everything has gone successfully, cleanup tile directories from RUNPATH
 mkdir cleanup
