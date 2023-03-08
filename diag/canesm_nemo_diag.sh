@@ -92,8 +92,8 @@ set -x
       # Run offline computation only if starting from January 
       if [ $fmon -eq 1 ] ; then 
 # Access the nemo restart files
-        diag_rs1="mc_${runid}_${yearm1}_m${lmon}_nemors.tar" # previous year
-        diag_rs2="mc_${runid}_${year}_m${lmon}_nemors.tar"   # current year
+        diag_rs1="mc_${runid}_${yearm1}_m${lmon}_nemors" # previous year
+        diag_rs2="mc_${runid}_${year}_m${lmon}_nemors"   # current year
         access rsp $diag_rs1 || ( echo "$diag_rs1 does not exist" ; exit 1 )
         access rsc $diag_rs2 || ( echo "$diag_rs2 does not exist" ; exit 1 )
 

@@ -225,13 +225,10 @@ if [ -s "$fnpatt" ]; then
    mv $pfx.nc ${runid}_initial_trc.nc
 fi
 
-# Create the tar archive for the nemors and save it.
+# Save new tar directory with the rebuilt files
 release rebuild_nemo.exe $rbnl_file
-tar -cf ${inrs}.tar *
-# preserve time stamp from restart.nc
-touch -r ${runid}_${end_step}_restart.nc $fnpatt ${inrs}.tar
-save ${inrs}.tar ${inrs}.tar || bail "Could not save ${indir}.tar"
 cd $wrkdir
+save ${inrs} ${inrs}
 rm -rf $inrs
 
 # since everything has gone successfully, cleanup tile directories from RUNPATH

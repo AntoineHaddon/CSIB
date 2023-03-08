@@ -73,14 +73,7 @@ echo "#################### Start NEMO pre-processing #################"
   # location of the source code
   nemo_repo=${nemo_repo:=$CCRNSRC/CanESM/CanNEMO}
   
-  # The name of a tar file containing the NEMO restart files
-  # This must be set for the first job of a run unless nemo_from_rest = on
-  # Restart files created by the submission job will have names of the form
-  #     ${uxxx}_${runid}_YYYYMMDD_restart.tar
-  nemo_restart=${nemo_restart:=''}
-
   # nemo_from_rest is used to flag starting nemo from rest rather than a restart
-  #     Either define nemo_restart or set nemo_from_rest = on but not both.
   nemo_from_rest=${nemo_from_rest:=0}
 
   # For interannual forcing, iaf_year_offset gives the offset between
@@ -157,11 +150,6 @@ echo "#################### Start NEMO pre-processing #################"
   #   _already_ started from rest
   if [[ "$chunk_start_date" != "$run_start_date" ]] && (( nemo_from_rest == 1 )); then
     nemo_from_rest=0
-  fi
-
-  # bail if use asked to use a specific restart and start from rest
-  if is_defined $nemo_restart && (( nemo_from_rest == 1 )); then
-    bail "nemo_prelude: nemo_restart=$nemo_restart and nemo_from_rest=1 are mutually exclusive"
   fi
 
   # make sure we got a valid forcing setting
@@ -246,35 +234,21 @@ echo "#################### Start NEMO pre-processing #################"
 
     # Determine what restart to use
     # -----------------------------
-    # Default restart file name (this will be used unless user provided nemo_restart)
-    rs_sfx="nemors.tar"
+    rs_sfx="nemors"
     rs_file=${uxxx}_${runid}_${input_rs_date_string}_${rs_sfx}
 
-    # Set the name of the restart file that is ACTUALLY used (can be overridden by user)
-    nemo_rs=${nemo_restart:-$rs_file}
-
-    # Access the restart and process it as necessary
+    # Access the restart and retrieve the contents
     # ----------------------------------------------
     echo "##########################"
-    echo "###   Restarting from file $nemo_rs"
+    echo "###   Restarting from file $rs_file"
     echo "##########################"
 
     rm -f RESTART_ARC
-    access RESTART_ARC $(basename $nemo_rs .tar) nocp=off || access RESTART_ARC $nemo_rs
+    access RESTART_ARC $rs_file nocp=off || bail "Failed to access nemo restart!"
 
-    # Deal with "old" tar archives, or new directory based restarts
-    if ! tar tf RESTART_ARC &> /dev/null; then
-        # This is the directory. checksum the contents
-        sha1sum RESTART_ARC/* >> xnemo_access_log
-        mv RESTART_ARC/* . || bail "Cannot get files from restart directory"
-    else
-        # this is the tar file. checksum it.
-        sha1sum RESTART_ARC >> xnemo_access_log
-        # Ensure that we can overwrite existing files with files from the restart
-        # Ignore any netcdf files in the restart
-        tar tf RESTART_ARC | grep -v '\.nc$' | xargs -I'{}' chmod u+rw {} || :
-        tar xf RESTART_ARC || bail "Cannot extract files from $nemo_rs"
-    fi
+    # checksum the contents
+    sha1sum RESTART_ARC/* >> xnemo_access_log
+    mv RESTART_ARC/* . || bail "Cannot get files from restart directory"
     release RESTART_ARC
 
     # Rename each task specific restart files (extracted above)
@@ -284,7 +258,7 @@ echo "#################### Start NEMO pre-processing #################"
     #   in the previous run.
 
     # Define the names that nemo will look for
-    # - these files get extracted from the 'nemo_rs' file
+    # - these files get extracted from the 'rs_file' file
     # - for INPUT files each domain's specific file will look like ${cn_*rst_in}_MMMM.nc
     #   while for OUTPUT files, each domain's specific file will look like ${runid}_NNNNNNN_${cn_*rst_out}_MMMM.nc
     #       - where MMMM is the MPI task number and NNNNNNNN is the timestep
@@ -304,7 +278,7 @@ echo "#################### Start NEMO pre-processing #################"
     # Ocean restart files
     found_rs=`(ls -1 *_${cn_ocerst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
     [ -z "$found_rs" ] && found_rs=`(ls -1 *_${cn_ocerst_out}.nc || : ) 2>/dev/null`
-    [ -z "$found_rs" ] && bail "No ocean restart files were found in $nemo_rs"
+    [ -z "$found_rs" ] && bail "No ocean restart files were found in $rs_file"
     rm -f input_ocn_restart_file_names
     touch input_ocn_restart_file_names
     for rsfile in $found_rs; do
@@ -321,7 +295,7 @@ echo "#################### Start NEMO pre-processing #################"
     found_rs=`(ls -1 *_${cn_icerst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
     [ -z "$found_rs" ] && found_rs=`(ls -1 *_${cn_icerst_out}.nc || : ) 2>/dev/null`
     if [ -z "$found_rs" ]; then
-      [ $nn_ice -ge 2 ] && bail "No ice restart files were found in $nemo_rs"
+      [ $nn_ice -ge 2 ] && bail "No ice restart files were found in $rs_file"
       with_ice=off
     else
       for rsfile in $found_rs; do
@@ -337,7 +311,7 @@ echo "#################### Start NEMO pre-processing #################"
     if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
       found_rs=`(ls -1 *_${cn_trcrst_out}_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
       [ -z "$found_rs" ] && found_rs=`(ls -1 *_${cn_trcrst_out}.nc || : ) 2>/dev/null`
-      [ -z "$found_rs" ] && bail "No Pisces restart files were found in $nemo_rs"
+      [ -z "$found_rs" ] && bail "No Pisces restart files were found in $rs_file"
       rm -f input_trc_restart_file_names
       touch input_trc_restart_file_names
       for rsfile in $found_rs; do

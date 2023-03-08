@@ -111,9 +111,9 @@ set -x
       # Access the nemo restart files
       if [ $lmon -eq 12 ]; then
         # previous year
-        diag_rs1="mc_${runid}_${yearm1}_m${lmon}_nemors.tar" # previous year
+        diag_rs1="mc_${runid}_${yearm1}_m${lmon}_nemors" # previous year
       else
-        diag_rs1="mc_${runid}_${year}_m${lmon}_nemors.tar" # previous year
+        diag_rs1="mc_${runid}_${year}_m${lmon}_nemors" # previous year
       fi	      
       access rsp $diag_rs1 || ( echo "$diag_rs1 does not exist" ; exit 1 )
     fi
