@@ -259,6 +259,6 @@
     mv -f $filelist NEXT_RESTART_ARC || :
 
     # SAVE
-    rs_out=${model_rs}nemors
+    rs_out=${model_rs}_tiled_nemors
     save NEXT_RESTART_ARC $rs_out
     release NEXT_RESTART_ARC

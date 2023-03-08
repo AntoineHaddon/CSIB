@@ -234,8 +234,16 @@ echo "#################### Start NEMO pre-processing #################"
 
     # Determine what restart to use
     # -----------------------------
-    rs_sfx="nemors"
-    rs_file=${uxxx}_${runid}_${input_rs_date_string}_${rs_sfx}
+    # We start by trying to use the tiled restart, which is produced directly
+    #   by the previous model run, but it won't be present for the first chunk
+    rebuilt_restart_suffix="nemors"
+    tiled_restart_suffix="tiled_nemors"
+    restart_prefix=${uxxx}_${runid}_${input_rs_date_string}
+    if fdb exists ${restart_prefix}_${tiled_restart_suffix}; then
+        rs_file=${restart_prefix}_${tiled_restart_suffix}
+    else
+        rs_file=${restart_prefix}_${rebuilt_restart_suffix}
+    fi
 
     # Access the restart and retrieve the contents
     # ----------------------------------------------

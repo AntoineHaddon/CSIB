@@ -133,7 +133,7 @@ fi
 
 # Access the restart directory, and cd into it.
 modellast="mc_${runid}_${yearlast}_m${monlast}";
-inrs=${modellast}_nemors
+inrs=${modellast}_tiled_nemors
 access $inrs $inrs nocp=off
 dir_del_list+=" $inrs"
 cd $inrs
@@ -226,10 +226,13 @@ if [ -s "$fnpatt" ]; then
 fi
 
 # Save new tar directory with the rebuilt files
+outrs=${modellast}_nemors
 release rebuild_nemo.exe $rbnl_file
 cd $wrkdir
-save ${inrs} ${inrs}
-rm -rf $inrs
+mkdir $outrs
+mv ${inrs}/* ${outrs}/
+save ${outrs} ${outrs}
+rm -rf $inrs $outrs
 
 # since everything has gone successfully, cleanup tile directories from RUNPATH
 mkdir cleanup
