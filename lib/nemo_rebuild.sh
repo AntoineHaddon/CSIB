@@ -148,7 +148,6 @@ fi
 #       that doesn't have the new "tiled_nemors" suffix,
 #       which would result in $inrs=$outrs
 access in_${inrs} $inrs nocp=off
-dir_del_list+=" $inrs"
 cd in_${inrs}
 ln -s ../rebuild_nemo.exe .
 # Figure out the last time step, which is needed for the rs tile names.
