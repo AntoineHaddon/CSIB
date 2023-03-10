@@ -118,12 +118,11 @@ set -x
       access rsp $diag_rs1 || ( echo "$diag_rs1 does not exist" ; exit 1 )
     fi
     if [ -L rsp ] ; then
-       mkdir dir_rsp; cd dir_rsp
-       tar -xvf ../rsp
-       ncks -v sss_glob_avg *_$file_state.nc ../sss_glob_avg.nc
-       cd ..
+       work_dir=$(pwd)
+       cd rsp
+       ncks -v sss_glob_avg *_$file_state.nc ${work_dir}/sss_glob_avg.nc
+       cd $work_dir
        release rsp
-       rm -f -r dir_rsp
     fi
     # Run the offline diagnostics
     ./nemo_diag_cmoc.exe

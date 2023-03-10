@@ -99,24 +99,22 @@ set -x
 
 # Get tn and sn from the last step of previous year
         if [ -L rsp ] ; then
-          mkdir dir_rsp; cd dir_rsp
-          tar -xvf ../rsp
-          cdo select,name=$t_state,timestep=-1 *_$file_state.nc ../tnp.nc
-          cdo select,name=$s_state,timestep=-1 *_$file_state.nc ../snp.nc
-          cd ..
+          work_dir=$(pwd)
+          cd rsp
+          cdo select,name=$t_state,timestep=-1 *_$file_state.nc ${work_dir}/tnp.nc
+          cdo select,name=$s_state,timestep=-1 *_$file_state.nc ${work_dir}/snp.nc
+          cd $work_dir
           release rsp
-          rm -f -r dir_rsp
         fi
 
 # Get tn and sn from the last step of current year
         if [ -L rsc ] ; then
-          mkdir dir_rsc; cd dir_rsc
-          tar -xvf ../rsc
-          cdo select,name=tn,timestep=-1 ${runid}_*_restart.nc ../tnc.nc
-          cdo select,name=sn,timestep=-1 ${runid}_*_restart.nc ../snc.nc
-          cd ..
+          work_dir=$(pwd)
+          cd rsc
+          cdo select,name=tn,timestep=-1 ${runid}_*_restart.nc ${work_dir}/tnc.nc
+          cdo select,name=sn,timestep=-1 ${runid}_*_restart.nc ${work_dir}/snc.nc
+          cd $work_dir
           release rsc
-          rm -f -r dir_rsc
         fi
 
 ##############################
