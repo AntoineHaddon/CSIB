@@ -141,6 +141,7 @@ if fdb exists ${modellast}_tiled_nemors; then
 else
     inrs=${modellast}_nemors
 fi
+outrs=${modellast}_nemors
 
 # Access the restart directory, and cd into it.
 #   - we add "in_*" to the input directory to differentiate
@@ -237,16 +238,15 @@ if [ -s "$fnpatt" ]; then
    mv $pfx.nc ${runid}_initial_trc.nc
 fi
 
-# Save new tar directory with the rebuilt files
-outrs=${modellast}_nemors
 release rebuild_nemo.exe $rbnl_file
 cd $wrkdir
-mkdir out_${outrs}
-mv in_${inrs}/* out_${outrs}/
-save out_${outrs} ${outrs}
-rm -rf in_${inrs} out_${outrs}
 
-# since everything has gone successfully, cleanup tile directories from RUNPATH
+# since rebuild has gone successfully, cleanup tile directories from RUNPATH,
+#   removing the input restart (inrs) if inrs==outrs (which should only happen
+#   for the initial restart)
+if [[ ${inrs} == ${outrs} ]]; then
+    dir_del_list+=" ${inrs}"
+fi
 mkdir cleanup
 cd cleanup
 for fil in $dir_del_list; do
@@ -255,3 +255,9 @@ for fil in $dir_del_list; do
 done
 cd $wrkdir
 rm -rf cleanup
+
+# Finally, save new directory with the rebuilt files
+mkdir out_${outrs}
+mv in_${inrs}/* out_${outrs}/
+save out_${outrs} ${outrs}
+rm -rf in_${inrs} out_${outrs}
