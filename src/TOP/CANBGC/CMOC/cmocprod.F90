@@ -68,6 +68,7 @@ CONTAINS
       INTEGER, INTENT(in) :: kt, jnt
       !
       INTEGER  ::   ji, jj, jk
+      INTEGER  ::   jn
       REAL(wp) ::   zfact
       REAL(wp) ::   ztn, zadap
       REAL(wp) ::   zprod
@@ -83,6 +84,7 @@ CONTAINS
       !!---------------------------------------------------------------------
       !
       IF( ln_timing )  CALL timing_start('cmoc_prod')
+      !
       !
       IF( lwp ) THEN
         WRITE(numout,*)
@@ -104,8 +106,8 @@ CONTAINS
       zprochln(:,:,:) = 0._wp
       zprbio  (:,:,:) = 0._wp
       zprnch  (:,:,:) = 0._wp
-      zlimn   (:,:,:) = 0._wp
-      zliml   (:,:,:) = 0._wp
+      zlimn   (:,:,:) = 1._wp
+      zliml   (:,:,:) = 1._wp
       !
       DO jk = 1, jpkm1
       !
@@ -115,53 +117,55 @@ CONTAINS
             ! <CMOC code OR 10/30/2015> etot is replaced by zetot = qsr * 0.43 and CMOC light attenuation
             ! zetot(ji,jj,jk) = qsr(ji,jj) * 0.43_wp & 
             ! !
-            ! &               * exp ( - ( (0.04 + 0.03 * trn(ji,jj,1,jqnch) * 1e6_wp) * gdept_n(ji,jj,jk) ) )
+            ! &               * exp ( - ( (0.04 + 0.03 * trb(ji,jj,1,jqnch) * 1e6_wp) * gdept_n(ji,jj,jk) ) )
             !
             ! O Riche Sept 13th 2022
             ! use trc_opt_1band; can have a variable PAR/SW ratio (ln_varpar switch set in namelist_top_*).
             zetot(ji,jj,jk) = par_1band(ji,jj,jk)
-            !
-            !
-            ! <CMOC code OR 10/20/2015>
-            ! photosynthetic phytoplankton growth rate
-            ! -------------------------
-            ! 
-            ! original CMOC condition for PAR
-            !                  IF( zetot(ji,jj,jk) > 1.E-3 ) THEN
-            ztn    = tsn(ji,jj,jk,jp_tem) + 273.15_wp
-            ! ep_cmoc is in kJ mol^-1 and 8.31 is the ideal gas constant in J mol^-1 K^-1
-            zadap  = ep_cmoc * 1.e3_wp / 8.31_wp * ( 1._wp / ( ztn + rtrn ) - 1._wp / ( tvm_cmoc + 273.15_wp) )
-            zfact  = EXP ( -zadap )
-            ! zfact is the Arrhenius function, vm_cmoc the growth rate at 30oC in d^-1
-            ! zpislopead is the photosynthetic growth in s^-1
-            zpislopead (ji,jj,jk) = vm_cmoc * r1_rday * zfact
-            !
-            ! phytoplankton photoacclimation used in light limitation
-            ! trn(...,jqnch) / trn(...,jqphy) / 12. is theta in gChl per gC
-            ! ztheta is set to a maximum of thm_cmoc so as to prevent appearance of light-saturation in case zetot is small but trn(ji,jj,jk,jqphy) is 0
-            ztheta = MIN(thm_cmoc,trn(ji,jj,jk,jqnch)/(trn(ji,jj,jk,jqphy)*12._wp+rtrn))
-            zpislopen =  achl_cmoc * ztheta / ( zpislopead(ji,jj,jk) * rday  + rtrn )
-            ! zpislopead * rday is growth rate in d^-1 at temperature ToC as achl_cmoc is in d^-1
-            !
-            ! limitation functions
-            ! --------------------
-            ! light
-            zliml (ji,jj,jk) = 1.- EXP( -zpislopen  * zetot(ji,jj,jk) )
-            ! DIN
-            zlimn (ji,jj,jk) = trn(ji,jj,jk,jqno3) / ( kn_cmoc * 1e-6_wp * cnrr_cmoc + trn(ji,jj,jk,jqno3)+ rtrn )
-            ! iron is a constant and prescribed mask (xlimnfecmoc) see Zahariev et al 2008
-            ! update growth rate
-            zprbio(ji,jj,jk) = zpislopead(ji,jj,jk) * min ( zliml(ji,jj,jk) , zlimn(ji,jj,jk) , xlimnfecmoc(ji,jj) ) 
-            !  Computation of balanced chlorophyll based on balanced chlorophyll to carbon ratio; unit is gChl per molC
-            !  see Zahariev et al 2008 and Zahariev Environment Canada report (Canadian Model of Ocean Carbon v1.0)
-            !  balanced is defined as chlorophyll to carbon ratio in steady-state (Geider et al. 1996-1997)
-            !  p.40 Eq. 4.65 (note that in the report phytoplankton currency is N not C).
-            !  12._wp (gC molC^-1) to convert trn(...,jqphy) from moles to grams in the tra(...,jqchn) equations.
-            !  zprnch must be in gchl L^-1 per molC L^-1.
-            zprnch(ji,jj,jk) = 12._wp * thm_cmoc  * 2._wp    *  zpislopead(ji,jj,jk)  /  &
-            &                 ( 2._wp * zpislopead(ji,jj,jk) +                           &
-            &                  achl_cmoc * thm_cmoc  * zetot(ji,jj,jk) * r1_rday + rtrn )
-            !
+              !
+              !
+              ! <CMOC code OR 10/20/2015>
+              ! photosynthetic phytoplankton growth rate
+              ! -------------------------
+              ! 
+              ! original CMOC condition for PAR
+              IF( zetot(ji,jj,jk) > 1.E-3 ) THEN
+                ztn    = tsn(ji,jj,jk,jp_tem) + 273.15_wp
+                ! ep_cmoc is in kJ mol^-1 and 8.31 is the ideal gas constant in J mol^-1 K^-1
+                zadap  = ep_cmoc * 1.e3_wp / 8.31_wp * ( 1._wp / ( ztn + rtrn ) - 1._wp / ( tvm_cmoc + 273.15_wp) )
+                zfact  = EXP ( -zadap )
+                ! zfact is the Arrhenius function, vm_cmoc the growth rate at 30oC in d^-1
+                ! zpislopead is the photosynthetic growth in s^-1
+                zpislopead (ji,jj,jk) = vm_cmoc * r1_rday * zfact
+                !
+                ! phytoplankton photoacclimation used in light limitation
+                ! trn(...,jqnch) / trn(...,jqphy) / 12. is theta in gChl per gC
+                ! ztheta is set to a maximum of thm_cmoc so as to prevent appearance of light-saturation in case zetot is small but trn(ji,jj,jk,jqphy) is 0
+                ztheta = MIN(thm_cmoc,trb(ji,jj,jk,jqnch)/(trb(ji,jj,jk,jqphy)*12._wp+rtrn))
+                zpislopen =  achl_cmoc * ztheta / ( zpislopead(ji,jj,jk) * rday  + rtrn )
+                ! zpislopead * rday is growth rate in d^-1 at temperature ToC as achl_cmoc is in d^-1
+                !
+                ! limitation functions
+                ! --------------------
+                ! light
+                zliml (ji,jj,jk) = 1.- EXP( -zpislopen  * zetot(ji,jj,jk) )
+                ! DIN
+                zlimn (ji,jj,jk) = trb(ji,jj,jk,jqno3) / ( kn_cmoc * 1e-6_wp * cnrr_cmoc + trb(ji,jj,jk,jqno3)+ rtrn )
+                ! iron is a constant and prescribed mask (xlimnfecmoc) see Zahariev et al 2008
+                ! update growth rate
+                zprbio(ji,jj,jk) = zpislopead(ji,jj,jk) * min ( zliml(ji,jj,jk) , zlimn(ji,jj,jk) , xlimnfecmoc(ji,jj) ) 
+                !  Computation of balanced chlorophyll based on balanced chlorophyll to carbon ratio; unit is gChl per molC
+                !  see Zahariev et al 2008 and Zahariev Environment Canada report (Canadian Model of Ocean Carbon v1.0)
+                !  balanced is defined as chlorophyll to carbon ratio in steady-state (Geider et al. 1996-1997)
+                !  p.40 Eq. 4.65 (note that in the report phytoplankton currency is N not C).
+                !  12._wp (gC molC^-1) to convert trn(...,jqphy) from moles to grams in the tra(...,jqchn) equations.
+                !  zprnch must be in gchl L^-1 per molC L^-1.
+                zprnch(ji,jj,jk) = 12._wp * thm_cmoc  * 2._wp    *  zpislopead(ji,jj,jk)  /  &
+                &                 ( 2._wp * zpislopead(ji,jj,jk) +                           &
+                &                  achl_cmoc * thm_cmoc  * zetot(ji,jj,jk) * r1_rday + rtrn )
+                !
+              ENDIF
+              !
           END DO
         END DO
       END DO
@@ -171,18 +175,23 @@ CONTAINS
         DO jj = 1, jpj
           !
           DO ji = 1, jpi
-            ! Prognostic phytoplankton and chlorophyll tendencies
-            ! ---------------------------------------------------
             !
-            ! phytoplankton production term over a time step
-            ! zprbio is photosynthetic growth rate in s^-1 (only)
-            zprorca(ji,jj,jk) =  zprbio(ji,jj,jk)  * trn(ji,jj,jk,jqphy) * qfact2
-            ! chlorophyll production term   over a time step
-            zprod =              zprbio(ji,jj,jk)  * trn(ji,jj,jk,jqnch) * qfact2
-            ! nudge chlorophyll back to balanced growth, Zahariev et al 2008
-            zprochln(ji,jj,jk) = zprod + (zprnch (ji,jj,jk) * trn(ji,jj,jk,jqphy) - &
-            &                             trn(ji,jj,jk,jqnch)                       &
-            &                            ) * itau_cmoc * r1_rday * qfact2                
+            IF( zetot(ji,jj,jk) > 1.E-3 ) THEN
+              ! Prognostic phytoplankton and chlorophyll tendencies
+              ! ---------------------------------------------------
+              !
+              ! phytoplankton production term over a time step
+              ! zprbio is photosynthetic growth rate in s^-1 (only)
+              zprorca(ji,jj,jk) =  zprbio(ji,jj,jk)  * trb(ji,jj,jk,jqphy) * qfact2
+              ! chlorophyll production term   over a time step
+              zprod =              zprbio(ji,jj,jk)  * trb(ji,jj,jk,jqnch) * qfact2
+              ! nudge chlorophyll back to balanced growth, Zahariev et al 2008
+              zprochln(ji,jj,jk) = zprod + (zprnch (ji,jj,jk) * trb(ji,jj,jk,jqphy) - &
+              &                             trb(ji,jj,jk,jqnch)                       &
+              &                            ) * itau_cmoc * r1_rday * qfact2                
+              !
+            ENDIF
+            !
           END DO
         END DO
       END DO
@@ -194,24 +203,17 @@ CONTAINS
          DO jj = 1, jpj
            DO ji =1 ,jpi
             !
-            tra(ji,jj,jk,jqno3) = tra(ji,jj,jk,jqno3) - zprorca(ji,jj,jk)
-            tra(ji,jj,jk,jqphy) = tra(ji,jj,jk,jqphy) + zprorca(ji,jj,jk)
-            tra(ji,jj,jk,jqnch) = tra(ji,jj,jk,jqnch) + zprochln(ji,jj,jk)
-            tra(ji,jj,jk,jqoxy) = tra(ji,jj,jk,jqoxy) + zprorca(ji,jj,jk)
-            tra(ji,jj,jk,jqdic) = tra(ji,jj,jk,jqdic) - zprorca(ji,jj,jk)
-            tra(ji,jj,jk,jqtal) = tra(ji,jj,jk,jqtal) + ncrr_cmoc * zprorca(ji,jj,jk)
-            ! O Riche Sept 14th can be uncommented or moved to TOP
-            ! tra(ji,jj,jk,jqdnt) = tra(ji,jj,jk,jqdnt) - zprorca(ji,jj,jk)
-            !
-            ! O Riche Oct 26th 2022
-            ! Test if any trend is too large
-            IF( lwp .AND. ABS(tra(ji,jj,jk,jqno3)) > HUGE(1._wp) ) WRITE(numout,*) '','cmoc_prod:','~~~~~~~~~~~~~~~jqno3 has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
-            IF( lwp .AND. ABS(tra(ji,jj,jk,jqphy)) > HUGE(1._wp) ) WRITE(numout,*) '','cmoc_prod:','~~~~~~~~~~~~~~~jqphy has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
-            IF( lwp .AND. ABS(tra(ji,jj,jk,jqnch)) > HUGE(1._wp) ) WRITE(numout,*) '','cmoc_prod:','~~~~~~~~~~~~~~~jqnch has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
-            IF( lwp .AND. ABS(tra(ji,jj,jk,jqoxy)) > HUGE(1._wp) ) WRITE(numout,*) '','cmoc_prod:','~~~~~~~~~~~~~~~jqoxy has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
-            IF( lwp .AND. ABS(tra(ji,jj,jk,jqdic)) > HUGE(1._wp) ) WRITE(numout,*) '','cmoc_prod:','~~~~~~~~~~~~~~~jqdic has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
-            IF( lwp .AND. ABS(tra(ji,jj,jk,jqtal)) > HUGE(1._wp) ) WRITE(numout,*) '','cmoc_prod:','~~~~~~~~~~~~~~~jqtal has reached a huge value at ji = ', ji, ' jj =', jj, 'jk = ', jk
-            !
+            IF( zetot(ji,jj,jk) > 1.E-3 ) THEN
+              tra(ji,jj,jk,jqno3) = tra(ji,jj,jk,jqno3) - zprorca(ji,jj,jk)
+              tra(ji,jj,jk,jqphy) = tra(ji,jj,jk,jqphy) + zprorca(ji,jj,jk)
+              tra(ji,jj,jk,jqnch) = tra(ji,jj,jk,jqnch) + zprochln(ji,jj,jk)
+              tra(ji,jj,jk,jqoxy) = tra(ji,jj,jk,jqoxy) + zprorca(ji,jj,jk)
+              tra(ji,jj,jk,jqdic) = tra(ji,jj,jk,jqdic) - zprorca(ji,jj,jk)
+              tra(ji,jj,jk,jqtal) = tra(ji,jj,jk,jqtal) + ncrr_cmoc * zprorca(ji,jj,jk)
+              ! O Riche Sept 14th can be uncommented or moved to TOP
+              ! tra(ji,jj,jk,jqdnt) = tra(ji,jj,jk,jqdnt) - zprorca(ji,jj,jk)
+              !
+            ENDIF
           END DO
         END DO
      END DO
@@ -223,15 +225,15 @@ CONTAINS
      
      IF( lk_iomput ) THEN
        IF( jnt == qnrdttrc ) THEN
-          CALL iom_put( "PPPHY"   , zprorca (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )
-          CALL iom_put( "chlaP"   , zprochln(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )
-          CALL iom_put( "photor"  , zprbio(:,:,:)             * tmask_bgc_closea(:,:,:) )
-          CALL iom_put( "Mumax"   , zpislopead(:,:,:) * rday  * tmask_bgc_closea(:,:,:) )
-          CALL iom_put( "thchl2C" , zprnch  (:,:,:)           * tmask_bgc_closea(:,:,:) )
-          CALL iom_put( "LNnut"   , zlimn   (:,:,:)           * tmask_bgc_closea(:,:,:) )
-          CALL iom_put( "LNFe"    , xlimnfecmoc (:,:)         * tmask_bgc_closea(:,:,1) )
-          CALL iom_put( "LNlight" , zliml   (:,:,:)           * tmask_bgc_closea(:,:,:) )
-          CALL iom_put( "PARCMOC" , zetot   (:,:,:)           * tmask_bgc_closea(:,:,:) )
+          CALL iom_put( "PPPHY"   , zprorca (:,:,:)   * tmask_bgc_closea(:,:,:) )
+          CALL iom_put( "chlaP"   , zprochln(:,:,:)   * tmask_bgc_closea(:,:,:) )
+          CALL iom_put( "photor"  , zprbio(:,:,:)     * tmask_bgc_closea(:,:,:) )
+          CALL iom_put( "Mumax"   , zpislopead(:,:,:) * tmask_bgc_closea(:,:,:) )
+          CALL iom_put( "thchl2C" , zprnch  (:,:,:)   * tmask_bgc_closea(:,:,:) )
+          CALL iom_put( "LNnut"   , zlimn   (:,:,:)   * tmask_bgc_closea(:,:,:) )
+          CALL iom_put( "LNFe"    , xlimnfecmoc (:,:) * tmask_bgc_closea(:,:,1) )
+          CALL iom_put( "LNlight" , zliml   (:,:,:)   * tmask_bgc_closea(:,:,:) )
+          CALL iom_put( "PARCMOC" , zetot   (:,:,:)   * tmask_bgc_closea(:,:,:) )
        ENDIF
       ENDIF
       

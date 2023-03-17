@@ -69,46 +69,14 @@ CONTAINS
       IF(lwp) WRITE(numout,*) ' trc_sms:  shared BGC processes'
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
       !
-      !
-      ! O Riche July 05th 2022
-      ! undo this as conditional branching
-      ! requires up-to-date kt time step.
-      ! perhaps move it higher up
-      ! in trcstp.F90. Will it be consistent
-      ! with restart state? It won't work
-      ! necessarily as rfact is used in other
-      ! part of TOP, e.g. rfact2 in TRP/trcnxt.F90
-      ! it is possible that var. scope will
-      ! locally prevent any conflict with global
-      ! variables 
-      ! O Riche July 05th 2022
-      ! moved from trcsms.F90 to here
-      ! to be consistent with its location
-      ! in CanESM/CanNEMO code and the migration
-      ! of common code to TOP-tier modules
-      ! O Riche June 13th 2022
-      ! Time step header, select the namelist time step
-      ! or double it if Leap-Frog and not Euler has been selected as
-      ! the time integration scheme
-      !
-      qfact = r2dttrc
-      ! O Riche July 5th 2022
-      ! mitigating the impact of this line for now but might want to keep it
-      ! or upgrade it in the final version of the code.
-      ! qnrdttrc enables biology components of BGCMs to integrate over extra shorter time steps.
-      ! not to confuse with nn_dttrc (lumping physics time steps together drive BGCMs over a longer time step than OCE) and rdttrc
-      ! the new time step for BGCM tracers if nn_dtrc/=1
-      ! qnrdttrc = 4 ! should be read from namelist_pisces (or _canoe) by trcnam_pisces (or _canoe) or perhaps moved to namelist_top
-      !
-      ! O Riche Sept 13th 2022
-      ! added nrdttrc in namelist_top_* in &namtrc_run section    
-      !
       ! O Riche Oct 24th 2022
       ! CanBGC BGCMS - adding ln_cmoc/ln_canoe conditional branching
       IF( ln_cmoc .OR. ln_canoe) THEN
         ! total number of shared TOP + CanBGC tracers
         jp_tot = jp_bgc + jp_cmoc                     ! assume CMOC has benen activated
         IF( ln_canoe )  jp_tot = jp_bgc + jp_canoe    ! if assumption above is wrong
+        !
+        qfact = r2dttrc
         !
         IF( ( ln_top_euler .AND. kt == nittrc000 )  .OR. ( .NOT.ln_top_euler .AND. kt <= nittrc000 + nn_dttrc ) ) THEN
           qfactr  = 1. / qfact

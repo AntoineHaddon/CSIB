@@ -14,6 +14,15 @@
 !!              10 - additional 2D/3D  diagnostics            (namcandia)
 !!              11 - Damping                                  (namcandmp)
 !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+&namcmocnegtr   !   Switch the negatrive tracer block
+!-----------------------------------------------------------------------
+   ln_canoenegtr = .false.          !  .false. means it will be skipped
+/
+!-----------------------------------------------------------------------
+&namcanoemass    !   Mass conservation
+!-----------------------------------------------------------------------
+   ln_check_mass =  .true.     !  Check mass conservation
+/
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &namcanext     !   air-sea exchange
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -155,36 +164,38 @@
    diazolight  =  50.      ! Diazotrophs sensitivity to light (W/m2)
    concfediaz  =  100.     ! Diazotrophs half-saturation Cste for Iron
 /
+! OR Feb 6th 2023 Not needed in this version of NEMO
+! Diagnostics are defined in field/file_def_nemo-canoe.xml
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-&namcandia     !   additional 2D/3D tracers diagnostics 
-!,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-!              !    name   !           title of the field          !     units      !
-!              !           !                                       !                !  
-   candia2d(1)  = 'Cflx     ' , 'DIC flux                          ',  'molC/m2/s    '
-   candia2d(2)  = 'Oflx     ' , 'Oxygen flux                       ',  'molC/m2/s    '
-   candia2d(3)  = 'Kg       ' , 'Gas transfer                      ',  'mol/m2/s/uatm'
-   candia2d(4)  = 'Delc     ' , 'Delta CO2                         ',  'uatm         '
-   candia2d(5)  = 'PMO      ' , 'POC export                        ',  'molC/m2/s    '
-   candia2d(6)  = 'PMO2     ' , 'GOC export                        ',  'molC/m2/s    '
-   candia2d(7)  = 'ExpFe1   ' , 'Nano iron export                  ',  'molFe/m2/s   '
-   candia2d(8)  = 'ExpFe2   ' , 'Diatoms iron export               ',  'molFe/m2/s   '
-   candia2d(9)  = 'ExpSi    ' , 'Silicate export                   ',  'molSi/m2/s   '
-   candia2d(10) = 'ExpCaCO3 ' , 'Calcite export                    ',  'molC/m2/s    '
-   candia2d(11) = 'heup     ' , 'euphotic layer depth              ',  'm            '
-   candia2d(12) = 'Fedep    ' , 'Iron dep                          ',  'molFe/m2/s   '
-   candia2d(13) = 'Nfix     ' , 'Nitrogen Fixation                 ',  'molN/m2/s    '
-   candia3d(1)  = 'PH       ' , 'PH                                ',  '-            '
-   candia3d(2)  = 'CO3      ' , 'Bicarbonates                      ',  'mol/l        '
-   candia3d(3)  = 'CO3sat   ' , 'CO3 saturation                    ',  'mol/l        '
-   candia3d(4)  = 'PAR      ' , 'light penetration                 ',  'W/m2         '
-   candia3d(5)  = 'PPPHY    ' , 'Primary production of nanophyto   ',  'molC/m3/s    '
-   candia3d(6)  = 'PPPHY2   ' , 'Primary production of diatoms     ',  'molC/m3/s    '
-   candia3d(7)  = 'PPNEWN   ' , 'New Primary production of nano    ',  'molC/m3/s    '
-   candia3d(8)  = 'PPNEWD   ' , 'New Primary production of diat    ',  'molC/m3/s    '
-   candia3d(9)  = 'PBSi     ' , 'Primary production of Si diatoms  ',  'molSi/m3/s   '
-   candia3d(10) = 'PFeN     ' , 'Primary production of nano iron   ',  'molFe/m3/s   '
-   candia3d(11) = 'PFeD     ' , 'Primary production of diatoms iron',  'molFe/m3/s   '
-/
+! &namcandia     !   additional 2D/3D tracers diagnostics 
+! !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+! !              !    name   !           title of the field          !     units      !
+! !              !           !                                       !                !  
+   ! candia2d(1)  = 'Cflx     ' , 'DIC flux                          ',  'molC/m2/s    '
+   ! candia2d(2)  = 'Oflx     ' , 'Oxygen flux                       ',  'molC/m2/s    '
+   ! candia2d(3)  = 'Kg       ' , 'Gas transfer                      ',  'mol/m2/s/uatm'
+   ! candia2d(4)  = 'Delc     ' , 'Delta CO2                         ',  'uatm         '
+   ! candia2d(5)  = 'PMO      ' , 'POC export                        ',  'molC/m2/s    '
+   ! candia2d(6)  = 'PMO2     ' , 'GOC export                        ',  'molC/m2/s    '
+   ! candia2d(7)  = 'ExpFe1   ' , 'Nano iron export                  ',  'molFe/m2/s   '
+   ! candia2d(8)  = 'ExpFe2   ' , 'Diatoms iron export               ',  'molFe/m2/s   '
+   ! candia2d(9)  = 'ExpSi    ' , 'Silicate export                   ',  'molSi/m2/s   '
+   ! candia2d(10) = 'ExpCaCO3 ' , 'Calcite export                    ',  'molC/m2/s    '
+   ! candia2d(11) = 'heup     ' , 'euphotic layer depth              ',  'm            '
+   ! candia2d(12) = 'Fedep    ' , 'Iron dep                          ',  'molFe/m2/s   '
+   ! candia2d(13) = 'Nfix     ' , 'Nitrogen Fixation                 ',  'molN/m2/s    '
+   ! candia3d(1)  = 'PH       ' , 'PH                                ',  '-            '
+   ! candia3d(2)  = 'CO3      ' , 'Bicarbonates                      ',  'mol/l        '
+   ! candia3d(3)  = 'CO3sat   ' , 'CO3 saturation                    ',  'mol/l        '
+   ! candia3d(4)  = 'PAR      ' , 'light penetration                 ',  'W/m2         '
+   ! candia3d(5)  = 'PPPHY    ' , 'Primary production of nanophyto   ',  'molC/m3/s    '
+   ! candia3d(6)  = 'PPPHY2   ' , 'Primary production of diatoms     ',  'molC/m3/s    '
+   ! candia3d(7)  = 'PPNEWN   ' , 'New Primary production of nano    ',  'molC/m3/s    '
+   ! candia3d(8)  = 'PPNEWD   ' , 'New Primary production of diat    ',  'molC/m3/s    '
+   ! candia3d(9)  = 'PBSi     ' , 'Primary production of Si diatoms  ',  'molSi/m3/s   '
+   ! candia3d(10) = 'PFeN     ' , 'Primary production of nano iron   ',  'molFe/m3/s   '
+   ! candia3d(11) = 'PFeD     ' , 'Primary production of diatoms iron',  'molFe/m3/s   '
+! /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &namcandmp     !  Damping 
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

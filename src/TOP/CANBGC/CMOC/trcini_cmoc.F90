@@ -67,8 +67,6 @@ CONTAINS
       ! Load namelists for shared parameters
       CALL trc_nam_cmoc
 	    !                           ! Allocate cmoc arrays
-      IF( trc_sms_cmoc_alloc() /= 0 )   CALL ctl_stop( 'STOP', 'trc_ini_cmoc: unable to allocate cmoc arrays' )
-
       IF(lwp) WRITE(numout,*)
       IF(lwp) WRITE(numout,*) ' trc_ini_cmoc: passive tracer unit vector'
       IF(lwp) WRITE(numout,*) ' To check conservation : '
@@ -79,8 +77,11 @@ CONTAINS
 
       ! assign an index in trc array for each prognostic variable
       DO jn = 1,jp_bgc
-       write(numout,*) ctrcnm(jn)
-       cltra = ctrcnm(jn)
+       IF( lwp ) THEN
+         WRITE(numout,*) ctrcnm(jn)
+       ENDIF
+       !
+       cltra = TRIM( ctrcnm(jn) )
        IF( cltra == 'DIC'      )   jqdic = jn      !: dissolved inorganic carbon concentration
        IF( cltra == 'Alkalini' )   jqtal = jn      !: total alkalinity
        IF( cltra == 'O2'       )   jqoxy = jn      !: oxygen concentration
@@ -91,7 +92,7 @@ CONTAINS
       DO jp = 1,jp_cmoc
        jn = jp + jp_bgc
        write(numout,*) ctrcnm(jn)
-       cltra = ctrcnm(jn)
+       cltra = TRIM( ctrcnm(jn) ) !! OR Jan 19th 2023
        IF( cltra == 'POC'      )   jqpoc = jn      !: particulate organic carbon
        IF( cltra == 'PHY'      )   jqphy = jn      !: phyto carbon
        IF( cltra == 'ZOO'      )   jqzoo = jn      !: zooplankton carbon
@@ -134,19 +135,20 @@ CONTAINS
       !
       CALL trc_flx_init
       !
+      ! Calendar day counter for chemistry calls
       qndayflxtr = 0
       !
-      CALL trc_opt_init
+      CALL trc_opt_init    ! PAR 
       !
-      CALL cmoc_prod_init
+      CALL cmoc_prod_init  ! Primary production
       !
-      CALL cmoc_mort_init
+      CALL cmoc_mort_init  ! Phytoplankton mortality
       !
-      CALL cmoc_rem_init
+      CALL cmoc_rem_init   ! NO3 remineralization
       !
-      CALL cmoc_zoo_init
+      CALL cmoc_zoo_init   ! Zooplankton grazing and mortality
       !
-      CALL cmoc_sink_init !
+      CALL cmoc_sink_init  ! Particule sinking
       !
       ! !
    END SUBROUTINE trc_ini_cmoc
@@ -168,6 +170,7 @@ CONTAINS
       ierr = ierr +    trc_che_alloc()
       ierr = ierr +    trc_flx_alloc()
       ierr = ierr +  cmoc_sink_alloc()
+      ierr = ierr +  trc_sms_cmoc_alloc()
       !
       IF( lk_mpp    )   CALL mpp_sum( 'cmoc_alloc', ierr )
       IF( ierr /= 0 )   CALL ctl_stop( 'STOP', 'cmoc_alloc: unable to allocate cmoc arrays' )

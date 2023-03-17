@@ -8,13 +8,8 @@
 ============================================================================================================
     -->
 
-    <!--
-    <file_definition type="one_file" name="@expname@_@freq@_@startdate@_@enddate@" sync_freq="1mo" min_digits="4">   
-      <file_group id="1m" output_freq="1mo" output_level="10" enabled=".TRUE."> 
-    -->
-
-      <file_definition type="one_file" name="@expname@_@freq@_@startdate@_@enddate@" sync_freq="1ts" min_digits="4">   
-      <file_group id="1ts" output_freq="1ts" output_level="10" enabled=".TRUE."> 
+    	<file_definition type="one_file" name="@expname@_@freq@_@startdate@_@enddate@" sync_freq="1mo" min_digits="4"> 
+	    <file_group id="1m" output_freq="1mo" output_level="10" enabled=".TRUE.">
     
         <file id="file32" name_suffix="_btrc_T" description="CMOC sms variables + TOP tracers" >
           <!-- BGCM standard : variables available with TOP activated alone  -->
@@ -82,14 +77,26 @@
           <field field_ref="chlaP"    name="chlaP"     level="0" />
           <field field_ref="photor"   name="photor"    level="0" />
           <!-- CMOC export diagnostics -->
-          <field id="oomask"          name="oomask"    level="0" />
-          <field id="EPC100"          name="EPC100"    level="0" />
-          <field id="EPCALC100"       name="EPCALC100" level="0" />
+          <field field_ref="oomask"          name="oomask"    level="0" />
+          <field field_ref="EPC100"          name="EPC100"    level="0" />
+          <field field_ref="EPCALC100"       name="EPCALC100" level="0" />
           <!-- CMOC N2 diagnostics -->                
-          <field id="Nfix"            name="Nfix"      level="0" />
-          <field id="Denit"           name="Denit"     level="0" />
+          <field field_ref="Nfix"            name="Nfix"      level="0" />
+          <field field_ref="Denit"           name="Denit"     level="0" />
           
           <!-- Temporary addition -->
+          <field field_ref="MORTP"     name="MORTP"      level="0" />
+          <field field_ref="REMNO3"    name="REMNO3"     level="0" />
+          <field field_ref="oomask"    name="oomask"     level="0" />  
+          <field field_ref="EPC100"    name="EPC100"     level="0" />  
+          <field field_ref="EPCALC100" name="EPCALC100"  level="0" />  
+          <field field_ref="EPCz"      name="EPCz"       level="0" />
+          <field field_ref="GRAZZ"     name="GRAZZ"      level="0" />
+          <field field_ref="Z2POC"     name="Z2POC"      level="0" />
+          <field field_ref="ZEXUD"     name="ZEXUD"      level="0" />
+          <field field_ref="ZMORT"     name="ZMORT"      level="0" />         
+          <field field_ref="ZMORT2"    name="ZMORT2"     level="0" />         
+                                        
           <!-- Ideal Age Tracer (IAT) from TOP -->
           <!-- <field field_ref="Age"     level="0" /> -->
 

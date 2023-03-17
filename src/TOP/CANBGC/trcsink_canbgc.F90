@@ -54,7 +54,7 @@ MODULE trcsink_canbgc
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: sinking2 !: POC sinking fluxes 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: sinkcal  !: CaCO3 sinking flux
 
-   INTEGER  :: iksed  = 10
+   INTEGER  :: iksed  = 24 ! O Riche Feb 9th 2023 ~100 m (97m on level 24 closer to 100m than 108m on level 25)
 
    !!* Substitution
 !#  include "top_substitute.h90"
@@ -71,9 +71,9 @@ CONTAINS
       !!!!!!!!!! CMOC subroutines
       !!----------------------------------------------------------------------
       !
-  SUBROUTINE trc_sink2( pwsink, psinkflx, jp_tra )
+  SUBROUTINE trc_sink0( pwsink, psinkflx, jp_tra )
       !!---------------------------------------------------------------------
-      !!                     ***  ROUTINE trc_sink2  ***
+      !!                     ***  ROUTINE trc_sink0  ***
       !!
       !! ** Purpose :   Compute the sedimentation terms for the various sinking
       !!     particles. The scheme used to compute the trends is based
@@ -89,20 +89,26 @@ CONTAINS
       !!
       INTEGER  ::   ji, jj, jk, jn
       REAL(wp) ::   zew, zign, zflx
-      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: ztraz, zakz, zwsink2, ztrb 
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zwsink2, ztrb 
       !!---------------------------------------------------------------------
       !
-      IF( ln_timing )  CALL timing_start('trc_sink2')
+      IF( ln_timing )  CALL timing_start('trc_sink0')
+      !
+      IF( lwp ) THEN
+        WRITE(numout,*)
+        WRITE(numout,*) 'trc_sink0:'
+        WRITE(numout,*) 'on tracer ', TRIM( ctrcnm(jp_tra) )
+        WRITE(numout,*) '~~~~~~~~~~'
+        WRITE(numout,*)
+      ENDIF
       !
       ! Allocate temporary workspace
-      ALLOCATE( ztraz(jpi, jpj, jpk), zakz(jpi, jpj, jpk), zwsink2(jpi, jpj, jpk), ztrb(jpi, jpj, jpk) )
+      ALLOCATE( zwsink2(jpi, jpj, jpk), ztrb(jpi, jpj, jpk) )
       !
-      ztraz(:,:,:) = 0.e0
-      zakz (:,:,:) = 0.e0
-      ztrb (:,:,:) = trn(:,:,:,jp_tra)
+      ztrb (:,:,:) = trb(:,:,:,jp_tra)
       !
       DO jk = 1, jpkm1
-         zwsink2(:,:,jk+1) = -pwsink(:,:,jk) / rday * tmask_bgc_closea(:,:,jk+1) 
+         zwsink2(:,:,jk+1) = pwsink(:,:,jk) / rday * tmask_bgc_closea(:,:,jk+1) 
       END DO
       zwsink2(:,:,1) = 0.e0
       !
@@ -111,7 +117,7 @@ CONTAINS
         DO jj = 1, jpj      
            DO ji = 1, jpi    
               zew   = zwsink2(ji,jj,jk+1)
-              psinkflx(ji,jj,jk+1) = -zew * trn(ji,jj,jk,jp_tra) * qfact2
+              psinkflx(ji,jj,jk+1) = zew * trb(ji,jj,jk,jp_tra) * qfact2
            END DO
         END DO
       END DO
@@ -129,14 +135,14 @@ CONTAINS
          END DO
       END DO
       !
-      trn(:,:,:,jp_tra) = ztrb(:,:,:)
+      trb(:,:,:,jp_tra) = ztrb(:,:,:)
       !
-      DEALLOCATE( ztraz, zakz, zwsink2, ztrb )
+      DEALLOCATE( zwsink2, ztrb )
       !
-      IF( ln_timing )  CALL timing_stop('trc_sink2')
+      IF( ln_timing )  CALL timing_stop('trc_sink0')
       !
       !
-  END SUBROUTINE trc_sink2
+  END SUBROUTINE trc_sink0
       !
       !!----------------------------------------------------------------------
       !!!!!!!!!! CMOC subroutines
@@ -208,7 +214,7 @@ CONTAINS
       !   Compute the sedimentation term using cmocsink2 for POC
       !   -----------------------------------------------------
       !
-      CALL trc_sink2( wsbio3, sinking , jqpoc )
+      CALL trc_sink0( wsbio3, sinking , jqpoc )
       !
       !     Calcite sinking flux
       !     --------------------------------------------------------------------
@@ -237,7 +243,7 @@ CONTAINS
             ! PIC export at the bottom of the euphotic zone based on Zahariev et al 2008 p.59
             ! Time stepping is included with xstepb, so units are in mol/m2/step
            zfpon(ji,jj) = xrcico(ji,jj) * wsbio3(ji,jj,jk_eud_cmoc) * xstepb                                & 
-           &                        * trn(ji,jj,jk_eud_cmoc,jqpoc)                                          &
+           &                        * trb(ji,jj,jk_eud_cmoc,jqpoc)                                          &
            &                        * tmask_bgc_closea(ji,jj,jk_eud_cmoc) * oomask(ji,jj)
            !
          ENDDO
@@ -279,12 +285,12 @@ CONTAINS
                                                      ! boundary of the mixed layer.                           
                zideup = 1.0_wp / zdeup    
                !
-               trn(ji,jj,jk,jqdic) = trn(ji,jj,jk,jqdic) -                                   &
+               tra(ji,jj,jk,jqdic) = tra(ji,jj,jk,jqdic) -                                   &
                &                              zfpon(ji,jj) * zideup 
-               ! trn(ji,jj,jk,jqdnt) = trn(ji,jj,jk,jqdnt) -                                   &
+               ! tra(ji,jj,jk,jqdnt) = tra(ji,jj,jk,jqdnt) -                                   &
                ! &                              zfpon(ji,jj) * zideup 
                !
-               trn(ji,jj,jk,jqtal) = trn(ji,jj,jk,jqtal) -                                   &
+               tra(ji,jj,jk,jqtal) = tra(ji,jj,jk,jqtal) -                                   &
                &                      2.0_wp * zfpon(ji,jj) * zideup 
                !
             ENDDO
@@ -299,9 +305,9 @@ CONTAINS
             DO ji = 1,jpi
                zcaldiv =  ( zcalflxexp(ji,jj,jk) - zcalflxexp(ji,jj,jk+1) ) / e3t_n(ji,jj,jk) * tmask_bgc_closea(ji,jj,jk)
                !
-               trn(ji,jj,jk,jqdic) = trn(ji,jj,jk,jqdic) +          zcaldiv 
-               ! trn(ji,jj,jk,jqdnt) = trn(ji,jj,jk,jqdnt) +          zcaldiv 
-               trn(ji,jj,jk,jqtal) = trn(ji,jj,jk,jqtal) + 2.0_wp * zcaldiv                      
+               tra(ji,jj,jk,jqdic) = tra(ji,jj,jk,jqdic) +          zcaldiv 
+               ! tra(ji,jj,jk,jqdnt) = tra(ji,jj,jk,jqdnt) +          zcaldiv 
+               tra(ji,jj,jk,jqtal) = tra(ji,jj,jk,jqtal) + 2.0_wp * zcaldiv                      
                !
             ENDDO
          ENDDO
@@ -313,15 +319,17 @@ CONTAINS
       DO jj = 1, jpj
          DO ji = 1,jpi
             ikt = mbkt(ji,jj)
-            trn(ji,jj,ikt,jqdic) = trn(ji,jj,ikt,jqdic) - zcalbotflx(ji,jj)          / e3t_n(ji,jj, ikt)
-            trn(ji,jj,1,jqdic)   = trn(ji,jj,1,jqdic)   + zcalbotflx(ji,jj)          / e3t_n(ji,jj, 1) 
-            ! trn(ji,jj,ikt,jqdnt) = trn(ji,jj,ikt,jqdnt) - zcalbotflx(ji,jj)          / e3t_n(ji,jj, ikt)
-            ! trn(ji,jj,1,jqdnt)   = trn(ji,jj,1,jqdnt)   + zcalbotflx(ji,jj)          / e3t_n(ji,jj, 1) 
-            trn(ji,jj,ikt,jqtal) = trn(ji,jj,ikt,jqtal) - 2.0_wp * zcalbotflx(ji,jj) / e3t_n(ji,jj,ikt)
-            trn(ji,jj,1,jqtal)   = trn(ji,jj,1,jqtal)   + 2.0_wp * zcalbotflx(ji,jj) / e3t_n(ji,jj, 1) 
+            tra(ji,jj,ikt,jqdic) = tra(ji,jj,ikt,jqdic) - zcalbotflx(ji,jj)          / e3t_n(ji,jj, ikt)
+            tra(ji,jj,1,jqdic)   = tra(ji,jj,1,jqdic)   + zcalbotflx(ji,jj)          / e3t_n(ji,jj, 1) 
+            ! tra(ji,jj,ikt,jqdnt) = tra(ji,jj,ikt,jqdnt) - zcalbotflx(ji,jj)          / e3t_n(ji,jj, ikt)
+            ! tra(ji,jj,1,jqdnt)   = tra(ji,jj,1,jqdnt)   + zcalbotflx(ji,jj)          / e3t_n(ji,jj, 1) 
+            tra(ji,jj,ikt,jqtal) = tra(ji,jj,ikt,jqtal) - 2.0_wp * zcalbotflx(ji,jj) / e3t_n(ji,jj,ikt)
+            tra(ji,jj,1,jqtal)   = tra(ji,jj,1,jqtal)   + 2.0_wp * zcalbotflx(ji,jj) / e3t_n(ji,jj, 1) 
          ENDDO
       ENDDO
       !
+      !
+      ! Diagnostics
       !
       zrfact2 = 1.e3 * qfact2r
       ik1  = iksed + 1
@@ -330,10 +338,8 @@ CONTAINS
           CALL iom_put( "oomask", oomask(:,:))
           CALL iom_put( "EPC100", sinking(:,:,ik1) * zrfact2 * tmask_bgc_closea(:,:,1) )
           CALL iom_put( "EPCALC100",    zfpon(:,:) * zrfact2 * tmask_bgc_closea(:,:,1) ) !
+          CALL iom_put( "EPCz",     sinking(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) ) !
        ENDIF
-      ! ELSE
-       ! trc2d(:,:,jp_pcs0_2d + 4) = sinking (:,:,ik1) * zrfact2 * tmask_bgc_closea(:,:,1)
-      ! !
       ENDIF
       !
       IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
@@ -420,6 +426,7 @@ CONTAINS
       !!
       !! ** Method  : - Need to be described
       !!---------------------------------------------------------------------
+      USE par_canoe, ONLY : jrgoc, jrcal   ! indices declaration needed.
       INTEGER, INTENT(in) :: kt, jnt
       INTEGER  ::   ji, jj, jk
       REAL(wp) ::   zfact, zwsmax, zmax, zstep
@@ -440,26 +447,24 @@ CONTAINS
       !   Compute the sedimentation term using canoesink2 for all the sinking particles
       !   -----------------------------------------------------
       !
-      CALL trc_sink2( wsbio3, sinking , jqpoc )
-      CALL trc_sink2( wsbio4, sinking2, jqgoc )
-      CALL trc_sink2( wscal , sinkcal , jqcal )
+      CALL trc_sink0( wsbio3, sinking , jrpoc )
+      CALL trc_sink0( wsbio4, sinking2, jrgoc )
+      CALL trc_sink0( wscal , sinkcal , jrcal )
       !
-      ! IF( ln_diatrc ) THEN
-         ! zrfact2 = 1.e-3 * qfact2r
-         ! ik1  = iksed + 1
-         ! IF( lk_iomput ) THEN
-           ! IF( jnt == nrdttrc ) THEN
-              ! CALL iom_put( "EPC100"  , ( sinking(:,:,ik1) + sinking2(:,:,ik1) ) * zrfact2 * tmask_bgc_closea(:,:,1) ) ! Export of carbon at 100m
-              ! CALL iom_put( "EPCALC100",  sinkcal(:,:,ik1)                       * zrfact2 * tmask_bgc_closea(:,:,1) ) ! Export of calcite  at 100m
-           ! ENDIF
-         ! ELSE
-           ! trc2d(:,:,jp_pcs0_2d + 4) = sinking (:,:,ik1) * zrfact2 * tmask_bgc_closea(:,:,1)
-           ! trc2d(:,:,jp_pcs0_2d + 5) = sinking2(:,:,ik1) * zrfact2 * tmask_bgc_closea(:,:,1)
-           ! trc2d(:,:,jp_pcs0_2d + 9) = sinkcal (:,:,ik1) * zrfact2 * tmask_bgc_closea(:,:,1)
-         ! ENDIF
+      ! zrfact2 = 1.e-3 * qfact2r
+      ! ik1  = iksed + 1
+      ! IF( lk_iomput ) THEN
+       ! IF( jnt == qnrdttrc ) THEN
+          ! CALL iom_put( "EPC100"  , ( sinking(:,:,ik1) + sinking2(:,:,ik1) ) * zrfact2 * tmask_bgc_closea(:,:,1) ) ! Export of carbon at 100m
+          ! CALL iom_put( "EPCALC100",  sinkcal(:,:,ik1)                       * zrfact2 * tmask_bgc_closea(:,:,1) ) ! Export of calcite  at 100m
+       ! ENDIF
+      ! ELSE
+       ! trc2d(:,:,jp_pcs0_2d + 4) = sinking (:,:,ik1) * zrfact2 * tmask_bgc_closea(:,:,1)
+       ! trc2d(:,:,jp_pcs0_2d + 5) = sinking2(:,:,ik1) * zrfact2 * tmask_bgc_closea(:,:,1)
+       ! trc2d(:,:,jp_pcs0_2d + 9) = sinkcal (:,:,ik1) * zrfact2 * tmask_bgc_closea(:,:,1)
       ! ENDIF
-      ! !
-      ! !
+      !
+      !
       IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('sink')")
          CALL prt_ctl_trc_info(charout)

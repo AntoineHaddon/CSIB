@@ -18,11 +18,27 @@
       <!-- btrc on T grid -->
 
      <field_group id="btrc_T" grid_ref="grid_T_3D">
-       <!-- CanOE standard : variables available with ln_p4z  -->
+       <!-- BGCM standard : variables available with TOP activated alone  -->
        <field id="DIC"          long_name="Dissolved inorganic Concentration"        unit="mmol/m3" />
        <field id="Alkalini"     long_name="Total Alkalinity Concentration"           unit="mmol/m3" />
        <field id="O2"           long_name="Oxygen Concentration"                     unit="mmol/m3" />
        <field id="NO3"          long_name="NO3    Concentration"                     unit="mmol/m3" />
+       <!-- CanOE specific -->
+       <field id="POC"          long_name="Small organic carbon Concentration"       unit="mmol/m3" />
+       <field id="ZOO"          long_name="Microzooplankton Concentration    "       unit="mmol/m3" />
+       <field id="NCHL"         long_name="Nano chlorophyl Concentration     "       unit="  mg/m3" />
+       <field id="CaCO3"        long_name="Calcite Concentration             "       unit="mmol/m3" />
+       <field id="PHYC"         long_name="Nanophytoplankton C Concentration "       unit="mmol/m3" />
+       <field id="PHYN"         long_name="Nanophytoplankton N Concentration "       unit="mmol/m3" />
+       <field id="PHYFe"        long_name="Nanophytoplankton Fe Concentration"       unit="mmol/m3" />
+       <field id="PHY2C"        long_name="Diatoms C Concentration           "       unit="mmol/m3" />
+       <field id="PHY2N"        long_name="Diatoms N Concentration           "       unit="mmol/m3" />
+       <field id="PHY2Fe"       long_name="Diatoms Fe Concentration          "       unit="mmol/m3" />
+       <field id="DCHL"         long_name="Diatoms chlorophyl Concentration  "       unit="  mg/m3" />
+       <field id="ZOO2"         long_name="Mesozooplankton Concentration     "       unit="mmol/m3" />
+       <field id="Fer"          long_name="Dissolved Iron Concentration      "       unit="nmol/m3" />
+       <field id="GOC"          long_name="Big organic carbon Concentration  "       unit="mmol/m3" />
+       <field id="NH4"          long_name="Ammonium Concentration            "       unit="mmol/m3" />       
      </field_group>
 
      <!-- Additional diagnostics on T grid --> 
@@ -49,6 +65,7 @@
        <field id="Ironsed"     long_name="Iron flux from sediments"               unit="nmol/m3/s?"          grid_ref="grid_T_3D" />
 
        <!-- 2D fields here -->
+       <!-- Air-sea exchanges -->
        <field id="Cflx"        long_name="CO2 flux positivr if ocean gain"        unit="mmol/m2/s"           grid_ref="grid_T_2D" />
        <field id="Oflx"        long_name=" O2 flux positive if ocean gain"        unit="mmol/m2/s"           grid_ref="grid_T_2D" />
        
@@ -64,6 +81,19 @@
 
        <field id="Heup"        long_name="Euphotic layer depth"                   unit="m"                   grid_ref="grid_T_2D" />
        <field id="surf_chla"   long_name="surface chl-a external file"            unit="mg Chla/m3"          grid_ref="grid_T_2D" />
+       
+       <!-- CanOE diagnostics -->
+       <!-- Primary Production -->       
+       <field id="PPPHY"       long_name="Primary production of nanophyto   "     unit="molC/m3/s"           grid_ref="grid_T_3D" />
+       <field id="PPPHY2"      long_name="Primary production of diatoms     "     unit="molC/m3/s"           grid_ref="grid_T_3D" />
+       <field id="PPNEWN"      long_name="New Primary production of nano    "     unit="molC/m3/s"           grid_ref="grid_T_3D" />
+       <field id="PPNEWD"      long_name="New Primary production of diat    "     unit="molC/m3/s"           grid_ref="grid_T_3D" />
+       <field id="PFeN"        long_name="Primary production of nano iron   "     unit="molFe/m3/s"          grid_ref="grid_T_3D" />
+       <field id="PFeD"        long_name="Primary production of nano iron   "     unit="molFe/m3/s"          grid_ref="grid_T_3D" />
+       <field id="LNN"         long_name="Nitrogen limitation factor"             unit="-"                   grid_ref="grid_T_3D" />
+       <field id="LDN"         long_name="Nitrogen limitation factor"             unit="-"                   grid_ref="grid_T_3D" />
+       <field id="LNFe"        long_name="Iron limitation factor"                 unit="-"                   grid_ref="grid_T_3D" />
+       <field id="LDFe"        long_name="Iron limitation factor"                 unit="-"                   grid_ref="grid_T_3D" />
 
      </field_group>
 

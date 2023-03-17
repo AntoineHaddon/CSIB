@@ -74,14 +74,28 @@ CONTAINS
       !!
       !! ** Method  : - forward time integration (Euler or Leapfrog)
       !!---------------------------------------------------------------------
+      ! O Riche Feb 8th 2023
+      USE lib_mpp, ONLY   : ctl_stop
+      ! O Riche Feb 8th 2023
       INTEGER, INTENT(in) ::   kt, jnt ! ocean time step
       !!---------------------------------------------------------------------
       INTEGER  :: ji, jj, jk                                      ! loop indices 
       REAL(wp) :: zcompaph , ztortp , zrespp , zmortp , zfactch
+      ! O Riche Feb 8th 2023
+      INTEGER  :: ierr    ! allocate error integer flag
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: rnresult         ! diag array
+      ! O Riche Feb 8th 2023
       CHARACTER (len=25) :: charout
       !!---------------------------------------------------------------------
       !
-      IF( ln_timing )  CALL timing_start('cmoc_rem')
+      IF( ln_timing )  CALL timing_start('cmoc_rem')     
+      !
+      ! O Riche Feb 8th 2023      
+      ALLOCATE( rnresult(jpi,jpj,jpk), STAT=ierr )
+      IF( ierr /= 0 ) CALL ctl_stop('STOP', 'cmoc_mort: mpresult mem allocate failed.')
+      rnresult(:,:,:) = 0._wp
+      ! O Riche Feb 8th 2023      
+      !
       !
       IF( lwp ) THEN
         WRITE(numout,*)
@@ -102,7 +116,8 @@ CONTAINS
                &                 * exp ( -ed_cmoc * 1e3_wp / 8.31_wp *         &
                &                 ( 1._wp / ( tsn(ji,jj,jk,jp_tem) + 273.15_wp  &
                &                 + rtrn ) - 1._wp / ( tvm_cmoc + 273.15_wp )   &
-               &                 )      ) * trn(ji,jj,jk,jqpoc) * tmask_bgc_closea(ji,jj,jk)
+               &                 )      ) * trb(ji,jj,jk,jqpoc) * tmask_bgc_closea(ji,jj,jk)
+               rnresult(ji,jj,jk) = redet(ji,jj,jk)
             END DO
          END DO 
       END DO         
@@ -119,12 +134,25 @@ CONTAINS
          ! tra(:,:,jk,jqdnt) = tra(:,:,jk,jqdnt) + redet(:,:,jk) 
       END DO
 
+      ! O Riche Feb 8th 2023      
+      ! Remineralization diagnostics
+      IF( lk_iomput ) THEN
+       IF( jnt == qnrdttrc ) THEN
+          CALL iom_put( "REMNO3", rnresult(:,:,:) * tmask_bgc_closea(:,:,:) )
+       ENDIF
+      ENDIF
+      ! O Riche Feb 8th 2023      
+      !
       ! print mean trends (used for debugging)
       IF(ln_ctl)   THEN
        WRITE(charout, FMT="('rem')")
        CALL prt_ctl_trc_info(charout)
        CALL prt_ctl_trc(tab4d=tra, mask=tmask_bgc_closea, clinfo=ctrcnm)
       ENDIF
+      !
+      ! O Riche Feb 8th 2023
+      DEALLOCATE( rnresult )
+      ! O Riche Feb 8th 2023
       !
       IF( ln_timing )  CALL timing_stop('cmoc_rem')
       !  
@@ -178,7 +206,7 @@ CONTAINS
       !! ** input   :   Namelist namcmocpoc
       !!
       !!----------------------------------------------------------------------
-      INTEGER ::   ios       ! Local integer
+      INTEGER ::   ios, ierr       ! Local integers
       ! <CMOC code OR 10/15/2015> CMOC namelist
       NAMELIST/namcmocpoc/ ed_cmoc, reref_cmoc
       NAMELIST/namcmocdeu/ jk_eud_cmoc, nk_bal_cmoc
@@ -220,8 +248,11 @@ CONTAINS
       ENDIF
       ! 
       ! Allocate arrays
-      ALLOCATE(    redet( jpi, jpj, jpk ) )   ! Remineralization rate
-      ALLOCATE( redettot( jpi, jpj ) )        ! Denitrification rate
+      ALLOCATE(    redet( jpi, jpj, jpk ), STAT=ierr )   ! Remineralization rate
+      IF( ierr /= 0 )  CALL ctl_stop('STOP', 'cmoc_rem_init: failed to allocate redet array')
+      ALLOCATE( redettot( jpi, jpj ), STAT=ierr )        ! Denitrification rate
+      IF( ierr /= 0 )  CALL ctl_stop('STOP', 'cmoc_rem_init: failed to allocate redettot array')      
+      !
       !
   END SUBROUTINE cmoc_rem_init
    !
@@ -229,7 +260,7 @@ CONTAINS
    !! Zooplankton grazing
    !!----------------------------------------------------------------------
    !
-  SUBROUTINE cmoc_zoo( kt )
+  SUBROUTINE cmoc_zoo( kt, jnt )
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE p4z_micro  ***
       !!
@@ -237,17 +268,32 @@ CONTAINS
       !!
       !! ** Method  : - forward time integration (Euler or Leapfrog)
       !!---------------------------------------------------------------------
-      INTEGER, INTENT(in) ::   kt
+      INTEGER, INTENT(in) ::   kt, jnt
       !!---------------------------------------------------------------------
       INTEGER  :: ji, jj, jk
       REAL(wp) :: zcompaph
       REAL(wp) :: zgrapoc
       REAL(wp) :: zgrazpcmoc
       CHARACTER (len=25) :: charout
+      !
+      ! O Riche Feb 9th 2023
+      REAL(wp) :: zfact2
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zgrapoc0, zgrazpcmoc0
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: mzn_cmoc0, mzd_cmoc0, mz2_cmoc0
+      zgrapoc0(:,:,:)    = 0._wp
+      zgrazpcmoc0(:,:,:) = 0._wp
+      mzn_cmoc0(:,:,:)   = 0._wp
+      mzd_cmoc0(:,:,:)   = 0._wp
+      mz2_cmoc0(:,:,:)   = 0._wp
+      ! O Riche Feb 9th 2023
       !!---------------------------------------------------------------------
       !
       IF( ln_timing )  CALL timing_start('cmoc_zoo')
       !
+      ! O Riche Feb 9th 2023
+      ALLOCATE( zgrapoc0 (jpi, jpj, jpk), zgrazpcmoc0(jpi, jpj, jpk)                            )
+      ALLOCATE( mzn_cmoc0(jpi, jpj, jpk), mzd_cmoc0  (jpi, jpj, jpk), mz2_cmoc0(jpi, jpj, jpk ) )
+      ! O Riche Feb 9th 2023      
       IF( lwp ) THEN
         WRITE(numout,*)
         WRITE(numout,*), 'cmoc_zoo: compute zooplankton grazing'
@@ -261,15 +307,15 @@ CONTAINS
             DO ji = 1, jpi
 
                ! Conserve the PISCES code principle of a minimum phytoplankton biomass
-               zcompaph  = MAX( ( trn(ji,jj,jk,jqphy) - xthreshphy ), 0.e0 )
+               zcompaph  = MAX( ( trb(ji,jj,jk,jqphy) - xthreshphy ), 0.e0 )
                !
                ! Convert kp_cmoc from uM N (mmol N m^-3) to mol C L^-1 with 1e-6_wp * cnrr_cmoc
                ! lambda formula in Zahariev et al 2008
                ! grazing tendency
-               zgrazpcmoc = xstepb  * rm_cmoc * zcompaph  * trn(ji,jj,jk,jqphy)  /       &
+               zgrazpcmoc = xstepb  * rm_cmoc * zcompaph  * trb(ji,jj,jk,jqphy)  /       &
                &            ( kp_cmoc * 1e-6_wp * cnrr_cmoc * kp_cmoc * 1e-6_wp *        &
-               &             cnrr_cmoc + trn(ji,jj,jk,jqphy)                             &
-               &            * trn(ji,jj,jk,jqphy) + rtrn ) * trn(ji,jj,jk,jqzoo)
+               &             cnrr_cmoc + trb(ji,jj,jk,jqphy)                             &
+               &            * trb(ji,jj,jk,jqphy) + rtrn ) * trb(ji,jj,jk,jqzoo)
                ! POC tendency due to detritus fraction of grazed phytoplankton
                zgrapoc   = ( 1._wp - ga_cmoc ) * zgrazpcmoc
 
@@ -278,30 +324,54 @@ CONTAINS
                ! grazing
                &                     +  ga_cmoc * zgrazpcmoc &
                ! linear mortality and loss to POC
-               &                     - ( mzn_cmoc + mzd_cmoc ) * xstepb * trn(ji,jj,jk,jqzoo) &
+               &                     - ( mzn_cmoc + mzd_cmoc ) * xstepb * trb(ji,jj,jk,jqzoo) &
                ! quadratic mortality ( convert mz2_cmoc from (molN m^-3)^-1 to (molC L^-1)^-1 )
                &                     - mz2_cmoc * ncrr_cmoc * 1e3_wp                          &
-               &                      * xstepb * trn(ji,jj,jk,jqzoo) * trn(ji,jj,jk,jqzoo)
+               &                      * xstepb * trb(ji,jj,jk,jqzoo) * trb(ji,jj,jk,jqzoo)
 
                ! contribution to phytoplankton and POC 
                tra(ji,jj,jk,jqphy) = tra(ji,jj,jk,jqphy) - zgrazpcmoc
-               tra(ji,jj,jk,jqnch) = tra(ji,jj,jk,jqnch) - zgrazpcmoc * trn(ji,jj,jk,jqnch)/(trn(ji,jj,jk,jqphy)+rtrn)
+               tra(ji,jj,jk,jqnch) = tra(ji,jj,jk,jqnch) - zgrazpcmoc * trb(ji,jj,jk,jqnch)/(trb(ji,jj,jk,jqphy)+rtrn)
                tra(ji,jj,jk,jqpoc) = tra(ji,jj,jk,jqpoc) + zgrapoc
 
                ! mortality contribution to nutrients, carbon and oxygen cycle
-               tra(ji,jj,jk,jqno3) = tra(ji,jj,jk,jqno3) + mzn_cmoc * xstepb * trn(ji,jj,jk,jqzoo)
-               tra(ji,jj,jk,jqoxy) = tra(ji,jj,jk,jqoxy) - mzn_cmoc * xstepb * trn(ji,jj,jk,jqzoo)
-               tra(ji,jj,jk,jqdic) = tra(ji,jj,jk,jqdic) + mzn_cmoc * xstepb * trn(ji,jj,jk,jqzoo)
-               tra(ji,jj,jk,jqtal) = tra(ji,jj,jk,jqtal) - mzn_cmoc * xstepb * trn(ji,jj,jk,jqzoo) * ncrr_cmoc               
-               tra(ji,jj,jk,jqpoc) = tra(ji,jj,jk,jqpoc) + mzd_cmoc * xstepb * trn(ji,jj,jk,jqzoo) &
-               &                    + ncrr_cmoc * 1e3_wp * mz2_cmoc * xstepb * trn(ji,jj,jk,jqzoo) * trn(ji,jj,jk,jqzoo)
+               tra(ji,jj,jk,jqno3) = tra(ji,jj,jk,jqno3) + mzn_cmoc * xstepb * trb(ji,jj,jk,jqzoo)
+               tra(ji,jj,jk,jqoxy) = tra(ji,jj,jk,jqoxy) - mzn_cmoc * xstepb * trb(ji,jj,jk,jqzoo)
+               tra(ji,jj,jk,jqdic) = tra(ji,jj,jk,jqdic) + mzn_cmoc * xstepb * trb(ji,jj,jk,jqzoo)
+               tra(ji,jj,jk,jqtal) = tra(ji,jj,jk,jqtal) - mzn_cmoc * xstepb * trb(ji,jj,jk,jqzoo) * ncrr_cmoc               
+               tra(ji,jj,jk,jqpoc) = tra(ji,jj,jk,jqpoc) + mzd_cmoc * xstepb * trb(ji,jj,jk,jqzoo) &
+               &                    + ncrr_cmoc * 1e3_wp * mz2_cmoc * xstepb * trb(ji,jj,jk,jqzoo) * trb(ji,jj,jk,jqzoo)
                ! O Riche Oct 28th 2022 ! This is not yet implemented.
-               ! tra(ji,jj,jk,jqdnt) = tra(ji,jj,jk,jqdnt) + mzn_cmoc * xstepb * trn(ji,jj,jk,jqzoo)
+               ! tra(ji,jj,jk,jqdnt) = tra(ji,jj,jk,jqdnt) + mzn_cmoc * xstepb * trb(ji,jj,jk,jqzoo)
                !
-               
+               ! O Riche Feb9th 2023
+               zgrapoc0(ji,jj,jk)    = zgrazpcmoc                                   ! Grazing
+               zgrazpcmoc0(ji,jj,jk) = zgrapoc                                      ! Detritus to POC
+               mzn_cmoc0(ji,jj,jk)   = mzn_cmoc  * xstepb * trb(ji,jj,jk,jqzoo)      ! exudation (nitrogen)
+               mzd_cmoc0(ji,jj,jk)   = mzd_cmoc  * xstepb * trb(ji,jj,jk,jqzoo)      ! Linear mortality and below is quadratic mort.
+               mz2_cmoc0(ji,jj,jk)   = ncrr_cmoc * xstepb * 1e3_wp * mz2_cmoc * trb(ji,jj,jk,jqzoo) * trb(ji,jj,jk,jqzoo)
+               ! O Riche Feb9th 2023
+               !
             END DO
          END DO
       END DO
+      !
+      ! O Riche Feb 9th 2023      
+      ! Zooplanton diagnostics
+      IF( lk_iomput ) THEN
+       IF( jnt == qnrdttrc ) THEN
+          CALL iom_put( "GRAZZ" , zgrapoc0(:,:,:)    * tmask_bgc_closea(:,:,:) )
+          CALL iom_put( "Z2POC" , zgrazpcmoc0(:,:,:) * tmask_bgc_closea(:,:,:) )
+          CALL iom_put( "ZEXUD" , mzn_cmoc0(:,:,:)   * tmask_bgc_closea(:,:,:) )
+          CALL iom_put( "ZMORT" , mzd_cmoc0(:,:,:)   * tmask_bgc_closea(:,:,:) )
+          CALL iom_put( "ZMORT2", mz2_cmoc0(:,:,:)   * tmask_bgc_closea(:,:,:) )
+       ENDIF
+      ENDIF      
+      !
+      ! O Riche Feb9th 2023
+      DEALLOCATE( zgrapoc0 , zgrazpcmoc0            )
+      DEALLOCATE( mzn_cmoc0, mzd_cmoc0  , mz2_cmoc0 )
+      ! O Riche Feb9th 2023
       !
       IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('zoo')")
@@ -363,7 +433,7 @@ CONTAINS
    !!----------------------------------------------------------------------
    !
 
-  SUBROUTINE cmoc_mort( kt )
+  SUBROUTINE cmoc_mort( kt, jnt )
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE p4z_mort  ***
       !!
@@ -372,13 +442,26 @@ CONTAINS
       !!
       !! ** Method  : - forward time integration (Euler or Leapfrog)
       !!---------------------------------------------------------------------
-      INTEGER, INTENT(in) ::   kt ! ocean time step
+      ! O Riche Feb 8th 2023
+      USE lib_mpp, ONLY   : ctl_stop
+      ! O Riche Feb 8th 2023      
+      INTEGER, INTENT(in) ::   kt, jnt ! ocean time step
       !!---------------------------------------------------------------------
       INTEGER  :: ji, jj, jk                                      ! loop indices
       REAL(wp) :: zcompaph , ztortp , zrespp , zmortp , zfactch   ! working variables
+      ! O Riche Feb 8th 2023
+      INTEGER  :: ierr    ! allocate error integer flag
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: mpresult         ! diag array
+      ! O Riche Feb 8th 2023
       CHARACTER (len=25) :: charout
       !
       IF( ln_timing )  CALL timing_start('cmoc_mort')
+      !
+      ! O Riche Feb 8th 2023      
+      ALLOCATE( mpresult(jpi,jpj,jpk), STAT=ierr )
+      IF( ierr /= 0 ) CALL ctl_stop('STOP', 'cmoc_mort: mpresult mem allocate failed.')
+      mpresult(:,:,:) = 0._wp
+      ! O Riche Feb 8th 2023      
       !
       !
       IF( lwp ) THEN
@@ -393,11 +476,11 @@ CONTAINS
          DO jj = 1, jpj
             DO ji = 1, jpi
                ! Note: conserve the PISCES practice of minimum phyto biomass (see zcompaph below)
-               zcompaph = MAX( ( trn(ji,jj,jk,jqphy) - 1e-8 ), 0.e0 )
+               zcompaph = MAX( ( trb(ji,jj,jk,jqphy) - 1e-8 ), 0.e0 )
                
                ! Quadratic mortality
                ! <CMOC code OR 10/19/2015> 1e.3_wp convert (umol? OR Nov 2022) L^-1 to (mol ? OR Nov 2022) m^-3 ; use xstepb the global constant to convert to d^-1
-               zrespp = mpd2_cmoc * ncrr_cmoc * 1.e3_wp * xstepb * zcompaph * trn(ji,jj,jk,jqphy)
+               zrespp = mpd2_cmoc * ncrr_cmoc * 1.e3_wp * xstepb * zcompaph * trb(ji,jj,jk,jqphy)
 
                !  Linear mortality
                ztortp = mpd_cmoc * xstepb * zcompaph
@@ -407,21 +490,36 @@ CONTAINS
 
                !   Update the arrays TRA which contains the biological sources and sinks
                !   Calculate the chlorophyll to phytoplankton ratio
-               zfactch = trn(ji,jj,jk,jqnch)/(trn(ji,jj,jk,jqphy)+rtrn)
+               zfactch = trb(ji,jj,jk,jqnch)/(trb(ji,jj,jk,jqphy)+rtrn)
 
                tra(ji,jj,jk,jqphy) = tra(ji,jj,jk,jqphy) - zmortp
                tra(ji,jj,jk,jqnch) = tra(ji,jj,jk,jqnch) - zmortp * zfactch
                tra(ji,jj,jk,jqpoc) = tra(ji,jj,jk,jqpoc) + zmortp      
-               
+      ! O Riche Feb 8th 2023               
+               mpresult(ji,jj,jk)  = zmortp
+      ! O Riche Feb 8th 2023               
             END DO
          END DO
       END DO      
+      ! O Riche Feb 8th 2023      
+      ! Mortality diagnostics
+      IF( lk_iomput ) THEN
+       IF( jnt == qnrdttrc ) THEN
+          CALL iom_put( "MORTP" , mpresult(:,:,:) * tmask_bgc_closea(:,:,:) )
+       ENDIF
+      ENDIF
+      ! O Riche Feb 8th 2023      
+      !
       ! print mean trends (used for debugging)
       IF(ln_ctl)   THEN
        WRITE(charout, FMT="('mort')")
        CALL prt_ctl_trc_info(charout)
        CALL prt_ctl_trc(tab4d=tra, mask=tmask_bgc_closea, clinfo=ctrcnm)
       ENDIF
+      !
+      ! O Riche Feb 8th 2023
+      DEALLOCATE( mpresult )
+      ! O Riche Feb 8th 2023
       !
       IF( ln_timing )  CALL timing_stop('cmoc_mort')
       !

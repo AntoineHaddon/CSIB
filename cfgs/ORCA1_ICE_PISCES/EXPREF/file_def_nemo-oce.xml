@@ -8,9 +8,18 @@
 ============================================================================================================
     -->
 
-    <file_definition type="one_file" name="@expname@_@freq@_@startdate@_@enddate@" sync_freq="1mo" min_digits="4">
+    <!--
+    <file_definition type="one_file" name="@expname@_@freq@_@startdate@_@enddate@" min_digits="4">
+    -->
+    
+    <file_definition type="one_file" name="@expname@_@freq@_@startdate@_@enddate@" sync_freq="1d" min_digits="4">
 
-      <file_group id="1m" output_freq="1mo" output_level="10" enabled=".TRUE."> <!-- real monthly files -->
+      <!--
+      <file_group id="1m" output_freq="1mo" output_level="10" enabled=".TRUE.">
+      -->
+      
+      <file_group id="1d" output_freq="1d" output_level="10" enabled=".TRUE.">
+
 
         <file id="file11" name_suffix="_grid_T" description="ocean T grid variables">
           <field field_ref="toce"        name="thetao"   level="0" />
