@@ -73,7 +73,13 @@ CONTAINS
       REWIND( numnatp_cfgb )              ! Namelist namcmocnegtr in configuration namelist : Passive tracer variables
       READ  ( numnatp_cfgb, namcmocnegtr, IOSTAT = ios, ERR = 904 )
 904   IF( ios >  0 )   CALL ctl_nam ( ios , 'namcmocnegtr in configuration namelist_cmoc' )
-
+      !
+      IF(lwp) WRITE(numout,*)
+      IF(lwp) WRITE(numout,*) ' trc_nam_cmoc : namcmocws and namcmocnegtr'
+      IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+      IF(lwp) WRITE(numout,*) '    POC sinking speed                           ws_cmoc  =', ws_cmoc
+      IF(lwp) WRITE(numout,*) '    xnegtrc block switch                    ln_cmocnegtr =', ln_cmocnegtr
+      !
       IF(lwm) WRITE( numonpb, namcmocnegtr )    
       !
    END SUBROUTINE trc_nam_cmoc

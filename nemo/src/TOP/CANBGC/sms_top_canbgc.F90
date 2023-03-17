@@ -13,7 +13,7 @@ MODULE sms_top_canbgc
 	!!----------------------------------------------------------------------
 	USE par_oce
 	USE par_trc
-  	USE oce_trc                       ! O Riche June 29th 2022: to be able to use numout file ID
+  USE oce_trc                       ! O Riche June 29th 2022: to be able to use numout file ID
 
 	IMPLICIT NONE
 	PUBLIC
@@ -134,7 +134,7 @@ MODULE sms_top_canbgc
 
 	CONTAINS
 
-    SUBROUTINE trc_xnegtr( jptra0 , jptra1 )
+    SUBROUTINE trc_xnegtr( jptra0 , jptra1 , qnegtr )
       ! 
       ! Check the effect of the trend on the current array
       ! and if any tracer goes beyond zero reduce the time step
@@ -145,11 +145,10 @@ MODULE sms_top_canbgc
       !
       USE trc, ONLY: trb, tra
       !
-      INTEGER, INTENT(in) ::  jptra0, jptra1   !: tracer indices
+      INTEGER,                          INTENT(in)    ::  jptra0, jptra1   !: tracer indices
+      REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(inout) :: qnegtr
       INTEGER             ::  jn, ji, jj, jk   !: dummy loop indices
       REAL(wp)            ::  ztra
-      !
-      REAL(wp), DIMENSION(jpi,jpj,jpk) :: qnegtr
       !
       IF( lwp ) THEN
         WRITE(numout,*)
@@ -177,10 +176,6 @@ MODULE sms_top_canbgc
       END DO    
       !                                ! where at least 1 tracer concentration becomes negative
       !                                ! and by tracer we mean only the CMOC or shared BGC tracer.
-      !
-      DO jn = jptra0, jptra1
-        tra(:,:,:,jn) = qnegtr(:,:,:) * tra(:,:,:,jn)
-      END DO
       !
     END SUBROUTINE trc_xnegtr
 
@@ -228,8 +223,10 @@ MODULE sms_top_canbgc
 		!
 		IF( sms_top_alloc /= 0 )   CALL ctl_stop( 'STOP', 'sms_top_alloc: failed to allocate arrays' ) 
 		!
-
-		
+    ! OR Jan 19th 2023
+    ! default concentration (useful to flag the other layers when only trc_che_2D is used).
+    qhi(:,:,:) = 1.e-9_wp
+    !
 		END FUNCTION sms_top_alloc
 
 

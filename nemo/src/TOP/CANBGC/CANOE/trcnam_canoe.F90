@@ -15,7 +15,7 @@ MODULE trcnam_canoe
    USE iom             ! IO manager
    !
    USE sms_top_canbgc  ! shared arrays across BGCM code
-   USE sms_canoe
+   USE sms_canoe, ONLY    : ws_canoe, ws_canoe2, ws_canoec, ln_canoenegtr
    !
    IMPLICIT NONE
    PRIVATE
@@ -76,6 +76,14 @@ CONTAINS
 904   IF( ios >  0 )   CALL ctl_nam ( ios , 'namcanoenegtr in configuration namelist_canoe' )
 
       IF(lwm) WRITE( numonpb, namcanoenegtr )    
+      !
+      IF(lwp) WRITE(numout,*)
+      IF(lwp) WRITE(numout,*) ' trc_nam_canoe : namcanws and namcanoenegtr'
+      IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+      IF(lwp) WRITE(numout,*) '    POC sinking speed                         ws_canoe  =', ws_canoe
+      IF(lwp) WRITE(numout,*) '    Big particles sinking speed               ws_canoe2 =', ws_canoe2
+      IF(lwp) WRITE(numout,*) '    CaCO3 sinking speed                       ws_canoec =', ws_canoec
+      IF(lwp) WRITE(numout,*) '    xnegtrc block switch                  ln_canoenegtr =', ln_canoenegtr
       !
       END SUBROUTINE trc_nam_canoe
       !

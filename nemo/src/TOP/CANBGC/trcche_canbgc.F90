@@ -21,7 +21,8 @@ MODULE trcche_canbgc
    USE lib_mpp           !  MPP library
 
    USE in_out_manager    ! in_out_manager grants access to numout file ID
-
+   USE iom                       ! to access iom_put for diagnostics
+   
    USE trc_closea_canbgc ! bgc-specific closea mask
    USE trcsrc_canbgc     ! external sources module
 
@@ -248,6 +249,7 @@ CONTAINS
       REAL(wp) ::   zak1, zak2, zakb, zakw, zakp1, zakp2, zakp3, zaksi
       REAL(wp) ::   ztmas, ztmas1
       REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: hi
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zph0
       REAL(wp), DIMENSION(2) :: hion_CA
       !!---------------------------------------------------------------------
 
@@ -334,11 +336,24 @@ CONTAINS
                hi(ji,jj) = zah2 * zfact
                ! calculate [CO2*] for export to gas flux SR
                qh2co3(ji,jj) = ( 2.* zdic - zcalk ) / ( 2.+ zak1 / zah2 ) * zfact
-
+               qhi(ji,jj,1) = hi(ji,jj)    ! OR Jan 19th 2023
             END DO
          END DO
       END DO
       !
+      ! OR Jan 24th 2023
+      ! Moving pH diagnostics here
+      ALLOCATE( zph0(jpi,jpj,jpk) )
+      zph0(:,:,:) = rtrn 
+      DO jj= 1, jpj
+        DO ji= 1, jpi
+          zph0(ji,jj,1) = -1. * LOG10( MAX( qhi(ji,jj,1) + rtrn , rtrn ) ) 
+        END DO
+      END DO
+      !
+      CALL iom_put("pH", zph0(:,:,:) * tmask_bgc_closea(:,:,:))
+      DEALLOCATE( zph0 )
+      ! 
       DEALLOCATE( hi )
       !
       IF( ln_timing )  CALL timing_stop('trc_che_2D')
@@ -360,6 +375,7 @@ CONTAINS
       REAL(wp) ::   zak1, zak2, zakb, zakw, zakp1, zakp2, zakp3, zaksi
       REAL(wp) ::   ztmas, ztmas1
       REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: hi
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zph0
       REAL(wp), DIMENSION(2) :: hion_CA
       !!---------------------------------------------------------------------
       !
@@ -409,13 +425,28 @@ CONTAINS
                   hi(ji,jj,jk) = zah2 * zfact
                ! calculate [CO3--] and [H+] for export to other SR's
                   qco3(ji,jj,jk) = zcalk / ( 2. + zah2 / zak2 )     ! no conversion to mol L^-1 as it is not applied to Ksp
-                  qhi(ji,jj,jk) = zah2
+                  qhi(ji,jj,jk) = hi(ji,jj,jk)     ! OR Jan 19th 2023
 
                END DO
             END DO
          END DO
          !
       END DO 
+      !
+      ! OR Jan 24th 2023
+      ! Moving pH diagnostics here
+      ALLOCATE( zph0(jpi,jpj,jpk) )
+      zph0(:,:,:) = rtrn 
+      DO jk= 1, jpk
+        DO jj= 1, jpj
+          DO ji= 1, jpi
+          zph0(ji,jj,jk) = -1. * LOG10( MAX( qhi(ji,jj,jk) + rtrn , rtrn ) ) 
+          END DO
+        END DO
+      END DO
+      !
+      CALL iom_put("pH", zph0(:,:,:) * tmask_bgc_closea(:,:,:))
+      DEALLOCATE( zph0 )      
       !
       DEALLOCATE( hi )
       !

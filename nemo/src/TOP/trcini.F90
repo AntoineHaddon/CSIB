@@ -163,17 +163,32 @@ CONTAINS
          ln_trc_obc(jn) =       sn_tracer(jn)%llobc
       END DO
       !
-      DO jp = 1, jp_cmoc
-         jn = jp + jp_bgc
-         ctrcnm    (jn) = TRIM( cmoc_tracer(jp)%clsname )
-         ctrcln    (jn) = TRIM( cmoc_tracer(jp)%cllname )
-         ctrcun    (jn) = TRIM( cmoc_tracer(jp)%clunit  )
-         ln_trc_ini(jn) =       cmoc_tracer(jp)%llinit
-         ln_trc_sbc(jn) =       cmoc_tracer(jp)%llsbc
-         ln_trc_cbc(jn) =       cmoc_tracer(jp)%llcbc
-         ln_trc_obc(jn) =       cmoc_tracer(jp)%llobc
-      END DO
+      IF( ln_cmoc ) THEN  !! OR Jan 19th 2023
+        DO jp = 1, jp_cmoc
+           jn = jp + jp_bgc
+           ctrcnm    (jn) = TRIM( cmoc_tracer(jp)%clsname )
+           ctrcln    (jn) = TRIM( cmoc_tracer(jp)%cllname )
+           ctrcun    (jn) = TRIM( cmoc_tracer(jp)%clunit  )
+           ln_trc_ini(jn) =       cmoc_tracer(jp)%llinit
+           ln_trc_sbc(jn) =       cmoc_tracer(jp)%llsbc
+           ln_trc_cbc(jn) =       cmoc_tracer(jp)%llcbc
+           ln_trc_obc(jn) =       cmoc_tracer(jp)%llobc
+        END DO
+      END IF
       !
+      IF( ln_canoe ) THEN  !! OR Jan 19th 2023
+        DO jp = 1, jp_canoe
+           jn = jp + jp_bgc
+           ctrcnm    (jn) = TRIM( canoe_tracer(jp)%clsname )
+           ctrcln    (jn) = TRIM( canoe_tracer(jp)%cllname )
+           ctrcun    (jn) = TRIM( canoe_tracer(jp)%clunit  )
+           ln_trc_ini(jn) =       canoe_tracer(jp)%llinit
+           ln_trc_sbc(jn) =       canoe_tracer(jp)%llsbc
+           ln_trc_cbc(jn) =       canoe_tracer(jp)%llcbc
+           ln_trc_obc(jn) =       canoe_tracer(jp)%llobc
+        END DO
+      END IF
+      !      
       DO jn = 1, jp_dia3d +jp_dia2d
          cdianm    (jn) = TRIM( sn_dia(jn)%sname )
          cdialn    (jn) = TRIM( sn_dia(jn)%lname )
@@ -223,7 +238,9 @@ CONTAINS
                        CALL  trc_ldf_ini          ! lateral diffusion
                        !                          ! vertical diffusion: always implicit time stepping scheme
                        CALL  trc_rad_ini          ! positivity of passive tracers 
-                       CALL  trc_sink_ini         ! Vertical sedimentation of particles
+      ! OR Jan 18th 2023
+      ! CanOE and CMOC are using their own sinking scheme for now.
+      IF(.NOT. ln_cmoc .AND. .NOT. ln_canoe)      CALL  trc_sink_ini         ! Vertical sedimentation of particles
       !
    END SUBROUTINE trc_ini_trp
 

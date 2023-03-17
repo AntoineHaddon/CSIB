@@ -7,11 +7,9 @@
 =                                            DO NOT CHANGE                                                 =
 ============================================================================================================
     -->
-   <!-- 
+
    <field_definition level="1" prec="4" operation="average" enabled=".TRUE." default_value="1.e20" >
-   -->
-   <field_definition level="1" prec="4" operation="instant" enabled=".TRUE." default_value="1.e20" >
-    <!-- 
+
 ============================================================================================================
                                      Biogeochemistry model variables + TOP tracers
 ============================================================================================================
@@ -78,22 +76,28 @@
        <field id="surf_chla"   long_name="surface chl-a external file"            unit="mg Chla/m3"          grid_ref="grid_T_2D" />
 
        <!-- CMOC PP diagnostics -->
-       <field id="PPPHY"       long_name="Primary production"                     unit="mol/m3/s"            grid_ref="grid_T_3D" />
-       <field id="Mumax"       long_name="Phyto growth rate"                      unit="d^-1"                grid_ref="grid_T_3D" />
+       <field id="PPPHY"       long_name="Primary production"                     unit="mol/L/ts"            grid_ref="grid_T_3D" />
+       <field id="Mumax"       long_name="Phyto growth rate"                      unit="s^-1"                grid_ref="grid_T_3D" />
        <field id="LNnut"       long_name="Nitrogen limitation term in Nanophyto"  unit="-"                   grid_ref="grid_T_3D" />
        <field id="LNFe"        long_name="Iron limitation term in Nanophyto"      unit="-"                   grid_ref="grid_T_2D" />
        <field id="LNlight"     long_name="Light limitation term in Nanophyto"     unit="-"                   grid_ref="grid_T_3D" />
        <field id="PARCMOC"     long_name="Photosynthetically Available Radiation" unit="W/m2"                grid_ref="grid_T_3D" />
        <field id="thchl2C"     long_name="Balanced chla:C ratio"                  unit="mg chla mg C^-3"     grid_ref="grid_T_3D" />
        <field id="chlaP"       long_name="Chl-a   production"                     unit="mg chla m^-3 s^-1"   grid_ref="grid_T_3D" />
-       <field id="photor"      long_name="Photosynthetic rate"                    unit="d^-1"                grid_ref="grid_T_3D" />
-       <!-- CMOC export diagnostics -->
-       <field id="oomask"      long_name="Open ocean mask"                        unit="-"                   grid_ref="grid_T_2D" />
+       <field id="photor"      long_name="Photosynthetic rate"                    unit="s^-1"                grid_ref="grid_T_3D" />
+
+       <!-- Temporary addition -->
+       <field id="MORTP"       long_name="Phyto mortality rate"                   unit="mol/L/ts"            grid_ref="grid_T_3D" />
+       <field id="REMNO3"      long_name="Nitrate remineralization rate/redet"    unit="mol/L/ts"            grid_ref="grid_T_3D" />
+       <field id="oomask"      long_name="Open ocean mask v. level>= 28/ ~150m"   unit="-"                   grid_ref="grid_T_2D" />
        <field id="EPC100"      long_name="Export of carbon particles at 100 m"    unit="mol/m2/s"            grid_ref="grid_T_2D" />
        <field id="EPCALC100"   long_name="Export of Calcite at 100 m"             unit="mol/m2/s"            grid_ref="grid_T_2D" />
-       <!-- CMOC N2 diagnostics -->
-       <field id="Nfix"        long_name="Nitrogen fixation at surface"           unit="mol/m2/s"            grid_ref="grid_T_2D" />
-       <field id="Denit"       long_name="Water column denitrification"           unit="mol/m2/s"            grid_ref="grid_T_2D" />
+       <field id="EPCz"        long_name="Export of carbon at all depths"         unit="mol/m2/s"            grid_ref="grid_T_3D" />
+       <field id="GRAZZ"       long_name="Zooplankton grazing"                    unit="mol/L/ts"            grid_ref="grid_T_3D" />
+       <field id="Z2POC"       long_name="Zooplankton excretion"                  unit="mol/L/ts"            grid_ref="grid_T_3D" />
+       <field id="ZEXUD"       long_name="Zooplankton exudation"                  unit="mol/L/ts"            grid_ref="grid_T_3D" />
+       <field id="ZMORT"       long_name="Zooplankton mortality (linear)"         unit="mol/L/ts"            grid_ref="grid_T_3D" />
+       <field id="ZMORT2"      long_name="Zooplankton mortality (quadratic)"      unit="mol/L/ts"            grid_ref="grid_T_3D" />
        
        <!-- Temporary addition -->
        <!-- Ideal Age Tracer (IAT) from TOP -->

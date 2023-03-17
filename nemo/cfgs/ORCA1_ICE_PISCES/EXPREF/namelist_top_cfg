@@ -1,14 +1,5 @@
 !!>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-!! NEMO/TOP :   Reference namelist 
-!!>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-!!               - tracer run information                (namtrc_run)
-!!               - tracer definition                     (namtrc    )
-!!               - tracer data initialisation            (namtrc_dta)
-!!               - tracer advection                      (namtrc_adv)
-!!               - tracer lateral diffusion              (namtrc_ldf)
-!!               - tracer vertical physics               (namtrc_zdf)
-!!               - tracer newtonian damping              (namtrc_dmp)
-!!               - dynamical tracer trends               (namtrc_trd)
+!! NEMO/TOP1 :  Configuration namelist : used to overwrite defaults values defined in SHARED/namelist_top_ref
 !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 !-----------------------------------------------------------------------
 &namtrc_run      !   run information
@@ -16,40 +7,60 @@
    nn_dttrc      =  1        !  time step frequency for passive sn_tracers
    ln_top_euler  = .false.   !  use Euler time-stepping for TOP
    ln_rsttr      = .false.   !  start from a restart file (T) or not (F)
-   nn_rsttr      =   0       !  restart control = 0 initial time step is not compared to the restart file value
-                             !                  = 1 do not use the value in the restart file
-                             !                  = 2 calendar parameters read in the restart file
    cn_trcrst_in  = "restart_trc"   !  suffix of pass. sn_tracer restart name (input)
    cn_trcrst_indir = "."           !  directory from which to read input passive tracer restarts
    cn_trcrst_out = "restart_trc"   !  suffix of pass. sn_tracer restart name (output)
    cn_trcrst_outdir = "."          !  directory to which to write output passive tracer restarts
-   !   
-   qnrdttrc = 4    ! time splitting factor
 /
 !-----------------------------------------------------------------------
 &namtrc          !   tracers definition
 !-----------------------------------------------------------------------
-   jp_bgc        =  0           !  Number of passive tracers of the BGC model
-   !
+   jp_bgc        =  24
+!
    ln_canoe      =  .false.     !  Run CANOE  BGC model 
    ln_cmoc       =  .false.     !  Run CMOC   BGC model 
-   ln_pisces     =  .false.     !  Run PISCES BGC model 
+   ln_pisces     =  .true.      !  Run PISCES BGC model 
    ln_my_trc     =  .false.     !  Run MY_TRC BGC model
-   ln_age        =  .false.     !  Run the sea water age tracer
+   ln_age        =  .true.      !  Run the sea water age tracer
    ln_cfc11      =  .false.     !  Run the CFC11 passive tracer
    ln_cfc12      =  .false.     !  Run the CFC12 passive tracer
    ln_sf6        =  .false.     !  Run the SF6 passive tracer
-   ln_c14        =  .false.     !  Run the Radiocarbon passive tracer
-   !
-   ln_trcdta     =  .false.  !  Initialisation from data input file (T) or not (F)
+   ln_c14        =  .false.     !  Run the Radiocarbon passive tr
+!
+   ln_trcdta     =  .true.  !  Initialisation from data input file (T) or not (F)
    ln_trcdmp     =  .false.  !  add a damping termn (T) or not (F)
    ln_trcdmp_clo =  .false.  !  damping term (T) or not (F) on closed seas
    !
-   jp_dia3d      = 0         ! Number of 3D diagnostic variables
-   jp_dia2d      = 0         ! Number of 2D diagnostic variables
+   jp_dia3d      = 0 ! 3 ! 5  !7 ! Number of 3D diagnostic variables
+   jp_dia2d      = 0 ! 2 ! 10    ! Number of 2D diagnostic variables
    !_____________!___________!_________________________________________!____________!________________!
-   !             !    name   !           title of the field            !   units    ! init from file ! 
-!  sn_tracer(1)  = 'tracer  ', 'Tracer  Concentration                 ',   ' - '    ,   .false.
+!                 !           !                                          !             !
+!                 !    name   !           title of the field             !   units     ! initial data from file or not !
+!                 !           !                                          !             !
+   sn_tracer(1)   = 'DIC     ' , 'Dissolved inorganic Concentration      ',  'mol-C/L' ,  .true.
+   sn_tracer(2)   = 'Alkalini' , 'Total Alkalinity Concentration         ',  'eq/L '   ,  .true.
+   sn_tracer(3)   = 'O2      ' , 'Dissolved Oxygen Concentration         ',  'mol-C/L' ,  .true.
+   sn_tracer(4)   = 'CaCO3   ' , 'Calcite Concentration                  ',  'mol-C/L' ,  .false.
+   sn_tracer(5)   = 'PO4     ' , 'Phosphate Concentration                ',  'mol-C/L' ,  .true.
+   sn_tracer(6)   = 'POC     ' , 'Small organic carbon Concentration     ',  'mol-C/L' ,  .false.
+   sn_tracer(7)   = 'Si      ' , 'Silicate Concentration                 ',  'mol-C/L' ,  .true.
+   sn_tracer(8)   = 'PHY     ' , 'Nanophytoplankton Concentration        ',  'mol-C/L' ,  .false.
+   sn_tracer(9)   = 'ZOO     ' , 'Microzooplankton Concentration         ',  'mol-C/L' ,  .false.
+   sn_tracer(10)  = 'DOC     ' , 'Dissolved organic Concentration        ',  'mol-C/L' ,  .true.
+   sn_tracer(11)  = 'PHY2    ' , 'Diatoms Concentration                  ',  'mol-C/L' ,  .false.
+   sn_tracer(12)  = 'ZOO2    ' , 'Mesozooplankton Concentration          ',  'mol-C/L' ,  .false.
+   sn_tracer(13)  = 'DSi     ' , 'Diatoms Silicate Concentration         ',  'mol-C/L' ,  .false.
+   sn_tracer(14)  = 'Fer     ' , 'Dissolved Iron Concentration           ',  'mol-C/L' ,  .true.
+   sn_tracer(15)  = 'BFe     ' , 'Big iron particles Concentration       ',  'mol-C/L' ,  .false.
+   sn_tracer(16)  = 'GOC     ' , 'Big organic carbon Concentration       ',  'mol-C/L' ,  .false.
+   sn_tracer(17)  = 'SFe     ' , 'Small iron particles Concentration     ',  'mol-C/L' ,  .false.
+   sn_tracer(18)  = 'DFe     ' , 'Diatoms iron  Concentration            ',  'mol-C/L' ,  .false.
+   sn_tracer(19)  = 'GSi     ' , 'Sinking biogenic Silicate Concentration',  'mol-C/L' ,  .false.
+   sn_tracer(20)  = 'NFe     ' , 'Nano iron Concentration                ',  'mol-C/L' ,  .false.
+   sn_tracer(21)  = 'NCHL    ' , 'Nano chlorophyl Concentration          ',  'mol-C/L' ,  .false.
+   sn_tracer(22)  = 'DCHL    ' , 'Diatoms chlorophyl Concentration       ',  'mol-C/L' ,  .false.
+   sn_tracer(23)  = 'NO3     ' , 'Nitrates Concentration                 ',  'mol-C/L' ,  .true.
+   sn_tracer(24)  = 'NH4     ' , 'Ammonium Concentration                 ',  'mol-C/L' ,  .false.
 /
 !-----------------------------------------------------------------------
 &namage          !   AGE 
@@ -60,11 +71,25 @@
 !-----------------------------------------------------------------------
 &namtrc_dta      !    Initialisation from data input file
 !-----------------------------------------------------------------------
-!                !  file name        ! frequency (hours) ! variable  ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation ! land/sea mask !
-!                !                   !  (if <0  months)  !   name    !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  ! filename      !
-   sn_trcdta(1)  = 'data_TRC_nomask' ,        -12.       ,  'TRC'    ,    .false.   , .true. , 'yearly'  , ''       , ''       , ''
-   !
+!          !  file name  ! frequency (hours) ! variable  ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation ! land/sea mask !
+!          !             !  (if <0  months)  !   name    !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  ! filename      !
+   sn_trcdta(1)  = 'data_DIC_nomask'        ,        -12.       ,  'DIC'     ,    .false.   , .true. , 'yearly'  , ''       , ''   , ''
+   sn_trcdta(2)  = 'data_Alkalini_nomask'   ,        -12.       ,  'Alkalini',    .false.   , .true. , 'yearly'  , ''       , ''   , ''
+   sn_trcdta(3)  = 'data_O2_nomask'         ,        -1.        ,  'O2'      ,    .true.    , .true. , 'yearly'  , ''       , ''   , ''
+   sn_trcdta(5)  = 'data_PO4_nomask'        ,        -1.        ,  'PO4'     ,    .true.    , .true. , 'yearly'  , ''       , ''   , ''
+   sn_trcdta(7)  = 'data_Si_nomask'         ,        -1.        ,  'Si'      ,    .true.    , .true. , 'yearly'  , ''       , ''   , ''
+   sn_trcdta(10) = 'data_DOC_nomask'        ,        -12.       ,  'DOC'     ,    .false.   , .true. , 'yearly'  , ''       , ''   , ''
+   sn_trcdta(14) = 'data_Fer_nomask'        ,        -12.       ,  'Fer'     ,    .false.   , .true. , 'yearly'  , ''       , ''   , ''
+   sn_trcdta(23) = 'data_NO3_nomask'        ,        -1.        ,  'NO3'     ,    .true.    , .true. , 'yearly'  , ''       , ''   , ''
    cn_dir        =  './'     !  root directory for the location of the data files
+   rn_trfac(1)   =   1.0e-06  !  multiplicative factor
+   rn_trfac(2)   =   1.0e-06  !  -      -      -     -
+   rn_trfac(3)   =  44.6e-06  !  -      -      -     -
+   rn_trfac(5)   = 122.0e-06  !  -      -      -     -
+   rn_trfac(7)   =   1.0e-06  !  -      -      -     -
+   rn_trfac(10)  =   1.0      !  -      -      -     -
+   rn_trfac(14)  =   1.0      !  -      -      -     -
+   rn_trfac(23)  =   7.6e-06  !  -      -      -     -
 /
 !-----------------------------------------------------------------------
 &namtrc_adv      !   advection scheme for passive tracer                (default: NO selection)
@@ -73,7 +98,7 @@
    ln_trcadv_cen =  .false.  !  2nd order centered scheme
       nn_cen_h   =  4               !  =2/4, horizontal 2nd order CEN / 4th order CEN
       nn_cen_v   =  4               !  =2/4, vertical   2nd order CEN / 4th order COMPACT
-   ln_trcadv_fct =  .false.  !  FCT scheme
+   ln_trcadv_fct =  .true.  !  FCT scheme
       nn_fct_h   =  2               !  =2/4, horizontal 2nd / 4th order 
       nn_fct_v   =  2               !  =2/4, vertical   2nd / COMPACT 4th order 
    ln_trcadv_mus =  .false.  !  MUSCL scheme
@@ -87,7 +112,7 @@
 !-----------------------------------------------------------------------
 !                            !  Type of the operator:
    ln_trcldf_OFF   =  .false.    !  No explicit diffusion
-   ln_trcldf_tra   =  .false.    !  use active tracer setting
+   ln_trcldf_tra   = .true.      !  use active tracer setting
    !                         !  Coefficient (defined with namtra_ldf coefficient)
    rn_ldf_multi    = 1.          !  multiplier of aht for TRC mixing coefficient
    rn_fact_lap     = 1.          !  Equatorial enhanced zonal eddy diffusivity (lap only)
@@ -95,7 +120,7 @@
 !-----------------------------------------------------------------------
 &namtrc_rad      !  treatment of negative concentrations 
 !-----------------------------------------------------------------------
-   ln_trcrad     =  .true.   !  artificially correct negative concentrations (T) or not (F)
+   ln_trcrad     =  .false.   !  artificially correct negative concentrations (T) or not (F)
 /
 !-----------------------------------------------------------------------
 &namtrc_snk      !  Sedimentation of particles
@@ -152,20 +177,4 @@
                              !  = 0 NO damping of tracers at open boudaries
                              !  = 1 Only for tracers forced with external data
                              !  = 2 Damping applied to all tracers
-/
-!-----------------------------------------------------------------------
-&namtrc_opt    !   parameters for optics
-!-----------------------------------------------------------------------
-!              !  file name       ! frequency (hours) ! variable  ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation ! land/sea mask !
-!              !                  !  (if <0  months)  !   name    !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  ! filename      !
-   sn_par      = 'par.orca'       ,     24.           , 'fr_par'  ,  .true.      , .true. , 'yearly'  , ''       , ''       , ''
-   cn_dir      = './'      !  root directory for the location of the dynamical files
-   ln_varpar   =  .false.  ! boolean for PAR variable
-   parlux      =  0.43     ! Fraction of shortwave as PAR
-! 1-band PAR
-   kw_cmoc     =  0.04          ! PAR attenuation coefficient for seawater (m^-1)
-   kchl_cmoc   =  0.03          ! PAR attenuation for chlorophyll          (m^-1) (mgChl m^-3)^-1
-! par stairs profile for test purposes
-   parval      = 100.           ! surface PAR constant
-   zlevel      = 5              ! vertical level where PAR is non-zero
 /

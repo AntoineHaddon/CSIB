@@ -31,6 +31,7 @@ MODULE trcopt_canbgc
 
    PUBLIC   trc_opt              ! called in trcsms_canoe
    PUBLIC   trc_opt_1band        ! called in trcsms_cmoc
+   PUBLIC   trc_opt_stairs       ! called for test purposes, only have a fix value above a given depth/z layer
    PUBLIC   trc_opt_alloc        !
    PUBLIC   trc_opt_init         !
 
@@ -40,6 +41,8 @@ MODULE trcopt_canbgc
    REAL(wp) ::   xsi0r           ! 1. /rn_si0
    
    REAL(wp) ::   kw_cmoc, kchl_cmoc ! 1-band PAR parameters
+   INTEGER  ::   zlevel  ! trc_opt_stairs parameter
+   REAL(wp) ::   parval  ! trc_opt_stairs parameter
 
    TYPE(FLD), ALLOCATABLE, DIMENSION(:) ::   sf_par      ! structure of input par
    INTEGER , PARAMETER :: nbtimes = 366  !: maximum number of times record in a file
@@ -55,8 +58,10 @@ MODULE trcopt_canbgc
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::  emoyb           !: averaged PAR iver the mixed layer
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::  etot_ndcyb      !: PAR over 24h in case of diurnal cycle
 
-   REAL(wp), PUBLIC, TARGET, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::  etotb           !: par (photosynthetic available radiation)
-   REAL(wp), PUBLIC, POINTER            , SAVE, DIMENSION(:,:,:) ::  par_3bands      !: pointer/alias for etotb
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::  etotb           !: par (photosynthetic available radiation)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::  par_3bands      !: 
+
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::  par_stairs      !: trc_opt_stairs final output
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
@@ -65,8 +70,8 @@ MODULE trcopt_canbgc
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE trc_opt( kt )
-   ! SUBROUTINE trc_opt( kt, knt )
+   ! SUBROUTINE trc_opt( kt )
+   SUBROUTINE trc_opt( kt, knt )
    ! O Riche Aug 16th 2022
    ! knt is for time splitting, not implemented 
    ! at least for now
@@ -80,8 +85,8 @@ CONTAINS
       !!                chla concentration with light att.
       !!                based on Morel et al 1981
       !!---------------------------------------------------------------------
-      ! INTEGER, INTENT(in) ::   kt, knt   ! ocean time step 
-      INTEGER, INTENT(in) ::   kt        ! ocean time step 
+      INTEGER, INTENT(in) ::   kt, knt   ! ocean time step 
+      ! INTEGER, INTENT(in) ::   kt        ! ocean time step 
       ! O Riche Aug 16th 2022
       ! knt is for time splitting in PISCES
       ! see trcsms_pisces s/routine for reference, look for jnt and p4z_bio call
@@ -126,7 +131,7 @@ CONTAINS
       ! as a tracer
       ! for now read surface chlorophyll external file and 
       ! apply an e-folding of 30 m.
-      !  zchl3d(:,:,:) = trb(:,:,:,jqnch) + trb(:,:,:,jqdch)
+      !  zchl3d(:,:,:) = trb(:,:,:,jrnch) + trb(:,:,:,jrdch)
       !  CALL trc_src2d( kt, js2d_chla  )
       ! O Riche Sept 13th 2022
       ! this assumes that chlorophyll can be max 2 sizes
@@ -155,18 +160,36 @@ CONTAINS
         IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~'
         IF( lwp ) WRITE(numout,*)
         IF( lwp ) CALL FLUSH(numout)         
-        IF( iom_use("NCHL") )  ztotchla(:,:,:) = trn(:,:,:,jqnch)
+        IF( iom_use("NCHL") ) THEN
+          IF( lwp ) WRITE(numout,*), 'trc_opt: NCHL detected by iom_use S/R.'
+          IF( lwp ) WRITE(numout,*), 'trc_opt: ztotchla assigned current trn(:,:,:,jrnch) values'
+          IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'          
+          IF( lwp ) WRITE(numout,*)
+          ztotchla(:,:,:) = trn(:,:,:,jrnch)        
       ENDIF
-      ! IF( ln_canoe ) THEN
-        ! IF( lwp ) WRITE(numout,*) 'trc_opt: CanOE selected:'
-        ! IF( lwp ) WRITE(numout,*) 'using both CanOE chla-a tracers'
-        ! IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-        ! IF( lwp ) WRITE(numout,*)
-        ! IF( lwp ) CALL FLUSH(numout)       
-        ! IF( iom_use("NCHL") )  ztotchla(:,:,:) = trn(:,:,:,jrnch)
-        ! IF( iom_use("DCHL") )  ztotchla(:,:,:) = ztotchla(:,:,:) + trn(:,:,:,jrdch)
-      ! ENDIF
-      !
+      ENDIF
+      IF( ln_canoe ) THEN
+        IF( lwp ) WRITE(numout,*) 'trc_opt: CanOE selected:'
+        IF( lwp ) WRITE(numout,*) 'using both CanOE chla-a tracers'
+        IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+        IF( lwp ) WRITE(numout,*)
+        IF( lwp ) CALL FLUSH(numout)       
+        IF( iom_use("NCHL") ) THEN
+          IF( lwp ) WRITE(numout,*), 'trc_opt: NCHL detected by iom_use S/R.'
+          IF( lwp ) WRITE(numout,*), 'trc_opt: ztotchla assigned current trn(:,:,:,jrnch) values'
+          IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'          
+          IF( lwp ) WRITE(numout,*)        
+          ztotchla(:,:,:) = trn(:,:,:,jrnch)
+        ENDIF
+        IF( iom_use("DCHL") ) THEN
+          IF( lwp ) WRITE(numout,*), 'trc_opt: DCHL detected by iom_use S/R.'
+          IF( lwp ) WRITE(numout,*), 'trc_opt: ztotchla assigned current trn(:,:,:,jrdch) values'
+          IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'          
+          IF( lwp ) WRITE(numout,*)        
+          ztotchla(:,:,:) = ztotchla(:,:,:) + trn(:,:,:,jrdch)
+        ENDIF
+      ENDIF
+      
       DO jk = 1, jpkm1   
          DO jj = 1, jpj
             DO ji = 1, jpi
@@ -293,7 +316,7 @@ CONTAINS
       END DO
       !
       ! O Riche Aug 16th 2022, time splitting not implemented at least for now.
-      IF( lk_iomput ) THEN ! .AND.  knt == nrdttrc ) THEN
+      IF( lk_iomput .AND. knt == qnrdttrc ) THEN
          CALL iom_put( "Heup" , heupb(:,:  ) * tmask_bgc_closea(:,:,1) )  ! euphotic layer depth
          CALL iom_put( "PARDM", zpar(:,:,: ) * tmask_bgc_closea(:,:,:) )  ! diagnostic : PAR with no diurnal cycle (mixed layer mean within the mxl)
          CALL iom_put( "PAR"  , emoyb(:,:,:) * tmask_bgc_closea(:,:,:) )  ! Photosynthetically Available Radiation (3-band att., mxl meam within the mxl)
@@ -305,9 +328,9 @@ CONTAINS
       !
    END SUBROUTINE trc_opt
 
-   SUBROUTINE trc_opt_1band( kt )
+   SUBROUTINE trc_opt_1band( kt , knt )
    !
-      INTEGER, INTENT(in)  :: kt                 ! ocean time step
+      INTEGER, INTENT(in)  :: kt, knt            ! ocean time step
       INTEGER              :: ierr, ji, jj, jk
       REAL(wp)             :: zchl               ! temporary value of chla
       !
@@ -382,15 +405,27 @@ CONTAINS
           ! ENDIF
         ENDIF
       ENDIF
-      ! IF( ln_canoe ) THEN
-        ! IF( lwp ) WRITE(numout,*) 'trc_opt_1band: CanOE selected:'
-        ! IF( lwp ) WRITE(numout,*) 'using both CanOE chla-a tracers'
-        ! IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-        ! IF( lwp ) WRITE(numout,*)
-        ! IF( lwp ) CALL FLUSH(numout)
-        ! IF( iom_use("NCHL") )  ztotchla(:,:) = trn(:,:,1,jrnch)  !!! OR Jan 23rd 2023 ! Only use the surface ztotchla values
-        ! IF( iom_use("DCHL") )  ztotchla(:,:) = ztotchla(:,:) + trn(:,:,1,jrdch)  !!! OR Jan 23rd 2023 ! Only use the surface ztotchla values    
-      ! ENDIF
+      IF( ln_canoe ) THEN
+        IF( lwp ) WRITE(numout,*) 'trc_opt_1band: CanOE selected:'
+        IF( lwp ) WRITE(numout,*) 'using both CanOE chla-a tracers'
+        IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+        IF( lwp ) WRITE(numout,*)
+        IF( lwp ) CALL FLUSH(numout)
+        IF( iom_use("NCHL") ) THEN
+          IF( lwp ) WRITE(numout,*), 'trc_opt_1band: NCHL detected by iom_use S/R.'
+          IF( lwp ) WRITE(numout,*), 'trc_opt_1band: ztotchla assigned current trn(:,:,1,jrnch) values'
+          IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'          
+          IF( lwp ) WRITE(numout,*)
+          ztotchla(:,:) = trn(:,:,1,jrnch)  !!! OR Jan 23rd 2023 ! Only use the surface ztotchla values
+        ENDIF
+        IF( iom_use("DCHL") ) THEN
+          IF( lwp ) WRITE(numout,*), 'trc_opt_1band: DCHL detected by iom_use S/R.'
+          IF( lwp ) WRITE(numout,*), 'trc_opt_1band: ztotchla added current trn(:,:,1,jrdch) values'
+          IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'          
+          IF( lwp ) WRITE(numout,*)
+          ztotchla(:,:) = ztotchla(:,:) + trn(:,:,1,jrdch)  !!! OR Jan 23rd 2023 ! Only use the surface ztotchla values   
+        ENDIF
+      ENDIF
       !
       DO jk = 1, jpkm1
         DO jj = 1, jpj
@@ -416,11 +451,68 @@ CONTAINS
       !
       DEALLOCATE(zetot, zparsw)
       !
-      IF( lk_iomput )  CALL iom_put("PAR2BIO", par_1band(:,:,:) * tmask_bgc_closea(:,:,:) ) ! PAR to use for CMOC (or CanOE)
+      IF( lk_iomput .AND.  knt == qnrdttrc ) THEN
+        CALL iom_put( "Heup" ,                     tmask_bgc_closea(:,:,1) )  ! euphotic layer depth
+        CALL iom_put( "PARDM",                     tmask_bgc_closea(:,:,:) )  ! diagnostic : PAR with no diurnal cycle (mixed layer mean within the mxl)
+        CALL iom_put( "PAR"  ,                     tmask_bgc_closea(:,:,:) )  ! Photosynthetically Available Radiation (3-band att., mxl meam within the mxl)
+        CALL iom_put( "PAR3" ,                     tmask_bgc_closea(:,:,:) )  ! Photosynthetically Available Radiation (no band att.)
+
+        CALL iom_put("PAR2BIO", par_1band(:,:,:) * tmask_bgc_closea(:,:,:) ) ! PAR to use for CMOC (or CanOE)
+      ENDIF
       !
       IF( ln_timing )  CALL timing_stop('trc_opt_1band')      
          
    END SUBROUTINE trc_opt_1band
+
+   SUBROUTINE trc_opt_stairs( kt , knt, zlevel0, parval0 )
+      !
+      INTEGER,            INTENT(in)  :: kt, knt            ! ocean time step
+      INTEGER, OPTIONAL,  INTENT(in)  :: zlevel0
+      REAL(wp), OPTIONAL, INTENT(in)  :: parval0
+      !
+      INTEGER  :: ierr, ji, jj, jk, kmax, zlevel1
+      REAL(wp) :: parval1
+      !
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zetot   ! temporary SW downwelling rad. array
+                                                         ! use qsr, penetrative solar radiation
+      !
+      IF( ln_timing )  CALL timing_start('trc_opt_stairs')
+      !
+      IF( .NOT. PRESENT(zlevel0) ) zlevel1 = zlevel
+      IF( .NOT. PRESENT(parval0) ) parval1 = parval
+      IF(       PRESENT(zlevel0) ) zlevel1 = zlevel0
+      IF(       PRESENT(parval0) ) parval1 = parval0
+      !
+      IF( lwp ) WRITE(numout,*) 'trc_opt_stairs: constant PAR value ', parval1
+      IF( lwp ) WRITE(numout,*) '                     above z layer ', zlevel1
+      IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+      IF( lwp ) CALL FLUSH(numout)  
+      !
+      ALLOCATE( zetot(jpi,jpj,jpk), STAT=ierr)
+      IF( ierr > 0 )   CALL ctl_stop( 'STOP', 'trc_opt_stairs: unable to allocate zetot' )
+      !
+      zetot(:,:,:) = 0._wp
+      kmax = min(jpkm1, zlevel1)
+      DO jk = 1, kmax
+        DO jj = 1, jpj
+          DO ji = 1, jpi
+            zetot(ji,jj,jk) = parval1
+            !        
+          ENDDO
+        ENDDO
+      ENDDO
+      !
+      par_stairs(:,:,:) = zetot(:,:,:)
+      !
+      DEALLOCATE(zetot)
+      !
+      IF( lk_iomput .AND.  knt == qnrdttrc ) THEN
+        CALL iom_put("PAR2BIO", par_stairs(:,:,:) * tmask_bgc_closea(:,:,:) ) ! PAR to use for CMOC (or CanOE)
+      ENDIF
+      !
+      IF( ln_timing )  CALL timing_stop('trc_opt_stairs')      
+               
+   END SUBROUTINE trc_opt_stairs
 
    SUBROUTINE trc_opt_par( kt, pqsr, pe1, pe2, pe3, pe0, pqsr100 ) 
       !!----------------------------------------------------------------------
@@ -506,6 +598,12 @@ CONTAINS
       !
       IF( ln_timing )  CALL timing_start('trc_optsbc')
       !
+      IF(lwp) THEN
+         WRITE(numout,*)
+         WRITE(numout,*) 'trc_opt_sbc : '
+         WRITE(numout,*) '~~~~~~~~~~~~ '
+         WRITE(numout,*)
+      ENDIF      
       ! Compute par_varsw at nit000 or only if there is more than 1 time record in par coefficient file
       IF( ln_varpar ) THEN
          IF( kt == nit000 .OR. ( kt /= nit000 .AND. ntimes_par > 1 ) ) THEN
@@ -534,7 +632,8 @@ CONTAINS
       TYPE(FLD_N)        ::   sn_par  ! informations about the fields to be read
       !
       NAMELIST/namtrc_opt/ sn_par, cn_dir, ln_varpar, parlux,      &
-      &                    kw_cmoc, kchl_cmoc                      ! 1-band PAR parameters  
+      &                    kw_cmoc, kchl_cmoc,                     &  ! 1-band PAR parameters  
+      &                    parval,  zlevel                            ! stairs PAR parameters  
       !!----------------------------------------------------------------------
       IF(lwp) THEN
          WRITE(numout,*)
@@ -545,11 +644,11 @@ CONTAINS
 
       REWIND( numnat_ref )
       READ  ( numnat_ref, namtrc_opt, IOSTAT = ios, ERR = 901)
-901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namtrc_opt in reference namelist' )
+901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namtrc_opt in top reference namelist' )
 
       REWIND( numnat_cfg )
       READ  ( numnat_cfg, namtrc_opt, IOSTAT = ios, ERR = 902 )
-902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namtrc_opt in configuration namelist' )
+902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namtrc_opt in top configuration namelist' )
       IF(lwm) WRITE ( numonpb, namtrc_opt )
 
       IF(lwp) THEN
@@ -558,6 +657,8 @@ CONTAINS
          WRITE(numout,*) '      Default value for the PAR fraction                    parlux    = ', parlux
          WRITE(numout,*) '      1-band PAR att. coefficient by seawater  (m^-1)       kw_cmoc   = ', kw_cmoc
          WRITE(numout,*) '      1-band PAR att. coeff. by chla (m^-1) (mgChl m^-3)^-1 kchl_cmoc = ', kchl_cmoc
+         WRITE(numout,*) '      stairs PAR profile, constant value (W m^-2)           parval    = ', parval
+         WRITE(numout,*) '      stairs PAR profile, vertical level for non-zero vals  zlevel    = ', zlevel   
          WRITE(numout,*)
       ENDIF
       !
@@ -605,7 +706,8 @@ CONTAINS
         &     heupb(jpi,jpj),  heup_01b(jpi,jpj),              & 
         &     etotb(jpi,jpj,jpk),                              &
         &     etot_ndcyb(jpi,jpj,jpk), emoyb(jpi,jpj,jpk),     &              
-        &  par_1band(jpi,jpj,jpk),par_3bands(jpi,jpj,jpk),   STAT= trc_opt_alloc  ) 
+        &  par_1band(jpi,jpj,jpk),par_3bands(jpi,jpj,jpk),     &
+        & par_stairs(jpi,jpj,jpk),              STAT= trc_opt_alloc  ) 
       !
       IF( trc_opt_alloc /= 0 ) CALL ctl_stop( 'STOP', 'trc_opt_alloc : failed to allocate arrays.' )
       !

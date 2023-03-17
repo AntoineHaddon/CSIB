@@ -23,16 +23,12 @@
    cn_trcrst_indir = "."           !  directory from which to read input passive tracer restarts
    cn_trcrst_out = "restart_trc"   !  suffix of pass. sn_tracer restart name (output)
    cn_trcrst_outdir = "."          !  directory to which to write output passive tracer restarts
-   !   
-   qnrdttrc = 4    ! time splitting factor
 /
 !-----------------------------------------------------------------------
 &namtrc          !   tracers definition
 !-----------------------------------------------------------------------
    jp_bgc        =  0           !  Number of passive tracers of the BGC model
    !
-   ln_canoe      =  .false.     !  Run CANOE  BGC model 
-   ln_cmoc       =  .false.     !  Run CMOC   BGC model 
    ln_pisces     =  .false.     !  Run PISCES BGC model 
    ln_my_trc     =  .false.     !  Run MY_TRC BGC model
    ln_age        =  .false.     !  Run the sea water age tracer
@@ -129,9 +125,9 @@
    ln_trdmxl_trc_instant = .true.    !  flag to diagnose trends of instantantaneous or mean ML T/S
    cn_trdrst_trc_in  = 'restart_trd' !  suffix of pass. tracer trends restart name (input)
    cn_trdrst_trc_out = 'restart_trd' !  suffix of pass. tracer trends restart name (output)
-   ! ln_trdtrc( 1) = .true.
-   ! ln_trdtrc( 2) = .true.
-   ! ln_trdtrc(23) = .true.
+   ln_trdtrc( 1) = .true.
+   ln_trdtrc( 2) = .true.
+   ln_trdtrc(23) = .true.
 /
 !----------------------------------------------------------------------
 &namtrc_bc       !   data for boundary conditions
@@ -152,20 +148,4 @@
                              !  = 0 NO damping of tracers at open boudaries
                              !  = 1 Only for tracers forced with external data
                              !  = 2 Damping applied to all tracers
-/
-!-----------------------------------------------------------------------
-&namtrc_opt    !   parameters for optics
-!-----------------------------------------------------------------------
-!              !  file name       ! frequency (hours) ! variable  ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation ! land/sea mask !
-!              !                  !  (if <0  months)  !   name    !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  ! filename      !
-   sn_par      = 'par.orca'       ,     24.           , 'fr_par'  ,  .true.      , .true. , 'yearly'  , ''       , ''       , ''
-   cn_dir      = './'      !  root directory for the location of the dynamical files
-   ln_varpar   =  .false.  ! boolean for PAR variable
-   parlux      =  0.43     ! Fraction of shortwave as PAR
-! 1-band PAR
-   kw_cmoc     =  0.04          ! PAR attenuation coefficient for seawater (m^-1)
-   kchl_cmoc   =  0.03          ! PAR attenuation for chlorophyll          (m^-1) (mgChl m^-3)^-1
-! par stairs profile for test purposes
-   parval      = 100.           ! surface PAR constant
-   zlevel      = 5              ! vertical level where PAR is non-zero
 /

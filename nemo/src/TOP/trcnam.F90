@@ -135,7 +135,7 @@ CONTAINS
          WRITE(numout,*) '      control of time step for passive tracer      nn_rsttr      = ', nn_rsttr
          WRITE(numout,*) '      first time step for pass. trac.              nittrc000     = ', nittrc000
          WRITE(numout,*) '      use euler integration for TRC (y/n)          ln_top_euler  = ', ln_top_euler
-         WRITE(numout,*) '      time step splitting for BGC models           qnrdttrc      = ', qnrdttrc
+         WRITE(numout,*) 'CanBGC time step splitting for BGC models          qnrdttrc      = ', qnrdttrc !! OR Jan 19th 2023
       ENDIF
       !
 #if defined key_mpp_mpi
@@ -202,15 +202,17 @@ CONTAINS
           jptra  = jp_bgc + jp_cmoc
       ENDIF
       !
-      IF( ln_pisces )  THEN
+      IF( ln_pisces )  THEN !! double check that changes in TOP still accomodate the useage of PISCES ! OR Jan 19th 2023 
          jp_pisces = jp_bgc
          jp_pcs0   = 1
          jp_pcs1   = jp_pisces
+         jptra     = jp_pisces
       ENDIF
-      IF( ln_my_trc )  THEN
+      IF( ln_my_trc )  THEN !! double check that changes in TOP still accomodate the useage of another BGC ! OR Jan 19th 2023 
           jp_my_trc = jp_bgc
           jp_myt0   = 1
           jp_myt1   = jp_my_trc
+          jptra     = jp_my_trc
       ENDIF
       !
       IF( ln_age )    THEN

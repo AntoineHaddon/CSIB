@@ -76,7 +76,6 @@ CONTAINS
       REAL(wp) ::   zfld, zflu, zfld16, zflu16, zfact
       REAL(wp) ::   zsch_o2, zsch_co2
       REAL(wp), DIMENSION(jpi,jpj) :: zkgco2, zkgo2, zo2flx, zco2flx
-      REAL(wp), DIMENSION(jpi,jpj,jpk) :: zph0
 
       !!---------------------------------------------------------------------
       !
@@ -169,9 +168,6 @@ CONTAINS
       CALL iom_put("DpO2" , ( satmo2g(:,:) - trn(:,:,1,jqoxy) / ( K0O2(:,:) + rtrn ) ) * tmask_bgc_closea(:,:,1) )
       CALL iom_put("pO2"  ,                ( trn(:,:,1,jqoxy) / ( K0O2(:,:) + rtrn ) ) * tmask_bgc_closea(:,:,1) )
       ! Carbonate system
-      zph0(:,:,:) = rtrn
-      zph0(:,:,:) = qhi(:,:,:) + rtrn   ! [H+] is 2D for now so just set to epsilon if deeper than level 1 
-      CALL iom_put("pH",  -1. * LOG10( MAX( zph0(:,:,:), rtrn ) ) * tmask(:,:,:))
       ! other fields will be set to 0s by default (compilation setting)
       ! CALL iom_put("CO3",      )
       ! CALL iom_put("CO3sat",   )
