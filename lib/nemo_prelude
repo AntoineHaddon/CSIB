@@ -562,7 +562,13 @@ echo "#################### Start NEMO pre-processing #################"
   # End of O Riche Dec 19th 2022
   #  
   for f in "${nemo_namelists[@]}"; do
-      ! is_file $f && cp ${WRK_DIR}/config/namelists/${f} .
+  # O Riche Mar 20th 2023
+  # This was looking for a set of files not connected to cfgs files
+  # Could not find a line somewhere that dump files in nemo_config into
+  # $WRK_DIR/config/namelists
+      # ! is_file $f && cp ${WRK_DIR}/config/namelists/${f} .
+      ! is_file $f && cp ${nemo_config}${f} .
+  # O Riche Mar 20th 2023
   done
   # make namelist mods foir the restart switch 
     mod_nl namelist_cfg ln_rstart
