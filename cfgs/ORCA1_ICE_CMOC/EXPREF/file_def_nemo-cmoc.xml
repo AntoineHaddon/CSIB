@@ -86,10 +86,7 @@
           
           <!-- Temporary addition -->
           <field field_ref="MORTP"     name="MORTP"      level="0" />
-          <field field_ref="REMNO3"    name="REMNO3"     level="0" />
-          <field field_ref="oomask"    name="oomask"     level="0" />  
-          <field field_ref="EPC100"    name="EPC100"     level="0" />  
-          <field field_ref="EPCALC100" name="EPCALC100"  level="0" />  
+          <field field_ref="REMNO3"    name="REMNO3"     level="0" /> 
           <field field_ref="EPCz"      name="EPCz"       level="0" />
           <field field_ref="GRAZZ"     name="GRAZZ"      level="0" />
           <field field_ref="Z2POC"     name="Z2POC"      level="0" />
