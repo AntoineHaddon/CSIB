@@ -94,7 +94,9 @@
        <field id="EPC100"      long_name="Export of carbon particles at 100 m"    unit="mol/m2/s"            grid_ref="grid_T_2D" />
        <field id="EPCALC100"   long_name="Export of Calcite at 100 m"             unit="mol/m2/s"            grid_ref="grid_T_2D" />
        <!-- CMOC N2 diagnostics -->        
-       
+       <field id="Nfix"        long_name="Nitrogen fixation at surface"           unit="mol/m2/s"            grid_ref="grid_T_2D" />
+       <field id="Denit"       long_name="Water column denitrification"           unit="mol/m2/s"            grid_ref="grid_T_2D" />
+          
        <field id="EPCz"        long_name="Export of carbon at all depths"         unit="mol/m2/s"            grid_ref="grid_T_3D" />
        <field id="GRAZZ"       long_name="Zooplankton grazing"                    unit="mol/L/ts"            grid_ref="grid_T_3D" />
        <field id="Z2POC"       long_name="Zooplankton excretion"                  unit="mol/L/ts"            grid_ref="grid_T_3D" />
