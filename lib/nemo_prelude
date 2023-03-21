@@ -571,8 +571,8 @@ echo "#################### Start NEMO pre-processing #################"
   # This was looking for a set of files not connected to cfgs files
   # Could not find a line somewhere that dump files in nemo_config into
   # $WRK_DIR/config/namelists
-      # ! is_file $f && cp ${WRK_DIR}/config/namelists/${f} .
-      ! is_file $f && cp ${nemo_config}${f} .
+      ! is_file $f && cp ${WRK_DIR}/config/namelists/${f} .
+      # OR Mar21 2023 reactivated the old line as cfgs namelists are not working properly #! is_file $f && cp ${nemo_config}${f} .
   # O Riche Mar 20th 2023
   done
   # make namelist mods foir the restart switch 
