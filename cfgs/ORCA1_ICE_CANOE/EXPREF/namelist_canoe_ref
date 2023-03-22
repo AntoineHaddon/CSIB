@@ -54,9 +54,9 @@
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &namcanws     !   particule sinking parameters
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-   ws_canoe   =  0. ! OR March 22nd 2023 ! 2.       ! POC sinking speed
-   ws_canoe2  =  0. ! OR March 22nd 2023 ! 30.      ! Big particles sinking speed
-   ws_canoec  =  0. ! OR March 22nd 2023 ! 20.      ! CaCO3 sinking speed
+   ws_canoe   =  2.       ! POC sinking speed
+   ws_canoe2  =  30.      ! Big particles sinking speed
+   ws_canoec  =  20.      ! CaCO3 sinking speed
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &namcantf     !   parameters for temperature-dependence of various rates
@@ -73,14 +73,14 @@
    QNmin1     = 0.04      ! Small phytoplankton min N quota
    QNmax2     = 0.172     ! Large phytoplankton max N quota
    QNmin2     = 0.04      ! Large phytoplankton min N quota
-   VCNref     = 0. ! OR March 22nd 2023 ! 0.6       ! Reference rate of N uptake
+   VCNref     = 0.6       ! Reference rate of N uptake
    QFemax1    = 93.08     ! Small phytoplankton max Fe quota
    QFemin1    = 4.65      ! Small phytoplankton min Fe quota
    QFemax2    = 69.81     ! Large phytoplankton max Fe quota
    QFemin2    = 6.5       ! Large phytoplankton min Fe quota
-   VCFref     = 0. ! OR March 22nd 2023 ! 79.       ! Reference rate of Fe uptake
-   PCref      = 0. ! OR March 22nd 2023 ! 3.        ! Reference rate of photosynthesis
-   alphachl   = 0. ! OR March 22nd 2023 ! 1.08      ! Initial slope of P-E curve
+   VCFref     = 79.       ! Reference rate of Fe uptake
+   PCref      = 3.        ! Reference rate of photosynthesis
+   alphachl   = 1.08      ! Initial slope of P-E curve
    kn1        = 0.1       ! Small P half-saturation for NO3 uptake
    ka1        = 0.05      ! Small P half-saturation for NH4 uptake
    kf1        = 100.      ! Small P half-saturation for Fe uptake
@@ -88,47 +88,47 @@
    ka2        = 0.05      ! Large P half-saturation for NH4 uptake
    kf2        = 200.      ! Large P half-saturation for Fe uptake
    thetamax   = 0.18      ! Maximum chlorophyll/nitrogen ratio
-   eta        = 0. ! OR March 22nd 2023 ! 2.        ! Metabolic cost of biosynthesis
-   kexh       = 0. ! OR March 22nd 2023 ! 1.7       ! Exudation rate of excess intracellular C
+   eta        = 2.        ! Metabolic cost of biosynthesis
+   kexh       = 1.7       ! Exudation rate of excess intracellular C
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &namcanmort     !   parameters for phytoplankton sinks
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-   mprat      =  0. ! OR March 22nd 2023 ! 0.05     ! phytoplankton mortality rate
-   mprat2     =  0. ! OR March 22nd 2023 ! 0.1      ! Large zooplankton mortality rate
-   mpratm     =  0. ! OR March 22nd 2023 ! 0.1      ! Diatoms mortality rate
-   mpqua      =  0. ! OR March 22nd 2023 ! 6.E-2    ! quadratic mortality of phytoplankton
-   mpquad     =  0. ! OR March 22nd 2023 ! 6.E-2    ! maximum quadratic mortality of diatoms
-   chldegr    =  0. ! OR March 22nd 2023 ! 2.E-2    ! Chlorophyll photooxidation rate
-   picfrx     =  0. ! OR March 22nd 2023 ! 0.05     ! CaCO3 production rate (as fraction of POC)
+   mprat      =  0.05     ! phytoplankton mortality rate
+   mprat2     =  0.1      ! Large zooplankton mortality rate
+   mpratm     =  0.1      ! Diatoms mortality rate
+   mpqua      =  6.E-2    ! quadratic mortality of phytoplankton
+   mpquad     =  6.E-2    ! maximum quadratic mortality of diatoms
+   chldegr    =  2.E-2    ! Chlorophyll photooxidation rate
+   picfrx     =  0.05     ! CaCO3 production rate (as fraction of POC)
    xminp      =  0.01     ! minimum phytoplankton concentration for linear mortality
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &namcanmes     !   parameters for mesozooplankton
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
    part2      = 0.75      ! part of calcite not dissolved in mesozoo guts (not used)
-   gmax2      = 0. ! OR March 22nd 2023 ! 0.85      ! maximum grazing rate
+   gmax2      = 0.85      ! maximum grazing rate
    apl        = 0.25      ! large zooplankton functional response parameter
-   zsr2       = 0. ! OR March 22nd 2023 ! 0.1       ! specific respiration rate
+   zsr2       = 0.1       ! specific respiration rate
    lambda2    = 0.8       ! assimilation efficiency
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &namcanzoo     !   parameters for microzooplankton
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
    part       = 0.5       ! part of calcite not dissolved in microzoo guts (not used)
-   gmax1      = 0. ! OR March 22nd 2023 ! 1.7       ! maximum grazing rate
+   gmax1      = 1.7       ! maximum grazing rate
    aps        = 0.25      ! small zooplankton functional response parameter
-   zsr1       = 0. ! OR March 22nd 2023 ! 0.3       ! specific respiration rate
+   zsr1       = 0.3       ! specific respiration rate
    lambda1    = 0.8       ! assimilation efficiency
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &namcanrem     !   parameters for remineralization
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-   xremik     = 0. ! OR March 22nd 2023 ! 0.25      ! remineralisation rate of POC 
-   xremip     = 0. ! OR March 22nd 2023 ! 0.025     ! remineralisation rate of DOC
-   nitrif     = 0. ! OR March 22nd 2023 ! 0.05      ! NH4 nitrification rate 
-   xlam1      = 0. ! OR March 22nd 2023 ! 0.001     ! scavenging rate of iron (low concentrations)
-   xlam2      = 0. ! OR March 22nd 2023 ! 2.5       ! scavenging rate of iron (high concentrations)
+   xremik     = 0.25      ! remineralisation rate of POC 
+   xremip     = 0.025     ! remineralisation rate of DOC
+   nitrif     = 0.05      ! NH4 nitrification rate 
+   xlam1      = 0.001     ! scavenging rate of iron (low concentrations)
+   xlam2      = 2.5       ! scavenging rate of iron (high concentrations)
    ligand     = 600.      ! ligand concentration
    pocfctr    = 0.66      ! multiplier for POC-dependent scavenging
    o2thresh   = 6.        ! O2 threshold for denitrification
@@ -138,7 +138,7 @@
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &namcancal     !   parameters for Calcite chemistry
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-   kdca       = 0. ! OR March 22nd 2023 ! 7.4E-3    ! calcite dissolution rate constant in d^-1 (2700 m e-folding scale for w=20 m/d)
+   kdca       = 7.4E-3    ! calcite dissolution rate constant in d^-1 (2700 m e-folding scale for w=20 m/d)
    nca        = 1.        ! order of dissolution reaction (not used)
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
