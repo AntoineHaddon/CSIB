@@ -187,11 +187,11 @@ CONTAINS
 	      !
         ! CALL canoe_sink( kt , jnt )     ! particule sinking 
 	      !
-        CALL trc_opt_stairs( kt, jnt )       ! test PAR vert profile.
+        !!!!!!!!!!! CALL trc_opt_stairs( kt, jnt )       ! test PAR vert profile.
         ! CALL trc_opt( kt, jnt )       ! 3-band PAR attenuation
         !
 	      ! call CanOE production S/R
-        CALL canoe_prod( kt, jnt )
+        ! CALL canoe_prod( kt, jnt )
         !
         ! Initialize rnegtr2, if no call to trc_xnegtr tra used w/o correction
         rnegtr2(:,:,:) = 1._wp
