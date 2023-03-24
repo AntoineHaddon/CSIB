@@ -75,6 +75,7 @@ CONTAINS
       IF( kt == nittrc000 .AND. lk_trdmxl_trc )  CALL trd_mxl_trc_init    ! trends: Mixed-layer
       !
       IF( .NOT.ln_linssh ) THEN                                           ! update ocean volume due to ssh temporal evolution
+
          DO jk = 1, jpk
             cvol(:,:,jk) = e1e2t(:,:) * e3t_n(:,:,jk) * tmask(:,:,jk)
          END DO
@@ -84,6 +85,7 @@ CONTAINS
               & .OR. iom_use( "palktot" ) .OR. iom_use( "pfertot" ) )                           &
               &     areatot = glob_sum( 'trcstp', cvol(:,:,:) )
          ENDIF
+
       ENDIF
       !
       IF( l_trcdm2dc )   CALL trc_mean_qsr( kt )

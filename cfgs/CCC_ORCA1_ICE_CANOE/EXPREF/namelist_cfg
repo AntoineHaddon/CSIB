@@ -1,7 +1,7 @@
 !!>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 !! NEMO/OCE  Configuration namelist : overwrite default values defined in SHARED/namelist_ref
 !!>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-!!             ORCA2 - ICE - PISCES configuration                     !!
+!!             ORCA1 - ICE - CanOE configuration                      !!
 !!======================================================================
 !!              ***  Domain & Run management namelists  ***           !!
 !!                                                                    !!
@@ -48,7 +48,7 @@
    ln_read_cfg = .true.    !  (=T) read the domain configuration file
       cn_domcfg = "domain_cfg"  ! domain configuration filename
       !
-      ln_use_jattr = .true.     !  use (T) the file attribute: open_ocean_jstart, if present
+      ln_use_jattr = .false.      !  use (T) the file attribute: open_ocean_jstart, if present
    !                       !  in netcdf input files, as the start j-row for reading
       ln_closea    = .true.    !  T => keep closed seas (defined by closea_mask field) in the
       !                         !       domain and apply special treatment of freshwater fluxes.
@@ -431,6 +431,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
       rn_hsbfr =    1.6       !  heat/salt buoyancy flux ratio
    ln_zdfiwm   = .false.      ! internal wave-induced mixing            (T =>   fill namzdf_iwm)
    !                       !  Coefficients
+   ln_zdftmx   = .false.      !  old tidal mixing scheme (Simmons et al 2004) (T =>   fill namzdf_tmx)
    rn_avm0     =   1.2e-4     !  vertical eddy viscosity   [m2/s]       (background Kz if ln_zdfcst=F)
    rn_avt0     =   1.2e-5     !  vertical eddy diffusivity [m2/s]       (background Kz if ln_zdfcst=F)
    nn_avb      =    0         !  profile for background avt & avm (=1) or not (=0)
@@ -454,6 +455,18 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
    nn_zpyc     = 2         !  pycnocline-intensified dissipation scales as N (=1) or N^2 (=2)
    ln_mevar    = .true.    !  variable (T) or constant (F) mixing efficiency
    ln_tsdiff   = .true.    !  account for differential T/S mixing (T) or not (F)
+/
+!-----------------------------------------------------------------------
+&namzdf_tmx    !   tidal mixing parameterization                        ("ln_zdftmx = T")
+!-----------------------------------------------------------------------
+   rn_htmx     = 500.      !  vertical decay scale for turbulence (meters)
+   rn_n2min    = 1.e-20    !  threshold of the Brunt-Vaisala frequency (s-1)
+   rn_tfe      = 0.333     !  tidal dissipation efficiency
+   rn_me       = 0.2       !  mixing efficiency
+   ln_tmx_itf  = .true.    !  ITF specific parameterisation
+   rn_tfe_itf  = 1.        !  ITF tidal dissipation efficiency
+   ln_s2004    = .false.   !  Compute zav_tide following Simmons et al (2004) 
+   ln_sm2005   = .true.    !  Compute zav_tide following Saenko and Merryfield (2005)
 /
 !!======================================================================
 !!                  ***  Diagnostics namelists  ***                   !!
@@ -514,4 +527,3 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 &namsto        ! Stochastic parametrization of EOS                      (default: OFF)
 !-----------------------------------------------------------------------
 /
-

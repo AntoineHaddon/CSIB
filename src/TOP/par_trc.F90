@@ -9,6 +9,8 @@ MODULE par_trc
    !!             2.0  !  2007-12  (C. Ethe, G. Madec)  revised architecture
    !!----------------------------------------------------------------------
    USE par_kind          ! kind parameters
+   USE par_canoe         ! CANOE  model  parameters
+   USE par_cmoc          ! CMOC   model  parameters
    USE par_pisces        ! PISCES model  parameters
    USE par_cfc           ! CFCs  tracers parameters
    USE par_c14           ! C14 tracer    parameters
@@ -19,8 +21,11 @@ MODULE par_trc
    IMPLICIT NONE
 
    INTEGER, PUBLIC,  PARAMETER :: jpmaxtrc = 100  ! Maximum number of tracers
+   INTEGER, PUBLIC,  PARAMETER :: jpmaxdia = 100  ! Maximum number of diagnostics
 
    INTEGER, PUBLIC             :: jptra           !: Total number of passive tracers
+   INTEGER, PUBLIC             :: jp_canoe        !: number of passive tracers in CANOE  model
+   INTEGER, PUBLIC             :: jp_cmoc         !: number of passive tracers in CMOC   model
    INTEGER, PUBLIC             :: jp_pisces       !: number of passive tracers in PISCES model
    INTEGER, PUBLIC             :: jp_cfc          !: number of CFC passive tracers 
    INTEGER, PUBLIC             :: jp_my_trc       !: number of passive tracers in MY_TRC model
@@ -29,6 +34,8 @@ MODULE par_trc
    INTEGER, PUBLIC             :: jp_dia3d        !: number of 3D diagnostic variables
    INTEGER, PUBLIC             :: jp_dia2d        !: number of 2D diagnostic variables
 
+   LOGICAL, PUBLIC             :: ln_canoe        !: CANOE  flag 
+   LOGICAL, PUBLIC             :: ln_cmoc         !: CMOC   flag 
    LOGICAL, PUBLIC             :: ln_pisces       !: PISCES flag 
    LOGICAL, PUBLIC             :: ln_age          !: AGE flag 
    LOGICAL, PUBLIC             :: ln_cfc11        !: CFC11 flag 
@@ -39,5 +46,22 @@ MODULE par_trc
    LOGICAL, PUBLIC             :: ln_my_trc       !: MY_TRC flag 
 
    REAL(wp), PUBLIC            :: rtrn  = 0.5 * EPSILON( 1.e0 )    !: truncation value
+
+   ! common BGCM passive tracer indices
+   INTEGER, PUBLIC :: jqdic   !: dissolved inorganic carbon concentration 
+   INTEGER, PUBLIC :: jqtal   !: total alkalinity 
+   INTEGER, PUBLIC :: jqoxy   !: oxygen concentration 
+   INTEGER, PUBLIC :: jqno3   !: no3 concentration 
+   
+   ! CMOC   
+   INTEGER, PUBLIC :: jqphy   !: small sized phyto C biomass
+   INTEGER, PUBLIC :: jqnch   !: small sized phyto chl-a
+   INTEGER, PUBLIC :: jqzoo   !: small sized zoo C biomass
+   INTEGER, PUBLIC :: jqpoc   !: small sized POC
+   ! CANOE   
+   INTEGER, PUBLIC :: jrphy   !: small sized phyto C biomass
+   INTEGER, PUBLIC :: jrnch   !: small sized phyto chl-a
+   INTEGER, PUBLIC :: jrzoo   !: small sized zoo C biomass
+   INTEGER, PUBLIC :: jrpoc   !: small sized POC
 
 END MODULE par_trc
