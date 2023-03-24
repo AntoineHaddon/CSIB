@@ -1,9 +1,13 @@
 PROGRAM nemo_ocean_diag
 ! ======================================================================
-!  Purpose: Run-time diagnostics for NEMO (ORCA2) 
+!  New purpose:      Run-time diagnostics in CanESM5 for NEMO4/CanBGC/CMOC (eORCA1)
+!  Obsolete purpose: Run-time diagnostics for NEMO (ORCA2) 
 !
 ! HISTORY:
 ! -------
+! O. Riche    Jan    2023   change PH to pH when reading the variable from the o/p file.
+!                           read e3t from grid_t instead of from mesh_mask (not present).
+!
 ! O. Riche    Jan    2016   Fix total N and C RTD, issue: unit problem across 
 !                           variables; outputs are in nitrogen except DIC/TA.
 !
@@ -141,8 +145,8 @@ PROGRAM nemo_ocean_diag
 
 !----------------
 !     input file stuff
-      character fname05*100, fname06*100, fname07*100  
-      integer year, iou, iou4, iou5, iou6, recn, nrecon
+      character fname05*100, fname06*100, fname07*100, fname08*100 ! OR Jan 10th 2023  
+      integer year, iou, iou4, iou5, iou6, recn, nrecon, iou7 ! OR Jan 10th 2023
 
 !----------------
 ! Allocate Arrays
@@ -193,6 +197,7 @@ PROGRAM nemo_ocean_diag
          iou4 =0
          iou5 =0 
          iou6 =0 
+         iou7 =0 ! OR Jan 10th 2023
          recn =12.
          nrecon = int(recn + 0.001)
 !---------------------------------------------------
@@ -200,7 +205,8 @@ PROGRAM nemo_ocean_diag
 !---------------------------------------------------
         fname05='orca_mesh_mask'
         fname06='ptrc_t'   
-        fname07='diad_t'   
+        fname07='diad_t'
+        fname08='grid_t' ! OR Jan 10th 2023
 !---------------------------------------------------
 !    Get grid/mask data   
 !---------------------------------------------------
@@ -211,7 +217,7 @@ PROGRAM nemo_ocean_diag
       CALL openfile (fname05,iou4)
       CALL getvara ('e1t', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1t , 1., 0.)
       CALL getvara ('e2t', iou4, imt*jmt, (/1,1,1/),  (/imt,jmt,1/),e2t , 1., 0.)
-      CALL getvara ('e3t', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3t , 1., 0.)
+!      CALL getvara ('e3t', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3t , 1., 0.) ! OR Jan 10th 2023
       CALL getvara ('tmask', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/), t_mask , 1., 0.)
       CALL closefile (iou4)
 
@@ -219,8 +225,11 @@ PROGRAM nemo_ocean_diag
       CALL openfile (fname06,iou5)
       CALL getvara ('nav_lon', iou5, imt*jmt, (/1,1,1/), (/imt,jmt,1/), lon2d, 1., 0.)
       CALL getvara ('nav_lat', iou5, imt*jmt, (/1,1,1/), (/imt,jmt,1/), lat2d, 1., 0.)
-      CALL getvara ('deptht', iou5, km, (/1/), (/km/), deptht, 1., 0.)
+      CALL getvara ('deptht', iou5, km, (/1/), (/km/), deptht, 1., 0.)   
       CALL closefile (iou5)
+      CALL openfile(fname08,iou7) ! OR Jan 10th 2023
+      CALL getvara ('e3t', iou7, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3t , 1., 0.)
+      CALL closefile(iou7)  ! End of OR Jan 10th 2023
 
 !---------------------------------------------------
 ! Read in from NetCDF
@@ -256,7 +265,7 @@ PROGRAM nemo_ocean_diag
 !  Diagnostic variables
       if (exists) then 
 !       3-D: PH, PPPHY, PPPHY2, EPC100,
-          CALL getvara('PH',       iou6, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), ph, 1., 0.)   
+          CALL getvara('pH',       iou6, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), ph, 1., 0.)   
           CALL getvara('PPPHY',    iou6, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), ppphy, 1., 0.)   
 
 !       2-D :  EPCAL100, DIC flux, Oflux, Nfix, Irondep

@@ -8,9 +8,9 @@
 ============================================================================================================
     -->
 
-    <file_definition type="one_file" name="@expname@_@freq@_@startdate@_@enddate@" min_digits="4">
+    <file_definition type="one_file" name="@expname@_@freq@_@startdate@_@enddate@" sync_freq="1mo" min_digits="4">
 
-      <file_group id="1m" output_freq="1mo"  enabled=".TRUE."> <!-- real monthly files -->
+      <file_group id="1m" output_freq="1mo" output_level="10" enabled=".TRUE."> <!-- real monthly files -->
 
         <file id="file11" name_suffix="_grid_T" description="ocean T grid variables">
           <field field_ref="toce"             name="thetao"         level="0" /> <!-- (Omon*) level = 1 in CMIP6 -->
@@ -30,6 +30,10 @@
           <field field_ref="qt"               name="hfds"           level="0" /> <!-- (Omon*) level = 1 in CMIP6  -->
           <field field_ref="qsr_tot"          name="qsr_tot"        level="0" /> <!-- only rtd -->
           <field field_ref="qns_tot"          name="qns_tot"        level="0" /> <!-- only rtd -->
+
+          <!-- Ideal Age Tracer (IAT) from TOP -->
+          <field field_ref="Age"         name="Age"      level="0" />
+
         </file>
         <file id="file12" name_suffix="_grid_U" description="ocean U grid variables">
           <field field_ref="uoce"        name="uo"       level="0" /> <!-- (Omon*) level = 1 in CMIP6  -->
@@ -111,7 +115,6 @@
           <field field_ref="temptot"          name="thetaoga"    level="1" /> <!-- (Omon*) -->
           <field field_ref="saltot"           name="soga"        level="1" /> <!-- (Omon*) -->
         </file>
-
         <file id="file41" name_suffix="_diaptr" description="zonal mean variables" >
           <field field_ref="sophtove"    name="htovovrt"      grid_ref="grid_ptr_T_2D"  level="2"  /> <!-- (Omon*) -->
           <field field_ref="sopstove"    name="sltovovrt"     grid_ref="grid_ptr_T_2D"  level="2"  /> <!-- (Omon*) -->
@@ -198,7 +201,6 @@
       <file_group id="2y"  output_freq="2y"   enabled=".TRUE."/> <!-- real 2y files -->
       <file_group id="5y"  output_freq="5y"   enabled=".TRUE."/> <!-- real 5y files -->
       <file_group id="10y" output_freq="10y"  enabled=".TRUE."/> <!-- real 10y files -->
-
    </file_definition>
 
 

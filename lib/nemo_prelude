@@ -43,14 +43,49 @@
   }
 
 echo "#################### Start NEMO pre-processing #################"
-  # TODO CanOE : add the top and CanOE namlist if activer
+  # TODO CanOE : add the top and CanOE namlist if activated
   nemo_namelists=( namelist_ref     \
                    namelist_cfg     \
                    namelist_ice_ref \
                    namelist_ice_cfg
   )
-  # Add top namelist  to the list only if nemo_trc is enabled "${nemo_namelists} namelist_top"
-  [ "$nemo_trc" = "on" ] &&  nemo_namelists+=( namelist_top_ref namelist_top_cfg )
+  # O Riche Dec 16th 2022
+  # change nemo_namelists to contain references to either CMOC or CanOE and not PISCES
+  # if nemo_config is set to a CMOC or a CanOE config
+  if [[ $nemo_config == *"CANOE" ]] ; then
+  nemo_namelists=( namelist_ref     \
+                   namelist_cfg     \
+                   namelist_ice_ref \
+                   namelist_ice_cfg \
+                   namelist_top_ref \
+                   namelist_top_cfg \
+                   namelist_canoe_ref \
+                   namelist_canoe_cfg \
+  )
+  elif [[ $nemo_config == *"CMOC" ]] ; then
+  nemo_namelists=( namelist_ref     \
+                   namelist_cfg     \
+                   namelist_ice_ref \
+                   namelist_ice_cfg
+                   namelist_top_ref \
+                   namelist_top_cfg \
+                   namelist_cmoc_ref \
+                   namelist_cmoc_cfg \
+  )
+  elif [[ $nemo_config == *"PISCES" ]] ; then
+  nemo_namelists=( namelist_ref     \
+                   namelist_cfg     \
+                   namelist_ice_ref \
+                   namelist_ice_cfg
+                   namelist_top_ref \
+                   namelist_top_cfg \
+                   namelist_pisces_ref \
+                   namelist_pisces_cfg \
+  )
+  fi
+  # End of O Riche Dec 16th 2022
+  ################################
+  
   # ======================================================
   # Make sure we have necessary variables from parent code
   # ======================================================
@@ -188,6 +223,76 @@ echo "#################### Start NEMO pre-processing #################"
     acc_cp EMPave_old.dat            $nemo_empave_old 
   fi
 
+  # O Riche Dec 20th 2022
+  # CanBGC IC and forcing files additional section
+  # looked into nemo_pre.sh (see CanNEMO maestro scripts)
+  # for acc_cp, look in experiment.cfg for actual names 
+  # /variables (same location). For CanESM5 they are defined
+  # in canesm.cfg.
+  ToF nemo_trc
+
+  if [ $nemo_trc -eq 1 ] && [[ $nemo_carbon == "on" ]] ; then
+
+      is_defined $nemo_presatm || bail "The variable nemo_presatm must be defined in canesm.cfg"
+      acc_cp presatm.nc           $nemo_presatm
+      
+      is_defined $nemo_bathy_orca || bail "The variable nemo_bathy_orca must be defined in canesm.cfg"
+      acc_cp bathy.orca.nc        $nemo_bathy_orca
+
+      is_defined $nemo_chlorophyll || bail "The variable nemo_chlorophyll must be defined in canesm.cfg"
+      acc_cp chlorophyll.nc       $nemo_chlorophyll
+
+      is_defined $nemo_dust_orca || bail "The variable nemo_dust_orca must be defined in canesm.cfg"
+      acc_cp dust.orca.nc         $nemo_dust_orca
+      
+      is_defined $nemo_river_orca || bail "The variable nemo_river_orca must be defined in canesm.cfg"
+      acc_cp river.orca.nc        $nemo_river_orca
+      
+      is_defined $nemo_par_orca || bail "The variable nemo_par_orca must be defined in canesm.cfg"      
+      acc_cp par.orca.nc          $nemo_par_orca
+      
+      is_defined $nemo_solubility_orca || bail "The variable nemo_solubility_orca must be defined in canesm.cfg"      
+      acc_cp solubility.orca.nc   $nemo_solubility_orca
+      
+      is_defined $nemo_hydrofe_orca || bail "The variable nemo_hydrofe_orca must be defined in canesm.cfg"      
+      acc_cp hydrofe.orca.nc      $nemo_hydrofe_orca
+
+      is_defined $nemo_ndeposition_orca || bail "The variable nemo_ndeposition_orca must be defined in canesm.cfg"      
+      acc_cp ndeposition.orca.nc  $nemo_ndeposition_orca
+      
+      is_defined $nemo_data_dic_nomask || bail "The variable nemo_data_dic_nomask must be defined in canesm.cfg"      
+      acc_cp data_DIC_nomask.nc        $nemo_data_dic_nomask
+      
+      is_defined $nemo_data_alkalini_nomask || bail "The variable nemo_data_alkalini_nomask must be defined in canesm.cfg"      
+      acc_cp data_Alkalini_nomask.nc   $nemo_data_alkalini_nomask
+      
+      is_defined $nemo_data_o2_nomask || bail "The variable nemo_data_o2_nomask must be defined in canesm.cfg"      
+      acc_cp data_O2_nomask.nc         $nemo_data_o2_nomask
+      
+      is_defined $nemo_data_po4_nomask || bail "The variable nemo_data_po4_nomask must be defined in canesm.cfg"      
+      acc_cp data_PO4_nomask.nc        $nemo_data_po4_nomask
+      
+      is_defined $nemo_data_si_nomask || bail "The variable nemo_data_si_nomask must be defined in canesm.cfg"      
+      acc_cp data_Si_nomask.nc        $nemo_data_si_nomask
+      
+      is_defined $nemo_data_doc_nomask || bail "The variable nemo_data_doc_nomask must be defined in canesm.cfg"      
+      acc_cp data_DOC_nomask.nc        $nemo_data_doc_nomask
+      
+      is_defined $nemo_data_fer_nomask || bail "The variable nemo_data_fer_nomask must be defined in canesm.cfg"      
+      acc_cp data_Fer_nomask.nc        $nemo_data_fer_nomask
+      # trcsrc_canbgc.F90 use this file too.
+      is_defined $nemo_fermask_orca    || bail "The variable nemo_fermask_orca must be defined in canesm.cfg"      
+      acc_cp femask.nc                 $nemo_fermask_orca
+      
+      is_defined $nemo_data_no3_nomask || bail "The variable nemo_data_no3_nomask must be defined in canesm.cfg"      
+      acc_cp data_NO3_nomask.nc        $nemo_data_no3_nomask
+      
+
+  
+  fi
+  # End of O Riche Dec 20th 2022
+
+
   # Access files required to run NEMO
   xios_files=( axis_def_nemo.xml \
                context_nemo.xml \
@@ -198,9 +303,40 @@ echo "#################### Start NEMO pre-processing #################"
                file_def_nemo-oce.xml \
                grid_def_nemo.xml \
                iodef.xml )
-
-  # Add pisces files to the list only if nemo_carbon is enable 
-  [ "$nemo_carbon" = "on" ] &&  xios_files+=( field_def_nemo-pisces.xml file_def_nemo-pisces.xml )
+  # O Riche Dec 16th 2022
+  # change xios_files to contain references to either CMOC or CanOE and not PISCES
+  # if nemo_config is set to a CMOC or a CanOE config
+  if [[ $nemo_config == *"CANOE" ]] ; then
+  xios_files=( axis_def_nemo.xml \
+               context_nemo.xml \
+               domain_def_nemo.xml \
+               field_def_nemo-ice.xml \
+               field_def_nemo-oce.xml \
+               field_def_nemo-canoe.xml \
+               file_def_nemo-ice.xml \
+               file_def_nemo-oce.xml \
+               file_def_nemo-canoe.xml \
+               grid_def_nemo.xml \
+               iodef.xml )
+  elif [[ $nemo_config == *"CMOC" ]] ; then
+  xios_files=( axis_def_nemo.xml \
+               context_nemo.xml \
+               domain_def_nemo.xml \
+               field_def_nemo-ice.xml \
+               field_def_nemo-oce.xml \
+               field_def_nemo-cmoc.xml \
+               file_def_nemo-ice.xml \
+               file_def_nemo-oce.xml \
+               file_def_nemo-cmoc.xml \
+               grid_def_nemo.xml \
+               iodef.xml )
+  fi
+  # End of O Riche Dec 16th 2022
+  ################################
+  # Add pisces files to the list only if nemo_trc is enable
+  if [[ $nemo_config == *"PISCES" ]] ; then
+	xios_files=( "${xios_files[@]}"  field_def_nemo-pisces.xml file_def_nemo-pisces.xml )
+  fi
 
   for file in "${xios_files[@]}"; do
     echo $file
@@ -419,8 +555,26 @@ echo "#################### Start NEMO pre-processing #################"
   # - the main defaults are defined at the top of this script (should we move other runmode specific files?)
 
   # run namelists
+  # O Riche Dec 19th 2022
+  # default namelist folder
+  # namelists folder if trc and carbon is on
+  if [ $nemo_trc -eq 1 ] && [[ $nemo_carbon == "on" ]]; then
+     if [[ $nemo_config == *"CANOE" ]] || [[ $nemo_config == *"CMOC" ]] || [[ $nemo_config == *"PISCES" ]]; then
+      nemo_config=${nemo_repo}'/nemo/cfgs/'${nemo_config}'/EXPREF/'
+     else
+      bail "nemo_prelude: nemo_config: assigned BGCM is not PISCES, CMOC, nor CanOE"
+     fi
+  fi
+  # End of O Riche Dec 19th 2022
+  #  
   for f in "${nemo_namelists[@]}"; do
+  # O Riche Mar 20th 2023
+  # This was looking for a set of files not connected to cfgs files
+  # Could not find a line somewhere that dump files in nemo_config into
+  # $WRK_DIR/config/namelists
       ! is_file $f && cp ${WRK_DIR}/config/namelists/${f} .
+      # OR Mar21 2023 reactivated the old line as cfgs namelists are not working properly #! is_file $f && cp ${nemo_config}${f} .
+  # O Riche Mar 20th 2023
   done
   # make namelist mods foir the restart switch 
     mod_nl namelist_cfg ln_rstart 

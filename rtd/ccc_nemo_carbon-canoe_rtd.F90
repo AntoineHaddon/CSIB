@@ -6,6 +6,8 @@ IMPLICIT NONE
 !
 ! HISTORY:
 ! -------
+! O Riche     Jun    2022   Bare-bones version to test global tracer mass cons.
+!                           in NEMO4
 ! N. Swart    Dec    2015   Abstract all calculations to ccc_nemo_rtd_utils
 !                           module, which is shared between all rtd.
 !
@@ -211,7 +213,7 @@ SUBROUTINE calc (imt, jmt, km, lm)
       CALL openfile (fname05,iou4)
       CALL getvara ('e1t', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1t , 1., 0.)
       CALL getvara ('e2t', iou4, imt*jmt, (/1,1,1/),  (/imt,jmt,1/),e2t , 1., 0.)
-      CALL getvara ('e3t', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3t , 1., 0.)
+      CALL getvara ('e3t_0', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3t , 1., 0.)
       CALL getvara ('tmask', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/), t_mask , 1., 0.)
       CALL closefile (iou4)
 
@@ -230,7 +232,10 @@ SUBROUTINE calc (imt, jmt, km, lm)
       CALL openfile (fname06,iou5)
 
 !     read diagnostic variables from the diad_t file, if it exists
-      inquire (file=trim(fname07), exist=exists)                          
+      inquire (file=trim(fname07), exist=exists)
+! O Riche June 6th 2022
+! no diad_t here for this test and for now
+!	  exists=.false.
       if (exists) then         
           CALL openfile (fname07,iou6)
       endif
@@ -238,7 +243,7 @@ SUBROUTINE calc (imt, jmt, km, lm)
 !        DIC, TA, O2 
          CALL getvara('DIC',      iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),   dic, 1., 0.)                                 
          CALL getvara('CaCO3',    iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), caco3, 1., 0.)  
-         CALL getvara('TAlk',     iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),   tal, 1., 0.)   
+         CALL getvara('Alkalini',     iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),   tal, 1., 0.)   
 
 !        PH moved below for reading with other diat_t input
 
@@ -251,7 +256,7 @@ SUBROUTINE calc (imt, jmt, km, lm)
 !        NO3, NH4, dFe
          CALL getvara('NO3', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), no3, 1., 0.)
          CALL getvara('NH4', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), nh4, 1., 0.)    
-         CALL getvara('dFe', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), dfe, 1., 0.)    
+         CALL getvara('Fer', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), dfe, 1., 0.)    
 
 !        PHY, PHY2, ZOO, ZOO2
          CALL getvara('PHYC',  iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),  phy, 1., 0.)  

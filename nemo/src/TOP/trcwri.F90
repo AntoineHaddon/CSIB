@@ -13,10 +13,14 @@ MODULE trcwri
    !!----------------------------------------------------------------------
    USE dom_oce     ! ocean space and time domain variables
    USE oce_trc     ! shared variables between ocean and passive tracers
-   USE trc         ! passive tracers common variables 
+   USE trc         ! passive tracers common variables
+   ! USE par_trc, only: jp_dia3d     !    
+   USE par_trc     !    
    USE iom         ! I/O manager
    USE dianam      ! Output file name
    USE trcwri_pisces
+   USE trcwri_canoe 
+   USE trcwri_cmoc 
    USE trcwri_cfc
    USE trcwri_c14
    USE trcwri_age
@@ -36,9 +40,6 @@ CONTAINS
       !! ** Purpose :   output passive tracers fields and dynamical trends
       !!---------------------------------------------------------------------
       INTEGER, INTENT( in )     :: kt
-      !
-      INTEGER                   :: jn
-      CHARACTER (len=20)        :: cltra
       CHARACTER (len=40)        :: clhstnam
       INTEGER ::   inum = 11            ! temporary logical unit
       !!---------------------------------------------------------------------
@@ -64,11 +65,14 @@ CONTAINS
       ENDIF
       ! write the tracer concentrations in the file
       ! ---------------------------------------
+      IF( ln_canoe   )   CALL trc_wri_canoe      ! CANOE  
+      IF( ln_cmoc    )   CALL trc_wri_cmoc       ! CMOC   
       IF( ln_pisces  )   CALL trc_wri_pisces     ! PISCES 
       IF( ll_cfc     )   CALL trc_wri_cfc        ! surface fluxes of CFC
       IF( ln_c14     )   CALL trc_wri_c14        ! surface fluxes of C14
       IF( ln_age     )   CALL trc_wri_age        ! AGE tracer
       IF( ln_my_trc  )   CALL trc_wri_my_trc     ! MY_TRC  tracers
+      !
       !
       IF( ln_timing )   CALL timing_stop('trc_wri')
       !
