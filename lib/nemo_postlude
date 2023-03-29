@@ -68,8 +68,6 @@
   [ -s input_ice_restart_file_names ] && cat input_ice_restart_file_names | xargs rm -f
   [ -s input_trc_restart_file_names ] && cat input_trc_restart_file_names | xargs rm -f
 
-  # Should we save the NEMO restart to DATAPATH
-
     # The file saved_history_file_names will contain a list of saved files to be archived.
     # Since "save" will blindly transpose all file name characters to lower case before
     # saving to DATAPATH, we must keep track of the case of these files in some way.
@@ -144,132 +142,123 @@
     # ================================
     # Save the current restart files.
     # ================================
-    nemo_save_rs=${nemo_save_rs:-on}
-    ToF nemo_save_rs
 
     # MAIN RESTART FILES
-    if [ $nemo_save_rs -eq 1 ]; then
-        # Collect up the current restarts and save them to DATAPATH
-        rm -rf NEXT_RESTART_ARC
-        mkdir NEXT_RESTART_ARC
+    rm -rf NEXT_RESTART_ARC
+    mkdir NEXT_RESTART_ARC
 
-        # Identify the last NEMO timestep, which will be in the rs names
-        end_step=$(get_namelist_var nn_itend namelist | awk '{printf "%8.8d",$1}')
+    # Identify the last NEMO timestep, which will be in the rs names
+    end_step=$(get_namelist_var nn_itend namelist | awk '{printf "%8.8d",$1}')
 
-        # Look for ocean restart files matching the pattern below
-        eval ofnpatt=${cn_exp}_${end_step}_${cn_ocerst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
-        found_rs=`(ls -1 $ofnpatt || : ) 2>/dev/null`
+    # Look for ocean restart files matching the pattern below
+    eval ofnpatt=${cn_exp}_${end_step}_${cn_ocerst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
+    found_rs=$(ls -1 $ofnpatt || : 2>/dev/null)
+    if [ -z "$found_rs" ]; then
+      # No ocean restart files exist
+      bail "Attempting to save restarts but no ocean restart files exist. Looking for $ofnpatt"
+    else
+      mv $found_rs NEXT_RESTART_ARC
+    fi
+
+    if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
+        # Look for pisces restart files matching the pattern below
+        eval pfnpatt=${cn_exp}_${end_step}_${cn_trcrst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
+        found_rs=$(ls -1 $pfnpatt || : 2>/dev/null)
         if [ -z "$found_rs" ]; then
-          # No ocean restart files exist
-          bail "Attempting to save restarts but no ocean restart files exist. Looking for $ofnpatt"
+          # No pisces restart files exist
+          bail "Attempting to save restarts but no pisces restart files exist. Looking for $pfnpatt"
         else
           mv $found_rs NEXT_RESTART_ARC
         fi
+    fi
 
-      if [ $nemo_trc -eq 1 ] || [ $nemo_carbon -eq 1 ]; then
-          # Look for pisces restart files matching the pattern below
-          eval pfnpatt=${cn_exp}_${end_step}_${cn_trcrst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
-          found_rs=`(ls -1 $pfnpatt || : ) 2>/dev/null`
-          if [ -z "$found_rs" ]; then
-            # No pisces restart files exist
-            bail "Attempting to save restarts but no pisces restart files exist. Looking for $pfnpatt"
-          else
-            mv $found_rs NEXT_RESTART_ARC
-          fi
-      fi
+    if [ $with_ice -eq 1 ]; then
+       # Look for ice restart files
+       eval ifnpatt=${cn_exp}_${end_step}_${cn_icerst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
+       found_rs=$(ls -1 $ifnpatt || : 2>/dev/null)
+       if [ -z "$found_rs" ]; then
+          # No ice restart files exist
+          bail "Attempting to save restarts but no ice restart files exist. Looking for $ifnpatt"
+       else
+          mv $found_rs NEXT_RESTART_ARC
+       fi
+    fi
 
-      if [ $with_ice -eq 1 ]; then
-         # Look for ice restart files
-         eval ifnpatt=${cn_exp}_${end_step}_${cn_icerst_out}_\[0-9\]\[0-9\]\[0-9\]\[0-9\].nc
-         found_rs=`(ls -1 $ifnpatt || : ) 2>/dev/null`
-         if [ -z "$found_rs" ]; then
-            # No ice restart files exist
-            bail "Attempting to save restarts but no ice restart files exist. Looking for $ifnpatt"
-         else
-            mv $found_rs NEXT_RESTART_ARC
-         fi
-      fi
+    # ADD ADDITIONAL FILES
+    filelist=''
 
-      # ADD ADDITIONAL FILES
-      tarlist=''
+    # namelist files
+    cp -f namelist rs_namelist || :
+    [ -s rs_namelist ] && filelist="$filelist rs_namelist"
+    cp -f namelist_top rs_namelist_top || :
+    [ -s rs_namelist_top ] && filelist="$filelist rs_namelist_top"
+    cp -f namelist_ice rs_namelist_ice || :
+    [ -s rs_namelist_ice ] && filelist="$filelist rs_namelist_ice"
+    if [ $nemo_carbon -eq 1 ]; then
+      cp -f namelist_pisces rs_namelist_pisces || :
+      [ -s rs_namelist_pisces ]  && filelist="$filelist rs_namelist_pisces"
 
-      # namelist files
-      cp -f namelist rs_namelist || :
-      [ -s rs_namelist ] && tarlist="$tarlist rs_namelist"
-      cp -f namelist_top rs_namelist_top || :
-      [ -s rs_namelist_top ] && tarlist="$tarlist rs_namelist_top"
-      cp -f namelist_ice rs_namelist_ice || :
-      [ -s rs_namelist_ice ] && tarlist="$tarlist rs_namelist_ice"
-      if [ $nemo_carbon -eq 1 ]; then
-        cp -f namelist_pisces rs_namelist_pisces || :
-        [ -s rs_namelist_pisces ]  && tarlist="$tarlist rs_namelist_pisces"
-
-        if [ $nemo_cmoc -eq 1 ]; then
-          cp -f namelist_cmoc rs_namelist_cmoc || :
-          if [ -s rs_namelist_cmoc ]; then
-            chmod u+rw rs_namelist_cmoc
-            tarlist="$tarlist rs_namelist_cmoc"
-          fi
+      if [ $nemo_cmoc -eq 1 ]; then
+        cp -f namelist_cmoc rs_namelist_cmoc || :
+        if [ -s rs_namelist_cmoc ]; then
+          chmod u+rw rs_namelist_cmoc
+          filelist="$filelist rs_namelist_cmoc"
         fi
       fi
-
-      # current executable
-      rm -f rs_${nemo_exec}
-      cp -f ${nemo_exec} rs_${nemo_exec} || :
-      [ -s rs_${nemo_exec} ] && tarlist="$tarlist rs_${nemo_exec}"
-
-      if [[ "$runmode" == NEMO-AGCM-dcpp-assim* ]] ; then
-        # Add a EMPave data for nn_fwb=2
-        cp -f EMPave.dat rs_EMPave.dat || :
-        [ -s rs_EMPave.dat ] && tarlist="$tarlist rs_EMPave.dat"
-      fi
-
-      # time step file
-      cp -f time.step rs_time.step || :
-      [ -s rs_time.step ] && tarlist="$tarlist rs_time.step"
-
-      # ocean output file
-      cp -f ocean.output rs_ocean.output || :
-      [ -s rs_ocean.output ] && tarlist="$tarlist rs_ocean.output"
-
-      # checksum file of ocean prognostic state (for bit identity checks)
-      cp -f final.state rs_final.state || :
-      [ -s rs_final.state ] && tarlist="$tarlist rs_final.state"
-
-      # ocean timing stats
-      cp -f timing.output rs_timing.output || :
-      [ -s rs_timing.output ] && tarlist="$tarlist rs_timing.output"
-
-      # list of history files that are saved (Needed?)
-      cp -f saved_history_file_names rs_saved_history_file_names || :
-      [ -s rs_saved_history_file_names ] && tarlist="$tarlist rs_saved_history_file_names"
-
-      # Access log for nemo? (Needed?)
-      cp -f xnemo_access_log rs_xnemo_access_log || :
-      [ -s rs_xnemo_access_log ] && tarlist="$tarlist rs_xnemo_access_log"
-
-      # Add the output.init file created by the model, if present
-      eval ifnpatt=output.init*.nc
-      found_rs=`(ls -1 $ifnpatt || : ) 2>/dev/null`
-      [  -n "$found_rs" ]  && tarlist="$tarlist $found_rs"
-
-      # Add the output_trc.init file created by the model, if present
-      eval ifnpatt=output_trc.init*.nc
-      found_rs=`(ls -1 $ifnpatt || : ) 2>/dev/null`
-      [  -n "$found_rs" ]  && tarlist="$tarlist $found_rs"
-
-      # the mesh mask file
-      [ -s rs_mesh_mask.nc ] && tarlist="$tarlist rs_mesh_mask.nc"
-
-      # MOVE ADDITIONAL FILES INTO ARCHIVE
-      mv -f $tarlist NEXT_RESTART_ARC || :
-
-      # SAVE
-      if [ -n "$model_rs" ]; then
-        rs_out=${model_rs}nemors
-      else
-        rs_out=${uxxx}_${cn_exp}_${nemo_stop_date}_restart.tar
-      fi
-      save NEXT_RESTART_ARC $rs_out
-      release NEXT_RESTART_ARC
     fi
+
+    # current executable
+    rm -f rs_${nemo_exec}
+    cp -f ${nemo_exec} rs_${nemo_exec} || :
+    [ -s rs_${nemo_exec} ] && filelist="$filelist rs_${nemo_exec}"
+
+    if [[ "$runmode" == NEMO-AGCM-dcpp-assim* ]] ; then
+      # Add a EMPave data for nn_fwb=2
+      cp -f EMPave.dat rs_EMPave.dat || :
+      [ -s rs_EMPave.dat ] && filelist="$filelist rs_EMPave.dat"
+    fi
+
+    # time step file
+    cp -f time.step rs_time.step || :
+    [ -s rs_time.step ] && filelist="$filelist rs_time.step"
+
+    # ocean output file
+    cp -f ocean.output rs_ocean.output || :
+    [ -s rs_ocean.output ] && filelist="$filelist rs_ocean.output"
+
+    # checksum file of ocean prognostic state (for bit identity checks)
+    cp -f final.state rs_final.state || :
+    [ -s rs_final.state ] && filelist="$filelist rs_final.state"
+
+    # ocean timing stats
+    cp -f timing.output rs_timing.output || :
+    [ -s rs_timing.output ] && filelist="$filelist rs_timing.output"
+
+    # list of history files that are saved (Needed?)
+    cp -f saved_history_file_names rs_saved_history_file_names || :
+    [ -s rs_saved_history_file_names ] && filelist="$filelist rs_saved_history_file_names"
+
+    # Access log for nemo? (Needed?)
+    cp -f xnemo_access_log rs_xnemo_access_log || :
+    [ -s rs_xnemo_access_log ] && filelist="$filelist rs_xnemo_access_log"
+
+    # Add the output.init file created by the model, if present
+    eval ifnpatt=output.init*.nc
+    found_rs=`(ls -1 $ifnpatt || : ) 2>/dev/null`
+    [  -n "$found_rs" ]  && filelist="$filelist $found_rs"
+
+    # Add the output_trc.init file created by the model, if present
+    eval ifnpatt=output_trc.init*.nc
+    found_rs=`(ls -1 $ifnpatt || : ) 2>/dev/null`
+    [  -n "$found_rs" ]  && filelist="$filelist $found_rs"
+
+    # the mesh mask file
+    [ -s rs_mesh_mask.nc ] && filelist="$filelist rs_mesh_mask.nc"
+
+    # MOVE ADDITIONAL FILES INTO ARCHIVE
+    mv -f $filelist NEXT_RESTART_ARC || :
+
+    # SAVE
+    rs_out=${model_rs}tiled_nemors
+    save NEXT_RESTART_ARC $rs_out
+    release NEXT_RESTART_ARC
