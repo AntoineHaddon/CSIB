@@ -247,14 +247,7 @@ cd $wrkdir
 if [[ ${inrs} == ${outrs} ]]; then
     dir_del_list+=" ${inrs}"
 fi
-mkdir cleanup
-cd cleanup
-for fil in $dir_del_list; do
-   access xxx-to-del $fil
-   delete xxx-to-del
-done
-cd $wrkdir
-rm -rf cleanup
+fdb mdelete $dir_del_list
 
 # Finally, save new directory with the rebuilt files
 mkdir out_${outrs}
