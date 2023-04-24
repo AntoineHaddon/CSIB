@@ -248,8 +248,7 @@ cd $wrkdir
 if [[ ${inrs} == ${outrs} ]]; then
     dir_del_list+=" ${inrs}"
 fi
-
-fdb mdelete $dir_del_list || true
+fdb mdelete $dir_del_list
 
 # Finally, save new directory with the rebuilt files
 mkdir out_${outrs}
