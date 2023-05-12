@@ -5,9 +5,10 @@ PROGRAM nemo_ocean_diag
 !
 ! HISTORY
 !--------
-! D. Yang  Jul 2022         Use varying vertical scale factors to replace
-!                           the reference ones.
-!
+! D. Yang  Mar 17 2023      Furthe adjust computations for vol, tvol & svol 
+!                           (exclude ssh portion)
+! D. Yang  Jul 2022         Use varying vertical scale factors (e3?) to replace
+!                           the reference ones (e3?_0).
 ! D. Yang  Jun 2021         Adapt to NEMO4.0.3.
 !
 ! N. Swart    Dec    2015   Abstract all calculations to ccc_nemo_rtd_utils
@@ -130,9 +131,7 @@ PROGRAM nemo_ocean_diag
 !     Output data 
 ! ======================================================================
 ! (1) Global volume (m3)
-      REAL, DIMENSION(:), ALLOCATABLE :: vol0    ! global volume (not counting ssh)
-      REAL, DIMENSION(:), ALLOCATABLE :: vol     ! global total volume (counting ssh)
-! (2) Global-mean profiles of T(z) and S(z) (C, g/kg)
+      REAL, DIMENSION(:), ALLOCATABLE :: vol     ! global total volume (nonlinear free surface)
       REAL, DIMENSION(:,:), ALLOCATABLE :: theta_z, salt_z
 !     Global-mean T and S  (C, g/kg)) 
       REAL, DIMENSION(:), ALLOCATABLE :: tvol, svol 
@@ -245,7 +244,7 @@ PROGRAM nemo_ocean_diag
          &      snow_ai(lm), hflx_snow2(lm), isnwmlt(lm), snowmel(lm),            &
          &      hflx_qsr_tot_ave(lm), hflx_qns_tot_ave(lm),                       &
          &      hflx_qsr_ice_ave(lm), hflx_qns_ice_ave(lm),                       &
-         &      vol0(lm), vol(lm),                                                &
+         &      vol(lm),                                                          &
          &      STAT=ierr(8))
 
          IF (MAXVAL(ierr) /=0) THEN
@@ -396,7 +395,6 @@ PROGRAM nemo_ocean_diag
       enddo
 
 ! ********** Init / probably uneeded  ************
-      vol0(:)          = 0.0_dp
       vol(:)           = 0.0_dp
       tvol(:)          = 0.0_dp
       svol(:)          = 0.0_dp
@@ -438,7 +436,7 @@ PROGRAM nemo_ocean_diag
          !---------------------------------------------------
          ! Read in the monthly data from NetCDF
          !---------------------------------------------------
-         ! vertical scale factors (i.e., layer thinkness, change because we use vvl)
+         ! vertical scale factors - nonlinear free surface case 
           CALL getvara ('e3t', iou0, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), e3t , 1., 0.)
           CALL getvara ('e3u', iou1, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), e3u , 1., 0.)
           CALL getvara ('e3v', iou2, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), e3v , 1., 0.)
@@ -516,14 +514,19 @@ PROGRAM nemo_ocean_diag
     ! ---------------------------- Global mean ssh (cm)
           sshglo(l) = (volssh/area_tot)*1.0e2
     ! ---------------------------- Total volume
-          vol(l) = vol0(l) + volssh
+          ! Total global volume - nonlinear free surface case
+          do k = 1, km
+             do j = 1, jmt
+                do i = 1, imt          
+                   vol(l) = vol(l) + tarea(i, j)*t_mask(i, j, k)*e3t(i, j, k)
+                enddo
+             enddo
+          enddo
     ! ---------------------------- Global mean temperature (C) & salinity (psu)
-          tvol(l) = SUM(zarea_ssh(:, :)*theta(:, :, 1))
-          svol(l) = SUM(zarea_ssh(:, :)* salt(:, :, 1))
           do k = 1, km
               do j = 1, jmt
                   do i = 1, imt
-                      zztmp = tarea(i,j)*e3t(i,j,k)
+                      zztmp = tarea(i,j)*e3t(i,j,k)*t_mask(i, j, k)
                       tvol(l) = tvol(l) + zztmp*theta(i, j, k)
                       svol(l) = svol(l) + zztmp*salt(i, j, k)
                   enddo
@@ -968,7 +971,7 @@ PROGRAM nemo_ocean_diag
      &       , 'depth of the t grid', 'depth', 'm')
 
           call defvar ('ocean_volume', iou, 1, (/id_time/), 0., 1.e20, ' ', 'F' &
-              , 'Ocean volume excluding ssh portion', 'ocean_volume', 'm3')    
+              , 'Ocean volume', 'ocean_volume', 'm3')    
 
 !         Temp
           call defvar ('T', iou, 1, (/id_time/), -1.e4                         &
@@ -1191,8 +1194,8 @@ PROGRAM nemo_ocean_diag
         ntrec2 = ntrec + l - 1
         call putvars ('time', iou, ntrec2, tdays_elapsed, 1., 0.)
 
-!       Global volume (not counting ssh)
-        call putvars ('ocean_volume', iou, ntrec2, vol0(l), 1., 0.)
+        !Global volume (nonlinear free surface case, i.e., e3t is time-varying)
+        call putvars ('ocean_volume', iou, ntrec2, vol(l), 1., 0.)
 
 !       Temp
         call putvars ('T', iou, ntrec2, tvol(l), 1., 0.)
