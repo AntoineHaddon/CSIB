@@ -12,6 +12,12 @@
 
       <file_group id="1m" output_freq="1mo"  enabled=".TRUE."> <!-- real monthly files -->
 
+        <file id="file10" name_suffix="_scalar" description="ocean scalar variables">
+          <field field_ref="voltot"           name="volo"          level="0" />
+          <field field_ref="temptot"          name="thetaoga"      level="0" />
+          <field field_ref="saltot"           name="sogay"         level="0" />
+        </file>
+
         <file id="file11" name_suffix="_grid_T" description="ocean T grid variables">
           <field field_ref="toce"             name="thetao"         level="0" /> <!-- (Omon*) level = 1 in CMIP6 -->
           <field field_ref="soce"             name="so"             level="0" /> <!-- (Omon*) level = 1 in CMIP6 -->
