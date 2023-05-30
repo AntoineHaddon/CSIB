@@ -66,11 +66,11 @@ contains
       !=========================================================
       ! Global meridional overturning (Sv) (valid only south of 20N)  
       !=========================================================
-      SUBROUTINE moc(e1v, e3v, v, imt, jmt, km, over_psi)
+      SUBROUTINE moc(e1v, e3v, mask, v, imt, jmt, km, over_psi)
             implicit none
             integer imt, jmt, km, i, j, k
             REAL, DIMENSION(imt, jmt) :: e1v
-            REAL, DIMENSION(imt, jmt, km) :: e3v, v
+            REAL, DIMENSION(imt, jmt, km) :: e3v, v, mask
             REAL, DIMENSION(jmt, km) :: over_tran, over_psi
             REAL s
 
@@ -79,7 +79,9 @@ contains
                 do k = km, 1, -1
                     s=0.
                     do i = 1, imt - 2  ! not to double count the cyclic boundary
-                        s = s + v(i, j, k)*e1v(i, j)*e3v(i, j, k)
+                      if (mask(i,j,k).gt.0.5) then  ! mask the region of interst
+                        s = s + v(i, j, k)*e1v(i, j)*e3v(i, j, k) 
+                      endif  
                     enddo
                     over_tran(j, k) = s
                     over_psi(j, k)  = 0.

@@ -704,9 +704,9 @@ PROGRAM nemo_ocean_diag
           v(:, :, :) = v(:, :, :) + gmv(:, :, :) 
           w(:, :, :) = w(:, :, :) + gmw(:, :, :) 
 
-          call moc(e1v, e3v, v(:, :, :), imt, jmt, km               & 
+          call moc(e1v, e3v, v_mask, v(:, :, :), imt, jmt, km               & 
             &     , over_psi(:, :))
-          call moc(e1v, e3v, gmv(:,:,:), imt, jmt, km                &
+          call moc(e1v, e3v, v_mask, gmv(:,:,:), imt, jmt, km                &
             &     , over_psi_eddy(:, :))
     ! NADW
           do k = k500, km ! below ~ 500 m 
