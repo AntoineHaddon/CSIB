@@ -604,9 +604,11 @@ PROGRAM nemo_ocean_diag
           do i = 1, imt-2
                if (lon2d(i,10).ge.150..or.lon2d(i,10).le.-75.) then
                    do k = 1, k500 
+                     if (u_mask(i,j_eq,k).gt.0.5) then
                        if (u(i, j_eq, k).gt. euc_max(l)) then
                            euc_max(l) = u(i, j_eq, k)
                        endif
+                     endif  
                    enddo 
                endif
           enddo            
@@ -716,7 +718,7 @@ PROGRAM nemo_ocean_diag
     !
               if (over_psi(j_20S, k).gt.over_max_20S(l)) then   
                   over_max_20S(l) = over_psi(j_20S, k) 
-             endif
+              endif
           enddo    
     ! AABW 
           do k = k2000, km ! below ~ 2000 m 
@@ -732,13 +734,14 @@ PROGRAM nemo_ocean_diag
           do k = 1, km 
               do j =1, jmt   
                   if (lat2d(10,j).le.-40.) then ! south of 40S 
+                    if (v_mask(10,j,k).gt.0.5) then      
                       if (over_psi(j, k).gt.over_max_SO_net(l)) then      
                           over_max_SO_net(l) = over_psi(j, k) 
                       endif
-    !
                       if (over_psi_eddy(j, k).lt.over_min_SO_eddy(l)) then    
                           over_min_SO_eddy(l) = over_psi_eddy(j, k) 
                       endif
+                    endif                      
                   endif
               enddo 
           enddo    
