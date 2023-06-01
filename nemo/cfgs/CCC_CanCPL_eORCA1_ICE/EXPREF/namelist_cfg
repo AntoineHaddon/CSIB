@@ -408,7 +408,8 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
    ln_dynldf_lap =  .true.     !    laplacian operator
    ln_dynldf_lev =  .true.     !  iso-level
-   nn_ahm_ijk_t  = -30         !  =-30  3D coeff. read in eddy_diffusivity_3D.nc
+   nn_ahm_ijk_t  =  20         !  =-30  3D coeff. read in eddy_diffusivity_3D.nc
+                               !  = 20  F(i,j)=F(grid spacing)=c2d
 /
 !!======================================================================
 !!                     vertical physics namelists                     !!
