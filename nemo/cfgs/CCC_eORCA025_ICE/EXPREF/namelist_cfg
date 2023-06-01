@@ -401,7 +401,7 @@
       rn_hsbfr =    1.6       !  heat/salt buoyancy flux ratio
    ln_zdfiwm   = .false.      ! internal wave-induced mixing            (T =>   fill namzdf_iwm)
    !                       !  Coefficients
-   ln_zdftmx   =  .true.      !  old tidal mixing scheme (Simmons et al 2004) (T => fill namzdf_tmx)
+   ln_zdftmx   =  .true.      !  tidal mixing scheme (Simmons et al 2004) (T => fill namzdf_tmx)
    rn_avm0     =   1.2e-4     !  vertical eddy viscosity   [m2/s]       (background Kz if ln_zdfcst=F)
    rn_avt0     =   1.2e-5     !  vertical eddy diffusivity [m2/s]       (background Kz if ln_zdfcst=F)
    nn_avb      =    0         !  profile for background avt & avm (=1) or not (=0)
@@ -436,7 +436,7 @@
    ln_tmx_itf  = .true.    !  ITF specific parameterisation
    rn_tfe_itf  = 1.        !  ITF tidal dissipation efficiency
    ln_s2004    = .false.   !  Compute zav_tide following Simmons et al (2004)
-   ln_sm2005   = .true.    !  Compute zav_tide following following Saenko and Merryfield (2005)
+   ln_sm2005   = .true.    !  Compute zav_tide following Saenko and Merryfield (2005)
    ln_leewmx   = .true.    !  addition of Lee Wave mixing (.true.) or not (.false.)
    rn_lwm      = 0.3       !  lee wave mixing scaling
 /
