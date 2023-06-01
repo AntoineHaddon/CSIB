@@ -93,22 +93,22 @@
 !-----------------------------------------------------------------------
 &namsbc        !   Surface Boundary Condition manager                   (default: NO selection)
 !-----------------------------------------------------------------------
-   nn_fsbc     = 4         !  frequency of SBC module call
+   nn_fsbc     = 1         !  frequency of SBC module call
                            !     (also = the frequency of sea-ice & iceberg model call)
                      ! Type of air-sea fluxes
                      !   ln_blk or ln_cpl will be set to true by config-canesm
    ln_flx      = .false.   !  flux formulation                          (T => fill namsbc_flx )
-   ln_blk      = .false.    !  Bulk formulation                          (T => fill namsbc_blk )
+   ln_blk      = .false.   !  Bulk formulation                          (T => fill namsbc_blk )
       !              ! Type of coupling (Ocean/Ice/Atmosphere) :
-   ln_cpl      = .false.   !  atmosphere coupled   formulation          ( requires key_oasis3 )
+   ln_cpl      = .true.    !  atmosphere coupled   formulation          ( requires key_oasis3 )
      lk_cancpl   = .true.    !  CanCPL coupler 
                      ! Sea-ice :
    nn_ice      = 2         !  =2 or 3 automatically for SI3 or CICE    ("key_si3" or "key_cice")
                            !          except in AGRIF zoom where it has to be specified
                      ! Misc. options of sbc :
    ln_traqsr   = .true.    !  Light penetration in the ocean            (T => fill namtra_qsr)
-   ln_ssr      = .false.    !  Sea Surface Restoring on T and/or S       (T => fill namsbc_ssr)
-   ln_rnf      = .false.    !  runoffs                                   (T => fill namsbc_rnf)
+   ln_ssr      = .false.   !  Sea Surface Restoring on T and/or S       (T => fill namsbc_ssr)
+   ln_rnf      = .false.   !  runoffs                                   (T => fill namsbc_rnf)
    nn_fwb      = 0         !  FreshWater Budget:
    !                       !    =2 annual global mean of e-p-r set to zero
    ln_wave     = .false.   !  Activate coupling with wave  (T => fill namsbc_wave)
