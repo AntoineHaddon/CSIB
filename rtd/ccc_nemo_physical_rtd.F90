@@ -5,6 +5,7 @@ PROGRAM nemo_ocean_diag
 !
 ! HISTORY
 !--------
+! D. Yang  Jun 26 2023      Revise to use vol, tvol & svol from model
 ! D. Yang  Mar 17 2023      Furthe adjust computations for vol, tvol & svol 
 !                           (exclude ssh portion)
 ! D. Yang  Jul 2022         Use varying vertical scale factors (e3?) to replace
@@ -46,7 +47,7 @@ PROGRAM nemo_ocean_diag
 ! May 22/13 - O. Saenko   Original code.
 ! 
 !
-! PURPOSE - Run-time diagnostics for NEMO (ORCA1)
+! PURPOSE - Run-time diagnostics for NEMO
 !
 ! USAGE
 ! -----
@@ -64,6 +65,7 @@ PROGRAM nemo_ocean_diag
 !    - grid_u : monthly frequency (_1m_)
 !    - grid_v : monthly frequency (_1m_)
 !    - grid_w : monthly frequency (_1m_)
+!    - scalar : monthly frequency (_1m_)
 !
 ! OUTPUT FILES
 ! ------------
@@ -80,7 +82,7 @@ PROGRAM nemo_ocean_diag
       IMPLICIT NONE
       integer, parameter:: dp=kind(0.d0) ! double precision
       INTEGER :: i, j, k, l, imt, jmt, km, lm, year, mon, nrecon
-      INTEGER :: iou0, iou1, iou2, iou3, iou4, iou5, iou11
+      INTEGER :: iou0, iou1, iou2, iou3, iou4, iou5, iou6, iou11
       INTEGER :: j_20N, j_20S, j_eq, k60, k500, k2000, i_DP, j_DP_S 
       INTEGER :: j_DP_N, i_IN_E1, i_IN_W1, i_IN_E2, i_IN_W2
       INTEGER :: i_AN_E, i_AN_W, i_AS_E, i_AS_W, i_PN_E, i_PN_W
@@ -192,7 +194,7 @@ PROGRAM nemo_ocean_diag
       LOGICAL :: exists, exists1, notopen
       REAL    :: tyear, tdays_elapsed
       CHARACTER :: fname01*100,fname02*100, fname03*100
-      CHARACTER :: fname04*100, fname05*100, fname06*100
+      CHARACTER :: fname04*100, fname05*100, fname06*100, fname07*100
       CHARACTER(len=32) :: year_arg_in, mon_arg_in
       integer, dimension(8) :: ierr
 ! Constants
@@ -325,6 +327,7 @@ PROGRAM nemo_ocean_diag
         fname04='grid_w'
         fname05='orca_mesh_mask'
         fname06='icemod'
+        fname07='scalar'
 
 !---------------------------------------------------
 !    Open the defined NetCDF files   
@@ -335,6 +338,7 @@ PROGRAM nemo_ocean_diag
       call openfile (fname03,iou2)
       call openfile (fname04,iou3)
       call openfile (fname06,iou5)
+      call openfile (fname07,iou6)
 ! open file with mask/grid info
       call openfile (fname05,iou4)
 
@@ -395,9 +399,9 @@ PROGRAM nemo_ocean_diag
       enddo
 
 ! ********** Init / probably uneeded  ************
-      vol(:)           = 0.0_dp
-      tvol(:)          = 0.0_dp
-      svol(:)          = 0.0_dp
+!     vol(:)           = 0.0_dp
+!     tvol(:)          = 0.0_dp
+!     svol(:)          = 0.0_dp
       theta_z(:,:)     = 0.0_dp
       salt_z(:,:)      = 0.0_dp
       euc_max(:)       = 0.0_dp 
@@ -486,6 +490,10 @@ PROGRAM nemo_ocean_diag
           CALL getvara ('qsr_ice', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qsr_ice, 1., 0.)
           CALL getvara ('qns_ice', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qns_ice, 1., 0.)
 
+          CALL getvara ('volo', iou6, 1, (/l/), (/1/), vol(l), 1., 0.)
+          CALL getvara ('thetaoga', iou6, 1, (/l/), (/1/), tvol(l), 1., 0.)
+          CALL getvara ('sogay', iou6, 1, (/l/), (/1/), svol(l), 1., 0.)
+
          ! Wind enery input
           wind_x =  tau_x(:,:)*u(:,:,1)* u_mask(:, :, 1)
           wind_y =  tau_y(:,:)*v(:,:,1)* v_mask(:, :, 1)
@@ -507,27 +515,27 @@ PROGRAM nemo_ocean_diag
           sshglo(l) = (volssh/area_tot)*1.0e2
     ! ---------------------------- Total volume
           ! Total global volume - nonlinear free surface case
-          do k = 1, km
-             do j = 1, jmt
-                do i = 1, imt          
-                   vol(l) = vol(l) + tarea(i, j)*t_mask(i, j, k)*e3t(i, j, k)
-                enddo
-             enddo
-          enddo
+    !     do k = 1, km
+    !        do j = 1, jmt
+    !           do i = 1, imt          
+    !              vol(l) = vol(l) + tarea(i, j)*t_mask(i, j, k)*e3t(i, j, k)
+    !           enddo
+    !        enddo
+    !     enddo
     ! ---------------------------- Global mean temperature (C) & salinity (psu)
-          do k = 1, km
-              do j = 1, jmt
-                  do i = 1, imt
-                      zztmp = tarea(i,j)*e3t(i,j,k)*t_mask(i, j, k)
-                      tvol(l) = tvol(l) + zztmp*theta(i, j, k)
-                      svol(l) = svol(l) + zztmp*salt(i, j, k)
-                  enddo
-              enddo
-          enddo
-          if (vol(l).ne.0.) then
-            tvol(l) = tvol(l) / vol(l) ! C 
-            svol(l) = svol(l) / vol(l) ! psu 
-          endif
+    !     do k = 1, km
+    !         do j = 1, jmt
+    !             do i = 1, imt
+    !                 zztmp = tarea(i,j)*e3t(i,j,k)*t_mask(i, j, k)
+    !                 tvol(l) = tvol(l) + zztmp*theta(i, j, k)
+    !                 svol(l) = svol(l) + zztmp*salt(i, j, k)
+    !             enddo
+    !         enddo
+    !     enddo
+    !     if (vol(l).ne.0.) then
+    !       tvol(l) = tvol(l) / vol(l) ! C 
+    !       svol(l) = svol(l) / vol(l) ! psu 
+    !     endif
     ! end DY, 11/OCT/2013
 
     !---------------------------------------------------
