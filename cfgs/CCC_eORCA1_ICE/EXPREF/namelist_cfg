@@ -93,7 +93,7 @@
 !-----------------------------------------------------------------------
 &namsbc        !   Surface Boundary Condition manager                   (default: NO selection)
 !-----------------------------------------------------------------------
-   nn_fsbc     = 4         !  frequency of SBC module call
+   nn_fsbc     = 1         !  frequency of SBC module call
                            !     (also = the frequency of sea-ice & iceberg model call)
                      ! Type of air-sea fluxes
                      !   ln_blk or ln_cpl will be set to true by config-canesm
