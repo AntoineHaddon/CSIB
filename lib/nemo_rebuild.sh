@@ -99,9 +99,9 @@ fi
 [ -s "${inrs}" ]|| bail "Could not find ${inrs}"
 
 #access the coordinates files (used for lat/lon later)
-access tmp.nc $nemo_coordinates  nocp=no  #force copy because we make temporary changes
-cp tmp.nc coor.nc && rm tmp.nc
+access coor.nc $nemo_coordinates  nocp=no  #force copy because we make temporary changes
 ncrename -h -O -d t,time_counter coor.nc coor.nc || true #no error if already done
+ncks -h -O -v e1.,e2.,nav_lon,nav_lat,glam.,gphi. coor.nc coor.nc
 ncwa -h -O -a time_counter coor.nc coor.nc && ncks -h -O -x -v  time_counter coor.nc coor.nc
 
 # remove the jstart if  ln_use_jatt is true in the namelist
@@ -125,7 +125,7 @@ if [ $nemo_save_hist == "on" ] ; then
       freq=${nemo_hist_file_freq_list_array[$i]}
       lsfx=$(echo "$sfx" | tr '[:upper:]' '[:lower:]')
       indir=${model1}_${freq}_${lsfx}
-      access $indir $indir.nc nocp=off na 
+      access $indir $indir nocp=off na 
       if [ -d "$indir" ] ; then 
         # if don't exist, re-tile probably done by NEMO
         dir_del_list+=" $indir"
@@ -143,8 +143,7 @@ if [ $nemo_save_hist == "on" ] ; then
       fi
          # Replace the lat/lon to remove the hold made by the land processors elimination
         ncsave=${freq}_${lsfx}
-        access tmp.nc $indir.nc nocp=no na #force copy because we make temporary changes
-        cp tmp.nc $ncsave.nc && rm tmp.nc
+        access  $ncsave.nc $indir.nc nocp=no na #force copy because we make temporary changes
       if [ -e "$ncsave.nc" ] ; then
         # detect the grid (U/V/F/T) with the suffix
         if [[ ${sfx,,} == *"grid_u"*  ]];then
@@ -164,7 +163,7 @@ if [ $nemo_save_hist == "on" ] ; then
                     ncap2 -h -O -s "nav_lon=glamt;nav_lat=gphit"  $ncsave.nc  $ncsave.nc )
         fi
         ncks -h -O -x -v gphi.,glam.  $ncsave.nc  $ncsave.nc
-        access $indir.nc $indir.nc nocp=off na 
+        access $indir.nc $indir.nc na 
         delete  $indir.nc #delete and re-save to avoid new version
         save $ncsave.nc $indir.nc
         release $ncsave.nc
@@ -290,6 +289,7 @@ if [ -s "${pfx}_0000.nc" ]; then
    ncks -x -h -O -v  nav_lon,nav_lat $pfx.nc $pfx.nc
    ncks -A -h -v nav_lon,nav_lat ${wrkdir}/coor.nc $pfx.nc
 fi
+rm ${wrkdir}/coor.nc 
 
 cd $wrkdir
 

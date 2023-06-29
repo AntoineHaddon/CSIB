@@ -71,7 +71,7 @@ PROGRAM nemo_diag_canoe
    !!----------------
    !! Allocate Arrays
    !!----------------
-   ALLOCATE( e3t(imt,jmt,km), tmask(imt,jmt,km), time_bnds(ntbnds,lm), STAT=ierr(1) )
+   ALLOCATE( e3t(imt,jmt,km,lm), tmask(imt,jmt,km), time_bnds(ntbnds,lm), STAT=ierr(1) )
    ALLOCATE( time(lm), ytime(ly), deptht(km), x(imt), y(jmt), STAT=ierr(2) )
    ALLOCATE( nav_lon_t(imt,jmt), nav_lat_t(imt,jmt), STAT=ierr(3) )
    ALLOCATE( TT(imt,jmt,km,lm), SS(imt,jmt,km,lm), CC(imt,jmt,km,lm), AA(imt,jmt,km,lm), &
@@ -112,7 +112,7 @@ PROGRAM nemo_diag_canoe
    !!-------------------
    !! Get grid/mask data   
    !!-------------------
-   CALL getvara ('e3t', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3t , 1., 0.)
+   !CALL getvara ('e3t', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3t , 1., 0.)
    CALL getvara ('tmask', iou1, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),tmask , 1., 0.)
    ! Mask out Caspian in CCCma ORCA1 grid
    IF ( (imt == 362) .AND. (jmt == 292) ) THEN
@@ -147,6 +147,7 @@ PROGRAM nemo_diag_canoe
    CALL getvara ('nav_lat', iou2, imt*jmt, (/1,1/), (/imt,jmt/), nav_lat_t, 1., 0.)
    ! deptht 
    CALL getvara ('deptht', iou2, km, (/1/), (/km/), deptht, 1., 0.)
+   CALL getvara ('e3t', iou2, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),e3t , 1., 0.)
    ! temperature
    CALL getvara ('votemper', iou2, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), TT, 1., 0.)
    ! salinity

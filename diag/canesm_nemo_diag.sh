@@ -165,7 +165,7 @@ set -x
     [ ! -e ${sfx}_${fmon} ] && continue
     ncks -O -C -x -v time_centered_bounds,time_centered ${sfx}_${fmon} ${sfx}_${fmon} 
     cdo splitname ${sfx}_${fmon} xxx-${sfx}_
-    release ${sfx}_${fmon}
+    rm  ${sfx}_${fmon}
   done
 
 # Save time series

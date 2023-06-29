@@ -19,6 +19,7 @@
 !-----------------------------------------------------------------------
 &namrun        !   parameters of the run
 !-----------------------------------------------------------------------
+   nn_no       =       0   !  Assimilation cycle index
    cn_exp      =  "ORCA1"  !  experience name
    nn_it000    =       1   !  first time step
    nn_itend    =    5840   !  last  time step (std 5475)
@@ -32,6 +33,8 @@
    cn_ocerst_in    = "restart"   !  suffix of ocean restart name (input)
    cn_ocerst_out   = "restart"   !  suffix of ocean restart name (output)
    ln_clobber  = .true.    !  clobber (overwrite) an existing file
+   nn_stock    =       0   
+   nn_write    =       0   
 /
 !-----------------------------------------------------------------------
 &namdom        !   time and space domain
@@ -54,8 +57,8 @@
 &namtsd        !    Temperature & Salinity Data  (init/dmp)             (default: OFF)
 !-----------------------------------------------------------------------
    !                       ! =T  read T-S fields for:
-   ln_tsd_init = .true.          !  ocean initialisation
-   ln_tsd_dmp  = .true.          !  T-S restoring   (see namtra_dmp)
+   ln_tsd_init = .true.          !  ocean initialisation  (if ln_rstart = .false.)
+   ln_tsd_dmp  = .false.          !  T-S restoring   (see namtra_dmp)
 
    cn_dir = './'     !  root directory for the T-S data location
    !___________!_________________________!___________________!___________!_____________!________!___________!__________________!__________!_______________!
@@ -179,7 +182,7 @@
 !-----------------------------------------------------------------------
 &namsbc_rnf    !   runoffs                                              (ln_rnf =T)
 !-----------------------------------------------------------------------
-   ln_rnf_mouth = .true.    !  specific treatment at rivers mouths
+   ln_rnf_mouth = .false.    !  specific treatment at rivers mouths
       rn_hrnf     =  15.e0    !  depth over which enhanced vertical mixing is used    (ln_rnf_mouth=T)
       rn_avt_rnf  =   1.e-3   !  value of the additional vertical mixing coef. [m2/s] (ln_rnf_mouth=T)
    rn_rfact    =   1.e0    !  multiplicative factor for runoff

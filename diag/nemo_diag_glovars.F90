@@ -12,7 +12,7 @@ MODULE nemo_diag_glovars
       INTEGER, PARAMETER :: nline = 15                      ! number of sections
       INTEGER, PARAMETER :: nline_ice = 4                   ! number of ice-sections
       REAL, DIMENSION(:,:), ALLOCATABLE       :: e2u, e1v
-      REAL, DIMENSION(:,:,:), ALLOCATABLE     :: e3u, e3v, e3t
+      REAL, DIMENSION(:,:,:,:), ALLOCATABLE     :: e3u, e3v, e3t
       REAL, DIMENSION(:,:,:), ALLOCATABLE     :: umask, vmask, tmask
       REAL, DIMENSION(:,:,:,:), ALLOCATABLE   :: u, v
       REAL, DIMENSION(:,:,:), ALLOCATABLE     :: ssh       ! sossheig (m)
