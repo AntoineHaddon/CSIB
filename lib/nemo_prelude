@@ -71,6 +71,15 @@ echo "#################### Start NEMO pre-processing #################"
   # This is the start of the simulation
   year_run_start=${run_start_time[0]:-1}
 
+  # ===================
+  # Access input files
+  # ===================
+  # - many are only pulled in they don't already exist
+
+  # run namelists
+  for f in "${nemo_namelists[@]}"; do
+      ! is_file $f && cp ${WRK_DIR}/config/namelists/${f} .
+  done
   # configuration input files
   is_defined $nemo_coordinates || bail "The variable nemo_coordinates must be defined in the configuration file."
   acc_cp domain_cfg.nc             $nemo_coordinates
@@ -412,19 +421,17 @@ echo "#################### Start NEMO pre-processing #################"
     fi
   fi
 
-  # ===================
-  # Access input files
-  # ===================
-  # - many are only pulled in they don't already exist
-  # - the main defaults are defined at the top of this script (should we move other runmode specific files?)
-
-  # run namelists
-  for f in "${nemo_namelists[@]}"; do
-      ! is_file $f && cp ${WRK_DIR}/config/namelists/${f} .
-  done
   # make namelist mods foir the restart switch 
     mod_nl namelist_cfg ln_rstart 
     [ "$nemo_trc" = "on" ] && mod_nl namelist_top_cfg ln_rsttr
+
+  # force nn_istate=1 when  $output_level -ge 1  and $with_nemo_diag -eq 1 because 
+  # ocean_diag needs the init.nc of the current year (1st Jan).
+  # init.nc keep only if nemo_nn_istate
+  if [ $output_level -ge 1 ] && [ $with_nemo_diag -eq 1 ] && [ $chunk_start_month == $run_start_month ];then 
+    nn_istate=1
+    mod_nl namelist_cfg nn_istate
+  fi
 
   # nemo executable
   ! is_file $nemo_exec && cp ${EXEC_STORAGE_DIR}/$nemo_exec .
