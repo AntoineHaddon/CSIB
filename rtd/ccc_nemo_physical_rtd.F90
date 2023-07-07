@@ -5,8 +5,10 @@ PROGRAM nemo_ocean_diag
 !
 ! HISTORY
 !--------
-! D. Yang  Jul 2022         Use varying vertical scale factors to replace
-!                           the reference ones.
+! D. Yang  Mar 17 2023      Furthe adjust computations for vol, tvol & svol 
+!                           (exclude ssh portion)
+! D. Yang  Jul 2022         Use varying vertical scale factors (e3?) to replace
+!                           the reference ones (e3?_0).
 !
 ! D. Yang  Jun 2021         Adapt to NEMO4.0.3.
 !
@@ -130,8 +132,7 @@ PROGRAM nemo_ocean_diag
 !     Output data 
 ! ======================================================================
 ! (1) Global volume (m3)
-      REAL, DIMENSION(:), ALLOCATABLE :: vol0    ! global volume (not counting ssh)
-      REAL, DIMENSION(:), ALLOCATABLE :: vol     ! global total volume (counting ssh)
+      REAL, DIMENSION(:), ALLOCATABLE :: vol     ! global total volume (nonlinear free surface)
 ! (2) Global-mean profiles of T(z) and S(z) (C, g/kg)
       REAL, DIMENSION(:,:), ALLOCATABLE :: theta_z, salt_z
 !     Global-mean T and S  (C, g/kg)) 
@@ -245,8 +246,8 @@ PROGRAM nemo_ocean_diag
          &      snow_ai(lm), hflx_snow2(lm), isnwmlt(lm), snowmel(lm),            &
          &      hflx_qsr_tot_ave(lm), hflx_qns_tot_ave(lm),                       &
          &      hflx_qsr_ice_ave(lm), hflx_qns_ice_ave(lm),                       &
-         &      vol0(lm), vol(lm),                                                &
-         &     STAT=ierr(8))
+         &      vol(lm),                                                          &
+         &      STAT=ierr(8))
 
          IF (MAXVAL(ierr) /=0) THEN
            STOP 'Memory allocation error in Physical RTD'
@@ -277,7 +278,7 @@ PROGRAM nemo_ocean_diag
         i_AN_E  =  92; i_AN_W  = 135
         i_AS_E  = 121; i_AS_W  = 149
         i_PN_E  =  16; i_PN_W  = 91
-!     ORCA1 (with ln_use_jattr = .true.)
+!     ORCA1 (with ln_use_jattr = .true., 362 X 292)
       else if ( imt == 362.and.jmt == 292 ) then
         print *, "Using ORCA1 configuration (cut)"
         j_20N   = 222-40; j_20S   = 152-40; j_eq    = 187-40
@@ -348,13 +349,10 @@ PROGRAM nemo_ocean_diag
       call getvara ('depthw', iou3, km, (/1/), (/km/), depthw, 1., 0.)
       call getvara ('e1t', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1t , 1., 0.)
       call getvara ('e2t', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e2t , 1., 0.)
-      !call getvara ('e3t_0', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3t_0 , 1., 0.)
       call getvara ('e1v', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1v , 1., 0.)
       call getvara ('e2v', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e2v , 1., 0.)
-      !call getvara ('e3v_0', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3v , 1., 0.)
       call getvara ('e1u', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1u , 1., 0.)
       call getvara ('e2u', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e2u , 1., 0.)
-      !call getvara ('e3u_0', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3u , 1., 0.)
       call getvara ('tmask', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),t_mask , 1., 0.)
       call getvara ('umask', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),u_mask , 1., 0.)
       call getvara ('vmask', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),v_mask , 1., 0.)
@@ -399,7 +397,6 @@ PROGRAM nemo_ocean_diag
       enddo
 
 ! ********** Init / probably uneeded  ************
-      vol0(:)          = 0.0_dp
       vol(:)           = 0.0_dp
       tvol(:)          = 0.0_dp
       svol(:)          = 0.0_dp
@@ -441,10 +438,10 @@ PROGRAM nemo_ocean_diag
          !---------------------------------------------------
          ! Read in the monthly data from NetCDF
          !---------------------------------------------------
-         ! layer thinkness (change because we use vvl)
-         call getvara ('e3t', iou0, imt*jmt*km, (/1,1,1,1,l/), (/imt,jmt,km,1/),e3t , 1., 0.)
-         call getvara ('e3u', iou1, imt*jmt*km, (/1,1,1,1,l/), (/imt,jmt,km,1/),e3u , 1., 0.)
-         call getvara ('e3v', iou2, imt*jmt*km, (/1,1,1,1,l/), (/imt,jmt,km,1/),e3v , 1., 0.)
+         ! vertical scale factors - nonlinear free surface case 
+          CALL getvara ('e3t', iou0, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), e3t , 1., 0.)
+          CALL getvara ('e3u', iou1, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), e3u , 1., 0.)
+          CALL getvara ('e3v', iou2, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), e3v , 1., 0.)
          ! temperature
           CALL getvara ('thetao', iou0, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), theta, 1., 0.)
          ! salinity
@@ -513,22 +510,25 @@ PROGRAM nemo_ocean_diag
     !---------------------------------------------------
     ! (1) Global annual mean T and S and SSH
     ! ---------------------------- volume due to ssh   
+          volssh   = 0.
           zarea_ssh(:, :) = tarea(:, :)*ssh(:, :)
           volssh = SUM( zarea_ssh(:, :) )
     ! ---------------------------- Global mean ssh (cm)
           sshglo(l) = (volssh/area_tot)*1.0e2
-    ! ---------------------------- Global volume (counting ssh)
-          vol = 0.
+    ! ---------------------------- Total volume
+          ! Total global volume - nonlinear free surface case
           do k = 1, km
-               vol = vol + SUM( tarea(:, :)*t_mask(:, :, k)*e3t(:, :, k) )
+             do j = 1, jmt
+                do i = 1, imt          
+                   vol(l) = vol(l) + tarea(i, j)*t_mask(i, j, k)*e3t(i, j, k)
+                enddo
+             enddo
           enddo
     ! ---------------------------- Global mean temperature (C) & salinity (psu)
-          tvol(l) = SUM(zarea_ssh(:, :)*theta(:, :, 1))
-          svol(l) = SUM(zarea_ssh(:, :)* salt(:, :, 1))
           do k = 1, km
               do j = 1, jmt
                   do i = 1, imt
-                      zztmp = tarea(i,j)*e3t(i,j,k)
+                      zztmp = tarea(i,j)*e3t(i,j,k)*t_mask(i, j, k)
                       tvol(l) = tvol(l) + zztmp*theta(i, j, k)
                       svol(l) = svol(l) + zztmp*salt(i, j, k)
                   enddo
@@ -969,15 +969,11 @@ PROGRAM nemo_ocean_diag
 
           call defvar ('ocean_area', iou, 0, 0, 0., 0., ' ', 'F'     &
      &       , 'Total ocean surface area', ' ', 'm2')
-
-          call defvar ('ocean_volume', iou, 1, (/id_time/), 0., 0., ' ', 'F'     &
-     &       , 'Total ocean volume', ' ', 'm3')
-
           call defvar ('depth', iou, 1, (/id_z/), 0., 0., 'Y', 'F'     &
      &       , 'depth of the t grid', 'depth', 'm')
 
           call defvar ('ocean_volume', iou, 1, (/id_time/), 0., 1.e20, ' ', 'F' &
-              , 'Ocean volume excluding ssh portion', 'ocean_volume', 'm3')    
+              , 'Ocean volume', 'ocean_volume', 'm3')    
 
 !         Temp
           call defvar ('T', iou, 1, (/id_time/), -1.e4                         &
@@ -1181,8 +1177,6 @@ PROGRAM nemo_ocean_diag
           call putvara ('ocean_area', iou, 1, (/1/), (/1/)                     &
      &      , area_tot, 1., 0.)
 
-          call putvars ('ocean_volume', iou, ntrec2 , vol, 1., 0.)
-
       else
 !      if the file does exist then open it for writing at the next record
        print*,"output file found...opening existing file for appending"
@@ -1211,8 +1205,8 @@ PROGRAM nemo_ocean_diag
 !! End of OR Jan 11th 2023        
         call putvars ('time', iou, ntrec2, tdays_elapsed, 1., 0.)
 
-!       Global volume (not counting ssh)
-        call putvars ('ocean_volume', iou, ntrec2, vol0(l), 1., 0.)
+        !Global volume (nonlinear free surface case, i.e., e3t is time-varying)
+        call putvars ('ocean_volume', iou, ntrec2, vol(l), 1., 0.)
 
 !       Temp
         call putvars ('T', iou, ntrec2, tvol(l), 1., 0.)
