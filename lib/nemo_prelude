@@ -184,15 +184,8 @@ echo "#################### Start NEMO pre-processing #################"
     acc_cp EMPave_old.dat            $nemo_empave_old 
   fi
 
-  # O Riche Dec 20th 2022
-  # CanBGC IC and forcing files additional section
-  # looked into nemo_pre.sh (see CanNEMO maestro scripts)
-  # for acc_cp, look in experiment.cfg for actual names 
-  # /variables (same location). For CanESM5 they are defined
-  # in canesm.cfg.
-  ToF nemo_trc
-
-  if [ $nemo_trc -eq 1 ] && [[ $nemo_carbon == "on" ]] ; then
+  # CanBGC IC and forcing files additional section defined in canesm.cfg.
+  if [ "$nemo_trc" = "on" ] && [[ $nemo_carbon == "on" ]] ; then
 
       is_defined $nemo_presatm || bail "The variable nemo_presatm must be defined in canesm.cfg"
       acc_cp presatm.nc           $nemo_presatm
@@ -247,11 +240,7 @@ echo "#################### Start NEMO pre-processing #################"
       
       is_defined $nemo_data_no3_nomask || bail "The variable nemo_data_no3_nomask must be defined in canesm.cfg"      
       acc_cp data_NO3_nomask.nc        $nemo_data_no3_nomask
-      
-
-  
   fi
-  # End of O Riche Dec 20th 2022
 
 
   # Access files required to run NEMO
