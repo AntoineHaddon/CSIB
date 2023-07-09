@@ -19,7 +19,6 @@ MODULE trcstp
    USE trcsub         !
    USE trdtrc_oce
    USE trdmxl_trc
-   USE sms_pisces,  ONLY : ln_check_mass
    !
    USE prtctl_trc     ! Print control for debbuging
    USE iom            !
@@ -80,9 +79,7 @@ CONTAINS
             cvol(:,:,jk) = e1e2t(:,:) * e3t_n(:,:,jk) * tmask(:,:,jk)
          END DO
          IF( ln_pisces  ) then
-           IF ( ll_trcstat .OR. kt == nitrst .OR. ( ln_check_mass .AND. kt == nitend )          &
-              & .OR. iom_use( "pno3tot" ) .OR. iom_use( "ppo4tot" ) .OR. iom_use( "psiltot" )   &
-              & .OR. iom_use( "palktot" ) .OR. iom_use( "pfertot" ) )                           &
+              IF ( ll_trcstat .OR. kt == nitrst )         &
               &     areatot = glob_sum( 'trcstp', cvol(:,:,:) )
          ENDIF
 
