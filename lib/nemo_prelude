@@ -43,48 +43,6 @@
   }
 
 echo "#################### Start NEMO pre-processing #################"
-  # TODO CanOE : add the top and CanOE namlist if activated
-  nemo_namelists=( namelist_ref     \
-                   namelist_cfg     \
-                   namelist_ice_ref \
-                   namelist_ice_cfg
-  )
-  # O Riche Dec 16th 2022
-  # change nemo_namelists to contain references to either CMOC or CanOE and not PISCES
-  # if nemo_config is set to a CMOC or a CanOE config
-  if [[ $nemo_config == *"CANOE" ]] ; then
-  nemo_namelists=( namelist_ref     \
-                   namelist_cfg     \
-                   namelist_ice_ref \
-                   namelist_ice_cfg \
-                   namelist_top_ref \
-                   namelist_top_cfg \
-                   namelist_canoe_ref \
-                   namelist_canoe_cfg \
-  )
-  elif [[ $nemo_config == *"CMOC" ]] ; then
-  nemo_namelists=( namelist_ref     \
-                   namelist_cfg     \
-                   namelist_ice_ref \
-                   namelist_ice_cfg
-                   namelist_top_ref \
-                   namelist_top_cfg \
-                   namelist_cmoc_ref \
-                   namelist_cmoc_cfg \
-  )
-  elif [[ $nemo_config == *"PISCES" ]] ; then
-  nemo_namelists=( namelist_ref     \
-                   namelist_cfg     \
-                   namelist_ice_ref \
-                   namelist_ice_cfg
-                   namelist_top_ref \
-                   namelist_top_cfg \
-                   namelist_pisces_ref \
-                   namelist_pisces_cfg \
-  )
-  fi
-  # End of O Riche Dec 16th 2022
-  ################################
   
   # ======================================================
   # Make sure we have necessary variables from parent code
@@ -106,6 +64,9 @@ echo "#################### Start NEMO pre-processing #################"
   # This is the start of the simulation
   year_run_start=${run_start_time[0]:-1}
 
+  # ===================
+  # Access input files
+  # ===================
   # configuration input files
   is_defined $nemo_coordinates || bail "The variable nemo_coordinates must be defined in the configuration file."
   acc_cp domain_cfg.nc             $nemo_coordinates
@@ -303,38 +264,12 @@ echo "#################### Start NEMO pre-processing #################"
                file_def_nemo-oce.xml \
                grid_def_nemo.xml \
                iodef.xml )
-  # O Riche Dec 16th 2022
-  # change xios_files to contain references to either CMOC or CanOE and not PISCES
-  # if nemo_config is set to a CMOC or a CanOE config
+  # add xios filoes if nemo_config is set to a CMOC, a CanOE or a PISCES config 
   if [[ $nemo_config == *"CANOE" ]] ; then
-  xios_files=( axis_def_nemo.xml \
-               context_nemo.xml \
-               domain_def_nemo.xml \
-               field_def_nemo-ice.xml \
-               field_def_nemo-oce.xml \
-               field_def_nemo-canoe.xml \
-               file_def_nemo-ice.xml \
-               file_def_nemo-oce.xml \
-               file_def_nemo-canoe.xml \
-               grid_def_nemo.xml \
-               iodef.xml )
+	xios_files=( "${xios_files[@]}"  field_def_nemo-canoe.xml  file_def_nemo-canoe.xml )
   elif [[ $nemo_config == *"CMOC" ]] ; then
-  xios_files=( axis_def_nemo.xml \
-               context_nemo.xml \
-               domain_def_nemo.xml \
-               field_def_nemo-ice.xml \
-               field_def_nemo-oce.xml \
-               field_def_nemo-cmoc.xml \
-               file_def_nemo-ice.xml \
-               file_def_nemo-oce.xml \
-               file_def_nemo-cmoc.xml \
-               grid_def_nemo.xml \
-               iodef.xml )
-  fi
-  # End of O Riche Dec 16th 2022
-  ################################
-  # Add pisces files to the list only if nemo_trc is enable
-  if [[ $nemo_config == *"PISCES" ]] ; then
+	xios_files=( "${xios_files[@]}"  field_def_nemo-cmoc.xml    file_def_nemo-cmoc.xml )
+  elif [[ $nemo_config == *"PISCES" ]] ; then
 	xios_files=( "${xios_files[@]}"  field_def_nemo-pisces.xml file_def_nemo-pisces.xml )
   fi
 
@@ -548,35 +483,13 @@ echo "#################### Start NEMO pre-processing #################"
     fi
   fi
 
-  # ===================
-  # Access input files
-  # ===================
-  # - many are only pulled in they don't already exist
-  # - the main defaults are defined at the top of this script (should we move other runmode specific files?)
-
   # run namelists
-  # O Riche Dec 19th 2022
-  # default namelist folder
-  # namelists folder if trc and carbon is on
-  if [ $nemo_trc -eq 1 ] && [[ $nemo_carbon == "on" ]]; then
-     if [[ $nemo_config == *"CANOE" ]] || [[ $nemo_config == *"CMOC" ]] || [[ $nemo_config == *"PISCES" ]]; then
-      nemo_config=${nemo_repo}'/nemo/cfgs/'${nemo_config}'/EXPREF/'
-     else
-      bail "nemo_prelude: nemo_config: assigned BGCM is not PISCES, CMOC, nor CanOE"
-     fi
-  fi
-  # End of O Riche Dec 19th 2022
-  #  
-  for f in "${nemo_namelists[@]}"; do
-  # O Riche Mar 20th 2023
-  # This was looking for a set of files not connected to cfgs files
-  # Could not find a line somewhere that dump files in nemo_config into
-  # $WRK_DIR/config/namelists
-      ! is_file $f && cp ${WRK_DIR}/config/namelists/${f} .
-      # OR Mar21 2023 reactivated the old line as cfgs namelists are not working properly #! is_file $f && cp ${nemo_config}${f} .
-  # O Riche Mar 20th 2023
+  for f in ${nemo_namelists[@]}; do
+      ! is_file ${f}_ref && cp ${WRK_DIR}/config/namelists/${f}_ref .
+      ! is_file ${f}_cfg && cp ${WRK_DIR}/config/namelists/${f}_cfg .
   done
-  # make namelist mods foir the restart switch 
+
+  # make namelist mods for the restart switch 
     mod_nl namelist_cfg ln_rstart 
     [ "$nemo_trc" = "on" ] && mod_nl namelist_top_cfg ln_rsttr
 
