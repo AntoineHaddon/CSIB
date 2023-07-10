@@ -216,7 +216,7 @@ CONTAINS
         !! OR Jan19 23 ! CALL trc_n2fx_denit_cmoc( par_1band )
         !
         ! Move here to be consistent with NEMO4 and sidestepping from CanESM5 CMOC NEMO
-        !! OR Jan19 23 ! CALL trc_flx( kt )               ! compute air-sea gas exchange
+        CALL trc_flx( kt )               ! compute air-sea gas exchange
         ! IF the radioactive tracer was added there would be also a call to p4z_dcy( kt ) equivalent (trc_dcy?) here. 
         !       
         !!!!!! O Riche Nov 8th 2022
