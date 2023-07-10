@@ -208,7 +208,7 @@ CONTAINS
         !
         !!!!!!! End   of "p4zsed" block !!!!!!!
         !
-	!! CALL trc_flx( kt )     ! compute air-sea gas exchange 
+	  CALL trc_flx( kt )     ! compute air-sea gas exchange 
 	!
       END DO
       !
