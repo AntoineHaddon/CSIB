@@ -869,7 +869,7 @@
 
       real, intent(in) :: o, s
       real dout(ln)
-      real(kind=8) din(ln), offset, scale
+      real(kind=8) din(ln), offset, scale, fillvalue
 
       i = nf_inq_varid (ncid, name, iv)
       if (i .ne. nf_noerr) then
@@ -878,13 +878,16 @@
       endif
       scale = 1.0
       offset = 0.0
+      fillvalue = 1.e+20
       i = nf_inq_varndims(ncid, iv, nd)
       call checkerror (i,'getvara nf_inq_varndims '//name)
       i = nf_get_att_double (ncid, iv, 'add_offset', offset)
       i = nf_get_att_double (ncid, iv, 'scale_factor', scale)
+      i = nf_get_att_double (ncid, iv, '_FillValue', fillvalue)
       i = nf_get_vara_double (ncid, iv, is(1:nd), ic(1:nd), din)
       call checkerror(i,'getvara '//name)
       dout(1:ln) = (din(1:ln)*scale + offset)*s + o
+      where(dout.eq.fillvalue) dout=0.
 
       return
       end
