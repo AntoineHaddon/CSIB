@@ -10,6 +10,7 @@ MODULE zdftmx
    !!            4.0.3!  2021-07  (D. Yang)   Constrain tidal energy to be positive
    !!            4.0.3!  2021-08  (D. Yang)   Vertical diffusivity resulting from internal tide breaking is now capped by 20 cm2/s
    !!            4.0.3!  2022-07  (D. Yang)   Add two flags (ln_s2004 & ln_sm2005) to make computations of zav_tide from Simmons et al (2004) and Saenko and Merryfield (2005) optionally available
+   !!            4.0.3!  2022-08  (D. Yang)   Add lee wave mixing scheme controlled by ln_leewmx.
    !!----------------------------------------------------------------------
    !!----------------------------------------------------------------------
    !!   'key_zdftmx'                                  Tidal vertical mixing
@@ -48,6 +49,8 @@ MODULE zdftmx
    REAL(wp) ::  rn_tfe_itf  ! ITF tidal dissipation efficiency (St Laurent et al. 2002)
    LOGICAL  ::  ln_s2004    ! Compute zav_tide following Simmons et al (2004)
    LOGICAL  ::  ln_sm2005   ! Compute zav_tide following Saenko and Merryfield (2005)
+   LOGICAL  ::  ln_leewmx   ! Add (.TRUE.) lee wave mixing or not (.FALSE.).
+   REAL(wp) ::  rn_lwm      ! lee wave mixing scaling
 
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   en_tmx     ! energy available for tidal mixing (W/m2)
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   mask_itf   ! mask to use over Indonesian area
@@ -352,14 +355,14 @@ CONTAINS
       INTEGER  ::   inum         ! local integer
       INTEGER  ::   ios
       REAL(wp) ::   ztpc, ze_z   ! local scalars
-      REAL(wp), DIMENSION(jpi,jpj)   ::  zem2, zek1   ! read M2 and K1 tidal energy
+      REAL(wp), DIMENSION(jpi,jpj)   ::  zem2, zek1, zeef ! read M2 and K1 tidal energy and mesoscale eddy energy flux
       REAL(wp), DIMENSION(jpi,jpj)   ::  zkz          ! total M2, K1 and S2 tidal energy
       REAL(wp), DIMENSION(jpi,jpj)   ::  zfact        ! used for vertical structure function
       REAL(wp), DIMENSION(jpi,jpj)   ::  zhdep        ! Ocean depth 
       REAL(wp), DIMENSION(jpi,jpj,jpk) ::  zpc        ! power consumption
       REAL(wp), DIMENSION(jpi,jpj,jpk) ::  zav_tide   ! tidal mixing coefficient
       !!
-      NAMELIST/namzdf_tmx/ rn_htmx, rn_n2min, rn_tfe, rn_me, ln_tmx_itf, rn_tfe_itf, ln_s2004, ln_sm2005
+      NAMELIST/namzdf_tmx/ rn_htmx, rn_n2min, rn_tfe, rn_me, ln_tmx_itf, rn_tfe_itf, ln_s2004, ln_sm2005, ln_leewmx, rn_lwm
       !!----------------------------------------------------------------------
       !
       
@@ -383,8 +386,10 @@ CONTAINS
          WRITE(numout,*) '      Mixing efficiency                     = ', rn_me
          WRITE(numout,*) '      ITF specific parameterisation         = ', ln_tmx_itf
          WRITE(numout,*) '      ITF tidal dissipation efficiency      = ', rn_tfe_itf
-          WRITE(numout,*) '     zav_tide computed following Simmons et al =', ln_s2004
-          WRITE(numout,*) '     zav_tide computed following Saenko and Merryfield =', ln_sm2005
+         WRITE(numout,*) '     zav_tide computed following Simmons et al =', ln_s2004
+         WRITE(numout,*) '     zav_tide computed following Saenko and Merryfield =', ln_sm2005
+         WRITE(numout,*) '     Lee wave mixing                       = ', ln_leewmx
+         WRITE(numout,*) '     Lee wave mixing scaling               = ', rn_lwm
       ENDIF
 
       !                              ! allocate tmx arrays
@@ -392,24 +397,34 @@ CONTAINS
 
       IF( ln_tmx_itf ) THEN          ! read the Indonesian Through Flow mask
          CALL iom_open('mask_itf',inum)
-         CALL iom_get (inum, jpdom_data, 'tmaskitf',mask_itf,1) ! 
+         CALL iom_get (inum, jpdom_data, 'tmaskitf',mask_itf,1,lrowattr=ln_use_jattr) ! 
          CALL iom_close(inum)
       ENDIF
 
       ! read M2 tidal energy flux : W/m2  ( zem2 < 0 )
       CALL iom_open('M2rowdrg',inum)
-      CALL iom_get (inum, jpdom_data, 'field',zem2,1) ! 
+      CALL iom_get (inum, jpdom_data, 'field',zem2,1,lrowattr=ln_use_jattr) ! 
       CALL iom_close(inum)
 
       ! read K1 tidal energy flux : W/m2  ( zek1 < 0 )
       CALL iom_open('K1rowdrg',inum)
-      CALL iom_get (inum, jpdom_data, 'field',zek1,1) ! 
+      CALL iom_get (inum, jpdom_data, 'field',zek1,1,lrowattr=ln_use_jattr) ! 
       CALL iom_close(inum)
+
+      IF( ln_leewmx ) THEN ! read mesoscale eddy energy flux : W/m2  ( zeef < 0 )
+         CALL iom_open('Eddyengf',inum)
+         CALL iom_get (inum, jpdom_data, 'field',zeef,1,lrowattr=ln_use_jattr) !
+         CALL iom_close(inum)
+      ENDIF
  
       ! Total tidal energy ( M2, S2 and K1  with S2=(1/2)^2 * M2 )
       ! only the energy available for mixing is taken into account,
       ! (mixing efficiency tidal dissipation efficiency)
-      en_tmx(:,:) = - rn_tfe * rn_me * ( min(0.,zem2(:,:)) * 1.25 + min(0.,zek1(:,:)) ) * ssmask(:,:)
+      IF( ln_leewmx ) THEN ! include mesoscale eddy energy flux (zeef) in en_tmx
+         en_tmx(:,:) = - rn_tfe * rn_me * ( min(0.,zem2(:,:)) * 1.25 + min(0.,zek1(:,:)) + rn_lwm * zeef(:,:) ) * ssmask(:,:)     
+      ELSE   
+         en_tmx(:,:) = - rn_tfe * rn_me * ( min(0.,zem2(:,:)) * 1.25 + min(0.,zek1(:,:)) ) * ssmask(:,:)
+      ENDIF
 
 !============
 !TG: Bug for VVL? Should this section be moved out of _init and be updated at every timestep?

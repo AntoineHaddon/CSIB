@@ -23,6 +23,7 @@
 !------------------------------------------------------------------------------
    cn_icerst_in     = "restart_ice"   !  suffix of ice restart name (input)
    cn_icerst_out    = "restart_ice"   !  suffix of ice restart name (output)
+   nlay_i           =   4             !  number of ice  layers
 /
 !------------------------------------------------------------------------------
 &namitd         !   Ice discretization
