@@ -5,11 +5,11 @@ PROGRAM nemo_ocean_diag
 !
 ! HISTORY
 !--------
+! D. Yang  Jun 26 2023      Revise to use vol, tvol & svol from model
 ! D. Yang  Mar 17 2023      Furthe adjust computations for vol, tvol & svol 
 !                           (exclude ssh portion)
 ! D. Yang  Jul 2022         Use varying vertical scale factors (e3?) to replace
 !                           the reference ones (e3?_0).
-!
 ! D. Yang  Jun 2021         Adapt to NEMO4.0.3.
 !
 ! N. Swart    Dec    2015   Abstract all calculations to ccc_nemo_rtd_utils
@@ -47,7 +47,7 @@ PROGRAM nemo_ocean_diag
 ! May 22/13 - O. Saenko   Original code.
 ! 
 !
-! PURPOSE - Run-time diagnostics for NEMO (ORCA1)
+! PURPOSE - Run-time diagnostics for NEMO
 !
 ! USAGE
 ! -----
@@ -65,6 +65,7 @@ PROGRAM nemo_ocean_diag
 !    - grid_u : monthly frequency (_1m_)
 !    - grid_v : monthly frequency (_1m_)
 !    - grid_w : monthly frequency (_1m_)
+!    - scalar : monthly frequency (_1m_)
 !
 ! OUTPUT FILES
 ! ------------
@@ -81,7 +82,7 @@ PROGRAM nemo_ocean_diag
       IMPLICIT NONE
       integer, parameter:: dp=kind(0.d0) ! double precision
       INTEGER :: i, j, k, l, imt, jmt, km, lm, year, mon, nrecon
-      INTEGER :: iou0, iou1, iou2, iou3, iou4, iou5, iou11
+      INTEGER :: iou0, iou1, iou2, iou3, iou4, iou5, iou6, iou11
       INTEGER :: j_20N, j_20S, j_eq, k60, k500, k2000, i_DP, j_DP_S 
       INTEGER :: j_DP_N, i_IN_E1, i_IN_W1, i_IN_E2, i_IN_W2
       INTEGER :: i_AN_E, i_AN_W, i_AS_E, i_AS_W, i_PN_E, i_PN_W
@@ -133,7 +134,6 @@ PROGRAM nemo_ocean_diag
 ! ======================================================================
 ! (1) Global volume (m3)
       REAL, DIMENSION(:), ALLOCATABLE :: vol     ! global total volume (nonlinear free surface)
-! (2) Global-mean profiles of T(z) and S(z) (C, g/kg)
       REAL, DIMENSION(:,:), ALLOCATABLE :: theta_z, salt_z
 !     Global-mean T and S  (C, g/kg)) 
       REAL, DIMENSION(:), ALLOCATABLE :: tvol, svol 
@@ -194,7 +194,7 @@ PROGRAM nemo_ocean_diag
       LOGICAL :: exists, exists1, notopen
       REAL    :: tyear, tdays_elapsed
       CHARACTER :: fname01*100,fname02*100, fname03*100
-      CHARACTER :: fname04*100, fname05*100, fname06*100
+      CHARACTER :: fname04*100, fname05*100, fname06*100, fname07*100
       CHARACTER(len=32) :: year_arg_in, mon_arg_in
       integer, dimension(8) :: ierr
 ! Constants
@@ -327,6 +327,7 @@ PROGRAM nemo_ocean_diag
         fname04='grid_w'
         fname05='orca_mesh_mask'
         fname06='icemod'
+        fname07='scalar'
 
 !---------------------------------------------------
 !    Open the defined NetCDF files   
@@ -337,6 +338,7 @@ PROGRAM nemo_ocean_diag
       call openfile (fname03,iou2)
       call openfile (fname04,iou3)
       call openfile (fname06,iou5)
+      call openfile (fname07,iou6)
 ! open file with mask/grid info
       call openfile (fname05,iou4)
 
@@ -397,9 +399,9 @@ PROGRAM nemo_ocean_diag
       enddo
 
 ! ********** Init / probably uneeded  ************
-      vol(:)           = 0.0_dp
-      tvol(:)          = 0.0_dp
-      svol(:)          = 0.0_dp
+!     vol(:)           = 0.0_dp
+!     tvol(:)          = 0.0_dp
+!     svol(:)          = 0.0_dp
       theta_z(:,:)     = 0.0_dp
       salt_z(:,:)      = 0.0_dp
       euc_max(:)       = 0.0_dp 
@@ -488,6 +490,10 @@ PROGRAM nemo_ocean_diag
           CALL getvara ('qsr_ice', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qsr_ice, 1., 0.)
           CALL getvara ('qns_ice', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qns_ice, 1., 0.)
 
+          CALL getvara ('volo', iou6, 1, (/l/), (/1/), vol(l), 1., 0.)
+          CALL getvara ('thetaoga', iou6, 1, (/l/), (/1/), tvol(l), 1., 0.)
+          CALL getvara ('sogay', iou6, 1, (/l/), (/1/), svol(l), 1., 0.)
+
          ! Wind enery input
           wind_x =  tau_x(:,:)*u(:,:,1)* u_mask(:, :, 1)
           wind_y =  tau_y(:,:)*v(:,:,1)* v_mask(:, :, 1)
@@ -509,27 +515,27 @@ PROGRAM nemo_ocean_diag
           sshglo(l) = (volssh/area_tot)*1.0e2
     ! ---------------------------- Total volume
           ! Total global volume - nonlinear free surface case
-          do k = 1, km
-             do j = 1, jmt
-                do i = 1, imt          
-                   vol(l) = vol(l) + tarea(i, j)*t_mask(i, j, k)*e3t(i, j, k)
-                enddo
-             enddo
-          enddo
+    !     do k = 1, km
+    !        do j = 1, jmt
+    !           do i = 1, imt          
+    !              vol(l) = vol(l) + tarea(i, j)*t_mask(i, j, k)*e3t(i, j, k)
+    !           enddo
+    !        enddo
+    !     enddo
     ! ---------------------------- Global mean temperature (C) & salinity (psu)
-          do k = 1, km
-              do j = 1, jmt
-                  do i = 1, imt
-                      zztmp = tarea(i,j)*e3t(i,j,k)*t_mask(i, j, k)
-                      tvol(l) = tvol(l) + zztmp*theta(i, j, k)
-                      svol(l) = svol(l) + zztmp*salt(i, j, k)
-                  enddo
-              enddo
-          enddo
-          if (vol(l).ne.0.) then
-            tvol(l) = tvol(l) / vol(l) ! C 
-            svol(l) = svol(l) / vol(l) ! psu 
-          endif
+    !     do k = 1, km
+    !         do j = 1, jmt
+    !             do i = 1, imt
+    !                 zztmp = tarea(i,j)*e3t(i,j,k)*t_mask(i, j, k)
+    !                 tvol(l) = tvol(l) + zztmp*theta(i, j, k)
+    !                 svol(l) = svol(l) + zztmp*salt(i, j, k)
+    !             enddo
+    !         enddo
+    !     enddo
+    !     if (vol(l).ne.0.) then
+    !       tvol(l) = tvol(l) / vol(l) ! C 
+    !       svol(l) = svol(l) / vol(l) ! psu 
+    !     endif
     ! end DY, 11/OCT/2013
 
     !---------------------------------------------------
@@ -606,9 +612,11 @@ PROGRAM nemo_ocean_diag
           do i = 1, imt-2
                if (lon2d(i,10).ge.150..or.lon2d(i,10).le.-75.) then
                    do k = 1, k500 
+                     if (u_mask(i,j_eq,k).gt.0.5) then
                        if (u(i, j_eq, k).gt. euc_max(l)) then
                            euc_max(l) = u(i, j_eq, k)
                        endif
+                     endif  
                    enddo 
                endif
           enddo            
@@ -706,9 +714,9 @@ PROGRAM nemo_ocean_diag
           v(:, :, :) = v(:, :, :) + gmv(:, :, :) 
           w(:, :, :) = w(:, :, :) + gmw(:, :, :) 
 
-          call moc(e1v, e3v, v(:, :, :), imt, jmt, km               & 
+          call moc(e1v, e3v, v_mask, v(:, :, :), imt, jmt, km               & 
             &     , over_psi(:, :))
-          call moc(e1v, e3v, gmv(:,:,:), imt, jmt, km                &
+          call moc(e1v, e3v, v_mask, gmv(:,:,:), imt, jmt, km                &
             &     , over_psi_eddy(:, :))
     ! NADW
           do k = k500, km ! below ~ 500 m 
@@ -718,7 +726,7 @@ PROGRAM nemo_ocean_diag
     !
               if (over_psi(j_20S, k).gt.over_max_20S(l)) then   
                   over_max_20S(l) = over_psi(j_20S, k) 
-             endif
+              endif
           enddo    
     ! AABW 
           do k = k2000, km ! below ~ 2000 m 
@@ -734,13 +742,14 @@ PROGRAM nemo_ocean_diag
           do k = 1, km 
               do j =1, jmt   
                   if (lat2d(10,j).le.-40.) then ! south of 40S 
+                    if (v_mask(10,j,k).gt.0.5) then      
                       if (over_psi(j, k).gt.over_max_SO_net(l)) then      
                           over_max_SO_net(l) = over_psi(j, k) 
                       endif
-    !
                       if (over_psi_eddy(j, k).lt.over_min_SO_eddy(l)) then    
                           over_min_SO_eddy(l) = over_psi_eddy(j, k) 
                       endif
+                    endif                      
                   endif
               enddo 
           enddo    

@@ -12,11 +12,17 @@
 
       <file_group id="1m" output_freq="1mo"  enabled=".TRUE."> <!-- real monthly files -->
 
+        <file id="file10" name_suffix="_scalar" description="ocean scalar variables">
+          <field field_ref="voltot"           name="volo"          level="0" />
+          <field field_ref="temptot"          name="thetaoga"      level="0" />
+          <field field_ref="saltot"           name="sogay"         level="0" />
+        </file>
+
         <file id="file11" name_suffix="_grid_T" description="ocean T grid variables">
           <field field_ref="toce"             name="thetao"         level="0" /> <!-- (Omon*) level = 1 in CMIP6 -->
           <field field_ref="soce"             name="so"             level="0" /> <!-- (Omon*) level = 1 in CMIP6 -->
           <field field_ref="sst"              name="tos"            level="0" /> <!-- (Omon*) level = 1 in CMIP6 -->
-          <field field_ref="e3t"              name="e3t"      level="0" /> <!-- only rtd -->
+          <field field_ref="e3t"              name="e3t"            level="0" /> <!-- only rtd -->
           <field field_ref="ssh"              name="zos"            level="0" /> <!-- (Omon*) level = 1 in CMIP6  -->
           <field field_ref="empmr"            name="wfo"            level="0" /> <!-- (Omon*) level = 1 in CMIP6 -->
           <field field_ref="mldr10_1"         name="mlotst"         level="0" /> <!-- (Omon*) level = 1 in CMIP6 -->
@@ -30,7 +36,14 @@
           <field field_ref="qt"               name="hfds"           level="0" /> <!-- (Omon*) level = 1 in CMIP6  -->
           <field field_ref="qsr_tot"          name="qsr_tot"        level="0" /> <!-- only rtd -->
           <field field_ref="qns_tot"          name="qns_tot"        level="0" /> <!-- only rtd -->
+          <field field_ref="fmmflx"           name="fmmflx"         level="0" />
+	  <field field_ref="saltflx"          name="saltflx"        level="0" />
+          <field field_ref="runoffs"          name="friver"         level="0" />  <!-- (Omon) level = 2 in CMIP6  -->
+          <field field_ref="erp"              name="erp"            level="0" />
+          <!-- IAT/age tracer running in TOP w/o any BGCM       -->
+          <field field_ref='Age'              name='Age'            level="0"/>
         </file>
+
         <file id="file12" name_suffix="_grid_U" description="ocean U grid variables">
           <field field_ref="uoce"        name="uo"       level="0" /> <!-- (Omon*) level = 1 in CMIP6  -->
           <field field_ref="uoce_eiv"    name="uoce_eiv" level="0" /> <!-- only rtd -->
@@ -40,20 +53,25 @@
           <!-- <field field_ref="xmtrpice"         name="xmtrpice"      level="2"  /> <!-- (SImon*) <!-- Used for simassacrossline in diag (i-direction not needed)-->
           <!-- <field field_ref="xmtrpsnw"         name="xmtrpsnw"      level="2"  /> <!-- (SImon*) <!-- Used for snmassacrossline in diag (i-direction not needed)-->
         </file>
+
         <file id="file13" name_suffix="_grid_V" description="ocean V grid variables">
           <field field_ref="voce"        name="vo"       level="0" /> <!-- (Omon*) level = 1 in CMIP6  -->
           <field field_ref="voce_eiv"    name="voce_eiv" level="0" /> <!-- only rtd -->
           <field field_ref="vtau"        name="tauvo"    level="0" /> <!-- (Omon*) level = 1 in CMIP6  -->
           <field field_ref="e3v"         name="e3v"      level="0" /> <!-- only rtd -->
-          <field field_ref="yatrp"            name="yatrp"         level="2"  /> <!-- (SImon*) <!-- Used for siareaacrossline in diag -->
-          <field field_ref="ymtrpice"         name="ymtrpice"      level="2"  /> <!-- (SImon*) <!-- Used for simassacrossline in diag -->
-          <field field_ref="ymtrpsnw"         name="ymtrpsnw"      level="2"  /> <!-- (SImon*) <!-- Used for snmassacrossline in diag -->
+          <field field_ref="yatrp"       name="yatrp"    level="2"  /> <!-- (SImon*) <!-- Used for siareaacrossline in diag -->
+          <field field_ref="ymtrpice"    name="ymtrpice" level="2"  /> <!-- (SImon*) <!-- Used for simassacrossline in diag -->
+          <field field_ref="ymtrpsnw"    name="ymtrpsnw" level="2"  /> <!-- (SImon*) <!-- Used for snmassacrossline in diag -->
         </file>
+
         <file id="file14" name_suffix="_grid_W" description="ocean W grid variables">
-          <field field_ref="woce"        name="wo"       level="0" /> <!-- (Omon) -->
+	  <!-- <field field_ref="woce"        name="wo"       level="0" /> <!-- (Omon) -->
           <field field_ref="woce_eiv"    name="woce_eiv" level="0" />  <!-- only rtd -->
+	  <field field_ref="avt"         name="avt"      level="0" />
+	  <field field_ref="av_tmx"      name="av_tmx"   level="0" />
+	  <!-- <field field_ref="w_masstr"    name="wmo"      level="1" /> -->
         </file>
-          <!-- CMIP6 variables, started by NL, to be completed -->
+
         <file id="file15" name_suffix="_grid_T_ar6" description="ocean T grid variables">
           <field field_ref="botpres"          name="pbo"         level="1" /> <!-- (Omon*) -->
           <field field_ref="tpt_dep"          name="zfullo"      level="1" /> <!--(Oclim) <!-- Not in CMIP6 but available in NEMO4 -->
@@ -67,7 +85,6 @@
           <field field_ref="rain_ao_cea"      name="prra"        level="2" /> <!-- (Omon*) -->
           <field field_ref="qsr"              name="rsntds"      level="2" /> <!-- (Omon*) -->
           <!-- <field field_ref=""             name="wfonocorr"    level="1" /> <!-- (Omon*) not avaialblein in NEMO4 (need to code it?) -->
-          <field field_ref="runoffs"          name="friver"      level="2" /> <!-- (Omon*) -->
           <field field_ref="hflx_evap_cea"    name="hfevapds"    level="2" /> <!-- (Omon*) <!-- Not in CMIP6 but available in NEMO4 -->
           <field field_ref="qlw_oce"          name="rlntds"      level="2" /> <!-- (Omon*) <!-- Not in CMIP6 but available in NEMO4 -->
           <field field_ref="qla_oce"          name="hflso"       level="2" /> <!-- (Omon*) <!-- Not in CMIP6 but available in NEMO4 -->
@@ -113,31 +130,31 @@
         </file>
 
         <file id="file41" name_suffix="_diaptr" description="zonal mean variables" >
-          <field field_ref="sophtove"    name="htovovrt"      grid_ref="grid_ptr_T_2D"  level="2"  /> <!-- (Omon*) -->
-          <field field_ref="sopstove"    name="sltovovrt"     grid_ref="grid_ptr_T_2D"  level="2"  /> <!-- (Omon*) -->
-          <field field_ref="sophtgyre"   name="htovgyre"      grid_ref="grid_ptr_T_2D"  level="2"  /> <!-- (Omon*) -->
-          <field field_ref="sopstgyre"   name="sltovgyre"     grid_ref="grid_ptr_T_2D"  level="2"  /> <!-- (Omon*) <!-- Not in CMIP6 but available in NEMO4 -->
-          <field field_ref="sophtbtr"    name="htbtr"         grid_ref="grid_ptr_T_2D"  level="9"  /> <!-- (used?) -->
-          <field field_ref="sopstbtr"    name="sltbtr"        grid_ref="grid_ptr_T_2D"  level="9"  /> <!-- (used?) -->
-          <field field_ref="sophtadv"    name="htadv"         grid_ref="grid_ptr_T_2D"  level="9"  /> <!-- (used?) -->
-          <field field_ref="sopstadv"    name="sltadv"        grid_ref="grid_ptr_T_2D"  level="9"  /> <!-- (used?) -->
-          <field field_ref="sophtldf"    name="hfbasinpmdiff" grid_ref="grid_ptr_T_2D"  level="1"  /> <!-- (Omon*) -->
-          <field field_ref="sopstldf"    name="sltldf"        grid_ref="grid_ptr_T_2D"  level="9"  /> <!-- (used?) -->
-          <field field_ref="sophtvtr"    name="hfbasin"       grid_ref="grid_ptr_T_2D"  level="1"  /> <!-- (Omon*) -->
-          <field field_ref="sopstvtr"    name="sltbasin"      grid_ref="grid_ptr_T_2D"  level="9"  /> <!-- (used?) -->
-          <field field_ref="sophteiv"    name="hfbasinpmadv"  grid_ref="grid_ptr_T_2D"  level="1"  /> <!-- (Omon*) -->
-          <field field_ref="sopsteiv"    name="sltbasinpmadv" grid_ref="grid_ptr_T_2D"  level="9"  /> <!-- (used?) -->
-          <field field_ref="zomsf"       name="msftyz"        grid_ref="grid_ptr_T_3D"  level="1"  /> <!-- (Omon*) -->
+          <field field_ref="sophtove"    name="htovovrt"      grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (Omon*) -->
+          <field field_ref="sopstove"    name="sltovovrt"     grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (Omon*) -->
+          <field field_ref="sophtgyre"   name="htovgyre"      grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (Omon*) -->
+          <field field_ref="sopstgyre"   name="sltovgyre"     grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (Omon*) <!-- Not in CMIP6 but available in NEMO4 -->
+          <field field_ref="sophtbtr"    name="htbtr"         grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (used?) -->
+          <field field_ref="sopstbtr"    name="sltbtr"        grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (used?) -->
+          <field field_ref="sophtadv"    name="htadv"         grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (used?) -->
+          <field field_ref="sopstadv"    name="sltadv"        grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (used?) -->
+          <field field_ref="sophtldf"    name="hfbasinpmdiff" grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (Omon*) -->
+          <field field_ref="sopstldf"    name="sltldf"        grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (used?) -->
+          <field field_ref="sophtvtr"    name="hfbasin"       grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (Omon*) -->
+          <field field_ref="sopstvtr"    name="sltbasin"      grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (used?) -->
+          <field field_ref="sophteiv"    name="hfbasinpmadv"  grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (Omon*) -->
+          <field field_ref="sopsteiv"    name="sltbasinpmadv" grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (used?) -->
+          <field field_ref="zomsf"       name="msftyz"        grid_ref="grid_ptr_T_3D"  level="0"  /> <!-- (Omon*) -->
           <field field_ref="zotem"       name="znltem"        grid_ref="grid_ptr_T_3D"  level="0"  /> <!-- for analysis -->
           <field field_ref="zosal"       name="znlsal"        grid_ref="grid_ptr_T_3D"  level="0"  /> <!-- for analysis -->
           <field field_ref="zosrf"       name="znlsrf"        grid_ref="grid_ptr_T_3D"  level="0"  /> <!-- for analysis -->
         </file>
+
         <file id="file42" name_suffix="_strait_oce" description="transport variables through straits" >
           <!-- <field field_ref="masstr_strait"    name="mfo"         level="1" /> <!-- (Omon)  maskMFO_* does not exist in field_def_neo-oce -->
         </file>
 
       </file_group>
-
 
       <file_group id="3h"  output_freq="3h"  enabled=".TRUE."> <!-- real yearly files -->
         <file id="file20" name_suffix="_grid_T_ar6" description="ocean T grid variables">

@@ -152,12 +152,14 @@
       rtd_hist3="mc_${runid}_${yearm}_m${mon}_1m_grid_v.nc"
       rtd_hist4="mc_${runid}_${yearm}_m${mon}_1m_grid_w.nc"
       rtd_hist5="mc_${runid}_${yearm}_m${mon}_mesh_mask.nc"
+      rtd_hist6="mc_${runid}_${yearm}_m${mon}_1m_scalar.nc"
 
       access grid_t $rtd_hist1 na #|| bail "NEMO rdt cannot access $rtd_hist1"
       access grid_u $rtd_hist2 na #|| bail "NEMO rdt cannot access $rtd_hist2"
       access grid_v $rtd_hist3 na #|| bail "NEMO rdt cannot access $rtd_hist3"
       access grid_w $rtd_hist4 na #|| bail "NEMO rdt cannot access $rtd_hist4"
       access orca_mesh_mask $rtd_hist5 na
+      access scalar $rtd_hist6 na
 
       # Access additional annual history files containing ICE related variables (needed for qsr_ice anbd qns_ice)
       rtd_hist7="mc_${runid}_${yearm}_m${mon}_1m_icemod.nc"
@@ -191,6 +193,7 @@
       release ptrc_t
       release diad_t
       release orca_mesh_mask
+      release scalar
    done # month loop end
 
    # Cleanup

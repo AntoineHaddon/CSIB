@@ -47,7 +47,9 @@ echo "#################### Start NEMO pre-processing #################"
   nemo_namelists=( namelist_ref     \
                    namelist_cfg     \
                    namelist_ice_ref \
-                   namelist_ice_cfg
+                   namelist_ice_cfg \
+                   namelist_top_ref \
+                   namelist_top_cfg
   )
   # Add top namelist  to the list only if nemo_trc is enabled "${nemo_namelists} namelist_top"
   [ "$nemo_trc" = "on" ] &&  nemo_namelists+=( namelist_top_ref namelist_top_cfg )
@@ -108,7 +110,7 @@ echo "#################### Start NEMO pre-processing #################"
         acc_cp qlw_y${yearc}.nc              ${nemo_qlw}_y${forcing_year}.nc
         acc_cp precip_y${yearc}.nc           ${nemo_precip}_y${forcing_year}.nc
         acc_cp snow_y${yearc}.nc             ${nemo_snow}_y${forcing_year}.nc
-	    acc_cp slp_y${yearc}.nc              ${nemo_slp}_y${forcing_year}.nc
+	acc_cp slp_y${yearc}.nc              ${nemo_slp}_y${forcing_year}.nc
     done
     if [[ $nemo_ln_weight == "on" ]];then
       is_defined $nemo_weights_bicubic2 && is_defined $nemo_weights_bilinear2  || 
@@ -135,6 +137,17 @@ echo "#################### Start NEMO pre-processing #################"
         acc_cp runoff_y${yearc}.nc          ${nemo_runoff_core_monthly}_y${forcing_year}.nc
       done
     fi
+  fi
+  if [[ $nemo_ln_zdftmx == "on" ]]; then
+    is_defined $nemo_mask_itf && is_defined $nemo_M2rowdrg && is_defined $nemo_K1rowdrg ||
+        bail "The files for tidal mixing sheme must be defined in the configuration file."
+    acc_cp mask_itf.nc               $nemo_mask_itf
+    acc_cp M2rowdrg.nc               $nemo_M2rowdrg
+    acc_cp K1rowdrg.nc               $nemo_K1rowdrg
+  fi
+  if [[ $nemo_ln_leewmx == "on" ]]; then
+    is_defined $nemo_Eddyengf || bail "The file for lee wave mixing scheme must be defined in the configuration file."
+    acc_cp Eddyengf.nc               $nemo_Eddyengf
   fi
   if [[ $nemo_ln_zdfiwm == "on" ]]; then
     is_defined $nemo_mixing_power_bot && is_defined $nemo_mixing_power_pyc && is_defined $nemo_mixing_power_cri &&
@@ -173,7 +186,7 @@ echo "#################### Start NEMO pre-processing #################"
   fi 
 
   if [[ $nemo_nn_chldta == "on" ]]; then
-    is_defined $nemo_chlorophyl || bail "The variable nemo_chlorophyl must be defined in the configuration file."
+    is_defined $nemo_chlorophyll || bail "The variable nemo_chlorophyll must be defined in the configuration file."
     acc_cp chlorophyll.nc            $nemo_chlorophyll
   fi 
 
