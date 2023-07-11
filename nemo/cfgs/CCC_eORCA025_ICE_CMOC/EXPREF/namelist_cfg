@@ -50,7 +50,7 @@
       !
       ln_use_jattr = .true.      !  use (T) the file attribute: open_ocean_jstart, if present
    !                       !  in netcdf input files, as the start j-row for reading
-      ln_closea    = .true.    !  T => keep closed seas (defined by closea_mask field) in the
+      ln_closea    = .false.    !  T => keep closed seas (defined by closea_mask field) in the
       !                         !       domain and apply special treatment of freshwater fluxes.
       !                         !  F => suppress closed seas (defined by closea_mask field)
       !                         !       from the bathymetry at runtime.
@@ -68,8 +68,8 @@
    !___________!_________________________!___________________!___________!_____________!________!___________!__________________!__________!_______________!
    !           !  file name              ! frequency (hours) ! variable  ! time interp.!  clim  ! 'yearly'/ ! weights filename ! rotation ! land/sea mask !
    !           !                         !  (if <0  months)  !   name    !   (logical) !  (T/F) ! 'monthly' !                  ! pairing  !    filename   !
-   sn_tem = 'data_1m_potential_temperature_nomask',     -1.     ,'temperature',   .true.    , .true. , 'yearly'  ,    ''    ,    ''    ,    ''
-   sn_sal = 'data_1m_salinity_nomask'             ,     -1.     ,'salinity',   .true.    , .true. , 'yearly'  ,    ''    ,    ''    ,    ''
+   sn_tem = 'data_1m_potential_temperature_nomask',     -1.     ,'votemper',   .true.    , .true. , 'yearly'  ,    ''    ,    ''    ,    ''
+   sn_sal = 'data_1m_salinity_nomask'             ,     -1.     ,'vosaline',   .true.    , .true. , 'yearly'  ,    ''    ,    ''    ,    ''
 /
 !!======================================================================
 !!            ***  Surface Boundary Condition namelists  ***          !!
@@ -93,12 +93,12 @@
 !-----------------------------------------------------------------------
 &namsbc        !   Surface Boundary Condition manager                   (default: NO selection)
 !-----------------------------------------------------------------------
-   nn_fsbc     = 4         !  frequency of SBC module call
+   nn_fsbc     = 1         !  frequency of SBC module call
                            !     (also = the frequency of sea-ice & iceberg model call)
                      ! Type of air-sea fluxes
                      !   ln_blk or ln_cpl will be set to true by config-canesm
    ln_flx      = .false.   !  flux formulation                          (T => fill namsbc_flx )
-   ln_blk      = .false.    !  Bulk formulation                          (T => fill namsbc_blk )
+   ln_blk      = .true.    !  Bulk formulation                          (T => fill namsbc_blk )
       !              ! Type of coupling (Ocean/Ice/Atmosphere) :
    ln_cpl      = .false.   !  atmosphere coupled   formulation          ( requires key_oasis3 )
      lk_cancpl   = .false.    !  CanCPL coupler 
@@ -107,9 +107,9 @@
                            !          except in AGRIF zoom where it has to be specified
                      ! Misc. options of sbc :
    ln_traqsr   = .true.    !  Light penetration in the ocean            (T => fill namtra_qsr)
-   ln_ssr      = .false.    !  Sea Surface Restoring on T and/or S       (T => fill namsbc_ssr)
-   ln_rnf      = .false.    !  runoffs                                   (T => fill namsbc_rnf)
-   nn_fwb      = 0         !  FreshWater Budget:
+   ln_ssr      = .true.    !  Sea Surface Restoring on T and/or S       (T => fill namsbc_ssr)
+   ln_rnf      = .true.    !  runoffs                                   (T => fill namsbc_rnf)
+   nn_fwb      = 3         !  FreshWater Budget:
    !                       !    =2 annual global mean of e-p-r set to zero
    ln_wave     = .false.   !  Activate coupling with wave  (T => fill namsbc_wave)
    ln_cdgw     = .false.   !  Neutral drag coefficient read from wave model (T => ln_wave=.true. & fill namsbc_wave)
@@ -141,6 +141,8 @@
 !-----------------------------------------------------------------------
    !                    !  bulk algorithm :
    ln_NCAR    = .true.     ! "NCAR"      algorithm   (Large and Yeager 2008)
+   rn_vfac     = 1.        !  multiplicative factor for ocean & ice velocity used to
+   !                       !  calculate the wind stress (0.=absolute or 1.=relative winds)
 
    cn_dir = './'  !  root directory for the bulk data location
    !___________!_________________________!___________________!___________!_____________!________!___________!______________________________________!__________!_______________!
@@ -193,7 +195,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
    !                       ! type of penetration                        (default: NO selection)
    ln_qsr_rgb  = .true.       !  RGB light penetration (Red-Green-Blue)
    !
-   nn_chldta   =      0       !  RGB : Chl data (=1) or cst value (=0)
+   nn_chldta   =      1       !  RGB : Chl data (=1) or cst value (=0)
 
    cn_dir = './'  !  root directory for the chlorophyl data location
    !___________!_________________________!___________________!___________!_____________!________!___________!__________________!__________!_______________!
@@ -218,7 +220,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
 &namsbc_rnf    !   runoffs                                              (ln_rnf =T)
 !-----------------------------------------------------------------------
-   ln_rnf_mouth = .false.    !  specific treatment at rivers mouths
+   ln_rnf_mouth = .true.      !  specific treatment at rivers mouths
       rn_hrnf     =  15.e0    !  depth over which enhanced vertical mixing is used    (ln_rnf_mouth=T)
       rn_avt_rnf  =   1.e-3   !  value of the additional vertical mixing coef. [m2/s] (ln_rnf_mouth=T)
    rn_rfact    =   1.e0    !  multiplicative factor for runoff
@@ -304,7 +306,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
    ln_trabbl   = .true.    !  Bottom Boundary Layer parameterisation flag
       nn_bbl_ldf  =  1        !  diffusive bbl (=1)   or not (=0)
-      nn_bbl_adv  =  0        !  advective bbl (=1/2) or not (=0)
+      nn_bbl_adv  =  1        !  advective bbl (=1/2) or not (=0)
       rn_ahtbbl   =  1000.    !  lateral mixing coefficient in the bbl  [m2/s]
       rn_gambbl   =  10.      !  advective bbl coefficient                 [s]
 /
@@ -336,7 +338,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
    ln_traldf_lap   = .true.    !    laplacian operator
    ln_traldf_iso   = .true.    !  iso-neutral (Standard operator)
-   ln_traldf_msc   = .true.    !  Method of Stabilizing Correction      (both operators)
+   ln_traldf_msc   = .false.   !  Method of Stabilizing Correction      (both operators)
    !                       !  Coefficients:
    nn_aht_ijk_t    = 20        !  space/time variation of eddy coef
       !                             !   = 20     aht = 1/2  Ud. max(e1,e2)
@@ -406,7 +408,8 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
    ln_dynldf_lap =  .true.     !    laplacian operator
    ln_dynldf_lev =  .true.     !  iso-level
-   nn_ahm_ijk_t  = -30         !  =-30  3D coeff. read in eddy_diffusivity_3D.nc
+   nn_ahm_ijk_t  =  20         !  =-30  3D coeff. read in eddy_diffusivity_3D.nc
+                               !  = 20  F(i,j)=F(grid spacing)=c2d
 /
 !!======================================================================
 !!                     vertical physics namelists                     !!
@@ -424,14 +427,14 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
    ln_zdftke   = .true.       !  Turbulent Kinetic Energy closure       (T =>   fill namzdf_tke)
    ln_zdfevd   = .true.       !  Enhanced Vertical Diffusion scheme
-      nn_evdm  =    0            !  evd apply on tracer (=0) or on tracer and momentum (=1)
-      rn_evd   =  100.           !  evd mixing coefficient [m2/s]
+      nn_evdm  =    0         !  evd apply on tracer (=0) or on tracer and momentum (=1)
+      rn_evd   =   10.        !  evd mixing coefficient [m2/s]
    ln_zdfddm   = .true.    ! double diffusive mixing
       rn_avts  =    1.e-4     !  maximum avs (vertical mixing on salinity)
       rn_hsbfr =    1.6       !  heat/salt buoyancy flux ratio
    ln_zdfiwm   = .false.      ! internal wave-induced mixing            (T =>   fill namzdf_iwm)
    !                       !  Coefficients
-   ln_zdftmx   = .false.      !  old tidal mixing scheme (Simmons et al 2004) (T =>   fill namzdf_tmx)
+   ln_zdftmx   = .true.       !  old tidal mixing scheme (Simmons et al 2004) (T =>   fill namzdf_tmx)
    rn_avm0     =   1.2e-4     !  vertical eddy viscosity   [m2/s]       (background Kz if ln_zdfcst=F)
    rn_avt0     =   1.2e-5     !  vertical eddy diffusivity [m2/s]       (background Kz if ln_zdfcst=F)
    nn_avb      =    0         !  profile for background avt & avm (=1) or not (=0)
@@ -465,8 +468,10 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
    rn_me       = 0.2       !  mixing efficiency
    ln_tmx_itf  = .true.    !  ITF specific parameterisation
    rn_tfe_itf  = 1.        !  ITF tidal dissipation efficiency
-   ln_s2004    = .false.   !  Compute zav_tide following Simmons et al (2004) 
+   ln_s2004    = .false.   !  Compute zav_tide following Simmons et al (2004)
    ln_sm2005   = .true.    !  Compute zav_tide following Saenko and Merryfield (2005)
+   ln_leewmx   = .true.    !  addition of Lee Wave mixing (.true.) or not (.false.)
+   rn_lwm      = 0.3       !  lee wave mixing scaling
 /
 !!======================================================================
 !!                  ***  Diagnostics namelists  ***                   !!
