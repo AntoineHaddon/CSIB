@@ -198,9 +198,6 @@ PROGRAM nemo_diag
    CALL getvara ('tn', iou7, imt*jmt*km*1, (/1,1,1,1/), (/imt,jmt,km,1/), tnc, 1., 0.)
    ! sn from last time step of current year
    CALL getvara ('sn', iou8, imt*jmt*km*1, (/1,1,1,1/), (/imt,jmt,km,1/), snc, 1., 0.)
-   CALL getvara ('e3u', iou2, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),e3u , 1., 0.)
-   CALL getvara ('e3v', iou3, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),e3v , 1., 0.)
-   CALL getvara ('e3t', iou4, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),e3t , 1., 0.)
    print*, '-------------------'
    print*, 'Input data read OK!'
    print*, '-------------------'

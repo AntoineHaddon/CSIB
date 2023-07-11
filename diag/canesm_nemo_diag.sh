@@ -14,12 +14,6 @@ set -x
 # nemo_rtd_mons='1 7' for a run starting from January in two 6-month chunks;
 # nemo_rtd_mons='6 12' for a run starting from June in two 6-month chunks.
 
-# Note that nemo_rtd_mons used below is first month of the time chunk. 
-# nemo_rtd_mons=1 for a run starting from January in a single 12-month chunk;
-# nemo_rtd_mons=6 for a run starting from June in a single 12-month chunk;
-# nemo_rtd_mons='1 7' for a run starting from January in two 6-month chunks;
-# nemo_rtd_mons='6 12' for a run starting from June in two 6-month chunks.
-
 # First and last month/year of 12-month period
   fmon=`echo $nemo_rtd_mons | cut -f1 -d' '`
   nmon=`echo $nemo_rtd_mons | wc -w` # number of chunks in 12-month period
@@ -31,6 +25,12 @@ set -x
     fyear=`echo $year | awk '{printf "%04d", $1 - 1}'`
     lyear=$year
     lmon=`echo $fmon | awk '{printf "%02d", $1 - 1}'`
+  fi
+  #last month of the first chunk (for istate)
+  if [ $nmon -eq 1 ];then
+    lmon0=$lmon
+  else
+    lmon0=`echo $fmon | awk '{printf "%02d", $2 - 1}'`
   fi
 
 # Previous year
@@ -74,16 +74,19 @@ set -x
       # Run offline computation only if starting from January 
       if [ $fmon -eq 1 ] ; then 
 # Access the nemo restart files
-        diag_rs1="mc_${runid}_${yearm1}_m${lmon}_nemors" # previous year
-        diag_rs2="mc_${runid}_${year}_m${lmon}_nemors"   # current year
+        diag_rs1="mc_${runid}_${fyear}_m${lmon0}_nemors" # First restart of that year (for init.nc)
+        diag_rs2="mc_${runid}_${lyear}_m${lmon}_nemors" # last restart of that year (for restart.nc)
         access rsp $diag_rs1 || ( echo "$diag_rs1 does not exist" ; exit 1 )
         access rsc $diag_rs2 || ( echo "$diag_rs2 does not exist" ; exit 1 )
 
 # Get tn and sn from the last step of previous year
         if [ -L rsp ] ; then
           cd rsp
-          cdo select,name=tn,timestep=-1 *_restart.nc tnp.nc
-          cdo select,name=sn,timestep=-1 *_restart.nc snp.nc
+          cdo select,name=votemper,timestep=-1 *_istate_*.nc tnp.nc
+          cdo select,name=vosaline,timestep=-1 *_istate_*.nc snp.nc
+          ncrename -O -v votemper,tn tnp.nc tnp.nc
+          ncrename -O -v vosaline,sn snp.nc snp.nc
+          [ $nemo_nn_istate == 0 ] && rm *_istate_*.nc # user did not want istate, no need to keep it.
           cd ..
           mv rsp/tnp.nc rsp/snp.nc ./
           release rsp
@@ -165,6 +168,14 @@ set -x
     [ ! -e ${sfx}_${fmon} ] && continue
     ncks -O -C -x -v time_centered_bounds,time_centered ${sfx}_${fmon} ${sfx}_${fmon} 
     cdo splitname ${sfx}_${fmon} xxx-${sfx}_
+    # UGLY PATCH : Spetial treatments for diaptr (5D-variables not suported) || true to not cause error if no variable with that name (nil001, july 2023)
+    if [ "${sfx}_${fmon}" == "1m_diaptr_01" ]; then
+      ncks -v znltem  ${sfx}_${fmon} xxx-${sfx}_znltem.nc && ncrename -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_znltem.nc xxx-${sfx}_znltem.nc || true
+      ncks -v znlsal  ${sfx}_${fmon} xxx-${sfx}_znlsal.nc && ncrename -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_znlsal.nc xxx-${sfx}_znlsal.nc || true
+      ncks -v znlsrf  ${sfx}_${fmon} xxx-${sfx}_znlsrf.nc && ncrename -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_znlsrf.nc xxx-${sfx}_znlsrf.nc || true
+      ncks -v msftyz  ${sfx}_${fmon} xxx-${sfx}_msftyz.nc && ncrename -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_msftyz.nc xxx-${sfx}_msftyz.nc || true
+
+    fi
     rm  ${sfx}_${fmon}
   done
 
