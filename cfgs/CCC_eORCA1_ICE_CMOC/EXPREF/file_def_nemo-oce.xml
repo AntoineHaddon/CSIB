@@ -36,6 +36,8 @@
           <field field_ref="qt"               name="hfds"           level="0" /> <!-- (Omon*) level = 1 in CMIP6  -->
           <field field_ref="qsr_tot"          name="qsr_tot"        level="0" /> <!-- only rtd -->
           <field field_ref="qns_tot"          name="qns_tot"        level="0" /> <!-- only rtd -->
+          <!-- Ideal Age Tracer (IAT) from TOP -->
+          <field field_ref="Age"              name="Age"            level="0" />
         </file>
         <file id="file12" name_suffix="_grid_U" description="ocean U grid variables">
           <field field_ref="uoce"        name="uo"       level="0" /> <!-- (Omon*) level = 1 in CMIP6  -->
@@ -57,7 +59,9 @@
         </file>
         <file id="file14" name_suffix="_grid_W" description="ocean W grid variables">
           <field field_ref="woce"        name="wo"       level="0" /> <!-- (Omon) -->
-          <field field_ref="woce_eiv"    name="woce_eiv" level="0" />  <!-- only rtd -->
+	      <field field_ref="woce_eiv"    name="woce_eiv" level="0" />  <!-- only rtd -->
+	      <field field_ref="avt"         name="avt"      level="0" />
+          <field field_ref="av_tmx"      name="av_tmx"   level="0" />
         </file>
           <!-- CMIP6 variables, started by NL, to be completed -->
         <file id="file15" name_suffix="_grid_T_ar6" description="ocean T grid variables">
@@ -119,21 +123,21 @@
         </file>
 
         <file id="file41" name_suffix="_diaptr" description="zonal mean variables" >
-          <field field_ref="sophtove"    name="htovovrt"      grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (Omon*) -->
-          <field field_ref="sopstove"    name="sltovovrt"     grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (Omon*) -->
-          <field field_ref="sophtgyre"   name="htovgyre"      grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (Omon*) -->
-          <field field_ref="sopstgyre"   name="sltovgyre"     grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (Omon*) <!-- Not in CMIP6 but available in NEMO4 -->
-          <field field_ref="sophtbtr"    name="htbtr"         grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (used?) -->
-          <field field_ref="sopstbtr"    name="sltbtr"        grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (used?) -->
-          <field field_ref="sophtadv"    name="htadv"         grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (used?) -->
-          <field field_ref="sopstadv"    name="sltadv"        grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (used?) -->
-          <field field_ref="sophtldf"    name="hfbasinpmdiff" grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (Omon*) -->
-          <field field_ref="sopstldf"    name="sltldf"        grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (used?) -->
-          <field field_ref="sophtvtr"    name="hfbasin"       grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (Omon*) -->
-          <field field_ref="sopstvtr"    name="sltbasin"      grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (used?) -->
-          <field field_ref="sophteiv"    name="hfbasinpmadv"  grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (Omon*) -->
-          <field field_ref="sopsteiv"    name="sltbasinpmadv" grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (used?) -->
-          <field field_ref="zomsf"       name="msftyz"        grid_ref="grid_ptr_T_3D"  level="0"  /> <!-- (Omon*) -->
+          <field field_ref="sophtove"    name="htovovrt"      grid_ref="grid_ptr_T_2D"  level="2"  /> <!-- (Omon*) -->
+          <field field_ref="sopstove"    name="sltovovrt"     grid_ref="grid_ptr_T_2D"  level="2"  /> <!-- (Omon*) -->
+          <field field_ref="sophtgyre"   name="htovgyre"      grid_ref="grid_ptr_T_2D"  level="2"  /> <!-- (Omon*) -->
+          <field field_ref="sopstgyre"   name="sltovgyre"     grid_ref="grid_ptr_T_2D"  level="2"  /> <!-- (Omon*) <!-- Not in CMIP6 but available in NEMO4 -->
+          <field field_ref="sophtbtr"    name="htbtr"         grid_ref="grid_ptr_T_2D"  level="9"  /> <!-- (used?) -->
+          <field field_ref="sopstbtr"    name="sltbtr"        grid_ref="grid_ptr_T_2D"  level="9"  /> <!-- (used?) -->
+          <field field_ref="sophtadv"    name="htadv"         grid_ref="grid_ptr_T_2D"  level="9"  /> <!-- (used?) -->
+          <field field_ref="sopstadv"    name="sltadv"        grid_ref="grid_ptr_T_2D"  level="9"  /> <!-- (used?) -->
+          <field field_ref="sophtldf"    name="hfbasinpmdiff" grid_ref="grid_ptr_T_2D"  level="2"  /> <!-- (Omon*) -->
+          <field field_ref="sopstldf"    name="sltldf"        grid_ref="grid_ptr_T_2D"  level="9"  /> <!-- (used?) -->
+          <field field_ref="sophtvtr"    name="hfbasin"       grid_ref="grid_ptr_T_2D"  level="2"  /> <!-- (Omon*) -->
+          <field field_ref="sopstvtr"    name="sltbasin"      grid_ref="grid_ptr_T_2D"  level="9"  /> <!-- (used?) -->
+          <field field_ref="sophteiv"    name="hfbasinpmadv"  grid_ref="grid_ptr_T_2D"  level="2"  /> <!-- (Omon*) -->
+          <field field_ref="sopsteiv"    name="sltbasinpmadv" grid_ref="grid_ptr_T_2D"  level="9"  /> <!-- (used?) -->
+          <field field_ref="zomsf"       name="msftyz"        grid_ref="grid_ptr_T_3D"  level="2"  /> <!-- (Omon*) -->
           <field field_ref="zotem"       name="znltem"        grid_ref="grid_ptr_T_3D"  level="0"  /> <!-- for analysis -->
           <field field_ref="zosal"       name="znlsal"        grid_ref="grid_ptr_T_3D"  level="0"  /> <!-- for analysis -->
           <field field_ref="zosrf"       name="znlsrf"        grid_ref="grid_ptr_T_3D"  level="0"  /> <!-- for analysis -->
