@@ -102,7 +102,7 @@ CONTAINS
          ENDIF
       ELSE                                       !== the file doesn't exist ==!   (or we overwrite it)
          !                                       !============================!
-         iln = INDEX( cdname, '.nc' )
+         iln = INDEX( cdname, '.nc', back = .TRUE. )
          IF( ldwrt ) THEN              !* the file should be open in write mode so we create it...
             IF( jpnij > 1 ) THEN
                idg = MAX( INT(LOG10(REAL(MAX(1,jpnij-1),wp))) + 1, 4 )          ! how many digits to we need to write? min=4, max=9
