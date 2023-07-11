@@ -34,6 +34,8 @@
         <field id="toce_e3t_300"      field_ref="toce_e3t"          unit="degree_C"     grid_ref="grid_T_zoom_300"      detect_missing_value="true" />
         <field id="toce_e3t_vsum300"  field_ref="toce_e3t_300"      unit="degress_C*m"  grid_ref="grid_T_vsum"  detect_missing_value="true" />
         <field id="toce_vmean300"     field_ref="toce_e3t_vsum300"  unit="degree_C"     grid_ref="grid_T_vsum"  detect_missing_value="true" > toce_e3t_vsum300/e3t_vsum300 </field>
+        <!-- IAT/age tracer from TOP but running w/o any BGCM -->
+        <field id="Age" long_name="Seawater age since last contact with surface" standard_name="ideal age tracer" unit="year(s)" grid_ref="grid_T_3D"/>
 
   <!--- additions to diawri.F90 --->
         <field id="socegrad"    long_name="module of salinity gradient"              unit="psu/m"   grid_ref="grid_T_3D"/>
@@ -507,21 +509,22 @@
 
       <field_group id="grid_W" grid_ref="grid_W_3D">
         <field id="e3w"          long_name="W-cell thickness"                              standard_name="cell_thickness"                         unit="m"    />
+	<field id="av_tmx"       long_name="tidal mixing coefficient"                                                                             unit="m2/s" />
         <field id="woce"         long_name="ocean vertical velocity"                       standard_name="upward_sea_water_velocity"              unit="m/s"  />
         <field id="woce_e3w"     long_name="ocean vertical velocity * e3w"                                                                        unit="m2/s"  > woce * e3w </field>
         <field id="wocetr_eff"   long_name="effective ocean vertical transport"                                                                   unit="m3/s" />
 
         <!-- woce_eiv: available with EIV  (ln_ldfeiv=T and ln_ldfeiv_dia=T)  -->
-        <field id="woce_eiv"     long_name="EIV ocean vertical velocity"                    standard_name="bolus_upward_sea_water_velocity"       unit="m/s"  />
-        <field id="weiv_masstr"  long_name="EIV Upward Ocean Mass Transport"  standard_name="bolus_upward_ocean_mass_transport"             unit="kg/s"   />
-        <field id="weiv_heattr3d" long_name="ocean bolus heat transport"    standard_name="ocean_heat_z_transport_due_to_bolus_advection"   unit="W"    />
-        <field id="weiv_salttr3d" long_name="ocean bolus salt transport"    standard_name="ocean_salt_z_transport_due_to_bolus_advection"   unit="kg"   />
+        <field id="woce_eiv"     long_name="EIV ocean vertical velocity"                   standard_name="bolus_upward_sea_water_velocity"        unit="m/s"  />
+        <field id="weiv_masstr"  long_name="EIV Upward Ocean Mass Transport"               standard_name="bolus_upward_ocean_mass_transport"      unit="kg/s"   />
+        <field id="weiv_heattr3d" long_name="ocean bolus heat transport"                   standard_name="ocean_heat_z_transport_due_to_bolus_advection"   unit="W"    />
+        <field id="weiv_salttr3d" long_name="ocean bolus salt transport"                   standard_name="ocean_salt_z_transport_due_to_bolus_advection"   unit="kg"   />
 
         <field id="avt"          long_name="vertical eddy diffusivity"                      standard_name="ocean_vertical_heat_diffusivity"       unit="m2/s" />
-        <field id="avt_e3w"      long_name="vertical heat diffusivity * e3w"                unit="m3/s" > avt * e3w </field>
+        <field id="avt_e3w"      long_name="vertical heat diffusivity * e3w"                                                                      unit="m3/s" > avt * e3w </field>
         <field id="logavt"       long_name="logarithm of vertical eddy diffusivity"         standard_name="ocean_vertical_heat_diffusivity"       unit="m2/s" />
         <field id="avm"          long_name="vertical eddy viscosity"                        standard_name="ocean_vertical_momentum_diffusivity"   unit="m2/s" />
-        <field id="avm_e3w"      long_name="vertical eddy viscosity * e3w"   unit="m3/s" > avm * e3w </field>
+        <field id="avm_e3w"      long_name="vertical eddy viscosity * e3w"                                                                        unit="m3/s" > avm * e3w </field>
 
         <!-- avs: /= avt with ln_zdfddm=T -->
         <field id="avs"          long_name="salt vertical eddy diffusivity"                 standard_name="ocean_vertical_salt_diffusivity"       unit="m2/s" />
@@ -530,7 +533,7 @@
 
         <!-- avt_evd and avm_evd: available with ln_zdfevd -->
         <field id="avt_evd"      long_name="convective enhancement of vertical diffusivity" standard_name="ocean_vertical_tracer_diffusivity_due_to_convection"     unit="m2/s" />
-        <field id="avt_evd_e3w"  long_name="convective enhancement to vertical diffusivity * e3w "    unit="m3/s" > avt_evd * e3w </field>
+        <field id="avt_evd_e3w"  long_name="convective enhancement to vertical diffusivity * e3w "                                                                  unit="m3/s" > avt_evd * e3w </field>
         <field id="avm_evd"      long_name="convective enhancement of vertical viscosity"   standard_name="ocean_vertical_momentum_diffusivity_due_to_convection"   unit="m2/s" />
 
         <!-- avt_tide: available with ln_zdfiwm=T -->
@@ -541,14 +544,14 @@
         <field id="emix_iwm"     long_name="power density available for mixing"             standard_name="power_available_for_mixing_from_breaking_internal_waves"         unit="W/kg" />
 
         <!-- variables available with WAVE (ln_wave=T) -->
-        <field id="wstokes"      long_name="Stokes Drift vertical velocity"                 standard_name="upward_StokesDrift_velocity"   unit="m/s" />
+        <field id="wstokes"      long_name="Stokes Drift vertical velocity"                 standard_name="upward_StokesDrift_velocity"             unit="m/s" />
 
         <!-- variables available with diaar5 -->
         <field id="w_masstr"     long_name="vertical mass transport"                        standard_name="upward_ocean_mass_transport"             unit="kg/s"   />
         <field id="w_masstr2"    long_name="square of vertical mass transport"              standard_name="square_of_upward_ocean_mass_transport"   unit="kg2/s2" />
 
         <!-- EOS -->
-        <field id="bn2"          long_name="squared Brunt-Vaisala frequency"                unit="s-2" />
+        <field id="bn2"          long_name="squared Brunt-Vaisala frequency"                                                                        unit="s-2" />
 
       </field_group>
 
