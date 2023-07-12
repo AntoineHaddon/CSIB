@@ -69,8 +69,9 @@ echo "#################### Start NEMO pre-processing #################"
   # - many are only pulled in they don't already exist
 
   # run namelists
-  for f in "${nemo_namelists[@]}"; do
-      ! is_file $f && cp ${WRK_DIR}/config/namelists/${f} .
+  for f in ${nemo_namelists[@]}; do
+      ! is_file ${f}_ref && cp ${WRK_DIR}/config/namelists/${f}_ref .
+      ! is_file ${f}_cfg && cp ${WRK_DIR}/config/namelists/${f}_cfg .
   done
   # configuration input files
   is_defined $nemo_coordinates || bail "The variable nemo_coordinates must be defined in the configuration file."
