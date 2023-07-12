@@ -37,7 +37,7 @@
           <field field_ref="qsr_tot"          name="qsr_tot"        level="0" /> <!-- only rtd -->
           <field field_ref="qns_tot"          name="qns_tot"        level="0" /> <!-- only rtd -->
           <!-- Ideal Age Tracer (IAT) from TOP -->
-          <field field_ref="Age"              name="Age"            level="0" />
+          <field field_ref="Age"              name="Age"            level="0" /> <!-- (Omon*) level = 1 in CMIP6 -->
         </file>
         <file id="file12" name_suffix="_grid_U" description="ocean U grid variables">
           <field field_ref="uoce"        name="uo"       level="0" /> <!-- (Omon*) level = 1 in CMIP6  -->
