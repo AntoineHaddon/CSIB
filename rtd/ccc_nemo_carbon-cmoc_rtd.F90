@@ -5,6 +5,8 @@ PROGRAM nemo_ocean_diag
 !
 ! HISTORY:
 ! -------
+! N. Lambert  July   2023   Include the time variation of e3t
+!
 ! O. Riche    Jan    2023   change PH to pH when reading the variable from the o/p file.
 !                           read e3t from grid_t instead of from mesh_mask (not present).
 !
@@ -82,13 +84,13 @@ PROGRAM nemo_ocean_diag
 !     Grid-related arrays
       REAL, DIMENSION(:, :),    ALLOCATABLE ::   lon2d, lat2d, e1t, e2t
       REAL, DIMENSION(:),       ALLOCATABLE ::   deptht
-      REAL, DIMENSION(:, :, :), ALLOCATABLE ::   e3t, t_mask
+      REAL, DIMENSION(:, :, :), ALLOCATABLE ::    t_mask
 
 !     Monthly DIC, CaCO3, TA, PH, O2
       REAL, DIMENSION(:, :, :, :), ALLOCATABLE :: dic, caco3, tal, ph, oxy
 
 !     Monthly POC, GOC, DOC
-      REAL, DIMENSION(:, :, :, :), ALLOCATABLE :: poc, goc, doc
+      REAL, DIMENSION(:, :, :, :), ALLOCATABLE :: e3t, poc, goc, doc
 
 !     Monthly NO3, NH4, PO4, Si
       REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: no3, nh4, po4, si
@@ -159,7 +161,7 @@ PROGRAM nemo_ocean_diag
 
       ALLOCATE( lon2d(imt,jmt), lat2d(imt,jmt), e1t(imt,jmt), e2t(imt,jmt),     &
          &      g_mask(imt,jmt), STAT=ierr(1) ) 
-      ALLOCATE( e3t(imt,jmt,km), t_mask(imt,jmt,km), STAT=ierr(2) )    
+      ALLOCATE( e3t(imt,jmt,km,lm), t_mask(imt,jmt,km), STAT=ierr(2) )    
       ALLOCATE( deptht(km), STAT=ierr(3) )
       ALLOCATE( dic(imt, jmt, km, lm), caco3(imt, jmt, km, lm),                 &
          &      tal(imt, jmt, km, lm), ph(imt, jmt, km, lm),                    &
@@ -217,7 +219,6 @@ PROGRAM nemo_ocean_diag
       CALL openfile (fname05,iou4)
       CALL getvara ('e1t', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1t , 1., 0.)
       CALL getvara ('e2t', iou4, imt*jmt, (/1,1,1/),  (/imt,jmt,1/),e2t , 1., 0.)
-!      CALL getvara ('e3t', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3t , 1., 0.) ! OR Jan 10th 2023
       CALL getvara ('tmask', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/), t_mask , 1., 0.)
       CALL closefile (iou4)
 
@@ -227,9 +228,9 @@ PROGRAM nemo_ocean_diag
       CALL getvara ('nav_lat', iou5, imt*jmt, (/1,1,1/), (/imt,jmt,1/), lat2d, 1., 0.)
       CALL getvara ('deptht', iou5, km, (/1/), (/km/), deptht, 1., 0.)   
       CALL closefile (iou5)
-      CALL openfile(fname08,iou7) ! OR Jan 10th 2023
-      CALL getvara ('e3t', iou7, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3t , 1., 0.)
-      CALL closefile(iou7)  ! End of OR Jan 10th 2023
+      CALL openfile(fname08,iou7) 
+      CALL getvara ('e3t', iou7, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),e3t , 1., 0.)
+      CALL closefile(iou7)  
 
 !---------------------------------------------------
 ! Read in from NetCDF
@@ -315,24 +316,24 @@ PROGRAM nemo_ocean_diag
              g_mask(:, :)  = t_mask(:, :, k) 
 
     !        DIC, TA, PH, O2 
-             CALL area_ave(e1t, e2t, e3t, g_mask, dic(:, :, k, l), imt, jmt, km, dicz,   dvol, k)  
-             CALL area_ave(e1t, e2t, e3t, g_mask, tal(:, :, k, l), imt, jmt, km, talz,   dvol, k)  
-             CALL area_ave(e1t, e2t, e3t, g_mask, oxy(:, :, k, l), imt, jmt, km, oxyz,   dvol, k)
+             CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, dic(:, :, k, l), imt, jmt, km, dicz,   dvol, k)  
+             CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, tal(:, :, k, l), imt, jmt, km, talz,   dvol, k)  
+             CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, oxy(:, :, k, l), imt, jmt, km, oxyz,   dvol, k)
 
     !        POC, GOC, DOC
-             CALL area_ave(e1t, e2t, e3t, g_mask, poc(:, :, k, l), imt, jmt, km, pocz, dvol, k)
+             CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, poc(:, :, k, l), imt, jmt, km, pocz, dvol, k)
 
     !        NO3, NH4, PO4, Si 
-             CALL area_ave(e1t, e2t, e3t, g_mask, no3(:, :, k, l), imt, jmt, km, no3z, dvol, k)
+             CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, no3(:, :, k, l), imt, jmt, km, no3z, dvol, k)
 
     !        PHY, PHY2, ZOO, ZOO2
-             CALL area_ave(e1t, e2t, e3t, g_mask, phy(:, :, k, l),  imt, jmt, km, phyz,  dvol, k)  
-             CALL area_ave(e1t, e2t, e3t, g_mask, zoo(:, :, k, l),  imt, jmt, km, zooz,  dvol, k)  
+             CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, phy(:, :, k, l),  imt, jmt, km, phyz,  dvol, k)  
+             CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, zoo(:, :, k, l),  imt, jmt, km, zooz,  dvol, k)  
 
              if (exists) then
     !            PPPHY, PPPHY2      
-                 CALL area_ave(e1t, e2t, e3t, g_mask, ph(:, :, k, l),     imt, jmt, km, phz,     dvol, k)  
-                 CALL area_ave(e1t, e2t, e3t, g_mask, ppphy(:, :, k, l),  imt, jmt, km, ppphyz,  dvol, k) 
+                 CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, ph(:, :, k, l),     imt, jmt, km, phz,     dvol, k)  
+                 CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, ppphy(:, :, k, l),  imt, jmt, km, ppphyz,  dvol, k) 
              endif 
     !================================================================
     !        Assign outputs
