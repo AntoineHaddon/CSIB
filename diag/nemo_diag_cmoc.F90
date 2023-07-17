@@ -65,10 +65,11 @@ PROGRAM nemo_diag_cmoc
    call getdimlen ('deptht', iou, km)
    CALL getdimlen ('time_counter', iou, lm)      
    ! get grid size for tbnds/bnds
+   ntbnds=2
    Do i = 1, ntdim
       CALL getdimnm  (dimnm, iou, i, ndim)
       print*, 'DIM',i,':',dimnm, 'length:', ndim
-      IF (dimnm .eq. 'tbnds' .or. dimnm .eq. 'bnds') ntbnds = ndim
+      IF (dimnm .eq. 'tbnds' .or. dimnm .eq. 'bnds' .or. dimnm .eq. 'axis_nbounds' ) ntbnds = ndim
    END DO
 
    ly = lm / 12
