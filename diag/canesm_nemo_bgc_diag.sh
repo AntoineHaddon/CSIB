@@ -98,7 +98,7 @@ set -x
     cp ${EXEC_STORAGE_DIR}/nemo_diag_cmoc.exe .
 
     # Get all auxiliary files needed before running the offline diagnostics
-    access si.nc uncs_orca1_data_si_nomask.nc
+    access si.nc $nemo_data_si_nomask 
     # Get globally averaged surface salinity from previous year
     if [ $process_abio -gt 0 ]; then
       # Access the nemo restart files
@@ -183,7 +183,7 @@ set -x
     cp ${EXEC_STORAGE_DIR}/nemo_diag_canoe.exe .
 
     # Get all auxiliary files needed before running the offline diagnostics
-    access si.nc uncs_orca1_data_si_nomask.nc
+    access si.nc $nemo_data_si_nomask
     # Run the offline diagnostics
     ./nemo_diag_canoe.exe
 
