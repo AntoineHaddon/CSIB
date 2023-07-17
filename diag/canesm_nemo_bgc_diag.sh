@@ -180,7 +180,7 @@ set -x
     canoe_destfile="1m_diad_t"
 
     # copy in executable
-    cp ${EXEC_STORAGE_DIR}/executables/nemo_diag_canoe.exe .
+    cp ${EXEC_STORAGE_DIR}/nemo_diag_canoe.exe .
 
     # Get all auxiliary files needed before running the offline diagnostics
     access si.nc uncs_orca1_data_si_nomask.nc
