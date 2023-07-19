@@ -166,7 +166,7 @@
       access icemod $rtd_hist7 na
 
       # Create run time diagnostics for physical ocean variables
-      $nemo_physical_rtd_exe ${yearm} ${mon}
+      [ -s grid_t ] && $nemo_physical_rtd_exe ${yearm} ${mon}
 
                    # Sea-ice run time diagnostics
 
