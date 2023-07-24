@@ -63,9 +63,6 @@ set -x
   for sfx in $nemo_diag_file_suffix_list ; do
     diag_hist="mc_${runid}_${fyear}_m${fmon}_${sfx}.nc"
     access ${sfx}_${fmon} $diag_hist na
-    [ ! -e ${sfx}_${fmon} ] && continue
-    ncks -O -C -x -v time_centered_bounds,time_centered ${sfx}_${fmon} ${sfx}_${fmon} 
-    cdo splitname ${sfx}_${fmon} xxx-${sfx}_
   done
 
 # Execute the following lines when output_level -ge 1
@@ -167,7 +164,7 @@ set -x
   for sfx in $nemo_diag_file_suffix_list ; do
     [ ! -e ${sfx}_${fmon} ] && continue
     ncks -O -C -x -v time_centered_bounds,time_centered ${sfx}_${fmon} ${sfx}_${fmon} 
-    cdo splitname ${sfx}_${fmon} xxx-${sfx}_
+    cdo splitname ${sfx}_${fmon} xxx-${sfx}_ || true
     # UGLY PATCH : Spetial treatments for diaptr (5D-variables not suported) || true to not cause error if no variable with that name (nil001, july 2023)
     if [ "${sfx}_${fmon}" == "1m_diaptr_01" ]; then
       ncks -v znltem  ${sfx}_${fmon} xxx-${sfx}_znltem.nc && ncrename -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_znltem.nc xxx-${sfx}_znltem.nc || true
