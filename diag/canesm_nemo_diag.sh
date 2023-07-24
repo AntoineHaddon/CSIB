@@ -83,7 +83,6 @@ set -x
           cdo select,name=vosaline,timestep=-1 *_istate_*.nc snp.nc
           ncrename -O -v votemper,tn tnp.nc tnp.nc
           ncrename -O -v vosaline,sn snp.nc snp.nc
-          [ $nemo_nn_istate == 0 ] && rm *_istate_*.nc # user did not want istate, no need to keep it.
           cd ..
           mv rsp/tnp.nc rsp/snp.nc ./
           release rsp
