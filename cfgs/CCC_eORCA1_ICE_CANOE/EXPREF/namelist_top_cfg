@@ -53,10 +53,10 @@
    !_____________!___________!_________________________________________!____________!________________!
    !             !    name   !           title of the field            !   units    ! init from file ! 
 !  sn_tracer(1)  = 'tracer  ', 'Tracer  Concentration                 ',   ' - '    ,   .false.
-   sn_tracer(1)   = 'DIC     ' , 'Dissolved inorganic Concentration      ',  'mmol-C/L' ,  .false.
-   sn_tracer(2)   = 'Alkalini' , 'Total Alkalinity Concentration         ',  'mmoleq/L ',  .false.
-   sn_tracer(3)   = 'O2      ' , 'Dissolved Oxygen Concentration         ',  'mmol-O2/L',  .false.
-   sn_tracer(4)   = 'NO3     ' , 'Nitrate Concentration                  ',  'mmol-N/L' ,  .false.
+   sn_tracer(1)   = 'DIC     ' , 'Dissolved inorganic Concentration      ',  'mmol-C/L' ,  .true.
+   sn_tracer(2)   = 'Alkalini' , 'Total Alkalinity Concentration         ',  'mmoleq/L ',  .true.
+   sn_tracer(3)   = 'O2      ' , 'Dissolved Oxygen Concentration         ',  'mmol-O2/L',  .true.
+   sn_tracer(4)   = 'NO3     ' , 'Nitrate Concentration                  ',  'mmol-N/L' ,  .true.
    !_____________!___________!_________________________________________!____________!________________!
    !  CanOE-specific tracers   
    !_____________!___________!_________________________________________!____________!________________!
