@@ -161,22 +161,12 @@
       access orca_mesh_mask $rtd_hist5 na
       access scalar $rtd_hist6 na
 
-      # detect if voce_eiv contains NaN for eORCA025 config
-      if [ -L grid_v ] ; then
-        imt=`ncdump -h grid_v |grep x | head -1 | cut -f3 -d ' '` # get imt
-	eiv=`ncks -v voce_eiv -d x,500,500 -d y,700,700 -d depthv,1,1 grid_v | tail -n 3 | head -n -2 |sed -e 's/^[ \t]*//' | cut -f1 -d ' '`             # detect if the valu on an ocean grid from eORCA025 is NaN (i.e., _)
-        feiv=1                    # flag to read eiu/v/w or not that is used as an arg below
-        if [ $imt = 1442 ] && [ $eiv = "_" ]; then
-	  feiv=0  
-        fi	
-      fi
-
       # Access additional annual history files containing ICE related variables (needed for qsr_ice anbd qns_ice)
       rtd_hist7="mc_${runid}_${yearm}_m${mon}_1m_icemod.nc"
       access icemod $rtd_hist7 na
 
       # Create run time diagnostics for physical ocean variables
-      $nemo_physical_rtd_exe ${yearm} ${mon} ${feiv}
+      $nemo_physical_rtd_exe ${yearm} ${mon}
 
                    # Sea-ice run time diagnostics
 

@@ -86,7 +86,6 @@ PROGRAM nemo_ocean_diag
       INTEGER :: j_20N, j_20S, j_eq, k60, k500, k2000, i_DP, j_DP_S 
       INTEGER :: j_DP_N, i_IN_E1, i_IN_W1, i_IN_E2, i_IN_W2
       INTEGER :: i_AN_E, i_AN_W, i_AS_E, i_AS_W, i_PN_E, i_PN_W
-      INTEGER :: ieiv 
       REAL    :: recn, cp, tz, sz, w_meanx, w_meany, area1, area2
       REAL    :: area, arc, arcn, arcs
 ! ======================================================================
@@ -196,7 +195,7 @@ PROGRAM nemo_ocean_diag
       REAL    :: tyear, tdays_elapsed
       CHARACTER :: fname01*100,fname02*100, fname03*100
       CHARACTER :: fname04*100, fname05*100, fname06*100, fname07*100
-      CHARACTER(len=32) :: year_arg_in, mon_arg_in, feiv
+      CHARACTER(len=32) :: year_arg_in, mon_arg_in
       integer, dimension(8) :: ierr
 ! Constants
       REAL, PARAMETER :: lfus = 0.334e6
@@ -459,17 +458,12 @@ PROGRAM nemo_ocean_diag
           CALL getvara ('vo', iou2, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), v, 1., 0.)
          ! w-velocity 
           CALL getvara ('wo', iou3, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), w, 1., 0.)
-          ! Read arg to detect if uoce_eiv, voce_eiv & woce_eiv are available
-          CALL getarg(3, feiv )
-          read (feiv,'(I1)') ieiv
-          IF ( ieiv == 1 ) then
-            ! EI u-velocity 
-            CALL getvara ('uoce_eiv', iou1, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmu, 1., 0.)
-            ! EI v-velocity 
-            CALL getvara ('voce_eiv', iou2, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmv, 1., 0.)
-            ! EI w-velocity 
-            CALL getvara ('woce_eiv', iou3, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmw, 1., 0.)
-          ENDIF
+         ! EI u-velocity 
+          CALL getvara ('uoce_eiv', iou1, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmu, 1., 0.)
+         ! EI v-velocity 
+          CALL getvara ('voce_eiv', iou2, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmv, 1., 0.)
+         ! EI w-velocity 
+          CALL getvara ('woce_eiv', iou3, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmw, 1., 0.)
          ! Wind Stress along i-axis
           CALL getvara ('tauuo', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), tau_x, 1., 0.)
          ! Wind Stress along j-axis
@@ -717,10 +711,8 @@ PROGRAM nemo_ocean_diag
     !---------------------------------------------------
 
     ! Constract net, or residual velocities
-          IF ( ieiv == 1 ) then
-            v(:, :, :) = v(:, :, :) + gmv(:, :, :) 
-            w(:, :, :) = w(:, :, :) + gmw(:, :, :) 
-          ENDIF
+          v(:, :, :) = v(:, :, :) + gmv(:, :, :) 
+          w(:, :, :) = w(:, :, :) + gmw(:, :, :) 
 
           call moc(e1v, e3v, v_mask, v(:, :, :), imt, jmt, km               & 
             &     , over_psi(:, :))
