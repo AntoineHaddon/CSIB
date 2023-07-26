@@ -86,8 +86,10 @@ PROGRAM nemo_ocean_diag
       INTEGER :: j_20N, j_20S, j_eq, k60, k500, k2000, i_DP, j_DP_S 
       INTEGER :: j_DP_N, i_IN_E1, i_IN_W1, i_IN_E2, i_IN_W2
       INTEGER :: i_AN_E, i_AN_W, i_AS_E, i_AS_W, i_PN_E, i_PN_W
+      INTEGER :: eivid, status, nf_inq_varid, nf_get_att
       REAL    :: recn, cp, tz, sz, w_meanx, w_meany, area1, area2
       REAL    :: area, arc, arcn, arcs
+      REAL(kind=4) :: fill_value
 ! ======================================================================
 !     Input data 
 ! ======================================================================
@@ -464,6 +466,12 @@ PROGRAM nemo_ocean_diag
           CALL getvara ('voce_eiv', iou2, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmv, 1., 0.)
          ! EI w-velocity 
           CALL getvara ('woce_eiv', iou3, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmw, 1., 0.)
+         ! If eddy fields contain NaNs, set them to zeros.
+          status = nf_inq_varid(iou2, "voce_eiv", eivid)
+          status = nf_get_att(iou2, eivid, '_FillValue', fill_value)
+          WHERE (gmv == fill_value)
+            gmu = 0.0_dp; gmv = 0.0_dp; gmw = 0.0_dp
+          ENDWHERE
          ! Wind Stress along i-axis
           CALL getvara ('tauuo', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), tau_x, 1., 0.)
          ! Wind Stress along j-axis
