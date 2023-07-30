@@ -165,6 +165,17 @@
       </file_group>
 
       <file_group id="1y"  output_freq="1y"  enabled=".TRUE."> <!-- real yearly files -->
+        <file id="file32" name_suffix="_Heat_budget" description="To check heat budget">
+            <field field_ref="qt_ice_oce"  name="qt_ice_oce"   level="0" /> <!-- test heat bubget -->
+            <field field_ref="qt_ice"      name="qt_ice"       level="0" /> <!-- test heat bubget -->
+            <field field_ref="qt_oce_ai"   name="qt_oce_ai"    level="0" /> <!-- test heat bubget -->
+            <field field_ref="qt_atm_oi"   name="qt_atm_oi"    level="0" /> <!-- test heat bubget -->
+            <field field_ref="qtr_ice_bot" name="qtr_ice_bot"  level="0" /> <!-- test heat bubget -->
+            <field field_ref="qtr_ice_top" name="qtr_ice_top"  level="0" /> <!-- test heat bubget -->
+            <field field_ref="heatc"       name="heatc"        level="0" /> <!-- test heat bubget -->
+            <field field_ref="icehc"       name="icehc"        level="0" /> <!-- test heat bubget -->
+            <field field_ref="snwhc"       name="snwhc"        level="0" /> <!-- test heat bubget -->
+        </file>
         <file id="file31" name_suffix="_grid_T_ar6" description="ocean T grid variables">
             <field field_ref="ttrd_xad"      name="ttrd_xad"        level="3" /> <!-- (Oyr*)+diag -->
             <field field_ref="strd_xad"      name="strd_xad"        level="3" /> <!-- (Oyr*)+ diag -->
