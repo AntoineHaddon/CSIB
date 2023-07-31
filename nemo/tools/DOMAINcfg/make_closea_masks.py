@@ -50,10 +50,13 @@ def make_closea_masks(config=None,domcfg_file=None,mask=None):
     domcfg = nc.Dataset(domcfg_file,'r+')
     lon = domcfg.variables['nav_lon'][:]
     lat = domcfg.variables['nav_lat'][:]
-    top_level = domcfg.variables['top_level'][0][:]
+    top_level = domcfg.variables['top_level'][:]
+    bottom_level = domcfg.variables['bottom_level'][:]
+    bathy_metry = domcfg.variables['bathy_metry'][:]
 
-    nx = top_level.shape[1]
-    ny = top_level.shape[0]
+    nx = top_level.shape[2]
+    ny = top_level.shape[1]
+    nt = top_level.shape[0]
 
     # Generate 2D "i" and "j" fields for use in "where" statements.
     # These are the Fortran indices, counting from 1, so we have to
@@ -408,13 +411,14 @@ def make_closea_masks(config=None,domcfg_file=None,mask=None):
     closea_mask_empmr = ma.zeros(top_level.shape,dtype=np.int)
 
     for ics in range(num_closea):
-        closea_mask = ma.where( ( ii2d[:] >= ncsi1[ics+1] ) & ( ii2d[:] <= ncsi2[ics+1] ) &
-                                ( jj2d[:] >= ncsj1[ics+1] ) & ( jj2d[:] <= ncsj2[ics+1] ) &
-                                ( top_level == 1 ), ics+1, closea_mask)
+        if ncstt[ics+1] != -1:
+            closea_mask = ma.where( ( ii2d[:] >= ncsi1[ics+1] ) & ( ii2d[:] <= ncsi2[ics+1] ) &
+                                    ( jj2d[:] >= ncsj1[ics+1] ) & ( jj2d[:] <= ncsj2[ics+1] ) &
+                                    ( top_level == 1 ), ics+1, closea_mask)
         if ncstt[ics+1] == -1:
             top_level = ma.where( ( ii2d[:] >= ncsi1[ics+1] ) & ( ii2d[:] <= ncsi2[ics+1] ) &
-                                    ( jj2d[:] >= ncsj1[ics+1] ) & ( jj2d[:] <= ncsj2[ics+1] ) &
-                                    ( top_level == 1 ), 0, top_level)
+                                  ( jj2d[:] >= ncsj1[ics+1] ) & ( jj2d[:] <= ncsj2[ics+1] ) &
+                                  ( top_level == 1 ), 0, top_level)
         if ncstt[ics+1] == 1:
             rnf_count = rnf_count + 1
             temp_mask_rnf[:] = 0
@@ -469,22 +473,26 @@ def make_closea_masks(config=None,domcfg_file=None,mask=None):
         closea_mask.mask = np.where(top_level==0,True,False)
         closea_mask_rnf.mask = np.where(top_level==0,True,False)
         closea_mask_empmr.mask = np.where(top_level==0,True,False)
+        bottom_level.mask = np.where(top_level==0,True,False)
+        bathy_metry.mask = np.where(top_level==0,True,False)
 
 #=====================================
 # 4. Append masks to domain_cfg file.
 #=====================================
 
     if 'closea_mask' not in domcfg.variables.keys():
-        domcfg.createVariable('closea_mask',datatype='i',dimensions=('y','x'),fill_value=-1,chunksizes=(1000,1000))
+        domcfg.createVariable('closea_mask',datatype='i',dimensions=('t','y','x'),fill_value=-1,chunksizes=(1000,1000))
     domcfg.variables['closea_mask'][:]=closea_mask
-    domcfg.variables['top_level'][0][:]=top_level
+    domcfg.variables['top_level'][:]=top_level
+    domcfg.variables['bottom_level'][:]=bottom_level
+    domcfg.variables['bathy_metry'][:]=bathy_metry
     if rnf_count > 0:
         if 'closea_mask_rnf' not in domcfg.variables.keys():
-            domcfg.createVariable('closea_mask_rnf',datatype='i',dimensions=('y','x'),fill_value=-1,chunksizes=(1000,1000))
+            domcfg.createVariable('closea_mask_rnf',datatype='i',dimensions=('t','y','x'),fill_value=-1,chunksizes=(1000,1000))
         domcfg.variables['closea_mask_rnf'][:]=closea_mask_rnf
     if empmr_count > 0:
         if 'closea_mask_empmr' not in domcfg.variables.keys():
-            domcfg.createVariable('closea_mask_empmr',datatype='i',dimensions=('y','x'),fill_value=-1,chunksizes=(1000,1000))
+            domcfg.createVariable('closea_mask_empmr',datatype='i',dimensions=('t','y','x'),fill_value=-1,chunksizes=(1000,1000))
         domcfg.variables['closea_mask_empmr'][:]=closea_mask_empmr
 
     domcfg.close()
