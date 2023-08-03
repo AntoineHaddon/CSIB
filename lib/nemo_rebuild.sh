@@ -201,10 +201,9 @@ fi
 
 cp rebuild_nemo.exe ${inrs}/
 cd $inrs
-# Figure out the last time step, which is needed for the rs tile names.
-ls -l  rs_time.step
-nn_itend=$(cat rs_time.step)
-end_step=$(echo $nn_itend | awk '{printf "%8.8d",$1}')
+# Figure out the first/last time step, which is needed for the rs tile names.
+end_step=$(grep -m 1 -w nn_itend  rs_namelist_cfg | awk '{printf "%8.8d",$3}' )
+start_step=$(grep -m 1 -w nn_it000  rs_namelist_cfg | awk '{printf "%8.8d",$3}' )
 
 # The initial state files
 pfx=output.init
@@ -214,7 +213,7 @@ if [ -s "${pfx}_0000.nc" ]; then
    # Replace the global lat/lon to remove the hold made by the land processors elimination
    ncks -x -h -O -v  nav_lon,nav_lat $pfx.nc $pfx.nc
    ncks -A -h -v nav_lon,nav_lat ${wrkdir}/coor.nc $pfx.nc
-   ncsave=${model1}_istate_$start_date.nc
+   ncsave=${runid}_${start_step}_istate.nc
    mv  $pfx.nc $ncsave
 fi
 

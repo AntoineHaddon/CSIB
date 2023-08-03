@@ -79,8 +79,8 @@ set -x
 # Get tn and sn from the last step of previous year
         if [ -L rsp ] ; then
           cd rsp
-          cdo select,name=votemper,timestep=-1 *_istate_*.nc tnp.nc
-          cdo select,name=vosaline,timestep=-1 *_istate_*.nc snp.nc
+          cdo select,name=votemper,timestep=-1 *_istate.nc tnp.nc
+          cdo select,name=vosaline,timestep=-1 *_istate.nc snp.nc
           ncrename -O -v votemper,tn tnp.nc tnp.nc
           ncrename -O -v vosaline,sn snp.nc snp.nc
           cd ..
