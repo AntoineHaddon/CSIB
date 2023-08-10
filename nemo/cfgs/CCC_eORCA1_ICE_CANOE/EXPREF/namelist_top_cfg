@@ -285,3 +285,14 @@ wdust0       =  2.0      ! Dust sinking speed
    parval      = 100.           ! surface PAR constant
    zlevel      = 5              ! vertical level where PAR is non-zero
 /
+!-----------------------------------------------------------------------
+&namtrcflx     !   air-sea exchange
+!-----------------------------------------------------------------------
+   ln_co2int  =  .false. ! read atm pco2 from a file (T) or constant (F)
+   atmco2     =  284.317e-6     ! Constant value atmospheric pCO2 - ln_co2int = F
+!   clname     =  'atcco2.txt'  ! Name of atm pCO2 file - ln_co2int = T
+!   nn_offset  =  0       ! Offset model-data start year - ln_co2int = T
+   no3_sf  = 1.e-6
+!                        ! If your model year is iyy, nn_offset=(years(1)-iyy)
+!                        ! then the first atmospheric CO2 record read is at years(1)
+/
