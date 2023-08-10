@@ -165,7 +165,7 @@
       </file_group>
 
       <file_group id="1y"  output_freq="1y"  enabled=".TRUE."> <!-- real yearly files -->
-        <file id="file32" name_suffix="_Heat_budget" description="To check heat budget">
+        <file id="file35" name_suffix="_Heat_budget" description="To check heat budget">
             <field field_ref="qt_ice_oce"  name="qt_ice_oce"   level="0" /> <!-- test heat bubget -->
             <field field_ref="qt_ice"      name="qt_ice"       level="0" /> <!-- test heat bubget -->
             <field field_ref="qt_oce_ai"   name="qt_oce_ai"    level="0" /> <!-- test heat bubget -->
