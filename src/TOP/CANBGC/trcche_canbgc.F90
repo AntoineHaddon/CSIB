@@ -45,7 +45,6 @@ MODULE trcche_canbgc
 ! Constants and conversion factors
    REAL(wp), PUBLIC ::     xconv0   = 0.01_wp / 3600._wp !: coefficients for conversion 
    REAL(wp), PUBLIC ::     atcoxy   = 0.20946_wp         !: O2 fraction of air partial pressure (atm / atm)
-   REAL(wp), PUBLIC ::     atco2    = 284.317_wp*1e-6    !: Default atm pCO2 (atm)       
 
    REAL(wp) ::   salchl = 1. / 1.80655    ! conversion factor for salinity --> chlorinity (Wooster et al. 1969)
    REAL(wp) ::   o2atm  = 1. / ( 1000. * 0.20946 )  
@@ -296,7 +295,6 @@ CONTAINS
          END DO
       END DO
 
-
       ! SURFACE CHEMISTRY (PCO2 AND [H+] IN
       !     SURFACE LAYER); THE RESULT OF THIS CALCULATION
       !     IS USED TO COMPUTE AIR-SEA FLUX OF CO2
@@ -313,7 +311,7 @@ CONTAINS
                zdic = trn(ji,jj,1,jqdic) / zfact * ztmas + 0.002 * ztmas1
                ztalk = trn(ji,jj,1,jqtal) / zfact * ztmas + 0.0024 * ztmas1
 
-               zpo4 = trn(ji,jj,1,jqno3) / 16. / zfact                        ! needs to include NH4 for CanOE when available
+               zpo4 = trn(ji,jj,1,jqno3) * no3_sf / 16. / zfact                        ! needs to include NH4 for CanOE when available
                zsi = qasi3(ji,jj,1) * 0.000001 / zfact                        ! silica is a static array based on initialization file, not a carried tracer
 
                ! initialize local scalar variables so that calculations are identical in 2D and 3D SRs
@@ -402,7 +400,7 @@ CONTAINS
                   zbot = qborat3(ji,jj,jk) * ztmas + 0.000416 * ztmas1 
                   zdic = trn(ji,jj,jk,jqdic) / zfact * ztmas + 0.002 * ztmas1
                   ztalk = trn(ji,jj,jk,jqtal) / zfact * ztmas + 0.0024 * ztmas1
-                  zpo4 = trn(ji,jj,jk,jqno3) / 16. / zfact                        ! needs to include NH4 for CanOE when available
+                  zpo4 = trn(ji,jj,jk,jqno3) * no3_sf / 16. / zfact               ! needs to include NH4 for CanOE when available
                   zsi = qasi3(ji,jj,jk) * 0.000001 / zfact                        ! silica is a static array based on initialization file, not a carried tracer
 
                ! initialize local scalar variables so that calculations are identical in 2D and 3D SRs

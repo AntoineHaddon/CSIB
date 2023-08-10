@@ -69,6 +69,10 @@ MODULE trcsrc_canbgc
    REAL(wp), SAVE, PUBLIC :: wdust0       = 2.0_wp        !: dust0 sinking speed   (m s^-1)
    REAL(wp), SAVE, PUBLIC :: sedfeinput0  = 1000._wp      !: coastal iron release (?)
 
+   ! gas exchange parameters
+   REAL(wp), SAVE, PUBLIC :: no3_sf   = 1._wp               ! scaling factor for NO3 (for estimation of PO4)
+   REAL(wp), SAVE, PUBLIC :: atmco2   = 284.317_wp*1e-6     !: Default atm pCO2 (atm)
+   LOGICAL, SAVE, PUBLIC  :: ln_co2int = .false.
    ! External source switches
    LOGICAL, SAVE, PUBLIC  :: ln_dust0  = .false. 
    LOGICAL, SAVE, PUBLIC  :: ln_river0 = .false. 
@@ -138,6 +142,8 @@ CONTAINS
       NAMELIST/namtrcsrclog/ ln_dust0, ln_river0, ln_ndepo0
       NAMELIST/namtrc_src3d/ cn_dir, nb_src3d, sn_src3d, rn_src3d
       NAMELIST/namtrc_src2d/ cn_dir, nb_src2d, sn_src2d, rn_src2d
+      NAMELIST/namtrcflx/ ln_co2int, atmco2, no3_sf
+
       !
       ios = 0 ; ierr0 = 0  ;  ierr1 = 0  ;  ierr2 = 0 
       !
@@ -156,6 +162,10 @@ CONTAINS
       REWIND( numnml )
       READ  ( numnml, namtrcsrclog, IOSTAT = ios, ERR = 802)
 802   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namtrcsrclog in reference namelist' )
+      !       !
+      REWIND( numnml )
+      READ  ( numnml, namtrcflx, IOSTAT = ios, ERR = 803)
+803   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namtrcflx in reference namelist' )
       !       
       !!!!!!!!!! Read namelist info about external sources
       !     
@@ -766,3 +776,4 @@ CONTAINS
   END SUBROUTINE trc_n2fx_init_cmoc
 
 END MODULE trcsrc_canbgc
+
