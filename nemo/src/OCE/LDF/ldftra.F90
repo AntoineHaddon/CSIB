@@ -62,6 +62,11 @@ MODULE ldftra
    !                                            !                                bht_0 = 1/12 Ud*Ld^3 (blp case)
    REAL(wp), PUBLIC ::      rn_Ud               !: lateral diffusive velocity  [m/s]
    REAL(wp), PUBLIC ::      rn_Ld               !: lateral diffusive length    [m]
+   REAL(wp), PUBLIC ::      rn_zRomax           !: Upper limit of Rossby radius at w-point
+   REAL(wp), PUBLIC ::      rn_zRocoef          !: Rossby radius coefficient
+   REAL(wp), PUBLIC ::      rn_eiwmin           !: lower limit of eddy induced velocity
+   REAL(wp), PUBLIC ::      rn_eiwmax           !  upper limit of eddy induced velocity
+   REAL(wp), PUBLIC ::      rn_gm               !: scalling of eddy induced velocity
 
    !                                   !!* Namelist namtra_eiv : eddy induced velocity param. *
    !                                    != Use/diagnose eiv =!
@@ -136,9 +141,11 @@ CONTAINS
       !!
       NAMELIST/namtra_ldf/ ln_traldf_OFF, ln_traldf_lap  , ln_traldf_blp  ,   &   ! type of operator
          &                 ln_traldf_lev, ln_traldf_hor  , ln_traldf_triad,   &   ! acting direction of the operator
-         &                 ln_traldf_iso, ln_traldf_msc  ,  rn_slpmax     ,   &   ! option for iso-neutral operator
+         &                 ln_traldf_iso, ln_traldf_msc  , rn_slpmax     ,    &   ! option for iso-neutral operator
          &                 ln_triad_iso , ln_botmix_triad, rn_sw_triad    ,   &   ! option for triad operator
-         &                 nn_aht_ijk_t , rn_Ud          , rn_Ld                  ! lateral eddy coefficient
+         &                 nn_aht_ijk_t , rn_Ud          , rn_Ld ,            &   ! lateral eddy coefficient
+         &                 rn_zRomax ,    rn_zRocoef ,                        &   ! upper limit & coefficient of Rossby radius at w-point
+         &                 rn_eiwmin ,    rn_eiwmax ,      rn_gm                  ! lower & upper limits & scaling of the eddy induced velocity
       !!----------------------------------------------------------------------
       !
       IF(lwp) THEN                      ! control print
@@ -681,8 +688,9 @@ CONTAINS
                   ! eddies using the isopycnal slopes calculated in ldfslp.F : 
                   ! T^-1 = sqrt(m_jpk(N^2*(r1^2+r2^2)*e3w))
                   ze3w = e3w_n(ji,jj,jk) * wmask(ji,jj,jk)
-                  zah(ji,jj) = zah(ji,jj) + zn2 * ( wslpi(ji,jj,jk) * wslpi(ji,jj,jk)   &
-                     &                            + wslpj(ji,jj,jk) * wslpj(ji,jj,jk) ) * ze3w
+                  ! Add SQRT below. D.Yang, 2023-08-11
+                  zah(ji,jj) = zah(ji,jj) + SQRT( zn2 * ( wslpi(ji,jj,jk) * wslpi(ji,jj,jk)   &
+                     &                            + wslpj(ji,jj,jk) * wslpj(ji,jj,jk) ) ) * ze3w
                   zhw(ji,jj) = zhw(ji,jj) + ze3w
                END DO
             END DO
@@ -692,10 +700,11 @@ CONTAINS
       DO jj = 2, jpjm1
          DO ji = fs_2, fs_jpim1   ! vector opt.
             zfw = MAX( ABS( 2. * omega * SIN( rad * gphit(ji,jj) ) ) , 1.e-10 )
-            ! Rossby radius at w-point taken betwenn 2 km and  40km
-            zRo(ji,jj) = MAX(  2.e3 , MIN( .4 * zn(ji,jj) / zfw, 40.e3 )  )
+            ! Rossby radius at w-point taken betwenn 2 km and rn_zRomax km; Also set 1/pi=0.32 instead of 0.4. D.Yang, 2023-08-11 
+            zRo(ji,jj) = MAX(  2.e3 , MIN( .32 * zn(ji,jj) / zfw, rn_zRomax )  )
             ! Compute aeiw by multiplying Ro^2 and T^-1
-            zaeiw(ji,jj) = zRo(ji,jj) * zRo(ji,jj) * SQRT( zah(ji,jj) / zhw(ji,jj) ) * tmask(ji,jj,1)
+            ! Set rn_zRocoef & remove SQRT D.Yang, 2023-08-11
+            zaeiw(ji,jj) = rn_zRocoef * zRo(ji,jj) * ( zah(ji,jj) / zhw(ji,jj) ) * tmask(ji,jj,1)
          END DO
       END DO
 
@@ -704,10 +713,15 @@ CONTAINS
       DO jj = 2, jpjm1
          DO ji = fs_2, fs_jpim1   ! vector opt.
             zzaei = MIN( 1._wp, ABS( ff_t(ji,jj) * z1_f20 ) ) * zaeiw(ji,jj)     ! tropical decrease
-            zaeiw(ji,jj) = MIN( zzaei , paei0 )                                  ! Max value = paei0
+            ! Add scalling (rn_gm) to zaeiw. D.Yang, 2023-08-11
+            zaeiw(ji,jj) = rn_gm * MIN( zzaei , paei0 )                                  ! Max value = paei0
+            ! Limit the coefficient to rn_eiwmin - rn_eiwmax m^2 /s. D.Yang, 2023-08-11
+            zaeiw(ji,jj) = MIN( MAX( zaeiw(ji,jj) , rn_eiwmin ) , rn_eiwmax ) * tmask(ji,jj,1)
          END DO
       END DO
       CALL lbc_lnk( 'ldftra', zaeiw(:,:), 'W', 1. )       ! lateral boundary condition
+
+
       !               
       DO jj = 2, jpjm1                          !== aei at u- and v-points  ==!
          DO ji = fs_2, fs_jpim1   ! vector opt.
