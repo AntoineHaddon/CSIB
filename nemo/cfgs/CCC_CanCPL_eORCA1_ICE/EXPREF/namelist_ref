@@ -848,10 +848,10 @@
       !                        !  time invariant coefficients:  aei0 = 1/2  Ue*Le
       rn_Ue        = 0.02           !  lateral diffusive velocity [m/s] (nn_aht_ijk_t= 0, 10, 20, 30)
       rn_Le        = 200.e+3        !  lateral diffusive length   [m]   (nn_aht_ijk_t= 0, 10)
-      rn_zRomax    = 200.e+3        !  Upper limit of Rossby radius at w-point
-      rn_zRocoef   = 25000.         !  Rossby radius coefficient
-      rn_eiwmin    = 100.           !  lower limit of eddy induced velocity
-      rn_eiwmax    = 2000.          !  upper limit of eddy induced velocity
+      rn_zRomax    = 200.e+3        !  Rossby radius in the tropical regions: 200 km
+      rn_zRocoef   = 25.e+3         !  a prescribed "typical" eddy scale: 25 or 50 km
+      rn_eiwmin    = 100.           !  lower limit of eddy induced velocity (m2/s)
+      rn_eiwmax    = 2000.          !  upper limit of eddy induced velocity (m2/s)
       rn_gm        = 1.             !  scaling of eddy induced velocity
       !
       ln_ldfeiv_dia =.false.   ! diagnose eiv stream function and velocities

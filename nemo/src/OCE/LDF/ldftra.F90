@@ -8,6 +8,8 @@ MODULE ldftra
    !!            2.0  ! 2005-11  (G. Madec)  
    !!            3.7  ! 2013-12  (F. Lemarie, G. Madec)  restructuration/simplification of aht/aeiv specification,
    !!                 !                                  add velocity dependent coefficient and optional read in file
+   !!            4.0.3! 2023-08  (D. Yang)   Revise the computation of mesoscale eddy transfer coefficien 
+   !!                                        following Saenko, Yang & Gregory, J.Clim., 2018
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -62,11 +64,6 @@ MODULE ldftra
    !                                            !                                bht_0 = 1/12 Ud*Ld^3 (blp case)
    REAL(wp), PUBLIC ::      rn_Ud               !: lateral diffusive velocity  [m/s]
    REAL(wp), PUBLIC ::      rn_Ld               !: lateral diffusive length    [m]
-   REAL(wp), PUBLIC ::      rn_zRomax           !: Upper limit of Rossby radius at w-point
-   REAL(wp), PUBLIC ::      rn_zRocoef          !: Rossby radius coefficient
-   REAL(wp), PUBLIC ::      rn_eiwmin           !: lower limit of eddy induced velocity
-   REAL(wp), PUBLIC ::      rn_eiwmax           !  upper limit of eddy induced velocity
-   REAL(wp), PUBLIC ::      rn_gm               !: scalling of eddy induced velocity
 
    !                                   !!* Namelist namtra_eiv : eddy induced velocity param. *
    !                                    != Use/diagnose eiv =!
@@ -76,6 +73,11 @@ MODULE ldftra
    INTEGER , PUBLIC ::   nn_aei_ijk_t        !: choice of time/space variation of the eiv coeff.
    REAL(wp), PUBLIC ::      rn_Ue               !: lateral diffusive velocity  [m/s]
    REAL(wp), PUBLIC ::      rn_Le               !: lateral diffusive length    [m]
+   REAL(wp), PUBLIC ::      rn_zRomax           !: Rossby radius in the tropical regions at w-point
+   REAL(wp), PUBLIC ::      rn_zRocoef          !: a prescribed "typical" eddy scale
+   REAL(wp), PUBLIC ::      rn_eiwmin           !: lower limit of eddy induced velocity
+   REAL(wp), PUBLIC ::      rn_eiwmax           !  upper limit of eddy induced velocity
+   REAL(wp), PUBLIC ::      rn_gm               !: scalling of eddy induced velocity
    
    !                                  ! Flag to control the type of lateral diffusive operator
    INTEGER, PARAMETER, PUBLIC ::   np_ERROR  =-10   ! error in specification of lateral diffusion
@@ -143,9 +145,7 @@ CONTAINS
          &                 ln_traldf_lev, ln_traldf_hor  , ln_traldf_triad,   &   ! acting direction of the operator
          &                 ln_traldf_iso, ln_traldf_msc  , rn_slpmax     ,    &   ! option for iso-neutral operator
          &                 ln_triad_iso , ln_botmix_triad, rn_sw_triad    ,   &   ! option for triad operator
-         &                 nn_aht_ijk_t , rn_Ud          , rn_Ld ,            &   ! lateral eddy coefficient
-         &                 rn_zRomax ,    rn_zRocoef ,                        &   ! upper limit & coefficient of Rossby radius at w-point
-         &                 rn_eiwmin ,    rn_eiwmax ,      rn_gm                  ! lower & upper limits & scaling of the eddy induced velocity
+         &                 nn_aht_ijk_t , rn_Ud          , rn_Ld                  ! lateral eddy coefficient
       !!----------------------------------------------------------------------
       !
       IF(lwp) THEN                      ! control print
@@ -508,7 +508,9 @@ CONTAINS
       REAL(wp) ::   zah_max, zUfac         !   -   scalar
       !!
       NAMELIST/namtra_eiv/ ln_ldfeiv   , ln_ldfeiv_dia,   &   ! eddy induced velocity (eiv)
-         &                 nn_aei_ijk_t, rn_Ue, rn_Le         ! eiv  coefficient
+         &                 nn_aei_ijk_t, rn_Ue, rn_Le,    &   ! eiv  coefficient
+         &                 rn_zRomax   , rn_zRocoef ,     &   ! Rossby radius in the tropical regions & a prescribed "typical" eddy scale
+         &                 rn_eiwmin , rn_eiwmax , rn_gm      ! lower & upper limits & scaling of eddy induced velocity
       !!----------------------------------------------------------------------
       !
       IF(lwp) THEN                      ! control print
@@ -534,6 +536,11 @@ CONTAINS
          WRITE(numout,*) '         type of time-space variation            nn_aei_ijk_t  = ', nn_aht_ijk_t
          WRITE(numout,*) '         lateral diffusive velocity (if cst)     rn_Ue         = ', rn_Ue, ' m/s'
          WRITE(numout,*) '         lateral diffusive length   (if cst)     rn_Le         = ', rn_Le, ' m'
+         WRITE(numout,*) '         Rossby radius in the tropical regions   rn_zRomax     = ', rn_zRomax
+         WRITE(numout,*) '         a prescribed "typical" eddy scale       rn_zRocoef    = ', rn_zRocoef
+         WRITE(numout,*) '         lower limit of eddy induced velocity    rn_eiwmin     = ', rn_eiwmin
+         WRITE(numout,*) '         upper limit of eddy induced velocity    rn_eiwmax     = ', rn_eiwmax
+         WRITE(numout,*) '         scaling of eddy induced velocity        rn_gm         = ', rn_gm
          WRITE(numout,*)
       ENDIF
       !
@@ -700,10 +707,11 @@ CONTAINS
       DO jj = 2, jpjm1
          DO ji = fs_2, fs_jpim1   ! vector opt.
             zfw = MAX( ABS( 2. * omega * SIN( rad * gphit(ji,jj) ) ) , 1.e-10 )
-            ! Rossby radius at w-point taken betwenn 2 km and rn_zRomax km; Also set 1/pi=0.32 instead of 0.4. D.Yang, 2023-08-11 
+            ! Rossby radius at w-point taken betwenn 2 km and rn_zRomax km (in the tropical regions);
+            ! Also set 1/pi=0.32 instead of 0.4. D.Yang, 2023-08-11 
             zRo(ji,jj) = MAX(  2.e3 , MIN( .32 * zn(ji,jj) / zfw, rn_zRomax )  )
             ! Compute aeiw by multiplying Ro^2 and T^-1
-            ! Set rn_zRocoef & remove SQRT D.Yang, 2023-08-11
+            ! Set rn_zRocoef (a prescribed "typical" eddy scale) & remove SQRT D.Yang, 2023-08-11
             zaeiw(ji,jj) = rn_zRocoef * zRo(ji,jj) * ( zah(ji,jj) / zhw(ji,jj) ) * tmask(ji,jj,1)
          END DO
       END DO
