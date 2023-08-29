@@ -226,18 +226,17 @@
         [ -s rs_namelist_top_ref ]     && tarlist="$tarlist rs_namelist_top_ref"
       fi
 
-      if [ "$nemo_carbon" = "on" ]; then
-    	cp -f namelist_pisces_cfg rs_namelist_pisces_cfg || :
-    	[ -s rs_namelist_pisces_cfg ]  && tarlist="$tarlist rs_namelist_pisces_cfg"
-    	cp -f namelist_pisces_ref rs_namelist_pisces_ref || :
-    	[ -s rs_namelist_pisces_ref ]  && tarlist="$tarlist rs_namelist_pisces_ref"
+      if [ "$nemo_carbon" = "on" ]; then 
+        cp -f namelist_cmoc_cfg rs_namelist_cmoc_cfg || : 
+        [ -s rs_namelist_cmoc_cfg ]  && tarlist="$tarlist rs_namelist_cmoc_cfg" 
+        cp -f namelist_cmoc_ref rs_namelist_cmoc_ref || : 
+        [ -s rs_namelist_cmoc_ref ]  && tarlist="$tarlist rs_namelist_cmoc_ref" 
+        cp -f namelist_canoe_cfg rs_namelist_canoe_cfg || : 
+        [ -s rs_namelist_canoe_cfg ]  && tarlist="$tarlist rs_namelist_canoe_cfg" 
+        cp -f namelist_canoe_ref rs_namelist_canoe_ref || : 
+        [ -s rs_namelist_canoe_ref ]  && tarlist="$tarlist rs_namelist_canoe_ref" 
+      fi 
 
-        if [ "$nemo_cmoc" = "on" ]; then
-    	  cp -f namelist_cmoc_cfg rs_namelist_cmoc_cfg || :
-	      [ -s rs_namelist_cmoc_cfg ] &&  tarlist="$tarlist rs_namelist_cmoc_cfg"
-    	  cp -f namelist_cmoc_ref rs_namelist_cmoc_ref || :
-	      [ -s rs_namelist_cmoc_ref ] &&  tarlist="$tarlist rs_namelist_cmoc_ref"
-        fi
       fi
 
       # time step file
