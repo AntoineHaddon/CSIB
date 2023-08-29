@@ -136,7 +136,7 @@
           <field field_ref="sopstvtr"    name="sltbasin"      grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- for analysis -->
           <field field_ref="sophteiv"    name="hfbasinpmadv"  grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (Omon*) level = 2 in CMIP6 -->
           <field field_ref="sopsteiv"    name="sltbasinpmadv" grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- for analysis -->
-          <field field_ref="zomsf"       name="msftyz"        grid_ref="grid_ptr_T_3D"  level="0"  /> <!-- (Omon*) level = 2 in CMIP6 -->
+          <field field_ref="zomsf"       name="msftyz"        grid_ref="grid_znl_W_3D"  level="0"  /> <!-- (Omon*) level = 2 in CMIP6 -->
           <field field_ref="zotem"       name="znltem"        grid_ref="grid_ptr_T_3D"  level="0"  /> <!-- for analysis -->
           <field field_ref="zosal"       name="znlsal"        grid_ref="grid_ptr_T_3D"  level="0"  /> <!-- for analysis -->
           <field field_ref="zosrf"       name="znlsrf"        grid_ref="grid_ptr_T_3D"  level="0"  /> <!-- for analysis -->
