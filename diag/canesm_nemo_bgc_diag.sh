@@ -34,7 +34,14 @@ set -x
   fi
 
 # Previous year
-  yearm1=`echo $year | awk '{printf "%04d", $1 - 1}'`
+  if [[ $lmon -eq 12 ]] && [[ "$year" == "$run_start_year" ]] && [[ $nemo_from_rest == 'on' ]]; then
+    # use the current year because output.init.nc is used in that case (below)
+    yearm1=`echo $year | awk '{printf "%04d", $1}'`
+    file_state="initial_trc"
+  else
+    yearm1=`echo $year | awk '{printf "%04d", $1 - 1}'`
+    file_state="restart_trc"
+  fi
 
 # Access file containing grid information
   mask_mon=$(echo $nemo_rtd_mons | awk '{printf "%02d", $NF}')  # get last element of nemo_rtd_mons, printed as 2 digit number
@@ -104,19 +111,18 @@ set -x
       # Access the nemo restart files
       if [ $lmon -eq 12 ]; then
         # previous year
-        diag_rs1="mc_${runid}_${yearm1}_m${lmon}_nemors.tar" # previous year
+        diag_rs1="mc_${runid}_${yearm1}_m${lmon}_nemors" # previous year
       else
-        diag_rs1="mc_${runid}_${year}_m${lmon}_nemors.tar" # previous year
+        diag_rs1="mc_${runid}_${year}_m${lmon}_nemors" # previous year
       fi	      
       access rsp $diag_rs1 || ( echo "$diag_rs1 does not exist" ; exit 1 )
     fi
     if [ -L rsp ] ; then
-       mkdir dir_rsp; cd dir_rsp
-       tar -xvf ../rsp
-       ncks -v sss_glob_avg *_restart_trc.nc ../sss_glob_avg.nc
-       cd ..
+       work_dir=$(pwd)
+       cd rsp
+       ncks -v sss_glob_avg *_$file_state.nc ${work_dir}/sss_glob_avg.nc
+       cd $work_dir
        release rsp
-       rm -f -r dir_rsp
     fi
     # Run the offline diagnostics
     ./nemo_diag_cmoc.exe

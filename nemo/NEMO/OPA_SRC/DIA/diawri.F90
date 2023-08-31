@@ -54,6 +54,9 @@ MODULE diawri
    USE lib_mpp         ! MPP library
    USE timing          ! preformance summary
    USE wrk_nemo        ! working array
+#if defined key_top
+   USE trcrst
+#endif
 
    IMPLICIT NONE
    PRIVATE
@@ -141,6 +144,12 @@ CONTAINS
       ! Output the initial state and forcings
       IF( ninist == 1 ) THEN                       
          CALL dia_wri_state( 'output.init', kt )
+#if defined key_top
+         ! highjack the trcrst script to produce the init state of passive tracers
+         CALL iom_open( 'output_trc.init', numrtw, ldwrt = .TRUE., kiolib = jprstlib )
+         CALL trc_rst_wri( kt )
+         CALL iom_close( numrtw )     ! close the restart file
+#endif
          ninist = 0
       ENDIF
 

@@ -8,10 +8,6 @@ tmp/
 *.bak
 deploy.git/
 
-# ignore everything in nemo/NEMO/external/ except the README file
-nemo/NEMO/external/*
-!nemo/NEMO/external/README
-
 # ignore everything in the build directories except Makefiles and environment files
 diag/build/*
 rtd/build/*
