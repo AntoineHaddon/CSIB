@@ -237,8 +237,6 @@
         [ -s rs_namelist_canoe_ref ]  && tarlist="$tarlist rs_namelist_canoe_ref" 
       fi 
 
-      fi
-
       # time step file
       cp -f time.step rs_time.step || :
       [ -s rs_time.step ] && tarlist="$tarlist rs_time.step"
