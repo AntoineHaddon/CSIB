@@ -30,7 +30,7 @@ set -x
   if [ $nmon -eq 1 ];then
     lmon0=$lmon
   else
-    lmon0=`echo $fmon | awk '{printf "%02d", $2 - 1}'`
+    lmon0=`echo $nemo_rtd_mons | awk '{printf "%02d", $2 - 1}'`
   fi
 
 # Previous year
@@ -41,7 +41,7 @@ set -x
   cp ${EXEC_STORAGE_DIR}/${diag_exe} .
 
 # Access file containing grid information
-  mask_mon=$(echo $nemo_rtd_mons | awk '{printf "%02d", 1}')  # get first element of nemo_rtd_mons, printed as 2 digit number
+  mask_mon=$(echo $nemo_rtd_mons | awk '{printf "%02d", 1}')  # get last element of nemo_rtd_mons, printed as 2 digit number
   orca_grid_info=mc_${runid}_${fyear}_m${mask_mon}_mesh_mask.nc
   [ -s orca_mesh_mask ] || access orca_mesh_mask $orca_grid_info nocp=no
 
