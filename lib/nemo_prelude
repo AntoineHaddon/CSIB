@@ -410,7 +410,7 @@ echo "#################### Start NEMO pre-processing #################"
     if ! tar tf RESTART_ARC &> /dev/null; then
         # This is the directory. checksum the contents
         #sha1sum RESTART_ARC/* >> xnemo_access_log
-        mv RESTART_ARC/* . || bail "Cannot get files from restart directory"
+        mv RESTART_ARC/*restart* . || bail "Cannot get files from restart directory"
     else
         # this is the tar file. checksum it.
         #sha1sum RESTART_ARC >> xnemo_access_log
