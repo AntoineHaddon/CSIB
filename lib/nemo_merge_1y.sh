@@ -11,8 +11,7 @@ set -x
   # ======================================================
   # Make sure we have necessary variables from parent code
   # ======================================================
-  is_defined $nemo_hist_file_suffix_list_save   || bail "nemo_merge_1h.sh: nemo_hist_file_suffix_list_save must be defined!"
-  is_defined $nemo_hist_file_freq_list_save   || bail "nemo_merge_1h.sh: nemo_hist_file_freq_list_save must be defined!"
+  is_defined $nemo_diag_file_suffix_list   || bail "nemo_merge_1h.sh: nemo_diag_file_suffix_list must be defined!"
 
 # First and last month/year of 12-month period
   fmon=`echo $nemo_rtd_mons | cut -f1 -d' '`
@@ -27,12 +26,11 @@ set -x
     lmon=`echo $fmon | awk '{printf "%02d", $1 - 1}'`
   fi
 
- # Access the history files
-   nemo_hist_file_suffix_list_array_save=($nemo_hist_file_suffix_list_save)
-   nemo_hist_file_freq_list_array_save=($nemo_hist_file_freq_list_save)
-    n_suffix=${#nemo_hist_file_suffix_list_array_save[@]}
+ # Access the history files (and add the mesh_grid)
+   nemo_diag_file_suffix_list_array_save=($nemo_diag_file_suffix_list mesh_mask)
+    n_suffix=${#nemo_diag_file_suffix_list_array_save[@]}
    for ifile in $(seq 0 $(($n_suffix-1))); do
-     sfx=${nemo_hist_file_freq_list_array_save[$ifile]}_${nemo_hist_file_suffix_list_array_save[$ifile]}
+     sfx=${nemo_diag_file_suffix_list_array_save[$ifile]}
      yr=$fyear
      mp=0
      for mm in $nemo_rtd_mons ; do
