@@ -47,6 +47,7 @@ MODULE sbccpl
 #endif
    !
    USE in_out_manager ! I/O manager
+   USE timing
    USE iom            ! NetCDF library
    USE lib_mpp        ! distribued memory computing library
    USE lbclnk         ! ocean lateral boundary conditions (or mpp link)
@@ -60,7 +61,7 @@ MODULE sbccpl
    PRIVATE
 
    PUBLIC   sbc_cpl_init      ! routine called by sbcmod.F90
-   PUBLIC   sbc_cpl_rcv       ! routine called by icestp.F90
+   PUBLIC   sbc_cpl_rcv       ! routine called by sbcmod.F90
    PUBLIC   sbc_cpl_snd       ! routine called by step.F90
    PUBLIC   sbc_cpl_ice_tau   ! routine called by icestp.F90
    PUBLIC   sbc_cpl_ice_flx   ! routine called by icestp.F90
@@ -1142,6 +1143,7 @@ CONTAINS
       REAL(wp), DIMENSION(jpi,jpj) ::   ztx, zty, zmsk, zemp, zqns, zqsr, zcloud_fra
       type(FLD_CPL), pointer :: fld_ptr
       !!----------------------------------------------------------------------
+      IF( ln_timing )   call timing_start('sbc_cpl_rcv')
       !
       IF( kt == nit000 ) THEN
       !   cannot be done in the init phase when we use agrif as cpl_freq requires that oasis_enddef is done
@@ -1491,6 +1493,7 @@ CONTAINS
          IF( srcv(jpr_fice )%laction )   fr_i(:,:) = frcv(jpr_fice )%z3(:,:,1)
          !
       ENDIF
+      IF( ln_timing )   call timing_stop('sbc_cpl_rcv')
       !
    END SUBROUTINE sbc_cpl_rcv
 
@@ -2208,6 +2211,7 @@ CONTAINS
       REAL(wp), DIMENSION(jpi,jpj,jpl) ::   ztmp3, ztmp4
       !!----------------------------------------------------------------------
       !
+      IF( ln_timing )   call timing_start('sbc_cpl_snd')
       isec = ( kt - nit000 ) * NINT( rdt )        ! date of exchanges
 
       zfr_l(:,:) = 1.- fr_i(:,:)
@@ -2737,6 +2741,7 @@ CONTAINS
       ztmp1(:,:) = sstfrz(:,:) + rt0
       IF( ssnd(jps_sstfrz)%laction )  CALL cpl_snd( jps_sstfrz, isec, RESHAPE ( ztmp1, (/jpi,jpj,1/) ), info)
 #endif
+      IF( ln_timing )   call timing_stop('sbc_cpl_snd')
       !
    END SUBROUTINE sbc_cpl_snd
 

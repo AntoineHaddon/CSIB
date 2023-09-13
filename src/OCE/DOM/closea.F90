@@ -399,7 +399,6 @@ CONTAINS
 
       IF( ln_timing )  CALL timing_stop('sbc_clo')
       !
-      IF( ln_timing )  CALL timing_stop('sbc_clo')
 
    END SUBROUTINE sbc_clo
 

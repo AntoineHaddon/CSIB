@@ -97,7 +97,6 @@ CONTAINS
        !
       ! Create timing structure at first call of the routine
        CALL timing_ini_var(cdinfo)
-   !   write(*,*) 'after inivar ', s_timer%cname
 
       ! ici timing_ini_var a soit retrouve s_timer et fait return soit ajoute un maillon
       ! maintenant on regarde si le call d'avant corrsspond a un parent ou si il est ferme
@@ -121,7 +120,6 @@ CONTAINS
       CALL SYSTEM_CLOCK(COUNT_RATE=s_timer%ncount_rate, COUNT_MAX=s_timer%ncount_max)
       CALL SYSTEM_CLOCK(COUNT = s_timer%ncount)
 #endif
-!      write(*,*) 'end of start ', s_timer%cname
 
       !
    END SUBROUTINE timing_start
@@ -154,15 +152,15 @@ CONTAINS
 !!$      ENDIF
 
  !     No need to search ... : s_timer has the last value defined in start
- !     s_timer => s_timer_root
- !     DO WHILE( TRIM(s_timer%cname) /= TRIM(cdinfo) )
- !        IF( ASSOCIATED(s_timer%next) ) s_timer => s_timer%next
- !     END DO
+      !s_timer => s_timer_root
+      !DO WHILE( TRIM(s_timer%cname) /= TRIM(cdinfo) )
+         !IF( ASSOCIATED(s_timer%next) ) s_timer => s_timer%next
+      !END DO
+       !CALL timing_ini_var(cdinfo)
 
       ! CPU time correction
       zcpu_raw = zcpu_end - s_timer%t_cpu - t_overcpu ! total time including child
       s_timer%t_cpu  = zcpu_raw - s_timer%tsub_cpu
-  !    IF(s_timer%cname==trim('lbc_lnk_2d'))  write(*,*) s_timer%tsub_cpu,zcpu_end
 
       ! clock time correction
 #if defined key_mpp_mpi
@@ -175,7 +173,6 @@ CONTAINS
          zclock_raw = REAL(iperiods) / s_timer%ncount_rate !- t_overclock
          s_timer%t_clock  = zclock_raw - s_timer%tsub_clock
 #endif
- !     IF(s_timer%cname==trim('lbc_lnk_2d')) write(*,*) zclock_raw , s_timer%tsub_clock
 
       ! Correction of parent section
       IF( .NOT. PRESENT(csection) ) THEN
@@ -207,7 +204,6 @@ CONTAINS
       ! we come back
       IF ( ASSOCIATED(s_timer%parent_section ) ) s_timer => s_timer%parent_section
 
-!      write(*,*) 'end of stop ', s_timer%cname
 
    END SUBROUTINE timing_stop
 
@@ -438,7 +434,7 @@ CONTAINS
       ! write current info
       WRITE(numtime,*) 'Detailed timing for proc :', narea-1
       WRITE(numtime,*) '--------------------------'
-      WRITE(numtime,*) 'Section             ',            &
+      WRITE(numtime,'(7a)') 'Section             ',            &
       &   'Elapsed Time (s)  ','Elapsed Time (%)  ',   &
       &   'CPU Time(s)  ','CPU Time (%)  ','CPU/Elapsed  ','Frequency'
       s_timer => s_timer_root
@@ -754,10 +750,8 @@ CONTAINS
       ELSE
          s_timer => s_timer_root
          ! case of already existing area (typically inside a loop)
-   !         write(*,*) 'in ini_var for routine : ', cdinfo
          DO WHILE( ASSOCIATED(s_timer) )
             IF( TRIM(s_timer%cname) .EQ. TRIM(cdinfo) ) THEN
- !             write(*,*) 'in ini_var for routine : ', cdinfo,' we return'
                RETURN ! cdinfo is already in the chain
             ENDIF
             s_timer => s_timer%next
@@ -769,7 +763,6 @@ CONTAINS
             s_timer => s_timer%next
          END DO
 
-    !     write(*,*) 'after search', s_timer%cname
          ! cdinfo is not part of the chain so we add it with initialisation
           ALLOCATE(s_timer%next)
     !     write(*,*) 'after allocation of next'
@@ -795,7 +788,6 @@ CONTAINS
          s_timer%next%next => NULL()
          s_timer => s_timer%next
       ENDIF
-      !    write(*,*) 'after allocation'
      !
    END SUBROUTINE timing_ini_var
 
