@@ -147,26 +147,18 @@ if [ $nemo_save_hist == "on" ] ; then
       if [ -e "$ncsave.nc" ] ; then
         # detect the grid (U/V/F/T) with the suffix
         if [[ ${sfx,,} == *"grid_u"*  ]];then
-                  #(  release $ncsave.nc &&
-                  # continue )
                   ( ncks -A -h -v glamu,gphiu coor.nc $ncsave.nc && 
                     ncap2 -h -O -s "nav_lon=glamu;nav_lat=gphiu"  $ncsave.nc  $ncsave.nc )
         elif [[ ${sfx,,} == *"grid_v"*  ]];then
-                  #(  release $ncsave.nc &&
-                  # continue )
                   ( ncks -A -h -v glamv,gphiv coor.nc $ncsave.nc && 
                     ncap2 -h -O -s "nav_lon=glamv;nav_lat=gphiv"  $ncsave.nc  $ncsave.nc )
         elif [[ ${sfx,,} == *"grid_f"*  ]];then
-                  #(  release $ncsave.nc &&
-                  # continue )
                   ( ncks -A -h -v glamf,gphif coor.nc $ncsave.nc && 
                     ncap2 -h -O -s "nav_lon=glamf;nav_lat=gphif"  $ncsave.nc  $ncsave.nc )
         elif [[ ${sfx,,} == *"diaptr"*  ]];then
                   (  release $ncsave.nc &&
                    continue )
         else # grid T is the default 
-                  #(  release $ncsave.nc &&
-                  # continue )
                   ( ncks -A -h -v glamt,gphit coor.nc $ncsave.nc && 
                     ncap2 -h -O -s "nav_lon=glamt;nav_lat=gphit"  $ncsave.nc  $ncsave.nc )
         fi
@@ -181,7 +173,6 @@ fi
 
 # Rebuild the mesh_mask file created by the model, if present
 # Access the directory, if it is successfull, cd into it
-(
 indir=${model1}_mesh_mask
 pfx=mesh_mask
 ncsave=${model1}_${pfx}.nc
@@ -204,7 +195,6 @@ if [ -s "$indir" ] ; then
    cd $wrkdir
    rm -rf $indir
 fi
-)&
 
 # Rebuild the restart files. These will be saved alltogether, as
 # is custom for NEMO rs' historically.
@@ -216,7 +206,6 @@ end_step=$(grep -m 1 -w nn_itend  rs_namelist_cfg | awk '{printf "%8.8d",$3}' )
 start_step=$(grep -m 1 -w nn_it000  rs_namelist_cfg | awk '{printf "%8.8d",$3}' )
 
 # The initial state files
-(
 pfx=output.init
 # Check if the RS is already rebuilt, in which case do nothing.
 if [ -s "${pfx}_0000.nc" ]; then
@@ -227,12 +216,9 @@ if [ -s "${pfx}_0000.nc" ]; then
    ncsave=${runid}_${start_step}_istate.nc
    mv  $pfx.nc $ncsave
 fi
-)&
 
 # The physics rs file
-(
 pfx=${runid}_${end_step}_restart
-
 if [ ! -s "${pfx}_0000.nc" -a ! -e "${pfx}.nc" ]; then
    # Look for files, which might not have the same name as the run
    found_rs=`(ls -1 *_restart_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
@@ -254,10 +240,8 @@ if [ -s "${pfx}_0000.nc" ]; then
    ncks -x -h -O -v  nav_lon,nav_lat $pfx.nc $pfx.nc
    ncks -A -h -v nav_lon,nav_lat ${wrkdir}/coor.nc $pfx.nc
 fi
-)&
 
 # The ice rs file
-(
 pfx=${runid}_${end_step}_restart_ice
 if [ ! -s "${pfx}_0000.nc"  -a ! -e "${pfx}.nc" ]; then
    # Look for files, which might not have the same name as the run
@@ -279,11 +263,9 @@ if [ -s "${pfx}_0000.nc" ]; then
    ncks -x -h -O -v  nav_lon,nav_lat $pfx.nc $pfx.nc
    ncks -A -h -v nav_lon,nav_lat ${wrkdir}/coor.nc $pfx.nc
 fi
-)&
 
 
 # The trc rs file
-(
 pfx=${runid}_${end_step}_restart_trc
 if [ ! -s "${pfx}_0000.nc"  -a ! -e "${pfx}.nc" ]; then
    # Look for files, which might not have the same name as the run
@@ -305,8 +287,6 @@ if [ -s "${pfx}_0000.nc" ]; then
    ncks -x -h -O -v  nav_lon,nav_lat $pfx.nc $pfx.nc
    ncks -A -h -v nav_lon,nav_lat ${wrkdir}/coor.nc $pfx.nc
 fi
-)&
-wait; # this execute the "wait" to make sure everyone is finised
 
 cd $wrkdir
 rm coor.nc 
