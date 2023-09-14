@@ -37,33 +37,10 @@ set -x
   yearm1=`echo $year | awk '{printf "%04d", $1 - 1}'`
 
 # Access file containing grid information
-  mask_mon=$(echo $nemo_rtd_mons | awk '{printf "%02d", $NF}')  # get last element of nemo_rtd_mons, printed as 2 digit number
+  mask_mon=$(echo $nemo_rtd_mons | awk '{printf "%02d", 1}')  # get first element of nemo_rtd_mons, printed as 2 digit number
   orca_grid_info=mc_${runid}_${fyear}_m${mask_mon}_mesh_mask.nc
   [ -s orca_mesh_mask ] || access orca_mesh_mask $orca_grid_info
 
-# sfxlst is a suffix list for some nemo historical files.
-  sfxlst="1m_grid_t 1m_diad_t 1m_btrc_t" # OR Jan 09 '23 changed from ptrc_t
-
-# Access the history files
-  for sfx in $sfxlst ; do
-    yr=$fyear
-    mp=0
-    for mm in $nemo_rtd_mons ; do
-      if [ $mm -lt $mp ] ; then
-	# increment year by 1 if the current month is smaller than the previous month
-	yr=`echo $yr | awk '{printf "%04d", $1 + 1}'`;
-      fi
-      diag_hist="mc_${runid}_${yr}_m${mm}_${sfx}.nc"
-      access ${sfx}_${mm} $diag_hist na
-      mp=$mm
-    done
-# Merge sub-yearly files
-    if [ $nmon -gt 1 ] ; then
-      cdo mergetime ${sfx}_?? ${sfx}_m$fmon
-      rm -f ${sfx}_??
-      mv ${sfx}_m$fmon ${sfx}_$fmon
-    fi
-  done
 
 ##########################
 # CMIP6 nemo diagnostics #
