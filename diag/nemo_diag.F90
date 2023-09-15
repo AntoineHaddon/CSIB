@@ -76,7 +76,7 @@ PROGRAM nemo_diag
    Do i = 1, ntdim
       CALL getdimnm  (dimnm, iou, i, ndim)
       print*, 'DIM',i,':',dimnm, 'length:', ndim
-      IF (dimnm .eq. 'tbnds' .or. dimnm .eq. 'axis_nbounds') ntbnds = ndim
+      IF (dimnm .eq. 'tbnds' .or. dimnm .eq. 'axis_nbounds'.or. dimnm .eq. 'bnds') ntbnds = ndim
    END DO
 
    ly = lm / 12

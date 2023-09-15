@@ -62,6 +62,7 @@ CONTAINS
       !! Allocate Arrays
       !!----------------
       ALLOCATE( mfo(nline,lm), STAT=ierr(1) )
+      mfo(:,:) =0. 
 
       IF (MAXVAL(ierr) /=0) THEN
          STOP 'Memory allocation error in cmip6_mfo'
@@ -75,7 +76,8 @@ CONTAINS
       elseif (jmt.eq.332) then
         i0=41
       else
-        STOP 'mfo_line_mask made for ORCA1 and eORCA1 only for now'
+        Print*, 'WARNING: mfo_line_mask made for ORCA1 and eORCA1 only for now. mfo is empty.'
+        return
       endif
       secmask='#'
       DO j=jmt,41,-1 
@@ -85,7 +87,6 @@ CONTAINS
       !!-----------------------------------------
       !! Compute mass transports through sections
       !!-----------------------------------------
-      mfo(:,:) =0. 
       DO l=1,lm
          DO j=1,jmt
             DO i=1,imt
@@ -176,6 +177,10 @@ CONTAINS
       !!----------------
       ALLOCATE( simassacrossline(nline_ice,lm),snmassacrossline(nline_ice,lm),siareaacrossline(nline_ice,lm), STAT=ierr(1) )
 
+      siareaacrossline(:,:) =0.
+      simassacrossline(:,:) =0.
+      snmassacrossline(:,:) =0.
+
       IF (MAXVAL(ierr) /=0) THEN
          STOP 'Memory allocation error in cmip6_mfo'
       ENDIF
@@ -188,7 +193,8 @@ CONTAINS
       elseif (jmt.eq.332) then
         i0=41
       else
-        STOP 'mfo_line_mask made for ORCA1 and eORCA1 only for now'
+        Print*, 'WARNING: mfo_line_mask made for ORCA1 and eORCA1 only for now. mfo is empty.'
+        return
       endif
       secmask='#'
       DO j=jmt,41,-1 
@@ -198,9 +204,6 @@ CONTAINS
       !!-----------------------------------------
       !! Compute mass transports through sections
       !!-----------------------------------------
-      siareaacrossline(:,:) =0.
-      simassacrossline(:,:) =0.
-      snmassacrossline(:,:) =0.
 
       DO l=1,lm
          DO j=1,jmt
