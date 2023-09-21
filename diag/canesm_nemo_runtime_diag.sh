@@ -20,13 +20,6 @@
     cp $1 $cannemo_rtd_staging_dir/$2
   }
 
-  # bail is a simple error exit routine
-  bail_prefix="NEMO RTD"
-  bail(){``
-    echo `date`" $runid --- ${bail_prefix}: $*"
-    exit 1
-  }
-
 #~~~~~~~~~~~~~~~~~~~
 #   Main Script
 #~~~~~~~~~~~~~~~~~~~
