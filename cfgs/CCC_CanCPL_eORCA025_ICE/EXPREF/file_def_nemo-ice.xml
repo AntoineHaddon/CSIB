@@ -24,8 +24,8 @@
        <field field_ref="vtau_ai_cmip"    name="sistrydtop"     level="0"  /> <!-- (SImon*) <!-- Was Not in our CMIP6 but available in NEMO4 -->
        <field field_ref="qtr_ice_bot"     name="qtr_ice_bot"    level="0"  /> <!-- only rtd -->
        <field field_ref="qt_ice_oce"      name="qt_ice_oce"     level="0"  /> <!-- only rtd -->
-       <field field_ref="qsr_ice"         name="qsr_ice"        level="0"  /> <!-- only rtd -->
-       <field field_ref="qns_ice"         name="qns_ice"        level="0"  /> <!-- only rtd -->
+       <field field_ref="O_QnsIce"        name="O_QnsIce"       level="0"  /> <!-- only rtd -->
+       <field field_ref="O_QsrIce"        name="O_QsrIce"       level="0"  /> <!-- only rtd -->
        <!-- ==============
             SIMIP monthly fields (that are not in level =0) -->
        <!-- Sea-ice state variables -->
