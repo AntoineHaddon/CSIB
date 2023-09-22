@@ -83,7 +83,7 @@ PROGRAM nemo_ocean_diag
       IMPLICIT NONE
       integer, parameter:: dp=kind(0.d0) ! double precision
       INTEGER :: i, j, k, l, imt, jmt, km, lm, year, mon, nrecon
-      INTEGER :: iou0, iou1, iou2, iou3, iou4, iou5, iou6, iou11
+      INTEGER :: iou1, iou2, iou3, iou4, iou5, iou6, iou7, iou11
       INTEGER :: j_20N, j_20S, j_eq, k60, k500, k2000, i_DP, j_DP_S 
       INTEGER :: j_DP_N, i_IN_E1, i_IN_W1, i_IN_E2, i_IN_W2
       INTEGER :: i_AN_E, i_AN_W, i_AS_E, i_AS_W, i_PN_E, i_PN_W
@@ -148,7 +148,6 @@ PROGRAM nemo_ocean_diag
       REAL, DIMENSION(:), ALLOCATABLE :: hflx_snow  ! Heat flux snow over open ocean (w/m2)
       REAL, DIMENSION(:), ALLOCATABLE :: hflx_snow2  ! Heat flux snow over open ocean - computed (w/m2)
       REAL, DIMENSION(:), ALLOCATABLE :: hflx_snow_ice  ! Heat flux snow over ice (w/m2)
-      REAL, DIMENSION(:), ALLOCATABLE :: hflx_snow_ice2  ! Heat flux snow over ice (w/m2)
       REAL, DIMENSION(:), ALLOCATABLE :: hflx_rain  ! Heat flux rain (w/m2)
       REAL, DIMENSION(:), ALLOCATABLE :: hflx_rnf  ! Heat flux runoff (w/m2)
       REAL, DIMENSION(:), ALLOCATABLE :: snow_ai, snow_ao  ! Snow over sea-ice and open ocean
@@ -245,7 +244,6 @@ PROGRAM nemo_ocean_diag
          &      over_min_SO_eddy(lm), h_tran_20N(lm), h_tran_20NA(lm),            &
          &      h_tran_20S(lm), h_tran_20SA(lm), hflx_ice(lm), hflx_snow(lm),     &
          &      hflx_snow_ice(lm), hflx_rain(lm), hflx_rnf(lm), snow_ao(lm),      & 
-         &      hflx_snow_ice2(lm),                                               &
          &      snow_ai(lm), hflx_snow2(lm), isnwmlt(lm), snowmel(lm),            &
          &      hflx_qsr_tot_ave(lm), hflx_qns_tot_ave(lm),                       &
          &      hflx_qsr_ice_ave(lm), hflx_qns_ice_ave(lm),                       &
@@ -258,11 +256,11 @@ PROGRAM nemo_ocean_diag
 
          year =0
          ntrec=0
-         iou0 =0
          iou1 =0
          iou2 =0
          iou3 =0
          iou4 =0
+         iou5 =0
          recn =12.
          nrecon = int(recn + 0.001)
          Cp   = 4.2e+6  ! J/m3/K
@@ -336,31 +334,31 @@ PROGRAM nemo_ocean_diag
 !    Open the defined NetCDF files   
 !---------------------------------------------------
 ! open files with ocean physical variables
-      call openfile (fname01,iou0)
-      call openfile (fname02,iou1)
-      call openfile (fname03,iou2)
-      call openfile (fname04,iou3)
-      call openfile (fname06,iou5)
-      call openfile (fname07,iou6)
+      call openfile (fname01,iou1)
+      call openfile (fname02,iou2)
+      call openfile (fname03,iou3)
+      call openfile (fname04,iou4)
+      call openfile (fname06,iou6)
+      call openfile (fname07,iou7)
 ! open file with mask/grid info
-      call openfile (fname05,iou4)
+      call openfile (fname05,iou5)
 
 !---------------------------------------------------
 !    Get grid/mask data   
 !---------------------------------------------------
-      call getvara ('nav_lon', iou0, imt*jmt, (/1,1,1/), (/imt,jmt,1/), lon2d, 1., 0.)
-      call getvara ('nav_lat', iou0, imt*jmt, (/1,1,1/), (/imt,jmt,1/), lat2d, 1., 0.)
-      call getvara ('deptht', iou0, km, (/1/), (/km/), deptht, 1., 0.)
-      call getvara ('depthw', iou3, km, (/1/), (/km/), depthw, 1., 0.)
-      call getvara ('e1t', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1t , 1., 0.)
-      call getvara ('e2t', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e2t , 1., 0.)
-      call getvara ('e1v', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1v , 1., 0.)
-      call getvara ('e2v', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e2v , 1., 0.)
-      call getvara ('e1u', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1u , 1., 0.)
-      call getvara ('e2u', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e2u , 1., 0.)
-      call getvara ('tmask', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),t_mask , 1., 0.)
-      call getvara ('umask', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),u_mask , 1., 0.)
-      call getvara ('vmask', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),v_mask , 1., 0.)
+      call getvara ('nav_lon', iou1, imt*jmt, (/1,1,1/), (/imt,jmt,1/), lon2d, 1., 0.)
+      call getvara ('nav_lat', iou1, imt*jmt, (/1,1,1/), (/imt,jmt,1/), lat2d, 1., 0.)
+      call getvara ('deptht', iou1, km, (/1/), (/km/), deptht, 1., 0.)
+      call getvara ('depthw', iou4, km, (/1/), (/km/), depthw, 1., 0.)
+      call getvara ('e1t', iou5, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1t , 1., 0.)
+      call getvara ('e2t', iou5, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e2t , 1., 0.)
+      call getvara ('e1v', iou5, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1v , 1., 0.)
+      call getvara ('e2v', iou5, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e2v , 1., 0.)
+      call getvara ('e1u', iou5, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1u , 1., 0.)
+      call getvara ('e2u', iou5, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e2u , 1., 0.)
+      call getvara ('tmask', iou5, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),t_mask , 1., 0.)
+      call getvara ('umask', iou5, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),u_mask , 1., 0.)
+      call getvara ('vmask', iou5, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),v_mask , 1., 0.)
 
 !---------------------------------------------------
 !    Construct masks for some sub-regions   
@@ -441,64 +439,63 @@ PROGRAM nemo_ocean_diag
          ! Read in the monthly data from NetCDF
          !---------------------------------------------------
          ! vertical scale factors - nonlinear free surface case 
-          CALL getvara ('e3t', iou0, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), e3t , 1., 0.)
-          CALL getvara ('e3u', iou1, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), e3u , 1., 0.)
-          CALL getvara ('e3v', iou2, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), e3v , 1., 0.)
+          CALL getvara ('e3t', iou1, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), e3t , 1., 0.)
+          CALL getvara ('e3u', iou2, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), e3u , 1., 0.)
+          CALL getvara ('e3v', iou3, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), e3v , 1., 0.)
          ! temperature
-          CALL getvara ('thetao', iou0, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), theta, 1., 0.)
+          CALL getvara ('thetao', iou1, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), theta, 1., 0.)
          ! salinity
-          CALL getvara ('so', iou0, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), salt, 1., 0.)
+          CALL getvara ('so', iou1, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), salt, 1., 0.)
          ! net heat flux
-          CALL getvara ('hfds', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflux, 1., 0.)
+          CALL getvara ('hfds', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflux, 1., 0.)
          ! net water flux
-          CALL getvara ('wfo', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), wflux, 1., 0.)
+          CALL getvara ('wfo', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), wflux, 1., 0.)
          ! u-velocity 
-          CALL getvara ('uo', iou1, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), u, 1., 0.)
+          CALL getvara ('uo', iou2, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), u, 1., 0.)
          ! v-velocity 
-          CALL getvara ('vo', iou2, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), v, 1., 0.)
+          CALL getvara ('vo', iou3, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), v, 1., 0.)
          ! w-velocity 
-          CALL getvara ('wo', iou3, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), w, 1., 0.)
+          CALL getvara ('wo', iou4, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), w, 1., 0.)
          ! EI u-velocity 
-          CALL getvara ('uoce_eiv', iou1, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmu, 1., 0.)
+          CALL getvara ('uoce_eiv', iou2, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmu, 1., 0.)
          ! EI v-velocity 
-          CALL getvara ('voce_eiv', iou2, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmv, 1., 0.)
+          CALL getvara ('voce_eiv', iou3, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmv, 1., 0.)
          ! EI w-velocity 
-          CALL getvara ('woce_eiv', iou3, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmw, 1., 0.)
+          CALL getvara ('woce_eiv', iou4, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmw, 1., 0.)
          ! If eddy fields contain NaNs, set them to zeros.
-          status = nf_inq_varid(iou2, "voce_eiv", eivid)
-          status = nf_get_att(iou2, eivid, '_FillValue', fill_value)
+          status = nf_inq_varid(iou3, "voce_eiv", eivid)
+          status = nf_get_att(iou3, eivid, '_FillValue', fill_value)
           WHERE (gmv == fill_value)
             gmu = 0.0_dp; gmv = 0.0_dp; gmw = 0.0_dp
           ENDWHERE
          ! Wind Stress along i-axis
-          CALL getvara ('tauuo', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), tau_x, 1., 0.)
+          CALL getvara ('tauuo', iou2, imt*jmt, (/1,1,l/), (/imt,jmt,1/), tau_x, 1., 0.)
          ! Wind Stress along j-axis
-          CALL getvara ('tauvo', iou2, imt*jmt, (/1,1,l/), (/imt,jmt,1/), tau_y, 1., 0.)
+          CALL getvara ('tauvo', iou3, imt*jmt, (/1,1,l/), (/imt,jmt,1/), tau_y, 1., 0.)
          ! Sea surface height
-          CALL getvara ('zos', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), ssh, 1., 0.)
+          !CALL getvara ('zos', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), ssh, 1., 0.)
          ! Mixed Layer Depth 0.01 ref.10m
-          CALL getvara ('mlotst', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), mld10, 1., 0.)
+          CALL getvara ('mlotst', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), mld10, 1., 0.)
 
-          CALL getvara ('sndmasssnf', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), snow_ai_cea, 1., 0.)
-          CALL getvara ('prsn', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), snow_ao_cea, 1., 0.)
-          CALL getvara ('hfrainds', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_rain_cea, 1., 0.)
-          CALL getvara ('hfsnthermds', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_snow_ao_cea, 1., 0.)
-          hflx_snow_ao_cea = -1*hflx_snow_ao_cea ! Change in the sign convention for NEMO4
-          CALL getvara ('hfsnthermds2d', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_snow_ai_cea, 1., 0.)
-          CALL getvara ('qt_ice_oce', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_ice_cea, 1., 0.)
-          CALL getvara ('hfrunoffds', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_rnf_cea, 1., 0.)
-          CALL getvara ('sitimefrac', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), sitimefrac, 1., 0.)
-          CALL getvara ('sndmassmelt', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), snowmel_cea, 1., 0.)
+          CALL getvara ('sndmasssnf', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), snow_ai_cea, 1., 0.)
+          CALL getvara ('prsn', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), snow_ao_cea, 1., 0.)
+          CALL getvara ('hfrainds', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_rain_cea, 1., 0.)
+          CALL getvara ('hfsnthermds', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_snow_ao_cea, 1., 0.)
+          CALL getvara ('qt_ice_oce', iou6, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_ice_cea, 1., 0.)
+          CALL getvara ('hfrunoffds', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_rnf_cea, 1., 0.)
+          CALL getvara ('sitimefrac', iou6, imt*jmt, (/1,1,l/), (/imt,jmt,1/), sitimefrac, 1., 0.)
+          CALL getvara ('sndmassmelt', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), snowmel_cea, 1., 0.)
           isnwmlt_cea = snowmel_cea*sitimefrac*t_mask(:,:,1)
 
-          CALL getvara ('qsr_tot', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qsr_tot, 1., 0.)
-          CALL getvara ('qns_tot', iou0, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qns_tot, 1., 0.)
-          CALL getvara ('qsr_ice', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qsr_ice, 1., 0.)
-          CALL getvara ('qns_ice', iou5, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qns_ice, 1., 0.)
+          CALL getvara ('O_QsrMix', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qsr_tot, 1., 0.)
+          CALL getvara ('O_QnsMix', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qns_tot, 1., 0.)
+          CALL getvara ('O_QsrIce', iou6, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qsr_ice, 1., 0.)
+          CALL getvara ('O_QnsIce', iou6, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qns_ice, 1., 0.)
 
-          CALL getvara ('volo', iou6, 1, (/l/), (/1/), vol(l), 1., 0.)
-          CALL getvara ('thetaoga', iou6, 1, (/l/), (/1/), tvol(l), 1., 0.)
-          CALL getvara ('sogay', iou6, 1, (/l/), (/1/), svol(l), 1., 0.)
+          CALL getvara ('volo', iou7, 1, (/l/), (/1/), vol(l), 1., 0.)
+          CALL getvara ('thetaoga', iou7, 1, (/l/), (/1/), tvol(l), 1., 0.)
+          CALL getvara ('sogay', iou7, 1, (/l/), (/1/), svol(l), 1., 0.)
+          CALL getvara ('zosga', iou7, 1, (/l/), (/1/), sshglo(l), 1., 0.)
 
          ! Wind enery input
           wind_x =  tau_x(:,:)*u(:,:,1)* u_mask(:, :, 1)
@@ -514,11 +511,11 @@ PROGRAM nemo_ocean_diag
     !---------------------------------------------------
     ! (1) Global annual mean T and S and SSH
     ! ---------------------------- volume due to ssh   
-          volssh   = 0.
-          zarea_ssh(:, :) = tarea(:, :)*ssh(:, :)
-          volssh = SUM( zarea_ssh(:, :) )
+    !      volssh   = 0.
+    !      zarea_ssh(:, :) = tarea(:, :)*ssh(:, :)
+    !      volssh = SUM( zarea_ssh(:, :) )
     ! ---------------------------- Global mean ssh (cm)
-          sshglo(l) = (volssh/area_tot)*1.0e2
+    !      sshglo(l) = (volssh/area_tot)*1.0e2
     ! ---------------------------- Total volume
           ! Total global volume - nonlinear free surface case
     ! ---------------------------- Global mean temperature (C) & salinity (psu)
@@ -559,7 +556,7 @@ PROGRAM nemo_ocean_diag
             &              , jmt, wglo(l), dum)
     !DY      call area_ave_flx (e1t,e2t,g_mask,ssh_ann,sshglo,dum)
           wglo(l)   = wglo(l)*1.e+7   !  1.e-7 kg/m2/s
-    !DY      sshglo = sshglo*1.e+2 ! cm         
+          sshglo(l) = sshglo(l)*1.e+2 ! cm         
 
     !---------------------------------------------------
     ! (3) Energetics
@@ -788,13 +785,11 @@ PROGRAM nemo_ocean_diag
           g_mask(:,:) = t_mask(:,:,1)
           call area_ave_flx(e1t, e2t, g_mask, hflx_snow_ao_cea(:, :), imt      &
             &                  , jmt, hflx_snow(l), dum)
-          call area_ave_flx(e1t, e2t, g_mask, hflx_snow_ai_cea(:, :), imt      &
+          call area_ave_flx(e1t, e2t, g_mask, snow_ai_cea(:, :)*lfus*-1.0, imt      &
             &                  , jmt, hflx_snow_ice(l), dum)
           call area_ave_flx(e1t, e2t, g_mask, snow_ao_cea(:, :)*lfus*-1.0, imt      &
             &                  , jmt, hflx_snow2(l), dum)
-          call area_ave_flx(e1t, e2t, g_mask, snow_ai_cea(:, :)*lfus*-1.0, imt      &
-            &                  , jmt, hflx_snow_ice2(l), dum)
-          call area_ave_flx(e1t, e2t, g_mask, hflx_ice_cea(:, :), imt      &
+          call area_ave_flx(e1t, e2t, g_mask, hflx_ice_cea(:,:), imt      &
             &                  , jmt, hflx_ice(l), dum)
           call area_ave_flx(e1t, e2t, g_mask, hflx_rnf_cea(:, :), imt      &
             &                  , jmt, hflx_rnf(l), dum)
@@ -833,7 +828,6 @@ PROGRAM nemo_ocean_diag
       print*,'Runoff    ', hflx_rnf(l)
       print*,'Snow OOcal', hflx_snow2(l)
       print*,'Snow ice  ', hflx_snow_ice(l)
-      print*,'Snow ice 1', hflx_snow_ice2(l)
       print*,'Below ice ', hflx_ice(l)
       print*,'BEGO-inv  ', hglo(l) - hflx_snow2(l) - hflx_ice(l)
       print*,'isnwmlt   ', isnwmlt(l)
@@ -1247,15 +1241,9 @@ PROGRAM nemo_ocean_diag
         call putvars ('h_tran_20SA', iou, ntrec2, h_tran_20SA(l), 1., 0.)
 !--------------------------------------------------------------------------
 !       MEAN HEAT FLUX SURFACE (W/M^2)
-        ! WARNING : in NEMO4 qns_tot include hflx_snow2 and hflx_snow_ice
-        !           They are removed here becvause this RTD expect that
-        !           qns_tot do not include them ( hflx_snow will be added 
-        !           in the RDT server). Same append with qns_ice.
-        hflx_qns_tot_ave(l) = hflx_qns_tot_ave(l) + hflx_snow(l) - hflx_snow_ice(l)
-        hflx_qns_ice_ave(l) = hflx_qns_ice_ave(l) - hflx_snow_ice(l)
         call putvars ('hglo', iou, ntrec2, hglo(l), 1., 0.)
         call putvars ('hflx_ice', iou, ntrec2, hflx_ice(l), 1., 0.)
-        call putvars ('hflx_snow', iou, ntrec2, hflx_snow(l), 1., 0.)
+        call putvars ('hflx_snow', iou, ntrec2, hflx_snow(l)*-1.0, 1., 0.)
         call putvars ('hflx_snow_ice', iou, ntrec2, hflx_snow_ice(l), 1., 0.)
 
         call putvars ('hflx_qsr_tot', iou, ntrec2, hflx_qsr_tot_ave(l), 1., 0.)

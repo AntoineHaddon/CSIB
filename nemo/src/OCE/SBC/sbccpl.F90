@@ -1897,6 +1897,11 @@ CONTAINS
          ENDIF
       END SELECT
       !
+      ! New outputs for CCCma RTD
+      IF( iom_use('O_QnsOce') ) CALL iom_put( "O_QnsOce" , zqns_tot(:,:) - SUM( a_i * zqns_ice, dim=3 ) )
+      IF( iom_use('O_QnsIce') ) CALL iom_put( "O_QnsIce" , SUM( a_i * zqns_ice, dim=3 ) )
+      IF( iom_use('O_QnsMix') ) CALL iom_put( "O_QnsMix" , zqns_tot(:,:))
+      !
       ! --- calving (removed from qns_tot) --- !
       IF( srcv(jpr_cal)%laction )   zqns_tot(:,:) = zqns_tot(:,:) - frcv(jpr_cal)%z3(:,:,1) * rLfus  ! remove latent heat of calving
                                                                                                      ! we suppose it melts at 0deg, though it should be temp. of surrounding ocean
@@ -2051,6 +2056,11 @@ CONTAINS
          END DO
       ENDIF
 
+      ! New outputs for CCCma RTD
+      IF( iom_use('O_QsrOce') ) CALL iom_put( "O_QsrOce" , zqsr_tot(:,:) - SUM( a_i * zqsr_ice, dim=3 ) )
+      IF( iom_use('O_QsrIce') ) CALL iom_put( "O_QsrIce" , SUM( a_i * zqsr_ice, dim=3 ) )
+      IF( iom_use('O_QsrMix') ) CALL iom_put( "O_QsrMix" , zqsr_tot(:,:))
+      !
 #if defined key_si3
       ! --- solar flux over ocean --- !
       !         note: ziceld cannot be = 0 since we limit the ice concentration to amax
