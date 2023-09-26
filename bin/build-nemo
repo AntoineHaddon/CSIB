@@ -165,7 +165,7 @@ esac
 # Set inherited variables
 #========================
 
-xiosdir=xios-2.5
+xiosdir=xios-2.6
 cfgdir=cfgs
 xios_exec=xios_server.exe
 tooldir=tools

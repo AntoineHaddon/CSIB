@@ -1,0 +1,37 @@
+################################################################################
+##             XIOS2.5 build instructions for parallel I/O (CCCma)            ##
+##                                                                            ##
+##  -std=c++98: The XIOS2.5 code uses shared_ptr (from boost) without using   ##
+##              the boost namespace. The Intel 2019 C++ compiler defaults to  ##
+##              a newer C++ standard, which implements std::shared_ptr.       ##
+##              Therefore, the compiler does not know if it should use        ##
+##              boost::shared_ptr or std::shared_ptr. C++98 standard library  ##
+##              does not have a shared_ptr, so there is no ambiguity, which   ##
+##              makes the compiler happy. Thanks to Philippe Blain.           ##
+##  %BASE_FFLAGS: The options intend to be consistent with those in nemo4.*.  ##
+##                                                                            ##
+##                            D. Yang, May/2022                               ##
+################################################################################
+
+%CCOMPILER      mpicxx
+%FCOMPILER      mpif90
+%LINKER         mpif90
+
+%BASE_CFLAGS    
+
+%PROD_CFLAGS    -O2 -fp-model precise -init=arrays -init=zero
+%DEV_CFLAGS     -O2
+%DEBUG_CFLAGS   -O0 -g 
+
+%BASE_FFLAGS    -free -fpp -D_IMPI_=4 -Qoption,link,--noinhibit-exec -list -traceback  -assume buffered_stdout,protect_parens -convert big_endian -r8 -align array64byte
+
+%PROD_FFLAGS    -O2
+%DEV_FFLAGS     -O2
+%DEBUG_FFLAGS   -O0 -g
+
+%BASE_INC       -D__NONE__
+%BASE_LD        -lstdc++ $(shell nf-config --flibs)
+
+%CPP            cpp
+%FPP            cpp -P
+%MAKE           make
