@@ -36,7 +36,7 @@
 
 %NCDF_HOME          
 %HDF5_HOME           
-%XIOS_HOME           ${XIOS_DIR}
+%XIOS_HOME           ${MAIN_DIR}/xios-2.6/
 %OASIS_HOME          
 
 %NCDF_INC            "$(nf-config --fflags)"
@@ -45,20 +45,18 @@
 %XIOS_INC            -I%XIOS_HOME/inc
 %XIOS_LIB            -L%XIOS_HOME/lib -lxios -lstdc++
 
-%CPP                 cpp
-%FC                  mpif90
-
-%FCFLAGS             -free -fpp -D_IMPI_=4 -D_Cray_XC30 -Qoption,link,--noinhibit-exec -list -traceback -O2 -init=arrays -init=zero -fp-model precise -assume buffered_stdout,protect_parens -convert big_endian -r8 -align array64byte -fpe0
-%FFLAGS              -fixed -fpp -D_IMPI_=4 -D_Cray_XC30 -Qoption,link,--noinhibit-exec -list -traceback -O2 -init=arrays -init=zero -fp-model precise -assume buffered_stdout,protect_parens -convert big_endian -r8 -align array64byte -fpe0
-%LDFLAGS    
-%LD                  mpif90
-%FPPFLAGS            -P -C
-%AR                  ar  
+%CPP	             cpp
+%FC                  mpif90 
+%FCFLAGS             -i4 -r8 -O2 -fp-model strict -xHost -fno-alias
+%FFLAGS              %FCFLAGS
+%LD                  %FC
+%LDFLAGS             
+%FPPFLAGS            -P -traditional
+%AR                  ar
 %ARFLAGS             rs
 %MK                  make
+%USER_INC            %XIOS_INC %OASIS_INC %NCDF_INC
+%USER_LIB            %XIOS_LIB %OASIS_LIB %NCDF_LIB
 
-%USER_INC            %NCDF_INC %XIOS_INC
-%USER_LIB            %NCDF_LIB %XIOS_LIB
-
-%CC                  mpicxx -std=c++98
-%CFLAGS              -O2
+%CC                  icc
+%CFLAGS              -O0

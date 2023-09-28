@@ -35,31 +35,9 @@ nemo/mk/arch_tools.fcm
 nemo/src/CanCPL/cppdef_config.h90 
 nemo/src/CanCPL/cppdef_sizes.h90
 
-.svn
-
-#ignore xios-2.5 compiled files.
-nemo/xios-2.5/tools/FCM
-nemo/xios-2.5/extern/netcdf4
-nemo/xios-2.5/.void_file
-nemo/xios-2.5/.cache
-nemo/xios-2.5/.svn
-nemo/xios-2.5/Makefile
-nemo/xios-2.5/arch.env
-nemo/xios-2.5/arch.fcm
-nemo/xios-2.5/arch.path
-nemo/xios-2.5/bin/
-nemo/xios-2.5/bld_dir.cfg
-nemo/xios-2.5/cfg/
-nemo/xios-2.5/config.fcm
-nemo/xios-2.5/done/
-nemo/xios-2.5/etc/
-nemo/xios-2.5/fcm_env.ksh
-nemo/xios-2.5/fcm_env.sh
-nemo/xios-2.5/flags/
-nemo/xios-2.5/inc/
-nemo/xios-2.5/ppsrc/
 
 #ignore xios-2.6 compiled files.
+nemo/xios-2.6/fcm.bld.lock
 nemo/xios-2.6/tools/FCM
 nemo/xios-2.6/extern/netcdf4
 nemo/xios-2.6/.void_file
