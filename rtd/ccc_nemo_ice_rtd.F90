@@ -73,7 +73,7 @@ SUBROUTINE calc (imt, jmt, lm)
           & qt_ice_oce, sublim_over_sea_ice, qtr_ice_bot  
 !     Monthly snow fields: snow thickness, snow precip, snow precip 
 !                          over ice
-      REAL, DIMENSION(imt, jmt, lm) :: isnowthi, isnowpre, & 
+      REAL, DIMENSION(imt, jmt, lm) :: isnowthi, isnowpre, hflx_snow_ai_cea, & 
           &  snow_over_sea_ice, aicesflx, aicenflx, iicesflx, iicenflx, iicetflx
 
 ! ======================================================================
@@ -200,16 +200,22 @@ SUBROUTINE calc (imt, jmt, lm)
       call getvara ('sisnthick', iou0, imt*jmt*lm                       &
           & ,(/1,1,1/), (/imt,jmt,lm/), isnowthi, 1., 0.)
 ! Solar heat flux over ice
-      call getvara ('O_QsrIce', iou0, imt*jmt*lm                       &
+      call getvara ('qsr_ice', iou0, imt*jmt*lm                       &
           & ,(/1,1,1/), (/imt,jmt,lm/), aicesflx, 1., 0.)
 ! Non Solar heat flux over ice
-      call getvara ('O_QnsIce', iou0, imt*jmt*lm                       &
+      call getvara ('qns_ice', iou0, imt*jmt*lm                       &
           & ,(/1,1,1/), (/imt,jmt,lm/), aicenflx, 1., 0.)
 ! Solar heat flux under the ice 
       call getvara ('qtr_ice_bot', iou0, imt*jmt*lm                       &
           & ,(/1,1,1/), (/imt,jmt,lm/), iicesflx, 1., 0.)
+! Heat flux from the snow precipitation of ice
+      call getvara ('hfsnthermds2d', iou1, imt*jmt,                   &
+          & (/1,1,1/), (/imt,jmt,lm/), hflx_snow_ai_cea, 1., 0.)
+
 ! Non solar heat flux under the ice (total - solar )
       iicenflx= qt_ice_oce - iicesflx
+! Non solar radiation in ice 
+      aicenflx = aicenflx - hflx_snow_ai_cea 
 
 ! Hold these for now.
 ! Sublimation over sea-ice (cell average)
