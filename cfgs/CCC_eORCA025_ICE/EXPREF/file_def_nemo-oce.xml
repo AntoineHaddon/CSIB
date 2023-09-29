@@ -30,10 +30,11 @@
           <field field_ref="snow_ai_cea"      name="sndmasssnf"     level="0" /> <!-- (SImon*) -->
           <field field_ref="dmsmel"           name="sndmassmelt"    level="0" /> <!-- (SImon*) -->
           <field field_ref="snow_ao_cea"      name="prsn"           level="0" /> <!-- (Omon*) level = 2 in CMIP6 -->
-          <field field_ref="hflx_rain_cea"    name="hfrainds"       level="0" /> <!-- (Omon*) <!-- Not in CMIP6 but available in NEMO4 -->
-          <field field_ref="hflx_snow_ao_cea" name="hfsnthermds"    level="0" /> <!-- (Omon*) <!-- Not in CMIP6 but available in NEMO4 -->
-          <field field_ref="hflx_snow_ai_cea" name="hfsnthermds2d"  level="0" /> <!-- (Omon*) --> 
-          <field field_ref="hflx_rnf_cea"     name="hfrunoffds"     level="0" /> <!-- (Omon*) level = 2 in CMIP6 <!-- Not in CMIP6 but available in NEMO4 -->
+          <field field_ref="hflx_rain_cea"    name="hfrainds"       level="0" /> <!-- (Omon*) level = 2 in CMIP6 -->
+          <field field_ref="hflx_snow_ao_cea" name="hfsnthermds"    level="0" /> <!-- (Omon*) level = 2 in CMIP6 -->
+          <field field_ref="hflx_snow_ai_cea" name="hfsnthermds2d"  level="0" /> <!-- (Omon*) level = 2 in CMIP6 -->
+          <field field_ref="hflx_rnf_cea"     name="hfrunoffds"     level="0" /> <!-- (Omon*) level = 2 in CMIP6 -->
+          <field field_ref="hflx_evap_cea"    name="hfevapds"       level="0" /> <!-- (Omon*) level = 2 in CMIP6 -->
           <field field_ref="qt"               name="hfds"           level="0" /> <!-- (Omon*) level = 1 in CMIP6  -->
           <field field_ref="O_QnsMix"         name="O_QnsMix"       level="0" /> <!-- only rtd -->
           <field field_ref="O_QsrMix"         name="O_QsrMix"       level="0" /> <!-- only rtd -->
@@ -76,12 +77,11 @@
           <field field_ref="mldr10_1min"      name="mlotstmin"   level="1" /> <!-- (Omon*) -->
           <field field_ref="mldr10_1max"      name="mlotstmax"   level="1" /> <!-- (Omon*) -->
           <field field_ref="mldr10_1_sq"      name="mlotstsq"    level="1" /> <!-- (Omon*) <!-- codded in xios, to be check -->
-          <field field_ref="hflx_ice_cea"     name="fsitherm"    level="1" /> <!-- (Omon*) -->
+            <!-- <field field_ref="hflx_ice_cea"     name="fsitherm"    level="1" /> <!--(Omon*)  not avaialble in NEMO4(need to code it?) -->
           <field field_ref="rain_ao_cea"      name="prra"        level="2" /> <!-- (Omon*) -->
           <field field_ref="qsr"              name="rsntds"      level="2" /> <!-- (Omon*) -->
           <!-- <field field_ref=""             name="wfonocorr"    level="1" /> <!-- (Omon*) not avaialblein in NEMO4 (need to code it?) -->
           <field field_ref="runoffs"          name="friver"      level="2" /> <!-- (Omon*) -->
-          <field field_ref="hflx_evap_cea"    name="hfevapds"    level="2" /> <!-- (Omon*) <!-- Not in CMIP6 but available in NEMO4 -->
           <field field_ref="qlw_oce"          name="rlntds"      level="2" /> <!-- (Omon*) <!-- Not in CMIP6 but available in NEMO4 -->
           <field field_ref="qla_oce"          name="hflso"       level="2" /> <!-- (Omon*) <!-- Not in CMIP6 but available in NEMO4 -->
           <field field_ref="qsb_oce"          name="hfsso"       level="2" /> <!-- (Omon*) <!-- Not in CMIP6 but available in NEMO4 -->
