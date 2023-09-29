@@ -870,7 +870,7 @@
       real, intent(in) :: o, s
       real dout(ln)
       real(kind=8) din(ln), offset, scale, fillvalue, fill_in
-      fill_in=-999.
+      fill_in=0.
       i = nf_inq_varid (ncid, name, iv)
       if (i .ne. nf_noerr) then
         print*, '==> Warning: netcdf variable ',trim(name), ' not found'
