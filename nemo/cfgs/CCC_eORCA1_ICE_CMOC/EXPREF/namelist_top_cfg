@@ -16,7 +16,6 @@
 !-----------------------------------------------------------------------
 &namtrc_run      !   run information
 !-----------------------------------------------------------------------
-   nn_dttrc      =  1        !  time step frequency for passive sn_tracers
    ln_top_euler  = .false.   !  use Euler time-stepping for TOP
    ln_rsttr      = .false.   !  start from a restart file (T) or not (F)
    nn_rsttr      =   0       !  restart control = 0 initial time step is not compared to the restart file value
@@ -27,7 +26,6 @@
    cn_trcrst_out = "restart_trc"   !  suffix of pass. sn_tracer restart name (output)
    cn_trcrst_outdir = "."          !  directory to which to write output passive tracer restarts
    !   
-   qnrdttrc = 4 ! 1 ! 4    ! time splitting factor
 /
 !-----------------------------------------------------------------------
 &namtrc          !   tracers definition
@@ -173,7 +171,6 @@
    cn_dir_cbc    =  './'     !  root directory for the location of COASTAL data files
    cn_dir_obc    =  './'     !  root directory for the location of OPEN data files
    ln_rnf_ctl    = .false.   !  Remove runoff dilution on tracers with absent river load
-   rn_bc_time    =  86400.   !  Time scaling factor for SBC and CBC data (seconds in a day)
 /
 !----------------------------------------------------------------------
 &namtrc_bdy      !   Setup of tracer boundary conditions

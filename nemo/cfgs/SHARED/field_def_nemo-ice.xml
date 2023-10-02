@@ -106,6 +106,7 @@
       <field id="qtr_ice_top"  long_name="solar heat flux transmitted through the ice surface"                                                               unit="W/m2" />
       <field id="qt_oce_ai"    long_name="total heat flux at the ocean   surface: interface oce-(ice+atm)"                                                   unit="W/m2" />
       <field id="qt_atm_oi"    long_name="total heat flux at the oce-ice surface: interface atm-(ice+oce)"                                                   unit="W/m2" />
+      <field id="qt_ice_oce"   long_name="total heat flux at the ice bottom     : interface ice-(oce)" unit="W/m2" > ( qt_oce_ai - (qt_atm_oi-qt_ice) )  </field>      
       <field id="qemp_ice"     long_name="Downward Heat Flux from E-P over ice"                                                                              unit="W/m2" />
       <field id="albedo"       long_name="Mean albedo over sea ice and ocean"                                                                                unit=""     />
       <field id="Cd_ice"       long_name="Drag coefficient over sea-ice"                            standard_name="drag_coefficient_ice"                     unit=""     />

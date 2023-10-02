@@ -303,6 +303,17 @@ PROGRAM nemo_ocean_diag
         i_AN_E  = 191; i_AN_W  = 274
         i_AS_E  = 247; i_AS_W  = 302
         i_PN_E  =  34; i_PN_W  = 185
+!     eORCA1 (standard, 360 X 331)
+      else if ( imt == 360.and.jmt == 331 ) then
+        print *, "Using eORCA1 configuration (NEMO4.2)"
+        j_20N   = 222; j_20S   = 152; j_eq    = 187
+        k60     =  20; k500    =  39; k2000   =  54
+        i_DP    = 220; j_DP_S  =  81; j_DP_N  = 106
+        i_IN_E1 =   1; i_IN_W1 =  48
+        i_IN_E2 = 321; i_IN_W2 = imt-1
+        i_AN_E  = 190; i_AN_W  = 273
+        i_AS_E  = 246; i_AS_W  = 301
+        i_PN_E  =  33; i_PN_W  = 184
 !     eORCA025 (1442 X 1207)
       else if ( imt == 1442 ) then
         print *, "Using eORCA025 configuration"
@@ -315,7 +326,7 @@ PROGRAM nemo_ocean_diag
         i_AS_E  =  985; i_AS_W  = 1205
         i_PN_E  =  127; i_PN_W  =  735
       else
-        print *, "Dont recognize the configuration."
+        print *, "Dont recognize the configuration.",imt,"x",jmt 
         print *, "Only ORCA2, ORCA1 and eORCA025 compatible"
         stop
       endif

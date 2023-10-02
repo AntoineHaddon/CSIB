@@ -191,7 +191,7 @@ echo "#################### Start NEMO pre-processing #################"
     acc_cp bfr_coef.nc               $nemo_bfr_coef
   fi 
 
-  if [[ $nemo_ln_subbas == "on" ]]; then
+  if [[ $nemo_ln_diaptr == "on" ]]; then
     is_defined $nemo_subbasins || bail "The variable nemo_subbasins must be defined in the configuration file."
     acc_cp subbasins.nc              $nemo_subbasins  
   fi 

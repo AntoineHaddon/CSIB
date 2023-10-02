@@ -35,9 +35,8 @@
           <field field_ref="hflx_rnf_cea"     name="hfrunoffds"     level="0" /> <!-- (Omon*) level = 2 in CMIP6 -->
           <field field_ref="hflx_evap_cea"    name="hfevapds"       level="0" /> <!-- (Omon*) level = 2 in CMIP6 -->
           <field field_ref="qt"               name="hfds"           level="0" /> <!-- (Omon*) level = 1 in CMIP6  -->
-          <field field_ref="O_QnsMix"         name="O_QnsMix"       level="0" /> <!-- only rtd -->
-          <field field_ref="O_QsrMix"         name="O_QsrMix"       level="0" /> <!-- only rtd -->
-          
+          <field field_ref="qsr"          name="qsr_tot"        level="0" /> <!-- only rtd -->
+	      <field field_ref="qns"          name="qns_tot"        level="0" /> <!-- only rtd -->
           <!-- IAT/age tracer running in TOP w/o any BGCM       -->
           <field field_ref="Age"              name="Age"            level="0" />
           <field field_ref="runoffs"          name="friver"         level="0" />	  
@@ -64,7 +63,6 @@
           <field field_ref="woce"        name="wo"       level="0" /> <!-- (Omon) -->
 	  <field field_ref="woce_eiv"    name="woce_eiv" level="0" />  <!-- only rtd -->
 	  <field field_ref="avt"         name="avt"      level="0" />
-          <field field_ref="av_tmx"      name="av_tmx"   level="0" />
         </file>
           <!-- CMIP6 variables, started by NL, to be completed -->
         <file id="file15" name_suffix="_grid_T_ar6" description="ocean T grid variables">
