@@ -32,7 +32,6 @@
           <field field_ref="snow_ao_cea"      name="prsn"           level="0" /> <!-- (Omon*) level = 2 in CMIP6 -->
           <field field_ref="hflx_rain_cea"    name="hfrainds"       level="0" /> <!-- (Omon*) level = 2 in CMIP6 -->
           <field field_ref="hflx_snow_ao_cea" name="hfsnthermds"    level="0" /> <!-- (Omon*) level = 2 in CMIP6 -->
-          <field field_ref="hflx_snow_ai_cea" name="hfsnthermds2d"  level="0" /> <!-- (Omon*) level = 2 in CMIP6 -->
           <field field_ref="hflx_rnf_cea"     name="hfrunoffds"     level="0" /> <!-- (Omon*) level = 2 in CMIP6 -->
           <field field_ref="hflx_evap_cea"    name="hfevapds"       level="0" /> <!-- (Omon*) level = 2 in CMIP6 -->
           <field field_ref="qt"               name="hfds"           level="0" /> <!-- (Omon*) level = 1 in CMIP6  -->

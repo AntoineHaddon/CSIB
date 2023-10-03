@@ -29,6 +29,7 @@
        <field field_ref="O_QsrIce"        name="O_QsrIce"       level="0"  /> <!-- only rtd -->
        <field field_ref="qns_ice"         name="qns_ice"        level="0" /> <!-- only rtd -->
        <field field_ref="qsr_ice"         name="qsr_ice"        level="0" /> <!-- only rtd -->
+       <field field_ref="hflx_snow_ai_cea" name="hfsnthermds2d"  level="0" /> <!-- (Omon*) level = 2 in CMIP6 -->
        <!-- ==============
             SIMIP monthly fields (that are not in level =0) -->
        <!-- Sea-ice state variables -->

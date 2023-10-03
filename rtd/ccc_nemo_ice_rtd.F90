@@ -57,7 +57,7 @@ SUBROUTINE calc (imt, jmt, lm)
       IMPLICIT NONE 
       integer, parameter:: dp=kind(0.d0) ! double precision
       INTEGER :: i, j, k, imt, jmt, lm, cur_mon
-      INTEGER :: iou0, iou1
+      INTEGER :: iou1, iou2
 
 ! ======================================================================
 !     Input data 
@@ -91,7 +91,7 @@ SUBROUTINE calc (imt, jmt, lm)
       REAL, DIMENSION(lm)      :: isnowthick_nh, isnowthick_sh
       REAL, DIMENSION(lm)      :: iohflx_nh, iohflx_sh
       REAL, DIMENSION(lm)      :: test_calc
-      REAL, DIMENSION(lm)      :: aicesflx_ave, aicenflx_ave
+      REAL, DIMENSION(lm)      :: aicesflx_ave, aicenflx_ave,hflx_snow_ai_cea_ave
       REAL, DIMENSION(lm)      :: iicesflx_ave, iicenflx_ave,iicetflx_ave
 
 ! ======================================================================
@@ -116,8 +116,8 @@ SUBROUTINE calc (imt, jmt, lm)
 !----------------
            print*,'Reading data on NEMO grid...'
 
-         iou0 =0
          iou1 =0
+         iou2 =0
 
 !---------------------------------------------------
 !    Define NetCDF files   
@@ -127,21 +127,21 @@ SUBROUTINE calc (imt, jmt, lm)
 !---------------------------------------------------
 !    Open the defined NetCDF files   
 !---------------------------------------------------
-      call openfile (fname01,iou0)
-      call openfile (fname02,iou1)
+      call openfile (fname01,iou1)
+      call openfile (fname02,iou2)
 
 !---------------------------------------------------
 !    Get grid/mask data   
 !---------------------------------------------------
-      call getvara ('nav_lon', iou0, imt*jmt, (/1,1,1/), (/imt,jmt,1/) &
+      call getvara ('nav_lon', iou1, imt*jmt, (/1,1,1/), (/imt,jmt,1/) &
           &         , lon2d, 1., 0.)
-      call getvara ('nav_lat', iou0, imt*jmt, (/1,1,1/), (/imt,jmt,1/) &
+      call getvara ('nav_lat', iou1, imt*jmt, (/1,1,1/), (/imt,jmt,1/) &
           &         , lat2d, 1., 0.)
-      call getvara ('e1t', iou1, imt*jmt, (/1,1,1/), (/imt,jmt,1/)     &
+      call getvara ('e1t', iou2, imt*jmt, (/1,1,1/), (/imt,jmt,1/)     &
           &         , e1t, 1., 0.)
-      call getvara ('e2t', iou1, imt*jmt, (/1,1,1/), (/imt,jmt,1/)     &
+      call getvara ('e2t', iou2, imt*jmt, (/1,1,1/), (/imt,jmt,1/)     &
           &         , e2t , 1., 0.)
-      call getvara ('tmask', iou1, imt*jmt, (/1,1,1,1/)             &
+      call getvara ('tmask', iou2, imt*jmt, (/1,1,1,1/)             &
           &         , (/imt,jmt,1,1/),t_mask , 1., 0.)
 
 ! compute total grid cell area for valid ocean points   
@@ -172,44 +172,44 @@ SUBROUTINE calc (imt, jmt, lm)
 !    Load ice data from NetCDF
 !---------------------------------------------------
 ! Ice Fraction
-      call getvara ('siconc', iou0, imt*jmt*lm, (/1,1,1/)            &
+      call getvara ('siconc', iou1, imt*jmt*lm, (/1,1,1/)            &
           & , (/imt,jmt,lm/), soicecov, 1., 0.)
       soicecov=soicecov/100 ! from % to factor
 ! Ice thickness (cell average)
-      call getvara ('sithick', iou0, imt*jmt*lm, (/1,1,1/)            &
+      call getvara ('sithick', iou1, imt*jmt*lm, (/1,1,1/)            &
           & , (/imt,jmt,lm/), iicethic, 1., 0.)
 ! Ice surface temperature (cell average)
-      call getvara ('iicetemp', iou0, imt*jmt*lm           &
+      call getvara ('iicetemp', iou1, imt*jmt*lm           &
           & ,(/1,1,1/), (/imt,jmt,lm/), iicetemp, 1., 0.)
 ! Ice velocity along i-axis at I-point (ice presence average)
-      call getvara ('siu', iou0, imt*jmt*lm                       &
+      call getvara ('siu', iou1, imt*jmt*lm                       &
           & ,(/1,1,1/), (/imt,jmt,lm/), iicevelu, 1., 0.)
 ! Ice velocity along j-axis at I-point (ice presence average)
-      call getvara ('siv', iou0, imt*jmt*lm                       &
+      call getvara ('siv', iou1, imt*jmt*lm                       &
           & ,(/1,1,1/), (/imt,jmt,lm/), iicevelv, 1., 0.)
 ! Wind stress along i-axis over the ice at i-point
-      call getvara ('sistrxdtop', iou0, imt*jmt*lm                       &
+      call getvara ('sistrxdtop', iou1, imt*jmt*lm                       &
           & ,(/1,1,1/), (/imt,jmt,lm/), iicestru, 1., 0.)
 ! Wind stress along j-axis over the ice at i-point
-      call getvara ('sistrydtop', iou0, imt*jmt*lm                       &
+      call getvara ('sistrydtop', iou1, imt*jmt*lm                       &
           & ,(/1,1,1/), (/imt,jmt,lm/), iicestrv, 1., 0.)
 ! Oceanic total heat flux at ice base 
-     call getvara ('qt_ice_oce', iou0, imt*jmt*lm                       &
+     call getvara ('qt_ice_oce', iou1, imt*jmt*lm                       &
          & ,(/1,1,1/), (/imt,jmt,lm/), qt_ice_oce, 1., 0.)
 ! Snow thickness (cell average)
-      call getvara ('sisnthick', iou0, imt*jmt*lm                       &
+      call getvara ('sisnthick', iou1, imt*jmt*lm                       &
           & ,(/1,1,1/), (/imt,jmt,lm/), isnowthi, 1., 0.)
 ! Solar heat flux over ice
-      call getvara ('qsr_ice', iou0, imt*jmt*lm                       &
+      call getvara ('qsr_ice', iou1, imt*jmt*lm                       &
           & ,(/1,1,1/), (/imt,jmt,lm/), aicesflx, 1., 0.)
 ! Non Solar heat flux over ice
-      call getvara ('qns_ice', iou0, imt*jmt*lm                       &
+      call getvara ('qns_ice', iou1, imt*jmt*lm                       &
           & ,(/1,1,1/), (/imt,jmt,lm/), aicenflx, 1., 0.)
 ! Solar heat flux under the ice 
-      call getvara ('qtr_ice_bot', iou0, imt*jmt*lm                       &
+      call getvara ('qtr_ice_bot', iou1, imt*jmt*lm                       &
           & ,(/1,1,1/), (/imt,jmt,lm/), iicesflx, 1., 0.)
 ! Heat flux from the snow precipitation of ice
-      call getvara ('hfsnthermds2d', iou1, imt*jmt,                   &
+      call getvara ('hfsnthermds2d', iou1, imt*jmt*lm,                   &
           & (/1,1,1/), (/imt,jmt,lm/), hflx_snow_ai_cea, 1., 0.)
 
 ! Non solar heat flux under the ice (total - solar )
@@ -219,13 +219,13 @@ SUBROUTINE calc (imt, jmt, lm)
 
 ! Hold these for now.
 ! Sublimation over sea-ice (cell average)
-!      call getvara ('sublim_over_sea_ice', iou0, imt*jmt*lm            &
+!      call getvara ('sublim_over_sea_ice', iou1, imt*jmt*lm            &
 !          & ,(/1,1,1/), (/imt,jmt,lm/), sublim_over_sea_ice, 1., 0.)
 ! Snow precipitation
-!      call getvara ('snowpre', iou0, imt*jmt*lm                       &
+!      call getvara ('snowpre', iou1, imt*jmt*lm                       &
 !          & ,(/1,1,1/), (/imt,jmt,lm/), isnowpre, 1., 0.)
 ! Snow over sea-ice (cell average) [kg/m2/s]
-!      call getvara ('snow_over_sea_ice', iou0, imt*jmt*lm              &
+!      call getvara ('snow_over_sea_ice', iou1, imt*jmt*lm              &
 !          & ,(/1,1,1/), (/imt,jmt,lm/), snow_over_sea_ice, 1., 0.)
 
 !---------------------------------------------------
@@ -354,6 +354,9 @@ SUBROUTINE calc (imt, jmt, lm)
               & aicenflx(:, :, cur_mon), imt, jmt,                      &
               & aicenflx_ave(cur_mon), ss)
           CALL area_ave_flx(e1t, e2t, t_mask,                    &
+              & hflx_snow_ai_cea(:, :, cur_mon), imt, jmt,                      &
+              & hflx_snow_ai_cea_ave(cur_mon), ss)
+          CALL area_ave_flx(e1t, e2t, t_mask,                    &
               & aicesflx(:, :, cur_mon), imt, jmt,                      &
               & aicesflx_ave(cur_mon), ss)
 !  Solar and non solar heat fluxes from ice to ocean 
@@ -431,6 +434,7 @@ SUBROUTINE calc (imt, jmt, lm)
       print*,'S      ', aicesflx_ave
       print*,'NS     ', aicenflx_ave
       print*,'NET    ', aicenflx_ave + aicesflx_ave
+      print*,'SNOW   ', hflx_snow_ai_cea_ave
       print*,'-------------------------------------'
       print*,'   ICE-OCE Solar/nonsolar flux  (W/m^2) '
       print*,'-------------------------------------'
