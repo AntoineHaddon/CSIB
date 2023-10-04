@@ -19,7 +19,7 @@ MODULE trcflx_canbgc
 ! Module calls section
  
    USE trc                       ! time step in seconds whether or not euler is activated
-   USE oce_trc                   ! give access to active tracers, wndm, tsn, and fr_i (wind @10m, T/S, and ice fraction)
+   USE oce_trc                   ! give access to active tracers, wndm, ts, and fr_i (wind @10m, T/S, and ice fraction)
                                  ! oce_trc calls common OCE and TOP indices, e.g. jpi,jpj dimensions
    USE sms_top_canbgc            ! contains all common variables to Canadian BGCMs
  
@@ -93,7 +93,7 @@ CONTAINS
       ! -------------------------------------------
       DO jj = 1, jpj
          DO ji = 1, jpi
-            ztc  = tsn(ji,jj,1,jp_tem)
+            ztc  = ts(ji,jj,1,jp_tem,Kmm)
             ztc2 = ztc * ztc
             ztc3 = ztc * ztc2 
             ztc4 = ztc * ztc3 

@@ -115,7 +115,7 @@ CONTAINS
             DO ji = 1, jpi
                redet(ji,jj,jk) = reref_cmoc * xstepb &
                &                 * exp ( -ed_cmoc * 1e3_wp / 8.31_wp *         &
-               &                 ( 1._wp / ( tsn(ji,jj,jk,jp_tem) + 273.15_wp  &
+               &                 ( 1._wp / ( ts(ji,jj,jk,jp_tem,Kmm) + 273.15_wp  &
                &                 + rtrn ) - 1._wp / ( tvm_cmoc + 273.15_wp )   &
                &                 )      ) * tr(ji,jj,jk,jqpoc, Kbb) * tmask_bgc_closea(ji,jj,jk)
                rnresult(ji,jj,jk) = redet(ji,jj,jk)

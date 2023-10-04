@@ -166,7 +166,7 @@ CONTAINS
             DO ji = 1, jpi
                ! IF( par_3bands(ji,jj,jk) > 1.E-3 ) THEN
                IF( par_stairs(ji,jj,jk) > 1.E-3 ) THEN
-                      ztn  = tsn(ji,jj,jk,jp_tem)
+                      ztn  = ts(ji,jj,jk,jp_tem)
                       phyc  = MAX(tr(ji,jj,jk,jrphy, Kbb),0.)*mw_c
                       phyn  = MAX(tr(ji,jj,jk,jrnn, Kbb) ,0.)*mw_n
                       phyfe = MAX(tr(ji,jj,jk,jrnfe, Kbb),0.)*mw_fe

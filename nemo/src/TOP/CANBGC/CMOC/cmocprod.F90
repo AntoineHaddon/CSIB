@@ -131,7 +131,7 @@ CONTAINS
               ! 
               ! original CMOC condition for PAR
               IF( zetot(ji,jj,jk) > 1.E-3 ) THEN
-                ztn    = tsn(ji,jj,jk,jp_tem) + 273.15_wp
+                ztn    = ts(ji,jj,jk,jp_tem,Kmm) + 273.15_wp
                 ! ep_cmoc is in kJ mol^-1 and 8.31 is the ideal gas constant in J mol^-1 K^-1
                 zadap  = ep_cmoc * 1.e3_wp / 8.31_wp * ( 1._wp / ( ztn + rtrn ) - 1._wp / ( tvm_cmoc + 273.15_wp) )
                 zfact  = EXP ( -zadap )

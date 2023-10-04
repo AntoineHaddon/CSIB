@@ -160,7 +160,7 @@ CONTAINS
       !
       ! Update temperature dependencies
       ! use for BGC rates
-      CALL canoe_temp
+      CALL canoe_temp( Kmm )
       !
       DO jn = 1, jp_tot                    !   Store the tracer concentrations before entering CMOC
         rtrbbio(:,:,:,jn) = tr(:,:,:,jn, Kbb)

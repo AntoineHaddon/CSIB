@@ -41,7 +41,7 @@ MODULE canoetemp
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE canoe_temp
+   SUBROUTINE canoe_temp( Kmm )
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE canoe_temp  ***
       !!
@@ -49,14 +49,15 @@ CONTAINS
       !!
       !!---------------------------------------------------------------------
       !
+      INTEGER, INTENT(in) ::   Kmm  ! time level indices
       IF( ln_timing )  CALL timing_start('canoe_temp')
       !
       ! Computation of phyto and zoo metabolic rate
       ! -------------------------------------------
-      tgfuncp0(:,:,:)  = EXP(AEP*( 1./(tsn(:,:,:,jp_tem)+T0C)-1./(Tref+T0C)))
-      tgfuncz0(:,:,:)  = EXP(AEZ*( 1./(tsn(:,:,:,jp_tem)+T0C)-1./(Tref+T0C)))
-      tgfuncz20(:,:,:) = EXP(AEZ2*(1./(tsn(:,:,:,jp_tem)+T0C)-1./(Tref+T0C)))
-      tgfuncr0(:,:,:)  = EXP(AER*( 1./(tsn(:,:,:,jp_tem)+T0C)-1./(Tref+T0C)))
+      tgfuncp0(:,:,:)  = EXP(AEP*( 1./(ts(:,:,:,jp_tem,Kmm)+T0C)-1./(Tref+T0C)))
+      tgfuncz0(:,:,:)  = EXP(AEZ*( 1./(ts(:,:,:,jp_tem,Kmm)+T0C)-1./(Tref+T0C)))
+      tgfuncz20(:,:,:) = EXP(AEZ2*(1./(ts(:,:,:,jp_tem,Kmm)+T0C)-1./(Tref+T0C)))
+      tgfuncr0(:,:,:)  = EXP(AER*( 1./(ts(:,:,:,jp_tem,Kmm)+T0C)-1./(Tref+T0C)))
       !
       IF( ln_timing )  CALL timing_stop('canoe_temp')
       !

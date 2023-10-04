@@ -148,7 +148,7 @@ CONTAINS
       !
       ! call all the BGC initialization subroutines in TOP tier
       !
-      CALL trc_che_init_2D
+      CALL trc_che_init_2D( Kmm )
       !
       CALL trc_flx_init
       !

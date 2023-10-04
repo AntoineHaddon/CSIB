@@ -417,6 +417,14 @@ CONTAINS
       !
       ll_sas = nn_components == jp_iam_sas               ! component flags
       ll_opa = nn_components == jp_iam_oce
+      ! Constrain SSS from dropping below rn_minsal psu
+      IF( ln_minsal ) THEN
+        DO jj = 1, jpj
+          DO ji = 1, jpi
+            ts(ji,jj,1,jp_sal,Kmm) = MAX( ts(ji,jj,1,jp_sal,Kmm), rn_minsal ) * tmask(ji,jj,1)
+          END DO
+        END DO
+      ENDIF
       !
       IF( .NOT.ll_sas )   CALL sbc_ssm ( kt, Kbb, Kmm )  ! mean ocean sea surface variables (sst_m, sss_m, ssu_m, ssv_m)
       !

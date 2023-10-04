@@ -667,7 +667,7 @@ CONTAINS
                    !
                    &                 * zpar(ji,jj,jk) / inf_cmoc                                  & ! ligh sensitivity
                    !
-                   &                 * ( max(tsn(ji,jj,jk,jp_tem), tnfmi_cmoc ) - tnfmi_cmoc )    &
+                   &                 * ( max(ts(ji,jj,jk,jp_tem,Kmm), tnfmi_cmoc ) - tnfmi_cmoc )    &
                    &                 / ( tnfMa_cmoc - tnfmi_cmoc ) &                               ! temperature dependence
                    !
                    &                 * ( phinf_cmoc * exp( 1._wp ) * anf_cmoc * gdept_n(ji,jj,jk) &

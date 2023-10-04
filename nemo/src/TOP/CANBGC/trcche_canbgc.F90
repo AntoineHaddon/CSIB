@@ -270,18 +270,18 @@ CONTAINS
             ztmas   = tmask_bgc_closea(ji,jj,1)
             ztmas1  = 1. - tmask_bgc_closea(ji,jj,1)
             !                             ! SET ABSOLUTE TEMPERATURE
-            ztkel = tsn(ji,jj,1,jp_tem) + 273.15
+            ztkel = ts(ji,jj,1,jp_tem,Kmm) + 273.15
             zt    = ztkel * 0.01
             zt2   = zt * zt
             !
-            zsal  = tsn(ji,jj,1,jp_sal)*ztmas + ztmas1*35.
+            zsal  = ts(ji,jj,1,jp_sal,Kmm)*ztmas + ztmas1*35.
             zsal2 = zsal * zsal
             zlogt = LOG( zt )
             !                             ! LN(K0) OF SOLUBILITY OF CO2 (EQ. 12, WEISS, 1980)
             !                             !     AND FOR THE ATMOSPHERE FOR NON IDEAL GAS
             zcek1 = ca0 + ca1 / zt + ca2 * zlogt + ca3 * zt2 + zsal * ( ca4 + ca5 * zt + ca6 * zt2 )
             !                             ! LN(K0) OF SOLUBILITY OF O2 and N2 in ml/L (EQ. 8, GARCIA AND GORDON, 1992)
-            ztgg  = LOG( ( 298.15 - tsn(ji,jj,1,jp_tem) ) / ztkel )  ! Set the GORDON & GARCIA scaled temperature
+            ztgg  = LOG( ( 298.15 - ts(ji,jj,1,jp_tem,Kmm) ) / ztkel )  ! Set the GORDON & GARCIA scaled temperature
             ztgg2 = ztgg  * ztgg
             ztgg3 = ztgg2 * ztgg
             ztgg4 = ztgg3 * ztgg
@@ -454,13 +454,14 @@ CONTAINS
 
    END SUBROUTINE trc_che_3D
 
-   SUBROUTINE trc_che_init_2D
+   SUBROUTINE trc_che_init_2D( Kmm )
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE trc_che_init_2D  ***
       !!
       !! ** Purpose :   Calculate surface values of dissociation constants
       !!
       !!---------------------------------------------------------------------
+      INTEGER, INTENT(in) ::   Kmm  ! time level indices
       INTEGER  ::   ji, jj
       REAL(wp) ::   ztkel, zsal, zsal2
       REAL(wp) ::   ztc, zcl
@@ -481,8 +482,8 @@ CONTAINS
                 ztmas   = tmask_bgc_closea(ji,jj,1)
                 ztmas1  = 1. - tmask_bgc_closea(ji,jj,1)
                 ! SET ABSOLUTE TEMPERATURE
-                ztkel   = tsn(ji,jj,1,jp_tem) + 273.15
-                zsal  = tsn(ji,jj,1,jp_sal)*ztmas + ztmas1*35.
+                ztkel   = ts(ji,jj,1,jp_tem,Kmm) + 273.15
+                zsal  = ts(ji,jj,1,jp_sal,Kmm)*ztmas + ztmas1*35.
                 zsqrt  = SQRT( zsal )
                 zsal15  = zsqrt * zsal
                 zlogt  = LOG( ztkel )
@@ -490,7 +491,7 @@ CONTAINS
                 zis    = 19.924 * zsal / ( 1000.- 1.005 * zsal )
                 zis2   = zis * zis
                 zisqrt = SQRT( zis )
-                ztc     = tsn(ji,jj,1,jp_tem)
+                ztc     = ts(ji,jj,1,jp_tem,Kmm)
                 ! CHLORINITY (WOOSTER ET AL., 1969)
                 zcl     = zsal * salchl
  
@@ -544,13 +545,14 @@ CONTAINS
       !
    END SUBROUTINE trc_che_init_2D
 
-   SUBROUTINE trc_che_init_3D
+   SUBROUTINE trc_che_init_3D( Kmm )
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE trc_che_init_3D  ***
       !!
       !! ** Purpose :   Calculate values of dissociation constants at all depths
       !!
       !!---------------------------------------------------------------------
+      INTEGER, INTENT(in) ::   Kmm  ! time level indices
       INTEGER  ::   ji, jj, jk
       REAL(wp) ::   ztkel, zt, zt2, zsal, zbuf1, zbuf2
       REAL(wp) ::   zpres, ztc, zcl, zcpexp, zcpexp2, zfact
@@ -576,8 +578,8 @@ CONTAINS
                 zpres   = 1.025e-1 *gdept_n(ji,jj,jk)
 
                 ! ABSOLUTE TEMPERATURE
-                ztkel   = tsn(ji,jj,jk,jp_tem) + 273.15
-                zsal  = tsn(ji,jj,1,jp_sal)*ztmas + ztmas1*35.
+                ztkel   = ts(ji,jj,jk,jp_tem,Kmm) + 273.15
+                zsal  = ts(ji,jj,1,jp_sal,Kmm)*ztmas + ztmas1*35.
                 zsqrt  = SQRT( zsal )
                 zsal15  = zsqrt * zsal
                 zlogt  = LOG( ztkel )
@@ -585,7 +587,7 @@ CONTAINS
                 zis    = 19.924 * zsal / ( 1000.- 1.005 * zsal )
                 zis2   = zis * zis
                 zisqrt = SQRT( zis )
-                ztc     = tsn(ji,jj,jk,jp_tem)
+                ztc     = ts(ji,jj,jk,jp_tem,Kmm)
                 ! CHLORINITY (WOOSTER ET AL., 1969)
                 zcl     = zsal * salchl
  

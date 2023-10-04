@@ -239,8 +239,8 @@ CONTAINS
          DO ji = 1,jpi
             !  Rain ratio at level jk_eud_cmoc - bottom of the euphotic zone:
             !  Temperature is however taken from the 1st layer (confirmed with RJC, 16/02/2016)
-            xrcico(ji,jj) = rmcico_cmoc * exp(aci_cmoc * ( tsn(ji,jj,1,jp_tem)  - trcico_cmoc ) )                  &
-            &                         / (1.0_wp + exp(aci_cmoc *( tsn(ji,jj,1,jp_tem) - trcico_cmoc ) + rtrn ) )
+            xrcico(ji,jj) = rmcico_cmoc * exp(aci_cmoc * ( ts(ji,jj,1,jp_tem,Kmm)  - trcico_cmoc ) )                  &
+            &                         / (1.0_wp + exp(aci_cmoc *( ts(ji,jj,1,jp_tem,Kmm) - trcico_cmoc ) + rtrn ) )
             !
             ! PIC export at the bottom of the euphotic zone based on Zahariev et al 2008 p.59
             ! Time stepping is included with xstepb, so units are in mol/m2/step
