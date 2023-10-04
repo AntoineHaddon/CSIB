@@ -28,12 +28,13 @@ MODULE trcwri_cmoc
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE trc_wri_cmoc
+   SUBROUTINE trc_wri_cmoc( Kmm )
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE trc_wri_cmoc  ***
       !!
       !! ** Purpose :   output passive tracers fields 
       !!---------------------------------------------------------------------
+      INTEGER, INTENT(in)  :: Kmm   ! time level indices
       CHARACTER (len=20)   :: cltra
       INTEGER              :: jn
       REAL(wp)             :: zfact
@@ -52,7 +53,7 @@ CONTAINS
       IF ( cltra == 'PHY')       zfact = 1.e06_wp
       IF ( cltra == 'ZOO')       zfact = 1.e06_wp
       IF ( cltra == 'NCHL')      zfact = 1.e06_wp
-      CALL iom_put( cltra, trn(:,:,:,jn)*zfact ) ! O Riche June 6th 2022, manual scaling here as xml file issue not solved yet
+      CALL iom_put( cltra, tr(:,:,:,jn,Kmm)*zfact ) ! O Riche June 6th 2022, manual scaling here as xml file issue not solved yet
       END DO
       !
       ! Testing trcopt diagnostics

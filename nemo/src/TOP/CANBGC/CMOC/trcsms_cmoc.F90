@@ -49,7 +49,7 @@ MODULE trcsms_cmoc
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE trc_sms_cmoc( kt )
+   SUBROUTINE trc_sms_cmoc( kt, Kbb, Kmm, Krhs )
       !!----------------------------------------------------------------------
       !!                     ***  trc_sms_cmoc  ***
       !!
@@ -62,6 +62,7 @@ CONTAINS
       USE trcsrc_canbgc             ! loading external files/sources
       !
       INTEGER, INTENT(in) ::   kt   ! ocean time-step index
+      INTEGER, INTENT(in) ::   Kbb, Kmm, Krhs  ! time level indices
       INTEGER  ::  jnt			        ! time (-step) splitting index
       INTEGER  ::  jn, ji, jj, jk   ! dummy loop indices
       INTEGER  ::  zrfact           ! working variable
@@ -160,7 +161,7 @@ CONTAINS
       ENDIF
       !
       DO jn = 1, jp_tot                    !   Store the tracer concentrations before entering CMOC
-        qtrbbio(:,:,:,jn) = trb(:,:,:,jn)
+        qtrbbio(:,:,:,jn) = tr(:,:,:,jn, Kbb)
       END DO
       !
       ! O Riche Sept 14th 2022
@@ -191,32 +192,32 @@ CONTAINS
         WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
         CALL FLUSH(numout)
         !
-        CALL cmoc_sink( kt , jnt )     ! particule sinking 
+        CALL cmoc_sink( kt , jnt, Kbb, Kmm, Krhs  )     ! particule sinking 
         !
-        CALL trc_opt_1band( kt, jnt )  ! 1-band PAR attenuation
+        CALL trc_opt_1band( kt, jnt, Kmm )  ! 1-band PAR attenuation
         !
-        CALL cmoc_prod( kt, jnt )      ! Primary production
+        CALL cmoc_prod( kt, jnt, Kbb, Kmm, Krhs )      ! Primary production
         !
-        CALL cmoc_rem( kt, jnt )       ! NO3 remineralization
+        CALL cmoc_rem( kt, jnt, Kbb, Kmm, Krhs )       ! NO3 remineralization
         !
-        CALL cmoc_mort( kt, jnt )      ! Phyto mortality
+        CALL cmoc_mort( kt, jnt, Kbb, Kmm, Krhs )      ! Phyto mortality
         !
-        CALL cmoc_zoo( kt, jnt )       ! Zooplankton grazing and mortality
+        CALL cmoc_zoo( kt, jnt, Kbb, Kmm, Krhs )       ! Zooplankton grazing and mortality
         !
         ! Here CMOC would call the new subroutines that
         ! compute the various sources that were scattered
         ! within CanESM5/CMOC p4zsed.F90 code, e.g.
         ! river sources
         ! Formely p4z_sbc in p4zsed.F90
-        !! OR Jan19 23 ! IF ( jnt == 1 .AND. ll_sbc ) CALL trc_src_criver( kt )
+        !! OR Jan19 23 ! IF ( jnt == 1 .AND. ll_sbc ) CALL trc_src_criver( kt, Krhs )
         ! POC bottom instant. rem
-        !! OR Jan 24th 2023 ! CALL trc_bott_cmoc
+        !! OR Jan 24th 2023 ! CALL trc_bott_cmoc( Kmm, Krhs)
         ! n2 fixation/denitrification
         !! OR Jan19 23 ! CALL cmoc_rem_denit
-        !! OR Jan19 23 ! CALL trc_n2fx_denit_cmoc( par_1band )
+        !! OR Jan19 23 ! CALL trc_n2fx_denit_cmoc( par_1band ,Kmm, Krhs)
         !
         ! Move here to be consistent with NEMO4 and sidestepping from CanESM5 CMOC NEMO
-        CALL trc_flx( kt )               ! compute air-sea gas exchange
+        CALL trc_flx(kt, Kmm, Krhs)               ! compute air-sea gas exchange
         ! IF the radioactive tracer was added there would be also a call to p4z_dcy( kt ) equivalent (trc_dcy?) here. 
         !       
         !!!!!! O Riche Nov 8th 2022
@@ -230,8 +231,8 @@ CONTAINS
         !
         IF( ln_cmocnegtr )  CALL trc_xnegtr( 1, jp_tot, qnegtr2 )   !!! O Riche Nov 8th 2022 ! reside in sms_top_canbgc.F90
         DO jn = 1, jp_tot
-          trb(:,:,:,jn) = trb(:,:,:,jn) + qnegtr2(:,:,:) * tra(:,:,:,jn)        
-          tra(:,:,:,jn) = 0._wp
+          tr(:,:,:,jn, Kbb) = tr(:,:,:,jn, Kbb) + qnegtr2(:,:,:) * tr(:,:,:,jn, Krhs)        
+          tr(:,:,:,jn, Krhs) = 0._wp
         END DO
         !  
         !!!!!!! End   of "p4zbio" block !!!!!!!        
@@ -243,8 +244,8 @@ CONTAINS
       END DO
       !
       DO jn = 1, jp_tot
-        tra(:,:,:,jn) = ( trb(:,:,:,jn) - qtrbbio(:,:,:,jn) ) * qfactr
-        trb(:,:,:,jn) = qtrbbio(:,:,:,jn)
+        tr(:,:,:,jn, Krhs) = ( tr(:,:,:,jn, Kbb) - qtrbbio(:,:,:,jn) ) * qfactr
+        tr(:,:,:,jn, Kbb) = qtrbbio(:,:,:,jn)
         qtrbbio(:,:,:,jn) = 0._wp
       END DO
       !
@@ -260,7 +261,7 @@ CONTAINS
       IF( l_trdtrc ) THEN
           ALLOCATE( ztrmyt(jpi,jpj,jpk) )
           DO jn = 1, jp_tot
-            ztrmyt(:,:,:) = tra(:,:,:,jn)
+            ztrmyt(:,:,:) = tr(:,:,:,jn, Krhs)
             CALL trd_trc( ztrmyt, jn, jptra_sms, kt )   ! save trends
           END DO
           DEALLOCATE( ztrmyt )

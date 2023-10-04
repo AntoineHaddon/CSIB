@@ -65,7 +65,7 @@ CONTAINS
    !! Remineralization into nitrate
    !!----------------------------------------------------------------------
    !
-   SUBROUTINE cmoc_rem( kt, jnt )
+   SUBROUTINE cmoc_rem( kt, jnt, Kbb, Kmm, Krhs )
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE p4z_rem  ***
       !!
@@ -78,6 +78,7 @@ CONTAINS
       USE lib_mpp, ONLY   : ctl_stop
       ! O Riche Feb 8th 2023
       INTEGER, INTENT(in) ::   kt, jnt ! ocean time step
+      INTEGER, INTENT(in) ::   Kbb, Kmm, Krhs  ! time level indices
       !!---------------------------------------------------------------------
       INTEGER  :: ji, jj, jk                                      ! loop indices 
       REAL(wp) :: zcompaph , ztortp , zrespp , zmortp , zfactch
@@ -116,7 +117,7 @@ CONTAINS
                &                 * exp ( -ed_cmoc * 1e3_wp / 8.31_wp *         &
                &                 ( 1._wp / ( tsn(ji,jj,jk,jp_tem) + 273.15_wp  &
                &                 + rtrn ) - 1._wp / ( tvm_cmoc + 273.15_wp )   &
-               &                 )      ) * trb(ji,jj,jk,jqpoc) * tmask_bgc_closea(ji,jj,jk)
+               &                 )      ) * tr(ji,jj,jk,jqpoc, Kbb) * tmask_bgc_closea(ji,jj,jk)
                rnresult(ji,jj,jk) = redet(ji,jj,jk)
             END DO
          END DO 
@@ -126,12 +127,12 @@ CONTAINS
       !     Update the arrays TRA which contain the biological sources and sinks
       !     --------------------------------------------------------------------
       DO jk = 1, jpkm1
-         tra(:,:,jk,jqpoc) = tra(:,:,jk,jqpoc) - redet(:,:,jk) 
-         tra(:,:,jk,jqno3) = tra(:,:,jk,jqno3) + redet(:,:,jk) 
-         tra(:,:,jk,jqoxy) = tra(:,:,jk,jqoxy) - redet(:,:,jk) 
-         tra(:,:,jk,jqdic) = tra(:,:,jk,jqdic) + redet(:,:,jk) 
-         tra(:,:,jk,jqtal) = tra(:,:,jk,jqtal) - redet(:,:,jk) * ncrr_cmoc
-         ! tra(:,:,jk,jqdnt) = tra(:,:,jk,jqdnt) + redet(:,:,jk) 
+         tr(:,:,jk,jqpoc, Krhs) = tr(:,:,jk,jqpoc, Krhs) - redet(:,:,jk) 
+         tr(:,:,jk,jqno3, Krhs) = tr(:,:,jk,jqno3, Krhs) + redet(:,:,jk) 
+         tr(:,:,jk,jqoxy, Krhs) = tr(:,:,jk,jqoxy, Krhs) - redet(:,:,jk) 
+         tr(:,:,jk,jqdic, Krhs) = tr(:,:,jk,jqdic, Krhs) + redet(:,:,jk) 
+         tr(:,:,jk,jqtal, Krhs) = tr(:,:,jk,jqtal, Krhs) - redet(:,:,jk) * ncrr_cmoc
+         ! tr(:,:,jk,jqdnt, Krhs) = tr(:,:,jk,jqdnt, Krhs) + redet(:,:,jk) 
       END DO
 
       ! O Riche Feb 8th 2023      
@@ -147,7 +148,7 @@ CONTAINS
       IF(ln_ctl)   THEN
        WRITE(charout, FMT="('rem')")
        CALL prt_ctl_trc_info(charout)
-       CALL prt_ctl_trc(tab4d=tra, mask=tmask_bgc_closea, clinfo=ctrcnm)
+       CALL prt_ctl_trc(tab4d=tr(:,:,:,:,Krhs), mask=tmask_bgc_closea, clinfo=ctrcnm)
       ENDIF
       !
       ! O Riche Feb 8th 2023
@@ -260,7 +261,7 @@ CONTAINS
    !! Zooplankton grazing
    !!----------------------------------------------------------------------
    !
-  SUBROUTINE cmoc_zoo( kt, jnt )
+  SUBROUTINE cmoc_zoo( kt, jnt, Kbb, Kmm, Krhs )
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE p4z_micro  ***
       !!
@@ -269,6 +270,7 @@ CONTAINS
       !! ** Method  : - forward time integration (Euler or Leapfrog)
       !!---------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt, jnt
+      INTEGER, INTENT(in) ::   Kbb, Kmm, Krhs  ! time level indices
       !!---------------------------------------------------------------------
       INTEGER  :: ji, jj, jk
       REAL(wp) :: zcompaph
@@ -307,49 +309,49 @@ CONTAINS
             DO ji = 1, jpi
 
                ! Conserve the PISCES code principle of a minimum phytoplankton biomass
-               zcompaph  = MAX( ( trb(ji,jj,jk,jqphy) - xthreshphy ), 0.e0 )
+               zcompaph  = MAX( ( tr(ji,jj,jk,jqphy, Kbb) - xthreshphy ), 0.e0 )
                !
                ! Convert kp_cmoc from uM N (mmol N m^-3) to mol C L^-1 with 1e-6_wp * cnrr_cmoc
                ! lambda formula in Zahariev et al 2008
                ! grazing tendency
-               zgrazpcmoc = xstepb  * rm_cmoc * zcompaph  * trb(ji,jj,jk,jqphy)  /       &
+               zgrazpcmoc = xstepb  * rm_cmoc * zcompaph  * tr(ji,jj,jk,jqphy, Kbb)  /       &
                &            ( kp_cmoc * 1e-6_wp * cnrr_cmoc * kp_cmoc * 1e-6_wp *        &
-               &             cnrr_cmoc + trb(ji,jj,jk,jqphy)                             &
-               &            * trb(ji,jj,jk,jqphy) + rtrn ) * trb(ji,jj,jk,jqzoo)
+               &             cnrr_cmoc + tr(ji,jj,jk,jqphy, Kbb)                             &
+               &            * tr(ji,jj,jk,jqphy, Kbb) + rtrn ) * tr(ji,jj,jk,jqzoo, Kbb)
                ! POC tendency due to detritus fraction of grazed phytoplankton
                zgrapoc   = ( 1._wp - ga_cmoc ) * zgrazpcmoc
 
                ! zooplankton tendencies
-               tra(ji,jj,jk,jqzoo) = tra(ji,jj,jk,jqzoo) & 
+               tr(ji,jj,jk,jqzoo, Krhs) = tr(ji,jj,jk,jqzoo, Krhs) & 
                ! grazing
                &                     +  ga_cmoc * zgrazpcmoc &
                ! linear mortality and loss to POC
-               &                     - ( mzn_cmoc + mzd_cmoc ) * xstepb * trb(ji,jj,jk,jqzoo) &
+               &                     - ( mzn_cmoc + mzd_cmoc ) * xstepb * tr(ji,jj,jk,jqzoo, Kbb) &
                ! quadratic mortality ( convert mz2_cmoc from (molN m^-3)^-1 to (molC L^-1)^-1 )
                &                     - mz2_cmoc * ncrr_cmoc * 1e3_wp                          &
-               &                      * xstepb * trb(ji,jj,jk,jqzoo) * trb(ji,jj,jk,jqzoo)
+               &                      * xstepb * tr(ji,jj,jk,jqzoo, Kbb) * tr(ji,jj,jk,jqzoo, Kbb)
 
                ! contribution to phytoplankton and POC 
-               tra(ji,jj,jk,jqphy) = tra(ji,jj,jk,jqphy) - zgrazpcmoc
-               tra(ji,jj,jk,jqnch) = tra(ji,jj,jk,jqnch) - zgrazpcmoc * trb(ji,jj,jk,jqnch)/(trb(ji,jj,jk,jqphy)+rtrn)
-               tra(ji,jj,jk,jqpoc) = tra(ji,jj,jk,jqpoc) + zgrapoc
+               tr(ji,jj,jk,jqphy, Krhs) = tr(ji,jj,jk,jqphy, Krhs) - zgrazpcmoc
+               tr(ji,jj,jk,jqnch, Krhs) = tr(ji,jj,jk,jqnch, Krhs) - zgrazpcmoc * tr(ji,jj,jk,jqnch, Kbb)/(tr(ji,jj,jk,jqphy, Kbb)+rtrn)
+               tr(ji,jj,jk,jqpoc, Krhs) = tr(ji,jj,jk,jqpoc, Krhs) + zgrapoc
 
                ! mortality contribution to nutrients, carbon and oxygen cycle
-               tra(ji,jj,jk,jqno3) = tra(ji,jj,jk,jqno3) + mzn_cmoc * xstepb * trb(ji,jj,jk,jqzoo)
-               tra(ji,jj,jk,jqoxy) = tra(ji,jj,jk,jqoxy) - mzn_cmoc * xstepb * trb(ji,jj,jk,jqzoo)
-               tra(ji,jj,jk,jqdic) = tra(ji,jj,jk,jqdic) + mzn_cmoc * xstepb * trb(ji,jj,jk,jqzoo)
-               tra(ji,jj,jk,jqtal) = tra(ji,jj,jk,jqtal) - mzn_cmoc * xstepb * trb(ji,jj,jk,jqzoo) * ncrr_cmoc               
-               tra(ji,jj,jk,jqpoc) = tra(ji,jj,jk,jqpoc) + mzd_cmoc * xstepb * trb(ji,jj,jk,jqzoo) &
-               &                    + ncrr_cmoc * 1e3_wp * mz2_cmoc * xstepb * trb(ji,jj,jk,jqzoo) * trb(ji,jj,jk,jqzoo)
+               tr(ji,jj,jk,jqno3, Krhs) = tr(ji,jj,jk,jqno3, Krhs) + mzn_cmoc * xstepb * tr(ji,jj,jk,jqzoo, Kbb)
+               tr(ji,jj,jk,jqoxy, Krhs) = tr(ji,jj,jk,jqoxy, Krhs) - mzn_cmoc * xstepb * tr(ji,jj,jk,jqzoo, Kbb)
+               tr(ji,jj,jk,jqdic, Krhs) = tr(ji,jj,jk,jqdic, Krhs) + mzn_cmoc * xstepb * tr(ji,jj,jk,jqzoo, Kbb)
+               tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) - mzn_cmoc * xstepb * tr(ji,jj,jk,jqzoo, Kbb) * ncrr_cmoc               
+               tr(ji,jj,jk,jqpoc, Krhs) = tr(ji,jj,jk,jqpoc, Krhs) + mzd_cmoc * xstepb * tr(ji,jj,jk,jqzoo, Kbb) &
+               &                    + ncrr_cmoc * 1e3_wp * mz2_cmoc * xstepb * tr(ji,jj,jk,jqzoo, Kbb) * tr(ji,jj,jk,jqzoo, Kbb)
                ! O Riche Oct 28th 2022 ! This is not yet implemented.
-               ! tra(ji,jj,jk,jqdnt) = tra(ji,jj,jk,jqdnt) + mzn_cmoc * xstepb * trb(ji,jj,jk,jqzoo)
+               ! tr(ji,jj,jk,jqdnt, Krhs) = tr(ji,jj,jk,jqdnt, Krhs) + mzn_cmoc * xstepb * tr(ji,jj,jk,jqzoo, Kbb)
                !
                ! O Riche Feb9th 2023
                zgrapoc0(ji,jj,jk)    = zgrazpcmoc                                   ! Grazing
                zgrazpcmoc0(ji,jj,jk) = zgrapoc                                      ! Detritus to POC
-               mzn_cmoc0(ji,jj,jk)   = mzn_cmoc  * xstepb * trb(ji,jj,jk,jqzoo)      ! exudation (nitrogen)
-               mzd_cmoc0(ji,jj,jk)   = mzd_cmoc  * xstepb * trb(ji,jj,jk,jqzoo)      ! Linear mortality and below is quadratic mort.
-               mz2_cmoc0(ji,jj,jk)   = ncrr_cmoc * xstepb * 1e3_wp * mz2_cmoc * trb(ji,jj,jk,jqzoo) * trb(ji,jj,jk,jqzoo)
+               mzn_cmoc0(ji,jj,jk)   = mzn_cmoc  * xstepb * tr(ji,jj,jk,jqzoo, Kbb)      ! exudation (nitrogen)
+               mzd_cmoc0(ji,jj,jk)   = mzd_cmoc  * xstepb * tr(ji,jj,jk,jqzoo, Kbb)      ! Linear mortality and below is quadratic mort.
+               mz2_cmoc0(ji,jj,jk)   = ncrr_cmoc * xstepb * 1e3_wp * mz2_cmoc * tr(ji,jj,jk,jqzoo, Kbb) * tr(ji,jj,jk,jqzoo, Kbb)
                ! O Riche Feb9th 2023
                !
             END DO
@@ -376,7 +378,7 @@ CONTAINS
       IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('zoo')")
          CALL prt_ctl_trc_info(charout)
-         CALL prt_ctl_trc(tab4d=tra, mask=tmask_bgc_closea, clinfo=ctrcnm)
+         CALL prt_ctl_trc(tab4d=tr(:,:,:,:,Krhs), mask=tmask_bgc_closea, clinfo=ctrcnm)
       ENDIF
       !
       IF( ln_timing )  CALL timing_stop('cmoc_zoo')
@@ -433,7 +435,7 @@ CONTAINS
    !!----------------------------------------------------------------------
    !
 
-  SUBROUTINE cmoc_mort( kt, jnt )
+  SUBROUTINE cmoc_mort( kt, jnt , Kbb, Kmm, Krhs)
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE p4z_mort  ***
       !!
@@ -446,6 +448,7 @@ CONTAINS
       USE lib_mpp, ONLY   : ctl_stop
       ! O Riche Feb 8th 2023      
       INTEGER, INTENT(in) ::   kt, jnt ! ocean time step
+      INTEGER, INTENT(in) ::   Kbb, Kmm, Krhs  ! time level indices
       !!---------------------------------------------------------------------
       INTEGER  :: ji, jj, jk                                      ! loop indices
       REAL(wp) :: zcompaph , ztortp , zrespp , zmortp , zfactch   ! working variables
@@ -476,11 +479,11 @@ CONTAINS
          DO jj = 1, jpj
             DO ji = 1, jpi
                ! Note: conserve the PISCES practice of minimum phyto biomass (see zcompaph below)
-               zcompaph = MAX( ( trb(ji,jj,jk,jqphy) - 1e-8 ), 0.e0 )
+               zcompaph = MAX( ( tr(ji,jj,jk,jqphy, Kbb) - 1e-8 ), 0.e0 )
                
                ! Quadratic mortality
                ! <CMOC code OR 10/19/2015> 1e.3_wp convert (umol? OR Nov 2022) L^-1 to (mol ? OR Nov 2022) m^-3 ; use xstepb the global constant to convert to d^-1
-               zrespp = mpd2_cmoc * ncrr_cmoc * 1.e3_wp * xstepb * zcompaph * trb(ji,jj,jk,jqphy)
+               zrespp = mpd2_cmoc * ncrr_cmoc * 1.e3_wp * xstepb * zcompaph * tr(ji,jj,jk,jqphy, Kbb)
 
                !  Linear mortality
                ztortp = mpd_cmoc * xstepb * zcompaph
@@ -490,11 +493,11 @@ CONTAINS
 
                !   Update the arrays TRA which contains the biological sources and sinks
                !   Calculate the chlorophyll to phytoplankton ratio
-               zfactch = trb(ji,jj,jk,jqnch)/(trb(ji,jj,jk,jqphy)+rtrn)
+               zfactch = tr(ji,jj,jk,jqnch, Kbb)/(tr(ji,jj,jk,jqphy)+rtrn, Kbb)
 
-               tra(ji,jj,jk,jqphy) = tra(ji,jj,jk,jqphy) - zmortp
-               tra(ji,jj,jk,jqnch) = tra(ji,jj,jk,jqnch) - zmortp * zfactch
-               tra(ji,jj,jk,jqpoc) = tra(ji,jj,jk,jqpoc) + zmortp      
+               tr(ji,jj,jk,jqphy, Krhs) = tr(ji,jj,jk,jqphy, Krhs) - zmortp
+               tr(ji,jj,jk,jqnch, Krhs) = tr(ji,jj,jk,jqnch, Krhs) - zmortp * zfactch
+               tr(ji,jj,jk,jqpoc, Krhs) = tr(ji,jj,jk,jqpoc, Krhs) + zmortp      
       ! O Riche Feb 8th 2023               
                mpresult(ji,jj,jk)  = zmortp
       ! O Riche Feb 8th 2023               
@@ -514,7 +517,7 @@ CONTAINS
       IF(ln_ctl)   THEN
        WRITE(charout, FMT="('mort')")
        CALL prt_ctl_trc_info(charout)
-       CALL prt_ctl_trc(tab4d=tra, mask=tmask_bgc_closea, clinfo=ctrcnm)
+       CALL prt_ctl_trc(tab4d=tr(:,:,:,:,Krhs), mask=tmask_bgc_closea, clinfo=ctrcnm)
       ENDIF
       !
       ! O Riche Feb 8th 2023

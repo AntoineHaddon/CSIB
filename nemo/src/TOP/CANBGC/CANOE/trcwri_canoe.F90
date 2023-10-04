@@ -27,12 +27,13 @@ MODULE trcwri_canoe
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE trc_wri_canoe
+   SUBROUTINE trc_wri_canoe( Kmm )
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE trc_wri_canoe  ***
       !!
       !! ** Purpose :   output passive tracers fields 
       !!---------------------------------------------------------------------
+      INTEGER, INTENT(in)  :: Kmm   ! time level indices
       CHARACTER (len=20)   :: cltra
       INTEGER              :: jn
       REAL(wp)             :: zfact
@@ -45,7 +46,7 @@ CONTAINS
       zfact = 1._wp
       IF ( cltra == 'DIC'      ) zfact = 1.e06_wp
       IF ( cltra == 'Alkalini' ) zfact = 1.e06_wp
-      CALL iom_put( cltra, trn(:,:,:,jn)*zfact ) ! O Riche June 6th 2022, manual scaling here as xml file issue not solved yet
+      CALL iom_put( cltra, tr(:,:,:,jn,Kmm)*zfact ) ! O Riche June 6th 2022, manual scaling here as xml file issue not solved yet
       END DO
       !
       ! Testing trcopt diagnostics

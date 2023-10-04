@@ -91,8 +91,8 @@ CONTAINS
       !
       ! write the tracer concentrations in the file
       ! ---------------------------------------
-      IF( ln_canoe   )   CALL trc_wri_canoe      ! CANOE  
-      IF( ln_cmoc    )   CALL trc_wri_cmoc       ! CMOC   
+      IF( ln_canoe   )   CALL trc_wri_canoe ( Kmm )     ! CANOE  
+      IF( ln_cmoc    )   CALL trc_wri_cmoc  ( Kmm )     ! CMOC   
       IF( ln_pisces  )   CALL trc_wri_pisces( Kmm )     ! PISCES 
       IF( ll_cfc     )   CALL trc_wri_cfc   ( Kmm )     ! surface fluxes of CFC
       IF( ln_c14     )   CALL trc_wri_c14   ( Kmm )     ! surface fluxes of C14

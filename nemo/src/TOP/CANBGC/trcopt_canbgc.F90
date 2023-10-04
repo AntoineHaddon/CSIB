@@ -71,7 +71,7 @@ MODULE trcopt_canbgc
 CONTAINS
 
    ! SUBROUTINE trc_opt( kt )
-   SUBROUTINE trc_opt( kt, knt )
+   SUBROUTINE trc_opt( kt, knt , Kmm)
    ! O Riche Aug 16th 2022
    ! knt is for time splitting, not implemented 
    ! at least for now
@@ -86,6 +86,7 @@ CONTAINS
       !!                based on Morel et al 1981
       !!---------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt, knt   ! ocean time step 
+      INTEGER, INTENT(in) ::    Kmm  ! time level indices
       ! INTEGER, INTENT(in) ::   kt        ! ocean time step 
       ! O Riche Aug 16th 2022
       ! knt is for time splitting in PISCES
@@ -131,7 +132,7 @@ CONTAINS
       ! as a tracer
       ! for now read surface chlorophyll external file and 
       ! apply an e-folding of 30 m.
-      !  zchl3d(:,:,:) = trb(:,:,:,jrnch) + trb(:,:,:,jrdch)
+      !  zchl3d(:,:,:) = tr(:,:,:,jrnch, Kbb) + tr(:,:,:,jrdch, Kbb)
       !  CALL trc_src2d( kt, js2d_chla  )
       ! O Riche Sept 13th 2022
       ! this assumes that chlorophyll can be max 2 sizes
@@ -162,10 +163,10 @@ CONTAINS
         IF( lwp ) CALL FLUSH(numout)         
         IF( iom_use("NCHL") ) THEN
           IF( lwp ) WRITE(numout,*), 'trc_opt: NCHL detected by iom_use S/R.'
-          IF( lwp ) WRITE(numout,*), 'trc_opt: ztotchla assigned current trn(:,:,:,jrnch) values'
+          IF( lwp ) WRITE(numout,*), 'trc_opt: ztotchla assigned current tr(:,:,:,jrnch, Kmm) values'
           IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'          
           IF( lwp ) WRITE(numout,*)
-          ztotchla(:,:,:) = trn(:,:,:,jrnch)        
+          ztotchla(:,:,:) = tr(:,:,:,jrnch, Kmm)        
       ENDIF
       ENDIF
       IF( ln_canoe ) THEN
@@ -176,17 +177,17 @@ CONTAINS
         IF( lwp ) CALL FLUSH(numout)       
         IF( iom_use("NCHL") ) THEN
           IF( lwp ) WRITE(numout,*), 'trc_opt: NCHL detected by iom_use S/R.'
-          IF( lwp ) WRITE(numout,*), 'trc_opt: ztotchla assigned current trn(:,:,:,jrnch) values'
+          IF( lwp ) WRITE(numout,*), 'trc_opt: ztotchla assigned current tr(:,:,:,jrnch, Kmm) values'
           IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'          
           IF( lwp ) WRITE(numout,*)        
-          ztotchla(:,:,:) = trn(:,:,:,jrnch)
+          ztotchla(:,:,:) = tr(:,:,:,jrnch, Kmm)
         ENDIF
         IF( iom_use("DCHL") ) THEN
           IF( lwp ) WRITE(numout,*), 'trc_opt: DCHL detected by iom_use S/R.'
-          IF( lwp ) WRITE(numout,*), 'trc_opt: ztotchla assigned current trn(:,:,:,jrdch) values'
+          IF( lwp ) WRITE(numout,*), 'trc_opt: ztotchla assigned current tr(:,:,:,jrdch, Kmm) values'
           IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'          
           IF( lwp ) WRITE(numout,*)        
-          ztotchla(:,:,:) = ztotchla(:,:,:) + trn(:,:,:,jrdch)
+          ztotchla(:,:,:) = ztotchla(:,:,:) + tr(:,:,:,jrdch, Kmm)
         ENDIF
       ENDIF
       
@@ -328,9 +329,10 @@ CONTAINS
       !
    END SUBROUTINE trc_opt
 
-   SUBROUTINE trc_opt_1band( kt , knt )
+   SUBROUTINE trc_opt_1band( kt , knt, Kmm )
    !
       INTEGER, INTENT(in)  :: kt, knt            ! ocean time step
+      INTEGER, INTENT(in) ::    Kmm  ! time level indices
       INTEGER              :: ierr, ji, jj, jk
       REAL(wp)             :: zchl               ! temporary value of chla
       !
@@ -390,10 +392,10 @@ CONTAINS
         IF( lwp ) CALL FLUSH(numout)      
         IF( iom_use("NCHL") ) THEN
           IF( lwp ) WRITE(numout,*), 'trc_opt_1band: NCHL detected by iom_use S/R.'
-          IF( lwp ) WRITE(numout,*), 'trc_opt_1band: ztotchla assigned current trn(:,:,1,jqnch) values'
+          IF( lwp ) WRITE(numout,*), 'trc_opt_1band: ztotchla assigned current tr(:,:,1,jqnch, Kmm) values'
           IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'          
           IF( lwp ) WRITE(numout,*)
-          ztotchla(:,:) = trn(:,:,1,jqnch)  !!! OR Jan 23rd 2023 ! Only use the surface ztotchla values
+          ztotchla(:,:) = tr(:,:,1,jqnch, Kmm)  !!! OR Jan 23rd 2023 ! Only use the surface ztotchla values
           ! IF( .NOT. ln_rsttr .AND. kt <= nittrc000 + nn_dttrc) THEN
             ! ! OR Jan 20th 2023
             ! ! Temporary changes to test PAR and PP starting off
@@ -413,17 +415,17 @@ CONTAINS
         IF( lwp ) CALL FLUSH(numout)
         IF( iom_use("NCHL") ) THEN
           IF( lwp ) WRITE(numout,*), 'trc_opt_1band: NCHL detected by iom_use S/R.'
-          IF( lwp ) WRITE(numout,*), 'trc_opt_1band: ztotchla assigned current trn(:,:,1,jrnch) values'
+          IF( lwp ) WRITE(numout,*), 'trc_opt_1band: ztotchla assigned current tr(:,:,1,jrnch, Kmm) values'
           IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'          
           IF( lwp ) WRITE(numout,*)
-          ztotchla(:,:) = trn(:,:,1,jrnch)  !!! OR Jan 23rd 2023 ! Only use the surface ztotchla values
+          ztotchla(:,:) = tr(:,:,1,jrnch, Kmm)  !!! OR Jan 23rd 2023 ! Only use the surface ztotchla values
         ENDIF
         IF( iom_use("DCHL") ) THEN
           IF( lwp ) WRITE(numout,*), 'trc_opt_1band: DCHL detected by iom_use S/R.'
-          IF( lwp ) WRITE(numout,*), 'trc_opt_1band: ztotchla added current trn(:,:,1,jrdch) values'
+          IF( lwp ) WRITE(numout,*), 'trc_opt_1band: ztotchla added current tr(:,:,1,jrdch, Kmm) values'
           IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'          
           IF( lwp ) WRITE(numout,*)
-          ztotchla(:,:) = ztotchla(:,:) + trn(:,:,1,jrdch)  !!! OR Jan 23rd 2023 ! Only use the surface ztotchla values   
+          ztotchla(:,:) = ztotchla(:,:) + tr(:,:,1,jrdch, Kmm)  !!! OR Jan 23rd 2023 ! Only use the surface ztotchla values   
         ENDIF
       ENDIF
       !
@@ -433,7 +435,7 @@ CONTAINS
             ! O Riche Aug 17th 2022
             ! chl-a in the file is already in mg Chla m^-3 (ranging between 0.01 and 1)
             ! This is temporary as zchl/1st line should be replaced by
-            ! trn(ji,jj,jk,jqdch) + trn(ji,jj,jk,jqnch) once they are available.
+            ! tr(ji,jj,jk,jqdch, Kmm) + tr(ji,jj,jk,jqnch, Kmm) once they are available.
             ! zchl = src2d_dta(ji,jj,js2d_chla)*exp(-gdept_n(ji,jj,jk)/30._wp)
             ! O Riche Sept 13th 2022
             ! use chla arrays instead of mockup array

@@ -493,10 +493,10 @@ CONTAINS
       
   END SUBROUTINE trc_src_fesed
  
-  SUBROUTINE trc_src_criver( kt, write_rhs_flag )
+  SUBROUTINE trc_src_criver( kt, Krhs, write_rhs_flag )
       ! compute dic and doc sources from rivers
       !                       based on CanESM5/CMOC code.
-      INTEGER, INTENT(in)  :: kt
+      INTEGER, INTENT(in)  :: kt, Krhs
       INTEGER              :: ji, jj
       !
       LOGICAL, OPTIONAL, INTENT(in) :: write_rhs_flag   ! 
@@ -543,18 +543,19 @@ CONTAINS
       ENDIF
       !
       IF( write_rhs_flag0 ) THEN
-        tra(:,:,1,jqno3) = tra(:,:,1,jqno3) + no3river_cmoc(:,:)
-        tra(:,:,1,jqdic) = tra(:,:,1,jqdic) + dicriver_cmoc(:,:)
-        tra(:,:,1,jqtal) = tra(:,:,1,jqtal) + talriver_cmoc(:,:)
+        tr(:,:,1,jqno3, Krhs) = tr(:,:,1,jqno3, Krhs) + no3river_cmoc(:,:)
+        tr(:,:,1,jqdic, Krhs) = tr(:,:,1,jqdic, Krhs) + dicriver_cmoc(:,:)
+        tr(:,:,1,jqtal, Krhs) = tr(:,:,1,jqtal, Krhs) + talriver_cmoc(:,:)
       END IF
       IF( ln_timing )   CALL timing_stop('trc_src_criver')
       !    
   END SUBROUTINE trc_src_criver
 
-  SUBROUTINE trc_bott_cmoc( write_rhs_flag )
+  SUBROUTINE trc_bott_cmoc( Kmm, Krhs, write_rhs_flag )
       ! Fate of POC reaching the ocean floor: complete remineralization
       ! into DIC, DIN and sink of O2 and TALK 
       !
+      INTEGER, INTENT(in) ::    Kmm, Krhs  ! time level indices
       LOGICAL, OPTIONAL, INTENT(in) :: write_rhs_flag   ! 
       LOGICAL                       :: write_rhs_flag0  ! 
       !      
@@ -599,17 +600,17 @@ CONTAINS
             ikt  = mbkt(ji,jj)
             zdep = xstepb / e3t_n(ji,jj,ikt)
             zwsbio32 = zwsbio3(ji,jj,ikt) * zdep
-            dicbott_cmoc(ji,jj) =  trn(ji,jj,ikt,jqpoc) * zwsbio32 
-            talbott_cmoc(ji,jj) = -trn(ji,jj,ikt,jqpoc) * zwsbio32 * ncrr_cmoc
-            no3bott_cmoc(ji,jj) =  trn(ji,jj,ikt,jqpoc) * zwsbio32 
-            oxybott_cmoc(ji,jj) = -trn(ji,jj,ikt,jqpoc) * zwsbio32 
-            pocbott_cmoc(ji,jj) = -trn(ji,jj,ikt,jqpoc) * zwsbio32 
+            dicbott_cmoc(ji,jj) =  tr(ji,jj,ikt,jqpoc, Kmm) * zwsbio32 
+            talbott_cmoc(ji,jj) = -tr(ji,jj,ikt,jqpoc, Kmm) * zwsbio32 * ncrr_cmoc
+            no3bott_cmoc(ji,jj) =  tr(ji,jj,ikt,jqpoc, Kmm) * zwsbio32 
+            oxybott_cmoc(ji,jj) = -tr(ji,jj,ikt,jqpoc, Kmm) * zwsbio32 
+            pocbott_cmoc(ji,jj) = -tr(ji,jj,ikt,jqpoc, Kmm) * zwsbio32 
             IF( write_rhs_flag0 ) THEN
-              tra(ji,jj,ikt,jqdic) = tra(ji,jj,ikt,jqdic) + dicbott_cmoc(ji,jj)
-              tra(ji,jj,ikt,jqtal) = tra(ji,jj,ikt,jqtal) + talbott_cmoc(ji,jj)
-              tra(ji,jj,ikt,jqno3) = tra(ji,jj,ikt,jqno3) + no3bott_cmoc(ji,jj)
-              tra(ji,jj,ikt,jqoxy) = tra(ji,jj,ikt,jqoxy) + oxybott_cmoc(ji,jj)
-              tra(ji,jj,ikt,jqpoc) = tra(ji,jj,ikt,jqpoc) + pocbott_cmoc(ji,jj)
+              tr(ji,jj,ikt,jqdic, Krhs) = tr(ji,jj,ikt,jqdic, Krhs) + dicbott_cmoc(ji,jj)
+              tr(ji,jj,ikt,jqtal, Krhs) = tr(ji,jj,ikt,jqtal, Krhs) + talbott_cmoc(ji,jj)
+              tr(ji,jj,ikt,jqno3, Krhs) = tr(ji,jj,ikt,jqno3, Krhs) + no3bott_cmoc(ji,jj)
+              tr(ji,jj,ikt,jqoxy, Krhs) = tr(ji,jj,ikt,jqoxy, Krhs) + oxybott_cmoc(ji,jj)
+              tr(ji,jj,ikt,jqpoc, Krhs) = tr(ji,jj,ikt,jqpoc, Krhs) + pocbott_cmoc(ji,jj)
             END IF      
             !
          END DO
@@ -622,10 +623,11 @@ CONTAINS
   END SUBROUTINE trc_bott_cmoc
 
 
-  SUBROUTINE trc_n2fx_denit_cmoc( zpar, write_rhs_flag )
+  SUBROUTINE trc_n2fx_denit_cmoc( zpar,Kmm, Krhs, write_rhs_flag )
       ! compute N2 fixation and denitrification
       ! as prescribed in CanESM5/CMOC
       REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(in) :: zpar  ! any PAR array
+      INTEGER, INTENT(in) ::    Kmm  ! time level indices
       !
       LOGICAL, OPTIONAL, INTENT(in) :: write_rhs_flag   ! 
       LOGICAL                       :: write_rhs_flag0  ! 
@@ -661,7 +663,7 @@ CONTAINS
                    zn2fix(ji,jj,jk) = pnf_cmoc * cnrr_cmoc * 1e-12_wp / 3600._wp * qfact2         & ! reference rate
                    !
                    &                 * kn_cmoc * 1e-6_wp / ( kn_cmoc * 1e-6_wp                    &
-                   &                                         + trn(ji,jj,jk,jqno3) + rtrn)        & ! N inhibition
+                   &                                         + tr(ji,jj,jk,jqno3, Kmm) + rtrn)        & ! N inhibition
                    !
                    &                 * zpar(ji,jj,jk) / inf_cmoc                                  & ! ligh sensitivity
                    !
@@ -712,7 +714,7 @@ CONTAINS
       !
       DO jk = 1, jpkm1
         IF( write_rhs_flag0 ) THEN  
-          tra(:,:,jk,jqno3) = tra(:,:,jk,jqno3) +  zJNd(:,:,jk)
+          tr(:,:,jk,jqno3, Krhs) = tr(:,:,jk,jqno3, Krhs) +  zJNd(:,:,jk)
         END IF
       END DO
       !
@@ -720,7 +722,7 @@ CONTAINS
       ! IF(ln_ctl)   THEN
          ! WRITE(charout, FMT="('rem6')")
          ! CALL prt_ctl_trc_info(charout)
-         ! CALL prt_ctl_trc(tab4d=tra, mask=tmask_bgc_closea, clinfo=ctrcnm)
+         ! CALL prt_ctl_trc(tab4d=tr(:,:,:,:, Krhs), mask=tmask_bgc_closea, clinfo=ctrcnm)
       ! ENDIF
       !
       ! IF( lk_iomput ) THEN

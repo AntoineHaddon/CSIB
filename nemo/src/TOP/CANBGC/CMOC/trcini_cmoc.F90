@@ -44,7 +44,7 @@ MODULE trcini_cmoc
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE trc_ini_cmoc
+   SUBROUTINE trc_ini_cmoc( Kmm )
       !!----------------------------------------------------------------------
       !!                     ***  trc_ini_cmoc  ***  
       !!
@@ -53,6 +53,7 @@ CONTAINS
       !! ** Method  : - Read the namcfc namelist and check the parameter values
       !!----------------------------------------------------------------------
       !
+      INTEGER, INTENT(in) ::   Kmm  ! time level indices
       INTEGER  :: jn, jp
       CHARACTER(len = 20)  ::  cltra
       REAL(wp), SAVE ::   sco2   =  2.312e-3_wp
@@ -107,14 +108,14 @@ CONTAINS
       CALL trc_closea_init(read_var_flag=.true.)
       !
       IF( .NOT. ln_rsttr ) THEN
-        trn(:,:,:,jqdic) = sco2  * tmask_bgc_closea(:,:,:)
-        trn(:,:,:,jqtal) = alka0 * tmask_bgc_closea(:,:,:)
-        trn(:,:,:,jqoxy) = oxyg0 * tmask_bgc_closea(:,:,:)
-        trn(:,:,:,jqno3) = no30  * tmask_bgc_closea(:,:,:)
-        trn(:,:,:,jqpoc) = poc0  * tmask_bgc_closea(:,:,:)
-        trn(:,:,:,jqphy) = phy0  * tmask_bgc_closea(:,:,:)
-        trn(:,:,:,jqzoo) = zoo0  * tmask_bgc_closea(:,:,:)
-        trn(:,:,:,jqnch) = nch0  * tmask_bgc_closea(:,:,:)
+        tr(:,:,:,jqdic,Kmm) = sco2  * tmask_bgc_closea(:,:,:)
+        tr(:,:,:,jqtal,Kmm) = alka0 * tmask_bgc_closea(:,:,:)
+        tr(:,:,:,jqoxy,Kmm) = oxyg0 * tmask_bgc_closea(:,:,:)
+        tr(:,:,:,jqno3,Kmm) = no30  * tmask_bgc_closea(:,:,:)
+        tr(:,:,:,jqpoc,Kmm) = poc0  * tmask_bgc_closea(:,:,:)
+        tr(:,:,:,jqphy,Kmm) = phy0  * tmask_bgc_closea(:,:,:)
+        tr(:,:,:,jqzoo,Kmm) = zoo0  * tmask_bgc_closea(:,:,:)
+        tr(:,:,:,jqnch,Kmm) = nch0  * tmask_bgc_closea(:,:,:)
       ENDIF
       !
       CALL cmoc_alloc ! allocate arrays space, see end of this module

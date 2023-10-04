@@ -97,8 +97,8 @@ CONTAINS
       ENDIF
       ! End of CanBGC BGCMs
       !
-      IF( ln_canoe   )   CALL trc_sms_canoe  ( kt )    ! main program of CANOE  
-      IF( ln_cmoc    )   CALL trc_sms_cmoc   ( kt )    ! main program of CMOC   
+      IF( ln_canoe   )   CALL trc_sms_canoe  ( kt, Kbb, Kmm, Krhs )    ! main program of CANOE  
+      IF( ln_cmoc    )   CALL trc_sms_cmoc   ( kt, Kbb, Kmm, Krhs )    ! main program of CMOC   
       IF( ln_pisces  )   CALL trc_sms_pisces ( kt, Kbb, Kmm, Krhs )    ! main program of PISCES 
       IF( ll_cfc     )   CALL trc_sms_cfc    ( kt, Kbb, Kmm, Krhs )    ! surface fluxes of CFC
       IF( ln_c14     )   CALL trc_sms_c14    ( kt, Kbb, Kmm, Krhs )    ! surface fluxes of C14

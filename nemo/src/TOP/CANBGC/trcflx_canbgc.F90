@@ -55,7 +55,7 @@ MODULE trcflx_canbgc
 
 CONTAINS
 
-   SUBROUTINE trc_flx(kt)
+   SUBROUTINE trc_flx(kt, Kmm, Krhs)
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE trc_flx  ***
       !!
@@ -70,6 +70,7 @@ CONTAINS
       !!---------------------------------------------------------------------
       !
       INTEGER, INTENT(in) ::   kt   !
+      INTEGER, INTENT(in) ::   Kmm, Krhs  ! time level indices
       !
       INTEGER  ::   ji, jj, jm
       REAL(wp) ::   ztc, ztc2, ztc3, ztc4, zws, zkgwan
@@ -128,29 +129,29 @@ CONTAINS
 
       DO jj = 1, jpj
          DO ji = 1, jpi
-            !zh2co3(ji,jj) = trn(ji,jj,1,jqdic)*0.01_wp           ! set up fraction (1%) of DIC as a proxy for [H2CO3*]sw and convert in M
-			! 1% seems to be a reasonable fraction based on Zeebe et al textbook Fig. 1.6.27
-			! to represent total dissolved CO2g in seawater?	  
-			! CO2(g) <=> H2CO3 Zeebe Eqs 1.1.1 and H2CO3 in equilibrium with DIC (HCO3 and CO3 2-)
+            !zh2co3(ji,jj) = tr(ji,jj,1,jqdic, Kmm)*0.01_wp           ! set up fraction (1%) of DIC as a proxy for [H2CO3*]sw and convert in M
+            ! 1% seems to be a reasonable fraction based on Zeebe et al textbook Fig. 1.6.27
+            ! to represent total dissolved CO2g in seawater?	  
+            ! CO2(g) <=> H2CO3 Zeebe Eqs 1.1.1 and H2CO3 in equilibrium with DIC (HCO3 and CO3 2-)
             ! Compute CO2 flux for the sea and air
-			! zfld flux is based on Henry's law giving the equilibrium concentration to reach
-			! in seawater and the partial pressure of CO2 g (O2 g in air at sea surface level)
-			! partial pressure in air is converted to seawater concentration in mol L^-1
+            ! zfld flux is based on Henry's law giving the equilibrium concentration to reach
+            ! in seawater and the partial pressure of CO2 g (O2 g in air at sea surface level)
+            ! partial pressure in air is converted to seawater concentration in mol L^-1
 
             zfld = satmco2g(ji,jj) * K0CO2(ji,jj) * tmask_bgc_closea(ji,jj,1) * zkgco2(ji,jj)     ! (mol/L) * (m/s)
             zflu = qh2co3(ji,jj) * tmask_bgc_closea(ji,jj,1) * zkgco2(ji,jj)                        ! (mol/L) * (m/s) 
 
             oce_co2g(ji,jj) = ( zfld - zflu ) * qfact * e1e2t(ji,jj) * tmask_bgc_closea(ji,jj,1) * 1000. ! convert L^-1 to m^-3
             zco2flx(ji,jj)  = ( zfld - zflu ) * tmask_bgc_closea(ji,jj,1)
-            tra(ji,jj,1,jqdic) = tra(ji,jj,1,jqdic) + zco2flx(ji,jj) / e3t_n(ji,jj,1)
-			
+            tr(ji,jj,1,jqdic, Krhs) = tr(ji,jj,1,jqdic, Krhs) + zco2flx(ji,jj) / e3t_n(ji,jj,1)
+   
             ! Compute O2 flux 
             zfld16 = satmo2g(ji,jj) * K0O2(ji,jj) * tmask_bgc_closea(ji,jj,1) * zkgo2(ji,jj)     ! (mol/L) * (m/s)
-            zflu16 = trn(ji,jj,1,jqoxy) * tmask_bgc_closea(ji,jj,1) * zkgo2(ji,jj)                  ! (mol/L) * (m/s)
+            zflu16 = tr(ji,jj,1,jqoxy, Kmm) * tmask_bgc_closea(ji,jj,1) * zkgo2(ji,jj)                  ! (mol/L) * (m/s)
 
             oce_o2g(ji,jj) = ( zfld16 - zflu16 ) * qfact * e1e2t(ji,jj) * tmask_bgc_closea(ji,jj,1) * 1000. ! convert L^-1 to m^-3
             zo2flx(ji,jj)  = ( zfld16 - zflu16 ) * tmask_bgc_closea(ji,jj,1)
-            tra(ji,jj,1,jqoxy) = tra(ji,jj,1,jqoxy) + zo2flx(ji,jj) / e3t_n(ji,jj,1)
+            tr(ji,jj,1,jqoxy, Krhs) = tr(ji,jj,1,jqoxy, Krhs) + zo2flx(ji,jj) / e3t_n(ji,jj,1)
          END DO
       END DO
 
@@ -165,8 +166,8 @@ CONTAINS
       ! partial pressures
       CALL iom_put("DpCO2", ( satmco2g(:,:) - qh2co3(:,:) / ( K0CO2(:,:) + rtrn ) )   * tmask_bgc_closea(:,:,1) )
       CALL iom_put("pCO2" ,                 ( qh2co3(:,:) / ( K0CO2(:,:) + rtrn ) )   * tmask_bgc_closea(:,:,1) )
-      CALL iom_put("DpO2" , ( satmo2g(:,:) - trn(:,:,1,jqoxy) / ( K0O2(:,:) + rtrn ) ) * tmask_bgc_closea(:,:,1) )
-      CALL iom_put("pO2"  ,                ( trn(:,:,1,jqoxy) / ( K0O2(:,:) + rtrn ) ) * tmask_bgc_closea(:,:,1) )
+      CALL iom_put("DpO2" , ( satmo2g(:,:) - tr(:,:,1,jqoxy, Kmm) / ( K0O2(:,:) + rtrn ) ) * tmask_bgc_closea(:,:,1) )
+      CALL iom_put("pO2"  ,                ( tr(:,:,1,jqoxy, Kmm) / ( K0O2(:,:) + rtrn ) ) * tmask_bgc_closea(:,:,1) )
       ! Carbonate system
       ! other fields will be set to 0s by default (compilation setting)
       ! CALL iom_put("CO3",      )

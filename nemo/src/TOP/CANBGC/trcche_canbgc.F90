@@ -231,7 +231,7 @@ MODULE trcche_canbgc
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE trc_che_2D( kt )
+   SUBROUTINE trc_che_2D( kt, Kmm )
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE trc_che_2D  ***
       !!
@@ -239,6 +239,7 @@ CONTAINS
       !!
       !!---------------------------------------------------------------------
       INTEGER, INTENT( in ) ::   kt      ! ocean time-step index
+      INTEGER, INTENT(in) ::   Kmm  ! time level indices
       INTEGER  ::   ji, jj, jk, jm
       REAL(wp) ::   ztkel, zt, zt2, zsal, zsal2
       REAL(wp) ::   ztgg, ztgg2, ztgg3, ztgg4, ztgg5
@@ -308,10 +309,10 @@ CONTAINS
                ztmas1 = 1. - tmask_bgc_closea(ji,jj,1)
                zfact = rhop(ji,jj,1) / 1000. + rtrn
                zbot = qborat2(ji,jj) * ztmas + 0.000416 * ztmas1 
-               zdic = trn(ji,jj,1,jqdic) / zfact * ztmas + 0.002 * ztmas1
-               ztalk = trn(ji,jj,1,jqtal) / zfact * ztmas + 0.0024 * ztmas1
+               zdic = tr(ji,jj,1,jqdic, Kmm) / zfact * ztmas + 0.002 * ztmas1
+               ztalk = tr(ji,jj,1,jqtal, Kmm) / zfact * ztmas + 0.0024 * ztmas1
 
-               zpo4 = trn(ji,jj,1,jqno3) * no3_sf / 16. / zfact                        ! needs to include NH4 for CanOE when available
+               zpo4 = tr(ji,jj,1,jqno3, Kmm) * no3_sf / 16. / zfact                        ! needs to include NH4 for CanOE when available
                zsi = qasi3(ji,jj,1) * 0.000001 / zfact                        ! silica is a static array based on initialization file, not a carried tracer
 
                ! initialize local scalar variables so that calculations are identical in 2D and 3D SRs
@@ -358,7 +359,7 @@ CONTAINS
       !
    END SUBROUTINE trc_che_2D
 
-   SUBROUTINE trc_che_3D( kt )
+   SUBROUTINE trc_che_3D( kt, Kmm )
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE trc_che_3D  ***
       !!
@@ -367,6 +368,7 @@ CONTAINS
       !!---------------------------------------------------------------------
       !
       INTEGER, INTENT( in ) ::   kt      ! ocean time-step index
+      INTEGER, INTENT(in) ::   Kmm  ! time level indices
       INTEGER  ::   ji, jj, jk, jm
       REAL(wp) ::   zph, zah2, zbot, zdic, zcalk, ztalk, zfact
       REAL(wp) ::   zpo4, zsi
@@ -398,9 +400,9 @@ CONTAINS
                   ztmas1 = 1. - tmask_bgc_closea(ji,jj,jk)
                   zfact = rhop(ji,jj,jk) / 1000. + rtrn
                   zbot = qborat3(ji,jj,jk) * ztmas + 0.000416 * ztmas1 
-                  zdic = trn(ji,jj,jk,jqdic) / zfact * ztmas + 0.002 * ztmas1
-                  ztalk = trn(ji,jj,jk,jqtal) / zfact * ztmas + 0.0024 * ztmas1
-                  zpo4 = trn(ji,jj,jk,jqno3) * no3_sf / 16. / zfact               ! needs to include NH4 for CanOE when available
+                  zdic = tr(ji,jj,jk,jqdic, Kmm) / zfact * ztmas + 0.002 * ztmas1
+                  ztalk = tr(ji,jj,jk,jqtal, Kmm) / zfact * ztmas + 0.0024 * ztmas1
+                  zpo4 = tr(ji,jj,jk,jqno3, Kmm) * no3_sf / 16. / zfact               ! needs to include NH4 for CanOE when available
                   zsi = qasi3(ji,jj,jk) * 0.000001 / zfact                        ! silica is a static array based on initialization file, not a carried tracer
 
                ! initialize local scalar variables so that calculations are identical in 2D and 3D SRs

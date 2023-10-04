@@ -211,8 +211,8 @@ CONTAINS
      
       lltrcbc = ( COUNT(ln_trc_sbc) + COUNT(ln_trc_obc) + COUNT(ln_trc_cbc) ) > 0 
       !    
-      IF( ln_canoe       )   CALL trc_ini_canoe      !  CANOE  model
-      IF( ln_cmoc        )   CALL trc_ini_cmoc       !  CMOC   model
+      IF( ln_canoe       )   CALL trc_ini_canoe ( Kmm )     !  CANOE  model
+      IF( ln_cmoc        )   CALL trc_ini_cmoc  ( Kmm )     !  CMOC   model
       IF( ln_pisces      )   CALL trc_ini_pisces( Kmm )     !  PISCES model
       IF( ln_my_trc      )   CALL trc_ini_my_trc( Kmm )     !  MY_TRC model
       IF( ll_cfc         )   CALL trc_ini_cfc   ( Kmm )     !  CFC's

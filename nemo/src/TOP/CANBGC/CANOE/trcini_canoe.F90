@@ -42,7 +42,7 @@ MODULE trcini_canoe
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE trc_ini_canoe
+   SUBROUTINE trc_ini_canoe( Kmm )
       !!----------------------------------------------------------------------
       !!                     ***  trc_ini_canoe  ***  
       !!
@@ -51,6 +51,7 @@ CONTAINS
       !! ** Method  : - Read the namcfc namelist and check the parameter values
       !!----------------------------------------------------------------------
       !
+      INTEGER, INTENT(in) ::   Kmm  ! time level indices
       INTEGER  :: jn, jp
       CHARACTER(len = 20)  ::  cltra
       REAL(wp), SAVE ::   sco2   =  2.312e-3_wp
@@ -110,25 +111,25 @@ CONTAINS
       !
       IF( .NOT. ln_rsttr ) THEN
         !
-        trn(:,:,:,jqdic) = sco2  * tmask_bgc_closea(:,:,:)
-        trn(:,:,:,jqtal) = alka0 * tmask_bgc_closea(:,:,:)
-        trn(:,:,:,jqoxy) = oxyg0 * tmask_bgc_closea(:,:,:)
-        trn(:,:,:,jrcal) = bioma0              * tmask_bgc_closea(:,:,:)  ! calcite particules
-        trn(:,:,:,jrpoc) = bioma0              * tmask_bgc_closea(:,:,:)  !: small sized POC
-        trn(:,:,:,jrphy) = bioma0              * tmask_bgc_closea(:,:,:)  !: small sized phyto C biomass
-        trn(:,:,:,jrnn ) = bioma0 * 12./106.   * tmask_bgc_closea(:,:,:)  ! Nanophytoplankton N concentration 
-        trn(:,:,:,jrnfe) = bioma0 * 5.         * tmask_bgc_closea(:,:,:)  ! Nanophytoplankton Fe concentration 
-        trn(:,:,:,jrnch) = bioma0 * 12./55.    * tmask_bgc_closea(:,:,:)  !: small sized phyto chl-a
-        trn(:,:,:,jrdia) = bioma0              * tmask_bgc_closea(:,:,:)  ! large sized phyto C by
-        trn(:,:,:,jrdn ) = bioma0 * 12./106.   * tmask_bgc_closea(:,:,:)  ! Diatoms N concentration 
-        trn(:,:,:,jrdfe) = bioma0 * 5.         * tmask_bgc_closea(:,:,:)  ! Diatoms Fe concentration 
-        trn(:,:,:,jrdch) = bioma0 * 12./55.    * tmask_bgc_closea(:,:,:)  ! large sized phyto chl-a
-        trn(:,:,:,jrzoo) = bioma0              * tmask_bgc_closea(:,:,:)  !: small sized zoo C biomass
-        trn(:,:,:,jrmes) = bioma0              * tmask_bgc_closea(:,:,:)  ! large sized zoo C biomass
-        trn(:,:,:,jrfer) = 6.e2_wp             * tmask_bgc_closea(:,:,:)  ! Dissolved Iron Concentration
-        trn(:,:,:,jrgoc) = bioma0              * tmask_bgc_closea(:,:,:)  ! large sized POC
-        trn(:,:,:,jqno3) = no30  * tmask_bgc_closea(:,:,:)
-        trn(:,:,:,jrnh4) = bioma0 * 16./106.   * tmask_bgc_closea(:,:,:)  ! Ammonium Concentration        
+        tr(:,:,:,jqdic,Kmm) = sco2  * tmask_bgc_closea(:,:,:)
+        tr(:,:,:,jqtal,Kmm) = alka0 * tmask_bgc_closea(:,:,:)
+        tr(:,:,:,jqoxy,Kmm) = oxyg0 * tmask_bgc_closea(:,:,:)
+        tr(:,:,:,jrcal,Kmm) = bioma0              * tmask_bgc_closea(:,:,:)  ! calcite particules
+        tr(:,:,:,jrpoc,Kmm) = bioma0              * tmask_bgc_closea(:,:,:)  !: small sized POC
+        tr(:,:,:,jrphy,Kmm) = bioma0              * tmask_bgc_closea(:,:,:)  !: small sized phyto C biomass
+        tr(:,:,:,jrnn ,Kmm) = bioma0 * 12./106.   * tmask_bgc_closea(:,:,:)  ! Nanophytoplankton N concentration 
+        tr(:,:,:,jrnfe,Kmm) = bioma0 * 5.         * tmask_bgc_closea(:,:,:)  ! Nanophytoplankton Fe concentration 
+        tr(:,:,:,jrnch,Kmm) = bioma0 * 12./55.    * tmask_bgc_closea(:,:,:)  !: small sized phyto chl-a
+        tr(:,:,:,jrdia,Kmm) = bioma0              * tmask_bgc_closea(:,:,:)  ! large sized phyto C by
+        tr(:,:,:,jrdn ,Kmm) = bioma0 * 12./106.   * tmask_bgc_closea(:,:,:)  ! Diatoms N concentration 
+        tr(:,:,:,jrdfe,Kmm) = bioma0 * 5.         * tmask_bgc_closea(:,:,:)  ! Diatoms Fe concentration 
+        tr(:,:,:,jrdch,Kmm) = bioma0 * 12./55.    * tmask_bgc_closea(:,:,:)  ! large sized phyto chl-a
+        tr(:,:,:,jrzoo,Kmm) = bioma0              * tmask_bgc_closea(:,:,:)  !: small sized zoo C biomass
+        tr(:,:,:,jrmes,Kmm) = bioma0              * tmask_bgc_closea(:,:,:)  ! large sized zoo C biomass
+        tr(:,:,:,jrfer,Kmm) = 6.e2_wp             * tmask_bgc_closea(:,:,:)  ! Dissolved Iron Concentration
+        tr(:,:,:,jrgoc,Kmm) = bioma0              * tmask_bgc_closea(:,:,:)  ! large sized POC
+        tr(:,:,:,jqno3,Kmm) = no30  * tmask_bgc_closea(:,:,:)
+        tr(:,:,:,jrnh4,Kmm) = bioma0 * 16./106.   * tmask_bgc_closea(:,:,:)  ! Ammonium Concentration        
         !
       ENDIF
       !     
