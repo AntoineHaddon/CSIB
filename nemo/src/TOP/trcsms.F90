@@ -66,9 +66,9 @@ CONTAINS
         jp_tot = jp_bgc + jp_cmoc                     ! assume CMOC has benen activated
         IF( ln_canoe )  jp_tot = jp_bgc + jp_canoe    ! if assumption above is wrong
         !
-        qfact = r2dttrc
+        qfact = rDt_trc
         !
-        IF( ( ln_top_euler .AND. kt == nittrc000 )  .OR. ( .NOT.ln_top_euler .AND. kt <= nittrc000 + nn_dttrc ) ) THEN
+        IF( ( ln_top_euler .AND. kt == nittrc000 )  .OR. ( .NOT.ln_top_euler .AND. kt <= nittrc000 + 1 ) ) THEN
           qfactr  = 1. / qfact
           qfact2  = qfact / REAL( qnrdttrc, wp )  ! time split of BGC time step if qnrdttrc is greater than 1.
           qfact2r = 1. / qfact2
@@ -85,11 +85,11 @@ CONTAINS
           IF(lwp) WRITE(numout,*)
         ENDIF
         ! O Riche Oct 24th 2022 - adding trb/trn swap as appearing in p4zsms.F90 / PISCES BGC
-        ! according to comment in p4zsms.F90 this is for restart mode (neuler == 0 which means
+        ! according to comment in p4zsms.F90 this is for restart mode (l_1st_euler) which means
         ! restarts from with Euler forward otherwise leapfrog) and see namelist for OCE component.
-        ! ln_top_euler is for TOP, and is like the condition neuler == 0 for the 1st time step
+        ! ln_top_euler is for TOP, and is like the condition l_1st_euler == 0 for the 1st time step
         ! (but) starting from rest (not from restart).
-        IF( ( neuler == 0 .AND. kt == nittrc000 ) .OR. ln_top_euler ) THEN
+        IF( (l_1st_euler) .OR. ln_top_euler ) THEN
            DO jn = 1, jp_tot               !   SMS on tracer without Asselin time-filter
               tr(:,:,:,jn,Kbb) = tr(:,:,:,jn,Kmm)
            END DO

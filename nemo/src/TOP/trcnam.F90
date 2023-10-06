@@ -98,8 +98,8 @@ CONTAINS
       !!---------------------------------------------------------------------
       INTEGER  ::   ios   ! Local integer
       !!
-      NAMELIST/namtrc_run/ ln_rsttr, nn_rsttr, ln_top_euler, &
-        &                  cn_trcrst_indir, cn_trcrst_outdir, cn_trcrst_in, cn_trcrst_out  &
+      NAMELIST/namtrc_run/ ln_rsttr, nn_rsttr, ln_top_euler,                     &
+        &                  cn_trcrst_indir, cn_trcrst_outdir, cn_trcrst_in, cn_trcrst_out, &
         &                  qnrdttrc
       !!---------------------------------------------------------------------
       !
