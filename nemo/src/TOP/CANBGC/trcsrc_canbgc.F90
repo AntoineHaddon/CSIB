@@ -449,7 +449,7 @@ CONTAINS
       ENDIF
       !     
       CALL iom_open('bathy.orca.nc', inum)
-      CALL iom_get(inum, jpdom_data,'bathy',zcmask(:,:,:), lrowattr=ln_use_jattr)
+      CALL iom_get(inum, jpdom_global,'bathy',zcmask(:,:,:))
       CALL iom_close(inum)
       !
       DO jk = 1, 5

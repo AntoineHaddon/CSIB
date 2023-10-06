@@ -77,7 +77,7 @@ CONTAINS
       CALL iom_open('domain_cfg.nc', inum)
       varid = iom_varid(inum, 'closea_bgc_mask', ldstop = .false.)
       IF( varid > 0 ) THEN  ! the mask exists
-        CALL iom_get(inum, jpdom_data,'closea_bgc_mask',zdata_in(:,:), lrowattr=ln_use_jattr)
+        CALL iom_get(inum, jpdom_global,'closea_bgc_mask',zdata_in(:,:))
         CALL iom_close(inum)
         DO jk = 1, jpk
           tmask_bgc_closea(:,:,jk) = zdata_in(:,:)*tmask(:,:,jk)
