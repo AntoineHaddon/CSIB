@@ -367,11 +367,11 @@ CONTAINS
       !!----------------------------------------------------------------------
       !
       
-      REWIND( numnam_ref )              ! Namelist namzdf_tmx in reference namelist : Tidal Mixing
+      ! Namelist namzdf_tmx in reference namelist : Tidal Mixing
       READ  ( numnam_ref, namzdf_tmx, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 ) CALL ctl_nam ( ios , 'namzdf_tmx in reference namelist'  )
 
-      REWIND( numnam_cfg )              ! Namelist namzdf_tmx in configuration namelist : Tidal Mixing
+      ! Namelist namzdf_tmx in configuration namelist : Tidal Mixing
       READ  ( numnam_cfg, namzdf_tmx, IOSTAT = ios, ERR = 902 )
 902   IF( ios /= 0 ) CALL ctl_nam ( ios , 'namzdf_tmx in configuration namelist' )
       IF(lwm) WRITE ( numond, namzdf_tmx )

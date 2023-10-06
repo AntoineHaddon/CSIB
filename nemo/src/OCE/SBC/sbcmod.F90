@@ -108,7 +108,9 @@ CONTAINS
          &             nn_ice   , ln_ice_embd,                                       &
          &             ln_traqsr, ln_dm2dc ,                                         &
          &             ln_rnf   , nn_fwb     , ln_ssr   , ln_apr_dyn,                &
-         &             ln_wave  , nn_lsm
+         &             ln_wave  , nn_lsm, ln_minsal, rn_minsal,              &
+         &             ln_vertspp, ln_spp_c_grad, rn_spp_rho_c, nn_power, rn_spp_z_max, &
+         &             lk_cancpl, lk_oasis
       !!----------------------------------------------------------------------
       !
       IF(lwp) THEN
@@ -162,6 +164,16 @@ CONTAINS
          WRITE(numout,*) '         Patm gradient added in ocean & ice Eqs.    ln_apr_dyn    = ', ln_apr_dyn
          WRITE(numout,*) '         runoff / runoff mouths                     ln_rnf        = ', ln_rnf
          WRITE(numout,*) '         nb of iterations if land-sea-mask applied  nn_lsm        = ', nn_lsm
+         WRITE(numout,*) '         constrain SSS not dropping below  rn_minsal              = ', ln_minsal
+         WRITE(numout,*) '               min SSS                                            = ', rn_minsal
+         WRITE(numout,*) '         Salt plume parameterization                ln_vertspp    = ', ln_vertspp
+         IF (ln_vertspp) THEN
+            WRITE(numout,*) '               Local (T) or bulk density criterion  ln_spp_c_grad = ', ln_spp_c_grad
+            WRITE(numout,*) '               Shape parameter for vertical         nn_power      = ', nn_power
+            WRITE(numout,*) '               Density criterion for salt plume     rn_spp_rho_c  = ', rn_spp_rho_c
+            WRITE(numout,*) '               Maximum depth of the salt plume      rn_spp_z_max  = ', rn_spp_z_max
+            WRITE(numout,*) '               Minimum depth of the salt plume      rn_spp_z_min  = ', rn_spp_z_min
+         ENDIF
       ENDIF
       !
       IF( .NOT.ln_usr ) THEN     ! the model calendar needs some specificities (except in user defined case)

@@ -646,11 +646,9 @@ CONTAINS
          WRITE(numout,*)
       ENDIF
 
-      REWIND( numnat_ref )
       READ  ( numnat_ref, namtrc_opt, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namtrc_opt in top reference namelist' )
 
-      REWIND( numnat_cfg )
       READ  ( numnat_cfg, namtrc_opt, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namtrc_opt in top configuration namelist' )
       IF(lwm) WRITE ( numonpb, namtrc_opt )

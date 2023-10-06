@@ -145,9 +145,9 @@ CONTAINS
          &            jp_canoe, canoe_tracer, jp_cmoc, cmoc_tracer
       !!---------------------------------------------------------------------
       ! Dummy settings to fill tracers data structure
-      !                  !   name   !   title   !   unit   !   init  !   sbc   !   cbc   !   obc  !
+      !                  !   name   !   title   !   unit   !   init  !   sbc   !   cbc   !   obc  ! ais !
       jp_bgc = 0
-      sn_tracer = PTRACER( 'NONAME' , 'NOTITLE' , 'NOUNIT' , .false. , .false. , .false. , .false.)
+      sn_tracer = PTRACER( 'NONAME' , 'NOTITLE' , 'NOUNIT' , .false. , .false. , .false. , .false. , .false. )
       sn_dia    = DIAG('NONAME','NOTITLE','NOUNIT')
       canoe_tracer= PTRACER( 'NONAME' , 'NOTITLE' , 'NOUNIT' , .false. , .false. , .false. , .false.)
       cmoc_tracer = PTRACER( 'NONAME' , 'NOTITLE' , 'NOUNIT' , .false. , .false. , .false. , .false.)
