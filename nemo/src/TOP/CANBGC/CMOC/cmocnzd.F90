@@ -29,7 +29,7 @@ MODULE cmocnzd
 
    USE trc_closea_canbgc  !  tmask_bgc_closea
 
-   USE prtctl_trc      !  print control for debugging
+   USE prtctl      !  print control for debugging
    USE iom             !  I/O manager
 
    ! timing modules
@@ -146,10 +146,10 @@ CONTAINS
       ! O Riche Feb 8th 2023      
       !
       ! print mean trends (used for debugging)
-      IF(ln_ctl)   THEN
+      IF( sn_cfctl%l_prttrc )   THEN
        WRITE(charout, FMT="('rem')")
-       CALL prt_ctl_trc_info(charout)
-       CALL prt_ctl_trc(tab4d=tr(:,:,:,:,Krhs), mask=tmask_bgc_closea, clinfo=ctrcnm)
+       CALL prt_ctl_info(charout)
+       CALL prt_ctl(tab4d_1=tr(:,:,:,:,Krhs), mask1=tmask_bgc_closea, clinfo=ctrcnm)
       ENDIF
       !
       ! O Riche Feb 8th 2023
@@ -377,10 +377,10 @@ CONTAINS
       DEALLOCATE( mzn_cmoc0, mzd_cmoc0  , mz2_cmoc0 )
       ! O Riche Feb9th 2023
       !
-      IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
+      IF( sn_cfctl%l_prttrc )   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('zoo')")
-         CALL prt_ctl_trc_info(charout)
-         CALL prt_ctl_trc(tab4d=tr(:,:,:,:,Krhs), mask=tmask_bgc_closea, clinfo=ctrcnm)
+         CALL prt_ctl_info(charout)
+         CALL prt_ctl(tab4d_1=tr(:,:,:,:,Krhs), mask1=tmask_bgc_closea, clinfo=ctrcnm)
       ENDIF
       !
       IF( ln_timing )  CALL timing_stop('cmoc_zoo')
@@ -516,10 +516,10 @@ CONTAINS
       ! O Riche Feb 8th 2023      
       !
       ! print mean trends (used for debugging)
-      IF(ln_ctl)   THEN
+      IF( sn_cfctl%l_prttrc )   THEN
        WRITE(charout, FMT="('mort')")
-       CALL prt_ctl_trc_info(charout)
-       CALL prt_ctl_trc(tab4d=tr(:,:,:,:,Krhs), mask=tmask_bgc_closea, clinfo=ctrcnm)
+       CALL prt_ctl_info(charout)
+       CALL prt_ctl(tab4d_1=tr(:,:,:,:,Krhs), mask1=tmask_bgc_closea, clinfo=ctrcnm)
       ENDIF
       !
       ! O Riche Feb 8th 2023

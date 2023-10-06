@@ -192,7 +192,7 @@ CONTAINS
       !                             !* output tidal mixing coefficient
       CALL iom_put( "av_tmx", zav_tide )
 
-      IF(ln_ctl)   CALL prt_ctl(tab3d_1=zav_tide , clinfo1=' tmx - av_tide: ', tab3d_2=p_avt, clinfo2=' p_avt: ', kdim=jpk)
+      IF(sn_cfctl%l_prtctl)   CALL prt_ctl(tab3d_1=zav_tide , clinfo1=' tmx - av_tide: ', tab3d_2=p_avt, clinfo2=' p_avt: ', kdim=jpk)
       !
    END SUBROUTINE zdf_tmx
 

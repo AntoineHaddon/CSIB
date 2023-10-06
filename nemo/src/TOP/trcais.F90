@@ -259,8 +259,8 @@ CONTAINS
       ! for debugging
 !      IF( sn_cfctl%l_prttrc ) THEN ! print mean trends (used for debugging)
 !         WRITE(charout, FMT="('ais ')")
-!         CALL prt_ctl_trc_info(charout)
-!         CALL prt_ctl_trc( tab4d=ptr(:,:,:,:,Krhs), mask=tmask, clinfo=ctrcnm, clinfo2='trd' )
+!         CALL prt_ctl_info(charout)
+!         CALL prt_ctl( tab4d_1=ptr(:,:,:,:,Krhs), mask1=tmask, clinfo=ctrcnm, clinfo2='trd' )
 !      ENDIF
       !
    END SUBROUTINE trc_ais

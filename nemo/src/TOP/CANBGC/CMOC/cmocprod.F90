@@ -29,7 +29,7 @@ MODULE cmocprod
    ! access par_1band array and requires trcsms_cmoc to call trc_opt_1band
    ! to update par_1band every time step
    
-   USE prtctl_trc      !  print control for debugging
+   USE prtctl      !  print control for debugging
    USE iom             !  I/O manager
 
    ! timing modules
@@ -239,10 +239,10 @@ CONTAINS
        ENDIF
       ENDIF
       
-      IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
+      IF( sn_cfctl%l_prttrc )   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('prod')")
-         CALL prt_ctl_trc_info(charout)
-         CALL prt_ctl_trc(tab4d=tr(:,:,:,:, Krhs), mask=tmask_bgc_closea, clinfo=ctrcnm)
+         CALL prt_ctl_info(charout)
+         CALL prt_ctl(tab4d_1=tr(:,:,:,:, Krhs), mask1=tmask_bgc_closea, clinfo=ctrcnm)
       ENDIF
       !
       DEALLOCATE( zpislopead, zprbio, zprnch )

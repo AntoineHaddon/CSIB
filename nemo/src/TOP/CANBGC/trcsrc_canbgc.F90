@@ -13,7 +13,7 @@ MODULE trcsrc_canbgc
    USE iom             !  I/O manager
    USE fldread         !  time interpolation
 
-   USE prtctl_trc      !  print control for debugging
+   USE prtctl      !  print control for debugging
    USE in_out_manager  ! I/O manager
    USE dom_oce         ! ocean space and time domain 
    USE timing          ! Timing
@@ -721,10 +721,10 @@ CONTAINS
       END DO
       !
       ! ! print mean trends (used for debugging)
-      ! IF(ln_ctl)   THEN
+      ! IF( sn_cfctl%l_prttrc )   THEN
          ! WRITE(charout, FMT="('rem6')")
-         ! CALL prt_ctl_trc_info(charout)
-         ! CALL prt_ctl_trc(tab4d=tr(:,:,:,:, Krhs), mask=tmask_bgc_closea, clinfo=ctrcnm)
+         ! CALL prt_ctl_info(charout)
+         ! CALL prt_ctl(tab4d_1=tr(:,:,:,:, Krhs), mask1=tmask_bgc_closea, clinfo=ctrcnm)
       ! ENDIF
       !
       ! IF( lk_iomput ) THEN

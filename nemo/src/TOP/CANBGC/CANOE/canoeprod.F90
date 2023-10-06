@@ -31,7 +31,7 @@ MODULE canoeprod
    ! access par_1band array and requires trcsms_cmoc to call trc_opt_1band
    ! to update par_1band every time step
    
-   USE prtctl_trc      !  print control for debugging
+   USE prtctl          !  print control for debugging
    USE lib_mpp         !  ctl_stop on failed mem allocate check
    USE lib_fortran     !  access glob_sum function
    USE iom             !  I/O manager
@@ -318,10 +318,10 @@ CONTAINS
      ENDIF
      !
 
-     IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
+     IF( sn_cfctl%l_prttrc )   THEN  ! print mean trends (used for debugging)
         WRITE(charout, FMT="('prod')")
-        CALL prt_ctl_trc_info(charout)
-        CALL prt_ctl_trc(tab4d=tr(:,:,:,:, Krhs), mask=tmask, clinfo=ctrcnm)
+        CALL prt_ctl_info(charout)
+        CALL prt_ctl(tab4d_1=tr(:,:,:,:, Krhs), mask1=tmask, clinfo=ctrcnm)
      ENDIF
      !
      DEALLOCATE( zprdia,  zprbio,   zprdch,  zprnch,  zysopt            ) 

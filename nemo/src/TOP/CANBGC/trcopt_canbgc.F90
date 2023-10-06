@@ -18,7 +18,7 @@ MODULE trcopt_canbgc
 
    USE iom            ! I/O manager
    USE fldread        !  time interpolation
-   USE prtctl_trc     !  print control for debugging
+   USE prtctl     !  print control for debugging
 
    ! read external file
    USE sms_top_canbgc

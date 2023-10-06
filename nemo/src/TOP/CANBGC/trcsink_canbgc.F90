@@ -17,7 +17,7 @@ MODULE trcsink_canbgc
    USE oce_trc         !  shared variables between ocean and passive tracers
    USE trc             !  passive tracers common variables 
    
-   USE prtctl_trc      !  print control for debugging
+   USE prtctl      !  print control for debugging
    USE iom             !  I/O manager
    USE lib_fortran     ! Fortran utilities (allows no signed zero when 'key_nosignedzero' defined)
 
@@ -346,10 +346,10 @@ CONTAINS
        ENDIF
       ENDIF
       !
-      IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
+      IF( sn_cfctl%l_prttrc )   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('cmocsink')")
-         CALL prt_ctl_trc_info(charout)
-         CALL prt_ctl_trc(tab4d=tr(:,:,:,:, Krhs), mask=tmask_bgc_closea, clinfo=ctrcnm)
+         CALL prt_ctl_info(charout)
+         CALL prt_ctl(tab4d_1=tr(:,:,:,:, Krhs), mask1=tmask_bgc_closea, clinfo=ctrcnm)
       ENDIF
       !
       !
@@ -470,10 +470,10 @@ CONTAINS
       ! ENDIF
       !
       !
-      IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
+      IF( sn_cfctl%l_prttrc )   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('sink')")
-         CALL prt_ctl_trc_info(charout)
-         CALL prt_ctl_trc(tab4d=tr(:,:,:,:, Krhs), mask=tmask, clinfo=ctrcnm)
+         CALL prt_ctl_info(charout)
+         CALL prt_ctl(tab4d_1=tr(:,:,:,:, Krhs), mask1=tmask, clinfo=ctrcnm)
       ENDIF
       !
       IF( ln_timing )  CALL timing_stop('canoe_sink')
