@@ -167,7 +167,7 @@ CONTAINS
                END DO
             END DO
          END DO
-         ztpc= rau0 / ( rn_tfe * rn_me ) * ztpc
+         ztpc= rho0 / ( rn_tfe * rn_me ) * ztpc
          IF(lwp) WRITE(numout,*) 
          IF(lwp) WRITE(numout,*) '          N Total power consumption by av_tide    : ztpc = ', ztpc * 1.e-12 ,'TW'
       ENDIF
@@ -273,7 +273,7 @@ CONTAINS
        END DO
 
       !                             ! first estimation bounded by 10 cm2/s (with n2 bounded by rn_n2min) 
-      zcoef = rn_tfe_itf / ( rn_tfe * rau0 )
+      zcoef = rn_tfe_itf / ( rn_tfe * rho0 )
       DO jk = 1, jpk
          zavt_itf(:,:,jk) = MIN(  10.e-4, zcoef * en_tmx(:,:) * zsum(:,:) * zempba_3d(:,:,jk)   &
             &                                      / MAX( rn_n2min, rn2(:,:,jk) ) * tmask(:,:,jk)  )
@@ -304,7 +304,7 @@ CONTAINS
                END DO
             END DO
          END DO
-         ztpc= rau0 * ztpc / ( rn_me * rn_tfe_itf )
+         ztpc= rho0 * ztpc / ( rn_me * rn_tfe_itf )
          IF(lwp) WRITE(numout,*) '          N Total power consumption by zavt_itf: ztpc = ', ztpc * 1.e-12 ,'TW'
       ENDIF
 
@@ -338,7 +338,7 @@ CONTAINS
       !!             the standard tidal-induced vertical mixing as follows:
       !!                  Kz_tides = az_tmx / max( rn_n2min, N^2 )
       !!             with az_tmx a bottom intensified coefficient is given by:
-      !!                 az_tmx(z) = en_tmx / ( rau0 * rn_htmx ) * EXP( -(H-z)/rn_htmx )
+      !!                 az_tmx(z) = en_tmx / ( rho0 * rn_htmx ) * EXP( -(H-z)/rn_htmx )
       !!                                                  / ( 1. - EXP( - H   /rn_htmx ) ) 
       !!             where rn_htmx the characteristic length scale of the bottom 
       !!             intensification, en_tmx the tidal energy, and H the ocean depth
@@ -433,7 +433,7 @@ CONTAINS
       DO jj = 1, jpj                ! part independent of the level
          DO ji = 1, jpi
             zhdep(ji,jj) = gdepw_0(ji,jj,mbkt(ji,jj)+1)       ! depth of the ocean
-            zfact(ji,jj) = rau0 * rn_htmx * ( 1. - EXP( -zhdep(ji,jj) / rn_htmx ) )
+            zfact(ji,jj) = rho0 * rn_htmx * ( 1. - EXP( -zhdep(ji,jj) / rn_htmx ) )
             IF( zfact(ji,jj) /= 0 )   zfact(ji,jj) = en_tmx(ji,jj) / zfact(ji,jj)
          END DO
       END DO
@@ -446,10 +446,10 @@ CONTAINS
       END DO
 !===========
 
-      IF( nprint == 1 .AND. lwp ) THEN
+      IF( lwp ) THEN
          ! Control print
          ! Total power consumption due to vertical mixing
-         ! zpc = rau0 * 1/rn_me * rn2 * zav_tide
+         ! zpc = rho0 * 1/rn_me * rn2 * zav_tide
          zav_tide(:,:,:) = 0.e0
          DO jk = 2, jpkm1
             zav_tide(:,:,jk) = az_tmx(:,:,jk) / MAX( rn_n2min, rn2(:,:,jk) )
@@ -464,7 +464,7 @@ CONTAINS
                END DO
             END DO
          END DO
-         ztpc= rau0 * 1/(rn_tfe * rn_me) * ztpc
+         ztpc= rho0 * 1/(rn_tfe * rn_me) * ztpc
 
          WRITE(numout,*) 
          WRITE(numout,*) '          Total power consumption of the tidally driven part of Kz : ztpc = ', ztpc * 1.e-12 ,'TW'
@@ -476,7 +476,7 @@ CONTAINS
          DO jk = 2, jpkm1
             DO jj = 1, jpj
                DO ji = 1, jpi
-                  zkz(ji,jj) = zkz(ji,jj) + e3w_0(ji,jj,jk) * MAX(0.e0, rn2(ji,jj,jk)) * rau0 * zav_tide(ji,jj,jk) * wmask(ji,jj,jk)
+                  zkz(ji,jj) = zkz(ji,jj) + e3w_0(ji,jj,jk) * MAX(0.e0, rn2(ji,jj,jk)) * rho0 * zav_tide(ji,jj,jk) * wmask(ji,jj,jk)
                END DO
             END DO
          END DO
@@ -514,7 +514,7 @@ CONTAINS
                END DO
             END DO
          END DO
-         ztpc= rau0 * 1/(rn_tfe * rn_me) * ztpc
+         ztpc= rho0 * 1/(rn_tfe * rn_me) * ztpc
          WRITE(numout,*) '          2 Total power consumption of the tidally driven part of Kz : ztpc = ', ztpc * 1.e-12 ,'TW'
 
          DO jk = 1, jpk

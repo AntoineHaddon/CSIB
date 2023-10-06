@@ -122,7 +122,7 @@ CONTAINS
       ! Set a minimum bound on the depth of the salt plume
       z_crit_min = MIN(rn_spp_z_min, gdepw(ji,jj,mbkt(ji,jj),Kmm))
 
-      n2_crit = grav*rn_spp_rho_c*r1_rau0
+      n2_crit = grav*rn_spp_rho_c*r1_rho0
       ki_salt_plume = 2
       IF (ln_spp_c_grad) THEN
          DO jk=2,jpk
