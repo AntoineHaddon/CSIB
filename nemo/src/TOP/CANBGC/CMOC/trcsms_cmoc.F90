@@ -127,7 +127,7 @@ CONTAINS
           IF(lwp) write(numout,*) ' New chemical constants and various rates for biogeochemistry at new day : ', nday_year
           IF(lwp) write(numout,*) '~~~~~~'
           !
-          CALL trc_che_2D( kt )   ! computation of carbon chemistry constants
+          CALL trc_che_2D( kt, Kmm )   ! computation of carbon chemistry constants
           ! initialize the chemical constants
           ! JC's 2D carbon chem mode 
           !
@@ -154,7 +154,7 @@ CONTAINS
         IF(lwp) write(numout,*) ' New chemical constants and various rates for biogeochemistry at new day : ', nday_year
         IF(lwp) write(numout,*) '~~~~~~'
 
-        CALL trc_che_2D( kt )   ! computation of carbon chemistry constants
+        CALL trc_che_2D( kt, Kmm )   ! computation of carbon chemistry constants
         ! initialize the chemical constants
         ! JC's 2D carbon chem mode 
         !
@@ -213,7 +213,7 @@ CONTAINS
         ! POC bottom instant. rem
         !! OR Jan 24th 2023 ! CALL trc_bott_cmoc( Kmm, Krhs)
         ! n2 fixation/denitrification
-        !! OR Jan19 23 ! CALL cmoc_rem_denit
+        !! OR Jan19 23 ! CALL cmoc_rem_denit( Kmm )
         !! OR Jan19 23 ! CALL trc_n2fx_denit_cmoc( par_1band ,Kmm, Krhs)
         !
         ! Move here to be consistent with NEMO4 and sidestepping from CanESM5 CMOC NEMO
@@ -229,7 +229,7 @@ CONTAINS
         ! Initialize qnegtr2, if no call to trc_xnegtr tra used w/o correction
         qnegtr2(:,:,:) = 1._wp
         !
-        IF( ln_cmocnegtr )  CALL trc_xnegtr( 1, jp_tot, qnegtr2 )   !!! O Riche Nov 8th 2022 ! reside in sms_top_canbgc.F90
+        IF( ln_cmocnegtr )  CALL trc_xnegtr( 1, jp_tot, Kbb, Kmm, Krhs, qnegtr2 )   !!! O Riche Nov 8th 2022 ! reside in sms_top_canbgc.F90
         DO jn = 1, jp_tot
           tr(:,:,:,jn, Kbb) = tr(:,:,:,jn, Kbb) + qnegtr2(:,:,:) * tr(:,:,:,jn, Krhs)        
           tr(:,:,:,jn, Krhs) = 0._wp
@@ -262,7 +262,7 @@ CONTAINS
           ALLOCATE( ztrmyt(jpi,jpj,jpk) )
           DO jn = 1, jp_tot
             ztrmyt(:,:,:) = tr(:,:,:,jn, Krhs)
-            CALL trd_trc( ztrmyt, jn, jptra_sms, kt )   ! save trends
+            CALL trd_trc( ztrmyt, jn, jptra_sms, kt, Kmm )   ! save trends
           END DO
           DEALLOCATE( ztrmyt )
       END IF

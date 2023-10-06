@@ -58,7 +58,9 @@ MODULE trcsink_canbgc
 
    !!* Substitution
 !#  include "top_substitute.h90"
-#  include "vectopt_loop_substitute.h90"
+!#  include "vectopt_loop_substitute.h90"
+#  include "domzgr_substitute.h90"
+
    !!----------------------------------------------------------------------
    !! NEMO/TOP 3.3 , NEMO Consortium (2010)
    !! $Id: cmocsink.F90 3685 2012-11-27 15:39:02Z cetlod $ 
@@ -71,7 +73,7 @@ CONTAINS
       !!!!!!!!!! CMOC subroutines
       !!----------------------------------------------------------------------
       !
-  SUBROUTINE trc_sink0( pwsink, psinkflx, Kbb, jp_tra )
+  SUBROUTINE trc_sink0( pwsink, psinkflx, Kbb, Kmm, jp_tra )
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE trc_sink0  ***
       !!
@@ -85,7 +87,7 @@ CONTAINS
       !
       INTEGER , INTENT(in   )                         ::   jp_tra    ! tracer index index      
       REAL(wp), INTENT(in   ), DIMENSION(jpi,jpj,jpk) ::   pwsink    ! sinking speed
-      INTEGER, INTENT(in) ::   Kbb  ! time level indices
+      INTEGER, INTENT(in) ::   Kbb, Kmm  ! time level indices
       REAL(wp), INTENT(inout), DIMENSION(jpi,jpj,jpk) ::   psinkflx  ! sinking fluxe
       !!
       INTEGER  ::   ji, jj, jk, jn
@@ -130,7 +132,7 @@ CONTAINS
       DO jk=1,jpkm1
          DO jj = 1,jpj
             DO ji = 1, jpi
-               zflx = ( psinkflx(ji,jj,jk) - psinkflx(ji,jj,jk+1) ) / e3t_n(ji,jj,jk)
+               zflx = ( psinkflx(ji,jj,jk) - psinkflx(ji,jj,jk+1) ) / e3t(ji,jj,jk,Kmm)
                ztrb(ji,jj,jk) = ztrb(ji,jj,jk) + zflx
             END DO
          END DO
@@ -197,9 +199,9 @@ CONTAINS
       DO jk = 1,jpkm1
          DO jj = 1, jpj
             DO ji = 1, jpi
-               zwsmax = 0.8_wp * e3t_n(ji,jj,jk) / xstepb           
+               zwsmax = 0.8_wp * e3t(ji,jj,jk,Kmm) / xstepb           
                ! 0.8 is a factor (no unit)
-               ! e3t_n the vertical mesh size
+               ! e3t the vertical mesh size
                ! xstepb the size of a day in a time step
                ! zwsmax the fastest speed allowed
                wsbio3(ji,jj,jk) = MIN( wsbio3(ji,jj,jk), zwsmax )
@@ -216,7 +218,7 @@ CONTAINS
       !   Compute the sedimentation term using cmocsink2 for POC
       !   -----------------------------------------------------
       !
-      CALL trc_sink0( wsbio3, sinking, Kbb , jqpoc )
+      CALL trc_sink0( wsbio3, sinking, Kbb, Kmm , jqpoc )
       !
       !     Calcite sinking flux
       !     --------------------------------------------------------------------
@@ -257,7 +259,7 @@ CONTAINS
       DO jk = jk_eud_cmoc_p1, jpk                                                         
          DO jj = 1, jpj
             DO ji = 1,jpi
-               zcalflxexp(ji,jj,jk) = zfpon(ji,jj) * exp(-1.0_wp*(gdepw_n(ji,jj,jk)-gdepw_n(ji,jj,jk_eud_cmoc_p1)) * r_dci_cmoc)      &
+               zcalflxexp(ji,jj,jk) = zfpon(ji,jj) * exp(-1.0_wp*(gdepw(ji,jj,jk,Kmm)-gdepw(ji,jj,jk_eud_cmoc_p1,Kmm)) * r_dci_cmoc)      &
                &                                   * tmask_bgc_closea(ji,jj,jk-1)                ! Mask at jk-1 ensures bottom flux
             ENDDO                                                                                ! is included.
          ENDDO
@@ -283,7 +285,7 @@ CONTAINS
       DO jk =1, jk_eud_cmoc
          DO jj = 1, jpj
             DO ji = 1,jpi
-               zdeup = gdepw_n(ji,jj,jk_eud_cmoc_p1) ! w-grid depth at jk_eud_cmoc_p1 defines bottom
+               zdeup = gdepw(ji,jj,jk_eud_cmoc_p1,Kmm) ! w-grid depth at jk_eud_cmoc_p1 defines bottom
                                                      ! boundary of the mixed layer.                           
                zideup = 1.0_wp / zdeup    
                !
@@ -305,7 +307,7 @@ CONTAINS
       DO jk = jk_eud_cmoc_p1, jpkm1
          DO jj = 1, jpj
             DO ji = 1,jpi
-               zcaldiv =  ( zcalflxexp(ji,jj,jk) - zcalflxexp(ji,jj,jk+1) ) / e3t_n(ji,jj,jk) * tmask_bgc_closea(ji,jj,jk)
+               zcaldiv =  ( zcalflxexp(ji,jj,jk) - zcalflxexp(ji,jj,jk+1) ) / e3t(ji,jj,jk,Kmm) * tmask_bgc_closea(ji,jj,jk)
                !
                tr(ji,jj,jk,jqdic, Krhs) = tr(ji,jj,jk,jqdic, Krhs) +          zcaldiv 
                ! tr(ji,jj,jk,jqdnt) = tr(ji,jj,jk,jqdnt, Krhs) +          zcaldiv 
@@ -321,12 +323,12 @@ CONTAINS
       DO jj = 1, jpj
          DO ji = 1,jpi
             ikt = mbkt(ji,jj)
-            tr(ji,jj,ikt,jqdic, Krhs) = tr(ji,jj,ikt,jqdic, Krhs) - zcalbotflx(ji,jj)          / e3t_n(ji,jj, ikt)
-            tr(ji,jj,1,jqdic, Krhs)   = tr(ji,jj,1,jqdic, Krhs)   + zcalbotflx(ji,jj)          / e3t_n(ji,jj, 1) 
-            ! tr(ji,jj,ikt,jqdnt, Krhs) = tr(ji,jj,ikt,jqdnt, Krhs) - zcalbotflx(ji,jj)          / e3t_n(ji,jj, ikt)
-            ! tr(ji,jj,1,jqdnt, Krhs)   = tr(ji,jj,1,jqdnt, Krhs)   + zcalbotflx(ji,jj)          / e3t_n(ji,jj, 1) 
-            tr(ji,jj,ikt,jqtal, Krhs) = tr(ji,jj,ikt,jqtal, Krhs) - 2.0_wp * zcalbotflx(ji,jj) / e3t_n(ji,jj,ikt)
-            tr(ji,jj,1,jqtal, Krhs)   = tr(ji,jj,1,jqtal, Krhs)   + 2.0_wp * zcalbotflx(ji,jj) / e3t_n(ji,jj, 1) 
+            tr(ji,jj,ikt,jqdic, Krhs) = tr(ji,jj,ikt,jqdic, Krhs) - zcalbotflx(ji,jj)          / e3t(ji,jj, ikt,Kmm)
+            tr(ji,jj,1,jqdic, Krhs)   = tr(ji,jj,1,jqdic, Krhs)   + zcalbotflx(ji,jj)          / e3t(ji,jj, 1,Kmm) 
+            ! tr(ji,jj,ikt,jqdnt, Krhs) = tr(ji,jj,ikt,jqdnt, Krhs) - zcalbotflx(ji,jj)          / e3t(ji,jj, ikt,Kmm)
+            ! tr(ji,jj,1,jqdnt, Krhs)   = tr(ji,jj,1,jqdnt, Krhs)   + zcalbotflx(ji,jj)          / e3t(ji,jj, 1,Kmm) 
+            tr(ji,jj,ikt,jqtal, Krhs) = tr(ji,jj,ikt,jqtal, Krhs) - 2.0_wp * zcalbotflx(ji,jj) / e3t(ji,jj,ikt,Kmm)
+            tr(ji,jj,1,jqtal, Krhs)   = tr(ji,jj,1,jqtal, Krhs)   + 2.0_wp * zcalbotflx(ji,jj) / e3t(ji,jj, 1,Kmm) 
          ENDDO
       ENDDO
       !
@@ -450,9 +452,9 @@ CONTAINS
       !   Compute the sedimentation term using canoesink2 for all the sinking particles
       !   -----------------------------------------------------
       !
-      CALL trc_sink0( wsbio3, sinking, Kbb , jrpoc )
-      CALL trc_sink0( wsbio4, sinking2, Kbb, jrgoc )
-      CALL trc_sink0( wscal , sinkcal, Kbb , jrcal )
+      CALL trc_sink0( wsbio3, sinking, Kbb, Kmm , jrpoc )
+      CALL trc_sink0( wsbio4, sinking2, Kbb, Kmm, jrgoc )
+      CALL trc_sink0( wscal , sinkcal, Kbb, Kmm , jrcal )
       !
       ! zrfact2 = 1.e-3 * qfact2r
       ! ik1  = iksed + 1

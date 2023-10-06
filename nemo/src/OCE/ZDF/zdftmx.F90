@@ -57,7 +57,8 @@ MODULE zdftmx
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   az_tmx     ! coefficient used to evaluate the tidal induced Kz
 
    !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
+!#  include "vectopt_loop_substitute.h90"
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 4.0 , NEMO Consortium (2011)
    !! $Id: zdftmx.F90 8788 2017-11-22 18:01:02Z davestorkey $
@@ -76,7 +77,7 @@ CONTAINS
    END FUNCTION zdf_tmx_alloc
 
 
-   SUBROUTINE zdf_tmx( kt, p_avm, p_avt, p_avs)
+   SUBROUTINE zdf_tmx( kt,Kmm, p_avm, p_avt, p_avs)
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE zdf_tmx  ***
       !!                   
@@ -108,7 +109,7 @@ CONTAINS
       !! References : Simmons et al. 2004, Ocean Modelling, 6, 3-4, 245-263.
       !!              Koch-Larrouy et al. 2007, GRL.
       !!----------------------------------------------------------------------
-      INTEGER, INTENT(in) ::   kt   ! ocean time-step 
+      INTEGER, INTENT(in) ::   kt,Kmm   ! ocean time-step 
       REAL(wp), DIMENSION(:,:,:) , INTENT(inout) ::   p_avm          ! momentum Kz (w-points)
       REAL(wp), DIMENSION(:,:,:) , INTENT(inout) ::   p_avt, p_avs   ! tracer   Kz (w-points)
       !!
@@ -130,7 +131,7 @@ CONTAINS
 
          zkz(:,:) = 0.e0               !* Associated potential energy consummed over the whole water column
          DO jk = 2, jpkm1
-            zkz(:,:) = zkz(:,:) + e3w_n(:,:,jk) * MAX( 0.e0, rn2(:,:,jk) ) * rau0 * zav_tide(:,:,jk) * wmask(:,:,jk)
+            zkz(:,:) = zkz(:,:) + e3w(:,:,jk,Kmm) * MAX( 0.e0, rn2(:,:,jk) ) * rho0 * zav_tide(:,:,jk) * wmask(:,:,jk)
          END DO
 
          DO jj = 1, jpj                !* Here zkz should be equal to en_tmx ==> multiply by en_tmx/zkz to recover en_tmx
@@ -161,7 +162,7 @@ CONTAINS
          DO jk= 1, jpk
             DO jj= 1, jpj
                DO ji= 1, jpi
-                  ztpc = ztpc + e3w_n(ji,jj,jk) * e1t(ji,jj) * e2t(ji,jj)   &
+                  ztpc = ztpc + e3w(ji,jj,jk,Kmm) * e1t(ji,jj) * e2t(ji,jj)   &
                      &         * MAX( 0.e0, rn2(ji,jj,jk) ) * zav_tide(ji,jj,jk) * tmask(ji,jj,jk) * tmask_i(ji,jj)
                END DO
             END DO
@@ -174,7 +175,7 @@ CONTAINS
       !                          ! ----------------------- !
       !                          !    ITF  tidal mixing    !  (update zav_tide)
       !                          ! ----------------------- !
-      IF( ln_tmx_itf )   CALL tmx_itf( kt, zav_tide )
+      IF( ln_tmx_itf )   CALL tmx_itf( kt,Kmm, zav_tide )
 
       !                          ! ----------------------- !
       !                          !   Update  mixing coefs  !                          
@@ -196,7 +197,7 @@ CONTAINS
    END SUBROUTINE zdf_tmx
 
 
-   SUBROUTINE tmx_itf( kt, pav )
+   SUBROUTINE tmx_itf( kt,Kmm, pav )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE tmx_itf  ***
       !!                   
@@ -216,7 +217,7 @@ CONTAINS
       !!
       !! References :  Koch-Larrouy et al. 2007, GRL 
       !!----------------------------------------------------------------------
-      INTEGER , INTENT(in   )                         ::   kt   ! ocean time-step
+      INTEGER , INTENT(in   )                         ::   kt,Kmm   ! ocean time-step
       REAL(wp), INTENT(inout), DIMENSION(jpi,jpj,jpk) ::   pav  ! Tidal mixing coef.
       !! 
       INTEGER  ::   ji, jj, jk    ! dummy loop indices
@@ -243,8 +244,8 @@ CONTAINS
       zsum1(:,:) = 0.e0
       zsum2(:,:) = 0.e0
       DO jk= 2, jpk
-         zsum1(:,:) = zsum1(:,:) + zempba_3d_1(:,:,jk) * e3w_n(:,:,jk) * tmask(:,:,jk) * tmask(:,:,jk-1)
-         zsum2(:,:) = zsum2(:,:) + zempba_3d_2(:,:,jk) * e3w_n(:,:,jk) * tmask(:,:,jk) * tmask(:,:,jk-1)               
+         zsum1(:,:) = zsum1(:,:) + zempba_3d_1(:,:,jk) * e3w(:,:,jk,Kmm) * tmask(:,:,jk) * tmask(:,:,jk-1)
+         zsum2(:,:) = zsum2(:,:) + zempba_3d_2(:,:,jk) * e3w(:,:,jk,Kmm) * tmask(:,:,jk) * tmask(:,:,jk-1)               
       END DO
       DO jj = 1, jpj
          DO ji = 1, jpi
@@ -261,7 +262,7 @@ CONTAINS
                   &  + zempba_3d_2(ji,jj,jk) * zsum2(ji,jj) * ( 1. - zcoef )
                !
                zempba_3d(ji,jj,jk) =               ztpc 
-               zsum     (ji,jj)    = zsum(ji,jj) + ztpc * e3w_n(ji,jj,jk)
+               zsum     (ji,jj)    = zsum(ji,jj) + ztpc * e3w(ji,jj,jk,Kmm)
             END DO
          END DO
        END DO
@@ -280,7 +281,7 @@ CONTAINS
 
       zkz(:,:) = 0.e0               ! Associated potential energy consummed over the whole water column
       DO jk = 2, jpkm1
-         zkz(:,:) = zkz(:,:) + e3w_n(:,:,jk) * MAX( 0.e0, rn2(:,:,jk) ) * rau0 * zavt_itf(:,:,jk) * tmask(:,:,jk) * tmask(:,:,jk-1)
+         zkz(:,:) = zkz(:,:) + e3w(:,:,jk,Kmm) * MAX( 0.e0, rn2(:,:,jk) ) * rho0 * zavt_itf(:,:,jk) * tmask(:,:,jk) * tmask(:,:,jk-1)
       END DO
 
       DO jj = 1, jpj                ! Here zkz should be equal to en_tmx ==> multiply by en_tmx/zkz to recover en_tmx
@@ -298,7 +299,7 @@ CONTAINS
          DO jk= 1, jpk
             DO jj= 1, jpj
                DO ji= 1, jpi
-                  ztpc = ztpc + e1t(ji,jj) * e2t(ji,jj) * e3w_n(ji,jj,jk) * MAX( 0.e0, rn2(ji,jj,jk) )   &
+                  ztpc = ztpc + e1t(ji,jj) * e2t(ji,jj) * e3w(ji,jj,jk,Kmm) * MAX( 0.e0, rn2(ji,jj,jk) )   &
                      &                     * zavt_itf(ji,jj,jk) * tmask(ji,jj,jk) * tmask_i(ji,jj)
                END DO
             END DO

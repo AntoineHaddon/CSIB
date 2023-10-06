@@ -348,6 +348,7 @@ CONTAINS
       !                                         !* wave-induced mixing
       IF( ln_zdfswm )   CALL zdf_swm( kt, Kmm, avm, avt, avs )   ! surface  wave (Qiao et al. 2004)
       IF( ln_zdfiwm )   CALL zdf_iwm( kt, Kmm, avm, avt, avs )   ! internal wave (de Lavergne et al 2017)
+      IF( ln_zdftmx )   CALL zdf_tmx( kt, Kmm, avm, avt, avs )   ! old tidal mixing scheme (Simmons et al 2004)
 
       !                                         !* Lateral boundary conditions (sign unchanged)
       IF(nn_hls==1) THEN

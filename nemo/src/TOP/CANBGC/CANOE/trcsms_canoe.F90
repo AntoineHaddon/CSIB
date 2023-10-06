@@ -125,7 +125,7 @@ CONTAINS
           IF(lwp) write(numout,*) ' New chemical constants and various rates for biogeochemistry at new day : ', nday_year
           IF(lwp) write(numout,*) '~~~~~~'
           !
-          CALL trc_che_2D( kt )   ! computation of carbon chemistry constants
+          CALL trc_che_2D( kt, Kmm )   ! computation of carbon chemistry constants
           ! initialize the chemical constants
           ! JC's 2D carbon chem mode 
           !
@@ -152,7 +152,7 @@ CONTAINS
         IF(lwp) write(numout,*) ' New chemical constants and various rates for biogeochemistry at new day : ', nday_year
         IF(lwp) write(numout,*) '~~~~~~'
   
-        CALL trc_che_2D( kt )           ! computation of carbon chemistry constants
+        CALL trc_che_2D( kt,Kmm )           ! computation of carbon chemistry constants
         ! initialize the chemical constants
         ! JC's 2D carbon chem mode 
             !
@@ -197,7 +197,7 @@ CONTAINS
         ! Initialize rnegtr2, if no call to trc_xnegtr tra used w/o correction
         rnegtr2(:,:,:) = 1._wp
         !
-        IF( ln_canoenegtr )  CALL trc_xnegtr( 1, jp_tot, rnegtr2 )   !!! O Riche Nov 8th 2022 ! reside in sms_top_canbgc.F90
+        IF( ln_canoenegtr )  CALL trc_xnegtr( 1, jp_tot, Kbb, Kmm, Krhs, rnegtr2 )   !!! O Riche Nov 8th 2022 ! reside in sms_top_canbgc.F90
         DO jn = 1, jp_tot
           tr(:,:,:,jn, Kbb) = tr(:,:,:,jn, Kbb) + rnegtr2(:,:,:) * tr(:,:,:,jn, Krhs)        
           tr(:,:,:,jn, Krhs) = 0._wp
@@ -232,7 +232,7 @@ CONTAINS
       IF( l_trdtrc ) THEN
           DO jn = 1, jp_tot
             ztrmyt(:,:,:) = tr(:,:,:,jn, Krhs)
-            CALL trd_trc( ztrmyt, jn, jptra_sms, kt )   ! save trends
+            CALL trd_trc( ztrmyt, jn, jptra_sms, kt, Kmm )   ! save trends
           END DO
           DEALLOCATE( ztrmyt )
       END IF

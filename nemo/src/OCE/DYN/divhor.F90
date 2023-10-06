@@ -98,6 +98,8 @@ CONTAINS
 #endif
       IF( ln_isf )                      CALL isf_hdiv( kt, Kmm, hdiv )           !==  ice shelf         ==!   (update hdiv field)
       !
+      IF( ln_vertspp ) CALL sbc_spp_div( Kmm, hdiv )  !==  salt plume  ==!   (update hdivn field)      
+      !
       IF( nn_hls==1 )   CALL lbc_lnk( 'divhor', hdiv, 'T', 1.0_wp )   !   (no sign change)
       !                                                               ! needed for ww in sshwzv
       IF( ln_timing )   CALL timing_stop('div_hor')

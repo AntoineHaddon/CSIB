@@ -82,7 +82,7 @@ MODULE canoeprod
 
    !!* Substitution
 !#  include "top_substitute.h90"
-#  include "vectopt_loop_substitute.h90"
+!#  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 3.3 , NEMO Consortium (2010)
    !! $Id: canoeprod.F90 3773 2013-02-07 11:06:58Z cbricaud $ 
@@ -166,7 +166,7 @@ CONTAINS
             DO ji = 1, jpi
                ! IF( par_3bands(ji,jj,jk) > 1.E-3 ) THEN
                IF( par_stairs(ji,jj,jk) > 1.E-3 ) THEN
-                      ztn  = ts(ji,jj,jk,jp_tem)
+                      ztn  = ts(ji,jj,jk,jp_tem,Kmm)
                       phyc  = MAX(tr(ji,jj,jk,jrphy, Kbb),0.)*mw_c
                       phyn  = MAX(tr(ji,jj,jk,jrnn, Kbb) ,0.)*mw_n
                       phyfe = MAX(tr(ji,jj,jk,jrnfe, Kbb),0.)*mw_fe

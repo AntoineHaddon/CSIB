@@ -53,6 +53,9 @@ MODULE trcflx_canbgc
     REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) :: oce_o2g    !: O2  flux
     REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) :: satmo2g    !: atmospheric po2 
 
+   ! !!* Substitution
+#  include "domzgr_substitute.h90"
+
 CONTAINS
 
    SUBROUTINE trc_flx(kt, Kmm, Krhs)
@@ -143,7 +146,7 @@ CONTAINS
 
             oce_co2g(ji,jj) = ( zfld - zflu ) * qfact * e1e2t(ji,jj) * tmask_bgc_closea(ji,jj,1) * 1000. ! convert L^-1 to m^-3
             zco2flx(ji,jj)  = ( zfld - zflu ) * tmask_bgc_closea(ji,jj,1)
-            tr(ji,jj,1,jqdic, Krhs) = tr(ji,jj,1,jqdic, Krhs) + zco2flx(ji,jj) / e3t_n(ji,jj,1)
+            tr(ji,jj,1,jqdic, Krhs) = tr(ji,jj,1,jqdic, Krhs) + zco2flx(ji,jj) / e3t(ji,jj,1,Kmm)
    
             ! Compute O2 flux 
             zfld16 = satmo2g(ji,jj) * K0O2(ji,jj) * tmask_bgc_closea(ji,jj,1) * zkgo2(ji,jj)     ! (mol/L) * (m/s)
@@ -151,7 +154,7 @@ CONTAINS
 
             oce_o2g(ji,jj) = ( zfld16 - zflu16 ) * qfact * e1e2t(ji,jj) * tmask_bgc_closea(ji,jj,1) * 1000. ! convert L^-1 to m^-3
             zo2flx(ji,jj)  = ( zfld16 - zflu16 ) * tmask_bgc_closea(ji,jj,1)
-            tr(ji,jj,1,jqoxy, Krhs) = tr(ji,jj,1,jqoxy, Krhs) + zo2flx(ji,jj) / e3t_n(ji,jj,1)
+            tr(ji,jj,1,jqoxy, Krhs) = tr(ji,jj,1,jqoxy, Krhs) + zo2flx(ji,jj) / e3t(ji,jj,1,Kmm)
          END DO
       END DO
 

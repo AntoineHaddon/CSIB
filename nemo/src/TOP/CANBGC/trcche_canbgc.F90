@@ -214,6 +214,7 @@ MODULE trcche_canbgc
    REAL(wp) :: devk510  = 0.0
 
    !!* Substitution
+#  include "domzgr_substitute.h90"
 ! #include "top_substitute.h90" !!! O Riche June 23rd 2022
 !                               !!! This call other F90 headers
 ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! #  include "domzgr_substitute.h90"
@@ -221,7 +222,7 @@ MODULE trcche_canbgc
 ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! #  include "ldftra_substitute.h90"
 ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! #  include "vectopt_loop_substitute.h90"
 								!!! which use old variables for the grid/z-levels
-								!!! e.g. fse3t instead of e3t_n, optimization,
+								!!! e.g. fse3t instead of e3t, optimization,
 								!!! scaling of lateral diffusion terms, etc.
 
    !!----------------------------------------------------------------------
@@ -575,7 +576,7 @@ CONTAINS
                 ztmas   = tmask_bgc_closea(ji,jj,jk)
                 ztmas1  = 1. - tmask_bgc_closea(ji,jj,jk)
                 ! PRESSURE in dbar
-                zpres   = 1.025e-1 *gdept_n(ji,jj,jk)
+                zpres   = 1.025e-1 *gdept(ji,jj,jk,Kmm)
 
                 ! ABSOLUTE TEMPERATURE
                 ztkel   = ts(ji,jj,jk,jp_tem,Kmm) + 273.15

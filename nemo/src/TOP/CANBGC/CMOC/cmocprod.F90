@@ -47,7 +47,7 @@ MODULE cmocprod
 
    !!* Substitution
 !#  include "top_substitute.h90"
-#  include "vectopt_loop_substitute.h90"
+!#  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 3.3 , NEMO Consortium (2010)
    !! $Id: cmocprod.F90 3773 2013-02-07 11:06:58Z cbricaud $ 

@@ -52,7 +52,8 @@ MODULE cmocnzd
    !
    !!* Substitution
 !#  include "top_substitute.h90"
-#  include "vectopt_loop_substitute.h90"
+!#  include "vectopt_loop_substitute.h90"
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 3.3 , NEMO Consortium (2010)
    !! $Id: p4zmort.F90 3295 2012-01-30 15:49:07Z cetlod $ 
@@ -160,8 +161,9 @@ CONTAINS
   END SUBROUTINE cmoc_rem
 
   
-  SUBROUTINE cmoc_rem_denit
+  SUBROUTINE cmoc_rem_denit( Kmm ) 
       !
+      INTEGER, INTENT(in) ::  Kmm  ! time level indices
       INTEGER  :: ji, jj, jk         
       !!!
       ! O Riche Oct 27th 2022
@@ -185,7 +187,7 @@ CONTAINS
          DO jj = 1, jpj
             DO ji = 1, jpi
                 redettot(ji,jj) = redettot(ji,jj) + redet(ji,jj,jk)          &
-                &                                 * e3t_n(ji,jj,jk)          &
+                &                                 * e3t(ji,jj,jk,Kmm)          &
                 &                                 * tmask_bgc_closea(ji,jj,jk)
             END DO
           END DO 
@@ -493,7 +495,7 @@ CONTAINS
 
                !   Update the arrays TRA which contains the biological sources and sinks
                !   Calculate the chlorophyll to phytoplankton ratio
-               zfactch = tr(ji,jj,jk,jqnch, Kbb)/(tr(ji,jj,jk,jqphy)+rtrn, Kbb)
+               zfactch = tr(ji,jj,jk,jqnch, Kbb)/(tr(ji,jj,jk,jqphy,Kbb)+rtrn)
 
                tr(ji,jj,jk,jqphy, Krhs) = tr(ji,jj,jk,jqphy, Krhs) - zmortp
                tr(ji,jj,jk,jqnch, Krhs) = tr(ji,jj,jk,jqnch, Krhs) - zmortp * zfactch

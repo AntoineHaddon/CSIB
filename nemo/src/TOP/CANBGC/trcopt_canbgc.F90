@@ -63,6 +63,8 @@ MODULE trcopt_canbgc
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::  par_stairs      !: trc_opt_stairs final output
 
+   !! * Substitutions
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
    !! $Id: trcopt.F90 13331 2020-07-22 14:00:04Z cetlod $ 
@@ -151,7 +153,7 @@ CONTAINS
         IF( lwp ) CALL FLUSH(numout)      
         CALL trc_src2d( kt, js2d_chla )
         DO jk = 1, jpkm1
-          ztotchla(:,:,jk) = src2d_dta(:,:,js2d_chla)*exp(-gdept_n(:,:,jk)/30.)
+          ztotchla(:,:,jk) = src2d_dta(:,:,js2d_chla)*exp(-gdept(:,:,jk,Kmm)/30.)
         ENDDO
       ENDIF
       !
@@ -200,7 +202,7 @@ CONTAINS
                ! the surface chlorophyll file. It has 61 rows for values varying between 0.01 to 10.
                ! O Riche Aug 17th 2022
                ! chl-a in the file is already in mg Chla m^-3 (ranging between 0.01 and 1)
-               ! zchl = src2d_dta(ji,jj,js2d_chla)*exp(-gdept_n(ji,jj,jk)/30.)
+               ! zchl = src2d_dta(ji,jj,js2d_chla)*exp(-gdept(ji,jj,jk,Kmm)/30.)
                ! O Riche Sept 13th 2022
                ! use chla arrays instead of mockup array
                zchl = ztotchla(ji,jj,jk)
@@ -209,9 +211,9 @@ CONTAINS
                zchl = MIN(  10. , MAX( 0.05, zchl )  )
                irgb = NINT( 41 + 20.* LOG10( zchl ) + rtrn )
                !
-               ekb(ji,jj,jk) = rkrgb(1,irgb) * e3t_n(ji,jj,jk)
-               ekg(ji,jj,jk) = rkrgb(2,irgb) * e3t_n(ji,jj,jk)
-               ekr(ji,jj,jk) = rkrgb(3,irgb) * e3t_n(ji,jj,jk)
+               ekb(ji,jj,jk) = rkrgb(1,irgb) * e3t(ji,jj,jk,Kmm)
+               ekg(ji,jj,jk) = rkrgb(2,irgb) * e3t(ji,jj,jk,Kmm)
+               ekr(ji,jj,jk) = rkrgb(3,irgb) * e3t(ji,jj,jk,Kmm)
 
             END DO
          END DO
@@ -222,7 +224,7 @@ CONTAINS
          !
          zqsr_corr(:,:) = qsr_mean(:,:) / ( 1.-fr_i(:,:) + rtrn )
          !
-         CALL trc_opt_par( kt, zqsr_corr, ze1, ze2, ze3, pqsr100 = zqsr100 ) 
+         CALL trc_opt_par( kt, Kmm, zqsr_corr, ze1, ze2, ze3, pqsr100 = zqsr100 ) 
          !
          DO jk = 1, nksr      
             etot_ndcyb(:,:,jk) = ze1(:,:,jk) + ze2(:,:,jk) + ze3(:,:,jk)
@@ -230,7 +232,7 @@ CONTAINS
          !
          zqsr_corr(:,:) = qsr(:,:) / ( 1.-fr_i(:,:) + rtrn )
          !
-         CALL trc_opt_par( kt, zqsr_corr, ze1, ze2, ze3 ) 
+         CALL trc_opt_par( kt, Kmm, zqsr_corr, ze1, ze2, ze3 ) 
          !
          DO jk = 1, nksr      
             etotb(:,:,jk) =  ze1(:,:,jk) + ze2(:,:,jk) + ze3(:,:,jk)
@@ -240,7 +242,7 @@ CONTAINS
          !
          zqsr_corr(:,:) = qsr(:,:) / ( 1.-fr_i(:,:) + rtrn )
          !
-         CALL trc_opt_par( kt, zqsr_corr, ze1, ze2, ze3, pqsr100 = zqsr100  ) 
+         CALL trc_opt_par( kt, Kmm, zqsr_corr, ze1, ze2, ze3, pqsr100 = zqsr100  ) 
          !
          DO jk = 1, nksr      
             etotb (:,:,jk) = ze1(:,:,jk) + ze2(:,:,jk) + ze3(:,:,jk)
@@ -257,7 +259,7 @@ CONTAINS
       !
       IF( ln_qsr_bio ) THEN                    !* heat flux accros w-level (used in the dynamics)
          !                                     !  ------------------------
-         CALL trc_opt_par( kt, qsr, ze1, ze2, ze3, pe0=ze0 )
+         CALL trc_opt_par( kt, Kmm, qsr, ze1, ze2, ze3, pe0=ze0 )
          !
          etot3(:,:,1) =  qsr(:,:) * tmask_bgc_closea(:,:,1)
          DO jk = 2, nksr + 1
@@ -272,10 +274,10 @@ CONTAINS
               IF( etot_ndcyb(ji,jj,jk) * tmask(ji,jj,jk) >=  zqsr100(ji,jj) )  THEN
                  nelnb(ji,jj) = jk+1                    ! Euphotic level : 1rst T-level strictly below Euphotic layer
                  !                                      ! nb: ensure the compatibility with nmld_trc definition in trd_mld_trc_zint
-                 heupb(ji,jj) = gdepw_n(ji,jj,jk+1)     ! Euphotic layer depth
+                 heupb(ji,jj) = gdepw(ji,jj,jk+1,Kmm)     ! Euphotic layer depth
               ENDIF
               IF( etot_ndcyb(ji,jj,jk) * tmask(ji,jj,jk) >= 0.50 )  THEN
-                 heup_01b(ji,jj) = gdepw_n(ji,jj,jk+1)  ! Euphotic layer depth (light level definition)
+                 heup_01b(ji,jj) = gdepw(ji,jj,jk+1,Kmm)  ! Euphotic layer depth (light level definition)
               ENDIF
            END DO
         END DO
@@ -292,10 +294,10 @@ CONTAINS
       DO jk = 1, nksr
          DO jj = 1, jpj
             DO ji = 1, jpi
-               IF( gdepw_n(ji,jj,jk+1) <= hmld(ji,jj) ) THEN
-                  zetmp1 (ji,jj) = zetmp1 (ji,jj) + etotb     (ji,jj,jk) * e3t_n(ji,jj,jk) ! remineralisation (?OR Aug 30th 2022)
-                  zetmp2 (ji,jj) = zetmp2 (ji,jj) + etot_ndcyb(ji,jj,jk) * e3t_n(ji,jj,jk) ! production
-                  zdepmoy(ji,jj) = zdepmoy(ji,jj) +                        e3t_n(ji,jj,jk)
+               IF( gdepw(ji,jj,jk+1,Kmm) <= hmld(ji,jj) ) THEN
+                  zetmp1 (ji,jj) = zetmp1 (ji,jj) + etotb     (ji,jj,jk) * e3t(ji,jj,jk,Kmm) ! remineralisation (?OR Aug 30th 2022)
+                  zetmp2 (ji,jj) = zetmp2 (ji,jj) + etot_ndcyb(ji,jj,jk) * e3t(ji,jj,jk,Kmm) ! production
+                  zdepmoy(ji,jj) = zdepmoy(ji,jj) +                        e3t(ji,jj,jk,Kmm)
                ENDIF
             END DO
          END DO
@@ -307,7 +309,7 @@ CONTAINS
       DO jk = 1, nksr
          DO jj = 1, jpj
             DO ji = 1, jpi
-               IF( gdepw_n(ji,jj,jk+1) <= hmld(ji,jj) ) THEN
+               IF( gdepw(ji,jj,jk+1,Kmm) <= hmld(ji,jj) ) THEN
                   z1_dep = 1. / ( zdepmoy(ji,jj) + rtrn )
                   emoyb (ji,jj,jk) = zetmp1(ji,jj) * z1_dep
                   zpar (ji,jj,jk)  = zetmp2(ji,jj) * z1_dep
@@ -436,14 +438,14 @@ CONTAINS
             ! chl-a in the file is already in mg Chla m^-3 (ranging between 0.01 and 1)
             ! This is temporary as zchl/1st line should be replaced by
             ! tr(ji,jj,jk,jqdch, Kmm) + tr(ji,jj,jk,jqnch, Kmm) once they are available.
-            ! zchl = src2d_dta(ji,jj,js2d_chla)*exp(-gdept_n(ji,jj,jk)/30._wp)
+            ! zchl = src2d_dta(ji,jj,js2d_chla)*exp(-gdept(ji,jj,jk,Kmm)/30._wp)
             ! O Riche Sept 13th 2022
             ! use chla arrays instead of mockup array
             zchl = ztotchla(ji,jj)  !!! OR Jan 23rd 2023 ! Only use the surface ztotchla values
             zchl = zchl + rtrn
             zchl = zchl * tmask(ji,jj,jk)
             zetot(ji,jj,jk) = qsr(ji,jj) * zparsw(ji,jj)     & 
-            &               * exp ( - ( (kw_cmoc + kchl_cmoc * zchl * 1e6_wp) * gdept_n(ji,jj,jk) ) ) 
+            &               * exp ( - ( (kw_cmoc + kchl_cmoc * zchl * 1e6_wp) * gdept(ji,jj,jk,Kmm) ) ) 
             !        
           ENDDO
         ENDDO
@@ -516,7 +518,7 @@ CONTAINS
                
    END SUBROUTINE trc_opt_stairs
 
-   SUBROUTINE trc_opt_par( kt, pqsr, pe1, pe2, pe3, pe0, pqsr100 ) 
+   SUBROUTINE trc_opt_par( kt,Kmm, pqsr, pe1, pe2, pe3, pe0, pqsr100 ) 
       !!----------------------------------------------------------------------
       !!                  ***  routine trc_opt_par  ***
       !!
@@ -524,7 +526,7 @@ CONTAINS
       !!                for a given shortwave radiation
       !!
       !!----------------------------------------------------------------------
-      INTEGER                         , INTENT(in)              ::   kt                ! ocean time-step
+      INTEGER                         , INTENT(in)              ::   kt,Kmm                ! ocean time-step
       REAL(wp), DIMENSION(jpi,jpj)    , INTENT(in   )           ::   pqsr              ! shortwave
       REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(inout)           ::   pe1 , pe2 , pe3   ! PAR ( R-G-B)
       REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(inout), OPTIONAL ::   pe0               !
@@ -552,7 +554,7 @@ CONTAINS
          DO jk = 2, nksr + 1
             DO jj = 1, jpj
                DO ji = 1, jpi
-                  pe0(ji,jj,jk) = pe0(ji,jj,jk-1) * EXP( -e3t_n(ji,jj,jk-1) * xsi0r )
+                  pe0(ji,jj,jk) = pe0(ji,jj,jk-1) * EXP( -e3t(ji,jj,jk-1,Kmm) * xsi0r )
                   pe1(ji,jj,jk) = pe1(ji,jj,jk-1) * EXP( -ekb  (ji,jj,jk-1 )        )
                   pe2(ji,jj,jk) = pe2(ji,jj,jk-1) * EXP( -ekg  (ji,jj,jk-1 )        )
                   pe3(ji,jj,jk) = pe3(ji,jj,jk-1) * EXP( -ekr  (ji,jj,jk-1 )        )
