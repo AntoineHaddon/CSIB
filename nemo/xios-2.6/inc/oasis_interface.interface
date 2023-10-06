@@ -1,0 +1,23 @@
+interface
+SUBROUTINE fxios_oasis_init(server_id,str_len) BIND(C,NAME="fxios_oasis_init")
+ CHARACTER(kind = C_CHAR),DIMENSION(*) :: server_id
+ INTEGER(kind = C_INT),VALUE :: str_len
+END SUBROUTINE fxios_oasis_init
+SUBROUTINE fxios_oasis_enddef() BIND(C,NAME="fxios_oasis_enddef")
+END SUBROUTINE fxios_oasis_enddef
+SUBROUTINE fxios_oasis_finalize() BIND(C,NAME="fxios_oasis_finalize")
+END SUBROUTINE fxios_oasis_finalize
+SUBROUTINE fxios_oasis_get_localcomm(f_comm) BIND(C,NAME="fxios_oasis_get_localcomm")
+ INTEGER(kind=C_INT) :: f_comm
+END SUBROUTINE fxios_oasis_get_localcomm
+SUBROUTINE fxios_oasis_get_intracomm(f_comm_client_server,client_id,str_len) BIND(C,NAME="fxios_oasis_get_intracomm")
+ INTEGER(kind=C_INT) :: f_comm_client_server
+ CHARACTER,DIMENSION(*) :: client_id
+ INTEGER,VALUE :: str_len
+END SUBROUTINE fxios_oasis_get_intracomm
+SUBROUTINE fxios_oasis_get_intercomm(f_comm_client_server,client_id,str_len) BIND(C,NAME="fxios_oasis_get_intercomm")
+ INTEGER(kind=C_INT) :: f_comm_client_server
+ CHARACTER,DIMENSION(*) :: client_id
+ INTEGER,VALUE :: str_len
+END SUBROUTINE fxios_oasis_get_intercomm
+end interface

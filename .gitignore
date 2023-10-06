@@ -56,6 +56,6 @@ nemo/xios-2.6/etc/
 nemo/xios-2.6/fcm_env.ksh
 nemo/xios-2.6/fcm_env.sh
 nemo/xios-2.6/flags/
-nemo/xios-2.6/inc/
+#nemo/xios-2.6/inc/
 nemo/xios-2.6/ppsrc/
 
