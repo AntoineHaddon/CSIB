@@ -406,7 +406,7 @@ CONTAINS
       !! ** purpose :  set ice-ocean and ice-atm. fluxes to zeros at the beggining
       !!               of the time step
       !!----------------------------------------------------------------------
-      INTEGER  ::   ji, jj, jl      ! dummy loop index
+      INTEGER  ::   ji, jj,jl      ! dummy loop index
       !!----------------------------------------------------------------------
 
       DO jj = 1, jpj 

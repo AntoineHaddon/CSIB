@@ -47,6 +47,9 @@ CONTAINS
       !! -------------------------------------------------------------------------------------
       INTEGER, INTENT( in ) ::   kt        ! ocean time-step index      
       INTEGER, INTENT( in ) ::   Kbb, Kmm, Krhs ! time level indices
+      !!
+      !!
+      INTEGER               ::   jn      ! BGC tracer indexocean time-step index
       INTEGER               ::   jp_tot  ! total number of BGC tracers (shared TOP + activated CanBGC model)
       !!
       CHARACTER (len=25) :: charout

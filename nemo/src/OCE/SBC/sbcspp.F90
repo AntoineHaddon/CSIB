@@ -68,7 +68,7 @@ CONTAINS
 
       zfact = 0.5
       DO jj = 2, jpj
-         DO ji = fs_2, fs_jpim1
+         DO ji = 2, jpi
             ! Only distribute salt flux if flux is positive in this or the previous time step. Note that
             ! this could lead to a freshening at depth if sfx + sfx_b < 0., but is necessary to ensure
             ! symmetry in the leap frog timestepping

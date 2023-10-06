@@ -453,8 +453,8 @@ CONTAINS
       CALL iom_close(inum)
       !
       DO jk = 1, 5
-        DO jj = 2, jpjm1
-           DO ji = fs_2, fs_jpim1     ! These if required are added with the include statement just above the CONTAINS statement
+        DO jj = 2, jpj
+           DO ji = 2, jpi
               IF( tmask_bgc_closea(ji,jj,jk) /= 0. ) THEN
                  zmaskt = tmask_bgc_closea(ji+1,jj,jk) * tmask_bgc_closea(ji-1,jj,jk) & 
                     &   * tmask_bgc_closea(ji,jj+1,jk) * tmask_bgc_closea(ji,jj-1,jk) &

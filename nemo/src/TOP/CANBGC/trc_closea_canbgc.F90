@@ -11,11 +11,12 @@ MODULE trc_closea_canbgc
   !!                  !  location ./CanNEMO_tmp_src/nemo/tools/DOMAINcfg/
 	!!----------------------------------------------------------------------
 
-  USE par_oce         !: access jq* indices declaration
-  USE dom_oce         !: access tmask declaration
+    USE par_oce         !: access jq* indices declaration
+    USE dom_oce         !: access tmask declaration
+    USE iom            !  I/O manager
 
 	IMPLICIT NONE
-  PRIVATE
+    PRIVATE
   
     REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: tmask_bgc_closea !: make the mask real(wp)
 
@@ -25,7 +26,6 @@ CONTAINS
      
     SUBROUTINE trc_closea_init(read_var_flag)
     !
-    USE iom
     USE lib_mpp , ONLY: ctl_stop
     !
     LOGICAL, OPTIONAL, INTENT(in) :: read_var_flag   ! 

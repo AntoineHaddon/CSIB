@@ -3,7 +3,7 @@ MODULE trcwri_cmoc
    !!                       *** MODULE trcwri ***
    !!     trc_wri_cmoc   :  outputs of concentration fields
    !!======================================================================
-#if defined key_top && defined key_iomput
+#if defined key_top && defined key_xios
    !!----------------------------------------------------------------------
    !! History :      !  2007  (C. Ethe, G. Madec)  Original code
    !!                !  2016  (C. Ethe, T. Lovato) Revised architecture

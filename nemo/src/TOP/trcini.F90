@@ -152,7 +152,6 @@ CONTAINS
       USE trcini_my_trc  ! MY_TRC   initialisation
       !
       INTEGER, INTENT(in) ::   Kmm ! time level indices
-      INTEGER :: jn
       !!----------------------------------------------------------------------
       !
       ! Pass sn_tracer fields to specialized arrays 

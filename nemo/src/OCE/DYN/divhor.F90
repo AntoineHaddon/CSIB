@@ -22,6 +22,7 @@ MODULE divhor
    USE sbc_oce, ONLY : ln_rnf      ! river runoff
    USE sbcrnf , ONLY : sbc_rnf_div ! river runoff 
    USE isf_oce, ONLY : ln_isf      ! ice shelf
+   USE sbcspp,  ONLY : sbc_spp_div, ln_vertspp
    USE isfhdiv, ONLY : isf_hdiv    ! ice shelf
 #if defined key_asminc   
    USE asminc          ! Assimilation increment
