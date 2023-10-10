@@ -76,7 +76,7 @@ MODULE icedyn_rdgrft
    !
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icedyn_rdgrft.F90 13284 2020-07-09 15:12:23Z smasson $
+   !! $Id: icedyn_rdgrft.F90 13617 2020-10-16 08:07:20Z clem $
    !! Software governed by the CeCILL licence     (./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -340,7 +340,7 @@ CONTAINS
                      &                       ( 2._wp - ( zGsum(ji,jl-1) + zGsum(ji,jl) ) * z1_gstar )
                ELSEIF( zGsum(ji,jl-1) < rn_gstar ) THEN
                   apartf(ji,jl) = z1_gstar * ( rn_gstar     - zGsum(ji,jl-1) ) *  &
-                     &                       ( 2._wp - ( zGsum(ji,jl-1) + rn_gstar        ) * z1_gstar )
+                     &                       ( 2._wp - ( zGsum(ji,jl-1) + rn_gstar     ) * z1_gstar )
                ELSE
                   apartf(ji,jl) = 0._wp
                ENDIF
@@ -521,7 +521,9 @@ CONTAINS
       !----------------------------------------------------
       DO jl1 = 1, jpl
 
-         CALL tab_2d_1d( npti, nptidx(1:npti), s_i_1d(1:npti), s_i(:,:,jl1) )
+         IF( nn_icesal /= 2 )  THEN      
+            CALL tab_2d_1d( npti, nptidx(1:npti), s_i_1d(1:npti), s_i(:,:,jl1) )
+         ENDIF
 
          DO ji = 1, npti
 

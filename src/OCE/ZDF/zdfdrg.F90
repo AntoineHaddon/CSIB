@@ -77,7 +77,7 @@ MODULE zdfdrg
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: zdfdrg.F90 13284 2020-07-09 15:12:23Z smasson $
+   !! $Id: zdfdrg.F90 13481 2020-09-16 17:14:51Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -245,6 +245,8 @@ CONTAINS
 902   IF( ios >  0 )   CALL ctl_nam( ios , 'namdrg in configuration namelist' )
       IF(lwm) WRITE ( numond, namdrg )
       !
+      IF( ln_drgice_imp .AND. nn_ice /= 2 )   ln_drgice_imp = .FALSE.
+      !
       IF(lwp) THEN
          WRITE(numout,*)
          WRITE(numout,*) 'zdf_drg_init : top and/or bottom drag setting'
@@ -269,15 +271,11 @@ CONTAINS
       IF ( ln_drgice_imp.AND.(.NOT.ln_drgimp) ) & 
          &                CALL ctl_stop( 'zdf_drg_init: ln_drgice_imp=T requires ln_drgimp=T' )
       !
-      IF ( ln_drgice_imp.AND.( nn_ice /=2 ) ) &
-         &  CALL ctl_stop( 'zdf_drg_init: ln_drgice_imp=T requires si3' )
-      !
       !                     !==  BOTTOM drag setting  ==!   (applied at seafloor)
       !
       ALLOCATE( rCd0_bot(jpi,jpj), rCdU_bot(jpi,jpj) )
       CALL drg_init( 'BOTTOM'   , mbkt       ,                                         &   ! <== in
          &           r_Cdmin_bot, r_Cdmax_bot, r_z0_bot, r_ke0_bot, rCd0_bot, rCdU_bot )   ! ==> out
-
       !
       !                     !==  TOP drag setting  ==!   (applied at the top of ocean cavities)
       !

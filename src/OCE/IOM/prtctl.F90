@@ -35,7 +35,7 @@ MODULE prtctl
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: prtctl.F90 10068 2018-08-28 14:09:04Z nicolasmartin $ 
+   !! $Id: prtctl.F90 13412 2020-08-19 08:20:28Z gsamson $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -360,7 +360,7 @@ CONTAINS
 
 9000     FORMAT(a41,i4.4,a14)
 9001     FORMAT(a59)
-9002     FORMAT(a20,i4.4,a36,i3.3)
+9002     FORMAT(a20,i4.4,a36,i4.4)
 9003     FORMAT(a20,i4.4,a17,i4.4)
 9004     FORMAT(a11,i4.4,a26,i4.4,a14)
       END DO

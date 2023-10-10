@@ -73,7 +73,7 @@ MODULE sbcmod
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: sbcmod.F90 13284 2020-07-09 15:12:23Z smasson $
+   !! $Id: sbcmod.F90 13481 2020-09-16 17:14:51Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -132,6 +132,10 @@ CONTAINS
 #else
       IF( lk_si3  )   nn_ice      = 2
       IF( lk_cice )   nn_ice      = 3
+#endif
+      !
+#if ! defined key_si3
+      IF( nn_ice == 2 )    nn_ice = 0  ! without key key_si3 you cannot use si3...
 #endif
       !
       IF(lwp) THEN                  !* Control print

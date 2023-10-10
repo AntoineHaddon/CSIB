@@ -109,7 +109,7 @@ MODULE zdfgls
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: zdfgls.F90 13284 2020-07-09 15:12:23Z smasson $
+   !! $Id: zdfgls.F90 13511 2020-09-24 08:55:10Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -224,8 +224,8 @@ CONTAINS
       zhsro(:,:) = ( (1._wp-zice_fra(:,:)) * zhsro(:,:) + zice_fra(:,:) * rn_hsri )*tmask(:,:,1)  + (1._wp - tmask(:,:,1))*rn_hsro
       !
       DO jk = 2, jpkm1              !==  Compute dissipation rate  ==!
-         DO jj = 1, jpjm1
-            DO ji = 1, jpim1
+         DO jj = 2, jpjm1
+            DO ji = 2, jpim1
                eps(ji,jj,jk)  = rc03 * en(ji,jj,jk) * SQRT( en(ji,jj,jk) ) / hmxl_n(ji,jj,jk)
             END DO
          END DO
@@ -444,14 +444,14 @@ CONTAINS
             END DO
          END DO
       END DO
-      DO jk = 2, jpk                               ! Second recurrence : Lk = RHSk - Lk / Dk-1 * Lk-1
+      DO jk = 2, jpkm1                             ! Second recurrence : Lk = RHSk - Lk / Dk-1 * Lk-1
          DO jj = 2, jpjm1
             DO ji = fs_2, fs_jpim1    ! vector opt.
                zd_lw(ji,jj,jk) = en(ji,jj,jk) - zd_lw(ji,jj,jk) / zdiag(ji,jj,jk-1) * zd_lw(ji,jj,jk-1)
             END DO
          END DO
       END DO
-      DO jk = jpk-1, 2, -1                         ! thrid recurrence : Ek = ( Lk - Uk * Ek+1 ) / Dk
+      DO jk = jpkm1, 2, -1                         ! thrid recurrence : Ek = ( Lk - Uk * Ek+1 ) / Dk
          DO jj = 2, jpjm1
             DO ji = fs_2, fs_jpim1    ! vector opt.
                en(ji,jj,jk) = ( zd_lw(ji,jj,jk) - zd_up(ji,jj,jk) * en(ji,jj,jk+1) ) / zdiag(ji,jj,jk)
@@ -672,14 +672,14 @@ CONTAINS
             END DO
          END DO
       END DO
-      DO jk = 2, jpk                               ! Second recurrence : Lk = RHSk - Lk / Dk-1 * Lk-1
+      DO jk = 2, jpkm1                             ! Second recurrence : Lk = RHSk - Lk / Dk-1 * Lk-1
          DO jj = 2, jpjm1
             DO ji = fs_2, fs_jpim1    ! vector opt.
                zd_lw(ji,jj,jk) = psi(ji,jj,jk) - zd_lw(ji,jj,jk) / zdiag(ji,jj,jk-1) * zd_lw(ji,jj,jk-1)
             END DO
          END DO
       END DO
-      DO jk = jpk-1, 2, -1                         ! Third recurrence : Ek = ( Lk - Uk * Ek+1 ) / Dk
+      DO jk = jpkm1, 2, -1                         ! Third recurrence : Ek = ( Lk - Uk * Ek+1 ) / Dk
          DO jj = 2, jpjm1
             DO ji = fs_2, fs_jpim1    ! vector opt.
                psi(ji,jj,jk) = ( zd_lw(ji,jj,jk) - zd_up(ji,jj,jk) * psi(ji,jj,jk+1) ) / zdiag(ji,jj,jk)

@@ -38,7 +38,7 @@ MODULE traadv_cen
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: traadv_cen.F90 11993 2019-11-28 10:20:53Z cetlod $
+   !! $Id: traadv_cen.F90 13456 2020-09-10 15:42:42Z francesca $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -126,7 +126,7 @@ CONTAINS
             !
             DO jk = 1, jpkm1                       ! Horizontal advective fluxes
                DO jj = 2, jpjm1
-                  DO ji = 1, fs_jpim1   ! vector opt.
+                  DO ji = 2, fs_jpim1   ! vector opt.
                      zC2t_u = ptn(ji,jj,jk,jn) + ptn(ji+1,jj  ,jk,jn)   ! C2 interpolation of T at u- & v-points (x2)
                      zC2t_v = ptn(ji,jj,jk,jn) + ptn(ji  ,jj+1,jk,jn)
                      !                                                  ! C4 interpolation of T at u- & v-points (x2)
@@ -138,9 +138,10 @@ CONTAINS
                   END DO
                END DO
             END DO         
+            CALL lbc_lnk_multi( 'traadv_cen', zwx, 'U', -1. , zwy, 'V', -1. )
             !
          CASE DEFAULT
-            CALL ctl_stop( 'traadv_fct: wrong value for nn_fct' )
+            CALL ctl_stop( 'traadv_cen: wrong value for nn_cen' )
          END SELECT
          !
          SELECT CASE( kn_cen_v )       !--  Vertical fluxes  --!   (interior)

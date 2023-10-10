@@ -56,7 +56,7 @@ MODULE icedyn_rhg_evp
    REAL(wp), ALLOCATABLE, DIMENSION(:,:) ::   zmsk00, zmsk15
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icedyn_rhg_evp.F90 13346 2020-07-27 12:52:36Z clem $
+   !! $Id: icedyn_rhg_evp.F90 13646 2020-10-20 15:33:01Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -126,7 +126,7 @@ CONTAINS
       REAL(wp) ::   zalph1, z1_alph1, zalph2, z1_alph2                  ! alpha coef from Bouillon 2009 or Kimmritz 2017
       REAl(wp) ::   zbetau, zbetav
       REAL(wp) ::   zm1, zm2, zm3, zmassU, zmassV, zvU, zvV             ! ice/snow mass and volume
-      REAL(wp) ::   zdelta, zp_delf, zds2, zdt, zdt2, zdiv, zdiv2       ! temporary scalars
+      REAL(wp) ::   zp_delf, zds2, zdt, zdt2, zdiv, zdiv2               ! temporary scalars
       REAL(wp) ::   zTauO, zTauB, zRHS, zvel                            ! temporary scalars
       REAL(wp) ::   zkt                                                 ! isotropic tensile strength for landfast ice
       REAL(wp) ::   zvCr                                                ! critical ice volume above which ice is landfast
@@ -135,14 +135,15 @@ CONTAINS
       REAL(wp) ::   zfac_x, zfac_y
       REAL(wp) ::   zshear, zdum1, zdum2
       !
-      REAL(wp), DIMENSION(jpi,jpj) ::   zp_delt                         ! P/delta at T points
+      REAL(wp), DIMENSION(jpi,jpj) ::   zdelta, zp_delt                 ! delta and P/delta at T points
+      REAL(wp), DIMENSION(jpi,jpj) ::   zten_i                          ! tension
       REAL(wp), DIMENSION(jpi,jpj) ::   zbeta                           ! beta coef from Kimmritz 2017
       !
       REAL(wp), DIMENSION(jpi,jpj) ::   zdt_m                           ! (dt / ice-snow_mass) on T points
       REAL(wp), DIMENSION(jpi,jpj) ::   zaU  , zaV                      ! ice fraction on U/V points
       REAL(wp), DIMENSION(jpi,jpj) ::   zmU_t, zmV_t                    ! (ice-snow_mass / dt) on U/V points
       REAL(wp), DIMENSION(jpi,jpj) ::   zmf                             ! coriolis parameter at T points
-      REAL(wp), DIMENSION(jpi,jpj) ::   v_oceU, u_oceV, v_iceU, u_iceV  ! ocean/ice u/v component on V/U points                           
+      REAL(wp), DIMENSION(jpi,jpj) ::   v_oceU, u_oceV, v_iceU, u_iceV  ! ocean/ice u/v component on V/U points
       !
       REAL(wp), DIMENSION(jpi,jpj) ::   zds                             ! shear
       REAL(wp), DIMENSION(jpi,jpj) ::   zs1, zs2, zs12                  ! stress tensor components
@@ -167,7 +168,8 @@ CONTAINS
       !! --- check convergence
       REAL(wp), DIMENSION(jpi,jpj) ::   zu_ice, zv_ice
       !! --- diags
-      REAL(wp), ALLOCATABLE, DIMENSION(:,:) ::   zsig1, zsig2, zsig3
+      REAL(wp) ::   zsig1, zsig2, zsig12, zfac, z1_strength
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:) ::   zsig_I, zsig_II, zsig1_p, zsig2_p         
       !! --- SIMIP diags
       REAL(wp), ALLOCATABLE, DIMENSION(:,:) ::   zdiag_xmtrp_ice ! X-component of ice mass transport (kg/s)
       REAL(wp), ALLOCATABLE, DIMENSION(:,:) ::   zdiag_ymtrp_ice ! Y-component of ice mass transport (kg/s)
@@ -371,7 +373,7 @@ CONTAINS
          ENDIF
 
          ! --- divergence, tension & shear (Appendix B of Hunke & Dukowicz, 2002) --- !
-         DO jj = 1, jpjm1         ! loops start at 1 since there is no boundary condition (lbc_lnk) at i=1 and j=1 for F points
+         DO jj = 1, jpjm1
             DO ji = 1, jpim1
 
                ! shear at F points
@@ -381,10 +383,9 @@ CONTAINS
 
             END DO
          END DO
-         CALL lbc_lnk( 'icedyn_rhg_evp', zds, 'F', 1. )
 
-         DO jj = 2, jpj    ! loop to jpi,jpj to avoid making a communication for zs1,zs2,zs12
-            DO ji = 2, jpi ! no vector loop
+         DO jj = 2, jpjm1
+            DO ji = 2, jpim1 ! no vector loop
 
                ! shear**2 at T points (doc eq. A16)
                zds2 = ( zds(ji,jj  ) * zds(ji,jj  ) * e1e2f(ji,jj  ) + zds(ji-1,jj  ) * zds(ji-1,jj  ) * e1e2f(ji-1,jj  )  &
@@ -404,10 +405,31 @@ CONTAINS
                zdt2 = zdt * zdt
                
                ! delta at T points
-               zdelta = SQRT( zdiv2 + ( zdt2 + zds2 ) * z1_ecc2 )  
+               zdelta(ji,jj) = SQRT( zdiv2 + ( zdt2 + zds2 ) * z1_ecc2 )  
 
-               ! P/delta at T points
-               zp_delt(ji,jj) = strength(ji,jj) / ( zdelta + rn_creepl )
+            END DO
+         END DO
+         CALL lbc_lnk( 'icedyn_rhg_evp', zdelta, 'T', 1._wp )
+         
+         ! P/delta at T points
+         DO jj = 1, jpj
+            DO ji = 1, jpi
+               zp_delt(ji,jj) = strength(ji,jj) / ( zdelta(ji,jj) + rn_creepl )
+            END DO
+         END DO
+
+         DO jj = 2, jpj    ! loop ends at jpi,jpj so that no lbc_lnk are needed for zs1 and zs2
+            DO ji = 2, jpi ! no vector loop
+
+               ! divergence at T points (duplication to avoid communications)
+               zdiv  = ( e2u(ji,jj) * u_ice(ji,jj) - e2u(ji-1,jj) * u_ice(ji-1,jj)   &
+                  &    + e1v(ji,jj) * v_ice(ji,jj) - e1v(ji,jj-1) * v_ice(ji,jj-1)   &
+                  &    ) * r1_e1e2t(ji,jj)
+               
+               ! tension at T points (duplication to avoid communications)
+               zdt  = ( ( u_ice(ji,jj) * r1_e2u(ji,jj) - u_ice(ji-1,jj) * r1_e2u(ji-1,jj) ) * e2t(ji,jj) * e2t(ji,jj)   &
+                  &   - ( v_ice(ji,jj) * r1_e1v(ji,jj) - v_ice(ji,jj-1) * r1_e1v(ji,jj-1) ) * e1t(ji,jj) * e1t(ji,jj)   &
+                  &   ) * r1_e1e2t(ji,jj)
 
                ! alpha for aEVP
                !   gamma = 0.5*P/(delta+creepl) * (c*pi)**2/Area * dt/m
@@ -425,12 +447,11 @@ CONTAINS
                ENDIF
                
                ! stress at T points (zkt/=0 if landfast)
-               zs1(ji,jj) = ( zs1(ji,jj) * zalph1 + zp_delt(ji,jj) * ( zdiv * (1._wp + zkt) - zdelta * (1._wp - zkt) ) ) * z1_alph1
-               zs2(ji,jj) = ( zs2(ji,jj) * zalph2 + zp_delt(ji,jj) * ( zdt * z1_ecc2 * (1._wp + zkt) ) ) * z1_alph2
+               zs1(ji,jj) = ( zs1(ji,jj)*zalph1 + zp_delt(ji,jj) * ( zdiv*(1._wp + zkt) - zdelta(ji,jj)*(1._wp - zkt) ) ) * z1_alph1
+               zs2(ji,jj) = ( zs2(ji,jj)*zalph2 + zp_delt(ji,jj) * ( zdt * z1_ecc2 * (1._wp + zkt) ) ) * z1_alph2
              
             END DO
          END DO
-         CALL lbc_lnk( 'icedyn_rhg_evp', zp_delt, 'T', 1. )
 
          ! Save beta at T-points for further computations
          IF( ln_aEVP ) THEN
@@ -744,6 +765,8 @@ CONTAINS
                &   ) * r1_e1e2t(ji,jj)
             zdt2 = zdt * zdt
             
+            zten_i(ji,jj) = zdt
+
             ! shear**2 at T points (doc eq. A16)
             zds2 = ( zds(ji,jj  ) * zds(ji,jj  ) * e1e2f(ji,jj  ) + zds(ji-1,jj  ) * zds(ji-1,jj  ) * e1e2f(ji-1,jj  )  &
                &   + zds(ji,jj-1) * zds(ji,jj-1) * e1e2f(ji,jj-1) + zds(ji-1,jj-1) * zds(ji-1,jj-1) * e1e2f(ji-1,jj-1)  &
@@ -758,16 +781,16 @@ CONTAINS
                &             ) * r1_e1e2t(ji,jj)
             
             ! delta at T points
-            zdelta         = SQRT( pdivu_i(ji,jj) * pdivu_i(ji,jj) + ( zdt2 + zds2 ) * z1_ecc2 )  
-            rswitch        = 1._wp - MAX( 0._wp, SIGN( 1._wp, -zdelta ) ) ! 0 if delta=0
-            pdelta_i(ji,jj) = zdelta + rn_creepl * rswitch
+            zfac            = SQRT( pdivu_i(ji,jj) * pdivu_i(ji,jj) + ( zdt2 + zds2 ) * z1_ecc2 ) ! delta  
+            rswitch         = 1._wp - MAX( 0._wp, SIGN( 1._wp, -zfac ) ) ! 0 if delta=0
+            pdelta_i(ji,jj) = zfac + rn_creepl * rswitch ! delta+creepl
 
          END DO
       END DO
-      CALL lbc_lnk_multi( 'icedyn_rhg_evp', pshear_i, 'T', 1., pdivu_i, 'T', 1., pdelta_i, 'T', 1. )
+      CALL lbc_lnk_multi( 'icedyn_rhg_evp', pshear_i, 'T', 1., pdivu_i, 'T', 1., pdelta_i, 'T', 1., zten_i, 'T', 1., &
+         &                                  zs1     , 'T', 1., zs2    , 'T', 1., zs12    , 'F', 1. )
       
       ! --- Store the stress tensor for the next time step --- !
-      CALL lbc_lnk_multi( 'icedyn_rhg_evp', zs1, 'T', 1., zs2, 'T', 1., zs12, 'F', 1. )
       pstress1_i (:,:) = zs1 (:,:)
       pstress2_i (:,:) = zs2 (:,:)
       pstress12_i(:,:) = zs12(:,:)
@@ -796,42 +819,74 @@ CONTAINS
       IF( iom_use('iceshe') )   CALL iom_put( 'iceshe' , pshear_i * zmsk00 )   ! shear
       IF( iom_use('icestr') )   CALL iom_put( 'icestr' , strength * zmsk00 )   ! strength
 
-      ! --- stress tensor --- !
-      IF( iom_use('isig1') .OR. iom_use('isig2') .OR. iom_use('isig3') .OR. iom_use('normstr') .OR. iom_use('sheastr') ) THEN
+      ! --- Stress tensor invariants (SIMIP diags) --- !
+      IF( iom_use('normstr') .OR. iom_use('sheastr') ) THEN
          !
-         ALLOCATE( zsig1(jpi,jpj) , zsig2(jpi,jpj) , zsig3(jpi,jpj) )
+         ALLOCATE( zsig_I(jpi,jpj) , zsig_II(jpi,jpj) )
          !         
-         DO jj = 2, jpjm1
-            DO ji = 2, jpim1
-               zdum1 = ( zmsk00(ji-1,jj) * pstress12_i(ji-1,jj) + zmsk00(ji  ,jj-1) * pstress12_i(ji  ,jj-1) +  &  ! stress12_i at T-point
-                  &      zmsk00(ji  ,jj) * pstress12_i(ji  ,jj) + zmsk00(ji-1,jj-1) * pstress12_i(ji-1,jj-1) )  &
-                  &    / MAX( 1._wp, zmsk00(ji-1,jj) + zmsk00(ji,jj-1) + zmsk00(ji,jj) + zmsk00(ji-1,jj-1) )
-
-               zshear = SQRT( pstress2_i(ji,jj) * pstress2_i(ji,jj) + 4._wp * zdum1 * zdum1 ) ! shear stress  
-
-               zdum2 = zmsk00(ji,jj) / MAX( 1._wp, strength(ji,jj) )
-
-!!               zsig1(ji,jj) = 0.5_wp * zdum2 * ( pstress1_i(ji,jj) + zshear ) ! principal stress (y-direction, see Hunke & Dukowicz 2002)
-!!               zsig2(ji,jj) = 0.5_wp * zdum2 * ( pstress1_i(ji,jj) - zshear ) ! principal stress (x-direction, see Hunke & Dukowicz 2002)
-!!               zsig3(ji,jj) = zdum2**2 * ( ( pstress1_i(ji,jj) + strength(ji,jj) )**2 + ( rn_ecc * zshear )**2 ) ! quadratic relation linking compressive stress to shear stress
-!!                                                                                                               ! (scheme converges if this value is ~1, see Bouillon et al 2009 (eq. 11))
-               zsig1(ji,jj) = 0.5_wp * zdum2 * ( pstress1_i(ji,jj) )          ! compressive stress, see Bouillon et al. 2015
-               zsig2(ji,jj) = 0.5_wp * zdum2 * ( zshear )                     ! shear stress
-               zsig3(ji,jj) = zdum2**2 * ( ( pstress1_i(ji,jj) + strength(ji,jj) )**2 + ( rn_ecc * zshear )**2 )
+         DO jj = 1, jpj
+            DO ji = 1, jpi
+            
+               ! Ice stresses
+               ! sigma1, sigma2, sigma12 are some useful recombination of the stresses (Hunke and Dukowicz MWR 2002, Bouillon et al., OM2013)
+               ! These are NOT stress tensor components, neither stress invariants, neither stress principal components
+               ! I know, this can be confusing...
+               zfac             =   strength(ji,jj) / ( pdelta_i(ji,jj) + rn_creepl ) 
+               zsig1            =   zfac * ( pdivu_i(ji,jj) - pdelta_i(ji,jj) )
+               zsig2            =   zfac * z1_ecc2 * zten_i(ji,jj)
+               zsig12           =   zfac * z1_ecc2 * pshear_i(ji,jj)
+               
+               ! Stress invariants (sigma_I, sigma_II, Coon 1974, Feltham 2008)
+               zsig_I (ji,jj)   =   zsig1 * 0.5_wp                                           ! 1st stress invariant, aka average normal stress, aka negative pressure
+               zsig_II(ji,jj)   =   SQRT ( MAX( 0._wp, zsig2 * zsig2 * 0.25_wp + zsig12 ) )  ! 2nd  ''       '', aka maximum shear stress
+               
             END DO
-         END DO
-         CALL lbc_lnk_multi( 'icedyn_rhg_evp', zsig1, 'T', 1., zsig2, 'T', 1., zsig3, 'T', 1. )
+         END DO         
          !
-         CALL iom_put( 'isig1' , zsig1 )
-         CALL iom_put( 'isig2' , zsig2 )
-         CALL iom_put( 'isig3' , zsig3 )
-         !
-         ! Stress tensor invariants (normal and shear stress N/m)
-         IF( iom_use('normstr') )   CALL iom_put( 'normstr' ,       ( zs1(:,:) + zs2(:,:) )                       * zmsk00(:,:) ) ! Normal stress
-         IF( iom_use('sheastr') )   CALL iom_put( 'sheastr' , SQRT( ( zs1(:,:) - zs2(:,:) )**2 + 4*zs12(:,:)**2 ) * zmsk00(:,:) ) ! Shear stress
-
-         DEALLOCATE( zsig1 , zsig2 , zsig3 )
+         ! Stress tensor invariants (normal and shear stress N/m) - SIMIP diags - definitions following Coon (1974) and Feltham (2008)
+         IF( iom_use('normstr') )   CALL iom_put( 'normstr', zsig_I (:,:) * zmsk00(:,:) ) ! Normal stress
+         IF( iom_use('sheastr') )   CALL iom_put( 'sheastr', zsig_II(:,:) * zmsk00(:,:) ) ! Maximum shear stress
+         
+         DEALLOCATE ( zsig_I, zsig_II )
+         
       ENDIF
+
+      ! --- Normalized stress tensor principal components --- !
+      ! This are used to plot the normalized yield curve, see Lemieux & Dupont, 2020
+      ! Recommendation 1 : we use ice strength, not replacement pressure
+      ! Recommendation 2 : need to use deformations at PREVIOUS iterate for viscosities
+!!$      IF( iom_use('sig1_pnorm') .OR. iom_use('sig2_pnorm') ) THEN
+!!$         !
+!!$         ALLOCATE( zsig1_p(jpi,jpj) , zsig2_p(jpi,jpj) , zsig_I(jpi,jpj) , zsig_II(jpi,jpj) )         
+!!$         !         
+!!$         DO jj = 1, jpj
+!!$            DO ji = 1, jpi
+!!$            
+!!$               ! Ice stresses computed with **viscosities** (delta, p/delta) at **previous** iterates 
+!!$               !                        and **deformations** at current iterates
+!!$               !                        following Lemieux & Dupont (2020)
+!!$               zfac             =   zp_delt(ji,jj)
+!!$               zsig1            =   zfac * ( pdivu_i(ji,jj) - ( zdelta(ji,jj) + rn_creepl ) )
+!!$               zsig2            =   zfac * z1_ecc2 * zten_i(ji,jj)
+!!$               zsig12           =   zfac * z1_ecc2 * pshear_i(ji,jj)
+!!$               
+!!$               ! Stress invariants (sigma_I, sigma_II, Coon 1974, Feltham 2008), T-point
+!!$               zsig_I(ji,jj)    =   zsig1 * 0.5_wp                                           ! 1st stress invariant, aka average normal stress, aka negative pressure
+!!$               zsig_II(ji,jj)   =   SQRT ( MAX( 0._wp, zsig2 * zsig2 * 0.25_wp + zsig12 ) )  ! 2nd  ''       '', aka maximum shear stress
+!!$      
+!!$               ! Normalized  principal stresses (used to display the ellipse)
+!!$               z1_strength      =   1._wp / MAX( 1._wp, strength(ji,jj) )
+!!$               zsig1_p(ji,jj)   =   ( zsig_I(ji,jj) + zsig_II(ji,jj) ) * z1_strength
+!!$               zsig2_p(ji,jj)   =   ( zsig_I(ji,jj) - zsig_II(ji,jj) ) * z1_strength
+!!$            END DO
+!!$         END DO               
+!!$         !
+!!$         CALL iom_put( 'sig1_pnorm' , zsig1_p ) 
+!!$         CALL iom_put( 'sig2_pnorm' , zsig2_p ) 
+!!$      
+!!$         DEALLOCATE( zsig1_p , zsig2_p , zsig_I, zsig_II )
+!!$         
+!!$      ENDIF
 
       ! --- SIMIP --- !
       IF(  iom_use('dssh_dx') .OR. iom_use('dssh_dy') .OR. &
@@ -970,7 +1025,7 @@ CONTAINS
          ! write variables
          istatus = NF90_PUT_VAR( ncvgid, nvarid, (/zresm/), (/it/), (/1/) )
          ! close file
-         IF( kt == nitend )   istatus = NF90_CLOSE(ncvgid)
+         IF( kt == nitend - nn_fsbc + 1 )   istatus = NF90_CLOSE(ncvgid)
       ENDIF
       
    END SUBROUTINE rhg_cvg

@@ -45,7 +45,7 @@ MODULE icethd_do
 
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icethd_do.F90 11536 2019-09-11 13:54:18Z smasson $
+   !! $Id: icethd_do.F90 13589 2020-10-14 13:35:49Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -128,8 +128,10 @@ CONTAINS
       zvrel(:,:) = 0._wp
 
       ! Default new ice thickness
-      WHERE( qlead(:,:) < 0._wp  .AND. tau_icebfr(:,:) == 0._wp )   ;   ht_i_new(:,:) = rn_hinew ! if cooling and no landfast
-      ELSEWHERE                                                     ;   ht_i_new(:,:) = 0._wp
+      WHERE( qlead(:,:) < 0._wp ) ! cooling
+         ht_i_new(:,:) = rn_hinew
+      ELSEWHERE
+         ht_i_new(:,:) = 0._wp
       END WHERE
 
       IF( ln_frazil ) THEN
@@ -144,7 +146,7 @@ CONTAINS
          !
          DO jj = 2, jpjm1
             DO ji = 2, jpim1
-               IF ( qlead(ji,jj) < 0._wp .AND. tau_icebfr(ji,jj) == 0._wp ) THEN ! activated if cooling and no landfast
+               IF ( qlead(ji,jj) < 0._wp ) THEN ! cooling
                   ! -- Wind stress -- !
                   ztaux         = ( utau_ice(ji-1,jj  ) * umask(ji-1,jj  ,1)   &
                      &          +   utau_ice(ji  ,jj  ) * umask(ji  ,jj  ,1) ) * 0.5_wp
@@ -197,13 +199,13 @@ CONTAINS
       !------------------------------------------------------------------------------!
       ! 2) Compute thickness, salinity, enthalpy, age, area and volume of new ice
       !------------------------------------------------------------------------------!
-      ! This occurs if open water energy budget is negative (cooling) and there is no landfast ice
+      ! it occurs if cooling
 
       ! Identify grid points where new ice forms
       npti = 0   ;   nptidx(:) = 0
       DO jj = 1, jpj
          DO ji = 1, jpi
-            IF ( qlead(ji,jj)  <  0._wp .AND. tau_icebfr(ji,jj) == 0._wp ) THEN
+            IF ( qlead(ji,jj) < 0._wp ) THEN
                npti = npti + 1
                nptidx( npti ) = (jj - 1) * jpi + ji
             ENDIF

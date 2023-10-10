@@ -69,7 +69,7 @@ MODULE trabbl
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: trabbl.F90 11536 2019-09-11 13:54:18Z smasson $
+   !! $Id: trabbl.F90 13646 2020-10-20 15:33:01Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -512,8 +512,10 @@ CONTAINS
       !                              ! allocate trabbl arrays
       IF( tra_bbl_alloc() /= 0 )   CALL ctl_stop( 'STOP', 'tra_bbl_init : unable to allocate arrays' )
       !
-      IF( nn_bbl_adv == 1 )    WRITE(numout,*) '       * Advective BBL using upper velocity'
-      IF( nn_bbl_adv == 2 )    WRITE(numout,*) '       * Advective BBL using velocity = F( delta rho)'
+      IF(lwp) THEN
+         IF( nn_bbl_adv == 1 )    WRITE(numout,*) '       * Advective BBL using upper velocity'
+         IF( nn_bbl_adv == 2 )    WRITE(numout,*) '       * Advective BBL using velocity = F( delta rho)'
+      ENDIF
       !
       !                             !* vertical index of  "deep" bottom u- and v-points
       DO jj = 1, jpjm1                    ! (the "shelf" bottom k-indices are mbku and mbkv)

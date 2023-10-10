@@ -53,7 +53,7 @@ MODULE domain
 
    !!-------------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: domain.F90 13297 2020-07-13 08:01:58Z andmirek $
+   !! $Id: domain.F90 13436 2020-08-25 15:11:29Z acc $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!-------------------------------------------------------------------------
 CONTAINS
@@ -634,7 +634,7 @@ CONTAINS
       
       !
       !                             !==  ORCA family specificities  ==!
-      IF( cn_cfg == "ORCA" ) THEN
+      IF( TRIM(cn_cfg) == "orca" .OR. TRIM(cn_cfg) == "ORCA" ) THEN
          CALL iom_rstput( 0, 0, inum, 'ORCA'      , 1._wp            , ktype = jp_i4 )
          CALL iom_rstput( 0, 0, inum, 'ORCA_index', REAL( nn_cfg, wp), ktype = jp_i4 )         
       ENDIF

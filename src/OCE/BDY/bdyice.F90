@@ -40,7 +40,7 @@ MODULE bdyice
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: bdyice.F90 13284 2020-07-09 15:12:23Z smasson $
+   !! $Id: bdyice.F90 13589 2020-10-14 13:35:49Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -60,9 +60,7 @@ CONTAINS
       LOGICAL, DIMENSION(4)  :: llsend1, llrecv1        ! indicate how communications are to be carried out
       !!----------------------------------------------------------------------
       ! controls
-      IF( ln_timing    )   CALL timing_start('bdy_ice_thd')                                                            ! timing
-      IF( ln_icediachk )   CALL ice_cons_hsm(0,'bdy_ice_thd', rdiag_v, rdiag_s, rdiag_t, rdiag_fv, rdiag_fs, rdiag_ft) ! conservation
-      IF( ln_icediachk )   CALL ice_cons2D  (0,'bdy_ice_thd',  diag_v,  diag_s,  diag_t,  diag_fv,  diag_fs,  diag_ft) ! conservation
+      IF( ln_timing )   CALL timing_start('bdy_ice_thd')   ! timing
       !
       CALL ice_var_glo2eqv
       !
@@ -109,10 +107,8 @@ CONTAINS
       CALL ice_var_agg(1)
       !
       ! controls
-      IF( ln_icectl    )   CALL ice_prt     ( kt, iiceprt, jiceprt, 1, ' - ice thermo bdy - ' )                        ! prints
-      IF( ln_icediachk )   CALL ice_cons_hsm(1,'bdy_ice_thd', rdiag_v, rdiag_s, rdiag_t, rdiag_fv, rdiag_fs, rdiag_ft) ! conservation
-      IF( ln_icediachk )   CALL ice_cons2D  (1,'bdy_ice_thd',  diag_v,  diag_s,  diag_t,  diag_fv,  diag_fs,  diag_ft) ! conservation
-      IF( ln_timing    )   CALL timing_stop ('bdy_ice_thd')                                                            ! timing
+      IF( ln_icectl )   CALL ice_prt     ( kt, iiceprt, jiceprt, 1, ' - ice thermo bdy - ' )   ! prints
+      IF( ln_timing )   CALL timing_stop ('bdy_ice_thd')                                       ! timing
       !
    END SUBROUTINE bdy_ice
 

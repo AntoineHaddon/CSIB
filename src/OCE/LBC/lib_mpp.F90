@@ -175,7 +175,7 @@ MODULE lib_mpp
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: lib_mpp.F90 13061 2020-06-08 13:20:11Z smasson $
+   !! $Id: lib_mpp.F90 13635 2020-10-19 14:14:38Z mathiot $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -464,6 +464,7 @@ CONTAINS
          ELSE
             ALLOCATE(todelay(idvar)%y1d(isz))
             todelay(idvar)%y1d(:) = CMPLX(todelay(idvar)%z1d(:), 0., wp)   ! create %y1d, complex variable needed by mpi_sumdd
+            ndelayid(idvar) = MPI_REQUEST_NULL                             ! initialised request to a valid value
          END IF
       ENDIF
 
@@ -471,10 +472,10 @@ CONTAINS
          !                                       --------------------------
          ALLOCATE(todelay(idvar)%z1d(isz), todelay(idvar)%y1d(isz))   ! allocate also %z1d as used for the restart
          CALL mpi_allreduce( y_in(:), todelay(idvar)%y1d(:), isz, MPI_DOUBLE_COMPLEX, mpi_sumdd, ilocalcomm, ierr )   ! get %y1d
-         todelay(idvar)%z1d(:) = REAL(todelay(idvar)%y1d(:), wp)      ! define %z1d from %y1d
+         ndelayid(idvar) = MPI_REQUEST_NULL
       ENDIF
 
-      IF( ndelayid(idvar) > 0 )   CALL mpp_delay_rcv( idvar )         ! make sure %z1d is received
+      CALL mpp_delay_rcv( idvar )         ! make sure %z1d is received
 
       ! send back pout from todelay(idvar)%z1d defined at previous call
       pout(:) = todelay(idvar)%z1d(:)
@@ -483,7 +484,7 @@ CONTAINS
 # if defined key_mpi2
       IF( ln_timing ) CALL tic_tac( .TRUE., ld_global = .TRUE.)
       CALL  mpi_allreduce( y_in(:), todelay(idvar)%y1d(:), isz, MPI_DOUBLE_COMPLEX, mpi_sumdd, ilocalcomm, ierr )
-      ndelayid(idvar) = 1
+      ndelayid(idvar) = MPI_REQUEST_NULL
       IF( ln_timing ) CALL tic_tac(.FALSE., ld_global = .TRUE.)
 # else
       CALL mpi_iallreduce( y_in(:), todelay(idvar)%y1d(:), isz, MPI_DOUBLE_COMPLEX, mpi_sumdd, ilocalcomm, ndelayid(idvar), ierr )
@@ -513,6 +514,7 @@ CONTAINS
       INTEGER ::   idvar
       INTEGER ::   ierr, ilocalcomm
       !!----------------------------------------------------------------------
+      
 #if defined key_mpp_mpi
       ilocalcomm = mpi_comm_oce
       IF( PRESENT(kcom) )   ilocalcomm = kcom
@@ -533,6 +535,8 @@ CONTAINS
             IF(lwp) WRITE(numout,*) ' WARNING: the nb of delayed variables in restart file is not the model one'
             DEALLOCATE(todelay(idvar)%z1d)
             ndelayid(idvar) = -1                                      ! do as if we had no restart
+         ELSE
+            ndelayid(idvar) = MPI_REQUEST_NULL
          END IF
       ENDIF
 
@@ -540,18 +544,19 @@ CONTAINS
          !                                       --------------------------
          ALLOCATE(todelay(idvar)%z1d(isz))
          CALL mpi_allreduce( p_in(:), todelay(idvar)%z1d(:), isz, MPI_DOUBLE_PRECISION, mpi_max, ilocalcomm, ierr )   ! get %z1d
+         ndelayid(idvar) = MPI_REQUEST_NULL
       ENDIF
 
-      IF( ndelayid(idvar) > 0 )   CALL mpp_delay_rcv( idvar )         ! make sure %z1d is received
+      CALL mpp_delay_rcv( idvar )         ! make sure %z1d is received
 
       ! send back pout from todelay(idvar)%z1d defined at previous call
       pout(:) = todelay(idvar)%z1d(:)
 
       ! send p_in into todelay(idvar)%z1d with a non-blocking communication
+      ! (PM) Should we get rid of MPI2 option ? MPI3 was release in 2013. Who is still using MPI2 ?
 # if defined key_mpi2
       IF( ln_timing ) CALL tic_tac( .TRUE., ld_global = .TRUE.)
       CALL  mpi_allreduce( p_in(:), todelay(idvar)%z1d(:), isz, MPI_DOUBLE_PRECISION, mpi_max, ilocalcomm, ierr )
-      ndelayid(idvar) = 1
       IF( ln_timing ) CALL tic_tac(.FALSE., ld_global = .TRUE.)
 # else
       CALL mpi_iallreduce( p_in(:), todelay(idvar)%z1d(:), isz, MPI_DOUBLE_PRECISION, mpi_max, ilocalcomm, ndelayid(idvar), ierr )
@@ -574,15 +579,11 @@ CONTAINS
       INTEGER ::   ierr
       !!----------------------------------------------------------------------
 #if defined key_mpp_mpi
-      IF( ndelayid(kid) /= -2 ) THEN
-#if ! defined key_mpi2
-         IF( ln_timing ) CALL tic_tac( .TRUE., ld_global = .TRUE.)
-         CALL mpi_wait( ndelayid(kid), MPI_STATUS_IGNORE, ierr )                        ! make sure todelay(kid) is received
-         IF( ln_timing ) CALL tic_tac(.FALSE., ld_global = .TRUE.)
-#endif
-         IF( ASSOCIATED(todelay(kid)%y1d) )   todelay(kid)%z1d(:) = REAL(todelay(kid)%y1d(:), wp)  ! define %z1d from %y1d
-         ndelayid(kid) = -2   ! add flag to know that mpi_wait was already called on kid
-      ENDIF
+      IF( ln_timing ) CALL tic_tac( .TRUE., ld_global = .TRUE.)
+      ! test on ndelayid(kid) useless as mpi_wait return immediatly if the request handle is MPI_REQUEST_NULL
+      CALL mpi_wait( ndelayid(kid), MPI_STATUS_IGNORE, ierr ) ! after this ndelayid(kid) = MPI_REQUEST_NULL
+      IF( ln_timing ) CALL tic_tac( .FALSE., ld_global = .TRUE.)
+      IF( ASSOCIATED(todelay(kid)%y1d) )   todelay(kid)%z1d(:) = REAL(todelay(kid)%y1d(:), wp)  ! define %z1d from %y1d
 #endif
    END SUBROUTINE mpp_delay_rcv
 

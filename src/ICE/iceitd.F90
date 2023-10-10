@@ -50,7 +50,7 @@ MODULE iceitd
    !
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: iceitd.F90 13284 2020-07-09 15:12:23Z smasson $
+   !! $Id: iceitd.F90 13617 2020-10-16 08:07:20Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -614,25 +614,25 @@ CONTAINS
             END DO
          END DO
          !
-!!clem   CALL tab_2d_1d( npti, nptidx(1:npti), h_i_1d(1:npti), h_i(:,:,jl) )
-         CALL tab_2d_1d( npti, nptidx(1:npti), a_i_1d(1:npti), a_i(:,:,jl) )
-         CALL tab_2d_1d( npti, nptidx(1:npti), v_i_1d(1:npti), v_i(:,:,jl) )
-         !
-         DO ji = 1, npti
-            jdonor(ji,jl)  = jl 
-            ! how much of a_i you send in cat sup is somewhat arbitrary
-!!clem: these do not work properly after a restart (I do not know why) => not sure it is still true
-!!          zdaice(ji,jl)  = a_i_1d(ji) * ( h_i_1d(ji) - hi_max(jl) + epsi10 ) / h_i_1d(ji)  
-!!          zdvice(ji,jl)  = v_i_1d(ji) - ( a_i_1d(ji) - zdaice(ji,jl) ) * ( hi_max(jl) - epsi10 )
-!!clem: these do not work properly after a restart (I do not know why) => not sure it is still true
-!!          zdaice(ji,jl)  = a_i_1d(ji)
-!!          zdvice(ji,jl)  = v_i_1d(ji)
-!!clem: these are from UCL and work ok
-            zdaice(ji,jl)  = a_i_1d(ji) * 0.5_wp
-            zdvice(ji,jl)  = v_i_1d(ji) - zdaice(ji,jl) * ( hi_max(jl) + hi_max(jl-1) ) * 0.5_wp
-         END DO
-         !
-         IF( npti > 0 ) THEN
+         IF( npti > 0 ) THEN            
+            !!clem   CALL tab_2d_1d( npti, nptidx(1:npti), h_i_1d(1:npti), h_i(:,:,jl) )
+            CALL tab_2d_1d( npti, nptidx(1:npti), a_i_1d(1:npti), a_i(:,:,jl) )
+            CALL tab_2d_1d( npti, nptidx(1:npti), v_i_1d(1:npti), v_i(:,:,jl) )
+            !
+            DO ji = 1, npti
+               jdonor(ji,jl)  = jl 
+               ! how much of a_i you send in cat sup is somewhat arbitrary
+               !!clem: these do not work properly after a restart (I do not know why) => not sure it is still true
+               !!          zdaice(ji,jl)  = a_i_1d(ji) * ( h_i_1d(ji) - hi_max(jl) + epsi10 ) / h_i_1d(ji)  
+               !!          zdvice(ji,jl)  = v_i_1d(ji) - ( a_i_1d(ji) - zdaice(ji,jl) ) * ( hi_max(jl) - epsi10 )
+               !!clem: these do not work properly after a restart (I do not know why) => not sure it is still true
+               !!          zdaice(ji,jl)  = a_i_1d(ji)
+               !!          zdvice(ji,jl)  = v_i_1d(ji)
+               !!clem: these are from UCL and work ok
+               zdaice(ji,jl)  = a_i_1d(ji) * 0.5_wp
+               zdvice(ji,jl)  = v_i_1d(ji) - zdaice(ji,jl) * ( hi_max(jl) + hi_max(jl-1) ) * 0.5_wp
+            END DO
+            !
             CALL itd_shiftice( jdonor(1:npti,:), zdaice(1:npti,:), zdvice(1:npti,:) )  ! Shift jl=>jl+1
             ! Reset shift parameters
             jdonor(1:npti,jl) = 0
@@ -655,15 +655,16 @@ CONTAINS
             END DO
          END DO
          !
-         CALL tab_2d_1d( npti, nptidx(1:npti), a_i_1d(1:npti), a_i(:,:,jl+1) ) ! jl+1 is ok
-         CALL tab_2d_1d( npti, nptidx(1:npti), v_i_1d(1:npti), v_i(:,:,jl+1) ) ! jl+1 is ok
-         DO ji = 1, npti
-            jdonor(ji,jl) = jl + 1
-            zdaice(ji,jl) = a_i_1d(ji) 
-            zdvice(ji,jl) = v_i_1d(ji)
-         END DO
-         !
          IF( npti > 0 ) THEN
+            CALL tab_2d_1d( npti, nptidx(1:npti), a_i_1d(1:npti), a_i(:,:,jl+1) ) ! jl+1 is ok
+            CALL tab_2d_1d( npti, nptidx(1:npti), v_i_1d(1:npti), v_i(:,:,jl+1) ) ! jl+1 is ok
+            !
+            DO ji = 1, npti
+               jdonor(ji,jl) = jl + 1
+               zdaice(ji,jl) = a_i_1d(ji) 
+               zdvice(ji,jl) = v_i_1d(ji)
+            END DO
+            !
             CALL itd_shiftice( jdonor(1:npti,:), zdaice(1:npti,:), zdvice(1:npti,:) )  ! Shift jl+1=>jl
             ! Reset shift parameters
             jdonor(1:npti,jl) = 0

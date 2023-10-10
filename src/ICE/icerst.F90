@@ -17,6 +17,10 @@ MODULE icerst
    USE dom_oce        ! ocean domain
    USE phycst  , ONLY : rt0
    USE sbc_oce , ONLY : nn_fsbc, ln_cpl
+   USE sbc_oce , ONLY : nn_components, jp_iam_sas   ! SAS ss[st]_m init
+   USE sbc_oce , ONLY : sst_m, sss_m                ! SAS ss[st]_m init
+   USE oce     , ONLY : tsn                         ! SAS ss[st]_m init
+   USE eosbn2  , ONLY : l_useCT, eos_pt_from_ct     ! SAS ss[st]_m init
    USE iceistate      ! sea-ice: initial state
    USE icectl         ! sea-ice: control
    !
@@ -34,7 +38,7 @@ MODULE icerst
 
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icerst.F90 13284 2020-07-09 15:12:23Z smasson $
+   !! $Id: icerst.F90 13449 2020-09-03 14:40:10Z gsamson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -277,13 +281,24 @@ CONTAINS
          !                 ! ---------------------------------- !
       ELSE                 ! == case of a simplified restart == !
          !                 ! ---------------------------------- !
-         CALL ctl_warn('ice_rst_read: you are using a simplified ice restart')
+         CALL ctl_warn('ice_rst_read: you are attempting to use an unsuitable ice restart')
          !
-         CALL ice_istate_init
+         IF( .NOT. ln_iceini .OR. nn_iceini_file == 2 ) THEN
+            CALL ctl_stop('STOP', 'ice_rst_read: you need ln_ice_ini=T and nn_iceini_file=0 or 1')
+         ELSE
+            CALL ctl_warn('ice_rst_read: using ice_istate to set initial conditions instead')
+         ENDIF
+         !
+         IF( nn_components == jp_iam_sas ) THEN   ! SAS case: ss[st]_m were not initialized by sbc_ssm_init
+            !
+            IF(lwp) WRITE(numout,*) '  SAS: default initialisation of ss[st]_m arrays used in ice_istate'
+            IF( l_useCT )  THEN    ;   sst_m(:,:) = eos_pt_from_ct( tsn(:,:,1,jp_tem), tsn(:,:,1,jp_sal) )
+            ELSE                   ;   sst_m(:,:) = tsn(:,:,1,jp_tem)
+            ENDIF
+            sss_m(:,:) = tsn(:,:,1,jp_sal)
+         ENDIF
+         !
          CALL ice_istate( nit000 )
-         !
-         IF( .NOT.ln_iceini .OR. nn_iceini_file == 0 ) &
-            &   CALL ctl_stop('STOP', 'ice_rst_read: you need ln_ice_ini=T and nn_iceini_file=0')
          !
       ENDIF
 

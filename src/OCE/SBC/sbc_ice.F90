@@ -94,7 +94,6 @@ MODULE sbc_ice
    ! already defined in ice.F90 for SI3
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::  a_i
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::  h_i, h_s
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::  a_i_last_couple   !: Sea ice fraction on categories at the last coupling point
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   tatm_ice       !: air temperature [K]
 #endif
@@ -108,7 +107,7 @@ MODULE sbc_ice
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: sbc_ice.F90 13284 2020-07-09 15:12:23Z smasson $
+   !! $Id: sbc_ice.F90 13444 2020-08-31 08:58:55Z gsamson $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS

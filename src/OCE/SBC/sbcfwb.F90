@@ -43,7 +43,7 @@ MODULE sbcfwb
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: sbcfwb.F90 13280 2020-07-09 11:53:42Z smueller $
+   !! $Id: sbcfwb.F90 13581 2020-10-09 11:49:08Z mathiot $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -95,6 +95,7 @@ CONTAINS
 #if ! defined key_si3 && ! defined key_cice
          snwice_mass_b(:,:) = 0.e0               ! no sea-ice model is being used : no snow+ice mass
          snwice_mass  (:,:) = 0.e0
+         snwice_fmass (:,:) = 0.e0
 #endif
          !
       ENDIF

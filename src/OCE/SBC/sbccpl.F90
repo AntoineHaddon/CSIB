@@ -201,6 +201,9 @@ MODULE sbccpl
    TYPE( DYNARR ), SAVE, DIMENSION(jprcv) ::   frcv                ! all fields recieved from the atmosphere
 
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:) ::   alb_oce_mix    ! ocean albedo sent to atmosphere (mix clear/overcast sky)
+#if defined key_si3 || defined key_cice
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   a_i_last_couple !: Ice fractional area at last coupling time
+#endif
 
    REAL(wp) ::   rpref = 101000._wp   ! reference atmospheric pressure[N/m2]
    REAL(wp) ::   r1_grau              ! = 1.e0 / (grav * rau0)
@@ -211,7 +214,7 @@ MODULE sbccpl
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: sbccpl.F90 13284 2020-07-09 15:12:23Z smasson $
+   !! $Id: sbccpl.F90 13444 2020-08-31 08:58:55Z gsamson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -220,7 +223,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       !!             ***  FUNCTION sbc_cpl_alloc  ***
       !!----------------------------------------------------------------------
-      INTEGER :: ierr(4)
+      INTEGER :: ierr(5)
       !!----------------------------------------------------------------------
       ierr(:) = 0
       !
@@ -230,8 +233,11 @@ CONTAINS
       ALLOCATE( a_i(jpi,jpj,1) , STAT=ierr(2) )  ! used in sbcice_if.F90 (done here as there is no sbc_ice_if_init)
 #endif
       ALLOCATE( xcplmask(jpi,jpj,0:nn_cplmodel) , STAT=ierr(3) )
+#if defined key_si3 || defined key_cice
+      ALLOCATE( a_i_last_couple(jpi,jpj,jpl) , STAT=ierr(4) )
+#endif
       !
-      IF( .NOT. ln_apr_dyn ) ALLOCATE( ssh_ib(jpi,jpj), ssh_ibb(jpi,jpj), apr(jpi, jpj), STAT=ierr(4) )
+      IF( .NOT. ln_apr_dyn ) ALLOCATE( ssh_ib(jpi,jpj), ssh_ibb(jpi,jpj), apr(jpi, jpj), STAT=ierr(5) )
 
       sbc_cpl_alloc = MAXVAL( ierr )
       CALL mpp_sum ( 'sbccpl', sbc_cpl_alloc )
@@ -2223,6 +2229,7 @@ CONTAINS
       !
       IF( ln_timing )   call timing_start('sbc_cpl_snd')
       isec = ( kt - nit000 ) * NINT( rdt )        ! date of exchanges
+      info = OASIS_idle
 
       zfr_l(:,:) = 1.- fr_i(:,:)
       !                                                      ! ------------------------- !

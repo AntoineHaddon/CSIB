@@ -125,7 +125,6 @@ CONTAINS
       REAL(wp), DIMENSION(:,:,:), INTENT(in)  ::   phs    ! snow thickness
       REAL(wp), DIMENSION(:,:,:), INTENT(in)  ::   phi    ! ice thickness
       !!
-      REAL(wp) ::   zfr1, zfr2                 ! local variables
       REAL(wp), DIMENSION(jpi,jpj) ::   zsnw   ! snw distribution after wind blowing
       !!---------------------------------------------------------------------
       !
@@ -146,8 +145,6 @@ CONTAINS
 
       ! ice fields deduced from above
       zsnw(:,:) = 1._wp
-      !!CALL lim_thd_snwblow( at_i_b, zsnw )  ! snow distribution over ice after
-      !wind blowing 
       emp_ice  (:,:)   = SUM( a_i_b(:,:,:) * evap_ice(:,:,:), dim=3 ) - sprecip(:,:) * zsnw(:,:)
       emp_oce  (:,:)   = emp_oce(:,:) - sprecip(:,:) * (1._wp - zsnw(:,:) )
       qevap_ice(:,:,:) =   0._wp
@@ -160,17 +157,8 @@ CONTAINS
       qns_tot (:,:) = at_i_b(:,:) * qns_oce(:,:) + SUM( a_i_b(:,:,:) * qns_ice(:,:,:), dim=3 ) + qemp_ice(:,:) + qemp_oce(:,:)
       qsr_tot (:,:) = at_i_b(:,:) * qsr_oce(:,:) + SUM( a_i_b(:,:,:) * qsr_ice(:,:,:), dim=3 )
 
-      ! --- shortwave radiation transmitted below the surface (W/m2, see Grenfell Maykut 77) --- !
-      zfr1 = ( 0.18 * ( 1.0 - cldf_ice ) + 0.35 * cldf_ice )            ! transmission when hi>10cm
-      zfr2 = ( 0.82 * ( 1.0 - cldf_ice ) + 0.65 * cldf_ice )            ! zfr2 such that zfr1 + zfr2 to equal 1
-      !
-      WHERE    ( phs(:,:,:) <= 0._wp .AND. phi(:,:,:) <  0.1_wp )       ! linear decrease from hi=0 to 10cm  
-         qtr_ice_top(:,:,:) = qsr_ice(:,:,:) * ( zfr1 + zfr2 * ( 1._wp - phi(:,:,:) * 10._wp ) )
-      ELSEWHERE( phs(:,:,:) <= 0._wp .AND. phi(:,:,:) >= 0.1_wp )       ! constant (zfr1) when hi>10cm
-         qtr_ice_top(:,:,:) = qsr_ice(:,:,:) * zfr1
-      ELSEWHERE                                                         ! zero when hs>0
-         qtr_ice_top(:,:,:) = 0._wp 
-      END WHERE
+      ! --- shortwave radiation transmitted below the surface (W/m2)
+      qtr_ice_top(:,:,:) = 0._wp
 #endif
 
    END SUBROUTINE usrdef_sbc_ice_flx

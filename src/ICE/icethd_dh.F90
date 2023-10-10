@@ -31,7 +31,7 @@ MODULE icethd_dh
 
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icethd_dh.F90 13284 2020-07-09 15:12:23Z smasson $
+   !! $Id: icethd_dh.F90 13642 2020-10-19 22:58:34Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -138,7 +138,7 @@ CONTAINS
       ENDIF
       !
       DO ji = 1, npti
-         zf_tt(ji)         = qcn_ice_bot_1d(ji) + qsb_ice_bot_1d(ji) + fhld_1d(ji) 
+         zf_tt(ji)         = qcn_ice_bot_1d(ji) + qsb_ice_bot_1d(ji) + fhld_1d(ji) + qtr_ice_bot_1d(ji) * frq_m_1d(ji) 
          zq_bot(ji)        = MAX( 0._wp, zf_tt(ji) * rdt_ice )
       END DO
 
@@ -555,7 +555,7 @@ CONTAINS
          dh_s_mlt(ji)       = dh_s_mlt(ji) + zdeltah(ji,1)
          !    
          ! Remaining heat flux (W.m-2) is sent to the ocean heat budget
-         qt_oce_ai_1d(ji) = qt_oce_ai_1d(ji) + ( zq_rema(ji) * a_i_1d(ji) ) * r1_rdtice
+         !!!hfx_res_1d(ji) = hfx_res_1d(ji) + ( zq_rema(ji) * a_i_1d(ji) ) * r1_rdtice
 
          IF( ln_icectl .AND. zq_rema(ji) < 0. .AND. lwp ) WRITE(numout,*) 'ALERTE zq_rema <0 = ', zq_rema(ji)
       END DO

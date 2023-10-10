@@ -76,9 +76,12 @@
           <field id="vtau_oi"      long_name="Y-component of ocean stress on sea ice"                  standard_name="sea_ice_base_upward_y_stress"              unit="N/m2" />
           <field id="utau_bi"      long_name="X-component of ocean bottom stress on sea ice -landfast" standard_name="ocean_bottom_upward_x_stress"              unit="N/m2" />
           <field id="vtau_bi"      long_name="Y-component of ocean bottom stress on sea ice -landfast" standard_name="ocean_bottom_upward_y_stress"              unit="N/m2" />
-          <field id="isig1"        long_name="1st principal stress component for EVP rhg"                                                                        unit=""     />
+          <!-- the fields isig1 isig2 isig3 are obsolete -->
+	  <field id="isig1"        long_name="1st principal stress component for EVP rhg"                                                                        unit=""     />
           <field id="isig2"        long_name="2nd principal stress component for EVP rhg"                                                                        unit=""     />
           <field id="isig3"        long_name="convergence measure for EVP rheology (must be around 1)"                                                           unit=""     />
+          <field id="sig1_pnorm"   long_name="P-normalized 1st principal stress component"                                                                       unit=""     />
+          <field id="sig2_pnorm"   long_name="P-normalized 2nd principal stress component"                                                                       unit=""     />
           <field id="normstr"      long_name="Average normal stress in sea ice"                        standard_name="average_normal_stress"                     unit="N/m"  />
           <field id="sheastr"      long_name="Maximum shear stress in sea ice"                         standard_name="maximum_shear_stress"                      unit="N/m"  />
           <field id="icestr"       long_name="Compressive sea ice strength"                            standard_name="compressive_strength_of_sea_ice"           unit="N/m"  />
@@ -404,9 +407,6 @@
 	  <field field_ref="icestr"           name="sistre"  />
 	  <field field_ref="normstr"          name="normstr" />
 	  <field field_ref="sheastr"          name="sheastr" />
-	  <field field_ref="isig1"            name="isig1"   />
-	  <field field_ref="isig2"            name="isig2"   />
-	  <field field_ref="isig3"            name="isig3"   />
 	  
 	  <!-- heat fluxes -->
 	  <field field_ref="qt_oce_ai"        name="qt_oce_ai"  />

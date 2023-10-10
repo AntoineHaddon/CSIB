@@ -24,7 +24,6 @@ MODULE iceupdate
    USE icealb         ! sea-ice: albedo parameters
    USE traqsr         ! add penetration of solar flux in the calculation of heat budget
    USE icectl         ! sea-ice: control prints
-   USE bdy_oce , ONLY : ln_bdy
    USE zdfdrg  , ONLY : ln_drgice_imp
    !
    USE in_out_manager ! I/O manager
@@ -49,7 +48,7 @@ MODULE iceupdate
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: iceupdate.F90 13284 2020-07-09 15:12:23Z smasson $
+   !! $Id: iceupdate.F90 13642 2020-10-19 22:58:34Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -93,7 +92,6 @@ CONTAINS
       INTEGER, INTENT(in) ::   kt   ! number of iteration
       !
       INTEGER  ::   ji, jj, jl, jk   ! dummy loop indices
-      REAL(wp) ::   zqmass           ! Heat flux associated with mass exchange ice->ocean (W.m-2)
       REAL(wp) ::   zqsr             ! New solar flux received by the ocean
       REAL(wp), DIMENSION(jpi,jpj) ::   z2d                  ! 2D workspace
       !!---------------------------------------------------------------------
@@ -104,6 +102,10 @@ CONTAINS
          WRITE(numout,*)'ice_update_flx: update fluxes (mass, salt and heat) at the ice-ocean interface'
          WRITE(numout,*)'~~~~~~~~~~~~~~'
       ENDIF
+
+      ! Net heat flux on top of the ice-ocean (W.m-2)
+      !----------------------------------------------
+      qt_atm_oi(:,:) = qns_tot(:,:) + qsr_tot(:,:) 
 
       ! --- case we bypass ice thermodynamics --- !
       IF( .NOT. ln_icethd ) THEN   ! we suppose ice is impermeable => ocean is isolated from atmosphere
@@ -117,24 +119,34 @@ CONTAINS
       DO jj = 1, jpj
          DO ji = 1, jpi
 
-            ! Solar heat flux reaching the ocean = zqsr (W.m-2)
+            ! Solar heat flux reaching the ocean (max) = zqsr (W.m-2) 
             !---------------------------------------------------
             zqsr = qsr_tot(ji,jj) - SUM( a_i_b(ji,jj,:) * ( qsr_ice(ji,jj,:) - qtr_ice_bot(ji,jj,:) ) )
 
             ! Total heat flux reaching the ocean = qt_oce_ai (W.m-2)
             !---------------------------------------------------
-            zqmass           = hfx_thd(ji,jj) + hfx_dyn(ji,jj) + hfx_res(ji,jj) ! heat flux from snow is 0 (T=0 degC)
-            qt_oce_ai(ji,jj) = qt_oce_ai(ji,jj) + zqmass + zqsr
-
-            ! Add the residual from heat diffusion equation and sublimation (W.m-2)
-            !----------------------------------------------------------------------
-            qt_oce_ai(ji,jj) = qt_oce_ai(ji,jj) + hfx_err_dif(ji,jj) +   &
-               &             ( hfx_sub(ji,jj) - SUM( qevap_ice(ji,jj,:) * a_i_b(ji,jj,:) ) )
-
+            qt_oce_ai(ji,jj) = qt_atm_oi(ji,jj) - hfx_sum(ji,jj) - hfx_bom(ji,jj) - hfx_bog(ji,jj) &
+               &                                - hfx_dif(ji,jj) - hfx_opw(ji,jj) - hfx_snw(ji,jj) &
+               &                                + hfx_thd(ji,jj) + hfx_dyn(ji,jj) + hfx_res(ji,jj) &
+               &                                + hfx_sub(ji,jj) - SUM( qevap_ice(ji,jj,:) * a_i_b(ji,jj,:) ) + hfx_spr(ji,jj)                 
+            
             ! New qsr and qns used to compute the oceanic heat flux at the next time step
             !----------------------------------------------------------------------------
-            qsr(ji,jj) = zqsr
-            qns(ji,jj) = qt_oce_ai(ji,jj) - zqsr
+            ! if warming and some ice remains, then we suppose that the whole solar flux has been consumed to melt the ice
+            ! else ( cooling or no ice left ), then we suppose that     no    solar flux has been consumed
+            !
+            IF( fhld(ji,jj) > 0._wp .AND. at_i(ji,jj) > 0._wp ) THEN   !-- warming and some ice remains
+               !                                        solar flux transmitted thru the 1st level of the ocean (i.e. not used by sea-ice)
+               qsr(ji,jj) = ( 1._wp - at_i_b(ji,jj) ) * qsr_oce(ji,jj) * ( 1._wp - frq_m(ji,jj) ) &
+                  !                                   + solar flux transmitted thru ice and the 1st ocean level (also not used by sea-ice)
+                  &             + SUM( a_i_b(ji,jj,:) * qtr_ice_bot(ji,jj,:) ) * ( 1._wp - frq_m(ji,jj) )
+               !
+            ELSE                                                       !-- cooling or no ice left
+               qsr(ji,jj) = zqsr
+            ENDIF
+            !
+            ! the non-solar is simply derived from the solar flux
+            qns(ji,jj) = qt_oce_ai(ji,jj) - zqsr              
 
             ! Mass flux at the atm. surface
             !-----------------------------------
@@ -142,29 +154,16 @@ CONTAINS
 
             ! Mass flux at the ocean surface
             !------------------------------------
-            !  case of realistic freshwater flux (Tartinville et al., 2001) (presently ACTIVATED)
-            !  -------------------------------------------------------------------------------------
-            !  The idea of this approach is that the system that we consider is the ICE-OCEAN system
-            !  Thus  FW  flux  =  External ( E-P+snow melt)
-            !       Salt flux  =  Exchanges in the ice-ocean system then converted into FW
-            !                     Associated to Ice formation AND Ice melting
-            !                     Even if i see Ice melting as a FW and SALT flux
-            !
-            ! mass flux from ice/ocean
+            ! ice-ocean  mass flux
             wfx_ice(ji,jj) = wfx_bog(ji,jj) + wfx_bom(ji,jj) + wfx_sum(ji,jj) + wfx_sni(ji,jj)   &
                &           + wfx_opw(ji,jj) + wfx_dyn(ji,jj) + wfx_res(ji,jj) + wfx_lam(ji,jj) + wfx_pnd(ji,jj)
 
-            ! add the snow melt water to snow mass flux to the ocean
+            ! snw-ocean mass flux
             wfx_snw(ji,jj) = wfx_snw_sni(ji,jj) + wfx_snw_dyn(ji,jj) + wfx_snw_sum(ji,jj)
 
-            ! mass flux at the ocean/ice interface
-            fmmflx(ji,jj) = - ( wfx_ice(ji,jj) + wfx_snw(ji,jj) + wfx_err_sub(ji,jj) )              ! F/M mass flux save at least for biogeochemical model
-            ! Mass flux will be dealt with separately if the vertical salt plume parameterization is used
-            ! See sbc_spp_div in sbcspp
-            IF (.not. ln_vertspp) THEN
-               ! Mass flux + F/M mass flux (always ice/ocean mass exchange)
-               emp(ji,jj)    = emp_oce(ji,jj) - wfx_ice(ji,jj) - wfx_snw(ji,jj) - wfx_err_sub(ji,jj)   ! mass flux + F/M mass flux (always ice/ocean mass exchange)
-            ENDIF
+            ! total mass flux at the ocean/ice interface
+            fmmflx(ji,jj) =                - wfx_ice(ji,jj) - wfx_snw(ji,jj) - wfx_err_sub(ji,jj)   ! ice-ocean mass flux saved at least for biogeochemical model
+            emp   (ji,jj) = emp_oce(ji,jj) - wfx_ice(ji,jj) - wfx_snw(ji,jj) - wfx_err_sub(ji,jj)   ! atm-ocean + ice-ocean mass flux
 
             ! Salt flux at the ocean surface
             !------------------------------------------
@@ -268,8 +267,8 @@ CONTAINS
       CALL iom_put ('hfxsum'     , hfx_sum     )   ! heat flux used for ice surface melt
       CALL iom_put ('hfxopw'     , hfx_opw     )   ! heat flux used for ice formation in open water
       CALL iom_put ('hfxdif'     , hfx_dif     )   ! heat flux used for ice temperature change
-      CALL iom_put ('hfxsnw'     , hfx_snw     )   ! heat flux used for snow melt
-      CALL iom_put ('hfxerr'     , hfx_err_dif )   ! heat flux error after heat diffusion (included in qt_oce_ai)
+      CALL iom_put ('hfxsnw'     , hfx_snw     )   ! heat flux used for snow melt 
+      CALL iom_put ('hfxerr'     , hfx_err_dif )   ! heat flux error after heat diffusion
 
       ! heat fluxes associated with mass exchange (freeze/melt/precip...)
       CALL iom_put ('hfxthd'     , hfx_thd     )   !
@@ -286,11 +285,11 @@ CONTAINS
       ! controls
       !---------
 #if ! defined key_agrif
-      IF( ln_icediachk .AND. .NOT. ln_bdy)   CALL ice_cons_final('iceupdate')                                       ! conservation
+      IF( ln_icediachk )   CALL ice_cons_final('iceupdate')                                       ! conservation
 #endif
-      IF( ln_icectl                      )   CALL ice_prt       (kt, iiceprt, jiceprt, 3, 'Final state ice_update') ! prints
-      IF( ln_ctl                         )   CALL ice_prt3D     ('iceupdate')                                       ! prints
-      IF( ln_timing                      )   CALL timing_stop   ('ice_update')                                      ! timing
+      IF( ln_icectl    )   CALL ice_prt       (kt, iiceprt, jiceprt, 3, 'Final state ice_update') ! prints
+      IF( ln_ctl       )   CALL ice_prt3D     ('iceupdate')                                       ! prints
+      IF( ln_timing    )   CALL timing_stop   ('ice_update')                                      ! timing
       !
    END SUBROUTINE ice_update_flx
 

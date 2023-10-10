@@ -37,10 +37,7 @@
         <!-- IAT/age tracer from TOP but running w/o any BGCM -->
         <field id="Age" long_name="Seawater age since last contact with surface" standard_name="ideal age tracer" unit="year(s)" grid_ref="grid_T_3D"/>
 
-	<!-- Ideal Age Tracer (IAT) from TOP -->
-        <field id="Age"          long_name="Seawater age since contact with surface"  unit="years"    grid_ref="grid_T_3D"  />
-
-  <!--- additions to diawri.F90 --->
+	<!-- additions to diawri.F90 -->
         <field id="socegrad"    long_name="module of salinity gradient"              unit="psu/m"   grid_ref="grid_T_3D"/>
         <field id="socegrad2"   long_name="square of module of salinity gradient"    unit="psu2/m2" grid_ref="grid_T_3D"/>
         <field id="eken_int"    long_name="vertical integration of kinetic energy"   unit="m3/s2"   />

@@ -42,18 +42,26 @@ MODULE icectl
    PUBLIC   ice_ctl
    PUBLIC   ice_prt
    PUBLIC   ice_prt3D
+   PUBLIC   ice_drift_wri
+   PUBLIC   ice_drift_init
 
    ! thresold rates for conservation
    !    these values are changed by the namelist parameter rn_icechk, so that threshold = zchk * rn_icechk
    REAL(wp), PARAMETER ::   zchk_m   = 2.5e-7   ! kg/m2/s <=> 1e-6 m of ice per hour spuriously gained/lost
    REAL(wp), PARAMETER ::   zchk_s   = 2.5e-6   ! g/m2/s  <=> 1e-6 m of ice per hour spuriously gained/lost (considering s=10g/kg)
    REAL(wp), PARAMETER ::   zchk_t   = 7.5e-2   ! W/m2    <=> 1e-6 m of ice per hour spuriously gained/lost (considering Lf=3e5J/kg)
+
+   ! for drift outputs
+   CHARACTER(LEN=50)   ::   clname="icedrift_diagnostics.ascii"   ! ascii filename
+   INTEGER             ::   numicedrift                           ! outfile unit
+   REAL(wp)            ::   rdiag_icemass, rdiag_icesalt, rdiag_iceheat 
+   REAL(wp)            ::   rdiag_adv_icemass, rdiag_adv_icesalt, rdiag_adv_iceheat 
    
    !! * Substitutions
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icectl.F90 13284 2020-07-09 15:12:23Z smasson $
+   !! $Id: icectl.F90 13589 2020-10-14 13:35:49Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -131,8 +139,8 @@ CONTAINS
          zdiag_esmin = glob_min( 'icectl', SUM( e_s, dim=3 ) )
 
          ! -- advection scheme is conservative? -- !
-         zvtrp = glob_sum( 'icectl', ( diag_trp_vi * rhoi + diag_trp_vs * rhos ) * e1e2t ) ! must be close to 0 (only for Prather)
-         zetrp = glob_sum( 'icectl', ( diag_trp_ei        + diag_trp_es        ) * e1e2t ) ! must be close to 0 (only for Prather)
+         zvtrp = glob_sum( 'icectl', diag_adv_mass * e1e2t )
+         zetrp = glob_sum( 'icectl', diag_adv_heat * e1e2t )
 
          ! ice area (+epsi10 to set a threshold > 0 when there is no ice) 
          zarea = glob_sum( 'icectl', SUM( a_i + epsi10, dim=3 ) * e1e2t )
@@ -155,11 +163,10 @@ CONTAINS
             IF( zdiag_amax > MAX(rn_amax_n,rn_amax_s)+epsi10 .AND. cd_routine /= 'icedyn_adv' .AND. cd_routine /= 'icedyn_rdgrft' ) &
                &                   WRITE(numout,*)   cd_routine,' : violation a_i > amax      = ',zdiag_amax
             ! check if advection scheme is conservative
-            !    only check for Prather because Ultimate-Macho uses corrective fluxes (wfx etc)
-            !    so the formulation for conservation is different (and not coded) 
-            !    it does not mean UM is not conservative (it is checked with above prints) => update (09/2019): same for Prather now
-            !IF( ln_adv_Pra .AND. ABS(zvtrp) > zchk_m * rn_icechk_glo * zarea .AND. cd_routine == 'icedyn_adv' ) &
-            !   &                   WRITE(numout,*)   cd_routine,' : violation adv scheme [kg] = ',zvtrp * rdt_ice
+            IF( ABS(zvtrp) > zchk_m * rn_icechk_glo * zarea .AND. cd_routine == 'icedyn_adv' ) &
+               &                   WRITE(numout,*)   cd_routine,' : violation adv scheme [kg] = ',zvtrp * rdt_ice
+            IF( ABS(zetrp) > zchk_t * rn_icechk_glo * zarea .AND. cd_routine == 'icedyn_adv' ) &
+               &                   WRITE(numout,*)   cd_routine,' : violation adv scheme [J]  = ',zetrp * rdt_ice
          ENDIF
          !
       ENDIF
@@ -185,15 +192,18 @@ CONTAINS
 
       ! water flux
       ! -- mass diag -- !
-      zdiag_mass = glob_sum( 'icectl', ( wfx_ice + wfx_snw + wfx_spr + wfx_sub + diag_vice + diag_vsnw ) * e1e2t )
+      zdiag_mass = glob_sum( 'icectl', (  wfx_ice   + wfx_snw   + wfx_spr + wfx_sub &
+         &                              + diag_vice + diag_vsnw - diag_adv_mass ) * e1e2t )
 
       ! -- salt diag -- !
-      zdiag_salt = glob_sum( 'icectl', ( sfx + diag_sice ) * e1e2t )
+      zdiag_salt = glob_sum( 'icectl', ( sfx + diag_sice - diag_adv_salt ) * e1e2t )
 
       ! -- heat diag -- !
-      ! clem: not the good formulation
-      !!zdiag_heat  = glob_sum( 'icectl', ( qt_oce_ai - qt_atm_oi + diag_heat + hfx_thd + hfx_dyn + hfx_res + hfx_sub + hfx_spr  &
-      !!   &                              ) * e1e2t )
+      zdiag_heat  = glob_sum( 'icectl', ( qt_oce_ai - qt_atm_oi + diag_heat - diag_adv_heat ) * e1e2t )
+      ! equivalent to this:
+      !!zdiag_heat = glob_sum( 'icectl', ( -diag_heat + hfx_sum + hfx_bom + hfx_bog + hfx_dif + hfx_opw + hfx_snw &
+      !!   &                                          - hfx_thd - hfx_dyn - hfx_res - hfx_sub - hfx_spr &
+      !!   &                                          ) * e1e2t )
 
       ! ice area (+epsi10 to set a threshold > 0 when there is no ice) 
       zarea = glob_sum( 'icectl', SUM( a_i + epsi10, dim=3 ) * e1e2t )
@@ -203,7 +213,8 @@ CONTAINS
             &                   WRITE(numout,*) cd_routine,' : violation mass cons. [kg] = ',zdiag_mass * rdt_ice
          IF( ABS(zdiag_salt) > zchk_s * rn_icechk_glo * zarea ) &
             &                   WRITE(numout,*) cd_routine,' : violation salt cons. [g]  = ',zdiag_salt * rdt_ice
-         !!IF( ABS(zdiag_heat) > zchk_t * rn_icechk_glo * zarea ) WRITE(numout,*) cd_routine,' : violation heat cons. [J]  = ',zdiag_heat * rdt_ice
+         IF( ABS(zdiag_heat) > zchk_t * rn_icechk_glo * zarea ) &
+            &                   WRITE(numout,*) cd_routine,' : violation heat cons. [J]  = ',zdiag_heat * rdt_ice
       ENDIF
       !
    END SUBROUTINE ice_cons_final
@@ -746,7 +757,140 @@ CONTAINS
       CALL prt_ctl(tab2d_1=utau_ice   , clinfo1= ' utau_ice  : ', tab2d_2=vtau_ice   , clinfo2= ' vtau_ice  : ')
       
    END SUBROUTINE ice_prt3D
-      
+
+
+   SUBROUTINE ice_drift_wri( kt )
+      !!-------------------------------------------------------------------
+      !!                     ***  ROUTINE ice_drift_wri ***
+      !!
+      !! ** Purpose : conservation of mass, salt and heat
+      !!              write the drift in a ascii file at each time step
+      !!              and the total run drifts
+      !!-------------------------------------------------------------------
+      INTEGER, INTENT(in) ::   kt   ! ice time-step index
+      !
+      INTEGER  ::   ji, jj
+      REAL(wp) ::   zdiag_mass, zdiag_salt, zdiag_heat, zdiag_adv_mass, zdiag_adv_salt, zdiag_adv_heat
+      !!REAL(wp), DIMENSION(jpi,jpj) ::   zdiag_mass2D, zdiag_salt2D, zdiag_heat2D
+      !!-------------------------------------------------------------------
+      !
+      IF( kt == nit000 .AND. lwp ) THEN
+         WRITE(numout,*)
+         WRITE(numout,*) 'ice_drift_wri: sea-ice drifts'
+         WRITE(numout,*) '~~~~~~~~~~~~~'
+      ENDIF
+      !
+      !clem: the following lines check the ice drift in 2D.
+      !      to use this check, uncomment those lines and add the 3 fields in field_def_ice.xml
+      !!! 2D budgets (must be close to 0)
+      !!IF( iom_use('icedrift_mass') .OR. iom_use('icedrift_salt') .OR. iom_use('icedrift_heat') ) THEN
+      !!   DO jj = 1, jpj
+      !!      DO ji = 1, jpi
+      !!         zdiag_mass2D(ji,jj) =   wfx_ice(ji,jj)   + wfx_snw(ji,jj)   + wfx_spr(ji,jj) + wfx_sub(ji,jj) &
+      !!            &                  + diag_vice(ji,jj) + diag_vsnw(ji,jj) - diag_adv_mass(ji,jj)
+      !!         zdiag_salt2D(ji,jj) = sfx(ji,jj) + diag_sice(ji,jj) - diag_adv_salt(ji,jj)
+      !!         zdiag_heat2D(ji,jj) = qt_oce_ai(ji,jj) - qt_atm_oi(ji,jj) + diag_heat(ji,jj) - diag_adv_heat(ji,jj)
+      !!      END DO
+      !!   END DO
+      !!   !
+      !!   ! write outputs
+      !!   CALL iom_put( 'icedrift_mass', zdiag_mass2D )
+      !!   CALL iom_put( 'icedrift_salt', zdiag_salt2D )
+      !!   CALL iom_put( 'icedrift_heat', zdiag_heat2D )
+      !!ENDIF
+
+      ! -- mass diag -- !
+      zdiag_mass     = glob_sum( 'icectl', (  wfx_ice   + wfx_snw   + wfx_spr + wfx_sub &
+         &                                  + diag_vice + diag_vsnw - diag_adv_mass ) * e1e2t ) * rdt_ice
+      zdiag_adv_mass = glob_sum( 'icectl', diag_adv_mass * e1e2t ) * rdt_ice
+
+      ! -- salt diag -- !
+      zdiag_salt     = glob_sum( 'icectl', ( sfx + diag_sice - diag_adv_salt ) * e1e2t ) * rdt_ice * 1.e-3
+      zdiag_adv_salt = glob_sum( 'icectl', diag_adv_salt * e1e2t ) * rdt_ice * 1.e-3
+
+      ! -- heat diag -- !
+      zdiag_heat     = glob_sum( 'icectl', ( qt_oce_ai - qt_atm_oi + diag_heat - diag_adv_heat ) * e1e2t )
+      zdiag_adv_heat = glob_sum( 'icectl', diag_adv_heat * e1e2t )
+
+      !                    ! write out to file
+      IF( lwp ) THEN
+         ! check global drift (must be close to 0)
+         WRITE(numicedrift,FMT='(2x,i6,3x,a19,4x,f25.5)') kt, 'mass drift     [kg]', zdiag_mass
+         WRITE(numicedrift,FMT='(11x,     a19,4x,f25.5)')     'salt drift     [kg]', zdiag_salt
+         WRITE(numicedrift,FMT='(11x,     a19,4x,f25.5)')     'heat drift     [W] ', zdiag_heat
+         ! check drift from advection scheme (can be /=0 with bdy but not sure why)
+         WRITE(numicedrift,FMT='(11x,     a19,4x,f25.5)')     'mass drift adv [kg]', zdiag_adv_mass
+         WRITE(numicedrift,FMT='(11x,     a19,4x,f25.5)')     'salt drift adv [kg]', zdiag_adv_salt
+         WRITE(numicedrift,FMT='(11x,     a19,4x,f25.5)')     'heat drift adv [W] ', zdiag_adv_heat
+      ENDIF
+      !                    ! drifts
+      rdiag_icemass = rdiag_icemass + zdiag_mass
+      rdiag_icesalt = rdiag_icesalt + zdiag_salt
+      rdiag_iceheat = rdiag_iceheat + zdiag_heat
+      rdiag_adv_icemass = rdiag_adv_icemass + zdiag_adv_mass
+      rdiag_adv_icesalt = rdiag_adv_icesalt + zdiag_adv_salt
+      rdiag_adv_iceheat = rdiag_adv_iceheat + zdiag_adv_heat
+      !
+      !                    ! output drifts and close ascii file
+      IF( kt == nitend - nn_fsbc + 1 .AND. lwp ) THEN
+         ! to ascii file
+         WRITE(numicedrift,*) '******************************************'
+         WRITE(numicedrift,FMT='(3x,a23,6x,E10.2)') 'Run mass drift     [kg]', rdiag_icemass
+         WRITE(numicedrift,FMT='(3x,a23,6x,E10.2)') 'Run mass drift adv [kg]', rdiag_adv_icemass
+         WRITE(numicedrift,*) '******************************************'
+         WRITE(numicedrift,FMT='(3x,a23,6x,E10.2)') 'Run salt drift     [kg]', rdiag_icesalt
+         WRITE(numicedrift,FMT='(3x,a23,6x,E10.2)') 'Run salt drift adv [kg]', rdiag_adv_icesalt
+         WRITE(numicedrift,*) '******************************************'
+         WRITE(numicedrift,FMT='(3x,a23,6x,E10.2)') 'Run heat drift     [W] ', rdiag_iceheat
+         WRITE(numicedrift,FMT='(3x,a23,6x,E10.2)') 'Run heat drift adv [W] ', rdiag_adv_iceheat
+         CLOSE( numicedrift )
+         !
+         ! to ocean output
+         WRITE(numout,*)
+         WRITE(numout,*) 'ice_drift_wri: ice drifts information for the run '
+         WRITE(numout,*) '~~~~~~~~~~~~~'
+         ! check global drift (must be close to 0)
+         WRITE(numout,*) '   sea-ice mass drift     [kg] = ', rdiag_icemass
+         WRITE(numout,*) '   sea-ice salt drift     [kg] = ', rdiag_icesalt
+         WRITE(numout,*) '   sea-ice heat drift     [W]  = ', rdiag_iceheat
+         ! check drift from advection scheme (can be /=0 with bdy but not sure why)
+         WRITE(numout,*) '   sea-ice mass drift adv [kg] = ', rdiag_adv_icemass
+         WRITE(numout,*) '   sea-ice salt drift adv [kg] = ', rdiag_adv_icesalt
+         WRITE(numout,*) '   sea-ice heat drift adv [W]  = ', rdiag_adv_iceheat
+      ENDIF
+      !
+   END SUBROUTINE ice_drift_wri
+
+   SUBROUTINE ice_drift_init
+      !!----------------------------------------------------------------------
+      !!                  ***  ROUTINE ice_drift_init  ***
+      !!                   
+      !! ** Purpose :   create output file, initialise arrays
+      !!----------------------------------------------------------------------
+      !
+      IF( .NOT.ln_icediachk ) RETURN ! exit
+      !
+      IF(lwp) THEN
+         WRITE(numout,*)
+         WRITE(numout,*) 'ice_drift_init: Output ice drifts to ',TRIM(clname), ' file'
+         WRITE(numout,*) '~~~~~~~~~~~~~'
+         WRITE(numout,*)
+         !
+         ! create output ascii file
+         CALL ctl_opn( numicedrift, clname, 'UNKNOWN', 'FORMATTED', 'SEQUENTIAL', 1, numout, lwp, narea )
+         WRITE(numicedrift,*) 'Timestep  Drifts'
+         WRITE(numicedrift,*) '******************************************'
+      ENDIF
+      !
+      rdiag_icemass = 0._wp
+      rdiag_icesalt = 0._wp
+      rdiag_iceheat = 0._wp
+      rdiag_adv_icemass = 0._wp
+      rdiag_adv_icesalt = 0._wp
+      rdiag_adv_iceheat = 0._wp
+      !
+   END SUBROUTINE ice_drift_init
+
 #else
    !!----------------------------------------------------------------------
    !!   Default option         Empty Module           No SI3 sea-ice model
