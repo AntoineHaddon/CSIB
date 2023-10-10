@@ -28,7 +28,7 @@ MODULE step_c1d
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: step_c1d.F90 13093 2020-06-10 15:35:50Z gsamson $
+   !! $Id: step_c1d.F90 15594 2021-12-13 11:05:33Z cetlod $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -81,6 +81,9 @@ CONTAINS
       !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
       ! diagnostics and outputs             (ua, va, ta, sa used as workspace)
       !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+                         CALL eos( tsb, rhd, rhop, gdept_0(:,:,:) ) ! potential density 
+                                                                    ! ( needs in diawri, diahth and for some bio models )
+
                          CALL dia_wri( kstp )       ! ocean model: outputs
                          CALL dia_hth( kstp )       ! Thermocline depth (20 degres isotherm depth)
 
@@ -103,7 +106,6 @@ CONTAINS
       IF(.NOT.ln_linssh)CALL tra_adv( kstp )       ! horizontal & vertical advection
       IF( ln_zdfosm  )  CALL tra_osm( kstp )       ! OSMOSIS non-local tracer fluxes
                         CALL tra_zdf( kstp )       ! vertical mixing
-                        CALL eos( tsn, rhd, rhop, gdept_0(:,:,:) )   ! now potential density for zdfmxl
       IF( ln_zdfnpc )   CALL tra_npc( kstp )       ! applied non penetrative convective adjustment on (t,s)
                         CALL tra_nxt( kstp )       ! tracer fields at next time step
 

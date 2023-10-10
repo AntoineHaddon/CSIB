@@ -64,9 +64,12 @@ MODULE iceistate
    INTEGER , PARAMETER ::   jp_hld = 10          ! index of pnd lid depth    (m)
    TYPE(FLD), ALLOCATABLE, DIMENSION(:) ::   si  ! structure of input fields (file informations, fields read)
    !   
+#if defined key_agrif
+   REAL(wp), PUBLIC ::   rsshadj   !: initial mean ssh adjustment due to initial ice+snow mass
+#endif
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: iceistate.F90 14026 2020-12-03 08:48:10Z clem $
+   !! $Id: iceistate.F90 15495 2021-11-10 16:18:22Z clem $
    !! Software governed by the CeCILL licence (modipsl/doc/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -93,9 +96,8 @@ CONTAINS
       INTEGER, INTENT(in) ::   kt   ! time step 
       !!
       INTEGER  ::   ji, jj, jk, jl         ! dummy loop indices
-      REAL(wp) ::   ztmelts
+      REAL(wp) ::   ztmelts, zsshadj, area
       INTEGER , DIMENSION(4)           ::   itest
-      REAL(wp), DIMENSION(jpi,jpj)     ::   z2d
       REAL(wp), DIMENSION(jpi,jpj)     ::   zswitch    ! ice indicator
       REAL(wp), DIMENSION(jpi,jpj)     ::   zht_i_ini, zat_i_ini, ztm_s_ini            !data from namelist or nc file
       REAL(wp), DIMENSION(jpi,jpj)     ::   zt_su_ini, zht_s_ini, zsm_i_ini, ztm_i_ini !data from namelist or nc file
@@ -399,58 +401,58 @@ CONTAINS
          !
       ENDIF ! ln_iceini
       !
-      !----------------------------------------------
-      ! 4) Snow-ice mass (case ice is fully embedded)
-      !----------------------------------------------
+      !----------------------------------------------------------
+      ! 4) Adjust ssh and vertical scale factors to snow-ice mass
+      !----------------------------------------------------------
       snwice_mass  (:,:) = tmask(:,:,1) * SUM( rhos * v_s + rhoi * v_i + rhow * ( v_ip + v_il ), dim=3  )   ! snow+ice mass
       snwice_mass_b(:,:) = snwice_mass(:,:)
       !
       IF( ln_ice_embd ) THEN            ! embedded sea-ice: deplete the initial ssh below sea-ice area
-         !
+         !                              ! ----------------
          sshn(:,:) = sshn(:,:) - snwice_mass(:,:) * r1_rau0
          sshb(:,:) = sshb(:,:) - snwice_mass(:,:) * r1_rau0
          !
-         IF( .NOT.ln_linssh ) THEN
-            !
-            WHERE( ht_0(:,:) > 0 )   ;   z2d(:,:) = 1._wp + sshn(:,:)*tmask(:,:,1) / ht_0(:,:)
-            ELSEWHERE                ;   z2d(:,:) = 1._wp   ;   END WHERE
-            !
-            DO jk = 1,jpkm1                     ! adjust initial vertical scale factors                
-               e3t_n(:,:,jk) = e3t_0(:,:,jk) * z2d(:,:)
-               e3t_b(:,:,jk) = e3t_n(:,:,jk)
-               e3t_a(:,:,jk) = e3t_n(:,:,jk)
-            END DO
-            !
-            ! Reconstruction of all vertical scale factors at now and before time-steps
-            ! =========================================================================
-            ! Horizontal scale factor interpolations
-            ! --------------------------------------
-            CALL dom_vvl_interpol( e3t_b(:,:,:), e3u_b(:,:,:), 'U' )
-            CALL dom_vvl_interpol( e3t_b(:,:,:), e3v_b(:,:,:), 'V' )
-            CALL dom_vvl_interpol( e3t_n(:,:,:), e3u_n(:,:,:), 'U' )
-            CALL dom_vvl_interpol( e3t_n(:,:,:), e3v_n(:,:,:), 'V' )
-            CALL dom_vvl_interpol( e3u_n(:,:,:), e3f_n(:,:,:), 'F' )
-            ! Vertical scale factor interpolations
-            ! ------------------------------------
-            CALL dom_vvl_interpol( e3t_n(:,:,:), e3w_n (:,:,:), 'W'  )
-            CALL dom_vvl_interpol( e3u_n(:,:,:), e3uw_n(:,:,:), 'UW' )
-            CALL dom_vvl_interpol( e3v_n(:,:,:), e3vw_n(:,:,:), 'VW' )
-            CALL dom_vvl_interpol( e3u_b(:,:,:), e3uw_b(:,:,:), 'UW' )
-            CALL dom_vvl_interpol( e3v_b(:,:,:), e3vw_b(:,:,:), 'VW' )
-            ! t- and w- points depth
-            ! ----------------------
-            !!gm not sure of that....
-            gdept_n(:,:,1) = 0.5_wp * e3w_n(:,:,1)
-            gdepw_n(:,:,1) = 0.0_wp
-            gde3w_n(:,:,1) = gdept_n(:,:,1) - sshn(:,:)
-            DO jk = 2, jpk
-               gdept_n(:,:,jk) = gdept_n(:,:,jk-1) + e3w_n(:,:,jk  )
-               gdepw_n(:,:,jk) = gdepw_n(:,:,jk-1) + e3t_n(:,:,jk-1)
-               gde3w_n(:,:,jk) = gdept_n(:,:,jk  ) - sshn (:,:)
-            END DO
+      ELSE                              ! levitating sea-ice: deplete the initial ssh over the whole domain
+         !                              ! ------------------
+         area    = glob_sum( 'iceistate', e1e2t(:,:) * ssmask(:,:) )
+         zsshadj = glob_sum( 'iceistate', snwice_mass(:,:) * r1_rau0 * e1e2t(:,:) ) / area
+#if defined key_agrif
+         ! Override ssh adjustment in nested domains by the root-domain ssh adjustment;
+         ! store the adjustment value in a global module variable to make it retrievable in nested domains
+         IF( .NOT.Agrif_Root() ) THEN 
+            zsshadj = Agrif_Parent(rsshadj)
+         ELSE
+            rsshadj = zsshadj
          ENDIF
+#endif
+         IF(lwp) WRITE(numout,'(A23,F10.6,A20)') ' sea level adjusted by ', -zsshadj, ' m to compensate for'
+         IF(lwp) WRITE(numout,*) ' the initial snow+ice mass'
+         !
+         WHERE( ssmask(:,:) == 1._wp )
+            sshn(:,:) = sshn(:,:) - zsshadj
+            sshb(:,:) = sshb(:,:) - zsshadj
+         ENDWHERE
+         !
       ENDIF
-
+      
+      IF( .NOT.ln_linssh ) THEN
+         !
+         DO jk = 1, jpkm1            ! adjust initial vertical scale factors                
+            DO jj = 1, jpj
+               DO ji = 1, jpi
+                  IF( snwice_mass(ji,jj) /= 0._wp ) THEN
+                     e3t_n(ji,jj,jk) = e3t_0(ji,jj,jk) * ( 1._wp + sshn(ji,jj) * tmask(ji,jj,jk) / ht_0(ji,jj) )
+                     e3t_b(ji,jj,jk) = e3t_n(ji,jj,jk)
+                     e3t_a(ji,jj,jk) = e3t_n(ji,jj,jk)
+                  ENDIF
+               END DO
+            END DO
+         END DO
+         !
+         CALL dom_vvl_zgr            ! interpolation of all scale factors 
+         !
+      ENDIF
+      !
 !!clem: output of initial state should be written here but it is impossible because
 !!      the ocean and ice are in the same file
 !!      CALL dia_wri_state( 'output.init' )

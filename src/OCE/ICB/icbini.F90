@@ -40,7 +40,7 @@ MODULE icbini
                                                                            !: used in icbini and icbstp
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: icbini.F90 13350 2020-07-28 12:28:29Z smueller $
+   !! $Id: icbini.F90 15367 2021-10-14 08:00:58Z davestorkey $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -71,6 +71,7 @@ CONTAINS
       !
       IF( .NOT. ln_icebergs )   RETURN
 
+      ALLOCATE( utau_icb(jpi,jpj) , vtau_icb(jpi,jpj) )
       !                          ! allocate gridded fields
       IF( icb_alloc() /= 0 )   CALL ctl_stop( 'STOP', 'icb_alloc : unable to allocate arrays' )
       !

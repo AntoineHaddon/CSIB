@@ -70,7 +70,7 @@ MODULE bdydta
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: bdydta.F90 13284 2020-07-09 15:12:23Z smasson $ 
+   !! $Id: bdydta.F90 15364 2021-10-13 16:19:50Z smasson $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -245,7 +245,6 @@ CONTAINS
 
          ! If full velocities in boundary data, then split it into barotropic and baroclinic component
          IF( bf_alias(jp_bdyu3d)%ltotvel ) THEN     ! if we read 3D total velocity (can be true only if u3d was read)
-            !
             igrd = 2                       ! zonal velocity
             DO ib = 1, idx_bdy(jbdy)%nblen(igrd)
                ii   = idx_bdy(jbdy)%nbi(ib,igrd)
@@ -259,6 +258,8 @@ CONTAINS
                   dta_alias%u3d(ib,ik) = dta_alias%u3d(ib,ik) - dta_alias%u2d(ib)
                END DO
             END DO
+         ENDIF   ! ltotvel
+         IF( bf_alias(jp_bdyv3d)%ltotvel ) THEN     ! if we read 3D total velocity (can be true only if u3d was read)
             igrd = 3                       ! meridional velocity
             DO ib = 1, idx_bdy(jbdy)%nblen(igrd)
                ii   = idx_bdy(jbdy)%nbi(ib,igrd)

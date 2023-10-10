@@ -34,7 +34,7 @@ MODULE usrdef_nam
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: usrdef_nam.F90 11536 2019-09-11 13:54:18Z smasson $ 
+   !! $Id: usrdef_nam.F90 15563 2021-12-01 15:50:19Z jchanut $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -81,13 +81,17 @@ CONTAINS
       cd_cfg = 'VORTEX'             ! name & resolution (not used)
       kk_cfg = nINT( rn_dx )
       !
+#if defined key_agrif
       IF( Agrif_Root() ) THEN       ! Global Domain size:  VORTEX global domain is  1800 km x 1800 Km x 5000 m
+#endif
          kpi = NINT( 1800.e3  / rn_dx ) + 3  
          kpj = NINT( 1800.e3  / rn_dy ) + 3 
+#if defined key_agrif
       ELSE
          kpi  = nbcellsx + 2 + 2*nbghostcells
          kpj  = nbcellsy + 2 + 2*nbghostcells
       ENDIF
+#endif
       kpk = NINT( 5000._wp / rn_dz ) + 1
       !
       zlx = (kpi-2)*rn_dx*1.e-3

@@ -53,7 +53,7 @@ MODULE domain
 
    !!-------------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: domain.F90 13436 2020-08-25 15:11:29Z acc $
+   !! $Id: domain.F90 15610 2021-12-17 15:09:23Z jchanut $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!-------------------------------------------------------------------------
 CONTAINS
@@ -150,11 +150,21 @@ CONTAINS
       ht_0(:,:) = 0._wp  ! Reference ocean thickness
       hu_0(:,:) = 0._wp
       hv_0(:,:) = 0._wp
+      hf_0(:,:) = 0._wp
       DO jk = 1, jpk
          ht_0(:,:) = ht_0(:,:) + e3t_0(:,:,jk) * tmask(:,:,jk)
          hu_0(:,:) = hu_0(:,:) + e3u_0(:,:,jk) * umask(:,:,jk)
          hv_0(:,:) = hv_0(:,:) + e3v_0(:,:,jk) * vmask(:,:,jk)
       END DO
+      !
+      DO jk = 1, jpk
+         DO jj = 1, jpj
+            DO ji = 1, jpim1  
+               hf_0(ji,jj) = hf_0(ji,jj) + e3f_0(ji,jj,jk)*vmask(ji,jj,jk)*vmask(ji+1,jj,jk)
+            END DO
+         END DO
+      END DO
+      CALL lbc_lnk('domain', hf_0, 'F', 1._wp)
       !
       !           !==  time varying part of coordinate system  ==!
       !

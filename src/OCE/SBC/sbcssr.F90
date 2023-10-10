@@ -50,7 +50,7 @@ MODULE sbcssr
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: sbcssr.F90 12276 2019-12-20 11:14:26Z cetlod $
+   !! $Id: sbcssr.F90 14717 2021-04-16 09:42:56Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -90,6 +90,8 @@ CONTAINS
          !                                         ! ========================= !
          IF( MOD( kt-1, nn_fsbc ) == 0 ) THEN      !    Add restoring term     !
             !                                      ! ========================= !
+            qrp(:,:) = 0._wp ! necessary init
+            erp(:,:) = 0._wp
             !
             IF( nn_sstr == 1 ) THEN                                   !* Temperature restoring term
                DO jj = 1, jpj
@@ -139,9 +141,15 @@ CONTAINS
                      emp(ji,jj) = emp (ji,jj) + zerp
                      qns(ji,jj) = qns(ji,jj) - zerp * rcp * sst_m(ji,jj)
                      erp(ji,jj) = zerp
+                     qrp(ji,jj) = qrp(ji,jj) - zerp * rcp * sst_m(ji,jj)
                   END DO
                END DO
             ENDIF
+            !
+            ! outputs
+            CALL iom_put( 'hflx_ssr_cea', qrp(:,:) )
+            IF( nn_sssr == 1 )   CALL iom_put( 'sflx_ssr_cea',  erp(:,:) * sss_m(:,:) )
+            IF( nn_sssr == 2 )   CALL iom_put( 'vflx_ssr_cea', -erp(:,:) )
             !
          ENDIF
          !

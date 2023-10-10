@@ -34,7 +34,7 @@ MODULE flodom
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: flodom.F90 11818 2019-10-29 09:23:50Z jchanut $ 
+   !! $Id: flodom.F90 15231 2021-09-08 07:58:57Z clem $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -365,13 +365,6 @@ CONTAINS
       !!
       REAL(wp) ::   zabt, zbct, zcdt, zdat, zabpt, zbcpt, zcdpt, zdapt
       !!---------------------------------------------------------------------
-      !! Statement function
-      REAL(wp) ::   fsline
-      REAL(wp) ::   psax, psay, psbx, psby, psx, psy
-      fsline( psax, psay, psbx, psby, psx, psy ) = psy  * ( psbx - psax )   &
-         &                                       - psx  * ( psby - psay )   &
-         &                                       + psax *   psby - psay * psbx
-      !!---------------------------------------------------------------------
       
       ! 4 semi plane defined by the 4 points and including the T point
       zabt = fsline(pax,pay,pbx,pby,ptx,pty)
@@ -406,6 +399,21 @@ CONTAINS
       !
    END SUBROUTINE flo_findmesh
 
+   FUNCTION fsline( psax, psay, psbx, psby, psx, psy )
+      !! ---------------------------------------------------------------------
+      !!                 ***  Function fsline  ***
+      !!          
+      !! ** Purpose :
+      !! ** Method  : 
+      !!----------------------------------------------------------------------
+      REAL(wp) ::   fsline
+      REAL(wp), INTENT(in) ::   psax, psay, psbx, psby, psx, psy
+      !!---------------------------------------------------------------------
+      fsline = psy  * ( psbx - psax )   &
+         &   - psx  * ( psby - psay )   &
+         &   + psax *   psby - psay * psbx
+      !
+   END FUNCTION fsline
 
    FUNCTION flo_dstnce( pla1, phi1, pla2, phi2 )
       !! -------------------------------------------------------------

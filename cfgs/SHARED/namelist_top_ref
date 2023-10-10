@@ -103,6 +103,11 @@
    nitermax      =  2   !  number of iterations for sedimentation
 /
 !-----------------------------------------------------------------------
+&namtrc_opt      !  Optical
+!-----------------------------------------------------------------------
+   ln_trcdc2dm   =  .false.   !  Diurnal cycle for TOP
+/
+!-----------------------------------------------------------------------
 &namtrc_dmp      !   passive tracer newtonian damping                   (ln_trcdmp=T)
 !-----------------------------------------------------------------------
    nn_zdmp_tr    =    1      !  vertical   shape =0    damping throughout the water column

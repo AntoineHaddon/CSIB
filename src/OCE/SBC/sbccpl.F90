@@ -217,7 +217,7 @@ MODULE sbccpl
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: sbccpl.F90 14590 2021-03-05 13:21:05Z clem $
+   !! $Id: sbccpl.F90 15613 2021-12-22 09:35:54Z cetlod $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -1166,7 +1166,6 @@ CONTAINS
          ncpl_qsr_freq = cpl_freq( 'O_QsrOce' ) + cpl_freq( 'O_QsrMix' ) + cpl_freq( 'I_QsrOce' ) + cpl_freq( 'I_QsrMix' )
          IF( ln_dm2dc .AND. ncpl_qsr_freq /= 86400 )   &
             &   CALL ctl_stop( 'sbc_cpl_rcv: diurnal cycle reconstruction (ln_dm2dc) needs daily couping for solar radiation' )
-         ncpl_qsr_freq = 86400 / ncpl_qsr_freq   ! used by top
       ENDIF
       !
       IF( ln_mixcpl )   zmsk(:,:) = 1. - xcplmask(:,:,0)
@@ -1874,7 +1873,7 @@ CONTAINS
       IF( iom_use('rain') )          CALL iom_put( 'rain'        , tprecip(:,:) - sprecip(:,:)                           )  ! liquid precipitation
       IF( iom_use('snow_ao_cea') )   CALL iom_put( 'snow_ao_cea' , sprecip(:,:) * ( 1._wp - zsnw(:,:) )                  )  ! Snow over ice-free ocean  (cell average)
       IF( iom_use('snow_ai_cea') )   CALL iom_put( 'snow_ai_cea' , sprecip(:,:) *           zsnw(:,:)                    )  ! Snow over sea-ice         (cell average)
-      IF( iom_use('rain_ao_cea') )   CALL iom_put( 'rain_ao_cea' , ( tprecip(:,:) - sprecip(:,:) ) * picefr(:,:)         )  ! liquid precipitation over ocean (cell average)
+      IF( iom_use('rain_ao_cea') )   CALL iom_put( 'rain_ao_cea' , ( tprecip(:,:) - sprecip(:,:) ) * ziceld(:,:)         )  ! liquid precipitation over ocean (cell average)
       IF( iom_use('subl_ai_cea') )   CALL iom_put( 'subl_ai_cea' , zevap_ice_total(:,:) * picefr(:,:) * tmask(:,:,1)     )  ! Sublimation over sea-ice (cell average)
       IF( iom_use('evap_ao_cea') )   CALL iom_put( 'evap_ao_cea' , ( frcv(jpr_tevp)%z3(:,:,1)  &
          &                                                         - zevap_ice_total(:,:) * picefr(:,:) ) * tmask(:,:,1) )  ! ice-free oce evap (cell average)
@@ -2054,6 +2053,8 @@ CONTAINS
          &   CALL iom_put('hflx_snow_ao_cea', sprecip(:,:) * ( zcptsnw(:,:) - rLfus ) * ( 1._wp - zsnw(:,:) ) )
       IF (        iom_use('hflx_snow_ai_cea') ) &                                                    ! heat flux from snow (over ice)
          &   CALL iom_put('hflx_snow_ai_cea', sprecip(:,:) * ( zcptsnw(:,:) - rLfus ) *  zsnw(:,:) )
+      IF(         iom_use('hflx_subl_cea') )    &                                                    ! heat flux from sublimation
+         &   CALL iom_put('hflx_subl_cea' ,   SUM( qevap_ice(:,:,:) * a_i(:,:,:), dim=3 ) * tmask(:,:,1) )
       ! note: hflx for runoff and iceshelf are done in sbcrnf and sbcisf resp.
       !
       !                                                      ! ========================= !

@@ -69,7 +69,7 @@ MODULE traqsr
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: traqsr.F90 13331 2020-07-22 14:00:04Z cetlod $
+   !! $Id: traqsr.F90 14715 2021-04-15 11:41:16Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -280,8 +280,13 @@ CONTAINS
          ALLOCATE( zetot(jpi,jpj,jpk) )
          zetot(:,:,nksr+1:jpk) = 0._wp     ! below ~400m set to zero
          DO jk = nksr, 1, -1
-            zetot(:,:,jk) = zetot(:,:,jk+1) + qsr_hc(:,:,jk) * rau0_rcp
-         END DO         
+            DO jj = 2, jpjm1
+               DO ji = fs_2, fs_jpim1
+                  zetot(ji,jj,jk) = zetot(ji,jj,jk+1) + qsr_hc(ji,jj,jk) * rau0_rcp
+               ENDDO
+            ENDDO
+         END DO
+         CALL lbc_lnk( 'traqsr', zetot, 'T', 1._wp )         
          CALL iom_put( 'qsr3d', zetot )   ! 3D distribution of shortwave Radiation
          DEALLOCATE( zetot ) 
       ENDIF

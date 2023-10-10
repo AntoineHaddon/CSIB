@@ -34,6 +34,9 @@ MODULE lib_fortran
 #if defined key_nosignedzero
    PUBLIC SIGN
 #endif
+#if defined key_noisnan
+   PUBLIC ISNAN
+#endif
 
    INTERFACE glob_sum
       MODULE PROCEDURE glob_sum_1d, glob_sum_2d, glob_sum_3d
@@ -64,7 +67,7 @@ MODULE lib_fortran
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: lib_fortran.F90 10425 2018-12-19 21:54:16Z smasson $
+   !! $Id: lib_fortran.F90 15371 2021-10-14 15:02:36Z smueller $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -483,6 +486,26 @@ CONTAINS
       ELSE                    ;   SIGN_ARRAY_3D_B =-ABS(pa)
       ENDIF
    END FUNCTION SIGN_ARRAY_3D_B
+#endif
+
+#if defined key_noisnan
+!$AGRIF_DO_NOT_TREAT
+   FUNCTION ISNAN(pa)
+      !!-----------------------------------------------------------------------
+      !!                  ***  FUNCTION ISNAN  ***
+      !!
+      !! ** Purpose: provide an alternative to non-standard intrinsic function
+      !!             ISNAN
+      !!-----------------------------------------------------------------------
+      USE, INTRINSIC ::   ieee_arithmetic
+      !!
+      REAL(wp), INTENT(in) ::   pa
+      LOGICAL              ::   ISNAN
+      !!-----------------------------------------------------------------------
+      !
+      ISNAN = ieee_is_nan(pa)
+   END FUNCTION ISNAN
+!$AGRIF_END_DO_NOT_TREAT
 #endif
 
    !!======================================================================

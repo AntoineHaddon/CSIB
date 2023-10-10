@@ -40,7 +40,7 @@ MODULE bdyice
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: bdyice.F90 13589 2020-10-14 13:35:49Z clem $
+   !! $Id: bdyice.F90 14766 2021-04-30 09:08:19Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -152,10 +152,10 @@ CONTAINS
             a_i (ji,jj,  jl) = ( a_i (ji,jj,  jl) * zwgt1 + dta%a_i(i_bdy,jl) * zwgt ) * tmask(ji,jj,1)  ! Ice  concentration 
             h_i (ji,jj,  jl) = ( h_i (ji,jj,  jl) * zwgt1 + dta%h_i(i_bdy,jl) * zwgt ) * tmask(ji,jj,1)  ! Ice  depth 
             h_s (ji,jj,  jl) = ( h_s (ji,jj,  jl) * zwgt1 + dta%h_s(i_bdy,jl) * zwgt ) * tmask(ji,jj,1)  ! Snow depth
-            t_i (ji,jj,:,jl) = ( t_i (ji,jj,:,jl) * zwgt1 + dta%t_i(i_bdy,jl) * zwgt ) * tmask(ji,jj,1)  ! Ice  temperature
-            t_s (ji,jj,:,jl) = ( t_s (ji,jj,:,jl) * zwgt1 + dta%t_s(i_bdy,jl) * zwgt ) * tmask(ji,jj,1)  ! Snow temperature
-            t_su(ji,jj,  jl) = ( t_su(ji,jj,  jl) * zwgt1 + dta%tsu(i_bdy,jl) * zwgt ) * tmask(ji,jj,1)  ! Surf temperature
-            s_i (ji,jj,  jl) = ( s_i (ji,jj,  jl) * zwgt1 + dta%s_i(i_bdy,jl) * zwgt ) * tmask(ji,jj,1)  ! Ice  salinity
+            t_i (ji,jj,:,jl) =                              dta%t_i(i_bdy,jl)          * tmask(ji,jj,1)  ! Ice  temperature
+            t_s (ji,jj,:,jl) =                              dta%t_s(i_bdy,jl)          * tmask(ji,jj,1)  ! Snow temperature
+            t_su(ji,jj,  jl) =                              dta%tsu(i_bdy,jl)          * tmask(ji,jj,1)  ! Surf temperature
+            s_i (ji,jj,  jl) =                              dta%s_i(i_bdy,jl)          * tmask(ji,jj,1)  ! Ice  salinity
             a_ip(ji,jj,  jl) = ( a_ip(ji,jj,  jl) * zwgt1 + dta%aip(i_bdy,jl) * zwgt ) * tmask(ji,jj,1)  ! Ice  pond concentration
             h_ip(ji,jj,  jl) = ( h_ip(ji,jj,  jl) * zwgt1 + dta%hip(i_bdy,jl) * zwgt ) * tmask(ji,jj,1)  ! Ice  pond depth
             h_il(ji,jj,  jl) = ( h_il(ji,jj,  jl) * zwgt1 + dta%hil(i_bdy,jl) * zwgt ) * tmask(ji,jj,1)  ! Ice  pond lid depth
@@ -362,18 +362,18 @@ CONTAINS
                      zflag = idx_bdy(jbdy)%flagu(i_bdy,jgrd)
                      !     i-1  i   i    |  !        i  i i+1 |  !          i  i i+1 |
                      !      >  ice  >    |  !        o  > ice |  !          o  >  o  |      
-                     ! => set at u_ice(i-1) !  => set to O       !  => unchanged
+                     ! => set at u_ice(i-1) !  => set to u_oce   !  => unchanged
                      IF( zflag == -1. .AND. ji > 1 .AND. ji < jpi )   THEN  
                         IF    ( vt_i(ji  ,jj) > 0. )   THEN   ;   u_ice(ji,jj) = u_ice(ji-1,jj) 
-                        ELSEIF( vt_i(ji+1,jj) > 0. )   THEN   ;   u_ice(ji,jj) = 0._wp
+                        ELSEIF( vt_i(ji+1,jj) > 0. )   THEN   ;   u_ice(ji,jj) = u_oce(ji,jj)
                         END IF
                      END IF
                      ! |    i  i+1 i+1        !  |  i   i i+1        !  | i  i i+1
                      ! |    >  ice  >         !  | ice  >  o         !  | o  >  o   
-                     ! => set at u_ice(i+1)   !     => set to O      !     =>  unchanged
+                     ! => set at u_ice(i+1)   !     => set to u_oce  !     =>  unchanged
                      IF( zflag ==  1. .AND. ji+1 < jpi+1 )   THEN
                         IF    ( vt_i(ji+1,jj) > 0. )   THEN   ;   u_ice(ji,jj) = u_ice(ji+1,jj)
-                        ELSEIF( vt_i(ji  ,jj) > 0. )   THEN   ;   u_ice(ji,jj) = 0._wp
+                        ELSEIF( vt_i(ji  ,jj) > 0. )   THEN   ;   u_ice(ji,jj) = u_oce(ji,jj)
                         END IF
                      END IF
                      !
@@ -394,20 +394,20 @@ CONTAINS
                      !       ^    (jj  )       !       ^    (jj  )       !       ^    (jj  )       
                      !      ice   (jj  )       !       o    (jj  )       !       o    (jj  )       
                      !       ^    (jj-1)       !                         !
-                     ! => set to u_ice(jj-1)   !  =>   set to 0          !   => unchanged        
+                     ! => set to u_ice(jj-1)   !  =>   set to v_oce      !   => unchanged        
                      IF( zflag == -1. .AND. jj > 1 .AND. jj < jpj )   THEN                 
                         IF    ( vt_i(ji,jj  ) > 0. )   THEN   ;   v_ice(ji,jj) = v_ice(ji,jj-1)
-                        ELSEIF( vt_i(ji,jj+1) > 0. )   THEN   ;   v_ice(ji,jj) = 0._wp
+                        ELSEIF( vt_i(ji,jj+1) > 0. )   THEN   ;   v_ice(ji,jj) = v_oce(ji,jj)
                         END IF
                      END IF
                      !       ^    (jj+1)       !                         !              
                      !      ice   (jj+1)       !       o    (jj+1)       !       o    (jj+1)       
                      !       ^    (jj  )       !       ^    (jj  )       !       ^    (jj  )
                      !   ________________      !  ____ice___(jj  )_      !  _____o____(jj  ) 
-                     ! => set to u_ice(jj+1)   !    => set to 0          !    => unchanged  
+                     ! => set to u_ice(jj+1)   !    => set to v_oce      !    => unchanged  
                      IF( zflag ==  1. .AND. jj < jpj )   THEN              
                         IF    ( vt_i(ji,jj+1) > 0. )   THEN   ;   v_ice(ji,jj) = v_ice(ji,jj+1)
-                        ELSEIF( vt_i(ji,jj  ) > 0. )   THEN   ;   v_ice(ji,jj) = 0._wp
+                        ELSEIF( vt_i(ji,jj  ) > 0. )   THEN   ;   v_ice(ji,jj) = v_oce(ji,jj)
                         END IF
                      END IF
                      !

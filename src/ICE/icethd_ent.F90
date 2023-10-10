@@ -32,7 +32,7 @@ MODULE icethd_ent
 
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icethd_ent.F90 13284 2020-07-09 15:12:23Z smasson $
+   !! $Id: icethd_ent.F90 14777 2021-05-03 08:57:28Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -120,7 +120,7 @@ CONTAINS
       DO jk1 = 1, nlay_i
          DO ji = 1, npti
             rswitch      = MAX( 0._wp , SIGN( 1._wp , zhnew(ji) - epsi20 ) ) 
-            qnew(ji,jk1) = rswitch * ( zeh_cum1(ji,jk1) - zeh_cum1(ji,jk1-1) ) / MAX( zhnew(ji), epsi20 )
+            qnew(ji,jk1) = rswitch * MAX( 0._wp, zeh_cum1(ji,jk1) - zeh_cum1(ji,jk1-1) ) / MAX( zhnew(ji), epsi20 ) ! max for roundoff error
          END DO
       END DO
 

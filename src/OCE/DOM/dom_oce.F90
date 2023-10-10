@@ -155,6 +155,7 @@ MODULE dom_oce
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   ht_0            ,    ht_n             !: t-depth              [m]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   hu_0  ,    hu_b ,    hu_n ,    hu_a   !: u-depth              [m]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   hv_0  ,    hv_b ,    hv_n ,    hv_a   !: v-depth              [m]
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   hf_0                                  !: f-depth              [m]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::           r1_hu_b , r1_hu_n , r1_hu_a   !: inverse of u-depth [1/m]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::           r1_hv_b , r1_hv_n , r1_hv_a   !: inverse of v-depth [1/m]
 
@@ -223,7 +224,7 @@ MODULE dom_oce
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: dom_oce.F90 12859 2020-05-03 09:33:32Z smasson $
+   !! $Id: dom_oce.F90 15610 2021-12-17 15:09:23Z jchanut $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -281,7 +282,7 @@ CONTAINS
          &      e3uw_b(jpi,jpj,jpk) , e3vw_b(jpi,jpj,jpk) ,         &
          &      e3uw_n(jpi,jpj,jpk) , e3vw_n(jpi,jpj,jpk) ,     STAT=ierr(5) )
          !
-      ALLOCATE( ht_0(jpi,jpj) , hu_0(jpi,jpj) , hv_0(jpi,jpj) ,                                           &
+      ALLOCATE( ht_0(jpi,jpj) , hu_0(jpi,jpj) , hv_0(jpi,jpj) , hf_0(jpi,jpj)    ,                        &
          &                      hu_b(jpi,jpj) , hv_b(jpi,jpj) , r1_hu_b(jpi,jpj) , r1_hv_b(jpi,jpj) ,     &
          &      ht_n(jpi,jpj) , hu_n(jpi,jpj) , hv_n(jpi,jpj) , r1_hu_n(jpi,jpj) , r1_hv_n(jpi,jpj) ,     &
          &                      hu_a(jpi,jpj) , hv_a(jpi,jpj) , r1_hu_a(jpi,jpj) , r1_hv_a(jpi,jpj) , STAT=ierr(6)  )

@@ -46,7 +46,7 @@ MODULE step
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: step.F90 12859 2020-05-03 09:33:32Z smasson $
+   !! $Id: step.F90 15214 2021-08-31 13:29:53Z timgraham $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -167,6 +167,7 @@ CONTAINS
 
       IF(  lk_asminc .AND. ln_asmiau .AND. ln_dyninc )   &
                &         CALL dyn_asm_inc   ( kstp )  ! apply dynamics assimilation increment
+      IF( ln_bkgwri )    CALL asm_bkg_wri( kstp )     ! output background fields
       IF( ln_bdy     )   CALL bdy_dyn3d_dmp ( kstp )  ! bdy damping trends
 #if defined key_agrif
       IF(.NOT. Agrif_Root())  &

@@ -26,6 +26,7 @@ MODULE stpctl
    USE zdf_oce ,  ONLY : ln_zad_Aimp       ! ocean vertical physics variables
    USE wet_dry,   ONLY : ll_wd, ssh_ref    ! reference depth for negative bathy
 
+   USE lib_fortran     ! Fortran utilities
    USE netcdf          ! NetCDF library
    IMPLICIT NONE
    PRIVATE
@@ -35,7 +36,7 @@ MODULE stpctl
    INTEGER  ::   idrun, idtime, idssh, idu, ids1, ids2, idt1, idt2, idc1, idw1, istatus
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: stpctl.F90 13137 2020-06-22 06:29:57Z smasson $
+   !! $Id: stpctl.F90 15371 2021-10-14 15:02:36Z smueller $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS

@@ -73,7 +73,7 @@ MODULE sbcmod
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: sbcmod.F90 13481 2020-09-16 17:14:51Z clem $
+   !! $Id: sbcmod.F90 15369 2021-10-14 13:11:28Z davestorkey $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -472,7 +472,11 @@ CONTAINS
       !
       IF( ln_mixcpl )          CALL sbc_cpl_rcv   ( kt, nn_fsbc, nn_ice )   ! forced-coupled mixed formulation after forcing
       !
-      IF ( ln_wave .AND. (ln_tauwoc .OR. ln_tauw) ) CALL sbc_wstress( )      ! Wind stress provided by waves
+      IF ( ln_wave .AND. (ln_tauwoc .OR. ln_tauw) ) CALL sbc_wstress( )       ! Wind stress provided by waves 
+      !
+      IF( ln_icebergs ) THEN  ! save pure wind stresses (with no ice-ocean stress) to be used by icebergs
+         utau_icb(:,:) = utau(:,:) ; vtau_icb(:,:) = vtau(:,:)
+      ENDIF 
       !
       !                                            !==  Misc. Options  ==!
       !

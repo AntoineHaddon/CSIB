@@ -5,6 +5,7 @@ MODULE sedchem
    !! sediment :   Variable for chemistry of the CO2 cycle
    !!======================================================================
    !!   modules used
+   USE par_sed, ONLY : jpksed
    USE sed     ! sediment global variable
    USE sedarr
    USE eosbn2, ONLY : neos
@@ -40,7 +41,7 @@ MODULE sedchem
    REAL(wp), DIMENSION(6)  :: Ddsw                    
    DATA Ddsw / 999.842594 , 6.793952E-2 , -9.095290E-3, 1.001685E-4, -1.120083E-6, 6.536332E-9/
 
-  REAL(wp) :: devk10  = -25.5
+   REAL(wp) :: devk10  = -25.5
    REAL(wp) :: devk11  = -15.82
    REAL(wp) :: devk12  = -29.48
    REAL(wp) :: devk13  = -20.02
@@ -100,7 +101,7 @@ MODULE sedchem
    REAL(wp) :: devk59  = 0.0714e-3
    REAL(wp) :: devk510  = 0.0
 
-   !! $Id: sedchem.F90 12837 2020-05-01 08:37:37Z cetlod $
+   !! $Id: sedchem.F90 15236 2021-09-08 14:45:24Z clem $
 CONTAINS
 
    SUBROUTINE sed_chem( kt )

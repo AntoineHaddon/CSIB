@@ -7,6 +7,7 @@ MODULE seddta
    !! * Modules used
    USE sed
    USE sedarr
+   USE par_pisces
    USE phycst, ONLY : rday
    USE iom
    USE lib_mpp         ! distribued memory computing library
@@ -21,7 +22,7 @@ MODULE seddta
    REAL(wp) ::  rsecday  ! number of second per a day
    REAL(wp) ::  conv2    ! [kg/m2/month]-->[g/cm2/s] ( 1 month has 30 days )
 
-   !! $Id: seddta.F90 10362 2018-11-30 15:38:17Z aumont $
+   !! $Id: seddta.F90 15236 2021-09-08 14:45:24Z clem $
 CONTAINS
 
    !!---------------------------------------------------------------------------

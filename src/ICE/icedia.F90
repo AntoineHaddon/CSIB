@@ -41,7 +41,7 @@ MODULE icedia
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icedia.F90 11536 2019-09-11 13:54:18Z smasson $
+   !! $Id: icedia.F90 14717 2021-04-16 09:42:56Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -68,6 +68,7 @@ CONTAINS
       !!
       REAL(wp)   ::   zbg_ivol, zbg_item, zbg_area, zbg_isal
       REAL(wp)   ::   zbg_svol, zbg_stem
+      REAL(wp)   ::   zbg_ipvol, zbg_ilvol
       REAL(wp)   ::   z_frc_voltop, z_frc_temtop, z_frc_sal
       REAL(wp)   ::   z_frc_volbot, z_frc_tembot  
       REAL(wp)   ::   zdiff_vol, zdiff_sal, zdiff_tem  
@@ -88,7 +89,8 @@ CONTAINS
       ! 1 -  Contents           !
       ! ----------------------- !
       IF(  iom_use('ibgvol_tot' ) .OR. iom_use('sbgvol_tot' ) .OR. iom_use('ibgarea_tot') .OR. &
-         & iom_use('ibgsalt_tot') .OR. iom_use('ibgheat_tot') .OR. iom_use('sbgheat_tot') ) THEN
+         & iom_use('ibgsalt_tot') .OR. iom_use('ibgheat_tot') .OR. iom_use('sbgheat_tot') .OR. &
+         & iom_use('ipbgvol_tot' ) .OR. iom_use('ilbgvol_tot' ) ) THEN
 
          zbg_ivol = glob_sum( 'icedia', vt_i(:,:) * e1e2t(:,:) ) * 1.e-9  ! ice volume (km3)
          zbg_svol = glob_sum( 'icedia', vt_s(:,:) * e1e2t(:,:) ) * 1.e-9  ! snow volume (km3)
@@ -96,14 +98,20 @@ CONTAINS
          zbg_isal = glob_sum( 'icedia', st_i(:,:) * e1e2t(:,:) ) * 1.e-9  ! salt content (pss*km3)
          zbg_item = glob_sum( 'icedia', et_i(:,:) * e1e2t(:,:) ) * 1.e-20 ! heat content (1.e20 J)
          zbg_stem = glob_sum( 'icedia', et_s(:,:) * e1e2t(:,:) ) * 1.e-20 ! heat content (1.e20 J)
+         ! ponds
+         zbg_ipvol = glob_sum( 'icedia', vt_ip(:,:) * e1e2t(:,:) ) * 1.e-9  ! ice pond volume (km3)
+         zbg_ilvol = glob_sum( 'icedia', vt_il(:,:) * e1e2t(:,:) ) * 1.e-9  ! ice pond lid volume (km3)
 
          CALL iom_put( 'ibgvol_tot'  , zbg_ivol ) 
          CALL iom_put( 'sbgvol_tot'  , zbg_svol ) 
          CALL iom_put( 'ibgarea_tot' , zbg_area ) 
          CALL iom_put( 'ibgsalt_tot' , zbg_isal ) 
          CALL iom_put( 'ibgheat_tot' , zbg_item ) 
-         CALL iom_put( 'sbgheat_tot' , zbg_stem ) 
- 
+         CALL iom_put( 'sbgheat_tot' , zbg_stem )
+         ! ponds
+         CALL iom_put( 'ipbgvol_tot'  , zbg_ipvol )
+         CALL iom_put( 'ilbgvol_tot'  , zbg_ilvol )
+
       ENDIF
 
       ! ---------------------------!

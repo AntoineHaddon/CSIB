@@ -42,7 +42,7 @@ MODULE trcnam
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: trcnam.F90 11536 2019-09-11 13:54:18Z smasson $
+   !! $Id: trcnam.F90 15613 2021-12-22 09:35:54Z cetlod $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -90,6 +90,8 @@ CONTAINS
         WRITE(numout,*) 
         WRITE(numout,*) '   ==>>>   Passive Tracer  time step    rdttrc = nn_dttrc*rdt = ', rdttrc
       ENDIF
+      !
+                            CALL trc_nam_opt    ! Optical
       !
       IF( l_trdtrc )        CALL trc_nam_trd    ! Passive tracer trends
       !
@@ -265,6 +267,38 @@ CONTAINS
       ENDIF
       !
    END SUBROUTINE trc_nam_trc
+
+   SUBROUTINE trc_nam_opt
+      !!---------------------------------------------------------------------
+      !!                     ***  ROUTINE trc_nam_opt  ***
+      !!
+      !! ** Purpose :   read options for the passive tracer diagnostics
+      !!
+      !!---------------------------------------------------------------------
+      INTEGER  ::   ios, ierr                 ! Local integer
+      !!
+      NAMELIST/namtrc_opt/ ln_trcdc2dm
+      !!---------------------------------------------------------------------
+      !
+      IF(lwp) WRITE(numout,*)
+      IF(lwp) WRITE(numout,*) 'trc_nam_opt : read the passive tracer optical options'
+      IF(lwp) WRITE(numout,*) '~~~~~~~~~~~'
+      !
+      !
+      REWIND( numnat_ref )              ! Namelist namtrc_opt in reference namelist : Passive tracer trends
+      READ  ( numnat_ref, namtrc_opt, IOSTAT = ios, ERR = 905)
+905   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namtrc_opt in reference namelist' )
+      REWIND( numnat_cfg )              ! Namelist namtrc_trd in configuration namelist : Passive tracer trends
+      READ  ( numnat_cfg, namtrc_opt, IOSTAT = ios, ERR = 906 )
+906   IF( ios >  0 )   CALL ctl_nam ( ios , 'namtrc_opt in configuration namelist' )
+      IF(lwm) WRITE( numont, namtrc_opt )
+
+      IF(lwp) THEN
+         WRITE(numout,*) '   Namelist : namtrc_opt                    '
+         WRITE(numout,*) '      Diurnal cycle for TOP ln_trcdc2dm    = ', ln_trcdc2dm
+      ENDIF
+
+   END SUBROUTINE trc_nam_opt
 
 
    SUBROUTINE trc_nam_trd

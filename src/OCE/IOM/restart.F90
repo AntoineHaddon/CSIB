@@ -41,7 +41,7 @@ MODULE restart
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: restart.F90 11536 2019-09-11 13:54:18Z smasson $
+   !! $Id: restart.F90 15596 2021-12-13 16:28:47Z acc $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -68,8 +68,9 @@ CONTAINS
       IF( kt == nit000 ) THEN   ! default definitions
          lrst_oce = .FALSE.   
          IF( ln_rst_list ) THEN
-            nrst_lst = 1
-            nitrst = nn_stocklist( nrst_lst )
+            ! Protect against user requests outside of simulation period (#2735)
+            nitrst   = MIN( nitend, MINVAL( nn_stocklist, MASK=nn_stocklist.ge.nit000) )  
+            nrst_lst = MAX( 1, FINDLOC( nn_stocklist, nitrst, DIM=1 ) )
          ELSE
             nitrst = nitend
          ENDIF
@@ -86,7 +87,9 @@ CONTAINS
       ! to get better performances with NetCDF format:
       ! we open and define the ocean restart file one time step before writing the data (-> at nitrst - 1)
       ! except if we write ocean restart files every time step or if an ocean restart file was writen at nitend - 1
-      IF( kt == nitrst - 1 .OR. nn_stock == 1 .OR. ( kt == nitend .AND. .NOT. lrst_oce ) ) THEN
+      ! or if nit000 is requested in the nn_stocklist
+      IF( kt == nitrst - 1 .OR. nn_stock == 1 .OR. ( kt == nitend .AND. .NOT. lrst_oce ) &
+      &                                       .OR. ( kt == nit000 .AND. nitrst == nit000 ) ) THEN
          IF( nitrst <= nitend .AND. nitrst > 0 ) THEN 
             ! beware of the format used to write kt (default is i8.8, that should be large enough...)
             IF( nitrst > 999999999 ) THEN   ;   WRITE(clkt, *       ) nitrst
@@ -187,6 +190,7 @@ CONTAINS
             IF( ln_rst_list ) THEN
                nrst_lst = MIN(nrst_lst + 1, SIZE(nn_stocklist,1))
                nitrst = nn_stocklist( nrst_lst )
+               IF( nitrst == 0 ) nitrst = nitend    ! Force a restart at the end of the run
             ENDIF
       ENDIF
       !

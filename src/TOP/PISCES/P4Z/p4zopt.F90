@@ -39,7 +39,7 @@ MODULE p4zopt
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: p4zopt.F90 14214 2020-12-18 11:46:40Z cetlod $ 
+   !! $Id: p4zopt.F90 15613 2021-12-22 09:35:54Z cetlod $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -95,7 +95,7 @@ CONTAINS
       END DO
       !                                        !* Photosynthetically Available Radiation (PAR)
       !                                        !  --------------------------------------
-      IF( l_trcdm2dc ) THEN                     !  diurnal cycle
+      IF( ln_trcdc2dm ) THEN                     !  diurnal cycle
          !
          zqsr_corr(:,:) = qsr_mean(:,:) / ( 1.-fr_i(:,:) + rtrn )
          !

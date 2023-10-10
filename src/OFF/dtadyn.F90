@@ -88,7 +88,7 @@ MODULE dtadyn
 
    !!----------------------------------------------------------------------
    !! NEMO/OFF 4.0 , NEMO Consortium (2018)
-   !! $Id: dtadyn.F90 11536 2019-09-11 13:54:18Z smasson $
+   !! $Id: dtadyn.F90 15613 2021-12-22 09:35:54Z cetlod $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -409,6 +409,8 @@ CONTAINS
       IF(lwp) WRITE(numout,*) ' '
       IF(lwp) WRITE(numout,*) ' max depht of runoff : ', hrnf_max,'    max level  : ', nkrnf_max
       IF(lwp) WRITE(numout,*) ' '
+      !
+      ncpl_qsr_freq = sf_dyn(jf_qsr)%freqh  * 3600   !  Get qsr frequency ( needed if diurnal cycle in TOP )
       !
       CALL dta_dyn( nit000 )
       !

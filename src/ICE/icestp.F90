@@ -89,7 +89,7 @@ MODULE icestp
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icestp.F90 14026 2020-12-03 08:48:10Z clem $
+   !! $Id: icestp.F90 14885 2021-05-19 09:10:11Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -492,6 +492,7 @@ CONTAINS
                cnd_ice    (ji,jj,jl) = 0._wp   ! effective conductivity at the top of ice/snow (ln_cndflx=T)
                qcn_ice    (ji,jj,jl) = 0._wp   ! conductive flux (ln_cndflx=T & ln_cndemule=T)
                qtr_ice_bot(ji,jj,jl) = 0._wp   ! part of solar radiation transmitted through the ice needed at least for outputs
+               qml_ice    (ji,jj,jl) = 0._wp   ! surface melt heat flux
             END DO
          END DO
       END DO

@@ -48,7 +48,6 @@ MODULE trc
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::  gtrv           !: hor. gradient at v-points at bottom ocean level
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::  gtrui          !: hor. gradient at u-points at top    ocean level
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::  gtrvi          !: hor. gradient at v-points at top    ocean level
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)     ::  qsr_mean        !: daily mean qsr
    
    !! passive tracers  (input and output)
    !! ------------------------------------------  
@@ -134,7 +133,7 @@ MODULE trc
    !
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: trc.F90 14588 2021-03-05 07:42:07Z clem $
+   !! $Id: trc.F90 15613 2021-12-22 09:35:54Z cetlod $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -155,7 +154,7 @@ CONTAINS
          &      gtrui(jpi,jpj,jptra)  , gtrvi(jpi,jpj,jptra)                          ,       &
          &      trc_ice_ratio(jptra)  , trc_ice_prescr(jptra) , cn_trc_o(jptra)       ,       &
          &      sbc_trc_b(jpi,jpj,jptra), sbc_trc(jpi,jpj,jptra)                      ,       &  
-         &      cvol(jpi,jpj,jpk)     , trai(jptra)           , qsr_mean(jpi,jpj)     ,       &
+         &      cvol(jpi,jpj,jpk)     , trai(jptra)                                   ,       &
          &      ctrcnm(jptra)         , ctrcln(jptra)         , ctrcun(jptra)         ,       &
          &      ln_trc_ini(jptra)     ,                                                       &
          &      ln_trc_sbc(jptra)     , ln_trc_cbc(jptra)     , ln_trc_obc(jptra)     ,       &

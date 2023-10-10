@@ -69,7 +69,7 @@ MODULE sbcisf
    
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: sbcisf.F90 12294 2019-12-30 18:46:59Z mathiot $
+   !! $Id: sbcisf.F90 15231 2021-09-08 07:58:57Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -353,8 +353,7 @@ CONTAINS
          DO ji = 1, jpi
             DO jj = 1, jpj
                 ik = 2
-!!gm potential bug: use gdepw_0 not _n
-                DO WHILE ( ik <= mbkt(ji,jj) .AND. gdepw_n(ji,jj,ik) < rzisf_tbl(ji,jj) ) ;  ik = ik + 1 ;  END DO
+                DO WHILE ( ik <= mbkt(ji,jj) .AND. gdepw_0(ji,jj,ik) < rzisf_tbl(ji,jj) ) ;  ik = ik + 1 ;  END DO
                 misfkt(ji,jj) = ik-1
             END DO
          END DO

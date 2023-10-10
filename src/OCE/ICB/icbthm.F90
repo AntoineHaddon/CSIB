@@ -33,7 +33,7 @@ MODULE icbthm
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: icbthm.F90 13263 2020-07-08 07:55:54Z ayoung $
+   !! $Id: icbthm.F90 14772 2021-04-30 10:22:29Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -197,7 +197,7 @@ CONTAINS
             ! diagnostics
             CALL icb_dia_melt( ii, ij, zMnew, zheat_hcflux, zheat_latent, this%mass_scaling,       &
                &                       zdM, zdMbitsE, zdMbitsM, zdMb, zdMe,   &
-               &                       zdMv, z1_dt_e1e2 )
+               &                       zdMv, z1_dt_e1e2, z1_e1e2 )
          ELSE
             WRITE(numout,*) 'icb_thm: berg ',this%number(:),' appears to have grounded  at ',narea,ii,ij
             CALL icb_utl_print_berg( this, kt )

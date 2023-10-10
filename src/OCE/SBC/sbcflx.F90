@@ -14,6 +14,7 @@ MODULE sbcflx
    USE oce             ! ocean dynamics and tracers
    USE dom_oce         ! ocean space and time domain
    USE sbc_oce         ! surface boundary condition: ocean fields
+   USE trc_oce         ! share SMS/Ocean variables
    USE sbcdcy          ! surface boundary condition: diurnal cycle on qsr
    USE phycst          ! physical constants
    !
@@ -42,7 +43,7 @@ MODULE sbcflx
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: sbcflx.F90 13484 2020-09-17 12:45:07Z clem $
+   !! $Id: sbcflx.F90 15613 2021-12-22 09:35:54Z cetlod $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -131,6 +132,13 @@ CONTAINS
          IF( ln_dm2dc ) THEN   ;   qsr(:,:) = sbc_dcy( sf(jp_qsr)%fnow(:,:,1) ) * tmask(:,:,1)  ! modify now Qsr to include the diurnal cycle
          ELSE                  ;   qsr(:,:) =          sf(jp_qsr)%fnow(:,:,1)   * tmask(:,:,1)
          ENDIF
+#if defined key_top
+      IF( ln_trcdc2dm )  THEN      !  diurnal cycle in TOP
+         IF( ln_dm2dc )  THEN  ;  qsr_mean(:,:) = sf(jp_qsr)%fnow(:,:,1)  * tmask(:,:,1)
+         ELSE                  ;  ncpl_qsr_freq = sf(jp_qsr)%freqh * 3600 !  qsr_mean will be computed in TOP
+         ENDIF
+      ENDIF
+#endif         
          DO jj = 1, jpj                                           ! set the ocean fluxes from read fields
             DO ji = 1, jpi
                utau(ji,jj) =   sf(jp_utau)%fnow(ji,jj,1)                              * umask(ji,jj,1)

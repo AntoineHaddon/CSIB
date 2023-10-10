@@ -73,8 +73,8 @@ set -o posix
 
 #- Local variables ---
 b_n=$(basename ${0})
-export MAIN_DIR=${PWD%/tools*}
-export TOOLS_DIR=${MAIN_DIR}/tools
+export TOOLS_DIR=$(cd $(dirname "$0"); pwd)
+export MAIN_DIR=${TOOLS_DIR%/tools}
 export COMPIL_DIR=${MAIN_DIR}/mk
 export NEMO_DIR=${MAIN_DIR}/NEMO
 #-

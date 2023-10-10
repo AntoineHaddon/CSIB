@@ -37,7 +37,7 @@ MODULE trcstp
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: trcstp.F90 13323 2020-07-17 17:08:12Z smueller $ 
+   !! $Id: trcstp.F90 15613 2021-12-22 09:35:54Z cetlod $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -134,8 +134,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       !
       ! Define logical parameter ton control dirunal cycle in TOP
-      l_trcdm2dc = ln_dm2dc .OR. ( ln_cpl .AND. ncpl_qsr_freq /= 1 )
-      l_trcdm2dc = l_trcdm2dc  .AND. .NOT. l_offline
+      l_trcdm2dc = ( ln_trcdc2dm .AND. .NOT. ln_dm2dc  ) 
       IF( l_trcdm2dc .AND. lwp )   CALL ctl_warn( 'Coupling with passive tracers and used of diurnal cycle.',   &
          &                           'Computation of a daily mean shortwave for some biogeochemical models ' )
       !
@@ -165,13 +164,8 @@ CONTAINS
       IF( ln_timing )   CALL timing_start('trc_mean_qsr')
       !
       IF( kt == nittrc000 ) THEN
-         IF( ln_cpl )  THEN  
-            rdt_sampl = rday / ncpl_qsr_freq
-            nb_rec_per_day = ncpl_qsr_freq
-         ELSE  
-            rdt_sampl = MAX( 3600., rdttrc )
-            nb_rec_per_day = INT( rday / rdt_sampl )
-         ENDIF
+         rdt_sampl = REAL( ncpl_qsr_freq )
+         nb_rec_per_day = INT( rday / ncpl_qsr_freq )
          !
          IF(lwp) THEN
             WRITE(numout,*) 

@@ -48,7 +48,7 @@ MODULE icbutl
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: icbutl.F90 14372 2021-02-02 17:42:36Z mathiot $
+   !! $Id: icbutl.F90 15367 2021-10-14 08:00:58Z davestorkey $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -75,8 +75,8 @@ CONTAINS
       tt_e(1:jpi,1:jpj) = sst_m(:,:)
       ss_e(1:jpi,1:jpj) = sss_m(:,:)
       fr_e(1:jpi,1:jpj) = fr_i (:,:)
-      ua_e(1:jpi,1:jpj) = utau (:,:) * umask(:,:,1) ! maybe mask useless because mask applied in sbcblk
-      va_e(1:jpi,1:jpj) = vtau (:,:) * vmask(:,:,1) ! maybe mask useless because mask applied in sbcblk
+      ua_e(1:jpi,1:jpj) = utau_icb (:,:) * umask(:,:,1) ! maybe mask useless because mask applied in sbcblk
+      va_e(1:jpi,1:jpj) = vtau_icb (:,:) * vmask(:,:,1) ! maybe mask useless because mask applied in sbcblk
       !
       CALL lbc_lnk_icb( 'icbutl', uo_e, 'U', -1._wp, 1, 1 )
       CALL lbc_lnk_icb( 'icbutl', vo_e, 'V', -1._wp, 1, 1 )

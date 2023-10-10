@@ -33,7 +33,7 @@ MODULE agrif_oce_update
 
    !!----------------------------------------------------------------------
    !! NEMO/NST 4.0 , NEMO Consortium (2018)
-   !! $Id: agrif_oce_update.F90 10068 2018-08-28 14:09:04Z nicolasmartin $
+   !! $Id: agrif_oce_update.F90 15564 2021-12-01 16:35:59Z jchanut $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -403,7 +403,7 @@ CONTAINS
       LOGICAL, INTENT(in) :: before
       !!
       INTEGER :: ji,jj,jk,jn
-      REAL(wp) :: ztb, ztnu, ztno
+      REAL(wp) :: ze3b, ztb, ztnu, ztno
       !!---------------------------------------------
       !
       IF (before) THEN
@@ -433,7 +433,9 @@ CONTAINS
                   DO jj = j1, j2
                      DO ji = i1, i2
                         IF( tabres(ji,jj,jk,jn) /= 0._wp ) THEN
-                           ztb  = tsb(ji,jj,jk,jn) * e3t_b(ji,jj,jk) ! fse3t_b prior update should be used
+                           ze3b = e3t_b(ji,jj,jk) & ! Recover e3t_b before update
+                                & - rn_atfp * ( e3t_n(ji,jj,jk) - e3t_a(ji,jj,jk) )
+                           ztb  = tsb(ji,jj,jk,jn) * ze3b 
                            ztnu = tabres(ji,jj,jk,jn)
                            ztno = tsn(ji,jj,jk,jn) * e3t_a(ji,jj,jk)
                            tsb(ji,jj,jk,jn) = ( ztb + atfp * ( ztnu - ztno) )  & 
@@ -572,7 +574,7 @@ CONTAINS
       LOGICAL                                     , INTENT(in   ) :: before
       !
       INTEGER  :: ji, jj, jk
-      REAL(wp) :: zrhoy, zub, zunu, zuno
+      REAL(wp) :: zrhoy, ze3b, zub, zunu, zuno
       !!---------------------------------------------
       ! 
       IF( before ) THEN
@@ -587,7 +589,9 @@ CONTAINS
                   tabres(ji,jj,jk,1) = tabres(ji,jj,jk,1) * r1_e2u(ji,jj) 
                   !
                   IF (.NOT.(lk_agrif_fstep.AND.(neuler==0))) THEN ! Add asselin part
-                     zub  = ub(ji,jj,jk) * e3u_b(ji,jj,jk)  ! fse3t_b prior update should be used
+                     ze3b = e3u_b(ji,jj,jk) & ! Recover e3u_b before update
+                          & - rn_atfp * ( e3u_n(ji,jj,jk) - e3u_a(ji,jj,jk) )
+                     zub  = ub(ji,jj,jk) * ze3b 
                      zuno = un(ji,jj,jk) * e3u_a(ji,jj,jk)
                      zunu = tabres(ji,jj,jk,1)
                      ub(ji,jj,jk) = ( zub + atfp * ( zunu - zuno) ) &      
@@ -758,7 +762,7 @@ CONTAINS
       LOGICAL                                     , INTENT(in   ) :: before
       !
       INTEGER  :: ji, jj, jk
-      REAL(wp) :: zrhox, zvb, zvnu, zvno
+      REAL(wp) :: zrhox, ze3b, zvb, zvnu, zvno
       !!---------------------------------------------      
       !
       IF (before) THEN
@@ -777,7 +781,9 @@ CONTAINS
                   tabres(ji,jj,jk,1) = tabres(ji,jj,jk,1) * r1_e1v(ji,jj)
                   !
                   IF (.NOT.(lk_agrif_fstep.AND.(neuler==0))) THEN ! Add asselin part
-                     zvb  = vb(ji,jj,jk) * e3v_b(ji,jj,jk) ! fse3t_b prior update should be used
+                     ze3b = e3v_b(ji,jj,jk) & ! Recover e3v_b before update
+                          & - rn_atfp * ( e3v_n(ji,jj,jk) - e3v_a(ji,jj,jk) )
+                     zvb  = vb(ji,jj,jk) * ze3b 
                      zvno = vn(ji,jj,jk) * e3v_a(ji,jj,jk)
                      zvnu = tabres(ji,jj,jk,1)
                      vb(ji,jj,jk) = ( zvb + atfp * ( zvnu - zvno) ) &      

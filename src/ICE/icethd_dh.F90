@@ -31,7 +31,7 @@ MODULE icethd_dh
 
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icethd_dh.F90 14026 2020-12-03 08:48:10Z clem $
+   !! $Id: icethd_dh.F90 14685 2021-04-08 15:35:36Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -223,10 +223,8 @@ CONTAINS
       zdeltah   (1:npti) = 0._wp ! total snow thickness that sublimates, < 0
       zevap_rema(1:npti) = 0._wp
       DO ji = 1, npti
-         IF( evap_ice_1d(ji) > 0._wp ) THEN
-            zdeltah   (ji) = MAX( - evap_ice_1d(ji) * r1_rhos * rdt_ice, - h_s_1d(ji) )   ! amount of snw that sublimates, < 0            
-            zevap_rema(ji) = MAX( 0._wp, evap_ice_1d(ji) * rdt_ice + zdeltah(ji) * rhos ) ! remaining evap in kg.m-2 (used for ice sublimation later on)
-         ENDIF
+         zdeltah   (ji) = MAX( - evap_ice_1d(ji) * r1_rhos * rdt_ice, - h_s_1d(ji) )   ! amount of snw that sublimates, < 0           
+         zevap_rema(ji) = evap_ice_1d(ji) * rdt_ice + zdeltah(ji) * rhos               ! remaining evap in kg.m-2 (used for ice sublimation later on)
       END DO
       
       DO jk = 0, nlay_s

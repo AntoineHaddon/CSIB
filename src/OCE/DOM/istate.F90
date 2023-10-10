@@ -44,7 +44,7 @@ MODULE istate
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: istate.F90 13101 2020-06-12 11:10:44Z rblod $
+   !! $Id: istate.F90 15458 2021-10-28 15:12:05Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -59,6 +59,7 @@ CONTAINS
 !!gm see comment further down
       REAL(wp), ALLOCATABLE, DIMENSION(:,:,:,:) ::   zuvd    ! U & V data workspace
 !!gm end
+      REAL(wp), DIMENSION(jpi,jpj) ::   z2d    ! temporary array
       !!----------------------------------------------------------------------
       !
       IF(lwp) WRITE(numout,*)
@@ -109,13 +110,47 @@ CONTAINS
                         sshb(ji,jj) = tmask(ji,jj,1)*( rn_wdmin1 - (ht_0(ji,jj)) )
                      ENDIF
                   END DO
-               END DO 
+               END DO
+               !
+               IF( .NOT.ln_linssh ) THEN      ! adjust initial vertical scale factors
+                  sshn(:,:) = sshb(:,:)
+                  z2d (:,:) = 1._wp + sshn(:,:) * ssmask(:,:) / ( ht_0(:,:) + 1._wp - ssmask(:,:) )
+                  DO jk = 1, jpkm1                
+                     DO jj = 1, jpj
+                        DO ji = 1, jpi
+                           IF( ht_0(ji,jj) + sshb(ji,jj)  < rn_wdmin1 ) THEN
+                              e3t_n(ji,jj,jk) = e3t_0(ji,jj,jk) * ( z2d(ji,jj) * tmask(ji,jj,jk) - ( tmask(ji,jj,jk) - 1._wp ) )
+                              e3t_b(ji,jj,jk) = e3t_n(ji,jj,jk)
+                              e3t_a(ji,jj,jk) = e3t_n(ji,jj,jk)
+                           ENDIF
+                        END DO
+                     END DO
+                  END DO
+                  CALL dom_vvl_zgr
+               ENDIF
+               !
             ENDIF 
             ub  (:,:,:) = 0._wp
-            vb  (:,:,:) = 0._wp  
+            vb  (:,:,:) = 0._wp
             !
          ELSE                                 ! user defined initial T and S
             CALL usr_def_istate( gdept_b, tmask, tsb, ub, vb, sshb  )         
+            !
+            IF( .NOT.ln_linssh ) THEN         ! adjust initial vertical scale factors
+               sshn(:,:) = sshb(:,:)
+               z2d (:,:) = 1._wp + sshn(:,:) * ssmask(:,:) / ( ht_0(:,:) + 1._wp - ssmask(:,:) )
+               DO jk = 1, jpkm1                
+                  DO jj = 1, jpj
+                     DO ji = 1, jpi
+                        e3t_n(ji,jj,jk) = e3t_0(ji,jj,jk) * ( z2d(ji,jj) * tmask(ji,jj,jk) - ( tmask(ji,jj,jk) - 1._wp ) )
+                        e3t_b(ji,jj,jk) = e3t_n(ji,jj,jk)
+                        e3t_a(ji,jj,jk) = e3t_n(ji,jj,jk)
+                     END DO
+                  END DO
+               END DO
+               CALL dom_vvl_zgr
+            ENDIF
+            !
          ENDIF
          tsn  (:,:,:,:) = tsb (:,:,:,:)       ! set now values from to before ones
          sshn (:,:)     = sshb(:,:)   

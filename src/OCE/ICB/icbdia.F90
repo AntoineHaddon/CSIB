@@ -90,7 +90,7 @@ MODULE icbdia
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: icbdia.F90 14372 2021-02-02 17:42:36Z mathiot $
+   !! $Id: icbdia.F90 14772 2021-04-30 10:22:29Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -490,19 +490,19 @@ CONTAINS
 
    SUBROUTINE icb_dia_melt(ki, kj, pmnew, pheat_hcflux, pheat_latent, pmass_scale,     &
       &                    pdM, pdMbitsE, pdMbitsM, pdMb, pdMe,   &
-      &                    pdMv, pz1_dt_e1e2 )
+      &                    pdMv, pz1_dt_e1e2, pz1_e1e2 )
       !!----------------------------------------------------------------------
       !!----------------------------------------------------------------------
       INTEGER , INTENT(in) ::   ki, kj
       REAL(wp), INTENT(in) ::   pmnew, pheat_hcflux, pheat_latent, pmass_scale
-      REAL(wp), INTENT(in) ::   pdM, pdMbitsE, pdMbitsM, pdMb, pdMe, pdMv, pz1_dt_e1e2
+      REAL(wp), INTENT(in) ::   pdM, pdMbitsE, pdMbitsM, pdMb, pdMe, pdMv, pz1_dt_e1e2, pz1_e1e2
       !!----------------------------------------------------------------------
       !
       IF( .NOT.ln_bergdia )   RETURN
       !
       berg_melt (ki,kj) = berg_melt (ki,kj) + pdM      * pz1_dt_e1e2   ! kg/m2/s
-      berg_melt_hcflx (ki,kj) = berg_melt_hcflx (ki,kj) + pheat_hcflux * pz1_dt_e1e2   ! J/m2/s
-      berg_melt_qlat (ki,kj) = berg_melt_qlat (ki,kj) + pheat_latent * pz1_dt_e1e2   ! J/m2/s
+      berg_melt_hcflx (ki,kj) = berg_melt_hcflx (ki,kj) + pheat_hcflux * pz1_e1e2   ! W/m2
+      berg_melt_qlat (ki,kj) = berg_melt_qlat (ki,kj) + pheat_latent * pz1_e1e2   ! W/m2
       bits_src  (ki,kj) = bits_src  (ki,kj) + pdMbitsE * pz1_dt_e1e2   ! mass flux into bergy bitskg/m2/s
       bits_melt (ki,kj) = bits_melt (ki,kj) + pdMbitsM * pz1_dt_e1e2   ! melt rate of bergy bits kg/m2/s
       buoy_melt (ki,kj) = buoy_melt (ki,kj) + pdMb     * pz1_dt_e1e2   ! kg/m2/s

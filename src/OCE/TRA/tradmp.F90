@@ -54,7 +54,7 @@ MODULE tradmp
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: tradmp.F90 11536 2019-09-11 13:54:18Z smasson $ 
+   !! $Id: tradmp.F90 14717 2021-04-16 09:42:56Z clem $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -98,7 +98,7 @@ CONTAINS
       !
       IF( ln_timing )   CALL timing_start('tra_dmp')
       !
-      IF( l_trdtra )   THEN                    !* Save ta and sa trends
+      IF( l_trdtra .OR. iom_use('hflx_dmp_cea') .OR. iom_use('sflx_dmp_cea') ) THEN   !* Save ta and sa trends
          ALLOCATE( ztrdts(jpi,jpj,jpk,jpts) ) 
          ztrdts(:,:,:,:) = tsa(:,:,:,:) 
       ENDIF
@@ -147,6 +147,12 @@ CONTAINS
          END DO
          !
       END SELECT
+      !
+      ! outputs
+      IF( iom_use('hflx_dmp_cea') ) &
+         & CALL iom_put('hflx_dmp_cea', SUM( ( tsa(:,:,:,jp_tem) - ztrdts(:,:,:,jp_tem) ) * e3t_n(:,:,:), dim=3 ) * rcp * rau0 ) ! W/m2
+      IF( iom_use('sflx_dmp_cea') ) &
+         & CALL iom_put('sflx_dmp_cea', SUM( ( tsa(:,:,:,jp_sal) - ztrdts(:,:,:,jp_sal) ) * e3t_n(:,:,:), dim=3 ) * rau0 )       ! g/m2/s
       !
       IF( l_trdtra )   THEN       ! trend diagnostic
          ztrdts(:,:,:,:) = tsa(:,:,:,:) - ztrdts(:,:,:,:)

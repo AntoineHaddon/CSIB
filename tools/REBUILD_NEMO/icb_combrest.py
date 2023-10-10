@@ -78,12 +78,12 @@ for n in range(procnum):
  try:
    fw = Dataset(pathstart+nn+'.nc')
  except:
-   print 'Error: unable to open input file: ' + pathstart+nn+'.nc'
+   print ('Error: unable to open input file: ' + pathstart+nn+'.nc')
    sys.exit(12)
  for d in fw.dimensions :
   if d == 'n' :
    if len(fw.dimensions['n']) > 0:
-#    print 'icebergs found in: ' + pathstart+nn+'.nc' 
+#    print ('icebergs found in: ' + pathstart+nn+'.nc' )
      if len(fw.dimensions['k']) > nk :
        nk = len(fw.dimensions['k'])
      ntraj = ntraj + len(fw.dimensions['n'])
@@ -123,7 +123,7 @@ for n in range(procnum):
 # so skip quickly over these
     m  = len(fw.dimensions['n'])
     if m > 0:
-#     print pathstart+nn+'.nc'
+#     print (pathstart+nn+'.nc')
       lons[nt:nt+m]  = fw.variables['lon'][:]
       lats[nt:nt+m]  = fw.variables['lat'][:]
       xis[nt:nt+m]   = fw.variables['xi'][:]
@@ -149,8 +149,8 @@ if args.fcre :
   try:
     fo = Dataset(pathout, 'w', format='NETCDF4')
   except:
-    print 'Error accessing output file: ' + pathout
-    print 'Check it is a writable location.'
+    print ('Error accessing output file: ' + pathout)
+    print ('Check it is a writable location.')
     sys.exit(13)
 else :
   # Copy 2D variables across to output file from input file. This step avoids problems if rebuild_nemo 
@@ -159,13 +159,13 @@ else :
   try:
     os.rename(pathout,pathout.replace('.nc','_WORK.nc'))
   except OSError:
-    print 'Error: unable to move icebergs restart file: '+pathout
+    print ('Error: unable to move icebergs restart file: '+pathout)
     sys.exit(14)
   #
   try:
     fi = Dataset(pathout.replace('.nc','_WORK.nc'), 'r')
   except:
-    print 'Error: unable to open icebergs restart file: '+pathout.replace('.nc','_WORK.nc')
+    print ('Error: unable to open icebergs restart file: '+pathout.replace('.nc','_WORK.nc'))
     sys.exit(15)
   fo = Dataset(pathout, 'w')
   for dim in ['x','y','c','k']:
@@ -184,7 +184,7 @@ else :
 add_k = 1
 for d in fo.dimensions :
   if d == 'n' :
-    print 'Error: dimension n already exists in output file'
+    print ('Error: dimension n already exists in output file')
     sys.exit(16)
   if d == 'k' :
     add_k = 0

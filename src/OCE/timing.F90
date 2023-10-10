@@ -81,7 +81,7 @@ MODULE timing
    LOGICAL :: lwriter
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: timing.F90 11536 2019-09-11 13:54:18Z smasson $
+   !! $Id: timing.F90 15599 2021-12-14 16:07:32Z emmafiedler $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -372,6 +372,8 @@ CONTAINS
 
 #if defined key_mpp_mpi
       ALLOCATE(timing_glob(4*jpnij), stat=icode)
+      ! initialise zperc
+      zperc = 0.
       CALL MPI_GATHER( (/compute_time, waiting_time(1), waiting_time(2), elapsed_time/),   &
          &             4, MPI_DOUBLE_PRECISION, timing_glob, 4, MPI_DOUBLE_PRECISION, 0, MPI_COMM_OCE, icode)
       IF( narea == 1 ) THEN

@@ -2,7 +2,7 @@
 #if defined key_agrif
    !!----------------------------------------------------------------------
    !! NEMO/NST 4.0 , NEMO Consortium (2018)
-   !! $Id: agrif_user.F90 13479 2020-09-16 16:56:46Z clem $
+   !! $Id: agrif_user.F90 15039 2021-06-22 09:27:55Z jchanut $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 SUBROUTINE agrif_user
@@ -586,10 +586,10 @@ SUBROUTINE Agrif_InitValues_cont_top
    Agrif_SpecialValue=0.
    Agrif_UseSpecialValue = .TRUE.
    CALL Agrif_Bc_variable(trn_id,calledweight=1.,procname=interptrn)
-   Agrif_UseSpecialValue = .FALSE.
    CALL Agrif_Sponge
    tabspongedone_trn = .FALSE.
    CALL Agrif_Bc_variable(trn_sponge_id,calledweight=1.,procname=interptrn_sponge)
+   Agrif_UseSpecialValue = .FALSE.
    ! reset tsa to zero
    tra(:,:,:,:) = 0.
 
@@ -657,8 +657,8 @@ SUBROUTINE agrif_declare_var_top
    CALL agrif_declare_variable((/2,2,0,0/),(/ind3,ind3,0,0/),(/'x','y','N','N'/),(/1,1,1,1/),(/nlci,nlcj,jpk,jptra+1/),trn_id)
    CALL agrif_declare_variable((/2,2,0,0/),(/ind3,ind3,0,0/),(/'x','y','N','N'/),(/1,1,1,1/),(/nlci,nlcj,jpk,jptra+1/),trn_sponge_id)
 # else
-   CALL agrif_declare_variable((/2,2,0,0/),(/3,3,0,0/),(/'x','y','N','N'/),(/1,1,1,1/),(/nlci,nlcj,jpk,jptra/),trn_id)
-   CALL agrif_declare_variable((/2,2,0,0/),(/3,3,0,0/),(/'x','y','N','N'/),(/1,1,1,1/),(/nlci,nlcj,jpk,jptra/),trn_sponge_id)
+   CALL agrif_declare_variable((/2,2,0,0/),(/ind3,ind3,0,0/),(/'x','y','N','N'/),(/1,1,1,1/),(/nlci,nlcj,jpk,jptra/),trn_id)
+   CALL agrif_declare_variable((/2,2,0,0/),(/ind3,ind3,0,0/),(/'x','y','N','N'/),(/1,1,1,1/),(/nlci,nlcj,jpk,jptra/),trn_sponge_id)
 # endif
 
    ! 2. Type of interpolation

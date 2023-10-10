@@ -56,7 +56,7 @@ MODULE icedyn_rhg_evp
    REAL(wp), ALLOCATABLE, DIMENSION(:,:) ::   zmsk00, zmsk15
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icedyn_rhg_evp.F90 13646 2020-10-20 15:33:01Z clem $
+   !! $Id: icedyn_rhg_evp.F90 15518 2021-11-16 16:57:25Z edblockley $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -837,8 +837,8 @@ CONTAINS
                zsig12           =   zfac * z1_ecc2 * pshear_i(ji,jj)
                
                ! Stress invariants (sigma_I, sigma_II, Coon 1974, Feltham 2008)
-               zsig_I (ji,jj)   =   zsig1 * 0.5_wp                                           ! 1st stress invariant, aka average normal stress, aka negative pressure
-               zsig_II(ji,jj)   =   SQRT ( MAX( 0._wp, zsig2 * zsig2 * 0.25_wp + zsig12 ) )  ! 2nd  ''       '', aka maximum shear stress
+               zsig_I (ji,jj)   =   zsig1 * 0.5_wp                                      ! 1st stress invariant, aka average normal stress, aka negative pressure
+               zsig_II(ji,jj)   =   SQRT ( zsig2 * zsig2 * 0.25_wp + zsig12 * zsig12 )  ! 2nd  ''       ''    , aka maximum shear stress
                
             END DO
          END DO         
@@ -871,8 +871,8 @@ CONTAINS
 !!$               zsig12           =   zfac * z1_ecc2 * pshear_i(ji,jj)
 !!$               
 !!$               ! Stress invariants (sigma_I, sigma_II, Coon 1974, Feltham 2008), T-point
-!!$               zsig_I(ji,jj)    =   zsig1 * 0.5_wp                                           ! 1st stress invariant, aka average normal stress, aka negative pressure
-!!$               zsig_II(ji,jj)   =   SQRT ( MAX( 0._wp, zsig2 * zsig2 * 0.25_wp + zsig12 ) )  ! 2nd  ''       '', aka maximum shear stress
+!!$               zsig_I(ji,jj)    =   zsig1 * 0.5_wp                                      ! 1st stress invariant, aka average normal stress, aka negative pressure
+!!$               zsig_II(ji,jj)   =   SQRT ( zsig2 * zsig2 * 0.25_wp + zsig12 * zsig12 )  ! 2nd  ''       ''    , aka maximum shear stress
 !!$      
 !!$               ! Normalized  principal stresses (used to display the ellipse)
 !!$               z1_strength      =   1._wp / MAX( 1._wp, strength(ji,jj) )
@@ -1005,7 +1005,7 @@ CONTAINS
       ENDIF
 
       ! time
-      it = ( kt - 1 ) * kitermax + kiter
+      it = ( kt - nit000 ) * kitermax + kiter
       
       ! convergence
       IF( kiter == 1 ) THEN ! remove the first iteration for calculations of convergence (always very large)
@@ -1025,7 +1025,7 @@ CONTAINS
          ! write variables
          istatus = NF90_PUT_VAR( ncvgid, nvarid, (/zresm/), (/it/), (/1/) )
          ! close file
-         IF( kt == nitend - nn_fsbc + 1 )   istatus = NF90_CLOSE(ncvgid)
+         IF( kt == nitend - nn_fsbc + 1 .AND. kiter == kitermax )   istatus = NF90_CLOSE(ncvgid)
       ENDIF
       
    END SUBROUTINE rhg_cvg

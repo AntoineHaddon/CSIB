@@ -96,7 +96,7 @@ MODULE ldftra
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: ldftra.F90 12296 2019-12-30 19:34:01Z mathiot $
+   !! $Id: ldftra.F90 15092 2021-07-06 15:16:05Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -616,7 +616,7 @@ CONTAINS
          IF( .NOT.l_ldfeiv_time ) THEN             !* mask if No time variation 
             DO jk = 1, jpkm1
                aeiu(:,:,jk) = aeiu(:,:,jk) * umask(:,:,jk)
-               ahtv(:,:,jk) = ahtv(:,:,jk) * vmask(:,:,jk)
+               aeiv(:,:,jk) = aeiv(:,:,jk) * vmask(:,:,jk)
             END DO
          ENDIF
          !

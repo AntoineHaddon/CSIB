@@ -78,7 +78,7 @@ for n in range(procnum):
     #
     # skip any files with no icebergs
     if len(fw.dimensions['n']) > 0:
-        print pathstart+nn+'.nc'
+        print (pathstart+nn+'.nc')
         ic = fw.variables['iceberg_number'][:,0]
         ts = fw.variables['timestep'][:]
         icv = np.unique(ic)
@@ -95,15 +95,15 @@ try:
     icu = np.concatenate(icu)
 except ValueError:
     # No icebergs: create an empty output file.
-    print 'No icebergs in the model.'
+    print ('No icebergs in the model.')
     fw = Dataset(pathstart+'0000.nc')
     fo = Dataset(pathout, 'w', format='NETCDF4_CLASSIC')
     ntrj = fo.createDimension('ntraj', None)
     icbn = fo.createVariable('iceberg_number', 'i4',('ntraj'))
     n = 0
-    for key, value in varlist.iteritems() :
+    for key, value in varlist.items() :
         if key != "iceberg_number" :
-            print 'key is ',key
+            print ('key is ',key)
             oout = fo.createVariable(key, value.dtype, ('ntraj'),
                                  zlib=True, complevel=1)
             oout.long_name = fw.variables[key].getncattr('long_name')
@@ -126,7 +126,7 @@ print('times range from:        ',times.min(), 'to: ', times.max())
 nt = times.shape[0]
 #
 n=0
-for key, value in varlist.iteritems() :
+for key, value in varlist.items() :
     if key != "iceberg_number" :
         n = n + 1
 inarr = np.zeros((n, ntraj, nt))
@@ -141,7 +141,7 @@ innam = []
 intyp = []
 inlngnam = []
 inunits = []
-for key, value in varlist.iteritems() :
+for key, value in varlist.items() :
     if key != "iceberg_number" :
         innam.append(key)
 #
@@ -150,7 +150,7 @@ for key, value in varlist.iteritems() :
 #
 nn = '%4.4d' % 0
 fw = Dataset(pathstart+nn+'.nc')
-for key, value in varlist.iteritems() :
+for key, value in varlist.items() :
     if key != "iceberg_number" :
         intyp.append(fw.variables[key].dtype)
         inlngnam.append(fw.variables[key].getncattr('long_name'))
@@ -172,7 +172,7 @@ for n in range(procnum):
     if m > 0:
         inx = np.zeros(m, dtype=int)
         tsx = np.zeros(m, dtype=int)
-        #print pathstart+nn+'.nc'
+        #print (pathstart+nn+'.nc')
         ic = fw.variables['iceberg_number'][:,0]
         ts = fw.variables['timestep'][:]
         for k in range(m):
@@ -182,7 +182,7 @@ for n in range(procnum):
             inxx   = np.where(times == ts[k])
             tsx[k] = inxx[0]
         n = 0
-        for key, value in varlist.iteritems() :
+        for key, value in varlist.items() :
             if key != "iceberg_number" :
                 insmall = fw.variables[innam[n]][:]
                 inarr[n,inx[:],tsx[:]] = insmall[:]
@@ -197,7 +197,7 @@ nti  = fo.createDimension('ntime', None)
 icbn = fo.createVariable('iceberg_number', 'i4',('ntraj'))
 icbn[:] = icu
 n = 0
-for key, value in varlist.iteritems() :
+for key, value in varlist.items() :
     if key != "iceberg_number" :
         oout = fo.createVariable(innam[n], intyp[n], ('ntraj','ntime'),
                                  zlib=True, complevel=1, chunksizes=(1,nt))

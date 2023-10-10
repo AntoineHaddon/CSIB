@@ -31,7 +31,7 @@ MODULE trcsbc
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: trcsbc.F90 10788 2019-03-21 11:15:14Z cetlod $ 
+   !! $Id: trcsbc.F90 15393 2021-10-18 10:51:51Z cetlod $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -48,10 +48,15 @@ CONTAINS
       !!      * concentration/dilution effect:
       !!            The surface freshwater flux modify the ocean volume
       !!         and thus the concentration of a tracer as :
-      !!            tra = tra + emp * trn / e3t   for k=1
-      !!         where emp, the surface freshwater budget (evaporation minus
-      !!         precipitation ) given in kg/m2/s is divided
-      !!         by 1035 kg/m3 (density of ocean water) to obtain m/s.
+      !!            tra = tra + emp * trn / e3t + fmmflx * tri / e3t  for k=1
+      !!         where :
+      !!          - trn, the concentration of tracer in the ocean
+      !!          - tri, the concentration of tracer in the sea-ice
+      !!          - emp, the surface freshwater budget (evaporation minus precipitation + fmmflx)
+      !!            given in kg/m2/s is divided by 1035 kg/m3 (density of ocean water) to obtain m/s.
+      !!          - fmmflx, the flux asscociated to freezing-melting of sea-ice 
+      !!            In linear free surface case (ln_linssh=T), the volume of the
+      !!            ocean does not change with the water exchanges at the (air+ice)-sea
       !!
       !! ** Action  : - Update the 1st level of tra with the trend associated
       !!                with the tracer surface boundary condition 
@@ -61,9 +66,8 @@ CONTAINS
       !
       INTEGER  ::   ji, jj, jn                      ! dummy loop indices
       REAL(wp) ::   zse3t, zrtrn, zfact     ! local scalars
-      REAL(wp) ::   zftra, zdtra, ztfx, ztra   !   -      -
+      REAL(wp) ::   zdtra          !   -      -
       CHARACTER (len=22) :: charout
-      REAL(wp), DIMENSION(jpi,jpj)   ::   zsfx
       REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) ::   ztrtrd
       !!---------------------------------------------------------------------
       !
@@ -101,61 +105,81 @@ CONTAINS
          !
       ENDIF
 
-      ! Coupling online : river runoff is added to the horizontal divergence (hdivn) in the subroutine sbc_rnf_div 
-      ! one only consider the concentration/dilution effect due to evaporation minus precipitation + freezing/melting of sea-ice
-      ! Coupling offline : runoff are in emp which contains E-P-R
-      !
-      IF( .NOT.ln_linssh ) THEN  ! online coupling with vvl
-         zsfx(:,:) = 0._wp
-      ELSE                                      ! online coupling free surface or offline with free surface
-         zsfx(:,:) = emp(:,:)
-      ENDIF
-
       ! 0. initialization
       SELECT CASE ( nn_ice_tr )
 
-      CASE ( -1 ) ! No tracers in sea ice (null concentration in sea ice)
+      CASE ( -1 ) ! No tracers in sea ice ( trc_i = 0 )
          !
          DO jn = 1, jptra
             DO jj = 2, jpj
                DO ji = fs_2, fs_jpim1   ! vector opt.
-                  sbc_trc(ji,jj,jn) = zsfx(ji,jj) * r1_rau0 * trn(ji,jj,1,jn)
+                  sbc_trc(ji,jj,jn) = 0._wp
                END DO
             END DO
          END DO
          !
-      CASE ( 0 )  ! Same concentration in sea ice and in the ocean
+         IF( ln_linssh ) THEN  !* linear free surface  
+            DO jn = 1, jptra
+               DO jj = 2, jpj
+                  DO ji = fs_2, fs_jpim1   ! vector opt.
+                     sbc_trc(ji,jj,jn) = sbc_trc(ji,jj,jn) + r1_rau0 * emp(ji,jj) * trn(ji,jj,1,jn) !==>> add concentration/dilution effect due to constant volume cell
+                  END DO
+               END DO
+            END DO
+         ENDIF
+         !
+      CASE ( 0 )  ! Same concentration in sea ice and in the ocean ( trc_i = trn )
          !
          DO jn = 1, jptra
             DO jj = 2, jpj
                DO ji = fs_2, fs_jpim1   ! vector opt.
-                  sbc_trc(ji,jj,jn) = ( zsfx(ji,jj) + fmmflx(ji,jj) ) * r1_rau0 * trn(ji,jj,1,jn)
+                  sbc_trc(ji,jj,jn) = - fmmflx(ji,jj) * r1_rau0 * trn(ji,jj,1,jn)
                END DO
             END DO
          END DO
          !
+         IF( ln_linssh ) THEN  !* linear free surface  
+            DO jn = 1, jptra
+               DO jj = 2, jpj
+                  DO ji = fs_2, fs_jpim1   ! vector opt.
+                     sbc_trc(ji,jj,jn) = sbc_trc(ji,jj,jn) + r1_rau0 * emp(ji,jj) * trn(ji,jj,1,jn) !==>> add concentration/dilution effect due to constant volume cell
+                  END DO
+               END DO
+            END DO
+         ENDIF
+
       CASE ( 1 )  ! Specific treatment of sea ice fluxes with an imposed concentration in sea ice 
          !
          DO jn = 1, jptra
             DO jj = 2, jpj
                DO ji = fs_2, fs_jpim1   ! vector opt.
-                  zse3t = 1. / e3t_n(ji,jj,1)
-                  ! tracer flux at the ice/ocean interface (tracer/m2/s)
-                  zftra = - trc_i(ji,jj,jn) * fmmflx(ji,jj) ! uptake of tracer in the sea ice
-                  !                                         ! only used in the levitating sea ice case
-                  ! tracer flux only       : add concentration dilution term in net tracer flux, no F-M in volume flux
-                  ! tracer and mass fluxes : no concentration dilution term in net tracer flux, F-M term in volume flux
-                  ztfx  = zftra                        ! net tracer flux
-                  !
-                  zdtra = r1_rau0 * ( ztfx + ( zsfx(ji,jj) + fmmflx(ji,jj) ) * trn(ji,jj,1,jn) ) 
-                  IF ( zdtra < 0. ) THEN
-                     zdtra  = MAX(zdtra, -trn(ji,jj,1,jn) * e3t_n(ji,jj,1) / r2dttrc )   ! avoid negative concentrations to arise
-                  ENDIF
-                  sbc_trc(ji,jj,jn) =  zdtra 
+                  sbc_trc(ji,jj,jn)  = - fmmflx(ji,jj) * r1_rau0 * trc_i(ji,jj,jn)
                END DO
             END DO
          END DO
+         !
+         IF( ln_linssh ) THEN  !* linear free surface  
+            DO jn = 1, jptra
+               DO jj = 2, jpj
+                  DO ji = fs_2, fs_jpim1   ! vector opt.
+                     sbc_trc(ji,jj,jn) = sbc_trc(ji,jj,jn) + r1_rau0 * emp(ji,jj) * trn(ji,jj,1,jn) !==>> add concentration/dilution effect due to constant volume cell
+                  END DO
+               END DO
+            END DO
+         ENDIF
+         !
+         DO jn = 1, jptra
+            DO jj = 2, jpj
+               DO ji = fs_2, fs_jpim1   ! vector opt.
+                  zse3t = r2dttrc / e3t_n(ji,jj,1)
+                  zdtra = trn(ji,jj,1,jn) + sbc_trc(ji,jj,jn) * zse3t 
+                  IF( zdtra < 0. ) sbc_trc(ji,jj,jn) = MAX( zdtra, -trn(ji,jj,1,jn) / zse3t  ) ! avoid negative concentration that can occurs if trc_i > trn                   
+               END DO
+            END DO
+         END DO
+         !                                                       ! ===========
       END SELECT
+
       !
       CALL lbc_lnk( 'trcsbc', sbc_trc(:,:,:), 'T', 1. )
       !                                       Concentration dilution effect on tracers due to evaporation & precipitation 
@@ -174,7 +198,7 @@ CONTAINS
             ztrtrd(:,:,:) = tra(:,:,:,jn) - ztrtrd(:,:,:)
             CALL trd_tra( kt, 'TRC', jn, jptra_nsr, ztrtrd )
          END IF
-         !                                                       ! ===========
+         !
       END DO                                                     ! tracer loop
       !                                                          ! ===========
       !

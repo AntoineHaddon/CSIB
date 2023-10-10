@@ -51,7 +51,7 @@ MODULE iceitd
    !
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: iceitd.F90 14026 2020-12-03 08:48:10Z clem $
+   !! $Id: iceitd.F90 15045 2021-06-23 10:43:59Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -367,7 +367,10 @@ CONTAINS
             ENDIF
             !
             ! Compute coefficients of g(eta) = g0 + g1*eta
-            zdhr = 1._wp / (phR(ji) - phL(ji))
+            IF( phR(ji) > phL(ji) ) THEN   ;   zdhr = 1._wp / (phR(ji) - phL(ji))
+            ELSE                           ;   zdhr = 0._wp ! if hR=hL=hice => no remapping
+            ENDIF
+            !!zdhr = 1._wp / (phR(ji) - phL(ji))
             zwk1 = 6._wp * paice(ji) * zdhr
             zwk2 = ( phice(ji) - phL(ji) ) * zdhr
             pg0(ji) = zwk1 * ( z2_3 - zwk2 )                    ! Eq. 14

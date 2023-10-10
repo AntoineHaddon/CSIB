@@ -58,7 +58,7 @@ MODULE zdfphy
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: zdfphy.F90 13284 2020-07-09 15:12:23Z smasson $
+   !! $Id: zdfphy.F90 15565 2021-12-01 17:10:11Z jchanut $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -285,6 +285,10 @@ CONTAINS
 !!gm         avm(2:jpim1,2:jpjm1,1:jpkm1) = rn_avm0 * wmask(2:jpim1,2:jpjm1,1:jpkm1)
       END SELECT
       !  
+#if defined key_agrif 
+      ! interpolation parent grid => child grid for avm_k ( ex : at west border: update column 1 and 2)
+      IF( l_zdfsh2 )   CALL Agrif_avm
+#endif
       !                          !==  ocean Kz  ==!   (avt, avs, avm)
       !
       !                                         !* start from turbulent closure values
@@ -310,11 +314,6 @@ CONTAINS
       IF( ln_zdfswm )   CALL zdf_swm( kt, avm, avt, avs )   ! surface  wave (Qiao et al. 2004) 
       IF( ln_zdfiwm )   CALL zdf_iwm( kt, avm, avt, avs )   ! internal wave (de Lavergne et al 2017)
       IF( ln_zdftmx )   CALL zdf_tmx( kt, avm, avt, avs )   ! old tidal mixing scheme (Simmons et al 2004)
-
-#if defined key_agrif 
-      ! interpolation parent grid => child grid for avm_k ( ex : at west border: update column 1 and 2)
-      IF( l_zdfsh2 )   CALL Agrif_avm
-#endif
 
       !                                         !* Lateral boundary conditions (sign unchanged)
       IF( l_zdfsh2 ) THEN

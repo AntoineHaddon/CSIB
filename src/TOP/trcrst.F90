@@ -34,7 +34,7 @@ MODULE trcrst
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: trcrst.F90 11536 2019-09-11 13:54:18Z smasson $
+   !! $Id: trcrst.F90 15596 2021-12-13 16:28:47Z acc $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -56,8 +56,9 @@ CONTAINS
          IF( kt == nittrc000 ) THEN
             lrst_trc = .FALSE.
             IF( ln_rst_list ) THEN
-               nrst_lst = 1
-               nitrst = nn_stocklist( nrst_lst )
+               ! Protect against user requests outside of simulation period (#2735)
+               nitrst   = MIN( nitend, MINVAL( nn_stocklist, MASK=nn_stocklist.ge.nit000) )
+               nrst_lst = MAX( 1, FINDLOC( nn_stocklist, nitrst, DIM=1 ) )
             ELSE
                nitrst = nitend
             ENDIF
@@ -77,7 +78,9 @@ CONTAINS
       ! to get better performances with NetCDF format:
       ! we open and define the tracer restart file one tracer time step before writing the data (-> at nitrst - 2*nn_dttrc + 1)
       ! except if we write tracer restart files every tracer time step or if a tracer restart file was writen at nitend - 2*nn_dttrc + 1
-      IF( kt == nitrst - 2*nn_dttrc .OR. nn_stock == nn_dttrc .OR. ( kt == nitend - nn_dttrc .AND. .NOT. lrst_trc ) ) THEN
+      ! or if nit000 is requested in the nn_stocklist
+      IF( kt == nitrst - 2*nn_dttrc .OR. nn_stock == nn_dttrc .OR. ( kt == nitend - nn_dttrc .AND. .NOT. lrst_trc ) &
+      &                                                       .OR. ( kt == nit000 .AND. nitrst == nit000 ) ) THEN
          ! beware of the format used to write kt (default is i8.8, that should be large enough)
          IF( nitrst > 1.0e9 ) THEN   ;   WRITE(clkt,*       ) nitrst
          ELSE                        ;   WRITE(clkt,'(i8.8)') nitrst
@@ -352,7 +355,7 @@ CONTAINS
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: trcrst.F90 11536 2019-09-11 13:54:18Z smasson $
+   !! $Id: trcrst.F90 15596 2021-12-13 16:28:47Z acc $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!======================================================================
 END MODULE trcrst

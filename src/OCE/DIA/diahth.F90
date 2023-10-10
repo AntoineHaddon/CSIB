@@ -41,7 +41,7 @@ MODULE diahth
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: diahth.F90 12276 2019-12-20 11:14:26Z cetlod $ 
+   !! $Id: diahth.F90 15231 2021-09-08 07:58:57Z clem $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -364,13 +364,13 @@ CONTAINS
       ENDIF
       !
       ilevel(:,:) = 1
-      DO jk = 2, jpkm1
+      DO jk = 1, jpkm1
          DO jj = 1, jpj
             DO ji = 1, jpi
-               IF( ( gdept_n(ji,jj,jk) < pdep ) .AND. ( tmask(ji,jj,jk) == 1 ) ) THEN
-                   ilevel(ji,jj) = jk
-                   zthick(ji,jj) = zthick(ji,jj) + e3t_n(ji,jj,jk)
-                   phtc  (ji,jj) = phtc  (ji,jj) + e3t_n(ji,jj,jk) * ptn(ji,jj,jk)
+               IF( ( gdepw_n(ji,jj,jk+1) < pdep ) .AND. ( tmask(ji,jj,jk) == 1 ) ) THEN
+                  ilevel(ji,jj) = jk+1
+                  zthick(ji,jj) = zthick(ji,jj) + e3t_n(ji,jj,jk)
+                  phtc  (ji,jj) = phtc  (ji,jj) + e3t_n(ji,jj,jk) * ptn(ji,jj,jk)
                ENDIF
             ENDDO
          ENDDO
@@ -379,9 +379,10 @@ CONTAINS
       DO jj = 1, jpj
          DO ji = 1, jpi
             ik = ilevel(ji,jj)
-            zthick(ji,jj) = pdep - zthick(ji,jj)   !   remaining thickness to reach depht pdep
-            phtc(ji,jj)   = phtc(ji,jj) + ptn(ji,jj,ik+1) * MIN( e3t_n(ji,jj,ik+1), zthick(ji,jj) ) &
-                                                          * tmask(ji,jj,ik+1)
+            IF( tmask(ji,jj,ik) == 1 ) THEN
+               zthick(ji,jj) = MIN ( gdepw_n(ji,jj,ik+1), pdep ) - zthick(ji,jj)   ! remaining thickness to reach dephw pdep
+               phtc(ji,jj)   = phtc(ji,jj) + ptn(ji,jj,ik) * zthick(ji,jj)
+            ENDIF
          END DO
       ENDDO
       !

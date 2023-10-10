@@ -11,6 +11,7 @@ MODULE domvvl
 
    !!----------------------------------------------------------------------
    !!   dom_vvl_init     : define initial vertical scale factors, depths and column thickness
+   !!   dom_vvl_zgr      : most part of dom_vvl_init
    !!   dom_vvl_sf_nxt   : Compute next vertical scale factors
    !!   dom_vvl_sf_swp   : Swap vertical scale factors and update the vertical grid
    !!   dom_vvl_interpol : Interpolate vertical scale factors from one grid point to another
@@ -35,6 +36,7 @@ MODULE domvvl
    PRIVATE
 
    PUBLIC  dom_vvl_init       ! called by domain.F90
+   PUBLIC  dom_vvl_zgr        ! called by iceistate.F90
    PUBLIC  dom_vvl_sf_nxt     ! called by step.F90
    PUBLIC  dom_vvl_sf_swp     ! called by step.F90
    PUBLIC  dom_vvl_interpol   ! called by dynnxt.F90
@@ -46,6 +48,12 @@ MODULE domvvl
    LOGICAL , PUBLIC :: ln_vvl_ztilde_as_zstar = .FALSE.    ! ztilde vertical coordinate
    LOGICAL , PUBLIC :: ln_vvl_zstar_at_eqtor  = .FALSE.    ! ztilde vertical coordinate
    LOGICAL , PUBLIC :: ln_vvl_kepe            = .FALSE.    ! kinetic/potential energy transfer
+   !
+   INTEGER          :: nn_vvl_interp                       ! scale factors anomaly interpolation method at U-V-F points
+                                                           ! =0 linear with no bottom correction over steps (old)
+                                                           ! =1 linear with bottom correction over steps
+                                                           ! =2 "qco like", i.e. proportional to thicknesses at rest
+   !
    !                                                       ! conservation: not used yet
    REAL(wp)         :: rn_ahe3                             ! thickness diffusion coefficient
    REAL(wp)         :: rn_rst_e3t                          ! ztilde to zstar restoration timescale [days]
@@ -64,7 +72,7 @@ MODULE domvvl
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: domvvl.F90 11536 2019-09-11 13:54:18Z smasson $
+   !! $Id: domvvl.F90 15610 2021-12-17 15:09:23Z jchanut $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -114,10 +122,6 @@ CONTAINS
       !!
       !! Reference  : Leclair, M., and G. Madec, 2011, Ocean Modelling.
       !!----------------------------------------------------------------------
-      INTEGER ::   ji, jj, jk
-      INTEGER ::   ii0, ii1, ij0, ij1
-      REAL(wp)::   zcoef
-      !!----------------------------------------------------------------------
       !
       IF(lwp) WRITE(numout,*)
       IF(lwp) WRITE(numout,*) 'dom_vvl_init : Variable volume activated'
@@ -132,6 +136,54 @@ CONTAINS
       CALL dom_vvl_rst( nit000, 'READ' )
       e3t_a(:,:,jpk) = e3t_0(:,:,jpk)  ! last level always inside the sea floor set one for all
       !
+      !                    !== Set of all other vertical scale factors  ==!  (now and before)
+      CALL dom_vvl_zgr
+      !
+      IF(lwxios) THEN
+! define variables in restart file when writing with XIOS
+         CALL iom_set_rstw_var_active('e3t_b')
+         CALL iom_set_rstw_var_active('e3t_n')
+         !                                           ! ----------------------- !
+         IF( ln_vvl_ztilde .OR. ln_vvl_layer ) THEN  ! z_tilde and layer cases !
+            !                                        ! ----------------------- !
+            CALL iom_set_rstw_var_active('tilde_e3t_b')
+            CALL iom_set_rstw_var_active('tilde_e3t_n')
+         END IF
+         !                                           ! -------------!    
+         IF( ln_vvl_ztilde ) THEN                    ! z_tilde case !
+            !                                        ! ------------ !
+            CALL iom_set_rstw_var_active('hdiv_lf')
+         ENDIF
+         !
+      ENDIF
+      !
+   END SUBROUTINE dom_vvl_init
+
+   SUBROUTINE dom_vvl_zgr
+      !!----------------------------------------------------------------------
+      !!                ***  ROUTINE dom_vvl_zgr  ***
+      !!
+      !! ** Purpose :  Interpolation of all scale factors,
+      !!               depths and water column heights
+      !!
+      !! ** Method  :  - interpolate scale factors
+      !!
+      !! ** Action  : - e3t_(n/b) and tilde_e3t_(n/b)
+      !!              - Regrid: e3(u/v)_n
+      !!                        e3(u/v)_b
+      !!                        e3w_n
+      !!                        e3(u/v)w_b
+      !!                        e3(u/v)w_n
+      !!                        gdept_n, gdepw_n and gde3w_n
+      !!              - h(t/u/v)_0
+      !!              - frq_rst_e3t and frq_rst_hdv
+      !!
+      !! Reference  : Leclair, M., and G. Madec, 2011, Ocean Modelling.
+      !!----------------------------------------------------------------------
+      INTEGER ::   ji, jj, jk
+      INTEGER ::   ii0, ii1, ij0, ij1
+      REAL(wp)::   zcoef
+      !!----------------------------------------------------------------------
       !                    !== Set of all other vertical scale factors  ==!  (now and before)
       !                                ! Horizontal interpolation of e3t
       CALL dom_vvl_interpol( e3t_b(:,:,:), e3u_b(:,:,:), 'U' )    ! from T to U
@@ -159,8 +211,8 @@ CONTAINS
       gdept_b(:,:,1) = 0.5_wp * e3w_b(:,:,1)
       gdepw_b(:,:,1) = 0.0_wp
       DO jk = 2, jpk                               ! vertical sum
-         DO jj = 1,jpj
-            DO ji = 1,jpi
+         DO jj = 1, jpj
+            DO ji = 1, jpi
                !    zcoef = tmask - wmask    ! 0 everywhere tmask = wmask, ie everywhere expect at jk = mikt
                !                             ! 1 everywhere from mbkt to mikt + 1 or 1 (if no isf)
                !                             ! 0.5 where jk = mikt     
@@ -244,27 +296,8 @@ CONTAINS
          ENDIF
       ENDIF
       !
-      IF(lwxios) THEN
-! define variables in restart file when writing with XIOS
-         CALL iom_set_rstw_var_active('e3t_b')
-         CALL iom_set_rstw_var_active('e3t_n')
-         !                                           ! ----------------------- !
-         IF( ln_vvl_ztilde .OR. ln_vvl_layer ) THEN  ! z_tilde and layer cases !
-            !                                        ! ----------------------- !
-            CALL iom_set_rstw_var_active('tilde_e3t_b')
-            CALL iom_set_rstw_var_active('tilde_e3t_n')
-         END IF
-         !                                           ! -------------!    
-         IF( ln_vvl_ztilde ) THEN                    ! z_tilde case !
-            !                                        ! ------------ !
-            CALL iom_set_rstw_var_active('hdiv_lf')
-         ENDIF
-         !
-      ENDIF
-      !
-   END SUBROUTINE dom_vvl_init
-
-
+   END SUBROUTINE dom_vvl_zgr
+   
    SUBROUTINE dom_vvl_sf_nxt( kt, kcall ) 
       !!----------------------------------------------------------------------
       !!                ***  ROUTINE dom_vvl_sf_nxt  ***
@@ -691,7 +724,9 @@ CONTAINS
       !                                                             !   =  'U', 'V', 'W, 'F', 'UW' or 'VW'
       !
       INTEGER ::   ji, jj, jk                                       ! dummy loop indices
-      REAL(wp) ::  zlnwd                                            ! =1./0. when ln_wd_il = T/F
+      INTEGER ::   iku, ikum1, ikv, ikvm1, ikf, ikfm1               ! 
+      REAL(wp) ::  zlnwd                                            ! =1./0. when ln_wd_il = T/
+      REAL(wp), DIMENSION(jpi,jpj) :: zssh                          ! work array to retrieve ssh (nn_vvl_interp > 1)
       !!----------------------------------------------------------------------
       !
       IF(ln_wd_il) THEN
@@ -703,42 +738,172 @@ CONTAINS
       SELECT CASE ( pout )    !==  type of interpolation  ==!
          !
       CASE( 'U' )                   !* from T- to U-point : hor. surface weighted mean
-         DO jk = 1, jpk
-            DO jj = 1, jpjm1
-               DO ji = 1, fs_jpim1   ! vector opt.
-                  pe3_out(ji,jj,jk) = 0.5_wp * (  umask(ji,jj,jk) * (1.0_wp - zlnwd) + zlnwd ) * r1_e1e2u(ji,jj)   &
-                     &                       * (   e1e2t(ji  ,jj) * ( pe3_in(ji  ,jj,jk) - e3t_0(ji  ,jj,jk) )     &
-                     &                           + e1e2t(ji+1,jj) * ( pe3_in(ji+1,jj,jk) - e3t_0(ji+1,jj,jk) ) )
+         SELECT CASE ( nn_vvl_interp )
+         CASE ( 0 )   
+            !   
+            DO jk = 1, jpk
+               DO jj = 1, jpjm1
+                  DO ji = 1, fs_jpim1   ! vector opt.
+                     pe3_out(ji,jj,jk) = 0.5_wp * (  umask(ji,jj,jk) * (1.0_wp - zlnwd) + zlnwd ) * r1_e1e2u(ji,jj)   &
+                        &                       * (   e1e2t(ji  ,jj) * ( pe3_in(ji  ,jj,jk) - e3t_0(ji  ,jj,jk) )     &
+                        &                           + e1e2t(ji+1,jj) * ( pe3_in(ji+1,jj,jk) - e3t_0(ji+1,jj,jk) ) )
+                  END DO
                END DO
             END DO
-         END DO
+            !
+         CASE ( 1 ) 
+            !   
+            DO jk = 1, jpk
+               DO jj = 1, jpjm1
+                  DO ji = 1, fs_jpim1   ! vector opt.
+                     pe3_out(ji,jj,jk) = 0.5_wp * (  umask(ji,jj,jk) * (1.0_wp - zlnwd) + zlnwd ) * r1_e1e2u(ji,jj)   &
+                        &                       * (   e1e2t(ji  ,jj) * ( pe3_in(ji  ,jj,jk) - e3t_0(ji  ,jj,jk) )     &
+                        &                           + e1e2t(ji+1,jj) * ( pe3_in(ji+1,jj,jk) - e3t_0(ji+1,jj,jk) ) )
+                  END DO
+               END DO
+            END DO
+            !
+            ! Bottom correction:
+            DO jj = 1, jpjm1
+               DO ji = 1, fs_jpim1   ! vector opt.
+                  iku    = mbku(ji  ,jj)
+                  ikum1  = iku - 1
+                  pe3_out(ji,jj,iku) = ( umask(ji,jj,iku) * (1.0_wp - zlnwd) + zlnwd )                              & 
+                     &      *(  0.5_wp * r1_e1e2u(ji,jj)                                                            &
+                     &      *(  e1e2t(ji  ,jj) * ( SUM(tmask(ji  ,jj,:)*(pe3_in(ji  ,jj,:) - e3t_0(ji  ,jj,:))) )   &
+                     &        + e1e2t(ji+1,jj) * ( SUM(tmask(ji+1,jj,:)*(pe3_in(ji+1,jj,:) - e3t_0(ji+1,jj,:))) ) ) &
+                     &     - SUM(pe3_out(ji,jj,1:ikum1)))
+               END DO
+            END DO
+            !
+         CASE ( 2 ) 
+            zssh(:,:) = SUM(tmask(:,:,:)*(pe3_in(:,:,:)-e3t_0(:,:,:)), DIM=3)
+            DO jk = 1, jpk
+               DO jj = 1, jpjm1
+                  DO ji = 1, fs_jpim1   ! vector opt.
+                     pe3_out(ji,jj,jk) = 0.5_wp * (  umask(ji,jj,jk) * (1.0_wp - zlnwd) + zlnwd ) * r1_e1e2u(ji,jj)    &
+                        &                       * (   e1e2t(ji  ,jj) * zssh(ji  ,jj) + e1e2t(ji+1,jj) * zssh(ji+1,jj)) &
+                        &                       * e3u_0(ji,jj,jk) / ( hu_0(ji,jj) + 1._wp - ssumask(ji,jj) )
+                  END DO
+               END DO
+            END DO
+            !   
+         END SELECT
+         !
          CALL lbc_lnk( 'domvvl', pe3_out(:,:,:), 'U', 1._wp )
          pe3_out(:,:,:) = pe3_out(:,:,:) + e3u_0(:,:,:)
          !
       CASE( 'V' )                   !* from T- to V-point : hor. surface weighted mean
-         DO jk = 1, jpk
-            DO jj = 1, jpjm1
-               DO ji = 1, fs_jpim1   ! vector opt.
-                  pe3_out(ji,jj,jk) = 0.5_wp * ( vmask(ji,jj,jk)  * (1.0_wp - zlnwd) + zlnwd ) * r1_e1e2v(ji,jj)   &
-                     &                       * (   e1e2t(ji,jj  ) * ( pe3_in(ji,jj  ,jk) - e3t_0(ji,jj  ,jk) )     &
-                     &                           + e1e2t(ji,jj+1) * ( pe3_in(ji,jj+1,jk) - e3t_0(ji,jj+1,jk) ) )
+         SELECT CASE ( nn_vvl_interp )
+         CASE ( 0 )   
+            !   
+            DO jk = 1, jpk
+               DO jj = 1, jpjm1
+                  DO ji = 1, fs_jpim1   ! vector opt.
+                     pe3_out(ji,jj,jk) = 0.5_wp * ( vmask(ji,jj,jk)  * (1.0_wp - zlnwd) + zlnwd ) * r1_e1e2v(ji,jj)   &
+                        &                       * (   e1e2t(ji,jj  ) * ( pe3_in(ji,jj  ,jk) - e3t_0(ji,jj  ,jk) )     &
+                        &                           + e1e2t(ji,jj+1) * ( pe3_in(ji,jj+1,jk) - e3t_0(ji,jj+1,jk) ) )
+                  END DO
                END DO
             END DO
-         END DO
+            !                     !
+         CASE ( 1 ) 
+            !   
+            DO jk = 1, jpk
+               DO jj = 1, jpjm1
+                  DO ji = 1, fs_jpim1   ! vector opt.
+                     pe3_out(ji,jj,jk) = 0.5_wp * ( vmask(ji,jj,jk)  * (1.0_wp - zlnwd) + zlnwd ) * r1_e1e2v(ji,jj)   &
+                        &                       * (   e1e2t(ji,jj  ) * ( pe3_in(ji,jj  ,jk) - e3t_0(ji,jj  ,jk) )     &
+                        &                           + e1e2t(ji,jj+1) * ( pe3_in(ji,jj+1,jk) - e3t_0(ji,jj+1,jk) ) )
+                  END DO
+               END DO
+            END DO
+            !
+            ! Bottom correction:
+            DO jj = 1, jpjm1
+               DO ji = 1, fs_jpim1   ! vector opt.
+                  ikv    = mbkv(ji  ,jj)
+                  ikvm1  = ikv - 1
+                  pe3_out(ji,jj,ikv) = ( vmask(ji,jj,ikv) * (1.0_wp - zlnwd) + zlnwd )                              & 
+                     &      *(  0.5_wp * r1_e1e2v(ji,jj)                                                            &
+                     &      *(  e1e2t(ji,jj  ) * ( SUM(tmask(ji,jj  ,:)*(pe3_in(ji,jj  ,:) - e3t_0(ji,jj  ,:))) )   &
+                     &        + e1e2t(ji,jj+1) * ( SUM(tmask(ji,jj+1,:)*(pe3_in(ji,jj+1,:) - e3t_0(ji,jj+1,:))) ) ) &
+                     &     - SUM(pe3_out(ji,jj,1:ikvm1)))
+               END DO
+            END DO
+            !
+         CASE ( 2 ) 
+            zssh(:,:) = SUM(tmask(:,:,:)*(pe3_in(:,:,:)-e3t_0(:,:,:)), DIM=3)
+            DO jk = 1, jpk
+               DO jj = 1, jpjm1
+                  DO ji = 1, fs_jpim1   ! vector opt.
+                     pe3_out(ji,jj,jk) = 0.5_wp * (  vmask(ji,jj,jk) * (1.0_wp - zlnwd) + zlnwd ) * r1_e1e2v(ji,jj)    &
+                        &                       * (   e1e2t(ji  ,jj) * zssh(ji  ,jj) + e1e2t(ji,jj+1) * zssh(ji,jj+1)) &
+                        &                       * e3v_0(ji,jj,jk) / ( hv_0(ji,jj) + 1._wp - ssvmask(ji,jj) )
+                  END DO
+               END DO
+            END DO
+            !   
+         END SELECT
+         !
          CALL lbc_lnk( 'domvvl', pe3_out(:,:,:), 'V', 1._wp )
          pe3_out(:,:,:) = pe3_out(:,:,:) + e3v_0(:,:,:)
          !
       CASE( 'F' )                   !* from U-point to F-point : hor. surface weighted mean
-         DO jk = 1, jpk
-            DO jj = 1, jpjm1
-               DO ji = 1, fs_jpim1   ! vector opt.
-                  pe3_out(ji,jj,jk) = 0.5_wp * (  umask(ji,jj,jk) * umask(ji,jj+1,jk) * (1.0_wp - zlnwd) + zlnwd ) &
-                     &                       *    r1_e1e2f(ji,jj)                                                  &
-                     &                       * (   e1e2u(ji,jj  ) * ( pe3_in(ji,jj  ,jk) - e3u_0(ji,jj  ,jk) )     &
-                     &                           + e1e2u(ji,jj+1) * ( pe3_in(ji,jj+1,jk) - e3u_0(ji,jj+1,jk) ) )
+         SELECT CASE ( nn_vvl_interp )
+         CASE ( 0 )  
+            DO jk = 1, jpk
+               DO jj = 1, jpjm1
+                  DO ji = 1, fs_jpim1   ! vector opt.
+                     pe3_out(ji,jj,jk) = 0.5_wp * (  umask(ji,jj,jk) * umask(ji,jj+1,jk) * (1.0_wp - zlnwd) + zlnwd ) &
+                        &                       *    r1_e1e2f(ji,jj)                                                  &
+                        &                       * (   e1e2u(ji,jj  ) * ( pe3_in(ji,jj  ,jk) - e3u_0(ji,jj  ,jk) )     &
+                        &                           + e1e2u(ji,jj+1) * ( pe3_in(ji,jj+1,jk) - e3u_0(ji,jj+1,jk) ) )
+                  END DO
                END DO
             END DO
-         END DO
+            !
+         CASE ( 1 ) 
+            !
+            DO jk = 1, jpk
+               DO jj = 1, jpjm1
+                  DO ji = 1, fs_jpim1   ! vector opt.
+                     pe3_out(ji,jj,jk) = 0.5_wp * (  umask(ji,jj,jk) * umask(ji,jj+1,jk) * (1.0_wp - zlnwd) + zlnwd ) &
+                        &                       *    r1_e1e2f(ji,jj)                                                  &
+                        &                       * (   e1e2u(ji,jj  ) * ( pe3_in(ji,jj  ,jk) - e3u_0(ji,jj  ,jk) )     &
+                        &                           + e1e2u(ji,jj+1) * ( pe3_in(ji,jj+1,jk) - e3u_0(ji,jj+1,jk) ) )
+                  END DO
+               END DO
+            END DO
+            !
+            ! Bottom correction:
+            DO jj = 1, jpjm1
+               DO ji = 1, fs_jpim1   ! vector opt.
+                  ikf    = MIN(mbku(ji  ,jj),mbku(ji,jj+1))
+                  ikfm1  = ikf - 1
+                  pe3_out(ji,jj,ikf) = ( umask(ji,jj,ikf) * umask(ji,jj+1,ikf) * (1.0_wp - zlnwd) + zlnwd )         &
+                     &     * ( 0.5_wp *  r1_e1e2f(ji,jj)                                                            &
+                     &     * (  e1e2u(ji,jj  ) * ( SUM(umask(ji,jj  ,:)*(pe3_in(ji,jj  ,:) - e3u_0(ji,jj  ,:))) )   &
+                     &        + e1e2u(ji,jj+1) * ( SUM(umask(ji,jj+1,:)*(pe3_in(ji,jj+1,:) - e3u_0(ji,jj+1,:))) ) ) &
+                     &     - SUM(pe3_out(ji,jj,1:ikfm1)))
+               END DO
+            END DO
+            !
+         CASE ( 2 ) 
+            zssh(:,:) = SUM(umask(:,:,:)*(pe3_in(:,:,:)-e3u_0(:,:,:)), DIM=3)
+            DO jk = 1, jpk
+               DO jj = 1, jpjm1
+                  DO ji = 1, fs_jpim1   ! vector opt.
+                     pe3_out(ji,jj,jk) =  (  umask(ji,jj,jk)* umask(ji,jj+1,jk) * (1.0_wp - zlnwd) + zlnwd )   &
+                        &                 * 0.5_wp * r1_e1e2f(ji,jj)                                           &
+                        &                 * (e1e2u(ji  ,jj) * zssh(ji  ,jj) + e1e2u(ji,jj+1) * zssh(ji,jj+1))  &
+                        &                 * e3f_0(ji,jj,jk) / ( hf_0(ji,jj) + 1._wp - ssumask(ji,jj)*ssumask(ji,jj+1) )
+                  END DO
+               END DO
+            END DO      
+            !
+         END SELECT
+         !
          CALL lbc_lnk( 'domvvl', pe3_out(:,:,:), 'F', 1._wp )
          pe3_out(:,:,:) = pe3_out(:,:,:) + e3f_0(:,:,:)
          !
@@ -933,7 +1098,8 @@ CONTAINS
 !               !
 !               DO jk=1,jpk
 !                  e3t_b(:,:,jk) =  e3t_0(:,:,jk) * ( ht_0(:,:) + sshb(:,:) ) &
-!                     &            / ( ht_0(:,:) + 1._wp -ssmask(:,:) ) * tmask(:,:,jk)
+!                     &                           / ( ht_0(:,:) + 1._wp -ssmask(:,:) ) * tmask(:,:,jk)
+!                    &            + e3t_0(:,:,jk) * ( 1._wp - tmask(:,:,jk) )   ! make sure e3t_b != 0 on land points
 !               END DO
 !               e3t_n(:,:,:) = e3t_b(:,:,:)
                 sshn(:,:)=0._wp
@@ -987,7 +1153,8 @@ CONTAINS
       !!
       NAMELIST/nam_vvl/ ln_vvl_zstar, ln_vvl_ztilde, ln_vvl_layer, ln_vvl_ztilde_as_zstar, &
          &              ln_vvl_zstar_at_eqtor      , rn_ahe3     , rn_rst_e3t            , &
-         &              rn_lf_cutoff               , rn_zdef_max , ln_vvl_dbg                ! not yet implemented: ln_vvl_kepe
+         &              rn_lf_cutoff               , rn_zdef_max , ln_vvl_dbg            , &! not yet implemented: ln_vvl_kepe
+         &              nn_vvl_interp
       !!---------------------------------------------------------------------- 
       !
       REWIND( numnam_ref )              ! Namelist nam_vvl in reference namelist : 
@@ -1023,6 +1190,7 @@ CONTAINS
             WRITE(numout,*) '      z-tilde cutoff frequency of low-pass filter (days)   rn_lf_cutoff = ', rn_lf_cutoff
          ENDIF
          WRITE(numout,*) '         debug prints flag                                 ln_vvl_dbg   = ', ln_vvl_dbg
+         WRITE(numout,*) '         Method to compute scale factors anomaly at U/V/F points  nn_vvl_interp   = ', nn_vvl_interp
       ENDIF
       !
       ioptio = 0                      ! Parameter control
@@ -1034,6 +1202,7 @@ CONTAINS
       IF( ioptio /= 1 )   CALL ctl_stop( 'Choose ONE vertical coordinate in namelist nam_vvl' )
       IF( .NOT. ln_vvl_zstar .AND. ln_isf ) CALL ctl_stop( 'Only vvl_zstar has been tested with ice shelf cavity' )
       !
+      IF( .NOT. ln_vvl_zstar .AND. (nn_vvl_interp==2 ) )  CALL ctl_stop( 'nn_vvl_interp must be < 2 if ln_vvl_zstar=F' )
       IF(lwp) THEN                   ! Print the choice
          WRITE(numout,*)
          IF( ln_vvl_zstar           ) WRITE(numout,*) '      ==>>>   zstar vertical coordinate is used'
