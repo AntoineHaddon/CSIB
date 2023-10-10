@@ -50,7 +50,7 @@ MODULE tramle
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: tramle.F90 11536 2019-09-11 13:54:18Z smasson $
+   !! $Id: tramle.F90 14211 2020-12-18 10:04:16Z mathiot $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -211,8 +211,8 @@ CONTAINS
                zmuw = MAX(  0._wp , ( 1._wp - zcuw ) * ( 1._wp + r5_21 * zcuw )  )
                zmvw = MAX(  0._wp , ( 1._wp - zcvw ) * ( 1._wp + r5_21 * zcvw )  )
                !
-               zpsi_uw(ji,jj,jk) = zpsim_u(ji,jj) * zmuw * umask(ji,jj,jk)
-               zpsi_vw(ji,jj,jk) = zpsim_v(ji,jj) * zmvw * vmask(ji,jj,jk)
+               zpsi_uw(ji,jj,jk) = zpsim_u(ji,jj) * zmuw * wumask(ji,jj,jk) * wumask(ji,jj,1)
+               zpsi_vw(ji,jj,jk) = zpsim_v(ji,jj) * zmvw * wvmask(ji,jj,jk) * wvmask(ji,jj,1)
             END DO
          END DO
       END DO
@@ -228,7 +228,7 @@ CONTAINS
          DO jj = 2, jpjm1
             DO ji = fs_2, fs_jpim1   ! vector opt.
                pw(ji,jj,jk) = pw(ji,jj,jk) - ( zpsi_uw(ji,jj,jk) - zpsi_uw(ji-1,jj,jk)   &
-                  &                          + zpsi_vw(ji,jj,jk) - zpsi_vw(ji,jj-1,jk) )
+                  &                          + zpsi_vw(ji,jj,jk) - zpsi_vw(ji,jj-1,jk) ) * wmask(ji,jj,1)
             END DO
          END DO
       END DO

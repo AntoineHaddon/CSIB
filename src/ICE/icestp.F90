@@ -89,7 +89,7 @@ MODULE icestp
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icestp.F90 13640 2020-10-19 17:15:09Z clem $
+   !! $Id: icestp.F90 14026 2020-12-03 08:48:10Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -120,7 +120,7 @@ CONTAINS
       INTEGER ::   jl   ! dummy loop index
       !!----------------------------------------------------------------------
       !
-      IF( ln_timing )   CALL timing_start('ice_stp')
+      IF( ln_timing )   CALL timing_start('icestp')
       !
       !                                      !-----------------------!
       IF( MOD( kt-1, nn_fsbc ) == 0 ) THEN   ! --- Ice time step --- !
@@ -209,10 +209,10 @@ CONTAINS
       !-------------------------!
       ! --- Ocean time step --- !
       !-------------------------!
-      IF( ln_icedyn )                   CALL ice_update_tau( kt, ub(:,:,1), vb(:,:,1) )   ! -- update surface ocean stresses
+      CALL ice_update_tau( kt, ub(:,:,1), vb(:,:,1) )                 ! -- update surface ocean stresses
 !!gm   remark, the ocean-ice stress is not saved in ice diag call above .....  find a solution!!!
       !
-      IF( ln_timing )   CALL timing_stop('ice_stp')
+      IF( ln_timing )   CALL timing_stop('icestp')
       !
    END SUBROUTINE ice_stp
 
@@ -366,6 +366,8 @@ CONTAINS
       a_i_b (:,:,:)   = a_i (:,:,:)     ! ice area
       v_i_b (:,:,:)   = v_i (:,:,:)     ! ice volume
       v_s_b (:,:,:)   = v_s (:,:,:)     ! snow volume
+      v_ip_b(:,:,:)   = v_ip(:,:,:)     ! pond volume
+      v_il_b(:,:,:)   = v_il(:,:,:)     ! pond lid volume
       sv_i_b(:,:,:)   = sv_i(:,:,:)     ! salt content
       e_s_b (:,:,:,:) = e_s (:,:,:,:)   ! snow thermal energy
       e_i_b (:,:,:,:) = e_i (:,:,:,:)   ! ice thermal energy
@@ -449,7 +451,7 @@ CONTAINS
             !
             diag_heat(ji,jj) = 0._wp ;   diag_sice(ji,jj) = 0._wp
             diag_vice(ji,jj) = 0._wp ;   diag_vsnw(ji,jj) = 0._wp
-            diag_aice(ji,jj) = 0._wp
+            diag_aice(ji,jj) = 0._wp ;   diag_vpnd(ji,jj) = 0._wp
 
             tau_icebfr (ji,jj) = 0._wp   ! landfast ice param only (clem: important to keep the init here)
             qsb_ice_bot(ji,jj) = 0._wp   ! (needed if ln_icethd=F)
@@ -520,6 +522,8 @@ CONTAINS
             &             + SUM(     v_i (:,:,:)          - v_i_b (:,:,:)                  , dim=3 ) * r1_rdtice * rhoi
          diag_vsnw(:,:) = diag_vsnw(:,:) &
             &             + SUM(     v_s (:,:,:)          - v_s_b (:,:,:)                  , dim=3 ) * r1_rdtice * rhos
+         diag_vpnd(:,:) = diag_vpnd(:,:) &
+            &             + SUM(     v_ip + v_il          - v_ip_b - v_il_b                , dim=3 ) * r1_rdtice * rhow
          !
          IF( kn == 2 )    CALL iom_put ( 'hfxdhc' , diag_heat )   ! output of heat trend
          !

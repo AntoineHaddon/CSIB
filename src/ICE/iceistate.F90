@@ -66,7 +66,7 @@ MODULE iceistate
    !   
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: iceistate.F90 13284 2020-07-09 15:12:23Z smasson $
+   !! $Id: iceistate.F90 14026 2020-12-03 08:48:10Z clem $
    !! Software governed by the CeCILL licence (modipsl/doc/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -402,7 +402,7 @@ CONTAINS
       !----------------------------------------------
       ! 4) Snow-ice mass (case ice is fully embedded)
       !----------------------------------------------
-      snwice_mass  (:,:) = tmask(:,:,1) * SUM( rhos * v_s(:,:,:) + rhoi * v_i(:,:,:), dim=3  )   ! snow+ice mass
+      snwice_mass  (:,:) = tmask(:,:,1) * SUM( rhos * v_s + rhoi * v_i + rhow * ( v_ip + v_il ), dim=3  )   ! snow+ice mass
       snwice_mass_b(:,:) = snwice_mass(:,:)
       !
       IF( ln_ice_embd ) THEN            ! embedded sea-ice: deplete the initial ssh below sea-ice area

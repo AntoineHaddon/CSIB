@@ -49,7 +49,7 @@ MODULE icedyn_adv_pra
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icedyn_adv_pra.F90 13634 2020-10-19 14:12:54Z mathiot $
+   !! $Id: icedyn_adv_pra.F90 14026 2020-12-03 08:48:10Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -155,7 +155,8 @@ CONTAINS
       DO jt = 1, icycle
 
          ! diagnostics
-         zdiag_adv_mass(:,:) =   SUM(  pv_i(:,:,:) , dim=3 ) * rhoi + SUM(  pv_s(:,:,:) , dim=3 ) * rhos
+         zdiag_adv_mass(:,:) =   SUM( pv_i (:,:,:) , dim=3 ) * rhoi + SUM( pv_s (:,:,:) , dim=3 ) * rhos &
+            &                  + SUM( pv_ip(:,:,:) , dim=3 ) * rhow + SUM( pv_il(:,:,:) , dim=3 ) * rhow
          zdiag_adv_salt(:,:) =   SUM( psv_i(:,:,:) , dim=3 ) * rhoi
          zdiag_adv_heat(:,:) = - SUM(SUM( pe_i(:,:,1:nlay_i,:) , dim=4 ), dim=3 ) &
             &                  - SUM(SUM( pe_s(:,:,1:nlay_s,:) , dim=4 ), dim=3 )
@@ -321,7 +322,8 @@ CONTAINS
          CALL lbc_lnk( 'icedyn_adv_pra', pato_i, 'T',  1. )
          !
          ! --- diagnostics --- !
-         diag_adv_mass(:,:) = diag_adv_mass(:,:) + (   SUM( pv_i(:,:,:) , dim=3 ) * rhoi + SUM( pv_s(:,:,:) , dim=3 ) * rhos &
+         diag_adv_mass(:,:) = diag_adv_mass(:,:) + (   SUM( pv_i (:,:,:) , dim=3 ) * rhoi + SUM( pv_s (:,:,:) , dim=3 ) * rhos &
+            &                                        + SUM( pv_ip(:,:,:) , dim=3 ) * rhow + SUM( pv_il(:,:,:) , dim=3 ) * rhow &
             &                                        - zdiag_adv_mass(:,:) ) * z1_dt
          diag_adv_salt(:,:) = diag_adv_salt(:,:) + (   SUM( psv_i(:,:,:) , dim=3 ) * rhoi &
             &                                        - zdiag_adv_salt(:,:) ) * z1_dt

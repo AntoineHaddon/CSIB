@@ -28,6 +28,7 @@ MODULE iceitd
    USE lib_mpp        ! MPP library
    USE lib_fortran    ! fortran utilities (glob_sum + no signed zero)
    USE prtctl         ! Print control
+   USE timing         ! Timing
 
    IMPLICIT NONE
    PRIVATE
@@ -50,7 +51,7 @@ MODULE iceitd
    !
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: iceitd.F90 13617 2020-10-16 08:07:20Z clem $
+   !! $Id: iceitd.F90 14026 2020-12-03 08:48:10Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -84,6 +85,7 @@ CONTAINS
       REAL(wp), DIMENSION(jpij)       ::   zhb0, zhb1      ! category boundaries for thinnes categories
       REAL(wp), DIMENSION(jpij,0:jpl) ::   zhbnew          ! new boundaries of ice categories
       !!------------------------------------------------------------------
+      IF( ln_timing )   CALL timing_start('iceitd_rem')
 
       IF( kt == nit000 .AND. lwp )   WRITE(numout,*) '-- ice_itd_rem: remapping ice thickness distribution' 
 
@@ -317,6 +319,7 @@ CONTAINS
       !
       IF( ln_icediachk )   CALL ice_cons_hsm(1, 'iceitd_rem', rdiag_v, rdiag_s, rdiag_t, rdiag_fv, rdiag_fs, rdiag_ft)
       IF( ln_icediachk )   CALL ice_cons2D  (1, 'iceitd_rem',  diag_v,  diag_s,  diag_t,  diag_fv,  diag_fs,  diag_ft)
+      IF( ln_timing    )   CALL timing_stop ('iceitd_rem')
       !
    END SUBROUTINE ice_itd_rem
 
@@ -480,12 +483,14 @@ CONTAINS
                   a_ip_2d(ji,jl1) = a_ip_2d(ji,jl1) - ztrans
                   a_ip_2d(ji,jl2) = a_ip_2d(ji,jl2) + ztrans
                   !                                              
-                  ztrans          = v_ip_2d(ji,jl1) * zworka(ji)     ! Pond volume (also proportional to da/a)
+!!$                  ztrans          = v_ip_2d(ji,jl1) * zworka(ji)     ! Pond volume (also proportional to da/a)
+                  ztrans          = v_ip_2d(ji,jl1) * zworkv(ji)     ! Pond volume
                   v_ip_2d(ji,jl1) = v_ip_2d(ji,jl1) - ztrans
                   v_ip_2d(ji,jl2) = v_ip_2d(ji,jl2) + ztrans
                   !
                   IF ( ln_pnd_lids ) THEN                            ! Pond lid volume
-                     ztrans          = v_il_2d(ji,jl1) * zworka(ji)
+!!$                     ztrans          = v_il_2d(ji,jl1) * zworka(ji)
+                     ztrans          = v_il_2d(ji,jl1) * zworkv(ji)
                      v_il_2d(ji,jl1) = v_il_2d(ji,jl1) - ztrans
                      v_il_2d(ji,jl2) = v_il_2d(ji,jl2) + ztrans
                   ENDIF
@@ -591,6 +596,7 @@ CONTAINS
       INTEGER , DIMENSION(jpij,jpl-1) ::   jdonor           ! donor category index
       REAL(wp), DIMENSION(jpij,jpl-1) ::   zdaice, zdvice   ! ice area and volume transferred
       !!------------------------------------------------------------------
+      IF( ln_timing )   CALL timing_start('iceitd_reb')
       !
       IF( kt == nit000 .AND. lwp )   WRITE(numout,*) '-- ice_itd_reb: rebining ice thickness distribution' 
       !
@@ -622,15 +628,12 @@ CONTAINS
             DO ji = 1, npti
                jdonor(ji,jl)  = jl 
                ! how much of a_i you send in cat sup is somewhat arbitrary
-               !!clem: these do not work properly after a restart (I do not know why) => not sure it is still true
-               !!          zdaice(ji,jl)  = a_i_1d(ji) * ( h_i_1d(ji) - hi_max(jl) + epsi10 ) / h_i_1d(ji)  
-               !!          zdvice(ji,jl)  = v_i_1d(ji) - ( a_i_1d(ji) - zdaice(ji,jl) ) * ( hi_max(jl) - epsi10 )
-               !!clem: these do not work properly after a restart (I do not know why) => not sure it is still true
-               !!          zdaice(ji,jl)  = a_i_1d(ji)
-               !!          zdvice(ji,jl)  = v_i_1d(ji)
-               !!clem: these are from UCL and work ok
-               zdaice(ji,jl)  = a_i_1d(ji) * 0.5_wp
-               zdvice(ji,jl)  = v_i_1d(ji) - zdaice(ji,jl) * ( hi_max(jl) + hi_max(jl-1) ) * 0.5_wp
+               ! these are from CICE => transfer everything
+               !!zdaice(ji,jl)  = a_i_1d(ji)
+               !!zdvice(ji,jl)  = v_i_1d(ji)
+               ! these are from LLN => transfer only half of the category
+               zdaice(ji,jl)  =                       0.5_wp  * a_i_1d(ji)
+               zdvice(ji,jl)  = v_i_1d(ji) - (1._wp - 0.5_wp) * a_i_1d(ji) * hi_mean(jl)
             END DO
             !
             CALL itd_shiftice( jdonor(1:npti,:), zdaice(1:npti,:), zdvice(1:npti,:) )  ! Shift jl=>jl+1
@@ -676,6 +679,7 @@ CONTAINS
       !
       IF( ln_icediachk )   CALL ice_cons_hsm(1, 'iceitd_reb', rdiag_v, rdiag_s, rdiag_t, rdiag_fv, rdiag_fs, rdiag_ft)
       IF( ln_icediachk )   CALL ice_cons2D  (1, 'iceitd_reb',  diag_v,  diag_s,  diag_t,  diag_fv,  diag_fs,  diag_ft)
+      IF( ln_timing    )   CALL timing_stop ('iceitd_reb')
       !
    END SUBROUTINE ice_itd_reb
 

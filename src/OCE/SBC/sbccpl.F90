@@ -214,7 +214,7 @@ MODULE sbccpl
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: sbccpl.F90 13444 2020-08-31 08:58:55Z gsamson $
+   !! $Id: sbccpl.F90 14101 2020-12-04 15:13:54Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -1713,7 +1713,7 @@ CONTAINS
          ztprecip(:,:) = frcv(jpr_semp)%z3(:,:,1) - frcv(jpr_sbpr)%z3(:,:,1) + zsprecip(:,:)
       CASE( 'none'      )       ! Not available as for now: needs additional coding below when computing zevap_oce
       !                         ! since fields received are not defined with none option
-         CALL ctl_stop( 'STOP', 'sbccpl/sbc_cpl_ice_flx: some fields are not defined. Change sn_rcv_emp value in namelist namsbc_cpl' )
+         CALL ctl_stop('STOP', 'sbccpl/sbc_cpl_ice_flx: some fields are not defined. Change sn_rcv_emp value in namelist namsbc_cpl')
       END SELECT
 
 #if defined key_si3
@@ -1850,9 +1850,9 @@ CONTAINS
       IF( iom_use('snow_ao_cea') )   CALL iom_put( 'snow_ao_cea' , sprecip(:,:) * ( 1._wp - zsnw(:,:) )                  )  ! Snow over ice-free ocean  (cell average)
       IF( iom_use('snow_ai_cea') )   CALL iom_put( 'snow_ai_cea' , sprecip(:,:) *           zsnw(:,:)                    )  ! Snow over sea-ice         (cell average)
       IF( iom_use('rain_ao_cea') )   CALL iom_put( 'rain_ao_cea' , ( tprecip(:,:) - sprecip(:,:) ) * picefr(:,:)         )  ! liquid precipitation over ocean (cell average)
-      IF( iom_use('subl_ai_cea') )   CALL iom_put( 'subl_ai_cea' , frcv(jpr_ievp)%z3(:,:,1) * picefr(:,:) * tmask(:,:,1) )     ! Sublimation over sea-ice (cell average)
+      IF( iom_use('subl_ai_cea') )   CALL iom_put( 'subl_ai_cea' , zevap_ice_total(:,:) * picefr(:,:) * tmask(:,:,1)     )  ! Sublimation over sea-ice (cell average)
       IF( iom_use('evap_ao_cea') )   CALL iom_put( 'evap_ao_cea' , ( frcv(jpr_tevp)%z3(:,:,1)  &
-         &                                                         - frcv(jpr_ievp)%z3(:,:,1) * picefr(:,:) ) * tmask(:,:,1) ) ! ice-free oce evap (cell average)
+         &                                                         - zevap_ice_total(:,:) * picefr(:,:) ) * tmask(:,:,1) ) ! ice-free oce evap (cell average)
       ! note: runoff output is done in sbcrnf (which includes icebergs too) and iceshelf output is done in sbcisf
       !
       !                                                      ! ========================= !
@@ -1990,16 +1990,22 @@ CONTAINS
 
 #endif
       ! outputs
-      IF ( srcv(jpr_cal)%laction ) CALL iom_put('hflx_cal_cea'    , - frcv(jpr_cal)%z3(:,:,1) * rLfus )   ! latent heat from calving
-      IF ( srcv(jpr_icb)%laction ) CALL iom_put('hflx_icb_cea'    , - frcv(jpr_icb)%z3(:,:,1) * rLfus )   ! latent heat from icebergs melting
-      IF ( iom_use(   'hflx_rain_cea') ) CALL iom_put('hflx_rain_cea' , ( tprecip(:,:) - sprecip(:,:) ) * zcptrain(:,:) )        ! heat flux from rain (cell average)
-      IF ( iom_use(   'hflx_evap_cea') ) CALL iom_put('hflx_evap_cea' , ( frcv(jpr_tevp)%z3(:,:,1) - frcv(jpr_ievp)%z3(:,:,1) * picefr(:,:) )  &
-           &                         * zcptn(:,:) * tmask(:,:,1) )            ! heat flux from evap (cell average)
-      IF ( iom_use(   'hflx_prec_cea') ) CALL iom_put('hflx_prec_cea' ,    sprecip(:,:) * ( zcptsnw(:,:) - rLfus )  &                    ! heat flux from all precip (cell avg)
-         &                          + ( tprecip(:,:) - sprecip(:,:) ) * zcptrain(:,:) )
-      IF ( iom_use(   'hflx_snow_cea') ) CALL iom_put('hflx_snow_cea'   , sprecip(:,:) * ( zcptsnw(:,:) - rLfus )  )               ! heat flux from snow (cell average)
-      IF ( iom_use('hflx_snow_ao_cea') ) CALL iom_put('hflx_snow_ao_cea', sprecip(:,:) * ( zcptsnw(:,:) - rLfus ) * ( 1._wp - zsnw(:,:) ) )   ! heat flux from snow (over ocean)
-      IF ( iom_use('hflx_snow_ai_cea') ) CALL iom_put('hflx_snow_ai_cea', sprecip(:,:) * ( zcptsnw(:,:) - rLfus ) *  zsnw(:,:) )              ! heat flux from snow (over ice)
+      IF ( srcv(jpr_cal)%laction ) CALL iom_put('hflx_cal_cea' , - frcv(jpr_cal)%z3(:,:,1) * rLfus ) ! latent heat from calving
+      IF ( srcv(jpr_icb)%laction ) CALL iom_put('hflx_icb_cea' , - frcv(jpr_icb)%z3(:,:,1) * rLfus ) ! latent heat from icebergs melting
+      IF (        iom_use('hflx_rain_cea') )    &                                                    ! heat flux from rain (cell average)
+         &   CALL iom_put('hflx_rain_cea' , ( tprecip(:,:) - sprecip(:,:) ) * zcptrain(:,:) )
+      IF (        iom_use('hflx_evap_cea') )    &                                                    ! heat flux from evap (cell average)
+         &   CALL iom_put('hflx_evap_cea' , ( frcv(jpr_tevp)%z3(:,:,1) - zevap_ice_total(:,:) * picefr(:,:) )  &
+         &                                  * zcptn(:,:) * tmask(:,:,1) )
+      IF (        iom_use('hflx_prec_cea') )    &                                                    ! heat flux from all precip (cell avg)
+         &   CALL iom_put('hflx_prec_cea' ,    sprecip(:,:) * ( zcptsnw(:,:) - rLfus )  &
+         &                                 + ( tprecip(:,:) - sprecip(:,:) ) * zcptrain(:,:) )
+      IF (        iom_use('hflx_snow_cea') )    &                                                    ! heat flux from snow (cell average)
+         &   CALL iom_put('hflx_snow_cea'   , sprecip(:,:) * ( zcptsnw(:,:) - rLfus )  )
+      IF (        iom_use('hflx_snow_ao_cea') ) &                                                    ! heat flux from snow (over ocean)
+         &   CALL iom_put('hflx_snow_ao_cea', sprecip(:,:) * ( zcptsnw(:,:) - rLfus ) * ( 1._wp - zsnw(:,:) ) )
+      IF (        iom_use('hflx_snow_ai_cea') ) &                                                    ! heat flux from snow (over ice)
+         &   CALL iom_put('hflx_snow_ai_cea', sprecip(:,:) * ( zcptsnw(:,:) - rLfus ) *  zsnw(:,:) )
       ! note: hflx for runoff and iceshelf are done in sbcrnf and sbcisf resp.
       !
       !                                                      ! ========================= !
@@ -2053,7 +2059,7 @@ CONTAINS
          ENDIF
       CASE( 'none'      )       ! Not available as for now: needs additional coding
       !                         ! since fields received, here zqsr_tot,  are not defined with none option
-         CALL ctl_stop( 'STOP', 'sbccpl/sbc_cpl_ice_flx: some fields are not defined. Change sn_rcv_qsr value in namelist namsbc_cpl' )
+         CALL ctl_stop('STOP', 'sbccpl/sbc_cpl_ice_flx: some fields are not defined. Change sn_rcv_qsr value in namelist namsbc_cpl')
       END SELECT
       IF( ln_dm2dc .AND. ln_cpl ) THEN   ! modify qsr to include the diurnal cycle
          zqsr_tot(:,:  ) = sbc_dcy( zqsr_tot(:,:  ) )

@@ -95,7 +95,7 @@ MODULE icevar
 
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icevar.F90 13284 2020-07-09 15:12:23Z smasson $
+   !! $Id: icevar.F90 14026 2020-12-03 08:48:10Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -227,7 +227,7 @@ CONTAINS
       zhmax    =          hi_max(jpl)
       z1_zhmax =  1._wp / hi_max(jpl)               
       WHERE( h_i(:,:,jpl) > zhmax )   ! bound h_i by hi_max (i.e. 99 m) with associated update of ice area
-         h_i  (:,:,jpl) = zhmax
+         h_i   (:,:,jpl) = zhmax
          a_i   (:,:,jpl) = v_i(:,:,jpl) * z1_zhmax 
          z1_a_i(:,:,jpl) = zhmax * z1_v_i(:,:,jpl)
       END WHERE
@@ -243,7 +243,7 @@ CONTAINS
       WHERE    ( h_il(:,:,:) <= zhl_min )  ;   a_ip_eff(:,:,:) = a_ip_frac(:,:,:)       ! lid is very thin.  Expose all the pond
       ELSEWHERE( h_il(:,:,:) >= zhl_max )  ;   a_ip_eff(:,:,:) = 0._wp                  ! lid is very thick. Cover all the pond up with ice and snow
       ELSEWHERE                            ;   a_ip_eff(:,:,:) = a_ip_frac(:,:,:) * &   ! lid is in between. Expose part of the pond
-         &                                                       ( h_il(:,:,:) - zhl_min ) / ( zhl_max - zhl_min )
+         &                                                       ( zhl_max - h_il(:,:,:) ) / ( zhl_max - zhl_min )
       END WHERE
       !
       CALL ice_var_snwfra( h_s, za_s_fra )           ! calculate ice fraction covered by snow
@@ -544,9 +544,10 @@ CONTAINS
          DO jj = 1 , jpj
             DO ji = 1 , jpi
                ! update exchanges with ocean
-               sfx_res(ji,jj)  = sfx_res(ji,jj) + (1._wp - zswitch(ji,jj) ) * sv_i(ji,jj,jl)   * rhoi * r1_rdtice
-               wfx_res(ji,jj)  = wfx_res(ji,jj) + (1._wp - zswitch(ji,jj) ) * v_i (ji,jj,jl)   * rhoi * r1_rdtice
-               wfx_res(ji,jj)  = wfx_res(ji,jj) + (1._wp - zswitch(ji,jj) ) * v_s (ji,jj,jl)   * rhos * r1_rdtice
+               sfx_res(ji,jj)  = sfx_res(ji,jj) + ( 1._wp - zswitch(ji,jj) ) * sv_i(ji,jj,jl)   * rhoi * r1_rdtice
+               wfx_res(ji,jj)  = wfx_res(ji,jj) + ( 1._wp - zswitch(ji,jj) ) * v_i (ji,jj,jl)   * rhoi * r1_rdtice
+               wfx_res(ji,jj)  = wfx_res(ji,jj) + ( 1._wp - zswitch(ji,jj) ) * v_s (ji,jj,jl)   * rhos * r1_rdtice
+               wfx_pnd(ji,jj)  = wfx_pnd(ji,jj) + ( 1._wp - zswitch(ji,jj) ) * ( v_ip(ji,jj,jl)+v_il(ji,jj,jl) ) * rhow * r1_rdtice
                !
                a_i  (ji,jj,jl) = a_i (ji,jj,jl) * zswitch(ji,jj)
                v_i  (ji,jj,jl) = v_i (ji,jj,jl) * zswitch(ji,jj)
@@ -561,6 +562,8 @@ CONTAINS
                a_ip (ji,jj,jl) = a_ip (ji,jj,jl) * zswitch(ji,jj)
                v_ip (ji,jj,jl) = v_ip (ji,jj,jl) * zswitch(ji,jj)
                v_il (ji,jj,jl) = v_il (ji,jj,jl) * zswitch(ji,jj)
+               h_ip (ji,jj,jl) = h_ip (ji,jj,jl) * zswitch(ji,jj)
+               h_il (ji,jj,jl) = h_il (ji,jj,jl) * zswitch(ji,jj)
                !
             END DO
          END DO
@@ -655,6 +658,14 @@ CONTAINS
                   sfx_res(ji,jj)    = sfx_res(ji,jj) + psv_i(ji,jj,jl) * rhoi * z1_dt
                   psv_i  (ji,jj,jl) = 0._wp
                ENDIF
+               IF( pv_ip(ji,jj,jl) < 0._wp .OR. pv_il(ji,jj,jl) < 0._wp .OR. pa_ip(ji,jj,jl) <= 0._wp ) THEN
+                  wfx_pnd(ji,jj)    = wfx_pnd(ji,jj) + pv_il(ji,jj,jl) * rhow * z1_dt
+                  pv_il  (ji,jj,jl) = 0._wp
+               ENDIF
+               IF( pv_ip(ji,jj,jl) < 0._wp .OR. pa_ip(ji,jj,jl) <= 0._wp ) THEN
+                  wfx_pnd(ji,jj)    = wfx_pnd(ji,jj) + pv_ip(ji,jj,jl) * rhow * z1_dt
+                  pv_ip  (ji,jj,jl) = 0._wp
+               ENDIF
             END DO
          END DO
          !
@@ -664,8 +675,6 @@ CONTAINS
       WHERE( poa_i (:,:,:) < 0._wp )   poa_i (:,:,:) = 0._wp
       WHERE( pa_i  (:,:,:) < 0._wp )   pa_i  (:,:,:) = 0._wp
       WHERE( pa_ip (:,:,:) < 0._wp )   pa_ip (:,:,:) = 0._wp
-      WHERE( pv_ip (:,:,:) < 0._wp )   pv_ip (:,:,:) = 0._wp ! in theory one should change wfx_pnd(-) and wfx_sum(+)
-      WHERE( pv_il (:,:,:) < 0._wp )   pv_il (:,:,:) = 0._wp !    but it does not change conservation, so keep it this way is ok
       !
    END SUBROUTINE ice_var_zapneg
 

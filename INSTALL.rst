@@ -121,7 +121,7 @@ Checkout the NEMO sources
 
 .. code:: console
 
-   $ svn co https://forge.ipsl.jussieu.fr/nemo/svn/NEMO/releases/r4.0/r4.0.4
+   $ svn co https://forge.ipsl.jussieu.fr/nemo/svn/NEMO/releases/r4.0/r4.0.5
 
 Description of 1\ :sup:`st` level tree structure
 ------------------------------------------------

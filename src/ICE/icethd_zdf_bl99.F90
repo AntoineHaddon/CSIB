@@ -30,7 +30,7 @@ MODULE icethd_zdf_BL99
 
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icethd_zdf_bl99.F90 13284 2020-07-09 15:12:23Z smasson $
+   !! $Id: icethd_zdf_bl99.F90 14026 2020-12-03 08:48:10Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -108,31 +108,31 @@ CONTAINS
       REAL(wp), DIMENSION(jpij) ::   zfnet        ! surface flux function
       REAL(wp), DIMENSION(jpij) ::   zdqns_ice_b  ! derivative of the surface flux function
       !
-      REAL(wp), DIMENSION(jpij       )     ::   ztsuold     ! Old surface temperature in the ice
-      REAL(wp), DIMENSION(jpij,nlay_i)     ::   ztiold      ! Old temperature in the ice
-      REAL(wp), DIMENSION(jpij,nlay_s)     ::   ztsold      ! Old temperature in the snow
-      REAL(wp), DIMENSION(jpij,nlay_i)     ::   ztib        ! Temporary temperature in the ice to check the convergence
-      REAL(wp), DIMENSION(jpij,nlay_s)     ::   ztsb        ! Temporary temperature in the snow to check the convergence
-      REAL(wp), DIMENSION(jpij,0:nlay_i)   ::   ztcond_i    ! Ice thermal conductivity
-      REAL(wp), DIMENSION(jpij,0:nlay_i)   ::   ztcond_i_cp ! copy
-      REAL(wp), DIMENSION(jpij,0:nlay_i)   ::   zradtr_i    ! Radiation transmitted through the ice
-      REAL(wp), DIMENSION(jpij,0:nlay_i)   ::   zradab_i    ! Radiation absorbed in the ice
-      REAL(wp), DIMENSION(jpij,0:nlay_i)   ::   zkappa_i    ! Kappa factor in the ice
-      REAL(wp), DIMENSION(jpij,0:nlay_i)   ::   zeta_i      ! Eta factor in the ice
-      REAL(wp), DIMENSION(jpij,0:nlay_s)   ::   zradtr_s    ! Radiation transmited through the snow
-      REAL(wp), DIMENSION(jpij,0:nlay_s)   ::   zradab_s    ! Radiation absorbed in the snow
-      REAL(wp), DIMENSION(jpij,0:nlay_s)   ::   zkappa_s    ! Kappa factor in the snow
-      REAL(wp), DIMENSION(jpij,0:nlay_s)   ::   zeta_s      ! Eta factor in the snow
-      REAL(wp), DIMENSION(jpij)            ::   zkappa_comb ! Combined snow and ice surface conductivity
-      REAL(wp), DIMENSION(jpij,nlay_i+3)   ::   zindterm    ! 'Ind'ependent term
-      REAL(wp), DIMENSION(jpij,nlay_i+3)   ::   zindtbis    ! Temporary 'ind'ependent term
-      REAL(wp), DIMENSION(jpij,nlay_i+3)   ::   zdiagbis    ! Temporary 'dia'gonal term
-      REAL(wp), DIMENSION(jpij,nlay_i+3,3) ::   ztrid       ! Tridiagonal system terms
-      REAL(wp), DIMENSION(jpij)            ::   zq_ini      ! diag errors on heat
-      REAL(wp), DIMENSION(jpij)            ::   zghe        ! G(he), th. conduct enhancement factor, mono-cat
-      REAL(wp), DIMENSION(jpij)            ::   za_s_fra    ! ice fraction covered by snow 
-      REAL(wp), DIMENSION(jpij)            ::   isnow       ! snow presence (1) or not (0) 
-      REAL(wp), DIMENSION(jpij)            ::   isnow_comb  ! snow presence for met-office 
+      REAL(wp), DIMENSION(jpij       )   ::   ztsuold     ! Old surface temperature in the ice
+      REAL(wp), DIMENSION(jpij,nlay_i)   ::   ztiold      ! Old temperature in the ice
+      REAL(wp), DIMENSION(jpij,nlay_s)   ::   ztsold      ! Old temperature in the snow
+      REAL(wp), DIMENSION(jpij,nlay_i)   ::   ztib        ! Temporary temperature in the ice to check the convergence
+      REAL(wp), DIMENSION(jpij,nlay_s)   ::   ztsb        ! Temporary temperature in the snow to check the convergence
+      REAL(wp), DIMENSION(jpij,0:nlay_i) ::   ztcond_i    ! Ice thermal conductivity
+      REAL(wp), DIMENSION(jpij,0:nlay_i) ::   ztcond_i_cp ! copy
+      REAL(wp), DIMENSION(jpij,0:nlay_i) ::   zradtr_i    ! Radiation transmitted through the ice
+      REAL(wp), DIMENSION(jpij,0:nlay_i) ::   zradab_i    ! Radiation absorbed in the ice
+      REAL(wp), DIMENSION(jpij,0:nlay_i) ::   zkappa_i    ! Kappa factor in the ice
+      REAL(wp), DIMENSION(jpij,0:nlay_i) ::   zeta_i      ! Eta factor in the ice
+      REAL(wp), DIMENSION(jpij,0:nlay_s) ::   zradtr_s    ! Radiation transmited through the snow
+      REAL(wp), DIMENSION(jpij,0:nlay_s) ::   zradab_s    ! Radiation absorbed in the snow
+      REAL(wp), DIMENSION(jpij,0:nlay_s) ::   zkappa_s    ! Kappa factor in the snow
+      REAL(wp), DIMENSION(jpij,0:nlay_s) ::   zeta_s      ! Eta factor in the snow
+      REAL(wp), DIMENSION(jpij)          ::   zkappa_comb ! Combined snow and ice surface conductivity
+      REAL(wp), DIMENSION(jpij)          ::   zq_ini      ! diag errors on heat
+      REAL(wp), DIMENSION(jpij)          ::   zghe        ! G(he), th. conduct enhancement factor, mono-cat
+      REAL(wp), DIMENSION(jpij)          ::   za_s_fra    ! ice fraction covered by snow 
+      REAL(wp), DIMENSION(jpij)          ::   isnow       ! snow presence (1) or not (0) 
+      REAL(wp), DIMENSION(jpij)          ::   isnow_comb  ! snow presence for met-office 
+      REAL(wp), DIMENSION(jpij,nlay_i+nlay_s+1)   ::   zindterm    ! 'Ind'ependent term
+      REAL(wp), DIMENSION(jpij,nlay_i+nlay_s+1)   ::   zindtbis    ! Temporary 'ind'ependent term
+      REAL(wp), DIMENSION(jpij,nlay_i+nlay_s+1)   ::   zdiagbis    ! Temporary 'dia'gonal term
+      REAL(wp), DIMENSION(jpij,nlay_i+nlay_s+1,3) ::   ztrid       ! Tridiagonal system terms
       !
       ! Mono-category
       REAL(wp) ::   zepsilon   ! determines thres. above which computation of G(h) is done
@@ -532,16 +532,26 @@ CONTAINS
             !------------------------------
             ! Solve the tridiagonal system with Gauss elimination method.
             ! Thomas algorithm, from Computational fluid Dynamics, J.D. ANDERSON, McGraw-Hill 1984
-            jm_maxt = 0
-            jm_mint = nlay_i+5
+!!$            jm_maxt = 0
+!!$            jm_mint = nlay_i+5
+!!$            DO ji = 1, npti
+!!$               jm_mint = MIN(jm_min(ji),jm_mint)
+!!$               jm_maxt = MAX(jm_max(ji),jm_maxt)
+!!$            END DO
+!!$            !!clem SNWLAY => check why LIM1D does not get this loop. Is nlay_i+5 correct?
+!!$            
+!!$            DO jk = jm_mint+1, jm_maxt
+!!$               DO ji = 1, npti
+!!$                  jm = MIN(MAX(jm_min(ji)+1,jk),jm_max(ji))
+!!$                  zdiagbis(ji,jm) = ztrid   (ji,jm,2) - ztrid(ji,jm,1) * ztrid   (ji,jm-1,3) / zdiagbis(ji,jm-1)
+!!$                  zindtbis(ji,jm) = zindterm(ji,jm  ) - ztrid(ji,jm,1) * zindtbis(ji,jm-1  ) / zdiagbis(ji,jm-1)
+!!$               END DO
+!!$            END DO
+            ! clem: maybe one should find a way to reverse this loop for mpi performance
             DO ji = 1, npti
-               jm_mint = MIN(jm_min(ji),jm_mint)
-               jm_maxt = MAX(jm_max(ji),jm_maxt)
-            END DO
-
-            DO jk = jm_mint+1, jm_maxt
-               DO ji = 1, npti
-                  jm = MIN(MAX(jm_min(ji)+1,jk),jm_max(ji))
+               jm_mint = jm_min(ji)
+               jm_maxt = jm_max(ji)
+               DO jm = jm_mint+1, jm_maxt
                   zdiagbis(ji,jm) = ztrid   (ji,jm,2) - ztrid(ji,jm,1) * ztrid   (ji,jm-1,3) / zdiagbis(ji,jm-1)
                   zindtbis(ji,jm) = zindterm(ji,jm  ) - ztrid(ji,jm,1) * zindtbis(ji,jm-1  ) / zdiagbis(ji,jm-1)
                END DO
@@ -563,23 +573,32 @@ CONTAINS
                END DO
             END DO
 
+            ! snow temperatures      
             DO ji = 1, npti
                ! Variables used after iterations
                ! Value must be frozen after convergence for MPP independance reason
-               IF ( .NOT. l_T_converged(ji) ) THEN
-                  ! snow temperatures      
-                  IF( h_s_1d(ji) > 0._wp ) THEN
-                     t_s_1d(ji,nlay_s) = ( zindtbis(ji,nlay_s+1) - ztrid(ji,nlay_s+1,3) * t_i_1d(ji,1) ) / zdiagbis(ji,nlay_s+1)
-                  ENDIF
-                  ! surface temperature
+               IF ( .NOT. l_T_converged(ji) .AND. h_s_1d(ji) > 0._wp ) &
+                  &   t_s_1d(ji,nlay_s) = ( zindtbis(ji,nlay_s+1) - ztrid(ji,nlay_s+1,3) * t_i_1d(ji,1) ) / zdiagbis(ji,nlay_s+1)
+            END DO
+            !!clem SNWLAY
+            DO jm = nlay_s, 2, -1
+               DO ji = 1, npti
+                  jk = jm - 1
+                  IF ( .NOT. l_T_converged(ji) .AND. h_s_1d(ji) > 0._wp ) &
+                     &   t_s_1d(ji,jk) = ( zindtbis(ji,jm) - ztrid(ji,jm,3) * t_s_1d(ji,jk+1) ) / zdiagbis(ji,jm)
+               END DO
+            END DO
+            
+            ! surface temperature
+            DO ji = 1, npti
+               IF( .NOT. l_T_converged(ji) ) THEN
                   ztsub(ji) = t_su_1d(ji)
                   IF( t_su_1d(ji) < rt0 ) THEN
-                     t_su_1d(ji) = (  zindtbis(ji,jm_min(ji)) - ztrid(ji,jm_min(ji),3) *  &
-                        &           ( isnow(ji) * t_s_1d(ji,1) + ( 1._wp - isnow(ji) ) *  t_i_1d(ji,1) ) ) / zdiagbis(ji,jm_min(ji))
+                     t_su_1d(ji) = ( zindtbis(ji,jm_min(ji)) - ztrid(ji,jm_min(ji),3) *  &
+                        &          ( isnow(ji) * t_s_1d(ji,1) + ( 1._wp - isnow(ji) ) * t_i_1d(ji,1) ) ) / zdiagbis(ji,jm_min(ji))
                   ENDIF
                ENDIF
             END DO
-            !clem: in order to have several layers of snow, there is a missing loop here for t_s_1d(1:nlay_s-1)
             !
             !--------------------------------------------------------------
             ! 9) Has the scheme converged?, end of the iterative procedure
@@ -726,21 +745,30 @@ CONTAINS
             !------------------------------
             ! Solve the tridiagonal system with Gauss elimination method.
             ! Thomas algorithm, from Computational fluid Dynamics, J.D. ANDERSON, McGraw-Hill 1984
-            jm_maxt = 0
-            jm_mint = nlay_i+5
+!!$            jm_maxt = 0
+!!$            jm_mint = nlay_i+5
+!!$            DO ji = 1, npti
+!!$               jm_mint = MIN(jm_min(ji),jm_mint)
+!!$               jm_maxt = MAX(jm_max(ji),jm_maxt)
+!!$            END DO
+!!$            
+!!$            DO jk = jm_mint+1, jm_maxt
+!!$               DO ji = 1, npti
+!!$                  jm = MIN(MAX(jm_min(ji)+1,jk),jm_max(ji))
+!!$                  zdiagbis(ji,jm) = ztrid   (ji,jm,2) - ztrid(ji,jm,1) * ztrid   (ji,jm-1,3) / zdiagbis(ji,jm-1)
+!!$                  zindtbis(ji,jm) = zindterm(ji,jm)   - ztrid(ji,jm,1) * zindtbis(ji,jm-1)   / zdiagbis(ji,jm-1)
+!!$               END DO
+!!$            END DO
+            ! clem: maybe one should find a way to reverse this loop for mpi performance
             DO ji = 1, npti
-               jm_mint = MIN(jm_min(ji),jm_mint)
-               jm_maxt = MAX(jm_max(ji),jm_maxt)
-            END DO
-            
-            DO jk = jm_mint+1, jm_maxt
-               DO ji = 1, npti
-                  jm = MIN(MAX(jm_min(ji)+1,jk),jm_max(ji))
+               jm_mint = jm_min(ji)
+               jm_maxt = jm_max(ji)
+               DO jm = jm_mint+1, jm_maxt
                   zdiagbis(ji,jm) = ztrid   (ji,jm,2) - ztrid(ji,jm,1) * ztrid   (ji,jm-1,3) / zdiagbis(ji,jm-1)
-                  zindtbis(ji,jm) = zindterm(ji,jm)   - ztrid(ji,jm,1) * zindtbis(ji,jm-1)   / zdiagbis(ji,jm-1)
+                  zindtbis(ji,jm) = zindterm(ji,jm  ) - ztrid(ji,jm,1) * zindtbis(ji,jm-1  ) / zdiagbis(ji,jm-1)
                END DO
             END DO
-            
+
             ! ice temperatures
             DO ji = 1, npti
                ! Variable used after iterations
@@ -760,15 +788,19 @@ CONTAINS
             
             ! snow temperatures      
             DO ji = 1, npti
-               ! Variable used after iterations
+               ! Variables used after iterations
                ! Value must be frozen after convergence for MPP independance reason
-               IF ( .NOT. l_T_converged(ji) ) THEN
-                  IF( h_s_1d(ji) > 0._wp ) THEN
-                     t_s_1d(ji,nlay_s) = ( zindtbis(ji,nlay_s+1) - ztrid(ji,nlay_s+1,3) * t_i_1d(ji,1) ) / zdiagbis(ji,nlay_s+1)
-                  ENDIF
-               ENDIF
+               IF ( .NOT. l_T_converged(ji) .AND. h_s_1d(ji) > 0._wp ) &
+                  &   t_s_1d(ji,nlay_s) = ( zindtbis(ji,nlay_s+1) - ztrid(ji,nlay_s+1,3) * t_i_1d(ji,1) ) / zdiagbis(ji,nlay_s+1)
             END DO
-            !clem: in order to have several layers of snow, there is a missing loop here for t_s_1d(1:nlay_s-1)
+            !!clem SNWLAY
+            DO jm = nlay_s, 2, -1
+               DO ji = 1, npti
+                  jk = jm - 1
+                  IF ( .NOT. l_T_converged(ji) .AND. h_s_1d(ji) > 0._wp ) &
+                     &   t_s_1d(ji,jk) = ( zindtbis(ji,jm) - ztrid(ji,jm,3) * t_s_1d(ji,jk+1) ) / zdiagbis(ji,jm)
+               END DO
+            END DO
             !
             !--------------------------------------------------------------
             ! 9) Has the scheme converged?, end of the iterative procedure
@@ -922,8 +954,8 @@ CONTAINS
       DO ji = 1, npti         
          !--- Snow-ice interfacial temperature (diagnostic SIMIP)
          IF( h_s_1d(ji) >= zhs_ssl ) THEN
-            t_si_1d(ji) = (   rn_cnd_s       * h_i_1d(ji) * r1_nlay_i * t_s_1d(ji,1)   &
-               &            + ztcond_i(ji,1) * h_s_1d(ji) * r1_nlay_s * t_i_1d(ji,1) ) &
+            t_si_1d(ji) = (   rn_cnd_s       * h_i_1d(ji) * r1_nlay_i * t_s_1d(ji,nlay_s)   &
+               &            + ztcond_i(ji,1) * h_s_1d(ji) * r1_nlay_s * t_i_1d(ji,1)      ) &
                &          / ( rn_cnd_s       * h_i_1d(ji) * r1_nlay_i &
                &            + ztcond_i(ji,1) * h_s_1d(ji) * r1_nlay_s )
          ELSE

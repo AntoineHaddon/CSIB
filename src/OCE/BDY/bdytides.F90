@@ -46,7 +46,7 @@ MODULE bdytides
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: bdytides.F90 12910 2020-05-12 08:21:19Z smasson $
+   !! $Id: bdytides.F90 14168 2020-12-14 18:32:04Z jchanut $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -146,58 +146,58 @@ CONTAINS
                ALLOCATE( zti(jpi,jpj), ztr(jpi,jpj) )
                !
                ! SSH fields
-               IF( ASSOCIATED(dta%ssh) ) THEN   ! we use bdy ssh on this mpi subdomain
-                  clfile = TRIM(filtide)//'_grid_T.nc'
-                  CALL iom_open( clfile , inum ) 
-                  igrd = 1                       ! Everything is at T-points here
-                  DO itide = 1, nb_harmo
-                     CALL iom_get( inum, jpdom_autoglo, TRIM(Wave(ntide(itide))%cname_tide)//'_z1', ztr(:,:) )
-                     CALL iom_get( inum, jpdom_autoglo, TRIM(Wave(ntide(itide))%cname_tide)//'_z2', zti(:,:) ) 
+               clfile = TRIM(filtide)//'_grid_T.nc'
+               CALL iom_open( clfile , inum ) 
+               igrd = 1                       ! Everything is at T-points here
+               DO itide = 1, nb_harmo
+                  CALL iom_get( inum, jpdom_autoglo, TRIM(Wave(ntide(itide))%cname_tide)//'_z1', ztr(:,:) )
+                  CALL iom_get( inum, jpdom_autoglo, TRIM(Wave(ntide(itide))%cname_tide)//'_z2', zti(:,:) ) 
+                  IF( ASSOCIATED(dta%ssh) ) THEN   ! we use bdy ssh on this mpi subdomain
                      DO ib = 1, SIZE(dta%ssh)
                         ii = idx_bdy(ib_bdy)%nbi(ib,igrd)
                         ij = idx_bdy(ib_bdy)%nbj(ib,igrd)
                         td%ssh0(ib,itide,1) = ztr(ii,ij)
                         td%ssh0(ib,itide,2) = zti(ii,ij)
                      END DO
-                  END DO
-                  CALL iom_close( inum )
-               END IF
+                  ENDIF
+               END DO
+               CALL iom_close( inum )
                !
                ! U fields
-               IF( ASSOCIATED(dta%u2d) ) THEN   ! we use bdy u2d on this mpi subdomain
-                  clfile = TRIM(filtide)//'_grid_U.nc'
-                  CALL iom_open( clfile , inum ) 
-                  igrd = 2                       ! Everything is at U-points here
-                  DO itide = 1, nb_harmo
-                     CALL iom_get  ( inum, jpdom_autoglo, TRIM(Wave(ntide(itide))%cname_tide)//'_u1', ztr(:,:) )
-                     CALL iom_get  ( inum, jpdom_autoglo, TRIM(Wave(ntide(itide))%cname_tide)//'_u2', zti(:,:) )
+               clfile = TRIM(filtide)//'_grid_U.nc'
+               CALL iom_open( clfile , inum ) 
+               igrd = 2                       ! Everything is at U-points here
+               DO itide = 1, nb_harmo
+                  CALL iom_get  ( inum, jpdom_autoglo, TRIM(Wave(ntide(itide))%cname_tide)//'_u1', ztr(:,:) )
+                  CALL iom_get  ( inum, jpdom_autoglo, TRIM(Wave(ntide(itide))%cname_tide)//'_u2', zti(:,:) )
+                  IF( ASSOCIATED(dta%u2d) ) THEN   ! we use bdy u2d on this mpi subdomain
                      DO ib = 1, SIZE(dta%u2d)
                         ii = idx_bdy(ib_bdy)%nbi(ib,igrd)
                         ij = idx_bdy(ib_bdy)%nbj(ib,igrd)
                         td%u0(ib,itide,1) = ztr(ii,ij)
                         td%u0(ib,itide,2) = zti(ii,ij)
                      END DO
-                  END DO
-                  CALL iom_close( inum )
-               END IF
+                  ENDIF
+               END DO
+               CALL iom_close( inum )
                !
                ! V fields
-               IF( ASSOCIATED(dta%v2d) ) THEN   ! we use bdy v2d on this mpi subdomain
-                  clfile = TRIM(filtide)//'_grid_V.nc'
-                  CALL iom_open( clfile , inum ) 
-                  igrd = 3                       ! Everything is at V-points here
-                  DO itide = 1, nb_harmo
-                     CALL iom_get  ( inum, jpdom_autoglo, TRIM(Wave(ntide(itide))%cname_tide)//'_v1', ztr(:,:) )
-                     CALL iom_get  ( inum, jpdom_autoglo, TRIM(Wave(ntide(itide))%cname_tide)//'_v2', zti(:,:) )
+               clfile = TRIM(filtide)//'_grid_V.nc'
+               CALL iom_open( clfile , inum ) 
+               igrd = 3                       ! Everything is at V-points here
+               DO itide = 1, nb_harmo
+                  CALL iom_get  ( inum, jpdom_autoglo, TRIM(Wave(ntide(itide))%cname_tide)//'_v1', ztr(:,:) )
+                  CALL iom_get  ( inum, jpdom_autoglo, TRIM(Wave(ntide(itide))%cname_tide)//'_v2', zti(:,:) )
+                  IF( ASSOCIATED(dta%v2d) ) THEN   ! we use bdy v2d on this mpi subdomain
                      DO ib = 1, SIZE(dta%v2d)
                         ii = idx_bdy(ib_bdy)%nbi(ib,igrd)
                         ij = idx_bdy(ib_bdy)%nbj(ib,igrd)
                         td%v0(ib,itide,1) = ztr(ii,ij)
                         td%v0(ib,itide,2) = zti(ii,ij)
                      END DO
-                  END DO
-                  CALL iom_close( inum )
-               END IF
+                  ENDIF
+               END DO
+               CALL iom_close( inum )
                !
                DEALLOCATE( ztr, zti ) 
                !

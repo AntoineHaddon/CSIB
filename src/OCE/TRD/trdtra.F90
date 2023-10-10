@@ -43,7 +43,7 @@ MODULE trdtra
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: trdtra.F90 13067 2020-06-09 08:12:15Z smasson $
+   !! $Id: trdtra.F90 14175 2020-12-15 18:25:24Z hadcv $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -88,6 +88,7 @@ CONTAINS
       !      
       IF( .NOT. ALLOCATED( trdtx ) ) THEN      ! allocate trdtra arrays
          IF( trd_tra_alloc() /= 0 )   CALL ctl_stop( 'STOP', 'trd_tra : unable to allocate arrays' )
+         avt_evd(:,:,:) = 0._wp
       ENDIF
       !
       i01 = COUNT( (/ PRESENT(pun) .OR. ( ktrd /= jptra_xad .AND. ktrd /= jptra_yad .AND. ktrd /= jptra_zad ) /) )

@@ -61,7 +61,7 @@ MODULE icethd
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icethd.F90 13642 2020-10-19 22:58:34Z clem $
+   !! $Id: icethd.F90 14026 2020-12-03 08:48:10Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -170,6 +170,14 @@ CONTAINS
             !                              The following formulation is ok for both normal conditions and supercooling
             qsb_ice_bot(ji,jj) = rswitch * MIN( qsb_ice_bot(ji,jj), - zqfr_neg * r1_rdtice / MAX( at_i(ji,jj), epsi10 ) )
 
+            ! If conditions are always supercooled (such as at the mouth of ice-shelves), then ice grows continuously
+            ! ==> stop ice formation by artificially setting up the turbulent fluxes to 0 when volume > 20m (arbitrary)
+            IF( ( t_bo(ji,jj) - ( sst_m(ji,jj) + rt0 ) ) > 0._wp .AND. vt_i(ji,jj) >= 20._wp ) THEN
+               zqfr               = 0._wp
+               zqfr_pos           = 0._wp
+               qsb_ice_bot(ji,jj) = 0._wp
+            ENDIF
+            !
             ! --- Energy Budget of the leads (qlead, J.m-2) --- !
             !     qlead is the energy received from the atm. in the leads.
             !     If warming (zqld >= 0), then the energy in the leads is used to melt ice (bottom melting) => fhld  (W/m2)
@@ -246,7 +254,6 @@ CONTAINS
             !
             IF( ln_icedH ) THEN                                     ! --- Growing/Melting --- !
                               CALL ice_thd_dh                           ! Ice-Snow thickness   
-                              CALL ice_thd_pnd                          ! Melt ponds formation
                               CALL ice_thd_ent( e_i_1d(1:npti,:) )      ! Ice enthalpy remapping
             ENDIF
                               CALL ice_thd_sal( ln_icedS )          ! --- Ice salinity --- !    
@@ -257,6 +264,9 @@ CONTAINS
                &              CALL ice_thd_mono                     ! --- Extra lateral melting if virtual_itd --- !
             !
             IF( ln_icedA )    CALL ice_thd_da                       ! --- Lateral melting --- !
+            !
+            IF( ln_pnd .AND. ln_icedH ) &
+               &              CALL ice_thd_pnd                      ! --- Melt ponds formation --- !
             !
                               CALL ice_thd_1d2d( jl, 2 )            ! --- Change units of e_i, e_s from J/m3 to J/m2 --- !
             !                                                       ! --- & Move to 2D arrays --- !

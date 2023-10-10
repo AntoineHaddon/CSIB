@@ -38,7 +38,7 @@ MODULE icesbc
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icesbc.F90 13284 2020-07-09 15:12:23Z smasson $
+   !! $Id: icesbc.F90 14026 2020-12-03 08:48:10Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -60,7 +60,7 @@ CONTAINS
       REAL(wp), DIMENSION(jpi,jpj) ::   zutau_ice, zvtau_ice 
       !!-------------------------------------------------------------------
       !
-      IF( ln_timing )   CALL timing_start('ice_sbc')
+      IF( ln_timing )   CALL timing_start('icesbc')
       !
       IF( kt == nit000 .AND. lwp ) THEN
          WRITE(numout,*)
@@ -85,7 +85,7 @@ CONTAINS
          CALL lbc_lnk_multi( 'icesbc', utau_ice, 'U', -1., vtau_ice, 'V', -1. )
       ENDIF
       !
-      IF( ln_timing )   CALL timing_stop('ice_sbc')
+      IF( ln_timing )   CALL timing_stop('icesbc')
       !
    END SUBROUTINE ice_sbc_tau
 
@@ -118,7 +118,7 @@ CONTAINS
       REAL(wp), DIMENSION(:,:), ALLOCATABLE ::   zalb, zmsk00      ! 2D workspace
       !!--------------------------------------------------------------------
       !
-      IF( ln_timing )   CALL timing_start('ice_sbc_flx')
+      IF( ln_timing )   CALL timing_start('icesbc')
 
       IF( kt == nit000 .AND. lwp ) THEN
          WRITE(numout,*)
@@ -171,7 +171,7 @@ CONTAINS
 
       ENDIF
       !
-      IF( ln_timing )   CALL timing_stop('ice_sbc_flx')
+      IF( ln_timing )   CALL timing_stop('icesbc')
       !
    END SUBROUTINE ice_sbc_flx
 

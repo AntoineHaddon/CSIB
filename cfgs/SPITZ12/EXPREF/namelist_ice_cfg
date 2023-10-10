@@ -23,6 +23,7 @@
 !------------------------------------------------------------------------------
    jpl              =    10         !  number of ice  categories
    nlay_i           =    5          !  number of ice  layers
+   nlay_s           =    5          !  number of snw  layers
 /
 !------------------------------------------------------------------------------
 &namitd         !   Ice discretization

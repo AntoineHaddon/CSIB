@@ -48,7 +48,7 @@ MODULE iceupdate
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: iceupdate.F90 13642 2020-10-19 22:58:34Z clem $
+   !! $Id: iceupdate.F90 14026 2020-12-03 08:48:10Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -95,7 +95,7 @@ CONTAINS
       REAL(wp) ::   zqsr             ! New solar flux received by the ocean
       REAL(wp), DIMENSION(jpi,jpj) ::   z2d                  ! 2D workspace
       !!---------------------------------------------------------------------
-      IF( ln_timing )   CALL timing_start('ice_update')
+      IF( ln_timing )   CALL timing_start('iceupdate')
 
       IF( kt == nit000 .AND. lwp ) THEN
          WRITE(numout,*)
@@ -156,14 +156,14 @@ CONTAINS
             !------------------------------------
             ! ice-ocean  mass flux
             wfx_ice(ji,jj) = wfx_bog(ji,jj) + wfx_bom(ji,jj) + wfx_sum(ji,jj) + wfx_sni(ji,jj)   &
-               &           + wfx_opw(ji,jj) + wfx_dyn(ji,jj) + wfx_res(ji,jj) + wfx_lam(ji,jj) + wfx_pnd(ji,jj)
+               &           + wfx_opw(ji,jj) + wfx_dyn(ji,jj) + wfx_res(ji,jj) + wfx_lam(ji,jj)
 
             ! snw-ocean mass flux
             wfx_snw(ji,jj) = wfx_snw_sni(ji,jj) + wfx_snw_dyn(ji,jj) + wfx_snw_sum(ji,jj)
 
             ! total mass flux at the ocean/ice interface
-            fmmflx(ji,jj) =                - wfx_ice(ji,jj) - wfx_snw(ji,jj) - wfx_err_sub(ji,jj)   ! ice-ocean mass flux saved at least for biogeochemical model
-            emp   (ji,jj) = emp_oce(ji,jj) - wfx_ice(ji,jj) - wfx_snw(ji,jj) - wfx_err_sub(ji,jj)   ! atm-ocean + ice-ocean mass flux
+            fmmflx(ji,jj) =                - wfx_ice(ji,jj) - wfx_snw(ji,jj) - wfx_pnd(ji,jj) - wfx_err_sub(ji,jj)   ! ice-ocean mass flux saved at least for biogeochemical model
+            emp   (ji,jj) = emp_oce(ji,jj) - wfx_ice(ji,jj) - wfx_snw(ji,jj) - wfx_pnd(ji,jj) - wfx_err_sub(ji,jj)   ! atm-ocean + ice-ocean mass flux
 
             ! Salt flux at the ocean surface
             !------------------------------------------
@@ -174,7 +174,7 @@ CONTAINS
             !----------------------------------------
             snwice_mass_b(ji,jj) = snwice_mass(ji,jj)       ! save mass from the previous ice time step
             !                                               ! new mass per unit area
-            snwice_mass  (ji,jj) = tmask(ji,jj,1) * ( rhos * vt_s(ji,jj) + rhoi * vt_i(ji,jj)  )
+            snwice_mass  (ji,jj) = tmask(ji,jj,1) * ( rhos * vt_s(ji,jj) + rhoi * vt_i(ji,jj) + rhow * ( vt_ip(ji,jj) + vt_il(ji,jj) ) ) 
             !                                               ! time evolution of snow+ice mass
             snwice_fmass (ji,jj) = ( snwice_mass(ji,jj) - snwice_mass_b(ji,jj) ) * r1_rdtice
 
@@ -289,7 +289,7 @@ CONTAINS
 #endif
       IF( ln_icectl    )   CALL ice_prt       (kt, iiceprt, jiceprt, 3, 'Final state ice_update') ! prints
       IF( ln_ctl       )   CALL ice_prt3D     ('iceupdate')                                       ! prints
-      IF( ln_timing    )   CALL timing_stop   ('ice_update')                                      ! timing
+      IF( ln_timing    )   CALL timing_stop   ('iceupdate')                                       ! timing
       !
    END SUBROUTINE ice_update_flx
 
@@ -327,7 +327,7 @@ CONTAINS
       REAL(wp) ::   zat_v, zvtau_ice, zv_t, zrhoco  !   -      -
       REAL(wp) ::   zflagi                          !   -      -
       !!---------------------------------------------------------------------
-      IF( ln_timing )   CALL timing_start('ice_update_tau')
+      IF( ln_timing )   CALL timing_start('iceupdate')
 
       IF( kt == nit000 .AND. lwp ) THEN
          WRITE(numout,*)
@@ -383,8 +383,8 @@ CONTAINS
       END DO
       CALL lbc_lnk_multi( 'iceupdate', utau, 'U', -1., vtau, 'V', -1. )   ! lateral boundary condition
       !
-      IF( ln_timing )   CALL timing_stop('ice_update_tau')
-      !
+      IF( ln_timing )   CALL timing_stop('iceupdate')
+      !  
    END SUBROUTINE ice_update_tau
 
 

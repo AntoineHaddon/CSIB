@@ -52,9 +52,14 @@ MODULE nemogcm
 
    CHARACTER(lc) ::   cform_aaa="( /, 'AAAAAAAA', / ) "     ! flag for output listing
 
+#if defined key_mpp_mpi
+   ! need MPI_Wtime
+   INCLUDE 'mpif.h'
+#endif
+
    !!----------------------------------------------------------------------
    !! NEMO/SAS 4.0 , NEMO Consortium (2018)
-   !! $Id: nemogcm.F90 13013 2020-06-03 08:33:06Z smasson $
+   !! $Id: nemogcm.F90 13849 2020-11-23 10:21:34Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -74,6 +79,7 @@ CONTAINS
       !!              Madec, 2008, internal report, IPSL.
       !!----------------------------------------------------------------------
       INTEGER ::   istp   ! time step index
+      REAL(wp)::   zstptiming   ! elapsed time for 1 time step
       !!----------------------------------------------------------------------
       !
 #if defined key_agrif
@@ -128,8 +134,18 @@ CONTAINS
       IF( .NOT.ln_diurnal_only ) THEN                 !==  Standard time-stepping  ==!
          !
          DO WHILE( istp <= nitend .AND. nstop == 0 )
+
+            ncom_stp = istp
+            IF( ln_timing ) THEN
+               zstptiming = MPI_Wtime()
+               IF ( istp == ( nit000 + 1 ) ) elapsed_time = zstptiming
+               IF ( istp ==         nitend ) elapsed_time = zstptiming - elapsed_time
+            ENDIF
+
             CALL stp        ( istp ) 
             istp = istp + 1
+
+            IF( lwp .AND. ln_timing )   WRITE(numtime,*) 'timing step ', istp-1, ' : ', MPI_Wtime() - zstptiming
          END DO
          !
       ELSE                                            !==  diurnal SST time-steeping only  ==!

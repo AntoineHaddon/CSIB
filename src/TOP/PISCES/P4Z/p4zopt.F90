@@ -39,7 +39,7 @@ MODULE p4zopt
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: p4zopt.F90 13331 2020-07-22 14:00:04Z cetlod $ 
+   !! $Id: p4zopt.F90 14214 2020-12-18 11:46:40Z cetlod $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -263,8 +263,10 @@ CONTAINS
       !
       IF( lk_iomput .AND.  knt == nrdttrc ) THEN
          CALL iom_put( "Heup" , heup(:,:  ) * tmask(:,:,1) )  ! euphotic layer deptht
-         CALL iom_put( "PARDM", zpar(:,:,:) * tmask(:,:,:) )  ! Photosynthetically Available Radiation
-         CALL iom_put( "PAR"  , emoy(:,:,:) * tmask(:,:,:) )  ! Photosynthetically Available Radiation
+         IF( iom_use( "PAR" ) ) THEN
+            zpar(:,:,1) = zpar(:,:,1) * ( 1._wp - fr_i(:,:) )
+            CALL iom_put( "PAR", zpar(:,:,:) * tmask(:,:,:) )  ! Photosynthetically Available Radiation
+         ENDIF
       ENDIF
       !
       IF( ln_timing )   CALL timing_stop('p4z_opt')

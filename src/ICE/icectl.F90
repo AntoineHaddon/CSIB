@@ -61,7 +61,7 @@ MODULE icectl
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icectl.F90 13589 2020-10-14 13:35:49Z clem $
+   !! $Id: icectl.F90 14026 2020-12-03 08:48:10Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -84,15 +84,16 @@ CONTAINS
       REAL(wp)        , INTENT(inout) ::   pdiag_v, pdiag_s, pdiag_t, pdiag_fv, pdiag_fs, pdiag_ft
       !!
       REAL(wp) ::   zdiag_mass, zdiag_salt, zdiag_heat, &
-         &          zdiag_vmin, zdiag_amin, zdiag_amax, zdiag_eimin, zdiag_esmin, zdiag_smin
+         &          zdiag_vimin, zdiag_vsmin, zdiag_vpmin, zdiag_vlmin, zdiag_aimin, zdiag_aimax, &
+         &          zdiag_eimin, zdiag_esmin, zdiag_simin
       REAL(wp) ::   zvtrp, zetrp
       REAL(wp) ::   zarea
       !!-------------------------------------------------------------------
       !
       IF( icount == 0 ) THEN
 
-         pdiag_v = glob_sum( 'icectl',   SUM( v_i * rhoi + v_s * rhos, dim=3 ) * e1e2t )
-         pdiag_s = glob_sum( 'icectl',   SUM( sv_i * rhoi            , dim=3 ) * e1e2t )
+         pdiag_v = glob_sum( 'icectl',   SUM( v_i * rhoi + v_s * rhos + ( v_ip + v_il ) * rhow, dim=3 ) * e1e2t )
+         pdiag_s = glob_sum( 'icectl',   SUM( sv_i * rhoi , dim=3 ) * e1e2t )
          pdiag_t = glob_sum( 'icectl', ( SUM( SUM( e_i, dim=4 ), dim=3 ) + SUM( SUM( e_s, dim=4 ), dim=3 ) ) * e1e2t )
 
          ! mass flux
@@ -111,7 +112,8 @@ CONTAINS
       ELSEIF( icount == 1 ) THEN
 
          ! -- mass diag -- !
-         zdiag_mass = ( glob_sum( 'icectl', SUM( v_i * rhoi + v_s * rhos, dim=3 ) * e1e2t ) - pdiag_v ) * r1_rdtice       &
+            zdiag_mass = ( glob_sum( 'icectl', SUM( v_i * rhoi + v_s * rhos + ( v_ip + v_il ) * rhow, dim=3 ) * e1e2t )   &
+            &            - pdiag_v ) * r1_rdtice                                                                          &
             &         + glob_sum( 'icectl', ( wfx_bog + wfx_bom + wfx_sum + wfx_sni + wfx_opw + wfx_res + wfx_dyn +       &
             &                                 wfx_lam + wfx_pnd + wfx_snw_sni + wfx_snw_sum + wfx_snw_dyn + wfx_snw_sub + &
             &                                 wfx_ice_sub + wfx_spr ) * e1e2t )                                           &
@@ -131,10 +133,13 @@ CONTAINS
             &         - pdiag_ft
 
          ! -- min/max diag -- !
-         zdiag_amax  = glob_max( 'icectl', SUM( a_i, dim=3 ) )
-         zdiag_vmin  = glob_min( 'icectl', v_i )
-         zdiag_amin  = glob_min( 'icectl', a_i )
-         zdiag_smin  = glob_min( 'icectl', sv_i )
+         zdiag_aimax = glob_max( 'icectl', SUM( a_i, dim=3 ) )
+         zdiag_vimin = glob_min( 'icectl', v_i  )
+         zdiag_vsmin = glob_min( 'icectl', v_s  )
+         zdiag_vpmin = glob_min( 'icectl', v_ip )
+         zdiag_vlmin = glob_min( 'icectl', v_il )
+         zdiag_aimin = glob_min( 'icectl', a_i  )
+         zdiag_simin = glob_min( 'icectl', sv_i )
          zdiag_eimin = glob_min( 'icectl', SUM( e_i, dim=3 ) )
          zdiag_esmin = glob_min( 'icectl', SUM( e_s, dim=3 ) )
 
@@ -154,14 +159,17 @@ CONTAINS
             IF( ABS(zdiag_heat) > zchk_t * rn_icechk_glo * zarea ) &
                &                   WRITE(numout,*)   cd_routine,' : violation heat cons. [J]  = ',zdiag_heat * rdt_ice
             ! check negative values
-            IF( zdiag_vmin  < 0. ) WRITE(numout,*)   cd_routine,' : violation v_i < 0         = ',zdiag_vmin
-            IF( zdiag_amin  < 0. ) WRITE(numout,*)   cd_routine,' : violation a_i < 0         = ',zdiag_amin
-            IF( zdiag_smin  < 0. ) WRITE(numout,*)   cd_routine,' : violation s_i < 0         = ',zdiag_smin
-            IF( zdiag_eimin < 0. ) WRITE(numout,*)   cd_routine,' : violation e_i < 0         = ',zdiag_eimin
-            IF( zdiag_esmin < 0. ) WRITE(numout,*)   cd_routine,' : violation e_s < 0         = ',zdiag_esmin
+            IF( zdiag_vimin < 0. ) WRITE(numout,*)   cd_routine,' : violation v_i  < 0        = ',zdiag_vimin
+            IF( zdiag_vsmin < 0. ) WRITE(numout,*)   cd_routine,' : violation v_s  < 0        = ',zdiag_vsmin
+            IF( zdiag_vpmin < 0. ) WRITE(numout,*)   cd_routine,' : violation v_ip < 0        = ',zdiag_vpmin
+            IF( zdiag_vlmin < 0. ) WRITE(numout,*)   cd_routine,' : violation v_il < 0        = ',zdiag_vlmin
+            IF( zdiag_aimin < 0. ) WRITE(numout,*)   cd_routine,' : violation a_i  < 0        = ',zdiag_aimin
+            IF( zdiag_simin < 0. ) WRITE(numout,*)   cd_routine,' : violation s_i  < 0        = ',zdiag_simin
+            IF( zdiag_eimin < 0. ) WRITE(numout,*)   cd_routine,' : violation e_i  < 0        = ',zdiag_eimin
+            IF( zdiag_esmin < 0. ) WRITE(numout,*)   cd_routine,' : violation e_s  < 0        = ',zdiag_esmin
             ! check maximum ice concentration
-            IF( zdiag_amax > MAX(rn_amax_n,rn_amax_s)+epsi10 .AND. cd_routine /= 'icedyn_adv' .AND. cd_routine /= 'icedyn_rdgrft' ) &
-               &                   WRITE(numout,*)   cd_routine,' : violation a_i > amax      = ',zdiag_amax
+            IF( zdiag_aimax>MAX(rn_amax_n,rn_amax_s)+epsi10 .AND. cd_routine /= 'icedyn_adv' .AND. cd_routine /= 'icedyn_rdgrft' ) &
+               &                   WRITE(numout,*)   cd_routine,' : violation a_i > amax      = ',zdiag_aimax
             ! check if advection scheme is conservative
             IF( ABS(zvtrp) > zchk_m * rn_icechk_glo * zarea .AND. cd_routine == 'icedyn_adv' ) &
                &                   WRITE(numout,*)   cd_routine,' : violation adv scheme [kg] = ',zvtrp * rdt_ice
@@ -192,14 +200,14 @@ CONTAINS
 
       ! water flux
       ! -- mass diag -- !
-      zdiag_mass = glob_sum( 'icectl', (  wfx_ice   + wfx_snw   + wfx_spr + wfx_sub &
-         &                              + diag_vice + diag_vsnw - diag_adv_mass ) * e1e2t )
+      zdiag_mass = glob_sum( 'icectl', (  wfx_ice   + wfx_snw   + wfx_spr   + wfx_sub + wfx_pnd   &
+         &                              + diag_vice + diag_vsnw + diag_vpnd - diag_adv_mass ) * e1e2t )
 
       ! -- salt diag -- !
       zdiag_salt = glob_sum( 'icectl', ( sfx + diag_sice - diag_adv_salt ) * e1e2t )
 
       ! -- heat diag -- !
-      zdiag_heat  = glob_sum( 'icectl', ( qt_oce_ai - qt_atm_oi + diag_heat - diag_adv_heat ) * e1e2t )
+      zdiag_heat = glob_sum( 'icectl', ( qt_oce_ai - qt_atm_oi + diag_heat - diag_adv_heat ) * e1e2t )
       ! equivalent to this:
       !!zdiag_heat = glob_sum( 'icectl', ( -diag_heat + hfx_sum + hfx_bom + hfx_bog + hfx_dif + hfx_opw + hfx_snw &
       !!   &                                          - hfx_thd - hfx_dyn - hfx_res - hfx_sub - hfx_spr &
@@ -244,8 +252,8 @@ CONTAINS
       !
       IF( icount == 0 ) THEN
 
-         pdiag_v = SUM( v_i  * rhoi + v_s * rhos, dim=3 )
-         pdiag_s = SUM( sv_i * rhoi             , dim=3 )
+         pdiag_v = SUM( v_i  * rhoi + v_s * rhos + ( v_ip + v_il ) * rhow, dim=3 )
+         pdiag_s = SUM( sv_i * rhoi , dim=3 )
          pdiag_t = SUM( SUM( e_i, dim=4 ), dim=3 ) + SUM( SUM( e_s, dim=4 ), dim=3 )
 
          ! mass flux
@@ -260,7 +268,7 @@ CONTAINS
       ELSEIF( icount == 1 ) THEN
 
          ! -- mass diag -- !
-         zdiag_mass =   ( SUM( v_i * rhoi + v_s * rhos, dim=3 ) - pdiag_v ) * r1_rdtice                             &
+         zdiag_mass =   ( SUM( v_i * rhoi + v_s * rhos + ( v_ip + v_il ) * rhow, dim=3 ) - pdiag_v ) * r1_rdtice    &
             &         + ( wfx_bog + wfx_bom + wfx_sum + wfx_sni + wfx_opw + wfx_res + wfx_dyn + wfx_lam + wfx_pnd + &
             &             wfx_snw_sni + wfx_snw_sum + wfx_snw_dyn + wfx_snw_sub + wfx_ice_sub + wfx_spr )           &
             &         - pdiag_fv
@@ -351,6 +359,12 @@ CONTAINS
       CALL iom_rstput( 0, 0, inum, 'vneg_count', pdiag_vmin(:,:) , ktype = jp_r8 )    ! 
       CALL iom_rstput( 0, 0, inum, 'sneg_count', pdiag_smin(:,:) , ktype = jp_r8 )    ! 
       CALL iom_rstput( 0, 0, inum, 'eneg_count', pdiag_emin(:,:) , ktype = jp_r8 )    ! 
+      ! mean state
+      CALL iom_rstput( 0, 0, inum, 'icecon'    , SUM(a_i ,dim=3) , ktype = jp_r8 )    !
+      CALL iom_rstput( 0, 0, inum, 'icevol'    , SUM(v_i ,dim=3) , ktype = jp_r8 )    !
+      CALL iom_rstput( 0, 0, inum, 'snwvol'    , SUM(v_s ,dim=3) , ktype = jp_r8 )    !
+      CALL iom_rstput( 0, 0, inum, 'pndvol'    , SUM(v_ip,dim=3) , ktype = jp_r8 )    !
+      CALL iom_rstput( 0, 0, inum, 'lidvol'    , SUM(v_il,dim=3) , ktype = jp_r8 )    !
       
       CALL iom_close( inum )
 

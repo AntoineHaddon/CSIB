@@ -53,6 +53,16 @@ The description below is a brief advertisement of some test cases.
 List of test cases
 ==================
 
+BENCH
+-----
+| Benchmark configuration. Allow to run any configuration (including ORCA type or BDY) with idealized grid
+  and initial state so it does not need any input file other than the namelists.
+  As usual, all configuration changes can be done through the namelist.
+  We provide 3 example of namelist_cfg to mimic ORCA1, OR025 or ORCA12 configurations.
+  By default do not produce any output file. An extensive description of BENCH will be abailable in
+  Irrmann et al. 2021.
+
+
 ICE_AGRIF
 ---------
 

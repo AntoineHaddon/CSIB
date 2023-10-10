@@ -365,6 +365,7 @@ MODULE ice
    !! * Global variables at before time step
    !!----------------------------------------------------------------------
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   v_s_b, v_i_b, h_s_b, h_i_b !: snow and ice volumes/thickness
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   v_ip_b, v_il_b             !: ponds and lids volumes
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   a_i_b, sv_i_b              !:
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   e_s_b                      !: snow heat content
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   e_i_b                      !: ice temperatures
@@ -391,6 +392,7 @@ MODULE ice
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   diag_vice         !: ice volume variation   [m/s] 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   diag_vsnw         !: snw volume variation   [m/s] 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   diag_aice         !: ice conc.  variation   [s-1] 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   diag_vpnd         !: pond volume variation  [m/s] 
    !
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   diag_adv_mass     !: advection of mass (kg/m2/s)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   diag_adv_salt     !: advection of salt (g/m2/s)
@@ -417,7 +419,7 @@ MODULE ice
    !
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: ice.F90 13640 2020-10-19 17:15:09Z clem $
+   !! $Id: ice.F90 14026 2020-12-03 08:48:10Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -467,7 +469,7 @@ CONTAINS
          &      vt_i (jpi,jpj) , vt_s (jpi,jpj) , st_i(jpi,jpj) , at_i(jpi,jpj) , ato_i(jpi,jpj) ,  &
          &      et_i (jpi,jpj) , et_s (jpi,jpj) , tm_i(jpi,jpj) , tm_s(jpi,jpj) ,  &
          &      sm_i (jpi,jpj) , tm_su(jpi,jpj) , hm_i(jpi,jpj) , hm_s(jpi,jpj) ,  &
-         &      om_i (jpi,jpj) , bvm_i(jpi,jpj) , tau_icebfr(jpi,jpj)            , STAT=ierr(ii) )
+         &      om_i (jpi,jpj) , bvm_i(jpi,jpj) , tau_icebfr(jpi,jpj), STAT=ierr(ii) )
 
       ii = ii + 1
       ALLOCATE( t_s(jpi,jpj,nlay_s,jpl) , e_s(jpi,jpj,nlay_s,jpl) , STAT=ierr(ii) )
@@ -485,6 +487,7 @@ CONTAINS
       ! * Old values of global variables
       ii = ii + 1
       ALLOCATE( v_s_b (jpi,jpj,jpl) , v_i_b (jpi,jpj,jpl) , h_s_b(jpi,jpj,jpl)        , h_i_b(jpi,jpj,jpl),         &
+         &      v_ip_b(jpi,jpj,jpl) , v_il_b(jpi,jpj,jpl) ,                                                         &
          &      a_i_b (jpi,jpj,jpl) , sv_i_b(jpi,jpj,jpl) , e_i_b(jpi,jpj,nlay_i,jpl) , e_s_b(jpi,jpj,nlay_s,jpl) , &
          &      STAT=ierr(ii) )
 
@@ -499,7 +502,7 @@ CONTAINS
       ii = ii + 1
       ALLOCATE( diag_trp_vi(jpi,jpj) , diag_trp_vs (jpi,jpj) , diag_trp_ei(jpi,jpj),                      & 
          &      diag_trp_es(jpi,jpj) , diag_trp_sv (jpi,jpj) , diag_heat  (jpi,jpj),                      &
-         &      diag_sice  (jpi,jpj) , diag_vice   (jpi,jpj) , diag_vsnw  (jpi,jpj), diag_aice(jpi,jpj),  &
+         &      diag_sice  (jpi,jpj) , diag_vice   (jpi,jpj) , diag_vsnw  (jpi,jpj), diag_aice(jpi,jpj), diag_vpnd(jpi,jpj),  &
          &      diag_adv_mass(jpi,jpj), diag_adv_salt(jpi,jpj), diag_adv_heat(jpi,jpj), STAT=ierr(ii) )
 
       ! * Ice conservation

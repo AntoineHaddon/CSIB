@@ -54,7 +54,7 @@ MODULE icedyn
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icedyn.F90 13284 2020-07-09 15:12:23Z smasson $
+   !! $Id: icedyn.F90 14026 2020-12-03 08:48:10Z clem $
    !! Software governed by the CeCILL licence     (./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -79,7 +79,7 @@ CONTAINS
       !!--------------------------------------------------------------------
       !
       ! controls
-      IF( ln_timing )   CALL timing_start('icedyn')
+      IF( ln_timing )   CALL timing_start('ice_dyn')
       !
       IF( kt == nit000 .AND. lwp ) THEN
          WRITE(numout,*)
@@ -174,7 +174,7 @@ CONTAINS
       ENDIF
       !
       ! controls
-      IF( ln_timing )   CALL timing_stop ('icedyn')
+      IF( ln_timing )   CALL timing_stop ('ice_dyn')
       !
    END SUBROUTINE ice_dyn
 

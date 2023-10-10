@@ -41,7 +41,7 @@ MODULE icethd_pnd
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icethd_pnd.F90 13284 2020-07-09 15:12:23Z smasson $
+   !! $Id: icethd_pnd.F90 14246 2020-12-23 13:33:55Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -82,10 +82,13 @@ CONTAINS
       !! ** References : Bush, G.W., and Trump, D.J. (2017)
       !!-------------------------------------------------------------------
       INTEGER  ::   ji        ! loop indices
+      REAL(wp) ::   zdv_pnd   ! Amount of water going into the ponds & lids
       !!-------------------------------------------------------------------
       DO ji = 1, npti
          !
-         IF( a_i_1d(ji) > 0._wp .AND. t_su_1d(ji) >= rt0 ) THEN
+         zdv_pnd = ( h_ip_1d(ji) + h_il_1d(ji) ) * a_ip_1d(ji)
+         !
+         IF( a_i_1d(ji) >= 0.01_wp .AND. t_su_1d(ji) >= rt0 ) THEN
             h_ip_1d(ji)      = rn_hpnd    
             a_ip_1d(ji)      = rn_apnd * a_i_1d(ji)
             h_il_1d(ji)      = 0._wp    ! no pond lids whatsoever
@@ -94,6 +97,9 @@ CONTAINS
             a_ip_1d(ji)      = 0._wp
             h_il_1d(ji)      = 0._wp
          ENDIF
+         !
+         zdv_pnd = ( h_ip_1d(ji) + h_il_1d(ji) ) * a_ip_1d(ji) - zdv_pnd
+         wfx_pnd_1d(ji) = wfx_pnd_1d(ji) - zdv_pnd * rhow * r1_rdtice
          !
       END DO
       !
@@ -133,11 +139,12 @@ CONTAINS
       !!
       !!                    if no lids:   Vp = Vp * exp(0.01*MAX(Tp-Tsu,0)/Tp)                      --- from Holland et al 2012 ---
       !!
-      !!              - Flushing:         w = -perm/visc * rho_oce * grav * Hp / Hi                 --- from Flocco et al 2007 ---
-      !!                                     perm = permability of sea-ice
+      !!              - Flushing:         w = -perm/visc * rho_oce * grav * Hp / Hi * flush         --- from Flocco et al 2007 ---
+      !!                                     perm = permability of sea-ice                              + correction from Hunke et al 2012 (flush)
       !!                                     visc = water viscosity
       !!                                     Hp   = height of top of the pond above sea-level
       !!                                     Hi   = ice thickness thru which there is flushing
+      !!                                     flush= correction otherwise flushing is excessive
       !!
       !!              - Corrections:      remove melt ponds when lid thickness is 10 times the pond thickness
       !!
@@ -146,24 +153,27 @@ CONTAINS
       !!
       !! ** Tunable parameters : ln_pnd_lids, rn_apnd_max, rn_apnd_min
       !! 
-      !! ** Note       :   mostly stolen from CICE
+      !! ** Note       :   mostly stolen from CICE but not only. These are between level-ice ponds and CESM ponds.
       !!
       !! ** References :   Flocco and Feltham (JGR, 2007)
       !!                   Flocco et al       (JGR, 2010)
       !!                   Holland et al      (J. Clim, 2012)
+      !!                   Hunke et al        (OM 2012)
       !!-------------------------------------------------------------------
       REAL(wp), DIMENSION(nlay_i) ::   ztmp           ! temporary array
       !!
       REAL(wp), PARAMETER ::   zaspect =  0.8_wp      ! pond aspect ratio
       REAL(wp), PARAMETER ::   zTp     = -2._wp       ! reference temperature
       REAL(wp), PARAMETER ::   zvisc   =  1.79e-3_wp  ! water viscosity
+      REAL(wp), PARAMETER ::   zflush  =  0.1_wp      ! tuning param to reduce flushing (from Hunke et al 2012)
       !!
-      REAL(wp) ::   zfr_mlt, zdv_mlt                  ! fraction and volume of available meltwater retained for melt ponding
+      REAL(wp) ::   zfr_mlt, zdv_mlt, zdv_avail       ! fraction and volume of available meltwater retained for melt ponding
       REAL(wp) ::   zdv_frz, zdv_flush                ! Amount of melt pond that freezes, flushes
+      REAL(wp) ::   zdv_pnd                           ! Amount of water going into the ponds & lids
       REAL(wp) ::   zhp                               ! heigh of top of pond lid wrt ssh
       REAL(wp) ::   zv_ip_max                         ! max pond volume allowed
       REAL(wp) ::   zdT                               ! zTp-t_su
-      REAL(wp) ::   zsbr                              ! Brine salinity
+      REAL(wp) ::   zsbr, ztmelts                     ! Brine salinity
       REAL(wp) ::   zperm                             ! permeability of sea ice
       REAL(wp) ::   zfac, zdum                        ! temporary arrays
       REAL(wp) ::   z1_rhow, z1_aspect, z1_Tp         ! inverse
@@ -175,13 +185,15 @@ CONTAINS
       z1_Tp     = 1._wp / zTp 
 
       DO ji = 1, npti
+         !
+         zdv_pnd = ( h_ip_1d(ji) + h_il_1d(ji) ) * a_ip_1d(ji)
          !                                                            !----------------------------------------------------!
-         IF( h_i_1d(ji) < rn_himin .OR. a_i_1d(ji) < epsi10 ) THEN    ! Case ice thickness < rn_himin or tiny ice fraction !
+         IF( h_i_1d(ji) < rn_himin .OR. a_i_1d(ji) < 0.01_wp ) THEN   ! Case ice thickness < rn_himin or tiny ice fraction !
             !                                                         !----------------------------------------------------!
             !--- Remove ponds on thin ice or tiny ice fractions
-            a_ip_1d(ji)      = 0._wp
-            h_ip_1d(ji)      = 0._wp
-            h_il_1d(ji)      = 0._wp
+            a_ip_1d(ji) = 0._wp
+            h_ip_1d(ji) = 0._wp
+            h_il_1d(ji) = 0._wp
             !                                                         !--------------------------------!
          ELSE                                                         ! Case ice thickness >= rn_himin !
             !                                                         !--------------------------------!
@@ -192,23 +204,26 @@ CONTAINS
             ! case ice melting !
             !------------------!
             !
-            !--- available meltwater for melt ponding ---!
-            zdum    = -( dh_i_sum(ji)*rhoi + dh_s_mlt(ji)*rhos ) * z1_rhow * a_i_1d(ji)
-            zfr_mlt = rn_apnd_min + ( rn_apnd_max - rn_apnd_min ) * at_i_1d(ji) !  = ( 1 - r ) = fraction of melt water that is not flushed
-            zdv_mlt = MAX( 0._wp, zfr_mlt * zdum ) ! max for roundoff errors? 
+            !--- available meltwater for melt ponding (zdv_avail) ---!
+            zdv_avail = -( dh_i_sum(ji)*rhoi + dh_s_mlt(ji)*rhos ) * z1_rhow * a_i_1d(ji) ! > 0
+            zfr_mlt   = rn_apnd_min + ( rn_apnd_max - rn_apnd_min ) * at_i_1d(ji) !  = ( 1 - r ) = fraction of melt water that is not flushed
+            zdv_mlt   = MAX( 0._wp, zfr_mlt * zdv_avail ) ! max for roundoff errors? 
             !
             !--- overflow ---!
-            ! If pond area exceeds zfr_mlt * a_i_1d(ji) then reduce the pond volume
-            !    a_ip_max = zfr_mlt * a_i
-            !    => from zaspect = h_ip / (a_ip / a_i), set v_ip_max as: 
+            !
+            ! area driven overflow
+            !    If pond area exceeds zfr_mlt * a_i_1d(ji) then reduce the pond volume
+            !       a_ip_max = zfr_mlt * a_i
+            !       => from zaspect = h_ip / (a_ip / a_i), set v_ip_max as: 
             zv_ip_max = zfr_mlt**2 * a_i_1d(ji) * zaspect
-            zdv_mlt = MAX( 0._wp, MIN( zdv_mlt, zv_ip_max - v_ip_1d(ji) ) )
+            zdv_mlt   = MAX( 0._wp, MIN( zdv_mlt, zv_ip_max - v_ip_1d(ji) ) )
 
-            ! If pond depth exceeds half the ice thickness then reduce the pond volume
-            !    h_ip_max = 0.5 * h_i
-            !    => from zaspect = h_ip / (a_ip / a_i), set v_ip_max as: 
+            ! depth driven overflow
+            !    If pond depth exceeds half the ice thickness then reduce the pond volume
+            !       h_ip_max = 0.5 * h_i
+            !       => from zaspect = h_ip / (a_ip / a_i), set v_ip_max as: 
             zv_ip_max = z1_aspect * a_i_1d(ji) * 0.25 * h_i_1d(ji) * h_i_1d(ji)
-            zdv_mlt = MAX( 0._wp, MIN( zdv_mlt, zv_ip_max - v_ip_1d(ji) ) )
+            zdv_mlt   = MAX( 0._wp, MIN( zdv_mlt, zv_ip_max - v_ip_1d(ji) ) )
             
             !--- Pond growing ---!
             v_ip_1d(ji) = v_ip_1d(ji) + zdv_mlt
@@ -216,16 +231,6 @@ CONTAINS
             !--- Lid melting ---!
             IF( ln_pnd_lids )   v_il_1d(ji) = MAX( 0._wp, v_il_1d(ji) - zdv_mlt ) ! must be bounded by 0
             !
-            !--- mass flux ---!
-            IF( zdv_mlt > 0._wp ) THEN
-               zfac = zdv_mlt * rhow * r1_rdtice                        ! melt pond mass flux < 0 [kg.m-2.s-1]
-               wfx_pnd_1d(ji) = wfx_pnd_1d(ji) - zfac
-               !
-               zdum = zfac / ( wfx_snw_sum_1d(ji) + wfx_sum_1d(ji) )    ! adjust ice/snow melting flux > 0 to balance melt pond flux
-               wfx_snw_sum_1d(ji) = wfx_snw_sum_1d(ji) * (1._wp + zdum)
-               wfx_sum_1d(ji)     = wfx_sum_1d(ji)     * (1._wp + zdum)
-            ENDIF
-
             !-------------------!
             ! case ice freezing ! i.e. t_su_1d(ji) < (zTp+rt0)
             !-------------------!
@@ -236,67 +241,81 @@ CONTAINS
             IF( ln_pnd_lids ) THEN
                !
                !--- Lid growing and subsequent pond shrinking ---! 
-               zdv_frz = 0.5_wp * MAX( 0._wp, -v_il_1d(ji) + & ! Flocco 2010 (eq. 5) solved implicitly as aH**2 + bH + c = 0
+               zdv_frz = - 0.5_wp * MAX( 0._wp, -v_il_1d(ji) + & ! Flocco 2010 (eq. 5) solved implicitly as aH**2 + bH + c = 0
                   &                    SQRT( v_il_1d(ji)**2 + a_ip_1d(ji)**2 * 4._wp * rcnd_i * zdT * rdt_ice / (rLfus * rhow) ) ) ! max for roundoff errors
                
                ! Lid growing
-               v_il_1d(ji) = MAX( 0._wp, v_il_1d(ji) + zdv_frz )
+               v_il_1d(ji) = MAX( 0._wp, v_il_1d(ji) - zdv_frz )
                
                ! Pond shrinking
-               v_ip_1d(ji) = MAX( 0._wp, v_ip_1d(ji) - zdv_frz )
+               v_ip_1d(ji) = MAX( 0._wp, v_ip_1d(ji) + zdv_frz )
 
             ELSE
+               zdv_frz = v_ip_1d(ji) * ( EXP( 0.01_wp * zdT * z1_Tp ) - 1._wp )  ! Holland 2012 (eq. 6) 
                ! Pond shrinking
-               v_ip_1d(ji) = v_ip_1d(ji) * EXP( 0.01_wp * zdT * z1_Tp ) ! Holland 2012 (eq. 6)
+               v_ip_1d(ji) = MAX( 0._wp, v_ip_1d(ji) + zdv_frz )
             ENDIF
             !
             !--- Set new pond area and depth ---! assuming linear relation between h_ip and a_ip_frac
             ! v_ip     = h_ip * a_ip
             ! a_ip/a_i = a_ip_frac = h_ip / zaspect (cf Holland 2012, fitting SHEBA so that knowing v_ip we can distribute it to a_ip and h_ip)
-            a_ip_1d(ji)      = MIN( a_i_1d(ji), SQRT( v_ip_1d(ji) * z1_aspect * a_i_1d(ji) ) ) ! make sure a_ip < a_i
-            h_ip_1d(ji)      = zaspect * a_ip_1d(ji) / a_i_1d(ji)
-
-            !---------------!            
-            ! Pond flushing !
-            !---------------!
+            a_ip_1d(ji) = MIN( a_i_1d(ji), SQRT( v_ip_1d(ji) * z1_aspect * a_i_1d(ji) ) ) ! make sure a_ip < a_i
+            h_ip_1d(ji) = zaspect * a_ip_1d(ji) / a_i_1d(ji)
+            
+            !------------------------------------------------!            
+            ! Pond drainage through brine network (flushing) !
+            !------------------------------------------------!
             ! height of top of the pond above sea-level
             zhp = ( h_i_1d(ji) * ( rau0 - rhoi ) + h_ip_1d(ji) * ( rau0 - rhow * a_ip_1d(ji) / a_i_1d(ji) ) ) * r1_rau0
             
             ! Calculate the permeability of the ice (Assur 1958, see Flocco 2010)
             DO jk = 1, nlay_i
-               zsbr = - 1.2_wp                                  &
-                  &   - 21.8_wp    * ( t_i_1d(ji,jk) - rt0 )    &
-                  &   - 0.919_wp   * ( t_i_1d(ji,jk) - rt0 )**2 &
-                  &   - 0.0178_wp  * ( t_i_1d(ji,jk) - rt0 )**3
-               ztmp(jk) = sz_i_1d(ji,jk) / zsbr
+               ! MV Assur is inconsistent with SI3
+               !!zsbr = - 1.2_wp                                  &
+               !!   &   - 21.8_wp    * ( t_i_1d(ji,jk) - rt0 )    &
+               !!   &   - 0.919_wp   * ( t_i_1d(ji,jk) - rt0 )**2 &
+               !!   &   - 0.0178_wp  * ( t_i_1d(ji,jk) - rt0 )**3
+               !!ztmp(jk) = sz_i_1d(ji,jk) / zsbr
+               ! MV linear expression more consistent & simpler: zsbr = - ( t_i_1d(ji,jk) - rt0 ) / rTmlt
+               ztmelts  = -rTmlt * sz_i_1d(ji,jk)
+               ztmp(jk) = ztmelts / MIN( ztmelts, t_i_1d(ji,jk) - rt0 )
             END DO
             zperm = MAX( 0._wp, 3.e-08_wp * MINVAL(ztmp)**3 )
             
             ! Do the drainage using Darcy's law
-            zdv_flush   = -zperm * rau0 * grav * zhp * rdt_ice / (zvisc * h_i_1d(ji)) * a_ip_1d(ji)
-            zdv_flush   = MAX( zdv_flush, -v_ip_1d(ji) )
+            zdv_flush   = -zperm * rau0 * grav * zhp * rdt_ice / (zvisc * h_i_1d(ji)) * a_ip_1d(ji) * zflush ! zflush comes from Hunke et al. (2012)
+            zdv_flush   = MAX( zdv_flush, -v_ip_1d(ji) ) ! < 0 
             v_ip_1d(ji) = v_ip_1d(ji) + zdv_flush
             
             !--- Set new pond area and depth ---! assuming linear relation between h_ip and a_ip_frac
-            a_ip_1d(ji)      = MIN( a_i_1d(ji), SQRT( v_ip_1d(ji) * z1_aspect * a_i_1d(ji) ) ) ! make sure a_ip < a_i
-            h_ip_1d(ji)      = zaspect * a_ip_1d(ji) / a_i_1d(ji)
+            a_ip_1d(ji) = MIN( a_i_1d(ji), SQRT( v_ip_1d(ji) * z1_aspect * a_i_1d(ji) ) ) ! make sure a_ip < a_i
+            h_ip_1d(ji) = zaspect * a_ip_1d(ji) / a_i_1d(ji)
 
             !--- Corrections and lid thickness ---!
             IF( ln_pnd_lids ) THEN
                !--- retrieve lid thickness from volume ---!
-               IF( a_ip_1d(ji) > epsi10 ) THEN   ;   h_il_1d(ji) = v_il_1d(ji) / a_ip_1d(ji)
-               ELSE                              ;   h_il_1d(ji) = 0._wp
+               IF( a_ip_1d(ji) > 0.01_wp ) THEN   ;   h_il_1d(ji) = v_il_1d(ji) / a_ip_1d(ji)
+               ELSE                               ;   h_il_1d(ji) = 0._wp
                ENDIF
                !--- remove ponds if lids are much larger than ponds ---!
                IF ( h_il_1d(ji) > h_ip_1d(ji) * 10._wp ) THEN
-                  a_ip_1d(ji)      = 0._wp
-                  h_ip_1d(ji)      = 0._wp
-                  h_il_1d(ji)      = 0._wp
+                  a_ip_1d(ji) = 0._wp
+                  h_ip_1d(ji) = 0._wp
+                  h_il_1d(ji) = 0._wp
                ENDIF
             ENDIF
+
+!!$            ! diagnostics: dvpnd = mlt+rnf+frz+drn
+!!$            diag_dvpn_mlt_1d(ji) = diag_dvpn_mlt_1d(ji) + rhow *   zdv_avail             * r1_rdtice   ! > 0, surface melt input
+!!$            diag_dvpn_rnf_1d(ji) = diag_dvpn_rnf_1d(ji) + rhow * ( zdv_mlt - zdv_avail ) * r1_rdtice   ! < 0, runoff
+!!$            diag_dvpn_frz_1d(ji) = diag_dvpn_frz_1d(ji) + rhow *   zdv_frz               * r1_rdtice   ! < 0, shrinking
+!!$            diag_dvpn_drn_1d(ji) = diag_dvpn_drn_1d(ji) + rhow *   zdv_flush             * r1_rdtice   ! < 0, drainage
             !
          ENDIF
-         
+         !
+         zdv_pnd = ( h_ip_1d(ji) + h_il_1d(ji) ) * a_ip_1d(ji) - zdv_pnd
+         wfx_pnd_1d(ji) = wfx_pnd_1d(ji) - zdv_pnd * rhow * r1_rdtice
+         !
       END DO
       !
    END SUBROUTINE pnd_LEV

@@ -58,6 +58,11 @@ run a NEMO regional configuration.
 
 .. _here: https://prodn.idris.fr/thredds/catalog/ipsl_public/rron463/catalog.html
 
+Option 4: Use the nesting tools to create embedded zooms or regional configurations from an existing grid
+---------------------------------------------------------------------------------------------------------
+(see :download:`NESTING README <../../../tools/NESTING/README>`).
+
+
 Creating a completely new configuration
 =======================================
 

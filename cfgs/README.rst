@@ -239,7 +239,7 @@ it uses the NCAR bulk formulae.
 :convection:
    The vertical eddy viscosity and diffusivity coefficients are increased to 1 m\ :sup:`2`/s in
    case of static instability.
-:time step: is 5760sec (1h36') so that there is 15 time steps in one day.
+:time step: is 5400sec (1h30') so that there is 16 time steps in one day.
 
 ORCA2_OFF_PISCES
 ----------------
