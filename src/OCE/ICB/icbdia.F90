@@ -85,12 +85,12 @@ MODULE icbdia
 
    INTEGER                       ::  nbergs_start, nbergs_end, nbergs_calved
    INTEGER                       ::  nbergs_melted
-   INTEGER                       ::  nspeeding_tickets
+   INTEGER                       ::  nspeeding_tickets, nspeeding_tickets_all
    INTEGER , DIMENSION(nclasses) ::  nbergs_calved_by_class
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: icbdia.F90 10570 2019-01-24 15:14:49Z acc $
+   !! $Id: icbdia.F90 14372 2021-02-02 17:42:36Z mathiot $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -124,6 +124,7 @@ CONTAINS
       nbergs_calved             = 0
       nbergs_calved_by_class(:) = 0
       nspeeding_tickets         = 0
+      nspeeding_tickets_all     = 0
       stored_heat_end           = 0._wp
       floating_heat_end         = 0._wp
       floating_mass_end         = 0._wp
@@ -270,10 +271,10 @@ CONTAINS
             END DO
             CALL mpp_sum( 'icbdia', nsumbuf(1:nclasses+4), nclasses+4 )
             !
-            nbergs_end        = nsumbuf(1)
-            nbergs_calved     = nsumbuf(2)
-            nbergs_melted     = nsumbuf(3)
-            nspeeding_tickets = nsumbuf(4)
+            nbergs_end            = nsumbuf(1)
+            nbergs_calved         = nsumbuf(2)
+            nbergs_melted         = nsumbuf(3)
+            nspeeding_tickets_all = nsumbuf(4)
             DO ik = 1,nclasses
                nbergs_calved_by_class(ik)= nsumbuf(4+ik)
             END DO
@@ -328,7 +329,10 @@ CONTAINS
          ENDIF
          IF (nn_verbose_level > 0) THEN
             WRITE( numicb, '("calved by class = ",i6,20(",",i6))') (nbergs_calved_by_class(ik),ik=1,nclasses)
-            IF( nspeeding_tickets > 0 )   WRITE( numicb, '("speeding tickets issued = ",i6)') nspeeding_tickets
+            IF( nspeeding_tickets_all > 0 ) THEN
+                WRITE( numicb, '("speeding tickets issued (this domain)  = ",i6)') nspeeding_tickets
+                WRITE( numicb, '("speeding tickets issued (all domains)  = ",i6)') nspeeding_tickets_all
+            END IF
          ENDIF
          !
          nbergs_start              = nbergs_end
@@ -337,6 +341,7 @@ CONTAINS
          nbergs_calved             = 0
          nbergs_calved_by_class(:) = 0
          nspeeding_tickets         = 0
+         nspeeding_tickets_all     = 0
          stored_heat_start         = stored_heat_end
          floating_heat_start       = floating_heat_end
          floating_mass_start       = floating_mass_end

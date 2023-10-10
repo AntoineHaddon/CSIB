@@ -74,7 +74,7 @@ MODULE sbcwave
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: sbcwave.F90 13255 2020-07-06 15:41:29Z acc $
+   !! $Id: sbcwave.F90 14588 2021-03-05 07:42:07Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -219,6 +219,7 @@ CONTAINS
       !
       !                       !==  vertical Stokes Drift 3D velocity  ==!
       !
+      ze3divh(:,:,jpk) = 0._wp
       DO jk = 1, jpkm1               ! Horizontal e3*divergence
          DO jj = 2, jpj
             DO ji = fs_2, jpi

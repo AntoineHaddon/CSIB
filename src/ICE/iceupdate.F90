@@ -48,7 +48,7 @@ MODULE iceupdate
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: iceupdate.F90 14026 2020-12-03 08:48:10Z clem $
+   !! $Id: iceupdate.F90 14590 2021-03-05 13:21:05Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -105,7 +105,12 @@ CONTAINS
 
       ! Net heat flux on top of the ice-ocean (W.m-2)
       !----------------------------------------------
-      qt_atm_oi(:,:) = qns_tot(:,:) + qsr_tot(:,:) 
+      IF( ln_cndflx ) THEN   ! ice-atm interface = conduction (and melting) fluxes
+         qt_atm_oi(:,:) = ( 1._wp - at_i_b(:,:) ) * ( qns_oce(:,:) + qsr_oce(:,:) ) + qemp_oce(:,:) + &
+            &             SUM( a_i_b * ( qcn_ice + qml_ice + qtr_ice_top ), dim=3 ) + qemp_ice(:,:)
+      ELSE                   ! ice-atm interface = solar and non-solar fluxes
+         qt_atm_oi(:,:) = qns_tot(:,:) + qsr_tot(:,:) 
+      ENDIF
 
       ! --- case we bypass ice thermodynamics --- !
       IF( .NOT. ln_icethd ) THEN   ! we suppose ice is impermeable => ocean is isolated from atmosphere
@@ -121,15 +126,21 @@ CONTAINS
 
             ! Solar heat flux reaching the ocean (max) = zqsr (W.m-2) 
             !---------------------------------------------------
-            zqsr = qsr_tot(ji,jj) - SUM( a_i_b(ji,jj,:) * ( qsr_ice(ji,jj,:) - qtr_ice_bot(ji,jj,:) ) )
-
-            ! Total heat flux reaching the ocean = qt_oce_ai (W.m-2)
+            IF( ln_cndflx ) THEN   ! ice-atm interface = conduction (and melting) fluxes
+               zqsr = ( 1._wp - at_i_b(ji,jj) ) * qsr_oce(ji,jj) + SUM( a_i_b (ji,jj,:) * qtr_ice_bot(ji,jj,:) )
+            ELSE                   ! ice-atm interface = solar and non-solar fluxes
+               zqsr = qsr_tot(ji,jj) - SUM( a_i_b(ji,jj,:) * ( qsr_ice(ji,jj,:) - qtr_ice_bot(ji,jj,:) ) )
+            ENDIF
+         
+            ! Total heat flux reaching the ocean = qt_oce_ai (W.m-2) 
             !---------------------------------------------------
-            qt_oce_ai(ji,jj) = qt_atm_oi(ji,jj) - hfx_sum(ji,jj) - hfx_bom(ji,jj) - hfx_bog(ji,jj) &
-               &                                - hfx_dif(ji,jj) - hfx_opw(ji,jj) - hfx_snw(ji,jj) &
-               &                                + hfx_thd(ji,jj) + hfx_dyn(ji,jj) + hfx_res(ji,jj) &
-               &                                + hfx_sub(ji,jj) - SUM( qevap_ice(ji,jj,:) * a_i_b(ji,jj,:) ) + hfx_spr(ji,jj)                 
-            
+            IF( ln_icethd ) THEN
+               qt_oce_ai(ji,jj) = qt_atm_oi(ji,jj) - hfx_sum(ji,jj) - hfx_bom(ji,jj) - hfx_bog(ji,jj) &
+                  &                                - hfx_dif(ji,jj) - hfx_opw(ji,jj) - hfx_snw(ji,jj) &
+                  &                                + hfx_thd(ji,jj) + hfx_dyn(ji,jj) + hfx_res(ji,jj) &
+                  &                                + hfx_sub(ji,jj) - SUM( qevap_ice(ji,jj,:) * a_i_b(ji,jj,:) ) + hfx_spr(ji,jj)
+            ENDIF
+         
             ! New qsr and qns used to compute the oceanic heat flux at the next time step
             !----------------------------------------------------------------------------
             ! if warming and some ice remains, then we suppose that the whole solar flux has been consumed to melt the ice
@@ -146,7 +157,7 @@ CONTAINS
             ENDIF
             !
             ! the non-solar is simply derived from the solar flux
-            qns(ji,jj) = qt_oce_ai(ji,jj) - zqsr              
+            qns(ji,jj) = qt_oce_ai(ji,jj) - qsr(ji,jj)              
 
             ! Mass flux at the atm. surface
             !-----------------------------------
@@ -278,9 +289,12 @@ CONTAINS
       CALL iom_put ('hfxspr'     , hfx_spr     )   ! Heat flux from snow precip heat content
 
       ! other heat fluxes
-      IF( iom_use('hfxsensib'  ) )   CALL iom_put( 'hfxsensib'  ,     -qsb_ice_bot * at_i_b         )   ! Sensible oceanic heat flux
+      IF( iom_use('hfxsensib'  ) )   CALL iom_put( 'hfxsensib'  ,      qsb_ice_bot * at_i_b         )   ! Sensible oceanic heat flux
       IF( iom_use('hfxcndbot'  ) )   CALL iom_put( 'hfxcndbot'  , SUM( qcn_ice_bot * a_i_b, dim=3 ) )   ! Bottom conduction flux
       IF( iom_use('hfxcndtop'  ) )   CALL iom_put( 'hfxcndtop'  , SUM( qcn_ice_top * a_i_b, dim=3 ) )   ! Surface conduction flux
+!!    IF( iom_use('hfxmelt'    ) )   CALL iom_put( 'hfxmelt'    , SUM( qml_ice     * a_i_b, dim=3 ) )   ! Surface melt flux
+!!    IF( iom_use('hfxldmelt'  ) )   CALL iom_put( 'hfxldmelt'  ,      fhld        * at_i_b         )   ! Heat in lead for ice melting 
+!!    IF( iom_use('hfxldgrow'  ) )   CALL iom_put( 'hfxldgrow'  ,      qlead       * r1_rdtice      )   ! Heat in lead for ice growth
 
       ! controls
       !---------

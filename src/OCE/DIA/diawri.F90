@@ -79,7 +79,7 @@ MODULE diawri
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: diawri.F90 13085 2020-06-10 08:59:29Z davestorkey $
+   !! $Id: diawri.F90 14580 2021-03-04 09:32:30Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -210,21 +210,24 @@ CONTAINS
          CALL iom_put( "sbv", z2d )                ! bottom j-current
       ENDIF
 
-      IF( ln_zad_Aimp ) wn = wn + wi               ! Recombine explicit and implicit parts of vertical velocity for diagnostic output
-      !
-      CALL iom_put( "woce", wn )                   ! vertical velocity
+      !                                            ! vertical velocity
+      IF( ln_zad_Aimp ) THEN   ;   CALL iom_put( "woce", wn + wi )   ! explicit plus implicit parts
+      ELSE                     ;   CALL iom_put( "woce", wn )
+      ENDIF
+
       IF( iom_use('w_masstr') .OR. iom_use('w_masstr2') ) THEN   ! vertical mass transport & its square value
-         ! Caution: in the VVL case, it only correponds to the baroclinic mass transport.
-         z2d(:,:) = rau0 * e1e2t(:,:)
+         !                     ! Caution: in the VVL case, it only correponds to the baroclinic mass transport.
          DO jk = 1, jpk
-            z3d(:,:,jk) = wn(:,:,jk) * z2d(:,:)
+            IF( ln_zad_Aimp ) THEN
+               z3d(:,:,jk) = rau0 * e1e2t(:,:) * ( wn(:,:,jk) + wi(:,:,jk) )
+            ELSE
+               z3d(:,:,jk) = rau0 * e1e2t(:,:) * wn(:,:,jk)
+            ENDIF
          END DO
          CALL iom_put( "w_masstr" , z3d )  
-         IF( iom_use('w_masstr2') )   CALL iom_put( "w_masstr2", z3d(:,:,:) * z3d(:,:,:) )
+         IF( iom_use('w_masstr2') )   CALL iom_put( "w_masstr2", z3d * z3d )
       ENDIF
-      !
-      IF( ln_zad_Aimp ) wn = wn - wi               ! Remove implicit part of vertical velocity that was added for diagnostic output
-
+      
       CALL iom_put( "avt" , avt )                  ! T vert. eddy diff. coef.
       CALL iom_put( "avs" , avs )                  ! S vert. eddy diff. coef.
       CALL iom_put( "avm" , avm )                  ! T vert. eddy visc. coef.

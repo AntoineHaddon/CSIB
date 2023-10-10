@@ -73,7 +73,7 @@ MODULE cpl_oasis3
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: cpl_oasis3.F90 12528 2020-03-09 17:10:39Z smasson $
+   !! $Id: cpl_oasis3.F90 14435 2021-02-11 08:30:20Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -292,7 +292,7 @@ CONTAINS
       !------------------------------------------------------------------
       !
 #if defined key_agrif
-      IF( agrif_fixed() == Agrif_Nb_Fine_Grids() ) THEN
+      IF( agrif_fixed() == Agrif_Nb_Fine_Grids() .AND. .NOT. Agrif_Root() ) THEN
 #endif
       CALL oasis_enddef(nerror)
       IF( nerror /= OASIS_Ok )   CALL oasis_abort ( ncomp_id, 'cpl_define', 'Failure in oasis_enddef')

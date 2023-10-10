@@ -38,7 +38,7 @@ MODULE icesbc
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icesbc.F90 14026 2020-12-03 08:48:10Z clem $
+   !! $Id: icesbc.F90 14590 2021-03-05 13:21:05Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -139,13 +139,13 @@ CONTAINS
                                   CALL usrdef_sbc_ice_flx( kt, h_s, h_i )
       CASE( jp_blk )              !--- bulk formulation
                                   CALL blk_ice_flx    ( t_su, h_s, h_i, alb_ice )    ! 
-         IF( ln_mixcpl        )   CALL sbc_cpl_ice_flx( picefr=at_i_b, palbi=alb_ice, psst=sst_m, pist=t_su, phs=h_s, phi=h_i )
+         IF( ln_mixcpl        )   CALL sbc_cpl_ice_flx( kt, picefr=at_i_b, palbi=alb_ice, psst=sst_m, pist=t_su, phs=h_s, phi=h_i )
          IF( nn_flxdist /= -1 )   CALL ice_flx_dist   ( t_su, alb_ice, qns_ice, qsr_ice, dqns_ice, evap_ice, devap_ice, nn_flxdist )
          !                        !    compute conduction flux and surface temperature (as in Jules surface module)
          IF( ln_cndflx .AND. .NOT.ln_cndemulate ) &
             &                     CALL blk_ice_qcn    ( ln_virtual_itd, t_su, t_bo, h_s, h_i )
       CASE ( jp_purecpl )         !--- coupled formulation
-                                  CALL sbc_cpl_ice_flx( picefr=at_i_b, palbi=alb_ice, psst=sst_m, pist=t_su, phs=h_s, phi=h_i )
+                                  CALL sbc_cpl_ice_flx( kt, picefr=at_i_b, palbi=alb_ice, psst=sst_m, pist=t_su, phs=h_s, phi=h_i )
          IF( nn_flxdist /= -1 )   CALL ice_flx_dist   ( t_su, alb_ice, qns_ice, qsr_ice, dqns_ice, evap_ice, devap_ice, nn_flxdist )
       END SELECT
 

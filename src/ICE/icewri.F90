@@ -36,7 +36,7 @@ MODULE icewri
 
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icewri.F90 13284 2020-07-09 15:12:23Z smasson $
+   !! $Id: icewri.F90 14588 2021-03-05 07:42:07Z clem $
    !! Software governed by the CeCILL licence     (./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -254,13 +254,15 @@ CONTAINS
       CALL iom_rstput( 0, 0, kid, 'snwpre', sprecip      )   ! Snow precipitation
       CALL iom_rstput( 0, 0, kid, 'sisali', sm_i         )   ! Ice salinity
       CALL iom_rstput( 0, 0, kid, 'sivolu', vt_i         )   ! Ice volume
-      CALL iom_rstput( 0, 0, kid, 'sidive', divu_i*1.0e8 )   ! Ice divergence
       CALL iom_rstput( 0, 0, kid, 'si_amp', at_ip        )   ! Melt pond fraction
       CALL iom_rstput( 0, 0, kid, 'si_vmp', vt_ip        )   ! Melt pond volume
       CALL iom_rstput( 0, 0, kid, 'sithicat', h_i        )   ! Ice thickness
       CALL iom_rstput( 0, 0, kid, 'siconcat', a_i        )   ! Ice concentration
       CALL iom_rstput( 0, 0, kid, 'sisalcat', s_i        )   ! Ice salinity
       CALL iom_rstput( 0, 0, kid, 'snthicat', h_s        )   ! Snw thickness
+      IF( ln_icedyn ) THEN
+         CALL iom_rstput( 0, 0, kid, 'sidive', divu_i*1.e8 ) ! Ice divergence
+      ENDIF
 
     END SUBROUTINE ice_wri_state
 

@@ -33,7 +33,7 @@ MODULE p4zsed
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: p4zsed.F90 12276 2019-12-20 11:14:26Z cetlod $ 
+   !! $Id: p4zsed.F90 14588 2021-03-05 07:42:07Z clem $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -490,6 +490,8 @@ CONTAINS
       ALLOCATE( nitrpot(jpi,jpj,jpk), sdenit(jpi,jpj), STAT=p4z_sed_alloc )
       !
       IF( p4z_sed_alloc /= 0 )   CALL ctl_stop( 'STOP', 'p4z_sed_alloc: failed to allocate arrays' )
+      !
+      nitrpot(:,:,jpk) = 0._wp ! initialization 
       !
    END FUNCTION p4z_sed_alloc
 

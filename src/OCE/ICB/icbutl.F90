@@ -48,7 +48,7 @@ MODULE icbutl
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: icbutl.F90 13263 2020-07-08 07:55:54Z ayoung $
+   !! $Id: icbutl.F90 14372 2021-02-02 17:42:36Z mathiot $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -427,7 +427,12 @@ CONTAINS
       IF( ii == jpi ) THEN ; ii = ii-1 ; ierr = ierr + 1 ; END IF     
       IF( ij == jpj ) THEN ; ij = ij-1 ; ierr = ierr + 1 ; END IF
       !
-      IF ( ierr > 0 ) CALL ctl_stop('STOP','icb_utl_bilin_e: an icebergs coordinates is out of valid range (out of bound error)')
+      IF ( ierr > 0 ) THEN
+          CALL FLUSH(numicb)
+          CALL ctl_stop('STOP','icb_utl_bilin_e: an icebergs coordinates is out of valid range (out of bound error).'       , &
+               &                                'This can be fixed using rn_speed_limit=0.4 in &namberg.'                   , &
+               &                                'More details in the corresponding iceberg.stat file (nn_verbose_level > 0).' )
+      END IF
       !
       IF(    0.0_wp <= zi .AND. zi < 0.5_wp   ) THEN
          IF( 0.0_wp <= zj .AND. zj < 0.5_wp        )   THEN        !  NE quadrant

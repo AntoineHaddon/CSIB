@@ -124,6 +124,7 @@ MODULE sbccpl
    INTEGER, PARAMETER ::   jpr_tauwx  = 55   ! x component of the ocean stress from waves
    INTEGER, PARAMETER ::   jpr_tauwy  = 56   ! y component of the ocean stress from waves
    INTEGER, PARAMETER ::   jpr_ts_ice = 57   ! Sea ice surface temp
+   !!INTEGER, PARAMETER ::   jpr_qtrice = 58   ! Transmitted solar thru sea-ice
 
    INTEGER, PARAMETER ::   jprcv      = 57   ! total number of fields received
 
@@ -189,6 +190,8 @@ MODULE sbccpl
    TYPE(FLD_C) ::   sn_rcv_hsig, sn_rcv_phioc, sn_rcv_sdrfx, sn_rcv_sdrfy, sn_rcv_wper, sn_rcv_wnum, sn_rcv_tauwoc, &
                     sn_rcv_wdrag, sn_rcv_wfreq
    !                                   ! Other namelist parameters
+!!   TYPE(FLD_C) ::   sn_rcv_qtrice
+!!   !                                   ! Other namelist parameters
    INTEGER     ::   nn_cplmodel           ! Maximum number of models to/from which NEMO is potentialy sending/receiving data
    LOGICAL     ::   ln_usecplmask         !  use a coupling mask file to merge data received from several models
                                           !   -> file cplmask.nc with the float variable called cplmask (jpi,jpj,nn_cplmodel)
@@ -214,7 +217,7 @@ MODULE sbccpl
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: sbccpl.F90 14101 2020-12-04 15:13:54Z clem $
+   !! $Id: sbccpl.F90 14590 2021-03-05 13:21:05Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -223,7 +226,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       !!             ***  FUNCTION sbc_cpl_alloc  ***
       !!----------------------------------------------------------------------
-      INTEGER :: ierr(5)
+      INTEGER :: ierr(4)
       !!----------------------------------------------------------------------
       ierr(:) = 0
       !
@@ -233,11 +236,8 @@ CONTAINS
       ALLOCATE( a_i(jpi,jpj,1) , STAT=ierr(2) )  ! used in sbcice_if.F90 (done here as there is no sbc_ice_if_init)
 #endif
       ALLOCATE( xcplmask(jpi,jpj,0:nn_cplmodel) , STAT=ierr(3) )
-#if defined key_si3 || defined key_cice
-      ALLOCATE( a_i_last_couple(jpi,jpj,jpl) , STAT=ierr(4) )
-#endif
       !
-      IF( .NOT. ln_apr_dyn ) ALLOCATE( ssh_ib(jpi,jpj), ssh_ibb(jpi,jpj), apr(jpi, jpj), STAT=ierr(5) )
+      IF( .NOT. ln_apr_dyn ) ALLOCATE( ssh_ib(jpi,jpj), ssh_ibb(jpi,jpj), apr(jpi, jpj), STAT=ierr(4) )
 
       sbc_cpl_alloc = MAXVAL( ierr )
       CALL mpp_sum ( 'sbccpl', sbc_cpl_alloc )
@@ -273,7 +273,7 @@ CONTAINS
          &                  sn_rcv_wdrag , sn_rcv_qns   , sn_rcv_emp  , sn_rcv_rnf   , sn_rcv_cal   ,  &
          &                  sn_rcv_iceflx, sn_rcv_co2   , sn_rcv_mslp ,                                &
          &                  sn_rcv_icb   , sn_rcv_isf   , sn_rcv_wfreq, sn_rcv_tauw  ,                 &
-         &                  sn_rcv_ts_ice
+         &                  sn_rcv_ts_ice !!, sn_rcv_qtrice
       !!---------------------------------------------------------------------
       !
       ! ================================ !
@@ -315,6 +315,7 @@ CONTAINS
          WRITE(numout,*)'      iceberg                         = ', TRIM(sn_rcv_icb%cldes   ), ' (', TRIM(sn_rcv_icb%clcat   ), ')'
          WRITE(numout,*)'      ice shelf                       = ', TRIM(sn_rcv_isf%cldes   ), ' (', TRIM(sn_rcv_isf%clcat   ), ')'
          WRITE(numout,*)'      sea ice heat fluxes             = ', TRIM(sn_rcv_iceflx%cldes), ' (', TRIM(sn_rcv_iceflx%clcat), ')'
+!!       WRITE(numout,*)'      transmitted solar thru sea-ice  = ', TRIM(sn_rcv_qtrice%cldes), ' (', TRIM(sn_rcv_qtrice%clcat), ')'
          WRITE(numout,*)'      atm co2                         = ', TRIM(sn_rcv_co2%cldes   ), ' (', TRIM(sn_rcv_co2%clcat   ), ')'
          WRITE(numout,*)'      significant wave heigth         = ', TRIM(sn_rcv_hsig%cldes  ), ' (', TRIM(sn_rcv_hsig%clcat  ), ')'
          WRITE(numout,*)'      wave to oce energy flux         = ', TRIM(sn_rcv_phioc%cldes ), ' (', TRIM(sn_rcv_phioc%clcat ), ')'
@@ -580,9 +581,9 @@ CONTAINS
       !                                                      ! ------------------------- !
       srcv(jpr_mslp)%clname = 'O_MSLP'     ;   IF( TRIM(sn_rcv_mslp%cldes  ) == 'coupled' )    srcv(jpr_mslp)%laction = .TRUE.
       !
-      !                                                      ! ------------------------- !
-      !                                                      !  ice topmelt and botmelt  !
-      !                                                      ! ------------------------- !
+      !                                                      ! --------------------------------- !
+      !                                                      !  ice topmelt and conduction flux  !   
+      !                                                      ! --------------------------------- !
       srcv(jpr_topm )%clname = 'OTopMlt'
       srcv(jpr_botm )%clname = 'OBotMlt'
       IF( TRIM(sn_rcv_iceflx%cldes) == 'coupled' ) THEN
@@ -593,6 +594,19 @@ CONTAINS
          ENDIF
          srcv(jpr_topm:jpr_botm)%laction = .TRUE.
       ENDIF
+!!      !                                                      ! --------------------------- !
+!!      !                                                      ! transmitted solar thru ice  !   
+!!      !                                                      ! --------------------------- !
+!!      srcv(jpr_qtrice)%clname = 'OQtr'
+!!      IF( TRIM(sn_rcv_qtrice%cldes) == 'coupled' ) THEN
+!!         IF ( TRIM( sn_rcv_qtrice%clcat ) == 'yes' ) THEN
+!!            srcv(jpr_qtrice)%nct = nn_cats_cpl
+!!         ELSE
+!!           CALL ctl_stop( 'sbc_cpl_init: sn_rcv_qtrice%clcat should always be set to yes currently' )
+!!         ENDIF
+!!         srcv(jpr_qtrice)%laction = .TRUE.
+!!      ENDIF
+
       !                                                      ! ------------------------- !
       !                                                      !    ice skin temperature   !
       !                                                      ! ------------------------- !
@@ -855,13 +869,9 @@ CONTAINS
       CASE default   ;   CALL ctl_stop( 'sbc_cpl_init: wrong definition of sn_snd_thick%cldes' )
       END SELECT
 
-      ! Initialise ice fractions from last coupling time to zero (needed by Met-Office)
-#if defined key_si3 || defined key_cice
-       IF (ALLOCATED(a_i_last_couple)) a_i_last_couple(:,:,:) = 0._wp
-#endif
-      !                                                      ! ------------------------- !
-      !                                                      !      Ice Meltponds        !
-      !                                                      ! ------------------------- !
+      !                                                      ! ------------------------- ! 
+      !                                                      !      Ice Meltponds        ! 
+      !                                                      ! ------------------------- ! 
       ! Needed by Met Office
       ssnd(jps_a_p)%clname  = 'OPndFrc'
       ssnd(jps_ht_p)%clname = 'OPndTck'
@@ -1535,8 +1545,8 @@ CONTAINS
       !!
       !! ** Action  :   return ptau_i, ptau_j, the stress over the ice
       !!----------------------------------------------------------------------
-      REAL(wp), INTENT(out), DIMENSION(:,:) ::   p_taui   ! i- & j-components of atmos-ice stress [N/m2]
-      REAL(wp), INTENT(out), DIMENSION(:,:) ::   p_tauj   ! at I-point (B-grid) or U & V-point (C-grid)
+      REAL(wp), INTENT(inout), DIMENSION(:,:) ::   p_taui   ! i- & j-components of atmos-ice stress [N/m2]
+      REAL(wp), INTENT(inout), DIMENSION(:,:) ::   p_tauj   ! at I-point (B-grid) or U & V-point (C-grid)
       !!
       INTEGER ::   ji, jj   ! dummy loop indices
       INTEGER ::   itx      ! index of taux over ice
@@ -1544,7 +1554,9 @@ CONTAINS
       REAL(wp), DIMENSION(jpi,jpj) ::   ztx, zty
       !!----------------------------------------------------------------------
       !
-      IF( srcv(jpr_itx1)%laction ) THEN   ;   itx =  jpr_itx1
+#if defined key_si3 || defined key_cice
+      !
+      IF( srcv(jpr_itx1)%laction ) THEN   ;   itx =  jpr_itx1   
       ELSE                                ;   itx =  jpr_otx1
       ENDIF
 
@@ -1619,10 +1631,12 @@ CONTAINS
 
       ENDIF
       !
+#endif
+      !
    END SUBROUTINE sbc_cpl_ice_tau
 
 
-   SUBROUTINE sbc_cpl_ice_flx( picefr, palbi, psst, pist, phs, phi )
+   SUBROUTINE sbc_cpl_ice_flx( kt, picefr, palbi, psst, pist, phs, phi )
       !!----------------------------------------------------------------------
       !!             ***  ROUTINE sbc_cpl_ice_flx  ***
       !!
@@ -1664,6 +1678,13 @@ CONTAINS
       !!                                                                      runoff (which includes rivers+icebergs) and iceshelf
       !!                                                                      are provided but not included in emp here. Only runoff will
       !!                                                                      be included in emp in other parts of NEMO code
+      !!
+      !! ** Note : In case of the ice-atm coupling with conduction fluxes (such as Jules interface for the Met-Office),
+      !!              qsr_ice and qns_ice are not provided and they are not supposed to be used in the ice code.
+      !!              However, by precaution we also "fake" qns_ice and qsr_ice this way:
+      !!              qns_ice = qml_ice + qcn_ice ??
+      !!              qsr_ice = qtr_ice_top ??
+      !!
       !! ** Action  :   update at each nf_ice time step:
       !!                   qns_tot, qsr_tot  non-solar and solar total heat fluxes
       !!                   qns_ice, qsr_ice  non-solar and solar heat fluxes over the ice
@@ -1672,6 +1693,7 @@ CONTAINS
       !!                   dqns_ice          d(non-solar heat flux)/d(Temperature) over the ice
       !!                   sprecip           solid precipitation over the ocean
       !!----------------------------------------------------------------------
+      INTEGER,  INTENT(in)                                ::   kt         ! ocean model time step index (only for a_i_last_couple)
       REAL(wp), INTENT(in)   , DIMENSION(:,:)             ::   picefr     ! ice fraction                [0 to 1]
       !                                                   !!           ! optional arguments, used only in 'mixed oce-ice' case or for Met-Office coupling
       REAL(wp), INTENT(in)   , DIMENSION(:,:,:), OPTIONAL ::   palbi      ! all skies ice albedo
@@ -1688,6 +1710,15 @@ CONTAINS
       REAL(wp), DIMENSION(jpi,jpj,jpl) ::   zqns_ice, zqsr_ice, zdqns_ice, zqevap_ice, zevap_ice, zqtr_ice_top, ztsu
       REAL(wp), DIMENSION(jpi,jpj)     ::   ztri
       !!----------------------------------------------------------------------
+      !
+#if defined key_si3 || defined key_cice
+      !
+      IF( kt == nit000 ) THEN
+         ! allocate ice fractions from last coupling time here and not in sbc_cpl_init because of jpl
+         IF( .NOT.ALLOCATED(a_i_last_couple) )   ALLOCATE( a_i_last_couple(jpi,jpj,jpl) )
+         ! initialize to a_i for the 1st time step
+         a_i_last_couple(:,:,:) = a_i(:,:,:)
+      ENDIF
       !
       IF( ln_mixcpl )   zmsk(:,:) = 1. - xcplmask(:,:,0)
       ziceld(:,:) = 1._wp - picefr(:,:)
@@ -1715,8 +1746,6 @@ CONTAINS
       !                         ! since fields received are not defined with none option
          CALL ctl_stop('STOP', 'sbccpl/sbc_cpl_ice_flx: some fields are not defined. Change sn_rcv_emp value in namelist namsbc_cpl')
       END SELECT
-
-#if defined key_si3
 
       ! --- evaporation over ice (kg/m2/s) --- !
       IF (ln_scale_ice_flux) THEN ! typically met-office requirements
@@ -1808,40 +1837,36 @@ CONTAINS
          END DO
       ENDIF
 
-#else
-      zsnw(:,:) = picefr(:,:)
-      ! --- Continental fluxes --- !
-      IF( srcv(jpr_rnf)%laction ) THEN   ! runoffs (included in emp later on)
-         rnf(:,:) = frcv(jpr_rnf)%z3(:,:,1)
-      ENDIF
-      IF( srcv(jpr_cal)%laction ) THEN   ! calving (put in emp_tot)
-         zemp_tot(:,:) = zemp_tot(:,:) - frcv(jpr_cal)%z3(:,:,1)
-      ENDIF
-      IF( srcv(jpr_icb)%laction ) THEN   ! iceberg added to runoffs
-         fwficb(:,:) = frcv(jpr_icb)%z3(:,:,1)
-         rnf(:,:)    = rnf(:,:) + fwficb(:,:)
-      ENDIF
-      IF( srcv(jpr_isf)%laction ) THEN   ! iceshelf (fwfisf <0 mean melting)
-        fwfisf(:,:) = - frcv(jpr_isf)%z3(:,:,1)
-      ENDIF
+!! for CICE ??
+!!$      zsnw(:,:) = picefr(:,:)
+!!$      ! --- Continental fluxes --- !
+!!$      IF( srcv(jpr_rnf)%laction ) THEN   ! runoffs (included in emp later on)
+!!$         rnf(:,:) = frcv(jpr_rnf)%z3(:,:,1)
+!!$      ENDIF
+!!$      IF( srcv(jpr_cal)%laction ) THEN   ! calving (put in emp_tot)
+!!$         zemp_tot(:,:) = zemp_tot(:,:) - frcv(jpr_cal)%z3(:,:,1)
+!!$      ENDIF
+!!$      IF( srcv(jpr_icb)%laction ) THEN   ! iceberg added to runoffs
+!!$         fwficb(:,:) = frcv(jpr_icb)%z3(:,:,1)
+!!$         rnf(:,:)    = rnf(:,:) + fwficb(:,:)
+!!$      ENDIF
+!!$      IF( srcv(jpr_isf)%laction ) THEN   ! iceshelf (fwfisf <0 mean melting)
+!!$        fwfisf(:,:) = - frcv(jpr_isf)%z3(:,:,1)
+!!$      ENDIF
+!!$      !
+!!$      IF( ln_mixcpl ) THEN
+!!$         emp_tot(:,:) = emp_tot(:,:) * xcplmask(:,:,0) + zemp_tot(:,:) * zmsk(:,:)
+!!$         emp_ice(:,:) = emp_ice(:,:) * xcplmask(:,:,0) + zemp_ice(:,:) * zmsk(:,:)
+!!$         sprecip(:,:) = sprecip(:,:) * xcplmask(:,:,0) + zsprecip(:,:) * zmsk(:,:)
+!!$         tprecip(:,:) = tprecip(:,:) * xcplmask(:,:,0) + ztprecip(:,:) * zmsk(:,:)
+!!$      ELSE
+!!$         emp_tot(:,:) =                                  zemp_tot(:,:)
+!!$         emp_ice(:,:) =                                  zemp_ice(:,:)
+!!$         sprecip(:,:) =                                  zsprecip(:,:)
+!!$         tprecip(:,:) =                                  ztprecip(:,:)
+!!$      ENDIF
       !
-      IF( ln_mixcpl ) THEN
-         emp_tot(:,:) = emp_tot(:,:) * xcplmask(:,:,0) + zemp_tot(:,:) * zmsk(:,:)
-         emp_ice(:,:) = emp_ice(:,:) * xcplmask(:,:,0) + zemp_ice(:,:) * zmsk(:,:)
-         sprecip(:,:) = sprecip(:,:) * xcplmask(:,:,0) + zsprecip(:,:) * zmsk(:,:)
-         tprecip(:,:) = tprecip(:,:) * xcplmask(:,:,0) + ztprecip(:,:) * zmsk(:,:)
-      ELSE
-         emp_tot(:,:) =                                  zemp_tot(:,:)
-         emp_ice(:,:) =                                  zemp_ice(:,:)
-         sprecip(:,:) =                                  zsprecip(:,:)
-         tprecip(:,:) =                                  ztprecip(:,:)
-      ENDIF
-      !
-#endif
-
       ! outputs
-!!      IF( srcv(jpr_rnf)%laction )   CALL iom_put( 'runoffs' , rnf(:,:) * tmask(:,:,1)                                 )  ! runoff
-!!      IF( srcv(jpr_isf)%laction )   CALL iom_put( 'iceshelf_cea', -fwfisf(:,:) * tmask(:,:,1)                         )  ! iceshelf
       IF( srcv(jpr_cal)%laction )    CALL iom_put( 'calving_cea' , frcv(jpr_cal)%z3(:,:,1) * tmask(:,:,1)                )  ! calving
       IF( srcv(jpr_icb)%laction )    CALL iom_put( 'iceberg_cea' , frcv(jpr_icb)%z3(:,:,1) * tmask(:,:,1)                )  ! icebergs
       IF( iom_use('snowpre') )       CALL iom_put( 'snowpre'     , sprecip(:,:)                                          )  ! Snow
@@ -1852,17 +1877,41 @@ CONTAINS
       IF( iom_use('rain_ao_cea') )   CALL iom_put( 'rain_ao_cea' , ( tprecip(:,:) - sprecip(:,:) ) * picefr(:,:)         )  ! liquid precipitation over ocean (cell average)
       IF( iom_use('subl_ai_cea') )   CALL iom_put( 'subl_ai_cea' , zevap_ice_total(:,:) * picefr(:,:) * tmask(:,:,1)     )  ! Sublimation over sea-ice (cell average)
       IF( iom_use('evap_ao_cea') )   CALL iom_put( 'evap_ao_cea' , ( frcv(jpr_tevp)%z3(:,:,1)  &
-         &                                                         - zevap_ice_total(:,:) * picefr(:,:) ) * tmask(:,:,1) ) ! ice-free oce evap (cell average)
+         &                                                         - zevap_ice_total(:,:) * picefr(:,:) ) * tmask(:,:,1) )  ! ice-free oce evap (cell average)
       ! note: runoff output is done in sbcrnf (which includes icebergs too) and iceshelf output is done in sbcisf
+      !!IF( srcv(jpr_rnf)%laction )    CALL iom_put( 'runoffs' , rnf(:,:) * tmask(:,:,1)                                 )  ! runoff
+      !!IF( srcv(jpr_isf)%laction )    CALL iom_put( 'iceshelf_cea', -fwfisf(:,:) * tmask(:,:,1)                         )  ! iceshelf
       !
+      !                                                      ! ================================= !
+      SELECT CASE( TRIM( sn_rcv_iceflx%cldes ) )             !  ice topmelt and conductive flux  !
+      !                                                      ! ================================= !
+      CASE ('coupled')
+         IF (ln_scale_ice_flux) THEN
+            WHERE( a_i(:,:,:) > 1.e-10_wp )
+               qml_ice(:,:,:) = frcv(jpr_topm)%z3(:,:,:) * a_i_last_couple(:,:,:) / a_i(:,:,:)
+               qcn_ice(:,:,:) = frcv(jpr_botm)%z3(:,:,:) * a_i_last_couple(:,:,:) / a_i(:,:,:)
+            ELSEWHERE
+               qml_ice(:,:,:) = 0.0_wp
+               qcn_ice(:,:,:) = 0.0_wp
+            END WHERE
+         ELSE
+            qml_ice(:,:,:) = frcv(jpr_topm)%z3(:,:,:)
+            qcn_ice(:,:,:) = frcv(jpr_botm)%z3(:,:,:)
+         ENDIF
+      END SELECT
       !                                                      ! ========================= !
       SELECT CASE( TRIM( sn_rcv_qns%cldes ) )                !   non solar heat fluxes   !   (qns)
       !                                                      ! ========================= !
       CASE( 'oce only' )         ! the required field is directly provided
-         zqns_tot(:,:) = frcv(jpr_qnsoce)%z3(:,:,1)
-         ! For Met Office sea ice non-solar fluxes are already delt with by JULES so setting to zero
-         ! here so the only flux is the ocean only one.
-         zqns_ice(:,:,:) = 0._wp
+         ! Get the sea ice non solar heat flux from conductive, melting and sublimation fluxes
+         IF( TRIM(sn_rcv_iceflx%cldes) == 'coupled' ) THEN
+            zqns_ice(:,:,:) = qml_ice(:,:,:) + qcn_ice(:,:,:)
+         ELSE
+            zqns_ice(:,:,:) = 0._wp
+         ENDIF
+         ! Calculate the total non solar heat flux. The ocean only non solar heat flux (zqns_oce) will be recalculated after this CASE
+         ! statement to be consistent with other coupling methods even though .zqns_oce = frcv(jpr_qnsoce)%z3(:,:,1)
+         zqns_tot(:,:) = frcv(jpr_qnsoce)%z3(:,:,1) + SUM( zqns_ice(:,:,:) * a_i(:,:,:), dim=3 )
       CASE( 'conservative' )     ! the required fields are directly provided
          zqns_tot(:,:) = frcv(jpr_qnsmix)%z3(:,:,1)
          IF ( TRIM(sn_rcv_qns%clcat) == 'yes' ) THEN
@@ -1914,7 +1963,6 @@ CONTAINS
       ! --- iceberg (removed from qns_tot) --- !
       IF( srcv(jpr_icb)%laction )   zqns_tot(:,:) = zqns_tot(:,:) - frcv(jpr_icb)%z3(:,:,1) * rLfus  ! remove latent heat of iceberg melting
 
-#if defined key_si3
       ! --- non solar flux over ocean --- !
       !         note: ziceld cannot be = 0 since we limit the ice concentration to amax
       zqns_oce = 0._wp
@@ -1967,28 +2015,28 @@ CONTAINS
          qemp_ice (:,:  ) = zqemp_ice (:,:  )
       ENDIF
 
-#else
-      zcptsnw (:,:) = zcptn(:,:)
-      zcptrain(:,:) = zcptn(:,:)
-
-      ! clem: this formulation is certainly wrong... but better than it was...
-      zqns_tot(:,:) = zqns_tot(:,:)                             &          ! zqns_tot update over free ocean with:
-         &          - (  ziceld(:,:) * zsprecip(:,:) * rLfus )  &          ! remove the latent heat flux of solid precip. melting
-         &          - (  zemp_tot(:,:)                          &          ! remove the heat content of mass flux (assumed to be at SST)
-         &             - zemp_ice(:,:) ) * zcptn(:,:)
-
-     IF( ln_mixcpl ) THEN
-         qns_tot(:,:) = qns(:,:) * ziceld(:,:) + SUM( qns_ice(:,:,:) * a_i(:,:,:), dim=3 )   ! total flux from blk
-         qns_tot(:,:) = qns_tot(:,:) * xcplmask(:,:,0) +  zqns_tot(:,:)* zmsk(:,:)
-         DO jl=1,jpl
-            qns_ice(:,:,jl) = qns_ice(:,:,jl) * xcplmask(:,:,0) +  zqns_ice(:,:,jl)* zmsk(:,:)
-         ENDDO
-      ELSE
-         qns_tot(:,:  ) = zqns_tot(:,:  )
-         qns_ice(:,:,:) = zqns_ice(:,:,:)
-      ENDIF
-
-#endif
+!! for CICE ??
+!!$      ! --- non solar flux over ocean --- !
+!!$      zcptsnw (:,:) = zcptn(:,:)
+!!$      zcptrain(:,:) = zcptn(:,:)
+!!$      
+!!$      ! clem: this formulation is certainly wrong... but better than it was...
+!!$      zqns_tot(:,:) = zqns_tot(:,:)                             &          ! zqns_tot update over free ocean with:
+!!$         &          - (  ziceld(:,:) * zsprecip(:,:) * rLfus )  &          ! remove the latent heat flux of solid precip. melting
+!!$         &          - (  zemp_tot(:,:)                          &          ! remove the heat content of mass flux (assumed to be at SST)
+!!$         &             - zemp_ice(:,:) ) * zcptn(:,:) 
+!!$
+!!$     IF( ln_mixcpl ) THEN
+!!$         qns_tot(:,:) = qns(:,:) * ziceld(:,:) + SUM( qns_ice(:,:,:) * a_i(:,:,:), dim=3 )   ! total flux from blk
+!!$         qns_tot(:,:) = qns_tot(:,:) * xcplmask(:,:,0) +  zqns_tot(:,:)* zmsk(:,:)
+!!$         DO jl=1,jpl
+!!$            qns_ice(:,:,jl) = qns_ice(:,:,jl) * xcplmask(:,:,0) +  zqns_ice(:,:,jl)* zmsk(:,:)
+!!$         ENDDO
+!!$      ELSE
+!!$         qns_tot(:,:  ) = zqns_tot(:,:  )
+!!$         qns_ice(:,:,:) = zqns_ice(:,:,:)
+!!$      ENDIF
+!!$
       ! outputs
       IF ( srcv(jpr_cal)%laction ) CALL iom_put('hflx_cal_cea' , - frcv(jpr_cal)%z3(:,:,1) * rLfus ) ! latent heat from calving
       IF ( srcv(jpr_icb)%laction ) CALL iom_put('hflx_icb_cea' , - frcv(jpr_icb)%z3(:,:,1) * rLfus ) ! latent heat from icebergs melting
@@ -2009,12 +2057,36 @@ CONTAINS
       ! note: hflx for runoff and iceshelf are done in sbcrnf and sbcisf resp.
       !
       !                                                      ! ========================= !
+      SELECT CASE( TRIM( sn_rcv_dqnsdt%cldes ) )             !          d(qns)/dt        !
+      !                                                      ! ========================= !
+      CASE ('coupled')
+         IF ( TRIM(sn_rcv_dqnsdt%clcat) == 'yes' ) THEN
+            zdqns_ice(:,:,1:jpl) = frcv(jpr_dqnsdt)%z3(:,:,1:jpl)
+         ELSE
+            ! Set all category values equal for the moment
+            DO jl=1,jpl
+               zdqns_ice(:,:,jl) = frcv(jpr_dqnsdt)%z3(:,:,1)
+            ENDDO
+         ENDIF
+      CASE( 'none' ) 
+         zdqns_ice(:,:,:) = 0._wp
+      END SELECT
+      
+      IF( ln_mixcpl ) THEN
+         DO jl=1,jpl
+            dqns_ice(:,:,jl) = dqns_ice(:,:,jl) * xcplmask(:,:,0) + zdqns_ice(:,:,jl) * zmsk(:,:)
+         ENDDO
+      ELSE
+         dqns_ice(:,:,:) = zdqns_ice(:,:,:)
+      ENDIF
+      !
+      !                                                      ! ========================= !
       SELECT CASE( TRIM( sn_rcv_qsr%cldes ) )                !      solar heat fluxes    !   (qsr)
       !                                                      ! ========================= !
       CASE( 'oce only' )
          zqsr_tot(:,:  ) = MAX( 0._wp , frcv(jpr_qsroce)%z3(:,:,1) )
-         ! For Met Office sea ice solar fluxes are already delt with by JULES so setting to zero
-         ! here so the only flux is the ocean only one.
+         ! For the Met Office the only sea ice solar flux is the transmitted qsr which is added onto zqsr_ice
+         ! further down. Therefore start zqsr_ice off at zero.
          zqsr_ice(:,:,:) = 0._wp
       CASE( 'conservative' )
          zqsr_tot(:,:  ) = frcv(jpr_qsrmix)%z3(:,:,1)
@@ -2072,70 +2144,6 @@ CONTAINS
       IF( iom_use('O_QsrOce') ) CALL iom_put( "O_QsrOce" , zqsr_tot(:,:) - SUM( a_i * zqsr_ice, dim=3 ) )
       IF( iom_use('O_QsrIce') ) CALL iom_put( "O_QsrIce" , SUM( a_i * zqsr_ice, dim=3 ) )
       IF( iom_use('O_QsrMix') ) CALL iom_put( "O_QsrMix" , zqsr_tot(:,:))
-      !
-#if defined key_si3
-      ! --- solar flux over ocean --- !
-      !         note: ziceld cannot be = 0 since we limit the ice concentration to amax
-      zqsr_oce = 0._wp
-      WHERE( ziceld /= 0._wp )  zqsr_oce(:,:) = ( zqsr_tot(:,:) - SUM( a_i * zqsr_ice, dim=3 ) ) / ziceld(:,:)
-
-      IF( ln_mixcpl ) THEN   ;   qsr_oce(:,:) = qsr_oce(:,:) * xcplmask(:,:,0) +  zqsr_oce(:,:)* zmsk(:,:)
-      ELSE                   ;   qsr_oce(:,:) = zqsr_oce(:,:)   ;   ENDIF
-#endif
-
-      IF( ln_mixcpl ) THEN
-         qsr_tot(:,:) = qsr(:,:) * ziceld(:,:) + SUM( qsr_ice(:,:,:) * a_i(:,:,:), dim=3 )   ! total flux from blk
-         qsr_tot(:,:) = qsr_tot(:,:) * xcplmask(:,:,0) +  zqsr_tot(:,:)* zmsk(:,:)
-         DO jl = 1, jpl
-            qsr_ice(:,:,jl) = qsr_ice(:,:,jl) * xcplmask(:,:,0) +  zqsr_ice(:,:,jl)* zmsk(:,:)
-         END DO
-      ELSE
-         qsr_tot(:,:  ) = zqsr_tot(:,:  )
-         qsr_ice(:,:,:) = zqsr_ice(:,:,:)
-      ENDIF
-
-      !                                                      ! ========================= !
-      SELECT CASE( TRIM( sn_rcv_dqnsdt%cldes ) )             !          d(qns)/dt        !
-      !                                                      ! ========================= !
-      CASE ('coupled')
-         IF ( TRIM(sn_rcv_dqnsdt%clcat) == 'yes' ) THEN
-            zdqns_ice(:,:,1:jpl) = frcv(jpr_dqnsdt)%z3(:,:,1:jpl)
-         ELSE
-            ! Set all category values equal for the moment
-            DO jl=1,jpl
-               zdqns_ice(:,:,jl) = frcv(jpr_dqnsdt)%z3(:,:,1)
-            ENDDO
-         ENDIF
-      CASE( 'none' )
-         zdqns_ice(:,:,:) = 0._wp
-      END SELECT
-
-      IF( ln_mixcpl ) THEN
-         DO jl=1,jpl
-            dqns_ice(:,:,jl) = dqns_ice(:,:,jl) * xcplmask(:,:,0) + zdqns_ice(:,:,jl) * zmsk(:,:)
-         ENDDO
-      ELSE
-         dqns_ice(:,:,:) = zdqns_ice(:,:,:)
-      ENDIF
-
-#if defined key_si3
-      !                                                      ! ========================= !
-      SELECT CASE( TRIM( sn_rcv_iceflx%cldes ) )             !  ice topmelt and botmelt  !
-      !                                                      ! ========================= !
-      CASE ('coupled')
-         IF (ln_scale_ice_flux) THEN
-            WHERE( a_i(:,:,:) > 1.e-10_wp )
-               qml_ice(:,:,:) = frcv(jpr_topm)%z3(:,:,:) * a_i_last_couple(:,:,:) / a_i(:,:,:)
-               qcn_ice(:,:,:) = frcv(jpr_botm)%z3(:,:,:) * a_i_last_couple(:,:,:) / a_i(:,:,:)
-            ELSEWHERE
-               qml_ice(:,:,:) = 0.0_wp
-               qcn_ice(:,:,:) = 0.0_wp
-            END WHERE
-         ELSE
-            qml_ice(:,:,:) = frcv(jpr_topm)%z3(:,:,:)
-            qcn_ice(:,:,:) = frcv(jpr_botm)%z3(:,:,:)
-         ENDIF
-      END SELECT
       !                                                      ! ========================= !
       !                                                      !      Transmitted Qsr      !   [W/m2]
       !                                                      ! ========================= !
@@ -2167,19 +2175,52 @@ CONTAINS
          !
       ELSEIF( ln_cndflx .AND. .NOT.ln_cndemulate ) THEN      !==  conduction flux as surface forcing  ==!
          !
-         !          ! ===> here we must receive the qtr_ice_top array from the coupler
-         !                 for now just assume zero (fully opaque ice)
-         zqtr_ice_top(:,:,:) = 0._wp
+!!         SELECT CASE( TRIM( sn_rcv_qtrice%cldes ) )
+!!            !
+!!            !      ! ===> here we receive the qtr_ice_top array from the coupler
+!!         CASE ('coupled')
+!!            IF (ln_scale_ice_flux) THEN
+!!               WHERE( a_i(:,:,:) > 1.e-10_wp )
+!!                  zqtr_ice_top(:,:,:) = frcv(jpr_qtrice)%z3(:,:,:) * a_i_last_couple(:,:,:) / a_i(:,:,:)
+!!               ELSEWHERE
+!!                  zqtr_ice_top(:,:,:) = 0.0_wp
+!!               ENDWHERE
+!!            ELSE
+!!               zqtr_ice_top(:,:,:) = frcv(jpr_qtrice)%z3(:,:,:)
+!!            ENDIF
+!!           
+!!            ! Add retrieved transmitted solar radiation onto the ice and total solar radiation
+!!            zqsr_ice(:,:,:) = zqsr_ice(:,:,:) + zqtr_ice_top(:,:,:)
+!!            zqsr_tot(:,:)   = zqsr_tot(:,:) + SUM( zqtr_ice_top(:,:,:) * a_i(:,:,:), dim=3 )
+!!            
+!!            !      if we are not getting this data from the coupler then assume zero (fully opaque ice)
+!!         CASE ('none')
+            zqtr_ice_top(:,:,:) = 0._wp
+!!         END SELECT
          !
       ENDIF
       !
       IF( ln_mixcpl ) THEN
-         DO jl=1,jpl
+         qsr_tot(:,:) = qsr(:,:) * ziceld(:,:) + SUM( qsr_ice(:,:,:) * a_i(:,:,:), dim=3 )   ! total flux from blk
+         qsr_tot(:,:) = qsr_tot(:,:) * xcplmask(:,:,0) + zqsr_tot(:,:) * zmsk(:,:)
+         DO jl = 1, jpl
+            qsr_ice    (:,:,jl) = qsr_ice    (:,:,jl) * xcplmask(:,:,0) + zqsr_ice    (:,:,jl) * zmsk(:,:)
             qtr_ice_top(:,:,jl) = qtr_ice_top(:,:,jl) * xcplmask(:,:,0) + zqtr_ice_top(:,:,jl) * zmsk(:,:)
-         ENDDO
+         END DO
       ELSE
+         qsr_tot    (:,:  ) = zqsr_tot    (:,:  )
+         qsr_ice    (:,:,:) = zqsr_ice    (:,:,:)
          qtr_ice_top(:,:,:) = zqtr_ice_top(:,:,:)
       ENDIF
+      
+      ! --- solar flux over ocean --- !
+      ! note: ziceld cannot be = 0 since we limit the ice concentration to amax
+      zqsr_oce = 0._wp
+      WHERE( ziceld /= 0._wp )  zqsr_oce(:,:) = ( zqsr_tot(:,:) - SUM( a_i * zqsr_ice, dim=3 ) ) / ziceld(:,:)
+
+      IF( ln_mixcpl ) THEN   ;   qsr_oce(:,:) = qsr_oce(:,:) * xcplmask(:,:,0) +  zqsr_oce(:,:)* zmsk(:,:)
+      ELSE                   ;   qsr_oce(:,:) = zqsr_oce(:,:)   ;   ENDIF
+
       !                                                      ! ================== !
       !                                                      !   ice skin temp.   !
       !                                                      ! ================== !

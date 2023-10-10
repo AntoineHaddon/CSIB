@@ -13,6 +13,7 @@ MODULE icbdyn
    USE par_oce        ! NEMO parameters
    USE dom_oce        ! NEMO ocean domain
    USE phycst         ! NEMO physical constants
+   USE in_out_manager                      ! IO parameters
    !
    USE icb_oce        ! define iceberg arrays
    USE icbutl         ! iceberg utility routines
@@ -25,7 +26,7 @@ MODULE icbdyn
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: icbdyn.F90 13263 2020-07-08 07:55:54Z ayoung $
+   !! $Id: icbdyn.F90 14372 2021-02-02 17:42:36Z mathiot $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -83,8 +84,8 @@ CONTAINS
 
 
          !                                         !**   A1 = A(X1,V1)
-         CALL icb_accel( berg , zxi1, ze1, zuvel1, zuvel1, zax1,     &
-            &                   zyj1, ze2, zvvel1, zvvel1, zay1, zdt_2 )
+         CALL icb_accel( kt, berg , zxi1, ze1, zuvel1, zuvel1, zax1,     &
+            &                   zyj1, ze2, zvvel1, zvvel1, zay1, zdt_2, 0.5_wp )
          !
          zu1 = zuvel1 / ze1                           !**   V1 in d(i,j)/dt
          zv1 = zvvel1 / ze2
@@ -100,8 +101,8 @@ CONTAINS
             &             zyj2, zyj1, zv1, ll_bounced )
 
          !                                         !**   A2 = A(X2,V2)
-         CALL icb_accel( berg , zxi2, ze1, zuvel2, zuvel1, zax2,    &
-            &                   zyj2, ze2, zvvel2, zvvel1, zay2, zdt_2 )
+         CALL icb_accel( kt, berg , zxi2, ze1, zuvel2, zuvel1, zax2,    &
+            &                   zyj2, ze2, zvvel2, zvvel1, zay2, zdt_2, 0.5_wp )
          !
          zu2 = zuvel2 / ze1                           !**   V2 in d(i,j)/dt
          zv2 = zvvel2 / ze2
@@ -112,12 +113,12 @@ CONTAINS
          zxi3  = zxi1  + zdt_2 * zu2   ;   zuvel3 = zuvel1 + zdt_2 * zax2
          zyj3  = zyj1  + zdt_2 * zv2   ;   zvvel3 = zvvel1 + zdt_2 * zay2
          !
-         CALL icb_ground( zxi3, zxi1, zu3,   &
-            &                zyj3, zyj1, zv3, ll_bounced )
+         CALL icb_ground( zxi3, zxi1, zu2,   &
+            &             zyj3, zyj1, zv2, ll_bounced )
 
          !                                         !**   A3 = A(X3,V3)
-         CALL icb_accel( berg , zxi3, ze1, zuvel3, zuvel1, zax3,    &
-            &                   zyj3, ze2, zvvel3, zvvel1, zay3, zdt )
+         CALL icb_accel( kt, berg , zxi3, ze1, zuvel3, zuvel1, zax3,    &
+            &                   zyj3, ze2, zvvel3, zvvel1, zay3, zdt, 1._wp )
          !
          zu3 = zuvel3 / ze1                           !**   V3 in d(i,j)/dt
          zv3 = zvvel3 / ze2
@@ -128,12 +129,12 @@ CONTAINS
          zxi4 = zxi1 + zdt * zu3   ;   zuvel4 = zuvel1 + zdt * zax3
          zyj4 = zyj1 + zdt * zv3   ;   zvvel4 = zvvel1 + zdt * zay3
 
-         CALL icb_ground( zxi4, zxi1, zu4,   &
-            &             zyj4, zyj1, zv4, ll_bounced )
+         CALL icb_ground( zxi4, zxi1, zu3,   &
+            &             zyj4, zyj1, zv3, ll_bounced )
 
          !                                         !**   A4 = A(X4,V4)
-         CALL icb_accel( berg , zxi4, ze1, zuvel4, zuvel1, zax4,    &
-            &                   zyj4, ze2, zvvel4, zvvel1, zay4, zdt )
+         CALL icb_accel( kt, berg , zxi4, ze1, zuvel4, zuvel1, zax4,    &
+            &                   zyj4, ze2, zvvel4, zvvel1, zay4, zdt, 1._wp )
 
          zu4 = zuvel4 / ze1                           !**   V4 in d(i,j)/dt
          zv4 = zvvel4 / ze2
@@ -233,8 +234,8 @@ CONTAINS
    END SUBROUTINE icb_ground
 
 
-   SUBROUTINE icb_accel( berg , pxi, pe1, puvel, puvel0, pax,                &
-      &                         pyj, pe2, pvvel, pvvel0, pay, pdt )
+   SUBROUTINE icb_accel( kt, berg , pxi, pe1, puvel, puvel0, pax,                 &
+      &                             pyj, pe2, pvvel, pvvel0, pay, pdt, pcfl_scale )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE icb_accel  ***
       !!
@@ -243,6 +244,8 @@ CONTAINS
       !! ** Method  : - sum the terms in the momentum budget
       !!----------------------------------------------------------------------
       TYPE(iceberg ), POINTER, INTENT(in   ) ::   berg             ! berg
+      INTEGER                , INTENT(in   ) ::   kt               ! time step
+      REAL(wp)               , INTENT(in   ) ::   pcfl_scale
       REAL(wp)               , INTENT(in   ) ::   pxi   , pyj      ! berg position in (i,j) referential
       REAL(wp)               , INTENT(in   ) ::   puvel , pvvel    ! berg velocity [m/s]
       REAL(wp)               , INTENT(in   ) ::   puvel0, pvvel0   ! initial berg velocity [m/s]
@@ -360,11 +363,22 @@ CONTAINS
       IF( rn_speed_limit > 0._wp ) THEN       ! Limit speed of bergs based on a CFL criteria (if asked)
          zspeed = SQRT( zuveln*zuveln + zvveln*zvveln )    ! Speed of berg
          IF( zspeed > 0._wp ) THEN
-            zloc_dx = MIN( pe1, pe2 )                          ! minimum grid spacing
-            zspeed_new = zloc_dx / pdt * rn_speed_limit        ! Speed limit as a factor of dx / dt
+            zloc_dx = MIN( pe1, pe2 )                                ! minimum grid spacing
+            ! cfl scale is function of the RK4 step
+            zspeed_new = zloc_dx / pdt * rn_speed_limit * pcfl_scale ! Speed limit as a factor of dx / dt
             IF( zspeed_new < zspeed ) THEN
-               zuveln = zuveln * ( zspeed_new / zspeed )        ! Scale velocity to reduce speed
-               zvveln = zvveln * ( zspeed_new / zspeed )        ! without changing the direction
+               zuveln = zuveln * ( zspeed_new / zspeed )             ! Scale velocity to reduce speed
+               zvveln = zvveln * ( zspeed_new / zspeed )             ! without changing the direction
+               pax = (zuveln - puvel0)/pdt
+               pay = (zvveln - pvvel0)/pdt
+               !
+               ! print speeding ticket
+               IF (nn_verbose_level > 0) THEN
+                  WRITE(numicb, 9200) 'icb speeding : ',kt, nknberg, zspeed, &
+                       &                pxi, pyj, zuo, zvo, zua, zva, zui, zvi
+                  9200 FORMAT(a,i9,i6,f9.2,1x,4(1x,2f9.2))
+               END IF
+               !
                CALL icb_dia_speed()
             ENDIF
          ENDIF

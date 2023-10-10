@@ -62,7 +62,6 @@ BENCH
   By default do not produce any output file. An extensive description of BENCH will be abailable in
   Irrmann et al. 2021.
 
-
 ICE_AGRIF
 ---------
 

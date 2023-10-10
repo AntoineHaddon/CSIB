@@ -90,7 +90,7 @@ MODULE dynvor
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: dynvor.F90 12792 2020-04-22 10:39:09Z smasson $
+   !! $Id: dynvor.F90 14596 2021-03-08 08:17:56Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -221,6 +221,7 @@ CONTAINS
          IF(lwp) WRITE(numout,*) '~~~~~~~~~~~'
       ENDIF
       !
+      zwz(:,:,jpk) = 0._wp
       !
       SELECT CASE( kvor )                 !==  volume weighted vorticity considered  ==!
       CASE ( np_RVO )                           !* relative vorticity
@@ -730,6 +731,7 @@ CONTAINS
          IF(lwp) WRITE(numout,*) '~~~~~~~~~~~'
       ENDIF
       !
+      zwz(:,:,jpk) = 0._wp
       !                                                ! ===============
       DO jk = 1, jpkm1                                 ! Horizontal slab
          !                                             ! ===============

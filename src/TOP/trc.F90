@@ -24,7 +24,7 @@ MODULE trc
    INTEGER, PUBLIC ::   numtrc_cfg = -1   !: reference passive tracer namelist_top_cfg
    INTEGER, PUBLIC ::   numonr     = -1   !: reference passive tracer namelist output output.namelist.top
    INTEGER, PUBLIC ::   numstr            !: tracer statistics
-   INTEGER, PUBLIC ::   numrtr            !: trc restart (read )
+   INTEGER, PUBLIC ::   numrtr     = -1   !: trc restart (read )
    INTEGER, PUBLIC ::   numrtw            !: trc restart ( write )
 
    !! passive tracers fields (before,now,after)
@@ -134,7 +134,7 @@ MODULE trc
    !
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: trc.F90 10425 2018-12-19 21:54:16Z smasson $
+   !! $Id: trc.F90 14588 2021-03-05 07:42:07Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS

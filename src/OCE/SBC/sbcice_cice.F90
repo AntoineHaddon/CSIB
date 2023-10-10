@@ -89,7 +89,7 @@ MODULE sbcice_cice
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: sbcice_cice.F90 11536 2019-09-11 13:54:18Z smasson $
+   !! $Id: sbcice_cice.F90 14590 2021-03-05 13:21:05Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -132,7 +132,7 @@ CONTAINS
          IF      ( ksbc == jp_flx ) THEN
             CALL cice_sbc_force(kt)
          ELSE IF ( ksbc == jp_purecpl ) THEN
-            CALL sbc_cpl_ice_flx( fr_i )
+            CALL sbc_cpl_ice_flx( kt, fr_i )
          ENDIF
 
          CALL cice_sbc_in  ( kt, ksbc )

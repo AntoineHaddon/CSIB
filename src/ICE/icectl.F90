@@ -61,7 +61,7 @@ MODULE icectl
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icectl.F90 14026 2020-12-03 08:48:10Z clem $
+   !! $Id: icectl.F90 14590 2021-03-05 13:21:05Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -800,8 +800,8 @@ CONTAINS
       !!IF( iom_use('icedrift_mass') .OR. iom_use('icedrift_salt') .OR. iom_use('icedrift_heat') ) THEN
       !!   DO jj = 1, jpj
       !!      DO ji = 1, jpi
-      !!         zdiag_mass2D(ji,jj) =   wfx_ice(ji,jj)   + wfx_snw(ji,jj)   + wfx_spr(ji,jj) + wfx_sub(ji,jj) &
-      !!            &                  + diag_vice(ji,jj) + diag_vsnw(ji,jj) - diag_adv_mass(ji,jj)
+      !!         zdiag_mass2D(ji,jj) =   wfx_ice(ji,jj)   + wfx_snw(ji,jj)   + wfx_spr(ji,jj)   + wfx_sub(ji,jj) + wfx_pnd(ji,jj) &
+      !!            &                  + diag_vice(ji,jj) + diag_vsnw(ji,jj) + diag_vpnd(ji,jj) - diag_adv_mass(ji,jj)
       !!         zdiag_salt2D(ji,jj) = sfx(ji,jj) + diag_sice(ji,jj) - diag_adv_salt(ji,jj)
       !!         zdiag_heat2D(ji,jj) = qt_oce_ai(ji,jj) - qt_atm_oi(ji,jj) + diag_heat(ji,jj) - diag_adv_heat(ji,jj)
       !!      END DO
@@ -814,8 +814,8 @@ CONTAINS
       !!ENDIF
 
       ! -- mass diag -- !
-      zdiag_mass     = glob_sum( 'icectl', (  wfx_ice   + wfx_snw   + wfx_spr + wfx_sub &
-         &                                  + diag_vice + diag_vsnw - diag_adv_mass ) * e1e2t ) * rdt_ice
+      zdiag_mass     = glob_sum( 'icectl', (  wfx_ice   + wfx_snw   + wfx_spr + wfx_sub + wfx_pnd &
+         &                                  + diag_vice + diag_vsnw + diag_vpnd - diag_adv_mass ) * e1e2t ) * rdt_ice
       zdiag_adv_mass = glob_sum( 'icectl', diag_adv_mass * e1e2t ) * rdt_ice
 
       ! -- salt diag -- !
