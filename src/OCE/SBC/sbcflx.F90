@@ -34,8 +34,14 @@ MODULE sbcflx
    INTEGER , PARAMETER ::   jp_qtot = 3   ! index of total (non solar+solar) heat file
    INTEGER , PARAMETER ::   jp_qsr  = 4   ! index of solar heat file
    INTEGER , PARAMETER ::   jp_emp  = 5   ! index of evaporation-precipation file
- !!INTEGER , PARAMETER ::   jp_sfx  = 6   ! index of salt flux flux
-   INTEGER , PARAMETER ::   jpfld   = 5 !! 6 ! maximum number of files to read 
+!!$   INTEGER , PARAMETER ::   jp_sfx  = 6   ! index of salt flux
+!!$   INTEGER , PARAMETER ::   jp_sithic = 7    ! index of sea ice thickness
+!!$   INTEGER , PARAMETER ::   jp_siconc = 8    ! index of sea ice fraction
+!!$   INTEGER , PARAMETER ::   jp_hfrnf  = 9    ! index of rnf heat flux
+!!$   INTEGER , PARAMETER ::   jp_hfisf  = 10   ! index of iceshelf heat flux
+!!$   INTEGER , PARAMETER ::   jp_fwisf  = 11   ! index of iceshelf freshwater flux
+!!$   INTEGER , PARAMETER ::   jp_fwrnf  = 12   ! index of runoff freshwater flux
+   INTEGER , PARAMETER ::   jpfld   = 5   ! maximum number of files to read 
 
    TYPE(FLD), ALLOCATABLE, DIMENSION(:) ::   sf    ! structure of input fields (file informations, fields read)
 
@@ -43,7 +49,7 @@ MODULE sbcflx
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: sbcflx.F90 15613 2021-12-22 09:35:54Z cetlod $
+   !! $Id: sbcflx.F90 15813 2023-04-05 11:59:14Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -73,8 +79,7 @@ CONTAINS
       !!              - qns         non solar heat flux including heat flux due to emp
       !!              - qsr         solar heat flux
       !!              - emp         upward mass flux (evap. - precip.)
-      !!              - sfx         salt flux; set to zero at nit000 but possibly non-zero
-      !!                            if ice
+      !!              - sfx         salt flux; set to zero at nit000 but possibly non-zero if ice
       !!----------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt   ! ocean time step
       !!
@@ -88,8 +93,10 @@ CONTAINS
       !!
       CHARACTER(len=100) ::  cn_dir                               ! Root directory for location of flx files
       TYPE(FLD_N), DIMENSION(jpfld) ::   slf_i                    ! array of namelist information structures
-      TYPE(FLD_N) ::   sn_utau, sn_vtau, sn_qtot, sn_qsr, sn_emp !!, sn_sfx ! informations about the fields to be read
-      NAMELIST/namsbc_flx/ cn_dir, sn_utau, sn_vtau, sn_qtot, sn_qsr, sn_emp !!, sn_sfx
+      TYPE(FLD_N) ::   sn_utau, sn_vtau, sn_qtot, sn_qsr, sn_emp  !!, & ! informations about the fields to be read
+!!$         &             sn_sfx, sn_sithic, sn_siconc, sn_hfisf, sn_hfrnf, sn_fwisf, sn_fwrnf
+      NAMELIST/namsbc_flx/ cn_dir, sn_utau, sn_vtau, sn_qtot, sn_qsr, sn_emp !!, &
+!!$         &                         sn_sfx, sn_sithic, sn_siconc, sn_hfisf, sn_hfrnf, sn_fwisf, sn_fwrnf
       !!---------------------------------------------------------------------
       !
       IF( kt == nit000 ) THEN                ! First call kt=nit000  
@@ -110,7 +117,12 @@ CONTAINS
          !                                         ! store namelist information in an array
          slf_i(jp_utau) = sn_utau   ;   slf_i(jp_vtau) = sn_vtau
          slf_i(jp_qtot) = sn_qtot   ;   slf_i(jp_qsr ) = sn_qsr 
-         slf_i(jp_emp ) = sn_emp !! ;   slf_i(jp_sfx ) = sn_sfx
+         slf_i(jp_emp ) = sn_emp
+!!$         slf_i(jp_sfx  ) = sn_sfx
+!!$         slf_i(jp_sithic) = sn_sithic
+!!$         slf_i(jp_siconc) = sn_siconc
+!!$         slf_i(jp_hfisf) = sn_hfisf    ;   slf_i(jp_hfrnf) = sn_hfrnf
+!!$         slf_i(jp_fwisf) = sn_fwisf    ;   slf_i(jp_fwrnf) = sn_fwrnf
          !
          ALLOCATE( sf(jpfld), STAT=ierror )        ! set sf structure
          IF( ierror > 0 ) THEN   
@@ -145,16 +157,23 @@ CONTAINS
                vtau(ji,jj) =   sf(jp_vtau)%fnow(ji,jj,1)                              * vmask(ji,jj,1)
                qns (ji,jj) = ( sf(jp_qtot)%fnow(ji,jj,1) - sf(jp_qsr)%fnow(ji,jj,1) ) * tmask(ji,jj,1)
                emp (ji,jj) =   sf(jp_emp )%fnow(ji,jj,1)                              * tmask(ji,jj,1)
-               !!sfx (ji,jj) = sf(jp_sfx )%fnow(ji,jj,1)                              * tmask(ji,jj,1) 
+!!$               sfx (ji,jj) = sf(jp_sfx   )%fnow(ji,jj,1)                             * tmask(ji,jj,1) 
+!!$               !! => if the following is used, then one needs to change tke routine + allocate hm_i in sbc_oce
+!!$               hm_i(ji,jj) = sf(jp_sithic)%fnow(ji,jj,1)                             * tmask(ji,jj,1) 
+!!$               fr_i(ji,jj) = sf(jp_siconc)%fnow(ji,jj,1)                             * tmask(ji,jj,1)
+!!$               !! => if the following is used, then one needs to change rnf and isf routines + allocate the arrays
+!!$               hfisf(ji,jj) = sf(jp_hfisf)%fnow(ji,jj,1)                             * ssmask(ji,jj)
+!!$               fwisf(ji,jj) = sf(jp_fwisf)%fnow(ji,jj,1)                             * ssmask(ji,jj)
+!!$               hfrnf(ji,jj) = sf(jp_hfrnf)%fnow(ji,jj,1)                             * tmask(ji,jj,1)
+!!$               fwrnf(ji,jj) = sf(jp_fwrnf)%fnow(ji,jj,1)                             * tmask(ji,jj,1)
             END DO
          END DO
-         !                                                        ! add to qns the heat due to e-p
-         !clem: I do not think it is needed
-         !!qns(:,:) = qns(:,:) - emp(:,:) * sst_m(:,:) * rcp        ! mass flux is at SST
          !
          ! clem: without these lbc calls, it seems that the northfold is not ok (true in 3.6, not sure in 4.x) 
          CALL lbc_lnk_multi( 'sbcflx', utau, 'U', -1._wp, vtau, 'V', -1._wp, &
-            &                           qns, 'T',  1._wp, emp , 'T',  1._wp, qsr, 'T', 1._wp ) !! sfx, 'T', 1._wp  )
+            &                           qns, 'T',  1._wp, emp , 'T',  1._wp, qsr, 'T', 1._wp ) !! &
+!!$            &                           sfx, 'T', 1._wp, hm_i,'T', 1._wp, fr_i,'T', 1._wp, &
+!!$            &                          hfisf, 'T', 1._wp, fwisf, 'T', 1._wp, hfrnf, 'T', 1._wp, fwrnf, 'T', 1._wp )
          !
          IF( nitend-nit000 <= 100 .AND. lwp ) THEN                ! control print (if less than 100 time-step asked)
             WRITE(numout,*) 
@@ -176,7 +195,7 @@ CONTAINS
          DO ji = fs_2, fs_jpim1   ! vect. opt.
             ztx = ( utau(ji-1,jj  ) + utau(ji,jj) ) * 0.5_wp * ( 2._wp - MIN( umask(ji-1,jj  ,1), umask(ji,jj,1) ) )
             zty = ( vtau(ji  ,jj-1) + vtau(ji,jj) ) * 0.5_wp * ( 2._wp - MIN( vmask(ji  ,jj-1,1), vmask(ji,jj,1) ) ) 
-            zmod = 0.5_wp * SQRT( ztx * ztx + zty * zty ) * tmask(ji,jj,1)
+            zmod = SQRT( ztx * ztx + zty * zty ) * tmask(ji,jj,1)
             taum(ji,jj) = zmod
             wndm(ji,jj) = SQRT( zmod * zcoef )  !!clem: not used?
          END DO

@@ -257,6 +257,10 @@
    sn_qtot     = 'qtot'                  ,        24.        , 'qtot'    , .false.     , .false., 'yearly'  , ''               , ''       , ''
    sn_qsr      = 'qsr'                   ,        24.        , 'qsr'     , .false.     , .false., 'yearly'  , ''               , ''       , ''
    sn_emp      = 'emp'                   ,        24.        , 'emp'     , .false.     , .false., 'yearly'  , ''               , ''       , ''
+   !!sn_sfx    = 'sfx'                   ,        24.        , 'sfx'     , .false.     , .false., 'yearly'  , ''               , ''       , ''
+   ! read sea ice thickness to determine mixing intensity under sea ice
+   !!sn_sithic = 'ice'                   ,       -1          , 'sithic'  , .true.      , .false., 'yearly'  , ''               , ''       , ''
+   !!sn_siconc = 'ice'                   ,       -1          , 'siconc'  , .true.      , .false., 'yearly'  , ''               , ''       , ''
 /
 !-----------------------------------------------------------------------
 &namsbc_blk    !   namsbc_blk  generic Bulk formula                     (ln_blk =T)

@@ -34,7 +34,7 @@ MODULE trcrst
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: trcrst.F90 15596 2021-12-13 16:28:47Z acc $
+   !! $Id: trcrst.F90 15810 2022-05-04 14:48:12Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -47,6 +47,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt       ! number of iteration
       !
+      INTEGER             ::   ji
       CHARACTER(LEN=20)   ::   clkt     ! ocean time-step define as a character
       CHARACTER(LEN=256)   ::   clname   ! trc output restart file name
       CHARACTER(LEN=256)  ::   clpath   ! full path to ocean output restart file
@@ -58,7 +59,11 @@ CONTAINS
             IF( ln_rst_list ) THEN
                ! Protect against user requests outside of simulation period (#2735)
                nitrst   = MIN( nitend, MINVAL( nn_stocklist, MASK=nn_stocklist.ge.nit000) )
-               nrst_lst = MAX( 1, FINDLOC( nn_stocklist, nitrst, DIM=1 ) )
+               ! Fortran 2008 coding style:   nrst_lst = MAX( 1, FINDLOC( nn_stocklist, nitrst, DIM=1 ) )
+               nrst_lst = 1
+               DO ji = 1, SIZE(nn_stocklist)
+                  IF( nn_stocklist(ji) == nitrst )   nrst_lst = ji
+               END DO
             ELSE
                nitrst = nitend
             ENDIF
@@ -355,7 +360,7 @@ CONTAINS
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: trcrst.F90 15596 2021-12-13 16:28:47Z acc $
+   !! $Id: trcrst.F90 15810 2022-05-04 14:48:12Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!======================================================================
 END MODULE trcrst

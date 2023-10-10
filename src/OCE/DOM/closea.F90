@@ -48,23 +48,23 @@ MODULE closea
    LOGICAL, PUBLIC :: l_sbc_clo  !: T => Closed seas defined, apply special treatment of freshwater fluxes.
                                  !: F => No closed seas defined (closea_mask field not found).
    LOGICAL, PUBLIC :: l_clo_rnf  !: T => Some closed seas output freshwater (RNF or EMPMR) to specified runoff points.
-   INTEGER, PUBLIC :: jncs       !: number of closed seas (inferred from closea_mask field)
-   INTEGER, PUBLIC :: jncsr      !: number of closed seas rnf mappings (inferred from closea_mask_rnf field)
-   INTEGER, PUBLIC :: jncse      !: number of closed seas empmr mappings (inferred from closea_mask_empmr field)
-
-   INTEGER, PUBLIC, ALLOCATABLE, DIMENSION(:,:) ::  closea_mask       !: mask of integers defining closed seas
-   INTEGER, PUBLIC, ALLOCATABLE, DIMENSION(:,:) ::  closea_mask_rnf   !: mask of integers defining closed seas rnf mappings
-   INTEGER, PUBLIC, ALLOCATABLE, DIMENSION(:,:) ::  closea_mask_empmr !: mask of integers defining closed seas empmr mappings
-   REAL(wp), PUBLIC, ALLOCATABLE, DIMENSION(:)  ::   surf         !: closed sea surface areas
-                                                                  !: (and residual global surface area)
-   REAL(wp), PUBLIC, ALLOCATABLE, DIMENSION(:)  ::   surfr        !: closed sea target rnf surface areas
-   REAL(wp), PUBLIC, ALLOCATABLE, DIMENSION(:)  ::   surfe        !: closed sea target empmr surface areas
+   INTEGER :: jncs       ! number of closed seas (inferred from closea_mask field)
+   INTEGER :: jncsr      ! number of closed seas rnf mappings (inferred from closea_mask_rnf field)
+   INTEGER :: jncse      ! number of closed seas empmr mappings (inferred from closea_mask_empmr field)
+   
+   INTEGER , ALLOCATABLE, DIMENSION(:,:) ::  closea_mask       ! mask of integers defining closed seas
+   INTEGER , ALLOCATABLE, DIMENSION(:,:) ::  closea_mask_rnf   ! mask of integers defining closed seas rnf mappings
+   INTEGER , ALLOCATABLE, DIMENSION(:,:) ::  closea_mask_empmr ! mask of integers defining closed seas empmr mappings
+   REAL(wp), ALLOCATABLE, DIMENSION(:)  ::   surf         ! closed sea surface areas 
+                                                          ! (and residual global surface area) 
+   REAL(wp), ALLOCATABLE, DIMENSION(:)  ::   surfr        ! closed sea target rnf surface areas 
+   REAL(wp), ALLOCATABLE, DIMENSION(:)  ::   surfe        ! closed sea target empmr surface areas 
 
    !! * Substitutions
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: closea.F90 10425 2018-12-19 21:54:16Z smasson $
+   !! $Id: closea.F90 15680 2022-02-01 16:43:17Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -200,16 +200,21 @@ CONTAINS
       !!      put as run-off in open ocean.
       !!
       !! ** Action  :   emp updated surface freshwater fluxes and associated heat content at kt
+      !!
+      !!                surf(1:jncs) = surface of closed seas (defined by mask/=0)
+      !!                surf(jncs+1) = surface of global ocean without closed seas
+      !!                surfe(1:jncse) = surface of target regions (defined by mask_empmr/=0 & mask=0)
+      !!                                 where empmr budget (zfwfe) from some closed seas is added
+      !!                                                           (those where mask_empmr/=0 & mask/=0)
       !!----------------------------------------------------------------------
       INTEGER         , INTENT(in   ) ::   kt       ! ocean model time step
       !
       INTEGER             ::   ierr
       INTEGER             ::   jc, jcr, jce   ! dummy loop indices
-      REAL(wp), PARAMETER ::   rsmall = 1.e-20_wp    ! Closed sea correction epsilon
-      REAL(wp)            ::   zfwf_total, zcoef, zcoef1         !
-      REAL(wp), DIMENSION(jncs)    ::   zfwf      !:
-      REAL(wp), DIMENSION(jncsr+1) ::   zfwfr     !: freshwater fluxes over closed seas
-      REAL(wp), DIMENSION(jncse+1) ::   zfwfe     !:
+      REAL(wp)            ::   zfwf_total, zcoef  ! 
+      REAL(wp), DIMENSION(jncs)    ::   zfwf      !
+      REAL(wp), DIMENSION(jncsr+1) ::   zfwfr     ! freshwater fluxes over closed seas
+      REAL(wp), DIMENSION(jncse+1) ::   zfwfe     ! 
       REAL(wp), DIMENSION(jpi,jpj) ::   ztmp2d   ! 2D workspace
       !!----------------------------------------------------------------------
       !
@@ -246,7 +251,7 @@ CONTAINS
          END DO
          !
          ! jncs+1 : surface area of global ocean, closed seas excluded
-         surf(jncs+1) = surf(jncs+1) - SUM(surf(1:jncs))
+         IF( jncs > 0 )   surf(jncs+1) = surf(jncs+1) - SUM(surf(1:jncs))
          !
          !                                        ! surface areas of rnf target areas
          IF( jncsr > 0 ) THEN
@@ -313,22 +318,19 @@ CONTAINS
          !
          DO jcr = 1, jncsr
             !
-            ztmp2d(:,:) = 0.e0_wp
-            WHERE( closea_mask_rnf(:,:) == jcr .and. closea_mask(:,:) > 0 ) ztmp2d(:,:) = e1e2t(:,:) * ( emp(:,:)-rnf(:,:) ) * tmask_i(:,:)
-            zfwfr(jcr) = glob_sum( 'closea', ztmp2d(:,:) )
-            !
-            ! The following if avoids the redistribution of the round off
-            IF ( ABS(zfwfr(jcr) / surf(jncs+1) ) > rsmall) THEN
+            IF( surfr(jcr) > 0._wp ) THEN ! target area /= 0
+               ztmp2d(:,:) = 0.e0_wp
+               WHERE( closea_mask_rnf(:,:) == jcr .AND. closea_mask(:,:) > 0 ) ztmp2d(:,:) = e1e2t(:,:) * ( emp(:,:)-rnf(:,:) ) * tmask_i(:,:)
+               zfwfr(jcr) = glob_sum( 'closea', ztmp2d(:,:) )
                !
                ! Add residuals to target runoff points if negative and subtract from total to be added globally
-               IF( zfwfr(jcr) < 0.0 ) THEN
-                  zfwf_total = zfwf_total - zfwfr(jcr)
-                  zcoef    = zfwfr(jcr) / surfr(jcr)
-                  zcoef1   = rcp * zcoef
-                  WHERE( closea_mask_rnf(:,:) == jcr .and. closea_mask(:,:) == 0.0)
+               IF( zfwfr(jcr) < 0.0 ) THEN 
+                  zcoef = zfwfr(jcr) / surfr(jcr)
+                  WHERE( closea_mask_rnf(:,:) == jcr .AND. closea_mask(:,:) == 0 )
                      emp(:,:) = emp(:,:) + zcoef
-                     qns(:,:) = qns(:,:) - zcoef1 * sst_m(:,:)
+                     qns(:,:) = qns(:,:) - zcoef * rcp * sst_m(:,:)
                   ENDWHERE
+                  zfwf_total = zfwf_total - zfwfr(jcr)
                ENDIF
                !
             ENDIF
@@ -342,62 +344,50 @@ CONTAINS
          !
          DO jce = 1, jncse
             !
-            ztmp2d(:,:) = 0.e0_wp
-            WHERE( closea_mask_empmr(:,:) == jce .and. closea_mask(:,:) > 0 ) ztmp2d(:,:) = e1e2t(:,:) * ( emp(:,:)-rnf(:,:) ) * tmask_i(:,:)
-            zfwfe(jce) = glob_sum( 'closea', ztmp2d(:,:) )
-            !
-            ! The following if avoids the redistribution of the round off
-            IF ( ABS( zfwfe(jce) / surf(jncs+1) ) > rsmall ) THEN
+            IF( surfe(jce) > 0._wp ) THEN ! target area /= 0
+               ztmp2d(:,:) = 0.e0_wp
+               WHERE( closea_mask_empmr(:,:) == jce .AND. closea_mask(:,:) > 0 ) ztmp2d(:,:) = e1e2t(:,:) * ( emp(:,:)-rnf(:,:) ) * tmask_i(:,:)
+               zfwfe(jce) = glob_sum( 'closea', ztmp2d(:,:) )
                !
                ! Add residuals to runoff points and subtract from total to be added globally
-               zfwf_total = zfwf_total - zfwfe(jce)
-               zcoef    = zfwfe(jce) / surfe(jce)
-               zcoef1   = rcp * zcoef
-               WHERE( closea_mask_empmr(:,:) == jce .and. closea_mask(:,:) == 0.0)
+               zcoef = zfwfe(jce) / surfe(jce)
+               WHERE( closea_mask_empmr(:,:) == jce .AND. closea_mask(:,:) == 0 )
                   emp(:,:) = emp(:,:) + zcoef
-                  qns(:,:) = qns(:,:) - zcoef1 * sst_m(:,:)
+                  qns(:,:) = qns(:,:) - zcoef * rcp * sst_m(:,:)
                ENDWHERE
-               !
+               zfwf_total = zfwf_total - zfwfe(jce)
             ENDIF
+            !
          END DO
       ENDIF ! jncse > 0
 
       !
       ! 4. Spread residual flux over global ocean.
       !
-      ! The following if avoids the redistribution of the round off
-      IF ( ABS(zfwf_total / surf(jncs+1) ) > rsmall) THEN
-         zcoef    = zfwf_total / surf(jncs+1)
-         zcoef1   = rcp * zcoef
-         WHERE( closea_mask(:,:) == 0 )
-            emp(:,:) = emp(:,:) + zcoef
-            qns(:,:) = qns(:,:) - zcoef1 * sst_m(:,:)
-         ENDWHERE
-      ENDIF
-
+      zcoef = zfwf_total / surf(jncs+1)
+      WHERE( closea_mask(:,:) == 0 )
+         emp(:,:) = emp(:,:) + zcoef
+         qns(:,:) = qns(:,:) - zcoef * rcp * sst_m(:,:)
+      ENDWHERE
       !
       ! 5. Subtract area means from emp (and qns) over closed seas to give zero mean FW flux over each sea.
       !
       DO jc = 1, jncs
-         ! The following if avoids the redistribution of the round off
-         IF ( ABS(zfwf(jc) / surf(jncs+1) ) > rsmall) THEN
-            !
-            ! Subtract residuals from fluxes over closed sea
-            zcoef    = zfwf(jc) / surf(jc)
-            zcoef1   = rcp * zcoef
-            WHERE( closea_mask(:,:) == jc )
-               emp(:,:) = emp(:,:) - zcoef
-               qns(:,:) = qns(:,:) + zcoef1 * sst_m(:,:)
-            ENDWHERE
-            !
-         ENDIF
+         !
+         ! Subtract residuals from fluxes over closed sea
+         zcoef = zfwf(jc) / surf(jc)
+         WHERE( closea_mask(:,:) == jc )
+            emp(:,:) = emp(:,:) - zcoef
+            qns(:,:) = qns(:,:) + zcoef * rcp * sst_m(:,:)
+         ENDWHERE
+         !
       END DO
       !
       emp (:,:) = emp (:,:) * tmask(:,:,1)
       !
-      CALL lbc_lnk( 'closea', emp , 'T', 1._wp )
 
       IF( ln_timing )  CALL timing_stop('sbc_clo')
+      CALL lbc_lnk( 'closea', emp , 'T', 1._wp ) ! clem: why do we need that?
       !
 
    END SUBROUTINE sbc_clo

@@ -136,7 +136,7 @@ MODULE sbcblk
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: sbcblk.F90 15613 2021-12-22 09:35:54Z cetlod $
+   !! $Id: sbcblk.F90 15813 2023-04-05 11:59:14Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -421,16 +421,18 @@ CONTAINS
          END DO
       END DO
 #endif
+      ! mask the wind in case it is not masked in the input file otherwise we end up with twice the stress at the coast
+      ! (see calculation of utau/vtau below)
       DO jj = 2, jpjm1
          DO ji = fs_2, fs_jpim1   ! vect. opt.
-            zwnd_i(ji,jj) = (  sf(jp_wndi)%fnow(ji,jj,1) - rn_vfac * 0.5 * ( pu(ji-1,jj  ) + pu(ji,jj) )  )
-            zwnd_j(ji,jj) = (  sf(jp_wndj)%fnow(ji,jj,1) - rn_vfac * 0.5 * ( pv(ji  ,jj-1) + pv(ji,jj) )  )
+            zwnd_i(ji,jj) = (  sf(jp_wndi)%fnow(ji,jj,1) - rn_vfac * 0.5 * ( pu(ji-1,jj  ) + pu(ji,jj) )  ) * tmask(ji,jj,1)
+            zwnd_j(ji,jj) = (  sf(jp_wndj)%fnow(ji,jj,1) - rn_vfac * 0.5 * ( pv(ji  ,jj-1) + pv(ji,jj) )  ) * tmask(ji,jj,1)
          END DO
       END DO
       CALL lbc_lnk_multi( 'sbcblk', zwnd_i, 'T', -1., zwnd_j, 'T', -1. )
       ! ... scalar wind ( = | U10m - U_oce | ) at T-point (masked)
       wndm(:,:) = SQRT(  zwnd_i(:,:) * zwnd_i(:,:)   &
-         &             + zwnd_j(:,:) * zwnd_j(:,:)  ) * tmask(:,:,1)
+         &             + zwnd_j(:,:) * zwnd_j(:,:)  )
 
       ! ----------------------------------------------------------------------------- !
       !      I   Radiative FLUXES                                                     !

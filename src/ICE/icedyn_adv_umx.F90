@@ -32,7 +32,7 @@ MODULE icedyn_adv_umx
 
    PUBLIC   ice_dyn_adv_umx   ! called by icedyn_adv.F90
    !
-   INTEGER, PARAMETER ::   np_advS = 1         ! advection for S and T:    dVS/dt = -div(      uVS     ) => np_advS = 1
+   INTEGER, PARAMETER ::   np_advS = 2         ! advection for S and T:    dVS/dt = -div(      uVS     ) => np_advS = 1
    !                                                                    or dVS/dt = -div( uA * uHS / u ) => np_advS = 2
    !                                                                    or dVS/dt = -div( uV * uS  / u ) => np_advS = 3
    INTEGER, PARAMETER ::   np_limiter = 1      ! limiter: 1 = nonosc
@@ -53,7 +53,7 @@ MODULE icedyn_adv_umx
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icedyn_adv_umx.F90 14026 2020-12-03 08:48:10Z clem $
+   !! $Id: icedyn_adv_umx.F90 15812 2022-11-07 16:44:31Z clem $
    !! Software governed by the CeCILL licence     (./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS

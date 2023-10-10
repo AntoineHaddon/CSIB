@@ -40,7 +40,7 @@ MODULE diaar5
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: diaar5.F90 13087 2020-06-10 10:16:00Z davestorkey $
+   !! $Id: diaar5.F90 15795 2022-04-23 08:33:25Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -376,7 +376,7 @@ CONTAINS
       !! ** Purpose :   initialization for AR5 diagnostic computation
       !!----------------------------------------------------------------------
       INTEGER  ::   inum
-      INTEGER  ::   ik, idep
+      INTEGER  ::   ik
       INTEGER  ::   ji, jj, jk  ! dummy loop indices
       REAL(wp) ::   zztmp  
       REAL(wp), ALLOCATABLE, DIMENSION(:,:,:,:) ::   zsaldta   ! Jan/Dec levitus salinity
@@ -403,9 +403,9 @@ CONTAINS
          DO jk = 1, jpkm1
             DO jj = 1, jpj               ! interpolation of salinity at the last ocean level (i.e. the partial step)
                DO ji = 1, jpi
-                  idep = tmask(ji,jj,jk) * e3t_0(ji,jj,jk)
-                  zvol0 (ji,jj) = zvol0 (ji,jj) +  idep * e1e2t(ji,jj)
-                  thick0(ji,jj) = thick0(ji,jj) +  idep    
+                  zztmp = tmask(ji,jj,jk) * e3t_0(ji,jj,jk)
+                  zvol0 (ji,jj) = zvol0 (ji,jj) + zztmp * e1e2t(ji,jj)
+                  thick0(ji,jj) = thick0(ji,jj) + zztmp    
                END DO
             END DO
          END DO

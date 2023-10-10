@@ -41,7 +41,7 @@ MODULE restart
 #  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: restart.F90 15596 2021-12-13 16:28:47Z acc $
+   !! $Id: restart.F90 15810 2022-05-04 14:48:12Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -58,6 +58,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt     ! ocean time-step
       !!
+      INTEGER             ::   ji
       CHARACTER(LEN=20)   ::   clkt     ! ocean time-step deine as a character
       CHARACTER(LEN=256)   ::   clname   ! ocean output restart file name
       CHARACTER(lc)       ::   clpath   ! full path to ocean output restart file
@@ -69,8 +70,12 @@ CONTAINS
          lrst_oce = .FALSE.   
          IF( ln_rst_list ) THEN
             ! Protect against user requests outside of simulation period (#2735)
-            nitrst   = MIN( nitend, MINVAL( nn_stocklist, MASK=nn_stocklist.ge.nit000) )  
-            nrst_lst = MAX( 1, FINDLOC( nn_stocklist, nitrst, DIM=1 ) )
+            nitrst   = MIN( nitend, MINVAL( nn_stocklist, MASK=nn_stocklist.GE.nit000) )  
+            ! Fortran 2008 coding style:   nrst_lst = MAX( 1, FINDLOC( nn_stocklist, nitrst, DIM=1 ) )
+            nrst_lst = 1
+            DO ji = 1, SIZE(nn_stocklist)
+               IF( nn_stocklist(ji) == nitrst )   nrst_lst = ji
+            END DO
          ELSE
             nitrst = nitend
          ENDIF

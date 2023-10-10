@@ -60,7 +60,7 @@ MODULE dynnxt
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: dynnxt.F90 13284 2020-07-09 15:12:23Z smasson $
+   !! $Id: dynnxt.F90 15813 2023-04-05 11:59:14Z clem $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -362,6 +362,10 @@ CONTAINS
          zva(:,:,:) = ( vb(:,:,:) - zva(:,:,:) ) * z1_2dt
          CALL trd_dyn( zua, zva, jpdyn_atf, kt )
       ENDIF
+      !
+      !!clem
+      !!CALL lbc_lnk_multi( 'dynnxt' , ub, 'U', -1., vn, 'V', -1.)
+
       !
       IF ( iom_use("utau") ) THEN
          IF ( ln_drgice_imp.OR.ln_isfcav ) THEN

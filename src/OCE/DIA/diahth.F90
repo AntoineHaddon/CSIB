@@ -41,7 +41,7 @@ MODULE diahth
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: diahth.F90 15231 2021-09-08 07:58:57Z clem $ 
+   !! $Id: diahth.F90 15768 2022-03-30 07:04:47Z smasson $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -102,12 +102,13 @@ CONTAINS
       IF( ln_timing )   CALL timing_start('dia_hth')
 
       IF( kt == nit000 ) THEN
-         l_hth = .FALSE.
-         IF(   iom_use( 'mlddzt'   ) .OR. iom_use( 'mldr0_3'  ) .OR. iom_use( 'mldr0_1'  )    .OR.  & 
-            &  iom_use( 'mld_dt02' ) .OR. iom_use( 'topthdep' ) .OR. iom_use( 'mldr10_3' )    .OR.  &    
-            &  iom_use( '20d'      ) .OR. iom_use( '26d'      ) .OR. iom_use( '28d'      )    .OR.  &    
-            &  iom_use( 'hc300'    ) .OR. iom_use( 'hc700'    ) .OR. iom_use( 'hc2000'   )    .OR.  &    
-            &  iom_use( 'pycndep'  ) .OR. iom_use( 'tinv'     ) .OR. iom_use( 'depti'    )  ) l_hth = .TRUE.
+         !
+         l_hth = iom_use( 'mlddzt'   ) .OR. iom_use( 'mldr0_3'  ) .OR. iom_use( 'mldr0_1'  )    .OR.  & 
+            &    iom_use( 'mld_dt02' ) .OR. iom_use( 'topthdep' ) .OR. iom_use( 'mldr10_3' )    .OR.  &    
+            &    iom_use( '20d'      ) .OR. iom_use( '26d'      ) .OR. iom_use( '28d'      )    .OR.  &    
+            &    iom_use( 'hc300'    ) .OR. iom_use( 'hc700'    ) .OR. iom_use( 'hc2000'   )    .OR.  &    
+            &    iom_use( 'pycndep'  ) .OR. iom_use( 'tinv'     ) .OR. iom_use( 'depti'    )
+         !
          !                                      ! allocate dia_hth array
          IF( l_hth ) THEN 
             IF( dia_hth_alloc() /= 0 )   CALL ctl_stop( 'STOP', 'dia_hth : unable to allocate standard arrays' )
@@ -120,11 +121,12 @@ CONTAINS
 
       IF( l_hth ) THEN
          !
-         IF( iom_use( 'mlddzt' ) .OR. iom_use( 'mldr0_3' ) .OR. iom_use( 'mldr0_1' ) ) THEN
-            ! initialization
-            ztinv  (:,:) = 0._wp  
-            zdepinv(:,:) = 0._wp  
-            zmaxdzT(:,:) = 0._wp  
+         ! initialization
+         IF( iom_use( 'tinv'   ) )   ztinv  (:,:) = 0._wp  
+         IF( iom_use( 'depti'  ) )   zdepinv(:,:) = 0._wp  
+         IF( iom_use( 'mlddzt' ) )   zmaxdzT(:,:) = 0._wp  
+         IF( iom_use( 'mlddzt' ) .OR. iom_use( 'mld_dt02' ) .OR. iom_use( 'topthdep' )   &
+            &                    .OR. iom_use( 'mldr10_3' ) .OR. iom_use( 'pycndep'  ) ) THEN
             DO jj = 1, jpj
                DO ji = 1, jpi
                   zztmp = gdepw_n(ji,jj,mbkt(ji,jj)+1) 
@@ -133,8 +135,10 @@ CONTAINS
                   ztm2    (ji,jj) = zztmp
                   zrho10_3(ji,jj) = zztmp
                   zpycn   (ji,jj) = zztmp
-                 END DO
+               END DO
             END DO
+         ENDIF
+         IF( iom_use( 'mldr0_3' ) .OR. iom_use( 'mldr0_1' ) ) THEN
             IF( nla10 > 1 ) THEN 
                DO jj = 1, jpj
                   DO ji = 1, jpi
@@ -144,27 +148,9 @@ CONTAINS
                   END DO
                END DO
             ENDIF
-      
-            ! Preliminary computation
-            ! computation of zdelr = (dr/dT)(T,S,10m)*(-0.2 degC)
-            DO jj = 1, jpj
-               DO ji = 1, jpi
-                  IF( tmask(ji,jj,nla10) == 1. ) THEN
-                     zu  =  1779.50 + 11.250 * tsn(ji,jj,nla10,jp_tem) - 3.80   * tsn(ji,jj,nla10,jp_sal)  &
-                        &           - 0.0745 * tsn(ji,jj,nla10,jp_tem) * tsn(ji,jj,nla10,jp_tem)   &
-                        &           - 0.0100 * tsn(ji,jj,nla10,jp_tem) * tsn(ji,jj,nla10,jp_sal)
-                     zv  =  5891.00 + 38.000 * tsn(ji,jj,nla10,jp_tem) + 3.00   * tsn(ji,jj,nla10,jp_sal)  &
-                        &           - 0.3750 * tsn(ji,jj,nla10,jp_tem) * tsn(ji,jj,nla10,jp_tem)
-                     zut =    11.25 -  0.149 * tsn(ji,jj,nla10,jp_tem) - 0.01   * tsn(ji,jj,nla10,jp_sal)
-                     zvt =    38.00 -  0.750 * tsn(ji,jj,nla10,jp_tem)
-                     zw  = (zu + 0.698*zv) * (zu + 0.698*zv)
-                     zdelr(ji,jj) = ztem2 * (1000.*(zut*zv - zvt*zu)/zw)
-                  ELSE
-                     zdelr(ji,jj) = 0._wp
-                  ENDIF
-               END DO
-            END DO
+         ENDIF
 
+         IF( iom_use( 'mlddzt' ) .OR. iom_use( 'mldr0_3' ) .OR. iom_use( 'mldr0_1' ) ) THEN
             ! ------------------------------------------------------------- !
             ! thermocline depth: strongest vertical gradient of temperature !
             ! turbocline depth (mixing layer depth): avt = zavt5            !
@@ -204,6 +190,26 @@ CONTAINS
          !
          IF(  iom_use( 'mld_dt02' ) .OR. iom_use( 'topthdep' ) .OR. iom_use( 'mldr10_3' ) .OR.  &    
             &  iom_use( 'pycndep' ) .OR. iom_use( 'tinv'     ) .OR. iom_use( 'depti'    )  ) THEN
+     
+            ! Preliminary computation
+            ! computation of zdelr = (dr/dT)(T,S,10m)*(-0.2 degC)
+            DO jj = 1, jpj
+               DO ji = 1, jpi
+                  IF( tmask(ji,jj,nla10) == 1. ) THEN
+                     zu  =  1779.50 + 11.250 * tsn(ji,jj,nla10,jp_tem) - 3.80   * tsn(ji,jj,nla10,jp_sal)  &
+                        &           - 0.0745 * tsn(ji,jj,nla10,jp_tem) * tsn(ji,jj,nla10,jp_tem)   &
+                        &           - 0.0100 * tsn(ji,jj,nla10,jp_tem) * tsn(ji,jj,nla10,jp_sal)
+                     zv  =  5891.00 + 38.000 * tsn(ji,jj,nla10,jp_tem) + 3.00   * tsn(ji,jj,nla10,jp_sal)  &
+                        &           - 0.3750 * tsn(ji,jj,nla10,jp_tem) * tsn(ji,jj,nla10,jp_tem)
+                     zut =    11.25 -  0.149 * tsn(ji,jj,nla10,jp_tem) - 0.01   * tsn(ji,jj,nla10,jp_sal)
+                     zvt =    38.00 -  0.750 * tsn(ji,jj,nla10,jp_tem)
+                     zw  = (zu + 0.698*zv) * (zu + 0.698*zv)
+                     zdelr(ji,jj) = ztem2 * (1000.*(zut*zv - zvt*zu)/zw)
+                  ELSE
+                     zdelr(ji,jj) = 0._wp
+                  ENDIF
+               END DO
+            END DO
             ! ------------------------------------------------------------- !
             ! MLD: abs( tn - tn(10m) ) = ztem2                              !
             ! Top of thermocline: tn = tn(10m) - ztem2                      !
