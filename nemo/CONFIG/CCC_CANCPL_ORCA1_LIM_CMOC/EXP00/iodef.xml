@@ -44,7 +44,13 @@
         <field id="depti"        description="Depth of max. vert. inv. of temperature"   unit="m"                        />
         <field id="20d"          description="Depth of 20C isotherm"                     unit="m"                        />
         <field id="28d"          description="Depth of 28C isotherm"                     unit="m"                        />
+        <field id="14d"          description="Depth of 14C isotherm"                     unit="m"                        />
+        <field id="17d"          description="Depth of 17C isotherm"                     unit="m"                        />
+        <field id="26d"          description="Depth of 26C isotherm"                     unit="m"                        />
         <field id="hc300"        description="Heat content 300 m"                        unit="W"                        />
+        <field id="t300"         description="Mean sea water potential temperature in upper 300 m"   unit="degC"         />
+        <field id="s300"         description="Mean salinity in upper 300 m"              unit="psu"                      />
+
         <!-- variables available with key_diaar5 -->
         <field id="botpres"      description="Pressure at sea floor"                     unit="dbar"                     />
         <field id="cellthc"      description="Cell thickness"                            unit="m"     axis_ref="deptht"  />
