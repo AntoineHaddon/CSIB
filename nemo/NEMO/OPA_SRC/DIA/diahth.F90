@@ -9,6 +9,7 @@ MODULE diahth
    !!                 !  1999-07  (E. Guilyardi)  hd28 + heat content 
    !!            8.5  !  2002-06  (G. Madec)  F90: Free form and module
    !!   NEMO     3.2  !  2009-07  (S. Masson) hc300 bugfix + cleaning + add new diag
+   !!   NEMO     3.4.1|  2023-10  (D. Yang) Add new variables: hd14,hd17,hd26,t300,s300 
    !!----------------------------------------------------------------------
 #if   defined key_diahth   ||   defined key_esopa
    !!----------------------------------------------------------------------
@@ -35,7 +36,12 @@ MODULE diahth
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   hth    !: depth of the max vertical temperature gradient [m]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   hd20   !: depth of 20 C isotherm                         [m]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   hd28   !: depth of 28 C isotherm                         [m]
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   hd14   !: depth of 14 C isotherm                         [m]
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   hd17   !: depth of 17 C isotherm                         [m]
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   hd26   !: depth of 26 C isotherm                         [m]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   htc3   !: heat content of first 300 m                    [W]
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   t300   !: first 300 m mean temperature                   [degC]
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   s300   !: first 300 m mean salinity                      [psu]
 
    !! * Substitutions
 #  include "domzgr_substitute.h90"
@@ -51,7 +57,8 @@ CONTAINS
       INTEGER :: dia_hth_alloc
       !!---------------------------------------------------------------------
       !
-      ALLOCATE(hth(jpi,jpj), hd20(jpi,jpj), hd28(jpi,jpj), htc3(jpi,jpj), STAT=dia_hth_alloc)
+      ALLOCATE(hth(jpi,jpj), hd20(jpi,jpj), hd28(jpi,jpj), hd14(jpi,jpj), hd17(jpi,jpj), &
+          &    hd26(jpi,jpj), htc3(jpi,jpj), t300(jpi,jpj), s300(jpi,jpj), STAT=dia_hth_alloc)
       !
       IF( lk_mpp           )   CALL mpp_sum ( dia_hth_alloc )
       IF(dia_hth_alloc /= 0)   CALL ctl_warn('dia_hth_alloc: failed to allocate arrays.')
@@ -84,6 +91,7 @@ CONTAINS
       INTEGER                          ::   ji, jj, jk            ! dummy loop arguments
       INTEGER                          ::   iid, ilevel           ! temporary integers
       INTEGER, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   ik20, ik28  ! levels
+      INTEGER, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   ik14, ik17, ik26  ! levels
       REAL(wp)                         ::   zavt5 = 5.e-4_wp      ! Kz criterion for the turbocline depth
       REAL(wp)                         ::   zrho3 = 0.03_wp       ! density     criterion for mixed layer depth
       REAL(wp)                         ::   zrho1 = 0.01_wp       ! density     criterion for mixed layer depth
@@ -111,6 +119,7 @@ CONTAINS
 
          IF(.not. ALLOCATED(ik20))THEN
             ALLOCATE(ik20(jpi,jpj), ik28(jpi,jpj), &
+               &     ik14(jpi,jpj), ik17(jpi,jpj), ik26(jpi,jpj), &
                &      zabs2(jpi,jpj),   &
                &      ztm2(jpi,jpj),    &
                &      zrho10_3(jpi,jpj),&
@@ -254,19 +263,25 @@ CONTAINS
       ! ----------------------------------- !
       ik20(:,:) = 1
       ik28(:,:) = 1
+      ik14(:,:) = 1
+      ik17(:,:) = 1
+      ik26(:,:) = 1
       DO jk = 1, jpkm1   ! beware temperature is not always decreasing with depth => loop from top to bottom
          DO jj = 1, jpj
             DO ji = 1, jpi
                zztmp = tsn(ji,jj,jk,jp_tem)
                IF( zztmp >= 20. )   ik20(ji,jj) = jk
                IF( zztmp >= 28. )   ik28(ji,jj) = jk
+               IF( zztmp >= 14. )   ik14(ji,jj) = jk
+               IF( zztmp >= 17. )   ik17(ji,jj) = jk
+               IF( zztmp >= 26. )   ik26(ji,jj) = jk
             END DO
          END DO
       END DO
 
-      ! --------------------------- !
-      !  Depth of 20C/28C isotherm  !
-      ! --------------------------- !
+      ! --------------------------------------- !
+      !  Depth of 20C/28C/14C/17C/26C isotherm  !
+      ! --------------------------------------- !
       DO jj = 1, jpj
          DO ji = 1, jpi
             !
@@ -275,8 +290,8 @@ CONTAINS
             iid = ik20(ji,jj)
             IF( iid /= 1 ) THEN 
                zztmp =      fsdept(ji,jj,iid  )   &                     ! linear interpolation
-                  &  + (    fsdept(ji,jj,iid+1) - fsdept(ji,jj,iid)                       )   &
-                  &  * ( 20.*tmask(ji,jj,iid+1) - tsn(ji,jj,iid,jp_tem)                       )   &
+                  &  + (    fsdept(ji,jj,iid+1) - fsdept(ji,jj,iid) )   &
+                  &  * ( 20.*tmask(ji,jj,iid+1) - tsn(ji,jj,iid,jp_tem) )   & ! 20.*tmask seems problematic
                   &  / ( tsn(ji,jj,iid+1,jp_tem) - tsn(ji,jj,iid,jp_tem) + (1.-tmask(ji,jj,1)) )
                hd20(ji,jj) = MIN( zztmp , zzdep) * tmask(ji,jj,1)       ! bound by the ocean depth
             ELSE 
@@ -286,18 +301,54 @@ CONTAINS
             iid = ik28(ji,jj)
             IF( iid /= 1 ) THEN 
                zztmp =      fsdept(ji,jj,iid  )   &                     ! linear interpolation
-                  &  + (    fsdept(ji,jj,iid+1) - fsdept(ji,jj,iid)                       )   &
-                  &  * ( 28.*tmask(ji,jj,iid+1) -    tsn(ji,jj,iid,jp_tem)                       )   &
-                  &  / (  tsn(ji,jj,iid+1,jp_tem) -    tsn(ji,jj,iid,jp_tem) + (1.-tmask(ji,jj,1)) )
+                  &  + (    fsdept(ji,jj,iid+1) - fsdept(ji,jj,iid) )   &
+                  &  * ( 28.*tmask(ji,jj,iid+1) - tsn(ji,jj,iid,jp_tem) )   &
+                  &  / (  tsn(ji,jj,iid+1,jp_tem) - tsn(ji,jj,iid,jp_tem) + (1.-tmask(ji,jj,1)) )
                hd28(ji,jj) = MIN( zztmp , zzdep ) * tmask(ji,jj,1)      ! bound by the ocean depth
             ELSE 
                hd28(ji,jj) = 0._wp
+            ENDIF
+            !
+            iid = ik14(ji,jj)
+            IF( iid /= 1 ) THEN
+               zztmp =      fsdept(ji,jj,iid  )   &                     ! linear interpolation
+                  &  + (    fsdept(ji,jj,iid+1) - fsdept(ji,jj,iid) )   &
+                  &  * ( 14.*tmask(ji,jj,iid+1) - tsn(ji,jj,iid,jp_tem) )   &
+                  &  / (  tsn(ji,jj,iid+1,jp_tem) - tsn(ji,jj,iid,jp_tem) + (1.-tmask(ji,jj,1)) )
+               hd14(ji,jj) = MIN( zztmp , zzdep ) * tmask(ji,jj,1)      ! bound by the ocean depth
+            ELSE
+               hd14(ji,jj) = 0._wp
+            ENDIF
+            !  
+            iid = ik17(ji,jj)
+            IF( iid /= 1 ) THEN
+               zztmp =      fsdept(ji,jj,iid  )   &                     ! linear interpolation
+                  &  + (    fsdept(ji,jj,iid+1) - fsdept(ji,jj,iid) )   &
+                  &  * ( 17.*tmask(ji,jj,iid+1) - tsn(ji,jj,iid,jp_tem)                       )   &
+                  &  / (  tsn(ji,jj,iid+1,jp_tem) - tsn(ji,jj,iid,jp_tem) + (1.-tmask(ji,jj,1)) )
+               hd17(ji,jj) = MIN( zztmp , zzdep ) * tmask(ji,jj,1)      ! bound by the ocean depth 
+            ELSE      
+               hd17(ji,jj) = 0._wp
+            ENDIF
+            !
+            iid = ik26(ji,jj)
+            IF( iid /= 1 ) THEN
+               zztmp =      fsdept(ji,jj,iid  )   &                     ! linear interpolation
+                  &  + (    fsdept(ji,jj,iid+1) - fsdept(ji,jj,iid)
+                  &  * ( 26.*tmask(ji,jj,iid+1) - tsn(ji,jj,iid,jp_tem) )   & 
+                  &  / (  tsn(ji,jj,iid+1,jp_tem) - tsn(ji,jj,iid,jp_tem) + (1.-tmask(ji,jj,1)) )
+               hd26(ji,jj) = MIN( zztmp , zzdep ) * tmask(ji,jj,1)      ! bound by the ocean depth
+            ELSE
+               hd26(ji,jj) = 0._wp
             ENDIF
 
          END DO
       END DO
       CALL iom_put( "20d", hd20 )   ! depth of the 20 isotherm
       CALL iom_put( "28d", hd28 )   ! depth of the 28 isotherm
+      CALL iom_put( "14d", hd14 )   ! depth of the 14 isotherm
+      CALL iom_put( "17d", hd17 )   ! depth of the 17 isotherm
+      CALL iom_put( "26d", hd26 )   ! depth of the 26 isotherm
 
       ! ----------------------------- !
       !  Heat content of first 300 m  !
@@ -311,13 +362,20 @@ CONTAINS
          IF( zthick_0 < 300. )   ilevel = jk
       END DO
       ! surface boundary condition
-      IF( lk_vvl ) THEN   ;   zthick(:,:) = 0._wp       ;   htc3(:,:) = 0._wp                                   
-      ELSE                ;   zthick(:,:) = sshn(:,:)   ;   htc3(:,:) = tsn(:,:,1,jp_tem) * sshn(:,:) * tmask(:,:,1)   
+      IF( lk_vvl ) THEN 
+         zthick(:,:) = 0._wp 
+         htc3(:,:) = 0._wp 
+         s300(:,:) = 0._wp
+      ELSE 
+         zthick(:,:) = sshn(:,:)  
+         htc3(:,:) = tsn(:,:,1,jp_tem) * sshn(:,:) * tmask(:,:,1)   
+         s300(:,:) = tsn(:,:,1,jp_sal) * sshn(:,:) * tmask(:,:,1)  
       ENDIF
       ! integration down to ilevel
       DO jk = 1, ilevel
          zthick(:,:) = zthick(:,:) + fse3t(:,:,jk)
-         htc3  (:,:) = htc3  (:,:) + fse3t(:,:,jk) * tsn(:,:,jk,jp_tem) * tmask(:,:,jk)
+         htc3 (:,:) = htc3  (:,:) + fse3t(:,:,jk) * tsn(:,:,jk,jp_tem) * tmask(:,:,jk)
+         s300 (:,:) = s300  (:,:) + fse3t(:,:,jk) * tsn(:,:,jk,jp_sal) * tmask(:,:,jk)
       END DO
       ! deepest layer
       zthick(:,:) = 300. - zthick(:,:)   !   remaining thickness to reach 300m
@@ -325,14 +383,17 @@ CONTAINS
          DO ji = 1, jpi
             htc3(ji,jj) = htc3(ji,jj) + tsn(ji,jj,ilevel+1,jp_tem) * MIN( fse3t(ji,jj,ilevel+1), zthick(ji,jj) )  &
                                                                    * tmask(ji,jj,ilevel+1)
-            htc3(ji,jj) = htc3(ji,jj) + tsn(ji,jj,ilevel+1,jp_tem) * MIN( fse3t(ji,jj,ilevel+1), zthick(ji,jj) )   &
+            s300(ji,jj) = s300(ji,jj) + tsn(ji,jj,ilevel+1,jp_sal) * MIN( fse3t(ji,jj,ilevel+1), zthick(ji,jj) )   &
                &                                                   * tmask(ji,jj,ilevel+1)
          END DO
       END DO
+      ! Averge over 1st 300 m
+      CALL iom_put( "hc300 / 300.", t300 ) ! first 300m mean temperature 
+      CALL iom_put( "s300 / 300.", s300 )  ! first 300m mean salinity
       ! from temperature to heat contain
       zcoef = rau0 * rcp
       htc3(:,:) = zcoef * htc3(:,:)
-      CALL iom_put( "hc300", htc3 )      ! first 300m heat content
+      CALL iom_put( "hc300", htc3 )        ! first 300m heat content
       !
       IF( nn_timing == 1 )   CALL timing_stop('dia_hth')
       !
