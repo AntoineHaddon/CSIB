@@ -109,6 +109,7 @@ CONTAINS
       REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:) ::   zrho0_1    ! MLD rho = rho(surf) = 0.01
       REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:) ::   zmaxdzT    ! max of dT/dz
       REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:) ::   zthick     ! vertical integration thickness 
+      REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:) ::   tthick     ! vertical integration thickness in upper 300m
       REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:) ::   zdelr      ! delta rho equivalent to deltaT = 0.2
       !!----------------------------------------------------------------------
       IF( nn_timing == 1 )   CALL timing_start('dia_hth')
@@ -130,6 +131,7 @@ CONTAINS
                &      zrho0_1(jpi,jpj), &
                &      zmaxdzT(jpi,jpj), &
                &      zthick(jpi,jpj),  &
+               &      tthick(jpi,jpj),  &
                &      zdelr(jpi,jpj), STAT=ji)
             IF( lk_mpp  )   CALL mpp_sum(ji)
             IF( ji /= 0 )   CALL ctl_stop( 'STOP', 'dia_hth : unable to allocate standard ocean arrays' )
@@ -367,29 +369,33 @@ CONTAINS
          htc3(:,:) = 0._wp 
          s300(:,:) = 0._wp
       ELSE 
-         zthick(:,:) = sshn(:,:)  
+         zthick(:,:) = sshn(:,:) * tmask(:,:,1)
          htc3(:,:) = tsn(:,:,1,jp_tem) * sshn(:,:) * tmask(:,:,1)   
          s300(:,:) = tsn(:,:,1,jp_sal) * sshn(:,:) * tmask(:,:,1)  
       ENDIF
       ! integration down to ilevel
       DO jk = 1, ilevel
-         zthick(:,:) = zthick(:,:) + fse3t(:,:,jk)
+         zthick(:,:) = zthick(:,:) + fse3t(:,:,jk) * tmask(:,:,jk)
          htc3 (:,:) = htc3  (:,:) + fse3t(:,:,jk) * tsn(:,:,jk,jp_tem) * tmask(:,:,jk)
-         s300 (:,:) = s300  (:,:) + fse3t(:,:,jk) * tsn(:,:,jk,jp_sal) * tmask(:,:,jk)
+         s300 (:,:) = s300  (:,:) + fse3t(:,:,jk) * tsn(:,:,jk,jp_sal) * tmask(:,:,jk)  
       END DO
+      tthick(:,:) = zthick(:,:)
       ! deepest layer
-      zthick(:,:) = 300. - zthick(:,:)   !   remaining thickness to reach 300m
       DO jj = 1, jpj
          DO ji = 1, jpi
-            htc3(ji,jj) = htc3(ji,jj) + tsn(ji,jj,ilevel+1,jp_tem) * MIN( fse3t(ji,jj,ilevel+1), zthick(ji,jj) )  &
-                                                                   * tmask(ji,jj,ilevel+1)
-            s300(ji,jj) = s300(ji,jj) + tsn(ji,jj,ilevel+1,jp_sal) * MIN( fse3t(ji,jj,ilevel+1), zthick(ji,jj) )   &
-               &                                                   * tmask(ji,jj,ilevel+1)
+            zzdep = fsdepw(ji,jj,mbkt(ji,jj)+1)                        ! depth of the oean bottom
+            IF( zzdep >= 300. ) THEN
+               zthick(ji,jj) = 300. - zthick(ji,jj)   ! remaining thickness to reach 300m
+               htc3(ji,jj) = htc3(ji,jj) + tsn(ji,jj,ilevel+1,jp_tem) * MIN( fse3t(ji,jj,ilevel+1), zthick(ji,jj) )  &
+                                                                      * tmask(ji,jj,ilevel+1)
+               s300(ji,jj) = s300(ji,jj) + tsn(ji,jj,ilevel+1,jp_sal) * MIN( fse3t(ji,jj,ilevel+1), zthick(ji,jj) )  &
+                  &                                                   * tmask(ji,jj,ilevel+1)
+               tthick(ji,jj) = tthick(ji,jj) + MIN( fse3t(ji,jj,ilevel+1), zthick(ji,jj) ) * tmask(ji,jj,ilevel+1)
          END DO
       END DO
       ! Averge over 1st 300 m
-      CALL iom_put( "hc300 / 300.", t300 ) ! first 300m mean temperature 
-      CALL iom_put( "s300 / 300.", s300 )  ! first 300m mean salinity
+      CALL iom_put( "hc300 / tthick", t300 ) ! first 300m mean temperature 
+      CALL iom_put( "s300 / tthick", s300 )  ! first 300m mean salinity
       ! from temperature to heat contain
       zcoef = rau0 * rcp
       htc3(:,:) = zcoef * htc3(:,:)
