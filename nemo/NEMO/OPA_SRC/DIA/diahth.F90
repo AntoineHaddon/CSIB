@@ -391,6 +391,7 @@ CONTAINS
                s300(ji,jj) = s300(ji,jj) + tsn(ji,jj,ilevel+1,jp_sal) * MIN( fse3t(ji,jj,ilevel+1), zthick(ji,jj) )  &
                   &                                                   * tmask(ji,jj,ilevel+1)
                tthick(ji,jj) = tthick(ji,jj) + MIN( fse3t(ji,jj,ilevel+1), zthick(ji,jj) ) * tmask(ji,jj,ilevel+1)
+            END IF
          END DO
       END DO
       ! Averge over 1st 300 m
