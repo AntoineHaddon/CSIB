@@ -346,11 +346,11 @@ CONTAINS
 
          END DO
       END DO
-      CALL iom_put( "t20d", hd20 )   ! depth of the 20 isotherm
-      CALL iom_put( "t28d", hd28 )   ! depth of the 28 isotherm
-      CALL iom_put( "t14d", hd14 )   ! depth of the 14 isotherm
-      CALL iom_put( "t17d", hd17 )   ! depth of the 17 isotherm
-      CALL iom_put( "t26d", hd26 )   ! depth of the 26 isotherm
+      CALL iom_put( "20d", hd20 )   ! depth of the 20 isotherm
+      CALL iom_put( "28d", hd28 )   ! depth of the 28 isotherm
+      CALL iom_put( "14d", hd14 )   ! depth of the 14 isotherm
+      CALL iom_put( "17d", hd17 )   ! depth of the 17 isotherm
+      CALL iom_put( "26d", hd26 )   ! depth of the 26 isotherm
 
       ! ----------------------------- !
       !  Heat content of first 300 m  !
