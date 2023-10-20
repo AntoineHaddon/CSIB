@@ -272,11 +272,11 @@ CONTAINS
          DO jj = 1, jpj
             DO ji = 1, jpi
                zztmp = tsn(ji,jj,jk,jp_tem)
-               IF( zztmp >= 20. )   ik20(ji,jj) = jk
-               IF( zztmp >= 28. )   ik28(ji,jj) = jk
-               IF( zztmp >= 14. )   ik14(ji,jj) = jk
-               IF( zztmp >= 17. )   ik17(ji,jj) = jk
-               IF( zztmp >= 26. )   ik26(ji,jj) = jk
+               IF( zztmp > 20. )   ik20(ji,jj) = jk
+               IF( zztmp > 28. )   ik28(ji,jj) = jk
+               IF( zztmp > 14. )   ik14(ji,jj) = jk
+               IF( zztmp > 17. )   ik17(ji,jj) = jk
+               IF( zztmp > 26. )   ik26(ji,jj) = jk
             END DO
          END DO
       END DO
@@ -292,8 +292,8 @@ CONTAINS
             iid = ik20(ji,jj)
             IF( iid /= 1 ) THEN 
                zztmp =      fsdept(ji,jj,iid  )   &                     ! linear interpolation
-                  &  + (    fsdept(ji,jj,iid+1) - fsdept(ji,jj,iid) )   &
-                  &  * ( 20.*tmask(ji,jj,iid+1) - tsn(ji,jj,iid,jp_tem) )   & ! 20.*tmask seems problematic
+                  &  + ( fsdept(ji,jj,iid+1) * tmask(ji,jj,iid+1) - fsdept(ji,jj,iid) )   &
+                  &  * ( 20.*tmask(ji,jj,iid+1) - tsn(ji,jj,iid,jp_tem) )   & 
                   &  / ( tsn(ji,jj,iid+1,jp_tem) - tsn(ji,jj,iid,jp_tem) + (1.-tmask(ji,jj,1)) )
                hd20(ji,jj) = MIN( zztmp , zzdep) * tmask(ji,jj,1)       ! bound by the ocean depth
             ELSE 
@@ -303,7 +303,7 @@ CONTAINS
             iid = ik28(ji,jj)
             IF( iid /= 1 ) THEN 
                zztmp =      fsdept(ji,jj,iid  )   &                     ! linear interpolation
-                  &  + (    fsdept(ji,jj,iid+1) - fsdept(ji,jj,iid) )   &
+                  &  + ( fsdept(ji,jj,iid+1) * tmask(ji,jj,iid+1) - fsdept(ji,jj,iid) )   &
                   &  * ( 28.*tmask(ji,jj,iid+1) - tsn(ji,jj,iid,jp_tem) )   &
                   &  / (  tsn(ji,jj,iid+1,jp_tem) - tsn(ji,jj,iid,jp_tem) + (1.-tmask(ji,jj,1)) )
                hd28(ji,jj) = MIN( zztmp , zzdep ) * tmask(ji,jj,1)      ! bound by the ocean depth
@@ -314,7 +314,7 @@ CONTAINS
             iid = ik14(ji,jj)
             IF( iid /= 1 ) THEN
                zztmp =      fsdept(ji,jj,iid  )   &                     ! linear interpolation
-                  &  + (    fsdept(ji,jj,iid+1) - fsdept(ji,jj,iid) )   &
+                  &  + ( fsdept(ji,jj,iid+1) * tmask(ji,jj,iid+1) - fsdept(ji,jj,iid) )   &
                   &  * ( 14.*tmask(ji,jj,iid+1) - tsn(ji,jj,iid,jp_tem) )   &
                   &  / (  tsn(ji,jj,iid+1,jp_tem) - tsn(ji,jj,iid,jp_tem) + (1.-tmask(ji,jj,1)) )
                hd14(ji,jj) = MIN( zztmp , zzdep ) * tmask(ji,jj,1)      ! bound by the ocean depth
@@ -325,7 +325,7 @@ CONTAINS
             iid = ik17(ji,jj)
             IF( iid /= 1 ) THEN
                zztmp =      fsdept(ji,jj,iid  )   &                     ! linear interpolation
-                  &  + (    fsdept(ji,jj,iid+1) - fsdept(ji,jj,iid) )   &
+                  &  + ( fsdept(ji,jj,iid+1) * tmask(ji,jj,iid+1) - fsdept(ji,jj,iid) )   &
                   &  * ( 17.*tmask(ji,jj,iid+1) - tsn(ji,jj,iid,jp_tem)                       )   &
                   &  / (  tsn(ji,jj,iid+1,jp_tem) - tsn(ji,jj,iid,jp_tem) + (1.-tmask(ji,jj,1)) )
                hd17(ji,jj) = MIN( zztmp , zzdep ) * tmask(ji,jj,1)      ! bound by the ocean depth 
@@ -336,7 +336,7 @@ CONTAINS
             iid = ik26(ji,jj)
             IF( iid /= 1 ) THEN
                zztmp =      fsdept(ji,jj,iid  )   &                     ! linear interpolation
-                  &  + (    fsdept(ji,jj,iid+1) - fsdept(ji,jj,iid)
+                  &  + ( fsdept(ji,jj,iid+1) * tmask(ji,jj,iid+1) - fsdept(ji,jj,iid) )   &
                   &  * ( 26.*tmask(ji,jj,iid+1) - tsn(ji,jj,iid,jp_tem) )   & 
                   &  / (  tsn(ji,jj,iid+1,jp_tem) - tsn(ji,jj,iid,jp_tem) + (1.-tmask(ji,jj,1)) )
                hd26(ji,jj) = MIN( zztmp , zzdep ) * tmask(ji,jj,1)      ! bound by the ocean depth
@@ -346,11 +346,11 @@ CONTAINS
 
          END DO
       END DO
-      CALL iom_put( "20d", hd20 )   ! depth of the 20 isotherm
-      CALL iom_put( "28d", hd28 )   ! depth of the 28 isotherm
-      CALL iom_put( "14d", hd14 )   ! depth of the 14 isotherm
-      CALL iom_put( "17d", hd17 )   ! depth of the 17 isotherm
-      CALL iom_put( "26d", hd26 )   ! depth of the 26 isotherm
+      CALL iom_put( "t20d", hd20 )   ! depth of the 20 isotherm
+      CALL iom_put( "t28d", hd28 )   ! depth of the 28 isotherm
+      CALL iom_put( "t14d", hd14 )   ! depth of the 14 isotherm
+      CALL iom_put( "t17d", hd17 )   ! depth of the 17 isotherm
+      CALL iom_put( "t26d", hd26 )   ! depth of the 26 isotherm
 
       ! ----------------------------- !
       !  Heat content of first 300 m  !
@@ -395,8 +395,9 @@ CONTAINS
          END DO
       END DO
       ! Averge over 1st 300 m
-      CALL iom_put( "hc300 / tthick", t300 ) ! first 300m mean temperature 
-      CALL iom_put( "s300 / tthick", s300 )  ! first 300m mean salinity
+      CALL iom_put( "thick300", tthick ) ! first 300m mean temperature
+      CALL iom_put( "t300", htc3 / tthick ) ! first 300m mean temperature 
+      CALL iom_put( "s300", s300 / tthick )  ! first 300m mean salinity
       ! from temperature to heat contain
       zcoef = rau0 * rcp
       htc3(:,:) = zcoef * htc3(:,:)
