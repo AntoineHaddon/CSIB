@@ -140,8 +140,8 @@ CONTAINS
       !!---------------------------------------------------------------------
       INTEGER ::   ios, ierr, icfc, nb_bgcms       ! Local integer
       !!
-      NAMELIST/namtrc/jp_bgc, ln_canoe, ln_cmoc, ln_pisces, ln_my_trc, ln_age, ln_cfc11, ln_cfc12, ln_sf6, ln_c14, &
-         &            ln_trcdta, ln_trcdmp, ln_trcdmp_clo, jp_dia3d, jp_dia2d, sn_tracer, sn_dia,                  &
+      NAMELIST/namtrc/jp_bgc, ln_canoe, ln_cmoc, ln_pisces, ln_my_trc, ln_age, ln_cfc11, ln_cfc12, ln_sf6, ln_c14,   &
+         &            ln_trcdta, ln_trcdmp, ln_trcdmp_clo, jp_dia3d, jp_dia2d, sn_tracer, sn_dia, ln_trcbc,ln_trcais, &
          &            jp_canoe, canoe_tracer, jp_cmoc, cmoc_tracer
       !!---------------------------------------------------------------------
       ! Dummy settings to fill tracers data structure
