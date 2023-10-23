@@ -395,7 +395,7 @@ CONTAINS
          END DO
       END DO
       ! Averge over 1st 300 m
-      CALL iom_put( "thick300", tthick ) ! first 300m mean temperature
+      ! CALL iom_put( "thick300", tthick ) ! first 300m mean temperature
       CALL iom_put( "t300", htc3 / tthick ) ! first 300m mean temperature 
       CALL iom_put( "s300", s300 / tthick )  ! first 300m mean salinity
       ! from temperature to heat contain
