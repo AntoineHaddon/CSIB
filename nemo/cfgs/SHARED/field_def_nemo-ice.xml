@@ -34,6 +34,7 @@
       <field id="icemass"      long_name="Sea-ice mass per gridcell area"                          standard_name="sea_ice_amount"                            unit="kg/m2"/>
       <field id="snwmass"      long_name="Snow mass per area"                                      standard_name="liquid_water_content_of_surface_snow"      unit="kg/m2"/>
       <field id="iceconc"      long_name="Sea-ice area fraction"                                   standard_name="sea_ice_area_fraction"                     unit=""     />
+      <field id="sncover"     long_name="Sea-ice cover by snow area fraction"                     standard_name="snow_cover"                                unit=""      />
       <field id="icevolu"      long_name="Sea-ice volume per area"                                 standard_name="sea_ice_thickness"                         unit="m"    />
       <field id="icethic"      long_name="Sea-ice thickness"                                       standard_name="sea_ice_thickness"                         unit="m"    />
       <field id="snwthic"      long_name="Snow thickness"                                          standard_name="snow_thickness"                            unit="m"    />
@@ -215,6 +216,7 @@
       <field id="snwmass_cmip" long_name="Snow mass per area"                                      standard_name="liquid_water_content_of_surface_snow"    detect_missing_value="true" unit="kg/m2"  > snwmass * icemask   + $missval * (1.-icemask  ) </field>
       <field id="snwthic_cmip" long_name="Snow thickness"                                          standard_name="surface_snow_thickness"                  detect_missing_value="true" unit="m"      > snwthic * icemask05 + $missval * (1.-icemask05) </field>
       <field id="iceconc_pct"  long_name="Sea-ice area fraction in percent"                        standard_name="sea_ice_area_fraction_in_percent"                                    unit="%"      > iceconc * 100.                                  </field>
+      <field id="sncover_cmip" long_name="Sea-ice cover by snow area fraction"                     standard_name="snow_cover"                              detect_missing_value="true" unit="%"      > sncover * 100.                                  </field>
       <field id="iceage_cmip"  long_name="Age of sea ice"                                          standard_name="age_of_sea_ice"                          detect_missing_value="true" unit="days"   > iceage  * icemask15 + $missval * (1.-icemask15) </field>
       <field id="icesalt_cmip" long_name="Sea ice salinity"                                        standard_name="sea_ice_salinity"                        detect_missing_value="true" unit="g/kg"   > icesalt * icemask   + $missval * (1.-icemask  ) </field>
       <field id="icefrb_cmip"  long_name="Sea-ice freeboard"                                       standard_name="sea_ice_freeboard"                       detect_missing_value="true" unit="m"      > icefrb  * icemask   + $missval * (1.-icemask  ) </field>
@@ -316,6 +318,7 @@
 
       <!-- standard ice fields -->
       <field id="iceconc_cat"  long_name="Sea-ice concentration per category"                unit=""        />
+      <field id="sncover_cat"  long_name="Sea-ice cover by snow in thickness categories"     unit="1"       detect_missing_value="true" />
       <field id="icethic_cat"  long_name="Sea-ice thickness per category"                    unit="m"       detect_missing_value="true" />
       <field id="snwthic_cat"  long_name="Snow thickness per category"                       unit="m"       detect_missing_value="true" />
       <field id="icesalt_cat"  long_name="Sea-Ice Bulk salinity per category"                unit="g/kg"    detect_missing_value="true" />
@@ -335,6 +338,7 @@
 
       <!-- Add-ons for SIMIP -->
       <field id="iceconc_cat_cmip"     long_name="Sea-ice area fractions in thickness categories"  standard_name="sea_ice_area_fraction_over_categories" detect_missing_value="true" unit=""   > iceconc_cat      * icemask_cat + $missval * (1.-icemask_cat) </field>
+      <field id="sncover_cat_cmip"     long_name="Sea-ice cover by snow in thickness categories"   standard_name="sea_ice_area_fraction_over_categories" detect_missing_value="true" unit=""   > sncover_cat*100. * icemask_cat</field>
       <field id="icethic_cat_cmip"     long_name="Sea-ice thickness in thickness categories"       standard_name="sea_ice_thickness_over_categories"     detect_missing_value="true" unit="m"  > icethic_cat      * icemask_cat + $missval * (1.-icemask_cat) </field>
       <field id="snwthic_cat_cmip"     long_name="Snow thickness in thickness categories"          standard_name="snow_thickness_over_categories"        detect_missing_value="true" unit="m"  > snwthic_cat      * icemask_cat + $missval * (1.-icemask_cat) </field>
       <field id="iceconc_cat_pct_cmip" long_name="Sea-ice area fractions in thickness categories"  standard_name="sea_ice_area_fraction_over_categories" detect_missing_value="true" unit="%"  > iceconc_cat*100. * icemask_cat + $missval * (1.-icemask_cat) </field>

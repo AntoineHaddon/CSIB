@@ -451,6 +451,8 @@ that are available in the tidal-forcing implementation (see
       <field id="qt_oce"       long_name="total flux at ocean surface"                  standard_name="surface_downward_heat_flux_in_sea_water"            unit="W/m2"  />
       <field id="qsr_oce"      long_name="solar heat flux at ocean surface"             standard_name="net_downward_shortwave_flux_at_sea_water_surface"   unit="W/m2"  />
       <field id="qns_oce"      long_name="non-solar heat flux at ocean surface (including E-P)"                                                            unit="W/m2"  />
+      <field id="qsr_tot"      long_name="total solar heat flux"                                                                                           unit="W/m2"  />
+      <field id="qns_tot"      long_name="total non-solar heat flux (including E-P)"                                                                       unit="W/m2"  />
       <field id="qemp_oce"     long_name="Downward Heat Flux from E-P over open ocean"                                                                     unit="W/m2"  />
       <field id="taum_oce"     long_name="wind stress module over open ocean"           standard_name="magnitude_of_surface_downward_stress"               unit="N/m2"  />
       <field id="utau_oce"     long_name="Wind Stress along i-axis over open ocean (T-points)"  standard_name="surf_down_x_stress_open_oce_Tpoints"        unit="N/m2"   />
