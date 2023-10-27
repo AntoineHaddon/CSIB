@@ -42,6 +42,11 @@ MODULE sbc_oce
 #else
    LOGICAL , PUBLIC ::   lk_oasis = .FALSE. !: OASIS unused
 #endif
+#if defined key_cancpl
+   LOGICAL , PUBLIC ::   lk_cancpl = .TRUE. !: true, use the CanCPL coupler interface
+#else
+   LOGICAL , PUBLIC ::   lk_cancpl = .FALSE. !: false, CanCPL unused
+#endif
    LOGICAL , PUBLIC ::   ln_cpl         !: ocean-atmosphere coupled formulation
    LOGICAL , PUBLIC ::   ln_mixcpl      !: ocean-atmosphere forced-coupled mixed formulation
    LOGICAL , PUBLIC ::   ln_dm2dc       !: Daily mean to Diurnal Cycle short wave (qsr)
@@ -53,6 +58,7 @@ MODULE sbc_oce
    !                                             !: =F levitating ice (no presure effect) with mass and salt exchanges
    !                                             !: =T embedded sea-ice (pressure effect + mass and salt exchanges)
    INTEGER , PUBLIC ::   nn_components  !: flag for sbc module (including sea-ice) coupling mode (see component definition below)
+
    INTEGER , PUBLIC ::   nn_fwb         !: FreshWater Budget:
    !                                             !:  = 0 unchecked
    !                                             !:  = 1 global mean of e-p-r set to zero at each nn_fsbc time step
@@ -63,6 +69,8 @@ MODULE sbc_oce
    !
    !                                   !!* namsbc_cpl namelist *
    INTEGER , PUBLIC ::   nn_cats_cpl    !: Number of sea ice categories over which the coupling is carried out
+   LOGICAL , PUBLIC ::   ln_minsal      ! true if constrain SSS not dropping below 5 psu
+   REAL(wp), PUBLIC ::   rn_minsal      ! min SSS
    !
    !                                   !!* namsbc_wave namelist *
    LOGICAL , PUBLIC ::   ln_sdw         !: =T 3d stokes drift from wave model
