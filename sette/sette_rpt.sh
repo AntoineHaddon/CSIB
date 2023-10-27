@@ -267,10 +267,12 @@ function runcmpres(){
 
 #
   if [ -d $vdir/$mach/$dorv/$nam ]; then
-    f1s=$vdir/$mach/$dorv/$nam/LONG/run.stat
-    f1t=$vdir/$mach/$dorv/$nam/LONG/tracer.stat
-    f2s=$vdirref/$mach/$dorvref/$nam/LONG/run.stat
-    f2t=$vdirref/$mach/$dorvref/$nam/LONG/tracer.stat
+    # Selection of the test run used for the comparison (LONG or one of the reproducibility-test runs)
+    TESTD=$(ls -1 ${vdir}/${mach}/${dorv}/${nam}/ | grep -m 1 -e '^LONG$' -e '^REPRO_'); TESTD=${TESTD:-LONG}
+    f1s=$vdir/$mach/$dorv/${nam}/${TESTD}/run.stat
+    f1t=$vdir/$mach/$dorv/${nam}/${TESTD}/tracer.stat
+    f2s=$vdirref/$mach/$dorvref/${nam}/${TESTD}/run.stat
+    f2t=$vdirref/$mach/$dorvref/${nam}/${TESTD}/tracer.stat
     if  [ ! -f $f1s ] && [ ! -f $f1t ] ; then
       printf "%-20s %s\n" $nam " incomplete test";
       return;
@@ -286,11 +288,11 @@ function runcmpres(){
       cmp -s $f1s $f2s
       if [ $? == 0 ]; then
         if [ $pass == 0 ]; then
-          printf "%-20s %s %s\n" $nam  " run.stat    files are identical "
+          printf "%-20s %s (%s)\n" $nam  " run.stat    files are identical " ${TESTD}
         fi
       else
         get_ktdiff $f1s $f2s
-        printf "%-20s %s %s %-5s %s\n" $nam  " run.stat    files are DIFFERENT (results are different after " $ktdiff " time steps)"
+        printf "%-20s %s %s %-5s (%s)\n" $nam  " run.stat    files are DIFFERENT (results are different after " $ktdiff " time steps) " ${TESTD}
 #
 # Offer view of differences on the second pass
 #
@@ -310,11 +312,11 @@ function runcmpres(){
       cmp -s $f1t $f2t
       if [ $? == 0 ]; then
         if [ $pass == 0 ]; then          
-          printf "%-20s %s %s\n" $nam  " tracer.stat files are identical "
+          printf "%-20s %s (%s)\n" $nam  " tracer.stat files are identical " ${TESTD}
         fi
       else
         get_ktdiff2 $f1t $f2t
-        printf "%-20s %s %s %-5s %s\n" $nam  " tracer.stat files are DIFFERENT (results are different after " $ktdiff " time steps) "
+        printf "%-20s %s %s %-5s (%s)\n" $nam  " tracer.stat files are DIFFERENT (results are different after " $ktdiff " time steps) " ${TESTD}
 #
 # Offer view of differences on the second pass
 #
@@ -351,8 +353,10 @@ function runcmptim(){
 
 #
   if [ -d $vdir/$mach/$dorv/$nam ]; then
-    f1a=$vdir/$mach/$dorv/$nam/LONG/timing.output
-    f2a=$vdirref/$mach/$dorvref/$nam/LONG/timing.output
+    # Selection of the test run used for the comparison (LONG or one of the reproducibility-test runs)
+    TESTD=$(ls -1 ${vdir}/${mach}/${dorv}/${nam}/ | grep -m 1 -e '^LONG$' -e '^REPRO_'); TESTD=${TESTD:-LONG}
+    f1a=$vdir/$mach/$dorv/${nam}/${TESTD}/timing.output
+    f2a=$vdirref/$mach/$dorvref/${nam}/${TESTD}/timing.output
 #
 # Report average CPU time differences (if available)
 #
@@ -429,11 +433,12 @@ function identictest(){
 #
   get_dorv
 #
-  rep=`ls -1rt $vdir/$mach/$dorv/$nam/ |  tail -1l`
-  f1s=${vdir}/${mach}/${dorv}/${nam}/${rep}/run.stat
-  f2s=${vdir}/${mach}/${dorv2}/${nam2}/${rep}/run.stat
+  if [ -d $vdir/$mach/$dorv/$nam ] ; then
+   rep=`ls -1rt $vdir/$mach/$dorv/$nam/ |  tail -1l`
+   f1s=${vdir}/${mach}/${dorv}/${nam}/${rep}/run.stat
+   f2s=${vdir}/${mach}/${dorv2}/${nam2}/${rep}/run.stat
 #
-  if  [ -f $f1s ] && [ -f $f2s ] ; then
+   if  [ -f $f1s ] && [ -f $f2s ] ; then
       cmp -s $f1s $f2s
       if [ $? == 0 ]; then
           if [ $pass == 0 ]; then 
@@ -453,8 +458,11 @@ function identictest(){
 	      read y
           fi
       fi
-  else
+   else
       printf "%-27s %-27s %s\n" $nam $nam2 " incomplete test"
+   fi
+  else
+      printf "%-27s %-27s %s\n" " " " " " non-existent test directory"
   fi
 }
 ########################### END of function definitions #################################
@@ -463,15 +471,20 @@ function identictest(){
 ##                                                                                     ##
 #########################################################################################
 #
-# LOAD param variable (COMPILER, NEMO_VALIDATION_DIR, SVN_CMD)
+# LOAD param variable (COMPILER, NEMO_VALIDATION_DIR )
   SETTE_DIR=$(cd $(dirname "$0"); pwd)
   MAIN_DIR=$(dirname $SETTE_DIR)
   . ./param.cfg
+  TEST_CONFIGS_AVAILABLE=${TEST_CONFIGS_AVAILABLE[@]:-${TEST_CONFIGS[@]}}     # Workaround for some dated param.cfgs files
+  TEST_CONFIGS_AVAILABLE=${TEST_CONFIGS_AVAILABLE[@]/ SAS / ORCA2_SAS_ICE }   # Workaround for some dated param.cfgs files
+  TEST_CONFIGS_AVAILABLE=${TEST_CONFIGS_AVAILABLE[@]/ AGRIF / AGRIF_DEMO }    # Workaround for some dated param.cfgs files
+  if [ -z $USER_INPUT ] ; then USER_INPUT='yes' ; fi        # Default: yes => request user input on decisions.
+                                                            # (but may br inherited/imported from sette.sh)
 
   mach=${COMPILER}
 # overwrite revision (later) or compiler
   if [ $# -gt 0 ]; then
-    while getopts r:R:c:v:V:h option; do 
+    while getopts r:R:c:v:V:uh option; do 
        case $option in
           c) mach=$OPTARG;;
           r) rev=$OPTARG;;
@@ -484,6 +497,7 @@ function identictest(){
                echo "Requested comparison subdirectory: ${NEMO_VALIDATION_DIR}/${SETTE_SUB_VAL2} does not exist"
              fi
              ;;
+          u) USER_INPUT='no';;
           h | *) echo ''
                  echo 'sette_rpt.sh : ' 
                  echo '     display result for the latest change'
@@ -498,6 +512,7 @@ function identictest(){
                  echo ' -V sub_dir2 :'
                  echo '     2nd validation sub-directory below NEMO_VALIDATION_DIR'
                  echo '     if set the comparison is between two subdirectory trees beneath NEMO_VALIDATION_DIR'
+                 echo ' -u to run sette_rpt.sh without any user interaction'
                  echo ''
                  exit 42;;
        esac
@@ -507,24 +522,41 @@ function identictest(){
 # if $1 (remaining arguments)
   if [[ ! -z $1 ]] ; then rev=$1 ; fi
 
+  # Check that git branch is usable
+  git branch --show-current >&/dev/null
+  if [[ $? == 0 ]] ; then
+    # subdirectory below NEMO_VALIDATION_DIR defaults to branchname
+    NAM_MAIN="$(git branch --show-current)"
+  else
+    # subdirectory below NEMO_VALIDATION_DIR defaults to "MAIN"
+    NAM_MAIN="MAIN"
+  fi
   if [ ! -z $SETTE_SUB_VAL ] ; then
    export NEMO_VALIDATION_DIR=$NEMO_VALIDATION_DIR/$SETTE_SUB_VAL
-   if [ -d $NEMO_VALIDATION_REF/$SETTE_SUB_VAL ] && [ -z $SETTE_SUB_VAL2 ] ; then
+   if [ -d $NEMO_VALIDATION_REF/$SETTE_SUB_VAL ] && [ -z $SETTE_SUB_VAL2 ] && [ ${USER_INPUT} == "yes" ] ; then
     while true; do
         read -p "$NEMO_VALIDATION_REF/$SETTE_SUB_VAL exists. Do you wish to use it as a reference? " yn
         case $yn in
-            [Yy]* ) export $NEMO_VALIDATION_REF/$SETTE_SUB_VAL; break;;
-            [Nn]* ) echo "Ok, continuing with ${NEMO_VALIDATION_REF}/MAIN as the reference directory"
-                    export NEMO_VALIDATION_REF=${NEMO_VALIDATION_REF}/MAIN
+            [Yy]* ) export NEMO_VALIDATION_REF=$NEMO_VALIDATION_REF/$SETTE_SUB_VAL; break;;
+            [Nn]* ) echo "Ok, continuing with ${NEMO_VALIDATION_REF}/${NAM_MAIN} as the reference directory"
+                    export NEMO_VALIDATION_REF=${NEMO_VALIDATION_REF}/${NAM_MAIN}
                     break
                     ;;
             * ) echo "Please answer yes or no.";;
         esac
     done
+   elif [ -d $NEMO_VALIDATION_REF/$SETTE_SUB_VAL ] && [ -z $SETTE_SUB_VAL2 ] ; then
+    # No user input: make a best guess as to intent
+    export NEMO_VALIDATION_REF=$NEMO_VALIDATION_REF/$SETTE_SUB_VAL
+   elif [ -z $SETTE_SUB_VAL2 ] ; then
+    # No user input: default to branchname or MAIN
+    export NEMO_VALIDATION_REF=$NEMO_VALIDATION_REF/${NAM_MAIN}
    fi
   else
-   export NEMO_VALIDATION_DIR=${NEMO_VALIDATION_DIR}/MAIN
-   export NEMO_VALIDATION_REF=${NEMO_VALIDATION_REF}/MAIN
+   export NEMO_VALIDATION_DIR=${NEMO_VALIDATION_DIR}/${NAM_MAIN}
+   if [ -z $SETTE_SUB_VAL2 ] ; then
+    export NEMO_VALIDATION_REF=$NEMO_VALIDATION_REF/${NAM_MAIN}
+   fi
   fi
   NEMO_VALID=${NEMO_VALIDATION_DIR}
   NEMO_VALID_REF=${NEMO_VALIDATION_REF}
@@ -541,11 +573,39 @@ function identictest(){
 # Show current revision tag and branch name
 #
 echo ""
-lastchange=`${SVN_CMD} info ${MAIN_DIR} | grep 'Last Changed Rev' | awk '{print $NF}'`
-revision=`${SVN_CMD} info ${MAIN_DIR} | grep 'Revision' | awk '{print $NF}'`
-branchname=`${SVN_CMD} info ${MAIN_DIR} | grep ^URL | awk -F ipsl/forge/projets/nemo/svn/ '{print $NF}'`
-echo "Current code is : $branchname @ r$revision  ( last change @ r$lastchange )"
-[ `${SVN_CMD} status -q ${MAIN_DIR}/{cfgs,tests,src} | wc -l` -ge 1 ] && lastchange=${lastchange}+
+localchanges=`git status --short -uno | wc -l`
+# Check that git branch is usable and use it to detect detached HEADs
+git branch --show-current >& /dev/null
+if [[ $? == 0 ]] ; then
+  branchname="$(git branch --show-current)"
+  if [ -z $branchname ] ; then
+   # Probabably on a detached HEAD (possibly testing an old commit).
+   # Verify this and try to recover original commit
+   MORE_INFO="$(git branch -a | head -1l | sed -e's/.*(//' -e 's/)//' )"
+   if [[ "${MORE_INFO}" == *"detached"* ]] ; then
+     revision=$( echo \\${MORE_INFO} | awk '{print $NF}' )
+     # There is no robust way to recover a branch name in a detached state
+     # so just use the commit with a prefix
+     branchname="detached_"${revision}
+   else
+     branchname="Unknown"
+   fi
+  else
+   revision=`git rev-parse --short HEAD 2> /dev/null`
+  fi
+else
+  branchname="Unknown"
+fi
+rev_date0=`git log -1 | grep Date | sed -e 's/.*Date: *//' -e's/ +.*$//'`
+rev_date=`${DATE_CONV}"${rev_date0}" +"%y%j"`
+revision=${rev_date}_${revision}
+if [[ $localchanges > 0 ]] ; then
+ echo "Current code is : $branchname @ $revision  ( with local changes )"
+ lastchange=${revision}+
+else
+ echo "Current code is : $branchname @ $revision"
+ lastchange=$revision
+fi
 
 # by default use the current lastchanged revision
 lastchange=${rev:-$lastchange}
@@ -553,7 +613,11 @@ lastchange=${rev:-$lastchange}
 echo ""
 echo "SETTE validation report generated for : "
 echo ""
-echo "       $branchname @ r$lastchange (last changed revision)"
+if [[ $localchanges > 0 ]] ; then
+ echo "       $branchname @ $revision (with local changes)"
+else
+ echo "       $branchname @ $revision"
+fi
 echo ""
 echo "       on $COMPILER arch file"
 echo ""
@@ -577,17 +641,17 @@ do
 # Restartability test
  echo ""
  echo "   !----restart----!   "
- for restart_test in GYRE_PISCES ORCA2_ICE_PISCES ORCA2_OFF_PISCES AMM12 ORCA2_SAS_ICE AGRIF_DEMO WED025 ISOMIP+ OVERFLOW LOCK_EXCHANGE VORTEX ICE_AGRIF SWG
+ for restart_test in ${TEST_CONFIGS_AVAILABLE[@]}
  do
-   resttest $NEMO_VALID $restart_test $pass
+   [ "${restart_test}" != "ORCA2_ICE_OBS" ] && resttest $NEMO_VALID $restart_test $pass
  done
 #
 # Reproducibility tests
  echo ""
  echo "   !----repro----!   "
- for repro_test in GYRE_PISCES ORCA2_ICE_PISCES ORCA2_OFF_PISCES AMM12 ORCA2_SAS_ICE ORCA2_ICE_OBS AGRIF_DEMO WED025 ISOMIP+ VORTEX ICE_AGRIF SWG
+ for repro_test in ${TEST_CONFIGS_AVAILABLE[@]}
  do
-   reprotest $NEMO_VALID $repro_test $pass
+   [ "${repro_test}" != "OVERFLOW" -a "${repro_test}" != "LOCK_EXCHANGE" ] && reprotest $NEMO_VALID $repro_test $pass
  done
 
 # AGRIF special check to ensure results are unchanged with and without key_agrif
@@ -612,14 +676,13 @@ do
      echo 'and'
      echo "REFERENCE directory : $NEMO_VALID_REF at rev $NEMO_REV_REF"
      echo ''
-     checklist=(GYRE_PISCES ORCA2_ICE_PISCES ORCA2_OFF_PISCES AMM12 ORCA2_SAS_ICE AGRIF_DEMO WED025 ISOMIP+ VORTEX ICE_AGRIF OVERFLOW LOCK_EXCHANGE SWG)
-     for repro_test in ${checklist[@]}
+     for runcmp_test in ${TEST_CONFIGS_AVAILABLE[@]}
      do
-       runcmpres $NEMO_VALID $repro_test $NEMO_VALID_REF $NEMO_REV_REF $pass
+       runcmpres $NEMO_VALID $runcmp_test $NEMO_VALID_REF $NEMO_REV_REF $pass
      done
      echo ''
      echo 'Report timing differences between REFERENCE and VALID (if available) :'
-     for repro_test in ${checklist[@]}
+     for repro_test in ${TEST_CONFIGS_AVAILABLE[@]}
      do
        runcmptim $NEMO_VALID $repro_test $NEMO_VALID_REF $NEMO_REV_REF $pass
      done

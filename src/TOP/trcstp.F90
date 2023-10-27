@@ -58,15 +58,18 @@ CONTAINS
       INTEGER, INTENT( in ) :: Kbb, Kmm, Krhs, Kaa ! time level indices
       !
       INTEGER ::   jk, jn   ! dummy loop indices
+      INTEGER ::   ibb      ! local time-level index
       REAL(wp)::   ztrai    ! local scalar
-      LOGICAL ::   ll_trcstat ! local logical
+      LOGICAL ::   ll_trcstat, ll_trcpis ! local logical
       CHARACTER (len=25) ::   charout   !
       !!-------------------------------------------------------------------
       !
       IF( ln_timing )   CALL timing_start('trc_stp')
       !
+      ibb = Kbb                     ! default "before" time-level index
       IF( l_1st_euler .OR. ln_top_euler ) THEN     ! at nittrc000
          rDt_trc =  rn_Dt           ! = rn_Dt (use or restarting with Euler time stepping)
+         ibb = Kmm                  ! time-level index used to substitute the "before" with the "now" time level
       ELSEIF( kt <= nittrc000 + 1 ) THEN                                     ! at nittrc000 or nittrc000+1 
          rDt_trc = 2. * rn_Dt       ! = 2 rn_Dt (leapfrog) 
       ENDIF
@@ -82,11 +85,15 @@ CONTAINS
          DO jk = 1, jpk
             cvol(:,:,jk) = e1e2t(:,:) * e3t(:,:,jk,Kmm) * tmask(:,:,jk)
          END DO
-         IF ( ll_trcstat .OR. kt == nitrst .OR. ( ln_check_mass .AND. kt == nitend )   &
-              IF ( ll_trcstat .OR. kt == nitrst )         &
-              &     areatot = glob_sum( 'trcstp', cvol(:,:,:) )
+         IF( ln_pisces )  THEN
+            IF ( iom_use( "pno3tot" ) .OR. iom_use( "ppo4tot" ) .OR. iom_use( "psiltot" ) &
+               &  .OR. iom_use( "palktot" ) .OR. iom_use( "pfertot" ) ) &
+               & ll_trcpis = .TRUE.
+         ELSE
+            ll_trcpis = .FALSE.
          ENDIF
-
+         IF ( ll_trcstat .OR. kt == nitrst .OR. ( ln_check_mass .AND. kt == nitend ) .OR. ll_trcpis ) &
+            &     areatot = glob_sum( 'trcstp', cvol(:,:,:) )
       ENDIF
       !
       IF( l_trcdm2dc )   CALL trc_mean_qsr( kt )
@@ -102,9 +109,9 @@ CONTAINS
       CALL trc_rst_opn  ( kt )                            ! Open tracer restart file 
       IF( lrst_trc )  CALL trc_rst_cal  ( kt, 'WRITE' )   ! calendar
       CALL trc_wri      ( kt,      Kmm            )       ! output of passive tracers with iom I/O manager
-      CALL trc_sms      ( kt, Kbb, Kmm, Krhs      )       ! tracers: sinks and sources
+      CALL trc_sms      ( kt, ibb, Kmm, Krhs      )       ! tracers: sinks and sources
 #if ! defined key_sed_off
-      CALL trc_trp      ( kt, Kbb, Kmm, Krhs, Kaa )       ! transport of passive tracers
+      CALL trc_trp      ( kt, ibb, Kmm, Krhs, Kaa )       ! transport of passive tracers
 #endif
            !
            ! Note passive tracers have been time-filtered in trc_trp but the time level
@@ -117,7 +124,6 @@ CONTAINS
          IF(lrxios) CALL iom_context_finalize(      cr_toprst_cxt          )
          IF(lwm) CALL FLUSH( numont )                     ! flush namelist output
       ENDIF
-      IF( lrst_trc )            CALL trc_rst_wri  ( kt, Kmm, Kaa, Kbb  )       ! write tracer restart file
       IF( lk_trdmxl_trc  )      CALL trd_mxl_trc  ( kt,      Kaa       )       ! trends: Mixed-layer
       !
       IF( ln_top_euler ) THEN 
@@ -126,6 +132,8 @@ CONTAINS
          ! "before" fields = "now" fields.
          tr(:,:,:,:,Kmm) = tr(:,:,:,:,Kaa)
       ENDIF
+      !
+      IF( lrst_trc ) CALL trc_rst_wri( kt, Kmm, Kaa, ibb )   ! write tracer restart file
       !
       IF (ll_trcstat) THEN
          ztrai = 0._wp                                                   !  content of all tracers
@@ -143,12 +151,10 @@ CONTAINS
    SUBROUTINE trc_stp_ctl
       !!----------------------------------------------------------------------
       !!                     ***  ROUTINE trc_stp_ctl  ***
-      !! ** Purpose :        Control  + ocean volume
       !!----------------------------------------------------------------------
       !
       ! Define logical parameter ton control dirunal cycle in TOP
-      l_trcdm2dc = ln_dm2dc .OR. ( ln_cpl .AND. ncpl_qsr_freq /= 1 .AND. ncpl_qsr_freq /= 0 )
-      l_trcdm2dc = l_trcdm2dc .AND. .NOT. l_offline
+      l_trcdm2dc = ( ln_trcdc2dm .AND. .NOT. ln_dm2dc  ) 
       !
       IF( l_trcdm2dc .AND. lwp )   CALL ctl_warn( 'Coupling with passive tracers and used of diurnal cycle.',   &
          &                           'Computation of a daily mean shortwave for some biogeochemical models ' )
@@ -179,13 +185,9 @@ CONTAINS
       IF( ln_timing )   CALL timing_start('trc_mean_qsr')
       !
       IF( kt == nittrc000 ) THEN
-         IF( ln_cpl )  THEN  
-            rdt_sampl = rday / ncpl_qsr_freq
-            nb_rec_per_day = ncpl_qsr_freq
-         ELSE  
-            rdt_sampl = MAX( 3600., rn_Dt )
-            nb_rec_per_day = INT( rday / rdt_sampl )
-         ENDIF
+         !
+         rdt_sampl = REAL( ncpl_qsr_freq )
+         nb_rec_per_day = INT( rday / ncpl_qsr_freq )
          !
          IF(lwp) THEN
             WRITE(numout,*) 

@@ -19,6 +19,11 @@ MODULE dianam
    IMPLICIT NONE
    PRIVATE
 
+   INTEGER, PUBLIC ::   nn_dctwri             ! Frequency of output for dct diags
+   LOGICAL, PUBLIC ::   ln_diadct = .FALSE.   ! Calculate transport thru a section or not
+                                              ! set to FALSE because some configs do not read it in nml
+   INTEGER, PUBLIC ::   nb_sec                ! nb of sections
+
    PUBLIC dia_nam
 
    !!----------------------------------------------------------------------
@@ -60,8 +65,8 @@ CONTAINS
       INTEGER            ::   inbday, inbmo, inbyr             ! output frequency in days, months and years
       INTEGER            ::   iyyss, iddss, ihhss, immss       ! number of seconds in 1 year, 1 day, 1 hour and 1 minute
       INTEGER            ::   iyymo                            ! number of months in 1 year
-      REAL(wp)           ::   zsec1, zsec2                     ! not used
-      REAL(wp)           ::   zdrun, zjul                      ! temporary scalars
+      REAL(dp)           ::   zsec1, zsec2                     ! not used
+      REAL(dp)           ::   zdrun, zjul                      ! temporary scalars
       !!----------------------------------------------------------------------
 
       ! name for output frequency

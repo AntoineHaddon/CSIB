@@ -33,6 +33,8 @@ MODULE iceupdate
    USE timing         ! Timing
    USE sbcspp  , ONLY : ln_vertspp
 
+   USE oce
+
    IMPLICIT NONE
    PRIVATE
 
@@ -340,7 +342,7 @@ CONTAINS
       REAL(wp) ::   zat_v, zvtau_ice, zv_t, zrhoco  !   -      -
       REAL(wp) ::   zflagi                          !   -      -
       !!---------------------------------------------------------------------
-      IF( ln_timing )   CALL timing_start('ice_update')
+      IF( ln_timing )   CALL timing_start('iceupdate')
 
       IF( kt == nit000 .AND. lwp ) THEN
          WRITE(numout,*)
@@ -392,7 +394,7 @@ CONTAINS
       END_2D
       CALL lbc_lnk( 'iceupdate', utau, 'U', -1.0_wp, vtau, 'V', -1.0_wp )   ! lateral boundary condition
       !
-      IF( ln_timing )   CALL timing_stop('ice_update')
+      IF( ln_timing )   CALL timing_stop('iceupdate')
       !
    END SUBROUTINE ice_update_tau
 
@@ -447,12 +449,15 @@ CONTAINS
                CALL iom_get( numrir, jpdom_auto, 'snwice_mass_b', snwice_mass_b )
             ELSE                                     ! start from rest
                IF(lwp) WRITE(numout,*) '   ==>>   previous run without snow-ice mass output then set it'
-               snwice_mass  (:,:) = tmask(:,:,1) * ( rhos * vt_s(:,:) + rhoi * vt_i(:,:) )
+               snwice_mass  (:,:) = tmask(:,:,1) * ( rhos * vt_s(:,:) + rhoi * vt_i(:,:) & 
+                                                &  + rhow * (vt_ip(:,:) + vt_il(:,:))  )
                snwice_mass_b(:,:) = snwice_mass(:,:)
             ENDIF
          ELSE                                   !* Start from rest
+!JC: I think this is useless with what is now done in ice_istate
             IF(lwp) WRITE(numout,*) '   ==>>   start from rest: set the snow-ice mass'
-            snwice_mass  (:,:) = tmask(:,:,1) * ( rhos * vt_s(:,:) + rhoi * vt_i(:,:) )
+            snwice_mass  (:,:) = tmask(:,:,1) * ( rhos * vt_s(:,:) + rhoi * vt_i(:,:) & 
+                                             &  + rhow * (vt_ip(:,:) + vt_il(:,:))  )
             snwice_mass_b(:,:) = snwice_mass(:,:)
          ENDIF
          !

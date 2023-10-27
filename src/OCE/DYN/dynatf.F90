@@ -81,6 +81,7 @@ CONTAINS
 
    !! * Substitutions
 #  include "do_loop_substitute.h90"
+#  include "single_precision_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
    !! $Id: dynatf.F90 14834 2021-05-11 09:24:44Z hadcv $
@@ -357,8 +358,8 @@ CONTAINS
          ENDIF
       ENDIF
       !
-      IF(sn_cfctl%l_prtctl)   CALL prt_ctl( tab3d_1=puu(:,:,:,Kaa), clinfo1=' nxt  - puu(:,:,:,Kaa): ', mask1=umask,   &
-         &                                  tab3d_2=pvv(:,:,:,Kaa), clinfo2=' pvv(:,:,:,Kaa): '       , mask2=vmask )
+      IF(sn_cfctl%l_prtctl)   CALL prt_ctl( tab3d_1=CASTDP(puu(:,:,:,Kaa)), clinfo1=' nxt  - puu(:,:,:,Kaa): ', mask1=umask,   &
+         &                                  tab3d_2=CASTDP(pvv(:,:,:,Kaa)), clinfo2=' pvv(:,:,:,Kaa): '       , mask2=vmask )
       !
       IF( ln_dynspg_ts )   DEALLOCATE( zue, zve )
       IF( l_trddyn     )   DEALLOCATE( zua, zva )

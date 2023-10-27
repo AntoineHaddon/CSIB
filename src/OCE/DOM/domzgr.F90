@@ -113,10 +113,11 @@ CONTAINS
             &              k_top   , k_bot            )                  ! 1st & last ocean level
          !
          ! make sure that periodicities are properly applied 
-         CALL lbc_lnk( 'dom_zgr', gdept_0, 'T', 1._wp, gdepw_0, 'W', 1._wp,                                         &
-            &                       e3t_0, 'T', 1._wp,   e3u_0, 'U', 1._wp,  e3v_0, 'V', 1._wp, e3f_0, 'F', 1._wp,   &
+         CALL lbc_lnk( 'dom_zgr', gdept_0, 'T', 1._wp, gdepw_0, 'W', 1._wp,                     &
+            &                       e3u_0, 'U', 1._wp,  e3v_0, 'V', 1._wp, e3f_0, 'F', 1._wp,   &
             &                       e3w_0, 'W', 1._wp,  e3uw_0, 'U', 1._wp, e3vw_0, 'V', 1._wp,   &   
             &                     kfillmode = jpfillcopy )   ! do not put 0 over closed boundaries
+         CALL lbc_lnk( 'dom_zgr', e3t_0, 'T', 1._dp, kfillmode = jpfillcopy )
          ztopbot(:,:,1) = REAL(k_top, wp)
          ztopbot(:,:,2) = REAL(k_bot, wp)
          CALL lbc_lnk( 'dom_zgr', ztopbot, 'T', 1._wp, kfillmode = jpfillcopy )   ! do not put 0 over closed boundaries
@@ -139,7 +140,7 @@ CONTAINS
       IF( .NOT. ( l_Jperio .OR. l_NFold ) ) THEN                   ! N closed:
          zmsk(:,mj0(jpjglo-nn_hls):mj1(jpjglo-nn_hls)  ) = 0._wp   ! last    line of inner global domain at 0
       ENDIF
-      CALL lbc_lnk( 'usrdef_zgr', zmsk, 'T', 1. )             ! set halos
+      CALL lbc_lnk( 'usrdef_zgr', zmsk, 'T', 1._wp )             ! set halos
       k_top(:,:) = k_top(:,:) * NINT( zmsk(:,:) )
       !
 !!gm to be remove when removing the OLD definition of e3 scale factors so that gde3w disappears
@@ -235,7 +236,8 @@ CONTAINS
       REAL(wp), DIMENSION(:)    , INTENT(out) ::   pdept_1d, pdepw_1d          ! 1D grid-point depth       [m]
       REAL(wp), DIMENSION(:)    , INTENT(out) ::   pe3t_1d , pe3w_1d           ! 1D vertical scale factors [m]
       REAL(wp), DIMENSION(:,:,:), INTENT(out) ::   pdept, pdepw                ! grid-point depth          [m]
-      REAL(wp), DIMENSION(:,:,:), INTENT(out) ::   pe3t , pe3u , pe3v , pe3f   ! vertical scale factors    [m]
+      REAL(wp), DIMENSION(:,:,:), INTENT(out)  :: pe3u, pe3v, pe3f! vertical scale factors    [m]
+      REAL(dp), DIMENSION(:,:,:), INTENT(out)  :: pe3t! vertical scale factors    [m]
       REAL(wp), DIMENSION(:,:,:), INTENT(out) ::   pe3w , pe3uw, pe3vw         !    -       -      -
       INTEGER , DIMENSION(:,:)  , INTENT(out) ::   k_top , k_bot               ! first & last ocean level
       INTEGER                   , INTENT(out) ::   k_mbkuvf                    ! ==1 if mbku, mbkv, mbkf are in file
@@ -286,7 +288,7 @@ CONTAINS
       CALL iom_get( inum, jpdom_unknown, 'e3t_1d'  , pe3t_1d  )                     ! 1D reference coordinate
       CALL iom_get( inum, jpdom_unknown, 'e3w_1d'  , pe3w_1d  )
       !
-      CALL iom_get( inum, jpdom_global, 'e3t_0'  , pe3t , cd_type = 'T', psgn = 1._wp, kfill = jpfillcopy )    ! 3D coordinate
+      CALL iom_get( inum, jpdom_global, 'e3t_0'  , pe3t , cd_type = 'T', psgn = 1._dp, kfill = jpfillcopy )    ! 3D coordinate
       CALL iom_get( inum, jpdom_global, 'e3u_0'  , pe3u , cd_type = 'U', psgn = 1._wp, kfill = jpfillcopy )
       CALL iom_get( inum, jpdom_global, 'e3v_0'  , pe3v , cd_type = 'V', psgn = 1._wp, kfill = jpfillcopy )
       CALL iom_get( inum, jpdom_global, 'e3f_0'  , pe3f , cd_type = 'F', psgn = 1._wp, kfill = jpfillcopy )
@@ -313,9 +315,9 @@ CONTAINS
 #if defined key_qco && key_isf
          DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 2, jpk )        ! vertical sum at partial cell xxxx other level  
             IF( jk == k_top(ji,jj) ) THEN                               ! first ocean point : partial cell
-               gdept_0(ji,jj,jk) = gdepw_0(ji,jj,jk  ) + 0.5_wp * e3w_0(ji,jj,jk)   ! = risfdep + 1/2 e3w_0(mikt)
+               pdept(ji,jj,jk) = pdepw(ji,jj,jk  ) + 0.5_wp * pe3w(ji,jj,jk)   ! = risfdep + 1/2 e3w_0(mikt)
             ELSE                                                        !  other levels
-               gdept_0(ji,jj,jk) = gdept_0(ji,jj,jk-1) +          e3w_0(ji,jj,jk) 
+               pdept(ji,jj,jk) = pdept(ji,jj,jk-1) +          pe3w(ji,jj,jk) 
             ENDIF
          END_3D
 #endif
@@ -329,11 +331,11 @@ CONTAINS
       !
       IF( iom_varid( inum, 'mbku', ldstop = .FALSE. ) > 0 ) THEN
          IF(lwp) WRITE(numout,*) '          mbku, mbkv & mbkf read in ', TRIM(cn_domcfg), ' file'
-         CALL iom_get( inum, jpdom_global, 'mbku', z2d )
+         CALL iom_get( inum, jpdom_global, 'mbku', z2d, cd_type = 'U', psgn = 1._wp, kfill = jpfillcopy )
          k_bot_u(:,:) = NINT( z2d(:,:) )
-         CALL iom_get( inum, jpdom_global, 'mbkv', z2d )
+         CALL iom_get( inum, jpdom_global, 'mbkv', z2d, cd_type = 'V', psgn = 1._wp, kfill = jpfillcopy )
          k_bot_v(:,:) = NINT( z2d(:,:) )
-         CALL iom_get( inum, jpdom_global, 'mbkf', z2d )
+         CALL iom_get( inum, jpdom_global, 'mbkf', z2d, cd_type = 'F', psgn = 1._wp, kfill = jpfillcopy )
          k_bot_f(:,:) = NINT( z2d(:,:) )
          k_mbkuvf = 1
       ELSE

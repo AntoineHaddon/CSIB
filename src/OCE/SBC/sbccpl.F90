@@ -53,7 +53,7 @@ MODULE sbccpl
    USE mod_oasis, ONLY : OASIS_Sent, OASIS_ToRest, OASIS_SentOut, OASIS_ToRestOut
 #endif
 
-   USE sbc_phy, ONLY : pp_cldf
+   USE sbc_phy, ONLY : pp_cldf, rpref
 
    IMPLICIT NONE
    PRIVATE
@@ -219,17 +219,15 @@ MODULE sbccpl
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   a_i_last_couple !: Ice fractional area at last coupling time
 #endif
 
-   REAL(wp) ::   rpref = 101000._wp   ! reference atmospheric pressure[N/m2]
-   REAL(wp) ::   r1_grau              ! = 1.e0 / (grav * rho0)
-
    INTEGER , ALLOCATABLE, SAVE, DIMENSION(:) ::   nrcvinfo           ! OASIS info argument
 
    !! Substitution
 #  include "do_loop_substitute.h90"
+#  include "single_precision_substitute.h90"
 #  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: sbccpl.F90 15004 2021-06-16 10:33:18Z mathiot $
+   !! $Id: sbccpl.F90 15551 2021-11-28 20:19:36Z gsamson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -1188,6 +1186,7 @@ CONTAINS
       REAL(wp) ::   zrhoa  = 1.22          ! Air density kg/m3
       REAL(wp) ::   zcdrag = 1.5e-3        ! drag coefficient
       REAL(wp) ::   zzx, zzy               ! temporary variables
+      REAL(wp) ::   r1_grau                ! = 1.e0 / (grav * rho0)
       REAL(wp), DIMENSION(jpi,jpj) ::   ztx, zty, zmsk, zemp, zqns, zqsr, zcloud_fra
       !!----------------------------------------------------------------------
       !
@@ -1196,8 +1195,6 @@ CONTAINS
          ncpl_qsr_freq = cpl_freq( 'O_QsrOce' ) + cpl_freq( 'O_QsrMix' ) + cpl_freq( 'I_QsrOce' ) + cpl_freq( 'I_QsrMix' )
          IF( ln_dm2dc .AND. ncpl_qsr_freq /= 86400 )   &
             &   CALL ctl_stop( 'sbc_cpl_rcv: diurnal cycle reconstruction (ln_dm2dc) needs daily couping for solar radiation' )
-
-         IF( ncpl_qsr_freq /= 0) ncpl_qsr_freq = 86400 / ncpl_qsr_freq ! used by top
 
          IF ( ln_wave .AND. nn_components == 0 ) THEN
             ncpl_qsr_freq = 1;
@@ -1676,7 +1673,7 @@ CONTAINS
                p_taui(ji,jj) = zztmp1 * ( frcv(jpr_itx1)%z3(ji+1,jj  ,1) + frcv(jpr_itx1)%z3(ji,jj,1) )
                p_tauj(ji,jj) = zztmp2 * ( frcv(jpr_ity1)%z3(ji  ,jj+1,1) + frcv(jpr_ity1)%z3(ji,jj,1) )
             END_2D
-            CALL lbc_lnk( 'sbccpl', p_taui, 'U',  -1., p_tauj, 'V',  -1. )
+            CALL lbc_lnk( 'sbccpl', p_taui, 'U',  -1._wp, p_tauj, 'V',  -1._wp )
          END SELECT
 
       ENDIF
@@ -2320,7 +2317,7 @@ CONTAINS
             ztmp1(:,:) = ts(:,:,1,jp_tem,Kmm)   ! send temperature as it is (potential or conservative) -> use of l_useCT on the received part
          ELSE
             ! we must send the surface potential temperature
-            IF( l_useCT )  THEN    ;   ztmp1(:,:) = eos_pt_from_ct( ts(:,:,1,jp_tem,Kmm), ts(:,:,1,jp_sal,Kmm) )
+            IF( l_useCT )  THEN    ;   ztmp1(:,:) =eos_pt_from_ct( CASTSP(ts(:,:,1,jp_tem,Kmm)), CASTSP(ts(:,:,1,jp_sal,Kmm)) )
             ELSE                   ;   ztmp1(:,:) = ts(:,:,1,jp_tem,Kmm)
             ENDIF
             !
@@ -2754,11 +2751,11 @@ CONTAINS
       ENDIF
       !                                                        ! SSS
       IF( ssnd(jps_soce  )%laction )  THEN
-         CALL cpl_snd( jps_soce  , isec, RESHAPE ( ts(:,:,1,jp_sal,Kmm), (/jpi,jpj,1/) ), info )
+         CALL cpl_snd( jps_soce  , isec, CASTSP(RESHAPE ( ts(:,:,1,jp_sal,Kmm), (/jpi,jpj,1/) )), info )
       ENDIF
       !                                                        ! first T level thickness
       IF( ssnd(jps_e3t1st )%laction )  THEN
-         CALL cpl_snd( jps_e3t1st, isec, RESHAPE ( e3t(:,:,1,Kmm)   , (/jpi,jpj,1/) ), info )
+ CALL cpl_snd( jps_e3t1st, isec, CASTSP(RESHAPE ( e3t(:,:,1,Kmm) , (/jpi,jpj,1/) )), info )
       ENDIF
       !                                                        ! Qsr fraction
       IF( ssnd(jps_fraqsr)%laction )  THEN

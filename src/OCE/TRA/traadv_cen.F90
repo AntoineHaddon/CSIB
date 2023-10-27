@@ -75,7 +75,7 @@ CONTAINS
       INTEGER                                  , INTENT(in   ) ::   kn_cen_v        ! =2/4 (2nd or 4th order scheme)
       ! TEMP: [tiling] This can be A2D(nn_hls) after all lbc_lnks removed in the nn_hls = 2 case in tra_adv_fct
       REAL(wp), DIMENSION(jpi,jpj,jpk         ), INTENT(in   ) ::   pU, pV, pW      ! 3 ocean volume flux components
-      REAL(wp), DIMENSION(jpi,jpj,jpk,kjpt,jpt), INTENT(inout) ::   pt              ! tracers and RHS of tracer equation
+      REAL(dp), DIMENSION(jpi,jpj,jpk,kjpt,jpt), INTENT(inout) ::   pt              ! tracers and RHS of tracer equation
       !
       INTEGER  ::   ji, jj, jk, jn   ! dummy loop indices
       INTEGER  ::   ierr             ! local integer
@@ -136,7 +136,7 @@ CONTAINS
                zwx(ji,jj,jk) =  0.5_wp * pU(ji,jj,jk) * zC4t_u
                zwy(ji,jj,jk) =  0.5_wp * pV(ji,jj,jk) * zC4t_v
             END_3D
-            IF (nn_hls==1) CALL lbc_lnk( 'traadv_cen', zwx, 'U', -1. , zwy, 'V', -1. )
+            IF (nn_hls==1) CALL lbc_lnk( 'traadv_cen', zwx, 'U', -1._wp , zwy, 'V', -1._wp )
             !
          CASE DEFAULT
             CALL ctl_stop( 'traadv_cen: wrong value for nn_cen' )

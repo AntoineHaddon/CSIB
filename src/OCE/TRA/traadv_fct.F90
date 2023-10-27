@@ -80,13 +80,14 @@ CONTAINS
       REAL(wp)                                 , INTENT(in   ) ::   p2dt            ! tracer time-step
       ! TEMP: [tiling] This can be A2D(nn_hls) after all lbc_lnks removed in the nn_hls = 2 case
       REAL(wp), DIMENSION(jpi,jpj,jpk         ), INTENT(in   ) ::   pU, pV, pW      ! 3 ocean volume flux components
-      REAL(wp), DIMENSION(jpi,jpj,jpk,kjpt,jpt), INTENT(inout) ::   pt              ! tracers and RHS of tracer equation
+      REAL(dp), DIMENSION(jpi,jpj,jpk,kjpt,jpt), INTENT(inout) ::   pt              ! tracers and RHS of tracer equation
       !
       INTEGER  ::   ji, jj, jk, jn                           ! dummy loop indices
       REAL(wp) ::   ztra                                     ! local scalar
       REAL(wp) ::   zfp_ui, zfp_vj, zfp_wk, zC2t_u, zC4t_u   !   -      -
       REAL(wp) ::   zfm_ui, zfm_vj, zfm_wk, zC2t_v, zC4t_v   !   -      -
-      REAL(wp), DIMENSION(A2D(nn_hls),jpk)        ::   zwi, zwx, zwy, zwz, ztu, ztv, zltu, zltv, ztw
+      REAL(wp), DIMENSION(A2D(nn_hls),jpk)         :: zwi, zwz, ztu, ztv, zltu, zltv, ztw
+      REAL(dp), DIMENSION(A2D(nn_hls),jpk)         :: zwx, zwy
       REAL(wp), DIMENSION(:,:,:), ALLOCATABLE ::   ztrdx, ztrdy, ztrdz, zptry
       REAL(wp), DIMENSION(:,:,:), ALLOCATABLE ::   zwinf, zwdia, zwsup
       LOGICAL  ::   ll_zAimp                                 ! flag to apply adaptive implicit vertical advection
@@ -274,7 +275,7 @@ CONTAINS
                zwx(ji,jj,jk) =  0.5_wp * pU(ji,jj,jk) * zC4t_u - zwx(ji,jj,jk)
                zwy(ji,jj,jk) =  0.5_wp * pV(ji,jj,jk) * zC4t_v - zwy(ji,jj,jk)
             END_3D
-            IF (nn_hls==2) CALL lbc_lnk( 'traadv_fct', zwx, 'U', -1.0_wp , zwy, 'V', -1.0_wp )   ! Lateral boundary cond. (unchanged sgn)
+            IF (nn_hls==2) CALL lbc_lnk( 'traadv_fct', zwx, 'U', -1.0_dp , zwy, 'V', -1.0_dp )   ! Lateral boundary cond. (unchanged sgn)
             !
          END SELECT
          !
@@ -298,7 +299,8 @@ CONTAINS
          ENDIF
          !
          IF (nn_hls==1) THEN
-            CALL lbc_lnk( 'traadv_fct', zwi, 'T', 1.0_wp, zwx, 'U', -1.0_wp , zwy, 'V', -1.0_wp, zwz, 'T', 1.0_wp )
+            CALL lbc_lnk( 'traadv_fct', zwx, 'U', -1.0_dp , zwy, 'V', -1.0_dp)
+            CALL lbc_lnk( 'traadv_fct', zwi, 'T', 1.0_wp , zwz, 'T', 1.0_wp )
          ELSE
             CALL lbc_lnk( 'traadv_fct', zwi, 'T', 1.0_wp)
          END IF
@@ -323,7 +325,7 @@ CONTAINS
          !
          !        !==  monotonicity algorithm  ==!
          !
-         CALL nonosc( Kmm, pt(:,:,:,jn,Kbb), zwx, zwy, zwz, zwi, p2dt )
+         CALL nonosc( Krhs, pt(:,:,:,jn,Kbb), zwx, zwy, zwz, zwi, p2dt )
          !
          !        !==  final trend with corrected fluxes  ==!
          !
@@ -399,29 +401,32 @@ CONTAINS
       !!----------------------------------------------------------------------
       INTEGER                         , INTENT(in   ) ::   Kmm             ! time level index
       REAL(wp)                        , INTENT(in   ) ::   p2dt            ! tracer time-step
-      REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(in   ) ::   pbef            ! before field
+      REAL(dp), DIMENSION(jpi,jpj,jpk), INTENT(in   ) ::   pbef            ! before field
       REAL(wp), DIMENSION(A2D(nn_hls)    ,jpk), INTENT(in   ) ::   paft            ! after field
-      REAL(wp), DIMENSION(A2D(nn_hls)    ,jpk), INTENT(inout) ::   paa, pbb, pcc   ! monotonic fluxes in the 3 directions
+      REAL(wp), DIMENSION(A2D(nn_hls)    ,jpk), INTENT(inout)  :: pcc! monotonic fluxes in the 3 directions
+      REAL(dp), DIMENSION(A2D(nn_hls)    ,jpk), INTENT(inout)  :: paa, pbb! monotonic fluxes in the 3 directions
       !
       INTEGER  ::   ji, jj, jk   ! dummy loop indices
       INTEGER  ::   ikm1         ! local integer
-      REAL(dp) ::   zpos, zneg, zbt, za, zb, zc, zbig, zrtrn    ! local scalars
-      REAL(dp) ::   zau, zbu, zcu, zav, zbv, zcv, zup, zdo            !   -      -
-      REAL(dp), DIMENSION(A2D(nn_hls),jpk) :: zbetup, zbetdo, zbup, zbdo
+      REAL(wp) ::   zpos, zneg, zbt, zbig                 ! local scalars
+      REAL(wp) ::   zup, zdo                              !   -      -
+      REAL(wp), DIMENSION(A2D(nn_hls),jpk) :: zbetup, zbetdo, zbup, zbdo
       !!----------------------------------------------------------------------
       !
-      zbig  = 1.e+40_dp
-      zrtrn = 1.e-15_dp
-      zbetup(:,:,:) = 0._dp   ;   zbetdo(:,:,:) = 0._dp
+      zbig = HUGE(1._wp)
+      zbetup(:,:,jpk) = zbig   ;   zbetdo(:,:,jpk) = zbig
 
       ! Search local extrema
       ! --------------------
       ! max/min of pbef & paft with large negative/positive value (-/+zbig) inside land
       DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, jpk )
-         zbup(ji,jj,jk) = MAX( pbef(ji,jj,jk) * tmask(ji,jj,jk) - zbig * ( 1._wp - tmask(ji,jj,jk) ),   &
-            &                  paft(ji,jj,jk) * tmask(ji,jj,jk) - zbig * ( 1._wp - tmask(ji,jj,jk) )  )
-         zbdo(ji,jj,jk) = MIN( pbef(ji,jj,jk) * tmask(ji,jj,jk) + zbig * ( 1._wp - tmask(ji,jj,jk) ),   &
-            &                  paft(ji,jj,jk) * tmask(ji,jj,jk) + zbig * ( 1._wp - tmask(ji,jj,jk) )  )
+         IF( tmask(ji,jj,jk) == 1._wp ) THEN
+            zbup(ji,jj,jk) = MAX( pbef(ji,jj,jk), paft(ji,jj,jk) )
+            zbdo(ji,jj,jk) = MIN( pbef(ji,jj,jk), paft(ji,jj,jk) )
+         ELSE
+            zbup(ji,jj,jk) = -zbig
+            zbdo(ji,jj,jk) =  zbig
+         ENDIF
       END_3D
 
       DO jk = 1, jpkm1
@@ -441,42 +446,39 @@ CONTAINS
                &        zbdo(ji  ,jj  ,ikm1), zbdo(ji  ,jj  ,jk+1)  )
 
             ! positive part of the flux
-            zpos = MAX( 0., paa(ji-1,jj  ,jk  ) ) - MIN( 0., paa(ji  ,jj  ,jk  ) )   &
-               & + MAX( 0., pbb(ji  ,jj-1,jk  ) ) - MIN( 0., pbb(ji  ,jj  ,jk  ) )   &
-               & + MAX( 0., pcc(ji  ,jj  ,jk+1) ) - MIN( 0., pcc(ji  ,jj  ,jk  ) )
+            zpos = MAX( 0._wp, paa(ji-1,jj  ,jk  ) ) - MIN( 0._wp, paa(ji  ,jj  ,jk  ) )   &
+               & + MAX( 0._wp, pbb(ji  ,jj-1,jk  ) ) - MIN( 0._wp, pbb(ji  ,jj  ,jk  ) )   &
+               & + MAX( 0._wp, pcc(ji  ,jj  ,jk+1) ) - MIN( 0._wp, pcc(ji  ,jj  ,jk  ) )
 
             ! negative part of the flux
-            zneg = MAX( 0., paa(ji  ,jj  ,jk  ) ) - MIN( 0., paa(ji-1,jj  ,jk  ) )   &
-               & + MAX( 0., pbb(ji  ,jj  ,jk  ) ) - MIN( 0., pbb(ji  ,jj-1,jk  ) )   &
-               & + MAX( 0., pcc(ji  ,jj  ,jk  ) ) - MIN( 0., pcc(ji  ,jj  ,jk+1) )
+            zneg = MAX( 0._wp, paa(ji  ,jj  ,jk  ) ) - MIN( 0._wp, paa(ji-1,jj  ,jk  ) )   &
+               & + MAX( 0._wp, pbb(ji  ,jj  ,jk  ) ) - MIN( 0._wp, pbb(ji  ,jj-1,jk  ) )   &
+               & + MAX( 0._wp, pcc(ji  ,jj  ,jk  ) ) - MIN( 0._wp, pcc(ji  ,jj  ,jk+1) )
 
             ! up & down beta terms
             zbt = e1e2t(ji,jj) * e3t(ji,jj,jk,Kmm) / p2dt
-            zbetup(ji,jj,jk) = ( zup            - paft(ji,jj,jk) ) / ( zpos + zrtrn ) * zbt
-            zbetdo(ji,jj,jk) = ( paft(ji,jj,jk) - zdo            ) / ( zneg + zrtrn ) * zbt
+            IF( zup /= -zbig .AND. zpos /= 0._wp ) THEN   ;   zbetup(ji,jj,jk) = ( zup - paft(ji,jj,jk) ) / zpos * zbt
+            ELSE                                          ;   zbetup(ji,jj,jk) = zbig
+            ENDIF
+            IF( zdo /=  zbig .AND. zneg /= 0._wp ) THEN   ;   zbetdo(ji,jj,jk) = ( paft(ji,jj,jk) - zdo ) / zneg * zbt
+            ELSE                                          ;   zbetdo(ji,jj,jk) = zbig
+            ENDIF
          END_2D
       END DO
       IF (nn_hls==1) CALL lbc_lnk( 'traadv_fct', zbetup, 'T', 1.0_wp , zbetdo, 'T', 1.0_wp, ld4only= .TRUE. )   ! lateral boundary cond. (unchanged sign)
 
-      ! 3. monotonic flux in the i & j direction (paa & pbb)
-      ! ----------------------------------------
+      ! 3. monotonic flux in the i, j and k direction (paa, pbb and pcc)
+      ! ----------------------------------------------------------------
       DO_3D( 1, 0, 1, 0, 1, jpkm1 )
-         zau = MIN( 1._wp, zbetdo(ji,jj,jk), zbetup(ji+1,jj,jk) )
-         zbu = MIN( 1._wp, zbetup(ji,jj,jk), zbetdo(ji+1,jj,jk) )
-         zcu =       ( 0.5  + SIGN( 0.5_wp , paa(ji,jj,jk) ) )
-         paa(ji,jj,jk) = paa(ji,jj,jk) * ( zcu * zau + ( 1._wp - zcu) * zbu )
-
-         zav = MIN( 1._wp, zbetdo(ji,jj,jk), zbetup(ji,jj+1,jk) )
-         zbv = MIN( 1._wp, zbetup(ji,jj,jk), zbetdo(ji,jj+1,jk) )
-         zcv =       ( 0.5  + SIGN( 0.5_wp , pbb(ji,jj,jk) ) )
-         pbb(ji,jj,jk) = pbb(ji,jj,jk) * ( zcv * zav + ( 1._wp - zcv) * zbv )
-
-      ! monotonic flux in the k direction, i.e. pcc
-      ! -------------------------------------------
-         za = MIN( 1., zbetdo(ji,jj,jk+1), zbetup(ji,jj,jk) )
-         zb = MIN( 1., zbetup(ji,jj,jk+1), zbetdo(ji,jj,jk) )
-         zc =       ( 0.5  + SIGN( 0.5_wp , pcc(ji,jj,jk+1) ) )
-         pcc(ji,jj,jk+1) = pcc(ji,jj,jk+1) * ( zc * za + ( 1._wp - zc) * zb )
+         IF( paa(ji,jj,jk) > 0._wp ) THEN   ;   paa(ji,jj,jk) = paa(ji,jj,jk) * MIN( 1._wp, zbetdo(ji,jj,jk), zbetup(ji+1,jj,jk) )
+         ELSE                               ;   paa(ji,jj,jk) = paa(ji,jj,jk) * MIN( 1._wp, zbetup(ji,jj,jk), zbetdo(ji+1,jj,jk) )
+         ENDIF
+         IF( pbb(ji,jj,jk) > 0._wp ) THEN   ;   pbb(ji,jj,jk) = pbb(ji,jj,jk) * MIN( 1._wp, zbetdo(ji,jj,jk), zbetup(ji,jj+1,jk) )
+         ELSE                               ;   pbb(ji,jj,jk) = pbb(ji,jj,jk) * MIN( 1._wp, zbetup(ji,jj,jk), zbetdo(ji,jj+1,jk) )
+         ENDIF
+         IF( pcc(ji,jj,jk+1) > 0._wp ) THEN   ;   pcc(ji,jj,jk+1) = pcc(ji,jj,jk+1) * MIN( 1._wp, zbetdo(ji,jj,jk+1), zbetup(ji,jj,jk) )
+         ELSE                                 ;   pcc(ji,jj,jk+1) = pcc(ji,jj,jk+1) * MIN( 1._wp, zbetup(ji,jj,jk+1), zbetdo(ji,jj,jk) )
+         ENDIF
       END_3D
       !
    END SUBROUTINE nonosc
@@ -552,7 +554,7 @@ CONTAINS
       !!
       !! **  Method  :   4th order compact interpolation
       !!----------------------------------------------------------------------
-      REAL(wp),DIMENSION(jpi,jpj,jpk), INTENT(in   ) ::   pt_in    ! field at t-point
+      REAL(dp),DIMENSION(jpi,jpj,jpk), INTENT(in   ) ::   pt_in    ! field at t-point
       REAL(wp),DIMENSION(A2D(nn_hls)    ,jpk), INTENT(  out) ::   pt_out   ! field interpolated at w-point
       !
       INTEGER ::   ji, jj, jk   ! dummy loop integers
@@ -642,7 +644,7 @@ CONTAINS
       !!        The solution is pta.
       !!        The 3d array zwt is used as a work space array.
       !!----------------------------------------------------------------------
-      REAL(wp),DIMENSION(A2D(nn_hls),jpk), INTENT(in   ) ::   pD, pU, PL    ! 3-diagonal matrix
+      REAL(wp),DIMENSION(A2D(nn_hls),jpk), INTENT(in   ) ::   pD, pU, pL    ! 3-diagonal matrix
       REAL(wp),DIMENSION(A2D(nn_hls),jpk), INTENT(in   ) ::   pRHS          ! Right-Hand-Side
       REAL(wp),DIMENSION(A2D(nn_hls),jpk), INTENT(  out) ::   pt_out        !!gm field at level=F(klev)
       INTEGER                    , INTENT(in   ) ::   klev          ! =1 pt_out at w-level
@@ -943,7 +945,7 @@ CONTAINS
          !
          !        !==  monotonicity algorithm  ==!
          !
-         CALL nonosc( Kmm, pt(:,:,:,jn,Kbb), zwx_3d, zwy_3d, zwz, zwi, p2dt )
+         CALL nonosc( Krhs, pt(:,:,:,jn,Kbb), zwx_3d, zwy_3d, zwz, zwi, p2dt )
          !
          !        !==  final trend with corrected fluxes  ==!
          !

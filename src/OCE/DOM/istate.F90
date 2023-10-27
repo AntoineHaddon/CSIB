@@ -79,10 +79,12 @@ CONTAINS
       CALL dta_tsd_init                 ! Initialisation of T & S input data
       IF( ln_c1d) CALL dta_uvd_init     ! Initialisation of U & V input data (c1d only)
 
-      rhd  (:,:,:      ) = 0._wp   ;   rhop (:,:,:  ) = 0._wp      ! set one for all to 0 at level jpk
-      rn2b (:,:,:      ) = 0._wp   ;   rn2  (:,:,:  ) = 0._wp      ! set one for all to 0 at levels 1 and jpk
-      ts   (:,:,:,:,Kaa) = 0._wp                                   ! set one for all to 0 at level jpk
-      rab_b(:,:,:,:    ) = 0._wp   ;   rab_n(:,:,:,:) = 0._wp      ! set one for all to 0 at level jpk
+      ts   (:,:,:,:,Kaa) = 0._wp   ;   rn2  (:,:,:  ) = 0._wp         ! set one for all to 0 at levels 1 and jpk
+      IF ( ALLOCATED( rhd ) ) THEN                                    ! SWE, for example, will not have allocated these
+         rhd  (:,:,:      ) = 0._wp   ;   rhop (:,:,:  ) = 0._wp      ! set one for all to 0 at level jpk
+         rn2b (:,:,:      ) = 0._wp                                   ! set one for all to 0 at level jpk
+         rab_b(:,:,:,:    ) = 0._wp   ;   rab_n(:,:,:,:) = 0._wp      ! set one for all to 0 at level jpk
+      ENDIF
 #if defined key_agrif
       uu   (:,:,:  ,Kaa) = 0._wp   ! used in agrif_oce_sponge at initialization
       vv   (:,:,:  ,Kaa) = 0._wp   ! used in agrif_oce_sponge at initialization    
@@ -130,8 +132,8 @@ CONTAINS
                END DO
                CALL usr_def_istate( zgdept, tmask, ts(:,:,:,:,Kbb), uu(:,:,:,Kbb), vv(:,:,:,Kbb) )
                ! make sure that periodicities are properly applied 
-               CALL lbc_lnk( 'istate', ts(:,:,:,jp_tem,Kbb), 'T',  1._wp, ts(:,:,:,jp_sal,Kbb), 'T',  1._wp,   &
-                  &                    uu(:,:,:,       Kbb), 'U', -1._wp, vv(:,:,:,       Kbb), 'V', -1._wp )
+               CALL lbc_lnk( 'istate', ts(:,:,:,jp_tem,Kbb), 'T',  1._dp, ts(:,:,:,jp_sal,Kbb), 'T',  1._dp,   &
+                  &                    uu(:,:,:,       Kbb), 'U', -1._dp, vv(:,:,:,       Kbb), 'V', -1._dp )
             ENDIF
             ts  (:,:,:,:,Kmm) = ts (:,:,:,:,Kbb)       ! set now values from to before ones
             uu    (:,:,:,Kmm) = uu   (:,:,:,Kbb)

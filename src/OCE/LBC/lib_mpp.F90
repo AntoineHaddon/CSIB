@@ -1237,7 +1237,7 @@ CONTAINS
                 + aimag(ydda(ji)) + aimag(yddb(ji))
 
          ! The result is zt1 + zt2, after normalization.
-         yddb(ji) = cmplx ( zt1 + zt2, zt2 - ((zt1 + zt2) - zt1),wp )
+         yddb(ji) = cmplx ( zt1 + zt2, zt2 - ((zt1 + zt2) - zt1), dp )
       END DO
       !
    END SUBROUTINE DDPDD_MPI
@@ -1648,12 +1648,12 @@ CONTAINS
       !
       get_unit = 15   ! choose a unit that is big enough then it is not already used in NEMO
       llopn = .TRUE.
-      DO WHILE( (get_unit < 998) .AND. llopn )
+      DO WHILE( (get_unit < 9999) .AND. llopn )
          get_unit = get_unit + 1
          INQUIRE( unit = get_unit, opened = llopn )
       END DO
-      IF( (get_unit == 999) .AND. llopn ) THEN
-         CALL ctl_stop( 'STOP', 'get_unit: All logical units until 999 are used...' )
+      IF( (get_unit == 9999) .AND. llopn ) THEN
+         CALL ctl_stop( 'STOP', 'get_unit: All logical units until 9999 are used...' )
       ENDIF
       !
    END FUNCTION get_unit

@@ -55,8 +55,6 @@ MODULE trabbl
    REAL(wp), PUBLIC ::   rn_ahtbbl   !: along slope bbl diffusive coefficient [m2/s]
    REAL(wp), PUBLIC ::   rn_gambbl   !: lateral coeff. for bottom boundary layer scheme [s]
 
-   LOGICAL , PUBLIC ::   l_bbl       !: flag to compute bbl diffu. flux coef and transport
-
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:), PUBLIC ::   utr_bbl  , vtr_bbl   ! u- (v-) transport in the bottom boundary layer
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:), PUBLIC ::   ahu_bbl  , ahv_bbl   ! masked diffusive bbl coeff. at u & v-pts
 
@@ -103,7 +101,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       INTEGER,                                   INTENT(in   ) :: kt              ! ocean time-step
       INTEGER,                                   INTENT(in   ) :: Kbb, Kmm, Krhs  ! time level indices
-      REAL(wp), DIMENSION(jpi,jpj,jpk,jpts,jpt), INTENT(inout) :: pts             ! active tracers and RHS of tracer equation
+      REAL(dp), DIMENSION(jpi,jpj,jpk,jpts,jpt), INTENT(inout) :: pts             ! active tracers and RHS of tracer equation
       !
       INTEGER  ::   ji, jj, jk   ! Dummy loop indices
       REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) ::   ztrdt, ztrds
@@ -116,8 +114,6 @@ CONTAINS
          ztrdt(:,:,:) = pts(:,:,:,jp_tem,Krhs)
          ztrds(:,:,:) = pts(:,:,:,jp_sal,Krhs)
       ENDIF
-
-      IF( l_bbl )   CALL bbl( kt, nit000, 'TRA', Kbb, Kmm )   !* bbl coef. and transport (only if not already done in trcbbl)
 
       IF( nn_bbl_ldf == 1 ) THEN                    !* Diffusive bbl
          !
@@ -176,8 +172,8 @@ CONTAINS
       !!              Campin, J.-M., and H. Goosse, 1999, Tellus, 412-430.
       !!----------------------------------------------------------------------
       INTEGER                              , INTENT(in   ) ::   kjpt   ! number of tracers
-      REAL(wp), DIMENSION(jpi,jpj,jpk,kjpt), INTENT(in   ) ::   pt     ! before and now tracer fields
-      REAL(wp), DIMENSION(jpi,jpj,jpk,kjpt), INTENT(inout) ::   pt_rhs ! tracer trend
+      REAL(dp), DIMENSION(jpi,jpj,jpk,kjpt), INTENT(in   ) ::   pt     ! before and now tracer fields
+      REAL(dp), DIMENSION(jpi,jpj,jpk,kjpt), INTENT(inout) ::   pt_rhs ! tracer trend
       INTEGER                              , INTENT(in   ) ::   Kmm    ! time level indices
       !
       INTEGER  ::   ji, jj, jn   ! dummy loop indices
@@ -225,8 +221,8 @@ CONTAINS
       !!              Campin, J.-M., and H. Goosse, 1999, Tellus, 412-430.
       !!----------------------------------------------------------------------
       INTEGER                              , INTENT(in   ) ::   kjpt   ! number of tracers
-      REAL(wp), DIMENSION(jpi,jpj,jpk,kjpt), INTENT(in   ) ::   pt     ! before and now tracer fields
-      REAL(wp), DIMENSION(jpi,jpj,jpk,kjpt), INTENT(inout) ::   pt_rhs ! tracer trend
+      REAL(dp), DIMENSION(jpi,jpj,jpk,kjpt), INTENT(in   ) ::   pt     ! before and now tracer fields
+      REAL(dp), DIMENSION(jpi,jpj,jpk,kjpt), INTENT(inout) ::   pt_rhs ! tracer trend
       INTEGER                              , INTENT(in   ) ::   Kmm    ! time level indices
       !
       INTEGER  ::   ji, jj, jk, jn           ! dummy loop indices
@@ -289,7 +285,7 @@ CONTAINS
    END SUBROUTINE tra_bbl_adv
 
 
-   SUBROUTINE bbl( kt, kit000, cdtype, Kbb, Kmm )
+   SUBROUTINE bbl( kt, kit000, Kbb, Kmm )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE bbl  ***
       !!
@@ -317,7 +313,6 @@ CONTAINS
       !!----------------------------------------------------------------------
       INTEGER         , INTENT(in   ) ::   kt       ! ocean time-step index
       INTEGER         , INTENT(in   ) ::   kit000   ! first time step index
-      CHARACTER(len=3), INTENT(in   ) ::   cdtype   ! =TRA or TRC (tracer indicator)
       INTEGER         , INTENT(in   ) ::   Kbb, Kmm ! ocean time level index
       !
       INTEGER  ::   ji, jj                    ! dummy loop indices
@@ -333,7 +328,7 @@ CONTAINS
       IF( .NOT. l_istiled .OR. ntile == 1 )  THEN                       ! Do only on the first tile
          IF( kt == kit000 )  THEN
             IF(lwp)  WRITE(numout,*)
-            IF(lwp)  WRITE(numout,*) 'trabbl:bbl : Compute bbl velocities and diffusive coefficients in ', cdtype
+            IF(lwp)  WRITE(numout,*) 'trabbl:bbl : Compute bbl velocities and diffusive coefficients'
             IF(lwp)  WRITE(numout,*) '~~~~~~~~~~'
          ENDIF
       ENDIF
@@ -478,8 +473,6 @@ CONTAINS
       READ  ( numnam_cfg, nambbl, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'nambbl in configuration namelist' )
       IF(lwm) WRITE ( numond, nambbl )
-      !
-      l_bbl = .TRUE.                 !* flag to compute bbl coef and transport
       !
       IF(lwp) THEN                   !* Parameter control and print
          WRITE(numout,*)

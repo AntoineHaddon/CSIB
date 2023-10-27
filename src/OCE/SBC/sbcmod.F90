@@ -39,6 +39,7 @@ MODULE sbcmod
    USE sbcice_if      ! surface boundary condition: ice-if sea-ice model
 #if defined key_si3
    USE icestp         ! surface boundary condition: SI3 sea-ice model
+   USE ice
 #endif
    USE sbcice_cice    ! surface boundary condition: CICE sea-ice model
    USE sbccpl         ! surface boundary condition: coupled formulation
@@ -74,6 +75,7 @@ MODULE sbcmod
    INTEGER ::   nsbc   ! type of surface boundary condition (deduced from namsbc informations)
    !! * Substitutions
 #  include "do_loop_substitute.h90"
+#  include "single_precision_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
    !! $Id: sbcmod.F90 15372 2021-10-14 15:47:24Z davestorkey $
@@ -124,6 +126,10 @@ CONTAINS
 #endif
 #if ! defined key_si3
       IF( nn_ice == 2 )    nn_ice = 0  ! without key key_si3 you cannot use si3...
+#endif
+#if defined key_agrif
+      ! In case of an agrif zoom, the freshwater water budget is determined by parent:
+      IF (.NOT.Agrif_Root()) nn_fwb = Agrif_Parent(nn_fwb) 
 #endif
       !
       !
@@ -325,8 +331,14 @@ CONTAINS
       IF( ln_apr_dyn )    CALL sbc_apr_init              ! Atmo Pressure Forcing initialization
       !
 #if defined key_si3
-      IF( lk_agrif .AND. nn_ice == 0 ) THEN            ! allocate ice arrays in case agrif + ice-model + no-ice in child grid
-                          IF( sbc_ice_alloc() /= 0 )   CALL ctl_stop('STOP', 'sbc_ice_alloc : unable to allocate arrays' )
+      IF( nn_ice == 0 ) THEN
+         ! allocate ice arrays in case agrif + ice-model + no-ice in child grid
+         jpl = 1 ; nlay_i = 1 ; nlay_s = 1
+         IF( sbc_ice_alloc() /= 0 )   CALL ctl_stop('STOP', 'sbc_ice_alloc : unable to allocate arrays' )
+#if defined key_agrif
+         CALL Agrif_Declare_Var_ice  !  "      "   "   "      "  Sea ice
+#endif
+
       ELSEIF( nn_ice == 2 ) THEN
                           CALL ice_init( Kbb, Kmm, Kaa )         ! ICE initialization
       ENDIF
@@ -410,39 +422,34 @@ CONTAINS
       !
       !                                            !==  sbc formulation  ==!
       !
+      IF( ln_blk .OR. ln_abl ) THEN
+         IF( ll_sas  )         CALL sbc_cpl_rcv ( kt, nn_fsbc, nn_ice, Kbb, Kmm )   ! OCE-SAS coupling: SAS receiving fields from OCE
+         IF( ln_wave ) THEN
+            IF ( lk_oasis )    CALL sbc_cpl_rcv ( kt, nn_fsbc, nn_ice, Kbb, Kmm )   ! OCE-wave coupling
+                               CALL sbc_wave ( kt, Kmm )
+         ENDIF
+      ENDIF
       !
       SELECT CASE( nsbc )                                ! Compute ocean surface boundary condition
       !                                                  ! (i.e. utau,vtau, qns, qsr, emp, sfx)
-      CASE( jp_usr   )     ;   CALL usrdef_sbc_oce( kt, Kbb )                        ! user defined formulation
+      CASE( jp_usr     )   ;   CALL usrdef_sbc_oce( kt, Kbb )                        ! user defined formulation
       CASE( jp_flx     )   ;   CALL sbc_flx       ( kt )                             ! flux formulation
-      CASE( jp_blk     )
-         IF( ll_sas    )       CALL sbc_cpl_rcv   ( kt, nn_fsbc, nn_ice, Kbb, Kmm )   ! OCE-SAS coupling: SAS receiving fields from OCE
-!!!!!!!!!!! ATTENTION:ln_wave is not only used for oasis coupling !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-         IF( ln_wave )   THEN
-             IF ( lk_oasis )  CALL sbc_cpl_rcv ( kt, nn_fsbc, nn_ice, Kbb, Kmm )   ! OCE-wave coupling
-             CALL sbc_wave ( kt, Kmm )
-         ENDIF
-                               CALL sbc_blk       ( kt )                    ! bulk formulation for the ocean
-                               !
-      CASE( jp_abl     )
-         IF( ll_sas    )       CALL sbc_cpl_rcv   ( kt, nn_fsbc, nn_ice, Kbb, Kmm )   ! OCE-SAS coupling: SAS receiving fields from OCE
-                               CALL sbc_abl       ( kt )                    ! ABL  formulation for the ocean
-                               !
-      CASE( jp_purecpl )   ;   CALL sbc_cpl_rcv   ( kt, nn_fsbc, nn_ice, Kbb, Kmm )   ! pure coupled formulation
+      CASE( jp_blk     )   ;   CALL sbc_blk       ( kt )                             ! bulk formulation for the ocean
+      CASE( jp_abl     )   ;   CALL sbc_abl       ( kt )                             ! ABL  formulation for the ocean
+      CASE( jp_purecpl )   ;   CALL sbc_cpl_rcv   ( kt, nn_fsbc, nn_ice, Kbb, Kmm )  ! pure coupled formulation
       CASE( jp_none    )
          IF( ll_opa    )       CALL sbc_cpl_rcv   ( kt, nn_fsbc, nn_ice, Kbb, Kmm )  ! OCE-SAS coupling: OCE receiving fields from SAS
       END SELECT
-      !
       IF( ln_mixcpl )          CALL sbc_cpl_rcv   ( kt, nn_fsbc, nn_ice, Kbb, Kmm )  ! forced-coupled mixed formulation after forcing
       !
-      IF( ln_wave .AND. ln_tauoc )  THEN            ! Wave stress reduction
+      IF( ln_wave .AND. ln_tauoc ) THEN            ! Wave stress reduction
          DO_2D( 0, 0, 0, 0)
             utau(ji,jj) = utau(ji,jj) * ( tauoc_wave(ji,jj) + tauoc_wave(ji-1,jj) ) * 0.5_wp
             vtau(ji,jj) = vtau(ji,jj) * ( tauoc_wave(ji,jj) + tauoc_wave(ji,jj-1) ) * 0.5_wp
          END_2D
          !
-         CALL lbc_lnk( 'sbcwave', utau, 'U', -1. )
-         CALL lbc_lnk( 'sbcwave', vtau, 'V', -1. )
+         CALL lbc_lnk( 'sbcwave', utau, 'U', -1._wp )
+         CALL lbc_lnk( 'sbcwave', vtau, 'V', -1._wp )
          !
          taum(:,:) = taum(:,:)*tauoc_wave(:,:)
          !
@@ -452,8 +459,8 @@ CONTAINS
       ELSEIF( ln_wave .AND. ln_taw ) THEN                  ! Wave stress reduction
          utau(:,:) = utau(:,:) - tawx(:,:) + twox(:,:)
          vtau(:,:) = vtau(:,:) - tawy(:,:) + twoy(:,:)
-         CALL lbc_lnk( 'sbcwave', utau, 'U', -1. )
-         CALL lbc_lnk( 'sbcwave', vtau, 'V', -1. )
+         CALL lbc_lnk( 'sbcwave', utau, 'U', -1._wp )
+         CALL lbc_lnk( 'sbcwave', vtau, 'V', -1._wp )
          !
          DO_2D( 0, 0, 0, 0)
              taum(ji,jj) = sqrt((.5*(utau(ji-1,jj)+utau(ji,jj)))**2 + (.5*(vtau(ji,jj-1)+vtau(ji,jj)))**2)
@@ -463,7 +470,7 @@ CONTAINS
             &                                'If not requested select ln_taw=.false.' )
          !
       ENDIF
-      CALL lbc_lnk( 'sbcmod', taum(:,:), 'T', 1. )
+      CALL lbc_lnk( 'sbcmod', taum(:,:), 'T', 1._wp )
       !
       IF( ln_icebergs ) THEN  ! save pure stresses (with no ice-ocean stress) for use by icebergs
          utau_icb(:,:) = utau(:,:) ; vtau_icb(:,:) = vtau(:,:) 
@@ -601,16 +608,16 @@ CONTAINS
       ENDIF
       !
       IF(sn_cfctl%l_prtctl) THEN     ! print mean trends (used for debugging)
-         CALL prt_ctl(tab2d_1=fr_i                , clinfo1=' fr_i     - : ', mask1=tmask )
-         CALL prt_ctl(tab2d_1=(emp-rnf)           , clinfo1=' emp-rnf  - : ', mask1=tmask )
-         CALL prt_ctl(tab2d_1=(sfx-rnf)           , clinfo1=' sfx-rnf  - : ', mask1=tmask )
-         CALL prt_ctl(tab2d_1=qns                 , clinfo1=' qns      - : ', mask1=tmask )
-         CALL prt_ctl(tab2d_1=qsr                 , clinfo1=' qsr      - : ', mask1=tmask )
-         CALL prt_ctl(tab3d_1=tmask               , clinfo1=' tmask    - : ', mask1=tmask, kdim=jpk )
+         CALL prt_ctl(tab2d_1=CASTDP(fr_i)                , clinfo1=' fr_i     - : ', mask1=tmask )
+         CALL prt_ctl(tab2d_1=CASTDP((emp-rnf))           , clinfo1=' emp-rnf  - : ', mask1=tmask )
+         CALL prt_ctl(tab2d_1=CASTDP((sfx-rnf))           , clinfo1=' sfx-rnf  - : ', mask1=tmask )
+         CALL prt_ctl(tab2d_1=CASTDP(qns)                 , clinfo1=' qns      - : ', mask1=tmask )
+         CALL prt_ctl(tab2d_1=CASTDP(qsr)                , clinfo1=' qsr      - : ', mask1=tmask )
+         CALL prt_ctl(tab3d_1=CASTDP(tmask)              , clinfo1=' tmask    - : ', mask1=tmask, kdim=jpk )
          CALL prt_ctl(tab3d_1=ts(:,:,:,jp_tem,Kmm), clinfo1=' sst      - : ', mask1=tmask, kdim=1   )
          CALL prt_ctl(tab3d_1=ts(:,:,:,jp_sal,Kmm), clinfo1=' sss      - : ', mask1=tmask, kdim=1   )
-         CALL prt_ctl(tab2d_1=utau                , clinfo1=' utau     - : ', mask1=umask,                      &
-            &         tab2d_2=vtau                , clinfo2=' vtau     - : ', mask2=vmask )
+         CALL prt_ctl(tab2d_1=CASTDP(utau)               , clinfo1=' utau     - : ', mask1=umask,                      &
+            &         tab2d_2=CASTDP(vtau)               , clinfo2=' vtau     - : ', mask2=vmask )
       ENDIF
 
       IF( kt == nitend )   CALL sbc_final         ! Close down surface module if necessary

@@ -72,9 +72,10 @@ MODULE dynspg_ts
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   un_adv , vn_adv   !: Advection vel. at "now" barocl. step
    !
    INTEGER, SAVE :: icycle      ! Number of barotropic sub-steps for each internal step nn_e <= 2.5 nn_e
-   REAL(wp),SAVE :: rDt_e       ! Barotropic time step
+   REAL(dp),SAVE :: rDt_e       ! Barotropic time step
    !
-   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:)   ::   wgtbtp1, wgtbtp2   ! 1st & 2nd weights used in time filtering of barotropic fields
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:)    :: wgtbtp2! 1st & 2nd weights used in time filtering of barotropic fields
+   REAL(dp), ALLOCATABLE, SAVE, DIMENSION(:)    :: wgtbtp1! 1st & 2nd weights used in time filtering of barotropic fields
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:) ::   zwz                ! ff_f/h at F points
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:) ::   ftnw, ftne         ! triad of coriolis parameter
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:) ::   ftsw, ftse         ! (only used with een vorticity scheme)
@@ -86,6 +87,7 @@ MODULE dynspg_ts
 
    !! * Substitutions
 #  include "do_loop_substitute.h90"
+#  include "single_precision_substitute.h90"
 #  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
@@ -143,8 +145,9 @@ CONTAINS
       !!---------------------------------------------------------------------
       INTEGER                             , INTENT( in )  ::  kt                  ! ocean time-step index
       INTEGER                             , INTENT( in )  ::  Kbb, Kmm, Krhs, Kaa ! ocean time level indices
-      REAL(wp), DIMENSION(jpi,jpj,jpk,jpt), INTENT(inout) ::  puu, pvv            ! ocean velocities and RHS of momentum equation
-      REAL(wp), DIMENSION(jpi,jpj,jpt)    , INTENT(inout) ::  pssh, puu_b, pvv_b  ! SSH and barotropic velocities at main time levels
+      REAL(dp), DIMENSION(jpi,jpj,jpk,jpt), INTENT(inout) ::  puu, pvv            ! ocean velocities and RHS of momentum equation
+      REAL(wp), DIMENSION(jpi,jpj,jpt)    , INTENT(inout)  :: puu_b, pvv_b! SSH and barotropic velocities at main time levels
+      REAL(dp), DIMENSION(jpi,jpj,jpt)    , INTENT(inout)  :: pssh! SSH and barotropic velocities at main time levels
       INTEGER , OPTIONAL                  , INTENT( in )  ::  k_only_ADV          ! only Advection in the RHS
       !
       INTEGER  ::   ji, jj, jk, jn        ! dummy loop indices
@@ -152,16 +155,19 @@ CONTAINS
       LOGICAL  ::   ll_init               ! =T : special startup of 2d equations
       INTEGER  ::   noffset               ! local integers  : time offset for bdy update
       REAL(wp) ::   r1_Dt_b, z1_hu, z1_hv          ! local scalars
-      REAL(wp) ::   za0, za1, za2, za3              !   -      -
+      REAL(wp)  :: za0, za2, za3!   -      -
+      REAL(dp)  :: za1!   -      -
       REAL(wp) ::   zztmp, zldg               !   -      -
-      REAL(wp) ::   zhu_bck, zhv_bck, zhdiv         !   -      -
+      REAL(wp)  :: zhu_bck, zhv_bck!   -      -
+      REAL(dp)  :: zhdiv!   -      -
       REAL(wp) ::   zun_save, zvn_save              !   -      -
-      REAL(wp), DIMENSION(jpi,jpj) :: zu_trd, zu_frc, zu_spg, zssh_frc
+      REAL(wp), DIMENSION(jpi,jpj) :: zu_trd, zu_frc, zu_spg
       REAL(wp), DIMENSION(jpi,jpj) :: zv_trd, zv_frc, zv_spg
       REAL(wp), DIMENSION(jpi,jpj) :: zsshu_a, zhup2_e, zhtp2_e
       REAL(wp), DIMENSION(jpi,jpj) :: zsshv_a, zhvp2_e, zsshp2_e
       REAL(wp), DIMENSION(jpi,jpj) :: zCdU_u, zCdU_v   ! top/bottom stress at u- & v-points
-      REAL(wp), DIMENSION(jpi,jpj) :: zhU, zhV         ! fluxes
+      REAL(wp), DIMENSION(jpi,jpj)  :: zhV! fluxes
+      REAL(dp), DIMENSION(jpi,jpj)  :: zhU! fluxes
 !!st#if defined key_qco 
 !!st      REAL(wp), DIMENSION(jpi, jpj, jpk) :: ze3u, ze3v
 !!st#endif
@@ -171,13 +177,11 @@ CONTAINS
       INTEGER  :: iwdg, jwdg, kwdg   ! short-hand values for the indices of the output point
 
       REAL(wp) ::   zepsilon, zgamma            !   -      -
-      REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: zcpx, zcpy   ! Wetting/Dying gravity filter coef.
       REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: ztwdmask, zuwdmask, zvwdmask ! ROMS wetting and drying masks at t,u,v points
       REAL(wp), ALLOCATABLE, DIMENSION(:,:) :: zuwdav2, zvwdav2    ! averages over the sub-steps of zuwdmask and zvwdmask
       REAL(wp) ::   zt0substep !   Time of day at the beginning of the time substep
       !!----------------------------------------------------------------------
       !
-      IF( ln_wd_il ) ALLOCATE( zcpx(jpi,jpj), zcpy(jpi,jpj) )
       !                                         !* Allocate temporary arrays
       IF( ln_wd_dl ) ALLOCATE( ztwdmask(jpi,jpj), zuwdmask(jpi,jpj), zvwdmask(jpi,jpj), zuwdav2(jpi,jpj), zvwdav2(jpi,jpj))
       !
@@ -259,7 +263,7 @@ CONTAINS
          zhU(:,:) = puu_b(:,:,Kmm) * hu(:,:,Kmm) * e2u(:,:)        ! now fluxes 
          zhV(:,:) = pvv_b(:,:,Kmm) * hv(:,:,Kmm) * e1v(:,:)        ! NB: FULL domain : put a value in last row and column
          !
-         CALL dyn_cor_2d( ht(:,:), hu(:,:,Kmm), hv(:,:,Kmm), puu_b(:,:,Kmm), pvv_b(:,:,Kmm), zhU, zhV,  &   ! <<== in
+         CALL dyn_cor_2d( CASTSP(ht(:,:)), hu(:,:,Kmm), hv(:,:,Kmm), puu_b(:,:,Kmm), pvv_b(:,:,Kmm), zhU, zhV,  &   ! <<== in
             &                                                                          zu_trd, zv_trd   )   ! ==>> out
          !
          DO_2D( 0, 0, 0, 0 )                          ! Remove coriolis term (and possibly spg) from barotropic trend
@@ -319,17 +323,17 @@ CONTAINS
       !                                   !=  Net water flux forcing applied to a water column  =!
       !                                   ! ---------------------------------------------------  !
       IF (ln_bt_fw) THEN                          ! FORWARD integration: use kt+1/2 fluxes (NOW+1/2)
-         zssh_frc(:,:) = r1_rho0 * ( emp(:,:) - rnf(:,:) - fwfisf_cav(:,:) - fwfisf_par(:,:) )
+         ssh_frc(:,:) = r1_rho0 * ( emp(:,:) - rnf(:,:) - fwfisf_cav(:,:) - fwfisf_par(:,:) )
       ELSE                                        ! CENTRED integration: use kt-1/2 + kt+1/2 fluxes (NOW)
          zztmp = r1_rho0 * r1_2
-         zssh_frc(:,:) = zztmp * (   emp(:,:)        + emp_b(:,:)          &
-            &                      - rnf(:,:)        - rnf_b(:,:)          &
-            &                      - fwfisf_cav(:,:) - fwfisf_cav_b(:,:)   &
-            &                      - fwfisf_par(:,:) - fwfisf_par_b(:,:)   )
+         ssh_frc(:,:) = zztmp * (   emp(:,:)        + emp_b(:,:)          &
+            &                     - rnf(:,:)        - rnf_b(:,:)          &
+            &                     - fwfisf_cav(:,:) - fwfisf_cav_b(:,:)   &
+            &                     - fwfisf_par(:,:) - fwfisf_par_b(:,:)   )
       ENDIF
       !                                   !=  Add Stokes drift divergence  =!   (if exist)
       IF( ln_sdw ) THEN                   !  -----------------------------  !
-         zssh_frc(:,:) = zssh_frc(:,:) + div_sd(:,:)
+         ssh_frc(:,:) = ssh_frc(:,:) + div_sd(:,:)
       ENDIF
       !
       !                                         ! ice sheet coupling
@@ -337,12 +341,12 @@ CONTAINS
          !
          ! ice sheet coupling
          IF( ln_rstart .AND. kt == nit000 ) THEN
-            zssh_frc(:,:) = zssh_frc(:,:) + risfcpl_ssh(:,:)
+            ssh_frc(:,:) = ssh_frc(:,:) + risfcpl_ssh(:,:)
          END IF
          !
          ! conservation option
          IF( ln_isfcpl_cons ) THEN
-            zssh_frc(:,:) = zssh_frc(:,:) + risfcpl_cons_ssh(:,:)
+            ssh_frc(:,:) = ssh_frc(:,:) + risfcpl_cons_ssh(:,:)
          END IF
          !
       END IF
@@ -351,7 +355,7 @@ CONTAINS
       !                                   !=  Add the IAU weighted SSH increment  =!
       !                                   !  ------------------------------------  !
       IF( lk_asminc .AND. ln_sshinc .AND. ln_asmiau ) THEN
-         zssh_frc(:,:) = zssh_frc(:,:) - ssh_iau(:,:)
+         ssh_frc(:,:) = ssh_frc(:,:) - ssh_iau(:,:)
       ENDIF
 #endif
       !                                   != Fill boundary data arrays for AGRIF
@@ -507,9 +511,8 @@ CONTAINS
          !
 #if defined key_agrif
          ! Set fluxes during predictor step to ensure volume conservation
-         IF( .NOT.Agrif_Root() .AND. ln_bt_fw ) CALL agrif_dyn_ts_flux( jn, zhU, zhV )
+         IF( ln_bt_fw )   CALL agrif_dyn_ts_flux( jn, zhU, zhV )
 #endif
-         IF( ln_wd_il )   CALL wad_lmt_bt(zhU, zhV, sshn_e, zssh_frc, rDt_e)    !!gm wad_lmt_bt use of lbc_lnk on zhU, zhV
 
          IF( ln_wd_dl ) THEN           ! un_e and vn_e are set to zero at faces where 
             !                          ! the direction of the flow is from dry cells
@@ -524,15 +527,16 @@ CONTAINS
          !-------------------------------------------------------------------------!
          DO_2D( 0, 0, 0, 0 )
             zhdiv = (   zhU(ji,jj) - zhU(ji-1,jj) + zhV(ji,jj) - zhV(ji,jj-1)   ) * r1_e1e2t(ji,jj)
-            ssha_e(ji,jj) = (  sshn_e(ji,jj) - rDt_e * ( zssh_frc(ji,jj) + zhdiv )  ) * ssmask(ji,jj)
+            ssha_e(ji,jj) = (  sshn_e(ji,jj) - rDt_e * ( ssh_frc(ji,jj) + zhdiv )  ) * ssmask(ji,jj)
          END_2D
          !
-         CALL lbc_lnk( 'dynspg_ts', ssha_e, 'T', 1._wp,  zhU, 'U', -1._wp,  zhV, 'V', -1._wp )
+         CALL lbc_lnk( 'dynspg_ts', ssha_e, 'T', 1._dp,  zhU, 'U', -1._dp)
+         CALL lbc_lnk( 'dynspg_ts',  zhV, 'V', -1._wp )
          !
          ! Duplicate sea level across open boundaries (this is only cosmetic if linssh=T)
          IF( ln_bdy )   CALL bdy_ssh( ssha_e )
 #if defined key_agrif
-         IF( .NOT.Agrif_Root() )   CALL agrif_ssh_ts( jn )
+         CALL agrif_ssh_ts( jn )
 #endif
          !
          !                             ! Sum over sub-time-steps to compute advective velocities
@@ -584,13 +588,6 @@ CONTAINS
             zu_spg(ji,jj) = - zldg * ( zsshp2_e(ji+1,jj) - zsshp2_e(ji,jj) ) * r1_e1u(ji,jj)
             zv_spg(ji,jj) = - zldg * ( zsshp2_e(ji,jj+1) - zsshp2_e(ji,jj) ) * r1_e2v(ji,jj)
          END_2D
-         IF( ln_wd_il ) THEN        ! W/D : gravity filters applied on pressure gradient
-            CALL wad_spg( zsshp2_e, zcpx, zcpy )   ! Calculating W/D gravity filters
-            DO_2D( 0, 0, 0, 0 )
-               zu_spg(ji,jj) = zu_spg(ji,jj) * zcpx(ji,jj)
-               zv_spg(ji,jj) = zv_spg(ji,jj) * zcpy(ji,jj)
-            END_2D
-         ENDIF
          !
          ! Add Coriolis trend:
          ! zwz array below or triads normally depend on sea level with ln_linssh=F and should be updated
@@ -697,7 +694,7 @@ CONTAINS
          !                                                 ! open boundaries
          IF( ln_bdy )   CALL bdy_dyn2d( jn, ua_e, va_e, un_e, vn_e, hur_e, hvr_e, ssha_e )
 #if defined key_agrif                                                           
-         IF( .NOT.Agrif_Root() )  CALL agrif_dyn_ts( jn )  ! Agrif
+         CALL agrif_dyn_ts( jn )  ! Agrif
 #endif
          !                                             !* Swap
          !                                             !  ----
@@ -837,7 +834,6 @@ CONTAINS
       !                                   !* write time-spliting arrays in the restart
       IF( lrst_oce .AND.ln_bt_fw )   CALL ts_rst( kt, 'WRITE' )
       !
-      IF( ln_wd_il )   DEALLOCATE( zcpx, zcpy )
       IF( ln_wd_dl )   DEALLOCATE( ztwdmask, zuwdmask, zvwdmask, zuwdav2, zvwdav2 )
       !
       CALL iom_put( "baro_u" , puu_b(:,:,Kmm) )  ! Barotropic  U Velocity
@@ -855,11 +851,13 @@ CONTAINS
       LOGICAL, INTENT(in) ::   ll_av      ! temporal averaging=.true.
       LOGICAL, INTENT(in) ::   ll_fw      ! forward time splitting =.true.
       INTEGER, INTENT(inout) :: jpit      ! cycle length    
-      REAL(wp), DIMENSION(3*nn_e), INTENT(inout) ::   zwgt1, & ! Primary weights
-                                                         zwgt2    ! Secondary weights
+      REAL(wp), DIMENSION(3*nn_e), INTENT(inout)  :: zwgt2
+      REAL(dp), DIMENSION(3*nn_e), INTENT(inout)  :: zwgt1
+
       
       INTEGER ::  jic, jn, ji                      ! temporary integers
-      REAL(wp) :: za1, za2
+      REAL(wp)  :: za2
+      REAL(dp)  :: za1
       !!----------------------------------------------------------------------
 
       zwgt1(:) = 0._wp
@@ -1016,13 +1014,19 @@ CONTAINS
          zcu(ji,jj) = SQRT( grav * MAX(ht_0(ji,jj),0._wp) * (zxr2 + zyr2) )
       END_2D
       !
+#if defined key_agrif
+     ! Discard points that are not stepped by 2d mode:
+     zcu(Nis0:Nie0,Njs0:Nje0) = zcu(Nis0:Nie0,Njs0:Nje0) &
+                              & * (1._wp - tmask_upd(Nis0:Nie0,Njs0:Nje0))
+#endif
+      !
       zcmax = MAXVAL( zcu(Nis0:Nie0,Njs0:Nje0) )
       CALL mpp_max( 'dynspg_ts', zcmax )
 
       ! Estimate number of iterations to satisfy a max courant number= rn_bt_cmax
       IF( ln_bt_auto )   nn_e = CEILING( rn_Dt / rn_bt_cmax * zcmax)
       
-      rDt_e = rn_Dt / REAL( nn_e , wp )
+      rDt_e = rn_Dt / REAL( nn_e , dp )
       zcmax = zcmax * rDt_e
       ! Print results
       IF(lwp) WRITE(numout,*)
@@ -1161,7 +1165,8 @@ CONTAINS
       !!----------------------------------------------------------------------
       INTEGER  ::   ji ,jj                             ! dummy loop indices
       REAL(wp) ::   zx1, zx2, zy1, zy2, z1_hu, z1_hv   !   -      -
-      REAL(wp), DIMENSION(jpi,jpj), INTENT(in   ) :: pht, phu, phv, punb, pvnb, zhU, zhV
+      REAL(wp), DIMENSION(jpi,jpj), INTENT(in   )  :: pht, phu, phv, punb, pvnb, zhV
+      REAL(dp), DIMENSION(jpi,jpj), INTENT(in   )  :: zhU
       REAL(wp), DIMENSION(jpi,jpj), INTENT(  out) :: zu_trd, zv_trd
       !!----------------------------------------------------------------------
       SELECT CASE( nvor_scheme )
@@ -1218,7 +1223,7 @@ CONTAINS
 
    SUBROUTINE wad_tmsk( pssh, ptmsk )
       !!----------------------------------------------------------------------
-      !!                  ***  ROUTINE wad_lmt  ***
+      !!                  ***  ROUTINE wad_tmsk  ***
       !!                    
       !! ** Purpose :   set wetting & drying mask at tracer points 
       !!              for the current barotropic sub-step 
@@ -1257,7 +1262,7 @@ CONTAINS
 
    SUBROUTINE wad_Umsk( pTmsk, phU, phV, pu, pv, pUmsk, pVmsk )
       !!----------------------------------------------------------------------
-      !!                  ***  ROUTINE wad_lmt  ***
+      !!                  ***  ROUTINE wad_Umsk  ***
       !!                    
       !! ** Purpose :   set wetting & drying mask at tracer points 
       !!              for the current barotropic sub-step 
@@ -1267,7 +1272,8 @@ CONTAINS
       !! ** Action  :  ptmsk : wetting & drying t-mask
       !!----------------------------------------------------------------------
       REAL(wp), DIMENSION(jpi,jpj), INTENT(in   ) ::   pTmsk              ! W & D t-mask
-      REAL(wp), DIMENSION(jpi,jpj), INTENT(inout) ::   phU, phV, pu, pv   ! ocean velocities and transports
+      REAL(wp), DIMENSION(jpi,jpj), INTENT(inout)  :: phV, pu, pv! ocean velocities and transports
+      REAL(dp), DIMENSION(jpi,jpj), INTENT(inout)  :: phU! ocean velocities and transports
       REAL(wp), DIMENSION(jpi,jpj), INTENT(inout) ::   pUmsk, pVmsk       ! W & D u- and v-mask
       !
       INTEGER  ::   ji, jj   ! dummy loop indices
@@ -1291,60 +1297,6 @@ CONTAINS
       !
    END SUBROUTINE wad_Umsk
 
-
-   SUBROUTINE wad_spg( pshn, zcpx, zcpy )
-      !!---------------------------------------------------------------------
-      !!                   ***  ROUTINE  wad_sp  ***
-      !!
-      !! ** Purpose : 
-      !!----------------------------------------------------------------------
-      INTEGER  ::   ji ,jj               ! dummy loop indices
-      LOGICAL  ::   ll_tmp1, ll_tmp2
-      REAL(wp), DIMENSION(jpi,jpj), INTENT(in   ) :: pshn
-      REAL(wp), DIMENSION(jpi,jpj), INTENT(inout) :: zcpx, zcpy
-      !!----------------------------------------------------------------------
-      DO_2D( 0, 0, 0, 0 )
-         ll_tmp1 = MIN(  pshn(ji,jj)               ,  pshn(ji+1,jj) ) >                &
-              &      MAX( -ht_0(ji,jj)               , -ht_0(ji+1,jj) ) .AND.            &
-              &      MAX(  pshn(ji,jj) + ht_0(ji,jj) ,  pshn(ji+1,jj) + ht_0(ji+1,jj) )  &
-              &                                                         > rn_wdmin1 + rn_wdmin2
-         ll_tmp2 = ( ABS( pshn(ji+1,jj)            -  pshn(ji  ,jj))  > 1.E-12 ).AND.( &
-              &      MAX(   pshn(ji,jj)              ,  pshn(ji+1,jj) ) >                &
-              &      MAX(  -ht_0(ji,jj)              , -ht_0(ji+1,jj) ) + rn_wdmin1 + rn_wdmin2 )
-         IF(ll_tmp1) THEN
-            zcpx(ji,jj) = 1.0_wp
-         ELSEIF(ll_tmp2) THEN
-            ! no worries about  pshn(ji+1,jj) -  pshn(ji  ,jj) = 0, it won't happen ! here
-            zcpx(ji,jj) = ABS( (pshn(ji+1,jj) + ht_0(ji+1,jj) - pshn(ji,jj) - ht_0(ji,jj)) &
-                 &           / (pshn(ji+1,jj) - pshn(ji  ,jj)) )
-            zcpx(ji,jj) = max(min( zcpx(ji,jj) , 1.0_wp),0.0_wp)
-         ELSE
-            zcpx(ji,jj) = 0._wp
-         ENDIF
-         !
-         ll_tmp1 = MIN(  pshn(ji,jj)               ,  pshn(ji,jj+1) ) >                &
-              &      MAX( -ht_0(ji,jj)               , -ht_0(ji,jj+1) ) .AND.            &
-              &      MAX(  pshn(ji,jj) + ht_0(ji,jj) ,  pshn(ji,jj+1) + ht_0(ji,jj+1) )  &
-              &                                                       > rn_wdmin1 + rn_wdmin2
-         ll_tmp2 = ( ABS( pshn(ji,jj)              -  pshn(ji,jj+1))  > 1.E-12 ).AND.( &
-              &      MAX(   pshn(ji,jj)              ,  pshn(ji,jj+1) ) >                &
-              &      MAX(  -ht_0(ji,jj)              , -ht_0(ji,jj+1) ) + rn_wdmin1 + rn_wdmin2 )
-         
-         IF(ll_tmp1) THEN
-            zcpy(ji,jj) = 1.0_wp
-         ELSE IF(ll_tmp2) THEN
-            ! no worries about  pshn(ji,jj+1) -  pshn(ji,jj  ) = 0, it won't happen ! here
-            zcpy(ji,jj) = ABS( (pshn(ji,jj+1) + ht_0(ji,jj+1) - pshn(ji,jj) - ht_0(ji,jj)) &
-                 &           / (pshn(ji,jj+1) - pshn(ji,jj  )) )
-            zcpy(ji,jj) = MAX(  0._wp , MIN( zcpy(ji,jj) , 1.0_wp )  )
-         ELSE
-            zcpy(ji,jj) = 0._wp
-         ENDIF
-      END_2D
-            
-   END SUBROUTINE wad_spg
-     
-
    SUBROUTINE dyn_drg_init( Kbb, Kmm, puu, pvv, puu_b ,pvv_b, pu_RHSi, pv_RHSi, pCdU_u, pCdU_v )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE dyn_drg_init  ***
@@ -1356,7 +1308,7 @@ CONTAINS
       !! ** Method  :   computation done over the INNER domain only 
       !!----------------------------------------------------------------------
       INTEGER                             , INTENT(in   ) ::  Kbb, Kmm           ! ocean time level indices
-      REAL(wp), DIMENSION(jpi,jpj,jpk,jpt), INTENT(in   ) ::  puu, pvv           ! ocean velocities and RHS of momentum equation
+      REAL(dp), DIMENSION(jpi,jpj,jpk,jpt), INTENT(in   ) ::  puu, pvv           ! ocean velocities and RHS of momentum equation
       REAL(wp), DIMENSION(jpi,jpj,jpt)    , INTENT(in   ) ::  puu_b, pvv_b       ! barotropic velocities at main time levels
       REAL(wp), DIMENSION(jpi,jpj)        , INTENT(inout) ::  pu_RHSi, pv_RHSi   ! baroclinic part of the barotropic RHS
       REAL(wp), DIMENSION(jpi,jpj)        , INTENT(  out) ::  pCdU_u , pCdU_v    ! barotropic drag coefficients
@@ -1402,21 +1354,12 @@ CONTAINS
          END_2D
       ENDIF
       !
-      IF( ln_wd_il ) THEN      ! W/D : use the "clipped" bottom friction   !!gm   explain WHY, please !
-         zztmp = -1._wp / rDt_e
-         DO_2D( 0, 0, 0, 0 )
-            pu_RHSi(ji,jj) = pu_RHSi(ji,jj) + zu_i(ji,jj) *  wdrampu(ji,jj) * MAX(                                 & 
-                 &                              r1_hu(ji,jj,Kmm) * r1_2*( rCdU_bot(ji+1,jj)+rCdU_bot(ji,jj) ) , zztmp  )
-            pv_RHSi(ji,jj) = pv_RHSi(ji,jj) + zv_i(ji,jj) *  wdrampv(ji,jj) * MAX(                                 & 
-                 &                              r1_hv(ji,jj,Kmm) * r1_2*( rCdU_bot(ji,jj+1)+rCdU_bot(ji,jj) ) , zztmp  )
-         END_2D
-      ELSE                    ! use "unclipped" drag (even if explicit friction is used in 3D calculation)
+      ! use "unclipped" drag (even if explicit friction is used in 3D calculation)
          
-         DO_2D( 0, 0, 0, 0 )
-            pu_RHSi(ji,jj) = pu_RHSi(ji,jj) + r1_hu(ji,jj,Kmm) * r1_2*( rCdU_bot(ji+1,jj)+rCdU_bot(ji,jj) ) * zu_i(ji,jj)
-            pv_RHSi(ji,jj) = pv_RHSi(ji,jj) + r1_hv(ji,jj,Kmm) * r1_2*( rCdU_bot(ji,jj+1)+rCdU_bot(ji,jj) ) * zv_i(ji,jj)
-         END_2D
-      END IF
+      DO_2D( 0, 0, 0, 0 )
+         pu_RHSi(ji,jj) = pu_RHSi(ji,jj) + r1_hu(ji,jj,Kmm) * r1_2*( rCdU_bot(ji+1,jj)+rCdU_bot(ji,jj) ) * zu_i(ji,jj)
+         pv_RHSi(ji,jj) = pv_RHSi(ji,jj) + r1_hv(ji,jj,Kmm) * r1_2*( rCdU_bot(ji,jj+1)+rCdU_bot(ji,jj) ) * zv_i(ji,jj)
+      END_2D
       !
       !                    !==  TOP stress contribution from baroclinic velocities  ==!   (no W/D case)
       !
@@ -1456,7 +1399,8 @@ CONTAINS
       !!----------------------------------------------------------------------
       INTEGER ,INTENT(in   ) ::   jn                   ! index of sub time step
       LOGICAL ,INTENT(in   ) ::   ll_init              !
-      REAL(wp),INTENT(  out) ::   za0, za1, za2, za3   ! Half-step back interpolation coefficient
+      REAL(wp),INTENT(  out)  :: za0, za2, za3! Half-step back interpolation coefficient
+      REAL(dp),INTENT(  out)  :: za1! Half-step back interpolation coefficient
       !
       REAL(wp) ::   zepsilon, zgamma                   !   -      -
       !!----------------------------------------------------------------------

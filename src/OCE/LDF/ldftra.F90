@@ -97,7 +97,7 @@ MODULE ldftra
 #  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: ldftra.F90 15093 2021-07-06 16:20:39Z clem $
+   !! $Id: ldftra.F90 15475 2021-11-05 14:14:45Z cdllod $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -389,7 +389,7 @@ CONTAINS
       !!                                                   with a reduction to 0 in vicinity of the Equator
       !!    nn_aht_ijk_t = 21    ahtu, ahtv = F(i,j,  t) = F(growth rate of baroclinic instability)
       !!
-      !!                 = 31    ahtu, ahtv = F(i,j,k,t) = F(local velocity) (  |u|e  /12   laplacian operator
+      !!                 = 31    ahtu, ahtv = F(i,j,k,t) = F(local velocity) (  |u|e  / 2   laplacian operator
       !!                                                                     or |u|e^3/12 bilaplacian operator )
       !!
       !!              * time varying EIV coefficients: call to ldf_eiv routine
@@ -440,10 +440,10 @@ CONTAINS
          END DO
          !
       CASE(  31  )       !==  time varying 3D field  ==!   = F( local velocity )
-         IF( ln_traldf_lap     ) THEN          !   laplacian operator |u| e /12
+         IF( ln_traldf_lap     ) THEN          !   laplacian operator |u| e / 2
             DO jk = 1, jpkm1
-               ahtu(:,:,jk) = ABS( uu(:,:,jk,Kbb) ) * e1u(:,:) * r1_12   ! n.b. uu,vv are masked
-               ahtv(:,:,jk) = ABS( vv(:,:,jk,Kbb) ) * e2v(:,:) * r1_12
+               ahtu(:,:,jk) = ABS( uu(:,:,jk,Kbb) ) * e1u(:,:) * r1_2   ! n.b. uu,vv are masked
+               ahtv(:,:,jk) = ABS( vv(:,:,jk,Kbb) ) * e2v(:,:) * r1_2
             END DO
          ELSEIF( ln_traldf_blp ) THEN      ! bilaplacian operator      sqrt( |u| e^3 /12 ) = sqrt( |u| e /12 ) * e
             DO jk = 1, jpkm1
@@ -516,7 +516,7 @@ CONTAINS
          WRITE(numout,*) '      Eddy Induced Velocity (eiv) param.         ln_ldfeiv     = ', ln_ldfeiv
          WRITE(numout,*) '      eiv streamfunction & velocity diag.        ln_ldfeiv_dia = ', ln_ldfeiv_dia
          WRITE(numout,*) '      coefficients :'
-         WRITE(numout,*) '         type of time-space variation            nn_aei_ijk_t  = ', nn_aht_ijk_t
+         WRITE(numout,*) '         type of time-space variation            nn_aei_ijk_t  = ', nn_aei_ijk_t
          WRITE(numout,*) '         lateral diffusive velocity (if cst)     rn_Ue         = ', rn_Ue, ' m/s'
          WRITE(numout,*) '         lateral diffusive length   (if cst)     rn_Le         = ', rn_Le, ' m'
          WRITE(numout,*)
@@ -730,7 +730,7 @@ CONTAINS
       CHARACTER(len=3)            , INTENT(in   ) ::   cdtype    ! =TRA or TRC (tracer indicator)
       ! TEMP: [tiling] Can be A2D(nn_hls) after all lbc_lnks removed in the nn_hls = 2 case in tra_adv_fct
       REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(inout) ::   pu        ! in : 3 ocean transport components   [m3/s]
-      REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(inout) ::   pv        ! out: 3 ocean transport components   [m3/s]
+      REAL(dp), DIMENSION(jpi,jpj,jpk), INTENT(inout) ::   pv        ! out: 3 ocean transport components   [m3/s]
       REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(inout) ::   pw        ! increased by the eiv                [m3/s]
       !!
       INTEGER  ::   ji, jj, jk                 ! dummy loop indices
@@ -867,7 +867,7 @@ CONTAINS
       CALL iom_put( "veiv_heattr"  , zztmp * zw2d )                  !  heat transport in j-direction
       CALL iom_put( "veiv_heattr3d", zztmp * zw3d )                  !  heat transport in j-direction
       !
-      IF( iom_use( 'sophteiv' ) )   CALL dia_ptr_hst( jp_tem, 'eiv', 0.5 * zw3d )
+      IF( iom_use( 'sophteiv' ) )   CALL dia_ptr_hst( jp_tem, 'eiv', 0.5_wp * zw3d )
       !
       zztmp = 0.5_wp * 0.5
       IF( iom_use('ueiv_salttr') .OR. iom_use('ueiv_salttr3d')) THEN
@@ -891,7 +891,7 @@ CONTAINS
       CALL iom_put( "veiv_salttr"  , zztmp * zw2d )                  !  salt transport in j-direction
       CALL iom_put( "veiv_salttr3d", zztmp * zw3d )                  !  salt transport in j-direction
       !
-      IF( iom_use( 'sopsteiv' ) ) CALL dia_ptr_hst( jp_sal, 'eiv', 0.5 * zw3d )
+      IF( iom_use( 'sopsteiv' ) ) CALL dia_ptr_hst( jp_sal, 'eiv', 0.5_wp * zw3d )
       !
       !
    END SUBROUTINE ldf_eiv_dia

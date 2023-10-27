@@ -28,11 +28,11 @@ MODULE zdfosm
    !! 28/09/2017 (15) Calculation of Stokes drift moved into separate do-loops to allow for different options for the determining the Stokes drift to be added.
    !!            (16) Calculation of Stokes drift from windspeed for PM spectrum (for testing, commented out)
    !!            (17) Modification to Langmuir velocity scale to include effects due to the Stokes penetration depth (for testing, commented out)
-   !! ??/??/2018 (18) Revision to code structure, selected using key_osmldpth1. Inline code moved into subroutines. Changes to physics made,
+   !! ??/??/2018 (18) Revision to code structure, selected using fortran macro. Inline code moved into subroutines. Changes to physics made,
    !!                  (a) Pycnocline temperature and salinity profies changed for unstable layers
    !!                  (b) The stable OSBL depth parametrization changed.
    !! 16/05/2019 (19) Fox-Kemper parametrization of restratification through mixed layer eddies added to revised code.
-   !! 23/05/19   (20) Old code where key_osmldpth1` is *not* set removed, together with the key key_osmldpth1
+   !! 23/05/19   (20) Remove old code excluded by fortran macro along with the fortran macro that is not needed
    !!             4.2  !  2021-05  (S. Mueller)  Efficiency improvements, source-code clarity enhancements, and adaptation to tiling
    !!----------------------------------------------------------------------
 
@@ -920,7 +920,7 @@ CONTAINS
             ! Stokes drift set by assumimg onstant La#=0.3 (=0) or Pierson-Moskovitz spectrum (=1)
          CASE(0:1)
             CALL zdf_osm_iomput( "us_x", tmask(A2D(0),1) * sustke(A2D(0)) * scos_wind(A2D(0)) )   ! x surface Stokes drift
-            CALL zdf_osm_iomput( "us_y", tmask(A2D(0),1) * sustke(A2D(0)) * scos_wind(A2D(0)) )   ! y surface Stokes drift
+            CALL zdf_osm_iomput( "us_y", tmask(A2D(0),1) * sustke(A2D(0)) * ssin_wind(A2D(0)) )   ! y surface Stokes drift
             CALL zdf_osm_iomput( "wind_wave_abs_power", 1000.0_wp * rho0 * tmask(A2D(0),1) * sustar(A2D(0))**2 * sustke(A2D(0)) )
             ! Stokes drift read in from sbcwave  (=2).
          CASE(2:3)
@@ -938,8 +938,8 @@ CONTAINS
          END SELECT
          CALL zdf_osm_iomput( "zwth0",           tmask(A2D(0),1) * swth0(A2D(0))     )      ! <Tw_0>
          CALL zdf_osm_iomput( "zws0",            tmask(A2D(0),1) * sws0(A2D(0))      )      ! <Sw_0>
-         CALL zdf_osm_iomput( "zwb0",            tmask(A2D(0),1) * swb0(A2D(0))      )      ! <Sw_0>
-         CALL zdf_osm_iomput( "zwbav",           tmask(A2D(0),1) * swth0(A2D(0))     )      ! Upward BL-avged turb buoyancy flux
+         CALL zdf_osm_iomput( "zwb0",            tmask(A2D(0),1) * swb0(A2D(0))      )      ! <bw_0>
+         CALL zdf_osm_iomput( "zwbav",           tmask(A2D(0),1) * swbav(A2D(0))     )      ! Upward BL-avged turb buoyancy flux
          CALL zdf_osm_iomput( "ibld",            tmask(A2D(0),1) * nbld(A2D(0))      )      ! Boundary-layer max k
          CALL zdf_osm_iomput( "zdt_bl",          tmask(A2D(0),1) * av_dt_bl(A2D(0))  )      ! dt at ml base
          CALL zdf_osm_iomput( "zds_bl",          tmask(A2D(0),1) * av_ds_bl(A2D(0))  )      ! ds at ml base
@@ -988,7 +988,7 @@ CONTAINS
          CALL zdf_osm_iomput( "dbdx_mle",        umask(A2D(0),1) * dbdx_mle(A2D(0))  )      ! FK dbdx at u-pt
          CALL zdf_osm_iomput( "dbdy_mle",        vmask(A2D(0),1) * dbdy_mle(A2D(0))  )      ! FK dbdy at v-pt
          CALL zdf_osm_iomput( "zdiff_mle",       tmask(A2D(0),1) * zdiff_mle(A2D(0)) )      ! FK diff in MLE at t-pt
-         CALL zdf_osm_iomput( "zvel_mle",        tmask(A2D(0),1) * zdiff_mle(A2D(0)) )      ! FK diff in MLE at t-pt
+         CALL zdf_osm_iomput( "zvel_mle",        tmask(A2D(0),1) * zvel_mle(A2D(0)) )       ! FK velocity in MLE at t-pt
       END IF
       !
       ! Lateral boundary conditions on ghamu and ghamv, currently on W-grid (sign unchanged), needed to caclulate gham[uv] on u and
@@ -1665,7 +1665,7 @@ CONTAINS
                      &                   e3w(ji,jj,jm,Kmm) )
                   
                   !                    zhbl_s = MIN(zhbl_s, gdepw(ji,jj, mbkt(ji,jj) + 1,Kmm) - depth_tol)
-                  IF ( zhbl_s >= mbkt(ji,jj) + 1 ) THEN
+                  IF ( zhbl_s >= gdepw(ji,jj,mbkt(ji,jj) + 1,Kmm) ) THEN
                      zhbl_s      = MIN( zhbl_s,  gdepw(ji,jj,mbkt(ji,jj)+1,Kmm) - depth_tol )
                      l_pyc(ji,jj) = .FALSE.
                   ENDIF
@@ -1711,7 +1711,7 @@ CONTAINS
       REAL(wp) ::   zari, ztau, zdh_ref, zddhdt, zvel_max
       REAL(wp) ::   ztmp   ! Auxiliary variable
       !!
-      REAL, PARAMETER ::   pp_ddh = 2.5_wp, pp_ddh_2 = 3.5_wp   ! Also in pycnocline_depth
+      REAL(wp), PARAMETER ::   pp_ddh = 2.5_wp, pp_ddh_2 = 3.5_wp   ! Also in pycnocline_depth
       !!----------------------------------------------------------------------
       !
       DO_2D_OVR( nn_hls-1, nn_hls-1, nn_hls-1, nn_hls-1 )
@@ -3335,7 +3335,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       INTEGER                                  , INTENT(in   ) ::   kt          ! Time step index
       INTEGER                                  , INTENT(in   ) ::   Kmm, Krhs   ! Time level indices
-      REAL(wp), DIMENSION(jpi,jpj,jpk,jpts,jpt), INTENT(inout) ::   pts         ! Active tracers and RHS of tracer equation
+      REAL(dp), DIMENSION(jpi,jpj,jpk,jpts,jpt), INTENT(inout) ::   pts         ! Active tracers and RHS of tracer equation
       !!
       INTEGER                                 ::   ji, jj, jk
       REAL(wp), DIMENSION(:,:,:), ALLOCATABLE ::   ztrdt, ztrds   ! 3D workspace
@@ -3409,7 +3409,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       INTEGER                             , INTENT(in   ) ::   kt          ! Ocean time step index
       INTEGER                             , INTENT(in   ) ::   Kmm, Krhs   ! Ocean time level indices
-      REAL(wp), DIMENSION(jpi,jpj,jpk,jpt), INTENT(inout) ::   puu, pvv    ! Ocean velocities and RHS of momentum equation
+      REAL(dp), DIMENSION(jpi,jpj,jpk,jpt), INTENT(inout) ::   puu, pvv    ! Ocean velocities and RHS of momentum equation
       !!
       INTEGER :: ji, jj, jk   ! dummy loop indices
       !!----------------------------------------------------------------------
@@ -3450,7 +3450,7 @@ CONTAINS
             osmdia2d(A2D(0)) = posmdia2d(:,:)
             CALL iom_put( cdname, osmdia2d(A2D(nn_hls)) )
          ELSE   ! Halo present
-            CALL iom_put( cdname, osmdia2d )
+            CALL iom_put( cdname, posmdia2d )
          END IF
       END IF
       !
@@ -3473,7 +3473,7 @@ CONTAINS
             osmdia3d(A2D(0),:) = posmdia3d(:,:,:)
             CALL iom_put( cdname, osmdia3d(A2D(nn_hls),:) )
          ELSE   ! Halo present
-            CALL iom_put( cdname, osmdia3d )
+            CALL iom_put( cdname, posmdia3d )
          END IF
       END IF
       !

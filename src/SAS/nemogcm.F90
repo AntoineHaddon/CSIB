@@ -354,6 +354,7 @@ CONTAINS
       IF( nn_hls == 1 ) THEN
          CALL ctl_stop( 'STOP', 'nemogcm : Loop fusion can be used only with extra-halo' )
       ENDIF
+      CALL ctl_warn( 'nemo_init', 'you use key_loop_fusion, this may significantly slow down NEMO performances' )
 #endif
 
       CALL halo_mng_init()
@@ -390,6 +391,7 @@ CONTAINS
 
 #if defined key_agrif
       uu(:,:,:,:) = 0.0_wp   ;   vv(:,:,:,:) = 0.0_wp   ;   ts(:,:,:,:,:) = 0.0_wp   ! needed for interp done at initialization phase
+      uu_b(:,:,:) = 0.0_wp   ;   vv_b(:,:,:) = 0.0_wp
 #endif 
       !                                      ! external forcing 
                            CALL sbc_init( Nbb, Nnn, Naa )  ! Forcings : surface module 

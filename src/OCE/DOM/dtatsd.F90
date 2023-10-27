@@ -128,7 +128,6 @@ CONTAINS
       !!
       !! ** Method  : - call fldread routine
       !!              - ORCA_R2: add some hand made alteration to read data
-      !!              - 'key_orca_lev10' interpolates on 10 times more levels
       !!              - s- or mixed z-s coordinate: vertical interpolation on model mesh
       !!              - ln_tsd_dmp=F: deallocates the T-S data structure
       !!                as T-S data are no are used
@@ -136,13 +135,13 @@ CONTAINS
       !! ** Action  :   ptsd   T-S data on medl mesh and interpolated at time-step kt
       !!----------------------------------------------------------------------
       INTEGER                          , INTENT(in   ) ::   kt     ! ocean time-step
-      REAL(wp), DIMENSION(A2D(nn_hls),jpk,jpts), INTENT(  out) ::   ptsd   ! T & S data
+      REAL(dp), DIMENSION(A2D(nn_hls),jpk,jpts), INTENT(  out) ::   ptsd   ! T & S data
       !
       INTEGER ::   ji, jj, jk, jl, jkk   ! dummy loop indicies
       INTEGER ::   ik, il0, il1, ii0, ii1, ij0, ij1   ! local integers
       INTEGER, DIMENSION(jpts), SAVE :: irec_b, irec_n
-      REAL(wp)::   zl, zi                             ! local scalars
-      REAL(wp), DIMENSION(jpk) ::  ztp, zsp   ! 1D workspace
+      REAL(dp)::   zl, zi                             ! local scalars
+      REAL(dp), DIMENSION(jpk) ::  ztp, zsp   ! 1D workspace
       !!----------------------------------------------------------------------
       !
       IF( .NOT. l_istiled .OR. ntile == 1 )  THEN                                         ! Do only for the full domain
@@ -237,6 +236,10 @@ CONTAINS
          END_2D
          !
       ELSE                                !==   z- or zps- coordinate   ==!
+         !
+         ! We must keep this definition in a case different from the general case of s-coordinate as we don't
+         ! want to use "underground" values (levels below ocean bottom) to be able to start the model from
+         ! masked temp and sal (read for example in a restart or in output.init)
          !
          DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, jpk )
             ptsd(ji,jj,jk,jp_tem) = ptsd(ji,jj,jk,jp_tem) * tmask(ji,jj,jk)    ! Mask

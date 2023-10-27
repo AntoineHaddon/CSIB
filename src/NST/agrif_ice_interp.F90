@@ -26,13 +26,17 @@ MODULE agrif_ice_interp
    USE phycst , ONLY: rt0
    USE icevar
    USE sbc_ice, ONLY : tn_ice
-   USE lbclnk  
+   USE lbclnk
+   USE iceistate, ONLY : rsshadj
+   USE traqsr, ONLY : ln_traqsr
+   USE lib_mpp  
  
    IMPLICIT NONE
    PRIVATE
 
-   PUBLIC   agrif_interp_ice   ! called by agrif_user.F90
-   PUBLIC   agrif_istate_ice   ! called by icerst.F90
+   PUBLIC   agrif_interp_ice     ! called by agrif_user.F90
+   PUBLIC   agrif_istate_ice     ! called by icerst.F90
+   PUBLIC   agrif_istate_icevol  ! called by restart.F90
 
    !!----------------------------------------------------------------------
    !! NEMO/NST 4.0 , NEMO Consortium (2018)
@@ -57,6 +61,7 @@ CONTAINS
       ! Set a_i, v_i, v_s, sv_i, oa_i, a_ip, v_ip, t_su, e_s, e_i:
       Agrif_SpecialValue    = -9999.
       Agrif_UseSpecialValue = .TRUE.
+      CALL Agrif_Set_MaskMaxSearch(10)
       CALL Agrif_init_variable(tra_iceini_id,procname=interp_tra_ice)
       !
       CALL lbc_lnk( 'agrif_istate_ice',  a_i,'T',1._wp,  v_i,'T',1._wp, &
@@ -78,12 +83,67 @@ CONTAINS
       CALL Agrif_init_variable(v_iceini_id  ,procname=interp_v_ice)
       use_sign_north = .FALSE.
       Agrif_UseSpecialValue = .FALSE.
+      CALL Agrif_Set_MaskMaxSearch(3)
       ! 
       CALL lbc_lnk( 'agrif_istate_ice', u_ice, 'U', -1._wp, v_ice, 'V', -1._wp )
       !
       CALL ice_var_glo2eqv
       !
    END SUBROUTINE agrif_istate_ice
+
+
+   SUBROUTINE agrif_istate_icevol( Kbb, Kmm, Kaa )
+      !!-----------------------------------------------------------------------
+      !!           *** ROUTINE agrif_istate_icevol  ***
+      !!
+      !!  ** Method  : Set initial ssh over child grids from the ice volume
+      !!               computed over the parent grid.
+      !!               This routine is call only if nn_ice/=2 (no ice), over
+      !!               the child grid, hence it needs to know nn_ice
+      !!
+      !!-----------------------------------------------------------------------
+      INTEGER, INTENT(in) ::   Kbb, Kmm, Kaa   ! ocean time level indices
+      !
+      INTEGER ::   ios
+      !!
+      NAMELIST/namsbc/ nn_fsbc  ,                                                    &
+         &             ln_usr   , ln_flx   , ln_blk   , ln_abl,                      &
+         &             ln_cpl   , ln_mixcpl, nn_components,                          &
+         &             nn_ice   , ln_ice_embd,                                       &
+         &             ln_traqsr, ln_dm2dc ,                                         &
+         &             ln_rnf   , nn_fwb     , ln_ssr   , ln_apr_dyn,                &
+         &             ln_wave  , nn_lsm
+      !!----------------------------------------------------------------------
+      !
+      IF ( Agrif_Root() ) RETURN
+      !
+      !                       !**  read Surface Module namelist
+      !                       (we only need nn_ice actually which is unknown at the 
+      !                        time this subroutine is called)
+      READ  ( numnam_ref, namsbc, IOSTAT = ios, ERR = 901)
+901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namsbc in reference namelist' )
+      READ  ( numnam_cfg, namsbc, IOSTAT = ios, ERR = 902 )
+902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namsbc in configuration namelist' )
+      !
+      IF ( (nn_ice/=2).AND.((Agrif_Parent(nn_ice)==2).AND.           &
+                  &   (.NOT.(Agrif_Parent(ln_rstart)                 & 
+                  &     .OR.(Agrif_Parent(nn_iceini_file)==2))).AND. &
+                  &   (.NOT.Agrif_Parent(ln_ice_embd))               &
+                  &  )) THEN
+
+         IF(lwp) WRITE(numout,*) ' ' 
+         IF(lwp) WRITE(numout,*) 'Agrif_istate_icevol : Add an ssh increment coming from the parent grid sea-ice volume'
+         IF(lwp) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~'
+         IF(lwp) WRITE(numout,*) ' '
+
+         WHERE( ssmask(:,:) == 1._wp )
+             ssh(:,:,Kmm) = ssh(:,:,Kmm) - Agrif_Parent(rsshadj)
+             ssh(:,:,Kbb) = ssh(:,:,Kbb) - Agrif_Parent(rsshadj) 
+         ENDWHERE
+      ENDIF
+      !
+   END SUBROUTINE agrif_istate_icevol
+
 
    SUBROUTINE agrif_interp_ice( cd_type, kiter, kitermax )
       !!-----------------------------------------------------------------------

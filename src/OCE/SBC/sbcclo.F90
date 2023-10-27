@@ -38,11 +38,11 @@ MODULE sbcclo
    PUBLIC sbc_clo
    PUBLIC sbc_clo_init
    !
-   REAL(wp), PUBLIC, SAVE, ALLOCATABLE, DIMENSION(:) :: rsurfsrcg, rsurftrgg      !: closed sea source/target glo surface areas 
-   REAL(wp), PUBLIC, SAVE, ALLOCATABLE, DIMENSION(:) :: rsurfsrcr, rsurftrgr      !: closed sea source/target rnf surface areas 
-   REAL(wp), PUBLIC, SAVE, ALLOCATABLE, DIMENSION(:) :: rsurfsrce, rsurftrge      !: closed sea source/target emp surface areas 
+   REAL(wp), SAVE, ALLOCATABLE, DIMENSION(:) :: rsurfsrcg, rsurftrgg      !: closed sea source/target glo surface areas 
+   REAL(wp), SAVE, ALLOCATABLE, DIMENSION(:) :: rsurfsrcr, rsurftrgr      !: closed sea source/target rnf surface areas 
+   REAL(wp), SAVE, ALLOCATABLE, DIMENSION(:) :: rsurfsrce, rsurftrge      !: closed sea source/target emp surface areas 
    !
-   INTEGER, PUBLIC, SAVE, ALLOCATABLE, DIMENSION(:)  :: mcsgrpg, mcsgrpr, mcsgrpe !: closed sea group for glo, rnf and emp
+   INTEGER, SAVE, ALLOCATABLE, DIMENSION(:)  :: mcsgrpg, mcsgrpr, mcsgrpe !: closed sea group for glo, rnf and emp
    !
    CONTAINS
    !
@@ -159,7 +159,7 @@ MODULE sbcclo
          !
       END DO  ! jcs
 
-   END SUBROUTINE
+   END SUBROUTINE get_cssrcsurf
 
    SUBROUTINE get_cstrgsurf(kncs, kmaskcs, kmaskcsgrp, psurftrg, kcsgrp )
       !!-----------------------------------------------------------------------
@@ -211,7 +211,7 @@ MODULE sbcclo
          !
       END DO ! jcs
 
-   END SUBROUTINE
+   END SUBROUTINE get_cstrgsurf
 
    SUBROUTINE prt_csctl(kncs, psurfsrc, psurftrg, kcsgrp, cdcstype)
       !!-----------------------------------------------------------------------
@@ -245,7 +245,7 @@ MODULE sbcclo
          WRITE(numout,*)''
       END IF
 
-   END SUBROUTINE
+   END SUBROUTINE prt_csctl
 
    SUBROUTINE sbc_csupdate(kncs, kcsgrp, kmsk_src, kmsk_grp, psurfsrc, psurftrg, cdcstype, kmsk_opnsea, psurf_opnsea, pwcs, pqcs)
       !!-----------------------------------------------------------------------
@@ -301,23 +301,25 @@ MODULE sbcclo
             imsk_trg = kmsk_grp * kmsk_opnsea
          END IF
          !
-         !! 3. Subtract residuals from source points
-         zcsfwf = zcsfw / zsurfsrc
-         pwcs(:,:) = pwcs(:,:) -       zcsfwf              * imsk_src(:,:)
-         pqcs(:,:) = pqcs(:,:) + rcp * zcsfwf * sst_m(:,:) * imsk_src(:,:)
-         !
-         !! 4. Add residuals to target points 
-         !!    Do not use pqcs(:,:) = pqcs(:,:) - rcp * zcsfw  * sst_m(:,:) / zsurftrg 
-         !!    as there is no reason heat will be conserved with this formulation
-         zcsh   = glob_sum( 'closea', e1e2t(:,:) * rcp * zcsfwf * sst_m(:,:) * imsk_src(:,:) )
-         WHERE( imsk_trg(:,:) == kcsgrp(jcs) )
-            pwcs(:,:) = pwcs(:,:) + zcsfw / zsurftrg
-            pqcs(:,:) = pqcs(:,:) - zcsh  / zsurftrg
-         ENDWHERE
+         IF( zsurftrg > 0._wp ) THEN  ! target area /=0
+            !! 3. Subtract residuals from source points
+            zcsfwf = zcsfw / zsurfsrc
+            pwcs(:,:) = pwcs(:,:) -       zcsfwf              * imsk_src(:,:)
+            pqcs(:,:) = pqcs(:,:) + rcp * zcsfwf * sst_m(:,:) * imsk_src(:,:)
+            !
+            !! 4. Add residuals to target points 
+            !!    Do not use pqcs(:,:) = pqcs(:,:) - rcp * zcsfw  * sst_m(:,:) / zsurftrg 
+            !!    as there is no reason heat will be conserved with this formulation
+            zcsh   = glob_sum( 'closea', e1e2t(:,:) * rcp * zcsfwf * sst_m(:,:) * imsk_src(:,:) )
+            WHERE( imsk_trg(:,:) == kcsgrp(jcs) )
+               pwcs(:,:) = pwcs(:,:) + zcsfw / zsurftrg
+               pqcs(:,:) = pqcs(:,:) - zcsh  / zsurftrg
+            ENDWHERE
+         ENDIF
          !
       END DO ! jcs
 
-   END SUBROUTINE
+   END SUBROUTINE sbc_csupdate
 
    SUBROUTINE alloc_csarr( klen, pvarsrc, pvartrg, kvargrp )
       !!-----------------------------------------------------------------------
@@ -345,6 +347,6 @@ MODULE sbcclo
       pvarsrc(:) = 0.e0_wp
       pvartrg(:) = 0.e0_wp
       kvargrp(:) = 0
-   END SUBROUTINE
+   END SUBROUTINE alloc_csarr
 
 END MODULE

@@ -24,7 +24,7 @@ MODULE dtadyn
    USE dom_oce         ! ocean domain: variables
 #if defined key_qco 
    USE domqco          ! variable volume
-#else
+#elif ! defined key_linssh
    USE domvvl
 #endif
    USE zdf_oce         ! ocean vertical physics: variables
@@ -53,7 +53,7 @@ MODULE dtadyn
    PUBLIC   dta_dyn_init       ! called by nemo_init
    PUBLIC   dta_dyn            ! called by nemo_gcm
    PUBLIC   dta_dyn_atf        ! called by nemo_gcm
-#if ! defined key_qco
+#if ! defined key_qco && ! defined key_linssh
    PUBLIC   dta_dyn_sf_interp  ! called by nemo_gcm
 #endif
 #if defined key_sed_off
@@ -191,18 +191,15 @@ CONTAINS
          ahv_bbl(:,:) = sf_dyn(jf_vbl)%fnow(:,:,1) * vmask(:,:,1)
       ENDIF
       !
-      !
-      CALL eos( ts(:,:,:,:,Kmm), rhd, rhop, gdept_0(:,:,:) ) ! In any case, we need rhop
-      !
       IF(sn_cfctl%l_prtctl) THEN                 ! print control
-         CALL prt_ctl(tab3d_1=ts(:,:,:,jp_tem,Kmm), clinfo1=' tn      - : ', mask1=tmask,  kdim=jpk   )
-         CALL prt_ctl(tab3d_1=ts(:,:,:,jp_sal,Kmm), clinfo1=' sn      - : ', mask1=tmask,  kdim=jpk   )
-         CALL prt_ctl(tab3d_1=uu(:,:,:,Kmm)               , clinfo1=' uu(:,:,:,Kmm)      - : ', mask1=umask,  kdim=jpk   )
-         CALL prt_ctl(tab3d_1=vv(:,:,:,Kmm)               , clinfo1=' vv(:,:,:,Kmm)      - : ', mask1=vmask,  kdim=jpk   )
-         CALL prt_ctl(tab3d_1=ww               , clinfo1=' ww      - : ', mask1=tmask,  kdim=jpk   )
-         CALL prt_ctl(tab3d_1=avt              , clinfo1=' kz      - : ', mask1=tmask,  kdim=jpk   )
-         CALL prt_ctl(tab3d_1=uslp             , clinfo1=' slp  - u : ', tab3d_2=vslp, clinfo2=' v : ', kdim=jpk)
-         CALL prt_ctl(tab3d_1=wslpi            , clinfo1=' slp  - wi: ', tab3d_2=wslpj, clinfo2=' wj: ', kdim=jpk)
+         CALL prt_ctl(tab3d_1=ts(:,:,:,jp_tem,Kmm), clinfo1=' tn      - : ', mask1=tmask )
+         CALL prt_ctl(tab3d_1=ts(:,:,:,jp_sal,Kmm), clinfo1=' sn      - : ', mask1=tmask )
+         CALL prt_ctl(tab3d_1=uu(:,:,:,Kmm)               , clinfo1=' uu(:,:,:,Kmm)      - : ', mask1=umask )
+         CALL prt_ctl(tab3d_1=vv(:,:,:,Kmm)               , clinfo1=' vv(:,:,:,Kmm)      - : ', mask1=vmask )
+         CALL prt_ctl(tab3d_1=ww               , clinfo1=' ww      - : ', mask1=tmask )
+         CALL prt_ctl(tab3d_1=avt              , clinfo1=' kz      - : ', mask1=tmask )
+         CALL prt_ctl(tab3d_1=uslp             , clinfo1=' slp  - u : ', tab3d_2=vslp, clinfo2=' v : ' )
+         CALL prt_ctl(tab3d_1=wslpi            , clinfo1=' slp  - wi: ', tab3d_2=wslpj, clinfo2=' wj: ' )
       ENDIF
       !
       IF( ln_timing )   CALL timing_stop( 'dta_dyn')
@@ -345,6 +342,7 @@ CONTAINS
            CALL iom_close( inum )                                        ! close file
         ENDIF
         !
+#if ! defined key_linssh
 #if defined key_qco
         CALL dom_qco_r3c( ssh(:,:,Kbb), r3t(:,:,Kbb), r3u(:,:,Kbb), r3v(:,:,Kbb) )
         CALL dom_qco_r3c( ssh(:,:,Kmm), r3t(:,:,Kmm), r3u(:,:,Kmm), r3v(:,:,Kmm) )
@@ -357,7 +355,10 @@ CONTAINS
         CALL dta_dyn_sf_interp( nit000, Kmm )
         CALL dta_dyn_sf_interp( nit000, Kbb )
 #endif
+#endif
       ENDIF
+      !
+      ncpl_qsr_freq = sf_dyn(jf_qsr)%freqh  * 3600   !  Get qsr frequency ( needed if diurnal cycle in TOP
       !
       CALL dta_dyn_rnf_init( Kmm )
       !
@@ -388,7 +389,7 @@ CONTAINS
    END SUBROUTINE dta_dyn_atf
    
    
-#if ! defined key_qco  
+#if ! defined key_qco && ! defined key_linssh
 
    SUBROUTINE dta_dyn_sf_interp( kt, Kmm )
       !!---------------------------------------------------------------------
@@ -673,10 +674,10 @@ CONTAINS
 
       ! Partial steps: before Horizontal DErivative
       IF( ln_zps  .AND. .NOT. ln_isfcav)                            &
-         &            CALL zps_hde    ( kt, Kmm, jpts, pts, gtsu, gtsv,  &  ! Partial steps: before horizontal gradient
+         &            CALL zps_hde    ( kt, jpts, pts, gtsu, gtsv,  &  ! Partial steps: before horizontal gradient
          &                                        rhd, gru , grv    )  ! of t, s, rd at the last ocean level
       IF( ln_zps .AND.        ln_isfcav)                            &
-         &            CALL zps_hde_isf( kt, Kmm, jpts, pts, gtsu, gtsv, gtui, gtvi, &  ! Partial steps for top cell (ISF)
+         &            CALL zps_hde_isf( kt, jpts, pts, gtsu, gtsv, gtui, gtvi, &  ! Partial steps for top cell (ISF)
          &                                        rhd, gru , grv , grui, grvi )  ! of t, s, rd at the first ocean level
 
          rn2b(:,:,:) = rn2(:,:,:)                ! needed for zdfmxl
@@ -728,8 +729,8 @@ CONTAINS
       CALL eos    ( ts(:,:,:,:,Kmm), rhd, rhop, gdept_0(:,:,:) ) ! In any case, we need rhop
 
       IF(sn_cfctl%l_prtctl) THEN                     ! print control
-         CALL prt_ctl(tab3d_1=ts(:,:,:,jp_tem,Kmm), clinfo1=' tn      - : ', mask1=tmask,  kdim=jpk   )
-         CALL prt_ctl(tab3d_1=ts(:,:,:,jp_sal,Kmm), clinfo1=' sn      - : ', mask1=tmask,  kdim=jpk   )
+         CALL prt_ctl(tab3d_1=ts(:,:,:,jp_tem,Kmm), clinfo1=' tn      - : ', mask1=tmask )
+         CALL prt_ctl(tab3d_1=ts(:,:,:,jp_sal,Kmm), clinfo1=' sn      - : ', mask1=tmask )
       ENDIF
       !
       IF( ln_timing )   CALL timing_stop( 'dta_dyn_sed')

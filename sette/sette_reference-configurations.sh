@@ -983,7 +983,7 @@ if [ ${config} == "ORCA2_ICE_OBS" ] ;  then
     #
     . ./makenemo -m ${CMP_NAM} -n ${SETTE_CONFIG} -r ORCA2_ICE_PISCES -d "OCE ICE"  -j ${CMPL_CORES} add_key "key_asminc ${ADD_KEYS}" del_key "key_top ${DEL_KEYS}"
 fi
-if [ ${config} == "ORCA2_ICE_OBS" ] && [ ${DO_RESTART} == "1" ] ;  then
+if [ ${config} == "ORCA2_ICE_OBS" ] && [ ${DO_REPRO} == "1" ] ;  then
 ## Reproducibility tests
     export TEST_NAME="REPRO_4_8"
     cd ${SETTE_DIR}
@@ -1422,8 +1422,7 @@ if [ ${config} == "AGRIF" ] && [ ${DO_CORRUPT} == "1" ] ;  then
     sync_config  AGRIF_DEMO ${SETTE_CONFIG} 'cfgs'
     clean_config AGRIF_DEMO ${SETTE_CONFIG} 'cfgs'
     #
-    # AGRIF_DEMO does not yet support nn_hls=2 => key_loop_fusion can not be used
-    . ./makenemo -m ${CMP_NAM} -n ${SETTE_CONFIG} -r AGRIF_DEMO -j ${CMPL_CORES} add_key "${ADD_KEYS/key_loop_fusion}" del_key "key_agrif ${DEL_KEYS}"
+    . ./makenemo -m ${CMP_NAM} -n ${SETTE_CONFIG} -r AGRIF_DEMO -j ${CMPL_CORES} add_key "${ADD_KEYS}" del_key "key_agrif ${DEL_KEYS}"
     cd ${SETTE_DIR}
     . ./prepare_exe_dir.sh
     set_valid_dir

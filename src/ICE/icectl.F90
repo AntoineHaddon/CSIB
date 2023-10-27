@@ -47,9 +47,9 @@ MODULE icectl
 
    ! thresold rates for conservation
    !    these values are changed by the namelist parameter rn_icechk, so that threshold = zchk * rn_icechk
-   REAL(wp), PARAMETER ::   zchk_m   = 2.5e-7   ! kg/m2/s <=> 1e-6 m of ice per hour spuriously gained/lost
-   REAL(wp), PARAMETER ::   zchk_s   = 2.5e-6   ! g/m2/s  <=> 1e-6 m of ice per hour spuriously gained/lost (considering s=10g/kg)
-   REAL(wp), PARAMETER ::   zchk_t   = 7.5e-2   ! W/m2    <=> 1e-6 m of ice per hour spuriously gained/lost (considering Lf=3e5J/kg)
+   REAL(wp), PARAMETER ::   rchk_m   = 2.5e-7   ! kg/m2/s <=> 1e-6 m of ice per hour spuriously gained/lost
+   REAL(wp), PARAMETER ::   rchk_s   = 2.5e-6   ! g/m2/s  <=> 1e-6 m of ice per hour spuriously gained/lost (considering s=10g/kg)
+   REAL(wp), PARAMETER ::   rchk_t   = 7.5e-2   ! W/m2    <=> 1e-6 m of ice per hour spuriously gained/lost (considering Lf=3e5J/kg)
 
    ! for drift outputs
    CHARACTER(LEN=50)   ::   clname="icedrift_diagnostics.ascii"   ! ascii filename
@@ -75,7 +75,7 @@ CONTAINS
       !!
       !! ** Method  : This is an online diagnostics which can be activated with ln_icediachk=true
       !!              It prints in ocean.output if there is a violation of conservation at each time-step
-      !!              The thresholds (zchk_m, zchk_s, zchk_t) determine violations
+      !!              The thresholds (rchk_m, rchk_s, rchk_t) determine violations
       !!              For salt and heat thresholds, ice is considered to have a salinity of 10
       !!              and a heat content of 3e5 J/kg (=latent heat of fusion)
       !!-------------------------------------------------------------------
@@ -145,11 +145,11 @@ CONTAINS
 
          IF( lwp ) THEN
             ! check conservation issues
-            IF( ABS(zdiag_mass) > zchk_m * rn_icechk_glo * zchk3(10) ) &
+            IF( ABS(zdiag_mass) > rchk_m * rn_icechk_glo * zchk3(10) ) &
                &                   WRITE(numout,*)   cd_routine,' : violation mass cons. [kg] = ',zdiag_mass * rDt_ice
-            IF( ABS(zdiag_salt) > zchk_s * rn_icechk_glo * zchk3(10) ) &
+            IF( ABS(zdiag_salt) > rchk_s * rn_icechk_glo * zchk3(10) ) &
                &                   WRITE(numout,*)   cd_routine,' : violation salt cons. [g]  = ',zdiag_salt * rDt_ice
-            IF( ABS(zdiag_heat) > zchk_t * rn_icechk_glo * zchk3(10) ) &
+            IF( ABS(zdiag_heat) > rchk_t * rn_icechk_glo * zchk3(10) ) &
                &                   WRITE(numout,*)   cd_routine,' : violation heat cons. [J]  = ',zdiag_heat * rDt_ice
             ! check negative values
             IF( zchk4(1) < 0. )   WRITE(numout,*)   cd_routine,' : violation v_i  < 0        = ',zchk4(1)
@@ -164,9 +164,9 @@ CONTAINS
             IF( zchk3(7)>MAX(rn_amax_n,rn_amax_s)+epsi10 .AND. cd_routine /= 'icedyn_adv' .AND. cd_routine /= 'icedyn_rdgrft' ) &
                &                  WRITE(numout,*)   cd_routine,' : violation a_i > amax      = ',zchk3(7)
             ! check if advection scheme is conservative
-            IF( ABS(zchk3(8)) > zchk_m * rn_icechk_glo * zchk3(10) .AND. cd_routine == 'icedyn_adv' ) &
+            IF( ABS(zchk3(8)) > rchk_m * rn_icechk_glo * zchk3(10) .AND. cd_routine == 'icedyn_adv' ) &
                &                  WRITE(numout,*)   cd_routine,' : violation adv scheme [kg] = ',zchk3(8) * rDt_ice
-            IF( ABS(zchk3(9)) > zchk_t * rn_icechk_glo * zchk3(10) .AND. cd_routine == 'icedyn_adv' ) &
+            IF( ABS(zchk3(9)) > rchk_t * rn_icechk_glo * zchk3(10) .AND. cd_routine == 'icedyn_adv' ) &
                &                  WRITE(numout,*)   cd_routine,' : violation adv scheme [J]  = ',zchk3(9) * rDt_ice
          ENDIF
          !
@@ -182,7 +182,7 @@ CONTAINS
       !!
       !! ** Method  : This is an online diagnostics which can be activated with ln_icediachk=true
       !!              It prints in ocean.output if there is a violation of conservation at each time-step
-      !!              The thresholds (zchk_m, zchk_s, zchk_t) determine the violations
+      !!              The thresholds (rchk_m, rchk_s, rchk_t) determine the violations
       !!              For salt and heat thresholds, ice is considered to have a salinity of 10
       !!              and a heat content of 3e5 J/kg (=latent heat of fusion)
       !!-------------------------------------------------------------------
@@ -204,11 +204,11 @@ CONTAINS
       zchk(1:4)   = glob_sum_vec( 'icectl', ztmp(:,:,1:4) )
       
       IF( lwp ) THEN
-         IF( ABS(zchk(1)) > zchk_m * rn_icechk_glo * zchk(4) ) &
+         IF( ABS(zchk(1)) > rchk_m * rn_icechk_glo * zchk(4) ) &
             &                   WRITE(numout,*) cd_routine,' : violation mass cons. [kg] = ',zchk(1) * rDt_ice
-         IF( ABS(zchk(2)) > zchk_s * rn_icechk_glo * zchk(4) ) &
+         IF( ABS(zchk(2)) > rchk_s * rn_icechk_glo * zchk(4) ) &
             &                   WRITE(numout,*) cd_routine,' : violation salt cons. [g]  = ',zchk(2) * rDt_ice
-         IF( ABS(zchk(3)) > zchk_t * rn_icechk_glo * zchk(4) ) &
+         IF( ABS(zchk(3)) > rchk_t * rn_icechk_glo * zchk(4) ) &
             &                   WRITE(numout,*) cd_routine,' : violation heat cons. [J]  = ',zchk(3) * rDt_ice
       ENDIF
       !
@@ -259,20 +259,20 @@ CONTAINS
             &         + ( wfx_bog + wfx_bom + wfx_sum + wfx_sni + wfx_opw + wfx_res + wfx_dyn + wfx_lam + wfx_pnd + &
             &             wfx_snw_sni + wfx_snw_sum + wfx_snw_dyn + wfx_snw_sub + wfx_ice_sub + wfx_spr )           &
             &         - pdiag_fv
-         IF( MAXVAL( ABS(zdiag_mass) ) > zchk_m * rn_icechk_cel )   ll_stop_m = .TRUE.
+         IF( MAXVAL( ABS(zdiag_mass) ) > rchk_m * rn_icechk_cel )   ll_stop_m = .TRUE.
          !
          ! -- salt diag -- !
          zdiag_salt =   ( SUM( sv_i * rhoi , dim=3 ) - pdiag_s ) * r1_Dt_ice                                                  &
             &         + ( sfx_bri + sfx_bog + sfx_bom + sfx_sum + sfx_sni + sfx_opw + sfx_res + sfx_dyn + sfx_sub + sfx_lam ) &
             &         - pdiag_fs
-         IF( MAXVAL( ABS(zdiag_salt) ) > zchk_s * rn_icechk_cel )   ll_stop_s = .TRUE.
+         IF( MAXVAL( ABS(zdiag_salt) ) > rchk_s * rn_icechk_cel )   ll_stop_s = .TRUE.
          !
          ! -- heat diag -- !
          zdiag_heat =   ( SUM( SUM( e_i, dim=4 ), dim=3 ) + SUM( SUM( e_s, dim=4 ), dim=3 ) - pdiag_t ) * r1_Dt_ice &
             &         + (  hfx_sum + hfx_bom + hfx_bog + hfx_dif + hfx_opw + hfx_snw                                &
             &            - hfx_thd - hfx_dyn - hfx_res - hfx_sub - hfx_spr )                                        &
             &         - pdiag_ft
-         IF( MAXVAL( ABS(zdiag_heat) ) > zchk_t * rn_icechk_cel )   ll_stop_t = .TRUE.
+         IF( MAXVAL( ABS(zdiag_heat) ) > rchk_t * rn_icechk_cel )   ll_stop_t = .TRUE.
          !
          ! -- other diags -- !
          ! a_i < 0
@@ -691,49 +691,52 @@ CONTAINS
       CALL prt_ctl_info(' ========== ')
       CALL prt_ctl_info(' - Cell values : ')
       CALL prt_ctl_info('   ~~~~~~~~~~~~~ ')
-      CALL prt_ctl(tab2d_1=e1e2t      , clinfo1=' cell area   :')
-      CALL prt_ctl(tab2d_1=at_i       , clinfo1=' at_i        :')
-      CALL prt_ctl(tab2d_1=ato_i      , clinfo1=' ato_i       :')
-      CALL prt_ctl(tab2d_1=vt_i       , clinfo1=' vt_i        :')
-      CALL prt_ctl(tab2d_1=vt_s       , clinfo1=' vt_s        :')
-      CALL prt_ctl(tab2d_1=divu_i     , clinfo1=' divu_i      :')
-      CALL prt_ctl(tab2d_1=delta_i    , clinfo1=' delta_i     :')
-      CALL prt_ctl(tab2d_1=stress1_i  , clinfo1=' stress1_i   :')
-      CALL prt_ctl(tab2d_1=stress2_i  , clinfo1=' stress2_i   :')
-      CALL prt_ctl(tab2d_1=stress12_i , clinfo1=' stress12_i  :')
-      CALL prt_ctl(tab2d_1=strength   , clinfo1=' strength    :')
-      CALL prt_ctl(tab2d_1=delta_i    , clinfo1=' delta_i     :')
-      CALL prt_ctl(tab2d_1=u_ice      , clinfo1=' u_ice       :', tab2d_2=v_ice      , clinfo2=' v_ice       :')
+      CALL prt_ctl(tab2d_1=e1e2t      , clinfo1=' cell area   :', mask1=tmask)
+      CALL prt_ctl(tab2d_1=at_i       , clinfo1=' at_i        :', mask1=tmask)
+      CALL prt_ctl(tab2d_1=ato_i      , clinfo1=' ato_i       :', mask1=tmask)
+      CALL prt_ctl(tab2d_1=vt_i       , clinfo1=' vt_i        :', mask1=tmask)
+      CALL prt_ctl(tab2d_1=vt_s       , clinfo1=' vt_s        :', mask1=tmask)
+      CALL prt_ctl(tab2d_1=divu_i     , clinfo1=' divu_i      :', mask1=tmask)
+      CALL prt_ctl(tab2d_1=delta_i    , clinfo1=' delta_i     :', mask1=tmask)
+      CALL prt_ctl(tab2d_1=stress1_i  , clinfo1=' stress1_i   :', mask1=tmask)
+      CALL prt_ctl(tab2d_1=stress2_i  , clinfo1=' stress2_i   :', mask1=tmask)
+      CALL prt_ctl(tab2d_1=stress12_i , clinfo1=' stress12_i  :')   ! should be fmask
+      CALL prt_ctl(tab2d_1=strength   , clinfo1=' strength    :', mask1=tmask)
+      CALL prt_ctl(tab2d_1=delta_i    , clinfo1=' delta_i     :', mask1=tmask)
+      CALL prt_ctl(tab2d_1=u_ice      , clinfo1=' u_ice       :', mask1=umask,   &
+         &         tab2d_2=v_ice      , clinfo2=' v_ice       :', mask2=vmask)
 
       DO jl = 1, jpl
          CALL prt_ctl_info(' ')
          CALL prt_ctl_info(' - Category : ', ivar=jl)
          CALL prt_ctl_info('   ~~~~~~~~~~')
-         CALL prt_ctl(tab2d_1=h_i        (:,:,jl)        , clinfo1= ' h_i         : ')
-         CALL prt_ctl(tab2d_1=h_s        (:,:,jl)        , clinfo1= ' h_s         : ')
-         CALL prt_ctl(tab2d_1=t_su       (:,:,jl)        , clinfo1= ' t_su        : ')
-         CALL prt_ctl(tab2d_1=t_s        (:,:,1,jl)      , clinfo1= ' t_snow      : ')
-         CALL prt_ctl(tab2d_1=s_i        (:,:,jl)        , clinfo1= ' s_i         : ')
-         CALL prt_ctl(tab2d_1=o_i        (:,:,jl)        , clinfo1= ' o_i         : ')
-         CALL prt_ctl(tab2d_1=a_i        (:,:,jl)        , clinfo1= ' a_i         : ')
-         CALL prt_ctl(tab2d_1=v_i        (:,:,jl)        , clinfo1= ' v_i         : ')
-         CALL prt_ctl(tab2d_1=v_s        (:,:,jl)        , clinfo1= ' v_s         : ')
-         CALL prt_ctl(tab2d_1=e_s        (:,:,1,jl)      , clinfo1= ' e_snow      : ')
-         CALL prt_ctl(tab2d_1=sv_i       (:,:,jl)        , clinfo1= ' sv_i        : ')
-         CALL prt_ctl(tab2d_1=oa_i       (:,:,jl)        , clinfo1= ' oa_i        : ')
+         CALL prt_ctl(tab2d_1=h_i (:,:,jl)  , clinfo1= ' h_i         : ', mask1=tmask)
+         CALL prt_ctl(tab2d_1=h_s (:,:,jl)  , clinfo1= ' h_s         : ', mask1=tmask)
+         CALL prt_ctl(tab2d_1=t_su(:,:,jl)  , clinfo1= ' t_su        : ', mask1=tmask)
+         CALL prt_ctl(tab2d_1=t_s (:,:,1,jl), clinfo1= ' t_snow      : ', mask1=tmask)
+         CALL prt_ctl(tab2d_1=s_i (:,:,jl)  , clinfo1= ' s_i         : ', mask1=tmask)
+         CALL prt_ctl(tab2d_1=o_i (:,:,jl)  , clinfo1= ' o_i         : ', mask1=tmask)
+         CALL prt_ctl(tab2d_1=a_i (:,:,jl)  , clinfo1= ' a_i         : ', mask1=tmask)
+         CALL prt_ctl(tab2d_1=v_i (:,:,jl)  , clinfo1= ' v_i         : ', mask1=tmask)
+         CALL prt_ctl(tab2d_1=v_s (:,:,jl)  , clinfo1= ' v_s         : ', mask1=tmask)
+         CALL prt_ctl(tab2d_1=e_s (:,:,1,jl), clinfo1= ' e_snow      : ', mask1=tmask)
+         CALL prt_ctl(tab2d_1=sv_i(:,:,jl)  , clinfo1= ' sv_i        : ', mask1=tmask)
+         CALL prt_ctl(tab2d_1=oa_i(:,:,jl)  , clinfo1= ' oa_i        : ', mask1=tmask)
 
          DO jk = 1, nlay_i
             CALL prt_ctl_info(' - Layer : ', ivar=jk)
-            CALL prt_ctl(tab2d_1=t_i(:,:,jk,jl) , clinfo1= ' t_i       : ')
-            CALL prt_ctl(tab2d_1=e_i(:,:,jk,jl) , clinfo1= ' e_i       : ')
+            CALL prt_ctl(tab2d_1=t_i(:,:,jk,jl) , clinfo1= ' t_i       : ', mask1=tmask)
+            CALL prt_ctl(tab2d_1=e_i(:,:,jk,jl) , clinfo1= ' e_i       : ', mask1=tmask)
          END DO
       END DO
 
       CALL prt_ctl_info(' ')
       CALL prt_ctl_info(' - Stresses : ')
       CALL prt_ctl_info('   ~~~~~~~~~~ ')
-      CALL prt_ctl(tab2d_1=utau       , clinfo1= ' utau      : ', tab2d_2=vtau       , clinfo2= ' vtau      : ')
-      CALL prt_ctl(tab2d_1=utau_ice   , clinfo1= ' utau_ice  : ', tab2d_2=vtau_ice   , clinfo2= ' vtau_ice  : ')
+      CALL prt_ctl(tab2d_1=utau       , clinfo1= ' utau      : ', mask1 = umask,  &
+         &         tab2d_2=vtau       , clinfo2= ' vtau      : ', mask2 = vmask)
+      CALL prt_ctl(tab2d_1=utau_ice   , clinfo1= ' utau_ice  : ', mask1 = umask,  &
+         &         tab2d_2=vtau_ice   , clinfo2= ' vtau_ice  : ', mask2 = vmask)
 
    END SUBROUTINE ice_prt3D
 

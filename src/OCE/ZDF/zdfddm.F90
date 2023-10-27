@@ -30,6 +30,7 @@ MODULE zdfddm
 
    !! * Substitutions
 #  include "do_loop_substitute.h90"
+#  include "single_precision_substitute.h90"
 #  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
@@ -142,7 +143,7 @@ CONTAINS
             ! salt fingering
             zrr = zrau(ji,jj) / rn_hsbfr
             zrr = zrr * zrr
-            zavfs = rn_avts / ( 1 + zrr*zrr*zrr ) * zmsks(ji,jj) * zmskf(ji,jj)
+            zavfs = rn_avts / ( 1. + zrr*zrr*zrr ) * zmsks(ji,jj) * zmskf(ji,jj)
             zavft = 0.7 * zavfs * zinr
             ! diffusive layering
             zavdt = 1.3635e-6 * EXP(  4.6 * EXP( -0.54*(zinr-1.) )  ) * zmsks(ji,jj) * zmskd1(ji,jj)
@@ -158,7 +159,7 @@ CONTAINS
       !                                                   ! ===============
       !
       IF(sn_cfctl%l_prtctl) THEN
-         CALL prt_ctl(tab3d_1=avt , clinfo1=' ddm  - t: ', tab3d_2=avs , clinfo2=' s: ', kdim=jpk)
+         CALL prt_ctl(tab3d_1=CASTDP(avt), clinfo1=' ddm  - t: ', tab3d_2=CASTDP(avs) , clinfo2=' s: ')
       ENDIF
       !
    END SUBROUTINE zdf_ddm

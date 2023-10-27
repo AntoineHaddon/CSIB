@@ -134,7 +134,6 @@ that are available in the tidal-forcing implementation (see
     <field id="sssgrad2"    long_name="square of module of surface salinity gradient"    unit="1e-6/m2"  grid_ref="grid_T_2D_inner"/>
     <field id="ke"          long_name="kinetic energy"          standard_name="specific_kinetic_energy_of_sea_water"   unit="m2/s2"  grid_ref="grid_T_3D" />
     <field id="ke_int"      long_name="vertical integration of kinetic energy"   unit="m3/s2"  grid_ref="grid_T_2D_inner" />
-    <field id="salt2c"      long_name="Salt content vertically integrated"       unit="1e-3*kg/m2" />
 
     <!-- t-eddy viscosity coefficients (ldfdyn) -->
     <field id="ahmt_2d"      long_name=" surface t-eddy viscosity coefficient"   unit="m2/s or m4/s"                      />
@@ -178,8 +177,8 @@ that are available in the tidal-forcing implementation (see
     <field id="mldr10_1max"  long_name="Max of Mixed Layer Depth (dsigma = 0.01 wrt 10m)"   field_ref="mldr10_1"   operation="maximum"                                                                          />
     <field id="mldr10_1min"  long_name="Min of Mixed Layer Depth (dsigma = 0.01 wrt 10m)"   field_ref="mldr10_1"   operation="minimum"                                                                          />
     <field id="heatc"        long_name="Heat content vertically integrated"                 standard_name="integral_of_sea_water_potential_temperature_wrt_depth_expressed_as_heat_content"   unit="J/m2"      grid_ref="grid_T_2D_inner" />
-    <field id="saltc"        long_name="Salt content vertically integrated"                                                                                                                   unit="1e-3.m"    grid_ref="grid_T_2D_inner" />
-    <field id="saltc2"       long_name="square of Salt content vertically integrated"                                                                                                         unit="1e-6.m2"   grid_ref="grid_T_2D_inner" />
+    <field id="saltc"        long_name="Salt content vertically integrated"                                                                                                                   unit="PSU*kg/m2"    grid_ref="grid_T_2D_inner" />
+    <field id="salt2c"       long_name="square of Salt content vertically integrated"                                                                                                         unit="PSU2*kg/m2"   grid_ref="grid_T_2D_inner" />
 
     <!-- EOS -->
     <field id="alpha"        long_name="thermal expansion"                                                         unit="degC-1" grid_ref="grid_T_3D" />
@@ -331,7 +330,12 @@ that are available in the tidal-forcing implementation (see
     <field id="zustar"              long_name="friction velocity"                        unit="m/s"     />
     <field id="zwstrl"              long_name="langmuir velocity scale"                  unit="m/s"     />
     <field id="zvstr"               long_name="mixed velocity scale"                     unit="m/s"     />
-    <field id="zla"                 long_name="langmuir number"                          unit="m/s"     />
+    <field id="zla"                 long_name="langmuir number"                          unit="#"       />
+    <field id="wmp"                 long_name="wave mean period"                         unit="s"       />
+    <field id="hsw"                 long_name="significant wave height"                  unit="m"       />
+    <field id="wmp_NP"              long_name="wave mean period from NP spectrum"        unit="s"       />
+    <field id="hsw_NP"              long_name="significant wave height from NP spectrum" unit="m"       />
+    <field id="wndm"                long_name="U_10"                                     unit="m/s"     />
     <field id="wind_wave_abs_power" long_name="\rho |U_s| x u*^2"                        unit="mW"      />
     <field id="wind_wave_power"     long_name="U_s \dot  tau"                            unit="mW"      />
     <field id="wind_power"          long_name="\rho  u*^3"                               unit="mW"      />
@@ -427,7 +431,7 @@ that are available in the tidal-forcing implementation (see
       <field id="qt"           long_name="Net Downward Heat Flux"                standard_name="surface_downward_heat_flux_in_sea_water"                              unit="W/m2"                           />
       <field id="qns"          long_name="non solar Downward Heat Flux"                                                                                               unit="W/m2"                           />
       <field id="qsr"          long_name="Shortwave Radiation"                   standard_name="net_downward_shortwave_flux_at_sea_water_surface"                     unit="W/m2"                           />
-      <field id="qsr3d"        long_name="Shortwave Radiation 3D distribution"   standard_name="downwelling_shortwave_flux_in_sea_water"                              unit="W/m2"      grid_ref="grid_T_3D" />
+      <field id="qsr3d"        long_name="Shortwave Radiation 3D distribution"   standard_name="downwelling_shortwave_flux_in_sea_water"                              unit="W/m2"      grid_ref="grid_T_3D_inner" />
       <field id="qrp"          long_name="Surface Heat Flux: Damping"            standard_name="heat_flux_into_sea_water_due_to_newtonian_relaxation"                 unit="W/m2"                           />
       <field id="qclosea"      long_name="closed sea heat content flux"          standard_name="closea_heat_content_downward_flux"                                    unit="W/m2"     />
       <field id="erp"          long_name="Surface Water Flux: Damping"           standard_name="water_flux_out_of_sea_water_due_to_newtonian_relaxation"              unit="kg/m2/s"                        />
@@ -761,7 +765,7 @@ that are available in the tidal-forcing implementation (see
     <field id="avt_k"        long_name="vertical eddy diffusivity from closure schemes" standard_name="ocean_vertical_eddy_diffusivity"       unit="m2/s" />
     <field id="avm_k"        long_name="vertical eddy viscosity from closure schemes"   standard_name="ocean_vertical_eddy_viscosity"         unit="m2/s" />
     <field id="ediss_k"      long_name="Kolmogorov energy dissipation (tke scheme)"     standard_name="Kolmogorov_energy_dissipation"         unit="W/kg" />
-    <field id="eshear_k"     long_name="energy source from vertical shear"              standard_name="energy_source_from_shear"              unit="W/kg" />
+    <field id="eshear_k"     long_name="energy source from vertical shear"              standard_name="energy_source_from_shear"                                                      unit="W/kg"   grid_ref="grid_W_3D_inner" />
     <field id="estrat_k"     long_name="energy sink from stratification"                standard_name="energy_sink_from_stratification"       unit="W/kg" />
     
   </field_group>

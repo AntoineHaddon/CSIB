@@ -355,7 +355,7 @@ CONTAINS
          DO_3D( 0, 0, 0, 0, 1, jpkm1 )
             z2d(ji,jj) = z2d(ji,jj) + e3t(ji,jj,jk,Kmm) * ts(ji,jj,jk,jp_sal,Kmm) * ts(ji,jj,jk,jp_sal,Kmm) * tmask(ji,jj,jk)
          END_3D
-         CALL iom_put( "salt2c", rho0 * z2d )      ! vertically integrated salt content (PSU*kg/m2)
+         CALL iom_put( "salt2c", rho0 * z2d )      ! vertically integrated square of salt content (PSU2*kg/m2)
       ENDIF
       !
       IF ( iom_use("ke") .OR. iom_use("ke_int") ) THEN
@@ -580,7 +580,7 @@ CONTAINS
       INTEGER  ::   iimi, iima, ipk, it, itmod, ijmi, ijma   ! local integers
       INTEGER  ::   ipka                                     ! ABL
       INTEGER  ::   jn, ierror                               ! local integers
-      REAL(wp) ::   zsto, zout, zmax, zjulian                ! local scalars
+      REAL(dp) ::   zsto, zout, zmax, zjulian                ! local scalars
       !
       REAL(wp), DIMENSION(jpi,jpj    ) :: z2d     ! 2D workspace
       REAL(wp), DIMENSION(jpi,jpj,jpk) :: z3d     ! 3D workspace

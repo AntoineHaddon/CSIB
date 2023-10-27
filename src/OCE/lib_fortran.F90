@@ -25,14 +25,12 @@ MODULE lib_fortran
    IMPLICIT NONE
    PRIVATE
 
-   PUBLIC   glob_sum      ! used in many places (masked with tmask_i = ssmask * tmask_h)
-   PUBLIC   glob_sum_full ! used in many places (masked with tmask_h, excluding all duplicated points halos+periodicity)
+   PUBLIC   glob_sum      ! used in many places (masked with tmask_i = ssmask * (excludes halo+duplicated points (NP folding)) )
    PUBLIC   local_sum     ! used in trcrad, local operation before glob_sum_delay
    PUBLIC   sum3x3        ! used in trcrad, do a sum over 3x3 boxes
    PUBLIC   DDPDD         ! also used in closea module
    PUBLIC   glob_min, glob_max
    PUBLIC   glob_sum_vec
-   PUBLIC   glob_sum_full_vec
    PUBLIC   glob_min_vec, glob_max_vec
 #if defined key_nosignedzero
    PUBLIC SIGN
@@ -40,9 +38,6 @@ MODULE lib_fortran
 
    INTERFACE glob_sum
       MODULE PROCEDURE glob_sum_1d, glob_sum_2d, glob_sum_3d
-   END INTERFACE
-   INTERFACE glob_sum_full
-      MODULE PROCEDURE glob_sum_full_2d, glob_sum_full_3d
    END INTERFACE
    INTERFACE local_sum
       MODULE PROCEDURE local_sum_2d, local_sum_3d
@@ -58,9 +53,6 @@ MODULE lib_fortran
    END INTERFACE
    INTERFACE glob_sum_vec
       MODULE PROCEDURE glob_sum_vec_3d, glob_sum_vec_4d
-   END INTERFACE
-   INTERFACE glob_sum_full_vec
-      MODULE PROCEDURE glob_sum_full_vec_3d, glob_sum_full_vec_4d
    END INTERFACE
    INTERFACE glob_min_vec
       MODULE PROCEDURE glob_min_vec_3d, glob_min_vec_4d
@@ -87,82 +79,47 @@ MODULE lib_fortran
 CONTAINS
 
 #  define GLOBSUM_CODE
-
 #     define DIM_1d
-#     define FUNCTION_GLOBSUM           glob_sum_1d
-#     include "lib_fortran_generic.h90"
-#     undef FUNCTION_GLOBSUM
+#        include "lib_fortran_generic.h90"
 #     undef DIM_1d
-
 #     define DIM_2d
-#     define OPERATION_GLOBSUM
-#     define FUNCTION_GLOBSUM           glob_sum_2d
-#     include "lib_fortran_generic.h90"
-#     undef FUNCTION_GLOBSUM
-#     undef OPERATION_GLOBSUM
-#     define OPERATION_FULL_GLOBSUM
-#     define FUNCTION_GLOBSUM           glob_sum_full_2d
-#     include "lib_fortran_generic.h90"
-#     undef FUNCTION_GLOBSUM
-#     undef OPERATION_FULL_GLOBSUM
+#        include "lib_fortran_generic.h90"
 #     undef DIM_2d
-
 #     define DIM_3d
-#     define OPERATION_GLOBSUM
-#     define FUNCTION_GLOBSUM           glob_sum_3d
-#     include "lib_fortran_generic.h90"
-#     undef FUNCTION_GLOBSUM
-#     undef OPERATION_GLOBSUM
-#     define OPERATION_FULL_GLOBSUM
-#     define FUNCTION_GLOBSUM           glob_sum_full_3d
-#     include "lib_fortran_generic.h90"
-#     undef FUNCTION_GLOBSUM
-#     undef OPERATION_FULL_GLOBSUM
+#        include "lib_fortran_generic.h90"
 #     undef DIM_3d
-
 #  undef GLOBSUM_CODE
 
-
 #  define GLOBMINMAX_CODE
-
 #     define DIM_2d
-#     define OPERATION_GLOBMIN
-#     define FUNCTION_GLOBMINMAX           glob_min_2d
-#     include "lib_fortran_generic.h90"
-#     undef FUNCTION_GLOBMINMAX
-#     undef OPERATION_GLOBMIN
-#     define OPERATION_GLOBMAX
-#     define FUNCTION_GLOBMINMAX           glob_max_2d
-#     include "lib_fortran_generic.h90"
-#     undef FUNCTION_GLOBMINMAX
-#     undef OPERATION_GLOBMAX
+#        define OPERATION_GLOBMIN
+#           include "lib_fortran_generic.h90"
+#        undef OPERATION_GLOBMIN
+#        define OPERATION_GLOBMAX
+#           include "lib_fortran_generic.h90"
+#        undef OPERATION_GLOBMAX
 #     undef DIM_2d
-
 #     define DIM_3d
-#     define OPERATION_GLOBMIN
-#     define FUNCTION_GLOBMINMAX           glob_min_3d
-#     include "lib_fortran_generic.h90"
-#     undef FUNCTION_GLOBMINMAX
-#     undef OPERATION_GLOBMIN
-#     define OPERATION_GLOBMAX
-#     define FUNCTION_GLOBMINMAX           glob_max_3d
-#     include "lib_fortran_generic.h90"
-#     undef FUNCTION_GLOBMINMAX
-#     undef OPERATION_GLOBMAX
-#     undef DIM_3d
+#        define OPERATION_GLOBMIN
+#           include "lib_fortran_generic.h90"
+#        undef OPERATION_GLOBMIN
+#        define OPERATION_GLOBMAX
+#           include "lib_fortran_generic.h90"
+#        undef OPERATION_GLOBMAX
+#     undef DIM_3
 #  undef GLOBMINMAX_CODE
 
 !                          ! FUNCTION local_sum !
 
    FUNCTION local_sum_2d( ptab )
       !!----------------------------------------------------------------------
-      REAL(wp),  INTENT(in   ) ::   ptab(:,:) ! array on which operation is applied
+      REAL(dp), DIMENSION(:,:),  INTENT(in   ) ::   ptab ! array on which operation is applied
       COMPLEX(dp)              ::  local_sum_2d
       !
       !!-----------------------------------------------------------------------
       !
       COMPLEX(dp)::   ctmp
-      REAL(wp)   ::   ztmp
+      REAL(dp)   ::   ztmp
       INTEGER    ::   ji, jj    ! dummy loop indices
       INTEGER    ::   ipi, ipj  ! dimensions
       !!-----------------------------------------------------------------------
@@ -170,7 +127,7 @@ CONTAINS
       ipi = SIZE(ptab,1)   ! 1st dimension
       ipj = SIZE(ptab,2)   ! 2nd dimension
       !
-      ctmp = CMPLX( 0.e0, 0.e0, wp )   ! warning ctmp is cumulated
+      ctmp = CMPLX( 0.e0, 0.e0, dp )   ! warning ctmp is cumulated
 
       DO jj = 1, ipj
          DO ji = 1, ipi
@@ -185,13 +142,13 @@ CONTAINS
 
    FUNCTION local_sum_3d( ptab )
       !!----------------------------------------------------------------------
-      REAL(wp),  INTENT(in   ) ::   ptab(:,:,:) ! array on which operation is applied
+      REAL(wp), DIMENSION(:,:,:),  INTENT(in   ) ::   ptab ! array on which operation is applied
       COMPLEX(dp)              ::  local_sum_3d
       !
       !!-----------------------------------------------------------------------
       !
       COMPLEX(dp)::   ctmp
-      REAL(wp)   ::   ztmp
+      REAL(dp)   ::   ztmp
       INTEGER    ::   ji, jj, jk   ! dummy loop indices
       INTEGER    ::   ipi, ipj, ipk    ! dimensions
       !!-----------------------------------------------------------------------
@@ -200,7 +157,7 @@ CONTAINS
       ipj = SIZE(ptab,2)   ! 2nd dimension
       ipk = SIZE(ptab,3)   ! 3rd dimension
       !
-      ctmp = CMPLX( 0.e0, 0.e0, wp )   ! warning ctmp is cumulated
+      ctmp = CMPLX( 0.e0, 0.e0, dp )   ! warning ctmp is cumulated
 
       DO jk = 1, ipk
         DO jj = 1, ipj
@@ -330,11 +287,11 @@ CONTAINS
    FUNCTION glob_sum_vec_3d( cdname, ptab ) RESULT( ptmp )
       !!----------------------------------------------------------------------
       CHARACTER(len=*),  INTENT(in) ::   cdname      ! name of the calling subroutine
-      REAL(wp),          INTENT(in) ::   ptab(:,:,:) ! array on which operation is applied
-      REAL(wp), DIMENSION(SIZE(ptab,3)) ::   ptmp
+      REAL(dp), DIMENSION(:,:,:),         INTENT(in) ::   ptab ! array on which operation is applied
+      REAL(dp), DIMENSION(SIZE(ptab,3)) ::   ptmp
       !
       COMPLEX(dp), DIMENSION(:), ALLOCATABLE ::   ctmp
-      REAL(wp)    ::   ztmp
+      REAL(dp)    ::   ztmp
       INTEGER     ::   ji , jj , jk     ! dummy loop indices
       INTEGER     ::   ipi, ipj, ipk    ! dimensions
       INTEGER     ::   iis, iie, ijs, ije   ! loop start and end
@@ -365,7 +322,7 @@ CONTAINS
       END DO
       CALL mpp_sum( cdname, ctmp(:) )   ! sum over the global domain
       !
-      ptmp = REAL( ctmp(:), wp )
+      ptmp = REAL( ctmp(:), dp )
       !
       DEALLOCATE( ctmp )
       !
@@ -374,11 +331,11 @@ CONTAINS
    FUNCTION glob_sum_vec_4d( cdname, ptab ) RESULT( ptmp )
       !!----------------------------------------------------------------------
       CHARACTER(len=*),  INTENT(in) ::   cdname        ! name of the calling subroutine
-      REAL(wp),          INTENT(in) ::   ptab(:,:,:,:) ! array on which operation is applied
-      REAL(wp), DIMENSION(SIZE(ptab,4)) ::   ptmp
+      REAL(dp),  DIMENSION(:,:,:,:),        INTENT(in) ::   ptab ! array on which operation is applied
+      REAL(dp), DIMENSION(SIZE(ptab,4)) ::   ptmp
       !
       COMPLEX(dp), DIMENSION(:), ALLOCATABLE ::   ctmp
-      REAL(wp)    ::   ztmp
+      REAL(dp)    ::   ztmp
       INTEGER     ::   ji , jj , jk , jl     ! dummy loop indices
       INTEGER     ::   ipi, ipj, ipk, ipl    ! dimensions
       INTEGER     ::   iis, iie, ijs, ije    ! loop start and end
@@ -412,108 +369,17 @@ CONTAINS
       END DO
       CALL mpp_sum( cdname, ctmp(:) )   ! sum over the global domain
       !
-      ptmp = REAL( ctmp(:), wp )
+      ptmp = REAL( ctmp(:), dp )
       !
       DEALLOCATE( ctmp )
       !
    END FUNCTION glob_sum_vec_4d
-   
-   FUNCTION glob_sum_full_vec_3d( cdname, ptab ) RESULT( ptmp )
-      !!----------------------------------------------------------------------
-      CHARACTER(len=*),  INTENT(in) ::   cdname      ! name of the calling subroutine
-      REAL(wp),          INTENT(in) ::   ptab(:,:,:) ! array on which operation is applied
-      REAL(wp), DIMENSION(SIZE(ptab,3)) ::   ptmp
-      !
-      COMPLEX(dp), DIMENSION(:), ALLOCATABLE ::   ctmp
-      REAL(wp)    ::   ztmp
-      INTEGER     ::   ji , jj , jk     ! dummy loop indices
-      INTEGER     ::   ipi, ipj, ipk    ! dimensions
-      INTEGER     ::   iis, iie, ijs, ije   ! loop start and end
-      !!-----------------------------------------------------------------------
-      !
-      ipi = SIZE(ptab,1)   ! 1st dimension
-      ipj = SIZE(ptab,2)   ! 2nd dimension
-      ipk = SIZE(ptab,3)   ! 3rd dimension
-      !
-      IF( ipi == jpi .AND. ipj == jpj ) THEN   ! do 2D loop only over the inner domain (-> avoid to use undefined values)
-         iis = Nis0   ;   iie = Nie0
-         ijs = Njs0   ;   ije = Nje0
-      ELSE                                     ! I think we are never in this case...
-         iis = 1   ;   iie = jpi
-         ijs = 1   ;   ije = jpj
-      ENDIF
-      !
-      ALLOCATE( ctmp(ipk) )
-      !
-      DO jk = 1, ipk
-         ctmp(jk) = CMPLX( 0.e0, 0.e0, dp )   ! warning ctmp is cumulated
-         DO jj = ijs, ije
-            DO ji = iis, iie
-               ztmp =  ptab(ji,jj,jk) * tmask_h(ji,jj)
-               CALL DDPDD( CMPLX( ztmp, 0.e0, dp ), ctmp(jk) )
-            END DO
-         END DO
-      END DO
-      CALL mpp_sum( cdname, ctmp(:) )   ! sum over the global domain
-      !
-      ptmp = REAL( ctmp(:), wp )
-      !
-      DEALLOCATE( ctmp )
-      !
-   END FUNCTION glob_sum_full_vec_3d
-
-   FUNCTION glob_sum_full_vec_4d( cdname, ptab ) RESULT( ptmp )
-      !!----------------------------------------------------------------------
-      CHARACTER(len=*),  INTENT(in) ::   cdname        ! name of the calling subroutine
-      REAL(wp),          INTENT(in) ::   ptab(:,:,:,:) ! array on which operation is applied
-      REAL(wp), DIMENSION(SIZE(ptab,4)) ::   ptmp
-      !
-      COMPLEX(dp), DIMENSION(:), ALLOCATABLE ::   ctmp
-      REAL(wp)    ::   ztmp
-      INTEGER     ::   ji , jj , jk , jl     ! dummy loop indices
-      INTEGER     ::   ipi, ipj, ipk, ipl    ! dimensions
-      INTEGER     ::   iis, iie, ijs, ije    ! loop start and end
-      !!-----------------------------------------------------------------------
-      !
-      ipi = SIZE(ptab,1)   ! 1st dimension
-      ipj = SIZE(ptab,2)   ! 2nd dimension
-      ipk = SIZE(ptab,3)   ! 3rd dimension
-      ipl = SIZE(ptab,4)   ! 4th dimension
-      !
-      IF( ipi == jpi .AND. ipj == jpj ) THEN   ! do 2D loop only over the inner domain (-> avoid to use undefined values)
-         iis = Nis0   ;   iie = Nie0
-         ijs = Njs0   ;   ije = Nje0
-      ELSE                                     ! I think we are never in this case...
-         iis = 1   ;   iie = jpi
-         ijs = 1   ;   ije = jpj
-      ENDIF
-      !
-      ALLOCATE( ctmp(ipl) )
-      !
-      DO jl = 1, ipl
-         ctmp(jl) = CMPLX( 0.e0, 0.e0, dp )   ! warning ctmp is cumulated
-         DO jk = 1, ipk
-            DO jj = ijs, ije
-               DO ji = iis, iie
-                  ztmp =  ptab(ji,jj,jk,jl) * tmask_h(ji,jj)
-                  CALL DDPDD( CMPLX( ztmp, 0.e0, dp ), ctmp(jl) )
-               END DO
-            END DO
-         END DO
-      END DO
-      CALL mpp_sum( cdname, ctmp(:) )   ! sum over the global domain
-      !
-      ptmp = REAL( ctmp(:), wp )
-      !
-      DEALLOCATE( ctmp )
-      !
-   END FUNCTION glob_sum_full_vec_4d
 
    FUNCTION glob_min_vec_3d( cdname, ptab ) RESULT( ptmp )
       !!----------------------------------------------------------------------
       CHARACTER(len=*),  INTENT(in) ::   cdname        ! name of the calling subroutine
-      REAL(wp),          INTENT(in) ::   ptab(:,:,:)   ! array on which operation is applied
-      REAL(wp), DIMENSION(SIZE(ptab,3)) ::   ptmp
+      REAL(wp), DIMENSION(:,:,:),         INTENT(in) ::   ptab   ! array on which operation is applied
+      REAL(dp), DIMENSION(SIZE(ptab,3)) ::   ptmp
       !
       INTEGER     ::   jk    ! dummy loop indice & dimension
       INTEGER     ::   ipk   ! dimension
@@ -531,8 +397,8 @@ CONTAINS
    FUNCTION glob_min_vec_4d( cdname, ptab ) RESULT( ptmp )
       !!----------------------------------------------------------------------
       CHARACTER(len=*),  INTENT(in) ::   cdname          ! name of the calling subroutine
-      REAL(wp),          INTENT(in) ::   ptab(:,:,:,:)   ! array on which operation is applied
-      REAL(wp), DIMENSION(SIZE(ptab,4)) ::   ptmp
+      REAL(wp), DIMENSION(:,:,:,:),         INTENT(in) ::   ptab   ! array on which operation is applied
+      REAL(dp), DIMENSION(SIZE(ptab,4)) ::   ptmp
       !
       INTEGER     ::   jk , jl    ! dummy loop indice & dimension
       INTEGER     ::   ipk, ipl   ! dimension
@@ -554,8 +420,8 @@ CONTAINS
    FUNCTION glob_max_vec_3d( cdname, ptab ) RESULT( ptmp )
       !!----------------------------------------------------------------------
       CHARACTER(len=*),  INTENT(in) ::   cdname        ! name of the calling subroutine
-      REAL(wp),          INTENT(in) ::   ptab(:,:,:)   ! array on which operation is applied
-      REAL(wp), DIMENSION(SIZE(ptab,3)) ::   ptmp
+      REAL(wp), DIMENSION(:,:,:),         INTENT(in) ::   ptab   ! array on which operation is applied
+      REAL(dp), DIMENSION(SIZE(ptab,3)) ::   ptmp
       !
       INTEGER     ::   jk    ! dummy loop indice & dimension
       INTEGER     ::   ipk   ! dimension
@@ -573,8 +439,8 @@ CONTAINS
    FUNCTION glob_max_vec_4d( cdname, ptab ) RESULT( ptmp )
       !!----------------------------------------------------------------------
       CHARACTER(len=*),  INTENT(in) ::   cdname          ! name of the calling subroutine
-      REAL(wp),          INTENT(in) ::   ptab(:,:,:,:)   ! array on which operation is applied
-      REAL(wp), DIMENSION(SIZE(ptab,4)) ::   ptmp
+      REAL(wp), DIMENSION(:,:,:,:),         INTENT(in) ::   ptab   ! array on which operation is applied
+      REAL(dp), DIMENSION(SIZE(ptab,4)) ::   ptmp
       !
       INTEGER     ::   jk , jl    ! dummy loop indice & dimension
       INTEGER     ::   ipk, ipl   ! dimension
@@ -601,7 +467,7 @@ CONTAINS
       !!
       !!
       !! ** Method  : The code uses the compensated summation with doublet
-      !!              (sum,error) emulated useing complex numbers. ydda is the
+      !!              (sum,error) emulated using complex numbers. ydda is the
       !!               scalar to add to the summ yddb
       !!
       !! ** Action  : This does only work for MPI.
@@ -623,7 +489,7 @@ CONTAINS
          &   + AIMAG(ydda)         + AIMAG(yddb)
       !
       ! The result is t1 + t2, after normalization.
-      yddb = CMPLX( zt1 + zt2, zt2 - ((zt1 + zt2) - zt1), wp )
+      yddb = CMPLX( zt1 + zt2, zt2 - ((zt1 + zt2) - zt1), dp )
       !
    END SUBROUTINE DDPDD
 

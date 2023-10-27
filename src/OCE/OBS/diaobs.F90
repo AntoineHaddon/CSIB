@@ -161,8 +161,8 @@ CONTAINS
       LOGICAL, DIMENSION(:), ALLOCATABLE :: llvar   ! Logical for profile variable read
       LOGICAL, DIMENSION(jpmaxnfiles) :: lmask ! Used for finding number of sstbias files
       !
-      REAL(dp) :: rn_dobsini      ! Obs window start date YYYYMMDD.HHMMSS
-      REAL(dp) :: rn_dobsend      ! Obs window end date   YYYYMMDD.HHMMSS
+      REAL(wp) :: rn_dobsini      ! Obs window start date YYYYMMDD.HHMMSS
+      REAL(wp) :: rn_dobsend      ! Obs window end date   YYYYMMDD.HHMMSS
       REAL(wp) :: ztype_avglamscl ! Local version of rn_*_avglamscl
       REAL(wp) :: ztype_avgphiscl ! Local version of rn_*_avgphiscl
       REAL(wp), DIMENSION(:,:,:),   ALLOCATABLE :: zglam   ! Model longitudes for profile variables
@@ -404,7 +404,7 @@ CONTAINS
                ltype_night     = .FALSE.
             ENDIF
             
-            CALL obs_setinterpopts( nsurftypes, jtype, TRIM(cobstypessurf(jtype)), &
+            CALL obs_setinterpopts( nsurftypes, jtype, cobstypessurf(jtype),       &
                &                    nn_2dint_default, n2dint_type,                 &
                &                    ztype_avglamscl, ztype_avgphiscl,              &
                &                    ltype_fp_indegs, ltype_night,                  &
@@ -902,8 +902,8 @@ CONTAINS
       IMPLICIT NONE
 
       !! * Arguments
-      REAL(KIND=dp), INTENT(OUT) :: ddobs                        ! Date in YYYYMMDD.HHMMSS
-      INTEGER :: kstp
+      REAL(KIND=wp), INTENT(OUT) :: ddobs                        ! Date in YYYYMMDD.HHMMSS
+      INTEGER, INTENT(IN) :: kstp
 
       !! * Local declarations
       INTEGER :: iyea        ! date - (year, month, day, hour, minute)
@@ -986,7 +986,7 @@ CONTAINS
       IMPLICIT NONE
 
       !! * Arguments
-      REAL(KIND=dp), INTENT(OUT) :: ddobsini                   ! Initial date in YYYYMMDD.HHMMSS
+      REAL(KIND=wp), INTENT(OUT) :: ddobsini                   ! Initial date in YYYYMMDD.HHMMSS
 
       CALL calc_date( nit000 - 1, ddobsini )
 
@@ -1013,7 +1013,7 @@ CONTAINS
       IMPLICIT NONE
 
       !! * Arguments
-      REAL(dp), INTENT(OUT) :: ddobsfin ! Final date in YYYYMMDD.HHMMSS
+      REAL(wp), INTENT(OUT) :: ddobsfin ! Final date in YYYYMMDD.HHMMSS
 
       CALL calc_date( nitend, ddobsfin )
 
@@ -1074,7 +1074,7 @@ CONTAINS
          &                    ravgphiscl_type    !N/S diameter of obs footprint for this type
       LOGICAL, INTENT(IN)  :: lfp_indegs_type    !T=> footprint in degrees, F=> in metres
       LOGICAL, INTENT(IN)  :: lavnight_type      !T=> obs represent night time average
-      CHARACTER(len=8), INTENT(IN) :: ctypein 
+      CHARACTER(len=lca), INTENT(IN) :: ctypein 
 
       INTEGER, DIMENSION(ntypes), INTENT(INOUT) :: &
          &                    n2dint 

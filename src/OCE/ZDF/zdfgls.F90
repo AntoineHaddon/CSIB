@@ -114,6 +114,7 @@ MODULE zdfgls
 
    !! * Substitutions
 #  include "do_loop_substitute.h90"
+#  include "single_precision_substitute.h90"
 #  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
@@ -445,24 +446,6 @@ CONTAINS
             en   (ji,jj,ibot) = z_en    ;   en   (ji,jj,ibotm1) = z_en
          END_2D
          !
-         ! NOTE: ctl_stop with ln_isfcav when using GLS
-         IF( ln_isfcav) THEN     ! top boundary   (ocean cavity)
-            DO_2D_OVR( nn_hls-1, nn_hls-1, nn_hls-1, nn_hls-1 )
-               itop   = mikt(ji,jj)       ! k   top w-point
-               itopp1 = mikt(ji,jj) + 1   ! k+1 1st w-point below the top one
-               !                                                ! mask at the ocean surface points
-               z_en = MAX( rc02r * ustar2_top(ji,jj), rn_emin ) * ( 1._wp - tmask(ji,jj,1) )
-               !
- !!gm TO BE VERIFIED !!!
-               ! Dirichlet condition applied at:
-               !     top level (itop)         &      Just below it (itopp1)
-               zd_lw(ji,jj,itop) = 0._wp   ;   zd_lw(ji,jj,itopp1) = 0._wp
-               zd_up(ji,jj,itop) = 0._wp   ;   zd_up(ji,jj,itopp1) = 0._wp
-               zdiag(ji,jj,itop) = 1._wp   ;   zdiag(ji,jj,itopp1) = 1._wp
-               en   (ji,jj,itop) = z_en    ;   en   (ji,jj,itopp1) = z_en
-            END_2D
-         ENDIF
-         !
       CASE ( 1 )             ! Neumman boundary condition
          !
          DO_2D_OVR( nn_hls-1, nn_hls-1, nn_hls-1, nn_hls-1 )
@@ -479,23 +462,6 @@ CONTAINS
             zd_up(ji,jj,ibot) = 0._wp   ;   zd_up(ji,jj,ibotm1) = 0._wp
             en   (ji,jj,ibot) = z_en
          END_2D
-         ! NOTE: ctl_stop with ln_isfcav when using GLS
-         IF( ln_isfcav) THEN     ! top boundary   (ocean cavity)
-            DO_2D_OVR( nn_hls-1, nn_hls-1, nn_hls-1, nn_hls-1 )
-               itop   = mikt(ji,jj)       ! k   top w-point
-               itopp1 = mikt(ji,jj) + 1   ! k+1 1st w-point below the top one
-               !                                                ! mask at the ocean surface points
-               z_en = MAX( rc02r * ustar2_top(ji,jj), rn_emin ) * ( 1._wp - tmask(ji,jj,1) )
-               !
-               ! Bottom level Dirichlet condition:
-               !     Bottom level (ibot)      &      Just above it (ibotm1)
-               !         Dirichlet            !         Neumann
-               zd_lw(ji,jj,itop) = 0._wp   !   ! Remove zd_up from zdiag
-               zdiag(ji,jj,itop) = 1._wp   ;   zdiag(ji,jj,itopp1) = zdiag(ji,jj,itopp1) + zd_up(ji,jj,itopp1)
-               zd_up(ji,jj,itop) = 0._wp   ;   zd_up(ji,jj,itopp1) = 0._wp
-               en   (ji,jj,itop) = z_en
-            END_2D
-         ENDIF
          !
       END SELECT
 
@@ -891,8 +857,8 @@ CONTAINS
       p_avt(A2D(nn_hls),1) = 0._wp
       !
       IF(sn_cfctl%l_prtctl) THEN
-         CALL prt_ctl( tab3d_1=en   , clinfo1=' gls  - e: ', tab3d_2=p_avt, clinfo2=' t: ', kdim=jpk)
-         CALL prt_ctl( tab3d_1=p_avm, clinfo1=' gls  - m: ', kdim=jpk )
+         CALL prt_ctl( tab3d_1=CASTDP(en )  , clinfo1=' gls  - e: ', tab3d_2=CASTDP(p_avt), clinfo2=' t: ' )
+         CALL prt_ctl( tab3d_1=CASTDP(p_avm), clinfo1=' gls  - m: ' )
       ENDIF
       !
    END SUBROUTINE zdf_gls
@@ -967,8 +933,13 @@ CONTAINS
             CASE( 2 )   ;   WRITE(numout,*) '   ==>>>   scaling with mean     sea-ice thickness'
             CASE( 3 )   ;   WRITE(numout,*) '   ==>>>   scaling with max      sea-ice thickness'
             CASE DEFAULT
-               CALL ctl_stop( 'zdf_tke_init: wrong value for nn_mxlice, should be 0,1,2,3 ')
+               CALL ctl_stop( 'zdf_gls_init: wrong value for nn_mxlice, should be 0,1,2,3 ')
          END SELECT
+         IF     ( (nn_mxlice>0).AND.(nn_ice==0) ) THEN
+            CALL ctl_stop( 'zdf_gls_init: with no ice at all, nn_mxlice must be 0 ') 
+         ELSEIF ( (nn_mxlice>1).AND.(nn_ice==1) ) THEN
+            CALL ctl_stop( 'zdf_gls_init: with no ice model, nn_mxlice must be 0 or 1')
+         ENDIF
          WRITE(numout,*)
       ENDIF
 

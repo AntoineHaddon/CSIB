@@ -77,9 +77,7 @@ CONTAINS
       !!               fmask   : land/ocean mask at f-point (=0., or =1., or 
       !!                         =rn_shlat along lateral boundaries)
       !!               ssmask , ssumask, ssvmask, ssfmask : 2D ocean mask, i.e. at least 1 wet cell in the vertical
-      !!               tmask_h : halo mask at t-point, i.e. excluding all duplicated rows/lines
-      !!                         due to cyclic or North Fold boundaries as well as MPP halos.
-      !!               tmask_i : ssmask * tmask_h
+      !!               tmask_i : ssmask * ( excludes halo+duplicated points (NP folding) )
       !!----------------------------------------------------------------------
       INTEGER, DIMENSION(:,:), INTENT(in) ::   k_top, k_bot   ! first and last ocean level
       !
@@ -160,9 +158,15 @@ CONTAINS
       ! In case of a coarsened grid, account her for possibly aditionnal  
       ! masked points; these have been read in the mesh file and stored in mbku, mbkv, mbkf
       DO_2D( 0, 0, 0, 0 )
-         IF (mbku(ji,jj)<=1 ) umask(ji,jj,:) = 0._wp
-         IF (mbkv(ji,jj)<=1 ) vmask(ji,jj,:) = 0._wp
-         IF (mbkf(ji,jj)<=1 ) fmask(ji,jj,:) = 0._wp
+         ! Ugly patch to accomodate batropic case (jpk=2)
+         ! but with possible masked faces in the coarsening case
+         ! A better way would be to keep track of mbku/v/f=0 until here
+         ! but these have been assigned a minimum of 1. TBC
+         IF (jpk>2) THEN   
+            IF (mbku(ji,jj)==1) umask(ji,jj,:) = 0._wp
+            IF (mbkv(ji,jj)==1) vmask(ji,jj,:) = 0._wp
+            IF (mbkf(ji,jj)==1) fmask(ji,jj,:) = 0._wp
+         ENDIF
          IF ( MAXVAL(umask(ji,jj,:))/=0._wp )  umask(ji,jj,mbku(ji,jj)+1:jpk) = 0._wp
          IF ( MAXVAL(vmask(ji,jj,:))/=0._wp )  vmask(ji,jj,mbkv(ji,jj)+1:jpk) = 0._wp
          IF ( MAXVAL(fmask(ji,jj,:))/=0._wp )  fmask(ji,jj,mbkf(ji,jj)+1:jpk) = 0._wp
@@ -195,13 +199,11 @@ CONTAINS
       ENDIF
       fe3mask(:,:,:) = fmask(:,:,:)
 
-      ! Interior domain mask  (used for global sum)
+      ! Interior domain mask  (used for global sum) : 2D ocean mask x (halo+duplicated points) mask 
       ! --------------------
       !
-      CALL dom_uniq( tmask_h, 'T' )
-      !
-      !                          ! interior mask : 2D ocean mask x halo mask 
-      tmask_i(:,:) = ssmask(:,:) * tmask_h(:,:)
+      CALL dom_uniq( tmask_i, 'T' )
+      tmask_i(:,:) = ssmask(:,:) * tmask_i(:,:)
 
       ! Lateral boundary conditions on velocity (modify fmask)
       ! ---------------------------------------  
@@ -223,6 +225,20 @@ CONTAINS
       ! -------------------------------- 
       !
       CALL usr_def_fmask( cn_cfg, nn_cfg, fmask )
+      !
+#if defined key_agrif
+      ! Reset masks defining updated points over parent grids
+      !  = 1 : updated point from child(s)
+      !  = 0 : point not updated
+      ! 
+      tmask_upd(:,:) = 0._wp
+      umask_upd(:,:) = 0._wp
+      vmask_upd(:,:) = 0._wp
+      !
+      ! Reset mask defining actual computationnal domain
+      ! e.g. excluding ghosts and updated cells.
+      tmask_agrif(:,:) = 1._wp
+#endif     
       !
    END SUBROUTINE dom_msk
    
