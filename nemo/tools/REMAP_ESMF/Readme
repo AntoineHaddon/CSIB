@@ -1,0 +1,13 @@
+REMAP_ESMF is a tools that essentially allow the user to use the ESMF remapping fortran librairy 
+    to remap netcdf field from a chosen source to a destination grid. See the namelist_remap file 
+    for more information on the option available. 
+
+    Nicolas Lambert, Jan 2023
+
+
+To install: 
+    $ make all
+
+To execute 
+    $ source fenv # only once
+    $ ./remap.exe
