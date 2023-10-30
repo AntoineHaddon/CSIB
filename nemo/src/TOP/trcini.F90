@@ -153,6 +153,7 @@ CONTAINS
       !
       INTEGER, INTENT(in) ::   Kmm ! time level indices
       !!----------------------------------------------------------------------
+      INTEGER             ::  jp, jn  ! dummy loop indices
       !
       ! Pass sn_tracer fields to specialized arrays 
       DO jn = 1, jp_bgc
