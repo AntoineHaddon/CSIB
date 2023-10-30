@@ -25,6 +25,7 @@ MODULE sshwzv
    USE domvvl         ! Variable volume
    USE divhor         ! horizontal divergence
    USE phycst         ! physical constants
+   USE sbcspp  , ONLY : ln_vertspp
    USE bdy_oce , ONLY : ln_bdy, bdytmask   ! Open BounDarY
    USE bdydyn2d       ! bdy_ssh routine
    USE wet_dry        ! Wetting/Drying flux limiting
@@ -307,6 +308,7 @@ CONTAINS
                &                                              - rnf_b(:,:) +        rnf(:,:)   &
                &                                       - fwfisf_cav_b(:,:) + fwfisf_cav(:,:)   &
                &                                       - fwfisf_par_b(:,:) + fwfisf_par(:,:)   ) * ssmask(:,:)
+           IF (ln_vertspp) pssh(:,:,Kmm) = pssh(:,:,Kmm) - zcoef * (fmmflx_b(:,:) - fmmflx(:,:))
 
             ! ice sheet coupling
             IF( ln_isf .AND. ln_isfcpl .AND. kt == nit000+1 )   &

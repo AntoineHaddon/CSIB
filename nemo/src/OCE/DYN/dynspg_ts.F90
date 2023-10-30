@@ -33,6 +33,7 @@ MODULE dynspg_ts
    USE isf_oce         ! ice shelf variable (fwfisf)
    USE zdf_oce         ! vertical physics: variables
    USE zdfdrg          ! vertical physics: top/bottom drag coef.
+   USE sbcspp  , ONLY : ln_vertspp
    USE sbcapr          ! surface boundary condition: atmospheric pressure
    USE dynadv    , ONLY: ln_dynadv_vec
    USE dynvor          ! vortivity scheme indicators
@@ -324,12 +325,14 @@ CONTAINS
       !                                   ! ---------------------------------------------------  !
       IF (ln_bt_fw) THEN                          ! FORWARD integration: use kt+1/2 fluxes (NOW+1/2)
          ssh_frc(:,:) = r1_rho0 * ( emp(:,:) - rnf(:,:) - fwfisf_cav(:,:) - fwfisf_par(:,:) )
+         IF (ln_vertspp) ssh_frc(:,:) = ssh_frc(:,:) + r1_rho0*fmmflx(:,:)
       ELSE                                        ! CENTRED integration: use kt-1/2 + kt+1/2 fluxes (NOW)
          zztmp = r1_rho0 * r1_2
          ssh_frc(:,:) = zztmp * (   emp(:,:)        + emp_b(:,:)          &
             &                     - rnf(:,:)        - rnf_b(:,:)          &
             &                     - fwfisf_cav(:,:) - fwfisf_cav_b(:,:)   &
             &                     - fwfisf_par(:,:) - fwfisf_par_b(:,:)   )
+        IF (ln_vertspp) ssh_frc(:,:) = ssh_frc(:,:) + zztmp * (fmmflx(:,:) + fmmflx_b(:,:))
       ENDIF
       !                                   !=  Add Stokes drift divergence  =!   (if exist)
       IF( ln_sdw ) THEN                   !  -----------------------------  !

@@ -174,7 +174,13 @@ CONTAINS
 
          ! total mass flux at the ocean/ice interface
          fmmflx(ji,jj) =                - wfx_ice(ji,jj) - wfx_snw(ji,jj) - wfx_pnd(ji,jj) - wfx_err_sub(ji,jj)   ! ice-ocean mass flux saved at least for biogeochemical model
-         emp   (ji,jj) = emp_oce(ji,jj) - wfx_ice(ji,jj) - wfx_snw(ji,jj) - wfx_pnd(ji,jj) - wfx_err_sub(ji,jj)   ! atm-ocean + ice-ocean mass flux
+         ! Mass flux will be dealt with separately if the vertical salt plume parameterization is used
+         ! See sbc_spp_div in sbcspp
+         IF (.not. ln_vertspp) THEN
+            ! Mass flux + F/M mass flux (always ice/ocean mass exchange)
+            emp(ji,jj)    = emp_oce(ji,jj) - wfx_ice(ji,jj) - wfx_snw(ji,jj) - wfx_err_sub(ji,jj)   ! mass flux + F/M m    ass flux (always ice/ocean mass exchange)
+         ENDIF
+
 
          ! Salt flux at the ocean surface
          !------------------------------------------

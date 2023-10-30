@@ -29,6 +29,7 @@ MODULE traatf
    USE sbc_oce         ! surface boundary condition: ocean
    USE sbcrnf          ! river runoffs
    USE isf_oce         ! ice shelf melting
+   USE sbcspp  , ONLY : ln_vertspp
    USE zdf_oce         ! ocean vertical mixing
    USE domvvl          ! variable volume
    USE trd_oce         ! trends: ocean variables
@@ -290,6 +291,7 @@ CONTAINS
             ! Add asselin correction on scale factors:
             zscale = tmask(ji,jj,jk) * e3t(ji,jj,jk,Kmm) / ( ht(ji,jj) + 1._wp - ssmask(ji,jj) )
             ze3t_f = ze3t_f - zfact2 * zscale * ( emp_b(ji,jj) - emp(ji,jj) )
+            IF (ln_vertspp)  ze3t_f = ze3t_f - zscale* ( fmmflx_b(ji,jj) - fmmflx(ji,jj) )
             IF ( ll_rnf ) ze3t_f = ze3t_f + zfact2 * zscale * (    rnf_b(ji,jj) -    rnf(ji,jj) )
             IF ( ll_isf ) THEN
                IF ( ln_isfcav_mlt ) ze3t_f = ze3t_f + zfact2 * zscale * ( fwfisf_cav_b(ji,jj) - fwfisf_cav(ji,jj) )
