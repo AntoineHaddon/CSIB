@@ -41,6 +41,10 @@ MODULE zdf_oce
    LOGICAL , PUBLIC ::   ln_zdfiwm   !: internal wave-induced mixing flag
    LOGICAL , PUBLIC ::   ln_zdfmfc   !: convection: eddy diffusivity Mass Flux Convection
    !                             ! coefficients
+   LOGICAL , PUBLIC ::   ln_zdftmx   !: old tidal mixing scheme (Simmons et al 2004)
+   REAL(wp), PUBLIC ::   rn_htmx     !: vertical decay scale for turbulence (meters)
+   REAL(wp), PUBLIC ::   rn_n2min    !: threshold of the Brunt-Vaisala frequency (s-1)
+
    REAL(wp), PUBLIC ::   rn_avm0     !: vertical eddy viscosity (m2/s)
    REAL(wp), PUBLIC ::   rn_avt0     !: vertical eddy diffusivity (m2/s)
    INTEGER , PUBLIC ::   nn_avb      !: constant or profile background on avt (=0/1)

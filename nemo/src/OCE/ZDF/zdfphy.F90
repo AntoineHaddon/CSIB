@@ -24,6 +24,7 @@ MODULE zdfphy
    USE zdfevd         ! vertical physics: convection via enhanced vertical diffusion
    USE zdfmfc         ! vertical physics: Mass Flux Convection
    USE zdfiwm         ! vertical physics: internal wave-induced mixing
+   USE zdftmx         ! vertical physics: old tidal mixing scheme (Simmons et al 2004)
    USE zdfswm         ! vertical physics: surface  wave-induced mixing
    USE zdfmxl         ! vertical physics: mixed layer
    USE tranpc         ! convection: non penetrative adjustment
@@ -89,6 +90,7 @@ CONTAINS
          &             ln_zdfnpc, nn_npc , nn_npcp,                  &     ! convection : npc
          &             ln_zdfddm, rn_avts, rn_hsbfr,                 &     ! double diffusion
          &             ln_zdfswm,                                    &     ! surface  wave-induced mixing
+         &             ln_zdftmx,                                    &     ! old tidal mixing scheme (Simmons et al 2004)
          &             ln_zdfiwm,                                    &     ! internal  -      -      -
          &             ln_zad_Aimp,                                  &     ! apdative-implicit vertical advection
          &             rn_avm0, rn_avt0, nn_avb, nn_havtb                  ! coefficients
