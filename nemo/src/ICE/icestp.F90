@@ -409,72 +409,6 @@ CONTAINS
       INTEGER  ::   ji, jj,jl      ! dummy loop index
       !!----------------------------------------------------------------------
 
-      DO jj = 1, jpj 
-         DO ji = 1, jpi
-            sfx    (ji,jj) = 0._wp   ;
-            sfx_bri(ji,jj) = 0._wp   ;   sfx_lam(ji,jj) = 0._wp
-            sfx_sni(ji,jj) = 0._wp   ;   sfx_opw(ji,jj) = 0._wp
-            sfx_bog(ji,jj) = 0._wp   ;   sfx_dyn(ji,jj) = 0._wp
-            sfx_bom(ji,jj) = 0._wp   ;   sfx_sum(ji,jj) = 0._wp
-            sfx_res(ji,jj) = 0._wp   ;   sfx_sub(ji,jj) = 0._wp
-            !
-            wfx_snw(ji,jj) = 0._wp   ;   wfx_ice(ji,jj) = 0._wp
-            wfx_sni(ji,jj) = 0._wp   ;   wfx_opw(ji,jj) = 0._wp
-            wfx_bog(ji,jj) = 0._wp   ;   wfx_dyn(ji,jj) = 0._wp
-            wfx_bom(ji,jj) = 0._wp   ;   wfx_sum(ji,jj) = 0._wp
-            wfx_res(ji,jj) = 0._wp   ;   wfx_sub(ji,jj) = 0._wp
-            wfx_spr(ji,jj) = 0._wp   ;   wfx_lam(ji,jj) = 0._wp  
-            wfx_snw_dyn(ji,jj) = 0._wp ; wfx_snw_sum(ji,jj) = 0._wp
-            wfx_snw_sub(ji,jj) = 0._wp ; wfx_ice_sub(ji,jj) = 0._wp
-            wfx_snw_sni(ji,jj) = 0._wp 
-            wfx_pnd(ji,jj) = 0._wp
-
-            hfx_thd(ji,jj) = 0._wp   ;
-            hfx_snw(ji,jj) = 0._wp   ;   hfx_opw(ji,jj) = 0._wp
-            hfx_bog(ji,jj) = 0._wp   ;   hfx_dyn(ji,jj) = 0._wp
-            hfx_bom(ji,jj) = 0._wp   ;   hfx_sum(ji,jj) = 0._wp
-            hfx_res(ji,jj) = 0._wp   ;   hfx_sub(ji,jj) = 0._wp
-            hfx_spr(ji,jj) = 0._wp   ;   hfx_dif(ji,jj) = 0._wp
-            hfx_err_dif(ji,jj) = 0._wp
-            wfx_err_sub(ji,jj) = 0._wp
-            !
-            diag_heat(ji,jj) = 0._wp ;   diag_sice(ji,jj) = 0._wp
-            diag_vice(ji,jj) = 0._wp ;   diag_vsnw(ji,jj) = 0._wp
-            diag_aice(ji,jj) = 0._wp ;   diag_vpnd(ji,jj) = 0._wp
-
-            tau_icebfr (ji,jj) = 0._wp   ! landfast ice param only (clem: important to keep the init here)
-            qsb_ice_bot(ji,jj) = 0._wp   ! (needed if ln_icethd=F)
-
-            fhld(ji,jj) = 0._wp   ! needed if ln_icethd=F
-
-            ! for control checks (ln_icediachk)
-            diag_trp_vi(ji,jj) = 0._wp   ;   diag_trp_vs(ji,jj) = 0._wp
-            diag_trp_ei(ji,jj) = 0._wp   ;   diag_trp_es(ji,jj) = 0._wp
-            diag_trp_sv(ji,jj) = 0._wp
-            !
-            diag_adv_mass(ji,jj) = 0._wp
-            diag_adv_salt(ji,jj) = 0._wp
-            diag_adv_heat(ji,jj) = 0._wp
-         END DO
-      END DO
-
-      DO jl = 1, jpl
-         DO jj = 1, jpj 
-            DO ji = 1, jpi
-               ! SIMIP diagnostics
-               t_si       (ji,jj,jl) = rt0     ! temp at the ice-snow interface
-               qcn_ice_bot(ji,jj,jl) = 0._wp
-               qcn_ice_top(ji,jj,jl) = 0._wp   ! conductive fluxes
-               cnd_ice    (ji,jj,jl) = 0._wp   ! effective conductivity at the top of ice/snow (ln_cndflx=T)
-               qcn_ice    (ji,jj,jl) = 0._wp   ! conductive flux (ln_cndflx=T & ln_cndemule=T)
-               qtr_ice_bot(ji,jj,jl) = 0._wp   ! part of solar radiation transmitted through the ice needed at least for outputs
-               qml_ice    (ji,jj,jl) = 0._wp   ! surface melt heat flux
-            END DO
-         END DO
-      END DO
-      
->>>>>>> 12f4dc6f1... Commit for NEMO 4.0.4
-=======
 
       DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )   ! needed for (at least) diag_adv_mass -> to be removed 
          sfx    (ji,jj) = 0._wp   ;
@@ -539,7 +473,6 @@ CONTAINS
          END_2D
       ENDDO
 
->>>>>>> 89746a6d1... Initial commit
    END SUBROUTINE diag_set0
 
 

@@ -179,7 +179,6 @@ CONTAINS
           ELSE
              CALL iom_close( numrtw )     ! close the restart file (only at last time step)
           ENDIF
->>>>>>> 89746a6d1... Initial commit
 #if ! defined key_trdmxl_trc
           lrst_trc = .FALSE.
 #endif
