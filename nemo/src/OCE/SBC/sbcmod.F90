@@ -43,7 +43,6 @@ MODULE sbcmod
 #endif
    USE sbcice_cice    ! surface boundary condition: CICE sea-ice model
    USE sbccpl         ! surface boundary condition: coupled formulation
-   USE cpl_oasis3     ! OASIS routines for coupling
    USE sbcclo         ! surface boundary condition: closed sea correction
    USE sbcssr         ! surface boundary condition: sea surface restoring
    USE sbcrnf         ! surface boundary condition: runoffs
@@ -153,6 +152,7 @@ CONTAINS
 !!gm  lk_oasis is controlled by key_oasis3  ===>>>  It shoud be removed from the namelist
          WRITE(numout,*) '         OASIS coupling (with atm or sas)           lk_oasis      = ', lk_oasis
          WRITE(numout,*) '         components of your executable              nn_components = ', nn_components
+         WRITE(numout,*) '         CanCPL coupling (with CanAM)               lk_cancpl     = ', lk_cancpl
          WRITE(numout,*) '      Sea-ice : '
          WRITE(numout,*) '         ice management in the sbc (=0/1/2/3)       nn_ice        = ', nn_ice
          WRITE(numout,*) '         ice embedded into ocean                    ln_ice_embd   = ', ln_ice_embd
@@ -201,12 +201,16 @@ CONTAINS
       END SELECT
       !                             !* coupled options
       IF( ln_cpl ) THEN
-         IF( .NOT. lk_oasis )   CALL ctl_stop( 'sbc_init : coupled mode with an atmosphere model (ln_cpl=T)',   &
-            &                                  '           required to defined key_oasis3' )
+         IF( .NOT. (lk_oasis .or. lk_cancpl) .or. (lk_oasis .and. lk_cancpl) )   &
+            &                   CALL ctl_stop( 'sbc_init : coupled mode with an atmosphere model (ln_cpl=T)',   &
+            &                                  '           required to defined lk_oasis = .true. or lk_cancpl = .true.' )
+
       ENDIF
       IF( ln_mixcpl ) THEN
-         IF( .NOT. lk_oasis )   CALL ctl_stop( 'sbc_init : mixed forced-coupled mode (ln_mixcpl=T) ',   &
-            &                                  '           required to defined key_oasis3' )
+         IF( .NOT. (lk_oasis .or. lk_cancpl) .or. (lk_oasis .and. lk_cancpl) )   & 
+                                CALL ctl_stop( 'sbc_init : mixed forced-coupled mode (ln_mixcpl=T) ',   &
+            &                                  '           required to defined lk_oasis = .true. or lk_cancpl = .true. ' )
+
          IF( .NOT.ln_cpl    )   CALL ctl_stop( 'sbc_init : mixed forced-coupled mode (ln_mixcpl=T) requires ln_cpl = T' )
          IF( nn_components /= jp_iam_nemo )    &
             &                   CALL ctl_stop( 'sbc_init : the mixed forced-coupled mode (ln_mixcpl=T) ',   &
@@ -294,7 +298,7 @@ CONTAINS
       !
       !                             !* OASIS initialization
       !
-      IF( lk_oasis )   CALL sbc_cpl_init( nn_ice )   ! Must be done before: (1) first time step
+      IF( ln_cpl )   CALL sbc_cpl_init( nn_ice )   ! Must be done before: (1) first time step
       !                                              !                      (2) the use of nn_fsbc
       !     nn_fsbc initialization if OCE-SAS coupling via OASIS
       !     SAS time-step has to be declared in OASIS (mandatory) -> nn_fsbc has to be modified accordingly
@@ -448,7 +452,7 @@ CONTAINS
       IF( ln_blk .OR. ln_abl ) THEN
          IF( ll_sas  )         CALL sbc_cpl_rcv ( kt, nn_fsbc, nn_ice, Kbb, Kmm )   ! OCE-SAS coupling: SAS receiving fields from OCE
          IF( ln_wave ) THEN
-            IF ( lk_oasis )    CALL sbc_cpl_rcv ( kt, nn_fsbc, nn_ice, Kbb, Kmm )   ! OCE-wave coupling
+            IF ( ln_cpl )    CALL sbc_cpl_rcv ( kt, nn_fsbc, nn_ice, Kbb, Kmm )   ! OCE-wave coupling
                                CALL sbc_wave ( kt, Kmm )
          ENDIF
       ENDIF

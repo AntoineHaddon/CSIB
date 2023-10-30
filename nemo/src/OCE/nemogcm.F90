@@ -223,9 +223,9 @@ CONTAINS
       !
 #if defined key_xios
                                     CALL xios_finalize  ! end mpp communications with xios
-      IF( lk_oasis     )            CALL cpl_finalize   ! end coupling and mpp communications with OASIS
+      IF( lk_cancpl.or.lk_oasis     )            CALL cpl_finalize   ! end coupling and mpp communications with OASIS
 #else
-      IF    ( lk_oasis ) THEN   ;   CALL cpl_finalize   ! end coupling and mpp communications with OASIS
+      IF    ( lk_cancpl.or.lk_oasis ) THEN   ;   CALL cpl_finalize   ! end coupling and mpp communications with OASIS
       ELSEIF( lk_mpp   ) THEN   ;   CALL mppstop        ! end mpp communications
       ENDIF
 #endif
@@ -261,7 +261,7 @@ CONTAINS
       !
 #if defined key_xios
       IF( Agrif_Root() ) THEN
-         IF( lk_oasis ) THEN
+         IF( lk_cancpl.or.lk_oasis ) THEN
             CALL cpl_init( "oceanx", ilocal_comm )                               ! nemo local communicator given by oasis
             CALL xios_initialize( "not used"       , local_comm =ilocal_comm )   ! send nemo communicator to xios
          ELSE
@@ -270,7 +270,7 @@ CONTAINS
       ENDIF
       CALL mpp_start( ilocal_comm )
 #else
-      IF( lk_oasis ) THEN
+      IF( lk_cancpl.or.lk_oasis ) THEN
          IF( Agrif_Root() ) THEN
             CALL cpl_init( "oceanx", ilocal_comm )          ! nemo local communicator given by oasis
          ENDIF

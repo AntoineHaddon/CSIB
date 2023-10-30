@@ -31,7 +31,9 @@ MODULE sbccpl
 #if defined key_si3
    USE ice            ! ice variables
 #endif
-   USE cpl_oasis3     ! OASIS3 coupling
+   USE cpl_interface, ONLY : cpl_rcv, cpl_snd, cpl_define, cpl_freq
+   USE cpl_types,     ONLY : srcv, ssnd, COUPLER_Rcv, COUPLER_idle, FLD_C, FLD_CPL
+   USE cpl_cancpl,    ONLY : set_cancpl_params, query_start_cpl2ocn
    USE geo2ocean      !
    USE oce     , ONLY : ts, uu, vv, ssh, fraqsr_1lev
    USE ocealb         !
@@ -182,13 +184,6 @@ MODULE sbccpl
 #endif
 
    !                                  !!** namelist namsbc_cpl **
-   TYPE ::   FLD_C                     !
-      CHARACTER(len = 32) ::   cldes      ! desciption of the coupling strategy
-      CHARACTER(len = 32) ::   clcat      ! multiple ice categories strategy
-      CHARACTER(len = 32) ::   clvref     ! reference of vector ('spherical' or 'cartesian')
-      CHARACTER(len = 32) ::   clvor      ! orientation of vector fields ('eastward-northward' or 'local grid')
-      CHARACTER(len = 32) ::   clvgrd     ! grids on which is located the vector fields
-   END TYPE FLD_C
    !                                   ! Send to the atmosphere
    TYPE(FLD_C) ::   sn_snd_temp  , sn_snd_alb , sn_snd_thick, sn_snd_crt   , sn_snd_co2,  &
       &             sn_snd_thick1, sn_snd_cond, sn_snd_mpnd , sn_snd_sstfrz, sn_snd_ttilyr
@@ -381,10 +376,19 @@ CONTAINS
       !                                   ! allocate sbccpl arrays
       IF( sbc_cpl_alloc() /= 0 )   CALL ctl_stop( 'STOP', 'sbc_cpl_alloc : unable to allocate arrays' )
 
+      ! For now, we need to set the coupling strategy in the FLD_CPL portion of the field for cancpl
+      if (ln_cpl.and.lk_cancpl) then
+         call set_cancpl_params( [ &
+                        sn_snd_temp, sn_snd_alb   , sn_snd_thick, sn_snd_crt   , sn_snd_co2,   &
+                        sn_rcv_w10m, sn_rcv_taumod, sn_rcv_tau  , sn_rcv_dqnsdt, sn_rcv_qsr,   &
+                        sn_rcv_qns , sn_rcv_emp   , sn_rcv_rnf  , sn_rcv_cal   , sn_rcv_iceflx, sn_rcv_co2 ], &
+                        nn_ice, nn_fsbc )
+      endif
+
       ! ================================ !
       !   Define the receive interface   !
       ! ================================ !
-      nrcvinfo(:) = OASIS_idle   ! needed by nrcvinfo(jpr_otx1) if we do not receive ocean stress
+      nrcvinfo(:) = COUPLER_idle   ! needed by nrcvinfo(jpr_otx1) if we do not receive ocean stress
 
       ! for each field: define the OASIS name                              (srcv(:)%clname)
       !                 define receive or not from the namelist parameters (srcv(:)%laction)
@@ -875,11 +879,14 @@ CONTAINS
       ssnd(jps_ht_p)%clname  = 'OPndTck'
       ssnd(jps_hsnw)%clname  = 'OSnwTck'
       ssnd(jps_fice1)%clname = 'OIceFrd'
-      IF( k_ice /= 0 ) THEN
+      IF( k_ice /= 0 .and. .not. lk_cancpl  ) THEN
          ssnd(jps_fice)%laction  = .TRUE.                 ! if ice treated in the ocean (even in climato case)
          ssnd(jps_fice1)%laction = .TRUE.                 ! First-order regridded ice concentration, to be used producing atmos-to-ice fluxes (Met Office requirement)
 ! Currently no namelist entry to determine sending of multi-category ice fraction so use the thickness entry for now
          IF( TRIM( sn_snd_thick%clcat  ) == 'yes' ) ssnd(jps_fice)%nct  = nn_cats_cpl
+         IF( TRIM( sn_snd_thick1%clcat ) == 'yes' ) ssnd(jps_fice1)%nct = nn_cats_cpl
+      ELSEIF (lk_cancpl) then
+         ssnd(jps_fice)%laction  = .TRUE.                 ! if ice treated in the ocean (even in climato case)
          IF( TRIM( sn_snd_thick1%clcat ) == 'yes' ) ssnd(jps_fice1)%nct = nn_cats_cpl
       ENDIF
 
@@ -1208,6 +1215,10 @@ CONTAINS
       !                                                      ! Receive all the atmos. fields (including ice information)
       !                                                      ! ======================================================= !
       isec = ( kt - nit000 ) * NINT( rn_Dt )                      ! date of exchanges
+      IF (lk_cancpl) THEN
+          call query_start_cpl2ocn( isec )
+      ENDIF
+
       DO jn = 1, jprcv                                          ! received fields sent by the atmosphere
          IF( srcv(jn)%laction )   CALL cpl_rcv( jn, isec, frcv(jn)%z3, xcplmask(:,:,1:nn_cplmodel), nrcvinfo(jn) )
       END DO
@@ -1217,7 +1228,7 @@ CONTAINS
          !                                                   ! ========================= !
          ! define frcv(jpr_otx1)%z3(:,:,1) and frcv(jpr_oty1)%z3(:,:,1): stress at U/V point along model grid
          ! => need to be done only when we receive the field
-         IF(  nrcvinfo(jpr_otx1) == OASIS_Rcv ) THEN
+         IF(  nrcvinfo(jpr_otx1) == COUPLER_Rcv ) THEN
             !
             IF( TRIM( sn_rcv_tau%clvref ) == 'cartesian' ) THEN            ! 2 components on the sphere
                !                                                       ! (cartesian to spherical -> 3 to 2 components)
@@ -1284,7 +1295,7 @@ CONTAINS
             llnewtau = .FALSE.
          ENDIF
       ELSE
-         llnewtau = nrcvinfo(jpr_taum) == OASIS_Rcv
+         llnewtau = nrcvinfo(jpr_taum) == COUPLER_Rcv
          ! Stress module can be negative when received (interpolation problem)
          IF( llnewtau ) THEN
             frcv(jpr_taum)%z3(:,:,1) = MAX( 0._wp, frcv(jpr_taum)%z3(:,:,1) )
@@ -1610,7 +1621,7 @@ CONTAINS
       ENDIF
 
       ! do something only if we just received the stress from atmosphere
-      IF(  nrcvinfo(itx) == OASIS_Rcv ) THEN
+      IF(  nrcvinfo(itx) == COUPLER_Rcv ) THEN
          !                                                      ! ======================= !
          IF( srcv(jpr_itx1)%laction ) THEN                      !   ice stress received   !
             !                                                   ! ======================= !
@@ -2305,7 +2316,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       !
       isec = ( kt - nit000 ) * NINT( rn_Dt )        ! date of exchanges
-      info = OASIS_idle
+      info = COUPLER_idle
 
       zfr_l(:,:) = 1.- fr_i(:,:)
       !                                                      ! ------------------------- !
