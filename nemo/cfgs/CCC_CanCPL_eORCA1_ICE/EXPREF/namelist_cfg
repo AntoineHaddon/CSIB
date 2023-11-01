@@ -194,6 +194,8 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
    !                       ! type of penetration                        (default: NO selection)
    ln_qsr_rgb  = .true.       !  RGB light penetration (Red-Green-Blue)
+   ln_qsr_2bd  = .false.      !  2BD light penetration (two bands)
+   ln_qsr_bio  = .false.      !  bio-model light penetration
    !
    nn_chldta   =      1       !  RGB : Chl data (=1) or cst value (=0)
 
