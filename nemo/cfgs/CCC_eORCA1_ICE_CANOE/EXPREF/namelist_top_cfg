@@ -143,7 +143,7 @@
 !-----------------------------------------------------------------------
 &namtrc_rad      !  treatment of negative concentrations 
 !-----------------------------------------------------------------------
-   ln_trcrad     =  .false.   !  artificially correct negative concentrations (T) or not (F)
+   ln_trcrad     =  .true.   !  artificially correct negative concentrations (T) or not (F)
 /
 !-----------------------------------------------------------------------
 &namtrc_snk      !  Sedimentation of particles
