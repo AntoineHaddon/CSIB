@@ -116,7 +116,6 @@
    cn_dir      = './'        ! root directory for the location of the dynamical files
    ln_varpar   =  .true.     ! Read PAR from file
    parlux      =  0.43       ! Fraction of shortwave as PAR
-   light_loc   = 'center'    ! Light location in the water cell ('center', 'integral')
 ! 1-band PAR
    kw_cmoc     =  0.04          ! PAR attenuation coefficient for seawater (m^-1)
    kchl_cmoc   =  0.03          ! PAR attenuation for chlorophyll          (m^-1) (mgChl m^-3)^-1
