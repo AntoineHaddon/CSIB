@@ -311,7 +311,8 @@ CONTAINS
             DO ji = 1, jpi
 
                ! Conserve the PISCES code principle of a minimum phytoplankton biomass
-               zcompaph  = MAX( ( tr(ji,jj,jk,jqphy, Kbb) - xthreshphy ), 0.e0 )
+               zcompaph = MAX( trb(ji,jj,jk,jqphy, Kbb) , 1.e-8 )
+               zcompaph = MIN( zcompaph , 1.e-5 )              ! upper limit of 1e-5 molC/L or ~1.5 mmolN/m^3, 98.3% saturation for kp_cmoc = 0.2 mmolN m^-3
                !
                ! Convert kp_cmoc from uM N (mmol N m^-3) to mol C L^-1 with 1e-6_wp * cnrr_cmoc
                ! lambda formula in Zahariev et al 2008

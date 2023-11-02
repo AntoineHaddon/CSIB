@@ -105,6 +105,7 @@ CONTAINS
       zetot   (:,:,:) = 0._wp
       zprorca (:,:,:) = 0._wp
       zprochln(:,:,:) = 0._wp
+      zpislopead(:,:,:) = 0._wp
       zprbio  (:,:,:) = 0._wp
       zprnch  (:,:,:) = 0._wp
       zlimn   (:,:,:) = 1._wp
@@ -144,7 +145,7 @@ CONTAINS
                 ! ztheta is set to a maximum of thm_cmoc so as to prevent appearance of light-saturation in case zetot is small but
                 ! tr(ji,jj,jk,jqphy,Kmm) is 0
                 ztheta = MIN(thm_cmoc,tr(ji,jj,jk,jqnch,Kbb)/(tr(ji,jj,jk,jqphy,Kbb)*12._wp+rtrn))
-                zpislopen =  achl_cmoc * ztheta / ( zpislopead(ji,jj,jk) * rday  + rtrn )
+                zpislopen =  MAX(achl_cmoc * ztheta / ( zpislopead(ji,jj,jk) * rday  + rtrn) ,0.)
                 ! zpislopead * rday is growth rate in d^-1 at temperature ToC as achl_cmoc is in d^-1
                 !
                 ! limitation functions
@@ -153,6 +154,8 @@ CONTAINS
                 zliml (ji,jj,jk) = 1.- EXP( -zpislopen  * zetot(ji,jj,jk) )
                 ! DIN
                 zlimn (ji,jj,jk) = tr(ji,jj,jk,jqno3,Kbb) / ( kn_cmoc * 1e-6_wp * cnrr_cmoc + tr(ji,jj,jk,jqno3,Kbb)+ rtrn )
+                zlimn(ji,jj,jk) = MAX(zlimn(ji,jj,jk),0.)
+                zlimn(ji,jj,jk) = MIN(zlimn(ji,jj,jk),1.)
                 ! iron is a constant and prescribed mask (xlimnfecmoc) see Zahariev et al 2008
                 ! update growth rate
                 zprbio(ji,jj,jk) = zpislopead(ji,jj,jk) * min ( zliml(ji,jj,jk) , zlimn(ji,jj,jk) , xlimnfecmoc(ji,jj) ) 
