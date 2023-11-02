@@ -198,8 +198,8 @@ CONTAINS
 
        ! Silic acid clim
        ! qasi3 is used in CO2 flux calculation using
-       CALL trc_src3d( 1 , js3d_si)
-       qasi3(:,:,1) = src3d_dta(:,:,1,js3d_si)
+       ! CALL trc_src3d( 1 , js3d_si)
+       ! qasi3(:,:,1) = src3d_dta(:,:,1,js3d_si)
     
    END SUBROUTINE trc_flx_init
  
