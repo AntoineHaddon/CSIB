@@ -59,8 +59,6 @@ MODULE cpl_cancpl
   integer            ::   nerror        ! return error code
 
   integer :: nn_fsbc, nn_ice
-  !--- tmp space for use with MPI gather/scatter operations
-  real(wp), allocatable, save, dimension(:,:,:), private :: png
 
   !--- tmp char space
   character(512), save :: strng
@@ -838,109 +836,6 @@ contains
   END SUBROUTINE reconstruct_global_2d_ptr
 
 
-  subroutine copy_1d_to_3d_global(wrk, png)
-    !------------------------------------------------------------------------
-    !--- Copy values from a global 1D wrk array containing data received from
-    !--- the agcm to global 3D array suitable for use with mppscatter
-    !------------------------------------------------------------------------
-    real(kind=8), intent(in) :: wrk(:)
-    real(wp), intent(out) :: png(jpi,jpj,jpnij)
-
-    !--- Local
-    real(kind=8) :: glob_arr(jpiglo, jpjglo)
-
-    glob_arr = 0.0_8
-    glob_arr(1:jpiglo,1:jpjglo) = reshape( wrk(1:jpiglo*jpjglo), (/ jpiglo,jpjglo /) )
-
-    call copy_2d_to_3d_global(glob_arr, png)
-
-  end subroutine copy_1d_to_3d_global
-
-  subroutine copy_2d_to_3d_global(glob_a2d, png)
-    !------------------------------------------------------------------------
-    !--- Copy values from a global 2D array dimensioned (jpiglo, jpjglo)
-    !--- to a global 3D array suitable for use with mppscatter
-    !------------------------------------------------------------------------
-    real(kind=8) :: glob_a2d(jpiglo, jpjglo)
-    real(wp), intent(out) :: png(jpi,jpj,jpnij)
-
-    !--- Local
-    integer :: ji, jj, jn, ji_glob, jj_glob
-
-    do jn = 1,jpnij
-      !--- jn loops over all subdomains
-      png(:,:,jn) = 0.0_8
-      do ji=nldit(jn),nleit(jn)
-        do jj=nldjt(jn),nlejt(jn)
-          !--- nimppt(jn),njmppt(jn) are the global indicies corresponding to the
-          !--- (1,1) grid cell in the local index space of the current subdomain
-          ji_glob = ji + nimppt(jn) - 1
-          jj_glob = jj + njmppt(jn) - 1
-          if ( ji_glob < 1      .or. jj_glob < 1 .or. &
-               ji_glob > jpiglo .or. jj_glob > jpjglo ) then
-            write(6,*)'copy_2d_to_3d_global: Global index is out of range.'
-            write(6,*)'jn, ji, jj, ji_glob, jj_glob: ',jn, ji, jj, ji_glob, jj_glob
-            call ctl_stop("STOP", "copy_2d_to_3d_global", "Global index is out of range")
-          endif
-          png(ji,jj,jn) = glob_a2d(ji_glob,jj_glob)
-        enddo
-      enddo
-    enddo
-
-  end subroutine copy_2d_to_3d_global
-
-  subroutine copy_3d_to_1d_global(wrk, png)
-    !------------------------------------------------------------------------
-    !--- Copy values from a global 3D array containing data from a recent
-    !--- call to mppgather to a global 1D wrk array to be sent to the agcm
-    !------------------------------------------------------------------------
-    real(kind=8), intent(out) :: wrk(:)
-    real(wp), intent(in) :: png(jpi,jpj,jpnij)
-
-    !--- Local
-    real(kind=8) :: glob_arr(jpiglo, jpjglo)
-
-    call  copy_3d_to_2d_global(glob_arr, png)
-
-    wrk = 0.0_8
-    wrk(1:jpiglo*jpjglo) = reshape( glob_arr(1:jpiglo,1:jpjglo), (/ jpiglo*jpjglo /) )
-
-  end subroutine copy_3d_to_1d_global
-
-  subroutine copy_3d_to_2d_global(glob_a2d, png)
-    !------------------------------------------------------------------------
-    !--- Copy values from a global 3D array containing data from a recent
-    !--- call to mppgather to a global 2D array to be sent to the agcm
-    !------------------------------------------------------------------------
-    real(kind=8), intent(out) :: glob_a2d(jpiglo, jpjglo)
-    real(wp), intent(in) :: png(jpi,jpj,jpnij)
-
-    !--- Local
-    integer :: ji, jj, jn, ji_glob, jj_glob
-
-    glob_a2d = 0.0_8
-    do jn = 1,jpnij
-      !--- jn loops over all subdomains
-      do ji=nldit(jn),nleit(jn)
-        do jj=nldjt(jn),nlejt(jn)
-          !--- nimppt(jn),njmppt(jn) are the global indicies corresponding to the
-          !--- (1,1) grid cell in the local index space of the current subdomain
-          ji_glob = ji + nimppt(jn) - 1
-          jj_glob = jj + njmppt(jn) - 1
-          if ( ji_glob < 1      .or. jj_glob < 1 .or. &
-               ji_glob > jpiglo .or. jj_glob > jpjglo ) then
-            write(6,*)'copy_3d_to_2d_global: Global index is out of range.'
-            write(6,*)'jn, ji, jj, ji_glob, jj_glob: ',jn, ji, jj, ji_glob, jj_glob
-            call ctl_stop("STOP", "copy_3d_to_2d_global", "Global index is out of range")
-          endif
-          glob_a2d(ji_glob,jj_glob) = png(ji,jj,jn)
-        enddo
-      enddo
-    enddo
-
-  end subroutine copy_3d_to_2d_global
-
-
   subroutine cpl_cancpl_snd( kid, kstep, pdata, kinfo )
      !!---------------------------------------------------------------------
      !!              ***  ROUTINE cpl_cancpl_snd  ***
@@ -1263,7 +1158,6 @@ contains
     !!      MPI communication.
     !!----------------------------------------------------------------------
 
-    if ( allocated(png) ) DEALLOCATE( png )
     call mppstop
     !--- TODO --- Also tell coupler that the ocean has stopped
 
