@@ -305,8 +305,8 @@ CONTAINS
 9002  FORMAT (a, i4, a)
 9003  FORMAT (a, i5)
 
-      ALLOCATE( nfimpp(jpni), nfproc(jpni), nfjpi(jpni),   &
-         &      iin(jpnij), ijn(jpnij),   &
+      ALLOCATE( nfimpp(jpni), nfproc(jpni), nfjpi(jpni), nimppt(jpnij), njmppt(jpnij) ,  &
+         &      offsetst(jpnij), jpdtott(jpnij),iin(jpnij), ijn(jpnij), nlcit(jpnij) , nlcjt(jpnij) , &
          &      iimppt(jpni,jpnj), ijmppt(jpni,jpnj), ijpi(jpni,jpnj), ijpj(jpni,jpnj), ipproc(jpni,jpnj),   &
          &      inei(8,jpni,jpnj), llnei(8,jpni,jpnj),   &
          &      impi(8,jpnij),   &
@@ -444,6 +444,23 @@ CONTAINS
       ! update index of the neighbours in the subdomains grid
       WHERE( .NOT. llnei )   inei = -1
       !
+      ! Save global attribute  and 
+      ! calculate additional parameters for the domain decomposition
+      jpdtot = jpi*jpj
+      offsetst(1) = 0
+      DO jp = 1, jpnij
+        ii = iin(jp)
+        ij = ijn(jp)
+        nlcit(jp) = ijpi(ii,ij) !
+        nlcjt(jp) = ijpj(ii,ij) !
+        nimppt(jp) = iimppt(ii,ij)
+        njmppt(jp) = ijmppt(ii,ij)
+        jpdtott(jp) = nlcit(jp)*nlcjt(jp)
+        if (jp .gt. 1) offsetst(jp) = offsetst(jp-1) + jpdtott(jp-1)
+      END DO
+      jpdtot_glo = SUM(jpdtott)
+
+      !                          ! Prepare mpp north fold
       ! Save processor layout in ascii file
       IF (llwrtlay) THEN
          CALL ctl_opn( inum, 'layout.dat', 'REPLACE', 'FORMATTED', 'SEQUENTIAL', -1, numout, .FALSE., narea )

@@ -75,6 +75,7 @@ MODULE lib_mpp
    PUBLIC   mpp_report
    PUBLIC   mpp_bcast_nml
    PUBLIC   tic_tac
+   PUBLIC   reconstruct_global_2d
 #if defined key_mpi_off
    PUBLIC   MPI_wait
    PUBLIC   MPI_waitall
@@ -478,7 +479,6 @@ CONTAINS
       !
    END SUBROUTINE mppgather
 
-
    SUBROUTINE mppscatter( pio, kp, ptab )
       !!----------------------------------------------------------------------
       !!                  ***  routine mppscatter  ***
@@ -487,23 +487,91 @@ CONTAINS
       !!      following the vertical level and the local subdomain array.
       !!
       !!----------------------------------------------------------------------
-      REAL(wp), DIMENSION(jpi,jpj,jpnij)  ::   pio    ! output array
-      INTEGER                             ::   kp     ! Tag (not used with MPI
-      REAL(wp), DIMENSION(jpi,jpj)        ::   ptab   ! subdomain array input
+      REAL(wp), DIMENSION(jpiglo,jpjglo), INTENT(IN   ) :: pio    ! global input array
+      INTEGER,                            INTENT(IN   ) :: kp     ! Root PE
+      REAL(wp), DIMENSION(jpi,jpj),       INTENT(  OUT) :: ptab   ! subdomain array output
+      REAL(wp), DIMENSION(jpdtot) :: ptab_1d
+      REAL(wp), DIMENSION(jpdtot_glo) :: pio1d
       !!
       INTEGER :: itaille, ierror   ! temporary integer
+      INTEGER :: ji_glo, jj_glo, jproc, ji, jj, j1d
       !!---------------------------------------------------------------------
       !
-      itaille = jpi * jpj
-      !
+      ! Construct the array to scatter including duplicated points as needed
+      IF (kp == (narea-1)) THEN ! nproc in NEMO 4.0 == narea-1 in NEMO 4.2
+         DO jproc=1,jpnij
+            j1d = offsetst(jproc)
+            ! Loop over the interior points for this processet
+            DO jj=1,nlcjt(jproc)
+               DO ji=1,nlcit(jproc)
+                  ! Increment by one at beginning of loop since offset is 0-based
+                  j1d = j1d + 1
+                  ! Mapping from local index on processor to global index is based on the NEMO book
+                  ji_glo = ji + nimppt(jproc) - 1
+                  jj_glo = jj + njmppt(jproc) - 1
+                  pio1d(j1d) = pio(ji_glo,jj_glo)
+               ENDDO
+            ENDDO
+         ENDDO
+      ENDIF
 #if ! defined key_mpi_off
-      CALL mpi_scatter( pio, itaille, mpi_double_precision, ptab, itaille     ,   &
-         &                            mpi_double_precision, kp  , mpi_comm_oce, ierror )
+      itaille = jpdtot
+      ptab_1d(:) = 0.
+      CALL mpi_scatterv( pio1d, jpdtott, offsetst, mpi_double_precision,    &
+         &               ptab_1d, itaille, mpi_double_precision, kp, mpi_comm_oce, ierror )
+      ptab(1:nlcit(narea),1:nlcjt(narea)) = reshape(ptab_1d,[nlcit(narea),nlcjt(narea)])
 #else
       ptab(:,:) = pio(:,:,1)
 #endif
       !
    END SUBROUTINE mppscatter
+
+   SUBROUTINE reconstruct_global_2d( ptab, kp, pio )
+      !!----------------------------------------------------------------------
+      !!                  ***  routine mppscatter  ***
+      !!
+      !! ** Purpose :   Reconstruct a global 2d array from each subdomain
+      !!
+      !!----------------------------------------------------------------------
+      REAL(wp), DIMENSION(jpi,jpj)       , INTENT(IN   )  ::   ptab   ! subdomain array input
+      INTEGER                            , INTENT(IN   )  ::   kp     ! Tag (not used with MPI
+      REAL(wp), DIMENSION(jpiglo,jpjglo) , INTENT(  OUT)  ::   pio    ! output array
+
+      REAL(wp), DIMENSION(jpdtot_glo) :: pio1d
+      REAL(wp), DIMENSION(jpdtot)  :: ptab_1d
+      INTEGER :: itaille, ierror   ! temporary integer
+      INTEGER :: ji_glo, jj_glo, jproc, ji, jj, j1d
+      !!---------------------------------------------------------------------
+      !
+      itaille = jpdtot
+      ptab_1d(:) = PACK(ptab(1:nlcit(narea),1:nlcjt(narea)),.TRUE.)
+      ! Aggregate the indoor parts of the domain this has to be an mpi_gatherv in the event that the
+      ! subdomains are not all the same size
+      CALL mpi_gatherv( ptab_1d, itaille, mpi_double_precision, pio1d, jpdtott, &
+         &              offsetst, mpi_double_precision, kp, mpi_comm_oce, ierror )
+
+      pio(:,:) = 0.
+      IF (kp == (narea-1)) THEN ! nproc in NEMO 4.0 == narea-1 in NEMO 4.2
+         ! Loop over every processor and reconstruct the global array
+         DO jproc=1,jpnij
+            ! Find the starting point in 1d array for this processor
+            j1d = offsetst(jproc)
+            ! Loop over the interior points for this processet
+            DO jj=1,nlcjt(jproc)
+               DO ji=1,nlcit(jproc)
+                  ! Increment by one at beginning of loop since offset is 0-based
+                  j1d = j1d + 1
+                  ! Mapping from local index on processor to global index is based on the NEMO book
+                  ji_glo = ji + nimppt(jproc) - 1
+                  jj_glo = jj + njmppt(jproc) - 1
+                  pio(ji_glo,jj_glo) = pio1d(j1d)
+               ENDDO
+            ENDDO
+         ENDDO
+      ENDIF
+
+   END SUBROUTINE reconstruct_global_2d
+
 
 
    SUBROUTINE mpp_delay_sum( cdname, cdelay, y_in, pout, ldlast, kcom )

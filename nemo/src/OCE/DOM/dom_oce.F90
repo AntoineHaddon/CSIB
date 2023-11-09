@@ -94,6 +94,17 @@ MODULE dom_oce
    INTEGER, PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   mj0, mj1   !: global, including halos (jpjglo) ==> local domain j-index
    !                                                                !:    (mj0=1 and mj1=0 if global index not in local domain)
    INTEGER, PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   nfimpp, nfproc, nfjpi
+   INTEGER, PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   nimppt, njmppt   !: i-, j-indexes for each processor
+   INTEGER, PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   nlcit , nlcjt    !: dimensions of every subdomain
+   INTEGER, PUBLIC, SAVE                              :: jpdtot_glo  !: Total number  of computed points (sum of all subdomain points)
+   INTEGER, PUBLIC, SAVE                              :: jpdtot      !! Number of indoor points
+   INTEGER, PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:)   :: jpdtott !: Total number  of computed points (sum of all subdomain points) on every task
+   INTEGER, PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:)   :: offsetst!: The offsets to use for each task when doing an mpi_gather
+                                                                 !! based on the number of points in the 'indoor' domain. Note
+                                                                 !! the offsets are 0-based, e.g. the first processor should have
+                                                                 !! an offset of 0
+
+
 
    !!----------------------------------------------------------------------
    !! horizontal curvilinear coordinate and scale factors

@@ -31,8 +31,8 @@ MODULE cpl_cancpl
   use lbclnk                       ! ocean lateral boundary conditions (or mpp link)
   use timing
   use par_kind, only : wp
-  use lib_mpp, only : mpi_comm_oce, ctl_stop, mppgather, mppsync, mppscatter, mppstop, mpp_max
-  use lib_mpp, only : reconstruct_global_2d, mppgather_scalar_integer
+  use lib_mpp, only : mpi_comm_oce, ctl_stop, mppgather, mppsync, mppscatter, mppstop
+  use lib_mpp, only : reconstruct_global_2d
   use cpl_types, only : srcv, ssnd, FLD_C, FLD_CPL, nmaxfld
 
   implicit none
@@ -859,7 +859,7 @@ contains
      integer,  intent(out) :: kinfo
 
      !-- Local
-     integer :: jc
+     integer :: jc,ij,jj
      integer :: ldbg=1
      integer :: freq
      integer(kind=impi) :: rank, ierr
@@ -923,7 +923,7 @@ contains
        endif
 
        IF( ln_timing )   call timing_start('cancpl_snd_gather')
-       !--- Gather data into the global array png
+       !--- Gather data into the global array global_array
        call reconstruct_global_2d(pdata(:,:,jc),0,global_array)
        IF( ln_timing )   call timing_stop('cancpl_snd_gather')
 
@@ -939,9 +939,8 @@ contains
          call flush(numout)
        endif
 
-       !--- Map the the global 3D array png onto the 1D wrk array
+       !--- Map the the global 3D array global_array onto the 1D wrk array
        wrk(1:jpiglo*jpjglo) = reshape(global_array,[jpiglo*jpjglo])
-      !  call copy_3d_to_1d_global(wrk, png)
 
        if ( verbose > 2 ) then
          !--- Count the number of NaNs in the wrk array
@@ -1010,7 +1009,7 @@ contains
      integer :: verbose=1
      integer (kind=impi) :: status(MPI_status_size)
      type(FLD_CPL), pointer :: cpl_ptr
-     real, dimension(jpiglo,jpjglo) :: wrk2d
+     real, dimension(jpiglo,jpjglo) :: global_array
      !!--------------------------------------------------------------------
 
      !---Determine the rank of the calling process in model_communicator
