@@ -48,7 +48,6 @@ MODULE cpl_cancpl
   public :: check_value2d, check_value3d
   public :: query_start_cpl2ocn
 
-  logical, public, parameter ::   lk_cpl = .true.   !: coupled flag
   integer, public, save      ::   oasis_idle = 0    !: return code if no send or recv
   integer, public, save      ::   oasis_rcv  = 1    !: return code if field received
   integer, public, save      ::   oasis_snd  = 2    !: return code if field sent
@@ -1324,7 +1323,6 @@ contains
   public :: cpl_cancpl_finalize
   public :: set_cancpl_params
   public :: query_start_cpl2ocn
-  logical, public, parameter ::   lk_cpl = .false.   !: coupled flag
 
 contains
 

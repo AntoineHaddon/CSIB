@@ -38,16 +38,18 @@ MODULE sbc_oce
    LOGICAL , PUBLIC ::   ln_abl         !: Atmospheric boundary layer model
    LOGICAL , PUBLIC ::   ln_wave        !: wave in the system (forced or coupled)
 #if defined key_oasis3
-   LOGICAL , PUBLIC ::   lk_oasis = .TRUE.  !: OASIS used
+   LOGICAL , PUBLIC ::   ln_cpl = .TRUE. !: ocean-atmosphere coupled formulation
+   LOGICAL , PUBLIC ::   lk_oasis  = .TRUE.      !: OASIS flags
+   LOGICAL , PUBLIC ::   lk_cancpl  = .FALSE.     !: CanCPL flags
+#elif defined key_cancpl 
+   LOGICAL , PUBLIC ::   ln_cpl = .TRUE. !: ocean-atmosphere coupled formulation
+   LOGICAL , PUBLIC ::   lk_oasis  = .FALSE.      !: OASIS flags
+   LOGICAL , PUBLIC ::   lk_cancpl  = .TRUE.     !: CanCPL flags
 #else
-   LOGICAL , PUBLIC ::   lk_oasis = .FALSE. !: OASIS unused
+   LOGICAL , PUBLIC ::   ln_cpl = .FALSE. !: ocean-atmosphere coupled formulation
+   LOGICAL , PUBLIC ::   lk_oasis  = .FALSE.      !: OASIS flags
+   LOGICAL , PUBLIC ::   lk_cancpl  = .FALSE.     !: CanCPL flags
 #endif
-#if defined key_cancpl
-   LOGICAL , PUBLIC ::   lk_cancpl = .TRUE. !: true, use the CanCPL coupler interface
-#else
-   LOGICAL , PUBLIC ::   lk_cancpl = .FALSE. !: false, CanCPL unused
-#endif
-   LOGICAL , PUBLIC ::   ln_cpl         !: ocean-atmosphere coupled formulation
    LOGICAL , PUBLIC ::   ln_mixcpl      !: ocean-atmosphere forced-coupled mixed formulation
    LOGICAL , PUBLIC ::   ln_dm2dc       !: Daily mean to Diurnal Cycle short wave (qsr)
    LOGICAL , PUBLIC ::   ln_rnf         !: runoffs / runoff mouths
