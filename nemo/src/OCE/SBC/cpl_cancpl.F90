@@ -533,8 +533,8 @@ contains
      !--- in the call to cpl_initialize_events
 
      !--- Set a value for nemo_rn_rdt, defined in com_cpl
-     !--- rn_rdt is defined in the module dom_oce
-     nemo_rn_rdt = nint(rn_rdt,8)
+     !--- rn_Dt is defined in the module dom_oce
+     nemo_rn_rdt = nint(rn_Dt,8)
 
      !--- Set a value for nemo_nn_ice, defined in com_cpl
      nemo_nn_ice = nn_ice
@@ -909,7 +909,7 @@ contains
 
        kinfo = OASIS_Snd
 
-       if ( ln_ctl .and. verbose > 1 ) then
+       if ( sn_cfctl%l_prtctl .and. verbose > 1 ) then
          !--- Write info for each sub-domain to the ocean output file
          write(numout,*) '****************'
          write(numout,*) 'cpl_cancpl_snd: Outgoing ', ssnd(kid)%clname
@@ -1061,42 +1061,40 @@ contains
          !--- Receive the global array from the coupler
          call recv_data_rec(wrk, ibuf, cpl_master, trim(srcv(kid)%clname), dbg=ldbg)
 
-         !--- Map the 1D wrk array onto the global 3D array png
-        !  call copy_1d_to_3d_global(wrk, png)
        endif
 
-       IF( ln_timing )   call timing_start('cancpl_rcv_scatter')
        !--- Scatter the global array onto each NEMO task
-       wrk2d = RESHAPE(wrk,[jpiglo,jpjglo])
+       IF( ln_timing )   call timing_start('cancpl_rcv_scatter')
+       global_array = RESHAPE(wrk,[jpiglo,jpjglo])
        call mppsync
-       call mppscatter(wrk2d, 0, pdata(:,:,jc))
+       call mppscatter(global_array, 0, pdata(:,:,jc))
        call mppsync
        IF( ln_timing )   call timing_stop('cancpl_rcv_scatter')
 
        if ( rank == ocn_master .and. verbose > 2 ) then
-         !--- Count the number of NaNs in the global png array
-         idx = count( png /= png )
+         !--- Count the number of NaNs in the global_array
+         idx = count( global_array /= global_array )
          write(numout,*)'cpl_cancpl_rcv: ',trim(srcv(kid)%clname),'  Before lbc_lnk'
-         write(numout,*)'cpl_cancpl_rcv: ',trim(srcv(kid)%clname),'  Nans in png = ',idx
+         write(numout,*)'cpl_cancpl_rcv: ',trim(srcv(kid)%clname),'  Nans in global_array = ',idx
          write(numout,*)'cpl_cancpl_rcv: ',trim(srcv(kid)%clname),'  min,max,avg = ', &
-             minval(png),maxval(png),sum(png)/real(size(png),kind=8)
+             minval(global_array),maxval(global_array),sum(global_array)/real(size(global_array),kind=8)
          call flush(numout)
        endif
 
        !--- Fill overlap areas and extra hallows and check periodicity
-       call lbc_lnk( 'cpl_cancpl', pdata(:,:,jc), srcv(kid)%clgrid, srcv(kid)%nsgn )
+       call lbc_lnk( 'cpl_cancpl_rcv', pdata(:,:,jc), srcv(kid)%clgrid, srcv(kid)%nsgn )
 
        if ( rank == ocn_master .and. verbose > 2 ) then
-         !--- Count the number of NaNs in the global png array
-         idx = count( png /= png )
-           ! write(numout,*)'cpl_cancpl_rcv: ',trim(srcv(kid)%clname),'  After lbc_lnk'
-           write(numout,*)'cpl_cancpl_rcv: ',trim(srcv(kid)%clname),'  Nans in png = ',idx
-           ! write(numout,*)'cpl_cancpl_rcv: ',trim(srcv(kid)%clname),'  min,max,avg = ', &
-           !     minval(png),maxval(png),sum(png)/real(size(png),kind=8)
+         !--- Count the number of NaNs in the global global_array array
+         idx = count( global_array /= global_array )
+           write(numout,*)'cpl_cancpl_rcv: ',trim(srcv(kid)%clname),'  After lbc_lnk'
+           write(numout,*)'cpl_cancpl_rcv: ',trim(srcv(kid)%clname),'  Nans in global_array = ',idx
+           write(numout,*)'cpl_cancpl_rcv: ',trim(srcv(kid)%clname),'  min,max,avg = ', &
+               minval(global_array),maxval(global_array),sum(global_array)/real(size(global_array),kind=8)
            call flush(numout)
        endif
 
-       if ( ln_ctl .and. verbose > 1 ) then
+       if ( sn_cfctl%l_prtctl .and. verbose > 1 ) then
          !--- Write info for each sub-domain to the ocean output file
          write(numout,*) '****************'
          write(numout,*) 'cpl_cancpl_rcv: Incoming ', srcv(kid)%clname
