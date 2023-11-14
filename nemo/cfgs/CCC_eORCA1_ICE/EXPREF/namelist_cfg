@@ -48,17 +48,14 @@
    ln_read_cfg = .true.    !  (=T) read the domain configuration file
       cn_domcfg = "domain_cfg"  ! domain configuration filename
       !
-      ln_closea    = .true.    !  T => keep closed seas (defined by closea_mask field) in the
-      !                         !       domain and apply special treatment of freshwater fluxes.
-      !                         !  F => suppress closed seas (defined by closea_mask field)
-      !                         !       from the bathymetry at runtime.
-      !                         !  If closea_mask field doesn't exist in the domain_cfg file
-      !                         !       then this logical does nothing.
+      ln_closea    = .false. 
+      !                      !  (=T => fill namclo) 
+      !                      !  (=F) no control of net precip/evap over closed sea
 /
 !-----------------------------------------------------------------------
 &namclo        !   parameters of the closed sea (cs) behavior                (default: OFF)
 !-----------------------------------------------------------------------
-   ln_maskcs = .true.        ! (=T) cs are masked ; So, in this case ln_mask_csundef and ln_clo_rnf have no effect.
+   ln_maskcs = .false.        ! (=T) cs are masked ; So, in this case ln_mask_csundef and ln_clo_rnf have no effect.
       !                       ! (=F => set ln_mask_csundef and ln_clo_rnf) 
       !                       ! cs masks are read and net evap/precip over closed sea spread out depending on domain_cfg.nc masks.
       !                       ! See ln_mask_csundef and ln_clo_rnf for specific option related to this case
