@@ -349,7 +349,7 @@ CONTAINS
          call set_cancpl_params( [ &
                         sn_snd_temp, sn_snd_alb   , sn_snd_thick, sn_snd_crt   , sn_snd_co2,   &
                         sn_rcv_w10m, sn_rcv_taumod, sn_rcv_tau  , sn_rcv_dqnsdt, sn_rcv_qsr,   &
-                        sn_rcv_qns , sn_rcv_emp   , sn_rcv_rnf  , sn_rcv_cal   , sn_rcv_iceflx, sn_rcv_co2 ], &
+                        sn_rcv_qns , sn_rcv_emp   , sn_rcv_rnf  , sn_rcv_cal   , sn_rcv_iceflx, sn_rcv_co2, sn_rcv_mslp ], &
                         nn_ice, nn_fsbc )
       endif
 
