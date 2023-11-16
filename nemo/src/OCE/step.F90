@@ -109,8 +109,8 @@ CONTAINS
       !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
       IF( ln_tide    )   CALL sbc_tide( kstp )                   ! update tide potential
       IF( ln_apr_dyn )   CALL sbc_apr ( kstp )                   ! atmospheric pressure (NB: call before bdy_dta which needs ssh_ib)
-      IF( ln_bdy     )   CALL bdy_dta ( kstp, kt_offset = +1 )   ! update dynamic & tracer data at open boundaries
                          CALL sbc     ( kstp )                   ! Sea Boundary Condition (including sea-ice)
+      IF( ln_bdy     )   CALL bdy_dta ( kstp, kt_offset = +1 )   ! update dynamic & tracer data at open boundaries
 
       !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
       ! Update stochastic parameters and random T/S fluctuations

@@ -220,7 +220,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       !!             ***  FUNCTION sbc_cpl_alloc  ***
       !!----------------------------------------------------------------------
-      INTEGER :: ierr(4)
+      INTEGER :: ierr(3)
       !!----------------------------------------------------------------------
       ierr(:) = 0
       !
@@ -231,8 +231,6 @@ CONTAINS
 #endif
       ALLOCATE( xcplmask(jpi,jpj,0:nn_cplmodel) , STAT=ierr(3) )
       !
-      IF( .NOT. ln_apr_dyn ) ALLOCATE( ssh_ib(jpi,jpj), ssh_ibb(jpi,jpj), apr(jpi, jpj), STAT=ierr(4) )
-
       sbc_cpl_alloc = MAXVAL( ierr )
       CALL mpp_sum ( 'sbccpl', sbc_cpl_alloc )
       IF( sbc_cpl_alloc > 0 )   CALL ctl_warn('sbc_cpl_alloc: allocation of arrays failed')
@@ -1320,6 +1318,7 @@ CONTAINS
           apr   (:,:) =     frcv(jpr_mslp)%z3(:,:,1)                         !atmospheric pressure
 
           IF( kt == nit000 ) ssh_ibb(:,:) = ssh_ib(:,:)  ! correct this later (read from restart if possible)
+          CALL iom_put( "ssh_ib", ssh_ib )                   !* output the inverse barometer ssh
       END IF
       !
       IF( ln_sdw ) THEN  ! Stokes Drift correction activated
