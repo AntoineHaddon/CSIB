@@ -572,7 +572,14 @@ CONTAINS
       !                                                      ! ------------------------- !
       !                                                      ! Mean Sea Level Pressure   !
       !                                                      ! ------------------------- !
-      srcv(jpr_mslp)%clname = 'O_MSLP'     ;   IF( TRIM(sn_rcv_mslp%cldes  ) == 'coupled' )    srcv(jpr_mslp)%laction = .TRUE.
+      srcv(jpr_mslp)%clname = 'O_MSLP'     ;   
+      IF( TRIM(sn_rcv_mslp%cldes  ) == 'coupled' ) THEN
+          srcv(jpr_mslp)%laction = .TRUE.
+          l_aprcpl              = .TRUE.                      ! -> no need to read runoffs in sbcrnf
+          ln_apr_dyn            = nn_components /= jp_iam_sas ! -> force to go through sbcrnf if not sas
+          IF(lwp) WRITE(numout,*)
+          IF(lwp) WRITE(numout,*) '   Sea level pressure received from the coupler -> force ln_apr_dyn = ', ln_apr_dyn
+      ENDIF
       !
       !                                                      ! ------------------------- !
       !                                                      !  ice topmelt and botmelt  !
