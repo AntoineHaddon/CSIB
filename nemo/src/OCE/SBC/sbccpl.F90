@@ -902,6 +902,9 @@ CONTAINS
       CASE ( 'weighted ice and snow' )
          ssnd(jps_hice:jps_hsnw)%laction = .TRUE.
          IF( TRIM( sn_snd_thick%clcat ) == 'yes' ) ssnd(jps_hice:jps_hsnw)%nct = nn_cats_cpl
+      CASE ( 'weighted iwe and swe' )
+          ssnd(jps_hice:jps_hsnw)%laction = .TRUE.
+          IF ( TRIM( sn_snd_thick%clcat ) == 'yes' ) ssnd(jps_hice:jps_hsnw)%nct = jpl
       CASE default   ;   CALL ctl_stop( 'sbc_cpl_init: wrong definition of sn_snd_thick%cldes' )
       END SELECT
 
@@ -2513,6 +2516,20 @@ CONTAINS
                  ztmp4(:,:,1) = 0.
                END WHERE
             CASE default                  ;   CALL ctl_stop( 'sbc_cpl_snd: wrong definition of sn_snd_thick%clcat' )
+            END SELECT
+         CASE( 'weighted iwe and swe' )
+         !--- Cell average ice water equivalent and snow water equivalent
+            SELECT CASE( sn_snd_thick%clcat )
+               CASE( 'yes' )
+                  ztmp3(:,:,1:jpl) =  rhoi * h_i(:,:,1:jpl) * a_i(:,:,1:jpl)
+                  ztmp4(:,:,1:jpl) =  rhos * h_s(:,:,1:jpl) * a_i(:,:,1:jpl)
+               CASE( 'no' )
+                  ztmp3(:,:,:) = 0.0   ;  ztmp4(:,:,:) = 0.0
+                  DO jl=1,jpl
+                     ztmp3(:,:,1) = ztmp3(:,:,1) + rhoi * h_i(:,:,jl) * a_i(:,:,jl)
+                     ztmp4(:,:,1) = ztmp4(:,:,1) + rhos * h_s(:,:,jl) * a_i(:,:,jl)
+                  ENDDO
+               CASE default                  ;   CALL ctl_stop( 'sbc_cpl_snd: wrong definition of sn_snd_thick%clcat' )
             END SELECT
          CASE default                     ;   CALL ctl_stop( 'sbc_cpl_snd: wrong definition of sn_snd_thick%cldes' )
          END SELECT
