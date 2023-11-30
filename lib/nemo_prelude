@@ -175,8 +175,8 @@ echo "#################### Start NEMO pre-processing #################"
     is_defined $nemo_geothermal_heating || bail "The variable nemo_geothermal_heating must be defined in the configuration file."
     acc_cp geothermal_heating.nc     $nemo_geothermal_heating
   fi 
-
-  if [[ $nemo_nn_chldta == "on" ]]; then
+ 
+  if [  $nemo_traqrs != "bio" ] && [ $nemo_nn_chldta == 1 ]; then
     is_defined $nemo_chlorophyll || bail "The variable nemo_chlorophyll must be defined in the configuration file."
     acc_cp chlorophyll.nc            $nemo_chlorophyll
   fi 
@@ -286,8 +286,10 @@ echo "#################### Start NEMO pre-processing #################"
     # Not all have the output_level, but this is a secure way to have the same
     # output_level everywhere (should be in "context_nemo.mxl")
     sed -i "s/output_level=\"\([0-9]\+\)\"/output_level=\"${output_level}\"/" $file
-    #change using_serv to true if needed
-    [[ "$file" -eq "iodef.xml" ]] && [[  $nemo_use_xios_server -eq 1 ]] && sed -i '/using_server/c           <variable id="using_server"              type="bool">true</variable>' $file
+    if [[ "$file" -eq "iodef.xml" ]];then
+       [[  $nemo_use_xios_server -eq 1 ]] && sed -i '/using_server/c           <variable id="using_server"              type="bool">true</variable>' $file
+       [[  $nemo_use_xios_server -eq 0 ]] && sed -i '/using_server/c           <variable id="using_server"              type="bool">false</variable>' $file
+    fi
   done
 
   # =====================
@@ -505,10 +507,9 @@ echo "#################### Start NEMO pre-processing #################"
 
   # nemo executable
   ! is_file $nemo_exec && cp ${EXEC_STORAGE_DIR}/$nemo_exec .
-  # # xios executable
+  # xios executable
   if [[ $nemo_use_xios_server -eq 1 ]]; then  
     ! is_file $xios_exec && cp ${EXEC_STORAGE_DIR}/$xios_exec .
-  fi
-
+  fi                                 
 
 echo "#################### Stop NEMO pre-processing #################"

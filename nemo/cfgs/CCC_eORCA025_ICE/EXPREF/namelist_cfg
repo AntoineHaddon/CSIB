@@ -144,6 +144,8 @@
 !-----------------------------------------------------------------------
    !                       ! type of penetration                        (default: NO selection)
    ln_qsr_rgb  = .true.       !  RGB light penetration (Red-Green-Blue)
+   ln_qsr_2bd  = .false.      !  2BD light penetration (two bands)
+   ln_qsr_bio  = .false.      !  bio-model light penetration
    !
    nn_chldta   =      1       !  RGB : Chl data (=1) or cst value (=0)
 
@@ -184,6 +186,22 @@
    sn_s_rnf    = 'runoffs'            ,    24.   , 'rosaline',   .true.     , .true. , 'yearly'  , ''       , ''       , ''
    sn_t_rnf    = 'runoffs'            ,    24.   , 'rotemper',   .true.     , .true. , 'yearly'  , ''       , ''       , ''
    sn_dep_rnf  = 'runoffs'            ,     0.   , 'rodepth' ,   .false.    , .true. , 'yearly'  , ''       , ''       , ''
+/
+!-----------------------------------------------------------------------
+&namsbc_wave   ! External fields from wave model                        (ln_wave=T)
+!-----------------------------------------------------------------------
+/
+!-----------------------------------------------------------------------
+&namberg       !   iceberg parameters                                   (default: OFF)
+!-----------------------------------------------------------------------
+   ln_icebergs = .false.   ! activate iceberg floats (force =F with "key_agrif")
+   ln_use_calving= .false. ! Use calving data even when nn_test_icebergs > 0
+
+   cn_dir = './'  !  root directory for the location of drag coefficient files
+   !______!___________!___________________!______________!______________!_________!___________!__________!__________!_______________!
+   !      ! file name ! frequency (hours) !   variable   ! time interp. !  clim   ! 'yearly'/ ! weights  ! rotation ! land/sea mask !
+   !      !           !  (if <0  months)  !     name     !   (logical)  !  (T/F ) ! 'monthly' ! filename ! pairing  ! filename      !
+   sn_icb =  'calving',       -1.         , 'calving'    ,   .true.     , .true.  , 'yearly'  , ''       , ''       , ''
 /
 !!======================================================================
 !!               ***  Lateral boundary condition  ***                 !!
