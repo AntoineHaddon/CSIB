@@ -486,29 +486,6 @@ CONTAINS
          END DO
       END DO
 
-      ! Snow load on ice
-      ! -----------------
-      ! When snow load exceeds Archimede's limit and sst is positive,
-      ! snow-ice formation (next bloc) can lead to negative ice enthalpy.
-      ! Therefore we consider here that this excess of snow falls into the ocean
-      zdeltah(1:npti) = h_s_1d(1:npti) + h_i_1d(1:npti) * (rhoi-rho0) * r1_rhos
-      DO jk = 0, nlay_s
-         DO ji = 1, npti
-            IF( zdeltah(ji) > 0._wp .AND. sst_1d(ji) > 0._wp ) THEN
-               ! snow layer thickness that falls into the ocean
-               zdum = MIN( zdeltah(ji) , zh_s(ji,jk) )
-               ! mass & energy loss to the ocean
-               hfx_res_1d(ji) = hfx_res_1d(ji) - ze_s(ji,jk) * zdum * a_i_1d(ji) * r1_Dt_ice  ! heat flux to the ocean [W.m-2], < 0
-               wfx_res_1d(ji) = wfx_res_1d(ji) + rhos        * zdum * a_i_1d(ji) * r1_Dt_ice  ! mass flux
-               ! update thickness and energy
-               h_s_1d(ji)    = MAX( 0._wp, h_s_1d(ji)  - zdum )
-               zh_s  (ji,jk) = MAX( 0._wp, zh_s(ji,jk) - zdum )
-               ! update snow thickness that still has to fall
-               zdeltah(ji)   = MAX( 0._wp, zdeltah(ji) - zdum )
-            ENDIF
-         END DO
-      END DO
-
       ! Snow-Ice formation
       ! ------------------
       ! When snow load exceeds Archimede's limit, snow-ice interface goes down under sea-level,

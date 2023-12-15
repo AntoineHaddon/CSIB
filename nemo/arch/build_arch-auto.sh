@@ -23,11 +23,12 @@ Environment variables that can be defined
 
   NETCDF_C_prefix : prefix of the NetCDF-C library ($NCDF_F_PREFIX/lib) and include ($NCDF_C_PREFIX/include)
 	     - set it to "no" if you don't want to use NetCDF library
-	     - if not defined : we look for the path of the command "nc-config"
+	     - if not defined : we use "nc-config --prefix"
   	     Can also be specified with the optional argument --NETCDF_C_prefix
 
   NETCDF_F_prefix : prefix of the NetCDF-Fortran library ($NCDF_F_PREFIX/lib) and include ($NCDF_F_PREFIX/include)
-	     - if not defined : we use "nc-config  --flibs" to find it
+	     - if not defined : we use "nf-config --prefix"
+	     - if nf-config not found : we use "nc-config  --flibs" to find it
 	     - not used if NETCDF_C_prefix="no"
   	     Can also be specified with the optional argument --NETCDF_F_prefix
 
@@ -134,8 +135,8 @@ find_fortran_wrapper () {
 }
 # find the fortran compiler associated with the fortran wrapper $FCnemo
 find_fortran_compiler () {
-    if   [ $( $FCnemo --version | head -n 1 | grep -ci            gcc ) -eq 1 ] ; then ftncomp="gnu"
-    elif [ $( $FCnemo --version | head -n 1 | grep -ci          ifort ) -eq 1 ] ; then ftncomp="intel"
+    if   [ $( $FCnemo --version | head -n 1 | grep -ci "\(gcc\|gnu\)" ) -eq 1 ] ; then ftncomp="gnu"
+    elif [ $( $FCnemo --version | head -n 1 | grep -ci        "ifort" ) -eq 1 ] ; then ftncomp="intel"
     elif [ $( $FCnemo --version | head -n 1 | grep -ci "Cray Fortran" ) -eq 1 ] ; then ftncomp="cray"
     else
 	echo_red "ERROR: the fortran wrapper $FCnemo does not correspond to the gnu, the intel or the cray compiler" \
@@ -149,6 +150,7 @@ find_fortran_compiler () {
 #-----------------------------------------------------
 #
 NETCDF_C_prefix=${NETCDF_C_prefix:-notdef}
+NETCDF_F_prefix=${NETCDF_F_prefix:-notdef}
 if [ "$NETCDF_C_prefix" == "no" ]
 then
     echo_orange "WARNING: You chose to compile without any NetCDF Library" \
@@ -168,26 +170,68 @@ then
     OASIS_INC=""
     OASIS_LIB=""
 else
-    if [ "$NETCDF_C_prefix" == "notdef" ]
+    # find NETCDF_C_prefix and NC_CONFIG
+    if [ "$NETCDF_C_prefix" == "notdef" ]              # use nc-config to define NETCDF_C_prefix
     then
-	if [ $( err_which nc-config ) -ne 0 ]   # use nc-config to define NETCDF_C_prefix
+	if [ $( err_which nc-config ) -ne 0 ]          # nc-config not found in $PATH
 	then
 	    echo_red "ERROR: nc-config not found." \
-		     "       please define either your path to the NETCDF_C with 'export NETCDF_C_prefix=...'" \
+		     "       please define either your path to the NetCDF-C library with 'export NETCDF_C_prefix=...'" \
 		     "       or specify you don't want to use NetCDF with 'export NETCDF_C_prefix=no'" \
 	    exit 2
 	fi    
        	NC_CONFIG=nc-config
 	NETCDF_C_prefix=$( $NC_CONFIG --prefix  )
-    else
-	NC_CONFIG=$NETCDF_C_prefix/bin/nc-config   # assume that nc-config is in $NETCDF_C_prefix/bin
-	nbok=$( ls $NC_CONFIG 2>/dev/null | wc -l )   # check if we have nc-config
+    else                                               # use NETCDF_C_prefix to define NC_CONFIG
+	NC_CONFIG=$NETCDF_C_prefix/bin/nc-config       # assume that nc-config is in $NETCDF_C_prefix/bin
+	nbok=$( ls $NC_CONFIG 2>/dev/null | wc -l )    # check if we have nc-config
 	if [ $nbok -eq 0 ]
 	then
 	    echo_red "ERROR: nc-config not found in $NETCDF_C_prefix/bin" ; exit 2
 	fi
     fi
-    
+
+    # find NETCDF_F_prefix and NF_CONFIG
+    if [ "$NETCDF_F_prefix" == "notdef" ]              # use nf-config to define NETCDF_F_prefix
+    then
+	if [ $( err_which nf-config ) -ne 0 ]          # nf-config not found in $PATH
+	then
+	    NF_CONFIG=${NC_CONFIG/nc-config/nf-config} # try to find nf-config at the same place than nc-config
+	    if [ $( err_which $NF_CONFIG ) -ne 0 ]     # nf-config not located at the same place than nc-config
+	    then
+		if [ "$( $NC_CONFIG --all | grep -c "has-fortran" )" -gt 0 ]  # we can use nc-config instead of nf-config?
+		then
+		    # do we have NetCDF-Fortran?
+		    if [ "$( $NC_CONFIG --has-fortran )" != "yes" ]
+		    then
+			echo_red "ERROR: no netcdf-fortran " ; exit 2
+		    fi
+		    NF_CONFIG=$NC_CONFIG   # use nc-config instead of nf-config
+		    #                        define NETCDF_F_prefix with nc-config
+		    NETCDF_F_prefix=$( $NF_CONFIG --flibs | sed -e "s/.*\(-L\|-rpath,\)\([^ ]*\)\/lib  *-lnetcdff.*/\2/" )
+		    [ -z $NETCDF_F_prefix ] && NETCDF_F_prefix=$NETCDF_C_prefix   # empty -> we try NETCDF_C_prefix
+		else
+		    echo_red "ERROR: nf-config not found." \
+			     "       please define either your path to the NetCDF-Fortran library with 'export NETCDF_F_prefix=...'" \
+			     "       or specify you don't want to use NetCDF with 'export NETCDF_C_prefix=no'" \
+			     exit 2
+		fi
+	    else
+		NETCDF_F_prefix=$( $NF_CONFIG --prefix  )   # use nf-config to define NETCDF_F_prefix
+	    fi
+	else
+       	    NF_CONFIG=nf-config
+	    NETCDF_F_prefix=$( $NF_CONFIG --prefix  )   # use nf-config to define NETCDF_F_prefix
+	fi
+    else
+	NF_CONFIG=$NETCDF_F_prefix/bin/nf-config   # assume that nf-config is in $NETCDF_F_prefix/bin
+	nbok=$( ls $NF_CONFIG 2>/dev/null | wc -l )   # check if we have nf-config
+	if [ $nbok -eq 0 ]
+	then
+	    echo_red "ERROR: nf-config not found in $NETCDF_F_prefix/bin" ; exit 2
+	fi
+    fi
+
     # do we have the proper path to the netcdf library?
     nbok=$( ls $NETCDF_C_prefix/lib/libnetcdf* 2>/dev/null | wc -l )
     if [ $nbok -eq 0 ]
@@ -197,28 +241,13 @@ else
 	echo_green "NETCDF_C_prefix=$NETCDF_C_prefix"
     fi
 
-    # do we have NetCDF-Fortran?
-    if [ "$( $NC_CONFIG --has-fortran )" != "yes" ]
-    then
-	echo_red "ERROR: no netcdf-fortran " ; exit 2
-    fi
-    
     # do we have NetCDF-F90 interface?
-    if [ "$( $NC_CONFIG --has-f03 )" != "yes" ]
+    if [ "$( $NF_CONFIG --has-f03 )" != "yes" ]
     then
-	if [ "$( $NC_CONFIG --has-f90 )" != "yes" ]
+	if [ "$( $NF_CONFIG --has-f90 )" != "yes" ]
 	then
 	    echo_red "ERROR: no netcdf-fortran F90 interface" ; exit 2
 	fi
-    fi
-
-    # NetCDF fortran prefix
-    NETCDF_F_prefix=${NETCDF_F_prefix:-notdef}
-    if [ "$NETCDF_F_prefix" == "notdef" ]
-    then
-	# get the path of the netcdff library
-	NETCDF_F_prefix=$( $NC_CONFIG --flibs | sed -e "s/.*\(-L\|-rpath,\)\([^ ]*\)\/lib  *-lnetcdff.*/\2/" )
-        [ -z $NETCDF_F_prefix ] && NETCDF_F_prefix=$NETCDF_C_prefix   # empty -> we try NETCDF_C_prefix
     fi
   
     # do we have the proper path to the netcdff library?
@@ -309,7 +338,7 @@ else
 		CURLpath=""
 	    fi    
 	fi
-	CURLlib="$CURLpath -lcurl"
+	CURLlib="${CURLpath:-""} -lcurl"
     else
 	CURLlib=""
     fi
@@ -322,6 +351,7 @@ else
     
     # NCDF_INC and NCDF_LIB
     NCDF_INC="-I%NCDF_F_PREFIX/include -I%NCDF_C_PREFIX/include"
+    #NCDF_LIB="-L%NCDF_F_PREFIX/lib -lnetcdff -L%NCDF_C_PREFIX/lib -lnetcdf -Wl,-rpath=%NCDF_F_PREFIX/lib -L%HDF5_PREFIX/lib -lhdf5_hl -lhdf5 $CURLlib $Zlib $libM -Wl,-rpath=%HDF5_PREFIX/lib"
     NCDF_LIB="-L%NCDF_F_PREFIX/lib -lnetcdff -L%NCDF_C_PREFIX/lib -lnetcdf -L%HDF5_PREFIX/lib -lhdf5_hl -lhdf5 $CURLlib $Zlib $libM"
 
 fi
@@ -346,7 +376,7 @@ then
 	ismpi=$( basename $FCnemo | cut -c 1-3 | grep -Ec 'mpi|ftn' )
 	if [ $ismpi -eq 0 ]
 	then
-	    echo_orange "WARNING: the fortran compiler provided by nc-config \"$FCnemo\" is not starting with \"mpi\" or \"ftn\"." \
+	    echo_orange "WARNING: the fortran compiler provided by $( basename $NF_CONFIG ), \"$FCnemo\", is not starting with \"mpi\" or \"ftn\"." \
 			"         we look for mpiifort, mpif90 or ftn..."
 	    FCnemo_org=$FCnemo
 	    find_fortran_compiler
@@ -444,6 +474,19 @@ case "$ftncomp" in
 esac
 #
 #-----------------------------------------------------
+# CFLAGS
+#-----------------------------------------------------
+#
+case "${ftncomp}" in
+    gnu)
+        PROD_CFLAGS="-O0 -fcommon"
+        ;;
+    *)
+        PROD_CFLAGS="-O0"
+        ;;
+esac
+#
+#-----------------------------------------------------
 # XIOS and OASIS
 #-----------------------------------------------------
 #
@@ -461,7 +504,8 @@ then
 	XIOS_LIB=""
     else
 	XIOS_INC="-I%XIOS_PREFIX/inc"
-	XIOS_LIB="-L%XIOS_PREFIX/lib -lxios -lstdc++ "    
+	#XIOS_LIB="-L%XIOS_PREFIX/lib -lxios -lstdc++ -Wl,-rpath=%XIOS_PREFIX/lib"
+	XIOS_LIB="-L%XIOS_PREFIX/lib -lxios -lstdc++"
     fi
 
     # OASIS
@@ -562,7 +606,7 @@ cat > $archname << EOF
 #%FCFLAGS            $DEBUG_FCFLAGS
 %FFLAGS              %FCFLAGS
 %LD                  %FC
-%LDFLAGS             
+%LDFLAGS             -Wl,-rpath=%HDF5_PREFIX/lib -Wl,-rpath=%NCDF_F_PREFIX/lib -Wl,-rpath=%XIOS_PREFIX/lib
 %FPPFLAGS            -P -traditional
 %AR                  $ARnemo
 %ARFLAGS             rs
@@ -571,7 +615,7 @@ cat > $archname << EOF
 %USER_LIB            %XIOS_LIB %OASIS_LIB %NCDF_LIB
 
 %CC                  $CCnemo
-%CFLAGS              -O0
+%CFLAGS              $PROD_CFLAGS
 EOF
 #
 # Additional module search command for Cray Fortran to enable successful parallel builds
