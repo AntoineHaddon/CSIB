@@ -1221,10 +1221,10 @@
    ln_mxhsw    = .false.   !  surface mixing length scale = F(wave height)
    ln_lc       = .true.    !  Langmuir cell parameterisation (Axell 2002)
       rn_lc       =   0.15    !  coef. associated to Langmuir cells
-   nn_etau     =   1       !  penetration of tke below the mixed layer (ML) due to NIWs
-   !                          !        = 0 none ; = 1 add a tke source below the ML
-   !                          !        = 2 add a tke source just at the base of the ML
-   !                          !        = 3 as = 1 applied on HF part of the stress           (ln_cpl=T)
+   nn_etau     =   0       !  penetration of tke below the mixed layer (ML) due to NIWs
+                              !        = 0 none ; = 1 add a tke source below the ML
+                              !        = 2 add a tke source just at the base of the ML
+                              !        = 3 as = 1 applied on HF part of the stress           (ln_cpl=T)
       rn_efr      =   0.05    !  fraction of surface tke value which penetrates below the ML (nn_etau=1 or 2)
       nn_htau     =   1       !  type of exponential decrease of tke penetration below the ML
       !                       !        = 0  constant 10 m length scale
