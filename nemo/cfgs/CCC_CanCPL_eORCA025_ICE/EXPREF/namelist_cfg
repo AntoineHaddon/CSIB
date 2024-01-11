@@ -104,6 +104,7 @@
    ln_traqsr   = .true.    !  Light penetration in the ocean            (T => fill namtra_qsr)
    ln_ssr      = .false.   !  Sea Surface Restoring on T and/or S       (T => fill namsbc_ssr)
    ln_rnf      = .false.   !  runoffs                                   (T => fill namsbc_rnf)
+   ln_apr_dyn  = .false.   !  Patm gradient added in ocean & ice Eqs.   (T => fill namsbc_apr )
    nn_fwb      = 0         !  FreshWater Budget: 
    !                       !    =2 annual global mean of e-p-r set to zero
    ln_wave     = .false.   !  Activate coupling with wave  (T => fill namsbc_wave)
@@ -232,6 +233,15 @@ sn_rcv_mslp   =       'none'                 ,    'no'    ,     ''      ,       
    sn_s_rnf    = 'runoffs'            ,    24.   , 'rosaline',   .true.     , .true. , 'yearly'  , ''       , ''       , ''
    sn_t_rnf    = 'runoffs'            ,    24.   , 'rotemper',   .true.     , .true. , 'yearly'  , ''       , ''       , ''
    sn_dep_rnf  = 'runoffs'            ,     0.   , 'rodepth' ,   .false.    , .true. , 'yearly'  , ''       , ''       , ''
+/
+!-----------------------------------------------------------------------
+&namsbc_apr    !   Atmospheric pressure used as ocean forcing           (ln_apr_dyn =T)
+!-----------------------------------------------------------------------
+   cn_dir = './'        !  root directory for the Patm data location
+   !___________!_________________________!___________________!___________!_____________!________!___________!__________________!__________!_______________!
+   !           !  file name              ! frequency (hours) ! variable  ! time interp.!  clim  ! 'yearly'/ ! weights filename ! rotation ! land/sea mask !
+   !           !                         !  (if <0  months)  !   name    !   (logical) !  (T/F) ! 'monthly' !                  ! pairing  !    filename   !
+   sn_apr      = 'patm'                  ,         -1.       ,'somslpre' ,   .true.    , .true. , 'yearly'  ,    ''            ,    ''    ,      ''
 /
 !-----------------------------------------------------------------------
 &namsbc_wave   ! External fields from wave model                        (ln_wave=T)

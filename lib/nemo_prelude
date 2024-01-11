@@ -101,7 +101,8 @@ echo "#################### Start NEMO pre-processing #################"
         acc_cp qlw_y${yearc}.nc              ${nemo_qlw}_y${forcing_year}.nc
         acc_cp precip_y${yearc}.nc           ${nemo_precip}_y${forcing_year}.nc
         acc_cp snow_y${yearc}.nc             ${nemo_snow}_y${forcing_year}.nc
-	acc_cp slp_y${yearc}.nc              ${nemo_slp}_y${forcing_year}.nc
+	    acc_cp slp_y${yearc}.nc              ${nemo_slp}_y${forcing_year}.nc
+	    acc_cp apr_y${yearc}.nc              ${nemo_apr}_y${forcing_year}.nc
     done
     if [[ $nemo_ln_weight == "on" ]];then
       is_defined $nemo_weights_bicubic2 && is_defined $nemo_weights_bilinear2  || 
