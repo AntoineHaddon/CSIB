@@ -103,6 +103,7 @@
    ln_traqsr   = .true.    !  Light penetration in the ocean            (T => fill namtra_qsr)
    ln_ssr      = .true.    !  Sea Surface Restoring on T and/or S       (T => fill namsbc_ssr)
    ln_rnf      = .true.    !  runoffs                                   (T => fill namsbc_rnf)
+   ln_apr_dyn  = .false.   !  Patm gradient added in ocean & ice Eqs.   (T => fill namsbc_apr )
    nn_fwb      = 3         !  FreshWater Budget: 
    !                       !    =2 annual global mean of e-p-r set to zero
    ln_wave     = .false.   !  Activate coupling with wave  (T => fill namsbc_wave)
