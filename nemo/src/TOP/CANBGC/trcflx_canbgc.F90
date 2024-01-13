@@ -184,7 +184,7 @@ CONTAINS
 	   ! Initialize partial pressure difference fields
        oce_co2g(:,:)  = 0._wp                ! Initialization co2(g)
        oce_o2g(:,:)   = 0._wp                ! Initialization o2(g)
-       patmo(:,:)     = 1.e0                 ! Initialize patmo if no reading from a file
+       patmo(:,:)     = 1.e0                 ! Initialize patmo if no reading from a file (in atm)
        satmco2g(:,:)  = atmco2*patmo(:,:)     ! Initialization with constant value default for ln_co2int = F
        satmo2g(:,:)   = atcoxy*patmo(:,:)    ! Initialization of atm pO2
 

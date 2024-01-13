@@ -1313,14 +1313,14 @@ CONTAINS
       IF( srcv(jpr_co2)%laction )   atm_co2(:,:) = frcv(jpr_co2)%z3(:,:,1)
       !
       !                                                      ! ========================= !
-      !                                                      ! Mean Sea Level Pressure   !   (taum)
+      !                                                      ! Mean Sea Level Pressure   !   (Pa)
       !                                                      ! ========================= !
       IF( srcv(jpr_mslp)%laction ) THEN                    ! UKMO SHELF effect of atmospheric pressure on SSH
           IF( kt /= nit000 )   ssh_ibb(:,:) = ssh_ib(:,:)    !* Swap of ssh_ib fields
 
           r1_grau = 1.e0 / (grav * rau0)               !* constant for optimization
           ssh_ib(:,:) = - ( frcv(jpr_mslp)%z3(:,:,1) - rpref ) * r1_grau    ! equivalent ssh (inverse barometer)
-          apr   (:,:) =     frcv(jpr_mslp)%z3(:,:,1)                         !atmospheric pressure
+          apr   (:,:) =     frcv(jpr_mslp)%z3(:,:,1)                         !atmospheric pressure (Pa)
 
           IF( kt == nit000 ) ssh_ibb(:,:) = ssh_ib(:,:)  ! correct this later (read from restart if possible)
           CALL iom_put( "ssh_ib", ssh_ib )                   !* output the inverse barometer ssh
