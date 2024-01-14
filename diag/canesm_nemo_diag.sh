@@ -6,7 +6,7 @@
 # lib/jobdefs/canesm_nemo_diag_jobdef
 #########################################################
 
-set -x
+set -e
 
 # Note that nemo_rtd_mons used below is first month of the time chunk. 
 # nemo_rtd_mons=1 for a run starting from January in a single 12-month chunk;
@@ -48,10 +48,10 @@ set -x
 # Access file containing grid information
   mask_mon=$(echo $nemo_rtd_mons | awk '{printf "%02d", $NF}')  # get last element of nemo_rtd_mons, printed as 2 digit number
   orca_grid_info=mc_${runid}_${fyear}_m${mask_mon}_mesh_mask.nc
-  [ -s orca_mesh_mask ] || access orca_mesh_mask $orca_grid_info nocp=no
+  [ -s orca_mesh_mask ] || access orca_mesh_mask $orca_grid_info || { echo "canesm_nemo_diag.sh: failed to access $orca_grid_info" ; exit 1; }
 
 # Access file containing mfo line mask
-  [ -s mfo_line_mask ] || access mfo_line_mask mfo_line_mask
+  [ -s mfo_line_mask ] || access mfo_line_mask mfo_line_mask || { echo "canesm_nemo_diag.sh: failed to access $mfo_line_mask" ; exit 1; }
 
 # suffix list for sub-yearly nemo historical files.
   nemo_diag_file_suffix_list=${nemo_diag_file_suffix_list}
@@ -69,7 +69,7 @@ set -x
         yr=`echo $yr | awk '{printf "%04d", $1 + 1}'`;
       fi
       diag_hist="mc_${runid}_${yr}_m${mm}_${sfx}.nc"
-      access ${sfx}_${mm} $diag_hist na
+      access ${sfx}_${mm} $diag_hist || { echo "canesm_nemo_diag.sh: failed to access $diag_hist" ; exit 1; }
       mp=$mm
     done
 # Merge sub-yearly files
@@ -85,7 +85,7 @@ set -x
       if [ $nmon -eq 1 -a $fmon -eq 1 ] ; then
         for sfx in $nemo_diag_file_1y_suffix_list ; do
           diag_hist="mc_${runid}_${fyear}_m${fmon}_${sfx}.nc"
-          access ${sfx}_${fmon} $diag_hist na
+          access ${sfx}_${fmon} $diag_hist || { echo "canesm_nemo_diag.sh: failed to access $diag_hist" ; exit 1; }
         done
       fi
 
@@ -94,8 +94,8 @@ set -x
 # Access the nemo restart files
         diag_rs1="mc_${runid}_${yearm1}_m${lmon}_nemors" # previous year
         diag_rs2="mc_${runid}_${year}_m${lmon}_nemors"   # current year
-        access rsp $diag_rs1 || ( echo "$diag_rs1 does not exist" ; exit 1 )
-        access rsc $diag_rs2 || ( echo "$diag_rs2 does not exist" ; exit 1 )
+        access rsp $diag_rs1 || { echo "canesm_nemo_diag.sh: failed to access $diag_rs1" ; exit 1; }
+        access rsc $diag_rs2 || { echo "canesm_nemo_diag.sh: failed to access $diag_rs2" ; exit 1; }
 
 # Get tn and sn from the last step of previous year
         if [ -L rsp ] ; then
