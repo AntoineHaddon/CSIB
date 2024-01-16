@@ -50,6 +50,7 @@ PROGRAM nemo_diag
    INTEGER   :: ntrec, id_time, id_tbnds, id_l, id_s, id_x, id_y, id_z
    INTEGER   :: ntbnds, ndim, ntdim
    INTEGER   :: i, l
+   INTEGER   :: tnid, status, nf_inq_varid, nf_get_att
    LOGICAL   :: exists
    !INTEGER   :: strlen
    INTEGER, DIMENSION(10)            :: ierr
@@ -220,6 +221,12 @@ PROGRAM nemo_diag
    !WRITE(*,*) 'snc'
    ! snc(144,45,1)=34.1197096452
    !WRITE(*,*) snc(144,45,1)
+   status = nf_inq_varid(iou5, "tn", tnid)
+   status = nf_get_att(iou5, tnid, '_FillValue', fill_value)
+   WHERE (tnp == fill_value)
+     tnp = 0.0; snp = 0.0; tnc = 0.0; snc = 0.0
+   ENDWHERE
+
    print*, '-------------------'
    print*, 'Input data read OK!'
    print*, '-------------------'
