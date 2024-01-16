@@ -7,7 +7,7 @@
 #########################################################
 
 set -e
-output_level=1
+
 # Note that nemo_rtd_mons used below is first month of the time chunk. 
 # nemo_rtd_mons=1 for a run starting from January in a single 12-month chunk;
 # nemo_rtd_mons=6 for a run starting from June in a single 12-month chunk;
@@ -48,10 +48,10 @@ output_level=1
 # Access file containing grid information
   mask_mon=$(echo $nemo_rtd_mons | awk '{printf "%02d", $NF}')  # get last element of nemo_rtd_mons, printed as 2 digit number
   orca_grid_info=mc_${runid}_${fyear}_m${mask_mon}_mesh_mask.nc
-  [ -s orca_mesh_mask ] || access orca_mesh_mask $orca_grid_info || { echo "canesm_nemo_diag.sh: failed to access $orca_grid_info" ; exit 1; }
+  [ -s orca_mesh_mask ] || access orca_mesh_mask $orca_grid_info || bail "Failed to access $orca_grid_info"
 
 # Access file containing mfo line mask
-  [ -s mfo_line_mask ] || access mfo_line_mask mfo_line_mask || { echo "canesm_nemo_diag.sh: failed to access $mfo_line_mask" ; exit 1; }
+  [ -s mfo_line_mask ] || access mfo_line_mask mfo_line_mask || bail "Failed to access $mfo_line_mask"
 
 # suffix list for sub-yearly nemo historical files.
   nemo_diag_file_suffix_list=${nemo_diag_file_suffix_list}
@@ -69,7 +69,7 @@ output_level=1
         yr=`echo $yr | awk '{printf "%04d", $1 + 1}'`;
       fi
       diag_hist="mc_${runid}_${yr}_m${mm}_${sfx}.nc"
-      access ${sfx}_${mm} $diag_hist || { echo "canesm_nemo_diag.sh: failed to access $diag_hist" ; exit 1; }
+      access ${sfx}_${mm} $diag_hist || bail "Failed to access $diag_hist"
       mp=$mm
     done
 # Merge sub-yearly files
@@ -87,7 +87,7 @@ output_level=1
 ##########################################################################
 # Execute the following lines when output_level -ge 1
   level=1
-  while [ $level -le $output_level ] ; do
+  while (( $level <= $output_level )) ; do
     case $level in
       # output_level=1 and only if starting from January
       1)
@@ -104,7 +104,7 @@ output_level=1
            if [ -L grid_t -a $output_level -eq 1 ]; then
              $diag_exe
            elif [ ! -L grid_t ]; then
-             bail "canesm_nemo_diag.sh: Inputs for $diag_exe (grid_t) don't exist!"
+             bail "Inputs for $diag_exe (grid_t) don't exist!"
            fi
          fi
          ######################################
@@ -120,7 +120,7 @@ output_level=1
          if [ $nmon -eq 1 -a $fmon -eq 1 ] ; then
            for sfx in $nemo_diag_file_1y_suffix_list ; do
              diag_hist="mc_${runid}_${fyear}_m${fmon}_${sfx}.nc"
-             access ${sfx}_${fmon} $diag_hist || { echo "canesm_nemo_diag.sh: failed to access $diag_hist" ; exit 1; }
+             access ${sfx}_${fmon} $diag_hist || bail "Failed to access $diag_hist"
            done
          fi
          if [ $fmon -eq 1 ] ; then
@@ -128,8 +128,8 @@ output_level=1
            # Access the nemo restart files
            diag_rs1="mc_${runid}_${yearm1}_m${lmon}_nemors" # previous year
            diag_rs2="mc_${runid}_${year}_m${lmon}_nemors"   # current year
-           access rsp $diag_rs1 || { echo "canesm_nemo_diag.sh: failed to access $diag_rs1" ; exit 1; }
-           access rsc $diag_rs2 || { echo "canesm_nemo_diag.sh: failed to access $diag_rs2" ; exit 1; }
+           access rsp $diag_rs1 || bail "Failed to access $diag_rs1"
+           access rsc $diag_rs2 || bail "Failed to access $diag_rs2"
 
            # Get tn and sn from the last step of previous year
            if [ -L rsp ] ; then
@@ -157,7 +157,7 @@ output_level=1
            if [[ -L grid_t ]] && [[ -s tnp.nc ]]; then
              $diag_exe
            else
-             bail "canesm_nemo_diag.sh: Inputs for $diag_exe (grid_t and tnp.nc) don't exist!"
+             bail "Inputs for $diag_exe (grid_t and tnp.nc) don't exist!"
            fi
          fi
          ;;
@@ -165,46 +165,52 @@ output_level=1
     ((level++))
   done
 
-  if [ $output_level -eq 1 ] ; then
-    if [ $fmon -eq 1 ] ; then
-      # Append mfo.nc to 1m_scalar_ar6_${fmon} if exist
-      if [ -s mfo.nc ]; then
-        chmod u+w mfo.nc
-        cp 1m_scalar_ar6_${fmon} 1m_scalar_ar6.nc && chmod u+w 1m_scalar_ar6.nc || bail "1m_scalar_ar6_${fmon} does not exist"
-        ncks -A mfo.nc 1m_scalar_ar6.nc
-        rm -f 1m_scalar_ar6_${fmon}
-        mv 1m_scalar_ar6.nc 1m_scalar_ar6_${fmon}
-      else
-        bail "mfo.nc does not exist"
-      fi
-      # Append msftbarot.nc to 1m_grid_u_ar6_${fmon}
-      if [ -s msftbarot.nc ]; then
-        chmod u+w msftbarot.nc
-        cp 1m_grid_u_ar6_${fmon} 1m_grid_u_ar6.nc && chmod u+w 1m_grid_u_ar6.nc || bail "1m_grid_u_ar6_${fmon} does not exist"
-        ncks -A msftbarot.nc 1m_grid_u_ar6.nc
-        rm -f 1m_grid_u_ar6_${fmon}
-        mv 1m_grid_u_ar6.nc 1m_grid_u_ar6_${fmon}
-      else
-        bail "msftbarot.nc does not exist"
-      fi
-    fi 
-  fi
-  if [ $output_level -eq 3 ] ; then
-    # Append tstend.nc to 1y_grid_t_ar6_${fmon}
-    if [ ${nmon} -eq 1 -a $fmon -eq 1 ] ; then
-      if [ -s tstend.nc ]; then
-        chmod u+w tstend.nc
-        cp 1y_grid_t_ar6_${fmon} 1y_grid_t_ar6.nc && chmod u+w 1y_grid_t_ar6.nc || bail "1y_grid_t_ar6_${fmon} does not exist"
-        ncks -A tstend.nc 1y_grid_t_ar6.nc
-        rm -f 1y_grid_t_ar6_${fmon}
-        mv 1y_grid_t_ar6.nc 1y_grid_t_ar6_${fmon}
-        # Append yearly diagnostics suffix list
-        nemo_diag_file_suffix_list="$nemo_diag_file_suffix_list $nemo_diag_file_1y_suffix_list"
-      else
-        bail "tstend.nc does not exist"
-      fi
-    fi
-  fi
+  level=1
+  while (( $level <= $output_level )) ; do
+    case $level in
+      1)
+        if [ $fmon -eq 1 ] ; then
+        # Append mfo.nc to 1m_scalar_ar6_${fmon} if existing
+          if [ -s mfo.nc ]; then
+            chmod u+w mfo.nc
+            cp 1m_scalar_ar6_${fmon} 1m_scalar_ar6.nc && chmod u+w 1m_scalar_ar6.nc || bail "1m_scalar_ar6_${fmon} does not exist"
+            ncks -A mfo.nc 1m_scalar_ar6.nc
+            rm -f 1m_scalar_ar6_${fmon}
+            mv 1m_scalar_ar6.nc 1m_scalar_ar6_${fmon}
+          else
+            bail "mfo.nc does not exist"
+          fi
+          # Append msftbarot.nc to 1m_grid_u_ar6_${fmon} if existing
+          if [ -s msftbarot.nc ]; then
+            chmod u+w msftbarot.nc
+            cp 1m_grid_u_ar6_${fmon} 1m_grid_u_ar6.nc && chmod u+w 1m_grid_u_ar6.nc || bail "1m_grid_u_ar6_${fmon} does not exist"
+            ncks -A msftbarot.nc 1m_grid_u_ar6.nc
+            rm -f 1m_grid_u_ar6_${fmon}
+            mv 1m_grid_u_ar6.nc 1m_grid_u_ar6_${fmon}
+          else
+            bail "msftbarot.nc does not exist"
+          fi
+        fi 
+        ;;
+      3)
+        if [ ${nmon} -eq 1 -a $fmon -eq 1 ] ; then
+          # Append tstend.nc to 1y_grid_t_ar6_${fmon} if existing
+          if [ -s tstend.nc ]; then
+            chmod u+w tstend.nc
+            cp 1y_grid_t_ar6_${fmon} 1y_grid_t_ar6.nc && chmod u+w 1y_grid_t_ar6.nc || bail "1y_grid_t_ar6_${fmon} does not exist"
+            ncks -A tstend.nc 1y_grid_t_ar6.nc
+            rm -f 1y_grid_t_ar6_${fmon}
+            mv 1y_grid_t_ar6.nc 1y_grid_t_ar6_${fmon}
+            # Append yearly diagnostics suffix list
+            nemo_diag_file_suffix_list="$nemo_diag_file_suffix_list $nemo_diag_file_1y_suffix_list"
+          else
+            bail "tstend.nc does not exist"
+          fi
+        fi
+        ;;
+    esac 
+    ((level++))
+  done
 
 ##################################################
 # Split historical files to time series and save #
