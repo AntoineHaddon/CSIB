@@ -62,6 +62,7 @@ PROGRAM nemo_diag
    REAL, DIMENSION(:,:), ALLOCATABLE :: nav_lon_u, nav_lat_u
    REAL, DIMENSION(:,:), ALLOCATABLE :: nav_lon_t, nav_lat_t
    REAL, DIMENSION(:,:), ALLOCATABLE :: time_bnds
+   REAL(kind=4) :: fill_value
    !!-------------------------------------
    !! Establish grid size from input files.
    !!-------------------------------------
