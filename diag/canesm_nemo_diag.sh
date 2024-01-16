@@ -7,7 +7,7 @@
 #########################################################
 
 set -e
-
+output_level=1
 # Note that nemo_rtd_mons used below is first month of the time chunk. 
 # nemo_rtd_mons=1 for a run starting from January in a single 12-month chunk;
 # nemo_rtd_mons=6 for a run starting from June in a single 12-month chunk;
@@ -165,7 +165,7 @@ set -e
     ((level++))
   done
 
-  if [ $output_level -ge 1 ] ; then
+  if [ $output_level -eq 1 ] ; then
     if [ $fmon -eq 1 ] ; then
       # Append mfo.nc to 1m_scalar_ar6_${fmon} if exist
       if [ -s mfo.nc ]; then
@@ -188,6 +188,8 @@ set -e
         bail "msftbarot.nc does not exist"
       fi
     fi 
+  fi
+  if [ $output_level -eq 3 ] ; then
     # Append tstend.nc to 1y_grid_t_ar6_${fmon}
     if [ ${nmon} -eq 1 -a $fmon -eq 1 ] ; then
       if [ -s tstend.nc ]; then
