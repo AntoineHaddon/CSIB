@@ -325,6 +325,17 @@ PROGRAM nemo_ocean_diag
         i_AN_E  =  798; i_AN_W  = 1090
         i_AS_E  =  985; i_AS_W  = 1205
         i_PN_E  =  127; i_PN_W  =  735
+!     eORCA025 (1440 X 1206)
+      else if ( imt == 1440 ) then
+        print *, "Using eORCA025 configuration"
+        j_20N   =  767; j_20S  =  603; j_eq    = 685
+        k60     =   20; k500    =  39; k2000   =  54
+        i_DP    =  879; j_DP_S  = 318; j_DP_N  = 424
+        i_IN_E1 =    1; i_IN_W1 = 193
+        i_IN_E2 = 1283; i_IN_W2 = imt-1
+        i_AN_E  =  797; i_AN_W  = 1089
+        i_AS_E  =  984; i_AS_W  = 1204
+        i_PN_E  =  126; i_PN_W  =  734
       else
         print *, "Dont recognize the configuration.",imt,"x",jmt 
         print *, "Only ORCA2, ORCA1 and eORCA025 compatible"
@@ -440,10 +451,6 @@ PROGRAM nemo_ocean_diag
 
     ! ---------------------------- total area    
       tarea(:, :)   = e1t(:, :)*e2t(:, :)*t_mask(:, :, 1)
-      tarea(:, jmt) = 0. ! not to count the wrap row added to the northmost.
-      tarea(1, :)   = 0. ! not to count the 2 wrap columns for the cyclic boundary
-      tarea(imt, :) = 0. ! sshglo is not identical when using area(imt-1:imt,:)=0.
-      area_tot = 0.
       area_tot = SUM(tarea(:, :))
 
     ! Main loop over all months
@@ -807,7 +814,7 @@ PROGRAM nemo_ocean_diag
             &                  , jmt, hflx_snow_ice2(l), dum)
           call area_ave_flx(e1t, e2t, g_mask, snow_ao_cea(:, :)*lfus*-1.0, imt      &
             &                  , jmt, hflx_snow2(l), dum)
-          call area_ave_flx(e1t, e2t, g_mask, hflx_ice_cea(:,:), imt      &
+          call area_ave_flx(e1t, e2t, g_mask, -1.0*hflx_ice_cea(:,:), imt      &
             &                  , jmt, hflx_ice(l), dum)
           call area_ave_flx(e1t, e2t, g_mask, hflx_rnf_cea(:, :), imt      &
             &                  , jmt, hflx_rnf(l), dum)

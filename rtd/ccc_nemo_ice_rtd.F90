@@ -146,9 +146,6 @@ SUBROUTINE calc (imt, jmt, lm)
 
 ! compute total grid cell area for valid ocean points   
       tarea(:, :)   = e1t(:, :)*e2t(:, :)*t_mask(:, :)
-      tarea(:, jmt) = 0. ! not to count the wrap row added to the northmost.
-      tarea(1, :)   = 0. ! not to count the 2 wrap columns for the cyclic boundary
-      tarea(imt, :) = 0. ! sshglo is not identical when using area(imt-1:imt,:)=0.
 !---------------------------------------------------
 !    Construct masks for NH and SH sub-regions   
 !---------------------------------------------------

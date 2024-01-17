@@ -75,7 +75,7 @@ contains
             REAL s
 
 
-            do j = 1, jmt-1 ! north fold
+            do j = 1, jmt
                 do k = km, 1, -1
                     s=0.
                     do i = 1, imt
@@ -88,7 +88,7 @@ contains
                 enddo
             enddo
 
-            do j = 1, jmt-1 !north fold
+            do j = 1, jmt
                 do k = km, 1, -1
                     if (k.eq.km) then
                         over_psi(j,k) = -over_tran(j,k)
@@ -98,7 +98,7 @@ contains
                 enddo
             enddo
 
-            do j = 1, jmt-1 !north fold
+            do j = 1, jmt
                 do k = 1, km
                     over_psi(j, k)  =  over_psi(j, k)*1.e-6 ! to Sv                      
                 enddo
