@@ -101,7 +101,7 @@ set -e
            # Run the CMIP6 nemo offline diagnostics executable: $diag_exe #
            ################################################################
            # make sure inputs exist and run!
-           if [ -L grid_t -a $output_level -eq 1 ]; then
+           if [[ -L grid_t && $output_level -eq 1 ]]; then
              $diag_exe
            elif [ ! -L grid_t ]; then
              bail "Inputs for $diag_exe (grid_t) don't exist!"
@@ -110,14 +110,14 @@ set -e
          ######################################
          # Time mean (1d_diaptr -> 1m_diaptr) #
          ######################################
-         [ -L 1d_diaptr_${fmon} -o -s 1d_diaptr_${fmon} ] && cdo -b F64 monmean 1d_diaptr_${fmon} 1m_diaptr_${fmon}
+         [[ -L 1d_diaptr_${fmon} || -s 1d_diaptr_${fmon} ]] && cdo -b F64 monmean 1d_diaptr_${fmon} 1m_diaptr_${fmon}
          # Replace 1d_diaptr with 1m_diaptr after doing time mean
          nemo_diag_file_suffix_list=`echo $nemo_diag_file_suffix_list | sed -e "s/1d_diaptr/1m_diaptr/"`
          ;;
       # output_level=3 and only if starting from January
       3)
          # access input variables for computing tstend (yearly) with priority level 3
-         if [ $nmon -eq 1 -a $fmon -eq 1 ] ; then
+         if [[ $nmon -eq 1 && $fmon -eq 1 ]] ; then
            for sfx in $nemo_diag_file_1y_suffix_list ; do
              diag_hist="mc_${runid}_${fyear}_m${fmon}_${sfx}.nc"
              access ${sfx}_${fmon} $diag_hist || bail "Failed to access $diag_hist"
@@ -154,7 +154,7 @@ set -e
            # Run the CMIP6 nemo offline diagnostics executable: $diag_exe #
            ################################################################
            # make sure inputs exist and run!
-           if [[ -L grid_t ]] && [[ -s tnp.nc ]]; then
+           if [[ -L grid_t && -s tnp.nc ]]; then
              $diag_exe
            else
              bail "Inputs for $diag_exe (grid_t and tnp.nc) don't exist!"
@@ -193,7 +193,7 @@ set -e
         fi 
         ;;
       3)
-        if [ ${nmon} -eq 1 -a $fmon -eq 1 ] ; then
+        if [[ ${nmon} -eq 1 && $fmon -eq 1 ]] ; then
           # Append tstend.nc to 1y_grid_t_ar6_${fmon} if existing
           if [ -s tstend.nc ]; then
             chmod u+w tstend.nc
