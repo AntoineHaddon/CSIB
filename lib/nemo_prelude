@@ -255,8 +255,8 @@ echo "#################### Start NEMO pre-processing #################"
     access RESTART_ARC $rs_file nocp=off || bail "Failed to access nemo restart!"
 
     # checksum the contents
-    sha1sum RESTART_ARC/* >> xnemo_access_log
-    mv RESTART_ARC/* . || bail "Cannot get files from restart directory"
+    sha1sum RESTART_ARC/*restart* >> xnemo_access_log
+    mv RESTART_ARC/*restart* . || bail "Cannot get files from restart directory"
     release RESTART_ARC
 
     # Rename each task specific restart files (extracted above)
