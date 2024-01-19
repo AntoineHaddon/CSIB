@@ -91,126 +91,130 @@ set -e
     case $level in
       # output_level=1 and only if starting from January
       1)
-         # access input variables for computing vars with priority level 1
-         if [ $fmon -eq 1 ] ; then
-           ln -sf 1m_grid_t_${fmon} grid_t  || bail "Link to grid_t failed"
-           ln -sf 1m_grid_u_${fmon} grid_u  || bail "Link to grid_u failed"
-           ln -sf 1m_grid_v_${fmon} grid_v  || bail "Link to grid_v failed"
+        # access input variables for computing vars with priority level 1
+        if [ $fmon -eq 1 && $nemo_calc_diag -eq 1 ] ; then
+          ln -sf 1m_grid_t_${fmon} grid_t  || bail "Link to grid_t failed"
+          ln -sf 1m_grid_u_${fmon} grid_u  || bail "Link to grid_u failed"
+          ln -sf 1m_grid_v_${fmon} grid_v  || bail "Link to grid_v failed"
 
-           ################################################################
-           # Run the CMIP6 nemo offline diagnostics executable: $diag_exe #
-           ################################################################
-           # make sure inputs exist and run!
-           if [[ -L grid_t && $output_level -eq 1 ]]; then
-             $diag_exe
-           elif [ ! -L grid_t ]; then
-             bail "Inputs for $diag_exe (grid_t) don't exist!"
-           fi
-         fi
-         ######################################
-         # Time mean (1d_diaptr -> 1m_diaptr) #
-         ######################################
-         [[ -L 1d_diaptr_${fmon} || -s 1d_diaptr_${fmon} ]] && cdo -b F64 monmean 1d_diaptr_${fmon} 1m_diaptr_${fmon}
-         # Replace 1d_diaptr with 1m_diaptr after doing time mean
-         nemo_diag_file_suffix_list=`echo $nemo_diag_file_suffix_list | sed -e "s/1d_diaptr/1m_diaptr/"`
-         ;;
+          ################################################################
+          # Run the CMIP6 nemo offline diagnostics executable: $diag_exe #
+          ################################################################
+          # make sure inputs exist and run!
+          if [[ -L grid_t && $output_level -eq 1 ]]; then
+            $diag_exe
+          elif [ ! -L grid_t ]; then
+            bail "Inputs for $diag_exe (grid_t) don't exist!"
+          fi
+        fi
+        ######################################
+        # Time mean (1d_diaptr -> 1m_diaptr) #
+        ######################################
+        [[ -L 1d_diaptr_${fmon} || -s 1d_diaptr_${fmon} ]] && cdo -b F64 monmean 1d_diaptr_${fmon} 1m_diaptr_${fmon}
+        # Replace 1d_diaptr with 1m_diaptr after doing time mean
+        nemo_diag_file_suffix_list=`echo $nemo_diag_file_suffix_list | sed -e "s/1d_diaptr/1m_diaptr/"`
+        ;;
       # output_level=3 and only if starting from January
       3)
-         # access input variables for computing tstend (yearly) with priority level 3
-         if [[ $nmon -eq 1 && $fmon -eq 1 ]] ; then
-           for sfx in $nemo_diag_file_1y_suffix_list ; do
-             diag_hist="mc_${runid}_${fyear}_m${fmon}_${sfx}.nc"
-             access ${sfx}_${fmon} $diag_hist || bail "Failed to access $diag_hist"
-           done
-         fi
-         if [ $fmon -eq 1 ] ; then
-           # Run offline computation of tendency terms only if starting from January and yearly chunk
-           # Access the nemo restart files
-           diag_rs1="mc_${runid}_${yearm1}_m${lmon}_nemors" # previous year
-           diag_rs2="mc_${runid}_${year}_m${lmon}_nemors"   # current year
-           access rsp $diag_rs1 || bail "Failed to access $diag_rs1"
-           access rsc $diag_rs2 || bail "Failed to access $diag_rs2"
+        if [ $nemo_calc_diag -eq 1 ] ; then
+          # access input variables for computing tstend (yearly) with priority level 3
+          if [[ $nmon -eq 1 && $fmon -eq 1 ]] ; then
+            for sfx in $nemo_diag_file_1y_suffix_list ; do
+              diag_hist="mc_${runid}_${fyear}_m${fmon}_${sfx}.nc"
+              access ${sfx}_${fmon} $diag_hist || bail "Failed to access $diag_hist"
+            done
+          fi
+          if [ $fmon -eq 1 ] ; then
+            # Run offline computation of tendency terms only if starting from January and yearly chunk
+            # Access the nemo restart files
+            diag_rs1="mc_${runid}_${yearm1}_m${lmon}_nemors" # previous year
+            diag_rs2="mc_${runid}_${year}_m${lmon}_nemors"   # current year
+            access rsp $diag_rs1 || bail "Failed to access $diag_rs1"
+            access rsc $diag_rs2 || bail "Failed to access $diag_rs2"
 
-           # Get tn and sn from the last step of previous year
-           if [ -L rsp ] ; then
-             work_dir=$(pwd)
-             cd rsp
-             cdo select,name=$t_state,timestep=-1 *_$file_state.nc ${work_dir}/tnp.nc
-             cdo select,name=$s_state,timestep=-1 *_$file_state.nc ${work_dir}/snp.nc
-             cd $work_dir
-             release rsp
-           fi
+            # Get tn and sn from the last step of previous year
+            if [ -L rsp ] ; then
+              work_dir=$(pwd)
+              cd rsp
+              cdo select,name=$t_state,timestep=-1 *_$file_state.nc ${work_dir}/tnp.nc
+              cdo select,name=$s_state,timestep=-1 *_$file_state.nc ${work_dir}/snp.nc
+              cd $work_dir
+              release rsp
+            fi
 
-           # Get tn and sn from the last step of current year
-           if [ -L rsc ] ; then
-             work_dir=$(pwd)
-             cd rsc
-             cdo select,name=tn,timestep=-1 ${runid}_*_restart.nc ${work_dir}/tnc.nc
-             cdo select,name=sn,timestep=-1 ${runid}_*_restart.nc ${work_dir}/snc.nc
-             cd $work_dir
-             release rsc
-           fi
-           ################################################################
-           # Run the CMIP6 nemo offline diagnostics executable: $diag_exe #
-           ################################################################
-           # make sure inputs exist and run!
-           if [[ -L grid_t && -s tnp.nc ]]; then
-             $diag_exe
-           else
-             bail "Inputs for $diag_exe (grid_t and tnp.nc) don't exist!"
-           fi
-         fi
-         ;;
+            # Get tn and sn from the last step of current year
+            if [ -L rsc ] ; then
+              work_dir=$(pwd)
+              cd rsc
+              cdo select,name=tn,timestep=-1 ${runid}_*_restart.nc ${work_dir}/tnc.nc
+              cdo select,name=sn,timestep=-1 ${runid}_*_restart.nc ${work_dir}/snc.nc
+              cd $work_dir
+              release rsc
+            fi
+            ################################################################
+            # Run the CMIP6 nemo offline diagnostics executable: $diag_exe #
+            ################################################################
+            # make sure inputs exist and run!
+            if [[ -L grid_t && -s tnp.nc ]]; then
+              $diag_exe
+            else
+              bail "Inputs for $diag_exe (grid_t and tnp.nc) don't exist!"
+            fi
+          fi
+        fi
+        ;;
     esac
     ((level++))
   done
 
-  level=1
-  while (( $level <= $output_level )) ; do
-    case $level in
-      1)
-        if [ $fmon -eq 1 ] ; then
-        # Append mfo.nc to 1m_scalar_ar6_${fmon} if existing
-          if [ -s mfo.nc ]; then
-            chmod u+w mfo.nc
-            cp 1m_scalar_ar6_${fmon} 1m_scalar_ar6.nc && chmod u+w 1m_scalar_ar6.nc || bail "1m_scalar_ar6_${fmon} does not exist"
-            ncks -A mfo.nc 1m_scalar_ar6.nc
-            rm -f 1m_scalar_ar6_${fmon}
-            mv 1m_scalar_ar6.nc 1m_scalar_ar6_${fmon}
-          else
-            bail "mfo.nc does not exist"
+  if [ $nemo_calc_diag -eq 1 ] ; then
+    level=1
+    while (( $level <= $output_level )) ; do
+      case $level in
+        1)
+          if [ $fmon -eq 1 ] ; then
+          # Append mfo.nc to 1m_scalar_ar6_${fmon} if existing
+            if [ -s mfo.nc ]; then
+              chmod u+w mfo.nc
+              cp 1m_scalar_ar6_${fmon} 1m_scalar_ar6.nc && chmod u+w 1m_scalar_ar6.nc || bail "1m_scalar_ar6_${fmon} does not exist"
+              ncks -A mfo.nc 1m_scalar_ar6.nc
+              rm -f 1m_scalar_ar6_${fmon}
+              mv 1m_scalar_ar6.nc 1m_scalar_ar6_${fmon}
+            else
+              bail "mfo.nc does not exist"
+            fi
+            # Append msftbarot.nc to 1m_grid_u_ar6_${fmon} if existing
+            if [ -s msftbarot.nc ]; then
+              chmod u+w msftbarot.nc
+              cp 1m_grid_u_ar6_${fmon} 1m_grid_u_ar6.nc && chmod u+w 1m_grid_u_ar6.nc || bail "1m_grid_u_ar6_${fmon} does not exist"
+              ncks -A msftbarot.nc 1m_grid_u_ar6.nc
+              rm -f 1m_grid_u_ar6_${fmon}
+              mv 1m_grid_u_ar6.nc 1m_grid_u_ar6_${fmon}
+            else
+              bail "msftbarot.nc does not exist"
+            fi
+          fi 
+          ;;
+        3)
+          if [[ ${nmon} -eq 1 && $fmon -eq 1 ]] ; then
+            # Append tstend.nc to 1y_grid_t_ar6_${fmon} if existing
+            if [ -s tstend.nc ]; then
+              chmod u+w tstend.nc
+              cp 1y_grid_t_ar6_${fmon} 1y_grid_t_ar6.nc && chmod u+w 1y_grid_t_ar6.nc || bail "1y_grid_t_ar6_${fmon} does not exist"
+              ncks -A tstend.nc 1y_grid_t_ar6.nc
+              rm -f 1y_grid_t_ar6_${fmon}
+              mv 1y_grid_t_ar6.nc 1y_grid_t_ar6_${fmon}
+              # Append yearly diagnostics suffix list
+              nemo_diag_file_suffix_list="$nemo_diag_file_suffix_list $nemo_diag_file_1y_suffix_list"
+            else
+              bail "tstend.nc does not exist"
+            fi
           fi
-          # Append msftbarot.nc to 1m_grid_u_ar6_${fmon} if existing
-          if [ -s msftbarot.nc ]; then
-            chmod u+w msftbarot.nc
-            cp 1m_grid_u_ar6_${fmon} 1m_grid_u_ar6.nc && chmod u+w 1m_grid_u_ar6.nc || bail "1m_grid_u_ar6_${fmon} does not exist"
-            ncks -A msftbarot.nc 1m_grid_u_ar6.nc
-            rm -f 1m_grid_u_ar6_${fmon}
-            mv 1m_grid_u_ar6.nc 1m_grid_u_ar6_${fmon}
-          else
-            bail "msftbarot.nc does not exist"
-          fi
-        fi 
-        ;;
-      3)
-        if [[ ${nmon} -eq 1 && $fmon -eq 1 ]] ; then
-          # Append tstend.nc to 1y_grid_t_ar6_${fmon} if existing
-          if [ -s tstend.nc ]; then
-            chmod u+w tstend.nc
-            cp 1y_grid_t_ar6_${fmon} 1y_grid_t_ar6.nc && chmod u+w 1y_grid_t_ar6.nc || bail "1y_grid_t_ar6_${fmon} does not exist"
-            ncks -A tstend.nc 1y_grid_t_ar6.nc
-            rm -f 1y_grid_t_ar6_${fmon}
-            mv 1y_grid_t_ar6.nc 1y_grid_t_ar6_${fmon}
-            # Append yearly diagnostics suffix list
-            nemo_diag_file_suffix_list="$nemo_diag_file_suffix_list $nemo_diag_file_1y_suffix_list"
-          else
-            bail "tstend.nc does not exist"
-          fi
-        fi
-        ;;
-    esac 
-    ((level++))
-  done
+          ;;
+      esac 
+      ((level++))
+    done
+  fi
 
 ##################################################
 # Split historical files to time series and save #
