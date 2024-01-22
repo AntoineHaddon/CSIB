@@ -42,9 +42,16 @@
         <field id="BLT"          description="Barrier Layer Thickness"                   unit="m"                        />
         <field id="tinv"         description="Max of vertical invertion of temperature"  unit="degC"                     />
         <field id="depti"        description="Depth of max. vert. inv. of temperature"   unit="m"                        />
-        <field id="20d"          description="Depth of 20C isotherm"                     unit="m"                        />
-        <field id="28d"          description="Depth of 28C isotherm"                     unit="m"                        />
+        <field id="20d"         description="Depth of 20C isotherm"                     unit="m"                        />
+        <field id="28d"         description="Depth of 28C isotherm"                     unit="m"                        />
+        <field id="14d"         description="Depth of 14C isotherm"                     unit="m"                        />
+        <field id="17d"         description="Depth of 17C isotherm"                     unit="m"                        />
+        <field id="26d"         description="Depth of 26C isotherm"                     unit="m"                        />
         <field id="hc300"        description="Heat content 300 m"                        unit="W"                        />
+        <field id="t300"         description="Mean sea water potential temperature in upper 300 m"   unit="degC"         />
+        <field id="s300"         description="Mean salinity in upper 300 m"              unit="psu"                      />
+        <field id="thick300"     description="Thickness in upper 300 m"                  unit="m"                        />
+
         <!-- variables available with key_diaar5 -->
         <field id="botpres"      description="Pressure at sea floor"                     unit="dbar"                     />
         <field id="cellthc"      description="Cell thickness"                            unit="m"     axis_ref="deptht"  />
@@ -553,6 +560,14 @@
             <field ref="hflx_qns_tot"  name="hflx_qns_tot"   description="Non solar heat flux from coupler (cell average)"              level="0" />
             <field ref="hflx_qsr_ice"  name="hflx_qsr_ice"   description="Solar heat flux from coupler over sea-ice (cell average)"     level="0" />
             <field ref="hflx_qns_ice"  name="hflx_qns_ice"   description="Non solar heat flux from coupler over sea-ice (cell average)" level="0" />
+     <!--   <field ref="20d"           name="t20d"           description=""                                                             level="0" />
+            <field ref="28d"           name="t28d"           description=""                                                             level="0" />
+            <field ref="14d"           name="t14d"           description=""                                                             level="0" />
+            <field ref="17d"           name="t17d"           description=""                                                             level="0" />
+            <field ref="26d"           name="t26d"           description=""                                                             level="0" />
+            <field ref="t300"          name="t300"           description=""                                                             level="0" />
+            <field ref="s300"          name="s300"           description=""                                                             level="0" />    
+     -->
           </file>
 
           <file id="1m_grid_T_ar6" name_suffix="_ar6" >
