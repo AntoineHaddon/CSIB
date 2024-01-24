@@ -58,9 +58,11 @@ CONTAINS
       IF( ln_timing )   CALL timing_start('trc_sms')
 
       !
-      IF(lwp) WRITE(numout,*)
-      IF(lwp) WRITE(numout,*) ' trc_sms:  shared BGC processes'
-      IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+      IF( kt == nit000 .AND. lwp) THEN
+        WRITE(numout,*)
+        WRITE(numout,*) ' trc_sms:  shared BGC processes'
+        WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+      ENDIF
       !
       ! O Riche Oct 24th 2022
       ! CanBGC BGCMS - adding ln_cmoc/ln_canoe conditional branching

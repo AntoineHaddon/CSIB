@@ -51,9 +51,11 @@ CONTAINS
       !
       IF( ln_timing )   CALL timing_start('trc_sms_age')
       !
-      IF(lwp) WRITE(numout,*)
-      IF(lwp) WRITE(numout,*) ' trc_sms_age:  AGE model'
-      IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~'
+      IF( kt == nit000 .AND. lwp) THEN
+        WRITE(numout,*)
+        WRITE(numout,*) ' trc_sms_age:  AGE model'
+        WRITE(numout,*) ' ~~~~~~~~~~~~~~'
+      ENDIF
       !
       DO jk = 1, nla_age
          tr(:,:,jk,jp_age,Krhs) = rn_age_kill_rate * tr(:,:,jk,jp_age,Kbb)
