@@ -926,6 +926,14 @@ CONTAINS
                         &                      'increase the parameter jpmax_vars')
                ENDIF
                IF( llstop .AND. iom_varid == -1 )   CALL ctl_stop( TRIM(clinfo)//' not found' )
+               IF( l_Iperio.and.iom_file(kiomid)%dimsz(1,iiv).eq.Ni0glo+2 )  then
+                   CALL ctl_warn(TRIM(iom_file(kiomid)%name), ' is using the old inputs convention with the columns for the cyclic east-west ', & 
+                     'Starting indice on i-dimension adjusted (+1)'  )
+               ENDIF
+               IF( l_Jperio.and.iom_file(kiomid)%dimsz(2,iiv).eq.Nj0glo+2 )  then
+                   CALL ctl_warn(TRIM(iom_file(kiomid)%name), ' is using the old inputs convention with the columns for the cyclic south-morth ', & 
+                     'Starting indice on j-dimension adjusted (+1)'  )
+               ENDIF
             ELSE
                iom_varid = iiv
                IF( PRESENT(kdimsz) ) THEN
@@ -1318,6 +1326,12 @@ CONTAINS
             ELSE   !   not a 1D array as pv(sd)p1d requires jpdom_unknown
                ! we do not read the overlap and the extra-halos -> from Nis0 to Nie0 and from Njs0 to Nje0
                IF( idom == jpdom_global )   istart(1:2) = (/ mig0(Nis0), mjg0(Njs0) /)
+               IF( idom == jpdom_global.and.l_Iperio.and.idimsz(1).eq.Ni0glo+2 )  then
+                   istart(1) = istart(1) + 1 
+               ENDIF
+               IF( idom == jpdom_global.and.l_Jperio.and.idimsz(2).eq.Nj0glo+2 )  then
+                   istart(2) = istart(2) + 1 
+               ENDIF
                icnt(1:2) = (/ Ni_0, Nj_0 /)
                IF( llis3d ) THEN
                   IF( idom == jpdom_auto_xy ) THEN
