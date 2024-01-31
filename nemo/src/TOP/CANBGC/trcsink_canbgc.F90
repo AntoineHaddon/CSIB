@@ -497,9 +497,9 @@ CONTAINS
     !!                     ***  ROUTINE cmoc_sink_alloc  ***
     !!----------------------------------------------------------------------
     !
-    ALLOCATE( wsbio3 (jpi,jpj,jpk),  wsbio4  (jpi,jpj,jpk),        &
-       &      sinking(jpi,jpj,jpk),  sinking2(jpi,jpj,jpk),        &
-       &      sinkcal(jpi,jpj,jpk),          STAT=canoe_sink_alloc )
+    ALLOCATE( wsbio3(jpi,jpj,jpk), wsbio4(jpi,jpj,jpk), wscal(jpi,jpj,jpk), &
+       &    sinking(jpi,jpj,jpk), sinking2(jpi,jpj,jpk), sinkcal(jpi,jpj,jpk), &
+       &       STAT=canoe_sink_alloc )
        !
     IF( canoe_sink_alloc /= 0 ) CALL ctl_warn('canoe_sink_alloc : failed to allocate arrays.')
     !
