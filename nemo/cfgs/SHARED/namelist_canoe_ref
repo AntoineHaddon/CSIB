@@ -13,11 +13,6 @@
 !!              9  - parameters for Kriest parameterization   (namcankrp, namcankrs)
 !!              10 - additional 2D/3D  diagnostics            (namcandia)
 !!              11 - Damping                                  (namcandmp)
-!>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-&namcmocnegtr   !   Switch the negatrive tracer block
-!-----------------------------------------------------------------------
-   ln_canoenegtr = .false.          !  .false. means it will be skipped
-/
 !-----------------------------------------------------------------------
 &namcanoemass    !   Mass conservation
 !-----------------------------------------------------------------------
