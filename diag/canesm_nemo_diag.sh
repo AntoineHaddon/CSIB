@@ -85,9 +85,13 @@ set -e
 # 2. Run the Fortran executable to compute the CMIP6 offline diagnostics #
 # 3. Process *diaptr* files                                              #
 ##########################################################################
-# Execute the following lines when output_level -ge 1
-  level=1
-  while (( $level <= $output_level )) ; do
+#
+# Note that the following two "for and case" structures translates 
+# "output_leve" to "level" that represent the variable priority levels. 
+# For example, output_leve=3 means variable priority levels 1, 2 and 3.
+#
+# Execute the following lines when output_level -ge 1;
+  for level in $(seq 1 $output_level); do	  
     case $level in
       # output_level=1 and only if starting from January
       1)
@@ -165,12 +169,10 @@ set -e
         fi
         ;;
     esac
-    ((level++))
   done
 
   if [ $nemo_calc_diag -eq 1 ] ; then
-    level=1
-    while (( $level <= $output_level )) ; do
+    for level in $(seq 1 $output_level); do
       case $level in
         1)
           if [ $fmon -eq 1 ] ; then
@@ -213,7 +215,6 @@ set -e
           fi
           ;;
       esac 
-      ((level++))
     done
   fi
 
