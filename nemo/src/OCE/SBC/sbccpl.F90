@@ -47,6 +47,7 @@ MODULE sbccpl
 #endif
    !
    USE in_out_manager ! I/O manager
+   USE timing
    USE iom            ! NetCDF library
    USE lib_mpp        ! distribued memory computing library
    USE lbclnk         ! ocean lateral boundary conditions (or mpp link)
@@ -60,7 +61,7 @@ MODULE sbccpl
    PRIVATE
 
    PUBLIC   sbc_cpl_init      ! routine called by sbcmod.F90
-   PUBLIC   sbc_cpl_rcv       ! routine called by icestp.F90
+   PUBLIC   sbc_cpl_rcv       ! routine called by sbcmod.F90
    PUBLIC   sbc_cpl_snd       ! routine called by step.F90
    PUBLIC   sbc_cpl_ice_tau   ! routine called by icestp.F90
    PUBLIC   sbc_cpl_ice_flx   ! routine called by icestp.F90
@@ -1142,6 +1143,7 @@ CONTAINS
       REAL(wp), DIMENSION(jpi,jpj) ::   ztx, zty, zmsk, zemp, zqns, zqsr, zcloud_fra
       type(FLD_CPL), pointer :: fld_ptr
       !!----------------------------------------------------------------------
+      IF( ln_timing )   call timing_start('sbc_cpl_rcv')
       !
       IF( kt == nit000 ) THEN
       !   cannot be done in the init phase when we use agrif as cpl_freq requires that oasis_enddef is done
@@ -1491,6 +1493,7 @@ CONTAINS
          IF( srcv(jpr_fice )%laction )   fr_i(:,:) = frcv(jpr_fice )%z3(:,:,1)
          !
       ENDIF
+      IF( ln_timing )   call timing_stop('sbc_cpl_rcv')
       !
    END SUBROUTINE sbc_cpl_rcv
 
@@ -1894,6 +1897,11 @@ CONTAINS
          ENDIF
       END SELECT
       !
+      ! New outputs for CCCma RTD
+      IF( iom_use('O_QnsOce') ) CALL iom_put( "O_QnsOce" , zqns_tot(:,:) - SUM( a_i * zqns_ice, dim=3 ) )
+      IF( iom_use('O_QnsIce') ) CALL iom_put( "O_QnsIce" , SUM( a_i * zqns_ice, dim=3 ) )
+      IF( iom_use('O_QnsMix') ) CALL iom_put( "O_QnsMix" , zqns_tot(:,:))
+      !
       ! --- calving (removed from qns_tot) --- !
       IF( srcv(jpr_cal)%laction )   zqns_tot(:,:) = zqns_tot(:,:) - frcv(jpr_cal)%z3(:,:,1) * rLfus  ! remove latent heat of calving
                                                                                                      ! we suppose it melts at 0deg, though it should be temp. of surrounding ocean
@@ -2048,6 +2056,11 @@ CONTAINS
          END DO
       ENDIF
 
+      ! New outputs for CCCma RTD
+      IF( iom_use('O_QsrOce') ) CALL iom_put( "O_QsrOce" , zqsr_tot(:,:) - SUM( a_i * zqsr_ice, dim=3 ) )
+      IF( iom_use('O_QsrIce') ) CALL iom_put( "O_QsrIce" , SUM( a_i * zqsr_ice, dim=3 ) )
+      IF( iom_use('O_QsrMix') ) CALL iom_put( "O_QsrMix" , zqsr_tot(:,:))
+      !
 #if defined key_si3
       ! --- solar flux over ocean --- !
       !         note: ziceld cannot be = 0 since we limit the ice concentration to amax
@@ -2208,6 +2221,7 @@ CONTAINS
       REAL(wp), DIMENSION(jpi,jpj,jpl) ::   ztmp3, ztmp4
       !!----------------------------------------------------------------------
       !
+      IF( ln_timing )   call timing_start('sbc_cpl_snd')
       isec = ( kt - nit000 ) * NINT( rdt )        ! date of exchanges
 
       zfr_l(:,:) = 1.- fr_i(:,:)
@@ -2737,6 +2751,7 @@ CONTAINS
       ztmp1(:,:) = sstfrz(:,:) + rt0
       IF( ssnd(jps_sstfrz)%laction )  CALL cpl_snd( jps_sstfrz, isec, RESHAPE ( ztmp1, (/jpi,jpj,1/) ), info)
 #endif
+      IF( ln_timing )   call timing_stop('sbc_cpl_snd')
       !
    END SUBROUTINE sbc_cpl_snd
 

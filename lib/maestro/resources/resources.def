@@ -7,6 +7,7 @@ SEQ_DEFAULT_MACHINE=ppp5
 # Prefix to job/file names
 SEQ_JOBNAME_PREFIX=r02-optimisation-
 
+
 # Maestro submission method
 SEQ_CONTAINER_METHOD=immediate
 #SEQ_CONTAINER_METHOD=submit

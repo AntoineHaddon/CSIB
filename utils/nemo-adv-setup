@@ -115,9 +115,9 @@ else
         CCC_ORCA025_LIM)      namelists_and_iofiles='namelist namelist_ice namelist_top iodef.xml xmlio_server.def'                               ;;
         CCC_ORCA025_LIM_CMOC) namelists_and_iofiles='namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def' ;;
         CCC_ORCA1_LIM)        namelists_and_iofiles='namelist namelist_ice namelist_top iodef.xml xmlio_server.def'                               ;;
-        CCC_ORCA1_LIM_PISCES) namelists_and_iofiles='namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
-        CCC_ORCA1_LIM_CANOE)  namelists_and_iofiles='namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
-        CCC_ORCA1_LIM_CMOC)   namelists_and_iofiles='namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def' ;;
+        # CCC_ORCA1_LIM_PISCES) namelists_and_iofiles='namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
+        # CCC_ORCA1_LIM_CANOE)  namelists_and_iofiles='namelist namelist_ice namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
+        # CCC_ORCA1_LIM_CMOC)   namelists_and_iofiles='namelist namelist_ice namelist_pisces namelist_cmoc namelist_top iodef.xml xmlio_server.def' ;;
         CCC_ORCA1_OFF_PISCES) namelists_and_iofiles='namelist namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
         CCC_ORCA1_OFF_CANOE)  namelists_and_iofiles='namelist namelist_pisces namelist_top iodef.xml xmlio_server.def'  ;;
         CCC_ORCA1_OFF_CMOC)   namelists_and_iofiles='namelist namelist_pisces namelist_top namelist_cmoc iodef.xml xmlio_server.def'  ;;
@@ -152,15 +152,15 @@ else
     nemo_config_lower=$(echo ${nemo_config} | tr '[:upper:]' '[:lower:]')
     if [[ $nemo_config_lower == *"cmoc"* ]] || [[ $nemo_config_lower == *"canoe"* ]]; then
         sed -i "s#nemo_carbon=.*#nemo_carbon=on#" experiment.cfg
-        if [[ $nemo_config_lower == *"cmoc"* ]]; then
-            sed -i "s#nemo_cmoc=.*#nemo_cmoc=on#" experiment.cfg
-        fi
+        # if [[ $nemo_config_lower == *"cmoc"* ]]; then
+            # sed -i "s#nemo_cmoc=.*#nemo_cmoc=on#" experiment.cfg
+        # fi
         if [[ $nemo_config_lower == *"off"* ]]; then
-            sed -i 's#nemo_hist_file_suffix_list=.*#nemo_hist_file_suffix_list="ptrc_T diad_T"#' experiment.cfg
+            sed -i 's#nemo_hist_file_suffix_list=.*#nemo_hist_file_suffix_list="btrc_T diad_T"#' experiment.cfg
             sed -i 's#nemo_hist_file_freq_list=.*#nemo_hist_file_freq_list="1m     1m"#' experiment.cfg
-            sed -i 's#nemo_dump_file_suff=.*#nemo_dump_file_suff="ptrc_T diad_T"#' experiment.cfg
+            sed -i 's#nemo_dump_file_suff=.*#nemo_dump_file_suff="btrc_T diad_T"#' experiment.cfg
             sed -i 's#nemo_dump_file_freq=.*#nemo_dump_file_freq="1m     1m"#' experiment.cfg
-            sed -i 's#nemo_del_file_suff=.*#nemo_del_file_suff="ptrc_T diad_T"#' experiment.cfg
+            sed -i 's#nemo_del_file_suff=.*#nemo_del_file_suff="btrc_T diad_T"#' experiment.cfg
             sed -i 's#nemo_del_file_freq=.*#nemo_del_file_freq="1m     1m"#' experiment.cfg
         fi
     fi
@@ -181,7 +181,7 @@ else
         "ccc_orca1_lim_cmoc")   frq="5y"    ;;
         "ccc_orca1_lim_canoe")  frq="2y"    ;;
         "ccc_orca025_lim")      frq="4m"    ;;
-	"eorca025_ice")         frq="3m"    ;;
+	"eorca025_ice")         frq="4m"    ;;
         *) 
             echo "There is currently no recommended nemo_freq for config ${nemo_config}"
             echo "Value set to 1y. Alter if desired"

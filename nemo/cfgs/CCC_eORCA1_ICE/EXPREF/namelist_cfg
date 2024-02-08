@@ -194,6 +194,8 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
    !                       ! type of penetration                        (default: NO selection)
    ln_qsr_rgb  = .true.       !  RGB light penetration (Red-Green-Blue)
+   ln_qsr_2bd  = .false.      !  2BD light penetration (two bands)
+   ln_qsr_bio  = .false.      !  bio-model light penetration
    !
    nn_chldta   =      1       !  RGB : Chl data (=1) or cst value (=0)
 
@@ -243,6 +245,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 &namberg       !   iceberg parameters                                   (default: OFF)
 !-----------------------------------------------------------------------
    ln_icebergs = .false.    ! activate iceberg floats (force =F with "key_agrif")
+   ln_use_calving= .false. ! Use calving data even when nn_test_icebergs > 0
 
    cn_dir = './'  !  root directory for the location of drag coefficient files
    !______!___________!___________________!______________!______________!_________!___________!__________!__________!_______________!
@@ -453,7 +456,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
       !                       !                 = 1 bounded by the local vertical scale factor
       !                       !                 = 2 first vertical derivative of mixing length bounded by 1
       !                       !                 = 3 as =2 with distinct dissipative an mixing length scale
-      nn_etau     =   1       !  penetration of tke below the mixed layer (ML) due to NIWs
+      nn_etau     =   0       !  penetration of tke below the mixed layer (ML) due to NIWs
                                !        = 0 none ; = 1 add a tke source below the ML
                                !        = 2 add a tke source just at the base of the ML
                                !        = 3 as = 1 applied on HF part of the stress           (ln_cpl=T)
@@ -497,7 +500,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
 &namtrd        !   trend diagnostics                                    (default: OFF)
 !-----------------------------------------------------------------------
-   ln_tra_trd = .false.   ! (T) 3D tracer trend output (needed var. for ttrd_zdfp, ttrd_zdfp, etc.)
+   ln_tra_trd  = .false.   ! (T) 3D tracer trend output (needed var. for ttrd_zdfp, ttrd_zdfp, etc.)
 /
 !-----------------------------------------------------------------------
 &namptr        !   Poleward Transport Diagnostic                        (default: OFF)

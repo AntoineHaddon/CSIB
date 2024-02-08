@@ -1,4 +1,4 @@
-# CanNEMO
+## CanNEMO
 
 The development of NEMO at CCCma, including ocean physics, biogeochemistry and sea-ice as well as associated scripts and code for running the model. 
 CanNEMO is a component of [CanESM](https://gitlab.com/cccma/canesm).

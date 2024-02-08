@@ -6,6 +6,13 @@ IMPLICIT NONE
 !
 ! HISTORY:
 ! -------
+! N. Lambert  July   2023   Include the time variation of e3t
+!
+! O. Riche    Jan    2023   change PH to pH when reading the variable from the o/p file.
+!                           read e3t from grid_t instead of from mesh_mask (not present).
+!
+! O Riche     Jun    2022   Bare-bones version to test global tracer mass cons.
+!                           in NEMO4
 ! N. Swart    Dec    2015   Abstract all calculations to ccc_nemo_rtd_utils
 !                           module, which is shared between all rtd.
 !
@@ -88,14 +95,14 @@ SUBROUTINE calc (imt, jmt, km, lm)
 
 !     Grid-related arrays
       REAL, DIMENSION(:, :), ALLOCATABLE    :: lon2d, lat2d, e1t, e2t
-      REAL, DIMENSION(:, :, :), ALLOCATABLE :: e3t, t_mask
+      REAL, DIMENSION(:, :, :), ALLOCATABLE :: t_mask
       REAL, DIMENSION(:), ALLOCATABLE       :: deptht
 
 !     Monthly DIC, CaCO3, TA, PH, O2
       REAL, DIMENSION(:, :, :, :), ALLOCATABLE :: dic, caco3, tal, ph, oxy
 
 !     Monthly POC, GOC
-      REAL, DIMENSION(:, :, :, :), ALLOCATABLE :: poc, goc
+      REAL, DIMENSION(:, :, :, :), ALLOCATABLE :: e3t, poc, goc
 
 !     Monthly NO3, NH4, dFe
       REAL, DIMENSION(:, :, :, :), ALLOCATABLE :: no3, nh4, dfe
@@ -155,14 +162,15 @@ SUBROUTINE calc (imt, jmt, km, lm)
 
 !----------------
 !     input file stuff
-      character fname05*100, fname06*100, fname07*100  
-      integer year, iou4, iou5, iou6, recn, nrecon
+      character fname05*100, fname06*100, fname07*100, fname08*100
+      integer year, iou4, iou5, iou6, iou7, recn, nrecon
 
          year =0
          ntrec=0
          iou4 =0
          iou5 =0 
          iou6 =0 
+         iou7 =0 
          recn =12.
          nrecon = int(recn + 0.001)
 !---------------------------------------------------
@@ -171,12 +179,13 @@ SUBROUTINE calc (imt, jmt, km, lm)
         fname05='orca_mesh_mask'
         fname06='ptrc_t'   
         fname07='diad_t'   
+        fname08='grid_t' 
 !---------------------------------------------------
 !    Get grid/mask data   
 !---------------------------------------------------
       ALLOCATE( lon2d(imt,jmt), lat2d(imt,jmt), e1t(imt,jmt), e2t(imt,jmt),      &
          &      g_mask(imt,jmt), STAT=ierr(1) )
-      ALLOCATE( e3t(imt,jmt,km), t_mask(imt,jmt,km), STAT=ierr(2) )
+      ALLOCATE( e3t(imt,jmt,km,lm), t_mask(imt,jmt,km), STAT=ierr(2) )
       ALLOCATE( deptht(km), STAT=ierr(3) )
       ALLOCATE( dic(imt,jmt,km,lm), caco3(imt,jmt,km,lm),tal (imt,jmt,km,lm),    &
          &      ph(imt,jmt,km,lm), oxy(imt,jmt,km,lm), poc(imt,jmt,km,lm),       &
@@ -211,7 +220,6 @@ SUBROUTINE calc (imt, jmt, km, lm)
       CALL openfile (fname05,iou4)
       CALL getvara ('e1t', iou4, imt*jmt, (/1,1,1/), (/imt,jmt,1/),e1t , 1., 0.)
       CALL getvara ('e2t', iou4, imt*jmt, (/1,1,1/),  (/imt,jmt,1/),e2t , 1., 0.)
-      CALL getvara ('e3t', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/),e3t , 1., 0.)
       CALL getvara ('tmask', iou4, imt*jmt*km, (/1,1,1,1/), (/imt,jmt,km,1/), t_mask , 1., 0.)
       CALL closefile (iou4)
 
@@ -221,6 +229,9 @@ SUBROUTINE calc (imt, jmt, km, lm)
       CALL getvara ('nav_lat', iou5, imt*jmt, (/1,1,1/), (/imt,jmt,1/), lat2d, 1., 0.)
       CALL getvara ('deptht', iou5, km, (/1/), (/km/), deptht, 1., 0.)
       CALL closefile (iou5)
+      CALL openfile(fname08,iou7) 
+      CALL getvara ('e3t', iou7, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),e3t , 1., 0.)
+      CALL closefile(iou7)  
 
 !---------------------------------------------------
 ! Read from NetCDF
@@ -230,7 +241,10 @@ SUBROUTINE calc (imt, jmt, km, lm)
       CALL openfile (fname06,iou5)
 
 !     read diagnostic variables from the diad_t file, if it exists
-      inquire (file=trim(fname07), exist=exists)                          
+      inquire (file=trim(fname07), exist=exists)
+! O Riche June 6th 2022
+! no diad_t here for this test and for now
+!	  exists=.false.
       if (exists) then         
           CALL openfile (fname07,iou6)
       endif
@@ -238,7 +252,7 @@ SUBROUTINE calc (imt, jmt, km, lm)
 !        DIC, TA, O2 
          CALL getvara('DIC',      iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),   dic, 1., 0.)                                 
          CALL getvara('CaCO3',    iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), caco3, 1., 0.)  
-         CALL getvara('TAlk',     iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),   tal, 1., 0.)   
+         CALL getvara('Alkalini',     iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),   tal, 1., 0.)   
 
 !        PH moved below for reading with other diat_t input
 
@@ -251,7 +265,7 @@ SUBROUTINE calc (imt, jmt, km, lm)
 !        NO3, NH4, dFe
          CALL getvara('NO3', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), no3, 1., 0.)
          CALL getvara('NH4', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), nh4, 1., 0.)    
-         CALL getvara('dFe', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), dfe, 1., 0.)    
+         CALL getvara('Fer', iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/), dfe, 1., 0.)    
 
 !        PHY, PHY2, ZOO, ZOO2
          CALL getvara('PHYC',  iou5, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),  phy, 1., 0.)  
@@ -264,7 +278,7 @@ SUBROUTINE calc (imt, jmt, km, lm)
 !        Diagnostic variables
          if (exists) then 
 !            3-D: PH, PPPHY, PPPHY2, EPC100,
-             CALL getvara('PH',       iou6, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),      ph, 1., 0.)   
+             CALL getvara('pH',       iou6, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),      ph, 1., 0.)   
              CALL getvara('PPPHY',    iou6, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),   ppphy, 1., 0.)   
              CALL getvara('PPPHY2',   iou6, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),  ppphy2, 1., 0.)   
              CALL getvara('Nfix',     iou6, imt*jmt*km*lm, (/1,1,1,1/), (/imt,jmt,km,lm/),    nfix, 1., 0.)   
@@ -316,35 +330,35 @@ SUBROUTINE calc (imt, jmt, km, lm)
              g_mask(:, :)  = t_mask(:, :, k) 
 
     !        DIC, TA, PH, O2 
-             CALL area_ave(e1t, e2t, e3t, g_mask, dic(:, :, k, l),   imt, jmt, km, dicz,   dvol, k)  
-             CALL area_ave(e1t, e2t, e3t, g_mask, caco3(:, :, k, l), imt, jmt, km, caco3z, dvol, k)  
-             CALL area_ave(e1t, e2t, e3t, g_mask, tal(:, :, k, l),     imt, jmt, km, talz,   dvol, k)  
-             CALL area_ave(e1t, e2t, e3t, g_mask, oxy(:, :, k, l),     imt, jmt, km, oxyz,   dvol, k)
+             CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, dic(:, :, k, l),   imt, jmt, km, dicz,   dvol, k)  
+             CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, caco3(:, :, k, l), imt, jmt, km, caco3z, dvol, k)  
+             CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, tal(:, :, k, l),     imt, jmt, km, talz,   dvol, k)  
+             CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, oxy(:, :, k, l),     imt, jmt, km, oxyz,   dvol, k)
 
     !        POC, GOC
-             CALL area_ave(e1t, e2t, e3t, g_mask, poc(:, :, k, l), imt, jmt, km, pocz, dvol, k)
-             CALL area_ave(e1t, e2t, e3t, g_mask, goc(:, :, k, l), imt, jmt, km, gocz, dvol, k)
+             CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, poc(:, :, k, l), imt, jmt, km, pocz, dvol, k)
+             CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, goc(:, :, k, l), imt, jmt, km, gocz, dvol, k)
 
     !        NO3, NH4
-             CALL area_ave(e1t, e2t, e3t, g_mask, no3(:, :, k, l), imt, jmt, km, no3z, dvol, k)
-             CALL area_ave(e1t, e2t, e3t, g_mask, nh4(:, :, k, l), imt, jmt, km, nh4z, dvol, k)
-             CALL area_ave(e1t, e2t, e3t, g_mask, dfe(:, :, k, l), imt, jmt, km, dfez, dvol, k)  
+             CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, no3(:, :, k, l), imt, jmt, km, no3z, dvol, k)
+             CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, nh4(:, :, k, l), imt, jmt, km, nh4z, dvol, k)
+             CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, dfe(:, :, k, l), imt, jmt, km, dfez, dvol, k)  
 
     !        PHY, PHY2, ZOO, ZOO2
-             CALL area_ave(e1t, e2t, e3t, g_mask, phy(:, :, k, l),   imt, jmt, km, phyz,   dvol, k)  
-             CALL area_ave(e1t, e2t, e3t, g_mask, phy2(:, :, k, l),  imt, jmt, km, phy2z,  dvol, k)  
-             CALL area_ave(e1t, e2t, e3t, g_mask, phyn(:, :, k, l),  imt, jmt, km, phynz,  dvol, k)  
-             CALL area_ave(e1t, e2t, e3t, g_mask, phy2n(:, :, k, l), imt, jmt, km, phy2nz, dvol, k)  
-             CALL area_ave(e1t, e2t, e3t, g_mask, zoo(:, :, k, l),   imt, jmt, km, zooz,   dvol, k)  
-             CALL area_ave(e1t, e2t, e3t, g_mask, zoo2(:, :, k, l),  imt, jmt, km, zoo2z,  dvol, k) 
+             CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, phy(:, :, k, l),   imt, jmt, km, phyz,   dvol, k)  
+             CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, phy2(:, :, k, l),  imt, jmt, km, phy2z,  dvol, k)  
+             CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, phyn(:, :, k, l),  imt, jmt, km, phynz,  dvol, k)  
+             CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, phy2n(:, :, k, l), imt, jmt, km, phy2nz, dvol, k)  
+             CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, zoo(:, :, k, l),   imt, jmt, km, zooz,   dvol, k)  
+             CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, zoo2(:, :, k, l),  imt, jmt, km, zoo2z,  dvol, k) 
 
              if (exists) then
     !            PPPHY, PPPHY2      
-                 CALL area_ave(e1t, e2t, e3t, g_mask, ph(:, :, k, l),      imt, jmt, km, phz,      dvol, k)  
-                 CALL area_ave(e1t, e2t, e3t, g_mask, ppphy(:, :, k, l),   imt, jmt, km, ppphyz,   dvol, k) 
-                 CALL area_ave(e1t, e2t, e3t, g_mask, ppphy2(:, :, k, l),  imt, jmt, km, ppphy2z,  dvol, k) 
-                 CALL area_ave(e1t, e2t, e3t, g_mask, nfix(:, :, k, l),    imt, jmt, km, nfixz,    dvol, k) 
-                 CALL area_ave(e1t, e2t, e3t, g_mask, irondep(:, :, k, l), imt, jmt, km, irondepz, dvol, k) 
+                 CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, ph(:, :, k, l),      imt, jmt, km, phz,      dvol, k)  
+                 CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, ppphy(:, :, k, l),   imt, jmt, km, ppphyz,   dvol, k) 
+                 CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, ppphy2(:, :, k, l),  imt, jmt, km, ppphy2z,  dvol, k) 
+                 CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, nfix(:, :, k, l),    imt, jmt, km, nfixz,    dvol, k) 
+                 CALL area_ave(e1t, e2t, e3t(:,:,:,l), g_mask, irondep(:, :, k, l), imt, jmt, km, irondepz, dvol, k) 
              endif 
     !================================================================
     !        Assign outputs

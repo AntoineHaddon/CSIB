@@ -195,7 +195,7 @@
       tarlist=''
 
       # Copy init files if exist
-      [ $nemo_nn_istate == 1 ] && mv output.init_[0-9][0-9][0-9][0-9].nc NEXT_RESTART_ARC
+      [ -n "$(ls output.init_[0-9][0-9][0-9][0-9].nc 2>/dev/null)" ] && mv output.init_[0-9][0-9][0-9][0-9].nc NEXT_RESTART_ARC
 
       # Create copies of the namelists used and include them in the tar file
       cp -f namelist_cfg rs_namelist_cfg || :
@@ -226,19 +226,16 @@
         [ -s rs_namelist_top_ref ]     && tarlist="$tarlist rs_namelist_top_ref"
       fi
 
-      if [ "$nemo_carbon" = "on" ]; then
-    	cp -f namelist_pisces_cfg rs_namelist_pisces_cfg || :
-    	[ -s rs_namelist_pisces_cfg ]  && tarlist="$tarlist rs_namelist_pisces_cfg"
-    	cp -f namelist_pisces_ref rs_namelist_pisces_ref || :
-    	[ -s rs_namelist_pisces_ref ]  && tarlist="$tarlist rs_namelist_pisces_ref"
-
-        if [ "$nemo_cmoc" = "on" ]; then
-    	  cp -f namelist_cmoc_cfg rs_namelist_cmoc_cfg || :
-	      [ -s rs_namelist_cmoc_cfg ] &&  tarlist="$tarlist rs_namelist_cmoc_cfg"
-    	  cp -f namelist_cmoc_ref rs_namelist_cmoc_ref || :
-	      [ -s rs_namelist_cmoc_ref ] &&  tarlist="$tarlist rs_namelist_cmoc_ref"
-        fi
-      fi
+      if [ "$nemo_carbon" = "on" ]; then 
+        cp -f namelist_cmoc_cfg rs_namelist_cmoc_cfg || : 
+        [ -s rs_namelist_cmoc_cfg ]  && tarlist="$tarlist rs_namelist_cmoc_cfg" 
+        cp -f namelist_cmoc_ref rs_namelist_cmoc_ref || : 
+        [ -s rs_namelist_cmoc_ref ]  && tarlist="$tarlist rs_namelist_cmoc_ref" 
+        cp -f namelist_canoe_cfg rs_namelist_canoe_cfg || : 
+        [ -s rs_namelist_canoe_cfg ]  && tarlist="$tarlist rs_namelist_canoe_cfg" 
+        cp -f namelist_canoe_ref rs_namelist_canoe_ref || : 
+        [ -s rs_namelist_canoe_ref ]  && tarlist="$tarlist rs_namelist_canoe_ref" 
+      fi 
 
       # time step file
       cp -f time.step rs_time.step || :

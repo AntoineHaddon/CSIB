@@ -201,10 +201,9 @@ fi
 
 cp rebuild_nemo.exe ${inrs}/
 cd $inrs
-# Figure out the last time step, which is needed for the rs tile names.
-ls -l  rs_time.step
-nn_itend=$(cat rs_time.step)
-end_step=$(echo $nn_itend | awk '{printf "%8.8d",$1}')
+# Figure out the first/last time step, which is needed for the rs tile names.
+end_step=$(grep -m 1 -w nn_itend  rs_namelist_cfg | awk '{printf "%8.8d",$3}' )
+start_step=$(grep -m 1 -w nn_it000  rs_namelist_cfg | awk '{printf "%8.8d",$3}' )
 
 # The initial state files
 pfx=output.init
@@ -214,13 +213,12 @@ if [ -s "${pfx}_0000.nc" ]; then
    # Replace the global lat/lon to remove the hold made by the land processors elimination
    ncks -x -h -O -v  nav_lon,nav_lat $pfx.nc $pfx.nc
    ncks -A -h -v nav_lon,nav_lat ${wrkdir}/coor.nc $pfx.nc
-   ncsave=${model1}_istate_$start_date.nc
+   ncsave=${runid}_${start_step}_istate.nc
    mv  $pfx.nc $ncsave
 fi
 
 # The physics rs file
 pfx=${runid}_${end_step}_restart
-
 if [ ! -s "${pfx}_0000.nc" -a ! -e "${pfx}.nc" ]; then
    # Look for files, which might not have the same name as the run
    found_rs=`(ls -1 *_restart_[0-9][0-9][0-9][0-9].nc || : ) 2>/dev/null`
@@ -289,9 +287,9 @@ if [ -s "${pfx}_0000.nc" ]; then
    ncks -x -h -O -v  nav_lon,nav_lat $pfx.nc $pfx.nc
    ncks -A -h -v nav_lon,nav_lat ${wrkdir}/coor.nc $pfx.nc
 fi
-rm ${wrkdir}/coor.nc 
 
 cd $wrkdir
+rm coor.nc 
 
 #save the new untar ${inrs} (if already untar, file in direcotory are just kept)
  [ -e "${inrs}.tar" ] && ( save ${inrs} ${inrs} || bail "Could not save ${inrs}" )

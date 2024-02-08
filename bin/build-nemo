@@ -243,8 +243,9 @@ ARGS=( --job $xios_comp_np --arch $xios_arch )
 # Create xios executable (note that arch.env is sourced inside make_xios)
 # compile only if doesn't exist or clean_compile
 stored_exec="${storage_loc}/$(basename $target_xios_exec)"
-
 #test the file exist that way ([ -e] do not work, why?)
+# OR Feb 3rd 2023 this still does not work | removing it from my branch
+# nemo4-bgc-cancpl-integration
 if ls $stored_exec && [[ "$clean_compile" -ne 1 ]] ; then
 echo 'Skip make_xios...'
 else 

@@ -93,7 +93,7 @@ CONTAINS
       INTEGER ::   ierr    ! error code
       INTEGER ::   id      ! netcdf variable ID
 
-      REAL(wp), DIMENSION(jpi,jpj) :: zdata_in ! temporary real array for input
+      REAL(wp), DIMENSION(jpi,jpj) :: zdata_in  ! temporary real array for input
       !!----------------------------------------------------------------------
       !
       IF(lwp) WRITE(numout,*)
@@ -399,7 +399,6 @@ CONTAINS
 
       IF( ln_timing )  CALL timing_stop('sbc_clo')
       !
-      IF( ln_timing )  CALL timing_stop('sbc_clo')
 
    END SUBROUTINE sbc_clo
 
@@ -448,8 +447,8 @@ CONTAINS
       !!----------------------------------------------------------------------
       INTEGER, DIMENSION(:,:), INTENT(inout) ::   k_top, k_bot   ! ocean first and last level indices
       INTEGER                           :: inum, id
-      INTEGER,  DIMENSION(jpi,jpj) :: closea_mask ! closea_mask field
-      REAL(wp), DIMENSION(jpi,jpj) :: zdata_in ! temporary real array for input
+      INTEGER,  DIMENSION(jpi,jpj)      :: closea_mask     ! closea_mask field
+      REAL(wp), DIMENSION(jpi,jpj)      :: zdata_in ! temporary real array for input
       !!----------------------------------------------------------------------
       !
       IF(lwp) THEN                     ! Control print

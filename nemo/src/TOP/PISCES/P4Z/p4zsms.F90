@@ -487,6 +487,12 @@ CONTAINS
             IF( lwp ) WRITE(numnut,*) 
          ENDIF
       ENDIF
+      IF( .NOT.ln_linssh ) THEN ! update ocean volume due to ssh temporal evolution
+         IF ( iom_use( "pno3tot" ) .OR. iom_use( "ppo4tot" ) .OR. iom_use( "psiltot" )   &
+            & .OR. iom_use( "palktot" ) .OR. iom_use( "pfertot" ) .OR. ( ln_check_mass .AND. kt == nitend ) )                        &
+            &     areatot = glob_sum( 'p4z_chk_mass', cvol(:,:,:) )
+      ENDIF
+
 
       IF( iom_use( "pno3tot" ) .OR. ( ln_check_mass .AND. kt == nitend )  ) THEN
          !   Compute the budget of NO3, ALK, Si, Fer

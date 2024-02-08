@@ -43,16 +43,6 @@
   }
 
 echo "#################### Start NEMO pre-processing #################"
-  # TODO CanOE : add the top and CanOE namlist if activer
-  nemo_namelists=( namelist_ref     \
-                   namelist_cfg     \
-                   namelist_ice_ref \
-                   namelist_ice_cfg \
-                   namelist_top_ref \
-                   namelist_top_cfg
-  )
-  # Add top namelist  to the list only if nemo_trc is enabled "${nemo_namelists} namelist_top"
-  [ "$nemo_trc" = "on" ] &&  nemo_namelists+=( namelist_top_ref namelist_top_cfg )
   # ======================================================
   # Make sure we have necessary variables from parent code
   # ======================================================
@@ -73,6 +63,16 @@ echo "#################### Start NEMO pre-processing #################"
   # This is the start of the simulation
   year_run_start=${run_start_time[0]:-1}
 
+  # ===================
+  # Access input files
+  # ===================
+  # - many are only pulled in they don't already exist
+
+  # run namelists
+  for f in ${nemo_namelists[@]}; do
+      ! is_file ${f}_ref && cp ${WRK_DIR}/config/namelists/${f}_ref .
+      ! is_file ${f}_cfg && cp ${WRK_DIR}/config/namelists/${f}_cfg .
+  done
   # configuration input files
   is_defined $nemo_coordinates || bail "The variable nemo_coordinates must be defined in the configuration file."
   acc_cp domain_cfg.nc             $nemo_coordinates
@@ -175,8 +175,8 @@ echo "#################### Start NEMO pre-processing #################"
     is_defined $nemo_geothermal_heating || bail "The variable nemo_geothermal_heating must be defined in the configuration file."
     acc_cp geothermal_heating.nc     $nemo_geothermal_heating
   fi 
-
-  if [[ $nemo_nn_chldta == "on" ]]; then
+ 
+  if [  $nemo_traqrs != "bio" ] && [ $nemo_nn_chldta == 1 ]; then
     is_defined $nemo_chlorophyll || bail "The variable nemo_chlorophyll must be defined in the configuration file."
     acc_cp chlorophyll.nc            $nemo_chlorophyll
   fi 
@@ -201,6 +201,65 @@ echo "#################### Start NEMO pre-processing #################"
     acc_cp EMPave_old.dat            $nemo_empave_old 
   fi
 
+  # CanBGC IC and forcing files additional section defined in canesm.cfg.
+  if [ "$nemo_trc" = "on" ] && [[ $nemo_carbon == "on" ]] ; then
+
+      is_defined $nemo_presatm || bail "The variable nemo_presatm must be defined in canesm.cfg"
+      acc_cp presatm.nc           $nemo_presatm
+      
+      is_defined $nemo_bathy_orca || bail "The variable nemo_bathy_orca must be defined in canesm.cfg"
+      acc_cp bathy.orca.nc        $nemo_bathy_orca
+
+      is_defined $nemo_chlorophyll || bail "The variable nemo_chlorophyll must be defined in canesm.cfg"
+      acc_cp chlorophyll.nc       $nemo_chlorophyll  na 
+
+      is_defined $nemo_dust_orca || bail "The variable nemo_dust_orca must be defined in canesm.cfg"
+      acc_cp dust.orca.nc         $nemo_dust_orca
+      
+      is_defined $nemo_river_orca || bail "The variable nemo_river_orca must be defined in canesm.cfg"
+      acc_cp river.orca.nc        $nemo_river_orca
+      
+      is_defined $nemo_par_orca || bail "The variable nemo_par_orca must be defined in canesm.cfg"      
+      acc_cp par.orca.nc          $nemo_par_orca
+      
+      is_defined $nemo_solubility_orca || bail "The variable nemo_solubility_orca must be defined in canesm.cfg"      
+      acc_cp solubility.orca.nc   $nemo_solubility_orca
+      
+      is_defined $nemo_hydrofe_orca || bail "The variable nemo_hydrofe_orca must be defined in canesm.cfg"      
+      acc_cp hydrofe.orca.nc      $nemo_hydrofe_orca
+
+      is_defined $nemo_ndeposition_orca || bail "The variable nemo_ndeposition_orca must be defined in canesm.cfg"      
+      acc_cp ndeposition.orca.nc  $nemo_ndeposition_orca
+      
+      is_defined $nemo_data_dic_nomask || bail "The variable nemo_data_dic_nomask must be defined in canesm.cfg"      
+      acc_cp data_DIC_nomask.nc        $nemo_data_dic_nomask
+      
+      is_defined $nemo_data_alkalini_nomask || bail "The variable nemo_data_alkalini_nomask must be defined in canesm.cfg"      
+      acc_cp data_Alkalini_nomask.nc   $nemo_data_alkalini_nomask
+      
+      is_defined $nemo_data_o2_nomask || bail "The variable nemo_data_o2_nomask must be defined in canesm.cfg"      
+      acc_cp data_O2_nomask.nc         $nemo_data_o2_nomask
+      
+      is_defined $nemo_data_po4_nomask || bail "The variable nemo_data_po4_nomask must be defined in canesm.cfg"      
+      acc_cp data_PO4_nomask.nc        $nemo_data_po4_nomask
+      
+      is_defined $nemo_data_si_nomask || bail "The variable nemo_data_si_nomask must be defined in canesm.cfg"      
+      acc_cp data_Si_nomask.nc        $nemo_data_si_nomask
+      
+      is_defined $nemo_data_doc_nomask || bail "The variable nemo_data_doc_nomask must be defined in canesm.cfg"      
+      acc_cp data_DOC_nomask.nc        $nemo_data_doc_nomask
+      
+      is_defined $nemo_data_fer_nomask || bail "The variable nemo_data_fer_nomask must be defined in canesm.cfg"      
+      acc_cp data_Fer_nomask.nc        $nemo_data_fer_nomask
+      # trcsrc_canbgc.F90 use this file too.
+      is_defined $nemo_fermask_orca    || bail "The variable nemo_fermask_orca must be defined in canesm.cfg"      
+      acc_cp femask.nc                 $nemo_fermask_orca
+      
+      is_defined $nemo_data_no3_nomask || bail "The variable nemo_data_no3_nomask must be defined in canesm.cfg"      
+      acc_cp data_NO3_nomask.nc        $nemo_data_no3_nomask
+  fi
+
+
   # Access files required to run NEMO
   xios_files=( axis_def_nemo.xml \
                context_nemo.xml \
@@ -211,9 +270,14 @@ echo "#################### Start NEMO pre-processing #################"
                file_def_nemo-oce.xml \
                grid_def_nemo.xml \
                iodef.xml )
-
-  # Add pisces files to the list only if nemo_carbon is enable 
-  [ "$nemo_carbon" = "on" ] &&  xios_files+=( field_def_nemo-pisces.xml file_def_nemo-pisces.xml )
+  # add xios filoes if nemo_config is set to a CMOC, a CanOE or a PISCES config 
+  if [[ $nemo_config == *"CANOE" ]] ; then
+	xios_files=( "${xios_files[@]}"  field_def_nemo-canoe.xml  file_def_nemo-canoe.xml )
+  elif [[ $nemo_config == *"CMOC" ]] ; then
+	xios_files=( "${xios_files[@]}"  field_def_nemo-cmoc.xml    file_def_nemo-cmoc.xml )
+  elif [[ $nemo_config == *"PISCES" ]] ; then
+	xios_files=( "${xios_files[@]}"  field_def_nemo-pisces.xml file_def_nemo-pisces.xml )
+  fi
 
   for file in "${xios_files[@]}"; do
     echo $file
@@ -222,6 +286,10 @@ echo "#################### Start NEMO pre-processing #################"
     # Not all have the output_level, but this is a secure way to have the same
     # output_level everywhere (should be in "context_nemo.mxl")
     sed -i "s/output_level=\"\([0-9]\+\)\"/output_level=\"${output_level}\"/" $file
+    if [[ $file == "iodef.xml" ]];then
+       [[  $nemo_use_xios_server -eq 1 ]] && sed -i '/using_server/c\           <variable id="using_server"              type="bool">true</variable>' $file
+       [[  $nemo_use_xios_server -eq 0 ]] && sed -i '/using_server/c\           <variable id="using_server"              type="bool">false</variable>' $file
+    fi
   done
 
   # =====================
@@ -346,7 +414,7 @@ echo "#################### Start NEMO pre-processing #################"
     if ! tar tf RESTART_ARC &> /dev/null; then
         # This is the directory. checksum the contents
         #sha1sum RESTART_ARC/* >> xnemo_access_log
-        mv RESTART_ARC/* . || bail "Cannot get files from restart directory"
+        mv RESTART_ARC/*restart* . || bail "Cannot get files from restart directory"
     else
         # this is the tar file. checksum it.
         #sha1sum RESTART_ARC >> xnemo_access_log
@@ -425,23 +493,23 @@ echo "#################### Start NEMO pre-processing #################"
     fi
   fi
 
-  # ===================
-  # Access input files
-  # ===================
-  # - many are only pulled in they don't already exist
-  # - the main defaults are defined at the top of this script (should we move other runmode specific files?)
-
-  # run namelists
-  for f in "${nemo_namelists[@]}"; do
-      ! is_file $f && cp ${WRK_DIR}/config/namelists/${f} .
-  done
   # make namelist mods foir the restart switch 
     mod_nl namelist_cfg ln_rstart 
     [ "$nemo_trc" = "on" ] && mod_nl namelist_top_cfg ln_rsttr
 
+  # force nn_istate=1 when  $output_level -ge 1  and $with_nemo_diag -eq 1 because 
+  # ocean_diag needs the init.nc of the current year (1st Jan).
+  # init.nc keep only if nemo_nn_istate
+  if [ $output_level -ge 1 ] && [ $with_nemo_diag -eq 1 ] && [ $chunk_start_month == $run_start_month ];then 
+    nn_istate=1
+    mod_nl namelist_cfg nn_istate
+  fi
+
   # nemo executable
   ! is_file $nemo_exec && cp ${EXEC_STORAGE_DIR}/$nemo_exec .
-  # # xios executable
-  ! is_file $xios_exec && cp ${EXEC_STORAGE_DIR}/$xios_exec .
+  # xios executable
+  if [[ $nemo_use_xios_server -eq 1 ]]; then  
+    ! is_file $xios_exec && cp ${EXEC_STORAGE_DIR}/$xios_exec .
+  fi                                 
 
 echo "#################### Stop NEMO pre-processing #################"

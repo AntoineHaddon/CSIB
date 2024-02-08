@@ -1,0 +1,406 @@
+MODULE canoeprod
+   !!======================================================================
+   !!                         ***  MODULE canoeprod  ***
+   !! TOP :  Growth Rate of the two phytoplanktons groups 
+   !!======================================================================
+   !! History :   1.0  !  2004     (O. Aumont) Original code
+   !!             2.0  !  2007-12  (C. Ethe, G. Madec)  F90
+   !!             3.4  !  2011-05  (O. Aumont, C. Ethe) New parameterization of light limitation
+   !!          CanOE2  !  2022-23  (J. Christian, O. Riche) CanOE in NEMO4 phytoplankton growth and primary production
+   !!                  !                                    use trc_opt and par_3bands
+   !!----------------------------------------------------------------------
+   !!----------------------------------------------------------------------
+   !!   'key_canoe'?                                     CanOE bio-model
+   !!----------------------------------------------------------------------
+   !!   canoe_prod       :   Compute the growth Rate of the two phytoplanktons groups
+   !!   canoe_prod_init  :   Initialization of the parameters for growth
+   !!----------------------------------------------------------------------
+   USE oce_trc         !  shared variables between ocean and passive tracers
+   USE trc             !  passive tracers common variables 
+   
+   ! O Riche Sept 13th 2022
+   ! sms_top needed?
+   USE sms_top_canbgc     ! TOP Source Minus Sink variables
+   USE sms_canoe          ! CanOE specific parameters declaration
+
+   USE trc_closea_canbgc  ! tmask_bgc_closea
+   USE trcopt_canbgc      ! PAR attenuation
+   !
+   USE canoetemp          ! CanOE temperature dependencies module
+   !
+   ! access par_1band array and requires trcsms_cmoc to call trc_opt_1band
+   ! to update par_1band every time step
+   
+   USE prtctl_trc      !  print control for debugging
+   USE lib_mpp         !  ctl_stop on failed mem allocate check
+   USE lib_fortran     !  access glob_sum function
+   USE iom             !  I/O manager
+
+   ! timing modules
+   USE in_out_manager  ! nn_timing integer
+   USE timing          ! *_timing subroutines
+
+   IMPLICIT NONE
+   PRIVATE
+
+   PUBLIC   canoe_prod         ! called in trcsms_canoe.F90
+   PUBLIC   canoe_prod_init    ! called in trcini_canoe.F90
+
+   ! CanOE PP parameters
+   ! these are hardwired parameters
+   REAL(wp), PUBLIC ::  mw_c       = 12._wp            !:
+   REAL(wp), PUBLIC ::  mw_n       = 14._wp            !:
+   REAL(wp), PUBLIC ::  mw_fe      = 55.845_wp         !:
+   !! these are input parameters in namelist_pisces
+   REAL(wp), SAVE, PUBLIC ::  QNmax1     = 0.172_wp          !: Small phytoplankton max N quota
+   REAL(wp), SAVE, PUBLIC ::  QNmin1     = 0.04_wp           !: Small phytoplankton min N quota
+   REAL(wp), SAVE, PUBLIC ::  QNmax2     = 0.172_wp          !: Large phytoplankton max N quota
+   REAL(wp), SAVE, PUBLIC ::  QNmin2     = 0.04_wp           !: Large phytoplankton min N quota
+   REAL(wp), SAVE, PUBLIC ::  VCNref     = 0.6_wp            !: Reference rate of N uptake
+   REAL(wp), SAVE, PUBLIC ::  QFemax1    = 93.075_wp         !: Small phytoplankton max Fe quota
+   REAL(wp), SAVE, PUBLIC ::  QFemin1    = 4.65_wp           !: Small phytoplankton min Fe quota
+   REAL(wp), SAVE, PUBLIC ::  QFemax2    = 69.8063_wp        !: Large phytoplankton max Fe quota
+   REAL(wp), SAVE, PUBLIC ::  QFemin2    = 4.65_wp           !: Large phytoplankton min Fe quota
+   REAL(wp), SAVE, PUBLIC ::  VCFref     = 79._wp            !: Reference rate of Fe uptake
+   REAL(wp), SAVE, PUBLIC ::  PCref      = 3._wp             !: Reference rate of photosynthesis
+   REAL(wp), SAVE, PUBLIC ::  alphachl   = 1.08_wp           !: Initial slope of P-E curve
+   REAL(wp), SAVE, PUBLIC ::  kn1        = 0.1_wp            !: Small P half-saturation for NO3 uptake
+   REAL(wp), SAVE, PUBLIC ::  ka1        = 0.05_wp           !: Small P half-saturation for NH4 uptake
+   REAL(wp), SAVE, PUBLIC ::  kf1        = 100._wp           !: Small P half-saturation for Fe uptake
+   REAL(wp), SAVE, PUBLIC ::  kn2        = 0.5_wp            !: Large P half-saturation for NO3 uptake
+   REAL(wp), SAVE, PUBLIC ::  ka2        = 0.05_wp           !: Large P half-saturation for NH4 uptake
+   REAL(wp), SAVE, PUBLIC ::  kf2        = 200._wp           !: Large P half-saturation for Fe uptake
+   REAL(wp), SAVE, PUBLIC ::  thetamax   = 0.18_wp           !: Maximum chlorophyll/nitrogen ratio
+   REAL(wp), SAVE, PUBLIC ::  eta        = 2._wp             !: Metabolic cost of biosynthesis
+   REAL(wp), SAVE, PUBLIC ::  kexh       = 1.7_wp            !: exhudation of excess intracellular C
+
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   prmax    !: optimal production = f(temperature)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   quotan   !: proxy of N quota in Nanophyto
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   quotad   !: proxy of N quota in diatomee
+   
+   REAL(wp) :: tpp                    !: Total primary production
+
+   !!* Substitution
+!#  include "top_substitute.h90"
+#  include "vectopt_loop_substitute.h90"
+   !!----------------------------------------------------------------------
+   !! NEMO/TOP 3.3 , NEMO Consortium (2010)
+   !! $Id: canoeprod.F90 3773 2013-02-07 11:06:58Z cbricaud $ 
+   !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
+   !!----------------------------------------------------------------------
+CONTAINS
+
+   SUBROUTINE canoe_prod( kt , jnt )
+      !!---------------------------------------------------------------------
+      !!                     ***  ROUTINE canoe_prod  ***
+      !!
+      !! ** Purpose :   Compute the phytoplankton production depending on
+      !!                light, temperature and nutrient availability
+      !!
+      !! ** Method  : - forward time integration (Euler or Leapfrog)
+      !!---------------------------------------------------------------------
+      !
+      INTEGER, INTENT(in) :: kt, jnt
+      !
+      INTEGER  :: ji, jj, jk
+      REAL(wp) :: zfact, znanotot, zdiattot, zconctemp, zconctemp2
+      REAL(wp) :: zratio, zmax, ztn, zadap
+      REAL(wp) :: zlim, zprod, zproreg, zproreg2
+      REAL(wp) :: zmxltst, zmxlday, zmaxday
+      REAL(wp) :: zrum, zcodel, zargu, zval
+      REAL(wp) :: zrfact2
+! some local variables required by the revised model
+      REAL(wp) :: phyc,phyn,phyfe,chl,Ni,Na,Fe,Tf,QN,qndep,qfedep,VCNmax,Alim,Nlim,VCN,QFe,VCFmax,VCF
+      REAL(wp) :: PCmax,thetac,PCphot,rhochl,ei,xsphsyn, mwr_n2c, imw_n
+      CHARACTER (len=25) :: charout
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zprdia, zprbio, zprdch, zprnch, zysopt   
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zprorca, zprorcad, zprofed, zprofen, zpronew, zpronewd
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zprocn, zprocd, zpronn, zprond
+      !!---------------------------------------------------------------------
+      !
+      IF( ln_timing )  CALL timing_start('canoe_prod')
+      !
+      !
+      IF( lwp ) THEN
+        WRITE(numout,*)
+        WRITE(numout,*), 'canoe_prod: compute phytoplankton and chlorophyl production'
+        WRITE(numout,*), '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+        WRITE(numout,*)
+        CALL FLUSH(numout)
+      END IF
+      !  Allocate temporary workspace
+      ALLOCATE( zprdia(  jpi, jpj, jpk ),  zprbio(   jpi, jpj, jpk ) )
+      ALLOCATE( zprdch(  jpi, jpj, jpk ),  zprnch(   jpi, jpj, jpk ) )
+      ALLOCATE( zysopt(  jpi, jpj, jpk )                             ) 
+      ALLOCATE( zprorca( jpi, jpj, jpk ),  zprorcad( jpi, jpj, jpk ) )
+      ALLOCATE( zprofed( jpi, jpj, jpk ),  zprofen(  jpi, jpj, jpk ) )
+      ALLOCATE( zpronew( jpi, jpj, jpk ),  zpronewd( jpi, jpj, jpk ) )
+      ALLOCATE( zprocn(  jpi, jpj, jpk ),  zprocd(   jpi, jpj, jpk ) )
+      ALLOCATE( zpronn(  jpi, jpj, jpk ),  zprond(   jpi, jpj, jpk ) ) 
+      !
+      zprorca (:,:,:) = 0._wp
+      zprorcad(:,:,:) = 0._wp
+      zprofed (:,:,:) = 0._wp
+      zprofen (:,:,:) = 0._wp
+      zprochln(:,:,:) = 0._wp
+      zprochld(:,:,:) = 0._wp
+      zpronew (:,:,:) = 0._wp
+      zpronewd(:,:,:) = 0._wp
+      zprdia  (:,:,:) = 0._wp
+      zprbio  (:,:,:) = 0._wp
+      zprdch  (:,:,:) = 0._wp
+      zprnch  (:,:,:) = 0._wp
+      zysopt  (:,:,:) = 0._wp
+      zprocn  (:,:,:) = 0._wp
+      zprocd  (:,:,:) = 0._wp
+      zpronn  (:,:,:) = 0._wp
+      zprond  (:,:,:) = 0._wp
+! precalculate some constant terms to minimize divisions
+      mwr_n2c = mw_n/mw_c
+      imw_n   =   1./mw_n
+
+      ! Computation of the various production terms 
+      DO jk = 1, jpkm1
+         DO jj = 1, jpj
+            DO ji = 1, jpi
+               ! IF( par_3bands(ji,jj,jk) > 1.E-3 ) THEN
+               IF( par_stairs(ji,jj,jk) > 1.E-3 ) THEN
+                      ztn  = tsn(ji,jj,jk,jp_tem)
+                      phyc  = MAX(trb(ji,jj,jk,jrphy),0.)*mw_c
+                      phyn  = MAX(trb(ji,jj,jk,jrnn) ,0.)*mw_n
+                      phyfe = MAX(trb(ji,jj,jk,jrnfe),0.)*mw_fe
+                      chl   = MAX(trb(ji,jj,jk,jrnch),0.)
+                      Ni    = MAX(trb(ji,jj,jk,jqno3),0.)
+                      Na    = MAX(trb(ji,jj,jk,jrnh4),0.)
+                      Fe    = MAX(trb(ji,jj,jk,jrfer),0.)                        ! Fe variables are in nmol m^-3, others in mmol m^-3
+                      ! ei    = par_3bands(ji,jj,jk)*4.15                        ! convert to umol m^-2 s^-1
+                      ei    = par_stairs(ji,jj,jk)*4.15                        ! convert to umol m^-2 s^-1
+
+! this is modified from ~/mexfiles/vrm/fwd/bsource_vrm.f via chemo_2P2Z_gmk.F
+! small phytoplankton
+
+                      Tf = tgfuncp0(ji,jj,jk)
+                      QN = MIN(QNmax1,phyn/(phyc+rtrn))
+                      QN = MAX(QNmin1,QN)
+                      qndep = MAX((QNmax1-QN)/(QNmax1-QNmin1),0.)                  ! in principle this should be nonegative but if roundoff makes it even slightly negative the exponent could go NaN
+                      VCNmax = VCNref*Tf*qndep**0.05
+                      Alim  =  Na/(ka1+Na)
+                      Nlim  =  Ni/(kn1+Ni)
+                      VCN = VCNmax*((1.-Alim)*Nlim+Alim)
+
+                      QFe = MIN(QFemax1,phyfe/(phyc+rtrn))
+                      QFe = MAX(QFemin1,QFe)
+                      qfedep = MAX((QFemax1-QFe)/(QFemax1-QFemin1),0.) 
+                      VCFmax = VCFref*Tf*qfedep**0.05
+                      VCF = VCFmax*Fe/(kf1+Fe)
+
+                      PCmax = PCref*Tf*MIN((QFe-QFemin1+rtrn*1.e6)/(QFemax1-QFemin1),(QN-QNmin1+rtrn)/(QNmax1-QNmin1))
+
+                      PCmax = MAX(PCmax,1.0e-10)
+                      thetac = MAX(chl/(phyc+rtrn),0.001)
+                      PCphot = PCmax*(1.-EXP(-alphachl*ei*thetac/PCmax))
+                      rhochl = thetamax*(PCphot/(alphachl*thetac*MAX(ei,0.001)))
+
+! calculate excess intracellular C for exhudation
+                      xsphsyn=(phyc/(phyn+rtrn)*mwr_n2c-rr_c2n)*phyn*imw_n
+                      xsphsyn=MAX(xsphsyn,0.)
+
+                      zprocn(ji,jj,jk) = (PCphot-eta*VCN)*trb(ji,jj,jk,jrphy)*xstepb-kexh*xsphsyn*xstepb ! C production rate (in molar units)
+                      zpronn(ji,jj,jk) = VCN/QN*trb(ji,jj,jk,jrnn)*xstepb                                ! N uptake rate
+                      zprofen(ji,jj,jk) = VCF/QFe*trb(ji,jj,jk,jrnfe)*xstepb                             ! Fe uptake rate
+                      zprochln(ji,jj,jk) = rhochl*VCN/thetac*trb(ji,jj,jk,jrnch)*xstepb                  ! Chl production rate
+                      zpronew(ji,jj,jk) = zpronn(ji,jj,jk)*(1.-Alim)*Nlim/(Alim+(1.-Alim)*Nlim+rtrn)     ! NO3 uptake
+                      xlimnn(ji,jj,jk)   = 1.-qndep 
+                      xlimnfe0(ji,jj,jk) = 1.-qfedep 
+
+! large phytoplankton
+
+                      phyc = MAX(trb(ji,jj,jk,jrdia),0.)*mw_c
+                      phyn = MAX(trb(ji,jj,jk,jrdn),0.)*mw_n
+                      phyfe= MAX(trb(ji,jj,jk,jrdfe),0.)*mw_fe
+                      chl =  MAX(trb(ji,jj,jk,jrdch),0.)
+
+                      QN = MIN(QNmax2,phyn/(phyc+rtrn))
+                      QN = MAX(QNmin2,QN)
+                      qndep = MAX((QNmax2-QN)/(QNmax2-QNmin2),0.) 
+                      VCNmax = VCNref*Tf*qndep**0.05
+                      Alim  =  Na/(ka2+Na)
+                      Nlim  =  Ni/(kn2+Ni)
+                      VCN = VCNmax*((1.-Alim)*Nlim+Alim)
+
+                      QFe = MIN(QFemax2,phyfe/(phyc+rtrn))
+                      QFe = MAX(QFemin2,QFe)
+                      qfedep = MAX((QFemax2-QFe)/(QFemax2-QFemin2),0.) 
+                      VCFmax = VCFref*Tf*qfedep**0.05
+                      VCF = VCFmax*Fe/(kf2+Fe)
+
+                      PCmax = PCref*Tf*MIN((QFe-QFemin2+rtrn)/(QFemax2-QFemin2),(QN-QNmin2+rtrn)/(QNmax2-QNmin2))
+
+                      PCmax = MAX(PCmax,1.0e-10)
+                      thetac = MAX(chl/(phyc+rtrn),0.001)
+                      PCphot = PCmax*(1.-EXP(-alphachl*ei*thetac/PCmax))
+                      rhochl = thetamax*(PCphot/(alphachl*thetac*MAX(ei,0.001)))
+
+                      xsphsyn=(phyc/(phyn+rtrn)*mwr_n2c-rr_c2n)*phyn*imw_n
+                      xsphsyn=MAX(xsphsyn,0.)
+
+                      zprocd(ji,jj,jk) = (PCphot-eta*VCN)*trb(ji,jj,jk,jrdia)*xstepb-kexh*xsphsyn*xstepb       ! C production rate (in molar units)
+                      zprond(ji,jj,jk) = VCN/QN*trb(ji,jj,jk,jrdn)*xstepb                                     ! N uptake rate
+                      zprofed(ji,jj,jk) = VCF/QFe*trb(ji,jj,jk,jrdfe)*xstepb                                  ! Fe uptake rate
+                      zprochld(ji,jj,jk) = rhochl*VCN/thetac*trb(ji,jj,jk,jrdch)*xstepb                       ! Chl production rate
+                      zpronewd(ji,jj,jk) = zprond(ji,jj,jk)*(1.-Alim)*Nlim/(Alim+(1.-Alim)*Nlim+rtrn)        ! NO3 uptake
+                      xlimdn(ji,jj,jk)   = 1.-qndep 
+                      xlimdfe0(ji,jj,jk) = 1.-qfedep 
+
+               ENDIF
+            END DO
+         END DO
+      END DO
+
+      !   Update the arrays TRA which contain the biological sources and sinks
+      DO jk = 1, jpkm1
+         DO jj = 1, jpj
+           DO ji =1 ,jpi
+              zproreg  = zpronn(ji,jj,jk) - zpronew(ji,jj,jk)
+              zproreg2 = zprond(ji,jj,jk) - zpronewd(ji,jj,jk)
+              tra(ji,jj,jk,jqno3) = tra(ji,jj,jk,jqno3) - zpronew(ji,jj,jk) 
+              tra(ji,jj,jk,jqno3) = tra(ji,jj,jk,jqno3) !                       - zpronewd(ji,jj,jk)
+              tra(ji,jj,jk,jrnh4) = tra(ji,jj,jk,jrnh4) - zproreg                       
+              tra(ji,jj,jk,jrnh4) = tra(ji,jj,jk,jrnh4) !                       - zproreg2
+              tra(ji,jj,jk,jrphy) = tra(ji,jj,jk,jrphy) + zprocn(ji,jj,jk)
+              tra(ji,jj,jk,jrnn)  = tra(ji,jj,jk,jrnn)  + zpronn(ji,jj,jk)
+              tra(ji,jj,jk,jrnch) = tra(ji,jj,jk,jrnch) + zprochln(ji,jj,jk) 
+              tra(ji,jj,jk,jrnfe) = tra(ji,jj,jk,jrnfe) + zprofen(ji,jj,jk)
+              tra(ji,jj,jk,jrdia) = tra(ji,jj,jk,jrdia) ! + zprocd(ji,jj,jk) 
+              tra(ji,jj,jk,jrdn)  = tra(ji,jj,jk,jrdn)  ! + zprond(ji,jj,jk) 
+              tra(ji,jj,jk,jrdch) = tra(ji,jj,jk,jrdch) ! + zprochld(ji,jj,jk) 
+              tra(ji,jj,jk,jrdfe) = tra(ji,jj,jk,jrdfe) ! + zprofed(ji,jj,jk) 
+! O2 production equals DIC reduction + an additional nitrate term based on Laws 1991; this term is set to conserve O2 globally at steady state, i.e. 0.301887 = 2/rr_c2n where 2 mol O2 / mol N is the O2 sink to nitrification
+              tra(ji,jj,jk,jqoxy) = tra(ji,jj,jk,jqoxy) ! +  zprocn(ji,jj,jk)                       
+              tra(ji,jj,jk,jqoxy) = tra(ji,jj,jk,jqoxy) !                       + zprocd(ji,jj,jk)  
+              tra(ji,jj,jk,jqoxy) = tra(ji,jj,jk,jqoxy) ! + 0.301887 *  zpronew(ji,jj,jk)                            * rr_c2n 
+              tra(ji,jj,jk,jqoxy) = tra(ji,jj,jk,jqoxy) ! + 0.301887 *                      zpronewd(ji,jj,jk)       * rr_c2n   
+              tra(ji,jj,jk,jrfer) = tra(ji,jj,jk,jrfer) ! - zprofen(ji,jj,jk) 
+              tra(ji,jj,jk,jrfer) = tra(ji,jj,jk,jrfer) !                       - zprofed(ji,jj,jk)
+              tra(ji,jj,jk,jqdic) = tra(ji,jj,jk,jqdic) ! -  zprocn(ji,jj,jk)                        *1.E-6
+              tra(ji,jj,jk,jqdic) = tra(ji,jj,jk,jqdic) !                       - zprocd(ji,jj,jk)   *1.E-6
+              tra(ji,jj,jk,jqtal) = tra(ji,jj,jk,jqtal) ! +  zpronew(ji,jj,jk)                       *1.E-6 
+              tra(ji,jj,jk,jqtal) = tra(ji,jj,jk,jqtal) ! +                       zpronewd(ji,jj,jk) *1.E-6 
+              tra(ji,jj,jk,jqtal) = tra(ji,jj,jk,jqtal) ! -  zproreg                      * 1.E-6 
+              tra(ji,jj,jk,jqtal) = tra(ji,jj,jk,jqtal) ! -                   + zproreg2  * 1.E-6
+          END DO
+        END DO
+     END DO
+
+     ! Total primary production per year
+     tpp = tpp + glob_sum( 'canoe_prod' , ( zprorca(:,:,:) + zprorcad(:,:,:) ) * cvol(:,:,:) )
+
+     IF( kt == nitend .AND. jnt == qnrdttrc ) THEN
+       WRITE(numout,*) 'Total PP (Gtc) :'
+       WRITE(numout,*) '-------------------- : ',tpp * 12. / 1.E12
+       WRITE(numout,*) 
+     ENDIF
+
+      !
+     zrfact2 = 1.e-3 * qfact2r  ! conversion from umol/L/timestep into mol/m3/s
+     IF( jnt == qnrdttrc ) THEN
+       CALL iom_put( "PPPHY"   , zprocn (:,:,:)  * zrfact2 * tmask_bgc_closea(:,:,:) )  ! primary production by nanophyto
+       CALL iom_put( "PPPHY2"  , zprocd (:,:,:)  * zrfact2 * tmask_bgc_closea(:,:,:) )  ! primary production by diatom
+       CALL iom_put( "PPNEWN"  , zpronew (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )  ! new primary production by nanophyto
+       CALL iom_put( "PPNEWD"  , zpronewd(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )  ! new primary production by diatom
+       CALL iom_put( "PFeD"    , zprofed (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )  ! biogenic iron production by diatom
+       CALL iom_put( "PFeN"    , zprofen (:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )  ! biogenic iron production by nanophyto
+       CALL iom_put( "LNN"     , xlimnn  (:,:,:)           * tmask_bgc_closea(:,:,:) )  ! Nitrogen limitation term
+       CALL iom_put( "LDN"     , xlimdn  (:,:,:)           * tmask_bgc_closea(:,:,:) )  ! Nitrogen limitation term
+       CALL iom_put( "LNFe"    , xlimnfe0 (:,:,:)           * tmask_bgc_closea(:,:,:) )  ! Iron limitation term
+       CALL iom_put( "LDFe"    , xlimdfe0 (:,:,:)           * tmask_bgc_closea(:,:,:) )  ! Iron limitation term
+     ENDIF
+     !
+
+     IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
+        WRITE(charout, FMT="('prod')")
+        CALL prt_ctl_trc_info(charout)
+        CALL prt_ctl_trc(tab4d=tra, mask=tmask, clinfo=ctrcnm)
+     ENDIF
+     !
+     DEALLOCATE( zprdia,  zprbio,   zprdch,  zprnch,  zysopt            ) 
+     DEALLOCATE( zprorca, zprorcad, zprofed, zprofen, zpronew, zpronewd )
+     DEALLOCATE( zprocn,  zprocd,   zpronn,  zprond                     ) 
+     !
+     IF( ln_timing )  CALL timing_stop('canoe_prod')
+     !
+   END SUBROUTINE canoe_prod
+
+
+   SUBROUTINE canoe_prod_init
+      !!----------------------------------------------------------------------
+      !!                  ***  ROUTINE canoe_prod_init  ***
+      !!
+      !! ** Purpose :   Initialization of phytoplankton production parameters
+      !!
+      !! ** Method  :   Read the nampisprod namelist and check the parameters
+      !!      called at the first timestep (nittrc000)
+      !!
+      !! ** input   :   Namelist nampisprod
+      !!----------------------------------------------------------------------
+      !
+      INTEGER ::   ios, ierr ! Local integers
+      NAMELIST/namcanoeprod/ QNmax1, QNmin1, QNmax2, QNmin2, VCNref, QFemax1,     &
+         &                   QFemin1, QFemax2, QFemin2, VCFref, PCref, alphachl,  &
+         &                   kn1, ka1, kf1, kn2, ka2, kf2, thetamax, eta, kexh
+      !
+      !!----------------------------------------------------------------------
+
+      REWIND( numnatp_refb )              ! Namelist namcanoeprod in reference namelist : Passive tracer variables
+      READ  ( numnatp_refb, namcanoeprod, IOSTAT = ios, ERR = 901)
+901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namcanoeprod in reference namelist_canoe' )
+      REWIND( numnatp_cfgb )              ! Namelist namcanoeprod in configuration namelist : Passive tracer variables
+      READ  ( numnatp_cfgb, namcanoeprod, IOSTAT = ios, ERR = 902 )
+902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namcanoeprod in configuration namelist_canoe' )
+
+      IF(lwm) WRITE( numonpb, namcanoeprod )   
+    
+      IF(lwp) THEN                         ! control print
+         WRITE(numout,*)
+         WRITE(numout,*) ' canoe_prod_init: namcanoeprod'         
+         WRITE(numout,*) ' Namelist parameters for phytoplankton growth, nampisprod'
+         WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+         WRITE(numout,*) '    Small phytoplankton max N quota          QNmax1       =', QNmax1
+         WRITE(numout,*) '    Small phytoplankton min N quota          QNmin1       =', QNmin1
+         WRITE(numout,*) '    Large phytoplankton max N quota          QNmax2       =', QNmax2
+         WRITE(numout,*) '    Large phytoplankton min N quota          QNmin2       =', QNmin2
+         WRITE(numout,*) '    Reference rate of N uptake               VCNref       =', VCNref
+         WRITE(numout,*) '    Small phytoplankton max Fe quota         QFemax1      =', QFemax1
+         WRITE(numout,*) '    Small phytoplankton min Fe quota         QFemin1      =', QFemin1
+         WRITE(numout,*) '    Large phytoplankton max Fe quota         QFemax2      =', QFemax2
+         WRITE(numout,*) '    Large phytoplankton min Fe quota         QFemin2      =', QFemin2
+         WRITE(numout,*) '    Reference rate of Fe uptake              VCFref       =', VCFref
+         WRITE(numout,*) '    Reference rate of photosynthesis         PCref        =', PCref
+         WRITE(numout,*) '    Initial slope of P-E curve               alphachl     =', alphachl
+         WRITE(numout,*) '    Small P half-saturation for NO3 uptake   kn1          =', kn1
+         WRITE(numout,*) '    Small P half-saturation for NH4 uptake   ka1          =', ka1
+         WRITE(numout,*) '    Small P half-saturation for Fe uptake    kf1          =', kf1
+         WRITE(numout,*) '    Large P half-saturation for NO3 uptake   kn2          =', kn2
+         WRITE(numout,*) '    Large P half-saturation for NH4 uptake   ka2          =', ka2
+         WRITE(numout,*) '    Large P half-saturation for Fe uptake    kf2          =', kf2
+         WRITE(numout,*) '    Maximum chlorophyll/carbon ratio         thetamax     =', thetamax
+         WRITE(numout,*) '    Metabolic cost of biosynthesis           eta          =', eta
+         WRITE(numout,*) '    Exudation rate of excess intracellular C kexh         =', kexh
+      ENDIF
+      !
+      tpp = 0._wp
+      !
+      ! Allocate mem to limitation functions
+      ALLOCATE( xlimnfe0 (jpi,jpj,jpk), xlimdfe0 (jpi,jpj,jpk),       &
+         &      xlimnn (jpi,jpj,jpk),   xlimdn (jpi,jpj,jpk),    STAT=ierr )
+      !
+      IF( ierr /= 0 ) CALL ctl_stop( 'STOP', 'canoe_prod_init : failed to allocate xlim* arrays' )
+      !
+      ! Allocate mem to chl-a production arrays
+      ALLOCATE( zprochln(jpi,jpj,jpk) , zprochld(jpi,jpj,jpk) , STAT=ierr )
+      !
+      IF( ierr /= 0 ) CALL ctl_stop( 'STOP', 'canoe_prod_init : failed to allocate zprochl* arrays' )
+      !
+   END SUBROUTINE canoe_prod_init
+
+END MODULE  canoeprod

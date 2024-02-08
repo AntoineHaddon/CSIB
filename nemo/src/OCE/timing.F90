@@ -438,7 +438,7 @@ CONTAINS
       ! write current info
       WRITE(numtime,*) 'Detailed timing for proc :', narea-1
       WRITE(numtime,*) '--------------------------'
-      WRITE(numtime,*) 'Section             ',            &
+      WRITE(numtime,'(7a)') 'Section             ',            &
       &   'Elapsed Time (s)  ','Elapsed Time (%)  ',   &
       &   'CPU Time(s)  ','CPU Time (%)  ','CPU/Elapsed  ','Frequency'
       s_timer => s_timer_root

@@ -666,9 +666,9 @@
           i = nf_put_att_double(ncid,iv,'valid_range',nf_double,2,dvar)
           call checkerror(i,'defvar valid_range double '//trim(name))
         endif
-        i = nf_put_att_double (ncid,iv,'FillValue',nf_double,1                                                                      &
+        i = nf_put_att_double (ncid,iv,'_FillValue',nf_double,1                                                                      &
      &,   nf_fill_double)
-        call checkerror (i,'defvar FillValue double '//trim(name))
+        call checkerror (i,'defvar _FillValue double '//trim(name))
         call checkerror (i,'defvar missing_value double '//trim(name))
         i = nf_put_att_double (ncid,iv,'missing_value',nf_double,1                                                                   &
      &,   nf_fill_double)
@@ -682,11 +682,11 @@
           i = nf_put_att_real (ncid,iv,'valid_range',nf_real,2,fvar)
           call checkerror (i,'defvar valid_range real '//trim(name))
         endif
-        i = nf_put_att_double (ncid,iv,'FillValue',nf_real,1                                                                        &
-     &,   nf_fill_double)
-        call checkerror (i,'defvar FillValue real '//trim(name))
-        i = nf_put_att_double (ncid,iv,'missing_value',nf_real,1                                                                     &
-     &,   nf_fill_double)
+        i = nf_put_att_real (ncid,iv,'_FillValue',nf_real,1                                                                        &
+     &,   nf_fill_real)
+        call checkerror (i,'defvar _FillValue real '//trim(name))
+        i = nf_put_att_real (ncid,iv,'missing_value',nf_real,1                                                                     &
+     &,   nf_fill_real)
         call checkerror (i,'defvar missing_value real '//trim(name))
 
       elseif (type .eq. 'I') then
@@ -698,9 +698,9 @@
           i = nf_put_att_int (ncid,iv,'valid_range',nf_int,2,ivar)
           call checkerror (i,'defvar valid_range integer '//trim(name))
         endif
-        i = nf_put_att_int (ncid,iv,'FillValue',nf_int,1                                                                            &
+        i = nf_put_att_int (ncid,iv,'_FillValue',nf_int,1                                                                            &
      &,   nf_fill_int)
-        call checkerror (i,'defvar FillValue integer '//trim(name))
+        call checkerror (i,'defvar _FillValue integer '//trim(name))
         i = nf_put_att_int (ncid,iv,'missing_value',nf_int,1                                                                         &
      &,   nf_fill_int)
         call checkerror (i,'defvar missing_value integer '//trim(name))
@@ -869,8 +869,8 @@
 
       real, intent(in) :: o, s
       real dout(ln)
-      real(kind=8) din(ln), offset, scale
-
+      real(kind=8) din(ln), offset, scale, fillvalue, fill_in
+      fill_in=0.
       i = nf_inq_varid (ncid, name, iv)
       if (i .ne. nf_noerr) then
         print*, '==> Warning: netcdf variable ',trim(name), ' not found'
@@ -878,13 +878,16 @@
       endif
       scale = 1.0
       offset = 0.0
+      fillvalue = 1.e+20
       i = nf_inq_varndims(ncid, iv, nd)
       call checkerror (i,'getvara nf_inq_varndims '//name)
       i = nf_get_att_double (ncid, iv, 'add_offset', offset)
       i = nf_get_att_double (ncid, iv, 'scale_factor', scale)
+      i = nf_get_att_double (ncid, iv, '_FillValue', fillvalue)
       i = nf_get_vara_double (ncid, iv, is(1:nd), ic(1:nd), din)
       call checkerror(i,'getvara '//name)
       dout(1:ln) = (din(1:ln)*scale + offset)*s + o
+      where(dout.eq.fillvalue) dout=fill_in
 
       return
       end

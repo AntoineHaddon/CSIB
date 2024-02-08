@@ -1028,11 +1028,10 @@ contains
          write(numout,*) '****************'
        endif
 
-       IF( ln_timing )   call timing_start('cplsend_gather')
+       IF( ln_timing )   call timing_start('cancpl_snd_gather')
        !--- Gather data into the global array png
-      !  call lbc_lnk('cpl_cancpl_snd', pdata(:,:,jc), 'T', 1.)
        call reconstruct_global_2d(pdata(:,:,jc),0,global_array)
-       IF( ln_timing )   call timing_stop('cplsend_gather')
+       IF( ln_timing )   call timing_stop('cancpl_snd_gather')
 
        !--- Skip the rest of this loop unless this is the master task
        if ( rank /= ocn_master ) cycle
@@ -1172,13 +1171,13 @@ contains
         !  call copy_1d_to_3d_global(wrk, png)
        endif
 
-       IF( ln_timing )   call timing_start('cplrecv_scatter')
+       IF( ln_timing )   call timing_start('cancpl_rcv_scatter')
        !--- Scatter the global array onto each NEMO task
        wrk2d = RESHAPE(wrk,[jpiglo,jpjglo])
        call mppsync
        call mppscatter(wrk2d, 0, pdata(:,:,jc))
        call mppsync
-       IF( ln_timing )   call timing_stop('cplrecv_scatter')
+       IF( ln_timing )   call timing_stop('cancpl_rcv_scatter')
 
        if ( rank == ocn_master .and. verbose > 2 ) then
          !--- Count the number of NaNs in the global png array

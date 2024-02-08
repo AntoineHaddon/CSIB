@@ -166,7 +166,7 @@
       access icemod $rtd_hist7 na
 
       # Create run time diagnostics for physical ocean variables
-      $nemo_physical_rtd_exe ${yearm} ${mon}
+      [ -s grid_t ] && $nemo_physical_rtd_exe ${yearm} ${mon}
 
                    # Sea-ice run time diagnostics
 
@@ -176,7 +176,7 @@
       if [ "$nemo_carbon" = "on" ]; then
                    # Carbon run time diagnostics
         # Access additional annual history files containing PISCES related variables
-        rtd_hist8="mc_${runid}_${yearm}_m${mon}_1m_ptrc_t.nc"
+        rtd_hist8="mc_${runid}_${yearm}_m${mon}_1m_btrc_t.nc"
         rtd_hist9="mc_${runid}_${yearm}_m${mon}_1m_diad_t.nc"
         access ptrc_t $rtd_hist8 na
         access diad_t $rtd_hist9 na
