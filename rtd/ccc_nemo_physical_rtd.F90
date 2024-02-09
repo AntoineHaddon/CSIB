@@ -628,7 +628,7 @@ PROGRAM nemo_ocean_diag
           call area_ave(e1t, e2t, e3t, nino4_mask, arr2d1, imt, jmt    &
             &           , km, t_nino4(l), dvol, 1) 
 
-          do i = 1, imt-2
+          do i = 1, imt
                if (lon2d(i,10).ge.150..or.lon2d(i,10).le.-75.) then
                    do k = 1, k500 
                      if (u_mask(i,j_eq,k).gt.0.5) then
@@ -776,7 +776,7 @@ PROGRAM nemo_ocean_diag
     ! (8) Heat transport (PW) 
     !---------------------------------------------------
           do k = 1, km
-              do i = 1, imt-2
+              do i = 1, imt
     ! Global ocean at 20N 
                   arcn = e1v(i, j_20N)*e3v(i, j_20N, k)*v_mask(i, j_20N, k)
                   arcn = arcn*theta(i, j_20N, k)*t_mask(i, j_20N, k)

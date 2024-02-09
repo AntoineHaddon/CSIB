@@ -55,6 +55,7 @@ CONTAINS
       !!                  ***  trc_oce_alloc  ***
       !!----------------------------------------------------------------------
       ALLOCATE( etot3(jpi,jpj,jpk), oce_co2(jpi,jpj), qsr_mean(jpi,jpj), STAT=trc_oce_alloc )
+      oce_co2(:,:)=0.
 
       IF( trc_oce_alloc /= 0 )   CALL ctl_warn('trc_oce_alloc: failed to allocate etot3 array')
       !

@@ -73,7 +73,7 @@ SUBROUTINE calc (imt, jmt, lm)
           & qt_ice_oce, sublim_over_sea_ice, qtr_ice_bot  
 !     Monthly snow fields: snow thickness, snow precip, snow precip 
 !                          over ice
-      REAL, DIMENSION(imt, jmt, lm) :: isnowthi, isnowpre, hflx_snow_ai_cea, & 
+      REAL, DIMENSION(imt, jmt, lm) :: isnowthi, isnowpre, hflx_snow_ai_cea, hflx_err, & 
           &  snow_over_sea_ice, aicesflx, aicenflx, iicesflx, iicenflx, iicetflx
 
 ! ======================================================================
@@ -91,7 +91,7 @@ SUBROUTINE calc (imt, jmt, lm)
       REAL, DIMENSION(lm)      :: isnowthick_nh, isnowthick_sh
       REAL, DIMENSION(lm)      :: iohflx_nh, iohflx_sh
       REAL, DIMENSION(lm)      :: test_calc
-      REAL, DIMENSION(lm)      :: aicesflx_ave, aicenflx_ave,hflx_snow_ai_cea_ave
+      REAL, DIMENSION(lm)      :: aicesflx_ave, aicenflx_ave,hflx_snow_ai_cea_ave,hflx_err_ave
       REAL, DIMENSION(lm)      :: iicesflx_ave, iicenflx_ave,iicetflx_ave
 
 ! ======================================================================
@@ -208,11 +208,14 @@ SUBROUTINE calc (imt, jmt, lm)
 ! Heat flux from the snow precipitation of ice
       call getvara ('hfsnthermds2d', iou1, imt*jmt*lm,                   &
           & (/1,1,1/), (/imt,jmt,lm/), hflx_snow_ai_cea, 1., 0.)
+! Heat flux error
+      call getvara ('hfxerr', iou1, imt*jmt*lm,                   &
+          & (/1,1,1/), (/imt,jmt,lm/), hflx_err, 1., 0.)
 
 ! Non solar heat flux under the ice (total - solar )
       iicenflx= qt_ice_oce - iicesflx
 ! Non solar radiation in ice 
-      aicenflx = aicenflx - hflx_snow_ai_cea 
+      aicenflx = aicenflx - hflx_snow_ai_cea + hflx_err
 
 ! Hold these for now.
 ! Sublimation over sea-ice (cell average)
@@ -354,6 +357,9 @@ SUBROUTINE calc (imt, jmt, lm)
               & hflx_snow_ai_cea(:, :, cur_mon), imt, jmt,                      &
               & hflx_snow_ai_cea_ave(cur_mon), ss)
           CALL area_ave_flx(e1t, e2t, t_mask,                    &
+              & hflx_err(:, :, cur_mon), imt, jmt,                      &
+              & hflx_err_ave(cur_mon), ss)
+          CALL area_ave_flx(e1t, e2t, t_mask,                    &
               & aicesflx(:, :, cur_mon), imt, jmt,                      &
               & aicesflx_ave(cur_mon), ss)
 !  Solar and non solar heat fluxes from ice to ocean 
@@ -432,6 +438,7 @@ SUBROUTINE calc (imt, jmt, lm)
       print*,'NS     ', aicenflx_ave
       print*,'NET    ', aicenflx_ave + aicesflx_ave
       print*,'SNOW   ', hflx_snow_ai_cea_ave
+      print*,'Error  ', hflx_err_ave
       print*,'-------------------------------------'
       print*,'   ICE-OCE Solar/nonsolar flux  (W/m^2) '
       print*,'-------------------------------------'
