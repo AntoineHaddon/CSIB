@@ -29,6 +29,7 @@ MODULE trcini_canoe
    USE sms_canoe         ! set elemental parameters
    USE canoetemp         ! CanOE temperature dependencies module
    USE canoeprod         ! CanOE PP module
+   USE canoenzd          ! CanOE grazing/mortality/remineralization module
    !
    IMPLICIT NONE
    PRIVATE
@@ -159,6 +160,8 @@ CONTAINS
       CALL canoe_temp_init
       !
       CALL canoe_prod_init
+      !
+      CALL canoe_nzd_init
       !
       CALL canoe_sink_init
       !

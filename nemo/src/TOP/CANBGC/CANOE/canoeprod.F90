@@ -163,8 +163,7 @@ CONTAINS
       DO jk = 1, jpkm1
          DO jj = 1, jpj
             DO ji = 1, jpi
-               ! IF( par_3bands(ji,jj,jk) > 1.E-3 ) THEN
-               IF( par_stairs(ji,jj,jk) > 1.E-3 ) THEN
+                IF( par_3bands(ji,jj,jk) > 1.E-3 ) THEN
                       ztn  = tsn(ji,jj,jk,jp_tem)
                       phyc  = MAX(trb(ji,jj,jk,jrphy),0.)*mw_c
                       phyn  = MAX(trb(ji,jj,jk,jrnn) ,0.)*mw_n
@@ -173,8 +172,7 @@ CONTAINS
                       Ni    = MAX(trb(ji,jj,jk,jqno3),0.)
                       Na    = MAX(trb(ji,jj,jk,jrnh4),0.)
                       Fe    = MAX(trb(ji,jj,jk,jrfer),0.)                        ! Fe variables are in nmol m^-3, others in mmol m^-3
-                      ! ei    = par_3bands(ji,jj,jk)*4.15                        ! convert to umol m^-2 s^-1
-                      ei    = par_stairs(ji,jj,jk)*4.15                        ! convert to umol m^-2 s^-1
+                      ei    = par_3bands(ji,jj,jk)*4.15                        ! convert to umol m^-2 s^-1
 
 ! this is modified from ~/mexfiles/vrm/fwd/bsource_vrm.f via chemo_2P2Z_gmk.F
 ! small phytoplankton
