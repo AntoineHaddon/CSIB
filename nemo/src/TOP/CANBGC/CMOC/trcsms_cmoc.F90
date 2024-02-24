@@ -213,7 +213,8 @@ CONTAINS
         !! OR Jan 24th 2023 ! CALL trc_bott_cmoc
         ! n2 fixation/denitrification
         !! OR Jan19 23 ! CALL cmoc_rem_denit
-        !! OR Jan19 23 ! CALL trc_n2fx_denit_cmoc( par_1band )
+        CALL cmoc_rem_denit
+        CALL trc_n2fx_denit_cmoc( par_1band, kt, jnt )
         !
         ! Move here to be consistent with NEMO4 and sidestepping from CanESM5 CMOC NEMO
         CALL trc_flx( kt )               ! compute air-sea gas exchange

@@ -142,7 +142,7 @@ CONTAINS
                 ! trn(...,jqnch) / trn(...,jqphy) / 12. is theta in gChl per gC
                 ! ztheta is set to a maximum of thm_cmoc so as to prevent appearance of light-saturation in case zetot is small but trn(ji,jj,jk,jqphy) is 0
                 ztheta = MIN(thm_cmoc,trb(ji,jj,jk,jqnch)/(trb(ji,jj,jk,jqphy)*12._wp+rtrn))
-                zpislopen =  achl_cmoc * ztheta / ( zpislopead(ji,jj,jk) * rday  + rtrn )
+                zpislopen =  MAX( achl_cmoc * ztheta / ( zpislopead(ji,jj,jk) * rday  + rtrn ), 0.)
                 ! zpislopead * rday is growth rate in d^-1 at temperature ToC as achl_cmoc is in d^-1
                 !
                 ! limitation functions
@@ -151,6 +151,8 @@ CONTAINS
                 zliml (ji,jj,jk) = 1.- EXP( -zpislopen  * zetot(ji,jj,jk) )
                 ! DIN
                 zlimn (ji,jj,jk) = trb(ji,jj,jk,jqno3) / ( kn_cmoc * 1e-6_wp * cnrr_cmoc + trb(ji,jj,jk,jqno3)+ rtrn )
+                zlimn (ji,jj,jk) = MAX(zlimn(ji,jj,jk),0.)
+                zlimn (ji,jj,jk) = MIN(zlimn(ji,jj,jk),1.)
                 ! iron is a constant and prescribed mask (xlimnfecmoc) see Zahariev et al 2008
                 ! update growth rate
                 zprbio(ji,jj,jk) = zpislopead(ji,jj,jk) * min ( zliml(ji,jj,jk) , zlimn(ji,jj,jk) , xlimnfecmoc(ji,jj) ) 
@@ -186,8 +188,8 @@ CONTAINS
               ! chlorophyll production term   over a time step
               zprod =              zprbio(ji,jj,jk)  * trb(ji,jj,jk,jqnch) * qfact2
               ! nudge chlorophyll back to balanced growth, Zahariev et al 2008
-              zprochln(ji,jj,jk) = zprod + (zprnch (ji,jj,jk) * trb(ji,jj,jk,jqphy) - &
-              &                             trb(ji,jj,jk,jqnch)                       &
+              zprochln(ji,jj,jk) = zprod + (MAX(zprnch(ji,jj,jk)*trb(ji,jj,jk,jqphy),0.) - &
+              &                             MAX(trb(ji,jj,jk,jqnch),0.)                       &
               &                            ) * itau_cmoc * r1_rday * qfact2                
               !
             ENDIF

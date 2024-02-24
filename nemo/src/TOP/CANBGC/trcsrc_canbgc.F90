@@ -622,7 +622,7 @@ CONTAINS
   END SUBROUTINE trc_bott_cmoc
 
 
-  SUBROUTINE trc_n2fx_denit_cmoc( zpar, write_rhs_flag )
+  SUBROUTINE trc_n2fx_denit_cmoc( zpar, kt, jnt, write_rhs_flag )
       ! compute N2 fixation and denitrification
       ! as prescribed in CanESM5/CMOC
       REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(in) :: zpar  ! any PAR array
@@ -631,6 +631,7 @@ CONTAINS
       LOGICAL                       :: write_rhs_flag0  ! 
       !
       INTEGER                       :: ji, jj, jk      ! nested loop indices
+      INTEGER, INTENT(in)           :: kt, jnt ! ocean time step
       ! <CMOC code OR 10/15/2015> arrays for total water column remineralisation, 
       ! total euphotic zone nitrogen fixation, temporary array for DNF diagnostics, 
       ! pon flux (euphotic zone bottom) for PIC burial diagnostics, PIC flux at the 
@@ -696,9 +697,9 @@ CONTAINS
       END DO
       !
       ! Store 3D denitrication rate
-      denit_cmoc(:,:,:) = zJNd(:,:,:)
+      denit_cmoc(:,:,:) = zJNd(:,:,:) - n2fix_cmoc(:,:,:)
       !
-      ! WRITE(numout,*) 'DNF sum:', SUM(zn2fixtot(:,:)) + SUM(zdenittot(:,:))
+       WRITE(numout,*) 'DNF sum:', SUM(zn2fixtot(:,:)) , SUM(zdenittot(:,:))
 
       !     --------------------------------------------------------------------
       !     Update the arrays TRA which contain the biological sources and sinks
@@ -723,22 +724,22 @@ CONTAINS
          ! CALL prt_ctl_trc(tab4d=tra, mask=tmask_bgc_closea, clinfo=ctrcnm)
       ! ENDIF
       !
-      ! IF( lk_iomput ) THEN
-         ! IF( jnt == qnrdttrc ) THEN
-            ! ! <CMOC code OR 10/15/2015> 1.e+3_wp is to convert from L^-1 to m^-3
-            ! !  (left in the sum line #119); the diagnostics has to be rescaled 
-            ! ! to per second by dividing by rfact2.
-            ! zwork(:,:)  =  zn2fixtot(:,:) * ncrr_cmoc * 1.e+3_wp * qfact2r * tmask_bgc_closea(:,:,1)
-            ! ! nitrogen fixation in molN m^-2 s^-1 
-            ! CALL iom_put( "Nfix"   , zwork )
-            ! ! <CMOC code OR 12/11/2015> 1.e+3_wp is to convert from L^-1 to 
-            ! ! m^-3 (left in the sum line #119); the diagnostics has to be 
-            ! ! rescaled to per second by dividing by rfact2; NOTE: land mask 
-            ! ! already taken into account
-            ! zwork(:,:)  = -zdenittot(:,:) * ncrr_cmoc * 1.e+3_wp * qfact2r
-            ! CALL iom_put( "Denit"  , zwork ) ! denitrification in molN m^-2 s^-1 
-       ! ENDIF
-      ! ENDIF
+      IF( lk_iomput ) THEN
+         IF( jnt == qnrdttrc ) THEN
+            ! <CMOC code OR 10/15/2015> 1.e+3_wp is to convert from L^-1 to m^-3
+            !  (left in the sum line #119); the diagnostics has to be rescaled 
+            ! to per second by dividing by rfact2.
+            zwork(:,:)  =  zn2fixtot(:,:) * ncrr_cmoc * 1.e+3_wp * qfact2r * tmask_bgc_closea(:,:,1)
+            ! nitrogen fixation in molN m^-2 s^-1 
+            CALL iom_put( "Nfix"   , zwork )
+            ! <CMOC code OR 12/11/2015> 1.e+3_wp is to convert from L^-1 to 
+            ! m^-3 (left in the sum line #119); the diagnostics has to be 
+            ! rescaled to per second by dividing by rfact2; NOTE: land mask 
+            ! already taken into account
+            zwork(:,:)  = -zdenittot(:,:) * ncrr_cmoc * 1.e+3_wp * qfact2r
+            CALL iom_put( "Denit"  , zwork ) ! denitrification in molN m^-2 s^-1 
+       ENDIF
+      ENDIF
       !
       DEALLOCATE(zJNd, zdenittot, zn2fix, zn2fixtot, zwork)
       !
