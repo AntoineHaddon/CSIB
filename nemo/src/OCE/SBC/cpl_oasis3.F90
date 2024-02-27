@@ -126,7 +126,7 @@ CONTAINS
    END SUBROUTINE cpl_init
 
 
-   SUBROUTINE cpl_define( krcv, ksnd, kcplmodel )
+   SUBROUTINE cpl_define( krcv, ksnd, kcplmodel, potential_snd_order )
       !!-------------------------------------------------------------------
       !!             ***  ROUTINE cpl_define  ***
       !!
@@ -137,6 +137,7 @@ CONTAINS
       !!--------------------------------------------------------------------
       INTEGER, INTENT(in) ::   krcv, ksnd     ! Number of received and sent coupling fields
       INTEGER, INTENT(in) ::   kcplmodel      ! Maximum number of models to/from which NEMO is potentialy sending/receiving data
+      INTEGER, DIMENSION(ksnd), INTENT(in) :: potential_snd_order ! the defined send order from the sbc module
       !
       INTEGER :: id_part
       INTEGER :: paral(5)       ! OASIS3 box partition

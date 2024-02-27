@@ -324,44 +324,33 @@ contains
   end subroutine cpl_cancpl_init
 
 
-  subroutine cpl_cancpl_define( krcv, ksnd, kcplmodel )
+  subroutine cpl_cancpl_define( krcv, ksnd, kcplmodel, potential_snd_order )
      !!-------------------------------------------------------------------
      !!             ***  ROUTINE cpl_cancpl_define  ***
      !!
      !! ** Purpose :   Define grid and field information for ocean
-     !!    exchange between AGCM, OGCM and COUPLER.
+     !!    exchange between AGCM, OGCM and COUPLER, and check that the
+     !!    proposed send/receive operations from the coupler match up.
+     !!
+     !!    Note that the potential send order is defined by potential_snd_order,
+     !!     while the receive order is defined by looping through the sequential
+     !!     indices from 1:krcv
      !!--------------------------------------------------------------------
-     integer, intent(in) :: krcv   ! Number of all possible fields received
-     integer, intent(in) :: ksnd   ! Number of all possible fields sent
-     integer, intent(in) :: kcplmodel ! Number of models to send too. Note this is a dummy argument for now
-                                      ! so that the interface matches the oasis equivalent
+     integer, intent(in) :: krcv                ! Number of all possible fields received
+     integer, intent(in) :: ksnd                ! Number of all possible fields sent
+     integer, intent(in) :: kcplmodel           ! Number of models to send too. Note this is a dummy argument for now
+                                                ! so that the interface matches the oasis equivalent
+     integer, dimension(ksnd), intent(in) :: potential_snd_order ! the hardcoded possible send order from nemo
+                                                                 !  (see sbc_cpl_snd)
 
      !--- Local
      integer :: ji,jc,jx
+     integer :: cpl_order_index, ssnd_index
      character(len=8) :: zclname
      integer :: ldbg=1
      integer(kind=impi) :: rank, ierr
      integer :: verbose=2
      integer :: min_rank, min_index
-
-     !--- var_list_info will be assigned enough info about each list of variables
-     !--- sent or received to allow a simple reordering of these lists
-     type var_list_info_t
-       character(32) :: name
-       integer       :: index
-       integer       :: rank
-       logical       :: used
-     end type var_list_info_t
-     type(var_list_info_t) :: var_list_info(50)
-
-     !--- The order that fields are sent from NEMO to the coupler is determined
-     !--- in the subroutine sbc_cpl_snd. In terms of the index in ssnd, this order is
-     !--- jps_toce=2, jps_tice=3, jps_tmix=4, jps_albice=5, jps_albmix=6, jps_fice=1,
-     !--- jps_hice=7, jps_hsnw=8, jps_co2=15, jps_ocx1=9, jps_ocy1=10, jps_ocz1=11,
-     !--- jps_ivx1=12, jps_ivy1=13, jps_ivz1=14
-     integer, dimension(15) :: send_order = &
-         (/ 2, 3, 4, 5, 6, 1, 7, 8, 15, 9, 10, 11, 12, 13, 14 /)
-     !!--------------------------------------------------------------------
 
      !--- Determine the rank of the calling process in model_communicator
      call mpi_comm_rank ( model_communicator, rank, ierr )
@@ -379,164 +368,72 @@ contains
        call flush(numout)
      endif
 
-     ! -----------------------------------------------------------------
-     ! ... Assign variable name lists for ssnd and srcv variables
-     ! -----------------------------------------------------------------
+     ! ---------------------------------------------------
+     ! ... Check send/receive order arrays (from com_cpl)
+     ! ---------------------------------------------------
+     !  This will avoid lock ups in the communication calls to the coupler
+     !      and make sure we are sending / receiving the expected fields
      !
      !--- Send variables
-     !
-     !--- nemo_n_send_var is the number of fields in nemo_send_var
-     !--- These variables are available from the com_cpl module
-     nemo_n_send_var=0
-     var_list_info(:)%name  = " "
-     var_list_info(:)%index = 0
-     var_list_info(:)%rank  = 0
-     var_list_info(:)%used  = .false.
+     cpl_order_index = 1
      do ji = 1, ksnd
-        if ( ssnd(ji)%laction ) then
-           do jc = 1, ssnd(ji)%nct
-              if ( ssnd(ji)%nct .gt. 1 ) then
-                 write(zclname,'( a7, i1)') ssnd(ji)%clname,jc
-              else
-                 zclname=ssnd(ji)%clname
-              endif
+       ssnd_index = potential_snd_order(ji)
+       if ( ssnd(ssnd_index)%laction ) then
+           ! check if there are multiple categories (ie ice thickness)
+           if ( ssnd(ji)%nct > 1 ) then
+               write(numout,*) "cpl_cancpl_define: Sending multiple categories not supported"
+               call ctl_stop("STOP", "cpl_cancpl_define", "Sending multiple categories not supported")
+           end if
 
-              nemo_n_send_var = nemo_n_send_var + 1
-              if ( nemo_n_send_var > nmaxfld ) then
-                write(numout,*) "cpl_cancpl_define: Too many send variables"
-                write(6,*) "cpl_cancpl_define: Too many send variables"
-                call flush(6)
-                call ctl_stop("STOP", " cpl_cancpl_define", "Too many send variables")
-              endif
-
-              var_list_info(nemo_n_send_var)%name  = trim(zclname)
-              var_list_info(nemo_n_send_var)%index = ji
-              do jx=1,size(send_order)
-                if ( var_list_info(nemo_n_send_var)%index == send_order(jx) ) then
-                  var_list_info(nemo_n_send_var)%rank = jx
-                  exit
-                endif
-              enddo
-              if ( var_list_info(nemo_n_send_var)%rank == 0 ) then
-                write(6,*)"cpl_cancpl_define: Unable to determine rank for ", &
-                          trim(var_list_info(nemo_n_send_var)%name)
-                call flush(6)
-                call ctl_stop("STOP", " cpl_cancpl_define", "Unable to determine send rank")
-              elseif ( rank == ocn_master ) then
-                write(6,*)"cpl_cancpl_define: rank for ", &
-                          trim(var_list_info(nemo_n_send_var)%name),' is ',var_list_info(nemo_n_send_var)%rank
-                call flush(6)
-              endif
-
-           end do
-        endif
+           ! make sure order matches
+           if ( trim(adjustl(ssnd(ssnd_index)%clname)) /= trim(adjustl(nemo_send_var(cpl_order_index))) ) then
+               write(numout,*) "COUPLER SEND ORDER MISMATCH"
+               write(numout,*) "  NEMO WANTS TO SEND ", trim(adjustl(ssnd(ssnd_index)%clname)), " AT SEND", cpl_order_index
+               write(numout,*) "  BUT CANCPL EXPECTS ", trim(adjustl(nemo_send_var(cpl_order_index)))
+               write(numout,*) "UPDATE nl_coupler_par!"
+               write(6,*) "COUPLER SEND ORDER MISMATCH"
+               write(6,*) "  NEMO WANTS TO SEND ", trim(adjustl(ssnd(ssnd_index)%clname)), " AT SEND", cpl_order_index
+               write(6,*) "  BUT CANCPL EXPECTS ", trim(adjustl(nemo_send_var(cpl_order_index)))
+               write(6,*) "UPDATE nl_coupler_par!"
+               call ctl_stop("STOP", "cpl_cancpl_define", "Send order mismatch")
+           else
+               ! send order matches, check next variable
+               cpl_order_index = cpl_order_index + 1
+           end if
+       end if
      end do
-     if ( rank == ocn_master .and. verbose > 1 ) then
-       write(numout,*) 'cpl_cancpl_define: nemo_n_send_var=',nemo_n_send_var
-       call flush(numout)
-     endif
-     if ( nemo_n_send_var > 0 ) then
-       if ( associated(nemo_send_var) ) deallocate(nemo_send_var)
-       allocate( nemo_send_var(nemo_n_send_var) )
-       nemo_send_var(1:nemo_n_send_var) = var_list_info(1:nemo_n_send_var)%name
-     endif
 
-     if ( nemo_n_send_var > 1 ) then
-       !--- nemo_send_var needs to be reordered
-       !--- The fields in this list must be in the same order as the the data
-       !--- that is sent to the coupler.
-       !--- The subroutine sbc_cpl_snd determines the send order
-       !--- There is no clear way to determine this order on the fly so
-       !--- it must be hard coded here (this is bad).
-       !--- If there are any changes in sbc_cpl_snd that alter this order
-       !--- then there must also be changes here.
-       do ji=1,nemo_n_send_var
-         min_rank  = 1000
-         min_index = -1
-         !--- Find the index of the variable with the lowest rank
-         do jx=1,nemo_n_send_var
-           !--- Ignore names already in the ordered list
-           if ( var_list_info(jx)%used ) cycle
-           if ( var_list_info(jx)%rank < min_rank ) then
-             min_rank = var_list_info(jx)%rank
-             min_index = jx
-           endif
-         enddo
-         if ( min_index < 1 ) then
-           write(6,*)"cpl_cancpl_define: Unable to find min rank at send list element ",ji
-           call flush(6)
-           call ctl_stop("STOP", " cpl_cancpl_define", "Unable to find send list min rank")
-         endif
-         var_list_info(min_index)%used = .true.
-         !--- Overwrite nemo_send_var with the properly ordered names
-         nemo_send_var(ji) = var_list_info(min_index)%name
-       enddo
-     endif
-
-     if ( rank == ocn_master .and. verbose > 1 ) then
-       write(numout,*) 'cpl_cancpl_define : Assign received variables'
-       call flush(numout)
-     endif
-
-     !--- Receive variables
-     !
-     !--- nemo_n_recv_var is the number of fields in nemo_recv_var
-     !--- These variables are available from the com_cpl module
-     nemo_n_recv_var=0
-     var_list_info(:)%name  = " "
-     var_list_info(:)%index = 0
-     var_list_info(:)%rank  = 0
-     var_list_info(:)%used  = .false.
+     !--- Recv variables
+     cpl_order_index = 1
      do ji = 1, krcv
+        ! sbc_cpl_rcv simply loops over srcv, so we can just check that
         if ( srcv(ji)%laction ) then
-           do jc = 1, srcv(ji)%nct
-              if ( srcv(ji)%nct .gt. 1 ) then
-                 write(zclname,'( a7, i1)') srcv(ji)%clname,jc
-              else
-                 zclname=srcv(ji)%clname
-              endif
+            ! check if there are multiple categories
+            if ( srcv(ji)%nct > 1 ) then
+                write(numout,*) "cpl_cancpl_define: Receiving multiple categories not supported"
+                call ctl_stop("STOP", "cpl_cancpl_define", "Receiving multiple categories not supported")
+            end if
 
-              nemo_n_recv_var = nemo_n_recv_var + 1
-              if ( nemo_n_recv_var > nmaxfld ) then
-                write(numout,*) "cpl_cancpl_define: Too many receive variables"
-                write(6,*) "cpl_cancpl_define: Too many receive variables"
-                call flush(6)
-                call ctl_stop("STOP", " cpl_cancpl_define", "Too many receive variables")
-              endif
-
-              var_list_info(nemo_n_recv_var)%name  = trim(zclname)
-              var_list_info(nemo_n_recv_var)%index = ji
-              !--- The rank in srcv also indicates the order data is received
-              var_list_info(nemo_n_recv_var)%rank = ji
-
-           end do
-        endif
+            ! make sure order matches
+            if ( trim(adjustl(srcv(ji)%clname)) /= trim(adjustl(nemo_recv_var(cpl_order_index))) ) then
+                write(numout,*) "COUPLER RECV ORDER MISMATCH"
+                write(numout,*) "  NEMO WANTS TO RECV ", trim(adjustl(srcv(ji)%clname)), "AT RECV", cpl_order_index
+                write(numout,*) "  BUT CANCPL EXPECTS ", trim(adjustl(nemo_recv_var(cpl_order_index)))
+                write(numout,*) "UPDATE nl_coupler_par!"
+                write(6,*) "COUPLER RECV ORDER MISMATCH"
+                write(6,*) "  NEMO WANTS TO RECV ", trim(adjustl(srcv(ji)%clname)), "AT RECV", cpl_order_index
+                write(6,*) "  BUT CANCPL EXPECTS ", trim(adjustl(nemo_recv_var(cpl_order_index)))
+                write(6,*) "UPDATE nl_coupler_par!"
+                call ctl_stop("STOP", "cpl_cancpl_define", "Receive order mismatch")
+            else
+                ! recv order matches, check next variable
+                cpl_order_index = cpl_order_index + 1
+            end if
+        end if
      end do
-     if ( rank == ocn_master .and. verbose > 1 ) then
-       write(numout,*) 'cpl_cancpl_define: nemo_n_recv_var=',nemo_n_recv_var
-       call flush(numout)
-     endif
-     if ( nemo_n_recv_var > 0 ) then
-       if ( associated(nemo_recv_var) ) deallocate(nemo_recv_var)
-       allocate( nemo_recv_var(nemo_n_recv_var) )
-       !--- The fields in this list must be in the same order as the the data
-       !--- that is received from the coupler
-       !--- nemo_recv_var should already be in the correct order which is
-       !--- the order the fields appear in srcv
-       !--- If this ever changes then this list will need to be reordered
-       nemo_recv_var(1:nemo_n_recv_var) = var_list_info(1:nemo_n_recv_var)%name
-     endif
-
-     if ( rank == ocn_master .and. verbose > 1 ) then
-       write(6,*)"cpl_cancpl_define: nemo_n_send_var=",nemo_n_send_var
-       write(6,'(5(2x,a))')nemo_send_var(1:nemo_n_send_var)
-       write(6,*)"cpl_cancpl_define: nemo_n_recv_var=",nemo_n_recv_var
-       write(6,'(5(2x,a))')nemo_recv_var(1:nemo_n_recv_var)
-       call flush(6)
-     endif
-
-     !--- The following values will be broadcast to all mpi tasks
-     !--- in the call to cpl_initialize_events
+     !--------------------------------------------------------------------------------
+     ! Assign values that will be communicated to CanCPL during cpl_initialize_events
+     !--------------------------------------------------------------------------------
 
      !--- Set a value for nemo_rn_rdt, defined in com_cpl
      !--- rn_Dt is defined in the module dom_oce
@@ -913,7 +810,7 @@ contains
      integer :: freq
      integer(kind=impi) :: rank, ierr
      integer :: idx, nwrds
-     integer :: verbose=1
+     integer :: verbose=3
      real(wp), dimension(Ni0glo,Nj0glo) :: global_array
      !!--------------------------------------------------------------------
 

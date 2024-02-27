@@ -26,10 +26,11 @@ MODULE CPL_INTERFACE
 
    !> Abstract interfaces to allow for either the OASIS or CanCPL routines to be used
    ABSTRACT INTERFACE
-      SUBROUTINE cpl_define_sub( krcv, ksnd, kcplmodel )
+      SUBROUTINE cpl_define_sub( krcv, ksnd, kcplmodel, potential_snd_order )
          INTEGER, INTENT(in) :: krcv ! Number of coupling fields to receive
          INTEGER, INTENT(in) :: ksnd ! Number of coupling fields to send
          INTEGER, INTENT(in) :: kcplmodel      ! Maximum number of models to/from which NEMO is potentialy sending/receiving data
+         INTEGER, DIMENSION(ksnd), INTENT(in) :: potential_snd_order ! the defined send order from the sbc module
       END SUBROUTINE
    END INTERFACE
 
