@@ -162,6 +162,7 @@ CONTAINS
       ! use for BGC rates
       CALL canoe_temp
       !
+
       DO jn = 1, jp_tot                    !   Store the tracer concentrations before entering CMOC
         rtrbbio(:,:,:,jn) = trb(:,:,:,jn)
       END DO
@@ -198,6 +199,8 @@ CONTAINS
          CALL canoe_mort1( kt, jnt )
          CALL canoe_mort2( kt, jnt )
          CALL canoe_rem( kt, jnt )
+         CALL trc_src_fedep( kt )
+         CALL trc_src_fesed
         !
         ! Initialize rnegtr2, if no call to trc_xnegtr tra used w/o correction
         rnegtr2(:,:,:) = 1._wp
@@ -295,4 +298,5 @@ CONTAINS
 
    !!======================================================================
 END MODULE trcsms_canoe
+
 

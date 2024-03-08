@@ -394,6 +394,10 @@ CONTAINS
          zirondep(:,:,jk) = src2d_dta(:,:,js2d_dust) / ( wdust0 * 55.85 * rmtssb ) * 1.e-4 * EXP( -gdept_n(:,:,jk) / 1000. ) * 1.E+12
       END DO
 
+      DO jk = 1, jpkm1
+         tra(:,:,jk,jrfer) = tra(:,:,jk,jrfer) + zirondep(:,:,jk) * qfact2
+      END DO
+
       ! Diagnostics
       IF( lk_iomput ) THEN
         zafe(:,:,:) = zirondep(:,:,:) * 1.E-9 * tmask_bgc_closea(:,:,:)      ! zirondep and ironsed are in nmol m^-3 s^-1
@@ -446,29 +450,31 @@ CONTAINS
          CALL FLUSH(numout)
       ENDIF
       !     
-      CALL iom_open('bathy.orca.nc', inum)
-      CALL iom_get(inum, jpdom_data,'bathy',zcmask(:,:,:), lrowattr=ln_use_jattr)
-      CALL iom_close(inum)
+!      CALL iom_open('bathy.orca.nc', inum)
+!      CALL iom_get(inum, jpdom_data,'bathy',zcmask(:,:,:), lrowattr=ln_use_jattr)
+!      CALL iom_close(inum)
       !
-      DO jk = 1, 5
-        DO jj = 2, jpjm1
-           DO ji = fs_2, fs_jpim1     ! These if required are added with the include statement just above the CONTAINS statement
-              IF( tmask_bgc_closea(ji,jj,jk) /= 0. ) THEN
-                 zmaskt = tmask_bgc_closea(ji+1,jj,jk) * tmask_bgc_closea(ji-1,jj,jk) & 
-                    &   * tmask_bgc_closea(ji,jj+1,jk) * tmask_bgc_closea(ji,jj-1,jk) &
-                    &   * tmask_bgc_closea(ji,jj,jk+1)
-                 IF( zmaskt == 0. )  zcmask(ji,jj,jk ) = MAX( 0.1, zcmask(ji,jj,jk) ) 
-              END IF
-           END DO
-        END DO
-      END DO
-      CALL lbc_lnk('trc_src_fesed', zcmask(:,:,:) , 'T', 1. )      ! lateral boundary conditions on cmask   (sign unchanged)
+!      DO jk = 1, 5
+!        DO jj = 2, jpjm1
+!           DO ji = fs_2, fs_jpim1     ! These if required are added with the include statement just above the CONTAINS statement
+!              IF( tmask_bgc_closea(ji,jj,jk) /= 0. ) THEN
+!                 zmaskt = tmask_bgc_closea(ji+1,jj,jk) * tmask_bgc_closea(ji-1,jj,jk) & 
+!                    &   * tmask_bgc_closea(ji,jj+1,jk) * tmask_bgc_closea(ji,jj-1,jk) &
+!                    &   * tmask_bgc_closea(ji,jj,jk+1)
+!                 IF( zmaskt == 0. )  zcmask(ji,jj,jk ) = MAX( 0.1, zcmask(ji,jj,jk) ) 
+!              END IF
+!           END DO
+!        END DO
+!      END DO
+!      CALL lbc_lnk('trc_src_fesed', zcmask(:,:,:) , 'T', 1. )      ! lateral boundary conditions on cmask   (sign unchanged)
+      zcmask(:,:,:) = 1.
       DO jk = 1, jpk
         DO jj = 1, jpj
            DO ji = 1, jpi
               zexpide   = MIN( 8.,( gdept_n(ji,jj,jk) / 500. )**(-1.5) )
               zdenitide = -0.9543 + 0.7662 * LOG( zexpide ) - 0.235 * LOG( zexpide )**2
-              zcmask(ji,jj,jk) = zcmask(ji,jj,jk) * MIN( 1., EXP( zdenitide ) / 0.5 )
+              zcmask(ji,jj,jk) = MIN( 1., EXP( zdenitide ) / 0.5 )
+              !zcmask(ji,jj,jk) = zcmask(ji,jj,jk) * MIN( 1., EXP( zdenitide ) / 0.5 )
            END DO
         END DO
       END DO
@@ -480,6 +486,13 @@ CONTAINS
         zironsed(:,:,jk) = sedfeinput0 * zcmask(:,:,jk) / ( e3t_n(:,:,jk) * rday )
       END DO
 
+      DO jj = 1, jpj
+       DO ji = 1, jpi
+        jk  = mbkt(ji,jj)
+        tra(ji,jj,jk,jrfer) = tra(ji,jj,jk,jrfer) + zironsed(ji,jj,jk) * qfact2
+       END DO
+      END DO
+      
       ! Diagnostics
       IF( lk_iomput ) THEN
         zbfe(:,:,:) = zironsed(:,:,:) * 1.E-9 * tmask_bgc_closea(:,:,:)
@@ -487,7 +500,7 @@ CONTAINS
       ENDIF  
       ironsed_cmoc(:,:,:) = zironsed(:,:,:)
       !
-      DEALLOCATE( zcmask )
+      DEALLOCATE( zironsed, zbfe, zcmask )
 
       IF( ln_timing )   CALL timing_stop('trc_src_fesed')
       
