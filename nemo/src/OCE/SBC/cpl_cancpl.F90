@@ -396,7 +396,7 @@ contains
               endif
 
               nemo_n_send_var = nemo_n_send_var + 1
-              if ( nemo_n_send_var > 40 ) then
+              if ( nemo_n_send_var > nmaxfld ) then
                 write(numout,*) "cpl_cancpl_define: Too many send variables"
                 write(6,*) "cpl_cancpl_define: Too many send variables"
                 call flush(6)
@@ -491,7 +491,7 @@ contains
               endif
 
               nemo_n_recv_var = nemo_n_recv_var + 1
-              if ( nemo_n_recv_var > 40 ) then
+              if ( nemo_n_recv_var > nmaxfld ) then
                 write(numout,*) "cpl_cancpl_define: Too many receive variables"
                 write(6,*) "cpl_cancpl_define: Too many receive variables"
                 call flush(6)
@@ -705,7 +705,7 @@ contains
      if ( nemo_n_recv_var > 0 ) then
        do ji=1,nemo_n_recv_var
          cpl_vinfo = find_cpl_vinfo( name=trim(nemo_recv_var(ji)) )
-         do jx=1,40
+         do jx=1,nmaxfld
            if ( trim(adjustl(nemo_recv_var(ji))) .eq. trim(adjustl(srcv(jx)%clname)) ) then
              !--- jx is the index in srcv for this name
              do jc=1,srcv(jx)%nct

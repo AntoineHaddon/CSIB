@@ -13,7 +13,7 @@
 !-----------------------------------------------------------------------
 &namcmocnegtr   !   Switch the negatrive tracer block
 !-----------------------------------------------------------------------
-   ln_cmocnegtr = .false.          !  .false. means it will be skipped
+   ln_cmocnegtr = .true.          !  .false. means it will be skipped
 /
 !-----------------------------------------------------------------------
 &namcmocmass    !   Mass conservation

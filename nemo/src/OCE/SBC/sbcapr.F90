@@ -26,7 +26,8 @@ MODULE sbcapr
    PUBLIC   sbc_apr_init  ! routine called in sbcmod
 
    !                                          !!* namsbc_apr namelist (Atmospheric PRessure) *
-   LOGICAL, PUBLIC ::   ln_apr_obc = .false.   !: inverse barometer added to OBC ssh data
+   LOGICAL, PUBLIC ::   ln_apr_obc = .false.   !: inverse barometer added to OBC ssh data 
+   LOGICAL, PUBLIC ::   l_aprcpl = .false.   !: atm. pressure recieved from oasis
    LOGICAL, PUBLIC ::   ln_ref_apr             !: ref. pressure: global mean Patm (F) or a constant (F)
    REAL(wp)        ::   rn_pref                !  reference atmospheric pressure   [N/m2]
 
@@ -74,12 +75,14 @@ CONTAINS
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namsbc_apr in configuration namelist' )
       IF(lwm) WRITE ( numond, namsbc_apr )
       !
-      ALLOCATE( sf_apr(1), STAT=ierror )           !* allocate and fill sf_sst (forcing structure) with sn_sst
-      IF( ierror > 0 )   CALL ctl_stop( 'STOP', 'sbc_apr: unable to allocate sf_apr structure' )
-      !
-      CALL fld_fill( sf_apr, (/ sn_apr /), cn_dir, 'sbc_apr', 'Atmospheric pressure ', 'namsbc_apr' )
-                                ALLOCATE( sf_apr(1)%fnow(jpi,jpj,1)   )
-      IF( sn_apr%ln_tint )   ALLOCATE( sf_apr(1)%fdta(jpi,jpj,1,2) )
+      IF( .NOT. l_aprcpl )  THEN
+          ALLOCATE( sf_apr(1), STAT=ierror )           !* allocate and fill sf_sst (forcing structure) with sn_sst
+          IF( ierror > 0 )   CALL ctl_stop( 'STOP', 'sbc_apr: unable to allocate sf_apr structure' )
+          !
+          CALL fld_fill( sf_apr, (/ sn_apr /), cn_dir, 'sbc_apr', 'Atmospheric pressure ', 'namsbc_apr' )
+                                    ALLOCATE( sf_apr(1)%fnow(jpi,jpj,1)   )
+          IF( sn_apr%ln_tint )   ALLOCATE( sf_apr(1)%fdta(jpi,jpj,1,2) )
+      ENDIF
                              ALLOCATE( ssh_ib(jpi,jpj) , ssh_ibb(jpi,jpj) )
                              ALLOCATE( apr (jpi,jpj) )
       !
@@ -126,7 +129,7 @@ CONTAINS
       !!----------------------------------------------------------------------
 
       !                                         ! ========================== !
-      IF( MOD( kt-1, nn_fsbc ) == 0 ) THEN      !    At each sbc time-step   !
+      IF( MOD( kt-1, nn_fsbc ) == 0 .AND. .NOT.l_aprcpl ) THEN      !    At each sbc time-step   !
          !                                      ! ===========+++============ !
          !
          IF( kt /= nit000 )   ssh_ibb(:,:) = ssh_ib(:,:)    !* Swap of ssh_ib fields

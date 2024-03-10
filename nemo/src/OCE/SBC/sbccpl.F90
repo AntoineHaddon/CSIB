@@ -232,7 +232,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       !!             ***  FUNCTION sbc_cpl_alloc  ***
       !!----------------------------------------------------------------------
-      INTEGER :: ierr(4)
+      INTEGER :: ierr(3)
       !!----------------------------------------------------------------------
       ierr(:) = 0
       !
@@ -243,8 +243,6 @@ CONTAINS
 #endif
       ALLOCATE( xcplmask(jpi,jpj,0:nn_cplmodel) , STAT=ierr(3) )
       !
-      IF( .NOT. ln_apr_dyn ) ALLOCATE( ssh_ib(jpi,jpj), ssh_ibb(jpi,jpj), apr(jpi, jpj), STAT=ierr(4) )
-
       sbc_cpl_alloc = MAXVAL( ierr )
       CALL mpp_sum ( 'sbccpl', sbc_cpl_alloc )
       IF( sbc_cpl_alloc > 0 )   CALL ctl_warn('sbc_cpl_alloc: allocation of arrays failed')
@@ -382,7 +380,7 @@ CONTAINS
          call set_cancpl_params( [ &
                         sn_snd_temp, sn_snd_alb   , sn_snd_thick, sn_snd_crt   , sn_snd_co2,   &
                         sn_rcv_w10m, sn_rcv_taumod, sn_rcv_tau  , sn_rcv_dqnsdt, sn_rcv_qsr,   &
-                        sn_rcv_qns , sn_rcv_emp   , sn_rcv_rnf  , sn_rcv_cal   , sn_rcv_iceflx, sn_rcv_co2 ], &
+                        sn_rcv_qns , sn_rcv_emp   , sn_rcv_rnf  , sn_rcv_cal   , sn_rcv_iceflx, sn_rcv_co2, sn_rcv_mslp ], &
                         nn_ice, nn_fsbc )
       endif
 
@@ -603,7 +601,19 @@ CONTAINS
       !                                                      ! ------------------------- !
       !                                                      ! Mean Sea Level Pressure   !
       !                                                      ! ------------------------- !
-      srcv(jpr_mslp)%clname = 'O_MSLP'     ;   IF( TRIM(sn_rcv_mslp%cldes  ) == 'coupled' )    srcv(jpr_mslp)%laction = .TRUE.
+      srcv(jpr_mslp)%clname = 'O_MSLP'     ;   
+      IF( TRIM(sn_rcv_mslp%cldes  ) == 'coupled' ) THEN
+          srcv(jpr_mslp)%laction = .TRUE.
+          IF (ln_apr_dyn) THEN
+              l_aprcpl           = .TRUE.                      ! -> no need to read mslp in sbcapr
+              IF(lwp) WRITE(numout,*)
+              IF(lwp) WRITE(numout,*) '   Sea level pressure received from the coupler, ln_apr_dyn = ', ln_apr_dyn
+          ENDIF
+      ELSEIF (ln_apr_dyn) THEN
+          CALL ctl_warn( 'sbc_apr: ln_apr_dyn=T but no Sea level pressure received from the coupler,', &
+               &         '===> ln_apr_dyn forced to .FALSE.' )
+          ln_apr_dyn = .FALSE.
+      ENDIF
       !
       !                                                      ! --------------------------------- !
       !                                                      !  ice topmelt and conduction flux  !   
@@ -1357,17 +1367,18 @@ CONTAINS
       IF( srcv(jpr_co2)%laction )   atm_co2(:,:) = frcv(jpr_co2)%z3(:,:,1)
       !
       !                                                      ! ========================= !
-      !                                                      ! Mean Sea Level Pressure   !   (taum)
+      !                                                      ! Mean Sea Level Pressure   !   (Pa)
       !                                                      ! ========================= !
       IF( srcv(jpr_mslp)%laction ) THEN                    ! UKMO SHELF effect of atmospheric pressure on SSH
           IF( kt /= nit000 )   ssh_ibb(:,:) = ssh_ib(:,:)    !* Swap of ssh_ib fields
 
           r1_grau = 1.e0 / (grav * rho0)               !* constant for optimization
           ssh_ib(:,:) = - ( frcv(jpr_mslp)%z3(:,:,1) - rpref ) * r1_grau    ! equivalent ssh (inverse barometer)
-          apr   (:,:) =     frcv(jpr_mslp)%z3(:,:,1)                         !atmospheric pressure
+          apr   (:,:) =     frcv(jpr_mslp)%z3(:,:,1)                         !atmospheric pressure (Pa)
 
           IF( kt == nit000 ) ssh_ibb(:,:) = ssh_ib(:,:)  ! correct this later (read from restart if possible)
-      ENDIF
+          CALL iom_put( "ssh_ib", ssh_ib )                   !* output the inverse barometer ssh
+      END IF
       !
       IF( ln_sdw ) THEN  ! Stokes Drift correction activated
       !                                                      ! ========================= !
