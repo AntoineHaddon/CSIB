@@ -20,6 +20,7 @@ MODULE trcflx_canbgc
 ! Module calls section
  
    USE trc                       ! time step in seconds whether or not euler is activated
+   USE sbc_oce                   ! Surface boundary condition: ocean fields
    USE oce_trc                   ! give access to active tracers, wndm, ts, and fr_i (wind @10m, T/S, and ice fraction)
                                  ! oce_trc calls common OCE and TOP indices, e.g. jpi,jpj dimensions
    USE sms_top_canbgc            ! contains all common variables to Canadian BGCMs
@@ -101,11 +102,12 @@ CONTAINS
       INTEGER, INTENT(in) ::   kt   !
       INTEGER, INTENT(in) ::   Kmm, Krhs  ! time level indices
       !
-      INTEGER  ::   ji, jj, jm
+      INTEGER  ::   ji, jj, jm, iind, iindm1
       REAL(wp) ::   ztc, ztc2, ztc3, ztc4, zws, zkgwan
       REAL(wp) ::   zfld, zflu, zfld16, zflu16, zfact
       REAL(wp) ::   zsch_o2, zsch_co2
       REAL(wp), DIMENSION(jpi,jpj) :: zkgco2, zkgo2, zo2flx, zco2flx
+      REAL(wp) ::   zyr_dec, zdco2dt
 
       !!---------------------------------------------------------------------
       !
@@ -127,6 +129,30 @@ CONTAINS
          patmo(:,:) = sf_patm(1)%fnow(:,:,1)/101325.0     ! atmospheric pressure
       ENDSELECT
 
+      ! -------------------------------------------
+
+      SELECT  CASE (nn_co2int) ! atm co2
+      CASE (0) ! atm co2 constant value
+         satmco2g(:,:)  = nn_atmco2* 1E-6 *patmo(:,:)  
+      CASE (1) ! atm co2 from annual file
+         ! Linear temporal interpolation  of atmospheric pco2.  atcco2.txt has annual values.
+         ! Caveats: First column of .txt must be in years, decimal  years preferably. 
+         ! For nn_offset, if your model year is iyy, nn_offset=(years(1)-iyy) 
+         ! then the first atmospheric CO2 record read is at years(1)
+         zyr_dec = REAL( nyear + nn_offset, wp ) + REAL( nday_year, wp ) / REAL( nyear_len(1), wp )
+         jm = 1
+         DO WHILE( jm <= nmaxrec .AND. years(jm) < zyr_dec ) ;  jm = jm + 1 ;  END DO
+         iind = jm  ;   iindm1 = jm - 1
+         zdco2dt = ( atcco2h(iind) - atcco2h(iindm1) ) / ( years(iind) - years(iindm1) + rtrn )
+         nn_atmco2  = zdco2dt * ( zyr_dec - years(iindm1) ) + atcco2h(iindm1)
+         satmco2g(:,:) = nn_atmco2 * 1E-6 *patmo(:,:)  
+      CASE (2) ! co2 from inputs files
+         CALL fld_read( kt, 1, sf_atmco2 )               !* input atmco2 provided at kt + 1/2
+         satmco2g(:,:) = sf_atmco2(1)%fnow(:,:,1) * 1E-6 * patmo(:,:) ! CO2 concentration 
+      CASE (3) ! CO2 conc. from coupler
+         satmco2g(:,:) = atm_co2(:,:) * 1E-6 *patmo(:,:) 
+      ENDSELECT
+      satmo2g(:,:)   = atcoxy*patmo(:,:)    ! Initialization of atm pO2
 
 
       ! 2. compute gas exchange velocities
@@ -183,8 +209,8 @@ CONTAINS
 
             oce_co2g(ji,jj) = ( zfld - zflu ) * qfact * e1e2t(ji,jj) * tmask_bgc_closea(ji,jj,1) * 1000. ! convert L^-1 to m^-3
             zco2flx(ji,jj)  = ( zfld - zflu ) * tmask_bgc_closea(ji,jj,1)
-            tr(ji,jj,1,jqdic, Krhs) = tr(ji,jj,1,jqdic, Krhs) + zco2flx(ji,jj) / e3t(ji,jj,1,Kmm)
-   
+            tr(ji,jj,1,jqdic, Krhs) = tr(ji,jj,1,jqdic, Krhs) + zco2flx(ji,jj) / e3t(ji,jj,1,Kmm)  
+
             ! Compute O2 flux 
             zfld16 = satmo2g(ji,jj) * K0O2(ji,jj) * tmask_bgc_closea(ji,jj,1) * zkgo2(ji,jj)     ! (mol/L) * (m/s)
             zflu16 = tr(ji,jj,1,jqoxy, Kmm) * tmask_bgc_closea(ji,jj,1) * zkgo2(ji,jj)                  ! (mol/L) * (m/s)
@@ -194,8 +220,8 @@ CONTAINS
             tr(ji,jj,1,jqoxy, Krhs) = tr(ji,jj,1,jqoxy, Krhs) + zo2flx(ji,jj) / e3t(ji,jj,1,Kmm)
          END DO
       END DO
+      oce_co2(:,:)=zco2flx(:,:) 
 
-      ! O Riche Sept 7th 2022
       ! Diagnostics
       ! gas exchange rates
       CALL iom_put("KgCO2", zkgco2(:,:) )
