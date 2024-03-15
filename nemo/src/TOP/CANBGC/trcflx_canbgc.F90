@@ -32,7 +32,8 @@ MODULE trcflx_canbgc
    USE iom                       ! to access iom_put for diagnostics
    USE fldread                   ! read input fields
  
-   USE trcche_canbgc  			      ! Carbon chemistry module
+   USE trcche_canbgc             ! Carbon chemistry module
+   USE sbcapr                    ! Ocean dynamic atm. press
    USE trc_closea_canbgc         ! bgc-specific closea mask
 
 ! General scope section
@@ -109,15 +110,26 @@ CONTAINS
       !!---------------------------------------------------------------------
       !
       IF( ln_timing )  CALL timing_start('trc_flx')
-      IF(lwp) WRITE(numout,*)
-      IF(lwp) WRITE(numout,*) ' trc_flx:  air-sea processes' 
-      IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
       ! SURFACE CHEMISTRY (PCO2 AND [H+] IN
       !     SURFACE LAYER); THE RESULT OF THIS CALCULATION
       !     IS USED TO COMPUTE AIR-SEA FLUX OF CO2
 
-      ! 1. compute gas exchange velocities
+      ! 1. fill the gas exchange arrays 
+      ! -------------------------------------------
+      SELECT  CASE (nn_patmint) ! atm. press.
+      CASE (0) ! atm press constant value
+         patmo(:,:)=nn_patm/101325.0
+      CASE (1,3) ! atm press from ocean dyn. or coupler
+         patmo(:,:)=apr/101325.0
+      CASE (2) ! atm press from inputs files
+         CALL fld_read( kt, 1, sf_patm )               !* input Patm provided at kt + 1/2
+         patmo(:,:) = sf_patm(1)%fnow(:,:,1)/101325.0     ! atmospheric pressure
+      ENDSELECT
+
+
+
+      ! 2. compute gas exchange velocities
       ! -------------------------------------------
       DO jj = 1, jpj
          DO ji = 1, jpi
@@ -152,7 +164,7 @@ CONTAINS
          END DO
       END DO
 
-      ! 2. compute partial pressure differences and fluxes
+      ! 3. compute partial pressure differences and fluxes
       ! -------------------------------------------
 
       DO jj = 1, jpj
