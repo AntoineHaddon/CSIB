@@ -1,48 +1,8 @@
 !!>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 !! CANOE configuration namelist 
 !-----------------------------------------------------------------------
-!!>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-!! CANOE   :    1  - air-sea exchange                         (namcanext)
-!! namelists    2  - biological parameters                    (namcanbio)
-!!              3  - parameters for nutrient limitations      (namcanlim)    
-!!              4  - parameters for phytoplankton             (namcanprod,namcanmort)
-!!              5  - parameters for zooplankton               (namcanmes,namcanzoo)
-!!              6  - parameters for remineralization          (namcanrem)
-!!              7  - parameters for calcite chemistry         (namcancal)
-!!              8  - parameters for inputs deposition         (namcansed)
-!!              9  - parameters for Kriest parameterization   (namcankrp, namcankrs)
-!!              10 - additional 2D/3D  diagnostics            (namcandia)
-!!              11 - Damping                                  (namcandmp)
 !-----------------------------------------------------------------------
 &namcanoemass    !   Mass conservation
 !-----------------------------------------------------------------------
    ln_check_mass =  .true.     !  Check mass conservation
-/
-!'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-&namcanext     !   air-sea exchange
-!,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-   nn_offset  =  0       ! Offset model-data start year - ln_co2int = T
-!                        ! If your model year is iyy, nn_offset=(years(1)-iyy) 
-!                        ! then the first atmospheric CO2 record read is at years(1)
-   ln_co2int   = .true.  ! read atm pco2 from a file (T) or constant (F)
-   atcco2     =  284.317 ! Constant value atmospheric pCO2 - ln_co2int = F
-   clname      = 'omip6_co2atm.nc'     ! Name of atm pCO2 file - ln_co2int = T
-   clvarname   = 'mole_fraction_of_carbon_dioxide_in_air' ! CO2 variable name in clname
-   nn_readoffset_co2 = 0 ! Reference year in cl14name
-!   ln_c14int   = .false. ! read atm C14 from a file (T) or constant (F)
-!   atcd14c     = 0.      ! Constant value atmospheric C14  - ln_co2int = F
-!   cl14name    = 'omip6_Delta14co2.nc' ! Name of atm pCO2 file - ln_co2int = T
-!   cl14varname = 'Delta14co2_in_air'                      ! C14 variable name in cl14name 
-!   nn_readoffset_c14 = 1850 ! Reference year in cl14name
-   
-/
-!'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-&namcanatm     !  Atmospheric prrssure 
-!,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-!              !  file name   ! frequency (hours) ! variable   ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation !
-!              !              !  (if <0  months)  !   name     !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  !
-   sn_patm     = 'presatm'    ,     -1            , 'patm'     ,  .true.      , .true. ,   'yearly'  , ''       , ''
-   cn_dir      = './'     !  root directory for the location of the dynamical files
-!
-   ln_presatm  = .true.   ! constant atmopsheric pressure (F) or from a file (T)
 /

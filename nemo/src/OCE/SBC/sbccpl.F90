@@ -594,7 +594,7 @@ CONTAINS
          srcv(jpr_co2 )%laction = .TRUE.
          l_co2cpl = .TRUE.
          IF(lwp) WRITE(numout,*)
-         IF(lwp) WRITE(numout,*) '   Atmospheric pco2 received from oasis '
+         IF(lwp) WRITE(numout,*) '   Atmospheric pco2 received from the coupler '
          IF(lwp) WRITE(numout,*)
       ENDIF
       !

@@ -263,13 +263,11 @@ wdust0       =  2.0      ! Dust sinking speed
    kchl_cmoc   =  0.03          ! PAR attenuation for chlorophyll          (m^-1) (mgChl m^-3)^-1
 /
 !-----------------------------------------------------------------------
-&namtrcflx     !   air-sea exchange
+&nambgcext     !   air-sea exchange
 !-----------------------------------------------------------------------
-   ln_co2int  =  .false. ! read atm pco2 from a file (T) or constant (F)
-   atmco2     =  284.317e-6     ! Constant value atmospheric pCO2 - ln_co2int = F
-!   clname     =  'atcco2.txt'  ! Name of atm pCO2 file - ln_co2int = T
-!   nn_offset  =  0       ! Offset model-data start year - ln_co2int = T
-   no3_sf  = 1.
-!                        ! If your model year is iyy, nn_offset=(years(1)-iyy)
-!                        ! then the first atmospheric CO2 record read is at years(1)
+   nn_co2int  =  0 ! =0, co2 constant (nn_atmco2) 
+   nn_atmco2     =  288.0      ! Constant CO2 value in ppm (nn_co2int=0)
+!-----------------------------------------------------------------------
+   nn_patmint  =  0 ! =0, air pressure constant (nn_patm) 
+   nn_patm     =  101325. ! Constant atmospheric pressure in Pa (nn_patmint=0)
 /
