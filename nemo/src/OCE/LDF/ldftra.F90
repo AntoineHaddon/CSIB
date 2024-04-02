@@ -540,6 +540,8 @@ CONTAINS
       IF(lwp) THEN                      ! control print
          WRITE(numout,*) '   Namelist namtra_eiv : '
          WRITE(numout,*) '      Eddy Induced Velocity (eiv) param.         ln_ldfeiv     = ', ln_ldfeiv
+         WRITE(numout,*) '      computate Kgm following Saenko, Yang & Gregory (2018) ln_syg2018 = ', ln_syg2018
+         WRITE(numout,*) '      computate Kgm following Tréguier et al. (1997)        ln_thl1997 = ', ln_thl1997
          WRITE(numout,*) '      eiv streamfunction & velocity diag.        ln_ldfeiv_dia = ', ln_ldfeiv_dia
          WRITE(numout,*) '      coefficients :'
          WRITE(numout,*) '         type of time-space variation            nn_aei_ijk_t  = ', nn_aei_ijk_t
