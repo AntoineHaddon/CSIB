@@ -515,9 +515,11 @@ CONTAINS
       REAL(wp) ::   zah_max, zUfac         !   -   scalar
       !!
       NAMELIST/namtra_eiv/ ln_ldfeiv   , ln_ldfeiv_dia,   &   ! eddy induced velocity (eiv)
+         &                 ln_syg2018  , ln_thl1997,      &   ! flags controling computation of mesoscale eddy transfer
+                                                              ! coefficien following Saenko, Yang & Gregory (2018) or Tréguier et al. (1997)
          &                 nn_aei_ijk_t, rn_Ue, rn_Le,    &   ! eiv  coefficient
          &                 rn_zRomax   , rn_zRocoef ,     &   ! Rossby radius in the tropical regions & a prescribed "typical" eddy scale
-         &                 rn_eiwmin , rn_eiwmax , rn_gm      ! lower & upper limits & scaling of eddy induced velocity
+         &                 rn_eiwmin   , rn_eiwmax , rn_gm    ! lower & upper limits & scaling of eddy induced velocity
       !!----------------------------------------------------------------------
       !
       IF(lwp) THEN                      ! control print
