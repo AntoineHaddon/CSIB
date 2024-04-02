@@ -10,6 +10,10 @@ MODULE ldftra
    !!                 !                                  add velocity dependent coefficient and optional read in file
    !!            4.0.3! 2023-08  (D. Yang)   Revise the computation of mesoscale eddy transfer coefficien 
    !!                                        following Saenko, Yang & Gregory, J.Clim., 2018
+   !!            4.0.3! 2024-03  (D. Yang)   Add two switches ln_syg2018 and ln_thl1997 for computation of mesoscale eddy transfer
+   !!                                        coefficien following Saenko, Yang & Gregory (2018) and Tréguier et al. (1997)
+   !!                                        respectively. Note that the latter is the original code containing errors that is 
+   !!                                        now recovered for traceability. 
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -67,8 +71,11 @@ MODULE ldftra
 
    !                                   !!* Namelist namtra_eiv : eddy induced velocity param. *
    !                                    != Use/diagnose eiv =!
-   LOGICAL , PUBLIC ::   ln_ldfeiv           !: eddy induced velocity flag
-   LOGICAL , PUBLIC ::   ln_ldfeiv_dia       !: diagnose & output eiv streamfunction and velocity (IOM)
+   LOGICAL , PUBLIC ::   ln_ldfeiv           ! eddy induced velocity flag
+   LOGICAL , PUBLIC ::   ln_syg2018          ! compute mesoscale eddy transfer coefficien following Saenko, Yang & Gregory, J.Clim., 2018
+   LOGICAL , PUBLIC ::   ln_thl1997          ! compute mesoscale eddy transfer coefficien following Tréguier et al. (1997);
+                                             ! this is the original code containing errors, being kept for traceability.
+   LOGICAL , PUBLIC ::   ln_ldfeiv_dia       ! diagnose & output eiv streamfunction and velocity (IOM)
    !                                    != Coefficients =!
    INTEGER , PUBLIC ::   nn_aei_ijk_t        !: choice of time/space variation of the eiv coeff.
    REAL(wp), PUBLIC ::      rn_Ue               !: lateral diffusive velocity  [m/s]
@@ -607,7 +614,14 @@ CONTAINS
          CASE(  21  )                        !--  time varying 2D field  --!
             IF(lwp) WRITE(numout,*) '   ==>>>   eddy induced velocity coef. = F( latitude, longitude, time )'
             IF(lwp) WRITE(numout,*) '                                       = F( growth rate of baroclinic instability )'
+            IF(lwp) WRITE(numout,*) '   ------------------------------------------------------------ '
+            IF(lwp) WRITE(numout,*) '   1. The original scheme follows Tréguier et al. (1997). '
             IF(lwp) WRITE(numout,*) '           maximum allowed value: aei0 = ', aei0, ' m2/s'
+            IF(lwp) WRITE(numout,*) '   ------------------------------------------------------------ '
+            IF(lwp) WRITE(numout,*) '   ------------------------------------------------------------ '
+            IF(lwp) WRITE(numout,*) '   2. The new scheme follows Saenko, Yang & Gregory (2018). '
+            IF(lwp) WRITE(numout,*) '    eddy induced velocity coef. is constrained between', rn_eiwmin, 'and', rn_eiwmax, ' m2/s'
+            IF(lwp) WRITE(numout,*) '   ------------------------------------------------------------ '
             !
             l_ldfeiv_time = .TRUE.     ! will be calculated by call to ldf_tra routine in step.F90
             !
@@ -695,9 +709,14 @@ CONTAINS
                   ! eddies using the isopycnal slopes calculated in ldfslp.F : 
                   ! T^-1 = sqrt(m_jpk(N^2*(r1^2+r2^2)*e3w))
                   ze3w = e3w_n(ji,jj,jk) * wmask(ji,jj,jk)
-                  ! Add SQRT below. D.Yang, 2023-08-11
-                  zah(ji,jj) = zah(ji,jj) + SQRT( zn2 * ( wslpi(ji,jj,jk) * wslpi(ji,jj,jk)   &
+                  IF( ln_thl1997 ) THEN
+                    zah(ji,jj) = zah(ji,jj) + zn2 * ( wslpi(ji,jj,jk) * wslpi(ji,jj,jk)   &
+                     &                            + wslpj(ji,jj,jk) * wslpj(ji,jj,jk) ) * ze3w       
+                  ENDIF
+                  IF( ln_syg2018 ) THEN
+                    zah(ji,jj) = zah(ji,jj) + SQRT( zn2 * ( wslpi(ji,jj,jk) * wslpi(ji,jj,jk)   &
                      &                            + wslpj(ji,jj,jk) * wslpj(ji,jj,jk) ) ) * ze3w
+                  ENDIF
                   zhw(ji,jj) = zhw(ji,jj) + ze3w
                END DO
             END DO
@@ -707,24 +726,41 @@ CONTAINS
       DO jj = 2, jpjm1
          DO ji = fs_2, fs_jpim1   ! vector opt.
             zfw = MAX( ABS( 2. * omega * SIN( rad * gphit(ji,jj) ) ) , 1.e-10 )
-            ! Rossby radius at w-point taken betwenn 2 km and rn_zRomax km (in the tropical regions);
-            ! Also set 1/pi=0.32 instead of 0.4. D.Yang, 2023-08-11 
-            zRo(ji,jj) = MAX(  2.e3 , MIN( .32 * zn(ji,jj) / zfw, rn_zRomax )  )
+            IF( ln_thl1997 ) THEN
+              ! Rossby radius at w-point taken betwenn 2 km and  40km
+              zRo(ji,jj) = MAX(  2.e3 , MIN( .4 * zn(ji,jj) / zfw, 40.e3 )  )
+            ENDIF
+            IF( ln_syg2018 ) THEN      
+              ! Rossby radius at w-point taken betwenn 2 km and rn_zRomax km (in the tropical regions);
+              ! Also set 1/pi=0.32 instead of 0.4.  
+              zRo(ji,jj) = MAX(  2.e3 , MIN( .32 * zn(ji,jj) / zfw, rn_zRomax )  )
+            ENDIF  
             ! Compute aeiw by multiplying Ro^2 and T^-1
-            ! Set rn_zRocoef (a prescribed "typical" eddy scale) & remove SQRT D.Yang, 2023-08-11
-            zaeiw(ji,jj) = rn_zRocoef * zRo(ji,jj) * ( zah(ji,jj) / zhw(ji,jj) ) * tmask(ji,jj,1)
+            IF( ln_thl1997 ) THEN
+              zaeiw(ji,jj) = zRo(ji,jj) * zRo(ji,jj) * SQRT( zah(ji,jj) / zhw(ji,jj) ) * tmask(ji,jj,1)
+            ENDIF
+            IF( ln_syg2018 ) THEN
+              ! Set rn_zRocoef (a prescribed "typical" eddy scale) & remove SQRT
+              zaeiw(ji,jj) = rn_zRocoef * zRo(ji,jj) * ( zah(ji,jj) / zhw(ji,jj) ) * tmask(ji,jj,1)
+            ENDIF
          END DO
       END DO
 
       !                                         !==  Bound on eiv coeff.  ==!
+      ! Decrease the coefficient in the tropics (20N-20S)
       z1_f20 = 1._wp / (  2._wp * omega * sin( rad * 20._wp )  )
       DO jj = 2, jpjm1
          DO ji = fs_2, fs_jpim1   ! vector opt.
             zzaei = MIN( 1._wp, ABS( ff_t(ji,jj) * z1_f20 ) ) * zaeiw(ji,jj)     ! tropical decrease
-            ! Add scalling (rn_gm) to zaeiw. D.Yang, 2023-08-11
-            zaeiw(ji,jj) = rn_gm * MIN( zzaei , paei0 )                                  ! Max value = paei0
-            ! Limit the coefficient to rn_eiwmin - rn_eiwmax m^2 /s. D.Yang, 2023-08-11
-            zaeiw(ji,jj) = MIN( MAX( zaeiw(ji,jj) , rn_eiwmin ) , rn_eiwmax ) * tmask(ji,jj,1)
+            IF( ln_thl1997 ) THEN
+              zaeiw(ji,jj) = MIN( zzaei , paei0 )                                ! Max value = paei0
+            ENDIF
+            IF( ln_syg2018 ) THEN
+              ! Add scalling (rn_gm) to zaeiw.
+              zaeiw(ji,jj) = rn_gm * zzaei
+              ! Limit the coefficient to rn_eiwmin - rn_eiwmax m^2 /s. 
+              zaeiw(ji,jj) = MIN( MAX( zaeiw(ji,jj) , rn_eiwmin ) , rn_eiwmax ) * tmask(ji,jj,1)
+            ENDIF  
          END DO
       END DO
       CALL lbc_lnk( 'ldftra', zaeiw(:,:), 'W', 1. )       ! lateral boundary condition

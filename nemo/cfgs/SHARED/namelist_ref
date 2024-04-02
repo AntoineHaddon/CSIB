@@ -836,6 +836,8 @@
 &namtra_eiv    !   eddy induced velocity param.                         (default: OFF)
 !-----------------------------------------------------------------------
    ln_ldfeiv   = .false.   ! use eddy induced velocity parameterization
+   ln_syg2018  = .true.        ! compute mesoscale eddy transfer coefficien following Saenko, Yang & Gregory, J.Clim., 2018                                    ln_thl1997  = .false.       ! compute mesoscale eddy transfer coefficien following Tréguier et al. (1997);
+                               ! this is the original code containing errors, being kept for traceability.
       !
       !                        !  Coefficients:
       nn_aei_ijk_t    = 0           !  space/time variation of eddy coefficient:
