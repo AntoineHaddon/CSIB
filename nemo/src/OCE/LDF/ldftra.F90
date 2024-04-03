@@ -768,6 +768,7 @@ CONTAINS
          END DO
       END DO
       CALL lbc_lnk( 'ldftra', zaeiw(:,:), 'W', 1. )       ! lateral boundary condition
+      CALL iom_put( "kgm", zaeiw )
 
 
       !               

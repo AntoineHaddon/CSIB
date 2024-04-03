@@ -561,7 +561,8 @@
         <field id="w_masstr2"    long_name="square of vertical mass transport"              standard_name="square_of_upward_ocean_mass_transport"   unit="kg2/s2" />
 
         <!-- EOS -->
-        <field id="bn2"          long_name="squared Brunt-Vaisala frequency"                                                                        unit="s-2" />
+	<field id="bn2"          long_name="squared Brunt-Vaisala frequency"                standard_name="squared Brunt-Vaisala frequency"         unit="s-2" />
+	<field id="kgm"          long_name="mesoscale eddy transfer coefficient"            standard_name="mesoscale eddy transfer coefficient"     unit="m2/s2"        grid_ref="grid_W_2D" />
 
       </field_group>
 
