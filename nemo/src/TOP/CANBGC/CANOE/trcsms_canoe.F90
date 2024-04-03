@@ -201,6 +201,7 @@ CONTAINS
          CALL canoe_rem( kt, jnt )
          CALL trc_src_fedep( kt )
          CALL trc_src_fesed
+         CALL trc_n2fx_canoe( kt, jnt )
         !
         ! Initialize rnegtr2, if no call to trc_xnegtr tra used w/o correction
         rnegtr2(:,:,:) = 1._wp

@@ -165,6 +165,8 @@ CONTAINS
       !
       CALL canoe_sink_init
       !
+      CALL trc_n2fx_init_canoe
+      !
       ! Set elemental ratios
       ! ---------------------
       rr_c2n  =  6.625_wp

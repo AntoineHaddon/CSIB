@@ -23,7 +23,7 @@ MODULE trcsrc_canbgc
    USE sms_cmoc          ! shared variables
    USE sms_top_canbgc    ! access index/array definitions for ext. sources
    USE trc_closea_canbgc ! tmask_bgc_closea
-      
+   
    IMPLICIT NONE
    PRIVATE
 
@@ -250,7 +250,7 @@ CONTAINS
       ! These are used only to store values of the rivers sources. See trc_src_criver
       ALLOCATE( cotdep_cmoc(jpi,jpj),rivinp_cmoc(jpi,jpj), STAT=ierr0 )
       IF( ierr0 /= 0 )   CALL ctl_stop( 'STOP', 'trc_src_init: failed to allocate trc_src_criver arrays for trc_src' ) 
-      ! These are used only to store values of N2 fixation and denitrication. See trc_n2fx_denit_cmoc
+      ! These are used only to store values of N2 fixation and denitrification. See trc_n2fx_denit_cmoc
       ALLOCATE( n2fix_cmoc(jpi,jpj,jpk),denit_cmoc(jpi,jpj,jpk), STAT=ierr0 )
       IF( ierr0 /= 0 )   CALL ctl_stop( 'STOP', 'trc_src_init: failed to allocate trc_n2fx_denit_cmoc arrays for trc_src' ) 
       !
