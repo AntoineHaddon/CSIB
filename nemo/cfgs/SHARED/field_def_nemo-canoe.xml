@@ -94,6 +94,7 @@
        <field id="LDN"         long_name="Nitrogen limitation factor"             unit="-"                   grid_ref="grid_T_3D" />
        <field id="LNFe"        long_name="Iron limitation factor"                 unit="-"                   grid_ref="grid_T_3D" />
        <field id="LDFe"        long_name="Iron limitation factor"                 unit="-"                   grid_ref="grid_T_3D" />
+       <field id="Nfix"        long_name="Nitrogen fixation"                      unit="mol/m2/s"            grid_ref="grid_T_3D" />
 
      </field_group>
 

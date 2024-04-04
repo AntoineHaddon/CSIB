@@ -135,6 +135,7 @@
    diazolight  =  50.      ! Diazotrophs sensitivity to light (W/m2)
    concfediaz  =  100.     ! Diazotrophs half-saturation constant for iron
    kni         =  0.1      ! Diazotrophs half-saturation constant for N-inhibition
+   jk_max_dnf  =  25       ! layer index for max depth of nitrogen fixation
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &namcancal     !   parameters for Calcite chemistry

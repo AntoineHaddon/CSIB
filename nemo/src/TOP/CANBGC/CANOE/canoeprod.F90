@@ -80,6 +80,7 @@ MODULE canoeprod
    REAL(wp), SAVE, PUBLIC ::  kni        = 0.1_wp            !: DNF N inhibition parameter
    REAL(wp), SAVE, PUBLIC ::  diazolight = 50._wp            !: DNF irradiance dependence parameter
    REAL(wp), SAVE, PUBLIC ::  concfediaz = 100._wp           !: DNF iron concentration dependence parameter
+   INTEGER, SAVE, PUBLIC ::   jk_max_dnf = 25                !: layer index for max depth of nitrogen fixation
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   prmax    !: optimal production = f(temperature)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   quotan   !: proxy of N quota in Nanophyto
@@ -418,12 +419,12 @@ CONTAINS
       INTEGER                       :: ji, jj, jk      ! nested loop indices
       INTEGER, INTENT(in)           :: kt, jnt ! ocean time step
 
-      REAL(wp), ALLOCATABLE, DIMENSION(:,:  ) :: zn2fixtot, zwork
-      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zn2fix, znitrpot
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:  ) :: zn2fixtot
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zn2fix, znitrpot, zwork
       REAL(wp)   :: zrtn, zlim, zfact 
       !
-      ALLOCATE( zn2fix(jpi, jpj, jpk), znitrpot(jpi, jpj, jpk) )
-      ALLOCATE( zn2fixtot(jpi, jpj  ), zwork(jpi, jpj ) )
+      ALLOCATE( zn2fix(jpi, jpj, jpk), znitrpot(jpi, jpj, jpk), zwork(jpi, jpj, jpk) )
+      ALLOCATE( zn2fixtot(jpi, jpj  ) )
       ! Nitrogen fixation and denitrification
       ! ----------------------------------------------------------
 
@@ -432,7 +433,7 @@ CONTAINS
       zn2fixtot(:,:)   = 0._wp
       !
       ! hardwiring index for now because jk_eud_cmoc is in a namelist only read in CMOC runs
-      DO jk = 1, 25
+      DO jk = 1, jk_max_dnf
          DO jj = 1, jpj
             DO ji = 1, jpi
                    ! this is copied from CanESM5 p4z_sed
@@ -454,7 +455,7 @@ CONTAINS
       !     Update the arrays TRA which contain the biological sources and sinks
       !     --------------------------------------------------------------------
       !
-      DO jk = 1, 25
+      DO jk = 1, jk_max_dnf
          DO jj = 1, jpj
             DO ji = 1, jpi
                    zfact = znitrpot(ji,jj,jk) * nitrfix * xstepb
@@ -470,7 +471,7 @@ CONTAINS
       IF( lk_iomput ) THEN
          IF( jnt == qnrdttrc ) THEN
             ! nitrogen fixation in molN m^-2 s^-1 
-            zwork(:,:)  =  zn2fixtot(:,:) * 0.001/86400. * tmask_bgc_closea(:,:,1)
+            zwork(:,:,:)  =  zn2fix(:,:,:) * 0.001/rday * tmask_bgc_closea(:,:,:)
             CALL iom_put( "Nfix"   , zwork )
        ENDIF
       ENDIF
@@ -483,7 +484,7 @@ CONTAINS
       !
       INTEGER ::   ios  
       ! 
-      NAMELIST/namcanoenfx/ kni, concfediaz, nitrfix, diazolight
+      NAMELIST/namcanoenfx/ kni, concfediaz, nitrfix, diazolight, jk_max_dnf
       REWIND( numnatp_refb )              ! Namelist namcanoenfx in reference namelist : Passive tracer variables
       READ  ( numnatp_refb, namcanoenfx, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namcanoenfx in reference namelist_cmoc' )
@@ -501,6 +502,7 @@ CONTAINS
          WRITE(numout,*) '    DNF N inhibition parameter                     kni =', kni
          WRITE(numout,*) '    DNF irradiance dependence parameter            diazolight =', diazolight
          WRITE(numout,*) '    DNF iron concentration dependence parameter    concfediaz =', concfediaz
+         WRITE(numout,*) '    layer index for max depth of nitrogen fixation jk_max_dnf =', jk_max_dnf
          WRITE(numout,*) ' '
       END IF   
       !

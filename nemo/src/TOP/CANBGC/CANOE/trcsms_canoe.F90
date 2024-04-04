@@ -61,7 +61,7 @@ CONTAINS
       USE trcsrc_canbgc             ! loading external files/sources
       !
       INTEGER, INTENT(in) ::   kt   ! ocean time-step index
-      INTEGER  ::  jnt			        ! time (-step) splitting index
+      INTEGER  ::  jnt              ! time (-step) splitting index
       INTEGER  ::  jn, ji, jj, jk   ! dummy loop indices
       INTEGER  ::  zrfact           ! working variable      
       INTEGER  ::  jp_tot           ! jp_bgc+jp_cmoc
@@ -77,7 +77,7 @@ CONTAINS
       IF(lwp) WRITE(numout,*) ' trc_sms_canoe:  CANOE model'
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~'
       !
-      ! Sum of all the tracers shared TOP + CMOC
+      ! Sum of all the tracers shared TOP + CANOE
       jp_tot = jp_bgc + jp_canoe
       !
       ALLOCATE(rnegtr2(jpi,jpj,jpk))      
@@ -126,24 +126,15 @@ CONTAINS
           IF(lwp) write(numout,*) '~~~~~~'
           !
           CALL trc_che_2D( kt )   ! computation of carbon chemistry constants
-          ! initialize the chemical constants
-          ! JC's 2D carbon chem mode 
-          !
-        !  
+          !  
         ELSE
             WRITE(numout,*)
             WRITE(numout,*) 'Should something be done for the restart mode here? Nothing coded here yet, some code exists in TOP/trcini.F90 to take care of this though.'
             WRITE(numout,*)
         ENDIF
-          !
+         !
       ENDIF
       ! 
-      ! Do we need this or is this covered at least partly by all the new
-      ! external sources subroutines, e.g. trcsrc.F90 modules.
-      ! anything else to add?
-      ! ?IF( ll_sbc ) CALL p4z_sbc( kt )   ! external sources of nutrients
-      ! Do we need a CMOC- and CanOE-specific *_sbc.F90 file?
-      !
       IF( qndayflxtr /= nday_year ) THEN      ! New days
         !
         qndayflxtr = nday_year
@@ -153,17 +144,14 @@ CONTAINS
         IF(lwp) write(numout,*) '~~~~~~'
   
         CALL trc_che_2D( kt )           ! computation of carbon chemistry constants
-        ! initialize the chemical constants
-        ! JC's 2D carbon chem mode 
             !
       ENDIF  
       !
-      ! Update temperature dependencies
-      ! use for BGC rates
+      ! Update temperature dependencies for BGC rates
       CALL canoe_temp
       !
 
-      DO jn = 1, jp_tot                    !   Store the tracer concentrations before entering CMOC
+      DO jn = 1, jp_tot                    !   Store the tracer concentrations
         rtrbbio(:,:,:,jn) = trb(:,:,:,jn)
       END DO
       !  
@@ -173,26 +161,19 @@ CONTAINS
         ! This is the equivalent of p4z_bio call
         ! in trcsms_pisces.F90/CanESM5/CANOE
         !
-        ! trcsink calls go here according to p4z_bio
-        ! O Riche Jan 18th 2023
-        ! will have to make sure the time stepping scheme
-        ! properly work with NEMO4/PISCES/TRP infrastructure
-        ! before activating.
-	      !
-        ! Test print narea
         WRITE(numout,*)
         WRITE(numout,*) 'time step            #', kt
         WRITE(numout,*) 'split loop iteration #', jnt
         WRITE(numout,*) 'narea                #', narea
         WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
         CALL FLUSH(numout)
-	      !
-        CALL canoe_sink( kt , jnt )     ! particule sinking 
-	      !
+       !
+        CALL canoe_sink( kt , jnt )     ! particle sinking 
+       !
         !!!!!!!!!!! CALL trc_opt_stairs( kt, jnt )       ! test PAR vert profile.
          CALL trc_opt( kt, jnt )       ! 3-band PAR attenuation
-        !
-	      ! call CanOE production S/R
+       !
+       ! call CanOE production S/R
          CALL canoe_prod( kt, jnt )
          CALL canoe_meso( kt, jnt )
          CALL canoe_mzoo( kt, jnt )
@@ -212,14 +193,8 @@ CONTAINS
           tra(:,:,:,jn) = 0._wp
         END DO
         !  
-        !!!!!!! End   of "p4zbio" block !!!!!!!        
-        !
-        !!!!!!! Start of "p4zsed" block !!!!!!!
-        !
-        !!!!!!! End   of "p4zsed" block !!!!!!!
-        !
-	  CALL trc_flx( kt )     ! compute air-sea gas exchange 
-	!
+        CALL trc_flx( kt )     ! compute air-sea gas exchange 
+      !
       END DO
       !
       DO jn = 1, jp_tot
@@ -234,7 +209,6 @@ CONTAINS
       !CALL total_element(totfe,totn)
       !WRITE(numout,*) totfe, totn
       !
-      !
       IF( l_trdtrc )  ALLOCATE( ztrmyt(jpi,jpj,jpk) )
 
       ! Save the trends in the mixed layer
@@ -245,7 +219,7 @@ CONTAINS
           END DO
           DEALLOCATE( ztrmyt )
       END IF
-	  
+  
       !
       IF( ln_timing )   CALL timing_stop('trc_sms_canoe')
       !
