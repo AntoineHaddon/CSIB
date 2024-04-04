@@ -12,7 +12,6 @@
 !!              8  - parameters for inputs deposition         (namcansed)
 !!              9  - parameters for Kriest parameterization   (namcankrp, namcankrs)
 !!              10 - additional 2D/3D  diagnostics            (namcandia)
-!!              11 - Damping                                  (namcandmp)
 !-----------------------------------------------------------------------
 &namcanoemass    !   Mass conservation
 !-----------------------------------------------------------------------
@@ -130,6 +129,13 @@
    nh4frx     = 0.25      ! annamox fraction of denitrification
    oxymin     = 1.        ! half saturation constant for anoxia 
 /
+& namcanoenfx     !   parameters for N2 fixation
+!,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+   nitrfix     =  2.25E-2  ! Nitrogen fixation rate
+   diazolight  =  50.      ! Diazotrophs sensitivity to light (W/m2)
+   concfediaz  =  100.     ! Diazotrophs half-saturation constant for iron
+   kni         =  0.1      ! Diazotrophs half-saturation constant for N-inhibition
+/
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &namcancal     !   parameters for Calcite chemistry
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -155,9 +161,6 @@
    sedfeinput  =  1000.    ! Coastal release of Iron
    dustsolub   =  0.01     ! Solubility of the dust
    wdust       =  2.0      ! Dust sinking speed
-   nitrfix     =  2.25E-2  ! Nitrogen fixation rate
-   diazolight  =  50.      ! Diazotrophs sensitivity to light (W/m2)
-   concfediaz  =  100.     ! Diazotrophs half-saturation Cste for Iron
 /
 ! OR Feb 6th 2023 Not needed in this version of NEMO
 ! Diagnostics are defined in field/file_def_nemo-canoe.xml
@@ -192,11 +195,6 @@
    ! candia3d(11) = 'PFeD     ' , 'Primary production of diatoms iron',  'molFe/m3/s   '
 ! /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-&namcandmp     !  Damping 
-!,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-   ln_candmp    =  .true.     !  Relaxation of some tracers to a mean value
-   nn_candmp    =   225       !  Frequency of Relaxation 
-/
 &namcanoenegtr   !   Switch on/off the negatrive tracer block
 !-----------------------------------------------------------------------
    ln_canoenegtr = .false.    !  .false. means it will be skipped

@@ -12,7 +12,6 @@
 !!              8  - parameters for inputs deposition         (namcansed)
 !!              9  - parameters for Kriest parameterization   (namcankrp, namcankrs)
 !!              10 - additional 2D/3D  diagnostics            (namcandia)
-!!              11 - Damping                                  (namcandmp)
 !-----------------------------------------------------------------------
 &namcanoemass    !   Mass conservation
 !-----------------------------------------------------------------------
