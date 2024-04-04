@@ -366,15 +366,24 @@ sn_rcv_mslp   =       'none'                 ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
 &namtra_eiv    !   eddy induced velocity param.                         (default: OFF)
 !-----------------------------------------------------------------------
-   ln_ldfeiv   = .true.    ! use eddy induced velocity parameterization
-      !                        !  Coefficients:
-      nn_aei_ijk_t  = 21          ! space/time variation of the eiv coeficient
+   ln_ldfeiv   = .true.        ! use eddy induced velocity parameterization
+   ln_syg2018  = .true.        ! compute mesoscale eddy transfer coefficien following Saenko, Yang & Gregory, J.Clim., 2018
+   ln_thl1997  = .false.       ! compute mesoscale eddy transfer coefficien following Tréguier et al. (1997);
+                               ! this is the original code containing errors, being kept for traceability.
+      !                            !  Coefficients:
+      nn_aei_ijk_t  = 21           ! space/time variation of the eiv coeficient
       !                                !   = 21 F(i,j,t)  =Treguier et al. JPO 1997 formulation
-      !                           !  time invariant coefficients:  aei0 = 1/2  Ue*Le
-      rn_Ue        = 0.03              !  lateral diffusive velocity [m/s] (nn_aht_ijk_t= 0, 10, 20, 30)
-      rn_Le        = 200.e+3           !  lateral diffusive length   [m]   (nn_aht_ijk_t= 0, 10)
+                                       !   revised following Saenko, Yang & Gregory, J.Clim., 2018
+      !                        !  time invariant coefficients:  aei0 = 1/2  Ue*Le
+      rn_Ue        = 0.03           !  lateral diffusive velocity [m/s] (nn_aht_ijk_t= 0, 10, 20, 30)
+      rn_Le        = 200.e+3        !  lateral diffusive length   [m]   (nn_aht_ijk_t= 0, 10)
+      rn_zRomax    = 200.e+3        !  Rossby radius in the tropical regions: 200 km
+      rn_zRocoef   = 25.e+3         !  a prescribed "typical" eddy scale: 25 or 50 km
+      rn_eiwmin    = 100.           !  lower limit of eddy induced velocity (m2/s)
+      rn_eiwmax    = 2000.          !  upper limit of eddy induced velocity (m2/s)
+      rn_gm        = 1.             !  scaling of eddy induced velocity
       !
-      ln_ldfeiv_dia =.true.   ! diagnose eiv stream function and velocities
+      ln_ldfeiv_dia =.true.    ! diagnose eiv stream function and velocities
 /
 !-----------------------------------------------------------------------
 &namtra_dmp    !   tracer: T & S newtonian damping                      (default: OFF)
