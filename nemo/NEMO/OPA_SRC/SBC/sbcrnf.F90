@@ -447,8 +447,8 @@ CONTAINS
       IF(lwp) WRITE(numout,*) '~~~~~~~~~ '
 
       cl_rnfile = TRIM( cn_dir )//TRIM( sn_cnf%clname )
-      IF( .NOT. sn_cnf%ln_clim ) THEN   ;   WRITE(cl_rnfile, '(a,"_y",i4)' ) TRIM( cl_rnfile ), nyear    ! add year
-         IF( sn_cnf%cltype == 'monthly' )   WRITE(cl_rnfile, '(a,"m",i2)'  ) TRIM( cl_rnfile ), nmonth   ! add month
+      IF( .NOT. sn_cnf%ln_clim ) THEN   ;   WRITE(cl_rnfile, '(a,"_y",i4.4)' ) TRIM( cl_rnfile ), nyear    ! add year
+         IF( sn_cnf%cltype == 'monthly' )   WRITE(cl_rnfile, '(a,"m",i2.2)'  ) TRIM( cl_rnfile ), nmonth   ! add month
       ENDIF
 
       ! horizontal mask (read in NetCDF file)
