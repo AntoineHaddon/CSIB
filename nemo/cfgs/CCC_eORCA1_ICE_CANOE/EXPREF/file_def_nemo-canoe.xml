@@ -87,6 +87,7 @@
           <field field_ref="LDN"         level="0" />
           <field field_ref="LNFe"        level="0" />
           <field field_ref="LDFe"        level="0" />
+          <field field_ref="Nfix"        level="0" />
           
           <!-- Temporary addition -->
           <!-- Ideal Age Tracer (IAT) from TOP -->
