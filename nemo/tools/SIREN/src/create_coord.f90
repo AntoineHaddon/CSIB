@@ -4,18 +4,18 @@
 !
 ! DESCRIPTION:
 !> @file
-!> @brief 
-!> this program creates fine grid coordinate file.
+!> @brief
+!> this program creates target/fine grid coordinate file.
 !>
 !> @details
 !> @section sec1 method
 !> variables from the input coordinates coarse/source grid file, are extracted
 !> and interpolated to create a fine/taget grid coordinates file.<br/>
-!> @note 
+!> @note
 !>    interpolation method could be different for each variable.
 !>
-!> \image html  header_coord_40.png 
-!> <center> \image latex header_coord_40.png 
+!> \image html  header_coord_40.png
+!> <center> \image latex header_coord_40.png
 !> </center>
 !>
 !> @section sec2 how to
@@ -45,7 +45,7 @@
 !>       - **namout** to set output parameters
 !>
 !>    here after, each sub-namelist parameters is detailed.
-!>    @note 
+!>    @note
 !>       default values are specified between brackets
 !>
 !> @subsection sublog namlog
@@ -64,7 +64,7 @@
 !>          - fatal
 !>          - none
 !>
-!>    - **in_maxerror** [@a 5]<br/> 
+!>    - **in_maxerror** [@a 5]<br/>
 !>       maximum number of error allowed
 !>
 !> @subsection subcfg namcfg
@@ -72,28 +72,28 @@
 !>
 !>    - **cn_varcfg** [@a ./cfg/variable.cfg]<br/>
 !>       path to the variable configuration file.<br/>
-!>       the variable configuration file defines standard name, 
-!>       default interpolation method, axis,... 
-!>       to be used for some known variables.<br/> 
+!>       the variable configuration file defines standard name,
+!>       default interpolation method, axis,...
+!>       to be used for some known variables.<br/>
 !>
-!>    - **cn_dimcfg** [@a ./cfg/dimension.cfg]<br/> 
-!>       path to the dimension configuration file.<br/> 
-!>       the dimension configuration file defines dimensions allowed.<br/> 
+!>    - **cn_dimcfg** [@a ./cfg/dimension.cfg]<br/>
+!>       path to the dimension configuration file.<br/>
+!>       the dimension configuration file defines dimensions allowed.<br/>
 !>
-!>    - **cn_dumcfg** [@a ./cfg/dummy.cfg]<br/> 
+!>    - **cn_dumcfg** [@a ./cfg/dummy.cfg]<br/>
 !>       path to the useless (dummy) configuration file.<br/>
-!>       the dummy configuration file defines useless 
+!>       the dummy configuration file defines useless
 !>       dimension or variable. these dimension(s) or variable(s) will not be
 !>       processed.<br/>
 !>
-!> @subsection subsrc namsrc 
+!> @subsection subsrc namsrc
 !>    the source/coarse grid sub-namelist parameters are :
 !>
-!>    - **cn_coord0** [@a ]<br/> 
+!>    - **cn_coord0** [@a ]<br/>
 !>       path to the coordinate file
 !>
-!>    - **in_perio0** [@a ]<br/> 
-!>       NEMO periodicity index<br/> 
+!>    - **in_perio0** [@a ]<br/>
+!>       NEMO periodicity index<br/>
 !>       the NEMO periodicity could be choose between 0 to 6:
 !>       <dl>
 !>          <dt>in_perio=0</dt>
@@ -115,18 +115,18 @@
 !>          </dd>
 !>       </dl>
 !>       @sa For more information see @ref md_src_docsrc_6_perio
-!>       and Model Boundary Condition paragraph in the 
+!>       and Model Boundary Condition paragraph in the
 !>       [NEMO documentation](https://forge.ipsl.jussieu.fr/nemo/chrome/site/doc/NEMO/manual/pdf/NEMO_manual.pdf)
 !>
-!> @subsection subvar namvar 
+!> @subsection subvar namvar
 !>    the variable sub-namelist parameters are :
 !>
-!>    - **cn_varinfo** [@a ]<br/> 
+!>    - **cn_varinfo** [@a ]<br/>
 !>       list of variable and extra information about request(s) to be used<br/>
 !>
 !>       each elements of *cn_varinfo* is a string character (separated by ',').<br/>
-!>       it is composed of the variable name follow by ':', 
-!>       then request(s) to be used on this variable.<br/> 
+!>       it is composed of the variable name follow by ':',
+!>       then request(s) to be used on this variable.<br/>
 !>       request could be:
 !>          - int = interpolation method
 !>          - ext = extrapolation method
@@ -136,51 +136,51 @@
 !>
 !>       informations about available method could be find in @ref interp,
 !>       @ref extrap and @ref filter modules.<br/>
-!>       Example: 
+!>       Example:
 !>          - 'glamt: int=linear; ext=dist_weight', 'e1t: int=cubic/rhoi'
 !>
-!>       @note 
-!>          If you do not specify a method which is required, 
+!>       @note
+!>          If you do not specify a method which is required,
 !>          default one is apply.
 !>
-!> @subsection subnst namnst 
+!> @subsection subnst namnst
 !>    the nesting sub-namelist parameters are :
 !>
 !>    - **in_imin0** [@a ]<br/>
-!>       i-direction lower left  point indice of coarse grid subdomain to be used
+!>       i-direction lower left  point indice of source/coarse grid subdomain to be used
 !>    - **in_imax0** [@a ]<br/>
-!>       i-direction upper right point indice of coarse grid subdomain to be used
+!>       i-direction upper right point indice of source/coarse grid subdomain to be used
 !>    - **in_jmin0** [@a ]<br/>
-!>       j-direction lower left  point indice of coarse grid subdomain to be used
+!>       j-direction lower left  point indice of source/coarse grid subdomain to be used
 !>    - **in_jmax0** [@a ]<br/>
-!>       j-direction upper right point indice of coarse grid subdomain to be used
+!>       j-direction upper right point indice of source/coarse grid subdomain to be used
 !> <br/>or<br/>
 !>    - **rn_lonmin0** [@a ]<br/>
-!>       lower left  longitude of coarse grid subdomain to be used
+!>       lower left  longitude of source/coarse grid subdomain to be used
 !>    - **rn_lonmax0** [@a ]<br/>
-!>       upper right longitude of coarse grid subdomain to be used
+!>       upper right longitude of source/coarse grid subdomain to be used
 !>    - **rn_latmin0** [@a ]<br/>
-!>       lower left  latitude  of coarse grid subdomain to be used
+!>       lower left  latitude  of source/coarse grid subdomain to be used
 !>    - **rn_latmax0** [@a ]<br/>
-!>       upper right latitude  of coarse grid subdomain to be used
-!>    @note you could define sub domain with 
+!>       upper right latitude  of source/coarse grid subdomain to be used
+!>    @note you could define sub domain with
 !>       - coarse/source grid indices
 !>       <br/>or<br/>
 !>       - coordinates.<br/>
 !>    if coordinates are defined (-180 < lon < 360 and -90 < lat < 90),
 !>    SIREN does not take into account indices.
 !>
-!>    - **in_rhoi**  [@a 1]<br/> 
+!>    - **in_rhoi**  [@a 1]<br/>
 !>       refinement factor in i-direction
 !>
-!>    - **in_rhoj**  [@a 1]<br/> 
+!>    - **in_rhoj**  [@a 1]<br/>
 !>       refinement factor in j-direction
 !>
-!>       \image html  grid_zoom_60.png 
-!>       <center> \image latex grid_zoom_40.png 
+!>       \image html  grid_zoom_60.png
+!>       <center> \image latex grid_zoom_40.png
 !>       </center>
 !>
-!> @subsection subout namout 
+!> @subsection subout namout
 !>    the output sub-namelist parameter is :
 !>
 !>    - **cn_fileout** [@a coord_fine.nc]<br/>
@@ -280,17 +280,17 @@ PROGRAM create_coord
 
    ! namelist variable
    ! namlog
-   CHARACTER(LEN=lc) :: cn_logfile  = 'create_coord.log' 
-   CHARACTER(LEN=lc) :: cn_verbosity= 'warning' 
+   CHARACTER(LEN=lc) :: cn_logfile  = 'create_coord.log'
+   CHARACTER(LEN=lc) :: cn_verbosity= 'warning'
    INTEGER(i4)       :: in_maxerror = 5
 
    ! namcfg
-   CHARACTER(LEN=lc) :: cn_varcfg   = './cfg/variable.cfg' 
-   CHARACTER(LEN=lc) :: cn_dimcfg   = './cfg/dimension.cfg' 
+   CHARACTER(LEN=lc) :: cn_varcfg   = './cfg/variable.cfg'
+   CHARACTER(LEN=lc) :: cn_dimcfg   = './cfg/dimension.cfg'
    CHARACTER(LEN=lc) :: cn_dumcfg   = './cfg/dummy.cfg'
 
    ! namsrc
-   CHARACTER(LEN=lc) :: cn_coord0   = '' 
+   CHARACTER(LEN=lc) :: cn_coord0   = ''
    INTEGER(i4)       :: in_perio0   = -1
 
    ! namvar
@@ -327,16 +327,16 @@ PROGRAM create_coord
    &  in_perio0         !< periodicity index
 
    NAMELIST /namvar/ &  !< variable namelist
-   &  cn_varinfo        !< list of variable and extra information about 
-                        !< interpolation, extrapolation or filter method to be used. 
-                        !< (ex: 'votemper:linear,hann,dist_weight','vosaline:cubic' ) 
- 
+   &  cn_varinfo        !< list of variable and extra information about
+                        !< interpolation, extrapolation or filter method to be used.
+                        !< (ex: 'votemper:linear,hann,dist_weight','vosaline:cubic' )
+
    NAMELIST /namnst/ &  !< nesting namelist
-   &  rn_lonmin0,    &  !< lower left  coarse grid longitude
-   &  rn_lonmax0,    &  !< upper right coarse grid longitude
-   &  rn_latmin0,    &  !< lower left  coarse grid latitude
-   &  rn_latmax0,    &  !< upper right coarse grid latitude
-   &  in_imin0,      &  !< i-direction lower left  point indice 
+   &  rn_lonmin0,    &  !< lower left  source/coarse grid longitude
+   &  rn_lonmax0,    &  !< upper right source/coarse grid longitude
+   &  rn_latmin0,    &  !< lower left  source/coarse grid latitude
+   &  rn_latmax0,    &  !< upper right source/coarse grid latitude
+   &  in_imin0,      &  !< i-direction lower left  point indice
    &  in_imax0,      &  !< i-direction upper right point indice
    &  in_jmin0,      &  !< j-direction lower left  point indice
    &  in_jmax0,      &  !< j-direction upper right point indice
@@ -344,7 +344,7 @@ PROGRAM create_coord
    &  in_rhoj           !< refinement factor in j-direction
 
    NAMELIST /namout/ &  !< output namelist
-   &  cn_fileout        !< fine grid coordinate file   
+   &  cn_fileout        !< target/fine grid coordinate file
    !-------------------------------------------------------------------
 
    !
@@ -357,7 +357,7 @@ PROGRAM create_coord
    ! --------------------------------
    IF( il_narg /= 1 )THEN
       WRITE(cl_errormsg,*) ' ERROR : one argument is needed '
-      CALL fct_help(cp_myname,cl_errormsg) 
+      CALL fct_help(cp_myname,cl_errormsg)
       CALL EXIT(1)
    ELSE
 
@@ -392,12 +392,12 @@ PROGRAM create_coord
                CALL fct_err(il_status)
                IF( il_status /= 0 )THEN
                   WRITE(cl_errormsg,*) " ERROR : error opening "//TRIM(cl_namelist)
-                  CALL fct_help(cp_myname,cl_errormsg) 
+                  CALL fct_help(cp_myname,cl_errormsg)
                   CALL EXIT(1)
                ENDIF
 
                READ( il_fileid, NML = namlog )
- 
+
                ! define logger file
                CALL logger_open(TRIM(cn_logfile),TRIM(cn_verbosity),in_maxerror)
                CALL logger_header()
@@ -433,7 +433,7 @@ PROGRAM create_coord
             ELSE
 
                WRITE(cl_errormsg,*) " ERROR : can't find "//TRIM(cl_namelist)
-               CALL fct_help(cp_myname,cl_errormsg) 
+               CALL fct_help(cp_myname,cl_errormsg)
                CALL EXIT(1)
 
             ENDIF
@@ -449,8 +449,8 @@ PROGRAM create_coord
       CALL file_clean(tl_file)
       CALL grid_get_info(tl_coord0)
    ELSE
-      CALL logger_fatal("CREATE COORD: no coarse grid coordinate found. "//&
-      &     "check namelist")      
+      CALL logger_fatal("CREATE COORD: no source/coarse grid coordinate found. "//&
+      &     "check namelist")
    ENDIF
 
    ! check
@@ -468,7 +468,7 @@ PROGRAM create_coord
 
       il_index(:)=grid_get_closest(tl_coord0, &
          &                         REAL(rn_lonmin0,dp), REAL(rn_latmin0,dp), &
-         &                         cd_pos='ll') 
+         &                         cd_pos='ll')
       il_imin0=il_index(1)
       il_jmin0=il_index(2)
    ELSE
@@ -482,7 +482,7 @@ PROGRAM create_coord
 
       il_index(:)=grid_get_closest(tl_coord0, &
          &                         REAL(rn_lonmax0,dp), REAL(rn_latmax0,dp), &
-         &                         cd_pos='ur') 
+         &                         cd_pos='ur')
       il_imax0=il_index(1)
       il_jmax0=il_index(2)
    ELSE
@@ -508,7 +508,7 @@ PROGRAM create_coord
       &  " check namelist "//TRIM(cl_namelist))
    ELSE
       il_rho(jp_I)=in_rhoi
-      il_rho(jp_J)=in_rhoj      
+      il_rho(jp_J)=in_rhoj
 
       il_offset(:,:,:)=create_coord_get_offset(il_rho(:))
    ENDIF
@@ -554,7 +554,7 @@ PROGRAM create_coord
       CALL dom_del_extra( tl_var(ji), tl_dom, il_rho(:), .true. )
 
       ! filter
-      CALL filter_fill_value(tl_var(ji))      
+      CALL filter_fill_value(tl_var(ji))
 
    ENDDO
 
@@ -599,10 +599,10 @@ PROGRAM create_coord
    CALL file_add_att(tl_fileout, tl_att)
 
    tl_att=att_init("src_file",TRIM(fct_basename(cn_coord0)))
-   CALL file_add_att(tl_fileout, tl_att)   
+   CALL file_add_att(tl_fileout, tl_att)
 
    tl_att=att_init("src_i_indices",(/tl_dom%i_imin,tl_dom%i_imax/))
-   CALL file_add_att(tl_fileout, tl_att)   
+   CALL file_add_att(tl_fileout, tl_att)
    tl_att=att_init("src_j_indices",(/tl_dom%i_jmin,tl_dom%i_jmax/))
    CALL file_add_att(tl_fileout, tl_att)
    IF( .NOT. ALL(il_rho(:)==1) )THEN
@@ -649,14 +649,14 @@ PROGRAM create_coord
    ! clean
    CALL att_clean(tl_att)
    CALL var_clean(tl_var(:))
-   DEALLOCATE( tl_var) 
+   DEALLOCATE( tl_var)
 
    CALL file_clean(tl_fileout)
    CALL var_clean_extra()
 
    ! close log file
    CALL logger_footer()
-   CALL logger_close() 
+   CALL logger_close()
 
 CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -664,9 +664,9 @@ CONTAINS
          & RESULT (if_offset)
    !-------------------------------------------------------------------
    !> @brief
-   !> This function compute offset over Arakawa grid points, 
+   !> This function compute offset over Arakawa grid points,
    !> given refinement factor.
-   !> 
+   !>
    !> @author J.Paul
    !> @date August, 2014 - Initial Version
    !>
@@ -676,7 +676,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       INTEGER(i4), DIMENSION(:), INTENT(IN) :: id_rho
 
       ! function
@@ -710,20 +710,20 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief
    !> This subroutine interpolate variable, given refinment factor.
-   !> 
-   !> @details 
-   !>  Optionaly, you could specify number of points 
+   !>
+   !> @details
+   !>  Optionaly, you could specify number of points
    !>    to be extrapolated in i- and j-direction.<br/>
    !>  variable mask is first computed (using _FillValue) and interpolated.<br/>
-   !>  variable is then extrapolated, and interpolated.<br/> 
+   !>  variable is then extrapolated, and interpolated.<br/>
    !>  Finally interpolated mask is applied on refined variable.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !>
-   !> @param[inout] td_var variable strcuture 
+   !> @param[inout] td_var variable strcuture
    !> @param[in] id_rho    array of refinement factor
-   !> @param[in] id_offset offset between fine grid and coarse grid
+   !> @param[in] id_offset offset between target/fine grid and source/coarse grid
    !> @param[in] id_iext   number of points to be extrapolated in i-direction
    !> @param[in] id_jext   number of points to be extrapolated in j-direction
    !>
@@ -761,7 +761,7 @@ CONTAINS
 
       il_jext=2
       IF( PRESENT(id_jext) ) il_jext=id_jext
-      
+
       IF( il_iext < 2 .AND. td_var%c_interp(1) == 'cubic' )THEN
          CALL logger_warn("CREATE COORD INTERP: at least extrapolation "//&
          &  "on two points are required with cubic interpolation ")
@@ -783,7 +783,7 @@ CONTAINS
          &                td_var%t_dim(4)%i_len) )
 
          bl_mask(:,:,:,:)=1
-         WHERE(td_var%d_value(:,:,:,:)==td_var%d_fill) bl_mask(:,:,:,:)=0      
+         WHERE(td_var%d_value(:,:,:,:)==td_var%d_fill) bl_mask(:,:,:,:)=0
 
          SELECT CASE(TRIM(td_var%c_point))
          CASE DEFAULT ! 'T'
@@ -798,7 +798,7 @@ CONTAINS
          CASE('F')
             tl_mask=var_init('fmask',bl_mask(:,:,:,:),td_dim=td_var%t_dim(:),&
             &                id_ew=td_var%i_ew )
-         END SELECT         
+         END SELECT
 
          DEALLOCATE(bl_mask)
 
@@ -820,7 +820,7 @@ CONTAINS
          ! remove extraband
          CALL extrap_del_extrabands(td_var, il_iext*id_rho(jp_I), il_jext*id_rho(jp_J))
 
-         ! keep original mask 
+         ! keep original mask
          WHERE( tl_mask%d_value(:,:,:,:) == 0 )
             td_var%d_value(:,:,:,:)=td_var%d_fill
          END WHERE

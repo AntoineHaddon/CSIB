@@ -118,6 +118,7 @@ void ajoutevarindoloop_definedimension (char *name)
 
   if ( !List_UsedInSubroutine_Var )
   {
+  printf("LISTE VIDE\n");
       newvar=(listvar *)calloc(1,sizeof(listvar));
       newvar->var=(variable *)calloc(1,sizeof(variable));
       /*                                                                      */
@@ -160,6 +161,7 @@ void ajoutevarindoloop_definedimension (char *name)
             tmpvar = tmpvar->suiv;
          }
       }
+      
       if ( out == 2 || out == 0 )
       {
          newvar=(listvar *)calloc(1,sizeof(listvar));
@@ -174,6 +176,7 @@ void ajoutevarindoloop_definedimension (char *name)
          newvar->var->v_pointedvar=pointedvar;
 
          /* we should find this new variable to know the tabvars indice       */
+
          if ( variableisglobal(newvar, List_Global_Var) == 1 )
          {
             newvar->suiv = List_UsedInSubroutine_Var;
@@ -270,12 +273,10 @@ void  CompleteThelistvarindoloop()
 /******************************************************************************/
 void Merge_Variables(variable *var1, variable *var2)
 {
+
     if ( !strcasecmp(var1->v_typevar,"") )
             strcpy(var1->v_typevar,var2->v_typevar);
-    else
-      {
-      strcpy(var2->v_typevar,var1->v_typevar);
-      }
+    else    strcpy(var2->v_typevar,var1->v_typevar);
 
     if ( !strcasecmp(var1->v_oldname,"") )
             strcpy(var1->v_oldname,var2->v_oldname);
@@ -309,10 +310,26 @@ void Merge_Variables(variable *var1, variable *var2)
             strcpy(var1->v_precision,var2->v_precision);
     else    strcpy(var2->v_precision,var1->v_precision);
 
-    if ( !strcasecmp(var1->v_initialvalue,"") )
-            strcpy(var1->v_initialvalue,var2->v_initialvalue);
-    else    strcpy(var2->v_initialvalue,var1->v_initialvalue);
+//     if ( !strcasecmp(var1->v_initialvalue,"") )
+//             strcpy(var1->v_initialvalue,var2->v_initialvalue);
+//     else    strcpy(var2->v_initialvalue,var1->v_initialvalue);
 
+    if ( var1->v_initialvalue )
+            var2->v_initialvalue = var1->v_initialvalue;
+    else    var1->v_initialvalue = var2->v_initialvalue;
+
+    if ( var1->v_initialvalue_array )
+            var2->v_initialvalue_array = var1->v_initialvalue_array;
+    else    var1->v_initialvalue_array = var2->v_initialvalue_array;
+    
+    if ( var1->v_do_loop )
+            var2->v_do_loop = var1->v_do_loop;
+    else    var1->v_do_loop = var2->v_do_loop;
+    
+//     if ( !strcasecmp(var1->v_initialvalue_array,"") )
+//             strcpy(var1->v_initialvalue_array,var2->v_initialvalue_array);
+//     else    strcpy(var2->v_initialvalue_array,var1->v_initialvalue_array);
+    
     if ( !strcasecmp(var1->v_IntentSpec,"") )
             strcpy(var1->v_IntentSpec,var2->v_IntentSpec);
     else    strcpy(var2->v_IntentSpec,var1->v_IntentSpec);
@@ -384,6 +401,10 @@ void Merge_Variables(variable *var1, variable *var2)
     if ( var1->v_optionaldeclare == 0 )
             var1->v_optionaldeclare = var2->v_optionaldeclare;
     else    var2->v_optionaldeclare = var1->v_optionaldeclare ;
+
+    if ( var1->v_contiguousdeclare == 0 )
+            var1->v_contiguousdeclare = var2->v_contiguousdeclare;
+    else    var2->v_contiguousdeclare = var1->v_contiguousdeclare ;
 
     if ( var1->v_allocatable == 0 )
             var1->v_allocatable = var2->v_allocatable ;
@@ -489,6 +510,7 @@ void Update_List_Global_Var_From_List_Save_Var()
          Init_Variable(newvar->var);
          /*                                                                   */
          newvar->suiv = NULL;
+
          Merge_Variables(parcours->var,newvar->var);
          strcpy(newvar->var->v_subroutinename,parcours->var->v_subroutinename);
          strcpy(newvar->var->v_nomvar,parcours->var->v_nomvar);
@@ -1154,7 +1176,7 @@ void ListUpdate()
                 newvar->var->v_nomvar,
                 newvar->var->v_VariableIsParameter,
                 newvar->var->v_typevar,
-                newvar->var->v_initialvalue );
+                newvar->var->v_initialvalue->n_name );
         newvar = newvar->suiv;
     }
 }
@@ -1172,6 +1194,7 @@ void GiveTypeOfVariables()
          if ( IsVariableReal(parcours->var->v_nomvar) == 1 )
                                         strcpy(parcours->var->v_typevar,"REAL");
          else strcpy(parcours->var->v_typevar,"INTEGER");
+         parcours->var->v_catvar = get_cat_var(parcours->var);
       }
       parcours = parcours -> suiv ;
    }
@@ -1184,6 +1207,7 @@ void GiveTypeOfVariables()
          if ( IsVariableReal(parcours->var->v_nomvar) == 1 )
                                         strcpy(parcours->var->v_typevar,"REAL");
          else strcpy(parcours->var->v_typevar,"INTEGER");
+         parcours->var->v_catvar = get_cat_var(parcours->var);
       }
       parcours = parcours -> suiv ;
    }
@@ -1196,6 +1220,7 @@ void GiveTypeOfVariables()
          if ( IsVariableReal(parcours->var->v_nomvar) == 1 )
                                         strcpy(parcours->var->v_typevar,"REAL");
          else strcpy(parcours->var->v_typevar,"INTEGER");
+         parcours->var->v_catvar = get_cat_var(parcours->var);
       }
       parcours = parcours -> suiv ;
    }
@@ -1208,6 +1233,35 @@ void GiveTypeOfVariables()
          if ( IsVariableReal(parcours->var->v_nomvar) == 1 )
                                         strcpy(parcours->var->v_typevar,"REAL");
          else strcpy(parcours->var->v_typevar,"INTEGER");
+         parcours->var->v_catvar = get_cat_var(parcours->var);
+      }
+      parcours = parcours -> suiv ;
+   }
+   
+   /*                                                                         */
+   parcours = List_Parameter_Var;
+   while ( parcours )
+   {
+      if ( !strcasecmp(parcours->var->v_typevar,"") )
+      {
+         if ( IsVariableReal(parcours->var->v_nomvar) == 1 )
+                                        strcpy(parcours->var->v_typevar,"REAL");
+         else strcpy(parcours->var->v_typevar,"INTEGER");
+         parcours->var->v_catvar = get_cat_var(parcours->var);
+      }
+      parcours = parcours -> suiv ;
+   }
+   
+   /*                                                                         */
+   parcours = List_GlobalParameter_Var;
+   while ( parcours )
+   {
+      if ( !strcasecmp(parcours->var->v_typevar,"") )
+      {
+         if ( IsVariableReal(parcours->var->v_nomvar) == 1 )
+                                        strcpy(parcours->var->v_typevar,"REAL");
+         else strcpy(parcours->var->v_typevar,"INTEGER");
+         parcours->var->v_catvar = get_cat_var(parcours->var);
       }
       parcours = parcours -> suiv ;
    }
@@ -1508,8 +1562,6 @@ void IndiceTabvars_Common_Var_Treated(char *nom)
 
 void update_indicemaxtabvars(variable *var,listindice **Listofindices)
 {
-
-
             if ( Listofindices[var->v_catvar] )
             {
                var->v_indicetabvars = Listofindices[var->v_catvar] -> i_indice;
@@ -1546,6 +1598,16 @@ void IndiceTabvars_Common_Var_No_Treated(char *nom)
            parcours->var->v_indicetabvars == 0
           )
       {
+            /* The type may has not been given if the variable was only declared with dimension */
+
+            if ( !strcasecmp(parcours->var->v_typevar,"") )
+            {
+                  if ( IsVariableReal(parcours->var->v_nomvar) == 1 )
+                                        strcpy(parcours->var->v_typevar,"REAL");
+                  else strcpy(parcours->var->v_typevar,"INTEGER");
+                  parcours->var->v_catvar = get_cat_var(parcours->var);
+             }
+             
          indicemaxtabvars[parcours->var->v_catvar] = indicemaxtabvars[parcours->var->v_catvar] + 1 ;
          parcours->var->v_indicetabvars = indicemaxtabvars[parcours->var->v_catvar];
          parcours2 = parcours;
@@ -1625,7 +1687,7 @@ void New_Allocate_Subroutine_Is_Necessary()
               ( parcours->var->v_allocatable == 0 || !strcasecmp(parcours->var->v_typevar,"type"))      &&
               parcours->var->v_notgrid == 0                              &&
               ( ( parcours->var->v_nbdim != 0 || !strcasecmp(parcours->var->v_typevar,"type") )
-              || strcasecmp(parcours->var->v_initialvalue,"") )
+              || parcours->var->v_initialvalue )
             )
          {
             out = 1;
@@ -1657,7 +1719,7 @@ void New_Allocate_Subroutine_For_Common_Is_Necessary()
               strcasecmp(parcours->var->v_subroutinename,"")                &&
               !strcasecmp(parcours->var->v_commoninfile,cur_filename)       &&
               ( ( parcours->var->v_nbdim != 0 || !strcasecmp(parcours->var->v_typevar,"type") )
-              || strcasecmp(parcours->var->v_initialvalue,"") )
+              || parcours->var->v_initialvalue )
             )
          {
             out = 1;
@@ -1844,7 +1906,7 @@ void Affiche(listvar *in_parcours)
       printf("common         - %d \n", parcours->var->v_common);
       printf("dimensiongiven - %d \n", parcours->var->v_dimensiongiven);
       printf("dimsempty      - %d \n", parcours->var->v_dimsempty);
-      printf("initialvalue   - %s \n", parcours->var->v_initialvalue);
+      printf("initialvalue   - %s \n", parcours->var->v_initialvalue->n_name);
       printf("readedlistdim  - %s \n", parcours->var->v_readedlistdimension);
       printf("-------------------------------------\n");
 

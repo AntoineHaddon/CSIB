@@ -36,14 +36,15 @@ MODULE trdtra
 
    PUBLIC   trd_tra   ! called by all tra_... modules
 
-   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   trdtx, trdty, trdt   ! use to store the temperature trends
+   REAL(dp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   trdtx, trdty, trdt   ! use to store the temperature trends
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   avt_evd  ! store avt_evd to calculate EVD trend
 
    !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
+#  include "do_loop_substitute.h90"
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: trdtra.F90 13067 2020-06-09 08:12:15Z smasson $
+   !! $Id: trdtra.F90 14174 2020-12-15 18:25:18Z hadcv $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -59,7 +60,7 @@ CONTAINS
    END FUNCTION trd_tra_alloc
 
 
-   SUBROUTINE trd_tra( kt, ctype, ktra, ktrd, ptrd, pun, ptra )
+   SUBROUTINE trd_tra( kt, Kmm, Krhs, ctype, ktra, ktrd, ptrd, pu, ptra )
       !!---------------------------------------------------------------------
       !!                  ***  ROUTINE trd_tra  ***
       !! 
@@ -76,33 +77,36 @@ CONTAINS
       CHARACTER(len=3)                , INTENT(in)           ::   ctype   ! tracers trends type 'TRA'/'TRC'
       INTEGER                         , INTENT(in)           ::   ktra    ! tracer index
       INTEGER                         , INTENT(in)           ::   ktrd    ! tracer trend index
+      INTEGER                         , INTENT(in)           ::   Kmm, Krhs ! time level indices
       REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(in)           ::   ptrd    ! tracer trend  or flux
-      REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(in), OPTIONAL ::   pun     ! now velocity 
-      REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(in), OPTIONAL ::   ptra    ! now tracer variable
+      REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(in), OPTIONAL ::   pu      ! now velocity 
+      REAL(dp), DIMENSION(jpi,jpj,jpk), INTENT(in), OPTIONAL ::   ptra    ! now tracer variable
       !
       INTEGER ::   jk    ! loop indices
       INTEGER ::   i01   ! 0 or 1
-      REAL(wp),        DIMENSION(jpi,jpj,jpk) ::   ztrds             ! 3D workspace
-      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) ::   zwt, zws, ztrdt   ! 3D workspace
+      REAL(dp),        DIMENSION(jpi,jpj,jpk) ::   ztrds             ! 3D workspace
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:)  :: zwt, zws! 3D workspace
+      REAL(dp), ALLOCATABLE, DIMENSION(:,:,:)  :: ztrdt! 3D workspace
       !!----------------------------------------------------------------------
       !      
       IF( .NOT. ALLOCATED( trdtx ) ) THEN      ! allocate trdtra arrays
          IF( trd_tra_alloc() /= 0 )   CALL ctl_stop( 'STOP', 'trd_tra : unable to allocate arrays' )
+         avt_evd(:,:,:) = 0._wp
       ENDIF
       !
-      i01 = COUNT( (/ PRESENT(pun) .OR. ( ktrd /= jptra_xad .AND. ktrd /= jptra_yad .AND. ktrd /= jptra_zad ) /) )
+      i01 = COUNT( (/ PRESENT(pu) .OR. ( ktrd /= jptra_xad .AND. ktrd /= jptra_yad .AND. ktrd /= jptra_zad ) /) )
       !
       IF( ctype == 'TRA' .AND. ktra == jp_tem ) THEN   !==  Temperature trend  ==!
          !
          SELECT CASE( ktrd*i01 )
          !                            ! advection: transform the advective flux into a trend
-         CASE( jptra_xad )   ;   CALL trd_tra_adv( ptrd, pun, ptra, 'X', trdtx ) 
-         CASE( jptra_yad )   ;   CALL trd_tra_adv( ptrd, pun, ptra, 'Y', trdty ) 
-         CASE( jptra_zad )   ;   CALL trd_tra_adv( ptrd, pun, ptra, 'Z', trdt  ) 
+         CASE( jptra_xad )   ;   CALL trd_tra_adv( ptrd, pu, ptra, 'X', trdtx, Kmm ) 
+         CASE( jptra_yad )   ;   CALL trd_tra_adv( ptrd, pu, ptra, 'Y', trdty, Kmm ) 
+         CASE( jptra_zad )   ;   CALL trd_tra_adv( ptrd, pu, ptra, 'Z', trdt, Kmm )
          CASE( jptra_bbc,    &        ! qsr, bbc: on temperature only, send to trd_tra_mng
             &  jptra_qsr )   ;   trdt(:,:,:) = ptrd(:,:,:) * tmask(:,:,:)
                                  ztrds(:,:,:) = 0._wp
-                                 CALL trd_tra_mng( trdt, ztrds, ktrd, kt )
+                                 CALL trd_tra_mng( trdt, ztrds, ktrd, kt, Kmm )
  !!gm Gurvan, verify the jptra_evd trend please !
          CASE( jptra_evd )   ;   avt_evd(:,:,:) = ptrd(:,:,:) * tmask(:,:,:)
          CASE DEFAULT                 ! other trends: masked trends
@@ -116,12 +120,12 @@ CONTAINS
          SELECT CASE( ktrd*i01 )
          !                            ! advection: transform the advective flux into a trend
          !                            !            and send T & S trends to trd_tra_mng
-         CASE( jptra_xad  )   ;   CALL trd_tra_adv( ptrd , pun  , ptra, 'X'  , ztrds ) 
-                                  CALL trd_tra_mng( trdtx, ztrds, ktrd, kt   )
-         CASE( jptra_yad  )   ;   CALL trd_tra_adv( ptrd , pun  , ptra, 'Y'  , ztrds ) 
-                                  CALL trd_tra_mng( trdty, ztrds, ktrd, kt   )
-         CASE( jptra_zad  )   ;   CALL trd_tra_adv( ptrd , pun  , ptra, 'Z'  , ztrds ) 
-                                  CALL trd_tra_mng( trdt , ztrds, ktrd, kt   )
+         CASE( jptra_xad  )   ;   CALL trd_tra_adv( ptrd , pu  , ptra, 'X'  , ztrds, Kmm ) 
+                                  CALL trd_tra_mng( trdtx, ztrds, ktrd, kt, Kmm   )
+         CASE( jptra_yad  )   ;   CALL trd_tra_adv( ptrd , pu  , ptra, 'Y'  , ztrds, Kmm ) 
+                                  CALL trd_tra_mng( trdty, ztrds, ktrd, kt, Kmm   )
+         CASE( jptra_zad  )   ;   CALL trd_tra_adv( ptrd , pu  , ptra, 'Z'  , ztrds, Kmm ) 
+                                  CALL trd_tra_mng( trdt , ztrds, ktrd, kt, Kmm   )
          CASE( jptra_zdfp )           ! diagnose the "PURE" Kz trend (here: just before the swap)
             !                         ! iso-neutral diffusion case otherwise jptra_zdf is "PURE"
             ALLOCATE( zwt(jpi,jpj,jpk), zws(jpi,jpj,jpk), ztrdt(jpi,jpj,jpk) )
@@ -129,36 +133,40 @@ CONTAINS
             zwt(:,:, 1 ) = 0._wp   ;   zws(:,:, 1 ) = 0._wp            ! vertical diffusive fluxes
             zwt(:,:,jpk) = 0._wp   ;   zws(:,:,jpk) = 0._wp
             DO jk = 2, jpk
-               zwt(:,:,jk) = avt(:,:,jk) * ( tsa(:,:,jk-1,jp_tem) - tsa(:,:,jk,jp_tem) ) / e3w_n(:,:,jk) * tmask(:,:,jk)
-               zws(:,:,jk) = avs(:,:,jk) * ( tsa(:,:,jk-1,jp_sal) - tsa(:,:,jk,jp_sal) ) / e3w_n(:,:,jk) * tmask(:,:,jk)
+               zwt(:,:,jk) = avt(:,:,jk) * ( ts(:,:,jk-1,jp_tem,Krhs) - ts(:,:,jk,jp_tem,Krhs) )   &
+                  &        / e3w(:,:,jk,Kmm) * tmask(:,:,jk)
+               zws(:,:,jk) = avs(:,:,jk) * ( ts(:,:,jk-1,jp_sal,Krhs) - ts(:,:,jk,jp_sal,Krhs) )   &
+                  &        / e3w(:,:,jk,Kmm) * tmask(:,:,jk)
             END DO
             !
             ztrdt(:,:,jpk) = 0._wp   ;   ztrds(:,:,jpk) = 0._wp
             DO jk = 1, jpkm1
-               ztrdt(:,:,jk) = ( zwt(:,:,jk) - zwt(:,:,jk+1) ) / e3t_n(:,:,jk)
-               ztrds(:,:,jk) = ( zws(:,:,jk) - zws(:,:,jk+1) ) / e3t_n(:,:,jk) 
+               ztrdt(:,:,jk) = ( zwt(:,:,jk) - zwt(:,:,jk+1) ) / e3t(:,:,jk,Kmm)
+               ztrds(:,:,jk) = ( zws(:,:,jk) - zws(:,:,jk+1) ) / e3t(:,:,jk,Kmm) 
             END DO
-            CALL trd_tra_mng( ztrdt, ztrds, jptra_zdfp, kt )  
+            CALL trd_tra_mng( ztrdt, ztrds, jptra_zdfp, kt, Kmm )  
             !
             !                         ! Also calculate EVD trend at this point. 
             zwt(:,:,:) = 0._wp   ;   zws(:,:,:) = 0._wp            ! vertical diffusive fluxes
             DO jk = 2, jpk
-               zwt(:,:,jk) = avt_evd(:,:,jk) * ( tsa(:,:,jk-1,jp_tem) - tsa(:,:,jk,jp_tem) ) / e3w_n(:,:,jk) * tmask(:,:,jk)
-               zws(:,:,jk) = avt_evd(:,:,jk) * ( tsa(:,:,jk-1,jp_sal) - tsa(:,:,jk,jp_sal) ) / e3w_n(:,:,jk) * tmask(:,:,jk)
+               zwt(:,:,jk) = avt_evd(:,:,jk) * ( ts(:,:,jk-1,jp_tem,Krhs) - ts(:,:,jk,jp_tem,Krhs) )   &
+                  &            / e3w(:,:,jk,Kmm) * tmask(:,:,jk)
+               zws(:,:,jk) = avt_evd(:,:,jk) * ( ts(:,:,jk-1,jp_sal,Krhs) - ts(:,:,jk,jp_sal,Krhs) )   &
+                  &            / e3w(:,:,jk,Kmm) * tmask(:,:,jk)
             END DO
             !
             ztrdt(:,:,jpk) = 0._wp   ;   ztrds(:,:,jpk) = 0._wp
             DO jk = 1, jpkm1
-               ztrdt(:,:,jk) = ( zwt(:,:,jk) - zwt(:,:,jk+1) ) / e3t_n(:,:,jk)
-               ztrds(:,:,jk) = ( zws(:,:,jk) - zws(:,:,jk+1) ) / e3t_n(:,:,jk) 
+               ztrdt(:,:,jk) = ( zwt(:,:,jk) - zwt(:,:,jk+1) ) / e3t(:,:,jk,Kmm)
+               ztrds(:,:,jk) = ( zws(:,:,jk) - zws(:,:,jk+1) ) / e3t(:,:,jk,Kmm) 
             END DO
-            CALL trd_tra_mng( ztrdt, ztrds, jptra_evd, kt )  
+            CALL trd_tra_mng( ztrdt, ztrds, jptra_evd, kt, Kmm )  
             !
             DEALLOCATE( zwt, zws, ztrdt )
             !
          CASE DEFAULT                 ! other trends: mask and send T & S trends to trd_tra_mng
             ztrds(:,:,:) = ptrd(:,:,:) * tmask(:,:,:)
-            CALL trd_tra_mng( trdt, ztrds, ktrd, kt )  
+            CALL trd_tra_mng( trdt, ztrds, ktrd, kt, Kmm )  
          END SELECT
       ENDIF
 
@@ -166,21 +174,21 @@ CONTAINS
          !
          SELECT CASE( ktrd*i01 )
          !                            ! advection: transform the advective flux into a masked trend
-         CASE( jptra_xad )   ;   CALL trd_tra_adv( ptrd , pun , ptra, 'X', ztrds ) 
-         CASE( jptra_yad )   ;   CALL trd_tra_adv( ptrd , pun , ptra, 'Y', ztrds ) 
-         CASE( jptra_zad )   ;   CALL trd_tra_adv( ptrd , pun , ptra, 'Z', ztrds ) 
+         CASE( jptra_xad )   ;   CALL trd_tra_adv( ptrd , pu , ptra, 'X', ztrds, Kmm ) 
+         CASE( jptra_yad )   ;   CALL trd_tra_adv( ptrd , pu , ptra, 'Y', ztrds, Kmm ) 
+         CASE( jptra_zad )   ;   CALL trd_tra_adv( ptrd , pu , ptra, 'Z', ztrds, Kmm ) 
          CASE DEFAULT                 ! other trends: just masked 
                                  ztrds(:,:,:) = ptrd(:,:,:) * tmask(:,:,:)
          END SELECT
          !                            ! send trend to trd_trc
-         CALL trd_trc( ztrds, ktra, ktrd, kt ) 
+         CALL trd_trc( ztrds, ktra, ktrd, kt, Kmm ) 
          !
       ENDIF
       !
    END SUBROUTINE trd_tra
 
 
-   SUBROUTINE trd_tra_adv( pf, pun, ptn, cdir, ptrd )
+   SUBROUTINE trd_tra_adv( pf, pu, pt, cdir, ptrd, Kmm )
       !!---------------------------------------------------------------------
       !!                  ***  ROUTINE trd_tra_adv  ***
       !! 
@@ -193,40 +201,37 @@ CONTAINS
       !!                where fi is the incoming advective flux.
       !!----------------------------------------------------------------------
       REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(in   ) ::   pf      ! advective flux in one direction
-      REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(in   ) ::   pun     ! now velocity   in one direction
-      REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(in   ) ::   ptn     ! now or before tracer 
+      REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(in   ) ::   pu      ! now velocity   in one direction
+      REAL(dp), DIMENSION(jpi,jpj,jpk), INTENT(in   ) ::   pt      ! now or before tracer
       CHARACTER(len=1)                , INTENT(in   ) ::   cdir    ! X/Y/Z direction
-      REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(  out) ::   ptrd    ! advective trend in one direction
+      REAL(dp), DIMENSION(jpi,jpj,jpk), INTENT(  out) ::   ptrd    ! advective trend in one direction
+      INTEGER,  INTENT(in)                            ::   Kmm     ! time level index
       !
       INTEGER  ::   ji, jj, jk   ! dummy loop indices
       INTEGER  ::   ii, ij, ik   ! index shift as function of the direction
       !!----------------------------------------------------------------------
       !
-      SELECT CASE( cdir )      ! shift depending on the direction
+      SELECT CASE( cdir )             ! shift depending on the direction
       CASE( 'X' )   ;   ii = 1   ;   ij = 0   ;   ik = 0      ! i-trend
       CASE( 'Y' )   ;   ii = 0   ;   ij = 1   ;   ik = 0      ! j-trend
       CASE( 'Z' )   ;   ii = 0   ;   ij = 0   ;   ik =-1      ! k-trend
       END SELECT
       !
-      !                        ! set to zero uncomputed values
+      !                               ! set to zero uncomputed values
       ptrd(jpi,:,:) = 0._wp   ;   ptrd(1,:,:) = 0._wp
       ptrd(:,jpj,:) = 0._wp   ;   ptrd(:,1,:) = 0._wp
       ptrd(:,:,jpk) = 0._wp
       !
-      DO jk = 1, jpkm1         ! advective trend
-         DO jj = 2, jpjm1
-            DO ji = fs_2, fs_jpim1   ! vector opt.
-               ptrd(ji,jj,jk) = - (     pf (ji,jj,jk) - pf (ji-ii,jj-ij,jk-ik)                        &
-                 &                  - ( pun(ji,jj,jk) - pun(ji-ii,jj-ij,jk-ik) ) * ptn(ji,jj,jk)  )   &
-                 &              * r1_e1e2t(ji,jj) / e3t_n(ji,jj,jk) * tmask(ji,jj,jk)
-            END DO
-         END DO
-      END DO
+      DO_3D( 0, 0, 0, 0, 1, jpkm1 )   ! advective trend
+         ptrd(ji,jj,jk) = - (     pf (ji,jj,jk) - pf (ji-ii,jj-ij,jk-ik)                        &
+           &                  - ( pu(ji,jj,jk) - pu(ji-ii,jj-ij,jk-ik) ) * pt(ji,jj,jk)  )   &
+           &              * r1_e1e2t(ji,jj) / e3t(ji,jj,jk,Kmm) * tmask(ji,jj,jk)
+      END_3D
       !
    END SUBROUTINE trd_tra_adv
 
 
-   SUBROUTINE trd_tra_mng( ptrdx, ptrdy, ktrd, kt )
+   SUBROUTINE trd_tra_mng( ptrdx, ptrdy, ktrd, kt, Kmm )
       !!---------------------------------------------------------------------
       !!                  ***  ROUTINE trd_tra_mng  ***
       !! 
@@ -234,24 +239,21 @@ CONTAINS
       !!                integral constraints, potential energy, and/or 
       !!                mixed layer budget.
       !!----------------------------------------------------------------------
-      REAL(wp), DIMENSION(:,:,:), INTENT(inout) ::   ptrdx   ! Temperature or U trend 
-      REAL(wp), DIMENSION(:,:,:), INTENT(inout) ::   ptrdy   ! Salinity    or V trend
+      REAL(dp), DIMENSION(:,:,:), INTENT(inout) ::   ptrdx   ! Temperature or U trend
+      REAL(dp), DIMENSION(:,:,:), INTENT(inout) ::   ptrdy   ! Salinity    or V trend
       INTEGER                   , INTENT(in   ) ::   ktrd    ! tracer trend index
       INTEGER                   , INTENT(in   ) ::   kt      ! time step
+      INTEGER                   , INTENT(in   ) ::   Kmm     ! time level index
       !!----------------------------------------------------------------------
 
-      IF( neuler == 0 .AND. kt == nit000    ) THEN   ;   r2dt =      rdt      ! = rdt (restart with Euler time stepping)
-      ELSEIF(               kt <= nit000 + 1) THEN   ;   r2dt = 2. * rdt      ! = 2 rdt (leapfrog)
-      ENDIF
-
       !                   ! 3D output of tracers trends using IOM interface
-      IF( ln_tra_trd )   CALL trd_tra_iom ( ptrdx, ptrdy, ktrd, kt )
+      IF( ln_tra_trd )   CALL trd_tra_iom ( ptrdx, ptrdy, ktrd, kt, Kmm )
 
       !                   ! Integral Constraints Properties for tracers trends                                       !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-      IF( ln_glo_trd )   CALL trd_glo( ptrdx, ptrdy, ktrd, 'TRA', kt )
+      IF( ln_glo_trd )   CALL trd_glo( ptrdx, ptrdy, ktrd, 'TRA', kt, Kmm )
 
       !                   ! Potential ENergy trends
-      IF( ln_PE_trd  )   CALL trd_pen( ptrdx, ptrdy, ktrd, kt, r2dt )
+      IF( ln_PE_trd  )   CALL trd_pen( ptrdx, ptrdy, ktrd, kt, rDt, Kmm )
 
       !                   ! Mixed layer trends for active tracers
       IF( ln_tra_mxl )   THEN   
@@ -284,7 +286,7 @@ CONTAINS
          CASE ( jptra_npc )        ;   CALL trd_mxl_zint( ptrdx, ptrdy, jpmxl_npc, '3D' )   ! non penetr convect adjustment
          CASE ( jptra_atf )        ;   CALL trd_mxl_zint( ptrdx, ptrdy, jpmxl_atf, '3D' )   ! asselin time filter (last trend)
                                    !
-                                       CALL trd_mxl( kt, r2dt )                             ! trends: Mixed-layer (output)
+                                       CALL trd_mxl( kt, rDt )                             ! trends: Mixed-layer (output)
          END SELECT
          !
       ENDIF
@@ -292,16 +294,17 @@ CONTAINS
    END SUBROUTINE trd_tra_mng
 
 
-   SUBROUTINE trd_tra_iom( ptrdx, ptrdy, ktrd, kt )
+   SUBROUTINE trd_tra_iom( ptrdx, ptrdy, ktrd, kt, Kmm )
       !!---------------------------------------------------------------------
       !!                  ***  ROUTINE trd_tra_iom  ***
       !! 
       !! ** Purpose :   output 3D tracer trends using IOM
       !!----------------------------------------------------------------------
-      REAL(wp), DIMENSION(:,:,:), INTENT(inout) ::   ptrdx   ! Temperature or U trend 
-      REAL(wp), DIMENSION(:,:,:), INTENT(inout) ::   ptrdy   ! Salinity    or V trend
+      REAL(dp), DIMENSION(:,:,:), INTENT(inout) ::   ptrdx   ! Temperature or U trend
+      REAL(dp), DIMENSION(:,:,:), INTENT(inout) ::   ptrdy   ! Salinity    or V trend
       INTEGER                   , INTENT(in   ) ::   ktrd    ! tracer trend index
       INTEGER                   , INTENT(in   ) ::   kt      ! time step
+      INTEGER                   , INTENT(in   ) ::   Kmm     ! time level index
       !!
       INTEGER ::   ji, jj, jk   ! dummy loop indices
       INTEGER ::   ikbu, ikbv   ! local integers
@@ -328,8 +331,8 @@ CONTAINS
                                   CALL iom_put( "strd_zad"  , ptrdy )
                                   IF( ln_linssh ) THEN                   ! cst volume : adv flux through z=0 surface
                                      ALLOCATE( z2dx(jpi,jpj), z2dy(jpi,jpj) )
-                                     z2dx(:,:) = wn(:,:,1) * tsn(:,:,1,jp_tem) / e3t_n(:,:,1)
-                                     z2dy(:,:) = wn(:,:,1) * tsn(:,:,1,jp_sal) / e3t_n(:,:,1)
+                                     z2dx(:,:) = ww(:,:,1) * ts(:,:,1,jp_tem,Kmm) / e3t(:,:,1,Kmm)
+                                     z2dy(:,:) = ww(:,:,1) * ts(:,:,1,jp_sal,Kmm) / e3t(:,:,1,Kmm)
                                      CALL iom_put( "ttrd_sad", z2dx )
                                      CALL iom_put( "strd_sad", z2dy )
                                      DEALLOCATE( z2dx, z2dy )

@@ -9,8 +9,7 @@ MODULE icewri
    !!----------------------------------------------------------------------
    !!   'key_si3'                                       SI3 sea-ice model
    !!----------------------------------------------------------------------
-   !!   ice_wri       : write of the diagnostics variables in ouput file 
-   !!   ice_wri_state : write for initial state or/and abandon
+   !!   ice_wri       : write of the diagnostics variables in ouput file
    !!----------------------------------------------------------------------
    USE dianam         ! build name of file (routine)
    USE phycst         ! physical constant
@@ -19,6 +18,7 @@ MODULE icewri
    USE sbc_ice        ! Surface boundary condition: ice fields
    USE ice            ! sea-ice: variables
    USE icevar         ! sea-ice: operations
+   USE icealb , ONLY : rn_alb_oce
    !
    USE ioipsl         !
    USE in_out_manager ! I/O manager
@@ -32,11 +32,13 @@ MODULE icewri
    PRIVATE
 
    PUBLIC ice_wri        ! called by ice_stp
-   PUBLIC ice_wri_state  ! called by dia_wri_state 
+   PUBLIC ice_wri_state  ! called by dia_wri_state
 
+   !! * Substitutions
+#  include "do_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icewri.F90 13284 2020-07-09 15:12:23Z smasson $
+   !! $Id: icewri.F90 15388 2021-10-17 11:33:47Z clem $
    !! Software governed by the CeCILL licence     (./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -50,13 +52,13 @@ CONTAINS
       INTEGER  ::   ji, jj, jk, jl  ! dummy loop indices
       REAL(wp) ::   z2da, z2db, zrho1, zrho2
       REAL(wp) ::   zmiss_val       ! missing value retrieved from xios 
-      REAL(wp), DIMENSION(jpi,jpj)     ::   z2d, zfast                     ! 2D workspace
       REAL(wp), DIMENSION(jpi,jpj)     ::   zmsk00, zmsk05, zmsk15, zmsksn ! O%, 5% and 15% concentration mask and snow mask
       REAL(wp), DIMENSION(jpi,jpj,jpl) ::   zmsk00l, zmsksnl               ! cat masks
+      REAL(wp), DIMENSION(:,:), ALLOCATABLE ::   z2d,zfast, zalb, zmskalb      ! 2D workspace
       !
       ! Global ice diagnostics (SIMIP)
       REAL(wp) ::   zdiag_area_nh, zdiag_extt_nh, zdiag_volu_nh   ! area, extent, volume
-      REAL(wp) ::   zdiag_area_sh, zdiag_extt_sh, zdiag_volu_sh 
+      REAL(wp) ::   zdiag_area_sh, zdiag_extt_sh, zdiag_volu_sh
       !!-------------------------------------------------------------------
       !
       IF( ln_timing )   CALL timing_start('icewri')
@@ -68,35 +70,31 @@ CONTAINS
       CALL ice_var_bv
 
       ! tresholds for outputs
-      DO jj = 1, jpj
-         DO ji = 1, jpi
-            zmsk00(ji,jj) = MAX( 0._wp , SIGN( 1._wp , at_i(ji,jj) - epsi06  ) ) ! 1 if ice    , 0 if no ice
-            zmsk05(ji,jj) = MAX( 0._wp , SIGN( 1._wp , at_i(ji,jj) - 0.05_wp ) ) ! 1 if 5% ice , 0 if less
-            zmsk15(ji,jj) = MAX( 0._wp , SIGN( 1._wp , at_i(ji,jj) - 0.15_wp ) ) ! 1 if 15% ice, 0 if less
-            zmsksn(ji,jj) = MAX( 0._wp , SIGN( 1._wp , vt_s(ji,jj) - epsi06  ) ) ! 1 if snow   , 0 if no snow
-         END DO
-      END DO
+      DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
+         zmsk00(ji,jj) = MAX( 0._wp , SIGN( 1._wp , at_i(ji,jj) - epsi06  ) ) ! 1 if ice    , 0 if no ice
+         zmsk05(ji,jj) = MAX( 0._wp , SIGN( 1._wp , at_i(ji,jj) - 0.05_wp ) ) ! 1 if 5% ice , 0 if less
+         zmsk15(ji,jj) = MAX( 0._wp , SIGN( 1._wp , at_i(ji,jj) - 0.15_wp ) ) ! 1 if 15% ice, 0 if less
+         zmsksn(ji,jj) = MAX( 0._wp , SIGN( 1._wp , vt_s(ji,jj) - epsi06  ) ) ! 1 if snow   , 0 if no snow
+      END_2D
       DO jl = 1, jpl
-         DO jj = 1, jpj
-            DO ji = 1, jpi
-               zmsk00l(ji,jj,jl)  = MAX( 0._wp , SIGN( 1._wp , a_i(ji,jj,jl) - epsi06 ) )
-               zmsksnl(ji,jj,jl)  = MAX( 0._wp , SIGN( 1._wp , v_s(ji,jj,jl) - epsi06 ) )
-            END DO
-         END DO
+         DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
+            zmsk00l(ji,jj,jl)  = MAX( 0._wp , SIGN( 1._wp , a_i(ji,jj,jl) - epsi06 ) )
+            zmsksnl(ji,jj,jl)  = MAX( 0._wp , SIGN( 1._wp , v_s(ji,jj,jl) - epsi06 ) )
+         END_2D
       END DO
 
       !-----------------
       ! Standard outputs
       !-----------------
-      zrho1 = ( rau0 - rhoi ) * r1_rau0 ; zrho2 = rhos * r1_rau0
+      zrho1 = ( rho0 - rhoi ) * r1_rho0 ; zrho2 = rhos * r1_rho0
       ! masks
       CALL iom_put( 'icemask'  , zmsk00 )   ! ice mask 0%
       CALL iom_put( 'icemask05', zmsk05 )   ! ice mask 5%
       CALL iom_put( 'icemask15', zmsk15 )   ! ice mask 15%
-      CALL iom_put( 'icepres'  , zmsk00 )   ! Ice presence (1 or 0) 
+      CALL iom_put( 'icepres'  , zmsk00 )   ! Ice presence (1 or 0)
       !
       ! general fields
-      IF( iom_use('icemass' ) )   CALL iom_put( 'icemass', vt_i * rhoi * zmsk00 )                                           ! Ice mass per cell area 
+      IF( iom_use('icemass' ) )   CALL iom_put( 'icemass', vt_i * rhoi * zmsk00 )                                           ! Ice mass per cell area
       IF( iom_use('snwmass' ) )   CALL iom_put( 'snwmass', vt_s * rhos * zmsksn )                                           ! Snow mass per cell area
       IF( iom_use('iceconc' ) )   CALL iom_put( 'iceconc', at_i        * zmsk00 )                                           ! ice concentration
       IF( iom_use('icevolu' ) )   CALL iom_put( 'icevolu', vt_i        * zmsk00 )                                           ! ice volume = mean ice thickness over the cell
@@ -107,7 +105,7 @@ CONTAINS
       IF( iom_use('icehnew' ) )   CALL iom_put( 'icehnew', ht_i_new             )                                           ! new ice thickness formed in the leads
       IF( iom_use('snwvolu' ) )   CALL iom_put( 'snwvolu', vt_s        * zmsksn )                                           ! snow volume
       IF( iom_use('icefrb'  ) ) THEN                                                                                        ! Ice freeboard
-         z2d(:,:) = ( zrho1 * hm_i(:,:) - zrho2 * hm_s(:,:) )                                         
+         z2d(:,:) = ( zrho1 * hm_i(:,:) - zrho2 * hm_s(:,:) )
          WHERE( z2d < 0._wp )   z2d = 0._wp
                                   CALL iom_put( 'icefrb' , z2d * zmsk00         )
       ENDIF
@@ -133,23 +131,40 @@ CONTAINS
       IF( iom_use('uice'    ) )   CALL iom_put( 'uice'   , u_ice    )                                                       ! ice velocity u
       IF( iom_use('vice'    ) )   CALL iom_put( 'vice'   , v_ice    )                                                       ! ice velocity v
       !
-      IF( iom_use('icevel') .OR. iom_use('fasticepres') ) THEN                                                              ! module of ice velocity
-         DO jj = 2 , jpjm1
-            DO ji = 2 , jpim1
-               z2da  = u_ice(ji,jj) + u_ice(ji-1,jj)
-               z2db  = v_ice(ji,jj) + v_ice(ji,jj-1)
-               z2d(ji,jj) = 0.5_wp * SQRT( z2da * z2da + z2db * z2db )
-           END DO
-         END DO
-         CALL lbc_lnk( 'icewri', z2d, 'T', 1. )
+      IF( iom_use('icevel') .OR. iom_use('fasticepres') ) THEN                                                              ! module of ice velocity & fast ice
+         ALLOCATE( zfast(jpi,jpj) )
+         DO_2D( 0, 0, 0, 0 )
+            z2da  = u_ice(ji,jj) + u_ice(ji-1,jj)
+            z2db  = v_ice(ji,jj) + v_ice(ji,jj-1)
+            z2d(ji,jj) = 0.5_wp * SQRT( z2da * z2da + z2db * z2db )
+         END_2D
+         CALL lbc_lnk( 'icewri', z2d, 'T', 1.0_wp )
          CALL iom_put( 'icevel', z2d )
 
          WHERE( z2d(:,:) < 5.e-04_wp .AND. zmsk15(:,:) == 1._wp ) ; zfast(:,:) = 1._wp                                      ! record presence of fast ice
          ELSEWHERE                                                ; zfast(:,:) = 0._wp
          END WHERE
          CALL iom_put( 'fasticepres', zfast )
+         DEALLOCATE( zfast )
       ENDIF
-
+      !
+      IF( iom_use('icealb') .OR. iom_use('albedo') ) THEN                                                                   ! ice albedo and surface albedo
+         ALLOCATE( zalb(jpi,jpj), zmskalb(jpi,jpj) )
+         ! ice albedo
+         WHERE( at_i_b < 1.e-03 )
+            zmskalb(:,:) = 0._wp
+            zalb   (:,:) = rn_alb_oce
+         ELSEWHERE
+            zmskalb(:,:) = 1._wp
+            zalb   (:,:) = SUM( alb_ice * a_i_b, dim=3 ) / at_i_b
+         END WHERE
+         CALL iom_put( 'icealb' , zalb * zmskalb + zmiss_val * ( 1._wp - zmskalb ) )
+         ! ice+ocean albedo
+         zalb(:,:) = SUM( alb_ice * a_i_b, dim=3 ) + rn_alb_oce * ( 1._wp - at_i_b )
+         CALL iom_put( 'albedo' , zalb )
+         DEALLOCATE( zalb, zmskalb )
+      ENDIF
+      !
       ! --- category-dependent fields --- !
       IF( iom_use('icemask_cat' ) )   CALL iom_put( 'icemask_cat' ,                  zmsk00l                                   ) ! ice mask 0%
       IF( iom_use('iceconc_cat' ) )   CALL iom_put( 'iceconc_cat' , a_i            * zmsk00l                                   ) ! area for categories
@@ -165,9 +180,10 @@ CONTAINS
       IF( iom_use('icettop_cat' ) )   CALL iom_put( 'icettop_cat' , ( t_su - rt0 ) * zmsk00l + zmiss_val * ( 1._wp - zmsk00l ) ) ! surface temperature
       IF( iom_use('icebrv_cat'  ) )   CALL iom_put( 'icebrv_cat'  ,   bv_i * 100.  * zmsk00l + zmiss_val * ( 1._wp - zmsk00l ) ) ! brine volume
       IF( iom_use('iceapnd_cat' ) )   CALL iom_put( 'iceapnd_cat' ,   a_ip         * zmsk00l                                   ) ! melt pond frac for categories
+      IF( iom_use('icevpnd_cat' ) )   CALL iom_put( 'icevpnd_cat' ,   v_ip         * zmsk00l                                   ) ! melt pond volume for categories
       IF( iom_use('icehpnd_cat' ) )   CALL iom_put( 'icehpnd_cat' ,   h_ip         * zmsk00l + zmiss_val * ( 1._wp - zmsk00l ) ) ! melt pond thickness for categories
       IF( iom_use('icehlid_cat' ) )   CALL iom_put( 'icehlid_cat' ,   h_il         * zmsk00l + zmiss_val * ( 1._wp - zmsk00l ) ) ! melt pond lid thickness for categories
-      IF( iom_use('iceafpnd_cat') )   CALL iom_put( 'iceafpnd_cat',   a_ip_frac    * zmsk00l                                   ) ! melt pond frac for categories
+      IF( iom_use('iceafpnd_cat') )   CALL iom_put( 'iceafpnd_cat',   a_ip_frac    * zmsk00l                                   ) ! melt pond frac per ice area for categories
       IF( iom_use('iceaepnd_cat') )   CALL iom_put( 'iceaepnd_cat',   a_ip_eff     * zmsk00l                                   ) ! melt pond effective frac for categories
       IF( iom_use('icealb_cat'  ) )   CALL iom_put( 'icealb_cat'  ,   alb_ice      * zmsk00l + zmiss_val * ( 1._wp - zmsk00l ) ) ! ice albedo for categories
 
@@ -190,7 +206,7 @@ CONTAINS
       IF( iom_use('dmsssi') )   CALL iom_put( 'dmsssi',   wfx_sni*rhos*r1_rhoi                                                ) ! Snow mass change through snow-to-ice conversion
       IF( iom_use('dmsmel') )   CALL iom_put( 'dmsmel', - wfx_snw_sum                                                         ) ! Snow mass change through melt
       IF( iom_use('dmsdyn') )   CALL iom_put( 'dmsdyn', - wfx_snw_dyn + rhos * diag_trp_vs                                    ) ! Snow mass change through dynamics(kg/m2/s)
-      
+
       ! Global ice diagnostics
       IF(  iom_use('NH_icearea') .OR. iom_use('NH_icevolu') .OR. iom_use('NH_iceextt') .OR. &
          & iom_use('SH_icearea') .OR. iom_use('SH_icevolu') .OR. iom_use('SH_iceextt') ) THEN
@@ -225,19 +241,19 @@ CONTAINS
       !
    END SUBROUTINE ice_wri
 
- 
+
    SUBROUTINE ice_wri_state( kid )
       !!---------------------------------------------------------------------
       !!                 ***  ROUTINE ice_wri_state  ***
-      !!        
-      !! ** Purpose :   create a NetCDF file named cdfile_name which contains 
+      !!
+      !! ** Purpose :   create a NetCDF file named cdfile_name which contains
       !!      the instantaneous ice state and forcing fields for ice model
       !!        Used to find errors in the initial state or save the last
       !!      ocean state in case of abnormal end of a simulation
       !!
       !! History :   4.0  !  2013-06  (C. Rousset)
       !!----------------------------------------------------------------------
-      INTEGER, INTENT( in ) ::   kid 
+      INTEGER, INTENT( in ) ::   kid
       !!----------------------------------------------------------------------
       !
       !! The file is open in dia_wri_state (ocean routine)

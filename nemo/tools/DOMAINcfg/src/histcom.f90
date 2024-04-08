@@ -1,4 +1,5 @@
 MODULE histcom
+!$AGRIF_DO_NOT_TREAT
 !-
 !$Id: histcom.f90 2368 2010-11-09 15:38:45Z acc $
 !-
@@ -2498,4 +2499,5 @@ END SUBROUTINE ioconf_modname
 !===
 !-
 !-----------------
+!$AGRIF_END_DO_NOT_TREAT
 END MODULE histcom

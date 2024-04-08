@@ -65,19 +65,17 @@ PROGRAM TOYATM
   LOGICAL                       :: ln_rst_list, ln_mskland  , ln_clobber,ln_cfmeta, ln_iscpl, ln_xios_read
   LOGICAL                       :: ln_rstart, nn_date0, nn_time0, nn_leapy  , nn_istate, nn_stock, nn_write ,nn_chunksz, nn_euler,nn_wxios
   CHARACTER (len=256)           :: cn_exp , cn_ocerst_in, cn_ocerst_indir, cn_ocerst_out, cn_ocerst_outdir
-  REAL (kind=wp)                :: rn_rdt
+  REAL (kind=wp)                :: rn_Dt
   LOGICAL                       :: ln_linssh, ln_crs, ln_meshmask
-  REAL (kind=wp)                :: rn_isfhmin, rn_atfp
+  REAL (kind=wp)                ::  rn_atfp
   !
   ! NEMO namelists
-!!  NAMELIST/namrun/ nn_it000, nn_itend
-!!  NAMELIST/namdom/ rn_rdt
       NAMELIST/namrun/ cn_ocerst_indir, cn_ocerst_outdir, nn_stocklist, ln_rst_list,                 &
          &             nn_no   , cn_exp   , cn_ocerst_in, cn_ocerst_out, ln_rstart , nn_rstctl ,     &
          &             nn_it000, nn_itend , nn_date0    , nn_time0     , nn_leapy  , nn_istate ,     &
          &             nn_stock, nn_write , ln_mskland  , ln_clobber   , nn_chunksz, nn_euler  ,     &
          &             ln_cfmeta, ln_iscpl, ln_xios_read, nn_wxios
-      NAMELIST/namdom/ ln_linssh, rn_isfhmin, rn_rdt, rn_atfp, ln_crs, ln_meshmask
+      NAMELIST/namdom/ ln_linssh, rn_Dt, rn_atfp, ln_crs, ln_meshmask
   !
   !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   !  INITIALISATION 
@@ -132,7 +130,7 @@ PROGRAM TOYATM
   CLOSE(numnam_cfg)
   !
 ! Get time step and number of iterations from ocean
-  time_step = INT(rn_rdt)
+  time_step = INT(rn_Dt)
   niter = nn_itend - nn_it000 + 1 
   !
   IF (FILE_Debug >= 2) THEN

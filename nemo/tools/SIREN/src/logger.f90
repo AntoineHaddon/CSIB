@@ -11,9 +11,9 @@
 !>    - trace : Most detailed information.
 !>    - debug : Detailed information on the flow through the system.
 !>    - info  : Interesting runtime events (startup/shutdown).
-!>    - warning: Use of deprecated APIs, poor use of API, 'almost' errors, 
-!> other runtime situations that are undesirable or unexpected, 
-!> but not necessarily "wrong". 
+!>    - warning: Use of deprecated APIs, poor use of API, 'almost' errors,
+!> other runtime situations that are undesirable or unexpected,
+!> but not necessarily "wrong".
 !>    - error : Other runtime errors or unexpected conditions.
 !>    - fatal : Severe errors that cause premature termination.
 !>    - none  : to not create and write any information in logger file.<br />
@@ -21,7 +21,7 @@
 !>
 !> @note default verbosity is warning
 !>
-!> If total number of error exceeded maximum number 
+!> If total number of error exceeded maximum number
 !> authorized, program stop.
 !>
 !> to open/create logger file:<br/>
@@ -160,7 +160,7 @@ MODULE logger
    PUBLIC :: logger_footer      !< write footer on log file
    PUBLIC :: logger_flush       !< flushing output
    PUBLIC :: logger_trace       !< write trace    message in log file
-   PUBLIC :: logger_debug       !< write debug    message in log file 
+   PUBLIC :: logger_debug       !< write debug    message in log file
    PUBLIC :: logger_info        !< write info     message in log file
    PUBLIC :: logger_warn        !< write warning  message in log file
    PUBLIC :: logger_error       !< write error    message in log file
@@ -174,25 +174,25 @@ MODULE logger
       LOGICAL           :: l_use=.TRUE.             !< use logger or not
       CHARACTER(LEN=lc) :: c_name                   !< log file name
       CHARACTER(LEN=lc) :: c_verbosity = "warning"  !< verbosity choose
-      CHARACTER(LEN=lc) :: c_verb = ""              !< array of "verbosities" to used 
+      CHARACTER(LEN=lc) :: c_verb = ""              !< array of "verbosities" to used
       INTEGER(i4)       :: i_nerror   = 0           !< number of error
       INTEGER(i4)       :: i_nfatal   = 0           !< number of fatal error
       INTEGER(i4)       :: i_maxerror = 5           !< maximum number of error before stoping program
-   END TYPE TLOGGER   
+   END TYPE TLOGGER
 
    !  module variable
    INTEGER(i4), PARAMETER :: im_nverbosity=7     !< number of log level
-   CHARACTER(len=*), DIMENSION(im_nverbosity), PARAMETER :: cm_verbosity= & !< verbosity array 
+   CHARACTER(len=*), DIMENSION(im_nverbosity), PARAMETER :: cm_verbosity= & !< verbosity array
    &               (/ 'trace   ',&
    &                  'debug   ',&
-   &                  'info    ',& 
+   &                  'info    ',&
    &                  'warning ',&
    &                  'error   ',&
    &                  'fatal   ',&
    &                  'none    '/)
 
    TYPE(TLOGGER), SAVE :: tm_logger      !< logger structure
-                                                 
+
 CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE logger_open(cd_file, cd_verbosity, id_maxerror, id_logid)
@@ -200,7 +200,7 @@ CONTAINS
    !> @brief This subroutine create a log file with default verbosity
    !> ('warning').
    !> @details
-   !> Optionally verbosity could be change to 
+   !> Optionally verbosity could be change to
    !> ('trace','debug','info',warning','error','fatal').<br/>
    !> Optionally maximum number of error allowed could be change.
    !>
@@ -212,7 +212,7 @@ CONTAINS
    !> @param[in] id_maxerror  maximum number of error
    !> @param[in] id_logid     log file id (use to flush)
    !-------------------------------------------------------------------
-      
+
       IMPLICIT NONE
 
       ! Argument
@@ -239,7 +239,7 @@ CONTAINS
       ENDIF
 
       IF( TRIM(tm_logger%c_verbosity) == 'none' ) tm_logger%l_use=.FALSE.
-      
+
       IF( tm_logger%l_use )THEN
 
          ! get id if not already define
@@ -287,7 +287,7 @@ CONTAINS
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !-------------------------------------------------------------------
-      
+
       IMPLICIT NONE
 
       ! local variable
@@ -298,7 +298,7 @@ CONTAINS
          IF( tm_logger%i_id /= 0 )THEN
             !tm_logger%i_id = 0
             CLOSE( tm_logger%i_id, &
-            &      IOSTAT=il_status)      
+            &      IOSTAT=il_status)
             CALL fct_err(il_status)
          ELSE
              CALL logger_open('logger.log')
@@ -316,7 +316,7 @@ CONTAINS
    !> @author J.Paul
    !> @date January, 2016 - Initial Version
    !-------------------------------------------------------------------
-      
+
       IMPLICIT NONE
 
       ! local variable
@@ -336,14 +336,14 @@ CONTAINS
    SUBROUTINE logger_flush()
 
       IMPLICIT NONE
-      
+
       !----------------------------------------------------------------
 
       IF( tm_logger%l_use )THEN
          IF( tm_logger%i_id /= 0 )THEN
             CALL logger_close()
             CALL logger_open( tm_logger%c_name, tm_logger%c_verbosity, &
-            &                 tm_logger%i_maxerror, tm_logger%i_id )     
+            &                 tm_logger%i_maxerror, tm_logger%i_id )
          ELSE
              CALL logger_open('logger.log')
              CALL logger_header()
@@ -360,7 +360,7 @@ CONTAINS
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !-------------------------------------------------------------------
-      
+
       IMPLICIT NONE
 
       ! local variable
@@ -434,7 +434,7 @@ CONTAINS
    !> @param[in] cd_msg    message to write
    !> @param[in] ld_flush  flushing ouput
    !-------------------------------------------------------------------
-      
+
       IMPLICIT NONE
 
       ! Argument
@@ -452,7 +452,7 @@ CONTAINS
                   IF( ld_flush )THEN
                      CALL logger_flush()
                   ENDIF
-               ENDIF      
+               ENDIF
             ENDIF
          ELSE
              CALL logger_open('logger.log')
@@ -475,7 +475,7 @@ CONTAINS
    !> @param[in] cd_msg    message to write
    !> @param[in] ld_flush  flushing ouput
    !-------------------------------------------------------------------
-      
+
       IMPLICIT NONE
 
       ! Argument
@@ -493,7 +493,7 @@ CONTAINS
                   IF( ld_flush )THEN
                      CALL logger_flush()
                   ENDIF
-               ENDIF      
+               ENDIF
             ENDIF
          ELSE
              CALL logger_open('logger.log')
@@ -534,7 +534,7 @@ CONTAINS
                   IF( ld_flush )THEN
                      CALL logger_flush()
                   ENDIF
-               ENDIF      
+               ENDIF
             ENDIF
          ELSE
              CALL logger_open('logger.log')
@@ -574,7 +574,7 @@ CONTAINS
                   IF( ld_flush )THEN
                      CALL logger_flush()
                   ENDIF
-               ENDIF      
+               ENDIF
             ENDIF
          ELSE
              CALL logger_open('logger.log')
@@ -621,7 +621,7 @@ CONTAINS
                   IF( ld_flush )THEN
                      CALL logger_flush()
                   ENDIF
-               ENDIF      
+               ENDIF
             ENDIF
 
             IF( tm_logger%i_nerror >= tm_logger%i_maxerror )THEN
@@ -640,7 +640,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    RECURSIVE SUBROUTINE logger_fatal(cd_msg)
    !-------------------------------------------------------------------
-   !> @brief This subroutine write fatal error message on log file, 
+   !> @brief This subroutine write fatal error message on log file,
    !> close log file and stop process.
    !>
    !> @author J.Paul
@@ -685,7 +685,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE logger__write(cd_verb, cd_msg)
    !-------------------------------------------------------------------
-   !> @brief This subroutine cut message to get maximum of 80 character 
+   !> @brief This subroutine cut message to get maximum of 80 character
    !> by line in log file.
    !>
    !> @author J.Paul

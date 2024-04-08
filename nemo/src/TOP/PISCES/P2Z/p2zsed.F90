@@ -17,7 +17,7 @@ MODULE p2zsed
    !
    USE lbclnk          !
    USE iom             !
-   USE prtctl_trc      ! Print control for debbuging
+   USE prtctl          ! Print control for debbuging
 
    IMPLICIT NONE
    PRIVATE
@@ -30,14 +30,17 @@ MODULE p2zsed
    REAL(wp), PUBLIC ::   vsed        !: detritus sedimentation speed [m/s] 
    REAL(wp), PUBLIC ::   xhr         !: coeff for martin''s remineralisation profile
 
+   !! * Substitutions
+#  include "do_loop_substitute.h90"
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: p2zsed.F90 11536 2019-09-11 13:54:18Z smasson $ 
+   !! $Id: p2zsed.F90 15090 2021-07-06 14:25:18Z cetlod $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE p2z_sed( kt )
+   SUBROUTINE p2z_sed( kt, Kmm, Krhs )
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE p2z_sed  ***
       !!
@@ -48,14 +51,13 @@ CONTAINS
       !!              transport term, i.e.  dz(wt) and dz(ws)., dz(wtr)
       !!              using an upstream scheme
       !!              the now vertical advection of tracers is given by:
-      !!                      dz(trn wn) = 1/bt dk+1( e1t e2t vsed (trn) )
-      !!              add this trend now to the general trend of tracer (ta,sa,tra):
-      !!                             tra = tra + dz(trn wn)
+      !!                      dz(tr(:,:,:,:,Kmm) ww) = 1/bt dk+1( e1t e2t vsed (tr(:,:,:,:,Kmm)) )
+      !!              add this trend now to the general trend of tracer (ta,sa,tr(:,:,:,:,Krhs)):
+      !!                             tr(:,:,:,:,Krhs) = tr(:,:,:,:,Krhs) + dz(tr(:,:,:,:,Kmm) ww)
       !!        
-      !!              IF 'key_diabio' is defined, the now vertical advection
-      !!              trend of passive tracers is saved for futher diagnostics.
       !!---------------------------------------------------------------------
-      INTEGER, INTENT( in ) ::   kt      ! ocean time-step index      
+      INTEGER, INTENT( in ) ::   kt         ! ocean time-step index      
+      INTEGER, INTENT( in ) ::   Kmm, Krhs  ! time level indices
       !
       INTEGER  ::   ji, jj, jk, jl, ierr
       CHARACTER (len=25) :: charout
@@ -80,25 +82,21 @@ CONTAINS
 
       ! tracer flux at w-point: we use -vsed (downward flux)  with simplification : no e1*e2
       DO jk = 2, jpkm1
-         zwork(:,:,jk) = -vsed * trn(:,:,jk-1,jpdet)
+         zwork(:,:,jk) = -vsed * tr(:,:,jk-1,jpdet,Kmm)
       END DO
 
       ! tracer flux divergence at t-point added to the general trend
-      DO jk = 1, jpkm1
-         DO jj = 1, jpj
-            DO ji = 1, jpi
-               ztra(ji,jj,jk)  = - ( zwork(ji,jj,jk) - zwork(ji,jj,jk+1) ) / e3t_n(ji,jj,jk)
-               tra(ji,jj,jk,jpdet) = tra(ji,jj,jk,jpdet) + ztra(ji,jj,jk) 
-            END DO
-         END DO
-      END DO
+      DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, jpkm1 ) 
+         ztra(ji,jj,jk)  = - ( zwork(ji,jj,jk) - zwork(ji,jj,jk+1) ) / e3t(ji,jj,jk,Kmm)
+         tr(ji,jj,jk,jpdet,Krhs) = tr(ji,jj,jk,jpdet,Krhs) + ztra(ji,jj,jk) 
+      END_3D
 
       IF( lk_iomput )  THEN
          IF( iom_use( "TDETSED" ) ) THEN
             ALLOCATE( zw2d(jpi,jpj) )
-            zw2d(:,:) =  ztra(:,:,1) * e3t_n(:,:,1) * 86400._wp
+            zw2d(:,:) =  ztra(:,:,1) * e3t(:,:,1,Kmm) * 86400._wp
             DO jk = 2, jpkm1
-               zw2d(:,:) = zw2d(:,:) + ztra(:,:,jk) * e3t_n(:,:,jk) * 86400._wp
+               zw2d(:,:) = zw2d(:,:) + ztra(:,:,jk) * e3t(:,:,jk,Kmm) * 86400._wp
             END DO
             CALL iom_put( "TDETSED", zw2d )
             DEALLOCATE( zw2d )
@@ -106,10 +104,10 @@ CONTAINS
       ENDIF
       !
 
-      IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
+      IF(sn_cfctl%l_prttrc)   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('sed')")
-         CALL prt_ctl_trc_info(charout)
-         CALL prt_ctl_trc(tab4d=tra, mask=tmask, clinfo=ctrcnm)
+         CALL prt_ctl_info( charout, cdcomp = 'top' )
+         CALL prt_ctl(tab4d_1=tr(:,:,:,:,Krhs), mask1=tmask, clinfo=ctrcnm)
       ENDIF
       !
       IF( ln_timing )   CALL timing_stop('p2z_sed')
@@ -131,10 +129,8 @@ CONTAINS
       NAMELIST/namlobsed/ sedlam, sedlostpoc, vsed, xhr
       !!----------------------------------------------------------------------
       !
-      REWIND( numnatp_ref )              ! Namelist namlobsed in reference namelist : Lobster sediments
       READ  ( numnatp_ref, namlobsed, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namlosed in reference namelist' )
-      REWIND( numnatp_cfg )              ! Namelist namlobsed in configuration namelist : Lobster sediments
       READ  ( numnatp_cfg, namlobsed, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namlobsed in configuration namelist' )
       IF(lwm) WRITE ( numonp, namlobsed )

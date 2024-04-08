@@ -3,7 +3,7 @@
 !----------------------------------------------------------------------
 !
 ! DESCRIPTION:
-!> @brief 
+!> @brief
 !> This module manage variable structure.
 !>
 !> @details
@@ -15,14 +15,14 @@
 !>    @note the variable value inside structure will always be 4D array of real(8).<br/>
 !>    However the variable value could be initialised with
 !>    array of real(4), real(8), integer(4) or integer(8).
-!>        
+!>
 !> to initialise a variable structure:<br/>
 !> @code
 !>    tl_var=var_init( cd_name, [value,] [id_start, [id_count,]] [id_type,] [td_dim,] [td_att]... )
 !> @endcode
 !>       - cd_name is the variable name
 !>       - value is a 1D,2D,3D or 4D array, see var_init for more information [optional]
-!>       - id_start is a integer(4) 1D array of index from which the data 
+!>       - id_start is a integer(4) 1D array of index from which the data
 !>          values will be read [optional]
 !>       - id_count is a integer(4) 1D array of the number of indices selected
 !>          along each dimension [optional]
@@ -33,7 +33,7 @@
 !>       - others optionals arguments could be added, see var_init.
 !>       - to put scalar variable (OD), use td_dim with all dimension unused
 !> (td_dim(:)%l_use=.FALSE.)
-!>    
+!>
 !>    to print information about variable structure:<br/>
 !> @code
 !>    CALL var_print(td_var [,ld_more])
@@ -48,11 +48,11 @@
 !>
 !> to copy variable structure in another one (using different memory cell):<br/>
 !> @code
-!>    tl_var2=var_copy(tl_var1) 
+!>    tl_var2=var_copy(tl_var1)
 !> @endcode
 !>    @note as we use pointer for the value array of the variable structure,
-!>    the use of the assignment operator (=) to copy variable structure 
-!>    create a pointer on the same array. 
+!>    the use of the assignment operator (=) to copy variable structure
+!>    create a pointer on the same array.
 !>    This is not the case with this copy function.
 !>
 !> to get variable name:<br/>
@@ -66,8 +66,8 @@
 !>
 !> to get variable value:<br/>
 !>    - tl_var\%d_value(:,:,:,:)
-!>    
-!> to get the type number (based on NETCDF type constants) of the variable 
+!>
+!> to get the type number (based on NETCDF type constants) of the variable
 !>    (as define initially or read in file):<br/>
 !>    - tl_var\%i_type
 !>
@@ -116,28 +116,28 @@
 !>
 !> to add value to a variable structure:<br/>
 !> @code
-!>    CALL var_add_value(tl_var, value, [id_type,] [id_start, [id_count]]) 
+!>    CALL var_add_value(tl_var, value, [id_type,] [id_start, [id_count]])
 !> @endcode
 !>       - value : 4D array of value (real(4), real(8), integer(1), integer(2), integer(4), integer(8))
 !>       - id_type is the type of the variable to be used (default is the type
 !> of array value)
 !>       - id_start : 1D array of the index in the variable from which the data
 !>       values will be read (integer(4), optional)
-!>       - id_count : 1D array of the number of indices selected along each 
+!>       - id_count : 1D array of the number of indices selected along each
 !>       dimension (integer(4), optional)
 !>
 !> to add attribute to a variable structure:<br/>
 !> @code
 !>    CALL var_add_att(tl_var, td_att)
 !> @endcode
-!>       - td_att is an attribute structure, or array of attribute structure 
+!>       - td_att is an attribute structure, or array of attribute structure
 !>
 !> to add dimension to a variable structure:<br/>
 !> @code
 !>    CALL var_add_dim(tl_var, td_dim)
 !> @endcode
 !>       - td_dim is a dimension structure, or array of dimension structure
-!> 
+!>
 !> to delete value of a variable structure:<br/>
 !> @code
 !>    CALL var_del_value(tl_var)
@@ -147,12 +147,12 @@
 !> @code
 !>    CALL var_del_att(tl_var, td_att)
 !> @endcode
-!>       - td_att is an attribute structure 
+!>       - td_att is an attribute structure
 !> or
 !> @code
 !>    CALL var_del_att(tl_var, cd_name)
 !> @endcode
-!>       - cd_name is attribute name 
+!>       - cd_name is attribute name
 !>
 !> to delete one dimension of a variable structure:<br/>
 !> @code
@@ -187,8 +187,8 @@
 !> @code
 !>    tl_var=var_concat(tl_var1, tl_var2, [DIM])
 !> @endcode
-!>       - tl_var1 : variable structure 
-!>       - tl_var2 : variable structure 
+!>       - tl_var1 : variable structure
+!>       - tl_var2 : variable structure
 !>       - DIM : number of the dimension following which concatenate (1=>I, 2=>J, 3=>Z, 4=>T) [optional, default=4]
 !>
 !> to forced min and max value of a variable:<br/>
@@ -222,7 +222,7 @@
 !> @endcode
 !>    - td_var array of variable structure
 !>    - cd_name variable name
-!> 
+!>
 !> to get variable id, read from a file:<br/>
 !> @code
 !>  il_id=var_get_id( td_var, cd_name )
@@ -238,7 +238,7 @@
 !>
 !> to convert time variable structure in date structure:<br/>
 !> @code
-!>   tl_date=var_to_date(td_var) 
+!>   tl_date=var_to_date(td_var)
 !> @endcode
 !>    - td_var is time variable structure
 !>    - tl_date is date structure
@@ -257,7 +257,7 @@
 !> @endcode
 !>    - cd_file is filename
 !>
-!> to add variable information get from namelist, in global array of variable 
+!> to add variable information get from namelist, in global array of variable
 !> structure:
 !> @code
 !>    CALL var_chg_extra( cd_varinfo )
@@ -274,18 +274,18 @@
 !>    CALL var_check_dim( td_var )
 !> @endcode
 !>    - td_var is variable structure
-!> 
+!>
 !> @author
 !> J.Paul
 !>
 !> @date November, 2013 - Initial Version
 !> @date September, 2014
 !>  - add var_reorder
-!> @date November, 2014 
+!> @date November, 2014
 !> - Fix memory leaks bug
 !> @date June, 2015
 !> - change way to get variable information in namelist
-!> @date July, 2015 
+!> @date July, 2015
 !> - add subroutine var_chg_unit to change unit of output variable
 !> @date Spetember, 2015
 !> - manage useless (dummy) variable
@@ -336,7 +336,7 @@ MODULE var
    PUBLIC :: var_del_att       !< delete one attribute structure of variable structure
    PUBLIC :: var_del_dim       !< delete one dimension structure of variable structure
    PUBLIC :: var_move_att      !< overwrite one attribute structure in variable structure
-   PUBLIC :: var_move_dim      !< overwrite one dimension structure in variable structure 
+   PUBLIC :: var_move_dim      !< overwrite one dimension structure in variable structure
    PUBLIC :: var_get_mask      !< return the mask of variable
    PUBLIC :: var_chg_FillValue !< change FillValue to standard NETCDF Fill Value
    PUBLIC :: var_concat        !< concatenate two variables
@@ -345,11 +345,11 @@ MODULE var
    PUBLIC :: var_chg_name      !< change variable name
    PUBLIC :: var_max_dim       !< get array of maximum dimension use
    PUBLIC :: var_reorder       !< reorder table of value in variable structure
-   PUBLIC :: var_get_index     !< return the variable index, in an array of variable structure 
-   PUBLIC :: var_get_id        !< return the variable id, read from a file 
+   PUBLIC :: var_get_index     !< return the variable index, in an array of variable structure
+   PUBLIC :: var_get_id        !< return the variable id, read from a file
    PUBLIC :: var_get_unit      !< get free variable unit in an array of variable structure
    PUBLIC :: var_to_date       !< convert time variable structure in date structure
-   PUBLIC :: var_read_matrix   !< read matrix value from character string in namelist 
+   PUBLIC :: var_read_matrix   !< read matrix value from character string in namelist
    PUBLIC :: var_def_extra     !< read variable configuration file, and save extra information.
    PUBLIC :: var_chg_extra     !< read variable namelist information, and modify extra information.
    PUBLIC :: var_clean_extra   !< clean gloabl array of extra information.
@@ -408,7 +408,7 @@ MODULE var
    PRIVATE :: var__concat_j      ! concatenate varibales in j-direction
    PRIVATE :: var__concat_k      ! concatenate varibales in k-direction
    PRIVATE :: var__concat_l      ! concatenate varibales in l-direction
-   PRIVATE :: var__get_max       ! get maximum value from namelist 
+   PRIVATE :: var__get_max       ! get maximum value from namelist
    PRIVATE :: var__get_min       ! get minimum value from namelist
    PRIVATE :: var__get_unf       ! get scale factor value from namelist
    PRIVATE :: var__get_unt       ! get output unit from namelist
@@ -432,7 +432,7 @@ MODULE var
       INTEGER(i4)       :: i_ndim = 0           !< number of dimensions
       TYPE(TATT), DIMENSION(:), POINTER :: t_att => NULL() !< variable attributes
       TYPE(TDIM), DIMENSION(ip_maxdim)  :: t_dim           !< variable dimension
- 
+
       LOGICAL           :: l_file = .FALSE. !< variable read in a file
       LOGICAL           :: l_use  = .TRUE.  !< variable to be used
 
@@ -443,10 +443,10 @@ MODULE var
       CHARACTER(LEN=lc) :: c_axis     = ''!< variable axis
       REAL(dp)          :: d_scf = 1.           !< scale factor
       REAL(dp)          :: d_ofs = 0.           !< offset
-      REAL(dp)          :: d_fill= 0.           !< fill value     ! NF90_FILL_DOUBLE 
-      REAL(dp)          :: d_min = dp_fill      !< minimum value 
-      REAL(dp)          :: d_max = dp_fill      !< maximum value 
- 
+      REAL(dp)          :: d_fill= 0.           !< fill value     ! NF90_FILL_DOUBLE
+      REAL(dp)          :: d_min = dp_fill      !< minimum value
+      REAL(dp)          :: d_max = dp_fill      !< maximum value
+
       ! will be changed in output
       CHARACTER(LEN=lc) :: c_unt = ''           !< output variable unit (linked to unit factor)
       REAL(dp)          :: d_unf = 1._dp        !< unit factor
@@ -470,7 +470,7 @@ MODULE var
    END TYPE TVAR
 
    TYPE(TVAR), DIMENSION(:), ALLOCATABLE :: tg_varextra !< array of variable structure with extra information.
-                                                        !< fill when running var_def_extra() 
+                                                        !< fill when running var_def_extra()
 
    INTEGER(i4)                               , SAVE :: im_ndumvar !< number of elt in dummy variable array
    CHARACTER(LEN=lc), DIMENSION(ip_maxdumcfg), SAVE :: cm_dumvar  !< dummy variable
@@ -507,12 +507,12 @@ MODULE var
       MODULE PROCEDURE var__print_unit ! print information on one variable
       MODULE PROCEDURE var__print_arr  ! print information on a array of variables
    END INTERFACE var_print
-   
+
    INTERFACE var_clean
-      MODULE PROCEDURE var__clean_unit   
-      MODULE PROCEDURE var__clean_arr_1D    
-      MODULE PROCEDURE var__clean_arr_2D    
-      MODULE PROCEDURE var__clean_arr_3D    
+      MODULE PROCEDURE var__clean_unit
+      MODULE PROCEDURE var__clean_arr_1D
+      MODULE PROCEDURE var__clean_arr_2D
+      MODULE PROCEDURE var__clean_arr_3D
    END INTERFACE
 
    INTERFACE var_add_value
@@ -550,15 +550,15 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief
    !> This subroutine copy variable structure in another one
-   !> @details 
+   !> @details
    !> variable values are copied in a transitional variable, so input and output
    !> variable structure values do not point on the same "memory cell", and so
-   !> are independant. 
+   !> are independant.
    !>
    !> @warning do not use on the output of a function who create or read an
    !> structure (ex: tl_var=var_copy(var_init()) is forbidden).
    !> This will create memory leaks.
-   !> @warning to avoid infinite loop, do not use any function inside 
+   !> @warning to avoid infinite loop, do not use any function inside
    !> this subroutine
    !>
    !> @author J.Paul
@@ -649,14 +649,14 @@ CONTAINS
       tf_var%d_scf      = td_var%d_scf
       tf_var%d_ofs      = td_var%d_ofs
       tf_var%d_fill     = td_var%d_fill
-      
+
       ! copy netcdf4 variable
       tf_var%l_contiguous  = td_var%l_contiguous
       tf_var%l_shuffle     = td_var%l_shuffle
-      tf_var%l_fletcher32  = td_var%l_fletcher32 
+      tf_var%l_fletcher32  = td_var%l_fletcher32
       tf_var%i_deflvl      = td_var%i_deflvl
       tf_var%i_chunksz(:)  = td_var%i_chunksz(:)
-      
+
       ! copy dimg variable
       tf_var%i_rec = td_var%i_rec
 
@@ -691,19 +691,19 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief
    !> This subroutine copy a array of variable structure in another one
-   !> @details 
+   !> @details
    !> see var__copy_unit
    !>
    !> @warning do not use on the output of a function who create or read an
    !> structure (ex: tl_var=var_copy(var_init()) is forbidden).
    !> This will create memory leaks.
-   !> @warning to avoid infinite loop, do not use any function inside 
+   !> @warning to avoid infinite loop, do not use any function inside
    !> this subroutine
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !> @date November, 2014
-   !> - use function instead of overload assignment operator 
+   !> - use function instead of overload assignment operator
    !> (to avoid memory leak)
    !>
    !> @param[in] td_var   array of variable structure
@@ -877,7 +877,7 @@ CONTAINS
    !> @brief This function initialize a variable structure, given variable name.
    !>
    !> @details
-   !> Optionally you could add 1D,2D,3D or 4D array of value, 
+   !> Optionally you could add 1D,2D,3D or 4D array of value,
    !> see var__init_1D_dp, var__init_2D_dp... for more information.
    !>
    !> you could also add more information with the following optional arguments:
@@ -914,15 +914,15 @@ CONTAINS
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
-   !> @date February, 2015 
+   !> @date February, 2015
    !> - Bug fix: conversion of the FillValue type (float case)
-   !> @date June, 2015 
+   !> @date June, 2015
    !> - add unit factor (to change unit)
    !> @date February, 2019
    !> - add output name (to change name)
    !>
    !> @param[in] cd_name         variable name
-   !> @param[in] id_type         variable type 
+   !> @param[in] id_type         variable type
    !> @param[in] td_dim          array of dimension structure
    !> @param[in] td_att          array of attribute structure
    !> @param[in] dd_fill         fill value
@@ -938,7 +938,7 @@ CONTAINS
    !> @param[in] id_rec          record id (for rstdimg file)
    !> @param[in] dd_min          minimum value
    !> @param[in] dd_max          maximum value
-   !> @param[in] ld_contiguous   use contiguous storage or not 
+   !> @param[in] ld_contiguous   use contiguous storage or not
    !> @param[in] ld_shuffle      shuffle filter is turned on or not
    !> @param[in] ld_fletcher32   fletcher32 filter is turned on or not
    !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no deflation is in use
@@ -956,20 +956,20 @@ CONTAINS
 
       ! Argument
       CHARACTER(LEN=*),                       INTENT(IN) :: cd_name
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type
       TYPE(TDIM)      , DIMENSION(:),         INTENT(IN), OPTIONAL :: td_dim
       TYPE(TATT)      , DIMENSION(:),         INTENT(IN), OPTIONAL :: td_att
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_fill
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_units
-      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis 
+      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_stdname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_longname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_point
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id 
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_scf
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_ofs
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_min
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_max
       LOGICAL         ,                       INTENT(IN), OPTIONAL :: ld_contiguous
@@ -1069,7 +1069,7 @@ CONTAINS
                   tl_att=att_init('_FillValue',NF90_FILL_FLOAT)
                CASE DEFAULT ! NF90_DOUBLE
                   tl_att=att_init('_FillValue',NF90_FILL_DOUBLE)
-            END SELECT         
+            END SELECT
             CALL var_add_att(tf_var, tl_att)
          ENDIF
       ENDIF
@@ -1131,8 +1131,8 @@ CONTAINS
 
        IF( PRESENT(id_deflvl) )THEN
          tf_var%i_deflvl=id_deflvl
-      ENDIF     
-      
+      ENDIF
+
       IF( PRESENT(id_chunksz) )THEN
          tf_var%i_chunksz(:)=id_chunksz(:)
       ENDIF
@@ -1206,18 +1206,18 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief This function initialize a variable structure,
    !> with a real(8) 1D array of value.
-   !> @details 
+   !> @details
    !> Optionally could be added:<br/>
    !> - dimension structure.
    !> - attribute structure.
    !>
-   !> Dimension structure is needed to put value in variable structure. 
-   !> If none is given, we assume array is ordered as ('z') and we 
-   !> use array size as lentgh dimension. 
+   !> Dimension structure is needed to put value in variable structure.
+   !> If none is given, we assume array is ordered as ('z') and we
+   !> use array size as lentgh dimension.
    !>
    !> indices in the variable where value will be written could be specify if
-   !> start and count array are given. Dimension structure is needed in that 
-   !> case.    
+   !> start and count array are given. Dimension structure is needed in that
+   !> case.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -1232,10 +1232,10 @@ CONTAINS
    !>
    !> @param[in] cd_name         variable name
    !> @param[in] dd_value        1D array of real(8) value
-   !> @param[in] id_start        index in the variable from which the data values 
+   !> @param[in] id_start        index in the variable from which the data values
    !> will be read
    !> @param[in] id_count        number of indices selected along each dimension
-   !> @param[in] id_type         variable type 
+   !> @param[in] id_type         variable type
    !> @param[in] td_dim          dimension structure
    !> @param[in] td_att          array of attribute structure
    !> @param[in] dd_fill         fill value
@@ -1251,7 +1251,7 @@ CONTAINS
    !> @param[in] id_rec          record id (for rstdimg file)
    !> @param[in] dd_min          minimum value
    !> @param[in] dd_max          maximum value
-   !> @param[in] ld_contiguous   use contiguous storage or not 
+   !> @param[in] ld_contiguous   use contiguous storage or not
    !> @param[in] ld_shuffle      shuffle filter is turned on or not
    !> @param[in] ld_fletcher32   fletcher32 filter is turned on or not
    !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no deflation is in use
@@ -1272,20 +1272,20 @@ CONTAINS
       REAL(dp)        , DIMENSION(:)        , INTENT(IN) :: dd_value
       INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_start
       INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_count
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type
       TYPE(TDIM)      ,                       INTENT(IN), OPTIONAL :: td_dim
       TYPE(TATT)      , DIMENSION(:)        , INTENT(IN), OPTIONAL :: td_att
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_fill
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_units
-      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis 
+      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_stdname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_longname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_point
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id 
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_scf
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_ofs
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_min
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_max
       LOGICAL         ,                       INTENT(IN), OPTIONAL :: ld_contiguous
@@ -1363,7 +1363,7 @@ CONTAINS
          &              cd_filter=cd_filter(:),             &
          &              cd_unt=cd_unt, dd_unf=dd_unf,       &
          &              cd_namout=cd_namout )
-   
+
       ! add value
       ALLOCATE( dl_value(tl_dim(1)%i_len, &
       &                  tl_dim(2)%i_len, &
@@ -1414,23 +1414,23 @@ CONTAINS
          & RESULT (tf_var)
    !-------------------------------------------------------------------
    !> @brief This function initialize a variable structure,
-   !> with a real(8) 2D array of value. 
+   !> with a real(8) 2D array of value.
    !> optionally could be added:<br/>
    !> - dimension structure.
    !> - attribute structure.
    !>
-   !> @details 
-   !> array of 2 dimension structure is needed to put value in variable structure. 
-   !> If none is given, we assume array is ordered as ('x','y') and we 
-   !> use array size as lentgh dimension. 
+   !> @details
+   !> array of 2 dimension structure is needed to put value in variable structure.
+   !> If none is given, we assume array is ordered as ('x','y') and we
+   !> use array size as lentgh dimension.
    !>
    !> indices in the variable where value will be written could be specify if
-   !> start and count array are given. Dimension structure is needed in that 
-   !> case.    
+   !> start and count array are given. Dimension structure is needed in that
+   !> case.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
-   !> @date February, 2015 
+   !> @date February, 2015
    !> - bug fix: array initialise with dimension
    !> array not only one value
    !> @date June, 2015
@@ -1443,11 +1443,11 @@ CONTAINS
    !>
    !> @param[in] cd_name         variable name
    !> @param[in] dd_value        1D array of real(8) value
-   !> @param[in] id_start        index in the variable from which the 
+   !> @param[in] id_start        index in the variable from which the
    !> data values will be read
-   !> @param[in] id_count        number of indices selected along 
+   !> @param[in] id_count        number of indices selected along
    !> each dimension
-   !> @param[in] id_type         variable type 
+   !> @param[in] id_type         variable type
    !> @param[in] td_dim          dimension structure
    !> @param[in] td_att          array of attribute structure
    !> @param[in] dd_fill         fill value
@@ -1463,10 +1463,10 @@ CONTAINS
    !> @param[in] id_rec          record id (for rstdimg file)
    !> @param[in] dd_min          minimum value
    !> @param[in] dd_max          maximum value
-   !> @param[in] ld_contiguous   use contiguous storage or not 
+   !> @param[in] ld_contiguous   use contiguous storage or not
    !> @param[in] ld_shuffle      shuffle filter is turned on or not
    !> @param[in] ld_fletcher32   fletcher32 filter is turned on or not
-   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates 
+   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates
    !> no deflation is in use
    !> @param[in] id_chunksz      chunk size
    !> @param[in] cd_interp       interpolation method
@@ -1485,20 +1485,20 @@ CONTAINS
       REAL(dp)        , DIMENSION(:,:)      , INTENT(IN) :: dd_value
       INTEGER(i4)     , DIMENSION(:)        , INTENT(IN), OPTIONAL :: id_start
       INTEGER(i4)     , DIMENSION(:)        , INTENT(IN), OPTIONAL :: id_count
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type
       TYPE(TDIM)      , DIMENSION(:)        , INTENT(IN), OPTIONAL :: td_dim
       TYPE(TATT)      , DIMENSION(:)        , INTENT(IN), OPTIONAL :: td_att
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_fill
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_units
-      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis 
+      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_stdname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_longname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_point
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id 
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_scf
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_ofs
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_min
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_max
       LOGICAL         ,                       INTENT(IN), OPTIONAL :: ld_contiguous
@@ -1595,7 +1595,7 @@ CONTAINS
          &              cd_filter=cd_filter(:),             &
          &              cd_unt=cd_unt, dd_unf=dd_unf,       &
          &              cd_namout=cd_namout )
-   
+
       ! add value
       ALLOCATE( dl_value(tl_dim(1)%i_len, &
          &               tl_dim(2)%i_len, &
@@ -1644,18 +1644,18 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief This function initialize a variable structure,
    !> with a real(8) 3D array of value.
-   !> @details 
+   !> @details
    !> optionally could be added:<br/>
    !> - dimension structure.
    !> - attribute structure.
    !>
-   !> array of 3 dimension structure is needed to put value in variable structure. 
-   !> If none is given, we assume array is ordered as ('x','y','z') and we 
-   !> use array size as lentgh dimension. 
+   !> array of 3 dimension structure is needed to put value in variable structure.
+   !> If none is given, we assume array is ordered as ('x','y','z') and we
+   !> use array size as lentgh dimension.
    !>
    !> indices in the variable where value will be written could be specify if
-   !> start and count array are given. Dimension structure is needed in that 
-   !> case.    
+   !> start and count array are given. Dimension structure is needed in that
+   !> case.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -1668,11 +1668,11 @@ CONTAINS
    !>
    !> @param[in] cd_name         variable name
    !> @param[in] dd_value        1D array of real(8) value
-   !> @param[in] id_start        index in the variable from which the 
+   !> @param[in] id_start        index in the variable from which the
    !> data values will be read
-   !> @param[in] id_count        number of indices selected along 
+   !> @param[in] id_count        number of indices selected along
    !> each dimension
-   !> @param[in] id_type         variable type 
+   !> @param[in] id_type         variable type
    !> @param[in] td_dim          dimension structure
    !> @param[in] td_att          array of attribute structure
    !> @param[in] dd_fill         fill value
@@ -1688,10 +1688,10 @@ CONTAINS
    !> @param[in] id_rec          record id (for rstdimg file)
    !> @param[in] dd_min          minimum value
    !> @param[in] dd_max          maximum value
-   !> @param[in] ld_contiguous   use contiguous storage or not 
+   !> @param[in] ld_contiguous   use contiguous storage or not
    !> @param[in] ld_shuffle       shuffle filter is turned on or not
    !> @param[in] ld_fletcher32   fletcher32 filter is turned on or not
-   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no 
+   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no
    !> deflation is in use
    !> @param[in] id_chunksz      chunk size
    !> @param[in] cd_interp       interpolation method
@@ -1710,20 +1710,20 @@ CONTAINS
       REAL(dp)        , DIMENSION(:,:,:)    , INTENT(IN) :: dd_value
       INTEGER(i4)     , DIMENSION(:)        , INTENT(IN), OPTIONAL :: id_start
       INTEGER(i4)     , DIMENSION(:)        , INTENT(IN), OPTIONAL :: id_count
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type
       TYPE(TDIM)      , DIMENSION(:)        , INTENT(IN), OPTIONAL :: td_dim
       TYPE(TATT)      , DIMENSION(:)        , INTENT(IN), OPTIONAL :: td_att
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_fill
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_units
-      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis 
+      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_stdname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_longname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_point
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id 
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_scf
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_ofs
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_min
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_max
       LOGICAL         ,                       INTENT(IN), OPTIONAL :: ld_contiguous
@@ -1824,7 +1824,7 @@ CONTAINS
          &              cd_filter=cd_filter(:),             &
          &              cd_unt=cd_unt, dd_unf=dd_unf,       &
          &              cd_namout=cd_namout )
-   
+
       ! add value
       ALLOCATE( dl_value(tl_dim(1)%i_len, &
       &                  tl_dim(2)%i_len, &
@@ -1869,18 +1869,18 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief This function initialize a variable structure,
    !> with a real(8) 4D array of value.
-   !> @details 
+   !> @details
    !> optionally could be added:<br/>
    !> - dimension structure.
    !> - attribute structure.
    !>
-   !> Dimension structure is needed to put value in variable structure. 
-   !> If none is given, we assume array is ordered as ('x','y','z','t') and we 
-   !> use array size as lentgh dimension. 
+   !> Dimension structure is needed to put value in variable structure.
+   !> If none is given, we assume array is ordered as ('x','y','z','t') and we
+   !> use array size as lentgh dimension.
    !>
    !> indices in the variable where value will be written could be specify if
-   !> start and count array are given. Dimension structure is needed in that 
-   !> case.    
+   !> start and count array are given. Dimension structure is needed in that
+   !> case.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -1893,11 +1893,11 @@ CONTAINS
    !>
    !> @param[in] cd_name         variable name
    !> @param[in] dd_value        4D array of real(8) value
-   !> @param[in] id_start        index in the variable from which the 
+   !> @param[in] id_start        index in the variable from which the
    !> data values will be read
-   !> @param[in] id_count        number of indices selected along 
+   !> @param[in] id_count        number of indices selected along
    !> each dimension
-   !> @param[in] id_type         variable type 
+   !> @param[in] id_type         variable type
    !> @param[in] td_dim          array of dimension structure
    !> @param[in] td_att          array of attribute structure
    !> @param[in] dd_fill         fill value
@@ -1913,10 +1913,10 @@ CONTAINS
    !> @param[in] id_rec          record id (for rstdimg file)
    !> @param[in] dd_min          minimum value
    !> @param[in] dd_max          maximum value
-   !> @param[in] ld_contiguous   use contiguous storage or not 
+   !> @param[in] ld_contiguous   use contiguous storage or not
    !> @param[in] ld_shuffle       shuffle filter is turned on or not
    !> @param[in] ld_fletcher32   fletcher32 filter is turned on or not
-   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no 
+   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no
    !> deflation is in use
    !> @param[in] id_chunksz      chunk size
    !> @param[in] cd_interp       interpolation method
@@ -1935,20 +1935,20 @@ CONTAINS
       REAL(dp)        , DIMENSION(:,:,:,:),   INTENT(IN) :: dd_value
       INTEGER(i4)     , DIMENSION(ip_maxdim), INTENT(IN), OPTIONAL :: id_start
       INTEGER(i4)     , DIMENSION(ip_maxdim), INTENT(IN), OPTIONAL :: id_count
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type
       TYPE(TDIM)      , DIMENSION(:),         INTENT(IN), OPTIONAL :: td_dim
       TYPE(TATT)      , DIMENSION(:),         INTENT(IN), OPTIONAL :: td_att
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_fill
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_units
-      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis 
+      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_stdname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_longname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_point
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id 
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_scf
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_ofs
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_min
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_max
       LOGICAL         ,                       INTENT(IN), OPTIONAL :: ld_contiguous
@@ -2003,12 +2003,12 @@ CONTAINS
          &              cd_filter=cd_filter(:),             &
          &              cd_unt=cd_unt, dd_unf=dd_unf,       &
          &              cd_namout=cd_namout )
- 
+
       ! add value
       IF( .NOT. PRESENT(td_dim) )THEN
-         il_shape(:)=SHAPE(dd_value(:,:,:,:)) 
+         il_shape(:)=SHAPE(dd_value(:,:,:,:))
          DO ji=1,ip_maxdim
-            tl_dim=dim_init( cp_dimorder(ji:ji), id_len=il_shape(ji)) 
+            tl_dim=dim_init( cp_dimorder(ji:ji), id_len=il_shape(ji))
             CALL var_add_dim(tf_var, tl_dim)
          ENDDO
       ENDIF
@@ -2037,18 +2037,18 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief This function initialize a variable structure,
    !> with a real(4) 1D array of value.
-   !> @details 
+   !> @details
    !> optionally could be added:<br/>
    !> - dimension structure.
    !> - attribute structure.
    !>
-   !> dimension structure is needed to put value in variable structure. 
-   !> If none is given, we assume array is ordered as ('z') and we 
-   !> use array size as lentgh dimension. 
+   !> dimension structure is needed to put value in variable structure.
+   !> If none is given, we assume array is ordered as ('z') and we
+   !> use array size as lentgh dimension.
    !>
    !> indices in the variable where value will be written could be specify if
-   !> start and count array are given. Dimension structure is needed in that 
-   !> case.    
+   !> start and count array are given. Dimension structure is needed in that
+   !> case.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -2063,11 +2063,11 @@ CONTAINS
    !>
    !> @param[in] cd_name         variable name
    !> @param[in] rd_value        1D array of real(4) value
-   !> @param[in] id_start        index in the variable from which the 
+   !> @param[in] id_start        index in the variable from which the
    !> data values will be read
-   !> @param[in] id_count        number of indices selected along 
+   !> @param[in] id_count        number of indices selected along
    !> each dimension
-   !> @param[in] id_type         variable type 
+   !> @param[in] id_type         variable type
    !> @param[in] td_dim          array of dimension structure
    !> @param[in] td_att          array of attribute structure
    !> @param[in] rd_fill         fill value
@@ -2083,10 +2083,10 @@ CONTAINS
    !> @param[in] id_rec          record id (for rstdimg file)
    !> @param[in] dd_min          minimum value
    !> @param[in] dd_max          maximum value
-   !> @param[in] ld_contiguous   use contiguous storage or not 
+   !> @param[in] ld_contiguous   use contiguous storage or not
    !> @param[in] ld_shuffle       shuffle filter is turned on or not
    !> @param[in] ld_fletcher32   fletcher32 filter is turned on or not
-   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no 
+   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no
    !> deflation is in use
    !> @param[in] id_chunksz      chunk size
    !> @param[in] cd_interp       interpolation method
@@ -2105,20 +2105,20 @@ CONTAINS
       REAL(sp)        , DIMENSION(:)        , INTENT(IN) :: rd_value
       INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_start
       INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_count
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type
       TYPE(TDIM)      ,                       INTENT(IN), OPTIONAL :: td_dim
       TYPE(TATT)      , DIMENSION(:),         INTENT(IN), OPTIONAL :: td_att
       REAL(sp)        ,                       INTENT(IN), OPTIONAL :: rd_fill
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_units
-      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis 
+      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_stdname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_longname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_point
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id 
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_scf
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_ofs
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_min
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_max
       LOGICAL         ,                       INTENT(IN), OPTIONAL :: ld_contiguous
@@ -2148,7 +2148,7 @@ CONTAINS
       !----------------------------------------------------------------
 
       ! clean variable
-      CALL var_clean(tf_var)      
+      CALL var_clean(tf_var)
 
       il_type=NF90_FLOAT
       IF( PRESENT(id_type) ) il_type=id_type
@@ -2187,9 +2187,9 @@ CONTAINS
          &             cd_filter=cd_filter(:),             &
          &             cd_unt=cd_unt, dd_unf=dd_unf,       &
          &             cd_namout=cd_namout )
- 
+
       DEALLOCATE( dl_value )
- 
+
    END FUNCTION var__init_1D_sp
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION var__init_2D_sp(cd_name, rd_value,                    &
@@ -2208,18 +2208,18 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief This function initialize a variable structure,
    !> with a real(4) 2D array of value.
-   !> @details 
+   !> @details
    !> optionally could be added:<br/>
    !> - dimension structure.
    !> - attribute structure.
    !>
-   !> array of 2 dimension structure is needed to put value in variable structure. 
-   !> If none is given, we assume array is ordered as ('x','y') and we 
-   !> use array size as lentgh dimension. 
+   !> array of 2 dimension structure is needed to put value in variable structure.
+   !> If none is given, we assume array is ordered as ('x','y') and we
+   !> use array size as lentgh dimension.
    !>
    !> indices in the variable where value will be written could be specify if
-   !> start and count array are given. Dimension structure is needed in that 
-   !> case.    
+   !> start and count array are given. Dimension structure is needed in that
+   !> case.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -2234,11 +2234,11 @@ CONTAINS
    !>
    !> @param[in] cd_name         : variable name
    !> @param[in] rd_value        : 2D array of real(4) value
-   !> @param[in] id_start        : index in the variable from which the 
+   !> @param[in] id_start        : index in the variable from which the
    !> data values will be read
-   !> @param[in] id_count        : number of indices selected along 
+   !> @param[in] id_count        : number of indices selected along
    !> each dimension
-   !> @param[in] id_type         : variable type 
+   !> @param[in] id_type         : variable type
    !> @param[in] td_dim          : array of dimension structure
    !> @param[in] td_att          : array of attribute structure
    !> @param[in] rd_fill         : fill value
@@ -2254,10 +2254,10 @@ CONTAINS
    !> @param[in] id_rec          : record id (for rstdimg file)
    !> @param[in] dd_min          : minimum value
    !> @param[in] dd_max          : maximum value
-   !> @param[in] ld_contiguous   : use contiguous storage or not 
+   !> @param[in] ld_contiguous   : use contiguous storage or not
    !> @param[in] ld_shuffle      :  shuffle filter is turned on or not
    !> @param[in] ld_fletcher32   : fletcher32 filter is turned on or not
-   !> @param[in] id_deflvl       : deflate level from 0 to 9, 0 indicates no 
+   !> @param[in] id_deflvl       : deflate level from 0 to 9, 0 indicates no
    !> deflation is in use
    !> @param[in] id_chunksz      : chunk size
    !> @param[in] cd_interp       interpolation method
@@ -2276,20 +2276,20 @@ CONTAINS
       REAL(sp)        , DIMENSION(:,:)     ,  INTENT(IN) :: rd_value
       INTEGER(i4)     , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: id_start
       INTEGER(i4)     , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: id_count
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type
       TYPE(TDIM)      , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: td_dim
       TYPE(TATT)      , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: td_att
       REAL(sp)        ,                       INTENT(IN), OPTIONAL :: rd_fill
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_units
-      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis 
+      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_stdname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_longname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_point
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id 
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_scf
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_ofs
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_min
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_max
       LOGICAL         ,                       INTENT(IN), OPTIONAL :: ld_contiguous
@@ -2320,7 +2320,7 @@ CONTAINS
       !----------------------------------------------------------------
 
       ! clean variable
-      CALL var_clean(tf_var)      
+      CALL var_clean(tf_var)
 
       il_type=NF90_FLOAT
       IF( PRESENT(id_type) ) il_type=id_type
@@ -2363,9 +2363,9 @@ CONTAINS
          &             cd_filter=cd_filter(:),             &
          &             cd_unt=cd_unt, dd_unf=dd_unf,       &
          &             cd_namout=cd_namout )
-      
+
       DEALLOCATE( dl_value )
-      
+
    END FUNCTION var__init_2D_sp
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION var__init_3D_sp(cd_name, rd_value,        &
@@ -2384,18 +2384,18 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief This function initialize a variable structure,
    !> with a real(4) 3D array of value.
-   !> @details 
+   !> @details
    !> optionally could be added:<br/>
    !> - dimension structure.
    !> - attribute structure.
    !>
-   !> array of 3 dimension structure is needed to put value in variable structure. 
-   !> If none is given, we assume array is ordered as ('x','y','z') and we 
-   !> use array size as lentgh dimension. 
+   !> array of 3 dimension structure is needed to put value in variable structure.
+   !> If none is given, we assume array is ordered as ('x','y','z') and we
+   !> use array size as lentgh dimension.
    !>
    !> indices in the variable where value will be written could be specify if
-   !> start and count array are given. Dimension structure is needed in that 
-   !> case.    
+   !> start and count array are given. Dimension structure is needed in that
+   !> case.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -2410,11 +2410,11 @@ CONTAINS
    !>
    !> @param[in] cd_name         : variable name
    !> @param[in] rd_value        : 2D array of real(4) value
-   !> @param[in] id_start        : index in the variable from which the 
+   !> @param[in] id_start        : index in the variable from which the
    !> data values will be read
-   !> @param[in] id_count        : number of indices selected along 
+   !> @param[in] id_count        : number of indices selected along
    !> each dimension
-   !> @param[in] id_type         : variable type 
+   !> @param[in] id_type         : variable type
    !> @param[in] td_dim          : array of dimension structure
    !> @param[in] td_att          : array of attribute structure
    !> @param[in] rd_fill         : fill value
@@ -2430,10 +2430,10 @@ CONTAINS
    !> @param[in] id_rec          : record id (for rstdimg file)
    !> @param[in] dd_min          : minimum value
    !> @param[in] dd_max          : maximum value
-   !> @param[in] ld_contiguous   : use contiguous storage or not 
+   !> @param[in] ld_contiguous   : use contiguous storage or not
    !> @param[in] ld_shuffle      :  shuffle filter is turned on or not
    !> @param[in] ld_fletcher32   : fletcher32 filter is turned on or not
-   !> @param[in] id_deflvl       : deflate level from 0 to 9, 0 indicates no 
+   !> @param[in] id_deflvl       : deflate level from 0 to 9, 0 indicates no
    !> deflation is in use
    !> @param[in] id_chunksz      : chunk size
    !> @param[in] cd_interp       interpolation method
@@ -2452,20 +2452,20 @@ CONTAINS
       REAL(sp)        , DIMENSION(:,:,:)   ,  INTENT(IN) :: rd_value
       INTEGER(i4)     , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: id_start
       INTEGER(i4)     , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: id_count
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type
       TYPE(TDIM)      , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: td_dim
       TYPE(TATT)      , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: td_att
       REAL(sp)        ,                       INTENT(IN), OPTIONAL :: rd_fill
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_units
-      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis 
+      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_stdname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_longname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_point
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id 
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_scf
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_ofs
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_min
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_max
       LOGICAL         ,                       INTENT(IN), OPTIONAL :: ld_contiguous
@@ -2497,7 +2497,7 @@ CONTAINS
       !----------------------------------------------------------------
 
       ! clean variable
-      CALL var_clean(tf_var)      
+      CALL var_clean(tf_var)
 
       il_type=NF90_FLOAT
       IF( PRESENT(id_type) ) il_type=id_type
@@ -2543,9 +2543,9 @@ CONTAINS
          &             cd_filter=cd_filter(:),             &
          &             cd_unt=cd_unt, dd_unf=dd_unf,       &
          &             cd_namout=cd_namout )
-      
+
       DEALLOCATE( dl_value )
-      
+
    END FUNCTION var__init_3D_sp
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION var__init_sp(cd_name, rd_value,                    &
@@ -2564,18 +2564,18 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief This function initialize a variable structure,
    !> with a real(4) 4D array of value.
-   !> @details 
+   !> @details
    !> optionally could be added:<br/>
    !> - dimension structure.
    !> - attribute structure.
    !>
-   !> Dimension structure is needed to put value in variable structure. 
-   !> If none is given, we assume array is ordered as ('x','y','z','t') and we 
-   !> use array size as lentgh dimension. 
+   !> Dimension structure is needed to put value in variable structure.
+   !> If none is given, we assume array is ordered as ('x','y','z','t') and we
+   !> use array size as lentgh dimension.
    !>
    !> indices in the variable where value will be written could be specify if
-   !> start and count array are given. Dimension structure is needed in that 
-   !> case.    
+   !> start and count array are given. Dimension structure is needed in that
+   !> case.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -2590,11 +2590,11 @@ CONTAINS
    !>
    !> @param[in] cd_name         variable name
    !> @param[in] rd_value        4D array of real(4) value
-   !> @param[in] id_start        index in the variable from which the 
+   !> @param[in] id_start        index in the variable from which the
    !> data values will be read
-   !> @param[in] id_count        number of indices selected along 
+   !> @param[in] id_count        number of indices selected along
    !> each dimension
-   !> @param[in] id_type         variable type 
+   !> @param[in] id_type         variable type
    !> @param[in] td_dim          array of dimension structure
    !> @param[in] td_att          array of attribute structure
    !> @param[in] rd_fill         fill value
@@ -2610,10 +2610,10 @@ CONTAINS
    !> @param[in] id_rec          record id (for rstdimg file)
    !> @param[in] dd_min          minimum value
    !> @param[in] dd_max          maximum value
-   !> @param[in] ld_contiguous   use contiguous storage or not 
+   !> @param[in] ld_contiguous   use contiguous storage or not
    !> @param[in] ld_shuffle      shuffle filter is turned on or not
    !> @param[in] ld_fletcher32   fletcher32 filter is turned on or not
-   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no 
+   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no
    !> deflation is in use
    !> @param[in] id_chunksz      chunk size
    !> @param[in] cd_interp       interpolation method
@@ -2632,20 +2632,20 @@ CONTAINS
       REAL(sp)        , DIMENSION(:,:,:,:),   INTENT(IN) :: rd_value
       INTEGER(i4)     , DIMENSION(ip_maxdim), INTENT(IN), OPTIONAL :: id_start
       INTEGER(i4)     , DIMENSION(ip_maxdim), INTENT(IN), OPTIONAL :: id_count
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type
       TYPE(TDIM)      , DIMENSION(:),         INTENT(IN), OPTIONAL :: td_dim
       TYPE(TATT)      , DIMENSION(:),         INTENT(IN), OPTIONAL :: td_att
       REAL(sp)        ,                       INTENT(IN), OPTIONAL :: rd_fill
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_units
-      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis 
+      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_stdname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_longname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_point
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id 
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_scf
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_ofs
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_min
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_max
       LOGICAL         ,                       INTENT(IN), OPTIONAL :: ld_contiguous
@@ -2678,7 +2678,7 @@ CONTAINS
       !----------------------------------------------------------------
 
       ! clean variable
-      CALL var_clean(tf_var)      
+      CALL var_clean(tf_var)
 
       il_type=NF90_FLOAT
       IF( PRESENT(id_type) ) il_type=id_type
@@ -2727,9 +2727,9 @@ CONTAINS
          &             cd_filter=cd_filter(:),             &
          &             cd_unt=cd_unt, dd_unf=dd_unf,       &
          &             cd_namout=cd_namout )
-      
+
       DEALLOCATE( dl_value )
-      
+
    END FUNCTION var__init_sp
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION var__init_1D_i8(cd_name, kd_value,                    &
@@ -2748,18 +2748,18 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief This function initialize a variable structure,
    !> with a integer(8) 1D array of value.
-   !> @details 
+   !> @details
    !> optionally could be added:<br/>
    !> - dimension structure.
    !> - attribute structure.
    !>
-   !> dimension structure is needed to put value in variable structure. 
-   !> If none is given, we assume array is ordered as ('z') and we 
-   !> use array size as lentgh dimension. 
+   !> dimension structure is needed to put value in variable structure.
+   !> If none is given, we assume array is ordered as ('z') and we
+   !> use array size as lentgh dimension.
    !>
    !> indices in the variable where value will be written could be specify if
-   !> start and count array are given. Dimension structure is needed in that 
-   !> case.    
+   !> start and count array are given. Dimension structure is needed in that
+   !> case.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -2774,11 +2774,11 @@ CONTAINS
    !>
    !> @param[in] cd_name         : variable name
    !> @param[in] kd_value        : 1D array of integer(8) value
-   !> @param[in] id_start        : index in the variable from which the 
+   !> @param[in] id_start        : index in the variable from which the
    !> data values will be read
-   !> @param[in] id_count        : number of indices selected along 
+   !> @param[in] id_count        : number of indices selected along
    !> each dimension
-   !> @param[in] id_type         : variable type 
+   !> @param[in] id_type         : variable type
    !> @param[in] td_dim          : array of dimension structure
    !> @param[in] td_att          : array of attribute structure
    !> @param[in] kd_fill         : fill value
@@ -2794,10 +2794,10 @@ CONTAINS
    !> @param[in] id_rec          : record id (for rstdimg file)
    !> @param[in] dd_min          : minimum value
    !> @param[in] dd_max          : maximum value
-   !> @param[in] ld_contiguous   : use contiguous storage or not 
+   !> @param[in] ld_contiguous   : use contiguous storage or not
    !> @param[in] ld_shuffle      :  shuffle filter is turned on or not
    !> @param[in] ld_fletcher32   : fletcher32 filter is turned on or not
-   !> @param[in] id_deflvl       : deflate level from 0 to 9, 0 indicates no 
+   !> @param[in] id_deflvl       : deflate level from 0 to 9, 0 indicates no
    !> deflation is in use
    !> @param[in] id_chunksz      : chunk size
    !> @param[in] cd_interp       interpolation method
@@ -2816,20 +2816,20 @@ CONTAINS
       INTEGER(i8)     , DIMENSION(:)        , INTENT(IN) :: kd_value
       INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_start
       INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_count
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type
       TYPE(TDIM)      ,                       INTENT(IN), OPTIONAL :: td_dim
       TYPE(TATT)      , DIMENSION(:),         INTENT(IN), OPTIONAL :: td_att
       INTEGER(i8)     ,                       INTENT(IN), OPTIONAL :: kd_fill
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_units
-      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis 
+      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_stdname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_longname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_point
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id 
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_scf
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_ofs
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_min
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_max
       LOGICAL         ,                       INTENT(IN), OPTIONAL :: ld_contiguous
@@ -2859,7 +2859,7 @@ CONTAINS
       !----------------------------------------------------------------
 
       ! clean variable
-      CALL var_clean(tf_var)      
+      CALL var_clean(tf_var)
 
       il_type=NF90_INT
       IF( PRESENT(id_type) ) il_type=id_type
@@ -2898,9 +2898,9 @@ CONTAINS
          &             cd_filter=cd_filter(:),             &
          &             cd_unt=cd_unt, dd_unf=dd_unf,       &
          &             cd_namout=cd_namout )
- 
+
       DEALLOCATE( dl_value )
- 
+
    END FUNCTION var__init_1D_i8
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION var__init_2D_i8(cd_name, kd_value,        &
@@ -2919,18 +2919,18 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief This function initialize a variable structure,
    !> with a integer(8) 2D array of value.
-   !> @details 
+   !> @details
    !> optionally could be added:<br/>
    !> - dimension structure.
    !> - attribute structure.
    !>
-   !> array of 2 dimension structure is needed to put value in variable structure. 
-   !> If none is given, we assume array is ordered as ('x','y') and we 
-   !> use array size as lentgh dimension. 
+   !> array of 2 dimension structure is needed to put value in variable structure.
+   !> If none is given, we assume array is ordered as ('x','y') and we
+   !> use array size as lentgh dimension.
    !>
    !> indices in the variable where value will be written could be specify if
-   !> start and count array are given. Dimension structure is needed in that 
-   !> case.    
+   !> start and count array are given. Dimension structure is needed in that
+   !> case.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -2945,10 +2945,10 @@ CONTAINS
    !>
    !> @param[in] cd_name         variable name
    !> @param[in] kd_value        2D array of integer(8) value
-   !> @param[in] id_start        index in the variable from which the data values 
+   !> @param[in] id_start        index in the variable from which the data values
    !> will be read
    !> @param[in] id_count        number of indices selected along each dimension
-   !> @param[in] id_type         variable type 
+   !> @param[in] id_type         variable type
    !> @param[in] td_dim          array of dimension structure
    !> @param[in] td_att          array of attribute structure
    !> @param[in] kd_fill         fill value
@@ -2964,7 +2964,7 @@ CONTAINS
    !> @param[in] id_rec          record id (for rstdimg file)
    !> @param[in] dd_min          minimum value
    !> @param[in] dd_max          maximum value
-   !> @param[in] ld_contiguous   use contiguous storage or not 
+   !> @param[in] ld_contiguous   use contiguous storage or not
    !> @param[in] ld_shuffle       shuffle filter is turned on or not
    !> @param[in] ld_fletcher32   fletcher32 filter is turned on or not
    !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no deflation is in use
@@ -2985,20 +2985,20 @@ CONTAINS
       INTEGER(i8)     , DIMENSION(:,:)     ,  INTENT(IN) :: kd_value
       INTEGER(i4)     , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: id_start
       INTEGER(i4)     , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: id_count
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type
       TYPE(TDIM)      , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: td_dim
       TYPE(TATT)      , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: td_att
       INTEGER(i8)     ,                       INTENT(IN), OPTIONAL :: kd_fill
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_units
-      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis 
+      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_stdname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_longname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_point
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id 
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_scf
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_ofs
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_min
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_max
       LOGICAL         ,                       INTENT(IN), OPTIONAL :: ld_contiguous
@@ -3029,7 +3029,7 @@ CONTAINS
       !----------------------------------------------------------------
 
       ! clean variable
-      CALL var_clean(tf_var)      
+      CALL var_clean(tf_var)
 
       il_type=NF90_INT
       IF( PRESENT(id_type) ) il_type=id_type
@@ -3072,9 +3072,9 @@ CONTAINS
          &             cd_filter=cd_filter(:),             &
          &             cd_unt=cd_unt, dd_unf=dd_unf,       &
          &             cd_namout=cd_namout )
-      
+
       DEALLOCATE( dl_value )
-      
+
    END FUNCTION var__init_2D_i8
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION var__init_3D_i8(cd_name, kd_value,                    &
@@ -3093,18 +3093,18 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief This function initialize a variable structure,
    !> with a integer(8) 3D array of value.
-   !> @details 
+   !> @details
    !> optionally could be added:<br/>
    !> - dimension structure.
    !> - attribute structure.
    !>
-   !> array of 3 dimension structure is needed to put value in variable structure. 
-   !> If none is given, we assume array is ordered as ('x','y','z') and we 
-   !> use array size as lentgh dimension. 
+   !> array of 3 dimension structure is needed to put value in variable structure.
+   !> If none is given, we assume array is ordered as ('x','y','z') and we
+   !> use array size as lentgh dimension.
    !>
    !> indices in the variable where value will be written could be specify if
-   !> start and count array are given. Dimension structure is needed in that 
-   !> case.    
+   !> start and count array are given. Dimension structure is needed in that
+   !> case.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -3119,11 +3119,11 @@ CONTAINS
    !>
    !> @param[in] cd_name         variable name
    !> @param[in] kd_value        2D array of integer(8) value
-   !> @param[in] id_start        index in the variable from which the 
+   !> @param[in] id_start        index in the variable from which the
    !> data values will be read
-   !> @param[in] id_count        number of indices selected along 
+   !> @param[in] id_count        number of indices selected along
    !> each dimension
-   !> @param[in] id_type         variable type 
+   !> @param[in] id_type         variable type
    !> @param[in] td_dim          array of dimension structure
    !> @param[in] td_att          array of attribute structure
    !> @param[in] kd_fill         fill value
@@ -3139,10 +3139,10 @@ CONTAINS
    !> @param[in] id_rec          record id (for rstdimg file)
    !> @param[in] dd_min          minimum value
    !> @param[in] dd_max          maximum value
-   !> @param[in] ld_contiguous   use contiguous storage or not 
+   !> @param[in] ld_contiguous   use contiguous storage or not
    !> @param[in] ld_shuffle       shuffle filter is turned on or not
    !> @param[in] ld_fletcher32   fletcher32 filter is turned on or not
-   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no 
+   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no
    !> deflation is in use
    !> @param[in] id_chunksz      chunk size
    !> @param[in] cd_interp       interpolation method
@@ -3161,20 +3161,20 @@ CONTAINS
       INTEGER(i8)     , DIMENSION(:,:,:)   ,  INTENT(IN) :: kd_value
       INTEGER(i4)     , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: id_start
       INTEGER(i4)     , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: id_count
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type
       TYPE(TDIM)      , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: td_dim
       TYPE(TATT)      , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: td_att
       INTEGER(i8)     ,                       INTENT(IN), OPTIONAL :: kd_fill
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_units
-      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis 
+      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_stdname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_longname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_point
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id 
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_scf
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_ofs
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_min
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_max
       LOGICAL         ,                       INTENT(IN), OPTIONAL :: ld_contiguous
@@ -3206,7 +3206,7 @@ CONTAINS
       !----------------------------------------------------------------
 
       ! clean variable
-      CALL var_clean(tf_var)      
+      CALL var_clean(tf_var)
 
       il_type=NF90_INT
       IF( PRESENT(id_type) ) il_type=id_type
@@ -3252,9 +3252,9 @@ CONTAINS
          &             cd_filter=cd_filter(:),             &
          &             cd_unt=cd_unt, dd_unf=dd_unf,       &
          &             cd_namout=cd_namout )
-      
+
       DEALLOCATE( dl_value )
-      
+
    END FUNCTION var__init_3D_i8
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION var__init_i8(cd_name, kd_value,                    &
@@ -3273,18 +3273,18 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief This function initialize a variable structure,
    !> with a integer(8) 4D array of value.
-   !> @details 
+   !> @details
    !> optionally could be added:<br/>
    !> - dimension structure.
    !> - attribute structure.
    !>
-   !> Dimension structure is needed to put value in variable structure. 
-   !> If none is given, we assume array is ordered as ('x','y','z','t') and we 
-   !> use array size as lentgh dimension. 
+   !> Dimension structure is needed to put value in variable structure.
+   !> If none is given, we assume array is ordered as ('x','y','z','t') and we
+   !> use array size as lentgh dimension.
    !>
    !> indices in the variable where value will be written could be specify if
-   !> start and count array are given. Dimension structure is needed in that 
-   !> case.    
+   !> start and count array are given. Dimension structure is needed in that
+   !> case.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -3299,11 +3299,11 @@ CONTAINS
    !>
    !> @param[in] cd_name         variable name
    !> @param[in] kd_value        4D array of integer(8) value
-   !> @param[in] id_start        index in the variable from which the 
+   !> @param[in] id_start        index in the variable from which the
    !> data values will be read
-   !> @param[in] id_count        number of indices selected along 
+   !> @param[in] id_count        number of indices selected along
    !> each dimension
-   !> @param[in] id_type         variable type 
+   !> @param[in] id_type         variable type
    !> @param[in] td_dim          array of dimension structure
    !> @param[in] td_att          array of attribute structure
    !> @param[in] kd_fill         fill value
@@ -3319,10 +3319,10 @@ CONTAINS
    !> @param[in] id_rec          record id (for rstdimg file)
    !> @param[in] dd_min          minimum value
    !> @param[in] dd_max          maximum value
-   !> @param[in] ld_contiguous   use contiguous storage or not 
+   !> @param[in] ld_contiguous   use contiguous storage or not
    !> @param[in] ld_shuffle       shuffle filter is turned on or not
    !> @param[in] ld_fletcher32   fletcher32 filter is turned on or not
-   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no 
+   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no
    !> deflation is in use
    !> @param[in] id_chunksz      chunk size
    !> @param[in] cd_interp       interpolation method
@@ -3341,20 +3341,20 @@ CONTAINS
       INTEGER(i8)     , DIMENSION(:,:,:,:),   INTENT(IN) :: kd_value
       INTEGER(i4)     , DIMENSION(ip_maxdim), INTENT(IN), OPTIONAL :: id_start
       INTEGER(i4)     , DIMENSION(ip_maxdim), INTENT(IN), OPTIONAL :: id_count
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type
       TYPE(TDIM)      , DIMENSION(:),         INTENT(IN), OPTIONAL :: td_dim
       TYPE(TATT)      , DIMENSION(:),         INTENT(IN), OPTIONAL :: td_att
       INTEGER(i8)     ,                       INTENT(IN), OPTIONAL :: kd_fill
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_units
-      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis 
+      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_stdname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_longname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_point
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id 
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_scf
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_ofs
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_min
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_max
       LOGICAL         ,                       INTENT(IN), OPTIONAL :: ld_contiguous
@@ -3387,7 +3387,7 @@ CONTAINS
       !----------------------------------------------------------------
 
       ! clean variable
-      CALL var_clean(tf_var)      
+      CALL var_clean(tf_var)
 
       il_type=NF90_INT
       IF( PRESENT(id_type) ) il_type=id_type
@@ -3410,7 +3410,7 @@ CONTAINS
                ENDDO
             ENDDO
          ENDDO
-      ENDDO                  
+      ENDDO
 
       tf_var=var_init( cd_name, dl_value(:,:,:,:),         &
          &             id_start=id_start,                  &
@@ -3436,9 +3436,9 @@ CONTAINS
          &             cd_filter=cd_filter(:),             &
          &             cd_unt=cd_unt, dd_unf=dd_unf,       &
          &             cd_namout=cd_namout )
-      
+
       DEALLOCATE( dl_value )
-      
+
    END FUNCTION var__init_i8
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION var__init_1D_i4(cd_name, id_value,                    &
@@ -3457,18 +3457,18 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief This function initialize a variable structure,
    !> with a integer(4) 1D array of value.
-   !> @details 
+   !> @details
    !> optionally could be added:<br/>
    !> - dimension structure.
    !> - attribute structure.
    !>
-   !> dimension structure is needed to put value in variable structure. 
-   !> If none is given, we assume array is ordered as ('z') and we 
-   !> use array size as lentgh dimension. 
+   !> dimension structure is needed to put value in variable structure.
+   !> If none is given, we assume array is ordered as ('z') and we
+   !> use array size as lentgh dimension.
    !>
    !> indices in the variable where value will be written could be specify if
-   !> start and count array are given. Dimension structure is needed in that 
-   !> case.    
+   !> start and count array are given. Dimension structure is needed in that
+   !> case.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -3483,11 +3483,11 @@ CONTAINS
    !>
    !> @param[in] cd_name         variable name
    !> @param[in] id_value        1D array of integer(4) value
-   !> @param[in] id_start        index in the variable from which the 
+   !> @param[in] id_start        index in the variable from which the
    !> data values will be read
-   !> @param[in] id_count        number of indices selected along 
+   !> @param[in] id_count        number of indices selected along
    !> each dimension
-   !> @param[in] id_type         variable type 
+   !> @param[in] id_type         variable type
    !> @param[in] td_dim          array of dimension structure
    !> @param[in] td_att          array of attribute structure
    !> @param[in] id_fill         fill value
@@ -3503,10 +3503,10 @@ CONTAINS
    !> @param[in] id_rec          record id (for rstdimg file)
    !> @param[in] dd_min          minimum value
    !> @param[in] dd_max          maximum value
-   !> @param[in] ld_contiguous   use contiguous storage or not 
+   !> @param[in] ld_contiguous   use contiguous storage or not
    !> @param[in] ld_shuffle       shuffle filter is turned on or not
    !> @param[in] ld_fletcher32   fletcher32 filter is turned on or not
-   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no 
+   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no
    !> deflation is in use
    !> @param[in] id_chunksz      chunk size
    !> @param[in] cd_interp       interpolation method
@@ -3525,20 +3525,20 @@ CONTAINS
       INTEGER(i4)     , DIMENSION(:)        , INTENT(IN) :: id_value
       INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_start
       INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_count
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type
       TYPE(TDIM)      ,                       INTENT(IN), OPTIONAL :: td_dim
       TYPE(TATT)      , DIMENSION(:),         INTENT(IN), OPTIONAL :: td_att
       INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_fill
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_units
-      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis 
+      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_stdname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_longname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_point
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id 
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_scf
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_ofs
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_min
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_max
       LOGICAL         ,                       INTENT(IN), OPTIONAL :: ld_contiguous
@@ -3568,7 +3568,7 @@ CONTAINS
       !----------------------------------------------------------------
 
       ! clean variable
-      CALL var_clean(tf_var)      
+      CALL var_clean(tf_var)
 
       il_type=NF90_INT
       IF( PRESENT(id_type) ) il_type=id_type
@@ -3607,9 +3607,9 @@ CONTAINS
          &             cd_filter=cd_filter(:),             &
          &             cd_unt=cd_unt, dd_unf=dd_unf,       &
          &             cd_namout=cd_namout )
- 
+
       DEALLOCATE( dl_value )
- 
+
    END FUNCTION var__init_1D_i4
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION var__init_2D_i4(cd_name, id_value,                    &
@@ -3628,18 +3628,18 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief This function initialize a variable structure,
    !> with a integer(4) 2D array of value.
-   !> @details 
+   !> @details
    !> optionally could be added:<br/>
    !> - dimension structure.
    !> - attribute structure.
    !>
-   !> array of 2 dimension structure is needed to put value in variable structure. 
-   !> If none is given, we assume array is ordered as ('x','y') and we 
-   !> use array size as lentgh dimension. 
+   !> array of 2 dimension structure is needed to put value in variable structure.
+   !> If none is given, we assume array is ordered as ('x','y') and we
+   !> use array size as lentgh dimension.
    !>
    !> indices in the variable where value will be written could be specify if
-   !> start and count array are given. Dimension structure is needed in that 
-   !> case.    
+   !> start and count array are given. Dimension structure is needed in that
+   !> case.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -3654,11 +3654,11 @@ CONTAINS
    !>
    !> @param[in] cd_name         variable name
    !> @param[in] id_value        2D array of integer(4) value
-   !> @param[in] id_start        index in the variable from which the 
+   !> @param[in] id_start        index in the variable from which the
    !> data values will be read
-   !> @param[in] id_count        number of indices selected along 
+   !> @param[in] id_count        number of indices selected along
    !> each dimension
-   !> @param[in] id_type         variable type 
+   !> @param[in] id_type         variable type
    !> @param[in] td_dim          array of dimension structure
    !> @param[in] td_att          array of attribute structure
    !> @param[in] id_fill         fill value
@@ -3674,10 +3674,10 @@ CONTAINS
    !> @param[in] id_rec          record id (for rstdimg file)
    !> @param[in] dd_min          minimum value
    !> @param[in] dd_max          maximum value
-   !> @param[in] ld_contiguous   use contiguous storage or not 
+   !> @param[in] ld_contiguous   use contiguous storage or not
    !> @param[in] ld_shuffle       shuffle filter is turned on or not
    !> @param[in] ld_fletcher32   fletcher32 filter is turned on or not
-   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no 
+   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no
    !> deflation is in use
    !> @param[in] id_chunksz      chunk size
    !> @param[in] cd_interp       interpolation method
@@ -3696,20 +3696,20 @@ CONTAINS
       INTEGER(i4)     , DIMENSION(:,:)     ,  INTENT(IN) :: id_value
       INTEGER(i4)     , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: id_start
       INTEGER(i4)     , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: id_count
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type
       TYPE(TDIM)      , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: td_dim
       TYPE(TATT)      , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: td_att
       INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_fill
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_units
-      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis 
+      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_stdname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_longname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_point
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id 
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_scf
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_ofs
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_min
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_max
       LOGICAL         ,                       INTENT(IN), OPTIONAL :: ld_contiguous
@@ -3740,7 +3740,7 @@ CONTAINS
       !----------------------------------------------------------------
 
       ! clean variable
-      CALL var_clean(tf_var)      
+      CALL var_clean(tf_var)
 
       il_type=NF90_INT
       IF( PRESENT(id_type) ) il_type=id_type
@@ -3783,9 +3783,9 @@ CONTAINS
          &             cd_filter=cd_filter(:),             &
          &             cd_unt=cd_unt, dd_unf=dd_unf,       &
          &             cd_namout=cd_namout )
-      
+
       DEALLOCATE( dl_value )
-      
+
    END FUNCTION var__init_2D_i4
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION var__init_3D_i4(cd_name, id_value,                    &
@@ -3804,18 +3804,18 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief This function initialize a variable structure,
    !> with a integer(4) 3D array of value.
-   !> @details 
+   !> @details
    !> optionally could be added:<br/>
    !> - dimension structure.
    !> - attribute structure.
    !>
-   !> array of 3 dimension structure is needed to put value in variable structure. 
-   !> If none is given, we assume array is ordered as ('x','y','z') and we 
-   !> use array size as lentgh dimension. 
+   !> array of 3 dimension structure is needed to put value in variable structure.
+   !> If none is given, we assume array is ordered as ('x','y','z') and we
+   !> use array size as lentgh dimension.
    !>
    !> indices in the variable where value will be written could be specify if
-   !> start and count array are given. Dimension structure is needed in that 
-   !> case.    
+   !> start and count array are given. Dimension structure is needed in that
+   !> case.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -3830,11 +3830,11 @@ CONTAINS
    !>
    !> @param[in] cd_name         variable name
    !> @param[in] id_value        3D array of integer(4) value
-   !> @param[in] id_start        index in the variable from which the 
+   !> @param[in] id_start        index in the variable from which the
    !> data values will be read
-   !> @param[in] id_count        number of indices selected along 
+   !> @param[in] id_count        number of indices selected along
    !> each dimension
-   !> @param[in] id_type         variable type 
+   !> @param[in] id_type         variable type
    !> @param[in] td_dim          array of dimension structure
    !> @param[in] td_att          array of attribute structure
    !> @param[in] id_fill         fill value
@@ -3850,10 +3850,10 @@ CONTAINS
    !> @param[in] id_rec          record id (for rstdimg file)
    !> @param[in] dd_min          minimum value
    !> @param[in] dd_max          maximum value
-   !> @param[in] ld_contiguous   use contiguous storage or not 
+   !> @param[in] ld_contiguous   use contiguous storage or not
    !> @param[in] ld_shuffle       shuffle filter is turned on or not
    !> @param[in] ld_fletcher32   fletcher32 filter is turned on or not
-   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no 
+   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no
    !> deflation is in use
    !> @param[in] id_chunksz      chunk size
    !> @param[in] cd_interp       interpolation method
@@ -3872,20 +3872,20 @@ CONTAINS
       INTEGER(i4)     , DIMENSION(:,:,:)   ,  INTENT(IN) :: id_value
       INTEGER(i4)     , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: id_start
       INTEGER(i4)     , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: id_count
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type
       TYPE(TDIM)      , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: td_dim
       TYPE(TATT)      , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: td_att
       INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_fill
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_units
-      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis 
+      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_stdname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_longname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_point
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id 
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_scf
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_ofs
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_min
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_max
       LOGICAL         ,                       INTENT(IN), OPTIONAL :: ld_contiguous
@@ -3917,7 +3917,7 @@ CONTAINS
       !----------------------------------------------------------------
 
       ! clean variable
-      CALL var_clean(tf_var)      
+      CALL var_clean(tf_var)
 
       il_type=NF90_INT
       IF( PRESENT(id_type) ) il_type=id_type
@@ -3963,9 +3963,9 @@ CONTAINS
          &             cd_filter=cd_filter(:),             &
          &             cd_unt=cd_unt, dd_unf=dd_unf,       &
          &             cd_namout=cd_namout )
-      
+
       DEALLOCATE( dl_value )
-      
+
    END FUNCTION var__init_3D_i4
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION var__init_i4(cd_name, id_value,                    &
@@ -3984,18 +3984,18 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief This function initialize a variable structure,
    !> with a integer(4) 4D array of value.
-   !> @details 
+   !> @details
    !> optionally could be added:<br/>
    !> - dimension structure.
    !> - attribute structure.
    !>
-   !> Dimension structure is needed to put value in variable structure. 
-   !> If none is given, we assume array is ordered as ('x','y','z','t') and we 
-   !> use array size as lentgh dimension. 
+   !> Dimension structure is needed to put value in variable structure.
+   !> If none is given, we assume array is ordered as ('x','y','z','t') and we
+   !> use array size as lentgh dimension.
    !>
    !> indices in the variable where value will be written could be specify if
-   !> start and count array are given. Dimension structure is needed in that 
-   !> case.    
+   !> start and count array are given. Dimension structure is needed in that
+   !> case.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -4010,11 +4010,11 @@ CONTAINS
    !>
    !> @param[in] cd_name         variable name
    !> @param[in] id_value        4D array of integer(4) value
-   !> @param[in] id_start        index in the variable from which the 
+   !> @param[in] id_start        index in the variable from which the
    !> data values will be read
-   !> @param[in] id_count        number of indices selected along 
+   !> @param[in] id_count        number of indices selected along
    !> each dimension
-   !> @param[in] id_type         variable type 
+   !> @param[in] id_type         variable type
    !> @param[in] td_dim          array of dimension structure
    !> @param[in] td_att          array of attribute structure
    !> @param[in] id_fill         fill value
@@ -4030,10 +4030,10 @@ CONTAINS
    !> @param[in] id_rec          record id (for rstdimg file)
    !> @param[in] dd_min          minimum value
    !> @param[in] dd_max          maximum value
-   !> @param[in] ld_contiguous   use contiguous storage or not 
+   !> @param[in] ld_contiguous   use contiguous storage or not
    !> @param[in] ld_shuffle       shuffle filter is turned on or not
    !> @param[in] ld_fletcher32   fletcher32 filter is turned on or not
-   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no 
+   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no
    !> deflation is in use
    !> @param[in] id_chunksz      chunk size
    !> @param[in] cd_interp       interpolation method
@@ -4052,20 +4052,20 @@ CONTAINS
       INTEGER(i4)     , DIMENSION(:,:,:,:),   INTENT(IN) :: id_value
       INTEGER(i4)     , DIMENSION(ip_maxdim), INTENT(IN), OPTIONAL :: id_start
       INTEGER(i4)     , DIMENSION(ip_maxdim), INTENT(IN), OPTIONAL :: id_count
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type
       TYPE(TDIM)      , DIMENSION(:),         INTENT(IN), OPTIONAL :: td_dim
       TYPE(TATT)      , DIMENSION(:),         INTENT(IN), OPTIONAL :: td_att
       INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_fill
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_units
-      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis 
+      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_stdname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_longname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_point
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id 
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_scf
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_ofs
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_min
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_max
       LOGICAL         ,                       INTENT(IN), OPTIONAL :: ld_contiguous
@@ -4098,7 +4098,7 @@ CONTAINS
       !----------------------------------------------------------------
 
       ! clean variable
-      CALL var_clean(tf_var)      
+      CALL var_clean(tf_var)
 
       il_type=NF90_INT
       IF( PRESENT(id_type) ) il_type=id_type
@@ -4147,9 +4147,9 @@ CONTAINS
          &             cd_filter=cd_filter(:),             &
          &             cd_unt=cd_unt, dd_unf=dd_unf,       &
          &             cd_namout=cd_namout )
-      
+
       DEALLOCATE( dl_value )
-      
+
    END FUNCTION var__init_i4
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION var__init_1D_i2(cd_name, sd_value,                    &
@@ -4168,18 +4168,18 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief This function initialize a variable structure,
    !> with a integer(2) 1D array of value.
-   !> @details 
+   !> @details
    !> optionally could be added:<br/>
    !> - dimension structure.
    !> - attribute structure.
    !>
-   !> dimension structure is needed to put value in variable structure. 
-   !> If none is given, we assume array is ordered as ('z') and we 
-   !> use array size as lentgh dimension. 
+   !> dimension structure is needed to put value in variable structure.
+   !> If none is given, we assume array is ordered as ('z') and we
+   !> use array size as lentgh dimension.
    !>
    !> indices in the variable where value will be written could be specify if
-   !> start and count array are given. Dimension structure is needed in that 
-   !> case.    
+   !> start and count array are given. Dimension structure is needed in that
+   !> case.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -4194,11 +4194,11 @@ CONTAINS
    !>
    !> @param[in] cd_name         variable name
    !> @param[in] sd_value        1D array of integer(2) value
-   !> @param[in] id_start        index in the variable from which the 
+   !> @param[in] id_start        index in the variable from which the
    !> data values will be read
-   !> @param[in] id_count        number of indices selected along 
+   !> @param[in] id_count        number of indices selected along
    !> each dimension
-   !> @param[in] id_type         variable type 
+   !> @param[in] id_type         variable type
    !> @param[in] td_dim          array of dimension structure
    !> @param[in] td_att          array of attribute structure
    !> @param[in] sd_fill         fill value
@@ -4214,10 +4214,10 @@ CONTAINS
    !> @param[in] id_rec          record id (for rstdimg file)
    !> @param[in] dd_min          minimum value
    !> @param[in] dd_max          maximum value
-   !> @param[in] ld_contiguous   use contiguous storage or not 
+   !> @param[in] ld_contiguous   use contiguous storage or not
    !> @param[in] ld_shuffle       shuffle filter is turned on or not
    !> @param[in] ld_fletcher32   fletcher32 filter is turned on or not
-   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no 
+   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no
    !> deflation is in use
    !> @param[in] id_chunksz      chunk size
    !> @param[in] cd_interp       interpolation method
@@ -4236,20 +4236,20 @@ CONTAINS
       INTEGER(i2)     , DIMENSION(:)        , INTENT(IN) :: sd_value
       INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_start
       INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_count
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type
       TYPE(TDIM)      ,                       INTENT(IN), OPTIONAL :: td_dim
       TYPE(TATT)      , DIMENSION(:),         INTENT(IN), OPTIONAL :: td_att
       INTEGER(i2)     ,                       INTENT(IN), OPTIONAL :: sd_fill
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_units
-      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis 
+      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_stdname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_longname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_point
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id 
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_scf
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_ofs
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_min
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_max
       LOGICAL         ,                       INTENT(IN), OPTIONAL :: ld_contiguous
@@ -4279,7 +4279,7 @@ CONTAINS
       !----------------------------------------------------------------
 
       ! clean variable
-      CALL var_clean(tf_var)      
+      CALL var_clean(tf_var)
 
       il_type=NF90_SHORT
       IF( PRESENT(id_type) ) il_type=id_type
@@ -4318,9 +4318,9 @@ CONTAINS
          &             cd_filter=cd_filter(:),             &
          &             cd_unt=cd_unt, dd_unf=dd_unf,       &
          &             cd_namout=cd_namout )
- 
+
       DEALLOCATE( dl_value )
- 
+
    END FUNCTION var__init_1D_i2
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION var__init_2D_i2(cd_name, sd_value,                    &
@@ -4339,18 +4339,18 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief This function initialize a variable structure,
    !> with a integer(2) 2D array of value.
-   !> @details 
+   !> @details
    !> optionally could be added:<br/>
    !> - dimension structure.
    !> - attribute structure.
    !>
-   !> array of 2 dimension structure is needed to put value in variable structure. 
-   !> If none is given, we assume array is ordered as ('x','y') and we 
-   !> use array size as lentgh dimension. 
+   !> array of 2 dimension structure is needed to put value in variable structure.
+   !> If none is given, we assume array is ordered as ('x','y') and we
+   !> use array size as lentgh dimension.
    !>
    !> indices in the variable where value will be written could be specify if
-   !> start and count array are given. Dimension structure is needed in that 
-   !> case.    
+   !> start and count array are given. Dimension structure is needed in that
+   !> case.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -4365,11 +4365,11 @@ CONTAINS
    !>
    !> @param[in] cd_name         variable name
    !> @param[in] sd_value        2D array of integer(2) value
-   !> @param[in] id_start        index in the variable from which the 
+   !> @param[in] id_start        index in the variable from which the
    !> data values will be read
-   !> @param[in] id_count        number of indices selected along 
+   !> @param[in] id_count        number of indices selected along
    !> each dimension
-   !> @param[in] id_type         variable type 
+   !> @param[in] id_type         variable type
    !> @param[in] td_dim          array of dimension structure
    !> @param[in] td_att          array of attribute structure
    !> @param[in] sd_fill         fill value
@@ -4385,10 +4385,10 @@ CONTAINS
    !> @param[in] id_rec          record id (for rstdimg file)
    !> @param[in] dd_min          minimum value
    !> @param[in] dd_max          maximum value
-   !> @param[in] ld_contiguous   use contiguous storage or not 
+   !> @param[in] ld_contiguous   use contiguous storage or not
    !> @param[in] ld_shuffle       shuffle filter is turned on or not
    !> @param[in] ld_fletcher32   fletcher32 filter is turned on or not
-   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no 
+   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no
    !> deflation is in use
    !> @param[in] id_chunksz      chunk size
    !> @param[in] cd_interp       interpolation method
@@ -4407,20 +4407,20 @@ CONTAINS
       INTEGER(i2)     , DIMENSION(:,:)     ,  INTENT(IN) :: sd_value
       INTEGER(i4)     , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: id_start
       INTEGER(i4)     , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: id_count
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type
       TYPE(TDIM)      , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: td_dim
       TYPE(TATT)      , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: td_att
       INTEGER(i2)     ,                       INTENT(IN), OPTIONAL :: sd_fill
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_units
-      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis 
+      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_stdname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_longname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_point
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id 
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_scf
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_ofs
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_min
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_max
       LOGICAL         ,                       INTENT(IN), OPTIONAL :: ld_contiguous
@@ -4451,7 +4451,7 @@ CONTAINS
       !----------------------------------------------------------------
 
       ! clean variable
-      CALL var_clean(tf_var)      
+      CALL var_clean(tf_var)
 
       il_type=NF90_SHORT
       IF( PRESENT(id_type) ) il_type=id_type
@@ -4494,9 +4494,9 @@ CONTAINS
          &             cd_filter=cd_filter(:),             &
          &             cd_unt=cd_unt, dd_unf=dd_unf,       &
          &             cd_namout=cd_namout )
-      
+
       DEALLOCATE( dl_value )
-      
+
    END FUNCTION var__init_2D_i2
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION var__init_3D_i2(cd_name, sd_value,                    &
@@ -4515,18 +4515,18 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief This function initialize a variable structure,
    !> with a integer(2) 3D array of value.
-   !> @details 
+   !> @details
    !> optionally could be added:<br/>
    !> - dimension structure.
    !> - attribute structure.
    !>
-   !> array of 3 dimension structure is needed to put value in variable structure. 
-   !> If none is given, we assume array is ordered as ('x','y','z') and we 
-   !> use array size as lentgh dimension. 
+   !> array of 3 dimension structure is needed to put value in variable structure.
+   !> If none is given, we assume array is ordered as ('x','y','z') and we
+   !> use array size as lentgh dimension.
    !>
    !> indices in the variable where value will be written could be specify if
-   !> start and count array are given. Dimension structure is needed in that 
-   !> case.    
+   !> start and count array are given. Dimension structure is needed in that
+   !> case.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -4541,11 +4541,11 @@ CONTAINS
    !>
    !> @param[in] cd_name         variable name
    !> @param[in] sd_value        3D array of integer(2) value
-   !> @param[in] id_start        index in the variable from which the 
+   !> @param[in] id_start        index in the variable from which the
    !> data values will be read
-   !> @param[in] id_count        number of indices selected along 
+   !> @param[in] id_count        number of indices selected along
    !> each dimension
-   !> @param[in] id_type         variable type 
+   !> @param[in] id_type         variable type
    !> @param[in] td_dim          array of dimension structure
    !> @param[in] td_att          array of attribute structure
    !> @param[in] sd_fill         fill value
@@ -4561,10 +4561,10 @@ CONTAINS
    !> @param[in] id_rec          record id (for rstdimg file)
    !> @param[in] dd_min          minimum value
    !> @param[in] dd_max          maximum value
-   !> @param[in] ld_contiguous   use contiguous storage or not 
+   !> @param[in] ld_contiguous   use contiguous storage or not
    !> @param[in] ld_shuffle       shuffle filter is turned on or not
    !> @param[in] ld_fletcher32   fletcher32 filter is turned on or not
-   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no 
+   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no
    !> deflation is in use
    !> @param[in] id_chunksz      chunk size
    !> @param[in] cd_interp       interpolation method
@@ -4583,20 +4583,20 @@ CONTAINS
       INTEGER(i2)     , DIMENSION(:,:,:)   ,  INTENT(IN) :: sd_value
       INTEGER(i4)     , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: id_start
       INTEGER(i4)     , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: id_count
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type
       TYPE(TDIM)      , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: td_dim
       TYPE(TATT)      , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: td_att
       INTEGER(i2)     ,                       INTENT(IN), OPTIONAL :: sd_fill
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_units
-      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis 
+      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_stdname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_longname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_point
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id 
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_scf
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_ofs
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_min
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_max
       LOGICAL         ,                       INTENT(IN), OPTIONAL :: ld_contiguous
@@ -4628,7 +4628,7 @@ CONTAINS
       !----------------------------------------------------------------
 
       ! clean variable
-      CALL var_clean(tf_var)      
+      CALL var_clean(tf_var)
 
       il_type=NF90_SHORT
       IF( PRESENT(id_type) ) il_type=id_type
@@ -4674,9 +4674,9 @@ CONTAINS
          &             cd_filter=cd_filter(:),             &
          &             cd_unt=cd_unt, dd_unf=dd_unf,       &
          &             cd_namout=cd_namout )
-      
+
       DEALLOCATE( dl_value )
-      
+
    END FUNCTION var__init_3D_i2
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION var__init_i2(cd_name, sd_value,        &
@@ -4695,18 +4695,18 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief This function initialize a variable structure,
    !> with a integer(2) 4D array of value.
-   !> @details 
+   !> @details
    !> optionally could be added:<br/>
    !> - dimension structure.
    !> - attribute structure.
    !>
-   !> Dimension structure is needed to put value in variable structure. 
-   !> If none is given, we assume array is ordered as ('x','y','z','t') and we 
-   !> use array size as lentgh dimension. 
+   !> Dimension structure is needed to put value in variable structure.
+   !> If none is given, we assume array is ordered as ('x','y','z','t') and we
+   !> use array size as lentgh dimension.
    !>
    !> indices in the variable where value will be written could be specify if
-   !> start and count array are given. Dimension structure is needed in that 
-   !> case.    
+   !> start and count array are given. Dimension structure is needed in that
+   !> case.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -4721,11 +4721,11 @@ CONTAINS
    !>
    !> @param[in] cd_name         variable name
    !> @param[in] sd_value        4D array of integer(2) value
-   !> @param[in] id_start        index in the variable from which the 
+   !> @param[in] id_start        index in the variable from which the
    !> data values will be read
-   !> @param[in] id_count        number of indices selected along 
+   !> @param[in] id_count        number of indices selected along
    !> each dimension
-   !> @param[in] id_type         variable type 
+   !> @param[in] id_type         variable type
    !> @param[in] td_dim          array of dimension structure
    !> @param[in] td_att          array of attribute structure
    !> @param[in] sd_fill         fill value
@@ -4741,10 +4741,10 @@ CONTAINS
    !> @param[in] id_rec          record id (for rstdimg file)
    !> @param[in] dd_min          minimum value
    !> @param[in] dd_max          maximum value
-   !> @param[in] ld_contiguous   use contiguous storage or not 
+   !> @param[in] ld_contiguous   use contiguous storage or not
    !> @param[in] ld_shuffle       shuffle filter is turned on or not
    !> @param[in] ld_fletcher32   fletcher32 filter is turned on or not
-   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no 
+   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no
    !> deflation is in use
    !> @param[in] id_chunksz      chunk size
    !> @param[in] cd_interp       interpolation method
@@ -4763,20 +4763,20 @@ CONTAINS
       INTEGER(i2)     , DIMENSION(:,:,:,:),   INTENT(IN) :: sd_value
       INTEGER(i4)     , DIMENSION(ip_maxdim), INTENT(IN), OPTIONAL :: id_start
       INTEGER(i4)     , DIMENSION(ip_maxdim), INTENT(IN), OPTIONAL :: id_count
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type
       TYPE(TDIM)      , DIMENSION(:),         INTENT(IN), OPTIONAL :: td_dim
       TYPE(TATT)      , DIMENSION(:),         INTENT(IN), OPTIONAL :: td_att
       INTEGER(i2)     ,                       INTENT(IN), OPTIONAL :: sd_fill
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_units
-      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis 
+      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_stdname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_longname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_point
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id 
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_scf
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_ofs
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_min
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_max
       LOGICAL         ,                       INTENT(IN), OPTIONAL :: ld_contiguous
@@ -4809,7 +4809,7 @@ CONTAINS
       !----------------------------------------------------------------
 
       ! clean variable
-      CALL var_clean(tf_var)      
+      CALL var_clean(tf_var)
 
       il_type=NF90_SHORT
       IF( PRESENT(id_type) ) il_type=id_type
@@ -4858,9 +4858,9 @@ CONTAINS
          &             cd_filter=cd_filter(:),             &
          &             cd_unt=cd_unt, dd_unf=dd_unf,       &
          &             cd_namout=cd_namout )
-      
+
       DEALLOCATE( dl_value )
-      
+
    END FUNCTION var__init_i2
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION var__init_1D_i1(cd_name, bd_value,                    &
@@ -4879,18 +4879,18 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief This function initialize a variable structure,
    !> with a integer(1) 1D array of value.
-   !> @details 
+   !> @details
    !> optionally could be added:<br/>
    !> - dimension structure.
    !> - attribute structure.
    !>
-   !> dimension structure is needed to put value in variable structure. 
-   !> If none is given, we assume array is ordered as ('z') and we 
-   !> use array size as lentgh dimension. 
+   !> dimension structure is needed to put value in variable structure.
+   !> If none is given, we assume array is ordered as ('z') and we
+   !> use array size as lentgh dimension.
    !>
    !> indices in the variable where value will be written could be specify if
-   !> start and count array are given. Dimension structure is needed in that 
-   !> case.    
+   !> start and count array are given. Dimension structure is needed in that
+   !> case.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -4905,11 +4905,11 @@ CONTAINS
    !>
    !> @param[in] cd_name         variable name
    !> @param[in] bd_value        1D array of integer(1) value
-   !> @param[in] id_start        index in the variable from which the 
+   !> @param[in] id_start        index in the variable from which the
    !> data values will be read
-   !> @param[in] id_count        number of indices selected along 
+   !> @param[in] id_count        number of indices selected along
    !> each dimension
-   !> @param[in] id_type         variable type 
+   !> @param[in] id_type         variable type
    !> @param[in] td_dim          array of dimension structure
    !> @param[in] td_att          array of attribute structure
    !> @param[in] bd_fill         fill value
@@ -4925,10 +4925,10 @@ CONTAINS
    !> @param[in] id_rec          record id (for rstdimg file)
    !> @param[in] dd_min          minimum value
    !> @param[in] dd_max          maximum value
-   !> @param[in] ld_contiguous   use contiguous storage or not 
+   !> @param[in] ld_contiguous   use contiguous storage or not
    !> @param[in] ld_shuffle       shuffle filter is turned on or not
    !> @param[in] ld_fletcher32   fletcher32 filter is turned on or not
-   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no 
+   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no
    !> deflation is in use
    !> @param[in] id_chunksz      chunk size
    !> @param[in] cd_interp       interpolation method
@@ -4947,20 +4947,20 @@ CONTAINS
       INTEGER(i1)     , DIMENSION(:)        , INTENT(IN) :: bd_value
       INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_start
       INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_count
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type
       TYPE(TDIM)      ,                       INTENT(IN), OPTIONAL :: td_dim
       TYPE(TATT)      , DIMENSION(:),         INTENT(IN), OPTIONAL :: td_att
       INTEGER(i1)     ,                       INTENT(IN), OPTIONAL :: bd_fill
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_units
-      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis 
+      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_stdname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_longname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_point
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id 
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_scf
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_ofs
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_min
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_max
       LOGICAL         ,                       INTENT(IN), OPTIONAL :: ld_contiguous
@@ -4990,7 +4990,7 @@ CONTAINS
       !----------------------------------------------------------------
 
       ! clean variable
-      CALL var_clean(tf_var)      
+      CALL var_clean(tf_var)
 
       il_type=NF90_BYTE
       IF( PRESENT(id_type) ) il_type=id_type
@@ -5029,9 +5029,9 @@ CONTAINS
          &             cd_filter=cd_filter(:),             &
          &             cd_unt=cd_unt, dd_unf=dd_unf,       &
          &             cd_namout=cd_namout )
- 
+
       DEALLOCATE( dl_value )
- 
+
    END FUNCTION var__init_1D_i1
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION var__init_2D_i1(cd_name, bd_value,                    &
@@ -5050,18 +5050,18 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief This function initialize a variable structure,
    !> with a integer(1) 2D array of value.
-   !> @details 
+   !> @details
    !> optionally could be added:<br/>
    !> - dimension structure.
    !> - attribute structure.
    !>
-   !> array of 2 dimension structure is needed to put value in variable structure. 
-   !> If none is given, we assume array is ordered as ('x','y') and we 
-   !> use array size as lentgh dimension. 
+   !> array of 2 dimension structure is needed to put value in variable structure.
+   !> If none is given, we assume array is ordered as ('x','y') and we
+   !> use array size as lentgh dimension.
    !>
    !> indices in the variable where value will be written could be specify if
-   !> start and count array are given. Dimension structure is needed in that 
-   !> case.    
+   !> start and count array are given. Dimension structure is needed in that
+   !> case.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -5076,11 +5076,11 @@ CONTAINS
    !>
    !> @param[in] cd_name         variable name
    !> @param[in] bd_value        2D array of integer(1) value
-   !> @param[in] id_start        index in the variable from which the 
+   !> @param[in] id_start        index in the variable from which the
    !> data values will be read
-   !> @param[in] id_count        number of indices selected along 
+   !> @param[in] id_count        number of indices selected along
    !> each dimension
-   !> @param[in] id_type         variable type 
+   !> @param[in] id_type         variable type
    !> @param[in] td_dim          array of dimension structure
    !> @param[in] td_att          array of attribute structure
    !> @param[in] bd_fill         fill value
@@ -5096,10 +5096,10 @@ CONTAINS
    !> @param[in] id_rec          record id (for rstdimg file)
    !> @param[in] dd_min          minimum value
    !> @param[in] dd_max          maximum value
-   !> @param[in] ld_contiguous   use contiguous storage or not 
+   !> @param[in] ld_contiguous   use contiguous storage or not
    !> @param[in] ld_shuffle       shuffle filter is turned on or not
    !> @param[in] ld_fletcher32   fletcher32 filter is turned on or not
-   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no 
+   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no
    !> deflation is in use
    !> @param[in] id_chunksz      chunk size
    !> @param[in] cd_interp       interpolation method
@@ -5118,20 +5118,20 @@ CONTAINS
       INTEGER(i1)     , DIMENSION(:,:)     ,  INTENT(IN) :: bd_value
       INTEGER(i4)     , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: id_start
       INTEGER(i4)     , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: id_count
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type
       TYPE(TDIM)      , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: td_dim
       TYPE(TATT)      , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: td_att
       INTEGER(i1)     ,                       INTENT(IN), OPTIONAL :: bd_fill
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_units
-      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis 
+      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_stdname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_longname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_point
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id 
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_scf
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_ofs
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_min
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_max
       LOGICAL         ,                       INTENT(IN), OPTIONAL :: ld_contiguous
@@ -5162,7 +5162,7 @@ CONTAINS
       !----------------------------------------------------------------
 
       ! clean variable
-      CALL var_clean(tf_var)      
+      CALL var_clean(tf_var)
 
       il_type=NF90_BYTE
       IF( PRESENT(id_type) ) il_type=id_type
@@ -5205,9 +5205,9 @@ CONTAINS
          &             cd_filter=cd_filter(:),             &
          &             cd_unt=cd_unt, dd_unf=dd_unf,       &
          &             cd_namout=cd_namout )
-      
+
       DEALLOCATE( dl_value )
-      
+
    END FUNCTION var__init_2D_i1
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION var__init_3D_i1(cd_name, bd_value,                    &
@@ -5226,18 +5226,18 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief This function initialize a variable structure,
    !> with a integer(1) 3D array of value.
-   !> @details 
+   !> @details
    !> optionally could be added:<br/>
    !> - dimension structure.
    !> - attribute structure.
    !>
-   !> array of 3 dimension structure is needed to put value in variable structure. 
-   !> If none is given, we assume array is ordered as ('x','y','z') and we 
-   !> use array size as lentgh dimension. 
+   !> array of 3 dimension structure is needed to put value in variable structure.
+   !> If none is given, we assume array is ordered as ('x','y','z') and we
+   !> use array size as lentgh dimension.
    !>
    !> indices in the variable where value will be written could be specify if
-   !> start and count array are given. Dimension structure is needed in that 
-   !> case.    
+   !> start and count array are given. Dimension structure is needed in that
+   !> case.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -5252,11 +5252,11 @@ CONTAINS
    !>
    !> @param[in] cd_name         variable name
    !> @param[in] bd_value        3D array of integer(1) value
-   !> @param[in] id_start        index in the variable from which the 
+   !> @param[in] id_start        index in the variable from which the
    !> data values will be read
-   !> @param[in] id_count        number of indices selected along 
+   !> @param[in] id_count        number of indices selected along
    !> each dimension
-   !> @param[in] id_type         variable type 
+   !> @param[in] id_type         variable type
    !> @param[in] td_dim          array of dimension structure
    !> @param[in] td_att          array of attribute structure
    !> @param[in] bd_fill         fill value
@@ -5272,10 +5272,10 @@ CONTAINS
    !> @param[in] id_rec          record id (for rstdimg file)
    !> @param[in] dd_min          minimum value
    !> @param[in] dd_max          maximum value
-   !> @param[in] ld_contiguous   use contiguous storage or not 
+   !> @param[in] ld_contiguous   use contiguous storage or not
    !> @param[in] ld_shuffle       shuffle filter is turned on or not
    !> @param[in] ld_fletcher32   fletcher32 filter is turned on or not
-   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no 
+   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no
    !> deflation is in use
    !> @param[in] id_chunksz      chunk size
    !> @param[in] cd_interp       interpolation method
@@ -5294,20 +5294,20 @@ CONTAINS
       INTEGER(i1)     , DIMENSION(:,:,:)   ,  INTENT(IN) :: bd_value
       INTEGER(i4)     , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: id_start
       INTEGER(i4)     , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: id_count
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type
       TYPE(TDIM)      , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: td_dim
       TYPE(TATT)      , DIMENSION(:)       ,  INTENT(IN), OPTIONAL :: td_att
       INTEGER(i1)     ,                       INTENT(IN), OPTIONAL :: bd_fill
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_units
-      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis 
+      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_stdname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_longname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_point
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id 
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_scf
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_ofs
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_min
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_max
       LOGICAL         ,                       INTENT(IN), OPTIONAL :: ld_contiguous
@@ -5339,7 +5339,7 @@ CONTAINS
       !----------------------------------------------------------------
 
       ! clean variable
-      CALL var_clean(tf_var)      
+      CALL var_clean(tf_var)
 
       il_type=NF90_BYTE
       IF( PRESENT(id_type) ) il_type=id_type
@@ -5385,9 +5385,9 @@ CONTAINS
          &             cd_filter=cd_filter(:),             &
          &             cd_unt=cd_unt, dd_unf=dd_unf,       &
          &             cd_namout=cd_namout )
-      
+
       DEALLOCATE( dl_value )
-      
+
    END FUNCTION var__init_3D_i1
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION var__init_i1(cd_name, bd_value,                    &
@@ -5406,18 +5406,18 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief This function initialize a variable structure,
    !> with a integer(1) 4D array of value.
-   !> @details 
+   !> @details
    !> optionally could be added:<br/>
    !> - dimension structure.
    !> - attribute structure.
    !>
-   !> Dimension structure is needed to put value in variable structure. 
-   !> If none is given, we assume array is ordered as ('x','y','z','t') and we 
-   !> use array size as lentgh dimension. 
+   !> Dimension structure is needed to put value in variable structure.
+   !> If none is given, we assume array is ordered as ('x','y','z','t') and we
+   !> use array size as lentgh dimension.
    !>
    !> indices in the variable where value will be written could be specify if
-   !> start and count array are given. Dimension structure is needed in that 
-   !> case. 
+   !> start and count array are given. Dimension structure is needed in that
+   !> case.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -5432,11 +5432,11 @@ CONTAINS
    !>
    !> @param[in] cd_name         variable name
    !> @param[in] bd_value        4D array of integer(1) value
-   !> @param[in] id_start        index in the variable from which the 
+   !> @param[in] id_start        index in the variable from which the
    !> data values will be read
-   !> @param[in] id_count        number of indices selected along 
+   !> @param[in] id_count        number of indices selected along
    !> each dimension
-   !> @param[in] id_type         variable type 
+   !> @param[in] id_type         variable type
    !> @param[in] td_dim          array of dimension structure
    !> @param[in] td_att          array of attribute structure
    !> @param[in] bd_fill         fill value
@@ -5452,10 +5452,10 @@ CONTAINS
    !> @param[in] id_rec          record id (for rstdimg file)
    !> @param[in] dd_min          minimum value
    !> @param[in] dd_max          maximum value
-   !> @param[in] ld_contiguous   use contiguous storage or not 
+   !> @param[in] ld_contiguous   use contiguous storage or not
    !> @param[in] ld_shuffle       shuffle filter is turned on or not
    !> @param[in] ld_fletcher32   fletcher32 filter is turned on or not
-   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no 
+   !> @param[in] id_deflvl       deflate level from 0 to 9, 0 indicates no
    !> deflation is in use
    !> @param[in] id_chunksz      chunk size
    !> @param[in] cd_interp       interpolation method
@@ -5474,20 +5474,20 @@ CONTAINS
       INTEGER(i1)     , DIMENSION(:,:,:,:),   INTENT(IN) :: bd_value
       INTEGER(i4)     , DIMENSION(ip_maxdim), INTENT(IN), OPTIONAL :: id_start
       INTEGER(i4)     , DIMENSION(ip_maxdim), INTENT(IN), OPTIONAL :: id_count
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_type
       TYPE(TDIM)      , DIMENSION(:),         INTENT(IN), OPTIONAL :: td_dim
       TYPE(TATT)      , DIMENSION(:),         INTENT(IN), OPTIONAL :: td_att
       INTEGER(i1)     ,                       INTENT(IN), OPTIONAL :: bd_fill
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_units
-      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis 
+      CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_axis
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_stdname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_longname
       CHARACTER(LEN=*),                       INTENT(IN), OPTIONAL :: cd_point
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id 
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_id
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_ew
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_scf
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_ofs
-      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec 
+      INTEGER(i4)     ,                       INTENT(IN), OPTIONAL :: id_rec
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_min
       REAL(dp)        ,                       INTENT(IN), OPTIONAL :: dd_max
       LOGICAL         ,                       INTENT(IN), OPTIONAL :: ld_contiguous
@@ -5520,7 +5520,7 @@ CONTAINS
       !----------------------------------------------------------------
 
       ! clean variable
-      CALL var_clean(tf_var)      
+      CALL var_clean(tf_var)
 
       il_type=NF90_BYTE
       IF( PRESENT(id_type) ) il_type=id_type
@@ -5569,20 +5569,20 @@ CONTAINS
          &             cd_filter=cd_filter(:),             &
          &             cd_unt=cd_unt, dd_unf=dd_unf,       &
          &             cd_namout=cd_namout )
-      
+
       DEALLOCATE( dl_value )
-      
+
    END FUNCTION var__init_i1
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION var_concat(td_var1, td_var2, id_dim) &
          & RESULT (tf_var)
    !-------------------------------------------------------------------
    !> @brief  This function concatenate variable value following id_dim direction.
-   !> 
+   !>
    !> @details
    !> By default variable are concatenate following time dimension. To
    !> concatenate following another dimension, specify id_dim=x where x is the
-   !> dimension number (jp_I, jp_J,jp_K, jp_L). 
+   !> dimension number (jp_I, jp_J,jp_K, jp_L).
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -5637,7 +5637,7 @@ CONTAINS
          & RESULT (tf_var)
    !-------------------------------------------------------------------
    !> @brief  This function concatenate variable value following i-direction.
-   !> 
+   !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !> @date January, 2019
@@ -5672,7 +5672,7 @@ CONTAINS
 
          CALL logger_error("VAR CONCAT: can not concatenate variable "//&
             &              TRIM(td_var1%c_name)//" on an unused dimension I")
-   
+
       ELSEIF( ANY(td_var1%t_dim(2:4)%i_len /=  td_var2%t_dim(2:4)%i_len) )THEN
 
          cl_tmp='('//":"//","//&
@@ -5684,7 +5684,7 @@ CONTAINS
          cl_tmp='('//":"//","//&
             &   TRIM(fct_str(td_var2%t_dim(2)%i_len))//','//&
             &   TRIM(fct_str(td_var2%t_dim(3)%i_len))//','//&
-            &   TRIM(fct_str(td_var2%t_dim(4)%i_len))//')'         
+            &   TRIM(fct_str(td_var2%t_dim(4)%i_len))//')'
          CALL logger_debug("VAR CONCAT: second variable dimensions "//&
             &   TRIM(cl_tmp) )
 
@@ -5696,7 +5696,7 @@ CONTAINS
          DEALLOCATE(tl_var%d_value)
          ! change dimension length
          tl_var%t_dim(1)%i_len=td_var1%t_dim(1)%i_len+td_var2%t_dim(1)%i_len
-         
+
          ALLOCATE(tl_var%d_value(tl_var%t_dim(1)%i_len, &
             &                    tl_var%t_dim(2)%i_len, &
             &                    tl_var%t_dim(3)%i_len, &
@@ -5741,7 +5741,7 @@ CONTAINS
          & RESULT (tf_var)
    !-------------------------------------------------------------------
    !> @brief  This function concatenate variable value following j-direction.
-   !> 
+   !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !> @date January, 2019
@@ -5775,7 +5775,7 @@ CONTAINS
       &   .NOT. td_var1%t_dim(2)%l_use )THEN
 
          CALL logger_error("VAR CONCAT: can not concatenate variable "//&
-         &  TRIM(td_var1%c_name)//" on an unused dimension J")      
+         &  TRIM(td_var1%c_name)//" on an unused dimension J")
 
       ELSEIF(     td_var1%t_dim(1)%i_len   /=  td_var2%t_dim(1)%i_len  .OR. &
       &   ANY(td_var1%t_dim(3:4)%i_len /=  td_var2%t_dim(3:4)%i_len) )THEN
@@ -5791,7 +5791,7 @@ CONTAINS
             &    TRIM(fct_str(td_var1%t_dim(1)%i_len))//','//&
             &    ":"//','//&
             &    TRIM(fct_str(td_var2%t_dim(3)%i_len))//','//&
-            &    TRIM(fct_str(td_var2%t_dim(4)%i_len))//')'         
+            &    TRIM(fct_str(td_var2%t_dim(4)%i_len))//')'
          CALL logger_debug("VAR CONCAT: second variable dimensions "//&
             &    TRIM(cl_tmp) )
 
@@ -5803,7 +5803,7 @@ CONTAINS
          DEALLOCATE(tl_var%d_value)
          ! change dimension length
          tl_var%t_dim(2)%i_len=td_var1%t_dim(2)%i_len+td_var2%t_dim(2)%i_len
-         
+
          ALLOCATE(tl_var%d_value(tl_var%t_dim(1)%i_len, &
             &                    tl_var%t_dim(2)%i_len, &
             &                    tl_var%t_dim(3)%i_len, &
@@ -5831,7 +5831,7 @@ CONTAINS
                   ENDDO
                ENDDO
             ENDDO
-         ENDDO    
+         ENDDO
          !         tl_var%d_value(:,td_var1%t_dim(2)%i_len+1:tl_var%t_dim(2)%i_len,:,:)=&
          !&  td_var2%d_value(:,:,:,:)
 
@@ -5848,7 +5848,7 @@ CONTAINS
          & RESULT (tf_var)
    !-------------------------------------------------------------------
    !> @brief  This function concatenate variable value following k-direction.
-   !> 
+   !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !> @date January, 2019
@@ -5882,7 +5882,7 @@ CONTAINS
       &   .NOT. td_var1%t_dim(3)%l_use )THEN
 
          CALL logger_error("VAR CONCAT: can not concatenate variable "//&
-         &  TRIM(td_var1%c_name)//" on an unused dimension K")      
+         &  TRIM(td_var1%c_name)//" on an unused dimension K")
 
       ELSEIF(     td_var1%t_dim(4)%i_len   /=  td_var2%t_dim(4)%i_len  .OR. &
       &   ANY(td_var1%t_dim(1:2)%i_len /=  td_var2%t_dim(1:2)%i_len) )THEN
@@ -5898,7 +5898,7 @@ CONTAINS
             &    TRIM(fct_str(td_var1%t_dim(1)%i_len))//','//&
             &    TRIM(fct_str(td_var2%t_dim(2)%i_len))//','//&
             &    ":"//','//&
-            &    TRIM(fct_str(td_var2%t_dim(4)%i_len))//')'         
+            &    TRIM(fct_str(td_var2%t_dim(4)%i_len))//')'
          CALL logger_debug("VAR CONCAT: second variable dimensions "//&
             &    TRIM(cl_tmp) )
 
@@ -5910,7 +5910,7 @@ CONTAINS
          DEALLOCATE(tl_var%d_value)
          ! change dimension length
          tl_var%t_dim(3)%i_len=td_var1%t_dim(3)%i_len+td_var2%t_dim(3)%i_len
-         
+
          ALLOCATE(tl_var%d_value(tl_var%t_dim(1)%i_len, &
             &                    tl_var%t_dim(2)%i_len, &
             &                    tl_var%t_dim(3)%i_len, &
@@ -5955,7 +5955,7 @@ CONTAINS
          & RESULT (tf_var)
    !-------------------------------------------------------------------
    !> @brief  This function concatenate variable value following l-direction.
-   !> 
+   !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !> @date January, 2019
@@ -5989,7 +5989,7 @@ CONTAINS
       &   .NOT. td_var1%t_dim(4)%l_use )THEN
 
          CALL logger_error("VAR CONCAT: can not concatenate variable "//&
-         &  TRIM(td_var1%c_name)//" on an unused dimension L")      
+         &  TRIM(td_var1%c_name)//" on an unused dimension L")
 
       ELSEIF( ANY(td_var1%t_dim(1:3)%i_len /=  td_var2%t_dim(1:3)%i_len) )THEN
 
@@ -6004,7 +6004,7 @@ CONTAINS
             &    TRIM(fct_str(td_var1%t_dim(1)%i_len))//','//&
             &    TRIM(fct_str(td_var2%t_dim(2)%i_len))//','//&
             &    TRIM(fct_str(td_var2%t_dim(3)%i_len))//','//&
-            &    ":"//','//')'         
+            &    ":"//','//')'
          CALL logger_debug("VAR CONCAT: second variable dimensions "//&
             &    TRIM(cl_tmp) )
 
@@ -6016,7 +6016,7 @@ CONTAINS
          DEALLOCATE(tl_var%d_value)
          ! change dimension length
          tl_var%t_dim(4)%i_len=td_var1%t_dim(4)%i_len+td_var2%t_dim(4)%i_len
-         
+
          ALLOCATE(tl_var%d_value(tl_var%t_dim(1)%i_len, &
             &                    tl_var%t_dim(2)%i_len, &
             &                    tl_var%t_dim(3)%i_len, &
@@ -6059,12 +6059,12 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE var__add_att_arr(td_var, td_att)
    !-------------------------------------------------------------------
-   !> @brief This subroutine add an array of attribute structure 
+   !> @brief This subroutine add an array of attribute structure
    !> in a variable structure.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
-   !> @date June, 2015 
+   !> @date June, 2015
    !> - add all element of the array in the same time
    !> @date January, 2019
    !> - deallocate attribute strucure whatever happens
@@ -6075,7 +6075,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TVAR),               INTENT(INOUT) :: td_var
       TYPE(TATT), DIMENSION(:), INTENT(IN)    :: td_att
 
@@ -6173,7 +6173,7 @@ CONTAINS
                CASE("_FillValue")
                   td_var%d_fill = td_var%t_att(td_var%i_natt+ji)%d_value(1)
                CASE("ew_overlap")
-                  td_var%i_ew = INT(td_var%t_att(td_var%i_natt+ji)%d_value(1),i4) 
+                  td_var%i_ew = INT(td_var%t_att(td_var%i_natt+ji)%d_value(1),i4)
                CASE("standard_name")
                   td_var%c_stdname = TRIM(td_var%t_att(td_var%i_natt+ji)%c_value)
                CASE("long_name")
@@ -6195,12 +6195,12 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE var__add_att_unit(td_var, td_att)
    !-------------------------------------------------------------------
-   !> @brief This subroutine add an attribute structure 
+   !> @brief This subroutine add an attribute structure
    !> in a variable structure.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
-   !> @date June, 2015 
+   !> @date June, 2015
    !> - use var__add_att_arr subroutine
    !> @date January, 2019
    !> - clean attribute strucure
@@ -6211,7 +6211,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TVAR), INTENT(INOUT) :: td_var
       TYPE(TATT), INTENT(IN)    :: td_att
 
@@ -6224,7 +6224,7 @@ CONTAINS
       ! copy structure in an array
       tl_att(1)=att_copy(td_att)
 
-      ! 
+      !
       CALL var_add_att( td_var, tl_att(:) )
 
       ! clean
@@ -6234,13 +6234,13 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE var__del_att_name(td_var, cd_name)
    !-------------------------------------------------------------------
-   !> @brief This subroutine delete an attribute 
+   !> @brief This subroutine delete an attribute
    !> from variable structure.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
-   !> @date February, 2015 
-   !> - define local attribute structure to avoid mistake 
+   !> @date February, 2015
+   !> - define local attribute structure to avoid mistake
    !> with pointer
    !> @date January, 2019
    !> - clean attribute strucure
@@ -6251,7 +6251,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TVAR)      , INTENT(INOUT) :: td_var
       CHARACTER(LEN=*), INTENT(IN   ) :: cd_name
 
@@ -6275,7 +6275,7 @@ CONTAINS
          &  ", in variable "//TRIM(td_var%c_name) )
 
       ELSE
-         
+
          tl_att=att_copy(td_var%t_att(il_ind))
          CALL var_del_att(td_var, tl_att)
          ! clean
@@ -6286,13 +6286,13 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE var__del_att_str(td_var, td_att)
    !-------------------------------------------------------------------
-   !> @brief This subroutine delete an attribute 
+   !> @brief This subroutine delete an attribute
    !> from variable structure.
    !>
    !> @author J.Paul
    !> @date November, 2013- Initial Version
-   !> @date February, 2015 
-   !> - delete highlight attribute too, when attribute 
+   !> @date February, 2015
+   !> - delete highlight attribute too, when attribute
    !> is deleted
    !>
    !> @param[inout] td_var variable structure
@@ -6301,7 +6301,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TVAR), INTENT(INOUT) :: td_var
       TYPE(TATT), INTENT(IN)    :: td_att
 
@@ -6326,7 +6326,7 @@ CONTAINS
          &  ", in variable "//TRIM(td_var%c_name) )
 
       ELSE
-         
+
          CALL logger_trace( &
          &  " VAR DEL ATT: del attribute "//TRIM(td_att%c_name)//&
          &  ", in var "//TRIM(td_var%c_name) )
@@ -6375,7 +6375,7 @@ CONTAINS
 
                ! clean
                CALL att_clean(tl_att(:))
-            ENDIF 
+            ENDIF
             DEALLOCATE(tl_att)
          ENDIF
 
@@ -6389,7 +6389,7 @@ CONTAINS
             CASE("_FillValue")
                td_var%d_fill = 0._dp
             CASE("ew_overlap")
-               td_var%i_ew = -1 
+               td_var%i_ew = -1
             CASE("standard_name")
                td_var%c_stdname = ''
             CASE("long_name")
@@ -6407,7 +6407,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE var_move_att(td_var, td_att)
    !-------------------------------------------------------------------
-   !> @brief This subroutine move an attribute structure 
+   !> @brief This subroutine move an attribute structure
    !> from variable structure.
    !>
    !> @author J.Paul
@@ -6419,7 +6419,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TVAR), INTENT(INOUT) :: td_var
       TYPE(TATT), INTENT(IN)    :: td_att
 
@@ -6443,7 +6443,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE var__add_dim_arr(td_var, td_dim)
    !-------------------------------------------------------------------
-   !> @brief This subroutine add an array of dimension structure in a variable 
+   !> @brief This subroutine add an array of dimension structure in a variable
    !> structure.
    !> - number of dimension in variable can't be greater than 4
    !> - dimension can't be already uses in variable structure
@@ -6457,7 +6457,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TVAR),               INTENT(INOUT) :: td_var
       TYPE(TDIM), DIMENSION(:), INTENT(IN)    :: td_dim
 
@@ -6482,13 +6482,13 @@ CONTAINS
 
    END SUBROUTINE var__add_dim_arr
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE var__add_dim_unit(td_var, td_dim) 
+   SUBROUTINE var__add_dim_unit(td_var, td_dim)
    !-------------------------------------------------------------------
-   !> @brief This subroutine add one dimension in a variable 
+   !> @brief This subroutine add one dimension in a variable
    !> structure.
    !> @details
    !> - number of dimension in variable can't be greater than 4
-   !> - dimension can't be already uses in variable structure 
+   !> - dimension can't be already uses in variable structure
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -6499,7 +6499,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TVAR)      , INTENT(INOUT) :: td_var
       TYPE(TDIM)      , INTENT(IN   ) :: td_dim
 
@@ -6523,7 +6523,7 @@ CONTAINS
             &  ", already used in variable "//TRIM(td_var%c_name) )
          ELSE
 
-            ! back to disorder dimension array 
+            ! back to disorder dimension array
             CALL dim_disorder(td_var%t_dim(:))
 
             ! add new dimension
@@ -6546,7 +6546,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE var_del_dim(td_var, td_dim)
    !-------------------------------------------------------------------
-   !> @brief This subroutine delete a dimension structure in a variable 
+   !> @brief This subroutine delete a dimension structure in a variable
    !> structure.
    !>
    !> @warning delete variable value too.
@@ -6557,10 +6557,10 @@ CONTAINS
    !> @param[inout] td_var variable structure
    !> @param[in] td_dim    dimension structure
    !-------------------------------------------------------------------
-      
+
       IMPLICIT NONE
-      
-      ! Argument      
+
+      ! Argument
       TYPE(TVAR)      , INTENT(INOUT) :: td_var
       TYPE(TDIM)      , INTENT(IN   ) :: td_dim
 
@@ -6577,7 +6577,7 @@ CONTAINS
          &  " VAR DEL DIM: delete dimension "//TRIM(td_dim%c_name)//&
          &  ", short name "//TRIM(td_dim%c_sname)//&
          &  ", in variable "//TRIM(td_var%c_name) )
-         
+
          ! check if dimension already in variable structure
          il_ind=SCAN(TRIM(cp_dimorder),TRIM(td_dim%c_sname))
 
@@ -6610,12 +6610,12 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE var_move_dim(td_var, td_dim)
    !-------------------------------------------------------------------
-   !> @brief This subroutine move a dimension structure 
+   !> @brief This subroutine move a dimension structure
    !> in variable structure.
    !>
-   !> @warning 
+   !> @warning
    !> - dimension order could be changed
-   !> - delete variable value 
+   !> - delete variable value
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -6626,7 +6626,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TVAR)      , INTENT(INOUT) :: td_var
       TYPE(TDIM)      , INTENT(IN   ) :: td_dim
 
@@ -6661,7 +6661,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE var__print_arr(td_var)
    !-------------------------------------------------------------------
-   !> @brief This subroutine print informations of an array of variables. 
+   !> @brief This subroutine print informations of an array of variables.
    !>
    !> @author J.Paul
    !> @date June, 2014 - Initial Version
@@ -6671,7 +6671,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TVAR), DIMENSION(:), INTENT(IN) :: td_var
 
       ! loop indices
@@ -6700,7 +6700,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TVAR), INTENT(IN) :: td_var
       LOGICAL,    INTENT(IN), OPTIONAL :: ld_more
 
@@ -6736,7 +6736,7 @@ CONTAINS
          CASE DEFAULT
             !cl_type='unknown'
             cl_type=''
-      END SELECT      
+      END SELECT
 
       WRITE(*,'((/a,a),4(/3x,a,a),4(/3x,a,i3),&
          &     (/3x,a,a),3(/3x,a,ES12.4))')&
@@ -6764,9 +6764,9 @@ CONTAINS
 
          WRITE(*,'((3x,a),2(/3x,a,ES12.4))')&
             &     "VALUE ASSOCIATED" ,       &
-            &     " min value     : ",dl_min,&        
+            &     " min value     : ",dl_min,&
             &     " max value     : ",dl_max
-      ENDIF      
+      ENDIF
 
       IF( ll_more )THEN
          ! print dimension
@@ -6792,12 +6792,12 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE var__add_value(td_var, dd_value, id_start, id_count)
    !-------------------------------------------------------------------
-   !> @brief This subroutine add a 4D array of real(8) value in a variable 
+   !> @brief This subroutine add a 4D array of real(8) value in a variable
    !> structure.
    !>
-   !> @details 
+   !> @details
    !> indices in the variable where value will be written could be specify if
-   !> start and count array are given. 
+   !> start and count array are given.
    !> @warning Dimension of the array must be ordered as ('x','y','z','t')
    !>
    !> @author J.Paul
@@ -6807,14 +6807,14 @@ CONTAINS
    !>
    !> @param[inout] td_var variable structure
    !> @param[in] dd_value  array of variable value
-   !> @param[in] id_start  index in the variable from which the data values 
+   !> @param[in] id_start  index in the variable from which the data values
    !> will be read
    !> @param[in] id_count  number of indices selected along each dimension
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TVAR),                        INTENT(INOUT) :: td_var
       REAL(dp),    DIMENSION(:,:,:,:),   INTENT(IN)    :: dd_value
       INTEGER(i4), DIMENSION(ip_maxdim), INTENT(IN),   OPTIONAL  :: id_start
@@ -6913,7 +6913,7 @@ CONTAINS
                   &  " in variable structure")
 
                ENDIF
-               
+
                ! initialise array
                CALL logger_trace( &
                   & " VAR ADD VALUE: value in variable "//TRIM(td_var%c_name)//&
@@ -6952,10 +6952,10 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE var__add_value_dp(td_var, dd_value, id_type, id_start, id_count)
    !-------------------------------------------------------------------
-   !> @brief This subroutine add a 4D array of real(8) value in a variable 
+   !> @brief This subroutine add a 4D array of real(8) value in a variable
    !> structure. Dimension of the array must be ordered as ('x','y','z','t')
    !>
-   !> @details 
+   !> @details
    !> Optionally, you could specify the type of the variable to be used (default real(8)),
    !> and indices of the variable where value will be written with start and count array.
    !>
@@ -6964,15 +6964,15 @@ CONTAINS
    !>
    !> @param[inout] td_var variable structure
    !> @param[in] dd_value  array of variable value
-   !> @param[in] id_type   type of the variable to be used (default real(8)) 
-   !> @param[in] id_start  start indices of the variable where data values 
+   !> @param[in] id_type   type of the variable to be used (default real(8))
+   !> @param[in] id_start  start indices of the variable where data values
    !> will be written
    !> @param[in] id_count  number of indices selected along each dimension
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TVAR),                        INTENT(INOUT) :: td_var
       REAL(dp),    DIMENSION(:,:,:,:),   INTENT(IN)    :: dd_value
       INTEGER(i4),                       INTENT(IN),   OPTIONAL  :: id_type
@@ -7000,7 +7000,7 @@ CONTAINS
             cl_type='BYTE'
          END SELECT
          CALL logger_trace("VAR ADD VALUE: "//TRIM(td_var%c_name)//&
-         &                " value will be saved as "//TRIM(cl_type)) 
+         &                " value will be saved as "//TRIM(cl_type))
       ENDIF
 
       CALL var__add_value(td_var, dd_value, id_start, id_count)
@@ -7009,10 +7009,10 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE var__add_value_rp(td_var, rd_value, id_type, id_start, id_count)
    !-------------------------------------------------------------------
-   !> @brief This subroutine add a 4D array of real(4) value in a variable 
+   !> @brief This subroutine add a 4D array of real(4) value in a variable
    !> structure. Dimension of the array must be ordered as ('x','y','z','t')
    !>
-   !> @details 
+   !> @details
    !> Optionally, you could specify the type of the variable to be used (default real(4)),
    !> and indices of the variable where value will be written with start and count array.
    !>
@@ -7023,15 +7023,15 @@ CONTAINS
    !>
    !> @param[inout] td_var variable structure
    !> @param[in] rd_value  array of variable value
-   !> @param[in] id_type   type of the variable to be used (default real(4)) 
-   !> @param[in] id_start  start indices of the variable where data values 
+   !> @param[in] id_type   type of the variable to be used (default real(4))
+   !> @param[in] id_start  start indices of the variable where data values
    !> will be written
    !> @param[in] id_count  number of indices selected along each dimension
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TVAR),                        INTENT(INOUT) :: td_var
       REAL(sp),    DIMENSION(:,:,:,:),   INTENT(IN)    :: rd_value
       INTEGER(i4),                       INTENT(IN),   OPTIONAL  :: id_type
@@ -7070,8 +7070,8 @@ CONTAINS
             cl_type='BYTE'
          END SELECT
          CALL logger_trace("VAR ADD VALUE: "//TRIM(td_var%c_name)//&
-         &                " value will be saved as "//TRIM(cl_type)) 
-      ENDIF      
+         &                " value will be saved as "//TRIM(cl_type))
+      ENDIF
 
       il_shape=SHAPE(rd_value)
       ALLOCATE( dl_value(il_shape(1), il_shape(2), il_shape(3), il_shape(4)),&
@@ -7103,10 +7103,10 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE var__add_value_i1(td_var, bd_value, id_type, id_start, id_count)
    !-------------------------------------------------------------------
-   !> @brief This subroutine add a 4D array of integer(1) value in a variable 
+   !> @brief This subroutine add a 4D array of integer(1) value in a variable
    !> structure. Dimension of the array must be ordered as ('x','y','z','t')
    !>
-   !> @details 
+   !> @details
    !> Optionally, you could specify the type of the variable to be used (default integer(1)),
    !> and indices of the variable where value will be written with start and count array.
    !>
@@ -7119,15 +7119,15 @@ CONTAINS
    !>
    !> @param[inout] td_var variabele structure
    !> @param[in] bd_value  array of variable value
-   !> @param[in] id_type   type of the variable to be used (default integer(1)) 
-   !> @param[in] id_start  start indices of the variable where data values 
+   !> @param[in] id_type   type of the variable to be used (default integer(1))
+   !> @param[in] id_start  start indices of the variable where data values
    !> will be read
    !> @param[in] id_count  number of indices selected along each dimension
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TVAR),                        INTENT(INOUT) :: td_var
       INTEGER(i1), DIMENSION(:,:,:,:),   INTENT(IN)    :: bd_value
       INTEGER(i4),                       INTENT(IN),   OPTIONAL  :: id_type
@@ -7166,7 +7166,7 @@ CONTAINS
             cl_type='BYTE'
          END SELECT
          CALL logger_trace("VAR ADD VALUE: "//TRIM(td_var%c_name)//&
-         &                " value will be saved as "//TRIM(cl_type)) 
+         &                " value will be saved as "//TRIM(cl_type))
       ENDIF
 
       il_shape=SHAPE(bd_value)
@@ -7185,7 +7185,7 @@ CONTAINS
          DO jk=1,il_shape(3)
             DO jj=1,il_shape(2)
                DO ji=1,il_shape(1)
-                  dl_value(ji,jj,jk,jl)=REAL(bd_value(ji,jj,jk,jl),dp)      
+                  dl_value(ji,jj,jk,jl)=REAL(bd_value(ji,jj,jk,jl),dp)
                ENDDO
             ENDDO
          ENDDO
@@ -7199,10 +7199,10 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE var__add_value_i2(td_var, sd_value, id_type, id_start, id_count)
    !-------------------------------------------------------------------
-   !> @brief This subroutine add a 4D array of integer(2) value in a variable 
+   !> @brief This subroutine add a 4D array of integer(2) value in a variable
    !> structure. Dimension of the array must be ordered as ('x','y','z','t')
    !>
-   !> @details 
+   !> @details
    !> Optionally, you could specify the type of the variable to be used (default integer(2)),
    !> and indices of the variable where value will be written with start and count array.
    !>
@@ -7215,15 +7215,15 @@ CONTAINS
    !>
    !> @param[inout] td_var variabele structure
    !> @param[in] sd_value  array of variable value
-   !> @param[in] id_type   type of the variable to be used (default integer(2)) 
-   !> @param[in] id_start  start indices of the variable where data values 
+   !> @param[in] id_type   type of the variable to be used (default integer(2))
+   !> @param[in] id_start  start indices of the variable where data values
    !> will be read
    !> @param[in] id_count  number of indices selected along each dimension
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TVAR),                        INTENT(INOUT) :: td_var
       INTEGER(i2), DIMENSION(:,:,:,:),   INTENT(IN)    :: sd_value
       INTEGER(i4),                       INTENT(IN),   OPTIONAL  :: id_type
@@ -7262,7 +7262,7 @@ CONTAINS
             cl_type='BYTE'
          END SELECT
          CALL logger_trace("VAR ADD VALUE: "//TRIM(td_var%c_name)//&
-         &                " value will be saved as "//TRIM(cl_type)) 
+         &                " value will be saved as "//TRIM(cl_type))
       ENDIF
 
       il_shape=SHAPE(sd_value)
@@ -7281,7 +7281,7 @@ CONTAINS
          DO jk=1,il_shape(3)
             DO jj=1,il_shape(2)
                DO ji=1,il_shape(1)
-                  dl_value(ji,jj,jk,jl)=REAL(sd_value(ji,jj,jk,jl),dp)      
+                  dl_value(ji,jj,jk,jl)=REAL(sd_value(ji,jj,jk,jl),dp)
                ENDDO
             ENDDO
          ENDDO
@@ -7295,10 +7295,10 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE var__add_value_i4(td_var, id_value, id_type, id_start, id_count)
    !-------------------------------------------------------------------
-   !> @brief This subroutine add a 4D array of integer(4) value in a variable 
+   !> @brief This subroutine add a 4D array of integer(4) value in a variable
    !> structure. Dimension of the array must be ordered as ('x','y','z','t')
    !>
-   !> @details 
+   !> @details
    !> Optionally, you could specify the type of the variable to be used (default integer(4)),
    !> and indices of the variable where value will be written with start and count array.
    !>
@@ -7311,15 +7311,15 @@ CONTAINS
    !>
    !> @param[inout] td_var variabele structure
    !> @param[in] id_value  array of variable value
-   !> @param[in] id_type   type of the variable to be used (default integer(4)) 
-   !> @param[in] id_start  start indices of the variable where data values 
+   !> @param[in] id_type   type of the variable to be used (default integer(4))
+   !> @param[in] id_start  start indices of the variable where data values
    !> will be read
    !> @param[in] id_count  number of indices selected along each dimension
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TVAR),                        INTENT(INOUT) :: td_var
       INTEGER(i4), DIMENSION(:,:,:,:),   INTENT(IN)    :: id_value
       INTEGER(i4),                       INTENT(IN),   OPTIONAL  :: id_type
@@ -7358,7 +7358,7 @@ CONTAINS
             cl_type='BYTE'
          END SELECT
          CALL logger_trace("VAR ADD VALUE: "//TRIM(td_var%c_name)//&
-         &                " value will be saved as "//TRIM(cl_type)) 
+         &                " value will be saved as "//TRIM(cl_type))
       ENDIF
 
       il_shape=SHAPE(id_value)
@@ -7377,7 +7377,7 @@ CONTAINS
          DO jk=1,il_shape(3)
             DO jj=1,il_shape(2)
                DO ji=1,il_shape(1)
-                  dl_value(ji,jj,jk,jl)=REAL(id_value(ji,jj,jk,jl),dp)      
+                  dl_value(ji,jj,jk,jl)=REAL(id_value(ji,jj,jk,jl),dp)
                ENDDO
             ENDDO
          ENDDO
@@ -7391,10 +7391,10 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE var__add_value_i8(td_var, kd_value, id_type, id_start, id_count)
    !-------------------------------------------------------------------
-   !> @brief This subroutine add a 4D array of integer(8) value in a variable 
+   !> @brief This subroutine add a 4D array of integer(8) value in a variable
    !> structure. Dimension of the array must be ordered as ('x','y','z','t')
    !>
-   !> @details 
+   !> @details
    !> Optionally, you could specify the type of the variable to be used (default integer(4)),
    !> and indices of the variable where value will be written with start and count array.
    !>
@@ -7405,15 +7405,15 @@ CONTAINS
    !>
    !> @param[inout] td_var variable structure
    !> @param[in] kd_value  array of variable value
-   !> @param[in] id_type   type of the variable to be used (default integer(8)) 
-   !> @param[in] id_start  start indices of the variable where data values 
+   !> @param[in] id_type   type of the variable to be used (default integer(8))
+   !> @param[in] id_start  start indices of the variable where data values
    !> will be read
    !> @param[in] id_count  number of indices selected along each dimension
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TVAR),                        INTENT(INOUT) :: td_var
       INTEGER(i8), DIMENSION(:,:,:,:),   INTENT(IN)    :: kd_value
       INTEGER(i4),                       INTENT(IN),   OPTIONAL  :: id_type
@@ -7452,7 +7452,7 @@ CONTAINS
             cl_type='BYTE'
          END SELECT
          CALL logger_trace("VAR ADD VALUE: "//TRIM(td_var%c_name)//&
-         &                " value will be saved as "//TRIM(cl_type)) 
+         &                " value will be saved as "//TRIM(cl_type))
       ENDIF
 
       il_shape=SHAPE(kd_value)
@@ -7485,7 +7485,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE var_del_value(td_var)
    !-------------------------------------------------------------------
-   !> @brief This subroutine remove variable value in a variable 
+   !> @brief This subroutine remove variable value in a variable
    !> structure.
    !>
    !> @author J.Paul
@@ -7498,7 +7498,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TVAR), INTENT(INOUT) :: td_var
 
       !----------------------------------------------------------------
@@ -7516,7 +7516,7 @@ CONTAINS
          & RESULT (if_idx)
    !-------------------------------------------------------------------
    !> @brief This function return the variable index, in a array of variable
-   !> structure,  given variable name or standard name. 
+   !> structure,  given variable name or standard name.
    !>
    !> @author J.Paul
    !> @date September, 2014 - Initial Version
@@ -7529,7 +7529,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TVAR)      , DIMENSION(:), INTENT(IN) :: td_var
       CHARACTER(LEN=*),               INTENT(IN) :: cd_name
       CHARACTER(LEN=*),               INTENT(IN), OPTIONAL :: cd_stdname
@@ -7552,22 +7552,22 @@ CONTAINS
 
          ! look for variable name
          IF( fct_lower(td_var(ji)%c_name) == fct_lower(cd_name) )THEN
-         
+
             if_idx=ji
             EXIT
 
          ! look for variable standard name
          ELSE IF( fct_lower(td_var(ji)%c_stdname) == fct_lower(cd_name) .AND.&
             &     TRIM(fct_lower(td_var(ji)%c_stdname)) /= '' )THEN
-            
+
             if_idx=ji
             EXIT
 
-         ELSE IF( PRESENT(cd_stdname) )THEN 
+         ELSE IF( PRESENT(cd_stdname) )THEN
 
             IF( fct_lower(td_var(ji)%c_stdname) == fct_lower(cd_stdname) .AND.&
                &TRIM(fct_lower(td_var(ji)%c_stdname)) /= '' )THEN
-            
+
                if_idx=ji
                EXIT
             ENDIF
@@ -7577,7 +7577,7 @@ CONTAINS
          ! look for variable longname
          IF( fct_lower(td_var(ji)%c_longname) == fct_lower(cd_name) .AND.&
             &TRIM(fct_lower(td_var(ji)%c_longname)) /= '' )THEN
-            
+
             if_idx=ji
             EXIT
 
@@ -7585,7 +7585,7 @@ CONTAINS
 
             IF( fct_lower(td_var(ji)%c_longname) == fct_lower(cd_stdname) .AND.&
                &TRIM(fct_lower(td_var(ji)%c_longname)) /= '' )THEN
-            
+
                if_idx=ji
                EXIT
             ENDIF
@@ -7599,8 +7599,8 @@ CONTAINS
    FUNCTION var_get_id(td_var, cd_name, cd_stdname) &
          & RESULT (if_id)
    !-------------------------------------------------------------------
-   !> @brief This function return the variable id, 
-   !> given variable name or standard name. 
+   !> @brief This function return the variable id,
+   !> given variable name or standard name.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -7615,7 +7615,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TVAR)      , DIMENSION(:), INTENT(IN) :: td_var
       CHARACTER(LEN=*),               INTENT(IN) :: cd_name
       CHARACTER(LEN=*),               INTENT(IN), OPTIONAL :: cd_stdname
@@ -7634,17 +7634,17 @@ CONTAINS
 
       ! check if variable is in array of variable structure
       DO ji=1,il_size
-      
+
          ! look for variable name
          IF( fct_lower(td_var(ji)%c_name) == fct_lower(cd_name) )THEN
-         
+
             if_id=td_var(ji)%i_id
             EXIT
 
          ! look for variable standard name
          ELSE IF( fct_lower(td_var(ji)%c_stdname) == fct_lower(cd_name) .AND.&
             &     TRIM(fct_lower(td_var(ji)%c_stdname)) /= '' )THEN
-            
+
             if_id=td_var(ji)%i_id
             EXIT
 
@@ -7652,7 +7652,7 @@ CONTAINS
 
             IF( fct_lower(td_var(ji)%c_stdname) == fct_lower(cd_stdname) .AND.&
                &TRIM(fct_lower(td_var(ji)%c_stdname)) /= '' )THEN
-            
+
                if_id=td_var(ji)%i_id
                EXIT
             ENDIF
@@ -7662,15 +7662,15 @@ CONTAINS
          ! look for variable long name
          IF( fct_lower(td_var(ji)%c_longname) == fct_lower(cd_name) .AND.&
             &TRIM(fct_lower(td_var(ji)%c_longname)) /= '' )THEN
-            
+
             if_id=td_var(ji)%i_id
             EXIT
 
-         ELSE IF( PRESENT(cd_stdname) )THEN 
+         ELSE IF( PRESENT(cd_stdname) )THEN
 
             IF( fct_lower(td_var(ji)%c_longname) == fct_lower(cd_stdname) .AND.&
                &TRIM(fct_lower(td_var(ji)%c_longname)) /= '' )THEN
-            
+
                if_id=td_var(ji)%i_id
                EXIT
             ENDIF
@@ -7696,7 +7696,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TVAR), INTENT(IN) :: td_var
 
       ! function
@@ -7726,12 +7726,12 @@ CONTAINS
    SUBROUTINE var_chg_FillValue(td_var, dd_fill)
    !-------------------------------------------------------------------
    !> @brief
-   !> This subroutine change FillValue of the variable to 
-   !> standard NETCDF FillValue. 
+   !> This subroutine change FillValue of the variable to
+   !> standard NETCDF FillValue.
    !>
    !> @details
    !> optionally, you could specify a dummy _FillValue to be used
-   !> 
+   !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !> @date January, 2019
@@ -7743,7 +7743,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TVAR), INTENT(INOUT) :: td_var
       REAL(dp)  , INTENT(IN)   , OPTIONAL :: dd_fill
 
@@ -7822,12 +7822,12 @@ CONTAINS
    SUBROUTINE var_def_extra( cd_file )
    !-------------------------------------------------------------------
    !> @brief
-   !> This subroutine read variable configuration file. And save 
+   !> This subroutine read variable configuration file. And save
    !> global array of variable structure with extra information: tg_varextra.
-   !> 
+   !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
-   !> @date June, 2015 
+   !> @date June, 2015
    !> - new namelist format to get extra information (interpolation,...)
    !>
    !> @param[in] cd_file   configuration file of variable
@@ -7860,7 +7860,7 @@ CONTAINS
       ! read config variable file
       INQUIRE(FILE=TRIM(cd_file), EXIST=ll_exist)
       IF( ll_exist )THEN
-         
+
          ! get number of variable to be read
 
          il_fileid=fct_getunit()
@@ -7886,7 +7886,7 @@ CONTAINS
             IF( SCAN( TRIM(fct_concat(cp_com(:))) ,cl_line(1:1)) == 0 )THEN
                il_nvar=il_nvar+1
             ENDIF
-            
+
             READ( il_fileid, FMT='(a)', IOSTAT=il_status ) cl_line
             cl_line=TRIM(ADJUSTL(cl_line))
          ENDDO
@@ -7939,7 +7939,7 @@ CONTAINS
                ELSE
                   ji=ji-1
                ENDIF
-               
+
                READ( il_fileid, FMT='(a)', IOSTAT=il_status ) cl_line
                cl_line=TRIM(ADJUSTL(cl_line))
                ji=ji+1
@@ -7956,24 +7956,24 @@ CONTAINS
 
          CALL logger_error("VAR DEF EXTRA: can't find file "//TRIM(cd_file))
 
-      ENDIF      
+      ENDIF
 
    END SUBROUTINE var_def_extra
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE var_chg_extra( cd_varinfo )
    !-------------------------------------------------------------------
    !> @brief
-   !> This subroutine add variable information get from namelist in 
+   !> This subroutine add variable information get from namelist in
    !> global array of variable structure with extra information: tg_varextra.
-   !> 
-   !> @details 
+   !>
+   !> @details
    !> string character format must be : <br/>
    !> "varname:int=interp; flt=filter; ext=extrap; min=min; max=max"<br/>
-   !> you could specify only interpolation, filter or extrapolation method, 
+   !> you could specify only interpolation, filter or extrapolation method,
    !> whatever the order. you could find more
    !> information about available method in \ref interp, \ref filter, and
    !> \ref extrap module.<br/>
-   !> Examples: 
+   !> Examples:
    !> cn_varinfo='Bathymetry:flt=2*hamming(2,3); min=10.'
    !> cn_varinfo='votemper:int=cubic; ext=dist_weight; max=40.'
    !>
@@ -7986,8 +7986,8 @@ CONTAINS
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
-   !> @date July, 2015 
-   !> - get unit and unit factor (to change unit) 
+   !> @date July, 2015
+   !> - get unit and unit factor (to change unit)
    !> @date February, 2019
    !> - get variable output name
    !>
@@ -8059,7 +8059,7 @@ CONTAINS
                   CALL var_clean(tg_varextra(:))
                   DEALLOCATE(tg_varextra)
                   ALLOCATE( tg_varextra(il_nvar+1) )
-                  
+
                   tg_varextra(1:il_nvar)=var_copy(tl_varextra(:))
 
                   ! clean
@@ -8091,9 +8091,9 @@ CONTAINS
             CALL logger_debug( "VAR CHG EXTRA: name       "//&
                &               TRIM(tg_varextra(il_ind)%c_name) )
             CALL logger_debug( "VAR CHG EXTRA: interp     "//&
-               &               TRIM(tg_varextra(il_ind)%c_interp(1)) )         
+               &               TRIM(tg_varextra(il_ind)%c_interp(1)) )
             CALL logger_debug( "VAR CHG EXTRA: filter     "//&
-               &               TRIM(tg_varextra(il_ind)%c_filter(1)) )         
+               &               TRIM(tg_varextra(il_ind)%c_filter(1)) )
             CALL logger_debug( "VAR CHG EXTRA: extrap     "//&
                &               TRIM(tg_varextra(il_ind)%c_extrap(1)) )
             IF( tg_varextra(il_ind)%d_min /= dp_fill )THEN
@@ -8124,9 +8124,9 @@ CONTAINS
    SUBROUTINE var_clean_extra( )
    !-------------------------------------------------------------------
    !> @brief
-   !> This subroutine clean global array of variable structure 
+   !> This subroutine clean global array of variable structure
    !> with extra information: tg_varextra.
-   !> 
+   !>
    !> @author J.Paul
    !> @date October, 2016 - Initial Version
    !> @date January, 2019
@@ -8158,7 +8158,7 @@ CONTAINS
    !> - '/' for row
    !> - '\' for level<br/>
    !> Example:<br/>
-   !> 3,2,3/1,4,5  => 
+   !> 3,2,3/1,4,5  =>
    !> @f$ \left( \begin{array}{ccc}
    !> 3 & 2 & 3 \\
    !> 1 & 4 & 5 \end{array} \right) @f$
@@ -8172,7 +8172,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TVAR)      , INTENT(INOUT) :: td_var
       CHARACTER(LEN=*), INTENT(IN   ) :: cd_matrix
 
@@ -8189,7 +8189,7 @@ CONTAINS
       ! loop indices
       INTEGER(i4) :: ji
       INTEGER(i4) :: jj
-      INTEGER(i4) :: jk      
+      INTEGER(i4) :: jk
       !----------------------------------------------------------------
 
       IF( TRIM(cd_matrix) == '' )THEN
@@ -8211,7 +8211,7 @@ CONTAINS
                ji=1
                cl_elt=fct_split(TRIM(cl_line),ji,',')
                CALL logger_debug("VAR MATRIX elt "//TRIM(cl_elt) )
-               DO WHILE( TRIM(cl_elt) /= '') 
+               DO WHILE( TRIM(cl_elt) /= '')
                   READ(cl_elt,*) dl_matrix(ji,jj,jk)
                   ji=ji+1
                   cl_elt=fct_split(TRIM(cl_line),ji,',')
@@ -8237,7 +8237,7 @@ CONTAINS
          IF( ji-1 > 0 ) tl_dim(1)=dim_init('x',ji-1)
          IF( jj-1 > 0 ) tl_dim(2)=dim_init('y',jj-1)
          IF( jk-1 > 0 ) tl_dim(3)=dim_init('z',jk-1)
-         
+
          CALL var_add_dim(td_var, tl_dim(:))
          ! clean
          CALL dim_clean(tl_dim)
@@ -8255,11 +8255,11 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief
    !> This subroutine add extra information in variable structure.
-   !> 
-   !> @details 
+   !>
+   !> @details
    !> if variable name is informed in global array of variable structure (tg_varextra).
    !> fill empty parameter on variable structure.
-   !> 
+   !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !>
@@ -8275,7 +8275,7 @@ CONTAINS
       CHARACTER(LEN=lc) :: cl_tmp
 
       INTEGER(i4)       :: il_ind
-      
+
       TYPE(TATT)        :: tl_att
 
       ! loop indices
@@ -8313,21 +8313,21 @@ CONTAINS
                td_var%c_longname=TRIM(tg_varextra(il_ind)%c_longname)
                ! create attibute
                tl_att=att_init('long_name',TRIM(td_var%c_longname))
-               CALL var_move_att(td_var, tl_att)               
+               CALL var_move_att(td_var, tl_att)
             ENDIF
 
             ! units
-            IF( TRIM(td_var%c_units) == '' .AND. & 
+            IF( TRIM(td_var%c_units) == '' .AND. &
             &   TRIM(tg_varextra(il_ind)%c_units) /= '' )THEN
                td_var%c_units=TRIM(tg_varextra(il_ind)%c_units)
                ! create attibute
                tl_att=att_init('units',TRIM(td_var%c_units))
-               CALL var_move_att(td_var, tl_att)               
+               CALL var_move_att(td_var, tl_att)
             ENDIF
 
             ! axis
             IF( TRIM(tg_varextra(il_ind)%c_axis) /= '' .AND. &
-            &   ( TRIM(td_var%c_axis) == '' .OR. & 
+            &   ( TRIM(td_var%c_axis) == '' .OR. &
             &     TRIM(tg_varextra(il_ind)%c_axis) /= &
             &     TRIM(td_var%c_axis) ) )THEN
                td_var%c_axis=TRIM(tg_varextra(il_ind)%c_axis)
@@ -8360,7 +8360,7 @@ CONTAINS
             ENDIF
             ! create attibute
             tl_att=att_init('grid_point',TRIM(td_var%c_point))
-            CALL var_move_att(td_var, tl_att)               
+            CALL var_move_att(td_var, tl_att)
 
             ! clean
             CALL att_clean(tl_att)
@@ -8381,7 +8381,7 @@ CONTAINS
             IF( TRIM(td_var%c_filter(1)) == '' .AND. &
             &   TRIM(tg_varextra(il_ind)%c_filter(1)) /= '' )THEN
                td_var%c_filter(:)=tg_varextra(il_ind)%c_filter(:)
-            ENDIF            
+            ENDIF
 
             ! min value
             IF( td_var%d_min == dp_fill .AND. &
@@ -8432,22 +8432,22 @@ CONTAINS
          & RESULT (df_min)
    !-------------------------------------------------------------------
    !> @brief
-   !> This function check if variable information read in namelist contains 
-   !> minimum value and return it if true. 
-   !> 
+   !> This function check if variable information read in namelist contains
+   !> minimum value and return it if true.
+   !>
    !> @details
    !> minimum value is assume to follow string "min ="
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
-   !> @date June, 2015 
-   !> - change way to get information in namelist, 
+   !> @date June, 2015
+   !> - change way to get information in namelist,
    !> value follows string "min ="
    !> @date Feb, 2016
    !> - check character just after keyword
    !>
    !> @param[in] cd_name      variable name
-   !> @param[in] cd_varinfo   variable information read in namelist 
+   !> @param[in] cd_varinfo   variable information read in namelist
    !> @return minimum value to be used (FillValue if none)
    !-------------------------------------------------------------------
 
@@ -8463,7 +8463,7 @@ CONTAINS
       ! local variable
       CHARACTER(LEN=lc) :: cl_tmp
       CHARACTER(LEN=lc) :: cl_min
-      
+
       INTEGER(i4)       :: il_ind
 
       ! loop indices
@@ -8488,7 +8488,7 @@ CONTAINS
             ENDIF
          ENDIF
          ji=ji+1
-         cl_tmp=fct_split(cd_varinfo,ji,';')         
+         cl_tmp=fct_split(cd_varinfo,ji,';')
       ENDDO
 
       IF( TRIM(cl_min) /= '' )THEN
@@ -8509,22 +8509,22 @@ CONTAINS
          & RESULT (df_max)
    !-------------------------------------------------------------------
    !> @brief
-   !> This function check if variable information read in namelist contains 
-   !> maximum value and return it if true. 
-   !> 
+   !> This function check if variable information read in namelist contains
+   !> maximum value and return it if true.
+   !>
    !> @details
    !> maximum value is assume to follow string "max ="
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
-   !> @date June, 2015 
-   !> - change way to get information in namelist, 
+   !> @date June, 2015
+   !> - change way to get information in namelist,
    !> value follows string "max ="
    !> @date Feb, 2016
    !> - check character just after keyword
    !>
    !> @param[in] cd_name      variable name
-   !> @param[in] cd_varinfo   variable information read in namelist 
+   !> @param[in] cd_varinfo   variable information read in namelist
    !> @return maximum value to be used (FillValue if none)
    !-------------------------------------------------------------------
 
@@ -8540,7 +8540,7 @@ CONTAINS
       ! local variable
       CHARACTER(LEN=lc) :: cl_tmp
       CHARACTER(LEN=lc) :: cl_max
-      
+
       INTEGER(i4)       :: il_ind
 
       ! loop indices
@@ -8565,7 +8565,7 @@ CONTAINS
             ENDIF
          ENDIF
          ji=ji+1
-         cl_tmp=fct_split(cd_varinfo,ji,';')         
+         cl_tmp=fct_split(cd_varinfo,ji,';')
       ENDDO
 
       IF( TRIM(cl_max) /= '' )THEN
@@ -8585,9 +8585,9 @@ CONTAINS
          & RESULT (df_unf)
    !-------------------------------------------------------------------
    !> @brief
-   !> This function check if variable information read in namelist contains 
-   !> units factor value and return it if true. 
-   !> 
+   !> This function check if variable information read in namelist contains
+   !> units factor value and return it if true.
+   !>
    !> @details
    !> units factor value is assume to follow string "unf ="
    !>
@@ -8597,7 +8597,7 @@ CONTAINS
    !> - check character just after keyword
    !>
    !> @param[in] cd_name      variable name
-   !> @param[in] cd_varinfo   variable information read in namelist 
+   !> @param[in] cd_varinfo   variable information read in namelist
    !> @return untis factor value to be used (FillValue if none)
    !-------------------------------------------------------------------
 
@@ -8613,7 +8613,7 @@ CONTAINS
       ! local variable
       CHARACTER(LEN=lc) :: cl_tmp
       CHARACTER(LEN=lc) :: cl_unf
-      
+
       INTEGER(i4)       :: il_ind
 
       REAL(dp)          :: dl_unf
@@ -8640,7 +8640,7 @@ CONTAINS
             ENDIF
          ENDIF
          ji=ji+1
-         cl_tmp=fct_split(cd_varinfo,ji,';')         
+         cl_tmp=fct_split(cd_varinfo,ji,';')
       ENDDO
 
       IF( TRIM(cl_unf) /= '' )THEN
@@ -8662,31 +8662,31 @@ CONTAINS
          & RESULT (cf_interp)
    !-------------------------------------------------------------------
    !> @brief
-   !> This function check if variable information read in namelist contains 
-   !> interpolation method and return it if true. 
-   !> 
-   !> @details 
+   !> This function check if variable information read in namelist contains
+   !> interpolation method and return it if true.
+   !>
+   !> @details
    !> interpolation method is assume to follow string "int ="
    !>
    !> compare method name with the list of interpolation method available (see
    !> module global).
    !> check if factor (*rhoi, /rhoj..) are present.<br/>
-   !> Example:<br/> 
+   !> Example:<br/>
    !> - int=cubic/rhoi ; ext=dist_weight
    !> - int=bilin
    !> see @ref interp module for more information.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
-   !> @date June, 2015 
-   !> - change way to get information in namelist, 
+   !> @date June, 2015
+   !> - change way to get information in namelist,
    !> value follows string "int ="
    !> @date Feb, 2016
    !> - check character just after keyword
    !>
    !> @param[in] cd_name      variable name
    !> @param[in] cd_varinfo   variable information read in namelist
-   !> @return array of character information about interpolation 
+   !> @return array of character information about interpolation
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -8702,7 +8702,7 @@ CONTAINS
       CHARACTER(LEN=lc) :: cl_tmp
       CHARACTER(LEN=lc) :: cl_int
       CHARACTER(LEN=lc) :: cl_factor
-      
+
       INTEGER(i4)       :: il_ind
       INTEGER(i4)       :: il_len
 
@@ -8730,7 +8730,7 @@ CONTAINS
             ENDIF
          ENDIF
          ji=ji+1
-         cl_tmp=fct_split(cd_varinfo,ji,';')         
+         cl_tmp=fct_split(cd_varinfo,ji,';')
       ENDDO
 
       IF( TRIM(cl_int) /= '' )THEN
@@ -8740,7 +8740,7 @@ CONTAINS
 
                cf_interp(1)=TRIM(cp_interp_list(jj))
                il_len=LEN(TRIM(cp_interp_list(jj)))
-               
+
                ! look for factor
                IF( il_ind==1 )THEN
                   cl_factor=cl_int(il_len+1:)
@@ -8749,7 +8749,7 @@ CONTAINS
                ENDIF
                il_mul=SCAN(TRIM(cl_factor),'*')
                il_div=SCAN(TRIM(cl_factor),'/')
-               
+
                il_len=LEN(cl_factor)
                IF( il_mul /= 0 )THEN
                   IF( il_mul==1 )THEN
@@ -8794,12 +8794,12 @@ CONTAINS
          & RESULT (cf_extrap)
    !-------------------------------------------------------------------
    !> @brief
-   !> This function check if variable information read in namelist contains 
-   !> extrapolation method and return it if true. 
-   !> 
-   !> @details 
+   !> This function check if variable information read in namelist contains
+   !> extrapolation method and return it if true.
+   !>
+   !> @details
    !> extrapolation method is assume to follow string "ext ="
-   !> 
+   !>
    !> compare method name with the list of extrapolation method available (see
    !> module global).<br/>
    !> Example:<br/>
@@ -8809,8 +8809,8 @@ CONTAINS
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
-   !> @date June, 2015 
-   !> - change way to get information in namelist, 
+   !> @date June, 2015
+   !> - change way to get information in namelist,
    !> value follows string "ext ="
    !> @date Feb, 2016
    !> - check character just after keyword
@@ -8856,7 +8856,7 @@ CONTAINS
             ENDIF
          ENDIF
          ji=ji+1
-         cl_tmp=fct_split(cd_varinfo,ji,';')         
+         cl_tmp=fct_split(cd_varinfo,ji,';')
       ENDDO
 
       IF( TRIM(cl_ext) /= '' )THEN
@@ -8879,10 +8879,10 @@ CONTAINS
          & RESULt (cf_filter)
    !-------------------------------------------------------------------
    !> @brief
-   !> This function check if variable information read in namelist contains 
-   !> filter method and return it if true 
-   !> 
-   !> @details 
+   !> This function check if variable information read in namelist contains
+   !> filter method and return it if true
+   !>
+   !> @details
    !> filter method is assume to follow string "flt ="
    !>
    !> compare method name with the list of filter method available (see
@@ -8896,14 +8896,14 @@ CONTAINS
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
-   !> @date June, 2015 
-   !> - change way to get information in namelist, 
+   !> @date June, 2015
+   !> - change way to get information in namelist,
    !> value follows string "flt ="
    !> @date Feb, 2016
    !> - check character just after keyword
    !>
    !> @param[in] cd_name      variable name
-   !> @param[in] cd_varinfo   variable information read in namelist 
+   !> @param[in] cd_varinfo   variable information read in namelist
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -8941,9 +8941,9 @@ CONTAINS
             ENDIF
          ENDIF
          ji=ji+1
-         cl_tmp=fct_split(cd_varinfo,ji,';')         
+         cl_tmp=fct_split(cd_varinfo,ji,';')
       ENDDO
-      
+
       IF( TRIM(cl_flt) /= '' )THEN
          DO jj=1,ip_nfilter
             il_ind=INDEX(fct_lower(cl_flt),TRIM(cp_filter_list(jj)))
@@ -8987,7 +8987,7 @@ CONTAINS
                   cf_filter(4)=''
                   cf_filter(5)=''
                ENDIF
-   
+
                CALL logger_trace("VAR GET FILTER: name   "//TRIM(cf_filter(1)))
                CALL logger_trace("VAR GET FILTER: nturn  "//TRIM(cf_filter(2)))
                CALL logger_trace("VAR GET FILTER: cutoff "//TRIM(cf_filter(3)))
@@ -9005,10 +9005,10 @@ CONTAINS
          & RESULT (cf_unt)
    !-------------------------------------------------------------------
    !> @brief
-   !> This function check if variable information read in namelist contains 
-   !> output unit and return it if true. 
-   !> 
-   !> @details 
+   !> This function check if variable information read in namelist contains
+   !> output unit and return it if true.
+   !>
+   !> @details
    !> output unit is assume to follow string "unt ="
    !>
    !> @author J.Paul
@@ -9018,7 +9018,7 @@ CONTAINS
    !>
    !> @param[in] cd_name      variable name
    !> @param[in] cd_varinfo   variable information read in namelist
-   !> @return unit string character 
+   !> @return unit string character
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -9032,7 +9032,7 @@ CONTAINS
 
       ! local variable
       CHARACTER(LEN=lc) :: cl_tmp
-      
+
       INTEGER(i4)       :: il_ind
 
       ! loop indices
@@ -9056,7 +9056,7 @@ CONTAINS
             ENDIF
          ENDIF
          ji=ji+1
-         cl_tmp=fct_split(cd_varinfo,ji,';')         
+         cl_tmp=fct_split(cd_varinfo,ji,';')
       ENDDO
 
       IF( TRIM(cf_unt) /= '' )THEN
@@ -9071,10 +9071,10 @@ CONTAINS
          & RESULT (cf_namout)
    !-------------------------------------------------------------------
    !> @brief
-   !> This function check if variable information read in namelist contains 
-   !> variable ouptut name and return it if true. 
-   !> 
-   !> @details 
+   !> This function check if variable information read in namelist contains
+   !> variable ouptut name and return it if true.
+   !>
+   !> @details
    !> output name is assume to follow string "out ="
    !>
    !> @author J.Paul
@@ -9082,7 +9082,7 @@ CONTAINS
    !>
    !> @param[in] cd_name      variable name
    !> @param[in] cd_varinfo   variable information read in namelist
-   !> @return ouptut name string character 
+   !> @return ouptut name string character
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -9096,7 +9096,7 @@ CONTAINS
 
       ! local variable
       CHARACTER(LEN=lc) :: cl_tmp
-      
+
       INTEGER(i4)       :: il_ind
 
       ! loop indices
@@ -9120,7 +9120,7 @@ CONTAINS
             ENDIF
          ENDIF
          ji=ji+1
-         cl_tmp=fct_split(cd_varinfo,ji,';')         
+         cl_tmp=fct_split(cd_varinfo,ji,';')
       ENDDO
 
       IF( TRIM(cf_namout) /= '' )THEN
@@ -9134,54 +9134,54 @@ CONTAINS
    FUNCTION var_max_dim(td_var) &
          & RESULT (tf_dim)
    !-------------------------------------------------------------------
-   !> @brief 
-   !> This function search and save the biggest dimensions use 
+   !> @brief
+   !> This function search and save the biggest dimensions use
    !> in an array of variable structure.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !>
    !> @param[in] td_var array of variable structure
-   !> @return array of dimension 
+   !> @return array of dimension
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TVAR), DIMENSION(:), INTENT(IN) :: td_var
-      
+
       ! function
       TYPE(TDIM), DIMENSION(ip_maxdim)     :: tf_dim
 
       ! local variable
       INTEGER(i4) :: il_nvar
-      
+
       ! loop indices
-      INTEGER(i4) :: ji   
+      INTEGER(i4) :: ji
       !-------------------------------------------------------------------
-                          
+
       il_nvar=SIZE(td_var(:))
-                          
+
       tf_dim(:)=dim_copy(td_var(1)%t_dim(:))
 
       IF( il_nvar > 1 )THEN
-         DO ji=2,il_nvar     
-                             
+         DO ji=2,il_nvar
+
             IF( td_var(ji)%t_dim(1)%l_use .AND. &
             &   td_var(ji)%t_dim(1)%i_len >= tf_dim(1)%i_len )THEN
                tf_dim(1)=dim_copy(td_var(ji)%t_dim(1))
-            ENDIF            
-                             
+            ENDIF
+
             IF( td_var(ji)%t_dim(2)%l_use .AND. &
-            &   td_var(ji)%t_dim(2)%i_len >= tf_dim(2)%i_len )THEN 
+            &   td_var(ji)%t_dim(2)%i_len >= tf_dim(2)%i_len )THEN
                tf_dim(2)=dim_copy(td_var(ji)%t_dim(2))
-            ENDIF            
-                             
+            ENDIF
+
             IF( td_var(ji)%t_dim(3)%l_use .AND. &
-            &   td_var(ji)%t_dim(3)%i_len >= tf_dim(3)%i_len )THEN 
+            &   td_var(ji)%t_dim(3)%i_len >= tf_dim(3)%i_len )THEN
                tf_dim(3)=dim_copy(td_var(ji)%t_dim(3))
-            ENDIF            
-                             
+            ENDIF
+
             IF( td_var(ji)%t_dim(4)%l_use .AND. &
             &   td_var(ji)%t_dim(4)%i_len >= tf_dim(4)%i_len )THEN
                tf_dim(4)=dim_copy(td_var(ji)%t_dim(4))
@@ -9197,13 +9197,13 @@ CONTAINS
    !> @brief
    !> This subroutine forced minimum and maximum value of variable,
    !> with value of variable structure attribute d_min and d_max.
-   !> 
+   !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !>
    !> @param[inout] td_var variable structure
    !-------------------------------------------------------------------
-      
+
       IMPLICIT NONE
 
       ! Argument
@@ -9223,7 +9223,7 @@ CONTAINS
             END WHERE
          ENDIF
 
-         !2- forced maximum value 
+         !2- forced maximum value
          IF( td_var%d_max /= dp_fill )THEN
             WHERE( td_var%d_value(:,:,:,:) /= td_var%d_fill .AND. &
                &   td_var%d_value(:,:,:,:) >  td_var%d_max )
@@ -9239,7 +9239,7 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief
    !> This subroutine replace name of the variable,
-   !> 
+   !>
    !> @details
    !> output name (namout) is read from the namelist.
    !>
@@ -9261,7 +9261,7 @@ CONTAINS
       !----------------------------------------------------------------
 
       IF( ASSOCIATED(td_var%d_value) )THEN
-         !- change variable name 
+         !- change variable name
          IF( TRIM(td_var%c_namout) /= TRIM(td_var%c_name) .AND. &
          &   TRIM(td_var%c_namout) /= '' )THEN
             td_var%c_name = TRIM(td_var%c_namout)
@@ -9276,7 +9276,7 @@ CONTAINS
    !> @brief
    !> This subroutine replace unit name of the variable,
    !> and apply unit factor to the value of this variable.
-   !> 
+   !>
    !> @details
    !> new unit name (unt) and unit factor (unf) are read from the namelist.
    !>
@@ -9314,7 +9314,7 @@ CONTAINS
             CALL var_move_att(td_var, tl_att)
          ENDIF
 
-         !- change unit name 
+         !- change unit name
          IF( TRIM(td_var%c_unt) /= TRIM(td_var%c_units) .AND. &
          &   TRIM(td_var%c_unt) /= '' )THEN
             tl_att=att_init('units',TRIM(td_var%c_unt))
@@ -9332,10 +9332,10 @@ CONTAINS
    !> @brief
    !> This subroutine check variable dimension expected, as defined in
    !> file 'variable.cfg'.
-   !> 
-   !> @details 
+   !>
+   !> @details
    !> compare dimension used in variable structure with string character
-   !> axis from configuration file. 
+   !> axis from configuration file.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -9384,7 +9384,7 @@ CONTAINS
             IF( ll_warn )THEN
                CALL logger_warn("VAR CHECK DIM: variable dimension ("//&
                   &             TRIM(cl_dim)//") not conform with dimension"//&
-                  &             " expected ("//TRIM(td_var%c_axis)//"). ") 
+                  &             " expected ("//TRIM(td_var%c_axis)//"). ")
             ENDIF
          ELSE
             ! too much dimension
@@ -9392,7 +9392,7 @@ CONTAINS
                &             "variable "//TRIM(td_var%c_name)//".")
             cl_dim=TRIM(fct_upper(cp_dimorder))
             il_ndim =LEN( TRIM(ADJUSTL(cl_dim)) )
-            DO ji=1,il_ndim 
+            DO ji=1,il_ndim
                IF( INDEX(TRIM(td_var%c_axis),cl_dim(ji:ji)) == 0 )THEN
                   IF( td_var%t_dim(ji)%l_use )THEN
                      IF( td_var%t_dim(ji)%i_len == 1 )THEN
@@ -9417,17 +9417,17 @@ CONTAINS
    SUBROUTINE var_reorder(td_var, cd_dimorder)
    !-------------------------------------------------------------------
    !> @brief
-   !> This subroutine reshape variable value and dimension 
+   !> This subroutine reshape variable value and dimension
    !> in variable structure.
    !> @details
-   !> output dimension will be ordered as defined in 
+   !> output dimension will be ordered as defined in
    !> input array of dimension
    !> Optionaly you could specify output dimension order with
    !> string character of dimension
-   !> 
+   !>
    !> @author J.Paul
    !> @date August, 2014 - Initial Version
-   !> @date July 2015 
+   !> @date July 2015
    !> - do not use dim_disorder anymore
    !>
    !> @param[inout] td_var       variable structure
@@ -9484,12 +9484,12 @@ CONTAINS
          & RESULT (if_unit)
    !-------------------------------------------------------------------
    !> @brief
-   !> This function get the next unused unit in array of variable structure. 
-   !> 
+   !> This function get the next unused unit in array of variable structure.
+   !>
    !> @author J.Paul
    !> @date September, 2014 - Initial Version
    !>
-   !> @param[in] td_var array of variable structure 
+   !> @param[in] td_var array of variable structure
    !> @return free variable id
    !-------------------------------------------------------------------
 
@@ -9513,14 +9513,14 @@ CONTAINS
          & RESULT (tf_date)
    !-------------------------------------------------------------------
    !> @brief
-   !> This function convert a time variable structure in date structure. 
-   !> 
+   !> This function convert a time variable structure in date structure.
+   !>
    !> @author J.Paul
    !> @date November, 2014 - Initial Version
    !> @date January, 2019
-   !> -  add case for units in hours  
+   !> -  add case for units in hours
    !>
-   !> @param[in] td_var time variable structure 
+   !> @param[in] td_var time variable structure
    !> @return date structure
    !-------------------------------------------------------------------
 
@@ -9634,9 +9634,9 @@ CONTAINS
       ! read namelist
       INQUIRE(FILE=TRIM(cd_dummy), EXIST=ll_exist)
       IF( ll_exist )THEN
-    
+
          il_fileid=fct_getunit()
-   
+
          OPEN( il_fileid, FILE=TRIM(cd_dummy), &
             &             FORM='FORMATTED',    &
             &             ACCESS='SEQUENTIAL', &
@@ -9647,7 +9647,7 @@ CONTAINS
          IF( il_status /= 0 )THEN
             CALL logger_fatal("DIM GET DUMMY: opening "//TRIM(cd_dummy))
          ENDIF
-   
+
          READ( il_fileid, NML = namdum )
          im_ndumvar  = in_ndumvar
          cm_dumvar(:)= cn_dumvar(:)
@@ -9661,7 +9661,7 @@ CONTAINS
          ENDIF
 
       ENDIF
-   
+
    END SUBROUTINE var_get_dummy
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION var_is_dummy(td_var) &
@@ -9676,17 +9676,17 @@ CONTAINS
    !> - use number of dummy elt in do-loop
    !>
    !> @param[in] td_var variable structure
-   !> @return true if variable is dummy variable 
+   !> @return true if variable is dummy variable
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TVAR), INTENT(IN) :: td_var
-      
+
       ! function
       LOGICAL                :: lf_dummy
-      
+
       ! loop indices
       INTEGER(i4) :: ji
       !----------------------------------------------------------------

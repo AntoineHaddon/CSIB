@@ -1,5 +1,5 @@
 !
-! $Id: modutil.F90 10586 2019-01-27 19:42:34Z nicolasmartin $
+! $Id: modutil.F90 14107 2020-12-04 17:02:20Z nicolasmartin $
 !
 !     Agrif (Adaptive Grid Refinement In Fortran)
 !
@@ -107,6 +107,48 @@ subroutine Agrif_Step_Child ( procname )
     if ( Agrif_Mygrid%child_list%nitems > 0 ) call Agrif_Instance(Agrif_Mygrid)
 !---------------------------------------------------------------------------------------------------
 end subroutine Agrif_Step_Child
+!===================================================================================================
+!
+!===================================================================================================
+!  subroutine Agrif_Step_Childs
+!
+!> Apply 'procname' to each child grids of the current grid
+!---------------------------------------------------------------------------------------------------
+!     **************************************************************************
+!!!   Subroutine Agrif_Step_Childs
+!     **************************************************************************
+!
+      Subroutine Agrif_Step_Childs(procname)
+!
+    procedure(step_proc)    :: procname     !< subroutine to call on each grid
+!     Pointer argument
+      Type(Agrif_Grid),pointer   :: g        ! Pointer on the current grid
+!
+
+!
+!     Local pointer
+      Type(Agrif_pgrid),pointer  :: parcours ! Pointer for the recursive
+                                             ! procedure
+!
+      g => Agrif_Curgrid
+      
+      parcours => g % child_list % first
+!
+!     Recursive procedure for the time integration of the grid hierarchy      
+      Do while (associated(parcours))
+!
+!       Instanciation of the variables of the current grid
+        Call Agrif_Instance(parcours % gr)
+
+!     One step on the current grid
+
+         Call procname ()
+        parcours => parcours % next
+      enddo
+   
+      If (associated(g % child_list % first)) Call Agrif_Instance (g)
+      Return
+      End Subroutine Agrif_Step_Childs
 !===================================================================================================
 !
 !===================================================================================================
@@ -537,6 +579,8 @@ recursive subroutine Agrif_Integrate_Parallel ( g, procname )
 end subroutine Agrif_Integrate_Parallel
 !===================================================================================================
 !
+!===================================================================================================
+!
 !
 !===================================================================================================
 !  subroutine Agrif_Integrate_ChildGrids
@@ -586,7 +630,6 @@ recursive subroutine Agrif_Integrate_ChildGrids ( procname )
 
 #ifdef AGRIF_MPI
     else
-#endif    
 ! Continue only if the grid has defined sequences of child integrations.
     if ( .not. associated(save_grid % child_seq) ) return
 !
@@ -609,7 +652,6 @@ recursive subroutine Agrif_Integrate_ChildGrids ( procname )
         enddo
 !
     enddo
-#ifdef AGRIF_MPI
     endif
 #endif 
 
@@ -699,7 +741,7 @@ end subroutine Agrif_Integrate_Child_Parallel
 !---------------------------------------------------------------------------------------------------
 subroutine Agrif_Init_Grids ( procname1, procname2 )
 !---------------------------------------------------------------------------------------------------
-    procedure(typdef_proc), optional   :: procname1 !< (Default: Agrif_probdim_modtype_def)
+    procedure(typedef_proc), optional   :: procname1 !< (Default: Agrif_probdim_modtype_def)
     procedure(alloc_proc),   optional   :: procname2 !< (Default: Agrif_Allocationcalls)
 !
     integer :: i, ierr_allocate, nunit
@@ -716,20 +758,18 @@ subroutine Agrif_Init_Grids ( procname1, procname2 )
 ! TEST FOR COARSE GRID (GRAND MOTHER GRID) in AGRIF_FixedGrids.in
     nunit = Agrif_Get_Unit()
     open(nunit, file='AGRIF_FixedGrids.in', form='formatted', status="old", ERR=98)
-    if (Agrif_Probdim == 3) then
-       read(nunit,*) is_coarse, rhox, rhoy, rhoz, rhot
-    elseif (Agrif_Probdim == 2) then
-       read(nunit,*) is_coarse, rhox, rhoy, rhot
-    elseif (Agrif_Probdim == 2) then
-       read(nunit,*) is_coarse, rhox, rhot
-    endif
+    read(nunit,*) is_coarse
     if (is_coarse == -1) then
        agrif_coarse = .TRUE.
+       rewind(nunit)
        if (Agrif_Probdim == 3) then
+          read(nunit,*) is_coarse, rhox, rhoy, rhoz, rhot
           coarse_spaceref(1:3)=(/rhox,rhoy,rhoz/)
        elseif (Agrif_Probdim == 2) then
+          read(nunit,*) is_coarse, rhox, rhoy, rhot
           coarse_spaceref(1:2)=(/rhox,rhoy/)
-       elseif (Agrif_Probdim == 2) then
+       elseif (Agrif_Probdim == 1) then
+          read(nunit,*) is_coarse, rhox, rhot
           coarse_spaceref(1:1)=(/rhox/)
        endif
        coarse_timeref(1:Agrif_Probdim) = rhot
@@ -918,6 +958,7 @@ subroutine Agrif_Deallocation
 !
         if ( allocated(var_c % carray1) ) deallocate(var_c % carray1)
         if ( allocated(var_c % carray2) ) deallocate(var_c % carray2)
+        if ( allocated(var_c % carrayu) ) deallocate(var_c % carrayu)
 !
     enddo
 

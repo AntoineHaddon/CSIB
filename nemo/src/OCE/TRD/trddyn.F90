@@ -35,15 +35,16 @@ MODULE trddyn
    PUBLIC trd_dyn        ! called by all dynXXX modules
 
    !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
+#  include "do_loop_substitute.h90"
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: trddyn.F90 10425 2018-12-19 21:54:16Z smasson $
+   !! $Id: trddyn.F90 14433 2021-02-11 08:06:49Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE trd_dyn( putrd, pvtrd, ktrd, kt )
+   SUBROUTINE trd_dyn( putrd, pvtrd, ktrd, kt, Kmm )
       !!---------------------------------------------------------------------
       !!                  ***  ROUTINE trd_mod  ***
       !! 
@@ -51,9 +52,10 @@ CONTAINS
       !!              integral constraints, barotropic vorticity, kinetic enrgy, 
       !!              and/or mixed layer budget.
       !!----------------------------------------------------------------------
-      REAL(wp), DIMENSION(:,:,:), INTENT(inout) ::   putrd, pvtrd   ! U and V trends 
+      REAL(dp), DIMENSION(:,:,:), INTENT(inout) ::   putrd, pvtrd   ! U and V trends 
       INTEGER                   , INTENT(in   ) ::   ktrd           ! trend index
       INTEGER                   , INTENT(in   ) ::   kt             ! time step
+      INTEGER                   , INTENT(in   ) ::   Kmm            ! time level index
       !!----------------------------------------------------------------------
       !
       putrd(:,:,:) = putrd(:,:,:) * umask(:,:,:)                       ! mask the trends
@@ -65,22 +67,22 @@ CONTAINS
       !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
       !   3D output of momentum and/or tracers trends using IOM interface
       !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-      IF( ln_dyn_trd )   CALL trd_dyn_iom( putrd, pvtrd, ktrd, kt )
+      IF( ln_dyn_trd )   CALL trd_dyn_iom( putrd, pvtrd, ktrd, kt, Kmm )
          
       !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
       !  Integral Constraints Properties for momentum and/or tracers trends
       !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-      IF( ln_glo_trd )   CALL trd_glo( putrd, pvtrd, ktrd, 'DYN', kt )
+      IF( ln_glo_trd )   CALL trd_glo( putrd, pvtrd, ktrd, 'DYN', kt, Kmm )
 
       !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
       !  Kinetic Energy trends
       !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-      IF( ln_KE_trd  )   CALL trd_ken( putrd, pvtrd, ktrd, kt )
+      IF( ln_KE_trd  )   CALL trd_ken( putrd, pvtrd, ktrd, kt, Kmm )
 
       !<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
       !  Vorticity trends
       !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-      IF( ln_vor_trd )   CALL trd_vor( putrd, pvtrd, ktrd, kt )
+      IF( ln_vor_trd )   CALL trd_vor( putrd, pvtrd, ktrd, kt, Kmm )
 
       !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
       !  Mixed layer trends for active tracers
@@ -90,15 +92,16 @@ CONTAINS
    END SUBROUTINE trd_dyn
 
 
-   SUBROUTINE trd_dyn_iom( putrd, pvtrd, ktrd, kt )
+   SUBROUTINE trd_dyn_iom( putrd, pvtrd, ktrd, kt, Kmm )
       !!---------------------------------------------------------------------
       !!                  ***  ROUTINE trd_dyn_iom  ***
       !! 
       !! ** Purpose :   output 3D trends using IOM
       !!----------------------------------------------------------------------
-      REAL(wp), DIMENSION(:,:,:), INTENT(inout) ::   putrd, pvtrd   ! U and V trends
+      REAL(dp), DIMENSION(:,:,:), INTENT(inout) ::   putrd, pvtrd   ! U and V trends
       INTEGER                   , INTENT(in   ) ::   ktrd           ! trend index
       INTEGER                   , INTENT(in   ) ::   kt             ! time step
+      INTEGER                   , INTENT(in   ) ::   Kmm            ! time level index
       !
       INTEGER ::   ji, jj, jk   ! dummy loop indices
       INTEGER ::   ikbu, ikbv   ! local integers
@@ -120,15 +123,11 @@ CONTAINS
                               ALLOCATE( z3dx(jpi,jpj,jpk) , z3dy(jpi,jpj,jpk) )
                               z3dx(:,:,:) = 0._wp                  ! U.dxU & V.dyV (approximation)
                               z3dy(:,:,:) = 0._wp
-                              DO jk = 1, jpkm1   ! no mask as un,vn are masked
-                                 DO jj = 2, jpjm1
-                                    DO ji = 2, jpim1
-                                       z3dx(ji,jj,jk) = un(ji,jj,jk) * ( un(ji+1,jj,jk) - un(ji-1,jj,jk) ) / ( 2._wp * e1u(ji,jj) )
-                                       z3dy(ji,jj,jk) = vn(ji,jj,jk) * ( vn(ji,jj+1,jk) - vn(ji,jj-1,jk) ) / ( 2._wp * e2v(ji,jj) )
-                                    END DO
-                                 END DO
-                              END DO
-                              CALL lbc_lnk_multi( 'trddyn', z3dx, 'U', -1., z3dy, 'V', -1. )
+                              DO_3D( 0, 0, 0, 0, 1, jpkm1 )   ! no mask as un,vn are masked
+                                 z3dx(ji,jj,jk) = uu(ji,jj,jk,Kmm) * ( uu(ji+1,jj,jk,Kmm) - uu(ji-1,jj,jk,Kmm) ) / ( 2._wp * e1u(ji,jj) )
+                                 z3dy(ji,jj,jk) = vv(ji,jj,jk,Kmm) * ( vv(ji,jj+1,jk,Kmm) - vv(ji,jj-1,jk,Kmm) ) / ( 2._wp * e2v(ji,jj) )
+                              END_3D
+                              CALL lbc_lnk( 'trddyn', z3dx, 'U', -1.0_wp, z3dy, 'V', -1.0_wp )
                               CALL iom_put( "utrd_udx", z3dx  )
                               CALL iom_put( "vtrd_vdy", z3dy  )
                               DEALLOCATE( z3dx , z3dy )
@@ -141,8 +140,8 @@ CONTAINS
                               !
                               !                                    ! wind stress trends
                               ALLOCATE( z2dx(jpi,jpj) , z2dy(jpi,jpj) )
-                              z2dx(:,:) = ( utau_b(:,:) + utau(:,:) ) / ( e3u_n(:,:,1) * rau0 )
-                              z2dy(:,:) = ( vtau_b(:,:) + vtau(:,:) ) / ( e3v_n(:,:,1) * rau0 )
+                              z2dx(:,:) = ( utau_b(:,:) + utau(:,:) ) / ( e3u(:,:,1,Kmm) * rho0 )
+                              z2dy(:,:) = ( vtau_b(:,:) + vtau(:,:) ) / ( e3v(:,:,1,Kmm) * rho0 )
                               CALL iom_put( "utrd_tau", z2dx )
                               CALL iom_put( "vtrd_tau", z2dy )
                               DEALLOCATE( z2dx , z2dy )
@@ -158,13 +157,13 @@ CONTAINS
 !                                      ikbu = mbku(ji,jj)          ! deepest ocean u- & v-levels
 !                                          ikbv = mbkv(ji,jj)
 !                                          z3dx(ji,jj,jk) = 0.5 * ( rCdU_bot(ji+1,jj) + rCdU_bot(ji,jj) ) & 
-!                                               &         * un(ji,jj,ikbu) / e3u_n(ji,jj,ikbu)
+!                                               &         * uu(ji,jj,ikbu,Kmm) / e3u(ji,jj,ikbu,Kmm)
 !                                          z3dy(ji,jj,jk) = 0.5 * ( rCdU_bot(ji,jj+1) + rCdU_bot(ji,jj) ) &
-!                                               &         * vn(ji,jj,ikbv) / e3v_n(ji,jj,ikbv)
+!                                               &         * vv(ji,jj,ikbv,Kmm) / e3v(ji,jj,ikbv,Kmm)
 !                                    END DO
 !                                 END DO
 !                              END DO
-!                              CALL lbc_lnk_multi( 'trddyn', z3dx, 'U', -1., z3dy, 'V', -1. )
+!                              CALL lbc_lnk( 'trddyn', z3dx, 'U', -1.0_wp, z3dy, 'V', -1.0_wp )
 !                              CALL iom_put( "utrd_bfr", z3dx )
 !                              CALL iom_put( "vtrd_bfr", z3dy )
 !                                 DEALLOCATE( z3dx , z3dy )

@@ -39,14 +39,12 @@ MODULE zdf_oce
    !                             ! gravity wave-induced vertical mixing
    LOGICAL , PUBLIC ::   ln_zdfswm   !: surface  wave-induced mixing flag
    LOGICAL , PUBLIC ::   ln_zdfiwm   !: internal wave-induced mixing flag
-   !                             ! coefficients 
+   LOGICAL , PUBLIC ::   ln_zdfmfc   !: convection: eddy diffusivity Mass Flux Convection
+   !                             ! coefficients
    LOGICAL , PUBLIC ::   ln_zdftmx   !: old tidal mixing scheme (Simmons et al 2004)
    REAL(wp), PUBLIC ::   rn_htmx     !: vertical decay scale for turbulence (meters)
    REAL(wp), PUBLIC ::   rn_n2min    !: threshold of the Brunt-Vaisala frequency (s-1)
-   REAL(wp), PUBLIC ::   rn_tfe      !: tidal dissipation efficiency
-   REAL(wp), PUBLIC ::   rn_me       !: mixing efficiency
-   LOGICAL , PUBLIC ::   ln_tmx_itf  !: ITF specific parameterisation
-   REAL(wp), PUBLIC ::   rn_tfe_itf  !: ITF tidal dissipation efficiency
+
    REAL(wp), PUBLIC ::   rn_avm0     !: vertical eddy viscosity (m2/s)
    REAL(wp), PUBLIC ::   rn_avt0     !: vertical eddy diffusivity (m2/s)
    INTEGER , PUBLIC ::   nn_avb      !: constant or profile background on avt (=0/1)
@@ -61,7 +59,7 @@ MODULE zdf_oce
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: zdf_oce.F90 10425 2018-12-19 21:54:16Z smasson $ 
+   !! $Id: zdf_oce.F90 14072 2020-12-04 07:48:38Z laurent $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -72,7 +70,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       !
       ALLOCATE( avm (jpi,jpj,jpk) , avm_k(jpi,jpj,jpk) , avs(jpi,jpj,jpk) ,   &
-         &      avt (jpi,jpj,jpk) , avt_k(jpi,jpj,jpk) , en (jpi,jpj,jpk) ,   & 
+         &      avt (jpi,jpj,jpk) , avt_k(jpi,jpj,jpk) , en (jpi,jpj,jpk) ,   &
          &      avmb(jpk)         , avtb(jpk)          , avtb_2d(jpi,jpj) , STAT = zdf_oce_alloc )
          !
       IF( zdf_oce_alloc /= 0 )   CALL ctl_stop( 'STOP', 'zdf_oce_alloc: failed to allocate arrays' )

@@ -54,9 +54,18 @@ set -o posix
 #   * creation
 #
 #-
-MYFILE=$(basename "$1")
+MYDIR=$1
+MYFILE=$(basename "$2")
+
 if [ "$MYFILE" == "agrif2model.f90" ];then
-   \cp ${NEMO_TDIR}/${NEW_CONF}/WORK/${MYFILE/.f90/.F90} ${NEMO_TDIR}/${NEW_CONF}/NEMOFILES/obj/$MYFILE
+   # generic case
+   if [ -d ${MYDIR}/WORK ]; then
+      \cp ${MYDIR}/WORK/${MYFILE/.f90/.F90} ${MYDIR}/NEMOFILES/obj/$MYFILE
+   # DOMAINcfg case
+   elif [ -d ${MYDIR}/src ]; then
+      \cp ${MYDIR}/src/${MYFILE/.f90/.F90} ${MYDIR}/NEMOFILES/obj/$MYFILE
+   fi
 else
-cd ${NEMO_TDIR}/${NEW_CONF}/NEMOFILES/ppsrc/nemo ; ${NEMO_TDIR}/${NEW_CONF}/NEMOFILES/conv ${NEMO_TDIR}/${NEW_CONF}/NEMOFILES/agrif_oce.in -rm -incdir ${NEMO_TDIR}/${NEW_CONF}/NEMOFILES/inc -comdirout ${NEMO_TDIR}/${NEW_CONF}/NEMOFILES/obj -convfile ${MYFILE} > /dev/null 
+   cd ${MYDIR}/NEMOFILES/ppsrc/nemo
+   ${MYDIR}/NEMOFILES/conv ${MYDIR}/NEMOFILES/agrif_oce.in -rm -incdir ${MYDIR}/NEMOFILES/inc -comdirout ${MYDIR}/NEMOFILES/obj -convfile ${MYFILE} > /dev/null
 fi

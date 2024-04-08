@@ -24,8 +24,8 @@
            <field field_ref="tcflxcum" name="tcflxcum"  unit="PgC"    operation="instant" > tcflxcum * -1. * 12. / 1e15 </field>
            <field field_ref="tcexp"    name="tcexp"     unit="PgC/yr" operation="instant" > tcexp * 12. * 86400. * 365. / 1e15 </field>
            <field field_ref="tintpp"   name="tintpp"    unit="PgC/yr" operation="instant" > tintpp * 12. * 86400. * 365. / 1e15 </field>
-           <field field_ref="pno3tot"  name="pno3tot"   unit="umolN"  > pno3tot * 16. / 122. * 1e6 </field>
-           <field field_ref="ppo4tot"  name="ppo4tot"   unit="umolP"  > ppo4tot * 1. / 122. * 1e6 </field>
+           <field field_ref="pno3tot"  name="pno3tot"   unit="umolN"  > pno3tot * 16. / 117. * 1e6 </field>
+           <field field_ref="ppo4tot"  name="ppo4tot"   unit="umolP"  > ppo4tot * 1. / 117. * 1e6 </field>
            <field field_ref="psiltot"  name="psiltot"   unit="umolC"  > psiltot * 1e6  </field>
            <field field_ref="palktot"  name="palktot"   unit="umolC"  > palktot * 1e6  </field>
            <field field_ref="pfertot"  name="pfertot"   unit="nmolFe" > pfertot * 1e9  </field>

@@ -18,7 +18,7 @@ MODULE p2zbio
    USE trdtrc          !
    !
    USE lbclnk          ! 
-   USE prtctl_trc      ! Print control for debbuging
+   USE prtctl          ! Print control for debbuging
    USE iom             !
    
    IMPLICIT NONE
@@ -56,15 +56,16 @@ MODULE p2zbio
    REAL(wp) ::   fdbod      ! zooplankton mortality fraction that goes to detritus
 
    !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
+#  include "do_loop_substitute.h90"
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: p2zbio.F90 11536 2019-09-11 13:54:18Z smasson $ 
+   !! $Id: p2zbio.F90 14433 2021-02-11 08:06:49Z smasson $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE p2z_bio( kt )
+   SUBROUTINE p2z_bio( kt, Kmm, Krhs )
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE p2z_bio  ***
       !!
@@ -77,13 +78,14 @@ CONTAINS
       !!              the total of the sources and sinks for each tracer
       !!              is added to the general trend.
       !!        
-      !!                      tra = tra + zf...tra - zftra...
+      !!                      tr(Krhs) = tr(Krhs) + zf...tr(Krhs) - zftra...
       !!                                     |         |
       !!                                     |         |
       !!                                  source      sink
       !!        
       !!---------------------------------------------------------------------
-      INTEGER, INTENT( in ) ::   kt      ! ocean time-step index      
+      INTEGER, INTENT( in ) ::   kt             ! ocean time-step index      
+      INTEGER, INTENT( in ) ::   Kmm, Krhs      ! time level indices
       !
       INTEGER  ::   ji, jj, jk, jl
       REAL(wp) ::   zdet, zzoo, zphy, zno3, znh4, zdom      ! now concentrations
@@ -119,229 +121,225 @@ CONTAINS
       !                                      ! -------------------------- !
       DO jk = 1, jpkbm1                      !  Upper ocean (bio-layers)  !
          !                                   ! -------------------------- !
-         DO jj = 2, jpjm1
-            DO ji = fs_2, fs_jpim1 
-               ! trophic variables( det, zoo, phy, no3, nh4, dom)
-               ! ------------------------------------------------
+         DO_2D( 0, 0, 0, 0 )
+            ! trophic variables( det, zoo, phy, no3, nh4, dom)
+            ! ------------------------------------------------
 
-               ! negative trophic variables DO not contribute to the fluxes
-               zdet = MAX( 0.e0, trn(ji,jj,jk,jpdet) )
-               zzoo = MAX( 0.e0, trn(ji,jj,jk,jpzoo) )
-               zphy = MAX( 0.e0, trn(ji,jj,jk,jpphy) )
-               zno3 = MAX( 0.e0, trn(ji,jj,jk,jpno3) )
-               znh4 = MAX( 0.e0, trn(ji,jj,jk,jpnh4) )
-               zdom = MAX( 0.e0, trn(ji,jj,jk,jpdom) )
+            ! negative trophic variables DO not contribute to the fluxes
+            zdet = MAX( 0.e0, tr(ji,jj,jk,jpdet,Kmm) )
+            zzoo = MAX( 0.e0, tr(ji,jj,jk,jpzoo,Kmm) )
+            zphy = MAX( 0.e0, tr(ji,jj,jk,jpphy,Kmm) )
+            zno3 = MAX( 0.e0, tr(ji,jj,jk,jpno3,Kmm) )
+            znh4 = MAX( 0.e0, tr(ji,jj,jk,jpnh4,Kmm) )
+            zdom = MAX( 0.e0, tr(ji,jj,jk,jpdom,Kmm) )
 
-               ! Limitations
-               zlt   = 1.
-               zle   = 1. - EXP( -etot(ji,jj,jk) / aki / zlt )
-               ! psinut,akno3,aknh4 added by asklod AS Kremeur 2005-03
-               zlno3 = zno3 * EXP( -psinut * znh4 ) / ( akno3 + zno3 )
-               zlnh4 = znh4 / (znh4+aknh4)  
+            ! Limitations
+            zlt   = 1.
+            zle   = 1. - EXP( -etot(ji,jj,jk) / aki / zlt )
+            ! psinut,akno3,aknh4 added by asklod AS Kremeur 2005-03
+            zlno3 = zno3 * EXP( -psinut * znh4 ) / ( akno3 + zno3 )
+            zlnh4 = znh4 / (znh4+aknh4)  
 
-               ! sinks and sources
-               !    phytoplankton production and exsudation
-               zno3phy = tmumax * zle * zlt * zlno3 * zphy
-               znh4phy = tmumax * zle * zlt * zlnh4 * zphy
+            ! sinks and sources
+            !    phytoplankton production and exsudation
+            zno3phy = tmumax * zle * zlt * zlno3 * zphy
+            znh4phy = tmumax * zle * zlt * zlnh4 * zphy
 
-               !    fphylab added by asklod AS Kremeur 2005-03
-               zphydom = rgamma * (1 - fphylab) * (zno3phy + znh4phy)
-               zphynh4 = rgamma * fphylab * (zno3phy + znh4phy)
-               ! zooplankton production
-               !    preferences
-               zppz = rppz
-               zpdz = 1. - rppz
-               zpppz = ( zppz * zphy ) / ( ( zppz * zphy + zpdz * zdet ) + 1.e-13 )
-               zppdz = ( zpdz * zdet ) / ( ( zppz * zphy + zpdz * zdet ) + 1.e-13 )
-               zfood = zpppz * zphy + zppdz * zdet
-               !    filtration 
-               zfilpz = taus * zpppz / (aks + zfood)
-               zfildz = taus * zppdz / (aks + zfood)
-               !    grazing
-               zphyzoo = zfilpz * zphy * zzoo
-               zdetzoo = zfildz * zdet * zzoo
+            !    fphylab added by asklod AS Kremeur 2005-03
+            zphydom = rgamma * (1 - fphylab) * (zno3phy + znh4phy)
+            zphynh4 = rgamma * fphylab * (zno3phy + znh4phy)
+            ! zooplankton production
+            !    preferences
+            zppz = rppz
+            zpdz = 1. - rppz
+            zpppz = ( zppz * zphy ) / ( ( zppz * zphy + zpdz * zdet ) + 1.e-13 )
+            zppdz = ( zpdz * zdet ) / ( ( zppz * zphy + zpdz * zdet ) + 1.e-13 )
+            zfood = zpppz * zphy + zppdz * zdet
+            !    filtration 
+            zfilpz = taus * zpppz / (aks + zfood)
+            zfildz = taus * zppdz / (aks + zfood)
+            !    grazing
+            zphyzoo = zfilpz * zphy * zzoo
+            zdetzoo = zfildz * zdet * zzoo
 
-               ! fecal pellets production
-               zzoodet = rpnaz * zphyzoo + rdnaz * zdetzoo
+            ! fecal pellets production
+            zzoodet = rpnaz * zphyzoo + rdnaz * zdetzoo
 
-               ! zooplankton liquide excretion
-               zzoonh4 = tauzn * fzoolab * zzoo  
-               zzoodom = tauzn * (1 - fzoolab) * zzoo
+            ! zooplankton liquide excretion
+            zzoonh4 = tauzn * fzoolab * zzoo  
+            zzoodom = tauzn * (1 - fzoolab) * zzoo
 
-               ! mortality
-               !    phytoplankton mortality
-               zphydet = tmminp * zphy
+            ! mortality
+            !    phytoplankton mortality
+            zphydet = tmminp * zphy
 
-               !    zooplankton mortality
-               !    closure : flux grazing is redistributed below level jpkbio
-               zzoobod = tmminz * zzoo * zzoo
-               xksi(ji,jj) = xksi(ji,jj) + (1-fdbod) * zzoobod * e3t_n(ji,jj,jk)
-               zboddet = fdbod * zzoobod
+            !    zooplankton mortality
+            !    closure : flux grazing is redistributed below level jpkbio
+            zzoobod = tmminz * zzoo * zzoo
+            xksi(ji,jj) = xksi(ji,jj) + (1-fdbod) * zzoobod * e3t(ji,jj,jk,Kmm)
+            zboddet = fdbod * zzoobod
 
-               ! detritus and dom breakdown
-               zdetnh4 = taudn * fdetlab * zdet
-               zdetdom = taudn * (1 - fdetlab) * zdet
+            ! detritus and dom breakdown
+            zdetnh4 = taudn * fdetlab * zdet
+            zdetdom = taudn * (1 - fdetlab) * zdet
 
-               zdomnh4 = taudomn * zdom
+            zdomnh4 = taudomn * zdom
 
-               ! flux added to express how the excess of nitrogen from 
-               ! PHY, ZOO and DET to DOM goes directly to NH4 (flux of ajustment)
-               zdomaju = (1 - redf/reddom) * (zphydom + zzoodom + zdetdom)
+            ! flux added to express how the excess of nitrogen from 
+            ! PHY, ZOO and DET to DOM goes directly to NH4 (flux of ajustment)
+            zdomaju = (1 - redf/reddom) * (zphydom + zzoodom + zdetdom)
 
-               ! Nitrification 
-               znh4no3 = taunn * znh4
+            ! Nitrification 
+            znh4no3 = taunn * znh4
 
-               ! determination of trends
-               !    total trend for each biological tracer
-               zphya =   zno3phy + znh4phy - zphynh4 - zphydom - zphyzoo - zphydet
-               zzooa =   zphyzoo + zdetzoo - zzoodet - zzoodom - zzoonh4 - zzoobod
-               zno3a = - zno3phy + znh4no3
-               znh4a = - znh4phy - znh4no3 + zphynh4 + zzoonh4 + zdomnh4 + zdetnh4 + zdomaju
-               zdeta =   zphydet + zzoodet - zdetzoo - zdetnh4 - zdetdom + zboddet
-               zdoma =   zphydom + zzoodom + zdetdom - zdomnh4 - zdomaju
+            ! determination of trends
+            !    total trend for each biological tracer
+            zphya =   zno3phy + znh4phy - zphynh4 - zphydom - zphyzoo - zphydet
+            zzooa =   zphyzoo + zdetzoo - zzoodet - zzoodom - zzoonh4 - zzoobod
+            zno3a = - zno3phy + znh4no3
+            znh4a = - znh4phy - znh4no3 + zphynh4 + zzoonh4 + zdomnh4 + zdetnh4 + zdomaju
+            zdeta =   zphydet + zzoodet - zdetzoo - zdetnh4 - zdetdom + zboddet
+            zdoma =   zphydom + zzoodom + zdetdom - zdomnh4 - zdomaju
 
-               ! tracer flux at totox-point added to the general trend
-               tra(ji,jj,jk,jpdet) = tra(ji,jj,jk,jpdet) + zdeta
-               tra(ji,jj,jk,jpzoo) = tra(ji,jj,jk,jpzoo) + zzooa
-               tra(ji,jj,jk,jpphy) = tra(ji,jj,jk,jpphy) + zphya
-               tra(ji,jj,jk,jpno3) = tra(ji,jj,jk,jpno3) + zno3a
-               tra(ji,jj,jk,jpnh4) = tra(ji,jj,jk,jpnh4) + znh4a
-               tra(ji,jj,jk,jpdom) = tra(ji,jj,jk,jpdom) + zdoma
+            ! tracer flux at totox-point added to the general trend
+            tr(ji,jj,jk,jpdet,Krhs) = tr(ji,jj,jk,jpdet,Krhs) + zdeta
+            tr(ji,jj,jk,jpzoo,Krhs) = tr(ji,jj,jk,jpzoo,Krhs) + zzooa
+            tr(ji,jj,jk,jpphy,Krhs) = tr(ji,jj,jk,jpphy,Krhs) + zphya
+            tr(ji,jj,jk,jpno3,Krhs) = tr(ji,jj,jk,jpno3,Krhs) + zno3a
+            tr(ji,jj,jk,jpnh4,Krhs) = tr(ji,jj,jk,jpnh4,Krhs) + znh4a
+            tr(ji,jj,jk,jpdom,Krhs) = tr(ji,jj,jk,jpdom,Krhs) + zdoma
 
-                IF( lk_iomput ) THEN
-                  ! convert fluxes in per day
-                  ze3t = e3t_n(ji,jj,jk) * 86400._wp
-                  zw2d(ji,jj,1)  = zw2d(ji,jj,1)  + zno3phy * ze3t
-                  zw2d(ji,jj,2)  = zw2d(ji,jj,2)  + znh4phy * ze3t
-                  zw2d(ji,jj,3)  = zw2d(ji,jj,3)  + zphydom * ze3t
-                  zw2d(ji,jj,4)  = zw2d(ji,jj,4)  + zphynh4 * ze3t
-                  zw2d(ji,jj,5)  = zw2d(ji,jj,5)  + zphyzoo * ze3t
-                  zw2d(ji,jj,6)  = zw2d(ji,jj,6)  + zphydet * ze3t
-                  zw2d(ji,jj,7)  = zw2d(ji,jj,7)  + zdetzoo * ze3t
-                  zw2d(ji,jj,8)  = zw2d(ji,jj,8)  + zzoodet * ze3t
-                  zw2d(ji,jj,9)  = zw2d(ji,jj,9)  + zzoobod * ze3t
-                  zw2d(ji,jj,10) = zw2d(ji,jj,10) + zzoonh4 * ze3t
-                  zw2d(ji,jj,11) = zw2d(ji,jj,11) + zzoodom * ze3t
-                  zw2d(ji,jj,12) = zw2d(ji,jj,12) + znh4no3 * ze3t
-                  zw2d(ji,jj,13) = zw2d(ji,jj,13) + zdomnh4 * ze3t
-                  zw2d(ji,jj,14) = zw2d(ji,jj,14) + zdetnh4 * ze3t
-                  zw2d(ji,jj,15) = zw2d(ji,jj,15) + ( zno3phy + znh4phy - zphynh4 - zphydom - zphyzoo - zphydet ) * ze3t
-                  zw2d(ji,jj,16) = zw2d(ji,jj,16) + ( zphyzoo + zdetzoo - zzoodet - zzoobod - zzoonh4 - zzoodom ) * ze3t
-                  zw2d(ji,jj,17) = zw2d(ji,jj,17) + zdetdom * ze3t
-                  !   
-                  zw3d(ji,jj,jk,1) = zno3phy * 86400
-                  zw3d(ji,jj,jk,2) = znh4phy * 86400     
-                  zw3d(ji,jj,jk,3) = znh4no3 * 86400   
-                   ! 
-                ENDIF
-            END DO
-         END DO
+             IF( lk_iomput ) THEN
+               ! convert fluxes in per day
+               ze3t = e3t(ji,jj,jk,Kmm) * 86400._wp
+               zw2d(ji,jj,1)  = zw2d(ji,jj,1)  + zno3phy * ze3t
+               zw2d(ji,jj,2)  = zw2d(ji,jj,2)  + znh4phy * ze3t
+               zw2d(ji,jj,3)  = zw2d(ji,jj,3)  + zphydom * ze3t
+               zw2d(ji,jj,4)  = zw2d(ji,jj,4)  + zphynh4 * ze3t
+               zw2d(ji,jj,5)  = zw2d(ji,jj,5)  + zphyzoo * ze3t
+               zw2d(ji,jj,6)  = zw2d(ji,jj,6)  + zphydet * ze3t
+               zw2d(ji,jj,7)  = zw2d(ji,jj,7)  + zdetzoo * ze3t
+               zw2d(ji,jj,8)  = zw2d(ji,jj,8)  + zzoodet * ze3t
+               zw2d(ji,jj,9)  = zw2d(ji,jj,9)  + zzoobod * ze3t
+               zw2d(ji,jj,10) = zw2d(ji,jj,10) + zzoonh4 * ze3t
+               zw2d(ji,jj,11) = zw2d(ji,jj,11) + zzoodom * ze3t
+               zw2d(ji,jj,12) = zw2d(ji,jj,12) + znh4no3 * ze3t
+               zw2d(ji,jj,13) = zw2d(ji,jj,13) + zdomnh4 * ze3t
+               zw2d(ji,jj,14) = zw2d(ji,jj,14) + zdetnh4 * ze3t
+               zw2d(ji,jj,15) = zw2d(ji,jj,15) + ( zno3phy + znh4phy - zphynh4 - zphydom - zphyzoo - zphydet ) * ze3t
+               zw2d(ji,jj,16) = zw2d(ji,jj,16) + ( zphyzoo + zdetzoo - zzoodet - zzoobod - zzoonh4 - zzoodom ) * ze3t
+               zw2d(ji,jj,17) = zw2d(ji,jj,17) + zdetdom * ze3t
+               !   
+               zw3d(ji,jj,jk,1) = zno3phy * 86400
+               zw3d(ji,jj,jk,2) = znh4phy * 86400     
+               zw3d(ji,jj,jk,3) = znh4no3 * 86400   
+                ! 
+             ENDIF
+         END_2D
       END DO
 
       !                                      ! -------------------------- !
       DO jk = jpkb, jpkm1                    !  Upper ocean (bio-layers)  !
          !                                   ! -------------------------- !
-         DO jj = 2, jpjm1
-            DO ji = fs_2, fs_jpim1 
-               ! remineralisation of all quantities towards nitrate 
+         DO_2D( 0, 0, 0, 0 )
+            ! remineralisation of all quantities towards nitrate 
 
-               !    trophic variables( det, zoo, phy, no3, nh4, dom)
-               !       negative trophic variables DO not contribute to the fluxes
-               zdet = MAX( 0.e0, trn(ji,jj,jk,jpdet) )
-               zzoo = MAX( 0.e0, trn(ji,jj,jk,jpzoo) )
-               zphy = MAX( 0.e0, trn(ji,jj,jk,jpphy) )
-               zno3 = MAX( 0.e0, trn(ji,jj,jk,jpno3) )
-               znh4 = MAX( 0.e0, trn(ji,jj,jk,jpnh4) )
-               zdom = MAX( 0.e0, trn(ji,jj,jk,jpdom) )
+            !    trophic variables( det, zoo, phy, no3, nh4, dom)
+            !       negative trophic variables DO not contribute to the fluxes
+            zdet = MAX( 0.e0, tr(ji,jj,jk,jpdet,Kmm) )
+            zzoo = MAX( 0.e0, tr(ji,jj,jk,jpzoo,Kmm) )
+            zphy = MAX( 0.e0, tr(ji,jj,jk,jpphy,Kmm) )
+            zno3 = MAX( 0.e0, tr(ji,jj,jk,jpno3,Kmm) )
+            znh4 = MAX( 0.e0, tr(ji,jj,jk,jpnh4,Kmm) )
+            zdom = MAX( 0.e0, tr(ji,jj,jk,jpdom,Kmm) )
 
-               !    Limitations
-               zlt   = 0.e0
-               zle   = 0.e0
-               zlno3 = 0.e0
-               zlnh4 = 0.e0
+            !    Limitations
+            zlt   = 0.e0
+            zle   = 0.e0
+            zlno3 = 0.e0
+            zlnh4 = 0.e0
 
-               !    sinks and sources
-               !       phytoplankton production and exsudation
-               zno3phy = 0.e0
-               znh4phy = 0.e0
-               zphydom = 0.e0
-               zphynh4 = 0.e0
+            !    sinks and sources
+            !       phytoplankton production and exsudation
+            zno3phy = 0.e0
+            znh4phy = 0.e0
+            zphydom = 0.e0
+            zphynh4 = 0.e0
 
-               !    zooplankton production
-               zphyzoo = 0.e0      ! grazing
-               zdetzoo = 0.e0
+            !    zooplankton production
+            zphyzoo = 0.e0      ! grazing
+            zdetzoo = 0.e0
 
-               zzoodet = 0.e0      ! fecal pellets production
+            zzoodet = 0.e0      ! fecal pellets production
 
-               zzoonh4 = tauzn * fzoolab * zzoo         ! zooplankton liquide excretion
-               zzoodom = tauzn * (1 - fzoolab) * zzoo
+            zzoonh4 = tauzn * fzoolab * zzoo         ! zooplankton liquide excretion
+            zzoodom = tauzn * (1 - fzoolab) * zzoo
 
-               !    mortality
-               zphydet = tmminp * zphy      ! phytoplankton mortality
+            !    mortality
+            zphydet = tmminp * zphy      ! phytoplankton mortality
 
-               zzoobod = 0.e0               ! zooplankton mortality
-               zboddet = 0.e0               ! closure : flux fbod is redistributed below level jpkbio
+            zzoobod = 0.e0               ! zooplankton mortality
+            zboddet = 0.e0               ! closure : flux fbod is redistributed below level jpkbio
 
-               !    detritus and dom breakdown
-               zdetnh4 = taudn * fdetlab * zdet
-               zdetdom = taudn * (1 - fdetlab) * zdet
+            !    detritus and dom breakdown
+            zdetnh4 = taudn * fdetlab * zdet
+            zdetdom = taudn * (1 - fdetlab) * zdet
 
-               zdomnh4 = taudomn * zdom
-               zdomaju = (1 - redf/reddom) * (zphydom + zzoodom + zdetdom)
+            zdomnh4 = taudomn * zdom
+            zdomaju = (1 - redf/reddom) * (zphydom + zzoodom + zdetdom)
 
-               !    Nitrification
-               znh4no3 = taunn * znh4
+            !    Nitrification
+            znh4no3 = taunn * znh4
 
 
-               ! determination of trends
-               !     total trend for each biological tracer
-               zphya =   zno3phy + znh4phy - zphynh4 - zphydom - zphyzoo - zphydet
-               zzooa =   zphyzoo + zdetzoo - zzoodet - zzoodom - zzoonh4 - zzoobod
-               zno3a = - zno3phy + znh4no3 
-               znh4a = - znh4phy - znh4no3 + zphynh4 + zzoonh4 + zdomnh4 + zdetnh4 + zdomaju
-               zdeta = zphydet + zzoodet  - zdetzoo - zdetnh4 - zdetdom + zboddet
-               zdoma = zphydom + zzoodom + zdetdom - zdomnh4 - zdomaju
+            ! determination of trends
+            !     total trend for each biological tracer
+            zphya =   zno3phy + znh4phy - zphynh4 - zphydom - zphyzoo - zphydet
+            zzooa =   zphyzoo + zdetzoo - zzoodet - zzoodom - zzoonh4 - zzoobod
+            zno3a = - zno3phy + znh4no3 
+            znh4a = - znh4phy - znh4no3 + zphynh4 + zzoonh4 + zdomnh4 + zdetnh4 + zdomaju
+            zdeta = zphydet + zzoodet  - zdetzoo - zdetnh4 - zdetdom + zboddet
+            zdoma = zphydom + zzoodom + zdetdom - zdomnh4 - zdomaju
 
-               ! tracer flux at totox-point added to the general trend
-               tra(ji,jj,jk,jpdet) = tra(ji,jj,jk,jpdet) + zdeta
-               tra(ji,jj,jk,jpzoo) = tra(ji,jj,jk,jpzoo) + zzooa
-               tra(ji,jj,jk,jpphy) = tra(ji,jj,jk,jpphy) + zphya
-               tra(ji,jj,jk,jpno3) = tra(ji,jj,jk,jpno3) + zno3a
-               tra(ji,jj,jk,jpnh4) = tra(ji,jj,jk,jpnh4) + znh4a
-               tra(ji,jj,jk,jpdom) = tra(ji,jj,jk,jpdom) + zdoma
+            ! tracer flux at totox-point added to the general trend
+            tr(ji,jj,jk,jpdet,Krhs) = tr(ji,jj,jk,jpdet,Krhs) + zdeta
+            tr(ji,jj,jk,jpzoo,Krhs) = tr(ji,jj,jk,jpzoo,Krhs) + zzooa
+            tr(ji,jj,jk,jpphy,Krhs) = tr(ji,jj,jk,jpphy,Krhs) + zphya
+            tr(ji,jj,jk,jpno3,Krhs) = tr(ji,jj,jk,jpno3,Krhs) + zno3a
+            tr(ji,jj,jk,jpnh4,Krhs) = tr(ji,jj,jk,jpnh4,Krhs) + znh4a
+            tr(ji,jj,jk,jpdom,Krhs) = tr(ji,jj,jk,jpdom,Krhs) + zdoma
+            !
+             IF( lk_iomput ) THEN                  ! convert fluxes in per day
+               ze3t = e3t(ji,jj,jk,Kmm) * 86400._wp
+               zw2d(ji,jj,1)  = zw2d(ji,jj,1)  + zno3phy * ze3t
+               zw2d(ji,jj,2)  = zw2d(ji,jj,2)  + znh4phy * ze3t
+               zw2d(ji,jj,3)  = zw2d(ji,jj,3)  + zphydom * ze3t
+               zw2d(ji,jj,4)  = zw2d(ji,jj,4)  + zphynh4 * ze3t
+               zw2d(ji,jj,5)  = zw2d(ji,jj,5)  + zphyzoo * ze3t
+               zw2d(ji,jj,6)  = zw2d(ji,jj,6)  + zphydet * ze3t
+               zw2d(ji,jj,7)  = zw2d(ji,jj,7)  + zdetzoo * ze3t
+               zw2d(ji,jj,8)  = zw2d(ji,jj,8)  + zzoodet * ze3t
+               zw2d(ji,jj,9)  = zw2d(ji,jj,9)  + zzoobod * ze3t
+               zw2d(ji,jj,10) = zw2d(ji,jj,10) + zzoonh4 * ze3t
+               zw2d(ji,jj,11) = zw2d(ji,jj,11) + zzoodom * ze3t
+               zw2d(ji,jj,12) = zw2d(ji,jj,12) + znh4no3 * ze3t
+               zw2d(ji,jj,13) = zw2d(ji,jj,13) + zdomnh4 * ze3t
+               zw2d(ji,jj,14) = zw2d(ji,jj,14) + zdetnh4 * ze3t
+               zw2d(ji,jj,15) = zw2d(ji,jj,15) + ( zno3phy + znh4phy - zphynh4 - zphydom - zphyzoo - zphydet ) * ze3t
+               zw2d(ji,jj,16) = zw2d(ji,jj,16) + ( zphyzoo + zdetzoo - zzoodet - zzoobod - zzoonh4 - zzoodom ) * ze3t
+               zw2d(ji,jj,17) = zw2d(ji,jj,17) + zdetdom * ze3t
+               !   
+               zw3d(ji,jj,jk,1) = zno3phy * 86400._wp
+               zw3d(ji,jj,jk,2) = znh4phy * 86400._wp
+               zw3d(ji,jj,jk,3) = znh4no3 * 86400._wp
                !
-                IF( lk_iomput ) THEN                  ! convert fluxes in per day
-                  ze3t = e3t_n(ji,jj,jk) * 86400._wp
-                  zw2d(ji,jj,1)  = zw2d(ji,jj,1)  + zno3phy * ze3t
-                  zw2d(ji,jj,2)  = zw2d(ji,jj,2)  + znh4phy * ze3t
-                  zw2d(ji,jj,3)  = zw2d(ji,jj,3)  + zphydom * ze3t
-                  zw2d(ji,jj,4)  = zw2d(ji,jj,4)  + zphynh4 * ze3t
-                  zw2d(ji,jj,5)  = zw2d(ji,jj,5)  + zphyzoo * ze3t
-                  zw2d(ji,jj,6)  = zw2d(ji,jj,6)  + zphydet * ze3t
-                  zw2d(ji,jj,7)  = zw2d(ji,jj,7)  + zdetzoo * ze3t
-                  zw2d(ji,jj,8)  = zw2d(ji,jj,8)  + zzoodet * ze3t
-                  zw2d(ji,jj,9)  = zw2d(ji,jj,9)  + zzoobod * ze3t
-                  zw2d(ji,jj,10) = zw2d(ji,jj,10) + zzoonh4 * ze3t
-                  zw2d(ji,jj,11) = zw2d(ji,jj,11) + zzoodom * ze3t
-                  zw2d(ji,jj,12) = zw2d(ji,jj,12) + znh4no3 * ze3t
-                  zw2d(ji,jj,13) = zw2d(ji,jj,13) + zdomnh4 * ze3t
-                  zw2d(ji,jj,14) = zw2d(ji,jj,14) + zdetnh4 * ze3t
-                  zw2d(ji,jj,15) = zw2d(ji,jj,15) + ( zno3phy + znh4phy - zphynh4 - zphydom - zphyzoo - zphydet ) * ze3t
-                  zw2d(ji,jj,16) = zw2d(ji,jj,16) + ( zphyzoo + zdetzoo - zzoodet - zzoobod - zzoonh4 - zzoodom ) * ze3t
-                  zw2d(ji,jj,17) = zw2d(ji,jj,17) + zdetdom * ze3t
-                  !   
-                  zw3d(ji,jj,jk,1) = zno3phy * 86400._wp
-                  zw3d(ji,jj,jk,2) = znh4phy * 86400._wp
-                  zw3d(ji,jj,jk,3) = znh4no3 * 86400._wp
-                  !
-               ENDIF
-            END DO
-         END DO
+            ENDIF
+         END_2D
       END DO
       !
       IF( lk_iomput ) THEN
-         CALL lbc_lnk( 'p2zbio', zw2d(:,:,:),'T', 1. )
-         CALL lbc_lnk_multi( 'p2zbio', zw3d(:,:,:,1),'T', 1., zw3d(:,:,:,2),'T', 1., zw3d(:,:,:,3),'T', 1. )
+         CALL lbc_lnk( 'p2zbio', zw2d(:,:,:),'T', 1.0_wp )
+         CALL lbc_lnk( 'p2zbio', zw3d(:,:,:,1),'T', 1.0_wp, zw3d(:,:,:,2),'T', 1.0_wp, zw3d(:,:,:,3),'T', 1.0_wp )
          ! Save diagnostics
          CALL iom_put( "TNO3PHY", zw2d(:,:,1) )
          CALL iom_put( "TNH4PHY", zw2d(:,:,2) )
@@ -366,10 +364,10 @@ CONTAINS
          !
       ENDIF
 
-      IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
+      IF(sn_cfctl%l_prttrc)   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('bio')")
-         CALL prt_ctl_trc_info(charout)
-         CALL prt_ctl_trc(tab4d=tra, mask=tmask, clinfo=ctrcnm)
+         CALL prt_ctl_info( charout, cdcomp = 'top' )
+         CALL prt_ctl(tab4d_1=tr(:,:,:,:,Krhs), mask1=tmask, clinfo=ctrcnm)
       ENDIF
       !
       IF( lk_iomput )   DEALLOCATE( zw2d, zw3d )
@@ -401,10 +399,8 @@ CONTAINS
       IF(lwp) WRITE(numout,*) ' p2z_bio_init : LOBSTER bio-model initialization'
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~'
       !
-      REWIND( numnatp_ref )              ! Namelist namlobphy in reference namelist : Lobster biological parameters
       READ  ( numnatp_ref, namlobphy, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namlobphy in reference namelist' )
-      REWIND( numnatp_cfg )              ! Namelist namlobphy in configuration namelist : Lobster biological parameters
       READ  ( numnatp_cfg, namlobphy, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namlobphy in configuration namelist' )
       IF(lwm) WRITE ( numonp, namlobphy )
@@ -418,10 +414,8 @@ CONTAINS
          WRITE(numout,*) '      light hlaf saturation constant                       aki       =', aki
       ENDIF
 
-      REWIND( numnatp_ref )              ! Namelist namlobnut in reference namelist : Lobster nutriments parameters
       READ  ( numnatp_ref, namlobnut, IOSTAT = ios, ERR = 903)
 903   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namlobnut in reference namelist' )
-      REWIND( numnatp_cfg )              ! Namelist namlobnut in configuration namelist : Lobster nutriments parameters
       READ  ( numnatp_cfg, namlobnut, IOSTAT = ios, ERR = 904 )
 904   IF( ios >  0 )   CALL ctl_nam ( ios , 'namlobnut in configuration namelist' )
       IF(lwm) WRITE ( numonp, namlobnut )
@@ -435,10 +429,8 @@ CONTAINS
          WRITE(numout,*) '      inhibition of no3 uptake by nh4                      psinut    =', psinut
       ENDIF
 
-      REWIND( numnatp_ref )              ! Namelist namlobzoo in reference namelist : Lobster zooplankton parameters
       READ  ( numnatp_ref, namlobzoo, IOSTAT = ios, ERR = 905)
 905   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namlobzoo in reference namelist' )
-      REWIND( numnatp_cfg )              ! Namelist namlobzoo in configuration namelist : Lobster zooplankton parameters
       READ  ( numnatp_cfg, namlobzoo, IOSTAT = ios, ERR = 906 )
 906   IF( ios >  0 )   CALL ctl_nam ( ios , 'namlobzoo in configuration namelist' )
       IF(lwm) WRITE ( numonp, namlobzoo )
@@ -457,10 +449,8 @@ CONTAINS
          WRITE(numout,*) '      Zooplankton mortality fraction that goes to detritus fdbod     =', fdbod
       ENDIF
 
-      REWIND( numnatp_ref )              ! Namelist namlobdet in reference namelist : Lobster detritus parameters
       READ  ( numnatp_ref, namlobdet, IOSTAT = ios, ERR = 907)
 907   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namlobdet in reference namelist' )
-      REWIND( numnatp_cfg )              ! Namelist namlobdet in configuration namelist : Lobster detritus parameters
       READ  ( numnatp_cfg, namlobdet, IOSTAT = ios, ERR = 908 )
 908   IF( ios >  0 )   CALL ctl_nam ( ios , 'namlobdet in configuration namelist' )
       IF(lwm) WRITE ( numonp, namlobdet )
@@ -472,10 +462,8 @@ CONTAINS
           WRITE(numout,*) '      NH4 fraction of detritus dissolution                 fdetlab   =', fdetlab
       ENDIF
 
-      REWIND( numnatp_ref )              ! Namelist namlobdom in reference namelist : Lobster DOM breakdown rate
       READ  ( numnatp_ref, namlobdom, IOSTAT = ios, ERR = 909)
 909   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namlobdom in reference namelist' )
-      REWIND( numnatp_cfg )              ! Namelist namlobdom in configuration namelist : Lobster DOM breakdown rate
       READ  ( numnatp_cfg, namlobdom, IOSTAT = ios, ERR = 910 )
 910   IF( ios >  0 )   CALL ctl_nam ( ios , 'namlobdom in configuration namelist' )
       IF(lwm) WRITE ( numonp, namlobdom )

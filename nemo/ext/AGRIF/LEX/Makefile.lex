@@ -1,14 +1,15 @@
 LEX		= flex -i
-YACC	= bison -t -v -g
+YACC	= /usr/bin/bison -t -v -g --graph
+#YACC = byacc -t -v
 
 all: main.c fortran.c
 
 main.c : convert.tab.c convert.yy.c
-	cat   convert.tab.c convert.yy.c > ../LIB/main.c
+	cat   convert.tab.c convert.yy.c > main.c
 	$(RM) convert.tab.c convert.yy.c
 
 fortran.c : fortran.tab.c fortran.yy.c
-	cat   fortran.tab.c fortran.yy.c > ../LIB/fortran.c
+	cat   fortran.tab.c fortran.yy.c > fortran.c
 	$(RM) fortran.tab.c fortran.yy.c
 
 convert.tab.c : convert.y decl.h
@@ -28,4 +29,4 @@ clean:
 		  fortran.yy.c fortran.tab.c fortran.output fortran.vcg fortran.dot
 
 clean-all: clean
-	$(RM) ../LIB/main.c ../LIB/fortran.c
+	$(RM) main.c fortran.c

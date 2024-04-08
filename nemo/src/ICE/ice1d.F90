@@ -144,6 +144,7 @@ MODULE ice1D
    ! surface fields from the ocean
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   sst_1d
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   sss_1d
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   frq_m_1d
 
    ! convergence check
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   tice_cvgerr_1d   !: convergence of ice/snow temp (dT)          [K]
@@ -168,7 +169,7 @@ MODULE ice1D
    
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: ice1d.F90 13284 2020-07-09 15:12:23Z smasson $
+   !! $Id: ice1d.F90 13643 2020-10-19 23:41:14Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -224,7 +225,7 @@ CONTAINS
       ALLOCATE( qcn_ice_bot_1d(jpij) , qcn_ice_top_1d(jpij) , STAT=ierr(ii) )
       !
       ii = ii + 1
-      ALLOCATE( sst_1d(jpij) , sss_1d(jpij) , STAT=ierr(ii) )
+      ALLOCATE( sst_1d(jpij) , sss_1d(jpij) , frq_m_1d(jpij) , STAT=ierr(ii) )
       !
       ii = ii + 1
       ALLOCATE( tice_cvgerr_1d(jpij) , tice_cvgstp_1d(jpij) , STAT=ierr(ii) )

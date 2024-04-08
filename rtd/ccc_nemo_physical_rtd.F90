@@ -303,6 +303,17 @@ PROGRAM nemo_ocean_diag
         i_AN_E  = 191; i_AN_W  = 274
         i_AS_E  = 247; i_AS_W  = 302
         i_PN_E  =  34; i_PN_W  = 185
+!     eORCA1 (standard, 360 X 331)
+      else if ( imt == 360.and.jmt == 331 ) then
+        print *, "Using eORCA1 configuration (NEMO4.2)"
+        j_20N   = 222; j_20S   = 152; j_eq    = 187
+        k60     =  20; k500    =  39; k2000   =  54
+        i_DP    = 220; j_DP_S  =  81; j_DP_N  = 106
+        i_IN_E1 =   1; i_IN_W1 =  48
+        i_IN_E2 = 321; i_IN_W2 = imt-1
+        i_AN_E  = 190; i_AN_W  = 273
+        i_AS_E  = 246; i_AS_W  = 301
+        i_PN_E  =  33; i_PN_W  = 184
 !     eORCA025 (1442 X 1207)
       else if ( imt == 1442 ) then
         print *, "Using eORCA025 configuration"
@@ -314,8 +325,19 @@ PROGRAM nemo_ocean_diag
         i_AN_E  =  798; i_AN_W  = 1090
         i_AS_E  =  985; i_AS_W  = 1205
         i_PN_E  =  127; i_PN_W  =  735
+!     eORCA025 (1440 X 1206)
+      else if ( imt == 1440 ) then
+        print *, "Using eORCA025 configuration"
+        j_20N   =  767; j_20S  =  603; j_eq    = 685
+        k60     =   20; k500    =  39; k2000   =  54
+        i_DP    =  879; j_DP_S  = 318; j_DP_N  = 424
+        i_IN_E1 =    1; i_IN_W1 = 193
+        i_IN_E2 = 1283; i_IN_W2 = imt-1
+        i_AN_E  =  797; i_AN_W  = 1089
+        i_AS_E  =  984; i_AS_W  = 1204
+        i_PN_E  =  126; i_PN_W  =  734
       else
-        print *, "Dont recognize the configuration."
+        print *, "Dont recognize the configuration.",imt,"x",jmt 
         print *, "Only ORCA2, ORCA1 and eORCA025 compatible"
         stop
       endif
@@ -429,10 +451,6 @@ PROGRAM nemo_ocean_diag
 
     ! ---------------------------- total area    
       tarea(:, :)   = e1t(:, :)*e2t(:, :)*t_mask(:, :, 1)
-      tarea(:, jmt) = 0. ! not to count the wrap row added to the northmost.
-      tarea(1, :)   = 0. ! not to count the 2 wrap columns for the cyclic boundary
-      tarea(imt, :) = 0. ! sshglo is not identical when using area(imt-1:imt,:)=0.
-      area_tot = 0.
       area_tot = SUM(tarea(:, :))
 
     ! Main loop over all months
@@ -610,7 +628,7 @@ PROGRAM nemo_ocean_diag
           call area_ave(e1t, e2t, e3t, nino4_mask, arr2d1, imt, jmt    &
             &           , km, t_nino4(l), dvol, 1) 
 
-          do i = 1, imt-2
+          do i = 1, imt
                if (lon2d(i,10).ge.150..or.lon2d(i,10).le.-75.) then
                    do k = 1, k500 
                      if (u_mask(i,j_eq,k).gt.0.5) then
@@ -758,7 +776,7 @@ PROGRAM nemo_ocean_diag
     ! (8) Heat transport (PW) 
     !---------------------------------------------------
           do k = 1, km
-              do i = 1, imt-2
+              do i = 1, imt
     ! Global ocean at 20N 
                   arcn = e1v(i, j_20N)*e3v(i, j_20N, k)*v_mask(i, j_20N, k)
                   arcn = arcn*theta(i, j_20N, k)*t_mask(i, j_20N, k)
@@ -796,7 +814,7 @@ PROGRAM nemo_ocean_diag
             &                  , jmt, hflx_snow_ice2(l), dum)
           call area_ave_flx(e1t, e2t, g_mask, snow_ao_cea(:, :)*lfus*-1.0, imt      &
             &                  , jmt, hflx_snow2(l), dum)
-          call area_ave_flx(e1t, e2t, g_mask, hflx_ice_cea(:,:), imt      &
+          call area_ave_flx(e1t, e2t, g_mask, -1.0*hflx_ice_cea(:,:), imt      &
             &                  , jmt, hflx_ice(l), dum)
           call area_ave_flx(e1t, e2t, g_mask, hflx_rnf_cea(:, :), imt      &
             &                  , jmt, hflx_rnf(l), dum)

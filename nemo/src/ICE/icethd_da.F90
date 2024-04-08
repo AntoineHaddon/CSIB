@@ -34,7 +34,7 @@ MODULE icethd_da
 
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icethd_da.F90 11536 2019-09-11 13:54:18Z smasson $
+   !! $Id: icethd_da.F90 15385 2021-10-15 13:52:48Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -108,13 +108,11 @@ CONTAINS
       !!              Phil. Trans. R. Soc. A, 373(2052), 20140167.
       !!---------------------------------------------------------------------
       INTEGER  ::   ji     ! dummy loop indices
-      REAL(wp)            ::   zastar, zdfloe, zperi, zwlat, zda
+      REAL(wp)            ::   zastar, zdfloe, zperi, zwlat, zda, zda_tot
       REAL(wp), PARAMETER ::   zdmax = 300._wp
       REAL(wp), PARAMETER ::   zcs   = 0.66_wp
       REAL(wp), PARAMETER ::   zm1   = 3.e-6_wp
       REAL(wp), PARAMETER ::   zm2   = 1.36_wp
-      !
-      REAL(wp), DIMENSION(jpij) ::   zda_tot
       !!---------------------------------------------------------------------
       !
       zastar = 1._wp / ( 1._wp - (rn_dmin / zdmax)**(1._wp/rn_beta) )
@@ -127,23 +125,23 @@ CONTAINS
          !                                                                         !    = N*pi*D = (A/cs*D^2)*pi*D
          zwlat  = zm1 * ( MAX( 0._wp, sst_1d(ji) - ( t_bo_1d(ji) - rt0 ) ) )**zm2  ! Melt speed rate [m/s]
          !
-         zda_tot(ji) = MIN( zwlat * zperi * rdt_ice, at_i_1d(ji) )                 ! sea ice concentration decrease (>0)
+         zda_tot = MIN( zwlat * zperi * rDt_ice, at_i_1d(ji) )                     ! sea ice concentration decrease (>0)
       
          ! --- Distribute reduction among ice categories and calculate associated ice-ocean fluxes --- !
          IF( a_i_1d(ji) > 0._wp ) THEN
             ! decrease of concentration for the category jl
             !    each category contributes to melting in proportion to its concentration
-            zda = MIN( a_i_1d(ji), zda_tot(ji) * a_i_1d(ji) / at_i_1d(ji) )
+            zda = MIN( a_i_1d(ji), zda_tot * a_i_1d(ji) / at_i_1d(ji) )
             
             ! Contribution to salt flux
-            sfx_lam_1d(ji) = sfx_lam_1d(ji) + rhoi *  h_i_1d(ji) * zda * s_i_1d(ji) * r1_rdtice
+            sfx_lam_1d(ji) = sfx_lam_1d(ji) + rhoi *  h_i_1d(ji) * zda * s_i_1d(ji) * r1_Dt_ice
             
             ! Contribution to heat flux into the ocean [W.m-2], (<0)  
-            hfx_thd_1d(ji) = hfx_thd_1d(ji) - zda * r1_rdtice * ( h_i_1d(ji) * r1_nlay_i * SUM( e_i_1d(ji,1:nlay_i) )  &
+            hfx_thd_1d(ji) = hfx_thd_1d(ji) - zda * r1_Dt_ice * ( h_i_1d(ji) * r1_nlay_i * SUM( e_i_1d(ji,1:nlay_i) )  &
                                                                 + h_s_1d(ji) * r1_nlay_s * SUM( e_s_1d(ji,1:nlay_s) ) ) 
             
             ! Contribution to mass flux
-            wfx_lam_1d(ji) =  wfx_lam_1d(ji) + zda * r1_rdtice * ( rhoi * h_i_1d(ji) + rhos * h_s_1d(ji) )
+            wfx_lam_1d(ji) =  wfx_lam_1d(ji) + zda * r1_Dt_ice * ( rhoi * h_i_1d(ji) + rhos * h_s_1d(ji) )
             
             ! new concentration
             a_i_1d(ji) = a_i_1d(ji) - zda
@@ -176,10 +174,8 @@ CONTAINS
       NAMELIST/namthd_da/ rn_beta, rn_dmin
       !!-------------------------------------------------------------------
       !
-      REWIND( numnam_ice_ref )              ! Namelist namthd_da in reference namelist : Ice thermodynamics
       READ  ( numnam_ice_ref, namthd_da, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namthd_da in reference namelist' )
-      REWIND( numnam_ice_cfg )              ! Namelist namthd_da in configuration namelist : Ice thermodynamics
       READ  ( numnam_ice_cfg, namthd_da, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namthd_da in configuration namelist' )
       IF(lwm) WRITE( numoni, namthd_da )

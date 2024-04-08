@@ -63,7 +63,7 @@ set -o posix
 # EVOLUTIONS
 # ==========
 #
-# $Id: maketools 11926 2019-11-18 17:55:49Z nicolasmartin $
+# $Id: maketools 12415 2020-02-19 20:29:26Z smueller $
 #
 #
 #
@@ -73,8 +73,8 @@ set -o posix
 
 #- Local variables ---
 b_n=$(basename ${0})
-export MAIN_DIR=${PWD%/tools*}
-export TOOLS_DIR=${MAIN_DIR}/tools
+export TOOLS_DIR=$(cd $(dirname "$0"); pwd)
+export MAIN_DIR=${TOOLS_DIR%/tools}
 export COMPIL_DIR=${MAIN_DIR}/mk
 export NEMO_DIR=${MAIN_DIR}/NEMO
 #-
@@ -144,9 +144,6 @@ export NEMO_TDIR=${NEMO_TDIR:-$TOOLS_DIR}
 [ "${NEW_CONF}" == help ] && printf "%s\n"  "Available tools :" `ls ${TOOLS_DIR}|grep -v COMPILE | grep -v maketools` && exit
 [ "${CMP_NAM}" ==  help ] && . ${COMPIL_DIR}/Flist_archfile.sh all && exit
 
-#- When used for the first time, choose a compiler ---
-. ${COMPIL_DIR}/Fcheck_archfile.sh arch_tools.fcm cpp.fcm ${CMP_NAM} || exit
-
 #- Choose a default tool if needed ---
 #- REBUILD or last one used ---
 . ${COMPIL_DIR}/Fcheck_config.sh tools.txt ${NEW_CONF} || exit
@@ -155,7 +152,21 @@ export NEMO_TDIR=${NEMO_TDIR:-$TOOLS_DIR}
 echo "${NEW_CONF} "  > ${COMPIL_DIR}/tools.txt
 
 #- Make the building directory
-. ${COMPIL_DIR}/Fmake_bld.sh ${TOOLS_DIR} ${NEW_CONF} ${NEMO_TDIR} || exit
+. ${COMPIL_DIR}/Fmake_tools_bld.sh ${TOOLS_DIR} ${NEW_CONF} ${NEMO_TDIR} || exit
+
+#- At this stage cpp keys have been updated. we can check the arch file
+#- When used for the first time, choose a compiler ---
+. ${COMPIL_DIR}/Fcheck_archfile.sh arch_tools.fcm cpp_tools.fcm ${CMP_NAM} || exit
+
+#- At this stage the configuration has beeen chosen
+#- We coose the default light file
+export USEBLD=bldxag_tools.cfg
+
+#- We look after agrif
+grep key_agrif ${COMPIL_DIR}/cpp_tools.fcm && export AGRIFUSE=1 && export USEBLD=${USEBLD/xag/}
+
+
+. ${COMPIL_DIR}/Fprep_agrif.sh ${NEW_CONF} ${TOOLS_DIR} arch_tools.fcm|| exit 3
 
 #-
 #_ END OF CONFIGURATION PHASE
@@ -165,15 +176,25 @@ echo "${NEW_CONF} "  > ${COMPIL_DIR}/tools.txt
 #- Compile ---
 
 if [ "${NBR_PRC}" -gt 0 ]; then
-cd ${NEMO_TDIR}/${NEW_CONF} || cd -
+cd ${TOOLS_DIR}/${NEW_CONF} || cd -
 
-fcm build ${x_c} --ignore-lock -v 1 -j ${NBR_PRC} ${COMPIL_DIR}/bld_tools.cfg || cd -
-if [ -n "$(ls ${NEMO_TDIR}/${NEW_CONF}/BLD/bin/*.exe)" ]; then
-for i in `ls ${NEMO_TDIR}/${NEW_CONF}/BLD/bin/*.exe`
-   do
-      ln -sf ${i}  ${TOOLS_DIR}/${NEW_CONF}/.
-   done
-fi
+	## if AGRIF we do a first preprocessing
+	if [[ ${#x_c} -eq 0 && "$AGRIFUSE" -eq 1 ]]; then
+		fcm build --ignore-lock -j 1 ${COMPIL_DIR}/bld_preproagr_tools.cfg ||{ cd - ; exit 1 ;}
+		echo ''
+		echo "---------------------------------"
+		echo "CONV preprocessing successfull !!"
+		echo "---------------------------------"
+		echo ''
+	fi
+
+   fcm build ${x_c} --ignore-lock -v 1 -j ${NBR_PRC} ${COMPIL_DIR}/${USEBLD} || cd -
+   if [ -n "$(ls ${NEMO_TDIR}/${NEW_CONF}/BLD/bin/*.exe)" ]; then
+      for i in `ls ${NEMO_TDIR}/${NEW_CONF}/BLD/bin/*.exe`
+      do
+         ln -sf ${i}  ${TOOLS_DIR}/${NEW_CONF}/.
+      done
+   fi
 fi
 #-
 #- Come back to original directory ---

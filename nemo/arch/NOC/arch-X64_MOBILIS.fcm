@@ -19,8 +19,8 @@
 #
 # NCDF_INC    netcdf4 include file
 # NCDF_LIB    netcdf4 library
-# XIOS_INC    xios include file    (taken into accound only if key_iomput is activated)
-# XIOS_LIB    xios library         (taken into accound only if key_iomput is activated)
+# XIOS_INC    xios include file    (taken into accound only if key_xios is activated)
+# XIOS_LIB    xios library         (taken into accound only if key_xios is activated)
 # OASIS_INC   oasis include file   (taken into accound only if key_oasis3 is activated)
 # OASIS_LIB   oasis library        (taken into accound only if key_oasis3 is activated)
 #
@@ -55,13 +55,14 @@
 %OASIS_INC           
 %OASIS_LIB           
 
+#%CPP	             /cm/local/apps/gcc/6.1.0/bin/cpp
 %CPP	             cpp
 %FC                  mpif90 -c -cpp
 %FCFLAGS             -i4 -r8 -O3 -fp-model source -xAVX
 %FFLAGS              %FCFLAGS
 %LD                  mpif90
 %LDFLAGS             -lstdc++
-%FPPFLAGS            -P -C -traditional
+%FPPFLAGS            -P -traditional
 %AR                  ar
 %ARFLAGS             rs
 %MK                  gmake

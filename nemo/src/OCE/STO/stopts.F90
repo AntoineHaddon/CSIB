@@ -25,10 +25,10 @@ MODULE stopts
    REAL(wp), PUBLIC, DIMENSION(:,:,:,:,:), ALLOCATABLE :: pts_ran
 
    !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
+#  include "do_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: stopts.F90 10425 2018-12-19 21:54:16Z smasson $
+   !! $Id: stopts.F90 13295 2020-07-10 18:24:21Z acc $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -43,7 +43,7 @@ CONTAINS
       !!                around every model grid point
       !!
       !!----------------------------------------------------------------------
-      REAL(wp), DIMENSION(jpi,jpj,jpk,jpts), INTENT(inout) ::   pts   ! 1 : potential temperature  [Celsius]
+      REAL(dp), DIMENSION(jpi,jpj,jpk,jpts), INTENT(inout) ::   pts   ! 1 : potential temperature  [Celsius]
       !                                                               ! 2 : salinity               [psu]
       INTEGER  ::   ji, jj, jk, jts, jdof ! dummy loop indices
       INTEGER  ::   jim1, jjm1, jkm1  ! incremented indices
@@ -53,7 +53,7 @@ CONTAINS
       !!----------------------------------------------------------------------
 
       DO jts = 1, jpts
-        CALL lbc_lnk( 'stopts', pts(:,:,:,jts), 'T' , 1._wp )
+        CALL lbc_lnk( 'stopts', pts(:,:,:,jts), 'T' , 1._dp )
       ENDDO
 
       DO jdof = 1, nn_sto_eos
@@ -94,15 +94,11 @@ CONTAINS
 
       ! Eliminate any possible negative salinity
       DO jdof = 1, nn_sto_eos
-         DO jk = 1, jpkm1
-            DO jj = 1, jpj
-               DO ji = 1, jpi
-                  pts_ran(ji,jj,jk,jp_sal,jdof) = MIN( ABS(pts_ran(ji,jj,jk,jp_sal,jdof)) ,  &
-                                                &      MAX(pts(ji,jj,jk,jp_sal),0._wp) )     &
-                                                &  * SIGN(1._wp,pts_ran(ji,jj,jk,jp_sal,jdof))
-               END DO
-            END DO
-         END DO
+         DO_3D( 1, 1, 1, 1, 1, jpkm1 )
+            pts_ran(ji,jj,jk,jp_sal,jdof) = MIN( ABS(pts_ran(ji,jj,jk,jp_sal,jdof)) ,  &
+                                          &      MAX(pts(ji,jj,jk,jp_sal),0._wp) )     &
+                                          &  * SIGN(1._wp,pts_ran(ji,jj,jk,jp_sal,jdof))
+         END_3D
       END DO
 
       ! Eliminate any temperature lower than -2 degC

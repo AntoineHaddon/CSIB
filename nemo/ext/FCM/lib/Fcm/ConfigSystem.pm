@@ -329,6 +329,9 @@ sub compare_setting_in_config {
 
     while (my ($key, $val) = each(%old_val_of)) {
       if (exists($changed{$key})) {
+        # JMM Eliminate trailing and leading blank before comparison
+        $val=~ s/^\s+|\s+$//g;
+        $new_val_of{$key}=~ s/^\s+|\s+$//g;
         if ($val eq $new_val_of{$key}) { # no change from old to new
           delete($changed{$key});
         }

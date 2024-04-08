@@ -11,9 +11,9 @@
 !!   namwad       Wetting and drying                                    (default: OFF)
 !!   namtsd       data: temperature & salinity                          (default: OFF)
 !!   namcrs       coarsened grid (for outputs and/or TOP)               (ln_crs =T)
-!!   namc1d       1D configuration options                              ("key_c1d")
-!!   namc1d_dyndmp 1D newtonian damping applied on currents             ("key_c1d")
-!!   namc1d_uvd   1D data (currents)                                    ("key_c1d")
+!!   namc1d       1D configuration options                              (ln_c1d =T)
+!!   namc1d_dyndmp 1D newtonian damping applied on currents             (ln_c1d =T)
+!!   namc1d_uvd   1D data (currents)                                    (ln_c1d =T)
 !!======================================================================
 !
 !-----------------------------------------------------------------------
@@ -33,6 +33,10 @@
    ln_read_cfg = .false.   !  (=F) user defined configuration           (F => create/check namusr_def)
 /
 !-----------------------------------------------------------------------
+&namtile        !   parameters of the tiling
+!-----------------------------------------------------------------------
+/
+!-----------------------------------------------------------------------
 &namusr_def    !   GYRE user defined namelist  
 !-----------------------------------------------------------------------
    nn_GYRE     =     1     !  GYRE resolution [1/degrees]
@@ -44,7 +48,7 @@
 !-----------------------------------------------------------------------
    ln_linssh   = .true.    !  =T  linear free surface  ==>>  model level are fixed in time
    !
-   rn_rdt      = 7200.     !  time step for the dynamics
+   rn_Dt      = 7200.     !  time step for the dynamics
 /
 !!======================================================================
 !!            ***  Surface Boundary Condition namelists  ***          !!
@@ -216,12 +220,10 @@
 !!                  ***  Diagnostics namelists  ***                   !!
 !!                                                                    !!
 !!   namtrd       dynamics and/or tracer trends                         (default: OFF)
-!!   namptr       Poleward Transport Diagnostics                        (default: OFF)
 !!   namhsb       Heat and salt budgets                                 (default: OFF)
 !!   namdiu       Cool skin and warm layer models                       (default: OFF)
 !!   namdiu       Cool skin and warm layer models                       (default: OFF)
 !!   namflo       float parameters                                      (default: OFF)
-!!   nam_diaharm  Harmonic analysis of tidal constituents               (default: OFF)
 !!   nam_diadct   transports through some sections                      (default: OFF)
 !!   nam_dia25h   25h Mean Output                                       (default: OFF)
 !!   namnc4       netcdf4 chunking and compression settings             ("key_netcdf4")
@@ -230,14 +232,14 @@
 !!======================================================================
 !!                  ***  Miscellaneous namelists  ***                 !!
 !!                                                                    !!
-!!   nammpp            Massively Parallel Processing                    ("key_mpp_mpi")
+!!   nammpp            Massively Parallel Processing
 !!   namctl            Control prints                                   (default: OFF)
 !!   namsto            Stochastic parametrization of EOS                (default: OFF)
 !!======================================================================
 !
 !
 !-----------------------------------------------------------------------
-&nammpp        !   Massively Parallel Processing                        ("key_mpp_mpi")
+&nammpp        !   Massively Parallel Processing
 !-----------------------------------------------------------------------
 /
 !-----------------------------------------------------------------------

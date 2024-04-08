@@ -19,7 +19,7 @@ MODULE trcnam_c14
    !!
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: trcnam_c14.F90 11536 2019-09-11 13:54:18Z smasson $ 
+   !! $Id: trcnam_c14.F90 14871 2021-05-17 09:50:39Z rlod $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 
@@ -59,11 +59,10 @@ CONTAINS
       ln_trc_sbc(jp_c14) = .false.
       ln_trc_cbc(jp_c14) = .false.
       ln_trc_obc(jp_c14) = .false.
+      ln_trc_ais(jp_c14) = .false.
       !
-      REWIND( numtrc_ref )              ! Namelist namc14_typ in reference namelist :
       READ  ( numtrc_ref, namc14_typ, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namc14_typ in reference namelist' )
-      REWIND( numtrc_cfg )              ! Namelist namcfcdate in configuration namelist 
       READ  ( numtrc_cfg, namc14_typ, IOSTAT = ios, ERR = 902)
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namc14_typ in configuration namelist' )
       IF(lwm) WRITE ( numonr, namc14_typ )
@@ -77,10 +76,8 @@ CONTAINS
          WRITE(numout,*)
       ENDIF
 
-      REWIND( numtrc_ref )              ! Namelist namc14_typ in reference namelist :
       READ  ( numtrc_ref, namc14_sbc, IOSTAT = ios, ERR = 903)
 903   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namc14_sbc in reference namelist' )
-      REWIND( numtrc_cfg )              ! Namelist namcfcdate in configuration namelist 
       READ  ( numtrc_cfg, namc14_sbc, IOSTAT = ios, ERR = 904)
 904   IF( ios >  0 )   CALL ctl_nam ( ios , 'namc14_sbc in configuration namelist' )
       IF(lwm) WRITE( numonr, namc14_sbc )
@@ -93,10 +90,8 @@ CONTAINS
          WRITE(numout,*)
       ENDIF
 
-      REWIND( numtrc_ref )              ! Namelist namc14_typ in reference namelist :
       READ  ( numtrc_ref, namc14_fcg, IOSTAT = ios, ERR = 905)
 905   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namc14_fcg in reference namelist' )
-      REWIND( numtrc_cfg )              ! Namelist namcfcdate in configuration namelist 
       READ  ( numtrc_cfg, namc14_fcg, IOSTAT = ios, ERR = 906)
 906   IF( ios >  0 )   CALL ctl_nam ( ios , 'namc14_fcg in configuration namelist' )
       IF(lwm) WRITE ( numonr, namc14_fcg )

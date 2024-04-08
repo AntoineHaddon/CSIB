@@ -17,14 +17,14 @@
 !> @date September, 2002
 !> - F90: Free form and module
 !>  @date Marsh, 2009
-!> - R. Benshila : External north fold treatment  
+!> - R. Benshila : External north fold treatment
 !>  @date December, 2012
 !> - S.Mocavero, I. Epicoco : Add 'lbc_bdy_lnk' and lbc_obc_lnk' routine to optimize the BDY/OBC communications
 !> @date December, 2012
-!> - R. Bourdalle-Badie and G. Reffray : add a C1D case 
-!> @date January, 2015 
+!> - R. Bourdalle-Badie and G. Reffray : add a C1D case
+!> @date January, 2015
 !> - J.Paul : rewrite with SIREN coding rules
-!> @date Marsh, 2015 
+!> @date Marsh, 2015
 !> - J.Paul : add hide subroutine
 !>
 !> @note Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
@@ -35,9 +35,9 @@ MODULE lbc
    ! NOTE_avoid_public_variables_if_possible
 
    ! function and subroutine
-   PUBLIC :: lbc_lnk 
-   PUBLIC :: lbc_nfd  
-   PUBLIC :: lbc_hide  
+   PUBLIC :: lbc_lnk
+   PUBLIC :: lbc_nfd
+   PUBLIC :: lbc_hide
 
    PRIVATE :: lbc__lnk_3d
    PRIVATE :: lbc__lnk_2d
@@ -64,12 +64,12 @@ MODULE lbc
    INTERFACE lbc__hide_nfd
       MODULE PROCEDURE   lbc__hide_nfd_2d
    END INTERFACE
-    
+
 CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE lbc__lnk_3d(dd_array, cd_type, id_perio, dd_psgn, dd_fill)
-   !------------------------------------------------------------------- 
-   !> @brief This subroutine set lateral boundary conditions on a 3D array (non mpp case) 
+   !-------------------------------------------------------------------
+   !> @brief This subroutine set lateral boundary conditions on a 3D array (non mpp case)
    !>
    !> @details
    !>             dd_psign = -1 :    change the sign across the north fold
@@ -77,13 +77,13 @@ CONTAINS
    !>                      =  0 : no change of the sign across the north fold and
    !>                             strict positivity preserved: use inner row/column
    !>                             for closed boundaries.
-   !> @author J.Paul 
-   !> - January, 2015- rewrite with SIREN coding rules 
-   !> 
-   !> @param[inout] dd_array  3D array 
+   !> @author J.Paul
+   !> - January, 2015- rewrite with SIREN coding rules
+   !>
+   !> @param[inout] dd_array  3D array
    !> @param[in] cd_type point grid
    !> @param[in] id_perio NEMO periodicity of the grid
-   !> @param[in] dd_psgn 
+   !> @param[in] dd_psgn
    !> @param[in] dd_fill   fillValue
    !-------------------------------------------------------------------
 
@@ -167,8 +167,8 @@ CONTAINS
    END SUBROUTINE lbc__lnk_3d
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE lbc__lnk_2d(dd_array, cd_type, id_perio, dd_psgn, dd_fill)
-   !------------------------------------------------------------------- 
-   !> @brief This subroutine set lateral boundary conditions on a 2D array (non mpp case) 
+   !-------------------------------------------------------------------
+   !> @brief This subroutine set lateral boundary conditions on a 2D array (non mpp case)
    !>
    !> @details
    !>             dd_psign = -1 :    change the sign across the north fold
@@ -176,13 +176,13 @@ CONTAINS
    !>                      =  0 : no change of the sign across the north fold and
    !>                             strict positivity preserved: use inner row/column
    !>                             for closed boundaries.
-   !> @author J.Paul 
+   !> @author J.Paul
    !> - January, 2015- rewrite with SIREN coding rules
-   !> 
-   !> @param[inout] dd_array  2D array 
+   !>
+   !> @param[inout] dd_array  2D array
    !> @param[in] cd_type point grid
    !> @param[in] id_perio NEMO periodicity of the grid
-   !> @param[in] dd_psgn 
+   !> @param[in] dd_psgn
    !> @param[in] dd_fill   fillValue
    !-------------------------------------------------------------------
 
@@ -267,19 +267,19 @@ CONTAINS
    END SUBROUTINE lbc__lnk_2d
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE lbc__nfd_3d(dd_array, cd_type, id_perio, dd_psgn)
-   !------------------------------------------------------------------- 
-   !> @brief This subroutine manage 3D lateral boundary condition : 
-   !> North fold treatment without processor exchanges. 
+   !-------------------------------------------------------------------
+   !> @brief This subroutine manage 3D lateral boundary condition :
+   !> North fold treatment without processor exchanges.
    !>
    !> @warning keep only non mpp case
    !>
-   !> @author J.Paul 
+   !> @author J.Paul
    !> - January, 2015- rewrite with SIREN coding rules
-   !> 
-   !> @param[inout] dd_array  3D array 
+   !>
+   !> @param[inout] dd_array  3D array
    !> @param[in] cd_type point grid
    !> @param[in] id_perio NEMO periodicity of the grid
-   !> @param[in] dd_psgn 
+   !> @param[in] dd_psgn
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -304,7 +304,7 @@ CONTAINS
       INTEGER(i4) :: ji
       INTEGER(i4) :: jk
       !----------------------------------------------------------------
-      
+
       il_jpi=SIZE(dd_array(:,:,:),DIM=1)
       il_jpj=SIZE(dd_array(:,:,:),DIM=2)
       il_jpk=SIZE(dd_array(:,:,:),DIM=3)
@@ -335,7 +335,7 @@ CONTAINS
                   dd_array(ji,il_jpj,jk) = dd_psgn * dd_array(iju,il_jpj-2,jk)
                END DO
                dd_array(   1  ,il_jpj,jk) = dd_psgn * dd_array(    2   ,il_jpj-2,jk)
-               dd_array(il_jpi,il_jpj,jk) = dd_psgn * dd_array(il_jpi-1,il_jpj-2,jk) 
+               dd_array(il_jpi,il_jpj,jk) = dd_psgn * dd_array(il_jpi-1,il_jpj-2,jk)
                DO ji = il_jpi/2, il_jpi-1
                   iju = il_jpi-ji+1
                   dd_array(ji,il_jpjm1,jk) = dd_psgn * dd_array(iju,il_jpjm1,jk)
@@ -346,7 +346,7 @@ CONTAINS
                   dd_array(ji,il_jpj-1,jk) = dd_psgn * dd_array(ijt,il_jpj-2,jk)
                   dd_array(ji,il_jpj  ,jk) = dd_psgn * dd_array(ijt,il_jpj-3,jk)
                END DO
-               dd_array(1,il_jpj,jk) = dd_psgn * dd_array(3,il_jpj-3,jk) 
+               dd_array(1,il_jpj,jk) = dd_psgn * dd_array(3,il_jpj-3,jk)
             CASE ( 'F' )                               ! F-point
                DO ji = 1, il_jpi-1
                   iju = il_jpi-ji+1
@@ -354,7 +354,7 @@ CONTAINS
                   dd_array(ji,il_jpj  ,jk) = dd_psgn * dd_array(iju,il_jpj-3,jk)
                END DO
                dd_array(   1  ,il_jpj,jk) = dd_psgn * dd_array(    2   ,il_jpj-3,jk)
-               dd_array(il_jpi,il_jpj,jk) = dd_psgn * dd_array(il_jpi-1,il_jpj-3,jk) 
+               dd_array(il_jpi,il_jpj,jk) = dd_psgn * dd_array(il_jpi-1,il_jpj-3,jk)
             END SELECT
             !
          CASE ( 5 , 6 )                        ! *  North fold  F-point pivot
@@ -409,20 +409,20 @@ CONTAINS
    END SUBROUTINE lbc__nfd_3d
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE lbc__nfd_2d(dd_array, cd_type, id_perio, dd_psgn)
-   !------------------------------------------------------------------- 
-   !> @brief This subroutine manage 2D lateral boundary condition : 
-   !> North fold treatment without processor exchanges. 
+   !-------------------------------------------------------------------
+   !> @brief This subroutine manage 2D lateral boundary condition :
+   !> North fold treatment without processor exchanges.
    !>
    !> @warning keep only non mpp case
    !> @warning do not use additional halos
    !>
-   !> @author J.Paul 
+   !> @author J.Paul
    !> - January, 2015- rewrite with SIREN coding rules
-   !> 
-   !> @param[inout] dd_array  2D array 
+   !>
+   !> @param[inout] dd_array  2D array
    !> @param[in] cd_type point grid
    !> @param[in] id_perio NEMO periodicity of the grid
-   !> @param[in] dd_psgn 
+   !> @param[in] dd_psgn
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -475,7 +475,7 @@ CONTAINS
             END DO
             dd_array(   1  ,il_jpj  ) = dd_psgn * dd_array(    2   ,il_jpj-2)
             dd_array(il_jpi,il_jpj  ) = dd_psgn * dd_array(il_jpi-1,il_jpj-2)
-            dd_array(1     ,il_jpj-1) = dd_psgn * dd_array(il_jpi  ,il_jpj-1)   
+            dd_array(1     ,il_jpj-1) = dd_psgn * dd_array(il_jpi  ,il_jpj-1)
             DO ji = il_jpi/2, il_jpi-1
                iju = il_jpi-ji+1
                dd_array(ji,il_jpjm1) = dd_psgn * dd_array(iju,il_jpjm1)
@@ -485,7 +485,7 @@ CONTAINS
                ijt = il_jpi-ji+2
                dd_array(ji,il_jpj) = dd_psgn * dd_array(ijt,il_jpj-3)
             END DO
-            dd_array( 1 ,il_jpj)   = dd_psgn * dd_array( 3 ,il_jpj-3) 
+            dd_array( 1 ,il_jpj)   = dd_psgn * dd_array( 3 ,il_jpj-3)
          CASE ( 'F' )                                     ! F-point
             DO ji = 1, il_jpi-1
                iju = il_jpi-ji+1
@@ -493,8 +493,8 @@ CONTAINS
             END DO
             dd_array(   1  ,il_jpj)   = dd_psgn * dd_array(    2   ,il_jpj-3)
             dd_array(il_jpi,il_jpj)   = dd_psgn * dd_array(il_jpi-1,il_jpj-3)
-            dd_array(il_jpi,il_jpj-1) = dd_psgn * dd_array(il_jpi-1,il_jpj-2)      
-            dd_array(   1  ,il_jpj-1) = dd_psgn * dd_array(    2   ,il_jpj-2)      
+            dd_array(il_jpi,il_jpj-1) = dd_psgn * dd_array(il_jpi-1,il_jpj-2)
+            dd_array(   1  ,il_jpj-1) = dd_psgn * dd_array(    2   ,il_jpj-2)
          CASE ( 'I' )                                     ! ice U-V point (I-point)
             dd_array(2,il_jpj) = dd_psgn * dd_array(3,il_jpj-1)
             DO ji = 3, il_jpi
@@ -592,8 +592,8 @@ CONTAINS
    END SUBROUTINE lbc__nfd_2d
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE lbc__hide_lnk_2d(dd_array, cd_type, id_perio, dd_psgn, dd_fill)
-   !------------------------------------------------------------------- 
-   !> @brief This subroutine hide lateral boundary conditions on a 2D array (non mpp case) 
+   !-------------------------------------------------------------------
+   !> @brief This subroutine hide lateral boundary conditions on a 2D array (non mpp case)
    !>
    !> @details
    !>             dd_psign = -1 :    change the sign across the north fold
@@ -601,13 +601,13 @@ CONTAINS
    !>                      =  0 : no change of the sign across the north fold and
    !>                             strict positivity preserved: use inner row/column
    !>                             for closed boundaries.
-   !> @author J.Paul 
+   !> @author J.Paul
    !> - Marsh, 2015- initial version
-   !> 
-   !> @param[inout] dd_array  2D array 
+   !>
+   !> @param[inout] dd_array  2D array
    !> @param[in] cd_type point grid
    !> @param[in] id_perio NEMO periodicity of the grid
-   !> @param[in] dd_psgn 
+   !> @param[in] dd_psgn
    !> @param[in] dd_fill   fillValue
    !-------------------------------------------------------------------
 
@@ -693,21 +693,21 @@ CONTAINS
    END SUBROUTINE lbc__hide_lnk_2d
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE lbc__hide_nfd_2d(dd_array, cd_type, id_perio, dd_psgn, dd_fill)
-   !------------------------------------------------------------------- 
-   !> @brief This subroutine manage 2D lateral boundary condition : 
-   !> hide North fold treatment without processor exchanges. 
+   !-------------------------------------------------------------------
+   !> @brief This subroutine manage 2D lateral boundary condition :
+   !> hide North fold treatment without processor exchanges.
    !>
    !> @warning keep only non mpp case
    !> @warning do not use additional halos
    !>
-   !> @author J.Paul 
+   !> @author J.Paul
    !> - Marsh, 2015- initial version
-   !> 
-   !> @param[inout] dd_array  2D array 
+   !>
+   !> @param[inout] dd_array  2D array
    !> @param[in] cd_type point grid
    !> @param[in] id_perio NEMO periodicity of the grid
-   !> @param[in] dd_psgn 
-   !> @param[in] dd_fill 
+   !> @param[in] dd_psgn
+   !> @param[in] dd_fill
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -758,7 +758,7 @@ CONTAINS
             DO ji = 1, il_jpi-1
                dd_array(ji,il_jpj) = dl_fill
             END DO
-            dd_array(   1  ,il_jpj  ) = dl_fill 
+            dd_array(   1  ,il_jpj  ) = dl_fill
             dd_array(il_jpi,il_jpj  ) = dl_fill
             dd_array(1     ,il_jpj-1) = dl_fill
             DO ji = il_jpi/2+1, il_jpi-1
@@ -768,14 +768,14 @@ CONTAINS
             DO ji = 2, il_jpi
                dd_array(ji,il_jpj) = dl_fill
             END DO
-            dd_array( 1 ,il_jpj)   = dl_fill 
+            dd_array( 1 ,il_jpj)   = dl_fill
          CASE ( 'F' )                                     ! F-point
             DO ji = 1, il_jpi-1
                dd_array(ji,il_jpj) = dl_fill
             END DO
             dd_array(   1  ,il_jpj)   = dl_fill
             dd_array(il_jpi,il_jpj)   = dl_fill
-            dd_array(il_jpi,il_jpj-1) = dl_fill 
+            dd_array(il_jpi,il_jpj-1) = dl_fill
             dd_array(   1  ,il_jpj-1) = dl_fill
          END SELECT
          !

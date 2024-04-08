@@ -7,7 +7,6 @@ MODULE ldfdyn
    !!   NEMO     1.0  ! 2002-09  (G. Madec)  F90: Free form and module
    !!            3.7  ! 2014-01  (F. Lemarie, G. Madec)  restructuration/simplification of ahm specification,
    !!                 !                                  add velocity dependent coefficient and optional read in file
-   !!          4.0.3  ! 2021-02  (D. Yang)   Add lrowattr=ln_use_jattr for reading eddy_viscosity_3D.nc
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -34,6 +33,7 @@ MODULE ldfdyn
 
    !                                    !!* Namelist namdyn_ldf : lateral mixing on momentum *
    LOGICAL , PUBLIC ::   ln_dynldf_OFF   !: No operator (i.e. no explicit diffusion)
+   INTEGER , PUBLIC ::   nn_dynldf_typ   !: operator type (0: div-rot ; 1: symmetric)
    LOGICAL , PUBLIC ::   ln_dynldf_lap   !: laplacian operator
    LOGICAL , PUBLIC ::   ln_dynldf_blp   !: bilaplacian operator
    LOGICAL , PUBLIC ::   ln_dynldf_lev   !: iso-level direction
@@ -52,8 +52,12 @@ MODULE ldfdyn
    REAL(wp), PUBLIC ::   rn_ahm_b              !: lateral laplacian background eddy viscosity  [m2/s]
 
    !                                    !!* Parameter to control the type of lateral viscous operator
-   INTEGER, PARAMETER, PUBLIC ::   np_ERROR  =-10                       !: error in setting the operator
-   INTEGER, PARAMETER, PUBLIC ::   np_no_ldf = 00                       !: without operator (i.e. no lateral viscous trend)
+   INTEGER, PARAMETER, PUBLIC ::   np_ERROR   =-10                      !: error in setting the operator
+   INTEGER, PARAMETER, PUBLIC ::   np_no_ldf  = 00                      !: without operator (i.e. no lateral viscous trend)
+   !
+   INTEGER, PARAMETER, PUBLIC ::   np_typ_rot = 0                       !: div-rot   operator
+   INTEGER, PARAMETER, PUBLIC ::   np_typ_sym = 1                       !: symmetric operator
+   !
    !                          !!      laplacian     !    bilaplacian    !
    INTEGER, PARAMETER, PUBLIC ::   np_lap    = 10   ,   np_blp    = 20  !: iso-level operator
    INTEGER, PARAMETER, PUBLIC ::   np_lap_i  = 11                       !: iso-neutral or geopotential operator
@@ -73,10 +77,10 @@ MODULE ldfdyn
    REAL(wp) ::   r1_288  = 1._wp / 288._wp   ! =1/( 12^2 * 2 )
 
    !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
+#  include "do_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: ldfdyn.F90 12276 2019-12-20 11:14:26Z cetlod $ 
+   !! $Id: ldfdyn.F90 15014 2021-06-17 17:02:04Z smasson $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -94,11 +98,11 @@ CONTAINS
       !!              - the parameter nn_ahm_ijk_t:
       !!    nn_ahm_ijk_t  =  0 => = constant
       !!                  = 10 => = F(z) :     = constant with a reduction of 1/4 with depth 
-      !!                  =-20 => = F(i,j)     = shape read in 'eddy_viscosity.nc' file
+      !!                  =-20 => = F(i,j)     = shape read in 'eddy_viscosity_2D.nc' file
       !!                  = 20    = F(i,j)     = F(e1,e2) or F(e1^3,e2^3) (lap or bilap case)
-      !!                  =-30 => = F(i,j,k)   = shape read in 'eddy_viscosity.nc'  file
+      !!                  =-30 => = F(i,j,k)   = shape read in 'eddy_viscosity_3D.nc'  file
       !!                  = 30    = F(i,j,k)   = 2D (case 20) + decrease with depth (case 10)
-      !!                  = 31    = F(i,j,k,t) = F(local velocity) (  |u|e  /12   laplacian operator
+      !!                  = 31    = F(i,j,k,t) = F(local velocity) (  |u|e  / 2   laplacian operator
       !!                                                           or |u|e^3/12 bilaplacian operator )
       !!                  = 32    = F(i,j,k,t) = F(local deformation rate and gridscale) (D and L) (Smagorinsky)  
       !!                                                           (   L^2|D|      laplacian operator
@@ -109,17 +113,15 @@ CONTAINS
       REAL(wp) ::   zah0, zah_max, zUfac           ! local scalar
       CHARACTER(len=5) ::   cl_Units               ! units (m2/s or m4/s)
       !!
-      NAMELIST/namdyn_ldf/ ln_dynldf_OFF, ln_dynldf_lap, ln_dynldf_blp,   &   ! type of operator
-         &                 ln_dynldf_lev, ln_dynldf_hor, ln_dynldf_iso,   &   ! acting direction of the operator
-         &                 nn_ahm_ijk_t , rn_Uv    , rn_Lv,   rn_ahm_b,   &   ! lateral eddy coefficient
-         &                 rn_csmc      , rn_minfac    , rn_maxfac            ! Smagorinsky settings
+      NAMELIST/namdyn_ldf/ ln_dynldf_OFF, nn_dynldf_typ, ln_dynldf_lap, ln_dynldf_blp,   &   ! type of operator
+         &                 ln_dynldf_lev, ln_dynldf_hor, ln_dynldf_iso,                  &   ! acting direction of the operator
+         &                 nn_ahm_ijk_t , rn_Uv        , rn_Lv        ,   rn_ahm_b,      &   ! lateral eddy coefficient
+         &                 rn_csmc      , rn_minfac    , rn_maxfac                           ! Smagorinsky settings
       !!----------------------------------------------------------------------
       !
-      REWIND( numnam_ref )
       READ  ( numnam_ref, namdyn_ldf, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namdyn_ldf in reference namelist' )
 
-      REWIND( numnam_cfg )
       READ  ( numnam_cfg, namdyn_ldf, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namdyn_ldf in configuration namelist' )
       IF(lwm) WRITE ( numond, namdyn_ldf )
@@ -132,6 +134,7 @@ CONTAINS
          !
          WRITE(numout,*) '      type :'
          WRITE(numout,*) '         no explicit diffusion                ln_dynldf_OFF = ', ln_dynldf_OFF
+         WRITE(numout,*) '         type of operator (div-rot or sym)    nn_dynldf_typ = ', nn_dynldf_typ
          WRITE(numout,*) '         laplacian operator                   ln_dynldf_lap = ', ln_dynldf_lap
          WRITE(numout,*) '         bilaplacian operator                 ln_dynldf_blp = ', ln_dynldf_blp
          !
@@ -149,8 +152,8 @@ CONTAINS
          WRITE(numout,*) '      Smagorinsky settings (nn_ahm_ijk_t  = 32) :'
          WRITE(numout,*) '         Smagorinsky coefficient              rn_csmc       = ', rn_csmc
          WRITE(numout,*) '         factor multiplier for eddy visc.'
-         WRITE(numout,*) '            lower limit (default 1.0)         rn_minfac    = ', rn_minfac
-         WRITE(numout,*) '            upper limit (default 1.0)         rn_maxfac    = ', rn_maxfac
+         WRITE(numout,*) '            lower limit (default 1.0)         rn_minfac     = ', rn_minfac
+         WRITE(numout,*) '            upper limit (default 1.0)         rn_maxfac     = ', rn_maxfac
       ENDIF
 
       !
@@ -162,14 +165,22 @@ CONTAINS
       IF( ln_dynldf_OFF ) THEN   ;   nldf_dyn = np_no_ldf   ;   ioptio = ioptio + 1   ;   ENDIF
       IF( ln_dynldf_lap ) THEN   ;                              ioptio = ioptio + 1   ;   ENDIF
       IF( ln_dynldf_blp ) THEN   ;                              ioptio = ioptio + 1   ;   ENDIF
-      IF( ioptio /= 1   )   CALL ctl_stop( 'dyn_ldf_init: use ONE of the 3 operator options (NONE/lap/blp)' )
+      IF( ioptio /= 1   )   CALL ctl_stop( 'ldf_dyn_init: use ONE of the 3 operator options (NONE/lap/blp)' )
       !
       IF(.NOT.ln_dynldf_OFF ) THEN     !==  direction ==>> type of operator  ==!
+         !
+         SELECT CASE( nn_dynldf_typ )  ! div-rot or symmetric
+         CASE( np_typ_rot )   ;   IF(lwp)   WRITE(numout,*) '   ==>>>   use div-rot   operator '
+         CASE( np_typ_sym )   ;   IF(lwp)   WRITE(numout,*) '   ==>>>   use symmetric operator '
+         CASE DEFAULT                                     ! error
+            CALL ctl_stop('ldf_dyn_init: wrong value for nn_dynldf_typ (0 or 1)'  )
+         END SELECT
+         !
          ioptio = 0
          IF( ln_dynldf_lev )   ioptio = ioptio + 1
          IF( ln_dynldf_hor )   ioptio = ioptio + 1
          IF( ln_dynldf_iso )   ioptio = ioptio + 1
-         IF( ioptio /= 1   )   CALL ctl_stop( 'dyn_ldf_init: use ONE of the 3 direction options (level/hor/iso)' )
+         IF( ioptio /= 1   )   CALL ctl_stop( 'ldf_dyn_init: use ONE of the 3 direction options (level/hor/iso)' )
          !
          !                             ! Set nldf_dyn, the type of lateral diffusion, from ln_dynldf_... logicals
          ierr = 0
@@ -269,8 +280,8 @@ CONTAINS
          CASE ( -20 )      !== fixed horizontal shape read in file  ==!
             IF(lwp) WRITE(numout,*) '   ==>>>   eddy viscosity = F(i,j) read in eddy_viscosity.nc file'
             CALL iom_open( 'eddy_viscosity_2D.nc', inum )
-            CALL iom_get ( inum, jpdom_data, 'ahmt_2d', ahmt(:,:,1), lrowattr=ln_use_jattr)
-            CALL iom_get ( inum, jpdom_data, 'ahmf_2d', ahmf(:,:,1), lrowattr=ln_use_jattr)
+            CALL iom_get ( inum, jpdom_global, 'ahmt_2d', ahmt(:,:,1), cd_type = 'T', psgn = 1._wp )
+            CALL iom_get ( inum, jpdom_global, 'ahmf_2d', ahmf(:,:,1), cd_type = 'F', psgn = 1._wp )
             CALL iom_close( inum )
             DO jk = 2, jpkm1
                ahmt(:,:,jk) = ahmt(:,:,1)
@@ -286,8 +297,8 @@ CONTAINS
          CASE( -30  )      !== fixed 3D shape read in file  ==!
             IF(lwp) WRITE(numout,*) '   ==>>>   eddy viscosity = F(i,j,k) read in eddy_viscosity_3D.nc file'
             CALL iom_open( 'eddy_viscosity_3D.nc', inum )
-            CALL iom_get ( inum, jpdom_data, 'ahmt_3d', ahmt, lrowattr=ln_use_jattr )
-            CALL iom_get ( inum, jpdom_data, 'ahmf_3d', ahmf, lrowattr=ln_use_jattr )
+            CALL iom_get ( inum, jpdom_global, 'ahmt_3d', ahmt, cd_type = 'T', psgn = 1._wp )
+            CALL iom_get ( inum, jpdom_global, 'ahmf_3d', ahmf, cd_type = 'F', psgn = 1._wp )
             CALL iom_close( inum )
             !
          CASE(  30  )       !==  fixed 3D shape  ==!
@@ -313,12 +324,10 @@ CONTAINS
             ALLOCATE( dtensq(jpi,jpj,jpk) , dshesq(jpi,jpj,jpk) , esqt(jpi,jpj) , esqf(jpi,jpj) , STAT=ierr )
             IF( ierr /= 0 )   CALL ctl_stop( 'STOP', 'ldf_dyn_init: failed to allocate Smagorinsky arrays')
             !
-            DO jj = 1, jpj             ! Set local gridscale values
-               DO ji = 1, jpi
-                  esqt(ji,jj) = ( 2._wp * e1e2t(ji,jj) / ( e1t(ji,jj) + e2t(ji,jj) ) )**2 
-                  esqf(ji,jj) = ( 2._wp * e1e2f(ji,jj) / ( e1f(ji,jj) + e2f(ji,jj) ) )**2 
-               END DO
-            END DO
+            DO_2D( 1, 1, 1, 1 )        ! Set local gridscale values
+               esqt(ji,jj) = ( 2._wp * e1e2t(ji,jj) / ( e1t(ji,jj) + e2t(ji,jj) ) )**2 
+               esqf(ji,jj) = ( 2._wp * e1e2f(ji,jj) / ( e1f(ji,jj) + e2f(ji,jj) ) )**2 
+            END_2D
             !
          CASE DEFAULT
             CALL ctl_stop('ldf_dyn_init: wrong choice for nn_ahm_ijk_t, the type of space-time variation of ahm')
@@ -339,7 +348,7 @@ CONTAINS
    END SUBROUTINE ldf_dyn_init
 
 
-   SUBROUTINE ldf_dyn( kt )
+   SUBROUTINE ldf_dyn( kt, Kbb )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE ldf_dyn  ***
       !! 
@@ -348,7 +357,7 @@ CONTAINS
       !! ** Method  :   time varying eddy viscosity coefficients:
       !!
       !!    nn_ahm_ijk_t = 31    ahmt, ahmf = F(i,j,k,t) = F(local velocity) 
-      !!                         ( |u|e /12  or  |u|e^3/12 for laplacian or bilaplacian operator )
+      !!                         ( |u|e / 2  or  |u|e^3/2 for laplacian, u|e^3/12  for bilaplacian operator )
       !!
       !!    nn_ahm_ijk_t = 32    ahmt, ahmf = F(i,j,k,t) = F(local deformation rate and gridscale) (D and L) (Smagorinsky)  
       !!                         ( L^2|D|    or  L^4|D|/8  for laplacian or bilaplacian operator )
@@ -357,6 +366,7 @@ CONTAINS
       !! ** action  :    ahmt, ahmf   updated at each time step
       !!----------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt   ! time step index
+      INTEGER, INTENT(in) ::   Kbb  ! ocean time level indices
       !
       INTEGER  ::   ji, jj, jk   ! dummy loop indices
       REAL(wp) ::   zu2pv2_ij_p1, zu2pv2_ij, zu2pv2_ij_m1, zemax   ! local scalar (option 31)
@@ -369,47 +379,33 @@ CONTAINS
       !
       CASE(  31  )       !==  time varying 3D field  ==!   = F( local velocity )
          !
-         IF( ln_dynldf_lap   ) THEN        ! laplacian operator : |u| e /12 = |u/144| e
-            DO jk = 1, jpkm1
-               DO jj = 2, jpjm1
-                  DO ji = fs_2, fs_jpim1
-                     zu2pv2_ij    = ub(ji  ,jj  ,jk) * ub(ji  ,jj  ,jk) + vb(ji  ,jj  ,jk) * vb(ji  ,jj  ,jk)
-                     zu2pv2_ij_m1 = ub(ji-1,jj  ,jk) * ub(ji-1,jj  ,jk) + vb(ji  ,jj-1,jk) * vb(ji  ,jj-1,jk)
-                     zemax = MAX( e1t(ji,jj) , e2t(ji,jj) )
-                     ahmt(ji,jj,jk) = SQRT( (zu2pv2_ij + zu2pv2_ij_m1) * r1_288 ) * zemax * tmask(ji,jj,jk)      ! 288= 12*12 * 2
-                  END DO
-               END DO
-               DO jj = 1, jpjm1
-                  DO ji = 1, fs_jpim1
-                     zu2pv2_ij_p1 = ub(ji  ,jj+1,jk) * ub(ji  ,jj+1,jk) + vb(ji+1,jj  ,jk) * vb(ji+1,jj  ,jk)
-                     zu2pv2_ij    = ub(ji  ,jj  ,jk) * ub(ji  ,jj  ,jk) + vb(ji  ,jj  ,jk) * vb(ji  ,jj  ,jk)
-                     zemax = MAX( e1f(ji,jj) , e2f(ji,jj) )
-                     ahmf(ji,jj,jk) = SQRT( (zu2pv2_ij + zu2pv2_ij_p1) * r1_288 ) * zemax * fmask(ji,jj,jk)      ! 288= 12*12 * 2
-                  END DO
-               END DO
+         IF( ln_dynldf_lap   ) THEN        ! laplacian operator : |u| e / 2 = |u/ 4| e
+            DO jk = 1, jpkm1               ! r1_8 = 1 / (2*2 * 2)
+               DO_2D( 0, 0, 0, 0 )
+                  zu2pv2_ij    = uu(ji  ,jj  ,jk,Kbb) * uu(ji  ,jj  ,jk,Kbb) + vv(ji  ,jj  ,jk,Kbb) * vv(ji  ,jj  ,jk,Kbb)
+                  zu2pv2_ij_m1 = uu(ji-1,jj  ,jk,Kbb) * uu(ji-1,jj  ,jk,Kbb) + vv(ji  ,jj-1,jk,Kbb) * vv(ji  ,jj-1,jk,Kbb)
+                  zu2pv2_ij_p1 = uu(ji  ,jj+1,jk,Kbb) * uu(ji  ,jj+1,jk,Kbb) + vv(ji+1,jj  ,jk,Kbb) * vv(ji+1,jj  ,jk,Kbb)
+                  zemax = MAX( e1t(ji,jj) , e2t(ji,jj) )
+                  ahmt(ji,jj,jk) = SQRT( (zu2pv2_ij + zu2pv2_ij_m1) * r1_8 ) * zemax * tmask(ji,jj,jk)   
+                  zemax = MAX( e1f(ji,jj) , e2f(ji,jj) )
+                  ahmf(ji,jj,jk) = SQRT( (zu2pv2_ij + zu2pv2_ij_p1) * r1_8 ) * zemax * fmask(ji,jj,jk)
+               END_2D
             END DO
          ELSEIF( ln_dynldf_blp ) THEN      ! bilaplacian operator : sqrt( |u| e^3 /12 ) = sqrt( |u/144| e ) * e
-            DO jk = 1, jpkm1
-               DO jj = 2, jpjm1
-                  DO ji = fs_2, fs_jpim1
-                     zu2pv2_ij    = ub(ji  ,jj  ,jk) * ub(ji  ,jj  ,jk) + vb(ji  ,jj  ,jk) * vb(ji  ,jj  ,jk)
-                     zu2pv2_ij_m1 = ub(ji-1,jj  ,jk) * ub(ji-1,jj  ,jk) + vb(ji  ,jj-1,jk) * vb(ji  ,jj-1,jk)
-                     zemax = MAX( e1t(ji,jj) , e2t(ji,jj) )
-                     ahmt(ji,jj,jk) = SQRT(  SQRT( (zu2pv2_ij + zu2pv2_ij_m1) * r1_288 ) * zemax  ) * zemax * tmask(ji,jj,jk)
-                  END DO
-               END DO
-               DO jj = 1, jpjm1
-                  DO ji = 1, fs_jpim1
-                     zu2pv2_ij_p1 = ub(ji  ,jj+1,jk) * ub(ji  ,jj+1,jk) + vb(ji+1,jj  ,jk) * vb(ji+1,jj  ,jk)
-                     zu2pv2_ij    = ub(ji  ,jj  ,jk) * ub(ji  ,jj  ,jk) + vb(ji  ,jj  ,jk) * vb(ji  ,jj  ,jk)
-                     zemax = MAX( e1f(ji,jj) , e2f(ji,jj) )
-                     ahmf(ji,jj,jk) = SQRT(  SQRT( (zu2pv2_ij + zu2pv2_ij_p1) * r1_288 ) * zemax  ) * zemax * fmask(ji,jj,jk)
-                  END DO
-               END DO
+            DO jk = 1, jpkm1               ! r1_288 = 1 / (12*12 * 2)
+               DO_2D( 0, 0, 0, 0 )
+                  zu2pv2_ij    = uu(ji  ,jj  ,jk,Kbb) * uu(ji  ,jj  ,jk,Kbb) + vv(ji  ,jj  ,jk,Kbb) * vv(ji  ,jj  ,jk,Kbb)
+                  zu2pv2_ij_m1 = uu(ji-1,jj  ,jk,Kbb) * uu(ji-1,jj  ,jk,Kbb) + vv(ji  ,jj-1,jk,Kbb) * vv(ji  ,jj-1,jk,Kbb)
+                  zu2pv2_ij_p1 = uu(ji  ,jj+1,jk,Kbb) * uu(ji  ,jj+1,jk,Kbb) + vv(ji+1,jj  ,jk,Kbb) * vv(ji+1,jj  ,jk,Kbb)
+                  zemax = MAX( e1t(ji,jj) , e2t(ji,jj) )
+                  ahmt(ji,jj,jk) = SQRT(  SQRT( (zu2pv2_ij + zu2pv2_ij_m1) * r1_288 ) * zemax  ) * zemax * tmask(ji,jj,jk)
+                  zemax = MAX( e1f(ji,jj) , e2f(ji,jj) )
+                  ahmf(ji,jj,jk) = SQRT(  SQRT( (zu2pv2_ij + zu2pv2_ij_p1) * r1_288 ) * zemax  ) * zemax * fmask(ji,jj,jk)
+               END_2D
             END DO
          ENDIF
          !
-         CALL lbc_lnk_multi( 'ldfdyn', ahmt, 'T', 1.,  ahmf, 'F', 1. )
+         CALL lbc_lnk( 'ldfdyn', ahmt, 'T', 1.0_wp,  ahmf, 'F', 1.0_wp )
          !
          !
       CASE(  32  )       !==  time varying 3D field  ==!   = F( local deformation rate and gridscale ) (Smagorinsky)
@@ -418,64 +414,60 @@ CONTAINS
             !
             zcmsmag   = (rn_csmc/rpi)**2                                            ! (C_smag/pi)^2
             zstabf_lo = rn_minfac * rn_minfac / ( 2._wp * 12._wp * 12._wp * zcmsmag ) ! lower limit stability factor scaling
-            zstabf_up = rn_maxfac / ( 4._wp * zcmsmag * 2._wp * rdt )               ! upper limit stability factor scaling
+            zstabf_up = rn_maxfac / ( 4._wp * zcmsmag * 2._wp * rn_Dt )               ! upper limit stability factor scaling
             IF( ln_dynldf_blp ) zstabf_lo = ( 16._wp / 9._wp ) * zstabf_lo          ! provide |U|L^3/12 lower limit instead 
             !                                                                       ! of |U|L^3/16 in blp case
             DO jk = 1, jpkm1
                !
-               DO jj = 2, jpjm1
-                  DO ji = 2, jpim1
-                     zdb =   ( ub(ji,jj,jk) * r1_e2u(ji,jj) - ub(ji-1,jj,jk) * r1_e2u(ji-1,jj) ) * r1_e1t(ji,jj) * e2t(ji,jj)  &
-                        &  - ( vb(ji,jj,jk) * r1_e1v(ji,jj) - vb(ji,jj-1,jk) * r1_e1v(ji,jj-1) ) * r1_e2t(ji,jj) * e1t(ji,jj)
-                     dtensq(ji,jj,jk) = zdb * zdb * tmask(ji,jj,jk)
-                  END DO
-               END DO
+               DO_2D( 0, 0, 0, 0 )
+                  zdb =    ( uu(ji,jj,jk,Kbb) * r1_e2u(ji,jj) -  uu(ji-1,jj,jk,Kbb) * r1_e2u(ji-1,jj) )  &
+                       &                      * r1_e1t(ji,jj) * e2t(ji,jj)                           &
+                       & - ( vv(ji,jj,jk,Kbb) * r1_e1v(ji,jj) -  vv(ji,jj-1,jk,Kbb) * r1_e1v(ji,jj-1) )  &
+                       &                      * r1_e2t(ji,jj) * e1t(ji,jj)
+                  dtensq(ji,jj,jk) = zdb * zdb * tmask(ji,jj,jk)
+               END_2D
                !
-               DO jj = 1, jpjm1
-                  DO ji = 1, jpim1
-                     zdb =   ( ub(ji,jj+1,jk) * r1_e1u(ji,jj+1) - ub(ji,jj,jk) * r1_e1u(ji,jj) ) * r1_e2f(ji,jj) * e1f(ji,jj)  &
-                        &  + ( vb(ji+1,jj,jk) * r1_e2v(ji+1,jj) - vb(ji,jj,jk) * r1_e2v(ji,jj) ) * r1_e1f(ji,jj) * e2f(ji,jj)
-                     dshesq(ji,jj,jk) = zdb * zdb * fmask(ji,jj,jk)
-                  END DO
-               END DO
+               DO_2D( 1, 0, 1, 0 )
+                  zdb =   (  uu(ji,jj+1,jk,Kbb) * r1_e1u(ji,jj+1) -  uu(ji,jj,jk,Kbb) * r1_e1u(ji,jj) )  &
+                       &                        * r1_e2f(ji,jj)   * e1f(ji,jj)                       &
+                       & + ( vv(ji+1,jj,jk,Kbb) * r1_e2v(ji+1,jj) -  vv(ji,jj,jk,Kbb) * r1_e2v(ji,jj) )  &
+                       &                        * r1_e1f(ji,jj)   * e2f(ji,jj)
+                  dshesq(ji,jj,jk) = zdb * zdb * fmask(ji,jj,jk)
+               END_2D
                !
             END DO
             !
-            CALL lbc_lnk_multi( 'ldfdyn', dtensq, 'T', 1. )  ! lbc_lnk on dshesq not needed
+            CALL lbc_lnk( 'ldfdyn', dtensq, 'T', 1.0_wp )  ! lbc_lnk on dshesq not needed
             !
             DO jk = 1, jpkm1
               !
-               DO jj = 2, jpjm1                                ! T-point value
-                  DO ji = fs_2, fs_jpim1
-                     !
-                     zu2pv2_ij    = ub(ji  ,jj  ,jk) * ub(ji  ,jj  ,jk) + vb(ji  ,jj  ,jk) * vb(ji  ,jj  ,jk)
-                     zu2pv2_ij_m1 = ub(ji-1,jj  ,jk) * ub(ji-1,jj  ,jk) + vb(ji  ,jj-1,jk) * vb(ji  ,jj-1,jk)
-                     !
-                     zdelta         = zcmsmag * esqt(ji,jj)                                        ! L^2 * (C_smag/pi)^2
-                     ahmt(ji,jj,jk) = zdelta * SQRT(          dtensq(ji  ,jj,jk) +                         &
-                        &                            r1_4 * ( dshesq(ji  ,jj,jk) + dshesq(ji  ,jj-1,jk) +  &
-                        &                                     dshesq(ji-1,jj,jk) + dshesq(ji-1,jj-1,jk) ) )
-                     ahmt(ji,jj,jk) = MAX( ahmt(ji,jj,jk), SQRT( (zu2pv2_ij + zu2pv2_ij_m1) * zdelta * zstabf_lo ) ) ! Impose lower limit == minfac  * |U|L/2
-                     ahmt(ji,jj,jk) = MIN( ahmt(ji,jj,jk),                                    zdelta * zstabf_up )   ! Impose upper limit == maxfac  * L^2/(4*2dt)
-                     !
-                  END DO
-               END DO
+               DO_2D( 0, 0, 0, 0 )                                   ! T-point value
+                  !
+                  zu2pv2_ij    = uu(ji  ,jj  ,jk,Kbb) * uu(ji  ,jj  ,jk,Kbb) + vv(ji  ,jj  ,jk,Kbb) * vv(ji  ,jj  ,jk,Kbb)
+                  zu2pv2_ij_m1 = uu(ji-1,jj  ,jk,Kbb) * uu(ji-1,jj  ,jk,Kbb) + vv(ji  ,jj-1,jk,Kbb) * vv(ji  ,jj-1,jk,Kbb)
+                  !
+                  zdelta         = zcmsmag * esqt(ji,jj)                                        ! L^2 * (C_smag/pi)^2
+                  ahmt(ji,jj,jk) = zdelta * SQRT(          dtensq(ji  ,jj,jk) +                         &
+                     &                            r1_4 * ( dshesq(ji  ,jj,jk) + dshesq(ji  ,jj-1,jk) +  &
+                     &                                     dshesq(ji-1,jj,jk) + dshesq(ji-1,jj-1,jk) ) )
+                  ahmt(ji,jj,jk) = MAX( ahmt(ji,jj,jk), SQRT( (zu2pv2_ij + zu2pv2_ij_m1) * zdelta * zstabf_lo ) ) ! Impose lower limit == minfac  * |U|L/2
+                  ahmt(ji,jj,jk) = MIN( ahmt(ji,jj,jk),                                    zdelta * zstabf_up )   ! Impose upper limit == maxfac  * L^2/(4*2dt)
+                  !
+               END_2D
                !
-               DO jj = 1, jpjm1                                ! F-point value
-                  DO ji = 1, fs_jpim1
-                     !
-                     zu2pv2_ij_p1 = ub(ji  ,jj+1,jk) * ub(ji  ,jj+1,jk) + vb(ji+1,jj  ,jk) * vb(ji+1,jj  ,jk)
-                     zu2pv2_ij    = ub(ji  ,jj  ,jk) * ub(ji  ,jj  ,jk) + vb(ji  ,jj  ,jk) * vb(ji  ,jj  ,jk)
-                     !
-                     zdelta         = zcmsmag * esqf(ji,jj)                                        ! L^2 * (C_smag/pi)^2
-                     ahmf(ji,jj,jk) = zdelta * SQRT(          dshesq(ji  ,jj,jk) +                         &
-                        &                            r1_4 * ( dtensq(ji  ,jj,jk) + dtensq(ji  ,jj+1,jk) +  &
-                        &                                     dtensq(ji+1,jj,jk) + dtensq(ji+1,jj+1,jk) ) )
-                     ahmf(ji,jj,jk) = MAX( ahmf(ji,jj,jk), SQRT( (zu2pv2_ij + zu2pv2_ij_p1) * zdelta * zstabf_lo ) ) ! Impose lower limit == minfac  * |U|L/2
-                     ahmf(ji,jj,jk) = MIN( ahmf(ji,jj,jk),                                    zdelta * zstabf_up )   ! Impose upper limit == maxfac  * L^2/(4*2dt)
-                     !
-                  END DO
-               END DO
+               DO_2D( 1, 0, 1, 0 )                                   ! F-point value
+                  !
+                  zu2pv2_ij_p1 = uu(ji  ,jj+1,jk, kbb) * uu(ji  ,jj+1,jk, kbb) + vv(ji+1,jj  ,jk, kbb) * vv(ji+1,jj  ,jk, kbb)
+                  zu2pv2_ij    = uu(ji  ,jj  ,jk, kbb) * uu(ji  ,jj  ,jk, kbb) + vv(ji  ,jj  ,jk, kbb) * vv(ji  ,jj  ,jk, kbb)
+                  !
+                  zdelta         = zcmsmag * esqf(ji,jj)                                        ! L^2 * (C_smag/pi)^2
+                  ahmf(ji,jj,jk) = zdelta * SQRT(          dshesq(ji  ,jj,jk) +                         &
+                     &                            r1_4 * ( dtensq(ji  ,jj,jk) + dtensq(ji  ,jj+1,jk) +  &
+                     &                                     dtensq(ji+1,jj,jk) + dtensq(ji+1,jj+1,jk) ) )
+                  ahmf(ji,jj,jk) = MAX( ahmf(ji,jj,jk), SQRT( (zu2pv2_ij + zu2pv2_ij_p1) * zdelta * zstabf_lo ) ) ! Impose lower limit == minfac  * |U|L/2
+                  ahmf(ji,jj,jk) = MIN( ahmf(ji,jj,jk),                                    zdelta * zstabf_up )   ! Impose upper limit == maxfac  * L^2/(4*2dt)
+                  !
+               END_2D
                !
             END DO
             !
@@ -486,21 +478,15 @@ CONTAINS
             !                          ! stability limits already applied to laplacian values
             !                          ! effective default limits are 1/12 |U|L^3 < B_hm < 1//(32*2dt) L^4
             DO jk = 1, jpkm1
-               DO jj = 2, jpjm1
-                  DO ji = fs_2, fs_jpim1
-                     ahmt(ji,jj,jk) = SQRT( r1_8 * esqt(ji,jj) * ahmt(ji,jj,jk) )
-                  END DO
-               END DO
-               DO jj = 1, jpjm1
-                  DO ji = 1, fs_jpim1
-                     ahmf(ji,jj,jk) = SQRT( r1_8 * esqf(ji,jj) * ahmf(ji,jj,jk) )
-                  END DO
-               END DO
+               DO_2D( 0, 0, 0, 0 )
+                  ahmt(ji,jj,jk) = SQRT( r1_8 * esqt(ji,jj) * ahmt(ji,jj,jk) )
+                  ahmf(ji,jj,jk) = SQRT( r1_8 * esqf(ji,jj) * ahmf(ji,jj,jk) )
+               END_2D
             END DO
             !
          ENDIF
          !
-         CALL lbc_lnk_multi( 'ldfdyn', ahmt, 'T', 1. , ahmf, 'F', 1. )
+         CALL lbc_lnk( 'ldfdyn', ahmt, 'T', 1.0_wp , ahmf, 'F', 1.0_wp )
          !
       END SELECT
       !

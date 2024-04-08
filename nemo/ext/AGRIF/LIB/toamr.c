@@ -46,6 +46,7 @@ const char * tabvarsname(const variable *var)
         "tabvars_l",    // v_catvar == 3
         "tabvars_i"     // v_catvar == 4
     };
+
     return tname[var->v_catvar];    // v_catvar should never be ouside the range [0:4].
 }
 
@@ -136,15 +137,20 @@ const char *vargridnametabvars (const variable * var, int iorindice)
 {
     static char tname_1[LONG_C];
     static char tname_2[LONG_C];
-
+    
     if ( iorindice == 0 ) sprintf(tname_1, "Agrif_Gr %% %s(%d)", tabvarsname(var), var->v_indicetabvars);
     else                  sprintf(tname_1, "Agrif_Gr %% %s(i)",  tabvarsname(var));
 
-    if (!strcasecmp(var->v_typevar, "REAL"))
+    if (!strcasecmp(var->v_typevar, "real"))
     {
         if      ( !strcasecmp(var->v_nameinttypename,"8") ) sprintf(tname_2, "%% darray%d", var->v_nbdim);
         else if ( !strcasecmp(var->v_nameinttypename,"4") ) sprintf(tname_2, "%% sarray%d", var->v_nbdim);
-        else                                                sprintf(tname_2, "%% array%d",  var->v_nbdim);
+        else if ( !strcasecmp(var->v_precision,"8") ) sprintf(tname_2, "%% darray%d", var->v_nbdim);
+        else if ( !strcasecmp(var->v_precision,"4") ) sprintf(tname_2, "%% sarray%d", var->v_nbdim);        
+        else  
+          {
+          sprintf(tname_2, "%% array%d",  var->v_nbdim);
+          }
     }
     else if (!strcasecmp(var->v_typevar, "integer"))
     {
@@ -157,7 +163,12 @@ const char *vargridnametabvars (const variable * var, int iorindice)
     else if (!strcasecmp(var->v_typevar, "character"))
     {
         WARNING_CharSize(var);
+        if (!strcasecmp(var->v_dimchar  ,":") && var->v_nbdim == 0 )
+        {
+        sprintf (tname_2, "%% carrayu");
+        } else {
         sprintf (tname_2, "%% carray%d", var->v_nbdim);
+        }
     }
 
     strcat(tname_1, tname_2);
@@ -194,24 +205,47 @@ const char *vargridcurgridtabvars(const variable *var, int which_grid)
 
         if (!strcasecmp(var->v_typevar, "REAL"))
         {
-            if      ( !strcasecmp(var->v_nameinttypename,"8") ) sprintf(tname_2, "%% darray%d", var->v_nbdim);
-            else if ( !strcasecmp(var->v_nameinttypename,"4") ) sprintf(tname_2, "%% sarray%d", var->v_nbdim);
-            else                                                sprintf(tname_2, "%% array%d", var->v_nbdim);
+            if      ( !strcasecmp(var->v_nameinttypename,"8") ) sprintf(tname_2, "darray%d", var->v_nbdim);
+            else if ( !strcasecmp(var->v_nameinttypename,"4") ) sprintf(tname_2, "sarray%d", var->v_nbdim);
+            else if ( !strcasecmp(var->v_precision,"8") ) sprintf(tname_2, "darray%d", var->v_nbdim);
+            else if ( !strcasecmp(var->v_precision,"4") ) sprintf(tname_2, "sarray%d", var->v_nbdim);
+            else sprintf(tname_2, "array%d", var->v_nbdim);
         }
         else if (!strcasecmp(var->v_typevar, "INTEGER"))
         {
-            sprintf(tname_2, "%% iarray%d", var->v_nbdim);
+            sprintf(tname_2, "iarray%d", var->v_nbdim);
         }
         else if (!strcasecmp(var->v_typevar, "LOGICAL"))
         {
-            sprintf(tname_2, "%% larray%d", var->v_nbdim);
+            sprintf(tname_2, "larray%d", var->v_nbdim);
         }
         else if (!strcasecmp(var->v_typevar, "CHARACTER"))
         {
             WARNING_CharSize(var);
-            sprintf(tname_2, "%% carray%d", var->v_nbdim);
+            sprintf(tname_2, "carray%d", var->v_nbdim);
+      
+
+            if (!strcasecmp(var->v_dimchar  ,":") && var->v_nbdim == 0 )
+            {
+            sprintf (tname_2, "carrayu");
+            } else {
+            sprintf (tname_2, "carray%d", var->v_nbdim);
+            }
+
         }
-        strcat(tname_1, tname_2);
+
+
+
+        if (var->v_pointerdeclare)
+        {
+                strcat(tname_1,"%p");
+                strcat(tname_1, tname_2);
+        }
+        else
+        {
+                strcat(tname_1,"%");
+                strcat(tname_1, tname_2);
+        }
     }
     Save_Length(tname_1, 46);
 
@@ -231,28 +265,39 @@ const char *vargridcurgridtabvarswithoutAgrif_Gr(const variable *var)
     static char tname_2[LONG_C];
 
     sprintf(tname_1, "(%d)", var->v_indicetabvars);
+    
+        if (!strcasecmp(var->v_typevar, "REAL"))
+        {
+            if      ( !strcasecmp(var->v_nameinttypename,"8") ) sprintf(tname_2, "darray%d", var->v_nbdim);
+            else if ( !strcasecmp(var->v_nameinttypename,"4") ) sprintf(tname_2, "sarray%d", var->v_nbdim);
+            else if ( !strcasecmp(var->v_precision,"8") ) sprintf(tname_2, "darray%d", var->v_nbdim);
+            else if ( !strcasecmp(var->v_precision,"4") ) sprintf(tname_2, "sarray%d", var->v_nbdim);
+            else sprintf(tname_2, "array%d", var->v_nbdim);
+        }
+        else if (!strcasecmp(var->v_typevar, "INTEGER"))
+        {
+            sprintf(tname_2, "iarray%d", var->v_nbdim);
+        }
+        else if (!strcasecmp(var->v_typevar, "LOGICAL"))
+        {
+            sprintf(tname_2, "larray%d", var->v_nbdim);
+        }
+        else if (!strcasecmp(var->v_typevar, "CHARACTER"))
+        {
+            WARNING_CharSize(var);
+            sprintf(tname_2, "carray%d", var->v_nbdim);
+        }
+        if (var->v_pointerdeclare)
+        {
+                strcat(tname_1,"%p");
+                strcat(tname_1, tname_2);
+        }
+        else
+        {
+                strcat(tname_1,"%");
+                strcat(tname_1, tname_2);
+        }
 
-    if (!strcasecmp (var->v_typevar, "REAL"))
-    {
-        if      ( !strcasecmp(var->v_nameinttypename,"8") ) sprintf(tname_2, "%% darray%d", var->v_nbdim);
-        else if ( !strcasecmp(var->v_nameinttypename,"4") ) sprintf(tname_2, "%% sarray%d", var->v_nbdim);
-        else                                                sprintf(tname_2, "%% array%d", var->v_nbdim);
-    }
-    else if (!strcasecmp(var->v_typevar, "INTEGER"))
-    {
-        sprintf(tname_2, "%% iarray%d", var->v_nbdim);
-    }
-    else if (!strcasecmp(var->v_typevar, "LOGICAL"))
-    {
-        sprintf(tname_2, "%% larray%d", var->v_nbdim);
-    }
-    else if (!strcasecmp(var->v_typevar, "CHARACTER"))
-    {
-        WARNING_CharSize(var);
-        sprintf(tname_2, "%% carray%d", var->v_nbdim);
-    }
-
-    strcat(tname_1, tname_2);
     Save_Length(tname_1, 46);
 
     return tname_1;
@@ -534,10 +579,14 @@ void write_allocation_Common_0()
     listvar *parcours;
     listvar *parcoursprec;
     listvar *parcours1;
+    listname *parcours_name;
+    listname *parcours_name_array;
+    listdoloop *parcours_loop;
     FILE *allocationagrif;
     FILE *paramtoamr;
     char ligne[LONG_M];
     char ligne2[LONG_M];
+    char ligne3[LONG_M];
     variable *v;
     int IndiceMax;
     int IndiceMin;
@@ -549,6 +598,9 @@ void write_allocation_Common_0()
     listindice **list_indic;
     listindice *parcoursindic;
     int i;
+    int nb_initial;
+    int is_parameter_local;
+    int global_check;
 
     parcoursprec = (listvar *) NULL;
     parcours_nom = List_NameOfCommon;
@@ -560,14 +612,14 @@ void write_allocation_Common_0()
             /* Open the file to create the Alloc_agrif subroutine                */
             sprintf(ligne,"alloc_agrif_%s.h",parcours_nom->o_nom);
             allocationagrif = open_for_write(ligne);
-            fprintf(allocationagrif,"#include \"Param_toamr_%s.h\" \n", parcours_nom->o_nom);
 
+            fprintf(allocationagrif,"#include \"Param_toamr_%s.h\" \n", parcours_nom->o_nom);
             sprintf(ligne,"Param_toamr_%s.h",parcours_nom->o_nom);
             paramtoamr = open_for_write(ligne);
             neededparameter = (listnom *) NULL;
             list_indic = (listindice **) calloc(NB_CAT_VARIABLES,sizeof(listindice *));
 
-//             shouldincludempif = 1 ;
+             shouldincludempif = 1 ;
             parcours = List_Common_Var;
             while ( parcours )
             {
@@ -620,7 +672,7 @@ void write_allocation_Common_0()
                                         tofich(allocationagrif,ligne,1);
                                         IndiceMin = parcours->var->v_indicetabvars;
                                         IndiceMax = parcours->var->v_indicetabvars+compteur;
-                                        sprintf(ligne,"    allocate(%s", vargridnametabvars(v,1));
+                                        sprintf(ligne,"    if (.not. allocated(%s)) allocate(%s", vargridnametabvars(v,1), vargridnametabvars(v,1));
                                         sprintf(ligne2,"%s)", vargridparam(v));
                                         strcat(ligne,ligne2);
                                         tofich(allocationagrif,ligne,1);
@@ -638,7 +690,7 @@ void write_allocation_Common_0()
                                     }
                                     else
                                     {
-                                        sprintf(ligne,"allocate(%s", vargridnametabvars(v,0));
+                                        sprintf(ligne,"if (.not. allocated(%s)) allocate(%s", vargridnametabvars(v,0), vargridnametabvars(v,0));
                                         sprintf(ligne2,"%s)", vargridparam(v));
                                         strcat(ligne,ligne2);
                                         tofich(allocationagrif,ligne,1);
@@ -647,27 +699,49 @@ void write_allocation_Common_0()
                                         parcoursindic -> suiv = list_indic[parcours->var->v_catvar];
                                         list_indic[parcours->var->v_catvar] = parcoursindic;
                                     }
-                                    neededparameter = writedeclarationintoamr(List_Parameter_Var,
-                                                        paramtoamr,v,parcours_nom->o_nom,neededparameter,v->v_commonname);
+
+                                    global_check = 0;
+                                    is_parameter_local = writedeclarationintoamr(List_Parameter_Var,
+                                                        paramtoamr,v,parcours_nom->o_nom,&neededparameter,v->v_commonname,global_check);
+                                    if (is_parameter_local == 0)
+                                    {
+                                    global_check = 1;
+                                    is_parameter_local = writedeclarationintoamr(List_GlobalParameter_Var,
+                                                        paramtoamr,v,parcours_nom->o_nom,&neededparameter,v->v_commonname,global_check);
+                                    }
                                 }
                             } /* end of the allocation part                                       */
                             /*                INITIALISATION                                      */
-                            if ( strcasecmp(v->v_initialvalue,"") )
+                            if ( v->v_initialvalue )
+                            {
+                            parcours_name = v->v_initialvalue;
+                            parcours_name_array = v->v_initialvalue_array;
+                            if (parcours_name_array)
+                            {
+                            while (parcours_name)
                             {
                                 strcpy(ligne, vargridnametabvars(v,0));
-                                /* We should modify the initialvalue in the case of variable has been defined with others variables */
-                                strcpy(initialvalue,ChangeTheInitalvaluebyTabvarsName(v->v_initialvalue,List_Global_Var));
-                                if ( !strcasecmp(initialvalue,v->v_initialvalue) )
+                                if (parcours_name_array)
                                 {
-                                    strcpy(initialvalue,ChangeTheInitalvaluebyTabvarsName(v->v_initialvalue,List_Common_Var));
+                                if (strcasecmp(parcours_name_array->n_name,"") )
+                                {
+                                sprintf(ligne2,"(%s)",parcours_name_array->n_name);
+                                strcat(ligne,ligne2);
                                 }
-                                if ( !strcasecmp(initialvalue,v->v_initialvalue) )
+                                }
+                                /* We should modify the initialvalue in the case of variable has been defined with others variables */
+                                strcpy(initialvalue,ChangeTheInitalvaluebyTabvarsName(parcours_name->n_name,List_Global_Var));
+                                if ( !strcasecmp(initialvalue,parcours_name->n_name) )
                                 {
-                                    strcpy(initialvalue,ChangeTheInitalvaluebyTabvarsName(v->v_initialvalue,List_ModuleUsed_Var));
+                                    strcpy(initialvalue,ChangeTheInitalvaluebyTabvarsName(parcours_name->n_name,List_Common_Var));
+                                }
+                                if ( !strcasecmp(initialvalue,parcours_name->n_name) )
+                                {
+                                    strcpy(initialvalue,ChangeTheInitalvaluebyTabvarsName(parcours_name->n_name,List_ModuleUsed_Var));
                                 }
                                 strcat (ligne," = ");
 
-                                if (v->v_nbdim == 0)
+                                if (v->v_nbdim >= 0)
                                 {
                                     strcpy(ligne2,initialvalue);
                                 }
@@ -677,6 +751,51 @@ void write_allocation_Common_0()
                                 }
                                 strcat(ligne,ligne2);
                                 tofich(allocationagrif,ligne,1);
+                             
+                             parcours_name = parcours_name->suiv;
+                             if (parcours_name_array) parcours_name_array = parcours_name_array->suiv;
+                            }
+                            }
+                            else
+                            {
+                            strcpy(ligne, vargridnametabvars(v,0));
+                            strcat (ligne," = ");
+                            strcpy(ligne2,"");
+                            nb_initial = 0;
+                            
+                            while (parcours_name)
+                            {
+                            nb_initial = nb_initial + 1;
+                                /* We should modify the initialvalue in the case of variable has been defined with others variables */
+                                strcpy(initialvalue,ChangeTheInitalvaluebyTabvarsName(parcours_name->n_name,List_Global_Var));
+                                if ( !strcasecmp(initialvalue,parcours_name->n_name) )
+                                {
+                                    strcpy(initialvalue,ChangeTheInitalvaluebyTabvarsName(parcours_name->n_name,List_Common_Var));
+                                }
+                                if ( !strcasecmp(initialvalue,parcours_name->n_name) )
+                                {
+                                    strcpy(initialvalue,ChangeTheInitalvaluebyTabvarsName(parcours_name->n_name,List_ModuleUsed_Var));
+                                }
+
+                                strcat(ligne2,initialvalue);
+                             if (parcours_name->suiv)
+                             {
+                             strcat(ligne2,",");
+                             }
+                             
+                             parcours_name = parcours_name->suiv;
+                            }
+                            if (nb_initial > 1)
+                            {
+                            sprintf(ligne3,"reshape((/%s/),shape(%s))",ligne2,vargridnametabvars(v,0));
+                            }
+                            else
+                            {
+                            strcpy(ligne3,ligne2);
+                            }
+                            strcat(ligne,ligne3);
+                            tofich(allocationagrif,ligne,1);
+                            }
                             }
                         }
                         if ( (onlyfixedgrids != 1) && (v->v_nbdim != 0) )
@@ -704,6 +823,9 @@ void write_allocation_Global_0()
     FILE *allocationagrif;
     char ligne[LONG_M];
     char ligne2[LONG_M];
+    char ligne3[LONG_M];
+    listname *parcours_name;
+    listname *parcours_name_array;
     variable *v;
     int IndiceMax;
     int IndiceMin;
@@ -713,6 +835,7 @@ void write_allocation_Global_0()
     int ValeurMax;
     char initialvalue[LONG_M];
     int typeiswritten ;
+    int nb_initial;
 
     parcoursprec = (listvar *) NULL;
     parcours_nom = List_NameOfModule;
@@ -793,7 +916,7 @@ void write_allocation_Global_0()
                                         tofich(allocationagrif,ligne,1);
                                         IndiceMin = parcours->var->v_indicetabvars;
                                         IndiceMax = parcours->var->v_indicetabvars+compteur;
-                                        sprintf(ligne,"    allocate(%s", vargridnametabvars(v,1));
+                                        sprintf(ligne,"    if (.not. allocated(%s)) allocate(%s", vargridnametabvars(v,1), vargridnametabvars(v,1));
                                         sprintf(ligne2,"%s)", vargridparam(v));
                                         strcat(ligne,ligne2);
                                         tofich(allocationagrif,ligne,1);
@@ -802,7 +925,7 @@ void write_allocation_Global_0()
                                     }
                                     else
                                     {
-                                        sprintf(ligne,"allocate(%s", vargridnametabvars(v,0));
+                                        sprintf(ligne,"if (.not. allocated(%s)) allocate(%s", vargridnametabvars(v,0), vargridnametabvars(v,0));
                                         sprintf(ligne2,"%s)", vargridparam(v));
                                         strcat(ligne,ligne2);
                                         tofich(allocationagrif,ligne,1);
@@ -810,23 +933,91 @@ void write_allocation_Global_0()
                                 }
                             } /* end of the allocation part                                       */
                             /*                INITIALISATION                                      */
-                            if ( strcasecmp(v->v_initialvalue,"") )
+
+               if ( v->v_initialvalue )
+                            {
+                            parcours_name = v->v_initialvalue;
+                            parcours_name_array = v->v_initialvalue_array;
+                            if (parcours_name_array)
+                            {
+                            while (parcours_name)
                             {
                                 strcpy(ligne, vargridnametabvars(v,0));
-                                /* We should modify the initialvalue in the case of variable has been defined with others variables */
-                                strcpy(initialvalue,ChangeTheInitalvaluebyTabvarsName(v->v_initialvalue,List_Global_Var));
-                                if ( !strcasecmp(initialvalue,v->v_initialvalue) )
+                                if (parcours_name_array)
                                 {
-                                    strcpy(initialvalue,ChangeTheInitalvaluebyTabvarsName(v->v_initialvalue,List_Common_Var));
+                                if (strcasecmp(parcours_name_array->n_name,"") )
+                                {
+                                sprintf(ligne2,"(%s)",parcours_name_array->n_name);
+                                strcat(ligne,ligne2);
                                 }
-                                if ( !strcasecmp(initialvalue,v->v_initialvalue) )
+                                }
+                                /* We should modify the initialvalue in the case of variable has been defined with others variables */
+                                strcpy(initialvalue,ChangeTheInitalvaluebyTabvarsName(parcours_name->n_name,List_Global_Var));
+                                if ( !strcasecmp(initialvalue,parcours_name->n_name) )
                                 {
-                                    strcpy(initialvalue,ChangeTheInitalvaluebyTabvarsName(v->v_initialvalue,List_ModuleUsed_Var));
+                                    strcpy(initialvalue,ChangeTheInitalvaluebyTabvarsName(parcours_name->n_name,List_Common_Var));
+                                }
+                                if ( !strcasecmp(initialvalue,parcours_name->n_name) )
+                                {
+                                    strcpy(initialvalue,ChangeTheInitalvaluebyTabvarsName(parcours_name->n_name,List_ModuleUsed_Var));
                                 }
                                 strcat (ligne," = ");
-                                strcat (ligne,initialvalue);
-                                Save_Length(ligne,48);
+
+                                if (v->v_nbdim >= 0)
+                                {
+                                    strcpy(ligne2,initialvalue);
+                                }
+                                else
+                                {
+                                    sprintf(ligne2,"reshape(%s,shape(%s))",initialvalue,vargridnametabvars(v,0));
+                                }
+                                strcat(ligne,ligne2);
                                 tofich(allocationagrif,ligne,1);
+                             
+                             parcours_name = parcours_name->suiv;
+                             if (parcours_name_array) parcours_name_array = parcours_name_array->suiv;
+                            }
+                            }
+                            else
+                            {
+                            strcpy(ligne, vargridnametabvars(v,0));
+                            strcat (ligne," = ");
+                            strcpy(ligne2,"");
+                            nb_initial = 0;
+                            
+                            while (parcours_name)
+                            {
+                            nb_initial = nb_initial + 1;
+                                /* We should modify the initialvalue in the case of variable has been defined with others variables */
+                                strcpy(initialvalue,ChangeTheInitalvaluebyTabvarsName(parcours_name->n_name,List_Global_Var));
+                                if ( !strcasecmp(initialvalue,parcours_name->n_name) )
+                                {
+                                    strcpy(initialvalue,ChangeTheInitalvaluebyTabvarsName(parcours_name->n_name,List_Common_Var));
+                                }
+                                if ( !strcasecmp(initialvalue,parcours_name->n_name) )
+                                {
+                                    strcpy(initialvalue,ChangeTheInitalvaluebyTabvarsName(parcours_name->n_name,List_ModuleUsed_Var));
+                                }
+
+                                strcat(ligne2,initialvalue);
+                             if (parcours_name->suiv)
+                             {
+                             strcat(ligne2,",");
+                             }
+                             
+                             parcours_name = parcours_name->suiv;
+                            }
+                            if (nb_initial > 1)
+                            {
+                            sprintf(ligne3,"reshape((/%s/),shape(%s))",ligne2,vargridnametabvars(v,0));
+                            }
+                            else
+                            {
+                            strcpy(ligne3,ligne2);
+                            }
+                            strcat(ligne,ligne3);
+                            tofich(allocationagrif,ligne,1);
+                            }
                             }
                         }
                         /* Case of structure types */

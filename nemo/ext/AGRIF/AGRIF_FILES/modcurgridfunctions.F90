@@ -1,5 +1,5 @@
 !
-! $Id: modcurgridfunctions.F90 5656 2015-07-31 08:55:56Z timgraham $
+! $Id: modcurgridfunctions.F90 14431 2021-02-11 07:57:24Z smasson $
 !
 !     AGRIF (Adaptive Grid Refinement In Fortran)
 !
@@ -28,6 +28,19 @@ module Agrif_CurgridFunctions
 !
     implicit none
 !
+
+    interface Agrif_Parent
+        module procedure Agrif_Parent_Real_4,   &
+                         Agrif_Parent_Real_8,   &
+                         Agrif_Parent_Array2_Real_8,   &
+                         Agrif_Parent_Integer, &
+                         Agrif_Parent_Character, &
+                         Agrif_Parent_Logical
+    end interface
+    interface Agrif_Child
+        module procedure Agrif_Child_Logical
+    end interface
+    
 contains
 !
 !===================================================================================================
@@ -656,6 +669,25 @@ subroutine Agrif_Set_coeffreft_z ( coeffref )
 !---------------------------------------------------------------------------------------------------
 end subroutine Agrif_Set_coeffreft_z
 !===================================================================================================
+!  subroutine Agrif_Set_coeffreft
+!---------------------------------------------------------------------------------------------------
+subroutine Agrif_Set_coeffreft ( coeffref )
+!---------------------------------------------------------------------------------------------------
+    integer, intent(in) :: coeffref
+    integer :: i
+
+    if (coeffref < 0) then
+        write(*,*)'Coefficient of time raffinement should be positive'
+        stop
+    else
+        do i=1,Agrif_Probdim
+          Agrif_coeffreft(i) = coeffref
+          Agrif_Curgrid % timeref(i) = coeffref
+        enddo
+    endif
+!---------------------------------------------------------------------------------------------------
+end subroutine Agrif_Set_coeffreft
+!===================================================================================================
 !
 !===================================================================================================
 !  subroutine Agrif_Set_Minwidth
@@ -737,6 +769,19 @@ function Agrif_Level ( )
 !---------------------------------------------------------------------------------------------------
 end function Agrif_Level
 !===================================================================================================
+!===================================================================================================
+!  subroutine Agrif_set_periodicity
+!---------------------------------------------------------------------------------------------------
+
+subroutine Agrif_set_periodicity(i,decal)
+!---------------------------------------------------------------------------------------------------
+    integer :: i, decal
+    
+    Agrif_curgrid%periodicity(i)=.TRUE.
+    Agrif_curgrid%periodicity_decal(i)=decal
+    
+!---------------------------------------------------------------------------------------------------
+end subroutine Agrif_set_periodicity
 !
 !===================================================================================================
 !  function Agrif_MaxLevel
@@ -762,4 +807,347 @@ function Agrif_GridAllocation_is_done ( ) result(isdone)
 end function Agrif_GridAllocation_is_done
 !===================================================================================================
 !
+
+function Agrif_Parent_Real_4(real_variable) result(real_variable_parent)
+real(KIND=4) :: real_variable
+real(KIND=4) :: real_variable_parent
+
+integer :: i
+logical :: i_found
+
+i_found = .FALSE.
+
+do i=1,Agrif_NbVariables(2)
+  if (LOC(real_variable) == LOC(agrif_curgrid%tabvars_r(i)%array0)) then
+     real_variable_parent = agrif_curgrid%tabvars_r(i)%parent_var%array0
+     i_found = .TRUE.
+     EXIT
+  endif
+enddo
+
+IF (.NOT.i_found) THEN
+do i=1,Agrif_NbVariables(2)
+  if (LOC(real_variable) == LOC(agrif_curgrid%tabvars_r(i)%sarray0)) then
+     real_variable_parent = agrif_curgrid%tabvars_r(i)%parent_var%sarray0
+     i_found = .TRUE.
+     EXIT
+  endif
+enddo
+ENDIF
+
+if (.NOT.i_found) STOP 'Agrif_Parent_Real_4 : Variable not found'
+
+end function Agrif_Parent_Real_4
+
+function Agrif_Parent_Real_8(real_variable) result(real_variable_parent)
+real(KIND=8) :: real_variable
+real(KIND=8) :: real_variable_parent
+
+integer :: i
+logical :: i_found
+
+i_found = .FALSE.
+
+do i=1,Agrif_NbVariables(2)
+  if (LOC(real_variable) == LOC(agrif_curgrid%tabvars_r(i)%array0)) then
+     real_variable_parent = agrif_curgrid%tabvars_r(i)%parent_var%array0
+     i_found = .TRUE.
+     EXIT
+  endif
+enddo
+
+IF (.NOT.i_found) THEN
+do i=1,Agrif_NbVariables(2)
+  if (LOC(real_variable) == LOC(agrif_curgrid%tabvars_r(i)%darray0)) then
+     real_variable_parent = agrif_curgrid%tabvars_r(i)%parent_var%darray0
+     i_found = .TRUE.
+     EXIT
+  endif
+enddo
+ENDIF
+
+if (.NOT.i_found) STOP 'Agrif_Parent_Real_8 : Variable not found'
+
+end function Agrif_Parent_Real_8
+
+function Agrif_Parent_Array2_Real_8(real_variable,ji,jj) result(real_variable_parent)
+real(KIND=8), DIMENSION(:,:) :: real_variable
+real(KIND=8) :: real_variable_parent
+integer :: ji,jj
+
+integer :: i
+logical :: i_found
+
+i_found = .FALSE.
+
+do i=1,Agrif_NbVariables(0)
+  if (LOC(real_variable) == LOC(agrif_curgrid%tabvars(i)%array2)) then
+     real_variable_parent = agrif_curgrid%tabvars(i)%parent_var%array2(ji,jj)
+     i_found = .TRUE.
+     EXIT
+  endif
+enddo
+
+if (.NOT.i_found) STOP 'Agrif_Parent_Array2_Real_8 : Variable not found'
+
+end function Agrif_Parent_Array2_Real_8
+
+
+function Agrif_Parent_Integer(integer_variable) result(integer_variable_parent)
+integer :: integer_variable
+integer :: integer_variable_parent
+
+integer :: i
+logical :: i_found
+
+i_found = .FALSE.
+
+do i=1,Agrif_NbVariables(4)
+  if (LOC(integer_variable) == LOC(agrif_curgrid%tabvars_i(i)%iarray0)) then
+     integer_variable_parent = agrif_curgrid%tabvars_i(i)%parent_var%iarray0
+     i_found = .TRUE.
+     EXIT
+  endif
+enddo
+
+if (.NOT.i_found) STOP 'Agrif_Parent : Variable not found'
+
+end function Agrif_Parent_Integer
+
+function Agrif_Parent_Character(character_variable) result(character_variable_parent)
+character(*) :: character_variable
+character(len(character_variable)) :: character_variable_parent
+
+integer :: i
+logical :: i_found
+
+i_found = .FALSE.
+
+do i=1,Agrif_NbVariables(1)
+  if (LOC(character_variable) == LOC(agrif_curgrid%tabvars_c(i)%carray0)) then
+     character_variable_parent = agrif_curgrid%tabvars_c(i)%parent_var%carray0
+     i_found = .TRUE.
+     EXIT
+  endif
+enddo
+
+if (.NOT.i_found) STOP 'Agrif_Parent : Variable not found'
+
+end function Agrif_Parent_Character
+
+function Agrif_Parent_Logical(logical_variable) result(logical_variable_parent)
+logical :: logical_variable
+logical :: logical_variable_parent
+
+integer :: i
+logical :: i_found
+
+i_found = .FALSE.
+
+do i=1,Agrif_NbVariables(3)
+  if (LOC(logical_variable) == LOC(agrif_curgrid%tabvars_l(i)%larray0)) then
+     logical_variable_parent = agrif_curgrid%tabvars_l(i)%parent_var%larray0
+     i_found = .TRUE.
+     EXIT
+  endif
+enddo
+
+if (.NOT.i_found) STOP 'Agrif_Parent : Variable not found'
+
+end function Agrif_Parent_Logical
+
+function Agrif_Child_Logical(logical_variable) result(logical_variable_child)
+logical :: logical_variable
+logical :: logical_variable_child
+
+integer :: i
+logical :: i_found
+
+i_found = .FALSE.
+
+do i=1,Agrif_NbVariables(3)
+  if (LOC(logical_variable) == LOC(agrif_curgrid%tabvars_l(i)%larray0)) then
+     logical_variable_child = Agrif_CurChildgrid%tabvars_l(i)%larray0
+     i_found = .TRUE.
+     EXIT
+  endif
+enddo
+
+if (.NOT.i_found) STOP 'Agrif_Child : Variable not found'
+
+end function Agrif_Child_Logical
+
+function Agrif_Irhox() result(i_val)
+integer :: i_val
+i_val = agrif_curgrid%spaceref(1)
+end function Agrif_Irhox
+
+function Agrif_Irhoy() result(i_val)
+integer :: i_val
+i_val = agrif_curgrid%spaceref(2)
+end function Agrif_Irhoy
+
+function Agrif_Irhoz() result(i_val)
+integer :: i_val
+i_val = agrif_curgrid%spaceref(3)
+end function Agrif_Irhoz
+
+function Agrif_NearCommonBorderX() result(l_val)
+logical :: l_val
+l_val = agrif_curgrid%nearRootBorder(1)
+end function Agrif_NearCommonBorderX
+
+subroutine Agrif_Set_NearCommonBorderX(l_val)
+logical,intent(in) :: l_val
+agrif_curgrid%nearRootBorder(1)=l_val
+end subroutine Agrif_Set_NearCommonBorderX
+
+function Agrif_NearCommonBorderY() result(l_val)
+logical :: l_val
+l_val = agrif_curgrid%nearRootBorder(2)
+end function Agrif_NearCommonBorderY
+
+subroutine Agrif_Set_NearCommonBorderY(l_val)
+logical,intent(in) :: l_val
+agrif_curgrid%nearRootBorder(2)=l_val
+end subroutine Agrif_Set_NearCommonBorderY
+
+function Agrif_NearCommonBorderZ() result(l_val)
+logical :: l_val
+l_val = agrif_curgrid%nearRootBorder(3)
+end function Agrif_NearCommonBorderZ
+
+subroutine Agrif_Set_NearCommonBorderZ(l_val)
+logical,intent(in) :: l_val
+agrif_curgrid%nearRootBorder(3)=l_val
+end subroutine Agrif_Set_NearCommonBorderZ
+
+function Agrif_DistantCommonBorderX() result(l_val)
+logical :: l_val
+l_val = agrif_curgrid%DistantRootBorder(1)
+end function Agrif_DistantCommonBorderX
+
+subroutine Agrif_Set_DistantCommonBorderX(l_val)
+logical,intent(in) :: l_val
+agrif_curgrid%DistantRootBorder(1)=l_val
+end subroutine Agrif_Set_DistantCommonBorderX
+
+function Agrif_DistantCommonBorderY() result(l_val)
+logical :: l_val
+l_val = agrif_curgrid%DistantRootBorder(2)
+end function Agrif_DistantCommonBorderY
+
+subroutine Agrif_Set_DistantCommonBorderY(l_val)
+logical,intent(in) :: l_val
+agrif_curgrid%DistantRootBorder(2)=l_val
+end subroutine Agrif_Set_DistantCommonBorderY
+
+function Agrif_DistantCommonBorderZ() result(l_val)
+logical :: l_val
+l_val = agrif_curgrid%DistantRootBorder(3)
+end function Agrif_DistantCommonBorderZ
+
+subroutine Agrif_Set_DistantCommonBorderZ(l_val)
+logical,intent(in) :: l_val
+agrif_curgrid%DistantRootBorder(3)=l_val
+end subroutine Agrif_Set_DistantCommonBorderZ
+
+function Agrif_Ix() result(i_val)
+integer :: i_val
+i_val = agrif_curgrid%ix(1)
+end function Agrif_Ix
+
+function Agrif_Iy() result(i_val)
+integer :: i_val
+i_val = agrif_curgrid%ix(2)
+end function Agrif_Iy
+
+function Agrif_Iz() result(i_val)
+integer :: i_val
+i_val = agrif_curgrid%ix(3)
+end function Agrif_Iz
+
+function Agrif_Get_grid_id() result(i_val)
+integer :: i_val
+i_val = agrif_curgrid % grid_id
+end function Agrif_Get_grid_id
+
+function Agrif_Get_parent_id() result(i_val)
+integer :: i_val
+i_val = agrif_curgrid % parent % grid_id
+end function Agrif_Get_parent_id
+
+function Agrif_rhox() result(r_val)
+real :: r_val
+r_val = real(agrif_curgrid%spaceref(1))
+end function Agrif_rhox
+
+function Agrif_rhoy() result(r_val)
+real :: r_val
+r_val = real(agrif_curgrid%spaceref(2))
+end function Agrif_rhoy
+
+function Agrif_rhoz() result(r_val)
+real :: r_val
+r_val = real(agrif_curgrid%spaceref(3))
+end function Agrif_rhoz
+
+function Agrif_Nb_Step() result(i_val)
+integer :: i_val
+i_val = agrif_curgrid%ngridstep
+end function Agrif_Nb_Step
+
+function Agrif_Nb_Fine_Grids() result(i_val)
+integer :: i_val
+i_val = Agrif_nbfixedgrids
+end function Agrif_Nb_Fine_Grids
+
+! Set the name of the External mapping subroutine (if needed)
+subroutine Agrif_Set_ExternalMapping(external_mapping)
+Procedure(mapping) :: external_mapping
+
+agrif_external_mapping => external_mapping
+
+end subroutine Agrif_Set_ExternalMapping
+
+! Set the name of the user linear interp function (if needed)
+subroutine Agrif_Set_external_linear_interp(external_linear_interp)
+Procedure(linear_interp) :: external_linear_interp
+
+agrif_external_linear_interp => external_linear_interp
+
+end subroutine Agrif_Set_external_linear_interp
+
+subroutine Agrif_UnSet_external_linear_interp()
+
+nullify(agrif_external_linear_interp)
+
+end subroutine Agrif_UnSet_external_linear_interp
+
+! test if there is at least a child grid in the early stage of the initialisation
+! (when Agrif_Nb_Fine_Grids is not yet defined)
+LOGICAL FUNCTION Agrif_Root_Only()
+   INTEGER :: nb_rootschildgrids
+   INTEGER :: nunit, iost
+   LOGICAL :: Bexist
+   
+   nunit = Agrif_Get_Unit()
+   OPEN(nunit, file='AGRIF_FixedGrids.in', form='formatted', status="old", action ="read", IOSTAT=iost)
+   IF( iost == 0 ) THEN
+      READ(nunit,*) nb_rootschildgrids
+      CLOSE(nunit)
+      Agrif_Root_Only = (nb_rootschildgrids <= 0)
+   ELSE
+      INQUIRE(FILE='AGRIF_FixedGrids.in',EXIST=BEXIST)
+      IF (.NOT. BEXIST) THEN
+         PRINT*,'ERROR : File AGRIF_FixedGrids.in not found.'
+         STOP
+      ELSE
+         PRINT*,'Error opening file AGRIF_FixedGrids.in'
+         STOP
+      ENDIF
+   ENDIF
+ 
+END FUNCTION Agrif_Root_Only
+
 end module Agrif_CurgridFunctions

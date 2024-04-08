@@ -4,19 +4,19 @@
 !
 ! DESCRIPTION:
 !> @file
-!> @brief 
+!> @brief
 !> this program merges bathymetry file at boundaries.
 !>
 !> @details
 !> @section sec1 method
-!> coarse grid bathymetry is interpolated on fine grid 
-!> (nearest interpolation method is used).<br/>  
+!> coarse grid bathymetry is interpolated on fine grid
+!> (nearest interpolation method is used).<br/>
 !> then fine bathymetry and refined coarse bathymetry are merged at boundaries.<br/>
 !>    @f[BathyFine= Weight * BathyCoarse + (1-Weight)*BathyFine@f]
 !> the weight function used is :<br/>
 !>       @f[Weight = 0.5 + 0.5*COS( \frac{\pi*dist}{width} )@f]<br/>
 !> with
-!> - dist : number of point to border 
+!> - dist : number of point to border
 !> - width : boundary size
 !>
 !> @section sec2 how to
@@ -47,7 +47,7 @@
 !>       - **namout** to set output parameters
 !>
 !>    here after, each sub-namelist parameters is detailed.
-!>    @note 
+!>    @note
 !>       default values are specified between brackets
 !>
 !> @subsection sublog namlog
@@ -66,38 +66,38 @@
 !>          - fatal
 !>          - none
 !>
-!>    - **in_maxerror** [@a 5]<br/> 
+!>    - **in_maxerror** [@a 5]<br/>
 !>       maximum number of error allowed
 !>
 !> @subsection subcfg namcfg
-!>    the configuration sub-namelist parameters are : 
+!>    the configuration sub-namelist parameters are :
 !>
 !>    - **cn_varcfg** [@a ./cfg/variable.cfg]<br/>
 !>       path to the variable configuration file.<br/>
-!>       the variable configuration file defines standard name, 
-!>       default interpolation method, axis,... 
-!>       to be used for some known variables.<br/> 
+!>       the variable configuration file defines standard name,
+!>       default interpolation method, axis,...
+!>       to be used for some known variables.<br/>
 !>
-!>    - **cn_dimcfg** [@a ./cfg/dimension.cfg]<br/> 
-!>       path to the dimension configuration file.<br/> 
-!>       the dimension configuration file defines dimensions allowed.<br/> 
+!>    - **cn_dimcfg** [@a ./cfg/dimension.cfg]<br/>
+!>       path to the dimension configuration file.<br/>
+!>       the dimension configuration file defines dimensions allowed.<br/>
 !>
-!>    - **cn_dumcfg** [@a ./cfg/dummy.cfg]<br/> 
+!>    - **cn_dumcfg** [@a ./cfg/dummy.cfg]<br/>
 !>       path to the useless (dummy) configuration file.<br/>
-!>       the dummy configuration file defines useless 
+!>       the dummy configuration file defines useless
 !>       dimension or variable. these dimension(s) or variable(s) will not be
 !>       processed.<br/>
 !>
-!> @subsection subsrc namsrc 
+!> @subsection subsrc namsrc
 !>    the source/coarse grid sub-namelist parameters are :
 !>
-!>    - **cn_bathy0** [@a ]<br/> 
+!>    - **cn_bathy0** [@a ]<br/>
 !>       path to the bathymetry file
-!>       @warning 
+!>       @warning
 !>          variable name must be __Bathymetry__ here.
 !>
-!>    - **in_perio0** [@a ]<br/> 
-!>       NEMO periodicity index<br/> 
+!>    - **in_perio0** [@a ]<br/>
+!>       NEMO periodicity index<br/>
 !>       the NEMO periodicity could be choose between 0 to 6:
 !>       <dl>
 !>          <dt>in_perio=0</dt>
@@ -119,15 +119,15 @@
 !>          </dd>
 !>       </dl>
 !>       @sa For more information see @ref md_src_docsrc_6_perio
-!>       and Model Boundary Condition paragraph in the 
+!>       and Model Boundary Condition paragraph in the
 !>       [NEMO documentation](https://forge.ipsl.jussieu.fr/nemo/chrome/site/doc/NEMO/manual/pdf/NEMO_manual.pdf)
 !>
-!> @subsection subtgt namtgt 
+!> @subsection subtgt namtgt
 !>    the target/fine grid sub-namelist parameters are :
 !>
-!>    - **cn_bathy1** [@a ]<br/> 
+!>    - **cn_bathy1** [@a ]<br/>
 !>       path to bathymetry file
-!>       @warning 
+!>       @warning
 !>          variable name must be __Bathymetry__ here.
 !>
 !>    - **in_perio1** [@a ]<br/>
@@ -136,22 +136,22 @@
 !>    not need to fill this parameter. SIREN will read it on the global attributes of
 !>    the coordinates file.
 !>
-!> @subsection subnst namnst 
+!> @subsection subnst namnst
 !>    the nesting sub-namelist parameters are (default value are specified between brackets):
-!>    - **in_rhoi**  [@a 1]<br/> 
+!>    - **in_rhoi**  [@a 1]<br/>
 !>       refinement factor in i-direction
 !>
-!>    - **in_rhoj**  [@a 1]<br/> 
+!>    - **in_rhoj**  [@a 1]<br/>
 !>       refinement factor in j-direction
 !>
-!>    @note 
+!>    @note
 !>       coarse grid indices will be deduced from fine grid
 !>       coordinate file.
 !>
 !> @subsection subbdy nambdy
 !>    the boundary sub-namelist parameters are :
 !>
-!>    - **ln_north** [@a .TRUE.]<br/> 
+!>    - **ln_north** [@a .TRUE.]<br/>
 !>       logical to use north boundary or not
 !>    - **ln_south** [@a .TRUE.]<br/>
 !>       logical to use south boundary or not
@@ -173,31 +173,31 @@
 !>       segmentation.<br/>
 !>       segments are separated by '|'.<br/>
 !>       each segments of the boundary is composed of:
-!>          - indice of velocity (orthogonal to boundary .ie. 
-!>             for north boundary, J-indice). 
-!>          - indice of segment start (I-indice for north boundary) 
+!>          - indice of velocity (orthogonal to boundary .ie.
+!>             for north boundary, J-indice).
+!>          - indice of segment start (I-indice for north boundary)
 !>          - indice of segment end   (I-indice for north boundary)<br/>
 !>             indices must be separated by ':' .<br/>
-!>          - optionally, boundary size could be added between '(' and ')' 
+!>          - optionally, boundary size could be added between '(' and ')'
 !>          in the first segment defined.
-!>             @note 
+!>             @note
 !>                boundary size is the same for all segments of one boundary.
 !>
 !>       Examples:
 !>          - cn_north='index1,first1:last1(width)'
 !>          - cn_north='index1(width),first1:last1|index2,first2:last2'
 !>
-!>       @image html  boundary_50.png 
+!>       @image html  boundary_50.png
 !>       <center>@image latex boundary_50.png
 !>       </center>
 !>
-!>    - **in_ncrs**  [@a 2]<br/> 
+!>    - **in_ncrs**  [@a 2]<br/>
 !>       number of point(s) with coarse value save at boundaries
 !>
 !>    - **ln_oneseg** [@a .TRUE.]<br/>
 !>       logical to use only one segment for each boundary or not
 !>
-!> @subsection subout namout 
+!> @subsection subout namout
 !>    the output sub-namelist parameter is :
 !>
 !>    - **cn_fileout** [@a bathy_merged.nc]<br/>
@@ -207,9 +207,9 @@
 !> @author J.Paul
 !>
 !> @date November, 2013 - Initial Version
-!> @date Sepember, 2014 
+!> @date Sepember, 2014
 !> - add header for user
-!> @date July, 2015 
+!> @date July, 2015
 !> - extrapolate all land points
 !> - add attributes with boundary string character (as in namelist)
 !> @date September, 2015
@@ -290,15 +290,15 @@ PROGRAM merge_bathy
 
    TYPE(TFILE)                                        :: tl_file
    TYPE(TFILE)                                        :: tl_fileout
-   
+
    TYPE(TATT)                                         :: tl_att
-   
+
    TYPE(TVAR)                                         :: tl_var
    TYPE(TVAR)                                         :: tl_lon
    TYPE(TVAR)                                         :: tl_lat
-   
+
    TYPE(TDIM)       , DIMENSION(ip_maxdim)            :: tl_dim
-   
+
    TYPE(TBDY)       , DIMENSION(ip_ncard)             :: tl_bdy
 
    ! loop indices
@@ -308,21 +308,21 @@ PROGRAM merge_bathy
 
    ! namelist variable
    ! namlog
-   CHARACTER(LEN=lc)                       :: cn_logfile = 'merge_bathy.log' 
-   CHARACTER(LEN=lc)                       :: cn_verbosity = 'warning' 
+   CHARACTER(LEN=lc)                       :: cn_logfile = 'merge_bathy.log'
+   CHARACTER(LEN=lc)                       :: cn_verbosity = 'warning'
    INTEGER(i4)                             :: in_maxerror = 5
 
    ! namcfg
-   CHARACTER(LEN=lc)                       :: cn_varcfg = './cfg/variable.cfg' 
+   CHARACTER(LEN=lc)                       :: cn_varcfg = './cfg/variable.cfg'
    CHARACTER(LEN=lc)                       :: cn_dimcfg = './cfg/dimension.cfg'
    CHARACTER(LEN=lc)                       :: cn_dumcfg = './cfg/dummy.cfg'
 
    ! namsrc
-   CHARACTER(LEN=lc)                       :: cn_bathy0 = '' 
+   CHARACTER(LEN=lc)                       :: cn_bathy0 = ''
    INTEGER(i4)                             :: in_perio0 = -1
 
    ! namtgt
-   CHARACTER(LEN=lc)                       :: cn_bathy1 = '' 
+   CHARACTER(LEN=lc)                       :: cn_bathy1 = ''
    INTEGER(i4)                             :: in_perio1 = -1
 
 !   ! namvar
@@ -345,7 +345,7 @@ PROGRAM merge_bathy
    LOGICAL                                 :: ln_oneseg= .TRUE.
 
    ! namout
-   CHARACTER(LEN=lc)                       :: cn_fileout = 'bathy_merged.nc' 
+   CHARACTER(LEN=lc)                       :: cn_fileout = 'bathy_merged.nc'
    !-------------------------------------------------------------------
 
    NAMELIST /namlog/ &   !< logger namelist
@@ -361,16 +361,16 @@ PROGRAM merge_bathy
    NAMELIST /namsrc/ &   !< source/coarse grid namelist
    &  cn_bathy0,  &      !< bathymetry file
    &  in_perio0          !< periodicity index
-   
+
    NAMELIST /namtgt/ &   !< target/fine grid namelist
    &  cn_bathy1,     &   !< bathymetry file
    &  in_perio1          !< periodicity index
- 
+
 !   NAMELIST /namvar/ &  !< variable namelist
-!   &  cn_varinfo        !< list of variable and interpolation 
-!                        !< method to be used. 
-!                        !< (ex: 'votemper|linear','vosaline|cubic' ) 
-   
+!   &  cn_varinfo        !< list of variable and interpolation
+!                        !< method to be used.
+!                        !< (ex: 'votemper|linear','vosaline|cubic' )
+
    NAMELIST /namnst/ &  !< nesting namelist
    &  in_rhoi,    &     !< refinement factor in i-direction
    &  in_rhoj           !< refinement factor in j-direction
@@ -384,11 +384,11 @@ PROGRAM merge_bathy
    &  cn_south,   &     !< south boundary indices on fine grid
    &  cn_east ,   &     !< east  boundary indices on fine grid
    &  cn_west ,   &     !< west  boundary indices on fine grid
-   &  in_ncrs,    &     !< number of point with coarse value save at boundaries 
+   &  in_ncrs,    &     !< number of point with coarse value save at boundaries
    &  ln_oneseg         !< use only one segment for each boundary or not
 
    NAMELIST /namout/ &  !< output namelist
-   &  cn_fileout        !< fine grid merged bathymetry file   
+   &  cn_fileout        !< fine grid merged bathymetry file
    !-------------------------------------------------------------------
 
    !
@@ -401,7 +401,7 @@ PROGRAM merge_bathy
    ! --------------------------------
    IF( il_narg /= 1 )THEN
       WRITE(cl_errormsg,*) ' ERROR : one argument is needed '
-      CALL fct_help(cp_myname,cl_errormsg) 
+      CALL fct_help(cp_myname,cl_errormsg)
       CALL EXIT(1)
    ELSE
 
@@ -436,7 +436,7 @@ PROGRAM merge_bathy
                CALL fct_err(il_status)
                IF( il_status /= 0 )THEN
                   WRITE(cl_errormsg,*) " ERROR : error opening "//TRIM(cl_namelist)
-                  CALL fct_help(cp_myname,cl_errormsg) 
+                  CALL fct_help(cp_myname,cl_errormsg)
                   CALL EXIT(1)
                ENDIF
 
@@ -479,7 +479,7 @@ PROGRAM merge_bathy
             ELSE
 
                WRITE(cl_errormsg,*) " ERROR : can't find "//TRIM(cl_namelist)
-               CALL fct_help(cp_myname,cl_errormsg) 
+               CALL fct_help(cp_myname,cl_errormsg)
                CALL EXIT(1)
 
             ENDIF
@@ -557,7 +557,7 @@ PROGRAM merge_bathy
 
    tl_bdy(:)=boundary_init(tl_var, ln_north, ln_south, ln_east, ln_west, &
    &                               cn_north, cn_south, cn_east, cn_west, &
-   &                               ln_oneseg ) 
+   &                               ln_oneseg )
 
    ! get boundary on coarse grid
    ! define refined bathymetry array (for coarse grid)
@@ -574,7 +574,7 @@ PROGRAM merge_bathy
    &                   tl_var%t_dim(2)%i_len, &
    &                   1,1) )
 
-   dl_weight(:,:,:,:)=dl_fill 
+   dl_weight(:,:,:,:)=dl_fill
 
    ! compute coarse grid refined bathymetry on boundary.
    DO jk=1,ip_ncard
@@ -629,7 +629,7 @@ PROGRAM merge_bathy
       CALL var_clean(tl_lat)
 
       ! close mpp files
-      CALL iom_mpp_close(tl_bathy1)      
+      CALL iom_mpp_close(tl_bathy1)
    ENDIF
 
    CALL file_add_var(tl_fileout, tl_var)
@@ -702,7 +702,7 @@ PROGRAM merge_bathy
    ENDIF
 
    IF( tl_bdy(jp_south)%l_use )THEN
-      
+
       cl_tmp=TRIM(fct_str(tl_bdy(jp_south)%t_seg(1)%i_index))//','//&
          &   TRIM(fct_str(tl_bdy(jp_south)%t_seg(1)%i_first))//':'//&
          &   TRIM(fct_str(tl_bdy(jp_south)%t_seg(1)%i_last))//&
@@ -785,16 +785,16 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief
    !> This subroutine compute refined bathymetry on boundary from coarse grid.
-   !> 
+   !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !>
-   !> @param[in] td_bathy0       coarse grid bathymetry file structure 
+   !> @param[in] td_bathy0       coarse grid bathymetry file structure
    !> @param[in] td_bathy1       fine grid bathymetry file structure
    !> @param[in] td_bdy          boundary structure
    !> @param[in] id_rho          array of refinement factor
    !> @param[in] id_ncrs         number of point with coarse value save at boundaries
-   !> @param[inout] dd_refined   array of refined bathymetry 
+   !> @param[inout] dd_refined   array of refined bathymetry
    !> @param[inout] dd_weight    array of weight
    !> @param[in] dd_fill         fillValue
    !>
@@ -810,14 +810,14 @@ CONTAINS
       INTEGER(i4)                    , INTENT(IN   ) :: id_ncrs
       REAL(dp)   , DIMENSION(:,:,:,:), INTENT(INOUT) :: dd_refined
       REAL(dp)   , DIMENSION(:,:,:,:), INTENT(INOUT) :: dd_weight
-      REAL(dp)                       , INTENT(IN   ) :: dd_fill  
+      REAL(dp)                       , INTENT(IN   ) :: dd_fill
 
       ! local variable
       INTEGER(i4) :: il_imin1
       INTEGER(i4) :: il_imax1
       INTEGER(i4) :: il_jmin1
       INTEGER(i4) :: il_jmax1
-      
+
       INTEGER(i4) :: il_imin0
       INTEGER(i4) :: il_imax0
       INTEGER(i4) :: il_jmin0
@@ -854,18 +854,18 @@ CONTAINS
             CASE('north')
 
                il_imin1=td_bdy%t_seg(jl)%i_first
-               il_imax1=td_bdy%t_seg(jl)%i_last 
+               il_imax1=td_bdy%t_seg(jl)%i_last
                il_jmin1=td_bdy%t_seg(jl)%i_index-(td_bdy%t_seg(jl)%i_width-1)
                il_jmax1=td_bdy%t_seg(jl)%i_index
 
-               ! do not used grid point to compute 
+               ! do not used grid point to compute
                ! boundaries indices (cf create_boundary)
                ! as Bathymetry always on T point
 
             CASE('south')
 
                il_imin1=td_bdy%t_seg(jl)%i_first
-               il_imax1=td_bdy%t_seg(jl)%i_last 
+               il_imax1=td_bdy%t_seg(jl)%i_last
                il_jmin1=td_bdy%t_seg(jl)%i_index
                il_jmax1=td_bdy%t_seg(jl)%i_index+(td_bdy%t_seg(jl)%i_width-1)
 
@@ -874,9 +874,9 @@ CONTAINS
                il_imin1=td_bdy%t_seg(jl)%i_index-(td_bdy%t_seg(jl)%i_width-1)
                il_imax1=td_bdy%t_seg(jl)%i_index
                il_jmin1=td_bdy%t_seg(jl)%i_first
-               il_jmax1=td_bdy%t_seg(jl)%i_last 
+               il_jmax1=td_bdy%t_seg(jl)%i_last
 
-               ! do not used grid point to compute 
+               ! do not used grid point to compute
                ! boundaries indices (cf create_boundary)
                ! as Bathymetry always on T point
 
@@ -885,7 +885,7 @@ CONTAINS
                il_imin1=td_bdy%t_seg(jl)%i_index
                il_imax1=td_bdy%t_seg(jl)%i_index+(td_bdy%t_seg(jl)%i_width-1)
                il_jmin1=td_bdy%t_seg(jl)%i_first
-               il_jmax1=td_bdy%t_seg(jl)%i_last 
+               il_jmax1=td_bdy%t_seg(jl)%i_last
 
             END SELECT
 
@@ -1097,14 +1097,14 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief
    !> This subroutine interpolate variable.
-   !> 
+   !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !>
    !> @param[inout] td_var variable structure
    !> @param[in] id_rho    array of refinment factor
    !> @param[in] id_offset array of offset between fine and coarse grid
-   !> @param[in] id_iext   i-direction size of extra bands (default=im_minext) 
+   !> @param[in] id_iext   i-direction size of extra bands (default=im_minext)
    !> @param[in] id_jext   j-direction size of extra bands (default=im_minext)
    !-------------------------------------------------------------------
 
@@ -1155,7 +1155,7 @@ CONTAINS
       &                td_var%t_dim(4)%i_len) )
 
       bl_mask(:,:,:,:)=1
-      WHERE(td_var%d_value(:,:,:,:)==td_var%d_fill) bl_mask(:,:,:,:)=0      
+      WHERE(td_var%d_value(:,:,:,:)==td_var%d_fill) bl_mask(:,:,:,:)=0
 
       SELECT CASE(TRIM(td_var%c_point))
       CASE DEFAULT ! 'T'
@@ -1188,7 +1188,7 @@ CONTAINS
       ! remove extraband
       CALL extrap_del_extrabands(td_var, il_iext*id_rho(jp_I), il_jext*id_rho(jp_J))
 
-      ! keep original mask 
+      ! keep original mask
       WHERE( tl_mask%d_value(:,:,:,:) == 0 )
          td_var%d_value(:,:,:,:)=td_var%d_fill
       END WHERE

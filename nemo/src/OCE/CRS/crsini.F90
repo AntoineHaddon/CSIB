@@ -27,14 +27,17 @@ MODULE crsini
 
    PUBLIC   crs_init   ! called by nemogcm.F90 module
 
+   !! * Substitutions
+#  include "single_precision_substitute.h90"
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: crsini.F90 11536 2019-09-11 13:54:18Z smasson $
+   !! $Id: crsini.F90 13237 2020-07-03 09:12:53Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
    
-   SUBROUTINE crs_init 
+   SUBROUTINE crs_init( Kmm )
       !!-------------------------------------------------------------------
       !!                     *** SUBROUTINE crs_init
       !!  ** Purpose : Initialization of the grid coarsening module  
@@ -67,6 +70,8 @@ CONTAINS
       !! 
       !!               - Read in pertinent data ?
       !!-------------------------------------------------------------------
+      INTEGER, INTENT(in) :: Kmm   ! time level index
+      !
       INTEGER  :: ji,jj,jk      ! dummy indices
       INTEGER  :: ierr                                ! allocation error status
       INTEGER  ::   ios                 ! Local integer output status for namelist read
@@ -79,10 +84,8 @@ CONTAINS
      ! 1. Read Namelist file
      !---------------------------------------------------------
      !
-      REWIND( numnam_ref )              ! Namelist namrun in reference namelist : Parameters of the run
       READ  ( numnam_ref, namcrs, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namcrs in reference namelist' )
-      REWIND( numnam_cfg )              ! Namelist namrun in configuration namelist : Parameters of the run
       READ  ( numnam_cfg, namcrs, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namcrs in configuration namelist' )
       IF(lwm) WRITE ( numond, namcrs )
@@ -97,7 +100,7 @@ CONTAINS
         WRITE(numout,*) '      bin centering preference              nn_binref  = ', nn_binref
         WRITE(numout,*) '      create a mesh file (=T)               ln_msh_crs = ', ln_msh_crs
         WRITE(numout,*) '      type of Kz coarsening (0,1,2)         nn_crs_kz  = ', nn_crs_kz
-        WRITE(numout,*) '      wn coarsened or computed using hdivn  ln_crs_wn  = ', ln_crs_wn
+        WRITE(numout,*) '      ww coarsened or computed using hdiv  ln_crs_wn  = ', ln_crs_wn
      ENDIF
               
      rfactx_r = 1. / nn_factx
@@ -151,8 +154,8 @@ CONTAINS
      !      3.c.1 Horizontal scale factors
 
      CALL crs_dom_hgr( e1t, e2t, 'T', e1t_crs, e2t_crs )
-     CALL crs_dom_hgr( e1u, e2u, 'U', e1u_crs, e2u_crs )
-     CALL crs_dom_hgr( e1v, e2v, 'V', e1v_crs, e2v_crs )
+     CALL crs_dom_hgr( e1u, CASTDP(e2u), 'U', e1u_crs, e2u_crs )
+     CALL crs_dom_hgr( CASTDP(e1v), e2v, 'V', e1v_crs, e2v_crs )
      CALL crs_dom_hgr( e1f, e2f, 'F', e1f_crs, e2f_crs )
 
      e1e2t_crs(:,:) = e1t_crs(:,:) * e2t_crs(:,:)
@@ -173,13 +176,15 @@ CONTAINS
      CALL crs_dom_bat
      
      !
-     ze3t(:,:,:) = e3t_n(:,:,:)
-     ze3u(:,:,:) = e3u_n(:,:,:)
-     ze3v(:,:,:) = e3v_n(:,:,:)
-     ze3w(:,:,:) = e3w_n(:,:,:)
+     DO jk = 1, jpk
+        ze3t(:,:,jk) = e3t(:,:,jk,Kmm)
+        ze3u(:,:,jk) = e3u(:,:,jk,Kmm)
+        ze3v(:,:,jk) = e3v(:,:,jk,Kmm)
+        ze3w(:,:,jk) = e3w(:,:,jk,Kmm)
+     END DO  
 
      !    3.d.2   Surfaces 
-     CALL crs_dom_sfc( tmask, 'W', e1e2w_crs, e1e2w_msk, p_e1=e1t, p_e2=e2t  )
+     CALL crs_dom_sfc( tmask, 'W', e1e2w_crs, e1e2w_msk, p_e1=CASTSP(e1t), p_e2=CASTSP(e2t)  )
      CALL crs_dom_sfc( umask, 'U', e2e3u_crs, e2e3u_msk, p_e2=e2u, p_e3=ze3u )
      CALL crs_dom_sfc( vmask, 'V', e1e3v_crs, e1e3v_msk, p_e1=e1v, p_e3=ze3v )
    
@@ -189,8 +194,8 @@ CONTAINS
      !    3.d.3   Vertical scale factors
      !
      CALL crs_dom_e3( e1t, e2t, ze3t, e1e2w_crs, 'T', tmask, e3t_crs, e3t_max_crs)
-     CALL crs_dom_e3( e1u, e2u, ze3u, e2e3u_crs, 'U', umask, e3u_crs, e3u_max_crs)
-     CALL crs_dom_e3( e1v, e2v, ze3v, e1e3v_crs, 'V', vmask, e3v_crs, e3v_max_crs)
+     CALL crs_dom_e3( e1u, CASTDP(e2u), ze3u, e2e3u_crs, 'U', umask, e3u_crs, e3u_max_crs)
+     CALL crs_dom_e3( CASTDP(e1v), e2v, ze3v, e1e3v_crs, 'V', vmask, e3v_crs, e3v_max_crs)
      CALL crs_dom_e3( e1t, e2t, ze3w, e1e2w_crs, 'W', tmask, e3w_crs, e3w_max_crs)
 
      ! Replace 0 by e3t_0 or e3w_0
@@ -206,8 +211,8 @@ CONTAINS
      ENDDO
 
      !    3.d.3   Vertical depth (meters)
-     CALL crs_dom_ope( gdept_0, 'MAX', 'T', tmask, gdept_crs, p_e3=ze3t, psgn=1.0 ) 
-     CALL crs_dom_ope( gdepw_0, 'MAX', 'W', tmask, gdepw_crs, p_e3=ze3w, psgn=1.0 )
+     CALL crs_dom_ope( gdept_0, 'MAX', 'T', tmask, gdept_crs, p_e3=ze3t, psgn=1.0_wp ) 
+     CALL crs_dom_ope( gdepw_0, 'MAX', 'W', tmask, gdepw_crs, p_e3=ze3w, psgn=1.0_wp )
 
 
      !---------------------------------------------------------

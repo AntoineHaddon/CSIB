@@ -9,7 +9,7 @@ MODULE sao_read
    USE par_kind, ONLY: lc
    USE netcdf
    USE oce,     ONLY: tsn, sshn
-   USE dom_oce, ONLY: nlci, nlcj, nimpp, njmpp, tmask
+   USE dom_oce, ONLY: nimpp, njmpp, tmask
    USE par_oce, ONLY: jpi, jpj, jpk
    !
    USE obs_fbm, ONLY: fbimdi, fbrmdi, fbsp, fbdp
@@ -22,7 +22,7 @@ MODULE sao_read
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: sao_read.F90 10069 2018-08-28 14:12:24Z nicolasmartin $
+   !! $Id: sao_read.F90 13286 2020-07-09 15:48:29Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -93,9 +93,9 @@ CONTAINS
          istat = nf90_inquire_dimension(ncid, tdim, len=ntimes)
          IF (ifcst .LE. ntimes) THEN
             ! Allocate temporary temperature array
-            ALLOCATE(temp_tn(nlci,nlcj,jpk))
-            ALLOCATE(temp_sn(nlci,nlcj,jpk))
-            ALLOCATE(temp_sshn(nlci,nlcj))
+            ALLOCATE(temp_tn(jpi,jpj,jpk))
+            ALLOCATE(temp_sn(jpi,jpj,jpk))
+            ALLOCATE(temp_sshn(jpi,jpj))
 
             ! Set temp_tn, temp_sn to 0.
             temp_tn(:,:,:) = fbrmdi
@@ -103,10 +103,10 @@ CONTAINS
             temp_sshn(:,:) = fbrmdi
 
             ! Create start and count arrays
-            start_n = (/ nimpp, njmpp, 1,   ifcst /)
-            count_n = (/ nlci,  nlcj,  jpk, 1     /)
-            start_s = (/ nimpp, njmpp, ifcst /)
-            count_s = (/ nlci,  nlcj,  1     /)
+            start_n = (/ nimpp, njmpp,      1, ifcst /)
+            count_n = (/   jpi,   jpj, jpk, 1        /)
+            start_s = (/ nimpp, njmpp        , ifcst /)
+            count_s = (/   jpi,   jpj,      1        /)
 
             ! Read information into temporary arrays
             ! retrieve varid and read in temperature
@@ -137,24 +137,10 @@ CONTAINS
             sshn(:,:) = fbrmdi
 
             ! Mask out missing data index
-            tsn(1:nlci,1:nlcj,1:jpk,1) = temp_tn(:,:,:) * tmask(1:nlci,1:nlcj,1:jpk)
-            tsn(1:nlci,1:nlcj,1:jpk,2) = temp_sn(:,:,:) * tmask(1:nlci,1:nlcj,1:jpk)
-            sshn(1:nlci,1:nlcj)        = temp_sshn(:,:) * tmask(1:nlci,1:nlcj,1)
-
-            ! Remove halo from tmask, tsn, sshn to prevent double obs counting
-            IF (jpi > nlci) THEN
-                tmask(nlci+1:,:,:) = 0
-                tsn(nlci+1:,:,:,1) = 0
-                tsn(nlci+1:,:,:,2) = 0
-                sshn(nlci+1:,:) = 0
-            END IF
-            IF (jpj > nlcj) THEN
-                tmask(:,nlcj+1:,:) = 0
-                tsn(:,nlcj+1:,:,1) = 0
-                tsn(:,nlcj+1:,:,2) = 0
-                sshn(:,nlcj+1:) = 0
-            END IF
-
+            tsn(1:jpi,1:jpj,1:jpk,1) = temp_tn(:,:,:) * tmask(1:jpi,1:jpj,1:jpk)
+            tsn(1:jpi,1:jpj,1:jpk,2) = temp_sn(:,:,:) * tmask(1:jpi,1:jpj,1:jpk)
+            sshn(1:jpi,1:jpj)        = temp_sshn(:,:) * tmask(1:jpi,1:jpj,1)
+            
             ! Deallocate arrays
             DEALLOCATE(temp_tn, temp_sn, temp_sshn)
          ELSE

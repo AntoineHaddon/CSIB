@@ -13,15 +13,15 @@
 !> @details
 !> @section sec1 method
 !>  bathymetry (and optionally ice shelf draft) is read on input file.<br/>
-!>  horizontal grid-point position, scale factors, and the coriolis factor 
-!>  are read in coordinates file or computed.<br/> 
+!>  horizontal grid-point position, scale factors, and the coriolis factor
+!>  are read in coordinates file or computed.<br/>
 !>  vertical coordinate is defined, and the bathymetry recomputed to fit the
 !>  vertical grid.<br/>
 !>  finally the masks from the bathymetry are computed.
 !>
 !>  all the variables read and or computed, are writen in one to three file(s) depending on
 !>  output option.
-!>  @note 
+!>  @note
 !>    the file contain depends on
 !>    the vertical coordinate used (z-coord, partial steps, s-coord)
 !>
@@ -59,7 +59,7 @@
 !>       - **namout** to set output parameters
 !>
 !>    here after, each sub-namelist parameters is detailed.
-!>    @note 
+!>    @note
 !>       default values are specified between brackets
 !>
 !> @subsection sublog namlog
@@ -78,7 +78,7 @@
 !>          - fatal
 !>          - none
 !>
-!>    - **in_maxerror** [@a 5]<br/> 
+!>    - **in_maxerror** [@a 5]<br/>
 !>       maximum number of error allowed
 !>
 !> @subsection subcfg namcfg
@@ -86,21 +86,21 @@
 !>
 !>    - **cn_varcfg** [@a ./cfg/variable.cfg]<br/>
 !>       path to the variable configuration file.<br/>
-!>       the variable configuration file defines standard name, 
-!>       default interpolation method, axis,... 
-!>       to be used for some known variables.<br/> 
+!>       the variable configuration file defines standard name,
+!>       default interpolation method, axis,...
+!>       to be used for some known variables.<br/>
 !>
-!>    - **cn_dimcfg** [@a ./cfg/dimension.cfg]<br/> 
-!>       path to the dimension configuration file.<br/> 
-!>       the dimension configuration file defines dimensions allowed.<br/> 
+!>    - **cn_dimcfg** [@a ./cfg/dimension.cfg]<br/>
+!>       path to the dimension configuration file.<br/>
+!>       the dimension configuration file defines dimensions allowed.<br/>
 !>
-!>    - **cn_dumcfg** [@a ./cfg/dummy.cfg]<br/> 
+!>    - **cn_dumcfg** [@a ./cfg/dummy.cfg]<br/>
 !>       path to the useless (dummy) configuration file.<br/>
-!>       the dummy configuration file defines useless 
+!>       the dummy configuration file defines useless
 !>       dimension or variable. these dimension(s) or variable(s) will not be
 !>       processed.<br/>
 !>
-!> @subsection subsrc namsrc 
+!> @subsection subsrc namsrc
 !>    the source grid sub-namelist parameters are :
 !>
 !>    - **cn_bathy** [@a ]<br/>
@@ -203,7 +203,7 @@
 !>    - **dn_ppacr2** [@a 13.000000000000]<br/>
 !>       double tanh function parameter
 !>
-!>     @note 
+!>     @note
 !>       If *dn_ppa1*, *dn_ppa0* and *dn_ppsur* are undefined,
 !>       NEMO will compute them from *dn_ppdzmin, dn_pphmax, dn_ppkth, dn_ppacr*
 !>
@@ -265,11 +265,11 @@
 !>    - **rn_shlat** [@a 2.]<br/>
 !>       lateral boundary conditions at the coast (modify fmask)
 !>       -     shlat = 0 : free slip
-!>       - 0 < shlat < 2 : partial slip 
+!>       - 0 < shlat < 2 : partial slip
 !>       -     shlat = 2 : no slip
 !>       -     shlat > 2 : strong slip
 !>
-!>    for more information see Boundary Condition at the Coast 
+!>    for more information see Boundary Condition at the Coast
 !>    in [NEMO documentation](https://forge.ipsl.jussieu.fr/nemo/chrome/site/doc/NEMO/manual/pdf/NEMO_manual.pdf)
 !>
 !> @subsection subwd namwd
@@ -311,8 +311,8 @@
 !>
 !>       - if niproc, and njproc are provided : the program only look for land
 !>         processor to be removed
-!>       - if nproc is provided : the program compute each possible domain layout, 
-!>         and save the one with the most land processor to be removed 
+!>       - if nproc is provided : the program compute each possible domain layout,
+!>         and save the one with the most land processor to be removed
 !>       - with no information about number of processors, the program
 !>         assume to use only one processor
 !>
@@ -325,7 +325,7 @@
 !>
 !>    @note
 !>        - if 0 < in_msh <= 3: write full 3D arrays for e3[tuvw] and gdep[tuvw]
-!>        - if 3 < in_msh <= 6: write full 3D arrays for e3[tuvw] and 2D arrays 
+!>        - if 3 < in_msh <= 6: write full 3D arrays for e3[tuvw] and 2D arrays
 !>                            corresponding to the depth of the bottom t- and w-points
 !>        - if 6 < in_msh <= 9: write 2D arrays corresponding to the depth and the
 !>                            thickness (e3[tw]_ps) of the bottom points
@@ -404,7 +404,7 @@ PROGRAM create_meshmask
    TYPE(TATT) , DIMENSION(:)        , ALLOCATABLE :: tl_gatt
 
    TYPE(TDIM)                                     :: tl_dim
-   
+
    TYPE(TVAR)                                     :: tl_bathy
    TYPE(TVAR)                                     :: tl_risfdep
    TYPE(TVAR)                                     :: tl_misf
@@ -437,12 +437,12 @@ PROGRAM create_meshmask
 
    ! namelist variable
    ! namlog
-   CHARACTER(LEN=lc) :: cn_logfile  = 'create_meshmask.log' 
-   CHARACTER(LEN=lc) :: cn_verbosity= 'warning' 
+   CHARACTER(LEN=lc) :: cn_logfile  = 'create_meshmask.log'
+   CHARACTER(LEN=lc) :: cn_verbosity= 'warning'
    INTEGER(i4)       :: in_maxerror = 5
 
    ! namcfg
-   CHARACTER(LEN=lc) :: cn_varcfg   = './cfg/variable.cfg' 
+   CHARACTER(LEN=lc) :: cn_varcfg   = './cfg/variable.cfg'
    CHARACTER(LEN=lc) :: cn_dimcfg   = './cfg/dimension.cfg'
    CHARACTER(LEN=lc) :: cn_dumcfg   = './cfg/dummy.cfg'
 
@@ -469,7 +469,7 @@ PROGRAM create_meshmask
 
    ! namout
    CHARACTER(LEN=lc) :: cn_domcfg   = 'domain_cfg.nc'
-   INTEGER(i4)       :: in_msh      = 0 
+   INTEGER(i4)       :: in_msh      = 0
    CHARACTER(LEN=lc) :: cn_type     = 'cdf'
    INTEGER(i4)       :: in_nproc    = 0
    INTEGER(i4)       :: in_niproc   = 0
@@ -512,7 +512,7 @@ PROGRAM create_meshmask
    &  in_nproc,      &  !< number of processor to be used
    &  in_niproc,     &  !< i-direction number of processor
    &  in_njproc         !< j-direction numebr of processor
-   !-------------------------------------------------------------------   
+   !-------------------------------------------------------------------
 
    !
    ! Initialisation
@@ -524,7 +524,7 @@ PROGRAM create_meshmask
    ! --------------------------------
    IF( il_narg /= 1 )THEN
       WRITE(cl_errormsg,*) ' ERROR : one argument is needed '
-      CALL fct_help(cp_myname,cl_errormsg) 
+      CALL fct_help(cp_myname,cl_errormsg)
       CALL EXIT(1)
    ELSE
 
@@ -559,12 +559,12 @@ PROGRAM create_meshmask
                CALL fct_err(il_status)
                IF( il_status /= 0 )THEN
                   WRITE(cl_errormsg,*) " ERROR : error opening "//TRIM(cl_namelist)
-                  CALL fct_help(cp_myname,cl_errormsg) 
+                  CALL fct_help(cp_myname,cl_errormsg)
                   CALL EXIT(1)
                ENDIF
 
                READ( il_fileid, NML = namlog )
- 
+
                ! define logger file
                CALL logger_open(TRIM(cn_logfile),TRIM(cn_verbosity),in_maxerror)
                CALL logger_header()
@@ -598,7 +598,7 @@ PROGRAM create_meshmask
             ELSE
 
                WRITE(cl_errormsg,*) " ERROR : can't find "//TRIM(cl_namelist)
-               CALL fct_help(cp_myname,cl_errormsg) 
+               CALL fct_help(cp_myname,cl_errormsg)
                CALL EXIT(1)
 
             ENDIF
@@ -617,7 +617,7 @@ PROGRAM create_meshmask
       CALL grid_get_info(tl_mpp)
    ELSE
       CALL logger_fatal("CREATE MESH MASK: no input bathymetry file found. "//&
-      &     "check namelist")      
+      &     "check namelist")
    ENDIF
 
    ! read bathymetry
@@ -651,7 +651,7 @@ PROGRAM create_meshmask
         & tl_bathy%d_value(:,:,1,1) < 0._dp )
       tl_bathy%d_value(:,:,1,1) = 0._dp
    END WHERE
- 
+
    IF ( ln_isfcav ) THEN
       WRITE(*,*) 'ICESHELF DRAFT FILE TO BE USED:',TRIM(cn_isfdep)
       WRITE(*,*) 'ICESHELF VARIABLE READ : '//TRIM(cn_varisfdep)
@@ -661,7 +661,7 @@ PROGRAM create_meshmask
          CALL grid_get_info(tl_mpp)
       ELSE
          CALL logger_fatal("CREATE MESH MASK: no input Iceshelf draft '//&
-            &  'file found. check namelist")      
+            &  'file found. check namelist")
       ENDIF
 
       ! read Iceshelf draft
@@ -708,7 +708,7 @@ PROGRAM create_meshmask
 
    ! compute horizontal mesh
    WRITE(*,*) "COMPUTE HORIZONTAL MESH"
-   CALL grid_hgr_fill(tl_namh,jpi,jpj,ll_domcfg)      
+   CALL grid_hgr_fill(tl_namh,jpi,jpj,ll_domcfg)
 
    ! Vertyical  mesh (dom_zgr) -------------------------------------------------
    tl_namz=grid_zgr_nam( cn_coord, in_perio, cl_namelist )
@@ -716,7 +716,7 @@ PROGRAM create_meshmask
    ! init Vertical grid global variable
    CALL grid_zgr_init(jpi,jpj,jpk,ln_sco)
    IF( ln_zps    ) CALL grid_zgr_zps_init(jpi,jpj)
-   IF( ln_sco    ) CALL grid_zgr_sco_init(jpi,jpj) 
+   IF( ln_sco    ) CALL grid_zgr_sco_init(jpi,jpj)
 
    ! compute vertical  mesh
    WRITE(*,*) "COMPUTE VERTICAL MESH"
@@ -728,12 +728,12 @@ PROGRAM create_meshmask
 
    ! Maximum stiffness ratio/hydrostatic consistency
    IF( ln_sco    ) CALL grid_zgr_sco_stiff(tl_namz,jpi,jpj,jpk)
- 
+
    ! clean
    CALL var_clean(tl_bathy)
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   ! create ouptut structure 
+   ! create ouptut structure
    IF( in_niproc == 0 .AND. &
    &   in_njproc == 0 .AND. &
    &   in_nproc  == 0 )THEN
@@ -767,9 +767,9 @@ PROGRAM create_meshmask
          tl_mppmsk=>tl_mppout0
          tl_mpphgr=>tl_mppout0
          tl_mppzgr=>tl_mppout0
-         
+
          !                                  ! ============================
-      CASE ( 2 )                            !  create 'mesh.nc' and 
+      CASE ( 2 )                            !  create 'mesh.nc' and
          !                                  !         'mask.nc' files
          !                                  ! ============================
          tl_mppout0=mpp_init( 'mask.nc', tg_tmask, &
@@ -822,7 +822,7 @@ PROGRAM create_meshmask
       il_tmp(:)=jpk
       tl_scalar=var_init('jpkglo', il_tmp(:), id_type=NF90_INT, td_dim=tl_dim)
       CALL mpp_add_var(tl_mppmsk, tl_scalar)
-      
+
       il_tmp(:)=tl_mppout0%i_perio
       tl_scalar=var_init('jperio', il_tmp(:), id_type=NF90_INT, td_dim=tl_dim)
       CALL mpp_add_var(tl_mppmsk, tl_scalar)
@@ -952,7 +952,7 @@ PROGRAM create_meshmask
       ! cosf
       CALL mpp_add_var(tl_mpphgr, tg_gcosf)
       CALL var_clean(tg_gcosf)
-      
+
       ! sint
       CALL mpp_add_var(tl_mpphgr, tg_gsint)
       CALL var_clean(tg_gsint)
@@ -966,11 +966,11 @@ PROGRAM create_meshmask
       CALL mpp_add_var(tl_mpphgr, tg_gsinf)
       CALL var_clean(tg_gsinf)
    ENDIF
-   
+
    !!! vertical mesh (zgr)
    !!!----------------------
    ! note that mbkt is set to 1 over land ==> use surface tmask
-   ! 
+   !
    ! mbathy
    tg_mbathy%d_value(:,:,:,:) = tg_ssmask%d_value(:,:,:,:) * &
    &                            tg_mbkt%d_value(:,:,:,:)
@@ -999,7 +999,7 @@ PROGRAM create_meshmask
       ! isfdraft
       tl_risfdep%d_value(:,:,:,:) = tl_risfdep%d_value(:,:,:,:) * &
       &                             tg_mikt%d_value(:,:,:,:)
- 
+
       CALL mpp_add_var(tl_mppzgr, tl_risfdep)
       CALL var_clean(tl_risfdep)
    ENDIF
@@ -1077,12 +1077,12 @@ PROGRAM create_meshmask
          ! gdepw_1d
          CALL mpp_add_var(tl_mppzgr, tg_gdepw_1d)
          CALL var_clean(tg_gdepw_1d)
-         
+
          ! gdept_0
-         CALL mpp_add_var(tl_mppzgr, tg_gdept_0)      
+         CALL mpp_add_var(tl_mppzgr, tg_gdept_0)
          CALL var_clean(tg_gdept_0)
          ! gdepw_0
-         CALL mpp_add_var(tl_mppzgr, tg_gdepw_0)      
+         CALL mpp_add_var(tl_mppzgr, tg_gdepw_0)
          CALL var_clean(tg_gdepw_0)
       ENDIF
 
@@ -1107,7 +1107,7 @@ PROGRAM create_meshmask
 
       ELSE
 
-         DO jj = 1,jpj   
+         DO jj = 1,jpj
             DO ji = 1,jpi
                ik=tg_mbkt%d_value(ji,jj,1,1)
                tg_e3tp%d_value(ji,jj,1,1) = tg_e3t_0%d_value(ji,jj,ik,1) * &
@@ -1115,7 +1115,7 @@ PROGRAM create_meshmask
                tg_e3wp%d_value(ji,jj,1,1) = tg_e3w_0%d_value(ji,jj,ik,1) * &
                   &                         tg_ssmask%d_value(ji,jj,1,1)
             END DO
-         END DO         
+         END DO
          ! e3t_ps
          CALL mpp_add_var(tl_mppzgr, tg_e3tp)
          CALL var_clean(tg_e3tp)
@@ -1126,9 +1126,9 @@ PROGRAM create_meshmask
       ENDIF ! 3D vertical scale factors
 
       IF( ll_domcfg .OR. in_msh <= 3 ) THEN ! 3D depth
-         
+
          IF( .NOT. tl_namz%l_e3_dep )THEN
-      
+
             ! gdepu, gdepv
             IF( .NOT. ll_domcfg )THEN
                ALLOCATE(dl_tmp3D(jpi,jpj,jpk))
@@ -1138,17 +1138,17 @@ PROGRAM create_meshmask
                tl_gdepv=var_init('gdepv',dl_tmp3D(:,:,:), id_type=NF90_FLOAT)
 
                DEALLOCATE(dl_tmp3D)
-               DO jk = 1,jpk   
-                  DO jj = 1, jpj-1   
+               DO jk = 1,jpk
+                  DO jj = 1, jpj-1
                      DO ji = 1, jpi-1   ! vector opt.
                         tl_gdepu%d_value(ji,jj,jk,1) = MIN( tg_gdept_0%d_value(ji  ,jj  ,jk,1) , &
                            &                                tg_gdept_0%d_value(ji+1,jj  ,jk,1) )
 
                         tl_gdepv%d_value(ji,jj,jk,1) = MIN( tg_gdept_0%d_value(ji  ,jj  ,jk,1) , &
                            &                                tg_gdept_0%d_value(ji  ,jj+1,jk,1) )
-                     END DO   
-                  END DO   
-               END DO         
+                     END DO
+                  END DO
+               END DO
                CALL lbc_lnk( tl_gdepu%d_value(:,:,:,1), 'U', in_perio, 1._dp )
                CALL lbc_lnk( tl_gdepv%d_value(:,:,:,1), 'V', in_perio, 1._dp )
 
@@ -1177,7 +1177,7 @@ PROGRAM create_meshmask
          tl_hdepw=var_init('hdepw',dl_tmp2D(:,:), id_type=NF90_INT)
 
          DEALLOCATE(dl_tmp2D)
-         DO jj = 1,jpj   
+         DO jj = 1,jpj
             DO ji = 1,jpi
                ik=tg_mbkt%d_value(ji,jj,1,1)
                tl_hdept%d_value(ji,jj,1,1) = tg_gdept_0%d_value(ji,jj,ik  ,1) * tg_ssmask%d_value(ji,jj,1,1)
@@ -1208,7 +1208,7 @@ PROGRAM create_meshmask
       CALL var_clean(tg_e3w_1d)
    ENDIF
 
-   IF( ln_zps .OR. ln_zco )THEN ! z-coordinate 
+   IF( ln_zps .OR. ln_zco )THEN ! z-coordinate
       IF( .NOT. tl_namz%l_e3_dep )THEN
          ! depth
          ! gdept_1d
@@ -1232,7 +1232,7 @@ PROGRAM create_meshmask
          ! add some attribute
          tl_att=att_init("Created_by","SIREN create_meshmask")
          CALL mpp_add_att(tl_mppmsk, tl_att)
-         
+
          !add source url
          cl_url=fct_split(fct_split(cp_url,2,'$'),2,'URL:')
          tl_att=att_init("SIREN_url",cl_url)
@@ -1242,7 +1242,7 @@ PROGRAM create_meshmask
          cl_date=date_print(date_now())
          tl_att=att_init("Creation_date",TRIM(cl_date))
          CALL mpp_add_att(tl_mppmsk, tl_att)
-         
+
          ! add attribute periodicity
          il_attid=0
          IF( ASSOCIATED(tl_mppmsk%t_proc(1)%t_att) )THEN
@@ -1252,7 +1252,7 @@ PROGRAM create_meshmask
             tl_att=att_init('periodicity',in_perio)
             CALL mpp_add_att(tl_mppmsk,tl_att)
          ENDIF
-         
+
          il_attid=0
          IF( ASSOCIATED(tl_mppmsk%t_proc(1)%t_att) )THEN
             il_attid=att_get_id(tl_mppmsk%t_proc(1)%t_att(:),'ew_overlap')
@@ -1261,7 +1261,7 @@ PROGRAM create_meshmask
             tl_att=att_init('ew_overlap',il_ew)
             CALL mpp_add_att(tl_mppmsk,tl_att)
          ENDIF
-         
+
          ji=1
          DO WHILE( tl_gatt(ji)%c_name /= '' )
             CALL mpp_add_att(tl_mppmsk,tl_gatt(ji))
@@ -1270,12 +1270,12 @@ PROGRAM create_meshmask
          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
          ! create file
          CALL iom_mpp_create(tl_mppmsk)
-         
+
          ! write file
          CALL iom_mpp_write_file(tl_mppmsk)
          ! close file
          CALL iom_mpp_close(tl_mppmsk)
-         
+
          ! clean
          CALL mpp_clean(tl_mppmsk)
 
@@ -1284,7 +1284,7 @@ PROGRAM create_meshmask
          tl_att=att_init("Created_by","SIREN create_meshmask")
          CALL mpp_add_att(tl_mppmsk, tl_att)
          CALL mpp_add_att(tl_mpphgr, tl_att)
-         
+
          !add source url
          cl_url=fct_split(fct_split(cp_url,2,'$'),2,'URL:')
          tl_att=att_init("SIREN_url",cl_url)
@@ -1296,7 +1296,7 @@ PROGRAM create_meshmask
          tl_att=att_init("Creation_date",TRIM(cl_date))
          CALL mpp_add_att(tl_mppmsk, tl_att)
          CALL mpp_add_att(tl_mpphgr, tl_att)
-         
+
          ! add attribute periodicity
          il_attid=0
          IF( ASSOCIATED(tl_mppmsk%t_proc(1)%t_att) )THEN
@@ -1307,7 +1307,7 @@ PROGRAM create_meshmask
             CALL mpp_add_att(tl_mppmsk,tl_att)
             CALL mpp_add_att(tl_mpphgr,tl_att)
          ENDIF
-         
+
          il_attid=0
          IF( ASSOCIATED(tl_mppmsk%t_proc(1)%t_att) )THEN
             il_attid=att_get_id(tl_mppmsk%t_proc(1)%t_att(:),'ew_overlap')
@@ -1324,29 +1324,29 @@ PROGRAM create_meshmask
             CALL mpp_add_att(tl_mpphgr,tl_gatt(ji))
             ji=ji+1
          ENDDO
-         
+
          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
          ! create mask file
          !-----------------
          CALL iom_mpp_create(tl_mppmsk)
-         
+
          ! write file
          CALL iom_mpp_write_file(tl_mppmsk)
          ! close file
          CALL iom_mpp_close(tl_mppmsk)
-         
+
          ! clean
          CALL mpp_clean(tl_mppmsk)
 
          ! create mesh file
          !-----------------
          CALL iom_mpp_create(tl_mpphgr)
-         
+
          ! write file
          CALL iom_mpp_write_file(tl_mpphgr)
          ! close file
          CALL iom_mpp_close(tl_mpphgr)
-         
+
          ! clean
          CALL mpp_clean(tl_mpphgr)
 
@@ -1356,7 +1356,7 @@ PROGRAM create_meshmask
          CALL mpp_add_att(tl_mppmsk, tl_att)
          CALL mpp_add_att(tl_mpphgr, tl_att)
          CALL mpp_add_att(tl_mppzgr, tl_att)
-         
+
          !add source url
          cl_url=fct_split(fct_split(cp_url,2,'$'),2,'URL:')
          tl_att=att_init("SIREN_url",cl_url)
@@ -1370,7 +1370,7 @@ PROGRAM create_meshmask
          CALL mpp_add_att(tl_mppmsk, tl_att)
          CALL mpp_add_att(tl_mpphgr, tl_att)
          CALL mpp_add_att(tl_mppzgr, tl_att)
-         
+
          ! add attribute periodicity
          il_attid=0
          IF( ASSOCIATED(tl_mppmsk%t_proc(1)%t_att) )THEN
@@ -1382,7 +1382,7 @@ PROGRAM create_meshmask
             CALL mpp_add_att(tl_mpphgr,tl_att)
             CALL mpp_add_att(tl_mppzgr,tl_att)
          ENDIF
- 
+
          il_attid=0
          IF( ASSOCIATED(tl_mppmsk%t_proc(1)%t_att) )THEN
             il_attid=att_get_id(tl_mppmsk%t_proc(1)%t_att(:),'ew_overlap')
@@ -1406,12 +1406,12 @@ PROGRAM create_meshmask
          ! create mask file
          !-----------------
          CALL iom_mpp_create(tl_mppmsk)
- 
+
          ! write file
          CALL iom_mpp_write_file(tl_mppmsk)
          ! close file
          CALL iom_mpp_close(tl_mppmsk)
- 
+
          ! clean
          WRITE(*,*) "CLEAN MSK"
          CALL mpp_clean(tl_mppmsk)
@@ -1419,12 +1419,12 @@ PROGRAM create_meshmask
          ! create mesh_hgr file
          !-----------------
          CALL iom_mpp_create(tl_mpphgr)
- 
+
          ! write file
          CALL iom_mpp_write_file(tl_mpphgr)
          ! close file
          CALL iom_mpp_close(tl_mpphgr)
- 
+
          ! clean
          WRITE(*,*) "CLEAN HGR"
          CALL mpp_clean(tl_mpphgr)
@@ -1433,14 +1433,14 @@ PROGRAM create_meshmask
          !-----------------
          WRITE(*,*) "CREATE ZGR"
          CALL iom_mpp_create(tl_mppzgr)
- 
+
          ! write file
          WRITE(*,*) "WRITE ZGR"
          CALL iom_mpp_write_file(tl_mppzgr)
          ! close file
          WRITE(*,*) "CLOSE ZGR"
          CALL iom_mpp_close(tl_mppzgr)
- 
+
          ! clean
          WRITE(*,*) "CLEAN ZGR"
          CALL mpp_clean(tl_mppzgr)
@@ -1468,29 +1468,29 @@ PROGRAM create_meshmask
    CALL logger_close()
 CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE create_meshmask__mask(td_nam,jpi,jpj,jpk,ld_domcfg) 
+   SUBROUTINE create_meshmask__mask(td_nam,jpi,jpj,jpk,ld_domcfg)
    !-------------------------------------------------------------------
-   !> @brief This subroutine compute land/ocean mask arrays at tracer points, 
-   !>      horizontal velocity points (u & v), vorticity points (f) and 
-   !>      barotropic stream function  points (b). 
+   !> @brief This subroutine compute land/ocean mask arrays at tracer points,
+   !>      horizontal velocity points (u & v), vorticity points (f) and
+   !>      barotropic stream function  points (b).
    !>
    !> @details
    !>
-   !> ** Method  :   The ocean/land mask is computed from the basin bathymetry in level (mbathy) 
+   !> ** Method  :   The ocean/land mask is computed from the basin bathymetry in level (mbathy)
    !>      which is defined or read in dommba.
    !>      mbathy equals 0 over continental T-point and the number of ocean level over the ocean.
    !>
    !>      At a given position (ji,jj,jk) the ocean/land mask is given by:
-   !>      - t-point : 
+   !>      - t-point :
    !>             - 0. IF mbathy( ji ,jj) =< 0
    !>             - 1. IF mbathy( ji ,jj) >= jk
-   !>      - u-point : 
+   !>      - u-point :
    !>             - 0. IF mbathy( ji ,jj)  or mbathy(ji+1, jj ) =< 0
    !>             - 1. IF mbathy( ji ,jj) and mbathy(ji+1, jj ) >= jk.
-   !>      - v-point : 
+   !>      - v-point :
    !>             - 0. IF mbathy( ji ,jj)  or mbathy( ji ,jj+1) =< 0
    !>             - 1. IF mbathy( ji ,jj) and mbathy( ji ,jj+1) >= jk.
-   !>      - f-point : 
+   !>      - f-point :
    !>             - 0. IF mbathy( ji ,jj)  or mbathy( ji ,jj+1) or mbathy(ji+1,jj)  or mbathy(ji+1,jj+1) =< 0
    !>             - 1. IF mbathy( ji ,jj) and mbathy( ji ,jj+1) and mbathy(ji+1,jj) and mbathy(ji+1,jj+1) >= jk.
    !>      - b-point : the same definition as for f-point of the first ocean
@@ -1500,7 +1500,7 @@ CONTAINS
    !>                as MPP halos.
    !>
    !> @warning do not set the lateral friction through the value of fmask along
-   !>      the coast and topography. 
+   !>      the coast and topography.
    !>
    !> @note If nperio not equal to 0, the land/ocean mask arrays
    !>      are defined with the proper value at lateral domain boundaries,
@@ -1516,7 +1516,7 @@ CONTAINS
    !>          boundaries routines.
    !>        - bmask is  set to 0 on the open boundaries.
    !>
-   !> ** Action :   
+   !> ** Action :
    !>       - tmask    : land/ocean mask at t-point (=0. or 1.)
    !>       - umask    : land/ocean mask at u-point (=0. or 1.)
    !>       - vmask    : land/ocean mask at v-point (=0. or 1.)
@@ -1538,7 +1538,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TNAMH), INTENT(IN) :: td_nam
       INTEGER(i4), INTENT(IN) :: jpi
       INTEGER(i4), INTENT(IN) :: jpj
@@ -1587,21 +1587,21 @@ CONTAINS
                IF( tg_mbathy%d_value(ji,jj,1,1) - REAL(jk,dp) + 0.1_dp >= 0._dp )THEN
                   tg_tmask%d_value(ji,jj,jk,1) = 1._dp
                ENDIF
-            ENDDO  
-         ENDDO  
-      ENDDO  
-      
+            ENDDO
+         ENDDO
+      ENDDO
+
       ! (ISF) define barotropic mask and mask the ice shelf point
       tg_ssmask%d_value(:,:,1,1)=tg_tmask%d_value(:,:,1,1) ! at this stage ice shelf is not masked
-      
+
       DO jk = 1, jpk
          DO jj = 1, jpj
             DO ji = 1, jpi
                IF( tg_misfdep%d_value(ji,jj,1,1) - REAL(jk,dp) - 0.1_dp >= 0._dp )   THEN
                   tg_tmask%d_value(ji,jj,jk,1) = 0._dp
                END IF
-            ENDDO  
-         ENDDO  
+            ENDDO
+         ENDDO
       ENDDO
 
 !      ! Interior domain mask (used for global sum)
@@ -1617,7 +1617,7 @@ CONTAINS
 !
 !      ! north fold mask
 !      ! ---------------
-!      dl_tpol(1:jpi) = 1._dp 
+!      dl_tpol(1:jpi) = 1._dp
 !      dl_fpol(1:jpi) = 1._dp
 !      IF( td_nam%i_perio == 3 .OR. td_nam%i_perio == 4 )THEN      ! T-point pivot
 !         dl_tpol(jpi/2+1:jpi) = 0._dp
@@ -1656,7 +1656,7 @@ CONTAINS
                ENDIF
             ENDDO
          ENDDO
-      ENDDO      
+      ENDDO
 
 !      ! (ISF) MIN(1,SUM(umask)) is here to check if you have effectively at least 1 wet cell at u point
 !      DO jj = 1, jpjm1
@@ -1685,7 +1685,7 @@ CONTAINS
 !      CALL lbc_lnk( tg_ssvmask%d_value(:,:,:,1), 'V', td_nam%i_perio, 1._dp )
 !      CALL lbc_lnk( tg_ssfmask%d_value(:,:,:,1), 'F', td_nam%i_perio, 1._dp )
 
-      ! 3. Ocean/land mask at wu-, wv- and w points 
+      ! 3. Ocean/land mask at wu-, wv- and w points
       !----------------------------------------------
 !      tg_wmask%d_value (:,:,1,1) = tg_tmask%d_value(:,:,1,1) ! surface
 !      tg_wumask%d_value(:,:,1,1) = tg_umask%d_value(:,:,1,1)
@@ -1695,17 +1695,17 @@ CONTAINS
 !         tg_wmask%d_value (:,:,jk,1) = tg_tmask%d_value(:,:,jk  ,1) * &
 !                                     & tg_tmask%d_value(:,:,jk-1,1)
 !         tg_wumask%d_value(:,:,jk,1) = tg_umask%d_value(:,:,jk  ,1) * &
-!                                     & tg_umask%d_value(:,:,jk-1,1)   
+!                                     & tg_umask%d_value(:,:,jk-1,1)
 !         tg_wvmask%d_value(:,:,jk,1) = tg_vmask%d_value(:,:,jk  ,1) * &
 !                                     & tg_vmask%d_value(:,:,jk-1,1)
 !      ENDDO
 
       ! Lateral boundary conditions on velocity (modify fmask)
-      ! ---------------------------------------     
+      ! ---------------------------------------
       IF( .NOT. ld_domcfg )THEN
          ALLOCATE( zwf(jpi,jpj) )
          DO jk = 1, jpk
-            zwf(:,:) = tg_fmask%d_value(:,:,jk,1)         
+            zwf(:,:) = tg_fmask%d_value(:,:,jk,1)
             DO jj = 2, jpj-1
                DO ji = 2, jpi-1   ! vector opt.
                   IF( tg_fmask%d_value(ji,jj,jk,1) == 0._dp )THEN
@@ -1724,7 +1724,7 @@ CONTAINS
                   tg_fmask%d_value(jpi,jj,jk,1) = rn_shlat * &
                                                 & MIN(1._wp, MAX(zwf(jpi,jj+1), zwf(jpi-1,jj), zwf(jpi,jj-1)))
                ENDIF
-            END DO         
+            END DO
             DO ji = 2, jpi-1
                IF( tg_fmask%d_value(ji,1,jk,1) == 0._dp )THEN
                   tg_fmask%d_value(ji, 1 ,jk,1) = rn_shlat * &
@@ -1743,7 +1743,7 @@ CONTAINS
 !         IF( td_nam%i_cla == 0 ) THEN
 !            ! Gibraltar strait  : partial slip (fmask=0.5)
 !            ij0 = 101   ;   ij1 = 101
-!            ii0 = 139   ;   ii1 = 140   
+!            ii0 = 139   ;   ii1 = 140
 !            tg_fmask%d_value(ii0:ii1,ij0:ij1,1:jpk,1) =  0.5_dp
 !
 !            ij0 = 102   ;   ij1 = 102
@@ -1771,44 +1771,44 @@ CONTAINS
 !         !
 !         isrow = 332 - jpj
 !         ! Gibraltar Strait
-!         ii0 = 282           ;   ii1 = 283 
+!         ii0 = 282           ;   ii1 = 283
 !         ij0 = 201 + isrow   ;   ij1 = 241 - isrow
-!         tg_fmask%d_value(ii0:ii1,ij0:ij1,1:jpk,1) = 2._dp  
+!         tg_fmask%d_value(ii0:ii1,ij0:ij1,1:jpk,1) = 2._dp
 !
 !         ! Bhosporus Strait
 !         ii0 = 314           ;   ii1 = 315
-!         ij0 = 208 + isrow   ;   ij1 = 248 - isrow 
-!         tg_fmask%d_value(ii0:ii1,ij0:ij1,1:jpk,1 ) = 2._dp  
+!         ij0 = 208 + isrow   ;   ij1 = 248 - isrow
+!         tg_fmask%d_value(ii0:ii1,ij0:ij1,1:jpk,1 ) = 2._dp
 !
-!         ! Makassar Strait (Top) 
+!         ! Makassar Strait (Top)
 !         ii0 =  48           ;   ii1 =  48
 !         ij0 = 149 + isrow   ;   ij1 = 190 - isrow
-!         tg_fmask%d_value(ii0:ii1,ij0:ij1,1:jpk,1 ) = 3._dp  
+!         tg_fmask%d_value(ii0:ii1,ij0:ij1,1:jpk,1 ) = 3._dp
 !
 !         ! Lombok Strait
 !         ii0 =  44           ;   ii1 =  44
 !         ij0 = 124 + isrow   ;   ij1 = 165 - isrow
-!         tg_fmask%d_value(ii0:ii1,ij0:ij1,1:jpk,1 ) = 2._dp  
+!         tg_fmask%d_value(ii0:ii1,ij0:ij1,1:jpk,1 ) = 2._dp
 !
 !         ! Ombai Strait
 !         ii0 =  53           ;   ii1 =  53
 !         ij0 = 124 + isrow   ;   ij1 = 165 - isrow
-!         tg_fmask%d_value(ii0:ii1,ij0:ij1,1:jpk,1 ) = 2._dp  
+!         tg_fmask%d_value(ii0:ii1,ij0:ij1,1:jpk,1 ) = 2._dp
 !
 !         ! Timor Passage
 !         ii0 =  56           ;   ii1 =  56
 !         ij0 = 124 + isrow   ;   ij1 = 165 - isrow
-!         tg_fmask%d_value(ii0:ii1,ij0:ij1,1:jpk,1 ) = 2._dp  
+!         tg_fmask%d_value(ii0:ii1,ij0:ij1,1:jpk,1 ) = 2._dp
 !
 !         ! West Halmahera Strait
 !         ii0 =  58           ;   ii1 =  58
 !         ij0 = 141 + isrow   ;   ij1 = 182 - isrow
-!         tg_fmask%d_value(ii0:ii1,ij0:ij1,1:jpk,1 ) = 3._dp  
+!         tg_fmask%d_value(ii0:ii1,ij0:ij1,1:jpk,1 ) = 3._dp
 !
 !         ! East Halmahera Strait
 !         ii0 =  55           ;   ii1 =  55
 !         ij0 = 141 + isrow   ;   ij1 = 182 - isrow
-!         tg_fmask%d_value(ii0:ii1,ij0:ij1,1:jpk,1 ) = 3._dp  
+!         tg_fmask%d_value(ii0:ii1,ij0:ij1,1:jpk,1 ) = 3._dp
 !         !
 !      ENDIF
       !
@@ -1819,13 +1819,13 @@ CONTAINS
 
 !      DEALLOCATE( dl_tpol )
 !      DEALLOCATE( dl_fpol )
-      
+
    END SUBROUTINE create_meshmask__mask
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION create_meshmask__gloatt(cd_bathy,cd_coord,cd_isfdep,td_namh,td_namz) &
          & RESULT(tf_att)
    !-------------------------------------------------------------------
-   !> @brief 
+   !> @brief
    !> this function create array of global attributes.
    !>
    !> @author J.Paul
@@ -1840,12 +1840,12 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
-      CHARACTER(LEN=*), INTENT(IN   )  :: cd_bathy 
-      CHARACTER(LEN=*), INTENT(IN   )  :: cd_coord 
-      CHARACTER(LEN=*), INTENT(IN   )  :: cd_isfdep 
-      TYPE(TNAMH)     , INTENT(IN   )  :: td_namh 
-      TYPE(TNAMZ)     , INTENT(IN   )  :: td_namz 
+      ! Argument
+      CHARACTER(LEN=*), INTENT(IN   )  :: cd_bathy
+      CHARACTER(LEN=*), INTENT(IN   )  :: cd_coord
+      CHARACTER(LEN=*), INTENT(IN   )  :: cd_isfdep
+      TYPE(TNAMH)     , INTENT(IN   )  :: td_namh
+      TYPE(TNAMZ)     , INTENT(IN   )  :: td_namz
 
       ! function
       TYPE(TATT), DIMENSION(ip_maxatt) :: tf_att
@@ -1958,7 +1958,7 @@ CONTAINS
          ji=ji+1 ; tf_att(ji)=att_init("wdmin2",td_namz%d_wdmin2)
          ji=ji+1 ; tf_att(ji)=att_init("wdld",td_namz%d_wdld)
       ENDIF
- 
+
    END FUNCTION create_meshmask__gloatt
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 END PROGRAM

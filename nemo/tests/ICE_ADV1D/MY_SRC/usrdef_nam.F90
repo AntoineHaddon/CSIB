@@ -13,7 +13,6 @@ MODULE usrdef_nam
    !!   usr_def_nam   : read user defined namelist and set global domain size
    !!   usr_def_hgr   : initialize the horizontal mesh 
    !!----------------------------------------------------------------------
-   USE dom_oce  , ONLY: nimpp , njmpp            ! i- & j-indices of the local domain
    USE par_oce        ! ocean space and time domain
    USE phycst         ! physical constants
    !
@@ -39,7 +38,7 @@ MODULE usrdef_nam
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE usr_def_nam( cd_cfg, kk_cfg, kpi, kpj, kpk, kperio )
+   SUBROUTINE usr_def_nam( cd_cfg, kk_cfg, kpi, kpj, kpk, ldIperio, ldJperio, ldNFold, cdNFtype )
       !!----------------------------------------------------------------------
       !!                     ***  ROUTINE dom_nam  ***
       !!                    
@@ -51,10 +50,12 @@ CONTAINS
       !!
       !! ** input   : - namusr_def namelist found in namelist_cfg
       !!----------------------------------------------------------------------
-      CHARACTER(len=*)              , INTENT(out) ::   cd_cfg          ! configuration name
-      INTEGER                       , INTENT(out) ::   kk_cfg          ! configuration resolution
-      INTEGER                       , INTENT(out) ::   kpi, kpj, kpk   ! global domain sizes 
-      INTEGER                       , INTENT(out) ::   kperio          ! lateral global domain b.c. 
+      CHARACTER(len=*), INTENT(out) ::   cd_cfg               ! configuration name
+      INTEGER         , INTENT(out) ::   kk_cfg               ! configuration resolution
+      INTEGER         , INTENT(out) ::   kpi, kpj, kpk        ! global domain sizes
+      LOGICAL         , INTENT(out) ::   ldIperio, ldJperio   ! i- and j- periodicity
+      LOGICAL         , INTENT(out) ::   ldNFold              ! North pole folding
+      CHARACTER(len=1), INTENT(out) ::   cdNFtype             ! Folding type: T or F
       !
       INTEGER ::   ios       ! Local integer
       REAL(wp)::   zlx, zly  ! Local scalars
@@ -62,7 +63,6 @@ CONTAINS
       NAMELIST/namusr_def/ rn_dx, rn_dy, ln_corio, rn_ppgphi0
       !!----------------------------------------------------------------------
       !
-      REWIND( numnam_cfg )          ! Namelist namusr_def (exist in namelist_cfg only)
       READ  ( numnam_cfg, namusr_def, IOSTAT = ios, ERR = 902 )
 902   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namusr_def in configuration namelist' )
       !
@@ -79,7 +79,9 @@ CONTAINS
       zlx = kpi*rn_dx*1.e-3
       zly = kpj*rn_dy*1.e-3
       !                             ! Set the lateral boundary condition of the global domain
-      kperio = 0                    ! ICE_ADV1D configuration : bi-periodic basin
+      ldIperio = .FALSE.   ;   ldJperio = .FALSE.   ! ICE_ADV1D configuration : closed domain
+      ldNFold  = .FALSE.   ;   cdNFtype = '-'
+      !
       !                             ! control print
       IF(lwp) THEN
          WRITE(numout,*) '   '
@@ -91,13 +93,11 @@ CONTAINS
          WRITE(numout,*) '      ICE_ADV1D domain  '
          WRITE(numout,*) '         LX [km]: ', zlx
          WRITE(numout,*) '         LY [km]: ', zly
-         WRITE(numout,*) '         resulting global domain size :        jpiglo = ', kpi
-         WRITE(numout,*) '                                               jpjglo = ', kpj
+         WRITE(numout,*) '         resulting global domain size :        Ni0glo = ', kpi
+         WRITE(numout,*) '                                               Nj0glo = ', kpj
          WRITE(numout,*) '                                               jpkglo = ', kpk
          WRITE(numout,*) '         Coriolis:', ln_corio
          WRITE(numout,*) '   '
-         WRITE(numout,*) '   Lateral boundary condition of the global domain'
-         WRITE(numout,*) '      ICE_ADV1D : closed basin                 jperio = ', kperio
       ENDIF
       !
    END SUBROUTINE usr_def_nam

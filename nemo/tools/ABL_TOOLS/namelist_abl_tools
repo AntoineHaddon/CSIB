@@ -4,12 +4,12 @@
 :-----------------------------------------------------------------------------
 :
 &nml_dom
-    jpka         =      50,
-    hmax         =   2000.,
-    theta_s      =      2.,
-    hc           =    100.,
-    ln_impose_z1 =  .true.,
-    z1           =     10.,
+    jpka         =      50,        ! ABL vertical levels number
+    hmax         =   2000.,        ! ABL last level altitude
+    theta_s      =      2.,        ! vertical grid stretching parameters
+    hc           =    100.,        ! 
+    ln_impose_z1 =  .true.,        ! force ABL first level altitude
+    z1           =     10.,        ! ABL firt level imposed altitude [m]
 /
 
 &nml_opt

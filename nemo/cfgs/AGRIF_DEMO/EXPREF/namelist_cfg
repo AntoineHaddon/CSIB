@@ -11,9 +11,9 @@
 !!   namwad       Wetting and drying                                    (default: OFF)
 !!   namtsd       data: temperature & salinity                          (default: OFF)
 !!   namcrs       coarsened grid (for outputs and/or TOP)               (ln_crs =T)
-!!   namc1d       1D configuration options                              ("key_c1d")
-!!   namc1d_dyndmp 1D newtonian damping applied on currents             ("key_c1d")
-!!   namc1d_uvd   1D data (currents)                                    ("key_c1d")
+!!   namc1d       1D configuration options                              (ln_c1d =T)
+!!   namc1d_dyndmp 1D newtonian damping applied on currents             (ln_c1d =T)
+!!   namc1d_uvd   1D data (currents)                                    (ln_c1d =T)
 !!======================================================================
 !
 !-----------------------------------------------------------------------
@@ -29,19 +29,24 @@
 !-----------------------------------------------------------------------
    ln_linssh   = .false.   !  =T  linear free surface  ==>>  model level are fixed in time
    !
-   rn_rdt      = 5400.     !  time step for the dynamics and tracer
+   rn_Dt      = 5400.     !  time step for the dynamics and tracer
+   ln_meshmask = .false.  !  =T create a mesh file
 /
 !-----------------------------------------------------------------------
-&namcfg        !   parameters of the configuration                      (default: user defined GYRE)
+&namcfg        !   parameters of the configuration                      (default: use namusr_def in namelist_cfg)
 !-----------------------------------------------------------------------
    ln_read_cfg = .true.    !  (=T) read the domain configuration file
-      cn_domcfg = "ORCA_R2_zps_domcfg_agrif"    ! domain configuration filename
+      cn_domcfg = "domain_cfg.nc"    ! domain configuration filename
       !
       ln_closea    = .false.    !  F => suppress closed seas (defined by closea_mask field) 
       !                         !       from the bathymetry at runtime.
 /
 !-----------------------------------------------------------------------
-&namtsd        !    Temperature & Salinity Data                         (default: OFF)
+&namtile        !   parameters of the tiling
+!-----------------------------------------------------------------------
+/
+!-----------------------------------------------------------------------
+&namtsd        !    Temperature & Salinity Data  (init/dmp)             (default: OFF)
 !-----------------------------------------------------------------------
    !                       ! =T  read T-S fields for:
    ln_tsd_init = .true.          !  ocean initialisation
@@ -62,52 +67,52 @@
 !!   namsbc_blk      Bulk formulae formulation                          (ln_blk     =T)
 !!   namsbc_cpl      CouPLed            formulation                     ("key_oasis3" )
 !!   namsbc_sas      Stand-Alone Surface module                         (SAS_SRC  only)
+!!   namsbc_iif      Ice-IF: use observed ice cover                     (nn_ice = 1   )
 !!   namtra_qsr      penetrative solar radiation                        (ln_traqsr  =T)
+!!   namsbc_ssr      sea surface restoring term (for T and/or S)        (ln_ssr     =T)
 !!   namsbc_rnf      river runoffs                                      (ln_rnf     =T)
+!!   namsbc_apr      Atmospheric Pressure                               (ln_apr_dyn =T)
 !!   namsbc_isf      ice shelf melting/freezing                         (ln_isfcav  =T : read (ln_read_cfg=T) or set or usr_def_zgr )
 !!   namsbc_iscpl    coupling option between land ice model and ocean   (ln_isfcav  =T)
-!!   namsbc_apr      Atmospheric Pressure                               (ln_apr_dyn =T)
-!!   namsbc_ssr      sea surface restoring term (for T and/or S)        (ln_ssr     =T)
 !!   namsbc_wave     external fields from wave model                    (ln_wave    =T)
 !!   namberg         iceberg floats                                     (ln_icebergs=T)
 !!======================================================================
 !
 !-----------------------------------------------------------------------
-&namsbc        !   Surface Boundary Condition (surface module)
+&namsbc        !   Surface Boundary Condition manager                   (default: NO selection)
 !-----------------------------------------------------------------------
    nn_fsbc     = 1         !  frequency of SBC module call
                            !     (also = the frequency of sea-ice & iceberg model call)
                      ! Type of air-sea fluxes 
    ln_blk      = .true.    !  Bulk formulation                          (T => fill namsbc_blk )
                      ! Sea-ice :
-   nn_ice      = 2         !  =2 or 3 automatically for SI3 or CICE    ("key_si3" or "key_cice")
-                           !          except in AGRIF zoom where it has to be specified
+   nn_ice      = 2         !  =0 no ice boundary condition
+      !                    !  =1 use observed ice-cover                 (  => fill namsbc_iif )
+      !                    !  =2 or 3 for SI3 and CICE, respectively
                      ! Misc. options of sbc : 
    ln_traqsr   = .true.    !  Light penetration in the ocean            (T => fill namtra_qsr)
-   ln_rnf      = .true.    !  runoffs                                   (T => fill namsbc_rnf)
    ln_ssr      = .true.    !  Sea Surface Restoring on T and/or S       (T => fill namsbc_ssr)
+   ln_rnf      = .true.    !  runoffs                                   (T => fill namsbc_rnf)
    nn_fwb      = 0         !  FreshWater Budget: =0 unchecked
 /
 !-----------------------------------------------------------------------
-&namsbc_blk   !   namsbc_blk  generic Bulk formula                      (ln_blk =T)
+&namsbc_blk    !   namsbc_blk  generic Bulk formula                     (ln_blk =T)
 !-----------------------------------------------------------------------
    !                    !  bulk algorithm :
    ln_NCAR    = .true.     ! "NCAR"      algorithm   (Large and Yeager 2008)
-
    cn_dir = './'  !  root directory for the bulk data location
    !___________!_________________________!___________________!___________!_____________!________!___________!______________________________________!__________!_______________!
    !           !  file name              ! frequency (hours) ! variable  ! time interp.!  clim  ! 'yearly'/ !          weights filename            ! rotation ! land/sea mask !
    !           !                         !  (if <0  months)  !   name    !   (logical) !  (T/F) ! 'monthly' !                                      ! pairing  !    filename   !
-   sn_wndi     = 'u_10.15JUNE2009_fill'       ,    6.        , 'U_10_MOD',   .false.   , .true. , 'yearly'  , 'weights_core_orca2_bicubic_noc.nc'  , 'Uwnd'   , ''
-   sn_wndj     = 'v_10.15JUNE2009_fill'       ,    6.        , 'V_10_MOD',   .false.   , .true. , 'yearly'  , 'weights_core_orca2_bicubic_noc.nc'  , 'Vwnd'   , ''
-   sn_qsr      = 'ncar_rad.15JUNE2009_fill'   ,   24.        , 'SWDN_MOD',   .false.   , .true. , 'yearly'  , 'weights_core_orca2_bilinear_noc.nc' , ''       , ''
-   sn_qlw      = 'ncar_rad.15JUNE2009_fill'   ,   24.        , 'LWDN_MOD',   .false.   , .true. , 'yearly'  , 'weights_core_orca2_bilinear_noc.nc' , ''       , ''
-   sn_tair     = 't_10.15JUNE2009_fill'       ,    6.        , 'T_10_MOD',   .false.   , .true. , 'yearly'  , 'weights_core_orca2_bilinear_noc.nc' , ''       , ''
-   sn_humi     = 'q_10.15JUNE2009_fill'       ,    6.        , 'Q_10_MOD',   .false.   , .true. , 'yearly'  , 'weights_core_orca2_bilinear_noc.nc' , ''       , ''
-   sn_prec     = 'ncar_precip.15JUNE2009_fill',   -1.        , 'PRC_MOD1',   .false.   , .true. , 'yearly'  , 'weights_core_orca2_bilinear_noc.nc' , ''       , ''
-   sn_snow     = 'ncar_precip.15JUNE2009_fill',   -1.        , 'SNOW'    ,   .false.   , .true. , 'yearly'  , 'weights_core_orca2_bilinear_noc.nc' , ''       , ''
-   sn_slp      = 'slp.15JUNE2009_fill'        ,    6.        , 'SLP'     ,   .false.   , .true. , 'yearly'  , 'weights_core_orca2_bilinear_noc.nc' , ''       , ''
-   sn_tdif     = 'taudif_core'                ,   24.        , 'taudif'  ,   .false.   , .true. , 'yearly'  , 'weights_core_orca2_bilinear_noc.nc' , ''       , ''
+   sn_wndi     = 'u_10.15JUNE2009_fill'       ,    6.        , 'U_10_MOD',   .false.   , .true. , 'yearly'  , 'weights_core2_orca2_bicub'  , 'Uwnd'   , ''
+   sn_wndj     = 'v_10.15JUNE2009_fill'       ,    6.        , 'V_10_MOD',   .false.   , .true. , 'yearly'  , 'weights_core2_orca2_bicub'  , 'Vwnd'   , ''
+   sn_qsr      = 'ncar_rad.15JUNE2009_fill'   ,   24.        , 'SWDN_MOD',   .false.   , .true. , 'yearly'  , 'weights_core2_orca2_bilin' , ''       , ''
+   sn_qlw      = 'ncar_rad.15JUNE2009_fill'   ,   24.        , 'LWDN_MOD',   .false.   , .true. , 'yearly'  , 'weights_core2_orca2_bilin' , ''       , ''
+   sn_tair     = 't_10.15JUNE2009_fill'       ,    6.        , 'T_10_MOD',   .false.   , .true. , 'yearly'  , 'weights_core2_orca2_bilin' , ''       , ''
+   sn_humi     = 'q_10.15JUNE2009_fill'       ,    6.        , 'Q_10_MOD',   .false.   , .true. , 'yearly'  , 'weights_core2_orca2_bilin' , ''       , ''
+   sn_prec     = 'ncar_precip.15JUNE2009_fill',   -1.        , 'PRC_MOD1',   .false.   , .true. , 'yearly'  , 'weights_core2_orca2_bilin' , ''       , ''
+   sn_snow     = 'ncar_precip.15JUNE2009_fill',   -1.        , 'SNOW'    ,   .false.   , .true. , 'yearly'  , 'weights_core2_orca2_bilin' , ''       , ''
+   sn_slp      = 'slp.15JUNE2009_fill'        ,    6.        , 'SLP'     ,   .false.   , .true. , 'yearly'  , 'weights_core2_orca2_bilin' , ''       , ''
 /
 !-----------------------------------------------------------------------
 &namtra_qsr    !   penetrative solar radiation                          (ln_traqsr =T)
@@ -124,11 +129,20 @@
    sn_chl      ='chlorophyll'            ,        -1.        , 'CHLA'    ,   .true.    , .true. , 'yearly'  , ''               , ''       , ''
 /
 !-----------------------------------------------------------------------
+&namsbc_ssr    !   surface boundary condition : sea surface restoring   (ln_ssr =T)
+!-----------------------------------------------------------------------
+   nn_sssr     =     2     !  add a damping term to the surface freshwater flux
+      rn_deds     =  -166.67  !  magnitude of the damping on salinity   [mm/day]
+      ln_sssr_bnd =  .true.   !  flag to bound erp term (associated with nn_sssr=2)
+      rn_sssr_bnd =   4.e0    !  ABS(Max/Min) value of the damping erp term [mm/day]
+/
+!-----------------------------------------------------------------------
 &namsbc_rnf    !   runoffs                                              (ln_rnf =T)
 !-----------------------------------------------------------------------
    ln_rnf_mouth = .true.    !  specific treatment at rivers mouths
       rn_hrnf     =  15.e0    !  depth over which enhanced vertical mixing is used    (ln_rnf_mouth=T)
       rn_avt_rnf  =   1.e-3   !  value of the additional vertical mixing coef. [m2/s] (ln_rnf_mouth=T)
+   rn_rfact    =   1.e0    !  multiplicative factor for runoff
 
    cn_dir = './'  !  root directory for the location of the runoff files
    !___________!_____________!___________________!___________!_____________!_________!___________!__________!__________!_______________!
@@ -141,15 +155,11 @@
    sn_dep_rnf  = 'runoffs'            ,     0.   , 'rodepth' ,   .false.    , .true. , 'yearly'  , ''       , ''       , ''
 /
 !-----------------------------------------------------------------------
-&namsbc_ssr    !   surface boundary condition : sea surface restoring   (ln_ssr =T)
+&namsbc_wave   ! External fields from wave model                        (ln_wave=T)
 !-----------------------------------------------------------------------
-   nn_sssr     =     2     !  add a damping term to the surface freshwater flux
-      rn_deds     =  -166.67  !  magnitude of the damping on salinity   [mm/day]
-      ln_sssr_bnd =  .true.   !  flag to bound erp term (associated with nn_sssr=2)
-      rn_sssr_bnd =   4.e0    !  ABS(Max/Min) value of the damping erp term [mm/day]
 /
 !-----------------------------------------------------------------------
-&namberg       !   iceberg parameters                                   (default: No iceberg)
+&namberg       !   iceberg parameters                                   (default: OFF)
 !-----------------------------------------------------------------------
    !  iceberg floats are not currently available with AGRIF
    !     ===>>  forced deactivation in icbini.F90
@@ -158,7 +168,7 @@
 !!               ***  Lateral boundary condition  ***                 !!
 !!                                                                    !!
 !!   namlbc        lateral momentum boundary condition                  (default: NO selection)
-!!   namagrif      agrif nested grid ( read by child model only )       ("key_agrif")
+!!   namagrif      agrif nested grid   (read by child model only)       ("key_agrif")
 !!   nam_tide      Tidal forcing                                        (default: OFF)
 !!   nambdy        Unstructured open boundaries                         (default: OFF)
 !!   nambdy_dta    Unstructured open boundaries - external data         (see  nambdy)
@@ -211,7 +221,7 @@
       rn_gambbl   =  10.      !  advective bbl coefficient                 [s]
 /
 !!======================================================================
-!!                        Tracer (T & S) namelists                    !!
+!!                        Tracer (T-S) namelists                      !!
 !!                                                                    !!
 !!   nameos        equation of state                                    (default: NO selection)
 !!   namtra_adv    advection scheme                                     (default: NO selection)
@@ -234,11 +244,6 @@
       nn_fct_v   =  2               !  =2/4, vertical   2nd / COMPACT 4th order 
 /
 !-----------------------------------------------------------------------
-&namtra_mle    !   mixed layer eddy parametrisation (Fox-Kemper)        (default: OFF)
-!-----------------------------------------------------------------------
-   ln_mle      = .true.   ! (T) use the Mixed Layer Eddy (MLE) parameterisation
-/
-!-----------------------------------------------------------------------
 &namtra_ldf    !   lateral diffusion scheme for tracers                 (default: NO selection)
 !-----------------------------------------------------------------------
    !                       !  Operator type:
@@ -254,9 +259,14 @@
       rn_Ld        = 200.e+3        !  lateral diffusive length   [m]   (nn_aht_ijk_t= 0, 10)
 /
 !-----------------------------------------------------------------------
-&namtra_eiv !   eddy induced velocity param.                            (default: OFF)
+&namtra_mle    !   mixed layer eddy parametrisation (Fox-Kemper)        (default: OFF)
 !-----------------------------------------------------------------------
-   ln_ldfeiv     =.true.   ! use eddy induced velocity parameterization
+   ln_mle      = .true.   ! (T) use the Mixed Layer Eddy (MLE) parameterisation
+/
+!-----------------------------------------------------------------------
+&namtra_eiv    !   eddy induced velocity param.                         (default: OFF)
+!-----------------------------------------------------------------------
+   ln_ldfeiv   = .true.    ! use eddy induced velocity parameterization
       !                        !  Coefficients:
       nn_aei_ijk_t  = 21          ! space/time variation of the eiv coeficient
       !                                !   = 21 F(i,j,t)  =Treguier et al. JPO 1997 formulation
@@ -285,10 +295,6 @@
 !!======================================================================
 !
 !-----------------------------------------------------------------------
-&nam_vvl       !   vertical coordinate options                          (default: z-star)
-!-----------------------------------------------------------------------
-/
-!-----------------------------------------------------------------------
 &namdyn_adv    !   formulation of the momentum advection                (default: NO selection)
 !-----------------------------------------------------------------------
    ln_dynadv_vec = .true.  !  vector form - 2nd centered scheme
@@ -298,7 +304,6 @@
 &namdyn_vor    !   Vorticity / Coriolis scheme                          (default: NO selection)
 !-----------------------------------------------------------------------
    ln_dynvor_een = .true.  !  energy & enstrophy scheme
-      nn_een_e3f = 0          ! =0   e3f = mean masked e3t divided by 4
 /
 !-----------------------------------------------------------------------
 &namdyn_hpg    !   Hydrostatic pressure gradient option                 (default: NO selection)
@@ -333,7 +338,7 @@
 !!======================================================================
 !
 !-----------------------------------------------------------------------
-&namzdf        !   vertical physics                                     (default: NO selection)
+&namzdf        !   vertical physics manager                             (default: NO selection)
 !-----------------------------------------------------------------------
    !                       ! type of vertical closure
    ln_zdftke   = .true.       !  Turbulent Kinetic Energy closure       (T =>   fill namzdf_tke)
@@ -352,17 +357,19 @@
 !-----------------------------------------------------------------------
 &namzdf_tke    !   turbulent eddy kinetic dependent vertical diffusion  (ln_zdftke =T)
 !-----------------------------------------------------------------------
+      nn_mxlice = 2           ! type of scaling under sea-ice
+      !                       !    = 0 no scaling under sea-ice
+      !                       !    = 1 scaling with constant sea-ice thickness
+      !                       !    = 2 scaling with mean sea-ice thickness ( only with SI3 sea-ice model ) 
 /
 !!======================================================================
 !!                  ***  Diagnostics namelists  ***                   !!
 !!                                                                    !!
 !!   namtrd       dynamics and/or tracer trends                         (default: OFF)
-!!   namptr       Poleward Transport Diagnostics                        (default: OFF)
 !!   namhsb       Heat and salt budgets                                 (default: OFF)
 !!   namdiu       Cool skin and warm layer models                       (default: OFF)
 !!   namdiu       Cool skin and warm layer models                       (default: OFF)
 !!   namflo       float parameters                                      (default: OFF)
-!!   nam_diaharm  Harmonic analysis of tidal constituents               (default: OFF)
 !!   nam_diadct   transports through some sections                      (default: OFF)
 !!   nam_dia25h   25h Mean Output                                       (default: OFF)
 !!   namnc4       netcdf4 chunking and compression settings             ("key_netcdf4")
@@ -378,14 +385,13 @@
 !!======================================================================
 !!                  ***  Miscellaneous namelists  ***                 !!
 !!                                                                    !!
-!!   nammpp            Massively Parallel Processing                    ("key_mpp_mpi")
+!!   nammpp            Massively Parallel Processing
 !!   namctl            Control prints                                   (default: OFF)
 !!   namsto            Stochastic parametrization of EOS                (default: OFF)
 !!======================================================================
 !
-!
 !-----------------------------------------------------------------------
-&nammpp        !   Massively Parallel Processing                        ("key_mpp_mpi")
+&nammpp        !   Massively Parallel Processing
 !-----------------------------------------------------------------------
 /
 !-----------------------------------------------------------------------

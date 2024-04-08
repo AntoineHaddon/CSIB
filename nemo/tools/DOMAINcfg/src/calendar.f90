@@ -1,4 +1,5 @@
 MODULE calendar
+!$AGRIF_DO_NOT_TREAT
 !-
 !$Id: calendar.f90 2459 2010-12-07 11:17:48Z smasson $
 !-
@@ -1041,4 +1042,5 @@ END SUBROUTINE time_diff
 !-
 !===
 !-
+!$AGRIF_END_DO_NOT_TREAT
 END MODULE calendar

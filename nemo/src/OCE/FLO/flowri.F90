@@ -32,9 +32,11 @@ MODULE flowri
    REAL(wp), ALLOCATABLE, DIMENSION(:) ::   zlon , zlat, zdep   ! 2D workspace
    REAL(wp), ALLOCATABLE, DIMENSION(:) ::   ztem , zsal, zrho   ! 2D workspace
 
+   !! * Substitutions
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: flowri.F90 11818 2019-10-29 09:23:50Z jchanut $
+   !! $Id: flowri.F90 15062 2021-06-28 11:19:48Z jchanut $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -50,7 +52,7 @@ CONTAINS
       IF( flo_wri_alloc /= 0 )   CALL ctl_stop( 'STOP', 'flo_wri_alloc: failed to allocate arrays.' )
    END FUNCTION flo_wri_alloc
 
-   SUBROUTINE flo_wri( kt )
+   SUBROUTINE flo_wri( kt, Kmm )
       !!---------------------------------------------------------------------
       !!                  ***  ROUTINE flo_wri ***
       !!             
@@ -63,7 +65,8 @@ CONTAINS
       !!      
       !!----------------------------------------------------------------------
       !! * Arguments
-      INTEGER  :: kt                               ! time step
+      INTEGER, INTENT(in)  :: kt                 ! time step
+      INTEGER, INTENT(in)  :: Kmm                ! time level index
 
       !! * Local declarations
       INTEGER  :: iafl , ibfl , icfl             ! temporary integer
@@ -103,8 +106,8 @@ CONTAINS
             iafloc = mi1( iafl )
             ibfloc = mj1( ibfl )
  
-            IF( nldi <= iafloc .AND. iafloc <= nlei .AND. &
-              & nldj <= ibfloc .AND. ibfloc <= nlej       ) THEN 
+            IF( Nis0 <= iafloc .AND. iafloc <= Nie0 .AND. &
+              & Njs0 <= ibfloc .AND. ibfloc <= Nje0       ) THEN 
 
                !the float is inside of current proc's area
                ia1floc = iafloc + 1
@@ -115,12 +118,12 @@ CONTAINS
                      +     zafl *(1.-zbfl)*gphit(ia1floc,ibfloc ) +     zafl  * zbfl * gphit(ia1floc,ib1floc)   
                zlon(jfl) = (1.-zafl)*(1.-zbfl)*glamt(iafloc ,ibfloc ) + (1.-zafl) * zbfl * glamt(iafloc ,ib1floc)   &
                      +     zafl *(1.-zbfl)*glamt(ia1floc,ibfloc ) +     zafl  * zbfl * glamt(ia1floc,ib1floc)
-               zdep(jfl) = (1.-zcfl)*gdepw_n(iafloc,ibfloc,icfl ) + zcfl * gdepw_n(iafloc,ibfloc,ic1fl)     
+               zdep(jfl) = (1.-zcfl)*gdepw(iafloc,ibfloc,icfl ,Kmm) + zcfl * gdepw(iafloc,ibfloc,ic1fl,Kmm)     
 
                !save temperature, salinity and density at this position
-               ztem(jfl) = tsn(iafloc,ibfloc,icfl,jp_tem)
-               zsal (jfl) = tsn(iafloc,ibfloc,icfl,jp_sal)
-               zrho (jfl) = (rhd(iafloc,ibfloc,icfl)+1)*rau0
+               ztem(jfl) = ts(iafloc,ibfloc,icfl,jp_tem,Kmm)
+               zsal (jfl) = ts(iafloc,ibfloc,icfl,jp_sal,Kmm)
+               zrho (jfl) = (rhd(iafloc,ibfloc,icfl)+1)*rho0
 
             ENDIF
 
@@ -136,11 +139,11 @@ CONTAINS
                       +     zafl *(1.-zbfl)*gphit(ia1floc,ibfloc ) +     zafl  * zbfl * gphit(ia1floc,ib1floc)
             zlon(jfl) = (1.-zafl)*(1.-zbfl)*glamt(iafloc ,ibfloc ) + (1.-zafl) * zbfl * glamt(iafloc ,ib1floc)   &
                       +     zafl *(1.-zbfl)*glamt(ia1floc,ibfloc ) +     zafl  * zbfl * glamt(ia1floc,ib1floc)
-            zdep(jfl) = (1.-zcfl)*gdepw_n(iafloc,ibfloc,icfl ) + zcfl * gdepw_n(iafloc,ibfloc,ic1fl)
+            zdep(jfl) = (1.-zcfl)*gdepw(iafloc,ibfloc,icfl ,Kmm) + zcfl * gdepw(iafloc,ibfloc,ic1fl,Kmm)
 
-            ztem(jfl) = tsn(iafloc,ibfloc,icfl,jp_tem)
-            zsal(jfl) = tsn(iafloc,ibfloc,icfl,jp_sal)
-            zrho(jfl) = (rhd(iafloc,ibfloc,icfl)+1)*rau0
+            ztem(jfl) = ts(iafloc,ibfloc,icfl,jp_tem,Kmm)
+            zsal(jfl) = ts(iafloc,ibfloc,icfl,jp_sal,Kmm)
+            zrho(jfl) = (rhd(iafloc,ibfloc,icfl)+1)*rho0
           
          ENDIF
 
@@ -197,7 +200,7 @@ CONTAINS
       !II-2-a Write with IOM
       !----------------------
 
-#if defined key_iomput
+#if defined key_xios
          CALL iom_put( "traj_lon"     , zlon )
          CALL iom_put( "traj_lat"     , zlat )
          CALL iom_put( "traj_dep"     , zdep )
@@ -243,7 +246,7 @@ CONTAINS
             !II-2-b-2 Write in  netcdf file
             !-------------------------------
             irec =  INT( (kt-nn_it000+1)/nn_writefl ) +1
-            ztime = ( kt-nn_it000 + 1 ) * rdt
+            ztime = ( kt-nn_it000 + 1 ) * rn_Dt
 
             CALL flioputv( numflo , 'time_counter', ztime , start=(/irec/) )
 

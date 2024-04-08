@@ -9,13 +9,13 @@ MODULE sedinitrc
    !!----------------------------------------------------------------------
    !! * Modules used
    USE sed     ! sediment global variable
-   USE sed_oce
    USE sedini
    USE seddta
    USE sedrst
    USE sedco3
    USE sedchem
    USE sedarr
+   USE sed_oce
    USE lib_mpp         ! distribued memory computing library
 
 
@@ -32,7 +32,7 @@ MODULE sedinitrc
 CONTAINS
 
 
-   SUBROUTINE sed_initrc
+   SUBROUTINE sed_initrc( Kbb, Kmm )
       !!----------------------------------------------------------------------
       !!                   ***  ROUTINE sed_init  ***
       !!
@@ -49,6 +49,8 @@ CONTAINS
       !!        !  04-10  (N. Emprin, M. Gehlen )  Original code
       !!        !  06-07  (C. Ethe)  Re-organization
       !!----------------------------------------------------------------------
+      INTEGER, INTENT(in) ::   Kbb, Kmm  ! time level indices
+
       INTEGER :: ji, jj, ikt
       !!----------------------------------------------------------------------
 
@@ -64,7 +66,7 @@ CONTAINS
       ! sets initial sediment composition
       ! ( only clay or reading restart file )
       !---------------------------------------
-      CALL sed_init_data
+      CALL sed_init_data( Kbb, Kmm )
 
 
       CALL sed_init_wri
@@ -73,7 +75,7 @@ CONTAINS
    END SUBROUTINE sed_initrc
 
 
-   SUBROUTINE sed_init_data
+   SUBROUTINE sed_init_data( Kbb, Kmm )
       !!----------------------------------------------------------------------
       !!                   ***  ROUTINE sed_init_data  ***
       !!
@@ -85,9 +87,10 @@ CONTAINS
       !!        !  06-07  (C. Ethe)  original
       !!----------------------------------------------------------------------
  
+      INTEGER, INTENT(in) ::   Kbb, Kmm  ! time level indices
+
       ! local variables
-      INTEGER :: &
-         ji, jk, zhipor
+      INTEGER :: ji, jk, zhipor
 
       !--------------------------------------------------------------------
  
@@ -127,14 +130,10 @@ CONTAINS
 
 
       ! Load initial Pisces Data for bot. wat. Chem and fluxes
-      CALL sed_dta ( nitsed000 ) 
+      CALL sed_dta ( nitsed000, Kbb, Kmm ) 
 
       ! Initialization of chemical constants
       CALL sed_chem ( nitsed000 )
-
-      ! Stores initial sediment data for mass balance calculation
-      pwcp0 (1:jpoce,1:jpksed,1:jpwat ) = pwcp (1:jpoce,1:jpksed,1:jpwat ) 
-      solcp0(1:jpoce,1:jpksed,1:jpsol ) = solcp(1:jpoce,1:jpksed,1:jpsol) 
 
       ! Conversion of [h+] in mol/Kg to get it in mol/l ( multiplication by density)
       DO jk = 1, jpksed

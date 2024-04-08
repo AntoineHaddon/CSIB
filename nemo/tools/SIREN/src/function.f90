@@ -23,14 +23,14 @@
 !>  cl_str=cd_char//num
 !> @endcode
 !>  - cd_char is the string character
-!>  - num is the numeric value (integer, real or logical)  
+!>  - num is the numeric value (integer, real or logical)
 !>
-!>  to concatenate all the element of a character array:<br/> 
+!>  to concatenate all the element of a character array:<br/>
 !> @code
 !>  cl_string=fct_concat(cd_arr [,cd_sep])
 !> @endcode
 !>  - cd_arr is a 1D array of character
-!>  - cd_sep is a separator character to add between each element of cd_arr 
+!>  - cd_sep is a separator character to add between each element of cd_arr
 !> [optional]
 !>
 !>  to convert character from lower to upper case:<br/>
@@ -53,7 +53,7 @@
 !>  ll_is_real=fct_is_real(cd_var)
 !> @endcode
 !>
-!>  to split string into substring and return one of the element:<br/>  
+!>  to split string into substring and return one of the element:<br/>
 !> @code
 !>  cl_str=fct_split(cd_string ,id_ind [,cd_sep])
 !> @endcode
@@ -74,7 +74,7 @@
 !> @endcode
 !>  - cd_string is the string filename
 !>  - cd_sep is the separator ti be used (default '/')
-!>  
+!>
 !> to create a pause statement:<br/>
 !> @code
 !> CALL fct_pause(cd_msg)
@@ -85,7 +85,7 @@
 !> @code
 !> CALL fct_err(id_status)
 !> @endcode
-!> 
+!>
 !> to show help message:<br/>
 !> @code
 !> CALL fct_help(cd_filename, cd_err)
@@ -99,12 +99,12 @@
 !> @endcode
 !>    - cd_filename : file name
 !>
-!> 
+!>
 !> @author
 !> J.Paul
 !>
 !> @date November, 2013 - Initial Version
-!> @date September, 2014 
+!> @date September, 2014
 !> - add header
 !> @date October, 2019
 !> - add help and version function
@@ -176,19 +176,19 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    PURE FUNCTION fct__i1_cat(cd_char, bd_val) &
          & RESULT(cf_str)
-   !------------------------------------------------------------------- 
-   !> @brief This function concatenate character and integer(1) (as character). 
+   !-------------------------------------------------------------------
+   !> @brief This function concatenate character and integer(1) (as character).
    !>
-   !> @author J.Paul 
-   !> @date September, 2014 - Initial Version 
+   !> @author J.Paul
+   !> @date September, 2014 - Initial Version
    !>
    !> @param[in] cd_char   string character
    !> @param[in] bd_val    integer(1) variable value
-   !> @return string character 
-   !------------------------------------------------------------------- 
- 
+   !> @return string character
+   !-------------------------------------------------------------------
+
       IMPLICIT NONE
- 
+
       ! arguments
       CHARACTER(LEN=lc), INTENT(IN) :: cd_char
       INTEGER(i1),       INTENT(IN) :: bd_val
@@ -198,28 +198,28 @@ CONTAINS
 
       ! local variable
       CHARACTER(LEN=lc) :: cl_val
-      !---------------------------------------------------------------- 
- 
+      !----------------------------------------------------------------
+
       cl_val = fct_str(bd_val)
       cf_str = TRIM(cd_char)//TRIM(cl_val)
 
-   END FUNCTION fct__i1_cat 
+   END FUNCTION fct__i1_cat
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    PURE FUNCTION fct__i2_cat(cd_char, sd_val) &
          & RESULT(cf_str)
-   !------------------------------------------------------------------- 
-   !> @brief This function concatenate character and integer(2) (as character). 
+   !-------------------------------------------------------------------
+   !> @brief This function concatenate character and integer(2) (as character).
    !>
-   !> @author J.Paul 
-   !> @date September, 2014 - Initial Version 
+   !> @author J.Paul
+   !> @date September, 2014 - Initial Version
    !>
    !> @param[in] cd_char   string character
    !> @param[in] sd_val    integer(2) variable value
-   !> @return string character 
-   !------------------------------------------------------------------- 
- 
+   !> @return string character
+   !-------------------------------------------------------------------
+
       IMPLICIT NONE
- 
+
       ! arguments
       CHARACTER(LEN=lc), INTENT(IN) :: cd_char
       INTEGER(i2),       INTENT(IN) :: sd_val
@@ -229,28 +229,28 @@ CONTAINS
 
       ! local variable
       CHARACTER(LEN=lc) :: cl_val
-      !---------------------------------------------------------------- 
- 
+      !----------------------------------------------------------------
+
       cl_val = fct_str(sd_val)
       cf_str = TRIM(cd_char)//TRIM(cl_val)
 
-   END FUNCTION fct__i2_cat 
+   END FUNCTION fct__i2_cat
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    PURE FUNCTION fct__i4_cat(cd_char, id_val) &
          & RESULT(cf_str)
-   !------------------------------------------------------------------- 
-   !> @brief This function concatenate character and integer(4) (as character). 
+   !-------------------------------------------------------------------
+   !> @brief This function concatenate character and integer(4) (as character).
    !>
-   !> @author J.Paul 
-   !> @date November, 2013 - Initial Version 
+   !> @author J.Paul
+   !> @date November, 2013 - Initial Version
    !>
    !> @param[in] cd_char   string character
    !> @param[in] id_val    integer(4) variable value
-   !> @return string character 
-   !------------------------------------------------------------------- 
- 
+   !> @return string character
+   !-------------------------------------------------------------------
+
       IMPLICIT NONE
- 
+
       ! arguments
       CHARACTER(LEN=lc), INTENT(IN) :: cd_char
       INTEGER(i4),       INTENT(IN) :: id_val
@@ -260,28 +260,28 @@ CONTAINS
 
       ! local variable
       CHARACTER(LEN=lc) :: cl_val
-      !---------------------------------------------------------------- 
- 
+      !----------------------------------------------------------------
+
       cl_val = fct_str(id_val)
       cf_str = TRIM(cd_char)//TRIM(cl_val)
 
-   END FUNCTION fct__i4_cat 
+   END FUNCTION fct__i4_cat
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    PURE FUNCTION fct__i8_cat(cd_char, kd_val) &
          & RESULT(cf_str)
-   !------------------------------------------------------------------- 
-   !> @brief This function concatenate character and integer(8) (as character). 
+   !-------------------------------------------------------------------
+   !> @brief This function concatenate character and integer(8) (as character).
    !>
-   !> @author J.Paul 
-   !> @date November, 2013 - Initial Version 
+   !> @author J.Paul
+   !> @date November, 2013 - Initial Version
    !>
    !> @param[in] cd_char   string character
    !> @param[in] kd_val    integer(8) variable value
-   !> @return string character 
-   !------------------------------------------------------------------- 
- 
+   !> @return string character
+   !-------------------------------------------------------------------
+
       IMPLICIT NONE
- 
+
       ! arguments
       CHARACTER(LEN=lc), INTENT(IN) :: cd_char
       INTEGER(i8),       INTENT(IN) :: kd_val
@@ -291,28 +291,28 @@ CONTAINS
 
       ! local variable
       CHARACTER(LEN=lc) :: cl_val
-      !---------------------------------------------------------------- 
- 
+      !----------------------------------------------------------------
+
       cl_val = fct_str(kd_val)
       cf_str = TRIM(cd_char)//TRIM(cl_val)
 
-   END FUNCTION fct__i8_cat 
+   END FUNCTION fct__i8_cat
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    PURE FUNCTION fct__r4_cat(cd_char, rd_val) &
          & RESULT(cf_str)
-   !------------------------------------------------------------------- 
-   !> @brief This function concatenate character and real(4) (as character). 
+   !-------------------------------------------------------------------
+   !> @brief This function concatenate character and real(4) (as character).
    !>
-   !> @author J.Paul 
-   !> @date November, 2013 - Initial Version 
+   !> @author J.Paul
+   !> @date November, 2013 - Initial Version
    !>
    !> @param[in] cd_char   string character
    !> @param[in] rd_val    real(4) variable value
-   !> @return string character 
-   !------------------------------------------------------------------- 
- 
+   !> @return string character
+   !-------------------------------------------------------------------
+
       IMPLICIT NONE
- 
+
       ! arguments
       CHARACTER(LEN=lc), INTENT(IN) :: cd_char
       REAL(sp),          INTENT(IN) :: rd_val
@@ -322,28 +322,28 @@ CONTAINS
 
       ! local variable
       CHARACTER(LEN=lc) :: cl_val
-      !---------------------------------------------------------------- 
- 
+      !----------------------------------------------------------------
+
       cl_val = fct_str(rd_val)
       cf_str = TRIM(cd_char)//TRIM(cl_val)
 
-   END FUNCTION fct__r4_cat 
+   END FUNCTION fct__r4_cat
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    PURE FUNCTION fct__r8_cat(cd_char, dd_val) &
          & RESULT(cf_str)
-   !------------------------------------------------------------------- 
-   !> @brief This function concatenate character and real(8) (as character). 
+   !-------------------------------------------------------------------
+   !> @brief This function concatenate character and real(8) (as character).
    !>
-   !> @author J.Paul 
-   !> @date November, 2013 - Initial Version 
+   !> @author J.Paul
+   !> @date November, 2013 - Initial Version
    !>
    !> @param[in] cd_char   string character
    !> @param[in] dd_val    real(8) variable value
-   !> @return string character 
-   !------------------------------------------------------------------- 
- 
+   !> @return string character
+   !-------------------------------------------------------------------
+
       IMPLICIT NONE
- 
+
       ! arguments
       CHARACTER(LEN=lc), INTENT(IN) :: cd_char
       REAL(dp),          INTENT(IN) :: dd_val
@@ -353,28 +353,28 @@ CONTAINS
 
       ! local variable
       CHARACTER(LEN=lc) :: cl_val
-      !---------------------------------------------------------------- 
- 
+      !----------------------------------------------------------------
+
       cl_val = fct_str(dd_val)
       cf_str = TRIM(cd_char)//TRIM(cl_val)
 
-   END FUNCTION fct__r8_cat 
+   END FUNCTION fct__r8_cat
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    PURE FUNCTION fct__l_cat(cd_char, ld_val) &
          & RESULT(cf_str)
-   !------------------------------------------------------------------- 
-   !> @brief This function concatenate character and logical (as character). 
+   !-------------------------------------------------------------------
+   !> @brief This function concatenate character and logical (as character).
    !>
-   !> @author J.Paul 
-   !> @date November, 2013 - Initial Version 
+   !> @author J.Paul
+   !> @date November, 2013 - Initial Version
    !>
    !> @param[in] cd_char   string character
    !> @param[in] ld_val    logical variable value
-   !> @return string character 
-   !------------------------------------------------------------------- 
+   !> @return string character
+   !-------------------------------------------------------------------
 
       IMPLICIT NONE
- 
+
       ! arguments
       CHARACTER(LEN=lc), INTENT(IN) :: cd_char
       LOGICAL,           INTENT(IN) :: ld_val
@@ -384,42 +384,42 @@ CONTAINS
 
       ! local variable
       CHARACTER(LEN=lc) :: cl_val
-      !---------------------------------------------------------------- 
- 
+      !----------------------------------------------------------------
+
       cl_val = fct_str(ld_val)
       cf_str = TRIM(cd_char)//TRIM(cl_val)
 
-   END FUNCTION fct__l_cat 
+   END FUNCTION fct__l_cat
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION fct_getunit() &
          & RESULT(if_unit)
-   !------------------------------------------------------------------- 
-   !> @brief This function returns the next available I/O unit number. 
+   !-------------------------------------------------------------------
+   !> @brief This function returns the next available I/O unit number.
    !>
-   !> @author J.Paul 
-   !> @date November, 2013 - Initial Version 
+   !> @author J.Paul
+   !> @date November, 2013 - Initial Version
    !>
-   !> @return file id 
-   !------------------------------------------------------------------- 
+   !> @return file id
+   !-------------------------------------------------------------------
 
       IMPLICIT NONE
- 
+
       ! function
       INTEGER(i4) :: if_unit
 
-      ! local variable 
-      LOGICAL ::  ll_opened 
-      !---------------------------------------------------------------- 
-      ! initialise 
-      if_unit = 10 
- 
-      INQUIRE(UNIT=if_unit, OPENED=ll_opened) 
-      DO WHILE( ll_opened ) 
-         if_unit = if_unit + 1 
-         INQUIRE(UNIT=if_unit, OPENED=ll_opened)  
-      ENDDO 
- 
-   END FUNCTION fct_getunit 
+      ! local variable
+      LOGICAL ::  ll_opened
+      !----------------------------------------------------------------
+      ! initialise
+      if_unit = 10
+
+      INQUIRE(UNIT=if_unit, OPENED=ll_opened)
+      DO WHILE( ll_opened )
+         if_unit = if_unit + 1
+         INQUIRE(UNIT=if_unit, OPENED=ll_opened)
+      ENDDO
+
+   END FUNCTION fct_getunit
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE fct_err(id_status)
    !-------------------------------------------------------------------
@@ -484,7 +484,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       LOGICAL, INTENT(IN) :: ld_var
 
       ! function
@@ -513,7 +513,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       INTEGER(i1), INTENT(IN) :: bd_var
 
       ! function
@@ -542,7 +542,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       INTEGER(i2), INTENT(IN) :: sd_var
 
       ! function
@@ -571,7 +571,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       INTEGER(i4), INTENT(IN) :: id_var
 
       ! function
@@ -600,7 +600,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       INTEGER(i8), INTENT(IN) :: kd_var
 
       ! function
@@ -629,7 +629,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       REAL(sp), INTENT(IN) :: rd_var
 
       ! function
@@ -658,7 +658,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       REAL(dp), INTENT(IN) :: dd_var
 
       ! function
@@ -676,7 +676,7 @@ CONTAINS
    PURE FUNCTION fct_concat(cd_arr,cd_sep) &
          & RESULT(cf_str)
    !-------------------------------------------------------------------
-   !> @brief This function concatenate all the element of a character array 
+   !> @brief This function concatenate all the element of a character array
    !> in a character string.
    !> @details
    !> optionnally a separator could be added between each element.
@@ -691,7 +691,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       CHARACTER(*), DIMENSION(:), INTENT(IN) :: cd_arr
       CHARACTER(*),               INTENT(IN), OPTIONAL :: cd_sep
 
@@ -717,7 +717,7 @@ CONTAINS
 
          WRITE(cl_tmp,*) TRIM(cf_str)//TRIM(ADJUSTL(cd_arr(ji)))//TRIM(cl_sep)
          cf_str=TRIM(ADJUSTL(cl_tmp))
-      
+
       ENDDO
 
    END FUNCTION fct_concat
@@ -728,9 +728,9 @@ CONTAINS
    !> @brief This function convert string character upper case to lower case.
    !>
    !> @details
-   !> The function IACHAR returns the ASCII value of the character passed 
-   !> as argument. The ASCII code has the uppercase alphabet starting at 
-   !> code 65, and the lower case one at code 101, therefore 
+   !> The function IACHAR returns the ASCII value of the character passed
+   !> as argument. The ASCII code has the uppercase alphabet starting at
+   !> code 65, and the lower case one at code 101, therefore
    !> IACHAR('a')- IACHAR('A') would be the difference between the uppercase
    !> and the lowercase codes.
    !>
@@ -743,7 +743,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       CHARACTER(*), INTENT(IN) :: cd_var
 
       ! function
@@ -792,9 +792,9 @@ CONTAINS
    !> @brief This function convert string character lower case to upper case.
    !>
    !> @details
-   !> The function IACHAR returns the ASCII value of the character passed 
-   !> as argument. The ASCII code has the uppercase alphabet starting at 
-   !> code 65, and the lower case one at code 101, therefore 
+   !> The function IACHAR returns the ASCII value of the character passed
+   !> as argument. The ASCII code has the uppercase alphabet starting at
+   !> code 65, and the lower case one at code 101, therefore
    !> IACHAR('a')- IACHAR('A') would be the difference between the uppercase
    !> and the lowercase codes.
    !>
@@ -807,7 +807,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       CHARACTER(*), INTENT(IN) :: cd_var
 
       ! function
@@ -864,7 +864,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       CHARACTER(LEN=*), INTENT(IN) :: cd_var
 
       ! function
@@ -898,8 +898,8 @@ CONTAINS
    !> @author J.Paul
    !> @date June, 2015 - Initial Version
    !> @date April, 2018
-   !> - permit negative exposant 
-   !> - permit sign as first character 
+   !> - permit negative exposant
+   !> - permit sign as first character
    !>
    !> @param[in] cd_var character
    !> @return character is real number
@@ -907,35 +907,35 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       CHARACTER(LEN=*), INTENT(IN) :: cd_var
-   
+
       ! function
       LOGICAL                      :: lf_real
 
       ! local variables
       LOGICAL :: ll_exp
       LOGICAL :: ll_dec
-   
+
       ! loop indices
       INTEGER :: ji
       !----------------------------------------------------------------
-   
+
       ll_exp=.TRUE.
       ll_dec=.FALSE.
       DO ji=1,LEN(TRIM(cd_var))
          IF( IACHAR(cd_var(ji:ji)) >= IACHAR('0') .AND. &
          &   IACHAR(cd_var(ji:ji)) <= IACHAR('9') )THEN
-   
+
             lf_real=.TRUE.
             ll_exp=.FALSE.
-      
+
          ELSEIF( TRIM(fct_lower(cd_var(ji:ji)))=='e' )THEN
-         
+
             IF( ll_exp .OR. ji== LEN(TRIM(cd_var)) )THEN
                lf_real=.FALSE.
                EXIT
-            ELSE 
+            ELSE
                ll_exp=.TRUE.
             ENDIF
 
@@ -946,9 +946,9 @@ CONTAINS
             ELSE
                lf_real=.TRUE.
             ENDIF
-         
+
          ELSEIF( TRIM(cd_var(ji:ji))=='-' )THEN
-         
+
             IF( ji <= 1 )THEN
                IF( ji /= 1 )THEN
                   lf_real=.FALSE.
@@ -966,7 +966,7 @@ CONTAINS
             ENDIF
 
          ELSEIF( TRIM(cd_var(ji:ji))=='.' )THEN
-   
+
             IF( ll_dec )THEN
                lf_real=.FALSE.
                EXIT
@@ -974,21 +974,21 @@ CONTAINS
                lf_real=.TRUE.
                ll_dec=.TRUE.
             ENDIF
-   
+
          ELSE
-   
+
             lf_real=.FALSE.
             EXIT
-   
+
          ENDIF
       ENDDO
-   
+
    END FUNCTION fct_is_real
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    PURE FUNCTION fct_split(cd_string, id_ind, cd_sep) &
          & RESULT(cf_elt)
    !-------------------------------------------------------------------
-   !> @brief This function split string of character 
+   !> @brief This function split string of character
    !> using separator character, by default '|',
    !> and return the element on index ind.
    !>
@@ -1003,7 +1003,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       CHARACTER(LEN=*), INTENT(IN) :: cd_string
       INTEGER(i4)     , INTENT(IN) :: id_ind
       CHARACTER(LEN=*), INTENT(IN), OPTIONAL :: cd_sep
@@ -1017,7 +1017,7 @@ CONTAINS
 
       INTEGER(i4) :: il_sep
       INTEGER(i4) :: il_lsep
-      
+
       ! loop indices
       INTEGER(i4) :: ji
       !----------------------------------------------------------------
@@ -1034,11 +1034,11 @@ CONTAINS
             cl_sep=TRIM(ADJUSTL(cd_sep))
          ENDIF
       ENDIF
-      
+
       IF( cl_sep /= ' ' )THEN
          ! get separator index
          il_sep=INDEX( TRIM(cl_string), TRIM(cl_sep) )
-         il_lsep=LEN(TRIM(cl_sep)) 
+         il_lsep=LEN(TRIM(cl_sep))
 
          IF( il_sep /= 0 )THEN
             cf_elt=TRIM(ADJUSTL(cl_string(1:il_sep-1)))
@@ -1048,9 +1048,9 @@ CONTAINS
 
          ji=1
          DO WHILE( il_sep /= 0 .AND. ji /= id_ind )
-            
+
             ji=ji+1
-            
+
             cl_string=TRIM(cl_string(il_sep+il_lsep:))
             il_sep=INDEX( TRIM(cl_string), TRIM(cl_sep) )
 
@@ -1072,8 +1072,8 @@ CONTAINS
    PURE FUNCTION fct__split_space(cd_string, id_ind) &
          & RESULT(cf_elt)
    !-------------------------------------------------------------------
-   !> @brief This function split string of character 
-   !> using space as separator, 
+   !> @brief This function split string of character
+   !> using space as separator,
    !> and return the element on index ind.
    !>
    !> @author J.Paul
@@ -1086,7 +1086,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       CHARACTER(LEN=*), INTENT(IN) :: cd_string
       INTEGER(i4)     , INTENT(IN) :: id_ind
 
@@ -1098,7 +1098,7 @@ CONTAINS
 
       INTEGER(i4) :: il_sep
       INTEGER(i4) :: il_lsep
-      
+
       ! loop indices
       INTEGER(i4) :: ji
       !----------------------------------------------------------------
@@ -1108,7 +1108,7 @@ CONTAINS
 
       ! get separator index
       il_sep=INDEX( TRIM(cl_string), ' ' )
-      il_lsep=LEN(' ') 
+      il_lsep=LEN(' ')
 
       IF( il_sep /= 0 )THEN
          cf_elt=TRIM(ADJUSTL(cl_string(1:il_sep-1)))
@@ -1118,9 +1118,9 @@ CONTAINS
 
       ji=1
       DO WHILE( il_sep /= 0 .AND. ji /= id_ind )
-         
+
          ji=ji+1
-         
+
          cl_string=TRIM(cl_string(il_sep+il_lsep:))
          il_sep=INDEX( TRIM(cl_string), ' ' )
 
@@ -1155,7 +1155,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       CHARACTER(LEN=*), INTENT(IN) :: cd_string
       CHARACTER(LEN=*), INTENT(IN), OPTIONAL :: cd_sep
 
@@ -1166,7 +1166,7 @@ CONTAINS
       CHARACTER(LEN=lc) :: cl_sep
       CHARACTER(LEN=lc) :: cl_string
       INTEGER(i4)       :: il_sep
-      
+
       ! loop indices
       !----------------------------------------------------------------
       ! initialize
@@ -1200,7 +1200,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       CHARACTER(LEN=*), INTENT(IN) :: cd_string
       CHARACTER(LEN=*), INTENT(IN), OPTIONAL :: cd_sep
 
@@ -1211,7 +1211,7 @@ CONTAINS
       CHARACTER(LEN=lc) :: cl_sep
       CHARACTER(LEN=lc) :: cl_string
       INTEGER(i4)       :: il_sep
-      
+
       ! loop indices
       !----------------------------------------------------------------
       ! initialize
@@ -1234,14 +1234,14 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief
    !> This function show help message.
-   !> 
-   !> @details 
+   !>
+   !> @details
    !>  Optionaly, print error detected
    !>
    !> @author J.Paul
    !> @date October, 2019 - Initial Version
    !>
-   !> @param[in] cd_filename   file name 
+   !> @param[in] cd_filename   file name
    !> @param[in] cd_err        error message
    !>
    !> @return print help message
@@ -1258,10 +1258,11 @@ CONTAINS
       PRINT '(   2x,a,/)', 'positional arguments:'
       PRINT '(   5x,a   )',    'namelist                       '//TRIM(cd_filename)//" namelist"
       PRINT '( /,5x,a,/)', 'NB : a template of the namelist could be created running (in templates directory):'
-      PRINT '(   8x,a  )',    'python create_templates.py '//TRIM(cd_filename)
+      PRINT '(   8x,a  )',    'python create_templates.py '//TRIM(cd_filename)//'.f90 '//TRIM(cd_filename)//'.nam'
       PRINT '( /,2x,a,/)', 'optional arguments:'
       PRINT '(   5x,a  )',    "-h, --help                      display this help and exit"
       PRINT '(   5x,a,/)',    "-v, --version                   output Siren's version information and exit"
+      PRINT '( /,2x,a,/)', 'for more information, see documentation.'
       IF (PRESENT(cd_err)) THEN
          PRINT '(2x,a,/)', 'ERROR DETECTED:'
          PRINT '(5x,a,/)', TRIM(cd_err)
@@ -1273,11 +1274,11 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief
    !> This function show the version of Siren.
-   !> 
+   !>
    !> @author J.Paul
    !> @date October, 2019 - Initial Version
    !>
-   !> @param[in] cd_filename   file name 
+   !> @param[in] cd_filename   file name
    !>
    !> @return print version message
    !-------------------------------------------------------------------

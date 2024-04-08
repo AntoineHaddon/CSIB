@@ -98,7 +98,7 @@ subroutine Agrif_Declare_Variable ( posvar, firstpoint, raf, lb, ub, varid, tore
     Agrif_Curgrid % variables => new_varlist
     Agrif_Curgrid % Nbvariables = Agrif_Curgrid % Nbvariables + 1
 
-    varid = -Agrif_Curgrid % Nbvariables
+    varid = Agrif_Curgrid % Nbvariables
 
     var % parent_var => Agrif_Search_Variable(Agrif_Curgrid % parent, Agrif_Curgrid % nbvariables)
     var % root_var   => Agrif_Search_Variable(Agrif_Mygrid, Agrif_Curgrid % nbvariables)

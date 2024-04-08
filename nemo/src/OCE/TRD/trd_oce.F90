@@ -26,13 +26,13 @@ MODULE trd_oce
    LOGICAL , PUBLIC ::   l_trdtra        !: tracers  trend flag (set from namelist in trdini)
    LOGICAL , PUBLIC ::   l_trddyn        !: momentum trend flag (set from namelist in trdini)
    
-# if ( defined key_trdtrc && defined key_iomput )  ||  defined key_trdmxl_trc
+# if ( defined key_trdtrc && defined key_xios )  ||  defined key_trdmxl_trc
    LOGICAL , PUBLIC ::   l_trdtrc = .TRUE.        !: tracers  trend flag
 # else
    LOGICAL , PUBLIC ::   l_trdtrc = .FALSE.       !: tracers  trend flag
 # endif
    !                                                  !!!* Active tracers trends indexes
-   INTEGER, PUBLIC, PARAMETER ::   jptot_tra  = 20     !: Total trend nb: change it when adding/removing one indice below
+   INTEGER, PUBLIC, PARAMETER ::   jptot_tra  = 21     !: Total trend nb: change it when adding/removing one indice below
    !                               ===============     !  
    INTEGER, PUBLIC, PARAMETER ::   jptra_xad  =  1     !: x- horizontal advection
    INTEGER, PUBLIC, PARAMETER ::   jptra_yad  =  2     !: y- horizontal advection
@@ -45,6 +45,7 @@ MODULE trd_oce
    INTEGER, PUBLIC, PARAMETER ::   jptra_evd  =  9     !: EVD term (convection)
    INTEGER, PUBLIC, PARAMETER ::   jptra_bbc  = 10     !: Bottom Boundary Condition (geoth. heating) 
    INTEGER, PUBLIC, PARAMETER ::   jptra_bbl  = 11     !: Bottom Boundary Layer (diffusive and/or advective)
+   INTEGER, PUBLIC, PARAMETER ::   jptra_osm  = 21     !: Non-local terms from OSMOSIS OBL model
    INTEGER, PUBLIC, PARAMETER ::   jptra_npc  = 12     !: non-penetrative convection treatment
    INTEGER, PUBLIC, PARAMETER ::   jptra_dmp  = 13     !: internal restoring (damping)
    INTEGER, PUBLIC, PARAMETER ::   jptra_qsr  = 14     !: penetrative solar radiation
@@ -76,7 +77,7 @@ MODULE trd_oce
    !
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: trd_oce.F90 10068 2018-08-28 14:09:04Z nicolasmartin $
+   !! $Id: trd_oce.F90 14239 2020-12-23 08:57:16Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!======================================================================
 END MODULE trd_oce

@@ -38,7 +38,7 @@ MODULE icethd_sal
 
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icethd_sal.F90 13284 2020-07-09 15:12:23Z smasson $
+   !! $Id: icethd_sal.F90 13472 2020-09-16 13:05:19Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -66,8 +66,8 @@ CONTAINS
       !               !---------------------------------------------!
       CASE( 2 )       !  time varying salinity with linear profile  !
          !            !---------------------------------------------!
-         z1_time_gd = rdt_ice / rn_time_gd
-         z1_time_fl = rdt_ice / rn_time_fl
+         z1_time_gd = rDt_ice / rn_time_gd
+         z1_time_fl = rDt_ice / rn_time_fl
          !
          DO ji = 1, npti
             !
@@ -92,7 +92,7 @@ CONTAINS
                   ! update salinity
                   s_i_1d(ji) = s_i_1d(ji) + zds
                   ! salt flux
-                  sfx_bri_1d(ji) = sfx_bri_1d(ji) - rhoi * a_i_1d(ji) * h_i_1d(ji) * zds * r1_rdtice
+                  sfx_bri_1d(ji) = sfx_bri_1d(ji) - rhoi * a_i_1d(ji) * h_i_1d(ji) * zds * r1_Dt_ice
                ENDIF
                !
                ! --- salinity must stay inbounds --- !
@@ -101,7 +101,7 @@ CONTAINS
                ! update salinity
                s_i_1d(ji) = s_i_1d(ji) + zds
                ! salt flux
-               sfx_res_1d(ji) = sfx_res_1d(ji) - rhoi * a_i_1d(ji) * h_i_1d(ji) * zds * r1_rdtice
+               sfx_res_1d(ji) = sfx_res_1d(ji) - rhoi * a_i_1d(ji) * h_i_1d(ji) * zds * r1_Dt_ice
                !
             ENDIF
             !
@@ -137,10 +137,8 @@ CONTAINS
          &                 rn_sal_fl, rn_time_fl, rn_simax , rn_simin 
       !!-------------------------------------------------------------------
       !
-      REWIND( numnam_ice_ref )              ! Namelist namthd_sal in reference namelist : Ice salinity
       READ  ( numnam_ice_ref, namthd_sal, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namthd_sal in reference namelist' )
-      REWIND( numnam_ice_cfg )              ! Namelist namthd_sal in configuration namelist : Ice salinity
       READ  ( numnam_ice_cfg, namthd_sal, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namthd_sal in configuration namelist' )
       IF(lwm) WRITE ( numoni, namthd_sal )

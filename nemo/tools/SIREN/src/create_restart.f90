@@ -4,18 +4,18 @@
 !
 ! DESCRIPTION:
 !> @file
-!> @brief 
+!> @brief
 !> this program creates restart file or initial state.
 !>
 !> @details
 !> @section sec1 method
-!> variables could be 
+!> variables could be
 !>  - extracted from fine grid file
 !>  - interpolated from coarse grid file
 !>  - interpolated from restart file
 !>  - handwritten
 !>
-!> then they are split over new layout. 
+!> then they are split over new layout.
 !> @note
 !>    interpolation and/or extrapolation method could be different for each variable.
 !>
@@ -49,7 +49,7 @@
 !>       - **namout** to set output parameters
 !>
 !>    here after, each sub-namelist parameters is detailed.
-!>    @note 
+!>    @note
 !>       default values are specified between brackets
 !>
 !> @subsection sublog namlog
@@ -68,7 +68,7 @@
 !>          - fatal
 !>          - none
 !>
-!>    - **in_maxerror** [@a 5]<br/> 
+!>    - **in_maxerror** [@a 5]<br/>
 !>       maximum number of error allowed
 !>
 !> @subsection subcfg namcfg
@@ -76,28 +76,28 @@
 !>
 !>    - **cn_varcfg** [@a ./cfg/variable.cfg]<br/>
 !>       path to the variable configuration file.<br/>
-!>       the variable configuration file defines standard name, 
-!>       default interpolation method, axis,... 
-!>       to be used for some known variables.<br/> 
+!>       the variable configuration file defines standard name,
+!>       default interpolation method, axis,...
+!>       to be used for some known variables.<br/>
 !>
-!>    - **cn_dimcfg** [@a ./cfg/dimension.cfg]<br/> 
-!>       path to the dimension configuration file.<br/> 
-!>       the dimension configuration file defines dimensions allowed.<br/> 
+!>    - **cn_dimcfg** [@a ./cfg/dimension.cfg]<br/>
+!>       path to the dimension configuration file.<br/>
+!>       the dimension configuration file defines dimensions allowed.<br/>
 !>
-!>    - **cn_dumcfg** [@a ./cfg/dummy.cfg]<br/> 
+!>    - **cn_dumcfg** [@a ./cfg/dummy.cfg]<br/>
 !>       path to the useless (dummy) configuration file.<br/>
-!>       the dummy configuration file defines useless 
+!>       the dummy configuration file defines useless
 !>       dimension or variable. these dimension(s) or variable(s) will not be
 !>       processed.<br/>
 !>
-!> @subsection subsrc namsrc 
+!> @subsection subsrc namsrc
 !>    the coarse grid sub-namelist parameters are :
 !>
-!>    - **cn_coord0** [@a ]<br/> 
+!>    - **cn_coord0** [@a ]<br/>
 !>       path to the coordinate file
 !>
-!>    - **in_perio0** [@a ]<br/> 
-!>       NEMO periodicity index<br/> 
+!>    - **in_perio0** [@a ]<br/>
+!>       NEMO periodicity index<br/>
 !>       the NEMO periodicity could be choose between 0 to 6:
 !>       <dl>
 !>          <dt>in_perio=0</dt>
@@ -119,16 +119,16 @@
 !>          </dd>
 !>       </dl>
 !>       @sa For more information see @ref md_src_docsrc_6_perio
-!>       and Model Boundary Condition paragraph in the 
+!>       and Model Boundary Condition paragraph in the
 !>       [NEMO documentation](https://forge.ipsl.jussieu.fr/nemo/chrome/site/doc/NEMO/manual/pdf/NEMO_manual.pdf)
 !>
-!> @subsection subtgt namtgt 
+!> @subsection subtgt namtgt
 !>    the fine grid sub-namelist parameters are :
 !>
-!>    - **cn_coord1** [@a ]<br/> 
+!>    - **cn_coord1** [@a ]<br/>
 !>       path to coordinate file
 !>
-!>    - **cn_bathy1** [@a ]<br/> 
+!>    - **cn_bathy1** [@a ]<br/>
 !>       path to bathymetry file
 !>
 !>    - **in_perio1** [@a ]<br/>
@@ -175,7 +175,7 @@
 !>    - **in_nlevel** [@a 75]<br/>
 !>       number of vertical level
 !>
-!>     @note 
+!>     @note
 !>       If *dn_ppa1*, *dn_ppa0* and *dn_ppsur* are undefined,
 !>       NEMO will compute them from *dn_ppdzmin, dn_pphmax, dn_ppkth, dn_ppacr*
 !>
@@ -187,20 +187,20 @@
 !>    - **dn_e3zps_rat** [@a 0.2]<br/>
 !>       minimum thickness ratio of partial step level
 !>
-!> @subsection subvar namvar 
+!> @subsection subvar namvar
 !>    the variable sub-namelist parameters are :
 !>
-!>    - **cn_varfile** [@a ]<br/> 
-!>       list of variable, and associated file 
+!>    - **cn_varfile** [@a ]<br/>
+!>       list of variable, and associated file
 !>
 !>       *cn_varfile* is the path and filename of the file where find
 !>       variable.
-!>       @note 
+!>       @note
 !>          *cn_varfile* could be a matrix of value, if you want to handwrite
 !>          variable value.<br/>
 !>          the variable array of value is split into equal subdomain.<br/>
-!>          each subdomain is filled with the corresponding value 
-!>          of the matrix.<br/>          
+!>          each subdomain is filled with the corresponding value
+!>          of the matrix.<br/>
 !>          separators used to defined matrix are:
 !>             - ',' for line
 !>             - '/' for row
@@ -209,7 +209,7 @@
 !>                                      3 & 2 & 3 \\
 !>                                      1 & 4 & 5 \end{array} \right) @f$
 !>
-!>       Examples: 
+!>       Examples:
 !>          - 'votemper:gridT.nc', 'vozocrtx:gridU.nc'
 !>          - 'votemper:10\25', 'vozocrtx:gridU.nc'<br/>
 !>
@@ -219,19 +219,19 @@
 !>       Example:
 !>          - 'all:restart.dimg'
 !>
-!>       @note 
+!>       @note
 !>          Optionnaly, NEMO periodicity could be added following the filename.
 !>          the periodicity must be separated by ';'
 !>
 !>       Example:
 !>          - 'votemper:gridT.nc ; perio=4'
 !>
-!>    - **cn_varinfo** [@a ]<br/> 
+!>    - **cn_varinfo** [@a ]<br/>
 !>       list of variable and extra information about request(s) to be used<br/>
 !>
 !>       each elements of *cn_varinfo* is a string character (separated by ',').<br/>
-!>       it is composed of the variable name follow by ':', 
-!>       then request(s) to be used on this variable.<br/> 
+!>       it is composed of the variable name follow by ':',
+!>       then request(s) to be used on this variable.<br/>
 !>       request could be:
 !>          - int = interpolation method
 !>          - ext = extrapolation method
@@ -246,28 +246,28 @@
 !>
 !>       informations about available method could be find in @ref interp,
 !>       @ref extrap and @ref filter modules.<br/>
-!>       Example: 
+!>       Example:
 !>          - 'votemper: int=linear; flt=hann; ext=dist_weight',
 !>            'vosaline: int=cubic'
 !>
-!>       @note 
-!>          If you do not specify a method which is required, 
+!>       @note
+!>          If you do not specify a method which is required,
 !>          default one is apply.
 !>
-!> @subsection subnst namnst 
+!> @subsection subnst namnst
 !>    the nesting sub-namelist parameters are :
 !>
-!>    - **in_rhoi**  [@a 1]<br/> 
+!>    - **in_rhoi**  [@a 1]<br/>
 !>       refinement factor in i-direction
 !>
-!>    - **in_rhoj**  [@a 1]<br/> 
+!>    - **in_rhoj**  [@a 1]<br/>
 !>       refinement factor in j-direction
 !>
-!>    @note 
+!>    @note
 !>       coarse grid indices will be deduced from fine grid
 !>       coordinate file.
 !>
-!> @subsection subout namout 
+!> @subsection subout namout
 !>    the output sub-namelist parameter is :
 !>
 !>    - **cn_fileout** [@a restart.nc]<br/>
@@ -291,8 +291,8 @@
 !>    @note
 !>       - if *in_niproc*, and *in_njproc* are provided : the program only look for land
 !>         processor to be removed
-!>       - if *in_nproc* is provided : the program compute each possible domain layout, 
-!>         and save the one with the most land processor to be removed 
+!>       - if *in_nproc* is provided : the program compute each possible domain layout,
+!>         and save the one with the most land processor to be removed
 !>       - with no information about number of processors, the program
 !>         assume to use only one processor
 !>
@@ -323,6 +323,8 @@
 !> - use periodicity read from namelist, and store in multi structure
 !> @date Ocober, 2019
 !> - add help and version optional arguments
+!> @date July, 2020
+!> - do not check domain validity, if source and target coordinates are the same
 !>
 !> @todo
 !> - rewrite using meshmask instead of bathymetry and coordinates files
@@ -363,7 +365,7 @@ PROGRAM create_restart
    CHARACTER(LEN=lc)                                  :: cl_date
    CHARACTER(LEN=lc)                                  :: cl_name
    CHARACTER(LEN=lc)                                  :: cl_data
-   CHARACTER(LEN=lc)                                  :: cl_fileout 
+   CHARACTER(LEN=lc)                                  :: cl_fileout
    CHARACTER(LEN=lc)                                  :: cl_url
    CHARACTER(LEN=lc)                                  :: cl_errormsg
 
@@ -394,14 +396,14 @@ PROGRAM create_restart
    TYPE(TDOM)                                         :: tl_dom0
 
    TYPE(TATT)                                         :: tl_att
-   
+
    TYPE(TVAR)                                         :: tl_depth
    TYPE(TVAR)                                         :: tl_time
    TYPE(TVAR)                                         :: tl_lon
    TYPE(TVAR)                                         :: tl_lat
    TYPE(TVAR)       , DIMENSION(:)      , ALLOCATABLE :: tl_var
    TYPE(TVAR)       , DIMENSION(:)      , ALLOCATABLE :: tl_level
-   
+
    TYPE(TDIM)       , DIMENSION(ip_maxdim)            :: tl_dim
 
    TYPE(TFILE)                                        :: tl_file
@@ -421,17 +423,17 @@ PROGRAM create_restart
 
    ! namelist variable
    ! namlog
-   CHARACTER(LEN=lc)                       :: cn_logfile = 'create_restart.log' 
-   CHARACTER(LEN=lc)                       :: cn_verbosity = 'warning' 
+   CHARACTER(LEN=lc)                       :: cn_logfile = 'create_restart.log'
+   CHARACTER(LEN=lc)                       :: cn_verbosity = 'warning'
    INTEGER(i4)                             :: in_maxerror = 5
 
    ! namcfg
-   CHARACTER(LEN=lc)                       :: cn_varcfg = './cfg/variable.cfg' 
+   CHARACTER(LEN=lc)                       :: cn_varcfg = './cfg/variable.cfg'
    CHARACTER(LEN=lc)                       :: cn_dimcfg = './cfg/dimension.cfg'
    CHARACTER(LEN=lc)                       :: cn_dumcfg = './cfg/dummy.cfg'
 
    ! namsrc
-   CHARACTER(LEN=lc)                       :: cn_coord0 = '' 
+   CHARACTER(LEN=lc)                       :: cn_coord0 = ''
    INTEGER(i4)                             :: in_perio0 = -1
 
    ! namtgt
@@ -466,7 +468,7 @@ PROGRAM create_restart
    INTEGER(i4)                             :: in_rhoj = 1
 
    ! namout
-   CHARACTER(LEN=lc)                       :: cn_fileout = 'restart.nc' 
+   CHARACTER(LEN=lc)                       :: cn_fileout = 'restart.nc'
    LOGICAL                                 :: ln_extrap  = .FALSE.
    INTEGER(i4)                             :: in_nproc   = 0
    INTEGER(i4)                             :: in_niproc  = 0
@@ -493,7 +495,7 @@ PROGRAM create_restart
    &  cn_coord1,     &  !< coordinate file
    &  cn_bathy1,     &  !< bathymetry file
    &  in_perio1         !< periodicity index
- 
+
    NAMELIST /namzgr/ &
    &  dn_pp_to_be_computed, &
    &  dn_ppsur,      &
@@ -539,7 +541,7 @@ PROGRAM create_restart
    ! --------------------------------
    IF( il_narg /= 1 )THEN
       WRITE(cl_errormsg,*) ' ERROR : one argument is needed '
-      CALL fct_help(cp_myname,cl_errormsg) 
+      CALL fct_help(cp_myname,cl_errormsg)
       CALL EXIT(1)
    ELSE
 
@@ -574,12 +576,12 @@ PROGRAM create_restart
                CALL fct_err(il_status)
                IF( il_status /= 0 )THEN
                   WRITE(cl_errormsg,*) " ERROR : error opening "//TRIM(cl_namelist)
-                  CALL fct_help(cp_myname,cl_errormsg) 
+                  CALL fct_help(cp_myname,cl_errormsg)
                   CALL EXIT(1)
                ENDIF
 
                READ( il_fileid, NML = namlog )
- 
+
                ! define logger file
                CALL logger_open(TRIM(cn_logfile),TRIM(cn_verbosity),in_maxerror)
                CALL logger_header()
@@ -619,7 +621,7 @@ PROGRAM create_restart
             ELSE
 
                WRITE(cl_errormsg,*) " ERROR : can't find "//TRIM(cl_namelist)
-               CALL fct_help(cp_myname,cl_errormsg) 
+               CALL fct_help(cp_myname,cl_errormsg)
                CALL EXIT(1)
 
             ENDIF
@@ -643,7 +645,7 @@ PROGRAM create_restart
       CALL grid_get_info(tl_coord0)
    ELSE
       CALL logger_fatal("CREATE RESTART: no coarse grid coordinate found. "//&
-      &     "check namelist")      
+      &     "check namelist")
    ENDIF
 
    IF( TRIM(cn_coord1) /= '' )THEN
@@ -699,10 +701,15 @@ PROGRAM create_restart
    il_imin0=il_ind(1,1) ; il_imax0=il_ind(1,2)
    il_jmin0=il_ind(2,1) ; il_jmax0=il_ind(2,2)
 
-   ! check domain validity
-   CALL grid_check_dom(tl_coord0, il_imin0, il_imax0, il_jmin0, il_jmax0)
+   IF( TRIM(cn_coord1) /= TRIM(cn_coord0) )THEN
+      ! check domain validity
+      CALL grid_check_dom(tl_coord0, il_imin0, il_imax0, il_jmin0, il_jmax0)
+   ELSE
+      CALL logger_warn("CREATE RESTART: source and target coordinate are the "//&
+         &  "same. we assume you want to split it")
+   ENDIF
 
-   !3-2-4 check coincidence between coarse and fine grid
+   ! check coincidence between coarse and fine grid
    CALL grid_check_coincidence( tl_coord0, tl_coord1, &
    &                            il_imin0, il_imax0, &
    &                            il_jmin0, il_jmax0, &
@@ -758,7 +765,7 @@ PROGRAM create_restart
             !
             tl_file=file_init(TRIM(tl_multi%t_mpp(ji)%t_proc(1)%c_name), &
                &              id_perio=tl_multi%t_mpp(ji)%i_perio)
-            tl_mpp=mpp_init( tl_file )
+            tl_mpp=mpp_init( tl_file, id_perio=tl_multi%t_mpp(ji)%i_perio )
             ! clean
             CALL file_clean(tl_file)
             CALL grid_get_info(tl_mpp)
@@ -784,7 +791,7 @@ PROGRAM create_restart
 
             IF( ANY(tl_mpp%t_dim(1:2)%i_len /= tl_coord0%t_dim(1:2)%i_len) .OR.&
             &   ALL(il_rho(:)==1) )THEN
-            !!! extract value from fine grid 
+            !!! extract value from fine grid
 
                IF( ANY( tl_mpp%t_dim(1:2)%i_len < &
                &        tl_coord1%t_dim(1:2)%i_len) )THEN
@@ -793,12 +800,12 @@ PROGRAM create_restart
                   &  " grid coordinates.")
                ENDIF
 
-               ! use coord0 instead of mpp for restart file case 
+               ! use coord0 instead of mpp for restart file case
                !  (without lon,lat)
                ll_sameGrid=.FALSE.
                IF( ALL(tl_mpp%t_dim(1:2)%i_len /= tl_coord0%t_dim(1:2)%i_len) &
                &   )THEN
-                  ll_sameGrid=.TRUE. 
+                  ll_sameGrid=.TRUE.
                ENDIF
 
                ! compute domain on fine grid
@@ -829,7 +836,7 @@ PROGRAM create_restart
                tl_dom1=dom_init(tl_mpp,         &
                &                il_imin1, il_imax1, &
                &                il_jmin1, il_jmax1)
-               
+
                ! open mpp files
                CALL iom_dom_open(tl_mpp, tl_dom1)
 
@@ -870,7 +877,7 @@ PROGRAM create_restart
                CALL dom_clean(tl_dom1)
 
             ELSE
-            !!! get value from coarse grid 
+            !!! get value from coarse grid
 
                ! compute domain on coarse grid
                tl_dom0=dom_init(tl_mpp,             &
@@ -902,7 +909,7 @@ PROGRAM create_restart
                      &                                cd_point=TRIM(tl_var(jvar)%c_point))
 
                   ! interpolate variable
-                  CALL create_restart_interp(tl_var(jvar), & 
+                  CALL create_restart_interp(tl_var(jvar), &
                      &                       il_rho(:), &
                      &                       id_offset=il_offset(:,:))
 
@@ -1006,14 +1013,14 @@ PROGRAM create_restart
 
    DO ji=1,ip_maxdim
 
-      IF( tl_dim(ji)%l_use )THEN
+      IF( tl_dim(ji)%l_use .AND. .NOT. tl_mppout%t_dim(ji)%l_use )THEN
          CALL mpp_move_dim(tl_mppout, tl_dim(ji))
          SELECT CASE(TRIM(tl_dim(ji)%c_sname))
          CASE('z','t')
             DO jj=1,tl_mppout%i_nproc
                CALL file_add_dim(tl_mppout%t_proc(jj), tl_dim(ji))
             ENDDO
-         END SELECT 
+         END SELECT
       ENDIF
 
    ENDDO
@@ -1145,23 +1152,23 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief
    !> This function create variable, filled with matrix value
-   !> 
-   !> @details 
-   !> A variable is create with the same name that the input variable, 
-   !> and with dimension of the coordinate file.<br/> 
+   !>
+   !> @details
+   !> A variable is create with the same name that the input variable,
+   !> and with dimension of the coordinate file.<br/>
    !> Then the variable array of value is split into equal subdomain.
    !> Each subdomain is filled with the associated value of the matrix.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !> @date June, 2015
-   !> - do not use level anymore 
+   !> - do not use level anymore
    !>
-   !> @param[in] td_var    variable structure 
-   !> @param[in] td_coord  coordinate file structure 
-   !> @param[in] id_nlevel number of vertical level  
+   !> @param[in] td_var    variable structure
+   !> @param[in] td_coord  coordinate file structure
+   !> @param[in] id_nlevel number of vertical level
    !> @param[in] id_xghost ghost cell array
-   !> @return variable structure 
+   !> @return variable structure
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -1208,7 +1215,7 @@ CONTAINS
       tl_dim(jp_I)%i_len=tl_dim(jp_I)%i_len - SUM(id_xghost(jp_I,:))*ip_ghost
       tl_dim(jp_J)%i_len=tl_dim(jp_J)%i_len - SUM(id_xghost(jp_J,:))*ip_ghost
 
-      ! split output domain in N subdomain depending of matrix dimension 
+      ! split output domain in N subdomain depending of matrix dimension
       il_size(:) = tl_dim(1:3)%i_len / il_dim(:)
       il_rest(:) = MOD(tl_dim(1:3)%i_len, il_dim(:))
 
@@ -1236,7 +1243,7 @@ CONTAINS
       ! add rest to last cell
       il_kshape(il_dim(3)+1)=il_kshape(il_dim(3)+1)+il_rest(3)
 
-      ! write ouput array of value 
+      ! write ouput array of value
       ALLOCATE(dl_value( tl_dim(1)%i_len, &
       &                  tl_dim(2)%i_len, &
       &                  tl_dim(3)%i_len, &
@@ -1247,7 +1254,7 @@ CONTAINS
       DO jk=2,il_dim(3)+1
          DO jj=2,il_dim(2)+1
             DO ji=2,il_dim(1)+1
-               
+
                dl_value( 1+il_ishape(ji-1):il_ishape(ji), &
                &         1+il_jshape(jj-1):il_jshape(jj), &
                &         1+il_kshape(jk-1):il_kshape(jk), &
@@ -1268,7 +1275,7 @@ CONTAINS
 
       DEALLOCATE(dl_value)
 
-      ! clean 
+      ! clean
       DEALLOCATE(il_ishape)
       DEALLOCATE(il_jshape)
       DEALLOCATE(il_kshape)
@@ -1279,7 +1286,7 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief
    !> This subroutine use mask to filled land point with _FillValue
-   !> 
+   !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !>
@@ -1343,13 +1350,13 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief
    !> This subroutine interpolate variable
-   !> 
+   !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !> @date June, 2015
    !> - do not use level anymore (for extrapolation)
    !>
-   !> @param[inout] td_var    variable structure 
+   !> @param[inout] td_var    variable structure
    !> @param[in] id_rho       array of refinment factor
    !> @param[in] id_offset    array of offset between fine and coarse grid
    !> @param[in] id_iext      i-direction size of extra bands (default=im_minext)
@@ -1410,14 +1417,14 @@ CONTAINS
    !> @brief
    !> This subroutine get depth variable value in an open mpp structure
    !> and check if agree with already input depth variable.
-   !> 
-   !> @details 
+   !>
+   !> @details
    !>
    !> @author J.Paul
    !> @date November, 2014 - Initial Version
    !>
    !> @param[in] td_mpp       mpp structure
-   !> @param[inout] td_depth  depth variable structure 
+   !> @param[inout] td_depth  depth variable structure
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -1454,7 +1461,7 @@ CONTAINS
          ENDIF
 
       ENDIF
-      
+
    END SUBROUTINE create_restart_check_depth
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE create_restart_check_time(td_mpp, td_time)
@@ -1462,14 +1469,14 @@ CONTAINS
    !> @brief
    !> This subroutine get date and time in an open mpp structure
    !> and check if agree with date and time already read.
-   !> 
-   !> @details 
+   !>
+   !> @details
    !>
    !> @author J.Paul
    !> @date November, 2014 - Initial Version
    !>
    !> @param[in] td_mpp      mpp structure
-   !> @param[inout] td_time  time variable structure 
+   !> @param[inout] td_time  time variable structure
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -1512,7 +1519,7 @@ CONTAINS
          ENDIF
 
       ENDIF
-      
+
    END SUBROUTINE create_restart_check_time
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 END PROGRAM create_restart

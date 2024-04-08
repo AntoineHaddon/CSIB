@@ -14,7 +14,8 @@ MODULE sbcmod
    !!            3.5  ! 2012-11  (A. Coward, G. Madec) Rethink of heat, mass and salt surface fluxes
    !!            3.6  ! 2014-11  (P. Mathiot, C. Harris) add ice shelves melting
    !!            4.0  ! 2016-06  (L. Brodeau) new general bulk formulation
-   !!            4.0.3! 2021-06  (D. Yang) Constrain SSS not dropping below 5 psu
+   !!            4.0  ! 2019-03  (F. Lemarié & G. Samson)  add ABL compatibility (ln_abl=TRUE)
+   !!            4.2  ! 2020-12  (G. Madec, E. Clementi) modified wave forcing and coupling
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -24,7 +25,9 @@ MODULE sbcmod
    !!----------------------------------------------------------------------
    USE oce            ! ocean dynamics and tracers
    USE dom_oce        ! ocean space and time domain
+   USE closea         ! closed seas
    USE phycst         ! physical constants
+   USE sbc_phy, ONLY : pp_cldf
    USE sbc_oce        ! Surface boundary condition: ocean fields
    USE trc_oce        ! shared ocean-passive tracers variables
    USE sbc_ice        ! Surface boundary condition: ice fields
@@ -32,17 +35,18 @@ MODULE sbcmod
    USE sbcssm         ! surface boundary condition: sea-surface mean variables
    USE sbcflx         ! surface boundary condition: flux formulation
    USE sbcblk         ! surface boundary condition: bulk formulation
+   USE sbcabl         ! atmospheric boundary layer
    USE sbcice_if      ! surface boundary condition: ice-if sea-ice model
 #if defined key_si3
    USE icestp         ! surface boundary condition: SI3 sea-ice model
+   USE ice
 #endif
    USE sbcice_cice    ! surface boundary condition: CICE sea-ice model
-   USE sbcisf         ! surface boundary condition: ice-shelf
    USE sbccpl         ! surface boundary condition: coupled formulation
+   USE sbcclo         ! surface boundary condition: closed sea correction
    USE sbcssr         ! surface boundary condition: sea surface restoring
    USE sbcrnf         ! surface boundary condition: runoffs
    USE sbcapr         ! surface boundary condition: atmo pressure
-   USE sbcisf         ! surface boundary condition: ice shelf
    USE sbcfwb         ! surface boundary condition: freshwater budget
    USE icbstp         ! Icebergs
    USE icb_oce  , ONLY : ln_passive_mode      ! iceberg interaction mode
@@ -51,6 +55,7 @@ MODULE sbcmod
    USE bdy_oce   , ONLY: ln_bdy
    USE usrdef_sbc     ! user defined: surface boundary condition
    USE closea         ! closed sea
+   USE lbclnk         ! ocean lateral boundary conditions (or mpp link)
    !
    USE prtctl         ! Print control                    (prt_ctl routine)
    USE iom            ! IOM library
@@ -58,7 +63,7 @@ MODULE sbcmod
    USE lib_mpp        ! MPP library
    USE timing         ! Timing
    USE wet_dry
-   USE diurnal_bulk, ONLY:   ln_diurnal_only   ! diurnal SST diagnostic
+   USE diu_bulk, ONLY:   ln_diurnal_only   ! diurnal SST diagnostic
    USE cpl_interface, only : cpl_freq
    USE sbcspp, ONLY : nn_power, rn_spp_rho_c, ln_vertspp, ln_spp_c_grad
    USE sbcspp, ONLY : rn_spp_z_max, rn_spp_z_min
@@ -70,15 +75,17 @@ MODULE sbcmod
    PUBLIC   sbc_init   ! routine called by opa.F90
 
    INTEGER ::   nsbc   ! type of surface boundary condition (deduced from namsbc informations)
-
+   !! * Substitutions
+#  include "do_loop_substitute.h90"
+#  include "single_precision_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: sbcmod.F90 13284 2020-07-09 15:12:23Z smasson $
+   !! $Id: sbcmod.F90 15372 2021-10-14 15:47:24Z davestorkey $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE sbc_init
+   SUBROUTINE sbc_init( Kbb, Kmm, Kaa )
       !!---------------------------------------------------------------------
       !!                    ***  ROUTINE sbc_init ***
       !!
@@ -90,17 +97,17 @@ CONTAINS
       !! ** Action  : - read namsbc parameters
       !!              - nsbc: type of sbc
       !!----------------------------------------------------------------------
+      INTEGER, INTENT(in) ::   Kbb, Kmm, Kaa         ! ocean time level indices
       INTEGER ::   ios, icpt                         ! local integer
       LOGICAL ::   ll_purecpl, ll_opa, ll_not_nemo   ! local logical
       !!
-      NAMELIST/namsbc/ nn_fsbc  ,                                                       &
-         &             ln_usr   , ln_flx   , ln_blk       ,                             &
-         &             ln_cpl   , ln_mixcpl, nn_components,                             &
-         &             nn_ice   , ln_ice_embd,                                          &
-         &             ln_traqsr, ln_dm2dc ,                                            &
-         &             ln_rnf   , nn_fwb   , ln_ssr   , ln_isf    , ln_apr_dyn ,        &
-         &             ln_wave  , ln_cdgw  , ln_sdw   , ln_tauwoc  , ln_stcor   ,       &
-         &             ln_tauw  , nn_lsm, nn_sdrift, ln_minsal, rn_minsal,              &
+      NAMELIST/namsbc/ nn_fsbc  ,                                                    &
+         &             ln_usr   , ln_flx   , ln_blk   , ln_abl,                      &
+         &             ln_cpl   , ln_mixcpl, nn_components,                          &
+         &             nn_ice   , ln_ice_embd,                                       &
+         &             ln_traqsr, ln_dm2dc ,                                         &
+         &             ln_rnf   , nn_fwb     , ln_ssr   , ln_apr_dyn,                &
+         &             ln_wave  , nn_lsm, ln_minsal, rn_minsal,              &
          &             ln_vertspp, ln_spp_c_grad, rn_spp_rho_c, nn_power, rn_spp_z_max, &
          &             lk_cancpl, lk_oasis
       !!----------------------------------------------------------------------
@@ -112,27 +119,23 @@ CONTAINS
       ENDIF
       !
       !                       !**  read Surface Module namelist
-      REWIND( numnam_ref )          !* Namelist namsbc in reference namelist : Surface boundary
       READ  ( numnam_ref, namsbc, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namsbc in reference namelist' )
-      REWIND( numnam_cfg )          !* Namelist namsbc in configuration namelist : Parameters of the run
       READ  ( numnam_cfg, namsbc, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namsbc in configuration namelist' )
       IF(lwm) WRITE( numond, namsbc )
       !
-#if defined key_mpp_mpi
+#if ! defined key_mpi_off
       ncom_fsbc = nn_fsbc    ! make nn_fsbc available for lib_mpp
 #endif
-      !                             !* overwrite namelist parameter using CPP key information
-#if defined key_agrif
-      IF( Agrif_Root() ) THEN                ! AGRIF zoom (cf r1242: possibility to run without ice in fine grid)
-         IF( lk_si3  )   nn_ice      = 2
-         IF( lk_cice )   nn_ice      = 3
-      ENDIF
-#else
-      IF( lk_si3  )   nn_ice      = 2
-      IF( lk_cice )   nn_ice      = 3
+#if ! defined key_si3
+      IF( nn_ice == 2 )    nn_ice = 0  ! without key key_si3 you cannot use si3...
 #endif
+#if defined key_agrif
+      ! In case of an agrif zoom, the freshwater water budget is determined by parent:
+      IF (.NOT.Agrif_Root()) nn_fwb = Agrif_Parent(nn_fwb) 
+#endif
+      !
       !
       IF(lwp) THEN                  !* Control print
          WRITE(numout,*) '   Namelist namsbc (partly overwritten with CPP key setting)'
@@ -141,9 +144,12 @@ CONTAINS
          WRITE(numout,*) '         user defined formulation                   ln_usr        = ', ln_usr
          WRITE(numout,*) '         flux         formulation                   ln_flx        = ', ln_flx
          WRITE(numout,*) '         bulk         formulation                   ln_blk        = ', ln_blk
+         WRITE(numout,*) '         ABL          formulation                   ln_abl        = ', ln_abl
+         WRITE(numout,*) '         Surface wave (forced or coupled)           ln_wave       = ', ln_wave
          WRITE(numout,*) '      Type of coupling (Ocean/Ice/Atmosphere) : '
          WRITE(numout,*) '         ocean-atmosphere coupled formulation       ln_cpl        = ', ln_cpl
          WRITE(numout,*) '         mixed forced-coupled     formulation       ln_mixcpl     = ', ln_mixcpl
+!!gm  lk_oasis is controlled by key_oasis3  ===>>>  It shoud be removed from the namelist
          WRITE(numout,*) '         OASIS coupling (with atm or sas)           lk_oasis      = ', lk_oasis
          WRITE(numout,*) '         components of your executable              nn_components = ', nn_components
          WRITE(numout,*) '         CanCPL coupling (with CanAM)               lk_cancpl     = ', lk_cancpl
@@ -157,16 +163,8 @@ CONTAINS
          WRITE(numout,*) '         FreshWater Budget control  (=0/1/2)        nn_fwb        = ', nn_fwb
          WRITE(numout,*) '         Patm gradient added in ocean & ice Eqs.    ln_apr_dyn    = ', ln_apr_dyn
          WRITE(numout,*) '         runoff / runoff mouths                     ln_rnf        = ', ln_rnf
-         WRITE(numout,*) '         iceshelf formulation                       ln_isf        = ', ln_isf
          WRITE(numout,*) '         nb of iterations if land-sea-mask applied  nn_lsm        = ', nn_lsm
-         WRITE(numout,*) '         surface wave                               ln_wave       = ', ln_wave
-         WRITE(numout,*) '               Stokes drift corr. to vert. velocity ln_sdw        = ', ln_sdw
-         WRITE(numout,*) '                  vertical parametrization          nn_sdrift     = ', nn_sdrift
-         WRITE(numout,*) '               wave modified ocean stress           ln_tauwoc     = ', ln_tauwoc
-         WRITE(numout,*) '               wave modified ocean stress component ln_tauw       = ', ln_tauw
-         WRITE(numout,*) '               Stokes coriolis term                 ln_stcor      = ', ln_stcor
-         WRITE(numout,*) '               neutral drag coefficient (CORE,NCAR) ln_cdgw       = ', ln_cdgw
-         WRITE(numout,*) '               constrain SSS not dropping below 5 psu             = ', ln_minsal
+         WRITE(numout,*) '         constrain SSS not dropping below  rn_minsal              = ', ln_minsal
          WRITE(numout,*) '               min SSS                                            = ', rn_minsal
          WRITE(numout,*) '         Salt plume parameterization                ln_vertspp    = ', ln_vertspp
          IF (ln_vertspp) THEN
@@ -178,46 +176,26 @@ CONTAINS
          ENDIF
       ENDIF
       !
-      IF( .NOT.ln_wave ) THEN
-         ln_sdw = .false. ; ln_cdgw = .false. ; ln_tauwoc = .false. ; ln_tauw = .false. ; ln_stcor = .false.
-      ENDIF
-      IF( ln_sdw ) THEN
-         IF( .NOT.(nn_sdrift==jp_breivik_2014 .OR. nn_sdrift==jp_li_2017 .OR. nn_sdrift==jp_peakfr) ) &
-            CALL ctl_stop( 'The chosen nn_sdrift for Stokes drift vertical velocity must be 0, 1, or 2' )
-      ENDIF
-      ll_st_bv2014  = ( nn_sdrift==jp_breivik_2014 )
-      ll_st_li2017  = ( nn_sdrift==jp_li_2017 )
-      ll_st_bv_li   = ( ll_st_bv2014 .OR. ll_st_li2017 )
-      ll_st_peakfr  = ( nn_sdrift==jp_peakfr )
-      IF( ln_tauwoc .AND. ln_tauw ) &
-         CALL ctl_stop( 'More than one method for modifying the ocean stress has been selected ', &
-                                  '(ln_tauwoc=.true. and ln_tauw=.true.)' )
-      IF( ln_tauwoc ) &
-         CALL ctl_warn( 'You are subtracting the wave stress to the ocean (ln_tauwoc=.true.)' )
-      IF( ln_tauw ) &
-         CALL ctl_warn( 'The wave modified ocean stress components are used (ln_tauw=.true.) ', &
-                              'This will override any other specification of the ocean stress' )
-      !
       IF( .NOT.ln_usr ) THEN     ! the model calendar needs some specificities (except in user defined case)
-         IF( MOD( rday , rdt ) /= 0. )   CALL ctl_stop( 'the time step must devide the number of second of in a day' )
+         IF( MOD( rday , rn_Dt ) /= 0. )   CALL ctl_stop( 'the time step must devide the number of second of in a day' )
          IF( MOD( rday , 2.  ) /= 0. )   CALL ctl_stop( 'the number of second of in a day must be an even number'    )
-         IF( MOD( rdt  , 2.  ) /= 0. )   CALL ctl_stop( 'the time step (in second) must be an even number'           )
+         IF( MOD( rn_Dt  , 2.  ) /= 0. )   CALL ctl_stop( 'the time step (in second) must be an even number'           )
       ENDIF
       !                       !**  check option consistency
       !
-      IF(lwp) WRITE(numout,*)       !* Single / Multi - executable (NEMO / OPA+SAS)
+      IF(lwp) WRITE(numout,*)       !* Single / Multi - executable (NEMO / OCE+SAS)
       SELECT CASE( nn_components )
       CASE( jp_iam_nemo )
-         IF(lwp) WRITE(numout,*) '   ==>>>   NEMO configured as a single executable (i.e. including both OPA and Surface module)'
-      CASE( jp_iam_opa  )
-         IF(lwp) WRITE(numout,*) '   ==>>>   Multi executable configuration. Here, OPA component'
-         IF( .NOT.lk_oasis )   CALL ctl_stop( 'sbc_init : OPA-SAS coupled via OASIS, but lk_oasis = F ' )
-         IF( ln_cpl        )   CALL ctl_stop( 'sbc_init : OPA-SAS coupled via OASIS, but ln_cpl = T in OPA'   )
-         IF( ln_mixcpl     )   CALL ctl_stop( 'sbc_init : OPA-SAS coupled via OASIS, but ln_mixcpl = T in OPA' )
+         IF(lwp) WRITE(numout,*) '   ==>>>   NEMO configured as a single executable (i.e. including both OCE and Surface module)'
+      CASE( jp_iam_oce  )
+         IF(lwp) WRITE(numout,*) '   ==>>>   Multi executable configuration. Here, OCE component'
+         IF( .NOT.lk_oasis )   CALL ctl_stop( 'sbc_init : OCE-SAS coupled via OASIS, but key_oasis3 disabled' )
+         IF( ln_cpl        )   CALL ctl_stop( 'sbc_init : OCE-SAS coupled via OASIS, but ln_cpl = T in OCE'   )
+         IF( ln_mixcpl     )   CALL ctl_stop( 'sbc_init : OCE-SAS coupled via OASIS, but ln_mixcpl = T in OCE' )
       CASE( jp_iam_sas  )
          IF(lwp) WRITE(numout,*) '   ==>>>   Multi executable configuration. Here, SAS component'
-         IF( .NOT.lk_oasis )   CALL ctl_stop( 'sbc_init : OPA-SAS coupled via OASIS, but lk_oasis = F ' )
-         IF( ln_mixcpl     )   CALL ctl_stop( 'sbc_init : OPA-SAS coupled via OASIS, but ln_mixcpl = T in OPA' )
+         IF( .NOT.lk_oasis )   CALL ctl_stop( 'sbc_init : OCE-SAS coupled via OASIS, but key_oasis3 disabled' )
+         IF( ln_mixcpl     )   CALL ctl_stop( 'sbc_init : OCE-SAS coupled via OASIS, but ln_mixcpl = T in OCE' )
       CASE DEFAULT
          CALL ctl_stop( 'sbc_init : unsupported value for nn_components' )
       END SELECT
@@ -226,11 +204,13 @@ CONTAINS
          IF( .NOT. (lk_oasis .or. lk_cancpl) .or. (lk_oasis .and. lk_cancpl) )   &
             &                   CALL ctl_stop( 'sbc_init : coupled mode with an atmosphere model (ln_cpl=T)',   &
             &                                  '           required to defined lk_oasis = .true. or lk_cancpl = .true.' )
+
       ENDIF
       IF( ln_mixcpl ) THEN
          IF( .NOT. (lk_oasis .or. lk_cancpl) .or. (lk_oasis .and. lk_cancpl) )   & 
                                 CALL ctl_stop( 'sbc_init : mixed forced-coupled mode (ln_mixcpl=T) ',   &
             &                                  '           required to defined lk_oasis = .true. or lk_cancpl = .true. ' )
+
          IF( .NOT.ln_cpl    )   CALL ctl_stop( 'sbc_init : mixed forced-coupled mode (ln_mixcpl=T) requires ln_cpl = T' )
          IF( nn_components /= jp_iam_nemo )    &
             &                   CALL ctl_stop( 'sbc_init : the mixed forced-coupled mode (ln_mixcpl=T) ',   &
@@ -241,11 +221,16 @@ CONTAINS
       CASE( 0 )                        !- no ice in the domain
       CASE( 1 )                        !- Ice-cover climatology ("Ice-if" model)
       CASE( 2 )                        !- SI3  ice model
+         IF( .NOT.( ln_blk .OR. ln_cpl .OR. ln_abl .OR. ln_usr ) )   &
+            &                   CALL ctl_stop( 'sbc_init : SI3 sea-ice model requires ln_blk or ln_cpl or ln_abl or ln_usr = T' )
       CASE( 3 )                        !- CICE ice model
-         IF( .NOT.( ln_blk .OR. ln_cpl ) )   CALL ctl_stop( 'sbc_init : CICE sea-ice model requires ln_blk or ln_cpl = T' )
-         IF( lk_agrif                    )   CALL ctl_stop( 'sbc_init : CICE sea-ice model not currently available with AGRIF' )
+         IF( .NOT.( ln_blk .OR. ln_cpl .OR. ln_abl .OR. ln_usr ) )   &
+            &                   CALL ctl_stop( 'sbc_init : CICE sea-ice model requires ln_blk or ln_cpl or ln_abl or ln_usr = T' )
+         IF( lk_agrif                                )   &
+            &                   CALL ctl_stop( 'sbc_init : CICE sea-ice model not currently available with AGRIF' )
       CASE DEFAULT                     !- not supported
       END SELECT
+      IF( ln_diurnal .AND. .NOT. (ln_blk.OR.ln_abl) )   CALL ctl_stop( "sbc_init: diurnal flux processing only implemented for bulk forcing" )
       !
       !                       !**  allocate and set required variables
       !
@@ -255,11 +240,6 @@ CONTAINS
       IF( sbc_ice_alloc() /= 0 )   CALL ctl_stop( 'sbc_init : unable to allocate sbc_ice arrays' )
 #endif
       !
-      IF( .NOT.ln_isf ) THEN        !* No ice-shelf in the domain : allocate and set to zero
-         IF( sbc_isf_alloc() /= 0 )   CALL ctl_stop( 'STOP', 'sbc_init : unable to allocate sbc_isf arrays' )
-         fwfisf  (:,:)   = 0._wp   ;   risf_tsc  (:,:,:) = 0._wp
-         fwfisf_b(:,:)   = 0._wp   ;   risf_tsc_b(:,:,:) = 0._wp
-      END IF
       !
       IF( sbc_ssr_alloc() /= 0 )   CALL ctl_stop( 'STOP', 'sbc_init : unable to allocate sbc_ssr arrays' )
       IF( .NOT.ln_ssr ) THEN               !* Initialize qrp and erp if no restoring
@@ -267,33 +247,35 @@ CONTAINS
          erp(:,:) = 0._wp
       ENDIF
       !
-
       IF( nn_ice == 0 ) THEN        !* No sea-ice in the domain : ice fraction is always zero
-         IF( nn_components /= jp_iam_opa )   fr_i(:,:) = 0._wp    ! except for OPA in SAS-OPA coupled case
+         IF( nn_components /= jp_iam_oce )   fr_i(:,:) = 0._wp    ! except for OCE in SAS-OCE coupled case
       ENDIF
       !
       sfx   (:,:) = 0._wp           !* salt flux due to freezing/melting
       fmmflx(:,:) = 0._wp           !* freezing minus melting flux
+      cloud_fra(:,:) = pp_cldf      !* cloud fraction over sea ice (used in si3)
 
       taum(:,:) = 0._wp             !* wind stress module (needed in GLS in case of reduced restart)
 
       !                          ! Choice of the Surface Boudary Condition (set nsbc)
+      nday_qsr = -1   ! allow initialization at the 1st call !LB: now warm-layer of COARE* calls "sbc_dcy_param" of sbcdcy.F90!
       IF( ln_dm2dc ) THEN           !* daily mean to diurnal cycle
-         nday_qsr = -1   ! allow initialization at the 1st call
-         IF( .NOT.( ln_flx .OR. ln_blk ) .AND. nn_components /= jp_iam_opa )   &
-            &   CALL ctl_stop( 'qsr diurnal cycle from daily values requires a flux or bulk formulation' )
+         !LB:nday_qsr = -1   ! allow initialization at the 1st call
+         IF( .NOT.( ln_flx .OR. ln_blk .OR. ln_abl ) .AND. nn_components /= jp_iam_oce )   &
+            &   CALL ctl_stop( 'qsr diurnal cycle from daily values requires flux, bulk or abl formulation' )
       ENDIF
       !                             !* Choice of the Surface Boudary Condition
       !                             (set nsbc)
       !
       ll_purecpl  = ln_cpl .AND. .NOT.ln_mixcpl
-      ll_opa      = nn_components == jp_iam_opa
+      ll_opa      = nn_components == jp_iam_oce
       ll_not_nemo = nn_components /= jp_iam_nemo
       icpt = 0
       !
       IF( ln_usr          ) THEN   ;   nsbc = jp_usr     ; icpt = icpt + 1   ;   ENDIF       ! user defined         formulation
       IF( ln_flx          ) THEN   ;   nsbc = jp_flx     ; icpt = icpt + 1   ;   ENDIF       ! flux                 formulation
       IF( ln_blk          ) THEN   ;   nsbc = jp_blk     ; icpt = icpt + 1   ;   ENDIF       ! bulk                 formulation
+      IF( ln_abl          ) THEN   ;   nsbc = jp_abl     ; icpt = icpt + 1   ;   ENDIF       ! ABL                  formulation
       IF( ll_purecpl      ) THEN   ;   nsbc = jp_purecpl ; icpt = icpt + 1   ;   ENDIF       ! Pure Coupled         formulation
       IF( ll_opa          ) THEN   ;   nsbc = jp_none    ; icpt = icpt + 1   ;   ENDIF       ! opa coupling via SAS module
       !
@@ -305,9 +287,10 @@ CONTAINS
          CASE( jp_usr     )   ;   WRITE(numout,*) '   ==>>>   user defined forcing formulation'
          CASE( jp_flx     )   ;   WRITE(numout,*) '   ==>>>   flux formulation'
          CASE( jp_blk     )   ;   WRITE(numout,*) '   ==>>>   bulk formulation'
+         CASE( jp_abl     )   ;   WRITE(numout,*) '   ==>>>   ABL  formulation'
          CASE( jp_purecpl )   ;   WRITE(numout,*) '   ==>>>   pure coupled formulation'
 !!gm abusive use of jp_none ??   ===>>> need to be check and changed by adding a jp_sas parameter
-         CASE( jp_none    )   ;   WRITE(numout,*) '   ==>>>   OPA coupled to SAS via oasis'
+         CASE( jp_none    )   ;   WRITE(numout,*) '   ==>>>   OCE coupled to SAS via oasis'
             IF( ln_mixcpl )       WRITE(numout,*) '               + forced-coupled mixed formulation'
          END SELECT
          IF( ll_not_nemo  )       WRITE(numout,*) '               + OASIS coupled SAS'
@@ -317,15 +300,15 @@ CONTAINS
       !
       IF( ln_cpl )   CALL sbc_cpl_init( nn_ice )   ! Must be done before: (1) first time step
       !                                              !                      (2) the use of nn_fsbc
-      !     nn_fsbc initialization if OPA-SAS coupling via OASIS
+      !     nn_fsbc initialization if OCE-SAS coupling via OASIS
       !     SAS time-step has to be declared in OASIS (mandatory) -> nn_fsbc has to be modified accordingly
       IF( nn_components /= jp_iam_nemo ) THEN
-         IF( nn_components == jp_iam_opa )   nn_fsbc = cpl_freq('O_SFLX') / NINT(rdt)
-         IF( nn_components == jp_iam_sas )   nn_fsbc = cpl_freq('I_SFLX') / NINT(rdt)
+         IF( nn_components == jp_iam_oce )   nn_fsbc = cpl_freq('O_SFLX') / NINT(rn_Dt)
+         IF( nn_components == jp_iam_sas )   nn_fsbc = cpl_freq('I_SFLX') / NINT(rn_Dt)
          !
          IF(lwp)THEN
             WRITE(numout,*)
-            WRITE(numout,*)"   OPA-SAS coupled via OASIS : nn_fsbc re-defined from OASIS namcouple ", nn_fsbc
+            WRITE(numout,*)"   OCE-SAS coupled via OASIS : nn_fsbc re-defined from OASIS namcouple ", nn_fsbc
             WRITE(numout,*)
          ENDIF
       ENDIF
@@ -342,52 +325,68 @@ CONTAINS
          ENDIF
       ENDIF
       !
-      IF( MOD( rday, REAL(nn_fsbc, wp) * rdt ) /= 0 )   &
+      IF( MOD( rday, REAL(nn_fsbc, wp) * rn_Dt ) /= 0 )   &
          &  CALL ctl_warn( 'sbc_init : nn_fsbc is NOT a multiple of the number of time steps in a day' )
       !
-      IF( ln_dm2dc .AND. NINT(rday) / ( nn_fsbc * NINT(rdt) ) < 8  )   &
+      IF( ln_dm2dc .AND. NINT(rday) / ( nn_fsbc * NINT(rn_Dt) ) < 8  )   &
          &   CALL ctl_warn( 'sbc_init : diurnal cycle for qsr: the sampling of the diurnal cycle is too small...' )
       !
 
       !                       !**  associated modules : initialization
       !
-                          CALL sbc_ssm_init            ! Sea-surface mean fields initialization
+                          CALL sbc_ssm_init ( Kbb, Kmm ) ! Sea-surface mean fields initialization
       !
-      IF( ln_blk      )   CALL sbc_blk_init            ! bulk formulae initialization
+      IF( l_sbc_clo   )   CALL sbc_clo_init              ! closed sea surface initialisation
+      !
+      IF( ln_blk      )   CALL sbc_blk_init              ! bulk formulae initialization
 
-      IF( ln_ssr      )   CALL sbc_ssr_init            ! Sea-Surface Restoring initialization
+      IF( ln_abl      )   CALL sbc_abl_init              ! Atmospheric Boundary Layer (ABL)
+
+      IF( ln_ssr      )   CALL sbc_ssr_init              ! Sea-Surface Restoring initialization
       !
-      IF( ln_isf      )   CALL sbc_isf_init            ! Compute iceshelves
       !
-                          CALL sbc_rnf_init            ! Runof initialization
+                          CALL sbc_rnf_init( Kmm )       ! Runof initialization
       !
-      IF( ln_apr_dyn )    CALL sbc_apr_init            ! Atmo Pressure Forcing initialization
+      IF( ln_apr_dyn )    CALL sbc_apr_init              ! Atmo Pressure Forcing initialization
       !
 #if defined key_si3
-      IF( lk_agrif .AND. nn_ice == 0 ) THEN            ! allocate ice arrays in case agrif + ice-model + no-ice in child grid
-                          IF( sbc_ice_alloc() /= 0 )   CALL ctl_stop('STOP', 'sbc_ice_alloc : unable to allocate arrays' )
+      IF( nn_ice == 0 ) THEN
+         ! allocate ice arrays in case agrif + ice-model + no-ice in child grid
+         jpl = 1 ; nlay_i = 1 ; nlay_s = 1
+         IF( sbc_ice_alloc() /= 0 )   CALL ctl_stop('STOP', 'sbc_ice_alloc : unable to allocate arrays' )
+#if defined key_agrif
+         CALL Agrif_Declare_Var_ice  !  "      "   "   "      "  Sea ice
+#endif
+
       ELSEIF( nn_ice == 2 ) THEN
-                          CALL ice_init                ! ICE initialization
+                          CALL ice_init( Kbb, Kmm, Kaa )         ! ICE initialization
       ENDIF
 #endif
-      IF( nn_ice == 3 )   CALL cice_sbc_init( nsbc )   ! CICE initialization
+      IF( nn_ice == 3 )   CALL cice_sbc_init( nsbc, Kbb, Kmm )   ! CICE initialization
       !
-      IF( ln_wave     )   CALL sbc_wave_init           ! surface wave initialisation
-      !
-      IF( lwxios ) THEN
-         CALL iom_set_rstw_var_active('utau_b')
-         CALL iom_set_rstw_var_active('vtau_b')
-         CALL iom_set_rstw_var_active('qns_b')
-         ! The 3D heat content due to qsr forcing is treated in traqsr
-         ! CALL iom_set_rstw_var_active('qsr_b')
-         CALL iom_set_rstw_var_active('emp_b')
-         CALL iom_set_rstw_var_active('sfx_b')
+      IF( ln_wave     ) THEN
+                          CALL sbc_wave_init                     ! surface wave initialisation
+      ELSE
+                          IF(lwp) WRITE(numout,*)
+                          IF(lwp) WRITE(numout,*) '   No surface waves : all wave related logical set to false'
+                          ln_sdw       = .false.
+                          ln_stcor     = .false.
+                          ln_cdgw      = .false.
+                          ln_tauoc     = .false.
+                          ln_wave_test = .false.
+                          ln_charn     = .false.
+                          ln_taw       = .false.
+                          ln_phioc     = .false.
+                          ln_bern_srfc = .false.
+                          ln_breivikFV_2016 = .false.
+                          ln_vortex_force = .false.
+                          ln_stshear  = .false.
       ENDIF
-
+      !
    END SUBROUTINE sbc_init
 
 
-   SUBROUTINE sbc( kt )
+   SUBROUTINE sbc( kt, Kbb, Kmm )
       !!---------------------------------------------------------------------
       !!                    ***  ROUTINE sbc  ***
       !!
@@ -404,12 +403,15 @@ CONTAINS
       !!              - updte the ice fraction : fr_i
       !!----------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt   ! ocean time step
-      INTEGER ::    jj, ji
+      INTEGER, INTENT(in) ::   Kbb, Kmm   ! ocean time level indices
+      INTEGER  ::   jj, ji          ! dummy loop argument
       !
       LOGICAL ::   ll_sas, ll_opa   ! local logical
       !
       REAL(wp) ::     zthscl        ! wd  tanh scale
       REAL(wp), DIMENSION(jpi,jpj) ::  zwdht, zwght  ! wd dep over wd limit, wgt
+      REAL(wp), DIMENSION(jpi,jpj) ::  z2d           ! temporary array used for iom_put
+
       !!---------------------------------------------------------------------
       !
       IF( ln_timing )   CALL timing_start('sbc')
@@ -422,13 +424,9 @@ CONTAINS
          qns_b (:,:) = qns (:,:)                         !  are set at the end of the routine)
          emp_b (:,:) = emp (:,:)
          sfx_b (:,:) = sfx (:,:)
-         IF ( ln_rnf ) THEN
+         IF( ln_rnf ) THEN
             rnf_b    (:,:  ) = rnf    (:,:  )
             rnf_tsc_b(:,:,:) = rnf_tsc(:,:,:)
-         ENDIF
-         IF( ln_isf )  THEN
-            fwfisf_b  (:,:  ) = fwfisf  (:,:  )
-            risf_tsc_b(:,:,:) = risf_tsc(:,:,:)
          ENDIF
         !
       ENDIF
@@ -437,74 +435,111 @@ CONTAINS
       !                                            ! ---------------------------------------- !
       !
       ll_sas = nn_components == jp_iam_sas               ! component flags
-      ll_opa = nn_components == jp_iam_opa
-      ! Constrain SSS from dropping below 5. psu
+      ll_opa = nn_components == jp_iam_oce
+      ! Constrain SSS from dropping below rn_minsal psu
       IF( ln_minsal ) THEN
         DO jj = 1, jpj
           DO ji = 1, jpi
-            tsn(ji,jj,1,jp_sal) = MAX( tsn(ji,jj,1,jp_sal), rn_minsal ) * tmask(ji,jj,1)
+            ts(ji,jj,1,jp_sal,Kmm) = MAX( ts(ji,jj,1,jp_sal,Kmm), rn_minsal ) * tmask(ji,jj,1)
           END DO
         END DO
       ENDIF
       !
-      IF( .NOT.ll_sas )   CALL sbc_ssm ( kt )            ! mean ocean sea surface variables (sst_m, sss_m, ssu_m, ssv_m)
-      IF( ln_wave     )   CALL sbc_wave( kt )            ! surface waves
-
+      IF( .NOT.ll_sas )   CALL sbc_ssm ( kt, Kbb, Kmm )  ! mean ocean sea surface variables (sst_m, sss_m, ssu_m, ssv_m)
       !
       !                                            !==  sbc formulation  ==!
       !
+      IF( ln_blk .OR. ln_abl ) THEN
+         IF( ll_sas  )         CALL sbc_cpl_rcv ( kt, nn_fsbc, nn_ice, Kbb, Kmm )   ! OCE-SAS coupling: SAS receiving fields from OCE
+         IF( ln_wave ) THEN
+            IF ( ln_cpl )    CALL sbc_cpl_rcv ( kt, nn_fsbc, nn_ice, Kbb, Kmm )   ! OCE-wave coupling
+                               CALL sbc_wave ( kt, Kmm )
+         ENDIF
+      ENDIF
+      !
       SELECT CASE( nsbc )                                ! Compute ocean surface boundary condition
       !                                                  ! (i.e. utau,vtau, qns, qsr, emp, sfx)
-      CASE( jp_usr   )     ;   CALL usrdef_sbc_oce( kt )                    ! user defined formulation
-      CASE( jp_flx     )   ;   CALL sbc_flx       ( kt )                    ! flux formulation
-      CASE( jp_blk     )
-         IF( ll_sas    )       CALL sbc_cpl_rcv   ( kt, nn_fsbc, nn_ice )   ! OPA-SAS coupling: SAS receiving fields from OPA
-                               CALL sbc_blk       ( kt )                    ! bulk formulation for the ocean
-                               !
-      CASE( jp_purecpl )   ;   CALL sbc_cpl_rcv   ( kt, nn_fsbc, nn_ice )   ! pure coupled formulation
+      CASE( jp_usr     )   ;   CALL usrdef_sbc_oce( kt, Kbb )                        ! user defined formulation
+      CASE( jp_flx     )   ;   CALL sbc_flx       ( kt )                             ! flux formulation
+      CASE( jp_blk     )   ;   CALL sbc_blk       ( kt )                             ! bulk formulation for the ocean
+      CASE( jp_abl     )   ;   CALL sbc_abl       ( kt )                             ! ABL  formulation for the ocean
+      CASE( jp_purecpl )   ;   CALL sbc_cpl_rcv   ( kt, nn_fsbc, nn_ice, Kbb, Kmm )  ! pure coupled formulation
       CASE( jp_none    )
-         IF( ll_opa    )       CALL sbc_cpl_rcv   ( kt, nn_fsbc, nn_ice )   ! OPA-SAS coupling: OPA receiving fields from SAS
+         IF( ll_opa    )       CALL sbc_cpl_rcv   ( kt, nn_fsbc, nn_ice, Kbb, Kmm )  ! OCE-SAS coupling: OCE receiving fields from SAS
       END SELECT
+      IF( ln_mixcpl )          CALL sbc_cpl_rcv   ( kt, nn_fsbc, nn_ice, Kbb, Kmm )  ! forced-coupled mixed formulation after forcing
       !
-      IF( ln_mixcpl )          CALL sbc_cpl_rcv   ( kt, nn_fsbc, nn_ice )   ! forced-coupled mixed formulation after forcing
+      IF( ln_wave .AND. ln_tauoc ) THEN            ! Wave stress reduction
+         DO_2D( 0, 0, 0, 0)
+            utau(ji,jj) = utau(ji,jj) * ( tauoc_wave(ji,jj) + tauoc_wave(ji-1,jj) ) * 0.5_wp
+            vtau(ji,jj) = vtau(ji,jj) * ( tauoc_wave(ji,jj) + tauoc_wave(ji,jj-1) ) * 0.5_wp
+         END_2D
+         !
+         CALL lbc_lnk( 'sbcwave', utau, 'U', -1._wp )
+         CALL lbc_lnk( 'sbcwave', vtau, 'V', -1._wp )
+         !
+         taum(:,:) = taum(:,:)*tauoc_wave(:,:)
+         !
+         IF( kt == nit000 )   CALL ctl_warn( 'sbc: You are subtracting the wave stress to the ocean.',   &
+            &                                'If not requested select ln_tauoc=.false.' )
+         !
+      ELSEIF( ln_wave .AND. ln_taw ) THEN                  ! Wave stress reduction
+         utau(:,:) = utau(:,:) - tawx(:,:) + twox(:,:)
+         vtau(:,:) = vtau(:,:) - tawy(:,:) + twoy(:,:)
+         CALL lbc_lnk( 'sbcwave', utau, 'U', -1._wp )
+         CALL lbc_lnk( 'sbcwave', vtau, 'V', -1._wp )
+         !
+         DO_2D( 0, 0, 0, 0)
+             taum(ji,jj) = sqrt((.5*(utau(ji-1,jj)+utau(ji,jj)))**2 + (.5*(vtau(ji,jj-1)+vtau(ji,jj)))**2)
+         END_2D
+         !
+         IF( kt == nit000 )   CALL ctl_warn( 'sbc: You are subtracting the wave stress to the ocean.',   &
+            &                                'If not requested select ln_taw=.false.' )
+         !
+      ENDIF
+      CALL lbc_lnk( 'sbcmod', taum(:,:), 'T', 1._wp )
       !
-      IF ( ln_wave .AND. (ln_tauwoc .OR. ln_tauw) ) CALL sbc_wstress( )      ! Wind stress provided by waves
+      IF( ln_icebergs ) THEN  ! save pure stresses (with no ice-ocean stress) for use by icebergs
+         utau_icb(:,:) = utau(:,:) ; vtau_icb(:,:) = vtau(:,:) 
+      ENDIF
       !
       !                                            !==  Misc. Options  ==!
       !
       SELECT CASE( nn_ice )                                       ! Update heat and freshwater fluxes over sea-ice areas
-      CASE(  1 )   ;         CALL sbc_ice_if   ( kt )             ! Ice-cover climatology ("Ice-if" model)
+      CASE(  1 )   ;         CALL sbc_ice_if   ( kt, Kbb, Kmm )   ! Ice-cover climatology ("Ice-if" model)
 #if defined key_si3
-      CASE(  2 )   ;         CALL ice_stp  ( kt, nsbc )           ! SI3 ice model
+      CASE(  2 )   ;         CALL ice_stp  ( kt, Kbb, Kmm, nsbc ) ! SI3 ice model
 #endif
       CASE(  3 )   ;         CALL sbc_ice_cice ( kt, nsbc )       ! CICE ice model
       END SELECT
 
-      IF( ln_icebergs    )   THEN
-                                     CALL icb_stp( kt )           ! compute icebergs
-         ! icebergs may advect into haloes during the icb step and alter emp.
-         ! A lbc_lnk is necessary here to ensure restartability (#2113)
-         IF( .NOT. ln_passive_mode ) CALL lbc_lnk( 'sbcmod', emp, 'T', 1. ) ! ensure restartability with icebergs
-      ENDIF
+      IF( ln_icebergs    )   CALL icb_stp( kt, Kmm )              ! compute icebergs
 
-      IF( ln_isf         )   CALL sbc_isf( kt )                   ! compute iceshelves
+      ! Icebergs do not melt over the haloes.
+      ! So emp values over the haloes are no more consistent with the inner domain values.
+      ! A lbc_lnk is therefore needed to ensure reproducibility and restartability.
+      ! see ticket #2113 for discussion about this lbc_lnk.
+      ! The lbc_lnk is also needed for SI3 with nn_hls > 1 as emp is not yet defined for these points in iceupdate.F90
+      IF( (ln_icebergs .AND. .NOT. ln_passive_mode) .OR. (nn_ice == 2 .AND. nn_hls == 2) ) THEN
+         CALL lbc_lnk( 'sbcmod', emp, 'T', 1.0_wp )
+      ENDIF
 
       IF( ln_rnf         )   CALL sbc_rnf( kt )                   ! add runoffs to fresh water fluxes
 
-      IF( ln_ssr         )   CALL sbc_ssr( kt )                   ! add SST/SSS damping term
+      IF( ln_ssr         )   CALL sbc_ssr( kt )                        ! add SST/SSS damping term
 
-      IF( nn_fwb    /= 0 )   CALL sbc_fwb( kt, nn_fwb, nn_fsbc )  ! control the freshwater budget
+      IF( nn_fwb    /= 0 )   CALL sbc_fwb( kt, nn_fwb, nn_fsbc, Kmm )  ! control the freshwater budget
 
       ! Special treatment of freshwater fluxes over closed seas in the model domain
       ! Should not be run if ln_diurnal_only
-      IF( l_sbc_clo .AND. (.NOT. ln_diurnal_only) )   CALL sbc_clo( kt )
+      IF( l_sbc_clo      )   CALL sbc_clo( kt )
 
 !!$!RBbug do not understand why see ticket 667
 !!$!clem: it looks like it is necessary for the north fold (in certain circumstances). Don't know why.
-!!$      CALL lbc_lnk( 'sbcmod', emp, 'T', 1. )
-      IF ( ll_wd ) THEN     ! If near WAD point limit the flux for now
+!!$      CALL lbc_lnk( 'sbcmod', emp, 'T', 1.0_wp )
+      IF( ll_wd ) THEN     ! If near WAD point limit the flux for now
          zthscl = atanh(rn_wd_sbcfra)                     ! taper frac default is .999
-         zwdht(:,:) = sshn(:,:) + ht_0(:,:) - rn_wdmin1   ! do this calc of water
+         zwdht(:,:) = ssh(:,:,Kmm) + ht_0(:,:) - rn_wdmin1   ! do this calc of water
                                                      ! depth above wd limit once
          WHERE( zwdht(:,:) <= 0.0 )
             taum(:,:) = 0.0
@@ -529,18 +564,16 @@ CONTAINS
       !
       IF( kt == nit000 ) THEN                          !   set the forcing field at nit000 - 1    !
          !                                             ! ---------------------------------------- !
-         IF( ln_rstart .AND.    &                               !* Restart: read in restart file
-            & iom_varid( numror, 'utau_b', ldstop = .FALSE. ) > 0 ) THEN
-            IF(lwp) WRITE(numout,*) '          nit000-1 surface forcing fields red in the restart file'
-            CALL iom_get( numror, jpdom_autoglo, 'utau_b', utau_b, ldxios = lrxios )   ! before i-stress  (U-point)
-            CALL iom_get( numror, jpdom_autoglo, 'vtau_b', vtau_b, ldxios = lrxios )   ! before j-stress  (V-point)
-            CALL iom_get( numror, jpdom_autoglo, 'qns_b' , qns_b, ldxios = lrxios  )   ! before non solar heat flux (T-point)
-            ! The 3D heat content due to qsr forcing is treated in traqsr
-            ! CALL iom_get( numror, jpdom_autoglo, 'qsr_b' , qsr_b, ldxios = lrxios  ) ! before     solar heat flux (T-point)
-            CALL iom_get( numror, jpdom_autoglo, 'emp_b', emp_b, ldxios = lrxios  )    ! before     freshwater flux (T-point)
+         IF( ln_rstart .AND. .NOT.l_1st_euler ) THEN            !* Restart: read in restart file
+            IF(lwp) WRITE(numout,*) '          nit000-1 surface forcing fields read in the restart file'
+            CALL iom_get( numror, jpdom_auto, 'utau_b', utau_b )   ! i-stress
+            CALL iom_get( numror, jpdom_auto, 'vtau_b', vtau_b )   ! j-stress
+            CALL iom_get( numror, jpdom_auto,  'qns_b',  qns_b )   ! non solar heat flux
+            CALL iom_get( numror, jpdom_auto,  'emp_b',  emp_b )   ! freshwater flux
+            ! NB: The 3D heat content due to qsr forcing (qsr_hc_b) is treated in traqsr
             ! To ensure restart capability with 3.3x/3.4 restart files    !! to be removed in v3.6
             IF( iom_varid( numror, 'sfx_b', ldstop = .FALSE. ) > 0 ) THEN
-               CALL iom_get( numror, jpdom_autoglo, 'sfx_b', sfx_b, ldxios = lrxios )  ! before salt flux (T-point)
+               CALL iom_get( numror, jpdom_auto, 'sfx_b', sfx_b )  ! before salt flux (T-point)
             ELSE
                sfx_b (:,:) = sfx(:,:)
             ENDIF
@@ -560,45 +593,58 @@ CONTAINS
          IF(lwp) WRITE(numout,*) 'sbc : ocean surface forcing fields written in ocean restart file ',   &
             &                    'at it= ', kt,' date= ', ndastp
          IF(lwp) WRITE(numout,*) '~~~~'
-         IF( lwxios ) CALL iom_swap(      cwxios_context          )
-         CALL iom_rstput( kt, nitrst, numrow, 'utau_b' , utau, ldxios = lwxios )
-         CALL iom_rstput( kt, nitrst, numrow, 'vtau_b' , vtau, ldxios = lwxios )
-         CALL iom_rstput( kt, nitrst, numrow, 'qns_b'  , qns, ldxios = lwxios  )
+         CALL iom_rstput( kt, nitrst, numrow, 'utau_b' , utau )
+         CALL iom_rstput( kt, nitrst, numrow, 'vtau_b' , vtau )
+         CALL iom_rstput( kt, nitrst, numrow, 'qns_b'  , qns  )
          ! The 3D heat content due to qsr forcing is treated in traqsr
          ! CALL iom_rstput( kt, nitrst, numrow, 'qsr_b'  , qsr  )
-         CALL iom_rstput( kt, nitrst, numrow, 'emp_b'  , emp, ldxios = lwxios  )
-         CALL iom_rstput( kt, nitrst, numrow, 'sfx_b'  , sfx, ldxios = lwxios  )
-         IF( lwxios ) CALL iom_swap(      cxios_context          )
+         CALL iom_rstput( kt, nitrst, numrow, 'emp_b'  , emp  )
+         CALL iom_rstput( kt, nitrst, numrow, 'sfx_b'  , sfx  )
       ENDIF
       !                                                ! ---------------------------------------- !
       !                                                !        Outputs and control print         !
       !                                                ! ---------------------------------------- !
       IF( MOD( kt-1, nn_fsbc ) == 0 ) THEN
-         CALL iom_put( "empmr"  , emp    - rnf )                ! upward water flux
-         CALL iom_put( "empbmr" , emp_b  - rnf )                ! before upward water flux ( needed to recalculate the time evolution of ssh in offline )
-         CALL iom_put( "saltflx", sfx  )                        ! downward salt flux (includes virtual salt flux beneath ice in linear free surface case)
-         CALL iom_put( "fmmflx", fmmflx  )                      ! Freezing-melting water flux
-         CALL iom_put( "qt"    , qns  + qsr )                   ! total heat flux
-         CALL iom_put( "qns"   , qns        )                   ! solar heat flux
-         CALL iom_put( "qsr"   ,       qsr  )                   ! solar heat flux
+         IF( iom_use("empmr") ) THEN
+            DO_2D( 0, 0, 0, 0 )
+               z2d(ji,jj) =  emp(ji,jj) - rnf(ji,jj)
+            END_2D
+            CALL iom_put( "empmr"  , z2d      )                ! upward water flux
+         ENDIF
+         IF( iom_use("empbmr") ) THEN
+            DO_2D( 0, 0, 0, 0 )
+               z2d(ji,jj) =  emp_b(ji,jj) - rnf(ji,jj)
+            END_2D
+            CALL iom_put( "empbmr" , z2d      )                ! before upward water flux ( needed to recalculate the time evolution of ssh in offline )
+         ENDIF
+         CALL iom_put( "saltflx", sfx         )                ! downward salt flux (includes virtual salt flux beneath ice in linear free surface case)
+         CALL iom_put( "fmmflx" , fmmflx      )                ! Freezing-melting water flux
+         IF( iom_use("qt") ) THEN
+            DO_2D( 0, 0, 0, 0 )
+               z2d(ji,jj) =  qns(ji,jj) + qsr(ji,jj)
+            END_2D
+            CALL iom_put( "qt"  , z2d         )                ! total heat flux
+         ENDIF
+         CALL iom_put( "qns"    , qns         )                ! solar heat flux
+         CALL iom_put( "qsr"    , qsr         )                ! solar heat flux
          IF( nn_ice > 0 .OR. ll_opa )   CALL iom_put( "ice_cover", fr_i )   ! ice fraction
-         CALL iom_put( "taum"  , taum       )                   ! wind stress module
-         CALL iom_put( "wspd"  , wndm       )                   ! wind speed  module over free ocean or leads in presence of sea-ice
-         CALL iom_put( "qrp", qrp )                             ! heat flux damping
-         CALL iom_put( "erp", erp )                             ! freshwater flux damping
+         CALL iom_put( "taum"   , taum        )                ! wind stress module
+         CALL iom_put( "wspd"   , wndm        )                ! wind speed  module over free ocean or leads in presence of sea-ice
+         CALL iom_put( "qrp"    , qrp         )                ! heat flux damping
+         CALL iom_put( "erp"    , erp         )                ! freshwater flux damping
       ENDIF
       !
-      IF(ln_ctl) THEN         ! print mean trends (used for debugging)
-         CALL prt_ctl(tab2d_1=fr_i              , clinfo1=' fr_i    - : ', mask1=tmask )
-         CALL prt_ctl(tab2d_1=(emp-rnf + fwfisf), clinfo1=' emp-rnf - : ', mask1=tmask )
-         CALL prt_ctl(tab2d_1=(sfx-rnf + fwfisf), clinfo1=' sfx-rnf - : ', mask1=tmask )
-         CALL prt_ctl(tab2d_1=qns              , clinfo1=' qns      - : ', mask1=tmask )
-         CALL prt_ctl(tab2d_1=qsr              , clinfo1=' qsr      - : ', mask1=tmask )
-         CALL prt_ctl(tab3d_1=tmask            , clinfo1=' tmask    - : ', mask1=tmask, kdim=jpk )
-         CALL prt_ctl(tab3d_1=tsn(:,:,:,jp_tem), clinfo1=' sst      - : ', mask1=tmask, kdim=1   )
-         CALL prt_ctl(tab3d_1=tsn(:,:,:,jp_sal), clinfo1=' sss      - : ', mask1=tmask, kdim=1   )
-         CALL prt_ctl(tab2d_1=utau             , clinfo1=' utau     - : ', mask1=umask,                      &
-            &         tab2d_2=vtau             , clinfo2=' vtau     - : ', mask2=vmask )
+      IF(sn_cfctl%l_prtctl) THEN     ! print mean trends (used for debugging)
+         CALL prt_ctl(tab2d_1=CASTDP(fr_i)                , clinfo1=' fr_i     - : ', mask1=tmask )
+         CALL prt_ctl(tab2d_1=CASTDP((emp-rnf))           , clinfo1=' emp-rnf  - : ', mask1=tmask )
+         CALL prt_ctl(tab2d_1=CASTDP((sfx-rnf))           , clinfo1=' sfx-rnf  - : ', mask1=tmask )
+         CALL prt_ctl(tab2d_1=CASTDP(qns)                 , clinfo1=' qns      - : ', mask1=tmask )
+         CALL prt_ctl(tab2d_1=CASTDP(qsr)                , clinfo1=' qsr      - : ', mask1=tmask )
+         CALL prt_ctl(tab3d_1=CASTDP(tmask)              , clinfo1=' tmask    - : ', mask1=tmask, kdim=jpk )
+         CALL prt_ctl(tab3d_1=ts(:,:,:,jp_tem,Kmm), clinfo1=' sst      - : ', mask1=tmask, kdim=1   )
+         CALL prt_ctl(tab3d_1=ts(:,:,:,jp_sal,Kmm), clinfo1=' sss      - : ', mask1=tmask, kdim=1   )
+         CALL prt_ctl(tab2d_1=CASTDP(utau)               , clinfo1=' utau     - : ', mask1=umask,                      &
+            &         tab2d_2=CASTDP(vtau)               , clinfo2=' vtau     - : ', mask2=vmask )
       ENDIF
 
       IF( kt == nitend )   CALL sbc_final         ! Close down surface module if necessary

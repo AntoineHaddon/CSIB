@@ -15,11 +15,12 @@ MODULE agrif_ice
    PRIVATE 
 
    INTEGER, PUBLIC ::  u_ice_id, v_ice_id, tra_ice_id
+   INTEGER, PUBLIC ::  u_iceini_id, v_iceini_id, tra_iceini_id
    INTEGER, PUBLIC ::  nbstep_ice = 0    ! child time position in sea-ice model
 
    !!----------------------------------------------------------------------
    !! NEMO/NST 4.0 , NEMO Consortium (2018)
-   !! $Id: agrif_ice.F90 10068 2018-08-28 14:09:04Z nicolasmartin $
+   !! $Id: agrif_ice.F90 13216 2020-07-02 09:25:49Z rblod $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 

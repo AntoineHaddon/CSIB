@@ -20,8 +20,7 @@ MODULE obs_averg_h2d
    USE dom_oce,   ONLY : &
       & e1t, e2t, &
       & e1f, e2f, &
-      & glamt, gphit, &
-      & nproc
+      & glamt, gphit
    USE in_out_manager
    USE obs_const, ONLY : &
       & obfillflt		! Fillvalue
@@ -44,14 +43,14 @@ MODULE obs_averg_h2d
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: obs_averg_h2d.F90 10425 2018-12-19 21:54:16Z smasson $
+   !! $Id: obs_averg_h2d.F90 14275 2021-01-07 12:13:16Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 
 CONTAINS
    SUBROUTINE obs_avg_h2d_init( kpk, kpk2, kmaxifp, kmaxjfp, k2dint, plam,  pphi, &
       &                         pglam, pgphi, pglamf, pgphif, pmask, plamscl, pphiscl, lindegrees, &
-      &                         pweig, pobsmask, iminpoints )
+      &                         pweig, iminpoints )
       !!-----------------------------------------------------------------------
       !!
       !!                     ***  ROUTINE obs_avg_h2d_init  ***
@@ -97,8 +96,6 @@ CONTAINS
          & lindegrees           ! T=> obs footprint specified in degrees, F=> in metres
       REAL(KIND=wp), DIMENSION(kmaxifp,kmaxjfp,kpk2), INTENT(OUT) ::  &
          & pweig                ! Weights for averaging
-      REAL(KIND=wp), DIMENSION(kpk2), INTENT(OUT) ::  &
-         & pobsmask             ! Vertical mask for observations
       INTEGER, INTENT(IN), OPTIONAL :: &
          & iminpoints           ! Reject point which is not surrounded
                                 ! by at least iminpoints sea points

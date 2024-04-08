@@ -2,14 +2,38 @@
 
 @tableofcontents
 
+# Release 2020-07-30 {#rev_2020-07-30}
+# Bug fix
+- M mpp.f90 :
+	- look for array index of proc id, only if proc id contains in array
+- M iom_cdf.f90 :
+	- use 2D start and count array (for each variable), if present as argument
+- M create_restart.f90 :
+	- do not check domain validity, if source and target coordinates are the same
+
+# Release 2020-07-27 {#rev_2020-07-27}
+# Bug fix
+use right indices to write variable on netcdf file
+- M src/iom.f90 :
+	- use 2D start and count arrays
+- M src/iom_mpp.f90 :
+	- compute start and count arrays (2D, for each variable)
+- M src/mpp.f90 :
+	- call dim_reorder for each proc file
+	- add variable's dimension argument to set up mpp structure
+- M src/iom_cdf.f90 :
+	- use 2D start and count array (for each variable)
+- M src/file.f90 :
+	- keep file order indices, when adding dimension
+
 # Release 2019-12-03 {#rev_2019-12-03}
 ## New features
-- M src/iom_cdf.f90 :
+- M Siren/src/iom_cdf.f90 :
 	- write netcdf file as netcdf4
 
 # Release 2019-11-05 {#rev_2019-11-05}
 ## New features
-- M src/function.f90
+- M Siren/src/function.f90
 - M src/create_bathy.f90 :
 	- add help and version optional arguments
 	- update header for usage
@@ -35,7 +59,7 @@
 	- add help and version functions
 - M src/global.f90 :
 	- add parameter for version, author, and date
-	- set SVN keyword Revision, Author, and Date 
+	- set SVN keyword Revision, Author, and Date
 
 # Release 2019-10-18 {#rev_2019-10-18}
 ## New Features
@@ -164,7 +188,7 @@
 	- add url path to global attributes of output file(s)
 	- create and clean file structure to avoid memory leaks
 	- check dimension of matrix for 'handmade' bathymetry
-	- check name and standard name for longitude and latitude 
+	- check name and standard name for longitude and latitude
 	- rewrite header (doc)
 	- rename sub namelist namcrs to namsrc
 	- rename sub namelist namfin to namtgt
@@ -221,7 +245,7 @@
 - src/function.f90 :
 	- permit sign as first character
 - src/grid.f90 :
-	- do not use silicalim, or silicamax to get pivot point 
+	- do not use silicalim, or silicamax to get pivot point
 	- check name and standard name for latitude
 - src/iom_cdf.f90 :
 	- clean variable, attributes, and dimension structures
@@ -255,7 +279,7 @@
 - src/docsrc/2_quickstart.md :
 	- change link to SIREN inputs
 	- add description of create_meshmask
-	- add description of create_layout 
+	- add description of create_layout
 ## Bug fixes
 - src/function.f90 :
 	- permit negative exposant

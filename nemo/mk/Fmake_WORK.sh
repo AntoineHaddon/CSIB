@@ -36,7 +36,7 @@ set -o posix
 #
 # - Create line in NEW_CONF/WORK
 # - Use specified sub-directories previously
-# - OPA has to be done first !!!
+# - OCE has to be done first !!!
 #
 #
 # EXAMPLES
@@ -56,44 +56,46 @@ set -o posix
 # EVOLUTIONS
 # ==========
 #
-# $Id: Fmake_WORK.sh 9651 2018-05-28 06:47:14Z nicolasmartin $
+# $Id: Fmake_WORK.sh 15223 2021-09-01 12:12:03Z gsamson $
 #
 #
 #
 #   * creation
 #
 #-
-declare ZSRC=$1 ; shift 
-declare ZCONF=$1 ; shift
-ZTAB=( $@ )
-declare i=0 ; declare NDIR=${#ZTAB[@]}
+declare ZSRC=${@}
+ZCONF=${NEW_CONF}
+ZTAB=${NEM_SUBDIR[@]}
+declare NDIR=${#ZTAB[@]}
 
 echo 'Creating '${ZCONF}'/WORK = '${ZTAB[*]}' for '${ZCONF}
 
 [ ! -d ${ZCONF}/MY_SRC ] && \mkdir ${ZCONF}/MY_SRC
 [   -d ${ZCONF}/WORK   ] || \mkdir ${ZCONF}/WORK
 
-if [ "${ZSRC}" != 'none' ] ; then 
-
-	if [ -d ${ZSRC} ] ; then 
-		ln -sf ${ZSRC}/*.[Ffh]90 ${ZCONF}/MY_SRC/. 
-		echo 'MY_SRC content is linked to '${ZSRC}
-	else
-		echo 'External directory for MY_SRC does not exist. Using default.'
-	fi
-
-else 
-	echo 'MY_SRC directory is : '${ZCONF}'/MY_SRC'
-fi
-
-#\rm -f ../${1}/WORK/*
-
 for comp in ${ZTAB[*]}; do
 	find ${NEMO_DIR}/$comp -name *.[Ffh]90 -exec ln -sf {} ${ZCONF}/WORK \;
 done
 
-for i in `(cd ${ZCONF}/MY_SRC ; \ls *.[Ffh]90 2>/dev/null ) `; do
-	[ -f ${ZCONF}/MY_SRC/$i ] &&  ln -sf $PWD/${ZCONF}/MY_SRC/${i} ${ZCONF}/WORK/.
-done
+cd ${ZCONF}
+for ZDIR in ${ZSRC[@]}; do
+    if [ -d ${ZDIR} ] ; then
+        d=${ZDIR}
+    else
+        d='MY_SRC'
+        echo 'External directory for MY_SRC unspecified or does not exist. Using default.'
+    fi
 
-unset -v ZCONF ZTAB i NDIR
+    for ff in `(find ${d} -name *.[Ffh]90 2>/dev/null)`
+    do
+        if [ "$ff" != "${ff#/}" ]; then
+          ln -sf $ff WORK/.
+        else
+          ln -sf ../$ff WORK/.
+        fi
+    done
+    echo ${d}' content is linked to '${ZCONF}/WORK
+done
+cd -
+
+unset -v ZCONF ZTAB NDIR

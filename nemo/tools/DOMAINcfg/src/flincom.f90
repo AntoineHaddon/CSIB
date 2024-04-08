@@ -1,4 +1,5 @@
 MODULE flincom
+!$AGRIF_DO_NOT_TREAT
 !-
 !$Id: flincom.f90 2281 2010-10-15 14:21:13Z smasson $
 !-
@@ -1936,4 +1937,5 @@ END SUBROUTINE flininspect
 !-
 !===
 !-
+!$AGRIF_END_DO_NOT_TREAT
 END MODULE flincom

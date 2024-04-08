@@ -1,4 +1,5 @@
 MODULE ioipsl
+!$AGRIF_DO_NOT_TREAT
 !
 !$Id: ioipsl.f90 2281 2010-10-15 14:21:13Z smasson $
 !-
@@ -14,4 +15,5 @@ MODULE ioipsl
   USE flincom    
   USE histcom    
   USE restcom
+!$AGRIF_END_DO_NOT_TREAT
 END MODULE ioipsl

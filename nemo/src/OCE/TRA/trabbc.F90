@@ -11,17 +11,17 @@ MODULE trabbc
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
-   !!   tra_bbc       : update the tracer trend at ocean bottom 
+   !!   tra_bbc       : update the tracer trend at ocean bottom
    !!   tra_bbc_init  : initialization of geothermal heat flux trend
    !!----------------------------------------------------------------------
    USE oce            ! ocean variables
    USE dom_oce        ! domain: ocean
    USE phycst         ! physical constants
    USE trd_oce        ! trends: ocean variables
-   USE trdtra         ! trends manager: tracers 
+   USE trdtra         ! trends manager: tracers
    !
    USE in_out_manager ! I/O manager
-   USE iom            ! xIOS 
+   USE iom            ! xIOS
    USE fldread        ! read input fields
    USE lbclnk         ! ocean lateral boundary conditions (or mpp link)
    USE lib_mpp        ! distributed memory computing library
@@ -42,28 +42,31 @@ MODULE trabbc
    REAL(wp), PUBLIC , ALLOCATABLE, DIMENSION(:,:) ::   qgh_trd0   ! geothermal heating trend
 
    TYPE(FLD), ALLOCATABLE, DIMENSION(:) ::   sf_qgh   ! structure of input qgh (file informations, fields read)
- 
+
+   !! * Substitutions
+#  include "do_loop_substitute.h90"
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: trabbc.F90 12276 2019-12-20 11:14:26Z cetlod $
+   !! $Id: trabbc.F90 14834 2021-05-11 09:24:44Z hadcv $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE tra_bbc( kt )
+   SUBROUTINE tra_bbc( kt, Kmm, pts, Krhs )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE tra_bbc  ***
       !!
-      !! ** Purpose :   Compute the bottom boundary contition on temperature 
-      !!              associated with geothermal heating and add it to the 
+      !! ** Purpose :   Compute the bottom boundary contition on temperature
+      !!              associated with geothermal heating and add it to the
       !!              general trend of temperature equations.
       !!
-      !! ** Method  :   The geothermal heat flux set to its constant value of 
+      !! ** Method  :   The geothermal heat flux set to its constant value of
       !!              86.4 mW/m2 (Stein and Stein 1992, Huang 1999).
       !!       The temperature trend associated to this heat flux through the
       !!       ocean bottom can be computed once and is added to the temperature
       !!       trend juste above the bottom at each time step:
-      !!            ta = ta + Qsf / (rau0 rcp e3T) for k= mbkt
+      !!            ta = ta + Qsf / (rho0 rcp e3T) for k= mbkt
       !!       Where Qsf is the geothermal heat flux.
       !!
       !! ** Action  : - update the temperature trends with geothermal heating trend
@@ -72,37 +75,36 @@ CONTAINS
       !! References : Stein, C. A., and S. Stein, 1992, Nature, 359, 123-129.
       !!              Emile-Geay and Madec, 2009, Ocean Science.
       !!----------------------------------------------------------------------
-      INTEGER, INTENT(in) ::   kt   ! ocean time-step index
+      INTEGER,                                   INTENT(in   ) :: kt         ! ocean time-step index
+      INTEGER,                                   INTENT(in   ) :: Kmm, Krhs  ! time level indices
+      REAL(dp), DIMENSION(jpi,jpj,jpk,jpts,jpt), INTENT(inout) :: pts        ! active tracers and RHS of tracer equation
       !
-      INTEGER  ::   ji, jj    ! dummy loop indices
+      INTEGER  ::   ji, jj, jk    ! dummy loop indices
       REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) ::   ztrdt   ! 3D workspace
       !!----------------------------------------------------------------------
       !
       IF( ln_timing )   CALL timing_start('tra_bbc')
       !
-      IF( l_trdtra )   THEN         ! Save the input temperature trend
+      IF( l_trdtra ) THEN           ! Save the input temperature trend
          ALLOCATE( ztrdt(jpi,jpj,jpk) )
-         ztrdt(:,:,:) = tsa(:,:,:,jp_tem)
+         ztrdt(:,:,:) = pts(:,:,:,jp_tem,Krhs)
       ENDIF
       !                             !  Add the geothermal trend on temperature
-      DO jj = 2, jpjm1
-         DO ji = 2, jpim1
-            tsa(ji,jj,mbkt(ji,jj),jp_tem) = tsa(ji,jj,mbkt(ji,jj),jp_tem) + qgh_trd0(ji,jj) / e3t_n(ji,jj,mbkt(ji,jj))
-         END DO
-      END DO
-      !
-      CALL lbc_lnk( 'trabbc', tsa(:,:,:,jp_tem) , 'T', 1. )
+      DO_2D( 0, 0, 0, 0 )
+         pts(ji,jj,mbkt(ji,jj),jp_tem,Krhs) = pts(ji,jj,mbkt(ji,jj),jp_tem,Krhs)   &
+            &             + qgh_trd0(ji,jj) / e3t(ji,jj,mbkt(ji,jj),Kmm)
+      END_2D
       !
       IF( l_trdtra ) THEN        ! Send the trend for diagnostics
-         ztrdt(:,:,:) = tsa(:,:,:,jp_tem) - ztrdt(:,:,:)
-         CALL trd_tra( kt, 'TRA', jp_tem, jptra_bbc, ztrdt )
+         ztrdt(:,:,:) = pts(:,:,:,jp_tem,Krhs) - ztrdt(:,:,:)
+         CALL trd_tra( kt, Kmm, Krhs, 'TRA', jp_tem, jptra_bbc, ztrdt )
          DEALLOCATE( ztrdt )
       ENDIF
       !
-      CALL iom_put ( "hfgeou" , rau0_rcp * qgh_trd0(:,:) )
-      !
-      IF(ln_ctl)   CALL prt_ctl( tab3d_1=tsa(:,:,:,jp_tem), clinfo1=' bbc  - Ta: ', mask1=tmask, clinfo3='tra-ta' )
-      !
+      CALL iom_put ( "hfgeou" , rho0_rcp * qgh_trd0(:,:) )
+
+      IF(sn_cfctl%l_prtctl)   CALL prt_ctl( tab3d_1=pts(:,:,:,jp_tem,Krhs), clinfo1=' bbc  - Ta: ', mask1=tmask, clinfo3='tra-ta' )
+      
       IF( ln_timing )   CALL timing_stop('tra_bbc')
       !
    END SUBROUTINE tra_bbc
@@ -131,14 +133,12 @@ CONTAINS
       TYPE(FLD_N)        ::   sn_qgh    ! informations about the geotherm. field to be read
       CHARACTER(len=256) ::   cn_dir    ! Root directory for location of ssr files
       !!
-      NAMELIST/nambbc/ln_trabbc, nn_geoflx, rn_geoflx_cst, sn_qgh, cn_dir 
+      NAMELIST/nambbc/ln_trabbc, nn_geoflx, rn_geoflx_cst, sn_qgh, cn_dir
       !!----------------------------------------------------------------------
       !
-      REWIND( numnam_ref )
       READ  ( numnam_ref, nambbc, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'nambbc in reference namelist' )
       !
-      REWIND( numnam_cfg )
       READ  ( numnam_cfg, nambbc, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'nambbc in configuration namelist' )
       IF(lwm) WRITE ( numond, nambbc )
@@ -162,7 +162,7 @@ CONTAINS
          !
          CASE ( 1 )                          !* constant flux
             IF(lwp) WRITE(numout,*) '   ==>>>   constant heat flux  =   ', rn_geoflx_cst
-            qgh_trd0(:,:) = r1_rau0_rcp * rn_geoflx_cst
+            qgh_trd0(:,:) = r1_rho0_rcp * rn_geoflx_cst
             !
          CASE ( 2 )                          !* variable geothermal heat flux : read the geothermal fluxes in mW/m2
             IF(lwp) WRITE(numout,*) '   ==>>>   variable geothermal heat flux'
@@ -179,7 +179,7 @@ CONTAINS
                &          'bottom temperature boundary condition', 'nambbc', no_print )
 
             CALL fld_read( nit000, 1, sf_qgh )                         ! Read qgh data
-            qgh_trd0(:,:) = r1_rau0_rcp * sf_qgh(1)%fnow(:,:,1) * 1.e-3 ! conversion in W/m2
+            qgh_trd0(:,:) = r1_rho0_rcp * sf_qgh(1)%fnow(:,:,1) * 1.e-3 ! conversion in W/m2
             !
          CASE DEFAULT
             WRITE(ctmp1,*) '     bad flag value for nn_geoflx = ', nn_geoflx

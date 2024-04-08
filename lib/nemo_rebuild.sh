@@ -82,38 +82,11 @@ export OMP_NUM_THREADS=2
 wrkdir=$(pwd)
 dir_del_list=""
 
-# Access the restart directory 
-# done ealier to have access to the namlist_cdf stored in $inrs
-# Restart will be rebuilt later.
-modellast="mc_${runid}_${yearlast}_m${monlast}";
-inrs=${modellast}_nemors
-access ${inrs}.tar ${inrs}.tar nocp=off na
-if [ -s "${inrs}.tar" ]; then
-  mkdir  ${inrs} 
-  tar -xf ${inrs}.tar -C ${inrs}
-  dir_del_list+=" ${inrs}.tar" #delete the tar and save the directory
-else
-  access $inrs $inrs nocp=on na #make a link to update the files in the directory 
-  #dir_del_list+=" $inrs" # DON'T delete the directory, files inside updated
-fi
-[ -s "${inrs}" ]|| bail "Could not find ${inrs}"
-
 #access the coordinates files (used for lat/lon later)
 access coor.nc $nemo_coordinates  nocp=no  #force copy because we make temporary changes
 ncrename -h -O -d t,time_counter coor.nc coor.nc || true #no error if already done
 ncks -h -O -v e1.,e2.,nav_lon,nav_lat,glam.,gphi. coor.nc coor.nc
 ncwa -h -O -a time_counter coor.nc coor.nc && ncks -h -O -x -v  time_counter coor.nc coor.nc
-
-# remove the jstart if  ln_use_jatt is true in the namelist
-if [ $( get_namelist_var ln_use_jattr $inrs/rs_namelist_cfg ) == ".true." ];then
-  jstart=$( ncdump -h coor.nc | grep  --color=never "open_ocean_jstart\s*=" )
-  jstart=${jstart##*=}
-  jstart=$( trim_whitespace $jstart )
-  jstart=$( echo $jstart | sed 's/[,;.]$//g' )
-  # cut coor.nc according to open_ocean_jstart
-  # remember that coor.nc is a temporary file
-  ncks -h -O -d y,$(expr $jstart - 1), coor.nc coor.nc 
-fi
 
 # A list of directories to delete from RUNPATH at the end
 if [ $nemo_save_hist == "on" ] ; then
@@ -196,9 +169,22 @@ if [ -s "$indir" ] ; then
    rm -rf $indir
 fi
 
+# Access the restart directory 
+modellast="mc_${runid}_${yearlast}_m${monlast}";
+inrs=${modellast}_nemors
+access ${inrs}.tar ${inrs}.tar nocp=off na
+if [ -s "${inrs}.tar" ]; then
+  mkdir  ${inrs} 
+  tar -xf ${inrs}.tar -C ${inrs}
+  dir_del_list+=" ${inrs}.tar" #delete the tar and save the directory
+else
+  access $inrs $inrs nocp=on na #make a link to update the files in the directory 
+  #dir_del_list+=" $inrs" # DON'T delete the directory, files inside updated
+fi
+[ -s "${inrs}" ]|| bail "Could not find ${inrs}"
+
 # Rebuild the restart files. These will be saved alltogether, as
 # is custom for NEMO rs' historically.
-
 cp rebuild_nemo.exe ${inrs}/
 cd $inrs
 # Figure out the first/last time step, which is needed for the rs tile names.

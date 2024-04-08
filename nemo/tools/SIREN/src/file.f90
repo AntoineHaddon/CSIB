@@ -2,7 +2,7 @@
 ! NEMO system team, System and Interface for oceanic RElocable Nesting
 !----------------------------------------------------------------------
 !
-!> @brief 
+!> @brief
 !> This module manage file structure.
 !>
 !> @details
@@ -29,10 +29,10 @@
 !>
 !>    to get file id (units):<br/>
 !>    - tl_file\%i_id
-!>    
+!>
 !>    to get the type of the file (cdf, cdf4, dimg):<br/>
 !>    - tl_file\%c_type
-!> 
+!>
 !>    to know if file was open in write mode:<br/>
 !>    - tl_file\%l_wrt
 !>
@@ -124,7 +124,7 @@
 !>    CALL file_move_var(td_file, td_var)
 !> @endcode
 !>       - td_var is a variable structure
-!> 
+!>
 !>    to check if file and variable structure share same dimension:<br/>
 !> @code
 !>    ll_check_dim = file_check_var_dim(td_file, td_var)
@@ -135,7 +135,7 @@
 !> J.Paul
 !>
 !> @date November, 2013 - Initial Version
-!> @date November, 2014 
+!> @date November, 2014
 !> - Fix memory leaks bug
 !>
 !> @note Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
@@ -175,7 +175,7 @@ MODULE file
    PUBLIC :: file_get_id         !< get file id
    PUBLIC :: file_rename         !< rename file name
    PUBLIC :: file_add_suffix     !< add suffix to file name
- 
+
    PRIVATE :: file__clean_unit    ! clean file structure
    PRIVATE :: file__clean_arr     ! clean array of file structure
    PRIVATE :: file__del_var_name ! delete a variable structure in file structure, given variable name or standard name
@@ -191,7 +191,7 @@ MODULE file
 
    TYPE TFILE !< file structure
 
-      ! general 
+      ! general
       CHARACTER(LEN=lc)                 :: c_name = ""       !< file name
       CHARACTER(LEN=lc)                 :: c_type = ""       !< type of the file (cdf, cdf4, dimg)
       INTEGER(i4)                       :: i_id   = 0        !< file id
@@ -215,7 +215,7 @@ MODULE file
       LOGICAL                           :: l_def   = .FALSE. !< define mode or not
       TYPE(TATT), DIMENSION(:), POINTER :: t_att   => NULL() !< global attributes
       TYPE(TDIM), DIMENSION(ip_maxdim)  :: t_dim             !< dimension structure
-      
+
       ! dimg file
       INTEGER(i4)                       :: i_recl = 0        !< record length (binary file)
       INTEGER(i4)                       :: i_n0d  = 0        !< number of scalar variable
@@ -259,15 +259,15 @@ MODULE file
       MODULE PROCEDURE file__del_att_name
       MODULE PROCEDURE file__del_att_str
    END INTERFACE file_del_att
-   
+
    INTERFACE file_rename
       MODULE PROCEDURE file__rename_char
       MODULE PROCEDURE file__rename_str
    END INTERFACE file_rename
 
     INTERFACE file_copy
-      MODULE PROCEDURE file__copy_unit   
-      MODULE PROCEDURE file__copy_arr    
+      MODULE PROCEDURE file__copy_unit
+      MODULE PROCEDURE file__copy_arr
    END INTERFACE
 
 CONTAINS
@@ -277,27 +277,27 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief
    !> This subroutine copy file structure in another one
-   !> @details 
-   !> file variable and attribute value are copied in a temporary array, 
-   !> so input and output file structure value do not point on the same 
-   !> "memory cell", and so on are independant. 
+   !> @details
+   !> file variable and attribute value are copied in a temporary array,
+   !> so input and output file structure value do not point on the same
+   !> "memory cell", and so on are independant.
    !>
    !> @note new file is assume to be closed.
    !>
    !> @warning do not use on the output of a function who create or read an
    !> structure (ex: tl_file=file_copy(file_init()) is forbidden).
    !> This will create memory leaks.
-   !> @warning to avoid infinite loop, do not use any function inside 
+   !> @warning to avoid infinite loop, do not use any function inside
    !> this subroutine
-   !>   
+   !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !> @date November, 2014
-   !> - use function instead of overload assignment operator 
+   !> - use function instead of overload assignment operator
    !> (to avoid memory leak)
    !> @date January, 2019
    !> - clean variable structure
-   !> 
+   !>
    !> @param[in] td_file  file structure
    !> @return copy of input file structure
    !-------------------------------------------------------------------
@@ -351,7 +351,7 @@ CONTAINS
             CALL var_clean(tl_var)
          ENDDO
       ENDIF
-      
+
       ! copy netcdf variable
       tf_file%i_ndim   = td_file%i_ndim
       tf_file%i_natt   = td_file%i_natt
@@ -360,7 +360,7 @@ CONTAINS
 
       ! copy dimension
       tf_file%t_dim(:) = dim_copy(td_file%t_dim(:))
-      
+
       ! copy attribute structure
       IF( ASSOCIATED(tf_file%t_att) )THEN
          CALL att_clean(tf_file%t_att(:))
@@ -382,9 +382,9 @@ CONTAINS
       tf_file%i_n0d  = td_file%i_n0d
       tf_file%i_n1d  = td_file%i_n1d
       tf_file%i_n2d  = td_file%i_n2d
-      tf_file%i_n3d  = td_file%i_n3d 
+      tf_file%i_n3d  = td_file%i_n3d
       tf_file%i_rhd  = td_file%i_rhd
-      
+
       ! copy mpp variable
       tf_file%i_pid  = td_file%i_pid
       tf_file%i_impp = td_file%i_impp
@@ -407,23 +407,23 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief
    !> This subroutine copy a array of file structure in another one
-   !> @details 
-   !> file variable and attribute value are copied in a temporary array, 
-   !> so input and output file structure value do not point on the same 
-   !> "memory cell", and so on are independant. 
+   !> @details
+   !> file variable and attribute value are copied in a temporary array,
+   !> so input and output file structure value do not point on the same
+   !> "memory cell", and so on are independant.
    !>
    !> @note new file is assume to be closed.
    !>
    !> @warning do not use on the output of a function who create or read an
    !> structure (ex: tl_file=file_copy(file_init()) is forbidden).
    !> This will create memory leaks.
-   !> @warning to avoid infinite loop, do not use any function inside 
+   !> @warning to avoid infinite loop, do not use any function inside
    !> this subroutine
-   !>   
+   !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !> @date November, 2014
-   !> - use function instead of overload assignment operator 
+   !> - use function instead of overload assignment operator
    !> (to avoid memory leak)
    !>
    !> @param[in] td_file  file structure
@@ -449,11 +449,11 @@ CONTAINS
    END FUNCTION file__copy_arr
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION file_init(cd_file, cd_type, ld_wrt, &
-         &                        id_ew, id_perio, id_pivot,&
-         &                        cd_grid) &
+         &            id_ew, id_perio, id_pivot,&
+         &            cd_grid) &
          & RESULT (tf_file)
    !-------------------------------------------------------------------
-   !> @brief This function initialize file structure.<br/> 
+   !> @brief This function initialize file structure.<br/>
    !> @details
    !> If cd_type is not specify, check if file name include '.nc' or
    !> '.dimg'<br/>
@@ -481,7 +481,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       CHARACTER(LEN=*), INTENT(IN) :: cd_file
       CHARACTER(LEN=*), INTENT(IN), OPTIONAL :: cd_type
       LOGICAL         , INTENT(IN), OPTIONAL :: ld_wrt
@@ -524,7 +524,7 @@ CONTAINS
          tl_att=att_init("Conventions","CF-1.5")
          CALL file_add_att(tf_file,tl_att)
       ENDIF
-     
+
       tl_att=att_init("Grid",TRIM(tf_file%c_grid))
       CALL file_add_att(tf_file,tl_att)
 
@@ -568,7 +568,7 @@ CONTAINS
    FUNCTION file_get_type(cd_file) &
          & RESULT (cf_type)
    !-------------------------------------------------------------------
-   !> @brief 
+   !> @brief
    !> This function get type of file, given file name.
    !> @details
    !> Actually it get suffix of the file name, and compare it to 'nc', 'cdf' or
@@ -580,7 +580,7 @@ CONTAINS
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !> @date January, 2019
-   !> - netcdf4 files identify as netcdf file 
+   !> - netcdf4 files identify as netcdf file
    !>
    !> @param[in] cd_file   file name
    !> @return type of file
@@ -588,7 +588,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       CHARACTER(LEN=*), INTENT(IN) :: cd_file
 
       ! function
@@ -618,7 +618,7 @@ CONTAINS
    FUNCTION file_check_var_dim(td_file, td_var, ld_chklen) &
          & RESULT (lf_dim)
    !-------------------------------------------------------------------
-   !> @brief This function check that variable dimension to be used 
+   !> @brief This function check that variable dimension to be used
    !> of both variable and file structure are convenient (axis, length).
    !
    !> @details
@@ -637,7 +637,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE), INTENT(IN) :: td_file
       TYPE(TVAR),  INTENT(IN) :: td_var
       LOGICAL,     INTENT(IN), OPTIONAL :: ld_chklen
@@ -648,7 +648,7 @@ CONTAINS
       ! local variable
       CHARACTER(LEN=lc) :: cl_dim
       LOGICAL           :: ll_error
-      LOGICAL           :: ll_warn 
+      LOGICAL           :: ll_warn
       LOGICAL           :: ll_chklen
       LOGICAL           :: ll_use
       LOGICAL           :: ll_len
@@ -666,7 +666,7 @@ CONTAINS
       ll_chklen=.TRUE.
       IF( PRESENT(ld_chklen) ) ll_chklen=ld_chklen
 
-      ! check used dimension 
+      ! check used dimension
       ll_error=.FALSE.
       ll_warn=.FALSE.
       DO ji=1,ip_maxdim
@@ -767,7 +767,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE), INTENT(INOUT) :: td_file
       TYPE(TVAR) , INTENT(INOUT) :: td_var
 
@@ -822,7 +822,7 @@ CONTAINS
                &  ", standard name "//TRIM(td_var%c_stdname)//&
                &  ", in file "//TRIM(td_file%c_name) )
 
-               ! check used dimension 
+               ! check used dimension
                IF( file_check_var_dim(td_file, td_var) )THEN
 
                   ! check variable dimension expected
@@ -928,7 +928,7 @@ CONTAINS
 
                      ! update dimension name in new variable
                      tl_var(1)%t_dim(:)%c_name = td_file%t_dim(:)%c_name
-                  
+
                      ! add new variable
                      td_file%t_var(il_ind)=var_copy(tl_var(1))
 
@@ -973,12 +973,12 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE file__del_var_name(td_file, cd_name)
    !-------------------------------------------------------------------
-   !> @brief This subroutine delete a variable structure 
+   !> @brief This subroutine delete a variable structure
    !> in file structure, given variable name or standard name.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
-   !> @date February, 2015 
+   !> @date February, 2015
    !> - define local variable structure to avoid mistake with pointer
    !>
    !> @param[inout] td_file   file structure
@@ -987,7 +987,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE)     , INTENT(INOUT) :: td_file
       CHARACTER(LEN=*), INTENT(IN   ) :: cd_name
 
@@ -1014,7 +1014,7 @@ CONTAINS
             ENDIF
 
             IF( il_ind /= 0 )THEN
-   
+
                tl_var=var_copy(td_file%t_var(il_ind))
                CALL file_del_var(td_file, tl_var)
                ! clean
@@ -1040,7 +1040,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE file__del_var_str(td_file, td_var)
    !-------------------------------------------------------------------
-   !> @brief This subroutine delete a variable structure 
+   !> @brief This subroutine delete a variable structure
    !> in file structure, given variable structure.
    !>
    !> @author J.Paul
@@ -1054,7 +1054,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE), INTENT(INOUT) :: td_file
       TYPE(TVAR),  INTENT(IN)    :: td_var
 
@@ -1073,7 +1073,7 @@ CONTAINS
 
          CALL logger_error( " FILE DEL VAR: file structure unknown ")
          CALL logger_debug( " FILE DEL VAR: you should have used "//&
-         &  "file_init before running file_del_var" )      
+         &  "file_init before running file_del_var" )
 
       ELSE
 
@@ -1103,7 +1103,7 @@ CONTAINS
                ENDDO
 
             ELSE
-               
+
                CALL logger_trace( "FILE DEL VAR: delete variable "//&
                &  TRIM(td_var%c_name)//", from file "//TRIM(td_file%c_name) )
 
@@ -1173,7 +1173,7 @@ CONTAINS
 
                   ! clean
                   CALL var_clean(tl_var(:))
-               ENDIF 
+               ENDIF
                DEALLOCATE(tl_var)
 
             ENDIF
@@ -1184,7 +1184,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE file_move_var(td_file, td_var)
    !-------------------------------------------------------------------
-   !> @brief This subroutine overwrite variable structure 
+   !> @brief This subroutine overwrite variable structure
    !> in file structure.
    !
    !> @warning change variable id in file structure.
@@ -1198,7 +1198,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE), INTENT(INOUT) :: td_file
       TYPE(TVAR),  INTENT(IN)    :: td_var
 
@@ -1222,7 +1222,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE file_add_att(td_file, td_att)
    !-------------------------------------------------------------------
-   !> @brief This subroutine add a global attribute 
+   !> @brief This subroutine add a global attribute
    !> in a file structure.<br/>
    !> Do not overwrite, if attribute already in file structure.
    !
@@ -1237,7 +1237,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE), INTENT(INOUT) :: td_file
       TYPE(TATT),  INTENT(IN)    :: td_att
 
@@ -1255,7 +1255,7 @@ CONTAINS
 
          CALL logger_error( " FILE ADD ATT: file structure unknown ")
          CALL logger_debug( " FILE ADD ATT: you should have used file_init before "//&
-         & "running file_add_att" )      
+         & "running file_add_att" )
 
       ELSE
 
@@ -1266,7 +1266,7 @@ CONTAINS
          ENDIF
 
          IF( il_ind /= 0 )THEN
-         
+
             CALL logger_error( &
             &  " FILE ADD ATT: attribute "//TRIM(td_att%c_name)//&
             &  ", already in file "//TRIM(td_file%c_name) )
@@ -1277,7 +1277,7 @@ CONTAINS
             ENDDO
 
          ELSE
-            
+
             CALL logger_trace( &
             &  " FILE ADD ATT: add attribute "//TRIM(td_att%c_name)//&
             &  ", in file "//TRIM(td_file%c_name) )
@@ -1343,12 +1343,12 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE file__del_att_name(td_file, cd_name)
    !-------------------------------------------------------------------
-   !> @brief This subroutine delete a global attribute structure 
+   !> @brief This subroutine delete a global attribute structure
    !> in file structure, given attribute name.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
-   !> @date February, 2015 
+   !> @date February, 2015
    !> - define local attribute structure to avoid mistake
    !> with pointer
    !> @date January, 2019
@@ -1360,7 +1360,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE)     , INTENT(INOUT) :: td_file
       CHARACTER(LEN=*), INTENT(IN   ) :: cd_name
 
@@ -1387,7 +1387,7 @@ CONTAINS
             ENDIF
 
             IF( il_ind /= 0 )THEN
-   
+
                tl_att=att_copy(td_file%t_att(il_ind))
                CALL file_del_att(td_file, tl_att)
                ! clean
@@ -1411,7 +1411,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE file__del_att_str(td_file, td_att)
    !-------------------------------------------------------------------
-   !> @brief This subroutine delete a global attribute structure 
+   !> @brief This subroutine delete a global attribute structure
    !> from file structure, given attribute structure.
    !>
    !> @author J.Paul
@@ -1425,7 +1425,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE), INTENT(INOUT) :: td_file
       TYPE(TATT),  INTENT(IN)    :: td_att
 
@@ -1442,7 +1442,7 @@ CONTAINS
 
          CALL logger_error( " FILE DEL ATT: file structure unknown ")
          CALL logger_debug( " FILE DEL ATT: you should have used "//&
-         &  "file_init before running file_del_att" )      
+         &  "file_init before running file_del_att" )
 
       ELSE
 
@@ -1459,7 +1459,7 @@ CONTAINS
             &  ", in file "//TRIM(td_file%c_name) )
 
          ELSE
-            
+
             CALL logger_trace( &
             &  " FILE DEL ATT: del attribute "//TRIM(td_att%c_name)//&
             &  ", in file "//TRIM(td_file%c_name) )
@@ -1500,9 +1500,9 @@ CONTAINS
                ! copy attribute in file before
                td_file%t_att(1:td_file%i_natt)=att_copy(tl_att(:))
 
-               ! clean 
+               ! clean
                CALL att_clean(tl_att(:))
-            ENDIF 
+            ENDIF
             DEALLOCATE(tl_att)
 
          ENDIF
@@ -1512,7 +1512,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE file_move_att(td_file, td_att)
    !-------------------------------------------------------------------
-   !> @brief This subroutine move a global attribute structure 
+   !> @brief This subroutine move a global attribute structure
    !> from file structure.
    !> @warning change attribute id in file structure.
    !>
@@ -1525,7 +1525,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE), INTENT(INOUT) :: td_file
       TYPE(TATT),  INTENT(IN)    :: td_att
 
@@ -1555,7 +1555,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE file_add_dim(td_file, td_dim)
    !-------------------------------------------------------------------
-   !> @brief This subroutine add a dimension structure in file 
+   !> @brief This subroutine add a dimension structure in file
    !> structure.
    !> Do not overwrite, if dimension already in file structure.
    !>
@@ -1563,6 +1563,8 @@ CONTAINS
    !> @date November, 2013 - Initial Version
    !> @date September, 2014
    !> - do not reorder dimension, before put in file
+   !> @date July, 2020
+   !> - keep file order indices, when adding dimension
    !>
    !> @param[inout] td_file   file structure
    !> @param[in] td_dim       dimension structure
@@ -1570,12 +1572,14 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE)     , INTENT(INOUT) :: td_file
       TYPE(TDIM)      , INTENT(IN   ) :: td_dim
 
       ! local variable
       INTEGER(i4) :: il_ind
+      INTEGER(i4) :: il_xyzt2
+      INTEGER(i4) :: il_2xyzt
 
       ! loop indices
       INTEGER(i4) :: ji
@@ -1585,7 +1589,7 @@ CONTAINS
 
          CALL logger_error( " FILE ADD DIM: file structure unknown ")
          CALL logger_debug( " FILE ADD DIM: you should have used "//&
-         &  "file_init before running file_add_dim" )      
+         &  "file_init before running file_add_dim" )
 
       ELSE
 
@@ -1601,9 +1605,14 @@ CONTAINS
                   &  ", already used in file "//TRIM(td_file%c_name) )
                ELSE
                   ! replace dimension
+                  il_xyzt2=td_file%t_dim(il_ind)%i_xyzt2
+                  il_2xyzt=td_file%t_dim(il_ind)%i_2xyzt
+
                   td_file%t_dim(il_ind)=dim_copy(td_dim)
-                  td_file%t_dim(il_ind)%i_id=il_ind
+                  td_file%t_dim(il_ind)%i_id=MAXVAL(td_file%t_dim(:)%i_id)+1
                   td_file%t_dim(il_ind)%l_use=.TRUE.
+                  td_file%t_dim(il_ind)%i_xyzt2=il_xyzt2
+                  td_file%t_dim(il_ind)%i_2xyzt=il_2xyzt
                ENDIF
             ELSE
                IF( td_file%i_ndim == ip_maxdim )THEN
@@ -1616,19 +1625,19 @@ CONTAINS
                   ! search empty dimension
                   DO ji=1,ip_maxdim
                      IF( td_file%t_dim(ji)%i_id == 0 )THEN
-                        il_ind=ji 
+                        il_ind=ji
                         EXIT
                      ENDIF
                   ENDDO
- 
-                  ! add new dimension    
+
+                  ! add new dimension
                   td_file%t_dim(il_ind)=dim_copy(td_dim)
                   ! update number of attribute
                   td_file%i_ndim=COUNT(td_file%t_dim(:)%l_use)
 
                   td_file%t_dim(il_ind)%i_id=td_file%i_ndim
                   td_file%t_dim(il_ind)%l_use=.TRUE.
-               ENDIF               
+               ENDIF
             ENDIF
 
          ELSE
@@ -1643,7 +1652,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE file_del_dim(td_file, td_dim)
    !-------------------------------------------------------------------
-   !> @brief This subroutine delete a dimension structure in file 
+   !> @brief This subroutine delete a dimension structure in file
    !> structure.
    !>
    !> @author J.Paul
@@ -1657,7 +1666,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE)     , INTENT(INOUT) :: td_file
       TYPE(TDIM)      , INTENT(IN   ) :: td_dim
 
@@ -1675,7 +1684,7 @@ CONTAINS
 
          CALL logger_error( " FILE DEL DIM: file structure unknown ")
          CALL logger_debug( " FILE DEL DIM: you should have used "//&
-         &  "file_init before running file_del_dim" )      
+         &  "file_init before running file_del_dim" )
 
       ELSE
 
@@ -1696,7 +1705,7 @@ CONTAINS
                &  "FILE DEL DIM: not enough space to put dimensions from "//&
                &  TRIM(td_file%c_name)//" in temporary dimension structure")
 
-            ELSE            
+            ELSE
                ! save temporary dimension's mpp structure
                tl_dim( 1 : il_ind-1 ) = dim_copy(td_file%t_dim(1 : il_ind-1))
                tl_dim( il_ind : td_file%i_ndim-1 ) = &
@@ -1727,9 +1736,9 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE file_move_dim(td_file, td_dim)
    !-------------------------------------------------------------------
-   !> @brief This subroutine move a dimension structure 
+   !> @brief This subroutine move a dimension structure
    !> in file structure.
-   !> @warning change dimension order in file structure. 
+   !> @warning change dimension order in file structure.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -1740,7 +1749,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE)     , INTENT(INOUT) :: td_file
       TYPE(TDIM)      , INTENT(IN   ) :: td_dim
 
@@ -1784,7 +1793,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE), INTENT(IN) :: td_file
 
       ! local variable
@@ -1866,12 +1875,12 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       CHARACTER(LEN=*), INTENT(IN) :: cd_file
 
       ! function
       CHARACTER(LEN=lc)            :: cf_suffix
-   
+
       ! local variable
       INTEGER(i4) :: il_ind
       !----------------------------------------------------------------
@@ -1904,9 +1913,9 @@ CONTAINS
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
-   !> @date February, 2015 
+   !> @date February, 2015
    !> - add case to not return date (yyyymmdd) at the end of filename
-   !> @date February, 2015 
+   !> @date February, 2015
    !> - add case to not return release number
    !> we assume release number only on one digit (ex : file_v3.5.nc)
    !>
@@ -1916,7 +1925,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       CHARACTER(LEN=lc), INTENT(IN) :: cd_file
 
       ! function
@@ -1949,7 +1958,7 @@ CONTAINS
             ! date case yyyymmdd
             cf_number=''
          ELSEIF( LEN(TRIM(cf_number))-1 == 1 )THEN
-            ! release number case 
+            ! release number case
             cf_number=''
          ENDIF
       ELSE
@@ -1976,7 +1985,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       CHARACTER(LEN=*), INTENT(IN) :: cd_file
       INTEGER(i4),      INTENT(IN), OPTIONAL :: id_num
 
@@ -2045,7 +2054,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE), INTENT(IN) :: td_file
       INTEGER(i4), INTENT(IN), OPTIONAL :: id_num
 
@@ -2077,7 +2086,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       CHARACTER(LEN=*), INTENT(IN) :: cd_file
       CHARACTER(LEN=*), INTENT(IN) :: cd_type
 
@@ -2090,7 +2099,7 @@ CONTAINS
       CHARACTER(LEN=lc) :: cl_suffix
       !----------------------------------------------------------------
 
-      ! get suffix 
+      ! get suffix
       cl_suffix=file__get_suffix(cd_file)
       IF( TRIM(cl_suffix) /= '' )THEN
          il_ind=INDEX(TRIM(cd_file),TRIM(cl_suffix(1:1)),BACK=.TRUE.)
@@ -2116,7 +2125,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE file__clean_unit(td_file)
    !-------------------------------------------------------------------
-   !> @brief 
+   !> @brief
    !>  This subroutine clean file strcuture.
    !>
    !> @author J.Paul
@@ -2168,7 +2177,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE file__clean_arr(td_file)
    !-------------------------------------------------------------------
-   !> @brief 
+   !> @brief
    !>  This subroutine clean file array of file strcuture.
    !>
    !> @author J.Paul
@@ -2197,7 +2206,7 @@ CONTAINS
          & RESULT (if_id)
    !-------------------------------------------------------------------
    !> @brief This function return the file id, in a array of file
-   !> structure,  given file name. 
+   !> structure,  given file name.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -2209,7 +2218,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE)     , DIMENSION(:), INTENT(IN) :: td_file
       CHARACTER(LEN=*),               INTENT(IN) :: cd_name
 
@@ -2229,7 +2238,7 @@ CONTAINS
       DO ji=1,il_size
          ! look for file name
          IF( fct_lower(td_file(ji)%c_name) == fct_lower(cd_name) )THEN
-         
+
             if_id=td_file(ji)%i_id
             EXIT
 
@@ -2243,11 +2252,11 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief
    !> This function get the next unused unit in array of file structure.
-   !> 
+   !>
    !> @author J.Paul
    !> @date September, 2014 - Initial Version
    !>
-   !> @param[in] td_file   array of file 
+   !> @param[in] td_file   array of file
    !-------------------------------------------------------------------
 
       IMPLICIT NONE

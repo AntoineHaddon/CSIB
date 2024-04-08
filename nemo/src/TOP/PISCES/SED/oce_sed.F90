@@ -7,17 +7,22 @@ MODULE oce_sed
    !!        !  06-12  (C. Ethe)  Orignal
    !!----------------------------------------------------------------------
    USE par_sed
+   USE par_trc , ONLY : rtrn  => rtrn
+   USE par_pisces
    USE timing
-   USE par_trc
 
    USE dom_oce , ONLY :   glamt     =>   glamt          !: longitude of t-point (degre)
    USE dom_oce , ONLY :   gphit     =>   gphit          !: latitude  of t-point (degre)
-   USE dom_oce , ONLY :   e3t_n     =>   e3t_n          !: latitude  of t-point (degre)
+ 
+#if defined key_qco || defined key_linssh
+#else
+   USE dom_oce , ONLY :   e3t       =>   e3t            !: latitude  of t-point (degre)
+#endif
    USE dom_oce , ONLY :   e3t_1d    =>   e3t_1d         !: reference depth of t-points (m)
    USE dom_oce , ONLY :   gdepw_0   =>   gdepw_0        !: reference depth of t-points (m)
    USE dom_oce , ONLY :   mbkt      =>   mbkt           !: vertical index of the bottom last T- ocean level
    USE dom_oce , ONLY :   tmask     =>   tmask          !: land/ocean mask at t-points
-   USE dom_oce , ONLY :   rdt       =>   rdt            !: time step for the dynamics
+   USE dom_oce , ONLY :   rn_Dt     =>   rn_Dt          !: time step for the dynamics
    USE dom_oce , ONLY :   nyear     =>   nyear          !: Current year
    USE dom_oce , ONLY :   ndastp    =>   ndastp         !: time step date in year/month/day aammjj
    USE dom_oce , ONLY :   adatrj    =>   adatrj         !: number of elapsed days since the begining of the run
@@ -25,12 +30,12 @@ MODULE oce_sed
    !                                !: it is the accumulated duration of previous runs
    !                                !: that may have been run with different time steps.
 
-   USE oce     , ONLY :  tsn        =>   tsn             !: pot. temperature (celsius) and salinity (psu)
-   USE trc     , ONLY :  trb        =>   trb             !: pot. temperature (celsius) and salinity (psu)
+   USE oce     , ONLY :   ts        =>   ts              !: pot. temperature (celsius) and salinity (psu)
+   USE trc     , ONLY :   tr        =>   tr              !: pot. temperature (celsius) and salinity (psu)
 
    USE sms_pisces, ONLY : wsbio4    =>   wsbio4          !: sinking flux for POC
    USE sms_pisces, ONLY : wsbio3    =>   wsbio3          !: sinking flux for GOC
-   USE sms_pisces, ONLY : wsbio2    =>   wsbio2           !: sinking flux for calcite
+   USE sms_pisces, ONLY : wsbio2    =>   wsbio2          !: sinking flux for calcite
    USE sms_pisces, ONLY : wsbio     =>   wsbio           !: sinking flux for calcite
    USE sms_pisces, ONLY : ln_p5z    =>   ln_p5z          !: PISCES-QUOTA flag
    USE p4zche, ONLY     : akb3      =>   akb3            !: Chemical constants  
@@ -48,9 +53,7 @@ MODULE oce_sed
    USE p4zche, ONLY     : fluorid   =>   fluorid         !: Chemical constants  
    USE p4zche, ONLY     : sulfat    =>   sulfat          !: Chemical constants  
    USE p4zche, ONLY     : sio3eq    =>   sio3eq          !: Chemical constants  
-   USE p4zsbc, ONLY     : dust      =>   dust
-   USE trc       , ONLY : r2dttrc   =>   r2dttrc
+   USE p4zbc, ONLY     : dust      =>   dust
+   USE trc  , ONLY : rDt_trc   =>   rDt_trc
 
 END MODULE oce_sed
-
-

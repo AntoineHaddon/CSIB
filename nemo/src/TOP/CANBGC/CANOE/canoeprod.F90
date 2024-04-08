@@ -31,7 +31,7 @@ MODULE canoeprod
    ! access par_1band array and requires trcsms_cmoc to call trc_opt_1band
    ! to update par_1band every time step
    
-   USE prtctl_trc      !  print control for debugging
+   USE prtctl          !  print control for debugging
    USE lib_mpp         !  ctl_stop on failed mem allocate check
    USE lib_fortran     !  access glob_sum function
    USE iom             !  I/O manager
@@ -82,7 +82,7 @@ MODULE canoeprod
 
    !!* Substitution
 !#  include "top_substitute.h90"
-#  include "vectopt_loop_substitute.h90"
+!#  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 3.3 , NEMO Consortium (2010)
    !! $Id: canoeprod.F90 3773 2013-02-07 11:06:58Z cbricaud $ 
@@ -90,7 +90,7 @@ MODULE canoeprod
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE canoe_prod( kt , jnt )
+   SUBROUTINE canoe_prod( kt , jnt , Kbb, Kmm, Krhs )
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE canoe_prod  ***
       !!
@@ -101,6 +101,7 @@ CONTAINS
       !!---------------------------------------------------------------------
       !
       INTEGER, INTENT(in) :: kt, jnt
+      INTEGER, INTENT(in) ::   Kbb, Kmm, Krhs  ! time level indices
       !
       INTEGER  :: ji, jj, jk
       REAL(wp) :: zfact, znanotot, zdiattot, zconctemp, zconctemp2
@@ -165,14 +166,14 @@ CONTAINS
             DO ji = 1, jpi
                ! IF( par_3bands(ji,jj,jk) > 1.E-3 ) THEN
                IF( par_stairs(ji,jj,jk) > 1.E-3 ) THEN
-                      ztn  = tsn(ji,jj,jk,jp_tem)
-                      phyc  = MAX(trb(ji,jj,jk,jrphy),0.)*mw_c
-                      phyn  = MAX(trb(ji,jj,jk,jrnn) ,0.)*mw_n
-                      phyfe = MAX(trb(ji,jj,jk,jrnfe),0.)*mw_fe
-                      chl   = MAX(trb(ji,jj,jk,jrnch),0.)
-                      Ni    = MAX(trb(ji,jj,jk,jqno3),0.)
-                      Na    = MAX(trb(ji,jj,jk,jrnh4),0.)
-                      Fe    = MAX(trb(ji,jj,jk,jrfer),0.)                        ! Fe variables are in nmol m^-3, others in mmol m^-3
+                      ztn  = ts(ji,jj,jk,jp_tem,Kmm)
+                      phyc  = MAX(tr(ji,jj,jk,jrphy, Kbb),0.)*mw_c
+                      phyn  = MAX(tr(ji,jj,jk,jrnn, Kbb) ,0.)*mw_n
+                      phyfe = MAX(tr(ji,jj,jk,jrnfe, Kbb),0.)*mw_fe
+                      chl   = MAX(tr(ji,jj,jk,jrnch, Kbb),0.)
+                      Ni    = MAX(tr(ji,jj,jk,jqno3, Kbb),0.)
+                      Na    = MAX(tr(ji,jj,jk,jrnh4, Kbb),0.)
+                      Fe    = MAX(tr(ji,jj,jk,jrfer, Kbb),0.)                        ! Fe variables are in nmol m^-3, others in mmol m^-3
                       ! ei    = par_3bands(ji,jj,jk)*4.15                        ! convert to umol m^-2 s^-1
                       ei    = par_stairs(ji,jj,jk)*4.15                        ! convert to umol m^-2 s^-1
 
@@ -205,20 +206,20 @@ CONTAINS
                       xsphsyn=(phyc/(phyn+rtrn)*mwr_n2c-rr_c2n)*phyn*imw_n
                       xsphsyn=MAX(xsphsyn,0.)
 
-                      zprocn(ji,jj,jk) = (PCphot-eta*VCN)*trb(ji,jj,jk,jrphy)*xstepb-kexh*xsphsyn*xstepb ! C production rate (in molar units)
-                      zpronn(ji,jj,jk) = VCN/QN*trb(ji,jj,jk,jrnn)*xstepb                                ! N uptake rate
-                      zprofen(ji,jj,jk) = VCF/QFe*trb(ji,jj,jk,jrnfe)*xstepb                             ! Fe uptake rate
-                      zprochln(ji,jj,jk) = rhochl*VCN/thetac*trb(ji,jj,jk,jrnch)*xstepb                  ! Chl production rate
+                      zprocn(ji,jj,jk) = (PCphot-eta*VCN)*tr(ji,jj,jk,jrphy, Kbb)*xstepb-kexh*xsphsyn*xstepb ! C production rate (in molar units)
+                      zpronn(ji,jj,jk) = VCN/QN*tr(ji,jj,jk,jrnn, Kbb)*xstepb                                ! N uptake rate
+                      zprofen(ji,jj,jk) = VCF/QFe*tr(ji,jj,jk,jrnfe, Kbb)*xstepb                             ! Fe uptake rate
+                      zprochln(ji,jj,jk) = rhochl*VCN/thetac*tr(ji,jj,jk,jrnch, Kbb)*xstepb                  ! Chl production rate
                       zpronew(ji,jj,jk) = zpronn(ji,jj,jk)*(1.-Alim)*Nlim/(Alim+(1.-Alim)*Nlim+rtrn)     ! NO3 uptake
                       xlimnn(ji,jj,jk)   = 1.-qndep 
                       xlimnfe0(ji,jj,jk) = 1.-qfedep 
 
 ! large phytoplankton
 
-                      phyc = MAX(trb(ji,jj,jk,jrdia),0.)*mw_c
-                      phyn = MAX(trb(ji,jj,jk,jrdn),0.)*mw_n
-                      phyfe= MAX(trb(ji,jj,jk,jrdfe),0.)*mw_fe
-                      chl =  MAX(trb(ji,jj,jk,jrdch),0.)
+                      phyc = MAX(tr(ji,jj,jk,jrdia, Kbb),0.)*mw_c
+                      phyn = MAX(tr(ji,jj,jk,jrdn, Kbb),0.)*mw_n
+                      phyfe= MAX(tr(ji,jj,jk,jrdfe, Kbb),0.)*mw_fe
+                      chl =  MAX(tr(ji,jj,jk,jrdch, Kbb),0.)
 
                       QN = MIN(QNmax2,phyn/(phyc+rtrn))
                       QN = MAX(QNmin2,QN)
@@ -244,10 +245,10 @@ CONTAINS
                       xsphsyn=(phyc/(phyn+rtrn)*mwr_n2c-rr_c2n)*phyn*imw_n
                       xsphsyn=MAX(xsphsyn,0.)
 
-                      zprocd(ji,jj,jk) = (PCphot-eta*VCN)*trb(ji,jj,jk,jrdia)*xstepb-kexh*xsphsyn*xstepb       ! C production rate (in molar units)
-                      zprond(ji,jj,jk) = VCN/QN*trb(ji,jj,jk,jrdn)*xstepb                                     ! N uptake rate
-                      zprofed(ji,jj,jk) = VCF/QFe*trb(ji,jj,jk,jrdfe)*xstepb                                  ! Fe uptake rate
-                      zprochld(ji,jj,jk) = rhochl*VCN/thetac*trb(ji,jj,jk,jrdch)*xstepb                       ! Chl production rate
+                      zprocd(ji,jj,jk) = (PCphot-eta*VCN)*tr(ji,jj,jk,jrdia, Kbb)*xstepb-kexh*xsphsyn*xstepb       ! C production rate (in molar units)
+                      zprond(ji,jj,jk) = VCN/QN*tr(ji,jj,jk,jrdn, Kbb)*xstepb                                     ! N uptake rate
+                      zprofed(ji,jj,jk) = VCF/QFe*tr(ji,jj,jk,jrdfe, Kbb)*xstepb                                  ! Fe uptake rate
+                      zprochld(ji,jj,jk) = rhochl*VCN/thetac*tr(ji,jj,jk,jrdch, Kbb)*xstepb                       ! Chl production rate
                       zpronewd(ji,jj,jk) = zprond(ji,jj,jk)*(1.-Alim)*Nlim/(Alim+(1.-Alim)*Nlim+rtrn)        ! NO3 uptake
                       xlimdn(ji,jj,jk)   = 1.-qndep 
                       xlimdfe0(ji,jj,jk) = 1.-qfedep 
@@ -263,31 +264,31 @@ CONTAINS
            DO ji =1 ,jpi
               zproreg  = zpronn(ji,jj,jk) - zpronew(ji,jj,jk)
               zproreg2 = zprond(ji,jj,jk) - zpronewd(ji,jj,jk)
-              tra(ji,jj,jk,jqno3) = tra(ji,jj,jk,jqno3) - zpronew(ji,jj,jk) 
-              tra(ji,jj,jk,jqno3) = tra(ji,jj,jk,jqno3) !                       - zpronewd(ji,jj,jk)
-              tra(ji,jj,jk,jrnh4) = tra(ji,jj,jk,jrnh4) - zproreg                       
-              tra(ji,jj,jk,jrnh4) = tra(ji,jj,jk,jrnh4) !                       - zproreg2
-              tra(ji,jj,jk,jrphy) = tra(ji,jj,jk,jrphy) + zprocn(ji,jj,jk)
-              tra(ji,jj,jk,jrnn)  = tra(ji,jj,jk,jrnn)  + zpronn(ji,jj,jk)
-              tra(ji,jj,jk,jrnch) = tra(ji,jj,jk,jrnch) + zprochln(ji,jj,jk) 
-              tra(ji,jj,jk,jrnfe) = tra(ji,jj,jk,jrnfe) + zprofen(ji,jj,jk)
-              tra(ji,jj,jk,jrdia) = tra(ji,jj,jk,jrdia) ! + zprocd(ji,jj,jk) 
-              tra(ji,jj,jk,jrdn)  = tra(ji,jj,jk,jrdn)  ! + zprond(ji,jj,jk) 
-              tra(ji,jj,jk,jrdch) = tra(ji,jj,jk,jrdch) ! + zprochld(ji,jj,jk) 
-              tra(ji,jj,jk,jrdfe) = tra(ji,jj,jk,jrdfe) ! + zprofed(ji,jj,jk) 
+              tr(ji,jj,jk,jqno3, Krhs) = tr(ji,jj,jk,jqno3, Krhs) - zpronew(ji,jj,jk) 
+              tr(ji,jj,jk,jqno3, Krhs) = tr(ji,jj,jk,jqno3, Krhs) !                       - zpronewd(ji,jj,jk)
+              tr(ji,jj,jk,jrnh4, Krhs) = tr(ji,jj,jk,jrnh4, Krhs) - zproreg                       
+              tr(ji,jj,jk,jrnh4, Krhs) = tr(ji,jj,jk,jrnh4, Krhs) !                       - zproreg2
+              tr(ji,jj,jk,jrphy, Krhs) = tr(ji,jj,jk,jrphy, Krhs) + zprocn(ji,jj,jk)
+              tr(ji,jj,jk,jrnn, Krhs)  = tr(ji,jj,jk,jrnn, Krhs)  + zpronn(ji,jj,jk)
+              tr(ji,jj,jk,jrnch, Krhs) = tr(ji,jj,jk,jrnch, Krhs) + zprochln(ji,jj,jk) 
+              tr(ji,jj,jk,jrnfe, Krhs) = tr(ji,jj,jk,jrnfe, Krhs) + zprofen(ji,jj,jk)
+              tr(ji,jj,jk,jrdia, Krhs) = tr(ji,jj,jk,jrdia, Krhs) ! + zprocd(ji,jj,jk) 
+              tr(ji,jj,jk,jrdn, Krhs)  = tr(ji,jj,jk,jrdn, Krhs)  ! + zprond(ji,jj,jk) 
+              tr(ji,jj,jk,jrdch, Krhs) = tr(ji,jj,jk,jrdch, Krhs) ! + zprochld(ji,jj,jk) 
+              tr(ji,jj,jk,jrdfe, Krhs) = tr(ji,jj,jk,jrdfe, Krhs) ! + zprofed(ji,jj,jk) 
 ! O2 production equals DIC reduction + an additional nitrate term based on Laws 1991; this term is set to conserve O2 globally at steady state, i.e. 0.301887 = 2/rr_c2n where 2 mol O2 / mol N is the O2 sink to nitrification
-              tra(ji,jj,jk,jqoxy) = tra(ji,jj,jk,jqoxy) ! +  zprocn(ji,jj,jk)                       
-              tra(ji,jj,jk,jqoxy) = tra(ji,jj,jk,jqoxy) !                       + zprocd(ji,jj,jk)  
-              tra(ji,jj,jk,jqoxy) = tra(ji,jj,jk,jqoxy) ! + 0.301887 *  zpronew(ji,jj,jk)                            * rr_c2n 
-              tra(ji,jj,jk,jqoxy) = tra(ji,jj,jk,jqoxy) ! + 0.301887 *                      zpronewd(ji,jj,jk)       * rr_c2n   
-              tra(ji,jj,jk,jrfer) = tra(ji,jj,jk,jrfer) ! - zprofen(ji,jj,jk) 
-              tra(ji,jj,jk,jrfer) = tra(ji,jj,jk,jrfer) !                       - zprofed(ji,jj,jk)
-              tra(ji,jj,jk,jqdic) = tra(ji,jj,jk,jqdic) ! -  zprocn(ji,jj,jk)                        *1.E-6
-              tra(ji,jj,jk,jqdic) = tra(ji,jj,jk,jqdic) !                       - zprocd(ji,jj,jk)   *1.E-6
-              tra(ji,jj,jk,jqtal) = tra(ji,jj,jk,jqtal) ! +  zpronew(ji,jj,jk)                       *1.E-6 
-              tra(ji,jj,jk,jqtal) = tra(ji,jj,jk,jqtal) ! +                       zpronewd(ji,jj,jk) *1.E-6 
-              tra(ji,jj,jk,jqtal) = tra(ji,jj,jk,jqtal) ! -  zproreg                      * 1.E-6 
-              tra(ji,jj,jk,jqtal) = tra(ji,jj,jk,jqtal) ! -                   + zproreg2  * 1.E-6
+              tr(ji,jj,jk,jqoxy, Krhs) = tr(ji,jj,jk,jqoxy, Krhs) ! +  zprocn(ji,jj,jk)                       
+              tr(ji,jj,jk,jqoxy, Krhs) = tr(ji,jj,jk,jqoxy, Krhs) !                       + zprocd(ji,jj,jk)  
+              tr(ji,jj,jk,jqoxy, Krhs) = tr(ji,jj,jk,jqoxy, Krhs) ! + 0.301887 *  zpronew(ji,jj,jk)                            * rr_c2n 
+              tr(ji,jj,jk,jqoxy, Krhs) = tr(ji,jj,jk,jqoxy, Krhs) ! + 0.301887 *                      zpronewd(ji,jj,jk)       * rr_c2n   
+              tr(ji,jj,jk,jrfer, Krhs) = tr(ji,jj,jk,jrfer, Krhs) ! - zprofen(ji,jj,jk) 
+              tr(ji,jj,jk,jrfer, Krhs) = tr(ji,jj,jk,jrfer, Krhs) !                       - zprofed(ji,jj,jk)
+              tr(ji,jj,jk,jqdic, Krhs) = tr(ji,jj,jk,jqdic, Krhs) ! -  zprocn(ji,jj,jk)                        *1.E-6
+              tr(ji,jj,jk,jqdic, Krhs) = tr(ji,jj,jk,jqdic, Krhs) !                       - zprocd(ji,jj,jk)   *1.E-6
+              tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) ! +  zpronew(ji,jj,jk)                       *1.E-6 
+              tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) ! +                       zpronewd(ji,jj,jk) *1.E-6 
+              tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) ! -  zproreg                      * 1.E-6 
+              tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) ! -                   + zproreg2  * 1.E-6
           END DO
         END DO
      END DO
@@ -317,10 +318,10 @@ CONTAINS
      ENDIF
      !
 
-     IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
+     IF( sn_cfctl%l_prttrc )   THEN  ! print mean trends (used for debugging)
         WRITE(charout, FMT="('prod')")
-        CALL prt_ctl_trc_info(charout)
-        CALL prt_ctl_trc(tab4d=tra, mask=tmask, clinfo=ctrcnm)
+        CALL prt_ctl_info(charout)
+        CALL prt_ctl(tab4d_1=tr(:,:,:,:, Krhs), mask1=tmask, clinfo=ctrcnm)
      ENDIF
      !
      DEALLOCATE( zprdia,  zprbio,   zprdch,  zprnch,  zysopt            ) 

@@ -51,7 +51,7 @@ set -o posix
 # EVOLUTIONS
 # ==========
 #
-# $Id: Fcheck_archfile.sh 10449 2019-01-02 09:38:04Z andmirek $
+# $Id: Fcheck_archfile.sh 14945 2021-06-04 07:38:41Z gsamson $
 #
 #
 #
@@ -166,12 +166,12 @@ fi
 
 #- do we need xios library?
 #- 2 cases: 
-#- in CONFIG directory looking for key_iomput
+#- in CONFIG directory looking for key_xios or key_iomput
 if [ "$1" == "arch_nemo.fcm" ]
 then
     if [ "$2" != "nocpp" ] 
     then
-        use_iom=$( sed -e "s/#.*$//" ${COMPIL_DIR}/$2 | grep -c key_iomput )
+        use_iom=$( sed -e "s/#.*$//" ${COMPIL_DIR}/$2 | grep -c "key_xios\|key_iomput" )
     else
         use_iom=0
     fi

@@ -65,6 +65,11 @@ ndomain=${ndomain}
 EOC
 if [[ -n ${dims} ]] ; then
    echo ${dims} >> nam_rebuild
+   echo ${dims} >> $nam_rebuild
+fi
+if [[ -n ${NCSLICESIZE} ]] ; then
+   echo " nslicesize=${NCSLICESIZE}" >> $nam_rebuild
+=======
 fi
 if [[ -n ${NCHUNKSIZE} ]] ; then
    echo " nchunksize=${NCHUNKSIZE}" >> nam_rebuild

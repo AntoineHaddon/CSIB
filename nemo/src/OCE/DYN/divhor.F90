@@ -19,13 +19,12 @@ MODULE divhor
    !!----------------------------------------------------------------------
    USE oce             ! ocean dynamics and tracers
    USE dom_oce         ! ocean space and time domain
-   USE sbc_oce, ONLY : ln_rnf, ln_isf ! surface boundary condition: ocean
-   USE sbcrnf          ! river runoff
-   USE sbcisf          ! ice shelf
+   USE sbc_oce, ONLY : ln_rnf      ! river runoff
+   USE sbcrnf , ONLY : sbc_rnf_div ! river runoff 
+   USE isf_oce, ONLY : ln_isf      ! ice shelf
    USE sbcspp,  ONLY : sbc_spp_div, ln_vertspp
-   USE iscplhsb        ! ice sheet / ocean coupling
-   USE iscplini        ! ice sheet / ocean coupling
-#if defined key_asminc
+   USE isfhdiv, ONLY : isf_hdiv    ! ice shelf
+#if defined key_asminc   
    USE asminc          ! Assimilation increment
 #endif
    !
@@ -40,78 +39,73 @@ MODULE divhor
    PUBLIC   div_hor    ! routine called by step.F90 and istate.F90
 
    !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
+#  include "do_loop_substitute.h90"
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: divhor.F90 12737 2020-04-10 17:55:11Z jchanut $
+   !! $Id: divhor.F90 15150 2021-07-27 10:38:24Z smasson $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE div_hor( kt )
+   SUBROUTINE div_hor( kt, Kbb, Kmm )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE div_hor  ***
-      !!
+      !!                    
       !! ** Purpose :   compute the horizontal divergence at now time-step
       !!
       !! ** Method  :   the now divergence is computed as :
-      !!         hdivn = 1/(e1e2t*e3t) ( di[e2u*e3u un] + dj[e1v*e3v vn] )
-      !!      and correct with runoff inflow (div_rnf) and cross land flow (div_cla)
+      !!         hdiv = 1/(e1e2t*e3t) ( di[e2u*e3u un] + dj[e1v*e3v vn] )
+      !!      and correct with runoff inflow (div_rnf) and cross land flow (div_cla) 
       !!
-      !! ** Action  : - update hdivn, the now horizontal divergence
+      !! ** Action  : - update hdiv, the now horizontal divergence
       !!----------------------------------------------------------------------
-      INTEGER, INTENT(in) ::   kt   ! ocean time-step index
+      INTEGER, INTENT(in) ::   kt        ! ocean time-step index
+      INTEGER, INTENT(in) ::   Kbb, Kmm  ! ocean time level indices
       !
       INTEGER  ::   ji, jj, jk    ! dummy loop indices
-      REAL(wp) ::   zraur, zdep   ! local scalars
       !!----------------------------------------------------------------------
       !
       IF( ln_timing )   CALL timing_start('div_hor')
       !
       IF( kt == nit000 ) THEN
-         IF(lwp) WRITE(numout,*)
-         IF(lwp) WRITE(numout,*) 'div_hor : horizontal velocity divergence '
-         IF(lwp) WRITE(numout,*) '~~~~~~~   '
-         hdivn(:,:,:) = 0._wp    ! initialize hdivn for the halos at the first time step
+         IF( .NOT. l_istiled .OR. ntile == 1 )  THEN                       ! Do only on the first tile
+            IF(lwp) WRITE(numout,*)
+            IF(lwp) WRITE(numout,*) 'div_hor : horizontal velocity divergence '
+            IF(lwp) WRITE(numout,*) '~~~~~~~   '
+         ENDIF
+         DO_3D_OVR( nn_hls, nn_hls, nn_hls, nn_hls, 1, jpk )
+            hdiv(ji,jj,jk) = 0._wp    ! initialize hdiv for the halos at the first time step
+         END_3D
       ENDIF
       !
-      DO jk = 1, jpkm1                                      !==  Horizontal divergence  ==!
-         DO jj = 2, jpjm1
-            DO ji = fs_2, fs_jpim1   ! vector opt.
-               hdivn(ji,jj,jk) = (  e2u(ji  ,jj) * e3u_n(ji  ,jj,jk) * un(ji  ,jj,jk)      &
-                  &               - e2u(ji-1,jj) * e3u_n(ji-1,jj,jk) * un(ji-1,jj,jk)      &
-                  &               + e1v(ji,jj  ) * e3v_n(ji,jj  ,jk) * vn(ji,jj  ,jk)      &
-                  &               - e1v(ji,jj-1) * e3v_n(ji,jj-1,jk) * vn(ji,jj-1,jk)  )   &
-                  &            * r1_e1e2t(ji,jj) / e3t_n(ji,jj,jk)
-            END DO
-         END DO
-      END DO
-#if defined key_agrif
-      IF( .NOT. Agrif_Root() ) THEN
-         IF( l_Westedge )   hdivn(   2   ,  :   ,:) = 0._wp      ! west
-         IF( l_Eastedge )   hdivn( nlci-1,  :   ,:) = 0._wp      ! east
-         IF( l_Southedge )  hdivn(   :   ,  2   ,:) = 0._wp      ! south
-         IF( l_Northedge )  hdivn(   :   ,nlcj-1,:) = 0._wp      ! north
-      ENDIF
+      DO_3D_OVR( nn_hls-1, nn_hls, nn_hls-1, nn_hls, 1, jpkm1 )                                          !==  Horizontal divergence  ==!
+         ! round brackets added to fix the order of floating point operations
+         ! needed to ensure halo 1 - halo 2 compatibility
+         hdiv(ji,jj,jk) = (  ( e2u(ji  ,jj) * e3u(ji  ,jj,jk,Kmm) * uu(ji  ,jj,jk,Kmm)     &
+            &                - e2u(ji-1,jj) * e3u(ji-1,jj,jk,Kmm) * uu(ji-1,jj,jk,Kmm)     &
+            &                )                                                             & ! bracket for halo 1 - halo 2 compatibility
+            &              + ( e1v(ji,jj  ) * e3v(ji,jj  ,jk,Kmm) * vv(ji,jj  ,jk,Kmm)     &
+            &                - e1v(ji,jj-1) * e3v(ji,jj-1,jk,Kmm) * vv(ji,jj-1,jk,Kmm)     &
+            &                )                                                             & ! bracket for halo 1 - halo 2 compatibility
+            &             )  * r1_e1e2t(ji,jj) / e3t(ji,jj,jk,Kmm)
+      END_3D
+      !
+      IF( ln_rnf )   CALL sbc_rnf_div( hdiv, Kmm )                               !==  runoffs    ==!   (update hdiv field)
+      !
+#if defined key_asminc 
+      IF( ln_sshinc .AND. ln_asmiau )   CALL ssh_asm_div( kt, Kbb, Kmm, hdiv )   !==  SSH assimilation  ==!   (update hdiv field)
+      ! 
 #endif
+      IF( ln_isf )                      CALL isf_hdiv( kt, Kmm, hdiv )           !==  ice shelf         ==!   (update hdiv field)
       !
-      IF( ln_rnf )   CALL sbc_rnf_div( hdivn )              !==  runoffs    ==!   (update hdivn field)
+      IF( ln_vertspp ) CALL sbc_spp_div( Kmm, hdiv )  !==  salt plume  ==!   (update hdivn field)      
       !
-#if defined key_asminc
-      IF( ln_sshinc .AND. ln_asmiau )   CALL ssh_asm_div( kt, hdivn )   !==  SSH assimilation  ==!   (update hdivn field)
-      !
-#endif
-      IF( ln_isf )   CALL sbc_isf_div( hdivn )      !==  ice shelf  ==!   (update hdivn field)
-
-      IF( ln_vertspp ) CALL sbc_spp_div( hdivn )  !==  salt plume  ==!   (update hdivn field)
-      !
-      IF( ln_iscpl .AND. ln_hsb )   CALL iscpl_div( hdivn ) !==  ice sheet  ==!   (update hdivn field)
-      !
-      CALL lbc_lnk( 'divhor', hdivn, 'T', 1. )   !   (no sign change)
-      !
+      IF( nn_hls==1 )   CALL lbc_lnk( 'divhor', hdiv, 'T', 1.0_wp )   !   (no sign change)
+      !                                                               ! needed for ww in sshwzv
       IF( ln_timing )   CALL timing_stop('div_hor')
       !
    END SUBROUTINE div_hor
-
+   
    !!======================================================================
 END MODULE divhor

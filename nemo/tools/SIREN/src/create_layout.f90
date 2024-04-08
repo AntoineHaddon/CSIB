@@ -4,7 +4,7 @@
 !
 ! DESCRIPTION:
 !> @file
-!> @brief 
+!> @brief
 !> This program creates/computes the domain layout for you configuration.
 !>
 !> @details
@@ -14,7 +14,7 @@
 !> and the number of processors available or following i and j-direction.
 !> Then the number of sea/land processors is compute with mask.
 !>
-!> The optimized domain layout is assumed to be the domain layout, with the the most land 
+!> The optimized domain layout is assumed to be the domain layout, with the the most land
 !> processors removed. If no land processor could be removed, it assumed to be the domain layout
 !> with the most sea processors.
 !>
@@ -43,7 +43,7 @@
 !>       - **namout** to set output parameters
 !>
 !>    here after, each sub-namelist parameters is detailed.
-!>    @note 
+!>    @note
 !>       default values are specified between brackets
 !>
 !> @subsection sublog namlog
@@ -62,7 +62,7 @@
 !>          - fatal
 !>          - none
 !>
-!>    - **in_maxerror** [@a 5]<br/> 
+!>    - **in_maxerror** [@a 5]<br/>
 !>       maximum number of error allowed
 !>
 !> @subsection subcfg namcfg
@@ -70,37 +70,37 @@
 !>
 !>    - **cn_varcfg** [@a ./cfg/variable.cfg]<br/>
 !>       path to the variable configuration file.<br/>
-!>       the variable configuration file defines standard name, 
-!>       default interpolation method, axis,... 
-!>       to be used for some known variables.<br/> 
+!>       the variable configuration file defines standard name,
+!>       default interpolation method, axis,...
+!>       to be used for some known variables.<br/>
 !>
-!>    - **cn_dimcfg** [@a ./cfg/dimension.cfg]<br/> 
-!>       path to the dimension configuration file.<br/> 
-!>       the dimension configuration file defines dimensions allowed.<br/> 
+!>    - **cn_dimcfg** [@a ./cfg/dimension.cfg]<br/>
+!>       path to the dimension configuration file.<br/>
+!>       the dimension configuration file defines dimensions allowed.<br/>
 !>
-!>    - **cn_dumcfg** [@a ./cfg/dummy.cfg]<br/> 
+!>    - **cn_dumcfg** [@a ./cfg/dummy.cfg]<br/>
 !>       path to the useless (dummy) configuration file.<br/>
-!>       the dummy configuration file defines useless 
+!>       the dummy configuration file defines useless
 !>       dimension or variable. these dimension(s) or variable(s) will not be
 !>       processed.<br/>
 !>
-!> @subsection subvar namvar 
+!> @subsection subvar namvar
 !>    the variable sub-namelist parameters are :
 !>
-!>    - **cn_varfile** [@a ]<br/> 
-!>       list of variable, and associated file 
-!>       @warning 
+!>    - **cn_varfile** [@a ]<br/>
+!>       list of variable, and associated file
+!>       @warning
 !>          variable name must be __Bathymetry__ here.
 !>
 !>    - **cn_varfile** [@a ]<br/>:
-!>       list of variable, and associated file.<br/> 
+!>       list of variable, and associated file.<br/>
 !>       *cn_varfile* is the path and filename of the file where find
 !>       variable to be used as mask grid.<br/>
 !>
-!>       Examples: 
+!>       Examples:
 !>          - 'Bathymetry:bathy_meter.nc'
 !>
-!> @subsection subout namout 
+!> @subsection subout namout
 !>    the output sub-namelist parameters are :
 !>
 !>    - **in_niproc** [@a 1]<br/>:
@@ -113,8 +113,8 @@
 !>    @note
 !>       - if *in_niproc*, and *in_njproc* are provided : the program only look for land
 !>         processor to be removed
-!>       - if *in_nproc* is provided : the program compute each possible domain layout, 
-!>         and save the one with the most land processor to be removed 
+!>       - if *in_nproc* is provided : the program compute each possible domain layout,
+!>         and save the one with the most land processor to be removed
 !>       - with no information about number of processors, the program
 !>         assume to use only one processor
 !>
@@ -135,7 +135,7 @@ PROGRAM create_layout
    USE logger                          ! log file manager
    USE fct                             ! basic useful function
    USE date                            ! date manager
-   USE math                            ! 
+   USE math                            !
    USE att                             ! attribute manager
    USE dim                             ! dimension manager
    USE var                             ! variable manager
@@ -173,15 +173,15 @@ PROGRAM create_layout
    TYPE(TMPP)                              :: tl_mppout
 
    TYPE(TMULTI)                            :: tl_multi
-   
+
    ! namelist variable
    ! namlog
-   CHARACTER(LEN=lc)                       :: cn_logfile = 'create_layout.log' 
-   CHARACTER(LEN=lc)                       :: cn_verbosity = 'warning' 
+   CHARACTER(LEN=lc)                       :: cn_logfile = 'create_layout.log'
+   CHARACTER(LEN=lc)                       :: cn_verbosity = 'warning'
    INTEGER(i4)                             :: in_maxerror = 5
 
    ! namcfg
-   CHARACTER(LEN=lc)                       :: cn_varcfg = './cfg/variable.cfg' 
+   CHARACTER(LEN=lc)                       :: cn_varcfg = './cfg/variable.cfg'
    CHARACTER(LEN=lc)                       :: cn_dimcfg = './cfg/dimension.cfg'
    CHARACTER(LEN=lc)                       :: cn_dumcfg = './cfg/dummy.cfg'
 
@@ -190,7 +190,7 @@ PROGRAM create_layout
 
    ! namout
    INTEGER(i4)                             :: in_niproc = 0
-   INTEGER(i4)                             :: in_njproc = 0 
+   INTEGER(i4)                             :: in_njproc = 0
    INTEGER(i4)                             :: in_nproc  = 0
    !-------------------------------------------------------------------
 
@@ -205,13 +205,13 @@ PROGRAM create_layout
    &  cn_dumcfg         !< dummy configuration file
 
    NAMELIST /namvar/ &  !< source grid namelist
-   &  cn_varfile        !< input file and mask variable   
+   &  cn_varfile        !< input file and mask variable
 
    NAMELIST /namout/ &  !< output namelist
    &  in_niproc,     &
    &  in_njproc,     &
    &  in_nproc
-   !-------------------------------------------------------------------   
+   !-------------------------------------------------------------------
 
    !
    ! Initialisation
@@ -223,7 +223,7 @@ PROGRAM create_layout
    ! --------------------------------
    IF( il_narg /= 1 )THEN
       WRITE(cl_errormsg,*) ' ERROR : one argument is needed '
-      CALL fct_help(cp_myname,cl_errormsg) 
+      CALL fct_help(cp_myname,cl_errormsg)
       CALL EXIT(1)
    ELSE
 
@@ -258,7 +258,7 @@ PROGRAM create_layout
                CALL fct_err(il_status)
                IF( il_status /= 0 )THEN
                   WRITE(cl_errormsg,*) " ERROR : error opening "//TRIM(cl_namelist)
-                  CALL fct_help(cp_myname,cl_errormsg) 
+                  CALL fct_help(cp_myname,cl_errormsg)
                   CALL EXIT(1)
                ENDIF
 
@@ -297,7 +297,7 @@ PROGRAM create_layout
             ELSE
 
                WRITE(cl_errormsg,*) " ERROR : can't find "//TRIM(cl_namelist)
-               CALL fct_help(cp_myname,cl_errormsg) 
+               CALL fct_help(cp_myname,cl_errormsg)
                CALL EXIT(1)
 
             ENDIF
@@ -313,7 +313,7 @@ PROGRAM create_layout
    ELSE
 
       CALL multi_print(tl_multi)
-      
+
       ! open file
       tl_file=file_init(TRIM(tl_multi%t_mpp(1)%c_name))
       tl_mpp=mpp_init( tl_file )

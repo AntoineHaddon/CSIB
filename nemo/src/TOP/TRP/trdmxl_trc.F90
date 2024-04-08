@@ -5,7 +5,6 @@ MODULE trdmxl_trc
    !!======================================================================
    !! History :  9.0  !  06-08  (C. Deltel)  Original code (from trdmxl.F90)
    !!                 !  07-04  (C. Deltel)  Bug fix : add trcrad trends
-   !!                 !  07-06  (C. Deltel)  key_gyre : do not call lbc_lnk
    !!----------------------------------------------------------------------
 #if   defined key_top   &&   defined key_trdmxl_trc
    !!----------------------------------------------------------------------
@@ -15,8 +14,7 @@ MODULE trdmxl_trc
    !!   trd_mxl_trc_zint : passive tracer trends vertical integration
    !!   trd_mxl_trc_init : initialization step
    !!----------------------------------------------------------------------
-   USE trc               ! tracer definitions (trn, trb, tra, etc.)
-   USE trc_oce, ONLY :   nn_dttrc  ! frequency of step on passive tracers
+   USE trc               ! tracer definitions (tr etc.)
    USE dom_oce           ! domain definition
    USE zdfmxl  , ONLY : nmln ! number of level in the mixed layer
    USE zdf_oce , ONLY : avs  ! vert. diffusivity coef. at w-point for temp  
@@ -49,9 +47,12 @@ MODULE trdmxl_trc
 
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::  ztmltrd2   !
 
+   !! * Substitutions
+#  include "do_loop_substitute.h90"
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: trdmxl_trc.F90 11536 2019-09-11 13:54:18Z smasson $ 
+   !! $Id: trdmxl_trc.F90 15090 2021-07-06 14:25:18Z cetlod $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -69,7 +70,7 @@ CONTAINS
    END FUNCTION trd_mxl_trc_alloc
 
 
-   SUBROUTINE trd_mxl_trc_zint( ptrc_trdmxl, ktrd, ctype, kjn )
+   SUBROUTINE trd_mxl_trc_zint( ptrc_trdmxl, ktrd, ctype, kjn, Kmm )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE trd_mxl_trc_zint  ***
       !! 
@@ -91,6 +92,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       !!
       INTEGER, INTENT( in ) ::   ktrd, kjn                        ! ocean trend index and passive tracer rank
+      INTEGER, INTENT( in ) ::   Kmm                              ! time level index
       CHARACTER(len=2), INTENT( in ) ::  ctype                    ! surface/bottom (2D) or interior (3D) physics
       REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT( in ) ::  ptrc_trdmxl ! passive tracer trend
       !
@@ -120,17 +122,15 @@ CONTAINS
             !
             isum  = 0   ;   zvlmsk(:,:) = 0.e0
 
-            IF( jpktrd_trc < jpk ) THEN                           ! description ???
-               DO jj = 1, jpj
-                  DO ji = 1, jpi
-                     IF( nmld_trc(ji,jj) <= jpktrd_trc ) THEN
-                        zvlmsk(ji,jj) = tmask(ji,jj,1)
-                     ELSE
-                        isum = isum + 1
-                        zvlmsk(ji,jj) = 0.e0
-                     ENDIF
-                  END DO
-               END DO
+            IF( jpktrd_trc < jpk ) THEN   
+               DO_2D( nn_hls, nn_hls, nn_hls, nn_hls ) 
+                  IF( nmld_trc(ji,jj) <= jpktrd_trc ) THEN
+                     zvlmsk(ji,jj) = tmask(ji,jj,1)
+                  ELSE
+                     isum = isum + 1
+                     zvlmsk(ji,jj) = 0.e0
+                  ENDIF
+               END_2D
             ENDIF
 
             IF( isum > 0 ) THEN                                   ! index of ocean points (2D only)
@@ -146,13 +146,9 @@ CONTAINS
          
          ! ... Weights for vertical averaging
          wkx_trc(:,:,:) = 0.e0
-         DO jk = 1, jpktrd_trc                                    ! initialize wkx_trc with vertical scale factor in mixed-layer
-            DO jj = 1, jpj
-               DO ji = 1, jpi
-                  IF( jk - nmld_trc(ji,jj) < 0 )   wkx_trc(ji,jj,jk) = e3t_n(ji,jj,jk) * tmask(ji,jj,jk)
-               END DO
-            END DO
-         END DO
+         DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, jpktrd_trc )                    ! description ???
+            IF( jk - nmld_trc(ji,jj) < 0 )   wkx_trc(ji,jj,jk) = e3t(ji,jj,jk,Kmm) * tmask(ji,jj,jk)
+         END_3D
          
          rmld_trc(:,:) = 0.e0
          DO jk = 1, jpktrd_trc                                    ! compute mixed-layer depth : rmld_trc
@@ -182,7 +178,7 @@ CONTAINS
    END SUBROUTINE trd_mxl_trc_zint
 
 
-   SUBROUTINE trd_mxl_trc( kt )
+   SUBROUTINE trd_mxl_trc( kt, Kmm )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE trd_mxl_trc  ***
       !! 
@@ -231,6 +227,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       !
       INTEGER, INTENT(in) ::   kt   ! ocean time-step index
+      INTEGER, INTENT(in) ::   Kmm                              ! time level index
       !
       INTEGER ::   ji, jj, jk, jl, ik, it, itmod, jn
       REAL(wp) ::   zavt, zfn, zfn2
@@ -250,8 +247,6 @@ CONTAINS
       !!----------------------------------------------------------------------
 
 
-      IF( nn_dttrc  /= 1  )   CALL ctl_stop( " Be careful, trends diags never validated " )
-
       ! ======================================================================
       ! I. Diagnose the purely vertical (K_z) diffusion trend
       ! ======================================================================
@@ -262,15 +257,13 @@ CONTAINS
       IF( ln_trcldf_iso ) THEN
          !
          DO jn = 1, jptra
-            DO jj = 1, jpj
-               DO ji = 1, jpi
-                  ik = nmld_trc(ji,jj)
-                  IF( ln_trdtrc(jn) )    &
-                  tmltrd_trc(ji,jj,jpmxl_trc_zdf,jn) = - avs(ji,jj,ik) / e3w_n(ji,jj,ik) * tmask(ji,jj,ik)  &
-                       &                    * ( trn(ji,jj,ik-1,jn) - trn(ji,jj,ik,jn) )            &
-                       &                    / MAX( 1., rmld_trc(ji,jj) ) * tmask(ji,jj,1)
-               END DO
-            END DO
+            DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )                    ! description ???
+               ik = nmld_trc(ji,jj)
+               IF( ln_trdtrc(jn) )    &
+               tmltrd_trc(ji,jj,jpmxl_trc_zdf,jn) = - avs(ji,jj,ik) / e3w(ji,jj,ik,Kmm) * tmask(ji,jj,ik)  &
+                    &                    * ( tr(ji,jj,ik-1,jn,Kmm) - tr(ji,jj,ik,jn,Kmm) )            &
+                    &                    / MAX( 1., rmld_trc(ji,jj) ) * tmask(ji,jj,1)
+            END_2D
          END DO
 
          DO jn = 1, jptra
@@ -289,7 +282,7 @@ CONTAINS
          DO jn = 1, jptra
             IF( ln_trdtrc(jn) ) THEN
                DO jl = 1, jpltrd_trc
-                  CALL lbc_lnk( 'trdmxl_trc', tmltrd_trc(:,:,jl,jn), 'T', 1. )        ! lateral boundary conditions
+                  CALL lbc_lnk( 'trdmxl_trc', tmltrd_trc(:,:,jl,jn), 'T', 1._wp )        ! lateral boundary conditions
                END DO
             ENDIF
          END DO
@@ -321,13 +314,13 @@ CONTAINS
       DO jk = 1, jpktrd_trc ! - 1 ???
          DO jn = 1, jptra
             IF( ln_trdtrc(jn) ) &
-               tml_trc(:,:,jn) = tml_trc(:,:,jn) + wkx_trc(:,:,jk) * trn(:,:,jk,jn)
+               tml_trc(:,:,jn) = tml_trc(:,:,jn) + wkx_trc(:,:,jk) * tr(:,:,jk,jn,Kmm)
          END DO
       END DO
 
       ! II.3 Initialize mixed-layer "before" arrays for the 1rst analysis window    
       ! ------------------------------------------------------------------------
-      IF( kt == nittrc000 + nn_dttrc ) THEN  !  i.e. ( .NOT. ln_rstart ).AND.( kt == nit000 + 1)    ???
+      IF( kt == nittrc000 + 1 ) THEN  !  i.e. ( .NOT. ln_rstart ).AND.( kt == nit000 + 1)    ???
          !
          DO jn = 1, jptra
             IF( ln_trdtrc(jn) ) THEN
@@ -407,11 +400,11 @@ CONTAINS
 
          DO jn = 1, jptra
             IF( ln_trdtrc(jn) ) THEN
-               !-- Compute total trends    (use rdttrc instead of rdt ???)
+               !-- Compute total trends 
                IF ( ln_trcadv_muscl .OR. ln_trcadv_muscl2 ) THEN  ! EULER-FORWARD schemes
-                  ztmltot(:,:,jn) =  ( tml_trc(:,:,jn) - tmlbn_trc(:,:,jn) )/rdt
+                  ztmltot(:,:,jn) =  ( tml_trc(:,:,jn) - tmlbn_trc(:,:,jn) )/rn_Dt
                ELSE                                                                     ! LEAP-FROG schemes
-                  ztmltot(:,:,jn) =  ( tml_trc(:,:,jn) - tmlbn_trc(:,:,jn) + tmlb_trc(:,:,jn) - tmlbb_trc(:,:,jn))/(2.*rdt)
+                  ztmltot(:,:,jn) =  ( tml_trc(:,:,jn) - tmlbn_trc(:,:,jn) + tmlb_trc(:,:,jn) - tmlbb_trc(:,:,jn))/(2.*rn_Dt)
                ENDIF
                
                !-- Compute residuals
@@ -424,8 +417,8 @@ CONTAINS
                
          !-- Lateral boundary conditions
                IF ( cn_cfg .NE. 'gyre' ) THEN
-                  CALL lbc_lnk_multi( 'trdmxl_trc', ztmltot(:,:,jn) , 'T', 1. , ztmlres(:,:,jn) , 'T', 1., &
-                     &                ztmlatf(:,:,jn) , 'T', 1. , ztmlrad(:,:,jn) , 'T', 1. )
+                  CALL lbc_lnk( 'trdmxl_trc', ztmltot(:,:,jn) , 'T', 1._wp , ztmlres(:,:,jn) , 'T', 1._wp, &
+                     &                        ztmlatf(:,:,jn) , 'T', 1._wp , ztmlrad(:,:,jn) , 'T', 1._wp )
                ENDIF
 
 
@@ -445,7 +438,7 @@ CONTAINS
          DO jn = 1, jptra
             IF( ln_trdtrc(jn) ) THEN
                tml_sum_trc(:,:,jn) = tmlbn_trc(:,:,jn) + 2 * ( tml_sum_trc(:,:,jn) - tml_trc(:,:,jn) ) + tml_trc(:,:,jn)
-               ztmltot2   (:,:,jn) = ( tml_sum_trc(:,:,jn) - tml_sumb_trc(:,:,jn) ) /  ( 2.*rdt )    ! now tracer unit is /sec
+               ztmltot2   (:,:,jn) = ( tml_sum_trc(:,:,jn) - tml_sumb_trc(:,:,jn) ) /  ( 2.*rn_Dt )    ! now tracer unit is /sec
             ENDIF
          END DO
 
@@ -475,9 +468,9 @@ CONTAINS
 
          !-- Lateral boundary conditions 
                IF ( cn_cfg .NE. 'gyre' ) THEN            ! other than GYRE configuration    
-                  CALL lbc_lnk_multi( 'trdmxl_trc', ztmltot2(:,:,jn), 'T', 1., ztmlres2(:,:,jn), 'T', 1. )
+                  CALL lbc_lnk( 'trdmxl_trc', ztmltot2(:,:,jn), 'T', 1._wp, ztmlres2(:,:,jn), 'T', 1._wp )
                   DO jl = 1, jpltrd_trc
-                     CALL lbc_lnk( 'trdmxl_trc', ztmltrd2(:,:,jl,jn), 'T', 1. )       ! will be output in the NetCDF trends file
+                     CALL lbc_lnk( 'trdmxl_trc', ztmltrd2(:,:,jl,jn), 'T', 1._wp )       ! will be output in the NetCDF trends file
                   END DO
                ENDIF
 
@@ -858,24 +851,24 @@ CONTAINS
       IF( .NOT. ln_trdmxl_trc_instant ) THEN
          CALL ctl_stop( 'STOP', 'trd_mxl_trc : this was never checked. Comment this line to proceed...' )
       ENDIF
-      zsto = nn_trd_trc * rdt
+      zsto = nn_trd_trc * rn_Dt
       clop = "inst("//TRIM(clop)//")"
 #  else
       IF( ln_trdmxl_trc_instant ) THEN
-         zsto = rdt                                               ! inst. diags : we use IOIPSL time averaging
+         zsto = rn_Dt                                               ! inst. diags : we use IOIPSL time averaging
       ELSE
-         zsto = nn_trd_trc * rdt                                    ! mean  diags : we DO NOT use any IOIPSL time averaging
+         zsto = nn_trd_trc * rn_Dt                                    ! mean  diags : we DO NOT use any IOIPSL time averaging
       ENDIF
       clop = "ave("//TRIM(clop)//")"
 #  endif
-      zout = nn_trd_trc * rdt
-      iiter = ( nittrc000 - 1 ) / nn_dttrc
+      zout = nn_trd_trc * rn_Dt
+      iiter = nittrc000 - 1
 
       IF(lwp) WRITE (numout,*) '                netCDF initialization'
 
       ! II.2 Compute julian date from starting date of the run
       ! ------------------------------------------------------
-      CALL ymds2ju( nyear, nmonth, nday, rdt, zjulian )
+      CALL ymds2ju( nyear, nmonth, nday, rn_Dt, zjulian )
       zjulian = zjulian - adatrj   !   set calendar origin to the beginning of the experiment
       IF(lwp) WRITE(numout,*)' '  
       IF(lwp) WRITE(numout,*)' Date 0 used :', nittrc000               &
@@ -907,7 +900,7 @@ CONTAINS
             csuff="ML_"//ctrcnm(jn)
             CALL dia_nam( clhstnam, nn_trd_trc, csuff )
             CALL histbeg( clhstnam, jpi, glamt, jpj, gphit,                                            &
-               &        1, jpi, 1, jpj, iiter, zjulian, rdt, nh_t(jn), nidtrd(jn), domain_id=nidom, snc4chunks=snc4set )
+               &        1, jpi, 1, jpj, iiter, zjulian, rn_Dt, nh_t(jn), nidtrd(jn), domain_id=nidom, snc4chunks=snc4set )
       
             !-- Define the ML depth variable
             CALL histdef(nidtrd(jn), "mxl_depth", clmxl//" Mixed Layer Depth", "m",                        &
@@ -944,7 +937,7 @@ CONTAINS
             DO jl = 1, jpltrd_trc - 2                                ! <== only true if jpltrd_trc == jpmxl_trc_atf
                CALL histdef(nidtrd(jn), trim(clvar)//trim(ctrd_trc(jl,2)), clmxl//" "//clvar//ctrd_trc(jl,1),                      & 
                  &    cltrcu, jpi, jpj, nh_t(jn), 1  , 1, 1  , -99 , 32, clop, zsto, zout ) ! IOIPSL: time mean
-            END DO                                                                         ! if zsto=rdt above
+            END DO                                                                         ! if zsto=rn_Dt above
          
             CALL histdef(nidtrd(jn), trim(clvar)//trim(ctrd_trc(jpmxl_trc_radb,2)), clmxl//" "//clvar//ctrd_trc(jpmxl_trc_radb,1), & 
               &       cltrcu, jpi, jpj, nh_t(jn), 1  , 1, 1  , -99 , 32, clop, zout, zout ) ! IOIPSL: NO time mean
@@ -969,12 +962,14 @@ CONTAINS
    !!   Default option :                                       Empty module
    !!----------------------------------------------------------------------
 CONTAINS
-   SUBROUTINE trd_mxl_trc( kt )                                   ! Empty routine
+   SUBROUTINE trd_mxl_trc( kt, Kmm )                                   ! Empty routine
       INTEGER, INTENT( in) ::   kt
+      INTEGER, INTENT( in) ::   Kmm            ! time level index
       WRITE(*,*) 'trd_mxl_trc: You should not have seen this print! error?', kt
    END SUBROUTINE trd_mxl_trc
-   SUBROUTINE trd_mxl_trc_zint( ptrc_trdmxl, ktrd, ctype, kjn )
+   SUBROUTINE trd_mxl_trc_zint( ptrc_trdmxl, ktrd, ctype, kjn, Kmm )
       INTEGER               , INTENT( in ) ::  ktrd, kjn              ! ocean trend index and passive tracer rank
+      INTEGER               , INTENT( in ) ::  Kmm                    ! time level index
       CHARACTER(len=2)      , INTENT( in ) ::  ctype                  ! surface/bottom (2D) or interior (3D) physics
       REAL, DIMENSION(:,:,:), INTENT( in ) ::  ptrc_trdmxl            ! passive trc trend
       WRITE(*,*) 'trd_mxl_trc_zint: You should not have seen this print! error?', ptrc_trdmxl(1,1,1)

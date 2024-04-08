@@ -1,4 +1,5 @@
 MODULE errioipsl
+!$AGRIF_DO_NOT_TREAT
 !-
 !$Id: errioipsl.f90 2281 2010-10-15 14:21:13Z smasson $
 !-
@@ -212,4 +213,5 @@ SUBROUTINE ipsldbg (new_status,old_status)
 END SUBROUTINE ipsldbg
 !===
 !-------------------
+!$AGRIF_END_DO_NOT_TREAT
 END MODULE errioipsl

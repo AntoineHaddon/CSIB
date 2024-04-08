@@ -422,6 +422,7 @@ int IsTabvarsUseInArgument_0()
          if ( !strcasecmp(parcours->var->v_subroutinename,subroutinename) )
                                                                   doloopout = 1;
          else parcours = parcours->suiv;
+        
       }
       if (  doloopout == 0 ) out = 0;
       else out = 1 ;
@@ -590,11 +591,14 @@ int VariableIsFunction(const char *ident)
 
     out = 0;
 
+    return (out == 0);
+    
     if ( !strcasecmp(ident,"size") ||
          !strcasecmp(ident,"if")   ||
          !strcasecmp(ident,"max")  ||
          !strcasecmp(ident,"min")  )
     {
+    printf("ident = %s\n",ident);
         newvar = List_SubroutineDeclaration_Var;
         while ( newvar && out == 0 )
         {
@@ -610,12 +614,48 @@ int VariableIsFunction(const char *ident)
             newvar = List_Global_Var;
             while ( newvar && out == 0 )
             {
+            printf("llll = %s\n",newvar->var->v_nomvar);
                 if ( !strcasecmp(ident, newvar->var->v_nomvar) ) out = 1;
                 newvar = newvar -> suiv ;
             }
         }
     }
     return (out == 0);
+}
+
+/* removenewline */
+/* REMOVE UNWANTED character */
+/* from a NAME{NEWLINE77]NAME flex match */
+
+void removenewline(char *nom)
+{
+char temp_nom[LONG_VNAME];
+int size_nom,i,j;
+
+size_nom=strlen(nom);
+
+j=0;
+for (i=0;i<size_nom;)
+{
+if (nom[i]=='\n')
+{
+/* REMOVE RETURN - blank and column 6 character */
+i=i+7;
+}
+else if (nom[i]==' ' || nom[i]=='\t')
+{
+i=i+1;
+}
+else
+{
+temp_nom[j]=nom[i];
+j++;
+i++;
+}
+}
+temp_nom[j]='\0';
+
+strcpy(nom,temp_nom);
 }
 
 void dump_var(const variable* var)

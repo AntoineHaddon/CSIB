@@ -478,6 +478,10 @@ void Add_Save_Var_1 (const char *name, listdim *d)
         newvar->var->v_save = 1;
         strcpy(newvar->var->v_nomvar,name);
         strcpy(newvar->var->v_modulename,curmodulename);
+        if (strcasecmp(curmodulename,""))
+        {
+        newvar->var->v_module=1;
+        }
         strcpy(newvar->var->v_subroutinename,subroutinename);
         strcpy(newvar->var->v_commoninfile,cur_filename);
 
@@ -521,18 +525,23 @@ void Add_Save_Var_dcl_1 (listvar *var)
             newvar->var = (variable *) calloc(1,sizeof(variable));
 
             Init_Variable(newvar->var);
-
             newvar->var->v_save = 1;
             strcpy(newvar->var->v_nomvar,parcours->var->v_nomvar);
+            strcpy(newvar->var->v_dimchar,parcours->var->v_dimchar);
             strcpy(newvar->var->v_modulename,curmodulename);
             strcpy(newvar->var->v_subroutinename,subroutinename);
             strcpy(newvar->var->v_commoninfile,cur_filename);
             strcpy(newvar->var->v_readedlistdimension,parcours->var->v_readedlistdimension);
 
             newvar->var->v_nbdim = parcours->var->v_nbdim;
+            strcpy(newvar->var->v_typevar,parcours->var->v_typevar);
+            strcpy(newvar->var->v_precision,parcours->var->v_precision);
             newvar->var->v_catvar = parcours->var->v_catvar;
             newvar->var->v_dimension = parcours->var->v_dimension;
             newvar->var->v_dimensiongiven=parcours->var->v_dimensiongiven;
+            newvar->var->v_allocatable = parcours->var->v_allocatable;
+            newvar->var->v_initialvalue = parcours->var->v_initialvalue;
+            newvar->var->v_initialvalue_array = parcours->var->v_initialvalue_array;
             newvar->suiv = List_Save_Var;
             List_Save_Var = newvar;
 

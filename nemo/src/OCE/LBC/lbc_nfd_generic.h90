@@ -1,175 +1,389 @@
-#if defined MULTI
-#   define NAT_IN(k)                cd_nat(k)   
-#   define SGN_IN(k)                psgn(k)
-#   define F_SIZE(ptab)             kfld
-#   if defined DIM_2d
-#      define ARRAY_TYPE(i,j,k,l,f)    TYPE(PTR_2D),INTENT(inout)::ptab(f)
-#      define ARRAY_IN(i,j,k,l,f)      ptab(f)%pt2d(i,j)
-#      define K_SIZE(ptab)             1
-#      define L_SIZE(ptab)             1
-#   endif
-#   if defined DIM_3d
-#      define ARRAY_TYPE(i,j,k,l,f)    TYPE(PTR_3D),INTENT(inout)::ptab(f)
-#      define ARRAY_IN(i,j,k,l,f)      ptab(f)%pt3d(i,j,k)
-#      define K_SIZE(ptab)             SIZE(ptab(1)%pt3d,3)
-#      define L_SIZE(ptab)             1
-#   endif
-#   if defined DIM_4d
-#      define ARRAY_TYPE(i,j,k,l,f)    TYPE(PTR_4D),INTENT(inout)::ptab(f)
-#      define ARRAY_IN(i,j,k,l,f)      ptab(f)%pt4d(i,j,k,l)
-#      define K_SIZE(ptab)             SIZE(ptab(1)%pt4d,3)
-#      define L_SIZE(ptab)             SIZE(ptab(1)%pt4d,4)
-#   endif
-#else
-!                          !==  IN: ptab is an array  ==!
-#   define NAT_IN(k)                cd_nat
-#   define SGN_IN(k)                psgn
-#   define F_SIZE(ptab)             1
-#   if defined DIM_2d
-#      define ARRAY_IN(i,j,k,l,f)   ptab(i,j)
-#      define K_SIZE(ptab)          1
-#      define L_SIZE(ptab)          1
-#   endif
-#   if defined DIM_3d
-#      define ARRAY_IN(i,j,k,l,f)   ptab(i,j,k)
-#      define K_SIZE(ptab)          SIZE(ptab,3)
-#      define L_SIZE(ptab)          1
-#   endif
-#   if defined DIM_4d
-#      define ARRAY_IN(i,j,k,l,f)   ptab(i,j,k,l)
-#      define K_SIZE(ptab)          SIZE(ptab,3)
-#      define L_SIZE(ptab)          SIZE(ptab,4)
-#   endif
-#   define ARRAY_TYPE(i,j,k,l,f)    REAL(wp),INTENT(inout)::ARRAY_IN(i,j,k,l,f)
-#endif
-
-#if defined MULTI
-   SUBROUTINE ROUTINE_NFD( ptab, cd_nat, psgn, kfld )
-      INTEGER          , INTENT(in   ) ::   kfld        ! number of pt3d arrays
-#else
-   SUBROUTINE ROUTINE_NFD( ptab, cd_nat, psgn       )
-#endif
-      ARRAY_TYPE(:,:,:,:,:)                             ! array or pointer of arrays on which the boundary condition is applied
-      CHARACTER(len=1) , INTENT(in   ) ::   NAT_IN(:)   ! nature of array grid-points
-      REAL(wp)         , INTENT(in   ) ::   SGN_IN(:)   ! sign used across the north fold boundary
+SUBROUTINE lbc_nfd_/**/PRECISION( ptab, cd_nat, psgn, khls, kfld )
+      TYPE(PTR_4d_/**/PRECISION),  DIMENSION(:), INTENT(inout) ::   ptab        ! pointer of arrays on which apply the b.c.
+      CHARACTER(len=1), DIMENSION(:), INTENT(in   ) ::   cd_nat      ! nature of array grid-points
+      REAL(PRECISION),  DIMENSION(:), INTENT(in   ) ::   psgn        ! sign used across the north fold boundary
+      INTEGER                       , INTENT(in   ) ::   khls        ! halo size, default = nn_hls
+      INTEGER                       , INTENT(in   ) ::   kfld        ! number of pt3d arrays
       !
-      INTEGER  ::    ji,  jj,  jk,  jl, jh,  jf   ! dummy loop indices
-      INTEGER  ::   ipi, ipj, ipk, ipl,     ipf   ! dimension of the input array
-      INTEGER  ::   ijt, iju, ipjm1
+      INTEGER  ::    ji,  jj,  jk,  jl,  jf   ! dummy loop indices
+      INTEGER  ::   ipi, ipj, ipk, ipl, ipf   ! dimension of the input array
+      INTEGER  ::   ii1, ii2, ij1, ij2
       !!----------------------------------------------------------------------
       !
-      ipk = K_SIZE(ptab)   ! 3rd dimension
-      ipl = L_SIZE(ptab)   ! 4th    -
-      ipf = F_SIZE(ptab)   ! 5th    -      use in "multi" case (array of pointers)
+      ipi = SIZE(ptab(1)%pt4d,1)
+      ipj = SIZE(ptab(1)%pt4d,2)
+      ipk = SIZE(ptab(1)%pt4d,3)
+      ipl = SIZE(ptab(1)%pt4d,4)
+      ipf = kfld
       !
-      !
-      SELECT CASE ( jpni )
-      CASE ( 1 )     ;   ipj = nlcj       ! 1 proc only  along the i-direction
-      CASE DEFAULT   ;   ipj = 4          ! several proc along the i-direction
-      END SELECT
-      ipjm1 = ipj-1
-
+      IF( ipi /= Ni0glo+2*khls ) THEN
+         WRITE(ctmp1,*) 'lbc_nfd input array does not match khls', ipi, khls, Ni0glo
+         CALL ctl_stop( 'STOP', ctmp1 )
+      ENDIF
       !
       DO jf = 1, ipf                      ! Loop on the number of arrays to be treated
          !
-         SELECT CASE ( npolj )
-         !
-         CASE ( 3 , 4 )                        ! *  North fold  T-point pivot
+         IF( c_NFtype == 'T' ) THEN            ! *  North fold  T-point pivot
             !
-            SELECT CASE ( NAT_IN(jf)  )
+            SELECT CASE ( cd_nat(jf) )
             CASE ( 'T' , 'W' )                         ! T-, W-point
-               DO ji = 2, jpiglo
-                  ijt = jpiglo-ji+2
-                  ARRAY_IN(ji,ipj,:,:,jf) = SGN_IN(jf)  * ARRAY_IN(ijt,ipj-2,:,:,jf)
-               END DO
-               ARRAY_IN(1,ipj,:,:,jf) = SGN_IN(jf)  * ARRAY_IN(3,ipj-2,:,:,jf)
-               DO ji = jpiglo/2+1, jpiglo
-                  ijt = jpiglo-ji+2
-                  ARRAY_IN(ji,ipjm1,:,:,jf) = SGN_IN(jf)  * ARRAY_IN(ijt,ipjm1,:,:,jf)
-               END DO
+               DO jl = 1, ipl   ;   DO jk = 1, ipk
+                  !
+                  ! last khls lines (from ipj to ipj-khls+1) : full
+               	  DO jj = 1, khls
+               	     ij1 = ipj          - jj + 1         ! ends at: ipj - khls + 1
+                     ij2 = ipj - 2*khls + jj - 1         ! ends at: ipj - 2*khls + khls - 1 = ipj - khls - 1
+                     !
+                     DO ji = 1, khls              ! first khls points
+                        ii1 =              ji            ! ends at: khls
+                        ii2 = 2*khls + 2 - ji            ! ends at: 2*khls + 2 - khls = khls + 2
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                     DO ji = 1, 1                 ! point khls+1
+                        ii1 = khls + ji
+                        ii2 = ii1
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                     DO ji = 1, Ni0glo - 1        ! points from khls+2 to ipi - khls   (note: Ni0glo = ipi - 2*khls)
+                        ii1 =   2 + khls + ji - 1        ! ends at: 2 + khls + ipi - 2*khls - 1 - 1 = ipi - khls
+                        ii2 = ipi - khls - ji + 1        ! ends at: ipi - khls - ( ipi - 2*khls - 1 ) + 1 = khls + 2
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                     DO ji = 1, 1                 ! point ipi - khls + 1
+                        ii1 = ipi - khls + ji
+                        ii2 =       khls + ji
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                     DO ji = 1, khls-1            ! last khls-1 points
+                        ii1 = ipi - khls + 1 + ji        ! ends at: ipi - khls + 1 + khls - 1 = ipi
+                        ii2 = ipi - khls + 1 - ji        ! ends at: ipi - khls + 1 - khls + 1 = ipi - 2*khls + 2
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                  END DO
+                  !
+                  ! line number ipj-khls : right half
+               	  DO jj = 1, 1
+                     ij1 = ipj - khls
+                     ij2 = ij1   ! same line
+                     !
+                     DO ji = 1, Ni0glo/2-1        ! points from ipi/2+2 to ipi - khls   (note: Ni0glo = ipi - 2*khls)
+                        ii1 = ipi/2 + ji + 1             ! ends at: ipi/2 + (ipi/2 - khls - 1) + 1 = ipi - khls
+                        ii2 = ipi/2 - ji + 1             ! ends at: ipi/2 - (ipi/2 - khls - 1) + 1 = khls + 2
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                     DO ji = 1, khls              ! first khls points: redo them just in case (if e-w periodocity already done)
+                        !                         ! as we just changed points ipi-2khls+1 to ipi-khls  
+                        ii1 =              ji            ! ends at: khls
+                        ii2 = 2*khls + 2 - ji            ! ends at: 2*khls + 2 - khls = khls + 2
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                     !                            ! last khls-1 points: have been / will done by e-w periodicity 
+                  END DO
+                  !
+               END DO; END DO
             CASE ( 'U' )                               ! U-point
-               DO ji = 1, jpiglo-1
-                  iju = jpiglo-ji+1
-                  ARRAY_IN(ji,ipj,:,:,jf) = SGN_IN(jf)  * ARRAY_IN(iju,ipj-2,:,:,jf)
-               END DO
-               ARRAY_IN(   1  ,ipj,:,:,jf) = SGN_IN(jf)  * ARRAY_IN(    2   ,ipj-2,:,:,jf)
-               ARRAY_IN(jpiglo,ipj,:,:,jf) = SGN_IN(jf)  * ARRAY_IN(jpiglo-1,ipj-2,:,:,jf) 
-               DO ji = jpiglo/2, jpiglo-1
-                  iju = jpiglo-ji+1
-                  ARRAY_IN(ji,ipjm1,:,:,jf) = SGN_IN(jf)  * ARRAY_IN(iju,ipjm1,:,:,jf)
-               END DO
+               DO jl = 1, ipl   ;   DO jk = 1, ipk
+                  !
+                  ! last khls lines (from ipj to ipj-khls+1) : full
+               	  DO jj = 1, khls
+               	     ij1 = ipj          - jj + 1         ! ends at: ipj - khls + 1
+                     ij2 = ipj - 2*khls + jj - 1         ! ends at: ipj - 2*khls + khls - 1 = ipj - khls - 1
+                     !
+                     DO ji = 1, khls              ! first khls points
+                        ii1 =              ji            ! ends at: khls
+                        ii2 = 2*khls + 1 - ji            ! ends at: 2*khls + 1 - khls = khls + 1
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                     DO ji = 1, Ni0glo            ! points from khls to ipi - khls   (note: Ni0glo = ipi - 2*khls)
+                        ii1 =       khls + ji            ! ends at: khls + ipi - 2*khls = ipi - khls
+                        ii2 = ipi - khls - ji + 1        ! ends at: ipi - khls - ( ipi - 2*khls ) + 1 = khls + 1
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                     DO ji = 1, khls              ! last khls points
+                        ii1 = ipi - khls + ji            ! ends at: ipi - khls + khls = ipi
+                        ii2 = ipi - khls - ji + 1        ! ends at: ipi - khls + 1 - khls = ipi - 2*khls + 1
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                  END DO
+                  !
+                  ! line number ipj-khls : right half
+               	  DO jj = 1, 1
+                     ij1 = ipj - khls
+                     ij2 = ij1   ! same line
+                     !
+                     DO ji = 1, Ni0glo/2          ! points from ipi/2+1 to ipi - khls   (note: Ni0glo = ipi - 2*khls)
+                        ii1 = ipi/2 + ji                 ! ends at: ipi/2 + (ipi/2 - khls) = ipi - khls
+                        ii2 = ipi/2 - ji + 1             ! ends at: ipi/2 - (ipi/2 - khls) + 1 = khls + 1
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                     DO ji = 1, khls              ! first khls points: redo them just in case (if e-w periodocity already done)
+                        !                         ! as we just changed points ipi-2khls+1 to ipi-khls  
+                        ii1 =              ji            ! ends at: khls
+                        ii2 = 2*khls + 1 - ji            ! ends at: 2*khls + 1 - khls = khls + 1
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                     !                            ! last khls-1 points: have been / will done by e-w periodicity 
+                  END DO
+                  !
+               END DO; END DO
             CASE ( 'V' )                               ! V-point
-               DO ji = 2, jpiglo
-                  ijt = jpiglo-ji+2
-                  ARRAY_IN(ji,ipj-1,:,:,jf) = SGN_IN(jf)  * ARRAY_IN(ijt,ipj-2,:,:,jf)
-                  ARRAY_IN(ji,ipj  ,:,:,jf) = SGN_IN(jf)  * ARRAY_IN(ijt,ipj-3,:,:,jf)
-               END DO
-               ARRAY_IN(1,ipj,:,:,jf) = SGN_IN(jf)  * ARRAY_IN(3,ipj-3,:,:,jf) 
+               DO jl = 1, ipl   ;   DO jk = 1, ipk
+                  !
+                  ! last khls+1 lines (from ipj to ipj-khls) : full
+               	  DO jj = 1, khls+1
+               	     ij1 = ipj          - jj + 1         ! ends at: ipj - ( khls + 1 ) + 1 = ipj - khls
+                     ij2 = ipj - 2*khls + jj - 2         ! ends at: ipj - 2*khls + khls + 1 - 2 = ipj - khls - 1
+                     !
+                     DO ji = 1, khls              ! first khls points
+                        ii1 =              ji            ! ends at: khls
+                        ii2 = 2*khls + 2 - ji            ! ends at: 2*khls + 2 - khls = khls + 2
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                     DO ji = 1, 1                 ! point khls+1
+                        ii1 = khls + ji
+                        ii2 = ii1
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                     DO ji = 1, Ni0glo - 1        ! points from khls+2 to ipi - khls   (note: Ni0glo = ipi - 2*khls)
+                        ii1 =   2 + khls + ji - 1        ! ends at: 2 + khls + ipi - 2*khls - 1 - 1 = ipi - khls
+                        ii2 = ipi - khls - ji + 1        ! ends at: ipi - khls - ( ipi - 2*khls - 1 ) + 1 = khls + 2
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                     DO ji = 1, 1                 ! point ipi - khls + 1
+                        ii1 = ipi - khls + ji
+                        ii2 =       khls + ji
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                     DO ji = 1, khls-1            ! last khls-1 points
+                        ii1 = ipi - khls + 1 + ji        ! ends at: ipi - khls + 1 + khls - 1 = ipi
+                        ii2 = ipi - khls + 1 - ji        ! ends at: ipi - khls + 1 - khls + 1 = ipi - 2*khls + 2
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                  END DO
+                  !
+               END DO; END DO
             CASE ( 'F' )                               ! F-point
-               DO ji = 1, jpiglo-1
-                  iju = jpiglo-ji+1
-                  ARRAY_IN(ji,ipj-1,:,:,jf) = SGN_IN(jf)  * ARRAY_IN(iju,ipj-2,:,:,jf)
-                  ARRAY_IN(ji,ipj  ,:,:,jf) = SGN_IN(jf)  * ARRAY_IN(iju,ipj-3,:,:,jf)
-               END DO
-               ARRAY_IN(   1  ,ipj,:,:,jf) = SGN_IN(jf)  * ARRAY_IN(    2   ,ipj-3,:,:,jf)
-               ARRAY_IN(jpiglo,ipj,:,:,jf) = SGN_IN(jf)  * ARRAY_IN(jpiglo-1,ipj-3,:,:,jf) 
-            END SELECT
+               DO jl = 1, ipl   ;   DO jk = 1, ipk
+                  !
+                  ! last khls+1 lines (from ipj to ipj-khls) : full
+               	  DO jj = 1, khls+1
+               	     ij1 = ipj          - jj + 1         ! ends at: ipj - ( khls + 1 ) + 1 = ipj - khls
+                     ij2 = ipj - 2*khls + jj - 2         ! ends at: ipj - 2*khls + khls + 1 - 2 = ipj - khls - 1
+                     !
+                     DO ji = 1, khls              ! first khls points
+                        ii1 =              ji            ! ends at: khls
+                        ii2 = 2*khls + 1 - ji            ! ends at: 2*khls + 1 - khls = khls + 1
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                     DO ji = 1, Ni0glo            ! points from khls to ipi - khls   (note: Ni0glo = ipi - 2*khls)
+                        ii1 =       khls + ji            ! ends at: khls + ipi - 2*khls = ipi - khls
+                        ii2 = ipi - khls - ji + 1        ! ends at: ipi - khls - ( ipi - 2*khls ) + 1 = khls + 1
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                     DO ji = 1, khls              ! last khls points
+                        ii1 = ipi - khls + ji            ! ends at: ipi - khls + khls = ipi
+                        ii2 = ipi - khls - ji + 1        ! ends at: ipi - khls + 1 - khls = ipi - 2*khls + 1
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                  END DO
+                  !
+               END DO; END DO
+            END SELECT   ! cd_nat(jf)
             !
-         CASE ( 5 , 6 )                        ! *  North fold  F-point pivot
-            !
-            SELECT CASE ( NAT_IN(jf)  )
-            CASE ( 'T' , 'W' )                         ! T-, W-point
-               DO ji = 1, jpiglo
-                  ijt = jpiglo-ji+1
-                  ARRAY_IN(ji,ipj,:,:,jf) = SGN_IN(jf)  * ARRAY_IN(ijt,ipj-1,:,:,jf)
-               END DO
-            CASE ( 'U' )                               ! U-point
-               DO ji = 1, jpiglo-1
-                  iju = jpiglo-ji
-                  ARRAY_IN(ji,ipj,:,:,jf) = SGN_IN(jf)  * ARRAY_IN(iju,ipj-1,:,:,jf)
-               END DO
-               ARRAY_IN(jpiglo,ipj,:,:,jf) = SGN_IN(jf) * ARRAY_IN(jpiglo-2,ipj-1,:,:,jf)
-            CASE ( 'V' )                               ! V-point
-               DO ji = 1, jpiglo
-                  ijt = jpiglo-ji+1
-                  ARRAY_IN(ji,ipj,:,:,jf) = SGN_IN(jf)  * ARRAY_IN(ijt,ipj-2,:,:,jf)
-               END DO
-               DO ji = jpiglo/2+1, jpiglo
-                  ijt = jpiglo-ji+1
-                  ARRAY_IN(ji,ipjm1,:,:,jf) = SGN_IN(jf)  * ARRAY_IN(ijt,ipjm1,:,:,jf)
-               END DO
-            CASE ( 'F' )                               ! F-point
-               DO ji = 1, jpiglo-1
-                  iju = jpiglo-ji
-                  ARRAY_IN(ji,ipj  ,:,:,jf) = SGN_IN(jf)  * ARRAY_IN(iju,ipj-2,:,:,jf)
-               END DO
-               ARRAY_IN(jpiglo,ipj,:,:,jf) = SGN_IN(jf)   * ARRAY_IN(jpiglo-2,ipj-2,:,:,jf)
-               DO ji = jpiglo/2+1, jpiglo-1
-                  iju = jpiglo-ji
-                  ARRAY_IN(ji,ipjm1,:,:,jf) = SGN_IN(jf)  * ARRAY_IN(iju,ipjm1,:,:,jf)
-               END DO
-            END SELECT
-            !
-         CASE DEFAULT                           ! *  closed : the code probably never go through
-            !
-            SELECT CASE ( NAT_IN(jf) )
-            CASE ( 'T' , 'U' , 'V' , 'W' )             ! T-, U-, V-, W-points
-               ARRAY_IN(:, 1 ,:,:,jf) = 0._wp
-               ARRAY_IN(:,ipj,:,:,jf) = 0._wp
-            CASE ( 'F' )                               ! F-point
-               ARRAY_IN(:,ipj,:,:,jf) = 0._wp
-            END SELECT
-            !
-         END SELECT     !  npolj
+         ENDIF   ! c_NFtype == 'T'
          !
-      END DO
+         IF( c_NFtype == 'F' ) THEN            ! *  North fold  F-point pivot
+            !
+            SELECT CASE ( cd_nat(jf) )
+            CASE ( 'T' , 'W' )                         ! T-, W-point
+               DO jl = 1, ipl   ;   DO jk = 1, ipk
+                  !
+                  ! first: line number ipj-khls : 3 points
+               	  DO jj = 1, 1
+                     ij1 = ipj - khls
+                     ij2 = ij1   ! same line
+                     !
+                     DO ji = 1, 1                 ! points from ipi/2+1
+                        ii1 = ipi/2 + ji
+                        ii2 = ipi/2 - ji + 1
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) =            ptab(jf)%pt4d(ii2,ij2,jk,jl)   ! Warning: pb with sign...
+                     END DO
+                     DO ji = 1, 1                 ! points ipi - khls
+                        ii1 = ipi - khls + ji - 1
+                        ii2 =       khls + ji
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) =            ptab(jf)%pt4d(ii2,ij2,jk,jl)   ! Warning: pb with sign...
+                     END DO
+                     DO ji = 1, 1                 ! point khls: redo it just in case (if e-w periodocity already done)
+                        !                         ! as we just changed point ipi - khls
+                        ii1 = khls + ji - 1
+                        ii2 = khls + ji
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) =            ptab(jf)%pt4d(ii2,ij2,jk,jl)   ! Warning: pb with sign...
+                     END DO
+                  END DO
+                  !
+                  ! Second: last khls lines (from ipj to ipj-khls+1) : full
+               	  DO jj = 1, khls
+               	     ij1 = ipj + 1      - jj             ! ends at: ipj + 1 - khls
+                     ij2 = ipj - 2*khls + jj             ! ends at: ipj - 2*khls + khls = ipj - khls
+                     !
+                     DO ji = 1, khls              ! first khls points
+                        ii1 =              ji            ! ends at: khls
+                        ii2 = 2*khls + 1 - ji            ! ends at: 2*khls + 1 - khls = khls + 1
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                     DO ji = 1, Ni0glo            ! points from khls to ipi - khls   (note: Ni0glo = ipi - 2*khls)
+                        ii1 =       khls + ji            ! ends at: khls + ipi - 2*khls = ipi - khls
+                        ii2 = ipi - khls - ji + 1        ! ends at: ipi - khls - ( ipi - 2*khls ) + 1 = khls + 1
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                     DO ji = 1, khls              ! last khls points
+                        ii1 = ipi - khls + ji            ! ends at: ipi - khls + khls = ipi
+                        ii2 = ipi - khls - ji + 1        ! ends at: ipi - khls + 1 - khls = ipi - 2*khls + 1
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                  END DO
+                  !
+               END DO; END DO
+            CASE ( 'U' )                               ! U-point
+               DO jl = 1, ipl   ;   DO jk = 1, ipk
+                  !
+                  ! last khls lines (from ipj to ipj-khls+1) : full
+               	  DO jj = 1, khls
+               	     ij1 = ipj + 1      - jj             ! ends at: ipj + 1 - khls
+                     ij2 = ipj - 2*khls + jj             ! ends at: ipj - 2*khls + khls = ipj - khls
+                     !
+                     DO ji = 1, khls-1            ! first khls-1 points
+                        ii1 =          ji                ! ends at: khls-1
+                        ii2 = 2*khls - ji                ! ends at: 2*khls - ( khls - 1 ) = khls + 1
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                     DO ji = 1, 1                 ! point khls
+                        ii1 = khls + ji - 1
+                        ii2 = ipi - ii1
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                     DO ji = 1, Ni0glo - 1        ! points from khls+1 to ipi - khls - 1  (note: Ni0glo = ipi - 2*khls)
+                        ii1 =       khls + ji            ! ends at: khls + ( ipi - 2*khls - 1 ) = ipi - khls - 1
+                        ii2 = ipi - khls - ji            ! ends at: ipi - khls - ( ipi - 2*khls - 1 ) = khls + 1
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                     DO ji = 1, 1                 ! point ipi - khls
+                        ii1 = ipi - khls + ji - 1
+                        ii2 = ii1
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                     DO ji = 1, khls              ! last khls points
+                        ii1 = ipi - khls + ji            ! ends at: ipi - khls + khls = ipi
+                        ii2 = ipi - khls - ji            ! ends at: ipi - khls - khls = ipi - 2*khls
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                  END DO
+                  !
+               END DO; END DO
+            CASE ( 'V' )                               ! V-point
+               DO jl = 1, ipl   ;   DO jk = 1, ipk
+                  !
+                  ! last khls lines (from ipj to ipj-khls+1) : full
+               	  DO jj = 1, khls
+               	     ij1 = ipj          - jj + 1         ! ends at: ipj - khls + 1
+                     ij2 = ipj - 2*khls + jj - 1         ! ends at: ipj - 2*khls + khls - 1 = ipj - khls - 1
+                     !
+                     DO ji = 1, khls              ! first khls points
+                        ii1 =              ji            ! ends at: khls
+                        ii2 = 2*khls + 1 - ji            ! ends at: 2*khls + 1 - khls = khls + 1
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                     DO ji = 1, Ni0glo            ! points from khls to ipi - khls   (note: Ni0glo = ipi - 2*khls)
+                        ii1 =       khls + ji          ! ends at: khls + ipi - 2*khls = ipi - khls
+                        ii2 = ipi - khls - ji + 1      ! ends at: ipi - khls - ( ipi - 2*khls ) + 1 = khls + 1
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                     DO ji = 1, khls            ! last khls points
+                        ii1 = ipi - khls + ji          ! ends at: ipi - khls + khls = ipi
+                        ii2 = ipi - khls - ji + 1      ! ends at: ipi - khls + 1 - khls = ipi - 2*khls + 1
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                  END DO   
+                  !
+                  ! line number ipj-khls : right half
+               	  DO jj = 1, 1
+                     ij1 = ipj - khls
+                     ij2 = ij1   ! same line
+                     !
+                     DO ji = 1, Ni0glo/2          ! points from ipi/2+1 to ipi - khls   (note: Ni0glo = ipi - 2*khls)
+                        ii1 = ipi/2 + ji                 ! ends at: ipi/2 + (ipi/2 - khls) = ipi - khls
+                        ii2 = ipi/2 - ji + 1             ! ends at: ipi/2 - (ipi/2 - khls) + 1 = khls + 1
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                     DO ji = 1, khls              ! first khls points: redo them just in case (if e-w periodocity already done)
+                        !                         ! as we just changed points ipi-2khls+1 to ipi-khls  
+                        ii1 =              ji            ! ends at: khls
+                        ii2 = 2*khls + 1 - ji            ! ends at: 2*khls + 1 - khls = khls + 1
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                     !                            ! last khls points: have been / will done by e-w periodicity 
+                  END DO
+                  !
+               END DO; END DO
+            CASE ( 'F' )                               ! F-point
+               DO jl = 1, ipl   ;   DO jk = 1, ipk
+                  !
+                  ! last khls lines (from ipj to ipj-khls+1) : full
+               	  DO jj = 1, khls
+               	     ij1 = ipj          - jj + 1         ! ends at: ipj - khls + 1
+                     ij2 = ipj - 2*khls + jj - 1         ! ends at: ipj - 2*khls + khls - 1 = ipj - khls - 1
+                     !
+                     DO ji = 1, khls-1            ! first khls-1 points
+                        ii1 =          ji                ! ends at: khls-1
+                        ii2 = 2*khls - ji                ! ends at: 2*khls - ( khls - 1 ) = khls + 1
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                     DO ji = 1, 1                 ! point khls
+                        ii1 = khls + ji - 1
+                        ii2 = ipi - ii1
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                     DO ji = 1, Ni0glo - 1        ! points from khls+1 to ipi - khls - 1  (note: Ni0glo = ipi - 2*khls)
+                        ii1 =       khls + ji            ! ends at: khls + ( ipi - 2*khls - 1 ) = ipi - khls - 1
+                        ii2 = ipi - khls - ji            ! ends at: ipi - khls - ( ipi - 2*khls - 1 ) = khls + 1
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                     DO ji = 1, 1                 ! point ipi - khls
+                        ii1 = ipi - khls + ji - 1
+                        ii2 = ii1
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                     DO ji = 1, khls              ! last khls points
+                        ii1 = ipi - khls + ji            ! ends at: ipi - khls + khls = ipi
+                        ii2 = ipi - khls - ji            ! ends at: ipi - khls - khls = ipi - 2*khls
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                  END DO   
+                  !
+                  ! line number ipj-khls : right half
+               	  DO jj = 1, 1
+                     ij1 = ipj - khls
+                     ij2 = ij1   ! same line
+                     !
+                     DO ji = 1, Ni0glo/2-1        ! points from ipi/2+1 to ipi - khls-1  (note: Ni0glo = ipi - 2*khls)
+                        ii1 = ipi/2 + ji                 ! ends at: ipi/2 + (ipi/2 - khls) = ipi - khls
+                        ii2 = ipi/2 - ji                 ! ends at: ipi/2 - (ipi/2 - khls - 1 ) = khls + 1
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                     DO ji = 1, khls-1            ! first khls-1 points: redo them just in case (if e-w periodocity already done)
+                        !                         ! as we just changed points ipi-2khls+1 to ipi-nn_hl-1  
+                        ii1 =          ji                ! ends at: khls
+                        ii2 = 2*khls - ji                ! ends at: 2*khls - ( khls - 1 ) = khls + 1
+                        ptab(jf)%pt4d(ii1,ij1,jk,jl) = psgn(jf) * ptab(jf)%pt4d(ii2,ij2,jk,jl)
+                     END DO
+                     !                            ! last khls points: have been / will done by e-w periodicity 
+                  END DO
+                  !
+               END DO; END DO
+            END SELECT   ! cd_nat(jf)
+            !
+         ENDIF   ! c_NFtype == 'F'
+         !
+      END DO   ! ipf
       !
-   END SUBROUTINE ROUTINE_NFD
-
-#undef ARRAY_TYPE
-#undef ARRAY_IN
-#undef NAT_IN
-#undef SGN_IN
-#undef K_SIZE
-#undef L_SIZE
-#undef F_SIZE
+   END SUBROUTINE lbc_nfd_/**/PRECISION

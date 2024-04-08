@@ -10,7 +10,7 @@ MODULE tradmp
    !!            8.1  ! 2001-02  (G. Madec, E. Durand)  cleaning
    !!  NEMO      1.0  ! 2002-08  (G. Madec, E. Durand)  free form + modules
    !!            3.2  ! 2009-08  (G. Madec, C. Talandier)  DOCTOR norm for namelist parameter
-   !!            3.3  ! 2010-06  (C. Ethe, G. Madec) merge TRA-TRC 
+   !!            3.3  ! 2010-06  (C. Ethe, G. Madec) merge TRA-TRC
    !!            3.4  ! 2011-04  (G. Madec, C. Ethe) Merge of dtatem and dtasal + suppression of CPP keys
    !!            3.6  ! 2015-06  (T. Graham)  read restoring coefficient in a file
    !!            3.7  ! 2015-10  (G. Madec)  remove useless trends arrays
@@ -23,9 +23,8 @@ MODULE tradmp
    !!----------------------------------------------------------------------
    USE oce            ! ocean: variables
    USE dom_oce        ! ocean: domain variables
-   USE c1d            ! 1D vertical configuration
    USE trd_oce        ! trends: ocean variables
-   USE trdtra         ! trends manager: tracers 
+   USE trdtra         ! trends manager: tracers
    USE zdf_oce        ! ocean: vertical physics
    USE phycst         ! physical constants
    USE dtatsd         ! data: temperature & salinity
@@ -51,10 +50,11 @@ MODULE tradmp
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   resto    !: restoring coeff. on T and S (s-1)
 
    !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
+#  include "do_loop_substitute.h90"
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: tradmp.F90 11536 2019-09-11 13:54:18Z smasson $ 
+   !! $Id: tradmp.F90 15023 2021-06-18 14:35:25Z gsamson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -71,15 +71,15 @@ CONTAINS
    END FUNCTION tra_dmp_alloc
 
 
-   SUBROUTINE tra_dmp( kt )
+   SUBROUTINE tra_dmp( kt, Kbb, Kmm, pts, Krhs )
       !!----------------------------------------------------------------------
       !!                   ***  ROUTINE tra_dmp  ***
-      !!                  
+      !!
       !! ** Purpose :   Compute the tracer trend due to a newtonian damping
       !!      of the tracer field towards given data field and add it to the
       !!      general tracer trends.
       !!
-      !! ** Method  :   Newtonian damping towards t_dta and s_dta computed 
+      !! ** Method  :   Newtonian damping towards t_dta and s_dta computed
       !!      and add to the general tracer trends:
       !!                     ta = ta + resto * (t_dta - tb)
       !!                     sa = sa + resto * (s_dta - sb)
@@ -89,18 +89,25 @@ CONTAINS
       !!
       !! ** Action  : - tsa: tracer trends updated with the damping trend
       !!----------------------------------------------------------------------
-      INTEGER, INTENT(in) ::   kt   ! ocean time-step index
+      INTEGER,                                   INTENT(in   ) :: kt              ! ocean time-step index
+      INTEGER,                                   INTENT(in   ) :: Kbb, Kmm, Krhs  ! time level indices
+      REAL(dp), DIMENSION(jpi,jpj,jpk,jpts,jpt), INTENT(inout) :: pts             ! active tracers and RHS of tracer equation
       !
       INTEGER ::   ji, jj, jk, jn   ! dummy loop indices
-      REAL(wp), DIMENSION(jpi,jpj,jpk,jpts)     ::  zts_dta
+      REAL(dp), DIMENSION(A2D(nn_hls),jpk,jpts)     ::  zts_dta
+      REAL(wp), DIMENSION(:,:,:)  , ALLOCATABLE ::  zwrk
       REAL(wp), DIMENSION(:,:,:,:), ALLOCATABLE ::  ztrdts
       !!----------------------------------------------------------------------
       !
       IF( ln_timing )   CALL timing_start('tra_dmp')
       !
-      IF( l_trdtra )   THEN                    !* Save ta and sa trends
-         ALLOCATE( ztrdts(jpi,jpj,jpk,jpts) ) 
-         ztrdts(:,:,:,:) = tsa(:,:,:,:) 
+      IF( l_trdtra .OR. iom_use('hflx_dmp_cea') .OR. iom_use('sflx_dmp_cea') ) THEN   !* Save ta and sa trends
+         ALLOCATE( ztrdts(A2D(nn_hls),jpk,jpts) )
+         DO jn = 1, jpts
+            DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, jpk )
+               ztrdts(ji,jj,jk,jn) = pts(ji,jj,jk,jn,Krhs)
+            END_3D
+         END DO
       ENDIF
       !                           !==  input T-S data at kt  ==!
       CALL dta_tsd( kt, zts_dta )            ! read and interpolates T-S data at kt
@@ -109,54 +116,64 @@ CONTAINS
       !
       CASE( 0 )                        !*  newtonian damping throughout the water column  *!
          DO jn = 1, jpts
-            DO jk = 1, jpkm1
-               DO jj = 2, jpjm1
-                  DO ji = fs_2, fs_jpim1   ! vector opt.
-                     tsa(ji,jj,jk,jn) = tsa(ji,jj,jk,jn) + resto(ji,jj,jk) * ( zts_dta(ji,jj,jk,jn) - tsb(ji,jj,jk,jn) )
-                  END DO
-               END DO
-            END DO
+            DO_3D( 0, 0, 0, 0, 1, jpkm1 )
+               pts(ji,jj,jk,jn,Krhs) = pts(ji,jj,jk,jn,Krhs)           &
+                  &                  + resto(ji,jj,jk) * ( zts_dta(ji,jj,jk,jn) - pts(ji,jj,jk,jn,Kbb) )
+            END_3D
          END DO
          !
       CASE ( 1 )                       !*  no damping in the turbocline (avt > 5 cm2/s)  *!
-         DO jk = 1, jpkm1
-            DO jj = 2, jpjm1
-               DO ji = fs_2, fs_jpim1   ! vector opt.
-                  IF( avt(ji,jj,jk) <= avt_c ) THEN
-                     tsa(ji,jj,jk,jp_tem) = tsa(ji,jj,jk,jp_tem)   &
-                        &                 + resto(ji,jj,jk) * ( zts_dta(ji,jj,jk,jp_tem) - tsb(ji,jj,jk,jp_tem) )
-                     tsa(ji,jj,jk,jp_sal) = tsa(ji,jj,jk,jp_sal)   &
-                        &                 + resto(ji,jj,jk) * ( zts_dta(ji,jj,jk,jp_sal) - tsb(ji,jj,jk,jp_sal) )
-                  ENDIF
-               END DO
-            END DO
-         END DO
+         DO_3D( 0, 0, 0, 0, 1, jpkm1 )
+            IF( avt(ji,jj,jk) <= avt_c ) THEN
+               pts(ji,jj,jk,jp_tem,Krhs) = pts(ji,jj,jk,jp_tem,Krhs)   &
+                  &                      + resto(ji,jj,jk) * ( zts_dta(ji,jj,jk,jp_tem) - pts(ji,jj,jk,jp_tem,Kbb) )
+               pts(ji,jj,jk,jp_sal,Krhs) = pts(ji,jj,jk,jp_sal,Krhs)   &
+                  &                      + resto(ji,jj,jk) * ( zts_dta(ji,jj,jk,jp_sal) - pts(ji,jj,jk,jp_sal,Kbb) )
+            ENDIF
+         END_3D
          !
       CASE ( 2 )                       !*  no damping in the mixed layer   *!
-         DO jk = 1, jpkm1
-            DO jj = 2, jpjm1
-               DO ji = fs_2, fs_jpim1   ! vector opt.
-                  IF( gdept_n(ji,jj,jk) >= hmlp (ji,jj) ) THEN
-                     tsa(ji,jj,jk,jp_tem) = tsa(ji,jj,jk,jp_tem)   &
-                        &                 + resto(ji,jj,jk) * ( zts_dta(ji,jj,jk,jp_tem) - tsb(ji,jj,jk,jp_tem) )
-                     tsa(ji,jj,jk,jp_sal) = tsa(ji,jj,jk,jp_sal)   &
-                        &                 + resto(ji,jj,jk) * ( zts_dta(ji,jj,jk,jp_sal) - tsb(ji,jj,jk,jp_sal) )
-                  ENDIF
-               END DO
-            END DO
-         END DO
+         DO_3D( 0, 0, 0, 0, 1, jpkm1 )
+            IF( gdept(ji,jj,jk,Kmm) >= hmlp (ji,jj) ) THEN
+               pts(ji,jj,jk,jp_tem,Krhs) = pts(ji,jj,jk,jp_tem,Krhs)   &
+                  &                      + resto(ji,jj,jk) * ( zts_dta(ji,jj,jk,jp_tem) - pts(ji,jj,jk,jp_tem,Kbb) )
+               pts(ji,jj,jk,jp_sal,Krhs) = pts(ji,jj,jk,jp_sal,Krhs)   &
+                  &                      + resto(ji,jj,jk) * ( zts_dta(ji,jj,jk,jp_sal) - pts(ji,jj,jk,jp_sal,Kbb) )
+            ENDIF
+         END_3D
          !
       END SELECT
       !
+      ! outputs (clem trunk)
+      IF( iom_use('hflx_dmp_cea') .OR. iom_use('sflx_dmp_cea') ) THEN
+         ALLOCATE( zwrk(A2D(nn_hls),jpk) )          ! Needed to handle expressions containing e3t when using key_qco or key_linssh
+         zwrk(:,:,:) = 0._wp
+
+         IF( iom_use('hflx_dmp_cea') ) THEN
+            DO_3D( 0, 0, 0, 0, 1, jpk )
+               zwrk(ji,jj,jk) = ( pts(ji,jj,jk,jp_tem,Krhs) - ztrdts(ji,jj,jk,jp_tem) ) * e3t(ji,jj,jk,Kmm)
+            END_3D
+            CALL iom_put('hflx_dmp_cea', SUM( zwrk(:,:,:), dim=3 ) * rcp * rho0 ) ! W/m2
+         ENDIF
+         IF( iom_use('sflx_dmp_cea') ) THEN
+            DO_3D( 0, 0, 0, 0, 1, jpk )
+               zwrk(ji,jj,jk) = ( pts(ji,jj,jk,jp_sal,Krhs) - ztrdts(ji,jj,jk,jp_sal) ) * e3t(ji,jj,jk,Kmm)
+            END_3D
+            CALL iom_put('sflx_dmp_cea', SUM( zwrk(:,:,:), dim=3 ) * rho0 )       ! g/m2/s
+         ENDIF
+
+         DEALLOCATE( zwrk )
+      ENDIF
+      !
       IF( l_trdtra )   THEN       ! trend diagnostic
-         ztrdts(:,:,:,:) = tsa(:,:,:,:) - ztrdts(:,:,:,:)
-         CALL trd_tra( kt, 'TRA', jp_tem, jptra_dmp, ztrdts(:,:,:,jp_tem) )
-         CALL trd_tra( kt, 'TRA', jp_sal, jptra_dmp, ztrdts(:,:,:,jp_sal) )
-         DEALLOCATE( ztrdts ) 
+         ztrdts(:,:,:,:) = pts(:,:,:,:,Krhs) - ztrdts(:,:,:,:)
+         CALL trd_tra( kt, Kmm, Krhs, 'TRA', jp_tem, jptra_dmp, ztrdts(:,:,:,jp_tem) )
+         CALL trd_tra( kt, Kmm, Krhs, 'TRA', jp_sal, jptra_dmp, ztrdts(:,:,:,jp_sal) )
+         DEALLOCATE( ztrdts )
       ENDIF
       !                           ! Control print
-      IF(ln_ctl)   CALL prt_ctl( tab3d_1=tsa(:,:,:,jp_tem), clinfo1=' dmp  - Ta: ', mask1=tmask,   &
-         &                       tab3d_2=tsa(:,:,:,jp_sal), clinfo2=       ' Sa: ', mask2=tmask, clinfo3='tra' )
+      IF(sn_cfctl%l_prtctl)   CALL prt_ctl( tab3d_1=pts(:,:,:,jp_tem,Krhs), clinfo1=' dmp  - Ta: ', mask1=tmask,   &
+         &                                  tab3d_2=pts(:,:,:,jp_sal,Krhs), clinfo2=       ' Sa: ', mask2=tmask, clinfo3='tra' )
       !
       IF( ln_timing )   CALL timing_stop('tra_dmp')
       !
@@ -166,21 +183,19 @@ CONTAINS
    SUBROUTINE tra_dmp_init
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE tra_dmp_init  ***
-      !! 
-      !! ** Purpose :   Initialization for the newtonian damping 
+      !!
+      !! ** Purpose :   Initialization for the newtonian damping
       !!
       !! ** Method  :   read the namtra_dmp namelist and check the parameters
       !!----------------------------------------------------------------------
-      INTEGER ::   ios, imask   ! local integers 
+      INTEGER ::   ios, imask   ! local integers
       !
       NAMELIST/namtra_dmp/ ln_tradmp, nn_zdmp, cn_resto
       !!----------------------------------------------------------------------
       !
-      REWIND( numnam_ref )   ! Namelist namtra_dmp in reference namelist : T & S relaxation
       READ  ( numnam_ref, namtra_dmp, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namtra_dmp in reference namelist' )
       !
-      REWIND( numnam_cfg )   ! Namelist namtra_dmp in configuration namelist : T & S relaxation
       READ  ( numnam_cfg, namtra_dmp, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namtra_dmp in configuration namelist' )
       IF(lwm) WRITE ( numond, namtra_dmp )
@@ -218,7 +233,7 @@ CONTAINS
          ENDIF
          !                          ! Read in mask from file
          CALL iom_open ( cn_resto, imask)
-         CALL iom_get  ( imask, jpdom_autoglo, 'resto', resto )
+         CALL iom_get  ( imask, jpdom_auto, 'resto', resto )
          CALL iom_close( imask )
       ENDIF
       !

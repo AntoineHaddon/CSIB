@@ -49,16 +49,17 @@ MODULE storng
    INTEGER(KIND=i8) :: w=123456123456123456_8
 
    ! Parameters to generate real random variates
-   REAL(KIND=wp), PARAMETER :: huge64=9223372036854775808.0  ! +1
    REAL(KIND=wp), PARAMETER :: zero=0.0, half=0.5, one=1.0, two=2.0
 
    ! Variables to store 2 Gaussian random numbers with current index (ig)
    INTEGER(KIND=i8), SAVE :: ig=1
    REAL(KIND=wp), SAVE :: gran1, gran2
 
+   !! * Substitutions
+#  include "do_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: storng.F90 10069 2018-08-28 14:12:24Z nicolasmartin $
+   !! $Id: storng.F90 12649 2020-04-03 07:11:57Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -272,7 +273,7 @@ CONTAINS
       IMPLICIT NONE
       REAL(KIND=wp) :: uran
 
-      uran = half * ( one + REAL(kiss(),wp) / huge64 )
+      uran = half * ( one + REAL(kiss(),wp) / HUGE(1._wp) )
 
    END SUBROUTINE kiss_uniform
 
@@ -295,8 +296,8 @@ CONTAINS
       IF (ig.EQ.1) THEN
          rsq = two
          DO WHILE ( (rsq.GE.one).OR. (rsq.EQ.zero) )
-            u1 = REAL(kiss(),wp) / huge64
-            u2 = REAL(kiss(),wp) / huge64
+            u1 = REAL(kiss(),wp) / HUGE(1._wp)
+            u2 = REAL(kiss(),wp) / HUGE(1._wp)
             rsq = u1*u1 + u2*u2
          ENDDO
          fac = SQRT(-two*LOG(rsq)/rsq)

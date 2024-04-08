@@ -29,12 +29,12 @@ MODULE p2zsms
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: p2zsms.F90 10068 2018-08-28 14:09:04Z nicolasmartin $ 
+   !! $Id: p2zsms.F90 12377 2020-02-12 14:39:06Z acc $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE p2z_sms( kt )
+   SUBROUTINE p2z_sms( kt, Kmm, Krhs )
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE p2z_sms  ***
       !!
@@ -43,21 +43,22 @@ CONTAINS
       !!
       !! ** Method  : - ???
       !! --------------------------------------------------------------------
-      INTEGER, INTENT( in ) ::   kt      ! ocean time-step index      
+      INTEGER, INTENT( in ) ::   kt            ! ocean time-step index      
+      INTEGER, INTENT( in ) ::   Kmm, Krhs     ! ocean time level index      
       !
       INTEGER ::   jn   ! dummy loop index
       !! --------------------------------------------------------------------
       !
       IF( ln_timing )   CALL timing_start('p2z_sms')
       !
-      CALL p2z_opt( kt )      ! optical model
-      CALL p2z_bio( kt )      ! biological model
-      CALL p2z_sed( kt )      ! sedimentation model
-      CALL p2z_exp( kt )      ! export
+      CALL p2z_opt( kt, Kmm       )      ! optical model
+      CALL p2z_bio( kt, Kmm, Krhs )      ! biological model
+      CALL p2z_sed( kt, Kmm, Krhs )      ! sedimentation model
+      CALL p2z_exp( kt, Kmm, Krhs )      ! export
       !
       IF( l_trdtrc ) THEN
          DO jn = jp_pcs0, jp_pcs1
-           CALL trd_trc( tra(:,:,:,jn), jn, jptra_sms, kt )   ! save trends
+           CALL trd_trc( tr(:,:,:,jn,Krhs), jn, jptra_sms, kt, Kmm )   ! save trends
          END DO
       END IF
       !

@@ -1,5 +1,5 @@
 !
-! $Id: modinterpbasic.F90 5656 2015-07-31 08:55:56Z timgraham $
+! $Id: modinterpbasic.F90 14107 2020-12-04 17:02:20Z nicolasmartin $
 !
 !     AGRIF (Adaptive Grid Refinement In Fortran)
 !
@@ -36,7 +36,7 @@ module Agrif_InterpBasic
     real, dimension(Agrif_MaxRaff)          :: tabdiff2, tabdiff3
     real, dimension(:),   allocatable       :: tabtest4
     real, dimension(:,:), allocatable       :: coeffparent
-    integer, dimension(:,:), allocatable    :: indparent
+    integer, private, dimension(:,:), allocatable    :: indparent
     integer, dimension(:,:), allocatable    :: indparentppm, indchildppm
     integer, dimension(:), allocatable      :: indparentppm_1d, indchildppm_1d
 !
@@ -55,14 +55,14 @@ subroutine Agrif_basicinterp_linear1D ( x, y, np, nc, s_parent, s_child, ds_pare
     real, dimension(nc), intent(out)    :: y            !< Fine output data to child
     integer,             intent(in)     :: np           !< Length of input array
     integer,             intent(in)     :: nc           !< Length of output array
-    real,                intent(in)     :: s_parent     !< Parent grid position (s_root = 0)
-    real,                intent(in)     :: s_child      !< Child  grid position (s_root = 0)
-    real,                intent(in)     :: ds_parent    !< Parent grid dx (ds_root = 1)
-    real,                intent(in)     :: ds_child     !< Child  grid dx (ds_root = 1)
+    real(kind=8),                intent(in)     :: s_parent     !< Parent grid position (s_root = 0)
+    real(kind=8),                intent(in)     :: s_child      !< Child  grid position (s_root = 0)
+    real(kind=8),                intent(in)     :: ds_parent    !< Parent grid dx (ds_root = 1)
+    real(kind=8),                intent(in)     :: ds_child     !< Child  grid dx (ds_root = 1)
 !
     integer :: i, coeffraf, locind_parent_left
-    real    :: globind_parent_left, globind_parent_right
-    real    :: invds, invds2, ypos, ypos2, diff
+    real(kind=8)    :: globind_parent_left, globind_parent_right
+    real(kind=8)    :: invds, invds2, ypos, ypos2, diff
 !
     coeffraf = nint(ds_parent/ds_child)
 !
@@ -91,6 +91,9 @@ subroutine Agrif_basicinterp_linear1D ( x, y, np, nc, s_parent, s_child, ds_pare
         endif
 !
         diff = globind_parent_right - ypos2
+! quick fix for roundoff error
+        diff=nint(diff*coeffraf)/real(coeffraf)
+
         y(i) = (diff*x(locind_parent_left) + (1.-diff)*x(locind_parent_left+1))
         ypos2 = ypos2 + invds2
 !
@@ -103,8 +106,13 @@ subroutine Agrif_basicinterp_linear1D ( x, y, np, nc, s_parent, s_child, ds_pare
         y(nc) = x(np)
     else
         globind_parent_left = s_parent + (locind_parent_left - 1)*ds_parent
-        y(nc) = ((globind_parent_left + ds_parent - ypos)*x(locind_parent_left)  &
-                           + (ypos - globind_parent_left)*x(locind_parent_left+1))*invds
+        diff=(globind_parent_left + ds_parent - ypos)*invds
+
+! quick fix for roundoff error
+        diff=nint(diff*coeffraf)/real(coeffraf)
+!        y(nc) = ((globind_parent_left + ds_parent - ypos)*x(locind_parent_left)  &
+!                           + (ypos - globind_parent_left)*x(locind_parent_left+1))*invds
+        y(nc) = (diff*x(locind_parent_left) + (1.-diff)*x(locind_parent_left+1))
     endif
 !---------------------------------------------------------------------------------------------------
 end subroutine Agrif_basicinterp_linear1D
@@ -119,16 +127,16 @@ end subroutine Agrif_basicinterp_linear1D
 subroutine Linear1dPrecompute2d ( np2, np, nc, s_parent, s_child, ds_parent, ds_child, dir )
 !---------------------------------------------------------------------------------------------------
     integer, intent(in) :: np,nc,np2
-    real,    intent(in) :: s_parent, s_child
-    real,    intent(in) :: ds_parent, ds_child
+    real(kind=8),    intent(in) :: s_parent, s_child
+    real(kind=8),    intent(in) :: ds_parent, ds_child
     integer, intent(in) :: dir
 !
     integer :: i,coeffraf,locind_parent_left,inc,inc1,inc2
     integer, dimension(:,:), allocatable :: indparent_tmp
     real, dimension(:,:), allocatable :: coeffparent_tmp
-    real    :: ypos,globind_parent_left,globind_parent_right
-    real    :: invds, invds2, invds3
-    real :: ypos2,diff
+    real(kind=8)    :: ypos,globind_parent_left,globind_parent_right
+    real(kind=8)    :: invds, invds2, invds3
+    real(kind=8) :: ypos2,diff
 !
     coeffraf = nint(ds_parent/ds_child)
 !
@@ -163,7 +171,7 @@ subroutine Linear1dPrecompute2d ( np2, np, nc, s_parent, s_child, ds_parent, ds_
 !
         if (ypos2 > globind_parent_right) then
             locind_parent_left = locind_parent_left + 1
-            globind_parent_right = globind_parent_right + 1.
+            globind_parent_right = globind_parent_right + 1.d0
             ypos2 = ypos*invds+(i-1)*invds2
         endif
 !
@@ -219,10 +227,17 @@ subroutine Linear1dAfterCompute ( x, y, np, nc, dir )
 !
 !CDIR ALTCODE
 !CDIR NODEP
+    if (associated(agrif_external_linear_interp)) then
+    do i = 1,nc
+        y(i)=agrif_external_linear_interp(x(MAX(indparent(i,dir),1)), &
+              x(indparent(i,dir)+1),coeffparent(i,dir))
+    enddo
+    else
     do i = 1,nc
         y(i) = coeffparent(i,dir)  * x(MAX(indparent(i,dir),1)) + &
            (1.-coeffparent(i,dir)) * x(indparent(i,dir)+1)
     enddo
+    endif
 !---------------------------------------------------------------------------------------------------
 end subroutine Linear1dAfterCompute
 !===================================================================================================
@@ -238,12 +253,12 @@ subroutine Lagrange1d ( x, y, np, nc, s_parent, s_child, ds_parent, ds_child )
     integer,             intent(in)     :: np, nc
     real, dimension(np), intent(in)     :: x
     real, dimension(nc), intent(out)    :: y
-    real,                intent(in)     :: s_parent, s_child
-    real,                intent(in)     :: ds_parent, ds_child
+    real(kind=8),                intent(in)     :: s_parent, s_child
+    real(kind=8),                intent(in)     :: ds_parent, ds_child
 !
     integer :: i, coeffraf, locind_parent_left
-    real    :: ypos,globind_parent_left
-    real    :: deltax, invdsparent
+    real(kind=8)    :: ypos,globind_parent_left
+    real(kind=8)    :: deltax, invdsparent
     real    :: t2,t3,t4,t5,t6,t7,t8
 !
     if (np <= 2) then
@@ -303,11 +318,11 @@ subroutine Constant1d ( x, y, np, nc, s_parent, s_child, ds_parent, ds_child )
     integer,             intent(in)     :: np, nc
     real, dimension(np), intent(in)     :: x
     real, dimension(nc), intent(out)    :: y
-    real,                intent(in)     :: s_parent, s_child
-    real,                intent(in)     :: ds_parent, ds_child
+    real(kind=8),                intent(in)     :: s_parent, s_child
+    real(kind=8),                intent(in)     :: ds_parent, ds_child
 !
     integer :: i, coeffraf, locind_parent
-    real    :: ypos
+    real(kind=8)    :: ypos
 !
     coeffraf = nint(ds_parent/ds_child)
 !
@@ -341,12 +356,12 @@ subroutine Linear1dConserv ( x, y, np, nc, s_parent, s_child, ds_parent, ds_chil
     integer,             intent(in)     :: np, nc
     real, dimension(np), intent(in)     :: x
     real, dimension(nc), intent(out)    :: y
-    real,                intent(in)     :: s_parent, s_child
-    real,                intent(in)     :: ds_parent, ds_child
+    real(kind=8),                intent(in)     :: s_parent, s_child
+    real(kind=8),                intent(in)     :: ds_parent, ds_child
 !
     real, dimension(:), allocatable :: ytemp
     integer :: i,coeffraf,locind_parent_left,locind_parent_last
-    real    :: ypos,xdiffmod,xpmin,xpmax,slope
+    real(kind=8)    :: ypos,xdiffmod,xpmin,xpmax,slope
     integer :: i1,i2,ii
     integer :: diffmod
 !
@@ -385,7 +400,7 @@ subroutine Linear1dConserv ( x, y, np, nc, s_parent, s_child, ds_parent, ds_chil
     endif
 
     do ii = i-coeffraf/2+diffmod,i+coeffraf/2
-        ytemp(ii) = x(locind_parent_left)+(ii-i-xdiffmod/2.)*slope
+        ytemp(ii) = x(locind_parent_left)+(ii-i-xdiffmod)*slope
     enddo
 
     locind_parent_left = locind_parent_left + 1
@@ -393,7 +408,7 @@ subroutine Linear1dConserv ( x, y, np, nc, s_parent, s_child, ds_parent, ds_chil
     do i = i1+coeffraf, i2-coeffraf,coeffraf
         slope = (x(locind_parent_left+1)-x(locind_parent_left-1))/(2.*coeffraf)
         do ii = i-coeffraf/2+diffmod,i+coeffraf/2
-            ytemp(ii) = x(locind_parent_left)+(ii-i-xdiffmod/2.)*slope
+            ytemp(ii) = x(locind_parent_left)+(ii-i-xdiffmod)*slope
         enddo
         locind_parent_left = locind_parent_left + 1
     enddo
@@ -407,7 +422,7 @@ subroutine Linear1dConserv ( x, y, np, nc, s_parent, s_child, ds_parent, ds_chil
     endif
 
     do ii = i-coeffraf/2+diffmod,nc
-        ytemp(ii) = x(locind_parent_left)+(ii-i-xdiffmod/2.)*slope
+        ytemp(ii) = x(locind_parent_left)+(ii-i-xdiffmod)*slope
     enddo
 !
     y(1:nc)=ytemp(1:nc)
@@ -428,12 +443,12 @@ subroutine Linear1dConservLim ( x, y, np, nc, s_parent, s_child, ds_parent, ds_c
     integer,             intent(in)     :: np, nc
     real, dimension(np), intent(in)     :: x
     real, dimension(nc), intent(out)    :: y
-    real,                intent(in)     :: s_parent, s_child
-    real,                intent(in)     :: ds_parent, ds_child
+    real(kind=8),                intent(in)     :: s_parent, s_child
+    real(kind=8),                intent(in)     :: ds_parent, ds_child
 !
     real, dimension(:), allocatable :: ytemp
     integer :: i,coeffraf,locind_parent_left,locind_parent_last
-    real    :: ypos,xdiffmod,xpmin,xpmax,slope
+    real(kind=8)    :: ypos,xdiffmod,xpmin,xpmax,slope
     integer :: i1,i2,ii
     integer :: diffmod
 !
@@ -478,7 +493,7 @@ subroutine Linear1dConservLim ( x, y, np, nc, s_parent, s_child, ds_parent, ds_c
     endif
 
     do ii = i-coeffraf/2+diffmod,i+coeffraf/2
-        ytemp(ii) = x(locind_parent_left)+(ii-i-xdiffmod/2.)*slope
+        ytemp(ii) = x(locind_parent_left)+(ii-i-xdiffmod)*slope
     enddo
 
     locind_parent_left = locind_parent_left + 1
@@ -487,7 +502,7 @@ subroutine Linear1dConservLim ( x, y, np, nc, s_parent, s_child, ds_parent, ds_c
         slope = Agrif_limiter_vanleer(x(locind_parent_left-1:locind_parent_left+1))
         slope = slope / coeffraf
         do ii=i-coeffraf/2+diffmod,i+coeffraf/2
-            ytemp(ii) = x(locind_parent_left)+(ii-i-xdiffmod/2.)*slope
+            ytemp(ii) = x(locind_parent_left)+(ii-i-xdiffmod)*slope
         enddo
         locind_parent_left = locind_parent_left + 1
     enddo
@@ -502,7 +517,7 @@ subroutine Linear1dConservLim ( x, y, np, nc, s_parent, s_child, ds_parent, ds_c
     endif
 
     do ii=i-coeffraf/2+diffmod,nc
-        ytemp(ii) = x(locind_parent_left)+(ii-i-xdiffmod/2.)*slope
+        ytemp(ii) = x(locind_parent_left)+(ii-i-xdiffmod)*slope
     enddo
 !
     y(1:nc) = ytemp(1:nc)
@@ -523,14 +538,15 @@ subroutine PPM1d ( x, y, np, nc, s_parent, s_child, ds_parent, ds_child )
     integer,             intent(in)     :: np, nc
     real, dimension(np), intent(in)     :: x
     real, dimension(nc), intent(out)    :: y
-    real,                intent(in)     :: s_parent, s_child
-    real,                intent(in)     :: ds_parent, ds_child
+    real(kind=8),                intent(in)     :: s_parent, s_child
+    real(kind=8),                intent(in)     :: ds_parent, ds_child
 !
     integer :: i,coeffraf,locind_parent_left,locind_parent_last
     integer :: iparent,ipos,pos,nmin,nmax
-    real    :: ypos
+    real(kind=8)    :: ypos
     integer :: i1,jj
-    real :: xpmin,a
+    real(kind=8) :: xpmin
+    real :: a
 !
     real, dimension(np) :: xl,delta,a6,slope
     integer :: diffmod
@@ -645,8 +661,8 @@ end subroutine PPM1d
 subroutine PPM1dPrecompute2d ( np2, np, nc, s_parent, s_child, ds_parent, ds_child, dir )
 !---------------------------------------------------------------------------------------------------
     integer,             intent(in)     :: np2, np, nc
-    real,                intent(in)     :: s_parent, s_child
-    real,                intent(in)     :: ds_parent, ds_child
+    real(kind=8),                intent(in)     :: s_parent, s_child
+    real(kind=8),                intent(in)     :: ds_parent, ds_child
     integer,             intent(in)     :: dir
 !
     integer, dimension(:,:), allocatable :: indparent_tmp
@@ -655,7 +671,8 @@ subroutine PPM1dPrecompute2d ( np2, np, nc, s_parent, s_child, ds_parent, ds_chi
     integer :: iparent,ipos,pos
     real    :: ypos
     integer :: i1,jj
-    real :: xpmin,a
+    real(kind=8) :: xpmin
+    real :: a
 !
     integer :: diffmod
     real :: invcoeffraf
@@ -1068,15 +1085,15 @@ subroutine WENO1d ( x, y, np, nc, s_parent, s_child, ds_parent, ds_child )
     integer,             intent(in)     :: np, nc
     real, dimension(np), intent(in)     :: x
     real, dimension(nc), intent(out)    :: y
-    real,                intent(in)     :: s_parent, s_child
-    real,                intent(in)     :: ds_parent, ds_child
+    real(kind=8),                intent(in)     :: s_parent, s_child
+    real(kind=8),                intent(in)     :: ds_parent, ds_child
 !
     real, dimension(:), allocatable :: ytemp
     integer :: i,coeffraf,locind_parent_left,locind_parent_last
     integer :: iparent,ipos,pos,nmin,nmax
-    real    :: ypos
+    real(kind=8)    :: ypos
     integer :: i1,jj
-    real :: xpmin
+    real(kind=8) :: xpmin
 !
     real, dimension(np) :: slope
     real, dimension(:), allocatable  :: diff
@@ -1165,14 +1182,14 @@ subroutine ENO1d ( x, y, np, nc, s_parent, s_child, ds_parent, ds_child )
     integer,             intent(in)     :: np, nc
     real, dimension(np), intent(in)     :: x
     real, dimension(nc), intent(out)    :: y
-    real,                intent(in)     :: s_parent, s_child
-    real,                intent(in)     :: ds_parent, ds_child
+    real(kind=8),                intent(in)     :: s_parent, s_child
+    real(kind=8),                intent(in)     :: ds_parent, ds_child
 !
     integer :: i,coeffraf,locind_parent_left,locind_parent_last
     integer :: ipos, pos
-    real    :: ypos,xi
+    real(kind=8)    :: ypos,xi
     integer :: i1,jj
-    real :: xpmin
+    real(kind=8) :: xpmin
 !
     real, dimension(:),   allocatable  :: ytemp
     real, dimension(:,:), allocatable  :: xbar
@@ -1275,14 +1292,15 @@ end subroutine ENO1d
       Real, Dimension(np) :: x      
       Real, Dimension(nc) :: y
       Real, Dimension(:),Allocatable :: ytemp
-      Real                :: s_parent,s_child,ds_parent,ds_child
+      Real(kind=8)        :: s_parent,s_child,ds_parent,ds_child
 !
 !     Local scalars
       Integer :: i,coeffraf,locind_parent_left,locind_parent_last
       Integer :: iparent,ipos,pos,nmin,nmax
-      Real    :: ypos
+      Real(kind=8)    :: ypos
       integer :: i1,jj
-      Real :: xpmin,cavg,a,b
+      Real(kind=8) :: xpmin
+      real :: cavg,a,b
 !      
       Real :: xrmin,xrmax,am3,s2,s1  
       Real, Dimension(np) :: dela,xr,xl,delta,a6,slope,slope2

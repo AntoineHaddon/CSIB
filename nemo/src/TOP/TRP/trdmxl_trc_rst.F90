@@ -10,8 +10,8 @@ MODULE trdmxl_trc_rst
    !!----------------------------------------------------------------------
    USE in_out_manager  ! I/O manager
    USE iom             ! I/O module
-   USE trc             ! for nn_dttrc ctrcnm
-   USE trdmxl_trc_oce  ! for lk_trdmxl_trc
+   USE trc             ! for ctrcnm
+   USE trdtrc_oce  ! for lk_trdmxl_trc
 
    IMPLICIT NONE
    PRIVATE
@@ -23,7 +23,7 @@ MODULE trdmxl_trc_rst
    
    !!---------------------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: trdmxl_trc_rst.F90 10425 2018-12-19 21:54:16Z smasson $ 
+   !! $Id: trdmxl_trc_rst.F90 15090 2021-07-06 14:25:18Z cetlod $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!---------------------------------------------------------------------------------
 CONTAINS
@@ -43,7 +43,7 @@ CONTAINS
       INTEGER :: jl,  jk, jn               ! loop indice
       !!--------------------------------------------------------------------------------
 
-      IF( kt == nitrst - nn_dttrc .OR. nitend - nit000 + 1 < 2 * nn_dttrc ) THEN ! idem trcrst.F90
+      IF( kt == nitrst - 1 .OR. nitend - nit000 + 1 < 2 ) THEN ! idem trcrst.F90
          IF( nitrst > 1.0e9 ) THEN
             WRITE(clkt,*) nitrst
          ELSE
@@ -52,7 +52,7 @@ CONTAINS
          clname = TRIM(cexper)//"_"//TRIM(ADJUSTL(clkt))//"_"//TRIM(cn_trdrst_trc_out)
          clpath = TRIM(cn_trcrst_outdir)
          IF( clpath(LEN_TRIM(clpath):) /= '/' ) clpath = TRIM(clpath) // '/'
-         IF(lwp) WRITE(numout,*) '             open ocean restart_mld_trc NetCDF  'TRIM(clpath)//TRIM(clname)
+         IF(lwp) WRITE(numout,*) '             open ocean restart_mld_trc NetCDF  ', TRIM(clpath)//TRIM(clname)
          CALL iom_open( TRIM(clpath)//TRIM(clname), nummldw_trc, ldwrt = .TRUE. )
       ENDIF
 
@@ -143,24 +143,24 @@ CONTAINS
       IF( ln_trdmxl_trc_instant ) THEN 
          
          DO jn = 1, jptra
-            CALL iom_get( inum, jpdom_autoglo, 'tmlbb_trc_'  //ctrcnm(jn), tmlbb_trc  (:,:,jn) )
-            CALL iom_get( inum, jpdom_autoglo, 'tmlbn_trc_'  //ctrcnm(jn), tmlbn_trc  (:,:,jn) )
-            CALL iom_get( inum, jpdom_autoglo, 'tmlatfb_trc_'//ctrcnm(jn), tmlatfb_trc(:,:,jn) )
-            CALL iom_get( inum, jpdom_autoglo, 'tmlradb_trc_'//ctrcnm(jn), tmlradb_trc(:,:,jn) )
+            CALL iom_get( inum, jpdom_auto, 'tmlbb_trc_'  //ctrcnm(jn), tmlbb_trc  (:,:,jn) )
+            CALL iom_get( inum, jpdom_auto, 'tmlbn_trc_'  //ctrcnm(jn), tmlbn_trc  (:,:,jn) )
+            CALL iom_get( inum, jpdom_auto, 'tmlatfb_trc_'//ctrcnm(jn), tmlatfb_trc(:,:,jn) )
+            CALL iom_get( inum, jpdom_auto, 'tmlradb_trc_'//ctrcnm(jn), tmlradb_trc(:,:,jn) )
          END DO
          
       ELSE
-         CALL iom_get( inum, jpdom_autoglo, 'rmldbn_trc', rmldbn_trc ) ! needed for rmld_sum
+         CALL iom_get( inum, jpdom_auto, 'rmldbn_trc', rmldbn_trc ) ! needed for rmld_sum
          
          !                                                          ! ===========
          DO jn = 1, jptra                                           ! tracer loop
             !                                                       ! ===========
-            CALL iom_get( inum, jpdom_autoglo, 'tmlatfb_trc_' //ctrcnm(jn), tmlatfb_trc(:,:,jn) )
-            CALL iom_get( inum, jpdom_autoglo, 'tmlbb_trc_'   //ctrcnm(jn), tmlbb_trc  (:,:,jn) )
-            CALL iom_get( inum, jpdom_autoglo, 'tmlradb_trc_' //ctrcnm(jn), tmlradb_trc(:,:,jn) )
+            CALL iom_get( inum, jpdom_auto, 'tmlatfb_trc_' //ctrcnm(jn), tmlatfb_trc(:,:,jn) )
+            CALL iom_get( inum, jpdom_auto, 'tmlbb_trc_'   //ctrcnm(jn), tmlbb_trc  (:,:,jn) )
+            CALL iom_get( inum, jpdom_auto, 'tmlradb_trc_' //ctrcnm(jn), tmlradb_trc(:,:,jn) )
 
-            CALL iom_get( inum, jpdom_autoglo, 'tmlbn_trc_'   //ctrcnm(jn), tmlbn_trc   (:,:,jn) ) ! needed for tml_sum
-            CALL iom_get( inum, jpdom_autoglo, 'tml_sumb_trc_'//ctrcnm(jn), tml_sumb_trc(:,:,jn) )
+            CALL iom_get( inum, jpdom_auto, 'tmlbn_trc_'   //ctrcnm(jn), tmlbn_trc   (:,:,jn) ) ! needed for tml_sum
+            CALL iom_get( inum, jpdom_auto, 'tml_sumb_trc_'//ctrcnm(jn), tml_sumb_trc(:,:,jn) )
             
             DO jk = 1, jpltrd_trc
                IF( jk < 10 )   THEN
@@ -168,13 +168,13 @@ CONTAINS
                ELSE
                   WRITE(charout,FMT="('tmltrd_csum_ub_trc_', A3, '_', I2)") ctrcnm(jn), jk
                ENDIF
-               CALL iom_get( inum, jpdom_autoglo, charout, tmltrd_csum_ub_trc(:,:,jk,jn) )
+               CALL iom_get( inum, jpdom_auto, charout, tmltrd_csum_ub_trc(:,:,jk,jn) )
             END DO
             
-            CALL iom_get( inum, jpdom_autoglo, 'tmltrd_atf_sumb_trc_'//ctrcnm(jn) , &
+            CALL iom_get( inum, jpdom_auto, 'tmltrd_atf_sumb_trc_'//ctrcnm(jn) , &
                  &        tmltrd_atf_sumb_trc(:,:,jn) )
 
-            CALL iom_get( inum, jpdom_autoglo, 'tmltrd_rad_sumb_trc_'//ctrcnm(jn) , &
+            CALL iom_get( inum, jpdom_auto, 'tmltrd_rad_sumb_trc_'//ctrcnm(jn) , &
                  &        tmltrd_rad_sumb_trc(:,:,jn) )
             !                                                       ! ===========
          END DO                                                     ! tracer loop

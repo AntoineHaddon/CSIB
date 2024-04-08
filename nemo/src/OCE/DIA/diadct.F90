@@ -10,8 +10,8 @@ MODULE diadct
    !!             -   ! 04/2007 (C Bricaud) test on sec%nb_point, initialisation of ztransp1,ztransp2,...
    !!            3.4  ! 09/2011 (C Bricaud)
    !!----------------------------------------------------------------------
-   !! does not work with agrif
 #if ! defined key_agrif
+   !!                        ==>>  CAUTION: does not work with agrif
    !!----------------------------------------------------------------------
    !!   dia_dct      :  Compute the transport through a sec.
    !!   dia_dct_init :  Read namelist.
@@ -26,6 +26,7 @@ MODULE diadct
    USE dom_oce         ! ocean space and time domain
    USE phycst          ! physical constants
    USE in_out_manager  ! I/O manager
+   USE iom
    USE daymod          ! calendar
    USE dianam          ! build name of file
    USE lib_mpp         ! distributed memory computing library
@@ -42,9 +43,7 @@ MODULE diadct
    PUBLIC   dia_dct_init ! routine called by nemogcm.F90
 
    !                         !!** namelist variables **
-   LOGICAL, PUBLIC ::   ln_diadct     !: Calculate transport thru a section or not
    INTEGER         ::   nn_dct        !  Frequency of computation
-   INTEGER         ::   nn_dctwri     !  Frequency of output
    INTEGER         ::   nn_secdebug   !  Number of the section to debug
    
    INTEGER, PARAMETER :: nb_class_max  = 10
@@ -53,7 +52,6 @@ MODULE diadct
    INTEGER, PARAMETER :: nb_type_class = 10
    INTEGER, PARAMETER :: nb_3d_vars    = 3 
    INTEGER, PARAMETER :: nb_2d_vars    = 2 
-   INTEGER            :: nb_sec 
 
    TYPE POINT_SECTION
       INTEGER :: I,J
@@ -65,19 +63,18 @@ MODULE diadct
 
    TYPE SECTION
       CHARACTER(len=60)                            :: name              ! name of the sec
-      LOGICAL                                      :: llstrpond         ! true if you want the computation of salt and
-                                                                       ! heat transports
+      LOGICAL                                      :: llstrpond         ! true if you want the computation of salt and heat transports
       LOGICAL                                      :: ll_ice_section    ! ice surface and ice volume computation
       LOGICAL                                      :: ll_date_line      ! = T if the section crosses the date-line
       TYPE(COORD_SECTION), DIMENSION(2)            :: coordSec          ! longitude and latitude of the extremities of the sec
       INTEGER                                      :: nb_class          ! number of boundaries for density classes
       INTEGER, DIMENSION(nb_point_max)             :: direction         ! vector direction of the point in the section
       CHARACTER(len=40),DIMENSION(nb_class_max)    :: classname         ! characteristics of the class
-      REAL(wp), DIMENSION(nb_class_max)            :: zsigi           ,&! in-situ   density classes    (99 if you don't want)
-                                                      zsigp           ,&! potential density classes    (99 if you don't want)
-                                                      zsal            ,&! salinity classes   (99 if you don't want)
-                                                      ztem            ,&! temperature classes(99 if you don't want)
-                                                      zlay              ! level classes      (99 if you don't want)
+      REAL(wp), DIMENSION(nb_class_max)            :: zsigi             ! in-situ   density classes    (99 if you don't want)
+      REAL(wp), DIMENSION(nb_class_max)            :: zsigp             ! potential density classes    (99 if you don't want)
+      REAL(wp), DIMENSION(nb_class_max)            :: zsal              ! salinity classes   (99 if you don't want)
+      REAL(wp), DIMENSION(nb_class_max)            :: ztem              ! temperature classes(99 if you don't want)
+      REAL(wp), DIMENSION(nb_class_max)            :: zlay              ! level classes      (99 if you don't want)
       REAL(wp), DIMENSION(nb_type_class,nb_class_max)  :: transport     ! transport output
       REAL(wp)                                         :: slopeSection  ! slope of the section
       INTEGER                                          :: nb_point      ! number of points in the section
@@ -88,12 +85,22 @@ MODULE diadct
  
    REAL(wp), ALLOCATABLE, DIMENSION(:,:,:,:) ::  transports_3d 
    REAL(wp), ALLOCATABLE, DIMENSION(:,:,:)   ::  transports_2d  
+#if defined key_xios
+   REAL(wp), ALLOCATABLE, DIMENSION(:)   ::  heat_transport
+   REAL(wp), ALLOCATABLE, DIMENSION(:)   ::  salt_transport
+   REAL(wp), ALLOCATABLE, DIMENSION(:)   ::  vol_transport
+#endif
 
+
+   !! * Substitutions
+#  include "single_precision_substitute.h90"  
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: diadct.F90 11536 2019-09-11 13:54:18Z smasson $
+   !! $Id: diadct.F90 13286 2020-07-09 15:48:29Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
+
 CONTAINS
  
    INTEGER FUNCTION diadct_alloc() 
@@ -122,11 +129,9 @@ CONTAINS
       NAMELIST/nam_diadct/ln_diadct, nn_dct, nn_dctwri, nn_secdebug
       !!---------------------------------------------------------------------
 
-     REWIND( numnam_ref )              ! Namelist nam_diadct in reference namelist : Diagnostic: transport through sections
      READ  ( numnam_ref, nam_diadct, IOSTAT = ios, ERR = 901)
 901  IF( ios /= 0 ) CALL ctl_nam ( ios , 'nam_diadct in reference namelist' )
 
-     REWIND( numnam_cfg )              ! Namelist nam_diadct in configuration namelist : Diagnostic: transport through sections
      READ  ( numnam_cfg, nam_diadct, IOSTAT = ios, ERR = 902 )
 902  IF( ios >  0 ) CALL ctl_nam ( ios , 'nam_diadct in configuration namelist' )
      IF(lwm) WRITE ( numond, nam_diadct )
@@ -158,13 +163,14 @@ CONTAINS
         !Read section_ijglobal.diadct
         CALL readsec
 
+#if ! defined key_xios   
         !open output file
         IF( lwm ) THEN
            CALL ctl_opn( numdct_vol,  'volume_transport', 'NEW', 'FORMATTED', 'SEQUENTIAL', -1, numout,  .FALSE. )
            CALL ctl_opn( numdct_heat, 'heat_transport'  , 'NEW', 'FORMATTED', 'SEQUENTIAL', -1, numout,  .FALSE. )
            CALL ctl_opn( numdct_salt, 'salt_transport'  , 'NEW', 'FORMATTED', 'SEQUENTIAL', -1, numout,  .FALSE. )
         ENDIF
-
+#endif
         ! Initialise arrays to zero 
         transports_3d(:,:,:,:)=0.0 
         transports_2d(:,:,:)  =0.0 
@@ -174,7 +180,7 @@ CONTAINS
   END SUBROUTINE dia_dct_init
  
  
-  SUBROUTINE dia_dct( kt )
+  SUBROUTINE dia_dct( kt, Kmm )
      !!---------------------------------------------------------------------
      !!               ***  ROUTINE diadct  ***  
      !!
@@ -191,7 +197,8 @@ CONTAINS
      !!               Call dia_dct_wri to write the transports into file 
      !!               Reinitialise all relevant arrays to zero 
      !!---------------------------------------------------------------------
-     INTEGER, INTENT(in) ::   kt
+     INTEGER, INTENT(in) ::   kt    ! ocean time step
+     INTEGER, INTENT(in) ::   Kmm   ! time level index
      !
      INTEGER ::   jsec              ! loop on sections
      INTEGER ::   itotal            ! nb_sec_max*nb_type_class*nb_class_max
@@ -231,7 +238,7 @@ CONTAINS
            IF( (jsec==nn_secdebug .OR. nn_secdebug==-1) .AND.  kt==nit000+nn_dct-1 ) lldebug=.TRUE. 
 
            !Compute transport through section  
-           CALL transport(secs(jsec),lldebug,jsec) 
+           CALL transport(Kmm,secs(jsec),lldebug,jsec) 
 
         ENDDO
              
@@ -245,11 +252,14 @@ CONTAINS
  
            ! Sum over each class 
            DO jsec=1,nb_sec 
-              CALL dia_dct_sum(secs(jsec),jsec) 
+              CALL dia_dct_sum(Kmm,secs(jsec),jsec) 
            ENDDO 
 
            !Sum on all procs 
-           IF( lk_mpp )THEN
+!           IF( lk_mpp )THEN 
+! removed by AV do not know the significance of this test, following test taken from diaprt 
+#if ! defined key_mpi_off
+           IF( .NOT. l_istiled .OR. ntile == nijtile ) THEN
               ish(1)  =  nb_sec_max*nb_type_class*nb_class_max 
               ish2    = (/nb_sec_max,nb_type_class,nb_class_max/)
               DO jsec=1,nb_sec ; zsum(jsec,:,:) = secs(jsec)%transport(:,:) ; ENDDO
@@ -258,11 +268,21 @@ CONTAINS
               zsum(:,:,:)= RESHAPE(zwork,ish2)
               DO jsec=1,nb_sec ; secs(jsec)%transport(:,:) = zsum(jsec,:,:) ; ENDDO
            ENDIF
+#endif
 
            !Write the transport
+#if defined key_xios   
+!        IF( lwm ) sec_transport(:) = 0
+           ALLOCATE(heat_transport(nb_sec),salt_transport(nb_sec),vol_transport(nb_sec))
+#endif
            DO jsec=1,nb_sec
 
+#if defined key_xios   
+              ! xios waits for a send from all procs 
+              CALL dia_dct_wri(kt,jsec,secs(jsec))
+#else
               IF( lwm )CALL dia_dct_wri(kt,jsec,secs(jsec))
+#endif
             
               !nullify transports values after writing
               transports_3d(:,jsec,:,:)=0.
@@ -270,6 +290,14 @@ CONTAINS
               secs(jsec)%transport(:,:)=0.  
 
            ENDDO
+#if defined key_xios   
+          IF ( .NOT. l_istiled .OR. ntile == nijtile ) THEN
+             CALL iom_put('mfo' ,  vol_transport )
+             CALL iom_put('sfo' ,  salt_transport )
+             CALL iom_put('hfo' ,  heat_transport )
+          ENDIF
+          DEALLOCATE(heat_transport, salt_transport, vol_transport)
+#endif
 
         ENDIF 
 
@@ -409,9 +437,9 @@ CONTAINS
               iiloc=iiglo-nimpp+1   ! local coordinates of the point
               ijloc=ijglo-njmpp+1   !  "
 
-              !verify if the point is on the local domain:(1,nlei)*(1,nlej)
-              IF( iiloc >= 1 .AND. iiloc <= nlei .AND. &
-                  ijloc >= 1 .AND. ijloc <= nlej       )THEN
+              !verify if the point is on the local domain:(1,Nie0)*(1,Nje0)
+              IF( iiloc >= 1 .AND. iiloc <= Nie0 .AND. &
+                  ijloc >= 1 .AND. ijloc <= Nje0       )THEN
                  iptloc = iptloc + 1                                                 ! count local points
                  secs(jsec)%listPoint(iptloc) = POINT_SECTION(mi0(iiglo),mj0(ijglo)) ! store local coordinates
                  secs(jsec)%direction(iptloc) = directemp(jpt)                       ! store local direction
@@ -516,8 +544,8 @@ CONTAINS
      ENDIF
  
      !which coordinate shall we verify ?
-     IF      ( cdind=='I' )THEN   ; itest=nlei ; iind=1
-     ELSE IF ( cdind=='J' )THEN   ; itest=nlej ; iind=2
+     IF      ( cdind=='I' )THEN   ; itest=Nie0 ; iind=1
+     ELSE IF ( cdind=='J' )THEN   ; itest=Nje0 ; iind=2
      ELSE    ; CALL ctl_stop("removepoints :Wrong value for cdind") 
      ENDIF
 
@@ -557,7 +585,7 @@ CONTAINS
    END SUBROUTINE removepoints
 
 
-   SUBROUTINE transport(sec,ld_debug,jsec)
+   SUBROUTINE transport(Kmm,sec,ld_debug,jsec)
      !!-------------------------------------------------------------------------------------------
      !!                     ***  ROUTINE transport  ***
      !!
@@ -577,6 +605,7 @@ CONTAINS
      !!              point in a section, summed over each nn_dct. 
      !!
      !!-------------------------------------------------------------------------------------------
+     INTEGER      ,INTENT(IN)    :: Kmm         ! time level index
      TYPE(SECTION),INTENT(INOUT) :: sec
      LOGICAL      ,INTENT(IN)    :: ld_debug
      INTEGER      ,INTENT(IN)    :: jsec        ! numeric identifier of section
@@ -672,34 +701,34 @@ CONTAINS
             !           ! compute temperature, salinity, insitu & potential density, ssh and depth at U/V point 
             SELECT CASE( sec%direction(jseg) )
                CASE(0,1) 
-                  ztn   = interp(k%I,k%J,jk,'V',tsn(:,:,:,jp_tem) ) 
-                  zsn   = interp(k%I,k%J,jk,'V',tsn(:,:,:,jp_sal) ) 
-                  zrhop = interp(k%I,k%J,jk,'V',rhop) 
-                  zrhoi = interp(k%I,k%J,jk,'V',rhd*rau0+rau0) 
-                  zsshn =  0.5*( sshn(k%I,k%J) + sshn(k%I,k%J+1)    ) * vmask(k%I,k%J,1) 
+                  ztn   = interp(Kmm,k%I,k%J,jk,'V',ts(:,:,:,jp_tem,Kmm) ) 
+                  zsn   = interp(Kmm,k%I,k%J,jk,'V',ts(:,:,:,jp_sal,Kmm) ) 
+                  zrhop = interp(Kmm,k%I,k%J,jk,'V',rhop) 
+                  zrhoi =interp(Kmm,k%I,k%J,jk,'V',CASTDP(rhd*rho0+rho0))
+                  zsshn =  0.5*( ssh(k%I,k%J,Kmm) + ssh(k%I,k%J+1,Kmm)    ) * vmask(k%I,k%J,1) 
                CASE(2,3) 
-                  ztn   = interp(k%I,k%J,jk,'U',tsn(:,:,:,jp_tem) ) 
-                  zsn   = interp(k%I,k%J,jk,'U',tsn(:,:,:,jp_sal) ) 
-                  zrhop = interp(k%I,k%J,jk,'U',rhop) 
-                  zrhoi = interp(k%I,k%J,jk,'U',rhd*rau0+rau0) 
-                  zsshn =  0.5*( sshn(k%I,k%J) + sshn(k%I+1,k%J)    ) * umask(k%I,k%J,1)  
+                  ztn   = interp(Kmm,k%I,k%J,jk,'U',ts(:,:,:,jp_tem,Kmm) ) 
+                  zsn   = interp(Kmm,k%I,k%J,jk,'U',ts(:,:,:,jp_sal,Kmm) ) 
+                  zrhop = interp(Kmm,k%I,k%J,jk,'U',rhop) 
+                  zrhoi =interp(Kmm,k%I,k%J,jk,'U',CASTDP(rhd*rho0+rho0))
+                  zsshn =  0.5*( ssh(k%I,k%J,Kmm) + ssh(k%I+1,k%J,Kmm)    ) * umask(k%I,k%J,1)  
                END SELECT 
                !
-               zdep= gdept_n(k%I,k%J,jk) 
+               zdep= gdept(k%I,k%J,jk,Kmm) 
   
                SELECT CASE( sec%direction(jseg) )                !compute velocity with the correct direction 
                CASE(0,1)   
                   zumid=0._wp
-                  zvmid=isgnv*vn(k%I,k%J,jk)*vmask(k%I,k%J,jk) 
+                  zvmid=isgnv*vv(k%I,k%J,jk,Kmm)*vmask(k%I,k%J,jk) 
                CASE(2,3) 
-                  zumid=isgnu*un(k%I,k%J,jk)*umask(k%I,k%J,jk) 
+                  zumid=isgnu*uu(k%I,k%J,jk,Kmm)*umask(k%I,k%J,jk) 
                   zvmid=0._wp
                END SELECT 
  
                !zTnorm=transport through one cell; 
                !velocity* cell's length * cell's thickness 
-               zTnorm = zumid*e2u(k%I,k%J) * e3u_n(k%I,k%J,jk)     & 
-                  &   + zvmid*e1v(k%I,k%J) * e3v_n(k%I,k%J,jk) 
+               zTnorm = zumid*e2u(k%I,k%J) * e3u(k%I,k%J,jk,Kmm)     & 
+                  &   + zvmid*e1v(k%I,k%J) * e3v(k%I,k%J,jk,Kmm) 
 
 !!gm  THIS is WRONG  no transport due to ssh in linear free surface case !!!!!
                IF( ln_linssh ) THEN              !add transport due to free surface 
@@ -764,7 +793,7 @@ CONTAINS
   END SUBROUTINE transport
 
 
-  SUBROUTINE dia_dct_sum(sec,jsec) 
+  SUBROUTINE dia_dct_sum(Kmm,sec,jsec) 
      !!------------------------------------------------------------- 
      !! Purpose: Average the transport over nn_dctwri time steps  
      !! and sum over the density/salinity/temperature/depth classes 
@@ -783,6 +812,7 @@ CONTAINS
      !!           segments linking each point of sec%listPoint  with the next one.    
      !! 
      !!------------------------------------------------------------- 
+     INTEGER      ,INTENT(IN)    :: Kmm         ! time level index
      TYPE(SECTION),INTENT(INOUT) :: sec 
      INTEGER      ,INTENT(IN)    :: jsec        ! numeric identifier of section 
  
@@ -844,20 +874,20 @@ CONTAINS
               ! compute temperature, salinity, insitu & potential density, ssh and depth at U/V point 
               SELECT CASE( sec%direction(jseg) ) 
               CASE(0,1) 
-                 ztn   = interp(k%I,k%J,jk,'V',tsn(:,:,:,jp_tem) ) 
-                 zsn   = interp(k%I,k%J,jk,'V',tsn(:,:,:,jp_sal) ) 
-                 zrhop = interp(k%I,k%J,jk,'V',rhop) 
-                 zrhoi = interp(k%I,k%J,jk,'V',rhd*rau0+rau0) 
+                 ztn   = interp(Kmm,k%I,k%J,jk,'V',ts(:,:,:,jp_tem,Kmm) ) 
+                 zsn   = interp(Kmm,k%I,k%J,jk,'V',ts(:,:,:,jp_sal,Kmm) ) 
+                 zrhop = interp(Kmm,k%I,k%J,jk,'V',rhop) 
+                 zrhoi =interp(Kmm,k%I,k%J,jk,'V',CASTDP(rhd*rho0+rho0))
 
               CASE(2,3) 
-                 ztn   = interp(k%I,k%J,jk,'U',tsn(:,:,:,jp_tem) ) 
-                 zsn   = interp(k%I,k%J,jk,'U',tsn(:,:,:,jp_sal) ) 
-                 zrhop = interp(k%I,k%J,jk,'U',rhop) 
-                 zrhoi = interp(k%I,k%J,jk,'U',rhd*rau0+rau0) 
-                 zsshn =  0.5*( sshn(k%I,k%J)    + sshn(k%I+1,k%J)    ) * umask(k%I,k%J,1)  
+                 ztn   = interp(Kmm,k%I,k%J,jk,'U',ts(:,:,:,jp_tem,Kmm) ) 
+                 zsn   = interp(Kmm,k%I,k%J,jk,'U',ts(:,:,:,jp_sal,Kmm) ) 
+                 zrhop = interp(Kmm,k%I,k%J,jk,'U',rhop) 
+                 zrhoi =interp(Kmm,k%I,k%J,jk,'U',CASTDP(rhd*rho0+rho0))
+                 zsshn =  0.5*( ssh(k%I,k%J,Kmm)    + ssh(k%I+1,k%J,Kmm)    ) * umask(k%I,k%J,1)  
               END SELECT 
  
-              zdep= gdept_n(k%I,k%J,jk) 
+              zdep= gdept(k%I,k%J,jk,Kmm) 
   
               !------------------------------- 
               !  LOOP ON THE DENSITY CLASSES | 
@@ -1035,6 +1065,7 @@ CONTAINS
            zbnd2 = sec%ztem(jclass+1)
         ENDIF
                   
+#if ! defined key_xios   
         !write volume transport per class
         WRITE(numdct_vol,118) ndastp,kt,ksec,sec%name,zslope, &
                               jclass,classe,zbnd1,zbnd2,&
@@ -1054,9 +1085,16 @@ CONTAINS
                               sec%transport(5,jclass)*1.e-9,sec%transport(6,jclass)*1.e-9,&
                               (sec%transport(5,jclass)+sec%transport(6,jclass))*1.e-9
         ENDIF
-
+#endif
      ENDDO
 
+#if defined key_xios   
+     IF ( .NOT. l_istiled .OR. ntile == nijtile ) THEN
+         vol_transport(ksec) = zsumclasses(1)+zsumclasses(2)
+         salt_transport(ksec) = ( zsumclasses(5)+zsumclasses(6) )*1e-9
+         heat_transport(ksec) = ( zsumclasses(3)+zsumclasses(4) )*1e-15
+     ENDIF
+#else
      zbnd1 = 0._wp
      zbnd2 = 0._wp
      jclass=0
@@ -1096,11 +1134,11 @@ CONTAINS
                                               
 118   FORMAT(I8,1X,I8,1X,I4,1X,A30,1X,f9.2,1X,I4,3X,A8,1X,2F12.4,5X,3F12.4)
 119   FORMAT(I8,1X,I8,1X,I4,1X,A30,1X,f9.2,1X,I4,3X,A8,1X,2F12.4,5X,3E15.6)
-      !
+#endif
    END SUBROUTINE dia_dct_wri
 
 
-   FUNCTION interp(ki, kj, kk, cd_point, ptab)
+   FUNCTION interp(Kmm, ki, kj, kk, cd_point, ptab)
   !!----------------------------------------------------------------------
   !!
   !!   Purpose: compute temperature/salinity/density at U-point or V-point
@@ -1117,8 +1155,8 @@ CONTAINS
   !!  ----------------------------------------  1. Veritcal interpolation: compute zbis
   !!    |               |                  |       interpolation between ptab(I,J,K) and ptab(I,J,K+1)
   !!    |               |                  |       zbis = 
-  !!    |               |                  |      [ e3w(I+1,J,K)*ptab(I,J,K) + ( e3w(I,J,K) - e3w(I+1,J,K) ) * ptab(I,J,K-1) ]
-  !!    |               |                  |      /[ e3w(I+1,J,K) + e3w(I,J,K) - e3w(I+1,J,K) ] 
+  !!    |               |                  |      [ e3w_n(I+1,J,K,NOW)*ptab(I,J,K) + ( e3w_n(I,J,K,NOW) - e3w_n(I+1,J,K,NOW) ) * ptab(I,J,K-1) ]
+  !!    |               |                  |     /[ e3w_n(I+1,J,K,NOW)             +   e3w_n(I,J,K,NOW) - e3w_n(I+1,J,K,NOW) ] 
   !!    |               |                  | 
   !!    |               |                  |    2. Horizontal interpolation: compute value at U/V point
   !!K-1 | ptab(I,J,K-1) |                  |       interpolation between zbis and ptab(I+1,J,K)  
@@ -1161,9 +1199,10 @@ CONTAINS
   !!
   !!----------------------------------------------------------------------
   !*arguments
+  INTEGER, INTENT(IN)                          :: Kmm          ! time level index
   INTEGER, INTENT(IN)                          :: ki, kj, kk   ! coordinate of point
   CHARACTER(len=1), INTENT(IN)                 :: cd_point     ! type of point (U, V)
-  REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(IN) :: ptab         ! variable to compute at (ki, kj, kk )
+  REAL(dp), DIMENSION(jpi,jpj,jpk), INTENT(IN) :: ptab         ! variable to compute at (ki, kj, kk )
   REAL(wp)                                     :: interp       ! interpolated variable 
 
   !*local declations
@@ -1195,9 +1234,9 @@ CONTAINS
 
   IF( ln_sco )THEN   ! s-coordinate case
 
-     zdepu = ( gdept_n(ii1,ij1,kk) +  gdept_n(ii2,ij2,kk) ) * 0.5_wp 
-     zdep1 = gdept_n(ii1,ij1,kk) - zdepu
-     zdep2 = gdept_n(ii2,ij2,kk) - zdepu
+     zdepu = ( gdept(ii1,ij1,kk,Kmm) +  gdept(ii2,ij2,kk,Kmm) ) * 0.5_wp 
+     zdep1 = gdept(ii1,ij1,kk,Kmm) - zdepu
+     zdep2 = gdept(ii2,ij2,kk,Kmm) - zdepu
 
      ! weights
      zwgt1 = SQRT( ( 0.5 * zet1 ) * ( 0.5 * zet1 ) + ( zdep1 * zdep1 ) )
@@ -1209,9 +1248,11 @@ CONTAINS
 
   ELSE       ! full step or partial step case 
 
-     ze3t  = e3t_n(ii2,ij2,kk) - e3t_n(ii1,ij1,kk) 
-     zwgt1 = ( e3w_n(ii2,ij2,kk) - e3w_n(ii1,ij1,kk) ) / e3w_n(ii2,ij2,kk)
-     zwgt2 = ( e3w_n(ii1,ij1,kk) - e3w_n(ii2,ij2,kk) ) / e3w_n(ii1,ij1,kk)
+     ze3t  = e3t(ii2,ij2,kk,Kmm) - e3t(ii1,ij1,kk,Kmm) 
+     zwgt1 = ( e3w(ii2,ij2,kk,Kmm) - e3w(ii1,ij1,kk,Kmm) )   &
+        &    / e3w(ii2,ij2,kk,Kmm)
+     zwgt2 = ( e3w(ii1,ij1,kk,Kmm) - e3w(ii2,ij2,kk,Kmm) )   &
+        &    / e3w(ii1,ij1,kk,Kmm)
 
      IF(kk .NE. 1)THEN
 
@@ -1244,9 +1285,12 @@ CONTAINS
    SUBROUTINE dia_dct_init
       IMPLICIT NONE
    END SUBROUTINE dia_dct_init
-   SUBROUTINE dia_dct( kt )
+
+   SUBROUTINE dia_dct( kt, Kmm )         ! Dummy routine
       IMPLICIT NONE
-      INTEGER, INTENT(in) ::   kt
+      INTEGER, INTENT( in ) :: kt   ! ocean time-step index
+      INTEGER, INTENT( in ) :: Kmm  ! ocean time level index
+      WRITE(*,*) 'dia_dct: You should not have seen this print! error?', kt
    END SUBROUTINE dia_dct
    !
 #endif

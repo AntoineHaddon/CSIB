@@ -34,10 +34,10 @@ MODULE icecor
    PUBLIC   ice_cor   ! called by icestp.F90
 
    !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
+#  include "do_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icecor.F90 13284 2020-07-09 15:12:23Z smasson $
+   !! $Id: icecor.F90 15334 2021-10-05 21:18:34Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -52,9 +52,8 @@ CONTAINS
       INTEGER, INTENT(in) ::   kt    ! number of iteration
       INTEGER, INTENT(in) ::   kn    ! 1 = after dyn ; 2 = after thermo
       !
-      INTEGER  ::   ji, jj, jk, jl   ! dummy loop indices
+      INTEGER  ::   ji, jj, jl       ! dummy loop indices
       REAL(wp) ::   zsal, zzc
-      REAL(wp), DIMENSION(jpi,jpj) ::   zafx   ! concentration trends diag
       !!----------------------------------------------------------------------
       ! controls
       IF( ln_timing    )   CALL timing_start('icecor')                                                             ! timing
@@ -89,81 +88,27 @@ CONTAINS
       !                             !-----------------------------------------------------
       IF ( nn_icesal == 2 ) THEN    !  salinity must stay in bounds [Simin,Simax]        !
          !                          !-----------------------------------------------------
-         zzc = rhoi * r1_rdtice
+         zzc = rhoi * r1_Dt_ice
          DO jl = 1, jpl
-            DO jj = 1, jpj 
-               DO ji = 1, jpi
-                  zsal = sv_i(ji,jj,jl)
-                  sv_i(ji,jj,jl) = MIN(  MAX( rn_simin*v_i(ji,jj,jl) , sv_i(ji,jj,jl) ) , rn_simax*v_i(ji,jj,jl)  )
-                  sfx_res(ji,jj) = sfx_res(ji,jj) - ( sv_i(ji,jj,jl) - zsal ) * zzc   ! associated salt flux
-               END DO
-            END DO
+            DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
+               zsal = sv_i(ji,jj,jl)
+               sv_i(ji,jj,jl) = MIN(  MAX( rn_simin*v_i(ji,jj,jl) , sv_i(ji,jj,jl) ) , rn_simax*v_i(ji,jj,jl)  )
+               IF( kn /= 0 ) & ! no ice-ocean exchanges if kn=0 (for bdy for instance) otherwise conservation diags will fail
+                  &   sfx_res(ji,jj) = sfx_res(ji,jj) - ( sv_i(ji,jj,jl) - zsal ) * zzc   ! associated salt flux
+            END_2D
          END DO
       ENDIF
-      !                             !-----------------------------------------------------
-      CALL ice_var_zapsmall         !  Zap small values                                  !
-      !                             !-----------------------------------------------------
-
-      !                             !-----------------------------------------------------
-      IF( kn == 2 ) THEN            !  Ice drift case: Corrections to avoid wrong values !
-         DO jj = 2, jpjm1           !-----------------------------------------------------
-            DO ji = 2, jpim1
-               IF ( at_i(ji,jj) == 0._wp ) THEN    ! what to do if there is no ice
-                  IF ( at_i(ji+1,jj) == 0._wp )   u_ice(ji  ,jj) = 0._wp   ! right side
-                  IF ( at_i(ji-1,jj) == 0._wp )   u_ice(ji-1,jj) = 0._wp   ! left side
-                  IF ( at_i(ji,jj+1) == 0._wp )   v_ice(ji,jj  ) = 0._wp   ! upper side
-                  IF ( at_i(ji,jj-1) == 0._wp )   v_ice(ji,jj-1) = 0._wp   ! bottom side
-               ENDIF
-            END DO
-         END DO
-         CALL lbc_lnk_multi( 'icecor', u_ice, 'U', -1., v_ice, 'V', -1. )
+      !
+      IF( kn /= 0 ) THEN   ! no zapsmall if kn=0 (for bdy for instance) because we do not want ice-ocean exchanges (wfx,sfx,hfx)
+         !                                                              otherwise conservation diags will fail
+         !                          !-----------------------------------------------------
+         CALL ice_var_zapsmall      !  Zap small values                                  !
+         !                          !-----------------------------------------------------
       ENDIF
-
-      !                             !-----------------------------------------------------
-      SELECT CASE( kn )             !  Diagnostics                                       !
-      !                             !-----------------------------------------------------
-      CASE( 1 )                        !--- dyn trend diagnostics
-         !
-         IF( ln_icediachk .OR. iom_use('hfxdhc') ) THEN
-            diag_heat(:,:) = - SUM(SUM( e_i (:,:,1:nlay_i,:) - e_i_b (:,:,1:nlay_i,:), dim=4 ), dim=3 ) * r1_rdtice &      ! W.m-2
-               &             - SUM(SUM( e_s (:,:,1:nlay_s,:) - e_s_b (:,:,1:nlay_s,:), dim=4 ), dim=3 ) * r1_rdtice
-            diag_sice(:,:) =   SUM(     sv_i(:,:,:)          - sv_i_b(:,:,:)                  , dim=3 ) * r1_rdtice * rhoi
-            diag_vice(:,:) =   SUM(     v_i (:,:,:)          - v_i_b (:,:,:)                  , dim=3 ) * r1_rdtice * rhoi
-            diag_vsnw(:,:) =   SUM(     v_s (:,:,:)          - v_s_b (:,:,:)                  , dim=3 ) * r1_rdtice * rhos
-         ENDIF
-         !                       ! concentration tendency (dynamics)
-         IF( iom_use('afxdyn') .OR. iom_use('afxthd') .OR. iom_use('afxtot') ) THEN 
-            zafx(:,:) = SUM( a_i(:,:,:) - a_i_b(:,:,:), dim=3 ) * r1_rdtice 
-            CALL iom_put( 'afxdyn' , zafx )
-         ENDIF
-         !
-      CASE( 2 )                        !--- thermo trend diagnostics & ice aging
-         !
-         oa_i(:,:,:) = oa_i(:,:,:) + a_i(:,:,:) * rdt_ice   ! ice natural aging incrementation
-         !
-         IF( ln_icediachk .OR. iom_use('hfxdhc') ) THEN
-            diag_heat(:,:) = diag_heat(:,:) &
-               &             - SUM(SUM( e_i (:,:,1:nlay_i,:) - e_i_b (:,:,1:nlay_i,:), dim=4 ), dim=3 ) * r1_rdtice &
-               &             - SUM(SUM( e_s (:,:,1:nlay_s,:) - e_s_b (:,:,1:nlay_s,:), dim=4 ), dim=3 ) * r1_rdtice
-            diag_sice(:,:) = diag_sice(:,:) &
-               &             + SUM(     sv_i(:,:,:)          - sv_i_b(:,:,:)                  , dim=3 ) * r1_rdtice * rhoi
-            diag_vice(:,:) = diag_vice(:,:) &
-               &             + SUM(     v_i (:,:,:)          - v_i_b (:,:,:)                  , dim=3 ) * r1_rdtice * rhoi
-            diag_vsnw(:,:) = diag_vsnw(:,:) &
-               &             + SUM(     v_s (:,:,:)          - v_s_b (:,:,:)                  , dim=3 ) * r1_rdtice * rhos
-            CALL iom_put ( 'hfxdhc' , diag_heat ) 
-         ENDIF
-         !                       ! concentration tendency (total + thermo)
-         IF( iom_use('afxdyn') .OR. iom_use('afxthd') .OR. iom_use('afxtot') ) THEN 
-            zafx(:,:) = zafx(:,:) + SUM( a_i(:,:,:) - a_i_b(:,:,:), dim=3 ) * r1_rdtice
-            CALL iom_put( 'afxthd' , SUM( a_i(:,:,:) - a_i_b(:,:,:), dim=3 ) * r1_rdtice )
-            CALL iom_put( 'afxtot' , zafx )
-         ENDIF
-         !
-      END SELECT
       !
       ! controls
-      IF( ln_ctl       )   CALL ice_prt3D   ('icecor')                                                             ! prints
+      IF( sn_cfctl%l_prtctl ) &
+         &                 CALL ice_prt3D   ('icecor')                                                             ! prints
       IF( ln_icectl .AND. kn == 2 ) &
          &                 CALL ice_prt     ( kt, iiceprt, jiceprt, 2, ' - Final state - ' )                       ! prints
       IF( ln_icediachk )   CALL ice_cons_hsm(1, 'icecor', rdiag_v, rdiag_s, rdiag_t, rdiag_fv, rdiag_fs, rdiag_ft) ! conservation

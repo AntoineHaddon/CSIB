@@ -28,11 +28,9 @@ MODULE usrdef_zgr
 
    PUBLIC   usr_def_zgr        ! called by domzgr.F90
 
-   !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: usrdef_zgr.F90 10425 2018-12-19 21:54:16Z smasson $
+   !! $Id: usrdef_zgr.F90 13286 2020-07-09 15:48:29Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS             
@@ -54,7 +52,8 @@ CONTAINS
       REAL(wp), DIMENSION(:)    , INTENT(out) ::   pdept_1d, pdepw_1d          ! 1D grid-point depth     [m]
       REAL(wp), DIMENSION(:)    , INTENT(out) ::   pe3t_1d , pe3w_1d           ! 1D grid-point depth     [m]
       REAL(wp), DIMENSION(:,:,:), INTENT(out) ::   pdept, pdepw                ! grid-point depth        [m]
-      REAL(wp), DIMENSION(:,:,:), INTENT(out) ::   pe3t , pe3u , pe3v , pe3f   ! vertical scale factors  [m]
+      REAL(wp), DIMENSION(:,:,:), INTENT(out)  :: pe3u, pe3v, pe3f! vertical scale factors  [m]
+      REAL(dp), DIMENSION(:,:,:), INTENT(out)  :: pe3t! vertical scale factors  [m]
       REAL(wp), DIMENSION(:,:,:), INTENT(out) ::   pe3w , pe3uw, pe3vw         ! i-scale factors 
       INTEGER , DIMENSION(:,:)  , INTENT(out) ::   k_top, k_bot                ! first & last ocean level
       !
@@ -199,11 +198,9 @@ CONTAINS
       IF(lwp) WRITE(numout,*) '    ~~~~~~~~~~~'
       IF(lwp) WRITE(numout,*) '       GYRE case : closed flat box ocean without ocean cavities'
       !
-      z2d(:,:) = REAL( jpkm1 , wp )          ! flat bottom
+      z2d(:,:) = REAL( jpkm1 , wp )                              ! flat bottom
       !
-      CALL lbc_lnk( 'usrdef_zgr', z2d, 'T', 1. )           ! set surrounding land to zero (here jperio=0 ==>> closed)
-      !
-      k_bot(:,:) = NINT( z2d(:,:) )           ! =jpkm1 over the ocean point, =0 elsewhere
+      k_bot(:,:) = NINT( z2d(:,:) )          ! =jpkm1 over the ocean point, =0 elsewhere
       !
       k_top(:,:) = MIN( 1 , k_bot(:,:) )     ! = 1    over the ocean point, =0 elsewhere
       !
@@ -224,7 +221,8 @@ CONTAINS
       REAL(wp), DIMENSION(:)    , INTENT(in   ) ::   pdept_1d, pdepw_1d          ! 1D grid-point depth       [m]
       REAL(wp), DIMENSION(:)    , INTENT(in   ) ::   pe3t_1d , pe3w_1d           ! 1D vertical scale factors [m]
       REAL(wp), DIMENSION(:,:,:), INTENT(  out) ::   pdept, pdepw                ! grid-point depth          [m]
-      REAL(wp), DIMENSION(:,:,:), INTENT(  out) ::   pe3t , pe3u , pe3v , pe3f   ! vertical scale factors    [m]
+      REAL(wp), DIMENSION(:,:,:), INTENT(  out)  :: pe3u, pe3v, pe3f! vertical scale factors    [m]
+      REAL(dp), DIMENSION(:,:,:), INTENT(  out)  :: pe3t! vertical scale factors    [m]
       REAL(wp), DIMENSION(:,:,:), INTENT(  out) ::   pe3w , pe3uw, pe3vw         !    -       -      -
       !
       INTEGER  ::   jk

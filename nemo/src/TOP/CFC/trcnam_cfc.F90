@@ -20,7 +20,7 @@ MODULE trcnam_cfc
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: trcnam_cfc.F90 11536 2019-09-11 13:54:18Z smasson $ 
+   !! $Id: trcnam_cfc.F90 14871 2021-05-17 09:50:39Z rlod $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -50,10 +50,8 @@ CONTAINS
          WRITE(numout,*) ' ~~~~~~~~~~~'
       ENDIF
       !
-      REWIND( numtrc_ref )              ! Namelist namcfcdate in reference namelist : CFC parameters
       READ  ( numtrc_ref, namcfc, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namcfc in reference namelist' )
-      REWIND( numtrc_cfg )              ! Namelist namcfcdate in configuration namelist : CFC parameters
       READ  ( numtrc_cfg, namcfc, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namcfc in configuration namelist' )
       IF(lwm) WRITE( numonr, namcfc )
@@ -78,6 +76,7 @@ CONTAINS
          ln_trc_sbc(jn) = .false.
          ln_trc_cbc(jn) = .false.
          ln_trc_obc(jn) = .false.
+         ln_trc_ais(jn) = .false.
       ENDIF
       !
       IF( ln_cfc12 ) THEN

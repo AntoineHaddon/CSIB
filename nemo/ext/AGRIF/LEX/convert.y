@@ -129,7 +129,6 @@ int main(int argc,char *argv[])
     int stylegiven = 0;
     int infreegiven ;
     int infixedgiven ;
-    int lengthmainfile;
 
     char filetoparse[LONG_FNAME];
 
@@ -159,10 +158,12 @@ int main(int argc,char *argv[])
     List_FunctionType_Var = (listvar *) NULL;
     tmpuselocallist = (listusemodule *) NULL;
     List_ContainsSubroutine = (listnom *) NULL;
+    List_Do_labels = (listname *) NULL;
     oldfortran_out = (FILE *) NULL;
 
-    if (argc < 2) print_usage();
-    
+    if ( argc < 2 )
+        print_usage();
+
     strcpy(config_file, argv[1]);
     strcpy(work_dir, ".");
     strcpy(input_dir, ".");
@@ -256,17 +257,8 @@ int main(int argc,char *argv[])
         {
             strcpy(filetoparse, argv[i+1]);
             i++;
-            lengthmainfile = strlen(filetoparse);
-            if (!strcasecmp(&filetoparse[lengthmainfile-4], ".f90"))
-            {
-                infixed = 0;
-                infree = 1;
-            }
-            else
-            {
-                infixed = 1;
-                infree = 0;
-            }
+            infree  = (strstr(filetoparse, ".f90") != NULL) || (strstr(filetoparse, ".F90") != NULL);
+            infixed = ! infree;
         }
         else if (!strcasecmp(argv[i], "-free"))
         {
@@ -399,6 +391,11 @@ int main(int argc,char *argv[])
 
     /* Build new subroutines                                                   */
     firstpass = 0;
+    /*
+    printf("**********************************\n");
+    printf("SECOND PASSES \n");
+    printf("**********************************\n");
+    */
     process_fortran(filetoparse);
 
     newvar = (listvar *) NULL;

@@ -1,12 +1,12 @@
 MODULE traadv
    !!==============================================================================
    !!                       ***  MODULE  traadv  ***
-   !! Ocean active tracers:  advection trend 
+   !! Ocean active tracers:  advection trend
    !!==============================================================================
    !! History :  2.0  !  2005-11  (G. Madec)  Original code
    !!            3.3  !  2010-09  (C. Ethe, G. Madec)  merge TRC-TRA + switch from velocity to transport
    !!            3.6  !  2011-06  (G. Madec)  Addition of Mixed Layer Eddy parameterisation
-   !!            3.7  !  2014-05  (G. Madec)  Add 2nd/4th order cases for CEN and FCT schemes 
+   !!            3.7  !  2014-05  (G. Madec)  Add 2nd/4th order cases for CEN and FCT schemes
    !!             -   !  2014-12  (G. Madec) suppression of cross land advection option
    !!            3.6  !  2015-06  (E. Clementi) Addition of Stokes drift in case of wave coupling
    !!----------------------------------------------------------------------
@@ -17,6 +17,8 @@ MODULE traadv
    !!----------------------------------------------------------------------
    USE oce            ! ocean dynamics and active tracers
    USE dom_oce        ! ocean space and time domain
+   ! TEMP: [tiling] This change not necessary after all lbc_lnks removed in the nn_hls = 2 case in tra_adv_fct
+   USE domtile
    USE domvvl         ! variable vertical scale factors
    USE sbcwave        ! wave module
    USE sbc_oce        ! surface boundary condition: ocean
@@ -29,8 +31,8 @@ MODULE traadv
    USE ldftra         ! Eddy Induced transport     (ldf_eiv_trp  routine)
    USE ldfslp         ! Lateral diffusion: slopes of neutral surfaces
    USE trd_oce        ! trends: ocean variables
-   USE trdtra         ! trends manager: tracers 
-   USE diaptr         ! Poleward heat transport 
+   USE trdtra         ! trends manager: tracers
+   USE diaptr         ! Poleward heat transport
    !
    USE in_out_manager ! I/O manager
    USE iom            ! I/O module
@@ -56,119 +58,157 @@ MODULE traadv
    INTEGER ::      nn_ubs_v             ! =2/4 : vertical choice of the order of UBS scheme
    LOGICAL ::   ln_traadv_qck    ! QUICKEST scheme flag
 
-   INTEGER ::   nadv             ! choice of the type of advection scheme
+   INTEGER, PUBLIC ::   nadv             ! choice of the type of advection scheme
    !                             ! associated indices:
-   INTEGER, PARAMETER ::   np_NO_adv  = 0   ! no T-S advection
-   INTEGER, PARAMETER ::   np_CEN     = 1   ! 2nd/4th order centered scheme
-   INTEGER, PARAMETER ::   np_FCT     = 2   ! 2nd/4th order Flux Corrected Transport scheme
-   INTEGER, PARAMETER ::   np_MUS     = 3   ! MUSCL scheme
-   INTEGER, PARAMETER ::   np_UBS     = 4   ! 3rd order Upstream Biased Scheme
-   INTEGER, PARAMETER ::   np_QCK     = 5   ! QUICK scheme
-   
+   INTEGER, PARAMETER, PUBLIC ::   np_NO_adv  = 0   ! no T-S advection
+   INTEGER, PARAMETER, PUBLIC ::   np_CEN     = 1   ! 2nd/4th order centered scheme
+   INTEGER, PARAMETER, PUBLIC ::   np_FCT     = 2   ! 2nd/4th order Flux Corrected Transport scheme
+   INTEGER, PARAMETER, PUBLIC ::   np_MUS     = 3   ! MUSCL scheme
+   INTEGER, PARAMETER, PUBLIC ::   np_UBS     = 4   ! 3rd order Upstream Biased Scheme
+   INTEGER, PARAMETER, PUBLIC ::   np_QCK     = 5   ! QUICK scheme
+
    !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
+#  include "do_loop_substitute.h90"
+#  include "single_precision_substitute.h90"
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: traadv.F90 11993 2019-11-28 10:20:53Z cetlod $
+   !! $Id: traadv.F90 15073 2021-07-02 14:20:14Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE tra_adv( kt )
+   SUBROUTINE tra_adv( kt, Kbb, Kmm, pts, Krhs )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE tra_adv  ***
       !!
       !! ** Purpose :   compute the ocean tracer advection trend.
       !!
-      !! ** Method  : - Update (ua,va) with the advection term following nadv
+      !! ** Method  : - Update (uu(:,:,:,Krhs),vv(:,:,:,Krhs)) with the advection term following nadv
       !!----------------------------------------------------------------------
-      INTEGER, INTENT(in) ::   kt   ! ocean time-step index
+      INTEGER                                  , INTENT(in)    :: kt             ! ocean time-step index
+      INTEGER                                  , INTENT(in)    :: Kbb, Kmm, Krhs ! time level indices
+      REAL(dp), DIMENSION(jpi,jpj,jpk,jpts,jpt), INTENT(inout) :: pts            ! active tracers and RHS of tracer equation
       !
-      INTEGER ::   jk   ! dummy loop index
-      REAL(wp), DIMENSION(jpi,jpj,jpk)        :: zun, zvn, zwn   ! 3D workspace
-      REAL(wp), DIMENSION(:,:,:), ALLOCATABLE ::   ztrdt, ztrds
+      INTEGER ::   ji, jj, jk   ! dummy loop index
+      ! TEMP: [tiling] This change not necessary and can be A2D(nn_hls) after all lbc_lnks removed in the nn_hls = 2 case in tra_adv_fct
+      REAL(wp), DIMENSION(:,:,:), ALLOCATABLE, SAVE :: zuu, zww   ! 3D workspace
+      REAL(dp), DIMENSION(:,:,:), ALLOCATABLE, SAVE :: zvv
+      REAL(wp), DIMENSION(:,:,:), ALLOCATABLE :: ztrdt, ztrds
+      ! TEMP: [tiling] This change not necessary after all lbc_lnks removed in the nn_hls = 2 case in tra_adv_fct
+      LOGICAL :: lskip
       !!----------------------------------------------------------------------
       !
       IF( ln_timing )   CALL timing_start('tra_adv')
       !
-      !                                          ! set time step
-      IF( neuler == 0 .AND. kt == nit000 ) THEN   ;   r2dt =         rdt   ! at nit000             (Euler)
-      ELSEIF( kt <= nit000 + 1 )           THEN   ;   r2dt = 2._wp * rdt   ! at nit000 or nit000+1 (Leapfrog)
+      lskip = .FALSE.
+
+      ! TEMP: [tiling] These changes not necessary after all lbc_lnks removed in the nn_hls = 2 case in tra_adv_fct
+      IF( .NOT. l_istiled .OR. ntile == 1 )  THEN                       ! Do only on the first tile
+         ALLOCATE( zuu(jpi,jpj,jpk), zvv(jpi,jpj,jpk), zww(jpi,jpj,jpk) )
       ENDIF
-      !
-      !                                         !==  effective transport  ==!
-      zun(:,:,jpk) = 0._wp
-      zvn(:,:,jpk) = 0._wp
-      zwn(:,:,jpk) = 0._wp
-      IF( ln_wave .AND. ln_sdw )  THEN
-         DO jk = 1, jpkm1                                                       ! eulerian transport + Stokes Drift
-            zun(:,:,jk) = e2u  (:,:) * e3u_n(:,:,jk) * ( un(:,:,jk) + usd(:,:,jk) )
-            zvn(:,:,jk) = e1v  (:,:) * e3v_n(:,:,jk) * ( vn(:,:,jk) + vsd(:,:,jk) )
-            zwn(:,:,jk) = e1e2t(:,:)                 * ( wn(:,:,jk) + wsd(:,:,jk) )
-         END DO
-      ELSE
-         DO jk = 1, jpkm1
-            zun(:,:,jk) = e2u  (:,:) * e3u_n(:,:,jk) * un(:,:,jk)               ! eulerian transport only
-            zvn(:,:,jk) = e1v  (:,:) * e3v_n(:,:,jk) * vn(:,:,jk)
-            zwn(:,:,jk) = e1e2t(:,:)                 * wn(:,:,jk)
-         END DO
+
+      ! TEMP: [tiling] These changes not necessary after all lbc_lnks removed in the nn_hls = 2 case in tra_adv_fct
+      IF( ln_tile .AND. nadv == np_FCT )  THEN
+         IF( ntile == 1 ) THEN
+            CALL dom_tile_stop( ldhold=.TRUE. )
+         ELSE
+            lskip = .TRUE.
+         ENDIF
       ENDIF
-      !
-      IF( ln_vvl_ztilde .OR. ln_vvl_layer ) THEN                                ! add z-tilde and/or vvl corrections
-         zun(:,:,:) = zun(:,:,:) + un_td(:,:,:)
-         zvn(:,:,:) = zvn(:,:,:) + vn_td(:,:,:)
-      ENDIF
-      !
-      zun(:,:,jpk) = 0._wp                                                      ! no transport trough the bottom
-      zvn(:,:,jpk) = 0._wp
-      zwn(:,:,jpk) = 0._wp
-      !
-      IF( ln_ldfeiv .AND. .NOT. ln_traldf_triad )   &
-         &              CALL ldf_eiv_trp( kt, nit000, zun, zvn, zwn, 'TRA' )   ! add the eiv transport (if necessary)
-      !
-      IF( ln_mle    )   CALL tra_mle_trp( kt, nit000, zun, zvn, zwn, 'TRA' )   ! add the mle transport (if necessary)
-      !
-      CALL iom_put( "uocetr_eff", zun )                                        ! output effective transport      
-      CALL iom_put( "vocetr_eff", zvn )
-      CALL iom_put( "wocetr_eff", zwn )
-      !
+      IF( .NOT. lskip ) THEN
+         !                                         !==  effective transport  ==!
+         IF( ln_wave .AND. ln_sdw )  THEN
+            DO_3D_OVR( nn_hls, nn_hls-1, nn_hls, nn_hls-1, 1, jpkm1 )
+               zuu(ji,jj,jk) = e2u  (ji,jj) * e3u(ji,jj,jk,Kmm) * ( uu(ji,jj,jk,Kmm) + usd(ji,jj,jk) )
+               zvv(ji,jj,jk) = e1v  (ji,jj) * e3v(ji,jj,jk,Kmm) * ( vv(ji,jj,jk,Kmm) + vsd(ji,jj,jk) )
+            END_3D
+            DO_3D_OVR( nn_hls-1, nn_hls-1, nn_hls-1, nn_hls-1, 1, jpkm1 )
+               zww(ji,jj,jk) = e1e2t(ji,jj)                     * ( ww(ji,jj,jk)     + wsd(ji,jj,jk) )
+            END_3D
+         ELSE
+            DO_3D_OVR( nn_hls, nn_hls-1, nn_hls, nn_hls-1, 1, jpkm1 )
+               zuu(ji,jj,jk) = e2u  (ji,jj) * e3u(ji,jj,jk,Kmm) * uu(ji,jj,jk,Kmm)               ! eulerian transport only
+               zvv(ji,jj,jk) = e1v  (ji,jj) * e3v(ji,jj,jk,Kmm) * vv(ji,jj,jk,Kmm)
+            END_3D
+            DO_3D_OVR( nn_hls-1, nn_hls-1, nn_hls-1, nn_hls-1, 1, jpkm1 )
+               zww(ji,jj,jk) = e1e2t(ji,jj)                     * ww(ji,jj,jk)
+            END_3D
+         ENDIF
+         !
+         IF( ln_vvl_ztilde .OR. ln_vvl_layer ) THEN                                ! add z-tilde and/or vvl corrections
+            DO_3D_OVR( nn_hls, nn_hls-1, nn_hls, nn_hls-1, 1, jpkm1 )
+               zuu(ji,jj,jk) = zuu(ji,jj,jk) + un_td(ji,jj,jk)
+               zvv(ji,jj,jk) = zvv(ji,jj,jk) + vn_td(ji,jj,jk)
+            END_3D
+         ENDIF
+         !
+         DO_2D_OVR( nn_hls, nn_hls-1, nn_hls, nn_hls-1 )
+            zuu(ji,jj,jpk) = 0._wp                                                      ! no transport trough the bottom
+            zvv(ji,jj,jpk) = 0._dp
+            zww(ji,jj,jpk) = 0._wp
+         END_2D
+         !
+         IF( ln_ldfeiv .AND. .NOT. ln_traldf_triad )   &
+            &              CALL ldf_eiv_trp( kt, nit000, zuu, zvv, zww, 'TRA', Kmm, Krhs )   ! add the eiv transport (if necessary)
+         !
+         IF( ln_mle    )   CALL tra_mle_trp( kt, nit000, zuu, zvv, zww, 'TRA', Kmm       )   ! add the mle transport (if necessary)
+         !
+         ! TEMP: [tiling] This change not necessary after all lbc_lnks removed in the nn_hls = 2 case in tra_adv_fct
+         IF( .NOT. l_istiled .OR. ntile == nijtile )  THEN                ! Do only on the last tile
+            CALL iom_put( "uocetr_eff", zuu )                                        ! output effective transport
+            CALL iom_put( "vocetr_eff", zvv )
+            CALL iom_put( "wocetr_eff", zww )
+         ENDIF
+         !
 !!gm ???
-      IF( ln_diaptr )   CALL dia_ptr( zvn )                                    ! diagnose the effective MSF 
+         ! TEMP: [tiling] This copy-in not necessary after all lbc_lnks removed in the nn_hls = 2 case in tra_adv_fct
+         CALL dia_ptr( kt, Kmm, CASTSP(zvv(A2D(nn_hls),:)) )                                    ! diagnose the effective MSF
 !!gm ???
-      !
-      IF( l_trdtra )   THEN                    !* Save ta and sa trends
-         ALLOCATE( ztrdt(jpi,jpj,jpk), ztrds(jpi,jpj,jpk) )
-         ztrdt(:,:,:) = tsa(:,:,:,jp_tem)
-         ztrds(:,:,:) = tsa(:,:,:,jp_sal)
-      ENDIF
-      !
-      SELECT CASE ( nadv )                      !==  compute advection trend and add it to general trend  ==!
-      !
-      CASE ( np_CEN )                                 ! Centered scheme : 2nd / 4th order
-         CALL tra_adv_cen    ( kt, nit000, 'TRA',         zun, zvn, zwn     , tsn, tsa, jpts, nn_cen_h, nn_cen_v )
-      CASE ( np_FCT )                                 ! FCT scheme      : 2nd / 4th order
-         CALL tra_adv_fct    ( kt, nit000, 'TRA', r2dt, zun, zvn, zwn, tsb, tsn, tsa, jpts, nn_fct_h, nn_fct_v )
-      CASE ( np_MUS )                                 ! MUSCL
-         CALL tra_adv_mus    ( kt, nit000, 'TRA', r2dt, zun, zvn, zwn, tsb,      tsa, jpts        , ln_mus_ups ) 
-      CASE ( np_UBS )                                 ! UBS
-         CALL tra_adv_ubs    ( kt, nit000, 'TRA', r2dt, zun, zvn, zwn, tsb, tsn, tsa, jpts        , nn_ubs_v   )
-      CASE ( np_QCK )                                 ! QUICKEST
-         CALL tra_adv_qck    ( kt, nit000, 'TRA', r2dt, zun, zvn, zwn, tsb, tsn, tsa, jpts                     )
-      !
-      END SELECT
-      !
-      IF( l_trdtra )   THEN                      ! save the advective trends for further diagnostics
-         DO jk = 1, jpkm1
-            ztrdt(:,:,jk) = tsa(:,:,jk,jp_tem) - ztrdt(:,:,jk)
-            ztrds(:,:,jk) = tsa(:,:,jk,jp_sal) - ztrds(:,:,jk)
-         END DO
-         CALL trd_tra( kt, 'TRA', jp_tem, jptra_totad, ztrdt )
-         CALL trd_tra( kt, 'TRA', jp_sal, jptra_totad, ztrds )
-         DEALLOCATE( ztrdt, ztrds )
+         !
+
+         IF( l_trdtra )   THEN                    !* Save ta and sa trends
+            ALLOCATE( ztrdt(jpi,jpj,jpk), ztrds(jpi,jpj,jpk) )
+            ztrdt(:,:,:) = pts(:,:,:,jp_tem,Krhs)
+            ztrds(:,:,:) = pts(:,:,:,jp_sal,Krhs)
+         ENDIF
+         !
+         SELECT CASE ( nadv )                      !==  compute advection trend and add it to general trend  ==!
+         !
+         CASE ( np_CEN )                                 ! Centered scheme : 2nd / 4th order
+            CALL tra_adv_cen    ( kt, nit000, 'TRA',      zuu, CASTSP(zvv), zww, Kmm, pts, jpts, Krhs, nn_cen_h, nn_cen_v      )
+         CASE ( np_FCT )                                 ! FCT scheme      : 2nd / 4th order
+               CALL tra_adv_fct ( kt, nit000, 'TRA', rDt, zuu, CASTSP(zvv), zww, Kbb, Kmm, pts, jpts, Krhs, nn_fct_h, nn_fct_v )
+         CASE ( np_MUS )                                 ! MUSCL
+                CALL tra_adv_mus( kt, nit000, 'TRA', rDt, zuu, CASTSP(zvv), zww, Kbb, Kmm, pts, jpts, Krhs, ln_mus_ups         )
+         CASE ( np_UBS )                                 ! UBS
+            CALL tra_adv_ubs    ( kt, nit000, 'TRA', rDt, zuu, CASTSP(zvv), zww, Kbb, Kmm, pts, jpts, Krhs, nn_ubs_v           )
+         CASE ( np_QCK )                                 ! QUICKEST
+            CALL tra_adv_qck    ( kt, nit000, 'TRA', rDt, zuu, CASTSP(zvv), zww, Kbb, Kmm, pts, jpts, Krhs                     )
+         !
+         END SELECT
+         !
+         IF( l_trdtra )   THEN                      ! save the advective trends for further diagnostics
+            DO jk = 1, jpkm1
+               ztrdt(:,:,jk) = pts(:,:,jk,jp_tem,Krhs) - ztrdt(:,:,jk)
+               ztrds(:,:,jk) = pts(:,:,jk,jp_sal,Krhs) - ztrds(:,:,jk)
+            END DO
+            CALL trd_tra( kt, Kmm, Krhs, 'TRA', jp_tem, jptra_totad, ztrdt )
+            CALL trd_tra( kt, Kmm, Krhs, 'TRA', jp_sal, jptra_totad, ztrds )
+            DEALLOCATE( ztrdt, ztrds )
+         ENDIF
+
+         ! TEMP: [tiling] This change not necessary after all lbc_lnks removed in the nn_hls = 2 case in tra_adv_fct
+         IF( ln_tile .AND. .NOT. l_istiled ) CALL dom_tile_start( ldhold=.TRUE. )
       ENDIF
       !                                              ! print mean trends (used for debugging)
-      IF(ln_ctl)   CALL prt_ctl( tab3d_1=tsa(:,:,:,jp_tem), clinfo1=' adv  - Ta: ', mask1=tmask,               &
-         &                       tab3d_2=tsa(:,:,:,jp_sal), clinfo2=       ' Sa: ', mask2=tmask, clinfo3='tra' )
+      IF(sn_cfctl%l_prtctl)   CALL prt_ctl( tab3d_1=pts(:,:,:,jp_tem,Krhs), clinfo1=' adv  - Ta: ', mask1=tmask, &
+         &                                  tab3d_2=pts(:,:,:,jp_sal,Krhs), clinfo2=       ' Sa: ', mask2=tmask, clinfo3='tra' )
+
+      ! TEMP: [tiling] This change not necessary after all lbc_lnks removed in the nn_hls = 2 case in tra_adv_fct
+      IF( .NOT. l_istiled .OR. ntile == nijtile )  THEN                ! Do only for the full domain
+         DEALLOCATE( zuu, zvv, zww )
+      ENDIF
       !
       IF( ln_timing )   CALL timing_stop( 'tra_adv' )
       !
@@ -178,8 +218,8 @@ CONTAINS
    SUBROUTINE tra_adv_init
       !!---------------------------------------------------------------------
       !!                  ***  ROUTINE tra_adv_init  ***
-      !!                
-      !! ** Purpose :   Control the consistency between namelist options for 
+      !!
+      !! ** Purpose :   Control the consistency between namelist options for
       !!              tracer advection schemes and set nadv
       !!----------------------------------------------------------------------
       INTEGER ::   ioptio, ios   ! Local integers
@@ -193,11 +233,9 @@ CONTAINS
       !!----------------------------------------------------------------------
       !
       !                                !==  Namelist  ==!
-      REWIND( numnam_ref )                   ! Namelist namtra_adv in reference namelist : Tracer advection scheme
       READ  ( numnam_ref, namtra_adv, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namtra_adv in reference namelist' )
       !
-      REWIND( numnam_cfg )                   ! Namelist namtra_adv in configuration namelist : Tracer advection scheme
       READ  ( numnam_cfg, namtra_adv, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namtra_adv in configuration namelist' )
       IF(lwm) WRITE( numond, namtra_adv )
@@ -222,7 +260,7 @@ CONTAINS
       ENDIF
       !
       !                                !==  Parameter control & set nadv ==!
-      ioptio = 0                       
+      ioptio = 0
       IF( ln_traadv_OFF ) THEN   ;   ioptio = ioptio + 1   ;   nadv = np_NO_adv   ;   ENDIF
       IF( ln_traadv_cen ) THEN   ;   ioptio = ioptio + 1   ;   nadv = np_CEN      ;   ENDIF
       IF( ln_traadv_fct ) THEN   ;   ioptio = ioptio + 1   ;   nadv = np_FCT      ;   ENDIF
@@ -240,6 +278,10 @@ CONTAINS
                         .AND. ( nn_fct_v /= 2 .AND. nn_fct_v /= 4 )   ) THEN
         CALL ctl_stop( 'tra_adv_init: FCT scheme, choose 2nd or 4th order' )
       ENDIF
+      ! TEMP: [tiling] This change not necessary after all lbc_lnks removed in the nn_hls = 2 case in tra_adv_fct
+      IF( ln_traadv_fct .AND. ln_tile ) THEN
+         CALL ctl_warn( 'tra_adv_init: FCT scheme does not yet work with tiling' )
+      ENDIF
       IF( ln_traadv_ubs .AND. ( nn_ubs_v /= 2 .AND. nn_ubs_v /= 4 )   ) THEN     ! UBS
         CALL ctl_stop( 'tra_adv_init: UBS scheme, choose 2nd or 4th order' )
       ENDIF
@@ -251,7 +293,7 @@ CONTAINS
             & ln_traadv_fct .AND. nn_fct_v == 4   )   CALL ctl_stop( 'tra_adv_init: 4th order COMPACT scheme not allowed with ISF' )
       ENDIF
       !
-      !                                !==  Print the choice  ==!  
+      !                                !==  Print the choice  ==!
       IF(lwp) THEN
          WRITE(numout,*)
          SELECT CASE ( nadv )

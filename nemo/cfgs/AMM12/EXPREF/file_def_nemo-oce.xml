@@ -42,7 +42,6 @@
 
       <file_group id="25h_mean" output_freq="1d" output_level="10" enabled=".TRUE.">
 
-
      <file id="file12" name_suffix="_25hourm_grid_T" description="ocean T grid variables, 25h meaned" enabled=".TRUE." >
      <field field_ref="temper25h"   name="votemper"  operation="instant" enabled=".TRUE."/>
      <field field_ref="tempis25h"   name="votempis"  operation="instant" enabled=".TRUE."/>

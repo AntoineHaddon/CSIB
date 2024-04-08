@@ -34,14 +34,16 @@ MODULE sbcice_if
 
    TYPE(FLD), ALLOCATABLE, DIMENSION(:) ::   sf_ice   ! structure of input ice-cover (file informations, fields read)
    
+   !! * Substitutions
+#  include "do_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: sbcice_if.F90 11536 2019-09-11 13:54:18Z smasson $
+   !! $Id: sbcice_if.F90 13295 2020-07-10 18:24:21Z acc $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE sbc_ice_if( kt )
+   SUBROUTINE sbc_ice_if( kt, Kbb, Kmm )
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE sbc_ice_if  ***
       !!
@@ -58,6 +60,7 @@ CONTAINS
       !!                fr_i       : update the ice fraction
       !!---------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt   ! ocean time step
+      INTEGER, INTENT(in) ::   Kbb, Kmm   ! ocean time level indices
       !
       INTEGER  ::   ji, jj     ! dummy loop indices
       INTEGER  ::   ierror     ! return error code
@@ -73,11 +76,9 @@ CONTAINS
       IF( kt == nit000 ) THEN                   !  First call kt=nit000  !
          !                                      ! ====================== !
          ! set file information
-         REWIND( numnam_ref )              ! Namelist namsbc_iif in reference namelist : Ice if file
          READ  ( numnam_ref, namsbc_iif, IOSTAT = ios, ERR = 901)
 901      IF( ios /= 0 )   CALL ctl_nam ( ios , 'namsbc_iif in reference namelist' )
 
-         REWIND( numnam_cfg )              ! Namelist Namelist namsbc_iif in configuration namelist : Ice if file
          READ  ( numnam_cfg, namsbc_iif, IOSTAT = ios, ERR = 902 )
 902      IF( ios >  0 )   CALL ctl_nam ( ios , 'namsbc_iif in configuration namelist' )
          IF(lwm) WRITE ( numond, namsbc_iif )
@@ -107,39 +108,37 @@ CONTAINS
          IF( ln_cpl )   a_i(:,:,1) = fr_i(:,:)         
 
          ! Flux and ice fraction computation
-         DO jj = 1, jpj
-            DO ji = 1, jpi
-               !
-               zt_fzp  = fr_i(ji,jj)                        ! freezing point temperature
-               zfr_obs = sf_ice(1)%fnow(ji,jj,1)            ! observed ice cover
-               !                                            ! ocean ice fraction (0/1) from the freezing point temperature
-               IF( sst_m(ji,jj) <= zt_fzp ) THEN   ;   fr_i(ji,jj) = 1.e0
-               ELSE                                ;   fr_i(ji,jj) = 0.e0
-               ENDIF
+         DO_2D( 1, 1, 1, 1 )
+            !
+            zt_fzp  = fr_i(ji,jj)                        ! freezing point temperature
+            zfr_obs = sf_ice(1)%fnow(ji,jj,1)            ! observed ice cover
+            !                                            ! ocean ice fraction (0/1) from the freezing point temperature
+            IF( sst_m(ji,jj) <= zt_fzp ) THEN   ;   fr_i(ji,jj) = 1.e0
+            ELSE                                ;   fr_i(ji,jj) = 0.e0
+            ENDIF
 
-               tsn(ji,jj,1,jp_tem) = MAX( tsn(ji,jj,1,jp_tem), zt_fzp )     ! avoid over-freezing point temperature
+            ts(ji,jj,1,jp_tem,Kmm) = MAX( ts(ji,jj,1,jp_tem,Kmm), zt_fzp )     ! avoid over-freezing point temperature
 
-               qsr(ji,jj) = ( 1. - zfr_obs ) * qsr(ji,jj)   ! solar heat flux : zero below observed ice cover
+            qsr(ji,jj) = ( 1. - zfr_obs ) * qsr(ji,jj)   ! solar heat flux : zero below observed ice cover
 
-               !                                            ! non solar heat flux : add a damping term 
-               !      # ztrp*(t-(tgel-1.))  if observed ice and no opa ice   (zfr_obs=1 fr_i=0)
-               !      # ztrp*min(0,t-tgel)  if observed ice and opa ice      (zfr_obs=1 fr_i=1)
-               zqri = ztrp * ( tsb(ji,jj,1,jp_tem) - ( zt_fzp - 1.) )
-               zqrj = ztrp * MIN( 0., tsb(ji,jj,1,jp_tem) - zt_fzp )
-               zqrp = ( zfr_obs * ( (1. - fr_i(ji,jj) ) * zqri    &
-                 &                 +      fr_i(ji,jj)   * zqrj ) ) * tmask(ji,jj,1)
+            !                                            ! non solar heat flux : add a damping term 
+            !      # ztrp*(t-(tgel-1.))  if observed ice and no opa ice   (zfr_obs=1 fr_i=0)
+            !      # ztrp*min(0,t-tgel)  if observed ice and opa ice      (zfr_obs=1 fr_i=1)
+            zqri = ztrp * ( ts(ji,jj,1,jp_tem,Kbb) - ( zt_fzp - 1.) )
+            zqrj = ztrp * MIN( 0., ts(ji,jj,1,jp_tem,Kbb) - zt_fzp )
+            zqrp = ( zfr_obs * ( (1. - fr_i(ji,jj) ) * zqri    &
+              &                 +      fr_i(ji,jj)   * zqrj ) ) * tmask(ji,jj,1)
 
-               !                                            ! non-solar heat flux 
-               !      # qns unchanged              if no climatological ice              (zfr_obs=0)
-               !      # qns = zqrp                 if climatological ice and no opa ice  (zfr_obs=1, fr_i=0)
-               !      # qns = zqrp -2(-4) watt/m2  if climatological ice and opa ice     (zfr_obs=1, fr_i=1)
-               !                                   (-2=arctic, -4=antarctic)   
-               zqi = -3. + SIGN( 1._wp, ff_f(ji,jj) )
-               qns(ji,jj) = ( ( 1.- zfr_obs ) * qns(ji,jj)                             &
-                  &          +      zfr_obs   * fr_i(ji,jj) * zqi ) * tmask(ji,jj,1)   &
-                  &       + zqrp
-            END DO
-         END DO
+            !                                            ! non-solar heat flux 
+            !      # qns unchanged              if no climatological ice              (zfr_obs=0)
+            !      # qns = zqrp                 if climatological ice and no opa ice  (zfr_obs=1, fr_i=0)
+            !      # qns = zqrp -2(-4) watt/m2  if climatological ice and opa ice     (zfr_obs=1, fr_i=1)
+            !                                   (-2=arctic, -4=antarctic)   
+            zqi = -3. + SIGN( 1._wp, ff_f(ji,jj) )
+            qns(ji,jj) = ( ( 1.- zfr_obs ) * qns(ji,jj)                             &
+               &          +      zfr_obs   * fr_i(ji,jj) * zqi ) * tmask(ji,jj,1)   &
+               &       + zqrp
+         END_2D
          !
       ENDIF
       !

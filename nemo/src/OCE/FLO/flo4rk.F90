@@ -25,14 +25,15 @@ MODULE flo4rk
    REAL(wp), DIMENSION (4) ::   rcoef  = (/-1./6. , 1./2. ,-1./2. , 1./6. /)   !
    REAL(wp), DIMENSION (3) ::   scoef1 = (/  0.5  ,  0.5  ,  1.0  /)           !
 
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: flo4rk.F90 11536 2019-09-11 13:54:18Z smasson $ 
+   !! $Id: flo4rk.F90 13237 2020-07-03 09:12:53Z smasson $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE flo_4rk( kt )
+   SUBROUTINE flo_4rk( kt, Kbb, Kmm )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE flo_4rk  ***
       !!
@@ -44,7 +45,8 @@ CONTAINS
       !!         We need to know the velocity field, the old positions of the
       !!       floats and the grid defined on the domain.
       !!----------------------------------------------------------------------
-      INTEGER, INTENT(in) ::   kt   ! ocean time-step index
+      INTEGER, INTENT(in) ::   kt         ! ocean time-step index
+      INTEGER, INTENT(in) ::   Kbb, Kmm   ! ocean time level indices
       !!
       INTEGER ::  jfl, jind           ! dummy loop indices
       INTEGER ::  ierror              ! error value
@@ -124,13 +126,13 @@ CONTAINS
       DO  jind = 1, 4         
       
          ! for each step we compute the compute the velocity with Lagrange interpolation
-         CALL flo_interp( zgifl, zgjfl, zgkfl, zufl, zvfl, zwfl, jind )
+         CALL flo_interp( Kbb, Kmm, zgifl, zgjfl, zgkfl, zufl, zvfl, zwfl, jind )
          
          ! computation of Runge-Kutta factor
          DO jfl = 1, jpnfl
-            zrkxfl(jfl,jind) = rdt*zufl(jfl)
-            zrkyfl(jfl,jind) = rdt*zvfl(jfl)
-            zrkzfl(jfl,jind) = rdt*zwfl(jfl)
+            zrkxfl(jfl,jind) = rn_Dt*zufl(jfl)
+            zrkyfl(jfl,jind) = rn_Dt*zvfl(jfl)
+            zrkzfl(jfl,jind) = rn_Dt*zwfl(jfl)
          END DO
          IF( jind /= 4 ) THEN
             DO jfl = 1, jpnfl
@@ -152,7 +154,8 @@ CONTAINS
    END SUBROUTINE flo_4rk
 
 
-   SUBROUTINE flo_interp( pxt , pyt , pzt ,      &
+   SUBROUTINE flo_interp( Kbb, Kmm,              &
+      &                   pxt , pyt , pzt ,      &
       &                   pufl, pvfl, pwfl, ki )
       !!----------------------------------------------------------------------
       !!                ***  ROUTINE flointerp  ***
@@ -164,6 +167,7 @@ CONTAINS
       !!      compute velocity at the date and the position we need to
       !!      integrated with RK method.
       !!----------------------------------------------------------------------
+      INTEGER                    , INTENT(in   ) ::   Kbb, Kmm           ! ocean time level indices
       REAL(wp) , DIMENSION(jpnfl), INTENT(in   ) ::   pxt , pyt , pzt    ! position of the float
       REAL(wp) , DIMENSION(jpnfl), INTENT(  out) ::   pufl, pvfl, pwfl   ! velocity at this position
       INTEGER                    , INTENT(in   ) ::   ki                 !
@@ -245,8 +249,8 @@ CONTAINS
             DO jind2 = 1, 4
                DO jind3 = 1, 4
                   ztufl(jfl,jind1,jind2,jind3) =   &
-                     &   (  tcoef1(ki) * ub(iidu(jfl,jind1),ijdu(jfl,jind2),ikdu(jfl,jind3)) +   &
-                     &      tcoef2(ki) * un(iidu(jfl,jind1),ijdu(jfl,jind2),ikdu(jfl,jind3)) )   &
+                     &   (  tcoef1(ki) * uu(iidu(jfl,jind1),ijdu(jfl,jind2),ikdu(jfl,jind3),Kbb) +   &
+                     &      tcoef2(ki) * uu(iidu(jfl,jind1),ijdu(jfl,jind2),ikdu(jfl,jind3),Kmm) )   &
                      &      / e1u(iidu(jfl,jind1),ijdu(jfl,jind2)) 
                END DO
             END DO
@@ -329,8 +333,8 @@ CONTAINS
             DO jind2 = 1, 4
                DO jind3 = 1 ,4
                   ztvfl(jfl,jind1,jind2,jind3)=   &
-                     &   ( tcoef1(ki) * vb(iidv(jfl,jind1),ijdv(jfl,jind2),ikdv(jfl,jind3))  +   &
-                     &     tcoef2(ki) * vn(iidv(jfl,jind1),ijdv(jfl,jind2),ikdv(jfl,jind3)) )    & 
+                     &   ( tcoef1(ki) * vv(iidv(jfl,jind1),ijdv(jfl,jind2),ikdv(jfl,jind3),Kbb)  +   &
+                     &     tcoef2(ki) * vv(iidv(jfl,jind1),ijdv(jfl,jind2),ikdv(jfl,jind3),Kmm) )    & 
                      &     / e2v(iidv(jfl,jind1),ijdv(jfl,jind2))
                END DO
             END DO
@@ -421,8 +425,8 @@ CONTAINS
                DO jind3 = 1, 4
                   ztwfl(jfl,jind1,jind2,jind3)=   &
                      &   ( tcoef1(ki) * wb(iidw(jfl,jind1),ijdw(jfl,jind2),ikdw(jfl,jind3))+   &
-                     &     tcoef2(ki) * wn(iidw(jfl,jind1),ijdw(jfl,jind2),ikdw(jfl,jind3)) )  &
-                     &   / e3w_n(iidw(jfl,jind1),ijdw(jfl,jind2),ikdw(jfl,jind3))
+                     &     tcoef2(ki) * ww(iidw(jfl,jind1),ijdw(jfl,jind2),ikdw(jfl,jind3)) )  &
+                     &   / e3w(iidw(jfl,jind1),ijdw(jfl,jind2),ikdw(jfl,jind3),Kmm)
                END DO
             END DO
          END DO

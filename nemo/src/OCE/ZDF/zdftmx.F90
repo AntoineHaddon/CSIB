@@ -57,7 +57,8 @@ MODULE zdftmx
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   az_tmx     ! coefficient used to evaluate the tidal induced Kz
 
    !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
+!#  include "vectopt_loop_substitute.h90"
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OPA 4.0 , NEMO Consortium (2011)
    !! $Id: zdftmx.F90 8788 2017-11-22 18:01:02Z davestorkey $
@@ -76,7 +77,7 @@ CONTAINS
    END FUNCTION zdf_tmx_alloc
 
 
-   SUBROUTINE zdf_tmx( kt, p_avm, p_avt, p_avs)
+   SUBROUTINE zdf_tmx( kt,Kmm, p_avm, p_avt, p_avs)
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE zdf_tmx  ***
       !!                   
@@ -108,7 +109,7 @@ CONTAINS
       !! References : Simmons et al. 2004, Ocean Modelling, 6, 3-4, 245-263.
       !!              Koch-Larrouy et al. 2007, GRL.
       !!----------------------------------------------------------------------
-      INTEGER, INTENT(in) ::   kt   ! ocean time-step 
+      INTEGER, INTENT(in) ::   kt,Kmm   ! ocean time-step 
       REAL(wp), DIMENSION(:,:,:) , INTENT(inout) ::   p_avm          ! momentum Kz (w-points)
       REAL(wp), DIMENSION(:,:,:) , INTENT(inout) ::   p_avt, p_avs   ! tracer   Kz (w-points)
       !!
@@ -130,7 +131,7 @@ CONTAINS
 
          zkz(:,:) = 0.e0               !* Associated potential energy consummed over the whole water column
          DO jk = 2, jpkm1
-            zkz(:,:) = zkz(:,:) + e3w_n(:,:,jk) * MAX( 0.e0, rn2(:,:,jk) ) * rau0 * zav_tide(:,:,jk) * wmask(:,:,jk)
+            zkz(:,:) = zkz(:,:) + e3w(:,:,jk,Kmm) * MAX( 0.e0, rn2(:,:,jk) ) * rho0 * zav_tide(:,:,jk) * wmask(:,:,jk)
          END DO
 
          DO jj = 1, jpj                !* Here zkz should be equal to en_tmx ==> multiply by en_tmx/zkz to recover en_tmx
@@ -161,12 +162,12 @@ CONTAINS
          DO jk= 1, jpk
             DO jj= 1, jpj
                DO ji= 1, jpi
-                  ztpc = ztpc + e3w_n(ji,jj,jk) * e1t(ji,jj) * e2t(ji,jj)   &
+                  ztpc = ztpc + e3w(ji,jj,jk,Kmm) * e1t(ji,jj) * e2t(ji,jj)   &
                      &         * MAX( 0.e0, rn2(ji,jj,jk) ) * zav_tide(ji,jj,jk) * tmask(ji,jj,jk) * tmask_i(ji,jj)
                END DO
             END DO
          END DO
-         ztpc= rau0 / ( rn_tfe * rn_me ) * ztpc
+         ztpc= rho0 / ( rn_tfe * rn_me ) * ztpc
          IF(lwp) WRITE(numout,*) 
          IF(lwp) WRITE(numout,*) '          N Total power consumption by av_tide    : ztpc = ', ztpc * 1.e-12 ,'TW'
       ENDIF
@@ -174,7 +175,7 @@ CONTAINS
       !                          ! ----------------------- !
       !                          !    ITF  tidal mixing    !  (update zav_tide)
       !                          ! ----------------------- !
-      IF( ln_tmx_itf )   CALL tmx_itf( kt, zav_tide )
+      IF( ln_tmx_itf )   CALL tmx_itf( kt,Kmm, zav_tide )
 
       !                          ! ----------------------- !
       !                          !   Update  mixing coefs  !                          
@@ -191,12 +192,12 @@ CONTAINS
       !                             !* output tidal mixing coefficient
       CALL iom_put( "av_tmx", zav_tide )
 
-      IF(ln_ctl)   CALL prt_ctl(tab3d_1=zav_tide , clinfo1=' tmx - av_tide: ', tab3d_2=p_avt, clinfo2=' p_avt: ', kdim=jpk)
+      IF(sn_cfctl%l_prtctl)   CALL prt_ctl(tab3d_1=zav_tide , clinfo1=' tmx - av_tide: ', tab3d_2=p_avt, clinfo2=' p_avt: ', kdim=jpk)
       !
    END SUBROUTINE zdf_tmx
 
 
-   SUBROUTINE tmx_itf( kt, pav )
+   SUBROUTINE tmx_itf( kt,Kmm, pav )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE tmx_itf  ***
       !!                   
@@ -216,7 +217,7 @@ CONTAINS
       !!
       !! References :  Koch-Larrouy et al. 2007, GRL 
       !!----------------------------------------------------------------------
-      INTEGER , INTENT(in   )                         ::   kt   ! ocean time-step
+      INTEGER , INTENT(in   )                         ::   kt,Kmm   ! ocean time-step
       REAL(wp), INTENT(inout), DIMENSION(jpi,jpj,jpk) ::   pav  ! Tidal mixing coef.
       !! 
       INTEGER  ::   ji, jj, jk    ! dummy loop indices
@@ -243,8 +244,8 @@ CONTAINS
       zsum1(:,:) = 0.e0
       zsum2(:,:) = 0.e0
       DO jk= 2, jpk
-         zsum1(:,:) = zsum1(:,:) + zempba_3d_1(:,:,jk) * e3w_n(:,:,jk) * tmask(:,:,jk) * tmask(:,:,jk-1)
-         zsum2(:,:) = zsum2(:,:) + zempba_3d_2(:,:,jk) * e3w_n(:,:,jk) * tmask(:,:,jk) * tmask(:,:,jk-1)               
+         zsum1(:,:) = zsum1(:,:) + zempba_3d_1(:,:,jk) * e3w(:,:,jk,Kmm) * tmask(:,:,jk) * tmask(:,:,jk-1)
+         zsum2(:,:) = zsum2(:,:) + zempba_3d_2(:,:,jk) * e3w(:,:,jk,Kmm) * tmask(:,:,jk) * tmask(:,:,jk-1)               
       END DO
       DO jj = 1, jpj
          DO ji = 1, jpi
@@ -261,7 +262,7 @@ CONTAINS
                   &  + zempba_3d_2(ji,jj,jk) * zsum2(ji,jj) * ( 1. - zcoef )
                !
                zempba_3d(ji,jj,jk) =               ztpc 
-               zsum     (ji,jj)    = zsum(ji,jj) + ztpc * e3w_n(ji,jj,jk)
+               zsum     (ji,jj)    = zsum(ji,jj) + ztpc * e3w(ji,jj,jk,Kmm)
             END DO
          END DO
        END DO
@@ -272,7 +273,7 @@ CONTAINS
        END DO
 
       !                             ! first estimation bounded by 10 cm2/s (with n2 bounded by rn_n2min) 
-      zcoef = rn_tfe_itf / ( rn_tfe * rau0 )
+      zcoef = rn_tfe_itf / ( rn_tfe * rho0 )
       DO jk = 1, jpk
          zavt_itf(:,:,jk) = MIN(  10.e-4, zcoef * en_tmx(:,:) * zsum(:,:) * zempba_3d(:,:,jk)   &
             &                                      / MAX( rn_n2min, rn2(:,:,jk) ) * tmask(:,:,jk)  )
@@ -280,7 +281,7 @@ CONTAINS
 
       zkz(:,:) = 0.e0               ! Associated potential energy consummed over the whole water column
       DO jk = 2, jpkm1
-         zkz(:,:) = zkz(:,:) + e3w_n(:,:,jk) * MAX( 0.e0, rn2(:,:,jk) ) * rau0 * zavt_itf(:,:,jk) * tmask(:,:,jk) * tmask(:,:,jk-1)
+         zkz(:,:) = zkz(:,:) + e3w(:,:,jk,Kmm) * MAX( 0.e0, rn2(:,:,jk) ) * rho0 * zavt_itf(:,:,jk) * tmask(:,:,jk) * tmask(:,:,jk-1)
       END DO
 
       DO jj = 1, jpj                ! Here zkz should be equal to en_tmx ==> multiply by en_tmx/zkz to recover en_tmx
@@ -298,12 +299,12 @@ CONTAINS
          DO jk= 1, jpk
             DO jj= 1, jpj
                DO ji= 1, jpi
-                  ztpc = ztpc + e1t(ji,jj) * e2t(ji,jj) * e3w_n(ji,jj,jk) * MAX( 0.e0, rn2(ji,jj,jk) )   &
+                  ztpc = ztpc + e1t(ji,jj) * e2t(ji,jj) * e3w(ji,jj,jk,Kmm) * MAX( 0.e0, rn2(ji,jj,jk) )   &
                      &                     * zavt_itf(ji,jj,jk) * tmask(ji,jj,jk) * tmask_i(ji,jj)
                END DO
             END DO
          END DO
-         ztpc= rau0 * ztpc / ( rn_me * rn_tfe_itf )
+         ztpc= rho0 * ztpc / ( rn_me * rn_tfe_itf )
          IF(lwp) WRITE(numout,*) '          N Total power consumption by zavt_itf: ztpc = ', ztpc * 1.e-12 ,'TW'
       ENDIF
 
@@ -337,7 +338,7 @@ CONTAINS
       !!             the standard tidal-induced vertical mixing as follows:
       !!                  Kz_tides = az_tmx / max( rn_n2min, N^2 )
       !!             with az_tmx a bottom intensified coefficient is given by:
-      !!                 az_tmx(z) = en_tmx / ( rau0 * rn_htmx ) * EXP( -(H-z)/rn_htmx )
+      !!                 az_tmx(z) = en_tmx / ( rho0 * rn_htmx ) * EXP( -(H-z)/rn_htmx )
       !!                                                  / ( 1. - EXP( - H   /rn_htmx ) ) 
       !!             where rn_htmx the characteristic length scale of the bottom 
       !!             intensification, en_tmx the tidal energy, and H the ocean depth
@@ -366,11 +367,11 @@ CONTAINS
       !!----------------------------------------------------------------------
       !
       
-      REWIND( numnam_ref )              ! Namelist namzdf_tmx in reference namelist : Tidal Mixing
+      ! Namelist namzdf_tmx in reference namelist : Tidal Mixing
       READ  ( numnam_ref, namzdf_tmx, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 ) CALL ctl_nam ( ios , 'namzdf_tmx in reference namelist'  )
 
-      REWIND( numnam_cfg )              ! Namelist namzdf_tmx in configuration namelist : Tidal Mixing
+      ! Namelist namzdf_tmx in configuration namelist : Tidal Mixing
       READ  ( numnam_cfg, namzdf_tmx, IOSTAT = ios, ERR = 902 )
 902   IF( ios /= 0 ) CALL ctl_nam ( ios , 'namzdf_tmx in configuration namelist' )
       IF(lwm) WRITE ( numond, namzdf_tmx )
@@ -397,23 +398,23 @@ CONTAINS
 
       IF( ln_tmx_itf ) THEN          ! read the Indonesian Through Flow mask
          CALL iom_open('mask_itf',inum)
-         CALL iom_get (inum, jpdom_data, 'tmaskitf',mask_itf,1,lrowattr=ln_use_jattr) ! 
+         CALL iom_get (inum, jpdom_global, 'tmaskitf',mask_itf,1) ! 
          CALL iom_close(inum)
       ENDIF
 
       ! read M2 tidal energy flux : W/m2  ( zem2 < 0 )
       CALL iom_open('M2rowdrg',inum)
-      CALL iom_get (inum, jpdom_data, 'field',zem2,1,lrowattr=ln_use_jattr) ! 
+      CALL iom_get (inum, jpdom_global, 'field',zem2,1) ! 
       CALL iom_close(inum)
 
       ! read K1 tidal energy flux : W/m2  ( zek1 < 0 )
       CALL iom_open('K1rowdrg',inum)
-      CALL iom_get (inum, jpdom_data, 'field',zek1,1,lrowattr=ln_use_jattr) ! 
+      CALL iom_get (inum, jpdom_global, 'field',zek1,1) ! 
       CALL iom_close(inum)
 
       IF( ln_leewmx ) THEN ! read mesoscale eddy energy flux : W/m2  ( zeef < 0 )
          CALL iom_open('Eddyengf',inum)
-         CALL iom_get (inum, jpdom_data, 'field',zeef,1,lrowattr=ln_use_jattr) !
+         CALL iom_get (inum, jpdom_global, 'field',zeef,1) !
          CALL iom_close(inum)
       ENDIF
  
@@ -432,7 +433,7 @@ CONTAINS
       DO jj = 1, jpj                ! part independent of the level
          DO ji = 1, jpi
             zhdep(ji,jj) = gdepw_0(ji,jj,mbkt(ji,jj)+1)       ! depth of the ocean
-            zfact(ji,jj) = rau0 * rn_htmx * ( 1. - EXP( -zhdep(ji,jj) / rn_htmx ) )
+            zfact(ji,jj) = rho0 * rn_htmx * ( 1. - EXP( -zhdep(ji,jj) / rn_htmx ) )
             IF( zfact(ji,jj) /= 0 )   zfact(ji,jj) = en_tmx(ji,jj) / zfact(ji,jj)
          END DO
       END DO
@@ -445,10 +446,10 @@ CONTAINS
       END DO
 !===========
 
-      IF( nprint == 1 .AND. lwp ) THEN
+      IF( lwp ) THEN
          ! Control print
          ! Total power consumption due to vertical mixing
-         ! zpc = rau0 * 1/rn_me * rn2 * zav_tide
+         ! zpc = rho0 * 1/rn_me * rn2 * zav_tide
          zav_tide(:,:,:) = 0.e0
          DO jk = 2, jpkm1
             zav_tide(:,:,jk) = az_tmx(:,:,jk) / MAX( rn_n2min, rn2(:,:,jk) )
@@ -463,7 +464,7 @@ CONTAINS
                END DO
             END DO
          END DO
-         ztpc= rau0 * 1/(rn_tfe * rn_me) * ztpc
+         ztpc= rho0 * 1/(rn_tfe * rn_me) * ztpc
 
          WRITE(numout,*) 
          WRITE(numout,*) '          Total power consumption of the tidally driven part of Kz : ztpc = ', ztpc * 1.e-12 ,'TW'
@@ -475,7 +476,7 @@ CONTAINS
          DO jk = 2, jpkm1
             DO jj = 1, jpj
                DO ji = 1, jpi
-                  zkz(ji,jj) = zkz(ji,jj) + e3w_0(ji,jj,jk) * MAX(0.e0, rn2(ji,jj,jk)) * rau0 * zav_tide(ji,jj,jk) * wmask(ji,jj,jk)
+                  zkz(ji,jj) = zkz(ji,jj) + e3w_0(ji,jj,jk) * MAX(0.e0, rn2(ji,jj,jk)) * rho0 * zav_tide(ji,jj,jk) * wmask(ji,jj,jk)
                END DO
             END DO
          END DO
@@ -513,7 +514,7 @@ CONTAINS
                END DO
             END DO
          END DO
-         ztpc= rau0 * 1/(rn_tfe * rn_me) * ztpc
+         ztpc= rho0 * 1/(rn_tfe * rn_me) * ztpc
          WRITE(numout,*) '          2 Total power consumption of the tidally driven part of Kz : ztpc = ', ztpc * 1.e-12 ,'TW'
 
          DO jk = 1, jpk

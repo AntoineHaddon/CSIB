@@ -35,11 +35,12 @@ MODULE sbcspp
    REAL(wp), PUBLIC :: rn_spp_z_max = 100.   ! Maximum depth of the salt plume
    REAL(wp), PUBLIC :: rn_spp_z_min = 10.   ! Maximum depth of the salt plume
 
-#  include "vectopt_loop_substitute.h90"
+!#  include "vectopt_loop_substitute.h90"
+#  include "domzgr_substitute.h90"
 
 CONTAINS
 
-   SUBROUTINE sbc_spp_div( phdivn )
+   SUBROUTINE sbc_spp_div( Kmm, phdivn )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE sbc_spp_div***
       !!
@@ -56,6 +57,7 @@ CONTAINS
       !!
       !! ** Action  : phdivn
       !!----------------------------------------------------------------------
+      INTEGER, INTENT(IN   ) :: Kmm           ! Time
       REAL(wp), DIMENSION(:,:,:), INTENT( INOUT ) ::   phdivn   ! horizontal divergence
       REAL(wp)                                    ::   zfact    ! Timestepping factor
       INTEGER :: kl_salt_plume
@@ -66,28 +68,28 @@ CONTAINS
 
       zfact = 0.5
       DO jj = 2, jpj
-         DO ji = fs_2, fs_jpim1
+         DO ji = 2, jpi
             ! Only distribute salt flux if flux is positive in this or the previous time step. Note that
             ! this could lead to a freshening at depth if sfx + sfx_b < 0., but is necessary to ensure
             ! symmetry in the leap frog timestepping
-            IF (fmmflx_b(ji,jj) > 0. .or. fmmflx(ji,jj) > 0.) THEN
-               CALL spp_coeffs_col( ji, jj, kl_salt_plume, z_power )
-               wt = (zfact*r1_rau0)*(fmmflx_b(ji,jj)+fmmflx(ji,jj))
+            IF (fmmflx(ji,jj) > 0.) THEN
+               CALL spp_coeffs_col( ji, jj,Kmm, kl_salt_plume, z_power )
+               wt = r1_rho0*fmmflx(ji,jj)
 
                ! Distribute divergence in the vertical
                DO jk = 1,kl_salt_plume
-                  phdivn(ji,jj,jk) = phdivn(ji,jj,jk) + (wt*z_power(jk))/e3t_n(ji,jj,jk)
+                  phdivn(ji,jj,jk) = phdivn(ji,jj,jk) + (wt*z_power(jk))/e3t(ji,jj,jk,Kmm)
                END DO
             ELSE
                phdivn(ji,jj,1) = phdivn(ji,jj,1) + &
-                               & ( fmmflx(ji,jj) + fmmflx_b(ji,jj) ) * zfact * r1_rau0 / e3t_n(ji,jj,1)
+                               & fmmflx(ji,jj) * r1_rho0 / e3t(ji,jj,1,Kmm)
             ENDIF
          END DO
       END DO
 
    END SUBROUTINE sbc_spp_div
 
-   SUBROUTINE spp_coeffs_col( ji, jj, kl_salt_plume, z_power )
+   SUBROUTINE spp_coeffs_col( ji, jj,Kmm, kl_salt_plume, z_power )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE sbc_coeffs_col***
       !!
@@ -106,6 +108,7 @@ CONTAINS
       !!----------------------------------------------------------------------
 
       INTEGER, INTENT(IN   ) :: ji,jj         ! Indices of the column
+      INTEGER, INTENT(IN   ) :: Kmm           ! Time
       INTEGER, INTENT(  OUT) :: kl_salt_plume ! Index of last layer within the salt plume
       REAL   , DIMENSION(jpk), INTENT(  OUT) :: z_power       ! Weighting factor used to distribute flux
 
@@ -115,17 +118,17 @@ CONTAINS
       INTEGER :: jk, ki_salt_plume, ki_z_min, ki_z_max
 
       ! Set a maximum bound to the depth of the salt plume
-      z_crit_max = MIN(rn_spp_z_max, gdepw_n(ji,jj,mbkt(ji,jj)))
+      z_crit_max = MIN(rn_spp_z_max, gdepw(ji,jj,mbkt(ji,jj),Kmm))
       ! Set a minimum bound on the depth of the salt plume
-      z_crit_min = MIN(rn_spp_z_min, gdepw_n(ji,jj,mbkt(ji,jj)))
+      z_crit_min = MIN(rn_spp_z_min, gdepw(ji,jj,mbkt(ji,jj),Kmm))
 
-      n2_crit = grav*rn_spp_rho_c*r1_rau0
+      n2_crit = grav*rn_spp_rho_c*r1_rho0
       ki_salt_plume = 2
       IF (ln_spp_c_grad) THEN
          DO jk=2,jpk
-            IF ( gdepw_n(ji,jj,jk) < z_crit_min ) THEN
+            IF ( gdepw(ji,jj,jk,Kmm) < z_crit_min ) THEN
                CYCLE
-            ELSEIF ( rn2b(ji,jj,jk) >= n2_crit .or. gdepw_n(ji,jj,jk+1) >= z_crit_max ) THEN
+            ELSEIF ( rn2b(ji,jj,jk) >= n2_crit .or. gdepw(ji,jj,jk+1,Kmm) >= z_crit_max ) THEN
                ki_salt_plume = jk
                EXIT
             ENDIF
@@ -133,10 +136,10 @@ CONTAINS
       ELSE
          rhoc = 0.
          DO jk=2,jpk
-            rhoc = rhoc + MAX(rn2b(ji,jj,jk), 0.)*e3w_n(ji,jj,jk)
-            IF ( gdepw_n(ji,jj,jk) < z_crit_min ) THEN
+            rhoc = rhoc + MAX(rn2b(ji,jj,jk), 0.)*e3w(ji,jj,jk,Kmm)
+            IF ( gdepw(ji,jj,jk,Kmm) < z_crit_min ) THEN
                CYCLE
-            ELSEIF ( rhoc >= n2_crit           .or. gdepw_n(ji,jj,jk+1) >= z_crit_max ) THEN
+            ELSEIF ( rhoc >= n2_crit           .or. gdepw(ji,jj,jk+1,Kmm) >= z_crit_max ) THEN
                ki_salt_plume = jk
                EXIT
             ENDIF
@@ -147,7 +150,7 @@ CONTAINS
       ! Calculate coefficient used in the (Eq. 9) by discretizing the constraint in Eq. 10
       z_power_sum = 0.
       DO jk=1,kl_salt_plume
-        z_power(jk) = gdept_n(ji,jj,jk)**nn_power
+        z_power(jk) = gdept(ji,jj,jk,Kmm)**nn_power
         z_power_sum = z_power_sum + z_power(jk)
       ENDDO
 

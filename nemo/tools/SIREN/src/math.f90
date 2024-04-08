@@ -56,19 +56,19 @@
 !> @endcode
 !>       - dd_value is 1D array of variable
 !>       - dd_fill is FillValue of variable
-!>       - ld_discont is logical to take into account longitudinal 
+!>       - ld_discont is logical to take into account longitudinal
 !>         East-West discontinuity [optional]
 !>
 !>    to compute first derivative of 2D array:<br/>
 !> @code
-!>    dl_value(:,:)=math_deriv_2D( dd_value(:,:), dd_fill, cd_dim, 
+!>    dl_value(:,:)=math_deriv_2D( dd_value(:,:), dd_fill, cd_dim,
 !>                  [ld_discont] )
 !> @endcode
 !>       - dd_value is 2D array of variable
 !>       - dd_fill is FillValue of variable
 !>       - cd_dim is character to compute derivative on first (I) or
 !>         second (J) dimension
-!>       - ld_discont is logical to take into account longitudinal 
+!>       - ld_discont is logical to take into account longitudinal
 !>         East-West discontinuity [optional]
 !>
 !>    to compute first derivative of 3D array:<br/>
@@ -80,7 +80,7 @@
 !>       - dd_fill is FillValue of variable
 !>       - cd_dim is character to compute derivative on first (I), second (J),
 !>         or third (K) dimension
-!>       - ld_discont is logical to take into account longitudinal East-West 
+!>       - ld_discont is logical to take into account longitudinal East-West
 !>         discontinuity [optional]
 !>
 !>
@@ -107,11 +107,11 @@ MODULE math
    PUBLIC :: math_QsortC    !< sort an 1D array
    PUBLIC :: math_unwrap    !< correct phase angles to produce smoother phase
    PUBLIC :: math_compute   !< compute simple operation
-   PUBLIC :: math_deriv_1D  !< compute first derivative of 1D array 
-   PUBLIC :: math_deriv_2D  !< compute first derivative of 2D array 
+   PUBLIC :: math_deriv_1D  !< compute first derivative of 1D array
+   PUBLIC :: math_deriv_2D  !< compute first derivative of 2D array
    PUBLIC :: math_deriv_3D  !< compute first derivative of 3D array
    PUBLIC :: math_ortho     !< compute orthodome distance
-   PUBLIC :: math_euclid    !< compute euclidian distance
+   PUBLIC :: math_euclid    !< compute euclidiean distance
 
    PRIVATE :: math__Partition
    PRIVATE :: math__mean_1d
@@ -142,16 +142,16 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    PURE FUNCTION math__mean_1d(dd_array, dd_fill) &
          & RESULT (df_mean)
-   !------------------------------------------------------------------- 
-   !> @brief This function compute the mean of a 1D array. 
+   !-------------------------------------------------------------------
+   !> @brief This function compute the mean of a 1D array.
    !>
-   !> @author J.Paul 
-   !> @date January, 2015 - Initial Version 
+   !> @author J.Paul
+   !> @date January, 2015 - Initial Version
    !>
-   !> @param[in] dd_array  1D array 
+   !> @param[in] dd_array  1D array
    !> @param[in] dd_fill   fillValue
    !> @return mean value, real(dp)
-   !------------------------------------------------------------------- 
+   !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
@@ -167,7 +167,7 @@ CONTAINS
       REAL(dp)     :: dl_sum
       REAL(dp)     :: dl_count
       !----------------------------------------------------------------
-      
+
       IF( PRESENT(dd_fill) )THEN
          il_count=COUNT(dd_array(:)/=dd_fill)
          IF( il_count > 0 )THEN
@@ -194,17 +194,17 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    PURE FUNCTION math__mean_2d(dd_array, dd_fill) &
          & RESULT (df_mean)
-   !------------------------------------------------------------------- 
-   !> @brief This function compute the mean of a 2D array. 
+   !-------------------------------------------------------------------
+   !> @brief This function compute the mean of a 2D array.
    !>
-   !> @author J.Paul 
-   !> @date January, 2015 - Initial Version 
+   !> @author J.Paul
+   !> @date January, 2015 - Initial Version
    !>
-   !> @param[in] dd_array  2D array 
+   !> @param[in] dd_array  2D array
    !> @param[in] dd_fill   fillValue
    !> @return mean value, real(dp)
-   !------------------------------------------------------------------- 
-      
+   !-------------------------------------------------------------------
+
       IMPLICIT NONE
 
       ! Argument
@@ -247,17 +247,17 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    PURE FUNCTION math__median_1d(dd_array, dd_fill) &
          & RESULT (df_median)
-   !------------------------------------------------------------------- 
-   !> @brief This function compute the median of a 1D array. 
+   !-------------------------------------------------------------------
+   !> @brief This function compute the median of a 1D array.
    !>
-   !> @author J.Paul 
-   !> @date January, 2015 - Initial Version 
+   !> @author J.Paul
+   !> @date January, 2015 - Initial Version
    !>
-   !> @param[in] dd_array  1D array 
+   !> @param[in] dd_array  1D array
    !> @param[in] dd_fill   fillValue
    !> @return median value, real(dp)
    !-------------------------------------------------------------------
-      
+
       IMPLICIT NONE
 
       ! Argument
@@ -272,7 +272,7 @@ CONTAINS
 
       REAL(dp), DIMENSION(:), ALLOCATABLE :: dl_list
       !----------------------------------------------------------------
-      
+
       IF( PRESENT(dd_fill)  )THEN
          il_count=COUNT(dd_array(:)/=dd_fill)
          IF( il_count > 0 )THEN
@@ -307,17 +307,17 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    PURE FUNCTION math__median_2d(dd_array, dd_fill) &
          & RESULT (df_median)
-   !------------------------------------------------------------------- 
-   !> @brief This function compute the median of a 2D array. 
-   !> 
-   !> @author J.Paul 
-   !> @date January, 2015 - Initial Version 
+   !-------------------------------------------------------------------
+   !> @brief This function compute the median of a 2D array.
    !>
-   !> @param[in] dd_array  2D array 
+   !> @author J.Paul
+   !> @date January, 2015 - Initial Version
+   !>
+   !> @param[in] dd_array  2D array
    !> @param[in] dd_fill   fillValue
    !> @return median value, real(dp)
    !-------------------------------------------------------------------
-      
+
       IMPLICIT NONE
 
       ! Argument
@@ -326,13 +326,13 @@ CONTAINS
 
       ! funtion
       REAL(dp)                             :: df_median
-      
+
       ! local variable
       INTEGER(i4)                         :: il_count
 
       REAL(dp), DIMENSION(:), ALLOCATABLE :: dl_list
       !----------------------------------------------------------------
-      
+
       IF( PRESENT(dd_fill)  )THEN
          il_count=COUNT(dd_array(:,:)/=dd_fill)
          IF( il_count > 0 )THEN
@@ -360,20 +360,20 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    PURE FUNCTION math__mwe_1d(dd_array, id_next, dd_fill) &
          & RESULT (df_mwe)
-   !------------------------------------------------------------------- 
-   !> @brief This function compute the mean without extremum of a 1D array. 
-   !> 
-   !> @author J.Paul 
-   !> @date January, 2015 - Initial Version 
+   !-------------------------------------------------------------------
+   !> @brief This function compute the mean without extremum of a 1D array.
    !>
-   !> @param[in] dd_array  1D array 
+   !> @author J.Paul
+   !> @date January, 2015 - Initial Version
+   !>
+   !> @param[in] dd_array  1D array
    !> @param[in] id_next   number of extremum to be removed
    !> @param[in] dd_fill   fillValue
    !> @return median value, real(dp)
    !-------------------------------------------------------------------
-      
+
       IMPLICIT NONE
-      
+
       ! Argument
       REAL(dp), DIMENSION(:), INTENT(IN) :: dd_array
       INTEGER(i4)           , INTENT(IN), OPTIONAL :: id_next
@@ -392,7 +392,7 @@ CONTAINS
 
       il_next=2
       IF( PRESENT(id_next) ) il_next=id_next
-      
+
       il_size=SIZE(dd_array(:))
       IF( PRESENT(dd_fill)  )THEN
          il_count=COUNT(dd_array(:)/=dd_fill)
@@ -434,18 +434,18 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    PURE FUNCTION math__mwe_2d(dd_array, id_next, dd_fill) &
          & RESULT (df_mwe)
-   !------------------------------------------------------------------- 
-   !> @brief This function compute the mean without extremum of a 2D array. 
+   !-------------------------------------------------------------------
+   !> @brief This function compute the mean without extremum of a 2D array.
    !>
-   !> @author J.Paul 
-   !> @date January, 2015 - Initial Version 
+   !> @author J.Paul
+   !> @date January, 2015 - Initial Version
    !>
-   !> @param[in] dd_array  2D array 
+   !> @param[in] dd_array  2D array
    !> @param[in] id_next   number of extremum to be removed
    !> @param[in] dd_fill   fillValue
    !> @return median value, real(dp)
    !-------------------------------------------------------------------
-      
+
       IMPLICIT NONE
 
       ! Argument
@@ -461,7 +461,7 @@ CONTAINS
 
       REAL(dp), DIMENSION(:), ALLOCATABLE :: dl_list
       !----------------------------------------------------------------
-      
+
       IF( PRESENT(dd_fill)  )THEN
          il_count=COUNT(dd_array(:,:)/=dd_fill)
          IF( il_count > 0 )THEN
@@ -489,8 +489,8 @@ CONTAINS
    END FUNCTION math__mwe_2d
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    PURE RECURSIVE SUBROUTINE math_QsortC(dd_array)
-   !------------------------------------------------------------------- 
-   !> @brief This subroutine sort a 1D array. 
+   !-------------------------------------------------------------------
+   !> @brief This subroutine sort a 1D array.
    !>
    !> @details
    !> Recursive Fortran 95 quicksort routine
@@ -498,13 +498,13 @@ CONTAINS
    !> Author: Juli Rew, SCD Consulting (juliana@ucar.edu), 9/03
    !> Based on algorithm from Cormen et al., Introduction to Algorithms,
    !> 1997 printing
-   !> 
-   !> @author J.Paul 
-   !> @date January, 2015 - Rewrite with SIREN coding rules 
    !>
-   !> @param[inout] dd_array  1D array 
+   !> @author J.Paul
+   !> @date January, 2015 - Rewrite with SIREN coding rules
+   !>
+   !> @param[inout] dd_array  1D array
    !-------------------------------------------------------------------
-      
+
       IMPLICIT NONE
 
       ! Argument
@@ -513,7 +513,7 @@ CONTAINS
       ! local variable
       INTEGER(i4) :: il_iq
       !----------------------------------------------------------------
-     
+
       IF( SIZE(dd_array(:)) > 1 )THEN
          CALL math__Partition(dd_array, il_iq)
          CALL math_QsortC(dd_array(:il_iq-1))
@@ -523,23 +523,23 @@ CONTAINS
    END SUBROUTINE math_QsortC
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    PURE SUBROUTINE math__Partition(dd_array, id_marker)
-   !------------------------------------------------------------------- 
-   !> @brief This subroutine partition a 1D array. 
+   !-------------------------------------------------------------------
+   !> @brief This subroutine partition a 1D array.
    !>
    !> @details
    !> Author: Juli Rew, SCD Consulting (juliana@ucar.edu), 9/03
    !> Based on algorithm from Cormen et al., Introduction to Algorithms,
    !> 1997 printing
-   !> 
-   !> @author J.Paul 
-   !> @date January, 2015 - Rewrite with SIREN coding rules 
+   !>
+   !> @author J.Paul
+   !> @date January, 2015 - Rewrite with SIREN coding rules
    !> @date November, 2017
    !> - use the correct loop index to look for element bigger than pivot point.
    !>
-   !> @param[inout] dd_array  1D array 
-   !> @param[in] id_marker 
+   !> @param[inout] dd_array  1D array
+   !> @param[in] id_marker
    !-------------------------------------------------------------------
-      
+
       IMPLICIT NONE
 
       ! Argument
@@ -559,7 +559,7 @@ CONTAINS
       ji= 0
       jj= SIZE(dd_array(:)) + 1
 
-      DO 
+      DO
          jj=jj-1
          DO
             IF( dd_array(jj) <= dl_x ) EXIT
@@ -587,9 +587,9 @@ CONTAINS
    END SUBROUTINE math__Partition
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    PURE SUBROUTINE math_unwrap(dd_array, dd_discont)
-   !------------------------------------------------------------------- 
-   !> @brief This subroutine correct phase angles to produce smoother 
-   !> phase plots. 
+   !-------------------------------------------------------------------
+   !> @brief This subroutine correct phase angles to produce smoother
+   !> phase plots.
    !>
    !> @details
    !> This code is based on numpy unwrap function
@@ -599,19 +599,19 @@ CONTAINS
    !> Unwrap radian phase `dd_array` by changing absolute jumps greater than
    !> `dd_discont` to their 2*pi complement.
    !>
-   !> @note If the discontinuity in `dd_array` is smaller than ``pi``, 
+   !> @note If the discontinuity in `dd_array` is smaller than ``pi``,
    !> but larger than `dd_discont`, no unwrapping is done because taking
    !> the 2*pi complement would only make the discontinuity larger.
    !>
-   !> @author J.Paul 
-   !> @date Marsh, 2015 - Rewrite in fortran, with SIREN coding rules 
+   !> @author J.Paul
+   !> @date Marsh, 2015 - Rewrite in fortran, with SIREN coding rules
    !>
-   !> @param[inout] dd_array  1D array 
+   !> @param[inout] dd_array  1D array
    !> @param[in] dd_discont maximum discontinuity between values, default pi
    !-------------------------------------------------------------------
-      
+
       IMPLICIT NONE
-      
+
       ! Argument
       REAL(dp)   , DIMENSION(:), INTENT(INOUT) :: dd_array
       REAL(dp)   ,               INTENT(IN   ), OPTIONAL :: dd_discont
@@ -657,7 +657,7 @@ CONTAINS
       END WHERE
 
       DEALLOCATE(dl_diff)
-      
+
       ALLOCATE(dl_tmp(il_size))
       dl_tmp(:)=dd_array(:)
 
@@ -672,28 +672,28 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    RECURSIVE FUNCTION math_compute(cd_var) &
          &  RESULT(df_res)
-   !------------------------------------------------------------------- 
-   !> @brief This function compute simple operation 
+   !-------------------------------------------------------------------
+   !> @brief This function compute simple operation
    !>
    !> @details
    !> - operation should be write as a string of character.
-   !> - operators allowed are : +,-,*,/ 
+   !> - operators allowed are : +,-,*,/
    !> - to ordered operation you should use parentheses
    !>
-   !> exemples: '1e6/(16/122)', '(3/2)*(2+1)' 
+   !> exemples: '1e6/(16/122)', '(3/2)*(2+1)'
    !>
-   !> @author J.Paul 
+   !> @author J.Paul
    !> @date June, 2015 - initial version
    !>
-   !> @param[in] cd_var operation to compute (string of character)  
+   !> @param[in] cd_var operation to compute (string of character)
    !> @return result of the operation, real(dp)
    !-------------------------------------------------------------------
-      
+
       IMPLICIT NONE
-      
-      ! Argument      
+
+      ! Argument
       CHARACTER(LEN=*), INTENT(IN) :: cd_var
-   
+
       ! fucntion
       REAL(dp)                     :: df_res
 
@@ -701,19 +701,19 @@ CONTAINS
       CHARACTER(LEN=lc) :: cl_var
       CHARACTER(LEN=lc) :: cl_str1
       CHARACTER(LEN=lc) :: cl_str2
-   
+
       INTEGER(i4)       :: il_ind
       ! loop indices
       !----------------------------------------------------------------
-   
-   
+
+
       IF(fct_is_real(cd_var))THEN
          READ(cd_var,*) df_res
       ELSE
-      
-   
+
+
          CALL math__parentheses(cd_var, cl_var)
-         
+
          IF(fct_is_real(cl_var))THEN
             READ(cl_var,*) df_res
          ELSE
@@ -748,38 +748,38 @@ CONTAINS
             ENDIF
          ENDIF
       ENDIF
-   
+
    END FUNCTION math_compute
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE math__parentheses(cd_varin, cd_varout)
-   !------------------------------------------------------------------- 
+   !-------------------------------------------------------------------
    !> @brief This subroutine replace sub string inside parentheses
    !> by the value of the operation inside.
    !>
    !> @details
-   !> exemple : 
+   !> exemple :
    !> - '2.6+(3/2)' => '2.6+1.5000'
    !>
-   !> @author J.Paul 
+   !> @author J.Paul
    !> @date June, 2015 - initial version
-   !> 
+   !>
    !> @param[in] cd_varin  string of character with operation inside
-   !> parentheses 
-   !> @param[out] cd_varout string of character with result of 
+   !> parentheses
+   !> @param[out] cd_varout string of character with result of
    !> operation inside parentheses
-   !-------------------------------------------------------------------   
-      
+   !-------------------------------------------------------------------
+
       IMPLICIT NONE
-      
-      ! Argument      
+
+      ! Argument
       CHARACTER(LEN=*) , INTENT(IN)  :: cd_varin
       CHARACTER(LEN=lc), INTENT(OUT) :: cd_varout
-      
+
       ! local variables
       CHARACTER(LEN=lc)     :: cl_cpt
       INTEGER(i4)           :: il_ind
       INTEGER(i4)           :: il_count
-      
+
       ! loop indices
       INTEGER(i4) :: ji
       !----------------------------------------------------------------
@@ -803,7 +803,7 @@ CONTAINS
       ELSE
          cd_varout=TRIM(cd_varin)
       ENDIF
-   
+
    END SUBROUTINE math__parentheses
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    PURE FUNCTION math_deriv_1D(dd_value, dd_fill, ld_discont) &
@@ -811,8 +811,8 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief
    !> This function compute derivative of 1D array.
-   !> 
-   !> @details 
+   !>
+   !> @details
    !> optionaly you could specify to take into account east west discontinuity
    !> (-180° 180° or 0° 360° for longitude variable)
    !>
@@ -821,7 +821,7 @@ CONTAINS
    !>
    !> @param[in] dd_value     1D array of variable to be extrapolated
    !> @param[in] dd_fill      FillValue of variable
-   !> @param[in] ld_discont   logical to take into account east west discontinuity 
+   !> @param[in] ld_discont   logical to take into account east west discontinuity
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -863,7 +863,7 @@ CONTAINS
 
       ! compute derivative in i-direction
       DO ji=1,il_shape(1)
-         
+
             il_imin=MAX(ji-1,1)
             il_imax=MIN(ji+1,il_shape(1))
 
@@ -893,11 +893,11 @@ CONTAINS
                dl_min=MINVAL( dl_value(:), dl_value(:)/=dd_fill )
                dl_max=MAXVAL( dl_value(:), dl_value(:)/=dd_fill )
                IF( dl_min < -170_dp .AND. dl_max > 170_dp )THEN
-                  WHERE( dl_value(:) < 0._dp ) 
+                  WHERE( dl_value(:) < 0._dp )
                      dl_value(:) = dl_value(:)+360._dp
                   END WHERE
                ELSEIF( dl_min < 10_dp .AND. dl_max > 350_dp )THEN
-                  WHERE( dl_value(:) > 180._dp ) 
+                  WHERE( dl_value(:) > 180._dp )
                      dl_value(:) = dl_value(:)-180._dp
                   END WHERE
                ENDIF
@@ -923,9 +923,9 @@ CONTAINS
    !> @brief
    !> This function compute derivative of 2D array.
    !> you have to specify in which direction derivative have to be computed:
-   !> first (I) or second (J) dimension. 
+   !> first (I) or second (J) dimension.
    !>
-   !> @details 
+   !> @details
    !> optionaly you could specify to take into account east west discontinuity
    !> (-180° 180° or 0° 360° for longitude variable)
    !>
@@ -934,8 +934,8 @@ CONTAINS
    !>
    !> @param[in] dd_value     2D array of variable to be extrapolated
    !> @param[in] dd_fill      FillValue of variable
-   !> @param[in] cd_dim       compute derivative on first (I) or second (J) dimension 
-   !> @param[in] ld_discont   logical to take into account east west discontinuity 
+   !> @param[in] cd_dim       compute derivative on first (I) or second (J) dimension
+   !> @param[in] ld_discont   logical to take into account east west discontinuity
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -991,7 +991,7 @@ CONTAINS
 
             ! init
             dl_value(:,:)=dd_fill
-            
+
             il_imin=MAX(ji-1,1)
             il_imax=MIN(ji+1,il_shape(1))
 
@@ -1021,16 +1021,16 @@ CONTAINS
                dl_min=MINVAL( dl_value(:,:), dl_value(:,:)/=dd_fill )
                dl_max=MAXVAL( dl_value(:,:), dl_value(:,:)/=dd_fill )
                IF( dl_min < -170_dp .AND. dl_max > 170_dp )THEN
-                  WHERE( dl_value(:,:) < 0_dp ) 
+                  WHERE( dl_value(:,:) < 0_dp )
                      dl_value(:,:) = dl_value(:,:)+360._dp
                   END WHERE
                ELSEIF( dl_min < 10_dp .AND. dl_max > 350_dp )THEN
-                  WHERE( dl_value(:,:) > 180 ) 
+                  WHERE( dl_value(:,:) > 180 )
                      dl_value(:,:) = dl_value(:,:)-180._dp
                   END WHERE
                ENDIF
             ENDIF
-            
+
             WHERE( dl_value(2,:) /= dd_fill .AND. &  ! ji
                &   dl_value(3,:) /= dd_fill .AND. &  ! ji+1
                &   dl_value(1,:) /= dd_fill )        ! ji-1
@@ -1046,7 +1046,7 @@ CONTAINS
          ALLOCATE( dl_value(il_shape(1),3) )
          ! compute derivative in j-direction
          DO jj=1,il_shape(2)
-         
+
             il_jmin=MAX(jj-1,1)
             il_jmax=MIN(jj+1,il_shape(2))
 
@@ -1076,11 +1076,11 @@ CONTAINS
                dl_min=MINVAL( dl_value(:,:), dl_value(:,:)/=dd_fill )
                dl_max=MAXVAL( dl_value(:,:), dl_value(:,:)/=dd_fill )
                IF( dl_min < -170_dp .AND. dl_max > 170_dp )THEN
-                  WHERE( dl_value(:,:) < 0_dp ) 
+                  WHERE( dl_value(:,:) < 0_dp )
                      dl_value(:,:) = dl_value(:,:)+360._dp
                   END WHERE
                ELSEIF( dl_min < 10_dp .AND. dl_max > 350_dp )THEN
-                  WHERE( dl_value(:,:) > 180 ) 
+                  WHERE( dl_value(:,:) > 180 )
                      dl_value(:,:) = dl_value(:,:)-180._dp
                   END WHERE
                ENDIF
@@ -1090,12 +1090,12 @@ CONTAINS
                &   dl_value(:, 3) /= dd_fill .AND. & ! jj+1
                &   dl_value(:, 1) /= dd_fill )       ! jj-1
 
-               df_deriv(:,jj)= (dl_value(:,3) - dl_value(:,1)) / REAL(il_jmax-il_jmin,dp)         
+               df_deriv(:,jj)= (dl_value(:,3) - dl_value(:,1)) / REAL(il_jmax-il_jmin,dp)
 
             END WHERE
 
          ENDDO
-         
+
       END SELECT
 
       DEALLOCATE( dl_value )
@@ -1109,8 +1109,8 @@ CONTAINS
    !> This function compute derivative of 3D array.
    !> you have to specify in which direction derivative have to be computed:
    !> first (I), second (J) or third (K) dimension.
-   !> 
-   !> @details 
+   !>
+   !> @details
    !> optionaly you could specify to take into account east west discontinuity
    !> (-180° 180° or 0° 360° for longitude variable)
    !>
@@ -1119,7 +1119,7 @@ CONTAINS
    !>
    !> @param[inout] dd_value  3D array of variable to be extrapolated
    !> @param[in] dd_fill      FillValue of variable
-   !> @param[in] cd_dim       compute derivative on first (I) second (J) or third (K) dimension   
+   !> @param[in] cd_dim       compute derivative on first (I) second (J) or third (K) dimension
    !> @param[in] ld_discont   logical to take into account east west discontinuity
    !-------------------------------------------------------------------
 
@@ -1161,9 +1161,9 @@ CONTAINS
 
       INTEGER(i4) :: j1
       INTEGER(i4) :: j2
-      
+
       INTEGER(i4) :: k1
-      INTEGER(i4) :: k2      
+      INTEGER(i4) :: k2
       !----------------------------------------------------------------
       ! init
       df_deriv(:,:,:)=dd_fill
@@ -1181,7 +1181,7 @@ CONTAINS
          ALLOCATE( dl_value(3,il_shape(2),il_shape(3)) )
          ! compute derivative in i-direction
          DO ji=1,il_shape(1)
-            
+
             il_imin=MAX(ji-1,1)
             il_imax=MIN(ji+1,il_shape(1))
 
@@ -1211,18 +1211,18 @@ CONTAINS
                dl_min=MINVAL( dl_value(:,:,:), dl_value(:,:,:)/=dd_fill )
                dl_max=MAXVAL( dl_value(:,:,:), dl_value(:,:,:)/=dd_fill )
                IF( dl_min < -170_dp .AND. dl_max > 170_dp )THEN
-                  WHERE( dl_value(:,:,:) < 0_dp ) 
+                  WHERE( dl_value(:,:,:) < 0_dp )
                      dl_value(:,:,:) = dl_value(:,:,:)+360._dp
                   END WHERE
                ELSEIF( dl_min < 10_dp .AND. dl_max > 350_dp )THEN
-                  WHERE( dl_value(:,:,:) > 180 ) 
+                  WHERE( dl_value(:,:,:) > 180 )
                      dl_value(:,:,:) = dl_value(:,:,:)-180._dp
                   END WHERE
                ENDIF
             ENDIF
 
             WHERE( dl_value(2,:,:) /= dd_fill .AND. & ! ji
-               &   dl_value(3,:,:) /= dd_fill .AND. & !ji+1 
+               &   dl_value(3,:,:) /= dd_fill .AND. & !ji+1
                &   dl_value(1,:,:) /= dd_fill )       !ji-1
 
                df_deriv(ji,:,:)= (dl_value(3,:,:) - dl_value(1,:,:)) / REAL(il_imax-il_imin,dp)
@@ -1236,7 +1236,7 @@ CONTAINS
          ALLOCATE( dl_value(il_shape(1),3,il_shape(3)) )
          ! compute derivative in j-direction
          DO jj=1,il_shape(2)
-         
+
             il_jmin=MAX(jj-1,1)
             il_jmax=MIN(jj+1,il_shape(2))
 
@@ -1266,11 +1266,11 @@ CONTAINS
                dl_min=MINVAL( dl_value(:,:,:), dl_value(:,:,:)/=dd_fill )
                dl_max=MAXVAL( dl_value(:,:,:), dl_value(:,:,:)/=dd_fill )
                IF( dl_min < -170_dp .AND. dl_max > 170_dp )THEN
-                  WHERE( dl_value(:,:,:) < 0_dp ) 
+                  WHERE( dl_value(:,:,:) < 0_dp )
                      dl_value(:,:,:) = dl_value(:,:,:)+360._dp
                   END WHERE
                ELSEIF( dl_min < 10_dp .AND. dl_max > 350_dp )THEN
-                  WHERE( dl_value(:,:,:) > 180 ) 
+                  WHERE( dl_value(:,:,:) > 180 )
                      dl_value(:,:,:) = dl_value(:,:,:)-180._dp
                   END WHERE
                ENDIF
@@ -1280,12 +1280,12 @@ CONTAINS
                &   dl_value(:, 3,:) /= dd_fill .AND. & ! jj+1
                &   dl_value(:, 1,:) /= dd_fill )       ! jj-1
 
-               df_deriv(:,jj,:)= (dl_value(:,3,:) - dl_value(:,1,:)) / REAL(il_jmax - il_jmin,dp)         
+               df_deriv(:,jj,:)= (dl_value(:,3,:) - dl_value(:,1,:)) / REAL(il_jmax - il_jmin,dp)
 
             END WHERE
 
          ENDDO
-         
+
       CASE('K')
 
          ALLOCATE( dl_value(il_shape(1),il_shape(2),3) )
@@ -1321,21 +1321,21 @@ CONTAINS
                dl_min=MINVAL( dl_value(:,:,:), dl_value(:,:,:)/=dd_fill )
                dl_max=MAXVAL( dl_value(:,:,:), dl_value(:,:,:)/=dd_fill )
                IF( dl_min < -170_dp .AND. dl_max > 170_dp )THEN
-                  WHERE( dl_value(:,:,:) < 0_dp ) 
+                  WHERE( dl_value(:,:,:) < 0_dp )
                      dl_value(:,:,:) = dl_value(:,:,:)+360._dp
                   END WHERE
                ELSEIF( dl_min < 10_dp .AND. dl_max > 350_dp )THEN
-                  WHERE( dl_value(:,:,:) > 180 ) 
+                  WHERE( dl_value(:,:,:) > 180 )
                      dl_value(:,:,:) = dl_value(:,:,:)-180._dp
                   END WHERE
                ENDIF
-            ENDIF         
+            ENDIF
 
             WHERE( dl_value(:,:,2) /= dd_fill .AND. & ! jk
                &   dl_value(:,:,3) /= dd_fill .AND. & ! jk+1
                &   dl_value(:,:,1) /= dd_fill )       ! jk-1
 
-               df_deriv(:,:,jk)= (dl_value(:,:,3) - dl_value(:,:,1)) / REAL(il_kmax-il_kmin,dp)         
+               df_deriv(:,:,jk)= (dl_value(:,:,3) - dl_value(:,:,1)) / REAL(il_kmax-il_kmin,dp)
 
             END WHERE
 
@@ -1353,8 +1353,8 @@ CONTAINS
    !> @brief
    !> This function compute orthodome distance between opposite point of a cell
    !> of one degree.
-   !> 
-   !> @details 
+   !>
+   !> @details
    !>
    !> @author J.Paul
    !> @date April, 2017 - Initial Version
@@ -1362,15 +1362,15 @@ CONTAINS
    !> @param[in] dd_latm   mean latitude of the cell
    !> @return orthodome distance
    !-------------------------------------------------------------------
-      
+
       IMPLICIT NONE
 
       ! Argument
       REAL(dp), TARGET :: dd_latm
-      
+
       ! function
       REAL(dp)         :: df_ortho
-      
+
       ! local
       REAL(dp) :: dl_dlat
       REAL(dp) :: dl_dlon
@@ -1383,7 +1383,7 @@ CONTAINS
       dl_dlat= 1._dp * dp_deg2rad
       dl_dlon= 1._dp * dp_deg2rad
 
-      ! 
+      !
       dl_lat1 = (dd_latm - 0.5_dp) * dp_deg2rad
       dl_lat2 = (dd_latm + 0.5_dp) * dp_deg2rad
 
@@ -1400,26 +1400,26 @@ CONTAINS
    !> @brief
    !> This function compute euclidian distance between opposite point of a cell
    !> of one degree, center on (lonm,latm).
-   !> 
-   !> @details 
+   !>
+   !> @details
    !>
    !> @author J.Paul
    !> @date April, 2017 - Initial Version
    !>
    !> @param[in] dd_lonm   mean longitude of the cell
    !> @param[in] dd_latm   mean latitude of the cell
-   !> @return orthodome distance
+   !> @return euclidiean distance
    !-------------------------------------------------------------------
-      
+
       IMPLICIT NONE
 
       ! Argument
       REAL(dp), TARGET :: dd_lonm
       REAL(dp), TARGET :: dd_latm
-      
+
       ! function
       REAL(dp)         :: df_euclid
-      
+
       ! local
       REAL(dp) :: dl_lata
       REAL(dp) :: dl_lona

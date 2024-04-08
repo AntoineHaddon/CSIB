@@ -12,9 +12,16 @@
 !> @endcode
 !>       - td_file is file structure (see @ref file)
 !>
-!>    to write in netcdf file:<br/>
+!>    to write header in netcdf file:<br/>
 !> @code
-!>    CALL  iom_cdf_write_file(td_file)
+!>    CALL  iom_cdf_write_header(td_file, cd_dimorder, td_dim)
+!> @endcode
+!>       - cd_dimorder is dimension order (string)<br/>
+!>       - td_dim      is dimension structure
+!>
+!>    to write variables in netcdf file:<br/>
+!> @code
+!>    CALL  iom_cdf_write_var(td_file)
 !> @endcode
 !>
 !>    to close netcdf file:<br/>
@@ -44,7 +51,7 @@
 !>       - id_varid is variable id
 !>       - id_attid is attribute id<br/>
 !>       - cd_name is attribute name
-!>    
+!>
 !>    to read one variable in netcdf file:<br/>
 !> @code
 !>    tl_var = iom_cdf_read_var(td_file, id_varid, [id_start, id_count])
@@ -55,7 +62,7 @@
 !> @endcode
 !>       - id_varid is variabale id
 !>       - cd_name is variabale name
-!>       - id_start is a integer(4) 1D array of index from which the data 
+!>       - id_start is a integer(4) 1D array of index from which the data
 !>          values will be read [optional]
 !>       - id_count is a integer(4) 1D array of the number of indices selected
 !>          along each dimension [optional]
@@ -101,7 +108,7 @@ MODULE iom_cdf
    PRIVATE :: iom_cdf__get_file_var    ! read information about variable on an opened netcdf file
    PRIVATE :: iom_cdf__read_dim_id     ! read one dimension in an opened netcdf file, given dimension id.
    PRIVATE :: iom_cdf__read_dim_name   ! read one dimension in an opened netcdf file, given dimension name.
-   PRIVATE :: iom_cdf__read_att_name   ! read variable or global attribute in an opened netcdf file, given attribute name. 
+   PRIVATE :: iom_cdf__read_att_name   ! read variable or global attribute in an opened netcdf file, given attribute name.
    PRIVATE :: iom_cdf__read_att_id     ! read variable or global attribute in an opened netcdf file, given attribute id.
    PRIVATE :: iom_cdf__read_var_id     ! read variable value in an opened netcdf file, given variable id.
    PRIVATE :: iom_cdf__read_var_name   ! read variable value in an opened netcdf file, given variable name or standard name.
@@ -144,12 +151,12 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE iom_cdf__check(id_status, cd_msg)
    !-------------------------------------------------------------------
-   !> @brief This subroutine provides a simple interface to 
-   !> netcdf error message 
+   !> @brief This subroutine provides a simple interface to
+   !> netcdf error message
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
-   !> @date May, 2015 
+   !> @date May, 2015
    !> - add optional message to netcdf error message
    !>
    !> @param[in] id_status error status
@@ -158,7 +165,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       INTEGER(i4)     , INTENT(IN)           :: id_status
       CHARACTER(LEN=*), INTENT(IN), OPTIONAL :: cd_msg
       ! local variable
@@ -198,7 +205,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE), INTENT(INOUT)  :: td_file
 
       ! local variable
@@ -218,7 +225,7 @@ CONTAINS
 
             CALL logger_fatal( " IOM CDF OPEN: can not open file "//&
             &               TRIM(td_file%c_name) )
- 
+
          ELSE
 
             CALL logger_info( " IOM CDF CREATE: file "//TRIM(td_file%c_name) )
@@ -245,7 +252,7 @@ CONTAINS
             &               TRIM(td_file%c_name)//" already opened")
 
          ELSE
- 
+
             IF( .NOT. td_file%l_wrt )THEN
 
                CALL logger_info( " IOM CDF OPEN: file "//&
@@ -272,7 +279,7 @@ CONTAINS
             CALL iom_cdf__get_info(td_file)
 
             ! read dimension in file
-            CALL iom_cdf__get_file_dim(td_file) 
+            CALL iom_cdf__get_file_dim(td_file)
 
             ! read global attribute in file
             CALL iom_cdf__get_file_att(td_file)
@@ -301,7 +308,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE), INTENT(INOUT) :: td_file
 
       ! local variable
@@ -329,10 +336,10 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE iom_cdf__get_info(td_file)
    !-------------------------------------------------------------------
-   !> @brief This subroutine get global information in an opened netcdf 
+   !> @brief This subroutine get global information in an opened netcdf
    !> file.
    !> @details
-   !> It gets the number of variables, the number of dimensions, 
+   !> It gets the number of variables, the number of dimensions,
    !> the number of global attributes, the ID of the unlimited dimension
    !> and finally the format version and filled file strucuture with it.
    !>
@@ -346,7 +353,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE), INTENT(INOUT) :: td_file
 
       ! local variable
@@ -367,7 +374,7 @@ CONTAINS
          CASE(nf90_format_netcdf4,nf90_format_netcdf4_classic)
             td_file%c_type='cdf'
       END SELECT
-      CALL logger_debug("IOM CDF GET INFO: type "//TRIM(td_file%c_type)) 
+      CALL logger_debug("IOM CDF GET INFO: type "//TRIM(td_file%c_type))
 
       ! record header infos
       td_file%i_rhd=1
@@ -392,7 +399,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE), INTENT(INOUT) :: td_file
 
       ! local variable
@@ -452,7 +459,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE iom_cdf__get_file_att(td_file)
    !-------------------------------------------------------------------
-   !> @brief This subroutine read global attribute on an opened netcdf 
+   !> @brief This subroutine read global attribute on an opened netcdf
    !> file.
    !> The attribute structure inside file structure is then completed.
    !>
@@ -468,7 +475,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE), INTENT(INOUT) :: td_file
 
       ! local variable
@@ -510,7 +517,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE iom_cdf__get_file_var(td_file)
    !-------------------------------------------------------------------
-   !> @brief This subroutine read information about variable of an 
+   !> @brief This subroutine read information about variable of an
    !> opened netcdf file.
    !> The variable structure inside file structure is then completed.
    !> @note variable value are not read !
@@ -530,7 +537,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE), INTENT(INOUT) :: td_file
 
       ! local variable
@@ -555,7 +562,7 @@ CONTAINS
          ALLOCATE(tl_var(il_nvar))
          DO ji = 1, il_nvar
            ! read variable information
-           tl_var(ji)=iom_cdf__read_var_meta( td_file, ji) 
+           tl_var(ji)=iom_cdf__read_var_meta( td_file, ji)
          ENDDO
 
          ! update number of variable used
@@ -633,7 +640,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE iom_cdf__del_coord_var(td_file)
    !-------------------------------------------------------------------
-   !> @brief This subroutine delete coordinate variable from an 
+   !> @brief This subroutine delete coordinate variable from an
    !> opened netcdf file if present.
    !>
    !> @author J.Paul
@@ -644,7 +651,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE), INTENT(INOUT) :: td_file
 
       ! local variable
@@ -680,7 +687,7 @@ CONTAINS
    FUNCTION iom_cdf__read_dim_id(td_file, id_dimid) &
          & RESULT (tf_dim)
    !-------------------------------------------------------------------
-   !> @brief This function read one dimension in an opened netcdf file, 
+   !> @brief This function read one dimension in an opened netcdf file,
    !> given dimension id.
    !>
    !> @author J.Paul
@@ -690,12 +697,12 @@ CONTAINS
    !>
    !> @param[in] td_file   file structure
    !> @param[in] id_dimid  dimension id
-   !> @return  dimension structure 
+   !> @return  dimension structure
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE), INTENT(IN) :: td_file
       INTEGER(i4), INTENT(IN) :: id_dimid
 
@@ -744,7 +751,7 @@ CONTAINS
    FUNCTION iom_cdf__read_dim_name(td_file, cd_name) &
          & RESULT (tf_dim)
    !-------------------------------------------------------------------
-   !> @brief This function read one dimension in an opened netcdf file, 
+   !> @brief This function read one dimension in an opened netcdf file,
    !> given dimension name.
    !>
    !> @author J.Paul
@@ -752,17 +759,17 @@ CONTAINS
    !>
    !> @param[in] td_file   file structure
    !> @param[in] cd_name   dimension name
-   !> @return  dimension structure 
+   !> @return  dimension structure
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE),      INTENT(IN) :: td_file
       CHARACTER(LEN=*), INTENT(IN) :: cd_name
 
       ! function
-      TYPE(TDIM)                   :: tf_dim 
+      TYPE(TDIM)                   :: tf_dim
 
       ! local variable
       INTEGER(i4) :: il_status
@@ -776,7 +783,7 @@ CONTAINS
          &  " IOM CDF READ DIM: no id associated to file "//&
          &  TRIM(td_file%c_name))
 
-      ELSE      
+      ELSE
 
          il_status=NF90_INQ_DIMID( td_file%i_id, TRIM(ADJUSTL(cd_name)), &
          &                         il_dimid)
@@ -791,28 +798,28 @@ CONTAINS
    FUNCTION iom_cdf__read_att_name(td_file, id_varid, cd_name) &
          & RESULT (tf_att)
    !-------------------------------------------------------------------
-   !> @brief This function read variable or global attribute in an opened 
+   !> @brief This function read variable or global attribute in an opened
    !> netcdf file, given attribute name.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !> @date November 2017
-   !> - check if cl_value is not bug 
+   !> - check if cl_value is not bug
    !>
    !> @param[in] td_file   file structure
    !> @param[in] id_varid  variable id. use NF90_GLOBAL to read global
    !> attribute in a file
    !> @param[in] cd_name   attribute name
-   !> @return  attribute structure 
+   !> @return  attribute structure
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE),      INTENT(IN) :: td_file
       INTEGER(i4),      INTENT(IN) :: id_varid
       CHARACTER(LEN=*), INTENT(IN) :: cd_name
-   
+
       ! function
       TYPE(TATT)                   :: tf_att
 
@@ -825,7 +832,7 @@ CONTAINS
       INTEGER(i4) :: il_len
 
       CHARACTER(LEN=lc) :: cl_value
-      
+
       INTEGER(i1), DIMENSION(:), ALLOCATABLE :: bl_value
       INTEGER(i2), DIMENSION(:), ALLOCATABLE :: sl_value
       INTEGER(i4), DIMENSION(:), ALLOCATABLE :: il_value
@@ -838,7 +845,7 @@ CONTAINS
          CALL logger_error( &
             &  " IOM CDF READ ATT: no id associated to file "//TRIM(td_file%c_name))
 
-      ELSE      
+      ELSE
 
          cl_name=TRIM(ADJUSTL(cd_name))
 
@@ -895,7 +902,7 @@ CONTAINS
                   tf_att=att_init(cl_name, cl_value)
 
                ENDIF
-         
+
             CASE(NF90_BYTE)
                CALL logger_debug( " IOM CDF READ ATT: get NF90_BYTE ")
 
@@ -912,7 +919,7 @@ CONTAINS
                   il_status=NF90_GET_ATT(td_file%i_id, id_varid, &
                      &                   cl_name, &
                      &                   bl_value(:))
-                  CALL iom_cdf__check(il_status,"IOM CDF READ ATT: ")   
+                  CALL iom_cdf__check(il_status,"IOM CDF READ ATT: ")
 
                   tf_att=att_init(cl_name, bl_value(:))
 
@@ -937,7 +944,7 @@ CONTAINS
                   il_status=NF90_GET_ATT(td_file%i_id, id_varid, &
                      &                   cl_name, &
                      &                   sl_value(:))
-                  CALL iom_cdf__check(il_status,"IOM CDF READ ATT: ")   
+                  CALL iom_cdf__check(il_status,"IOM CDF READ ATT: ")
 
                   tf_att=att_init(cl_name, sl_value(:))
 
@@ -962,7 +969,7 @@ CONTAINS
                   il_status=NF90_GET_ATT(td_file%i_id, id_varid, &
                      &                   cl_name, &
                      &                   il_value(:))
-                  CALL iom_cdf__check(il_status,"IOM CDF READ ATT: ")   
+                  CALL iom_cdf__check(il_status,"IOM CDF READ ATT: ")
 
                   tf_att=att_init(cl_name, il_value(:))
                ENDIF
@@ -986,7 +993,7 @@ CONTAINS
                   il_status=NF90_GET_ATT(td_file%i_id, id_varid, &
                      &                   cl_name, &
                      &                   rl_value(:))
-                  CALL iom_cdf__check(il_status,"IOM CDF READ ATT: ")   
+                  CALL iom_cdf__check(il_status,"IOM CDF READ ATT: ")
 
                   tf_att=att_init(cl_name, rl_value(:))
 
@@ -1011,7 +1018,7 @@ CONTAINS
                   il_status=NF90_GET_ATT(td_file%i_id, id_varid, &
                      &                   cl_name, &
                      &                   dl_value(:))
-                  CALL iom_cdf__check(il_status,"IOM CDF READ ATT: ")   
+                  CALL iom_cdf__check(il_status,"IOM CDF READ ATT: ")
 
                   tf_att=att_init(cl_name, dl_value(:))
 
@@ -1030,22 +1037,22 @@ CONTAINS
    FUNCTION iom_cdf__read_att_id(td_file, id_varid, id_attid) &
          & RESULT (tf_att)
    !-------------------------------------------------------------------
-   !> @brief This function read variable or global attribute in an opened 
+   !> @brief This function read variable or global attribute in an opened
    !> netcdf file, given attribute id.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !>
    !> @param[in] td_file   file structure
-   !> @param[in] id_varid  variable id. use NF90_GLOBAL to read global 
+   !> @param[in] id_varid  variable id. use NF90_GLOBAL to read global
    !> attribute in a file
    !> @param[in] id_attid  attribute id
-   !> @return  attribute structure 
+   !> @return  attribute structure
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE), INTENT(IN) :: td_file
       INTEGER(i4), INTENT(IN) :: id_varid
       INTEGER(i4), INTENT(IN) :: id_attid
@@ -1085,10 +1092,10 @@ CONTAINS
    FUNCTION iom_cdf__read_var_id(td_file, id_varid, id_start, id_count) &
          & RESULT (tf_var)
    !-------------------------------------------------------------------
-   !> @brief This function read variable value in an opened 
+   !> @brief This function read variable value in an opened
    !> netcdf file, given variable id.
    !> @details
-   !> Optionaly, start indices and number of indices selected along each dimension 
+   !> Optionaly, start indices and number of indices selected along each dimension
    !> could be specify in a 4 dimension array (/'x','y','z','t'/)
    !>
    !> @author J.Paul
@@ -1096,15 +1103,15 @@ CONTAINS
    !>
    !> @param[in] td_file   file structure
    !> @param[in] id_varid  variable id
-   !> @param[in] id_start  index in the variable from which the data values 
+   !> @param[in] id_start  index in the variable from which the data values
    !> will be read
    !> @param[in] id_count  number of indices selected along each dimension
-   !> @return  variable structure 
+   !> @return  variable structure
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE),               INTENT(IN) :: td_file
       INTEGER(i4),               INTENT(IN) :: id_varid
       INTEGER(i4), DIMENSION(:), INTENT(IN), OPTIONAL :: id_start
@@ -1145,10 +1152,10 @@ CONTAINS
    FUNCTION iom_cdf__read_var_name(td_file, cd_name, id_start, id_count) &
          & RESULT (tf_var)
    !-------------------------------------------------------------------
-   !> @brief This function read variable value in an opened 
+   !> @brief This function read variable value in an opened
    !> netcdf file, given variable name or standard name.
    !> @details
-   !> Optionaly, start indices and number of indices selected along each dimension 
+   !> Optionaly, start indices and number of indices selected along each dimension
    !> could be specify in a 4 dimension array (/'x','y','z','t'/)
    !>
    !> look first for variable name. If it doesn't
@@ -1161,12 +1168,12 @@ CONTAINS
    !> @param[in] cd_name   variable name or standard name.
    !> @param[in] id_start  index in the variable from which the data values will be read
    !> @param[in] id_count  number of indices selected along each dimension
-   !> @return  variable structure 
+   !> @return  variable structure
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE)     ,                INTENT(IN) :: td_file
       CHARACTER(LEN=*),                INTENT(IN), OPTIONAL :: cd_name
       INTEGER(i4)     , DIMENSION(:),  INTENT(IN), OPTIONAL :: id_start
@@ -1213,29 +1220,29 @@ CONTAINS
          ENDIF
 
       ENDIF
- 
+
    END FUNCTION iom_cdf__read_var_name
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE iom_cdf__fill_var_all(td_file, id_start, id_count)
    !-------------------------------------------------------------------
-   !> @brief This subroutine fill all variable value from an opened 
+   !> @brief This subroutine fill all variable value from an opened
    !> netcdf file.
    !> @details
-   !> Optionaly, start indices and number of indices selected along each dimension 
+   !> Optionaly, start indices and number of indices selected along each dimension
    !> could be specify in a 4 dimension array (/'x','y','z','t'/)
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !>
    !> @param[inout] td_file   file structure
-   !> @param[in] id_start     index in the variable from which the data values 
+   !> @param[in] id_start     index in the variable from which the data values
    !> will be read
    !> @param[in] id_count     number of indices selected along each dimension
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE),               INTENT(INOUT) :: td_file
       INTEGER(i4), DIMENSION(:), INTENT(IN   ),  OPTIONAL :: id_start
       INTEGER(i4), DIMENSION(:), INTENT(IN   ),  OPTIONAL :: id_count
@@ -1264,10 +1271,10 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE iom_cdf__fill_var_id(td_file, id_varid, id_start, id_count)
    !-------------------------------------------------------------------
-   !> @brief This subroutine fill variable value in an opened 
+   !> @brief This subroutine fill variable value in an opened
    !> netcdf file, given variable id.
    !> @details
-   !> Optionaly, start indices and number of indices selected along each dimension 
+   !> Optionaly, start indices and number of indices selected along each dimension
    !> could be specify in a 4 dimension array (/'x','y','z','t'/)
    !
    !> @author J.Paul
@@ -1275,14 +1282,14 @@ CONTAINS
    !
    !> @param[inout] td_file   file structure
    !> @param[in] id_varid     variable id
-   !> @param[in] id_start     index in the variable from which the data values 
+   !> @param[in] id_start     index in the variable from which the data values
    !> will be read
    !> @param[in] id_count     number of indices selected along each dimension
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE),               INTENT(INOUT) :: td_file
       INTEGER(i4),               INTENT(IN)    :: id_varid
       INTEGER(i4), DIMENSION(:), INTENT(IN),  OPTIONAL :: id_start
@@ -1328,10 +1335,10 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE iom_cdf__fill_var_name(td_file, cd_name, id_start, id_count)
    !-------------------------------------------------------------------
-   !> @brief This subroutine fill variable value in an opened 
+   !> @brief This subroutine fill variable value in an opened
    !> netcdf file, given variable name or standard name.
    !> @details
-   !> Optionaly, start indices and number of indices selected along each dimension 
+   !> Optionaly, start indices and number of indices selected along each dimension
    !> could be specify in a 4 dimension array (/'x','y','z','t'/)
    !>
    !> look first for variable name. If it doesn't
@@ -1348,7 +1355,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE),                   INTENT(INOUT) :: td_file
       CHARACTER(LEN=*),              INTENT(IN)    :: cd_name
       INTEGER(i4),     DIMENSION(:), INTENT(IN),  OPTIONAL :: id_start
@@ -1381,13 +1388,13 @@ CONTAINS
             ENDIF
 
       ENDIF
-      
+
    END SUBROUTINE iom_cdf__fill_var_name
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION iom_cdf__read_var_meta(td_file, id_varid) &
          & RESULT (tf_var)
    !-------------------------------------------------------------------
-   !> @brief This function read metadata of a variable in an opened 
+   !> @brief This function read metadata of a variable in an opened
    !> netcdf file.
    !>
    !> @note variable value are not read
@@ -1401,12 +1408,12 @@ CONTAINS
    !>
    !> @param[in] td_file   file structure
    !> @param[in] id_varid  variable id
-   !> @return  variable structure 
+   !> @return  variable structure
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE), INTENT(IN) :: td_file
       INTEGER(i4), INTENT(IN) :: id_varid
 
@@ -1445,7 +1452,7 @@ CONTAINS
             &  " IOM CDF READ VAR META: inquire variable "//&
             &  TRIM(fct_str(id_varid))//&
             &  " in file "//TRIM(td_file%c_name))
-         
+
          il_dimid(:)=0
 
          il_status=NF90_INQUIRE_VARIABLE( td_file%i_id, id_varid,        &
@@ -1525,7 +1532,7 @@ CONTAINS
                   CALL logger_info("IOM CDF READ VAR META: assume _FillValue is equal to "//&
                      &             "dummy fillValue (1.e20) for variable "//TRIM(cl_name) )
                   tl_fill=att_init('_FillValue',1.e20)
-            END SELECT            
+            END SELECT
             ! create attribute _FillValue
             tl_att(il_natt+1)=att_copy(tl_fill)
          ENDIF
@@ -1569,18 +1576,18 @@ CONTAINS
    !> in an opened netcdf file.
    !>
    !> @details
-   !> the number of dimension can't exceed 4, 
+   !> the number of dimension can't exceed 4,
    !> and should be 'x', 'y', 'z', 't' (whatever their order).<br/>
    !> If the number of dimension read is less than 4, the array of dimension
    !> strucure is filled with unused dimension.<br/>
    !> So the array of dimension structure of a variable is always compose of 4
-   !> dimension (use or not). 
+   !> dimension (use or not).
    !>
-   !> @warn dummy dimension are not used. 
+   !> @warn dummy dimension are not used.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
-   !> @date July, 2015 
+   !> @date July, 2015
    !> - Bug fix: use order to disorder table (see dim_init)
    !> @date September, 2015
    !> - check dummy dimension
@@ -1592,12 +1599,12 @@ CONTAINS
    !> @param[in] id_ndim   number of dimension
    !> @param[in] cd_name   variable name
    !> @param[in] id_dimid  array of dimension id
-   !> @return array dimension structure 
+   !> @return array dimension structure
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE),               INTENT(IN) :: td_file
       INTEGER(i4),               INTENT(IN) :: id_ndim
       CHARACTER(LEN=*)         , INTENT(IN) :: cd_name
@@ -1653,13 +1660,11 @@ CONTAINS
                      EXIT
                   ENDIF
                ENDDO
-               !il_xyzt2(ii)=td_file%t_dim(id_dimid(ji))%i_xyzt2
                il_xyzt2(ii)=td_file%t_dim(il_idx)%i_xyzt2
 
                ! read dimension information
                tl_dim(ii) = dim_init( td_file%t_dim(il_xyzt2(ii))%c_name, &
                   &                   td_file%t_dim(il_xyzt2(ii))%i_len )
-
                ii=ii+1
             ELSE
                CALL logger_debug(" IOM CDF READ VAR DIM: dummy variable "//&
@@ -1669,7 +1674,7 @@ CONTAINS
 
          ! reorder dimension to ('x','y','z','t')
          CALL dim_reorder(tl_dim(:))
- 
+
          tf_dim(:)=dim_copy(tl_dim(:))
 
          ! clean
@@ -1696,10 +1701,10 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE), INTENT(IN) :: td_file
       INTEGER(i4), INTENT(IN) :: id_varid
-      INTEGER(i4), INTENT(IN) :: id_natt      
+      INTEGER(i4), INTENT(IN) :: id_natt
 
       ! function
       TYPE(TATT), DIMENSION(id_natt) :: tf_att
@@ -1711,7 +1716,7 @@ CONTAINS
       !----------------------------------------------------------------
 
       IF( id_natt > 0 )THEN
-      
+
          ! read attributes
          DO ji = 1, id_natt
             CALL logger_trace( " IOM CDF READ VAR ATT: get attribute "//&
@@ -1736,12 +1741,12 @@ CONTAINS
    !> @brief This subroutine read variable value
    !> in an opened netcdf file.
    !> @details
-   !> Optionaly, start indices and number of indices selected along each dimension 
+   !> Optionaly, start indices and number of indices selected along each dimension
    !> could be specify in a 4 dimension array (/'x','y','z','t'/)
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
-   !> @date June, 2015 
+   !> @date June, 2015
    !> - use scale factor and offset, as soon as read variable value
    !> @date January, 2019
    !> - read array in netcdf file, level by level, and time step by time step
@@ -1751,12 +1756,12 @@ CONTAINS
    !> @param[inout] td_var variable structure
    !> @param[in] id_start  index in the variable from which the data values will be read
    !> @param[in] id_count  number of indices selected along each dimension
-   !> @return variable structure completed 
+   !> @return variable structure completed
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE),               INTENT(IN)    :: td_file
       TYPE(TVAR) ,               INTENT(INOUT) :: td_var
       INTEGER(i4), DIMENSION(:), INTENT(IN),   OPTIONAL :: id_start
@@ -1876,7 +1881,7 @@ CONTAINS
                il_count_tmp(jp_L) = 1
                DO jk=il_start(jp_K),il_start(jp_K)+il_count(jp_K)-1
                   il_start_tmp(jp_K)=jk
-                  il_count_tmp(jp_K)=1 
+                  il_count_tmp(jp_K)=1
                   il_status = NF90_GET_VAR( td_file%i_id, il_varid,           &
                   &                                       dl_value(:,:,jk,jl),&
                   &                                       start = il_start_tmp(:),&
@@ -1889,9 +1894,9 @@ CONTAINS
 
             ! Allocate space to hold variable value in structure
             IF( ASSOCIATED(td_var%d_value) )THEN
-               DEALLOCATE(td_var%d_value)   
+               DEALLOCATE(td_var%d_value)
             ENDIF
- 
+
             ! new dimension length
             td_var%t_dim(:)%i_len=il_count_ord(:)
 
@@ -1950,7 +1955,7 @@ CONTAINS
             DEALLOCATE(dl_tmp)
 !<   dummy patch for pgf95
 
-            ! force to change _FillValue to avoid mistake 
+            ! force to change _FillValue to avoid mistake
             ! with dummy zero _FillValue
             IF( td_var%d_fill == 0._dp )THEN
                CALL var_chg_FillValue(td_var)
@@ -1985,8 +1990,8 @@ CONTAINS
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
-   !> @date July, 2015 
-   !> - add dimension order option 
+   !> @date July, 2015
+   !> - add dimension order option
    !> @date August, 2017
    !> - split write_file into write_header and write_var
    !> - add dimension structure as optional argument
@@ -1994,11 +1999,13 @@ CONTAINS
    !> - do not check variable dimension if dimension forced
    !>
    !> @param[inout] td_file   file structure
+   !> @param[in] cd_dimorder  dimension order
+   !> @param[in] td_dim       dimension structure
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE)                           , INTENT(INOUT) :: td_file
       CHARACTER(LEN=*)                      , INTENT(IN   ), OPTIONAL :: cd_dimorder
       TYPE(TDIM )     , DIMENSION(ip_maxdim), INTENT(IN   ), OPTIONAL :: td_dim
@@ -2073,7 +2080,7 @@ CONTAINS
                CALL iom_cdf__check(il_status,"IOM CDF WRITE HEADER: ")
 
                td_file%l_def=.TRUE.
-            ENDIF            
+            ENDIF
 
             ! write dimension definition in header of file
             IF( TRIM(cl_dimorder) /= 'xyzt' )THEN
@@ -2101,10 +2108,10 @@ CONTAINS
 
                   ! do not use FillValue for dimension variable
                   CALL var_del_att(tl_var(ji), "_FillValue")
-                   
+
                   ! write dimension variable definition in header of file
                   CALL iom_cdf__write_var_def(td_file,tl_var(ji))
-                  
+
                ENDIF
             ENDDO
 
@@ -2112,7 +2119,7 @@ CONTAINS
             DO ji = 1, td_file%i_natt
                CALL iom_cdf__write_att_def(td_file, NF90_GLOBAL, td_file%t_att(ji))
             ENDDO
- 
+
             ! write variable definition in header of file
             ll_chkdim=.TRUE.
             IF( PRESENT(td_dim) )THEN
@@ -2159,7 +2166,7 @@ CONTAINS
 
    END SUBROUTINE iom_cdf_write_header
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE iom_cdf_write_var(td_file, cd_dimorder, id_start, id_count)!, ld_first)
+   SUBROUTINE iom_cdf_write_var(td_file, cd_dimorder, id_start, id_count)
    !-------------------------------------------------------------------
    !> @brief This subroutine write variable(s) in an opened netcdf file.
    !>
@@ -2168,26 +2175,27 @@ CONTAINS
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
-   !> @date July, 2015 
-   !> - add dimension order option 
+   !> @date July, 2015
+   !> - add dimension order option
    !> @date August, 2017
    !> - add start and count array as optional argument
+   !> @date July, 2020
+   !> - use 2D start and count array (for each variable), if present as argument
    !>
    !> @param[inout] td_file   file structure
-   !> @param[in] td_var       array of variable structure
    !> @param[in] cd_dimorder  dimension order
-   !> @param[in] id_start     index in the variable from which the data values 
+   !> @param[in] id_start     index in the variable from which the data values
    !> will be read
    !> @param[in] id_count     number of indices selected along each dimension
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
-      TYPE(TFILE)                   , INTENT(INOUT) :: td_file
-      CHARACTER(LEN=*)              , INTENT(IN   ), OPTIONAL :: cd_dimorder
-      INTEGER(i4)     , DIMENSION(:), INTENT(IN   ), OPTIONAL :: id_start
-      INTEGER(i4)     , DIMENSION(:), INTENT(IN   ), OPTIONAL :: id_count
+      ! Argument
+      TYPE(TFILE)                     , INTENT(INOUT) :: td_file
+      CHARACTER(LEN=*)                , INTENT(IN   ), OPTIONAL :: cd_dimorder
+      INTEGER(i4)     , DIMENSION(:,:), INTENT(IN   ), OPTIONAL :: id_start
+      INTEGER(i4)     , DIMENSION(:,:), INTENT(IN   ), OPTIONAL :: id_count
       ! local variable
       CHARACTER(LEN=lc)                      :: cl_dimorder
 
@@ -2218,8 +2226,13 @@ CONTAINS
 
                IF( ASSOCIATED(td_file%t_var(ji)%d_value) )THEN
                   ! write variable value in file
-                  CALL iom_cdf__write_var_value( td_file, td_file%t_var(ji), &
-                     &                           id_start, id_count)
+                  IF( PRESENT(id_start) .AND. PRESENT(id_count) )THEN
+                     CALL iom_cdf__write_var_value( td_file, td_file%t_var(ji), &
+                        &                           id_start(:,ji), &
+                        &                           id_count(:,ji))
+                  ELSE
+                     CALL iom_cdf__write_var_value( td_file, td_file%t_var(ji))
+                  ENDIF
                ENDIF
             ENDDO
 
@@ -2236,7 +2249,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE iom_cdf__write_dim_def(td_file, td_dim)
    !-------------------------------------------------------------------
-   !> @brief This subroutine define a dimension in the header of a netcdf 
+   !> @brief This subroutine define a dimension in the header of a netcdf
    !> file.
    !>
    !> @author J.Paul
@@ -2251,7 +2264,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE), INTENT(INOUT) :: td_file
       TYPE(TDIM),  INTENT(INOUT) :: td_dim
 
@@ -2275,7 +2288,7 @@ CONTAINS
             CALL logger_debug( &
             &  "IOM CDF WRITE FILE DIM: write dimension "//TRIM(td_dim%c_name)//&
             &  " in file "//TRIM(td_file%c_name))
-            
+
             CALL logger_debug("IOM CDF WRITE FILE DIM: id "//TRIM(fct_str(td_file%i_id))//&
                & " sname "//TRIM(td_dim%c_sname))
             il_status=NF90_DEF_DIM(td_file%i_id, fct_upper(td_dim%c_sname), &
@@ -2299,14 +2312,14 @@ CONTAINS
    !> - do not check define mode here anymore
    !>
    !> @param[inout] td_file   file structure
-   !> @param[in] id_varid     variable id. use NF90_GLOBAL to write 
+   !> @param[in] id_varid     variable id. use NF90_GLOBAL to write
    !> global attribute in a file
    !> @param[in] td_att       attribute structure
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE), INTENT(INOUT) :: td_file
       INTEGER(i4), INTENT(IN)    :: id_varid
       TYPE(TATT),  INTENT(IN)    :: td_att
@@ -2348,18 +2361,18 @@ CONTAINS
    !> - do not force to use zero as FillValue for any meshmask variable
    !> @date August, 2017
    !> - add start and count array as optional argument
-   !> - variable definition now done in write_var_def 
+   !> - variable definition now done in write_var_def
    !>
    !> @param[inout] td_file   file structure
    !> @param[inout] td_var    variable structure
-   !> @param[in] id_start     index in the variable from which the data 
+   !> @param[in] id_start     index in the variable from which the data
    !> values will be read
    !> @param[in] id_count     number of indices selected along each dimension
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE)              , INTENT(INOUT) :: td_file
       TYPE(TVAR)               , INTENT(INOUT) :: td_var
       INTEGER(i4), DIMENSION(:), INTENT(IN   ), OPTIONAL :: id_start
@@ -2369,7 +2382,7 @@ CONTAINS
       !----------------------------------------------------------------
 
       IF( ASSOCIATED(td_var%d_value) )THEN
-         
+
          ! write variable value in file
          CALL iom_cdf__write_var_value(td_file, td_var, id_start, id_count)
       ENDIF
@@ -2399,7 +2412,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE), INTENT(IN   ) :: td_file
       TYPE(TVAR),  INTENT(INOUT) :: td_var
       LOGICAL    , INTENT(IN   ), OPTIONAL :: ld_chkdim
@@ -2429,7 +2442,7 @@ CONTAINS
                EXIT
             ENDIF
          ENDDO
-         ! ugly patch until NEMO do not force to use 0. as FillValue 
+         ! ugly patch until NEMO do not force to use 0. as FillValue
          IF( ll_chg )THEN
             ! not a dimension variable
             ! change FillValue
@@ -2458,7 +2471,7 @@ CONTAINS
                !   & 'alk','dic','doc','fer' )
                !   ! do not change for BGC variables
             END SELECT
-         ENDIF         
+         ENDIF
 
          ! forced to use float type
          IF( td_var%d_unf /= 1. .AND. td_var%i_type==NF90_SHORT )THEN
@@ -2473,7 +2486,7 @@ CONTAINS
             il_status = NF90_DEF_VAR(td_file%i_id,          &
                &                     TRIM(td_var%c_name),   &
                &                     td_var%i_type,         &
-               &                     varid=td_var%i_id) 
+               &                     varid=td_var%i_id)
             CALL iom_cdf__check(il_status,"IOM CDF WRITE VAR DEF: ")
          ELSE
 
@@ -2612,7 +2625,7 @@ CONTAINS
    !> @details
    !> The variable is written in the type define in variable structure.
    !> Only dimension used are printed, and fillValue in array are
-   !> replaced by default fill values defined in module netcdf for each type. 
+   !> replaced by default fill values defined in module netcdf for each type.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -2623,14 +2636,14 @@ CONTAINS
    !>
    !> @param[in] td_file   file structure
    !> @param[in] td_var    variable structure
-   !> @param[in] id_start  index in the variable from which the data 
+   !> @param[in] id_start  index in the variable from which the data
    !> values will be read
    !> @param[in] id_count  number of indices selected along each dimension
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE)                   , INTENT(IN   ) :: td_file
       TYPE(TVAR)                    , INTENT(IN   ) :: td_var
       INTEGER(i4)     , DIMENSION(:), INTENT(IN   ), OPTIONAL :: id_start
@@ -2643,10 +2656,10 @@ CONTAINS
       REAL(dp),    DIMENSION(:,:,:,:), ALLOCATABLE :: dl_value
 
       INTEGER(i4), DIMENSION(ip_maxdim) :: il_start
-      INTEGER(i4), DIMENSION(ip_maxdim) :: il_count      
+      INTEGER(i4), DIMENSION(ip_maxdim) :: il_count
 
       INTEGER(i4), DIMENSION(ip_maxdim) :: il_start_ord
-      INTEGER(i4), DIMENSION(ip_maxdim) :: il_count_ord      
+      INTEGER(i4), DIMENSION(ip_maxdim) :: il_count_ord
       ! loop indices
       INTEGER(i4) :: ji, jj
       !----------------------------------------------------------------
@@ -2655,13 +2668,13 @@ CONTAINS
       CALL logger_debug( &
       &  "IOM CDF WRITE VAR VALUE: get dimension to be used for variable "//&
       &  TRIM(td_var%c_name)//" in file "//TRIM(td_file%c_name))
- 
+
       il_start(:)=1
       IF( PRESENT(id_start) ) il_start(:)=id_start(:)
 
       il_count(:)=td_var%t_dim(:)%i_len
       IF( PRESENT(id_count) ) il_count(:)=id_count(:)
- 
+
       ! use scale factor and offset
       WHERE( td_var%d_value(:,:,:,:) /= td_var%d_fill )
          td_var%d_value(:,:,:,:) = &

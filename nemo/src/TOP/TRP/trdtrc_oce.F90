@@ -23,7 +23,7 @@ MODULE trdtrc_oce
    CHARACTER(len=50) ::  cn_trdrst_trc_out    !: suffix of pass. tracer restart name (output)
    LOGICAL, DIMENSION(:), ALLOCATABLE ::   ln_trdtrc   !: large trends diagnostic to write or not (namelist)
 
-# if defined key_trdtrc && defined key_iomput
+# if defined key_trdtrc && defined key_xios
    LOGICAL, PARAMETER ::   lk_trdtrc = .TRUE. 
 # else
    LOGICAL, PARAMETER ::   lk_trdtrc = .FALSE.   !: ML trend flag
@@ -107,7 +107,7 @@ MODULE trdtrc_oce
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: trdtrc_oce.F90 10425 2018-12-19 21:54:16Z smasson $ 
+   !! $Id: trdtrc_oce.F90 14239 2020-12-23 08:57:16Z smasson $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS

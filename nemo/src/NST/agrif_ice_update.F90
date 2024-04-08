@@ -1,5 +1,3 @@
-#define TWO_WAY
-!!#undef TWO_WAY
 #undef DECAL_FEEDBACK  /* SEPARATION of INTERFACES*/
 
 MODULE agrif_ice_update
@@ -26,6 +24,7 @@ MODULE agrif_ice_update
    USE sbc_oce
    USE agrif_oce
    USE ice
+   USE sbc_ice , ONLY : snwice_mass
    USE agrif_ice 
    USE phycst , ONLY: rt0
 
@@ -36,7 +35,7 @@ MODULE agrif_ice_update
 
    !!----------------------------------------------------------------------
    !! NEMO/NST 4.0 , NEMO Consortium (2018)
-   !! $Id: agrif_ice_update.F90 10069 2018-08-28 14:12:24Z nicolasmartin $
+   !! $Id: agrif_ice_update.F90 13472 2020-09-16 13:05:19Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -62,12 +61,14 @@ CONTAINS
       Agrif_SpecialValueFineGrid    = -9999.
       Agrif_UseSpecialValueInUpdate = .TRUE.
 
-# if defined TWO_WAY
 # if ! defined DECAL_FEEDBACK
       CALL Agrif_Update_Variable( tra_ice_id , procname = update_tra_ice  )
 #else
       CALL Agrif_Update_Variable( tra_ice_id , locupdate=(/1,0/), procname = update_tra_ice  )
 #endif
+      use_sign_north = .TRUE.
+      sign_north = -1.
+
 # if ! defined DECAL_FEEDBACK
       CALL Agrif_Update_Variable( u_ice_id   , procname = update_u_ice    )
       CALL Agrif_Update_Variable( v_ice_id   , procname = update_v_ice    )
@@ -75,10 +76,10 @@ CONTAINS
       CALL Agrif_Update_Variable( u_ice_id   , locupdate1=(/0,-1/),locupdate2=(/1,-2/),procname=update_u_ice) 
       CALL Agrif_Update_Variable( v_ice_id   , locupdate1=(/1,-2/),locupdate2=(/0,-1/),procname=update_v_ice)
 #endif
+      use_sign_north = .FALSE.
 !      CALL Agrif_Update_Variable( tra_ice_id , locupdate=(/0,2/), procname = update_tra_ice  )
 !      CALL Agrif_Update_Variable( u_ice_id   , locupdate=(/0,1/), procname = update_u_ice    )
 !      CALL Agrif_Update_Variable( v_ice_id   , locupdate=(/0,1/), procname = update_v_ice    )
-# endif
       Agrif_SpecialValueFineGrid    = 0.
       Agrif_UseSpecialValueInUpdate = .FALSE.
       !
@@ -101,20 +102,21 @@ CONTAINS
       IF( before ) THEN
          jm = 1
          DO jl = 1, jpl
-            ptab(i1:i2,j1:j2,jm  ) = a_i (i1:i2,j1:j2,jl)
-            ptab(i1:i2,j1:j2,jm+1) = v_i (i1:i2,j1:j2,jl)
-            ptab(i1:i2,j1:j2,jm+2) = v_s (i1:i2,j1:j2,jl)
-            ptab(i1:i2,j1:j2,jm+3) = sv_i(i1:i2,j1:j2,jl)
-            ptab(i1:i2,j1:j2,jm+4) = oa_i(i1:i2,j1:j2,jl)
-            ptab(i1:i2,j1:j2,jm+5) = a_ip(i1:i2,j1:j2,jl)
-            ptab(i1:i2,j1:j2,jm+6) = v_ip(i1:i2,j1:j2,jl)
-            ptab(i1:i2,j1:j2,jm+7) = t_su(i1:i2,j1:j2,jl)
-            jm = jm + 8
+            ptab(i1:i2,j1:j2,jm  ) = a_i (i1:i2,j1:j2,jl) * e1e2t_frac(i1:i2,j1:j2) 
+            ptab(i1:i2,j1:j2,jm+1) = v_i (i1:i2,j1:j2,jl) * e1e2t_frac(i1:i2,j1:j2)
+            ptab(i1:i2,j1:j2,jm+2) = v_s (i1:i2,j1:j2,jl) * e1e2t_frac(i1:i2,j1:j2)
+            ptab(i1:i2,j1:j2,jm+3) = sv_i(i1:i2,j1:j2,jl) * e1e2t_frac(i1:i2,j1:j2)
+            ptab(i1:i2,j1:j2,jm+4) = oa_i(i1:i2,j1:j2,jl) * e1e2t_frac(i1:i2,j1:j2)
+            ptab(i1:i2,j1:j2,jm+5) = a_ip(i1:i2,j1:j2,jl) * e1e2t_frac(i1:i2,j1:j2)
+            ptab(i1:i2,j1:j2,jm+6) = v_ip(i1:i2,j1:j2,jl) * e1e2t_frac(i1:i2,j1:j2)
+            ptab(i1:i2,j1:j2,jm+7) = v_il(i1:i2,j1:j2,jl) * e1e2t_frac(i1:i2,j1:j2)
+            ptab(i1:i2,j1:j2,jm+8) = t_su(i1:i2,j1:j2,jl) * e1e2t_frac(i1:i2,j1:j2)
+            jm = jm + 9
             DO jk = 1, nlay_s
-               ptab(i1:i2,j1:j2,jm) = e_s(i1:i2,j1:j2,jk,jl)   ;   jm = jm + 1
+               ptab(i1:i2,j1:j2,jm) = e_s(i1:i2,j1:j2,jk,jl) * e1e2t_frac(i1:i2,j1:j2)   ;   jm = jm + 1
             END DO
             DO jk = 1, nlay_i
-               ptab(i1:i2,j1:j2,jm) = e_i(i1:i2,j1:j2,jk,jl)   ;   jm = jm + 1
+               ptab(i1:i2,j1:j2,jm) = e_i(i1:i2,j1:j2,jk,jl) * e1e2t_frac(i1:i2,j1:j2)   ;   jm = jm + 1
             END DO
          END DO
          !
@@ -137,11 +139,12 @@ CONTAINS
                      oa_i(ji,jj,jl) = ptab(ji,jj,jm+4) * tmask(ji,jj,1)
                      a_ip(ji,jj,jl) = ptab(ji,jj,jm+5) * tmask(ji,jj,1)
                      v_ip(ji,jj,jl) = ptab(ji,jj,jm+6) * tmask(ji,jj,1)
-                     t_su(ji,jj,jl) = ptab(ji,jj,jm+7) * tmask(ji,jj,1)
+                     v_il(ji,jj,jl) = ptab(ji,jj,jm+7) * tmask(ji,jj,1)
+                     t_su(ji,jj,jl) = ptab(ji,jj,jm+8) * tmask(ji,jj,1)
                   ENDIF
                END DO
             END DO
-            jm = jm + 8
+            jm = jm + 9
             !
             DO jk = 1, nlay_s
                WHERE( ptab(i1:i2,j1:j2,jm) /= Agrif_SpecialValueFineGrid )
@@ -162,6 +165,17 @@ CONTAINS
          DO jl = 1, jpl
             WHERE( tmask(i1:i2,j1:j2,1) == 0._wp )   t_su(i1:i2,j1:j2,jl) = rt0   ! to avoid a division by 0 in sbcblk.F90
          END DO
+
+         ! new mass per unit area  
+         vt_s (i1:i2,j1:j2) = SUM(  v_s(i1:i2,j1:j2,:), dim=3 )
+         vt_i (i1:i2,j1:j2) = SUM(  v_i(i1:i2,j1:j2,:), dim=3 )
+         vt_ip(i1:i2,j1:j2) = SUM( v_ip(i1:i2,j1:j2,:), dim=3 )
+         vt_il(i1:i2,j1:j2) = SUM( v_il(i1:i2,j1:j2,:), dim=3 )
+
+         snwice_mass(i1:i2,j1:j2) = tmask(i1:i2,j1:j2,1) * ( rhos *   vt_s(i1:i2,j1:j2)  & 
+                                  &                        + rhoi *   vt_i(i1:i2,j1:j2)  &
+                                  &                        + rhow * (vt_ip(i1:i2,j1:j2)  & 
+                                  &                                + vt_il(i1:i2,j1:j2)) )
          
       ENDIF
       !

@@ -3,28 +3,28 @@
 !----------------------------------------------------------------------
 !
 ! DESCRIPTION:
-!> @brief 
+!> @brief
 !> This module manage interpolation on regular grid.
 !>
-!> @details Interpolation method to be used is specify inside variable 
-!>    strcuture, as array of string character.<br/> 
+!> @details Interpolation method to be used is specify inside variable
+!>    strcuture, as array of string character.<br/>
 !>    - td_var\%c_interp(1) string character is the interpolation name choose between:
 !>       - 'nearest'
 !>       - 'cubic  '
 !>       - 'linear '
-!>    - td_var\%c_interp(2) string character is an operation to be used 
+!>    - td_var\%c_interp(2) string character is an operation to be used
 !>    on interpolated value.<br/>
 !>          operation have to be mulitplication '*' or division '/'.<br/>
-!>          coefficient have to be refinement factor following i-direction 'rhoi', 
+!>          coefficient have to be refinement factor following i-direction 'rhoi',
 !>          j-direction 'rhoj', or k-direction 'rhok'.<br/>
 !>
 !>          Examples: '*rhoi', '/rhoj'.
-!> 
+!>
 !>    @note Those informations are read from namelist or variable configuration file (default).<br/>
 !>    Interplation method could be specify for each variable in namelist _namvar_,
 !>    defining string character _cn\_varinfo_.<br/>
 !>    Example:
-!>       - cn_varinfo='varname1:int=cubic/rhoi', 'varname2:int=linear' 
+!>       - cn_varinfo='varname1:int=cubic/rhoi', 'varname2:int=linear'
 !>
 !>    to create mixed grid (with coarse grid point needed to compute
 !> interpolation):<br/>
@@ -67,7 +67,7 @@
 !>
 !> @author
 !> J.Paul
-!> 
+!>
 !> @date November, 2013 - Initial Version
 !> @date September, 2014
 !> - add header
@@ -109,7 +109,7 @@ MODULE interp
    PRIVATE :: interp__fill_value          ! interpolate value over detectected point
    PRIVATE :: interp__clean_even_grid     ! clean even mixed grid
    PRIVATE :: interp__check_method        ! check if interpolation method available
-   
+
    TYPE TINTERP
       CHARACTER(LEN=lc) :: c_name   = '' !< interpolation method name
       CHARACTER(LEN=lc) :: c_factor = '' !< interpolation factor
@@ -117,11 +117,11 @@ MODULE interp
    END TYPE TINTERP
 
    INTERFACE interp_detect
-      MODULE PROCEDURE interp__detect_wrapper 
+      MODULE PROCEDURE interp__detect_wrapper
    END INTERFACE interp_detect
 
    INTERFACE interp_fill_value
-      MODULE PROCEDURE interp__fill_value_wrapper 
+      MODULE PROCEDURE interp__fill_value_wrapper
    END INTERFACE interp_fill_value
 
 CONTAINS
@@ -131,8 +131,8 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief
    !> This function check if interpolation method is available.
-   !> 
-   !> @details 
+   !>
+   !> @details
    !> check if name of interpolation method is present in global list of string
    !> character cp_interp_list (see global.f90).
    !>
@@ -177,8 +177,8 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief
    !> This function detected point to be interpolated.
-   !> 
-   !> @details 
+   !>
+   !> @details
    !> Actually it checks, the number of dimension used for this variable
    !> and launch interp__detect which detected point to be interpolated.
    !>
@@ -187,7 +187,7 @@ CONTAINS
    !>
    !> @param[in] td_mix mixed grid variable (to interpolate)
    !> @param[in] id_rho array of refinement factor
-   !> @return 3D array of detected point to be interpolated 
+   !> @return 3D array of detected point to be interpolated
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -209,16 +209,16 @@ CONTAINS
          ! no dimension I-J-K used
          CALL logger_debug(" INTERP DETECT: nothing done for variable"//&
             &              TRIM(td_mix%c_name) )
-         
+
          if_detect(:,:,:)=0
 
       ELSE IF( ALL(td_mix%t_dim(1:3)%l_use) )THEN
-         
+
          ! detect point to be interpolated on I-J-K
          CALL logger_debug(" INTERP DETECT: detect point "//&
             &              TRIM(td_mix%c_point)//" for variable "//&
             &              TRIM(td_mix%c_name) )
-         
+
          if_detect(:,:,:)=interp__detect( td_mix, id_rho(:) )
 
       ELSE IF( ALL(td_mix%t_dim(1:2)%l_use) )THEN
@@ -227,18 +227,18 @@ CONTAINS
          CALL logger_debug(" INTERP DETECT: detect point "//&
             &              TRIM(td_mix%c_point)//" for variable "//&
             &              TRIM(td_mix%c_name) )
-         
+
          if_detect(:,:,1:1)=interp__detect( td_mix, id_rho(:))
 
       ELSE IF( td_mix%t_dim(3)%l_use )THEN
-         
+
          ! detect point to be interpolated on K
          CALL logger_debug(" INTERP DETECT: detect vertical point "//&
             &              " for variable "//TRIM(td_mix%c_name) )
-         
+
          if_detect(1:1,1:1,:)=interp__detect( td_mix, id_rho(:) )
 
-      ENDIF              
+      ENDIF
 
    END FUNCTION interp__detect_wrapper
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -247,8 +247,8 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief
    !> This function detected point to be interpolated.
-   !> 
-   !> @details 
+   !>
+   !> @details
    !> A special case is done for even refinement on ARAKAWA-C grid.
    !>
    !> @author J.Paul
@@ -256,7 +256,7 @@ CONTAINS
    !
    !> @param[in] td_mix mixed grid variable (to interpolate)
    !> @param[in] id_rho array of refinement factor
-   !> @return 3D array of detected point to be interpolated 
+   !> @return 3D array of detected point to be interpolated
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -294,7 +294,7 @@ CONTAINS
       ll_even(:)=.FALSE.
       IF( MOD(il_rho(jp_I),2) == 0 ) ll_even(1)=.TRUE.
       IF( MOD(il_rho(jp_J),2) == 0 ) ll_even(2)=.TRUE.
-      IF( MOD(il_rho(jp_K),2) == 0 ) ll_even(3)=.TRUE.         
+      IF( MOD(il_rho(jp_K),2) == 0 ) ll_even(3)=.TRUE.
 
       SELECT CASE(TRIM(td_mix%c_point))
          CASE('U')
@@ -342,7 +342,7 @@ CONTAINS
                   ! i-direction
                   if_detect(MAX(1,ji-il_xextra):MIN(ji+il_xextra,il_dim(1)),&
                      &      MAX(1,jj-(il_rho(jp_J)-1)):MIN(jj+(il_rho(jp_J)-1),il_dim(2)),&
-                     &      MAX(1,jk-(il_rho(jp_K)-1)):MIN(jk+(il_rho(jp_K)-1),il_dim(3)) )=0 
+                     &      MAX(1,jk-(il_rho(jp_K)-1)):MIN(jk+(il_rho(jp_K)-1),il_dim(3)) )=0
                   ! j-direction
                   if_detect(MAX(1,ji-(il_rho(jp_I)-1)):MIN(ji+(il_rho(jp_I)-1),il_dim(1)),&
                      &      MAX(1,jj-il_yextra):MIN(jj+il_yextra,il_dim(2)),&
@@ -350,7 +350,7 @@ CONTAINS
                   ! k-direction
                   if_detect(MAX(1,ji-(il_rho(jp_I)-1)):MIN(ji+(il_rho(jp_I)-1),il_dim(1)),&
                      &      MAX(1,jj-(il_rho(jp_J)-1)):MIN(jj+(il_rho(jp_J)-1),il_dim(2)),&
-                     &      MAX(1,jk-il_zextra):MIN(jk+il_zextra,il_dim(3)) )=0         
+                     &      MAX(1,jk-il_zextra):MIN(jk+il_zextra,il_dim(3)) )=0
 
                ENDIF
 
@@ -366,10 +366,10 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief
    !> This subroutine create mixed grid.
-   !> 
-   !> @details 
+   !>
+   !> @details
    !> Created grid is fine resolution grid.
-   !> First and last point are coasre grid point. 
+   !> First and last point are coasre grid point.
    !>
    !> A special case is done for even refinement on ARAKAWA-C grid.
    !>
@@ -378,14 +378,14 @@ CONTAINS
    !>
    !> @param[in] td_var    coarse grid variable (should be extrapolated)
    !> @param[out] td_mix   mixed grid variable
-   !> @param[in] id_rho    array of refinment factor (default 1) 
+   !> @param[in] id_rho    array of refinment factor (default 1)
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
       ! Argument
-      TYPE(TVAR) ,               INTENT(IN   ) :: td_var 
-      TYPE(TVAR) ,               INTENT(  OUT) :: td_mix 
+      TYPE(TVAR) ,               INTENT(IN   ) :: td_var
+      TYPE(TVAR) ,               INTENT(  OUT) :: td_mix
       INTEGER(I4), DIMENSION(:), INTENT(IN   ), OPTIONAL :: id_rho
 
       ! local variable
@@ -407,7 +407,7 @@ CONTAINS
       ll_even(:)=.FALSE.
       IF( MOD(il_rho(jp_I),2) == 0 ) ll_even(1)=.TRUE.
       IF( MOD(il_rho(jp_J),2) == 0 ) ll_even(2)=.TRUE.
-      IF( MOD(il_rho(jp_K),2) == 0 ) ll_even(3)=.TRUE.         
+      IF( MOD(il_rho(jp_K),2) == 0 ) ll_even(3)=.TRUE.
 
       SELECT CASE(TRIM(td_var%c_point))
          CASE('U')
@@ -459,20 +459,20 @@ CONTAINS
    !> @brief
    !> This subroutine remove points added to mixed grid to compute
    !> interpolation in the special case of even refinement on ARAKAWA-C grid.
-   !> 
-   !> @details 
+   !>
+   !> @details
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !>
    !> @param[inout] td_mix mixed grid variable
-   !> @param[in] id_rho    array of refinment factor 
+   !> @param[in] id_rho    array of refinment factor
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
       ! Argument
-      TYPE(TVAR) ,               INTENT(INOUT) :: td_mix 
+      TYPE(TVAR) ,               INTENT(INOUT) :: td_mix
       INTEGER(I4), DIMENSION(:), INTENT(IN   ), OPTIONAL :: id_rho
 
       ! local variable
@@ -500,7 +500,7 @@ CONTAINS
       ll_even(:)=.FALSE.
       IF( MOD(il_rho(jp_I),2) == 0 ) ll_even(1)=.TRUE.
       IF( MOD(il_rho(jp_J),2) == 0 ) ll_even(2)=.TRUE.
-      IF( MOD(il_rho(jp_K),2) == 0 ) ll_even(3)=.TRUE.         
+      IF( MOD(il_rho(jp_K),2) == 0 ) ll_even(3)=.TRUE.
 
       SELECT CASE(TRIM(td_mix%c_point))
          CASE('U')
@@ -555,7 +555,7 @@ CONTAINS
             il_rho(jp_J)=il_rho(jp_J)-1
             ! compute right fine grid dimension length
             td_mix%t_dim(2)%i_len=td_mix%t_dim(2)%i_len*il_rho(jp_J)-il_yextra
-            
+
          ENDIF
 
          IF( tl_mix%t_dim(3)%l_use .AND. ll_even(3) )THEN
@@ -573,7 +573,7 @@ CONTAINS
             ! compute right fine grid dimension length
             td_mix%t_dim(3)%i_len=td_mix%t_dim(3)%i_len*il_rho(jp_K)-il_zextra
 
-         ENDIF      
+         ENDIF
 
          IF( ASSOCIATED(td_mix%d_value) ) DEALLOCATE( td_mix%d_value )
          ALLOCATE( td_mix%d_value( td_mix%t_dim(1)%i_len, &
@@ -622,10 +622,10 @@ CONTAINS
          &                            id_rho, id_offset)
    !-------------------------------------------------------------------
    !> @brief
-   !> This subroutine remove points added on mixed grid 
-   !> to compute interpolation. And save interpolated value over domain. 
-   !> 
-   !> @details 
+   !> This subroutine remove points added on mixed grid
+   !> to compute interpolation. And save interpolated value over domain.
+   !>
+   !> @details
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -677,7 +677,7 @@ CONTAINS
 
       ! compute domain indices in i-direction
       il_imin0=1  ; il_imax0=td_var%t_dim(1)%i_len
- 
+
       IF( td_var%t_dim(1)%l_use )THEN
          il_imin1=il_imin0+id_offset(Jp_I,1)
          il_imax1=il_imax0-id_offset(Jp_I,2)
@@ -690,7 +690,7 @@ CONTAINS
 
       ! compute domain indices in j-direction
       il_jmin0=1  ; il_jmax0=td_var%t_dim(2)%i_len
- 
+
       IF( td_var%t_dim(2)%l_use )THEN
          il_jmin1=il_jmin0+id_offset(Jp_J,1)
          il_jmax1=il_jmax0-id_offset(Jp_J,2)
@@ -698,13 +698,13 @@ CONTAINS
 
          il_jmin1=il_jmin0
          il_jmax1=il_jmax0
- 
+
       ENDIF
 
       ! compute new dimension
       td_var%t_dim(1)%i_len=il_imax1-il_imin1+1
       td_var%t_dim(2)%i_len=il_jmax1-il_jmin1+1
- 
+
       ALLOCATE(dl_value(td_var%t_dim(1)%i_len, &
       &                 td_var%t_dim(2)%i_len, &
       &                 td_var%t_dim(3)%i_len, &
@@ -720,20 +720,20 @@ CONTAINS
       CALL var_add_value(td_var,dl_value(:,:,:,:))
 
       DEALLOCATE(dl_value)
- 
+
       ! clean
       CALL var_clean(tl_mix)
 
    END SUBROUTINE interp_clean_mixed_grid
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE interp__fill_value_wrapper(td_var, & 
+   SUBROUTINE interp__fill_value_wrapper(td_var, &
          &                               id_rho, &
          &                               id_offset)
    !-------------------------------------------------------------------
    !> @brief
    !> This subroutine interpolate variable value.
-   !> 
-   !> @details 
+   !>
+   !> @details
    !> Actually it checks, the number of dimension used for this variable
    !> and launch interp__fill_value.
    !>
@@ -798,8 +798,8 @@ CONTAINS
          &                        TRIM(fct_str(il_rho(jp_I)))//&
          &                   " "//TRIM(fct_str(il_rho(jp_J)))//&
          &                   " "//TRIM(fct_str(il_rho(jp_K))) )
- 
-         CALL interp__fill_value( td_var, cl_method, & 
+
+         CALL interp__fill_value( td_var, cl_method, &
          &                        il_rho(:), il_offset(:,:) )
 
          SELECT CASE(TRIM(td_var%c_interp(2)))
@@ -824,12 +824,12 @@ CONTAINS
                &  td_var%d_value(:,:,:,:) * REAL(il_rho(jp_I),dp)
             END WHERE
          CASE('*rhoj')
-            WHERE( td_var%d_value(:,:,:,:) /= td_var%d_fill ) 
+            WHERE( td_var%d_value(:,:,:,:) /= td_var%d_fill )
                td_var%d_value(:,:,:,:) = &
                &  td_var%d_value(:,:,:,:) * REAL(il_rho(jp_J),dp)
             END WHERE
          CASE('*rhok')
-            WHERE( td_var%d_value(:,:,:,:) /= td_var%d_fill ) 
+            WHERE( td_var%d_value(:,:,:,:) /= td_var%d_fill )
                td_var%d_value(:,:,:,:) = &
                &  td_var%d_value(:,:,:,:) * REAL(il_rho(jp_K),dp)
             END WHERE
@@ -850,22 +850,22 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief
    !> This subroutine interpolate value over mixed grid.
-   !> 
+   !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !> @date September, 2014
    !> - use interpolation method modules
    !>
    !> @param[inout] td_var variable structure
-   !> @param[in] cd_method interpolation method 
-   !> @param[in] id_rho    array of refinment factor 
+   !> @param[in] cd_method interpolation method
+   !> @param[in] id_rho    array of refinment factor
    !> @param[in] id_offset 2D array of offset between fine and coarse grid
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
       ! Argument
-      TYPE(TVAR)                      , INTENT(INOUT) :: td_var 
+      TYPE(TVAR)                      , INTENT(INOUT) :: td_var
       CHARACTER(LEN=*)                , INTENT(IN   ) :: cd_method
       INTEGER(I4)     , DIMENSION(:)  , INTENT(IN   ) :: id_rho
       INTEGER(I4)     , DIMENSION(2,2), INTENT(IN   ) :: id_offset
@@ -875,17 +875,17 @@ CONTAINS
 
       INTEGER(I4)    , DIMENSION(:)      , ALLOCATABLE :: il_rho
       INTEGER(i4)    , DIMENSION(:,:,:)  , ALLOCATABLE :: il_detect
- 
+
       REAL(dp)                                         :: dl_min
       REAL(dp)                                         :: dl_max
 
       LOGICAL        , DIMENSION(3)                    :: ll_even
       LOGICAL                                          :: ll_discont
- 
+
       TYPE(TVAR)                                       :: tl_mix
 
       TYPE(TATT)                                       :: tl_att
- 
+
       ! loop indices
       !----------------------------------------------------------------
 
@@ -916,7 +916,7 @@ CONTAINS
       ll_even(:)=.FALSE.
       IF( MOD(id_rho(jp_I),2) == 0 ) ll_even(1)=.TRUE.
       IF( MOD(id_rho(jp_J),2) == 0 ) ll_even(2)=.TRUE.
-      IF( MOD(id_rho(jp_K),2) == 0 ) ll_even(3)=.TRUE.         
+      IF( MOD(id_rho(jp_K),2) == 0 ) ll_even(3)=.TRUE.
 
       SELECT CASE(TRIM(tl_mix%c_point))
          CASE('U')
@@ -940,7 +940,7 @@ CONTAINS
          dl_min=MINVAL( tl_mix%d_value(:,:,:,:), &
          &              tl_mix%d_value(:,:,:,:)/=tl_mix%d_fill)
          dl_max=MAXVAL( tl_mix%d_value(:,:,:,:), &
-         &              tl_mix%d_value(:,:,:,:)/=tl_mix%d_fill)         
+         &              tl_mix%d_value(:,:,:,:)/=tl_mix%d_fill)
          IF( dl_min < -170_dp .AND. dl_max > 170_dp .OR. &
          &   dl_min <   10_dp .AND. dl_max > 350_dp )THEN
             ll_discont=.TRUE.
@@ -963,7 +963,7 @@ CONTAINS
          CALL interp_linear_fill(tl_mix%d_value(:,:,:,:), tl_mix%d_fill, &
               &                  il_detect(:,:,:),                        &
               &                  il_rho(:), ll_even(:), ll_discont )
-      END SELECT         
+      END SELECT
 
       IF( ANY(il_detect(:,:,:)==1) )THEN
          CALL logger_warn("INTERP FILL: some points can not be interpolated "//&
@@ -974,7 +974,7 @@ CONTAINS
 
       !4- save useful domain (remove offset)
       CALL interp_clean_mixed_grid( tl_mix, td_var, &
-      &                             id_rho(:), id_offset(:,:)  )  
+      &                             id_rho(:), id_offset(:,:)  )
 
       ! clean variable structure
       DEALLOCATE(il_rho)

@@ -26,10 +26,10 @@ MODULE phycst
    PUBLIC :: dp_pi      !< pi
    PUBLIC :: dp_eps     !< epsilon value
    PUBLIC :: dp_rearth  !< earth radius [m]
-   PUBLIC :: dp_deg2rad !< degree to radian ratio 
-   PUBLIC :: dp_rad2deg !< radian to degree ratio 
-   PUBLIC :: dp_delta   !<  
-   PUBLIC :: dp_omega   !< earth rotation parameter [s-1] 
+   PUBLIC :: dp_deg2rad !< degree to radian ratio
+   PUBLIC :: dp_rad2deg !< radian to degree ratio
+   PUBLIC :: dp_delta   !<
+   PUBLIC :: dp_omega   !< earth rotation parameter [s-1]
    PUBLIC :: dp_day     !< day                                [s]
    PUBLIC :: dp_siyea   !< sideral year                       [s]
    PUBLIC :: dp_siday   !< sideral day                        [s]
@@ -44,7 +44,7 @@ MODULE phycst
    REAL(dp), PARAMETER :: dp_deg2rad = dp_pi/180.0
    REAL(dp), PARAMETER :: dp_rad2deg = 180.0/dp_pi
 
-   REAL(dp), PARAMETER :: dp_day = 24.*60.*60.     
+   REAL(dp), PARAMETER :: dp_day = 24.*60.*60.
    REAL(dp), PARAMETER :: dp_siyea = 365.25_dp * dp_day * &
       &  2._dp * dp_pi / 6.283076_dp
    REAL(dp), PARAMETER :: dp_siday = dp_day / ( 1._dp + dp_day / dp_siyea )

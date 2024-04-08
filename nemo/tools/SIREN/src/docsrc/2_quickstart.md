@@ -3,15 +3,15 @@
 @tableofcontents
 
 SIREN is a software to set up regional configuration with
- [NEMO](http://www.nemo-ocean.eu).<br/> 
+ [NEMO](http://www.nemo-ocean.eu).<br/>
 Actually SIREN creates all the input files you need to run a NEMO regional configuration.<br/>
- 
+
 SIREN is composed of a set of Fortran programs :
 <ul>
  <li>create_coord.f90 to create regional grid coordinates.</li>
  <li>create_bathy.f90 to create regional grid bathymetry.</li>
  <li>merge_bathy.f90 to merge regional grid bathymetry with wider grid bathymetry
- at boundaries. 
+ at boundaries.
  @note the goal of this step is to avoid break in Bathymetry.
  This break may cause inconsistency between forcing fields  at boundary and regional fields.
  </li>
@@ -53,7 +53,7 @@ To create this new cooridnates file, you have to run :
 
 Here after is an example of namelist for *create_coord.exe*.<br/>
 In this example, you create a coordinates file named *coord_fine.nc*.<br/>
-This new coordinates file is refined from an extraction of *coordinates_ORCA025.nc*. 
+This new coordinates file is refined from an extraction of *coordinates_ORCA025.nc*.
 ~~~~~~~~~~~
 &namlog
 /
@@ -134,7 +134,7 @@ example: ORCA05</dd>
 ## namvar
 The **namvar** sub-namelist lists variables to be used.<br/>
 By default all the variables of the coarse/source coordinates file are used to create
-the new coordinates file.<br/> 
+the new coordinates file.<br/>
 The interpolation methods to be used are defined in the configuration variables file (see
 above). So you do not need to fill this sub-namelist too.
 
@@ -142,7 +142,7 @@ above). So you do not need to fill this sub-namelist too.
 The **namnst** sub-namelist defines the subdomain to be used as well as refinment factor.<br/>
 
 <ul>
-<li> you could define sub domain with coarse grid indices</li> 
+<li> you could define sub domain with coarse grid indices</li>
 
 ~~~~~~~~~~~
 &namnst
@@ -157,8 +157,8 @@ The **namnst** sub-namelist defines the subdomain to be used as well as refinmen
 
 ~~~~~~~~~~~
 &namnst
-   rn_lonmin0 = -97.9 
-   rn_lonmax0 = -62.3 
+   rn_lonmin0 = -97.9
+   rn_lonmax0 = -62.3
    rn_latmin0 =   7.7
    rn_latmax0 =  30.8
 /
@@ -186,15 +186,15 @@ pole), and use the refinment factor you want.</li>
 <li>you can select area crossing the east-west overlap of the global ORCA grid.</li>
 
 ~~~~~~~~~~~
-&namnst          
-   in_imin0 = 1402 
+&namnst
+   in_imin0 = 1402
    in_imax0 = 62
-   in_jmin0 = 490 
-   in_jmax0 = 570 
+   in_jmin0 = 490
+   in_jmax0 = 570
 
    in_rhoi = 5
-   in_rhoj = 5 
-/                
+   in_rhoj = 5
+/
 ~~~~~~~~~~~
 @image html grid_glob_over_30.png
 <center>@image latex grid_glob_over_20.png
@@ -272,7 +272,7 @@ Moreover a minimum value of 5m is imposed to the output Bathymetry.
 /
 
 &namout
-   cn_fileout = "PATH/bathy_fine.nc"      
+   cn_fileout = "PATH/bathy_fine.nc"
 /
 ~~~~~~~~~~~~~~~~~~
 
@@ -293,7 +293,7 @@ coordinates file.<br/>
 In the same way, the **namtgt** sub-namelist  set parameters of the target/fine
 coordinates file.<br/>
 @note in this namelist example, there is no need to set the variable *in_perio1* to define the NEMO
-periodicity of the fine grid. Indeed, if this variable is not inform, SIREN tries to read it 
+periodicity of the fine grid. Indeed, if this variable is not inform, SIREN tries to read it
 in the global attributes of the file. So if you created the fine coordinates with SIREN, you do not have to
 fill it. In other case, you should add it to the namelist.
 
@@ -303,7 +303,7 @@ The **namvar** sub-namelist lists variables to be used:
    <dt>cn_varfile</dt>
       <dd> defines the variable name ("Bathymetry" here) and the input file associated with.
             @warning The domain of the input Bathymetry have to be larger than the output domain.
-         @note 
+         @note
          <ul>
             <li>if the input file is at coarse grid resolution (same than *cn_coord0*), the ouptut Bathymetry will be refined on fine grid.</li>
             <li>if the input file is a wider bathymetry (already at fine grid resolution), the output Bathymetry will be extracted from this one.</li>
@@ -328,7 +328,7 @@ coordinates.
 ## namout
 Finally, this **namout** sub-namelist defines the output file.<br/>
 
-@note All the output files create by SIREN include information about 
+@note All the output files create by SIREN include information about
 source file, indices, refinment and interpolation method used.
 
 @sa For more information and options to create bathymetry, see
@@ -374,7 +374,7 @@ Here after is an example of namelist for *merge_bathy.exe*.<br/>
 /
 
 &namout
-   cn_fileout = "PATH/bathy_merged.nc"      
+   cn_fileout = "PATH/bathy_merged.nc"
 /
 ~~~~~~~~~~~~~~~~~~
 
@@ -420,7 +420,7 @@ Here after is an example of namelist for *create_meshmask.exe*.<br/>
 In this example, you create one meshmask file named *mesh_mask.nc*.<br/>
 It uses coordinates file *coord_fine.nc* to define horizontal grid.
 and defines z-coordinate with partial steps.
-The minimum depth of the final Bathymetry is 10m. 
+The minimum depth of the final Bathymetry is 10m.
 ~~~~~~~~~~~
 &namlog
 /
@@ -493,8 +493,8 @@ As previously, we have the **namlog** and **namcfg** describe above.<br/>
 ## namsrc
 The **namsrc** sub-namelist defines the Bathymetry to be used.
 Mainly SIREN need Bathymetry to create meshmask.
-Here we also read coordinates directly on a file. 
-@note 
+Here we also read coordinates directly on a file.
+@note
  1. here again you could add the *in_perio* parameter if need be i.e. if your
 Bathymetry was not created by SIREN.
  2. by default SIREN suppress closed sea/lake from the ORCA domain.
@@ -640,14 +640,14 @@ The initial state is composed of temperature and salinity refined from an extrac
 /
 
 &namout
-   cn_fileout = "PATH/restart_out.nc"      
+   cn_fileout = "PATH/restart_out.nc"
    in_nproc = 81
 /
 ~~~~~~~~~~~~~~~~~~
 Let's get describe this namelist more accurately.<br/>
 
 ## namlog, namcfg
-As previously, we have the **namlog** and **namcfg** sub-namelists, as well as 
+As previously, we have the **namlog** and **namcfg** sub-namelists, as well as
 
 ## namsrc
 the **namsrc** sub-namelist to set parameters of the source/wide coordinates file (see above for more
@@ -754,14 +754,14 @@ The boundaries contain information about temperature, salinity, currents and sea
 /
 
 &namout
-   cn_fileout = "PATH/boundary_out.nc"      
+   cn_fileout = "PATH/boundary_out.nc"
 /
 ~~~~~~~~~~~~~~~~~~
 
 Let's get describe this namelist more accurately.<br/>
 
 ## namlog, namcfg
-As previously, we have the **namlog** and **namcfg** sub-namelists, as well as 
+As previously, we have the **namlog** and **namcfg** sub-namelists, as well as
 
 ## namsrc
 the **namcrs** sub-namelist to set parameters of the source/wide coordinates file (see above for more

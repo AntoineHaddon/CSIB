@@ -204,3 +204,69 @@ ICE_ADV1D
    :all:
    :style: unsrt
    :labelprefix: T
+
+ICE_RHEO
+--------
+| 
+
+BENCH
+-----
+| Benchmark configuration. Allow to run any configuration (including ORCA type or BDY) with idealized grid
+  and initial state so it does not need any input file other than the namelists.
+  As usual, all configuration changes can be done through the namelist. 
+  We provide 3 example of namelist_cfg to mimic ORCA1, OR025 or ORCA12 configurations.
+  By default do not produce any output file. An extensive description of BENCH will be abailable in 
+  Irrmann et al. 2021.
+
+CPL_OASIS
+---------
+| This test case checks the OASIS interface in OCE/SBC, allowing to set up 
+  a coupled configuration through OASIS. See CPL_OASIS/README.md for more information.
+
+DIA_GPU
+---------
+| This is a demonstrator of diagnostic DIAHSB ported to GPU using CUDA Fortran. 
+  Memory communications between host and device are asynchronous given the device has that capability. 
+  This experiment is target for ORCA2_ICE_PISCES
+
+TSUNAMI
+---------
+| just use dynspg_ts to simulate the propagation of an ssh anomaly (cosinus) in a box configuration
+  with flat bottom and jpk=2.
+
+DONUT
+-----
+| Donut shaped configuration to test MPI decomposition with bdy.
+
+C1D_ASICS
+---------
+| 
+
+DOME
+----
+| 
+
+ICB
+----
+| ICB is a very idealized configuration used to test and debug the icb module.
+  The configuration is box with a shallow shelf (40m) on the east and west part of the domain 
+  with a deep central trough (> 100m).
+  ICB are generating using the test capability of the icb model along a E-W line (this can easily be tuned).
+
+STATION_ASF
+-----------
+| this demonstration test case can be used to perform a sanity test of the SBCBLK interface of
+  NEMO.  It will test all the bulk-parameterization algorithms using an idealized
+  forcing that includes a wide range of *SSX / surface atmospheric state*
+  conditions to detect potential error / inconsistencies.  Both a short report and
+  boolean output: *passed* or *failed* is provided as an output.
+
+SWG
+---
+| Square bassin blown with an analytical wind. Vertical structure allows only one mode
+  associated with reduced gravity to develop. This configuration is based on Adcroft & Marshall 1998.
+  Also run with RK3 time stepping. 
+
+ADIAB_WAVE
+----------
+| The purpose of this test case is to validate the implementation of the Generalized Lagrangian Mean equations for the coupling of NEMO with waves. This test case was first proposed by Ardhuin et al. (2008) and was successively detailed by Bennis et al (2011).

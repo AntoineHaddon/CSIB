@@ -8,11 +8,11 @@
 !> @details
 !>    to read one variable in an mpp files over domain defined as domain structure:<br/>
 !> @code
-!>    tl_var=iom_dom_read_var( td_mpp, id_varid, td_dom ) 
+!>    tl_var=iom_dom_read_var( td_mpp, id_varid, td_dom )
 !> @endcode
 !>    or
 !> @code
-!>    tl_var=iom_dom_read_var( td_mpp, cd_name, td_dom ) 
+!>    tl_var=iom_dom_read_var( td_mpp, cd_name, td_dom )
 !> @endcode
 !>       - td_mpp is a mpp structure
 !>       - id_varid is a variable id
@@ -61,14 +61,14 @@ MODULE iom_dom
 
    INTERFACE iom_dom_read_var                   ! read one variable in an mpp structure
       MODULE PROCEDURE iom_dom__read_var_id     ! given variable id
-      MODULE PROCEDURE iom_dom__read_var_name   ! given variable name 
+      MODULE PROCEDURE iom_dom__read_var_name   ! given variable name
    END INTERFACE iom_dom_read_var
 
 CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE iom_dom_open(td_mpp, td_dom, id_perio, id_ew)
    !-------------------------------------------------------------------
-   !> @brief This subroutine open files composing mpp structure 
+   !> @brief This subroutine open files composing mpp structure
    !> over domain to be used.
    !>
    !> @author J.Paul
@@ -79,7 +79,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TMPP) , INTENT(INOUT) :: td_mpp
       TYPE(TDOM) , INTENT(IN)    :: td_dom
       INTEGER(i4), INTENT(IN), OPTIONAL :: id_perio
@@ -117,7 +117,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TMPP), INTENT(INOUT) :: td_mpp
 
       ! loop indices
@@ -143,12 +143,12 @@ CONTAINS
    !> @param[in] td_mpp    mpp structure
    !> @param[in] id_varid  variable id
    !> @param[in] td_dom    domain structure
-   !> @return  variable structure 
+   !> @return  variable structure
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TMPP) , INTENT(IN) :: td_mpp
       INTEGER(i4), INTENT(IN) :: id_varid
       TYPE(TDOM) , INTENT(IN) :: td_dom
@@ -196,7 +196,7 @@ CONTAINS
    FUNCTION iom_dom__read_var_name(td_mpp, cd_name, td_dom) &
          & RESULT (tf_var)
    !-------------------------------------------------------------------
-   !> @brief This function read variable value in opened mpp files, 
+   !> @brief This function read variable value in opened mpp files,
    !> given variable name or standard name, and domain structure.
    !>
    !> @details
@@ -215,12 +215,12 @@ CONTAINS
    !> @param[in] td_mpp    mpp structure
    !> @param[in] cd_name   variable name
    !> @param[in] td_dom    domain structure
-   !> @return  variable structure 
+   !> @return  variable structure
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TMPP),       INTENT(IN) :: td_mpp
       CHARACTER(LEN=*), INTENT(IN) :: cd_name
       TYPE(TDOM)      , INTENT(IN) :: td_dom
@@ -257,7 +257,7 @@ CONTAINS
          ENDIF
 
       ENDIF
- 
+
    END FUNCTION iom_dom__read_var_name
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE iom_dom__read_var_value(td_mpp, td_var, td_dom)
@@ -278,7 +278,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TMPP),   INTENT(IN)    :: td_mpp
       TYPE(TVAR),   INTENT(INOUT) :: td_var
       TYPE(TDOM),   INTENT(IN)    :: td_dom
@@ -302,20 +302,20 @@ CONTAINS
       ! copy mpp structure
       tl_mpp=mpp_copy(td_mpp)
       ! forced to keep same id
-      tl_mpp%t_proc(:)%i_id=td_mpp%t_proc(:)%i_id         
+      tl_mpp%t_proc(:)%i_id=td_mpp%t_proc(:)%i_id
 
       ! Allocate space to hold variable value in structure
       IF( ASSOCIATED(td_var%d_value) )THEN
-         DEALLOCATE(td_var%d_value)   
+         DEALLOCATE(td_var%d_value)
       ENDIF
-      
+
       ! copy domain structure
       tl_dom=dom_copy(td_dom)
       DO jk=1,ip_maxdim
          IF( .NOT. td_var%t_dim(jk)%l_use ) tl_dom%t_dim(jk)%i_len = 1
       ENDDO
 
-      ! use domain dimension 
+      ! use domain dimension
       td_var%t_dim(1:2)%i_len=tl_dom%t_dim(1:2)%i_len
 
       ALLOCATE(td_var%d_value( tl_dom%t_dim(1)%i_len, &
@@ -335,7 +335,7 @@ CONTAINS
       &  TRIM(fct_str(SIZE(td_var%d_value(:,:,:,:),DIM=1)))//","//&
       &  TRIM(fct_str(SIZE(td_var%d_value(:,:,:,:),DIM=2)))//","//&
       &  TRIM(fct_str(SIZE(td_var%d_value(:,:,:,:),DIM=3)))//","//&
-      &  TRIM(fct_str(SIZE(td_var%d_value(:,:,:,:),DIM=4)))//")" )         
+      &  TRIM(fct_str(SIZE(td_var%d_value(:,:,:,:),DIM=4)))//")" )
       ! FillValue by default
       td_var%d_value(:,:,:,:)=td_var%d_fill
 
@@ -354,7 +354,7 @@ CONTAINS
 
          ELSEIF( tl_dom%i_imin <= tl_dom%i_imax )THEN
          ! no east west overlap
-            
+
             CALL iom_dom__no_pole_no_overlap(tl_mpp, td_var, tl_dom)
 
             ! no more EW overlap in variable
@@ -403,7 +403,7 @@ CONTAINS
       !   ENDIF
       ENDIF
 
-      ! clean 
+      ! clean
       CALL mpp_clean(tl_mpp)
       CALL dom_clean(tl_dom)
 
@@ -417,18 +417,18 @@ CONTAINS
          ENDIF
       ENDIF
 
-      ! force to change _FillValue to avoid mistake 
+      ! force to change _FillValue to avoid mistake
       ! with dummy zero _FillValue
       IF( td_var%d_fill == 0._dp )THEN
          CALL var_chg_FillValue(td_var)
-      ENDIF      
+      ENDIF
 
    END SUBROUTINE iom_dom__read_var_value
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE iom_dom__no_pole_no_overlap(td_mpp, td_var, td_dom)
    !-------------------------------------------------------------------
    !> @brief This subroutine read variable value
-   !> in an mpp structure. 
+   !> in an mpp structure.
    !> @details
    !> The output domain do not overlap
    !> north fold boundary or east-west boundary.
@@ -443,7 +443,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TMPP),  INTENT(IN)    :: td_mpp
       TYPE(TVAR),  INTENT(INOUT) :: td_var
       TYPE(TDOM),  INTENT(IN)    :: td_dom
@@ -456,15 +456,15 @@ CONTAINS
 
       ! loop indices
       !----------------------------------------------------------------
-      
+
       ! copy domain structure
       tl_dom=dom_copy(td_dom)
 
       ! change dimension length if not use
-      IF( .NOT. td_var%t_dim(1)%l_use )THEN 
+      IF( .NOT. td_var%t_dim(1)%l_use )THEN
          tl_dom%i_imin=1 ; tl_dom%i_imax=1
       ENDIF
-      IF( .NOT. td_var%t_dim(2)%l_use )THEN 
+      IF( .NOT. td_var%t_dim(2)%l_use )THEN
          tl_dom%i_jmin=1 ; tl_dom%i_jmax=1
       ENDIF
 
@@ -485,7 +485,7 @@ CONTAINS
    SUBROUTINE iom_dom__no_pole_cyclic(td_mpp, td_var, td_dom)
    !-------------------------------------------------------------------
    !> @brief This subroutine read cyclic variable value
-   !> in an mpp structure. 
+   !> in an mpp structure.
    !> @details
    !> The output domain do not overlap north fold boundary.
    !> However it uses cyclic east-west boundary.
@@ -500,7 +500,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TMPP),   INTENT(IN   ) :: td_mpp
       TYPE(TVAR),   INTENT(INOUT) :: td_var
       TYPE(TDOM),   INTENT(IN   ) :: td_dom
@@ -522,10 +522,10 @@ CONTAINS
       tl_dom%i_imax=tl_dom%t_dim(1)%i_len
 
       ! change dimension length if not use
-      IF( .NOT. td_var%t_dim(1)%l_use )THEN 
+      IF( .NOT. td_var%t_dim(1)%l_use )THEN
          tl_dom%i_imin=1 ; tl_dom%i_imax=1
       ENDIF
-      IF( .NOT. td_var%t_dim(2)%l_use )THEN 
+      IF( .NOT. td_var%t_dim(2)%l_use )THEN
          tl_dom%i_jmin=1 ; tl_dom%i_jmax=1
       ENDIF
 
@@ -549,8 +549,8 @@ CONTAINS
    !> @brief This subroutine read East West overlap variable value
    !> in an mpp structure.
    !> @details
-   !> The output domain do not overlap north fold boundary. 
-   !> However it overlaps east-west boundary. 
+   !> The output domain do not overlap north fold boundary.
+   !> However it overlaps east-west boundary.
    !>
    !> @author J.Paul
    !> @date October, 2014 - Initial Version
@@ -562,7 +562,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TMPP),   INTENT(IN)    :: td_mpp
       TYPE(TVAR),   INTENT(INOUT) :: td_var
       TYPE(TDOM),   INTENT(IN),   OPTIONAL :: td_dom
@@ -586,10 +586,10 @@ CONTAINS
       tl_dom=dom_copy(td_dom)
 
       ! change dimension length if not use
-      IF( .NOT. td_var%t_dim(1)%l_use )THEN 
+      IF( .NOT. td_var%t_dim(1)%l_use )THEN
          tl_dom%i_imin=1 ; tl_dom%i_imax=1
       ENDIF
-      IF( .NOT. td_var%t_dim(2)%l_use )THEN 
+      IF( .NOT. td_var%t_dim(2)%l_use )THEN
          tl_dom%i_jmin=1 ; tl_dom%i_jmax=1
       ENDIF
 
@@ -615,7 +615,7 @@ CONTAINS
       &                        tl_var1%t_dim(4)%i_len) )
 
       tl_var1=iom_mpp_read_var(td_mpp, TRIM(td_var%c_name), &
-      &                        il_start(:), il_count(:) )      
+      &                        il_start(:), il_count(:) )
 
       IF( td_var%t_dim(jp_I)%l_use )THEN
          ! get second part of domain
@@ -640,11 +640,11 @@ CONTAINS
          &                        tl_var2%t_dim(4)%i_len) )
 
          tl_var2=iom_mpp_read_var(td_mpp, TRIM(td_var%c_name), &
-         &                        il_start(:), il_count(:) ) 
+         &                        il_start(:), il_count(:) )
 
          ! concatenate both part
          td_var=var_concat(tl_var1, tl_var2, jp_I)
-      
+
          ! clean
          CALL var_clean(tl_var1)
          CALL var_clean(tl_var2)
@@ -662,7 +662,7 @@ CONTAINS
 !   SUBROUTINE iom_dom__pole_no_overlap(td_mpp, td_var, td_dom)
    !-------------------------------------------------------------------
    !> @brief This subroutine read north fold variable value
-   !> in an mpp structure. 
+   !> in an mpp structure.
    !> @details
    !> The output domain overlaps
    !> north fold boundary. However it do not overlap east-west boundary.
@@ -677,7 +677,7 @@ CONTAINS
 !
 !      IMPLICIT NONE
 !
-!      ! Argument      
+!      ! Argument
 !      TYPE(TMPP),   INTENT(IN)    :: td_mpp
 !      TYPE(TVAR),   INTENT(INOUT) :: td_var
 !      TYPE(TDOM),   INTENT(IN),   OPTIONAL :: td_dom
@@ -692,7 +692,7 @@ CONTAINS
 !   SUBROUTINE iom_dom__pole_cyclic(td_mpp, td_var, td_dom)
    !-------------------------------------------------------------------
    !> @brief This subroutine read semi global variable value
-   !> in an mpp structure. 
+   !> in an mpp structure.
    !> @details
    !> The output domain overlaps north fold boundary.
    !> and uses cyclic east-west boundary.
@@ -703,12 +703,12 @@ CONTAINS
    !> @param[in] td_mpp    mpp structure
    !> @param[inout] td_var variable structure
    !> @param[in] td_dom    domain structure
-   !> @return variable structure completed 
+   !> @return variable structure completed
    !-------------------------------------------------------------------
 !
 !      IMPLICIT NONE
 !
-!      ! Argument      
+!      ! Argument
 !      TYPE(TMPP),   INTENT(IN)    :: td_mpp
 !      TYPE(TVAR),   INTENT(INOUT) :: td_var
 !      TYPE(TDOM),   INTENT(IN),   OPTIONAL :: td_dom
@@ -723,10 +723,10 @@ CONTAINS
 !   SUBROUTINE iom_dom__pole_overlap(td_mpp, td_var, td_dom)
    !-------------------------------------------------------------------
    !> @brief This subroutine read north fold East West overlap variable value
-   !> in an mpp structure. 
+   !> in an mpp structure.
    !> @details
-   !> The output domain overlaps north fold boundary. 
-   !> and east-west boundary. 
+   !> The output domain overlaps north fold boundary.
+   !> and east-west boundary.
    !>
    !> @author J.Paul
    !> @date October, 2014 - Initial Version
@@ -734,12 +734,12 @@ CONTAINS
    !> @param[in] td_mpp    mpp structure
    !> @param[inout] td_var variable structure
    !> @param[in] td_dom    domain structure
-   !> @return variable structure completed 
+   !> @return variable structure completed
    !-------------------------------------------------------------------
 !
 !      IMPLICIT NONE
 !
-!      ! Argument      
+!      ! Argument
 !      TYPE(TMPP),   INTENT(IN)    :: td_mpp
 !      TYPE(TVAR),   INTENT(INOUT) :: td_var
 !      TYPE(TDOM),   INTENT(IN),   OPTIONAL :: td_dom

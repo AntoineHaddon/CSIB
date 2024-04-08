@@ -9,9 +9,9 @@ use strict;
 use warnings;
 
 use Fcm::Timer qw{timestamp_command};
-use File::Spec::Functions;
 
 # Function declarations
+sub catfile;
 sub basename;
 sub dirname;
 
@@ -184,13 +184,13 @@ sub compile {
 
   } else {   # success
     print 'mv ', $info->{TARGET}, ' ', $objdir, "\n" if $verbose > 1;
-    rename $info->{TARGET}, catfile ($objdir, $info->{TARGET});
+    rename $info->{TARGET}, &catfile ($objdir, $info->{TARGET});
   }
 
   # Move any Fortran module definition files to the INC directory
   my @modfiles = <*.mod *.MOD>;
   for my $file (@modfiles) {
-    rename $file, catfile ($incpath[0], $file);
+    rename $file, &catfile ($incpath[0], $file);
   }
 
   return $rc;
@@ -314,7 +314,7 @@ sub load {
 
     } else {   # success
       print 'mv ', $info->{TARGET}, ' ', $bindir, "\n" if $verbose > 1;
-      rename $info->{TARGET}, catfile ($bindir, $info->{TARGET});
+      rename $info->{TARGET}, &catfile ($bindir, $info->{TARGET});
     }
   }
 
@@ -353,7 +353,7 @@ sub archive {
 
   # Set up the archive command
   my $lib     = &basename ($info->{TARGET});
-  my $tmplib  = catfile (&get_env ('FCM_TMPDIR', 1), $lib);
+  my $tmplib  = &catfile (&get_env ('FCM_TMPDIR', 1), $lib);
   my @ar_cmd  = ();
   push @ar_cmd, (&get_env ('AR', 1), &get_env ('ARFLAGS', 1));
   push @ar_cmd, $tmplib;
@@ -422,7 +422,7 @@ sub archive {
     my $libdir = &get_env ('FCM_LIBDIR', 1);
 
     print 'mv ', $tmplib, ' ', $libdir, "\n" if $verbose > 1;
-    rename $tmplib, catfile ($libdir, $lib);
+    rename $tmplib, &catfile ($libdir, $lib);
   }
 
   return $rc;
@@ -505,6 +505,25 @@ sub get_env {
   }
 
   return $string;
+}
+
+# ------------------------------------------------------------------------------
+# SYNOPSIS
+#   $path = &catfile (@paths);
+#
+# DESCRIPTION
+#   This is a local implementation of what is in the File::Spec module.
+# ------------------------------------------------------------------------------
+
+sub catfile {
+  my @names = split (m!/!, join ('/', @_));
+  my $path  = shift @names;
+
+  for my $name (@names) {
+    $path .= '/' . $name if (length $name);
+  }
+
+  return $path;
 }
 
 # ------------------------------------------------------------------------------

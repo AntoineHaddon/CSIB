@@ -46,7 +46,7 @@ set -o posix
 # EVOLUTIONS
 # ==========
 #
-# $Id: Fprep_agrif.sh 9598 2018-05-15 22:47:16Z nicolasmartin $
+# $Id: Fprep_agrif.sh 14230 2020-12-20 12:46:41Z smasson $
 #
 #
 #
@@ -58,12 +58,13 @@ set -o posix
 if [ "$AGRIFUSE" == 1 ]; then
 #-MPI for AGRIF
 if [ ! -f ${MAIN_DIR}/ext/AGRIF/nemo_mpi.h ];then
-   echo '#if defined key_mpp_mpi' > ${MAIN_DIR}/ext/AGRIF/nemo_mpi.h
-   echo '#define AGRIF_MPI'      >> ${MAIN_DIR}/ext/AGRIF/nemo_mpi.h
-   echo '#endif'                 >> ${MAIN_DIR}/ext/AGRIF/nemo_mpi.h
+   echo '#if ! defined key_mpi_off' > ${MAIN_DIR}/ext/AGRIF/nemo_mpi.h
+   echo '#define AGRIF_MPI'        >> ${MAIN_DIR}/ext/AGRIF/nemo_mpi.h
+   echo '#endif'                   >> ${MAIN_DIR}/ext/AGRIF/nemo_mpi.h
 fi
 
  #- CONV
+export MYARCH=$3
 fcm build ${COMPIL_DIR}/conv.cfg || exit 1
 #C_COMPILER=${CC-cc}
 #gmake CC=${C_COMPILER} -C ${MAIN_DIR}/ext/AGRIF/LIB

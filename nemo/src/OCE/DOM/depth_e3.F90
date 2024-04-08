@@ -35,11 +35,9 @@ MODULE depth_e3
    PUBLIC   depth_to_e3        ! called by usrdef_zgr
    PUBLIC   e3_to_depth        ! called by domzgr.F90
       
-   !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: depth_e3.F90 10069 2018-08-28 14:12:24Z nicolasmartin $
+   !! $Id: depth_e3.F90 12377 2020-02-12 14:39:06Z acc $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS             
@@ -145,7 +143,8 @@ CONTAINS
       !!
       !! ** Action  : - pe3t_1d, pe3w_1d : scale factor of t- and w-point (m)
       !!----------------------------------------------------------------------
-      REAL(wp), DIMENSION(:,:,:), INTENT(in   ) ::   pe3t_3d , pe3w_3d    ! vert. scale factors   [m]
+      REAL(wp), DIMENSION(:,:,:), INTENT(in   )  :: pe3w_3d! vert. scale factors   [m]
+      REAL(dp), DIMENSION(:,:,:), INTENT(in   )  :: pe3t_3d! vert. scale factors   [m]
       REAL(wp), DIMENSION(:,:,:), INTENT(  out) ::   pdept_3d, pdepw_3d   ! depth = SUM( e3 )     [m]
       !
       INTEGER  ::   jk           ! dummy loop indices

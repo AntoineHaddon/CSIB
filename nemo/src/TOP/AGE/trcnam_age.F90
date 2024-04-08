@@ -18,7 +18,7 @@ MODULE trcnam_age
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: trcnam_age.F90 11536 2019-09-11 13:54:18Z smasson $
+   !! $Id: trcnam_age.F90 14842 2021-05-11 13:17:26Z acc $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -47,16 +47,15 @@ CONTAINS
       ! Variable setting
       ctrcnm    (jp_age) = 'Age'
       ctrcln    (jp_age) = 'Sea water age since surface contact'
-      ctrcun    (jp_age) = 'year(s)'
+      ctrcun    (jp_age) = 'year'
       ln_trc_ini(jp_age) = .false.
       ln_trc_sbc(jp_age) = .false.
       ln_trc_cbc(jp_age) = .false.
       ln_trc_obc(jp_age) = .false.
+      ln_trc_ais(jp_age) = .false.
       !
-      REWIND( numnat_ref )              ! Namelist namagedate in reference namelist : AGE parameters
       READ  ( numnat_ref, namage, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namage in reference namelist' )
-      REWIND( numnat_cfg )              ! Namelist namagedate in configuration namelist : AGE parameters
       READ  ( numnat_cfg, namage, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namage in configuration namelist' )
       IF(lwm) WRITE ( numont, namage )

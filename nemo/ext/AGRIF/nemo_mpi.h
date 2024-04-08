@@ -1,3 +1,3 @@
-#if defined key_mpp_mpi
+#if ! defined key_mpi_off
 #define AGRIF_MPI
 #endif

@@ -192,7 +192,7 @@ echo "#################### Start NEMO pre-processing #################"
     acc_cp bfr_coef.nc               $nemo_bfr_coef
   fi 
 
-  if [[ $nemo_ln_subbas == "on" ]]; then
+  if [[ $nemo_ln_diaptr == "on" ]]; then
     is_defined $nemo_subbasins || bail "The variable nemo_subbasins must be defined in the configuration file."
     acc_cp subbasins.nc              $nemo_subbasins  
   fi 
@@ -366,7 +366,7 @@ echo "#################### Start NEMO pre-processing #################"
     [ "$nemo_trc" = "on" ] && ln_rsttr=.false.
 
     # access the istate files
-    is_defined $nemo_data_1m_temperature_rest && is_defined $nemo_data_1m_salinty_rest || bail "The variable nemo_sss_data and nemo_sst_data must be defined in the configuration file."
+    is_defined $nemo_data_1m_temperature_rest && is_defined $nemo_data_1m_salinty_rest || bail "The variable nemo_data_1m_temperature_rest and nemo_data_1m_salinty_rest must be defined when Starting from rest."
     acc_cp data_1m_potential_temperature_nomask.nc $nemo_data_1m_temperature_rest
     acc_cp data_1m_salinity_nomask.nc              $nemo_data_1m_salinty_rest
 

@@ -44,7 +44,7 @@
 !> @endcode
 !>       - id_varid is variabale id
 !>       - cd_name is variabale name or standard name
-!>       - id_start is a integer(4) 1D array of index from which the data 
+!>       - id_start is a integer(4) 1D array of index from which the data
 !>          values will be read [optional]
 !>       - id_count is a integer(4) 1D array of the number of indices selected
 !>          along each dimension [optional]
@@ -58,7 +58,7 @@
 !> J.Paul
 !>
 !> @date November, 2013 - Initial Version
-!> @date August, 2017 
+!> @date August, 2017
 !> - handle use of domain decomposition for monoproc file
 !>
 !> @note Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
@@ -79,7 +79,7 @@ MODULE iom_rstdimg
    ! NOTE_avoid_public_variables_if_possible
 
    ! type and variable
-   PRIVATE ::  im_vnl !< variable name length 
+   PRIVATE ::  im_vnl !< variable name length
 
    ! function and subroutine
    PUBLIC :: iom_rstdimg_open        !< open or create dimg file, return file structure
@@ -103,7 +103,7 @@ MODULE iom_rstdimg
    PRIVATE :: iom_rstdimg__read_var_value  ! read variable value in an opened dimg file, for variable 1,2,3d
    PRIVATE :: iom_rstdimg__get_rec         ! compute record number before writing file
    PRIVATE :: iom_rstdimg__write_header    ! write header in an opened dimg file
-   PRIVATE :: iom_rstdimg__write_var       ! write variables in an opened dimg file 
+   PRIVATE :: iom_rstdimg__write_var       ! write variables in an opened dimg file
 
    ! module variable
    INTEGER(i4), PARAMETER :: im_vnl = 32 ! variable name length
@@ -142,7 +142,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE), INTENT(INOUT)  :: td_file
 
       ! local variable
@@ -161,7 +161,7 @@ CONTAINS
 
             CALL logger_fatal( " OPEN: can not open dimg file "//&
             &               TRIM(td_file%c_name) )
-         
+
          ELSE
 
             CALL logger_info( " CREATE: dimg file "//TRIM(td_file%c_name) )
@@ -245,7 +245,7 @@ CONTAINS
                   CALL logger_fatal("IOM RSTDIMG OPEN: file "//&
                   &  TRIM(td_file%c_name)&
                   &  //" with record length "//TRIM(fct_str(td_file%i_recl)))
-               ENDIF               
+               ENDIF
 
             ELSE
 
@@ -267,7 +267,7 @@ CONTAINS
                   &  TRIM(fct_str(il_status)))
                   CALL logger_error("IOM RSTDIMG  OPEN: file "//&
                   & TRIM(td_file%c_name))
-               ENDIF        
+               ENDIF
 
             ENDIF
 
@@ -298,7 +298,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE), INTENT(INOUT) :: td_file
 
       ! local variable
@@ -311,7 +311,7 @@ CONTAINS
          CALL logger_error( &
          &  " CLOSE: no id associated to file "//TRIM(td_file%c_name))
 
-      ELSE      
+      ELSE
          CALL logger_info( &
          &  " CLOSE: file "//TRIM(td_file%c_name))
 
@@ -321,7 +321,7 @@ CONTAINS
             CALL logger_error("CLOSE "//TRIM(td_file%c_name))
          ENDIF
 
-         td_file%i_id = 0 
+         td_file%i_id = 0
 
       ENDIF
 
@@ -329,12 +329,12 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE iom_rstdimg__get_info(td_file)
    !-------------------------------------------------------------------
-   !> @brief This subroutine get global information in an opened dimg 
+   !> @brief This subroutine get global information in an opened dimg
    !> file.
    !> @details
-   !> It gets the number of variables, the  domain decompistion, 
+   !> It gets the number of variables, the  domain decompistion,
    !> the record of the header.<br/>
-   !> It read dimensions, and add it to dimension structure inside 
+   !> It read dimensions, and add it to dimension structure inside
    !> file structure.
    !>
    !> @author J.Paul
@@ -347,24 +347,24 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE), INTENT(INOUT) :: td_file
 
       ! local variable
       INTEGER(i4) :: il_status
-      INTEGER(i4) :: il_recl                          ! record length 
-      INTEGER(i4) :: il_nx, il_ny, il_nz              ! x,y,z dimension 
-      INTEGER(i4) :: il_n0d, il_n1d, il_n2d, il_n3d   ! number of 0/1/2/3D variables 
+      INTEGER(i4) :: il_recl                          ! record length
+      INTEGER(i4) :: il_nx, il_ny, il_nz              ! x,y,z dimension
+      INTEGER(i4) :: il_n0d, il_n1d, il_n2d, il_n3d   ! number of 0/1/2/3D variables
       INTEGER(i4) :: il_rhd                           ! record of the header infos
 
-      TYPE(TDIM)  :: tl_dim ! dimension structure 
+      TYPE(TDIM)  :: tl_dim ! dimension structure
       !----------------------------------------------------------------
 
       CALL logger_debug( &
       &  " IOM RSTDIMG GET INFO: about dimg file "//TRIM(td_file%c_name))
 
-      ! read first record 
-      READ( td_file%i_id, IOSTAT=il_status, REC=1 )& 
+      ! read first record
+      READ( td_file%i_id, IOSTAT=il_status, REC=1 )&
       &     il_recl,                         &
       &     il_nx, il_ny, il_nz,             &
       &     il_n0d, il_n1d, il_n2d, il_n3d,  &
@@ -390,7 +390,7 @@ CONTAINS
       ! actually fill unused dimension
       CALL dim_reorder(td_file%t_dim)
 
-      ! save total number of variable 
+      ! save total number of variable
       td_file%i_n0d=il_n0d
       td_file%i_n1d=il_n1d
       td_file%i_n2d=il_n2d
@@ -421,15 +421,15 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE), INTENT(INOUT) :: td_file
 
       ! local variable
       TYPE(TATT)  :: tl_att
       INTEGER(i4) :: il_status
-      INTEGER(i4) :: il_recl                          ! record length 
-      INTEGER(i4) :: il_nx, il_ny, il_nz              ! x,y,z dimension 
-      INTEGER(i4) :: il_n0d, il_n1d, il_n2d, il_n3d   ! number of 0/1/2/3D variables 
+      INTEGER(i4) :: il_recl                          ! record length
+      INTEGER(i4) :: il_nx, il_ny, il_nz              ! x,y,z dimension
+      INTEGER(i4) :: il_n0d, il_n1d, il_n2d, il_n3d   ! number of 0/1/2/3D variables
       INTEGER(i4) :: il_iglo, il_jglo                 ! domain global size
       INTEGER(i4) :: il_rhd                           ! record of the header infos
       INTEGER(i4) :: il_niproc, il_njproc, il_nproc   ! domain decomposition
@@ -448,8 +448,8 @@ CONTAINS
       CALL logger_debug( " IOM RSTDIMG GET MPP: dimg file "//&
       &  TRIM(td_file%c_name))
 
-      ! read first record 
-      READ( td_file%i_id, IOSTAT=il_status, REC=1 )& 
+      ! read first record
+      READ( td_file%i_id, IOSTAT=il_status, REC=1 )&
       &     il_recl,                         &
       &     il_nx, il_ny, il_nz,             &
       &     il_n0d, il_n1d, il_n2d, il_n3d,  &
@@ -494,8 +494,8 @@ CONTAINS
 
       ENDIF
 
-      ! read first record 
-      READ( td_file%i_id, IOSTAT=il_status, REC=1 )& 
+      ! read first record
+      READ( td_file%i_id, IOSTAT=il_status, REC=1 )&
       &     il_recl,                         &
       &     il_nx, il_ny, il_nz,             &
       &     il_n0d, il_n1d, il_n2d, il_n3d,  &
@@ -547,7 +547,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE iom_rstdimg__get_file_var(td_file)
    !-------------------------------------------------------------------
-   !> @brief This subroutine read information about variable on an 
+   !> @brief This subroutine read information about variable on an
    !> opened dimg file.
    !> @details
    !> The variables structures inside file structure are then completed.
@@ -562,7 +562,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE), INTENT(INOUT) :: td_file
 
       ! local variable
@@ -581,20 +581,20 @@ CONTAINS
 
          il_start(1) = 1
          il_count(1) = td_file%i_n0d
-         
+
          il_start(2) = 1 + il_count(1)
          il_count(2) = il_start(2) - 1 + td_file%i_n1d
-         
+
          il_start(3) = 1 + il_count(2)
          il_count(3) = il_start(3) - 1 + td_file%i_n2d
-         
+
          il_start(4) = 1 + il_count(3)
          il_count(4) = il_start(4) - 1 + td_file%i_n3d
-         
+
          ALLOCATE( cl_name(td_file%i_nvar), dl_value(td_file%i_nvar) )
 
-         ! read first record 
-         READ( td_file%i_id, IOSTAT=il_status, REC=td_file%i_rhd )& 
+         ! read first record
+         READ( td_file%i_id, IOSTAT=il_status, REC=td_file%i_rhd )&
          & cl_name(il_start(1):il_count(1)), dl_value(il_start(1):il_count(1)),&
          & cl_name(il_start(2):il_count(2)), dl_value(il_start(2):il_count(2)),&
          & cl_name(il_start(3):il_count(3)), dl_value(il_start(3):il_count(3)),&
@@ -645,7 +645,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE iom_rstdimg__get_file_var_0d(td_file, cd_name, dd_value)
    !-------------------------------------------------------------------
-   !> @brief This subroutine put informations about scalar variable 
+   !> @brief This subroutine put informations about scalar variable
    !> inside file structure.
    !>
    !> @author J.Paul
@@ -658,7 +658,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE),                         INTENT(INOUT) :: td_file
       CHARACTER(LEN=im_vnl), DIMENSION(:), INTENT(IN)    :: cd_name
       REAL(dp),              DIMENSION(:), INTENT(IN)    :: dd_value
@@ -675,10 +675,10 @@ CONTAINS
       ! do not use any dimension
       tl_dim(:)%l_use=.FALSE.
       tl_dim(:)%i_len=1
-      
+
       ! case scalar variable
       DO ji = 1, td_file%i_n0d
-   
+
          td_file%t_var(ji)=var_init( TRIM(cd_name(ji)), NF90_DOUBLE, &
          &                           tl_dim(:), dd_fill=0._dp,       &
          &                           id_id=ji, id_rec=1 )
@@ -700,13 +700,13 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE iom_rstdimg__get_file_var_1d(td_file, cd_name, dd_value)
    !-------------------------------------------------------------------
-   !> @brief This subroutine put informations about variable 1D 
+   !> @brief This subroutine put informations about variable 1D
    !> inside file structure.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !> @date July, 2016
-   !>    - change right dimension struct 
+   !>    - change right dimension struct
    !>
    !> @param[inout] td_file   file structure
    !> @param[in] cd_name      array of variable name
@@ -715,7 +715,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE),                         INTENT(INOUT) :: td_file
       CHARACTER(LEN=im_vnl), DIMENSION(:), INTENT(IN)    :: cd_name
       REAL(dp),              DIMENSION(:), INTENT(IN)    :: dd_value
@@ -736,7 +736,7 @@ CONTAINS
          ! do not use X and Y dimension
          tl_dim(1:2)%l_use=.FALSE.
          tl_dim(1:2)%i_len=1
-      
+
          td_file%t_var(ji)=var_init( TRIM(cd_name(ji)), NF90_DOUBLE, &
          &                           tl_dim(:), dd_fill=0._dp,       &
          &                           id_id=ji, id_rec=INT(dd_value(ji),i4) )
@@ -750,7 +750,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE iom_rstdimg__get_file_var_2d(td_file, cd_name, dd_value)
    !-------------------------------------------------------------------
-   !> @brief This subroutine put informations about variable 2D 
+   !> @brief This subroutine put informations about variable 2D
    !> inside file structure.
    !>
    !> @author J.Paul
@@ -763,7 +763,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE),                         INTENT(INOUT) :: td_file
       CHARACTER(LEN=im_vnl), DIMENSION(:), INTENT(IN)    :: cd_name
       REAL(dp),              DIMENSION(:), INTENT(IN)    :: dd_value
@@ -783,7 +783,7 @@ CONTAINS
          tl_dim(:)=dim_copy(td_file%t_dim(:))
          ! do not use Z dimension
          tl_dim(3)%l_use=.FALSE.
-         tl_dim(3)%i_len=1       
+         tl_dim(3)%i_len=1
 
          td_file%t_var(ji)=var_init( TRIM(cd_name(ji)), NF90_DOUBLE, &
          &                           tl_dim(:), dd_fill=0._dp,       &
@@ -798,7 +798,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE iom_rstdimg__get_file_var_3d(td_file, cd_name, dd_value)
    !-------------------------------------------------------------------
-   !> @brief This subroutine put informations about variable 3D 
+   !> @brief This subroutine put informations about variable 3D
    !> inside file structure.
    !>
    !> @author J.Paul
@@ -811,7 +811,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE),                         INTENT(INOUT) :: td_file
       CHARACTER(LEN=im_vnl), DIMENSION(:), INTENT(IN)    :: cd_name
       REAL(dp),              DIMENSION(:), INTENT(IN)    :: dd_value
@@ -828,7 +828,7 @@ CONTAINS
       &       td_file%i_n0d + td_file%i_n1d + td_file%i_n2d + td_file%i_n3d
 
          ! define same dimension as in file
-         tl_dim(:)=dim_copy(td_file%t_dim(:)) 
+         tl_dim(:)=dim_copy(td_file%t_dim(:))
 
          td_file%t_var(ji)=var_init( TRIM(cd_name(ji)), NF90_DOUBLE, &
          &                           tl_dim(:), dd_fill=0._dp,       &
@@ -844,7 +844,7 @@ CONTAINS
    FUNCTION iom_rstdimg__read_dim_id(td_file, id_dimid) &
          & RESULT (tf_dim)
    !-------------------------------------------------------------------
-   !> @brief This function read one dimension in an opened netcdf file, 
+   !> @brief This function read one dimension in an opened netcdf file,
    !> given dimension id.
    !>
    !> @author J.Paul
@@ -852,12 +852,12 @@ CONTAINS
    !>
    !> @param[in] td_file   file structure
    !> @param[in] id_dimid  dimension id
-   !> @return  dimension structure 
+   !> @return  dimension structure
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE), INTENT(IN) :: td_file
       INTEGER(i4), INTENT(IN) :: id_dimid
 
@@ -871,7 +871,7 @@ CONTAINS
          CALL logger_error( &
          &  " READ DIM: no id associated to dimg file "//TRIM(td_file%c_name))
 
-      ELSE      
+      ELSE
 
          tf_dim%i_id=id_dimid
 
@@ -894,7 +894,7 @@ CONTAINS
    FUNCTION iom_rstdimg__read_dim_name(td_file, cd_name) &
          & RESULT (tf_dim)
    !-------------------------------------------------------------------
-   !> @brief This function read one dimension in an opened netcdf file, 
+   !> @brief This function read one dimension in an opened netcdf file,
    !> given dimension name.
    !>
    !> @author J.Paul
@@ -902,12 +902,12 @@ CONTAINS
    !>
    !> @param[in] td_file   file structure
    !> @param[in] cd_name   dimension name
-   !> @return  dimension structure 
+   !> @return  dimension structure
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE),      INTENT(IN) :: td_file
       CHARACTER(LEN=*), INTENT(IN) :: cd_name
 
@@ -924,7 +924,7 @@ CONTAINS
          CALL logger_error( &
          &  " READ DIM: no id associated to dimg file "//TRIM(td_file%c_name))
 
-      ELSE      
+      ELSE
 
          il_dimid=dim_get_id(td_file%t_dim(:), TRIM(cd_name))
          IF( il_dimid /= 0 )THEN
@@ -942,10 +942,10 @@ CONTAINS
    FUNCTION iom_rstdimg__read_var_id(td_file, id_varid, id_start, id_count) &
          & RESULT (tf_var)
    !-------------------------------------------------------------------
-   !> @brief This function read variable value in an opened 
+   !> @brief This function read variable value in an opened
    !> dimg file, given variable id.
    !> @details
-   !> Optionaly, start indices and number of indices selected along each dimension 
+   !> Optionaly, start indices and number of indices selected along each dimension
    !> could be specify in a 4 dimension array (/'x','y','z','t'/)
    !>
    !> @author J.Paul
@@ -953,15 +953,15 @@ CONTAINS
    !>
    !> @param[in] td_file   file structure
    !> @param[in] id_varid  variable id
-   !> @param[in] id_start  index in the variable from which the data values 
+   !> @param[in] id_start  index in the variable from which the data values
    !> will be read
    !> @param[in] id_count  number of indices selected along each dimension
-   !> @return  variable structure 
+   !> @return  variable structure
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE),               INTENT(IN) :: td_file
       INTEGER(i4),               INTENT(IN) :: id_varid
       INTEGER(i4), DIMENSION(:), INTENT(IN), OPTIONAL :: id_start
@@ -994,7 +994,7 @@ CONTAINS
                CALL logger_debug( " READ VAR: variable 0d "//&
                &               TRIM(td_file%t_var(il_varid(1))%c_name)//&
                &               " should be already read ")
-            ENDIF            
+            ENDIF
 
          ELSE
             CALL logger_error( &
@@ -1008,10 +1008,10 @@ CONTAINS
    FUNCTION iom_rstdimg__read_var_name(td_file, cd_name, id_start, id_count) &
          & RESULT (tf_var)
    !-------------------------------------------------------------------
-   !> @brief This function read variable value in an opened 
+   !> @brief This function read variable value in an opened
    !> dimg file, given variable name or standard name.
    !> @details
-   !> Optionaly, start indices and number of indices selected along each dimension 
+   !> Optionaly, start indices and number of indices selected along each dimension
    !> could be specify in a 4 dimension array (/'x','y','z','t'/)
    !>
    !> look first for variable name. If it doesn't
@@ -1021,16 +1021,16 @@ CONTAINS
    !> @date November, 2013 - Initial Version
    !>
    !> @param[in] td_file   file structure
-   !> @param[in] cd_name   variable name or standard name 
-   !> @param[in] id_start  index in the variable from which the data values 
+   !> @param[in] cd_name   variable name or standard name
+   !> @param[in] id_start  index in the variable from which the data values
    !> will be read
    !> @param[in] id_count  number of indices selected along each dimension
-   !> @return  variable structure 
+   !> @return  variable structure
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument 
+      ! Argument
       TYPE(TFILE),                     INTENT(IN) :: td_file
       CHARACTER(LEN=*),                INTENT(IN) :: cd_name
       INTEGER(i4),      DIMENSION(:),  INTENT(IN), OPTIONAL :: id_start
@@ -1074,7 +1074,7 @@ CONTAINS
          ENDIF
 
       ENDIF
-      
+
    END FUNCTION iom_rstdimg__read_var_name
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE iom_rstdimg__read_var_value(td_file, td_var, id_start, id_count)
@@ -1082,7 +1082,7 @@ CONTAINS
    !> @brief This subroutine read variable value in an opened dimg file, for
    !> variable 1,2,3d.
    !> @details
-   !> Optionaly,start indices and number of indices selected along each dimension 
+   !> Optionaly,start indices and number of indices selected along each dimension
    !> could be specify in a 4 dimension array (/'x','y','z','t'/)
    !>
    !> @author J.Paul
@@ -1098,7 +1098,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE),               INTENT(IN)    :: td_file
       TYPE(TVAR) ,               INTENT(INOUT) :: td_var
       INTEGER(i4), DIMENSION(:), INTENT(IN),  OPTIONAL :: id_start
@@ -1190,13 +1190,13 @@ CONTAINS
          ! read values
          CALL logger_trace( &
          &  " READ VAR VALUE: get variable "//TRIM(td_var%c_name)//&
-         &  " in file "//TRIM(td_file%c_name))     
+         &  " in file "//TRIM(td_file%c_name))
 
          IF( ALL(td_var%t_dim(1:3)%l_use) )THEN
             ! 3D variable (X,Y,Z)
             ALLOCATE(dl_tmp( td_var%t_dim(1)%i_len, &
             &                td_var%t_dim(2)%i_len, &
-            &                td_var%t_dim(4)%i_len) )           
+            &                td_var%t_dim(4)%i_len) )
             DO ji=1,td_var%t_dim(3)%i_len
                READ(td_file%i_id, IOSTAT=il_status, REC=td_var%i_rec +ji-1) &
                &  dl_tmp(:,:,:)
@@ -1227,10 +1227,10 @@ CONTAINS
                   &            TRIM(td_var%c_name))
             ENDIF
          ENDIF
- 
+
          ! Allocate space to hold variable value in structure
          IF( ASSOCIATED(td_var%d_value) )THEN
-            DEALLOCATE(td_var%d_value)   
+            DEALLOCATE(td_var%d_value)
          ENDIF
 
          ALLOCATE(td_var%d_value( il_count(1), &
@@ -1252,7 +1252,7 @@ CONTAINS
          ! new dimension length
          td_var%t_dim(:)%i_len=il_count(:)
 
-         ! extract value 
+         ! extract value
          td_var%d_value(:,:,:,:) = dl_value(il_start(1):il_start(1)+il_count(1)-1,&
          &                                  il_start(2):il_start(2)+il_count(2)-1,&
          &                                  il_start(3):il_start(3)+il_count(3)-1,&
@@ -1262,7 +1262,7 @@ CONTAINS
 
       ENDIF
 
-      ! force to change _FillValue to avoid mistake 
+      ! force to change _FillValue to avoid mistake
       ! with dummy zero _FillValue
       IF( td_var%d_fill == 0._dp )THEN
          CALL var_chg_FillValue(td_var)
@@ -1288,14 +1288,14 @@ CONTAINS
    !> @date September, 2014
    !> - use iom_rstdimg__get_rec
    !> @date August, 2017
-   !> - split in write_header and write_var 
+   !> - split in write_header and write_var
    !>
    !> @param[inout] td_file   file structure
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE), INTENT(INOUT) :: td_file
 
       ! local variable
@@ -1321,7 +1321,7 @@ CONTAINS
             ! close and open file with right record length
             CALL iom_rstdimg_close(td_file)
 
-            ! compute record number to be used 
+            ! compute record number to be used
             ! and add variable no0d, no1d,.. if need be
             CALL iom_rstdimg__get_rec(td_file)
 
@@ -1386,14 +1386,14 @@ CONTAINS
    !> @date September, 2014
    !> - use iom_rstdimg__get_rec
    !> @date August, 2017
-   !> - split in write_header and write_var 
+   !> - split in write_header and write_var
    !>
    !> @param[inout] td_file   file structure
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE), INTENT(INOUT) :: td_file
 
       ! local variable
@@ -1408,7 +1408,7 @@ CONTAINS
          IF( td_file%l_wrt )THEN
 
             ! write variable in file
-            CALL iom_rstdimg__write_var(td_file) 
+            CALL iom_rstdimg__write_var(td_file)
 
          ELSE
 
@@ -1436,7 +1436,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE), INTENT(INOUT) :: td_file
 
       ! local variable
@@ -1464,13 +1464,13 @@ CONTAINS
          ALLOCATE( il_tmp1d( td_file%t_dim(3)%i_len ) )
          il_tmp1d(:)=-1
 
-         tl_var=var_init( 'no1d', il_tmp1d(:)) 
+         tl_var=var_init( 'no1d', il_tmp1d(:))
 
          DEALLOCATE( il_tmp1d )
 
-         CALL file_add_var( td_file, tl_var ) 
+         CALL file_add_var( td_file, tl_var )
       ENDIF
- 
+
       IF( td_file%i_n2d == 0 )THEN
          ! create var
          ALLOCATE( il_tmp2d( td_file%t_dim(1)%i_len, &
@@ -1481,10 +1481,10 @@ CONTAINS
 
          DEALLOCATE( il_tmp2d )
 
-         CALL file_add_var( td_file, tl_var ) 
+         CALL file_add_var( td_file, tl_var )
 
       ENDIF
- 
+
       IF( td_file%i_n3d == 0 )THEN
          ! create var
          ALLOCATE( il_tmp3d( td_file%t_dim(1)%i_len, &
@@ -1496,7 +1496,7 @@ CONTAINS
 
          DEALLOCATE( il_tmp3d )
 
-         CALL file_add_var( td_file, tl_var ) 
+         CALL file_add_var( td_file, tl_var )
       ENDIF
 
       ! clean
@@ -1533,7 +1533,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE iom_rstdimg__write_header(td_file)
    !-------------------------------------------------------------------
-   !> @brief This subroutine write header in an opened dimg 
+   !> @brief This subroutine write header in an opened dimg
    !> file in write mode.
    !>
    !> @author J.Paul
@@ -1546,7 +1546,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE), INTENT(INOUT) :: td_file
 
       ! local variable
@@ -1567,7 +1567,7 @@ CONTAINS
       INTEGER(i4), DIMENSION(:), ALLOCATABLE :: il_ldj
       INTEGER(i4), DIMENSION(:), ALLOCATABLE :: il_lei
       INTEGER(i4), DIMENSION(:), ALLOCATABLE :: il_lej
-      
+
       ! loop indices
       INTEGER(i4) :: ji
       !----------------------------------------------------------------
@@ -1612,7 +1612,7 @@ CONTAINS
       &   il_njproc  <= 0 .OR. &
       &   il_nproc <= 0 .OR. &
       &   il_nproc > il_niproc * il_njproc )THEN
-      
+
          CALL logger_error(" WRITE FILE: invalid domain splitting ")
 
          CALL logger_debug(" WRITE FILE: niproc "//TRIM(fct_str(il_niproc)) )
@@ -1620,7 +1620,7 @@ CONTAINS
          CALL logger_debug(" WRITE FILE: nproc "//TRIM(fct_str(il_nproc)) )
 
       ENDIF
-      
+
       ! get domain number
       il_ind=att_get_index( td_file%t_att, "DOMAIN_number" )
       il_area = 0
@@ -1668,7 +1668,7 @@ CONTAINS
       IF( il_ind /= 0 )THEN
          il_jmpp(:) = INT(td_file%t_att(il_ind)%d_value(:))
       ENDIF
-      
+
       ! check left bottom indices
       IF( ANY(il_impp(:)==0) .OR. ANY(il_jmpp(:)==0) )THEN
          CALL logger_warn("WRITE FILE: no data for subdomain left bottom indices")
@@ -1704,7 +1704,7 @@ CONTAINS
       IF( il_ind /= 0 )THEN
          il_ldj(:) = INT(td_file%t_att(il_ind)%d_value(:))
       ENDIF
-      
+
       ! check first indoor indices
       IF( ANY(il_ldi(:)==0) .OR. ANY(il_ldj(:)==0) )THEN
          CALL logger_warn("WRITE FILE: no data for subdomain first indoor indices")
@@ -1726,7 +1726,7 @@ CONTAINS
       ! check last indoor indices
       IF( ANY(il_lei(:)==0) .OR. ANY(il_lej(:)==0) )THEN
          CALL logger_warn("WRITE FILE: no data for subdomain last indoor indices")
-      ENDIF      
+      ENDIF
 
       ! write file header
       WRITE(td_file%i_id, IOSTAT=il_status, REC=1 )&
@@ -1752,7 +1752,7 @@ CONTAINS
       &           il_ldi,  il_ldj, &
       &           il_lei,  il_lej  )
 
-   END SUBROUTINE iom_rstdimg__write_header 
+   END SUBROUTINE iom_rstdimg__write_header
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE iom_rstdimg__write_var(td_file)
    !-------------------------------------------------------------------
@@ -1768,7 +1768,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE), INTENT(INOUT) :: td_file
 
       ! local variable
@@ -1795,11 +1795,11 @@ CONTAINS
 
          cl_name(ji)  = TRIM(td_file%t_var(ji)%c_name)
          dl_value(ji) = REAL(td_file%t_var(ji)%i_rec,dp)
-         
+
          SELECT CASE (TRIM(td_file%t_var(ji)%c_name))
             CASE('no0d','no1d','no2d','no3d')
             CASE DEFAULT
-               
+
                ! use scale factor and offset
                WHERE( td_file%t_var(ji)%d_value(:,:,:,:) /= &
                &      td_file%t_var(ji)%d_fill )
@@ -1819,7 +1819,7 @@ CONTAINS
                         il_rec = td_file%t_var(ji)%i_rec
                      CASE(3)
                         il_rec = td_file%t_var(ji)%i_rec + jk -1
-                  END SELECT 
+                  END SELECT
                   WRITE( td_file%i_id, IOSTAT=il_status, REC=il_rec ) &
                   &  td_file%t_var(ji)%d_value(:,:,jk,1)
                   CALL fct_err(il_status)
@@ -1837,13 +1837,13 @@ CONTAINS
 
       il_start(1) = 1
       il_count(1) = td_file%i_n0d
-      
+
       il_start(2) = 1 + il_count(1)
       il_count(2) = il_start(2) - 1 + td_file%i_n1d
-      
+
       il_start(3) = 1 + il_count(2)
       il_count(3) = il_start(3) - 1 + td_file%i_n2d
-      
+
       il_start(4) = 1 + il_count(3)
       il_count(4) = il_start(4) - 1 + td_file%i_n3d
 

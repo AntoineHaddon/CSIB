@@ -30,7 +30,7 @@ MODULE asmbkg
    USE zdftke             ! TKE vertical physics
    USE eosbn2             ! Equation of state (eos_bn2 routine)
    USE zdfmxl             ! Mixed layer depth
-   USE dom_oce     , ONLY :   ndastp
+   USE dom_oce     , ONLY : ndastp, l_istiled
    USE in_out_manager     ! I/O manager
    USE iom                ! I/O module
    USE asmpar             ! Parameters for the assmilation interface
@@ -46,12 +46,12 @@ MODULE asmbkg
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: asmbkg.F90 10425 2018-12-19 21:54:16Z smasson $
+   !! $Id: asmbkg.F90 15417 2021-10-20 14:16:29Z lovato $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE asm_bkg_wri( kt )
+   SUBROUTINE asm_bkg_wri( kt, Kmm )
       !!-----------------------------------------------------------------------
       !!                  ***  ROUTINE asm_bkg_wri ***
       !!
@@ -64,6 +64,7 @@ CONTAINS
       !!              at analysis time.
       !!-----------------------------------------------------------------------
       INTEGER, INTENT( IN ) :: kt               ! Current time-step
+      INTEGER, INTENT( IN ) :: Kmm              ! time level index
       !
       CHARACTER (LEN=50) :: cl_asmbkg
       CHARACTER (LEN=50) :: cl_asmdin
@@ -72,87 +73,90 @@ CONTAINS
       REAL(wp) :: zdate        ! Date
       !!-----------------------------------------------------------------------
 
-      !                                !-------------------------------------------
-      IF( kt == nitbkg_r ) THEN        ! Write out background at time step nitbkg_r
-         !                             !-----------------------------------========
-         !
-         WRITE(cl_asmbkg, FMT='(A,".nc")' ) TRIM( c_asmbkg )
-         cl_asmbkg = TRIM( cl_asmbkg )
-         INQUIRE( FILE = cl_asmbkg, EXIST = llok )
-         !
-         IF( .NOT. llok ) THEN
-            IF(lwp) WRITE(numout,*) ' Setting up assimilation background file '// TRIM( c_asmbkg )
-            !
-            !                                      ! Define the output file        
-            CALL iom_open( c_asmbkg, inum, ldwrt = .TRUE. )
-            !
-            IF( nitbkg_r == nit000 - 1 ) THEN      ! Treat special case when nitbkg = 0
-               zdate = REAL( ndastp )
-               IF( ln_zdftke ) THEN                   ! read turbulent kinetic energy ( en )
-                  IF(lwp) WRITE(numout,*) ' Reading TKE (en) from restart...'
-                  CALL tke_rst( nit000, 'READ' )
-               ENDIF
-            ELSE
-               zdate = REAL( ndastp )
-            ENDIF
-            !
-            !                                      ! Write the information
-            CALL iom_rstput( kt, nitbkg_r, inum, 'rdastp' , zdate             )
-            CALL iom_rstput( kt, nitbkg_r, inum, 'un'     , un                )
-            CALL iom_rstput( kt, nitbkg_r, inum, 'vn'     , vn                )
-            CALL iom_rstput( kt, nitbkg_r, inum, 'tn'     , tsn(:,:,:,jp_tem) )
-            CALL iom_rstput( kt, nitbkg_r, inum, 'sn'     , tsn(:,:,:,jp_sal) )
-            CALL iom_rstput( kt, nitbkg_r, inum, 'sshn'   , sshn              )
-            IF( ln_zdftke )   CALL iom_rstput( kt, nitbkg_r, inum, 'en'     , en                )
-            !
-            CALL iom_close( inum )
-         ENDIF
-         !
-      ENDIF
 
-      !                                !-------------------------------------------
-      IF( kt == nitdin_r ) THEN        ! Write out background at time step nitdin_r
-         !                             !-----------------------------------========
-         !
-         WRITE(cl_asmdin, FMT='(A,".nc")' ) TRIM( c_asmdin )
-         cl_asmdin = TRIM( cl_asmdin )
-         INQUIRE( FILE = cl_asmdin, EXIST = llok )
-         !
-         IF( .NOT. llok ) THEN
-            IF(lwp) WRITE(numout,*) ' Setting up assimilation background file '// TRIM( c_asmdin )
-            !
-            !                                      ! Define the output file        
-            CALL iom_open( c_asmdin, inum, ldwrt = .TRUE. )
-            !
-            IF( nitdin_r == nit000 - 1 ) THEN      ! Treat special case when nitbkg = 0
-
-               zdate = REAL( ndastp )
-            ELSE
-               zdate = REAL( ndastp )
-            ENDIF
-            !
-            !                                      ! Write the information
-            CALL iom_rstput( kt, nitdin_r, inum, 'rdastp' , zdate             )
-            CALL iom_rstput( kt, nitdin_r, inum, 'un'     , un                )
-            CALL iom_rstput( kt, nitdin_r, inum, 'vn'     , vn                )
-            CALL iom_rstput( kt, nitdin_r, inum, 'tn'     , tsn(:,:,:,jp_tem) )
-            CALL iom_rstput( kt, nitdin_r, inum, 'sn'     , tsn(:,:,:,jp_sal) )
-            CALL iom_rstput( kt, nitdin_r, inum, 'sshn'   , sshn              )
+      IF( .NOT. l_istiled .OR. ntile == nijtile ) THEN                       ! Do only on the last tile
+          !                                !-------------------------------------------
+          IF( kt == nitbkg_r ) THEN        ! Write out background at time step nitbkg_r
+             !                             !-----------------------------------========
+             !
+             WRITE(cl_asmbkg, FMT='(A,".nc")' ) TRIM( c_asmbkg )
+             cl_asmbkg = TRIM( cl_asmbkg )
+             INQUIRE( FILE = cl_asmbkg, EXIST = llok )
+             !
+             IF( .NOT. llok ) THEN
+                IF(lwp) WRITE(numout,*) ' Setting up assimilation background file '// TRIM( c_asmbkg )
+                !
+                !                                      ! Define the output file        
+                CALL iom_open( c_asmbkg, inum, ldwrt = .TRUE. )
+                !
+                IF( nitbkg_r == nit000 - 1 ) THEN      ! Treat special case when nitbkg = 0
+                   zdate = REAL( ndastp )
+                   IF( ln_zdftke ) THEN                   ! read turbulent kinetic energy ( en )
+                      IF(lwp) WRITE(numout,*) ' Reading TKE (en) from restart...'
+                      CALL tke_rst( nit000, 'READ' )
+                   ENDIF
+                ELSE
+                   zdate = REAL( ndastp )
+                ENDIF
+                !
+                !                                      ! Write the information
+                CALL iom_rstput( kt, nitbkg_r, inum, 'rdastp' , zdate                )
+                CALL iom_rstput( kt, nitbkg_r, inum, 'un'     , uu(:,:,:,Kmm)        )
+                CALL iom_rstput( kt, nitbkg_r, inum, 'vn'     , vv(:,:,:,Kmm)        )
+                CALL iom_rstput( kt, nitbkg_r, inum, 'tn'     , ts(:,:,:,jp_tem,Kmm) )
+                CALL iom_rstput( kt, nitbkg_r, inum, 'sn'     , ts(:,:,:,jp_sal,Kmm) )
+                CALL iom_rstput( kt, nitbkg_r, inum, 'sshn'   , ssh(:,:,Kmm)         )
+                IF( ln_zdftke )   CALL iom_rstput( kt, nitbkg_r, inum, 'en'     , en )
+                !
+                CALL iom_close( inum )
+             ENDIF
+             !
+          ENDIF
+    
+          !                                !-------------------------------------------
+          IF( kt == nitdin_r ) THEN        ! Write out background at time step nitdin_r
+             !                             !-----------------------------------========
+             !
+             WRITE(cl_asmdin, FMT='(A,".nc")' ) TRIM( c_asmdin )
+             cl_asmdin = TRIM( cl_asmdin )
+             INQUIRE( FILE = cl_asmdin, EXIST = llok )
+             !
+             IF( .NOT. llok ) THEN
+                IF(lwp) WRITE(numout,*) ' Setting up assimilation background file '// TRIM( c_asmdin )
+                !
+                !                                      ! Define the output file        
+                CALL iom_open( c_asmdin, inum, ldwrt = .TRUE. )
+                !
+                IF( nitdin_r == nit000 - 1 ) THEN      ! Treat special case when nitbkg = 0
+    
+                   zdate = REAL( ndastp )
+                ELSE
+                   zdate = REAL( ndastp )
+                ENDIF
+                !
+                !                                      ! Write the information
+                CALL iom_rstput( kt, nitdin_r, inum, 'rdastp' , zdate                )
+                CALL iom_rstput( kt, nitdin_r, inum, 'un'     , uu(:,:,:,Kmm)        )
+                CALL iom_rstput( kt, nitdin_r, inum, 'vn'     , vv(:,:,:,Kmm)        )
+                CALL iom_rstput( kt, nitdin_r, inum, 'tn'     , ts(:,:,:,jp_tem,Kmm) )
+                CALL iom_rstput( kt, nitdin_r, inum, 'sn'     , ts(:,:,:,jp_sal,Kmm) )
+                CALL iom_rstput( kt, nitdin_r, inum, 'sshn'   , ssh(:,:,Kmm)         )
 #if defined key_si3
-            IF( nn_ice == 2 ) THEN
-	            IF( ALLOCATED(at_i) ) THEN
-                  CALL iom_rstput( kt, nitdin_r, inum, 'iceconc', at_i(:,:)   )
-               ELSE
-		            CALL ctl_warn('asm_bkg_wri: Ice concentration not written to background ',   &
-		               &          'as ice variable at_i not allocated on this timestep')
-	            ENDIF
-            ENDIF
+                IF( nn_ice == 2 ) THEN
+    	            IF( ALLOCATED(at_i) ) THEN
+                      CALL iom_rstput( kt, nitdin_r, inum, 'iceconc', at_i(:,:)   )
+                   ELSE
+    		            CALL ctl_warn('asm_bkg_wri: Ice concentration not written to background ',   &
+    		               &          'as ice variable at_i not allocated on this timestep')
+    	            ENDIF
+                ENDIF
 #endif
-            !
-            CALL iom_close( inum )
-         ENDIF
-         !
-      ENDIF
+                !
+                CALL iom_close( inum )
+             ENDIF
+             !
+          ENDIF
+      ENDIF ! check for last tile
       !                    
    END SUBROUTINE asm_bkg_wri
 

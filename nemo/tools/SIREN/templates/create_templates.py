@@ -3,7 +3,7 @@
 """
 This script create template of namelist for Siren.
 
-see create_templates.py --help 
+see create_templates.py --help
 """
 import os
 import argparse
@@ -28,7 +28,7 @@ def get_default(i,var):
 def get_nam(i,o,d):
     """
     Copy input file in output file, line by line.
-    
+
     If line contains filterlist parameter and src:
         - copy the line without the src option
         - copy the file to be include line by line

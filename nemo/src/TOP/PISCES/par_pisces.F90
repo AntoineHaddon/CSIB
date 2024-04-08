@@ -5,12 +5,13 @@ MODULE par_pisces
    !!======================================================================
    !! History :   2.0  !  2007-12  (C. Ethe, G. Madec)  revised architecture
    !!----------------------------------------------------------------------
+   USE par_kind
 
    IMPLICIT NONE
 
    ! productive layer depth
-   INTEGER, PUBLIC ::   jpkb       !: first vertical layers where biology is active
-   INTEGER, PUBLIC ::   jpkbm1     !: first vertical layers where biology is active
+   INTEGER, PUBLIC ::   jpkb      !: first vertical layers where biology is active
+   INTEGER, PUBLIC ::   jpkbm1    !: first vertical layers where biology is active
 
    ! assign an index in trc arrays for each LOBSTER prognostic variables
    INTEGER, PUBLIC ::   jpdet     !: detritus                   
@@ -59,12 +60,18 @@ MODULE par_pisces
    !!---------------------------------------------------------------------
    !!   Default                                   No CFC geochemical model
    ! Starting/ending PISCES do-loop indices (N.B. no PISCES : jpl_pcs < jpf_pcs the do-loop are never done)
-   INTEGER, PUBLIC  ::   jp_pcs0  !: First index of PISCES tracers
-   INTEGER, PUBLIC  ::   jp_pcs1  !: Last  index of PISCES tracers
+   INTEGER, PUBLIC  ::  jp_pcs0  !: First index of PISCES tracers
+   INTEGER, PUBLIC  ::  jp_pcs1  !: Last  index of PISCES tracers
+
+   REAL(wp), PUBLIC ::  mMass_C  = 12.00      ! Molar mass of carbon
+   REAL(wp), PUBLIC ::  mMass_N  = 14.00      ! Molar mass of nitrogen
+   REAL(wp), PUBLIC ::  mMass_P  = 31.00      ! Molar mass of phosphorus
+   REAL(wp), PUBLIC ::  mMass_Fe = 55.85      ! Molar mass of iron
+   REAL(wp), PUBLIC ::  mMass_Si = 28.00      ! Molar mass of silver
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: par_pisces.F90 10416 2018-12-19 11:45:43Z aumont $ 
+   !! $Id: par_pisces.F90 15459 2021-10-29 08:19:18Z cetlod $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!======================================================================
 END MODULE par_pisces

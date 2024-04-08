@@ -29,15 +29,17 @@ MODULE zdfddm
    PUBLIC   zdf_ddm       ! called by step.F90
 
    !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
+#  include "do_loop_substitute.h90"
+#  include "single_precision_substitute.h90"
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: zdfddm.F90 10068 2018-08-28 14:09:04Z nicolasmartin $
+   !! $Id: zdfddm.F90 14853 2021-05-12 13:07:30Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE zdf_ddm( kt, p_avm, p_avt, p_avs )
+   SUBROUTINE zdf_ddm( kt, Kmm, p_avm, p_avt, p_avs )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE zdf_ddm  ***
       !!                    
@@ -67,7 +69,8 @@ CONTAINS
       !!
       !! References :   Merryfield et al., JPO, 29, 1124-1142, 1999.
       !!----------------------------------------------------------------------
-      INTEGER, INTENT(in   ) ::   kt       ! ocean time-step indexocean time step
+      INTEGER, INTENT(in   ) ::   kt       ! ocean time-step index
+      INTEGER, INTENT(in   ) ::   Kmm      ! ocean time level index
       REAL(wp), DIMENSION(:,:,:), INTENT(inout) ::   p_avm   !  Kz on momentum    (w-points)
       REAL(wp), DIMENSION(:,:,:), INTENT(inout) ::   p_avt   !  Kz on temperature (w-points)
       REAL(wp), DIMENSION(:,:,:), INTENT(  out) ::   p_avs   !  Kz on salinity    (w-points)
@@ -75,10 +78,12 @@ CONTAINS
       INTEGER  ::   ji, jj , jk     ! dummy loop indices
       REAL(wp) ::   zaw, zbw, zrw   ! local scalars
       REAL(wp) ::   zdt, zds
-      REAL(wp) ::   zinr, zrr       !   -      -
-      REAL(wp) ::   zavft, zavfs    !   -      -
+      REAL(wp) ::   zinr            !   -      -
+      REAL(dp) ::         zrr       !   -      -
+      REAL(wp) ::   zavft           !   -      -
+      REAL(dp) ::          zavfs    !   -      -
       REAL(wp) ::   zavdt, zavds    !   -      -
-      REAL(wp), DIMENSION(jpi,jpj) ::   zrau, zmsks, zmskf, zmskd1, zmskd2, zmskd3
+      REAL(wp), DIMENSION(A2D(nn_hls)) ::   zrau, zmsks, zmskf, zmskd1, zmskd2, zmskd3
       !!----------------------------------------------------------------------
       !
       !                                                ! ===============
@@ -90,80 +95,71 @@ CONTAINS
 !!gm                     ==>>>  test in the loop instead of use of mask arrays
 !!gm                            and many acces in memory
          
-         DO jj = 1, jpj                !==  R=zrau = (alpha / beta) (dk[t] / dk[s])  ==!
-            DO ji = 1, jpi
-               zrw =   ( gdepw_n(ji,jj,jk  ) - gdept_n(ji,jj,jk) )   &
-!!gm please, use e3w_n below 
-                  &  / ( gdept_n(ji,jj,jk-1) - gdept_n(ji,jj,jk) ) 
-               !
-               zaw = (  rab_n(ji,jj,jk,jp_tem) * (1. - zrw) + rab_n(ji,jj,jk-1,jp_tem) * zrw  )  &
-                   &    * tmask(ji,jj,jk) * tmask(ji,jj,jk-1)
-               zbw = (  rab_n(ji,jj,jk,jp_sal) * (1. - zrw) + rab_n(ji,jj,jk-1,jp_sal) * zrw  )  &
-                   &    * tmask(ji,jj,jk) * tmask(ji,jj,jk-1)
-               !
-               zdt = zaw * ( tsn(ji,jj,jk-1,jp_tem) - tsn(ji,jj,jk,jp_tem) )
-               zds = zbw * ( tsn(ji,jj,jk-1,jp_sal) - tsn(ji,jj,jk,jp_sal) ) 
-               IF( ABS( zds) <= 1.e-20_wp )   zds = 1.e-20_wp
-               zrau(ji,jj) = MAX(  1.e-20, zdt / zds  )    ! only retains positive value of zrau
-            END DO
-         END DO
+         DO_2D( nn_hls-1, nn_hls-1, nn_hls-1, nn_hls-1 )           !==  R=zrau = (alpha / beta) (dk[t] / dk[s])  ==!
+            zrw =   ( gdepw(ji,jj,jk  ,Kmm) - gdept(ji,jj,jk,Kmm) )   &
+!!gm please, use e3w at Kmm below 
+               &  / ( gdept(ji,jj,jk-1,Kmm) - gdept(ji,jj,jk,Kmm) ) 
+            !
+            zaw = (  rab_n(ji,jj,jk,jp_tem) * (1. - zrw) + rab_n(ji,jj,jk-1,jp_tem) * zrw  )  &
+                &    * tmask(ji,jj,jk) * tmask(ji,jj,jk-1)
+            zbw = (  rab_n(ji,jj,jk,jp_sal) * (1. - zrw) + rab_n(ji,jj,jk-1,jp_sal) * zrw  )  &
+                &    * tmask(ji,jj,jk) * tmask(ji,jj,jk-1)
+            !
+            zdt = zaw * ( ts(ji,jj,jk-1,jp_tem,Kmm) - ts(ji,jj,jk,jp_tem,Kmm) )
+            zds = zbw * ( ts(ji,jj,jk-1,jp_sal,Kmm) - ts(ji,jj,jk,jp_sal,Kmm) ) 
+            IF( ABS( zds) <= 1.e-20_wp )   zds = 1.e-20_wp
+            zrau(ji,jj) = MAX(  1.e-20, zdt / zds  )    ! only retains positive value of zrau
+         END_2D
 
-         DO jj = 1, jpj                !==  indicators  ==!
-            DO ji = 1, jpi
-               ! stability indicator: msks=1 if rn2>0; 0 elsewhere
-               IF( rn2(ji,jj,jk) + 1.e-12  <= 0. ) THEN   ;   zmsks(ji,jj) = 0._wp
-               ELSE                                       ;   zmsks(ji,jj) = 1._wp
-               ENDIF
-               ! salt fingering indicator: msksf=1 if R>1; 0 elsewhere            
-               IF( zrau(ji,jj) <= 1.             ) THEN   ;   zmskf(ji,jj) = 0._wp
-               ELSE                                       ;   zmskf(ji,jj) = 1._wp
-               ENDIF
-               ! diffusive layering indicators: 
-               !     ! mskdl1=1 if 0< R <1; 0 elsewhere
-               IF( zrau(ji,jj) >= 1.             ) THEN   ;   zmskd1(ji,jj) = 0._wp
-               ELSE                                       ;   zmskd1(ji,jj) = 1._wp
-               ENDIF
-               !     ! mskdl2=1 if 0< R <0.5; 0 elsewhere
-               IF( zrau(ji,jj) >= 0.5            ) THEN   ;   zmskd2(ji,jj) = 0._wp
-               ELSE                                       ;   zmskd2(ji,jj) = 1._wp
-               ENDIF
-               !   mskdl3=1 if 0.5< R <1; 0 elsewhere
-               IF( zrau(ji,jj) <= 0.5 .OR. zrau(ji,jj) >= 1. ) THEN   ;   zmskd3(ji,jj) = 0._wp
-               ELSE                                                   ;   zmskd3(ji,jj) = 1._wp
-               ENDIF
-            END DO
-         END DO
-         ! mask zmsk in order to have avt and avs masked
-         zmsks(:,:) = zmsks(:,:) * wmask(:,:,jk)
-
+         DO_2D( nn_hls-1, nn_hls-1, nn_hls-1, nn_hls-1 )           !==  indicators  ==!
+            ! stability indicator: msks=1 if rn2>0; 0 elsewhere
+            IF( rn2(ji,jj,jk) + 1.e-12  <= 0. ) THEN   ;   zmsks(ji,jj) = 0._wp
+            ELSE                                       ;   zmsks(ji,jj) = 1._wp * wmask(ji,jj,jk)   ! mask so avt and avs masked
+            ENDIF
+            ! salt fingering indicator: msksf=1 if R>1; 0 elsewhere            
+            IF( zrau(ji,jj) <= 1.             ) THEN   ;   zmskf(ji,jj) = 0._wp
+            ELSE                                       ;   zmskf(ji,jj) = 1._wp
+            ENDIF
+            ! diffusive layering indicators: 
+            !     ! mskdl1=1 if 0< R <1; 0 elsewhere
+            IF( zrau(ji,jj) >= 1.             ) THEN   ;   zmskd1(ji,jj) = 0._wp
+            ELSE                                       ;   zmskd1(ji,jj) = 1._wp
+            ENDIF
+            !     ! mskdl2=1 if 0< R <0.5; 0 elsewhere
+            IF( zrau(ji,jj) >= 0.5            ) THEN   ;   zmskd2(ji,jj) = 0._wp
+            ELSE                                       ;   zmskd2(ji,jj) = 1._wp
+            ENDIF
+            !   mskdl3=1 if 0.5< R <1; 0 elsewhere
+            IF( zrau(ji,jj) <= 0.5 .OR. zrau(ji,jj) >= 1. ) THEN   ;   zmskd3(ji,jj) = 0._wp
+            ELSE                                                   ;   zmskd3(ji,jj) = 1._wp
+            ENDIF
+         END_2D
 
          ! Update avt and avs
          ! ------------------
          ! Constant eddy coefficient: reset to the background value
-         DO jj = 1, jpj
-            DO ji = 1, jpi
-               zinr = 1._wp / zrau(ji,jj)
-               ! salt fingering
-               zrr = zrau(ji,jj) / rn_hsbfr
-               zrr = zrr * zrr
-               zavfs = rn_avts / ( 1 + zrr*zrr*zrr ) * zmsks(ji,jj) * zmskf(ji,jj)
-               zavft = 0.7 * zavfs * zinr
-               ! diffusive layering
-               zavdt = 1.3635e-6 * EXP(  4.6 * EXP( -0.54*(zinr-1.) )  ) * zmsks(ji,jj) * zmskd1(ji,jj)
-               zavds = zavdt * zmsks(ji,jj) * (  ( 1.85 * zrau(ji,jj) - 0.85 ) * zmskd3(ji,jj)   &
-                  &                             +  0.15 * zrau(ji,jj)          * zmskd2(ji,jj)  )
-               ! add to the eddy viscosity coef. previously computed
-               p_avs(ji,jj,jk) = p_avt(ji,jj,jk) + zavfs + zavds
-               p_avt(ji,jj,jk) = p_avt(ji,jj,jk) + zavft + zavdt
-               p_avm(ji,jj,jk) = p_avm(ji,jj,jk) + MAX( zavft + zavdt, zavfs + zavds )
-            END DO
-         END DO
+         DO_2D_OVR( nn_hls-1, nn_hls-1, nn_hls-1, nn_hls-1 )
+            zinr = 1._wp / zrau(ji,jj)
+            ! salt fingering
+            zrr = zrau(ji,jj) / rn_hsbfr
+            zrr = zrr * zrr
+            zavfs = rn_avts / ( 1. + zrr*zrr*zrr ) * zmsks(ji,jj) * zmskf(ji,jj)
+            zavft = 0.7 * zavfs * zinr
+            ! diffusive layering
+            zavdt = 1.3635e-6 * EXP(  4.6 * EXP( -0.54*(zinr-1.) )  ) * zmsks(ji,jj) * zmskd1(ji,jj)
+            zavds = zavdt * zmsks(ji,jj) * (  ( 1.85 * zrau(ji,jj) - 0.85 ) * zmskd3(ji,jj)   &
+               &                             +  0.15 * zrau(ji,jj)          * zmskd2(ji,jj)  )
+            ! add to the eddy viscosity coef. previously computed
+            p_avs(ji,jj,jk) = p_avt(ji,jj,jk) + zavfs + zavds
+            p_avt(ji,jj,jk) = p_avt(ji,jj,jk) + zavft + zavdt
+            p_avm(ji,jj,jk) = p_avm(ji,jj,jk) + MAX( zavft + zavdt, zavfs + zavds )
+         END_2D
          !                                                ! ===============
       END DO                                              !   End of slab
       !                                                   ! ===============
       !
-      IF(ln_ctl) THEN
-         CALL prt_ctl(tab3d_1=avt , clinfo1=' ddm  - t: ', tab3d_2=avs , clinfo2=' s: ', kdim=jpk)
+      IF(sn_cfctl%l_prtctl) THEN
+         CALL prt_ctl(tab3d_1=CASTDP(avt), clinfo1=' ddm  - t: ', tab3d_2=CASTDP(avs) , clinfo2=' s: ')
       ENDIF
       !
    END SUBROUTINE zdf_ddm

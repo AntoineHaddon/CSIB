@@ -31,8 +31,8 @@ MODULE cpl_cancpl
   use lbclnk                       ! ocean lateral boundary conditions (or mpp link)
   use timing
   use par_kind, only : wp
-  use lib_mpp, only : mpi_comm_oce, ctl_stop, mppgather, mppsync, mppscatter, mppstop, mpp_max
-  use lib_mpp, only : reconstruct_global_2d, mppgather_scalar_integer
+  use lib_mpp, only : mpi_comm_oce, ctl_stop, mppgather, mppsync, mppscatter, mppstop
+  use lib_mpp, only : reconstruct_global_2d
   use cpl_types, only : srcv, ssnd, FLD_C, FLD_CPL, nmaxfld
 
   implicit none
@@ -48,7 +48,6 @@ MODULE cpl_cancpl
   public :: check_value2d, check_value3d
   public :: query_start_cpl2ocn
 
-  logical, public, parameter ::   lk_cpl = .true.   !: coupled flag
   integer, public, save      ::   oasis_idle = 0    !: return code if no send or recv
   integer, public, save      ::   oasis_rcv  = 1    !: return code if field received
   integer, public, save      ::   oasis_snd  = 2    !: return code if field sent
@@ -60,8 +59,6 @@ MODULE cpl_cancpl
   integer            ::   nerror        ! return error code
 
   integer :: nn_fsbc, nn_ice
-  !--- tmp space for use with MPI gather/scatter operations
-  real(wp), allocatable, save, dimension(:,:,:), private :: png
 
   !--- tmp char space
   character(512), save :: strng
@@ -536,8 +533,8 @@ contains
      !--- in the call to cpl_initialize_events
 
      !--- Set a value for nemo_rn_rdt, defined in com_cpl
-     !--- rn_rdt is defined in the module dom_oce
-     nemo_rn_rdt = nint(rn_rdt,8)
+     !--- rn_Dt is defined in the module dom_oce
+     nemo_rn_rdt = nint(rn_Dt,8)
 
      !--- Set a value for nemo_nn_ice, defined in com_cpl
      nemo_nn_ice = nn_ice
@@ -839,109 +836,6 @@ contains
   END SUBROUTINE reconstruct_global_2d_ptr
 
 
-  subroutine copy_1d_to_3d_global(wrk, png)
-    !------------------------------------------------------------------------
-    !--- Copy values from a global 1D wrk array containing data received from
-    !--- the agcm to global 3D array suitable for use with mppscatter
-    !------------------------------------------------------------------------
-    real(kind=8), intent(in) :: wrk(:)
-    real(wp), intent(out) :: png(jpi,jpj,jpnij)
-
-    !--- Local
-    real(kind=8) :: glob_arr(jpiglo, jpjglo)
-
-    glob_arr = 0.0_8
-    glob_arr(1:jpiglo,1:jpjglo) = reshape( wrk(1:jpiglo*jpjglo), (/ jpiglo,jpjglo /) )
-
-    call copy_2d_to_3d_global(glob_arr, png)
-
-  end subroutine copy_1d_to_3d_global
-
-  subroutine copy_2d_to_3d_global(glob_a2d, png)
-    !------------------------------------------------------------------------
-    !--- Copy values from a global 2D array dimensioned (jpiglo, jpjglo)
-    !--- to a global 3D array suitable for use with mppscatter
-    !------------------------------------------------------------------------
-    real(kind=8) :: glob_a2d(jpiglo, jpjglo)
-    real(wp), intent(out) :: png(jpi,jpj,jpnij)
-
-    !--- Local
-    integer :: ji, jj, jn, ji_glob, jj_glob
-
-    do jn = 1,jpnij
-      !--- jn loops over all subdomains
-      png(:,:,jn) = 0.0_8
-      do ji=nldit(jn),nleit(jn)
-        do jj=nldjt(jn),nlejt(jn)
-          !--- nimppt(jn),njmppt(jn) are the global indicies corresponding to the
-          !--- (1,1) grid cell in the local index space of the current subdomain
-          ji_glob = ji + nimppt(jn) - 1
-          jj_glob = jj + njmppt(jn) - 1
-          if ( ji_glob < 1      .or. jj_glob < 1 .or. &
-               ji_glob > jpiglo .or. jj_glob > jpjglo ) then
-            write(6,*)'copy_2d_to_3d_global: Global index is out of range.'
-            write(6,*)'jn, ji, jj, ji_glob, jj_glob: ',jn, ji, jj, ji_glob, jj_glob
-            call ctl_stop("STOP", "copy_2d_to_3d_global", "Global index is out of range")
-          endif
-          png(ji,jj,jn) = glob_a2d(ji_glob,jj_glob)
-        enddo
-      enddo
-    enddo
-
-  end subroutine copy_2d_to_3d_global
-
-  subroutine copy_3d_to_1d_global(wrk, png)
-    !------------------------------------------------------------------------
-    !--- Copy values from a global 3D array containing data from a recent
-    !--- call to mppgather to a global 1D wrk array to be sent to the agcm
-    !------------------------------------------------------------------------
-    real(kind=8), intent(out) :: wrk(:)
-    real(wp), intent(in) :: png(jpi,jpj,jpnij)
-
-    !--- Local
-    real(kind=8) :: glob_arr(jpiglo, jpjglo)
-
-    call  copy_3d_to_2d_global(glob_arr, png)
-
-    wrk = 0.0_8
-    wrk(1:jpiglo*jpjglo) = reshape( glob_arr(1:jpiglo,1:jpjglo), (/ jpiglo*jpjglo /) )
-
-  end subroutine copy_3d_to_1d_global
-
-  subroutine copy_3d_to_2d_global(glob_a2d, png)
-    !------------------------------------------------------------------------
-    !--- Copy values from a global 3D array containing data from a recent
-    !--- call to mppgather to a global 2D array to be sent to the agcm
-    !------------------------------------------------------------------------
-    real(kind=8), intent(out) :: glob_a2d(jpiglo, jpjglo)
-    real(wp), intent(in) :: png(jpi,jpj,jpnij)
-
-    !--- Local
-    integer :: ji, jj, jn, ji_glob, jj_glob
-
-    glob_a2d = 0.0_8
-    do jn = 1,jpnij
-      !--- jn loops over all subdomains
-      do ji=nldit(jn),nleit(jn)
-        do jj=nldjt(jn),nlejt(jn)
-          !--- nimppt(jn),njmppt(jn) are the global indicies corresponding to the
-          !--- (1,1) grid cell in the local index space of the current subdomain
-          ji_glob = ji + nimppt(jn) - 1
-          jj_glob = jj + njmppt(jn) - 1
-          if ( ji_glob < 1      .or. jj_glob < 1 .or. &
-               ji_glob > jpiglo .or. jj_glob > jpjglo ) then
-            write(6,*)'copy_3d_to_2d_global: Global index is out of range.'
-            write(6,*)'jn, ji, jj, ji_glob, jj_glob: ',jn, ji, jj, ji_glob, jj_glob
-            call ctl_stop("STOP", "copy_3d_to_2d_global", "Global index is out of range")
-          endif
-          glob_a2d(ji_glob,jj_glob) = png(ji,jj,jn)
-        enddo
-      enddo
-    enddo
-
-  end subroutine copy_3d_to_2d_global
-
-
   subroutine cpl_cancpl_snd( kid, kstep, pdata, kinfo )
      !!---------------------------------------------------------------------
      !!              ***  ROUTINE cpl_cancpl_snd  ***
@@ -965,7 +859,7 @@ contains
      integer,  intent(out) :: kinfo
 
      !-- Local
-     integer :: jc
+     integer :: jc,ij,jj
      integer :: ldbg=1
      integer :: freq
      integer(kind=impi) :: rank, ierr
@@ -1015,7 +909,7 @@ contains
 
        kinfo = OASIS_Snd
 
-       if ( ln_ctl .and. verbose > 1 ) then
+       if ( sn_cfctl%l_prtctl .and. verbose > 1 ) then
          !--- Write info for each sub-domain to the ocean output file
          write(numout,*) '****************'
          write(numout,*) 'cpl_cancpl_snd: Outgoing ', ssnd(kid)%clname
@@ -1029,7 +923,7 @@ contains
        endif
 
        IF( ln_timing )   call timing_start('cancpl_snd_gather')
-       !--- Gather data into the global array png
+       !--- Gather data into the global array global_array
        call reconstruct_global_2d(pdata(:,:,jc),0,global_array)
        IF( ln_timing )   call timing_stop('cancpl_snd_gather')
 
@@ -1045,9 +939,8 @@ contains
          call flush(numout)
        endif
 
-       !--- Map the the global 3D array png onto the 1D wrk array
+       !--- Map the the global 3D array global_array onto the 1D wrk array
        wrk(1:jpiglo*jpjglo) = reshape(global_array,[jpiglo*jpjglo])
-      !  call copy_3d_to_1d_global(wrk, png)
 
        if ( verbose > 2 ) then
          !--- Count the number of NaNs in the wrk array
@@ -1116,7 +1009,7 @@ contains
      integer :: verbose=1
      integer (kind=impi) :: status(MPI_status_size)
      type(FLD_CPL), pointer :: cpl_ptr
-     real, dimension(jpiglo,jpjglo) :: wrk2d
+     real, dimension(jpiglo,jpjglo) :: global_array
      !!--------------------------------------------------------------------
 
      !---Determine the rank of the calling process in model_communicator
@@ -1167,42 +1060,40 @@ contains
          !--- Receive the global array from the coupler
          call recv_data_rec(wrk, ibuf, cpl_master, trim(srcv(kid)%clname), dbg=ldbg)
 
-         !--- Map the 1D wrk array onto the global 3D array png
-        !  call copy_1d_to_3d_global(wrk, png)
        endif
 
-       IF( ln_timing )   call timing_start('cancpl_rcv_scatter')
        !--- Scatter the global array onto each NEMO task
-       wrk2d = RESHAPE(wrk,[jpiglo,jpjglo])
+       IF( ln_timing )   call timing_start('cancpl_rcv_scatter')
+       global_array = RESHAPE(wrk,[jpiglo,jpjglo])
        call mppsync
-       call mppscatter(wrk2d, 0, pdata(:,:,jc))
+       call mppscatter(global_array, 0, pdata(:,:,jc))
        call mppsync
        IF( ln_timing )   call timing_stop('cancpl_rcv_scatter')
 
        if ( rank == ocn_master .and. verbose > 2 ) then
-         !--- Count the number of NaNs in the global png array
-         idx = count( png /= png )
+         !--- Count the number of NaNs in the global_array
+         idx = count( global_array /= global_array )
          write(numout,*)'cpl_cancpl_rcv: ',trim(srcv(kid)%clname),'  Before lbc_lnk'
-         write(numout,*)'cpl_cancpl_rcv: ',trim(srcv(kid)%clname),'  Nans in png = ',idx
+         write(numout,*)'cpl_cancpl_rcv: ',trim(srcv(kid)%clname),'  Nans in global_array = ',idx
          write(numout,*)'cpl_cancpl_rcv: ',trim(srcv(kid)%clname),'  min,max,avg = ', &
-             minval(png),maxval(png),sum(png)/real(size(png),kind=8)
+             minval(global_array),maxval(global_array),sum(global_array)/real(size(global_array),kind=8)
          call flush(numout)
        endif
 
        !--- Fill overlap areas and extra hallows and check periodicity
-       call lbc_lnk( 'cpl_cancpl', pdata(:,:,jc), srcv(kid)%clgrid, srcv(kid)%nsgn )
+       call lbc_lnk( 'cpl_cancpl_rcv', pdata(:,:,jc), srcv(kid)%clgrid, srcv(kid)%nsgn )
 
        if ( rank == ocn_master .and. verbose > 2 ) then
-         !--- Count the number of NaNs in the global png array
-         idx = count( png /= png )
-           ! write(numout,*)'cpl_cancpl_rcv: ',trim(srcv(kid)%clname),'  After lbc_lnk'
-           write(numout,*)'cpl_cancpl_rcv: ',trim(srcv(kid)%clname),'  Nans in png = ',idx
-           ! write(numout,*)'cpl_cancpl_rcv: ',trim(srcv(kid)%clname),'  min,max,avg = ', &
-           !     minval(png),maxval(png),sum(png)/real(size(png),kind=8)
+         !--- Count the number of NaNs in the global global_array array
+         idx = count( global_array /= global_array )
+           write(numout,*)'cpl_cancpl_rcv: ',trim(srcv(kid)%clname),'  After lbc_lnk'
+           write(numout,*)'cpl_cancpl_rcv: ',trim(srcv(kid)%clname),'  Nans in global_array = ',idx
+           write(numout,*)'cpl_cancpl_rcv: ',trim(srcv(kid)%clname),'  min,max,avg = ', &
+               minval(global_array),maxval(global_array),sum(global_array)/real(size(global_array),kind=8)
            call flush(numout)
        endif
 
-       if ( ln_ctl .and. verbose > 1 ) then
+       if ( sn_cfctl%l_prtctl .and. verbose > 1 ) then
          !--- Write info for each sub-domain to the ocean output file
          write(numout,*) '****************'
          write(numout,*) 'cpl_cancpl_rcv: Incoming ', srcv(kid)%clname
@@ -1264,7 +1155,6 @@ contains
     !!      MPI communication.
     !!----------------------------------------------------------------------
 
-    if ( allocated(png) ) DEALLOCATE( png )
     call mppstop
     !--- TODO --- Also tell coupler that the ocean has stopped
 
@@ -1324,7 +1214,6 @@ contains
   public :: cpl_cancpl_finalize
   public :: set_cancpl_params
   public :: query_start_cpl2ocn
-  logical, public, parameter ::   lk_cpl = .false.   !: coupled flag
 
 contains
 

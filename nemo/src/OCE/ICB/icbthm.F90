@@ -33,7 +33,7 @@ MODULE icbthm
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: icbthm.F90 13263 2020-07-08 07:55:54Z ayoung $
+   !! $Id: icbthm.F90 15088 2021-07-06 13:03:34Z acc $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -48,22 +48,23 @@ CONTAINS
       !!----------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt   ! timestep number, just passed to icb_utl_print_berg
       !
-      INTEGER  ::   ii, ij
-      REAL(wp) ::   zM, zT, zW, zL, zSST, zVol, zLn, zWn, zTn, znVol, zIC, zDn
+      INTEGER  ::   ii, ij, jk, ikb
+      REAL(wp) ::   zM, zT, zW, zL, zSST, zVol, zLn, zWn, zTn, znVol, zIC, zDn, zD, zvb, zub, ztb
+      REAL(wp) ::   zMv, zMe, zMb, zmelt, zdvo, zdvob, zdva, zdM, zSs, zdMe, zdMb, zdMv
       REAL(wp) ::   zSSS, zfzpt
-      REAL(wp) ::   zMv, zMe, zMb, zmelt, zdvo, zdva, zdM, zSs, zdMe, zdMb, zdMv
       REAL(wp) ::   zMnew, zMnew1, zMnew2, zheat_hcflux, zheat_latent, z1_12
       REAL(wp) ::   zMbits, znMbits, zdMbitsE, zdMbitsM, zLbits, zAbits, zMbb
-      REAL(wp) ::   zxi, zyj, zff, z1_rday, z1_e1e2, zdt, z1_dt, z1_dt_e1e2
+      REAL(wp) ::   zxi, zyj, zff, z1_rday, z1_e1e2, zdt, z1_dt, z1_dt_e1e2, zdepw
+      REAL(wp), DIMENSION(jpk) :: ztoce, zuoce, zvoce, ze3t, zzMv
       TYPE(iceberg), POINTER ::   this, next
       TYPE(point)  , POINTER ::   pt
       !
-      COMPLEX(wp), DIMENSION(jpi,jpj) :: cicb_melt, cicb_hflx
+      COMPLEX(dp), DIMENSION(jpi,jpj) :: cicb_melt, cicb_hflx
       !!----------------------------------------------------------------------
       !
       !! initialiaze cicb_melt and cicb_heat
-      cicb_melt = CMPLX( 0.e0, 0.e0, wp ) 
-      cicb_hflx = CMPLX( 0.e0, 0.e0, wp ) 
+      cicb_melt = CMPLX( 0.e0, 0.e0, dp ) 
+      cicb_hflx = CMPLX( 0.e0, 0.e0, dp ) 
       !
       z1_rday = 1._wp / rday
       z1_12   = 1._wp / 12._wp
@@ -84,9 +85,20 @@ CONTAINS
          !
          pt => this%current_point
          nknberg = this%number(1)
-         CALL icb_utl_interp( pt%xi, pt%e1, pt%uo, pt%ui, pt%ua, pt%ssh_x,   &
-            &                 pt%yj, pt%e2, pt%vo, pt%vi, pt%va, pt%ssh_y,   &
-            &                 pt%sst, pt%cn, pt%hi, zff, pt%sss )
+
+         CALL icb_utl_interp( pt%xi, pt%yj,            &   ! position
+             &                 pssu=pt%ssu, pua=pt%ua, &   ! oce/atm velocities
+             &                 pssv=pt%ssv, pva=pt%va, &   ! oce/atm velocities
+             &                 psst=pt%sst, pcn=pt%cn, &
+             &                 psss=pt%sss             )
+
+         IF ( nn_sample_rate > 0 .AND. MOD(kt-1,nn_sample_rate) == 0 ) THEN
+            CALL icb_utl_interp( pt%xi, pt%yj, pe1=pt%e1, pe2=pt%e2,                 &
+               &                 pui=pt%ui, pssh_i=pt%ssh_x, &
+               &                 pvi=pt%vi, pssh_j=pt%ssh_y, &
+               &                 phi=pt%hi,                  &
+               &                 plat=pt%lat, plon=pt%lon )
+         END IF
          !
          zSST = pt%sst
          zSSS = pt%sss
@@ -94,31 +106,62 @@ CONTAINS
          zIC  = MIN( 1._wp, pt%cn + rn_sicn_shift )     ! Shift sea-ice concentration       !!gm ???
          zM   = pt%mass
          zT   = pt%thickness                               ! total thickness
-       ! D   = (rn_rho_bergs/pp_rho_seawater)*zT ! draught (keel depth)
-       ! F   = zT - D ! freeboard
+         zD   = rho_berg_1_oce * zT                        ! draught (keel depth)
          zW   = pt%width
          zL   = pt%length
          zxi  = pt%xi                                      ! position in (i,j) referential
          zyj  = pt%yj
          ii  = INT( zxi + 0.5 )                            ! T-cell of the berg
-         ii  = mi1( ii )
+         ii  = mi1( ii + (nn_hls-1) )
          ij  = INT( zyj + 0.5 )              
-         ij  = mj1( ij )
+         ij  = mj1( ij + (nn_hls-1) )
          zVol = zT * zW * zL
 
          ! Environment
-         zdvo = SQRT( (pt%uvel-pt%uo)**2 + (pt%vvel-pt%vo)**2 )
-         zdva = SQRT( (pt%ua  -pt%uo)**2 + (pt%va  -pt%vo)**2 )
-         zSs  = 1.5_wp * SQRT( zdva ) + 0.1_wp * zdva                ! Sea state      (eqn M.A9)
+         ! default sst, ssu and ssv
+         ! ln_M2016: use temp, u and v profile
+         IF ( ln_M2016 ) THEN
 
+            ! load t, u, v and e3 profile at icb position
+            CALL icb_utl_interp( pt%xi, pt%yj, ptoce=ztoce, puoce=zuoce, pvoce=zvoce, pe3t=ze3t )
+            
+            !compute bottom level
+            CALL icb_utl_getkb( pt%kb, ze3t, zD )
+
+            ikb = MIN(pt%kb,mbkt(ii,ij))                             ! limit pt%kb by mbkt 
+                                                                     ! => bottom temperature used to fill ztoce(mbkt:jpk)
+            ztb = ztoce(ikb)                                         ! basal temperature
+            zub = zuoce(ikb)
+            zvb = zvoce(ikb)
+         ELSE
+            ztb = pt%sst
+            zub = pt%ssu
+            zvb = pt%ssv
+         END IF
+
+         zdvob = SQRT( (pt%uvel-zub)**2 + (pt%vvel-zvb)**2 )        ! relative basal velocity
+         zdva  = SQRT( (pt%ua  -pt%ssu)**2 + (pt%va  -pt%ssv)**2 )  ! relative wind
+         zSs   = 1.5_wp * SQRT( zdva ) + 0.1_wp * zdva              ! Sea state      (eqn M.A9)
+         !
          ! Melt rates in m/s (i.e. division by rday)
-         zMv = MAX( 7.62d-3*zSST+1.29d-3*(zSST**2)                    , 0._wp ) * z1_rday      ! Buoyant convection at sides (eqn M.A10)
+         ! Buoyant convection at sides (eqn M.A10)
+         IF ( ln_M2016 ) THEN
+            ! averaging along all the iceberg draft
+            zzMv(:) = MAX( 7.62d-3*ztoce(:)+1.29d-3*(ztoce(:)**2), 0._wp ) * z1_rday
+            CALL icb_utl_zavg(zMv, zzMv, ze3t, zD, ikb )
+         ELSE
+            zMv = MAX( 7.62d-3*zSST+1.29d-3*(zSST**2), 0._wp ) * z1_rday
+         END IF
+         !
+         ! Basal turbulent melting     (eqn M.A7 )
          IF ( zSST > zfzpt ) THEN                                                              ! Calculate basal melting only if SST above freezing point  
-            zMb = MAX( 0.58_wp*(zdvo**0.8_wp)*(zSST+4.0_wp)/(zL**0.2_wp) , 0._wp ) * z1_rday   ! Basal turbulent melting     (eqn M.A7 )
+            zMb = MAX( 0.58_wp*(zdvob**0.8_wp)*(ztb+4.0_wp)/(zL**0.2_wp) , 0._wp ) * z1_rday
          ELSE
             zMb = 0._wp                                                                        ! No basal melting if SST below freezing point     
          ENDIF
-         zMe = MAX( z1_12*(zSST+2.)*zSs*(1._wp+COS(rpi*(zIC**3)))     , 0._wp ) * z1_rday      ! Wave erosion                (eqn M.A8 )
+         !
+         ! Wave erosion                (eqn M.A8 )
+         zMe = MAX( z1_12*(zSST+2.)*zSs*(1._wp+COS(rpi*(zIC**3)))     , 0._wp ) * z1_rday
 
          IF( ln_operator_splitting ) THEN      ! Operator split update of volume/mass
             zTn    = MAX( zT - zMb*zdt , 0._wp )         ! new total thickness (m)
@@ -159,7 +202,7 @@ CONTAINS
             znMbits  = zMbits + zdMbitsE                                             ! add new bergy bits to mass (kg)
             zLbits   = MIN( zL, zW, zT, 40._wp )                                     ! assume bergy bits are smallest dimension or 40 meters
             zAbits   = ( zMbits / rn_rho_bergs ) / zLbits                            ! Effective bottom area (assuming T=Lbits)
-            zMbb     = MAX( 0.58_wp*(zdvo**0.8_wp)*(zSST+2._wp) /   &
+            zMbb     = MAX( 0.58_wp*(zdvob**0.8_wp)*(zSST+2._wp) /   &
                &                              ( zLbits**0.2_wp ) , 0._wp ) * z1_rday ! Basal turbulent melting (for bits)
             zMbb     = rn_rho_bergs * zAbits * zMbb                                  ! in kg/s
             zdMbitsM = MIN( zMbb*zdt , znMbits )                                     ! bergy bits mass lost to melting (kg)
@@ -183,7 +226,7 @@ CONTAINS
             ! iceberg melt
             !! the use of DDPDD function for the cumulative sum is needed for reproducibility
             zmelt    = ( zdM - ( zdMbitsE - zdMbitsM ) ) * z1_dt   ! kg/s
-            CALL DDPDD( CMPLX( zmelt * z1_e1e2, 0.e0, wp ), cicb_melt(ii,ij) )
+            CALL DDPDD( CMPLX( zmelt * z1_e1e2, 0.e0, dp ), cicb_melt(ii,ij) )
             !
             ! iceberg heat flux
             !! the use of DDPDD function for the cumulative sum is needed for reproducibility
@@ -192,12 +235,12 @@ CONTAINS
             !!     melting is always zero. Leaving the term in the code until such a time as this is fixed. DS.
             zheat_hcflux = zmelt * pt%heat_density       ! heat content flux : kg/s x J/kg = J/s
             zheat_latent = - zmelt * rLfus               ! latent heat flux:  kg/s x J/kg = J/s
-            CALL DDPDD( CMPLX( ( zheat_hcflux + zheat_latent ) * z1_e1e2, 0.e0, wp ), cicb_hflx(ii,ij) )
+            CALL DDPDD( CMPLX( ( zheat_hcflux + zheat_latent ) * z1_e1e2, 0.e0, dp ), cicb_hflx(ii,ij) )
             !
             ! diagnostics
             CALL icb_dia_melt( ii, ij, zMnew, zheat_hcflux, zheat_latent, this%mass_scaling,       &
                &                       zdM, zdMbitsE, zdMbitsM, zdMb, zdMe,   &
-               &                       zdMv, z1_dt_e1e2 )
+               &                       zdMv, z1_dt_e1e2, z1_e1e2 )
          ELSE
             WRITE(numout,*) 'icb_thm: berg ',this%number(:),' appears to have grounded  at ',narea,ii,ij
             CALL icb_utl_print_berg( this, kt )
@@ -206,7 +249,7 @@ CONTAINS
          ENDIF
 
          ! Rolling
-         zDn = ( rn_rho_bergs / pp_rho_seawater ) * zTn       ! draught (keel depth)
+         zDn = rho_berg_1_oce * zTn       ! draught (keel depth)
          IF( zDn > 0._wp .AND. MAX(zWn,zLn) < SQRT( 0.92*(zDn**2) + 58.32*zDn ) ) THEN
             zT  = zTn
             zTn = zWn
@@ -223,6 +266,7 @@ CONTAINS
          next=>this%next
 
 !!gm  add a test to avoid over melting ?
+!!pm  I agree, over melting could break conservation (more melt than calving)
 
          IF( zMnew <= 0._wp ) THEN       ! Delete the berg if completely melted
             CALL icb_utl_delete( first_berg, this )
@@ -237,8 +281,8 @@ CONTAINS
          !
       END DO
       !
-      berg_grid%floating_melt = REAL(cicb_melt,wp)    ! kg/m2/s
-      berg_grid%calving_hflx  = REAL(cicb_hflx,wp)
+      berg_grid%floating_melt = REAL(cicb_melt,dp)    ! kg/m2/s
+      berg_grid%calving_hflx  = REAL(cicb_hflx,dp)
       !
       ! now use melt and associated heat flux in ocean (or not)
       !

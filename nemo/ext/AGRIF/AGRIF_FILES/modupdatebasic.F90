@@ -1,5 +1,5 @@
 !
-! $Id: modupdatebasic.F90 5656 2015-07-31 08:55:56Z timgraham $
+! $Id: modupdatebasic.F90 14975 2021-06-11 09:05:32Z jchanut $
 !
 !     AGRIF (Adaptive Grid Refinement In Fortran)
 !
@@ -48,10 +48,10 @@ subroutine Agrif_basicupdate_copy1d ( x, y, np, nc, s_parent, s_child, ds_parent
     real, dimension(nc), intent(in)     :: y            !< Fine input data from child
     integer,             intent(in)     :: np           !< Length of parent array
     integer,             intent(in)     :: nc           !< Length of child  array
-    real,                intent(in)     :: s_parent     !< Parent grid position (s_root = 0)
-    real,                intent(in)     :: s_child      !< Child  grid position (s_root = 0)
-    real,                intent(in)     :: ds_parent    !< Parent grid dx (ds_root = 1)
-    real,                intent(in)     :: ds_child     !< Child  grid dx (ds_root = 1)
+    real(kind=8),        intent(in)     :: s_parent     !< Parent grid position (s_root = 0)
+    real(kind=8),        intent(in)     :: s_child      !< Child  grid position (s_root = 0)
+    real(kind=8),        intent(in)     :: ds_parent    !< Parent grid dx (ds_root = 1)
+    real(kind=8),        intent(in)     :: ds_child     !< Child  grid dx (ds_root = 1)
 !---------------------------------------------------------------------------------------------------
     integer :: i, locind_child_left, coeffraf
 !
@@ -83,10 +83,10 @@ subroutine Agrif_basicupdate_copy1d_before ( nc2, np, nc, s_parent, s_child, ds_
     integer,             intent(in)     :: nc2          !< Length of parent array
     integer,             intent(in)     :: np           !< Length of parent array
     integer,             intent(in)     :: nc           !< Length of child  array
-    real,                intent(in)     :: s_parent     !< Parent grid position (s_root = 0)
-    real,                intent(in)     :: s_child      !< Child  grid position (s_root = 0)
-    real,                intent(in)     :: ds_parent    !< Parent grid dx (ds_root = 1)
-    real,                intent(in)     :: ds_child     !< Child  grid dx (ds_root = 1)
+    real(kind=8),        intent(in)     :: s_parent     !< Parent grid position (s_root = 0)
+    real(kind=8),        intent(in)     :: s_child      !< Child  grid position (s_root = 0)
+    real(kind=8),        intent(in)     :: ds_parent    !< Parent grid dx (ds_root = 1)
+    real(kind=8),        intent(in)     :: ds_child     !< Child  grid dx (ds_root = 1)
     integer,             intent(in)     :: dir          !< Direction
 !---------------------------------------------------------------------------------------------------
     integer, dimension(:,:), allocatable    :: indchildcopy_tmp
@@ -156,11 +156,12 @@ subroutine Agrif_basicupdate_average1d ( x, y, np, nc, s_parent, s_child, ds_par
     REAL, DIMENSION(np), intent(out)    :: x
     REAL, DIMENSION(nc), intent(in)     :: y
     INTEGER,             intent(in)     :: np,nc
-    REAL,                intent(in)     :: s_parent,  s_child
-    REAL,                intent(in)     :: ds_parent, ds_child
+    REAL(kind=8),        intent(in)     :: s_parent,  s_child
+    REAL(kind=8),        intent(in)     :: ds_parent, ds_child
 !
     INTEGER :: i, ii, locind_child_left, coeffraf
-    REAL    :: xpos, invcoeffraf
+    REAL(kind=8)    :: xpos
+    REAL ::  invcoeffraf
     INTEGER :: nbnonnuls
     INTEGER :: diffmod
 !
@@ -219,6 +220,70 @@ subroutine Agrif_basicupdate_average1d ( x, y, np, nc, s_parent, s_child, ds_par
 !---------------------------------------------------------------------------------------------------
 end subroutine Agrif_basicupdate_average1d
 !===================================================================================================
+
+!===================================================================================================
+!  subroutine Agrif_basicupdate_max1d
+!
+!> Carries out an update by taking the maximum on a parent grid (vector x)from its child grid (vector y).
+!---------------------------------------------------------------------------------------------------
+subroutine Agrif_basicupdate_max1d ( x, y, np, nc, s_parent, s_child, ds_parent, ds_child )
+!---------------------------------------------------------------------------------------------------
+    REAL, DIMENSION(np), intent(out)    :: x
+    REAL, DIMENSION(nc), intent(in)     :: y
+    INTEGER,             intent(in)     :: np,nc
+    REAL(kind=8),        intent(in)     :: s_parent,  s_child
+    REAL(kind=8),        intent(in)     :: ds_parent, ds_child
+!
+    INTEGER :: i, ii, locind_child_left, coeffraf
+    REAL(kind=8) :: xpos
+    INTEGER :: nbnonnuls
+    INTEGER :: diffmod
+!
+    coeffraf = nint(ds_parent/ds_child)
+!
+    if (coeffraf == 1) then
+        locind_child_left = 1 + nint((s_parent - s_child)/ds_child)
+        x(1:np) = y(locind_child_left:locind_child_left+np-1)
+        return
+    endif
+!
+    xpos = s_parent
+    x = -HUGE(1.0)
+!
+    diffmod = 0
+!
+    IF ( mod(coeffraf,2) == 0 ) diffmod = 1
+!
+    locind_child_left = 1 + agrif_int((xpos - s_child)/ds_child)
+!
+    IF (Agrif_UseSpecialValueInUpdate) THEN
+        do i = 1,np
+            nbnonnuls = 0
+!CDIR NOVECTOR
+            do ii = -coeffraf/2+locind_child_left+diffmod, &
+                     coeffraf/2+locind_child_left
+                IF (y(ii) /= Agrif_SpecialValueFineGrid) THEN
+                    x(i) = max(x(i),y(ii))
+                ENDIF
+            enddo
+            locind_child_left = locind_child_left + coeffraf
+        enddo
+    ELSE
+!
+!CDIR ALTCODE
+        do i = 1,np
+!CDIR NOVECTOR
+            do ii = -coeffraf/2+locind_child_left+diffmod, &
+                     coeffraf/2+locind_child_left
+                x(i) = max(x(i),y(ii))
+            enddo
+            locind_child_left = locind_child_left + coeffraf
+        enddo
+    ENDIF
+!---------------------------------------------------------------------------------------------------
+end subroutine Agrif_basicupdate_max1d
+!===================================================================================================
+
 !
 !===================================================================================================
 !  subroutine Average1dPrecompute
@@ -228,13 +293,13 @@ end subroutine Agrif_basicupdate_average1d
 subroutine Average1dPrecompute ( nc2, np, nc, s_parent, s_child, ds_parent, ds_child, dir )
 !---------------------------------------------------------------------------------------------------
     INTEGER, intent(in) :: nc2, np, nc
-    REAL,    intent(in) :: s_parent,  s_child
-    REAL,    intent(in) :: ds_parent, ds_child
+    REAL(kind=8),    intent(in) :: s_parent,  s_child
+    REAL(kind=8),    intent(in) :: ds_parent, ds_child
     INTEGER, intent(in) :: dir
 !
     INTEGER, DIMENSION(:,:), ALLOCATABLE :: indchildaverage_tmp
     INTEGER :: i, locind_child_left, coeffraf
-    REAL    :: xpos
+    REAL(kind=8)    :: xpos
     INTEGER :: diffmod
 !
     coeffraf = nint(ds_parent/ds_child)
@@ -280,8 +345,8 @@ subroutine Average1dAfterCompute ( x, y, np, nc, s_parent, s_child, ds_parent, d
     REAL, DIMENSION(np), intent(inout)  :: x
     REAL, DIMENSION(nc), intent(in)     :: y
     INTEGER,             intent(in)     :: np, nc
-    REAL,                intent(in)     :: s_parent,  s_child
-    REAL,                intent(in)     :: ds_parent, ds_child
+    REAL(kind=8),                intent(in)     :: s_parent,  s_child
+    REAL(kind=8),                intent(in)     :: ds_parent, ds_child
     INTEGER,             intent(in)     :: dir
 !
     REAL    :: invcoeffraf
@@ -337,10 +402,10 @@ subroutine Agrif_basicupdate_full_weighting1D ( x, y, np, nc, s_parent, s_child,
     real, dimension(np), intent(out)    :: x
     real, dimension(nc), intent(in)     :: y
     integer,             intent(in)     :: np, nc
-    real,                intent(in)     :: s_parent,  s_child
-    real,                intent(in)     :: ds_parent, ds_child
+    real(kind=8),                intent(in)     :: s_parent,  s_child
+    real(kind=8),                intent(in)     :: ds_parent, ds_child
 !---------------------------------------------------------------------------------------------------
-    REAL    :: xpos, xposfin
+    REAL(kind=8)    :: xpos, xposfin
     INTEGER :: i, ii, diffmod
     INTEGER :: it1, it2
     INTEGER :: i1,  i2

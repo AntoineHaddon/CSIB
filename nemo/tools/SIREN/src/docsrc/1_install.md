@@ -14,7 +14,7 @@ when NEMO is installed, you just have to compile SIREN codes:
 # Fortran Compiler #
 SIREN codes were succesfully tested with :
   - ifort (version 18.0.1 20171018)
-  - gfortran (version 4.8.5 20150623) 
+  - gfortran (version 4.8.5 20150623)
 
 <HR>
   <b>

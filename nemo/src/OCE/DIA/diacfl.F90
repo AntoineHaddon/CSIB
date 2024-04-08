@@ -32,15 +32,17 @@ MODULE diacfl
    PUBLIC   dia_cfl_init  ! routine called by nemogcm
 
    !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
+#  include "do_loop_substitute.h90"
+#  include "single_precision_substitute.h90"
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: diacfl.F90 11532 2019-09-11 13:30:16Z smasson $
+   !! $Id: diacfl.F90 14433 2021-02-11 08:06:49Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE dia_cfl ( kt )
+   SUBROUTINE dia_cfl ( kt, Kmm )
       !!----------------------------------------------------------------------
       !!                  ***  ROUTINE dia_cfl  ***
       !!
@@ -48,63 +50,51 @@ CONTAINS
       !!               and output to ascii file 'cfl_diagnostics.ascii'
       !!----------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt   ! ocean time-step index
+      INTEGER, INTENT(in) ::   Kmm  ! ocean time level index
       !
       INTEGER                          ::   ji, jj, jk                       ! dummy loop indices
-      REAL(wp)                         ::   z2dt, zCu_max, zCv_max, zCw_max  ! local scalars
+      REAL(wp)                         ::   zCu_max, zCv_max, zCw_max        ! local scalars
       INTEGER , DIMENSION(3)           ::   iloc_u , iloc_v , iloc_w , iloc  ! workspace
       REAL(wp), DIMENSION(jpi,jpj,jpk) ::   zCu_cfl, zCv_cfl, zCw_cfl        ! workspace
+      LOGICAL , DIMENSION(jpi,jpj,jpk) ::   llmsk
       !!----------------------------------------------------------------------
       !
       IF( ln_timing )   CALL timing_start('dia_cfl')
       !
-      !                       ! setup timestep multiplier to account for initial Eulerian timestep
-      IF( neuler == 0 .AND. kt == nit000 ) THEN   ;    z2dt = rdt
-      ELSE                                        ;    z2dt = rdt * 2._wp
-      ENDIF
+      llmsk(     1:nn_hls,:,:) = .FALSE.   ! exclude halos from the checked region
+      llmsk(Nie0+1:   jpi,:,:) = .FALSE.
+      llmsk(:,     1:nn_hls,:) = .FALSE.
+      llmsk(:,Nje0+1:   jpj,:) = .FALSE.
       !
-      !                
-      DO jk = 1, jpk       ! calculate Courant numbers
-         DO jj = 1, jpj
-            DO ji = 1, jpi
-               zCu_cfl(ji,jj,jk) = ABS( un(ji,jj,jk) ) * z2dt / e1u  (ji,jj)      ! for i-direction
-               zCv_cfl(ji,jj,jk) = ABS( vn(ji,jj,jk) ) * z2dt / e2v  (ji,jj)      ! for j-direction
-               zCw_cfl(ji,jj,jk) = ABS( wn(ji,jj,jk) ) * z2dt / e3w_n(ji,jj,jk)   ! for k-direction
-            END DO
-         END DO         
-      END DO
+      DO_3D( 0, 0, 0, 0, 1, jpk )      ! calculate Courant numbers
+         zCu_cfl(ji,jj,jk) = ABS( uu(ji,jj,jk,Kmm) ) * rDt / e1u  (ji,jj)      ! for i-direction
+         zCv_cfl(ji,jj,jk) = ABS( vv(ji,jj,jk,Kmm) ) * rDt / e2v  (ji,jj)      ! for j-direction
+         zCw_cfl(ji,jj,jk) = ABS( ww(ji,jj,jk) ) * rDt / e3w(ji,jj,jk,Kmm)     ! for k-direction
+      END_3D
       !
       ! write outputs
-      IF( iom_use('cfl_cu') )   CALL iom_put( 'cfl_cu', MAXVAL( zCu_cfl, dim=3 ) )
-      IF( iom_use('cfl_cv') )   CALL iom_put( 'cfl_cv', MAXVAL( zCv_cfl, dim=3 ) )
-      IF( iom_use('cfl_cw') )   CALL iom_put( 'cfl_cw', MAXVAL( zCw_cfl, dim=3 ) )
+      IF( iom_use('cfl_cu') ) THEN
+         llmsk(Nis0:Nie0,Njs0:Nje0,:) = umask(Nis0:Nie0,Njs0:Nje0,:) == 1._wp        ! define only the inner domain
+         CALL iom_put( 'cfl_cu', MAXVAL( zCu_cfl, mask = llmsk, dim=3 ) )
+      ENDIF
+      IF( iom_use('cfl_cv') ) THEN
+         llmsk(Nis0:Nie0,Njs0:Nje0,:) = vmask(Nis0:Nie0,Njs0:Nje0,:) == 1._wp        ! define only the inner domain
+         CALL iom_put( 'cfl_cv', MAXVAL( zCv_cfl, mask = llmsk, dim=3 ) )
+      ENDIF
+      IF( iom_use('cfl_cw') ) THEN
+         llmsk(Nis0:Nie0,Njs0:Nje0,:) = wmask(Nis0:Nie0,Njs0:Nje0,:) == 1._wp        ! define only the inner domain
+         CALL iom_put( 'cfl_cw', MAXVAL( zCw_cfl, mask = llmsk, dim=3 ) )
+      ENDIF
 
       !                    ! calculate maximum values and locations
-      IF( lk_mpp ) THEN
-         CALL mpp_maxloc( 'diacfl', zCu_cfl, umask, zCu_max, iloc_u )
-         CALL mpp_maxloc( 'diacfl', zCv_cfl, vmask, zCv_max, iloc_v )
-         CALL mpp_maxloc( 'diacfl', zCw_cfl, wmask, zCw_max, iloc_w )
-      ELSE
-         iloc = MAXLOC( ABS( zcu_cfl(:,:,:) ) )
-         iloc_u(1) = iloc(1) + nimpp - 1
-         iloc_u(2) = iloc(2) + njmpp - 1
-         iloc_u(3) = iloc(3)
-         zCu_max = zCu_cfl(iloc(1),iloc(2),iloc(3))
-         !
-         iloc = MAXLOC( ABS( zcv_cfl(:,:,:) ) )
-         iloc_v(1) = iloc(1) + nimpp - 1
-         iloc_v(2) = iloc(2) + njmpp - 1
-         iloc_v(3) = iloc(3)
-         zCv_max = zCv_cfl(iloc(1),iloc(2),iloc(3))
-         !
-         iloc = MAXLOC( ABS( zcw_cfl(:,:,:) ) )
-         iloc_w(1) = iloc(1) + nimpp - 1
-         iloc_w(2) = iloc(2) + njmpp - 1
-         iloc_w(3) = iloc(3)
-         zCw_max = zCw_cfl(iloc(1),iloc(2),iloc(3))
-      ENDIF
+      llmsk(Nis0:Nie0,Njs0:Nje0,:) = umask(Nis0:Nie0,Njs0:Nje0,:) == 1._wp        ! define only the inner domain
+      CALL mpp_maxloc( 'diacfl', CASTDP(zCu_cfl), llmsk, zCu_max, iloc_u )
+      llmsk(Nis0:Nie0,Njs0:Nje0,:) = vmask(Nis0:Nie0,Njs0:Nje0,:) == 1._wp        ! define only the inner domain
+      CALL mpp_maxloc( 'diacfl', CASTDP(zCv_cfl), llmsk, zCv_max, iloc_v )
+      llmsk(Nis0:Nie0,Njs0:Nje0,:) = wmask(Nis0:Nie0,Njs0:Nje0,:) == 1._wp        ! define only the inner domain
+      CALL mpp_maxloc( 'diacfl', CASTDP(zCw_cfl), llmsk, zCw_max, iloc_w )
       !
-      !                    ! write out to file
-      IF( lwp ) THEN
+      IF( lwp ) THEN       ! write out to file
          WRITE(numcfl,FMT='(2x,i6,3x,a6,4x,f7.4,1x,i4,1x,i4,1x,i4)') kt, 'Max Cu', zCu_max, iloc_u(1), iloc_u(2), iloc_u(3)
          WRITE(numcfl,FMT='(11x,     a6,4x,f7.4,1x,i4,1x,i4,1x,i4)')     'Max Cv', zCv_max, iloc_v(1), iloc_v(2), iloc_v(3)
          WRITE(numcfl,FMT='(11x,     a6,4x,f7.4,1x,i4,1x,i4,1x,i4)')     'Max Cw', zCw_max, iloc_w(1), iloc_w(2), iloc_w(3)
@@ -120,22 +110,22 @@ CONTAINS
          ! to ascii file
          WRITE(numcfl,*) '******************************************'
          WRITE(numcfl,FMT='(3x,a12,6x,f7.4,1x,i4,1x,i4,1x,i4)') 'Run Max Cu', rCu_max, nCu_loc(1), nCu_loc(2), nCu_loc(3)
-         WRITE(numcfl,FMT='(3x,a8,11x,f15.1)') ' => dt/C', z2dt/rCu_max
+         WRITE(numcfl,FMT='(3x,a8,11x,f15.1)') ' => dt/C', rDt/rCu_max
          WRITE(numcfl,*) '******************************************'
          WRITE(numcfl,FMT='(3x,a12,6x,f7.4,1x,i4,1x,i4,1x,i4)') 'Run Max Cv', rCv_max, nCv_loc(1), nCv_loc(2), nCv_loc(3)
-         WRITE(numcfl,FMT='(3x,a8,11x,f15.1)') ' => dt/C', z2dt/rCv_max
+         WRITE(numcfl,FMT='(3x,a8,11x,f15.1)') ' => dt/C', rDt/rCv_max
          WRITE(numcfl,*) '******************************************'
          WRITE(numcfl,FMT='(3x,a12,6x,f7.4,1x,i4,1x,i4,1x,i4)') 'Run Max Cw', rCw_max, nCw_loc(1), nCw_loc(2), nCw_loc(3)
-         WRITE(numcfl,FMT='(3x,a8,11x,f15.1)') ' => dt/C', z2dt/rCw_max
+         WRITE(numcfl,FMT='(3x,a8,11x,f15.1)') ' => dt/C', rDt/rCw_max
          CLOSE( numcfl ) 
          !
          ! to ocean output
          WRITE(numout,*)
          WRITE(numout,*) 'dia_cfl : Maximum Courant number information for the run '
          WRITE(numout,*) '~~~~~~~'
-         WRITE(numout,*) '   Max Cu = ', rCu_max, ' at (i,j,k) = (',nCu_loc(1),nCu_loc(2),nCu_loc(3),') => dt/C = ', z2dt/rCu_max
-         WRITE(numout,*) '   Max Cv = ', rCv_max, ' at (i,j,k) = (',nCv_loc(1),nCv_loc(2),nCv_loc(3),') => dt/C = ', z2dt/rCv_max
-         WRITE(numout,*) '   Max Cw = ', rCw_max, ' at (i,j,k) = (',nCw_loc(1),nCw_loc(2),nCw_loc(3),') => dt/C = ', z2dt/rCw_max
+         WRITE(numout,*) '   Max Cu = ', rCu_max, ' at (i,j,k) = (',nCu_loc(1),nCu_loc(2),nCu_loc(3),') => dt/C = ', rDt/rCu_max
+         WRITE(numout,*) '   Max Cv = ', rCv_max, ' at (i,j,k) = (',nCv_loc(1),nCv_loc(2),nCv_loc(3),') => dt/C = ', rDt/rCv_max
+         WRITE(numout,*) '   Max Cw = ', rCw_max, ' at (i,j,k) = (',nCw_loc(1),nCw_loc(2),nCw_loc(3),') => dt/C = ', rDt/rCw_max
       ENDIF
       !
       IF( ln_timing )   CALL timing_stop('dia_cfl')

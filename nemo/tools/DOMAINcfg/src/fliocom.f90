@@ -1,4 +1,5 @@
 MODULE fliocom
+!$AGRIF_DO_NOT_TREAT
 !-
 !$Id: fliocom.f90 2512 2010-12-23 15:27:09Z smasson $
 !-
@@ -5170,4 +5171,5 @@ END SUBROUTINE flio_qax
 !-
 !===
 !-
+!$AGRIF_END_DO_NOT_TREAT
 END MODULE fliocom

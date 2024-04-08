@@ -23,14 +23,16 @@ MODULE trcini_cfc
    REAL(wp) ::   ylats = -10.           ! 10 degrees south
    REAL(wp) ::   ylatn =  10.           ! 10 degrees north
 
+   !! * Substitutions
+#  include "do_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: trcini_cfc.F90 10068 2018-08-28 14:09:04Z nicolasmartin $ 
+   !! $Id: trcini_cfc.F90 15090 2021-07-06 14:25:18Z cetlod $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE trc_ini_cfc
+   SUBROUTINE trc_ini_cfc( Kmm )
       !!----------------------------------------------------------------------
       !!                     ***  trc_ini_cfc  ***  
       !!
@@ -38,8 +40,9 @@ CONTAINS
       !!
       !! ** Method  : - Read the namcfc namelist and check the parameter values
       !!----------------------------------------------------------------------
+      INTEGER, INTENT(in)  ::  Kmm  ! time level indices
       INTEGER  ::  ji, jj, jn, jl, jm, js, io, ierr
-      INTEGER  ::  iskip = 6   ! number of 1st descriptor lines
+      INTEGER  ::  iskip = 6        ! number of 1st descriptor lines
       REAL(wp) ::  zyy, zyd
       CHARACTER(len = 20)  ::  cltra
       !!----------------------------------------------------------------------
@@ -89,7 +92,7 @@ CONTAINS
          qint_cfc(:,:,:) = 0._wp
          DO jl = 1, jp_cfc
             jn = jp_cfc0 + jl - 1
-            trn(:,:,:,jn) = 0._wp
+            tr(:,:,:,jn,Kmm) = 0._wp
          END DO
       ENDIF
 
@@ -128,14 +131,12 @@ CONTAINS
       ! Linear interpolation between 2 hemispheric function of latitud between ylats and ylatn
       !---------------------------------------------------------------------------------------
       zyd = ylatn - ylats      
-      DO jj = 1 , jpj
-         DO ji = 1 , jpi
-            IF(     gphit(ji,jj) >= ylatn ) THEN   ;   xphem(ji,jj) = 1.e0
-            ELSEIF( gphit(ji,jj) <= ylats ) THEN   ;   xphem(ji,jj) = 0.e0
-            ELSE                                   ;   xphem(ji,jj) = ( gphit(ji,jj) - ylats) / zyd
-            ENDIF
-         END DO
-      END DO
+      DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
+         IF(     gphit(ji,jj) >= ylatn ) THEN   ;   xphem(ji,jj) = 1.e0
+         ELSEIF( gphit(ji,jj) <= ylats ) THEN   ;   xphem(ji,jj) = 0.e0
+         ELSE                                   ;   xphem(ji,jj) = ( gphit(ji,jj) - ylats) / zyd
+         ENDIF
+      END_2D
       !
       IF(lwp) WRITE(numout,*) 'Initialization of CFC tracers done'
       IF(lwp) WRITE(numout,*) ' '

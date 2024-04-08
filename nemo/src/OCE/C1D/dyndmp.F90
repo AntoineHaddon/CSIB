@@ -42,10 +42,11 @@ MODULE dyndmp
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::  resto_uv  !: restoring coeff. on U & V current
 
    !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
+#  include "do_loop_substitute.h90"
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: dyndmp.F90 11536 2019-09-11 13:54:18Z smasson $ 
+   !! $Id: dyndmp.F90 15062 2021-06-28 11:19:48Z jchanut $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -78,10 +79,8 @@ CONTAINS
       NAMELIST/namc1d_dyndmp/ ln_dyndmp
       !!----------------------------------------------------------------------
       !
-      REWIND( numnam_ref )              ! Namelist namc1d_dyndmp in reference namelist : 
       READ  ( numnam_ref, namc1d_dyndmp, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namc1d_dyndmp in reference namelist' )
-      REWIND( numnam_cfg )              ! Namelist namc1d_dyndmp in configuration namelist : Parameters of the run
       READ  ( numnam_cfg, namc1d_dyndmp, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namc1d_dyndmp in configuration namelist' )
       IF(lwm) WRITE ( numond, namc1d_dyndmp )
@@ -122,14 +121,14 @@ CONTAINS
          !
          !Read in mask from file
          CALL iom_open ( cn_resto, imask)
-         CALL iom_get  ( imask, jpdom_autoglo, 'resto', resto)
+         CALL iom_get  ( imask, jpdom_auto, 'resto', resto)
          CALL iom_close( imask )
       ENDIF
       !
    END SUBROUTINE dyn_dmp_init
 
 
-   SUBROUTINE dyn_dmp( kt )
+   SUBROUTINE dyn_dmp( kt, Kbb, Kmm, puu, pvv, Krhs )
       !!----------------------------------------------------------------------
       !!                   ***  ROUTINE dyn_dmp  ***
       !!                  
@@ -139,87 +138,76 @@ CONTAINS
       !!
       !! ** Method  :   Compute Newtonian damping towards u_dta and v_dta 
       !!      and add to the general momentum trends:
-      !!                     ua = ua + resto_uv * (u_dta - ub)
-      !!                     va = va + resto_uv * (v_dta - vb)
+      !!                     puu(Krhs) = puu(Krhs) + resto_uv * (u_dta - puu(Kbb))
+      !!                     pvv(Krhs) = pvv(Krhs) + resto_uv * (v_dta - pvv(Kbb))
       !!      The trend is computed either throughout the water column
       !!      (nn_zdmp=0), where the vertical mixing is weak (nn_zdmp=1) or
       !!      below the well mixed layer (nn_zdmp=2)
       !!
-      !! ** Action  : - (ua,va)   momentum trends updated with the damping trend
+      !! ** Action  : - (puu(:,:,:,Krhs),pvv(:,:,:,Krhs))   momentum trends updated with the damping trend
       !!----------------------------------------------------------------------
-      INTEGER, INTENT(in) ::   kt   ! ocean time-step index
+      INTEGER                             , INTENT(in   ) ::   kt             ! ocean time-step index
+      INTEGER                             , INTENT(in   ) ::   Kbb, Kmm, Krhs ! ocean time level indices
+      REAL(dp), DIMENSION(jpi,jpj,jpk,jpt), INTENT(inout) ::   puu, pvv       ! ocean velocities and RHS of momentum equation
       !!
       INTEGER  ::   ji, jj, jk   ! dummy loop indices
       REAL(wp) ::   zua, zva     ! local scalars
-      REAL(wp), DIMENSION(jpi,jpj,jpk,2) ::   zuv_dta   ! Read in data 
+      REAL(dp), DIMENSION(jpi,jpj,jpk,2) ::   zuv_dta   ! Read in data
       !!----------------------------------------------------------------------
       !
       IF( ln_timing )   CALL timing_start( 'dyn_dmp' )
       !
       !
       !                           !==   read and interpolate U & V current data at kt   ==!
-      CALL dta_uvd( kt, zuv_dta ) !!! NOTE: This subroutine must be altered for use outside
-                                  !!!       the C1D context (use of U,V grid variables)
+      CALL dta_uvd( kt, Kmm, zuv_dta(:,:,:,1), zuv_dta(:,:,:,2))
       !
       SELECT CASE ( nn_zdmp )     !==   Calculate/add Newtonian damping to the momentum trend   ==!
       !
       CASE( 0 )                   ! Newtonian damping throughout the water column
-         DO jk = 1, jpkm1
-            DO jj = 2, jpjm1
-               DO ji = fs_2, fs_jpim1   ! vector opt.
-                  zua = resto_uv(ji,jj,jk) * ( zuv_dta(ji,jj,jk,1) - ub(ji,jj,jk) )
-                  zva = resto_uv(ji,jj,jk) * ( zuv_dta(ji,jj,jk,2) - vb(ji,jj,jk) )
-                  ua(ji,jj,jk) = ua(ji,jj,jk) + zua
-                  va(ji,jj,jk) = va(ji,jj,jk) + zva
-                  utrdmp(ji,jj,jk) = zua           ! save the trends
-                  vtrdmp(ji,jj,jk) = zva      
-               END DO
-            END DO
-         END DO
+         DO_3D( 0, 0, 0, 0, 1, jpkm1 )
+            zua = resto_uv(ji,jj,jk) * ( zuv_dta(ji,jj,jk,1) - puu(ji,jj,jk,Kbb) )
+            zva = resto_uv(ji,jj,jk) * ( zuv_dta(ji,jj,jk,2) - pvv(ji,jj,jk,Kbb) )
+            puu(ji,jj,jk,Krhs) = puu(ji,jj,jk,Krhs) + zua
+            pvv(ji,jj,jk,Krhs) = pvv(ji,jj,jk,Krhs) + zva
+            utrdmp(ji,jj,jk) = zua           ! save the trends
+            vtrdmp(ji,jj,jk) = zva      
+         END_3D
          !
       CASE ( 1 )                  ! no damping above the turbocline (avt > 5 cm2/s)
-         DO jk = 1, jpkm1
-            DO jj = 2, jpjm1
-               DO ji = fs_2, fs_jpim1   ! vector opt.
-                  IF( avt(ji,jj,jk) <= avt_c ) THEN
-                     zua = resto_uv(ji,jj,jk) * ( zuv_dta(ji,jj,jk,1) - ub(ji,jj,jk) )
-                     zva = resto_uv(ji,jj,jk) * ( zuv_dta(ji,jj,jk,2) - vb(ji,jj,jk) )
-                  ELSE
-                     zua = 0._wp
-                     zva = 0._wp  
-                  ENDIF
-                  ua(ji,jj,jk) = ua(ji,jj,jk) + zua
-                  va(ji,jj,jk) = va(ji,jj,jk) + zva
-                  utrdmp(ji,jj,jk) = zua           ! save the trends
-                  vtrdmp(ji,jj,jk) = zva
-               END DO
-            END DO
-         END DO
+         DO_3D( 0, 0, 0, 0, 1, jpkm1 )
+            IF( avt(ji,jj,jk) <= avt_c ) THEN
+               zua = resto_uv(ji,jj,jk) * ( zuv_dta(ji,jj,jk,1) - puu(ji,jj,jk,Kbb) )
+               zva = resto_uv(ji,jj,jk) * ( zuv_dta(ji,jj,jk,2) - pvv(ji,jj,jk,Kbb) )
+            ELSE
+               zua = 0._wp
+               zva = 0._wp  
+            ENDIF
+            puu(ji,jj,jk,Krhs) = puu(ji,jj,jk,Krhs) + zua
+            pvv(ji,jj,jk,Krhs) = pvv(ji,jj,jk,Krhs) + zva
+            utrdmp(ji,jj,jk) = zua           ! save the trends
+            vtrdmp(ji,jj,jk) = zva
+         END_3D
          !
       CASE ( 2 )                  ! no damping in the mixed layer
-         DO jk = 1, jpkm1
-            DO jj = 2, jpjm1
-               DO ji = fs_2, fs_jpim1   ! vector opt.
-                  IF( gdept_n(ji,jj,jk) >= hmlp (ji,jj) ) THEN
-                     zua = resto_uv(ji,jj,jk) * ( zuv_dta(ji,jj,jk,1) - ub(ji,jj,jk) )
-                     zva = resto_uv(ji,jj,jk) * ( zuv_dta(ji,jj,jk,2) - vb(ji,jj,jk) )
-                  ELSE
-                     zua = 0._wp
-                     zva = 0._wp  
-                  ENDIF
-                  ua(ji,jj,jk) = ua(ji,jj,jk) + zua
-                  va(ji,jj,jk) = va(ji,jj,jk) + zva
-                  utrdmp(ji,jj,jk) = zua           ! save the trends
-                  vtrdmp(ji,jj,jk) = zva
-               END DO
-            END DO
-         END DO
+         DO_3D( 0, 0, 0, 0, 1, jpkm1 )
+            IF( gdept(ji,jj,jk,Kmm) >= hmlp (ji,jj) ) THEN
+               zua = resto_uv(ji,jj,jk) * ( zuv_dta(ji,jj,jk,1) - puu(ji,jj,jk,Kbb) )
+               zva = resto_uv(ji,jj,jk) * ( zuv_dta(ji,jj,jk,2) - pvv(ji,jj,jk,Kbb) )
+            ELSE
+               zua = 0._wp
+               zva = 0._wp  
+            ENDIF
+            puu(ji,jj,jk,Krhs) = puu(ji,jj,jk,Krhs) + zua
+            pvv(ji,jj,jk,Krhs) = pvv(ji,jj,jk,Krhs) + zva
+            utrdmp(ji,jj,jk) = zua           ! save the trends
+            vtrdmp(ji,jj,jk) = zva
+         END_3D
          !
       END SELECT
       !
       !                           ! Control print
-      IF( ln_ctl   )   CALL prt_ctl( tab3d_1=ua(:,:,:), clinfo1=' dmp  - Ua: ', mask1=umask,   &
-         &                           tab3d_2=va(:,:,:), clinfo2=       ' Va: ', mask2=vmask, clinfo3='dyn' )
+      IF( sn_cfctl%l_prtctl   )   CALL prt_ctl( tab3d_1=puu(:,:,:,Krhs), clinfo1=' dmp  - Ua: ', mask1=umask,   &
+         &                                      tab3d_2=pvv(:,:,:,Krhs), clinfo2=       ' Va: ', mask2=vmask, clinfo3='dyn' )
       !
       !
       IF( ln_timing )   CALL timing_stop( 'dyn_dmp')

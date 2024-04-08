@@ -1,5 +1,5 @@
 !
-! $Id: modcluster.F90 5656 2015-07-31 08:55:56Z timgraham $
+! $Id: modcluster.F90 14975 2021-06-11 09:05:32Z jchanut $
 !
 !     AGRIF (Adaptive Grid Refinement In Fortran)
 !
@@ -53,7 +53,7 @@ recursive subroutine Agrif_Cluster_All ( g, parent_rect )
 !
     TYPE(Agrif_LRectangle), pointer  :: parcours
     TYPE(Agrif_Grid)      , pointer  :: newgrid
-    REAL                             :: g_eps
+    REAL(kind=8)                     :: g_eps
     INTEGER                          :: i
 !
     g_eps = huge(1.)
@@ -130,10 +130,10 @@ recursive subroutine Agrif_TabpointsnD ( g, newgrid )
 !
     TYPE(Agrif_PGrid), pointer  :: parcours
 !
-    REAL                  :: g_eps, newgrid_eps, eps
-    REAL   , DIMENSION(3) :: newmin, newmax
-    REAL   , DIMENSION(3) :: gmin, gmax
-    REAL   , DIMENSION(3) :: xmin
+    REAL(kind=8)                  :: g_eps, newgrid_eps, eps
+    REAL(kind=8)   , DIMENSION(3) :: newmin, newmax
+    REAL(kind=8)   , DIMENSION(3) :: gmin, gmax
+    REAL(kind=8)   , DIMENSION(3) :: xmin
     INTEGER, DIMENSION(3) :: igmin, inewmin
     INTEGER, DIMENSION(3) :: inewmax
     INTEGER               :: i,  j,  k

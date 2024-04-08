@@ -26,14 +26,17 @@ MODULE zdfswm
    PUBLIC zdf_swm         ! routine called in zdp_phy
    PUBLIC zdf_swm_init    ! routine called in zdf_phy_init
 
+   !! * Substitutions
+#  include "do_loop_substitute.h90"
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: zdfswm.F90 10069 2018-08-28 14:12:24Z nicolasmartin $
+   !! $Id: zdfswm.F90 15062 2021-06-28 11:19:48Z jchanut $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE zdf_swm( kt, p_avm, p_avt, p_avs )
+   SUBROUTINE zdf_swm( kt, Kmm, p_avm, p_avt, p_avs )
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE zdf_swm ***
       !!
@@ -51,6 +54,7 @@ CONTAINS
       !! reference : Qiao et al. GRL, 2004
       !!---------------------------------------------------------------------
       INTEGER                    , INTENT(in   ) ::   kt             ! ocean time step
+      INTEGER                    , INTENT(in   ) ::   Kmm            ! time level index
       REAL(wp), DIMENSION(:,:,:) , INTENT(inout) ::   p_avm          ! momentum Kz (w-points)
       REAL(wp), DIMENSION(:,:,:) , INTENT(inout) ::   p_avt, p_avs   ! tracer   Kz (w-points)
       !
@@ -59,17 +63,13 @@ CONTAINS
       !!---------------------------------------------------------------------
       !
       zcoef = 1._wp * 0.353553_wp
-      DO jk = 2, jpkm1
-         DO jj = 2, jpjm1
-            DO ji = 2, jpim1
-               zqb = zcoef * hsw(ji,jj) * tsd2d(ji,jj) * EXP( -3. * wnum(ji,jj) * gdepw_n(ji,jj,jk) ) * wmask(ji,jj,jk)
-               !
-               p_avt(ji,jj,jk) = p_avt(ji,jj,jk) + zqb
-               p_avs(ji,jj,jk) = p_avs(ji,jj,jk) + zqb
-               p_avm(ji,jj,jk) = p_avm(ji,jj,jk) + zqb
-            END DO
-         END DO
-      END DO
+      DO_3D_OVR( nn_hls-1, nn_hls-1, nn_hls-1, nn_hls-1, 2, jpkm1 )
+         zqb = zcoef * hsw(ji,jj) * tsd2d(ji,jj) * EXP( -3. * wnum(ji,jj) * gdepw(ji,jj,jk,Kmm) ) * wmask(ji,jj,jk)
+         !
+         p_avt(ji,jj,jk) = p_avt(ji,jj,jk) + zqb
+         p_avs(ji,jj,jk) = p_avs(ji,jj,jk) + zqb
+         p_avm(ji,jj,jk) = p_avm(ji,jj,jk) + zqb
+      END_3D
       !
    END SUBROUTINE zdf_swm
    

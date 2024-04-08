@@ -18,11 +18,11 @@
 !> @endcode
 !>       - td_mpp  is mpp structure of an opened file.
 !>       - id_imin is i-direction sub-domain lower left  point indice
-!>       - id_imax is i-direction sub-domain upper right point indice 
+!>       - id_imax is i-direction sub-domain upper right point indice
 !>       - id_jmin is j-direction sub-domain lower left  point indice
 !>       - id_jmax is j-direction sub-domain upper right point indice
-!>       - cd_card is the cardinal name (for boundary case) 
-!> 
+!>       - cd_card is the cardinal name (for boundary case)
+!>
 !>    to get global domain dimension:<br/>
 !>    - tl_dom\%t_dim0
 !>
@@ -72,8 +72,8 @@
 !>    - tl_dom\%i_bdy
 !>       - 0 = no boundary
 !>       - 1 = north
-!>       - 2 = south 
-!>       - 3 = east 
+!>       - 2 = south
+!>       - 3 = east
 !>       - 4 = west
 !>
 !>    to clean domain structure:<br/>
@@ -95,12 +95,12 @@
 !>
 !>    to add extra bands to coarse grid domain (for interpolation):<br/>
 !> @code
-!>    CALL dom_add_extra( td_dom, id_iext, id_jext ) 
+!>    CALL dom_add_extra( td_dom, id_iext, id_jext )
 !> @endcode
 !>       - td_dom is domain structure
 !>       - id_iext is i-direction size of extra bands
 !>       - id_jext is j-direction size of extra bands
-!> 
+!>
 !>    to remove extra bands from fine grid (after interpolation):<br/>
 !> @code
 !>    CALL dom_del_extra( td_var, td_dom, id_rho )
@@ -108,7 +108,7 @@
 !>       - td_var is variable structure to be changed
 !>       - td_dom is domain structure
 !>       - id_rho is a array of refinement factor following i- and j-direction
-!>    
+!>
 !>    to reset coarse grid domain witouht extra bands:<br/>
 !> @code
 !>    CALL dom_clean_extra( td_dom )
@@ -123,7 +123,7 @@
 !> - use zero indice to defined cyclic or global domain
 !> @date October, 2014
 !> - use mpp file structure instead of file
-!> 
+!>
 !> @note Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
 !----------------------------------------------------------------------
 MODULE dom
@@ -152,7 +152,7 @@ MODULE dom
    PUBLIC :: dom_add_extra       !< add useful extra bands to coarse grid for interpolation
    PUBLIC :: dom_clean_extra     !< reset domain without extra bands
    PUBLIC :: dom_del_extra       !< remove extra point from fine grid after interpolation
-    
+
    PRIVATE :: dom__init_mpp                 ! initialise domain structure, given mpp file structure
    PRIVATE :: dom__define                   ! define sub domain indices
                                             ! define sub domain indices for input domain with
@@ -170,7 +170,7 @@ MODULE dom
    PRIVATE :: dom__size_pole_no_overlap     ! - with north fold condition, and which do not overlap east-west boundary
                                             ! compute size of
    PRIVATE :: dom__size_global              ! - global domain
-   PRIVATE :: dom__size_semi_global         ! - semi global domain 
+   PRIVATE :: dom__size_semi_global         ! - semi global domain
    PRIVATE :: dom__copy_unit                ! copy attribute structure
 
    TYPE TDOM !< domain structure
@@ -187,9 +187,9 @@ MODULE dom
 
       INTEGER(i4) :: i_bdy = 0                     !< boundary index : 0 = no boundary
                                                    !<                  1 = north
-                                                   !<                  2 = south 
-                                                   !<                  3 = east 
-                                                   !<                  4 = west 
+                                                   !<                  2 = south
+                                                   !<                  3 = east
+                                                   !<                  4 = west
       INTEGER(i4), DIMENSION(2,2) :: i_ghost0 = 0   !< array of ghost cell factor of global domain
       INTEGER(i4), DIMENSION(2,2) :: i_ghost  = 0   !< array of ghost cell factor of sub domain
 
@@ -216,13 +216,13 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief
    !> This subroutine copy an domain structure in another one
-   !> @details 
+   !> @details
    !> dummy function to get the same use for all structure
    !>
    !> @warning do not use on the output of a function who create or read an
    !> structure (ex: tl_dom=dom_copy(dom_init()) is forbidden).
    !> This will create memory leaks.
-   !> @warning to avoid infinite loop, do not use any function inside 
+   !> @warning to avoid infinite loop, do not use any function inside
    !> this subroutine
    !>
    !> @author J.Paul
@@ -244,7 +244,7 @@ CONTAINS
       !----------------------------------------------------------------
 
       tf_dom=td_dom
-      
+
    END FUNCTION dom__copy_unit
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE dom_print(td_dom)
@@ -259,7 +259,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TDOM), INTENT(IN) :: td_dom
 
       ! local argument
@@ -296,9 +296,9 @@ CONTAINS
    FUNCTION dom__init_mpp(td_mpp, id_imin, id_imax, id_jmin, id_jmax, cd_card) &
          & RESULT (tf_dom)
    !-------------------------------------------------------------------
-   !> @brief 
+   !> @brief
    !> This function intialise domain structure, given open file structure,
-   !> and sub domain indices. 
+   !> and sub domain indices.
    !> @details
    !> sub domain indices are computed, taking into account coarse grid
    !> periodicity, pivot point, and East-West overlap.
@@ -324,7 +324,7 @@ CONTAINS
       IMPLICIT NONE
 
       ! Argument
-      TYPE(TMPP)      , INTENT(IN) :: td_mpp 
+      TYPE(TMPP)      , INTENT(IN) :: td_mpp
 
       INTEGER(i4)     , INTENT(IN), OPTIONAL :: id_imin
       INTEGER(i4)     , INTENT(IN), OPTIONAL :: id_imax
@@ -413,16 +413,16 @@ CONTAINS
          tf_dom%i_ew0=td_mpp%i_ew
 
          ! initialise domain as global
-         tf_dom%i_imin = 1 
+         tf_dom%i_imin = 1
          tf_dom%i_imax = tf_dom%t_dim0(1)%i_len
 
-         tf_dom%i_jmin = 1 
+         tf_dom%i_jmin = 1
          tf_dom%i_jmax = tf_dom%t_dim0(2)%i_len
 
          ! sub domain dimension
          tf_dom%t_dim(:) = dim_copy(td_mpp%t_dim(:))
 
-         ! define sub domain indices 
+         ! define sub domain indices
          CALL dom__define(tf_dom, id_imin, id_imax, id_jmin, id_jmax)
 
       ENDIF
@@ -432,9 +432,9 @@ CONTAINS
    FUNCTION dom__init_file(td_file, id_imin, id_imax, id_jmin, id_jmax, cd_card) &
          & RESULT (tf_dom)
    !-------------------------------------------------------------------
-   !> @brief 
+   !> @brief
    !> This function intialise domain structure, given open file structure,
-   !> and sub domain indices. 
+   !> and sub domain indices.
    !> @details
    !> sub domain indices are computed, taking into account coarse grid
    !> periodicity, pivot point, and East-West overlap.
@@ -458,7 +458,7 @@ CONTAINS
       IMPLICIT NONE
 
       ! Argument
-      TYPE(TFILE)      , INTENT(IN) :: td_file 
+      TYPE(TFILE)      , INTENT(IN) :: td_file
 
       INTEGER(i4)      , INTENT(IN), OPTIONAL :: id_imin
       INTEGER(i4)      , INTENT(IN), OPTIONAL :: id_imax
@@ -546,16 +546,16 @@ CONTAINS
          tf_dom%i_ew0=td_file%i_ew
 
          ! initialise domain as global
-         tf_dom%i_imin = 1 
+         tf_dom%i_imin = 1
          tf_dom%i_imax = tf_dom%t_dim0(1)%i_len
 
-         tf_dom%i_jmin = 1 
+         tf_dom%i_jmin = 1
          tf_dom%i_jmax = tf_dom%t_dim0(2)%i_len
 
          ! sub domain dimension
          tf_dom%t_dim(:) = dim_copy(td_file%t_dim(:))
 
-         ! define sub domain indices 
+         ! define sub domain indices
          CALL dom__define(tf_dom, id_imin, id_imax, id_jmin, id_jmax)
 
       ENDIF
@@ -565,8 +565,8 @@ CONTAINS
    SUBROUTINE dom__define(td_dom, &
          &                id_imin, id_imax, id_jmin, id_jmax)
    !-------------------------------------------------------------------
-   !> @brief 
-   !> This subroutine define sub domain indices, and compute the size 
+   !> @brief
+   !> This subroutine define sub domain indices, and compute the size
    !> of the sub domain.
    !>
    !> @author J.Paul
@@ -581,7 +581,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TDOM),  INTENT(INOUT) :: td_dom
       INTEGER(i4), INTENT(IN), OPTIONAL :: id_imin
       INTEGER(i4), INTENT(IN), OPTIONAL :: id_imax
@@ -642,7 +642,7 @@ CONTAINS
                CALL logger_trace("DOM INIT DEFINE: symmetric boundary condition "//&
                &                 " across the equator")
                CALL dom__define_symmetric( td_dom )
-            CASE(3) ! North fold boundary (with a F-point pivot)  
+            CASE(3) ! North fold boundary (with a F-point pivot)
                CALL logger_trace("DOM INIT DEFINE: North fold boundary "//&
                &                 "(with a F-point pivot)")
                CALL dom__define_north_fold( td_dom )
@@ -650,13 +650,13 @@ CONTAINS
                CALL logger_trace("DOM INIT DEFINE: North fold boundary "//&
                &                 "(with a T-point pivot)")
                CALL dom__define_north_fold( td_dom )
-            CASE(4) ! North fold boundary (with a F-point pivot) 
+            CASE(4) ! North fold boundary (with a F-point pivot)
                     ! and cyclic east-west boundary
                CALL logger_trace("DOM INIT DEFINE:  North fold boundary "//&
                &                 "(with a F-point pivot) and cyclic "//&
                &                 "east-west boundary")
                CALL dom__define_cyclic_north_fold( td_dom )
-            CASE(6) ! North fold boundary (with a T-point pivot) 
+            CASE(6) ! North fold boundary (with a T-point pivot)
                     ! and cyclic east-west boundary
                CALL logger_trace("DOM INIT DEFINE: North fold boundary "//&
                &                 "(with a T-point pivot) and cyclic "//&
@@ -672,7 +672,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE dom__define_cyclic_north_fold(td_dom)
    !-------------------------------------------------------------------
-   !> @brief 
+   !> @brief
    !> This subroutine define sub domain indices from global domain with
    !> cyclic east-west boundary and north fold boundary condition.
    !>
@@ -729,7 +729,7 @@ CONTAINS
          CALL logger_trace("DOM DEFINE CYCLIC NORTH FOLD: "//&
          &  "domain to extract do not use north fold" )
          ! no North Pole
-         
+
          CALL dom__size_no_pole( td_dom )
 
       ELSE
@@ -738,13 +738,13 @@ CONTAINS
          &  "should have been an impossible case" )
 
       ENDIF
-      
+
    END SUBROUTINE dom__define_cyclic_north_fold
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE dom__define_north_fold(td_dom)
    !-------------------------------------------------------------------
-   !> @brief 
-   !> This subroutine define sub domain indices from global domain 
+   !> @brief
+   !> This subroutine define sub domain indices from global domain
    !> with north fold boundary condition.
    !>
    !> @author J.Paul
@@ -764,7 +764,7 @@ CONTAINS
          CALL logger_trace("DOM DEFINE NORTH FOLD: "//&
          &  "domain to extract has no north boundary" )
          ! no North Pole
-         
+
          CALL dom__size_no_pole_no_overlap( td_dom )
 
       ELSE
@@ -774,14 +774,14 @@ CONTAINS
 
          CALL dom__size_pole_no_overlap( td_dom )
 
-      ENDIF      
+      ENDIF
 
    END SUBROUTINE dom__define_north_fold
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE dom__define_symmetric(td_dom)
    !-------------------------------------------------------------------
-   !> @brief 
-   !> This subroutine define sub domain indices from global domain 
+   !> @brief
+   !> This subroutine define sub domain indices from global domain
    !> with symmetric boundary condition across the equator.
    !>
    !> @author J.Paul
@@ -802,7 +802,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE dom__define_cyclic(td_dom)
    !-------------------------------------------------------------------
-   !> @brief 
+   !> @brief
    !> This subroutine define sub domain indices from global domain
    !> with cyclic east-west boundary.
    !>
@@ -817,7 +817,7 @@ CONTAINS
       ! Argument
       TYPE(TDOM), INTENT(INOUT) :: td_dom
       !----------------------------------------------------------------
-      
+
       IF( td_dom%i_imin >= td_dom%i_imax )THEN
          CALL logger_trace("DOM DEFINE CYCLIC: "//&
          &  "domain to extract overlap east-west boundary")
@@ -837,7 +837,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE dom__define_closed(td_dom)
    !-------------------------------------------------------------------
-   !> @brief 
+   !> @brief
    !> This subroutine define sub domain indices from global domain
    !> with closed boundaries.
    !>
@@ -860,7 +860,7 @@ CONTAINS
    SUBROUTINE dom__size_global(td_dom)
    !-------------------------------------------------------------------
    !> @brief
-   !> This subroutine compute size of global domain 
+   !> This subroutine compute size of global domain
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial version
@@ -874,10 +874,10 @@ CONTAINS
       TYPE(TDOM), INTENT(INOUT) :: td_dom
       !----------------------------------------------------------------
 
-      td_dom%i_imin = 1                     
+      td_dom%i_imin = 1
       td_dom%i_imax = td_dom%t_dim0(1)%i_len
 
-      td_dom%i_jmin = 1 
+      td_dom%i_jmin = 1
       td_dom%i_jmax = td_dom%t_dim0(2)%i_len
 
       ! domain size
@@ -901,7 +901,7 @@ CONTAINS
    SUBROUTINE dom__size_semi_global(td_dom)
    !-------------------------------------------------------------------
    !> @brief
-   !> This subroutine compute size of a semi global domain 
+   !> This subroutine compute size of a semi global domain
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial version
@@ -916,7 +916,7 @@ CONTAINS
       TYPE(TDOM), INTENT(INOUT) :: td_dom
 
       ! local variable
-      INTEGER(i4) :: il_imid   ! canadian bipole index (middle of global domain) 
+      INTEGER(i4) :: il_imid   ! canadian bipole index (middle of global domain)
       !----------------------------------------------------------------
 
       il_imid = td_dom%t_dim0(1)%i_len/2 + td_dom%i_pivot
@@ -1069,7 +1069,7 @@ CONTAINS
          ! extract domain overlap east-west boundary
 
          td_dom%t_dim(1)%i_len = td_dom%i_imax + &
-         &                       td_dom%t_dim0(1)%i_len - td_dom%i_imin + 1 - & 
+         &                       td_dom%t_dim0(1)%i_len - td_dom%i_imin + 1 - &
          &                       td_dom%i_ew0     ! remove cyclic boundary
 
          ! add ghost cell
@@ -1118,12 +1118,12 @@ CONTAINS
          &  "check domain indices and grid periodicity." )
       ENDIF
 
-      td_dom%t_dim(1)%i_len = td_dom%i_imax - & 
-      &                       td_dom%i_imin + 1 
+      td_dom%t_dim(1)%i_len = td_dom%i_imax - &
+      &                       td_dom%i_imin + 1
 
       td_dom%t_dim(2)%i_len = td_dom%i_jmax - &
       &                       td_dom%i_jmin + 1
-      
+
       ! add ghost cell
       td_dom%i_ghost(:,:)=1
 
@@ -1153,7 +1153,7 @@ CONTAINS
       ! local variable
       INTEGER(i4) :: il_idom1  ! extract domain size, east part
       INTEGER(i4) :: il_idom2  ! extract domain size, west part
-      INTEGER(i4) :: il_imid   ! cananadian bipole index (middle of global domain) 
+      INTEGER(i4) :: il_imid   ! cananadian bipole index (middle of global domain)
       !----------------------------------------------------------------
 
       CALL logger_trace("DOM SIZE POLE OVERLAP: "//&
@@ -1163,7 +1163,7 @@ CONTAINS
 
       il_idom1 = td_dom%t_dim0(1)%i_len - td_dom%i_imin + 1
       il_idom2 = td_dom%i_imax
-      
+
       IF( il_idom1 > il_imid .OR. il_idom2 > il_imid )THEN
 
          CALL logger_trace("DOM SIZE POLE OVERLAP: "//&
@@ -1187,14 +1187,14 @@ CONTAINS
          ! to respect symmetry around asian bipole
          td_dom%i_imax = il_idom1
 
-         IF( td_dom%i_jmin == 0 ) td_dom%i_jmin = 1 
+         IF( td_dom%i_jmin == 0 ) td_dom%i_jmin = 1
          ! north pole
          td_dom%i_jmax = td_dom%t_dim0(2)%i_len
 
          ! compute size
          td_dom%t_dim(1)%i_len = il_idom1  !! no ghost cell ??
          td_dom%t_dim(2)%i_len = ( td_dom%t_dim0(2)%i_len - &
-         &                         td_dom%i_jmin + 1 ) + &   
+         &                         td_dom%i_jmin + 1 ) + &
          &                         ( td_dom%t_dim0(2)%i_len - &
          &                         td_dom%i_jmin + 1 ) - 2   ! remove north fold condition ?
 
@@ -1212,7 +1212,7 @@ CONTAINS
          ! to respect symmetry around asian bipole
          td_dom%i_imin = td_dom%t_dim0(1)%i_len - il_idom2 + 1
 
-         IF( td_dom%i_jmin == 0 ) td_dom%i_jmin = 1 
+         IF( td_dom%i_jmin == 0 ) td_dom%i_jmin = 1
          ! north pole
          td_dom%i_jmax=td_dom%t_dim0(2)%i_len
 
@@ -1225,7 +1225,7 @@ CONTAINS
 
          ! add ghost cell
          td_dom%i_ghost(:,:)=1
-         
+
          ! periodicity
          td_dom%i_perio=0
 
@@ -1270,7 +1270,7 @@ CONTAINS
       IF( td_dom%i_jmin==0 ) td_dom%i_jmin = 1
       IF( td_dom%i_jmax==0 ) td_dom%i_jmax = td_dom%t_dim0(2)%i_len
 
-      ! 
+      !
       il_mid = td_dom%t_dim0(1)%i_len/2 + td_dom%i_pivot
 
       IF( (td_dom%i_imin < il_mid .AND. td_dom%i_imax < il_mid) .OR. &
@@ -1306,9 +1306,9 @@ CONTAINS
 
             td_dom%t_dim(1)%i_len = il_idom1 + 1
             td_dom%t_dim(2)%i_len = ( td_dom%t_dim0(2)%i_len - &
-            &                         td_dom%i_jmin + 1 ) + & 
+            &                         td_dom%i_jmin + 1 ) + &
             &                         ( td_dom%t_dim0(2)%i_len - &
-            &                         td_dom%i_jmin + 1 ) &   
+            &                         td_dom%i_jmin + 1 ) &
             &                         - 2 - 2 * td_dom%i_pivot    ! remove north fold condition ?
 
             ! add ghost cell
@@ -1326,16 +1326,16 @@ CONTAINS
 
             td_dom%t_dim(1)%i_len = il_idom2 + 1
             td_dom%t_dim(2)%i_len = ( td_dom%t_dim0(2)%i_len -  &
-            &                         td_dom%i_jmin + 1 ) +     & 
+            &                         td_dom%i_jmin + 1 ) +     &
             &                         ( td_dom%t_dim0(2)%i_len -  &
-            &                         td_dom%i_jmax + 1 )       & 
+            &                         td_dom%i_jmax + 1 )       &
             &                         - 2 - 2 * td_dom%i_pivot  !  remove north fold condition ?
 
             ! add ghost cell
             td_dom%i_ghost(:,:)=1
 
             ! periodicity
-            td_dom%i_perio=0            
+            td_dom%i_perio=0
 
          ENDIF
       ENDIF
@@ -1344,14 +1344,14 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE dom_add_extra(td_dom, id_iext, id_jext)
    !-------------------------------------------------------------------
-   !> @brief 
+   !> @brief
    !>  This subroutine add extra bands to coarse domain to get enough point for
    !>  interpolation...
    !>
    !> @details
    !>  - domain periodicity is take into account.<br/>
    !>  - domain indices are changed, and size of extra bands are saved.<br/>
-   !>  - optionaly, i- and j- direction size of extra bands could be specify 
+   !>  - optionaly, i- and j- direction size of extra bands could be specify
    !> (default=im_minext)
    !>
    !> @author J.Paul
@@ -1359,7 +1359,7 @@ CONTAINS
    !> @date September, 2014
    !> - take into account number of ghost cell
    !> @date February, 2016
-   !> - number of extra point is the MAX (not the MIN) of zero and asess value. 
+   !> - number of extra point is the MAX (not the MIN) of zero and asess value.
    !>
    !> @param[inout] td_dom domain strcuture
    !> @param [in] id_iext  i-direction size of extra bands (default=im_minext)
@@ -1446,8 +1446,8 @@ CONTAINS
                ELSE ! td_dom%i_imax + il_iext > td_dom%t_dim0(1)%i_len
                   td_dom%i_iextra(2) = il_iext
                   td_dom%i_imax      = td_dom%i_imax + td_dom%i_iextra(2) - &
-                  &                     (td_dom%t_dim0(1)%i_len-td_dom%i_ew0) 
-               ENDIF               
+                  &                     (td_dom%t_dim0(1)%i_len-td_dom%i_ew0)
+               ENDIF
             ENDIF
 
          ENDIF
@@ -1479,12 +1479,12 @@ CONTAINS
                &                         td_dom%i_jmax )
                td_dom%i_jmax      = td_dom%i_jmax + td_dom%i_jextra(2)
             ENDIF
-         ENDIF         
+         ENDIF
 
       ENDIF
 
       IF( td_dom%i_imin <= td_dom%i_imax )THEN
-         td_dom%t_dim(1)%i_len = td_dom%i_imax - td_dom%i_imin +1 
+         td_dom%t_dim(1)%i_len = td_dom%i_imax - td_dom%i_imin +1
       ELSE ! td_dom%i_imin > td_dom%i_imax
          td_dom%t_dim(1)%i_len = td_dom%i_imax + &
          &                       td_dom%t_dim0(1)%i_len - td_dom%i_imin + 1 - &
@@ -1498,9 +1498,9 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE dom_clean_extra(td_dom)
    !-------------------------------------------------------------------
-   !> @brief 
-   !>  This subroutine clean coarse grid domain structure. 
-   !> it remove extra point added. 
+   !> @brief
+   !>  This subroutine clean coarse grid domain structure.
+   !> it remove extra point added.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial version
@@ -1538,16 +1538,16 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE dom_del_extra(td_var, td_dom, id_rho, ld_coord)
    !-------------------------------------------------------------------
-   !> @brief 
-   !>  This subroutine delete extra band, from fine grid variable value, 
+   !> @brief
+   !>  This subroutine delete extra band, from fine grid variable value,
    !> and dimension, taking into account refinement factor.
    !>
    !> @details
    !> @note This subroutine should be used before clean domain structure.
    !>
    !> @warning if work on coordinates grid, do not remove all extra point.
-   !> save value on ghost cell. 
-   !> 
+   !> save value on ghost cell.
+   !>
    !> @author J.Paul
    !> @date November, 2013 - Initial version
    !> @date September, 2014
@@ -1577,7 +1577,7 @@ CONTAINS
       INTEGER(i4) :: il_imax
       INTEGER(i4) :: il_jmin
       INTEGER(i4) :: il_jmax
-      
+
       INTEGER(i4), DIMENSION(2)   :: il_rho
       INTEGER(i4), DIMENSION(2,2) :: il_ghost
 
@@ -1621,7 +1621,7 @@ CONTAINS
 
             IF( il_iextra >= td_var%t_dim(1)%i_len )THEN
                ! case one point size dimension
-               SELECT CASE(td_dom%i_bdy) 
+               SELECT CASE(td_dom%i_bdy)
 
                   CASE(jp_north,jp_east)
 
@@ -1698,7 +1698,7 @@ CONTAINS
 
             IF( il_jextra >= td_var%t_dim(2)%i_len )THEN
                ! case one point size dimension
-               SELECT CASE(td_dom%i_bdy) 
+               SELECT CASE(td_dom%i_bdy)
 
                   CASE(jp_north,jp_east)
 
@@ -1787,7 +1787,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE dom_clean(td_dom)
    !-------------------------------------------------------------------
-   !> @brief 
+   !> @brief
    !>  This subroutine clean domain structure.
    !>
    !> @author J.Paul

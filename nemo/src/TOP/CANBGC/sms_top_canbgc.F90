@@ -134,7 +134,7 @@ MODULE sms_top_canbgc
 
 	CONTAINS
 
-    SUBROUTINE trc_xnegtr( jptra0 , jptra1 , qnegtr )
+    SUBROUTINE trc_xnegtr( jptra0 , jptra1, Kbb, Kmm, Krhs , qnegtr )
       ! 
       ! Check the effect of the trend on the current array
       ! and if any tracer goes beyond zero reduce the time step
@@ -143,9 +143,10 @@ MODULE sms_top_canbgc
       ! already if this is the 1st time step in the calling
       ! subroutine, i.e. trcsms_cmoc or trcsms_canoe.
       !
-      USE trc, ONLY: trb, tra
+      USE trc, ONLY: tr
       !
       INTEGER,                          INTENT(in)    ::  jptra0, jptra1   !: tracer indices
+      INTEGER, INTENT(in) ::   Kbb, Kmm, Krhs  ! time level indices
       REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(inout) :: qnegtr
       INTEGER             ::  jn, ji, jj, jk   !: dummy loop indices
       REAL(wp)            ::  ztra
@@ -165,9 +166,9 @@ MODULE sms_top_canbgc
         DO jk = 1, jpk
            DO jj = 1, jpj
               DO ji = 1, jpi
-                 IF( ( trb(ji,jj,jk,jn) + tra(ji,jj,jk,jn) ) < 0.e0 ) THEN
-                    ztra             = ABS( ( trb(ji,jj,jk,jn) - rtrn ) & 
-                    &                     / ( tra(ji,jj,jk,jn) + rtrn ) )
+                 IF( ( tr(ji,jj,jk,jn, Kbb) + tr(ji,jj,jk,jn, Krhs) ) < 0.e0 ) THEN
+                    ztra             = ABS( ( tr(ji,jj,jk,jn, Kbb) - rtrn ) & 
+                    &                     / ( tr(ji,jj,jk,jn, Krhs) + rtrn ) )
                     qnegtr(ji,jj,jk) = MIN( qnegtr(ji,jj,jk),  ztra )
                  ENDIF
              END DO

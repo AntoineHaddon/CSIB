@@ -1,4 +1,5 @@
 MODULE getincom
+!$AGRIF_DO_NOT_TREAT
 !-
 !$Id: getincom.f90 2281 2010-10-15 14:21:13Z smasson $
 !-
@@ -2005,4 +2006,5 @@ SUBROUTINE get_findkey (i_tab,c_key,pos)
 END SUBROUTINE get_findkey
 !===
 !------------------
+!$AGRIF_END_DO_NOT_TREAT
 END MODULE getincom

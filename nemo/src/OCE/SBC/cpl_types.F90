@@ -4,7 +4,7 @@ use par_kind, only : wp
 
 implicit none; private
 
-INTEGER, PUBLIC, PARAMETER ::   nmaxfld=60   ! Maximum number of coupling fields
+INTEGER, PUBLIC, PARAMETER ::   nmaxfld=80   ! Maximum number of coupling fields
 INTEGER, PUBLIC, PARAMETER ::   nmaxcat=5    ! Maximum number of coupling fields
 INTEGER, PUBLIC, PARAMETER ::   nmaxcpl=5    ! Maximum number of coupling fields
 TYPE, PUBLIC ::   FLD_C                     !

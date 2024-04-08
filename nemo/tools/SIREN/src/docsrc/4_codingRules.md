@@ -14,7 +14,7 @@ SIREN software adhere to strict __FORTRAN 95__ standard.<br/>
 There is only one exception. The use of functions _COMMAND_ARGUMENT_COUNT_ and
 _GET_COMMAND_ARGUMENT_.<br/>
 There exist no equivalent for those Fortran 03 intrinsec functions in Fortran
-95.<br/> At least none convenient for compilers tested (see @ref md_src_docsrc_1_install). 
+95.<br/> At least none convenient for compilers tested (see @ref md_src_docsrc_1_install).
 
 #  Free Form Source {#free}
 Free Form Source will be used, however a self imposed limit of 80 should

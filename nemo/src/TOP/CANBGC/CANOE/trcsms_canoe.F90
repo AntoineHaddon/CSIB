@@ -47,7 +47,7 @@ MODULE trcsms_canoe
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE trc_sms_canoe( kt )
+   SUBROUTINE trc_sms_canoe( kt, Kbb, Kmm, Krhs )
       !!----------------------------------------------------------------------
       !!                     ***  trc_sms_canoe  ***
       !!
@@ -60,6 +60,7 @@ CONTAINS
       USE trcsrc_canbgc             ! loading external files/sources
       !
       INTEGER, INTENT(in) ::   kt   ! ocean time-step index
+      INTEGER, INTENT(in) ::   Kbb, Kmm, Krhs  ! time level indices
       INTEGER  ::  jnt			        ! time (-step) splitting index
       INTEGER  ::  jn, ji, jj, jk   ! dummy loop indices
       INTEGER  ::  zrfact           ! working variable      
@@ -124,7 +125,7 @@ CONTAINS
           IF(lwp) write(numout,*) ' New chemical constants and various rates for biogeochemistry at new day : ', nday_year
           IF(lwp) write(numout,*) '~~~~~~'
           !
-          CALL trc_che_2D( kt )   ! computation of carbon chemistry constants
+          CALL trc_che_2D( kt, Kmm )   ! computation of carbon chemistry constants
           ! initialize the chemical constants
           ! JC's 2D carbon chem mode 
           !
@@ -151,7 +152,7 @@ CONTAINS
         IF(lwp) write(numout,*) ' New chemical constants and various rates for biogeochemistry at new day : ', nday_year
         IF(lwp) write(numout,*) '~~~~~~'
   
-        CALL trc_che_2D( kt )           ! computation of carbon chemistry constants
+        CALL trc_che_2D( kt,Kmm )           ! computation of carbon chemistry constants
         ! initialize the chemical constants
         ! JC's 2D carbon chem mode 
             !
@@ -159,10 +160,10 @@ CONTAINS
       !
       ! Update temperature dependencies
       ! use for BGC rates
-      CALL canoe_temp
+      CALL canoe_temp( Kmm )
       !
       DO jn = 1, jp_tot                    !   Store the tracer concentrations before entering CMOC
-        rtrbbio(:,:,:,jn) = trb(:,:,:,jn)
+        rtrbbio(:,:,:,jn) = tr(:,:,:,jn, Kbb)
       END DO
       !  
       DO jnt = 1, qnrdttrc             ! Potential time splitting if requested
@@ -185,21 +186,21 @@ CONTAINS
         WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
         CALL FLUSH(numout)
 	      !
-        ! CALL canoe_sink( kt , jnt )     ! particule sinking 
+        ! CALL canoe_sink( kt , jnt, Kbb, Kmm, Krhs )     ! particule sinking 
 	      !
         !!!!!!!!!!! CALL trc_opt_stairs( kt, jnt )       ! test PAR vert profile.
-        ! CALL trc_opt( kt, jnt )       ! 3-band PAR attenuation
+        ! CALL trc_opt( kt, jnt, Kmm )       ! 3-band PAR attenuation
         !
 	      ! call CanOE production S/R
-        ! CALL canoe_prod( kt, jnt )
+        ! CALL canoe_prod( kt , jnt , Kbb, Kmm, Krhs )
         !
         ! Initialize rnegtr2, if no call to trc_xnegtr tra used w/o correction
         rnegtr2(:,:,:) = 1._wp
         !
-        IF( ln_canoenegtr )  CALL trc_xnegtr( 1, jp_tot, rnegtr2 )   !!! O Riche Nov 8th 2022 ! reside in sms_top_canbgc.F90
+        IF( ln_canoenegtr )  CALL trc_xnegtr( 1, jp_tot, Kbb, Kmm, Krhs, rnegtr2 )   !!! O Riche Nov 8th 2022 ! reside in sms_top_canbgc.F90
         DO jn = 1, jp_tot
-          trb(:,:,:,jn) = trb(:,:,:,jn) + rnegtr2(:,:,:) * tra(:,:,:,jn)        
-          tra(:,:,:,jn) = 0._wp
+          tr(:,:,:,jn, Kbb) = tr(:,:,:,jn, Kbb) + rnegtr2(:,:,:) * tr(:,:,:,jn, Krhs)        
+          tr(:,:,:,jn, Krhs) = 0._wp
         END DO
         !  
         !!!!!!! End   of "p4zbio" block !!!!!!!        
@@ -208,13 +209,13 @@ CONTAINS
         !
         !!!!!!! End   of "p4zsed" block !!!!!!!
         !
-	  CALL trc_flx( kt )     ! compute air-sea gas exchange 
+	  CALL trc_flx(kt, Kmm, Krhs)     ! compute air-sea gas exchange 
 	!
       END DO
       !
       DO jn = 1, jp_tot
-        tra(:,:,:,jn) = ( trb(:,:,:,jn) - rtrbbio(:,:,:,jn) ) * qfactr
-        trb(:,:,:,jn) = rtrbbio(:,:,:,jn)
+        tr(:,:,:,jn, Krhs) = ( tr(:,:,:,jn, Kbb) - rtrbbio(:,:,:,jn) ) * qfactr
+        tr(:,:,:,jn, Kbb) = rtrbbio(:,:,:,jn)
         rtrbbio(:,:,:,jn) = 0._wp
       END DO
       !
@@ -230,8 +231,8 @@ CONTAINS
       ! Save the trends in the mixed layer
       IF( l_trdtrc ) THEN
           DO jn = 1, jp_tot
-            ztrmyt(:,:,:) = tra(:,:,:,jn)
-            CALL trd_trc( ztrmyt, jn, jptra_sms, kt )   ! save trends
+            ztrmyt(:,:,:) = tr(:,:,:,jn, Krhs)
+            CALL trd_trc( ztrmyt, jn, jptra_sms, kt, Kmm )   ! save trends
           END DO
           DEALLOCATE( ztrmyt )
       END IF
@@ -241,7 +242,7 @@ CONTAINS
       !
    END SUBROUTINE trc_sms_canoe
    
-   SUBROUTINE total_element(totfe,totn)
+   SUBROUTINE total_element(totfe,totn, Kmm)
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE total_element  ***
       !!
@@ -251,6 +252,7 @@ CONTAINS
       USE lib_fortran,   ONLY: glob_sum
       USE sms_canoe,     ONLY: rr_c2n, rr_fe2c
       !
+      INTEGER, INTENT(in) ::    Kmm  ! time level indices
       REAL(wp) :: totfe, totn
       !!---------------------------------------------------------------------
 
@@ -258,18 +260,18 @@ CONTAINS
       totn  = 0._wp
 
       totn = glob_sum( 'total_element',                                   &
-                         (   (trn(:,:,:,jqno3)   + trn(:,:,:,jrnh4)       &
-      &                     + trn(:,:,:,jrnn)  + trn(:,:,:,jrdn))*rr_c2n  &
-      &                     + trn(:,:,:,jrzoo) + trn(:,:,:,jrmes)         &
-      &                     + trn(:,:,:,jrpoc) + trn(:,:,:,jrgoc)  ) * cvol(:,:,:)  )
+                         (   (tr(:,:,:,jqno3, Kmm)   + tr(:,:,:,jrnh4, Kmm)       &
+      &                     + tr(:,:,:,jrnn, Kmm)  + tr(:,:,:,jrdn, Kmm))*rr_c2n  &
+      &                     + tr(:,:,:,jrzoo, Kmm) + tr(:,:,:,jrmes, Kmm)         &
+      &                     + tr(:,:,:,jrpoc, Kmm) + tr(:,:,:,jrgoc, Kmm)  ) * cvol(:,:,:)  )
       totn = totn/rr_c2n
 
       ! zoo and poc concs are in C units
 
       totfe = glob_sum( 'total_element',                                               &
-                          (   trn(:,:,:,jrfer) + trn(:,:,:,jrdfe) + trn(:,:,:,jrnfe)   &
-      &                     + trn(:,:,:,jrzoo)*rr_fe2c + trn(:,:,:,jrmes)*rr_fe2c      &
-      &                     + trn(:,:,:,jrpoc)*rr_fe2c + trn(:,:,:,jrgoc)*rr_fe2c  ) * cvol(:,:,:)  )
+                          (   tr(:,:,:,jrfer, Kmm) + tr(:,:,:,jrdfe, Kmm) + tr(:,:,:,jrnfe, Kmm)   &
+      &                     + tr(:,:,:,jrzoo, Kmm)*rr_fe2c + tr(:,:,:,jrmes, Kmm)*rr_fe2c      &
+      &                     + tr(:,:,:,jrpoc, Kmm)*rr_fe2c + tr(:,:,:,jrgoc, Kmm)*rr_fe2c  ) * cvol(:,:,:)  )
 
       !
    END SUBROUTINE total_element

@@ -6,13 +6,13 @@
 !> @brief This module manage Horizontal grid.
 !>
 !> @details
-!> ** Purpose :   Compute the geographical position (in degre) of the 
-!>      model grid-points,  the horizontal scale factors (in meters) and 
+!> ** Purpose :   Compute the geographical position (in degre) of the
+!>      model grid-points,  the horizontal scale factors (in meters) and
 !>      the Coriolis factor (in s-1).
 !>
 !> ** Method  :   The geographical position of the model grid-points is
 !>    defined from analytical functions, fslam and fsphi, the derivatives of which gives the horizontal scale factors e1,e2.
-!>    Defining two function fslam and fsphi and their derivatives in the two horizontal directions (fse1 and fse2), 
+!>    Defining two function fslam and fsphi and their derivatives in the two horizontal directions (fse1 and fse2),
 !>    the model grid-point position and scale factors are given by:
 !>    - t-point:
 !>       - glamt(i,j) = fslam(i    ,j    )   e1t(i,j) = fse1(i    ,j    )
@@ -45,7 +45,7 @@
 !> @note If the domain is periodic, verify that scale factors are also
 !>      periodic, and the coriolis term again.
 !>
-!> ** Action  : 
+!> ** Action  :
 !>    - define  glamt, glamu, glamv, glamf: longitude of t-, u-, v- and f-points (in degre)
 !>    - define  gphit, gphiu, gphiv, gphit: latitude  of t-, u-, v-  and f-points (in degre)
 !>    - define e1t, e2t, e1u, e2u, e1v, e2v, e1f, e2f: horizontal
@@ -59,9 +59,9 @@
 !> G, Madec
 !>
 !> @date March, 1988 - Original code
-!> @date January, 1996 
+!> @date January, 1996
 !> - terrain following coordinates
-!> @date February, 1997 
+!> @date February, 1997
 !> - print mesh informations
 !> @date November, 1999
 !> - M. Imbard : NetCDF format with IO-IPSL
@@ -75,14 +75,14 @@
 !> - A.M. Treguier, J.M. Molines : Case 4 (Mercator mesh)
 !> use of parameters in par_CONFIG-Rxx.h90, not in namelist
 !> @date May, 2004
-!> - A. Koch-Larrouy : Add Gyre configuration 
+!> - A. Koch-Larrouy : Add Gyre configuration
 !> @date February, 2011
 !> - G. Madec : add cell surface (e1e2t)
-!> @date September, 2015 
+!> @date September, 2015
 !> - J, Paul : rewrite to SIREN format from $Id: domhgr.F90 5506 2015-06-29 15:19:38Z clevy $
 !> @date October, 2016
 !> - J, Paul : update from trunk (revision 6961): add wetting and drying, ice sheet coupling..
-!> - J, Paul : compute coriolis factor at f-point and at t-point 
+!> - J, Paul : compute coriolis factor at f-point and at t-point
 !> - J, Paul : do not use anymore special case for ORCA grid
 !>
 !> @note Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
@@ -134,17 +134,17 @@ MODULE grid_hgr
    PUBLIC :: tg_gphiu
    PUBLIC :: tg_gphiv
    PUBLIC :: tg_gphif
-   
+
    PUBLIC :: tg_e1t
    PUBLIC :: tg_e1u
    PUBLIC :: tg_e1v
    PUBLIC :: tg_e1f
-   
+
    PUBLIC :: tg_e2t
    PUBLIC :: tg_e2u
    PUBLIC :: tg_e2v
    PUBLIC :: tg_e2f
-   
+
    PUBLIC :: tg_ff_t
    PUBLIC :: tg_ff_f
 
@@ -159,10 +159,10 @@ MODULE grid_hgr
    PUBLIC :: tg_gsinf
 
    ! function and subroutine
-   PUBLIC :: grid_hgr_init 
+   PUBLIC :: grid_hgr_init
    PUBLIC :: grid_hgr_fill
    PUBLIC :: grid_hgr_clean
-   PUBLIC :: grid_hgr_nam 
+   PUBLIC :: grid_hgr_nam
 
    PRIVATE :: grid_hgr__fill_curv
    PRIVATE :: grid_hgr__fill_reg
@@ -174,27 +174,27 @@ MODULE grid_hgr
 
    TYPE TNAMH
 
-      CHARACTER(LEN=lc) :: c_coord   
-      INTEGER(i4)       :: i_perio   
-                
-      INTEGER(i4)       :: i_mshhgr  
-      REAL(dp)          :: d_ppglam0 
-      REAL(dp)          :: d_ppgphi0 
-                
+      CHARACTER(LEN=lc) :: c_coord
+      INTEGER(i4)       :: i_perio
+
+      INTEGER(i4)       :: i_mshhgr
+      REAL(dp)          :: d_ppglam0
+      REAL(dp)          :: d_ppgphi0
+
       REAL(dp)          :: d_ppe1_deg
       REAL(dp)          :: d_ppe2_deg
-!      REAL(dp)          :: d_ppe1_m  
-!      REAL(dp)          :: d_ppe2_m     
+!      REAL(dp)          :: d_ppe1_m
+!      REAL(dp)          :: d_ppe2_m
 
-!      INTEGER(i4)       :: i_cla     
-                
-!      CHARACTER(LEN=lc) :: c_cfg     
-      INTEGER(i4)       :: i_cfg     
-      LOGICAL           :: l_bench   
-                
+!      INTEGER(i4)       :: i_cla
+
+!      CHARACTER(LEN=lc) :: c_cfg
+      INTEGER(i4)       :: i_cfg
+      LOGICAL           :: l_bench
+
    END TYPE
 
-   TYPE(TVAR), SAVE :: tg_tmask   
+   TYPE(TVAR), SAVE :: tg_tmask
    TYPE(TVAR), SAVE :: tg_umask
    TYPE(TVAR), SAVE :: tg_vmask
    TYPE(TVAR), SAVE :: tg_fmask
@@ -202,7 +202,7 @@ MODULE grid_hgr
 !   TYPE(TVAR), SAVE :: tg_wumask
 !   TYPE(TVAR), SAVE :: tg_wvmask
 
-   TYPE(TVAR), SAVE :: tg_ssmask 
+   TYPE(TVAR), SAVE :: tg_ssmask
 !   TYPE(TVAR), SAVE :: tg_ssumask
 !   TYPE(TVAR), SAVE :: tg_ssvmask
 !   TYPE(TVAR), SAVE :: tg_ssfmask
@@ -242,7 +242,7 @@ MODULE grid_hgr
 
 CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE grid_hgr_init(jpi, jpj, jpk, ld_domcfg) 
+   SUBROUTINE grid_hgr_init(jpi, jpj, jpk, ld_domcfg)
    !-------------------------------------------------------------------
    !> @brief This subroutine initialise hgr structure
    !>
@@ -255,7 +255,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       INTEGER(i4), INTENT(IN) :: jpi
       INTEGER(i4), INTENT(IN) :: jpj
       INTEGER(i4), INTENT(IN) :: jpk
@@ -319,14 +319,14 @@ CONTAINS
       IF( .NOT. ld_domcfg )THEN
          tg_fmask   = var_init('fmask'  ,dl_tmp3D(:,:,:), dd_fill=dp_fill_i1, id_type=NF90_BYTE)
       ENDIF
-      
+
 !      tg_wmask   = var_init('wmask'  ,dl_tmp3D(:,:,:), dd_fill=dp_fill_i1, id_type=NF90_BYTE)
 !      tg_wumask  = var_init('wumask' ,dl_tmp3D(:,:,:), dd_fill=dp_fill_i1, id_type=NF90_BYTE)
 !      tg_wvmask  = var_init('wvmask' ,dl_tmp3D(:,:,:), dd_fill=dp_fill_i1, id_type=NF90_BYTE)
 
    END SUBROUTINE grid_hgr_init
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE grid_hgr_clean(ld_domcfg) 
+   SUBROUTINE grid_hgr_clean(ld_domcfg)
    !-------------------------------------------------------------------
    !> @brief This subroutine clean hgr structure
    !>
@@ -337,7 +337,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       LOGICAL    , INTENT(IN) :: ld_domcfg
 
       ! local variable
@@ -396,19 +396,19 @@ CONTAINS
    !> @author J.Paul
    !> @date September, 2015 - Initial version
    !>
-   !> @param[in] cd_coord   
-   !> @param[in] id_perio  
+   !> @param[in] cd_coord
+   !> @param[in] id_perio
    !> @param[in] cd_namelist
    !> @return hgr namelist structure
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       CHARACTER(LEN=*), INTENT(IN) :: cd_coord
-      INTEGER(i4)     , INTENT(IN) :: id_perio   
+      INTEGER(i4)     , INTENT(IN) :: id_perio
       CHARACTER(LEN=*), INTENT(IN) :: cd_namelist
-      
+
       ! function
       TYPE(TNAMH)                  :: tf_namh
 
@@ -422,7 +422,7 @@ CONTAINS
       ! namelist
 
       ! namhgr
-      INTEGER(i4)       :: in_mshhgr   = 0 
+      INTEGER(i4)       :: in_mshhgr   = 0
       REAL(dp)          :: dn_ppglam0  = NF90_FILL_DOUBLE
       REAL(dp)          :: dn_ppgphi0  = NF90_FILL_DOUBLE
       REAL(dp)          :: dn_ppe1_deg = NF90_FILL_DOUBLE
@@ -439,8 +439,8 @@ CONTAINS
       LOGICAL           :: ln_bench    = .FALSE.
 
       !----------------------------------------------------------------
-      NAMELIST /namhgr/ &  
-      &  in_mshhgr,     &  !< type of horizontal mesh 
+      NAMELIST /namhgr/ &
+      &  in_mshhgr,     &  !< type of horizontal mesh
                            !< 0: curvilinear coordinate on the sphere read in coordinate.nc
                            !< 1: geographical mesh on the sphere with regular grid-spacing
                            !< 2: f-plane with regular grid-spacing
@@ -460,13 +460,13 @@ CONTAINS
       NAMELIST/namgrd/  &  !< orca grid namelist
 !      &  cn_cfg,        &  !< name of the configuration (orca)
       &  in_cfg,        &  !< resolution of the configuration (2,1,025..)
-      &  ln_bench          !< benchmark parameter (in_mshhgr = 5 ). 
+      &  ln_bench          !< benchmark parameter (in_mshhgr = 5 ).
 
       !----------------------------------------------------------------
       ! read namelist
       INQUIRE(FILE=TRIM(cd_namelist), EXIST=ll_exist)
       IF( ll_exist )THEN
-         
+
          il_fileid=fct_getunit()
 
          OPEN( il_fileid, FILE=TRIM(cd_namelist), &
@@ -490,7 +490,7 @@ CONTAINS
          IF( il_status /= 0 )THEN
             CALL logger_error("GRID HGR NAM: closing "//TRIM(cd_namelist))
          ENDIF
-        
+
          tf_namh%c_coord   = TRIM(cd_coord)
          tf_namh%i_perio   = id_perio
 
@@ -517,7 +517,7 @@ CONTAINS
 
    END FUNCTION grid_hgr_nam
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE grid_hgr_fill(td_nam, jpi, jpj, ld_domcfg) 
+   SUBROUTINE grid_hgr_fill(td_nam, jpi, jpj, ld_domcfg)
    !-------------------------------------------------------------------
    !> @brief This subroutine fill horizontal mesh (hgr structure)
    !>
@@ -531,7 +531,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TNAMH), INTENT(IN) :: td_nam
       INTEGER(i4), INTENT(IN) :: jpi
       INTEGER(i4), INTENT(IN) :: jpj
@@ -554,9 +554,9 @@ CONTAINS
          CALL logger_info('   meridional grid-spacing (degrees) ppe2_deg = '//&
             &  TRIM(fct_str(td_nam%d_ppe2_deg )) )
 !         CALL logger_info('   zonal      grid-spacing (meters)  ppe1_m   = '//&
-!            &  TRIM(fct_str(td_nam%d_ppe1_m   )) ) 
+!            &  TRIM(fct_str(td_nam%d_ppe1_m   )) )
 !         CALL logger_info('   meridional grid-spacing (meters)  ppe2_m   = '//&
-!            &  TRIM(fct_str(td_nam%d_ppe2_m   )) ) 
+!            &  TRIM(fct_str(td_nam%d_ppe2_m   )) )
       ENDIF
 
       SELECT CASE( td_nam%i_mshhgr ) ! type of horizontal mesh
@@ -593,7 +593,7 @@ CONTAINS
 
       ! create coriolis factor
       CALL grid_hgr__fill_coriolis(td_nam,jpi)!,jpj)
-     
+
       ! Control of domain for symetrical condition
       ! ------------------------------------------
       ! The equator line must be the latitude coordinate axe
@@ -608,12 +608,12 @@ CONTAINS
       ! compute angles between model grid lines and the North direction
       ! ---------------------------------------------------------------
       IF( .NOT. ld_domcfg )THEN
-         CALL grid_hgr__angle(td_nam,jpi,jpj) 
+         CALL grid_hgr__angle(td_nam,jpi,jpj)
       ENDIF
 
    END SUBROUTINE grid_hgr_fill
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE grid_hgr__fill_curv(td_nam)!,jpi,jpj) 
+   SUBROUTINE grid_hgr__fill_curv(td_nam)!,jpi,jpj)
    !-------------------------------------------------------------------
    !> @brief This subroutine fill horizontal mesh (hgr structure)
    !> for case of curvilinear coordinate on the sphere read in coordinate.nc file
@@ -625,12 +625,12 @@ CONTAINS
    !>
    !> @param[in] td_nam
    ! @param[in] jpi
-   ! @param[in] jpj   
+   ! @param[in] jpj
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TNAMH), INTENT(IN) :: td_nam
 !      INTEGER(i4), INTENT(IN) :: jpi
 !      INTEGER(i4), INTENT(IN) :: jpj
@@ -651,7 +651,7 @@ CONTAINS
          CALL grid_get_info(tl_coord)
       ELSE
          CALL logger_fatal("GRID HGR FILL: no input coordinates file found. "//&
-         &     "check namelist")      
+         &     "check namelist")
       ENDIF
 
       CALL iom_mpp_open( tl_coord )
@@ -701,14 +701,14 @@ CONTAINS
 !               !
 !               ! Gibraltar Strait (e2u = 20 km)
 !               ii0 = 139   ;   ii1 = 140
-!               ij0 = 102   ;   ij1 = 102   
+!               ij0 = 102   ;   ij1 = 102
 !               ! e2u = 20 km
 !               tg_e2u%d_value(ii0:ii1,ij0:ij1,1,1) =  20.e3
 !               CALL logger_info('orca_r2: Gibraltar    : e2u reduced to 20 km')
 !               !
 !               ! Bab el Mandeb (e2u = 18 km)
-!               ii0 = 160   ;   ii1 = 160 
-!               ij0 =  88   ;   ij1 =  88   
+!               ii0 = 160   ;   ii1 = 160
+!               ij0 =  88   ;   ij1 =  88
 !               ! e1v = 18 km
 !               tg_e1v%d_value(ii0:ii1,ij0:ij1,1,1) =  18.e3
 !               ! e2u = 30 km
@@ -719,7 +719,7 @@ CONTAINS
 !            ENDIF
 !            ! Danish Straits
 !            ii0 = 145   ;   ii1 = 146
-!            ij0 = 116   ;   ij1 = 116   
+!            ij0 = 116   ;   ij1 = 116
 !            ! e2u = 10 km
 !            tg_e2u%d_value(ii0:ii1,ij0:ij1,1,1) =  10.e3
 !            CALL logger_info('orca_r2: Danish Straits : e2u reduced to 10 km')
@@ -736,7 +736,7 @@ CONTAINS
 !
 !         ! Gibraltar Strait (e2u = 20 km)
 !         ii0 = 282           ;   ii1 = 283
-!         ij0 = 201 + isrow   ;   ij1 = 241 - isrow 
+!         ij0 = 201 + isrow   ;   ij1 = 241 - isrow
 !         ! e2u = 20 km
 !         tg_e2u%d_value(ii0:ii1,ij0:ij1,1,1) =  20.e3
 !         CALL logger_info('orca_r1: Gibraltar : e2u reduced to 20 km')
@@ -849,7 +849,7 @@ CONTAINS
 
    END SUBROUTINE grid_hgr__fill_curv
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE grid_hgr__fill_reg(td_nam, jpi, jpj) 
+   SUBROUTINE grid_hgr__fill_reg(td_nam, jpi, jpj)
    !-------------------------------------------------------------------
    !> @brief This subroutine fill horizontal mesh (hgr structure)
    !> for case of geographical mesh on the sphere with regular grid-spacing
@@ -859,12 +859,12 @@ CONTAINS
    !>
    !> @param[in] td_nam
    !> @param[in] jpi
-   !> @param[in] jpj   
+   !> @param[in] jpj
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TNAMH), INTENT(IN) :: td_nam
       INTEGER(i4), INTENT(IN) :: jpi
       INTEGER(i4), INTENT(IN) :: jpj
@@ -912,7 +912,7 @@ CONTAINS
 
    END SUBROUTINE grid_hgr__fill_reg
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE grid_hgr__fill_plan(td_nam, jpi, jpj) 
+   SUBROUTINE grid_hgr__fill_plan(td_nam, jpi, jpj)
    !-------------------------------------------------------------------
    !> @brief This subroutine fill horizontal mesh (hgr structure)
    !> for case of f- or beta-plane with regular grid-spacing
@@ -922,12 +922,12 @@ CONTAINS
    !>
    !> @param[in] td_nam
    !> @param[in] jpi
-   !> @param[in] jpj   
+   !> @param[in] jpj
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TNAMH), INTENT(IN) :: td_nam
       INTEGER(i4), INTENT(IN) :: jpi
       INTEGER(i4), INTENT(IN) :: jpj
@@ -960,7 +960,7 @@ CONTAINS
             tg_glamu%d_value(ji,jj,1,1) = dl_glam0 + td_nam%d_ppe1_deg * 1.e-3 * ( FLOAT( ji - 1 ) + 0.5 )
             tg_glamv%d_value(ji,jj,1,1) = tg_glamt%d_value(ji,jj,1,1)
             tg_glamf%d_value(ji,jj,1,1) = tg_glamu%d_value(ji,jj,1,1)
-   
+
             !tg_gphit%d_value(ji,jj,1,1) = dl_gphi0 + td_nam%d_ppe2_m * 1.e-3 * ( FLOAT( jj - 1 )       )
             tg_gphit%d_value(ji,jj,1,1) = dl_gphi0 + td_nam%d_ppe2_deg * 1.e-3 * ( FLOAT( jj - 1 )       )
             tg_gphiu%d_value(ji,jj,1,1) = tg_gphit%d_value(ji,jj,1,1)
@@ -972,14 +972,14 @@ CONTAINS
 
       ! Horizontal scale factors (in meters)
       !                              ======
-!      tg_e1t%d_value(:,:,1,1) = td_nam%d_ppe1_m      
-!      tg_e1u%d_value(:,:,1,1) = td_nam%d_ppe1_m      
-!      tg_e1v%d_value(:,:,1,1) = td_nam%d_ppe1_m      
-!      tg_e1f%d_value(:,:,1,1) = td_nam%d_ppe1_m      
-      tg_e1t%d_value(:,:,1,1) = td_nam%d_ppe1_deg      
-      tg_e1u%d_value(:,:,1,1) = td_nam%d_ppe1_deg      
-      tg_e1v%d_value(:,:,1,1) = td_nam%d_ppe1_deg      
-      tg_e1f%d_value(:,:,1,1) = td_nam%d_ppe1_deg      
+!      tg_e1t%d_value(:,:,1,1) = td_nam%d_ppe1_m
+!      tg_e1u%d_value(:,:,1,1) = td_nam%d_ppe1_m
+!      tg_e1v%d_value(:,:,1,1) = td_nam%d_ppe1_m
+!      tg_e1f%d_value(:,:,1,1) = td_nam%d_ppe1_m
+      tg_e1t%d_value(:,:,1,1) = td_nam%d_ppe1_deg
+      tg_e1u%d_value(:,:,1,1) = td_nam%d_ppe1_deg
+      tg_e1v%d_value(:,:,1,1) = td_nam%d_ppe1_deg
+      tg_e1f%d_value(:,:,1,1) = td_nam%d_ppe1_deg
 
 !      tg_e2t%d_value(:,:,1,1) = td_nam%d_ppe2_m
 !      tg_e2u%d_value(:,:,1,1) = td_nam%d_ppe2_m
@@ -992,7 +992,7 @@ CONTAINS
 
    END SUBROUTINE grid_hgr__fill_plan
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE grid_hgr__fill_merc(td_nam, jpi, jpj) 
+   SUBROUTINE grid_hgr__fill_merc(td_nam, jpi, jpj)
    !-------------------------------------------------------------------
    !> @brief This subroutine fill horizontal mesh (hgr structure)
    !> for case of geographical mesh on the sphere, isotropic MERCATOR type
@@ -1002,12 +1002,12 @@ CONTAINS
    !>
    !> @param[in] td_nam
    !> @param[in] jpi
-   !> @param[in] jpj   
+   !> @param[in] jpj
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TNAMH), INTENT(IN) :: td_nam
       INTEGER(i4), INTENT(IN) :: jpi
       INTEGER(i4), INTENT(IN) :: jpj
@@ -1072,7 +1072,7 @@ CONTAINS
 
    END SUBROUTINE grid_hgr__fill_merc
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE grid_hgr__fill_gyre(td_nam, jpi, jpj) 
+   SUBROUTINE grid_hgr__fill_gyre(td_nam, jpi, jpj)
    !-------------------------------------------------------------------
    !> @brief This subroutine fill horizontal mesh (hgr structure)
    !> for case of beta-plane with regular grid-spacing and rotated domain (GYRE configuration)
@@ -1087,7 +1087,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TNAMH), INTENT(IN) :: td_nam
       INTEGER(i4), INTENT(IN) :: jpi
       INTEGER(i4), INTENT(IN) :: jpj
@@ -1113,9 +1113,9 @@ CONTAINS
       zlam1 = -85
       zphi1 = 29
       ! resolution in meters
-      ze1 = 106000. / FLOAT(td_nam%i_cfg)            
+      ze1 = 106000. / FLOAT(td_nam%i_cfg)
       ! benchmark: forced the resolution to be about 100 km
-      IF( td_nam%l_bench )   ze1 = 106000.e0     
+      IF( td_nam%l_bench )   ze1 = 106000.e0
       zsin_alpha = - SQRT( 2. ) / 2.
       zcos_alpha =   SQRT( 2. ) / 2.
       ze1deg = ze1 / (dp_rearth * dp_deg2rad)
@@ -1144,7 +1144,7 @@ CONTAINS
             tg_glamu%d_value(ji,jj,1,1) = dl_glam0 &
                                         & + zim1  * ze1deg * zcos_alpha &
                                         & + zjm05 * ze1deg * zsin_alpha
-            tg_gphiu%d_value(ji,jj,1,1) = dl_gphi0 & 
+            tg_gphiu%d_value(ji,jj,1,1) = dl_gphi0 &
                                         & - zim1  * ze1deg * zsin_alpha &
                                         & + zjm05 * ze1deg * zcos_alpha
 
@@ -1160,10 +1160,10 @@ CONTAINS
 
       ! Horizontal scale factors (in meters)
       !                              ======
-      tg_e1t%d_value(:,:,1,1) = ze1      
-      tg_e1u%d_value(:,:,1,1) = ze1      
-      tg_e1v%d_value(:,:,1,1) = ze1      
-      tg_e1f%d_value(:,:,1,1) = ze1      
+      tg_e1t%d_value(:,:,1,1) = ze1
+      tg_e1u%d_value(:,:,1,1) = ze1
+      tg_e1v%d_value(:,:,1,1) = ze1
+      tg_e1f%d_value(:,:,1,1) = ze1
 
       tg_e2t%d_value(:,:,1,1) = ze1
       tg_e2u%d_value(:,:,1,1) = ze1
@@ -1172,7 +1172,7 @@ CONTAINS
 
    END SUBROUTINE grid_hgr__fill_gyre
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE grid_hgr__fill_coriolis(td_nam, jpi)!,jpj) 
+   SUBROUTINE grid_hgr__fill_coriolis(td_nam, jpi)!,jpj)
    !-------------------------------------------------------------------
    !> @brief This subroutine fill coriolis factor
    !>
@@ -1188,14 +1188,14 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TNAMH), INTENT(IN) :: td_nam
       INTEGER(i4), INTENT(IN) :: jpi
 !      INTEGER(i4), INTENT(IN) :: jpj
 
       ! local variable
       REAL(dp) :: zbeta
-      REAL(dp) :: zphi0  
+      REAL(dp) :: zphi0
       REAL(dp) :: zf0
 
       ! loop indices
@@ -1209,7 +1209,7 @@ CONTAINS
             tg_ff_f%d_value(:,:,1,1) = 2. * dp_omega * SIN(dp_deg2rad * tg_gphif%d_value(:,:,1,1))
             tg_ff_t%d_value(:,:,1,1) = 2. * dp_omega * SIN(dp_deg2rad * tg_gphit%d_value(:,:,1,1)) ! at t-point
 
-         CASE ( 2 )  ! f-plane at ppgphi0 
+         CASE ( 2 )  ! f-plane at ppgphi0
 
             tg_ff_f%d_value(:,:,1,1) = 2. * dp_omega * SIN( dp_deg2rad * td_nam%d_ppgphi0 )
             tg_ff_t%d_value(:,:,1,1) = 2. * dp_omega * SIN( dp_deg2rad * td_nam%d_ppgphi0 )
@@ -1257,7 +1257,7 @@ CONTAINS
    !> ** Method  :
    !>
    !> ** Action  :   Compute (gsint, gcost, gsinu, gcosu, gsinv, gcosv, gsinf, gcosf) arrays:
-   !>      sinus and cosinus of the angle between the north-south axe and the 
+   !>      sinus and cosinus of the angle between the north-south axe and the
    !>      j-direction at t, u, v and f-points
    !>
    !> History :
@@ -1282,8 +1282,8 @@ CONTAINS
       INTEGER(i4), INTENT(IN) :: jpj
 
       ! local variable
-      REAL(dp) :: zlam, zphi          
-      REAL(dp) :: zlan, zphh          
+      REAL(dp) :: zlam, zphi
+      REAL(dp) :: zlan, zphh
       REAL(dp) :: zxnpt, zynpt, znnpt ! x,y components and norm of the vector: T point to North Pole
       REAL(dp) :: zxnpu, zynpu, znnpu ! x,y components and norm of the vector: U point to North Pole
       REAL(dp) :: zxnpv, zynpv, znnpv ! x,y components and norm of the vector: V point to North Pole
@@ -1430,10 +1430,10 @@ CONTAINS
       ! =========================== !
 
       ! lateral boundary cond.: T-, U-, V-, F-pts, sgn
-      CALL lbc_lnk( tg_gcost%d_value(:,:,1,1), 'T', td_nam%i_perio, -1._dp )   
-      CALL lbc_lnk( tg_gcosu%d_value(:,:,1,1), 'U', td_nam%i_perio, -1._dp )   
-      CALL lbc_lnk( tg_gcosv%d_value(:,:,1,1), 'V', td_nam%i_perio, -1._dp )   
-      CALL lbc_lnk( tg_gcosf%d_value(:,:,1,1), 'F', td_nam%i_perio, -1._dp )   
+      CALL lbc_lnk( tg_gcost%d_value(:,:,1,1), 'T', td_nam%i_perio, -1._dp )
+      CALL lbc_lnk( tg_gcosu%d_value(:,:,1,1), 'U', td_nam%i_perio, -1._dp )
+      CALL lbc_lnk( tg_gcosv%d_value(:,:,1,1), 'V', td_nam%i_perio, -1._dp )
+      CALL lbc_lnk( tg_gcosf%d_value(:,:,1,1), 'F', td_nam%i_perio, -1._dp )
 
       CALL lbc_lnk( tg_gsint%d_value(:,:,1,1), 'T', td_nam%i_perio, -1._dp )
       CALL lbc_lnk( tg_gsinu%d_value(:,:,1,1), 'U', td_nam%i_perio, -1._dp )

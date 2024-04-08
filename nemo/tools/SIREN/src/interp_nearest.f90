@@ -3,7 +3,7 @@
 !----------------------------------------------------------------------
 !
 ! DESCRIPTION:
-!> @brief 
+!> @brief
 !> This module manage nearest interpolation on regular grid.
 !>
 !> @details
@@ -11,11 +11,11 @@
 !> @code
 !> CALL interp_nearest_fill(dd_value, dd_fill, id_detect, id_rho, ld_even [,ld_discont] )
 !> @endcode
-!>    - dd_value is 2D array of variable value 
+!>    - dd_value is 2D array of variable value
 !>    - dd_fill is the FillValue of variable
-!>    - id_detect is 2D array of point to be interpolated (see interp module) 
+!>    - id_detect is 2D array of point to be interpolated (see interp module)
 !>    - id_rho  is array of refinment factor
-!>    - ld_even indicates even refinment or not 
+!>    - ld_even indicates even refinment or not
 !>    - ld_discont indicates longitudinal discontinuity (-180°/180°, 0°/360°) or not
 !>
 !> @author
@@ -51,20 +51,20 @@ CONTAINS
    SUBROUTINE interp_nearest_fill(dd_value, id_detect, id_rho)
    !-------------------------------------------------------------------
    !> @brief
-   !> This subroutine compute horizontal nearest interpolation on 4D array of value. 
-   !> 
+   !> This subroutine compute horizontal nearest interpolation on 4D array of value.
+   !>
    !> @author J.Paul
    !> @date September, 2014 - Initial Version
    !>
-   !> @param[inout] dd_value  2D array of variable value 
-   !> @param[inout] id_detect 2D array of point to be interpolated 
+   !> @param[inout] dd_value  2D array of variable value
+   !> @param[inout] id_detect 2D array of point to be interpolated
    !> @param[in]    id_rho    array of refinment factor
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
       ! Argument
-      REAL(dp)        , DIMENSION(:,:,:,:), INTENT(INOUT) :: dd_value 
+      REAL(dp)        , DIMENSION(:,:,:,:), INTENT(INOUT) :: dd_value
       INTEGER(I4)     , DIMENSION(:,:,:)  , INTENT(INOUT) :: id_detect
       INTEGER(I4)     , DIMENSION(:)      , INTENT(IN   ) :: id_rho
 
@@ -91,7 +91,7 @@ CONTAINS
             ! I-J plan
             CALL interp_nearest__2D(dd_value(:,:,jk,jl),&
             &                       il_detect(:,:,jk),  &
-            &                       id_rho(jp_I), id_rho(jp_J) )            
+            &                       id_rho(jp_I), id_rho(jp_J) )
             IF( ANY(il_detect(:,:,jk)==1) )THEN
                ! I direction
                DO jj=1,il_shape(2)
@@ -122,13 +122,13 @@ CONTAINS
    SUBROUTINE interp_nearest__2D(dd_value, id_detect, id_rhoi, id_rhoj)
    !-------------------------------------------------------------------
    !> @brief
-   !> This subroutine compute nearest interpolation on 2D array of value. 
-   !> 
+   !> This subroutine compute nearest interpolation on 2D array of value.
+   !>
    !> @author J.Paul
    !> @date September, 2014 - Initial Version
    !>
-   !> @param[inout] dd_value  2D array of variable value 
-   !> @param[inout] id_detect 2D array of point to be interpolated 
+   !> @param[inout] dd_value  2D array of variable value
+   !> @param[inout] id_detect 2D array of point to be interpolated
    !> @param[in] id_rhoi      refinment factor in i-direction
    !> @param[in] id_rhoj      refinment factor in j-direction
    !> @param[in] id_rhok      refinment factor in k-direction
@@ -137,7 +137,7 @@ CONTAINS
       IMPLICIT NONE
 
       ! Argument
-      REAL(dp)        , DIMENSION(:,:), INTENT(INOUT) :: dd_value 
+      REAL(dp)        , DIMENSION(:,:), INTENT(INOUT) :: dd_value
       INTEGER(I4)     , DIMENSION(:,:), INTENT(INOUT) :: id_detect
       INTEGER(I4)                     , INTENT(IN   ) :: id_rhoi
       INTEGER(I4)                     , INTENT(IN   ) :: id_rhoj
@@ -157,7 +157,7 @@ CONTAINS
 
          DO jj=1,il_shape(2)-1,id_rhoj
             DO ji=1,il_shape(1)-1,id_rhoi
-         
+
                ! check if point to be interpolated
                IF( ALL(id_detect(ji:ji+id_rhoi,   &
                &                 jj:jj+id_rhoj)==0) ) CYCLE
@@ -178,20 +178,20 @@ CONTAINS
    SUBROUTINE interp_nearest__1D(dd_value, id_detect, id_rhoi)
    !-------------------------------------------------------------------
    !> @brief
-   !> This subroutine compute nearest interpolation on 1D array of value. 
-   !> 
+   !> This subroutine compute nearest interpolation on 1D array of value.
+   !>
    !> @author J.Paul
    !> @date September, 2014 - Initial Version
    !>
-   !> @param[inout] dd_value  1D array of variable value 
-   !> @param[inout] id_detect 1D array of point to be interpolated 
+   !> @param[inout] dd_value  1D array of variable value
+   !> @param[inout] id_detect 1D array of point to be interpolated
    !> @param[in]    id_rhoi   refinment factor
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
       ! Argument
-      REAL(dp)        , DIMENSION(:), INTENT(INOUT) :: dd_value 
+      REAL(dp)        , DIMENSION(:), INTENT(INOUT) :: dd_value
       INTEGER(I4)     , DIMENSION(:), INTENT(INOUT) :: id_detect
       INTEGER(I4)                   , INTENT(IN   ) :: id_rhoi
 
@@ -206,7 +206,7 @@ CONTAINS
          il_shape(:)=SHAPE(dd_value)
 
          DO ji=1,il_shape(1)-1,id_rhoi
-         
+
             ! check if point to be interpolated
             IF( ALL(id_detect(ji:ji+id_rhoi)==0) ) CYCLE
 
@@ -223,8 +223,8 @@ CONTAINS
    SUBROUTINE interp_nearest__2D_fill(dd_value, id_detect)
    !-------------------------------------------------------------------
    !> @brief
-   !> This subroutine compute nearest interpolation of a 2D array of value. 
-   !> 
+   !> This subroutine compute nearest interpolation of a 2D array of value.
+   !>
    !> @author J.Paul
    !> @date September, 2014 - Initial Version
    !>
@@ -235,7 +235,7 @@ CONTAINS
       IMPLICIT NONE
 
       ! Argument
-      REAL(dp)   , DIMENSION(:,:)  , INTENT(INOUT) :: dd_value 
+      REAL(dp)   , DIMENSION(:,:)  , INTENT(INOUT) :: dd_value
       INTEGER(i4), DIMENSION(:,:)  , INTENT(INOUT) :: id_detect
 
       ! local variable
@@ -268,7 +268,7 @@ CONTAINS
       DO jj=1,il_half2
 
          DO ji=1,il_half1
-            
+
             ! lower left point
             IF(id_detect(ji,jj)==1)THEN
 
@@ -291,7 +291,7 @@ CONTAINS
                dd_value( ji,il_shape(2)-jj+1)=dd_value(il_i1,il_j2)
                id_detect(ji,il_shape(2)-jj+1)=0
 
-            ENDIF            
+            ENDIF
 
             ! upper right point
             IF(id_detect(il_shape(1)-ji+1,il_shape(2)-jj+1)==1)THEN
@@ -299,7 +299,7 @@ CONTAINS
                dd_value( il_shape(1)-ji+1,il_shape(2)-jj+1)=dd_value(il_i2,il_j2)
                id_detect(il_shape(1)-ji+1,il_shape(2)-jj+1)=0
 
-            ENDIF            
+            ENDIF
 
          ENDDO
 
@@ -310,8 +310,8 @@ CONTAINS
    SUBROUTINE interp_nearest__1D_fill(dd_value, id_detect)
    !-------------------------------------------------------------------
    !> @brief
-   !> This subroutine compute nearest interpolation of a 1D array of value. 
-   !> 
+   !> This subroutine compute nearest interpolation of a 1D array of value.
+   !>
    !> @author J.Paul
    !> @date September, 2014 - Initial Version
    !>
@@ -322,7 +322,7 @@ CONTAINS
       IMPLICIT NONE
 
       ! Argument
-      REAL(dp)   , DIMENSION(:), INTENT(INOUT) :: dd_value 
+      REAL(dp)   , DIMENSION(:), INTENT(INOUT) :: dd_value
       INTEGER(i4), DIMENSION(:), INTENT(INOUT) :: id_detect
 
       ! local variable
@@ -332,7 +332,7 @@ CONTAINS
       INTEGER(i4) :: il_i2
 
       INTEGER(i4) :: il_half1
-      
+
       ! loop indices
       INTEGER(i4) :: ji
       !----------------------------------------------------------------
@@ -343,9 +343,9 @@ CONTAINS
       il_i2=il_shape(1)
 
       il_half1=CEILING(il_shape(1)*0.5)
-      
+
       DO ji=1,il_half1
-         
+
          ! lower left point
          IF(id_detect(ji)==1)THEN
 

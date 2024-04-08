@@ -18,7 +18,7 @@ MODULE trcopt_canbgc
 
    USE iom            ! I/O manager
    USE fldread        !  time interpolation
-   USE prtctl_trc     !  print control for debugging
+   USE prtctl     !  print control for debugging
 
    ! read external file
    USE sms_top_canbgc
@@ -63,6 +63,8 @@ MODULE trcopt_canbgc
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::  par_stairs      !: trc_opt_stairs final output
 
+   !! * Substitutions
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
    !! $Id: trcopt.F90 13331 2020-07-22 14:00:04Z cetlod $ 
@@ -71,7 +73,7 @@ MODULE trcopt_canbgc
 CONTAINS
 
    ! SUBROUTINE trc_opt( kt )
-   SUBROUTINE trc_opt( kt, knt )
+   SUBROUTINE trc_opt( kt, knt , Kmm)
    ! O Riche Aug 16th 2022
    ! knt is for time splitting, not implemented 
    ! at least for now
@@ -86,6 +88,7 @@ CONTAINS
       !!                based on Morel et al 1981
       !!---------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt, knt   ! ocean time step 
+      INTEGER, INTENT(in) ::    Kmm  ! time level indices
       ! INTEGER, INTENT(in) ::   kt        ! ocean time step 
       ! O Riche Aug 16th 2022
       ! knt is for time splitting in PISCES
@@ -131,7 +134,7 @@ CONTAINS
       ! as a tracer
       ! for now read surface chlorophyll external file and 
       ! apply an e-folding of 30 m.
-      !  zchl3d(:,:,:) = trb(:,:,:,jrnch) + trb(:,:,:,jrdch)
+      !  zchl3d(:,:,:) = tr(:,:,:,jrnch, Kbb) + tr(:,:,:,jrdch, Kbb)
       !  CALL trc_src2d( kt, js2d_chla  )
       ! O Riche Sept 13th 2022
       ! this assumes that chlorophyll can be max 2 sizes
@@ -150,7 +153,7 @@ CONTAINS
         IF( lwp ) CALL FLUSH(numout)      
         CALL trc_src2d( kt, js2d_chla )
         DO jk = 1, jpkm1
-          ztotchla(:,:,jk) = src2d_dta(:,:,js2d_chla)*exp(-gdept_n(:,:,jk)/30.)
+          ztotchla(:,:,jk) = src2d_dta(:,:,js2d_chla)*exp(-gdept(:,:,jk,Kmm)/30.)
         ENDDO
       ENDIF
       !
@@ -162,10 +165,10 @@ CONTAINS
         IF( lwp ) CALL FLUSH(numout)         
         IF( iom_use("NCHL") ) THEN
           IF( lwp ) WRITE(numout,*), 'trc_opt: NCHL detected by iom_use S/R.'
-          IF( lwp ) WRITE(numout,*), 'trc_opt: ztotchla assigned current trn(:,:,:,jrnch) values'
+          IF( lwp ) WRITE(numout,*), 'trc_opt: ztotchla assigned current tr(:,:,:,jrnch, Kmm) values'
           IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'          
           IF( lwp ) WRITE(numout,*)
-          ztotchla(:,:,:) = trn(:,:,:,jrnch)        
+          ztotchla(:,:,:) = tr(:,:,:,jrnch, Kmm)        
       ENDIF
       ENDIF
       IF( ln_canoe ) THEN
@@ -176,17 +179,17 @@ CONTAINS
         IF( lwp ) CALL FLUSH(numout)       
         IF( iom_use("NCHL") ) THEN
           IF( lwp ) WRITE(numout,*), 'trc_opt: NCHL detected by iom_use S/R.'
-          IF( lwp ) WRITE(numout,*), 'trc_opt: ztotchla assigned current trn(:,:,:,jrnch) values'
+          IF( lwp ) WRITE(numout,*), 'trc_opt: ztotchla assigned current tr(:,:,:,jrnch, Kmm) values'
           IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'          
           IF( lwp ) WRITE(numout,*)        
-          ztotchla(:,:,:) = trn(:,:,:,jrnch)
+          ztotchla(:,:,:) = tr(:,:,:,jrnch, Kmm)
         ENDIF
         IF( iom_use("DCHL") ) THEN
           IF( lwp ) WRITE(numout,*), 'trc_opt: DCHL detected by iom_use S/R.'
-          IF( lwp ) WRITE(numout,*), 'trc_opt: ztotchla assigned current trn(:,:,:,jrdch) values'
+          IF( lwp ) WRITE(numout,*), 'trc_opt: ztotchla assigned current tr(:,:,:,jrdch, Kmm) values'
           IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'          
           IF( lwp ) WRITE(numout,*)        
-          ztotchla(:,:,:) = ztotchla(:,:,:) + trn(:,:,:,jrdch)
+          ztotchla(:,:,:) = ztotchla(:,:,:) + tr(:,:,:,jrdch, Kmm)
         ENDIF
       ENDIF
       
@@ -199,7 +202,7 @@ CONTAINS
                ! the surface chlorophyll file. It has 61 rows for values varying between 0.01 to 10.
                ! O Riche Aug 17th 2022
                ! chl-a in the file is already in mg Chla m^-3 (ranging between 0.01 and 1)
-               ! zchl = src2d_dta(ji,jj,js2d_chla)*exp(-gdept_n(ji,jj,jk)/30.)
+               ! zchl = src2d_dta(ji,jj,js2d_chla)*exp(-gdept(ji,jj,jk,Kmm)/30.)
                ! O Riche Sept 13th 2022
                ! use chla arrays instead of mockup array
                zchl = ztotchla(ji,jj,jk)
@@ -208,9 +211,9 @@ CONTAINS
                zchl = MIN(  10. , MAX( 0.05, zchl )  )
                irgb = NINT( 41 + 20.* LOG10( zchl ) + rtrn )
                !
-               ekb(ji,jj,jk) = rkrgb(1,irgb) * e3t_n(ji,jj,jk)
-               ekg(ji,jj,jk) = rkrgb(2,irgb) * e3t_n(ji,jj,jk)
-               ekr(ji,jj,jk) = rkrgb(3,irgb) * e3t_n(ji,jj,jk)
+               ekb(ji,jj,jk) = rkrgb(1,irgb) * e3t(ji,jj,jk,Kmm)
+               ekg(ji,jj,jk) = rkrgb(2,irgb) * e3t(ji,jj,jk,Kmm)
+               ekr(ji,jj,jk) = rkrgb(3,irgb) * e3t(ji,jj,jk,Kmm)
 
             END DO
          END DO
@@ -221,7 +224,7 @@ CONTAINS
          !
          zqsr_corr(:,:) = qsr_mean(:,:) / ( 1.-fr_i(:,:) + rtrn )
          !
-         CALL trc_opt_par( kt, zqsr_corr, ze1, ze2, ze3, pqsr100 = zqsr100 ) 
+         CALL trc_opt_par( kt, Kmm, zqsr_corr, ze1, ze2, ze3, pqsr100 = zqsr100 ) 
          !
          DO jk = 1, nksr      
             etot_ndcyb(:,:,jk) = ze1(:,:,jk) + ze2(:,:,jk) + ze3(:,:,jk)
@@ -229,7 +232,7 @@ CONTAINS
          !
          zqsr_corr(:,:) = qsr(:,:) / ( 1.-fr_i(:,:) + rtrn )
          !
-         CALL trc_opt_par( kt, zqsr_corr, ze1, ze2, ze3 ) 
+         CALL trc_opt_par( kt, Kmm, zqsr_corr, ze1, ze2, ze3 ) 
          !
          DO jk = 1, nksr      
             etotb(:,:,jk) =  ze1(:,:,jk) + ze2(:,:,jk) + ze3(:,:,jk)
@@ -239,7 +242,7 @@ CONTAINS
          !
          zqsr_corr(:,:) = qsr(:,:) / ( 1.-fr_i(:,:) + rtrn )
          !
-         CALL trc_opt_par( kt, zqsr_corr, ze1, ze2, ze3, pqsr100 = zqsr100  ) 
+         CALL trc_opt_par( kt, Kmm, zqsr_corr, ze1, ze2, ze3, pqsr100 = zqsr100  ) 
          !
          DO jk = 1, nksr      
             etotb (:,:,jk) = ze1(:,:,jk) + ze2(:,:,jk) + ze3(:,:,jk)
@@ -256,7 +259,7 @@ CONTAINS
       !
       IF( ln_qsr_bio ) THEN                    !* heat flux accros w-level (used in the dynamics)
          !                                     !  ------------------------
-         CALL trc_opt_par( kt, qsr, ze1, ze2, ze3, pe0=ze0 )
+         CALL trc_opt_par( kt, Kmm, qsr, ze1, ze2, ze3, pe0=ze0 )
          !
          etot3(:,:,1) =  qsr(:,:) * tmask_bgc_closea(:,:,1)
          DO jk = 2, nksr + 1
@@ -271,10 +274,10 @@ CONTAINS
               IF( etot_ndcyb(ji,jj,jk) * tmask(ji,jj,jk) >=  zqsr100(ji,jj) )  THEN
                  nelnb(ji,jj) = jk+1                    ! Euphotic level : 1rst T-level strictly below Euphotic layer
                  !                                      ! nb: ensure the compatibility with nmld_trc definition in trd_mld_trc_zint
-                 heupb(ji,jj) = gdepw_n(ji,jj,jk+1)     ! Euphotic layer depth
+                 heupb(ji,jj) = gdepw(ji,jj,jk+1,Kmm)     ! Euphotic layer depth
               ENDIF
               IF( etot_ndcyb(ji,jj,jk) * tmask(ji,jj,jk) >= 0.50 )  THEN
-                 heup_01b(ji,jj) = gdepw_n(ji,jj,jk+1)  ! Euphotic layer depth (light level definition)
+                 heup_01b(ji,jj) = gdepw(ji,jj,jk+1,Kmm)  ! Euphotic layer depth (light level definition)
               ENDIF
            END DO
         END DO
@@ -291,10 +294,10 @@ CONTAINS
       DO jk = 1, nksr
          DO jj = 1, jpj
             DO ji = 1, jpi
-               IF( gdepw_n(ji,jj,jk+1) <= hmld(ji,jj) ) THEN
-                  zetmp1 (ji,jj) = zetmp1 (ji,jj) + etotb     (ji,jj,jk) * e3t_n(ji,jj,jk) ! remineralisation (?OR Aug 30th 2022)
-                  zetmp2 (ji,jj) = zetmp2 (ji,jj) + etot_ndcyb(ji,jj,jk) * e3t_n(ji,jj,jk) ! production
-                  zdepmoy(ji,jj) = zdepmoy(ji,jj) +                        e3t_n(ji,jj,jk)
+               IF( gdepw(ji,jj,jk+1,Kmm) <= hmld(ji,jj) ) THEN
+                  zetmp1 (ji,jj) = zetmp1 (ji,jj) + etotb     (ji,jj,jk) * e3t(ji,jj,jk,Kmm) ! remineralisation (?OR Aug 30th 2022)
+                  zetmp2 (ji,jj) = zetmp2 (ji,jj) + etot_ndcyb(ji,jj,jk) * e3t(ji,jj,jk,Kmm) ! production
+                  zdepmoy(ji,jj) = zdepmoy(ji,jj) +                        e3t(ji,jj,jk,Kmm)
                ENDIF
             END DO
          END DO
@@ -306,7 +309,7 @@ CONTAINS
       DO jk = 1, nksr
          DO jj = 1, jpj
             DO ji = 1, jpi
-               IF( gdepw_n(ji,jj,jk+1) <= hmld(ji,jj) ) THEN
+               IF( gdepw(ji,jj,jk+1,Kmm) <= hmld(ji,jj) ) THEN
                   z1_dep = 1. / ( zdepmoy(ji,jj) + rtrn )
                   emoyb (ji,jj,jk) = zetmp1(ji,jj) * z1_dep
                   zpar (ji,jj,jk)  = zetmp2(ji,jj) * z1_dep
@@ -328,9 +331,10 @@ CONTAINS
       !
    END SUBROUTINE trc_opt
 
-   SUBROUTINE trc_opt_1band( kt , knt )
+   SUBROUTINE trc_opt_1band( kt , knt, Kmm )
    !
       INTEGER, INTENT(in)  :: kt, knt            ! ocean time step
+      INTEGER, INTENT(in) ::    Kmm  ! time level indices
       INTEGER              :: ierr, ji, jj, jk
       REAL(wp)             :: zchl               ! temporary value of chla
       !
@@ -390,10 +394,10 @@ CONTAINS
         IF( lwp ) CALL FLUSH(numout)      
         IF( iom_use("NCHL") ) THEN
           IF( lwp ) WRITE(numout,*), 'trc_opt_1band: NCHL detected by iom_use S/R.'
-          IF( lwp ) WRITE(numout,*), 'trc_opt_1band: ztotchla assigned current trn(:,:,1,jqnch) values'
+          IF( lwp ) WRITE(numout,*), 'trc_opt_1band: ztotchla assigned current tr(:,:,1,jqnch, Kmm) values'
           IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'          
           IF( lwp ) WRITE(numout,*)
-          ztotchla(:,:) = trn(:,:,1,jqnch)  !!! OR Jan 23rd 2023 ! Only use the surface ztotchla values
+          ztotchla(:,:) = tr(:,:,1,jqnch, Kmm)  !!! OR Jan 23rd 2023 ! Only use the surface ztotchla values
           ! IF( .NOT. ln_rsttr .AND. kt <= nittrc000 + nn_dttrc) THEN
             ! ! OR Jan 20th 2023
             ! ! Temporary changes to test PAR and PP starting off
@@ -413,17 +417,17 @@ CONTAINS
         IF( lwp ) CALL FLUSH(numout)
         IF( iom_use("NCHL") ) THEN
           IF( lwp ) WRITE(numout,*), 'trc_opt_1band: NCHL detected by iom_use S/R.'
-          IF( lwp ) WRITE(numout,*), 'trc_opt_1band: ztotchla assigned current trn(:,:,1,jrnch) values'
+          IF( lwp ) WRITE(numout,*), 'trc_opt_1band: ztotchla assigned current tr(:,:,1,jrnch, Kmm) values'
           IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'          
           IF( lwp ) WRITE(numout,*)
-          ztotchla(:,:) = trn(:,:,1,jrnch)  !!! OR Jan 23rd 2023 ! Only use the surface ztotchla values
+          ztotchla(:,:) = tr(:,:,1,jrnch, Kmm)  !!! OR Jan 23rd 2023 ! Only use the surface ztotchla values
         ENDIF
         IF( iom_use("DCHL") ) THEN
           IF( lwp ) WRITE(numout,*), 'trc_opt_1band: DCHL detected by iom_use S/R.'
-          IF( lwp ) WRITE(numout,*), 'trc_opt_1band: ztotchla added current trn(:,:,1,jrdch) values'
+          IF( lwp ) WRITE(numout,*), 'trc_opt_1band: ztotchla added current tr(:,:,1,jrdch, Kmm) values'
           IF( lwp ) WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'          
           IF( lwp ) WRITE(numout,*)
-          ztotchla(:,:) = ztotchla(:,:) + trn(:,:,1,jrdch)  !!! OR Jan 23rd 2023 ! Only use the surface ztotchla values   
+          ztotchla(:,:) = ztotchla(:,:) + tr(:,:,1,jrdch, Kmm)  !!! OR Jan 23rd 2023 ! Only use the surface ztotchla values   
         ENDIF
       ENDIF
       !
@@ -433,15 +437,15 @@ CONTAINS
             ! O Riche Aug 17th 2022
             ! chl-a in the file is already in mg Chla m^-3 (ranging between 0.01 and 1)
             ! This is temporary as zchl/1st line should be replaced by
-            ! trn(ji,jj,jk,jqdch) + trn(ji,jj,jk,jqnch) once they are available.
-            ! zchl = src2d_dta(ji,jj,js2d_chla)*exp(-gdept_n(ji,jj,jk)/30._wp)
+            ! tr(ji,jj,jk,jqdch, Kmm) + tr(ji,jj,jk,jqnch, Kmm) once they are available.
+            ! zchl = src2d_dta(ji,jj,js2d_chla)*exp(-gdept(ji,jj,jk,Kmm)/30._wp)
             ! O Riche Sept 13th 2022
             ! use chla arrays instead of mockup array
             zchl = ztotchla(ji,jj)  !!! OR Jan 23rd 2023 ! Only use the surface ztotchla values
             zchl = zchl + rtrn
             zchl = zchl * tmask(ji,jj,jk)
             zetot(ji,jj,jk) = qsr(ji,jj) * zparsw(ji,jj)     & 
-            &               * exp ( - ( (kw_cmoc + kchl_cmoc * zchl * 1e6_wp) * gdept_n(ji,jj,jk) ) ) 
+            &               * exp ( - ( (kw_cmoc + kchl_cmoc * zchl * 1e6_wp) * gdept(ji,jj,jk,Kmm) ) ) 
             !        
           ENDDO
         ENDDO
@@ -514,7 +518,7 @@ CONTAINS
                
    END SUBROUTINE trc_opt_stairs
 
-   SUBROUTINE trc_opt_par( kt, pqsr, pe1, pe2, pe3, pe0, pqsr100 ) 
+   SUBROUTINE trc_opt_par( kt,Kmm, pqsr, pe1, pe2, pe3, pe0, pqsr100 ) 
       !!----------------------------------------------------------------------
       !!                  ***  routine trc_opt_par  ***
       !!
@@ -522,7 +526,7 @@ CONTAINS
       !!                for a given shortwave radiation
       !!
       !!----------------------------------------------------------------------
-      INTEGER                         , INTENT(in)              ::   kt                ! ocean time-step
+      INTEGER                         , INTENT(in)              ::   kt,Kmm                ! ocean time-step
       REAL(wp), DIMENSION(jpi,jpj)    , INTENT(in   )           ::   pqsr              ! shortwave
       REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(inout)           ::   pe1 , pe2 , pe3   ! PAR ( R-G-B)
       REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(inout), OPTIONAL ::   pe0               !
@@ -550,7 +554,7 @@ CONTAINS
          DO jk = 2, nksr + 1
             DO jj = 1, jpj
                DO ji = 1, jpi
-                  pe0(ji,jj,jk) = pe0(ji,jj,jk-1) * EXP( -e3t_n(ji,jj,jk-1) * xsi0r )
+                  pe0(ji,jj,jk) = pe0(ji,jj,jk-1) * EXP( -e3t(ji,jj,jk-1,Kmm) * xsi0r )
                   pe1(ji,jj,jk) = pe1(ji,jj,jk-1) * EXP( -ekb  (ji,jj,jk-1 )        )
                   pe2(ji,jj,jk) = pe2(ji,jj,jk-1) * EXP( -ekg  (ji,jj,jk-1 )        )
                   pe3(ji,jj,jk) = pe3(ji,jj,jk-1) * EXP( -ekr  (ji,jj,jk-1 )        )
@@ -642,11 +646,9 @@ CONTAINS
          WRITE(numout,*)
       ENDIF
 
-      REWIND( numnat_ref )
       READ  ( numnat_ref, namtrc_opt, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namtrc_opt in top reference namelist' )
 
-      REWIND( numnat_cfg )
       READ  ( numnat_cfg, namtrc_opt, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namtrc_opt in top configuration namelist' )
       IF(lwm) WRITE ( numonpb, namtrc_opt )

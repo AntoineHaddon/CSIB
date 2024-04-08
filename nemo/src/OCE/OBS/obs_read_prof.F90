@@ -36,7 +36,7 @@ MODULE obs_read_prof
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: obs_read_prof.F90 10068 2018-08-28 14:09:04Z nicolasmartin $
+   !! $Id: obs_read_prof.F90 14275 2021-01-07 12:13:16Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 
@@ -44,8 +44,8 @@ CONTAINS
 
    SUBROUTINE obs_rea_prof( profdata, knumfiles, cdfilenames, &
       &                     kvars, kextr, kstp, ddobsini, ddobsend, &
-      &                     ldvar1, ldvar2, ldignmis, ldsatt, &
-      &                     ldmod, kdailyavtypes )
+      &                     ldvar, ldignmis, ldsatt, &
+      &                     ldmod, cdvars, kdailyavtypes )
       !!---------------------------------------------------------------------
       !!
       !!                   *** ROUTINE obs_rea_prof ***
@@ -73,20 +73,20 @@ CONTAINS
       INTEGER, INTENT(IN) :: kvars      ! Number of variables in profdata
       INTEGER, INTENT(IN) :: kextr      ! Number of extra fields for each var
       INTEGER, INTENT(IN) :: kstp       ! Ocean time-step index
-      LOGICAL, INTENT(IN) :: ldvar1     ! Observed variables switches
-      LOGICAL, INTENT(IN) :: ldvar2
+      LOGICAL, DIMENSION(kvars), INTENT(IN) :: ldvar     ! Observed variables switches
       LOGICAL, INTENT(IN) :: ldignmis   ! Ignore missing files
       LOGICAL, INTENT(IN) :: ldsatt     ! Compute salinity at all temperature points
       LOGICAL, INTENT(IN) :: ldmod      ! Initialize model from input data
-      REAL(dp), INTENT(IN) :: ddobsini  ! Obs. ini time in YYYYMMDD.HHMMSS
-      REAL(dp), INTENT(IN) :: ddobsend  ! Obs. end time in YYYYMMDD.HHMMSS
+      REAL(wp), INTENT(IN) :: ddobsini  ! Obs. ini time in YYYYMMDD.HHMMSS
+      REAL(wp), INTENT(IN) :: ddobsend  ! Obs. end time in YYYYMMDD.HHMMSS
+      CHARACTER(len=8), DIMENSION(kvars), INTENT(IN) :: cdvars
       INTEGER, DIMENSION(imaxavtypes), OPTIONAL :: &
          & kdailyavtypes                ! Types of daily average observations
 
       !! * Local declarations
       CHARACTER(LEN=15), PARAMETER :: cpname='obs_rea_prof'
       CHARACTER(len=8) :: clrefdate
-      CHARACTER(len=8), DIMENSION(:), ALLOCATABLE :: clvars
+      CHARACTER(len=8), DIMENSION(:), ALLOCATABLE :: clvarsin
       INTEGER :: jvar
       INTEGER :: ji
       INTEGER :: jj
@@ -104,31 +104,24 @@ CONTAINS
       INTEGER :: isec
       INTEGER :: iprof
       INTEGER :: iproftot
-      INTEGER :: ivar1t0
-      INTEGER :: ivar2t0
-      INTEGER :: ivar1t
-      INTEGER :: ivar2t
+      INTEGER, DIMENSION(kvars) :: ivart0
+      INTEGER, DIMENSION(kvars) :: ivart
       INTEGER :: ip3dt
       INTEGER :: ios
       INTEGER :: ioserrcount
-      INTEGER :: ivar1tmpp
-      INTEGER :: ivar2tmpp
+      INTEGER, DIMENSION(kvars) :: ivartmpp
       INTEGER :: ip3dtmpp
       INTEGER :: itype
       INTEGER, DIMENSION(knumfiles) :: &
          & irefdate
-      INTEGER, DIMENSION(ntyp1770+1) :: &
-         & itypvar1,    &
-         & itypvar1mpp, &
-         & itypvar2,    &
-         & itypvar2mpp 
+      INTEGER, DIMENSION(ntyp1770+1,kvars) :: &
+         & itypvar,    &
+         & itypvarmpp
+      INTEGER, DIMENSION(:,:), ALLOCATABLE :: &
+         & iobsi,    &
+         & iobsj,    &
+         & iproc
       INTEGER, DIMENSION(:), ALLOCATABLE :: &
-         & iobsi1,    &
-         & iobsj1,    &
-         & iproc1,    &
-         & iobsi2,    &
-         & iobsj2,    &
-         & iproc2,    &
          & iindx,    &
          & ifileidx, &
          & iprofidx
@@ -139,20 +132,20 @@ CONTAINS
       REAL(wp), DIMENSION(:), ALLOCATABLE :: &
          & zphi, &
          & zlam
-      REAL(wp), DIMENSION(:), ALLOCATABLE :: &
+      REAL(dp), DIMENSION(:), ALLOCATABLE :: &
          & zdat
-      REAL(wp), DIMENSION(knumfiles) :: &
+      REAL(dp), DIMENSION(knumfiles) :: &
          & djulini, &
          & djulend
       LOGICAL :: llvalprof
       LOGICAL :: lldavtimset
+      LOGICAL :: llcycle
       TYPE(obfbdata), POINTER, DIMENSION(:) :: &
          & inpfiles
 
       ! Local initialization
       iprof = 0
-      ivar1t0 = 0
-      ivar2t0 = 0
+      ivart0(:) = 0
       ip3dt = 0
 
       ! Daily average types
@@ -218,9 +211,9 @@ CONTAINS
             CALL read_obfbdata( TRIM( cdfilenames(jj) ), inpfiles(jj), &
                &                ldgrid = .TRUE. )
 
-            IF ( inpfiles(jj)%nvar < 2 ) THEN
+            IF ( inpfiles(jj)%nvar /= kvars ) THEN
                CALL ctl_stop( 'Feedback format error: ', &
-                  &           ' less than 2 vars in profile file' )
+                  &           ' unexpected number of vars in profile file' )
             ENDIF
 
             IF ( ldmod .AND. ( inpfiles(jj)%nadd == 0 ) ) THEN
@@ -228,13 +221,17 @@ CONTAINS
             ENDIF
 
             IF ( jj == 1 ) THEN
-               ALLOCATE( clvars( inpfiles(jj)%nvar ) )
+               ALLOCATE( clvarsin( inpfiles(jj)%nvar ) )
                DO ji = 1, inpfiles(jj)%nvar
-                 clvars(ji) = inpfiles(jj)%cname(ji)
+                 clvarsin(ji) = inpfiles(jj)%cname(ji)
+                 IF ( clvarsin(ji) /= cdvars(ji) ) THEN
+                    CALL ctl_stop( 'Feedback file variables do not match', &
+                        &           ' expected variable names for this type' )
+                 ENDIF
                END DO
             ELSE
                DO ji = 1, inpfiles(jj)%nvar
-                  IF ( inpfiles(jj)%cname(ji) /= clvars(ji) ) THEN
+                  IF ( inpfiles(jj)%cname(ji) /= clvarsin(ji) ) THEN
                      CALL ctl_stop( 'Feedback file variables not consistent', &
                         &           ' with previous files for this type' )
                   ENDIF
@@ -307,8 +304,14 @@ CONTAINS
             inowin = 0
             DO ji = 1, inpfiles(jj)%nobs
                IF ( BTEST(inpfiles(jj)%ioqc(ji),2 ) ) CYCLE
-               IF ( BTEST(inpfiles(jj)%ivqc(ji,1),2) .AND. &
-                  & BTEST(inpfiles(jj)%ivqc(ji,2),2) ) CYCLE
+               llcycle = .TRUE.
+               DO jvar = 1, kvars
+                  IF ( .NOT. ( BTEST(inpfiles(jj)%ivqc(ji,jvar),2) ) ) THEN
+                     llcycle = .FALSE.
+                     EXIT
+                  ENDIF
+               END DO
+               IF ( llcycle ) CYCLE
                IF ( ( inpfiles(jj)%ptim(ji) >  djulini(jj) ) .AND. &
                   & ( inpfiles(jj)%ptim(ji) <= djulend(jj) )       ) THEN
                   inowin = inowin + 1
@@ -316,17 +319,20 @@ CONTAINS
             END DO
             ALLOCATE( zlam(inowin)  )
             ALLOCATE( zphi(inowin)  )
-            ALLOCATE( iobsi1(inowin) )
-            ALLOCATE( iobsj1(inowin) )
-            ALLOCATE( iproc1(inowin) )
-            ALLOCATE( iobsi2(inowin) )
-            ALLOCATE( iobsj2(inowin) )
-            ALLOCATE( iproc2(inowin) )
+            ALLOCATE( iobsi(inowin,kvars) )
+            ALLOCATE( iobsj(inowin,kvars) )
+            ALLOCATE( iproc(inowin,kvars) )
             inowin = 0
             DO ji = 1, inpfiles(jj)%nobs
                IF ( BTEST(inpfiles(jj)%ioqc(ji),2 ) ) CYCLE
-               IF ( BTEST(inpfiles(jj)%ivqc(ji,1),2) .AND. &
-                  & BTEST(inpfiles(jj)%ivqc(ji,2),2) ) CYCLE
+               llcycle = .TRUE.
+               DO jvar = 1, kvars
+                  IF ( .NOT. ( BTEST(inpfiles(jj)%ivqc(ji,jvar),2) ) ) THEN
+                     llcycle = .FALSE.
+                     EXIT
+                  ENDIF
+               END DO
+               IF ( llcycle ) CYCLE
                IF ( ( inpfiles(jj)%ptim(ji) >  djulini(jj) ) .AND. &
                   & ( inpfiles(jj)%ptim(ji) <= djulend(jj) )       ) THEN
                   inowin = inowin + 1
@@ -335,87 +341,99 @@ CONTAINS
                ENDIF
             END DO
 
-            IF ( TRIM( inpfiles(jj)%cname(1) ) == 'POTM' ) THEN
-               CALL obs_grid_search( inowin, zlam, zphi, iobsi1, iobsj1, &
-                  &                  iproc1, 'T' )
-               iobsi2(:) = iobsi1(:)
-               iobsj2(:) = iobsj1(:)
-               iproc2(:) = iproc1(:)
-            ELSEIF ( TRIM( inpfiles(jj)%cname(1) ) == 'UVEL' ) THEN
-               CALL obs_grid_search( inowin, zlam, zphi, iobsi1, iobsj1, &
-                  &                  iproc1, 'U' )
-               CALL obs_grid_search( inowin, zlam, zphi, iobsi2, iobsj2, &
-                  &                  iproc2, 'V' )
+            ! Assume anything other than velocity is on T grid
+            IF ( TRIM( inpfiles(jj)%cname(1) ) == 'UVEL' ) THEN
+               CALL obs_grid_search( inowin, zlam, zphi, iobsi(:,1), iobsj(:,1), &
+                  &                  iproc(:,1), 'U' )
+               CALL obs_grid_search( inowin, zlam, zphi, iobsi(:,2), iobsj(:,2), &
+                  &                  iproc(:,2), 'V' )
+            ELSE
+               CALL obs_grid_search( inowin, zlam, zphi, iobsi(:,1), iobsj(:,1), &
+                  &                  iproc(:,1), 'T' )
+               IF ( kvars > 1 ) THEN
+                  DO jvar = 2, kvars
+                     iobsi(:,jvar) = iobsi(:,1)
+                     iobsj(:,jvar) = iobsj(:,1)
+                     iproc(:,jvar) = iproc(:,1)
+                  END DO
+               ENDIF
             ENDIF
 
             inowin = 0
             DO ji = 1, inpfiles(jj)%nobs
                IF ( BTEST(inpfiles(jj)%ioqc(ji),2 ) ) CYCLE
-               IF ( BTEST(inpfiles(jj)%ivqc(ji,1),2) .AND. &
-                  & BTEST(inpfiles(jj)%ivqc(ji,2),2) ) CYCLE
+               llcycle = .TRUE.
+               DO jvar = 1, kvars
+                  IF ( .NOT. ( BTEST(inpfiles(jj)%ivqc(ji,jvar),2) ) ) THEN
+                     llcycle = .FALSE.
+                     EXIT
+                  ENDIF
+               END DO
+               IF ( llcycle ) CYCLE
                IF ( ( inpfiles(jj)%ptim(ji) >  djulini(jj) ) .AND. &
                   & ( inpfiles(jj)%ptim(ji) <= djulend(jj) )       ) THEN
                   inowin = inowin + 1
-                  inpfiles(jj)%iproc(ji,1) = iproc1(inowin)
-                  inpfiles(jj)%iobsi(ji,1) = iobsi1(inowin)
-                  inpfiles(jj)%iobsj(ji,1) = iobsj1(inowin)
-                  inpfiles(jj)%iproc(ji,2) = iproc2(inowin)
-                  inpfiles(jj)%iobsi(ji,2) = iobsi2(inowin)
-                  inpfiles(jj)%iobsj(ji,2) = iobsj2(inowin)
-                  IF ( inpfiles(jj)%iproc(ji,1) /= &
-                     & inpfiles(jj)%iproc(ji,2) ) THEN
-                     CALL ctl_stop( 'Error in obs_read_prof:', &
-                        & 'var1 and var2 observation on different processors')
+                  DO jvar = 1, kvars
+                     inpfiles(jj)%iproc(ji,jvar) = iproc(inowin,jvar)
+                     inpfiles(jj)%iobsi(ji,jvar) = iobsi(inowin,jvar)
+                     inpfiles(jj)%iobsj(ji,jvar) = iobsj(inowin,jvar)
+                  END DO
+                  IF ( kvars > 1 ) THEN
+                     DO jvar = 2, kvars
+                        IF ( inpfiles(jj)%iproc(ji,jvar) /= &
+                           & inpfiles(jj)%iproc(ji,1) ) THEN
+                           CALL ctl_stop( 'Error in obs_read_prof:', &
+                              & 'observation on different processors for different vars')
+                        ENDIF
+                     END DO
                   ENDIF
                ENDIF
             END DO
-            DEALLOCATE( zlam, zphi, iobsi1, iobsj1, iproc1, iobsi2, iobsj2, iproc2 )
+            DEALLOCATE( zlam, zphi, iobsi, iobsj, iproc )
 
             DO ji = 1, inpfiles(jj)%nobs
                IF ( BTEST(inpfiles(jj)%ioqc(ji),2 ) ) CYCLE
-               IF ( BTEST(inpfiles(jj)%ivqc(ji,1),2) .AND. &
-                  & BTEST(inpfiles(jj)%ivqc(ji,2),2) ) CYCLE
+               llcycle = .TRUE.
+               DO jvar = 1, kvars
+                  IF ( .NOT. ( BTEST(inpfiles(jj)%ivqc(ji,jvar),2) ) ) THEN
+                     llcycle = .FALSE.
+                     EXIT
+                  ENDIF
+               END DO
+               IF ( llcycle ) CYCLE
                IF ( ( inpfiles(jj)%ptim(ji) >  djulini(jj) ) .AND. &
                   & ( inpfiles(jj)%ptim(ji) <= djulend(jj) )       ) THEN
-                  IF ( nproc == 0 ) THEN
-                     IF ( inpfiles(jj)%iproc(ji,1) >  nproc ) CYCLE
+                  IF ( narea == 1 ) THEN
+                     IF ( inpfiles(jj)%iproc(ji,1) >  narea-1 ) CYCLE
                   ELSE
-                     IF ( inpfiles(jj)%iproc(ji,1) /= nproc ) CYCLE
+                     IF ( inpfiles(jj)%iproc(ji,1) /= narea-1 ) CYCLE
                   ENDIF
                   llvalprof = .FALSE.
-                  IF ( ldvar1 ) THEN
-                     loop_t_count : DO ij = 1,inpfiles(jj)%nlev
-                        IF ( inpfiles(jj)%pdep(ij,ji) >= 6000. ) &
-                           & CYCLE
-                        IF ( .NOT. BTEST(inpfiles(jj)%ivlqc(ij,ji,1),2) .AND. &
-                           & .NOT. BTEST(inpfiles(jj)%idqc(ij,ji),2) ) THEN
-                           ivar1t0 = ivar1t0 + 1
-                        ENDIF
-                     END DO loop_t_count
-                  ENDIF
-                  IF ( ldvar2 ) THEN
-                     loop_s_count : DO ij = 1,inpfiles(jj)%nlev
-                        IF ( inpfiles(jj)%pdep(ij,ji) >= 6000. ) &
-                           & CYCLE
-                        IF ( .NOT. BTEST(inpfiles(jj)%ivlqc(ij,ji,2),2) .AND. &
-                           & .NOT. BTEST(inpfiles(jj)%idqc(ij,ji),2) ) THEN
-                           ivar2t0 = ivar2t0 + 1
-                        ENDIF
-                     END DO loop_s_count
-                  ENDIF
-                  loop_p_count : DO ij = 1,inpfiles(jj)%nlev
+                  DO jvar = 1, kvars
+                     IF ( ldvar(jvar) ) THEN
+                        DO ij = 1,inpfiles(jj)%nlev
+                           IF ( inpfiles(jj)%pdep(ij,ji) >= 6000. ) &
+                              & CYCLE
+                           IF ( .NOT. BTEST(inpfiles(jj)%ivlqc(ij,ji,jvar),2) .AND. &
+                              & .NOT. BTEST(inpfiles(jj)%idqc(ij,ji),2) ) THEN
+                              ivart0(jvar) = ivart0(jvar) + 1
+                           ENDIF
+                        END DO
+                     ENDIF
+                  END DO
+                  DO ij = 1,inpfiles(jj)%nlev
                      IF ( inpfiles(jj)%pdep(ij,ji) >= 6000. ) &
                         & CYCLE
-                     IF ( ( .NOT. BTEST(inpfiles(jj)%ivlqc(ij,ji,1),2) .AND. &
-                        &   .NOT. BTEST(inpfiles(jj)%idqc(ij,ji),2) .AND. &
-                        &    ldvar1 ) .OR. &
-                        & ( .NOT. BTEST(inpfiles(jj)%ivlqc(ij,ji,2),2) .AND. &
-                        &   .NOT. BTEST(inpfiles(jj)%idqc(ij,ji),2) .AND. &
-                        &     ldvar2 ) ) THEN
-                        ip3dt = ip3dt + 1
-                        llvalprof = .TRUE.
-                     ENDIF
-                  END DO loop_p_count
+                     DO jvar = 1, kvars
+                        IF ( ( .NOT. BTEST(inpfiles(jj)%ivlqc(ij,ji,jvar),2) .AND. &
+                           &   .NOT. BTEST(inpfiles(jj)%idqc(ij,ji),2) .AND. &
+                           &    ldvar(jvar) ) ) THEN
+                           ip3dt = ip3dt + 1
+                           llvalprof = .TRUE.
+                           EXIT
+                        ENDIF
+                     END DO
+                  END DO
 
                   IF ( llvalprof ) iprof = iprof + 1
 
@@ -437,8 +455,14 @@ CONTAINS
       DO jj = 1, inobf
          DO ji = 1, inpfiles(jj)%nobs
             IF ( BTEST(inpfiles(jj)%ioqc(ji),2 ) ) CYCLE
-            IF ( BTEST(inpfiles(jj)%ivqc(ji,1),2) .AND. &
-               & BTEST(inpfiles(jj)%ivqc(ji,2),2) ) CYCLE
+            llcycle = .TRUE.
+            DO jvar = 1, kvars
+               IF ( .NOT. ( BTEST(inpfiles(jj)%ivqc(ji,jvar),2) ) ) THEN
+                  llcycle = .FALSE.
+                  EXIT
+               ENDIF
+            END DO
+            IF ( llcycle ) CYCLE
             IF ( ( inpfiles(jj)%ptim(ji) >  djulini(jj) ) .AND. &
                & ( inpfiles(jj)%ptim(ji) <= djulend(jj) )       ) THEN
                iproftot = iproftot + 1
@@ -452,8 +476,14 @@ CONTAINS
       DO jj = 1, inobf
          DO ji = 1, inpfiles(jj)%nobs
             IF ( BTEST(inpfiles(jj)%ioqc(ji),2 ) ) CYCLE
-            IF ( BTEST(inpfiles(jj)%ivqc(ji,1),2) .AND. &
-               & BTEST(inpfiles(jj)%ivqc(ji,2),2) ) CYCLE
+            llcycle = .TRUE.
+            DO jvar = 1, kvars
+               IF ( .NOT. ( BTEST(inpfiles(jj)%ivqc(ji,jvar),2) ) ) THEN
+                  llcycle = .FALSE.
+                  EXIT
+               ENDIF
+            END DO
+            IF ( llcycle ) CYCLE
             IF ( ( inpfiles(jj)%ptim(ji) >  djulini(jj) ) .AND. &
                & ( inpfiles(jj)%ptim(ji) <= djulend(jj) )       ) THEN
                jk = jk + 1
@@ -469,11 +499,9 @@ CONTAINS
 
       iv3dt(:) = -1
       IF (ldsatt) THEN
-         iv3dt(1) = ip3dt
-         iv3dt(2) = ip3dt
+         iv3dt(:) = ip3dt
       ELSE
-         iv3dt(1) = ivar1t0
-         iv3dt(2) = ivar2t0
+         iv3dt(:) = ivart0(:)
       ENDIF
       CALL obs_prof_alloc( profdata, kvars, kextr, iprof, iv3dt, &
          &                 kstp, jpi, jpj, jpk )
@@ -482,17 +510,13 @@ CONTAINS
 
       profdata%nprof     = 0
       profdata%nvprot(:) = 0
-      profdata%cvars(:)  = clvars(:)
+      profdata%cvars(:)  = clvarsin(:)
       iprof = 0
 
       ip3dt = 0
-      ivar1t = 0
-      ivar2t = 0
-      itypvar1   (:) = 0
-      itypvar1mpp(:) = 0
-
-      itypvar2   (:) = 0
-      itypvar2mpp(:) = 0
+      ivart(:) = 0
+      itypvar   (:,:) = 0
+      itypvarmpp(:,:) = 0
 
       ioserrcount = 0
       DO jk = 1, iproftot
@@ -500,17 +524,23 @@ CONTAINS
          jj = ifileidx(iindx(jk))
          ji = iprofidx(iindx(jk))
 
-            IF ( BTEST(inpfiles(jj)%ioqc(ji),2 ) ) CYCLE
-            IF ( BTEST(inpfiles(jj)%ivqc(ji,1),2) .AND. &
-               & BTEST(inpfiles(jj)%ivqc(ji,2),2) ) CYCLE
+         IF ( BTEST(inpfiles(jj)%ioqc(ji),2 ) ) CYCLE
+         llcycle = .TRUE.
+         DO jvar = 1, kvars
+            IF ( .NOT. ( BTEST(inpfiles(jj)%ivqc(ji,jvar),2) ) ) THEN
+               llcycle = .FALSE.
+               EXIT
+            ENDIF
+         END DO
+         IF ( llcycle ) CYCLE
 
          IF ( ( inpfiles(jj)%ptim(ji) >  djulini(jj) ) .AND.  &
             & ( inpfiles(jj)%ptim(ji) <= djulend(jj) ) ) THEN
 
-            IF ( nproc == 0 ) THEN
-               IF ( inpfiles(jj)%iproc(ji,1) >  nproc ) CYCLE
+            IF ( narea == 1 ) THEN
+               IF ( inpfiles(jj)%iproc(ji,1) >  narea-1 ) CYCLE
             ELSE
-               IF ( inpfiles(jj)%iproc(ji,1) /= nproc ) CYCLE
+               IF ( inpfiles(jj)%iproc(ji,1) /= narea-1 ) CYCLE
             ENDIF
 
             llvalprof = .FALSE.
@@ -518,29 +548,29 @@ CONTAINS
             IF ( inpfiles(jj)%ioqc(ji) > 2 ) CYCLE
 
             IF ( BTEST(inpfiles(jj)%ioqc(ji),2 ) ) CYCLE
-            IF ( BTEST(inpfiles(jj)%ivqc(ji,1),2) .AND. &
-               & BTEST(inpfiles(jj)%ivqc(ji,2),2) ) CYCLE
+            llcycle = .TRUE.
+            DO jvar = 1, kvars
+               IF ( .NOT. ( BTEST(inpfiles(jj)%ivqc(ji,jvar),2) ) ) THEN
+                  llcycle = .FALSE.
+                  EXIT
+               ENDIF
+            END DO
+            IF ( llcycle ) CYCLE
 
             loop_prof : DO ij = 1, inpfiles(jj)%nlev
 
                IF ( inpfiles(jj)%pdep(ij,ji) >= 6000. ) &
                   & CYCLE
 
-               IF ( .NOT. BTEST(inpfiles(jj)%ivlqc(ij,ji,1),2) .AND. &
-                  & .NOT. BTEST(inpfiles(jj)%idqc(ij,ji),2) ) THEN
+               DO jvar = 1, kvars
+                  IF ( .NOT. BTEST(inpfiles(jj)%ivlqc(ij,ji,jvar),2) .AND. &
+                     & .NOT. BTEST(inpfiles(jj)%idqc(ij,ji),2) ) THEN
 
-                  llvalprof = .TRUE. 
-                  EXIT loop_prof
+                     llvalprof = .TRUE. 
+                     EXIT loop_prof
 
-               ENDIF
-
-               IF ( .NOT. BTEST(inpfiles(jj)%ivlqc(ij,ji,2),2) .AND. &
-                  & .NOT. BTEST(inpfiles(jj)%idqc(ij,ji),2) ) THEN
-
-                  llvalprof = .TRUE. 
-                  EXIT loop_prof
-
-               ENDIF
+                  ENDIF
+               END DO
 
             END DO loop_prof
 
@@ -572,10 +602,10 @@ CONTAINS
                profdata%rphi(iprof) = inpfiles(jj)%pphi(ji)
 
                ! Coordinate search parameters
-               profdata%mi  (iprof,1) = inpfiles(jj)%iobsi(ji,1)
-               profdata%mj  (iprof,1) = inpfiles(jj)%iobsj(ji,1)
-               profdata%mi  (iprof,2) = inpfiles(jj)%iobsi(ji,2)
-               profdata%mj  (iprof,2) = inpfiles(jj)%iobsj(ji,2)
+               DO jvar = 1, kvars
+                  profdata%mi  (iprof,jvar) = inpfiles(jj)%iobsi(ji,jvar)
+                  profdata%mj  (iprof,jvar) = inpfiles(jj)%iobsj(ji,jvar)
+               END DO
 
                ! Profile WMO number
                profdata%cwmo(iprof) = inpfiles(jj)%cdwmo(ji)
@@ -615,140 +645,86 @@ CONTAINS
 
                   IF (ldsatt) THEN
 
-                     IF ( ( .NOT. BTEST(inpfiles(jj)%ivlqc(ij,ji,1),2) .AND. &
-                        &   .NOT. BTEST(inpfiles(jj)%idqc(ij,ji),2) .AND. &
-                        &    ldvar1 ) .OR. &
-                        & ( .NOT. BTEST(inpfiles(jj)%ivlqc(ij,ji,2),2) .AND. &
-                        &   .NOT. BTEST(inpfiles(jj)%idqc(ij,ji),2) .AND. &
-                        &   ldvar2 ) ) THEN
-                        ip3dt = ip3dt + 1
-                     ELSE
-                        CYCLE
-                     ENDIF
-
-                  ENDIF
-
-                  IF ( ( .NOT. BTEST(inpfiles(jj)%ivlqc(ij,ji,1),2) .AND. &
-                    &   .NOT. BTEST(inpfiles(jj)%idqc(ij,ji),2) .AND. &
-                    &    ldvar1 ) .OR. ldsatt ) THEN
-
-                     IF (ldsatt) THEN
-
-                        ivar1t = ip3dt
-
-                     ELSE
-
-                        ivar1t = ivar1t + 1
-
-                     ENDIF
-
-                     ! Depth of var1 observation
-                     profdata%var(1)%vdep(ivar1t) = &
-                        &                inpfiles(jj)%pdep(ij,ji)
-
-                     ! Depth of var1 observation QC
-                     profdata%var(1)%idqc(ivar1t) = &
-                        &                inpfiles(jj)%idqc(ij,ji)
-
-                     ! Depth of var1 observation QC flags
-                     profdata%var(1)%idqcf(:,ivar1t) = &
-                        &                inpfiles(jj)%idqcf(:,ij,ji)
-
-                     ! Profile index
-                     profdata%var(1)%nvpidx(ivar1t) = iprof
-
-                     ! Vertical index in original profile
-                     profdata%var(1)%nvlidx(ivar1t) = ij
-
-                     ! Profile var1 value
-                     IF ( .NOT. BTEST(inpfiles(jj)%ivlqc(ij,ji,1),2) .AND. &
-                        & .NOT. BTEST(inpfiles(jj)%idqc(ij,ji),2) ) THEN
-                        profdata%var(1)%vobs(ivar1t) = &
-                           &                inpfiles(jj)%pob(ij,ji,1)
-                        IF ( ldmod ) THEN
-                           profdata%var(1)%vmod(ivar1t) = &
-                              &                inpfiles(jj)%padd(ij,ji,1,1)
+                     DO jvar = 1, kvars
+                        IF ( ( .NOT. BTEST(inpfiles(jj)%ivlqc(ij,ji,jvar),2) .AND. &
+                           &   .NOT. BTEST(inpfiles(jj)%idqc(ij,ji),2) .AND. &
+                           &    ldvar(jvar) ) ) THEN
+                           ip3dt = ip3dt + 1
+                           EXIT
+                        ELSE IF ( jvar == kvars ) THEN
+                           CYCLE loop_p
                         ENDIF
-                        ! Count number of profile var1 data as function of type
-                        itypvar1( profdata%ntyp(iprof) + 1 ) = &
-                           & itypvar1( profdata%ntyp(iprof) + 1 ) + 1
-                     ELSE
-                        profdata%var(1)%vobs(ivar1t) = fbrmdi
-                     ENDIF
-
-                     ! Profile var1 qc
-                     profdata%var(1)%nvqc(ivar1t) = &
-                        & inpfiles(jj)%ivlqc(ij,ji,1)
-
-                     ! Profile var1 qc flags
-                     profdata%var(1)%nvqcf(:,ivar1t) = &
-                        & inpfiles(jj)%ivlqcf(:,ij,ji,1)
-
-                     ! Profile insitu T value
-                     IF ( TRIM( inpfiles(jj)%cname(1) ) == 'POTM' ) THEN
-                        profdata%var(1)%vext(ivar1t,1) = &
-                           &                inpfiles(jj)%pext(ij,ji,1)
-                     ENDIF
+                     END DO
 
                   ENDIF
 
-                  IF ( ( .NOT. BTEST(inpfiles(jj)%ivlqc(ij,ji,2),2) .AND. &
-                     &   .NOT. BTEST(inpfiles(jj)%idqc(ij,ji),2)    .AND. &
-                     &   ldvar2 ) .OR. ldsatt ) THEN
+                  DO jvar = 1, kvars
+                  
+                     IF ( ( .NOT. BTEST(inpfiles(jj)%ivlqc(ij,ji,jvar),2) .AND. &
+                       &   .NOT. BTEST(inpfiles(jj)%idqc(ij,ji),2) .AND. &
+                       &    ldvar(jvar) ) .OR. ldsatt ) THEN
 
-                     IF (ldsatt) THEN
+                        IF (ldsatt) THEN
 
-                        ivar2t = ip3dt
+                           ivart(jvar) = ip3dt
 
-                     ELSE
+                        ELSE
 
-                        ivar2t = ivar2t + 1
+                           ivart(jvar) = ivart(jvar) + 1
 
-                     ENDIF
-
-                     ! Depth of var2 observation
-                     profdata%var(2)%vdep(ivar2t) = &
-                        &                inpfiles(jj)%pdep(ij,ji)
-
-                     ! Depth of var2 observation QC
-                     profdata%var(2)%idqc(ivar2t) = &
-                        &                inpfiles(jj)%idqc(ij,ji)
-
-                     ! Depth of var2 observation QC flags
-                     profdata%var(2)%idqcf(:,ivar2t) = &
-                        &                inpfiles(jj)%idqcf(:,ij,ji)
-
-                     ! Profile index
-                     profdata%var(2)%nvpidx(ivar2t) = iprof
-
-                     ! Vertical index in original profile
-                     profdata%var(2)%nvlidx(ivar2t) = ij
-
-                     ! Profile var2 value
-                  IF (  ( .NOT. BTEST(inpfiles(jj)%ivlqc(ij,ji,2),2) ) .AND. &
-                    &   ( .NOT. BTEST(inpfiles(jj)%idqc(ij,ji),2)    )  ) THEN
-                        profdata%var(2)%vobs(ivar2t) = &
-                           &                inpfiles(jj)%pob(ij,ji,2)
-                        IF ( ldmod ) THEN
-                           profdata%var(2)%vmod(ivar2t) = &
-                              &                inpfiles(jj)%padd(ij,ji,1,2)
                         ENDIF
-                        ! Count number of profile var2 data as function of type
-                        itypvar2( profdata%ntyp(iprof) + 1 ) = &
-                           & itypvar2( profdata%ntyp(iprof) + 1 ) + 1
-                     ELSE
-                        profdata%var(2)%vobs(ivar2t) = fbrmdi
+
+                        ! Depth of jvar observation
+                        profdata%var(jvar)%vdep(ivart(jvar)) = &
+                           &                inpfiles(jj)%pdep(ij,ji)
+
+                        ! Depth of jvar observation QC
+                        profdata%var(jvar)%idqc(ivart(jvar)) = &
+                           &                inpfiles(jj)%idqc(ij,ji)
+
+                        ! Depth of jvar observation QC flags
+                        profdata%var(jvar)%idqcf(:,ivart(jvar)) = &
+                           &                inpfiles(jj)%idqcf(:,ij,ji)
+
+                        ! Profile index
+                        profdata%var(jvar)%nvpidx(ivart(jvar)) = iprof
+
+                        ! Vertical index in original profile
+                        profdata%var(jvar)%nvlidx(ivart(jvar)) = ij
+
+                        ! Profile jvar value
+                        IF ( .NOT. BTEST(inpfiles(jj)%ivlqc(ij,ji,jvar),2) .AND. &
+                           & .NOT. BTEST(inpfiles(jj)%idqc(ij,ji),2) ) THEN
+                           profdata%var(jvar)%vobs(ivart(jvar)) = &
+                              &                inpfiles(jj)%pob(ij,ji,jvar)
+                           IF ( ldmod ) THEN
+                              profdata%var(jvar)%vmod(ivart(jvar)) = &
+                                 &                inpfiles(jj)%padd(ij,ji,1,jvar)
+                           ENDIF
+                           ! Count number of profile var1 data as function of type
+                           itypvar( profdata%ntyp(iprof) + 1, jvar ) = &
+                              & itypvar( profdata%ntyp(iprof) + 1, jvar ) + 1
+                        ELSE
+                           profdata%var(jvar)%vobs(ivart(jvar)) = fbrmdi
+                        ENDIF
+
+                        ! Profile jvar qc
+                        profdata%var(jvar)%nvqc(ivart(jvar)) = &
+                           & inpfiles(jj)%ivlqc(ij,ji,jvar)
+
+                        ! Profile jvar qc flags
+                        profdata%var(jvar)%nvqcf(:,ivart(jvar)) = &
+                           & inpfiles(jj)%ivlqcf(:,ij,ji,jvar)
+
+                        ! Profile insitu T value
+                        IF ( TRIM( inpfiles(jj)%cname(jvar) ) == 'POTM' ) THEN
+                           profdata%var(jvar)%vext(ivart(jvar),1) = &
+                              &                inpfiles(jj)%pext(ij,ji,1)
+                        ENDIF
+
                      ENDIF
-
-                     ! Profile var2 qc
-                     profdata%var(2)%nvqc(ivar2t) = &
-                        & inpfiles(jj)%ivlqc(ij,ji,2)
-
-                     ! Profile var2 qc flags
-                     profdata%var(2)%nvqcf(:,ivar2t) = &
-                        & inpfiles(jj)%ivlqcf(:,ij,ji,2)
-
-                  ENDIF
+                  
+                  END DO
 
                END DO loop_p
 
@@ -762,12 +738,14 @@ CONTAINS
       ! Sum up over processors
       !-----------------------------------------------------------------------
 
-      CALL obs_mpp_sum_integer ( ivar1t0, ivar1tmpp )
-      CALL obs_mpp_sum_integer ( ivar2t0, ivar2tmpp )
+      DO jvar = 1, kvars
+         CALL obs_mpp_sum_integer ( ivart0(jvar), ivartmpp(jvar) )
+      END DO
       CALL obs_mpp_sum_integer ( ip3dt,   ip3dtmpp  )
 
-      CALL obs_mpp_sum_integers( itypvar1, itypvar1mpp, ntyp1770 + 1 )
-      CALL obs_mpp_sum_integers( itypvar2, itypvar2mpp, ntyp1770 + 1 )
+      DO jvar = 1, kvars
+         CALL obs_mpp_sum_integers( itypvar(:,jvar), itypvarmpp(:,jvar), ntyp1770 + 1 )
+      END DO
 
       !-----------------------------------------------------------------------
       ! Output number of observations.
@@ -777,68 +755,48 @@ CONTAINS
          WRITE(numout,'(A)') ' Profile data'
          WRITE(numout,'(1X,A)') '------------'
          WRITE(numout,*) 
-         WRITE(numout,'(1X,A)') 'Profile data, '//TRIM( profdata%cvars(1) )
-         WRITE(numout,'(1X,A)') '------------------------'
-         DO ji = 0, ntyp1770
-            IF ( itypvar1mpp(ji+1) > 0 ) THEN
-               WRITE(numout,'(1X,A3,1X,A48,A3,I8)') ctypshort(ji), &
-                  & cwmonam1770(ji)(1:52),' = ', &
-                  & itypvar1mpp(ji+1)
-            ENDIF
+         DO jvar = 1, kvars
+            WRITE(numout,'(1X,A)') 'Profile data, '//TRIM( profdata%cvars(jvar) )
+            WRITE(numout,'(1X,A)') '------------------------'
+            DO ji = 0, ntyp1770
+               IF ( itypvarmpp(ji+1,jvar) > 0 ) THEN
+                  WRITE(numout,'(1X,A3,1X,A48,A3,I8)') ctypshort(ji), &
+                     & cwmonam1770(ji)(1:52),' = ', &
+                     & itypvarmpp(ji+1,jvar)
+               ENDIF
+            END DO
+            WRITE(numout,'(1X,A)') &
+               & '---------------------------------------------------------------'
+            WRITE(numout,'(1X,A55,I8)') &
+               & 'Total profile data for variable '//TRIM( profdata%cvars(jvar) )// &
+               & '             = ', ivartmpp(jvar)
+            WRITE(numout,'(1X,A)') &
+               & '---------------------------------------------------------------'
+            WRITE(numout,*) 
          END DO
-         WRITE(numout,'(1X,A)') &
-            & '---------------------------------------------------------------'
-         WRITE(numout,'(1X,A55,I8)') &
-            & 'Total profile data for variable '//TRIM( profdata%cvars(1) )// &
-            & '             = ', ivar1tmpp
-         WRITE(numout,'(1X,A)') &
-            & '---------------------------------------------------------------'
-         WRITE(numout,*) 
-         WRITE(numout,'(1X,A)') 'Profile data, '//TRIM( profdata%cvars(2) )
-         WRITE(numout,'(1X,A)') '------------------------'
-         DO ji = 0, ntyp1770
-            IF ( itypvar2mpp(ji+1) > 0 ) THEN
-               WRITE(numout,'(1X,A3,1X,A48,A3,I8)') ctypshort(ji), &
-                  & cwmonam1770(ji)(1:52),' = ', &
-                  & itypvar2mpp(ji+1)
-            ENDIF
-         END DO
-         WRITE(numout,'(1X,A)') &
-            & '---------------------------------------------------------------'
-         WRITE(numout,'(1X,A55,I8)') &
-            & 'Total profile data for variable '//TRIM( profdata%cvars(2) )// &
-            & '             = ', ivar2tmpp
-         WRITE(numout,'(1X,A)') &
-            & '---------------------------------------------------------------'
-         WRITE(numout,*) 
       ENDIF
 
       IF (ldsatt) THEN
-         profdata%nvprot(1)    = ip3dt
-         profdata%nvprot(2)    = ip3dt
-         profdata%nvprotmpp(1) = ip3dtmpp
-         profdata%nvprotmpp(2) = ip3dtmpp
+         profdata%nvprot(:)    = ip3dt
+         profdata%nvprotmpp(:) = ip3dtmpp
       ELSE
-         profdata%nvprot(1)    = ivar1t
-         profdata%nvprot(2)    = ivar2t
-         profdata%nvprotmpp(1) = ivar1tmpp
-         profdata%nvprotmpp(2) = ivar2tmpp
+         DO jvar = 1, kvars
+            profdata%nvprot(jvar)    = ivart(jvar)
+            profdata%nvprotmpp(jvar) = ivartmpp(jvar)
+         END DO
       ENDIF
       profdata%nprof        = iprof
 
       !-----------------------------------------------------------------------
       ! Model level search
       !-----------------------------------------------------------------------
-      IF ( ldvar1 ) THEN
-         CALL obs_level_search( jpk, gdept_1d, &
-            & profdata%nvprot(1), profdata%var(1)%vdep, &
-            & profdata%var(1)%mvk )
-      ENDIF
-      IF ( ldvar2 ) THEN
-         CALL obs_level_search( jpk, gdept_1d, &
-            & profdata%nvprot(2), profdata%var(2)%vdep, &
-            & profdata%var(2)%mvk )
-      ENDIF
+      DO jvar = 1, kvars
+         IF ( ldvar(jvar) ) THEN
+            CALL obs_level_search( jpk, gdept_1d, &
+               & profdata%nvprot(jvar), profdata%var(jvar)%vdep, &
+               & profdata%var(jvar)%mvk )
+         ENDIF
+      END DO
 
       !-----------------------------------------------------------------------
       ! Set model equivalent to 99999
@@ -851,7 +809,7 @@ CONTAINS
       !-----------------------------------------------------------------------
       ! Deallocate temporary data
       !-----------------------------------------------------------------------
-      DEALLOCATE( ifileidx, iprofidx, zdat, clvars )
+      DEALLOCATE( ifileidx, iprofidx, zdat, clvarsin )
 
       !-----------------------------------------------------------------------
       ! Deallocate input data

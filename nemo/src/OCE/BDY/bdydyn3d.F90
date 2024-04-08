@@ -14,9 +14,9 @@ MODULE bdydyn3d
    USE dom_oce         ! ocean space and time domain
    USE bdy_oce         ! ocean open boundary conditions
    USE bdylib          ! for orlanski library routines
+   USE lib_mpp
    USE lbclnk          ! ocean lateral boundary conditions (or mpp link)
    USE in_out_manager  !
-   USE lib_mpp, ONLY: ctl_stop
    Use phycst
 
    IMPLICIT NONE
@@ -27,25 +27,28 @@ MODULE bdydyn3d
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: bdydyn3d.F90 11536 2019-09-11 13:54:18Z smasson $ 
+   !! $Id: bdydyn3d.F90 15368 2021-10-14 08:25:34Z smasson $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE bdy_dyn3d( kt )
+   SUBROUTINE bdy_dyn3d( kt, Kbb, puu, pvv, Kaa )
       !!----------------------------------------------------------------------
       !!                  ***  SUBROUTINE bdy_dyn3d  ***
       !!
       !! ** Purpose : - Apply open boundary conditions for baroclinic velocities
       !!
       !!----------------------------------------------------------------------
-      INTEGER, INTENT(in) ::   kt   ! Main time step counter
+      INTEGER                             , INTENT( in    ) ::   kt        ! Main time step counter
+      INTEGER                             , INTENT( in    ) ::   Kbb, Kaa  ! Time level indices
+      REAL(dp), DIMENSION(jpi,jpj,jpk,jpt), INTENT( inout ) ::   puu, pvv  ! Ocean velocities (to be updated at open boundaries)
       !
-      INTEGER  ::   ib_bdy, ir     ! BDY set index, rim index
-      LOGICAL  ::   llrim0         ! indicate if rim 0 is treated
-      LOGICAL, DIMENSION(4) :: llsend2, llrecv2, llsend3, llrecv3  ! indicate how communications are to be carried out
-
+      INTEGER               ::   ib_bdy, ir     ! BDY set index, rim index
+      INTEGER, DIMENSION(6) ::   idir6
+      LOGICAL               ::   llrim0         ! indicate if rim 0 is treated
+      LOGICAL, DIMENSION(8) ::   llsend2, llrecv2, llsend3, llrecv3  ! indicate how communications are to be carried out
       !!----------------------------------------------------------------------
+      
       llsend2(:) = .false.   ;   llrecv2(:) = .false.
       llsend3(:) = .false.   ;   llrecv3(:) = .false.
       DO ir = 1, 0, -1   ! treat rim 1 before rim 0
@@ -57,15 +60,15 @@ CONTAINS
             SELECT CASE( cn_dyn3d(ib_bdy) )
             CASE('none')        ;   CYCLE
             CASE('frs' )        ! treat the whole boundary at once
-               IF( ir == 0) CALL bdy_dyn3d_frs( idx_bdy(ib_bdy), dta_bdy(ib_bdy), kt, ib_bdy )
+                       IF( ir == 0) CALL bdy_dyn3d_frs( puu, pvv, Kaa, idx_bdy(ib_bdy), dta_bdy(ib_bdy), kt, ib_bdy )
             CASE('specified')   ! treat the whole rim      at once
-               IF( ir == 0) CALL bdy_dyn3d_spe( idx_bdy(ib_bdy), dta_bdy(ib_bdy), kt, ib_bdy )
+                       IF( ir == 0) CALL bdy_dyn3d_spe( puu, pvv, Kaa, idx_bdy(ib_bdy), dta_bdy(ib_bdy), kt, ib_bdy )
             CASE('zero')        ! treat the whole rim      at once
-               IF( ir == 0) CALL bdy_dyn3d_zro( idx_bdy(ib_bdy), dta_bdy(ib_bdy), kt, ib_bdy )
-            CASE('orlanski' )   ;   CALL bdy_dyn3d_orlanski( idx_bdy(ib_bdy), dta_bdy(ib_bdy), ib_bdy, llrim0, ll_npo=.false. )
-            CASE('orlanski_npo');   CALL bdy_dyn3d_orlanski( idx_bdy(ib_bdy), dta_bdy(ib_bdy), ib_bdy, llrim0, ll_npo=.true.  )
-            CASE('zerograd')    ;   CALL bdy_dyn3d_zgrad( idx_bdy(ib_bdy), dta_bdy(ib_bdy), kt, ib_bdy, llrim0 )
-            CASE('neumann')     ;   CALL bdy_dyn3d_nmn( idx_bdy(ib_bdy), ib_bdy, llrim0 )
+                       IF( ir == 0) CALL bdy_dyn3d_zro( puu, pvv, Kaa, idx_bdy(ib_bdy), dta_bdy(ib_bdy), kt, ib_bdy )
+            CASE('orlanski' )   ;   CALL bdy_dyn3d_orlanski( Kbb, puu, pvv, Kaa, idx_bdy(ib_bdy), dta_bdy(ib_bdy), ib_bdy, llrim0, ll_npo=.false. )
+            CASE('orlanski_npo');   CALL bdy_dyn3d_orlanski( Kbb, puu, pvv, Kaa, idx_bdy(ib_bdy), dta_bdy(ib_bdy), ib_bdy, llrim0, ll_npo=.true.  )
+            CASE('zerograd')    ;   CALL bdy_dyn3d_zgrad( puu, pvv, Kaa, idx_bdy(ib_bdy), dta_bdy(ib_bdy), kt, ib_bdy, llrim0 )
+            CASE('neumann')     ;   CALL bdy_dyn3d_nmn( puu, pvv, Kaa, idx_bdy(ib_bdy), ib_bdy, llrim0 )
             CASE DEFAULT        ;   CALL ctl_stop( 'bdy_dyn3d : unrecognised option for open boundaries for baroclinic velocities' )
             END SELECT
          END DO
@@ -78,15 +81,17 @@ CONTAINS
          DO ib_bdy=1, nb_bdy
             SELECT CASE( cn_dyn3d(ib_bdy) )
             CASE('orlanski', 'orlanski_npo')
-               llsend2(:) = llsend2(:) .OR. lsend_bdy(ib_bdy,2,:,ir)   ! possibly every direction, U points
-               llrecv2(:) = llrecv2(:) .OR. lrecv_bdy(ib_bdy,2,:,ir)   ! possibly every direction, U points
-               llsend3(:) = llsend3(:) .OR. lsend_bdy(ib_bdy,3,:,ir)   ! possibly every direction, V points
-               llrecv3(:) = llrecv3(:) .OR. lrecv_bdy(ib_bdy,3,:,ir)   ! possibly every direction, V points
+               llsend2(:) = llsend2(:) .OR. lsend_bdyolr(ib_bdy,2,:,ir)   ! possibly every direction, U points
+               llrecv2(:) = llrecv2(:) .OR. lrecv_bdyolr(ib_bdy,2,:,ir)   ! possibly every direction, U points
+               llsend3(:) = llsend3(:) .OR. lsend_bdyolr(ib_bdy,3,:,ir)   ! possibly every direction, V points
+               llrecv3(:) = llrecv3(:) .OR. lrecv_bdyolr(ib_bdy,3,:,ir)   ! possibly every direction, V points
             CASE('zerograd')
-               llsend2(3:4) = llsend2(3:4) .OR. lsend_bdyint(ib_bdy,2,3:4,ir)   ! north/south, U points
-               llrecv2(3:4) = llrecv2(3:4) .OR. lrecv_bdyint(ib_bdy,2,3:4,ir)   ! north/south, U points
-               llsend3(1:2) = llsend3(1:2) .OR. lsend_bdyint(ib_bdy,3,1:2,ir)   ! west/east, V points
-               llrecv3(1:2) = llrecv3(1:2) .OR. lrecv_bdyint(ib_bdy,3,1:2,ir)   ! west/east, V points
+               idir6 = (/ jpso, jpno, jpsw, jpse, jpnw, jpne /)
+               llsend2(idir6) = llsend2(idir6) .OR. lsend_bdyint(ib_bdy,2,idir6,ir)   ! north/south, U points
+               llrecv2(idir6) = llrecv2(idir6) .OR. lrecv_bdyint(ib_bdy,2,idir6,ir)   ! north/south, U points
+               idir6 = (/ jpwe, jpea, jpsw, jpse, jpnw, jpne /)
+               llsend3(idir6) = llsend3(idir6) .OR. lsend_bdyint(ib_bdy,3,idir6,ir)   ! west/east, V points
+               llrecv3(idir6) = llrecv3(idir6) .OR. lrecv_bdyint(ib_bdy,3,idir6,ir)   ! west/east, V points
             CASE('neumann')
                llsend2(:) = llsend2(:) .OR. lsend_bdyint(ib_bdy,2,:,ir)   ! possibly every direction, U points
                llrecv2(:) = llrecv2(:) .OR. lrecv_bdyint(ib_bdy,2,:,ir)   ! possibly every direction, U points
@@ -96,17 +101,17 @@ CONTAINS
          END DO
          !
          IF( ANY(llsend2) .OR. ANY(llrecv2) ) THEN   ! if need to send/recv in at least one direction
-            CALL lbc_lnk( 'bdydyn2d', ua, 'U', -1., kfillmode=jpfillnothing ,lsend=llsend2, lrecv=llrecv2 )
+            CALL lbc_lnk( 'bdydyn2d', puu(:,:,:,Kaa), 'U', -1.0_dp, kfillmode=jpfillnothing ,lsend=llsend2, lrecv=llrecv2 )
          END IF
          IF( ANY(llsend3) .OR. ANY(llrecv3) ) THEN   ! if need to send/recv in at least one direction
-            CALL lbc_lnk( 'bdydyn2d', va, 'V', -1., kfillmode=jpfillnothing ,lsend=llsend3, lrecv=llrecv3 )
+            CALL lbc_lnk( 'bdydyn2d', pvv(:,:,:,Kaa), 'V', -1.0_dp, kfillmode=jpfillnothing ,lsend=llsend3, lrecv=llrecv3 )
          END IF
       END DO   ! ir
       !
    END SUBROUTINE bdy_dyn3d
 
 
-   SUBROUTINE bdy_dyn3d_spe( idx, dta, kt , ib_bdy )
+   SUBROUTINE bdy_dyn3d_spe( puu, pvv, Kaa, idx, dta, kt, ib_bdy )
       !!----------------------------------------------------------------------
       !!                  ***  SUBROUTINE bdy_dyn3d_spe  ***
       !!
@@ -114,10 +119,12 @@ CONTAINS
       !!                at open boundaries.
       !!
       !!----------------------------------------------------------------------
-      INTEGER        , INTENT(in) ::   kt      ! time step index
-      TYPE(OBC_INDEX), INTENT(in) ::   idx     ! OBC indices
-      TYPE(OBC_DATA) , INTENT(in) ::   dta     ! OBC external data
-      INTEGER        , INTENT(in) ::   ib_bdy  ! BDY set index
+      INTEGER                             , INTENT( in    ) ::   Kaa       ! Time level index
+      REAL(dp), DIMENSION(jpi,jpj,jpk,jpt), INTENT( inout ) ::   puu, pvv  ! Ocean velocities (to be updated at open boundaries)
+      TYPE(OBC_INDEX)                     , INTENT( in    ) ::   idx       ! OBC indices
+      TYPE(OBC_DATA)                      , INTENT( in    ) ::   dta       ! OBC external data
+      INTEGER                             , INTENT( in    ) ::   kt        ! Time step
+      INTEGER                             , INTENT( in    ) ::   ib_bdy    ! BDY set index
       !
       INTEGER  ::   jb, jk         ! dummy loop indices
       INTEGER  ::   ii, ij, igrd   ! local integers
@@ -128,7 +135,7 @@ CONTAINS
          DO jk = 1, jpkm1
             ii   = idx%nbi(jb,igrd)
             ij   = idx%nbj(jb,igrd)
-            ua(ii,ij,jk) = dta%u3d(jb,jk) * umask(ii,ij,jk)
+            puu(ii,ij,jk,Kaa) = dta%u3d(jb,jk) * umask(ii,ij,jk)
          END DO
       END DO
       !
@@ -137,25 +144,27 @@ CONTAINS
          DO jk = 1, jpkm1
             ii   = idx%nbi(jb,igrd)
             ij   = idx%nbj(jb,igrd)
-            va(ii,ij,jk) = dta%v3d(jb,jk) * vmask(ii,ij,jk)
+            pvv(ii,ij,jk,Kaa) = dta%v3d(jb,jk) * vmask(ii,ij,jk)
          END DO
       END DO
       !
    END SUBROUTINE bdy_dyn3d_spe
 
 
-   SUBROUTINE bdy_dyn3d_zgrad( idx, dta, kt, ib_bdy, llrim0 )
+   SUBROUTINE bdy_dyn3d_zgrad( puu, pvv, Kaa, idx, dta, kt, ib_bdy, llrim0 )
       !!----------------------------------------------------------------------
       !!                  ***  SUBROUTINE bdy_dyn3d_zgrad  ***
       !!
       !! ** Purpose : - Enforce a zero gradient of normal velocity
       !!
       !!----------------------------------------------------------------------
-      INTEGER                     ::   kt
-      TYPE(OBC_INDEX), INTENT(in) ::   idx      ! OBC indices
-      TYPE(OBC_DATA),  INTENT(in) ::   dta      ! OBC external data
-      INTEGER,         INTENT(in) ::   ib_bdy   ! BDY set index
-      LOGICAL,         INTENT(in) ::   llrim0   ! indicate if rim 0 is treated
+      INTEGER                             , INTENT( in    ) ::   Kaa       ! Time level index
+      REAL(dp), DIMENSION(jpi,jpj,jpk,jpt), INTENT( inout ) ::   puu, pvv  ! Ocean velocities (to be updated at open boundaries)
+      TYPE(OBC_INDEX)                     , INTENT( in    ) ::   idx       ! OBC indices
+      TYPE(OBC_DATA)                      , INTENT( in    ) ::   dta       ! OBC external data
+      INTEGER                             , INTENT( in    ) ::   kt
+      INTEGER                             , INTENT( in    ) ::   ib_bdy    ! BDY set index
+      LOGICAL                             , INTENT( in    ) ::   llrim0   ! indicate if rim 0 is treated
       !!
       INTEGER  ::   jb, jk         ! dummy loop indices
       INTEGER  ::   ii, ij, igrd   ! local integers
@@ -177,7 +186,7 @@ CONTAINS
             IF( ij+flagv > jpj .OR. ij+flagv < 1 )   CYCLE      
             !
             DO jk = 1, jpkm1
-               ua(ii,ij,jk) = ua(ii,ij+flagv,jk) * umask(ii,ij+flagv,jk)
+               puu(ii,ij,jk,Kaa) = puu(ii,ij+flagv,jk,Kaa) * umask(ii,ij+flagv,jk)
             END DO
             !
          END IF
@@ -197,7 +206,7 @@ CONTAINS
             IF( ii+flagu > jpi .OR. ii+flagu < 1 )   CYCLE      
             !
             DO jk = 1, jpkm1
-               va(ii,ij,jk) = va(ii+flagu,ij,jk) * vmask(ii+flagu,ij,jk)
+               pvv(ii,ij,jk,Kaa) = pvv(ii+flagu,ij,jk,Kaa) * vmask(ii+flagu,ij,jk)
             END DO
             !
          END IF
@@ -206,17 +215,19 @@ CONTAINS
    END SUBROUTINE bdy_dyn3d_zgrad
 
 
-   SUBROUTINE bdy_dyn3d_zro( idx, dta, kt, ib_bdy )
+   SUBROUTINE bdy_dyn3d_zro( puu, pvv, Kaa, idx, dta, kt, ib_bdy )
       !!----------------------------------------------------------------------
       !!                  ***  SUBROUTINE bdy_dyn3d_zro  ***
       !!
       !! ** Purpose : - baroclinic velocities = 0. at open boundaries.
       !!
       !!----------------------------------------------------------------------
-      INTEGER        , INTENT(in) ::   kt      ! time step index
-      TYPE(OBC_INDEX), INTENT(in) ::   idx     ! OBC indices
-      TYPE(OBC_DATA) , INTENT(in) ::   dta     ! OBC external data
-      INTEGER,         INTENT(in) ::   ib_bdy  ! BDY set index
+      INTEGER                             , INTENT( in    ) ::   kt        ! time step index
+      INTEGER                             , INTENT( in    ) ::   Kaa       ! Time level index
+      REAL(dp), DIMENSION(jpi,jpj,jpk,jpt), INTENT( inout ) ::   puu, pvv  ! Ocean velocities (to be updated at open boundaries)
+      TYPE(OBC_INDEX)                     , INTENT( in    ) ::   idx       ! OBC indices
+      TYPE(OBC_DATA)                      , INTENT( in    ) ::   dta       ! OBC external data
+      INTEGER                             , INTENT( in    ) ::   ib_bdy    ! BDY set index
       !
       INTEGER  ::   ib, ik         ! dummy loop indices
       INTEGER  ::   ii, ij, igrd   ! local integers
@@ -227,7 +238,7 @@ CONTAINS
          ii = idx%nbi(ib,igrd)
          ij = idx%nbj(ib,igrd)
          DO ik = 1, jpkm1
-            ua(ii,ij,ik) = 0._wp
+            puu(ii,ij,ik,Kaa) = 0._wp
          END DO
       END DO
       !
@@ -236,14 +247,14 @@ CONTAINS
          ii = idx%nbi(ib,igrd)
          ij = idx%nbj(ib,igrd)
          DO ik = 1, jpkm1
-            va(ii,ij,ik) = 0._wp
+            pvv(ii,ij,ik,Kaa) = 0._wp
          END DO
       END DO
       !
    END SUBROUTINE bdy_dyn3d_zro
 
 
-   SUBROUTINE bdy_dyn3d_frs( idx, dta, kt, ib_bdy )
+   SUBROUTINE bdy_dyn3d_frs( puu, pvv, Kaa, idx, dta, kt, ib_bdy )
       !!----------------------------------------------------------------------
       !!                  ***  SUBROUTINE bdy_dyn3d_frs  ***
       !!
@@ -254,10 +265,12 @@ CONTAINS
       !!               a three-dimensional baroclinic ocean model with realistic
       !!               topography. Tellus, 365-382.
       !!----------------------------------------------------------------------
-      INTEGER        , INTENT(in) ::   kt      ! time step index
-      TYPE(OBC_INDEX), INTENT(in) ::   idx     ! OBC indices
-      TYPE(OBC_DATA) , INTENT(in) ::   dta     ! OBC external data
-      INTEGER,         INTENT(in) ::   ib_bdy  ! BDY set index
+      INTEGER                             , INTENT( in    ) ::   kt        ! time step index
+      INTEGER                             , INTENT( in    ) ::   Kaa       ! Time level index
+      REAL(dp), DIMENSION(jpi,jpj,jpk,jpt), INTENT( inout ) ::   puu, pvv  ! Ocean velocities (to be updated at open boundaries)
+      TYPE(OBC_INDEX)                     , INTENT( in    ) ::   idx       ! OBC indices
+      TYPE(OBC_DATA)                      , INTENT( in    ) ::   dta       ! OBC external data
+      INTEGER                             , INTENT( in    ) ::   ib_bdy    ! BDY set index
       !
       INTEGER  ::   jb, jk         ! dummy loop indices
       INTEGER  ::   ii, ij, igrd   ! local integers
@@ -270,7 +283,7 @@ CONTAINS
             ii   = idx%nbi(jb,igrd)
             ij   = idx%nbj(jb,igrd)
             zwgt = idx%nbw(jb,igrd)
-            ua(ii,ij,jk) = ( ua(ii,ij,jk) + zwgt * ( dta%u3d(jb,jk) - ua(ii,ij,jk) ) ) * umask(ii,ij,jk)
+            puu(ii,ij,jk,Kaa) = ( puu(ii,ij,jk,Kaa) + zwgt * ( dta%u3d(jb,jk) - puu(ii,ij,jk,Kaa) ) ) * umask(ii,ij,jk)
          END DO
       END DO
       !
@@ -280,14 +293,14 @@ CONTAINS
             ii   = idx%nbi(jb,igrd)
             ij   = idx%nbj(jb,igrd)
             zwgt = idx%nbw(jb,igrd)
-            va(ii,ij,jk) = ( va(ii,ij,jk) + zwgt * ( dta%v3d(jb,jk) - va(ii,ij,jk) ) ) * vmask(ii,ij,jk)
+            pvv(ii,ij,jk,Kaa) = ( pvv(ii,ij,jk,Kaa) + zwgt * ( dta%v3d(jb,jk) - pvv(ii,ij,jk,Kaa) ) ) * vmask(ii,ij,jk)
          END DO
       END DO   
       !
    END SUBROUTINE bdy_dyn3d_frs
 
 
-   SUBROUTINE bdy_dyn3d_orlanski( idx, dta, ib_bdy, llrim0, ll_npo )
+   SUBROUTINE bdy_dyn3d_orlanski( Kbb, puu, pvv, Kaa, idx, dta, ib_bdy, llrim0, ll_npo )
       !!----------------------------------------------------------------------
       !!                 ***  SUBROUTINE bdy_dyn3d_orlanski  ***
       !!             
@@ -297,42 +310,47 @@ CONTAINS
       !!
       !! References:  Marchesiello, McWilliams and Shchepetkin, Ocean Modelling vol. 3 (2001)    
       !!----------------------------------------------------------------------
-      TYPE(OBC_INDEX),              INTENT(in) ::   idx  ! OBC indices
-      TYPE(OBC_DATA),               INTENT(in) ::   dta  ! OBC external data
-      INTEGER,                      INTENT(in) ::   ib_bdy   ! BDY set index
-      LOGICAL,                      INTENT(in) ::   llrim0   ! indicate if rim 0 is treated
-      LOGICAL,                      INTENT(in) ::   ll_npo   ! switch for NPO version
+      INTEGER                             , INTENT( in    ) ::   Kbb, Kaa  ! Time level indices
+      REAL(dp), DIMENSION(jpi,jpj,jpk,jpt), INTENT( inout ) ::   puu, pvv  ! Ocean velocities (to be updated at open boundaries)
+      TYPE(OBC_INDEX)                     , INTENT( in    ) ::   idx       ! OBC indices
+      TYPE(OBC_DATA)                      , INTENT( in    ) ::   dta       ! OBC external data
+      INTEGER                             , INTENT( in    ) ::   ib_bdy    ! BDY set index
+      LOGICAL                             , INTENT( in    ) ::   llrim0    ! indicate if rim 0 is treated
+      LOGICAL                             , INTENT( in    ) ::   ll_npo    ! switch for NPO version
 
       INTEGER  ::   jb, igrd                               ! dummy loop indices
       !!----------------------------------------------------------------------
       !
-      !! Note that at this stage the ub and ua arrays contain the baroclinic velocities. 
+      !! Note that at this stage the puu(:,:,:,Kbb) and puu(:,:,:,Kaa) arrays contain the baroclinic velocities. 
       !
       igrd = 2      ! Orlanski bc on u-velocity; 
       !            
-      CALL bdy_orlanski_3d( idx, igrd, ub, ua, dta%u3d, ll_npo, llrim0 )
+      CALL bdy_orlanski_3d( idx, igrd, puu(:,:,:,Kbb), puu(:,:,:,Kaa), dta%u3d, ll_npo, llrim0 )
 
       igrd = 3      ! Orlanski bc on v-velocity
       !  
-      CALL bdy_orlanski_3d( idx, igrd, vb, va, dta%v3d, ll_npo, llrim0 )
+      CALL bdy_orlanski_3d( idx, igrd, pvv(:,:,:,Kbb), pvv(:,:,:,Kaa), dta%v3d, ll_npo, llrim0 )
       !
    END SUBROUTINE bdy_dyn3d_orlanski
 
 
-   SUBROUTINE bdy_dyn3d_dmp( kt )
+   SUBROUTINE bdy_dyn3d_dmp( kt, Kbb, puu, pvv, Krhs )
       !!----------------------------------------------------------------------
       !!                  ***  SUBROUTINE bdy_dyn3d_dmp  ***
       !!
       !! ** Purpose : Apply damping for baroclinic velocities at open boundaries.
       !!
       !!----------------------------------------------------------------------
-      INTEGER, INTENT(in) ::   kt   ! time step index
+      INTEGER                             , INTENT( in    ) ::   kt        ! time step
+      INTEGER                             , INTENT( in    ) ::   Kbb, Krhs ! Time level indices
+      REAL(dp), DIMENSION(jpi,jpj,jpk,jpt), INTENT( inout ) ::   puu, pvv  ! Ocean velocities and trends (to be updated at open boundaries)
       !
       INTEGER  ::   jb, jk         ! dummy loop indices
       INTEGER  ::   ib_bdy         ! loop index
       INTEGER  ::   ii, ij, igrd   ! local integers
       REAL(wp) ::   zwgt           ! boundary weight
       !!----------------------------------------------------------------------
+      IF( l_istiled .AND. ntile /= 1 ) RETURN                        ! Do only for the full domain
       !
       IF( ln_timing )   CALL timing_start('bdy_dyn3d_dmp')
       !
@@ -344,8 +362,8 @@ CONTAINS
                ij   = idx_bdy(ib_bdy)%nbj(jb,igrd)
                zwgt = idx_bdy(ib_bdy)%nbd(jb,igrd)
                DO jk = 1, jpkm1
-                  ua(ii,ij,jk) = ( ua(ii,ij,jk) + zwgt * ( dta_bdy(ib_bdy)%u3d(jb,jk) - &
-                                   ub(ii,ij,jk) + ub_b(ii,ij)) ) * umask(ii,ij,jk)
+                  puu(ii,ij,jk,Krhs) = ( puu(ii,ij,jk,Krhs) + zwgt * ( dta_bdy(ib_bdy)%u3d(jb,jk) - &
+                                   puu(ii,ij,jk,Kbb) + uu_b(ii,ij,Kbb)) ) * umask(ii,ij,jk)
                END DO
             END DO
             !
@@ -355,8 +373,8 @@ CONTAINS
                ij   = idx_bdy(ib_bdy)%nbj(jb,igrd)
                zwgt = idx_bdy(ib_bdy)%nbd(jb,igrd)
                DO jk = 1, jpkm1
-                  va(ii,ij,jk) = ( va(ii,ij,jk) + zwgt * ( dta_bdy(ib_bdy)%v3d(jb,jk) -  &
-                                   vb(ii,ij,jk) + vb_b(ii,ij)) ) * vmask(ii,ij,jk)
+                  pvv(ii,ij,jk,Krhs) = ( pvv(ii,ij,jk,Krhs) + zwgt * ( dta_bdy(ib_bdy)%v3d(jb,jk) -  &
+                                   pvv(ii,ij,jk,Kbb) + vv_b(ii,ij,Kbb)) ) * vmask(ii,ij,jk)
                END DO
             END DO
          ENDIF
@@ -367,7 +385,7 @@ CONTAINS
    END SUBROUTINE bdy_dyn3d_dmp
 
 
-   SUBROUTINE bdy_dyn3d_nmn( idx, ib_bdy, llrim0 )
+   SUBROUTINE bdy_dyn3d_nmn( puu, pvv, Kaa, idx, ib_bdy, llrim0 )
       !!----------------------------------------------------------------------
       !!                 ***  SUBROUTINE bdy_dyn3d_nmn  ***
       !!             
@@ -376,21 +394,23 @@ CONTAINS
       !! 
       !!
       !!----------------------------------------------------------------------
-      TYPE(OBC_INDEX), INTENT(in) ::   idx      ! OBC indices
-      INTEGER,         INTENT(in) ::   ib_bdy   ! BDY set index
-      LOGICAL,         INTENT(in) ::   llrim0   ! indicate if rim 0 is treated
+      INTEGER                             , INTENT( in    ) ::   Kaa       ! Time level index
+      REAL(dp), DIMENSION(jpi,jpj,jpk,jpt), INTENT( inout ) ::   puu, pvv  ! Ocean velocities (to be updated at open boundaries)
+      TYPE(OBC_INDEX)                     , INTENT( in    ) ::   idx       ! OBC indices
+      INTEGER                             , INTENT( in    ) ::   ib_bdy    ! BDY set index
+      LOGICAL                             , INTENT( in    ) ::   llrim0    ! indicate if rim 0 is treated
       INTEGER  ::   igrd                        ! dummy indice
       !!----------------------------------------------------------------------
       !
-      !! Note that at this stage the ub and ua arrays contain the baroclinic velocities. 
+      !! Note that at this stage the puu(:,:,:,Kbb) and puu(:,:,:,Kaa) arrays contain the baroclinic velocities. 
       !
       igrd = 2      ! Neumann bc on u-velocity; 
       !            
-      CALL bdy_nmn( idx, igrd, ua, llrim0 )   ! ua is masked
+      CALL bdy_nmn( idx, igrd, puu(:,:,:,Kaa), llrim0 )
 
       igrd = 3      ! Neumann bc on v-velocity
       !  
-      CALL bdy_nmn( idx, igrd, va, llrim0 )   ! va is masked
+      CALL bdy_nmn( idx, igrd, pvv(:,:,:,Kaa), llrim0 )
       !
    END SUBROUTINE bdy_dyn3d_nmn
 

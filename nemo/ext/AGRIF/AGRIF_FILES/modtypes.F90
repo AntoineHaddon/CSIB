@@ -19,7 +19,7 @@
 !
 !
 !
-!
+! 
 !> Definition of data types used in AGRIF, of several variables and parameters
 !
 module Agrif_Types
@@ -108,6 +108,33 @@ type Agrif_Variable
     real(4), dimension(:,:,:,:,:)  , allocatable :: sarray5
     real(4), dimension(:,:,:,:,:,:), allocatable :: sarray6
 !> @}
+!> \name Arrays containing the values of the grid variables (real)
+!> @{
+    real,    dimension(:)          , pointer :: parray1
+    real,    dimension(:,:)        , pointer :: parray2
+    real,    dimension(:,:,:)      , pointer :: parray3
+    real,    dimension(:,:,:,:)    , pointer :: parray4
+    real,    dimension(:,:,:,:,:)  , pointer :: parray5
+    real,    dimension(:,:,:,:,:,:), pointer :: parray6
+!> @}
+!> \name Arrays containing the values of the grid variables (real*8)
+!> @{
+    real(8), dimension(:)          , pointer :: pdarray1
+    real(8), dimension(:,:)        , pointer :: pdarray2
+    real(8), dimension(:,:,:)      , pointer :: pdarray3
+    real(8), dimension(:,:,:,:)    , pointer :: pdarray4
+    real(8), dimension(:,:,:,:,:)  , pointer :: pdarray5
+    real(8), dimension(:,:,:,:,:,:), pointer :: pdarray6
+!> @}
+!> \name Arrays containing the values of the grid variables (real*4)
+!> @{
+    real(4), dimension(:)          , pointer :: psarray1
+    real(4), dimension(:,:)        , pointer :: psarray2
+    real(4), dimension(:,:,:)      , pointer :: psarray3
+    real(4), dimension(:,:,:,:)    , pointer :: psarray4
+    real(4), dimension(:,:,:,:,:)  , pointer :: psarray5
+    real(4), dimension(:,:,:,:,:,:), pointer :: psarray6
+!> @}
 !> \name Arrays used to restore the values
 !> @{
     integer, dimension(:)          , pointer :: restore1D => NULL()
@@ -152,9 +179,10 @@ type Agrif_Variable_c
 !
 !> \name Arrays containing the values of the grid variables (character)
 !> @{
-    character(2400)                             :: carray0
-    character(200), dimension(:)  , allocatable :: carray1
-    character(200), dimension(:,:), allocatable :: carray2
+    character(4000)                             :: carray0
+    character(:)  ,                 allocatable :: carrayu
+    character(400), dimension(:)  , allocatable :: carray1
+    character(400), dimension(:,:), allocatable :: carray2
 !> @}
 !---------------------------------------------------------------------------------------------------
 end type Agrif_Variable_c
@@ -217,14 +245,25 @@ type Agrif_Variable_l
 !
 !> \name Arrays containing the values of the grid variables (logical)
 !> @{
-    logical                                      :: larray0
+    logical                                      :: larray0 = .FALSE.
     logical, dimension(:)          , allocatable :: larray1
     logical, dimension(:,:)        , allocatable :: larray2
     logical, dimension(:,:,:)      , allocatable :: larray3
     logical, dimension(:,:,:,:)    , allocatable :: larray4
     logical, dimension(:,:,:,:,:)  , allocatable :: larray5
     logical, dimension(:,:,:,:,:,:), allocatable :: larray6
+
 !> @}
+!> \name Arrays containing the values of the grid variables (logical pointers)
+!> @{
+    logical, dimension(:)          , pointer :: plarray1
+    logical, dimension(:,:)        , pointer :: plarray2
+    logical, dimension(:,:,:)      , pointer :: plarray3
+    logical, dimension(:,:,:,:)    , pointer :: plarray4
+    logical, dimension(:,:,:,:,:)  , pointer :: plarray5
+    logical, dimension(:,:,:,:,:,:), pointer :: plarray6
+!> @}
+
 !---------------------------------------------------------------------------------------------------
 end type Agrif_Variable_l
 !===================================================================================================
@@ -241,13 +280,24 @@ type Agrif_Variable_i
 !
 !> \name Arrays containing the values of the grid variables (integer)
 !> @{
-    integer                                      :: iarray0
+    integer                                      :: iarray0 = 0
     integer, dimension(:)          , allocatable :: iarray1
     integer, dimension(:,:)        , allocatable :: iarray2
     integer, dimension(:,:,:)      , allocatable :: iarray3
     integer, dimension(:,:,:,:)    , allocatable :: iarray4
     integer, dimension(:,:,:,:,:)  , allocatable :: iarray5
     integer, dimension(:,:,:,:,:,:), allocatable :: iarray6
+
+!> @}
+!
+!> \name Arrays containing the values of the grid variables (integer pointers)
+!> @{
+    integer, dimension(:)          , pointer :: piarray1
+    integer, dimension(:,:)        , pointer :: piarray2
+    integer, dimension(:,:,:)      , pointer :: piarray3
+    integer, dimension(:,:,:,:)    , pointer :: piarray4
+    integer, dimension(:,:,:,:,:)  , pointer :: piarray5
+    integer, dimension(:,:,:,:,:,:), pointer :: piarray6
 !> @}
 !---------------------------------------------------------------------------------------------------
 end type Agrif_Variable_i
@@ -272,8 +322,14 @@ type Agrif_Interp_Loc
     logical, dimension(:),    pointer :: sendtoproc1    => NULL()
     logical, dimension(:),    pointer :: sendtoproc2    => NULL()
     logical, dimension(:),    pointer :: recvfromproc1  => NULL()
-    logical, dimension(:),    pointer :: recvfromproc2  => NULL()
+    logical, dimension(:),    pointer :: recvfromproc2  => NULL() 
 #endif
+    integer                           :: nb_chunks
+    integer, dimension(:,:,:,:), allocatable :: parentarray_chunk
+    integer, dimension(:,:,:,:), allocatable :: parentarray_chunk_decal
+    integer, dimension(:,:),allocatable :: decal_chunks
+    logical, dimension(:),allocatable :: correction_required
+    logical, dimension(:),allocatable :: member_chuncks 
 !---------------------------------------------------------------------------------------------------
 end type Agrif_Interp_Loc
 !===================================================================================================
@@ -322,8 +378,8 @@ end type Agrif_Variables_List
     integer               :: Agrif_Regridding = 10
     integer               :: Agrif_Minwidth
     real                  :: Agrif_Efficiency = 0.7
-    integer               :: MaxSearch = 5
-    real, dimension(3)    :: Agrif_mind
+    integer               :: MaxSearch = 3 
+    real(kind=8), dimension(3)    :: Agrif_mind
 !> @}
 !> \name parameters for the interpolation of the child grids
 !> @{
@@ -343,6 +399,7 @@ end type Agrif_Variables_List
     integer, parameter    :: Agrif_Update_Copy = 1              !< copy
     integer, parameter    :: Agrif_Update_Average = 2           !< average
     integer, parameter    :: Agrif_Update_Full_Weighting = 3    !< full-weighting
+    integer, parameter    :: Agrif_Update_Max = 4               !< Max
 !> @}
 !> \name Raffinement grid switches
 !> @{
@@ -373,12 +430,34 @@ end type Agrif_Variables_List
     real, dimension(:,:,:,:,:)  , allocatable :: parray5
     real, dimension(:,:,:,:,:,:), allocatable :: parray6
 !
-    logical :: agrif_debug = .false.    ! may be activaded in users subroutine for debugging purposes
+    logical :: agrif_debug = .false.        ! may be activaded in users subroutine for debugging purposes
+    logical :: agrif_debug_interp = .false. ! may be activaded in users subroutine for debugging interpolations
+    logical :: agrif_debug_update = .false. ! may be activaded in users subroutine for debugging updates
 
 ! If a grand mother grid is present
     logical :: agrif_coarse = .false.
     integer, dimension(3) :: coarse_spaceref = (/1,1,1/)
     integer, dimension(3) :: coarse_timeref  = (/1,1,1/)
+    
+    
+! External mapping procedure
+    Procedure(mapping), pointer :: agrif_external_mapping => NULL()
+    abstract interface
+     subroutine mapping(ndim,ptx,pty,bounds,bounds_chunks,correction_required,nb_chunks)
+     integer :: ndim, ptx, pty
+     integer,dimension(ndim,2,2) :: bounds
+     integer,dimension(:,:,:,:),allocatable :: bounds_chunks
+     logical,dimension(:),allocatable :: correction_required
+     integer :: nb_chunks
+     end subroutine mapping
+    end interface
+
+    Procedure(linear_interp), pointer :: agrif_external_linear_interp => NULL()
+    abstract interface
+     real function linear_interp(x1,x2,coeff)
+     real :: x1, x2, coeff
+     end function linear_interp
+    end interface
 !
 contains
 !
@@ -387,7 +466,7 @@ contains
 !---------------------------------------------------------------------------------------------------
 integer function Agrif_Ceiling ( x )
 !---------------------------------------------------------------------------------------------------
-    real,   intent(in) :: x
+    real(kind=8),intent(in) :: x
 !
     integer   :: i
 !
@@ -407,7 +486,7 @@ end function Agrif_Ceiling
 !---------------------------------------------------------------------------------------------------
     integer function Agrif_Int(x)
 !---------------------------------------------------------------------------------------------------
-    real,   intent(in) :: x
+    real(kind=8),intent(in) :: x
 !
     integer :: i
 !

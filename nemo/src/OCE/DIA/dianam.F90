@@ -19,11 +19,16 @@ MODULE dianam
    IMPLICIT NONE
    PRIVATE
 
+   INTEGER, PUBLIC ::   nn_dctwri             ! Frequency of output for dct diags
+   LOGICAL, PUBLIC ::   ln_diadct = .FALSE.   ! Calculate transport thru a section or not
+                                              ! set to FALSE because some configs do not read it in nml
+   INTEGER, PUBLIC ::   nb_sec                ! nb of sections
+
    PUBLIC dia_nam
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: dianam.F90 10068 2018-08-28 14:09:04Z nicolasmartin $ 
+   !! $Id: dianam.F90 12489 2020-02-28 15:55:11Z davestorkey $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 
@@ -60,8 +65,8 @@ CONTAINS
       INTEGER            ::   inbday, inbmo, inbyr             ! output frequency in days, months and years
       INTEGER            ::   iyyss, iddss, ihhss, immss       ! number of seconds in 1 year, 1 day, 1 hour and 1 minute
       INTEGER            ::   iyymo                            ! number of months in 1 year
-      REAL(wp)           ::   zsec1, zsec2                     ! not used
-      REAL(wp)           ::   zdrun, zjul                      ! temporary scalars
+      REAL(dp)           ::   zsec1, zsec2                     ! not used
+      REAL(dp)           ::   zdrun, zjul                      ! temporary scalars
       !!----------------------------------------------------------------------
 
       ! name for output frequency
@@ -71,7 +76,7 @@ CONTAINS
       ENDIF
 
       IF( llfsec .OR. kfreq < 0 ) THEN   ;   inbsec = kfreq                       ! output frequency already in seconds
-      ELSE                               ;   inbsec = kfreq * NINT( rdt )   ! from time-step to seconds
+      ELSE                               ;   inbsec = kfreq * NINT( rn_Dt )   ! from time-step to seconds
       ENDIF
       iddss = NINT( rday          )                                         ! number of seconds in 1 day
       ihhss = NINT( rmmss * rhhmm )                                         ! number of seconds in 1 hour
@@ -115,8 +120,8 @@ CONTAINS
 
       ! date of the beginning and the end of the run
 
-      zdrun = rdt / rday * REAL( nitend - nit000, wp )                ! length of the run in days
-      zjul  = fjulday - rdt / rday
+      zdrun = rn_Dt / rday * REAL( nitend - nit000, wp )                ! length of the run in days
+      zjul  = fjulday - rn_Dt / rday
       CALL ju2ymds( zjul        , iyear1, imonth1, iday1, zsec1 )           ! year/month/day of the beginning of run
       CALL ju2ymds( zjul + zdrun, iyear2, imonth2, iday2, zsec2 )           ! year/month/day of the end       of run
 

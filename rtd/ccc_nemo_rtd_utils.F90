@@ -17,8 +17,8 @@ contains
 
                 s1=0.
                 ss=0.
-                do i=1,imt-2  ! not to double count the cyclic boundary
-                    do j=1,jmt-1 !avoid north fold
+                do i=1,imt
+                    do j=1,jmt 
                         if (mask(i,j).gt.0.5) then  ! mask the region of interst
                             vol = e1(i,j)*e2(i,j)*e3(i,j,kk)
                             ss=ss+vol
@@ -47,8 +47,8 @@ contains
 
                 s1=0.
                 ss=0.
-                do i=1,imt-2  ! not to double count the cyclic boundary
-                    do j=1,jmt-1 ! north fold
+                do i=1,imt
+                    do j=1,jmt
                             arc = e1(i,j)*e2(i,j)*mask(i,j)
                             ss=ss+arc
                             s1=s1+a(i,j)*arc
@@ -75,10 +75,10 @@ contains
             REAL s
 
 
-            do j = 1, jmt-1 ! north fold
+            do j = 1, jmt
                 do k = km, 1, -1
                     s=0.
-                    do i = 1, imt - 2  ! not to double count the cyclic boundary
+                    do i = 1, imt
                       if (mask(i,j,k).gt.0.5) then  ! mask the region of interst
                         s = s + v(i, j, k)*e1v(i, j)*e3v(i, j, k) 
                       endif  
@@ -88,7 +88,7 @@ contains
                 enddo
             enddo
 
-            do j = 1, jmt-1 !north fold
+            do j = 1, jmt
                 do k = km, 1, -1
                     if (k.eq.km) then
                         over_psi(j,k) = -over_tran(j,k)
@@ -98,7 +98,7 @@ contains
                 enddo
             enddo
 
-            do j = 1, jmt-1 !north fold
+            do j = 1, jmt
                 do k = 1, km
                     over_psi(j, k)  =  over_psi(j, k)*1.e-6 ! to Sv                      
                 enddo

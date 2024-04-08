@@ -30,10 +30,10 @@ MODULE usrdef_zgr
    PUBLIC   usr_def_zgr        ! called by domzgr.F90
 
    !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
+#  include "do_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: usrdef_zgr.F90 10072 2018-08-28 15:21:50Z nicolasmartin $
+   !! $Id: usrdef_zgr.F90 13295 2020-07-10 18:24:21Z acc $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS             
@@ -158,18 +158,17 @@ CONTAINS
          pe3uw(:,:,jk) = pe3w_1d (jk)
          pe3vw(:,:,jk) = pe3w_1d (jk)
       END DO
-      DO jj = 1, jpj                      ! bottom scale factors and depth at T- and W-points
-         DO ji = 1, jpi
-            ik = k_bot(ji,jj)
-            pdepw(ji,jj,ik+1) = MIN( zht(ji,jj) , pdepw_1d(ik+1) )
-            pe3t (ji,jj,ik  ) = pdepw(ji,jj,ik+1) - pdepw(ji,jj,ik)
-            pe3t (ji,jj,ik+1) = pe3t (ji,jj,ik  ) 
-            !
-            pdept(ji,jj,ik  ) = pdepw(ji,jj,ik  ) + pe3t (ji,jj,ik  ) * 0.5_wp
-            pdept(ji,jj,ik+1) = pdepw(ji,jj,ik+1) + pe3t (ji,jj,ik+1) * 0.5_wp
-            pe3w (ji,jj,ik+1) = pdept(ji,jj,ik+1) - pdept(ji,jj,ik)              ! = pe3t (ji,jj,ik  )
-         END DO
-      END DO         
+      ! bottom scale factors and depth at T- and W-points
+      DO_2D( 1, 1, 1, 1 )
+         ik = k_bot(ji,jj)
+         pdepw(ji,jj,ik+1) = MIN( zht(ji,jj) , pdepw_1d(ik+1) )
+         pe3t (ji,jj,ik  ) = pdepw(ji,jj,ik+1) - pdepw(ji,jj,ik)
+         pe3t (ji,jj,ik+1) = pe3t (ji,jj,ik  ) 
+         !
+         pdept(ji,jj,ik  ) = pdepw(ji,jj,ik  ) + pe3t (ji,jj,ik  ) * 0.5_wp
+         pdept(ji,jj,ik+1) = pdepw(ji,jj,ik+1) + pe3t (ji,jj,ik+1) * 0.5_wp
+         pe3w (ji,jj,ik+1) = pdept(ji,jj,ik+1) - pdept(ji,jj,ik)              ! = pe3t (ji,jj,ik  )
+      END_2D        
       !                                   ! bottom scale factors and depth at  U-, V-, UW and VW-points
       !                                   ! usually Computed as the minimum of neighbooring scale factors
       pe3u (:,:,:) = pe3t(:,:,:)          ! HERE C1D configuration : 

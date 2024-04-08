@@ -85,12 +85,12 @@ MODULE icbdia
 
    INTEGER                       ::  nbergs_start, nbergs_end, nbergs_calved
    INTEGER                       ::  nbergs_melted
-   INTEGER                       ::  nspeeding_tickets
+   INTEGER                       ::  nspeeding_tickets, nspeeding_tickets_all
    INTEGER , DIMENSION(nclasses) ::  nbergs_calved_by_class
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: icbdia.F90 10570 2019-01-24 15:14:49Z acc $
+   !! $Id: icbdia.F90 14773 2021-04-30 10:23:51Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -124,6 +124,7 @@ CONTAINS
       nbergs_calved             = 0
       nbergs_calved_by_class(:) = 0
       nspeeding_tickets         = 0
+      nspeeding_tickets_all     = 0
       stored_heat_end           = 0._wp
       floating_heat_end         = 0._wp
       floating_mass_end         = 0._wp
@@ -270,10 +271,10 @@ CONTAINS
             END DO
             CALL mpp_sum( 'icbdia', nsumbuf(1:nclasses+4), nclasses+4 )
             !
-            nbergs_end        = nsumbuf(1)
-            nbergs_calved     = nsumbuf(2)
-            nbergs_melted     = nsumbuf(3)
-            nspeeding_tickets = nsumbuf(4)
+            nbergs_end            = nsumbuf(1)
+            nbergs_calved         = nsumbuf(2)
+            nbergs_melted         = nsumbuf(3)
+            nspeeding_tickets_all = nsumbuf(4)
             DO ik = 1,nclasses
                nbergs_calved_by_class(ik)= nsumbuf(4+ik)
             END DO
@@ -328,7 +329,10 @@ CONTAINS
          ENDIF
          IF (nn_verbose_level > 0) THEN
             WRITE( numicb, '("calved by class = ",i6,20(",",i6))') (nbergs_calved_by_class(ik),ik=1,nclasses)
-            IF( nspeeding_tickets > 0 )   WRITE( numicb, '("speeding tickets issued = ",i6)') nspeeding_tickets
+            IF( nspeeding_tickets_all > 0 ) THEN
+                WRITE( numicb, '("speeding tickets issued (this domain)  = ",i6)') nspeeding_tickets
+                WRITE( numicb, '("speeding tickets issued (all domains)  = ",i6)') nspeeding_tickets_all
+            END IF
          ENDIF
          !
          nbergs_start              = nbergs_end
@@ -337,6 +341,7 @@ CONTAINS
          nbergs_calved             = 0
          nbergs_calved_by_class(:) = 0
          nspeeding_tickets         = 0
+         nspeeding_tickets_all     = 0
          stored_heat_start         = stored_heat_end
          floating_heat_start       = floating_heat_end
          floating_mass_start       = floating_mass_end
@@ -485,19 +490,19 @@ CONTAINS
 
    SUBROUTINE icb_dia_melt(ki, kj, pmnew, pheat_hcflux, pheat_latent, pmass_scale,     &
       &                    pdM, pdMbitsE, pdMbitsM, pdMb, pdMe,   &
-      &                    pdMv, pz1_dt_e1e2 )
+      &                    pdMv, pz1_dt_e1e2, pz1_e1e2 )
       !!----------------------------------------------------------------------
       !!----------------------------------------------------------------------
       INTEGER , INTENT(in) ::   ki, kj
       REAL(wp), INTENT(in) ::   pmnew, pheat_hcflux, pheat_latent, pmass_scale
-      REAL(wp), INTENT(in) ::   pdM, pdMbitsE, pdMbitsM, pdMb, pdMe, pdMv, pz1_dt_e1e2
+      REAL(wp), INTENT(in) ::   pdM, pdMbitsE, pdMbitsM, pdMb, pdMe, pdMv, pz1_dt_e1e2, pz1_e1e2
       !!----------------------------------------------------------------------
       !
       IF( .NOT.ln_bergdia )   RETURN
       !
       berg_melt (ki,kj) = berg_melt (ki,kj) + pdM      * pz1_dt_e1e2   ! kg/m2/s
-      berg_melt_hcflx (ki,kj) = berg_melt_hcflx (ki,kj) + pheat_hcflux * pz1_dt_e1e2   ! J/m2/s
-      berg_melt_qlat (ki,kj) = berg_melt_qlat (ki,kj) + pheat_latent * pz1_dt_e1e2   ! J/m2/s
+      berg_melt_hcflx (ki,kj) = berg_melt_hcflx (ki,kj) + pheat_hcflux * pz1_e1e2   ! W/m2
+      berg_melt_qlat (ki,kj) = berg_melt_qlat (ki,kj) + pheat_latent * pz1_e1e2   ! W/m2
       bits_src  (ki,kj) = bits_src  (ki,kj) + pdMbitsE * pz1_dt_e1e2   ! mass flux into bergy bitskg/m2/s
       bits_melt (ki,kj) = bits_melt (ki,kj) + pdMbitsM * pz1_dt_e1e2   ! melt rate of bergy bits kg/m2/s
       buoy_melt (ki,kj) = buoy_melt (ki,kj) + pdMb     * pz1_dt_e1e2   ! kg/m2/s

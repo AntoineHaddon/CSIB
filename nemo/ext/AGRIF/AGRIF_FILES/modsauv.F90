@@ -1,5 +1,5 @@
 !
-! $Id: modsauv.F90 5656 2015-07-31 08:55:56Z timgraham $
+! $Id: modsauv.F90 14975 2021-06-11 09:05:32Z jchanut $
 !
 !     AGRIF (Adaptive Grid Refinement In Fortran)
 !
@@ -78,6 +78,7 @@ subroutine Agrif_deallocate_Arrays_c ( var_c )
 !
     if (allocated(var_c%carray1)) deallocate(var_c%carray1)
     if (allocated(var_C%carray2)) deallocate(var_c%carray2)
+    if (allocated(var_C%carrayu)) deallocate(var_c%carrayu)
 !
 !---------------------------------------------------------------------------------------------------
 end subroutine Agrif_deallocate_Arrays_c
@@ -249,7 +250,7 @@ recursive subroutine Agrif_CopyFromOld_All ( g, oldchildlist )
     type(Agrif_Grid_List),     intent(in)    :: oldchildlist
 !
     type(Agrif_PGrid), pointer  :: parcours ! Pointer for the recursive procedure
-    real    :: g_eps, eps, oldgrid_eps
+    real(kind=8)    :: g_eps, eps, oldgrid_eps
     integer :: out
     integer :: iii
 !
@@ -330,7 +331,7 @@ recursive subroutine Agrif_CopyFromOld_AllOneVar ( g, oldchildlist, indic )
     integer,                   intent(in)    :: indic
 !
     type(Agrif_PGrid), pointer  :: parcours ! Pointer for the recursive procedure
-    real    :: g_eps,eps,oldgrid_eps
+    real(kind=8)    :: g_eps,eps,oldgrid_eps
     integer :: out
     integer :: iii
 !
@@ -414,9 +415,9 @@ subroutine Agrif_Copy ( new_gr, old_gr, new_var, old_var )
     integer, dimension(6) :: petabold  ! Indexes of the first point in the domain
     integer, dimension(6) :: nbtabold  ! Number of cells in each direction
     integer, dimension(6) :: nbtabnew  ! Number of cells in each direction
-    real,    dimension(6) :: snew,sold
-    real,    dimension(6) :: dsnew,dsold
-    real    :: eps
+    real(kind=8),    dimension(6) :: snew,sold
+    real(kind=8),    dimension(6) :: dsnew,dsold
+    real(kind=8)    :: eps
     integer :: n
 !
     root => new_var % root_var
@@ -530,15 +531,15 @@ subroutine Agrif_CopynD ( new_var, old_var, pttabold, petabold, pttabnew, petabn
     integer, dimension(nbdim),     intent(in)    :: petabnew
     integer, dimension(nbdim),     intent(in)    :: pttabold
     integer, dimension(nbdim),     intent(in)    :: petabold
-    real,    dimension(nbdim),     intent(in)    :: snew, sold
-    real,    dimension(nbdim),     intent(in)    :: dsnew,dsold
+    real(kind=8),    dimension(nbdim),     intent(in)    :: snew, sold
+    real(kind=8),    dimension(nbdim),     intent(in)    :: dsnew,dsold
     integer,                       intent(in)    :: nbdim
 !
     integer :: i,j,k,l,m,n,i0,j0,k0,l0,m0,n0
 !
-    real,    dimension(nbdim) :: dim_gmin,   dim_gmax
-    real,    dimension(nbdim) :: dim_newmin, dim_newmax
-    real,    dimension(nbdim) :: dim_min
+    real(kind=8),    dimension(nbdim) :: dim_gmin,   dim_gmax
+    real(kind=8),    dimension(nbdim) :: dim_newmin, dim_newmax
+    real(kind=8),    dimension(nbdim) :: dim_min
     integer, dimension(nbdim) :: ind_gmin,ind_newmin, ind_newmax
 !
     do i = 1,nbdim

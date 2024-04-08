@@ -1,4 +1,5 @@
 MODULE stringop
+!$AGRIF_DO_NOT_TREAT
 !-
 !$Id: stringop.f90 2281 2010-10-15 14:21:13Z smasson $
 !-
@@ -182,4 +183,5 @@ SUBROUTINE str_xfw (c_string,c_word,l_ok)
 END SUBROUTINE str_xfw
 !===
 !------------------
+!$AGRIF_END_DO_NOT_TREAT
 END MODULE stringop

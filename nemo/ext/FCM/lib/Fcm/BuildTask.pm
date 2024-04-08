@@ -124,6 +124,16 @@ sub action {
 
   return unless $self->actiontype;
 
+  if ( defined $self->srcfile ) {
+    my $bname = basename($self->srcfile->src) ;
+    for my $depend (@{ $self->dependency }) {
+      if ( $bname eq $depend ) {
+       # Recursion suspected
+       return;
+      }
+    }
+  }
+
   my $uptodate     = 1;
   my $dep_uptodate = 1;
 

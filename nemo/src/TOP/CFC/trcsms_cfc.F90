@@ -46,14 +46,17 @@ MODULE trcsms_cfc
    REAL(wp) ::   xconv3 = 1.0e+3       ! conversion from mol/l/atm to mol/m3/atm
    REAL(wp) ::   xconv4 = 1.0e-12      ! conversion from mol/m3/atm to mol/m3/pptv 
 
+   !! * Substitutions
+#  include "do_loop_substitute.h90"
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: trcsms_cfc.F90 12300 2020-01-06 08:31:02Z cetlod $ 
+   !! $Id: trcsms_cfc.F90 15090 2021-07-06 14:25:18Z cetlod $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE trc_sms_cfc( kt )
+   SUBROUTINE trc_sms_cfc( kt, Kbb, Kmm, Krhs )
       !!----------------------------------------------------------------------
       !!                     ***  ROUTINE trc_sms_cfc  ***
       !!
@@ -69,7 +72,8 @@ CONTAINS
       !!              - the input function is in pico-mol/m3/s and the
       !!                CFC concentration in pico-mol/m3
       !!----------------------------------------------------------------------
-      INTEGER, INTENT(in) ::   kt    ! ocean time-step index
+      INTEGER, INTENT(in) ::   kt               ! ocean time-step index
+      INTEGER, INTENT(in) ::   Kbb, Kmm, Krhs   ! ocean time level
       !
       INTEGER  ::   ji, jj, jn, jl, jm
       INTEGER  ::   iyear_beg, iyear_end
@@ -121,53 +125,50 @@ CONTAINS
          END DO
          
          !                                                         !------------!
-         DO jj = 1, jpj                                            !  i-j loop  !
-            DO ji = 1, jpi                                         !------------!
- 
-               ! space interpolation
-               zpp_cfc  =       xphem(ji,jj)   * zpatm(1,jl)   &
-                  &     + ( 1.- xphem(ji,jj) ) * zpatm(2,jl)
+         DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )                   !  i-j loop  !
+            !                                                      !------------!
+            ! space interpolation
+            zpp_cfc  =       xphem(ji,jj)   * zpatm(1,jl)   &
+               &     + ( 1.- xphem(ji,jj) ) * zpatm(2,jl)
 
-               ! Computation of concentration at equilibrium : in picomol/l
-               ! coefficient for solubility for CFC-11/12 in  mol/l/atm
-               IF( tmask(ji,jj,1) .GE. 0.5 ) THEN
-                  ztap  = ( tsn(ji,jj,1,jp_tem) + 273.16 ) * 0.01
-                  zdtap = sob(1,jl) + ztap * ( sob(2,jl) + ztap * sob(3,jl) ) 
-                  zsol  =  EXP( soa(1,jl) + soa(2,jl) / ztap + soa(3,jl) * LOG( ztap )   &
-                     &                    + soa(4,jl) * ztap * ztap + tsn(ji,jj,1,jp_sal) * zdtap ) 
-               ELSE
-                  zsol  = 0.e0
-               ENDIF
-               ! conversion from mol/l/atm to mol/m3/atm and from mol/m3/atm to mol/m3/pptv    
-               zsol = xconv4 * xconv3 * zsol * tmask(ji,jj,1)  
-               ! concentration at equilibrium
-               zca_cfc = xconv1 * zpp_cfc * zsol * tmask(ji,jj,1)             
-  
-               ! Computation of speed transfert
-               !    Schmidt number revised in Wanninkhof (2014)
-               zt1  = tsn(ji,jj,1,jp_tem)
-               zt2  = zt1 * zt1 
-               zt3  = zt1 * zt2
-               zt4  = zt2 * zt2
-               zsch = sca(1,jl) + sca(2,jl) * zt1 + sca(3,jl) * zt2 + sca(4,jl) * zt3 + sca(5,jl) * zt4
+            ! Computation of concentration at equilibrium : in picomol/l
+            ! coefficient for solubility for CFC-11/12 in  mol/l/atm
+            IF( tmask(ji,jj,1) .GE. 0.5 ) THEN
+               ztap  = ( ts(ji,jj,1,jp_tem,Kmm) + 273.16 ) * 0.01
+               zdtap = sob(1,jl) + ztap * ( sob(2,jl) + ztap * sob(3,jl) ) 
+               zsol  =  EXP( soa(1,jl) + soa(2,jl) / ztap + soa(3,jl) * LOG( ztap )   &
+                  &                    + soa(4,jl) * ztap * ztap + ts(ji,jj,1,jp_sal,Kmm) * zdtap ) 
+            ELSE
+               zsol  = 0.e0
+            ENDIF
+            ! conversion from mol/l/atm to mol/m3/atm and from mol/m3/atm to mol/m3/pptv    
+            zsol = xconv4 * xconv3 * zsol * tmask(ji,jj,1)  
+            ! concentration at equilibrium
+            zca_cfc = xconv1 * zpp_cfc * zsol * tmask(ji,jj,1)             
+            ! Computation of speed transfert
+            !    Schmidt number revised in Wanninkhof (2014)
+            zt1  = ts(ji,jj,1,jp_tem,Kmm)
+            zt2  = zt1 * zt1 
+            zt3  = zt1 * zt2
+            zt4  = zt2 * zt2
+            zsch = sca(1,jl) + sca(2,jl) * zt1 + sca(3,jl) * zt2 + sca(4,jl) * zt3 + sca(5,jl) * zt4
 
-               !    speed transfert : formulae revised in Wanninkhof (2014)
-               zv2     = wndm(ji,jj) * wndm(ji,jj)
-               zsch    = zsch / 660.
-               zak_cfc = ( 0.251 * xconv2 * zv2 / SQRT(zsch) ) * tmask(ji,jj,1)
+            !    speed transfert : formulae revised in Wanninkhof (2014)
+            zv2     = wndm(ji,jj) * wndm(ji,jj)
+            zsch    = zsch / 660.
+            zak_cfc = ( 0.251 * xconv2 * zv2 / SQRT(zsch) ) * tmask(ji,jj,1)
 
-               ! Input function  : speed *( conc. at equil - concen at surface )
-               ! trn in pico-mol/l idem qtr; ak in en m/a
-               qtr_cfc(ji,jj,jl) = -zak_cfc * ( trb(ji,jj,1,jn) - zca_cfc )   &
-                  &                         * tmask(ji,jj,1) * ( 1. - fr_i(ji,jj) )
-               ! Add the surface flux to the trend
-               tra(ji,jj,1,jn) = tra(ji,jj,1,jn) + qtr_cfc(ji,jj,jl) / e3t_n(ji,jj,1) 
+            ! Input function  : speed *( conc. at equil - concen at surface )
+            ! tr(:,:,:,:,Kmm) in pico-mol/l idem qtr; ak in en m/a
+            qtr_cfc(ji,jj,jl) = -zak_cfc * ( tr(ji,jj,1,jn,Kbb) - zca_cfc )   &
+               &                         * tmask(ji,jj,1) * ( 1. - fr_i(ji,jj) )
+            ! Add the surface flux to the trend
+            tr(ji,jj,1,jn,Krhs) = tr(ji,jj,1,jn,Krhs) + qtr_cfc(ji,jj,jl) / e3t(ji,jj,1,Kmm) 
 
-               ! cumulation of surface flux at each time step
-               qint_cfc(ji,jj,jl) = qint_cfc(ji,jj,jl) + qtr_cfc(ji,jj,jl) * rdt
-               !                                               !----------------!
-            END DO                                             !  end i-j loop  !
-         END DO                                                !----------------!
+            ! cumulation of surface flux at each time step
+            qint_cfc(ji,jj,jl) = qint_cfc(ji,jj,jl) + qtr_cfc(ji,jj,jl) * rn_Dt
+            !                                               !----------------!
+         END_2D
          !                                                  !----------------!
       END DO                                                !  end CFC loop  !
       !
@@ -194,7 +195,7 @@ CONTAINS
       !
       IF( l_trdtrc ) THEN
           DO jn = jp_cfc0, jp_cfc1
-            CALL trd_trc( tra(:,:,:,jn), jn, jptra_sms, kt )   ! save trends
+            CALL trd_trc( tr(:,:,:,jn,Krhs), jn, jptra_sms, kt, Kmm )   ! save trends
           END DO
       END IF
       !
@@ -296,7 +297,7 @@ CONTAINS
          jl = 0
          DO jn = jp_cfc0, jp_cfc1
             jl = jl + 1
-            CALL iom_get( numrtr, jpdom_autoglo, 'qint_'//ctrcnm(jn), qint_cfc(:,:,jl) ) 
+            CALL iom_get( numrtr, jpdom_auto, 'qint_'//ctrcnm(jn), qint_cfc(:,:,jl) ) 
          END DO
       ENDIF
       IF(lwp) WRITE(numout,*)

@@ -21,7 +21,7 @@ MODULE crslbclnk
    
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: crslbclnk.F90 11536 2019-09-11 13:54:18Z smasson $
+   !! $Id: crslbclnk.F90 14433 2021-02-11 08:06:49Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -49,7 +49,7 @@ CONTAINS
       !
       IF( .NOT.ll_grid_crs )   CALL dom_grid_crs   ! Save the parent grid information  & Switch to coarse grid domain
       !
-      CALL lbc_lnk( 'crslbclnk', pt3d1, cd_type1, psgn, kfillmode, pfillval )
+      CALL lbc_lnk( 'crslbclnk', pt3d1, cd_type1, psgn, kfillmode = kfillmode, pfillval = pfillval )
       !
       IF( .NOT.ll_grid_crs )   CALL dom_grid_glo   ! Return to parent grid domain
       !
@@ -79,7 +79,7 @@ CONTAINS
       !
       IF( .NOT.ll_grid_crs )   CALL dom_grid_crs   ! Save the parent grid information  & Switch to coarse grid domain
       !
-      CALL lbc_lnk( 'crslbclnk', pt2d, cd_type, psgn, kfillmode, pfillval )
+      CALL lbc_lnk( 'crslbclnk', pt2d, cd_type, psgn, kfillmode = kfillmode, pfillval = pfillval )
       !
       IF( .NOT.ll_grid_crs )   CALL dom_grid_glo   ! Return to parent grid domain
       !

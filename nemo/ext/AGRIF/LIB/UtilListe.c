@@ -51,7 +51,9 @@ void Init_Variable(variable *var)
    strcpy(var->v_commoninfile       , "");
    strcpy(var->v_subroutinename     , "");
    strcpy(var->v_precision          , "");
-   strcpy(var->v_initialvalue       , "");
+   var->v_initialvalue = (listname *)NULL;
+   var->v_initialvalue_array = (listname *)NULL;
+   var->v_do_loop = NULL;
    strcpy(var->v_IntentSpec         , "");
    strcpy(var->v_readedlistdimension, "");
    var->v_nbdim               = 0 ;
@@ -70,6 +72,7 @@ void Init_Variable(variable *var)
    var->v_c_star              = 0 ;
    var->v_indicetabvars       = 0 ;
    var->v_pointerdeclare      = 0 ;
+   var->v_contiguousdeclare   = 0 ;
    var->v_optionaldeclare     = 0 ;
    var->v_allocatable         = 0 ;
    var->v_target              = 0 ;
@@ -102,6 +105,11 @@ listvar * AddListvarToListvar ( listvar *l, listvar *glob, int ValueFirstpass )
                 newvar = newvar->suiv;
             newvar->suiv = l;
         }
+        newvar=glob;
+        while (newvar)
+        {
+        newvar=newvar->suiv;
+        }
     }
     return glob;
 }
@@ -116,6 +124,8 @@ listvar * AddListvarToListvar ( listvar *l, listvar *glob, int ValueFirstpass )
 /******************************************************************************/
 void CreateAndFillin_Curvar(const char *type, variable *curvar)
 {
+listname *newvar;
+
     if ( !strcasecmp(type, "character") && strcasecmp(CharacterSize, "") )
     {
         strcpy(curvar->v_dimchar, CharacterSize);
@@ -149,7 +159,10 @@ void CreateAndFillin_Curvar(const char *type, variable *curvar)
     /* Si cette variable a ete initialisee                                     */
     if (InitialValueGiven == 1 )
     {
-        strcpy(curvar->v_initialvalue,InitValue);
+    curvar->v_initialvalue=Insertname(curvar->v_initialvalue,InitValue,0);
+    
+//        strcpy(curvar->v_initialvalue,InitValue);
+        
         Save_Length(InitValue,14);
     }
     /* Si cette variable est declaree en save                                  */
@@ -236,6 +249,7 @@ void addprecision_derivedfromkind(variable *curvar)
 //       tmpvar->v_c_star = parcours->var->v_c_star;
 //       tmpvar->v_catvar = parcours->var->v_catvar;
 //       tmpvar->v_pointerdeclare = parcours->var->v_pointerdeclare;
+//       tmpvar->v_contiguousdeclare = parcours->var->v_contiguousdeclare;
 //       tmpvar->v_optionaldeclare = parcours->var->v_optionaldeclare;
 //       tmpvar->v_allocatable = parcours->var->v_allocatable;
 //       tmpvar->v_target      = parcours->var->v_target;
@@ -381,6 +395,7 @@ variable * createvar(const char *nom, listdim *d)
         strcpy(var->v_nameinttypename,nameinttypename);
     }
 
+    if ( contiguousdeclare   == 1 ) var->v_contiguousdeclare = 1;
     if ( optionaldeclare     == 1 ) var->v_optionaldeclare = 1;
     if ( pointerdeclare      == 1 ) var->v_pointerdeclare = 1;
     if ( VariableIsParameter == 1 ) var->v_VariableIsParameter = 1 ;
@@ -480,7 +495,9 @@ listvar *settype(const char *nom, listvar *lin)
    {
       v = newvar->var;
       strcpy(v->v_typevar,nom);
+      
       v->v_catvar = get_cat_var(v);
+
       newvar = newvar->suiv;
    }
    newvar = lin;
@@ -501,7 +518,6 @@ void printliste(listvar * lin)
    while (newvar)
    {
       v=newvar->var;
-      printf("nom = %s, allocatable = %d dim = %s\n",v->v_nomvar,v->v_allocatable,(v->v_dimension)->dim.last);
       newvar=newvar->suiv;
    }
 }
@@ -563,6 +579,77 @@ listname *Insertname(listname *lin,char *nom, int sens)
    return lin;
 }
 
+int testandextractfromlist(listname **lin, char*nom)
+{
+listname *newvar;
+int val_1, val_2;
+int return_stmt;
+
+printname(*lin);
+if (!(*lin))
+ {
+  return 0;
+ }
+else
+ {
+ sscanf(nom,"%d",&val_1);
+ sscanf((*lin)->n_name,"%d",&val_2);
+ if (val_1==val_2)
+   {
+/*   newvar = *lin;
+   *lin = (*lin)->suiv;
+   free(newvar);*/
+   /* continue to remove while the label stays the same */
+/*   return_stmt=testandextractfromlist(lin,nom);*/
+   return 1;
+   }
+ else
+  {
+  return 0;
+  }
+ }
+}
+
+void removefromlist(listname **lin, char*nom)
+{
+listname *newvar,*prev;
+int val_1, val_2;
+int return_stmt;
+int out;
+
+printname(*lin);
+if (*lin)
+ {
+ sscanf(nom,"%d",&val_1);
+ prev=(listname *) calloc(1,sizeof(listname));
+ prev->suiv=*lin;
+ *lin=prev;
+ newvar=(*lin)->suiv;
+ out = 0;
+ while (newvar && out == 0)
+ {
+ sscanf((newvar)->n_name,"%d",&val_2);
+ if (val_1==val_2)
+   {
+   prev->suiv=newvar->suiv;
+   free(newvar);
+   }
+  if (prev->suiv) 
+    {
+    prev=prev->suiv;
+    newvar=prev->suiv;
+    }
+   else
+   {
+   out = 1;
+   }
+  }
+ prev=*lin;
+ *lin=(*lin)->suiv;
+ free(prev);
+ }
+}
+
 listname *concat_listname(listname *l1, listname *l2)
 {
    listname *tmpvar;
@@ -605,7 +692,6 @@ void printname(listname * lin)
    newvar=lin;
    while (newvar)
    {
-      printf("nom = %s \n",newvar->n_name);
       newvar=newvar->suiv;
    }
 }
@@ -693,6 +779,7 @@ void Init_List_Data_Var()
 
 int get_cat_var(variable *var)
 {
+
     if (!strcasecmp(var->v_typevar, "CHARACTER"))
         return 1;
     else if ((var->v_nbdim == 0 ) && (!strcasecmp(var->v_typevar, "REAL")))
@@ -703,4 +790,37 @@ int get_cat_var(variable *var)
         return 4;
     else
         return 0;
+}
+
+void Insertdoloop(variable *var,char *do_var,char *do_begin, char *do_end, char *do_step)
+{
+listdoloop *new_do_loop;
+listdoloop *tmploop;
+new_do_loop = (listdoloop *) calloc(1,sizeof(listdoloop));
+
+new_do_loop->cur_do_loop = (do_loop *) calloc(1,sizeof(do_loop));
+
+strcpy(new_do_loop->cur_do_loop->do_variable,do_var);
+strcpy(new_do_loop->cur_do_loop->do_begin,do_begin);
+strcpy(new_do_loop->cur_do_loop->do_end,do_end);
+strcpy(new_do_loop->cur_do_loop->do_step,do_step);
+new_do_loop->suiv = NULL;
+
+if (!var->v_do_loop)
+{
+  var->v_do_loop = new_do_loop;
+}
+else
+{
+  new_do_loop->suiv = var->v_do_loop;
+  var->v_do_loop = new_do_loop;
+      
+//   tmploop = var->v_do_loop;
+//   while (tmploop->suiv)
+//   {
+//     tmploop=tmploop->suiv;
+//   }
+//   tmploop->suiv = new_do_loop ;
+//   }
+}
 }

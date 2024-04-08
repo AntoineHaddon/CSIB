@@ -9,9 +9,9 @@
 !>    to set the depth of model levels and the resulting vertical scale
 !> factors:<br/>
 !> @code
-!>    CALL vgrid_zgr_z(dd_gdepw(:), dd_gdept(:), dd_e3w(:), dd_e3t(:), 
-!>                     dd_ppkth, dd_ppkth2, dd_ppacr, dd_ppacr2, 
-!>                     dd_ppdzmin, dd_pphmax, dd_pp_to_be_computed, 
+!>    CALL vgrid_zgr_z(dd_gdepw(:), dd_gdept(:), dd_e3w(:), dd_e3t(:),
+!>                     dd_ppkth, dd_ppkth2, dd_ppacr, dd_ppacr2,
+!>                     dd_ppdzmin, dd_pphmax, dd_pp_to_be_computed,
 !>                     dd_ppa0, dd_ppa1, dd_ppa2, dd_ppsur)
 !> @endcode
 !>       - dd_gdepw is array of depth value on W point
@@ -28,12 +28,12 @@
 !>       - dd_ppa2               see NEMO documentation
 !>       - dd_ppa0               see NEMO documentation
 !>       - dd_ppsur              see NEMO documentation
-!>    
-!> 
+!>
+!>
 !>    to set the depth and vertical scale factor in partial step z-coordinate
 !>  case:<br/>
 !> @code
-!>    CALL vgrid_zgr_zps(id_mbathy(:,:), dd_bathy(:,:), id_jpkmax, dd_gdepw(:), 
+!>    CALL vgrid_zgr_zps(id_mbathy(:,:), dd_bathy(:,:), id_jpkmax, dd_gdepw(:),
 !>                       dd_e3t(:), dd_e3zps_min, dd_e3zps_rat)
 !> @endcode
 !>       - id_mbathy is array of bathymetry level
@@ -51,7 +51,7 @@
 !>       - id_mbathy is array of bathymetry level
 !>       - id_jpkmax is the maximum number of level to be used
 !>       - id_jpk    is the number of level
-!>   
+!>
 !>    to compute bathy level in T,U,V,F point from  Bathymetry file:<br/>
 !> @code
 !>    tl_level(:)=vgrid_get_level(td_bathy, [cd_namelist,] [td_dom,] [id_nlevel])
@@ -60,7 +60,7 @@
 !>       - cd_namelist is namelist [optional]
 !>       - td_dom is domain structure [optional]
 !>       - id_nlevel is number of lelvel to be used [optional]
-!>    
+!>
 !> @author
 !> J.Paul
 !>
@@ -96,7 +96,7 @@ MODULE vgrid
    ! type and variable
 
    ! function and subroutine
-   PUBLIC :: vgrid_zgr_z 
+   PUBLIC :: vgrid_zgr_z
    PUBLIC :: vgrid_zgr_zps
    PUBLIC :: vgrid_zgr_bat_ctl
    PUBLIC :: vgrid_get_level
@@ -109,7 +109,7 @@ CONTAINS
          &                dd_ppdzmin, dd_pphmax, dd_pp_to_be_computed, &
          &                dd_ppa0, dd_ppa1, dd_ppa2, dd_ppsur )
    !-------------------------------------------------------------------
-   !> @brief This subroutine set the depth of model levels and the resulting 
+   !> @brief This subroutine set the depth of model levels and the resulting
    !>      vertical scale factors.
    !>
    !> @details
@@ -134,22 +134,22 @@ CONTAINS
    !> @param[inout] dd_gedpt
    !> @param[inout] dd_e3w
    !> @param[inout] dd_e2t
-   !> @param[in] dd_ppkth 
+   !> @param[in] dd_ppkth
    !> @param[in] dd_ppkth2
    !> @param[in] dd_ppacr
    !> @param[in] dd_ppacr2
    !> @param[in] dd_ppdzmin
-   !> @param[in] dd_pphmax 
+   !> @param[in] dd_pphmax
    !> @param[in] dd_pp_to_be_computed
    !> @param[in] dd_ppa1
-   !> @param[in] dd_ppa2 
+   !> @param[in] dd_ppa2
    !> @param[in] dd_ppa0
    !> @param[in] dd_ppsur
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       REAL(dp), DIMENSION(:), INTENT(INOUT) :: dd_gdepw
       REAL(dp), DIMENSION(:), INTENT(INOUT) :: dd_gdept
       REAL(dp), DIMENSION(:), INTENT(INOUT) :: dd_e3w
@@ -229,9 +229,9 @@ CONTAINS
 
       ! Reference z-coordinate (depth - scale factor at T- and W-points)
       ! ======================
-      IF(  dd_ppkth == 0. )THEN            !  uniform vertical grid       
+      IF(  dd_ppkth == 0. )THEN            !  uniform vertical grid
 
-         dl_za1 = dl_zhmax/REAL((il_jpk-1),dp) 
+         dl_za1 = dl_zhmax/REAL((il_jpk-1),dp)
          DO jk = 1, il_jpk
             dl_zw = REAL(jk,dp)
             dl_zt = REAL(jk,dp) + 0.5_dp
@@ -267,12 +267,12 @@ CONTAINS
    ! If not, level beneath the ISF are not aligned (sum(e3t) /= depth)
    ! define e3t_0 and e3w_0 as the differences between gdept and gdepw respectively
       DO jk = 1, il_jpk-1
-         dd_e3t_1d(jk) = dd_gdepw(jk+1)-dd_gdepw(jk) 
+         dd_e3t_1d(jk) = dd_gdepw(jk+1)-dd_gdepw(jk)
       END DO
       dd_e3t_1d(il_jpk) = dd_e3t_1d(il_jpk-1) ! we don't care because this level is masked in NEMO
 
       DO jk = 2, il_jpk
-         dd_e3w_1d(jk) = dd_gdept(jk) - dd_gdept(jk-1) 
+         dd_e3w_1d(jk) = dd_gdept(jk) - dd_gdept(jk-1)
       END DO
       dd_e3w_1d(1  ) = 2._dp * (dd_gdept(1) - dd_gdepw(1))
 
@@ -282,7 +282,7 @@ CONTAINS
       DO jk = 1, il_jpk
          IF( dd_e3w(jk)  <= 0. .OR. dd_e3t(jk)  <= 0. )then
             CALL logger_debug("VGRID ZGR Z: e3w or e3t <= 0 ")
-         ENDIF   
+         ENDIF
 
          IF( dd_e3w_1d(jk)  <= 0. .OR. dd_e3t_1d(jk)  <= 0. )then
             CALL logger_debug("VGRID ZGR Z: e3w_1d or e3t_1d <= 0 ")
@@ -310,14 +310,14 @@ CONTAINS
       IMPLICIT NONE
 
       ! Argument
-      REAL(dp), DIMENSION(:,:), INTENT(INOUT) :: dd_bathy 
-      REAL(dp), DIMENSION(:)  , INTENT(IN   ) :: dd_gdepw 
+      REAL(dp), DIMENSION(:,:), INTENT(INOUT) :: dd_bathy
+      REAL(dp), DIMENSION(:)  , INTENT(IN   ) :: dd_gdepw
       REAL(dp)                , INTENT(IN   ) :: dd_hmin
       REAL(dp)                , INTENT(IN   ), OPTIONAL :: dd_fill
 
       ! local
       INTEGER(i4) :: il_jpk
-      
+
       REAL(dp)    :: dl_hmin
       REAL(dp)    :: dl_fill
 
@@ -334,14 +334,14 @@ CONTAINS
       ELSE
          jk = MINLOC( dd_gdepw, mask = dd_gdepw > dd_hmin, dim = 1 )  ! from a depth
       ENDIF
-      
-      dl_hmin = dd_gdepw(jk+1) ! minimum depth = ik+1 w-levels 
+
+      dl_hmin = dd_gdepw(jk+1) ! minimum depth = ik+1 w-levels
       WHERE( dd_bathy(:,:) <= 0._wp .OR. dd_bathy(:,:) == dl_fill )
          dd_bathy(:,:) = dl_fill                         ! min=0     over the lands
       ELSE WHERE
          dd_bathy(:,:) = MAX(  dl_hmin , dd_bathy(:,:)  )   ! min=dl_hmin over the oceans
       END WHERE
-      WRITE(*,*) 'Minimum ocean depth: ', dl_hmin, ' minimum number of ocean levels : ', jk      
+      WRITE(*,*) 'Minimum ocean depth: ', dl_hmin, ' minimum number of ocean levels : ', jk
 
    END SUBROUTINE vgrid_zgr_bat
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -351,7 +351,7 @@ CONTAINS
          &                  dd_fill )
    !-------------------------------------------------------------------
    !> @brief This subroutine set the depth and vertical scale factor in partial step
-   !>      z-coordinate case 
+   !>      z-coordinate case
    !>
    !> @details
    !> ** Method  :   Partial steps : computes the 3D vertical scale factors
@@ -364,10 +364,10 @@ CONTAINS
    !>      From  depth and scale factors reference, we compute there new value
    !>      with partial steps  on 3d arrays ( i, j, k ).
    !>
-   !>      w-level: 
+   !>      w-level:
    !>          - gdepw_ps(i,j,k)  = fsdep(k)
    !>          - e3w_ps(i,j,k) = dk(fsdep)(k)     = fse3(i,j,k)
-   !>      t-level: 
+   !>      t-level:
    !>          - gdept_ps(i,j,k)  = fsdep(k+0.5)
    !>          - e3t_ps(i,j,k) = dk(fsdep)(k+0.5) = fse3(i,j,k+0.5)
    !>
@@ -375,35 +375,35 @@ CONTAINS
    !>      we find the mbathy index of the depth at each grid point.
    !>      This leads us to three cases:
    !>          - bathy = 0 => mbathy = 0
-   !>          - 1 < mbathy < jpkm1    
-   !>          - bathy > gdepw(jpk) => mbathy = jpkm1  
+   !>          - 1 < mbathy < jpkm1
+   !>          - bathy > gdepw(jpk) => mbathy = jpkm1
    !>
    !>      Then, for each case, we find the new depth at t- and w- levels
-   !>      and the new vertical scale factors at t-, u-, v-, w-, uw-, vw- 
+   !>      and the new vertical scale factors at t-, u-, v-, w-, uw-, vw-
    !>      and f-points.
-   !> 
+   !>
    !>        This routine is given as an example, it must be modified
    !>      following the user s desiderata. nevertheless, the output as
    !>      well as the way to compute the model levels and scale factors
    !>      must be respected in order to insure second order accuracy
    !>      schemes.
    !>
-   !>  @warning 
+   !>  @warning
    !>         - gdept, gdepw and e3 are positives
    !>         - gdept_ps, gdepw_ps and e3_ps are positives
    !>
    !> @author A. Bozec, G. Madec
    !> @date February, 2009 - F90: Free form and module
-   !> @date February, 2009 
+   !> @date February, 2009
    !> - A. de Miranda : rigid-lid + islands
    !>
    !> @note Reference : Pacanowsky & Gnanadesikan 1997, Mon. Wea. Rev., 126, 3248-3270.
    !>
    !> @param[inout] id_mbathy
    !> @param[inout] dd_bathy
-   !> @param[inout] id_jpkmax 
+   !> @param[inout] id_jpkmax
    !> @param[in] dd_gdepw
-   !> @param[in] dd_e3t 
+   !> @param[in] dd_e3t
    !> @param[in] dd_e3zps_min
    !> @param[in] dd_e3zps_rat
    !> @param[in] dd_fill
@@ -411,7 +411,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       INTEGER(i4), DIMENSION(:,:), INTENT(  OUT) :: id_mbathy
       REAL(dp)   , DIMENSION(:,:), INTENT(INOUT) :: dd_bathy
       INTEGER(i4)                , INTENT(INOUT) :: id_jpkmax
@@ -424,8 +424,8 @@ CONTAINS
       ! local variable
       REAL(dp) :: dl_zmax     ! Maximum depth
       !REAL(dp) :: dl_zmin     ! Minimum depth
-      REAL(dp) :: dl_zdepth   ! Ajusted ocean depth to avoid too small e3t 
-      REAL(dp) :: dl_fill     
+      REAL(dp) :: dl_zdepth   ! Ajusted ocean depth to avoid too small e3t
+      REAL(dp) :: dl_fill
 
       INTEGER(i4) :: il_jpk
       INTEGER(i4) :: il_jpkm1
@@ -498,7 +498,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE vgrid_zgr_bat_ctl(id_mbathy, id_jpkmax, id_jpk)
    !-------------------------------------------------------------------
-   !> @brief This subroutine check the bathymetry in levels 
+   !> @brief This subroutine check the bathymetry in levels
    !>
    !> @details
    !> ** Method  :   The array mbathy is checked to verified its consistency
@@ -520,14 +520,14 @@ CONTAINS
    !> @author G.Madec
    !> @date Marsh, 2008 - Original code
    !>
-   !> @param[in] id_mbathy 
+   !> @param[in] id_mbathy
    !> @param[in] id_jpkmax
    !> @param[in] id_jpk
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       INTEGER(i4), DIMENSION(:,:), INTENT(INOUT) :: id_mbathy
       INTEGER(i4)                , INTENT(INOUT) :: id_jpkmax
       INTEGER(i4)                , INTENT(INOUT) :: id_jpk
@@ -617,26 +617,26 @@ CONTAINS
    FUNCTION vgrid_get_level(td_bathy, cd_namelist, td_dom, id_nlevel) &
          & RESULT (tf_var)
    !-------------------------------------------------------------------
-   !> @brief This function compute bathy level in T,U,V,F point, and return 
+   !> @brief This function compute bathy level in T,U,V,F point, and return
    !> them as array of variable structure
    !>
    !> @details
-   !> Bathymetry is read on Bathymetry file, then bathy level is computed 
+   !> Bathymetry is read on Bathymetry file, then bathy level is computed
    !> on T point, and finally fit to U,V,F point.
    !>
    !> you could specify :<br/>
    !> - namelist where find parameter to set the depth of model levels
    !> (default use GLORYS 75 levels parameters)
-   !> - domain structure to specify on e area to work on
+   !> - domain structure to specify one area to work on
    !> - number of level to be used
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !>
-   !> @param[in] td_bathy     Bathymetry file structure 
-   !> @param[in] cd_namelist  namelist 
+   !> @param[in] td_bathy     Bathymetry file structure
+   !> @param[in] cd_namelist  namelist
    !> @param[in] td_dom       domain structure
-   !> @param[in] id_nlevel    number of lelvel to be used 
+   !> @param[in] id_nlevel    number of lelvel to be used
    !> @return array of level on T,U,V,F point (variable structure)
    !-------------------------------------------------------------------
 
@@ -652,11 +652,11 @@ CONTAINS
       TYPE(TVAR), DIMENSION(ip_npoint)       :: tf_var
 
       ! local variable
-      REAL(dp)   , DIMENSION(:)      , ALLOCATABLE :: dl_gdepw 
-      REAL(dp)   , DIMENSION(:)      , ALLOCATABLE :: dl_gdept 
-      REAL(dp)   , DIMENSION(:)      , ALLOCATABLE :: dl_e3w 
+      REAL(dp)   , DIMENSION(:)      , ALLOCATABLE :: dl_gdepw
+      REAL(dp)   , DIMENSION(:)      , ALLOCATABLE :: dl_gdept
+      REAL(dp)   , DIMENSION(:)      , ALLOCATABLE :: dl_e3w
       REAL(dp)   , DIMENSION(:)      , ALLOCATABLE :: dl_e3t
-      REAL(dp)   , DIMENSION(:)      , ALLOCATABLE :: dl_e3w_1d 
+      REAL(dp)   , DIMENSION(:)      , ALLOCATABLE :: dl_e3w_1d
       REAL(dp)   , DIMENSION(:)      , ALLOCATABLE :: dl_e3t_1d
 
       INTEGER(i4)                                  :: il_status
@@ -665,7 +665,7 @@ CONTAINS
       INTEGER(i4), DIMENSION(2,2)                  :: il_xghost
       INTEGER(i4), DIMENSION(:,:)    , ALLOCATABLE :: il_mbathy
       INTEGER(i4), DIMENSION(:,:,:,:), ALLOCATABLE :: il_level
-      
+
       LOGICAL                                      :: ll_exist
 
       TYPE(TDIM) , DIMENSION(ip_maxdim)            :: tl_dim
@@ -723,7 +723,7 @@ CONTAINS
          !1- read namelist
          INQUIRE(FILE=TRIM(cd_namelist), EXIST=ll_exist)
          IF( ll_exist )THEN
- 
+
             il_fileid=fct_getunit()
 
             OPEN( il_fileid, FILE=TRIM(cd_namelist), &
@@ -799,9 +799,9 @@ CONTAINS
       CALL mpp_clean(tl_bathy)
 
       ! compute vertical grid
-      ALLOCATE( dl_gdepw(in_nlevel), dl_gdept(in_nlevel) ) 
-      ALLOCATE(   dl_e3w(in_nlevel),   dl_e3t(in_nlevel) ) 
-      ALLOCATE(   dl_e3w_1d(in_nlevel),   dl_e3t_1d(in_nlevel) ) 
+      ALLOCATE( dl_gdepw(in_nlevel), dl_gdept(in_nlevel) )
+      ALLOCATE(   dl_e3w(in_nlevel),   dl_e3t(in_nlevel) )
+      ALLOCATE(   dl_e3w_1d(in_nlevel),   dl_e3t_1d(in_nlevel) )
       CALL vgrid_zgr_z( dl_gdepw(:), dl_gdept(:), dl_e3w(:), dl_e3t(:), &
       &                 dl_e3w_1d, dl_e3t_1d, &
       &                 dn_ppkth, dn_ppkth2, dn_ppacr, dn_ppacr2,       &
@@ -815,7 +815,7 @@ CONTAINS
       &                   dl_gdepw(:), dl_e3t(:),               &
       &                   dn_e3zps_min, dn_e3zps_rat )
 
-      DEALLOCATE( dl_gdepw, dl_gdept ) 
+      DEALLOCATE( dl_gdepw, dl_gdept )
       DEALLOCATE(   dl_e3w,   dl_e3t )
 
       ! compute bathy level in T,U,V,F point

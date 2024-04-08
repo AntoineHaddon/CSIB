@@ -1,4 +1,5 @@
 MODULE mathelp
+!$AGRIF_DO_NOT_TREAT
 !-
 !$Id: mathelp.f90 2281 2010-10-15 14:21:13Z smasson $
 !-
@@ -3119,4 +3120,5 @@ SUBROUTINE moycum (opp,np,px,py,pwx)
 END SUBROUTINE moycum
 !===
 !-----------------
+!$AGRIF_END_DO_NOT_TREAT
 END MODULE mathelp

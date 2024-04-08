@@ -15,7 +15,7 @@
 !> @code
 !>    tl_multi=multi_init(cd_varfile(:))
 !> @endcode
-!>       - cd_varfile : array of variable with file path 
+!>       - cd_varfile : array of variable with file path
 !>       ('var1:file1','var2:file2')<br/>
 !>          file path could be replaced by a matrix of value.<br/>
 !>          separators used to defined matrix are:
@@ -24,11 +24,11 @@
 !>             - '\' for level<br/>
 !>             Example:<br/>
 !>                - 'var1:3,2,3/1,4,5'
-!>                - 3,2,3/1,4,5  =>  
+!>                - 3,2,3/1,4,5  =>
 !>                      @f$ \left( \begin{array}{ccc}
 !>                           3 & 2 & 3 \\
 !>                           1 & 4 & 5 \end{array} \right) @f$<br/>
-!> 
+!>
 !>    to get the number of mpp file in mutli file structure:<br/>
 !>    - tl_multi\%i_nmpp
 !>
@@ -58,7 +58,7 @@
 !> @date November, 2013 - Initial Version
 !> @date October, 2014
 !> - use mpp file structure instead of file
-!> @date November, 2014 
+!> @date November, 2014
 !> - Fix memory leaks bug
 !>
 !> @note Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
@@ -92,15 +92,15 @@ MODULE multi
    PRIVATE :: multi__get_perio !< read periodicity from namelist
 
    TYPE TMULTI !< multi file structure
-      ! general 
-      INTEGER(i4)                         :: i_nmpp  = 0         !< number of mpp files 
+      ! general
+      INTEGER(i4)                         :: i_nmpp  = 0         !< number of mpp files
       INTEGER(i4)                         :: i_nvar  = 0         !< total number of variables
       TYPE(TMPP) , DIMENSION(:), POINTER  :: t_mpp => NULL()     !< mpp files composing multi
    END TYPE
 
    INTERFACE multi_copy
       MODULE PROCEDURE multi__copy_unit   ! copy multi file structure
-   END INTERFACE   
+   END INTERFACE
 
 CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -109,17 +109,17 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief
    !> This function copy multi mpp structure in another one
-   !> @details 
-   !> file variable value are copied in a temporary array, 
-   !> so input and output file structure value do not point on the same 
-   !> "memory cell", and so on are independant. 
+   !> @details
+   !> file variable value are copied in a temporary array,
+   !> so input and output file structure value do not point on the same
+   !> "memory cell", and so on are independant.
    !>
    !> @warning do not use on the output of a function who create or read an
    !> attribute (ex: tl_att=att_copy(att_init()) is forbidden).
    !> This will create memory leaks.
-   !> @warning to avoid infinite loop, do not use any function inside 
+   !> @warning to avoid infinite loop, do not use any function inside
    !> this subroutine
-   !>   
+   !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !> @date November, 2014
@@ -180,14 +180,14 @@ CONTAINS
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
-   !> @date July, 2015 
+   !> @date July, 2015
    !> - check if variable to be read is in file
    !> @date January, 2016
    !> - read variable dimensions
    !> @date July, 2016
    !> - get variable to be read and associated file first
    !> @date August, 2017
-   !> - get perio from namelist 
+   !> - get perio from namelist
    !> @date January, 2019
    !> - create and clean file structure to avoid memory leaks
    !> - fill value read from array of variable structure
@@ -196,7 +196,7 @@ CONTAINS
    !> @date August, 2019
    !> - use periodicity read from namelist, and store in multi structure
    !>
-   !> @param[in] cd_varfile   variable location information (from namelist) 
+   !> @param[in] cd_varfile   variable location information (from namelist)
    !> @return multi file structure
    !-------------------------------------------------------------------
 
@@ -270,11 +270,11 @@ CONTAINS
             CALL logger_fatal("MULTI INIT: file name too long (>"//&
             &          TRIM(fct_str(lc))//"). check namelist.")
          ENDIF
-         
+
          IF( TRIM(cl_file) /= '' )THEN
             jk=0
             DO jj=1,jf
-               IF( TRIM(cl_file) == TRIM(cl_tabfile(jj)) )THEN            
+               IF( TRIM(cl_file) == TRIM(cl_tabfile(jj)) )THEN
                   jk=jj
                   EXIT
                ENDIF
@@ -462,7 +462,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TMULTI), INTENT(INOUT) :: td_multi
 
       ! local variable
@@ -500,7 +500,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TMULTI), INTENT(IN) :: td_multi
 
       ! local variable
@@ -549,7 +549,7 @@ CONTAINS
    !> @param[in]    td_mpp    mpp file strcuture
    !> @return mpp file id in multi mpp file structure
    !-------------------------------------------------------------------
-      
+
       IMPLICIT NONE
 
       ! Argument
@@ -559,7 +559,7 @@ CONTAINS
       ! local variable
       INTEGER(i4) :: il_status
       INTEGER(i4) :: il_mppid
-      
+
       TYPE(TMPP), DIMENSION(:), ALLOCATABLE :: tl_mpp
 
       ! loop indices
@@ -582,12 +582,12 @@ CONTAINS
             ENDDO
 
       ELSE
- 
+
          CALL logger_trace("MULTI ADD MPP: add mpp "//&
          &               TRIM(td_mpp%c_name)//" in multi mpp file structure")
 
          IF( td_multi%i_nmpp > 0 )THEN
-            ! 
+            !
             ! already other mpp file in multi file structure
             ALLOCATE( tl_mpp(td_multi%i_nmpp), stat=il_status )
             IF(il_status /= 0 )THEN
@@ -645,9 +645,9 @@ CONTAINS
    SUBROUTINE multi__get_perio(cd_file, id_perio)
    !-------------------------------------------------------------------
    !> @brief
-   !> This subroutine check if variable file, read in namelist, contains 
-   !> periodicity value and return it if true. 
-   !> 
+   !> This subroutine check if variable file, read in namelist, contains
+   !> periodicity value and return it if true.
+   !>
    !> @details
    !> periodicity value is assume to follow string "perio ="
    !>
@@ -659,7 +659,7 @@ CONTAINS
    !> given)
    !>
    !> @param[inout] cd_file    file name
-   !> @param[  out] id_perio   NEMO periodicity 
+   !> @param[  out] id_perio   NEMO periodicity
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -671,7 +671,7 @@ CONTAINS
       ! local variable
       CHARACTER(LEN=lc) :: cl_tmp
       CHARACTER(LEN=lc) :: cl_perio
- 
+
       INTEGER(i4)       :: il_ind
 
       ! loop indices
@@ -697,7 +697,7 @@ CONTAINS
             ENDIF
          ENDIF
          ji=ji+1
-         cl_tmp=fct_split(cd_file,ji,';')         
+         cl_tmp=fct_split(cd_file,ji,';')
       ENDDO
       cd_file=fct_split(cd_file,1,';')
 

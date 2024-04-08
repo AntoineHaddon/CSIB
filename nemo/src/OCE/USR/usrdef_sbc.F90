@@ -30,15 +30,16 @@ MODULE usrdef_sbc
    PUBLIC   usrdef_sbc_ice_flx   ! routine called by icestp.F90 for ice thermo
 
    !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
+#  include "do_loop_substitute.h90"
+#  include "single_precision_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: usrdef_sbc.F90 10425 2018-12-19 21:54:16Z smasson $
+   !! $Id: usrdef_sbc.F90 15145 2021-07-26 16:16:45Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE usrdef_sbc_oce( kt )
+   SUBROUTINE usrdef_sbc_oce( kt, Kbb )
       !!---------------------------------------------------------------------
       !!                    ***  ROUTINE usrdef_sbc  ***
       !!              
@@ -54,6 +55,7 @@ CONTAINS
       !! Reference : Hazeleger, W., and S. Drijfhout, JPO, 30, 677-695, 2000.
       !!----------------------------------------------------------------------
       INTEGER, INTENT(in) ::   kt   ! ocean time step
+      INTEGER, INTENT(in) ::   Kbb  ! ocean time index
       !!
       INTEGER  ::   ji, jj                 ! dummy loop indices
       INTEGER  ::   zyear0                 ! initial year 
@@ -66,7 +68,7 @@ CONTAINS
       REAL(wp) ::   ztimemax1, ztimemin1   ! 21th June, and 21th decem. if date0 = 1st january
       REAL(wp) ::   ztimemax2, ztimemin2   ! 21th June, and 21th decem. if date0 = 1st january
       REAL(wp) ::   ztaun                  ! intensity
-      REAL(wp) ::   zemp_s, zemp_n, zemp_sais, ztstar
+      REAL(wp) ::   zemp_S, zemp_N, zemp_sais, zTstar
       REAL(wp) ::   zcos_sais1, zcos_sais2, ztrp, zconv, t_star
       REAL(wp) ::   zsumemp, zsurf
       REAL(wp) ::   zrhoa  = 1.22         ! Air density kg/m3
@@ -87,7 +89,7 @@ CONTAINS
       zday_year0 = ( zmonth0 - 1 ) * 30.+zday0                  ! initial day betwen 1 and 360
 
       ! current day (in hours) since january the 1st of the current year
-      ztime = REAL( kt ) * rdt / (rmmss * rhhmm)   &       !  total incrementation (in hours)
+      ztime = REAL( kt ) * rn_Dt / (rmmss * rhhmm)   &       !  total incrementation (in hours)
          &      - (nyear  - 1) * rjjhh * zyydd             !  minus years since beginning of experiment (in hours)
 
       ztimemax1 = ((5.*30.)+21.)* 24.                      ! 21th june     at 24h in hours
@@ -108,37 +110,37 @@ CONTAINS
 
       ztrp= - 40.e0        ! retroaction term on heat fluxes (W/m2/K)
       zconv = 3.16e-5      ! convertion factor: 1 m/yr => 3.16e-5 mm/s
-      DO jj = 1, jpj
-         DO ji = 1, jpi
-            ! domain from 15 deg to 50 deg between 27 and 28  degC at 15N, -3
-            ! and 13 degC at 50N 53.5 + or - 11 = 1/4 period :
-            ! 64.5 in summer, 42.5 in winter
-            t_star = zTstar * ( 1. + 1. / 50. * zcos_sais2 )                &
-               &                    * COS( rpi * (gphit(ji,jj) - 5.)               &
-               &                    / ( 53.5 * ( 1 + 11 / 53.5 * zcos_sais2 ) * 2.) )
-            ! 23.5 deg : tropics
-            qsr (ji,jj) =  230 * COS( 3.1415 * ( gphit(ji,jj) - 23.5 * zcos_sais1 ) / ( 0.9 * 180 ) )
-            qns (ji,jj) = ztrp * ( tsb(ji,jj,1,jp_tem) - t_star ) - qsr(ji,jj)
-            IF( gphit(ji,jj) >= 14.845 .AND. 37.2 >= gphit(ji,jj) ) THEN    ! zero at 37.8 deg, max at 24.6 deg
-               emp  (ji,jj) =   zemp_S * zconv   &
-                  &         * SIN( rpi / 2 * (gphit(ji,jj) - 37.2) / (24.6 - 37.2) )  &
-                  &         * ( 1 - zemp_sais / zemp_S * zcos_sais1)
-            ELSE
-               emp (ji,jj) =  - zemp_N * zconv   &
-                  &         * SIN( rpi / 2 * (gphit(ji,jj) - 37.2) / (46.8 - 37.2) )  &
-                  &         * ( 1 - zemp_sais / zemp_N * zcos_sais1 )
-            ENDIF
-         END DO
-      END DO
+      DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )   ! emp and rnf used in sshwzv over the whole domain
+         ! domain from 15 deg to 50 deg between 27 and 28  degC at 15N, -3
+         ! and 13 degC at 50N 53.5 + or - 11 = 1/4 period :
+         ! 64.5 in summer, 42.5 in winter
+         t_star = zTstar * ( 1. + 1. / 50. * zcos_sais2 )                &
+            &                    * COS( rpi * (gphit(ji,jj) - 5.)               &
+            &                    / ( 53.5 * ( 1 + 11 / 53.5 * zcos_sais2 ) * 2.) )
+         ! 23.5 deg : tropics
+         qsr (ji,jj) =  230 * COS( 3.1415 * ( gphit(ji,jj) - 23.5 * zcos_sais1 ) / ( 0.9 * 180 ) )
+         qns (ji,jj) = ztrp * ( ts(ji,jj,1,jp_tem,Kbb) - t_star ) - qsr(ji,jj)
+         IF( gphit(ji,jj) >= 14.845 .AND. 37.2 >= gphit(ji,jj) ) THEN    ! zero at 37.8 deg, max at 24.6 deg
+            emp  (ji,jj) =   zemp_S * zconv   &
+               &         * SIN( rpi / 2 * (gphit(ji,jj) - 37.2) / (24.6 - 37.2) )  &
+               &         * ( 1 - zemp_sais / zemp_S * zcos_sais1)
+         ELSE
+            emp (ji,jj) =  - zemp_N * zconv   &
+               &         * SIN( rpi / 2 * (gphit(ji,jj) - 37.2) / (46.8 - 37.2) )  &
+               &         * ( 1 - zemp_sais / zemp_N * zcos_sais1 )
+         ENDIF
+      END_2D
 
-      zsumemp = GLOB_SUM( 'usrdef_sbc', emp  (:,:)   ) 
-      zsurf   = GLOB_SUM( 'usrdef_sbc', tmask(:,:,1) ) 
+      zsumemp = GLOB_SUM( 'usrdef_sbc', CASTDP(emp  (:,:))   )
+      zsurf   = GLOB_SUM( 'usrdef_sbc', CASTDP(tmask(:,:,1)) )
       zsumemp = zsumemp / zsurf         ! Default GYRE configuration
 
       ! freshwater (mass flux) and update of qns with heat content of emp
-      emp (:,:) = emp(:,:) - zsumemp * tmask(:,:,1)        ! freshwater flux (=0 in domain average)
-      sfx (:,:) = 0.0_wp                                   ! no salt flux
-      qns (:,:) = qns(:,:) - emp(:,:) * sst_m(:,:) * rcp   ! evap and precip are at SST
+      DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )   ! emp used in sshwzv over the whole domain
+         emp (ji,jj) = emp(ji,jj) - zsumemp * tmask(ji,jj,1)          ! freshwater flux (=0 in domain average)
+         sfx (ji,jj) = 0.0_wp                                         ! no salt flux
+         qns (ji,jj) = qns(ji,jj) - emp(ji,jj) * sst_m(ji,jj) * rcp   ! evap and precip are at SST
+      END_2D
 
 
       ! ---------------------------- !
@@ -154,7 +156,7 @@ CONTAINS
 
       !accumulates days of previous months of this year
       ! day (in hours) since january the 1st
-      ztime = FLOAT( kt ) * rdt / (rmmss * rhhmm)  &  ! incrementation in hour
+      ztime = FLOAT( kt ) * rn_Dt / (rmmss * rhhmm)  &  ! incrementation in hour
          &     - (nyear - 1) * rjjhh * zyydd          !  - nber of hours the precedent years
       ztimemax = ((5.*30.)+21.)* 24.               ! 21th june     in hours
       ztimemin = ztimemax + rjjhh * zyydd / 2      ! 21th december in hours
@@ -165,27 +167,22 @@ CONTAINS
       ! seasonal oscillation intensity
       ztau_sais = 0.015
       ztaun = ztau - ztau_sais * COS( (ztime - ztimemax) / (ztimemin - ztimemax) * rpi )
-      DO jj = 1, jpj
-         DO ji = 1, jpi
-           ! domain from 15deg to 50deg and 1/2 period along 14deg
-           ! so 5/4 of half period with seasonal cycle
-           utau(ji,jj) = - ztaun * SIN( rpi * (gphiu(ji,jj) - 15.) / (29.-15.) )
-           vtau(ji,jj) =   ztaun * SIN( rpi * (gphiv(ji,jj) - 15.) / (29.-15.) )
-         END DO
-      END DO
+      DO_2D( 1, 1, 1, 1 )
+        ! domain from 15deg to 50deg and 1/2 period along 14deg
+        ! so 5/4 of half period with seasonal cycle
+        utau(ji,jj) = - ztaun * SIN( rpi * (gphiu(ji,jj) - 15.) / (29.-15.) )
+        vtau(ji,jj) =   ztaun * SIN( rpi * (gphiv(ji,jj) - 15.) / (29.-15.) )
+      END_2D
 
       ! module of wind stress and wind speed at T-point
       zcoef = 1. / ( zrhoa * zcdrag ) 
-      DO jj = 2, jpjm1
-         DO ji = fs_2, fs_jpim1   ! vect. opt.
-            ztx = utau(ji-1,jj  ) + utau(ji,jj) 
-            zty = vtau(ji  ,jj-1) + vtau(ji,jj) 
-            zmod = 0.5 * SQRT( ztx * ztx + zty * zty )
-            taum(ji,jj) = zmod
-            wndm(ji,jj) = SQRT( zmod * zcoef )
-         END DO
-      END DO
-      CALL lbc_lnk_multi( 'usrdef_sbc', taum(:,:), 'T', 1. , wndm(:,:), 'T', 1. )
+      DO_2D( 0, 0, 0, 0 )
+         ztx = utau(ji-1,jj  ) + utau(ji,jj) 
+         zty = vtau(ji  ,jj-1) + vtau(ji,jj) 
+         zmod = 0.5 * SQRT( ztx * ztx + zty * zty )
+         taum(ji,jj) = zmod
+         wndm(ji,jj) = SQRT( zmod * zcoef )
+      END_2D
 
       ! ---------------------------------- !
       !  control print at first time-step  !

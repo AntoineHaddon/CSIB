@@ -3,7 +3,7 @@
 !----------------------------------------------------------------------
 !
 ! DESCRIPTION:
-!> @brief 
+!> @brief
 !> This module manage attribute of variable or file.
 !>
 !> @details
@@ -27,21 +27,21 @@
 !>
 !>    to print attribute information of one or array of attribute structure:<br/>
 !> @code
-!>    CALL att_print(td_att) 
+!>    CALL att_print(td_att)
 !> @endcode
 !>
 !>    to clean attribute structure:<br/>
 !> @code
-!>    CALL att_clean(td_att) 
+!>    CALL att_clean(td_att)
 !> @endcode
 !>
 !>    to copy attribute structure in another one (using different memory cell):<br/>
 !> @code
-!>    tl_att2=att_copy(tl_att1) 
+!>    tl_att2=att_copy(tl_att1)
 !> @endcode
 !>    @note as we use pointer for the value array of the attribute structure,
-!>    the use of the assignment operator (=) to copy attribute structure 
-!>    create a pointer on the same array. 
+!>    the use of the assignment operator (=) to copy attribute structure
+!>    create a pointer on the same array.
 !>    This is not the case with this copy function.
 !>
 !>    to get attribute index, in an array of attribute structure:<br/>
@@ -50,7 +50,7 @@
 !> @endcode
 !>    - td_att array of attribute structure
 !>    - cd_name attribute name
-!> 
+!>
 !>    to get attribute id, read from a file:<br/>
 !>@code
 !>  il_id=att_get_id( td_att, cd_name )
@@ -60,15 +60,15 @@
 !>
 !>    to get attribute name
 !>    - tl_att\%c_name
-!> 
+!>
 !>    to get character length or the number of value store in attribute
 !>    - tl_att\%i_len
 !>
 !>    to get attribute value:<br/>
 !>    - tl_att\%c_value    (for character attribute)
 !>    - tl_att\%d_value(i) (otherwise)
-!>    
-!>    to get the type number (based on NETCDF type constants) of the 
+!>
+!>    to get the type number (based on NETCDF type constants) of the
 !>    attribute:<br/>
 !>    - tl_att\%i_type
 !>
@@ -78,7 +78,7 @@
 !> @author J.Paul
 !>
 !> @date November, 2013 - Initial Version
-!> @date November, 2014 
+!> @date November, 2014
 !> - Fix memory leaks bug
 !> @date September, 2015
 !> - manage useless (dummy) attributes
@@ -148,7 +148,7 @@ MODULE att
    CHARACTER(LEN=lc), DIMENSION(ip_maxdumcfg), SAVE :: cm_dumatt  !< dummy attribute
 
    INTERFACE att_init
-      MODULE PROCEDURE att__init_c    
+      MODULE PROCEDURE att__init_c
       MODULE PROCEDURE att__init_dp
       MODULE PROCEDURE att__init_dp_0d
       MODULE PROCEDURE att__init_sp
@@ -169,8 +169,8 @@ MODULE att
    END INTERFACE att_print
 
    INTERFACE att_clean
-      MODULE PROCEDURE att__clean_unit  
-      MODULE PROCEDURE att__clean_arr   
+      MODULE PROCEDURE att__clean_unit
+      MODULE PROCEDURE att__clean_arr
    END INTERFACE
 
    INTERFACE att_copy
@@ -181,25 +181,25 @@ MODULE att
 CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION att__copy_arr(td_att) &
-         & RESULT(tf_att)      
+         & RESULT(tf_att)
    !-------------------------------------------------------------------
    !> @brief
    !> This subroutine copy a array of attribute structure in another one
-   !> @details 
+   !> @details
    !> see att__copy_unit
    !>
    !> @warning do not use on the output of a function who create or read an
    !> attribute (ex: tl_att=att_copy(att_init()) is forbidden).
    !> This will create memory leaks.
-   !> @warning to avoid infinite loop, do not use any function inside 
+   !> @warning to avoid infinite loop, do not use any function inside
    !> this subroutine
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !> @date November, 2014
-   !> - use function instead of overload assignment operator 
-   !> (to avoid memory leak) 
-   !
+   !> - use function instead of overload assignment operator
+   !> (to avoid memory leak)
+   !>
    !> @param[in] td_att   array of attribute structure
    !> @return copy of input array of attribute structure
    !-------------------------------------------------------------------
@@ -227,21 +227,21 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief
    !> This subroutine copy an attribute structure in another one.
-   !> @details 
+   !> @details
    !> attribute value are copied in a temporary array, so input and output
    !> attribute structure value do not point on the same "memory cell", and so
-   !> on are independant. 
+   !> on are independant.
    !>
    !> @warning do not use on the output of a function who create or read an
    !> attribute (ex: tl_att=att_copy(att_init()) is forbidden).
    !> This will create memory leaks.
-   !> @warning to avoid infinite loop, do not use any function inside 
+   !> @warning to avoid infinite loop, do not use any function inside
    !> this subroutine
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !> @date November, 2014
-   !> - use function instead of overload assignment operator (to avoid memory leak) 
+   !> - use function instead of overload assignment operator (to avoid memory leak)
    !>
    !> @param[in] td_att   attribute structure
    !> @return copy of input attribute structure
@@ -332,7 +332,7 @@ CONTAINS
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
-   !> @date September, 2014 
+   !> @date September, 2014
    !> - bug fix with use of id read from attribute structure
    !>
    !> @param[in] td_att    array of attribute structure
@@ -371,7 +371,7 @@ CONTAINS
          & RESULT (tf_att)
    !-------------------------------------------------------------------
    !> @brief This function initialize an attribute structure with character
-   !> value. 
+   !> value.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -390,7 +390,7 @@ CONTAINS
       ! function
       TYPE(TATT)                   :: tf_att
       !----------------------------------------------------------------
- 
+
       ! clean attribute
       CALL att_clean(tf_att)
 
@@ -409,7 +409,7 @@ CONTAINS
    FUNCTION att__init_dp(cd_name, dd_value, id_type) &
          & RESULT (tf_att)
    !-------------------------------------------------------------------
-   !> @brief This function initialize an attribute structure with array 
+   !> @brief This function initialize an attribute structure with array
    !> of real(8) value.
    !> @details
    !> Optionaly you could specify the type of the variable to be saved.
@@ -478,8 +478,8 @@ CONTAINS
    FUNCTION att__init_dp_0d(cd_name, dd_value, id_type) &
          & RESULT (tf_att)
    !-------------------------------------------------------------------
-   !> @brief This function initialize an attribute structure with 
-   !> real(8) value 
+   !> @brief This function initialize an attribute structure with
+   !> real(8) value
    !> @details
    !> Optionaly you could specify the type of the variable to be saved.
    !>
@@ -508,7 +508,7 @@ CONTAINS
 
       ! clean attribute
       CALL att_clean(tf_att)
-      
+
       cl_value="(/"//TRIM(fct_str(dd_value))//"/)"
 
       CALL logger_trace( &
@@ -536,7 +536,7 @@ CONTAINS
    FUNCTION att__init_sp(cd_name, rd_value, id_type) &
          & RESULT (tf_att)
    !-------------------------------------------------------------------
-   !> @brief This function initialize an attribute structure with array 
+   !> @brief This function initialize an attribute structure with array
    !> of real(4) value.
    !> @details
    !> Optionaly you could specify the type of the variable to be saved.
@@ -570,7 +570,7 @@ CONTAINS
 
       ! clean attribute
       CALL att_clean(tf_att)
-      
+
       ! array size
       il_len=size(rd_value(:))
 
@@ -585,7 +585,7 @@ CONTAINS
 
       CALL logger_trace( &
       &  " ATT INIT: attribute name: "//TRIM(ADJUSTL(cd_name))//&
-      &  " attribute value "//TRIM(ADJUSTL(cl_value)) )      
+      &  " attribute value "//TRIM(ADJUSTL(cl_value)) )
 
       tf_att%c_name=TRIM(ADJUSTL(cd_name))
 
@@ -608,8 +608,8 @@ CONTAINS
    FUNCTION att__init_sp_0d(cd_name, rd_value, id_type) &
          & RESULT (tf_att)
    !-------------------------------------------------------------------
-   !> @brief This function initialize an attribute structure with 
-   !> real(4) value. 
+   !> @brief This function initialize an attribute structure with
+   !> real(4) value.
    !> @details
    !> Optionaly you could specify the type of the variable to be saved.
    !>
@@ -638,12 +638,12 @@ CONTAINS
 
       ! clean attribute
       CALL att_clean(tf_att)
-      
+
       cl_value="(/"//TRIM(fct_str(rd_value))//"/)"
 
       CALL logger_trace( &
       &  " ATT INIT: attribute name: "//TRIM(ADJUSTL(cd_name))//&
-      &  " attribute value "//TRIM(ADJUSTL(cl_value)) )      
+      &  " attribute value "//TRIM(ADJUSTL(cl_value)) )
 
       tf_att%c_name=TRIM(ADJUSTL(cd_name))
 
@@ -666,7 +666,7 @@ CONTAINS
    FUNCTION att__init_i1(cd_name, bd_value, id_type) &
          & RESULT (tf_att)
    !-------------------------------------------------------------------
-   !> @brief This function initialize an attribute structure with array 
+   !> @brief This function initialize an attribute structure with array
    !> of integer(1) value.
    !> @details
    !> Optionaly you could specify the type of the variable to be saved.
@@ -700,7 +700,7 @@ CONTAINS
 
       ! clean attribute
       CALL att_clean(tf_att)
-      
+
       ! array size
       il_len=size(bd_value(:))
 
@@ -712,7 +712,7 @@ CONTAINS
 
       CALL logger_trace( &
       &  " ATT INIT: attribute name: "//TRIM(ADJUSTL(cd_name))//&
-      &  " attribute value "//TRIM(ADJUSTL(cl_value)) )      
+      &  " attribute value "//TRIM(ADJUSTL(cl_value)) )
 
       tf_att%c_name=TRIM(ADJUSTL(cd_name))
 
@@ -735,8 +735,8 @@ CONTAINS
    FUNCTION att__init_i1_0d(cd_name, bd_value, id_type) &
          & RESULT (tf_att)
    !-------------------------------------------------------------------
-   !> @brief This function initialize an attribute structure with 
-   !> integer(1) value. 
+   !> @brief This function initialize an attribute structure with
+   !> integer(1) value.
    !> @details
    !> Optionaly you could specify the type of the variable to be saved.
    !>
@@ -765,12 +765,12 @@ CONTAINS
 
       ! clean attribute
       CALL att_clean(tf_att)
-      
+
       cl_value="(/"//TRIM(fct_str(bd_value))//"/)"
 
       CALL logger_trace( &
       &  " ATT INIT: attribute name: "//TRIM(ADJUSTL(cd_name))//&
-      &  " attibute value "//TRIM(ADJUSTL(cl_value)) )      
+      &  " attibute value "//TRIM(ADJUSTL(cl_value)) )
 
       tf_att%c_name=TRIM(ADJUSTL(cd_name))
 
@@ -778,7 +778,7 @@ CONTAINS
          tf_att%i_type=id_type
       ELSE
          tf_att%i_type=NF90_BYTE
-      ENDIF      
+      ENDIF
 
       IF( ASSOCIATED(tf_att%d_value) )THEN
          DEALLOCATE(tf_att%d_value)
@@ -793,7 +793,7 @@ CONTAINS
    FUNCTION att__init_i2(cd_name, sd_value, id_type) &
          & RESULT (tf_att)
    !-------------------------------------------------------------------
-   !> @brief This function initialize an attribute structure with array 
+   !> @brief This function initialize an attribute structure with array
    !> of integer(2) value.
    !> @details
    !> Optionaly you could specify the type of the variable to be saved.
@@ -827,7 +827,7 @@ CONTAINS
 
       ! clean attribute
       CALL att_clean(tf_att)
-      
+
       ! array size
       il_len=size(sd_value(:))
 
@@ -839,7 +839,7 @@ CONTAINS
 
       CALL logger_trace( &
       &  " ATT INIT: attribute name: "//TRIM(ADJUSTL(cd_name))//&
-      &  " attribute value "//TRIM(ADJUSTL(cl_value)) )      
+      &  " attribute value "//TRIM(ADJUSTL(cl_value)) )
 
       tf_att%c_name=TRIM(ADJUSTL(cd_name))
 
@@ -862,8 +862,8 @@ CONTAINS
    FUNCTION att__init_i2_0d(cd_name, sd_value, id_type) &
          & RESULT (tf_att)
    !-------------------------------------------------------------------
-   !> @brief This function initialize an attribute structure with 
-   !> integer(2) value. 
+   !> @brief This function initialize an attribute structure with
+   !> integer(2) value.
    !> @details
    !> Optionaly you could specify the type of the variable to be saved.
    !>
@@ -892,12 +892,12 @@ CONTAINS
 
       ! clean attribute
       CALL att_clean(tf_att)
-      
+
       cl_value="(/"//TRIM(fct_str(sd_value))//"/)"
 
       CALL logger_trace( &
       &  " ATT INIT: attribute name: "//TRIM(ADJUSTL(cd_name))//&
-      &  " attibute value "//TRIM(ADJUSTL(cl_value)) )      
+      &  " attibute value "//TRIM(ADJUSTL(cl_value)) )
 
       tf_att%c_name=TRIM(ADJUSTL(cd_name))
 
@@ -920,7 +920,7 @@ CONTAINS
    FUNCTION att__init_i4(cd_name, id_value, id_type) &
          & RESULT(tf_att)
    !-------------------------------------------------------------------
-   !> @brief This function initialize an attribute structure with array 
+   !> @brief This function initialize an attribute structure with array
    !> of integer(4) value.
    !> @details
    !> Optionaly you could specify the type of the variable to be saved.
@@ -954,7 +954,7 @@ CONTAINS
 
       ! clean attribute
       CALL att_clean(tf_att)
-      
+
       ! array size
       il_len=size(id_value(:))
 
@@ -966,7 +966,7 @@ CONTAINS
 
       CALL logger_trace( &
       &  " ATT INIT: attribute name: "//TRIM(ADJUSTL(cd_name))//&
-      &  " attribute value "//TRIM(ADJUSTL(cl_value)) )      
+      &  " attribute value "//TRIM(ADJUSTL(cl_value)) )
 
       tf_att%c_name=TRIM(ADJUSTL(cd_name))
 
@@ -989,8 +989,8 @@ CONTAINS
    FUNCTION att__init_i4_0d(cd_name, id_value, id_type) &
          & RESULT (tf_att)
    !-------------------------------------------------------------------
-   !> @brief This function initialize an attribute structure with 
-   !> integer(4) value. 
+   !> @brief This function initialize an attribute structure with
+   !> integer(4) value.
    !> @details
    !> Optionaly you could specify the type of the variable to be saved.
    !>
@@ -1019,12 +1019,12 @@ CONTAINS
 
       ! clean attribute
       CALL att_clean(tf_att)
-      
+
       cl_value="(/"//TRIM(fct_str(id_value))//"/)"
 
       CALL logger_trace( &
       &  " ATT INIT: attribute name: "//TRIM(ADJUSTL(cd_name))//&
-      &  " attibute value "//TRIM(ADJUSTL(cl_value)) )      
+      &  " attibute value "//TRIM(ADJUSTL(cl_value)) )
 
       tf_att%c_name=TRIM(ADJUSTL(cd_name))
 
@@ -1047,7 +1047,7 @@ CONTAINS
    FUNCTION att__init_i8(cd_name, kd_value, id_type) &
          & RESULT (tf_att)
    !-------------------------------------------------------------------
-   !> @brief This function initialize an attribute structure with array 
+   !> @brief This function initialize an attribute structure with array
    !> of integer(8) value.
    !> @details
    !> Optionaly you could specify the type of the variable to be saved.
@@ -1081,7 +1081,7 @@ CONTAINS
 
       ! clean attribute
       CALL att_clean(tf_att)
-      
+
       ! array size
       il_len=size(kd_value(:))
 
@@ -1093,7 +1093,7 @@ CONTAINS
 
       CALL logger_trace( &
       &  " ATT INIT: attribute name: "//TRIM(ADJUSTL(cd_name))//&
-      &  " attibute value "//TRIM(ADJUSTL(cl_value)) )      
+      &  " attibute value "//TRIM(ADJUSTL(cl_value)) )
 
       tf_att%c_name=TRIM(ADJUSTL(cd_name))
 
@@ -1116,8 +1116,8 @@ CONTAINS
    FUNCTION att__init_i8_0d(cd_name, kd_value, id_type) &
          & RESULT (tf_att)
    !-------------------------------------------------------------------
-   !> @brief This function initialize an attribute structure with 
-   !> integer(8) value. 
+   !> @brief This function initialize an attribute structure with
+   !> integer(8) value.
    !> @details
    !> Optionaly you could specify the type of the variable to be saved.
    !>
@@ -1146,12 +1146,12 @@ CONTAINS
 
       ! clean attribute
       CALL att_clean(tf_att)
-      
+
       cl_value="(/"//TRIM(fct_str(kd_value))//"/)"
 
       CALL logger_trace( &
       &  " ATT INIT: attribute name: "//TRIM(ADJUSTL(cd_name))//&
-      &  " attibute value "//TRIM(ADJUSTL(cl_value)) )      
+      &  " attibute value "//TRIM(ADJUSTL(cl_value)) )
 
       tf_att%c_name=TRIM(ADJUSTL(cd_name))
 
@@ -1173,7 +1173,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE att__print_arr(td_att)
    !-------------------------------------------------------------------
-   !> @brief This subroutine print informations of an array of attribute. 
+   !> @brief This subroutine print informations of an array of attribute.
    !>
    !> @author J.Paul
    !> @date June, 2014 - Initial Version
@@ -1183,7 +1183,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TATT), DIMENSION(:), INTENT(IN) :: td_att
 
       ! loop indices
@@ -1202,7 +1202,7 @@ CONTAINS
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
-   !> @date September, 2014 
+   !> @date September, 2014
    !> - take into account type of attribute.
    !
    !> @param[in] td_att attribute structure
@@ -1210,7 +1210,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TATT), INTENT(IN) :: td_att
 
       ! local vairbale
@@ -1252,7 +1252,7 @@ CONTAINS
 
                cl_value=td_att%c_value
 
-            CASE(NF90_BYTE)   
+            CASE(NF90_BYTE)
                IF( td_att%i_len > 1 )THEN
                   cl_value='(/'
                   DO ji=1,td_att%i_len-1
@@ -1265,7 +1265,7 @@ CONTAINS
                   cl_value='(/'//TRIM(fct_str(td_att%d_value(1)))//'/)'
                ENDIF
 
-            CASE(NF90_SHORT)   
+            CASE(NF90_SHORT)
                IF( td_att%i_len > 1 )THEN
                   cl_value='(/'
                   DO ji=1,td_att%i_len-1
@@ -1278,7 +1278,7 @@ CONTAINS
                   cl_value='(/'//TRIM(fct_str(td_att%d_value(1)))//'/)'
                ENDIF
 
-            CASE(NF90_INT)   
+            CASE(NF90_INT)
                IF( td_att%i_len > 1 )THEN
                   cl_value='(/'
                   DO ji=1,td_att%i_len-1
@@ -1291,7 +1291,7 @@ CONTAINS
                   cl_value='(/'//TRIM(fct_str(td_att%d_value(1)))//'/)'
                ENDIF
 
-            CASE(NF90_FLOAT)   
+            CASE(NF90_FLOAT)
                IF( td_att%i_len > 1 )THEN
                   cl_value='(/'
                   DO ji=1,td_att%i_len-1
@@ -1304,7 +1304,7 @@ CONTAINS
                   cl_value='(/'//TRIM(fct_str(td_att%d_value(1)))//'/)'
                ENDIF
 
-            CASE(NF90_DOUBLE)   
+            CASE(NF90_DOUBLE)
                IF( td_att%i_len > 1 )THEN
                   cl_value='(/'
                   DO ji=1,td_att%i_len-1
@@ -1332,12 +1332,12 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE att__clean_unit(td_att)
    !-------------------------------------------------------------------
-   !> @brief 
+   !> @brief
    !>  This subroutine clean attribute strcuture.
    !
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
-   !> @date January, 2019 
+   !> @date January, 2019
    !> - nullify array inside attribute structure
    !>
    !> @param[inout] td_att attribute strcuture
@@ -1368,7 +1368,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE att__clean_arr(td_att)
    !-------------------------------------------------------------------
-   !> @brief 
+   !> @brief
    !>  This subroutine clean array of attribute strcuture.
    !
    !> @author J.Paul
@@ -1402,7 +1402,7 @@ CONTAINS
    !> @date Marsh, 2016
    !> - close file (bugfix)
    !> @date May, 2019
-   !> - read number of dummy element 
+   !> - read number of dummy element
    !>
    !> @param[in] cd_dummy dummy configuration file
    !-------------------------------------------------------------------
@@ -1441,9 +1441,9 @@ CONTAINS
       ! read namelist
       INQUIRE(FILE=TRIM(cd_dummy), EXIST=ll_exist)
       IF( ll_exist )THEN
-    
+
          il_fileid=fct_getunit()
-   
+
          OPEN( il_fileid, FILE=TRIM(cd_dummy), &
          &                FORM='FORMATTED',       &
          &                ACCESS='SEQUENTIAL',    &
@@ -1454,7 +1454,7 @@ CONTAINS
          IF( il_status /= 0 )THEN
             CALL logger_fatal("DIM GET DUMMY: opening "//TRIM(cd_dummy))
          ENDIF
-   
+
          READ( il_fileid, NML = namdum )
          im_ndumatt  = in_ndumatt
          cm_dumatt(:)= cn_dumatt(:)
@@ -1468,7 +1468,7 @@ CONTAINS
          ENDIF
 
       ENDIF
-   
+
    END SUBROUTINE att_get_dummy
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION att_is_dummy(td_att) &
@@ -1488,12 +1488,12 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TATT), INTENT(IN) :: td_att
-      
+
       ! function
       LOGICAL                :: lf_dummy
-      
+
       ! loop indices
       INTEGER(i4) :: ji
       !----------------------------------------------------------------

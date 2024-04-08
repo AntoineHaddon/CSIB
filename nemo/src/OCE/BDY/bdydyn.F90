@@ -29,26 +29,30 @@ MODULE bdydyn
 
    PUBLIC   bdy_dyn    ! routine called in dyn_nxt
 
+   !! * Substitutions
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: bdydyn.F90 10068 2018-08-28 14:09:04Z nicolasmartin $ 
+   !! $Id: bdydyn.F90 13237 2020-07-03 09:12:53Z smasson $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE bdy_dyn( kt, dyn3d_only )
+   SUBROUTINE bdy_dyn( kt, Kbb, puu, pvv, Kaa, dyn3d_only )
       !!----------------------------------------------------------------------
       !!                  ***  SUBROUTINE bdy_dyn  ***
       !!
       !! ** Purpose : - Wrapper routine for bdy_dyn2d and bdy_dyn3d.
       !!
       !!----------------------------------------------------------------------
-      INTEGER, INTENT(in)           ::   kt           ! Main time step counter
-      LOGICAL, INTENT(in), OPTIONAL ::   dyn3d_only   ! T => only update baroclinic velocities
+      INTEGER                             , INTENT(in)    ::   kt           ! Main time step counter
+      INTEGER                             , INTENT(in)    ::   Kbb, Kaa     ! Ocean time level indices
+      REAL(dp), DIMENSION(jpi,jpj,jpk,jpt), INTENT(inout) ::   puu, pvv     ! Ocean velocities (to be updated at open boundaries)
+      LOGICAL, OPTIONAL                   , INTENT(in)    ::   dyn3d_only   ! T => only update baroclinic velocities
       !
       INTEGER ::   jk, ii, ij, ib_bdy, ib, igrd     ! Loop counter
       LOGICAL ::   ll_dyn2d, ll_dyn3d, ll_orlanski
-      REAL(wp), DIMENSION(jpi,jpj) :: pua2d, pva2d     ! after barotropic velocities
+      REAL(wp), DIMENSION(jpi,jpj) :: zua2d, zva2d     ! after barotropic velocities
       !!----------------------------------------------------------------------
       !
       ll_dyn2d = .true.
@@ -69,25 +73,25 @@ CONTAINS
       !-------------------------------------------------------
 
       !                          ! "After" velocities: 
-      pua2d(:,:) = 0._wp
-      pva2d(:,:) = 0._wp     
+      zua2d(:,:) = 0._wp
+      zva2d(:,:) = 0._wp     
       DO jk = 1, jpkm1
-         pua2d(:,:) = pua2d(:,:) + e3u_a(:,:,jk) * ua(:,:,jk) * umask(:,:,jk)
-         pva2d(:,:) = pva2d(:,:) + e3v_a(:,:,jk) * va(:,:,jk) * vmask(:,:,jk)
+         zua2d(:,:) = zua2d(:,:) + e3u(:,:,jk,Kaa) * puu(:,:,jk,Kaa) * umask(:,:,jk)
+         zva2d(:,:) = zva2d(:,:) + e3v(:,:,jk,Kaa) * pvv(:,:,jk,Kaa) * vmask(:,:,jk)
       END DO
-      pua2d(:,:) = pua2d(:,:) * r1_hu_a(:,:)
-      pva2d(:,:) = pva2d(:,:) * r1_hv_a(:,:)
+      zua2d(:,:) = zua2d(:,:) * r1_hu(:,:,Kaa)
+      zva2d(:,:) = zva2d(:,:) * r1_hv(:,:,Kaa)
 
       DO jk = 1 , jpkm1
-         ua(:,:,jk) = ( ua(:,:,jk) - pua2d(:,:) ) * umask(:,:,jk)
-         va(:,:,jk) = ( va(:,:,jk) - pva2d(:,:) ) * vmask(:,:,jk)
+         puu(:,:,jk,Kaa) = ( puu(:,:,jk,Kaa) - zua2d(:,:) ) * umask(:,:,jk)
+         pvv(:,:,jk,Kaa) = ( pvv(:,:,jk,Kaa) - zva2d(:,:) ) * vmask(:,:,jk)
       END DO
 
 
       IF( ll_orlanski ) THEN     ! "Before" velocities (Orlanski condition only) 
          DO jk = 1 , jpkm1
-            ub(:,:,jk) = ( ub(:,:,jk) - ub_b(:,:) ) * umask(:,:,jk)
-            vb(:,:,jk) = ( vb(:,:,jk) - vb_b(:,:) ) * vmask(:,:,jk)
+            puu(:,:,jk,Kbb) = ( puu(:,:,jk,Kbb) - uu_b(:,:,Kbb) ) * umask(:,:,jk)
+            pvv(:,:,jk,Kbb) = ( pvv(:,:,jk,Kbb) - vv_b(:,:,Kbb) ) * vmask(:,:,jk)
          END DO
       ENDIF
 
@@ -96,23 +100,23 @@ CONTAINS
       ! parts separately
       !-------------------------------------------------------
 
-      IF( ll_dyn2d )   CALL bdy_dyn2d( kt, pua2d, pva2d, ub_b, vb_b, r1_hu_a(:,:), r1_hv_a(:,:), ssha )
+      IF( ll_dyn2d )   CALL bdy_dyn2d( kt, zua2d, zva2d, uu_b(:,:,Kbb), vv_b(:,:,Kbb), r1_hu(:,:,Kaa), r1_hv(:,:,Kaa), ssh(:,:,Kaa) )
 
-      IF( ll_dyn3d )   CALL bdy_dyn3d( kt )
+      IF( ll_dyn3d )   CALL bdy_dyn3d( kt, Kbb, puu, pvv, Kaa )
 
       !-------------------------------------------------------
       ! Recombine velocities
       !-------------------------------------------------------
       !
       DO jk = 1 , jpkm1
-         ua(:,:,jk) = ( ua(:,:,jk) + pua2d(:,:) ) * umask(:,:,jk)
-         va(:,:,jk) = ( va(:,:,jk) + pva2d(:,:) ) * vmask(:,:,jk)
+         puu(:,:,jk,Kaa) = ( puu(:,:,jk,Kaa) + zua2d(:,:) ) * umask(:,:,jk)
+         pvv(:,:,jk,Kaa) = ( pvv(:,:,jk,Kaa) + zva2d(:,:) ) * vmask(:,:,jk)
       END DO
       !
       IF ( ll_orlanski ) THEN
          DO jk = 1 , jpkm1
-            ub(:,:,jk) = ( ub(:,:,jk) + ub_b(:,:) ) * umask(:,:,jk)
-            vb(:,:,jk) = ( vb(:,:,jk) + vb_b(:,:) ) * vmask(:,:,jk)
+            puu(:,:,jk,Kbb) = ( puu(:,:,jk,Kbb) + uu_b(:,:,Kbb) ) * umask(:,:,jk)
+            pvv(:,:,jk,Kbb) = ( pvv(:,:,jk,Kbb) + vv_b(:,:,Kbb) ) * vmask(:,:,jk)
          END DO
       END IF
       !

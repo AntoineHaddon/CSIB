@@ -149,21 +149,21 @@ void ModifyTheVariableName_0(const char *ident, int lengthname)
     if ( out == 1 && strcasecmp(newvar->var->v_typevar,"type"))
     {
         // remove the variable
-        RemoveWordCUR_0(fortran_out,lengthname);
+ //       RemoveWordCUR_0(fortran_out,lengthname);
         // then write the new name
-        if ( inagrifcallargument == 1 && agrif_parentcall == 0 )
-            fprintf(fortran_out,"%d",newvar->var->v_indicetabvars);
-        else
-        {
-            if ( retour77 == 0 )
-                fprintf(fortran_out,"Agrif_%s & \n      ", tabvarsname(newvar->var));
-            else
-            {
-               fprintf(fortran_out,"Agrif_%s", tabvarsname(newvar->var));
-               fprintf(fortran_out," \n     & ");
-            }
-            fprintf(fortran_out,"%s",vargridcurgridtabvarswithoutAgrif_Gr(newvar->var));
-        }
+ //        if ( inagrifcallargument == 1 && agrif_parentcall == 0 )
+//             fprintf(fortran_out,"%d",newvar->var->v_indicetabvars);
+//         else
+//         {
+//             if ( retour77 == 0 )
+//                 fprintf(fortran_out,"Agrif_%s & \n      ", tabvarsname(newvar->var));
+//             else
+//             {
+//                fprintf(fortran_out,"Agrif_%s", tabvarsname(newvar->var));
+//                fprintf(fortran_out," \n     & ");
+//             }
+//             fprintf(fortran_out,"%s",vargridcurgridtabvarswithoutAgrif_Gr(newvar->var));
+//         }
     }
     else
     {

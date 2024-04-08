@@ -63,10 +63,10 @@ MODULE ice
    !! v_s         |      -      |    Snow volume per unit area    | m     |
    !! sv_i        |      -      |    Sea ice salt content         | pss.m |
    !! oa_i        |      -      |    Sea ice areal age content    | s     |
-   !! e_i         |             |    Ice enthalpy                 | J/m2  | 
-   !!             |    e_i_1d   |    Ice enthalpy per unit vol.   | J/m3  | 
-   !! e_s         |             |    Snow enthalpy                | J/m2  | 
-   !!             |    e_s_1d   |    Snow enthalpy per unit vol.  | J/m3  | 
+   !! e_i         |             |    Ice enthalpy                 | J/m2  |
+   !!             |    e_i_1d   |    Ice enthalpy per unit vol.   | J/m3  |
+   !! e_s         |             |    Snow enthalpy                | J/m2  |
+   !!             |    e_s_1d   |    Snow enthalpy per unit vol.  | J/m3  |
    !! a_ip        |      -      |    Ice pond concentration       |       |
    !! v_ip        |      -      |    Ice pond volume per unit area| m     |
    !! v_il        |    v_il_1d  |    Ice pond lid volume per area | m     |
@@ -107,9 +107,9 @@ MODULE ice
    !! sm_i        |      -      |    Mean sea ice salinity        | pss   |
    !! tm_i        |      -      |    Mean sea ice temperature     | K     |
    !! tm_s        |      -      |    Mean snow    temperature     | K     |
-   !! et_i        |      -      |    Total ice enthalpy           | J/m2  | 
-   !! et_s        |      -      |    Total snow enthalpy          | J/m2  | 
-   !! bv_i        |      -      |    relative brine volume        | ???   | 
+   !! et_i        |      -      |    Total ice enthalpy           | J/m2  |
+   !! et_s        |      -      |    Total snow enthalpy          | J/m2  |
+   !! bv_i        |      -      |    relative brine volume        | ???   |
    !! at_ip       |      -      |    Total ice pond concentration |       |
    !! hm_ip       |      -      |    Mean ice pond depth          | m     |
    !! vt_ip       |      -      |    Total ice pond vol. per unit area| m |
@@ -121,9 +121,9 @@ MODULE ice
    !! * Share Module variables
    !!----------------------------------------------------------------------
    !                                     !!** ice-generic parameters namelist (nampar) **
-   INTEGER           , PUBLIC ::   jpl              !: number of ice  categories 
-   INTEGER           , PUBLIC ::   nlay_i           !: number of ice  layers 
-   INTEGER           , PUBLIC ::   nlay_s           !: number of snow layers 
+   INTEGER           , PUBLIC ::   jpl              !: number of ice  categories
+   INTEGER           , PUBLIC ::   nlay_i           !: number of ice  layers
+   INTEGER           , PUBLIC ::   nlay_s           !: number of snow layers
    LOGICAL           , PUBLIC ::   ln_virtual_itd   !: virtual ITD mono-category parameterization (T) or not (F)
    LOGICAL           , PUBLIC ::   ln_icedyn        !: flag for ice dynamics (T) or not (F)
    LOGICAL           , PUBLIC ::   ln_icethd        !: flag for ice thermo   (T) or not (F)
@@ -136,25 +136,35 @@ MODULE ice
 
    !                                     !!** ice-itd namelist (namitd) **
    REAL(wp), PUBLIC ::   rn_himin         !: minimum ice thickness
-   
+
    !                                     !!** ice-dynamics namelist (namdyn) **
    REAL(wp), PUBLIC ::   rn_ishlat        !: lateral boundary condition for sea-ice
-   LOGICAL , PUBLIC ::   ln_landfast_L16  !: landfast ice parameterizationfrom lemieux2016 
+   LOGICAL , PUBLIC ::   ln_landfast_L16  !: landfast ice parameterizationfrom lemieux2016
    REAL(wp), PUBLIC ::   rn_lf_depfra     !:    fraction of ocean depth that ice must reach to initiate landfast ice
-   REAL(wp), PUBLIC ::   rn_lf_bfr        !:    maximum bottom stress per unit area of contact (lemieux2016) or per unit volume (home) 
+   REAL(wp), PUBLIC ::   rn_lf_bfr        !:    maximum bottom stress per unit area of contact (lemieux2016) or per unit volume (home)
    REAL(wp), PUBLIC ::   rn_lf_relax      !:    relaxation time scale (s-1) to reach static friction
    REAL(wp), PUBLIC ::   rn_lf_tensile    !:    isotropic tensile strength
    !
    !                                     !!** ice-ridging/rafting namelist (namdyn_rdgrft) **
+   LOGICAL,  PUBLIC ::   ln_str_H79       !: ice strength parameterization (Hibler79) (may be used in rheology)
    REAL(wp), PUBLIC ::   rn_crhg          !: determines changes in ice strength (also used for landfast param)
+   REAL(wp), PUBLIC ::   rn_pstar         !: determines ice strength, Hibler JPO79 (may be used in rheology)
    !
    !                                     !!** ice-rheology namelist (namdyn_rhg) **
-   LOGICAL , PUBLIC ::   ln_aEVP          !: using adaptive EVP (T or F) 
-   REAL(wp), PUBLIC ::   rn_creepl        !: creep limit : has to be under 1.0e-9
+   ! -- evp
+   LOGICAL , PUBLIC ::   ln_rhg_EVP       ! EVP rheology switch, used for rdgrft and rheology
+   LOGICAL , PUBLIC ::   ln_rhg_EAP       ! EAP rheology switch, used for rdgrft and rheology
+   LOGICAL , PUBLIC ::   ln_aEVP          !: using adaptive EVP (T or F)
+   REAL(wp), PUBLIC ::   rn_creepl        !: creep limit (has to be low enough, circa 10-9 m/s, depending on rheology)
    REAL(wp), PUBLIC ::   rn_ecc           !: eccentricity of the elliptical yield curve
    INTEGER , PUBLIC ::   nn_nevp          !: number of iterations for subcycling
-   REAL(wp), PUBLIC ::   rn_relast        !: ratio => telast/rdt_ice (1/3 or 1/9 depending on nb of subcycling nevp) 
-   INTEGER , PUBLIC ::   nn_rhg_chkcvg    !: check ice rheology convergence 
+   REAL(wp), PUBLIC ::   rn_relast        !: ratio => telast/rDt_ice (1/3 or 1/9 depending on nb of subcycling nevp)
+   INTEGER , PUBLIC ::   nn_rhg_chkcvg    !: check ice rheology convergence
+   ! -- vp
+   LOGICAL , PUBLIC ::   ln_rhg_VP        !: VP rheology
+   INTEGER , PUBLIC ::   nn_vp_nout       !: Number of outer iterations
+   INTEGER , PUBLIC ::   nn_vp_ninn       !: Number of inner iterations (linear system solver)
+   INTEGER , PUBLIC ::   nn_vp_chkcvg     !: Number of iterations every each convergence is checked
    !
    !                                     !!** ice-advection namelist (namdyn_adv) **
    LOGICAL , PUBLIC ::   ln_adv_Pra       !: Prather        advection scheme
@@ -172,24 +182,38 @@ MODULE ice
    REAL(wp), PUBLIC ::   rn_cio           !: drag coefficient for oceanic stress
    INTEGER , PUBLIC ::   nn_flxdist       !: Redistribute heat flux over ice categories
    !                                      !   =-1  Do nothing (needs N(cat) fluxes)
-   !                                      !   = 0  Average N(cat) fluxes then apply the average over the N(cat) ice 
+   !                                      !   = 0  Average N(cat) fluxes then apply the average over the N(cat) ice
    !                                      !   = 1  Average N(cat) fluxes then redistribute over the N(cat) ice using T-ice and albedo sensitivity
    !                                      !   = 2  Redistribute a single flux over categories
                                           ! -- icethd_zdf -- !
-   LOGICAL , PUBLIC ::   ln_cndflx        !: use conduction flux as surface boundary condition (instead of qsr and qns) 
-   LOGICAL , PUBLIC ::   ln_cndemulate    !: emulate conduction flux (if not provided) 
+   LOGICAL , PUBLIC ::   ln_cndflx        !: use conduction flux as surface boundary condition (instead of qsr and qns)
+   LOGICAL , PUBLIC ::   ln_cndemulate    !: emulate conduction flux (if not provided)
    !                                      ! Conduction flux as surface forcing or not
    INTEGER, PUBLIC, PARAMETER ::   np_cnd_OFF = 0  !: no forcing from conduction flux (ice thermodynamics forced via qsr and qns)
    INTEGER, PUBLIC, PARAMETER ::   np_cnd_ON  = 1  !: forcing from conduction flux (SM0L) (compute qcn and qsr_tr via sbcblk.F90 or sbccpl.F90)
    INTEGER, PUBLIC, PARAMETER ::   np_cnd_EMU = 2  !: emulate conduction flux via icethd_zdf.F90 (BL99) (1st round compute qcn and qsr_tr, 2nd round use it)
    INTEGER, PUBLIC ::   nn_qtrice         !: Solar flux transmitted thru the surface scattering layer:
-   !                                      !   = 0  Grenfell and Maykut 1977 (depends on cloudiness and is 0 when there is snow) 
+   !                                      !   = 0  Grenfell and Maykut 1977 (depends on cloudiness and is 0 when there is snow)
    !                                      !   = 1  Lebrun 2019 (equals 0.3 anytime with different melting/dry snw conductivities)
+
+   !                                     !!** namelist (namthd) **
+   LOGICAL , PUBLIC ::   ln_icedH         ! activate ice thickness change from growing/melting (T) or not (F)
+   LOGICAL , PUBLIC ::   ln_icedA         ! activate lateral melting param. (T) or not (F)
+   LOGICAL , PUBLIC ::   ln_icedO         ! activate ice growth in open-water (T) or not (F)
+   LOGICAL , PUBLIC ::   ln_icedS         ! activate gravity drainage and flushing (T) or not (F)
+   LOGICAL , PUBLIC ::   ln_leadhfx       ! heat in the leads is used to melt sea-ice before warming the ocean
+   !
+   !                                     !!** namelist (namthd_do) **
+   REAL(wp), PUBLIC ::   rn_hinew         ! thickness for new ice formation (m)
+   LOGICAL , PUBLIC ::   ln_frazil        ! use of frazil ice collection as function of wind (T) or not (F)
+   REAL(wp), PUBLIC ::   rn_maxfraz       ! maximum portion of frazil ice collecting at the ice bottom
+   REAL(wp), PUBLIC ::   rn_vfraz         ! threshold drift speed for collection of bottom frazil ice
+   REAL(wp), PUBLIC ::   rn_Cfraz         ! squeezing coefficient for collection of bottom frazil ice
    !
    !                                     !!** ice-vertical diffusion namelist (namthd_zdf) **
    LOGICAL , PUBLIC ::   ln_cndi_U64      !: thermal conductivity: Untersteiner (1964)
    LOGICAL , PUBLIC ::   ln_cndi_P07      !: thermal conductivity: Pringle et al (2007)
-   REAL(wp), PUBLIC ::   rn_cnd_s         !: thermal conductivity of the snow [W/m/K]   
+   REAL(wp), PUBLIC ::   rn_cnd_s         !: thermal conductivity of the snow [W/m/K]
    REAL(wp), PUBLIC ::   rn_kappa_i       !: coef. for the extinction of radiation in sea ice, Grenfell et al. (2006) [1/m]
    REAL(wp), PUBLIC ::   rn_kappa_s       !: coef. for the extinction of radiation in snw (nn_qtrice=0) [1/m]
    REAL(wp), PUBLIC ::   rn_kappa_smlt    !: coef. for the extinction of radiation in melt snw (nn_qtrice=1) [1/m]
@@ -207,9 +231,11 @@ MODULE ice
 
    !                                     !!** ice-ponds namelist (namthd_pnd)
    LOGICAL , PUBLIC ::   ln_pnd           !: Melt ponds (T) or not (F)
-   LOGICAL , PUBLIC ::   ln_pnd_LEV       !: Melt ponds scheme from Holland et al (2012), Flocco et al (2007, 2010)
-   REAL(wp), PUBLIC ::   rn_apnd_min      !: Minimum ice fraction that contributes to melt ponds
-   REAL(wp), PUBLIC ::   rn_apnd_max      !: Maximum ice fraction that contributes to melt ponds
+   LOGICAL , PUBLIC ::   ln_pnd_TOPO      !: Topographic Melt ponds scheme (Flocco et al 2007, 2010)
+   LOGICAL , PUBLIC ::   ln_pnd_LEV       !: Simple melt pond scheme
+   REAL(wp), PUBLIC ::   rn_apnd_min      !: Minimum fraction of melt water contributing to ponds
+   REAL(wp), PUBLIC ::   rn_apnd_max      !: Maximum fraction of melt water contributing to ponds
+   REAL(wp), PUBLIC ::   rn_pnd_flush     !: Pond flushing efficiency (tuning parameter)
    LOGICAL , PUBLIC ::   ln_pnd_CST       !: Melt ponds scheme with constant fraction and depth
    REAL(wp), PUBLIC ::   rn_apnd          !: prescribed pond fraction (0<rn_apnd<1)
    REAL(wp), PUBLIC ::   rn_hpnd          !: prescribed pond depth    (0<rn_hpnd<1)
@@ -225,28 +251,31 @@ MODULE ice
    INTEGER , PUBLIC ::   iiceprt          !: debug i-point
    INTEGER , PUBLIC ::   jiceprt          !: debug j-point
 
-   !                                     !!** some other parameters 
+   !                                     !!** some other parameters
    INTEGER , PUBLIC ::   kt_ice           !: iteration number
-   REAL(wp), PUBLIC ::   rdt_ice          !: ice time step
-   REAL(wp), PUBLIC ::   r1_rdtice        !: = 1. / rdt_ice
+   REAL(wp), PUBLIC ::   rDt_ice          !: ice time step
+   REAL(wp), PUBLIC ::   r1_Dt_ice        !: = 1. / rDt_ice
    REAL(wp), PUBLIC ::   r1_nlay_i        !: 1 / nlay_i
-   REAL(wp), PUBLIC ::   r1_nlay_s        !: 1 / nlay_s 
+   REAL(wp), PUBLIC ::   r1_nlay_s        !: 1 / nlay_s
    REAL(wp), PUBLIC ::   rswitch          !: switch for the presence of ice (1) or not (0)
    REAL(wp), PUBLIC ::   rdiag_v, rdiag_s, rdiag_t, rdiag_fv, rdiag_fs, rdiag_ft   !: conservation diagnostics
-   REAL(wp), PUBLIC, PARAMETER ::   epsi06 = 1.e-06_wp  !: small number 
-   REAL(wp), PUBLIC, PARAMETER ::   epsi10 = 1.e-10_wp  !: small number 
-   REAL(wp), PUBLIC, PARAMETER ::   epsi20 = 1.e-20_wp  !: small number 
+   REAL(wp), PUBLIC, PARAMETER ::   epsi06 = 1.e-06_wp  !: small number
+   REAL(wp), PUBLIC, PARAMETER ::   epsi10 = 1.e-10_wp  !: small number
+   REAL(wp), PUBLIC, PARAMETER ::   epsi20 = 1.e-20_wp  !: small number
 
    !                                     !!** define arrays
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   u_oce,v_oce     !: surface ocean velocity used in ice dynamics
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   ht_i_new        !: ice collection thickness accreted in leads
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   fraz_frac       !: fraction of frazil ice accreted at the ice bottom
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   strength        !: ice strength
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   stress1_i, stress2_i, stress12_i   !: 1st, 2nd & diagonal stress tensor element
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   delta_i         !: ice rheology elta factor (Flato & Hibler 95) [s-1]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   divu_i          !: Divergence of the velocity field             [s-1]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   shear_i         !: Shear of the velocity field                  [s-1]
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   aniso_11, aniso_12   !: structure tensor elements
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   rdg_conv
    !
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   t_bo            !: Sea-Ice bottom temperature [Kelvin]     
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   t_bo            !: Sea-Ice bottom temperature [Kelvin]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   qlead           !: heat balance of the lead (or of the open ocean)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   qsb_ice_bot     !: net downward heat flux from the ice to the ocean
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   fhld            !: heat flux from the lead used for bottom melting
@@ -293,7 +322,7 @@ MODULE ice
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   hfx_err_dif     !: heat flux remaining due to change in non-solar flux [W.m-2]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   qt_atm_oi       !: heat flux at the interface atm-[oce+ice]            [W.m-2]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   qt_oce_ai       !: heat flux at the interface oce-[atm+ice]            [W.m-2]
-   
+
    ! heat flux associated with ice-atmosphere mass exchange
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   hfx_sub         !: heat flux for sublimation            [W.m-2]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   hfx_spr         !: heat flux of the snow precipitation  [W.m-2]
@@ -340,6 +369,7 @@ MODULE ice
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)     ::   hm_s          !: mean snow thickness over all categories                 (m)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)     ::   om_i          !: mean ice age over all categories                        (s)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)     ::   tau_icebfr    !: ice friction on ocean bottom (landfast param activated)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)     ::   icb_mask      !: mask of grounded icebergs if landfast [0-1]
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   t_s           !: Snow temperatures     [K]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   e_s           !: Snow enthalpy         [J/m2]
@@ -361,21 +391,26 @@ MODULE ice
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)     ::   hm_il         !: mean melt pond lid depth                     [m]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)     ::   vt_il         !: total melt pond lid volume per gridcell area [m]
 
+   ! meltwater arrays to save for melt ponds (mv - could be grouped in a single meltwater volume array)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   dh_i_sum_2d   !: surface melt (2d arrays for ponds)       [m]
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   dh_s_mlt_2d   !: snow surf melt (2d arrays for ponds)     [m]
+
    !!----------------------------------------------------------------------
    !! * Global variables at before time step
    !!----------------------------------------------------------------------
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   v_s_b, v_i_b, h_s_b, h_i_b !: snow and ice volumes/thickness
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   v_ip_b, v_il_b             !: ponds and lids volumes
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   a_i_b, sv_i_b              !:
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   e_s_b                      !: snow heat content
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:,:) ::   e_i_b                      !: ice temperatures
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)     ::   u_ice_b, v_ice_b           !: ice velocity
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)     ::   at_i_b                     !: ice concentration (total)
-            
+
    !!----------------------------------------------------------------------
    !! * Ice thickness distribution variables
    !!----------------------------------------------------------------------
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:)   ::   hi_max            !: Boundary of ice thickness categories in thickness space
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:)   ::   hi_mean           !: Mean ice thickness in catgories 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:)   ::   hi_mean           !: Mean ice thickness in catgories
    !
    !!----------------------------------------------------------------------
    !! * Ice diagnostics
@@ -386,10 +421,16 @@ MODULE ice
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   diag_trp_es       !: transport of snw enthalpy [W/m2]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   diag_trp_sv       !: transport of salt content
    !
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   diag_heat         !: snw/ice heat content variation   [W/m2] 
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   diag_sice         !: ice salt content variation   [] 
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   diag_vice         !: ice volume variation   [m/s] 
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   diag_vsnw         !: snw volume variation   [m/s] 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   diag_heat         !: snw/ice heat content variation   [W/m2]
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   diag_sice         !: ice salt content variation   []
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   diag_vice         !: ice volume variation   [m/s]
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   diag_vsnw         !: snw volume variation   [m/s]
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   diag_aice         !: ice conc.  variation   [s-1]
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   diag_vpnd         !: pond volume variation  [m/s]
+   !
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   diag_adv_mass     !: advection of mass (kg/m2/s)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   diag_adv_salt     !: advection of salt (g/m2/s)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) ::   diag_adv_heat     !: advection of heat (W/m2)
    !
    !!----------------------------------------------------------------------
    !! * Ice conservation
@@ -405,19 +446,14 @@ MODULE ice
    !! * SIMIP extra diagnostics
    !!----------------------------------------------------------------------
    ! Extra sea ice diagnostics to address the data request
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   t_si            !: Temperature at Snow-ice interface (K) 
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   tm_si           !: mean temperature at the snow-ice interface (K) 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   t_si            !: Temperature at Snow-ice interface (K)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   tm_si           !: mean temperature at the snow-ice interface (K)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qcn_ice_bot     !: Bottom  conduction flux (W/m2)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qcn_ice_top     !: Surface conduction flux (W/m2)
    !
    !!----------------------------------------------------------------------
-   !! * Only for atmospheric coupling
-   !!----------------------------------------------------------------------
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   a_i_last_couple !: Ice fractional area at last coupling time
-   !
-   !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: ice.F90 13346 2020-07-27 12:52:36Z clem $
+   !! $Id: ice.F90 15388 2021-10-17 11:33:47Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -428,14 +464,15 @@ CONTAINS
       !!-----------------------------------------------------------------
       INTEGER :: ice_alloc
       !
-      INTEGER :: ierr(17), ii
+      INTEGER :: ierr(16), ii
       !!-----------------------------------------------------------------
       ierr(:) = 0
 
       ii = 1
-      ALLOCATE( u_oce    (jpi,jpj) , v_oce    (jpi,jpj) , ht_i_new  (jpi,jpj) , strength(jpi,jpj) ,  &
-         &      stress1_i(jpi,jpj) , stress2_i(jpi,jpj) , stress12_i(jpi,jpj) ,                      &
-         &      delta_i  (jpi,jpj) , divu_i   (jpi,jpj) , shear_i   (jpi,jpj) , STAT=ierr(ii) )
+      ALLOCATE( u_oce    (jpi,jpj) , v_oce    (jpi,jpj) , ht_i_new (jpi,jpj) , fraz_frac (jpi,jpj) ,  &
+         &      strength (jpi,jpj) , stress1_i(jpi,jpj) , stress2_i(jpi,jpj) , stress12_i(jpi,jpj) ,  &
+         &      delta_i  (jpi,jpj) , divu_i   (jpi,jpj) , shear_i  (jpi,jpj) ,                        &
+         &      aniso_11 (jpi,jpj) , aniso_12 (jpi,jpj) , rdg_conv (jpi,jpj) , STAT=ierr(ii) )
 
       ii = ii + 1
       ALLOCATE( t_bo       (jpi,jpj) , wfx_snw_sni(jpi,jpj) ,                                                &
@@ -448,7 +485,7 @@ CONTAINS
          &      qsb_ice_bot(jpi,jpj) , qlead     (jpi,jpj) ,                                                 &
          &      sfx_res    (jpi,jpj) , sfx_bri   (jpi,jpj) , sfx_dyn(jpi,jpj) , sfx_sub(jpi,jpj) , sfx_lam(jpi,jpj) ,  &
          &      sfx_bog    (jpi,jpj) , sfx_bom   (jpi,jpj) , sfx_sum(jpi,jpj) , sfx_sni(jpi,jpj) , sfx_opw(jpi,jpj) ,  &
-         &      hfx_res    (jpi,jpj) , hfx_snw   (jpi,jpj) , hfx_sub(jpi,jpj) ,                        & 
+         &      hfx_res    (jpi,jpj) , hfx_snw   (jpi,jpj) , hfx_sub(jpi,jpj) ,                        &
          &      qt_atm_oi  (jpi,jpj) , qt_oce_ai (jpi,jpj) , fhld   (jpi,jpj) ,                        &
          &      hfx_sum    (jpi,jpj) , hfx_bom   (jpi,jpj) , hfx_bog(jpi,jpj) , hfx_dif(jpi,jpj) ,     &
          &      hfx_opw    (jpi,jpj) , hfx_thd   (jpi,jpj) , hfx_dyn(jpi,jpj) , hfx_spr(jpi,jpj) ,     &
@@ -467,7 +504,7 @@ CONTAINS
          &      vt_i (jpi,jpj) , vt_s (jpi,jpj) , st_i(jpi,jpj) , at_i(jpi,jpj) , ato_i(jpi,jpj) ,  &
          &      et_i (jpi,jpj) , et_s (jpi,jpj) , tm_i(jpi,jpj) , tm_s(jpi,jpj) ,  &
          &      sm_i (jpi,jpj) , tm_su(jpi,jpj) , hm_i(jpi,jpj) , hm_s(jpi,jpj) ,  &
-         &      om_i (jpi,jpj) , bvm_i(jpi,jpj) , tau_icebfr(jpi,jpj)            , STAT=ierr(ii) )
+         &      om_i (jpi,jpj) , bvm_i(jpi,jpj) , tau_icebfr(jpi,jpj), icb_mask(jpi,jpj), STAT=ierr(ii) )
 
       ii = ii + 1
       ALLOCATE( t_s(jpi,jpj,nlay_s,jpl) , e_s(jpi,jpj,nlay_s,jpl) , STAT=ierr(ii) )
@@ -477,7 +514,8 @@ CONTAINS
 
       ii = ii + 1
       ALLOCATE( a_ip(jpi,jpj,jpl) , v_ip(jpi,jpj,jpl) , a_ip_frac(jpi,jpj,jpl) , h_ip(jpi,jpj,jpl),  &
-         &      v_il(jpi,jpj,jpl) , h_il(jpi,jpj,jpl) , a_ip_eff (jpi,jpj,jpl) , STAT = ierr(ii) )
+         &      v_il(jpi,jpj,jpl) , h_il(jpi,jpj,jpl) , a_ip_eff (jpi,jpj,jpl) ,                     &
+         &      dh_i_sum_2d(jpi,jpj,jpl) , dh_s_mlt_2d(jpi,jpj,jpl) , STAT = ierr(ii) )
 
       ii = ii + 1
       ALLOCATE( at_ip(jpi,jpj) , hm_ip(jpi,jpj) , vt_ip(jpi,jpj) , hm_il(jpi,jpj) , vt_il(jpi,jpj) , STAT = ierr(ii) )
@@ -485,34 +523,32 @@ CONTAINS
       ! * Old values of global variables
       ii = ii + 1
       ALLOCATE( v_s_b (jpi,jpj,jpl) , v_i_b (jpi,jpj,jpl) , h_s_b(jpi,jpj,jpl)        , h_i_b(jpi,jpj,jpl),         &
+         &      v_ip_b(jpi,jpj,jpl) , v_il_b(jpi,jpj,jpl) ,                                                         &
          &      a_i_b (jpi,jpj,jpl) , sv_i_b(jpi,jpj,jpl) , e_i_b(jpi,jpj,nlay_i,jpl) , e_s_b(jpi,jpj,nlay_s,jpl) , &
          &      STAT=ierr(ii) )
 
       ii = ii + 1
       ALLOCATE( u_ice_b(jpi,jpj) , v_ice_b(jpi,jpj) , at_i_b(jpi,jpj) , STAT=ierr(ii) )
-      
+
       ! * Ice thickness distribution variables
       ii = ii + 1
       ALLOCATE( hi_max(0:jpl), hi_mean(jpl),  STAT=ierr(ii) )
 
       ! * Ice diagnostics
       ii = ii + 1
-      ALLOCATE( diag_trp_vi(jpi,jpj) , diag_trp_vs (jpi,jpj) , diag_trp_ei(jpi,jpj),   & 
-         &      diag_trp_es(jpi,jpj) , diag_trp_sv (jpi,jpj) , diag_heat  (jpi,jpj),   &
-         &      diag_sice  (jpi,jpj) , diag_vice   (jpi,jpj) , diag_vsnw  (jpi,jpj), STAT=ierr(ii) )
+      ALLOCATE( diag_trp_vi(jpi,jpj) , diag_trp_vs (jpi,jpj) , diag_trp_ei(jpi,jpj),                      &
+         &      diag_trp_es(jpi,jpj) , diag_trp_sv (jpi,jpj) , diag_heat  (jpi,jpj),                      &
+         &      diag_sice  (jpi,jpj) , diag_vice   (jpi,jpj) , diag_vsnw  (jpi,jpj), diag_aice(jpi,jpj), diag_vpnd(jpi,jpj),  &
+         &      diag_adv_mass(jpi,jpj), diag_adv_salt(jpi,jpj), diag_adv_heat(jpi,jpj), STAT=ierr(ii) )
 
       ! * Ice conservation
       ii = ii + 1
-      ALLOCATE( diag_v (jpi,jpj) , diag_s (jpi,jpj) , diag_t (jpi,jpj),   & 
+      ALLOCATE( diag_v (jpi,jpj) , diag_s (jpi,jpj) , diag_t (jpi,jpj),   &
          &      diag_fv(jpi,jpj) , diag_fs(jpi,jpj) , diag_ft(jpi,jpj), STAT=ierr(ii) )
-      
+
       ! * SIMIP diagnostics
       ii = ii + 1
       ALLOCATE( t_si(jpi,jpj,jpl) , tm_si(jpi,jpj) , qcn_ice_bot(jpi,jpj,jpl) , qcn_ice_top(jpi,jpj,jpl) , STAT = ierr(ii) )
-
-      ! * For atmospheric coupling
-      ii = ii + 1
-      ALLOCATE( a_i_last_couple(jpi,jpj,jpl) , STAT=ierr(ii) )
 
       ice_alloc = MAXVAL( ierr(:) )
       IF( ice_alloc /= 0 )   CALL ctl_stop( 'STOP', 'ice_alloc: failed to allocate arrays.' )

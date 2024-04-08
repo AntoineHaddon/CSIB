@@ -1,4 +1,5 @@
 MODULE restcom
+!$AGRIF_DO_NOT_TREAT
 !-
 !$Id: restcom.f90 2281 2010-10-15 14:21:13Z smasson $
 !-
@@ -2543,4 +2544,5 @@ SUBROUTINE restclo (fid)
 END SUBROUTINE restclo
 !===
 !-----------------
+!$AGRIF_END_DO_NOT_TREAT
 END MODULE restcom

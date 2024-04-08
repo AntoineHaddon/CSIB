@@ -13,7 +13,7 @@ MODULE trcsrc_canbgc
    USE iom             !  I/O manager
    USE fldread         !  time interpolation
 
-   USE prtctl_trc      !  print control for debugging
+   USE prtctl      !  print control for debugging
    USE in_out_manager  ! I/O manager
    USE dom_oce         ! ocean space and time domain 
    USE timing          ! Timing
@@ -95,7 +95,8 @@ MODULE trcsrc_canbgc
 !#  include "top_substitute.h90"
 ! O Riche Aug 25th 2022
 ! Only needed are fs_2/fs_jpim1
-#   include "vectopt_loop_substitute.h90"
+!#   include "vectopt_loop_substitute.h90"
+#  include "domzgr_substitute.h90"
 
 CONTAINS
 
@@ -339,11 +340,11 @@ CONTAINS
   END SUBROUTINE trc_src2d
    !!======================================================================
 
-  SUBROUTINE trc_src_fedep( kt )
+  SUBROUTINE trc_src_fedep( kt, Kmm )
       ! compute iron sources: surface deposition from the atm. 
       !                       based on CanESM5/CanOE code.
       !
-      INTEGER, INTENT(in) :: kt
+      INTEGER, INTENT(in) :: kt, Kmm
       !
       INTEGER  :: jk                          !: loop variables
       INTEGER  :: ierr, ios                   !: working variables
@@ -386,12 +387,12 @@ CONTAINS
       ! Iron deposition at the surface
       ! -------------------------------------
       ! dust0 is in kgFe m^-2 month^-1; zirondep is in nmolFe m^-3 s^-1
-      zirondep(:,:,1) = dustsolub0 * src2d_dta(:,:,js2d_dust) / ( 55.85 * rmtssb * e3t_n(:,:,1) ) * 1.E+12
+      zirondep(:,:,1) = dustsolub0 * src2d_dta(:,:,js2d_dust) / ( 55.85 * rmtssb * e3t(:,:,1,Kmm) ) * 1.E+12
 
       ! Iron solubilization of particles in the water column
       ! ----------------------------------------------------
       DO jk = 2, jpkm1
-         zirondep(:,:,jk) = src2d_dta(:,:,js2d_dust) / ( wdust0 * 55.85 * rmtssb ) * 1.e-4 * EXP( -gdept_n(:,:,jk) / 1000. ) * 1.E+12
+         zirondep(:,:,jk) = src2d_dta(:,:,js2d_dust) / ( wdust0 * 55.85 * rmtssb ) * 1.e-4 * EXP( -gdept(:,:,jk,Kmm) / 1000. ) * 1.E+12
       END DO
 
       ! Diagnostics
@@ -405,9 +406,10 @@ CONTAINS
   
   END SUBROUTINE trc_src_fedep
 
-  SUBROUTINE trc_src_fesed
+  SUBROUTINE trc_src_fesed ( Kmm ) 
       ! compute iron sources: bottom flux from sediments
       !                       based on CanESM5/CanOE code.
+      INTEGER, INTENT(in) :: Kmm
       INTEGER  :: ji, jj, jk                  !: loop variables
       INTEGER  :: ierr, inum, ios             !: working variables
       !
@@ -447,12 +449,12 @@ CONTAINS
       ENDIF
       !     
       CALL iom_open('bathy.orca.nc', inum)
-      CALL iom_get(inum, jpdom_data,'bathy',zcmask(:,:,:), lrowattr=ln_use_jattr)
+      CALL iom_get(inum, jpdom_global,'bathy',zcmask(:,:,:))
       CALL iom_close(inum)
       !
       DO jk = 1, 5
-        DO jj = 2, jpjm1
-           DO ji = fs_2, fs_jpim1     ! These if required are added with the include statement just above the CONTAINS statement
+        DO jj = 2, jpj
+           DO ji = 2, jpi
               IF( tmask_bgc_closea(ji,jj,jk) /= 0. ) THEN
                  zmaskt = tmask_bgc_closea(ji+1,jj,jk) * tmask_bgc_closea(ji-1,jj,jk) & 
                     &   * tmask_bgc_closea(ji,jj+1,jk) * tmask_bgc_closea(ji,jj-1,jk) &
@@ -466,7 +468,7 @@ CONTAINS
       DO jk = 1, jpk
         DO jj = 1, jpj
            DO ji = 1, jpi
-              zexpide   = MIN( 8.,( gdept_n(ji,jj,jk) / 500. )**(-1.5) )
+              zexpide   = MIN( 8.,( gdept(ji,jj,jk,Kmm) / 500. )**(-1.5) )
               zdenitide = -0.9543 + 0.7662 * LOG( zexpide ) - 0.235 * LOG( zexpide )**2
               zcmask(ji,jj,jk) = zcmask(ji,jj,jk) * MIN( 1., EXP( zdenitide ) / 0.5 )
            END DO
@@ -477,7 +479,7 @@ CONTAINS
       ! -------------------------
       zironsed(:,:,jpk) = 0._wp
       DO jk = 1, jpkm1
-        zironsed(:,:,jk) = sedfeinput0 * zcmask(:,:,jk) / ( e3t_n(:,:,jk) * rday )
+        zironsed(:,:,jk) = sedfeinput0 * zcmask(:,:,jk) / ( e3t(:,:,jk,Kmm) * rday )
       END DO
 
       ! Diagnostics
@@ -493,10 +495,10 @@ CONTAINS
       
   END SUBROUTINE trc_src_fesed
  
-  SUBROUTINE trc_src_criver( kt, write_rhs_flag )
+  SUBROUTINE trc_src_criver( kt, Krhs, write_rhs_flag )
       ! compute dic and doc sources from rivers
       !                       based on CanESM5/CMOC code.
-      INTEGER, INTENT(in)  :: kt
+      INTEGER, INTENT(in)  :: kt, Krhs
       INTEGER              :: ji, jj
       !
       LOGICAL, OPTIONAL, INTENT(in) :: write_rhs_flag   ! 
@@ -543,18 +545,19 @@ CONTAINS
       ENDIF
       !
       IF( write_rhs_flag0 ) THEN
-        tra(:,:,1,jqno3) = tra(:,:,1,jqno3) + no3river_cmoc(:,:)
-        tra(:,:,1,jqdic) = tra(:,:,1,jqdic) + dicriver_cmoc(:,:)
-        tra(:,:,1,jqtal) = tra(:,:,1,jqtal) + talriver_cmoc(:,:)
+        tr(:,:,1,jqno3, Krhs) = tr(:,:,1,jqno3, Krhs) + no3river_cmoc(:,:)
+        tr(:,:,1,jqdic, Krhs) = tr(:,:,1,jqdic, Krhs) + dicriver_cmoc(:,:)
+        tr(:,:,1,jqtal, Krhs) = tr(:,:,1,jqtal, Krhs) + talriver_cmoc(:,:)
       END IF
       IF( ln_timing )   CALL timing_stop('trc_src_criver')
       !    
   END SUBROUTINE trc_src_criver
 
-  SUBROUTINE trc_bott_cmoc( write_rhs_flag )
+  SUBROUTINE trc_bott_cmoc( Kmm, Krhs, write_rhs_flag )
       ! Fate of POC reaching the ocean floor: complete remineralization
       ! into DIC, DIN and sink of O2 and TALK 
       !
+      INTEGER, INTENT(in) ::    Kmm, Krhs  ! time level indices
       LOGICAL, OPTIONAL, INTENT(in) :: write_rhs_flag   ! 
       LOGICAL                       :: write_rhs_flag0  ! 
       !      
@@ -582,7 +585,7 @@ CONTAINS
       DO jk = 1,jpkm1
          DO jj = 1, jpj
             DO ji = 1, jpi
-               zwsmax = 0.8 * e3t_n(ji,jj,jk) / xstepb
+               zwsmax = 0.8 * e3t(ji,jj,jk,Kmm) / xstepb
                zwsbio3(ji,jj,jk) = MIN( zwsbio3(ji,jj,jk), zwsmax )
             END DO
          END DO
@@ -597,19 +600,19 @@ CONTAINS
       DO jj = 1, jpj
          DO ji = 1, jpi
             ikt  = mbkt(ji,jj)
-            zdep = xstepb / e3t_n(ji,jj,ikt)
+            zdep = xstepb / e3t(ji,jj,ikt,Kmm)
             zwsbio32 = zwsbio3(ji,jj,ikt) * zdep
-            dicbott_cmoc(ji,jj) =  trn(ji,jj,ikt,jqpoc) * zwsbio32 
-            talbott_cmoc(ji,jj) = -trn(ji,jj,ikt,jqpoc) * zwsbio32 * ncrr_cmoc
-            no3bott_cmoc(ji,jj) =  trn(ji,jj,ikt,jqpoc) * zwsbio32 
-            oxybott_cmoc(ji,jj) = -trn(ji,jj,ikt,jqpoc) * zwsbio32 
-            pocbott_cmoc(ji,jj) = -trn(ji,jj,ikt,jqpoc) * zwsbio32 
+            dicbott_cmoc(ji,jj) =  tr(ji,jj,ikt,jqpoc, Kmm) * zwsbio32 
+            talbott_cmoc(ji,jj) = -tr(ji,jj,ikt,jqpoc, Kmm) * zwsbio32 * ncrr_cmoc
+            no3bott_cmoc(ji,jj) =  tr(ji,jj,ikt,jqpoc, Kmm) * zwsbio32 
+            oxybott_cmoc(ji,jj) = -tr(ji,jj,ikt,jqpoc, Kmm) * zwsbio32 
+            pocbott_cmoc(ji,jj) = -tr(ji,jj,ikt,jqpoc, Kmm) * zwsbio32 
             IF( write_rhs_flag0 ) THEN
-              tra(ji,jj,ikt,jqdic) = tra(ji,jj,ikt,jqdic) + dicbott_cmoc(ji,jj)
-              tra(ji,jj,ikt,jqtal) = tra(ji,jj,ikt,jqtal) + talbott_cmoc(ji,jj)
-              tra(ji,jj,ikt,jqno3) = tra(ji,jj,ikt,jqno3) + no3bott_cmoc(ji,jj)
-              tra(ji,jj,ikt,jqoxy) = tra(ji,jj,ikt,jqoxy) + oxybott_cmoc(ji,jj)
-              tra(ji,jj,ikt,jqpoc) = tra(ji,jj,ikt,jqpoc) + pocbott_cmoc(ji,jj)
+              tr(ji,jj,ikt,jqdic, Krhs) = tr(ji,jj,ikt,jqdic, Krhs) + dicbott_cmoc(ji,jj)
+              tr(ji,jj,ikt,jqtal, Krhs) = tr(ji,jj,ikt,jqtal, Krhs) + talbott_cmoc(ji,jj)
+              tr(ji,jj,ikt,jqno3, Krhs) = tr(ji,jj,ikt,jqno3, Krhs) + no3bott_cmoc(ji,jj)
+              tr(ji,jj,ikt,jqoxy, Krhs) = tr(ji,jj,ikt,jqoxy, Krhs) + oxybott_cmoc(ji,jj)
+              tr(ji,jj,ikt,jqpoc, Krhs) = tr(ji,jj,ikt,jqpoc, Krhs) + pocbott_cmoc(ji,jj)
             END IF      
             !
          END DO
@@ -622,10 +625,11 @@ CONTAINS
   END SUBROUTINE trc_bott_cmoc
 
 
-  SUBROUTINE trc_n2fx_denit_cmoc( zpar, write_rhs_flag )
+  SUBROUTINE trc_n2fx_denit_cmoc( zpar,Kmm, Krhs, write_rhs_flag )
       ! compute N2 fixation and denitrification
       ! as prescribed in CanESM5/CMOC
       REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(in) :: zpar  ! any PAR array
+      INTEGER, INTENT(in) ::    Kmm, Krhs  ! time level indices
       !
       LOGICAL, OPTIONAL, INTENT(in) :: write_rhs_flag   ! 
       LOGICAL                       :: write_rhs_flag0  ! 
@@ -661,19 +665,19 @@ CONTAINS
                    zn2fix(ji,jj,jk) = pnf_cmoc * cnrr_cmoc * 1e-12_wp / 3600._wp * qfact2         & ! reference rate
                    !
                    &                 * kn_cmoc * 1e-6_wp / ( kn_cmoc * 1e-6_wp                    &
-                   &                                         + trn(ji,jj,jk,jqno3) + rtrn)        & ! N inhibition
+                   &                                         + tr(ji,jj,jk,jqno3, Kmm) + rtrn)        & ! N inhibition
                    !
                    &                 * zpar(ji,jj,jk) / inf_cmoc                                  & ! ligh sensitivity
                    !
-                   &                 * ( max(tsn(ji,jj,jk,jp_tem), tnfmi_cmoc ) - tnfmi_cmoc )    &
+                   &                 * ( max(ts(ji,jj,jk,jp_tem,Kmm), tnfmi_cmoc ) - tnfmi_cmoc )    &
                    &                 / ( tnfMa_cmoc - tnfmi_cmoc ) &                               ! temperature dependence
                    !
-                   &                 * ( phinf_cmoc * exp( 1._wp ) * anf_cmoc * gdept_n(ji,jj,jk) &
-                   &                 * exp ( -anf_cmoc * gdept_n(ji,jj,jk) ) + phi0_cmoc )        & ! diazotroph abundance dependence
+                   &                 * ( phinf_cmoc * exp( 1._wp ) * anf_cmoc * gdept(ji,jj,jk,Kmm) &
+                   &                 * exp ( -anf_cmoc * gdept(ji,jj,jk,Kmm) ) + phi0_cmoc )        & ! diazotroph abundance dependence
                    &                 * oomask(ji,jj) * tmask_bgc_closea(ji,jj,jk)                             ! open ocean / land mask
                    !
                    ! total nitrogen fixation on the current 1/4 time step, is this still true, depends on qnrdttrc
-                   zn2fixtot(ji,jj) = zn2fixtot(ji,jj) + zn2fix(ji,jj,jk) * e3t_n(ji,jj,jk)     
+                   zn2fixtot(ji,jj) = zn2fixtot(ji,jj) + zn2fix(ji,jj,jk) * e3t(ji,jj,jk,Kmm)     
                    zJNd(ji,jj,jk)   = zn2fix(ji,jj,jk)
                END DO
           END DO
@@ -690,7 +694,7 @@ CONTAINS
                    &                 ( redet(ji,jj,jk) / (redettot(ji,jj) + rtrn) )     & 
                    &                                   * tmask_bgc_closea(ji,jj,jk) * oomask(ji,jj)
 
-                  zdenittot(ji,jj) = zdenittot(ji,jj) + zJNd(ji,jj,jk) * e3t_n(ji,jj,jk)                           
+                  zdenittot(ji,jj) = zdenittot(ji,jj) + zJNd(ji,jj,jk) * e3t(ji,jj,jk,Kmm)
                END DO
           END DO
       END DO
@@ -712,15 +716,15 @@ CONTAINS
       !
       DO jk = 1, jpkm1
         IF( write_rhs_flag0 ) THEN  
-          tra(:,:,jk,jqno3) = tra(:,:,jk,jqno3) +  zJNd(:,:,jk)
+          tr(:,:,jk,jqno3, Krhs) = tr(:,:,jk,jqno3, Krhs) +  zJNd(:,:,jk)
         END IF
       END DO
       !
       ! ! print mean trends (used for debugging)
-      ! IF(ln_ctl)   THEN
+      ! IF( sn_cfctl%l_prttrc )   THEN
          ! WRITE(charout, FMT="('rem6')")
-         ! CALL prt_ctl_trc_info(charout)
-         ! CALL prt_ctl_trc(tab4d=tra, mask=tmask_bgc_closea, clinfo=ctrcnm)
+         ! CALL prt_ctl_info(charout)
+         ! CALL prt_ctl(tab4d_1=tr(:,:,:,:, Krhs), mask1=tmask_bgc_closea, clinfo=ctrcnm)
       ! ENDIF
       !
       ! IF( lk_iomput ) THEN

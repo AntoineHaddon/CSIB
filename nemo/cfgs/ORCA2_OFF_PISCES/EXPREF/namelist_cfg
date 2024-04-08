@@ -11,9 +11,9 @@
 !!   namwad       Wetting and drying                                    (default: OFF)
 !!   namtsd       data: temperature & salinity                          (default: OFF)
 !!   namcrs       coarsened grid (for outputs and/or TOP)               (ln_crs =T)
-!!   namc1d       1D configuration options                              ("key_c1d")
-!!   namc1d_dyndmp 1D newtonian damping applied on currents             ("key_c1d")
-!!   namc1d_uvd   1D data (currents)                                    ("key_c1d")
+!!   namc1d       1D configuration options                              (ln_c1d =T)
+!!   namc1d_dyndmp 1D newtonian damping applied on currents             (ln_c1d =T)
+!!   namc1d_uvd   1D data (currents)                                    (ln_c1d =T)
 !!======================================================================
 !
 !-----------------------------------------------------------------------
@@ -33,7 +33,7 @@
 !-----------------------------------------------------------------------
    ln_linssh   = .true.   !  =T  linear free surface  ==>>  model level are fixed in time
    !
-   rn_rdt      = 21600.     !  time step for the dynamics and tracer
+   rn_Dt      = 21600.     !  time step for the dynamics and tracer
 /
 !-----------------------------------------------------------------------
 &namcfg        !   parameters of the configuration                      (default: use namusr_def in namelist_cfg)
@@ -42,6 +42,10 @@
       !                    !  (=F) user defined configuration           (F => create/check namusr_def)
       cn_domcfg = "ORCA_R2_zps_domcfg"   ! domain configuration filename
       !
+/
+!-----------------------------------------------------------------------
+&namtile        !   parameters of the tiling
+!-----------------------------------------------------------------------
 /
 !-----------------------------------------------------------------------
 &namtsd        !    Temperature & Salinity Data  (init/dmp)             (default: OFF)
@@ -56,15 +60,15 @@
 !-----------------------------------------------------------------------
 /
 !-----------------------------------------------------------------------
-&namc1d        !   1D configuration options                             ("key_c1d" default: PAPA station)
+&namc1d        !   1D configuration options                             (ln_c1d =T default: PAPA station)
 !-----------------------------------------------------------------------
 /
 !-----------------------------------------------------------------------
-&namc1d_dyndmp !   U & V newtonian damping                              ("key_c1d" default: OFF)
+&namc1d_dyndmp !   U & V newtonian damping                              (ln_c1d =T default: OFF)
 !-----------------------------------------------------------------------
 /
 !-----------------------------------------------------------------------
-&namc1d_uvd    !   data: U & V currents                                 ("key_c1d" default: OFF)
+&namc1d_uvd    !   data: U & V currents                                 (ln_c1d =T default: OFF)
 !-----------------------------------------------------------------------
 /
 !!======================================================================
@@ -198,6 +202,7 @@
 !-----------------------------------------------------------------------
 &namdrg        !   top/bottom drag coefficient                          (default: NO selection)
 !-----------------------------------------------------------------------
+   ln_drg_OFF  = .true.   !  must select one drag coefficient to true even if we don't use it
 /
 !-----------------------------------------------------------------------
 &namdrg_top    !   TOP friction                                         (ln_drg_OFF =F & ln_isfcav=T)
@@ -311,8 +316,7 @@
 !-----------------------------------------------------------------------
    ln_dynrnf       =  .false.    !  runoffs option enabled (T) or not (F)
    ln_dynrnf_depth =  .false.    !  runoffs is spread in vertical (T) or not (F)
-!   fwbcorr        = 3.786e-06   !  annual global mean of empmr for ssh correction
-
+   !
    cn_dir      = './'      !  root directory for the ocean data location
    !___________!_________________________!___________________!___________!_____________!________!___________!__________________!__________!_______________!
    !           !  file name              ! frequency (hours) ! variable  ! time interp.!  clim  ! 'yearly'/ ! weights filename ! rotation ! land/sea mask !
@@ -320,7 +324,7 @@
    sn_tem      = 'dyna_grid_T'           ,       120.        , 'votemper'  ,  .true.   , .true. , 'yearly'  , ''               , ''       , ''
    sn_sal      = 'dyna_grid_T'           ,       120.        , 'vosaline'  ,  .true.   , .true. , 'yearly'  , ''               , ''       , ''
    sn_mld      = 'dyna_grid_T'           ,       120.        , 'somixhgt'  ,  .true.   , .true. , 'yearly'  , ''               , ''       , ''
-   sn_emp      = 'dyna_grid_T'           ,       120.        , 'sowaflup'  ,  .true.   , .true. , 'yearly'  , ''               , ''       , ''
+   sn_emp      = 'dyna_grid_T'           ,       120.        , 'sowaflcd'  ,  .true.   , .true. , 'yearly'  , ''               , ''       , ''
    sn_fmf      = 'dyna_grid_T'           ,       120.        , 'iowaflup'  ,  .true.   , .true. , 'yearly'  , ''               , ''       , ''
    sn_ice      = 'dyna_grid_T'           ,       120.        , 'soicecov'  ,  .true.   , .true. , 'yearly'  , ''               , ''       , ''
    sn_qsr      = 'dyna_grid_T'           ,       120.        , 'soshfldo'  ,  .true.   , .true. , 'yearly'  , ''               , ''       , ''
@@ -346,6 +350,7 @@
 !-----------------------------------------------------------------------
 &namzdf        !   vertical physics manager                             (default: NO selection)
 !-----------------------------------------------------------------------
+   ln_zdfcst   = .true.      !  must select one vertical physics to true even if we don't use it
 /
 !-----------------------------------------------------------------------
 &namzdf_ric    !   richardson number dependent vertical diffusion       (ln_zdfric =T)
@@ -371,12 +376,10 @@
 !!                  ***  Diagnostics namelists  ***                   !!
 !!                                                                    !!
 !!   namtrd       dynamics and/or tracer trends                         (default: OFF)
-!!   namptr       Poleward Transport Diagnostics                        (default: OFF)
 !!   namhsb       Heat and salt budgets                                 (default: OFF)
 !!   namdiu       Cool skin and warm layer models                       (default: OFF)
 !!   namdiu       Cool skin and warm layer models                       (default: OFF)
 !!   namflo       float parameters                                      (default: OFF)
-!!   nam_diaharm  Harmonic analysis of tidal constituents               (default: OFF)
 !!   nam_diadct   transports through some sections                      (default: OFF)
 !!   nam_dia25h   25h Mean Output                                       (default: OFF)
 !!   namnc4       netcdf4 chunking and compression settings             ("key_netcdf4")
@@ -384,10 +387,6 @@
 !
 !-----------------------------------------------------------------------
 &namtrd        !   trend diagnostics                                    (default: OFF)
-!-----------------------------------------------------------------------
-/
-!-----------------------------------------------------------------------
-&namptr        !   Poleward Transport Diagnostic                        (default: OFF)
 !-----------------------------------------------------------------------
 /
 !-----------------------------------------------------------------------
@@ -400,10 +399,6 @@
 /
 !-----------------------------------------------------------------------
 &namflo        !   float parameters                                     (default: OFF)
-!-----------------------------------------------------------------------
-/
-!-----------------------------------------------------------------------
-&nam_diaharm   !   Harmonic analysis of tidal constituents              (default: OFF)
 !-----------------------------------------------------------------------
 /
 !-----------------------------------------------------------------------
@@ -436,13 +431,13 @@
 !!======================================================================
 !!                  ***  Miscellaneous namelists  ***                 !!
 !!                                                                    !!
-!!   nammpp            Massively Parallel Processing                    ("key_mpp_mpi")
+!!   nammpp            Massively Parallel Processing
 !!   namctl            Control prints                                   (default: OFF)
 !!   namsto            Stochastic parametrization of EOS                (default: OFF)
 !!======================================================================
 !
 !-----------------------------------------------------------------------
-&nammpp        !   Massively Parallel Processing                        ("key_mpp_mpi")
+&nammpp        !   Massively Parallel Processing
 !-----------------------------------------------------------------------
 /
 !-----------------------------------------------------------------------

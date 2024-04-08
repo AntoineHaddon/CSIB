@@ -16,7 +16,7 @@ MODULE p2zexp
    USE sms_pisces
    USE p2zsed
    USE lbclnk
-   USE prtctl_trc      ! Print control for debbuging
+   USE prtctl          ! Print control for debbuging
    USE trd_oce
    USE trdtrc
    USE iom
@@ -37,15 +37,16 @@ MODULE p2zexp
    REAL(wp)                                ::   areacot   !: surface coastal area
 
    !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
+#  include "do_loop_substitute.h90"
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: p2zexp.F90 10425 2018-12-19 21:54:16Z smasson $ 
+   !! $Id: p2zexp.F90 15090 2021-07-06 14:25:18Z cetlod $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE p2z_exp( kt )
+   SUBROUTINE p2z_exp( kt, Kmm, Krhs )
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE p2z_exp  ***
       !!
@@ -59,7 +60,8 @@ CONTAINS
       !!              COLUMN BELOW THE SURFACE LAYER.
       !!---------------------------------------------------------------------
       !!
-      INTEGER, INTENT( in ) ::   kt      ! ocean time-step index      
+      INTEGER, INTENT( in ) ::   kt             ! ocean time-step index      
+      INTEGER, INTENT( in ) ::   Kmm, Krhs      ! time level indices
       !!
       INTEGER  ::   ji, jj, jk, jl, ikt
       REAL(wp) ::   zgeolpoc, zfact, zwork, ze3t, zsedpocd, zmaskt
@@ -69,7 +71,7 @@ CONTAINS
       !
       IF( ln_timing )   CALL timing_start('p2z_exp')
       !
-      IF( kt == nittrc000 )   CALL p2z_exp_init
+      IF( kt == nittrc000 )   CALL p2z_exp_init( Kmm )
 
       zsedpoca(:,:) = 0.
 
@@ -79,14 +81,10 @@ CONTAINS
       ! (PARTS OF NEWLY FORMED MATTER REMAINING IN THE DIFFERENT
       ! LAYERS IS DETERMINED BY DMIN3 DEFINED IN sms_p2z.F90
       ! ----------------------------------------------------------------------
-      DO jk = 1, jpkm1
-         DO jj = 2, jpjm1
-            DO ji = fs_2, fs_jpim1
-               ze3t = 1. / e3t_n(ji,jj,jk)
-               tra(ji,jj,jk,jpno3) = tra(ji,jj,jk,jpno3) + ze3t * dmin3(ji,jj,jk) * xksi(ji,jj)
-            END DO
-         END DO
-      END DO
+      DO_3D( 0, 0, 0, 0, 1, jpkm1 )
+         ze3t = 1. / e3t(ji,jj,jk,Kmm)
+         tr(ji,jj,jk,jpno3,Krhs) = tr(ji,jj,jk,jpno3,Krhs) + ze3t * dmin3(ji,jj,jk) * xksi(ji,jj)
+      END_3D
 
       ! Find the last level of the water column
       ! Compute fluxes due to sinking particles (slow)
@@ -94,25 +92,21 @@ CONTAINS
 
       zgeolpoc = 0.e0         !     Initialization
       ! Release of nutrients from the "simple" sediment
-      DO jj = 2, jpjm1
-         DO ji = fs_2, fs_jpim1
-            ikt = mbkt(ji,jj) 
-            tra(ji,jj,ikt,jpno3) = tra(ji,jj,ikt,jpno3) + sedlam * sedpocn(ji,jj) / e3t_n(ji,jj,ikt) 
-            ! Deposition of organic matter in the sediment
-            zwork = vsed * trn(ji,jj,ikt,jpdet)
-            zsedpoca(ji,jj) = ( zwork + dminl(ji,jj) * xksi(ji,jj)   &
-               &           - sedlam * sedpocn(ji,jj) - sedlostpoc * sedpocn(ji,jj) ) * rdt
-            zgeolpoc = zgeolpoc + sedlostpoc * sedpocn(ji,jj) * e1e2t(ji,jj)
-         END DO
-      END DO
+      DO_2D( 0, 0, 0, 0 )
+         ikt = mbkt(ji,jj) 
+         tr(ji,jj,ikt,jpno3,Krhs) = tr(ji,jj,ikt,jpno3,Krhs) + sedlam * sedpocn(ji,jj) / e3t(ji,jj,ikt,Kmm) 
+         ! Deposition of organic matter in the sediment
+         zwork = vsed * tr(ji,jj,ikt,jpdet,Kmm)
+         zsedpoca(ji,jj) = ( zwork + dminl(ji,jj) * xksi(ji,jj)   &
+            &           - sedlam * sedpocn(ji,jj) - sedlostpoc * sedpocn(ji,jj) ) * rn_Dt
+         zgeolpoc = zgeolpoc + sedlostpoc * sedpocn(ji,jj) * e1e2t(ji,jj)
+      END_2D
 
-      DO jj = 2, jpjm1
-         DO ji = fs_2, fs_jpim1
-            tra(ji,jj,1,jpno3) = tra(ji,jj,1,jpno3) + zgeolpoc * cmask(ji,jj) / areacot / e3t_n(ji,jj,1)
-         END DO
-      END DO
+      DO_2D( 0, 0, 0, 0 )
+         tr(ji,jj,1,jpno3,Krhs) = tr(ji,jj,1,jpno3,Krhs) + zgeolpoc * cmask(ji,jj) / areacot / e3t(ji,jj,1,Kmm)
+      END_2D
 
-      CALL lbc_lnk( 'p2zexp', sedpocn, 'T', 1. )
+      CALL lbc_lnk( 'p2zexp', sedpocn, 'T', 1.0_wp )
  
       ! Oa & Ek: diagnostics depending on jpdia2d !          left as example
       IF( lk_iomput )  CALL iom_put( "SEDPOC" , sedpocn )
@@ -120,19 +114,17 @@ CONTAINS
       
       ! Time filter and swap of arrays
       ! ------------------------------
-      IF( neuler == 0 .AND. kt == nittrc000 ) THEN        ! Euler time-stepping at first time-step
-        !                                             ! (only swap)
+      IF( l_1st_euler ) THEN        ! Euler time-stepping at first time-step
+        !                           ! (only swap)
         sedpocn(:,:) = zsedpoca(:,:)
         !                                              
       ELSE
         !
-        DO jj = 1, jpj
-           DO ji = 1, jpi
-              zsedpocd = zsedpoca(ji,jj) - 2. * sedpocn(ji,jj) + sedpocb(ji,jj)      ! time laplacian on tracers
-              sedpocb(ji,jj) = sedpocn(ji,jj) + atfp * zsedpocd                     ! sedpocb <-- filtered sedpocn
-              sedpocn(ji,jj) = zsedpoca(ji,jj)                                       ! sedpocn <-- sedpoca
-           END DO
-        END DO
+        DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
+           zsedpocd = zsedpoca(ji,jj) - 2. * sedpocn(ji,jj) + sedpocb(ji,jj)      ! time laplacian on tracers
+           sedpocb(ji,jj) = sedpocn(ji,jj) + rn_atfp * zsedpocd                     ! sedpocb <-- filtered sedpocn
+           sedpocn(ji,jj) = zsedpoca(ji,jj)                                       ! sedpocn <-- sedpoca
+        END_2D
         ! 
       ENDIF
       !
@@ -145,10 +137,10 @@ CONTAINS
          CALL iom_rstput( kt, nitrst, numrtw, 'SEDN'//ctrcnm(jpdet), sedpocn(:,:) )
       ENDIF
       !
-      IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
+      IF(sn_cfctl%l_prttrc)   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('exp')")
-         CALL prt_ctl_trc_info(charout)
-         CALL prt_ctl_trc(tab4d=tra, mask=tmask, clinfo=ctrcnm)
+         CALL prt_ctl_info( charout, cdcomp = 'top' )
+         CALL prt_ctl(tab4d_1=tr(:,:,:,:,Krhs), mask1=tmask, clinfo=ctrcnm)
       ENDIF
       !
       IF( ln_timing )  CALL timing_stop('p2z_exp')
@@ -156,11 +148,12 @@ CONTAINS
    END SUBROUTINE p2z_exp
 
 
-   SUBROUTINE p2z_exp_init
+   SUBROUTINE p2z_exp_init( Kmm )
       !!----------------------------------------------------------------------
       !!                    ***  ROUTINE p4z_exp_init  ***
       !! ** purpose :   specific initialisation for export
       !!----------------------------------------------------------------------
+      INTEGER, INTENT(in)  ::  Kmm      ! time level index
       INTEGER  ::   ji, jj, jk
       REAL(wp) ::   zmaskt, zfluo, zfluu
       REAL(wp), DIMENSION(jpi,jpj    ) :: zrro
@@ -180,18 +173,14 @@ CONTAINS
       ! ------------------------------------------------------------
       zdm0 = 0._wp
       zrro = 1._wp
-      DO jk = jpkb, jpkm1
-         DO jj = 1, jpj
-            DO ji = 1, jpi
-               zfluo = ( gdepw_n(ji,jj,jk  ) / gdepw_n(ji,jj,jpkb) )**xhr
-               zfluu = ( gdepw_n(ji,jj,jk+1) / gdepw_n(ji,jj,jpkb) )**xhr
-               IF( zfluo.GT.1. )   zfluo = 1._wp
-               zdm0(ji,jj,jk) = zfluo - zfluu
-               IF( jk <= jpkb-1 )   zdm0(ji,jj,jk) = 0._wp
-               zrro(ji,jj) = zrro(ji,jj) - zdm0(ji,jj,jk)
-            END DO
-         END DO
-      END DO
+      DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, jpkb, jpkm1 )
+         zfluo = ( gdepw(ji,jj,jk  ,Kmm) / gdepw(ji,jj,jpkb,Kmm) )**xhr
+         zfluu = ( gdepw(ji,jj,jk+1,Kmm) / gdepw(ji,jj,jpkb,Kmm) )**xhr
+         IF( zfluo.GT.1. )   zfluo = 1._wp
+         zdm0(ji,jj,jk) = zfluo - zfluu
+         IF( jk <= jpkb-1 )   zdm0(ji,jj,jk) = 0._wp
+         zrro(ji,jj) = zrro(ji,jj) - zdm0(ji,jj,jk)
+      END_3D
       !
       zdm0(:,:,jpk) = zrro(:,:)
 
@@ -201,39 +190,31 @@ CONTAINS
       ! ----------------------------------------------------------------------
       dminl(:,:)   = 0._wp
       dmin3(:,:,:) = zdm0
-      DO jk = 1, jpk
-         DO jj = 1, jpj
-            DO ji = 1, jpi
-               IF( tmask(ji,jj,jk) == 0._wp ) THEN
-                  dminl(ji,jj) = dminl(ji,jj) + dmin3(ji,jj,jk)
-                  dmin3(ji,jj,jk) = 0._wp
-               ENDIF
-            END DO
-         END DO
-      END DO
+      DO_3D( nn_hls, nn_hls, nn_hls, nn_hls, 1, jpk )
+         IF( tmask(ji,jj,jk) == 0._wp ) THEN
+            dminl(ji,jj) = dminl(ji,jj) + dmin3(ji,jj,jk)
+            dmin3(ji,jj,jk) = 0._wp
+         ENDIF
+      END_3D
 
-      DO jj = 1, jpj
-         DO ji = 1, jpi
-            IF( tmask(ji,jj,1) == 0 )   dmin3(ji,jj,1) = 0._wp
-         END DO
-      END DO
+      DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
+         IF( tmask(ji,jj,1) == 0 )   dmin3(ji,jj,1) = 0._wp
+      END_2D
 
       ! Coastal mask 
       cmask(:,:) = 0._wp
-      DO jj = 2, jpjm1
-         DO ji = fs_2, fs_jpim1
-            IF( tmask(ji,jj,1) /= 0. ) THEN
-               zmaskt = tmask(ji+1,jj,1) * tmask(ji-1,jj,1) * tmask(ji,jj+1,1) * tmask(ji,jj-1,1) 
-               IF( zmaskt == 0. )   cmask(ji,jj) = 1._wp
-            END IF
-         END DO
-      END DO
-      CALL lbc_lnk( 'p2zexp', cmask , 'T', 1. )      ! lateral boundary conditions on cmask   (sign unchanged)
+      DO_2D( 0, 0, 0, 0 )
+         IF( tmask(ji,jj,1) /= 0. ) THEN
+            zmaskt = tmask(ji+1,jj,1) * tmask(ji-1,jj,1) * tmask(ji,jj+1,1) * tmask(ji,jj-1,1) 
+            IF( zmaskt == 0. )   cmask(ji,jj) = 1._wp
+         END IF
+      END_2D
+      CALL lbc_lnk( 'p2zexp', cmask , 'T', 1.0_wp )      ! lateral boundary conditions on cmask   (sign unchanged)
       areacot = glob_sum( 'p2zexp', e1e2t(:,:) * cmask(:,:) )
       !
       IF( ln_rsttr ) THEN
-         CALL iom_get( numrtr, jpdom_autoglo, 'SEDB'//ctrcnm(jpdet), sedpocb(:,:) )
-         CALL iom_get( numrtr, jpdom_autoglo, 'SEDN'//ctrcnm(jpdet), sedpocn(:,:) )
+         CALL iom_get( numrtr, jpdom_auto, 'SEDB'//ctrcnm(jpdet), sedpocb(:,:) )
+         CALL iom_get( numrtr, jpdom_auto, 'SEDN'//ctrcnm(jpdet), sedpocn(:,:) )
       ELSE
          sedpocb(:,:) = 0._wp
          sedpocn(:,:) = 0._wp

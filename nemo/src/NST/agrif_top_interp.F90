@@ -17,6 +17,7 @@ MODULE agrif_top_interp
    USE agrif_top_sponge
    USE par_trc
    USE trc
+   USE vremap
    !
    USE lib_mpp     ! MPP library
 
@@ -25,9 +26,11 @@ MODULE agrif_top_interp
 
    PUBLIC Agrif_trc, interptrn
 
+   !! * Substitutions
+#  include "domzgr_substitute.h90"
   !!----------------------------------------------------------------------
    !! NEMO/NST 4.0 , NEMO Consortium (2018)
-   !! $Id: agrif_top_interp.F90 12737 2020-04-10 17:55:11Z jchanut $
+   !! $Id: agrif_top_interp.F90 14218 2020-12-18 16:44:52Z jchanut $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -40,222 +43,171 @@ CONTAINS
       IF( Agrif_Root() )   RETURN
       !
       Agrif_SpecialValue    = 0._wp
-      Agrif_UseSpecialValue = .TRUE.
+      Agrif_UseSpecialValue = l_spc_top 
+      l_vremap              = ln_vert_remap
       !
       CALL Agrif_Bc_variable( trn_id, procname=interptrn )
+      !
       Agrif_UseSpecialValue = .FALSE.
+      l_vremap              = .FALSE.
       !
    END SUBROUTINE Agrif_trc
 
-   SUBROUTINE interptrn( ptab, i1, i2, j1, j2, k1, k2, n1, n2, before, nb, ndir )
+   SUBROUTINE interptrn( ptab, i1, i2, j1, j2, k1, k2, n1, n2, before )
       !!----------------------------------------------------------------------
       !!                  *** ROUTINE interptrn ***
       !!----------------------------------------------------------------------
       REAL(wp), DIMENSION(i1:i2,j1:j2,k1:k2,n1:n2), INTENT(inout) ::   ptab
       INTEGER                                     , INTENT(in   ) ::   i1, i2, j1, j2, k1, k2, n1, n2
       LOGICAL                                     , INTENT(in   ) ::   before
-      INTEGER                                     , INTENT(in   ) ::   nb , ndir
       !
-      INTEGER  ::   ji, jj, jk, jn, iref, jref, ibdy, jbdy   ! dummy loop indices
-      INTEGER  ::   imin, imax, jmin, jmax, N_in, N_out
-      REAL(wp) ::   zrho, z1, z2, z3, z4, z5, z6, z7
-      LOGICAL :: western_side, eastern_side,northern_side,southern_side
+      INTEGER  ::   ji, jj, jk, jn  ! dummy loop indices
+      INTEGER  ::   N_in, N_out
+      INTEGER  :: item
       ! vertical interpolation:
-      REAL(wp), DIMENSION(i1:i2,j1:j2,1:jpk,n1:n2) :: ptab_child
-      REAL(wp), DIMENSION(k1:k2,n1:n2-1) :: tabin
-      REAL(wp), DIMENSION(k1:k2) :: h_in
-      REAL(wp), DIMENSION(1:jpk) :: h_out
-      REAL(wp) :: h_diff
+      REAL(wp) :: zhtot, zwgt
+      REAL(wp), DIMENSION(k1:k2,1:jptra) :: tabin, tabin_i
+      REAL(wp), DIMENSION(k1:k2) :: z_in, h_in
+      REAL(wp), DIMENSION(1:jpk) :: h_out, z_out
+      !!----------------------------------------------------------------------
 
-      IF( before ) THEN         
+      IF( before ) THEN
+
+         item = Kmm_a
+         IF( l_ini_child )   Kmm_a = Kbb_a  
+
          DO jn = 1,jptra
-            DO jk=k1,k2
+            DO jk=k1,k2-1
                DO jj=j1,j2
                  DO ji=i1,i2
-                       ptab(ji,jj,jk,jn) = trn(ji,jj,jk,jn)
+                       ptab(ji,jj,jk,jn) = tr(ji,jj,jk,jn,Kmm_a)
                  END DO
               END DO
            END DO
-        END DO
-
-# if defined key_vertical
-        DO jk=k1,k2
-           DO jj=j1,j2
-              DO ji=i1,i2
-                 ptab(ji,jj,jk,jptra+1) = tmask(ji,jj,jk) * e3t_n(ji,jj,jk) 
-              END DO
-           END DO
-        END DO
-# endif
-      ELSE 
-
-         western_side  = (nb == 1).AND.(ndir == 1)   ;   eastern_side  = (nb == 1).AND.(ndir == 2)
-         southern_side = (nb == 2).AND.(ndir == 1)   ;   northern_side = (nb == 2).AND.(ndir == 2)
-
-# if defined key_vertical              
-         DO jj=j1,j2
-            DO ji=i1,i2
-               iref = ji
-               jref = jj
-               if(western_side) iref=MAX(2,ji)
-               if(eastern_side) iref=MIN(nlci-1,ji)
-               if(southern_side) jref=MAX(2,jj)
-               if(northern_side) jref=MIN(nlcj-1,jj)
-               N_in = 0
-               DO jk=k1,k2 !k2 = jpk of parent grid
-                  IF (ptab(ji,jj,jk,n2) == 0) EXIT
-                  N_in = N_in + 1
-                  tabin(jk,:) = ptab(ji,jj,jk,n1:n2-1)
-                  h_in(N_in) = ptab(ji,jj,jk,n2)
-               END DO
-               N_out = 0
-               DO jk=1,jpk ! jpk of child grid
-                  IF (tmask(iref,jref,jk) == 0) EXIT 
-                  N_out = N_out + 1
-                  h_out(jk) = e3t_n(iref,jref,jk)
-               ENDDO
-               IF (N_in > 0) THEN
-                  DO jn=1,jptra
-                     call reconstructandremap(tabin(1:N_in,jn),h_in,ptab_child(ji,jj,1:N_out,jn),h_out,N_in,N_out)
-                  ENDDO
-               ENDIF
-            ENDDO
-         ENDDO
-# else
-         ptab_child(i1:i2,j1:j2,1:jpk,1:jptra) = ptab(i1:i2,j1:j2,1:jpk,1:jptra)
-# endif
-         !
-         DO jn=1, jptra
-            tra(i1:i2,j1:j2,1:jpk,jn)=ptab_child(i1:i2,j1:j2,1:jpk,jn)*tmask(i1:i2,j1:j2,1:jpk) 
          END DO
 
-         IF ( .NOT.lk_agrif_clp ) THEN 
-            !
-            imin = i1 ; imax = i2
-            jmin = j1 ; jmax = j2
-            ! 
-            ! Remove CORNERS
-            IF( l_Southedge ) jmin = 2 + nbghostcells
-            IF( l_Northedge ) jmax = nlcj - nbghostcells - 1
-            IF( l_Westedge )  imin = 2 + nbghostcells
-            IF( l_Eastedge )  imax = nlci - nbghostcells - 1      
-            !
-            IF( eastern_side ) THEN
-               zrho = Agrif_Rhox()
-               z1 = ( zrho - 1._wp ) * 0.5_wp                    
-               z3 = ( zrho - 1._wp ) / ( zrho + 1._wp )         
-               z6 = 2._wp * ( zrho - 1._wp ) / ( zrho + 1._wp )
-               z7 =       - ( zrho - 1._wp ) / ( zrho + 3._wp )
-               z2 = 1._wp - z1 ; z4 = 1._wp - z3 ; z5 = 1._wp - z6 - z7
-               !
-               ibdy = nlci-nbghostcells
-               DO jn = 1, jptra
-                  tra(ibdy+1,jmin:jmax,1:jpkm1,jn) = z1 * ptab_child(ibdy+1,jmin:jmax,1:jpkm1,jn) + z2 * ptab_child(ibdy,jmin:jmax,1:jpkm1,jn)
-                  DO jk = 1, jpkm1
-                     DO jj = jmin,jmax
-                        IF( umask(ibdy-1,jj,jk) == 0._wp ) THEN
-                           tra(ibdy,jj,jk,jn) = tra(ibdy+1,jj,jk,jn) * tmask(ibdy,jj,jk)
-                        ELSE
-                           tra(ibdy,jj,jk,jn)=(z4*tra(ibdy+1,jj,jk,jn)+z3*tra(ibdy-1,jj,jk,jn))*tmask(ibdy,jj,jk)
-                           IF( un(ibdy-1,jj,jk) > 0._wp ) THEN
-                              tra(ibdy,jj,jk,jn)=( z6*tra(ibdy-1,jj,jk,jn)+z5*tra(ibdy+1,jj,jk,jn) & 
-                                                 + z7*tra(ibdy-2,jj,jk,jn) ) * tmask(ibdy,jj,jk)
-                           ENDIF
-                        ENDIF
-                     END DO
+         IF( l_vremap .OR. l_ini_child .OR. ln_zps ) THEN
+            ! Fill cell depths (i.e. gdept) to be interpolated
+            ! Warning: these are masked, hence extrapolated prior interpolation.
+            DO jj=j1,j2
+               DO ji=i1,i2
+                  ptab(ji,jj,k1,jptra+1) = 0.5_wp * tmask(ji,jj,k1) * e3w(ji,jj,k1,Kmm_a)
+                  DO jk=k1+1,k2-1
+                     ptab(ji,jj,jk,jptra+1) = tmask(ji,jj,jk) * &
+                        & ( ptab(ji,jj,jk-1,jptra+1) + e3w(ji,jj,jk,Kmm_a) )
                   END DO
-                  ! Restore ghost points:
-                  tra(ibdy+1,jmin:jmax,1:jpkm1,jn) = ptab_child(ibdy+1,jmin:jmax,1:jpkm1,jn) * tmask(ibdy+1,jmin:jmax,1:jpkm1)
                END DO
+            END DO
+
+            ! Save ssh at last level:
+            IF (.NOT.ln_linssh) THEN
+               ptab(i1:i2,j1:j2,k2,jptra+1) = ssh(i1:i2,j1:j2,Kmm_a)*tmask(i1:i2,j1:j2,1) 
+            END IF      
+         ENDIF
+         Kmm_a = item
+
+      ELSE 
+         item = Krhs_a
+         IF( l_ini_child )   Krhs_a = Kbb_a  
+
+         IF( l_vremap .OR. l_ini_child ) THEN
+            IF (ln_linssh) THEN
+               ptab(i1:i2,j1:j2,k2,n2) = 0._wp 
+
+            ELSE ! Assuming parent volume follows child:
+               ptab(i1:i2,j1:j2,k2,n2) = ssh(i1:i2,j1:j2,Krhs_a)          
             ENDIF
-            ! 
-            IF( northern_side ) THEN
-               zrho = Agrif_Rhoy()
-               z1 = ( zrho - 1._wp ) * 0.5_wp                    
-               z3 = ( zrho - 1._wp ) / ( zrho + 1._wp )         
-               z6 = 2._wp * ( zrho - 1._wp ) / ( zrho + 1._wp )
-               z7 =       - ( zrho - 1._wp ) / ( zrho + 3._wp )
-               z2 = 1._wp - z1 ; z4 = 1._wp - z3 ; z5 = 1._wp - z6 - z7
-               !
-               jbdy = nlcj-nbghostcells         
-               DO jn = 1, jptra
-                  tra(imin:imax,jbdy+1,1:jpkm1,jn) = z1 * ptab_child(imin:imax,jbdy+1,1:jpkm1,jn) + z2 * ptab_child(imin:imax,jbdy,1:jpkm1,jn)
-                  DO jk = 1, jpkm1
-                     DO ji = imin,imax
-                        IF( vmask(ji,jbdy-1,jk) == 0._wp ) THEN
-                           tra(ji,jbdy,jk,jn) = tra(ji,jbdy+1,jk,jn) * tmask(ji,jbdy,jk)
-                        ELSE
-                           tra(ji,jbdy,jk,jn)=(z4*tra(ji,jbdy+1,jk,jn)+z3*tra(ji,jbdy-1,jk,jn))*tmask(ji,jbdy,jk)        
-                           IF (vn(ji,jbdy-1,jk) > 0._wp ) THEN
-                              tra(ji,jbdy,jk,jn)=( z6*tra(ji,jbdy-1,jk,jn)+z5*tra(ji,jbdy+1,jk,jn)  &
-                                                 + z7*tra(ji,jbdy-2,jk,jn) ) * tmask(ji,jbdy,jk)
-                           ENDIF
-                        ENDIF
-                     END DO
+               
+            DO jj=j1,j2
+               DO ji=i1,i2
+                  tr(ji,jj,:,:,Krhs_a) = 0.  
+                  !
+                  ! Build vertical grids:
+                  ! N_in = mbkt_parent(ji,jj)
+                  ! Input grid (account for partial cells if any):
+                  N_in = k2-1
+                  z_in(1) = ptab(ji,jj,1,n2) - ptab(ji,jj,k2,n2)
+                  DO jk=2,k2
+                     z_in(jk) = ptab(ji,jj,jk,n2) - ptab(ji,jj,k2,n2)
+                     IF (( z_in(jk) <= z_in(jk-1) ).OR.(z_in(jk)>ht_0(ji,jj))) EXIT
                   END DO
-                  ! Restore ghost points:
-                  tra(imin:imax,jbdy+1,1:jpkm1,jn) = ptab_child(imin:imax,jbdy+1,1:jpkm1,jn) * tmask(imin:imax,jbdy+1,1:jpkm1)
-               END DO
-            ENDIF
-            !
-            IF( western_side ) THEN
-               zrho = Agrif_Rhox()
-               z1 = ( zrho - 1._wp ) * 0.5_wp                    
-               z3 = ( zrho - 1._wp ) / ( zrho + 1._wp )         
-               z6 = 2._wp * ( zrho - 1._wp ) / ( zrho + 1._wp )
-               z7 =       - ( zrho - 1._wp ) / ( zrho + 3._wp )
-               z2 = 1._wp - z1 ; z4 = 1._wp - z3 ; z5 = 1._wp - z6 - z7
-               !    
-               ibdy = 1+nbghostcells       
-               DO jn = 1, jptra
-                  tra(ibdy-1,jmin:jmax,1:jpkm1,jn) = z1 * ptab_child(ibdy-1,jmin:jmax,1:jpkm1,jn) + z2 * ptab_child(ibdy,jmin:jmax,1:jpkm1,jn)
-                  DO jk = 1, jpkm1
-                     DO jj = jmin,jmax
-                        IF( umask(ibdy,jj,jk) == 0._wp ) THEN
-                           tra(ibdy,jj,jk,jn) = tra(ibdy-1,jj,jk,jn) * tmask(ibdy,jj,jk)
-                        ELSE
-                           tra(ibdy,jj,jk,jn)=(z4*tra(ibdy-1,jj,jk,jn)+z3*tra(ibdy+1,jj,jk,jn))*tmask(ibdy,jj,jk)        
-                           IF( un(ibdy,jj,jk) < 0._wp ) THEN
-                              tra(ibdy,jj,jk,jn)=( z6*tra(ibdy+1,jj,jk,jn)+z5*tra(ibdy-1,jj,jk,jn) &
-                                                 + z7*tra(ibdy+2,jj,jk,jn) ) * tmask(ibdy,jj,jk)
-                           ENDIF
-                        ENDIF
-                     END DO
+                  N_in = jk-1
+                  DO jk=1, N_in
+                     tabin(jk,1:jptra) = ptab(ji,jj,jk,1:jptra)
                   END DO
-                  ! Restore ghost points:
-                  tra(ibdy-1,jmin:jmax,1:jpkm1,jn) = ptab_child(ibdy-1,jmin:jmax,1:jpkm1,jn) * tmask(ibdy-1,jmin:jmax,1:jpkm1)
-               END DO
-            ENDIF
-            !
-            IF( southern_side ) THEN
-               zrho = Agrif_Rhoy()
-               z1 = ( zrho - 1._wp ) * 0.5_wp                    
-               z3 = ( zrho - 1._wp ) / ( zrho + 1._wp )         
-               z6 = 2._wp * ( zrho - 1._wp ) / ( zrho + 1._wp )
-               z7 =       - ( zrho - 1._wp ) / ( zrho + 3._wp )
-               z2 = 1._wp - z1 ; z4 = 1._wp - z3 ; z5 = 1._wp - z6 - z7
-               !  
-               jbdy=1+nbghostcells        
-               DO jn = 1, jptra
-                  tra(imin:imax,jbdy-1,1:jpkm1,jn) = z1 * ptab_child(imin:imax,jbdy-1,1:jpkm1,jn) + z2 * ptab_child(imin:imax,jbdy,1:jpkm1,jn)
-                  DO jk = 1, jpkm1      
-                     DO ji = imin,imax
-                        IF( vmask(ji,jbdy,jk) == 0._wp ) THEN
-                           tra(ji,jbdy,jk,jn)=tra(ji,jbdy-1,jk,jn) * tmask(ji,jbdy,jk)
-                        ELSE
-                           tra(ji,jbdy,jk,jn)=(z4*tra(ji,jbdy-1,jk,jn)+z3*tra(ji,jbdy+1,jk,jn))*tmask(ji,jbdy,jk)
-                           IF( vn(ji,jbdy,jk) < 0._wp ) THEN
-                              tra(ji,jbdy,jk,jn)=( z6*tra(ji,jbdy+1,jk,jn)+z5*tra(ji,jbdy-1,jk,jn) & 
-                                                 + z7*tra(ji,jbdy+2,jk,jn) ) * tmask(ji,jbdy,jk)
-                           ENDIF
-                        ENDIF
+
+                  IF (ssmask(ji,jj)==1._wp) THEN
+                     N_out = mbkt(ji,jj)
+                  ELSE
+                     N_out = 0
+                  ENDIF
+
+                  IF (N_in*N_out > 0) THEN
+                     IF ( l_vremap ) THEN
+                        DO jk = 1, N_in
+                           h_in(jk) = e3t0_parent(ji,jj,jk) * & 
+                             &       (1._wp + ptab(ji,jj,k2,n2)/(ht0_parent(ji,jj)*ssmask(ji,jj) + 1._wp - ssmask(ji,jj)))
+                        END DO
+                        z_in(1) = 0.5_wp * h_in(1)
+                        DO jk=2,N_in
+                           z_in(jk) = z_in(jk-1) + 0.5_wp * ( h_in(jk) + h_in(jk-1) )
+                        END DO
+                        z_in(1:N_in) = z_in(1:N_in)  - ptab(ji,jj,k2,n2)
+                     ENDIF                              
+
+                     ! Output (Child) grid:
+                     DO jk=1,N_out
+                        h_out(jk) = e3t(ji,jj,jk,Krhs_a)
                      END DO
-                  END DO
-                  ! Restore ghost points:
-                  tra(imin:imax,jbdy-1,1:jpkm1,jn) = ptab_child(imin:imax,jbdy-1,1:jpkm1,jn) * tmask(imin:imax,jbdy-1,1:jpkm1)
+                     z_out(1) = 0.5_wp * e3w(ji,jj,1,Krhs_a) 
+                     DO jk=2,N_out
+                        z_out(jk) = z_out(jk-1) + e3w(ji,jj,jk,Krhs_a) 
+                     END DO
+                     IF (.NOT.ln_linssh) z_out(1:N_out) = z_out(1:N_out)  - ssh(ji,jj,Krhs_a)            
+
+                     IF( l_ini_child ) THEN
+                        CALL remap_linear(tabin(1:N_in,1:jptra),z_in(1:N_in),tr(ji,jj,1:N_out,1:jptra,Krhs_a),        &
+                                      &   z_out(1:N_out),N_in,N_out,jptra)  
+                     ELSE     
+                        CALL reconstructandremap(tabin(1:N_in,1:jptra),h_in(1:N_in),tr(ji,jj,1:N_out,1:jptra,Krhs_a), &
+                                      &   h_out(1:N_out),N_in,N_out,jptra)   
+                     ENDIF
+                  ENDIF
                END DO
+            END DO
+            Krhs_a = item
+ 
+         ELSE
+
+            IF ( Agrif_Parent(ln_zps) ) THEN ! Account for partial cells 
+                                             ! linear vertical interpolation
+               DO jj=j1,j2
+                  DO ji=i1,i2
+                     !
+                     N_in  = mbkt(ji,jj)
+                     N_out = mbkt(ji,jj)
+                     z_in(1) = ptab(ji,jj,1,n2)
+                     tabin(1,1:jptra) = ptab(ji,jj,1,1:jptra)
+                     DO jk=2, N_in
+                        z_in(jk) = ptab(ji,jj,jk,n2)
+                        tabin(jk,1:jptra) = ptab(ji,jj,jk,1:jptra)
+                     END DO
+                     IF (.NOT.ln_linssh) z_in(1:N_in) = z_in(1:N_in) - ptab(ji,jj,k2,n2)
+                     z_out(1) = 0.5_wp * e3w(ji,jj,1,Krhs_a)
+                     DO jk=2, N_out
+                        z_out(jk) = z_out(jk-1) + e3w(ji,jj,jk,Krhs_a)
+                     END DO
+                     IF (.NOT.ln_linssh) z_out(1:N_out) = z_out(1:N_out) - ssh(ji,jj,Krhs_a)
+                     CALL remap_linear(tabin(1:N_in,1:jptra),z_in(1:N_in),ptab(ji,jj,1:N_out,1:jptra), &
+                                   &   z_out(1:N_out),N_in,N_out,jptra)  
+                  END DO
+               END DO
+
             ENDIF
-            !
+
+            DO jn=1, jptra
+                tr(i1:i2,j1:j2,1:jpkm1,jn,Krhs_a)=ptab(i1:i2,j1:j2,1:jpkm1,jn)*tmask(i1:i2,j1:j2,1:jpkm1) 
+            END DO
          ENDIF
 
       ENDIF

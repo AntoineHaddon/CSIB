@@ -16,7 +16,7 @@ MODULE icetab
    !!----------------------------------------------------------------------
    USE par_oce
    USE ice, ONLY : jpl
-   
+
    IMPLICIT NONE
    PRIVATE
 
@@ -27,7 +27,7 @@ MODULE icetab
 
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icetab.F90 10069 2018-08-28 14:12:24Z nicolasmartin $
+   !! $Id: icetab.F90 14072 2020-12-04 07:48:38Z laurent $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -39,7 +39,7 @@ CONTAINS
       INTEGER                         , INTENT(in   ) ::   ndim1d   ! 1d size
       INTEGER , DIMENSION(ndim1d)     , INTENT(in   ) ::   tab_ind  ! input index
       REAL(wp), DIMENSION(jpi,jpj,jpl), INTENT(in   ) ::   tab2d    ! input 2D field
-      REAL(wp), DIMENSION(ndim1d,jpl) , INTENT(  out) ::   tab1d    ! output 1D field
+      REAL(wp), DIMENSION(ndim1d,jpl) , INTENT(inout) ::   tab1d    ! output 1D field
       !
       INTEGER ::   jl, jn, jid, jjd
       !!----------------------------------------------------------------------
@@ -60,7 +60,7 @@ CONTAINS
       INTEGER                     , INTENT(in   ) ::   ndim1d   ! 1d size
       INTEGER , DIMENSION(ndim1d) , INTENT(in   ) ::   tab_ind  ! input index
       REAL(wp), DIMENSION(jpi,jpj), INTENT(in   ) ::   tab2d    ! input 2D field
-      REAL(wp), DIMENSION(ndim1d) , INTENT(  out) ::   tab1d    ! output 1D field
+      REAL(wp), DIMENSION(ndim1d) , INTENT(inout) ::   tab1d    ! output 1D field
       !
       INTEGER ::   jn , jid, jjd
       !!----------------------------------------------------------------------
@@ -79,7 +79,7 @@ CONTAINS
       INTEGER                         , INTENT(in   ) ::   ndim1d    ! 1D size
       INTEGER , DIMENSION(ndim1d)     , INTENT(in   ) ::   tab_ind   ! input index
       REAL(wp), DIMENSION(ndim1d,jpl) , INTENT(in   ) ::   tab1d     ! input 1D field
-      REAL(wp), DIMENSION(jpi,jpj,jpl), INTENT(  out) ::   tab2d     ! output 2D field
+      REAL(wp), DIMENSION(jpi,jpj,jpl), INTENT(inout) ::   tab2d     ! output 2D field
       !
       INTEGER ::   jl, jn, jid, jjd
       !!----------------------------------------------------------------------
@@ -100,7 +100,7 @@ CONTAINS
       INTEGER                     , INTENT(in   ) ::   ndim1d    ! 1D size
       INTEGER , DIMENSION(ndim1d) , INTENT(in   ) ::   tab_ind   ! input index
       REAL(wp), DIMENSION(ndim1d) , INTENT(in   ) ::   tab1d     ! input 1D field
-      REAL(wp), DIMENSION(jpi,jpj), INTENT(  out) ::   tab2d     ! output 2D field
+      REAL(wp), DIMENSION(jpi,jpj), INTENT(inout) ::   tab2d     ! output 2D field
       !
       INTEGER ::   jn , jid, jjd
       !!----------------------------------------------------------------------

@@ -29,7 +29,7 @@ MODULE crsdom
    !!  History: 
    !!       Original.   May 2012.  (J. Simeon, C. Calone, G. Madec, C. Ethe)
    !!===================================================================
-   USE dom_oce        ! ocean space and time domain and to get jperio
+   USE dom_oce        ! ocean space and time domain
    USE crs            ! domain for coarse grid
    !
    USE in_out_manager 
@@ -53,7 +53,7 @@ MODULE crsdom
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: crsdom.F90 11536 2019-09-11 13:54:18Z smasson $
+   !! $Id: crsdom.F90 14433 2021-02-11 08:06:49Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -72,7 +72,7 @@ CONTAINS
       fmask_crs(:,:,:) = 0.0
   
             
-      IF( nldj_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
+      IF( Njs0_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
          IF( mje_crs(2) - mjs_crs(2) == 1 ) THEN
             je_2 = mje_crs(2)   ;  ij = je_2
          ENDIF
@@ -80,42 +80,42 @@ CONTAINS
          je_2 = mje_crs(2)      ;  ij = mjs_crs(2) 
       ENDIF
       DO jk = 1, jpkm1
-         DO ji = 2, nlei_crs  
+         DO ji = 2, Nie0_crs  
             ijis = mis_crs(ji)  ;  ijie = mie_crs(ji)    
             !          
             zmask = 0.0
             zmask = SUM( tmask(ijis:ijie,ij:je_2,jk) ) 
-            IF ( zmask > 0.0 ) tmask_crs(ji,2,jk) = 1.0
+            IF ( zmask > 0.0 ) tmask_crs(ji,2,jk) = 1.0_wp
                
             zmask = 0.0
             zmask = SUM( vmask(ijis:ijie,je_2     ,jk) )  
-            IF ( zmask > 0.0 ) vmask_crs(ji,2,jk) = 1.0
+            IF ( zmask > 0.0 ) vmask_crs(ji,2,jk) = 1.0_wp
                
             zmask = 0.0
             zmask = SUM(umask(ijie,ij:je_2,jk))   
-            IF ( zmask > 0.0 ) umask_crs(ji,2,jk) = 1.0
+            IF ( zmask > 0.0 ) umask_crs(ji,2,jk) = 1.0_wp
                
             fmask_crs(ji,je_2,jk) = fmask(ijie,2,jk)
          ENDDO
       ENDDO
       !
       DO jk = 1, jpkm1
-         DO ji = 2, nlei_crs  
+         DO ji = 2, Nie0_crs  
             ijis = mis_crs(ji)     ;   ijie = mie_crs(ji)       
-            DO jj = 3, nlej_crs
+            DO jj = 3, Nje0_crs
                ijjs = mjs_crs(jj)  ;   ijje = mje_crs(jj)
                           
                zmask = 0.0
                zmask = SUM( tmask(ijis:ijie,ijjs:ijje,jk) ) 
-               IF ( zmask > 0.0 ) tmask_crs(ji,jj,jk) = 1.0
+               IF ( zmask > 0.0 ) tmask_crs(ji,jj,jk) = 1.0_wp
                
                zmask = 0.0
                zmask = SUM( vmask(ijis:ijie,ijje     ,jk) )  
-               IF ( zmask > 0.0 ) vmask_crs(ji,jj,jk) = 1.0
+               IF ( zmask > 0.0 ) vmask_crs(ji,jj,jk) = 1.0_wp
                
                zmask = 0.0
                zmask = SUM( umask(ijie     ,ijjs:ijje,jk) )  
-               IF ( zmask > 0.0 ) umask_crs(ji,jj,jk) = 1.0
+               IF ( zmask > 0.0 ) umask_crs(ji,jj,jk) = 1.0_wp
                
                fmask_crs(ji,jj,jk) = fmask(ijie,ijje,jk)  
             ENDDO
@@ -123,10 +123,10 @@ CONTAINS
       ENDDO
 
       !
-      CALL crs_lbc_lnk( tmask_crs, 'T', 1.0 )
-      CALL crs_lbc_lnk( vmask_crs, 'V', 1.0 )
-      CALL crs_lbc_lnk( umask_crs, 'U', 1.0 )
-      CALL crs_lbc_lnk( fmask_crs, 'F', 1.0 )
+      CALL crs_lbc_lnk( tmask_crs, 'T', 1.0_wp )
+      CALL crs_lbc_lnk( vmask_crs, 'V', 1.0_wp )
+      CALL crs_lbc_lnk( umask_crs, 'U', 1.0_wp )
+      CALL crs_lbc_lnk( fmask_crs, 'F', 1.0_wp )
       !
    END SUBROUTINE crs_dom_msk
 
@@ -167,36 +167,36 @@ CONTAINS
   
       SELECT CASE ( cd_type )
          CASE ( 'T' )
-            DO jj =  nldj_crs, nlej_crs
+            DO jj =  Njs0_crs, Nje0_crs
                ijjs = mjs_crs(jj) + mybinctr
-               DO ji = 2, nlei_crs
+               DO ji = 2, Nie0_crs
                   ijis = mis_crs(ji) + mxbinctr 
                   p_gphi_crs(ji,jj) = p_gphi(ijis,ijjs)
                   p_glam_crs(ji,jj) = p_glam(ijis,ijjs)
                ENDDO
             ENDDO
          CASE ( 'U' )
-            DO jj =  nldj_crs, nlej_crs
+            DO jj =  Njs0_crs, Nje0_crs
                ijjs = mjs_crs(jj) + mybinctr                  
-               DO ji = 2, nlei_crs
+               DO ji = 2, Nie0_crs
                   ijis = mis_crs(ji)
                   p_gphi_crs(ji,jj) = p_gphi(ijis,ijjs)
                   p_glam_crs(ji,jj) = p_glam(ijis,ijjs)
                ENDDO
             ENDDO
          CASE ( 'V' )
-            DO jj =  nldj_crs, nlej_crs
+            DO jj =  Njs0_crs, Nje0_crs
                ijjs = mjs_crs(jj)
-               DO ji = 2, nlei_crs
+               DO ji = 2, Nie0_crs
                   ijis = mis_crs(ji) + mxbinctr 
                   p_gphi_crs(ji,jj) = p_gphi(ijis,ijjs)
                   p_glam_crs(ji,jj) = p_glam(ijis,ijjs)
                ENDDO
             ENDDO
          CASE ( 'F' )
-            DO jj =  nldj_crs, nlej_crs
+            DO jj =  Njs0_crs, Nje0_crs
                ijjs = mjs_crs(jj)
-               DO ji = 2, nlei_crs
+               DO ji = 2, Nie0_crs
                   ijis = mis_crs(ji)
                   p_gphi_crs(ji,jj) = p_gphi(ijis,ijjs)
                   p_glam_crs(ji,jj) = p_glam(ijis,ijjs)
@@ -205,19 +205,19 @@ CONTAINS
       END SELECT
 
       ! Retroactively add back the boundary halo cells.
-      CALL crs_lbc_lnk( p_gphi_crs, cd_type, 1.0 )
-      CALL crs_lbc_lnk( p_glam_crs, cd_type, 1.0 )
+      CALL crs_lbc_lnk( p_gphi_crs, cd_type, 1.0_wp )
+      CALL crs_lbc_lnk( p_glam_crs, cd_type, 1.0_wp )
          
       ! Fill up jrow=1 which is zeroed out or not handled by lbc_lnk and lbc_nfd
       SELECT CASE ( cd_type )
          CASE ( 'T', 'V' )
-            DO ji = 2, nlei_crs
+            DO ji = 2, Nie0_crs
                ijis = mis_crs(ji) + mxbinctr 
                p_gphi_crs(ji,1) = p_gphi(ijis,1)
                p_glam_crs(ji,1) = p_glam(ijis,1)
             ENDDO
          CASE ( 'U', 'F' )
-            DO ji = 2, nlei_crs
+            DO ji = 2, Nie0_crs
                ijis = mis_crs(ji) 
                p_gphi_crs(ji,1) = p_gphi(ijis,1)
                p_glam_crs(ji,1) = p_glam(ijis,1)
@@ -245,8 +245,8 @@ CONTAINS
       !!----------------------------------------------------------------
       !! 
       !!  Arguments
-      REAL(wp), DIMENSION(jpi,jpj)        , INTENT(in)  :: p_e1     ! Parent grid U,V scale factors (e1)
-      REAL(wp), DIMENSION(jpi,jpj)        , INTENT(in)  :: p_e2     ! Parent grid U,V scale factors (e2)
+      REAL(dp), DIMENSION(jpi,jpj)        , INTENT(in)  :: p_e1     ! Parent grid U,V scale factors (e1)
+      REAL(dp), DIMENSION(jpi,jpj)        , INTENT(in)  :: p_e2     ! Parent grid U,V scale factors (e2)
       CHARACTER(len=1)                    , INTENT(in)  :: cd_type  ! grid type U,V 
 
       REAL(wp), DIMENSION(jpi_crs,jpj_crs), INTENT(out) :: p_e1_crs ! Coarse grid box 2D quantity
@@ -260,9 +260,9 @@ CONTAINS
       ! Initialize      
 
       DO jk = 1, jpk    
-         DO ji = 2, nlei_crs
+         DO ji = 2, Nie0_crs
             ijie = mie_crs(ji)
-            DO jj = nldj_crs, nlej_crs
+            DO jj = Njs0_crs, Nje0_crs
                ijje = mje_crs(jj)   ;   ijrs =  mje_crs(jj) - mjs_crs(jj)
                ! Only for a factro 3 coarsening
                SELECT CASE ( cd_type )
@@ -295,8 +295,8 @@ CONTAINS
          ENDDO
       ENDDO
 
-      CALL crs_lbc_lnk( p_e1_crs, cd_type, 1.0, pfillval=1.0 )
-      CALL crs_lbc_lnk( p_e2_crs, cd_type, 1.0, pfillval=1.0 )
+      CALL crs_lbc_lnk( p_e1_crs, cd_type, 1.0_wp, pfillval=1.0_wp )
+      CALL crs_lbc_lnk( p_e2_crs, cd_type, 1.0_wp, pfillval=1.0_wp )
 
    END SUBROUTINE crs_dom_hgr
 
@@ -342,8 +342,8 @@ CONTAINS
       !!----------------------------------------------------------------
       CHARACTER(len=1),                         INTENT(in   ) ::   cd_type    ! grid type U,V 
       REAL(wp), DIMENSION(jpi,jpj,jpk)        , INTENT(in   ) ::   p_mask     ! Parent grid U,V mask
-      REAL(wp), DIMENSION(jpi,jpj)            , INTENT(in   ) ::   p_e1       ! Parent grid U,V scale factors (e1)
-      REAL(wp), DIMENSION(jpi,jpj)            , INTENT(in   ) ::   p_e2       ! Parent grid U,V scale factors (e2)
+      REAL(dp), DIMENSION(jpi,jpj)            , INTENT(in   ) ::   p_e1       ! Parent grid U,V scale factors (e1)
+      REAL(dp), DIMENSION(jpi,jpj)            , INTENT(in   ) ::   p_e2       ! Parent grid U,V scale factors (e2)
       REAL(wp), DIMENSION(jpi,jpj,jpk)        , INTENT(in   ) ::   p_e3       ! Parent grid vertical level thickness (e3u, e3v)
       REAL(wp), DIMENSION(jpi_crs,jpj_crs,jpk), INTENT(  out) ::   p_fld1_crs ! Coarse grid box 3D quantity 
       REAL(wp), DIMENSION(jpi_crs,jpj_crs,jpk), INTENT(  out) ::   p_fld2_crs ! Coarse grid box 3D quantity 
@@ -373,7 +373,7 @@ CONTAINS
          ENDDO
       ENDIF
 
-      IF( nldj_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
+      IF( Njs0_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
          IF( mje_crs(2) - mjs_crs(2) == 1 ) THEN
             je_2 = mje_crs(2)
             DO jk = 1, jpk           
@@ -439,8 +439,8 @@ CONTAINS
          ENDDO
       ENDDO
       !                                             !  Retroactively add back the boundary halo cells.
-      CALL crs_lbc_lnk( p_fld1_crs, cd_type, 1.0 ) 
-      CALL crs_lbc_lnk( p_fld2_crs, cd_type, 1.0 ) 
+      CALL crs_lbc_lnk( p_fld1_crs, cd_type, 1.0_wp ) 
+      CALL crs_lbc_lnk( p_fld2_crs, cd_type, 1.0_wp ) 
       !
       !
    END SUBROUTINE crs_dom_facvol
@@ -473,7 +473,7 @@ CONTAINS
       CHARACTER(len=3),                         INTENT(in)           :: cd_op      ! Operation SUM, MAX or MIN
       CHARACTER(len=1),                         INTENT(in)           :: cd_type    ! grid type U,V 
       REAL(wp), DIMENSION(jpi,jpj,jpk),         INTENT(in)           :: p_mask     ! Parent grid T,U,V mask
-      REAL(wp), DIMENSION(jpi,jpj),             INTENT(in), OPTIONAL :: p_e12      ! Parent grid T,U,V scale factors (e1 or e2)
+      REAL(dp), DIMENSION(jpi,jpj),             INTENT(in), OPTIONAL :: p_e12      ! Parent grid T,U,V scale factors (e1 or e2)
       REAL(wp), DIMENSION(jpi,jpj,jpk),         INTENT(in), OPTIONAL :: p_e3       ! Parent grid vertical level thickness (e3u, e3v)
       REAL(wp), DIMENSION(jpi_crs,jpj_crs,jpk), INTENT(in), OPTIONAL :: p_surf_crs ! Coarse grid area-weighting denominator    
       REAL(wp), DIMENSION(jpi_crs,jpj_crs,jpk), INTENT(in), OPTIONAL :: p_mask_crs ! Coarse grid T,U,V maska
@@ -511,7 +511,7 @@ CONTAINS
                      ENDDO
                   ENDIF
          
-                  IF( nldj_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
+                  IF( Njs0_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
                      IF( mje_crs(2) - mjs_crs(2) == 1 ) THEN
                         je_2 = mje_crs(2)
                         DO jk = 1, jpk           
@@ -616,7 +616,7 @@ CONTAINS
             
                CASE( 'T', 'W' )
          
-                  IF( nldj_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
+                  IF( Njs0_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
                      IF( mje_crs(2) - mjs_crs(2) == 1 ) THEN
                         je_2 = mje_crs(2)
                         DO jk = 1, jpk           
@@ -673,7 +673,7 @@ CONTAINS
             
                CASE( 'V' )
 
-                  IF( nldj_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
+                  IF( Njs0_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
                      IF( mje_crs(2) - mjs_crs(2) == 1 ) THEN
                         ijje = mje_crs(2)
                      ENDIF
@@ -710,7 +710,7 @@ CONTAINS
             
                CASE( 'U' )
 
-                  IF( nldj_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
+                  IF( Njs0_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
                      IF( mje_crs(2) - mjs_crs(2) == 1 ) THEN
                         je_2 = mje_crs(2)
                         DO jk = 1, jpk           
@@ -781,7 +781,7 @@ CONTAINS
             
                CASE( 'T', 'W' )
          
-                  IF( nldj_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
+                  IF( Njs0_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
                      IF( mje_crs(2) - mjs_crs(2) == 1 ) THEN
                         je_2 = mje_crs(2)
                         DO jk = 1, jpk           
@@ -841,7 +841,7 @@ CONTAINS
             
                CASE( 'V' )
 
-                 IF( nldj_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
+                 IF( Njs0_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
                      IF( mje_crs(2) - mjs_crs(2) == 1 ) THEN
                         ijje = mje_crs(2)
                       ENDIF
@@ -882,7 +882,7 @@ CONTAINS
             
                CASE( 'U' )
 
-                 IF( nldj_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
+                 IF( Njs0_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
                      IF( mje_crs(2) - mjs_crs(2) == 1 ) THEN
                         je_2 = mje_crs(2)
                         DO jk = 1, jpk           
@@ -952,7 +952,7 @@ CONTAINS
 
                CASE( 'T', 'W' )
          
-                  IF( nldj_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
+                  IF( Njs0_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
                      IF( mje_crs(2) - mjs_crs(2) == 1 ) THEN
                         je_2 = mje_crs(2)
                         DO jk = 1, jpk           
@@ -1012,7 +1012,7 @@ CONTAINS
             
                CASE( 'V' )
 
-                  IF( nldj_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
+                  IF( Njs0_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
                      IF( mje_crs(2) - mjs_crs(2) == 1 ) THEN
                         ijje = mje_crs(2)
                       ENDIF
@@ -1052,7 +1052,7 @@ CONTAINS
             
                CASE( 'U' )
 
-                 IF( nldj_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
+                 IF( Njs0_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
                      IF( mje_crs(2) - mjs_crs(2) == 1 ) THEN
                         je_2 = mje_crs(2)
                         DO jk = 1, jpk           
@@ -1135,7 +1135,7 @@ CONTAINS
       CHARACTER(len=3),                         INTENT(in)           :: cd_op    ! Operation SUM, MAX or MIN
       CHARACTER(len=1),                         INTENT(in)           :: cd_type    ! grid type U,V 
       REAL(wp), DIMENSION(jpi,jpj,jpk),         INTENT(in)           :: p_mask    ! Parent grid T,U,V mask
-      REAL(wp), DIMENSION(jpi,jpj),             INTENT(in), OPTIONAL :: p_e12    ! Parent grid T,U,V scale factors (e1 or e2)
+      REAL(dp), DIMENSION(jpi,jpj),             INTENT(in), OPTIONAL :: p_e12    ! Parent grid T,U,V scale factors (e1 or e2)
       REAL(wp), DIMENSION(jpi,jpj,jpk),         INTENT(in), OPTIONAL :: p_e3     ! Parent grid vertical level thickness (e3u, e3v)
       REAL(wp), DIMENSION(jpi_crs,jpj_crs)    , INTENT(in), OPTIONAL :: p_surf_crs ! Coarse grid area-weighting denominator    
       REAL(wp), DIMENSION(jpi_crs,jpj_crs,jpk), INTENT(in), OPTIONAL :: p_mask_crs    ! Coarse grid T,U,V mask
@@ -1157,7 +1157,7 @@ CONTAINS
             ALLOCATE( zsurfmsk(jpi,jpj) )
             zsurfmsk(:,:) =  p_e12(:,:) * p_e3(:,:,1) * p_mask(:,:,1)
 
-            IF( nldj_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
+            IF( Njs0_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
                IF( mje_crs(2) - mjs_crs(2) == 1 ) THEN
                   je_2 = mje_crs(2)
                   DO ji = nistr, niend, nn_factx
@@ -1233,7 +1233,7 @@ CONTAINS
 
                CASE( 'T', 'W' )
 
-                   IF( nldj_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
+                   IF( Njs0_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
                       IF( mje_crs(2) - mjs_crs(2) == 1 ) THEN
                          je_2 = mje_crs(2)
                          DO ji = nistr, niend, nn_factx
@@ -1284,7 +1284,7 @@ CONTAINS
             
                CASE( 'V' )
 
-                  IF( nldj_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
+                  IF( Njs0_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
                      IF( mje_crs(2) - mjs_crs(2) == 1 ) THEN
                         ijje = mje_crs(2)
                       ENDIF
@@ -1317,7 +1317,7 @@ CONTAINS
             
                CASE( 'U' )
 
-                  IF( nldj_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
+                  IF( Njs0_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
                      IF( mje_crs(2) - mjs_crs(2) == 1 ) THEN
                         je_2 = mje_crs(2)
                         DO ji = nistr, niend, nn_factx
@@ -1368,7 +1368,7 @@ CONTAINS
             
                CASE( 'T', 'W' )
   
-                   IF( nldj_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
+                   IF( Njs0_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
                       IF( mje_crs(2) - mjs_crs(2) == 1 ) THEN
                          je_2 = mje_crs(2)
                          DO ji = nistr, niend, nn_factx
@@ -1419,7 +1419,7 @@ CONTAINS
             
                CASE( 'V' )
 
-                  IF( nldj_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
+                  IF( Njs0_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
                      IF( mje_crs(2) - mjs_crs(2) == 1 ) THEN
                         ijje = mje_crs(2)
                       ENDIF
@@ -1452,7 +1452,7 @@ CONTAINS
             
                CASE( 'U' )
 
-                 IF( nldj_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
+                 IF( Njs0_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
                      IF( mje_crs(2) - mjs_crs(2) == 1 ) THEN
                         je_2 = mje_crs(2)
                         DO ji = nistr, niend, nn_factx
@@ -1496,7 +1496,7 @@ CONTAINS
 
               CASE( 'T', 'W' )
   
-                   IF( nldj_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
+                   IF( Njs0_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
                       IF( mje_crs(2) - mjs_crs(2) == 1 ) THEN
                          je_2 = mje_crs(2)
                          DO ji = nistr, niend, nn_factx
@@ -1547,7 +1547,7 @@ CONTAINS
             
                CASE( 'V' )
 
-                  IF( nldj_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
+                  IF( Njs0_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
                      IF( mje_crs(2) - mjs_crs(2) == 1 ) THEN
                         ijje = mje_crs(2)
                       ENDIF
@@ -1580,7 +1580,7 @@ CONTAINS
             
                CASE( 'U' )
 
-                 IF( nldj_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
+                 IF( Njs0_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
                      IF( mje_crs(2) - mjs_crs(2) == 1 ) THEN
                         je_2 = mje_crs(2)
                         DO ji = nistr, niend, nn_factx
@@ -1630,7 +1630,7 @@ CONTAINS
       !!  Arguments
       CHARACTER(len=1),                         INTENT(in) :: cd_type      ! grid type T, W ( U, V, F)
       REAL(wp), DIMENSION(jpi,jpj,jpk),         INTENT(in) :: p_mask       ! Parent grid T mask
-      REAL(wp), DIMENSION(jpi,jpj)    ,         INTENT(in) :: p_e1, p_e2   ! 2D tracer T or W on parent grid
+      REAL(dp), DIMENSION(jpi,jpj)    ,         INTENT(in) :: p_e1, p_e2   ! 2D tracer T or W on parent grid
       REAL(wp), DIMENSION(jpi,jpj,jpk),         INTENT(in) :: p_e3         ! 3D tracer T or W on parent grid
       REAL(wp), DIMENSION(jpi_crs,jpj_crs,jpk), INTENT(in) :: p_sfc_crs ! Coarse grid box east or north face quantity
       REAL(wp), DIMENSION(jpi_crs,jpj_crs,jpk), INTENT(inout) :: p_e3_crs ! Coarse grid box east or north face quantity 
@@ -1664,7 +1664,7 @@ CONTAINS
           zsurf(:,:,jk) = p_e1(:,:) * p_e2(:,:) * p_e3(:,:,jk) 
        ENDDO
 
-       IF( nldj_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
+       IF( Njs0_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
           IF( mje_crs(2) - mjs_crs(2) == 1 ) THEN
              je_2 = mje_crs(2)
              DO jk = 1 , jpk
@@ -1747,8 +1747,8 @@ CONTAINS
           ENDDO
        ENDDO
                   
-       CALL crs_lbc_lnk( p_e3_crs    , cd_type, 1.0, pfillval=1.0 )  
-       CALL crs_lbc_lnk( p_e3_max_crs, cd_type, 1.0, pfillval=1.0 )  
+       CALL crs_lbc_lnk( p_e3_crs    , cd_type, 1.0_wp, pfillval=1.0_wp )  
+       CALL crs_lbc_lnk( p_e3_max_crs, cd_type, 1.0_wp, pfillval=1.0_wp )  
        !              
        !
    END SUBROUTINE crs_dom_e3
@@ -1807,7 +1807,7 @@ CONTAINS
             ENDDO
       END SELECT
 
-      IF( nldj_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
+      IF( Njs0_crs == 1 .AND. ( ( mje_crs(2) - mjs_crs(2) ) < 2 ) ) THEN     !!cc bande du sud style ORCA2
          IF( mje_crs(2) - mjs_crs(2) == 1 ) THEN
             je_2 = mje_crs(2)
             DO jk = 1, jpk
@@ -1856,8 +1856,8 @@ CONTAINS
          ENDDO
       ENDDO   
 
-      CALL crs_lbc_lnk( p_surf_crs    , cd_type, 1.0, pfillval=1.0 )
-      CALL crs_lbc_lnk( p_surf_crs_msk, cd_type, 1.0, pfillval=1.0 )
+      CALL crs_lbc_lnk( p_surf_crs    , cd_type, 1.0_wp, pfillval=1.0_wp )
+      CALL crs_lbc_lnk( p_surf_crs_msk, cd_type, 1.0_wp, pfillval=1.0_wp )
 
    END SUBROUTINE crs_dom_sfc
    
@@ -1876,189 +1876,185 @@ CONTAINS
       INTEGER  :: ierr                                ! allocation error status
  
   
-     ! 1.a. Define global domain indices  : take into account the interior domain only ( removes i/j=1 , i/j=jpiglo/jpjglo ) then add 2/3 grid points 
-      jpiglo_crs   = INT( (jpiglo - 2) / nn_factx ) + 2
-  !    jpjglo_crs   = INT( (jpjglo - 2) / nn_facty ) + 2  ! the -2 removes j=1, j=jpj
-  !    jpjglo_crs   = INT( (jpjglo - 2) / nn_facty ) + 3
-      jpjglo_crs   = INT( (jpjglo - MOD(jpjglo, nn_facty)) / nn_facty ) + 3
-      jpiglo_crsm1 = jpiglo_crs - 1
-      jpjglo_crsm1 = jpjglo_crs - 1  
-
-      jpi_crs = ( jpiglo_crs   - 2 * nn_hls + (jpni-1) ) / jpni + 2 * nn_hls
-      jpj_crs = ( jpjglo_crsm1 - 2 * nn_hls + (jpnj-1) ) / jpnj + 2 * nn_hls   
-              
-      IF( noso < 0 ) jpj_crs = jpj_crs + 1    ! add a local band on southern processors  
-       
-      jpi_crsm1   = jpi_crs - 1
-      jpj_crsm1   = jpj_crs - 1
-      nperio_crs  = jperio
-      npolj_crs   = npolj
-      
-      ierr = crs_dom_alloc()          ! allocate most coarse grid arrays
-
-      ! 2.a Define processor domain
-      IF( .NOT. lk_mpp ) THEN
-         nimpp_crs  = 1
-         njmpp_crs  = 1
-         nlci_crs   = jpi_crs
-         nlcj_crs   = jpj_crs
-         nldi_crs   = 1
-         nldj_crs   = 1
-         nlei_crs   = jpi_crs
-         nlej_crs   = jpj_crs
-      ELSE
-         ! Initialisation of most local variables -
-         nimpp_crs  = 1
-         njmpp_crs  = 1
-         nlci_crs   = jpi_crs
-         nlcj_crs   = jpj_crs
-         nldi_crs   = 1
-         nldj_crs   = 1
-         nlei_crs   = jpi_crs
-         nlej_crs   = jpj_crs
-         
-        ! Calculs suivant une découpage en j
-        DO jn = 1, jpnij, jpni
-           IF( jn < ( jpnij - jpni + 1 ) ) THEN
-              nlejt_crs(jn) = AINT( REAL( ( jpjglo - (njmppt(jn     ) - 1) ) / nn_facty, wp ) ) &
-                       &    - AINT( REAL( ( jpjglo - (njmppt(jn+jpni) - 1) ) / nn_facty, wp ) )
-           ELSE                                             
-              nlejt_crs(jn) = AINT( REAL(  nlejt(jn) / nn_facty, wp ) ) + 1            
-           ENDIF
-           IF( noso < 0 ) nlejt_crs(jn) = nlejt_crs(jn) + 1             
-           SELECT CASE( ibonjt(jn) )
-              CASE ( -1 )
-                IF( MOD( jpjglo - njmppt(jn), nn_facty) > 0 )  nlejt_crs(jn) = nlejt_crs(jn) + 1
-                nlcjt_crs(jn) = nlejt_crs(jn) + nn_hls
-                nldjt_crs(jn) = nldjt(jn)
-              
-              CASE ( 0 )
-              
-                nldjt_crs(jn) = nldjt(jn)
-                IF( nldjt(jn) == 1 )  nlejt_crs(jn) = nlejt_crs(jn) + 1
-                nlejt_crs(jn) = nlejt_crs(jn) + nn_hls
-                nlcjt_crs(jn) = nlejt_crs(jn) + nn_hls
-                
-              CASE ( 1, 2 )
-              
-                nlejt_crs(jn) = nlejt_crs(jn) + nn_hls
-                nlcjt_crs(jn) = nlejt_crs(jn)
-                nldjt_crs(jn) = nldjt(jn)
-                
-              CASE DEFAULT
-                 CALL ctl_stop( 'STOP', 'error from crs_dom_def, you should not be there (1) ...' )
-           END SELECT
-           IF( nlcjt_crs(jn) > jpj_crs )     jpj_crs = jpj_crs + 1
-
-           IF(nldjt_crs(jn) == 1 ) THEN
-              njmppt_crs(jn) = 1
-           ELSE
-              njmppt_crs(jn) = 2 + ANINT(REAL((njmppt(jn) + 1 - MOD( jpjglo , nn_facty )) / nn_facty, wp ) )
-           ENDIF           
-           
-           DO jj = jn + 1, jn + jpni - 1
-              nlejt_crs(jj) = nlejt_crs(jn) 
-              nlcjt_crs(jj) = nlcjt_crs(jn)
-              nldjt_crs(jj) = nldjt_crs(jn)
-              njmppt_crs(jj)= njmppt_crs(jn)
-           ENDDO
-        ENDDO 
-        nlej_crs  = nlejt_crs(nproc + 1) 
-        nlcj_crs  = nlcjt_crs(nproc + 1)
-        nldj_crs  = nldjt_crs(nproc + 1)
-        njmpp_crs = njmppt_crs(nproc + 1)
-
-        ! Calcul suivant un decoupage en i
-        DO jn = 1, jpni
-           IF( jn == 1 ) THEN          
-              nleit_crs(jn) = AINT( REAL( ( nimppt(jn  ) - 1 + nlcit(jn  ) )  / nn_factx, wp) )
-           ELSE
-              nleit_crs(jn) = AINT( REAL( ( nimppt(jn  ) - 1 + nlcit(jn  ) )  / nn_factx, wp) ) &
-                 &          - AINT( REAL( ( nimppt(jn-1) - 1 + nlcit(jn-1) )  / nn_factx, wp) )
-           ENDIF
-
-           SELECT CASE( ibonit(jn) )
-              CASE ( -1 )
-                 nleit_crs(jn) = nleit_crs(jn) + nn_hls           
-                 nlcit_crs(jn) = nleit_crs(jn) + nn_hls
-                 nldit_crs(jn) = nldit(jn) 
-              
-              CASE ( 0 )
-                 nleit_crs(jn) = nleit_crs(jn) + nn_hls
-                 nlcit_crs(jn) = nleit_crs(jn) + nn_hls
-                 nldit_crs(jn) = nldit(jn) 
-                
-              CASE ( 1, 2 )
-                 IF( MOD( jpiglo - nimppt(jn), nn_factx) > 0 )  nleit_crs(jn) = nleit_crs(jn) + 1
-                 nleit_crs(jn) = nleit_crs(jn) + nn_hls
-                 nlcit_crs(jn) = nleit_crs(jn)
-                 nldit_crs(jn) = nldit(jn) 
-
-              CASE DEFAULT
-                 CALL ctl_stop( 'STOP', 'error from crs_dom_def, you should not be there (2) ...' )
-           END SELECT
-
-           nimppt_crs(jn) = ANINT( REAL( (nimppt(jn) + 1 ) / nn_factx, wp ) ) + 1
-           DO jj = jn + jpni , jpnij, jpni
-              nleit_crs(jj) = nleit_crs(jn) 
-              nlcit_crs(jj) = nlcit_crs(jn)
-              nldit_crs(jj) = nldit_crs(jn)
-              nimppt_crs(jj)= nimppt_crs(jn)
-           ENDDO
-         ENDDO 
-        
-         nlei_crs  = nleit_crs(nproc + 1) 
-         nlci_crs  = nlcit_crs(nproc + 1)
-         nldi_crs  = nldit_crs(nproc + 1)
-         nimpp_crs = nimppt_crs(nproc + 1)
-
-         DO ji = 1, jpi_crs
-            mig_crs(ji) = ji + nimpp_crs - 1
-         ENDDO
-         DO jj = 1, jpj_crs
-            mjg_crs(jj) = jj + njmpp_crs - 1!
-         ENDDO
-       
-         DO ji = 1, jpiglo_crs
-            mi0_crs(ji) = MAX( 1, MIN( ji - nimpp_crs + 1 , jpi_crs + 1 ) )
-            mi1_crs(ji) = MAX( 0, MIN( ji - nimpp_crs + 1 , jpi_crs     ) )
-         ENDDO
-         
-         DO jj = 1, jpjglo_crs
-            mj0_crs(jj) = MAX( 1, MIN( jj - njmpp_crs + 1 , jpj_crs + 1 ) )
-            mj1_crs(jj) = MAX( 0, MIN( jj - njmpp_crs + 1 , jpj_crs     ) )
-         ENDDO
-
-      ENDIF
-      
-      !                         Save the parent grid information
-      jpi_full    = jpi
-      jpj_full    = jpj
-      jpim1_full  = jpim1
-      jpjm1_full  = jpjm1
-      nperio_full = jperio
-
-      npolj_full  = npolj
-      jpiglo_full = jpiglo
-      jpjglo_full = jpjglo
-
-      nlcj_full   = nlcj
-      nlci_full   = nlci
-      nldi_full   = nldi
-      nldj_full   = nldj
-      nlei_full   = nlei
-      nlej_full   = nlej
-      nimpp_full  = nimpp     
-      njmpp_full  = njmpp
-      
-      nlcit_full(:)  = nlcit(:)
-      nldit_full(:)  = nldit(:)
-      nleit_full(:)  = nleit(:)
-      nimppt_full(:) = nimppt(:)
-      nlcjt_full(:)  = nlcjt(:)
-      nldjt_full(:)  = nldjt(:)
-      nlejt_full(:)  = nlejt(:)
-      njmppt_full(:) = njmppt(:)
+!!$     ! 1.a. Define global domain indices  : take into account the interior domain only ( removes i/j=1 , i/j=jpiglo/jpjglo ) then add 2/3 grid points 
+!!$      jpiglo_crs   = INT( (jpiglo - 2) / nn_factx ) + 2
+!!$  !    jpjglo_crs   = INT( (jpjglo - 2) / nn_facty ) + 2  ! the -2 removes j=1, j=jpj
+!!$  !    jpjglo_crs   = INT( (jpjglo - 2) / nn_facty ) + 3
+!!$      jpjglo_crs   = INT( (jpjglo - MOD(jpjglo, nn_facty)) / nn_facty ) + 3
+!!$      jpiglo_crsm1 = jpiglo_crs - 1
+!!$      jpjglo_crsm1 = jpjglo_crs - 1  
+!!$
+!!$      jpi_crs = ( jpiglo_crs   - 2 * nn_hls + (jpni-1) ) / jpni + 2 * nn_hls
+!!$      jpj_crs = ( jpjglo_crsm1 - 2 * nn_hls + (jpnj-1) ) / jpnj + 2 * nn_hls   
+!!$              
+!!$      IF( noso < 0 ) jpj_crs = jpj_crs + 1    ! add a local band on southern processors  
+!!$       
+!!$      jpi_crsm1   = jpi_crs - 1
+!!$      jpj_crsm1   = jpj_crs - 1
+!!$      nperio_crs  = jperio
+!!$      npolj_crs   = npolj
+!!$      
+!!$      ierr = crs_dom_alloc()          ! allocate most coarse grid arrays
+!!$
+!!$      ! 2.a Define processor domain
+!!$      IF( .NOT. lk_mpp ) THEN
+!!$         nimpp_crs = 1
+!!$         njmpp_crs = 1
+!!$         Nis0_crs  = 1
+!!$         Njs0_crs  = 1
+!!$         Nie0_crs  = jpi_crs
+!!$         Nje0_crs  = jpj_crs
+!!$      ELSE
+!!$         ! Initialisation of most local variables -
+!!$         nimpp_crs = 1
+!!$         njmpp_crs = 1
+!!$         Nis0_crs  = 1
+!!$         Njs0_crs  = 1
+!!$         Nie0_crs  = jpi_crs
+!!$         Nje0_crs  = jpj_crs
+!!$         
+!!$        ! Calculs suivant une découpage en j
+!!$        DO jn = 1, jpnij, jpni
+!!$           IF( jn < ( jpnij - jpni + 1 ) ) THEN
+!!$              nje0all_crs(jn) = AINT( REAL( ( jpjglo - (njmppt(jn     ) - 1) ) / nn_facty, wp ) ) &
+!!$                       &    - AINT( REAL( ( jpjglo - (njmppt(jn+jpni) - 1) ) / nn_facty, wp ) )
+!!$           ELSE                                             
+!!$              nje0all_crs(jn) = AINT( REAL(  nje0all(jn) / nn_facty, wp ) ) + 1            
+!!$           ENDIF
+!!$           IF( noso < 0 ) nje0all_crs(jn) = nje0all_crs(jn) + 1             
+!!$           SELECT CASE( ibonjt(jn) )
+!!$              CASE ( -1 )
+!!$                IF( MOD( jpjglo - njmppt(jn), nn_facty) > 0 )  nje0all_crs(jn) = nje0all_crs(jn) + 1
+!!$                jpjall_crs (jn) = nje0all_crs(jn) + nn_hls
+!!$                njs0all_crs(jn) = njs0all(jn)
+!!$              
+!!$              CASE ( 0 )
+!!$              
+!!$                njs0all_crs(jn) = njs0all(jn)
+!!$                IF( njs0all(jn) == 1 )  nje0all_crs(jn) = nje0all_crs(jn) + 1
+!!$                nje0all_crs(jn) = nje0all_crs(jn) + nn_hls
+!!$                jpjall_crs (jn) = nje0all_crs(jn) + nn_hls
+!!$                
+!!$              CASE ( 1, 2 )
+!!$              
+!!$                nje0all_crs(jn) = nje0all_crs(jn) + nn_hls
+!!$                jpjall_crs (jn) = nje0all_crs(jn)
+!!$                njs0all_crs(jn) = njs0all(jn)
+!!$                
+!!$              CASE DEFAULT
+!!$                 CALL ctl_stop( 'STOP', 'error from crs_dom_def, you should not be there (1) ...' )
+!!$           END SELECT
+!!$           IF( jpjall_crs(jn) > jpj_crs )     jpj_crs = jpj_crs + 1
+!!$
+!!$           IF(njs0all_crs(jn) == 1 ) THEN
+!!$              njmppt_crs(jn) = 1
+!!$           ELSE
+!!$              njmppt_crs(jn) = 2 + ANINT(REAL((njmppt(jn) + 1 - MOD( jpjglo , nn_facty )) / nn_facty, wp ) )
+!!$           ENDIF           
+!!$           
+!!$           DO jj = jn + 1, jn + jpni - 1
+!!$              nje0all_crs(jj) = nje0all_crs(jn) 
+!!$              jpjall_crs (jj) = jpjall_crs(jn)
+!!$              njs0all_crs(jj) = njs0all_crs(jn)
+!!$              njmppt_crs (jj) = njmppt_crs(jn)
+!!$           ENDDO
+!!$        ENDDO 
+!!$        Nje0_crs  = nje0all_crs(narea) 
+!!$        jpj_crs   = jpjall_crs (narea)
+!!$        Njs0_crs  = njs0all_crs(narea)
+!!$        njmpp_crs = njmppt_crs (narea)
+!!$
+!!$        ! Calcul suivant un decoupage en i
+!!$        DO jn = 1, jpni
+!!$           IF( jn == 1 ) THEN          
+!!$              nie0all_crs(jn) = AINT( REAL( ( nimppt(jn  ) - 1 + jpiall(jn  ) )  / nn_factx, wp) )
+!!$           ELSE
+!!$              nie0all_crs(jn) = AINT( REAL( ( nimppt(jn  ) - 1 + jpiall(jn  ) )  / nn_factx, wp) ) &
+!!$                 &            - AINT( REAL( ( nimppt(jn-1) - 1 + jpiall(jn-1) )  / nn_factx, wp) )
+!!$           ENDIF
+!!$
+!!$           SELECT CASE( ibonit(jn) )
+!!$              CASE ( -1 )
+!!$                 nie0all_crs(jn) = nie0all_crs(jn) + nn_hls           
+!!$                 jpiall_crs (jn) = nie0all_crs(jn) + nn_hls
+!!$                 nis0all_crs(jn) = nis0all(jn) 
+!!$              
+!!$              CASE ( 0 )
+!!$                 nie0all_crs(jn) = nie0all_crs(jn) + nn_hls
+!!$                 jpiall_crs (jn) = nie0all_crs(jn) + nn_hls
+!!$                 nis0all_crs(jn) = nis0all(jn) 
+!!$                
+!!$              CASE ( 1, 2 )
+!!$                 IF( MOD( jpiglo - nimppt(jn), nn_factx) > 0 )  nie0all_crs(jn) = nie0all_crs(jn) + 1
+!!$                 nie0all_crs(jn) = nie0all_crs(jn) + nn_hls
+!!$                 jpiall_crs (jn) = nie0all_crs(jn)
+!!$                 nis0all_crs(jn) = nis0all(jn) 
+!!$
+!!$              CASE DEFAULT
+!!$                 CALL ctl_stop( 'STOP', 'error from crs_dom_def, you should not be there (2) ...' )
+!!$           END SELECT
+!!$
+!!$           nimppt_crs(jn) = ANINT( REAL( (nimppt(jn) + 1 ) / nn_factx, wp ) ) + 1
+!!$           DO jj = jn + jpni , jpnij, jpni
+!!$              nie0all_crs(jj) = nie0all_crs(jn) 
+!!$              jpiall_crs (jj) = jpiall_crs (jn)
+!!$              nis0all_crs(jj) = nis0all_crs(jn)
+!!$              nimppt_crs (jj) = nimppt_crs (jn)
+!!$           ENDDO
+!!$         ENDDO 
+!!$        
+!!$         Nie0_crs  = nie0all_crs(narea) 
+!!$         jpi_crs   = jpiall_crs (narea)
+!!$         Nis0_crs  = nis0all_crs(narea)
+!!$         nimpp_crs = nimppt_crs (narea)
+!!$
+!!$         DO ji = 1, jpi_crs
+!!$            mig_crs(ji) = ji + nimpp_crs - 1
+!!$         ENDDO
+!!$         DO jj = 1, jpj_crs
+!!$            mjg_crs(jj) = jj + njmpp_crs - 1!
+!!$         ENDDO
+!!$       
+!!$         DO ji = 1, jpiglo_crs
+!!$            mi0_crs(ji) = MAX( 1, MIN( ji - nimpp_crs + 1 , jpi_crs + 1 ) )
+!!$            mi1_crs(ji) = MAX( 0, MIN( ji - nimpp_crs + 1 , jpi_crs     ) )
+!!$         ENDDO
+!!$         
+!!$         DO jj = 1, jpjglo_crs
+!!$            mj0_crs(jj) = MAX( 1, MIN( jj - njmpp_crs + 1 , jpj_crs + 1 ) )
+!!$            mj1_crs(jj) = MAX( 0, MIN( jj - njmpp_crs + 1 , jpj_crs     ) )
+!!$         ENDDO
+!!$
+!!$      ENDIF
+!!$      
+!!$      !                         Save the parent grid information
+!!$      jpi_full    = jpi
+!!$      jpj_full    = jpj
+!!$      jpim1_full  = jpim1
+!!$      jpjm1_full  = jpjm1
+!!$      nperio_full = jperio
+!!$
+!!$      npolj_full  = npolj
+!!$      jpiglo_full = jpiglo
+!!$      jpjglo_full = jpjglo
+!!$
+!!$      jpj_full   = jpj
+!!$      jpi_full   = jpi
+!!$      Nis0_full  = Nis0
+!!$      Njs0_full  = Njs0
+!!$      Nie0_full  = Nie0
+!!$      Nje0_full  = Nje0
+!!$      nimpp_full = nimpp     
+!!$      njmpp_full = njmpp
+!!$      
+!!$      jpiall_full (:) = jpiall (:)
+!!$      nis0all_full(:) = nis0all(:)
+!!$      nie0all_full(:) = nie0all(:)
+!!$      nimppt_full (:) = nimppt (:)
+!!$      jpjall_full (:) = jpjall (:)
+!!$      njs0all_full(:) = njs0all(:)
+!!$      nje0all_full(:) = nje0all(:)
+!!$      njmppt_full (:) = njmppt (:)
       
       CALL dom_grid_crs  !swich de grille
      
@@ -2071,15 +2067,15 @@ CONTAINS
          WRITE(numout,*) '~~~~~~~   coarse domain local  i-dimension              jpi = ', jpi
          WRITE(numout,*) '~~~~~~~   coarse domain local  j-dimension              jpj = ', jpj
          WRITE(numout,*)
-         WRITE(numout,*) ' nproc  = '     , nproc
-         WRITE(numout,*) ' nlci   = '     , nlci
-         WRITE(numout,*) ' nlcj   = '     , nlcj
-         WRITE(numout,*) ' nldi   = '     , nldi
-         WRITE(numout,*) ' nldj   = '     , nldj
-         WRITE(numout,*) ' nlei   = '     , nlei
-         WRITE(numout,*) ' nlej   = '     , nlej
-         WRITE(numout,*) ' nlei_full='    , nlei_full
-         WRITE(numout,*) ' nldi_full='    , nldi_full
+         WRITE(numout,*) ' narea  = '     , narea
+         WRITE(numout,*) ' jpi    = '     , jpi
+         WRITE(numout,*) ' jpj    = '     , jpj
+         WRITE(numout,*) ' Nis0   = '     , Nis0
+         WRITE(numout,*) ' Njs0   = '     , Njs0
+         WRITE(numout,*) ' Nie0   = '     , Nie0
+         WRITE(numout,*) ' Nje0   = '     , Nje0
+         WRITE(numout,*) ' Nie0_full='    , Nie0_full
+         WRITE(numout,*) ' Nis0_full='    , Nis0_full
          WRITE(numout,*) ' nimpp  = '     , nimpp
          WRITE(numout,*) ' njmpp  = '     , njmpp
          WRITE(numout,*) ' njmpp_full  = ', njmpp_full
@@ -2100,11 +2096,11 @@ CONTAINS
 
       IF ( nresty == 0 ) THEN
          mybinctr = mybinctr - 1
-         IF ( jperio == 3 .OR. jperio == 4 )  nperio_crs = jperio + 2
-         IF ( jperio == 5 .OR. jperio == 6 )  nperio_crs = jperio - 2 
-
-         IF ( npolj == 3 ) npolj_crs = 5
-         IF ( npolj == 5 ) npolj_crs = 3
+!!$         IF ( jperio == 3 .OR. jperio == 4 )  nperio_crs = jperio + 2
+!!$         IF ( jperio == 5 .OR. jperio == 6 )  nperio_crs = jperio - 2 
+!!$
+!!$         IF ( npolj == 3 ) npolj_crs = 5
+!!$         IF ( npolj == 5 ) npolj_crs = 3
       ENDIF     
       
       rfactxy = nn_factx * nn_facty
@@ -2120,66 +2116,66 @@ CONTAINS
 
       CASE ( 0 ) 
 
-         SELECT CASE ( jperio )
-     
- 
-        CASE ( 0, 1, 3, 4 )    !   3, 4 : T-Pivot at North Fold
-        
-            DO ji = 2, jpiglo_crsm1
-               ijie = ( ji * nn_factx ) - nn_factx   !cc
-               ijis = ijie - nn_factx + 1
-               mis2_crs(ji) = ijis
-               mie2_crs(ji) = ijie
-            ENDDO
-            IF ( jpiglo - 1 - mie2_crs(jpiglo_crsm1) <= nn_factx ) mie2_crs(jpiglo_crsm1) = jpiglo - 2  
-
-            ! Handle first the northernmost bin
-            IF ( nn_facty == 2 ) THEN   ;    ijjgloT = jpjglo - 1 
-            ELSE                        ;    ijjgloT = jpjglo
-            ENDIF
-
-            DO jj = 2, jpjglo_crs
-                ijje = ijjgloT - nn_facty * ( jj - 3 )
-                ijjs = ijje - nn_facty + 1                   
-                mjs2_crs(jpjglo_crs-jj+2) = ijjs
-                mje2_crs(jpjglo_crs-jj+2) = ijje
-            ENDDO
-
-         CASE ( 2 ) 
-            WRITE(numout,*)  'crs_init, jperio=2 not supported' 
-        
-         CASE ( 5, 6 )    ! F-pivot at North Fold
-
-            DO ji = 2, jpiglo_crsm1
-               ijie = ( ji * nn_factx ) - nn_factx 
-               ijis = ijie - nn_factx + 1
-               mis2_crs(ji) = ijis
-               mie2_crs(ji) = ijie
-            ENDDO
-            IF ( jpiglo - 1 - mie2_crs(jpiglo_crsm1) <= nn_factx ) mie_crs(jpiglo_crsm1)  = jpiglo - 2 
-
-            ! Treat the northernmost bin separately.
-            jj = 2
-            ijje = jpj - nn_facty * ( jj - 2 )
-            IF ( nn_facty == 3 ) THEN   ;  ijjs = ijje - 1 
-            ELSE                        ;  ijjs = ijje - nn_facty + 1
-            ENDIF
-            mjs2_crs(jpj_crs-jj+1) = ijjs
-            mje2_crs(jpj_crs-jj+1) = ijje
-
-            ! Now bin the rest, any remainder at the south is lumped in the southern bin
-            DO jj = 3, jpjglo_crsm1
-                ijje = jpjglo - nn_facty * ( jj - 2 )
-                ijjs = ijje - nn_facty + 1                  
-                IF ( ijjs <= nn_facty )  ijjs = 2
-                mjs2_crs(jpj_crs-jj+1)   = ijjs
-                mje2_crs(jpj_crs-jj+1)   = ijje
-            ENDDO
-
-         CASE DEFAULT
-            WRITE(numout,*) 'crs_init. Only jperio = 0, 1, 3, 4, 5, 6 supported' 
- 
-         END SELECT
+!!$         SELECT CASE ( jperio )
+!!$     
+!!$ 
+!!$        CASE ( 0, 1, 3, 4 )    !   3, 4 : T-Pivot at North Fold
+!!$        
+!!$            DO ji = 2, jpiglo_crsm1
+!!$               ijie = ( ji * nn_factx ) - nn_factx   !cc
+!!$               ijis = ijie - nn_factx + 1
+!!$               mis2_crs(ji) = ijis
+!!$               mie2_crs(ji) = ijie
+!!$            ENDDO
+!!$            IF ( jpiglo - 1 - mie2_crs(jpiglo_crsm1) <= nn_factx ) mie2_crs(jpiglo_crsm1) = jpiglo - 2  
+!!$
+!!$            ! Handle first the northernmost bin
+!!$            IF ( nn_facty == 2 ) THEN   ;    ijjgloT = jpjglo - 1 
+!!$            ELSE                        ;    ijjgloT = jpjglo
+!!$            ENDIF
+!!$
+!!$            DO jj = 2, jpjglo_crs
+!!$                ijje = ijjgloT - nn_facty * ( jj - 3 )
+!!$                ijjs = ijje - nn_facty + 1                   
+!!$                mjs2_crs(jpjglo_crs-jj+2) = ijjs
+!!$                mje2_crs(jpjglo_crs-jj+2) = ijje
+!!$            ENDDO
+!!$
+!!$         CASE ( 2 ) 
+!!$            WRITE(numout,*)  'crs_init, jperio=2 not supported' 
+!!$        
+!!$         CASE ( 5, 6 )    ! F-pivot at North Fold
+!!$
+!!$            DO ji = 2, jpiglo_crsm1
+!!$               ijie = ( ji * nn_factx ) - nn_factx 
+!!$               ijis = ijie - nn_factx + 1
+!!$               mis2_crs(ji) = ijis
+!!$               mie2_crs(ji) = ijie
+!!$            ENDDO
+!!$            IF ( jpiglo - 1 - mie2_crs(jpiglo_crsm1) <= nn_factx ) mie_crs(jpiglo_crsm1)  = jpiglo - 2 
+!!$
+!!$            ! Treat the northernmost bin separately.
+!!$            jj = 2
+!!$            ijje = jpj - nn_facty * ( jj - 2 )
+!!$            IF ( nn_facty == 3 ) THEN   ;  ijjs = ijje - 1 
+!!$            ELSE                        ;  ijjs = ijje - nn_facty + 1
+!!$            ENDIF
+!!$            mjs2_crs(jpj_crs-jj+1) = ijjs
+!!$            mje2_crs(jpj_crs-jj+1) = ijje
+!!$
+!!$            ! Now bin the rest, any remainder at the south is lumped in the southern bin
+!!$            DO jj = 3, jpjglo_crsm1
+!!$                ijje = jpjglo - nn_facty * ( jj - 2 )
+!!$                ijjs = ijje - nn_facty + 1                  
+!!$                IF ( ijjs <= nn_facty )  ijjs = 2
+!!$                mjs2_crs(jpj_crs-jj+1)   = ijjs
+!!$                mje2_crs(jpj_crs-jj+1)   = ijje
+!!$            ENDDO
+!!$
+!!$         CASE DEFAULT
+!!$            WRITE(numout,*) 'crs_init. Only jperio = 0, 1, 3, 4, 5, 6 supported' 
+!!$ 
+!!$         END SELECT
 
       CASE (1 )
          WRITE(numout,*) 'crs_init.  Equator-centered bins option not yet available' 
@@ -2202,18 +2198,18 @@ CONTAINS
         mjs_crs(:) = mjs2_crs(:) 
         mje_crs(:) = mje2_crs(:) 
       ELSE
-        DO jj = 1, nlej_crs
+        DO jj = 1, Nje0_crs
            mjs_crs(jj) = mjs2_crs(mjg_crs(jj)) - njmpp + 1
            mje_crs(jj) = mje2_crs(mjg_crs(jj)) - njmpp + 1
         ENDDO
-        DO ji = 1, nlei_crs
+        DO ji = 1, Nie0_crs
            mis_crs(ji) = mis2_crs(mig_crs(ji)) - nimpp + 1
            mie_crs(ji) = mie2_crs(mig_crs(ji)) - nimpp + 1
         ENDDO
       ENDIF
       !
-      nistr = mis_crs(2)  ;   niend = mis_crs(nlci_crs - 1)
-      njstr = mjs_crs(3)  ;   njend = mjs_crs(nlcj_crs - 1)
+      nistr = mis_crs(2)  ;   niend = mis_crs(jpi_crs - 1)
+      njstr = mjs_crs(3)  ;   njend = mjs_crs(jpj_crs - 1)
       !
    END SUBROUTINE crs_dom_def
    
@@ -2245,7 +2241,7 @@ CONTAINS
       ENDDO
      
       zmbk(:,:) = 0.0
-      zmbk(:,:) = REAL( mbathy_crs(:,:), wp ) ;   CALL crs_lbc_lnk(zmbk,'T',1.0)   ;   mbathy_crs(:,:) = NINT( zmbk(:,:) )
+      zmbk(:,:) = REAL( mbathy_crs(:,:), wp ) ;   CALL crs_lbc_lnk(zmbk,'T',1.0_wp)   ;   mbathy_crs(:,:) = NINT( zmbk(:,:) )
 
 
       !
@@ -2265,8 +2261,8 @@ CONTAINS
 
       ! convert into REAL to use lbc_lnk ; impose a min value of 1 as a zero can be set in lbclnk
       zmbk(:,:) = 1.e0;    
-      zmbk(:,:) = REAL( mbku_crs(:,:), wp )   ;   CALL crs_lbc_lnk(zmbk,'U',1.0) ; mbku_crs  (:,:) = MAX( NINT( zmbk(:,:) ), 1 ) 
-      zmbk(:,:) = REAL( mbkv_crs(:,:), wp )   ;   CALL crs_lbc_lnk(zmbk,'V',1.0) ; mbkv_crs  (:,:) = MAX( NINT( zmbk(:,:) ), 1 ) 
+      zmbk(:,:) = REAL( mbku_crs(:,:), wp )   ;   CALL crs_lbc_lnk(zmbk,'U',1.0_wp) ; mbku_crs  (:,:) = MAX( NINT( zmbk(:,:) ), 1 ) 
+      zmbk(:,:) = REAL( mbkv_crs(:,:), wp )   ;   CALL crs_lbc_lnk(zmbk,'V',1.0_wp) ; mbkv_crs  (:,:) = MAX( NINT( zmbk(:,:) ), 1 ) 
       !
    END SUBROUTINE crs_dom_bat
 

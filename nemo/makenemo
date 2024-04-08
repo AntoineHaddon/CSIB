@@ -1,7 +1,4 @@
 #!/bin/bash
-#==============================================
-# Add XIOS_DIR for NEMO4.0.3 (D. Yang, OCT 2020)
-#===============================================
 #set -x
 set -o posix
 #set -u
@@ -54,7 +51,6 @@ set -o posix
 # - MODELES_DIR :   "    "    "
 # - TOOLS_DIR   :   "    "    "
 # - NEMO_DIR    :   "    "    "
-# - XIOS_DIR    :   "    "    "
 # - REMOTE_CTL  : URL link to a remote resource list for an external configuration
 #                 which is not part of the reference suite
 # - LOCAL_REF   : Nearest reference configuration to an external configuration
@@ -78,7 +74,7 @@ set -o posix
 # EVOLUTIONS
 # ==========
 #
-# $Id: makenemo 12191 2019-12-11 15:56:06Z jchanut $
+# $Id: makenemo 15186 2021-08-12 16:39:09Z gsamson $
 #
 #
 #
@@ -105,7 +101,6 @@ export MAIN_DIR
 export CONFIG_DIR=${MAIN_DIR}/cfgs
 export TOOLS_DIR=${MAIN_DIR}/tools
 export COMPIL_DIR=${MAIN_DIR}/mk
-export XIOS_DIR=${MAIN_DIR}/xios-2.5
 export NEMO_DIR=${MAIN_DIR}/${x_s}
 export AGRIFUSE='10'
 list_key='0'; chk_key='1'
@@ -158,7 +153,7 @@ EOF
 				exit 0       ;;
 	  	('d') x_d=${OPTARG};; ('n') x_n=${OPTARG};; ('r') x_r=${OPTARG};; ('u') x_u=${OPTARG};;
 		('a') x_a=${OPTARG};; ('m') x_m=${OPTARG};; ('j') x_j=${OPTARG};; ('t') x_t=${OPTARG};;
-		('e') x_e=${OPTARG};; ('s') x_s=${OPTARG};; ('v') x_v=${OPTARG}                      ;;
+		('e') x_e=(${OPTARG});; ('s') x_s=${OPTARG};; ('v') x_v=${OPTARG}                      ;;
 		('k') chk_key=${OPTARG}                                                              ;;
 		(':') echo ${b_n}" : -"${OPTARG}" option : missing value" 1>&2;	exit 2             ;;
 		('?') echo ${b_n}" : -"${OPTARG}" option : not supported" 1>&2;	exit 2             ;;
@@ -197,6 +192,12 @@ export NEMO_DIR=${MAIN_DIR}/${x_s}
 
 [ "${CMP_NAM}" == 'all' ] && . ${COMPIL_DIR}/Flist_archfile.sh all && exit
 
+# Load environment if exists
+env_file=`find ${MAIN_DIR}/arch -name arch-${CMP_NAM}.env`
+if [ -f "${env_file}" ] ; then
+   echo "Load environment file arch-${CMP_NAM}.env"
+   . ${env_file}
+fi
 
 ## No ref. cfg, demo case, nor remote cfg selected
 if [[ -z "${REF_CONF}" && -z "${DEMO_CONF}" && -z "${RMT_CONF}" ]]; then
@@ -276,12 +277,12 @@ else
 	## Update sub-comps if needed
 	if [ -z "${NEM_SUBDIR}" ]; then
 			NEM_SUBDIR=$( grep -w ${TML_CONF} ${CONFIG_DIR}/${conf_file}  | awk '{$1 = ""; print $0}' )
-            echo "grep -w ${TML_CONF} ${CONFIG_DIR}/${conf_file}  | awk '{$1 = ""; print $0}'"
 	fi
 
 fi
 
 export NEMO_TDIR=${x_t:-$CONFIG_DIR}
+export NEM_SUBDIR="${NEM_SUBDIR}" NEW_CONF="${NEW_CONF}"
 
 ## Save new configuration with sub-components set in work_cfgs.txt
 [ -f ${CONFIG_DIR}/work_cfgs.txt ] && sed -i "/${NEW_CONF} /d" ${CONFIG_DIR}/work_cfgs.txt
@@ -305,7 +306,7 @@ ${COMPIL_DIR}/Fmake_config.sh ${NEW_CONF} ${TML_CONF}
 #- Create the WORK ---
 #- Clean links and librairies ---
 #- Creating the good links, at first on OCE ---
-. ${COMPIL_DIR}/Fmake_WORK.sh ${x_e} ${NEW_CONF} ${NEM_SUBDIR} || exit 3
+. ${COMPIL_DIR}/Fmake_WORK.sh ${x_e[@]} || exit 3
 
 . ${COMPIL_DIR}/Fmake_bld.sh ${CONFIG_DIR} ${NEW_CONF} ${NEMO_TDIR} || exit 3
 
@@ -333,7 +334,7 @@ if [ $chk_key -eq 1 ] ; then
 		if [ "$( echo $kk | cut -c 1-4 )" == "key_" ]; then
 			kk=${kk/=*/}
 
-			if [ ! $( grep $kk ${COMPIL_DIR}/full_key_list.txt ) ]; then
+			if [ ! $( grep -w $kk ${COMPIL_DIR}/full_key_list.txt ) ]; then
 				echo
 				echo "E R R O R : key "$kk" is not found in ${NEW_CONF}/WORK routines..."
 				echo "we stop..."
@@ -357,7 +358,7 @@ export USEBLD=bldxag.cfg
 
 #- We look after agrif
 grep key_agrif ${COMPIL_DIR}/cpp.fcm && export AGRIFUSE=1 && export USEBLD=${USEBLD/xag/}
-. ${COMPIL_DIR}/Fprep_agrif.sh ${NEW_CONF} ${NEMO_TDIR} || exit 3
+. ${COMPIL_DIR}/Fprep_agrif.sh ${NEW_CONF} ${NEMO_TDIR} arch_nemo.fcm || exit 3
 
 #-
 #_ END OF CONFIGURATION PHASE
@@ -365,11 +366,6 @@ grep key_agrif ${COMPIL_DIR}/cpp.fcm && export AGRIFUSE=1 && export USEBLD=${USE
 
 #-
 #- Compile ---
-
-echo "=== Inside makenemo ==="
-echo "modules used in the NEMO compilation"
-module list
-
 
 if [ "${NBR_PRC}" -gt 0 ]; then
 	cd ${NEMO_TDIR}/${NEW_CONF} || cd -

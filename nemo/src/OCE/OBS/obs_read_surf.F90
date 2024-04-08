@@ -31,7 +31,7 @@ MODULE obs_read_surf
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: obs_read_surf.F90 10069 2018-08-28 14:12:24Z nicolasmartin $
+   !! $Id: obs_read_surf.F90 14275 2021-01-07 12:13:16Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 
@@ -39,7 +39,7 @@ CONTAINS
 
    SUBROUTINE obs_rea_surf( surfdata, knumfiles, cdfilenames, &
       &                     kvars, kextr, kstp, ddobsini, ddobsend, &
-      &                     ldignmis, ldmod, ldnightav )
+      &                     ldignmis, ldmod, ldnightav, cdvars )
       !!---------------------------------------------------------------------
       !!
       !!                   *** ROUTINE obs_rea_surf ***
@@ -70,13 +70,14 @@ CONTAINS
       LOGICAL, INTENT(IN) :: ldignmis   ! Ignore missing files
       LOGICAL, INTENT(IN) :: ldmod      ! Initialize model from input data
       LOGICAL, INTENT(IN) :: ldnightav  ! Observations represent a night-time average
-      REAL(dp), INTENT(IN) :: ddobsini   ! Obs. ini time in YYYYMMDD.HHMMSS
-      REAL(dp), INTENT(IN) :: ddobsend   ! Obs. end time in YYYYMMDD.HHMMSS
+      REAL(wp), INTENT(IN) :: ddobsini   ! Obs. ini time in YYYYMMDD.HHMMSS
+      REAL(wp), INTENT(IN) :: ddobsend   ! Obs. end time in YYYYMMDD.HHMMSS
+      CHARACTER(len=8), DIMENSION(kvars), INTENT(IN) :: cdvars
 
       !! * Local declarations
       CHARACTER(LEN=11), PARAMETER :: cpname='obs_rea_surf'
       CHARACTER(len=8) :: clrefdate
-      CHARACTER(len=8), DIMENSION(:), ALLOCATABLE :: clvars
+      CHARACTER(len=8), DIMENSION(:), ALLOCATABLE :: clvarsin
       INTEGER :: ji
       INTEGER :: jj
       INTEGER :: jk
@@ -111,9 +112,9 @@ CONTAINS
       REAL(wp), DIMENSION(:), ALLOCATABLE :: &
          & zphi, &
          & zlam
-      REAL(wp), DIMENSION(:), ALLOCATABLE :: &
+      REAL(dp), DIMENSION(:), ALLOCATABLE :: &
          & zdat
-      REAL(wp), DIMENSION(knumfiles) :: &
+      REAL(dp), DIMENSION(knumfiles) :: &
          & djulini, &
          & djulend
       LOGICAL :: llvalprof
@@ -177,19 +178,28 @@ CONTAINS
             CALL read_obfbdata( TRIM( cdfilenames(jj) ), inpfiles(jj), &
                &                ldgrid = .TRUE. )
 
+            IF ( inpfiles(jj)%nvar /= kvars ) THEN
+               CALL ctl_stop( 'Feedback format error: ', &
+                  &           ' unexpected number of vars in feedback file' )
+            ENDIF
+
             IF ( ldmod .AND. ( inpfiles(jj)%nadd == 0 ) ) THEN
                CALL ctl_stop( 'Model not in input data' )
                RETURN
             ENDIF
 
             IF ( jj == 1 ) THEN
-               ALLOCATE( clvars( inpfiles(jj)%nvar ) )
+               ALLOCATE( clvarsin( inpfiles(jj)%nvar ) )
                DO ji = 1, inpfiles(jj)%nvar
-                 clvars(ji) = inpfiles(jj)%cname(ji)
+                 clvarsin(ji) = inpfiles(jj)%cname(ji)
+                 IF ( clvarsin(ji) /= cdvars(ji) ) THEN
+                    CALL ctl_stop( 'Feedback file variables do not match', &
+                        &           ' expected variable names for this type' )
+                 ENDIF
                END DO
             ELSE
                DO ji = 1, inpfiles(jj)%nvar
-                  IF ( inpfiles(jj)%cname(ji) /= clvars(ji) ) THEN
+                  IF ( inpfiles(jj)%cname(ji) /= clvarsin(ji) ) THEN
                      CALL ctl_stop( 'Feedback file variables not consistent', &
                         &           ' with previous files for this type' )
                   ENDIF
@@ -289,10 +299,10 @@ CONTAINS
             DO ji = 1, inpfiles(jj)%nobs
                IF ( ( inpfiles(jj)%ptim(ji) >  djulini(jj) ) .AND. &
                   & ( inpfiles(jj)%ptim(ji) <= djulend(jj) )       ) THEN
-                  IF ( nproc == 0 ) THEN
-                     IF ( inpfiles(jj)%iproc(ji,1) >  nproc ) CYCLE
+                  IF ( narea == 1 ) THEN
+                     IF ( inpfiles(jj)%iproc(ji,1) >  narea-1 ) CYCLE
                   ELSE
-                     IF ( inpfiles(jj)%iproc(ji,1) /= nproc ) CYCLE
+                     IF ( inpfiles(jj)%iproc(ji,1) /= narea-1 ) CYCLE
                   ENDIF
                   llvalprof = .FALSE.
                   IF ( .NOT. BTEST(inpfiles(jj)%ivlqc(1,ji,1),2) ) THEN
@@ -346,7 +356,7 @@ CONTAINS
 
       iobs = 0
 
-      surfdata%cvars(:)  = clvars(:)
+      surfdata%cvars(:)  = clvarsin(:)
 
       ityp   (:) = 0
       itypmpp(:) = 0
@@ -360,10 +370,10 @@ CONTAINS
          IF ( ( inpfiles(jj)%ptim(ji) >  djulini(jj) ) .AND.  &
             & ( inpfiles(jj)%ptim(ji) <= djulend(jj) ) ) THEN
 
-            IF ( nproc == 0 ) THEN
-               IF ( inpfiles(jj)%iproc(ji,1) >  nproc ) CYCLE
+            IF ( narea == 1 ) THEN
+               IF ( inpfiles(jj)%iproc(ji,1) >  narea-1 ) CYCLE
             ELSE
-               IF ( inpfiles(jj)%iproc(ji,1) /= nproc ) CYCLE
+               IF ( inpfiles(jj)%iproc(ji,1) /= narea-1 ) CYCLE
             ENDIF
 
             ! Set observation information
@@ -479,7 +489,7 @@ CONTAINS
       !-----------------------------------------------------------------------
       ! Deallocate temporary data
       !-----------------------------------------------------------------------
-      DEALLOCATE( ifileidx, isurfidx, zdat, clvars )
+      DEALLOCATE( ifileidx, isurfidx, zdat, clvarsin )
 
       !-----------------------------------------------------------------------
       ! Deallocate input data

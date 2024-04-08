@@ -29,7 +29,7 @@ MODULE cmocprod
    ! access par_1band array and requires trcsms_cmoc to call trc_opt_1band
    ! to update par_1band every time step
    
-   USE prtctl_trc      !  print control for debugging
+   USE prtctl      !  print control for debugging
    USE iom             !  I/O manager
 
    ! timing modules
@@ -47,7 +47,7 @@ MODULE cmocprod
 
    !!* Substitution
 !#  include "top_substitute.h90"
-#  include "vectopt_loop_substitute.h90"
+!#  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 3.3 , NEMO Consortium (2010)
    !! $Id: cmocprod.F90 3773 2013-02-07 11:06:58Z cbricaud $ 
@@ -55,7 +55,7 @@ MODULE cmocprod
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE cmoc_prod( kt , jnt )
+   SUBROUTINE cmoc_prod( kt , jnt , Kbb, Kmm, Krhs )
       !!---------------------------------------------------------------------
       !!                     ***  ROUTINE cmoc_prod  ***
       !!
@@ -66,6 +66,7 @@ CONTAINS
       !!---------------------------------------------------------------------
       !
       INTEGER, INTENT(in) :: kt, jnt
+      INTEGER, INTENT(in) ::   Kbb, Kmm, Krhs  ! time level indices
       !
       INTEGER  ::   ji, jj, jk
       INTEGER  ::   jn
@@ -104,6 +105,7 @@ CONTAINS
       zetot   (:,:,:) = 0._wp
       zprorca (:,:,:) = 0._wp
       zprochln(:,:,:) = 0._wp
+      zpislopead(:,:,:) = 0._wp
       zprbio  (:,:,:) = 0._wp
       zprnch  (:,:,:) = 0._wp
       zlimn   (:,:,:) = 1._wp
@@ -117,7 +119,7 @@ CONTAINS
             ! <CMOC code OR 10/30/2015> etot is replaced by zetot = qsr * 0.43 and CMOC light attenuation
             ! zetot(ji,jj,jk) = qsr(ji,jj) * 0.43_wp & 
             ! !
-            ! &               * exp ( - ( (0.04 + 0.03 * trb(ji,jj,1,jqnch) * 1e6_wp) * gdept_n(ji,jj,jk) ) )
+            ! &               * exp ( - ( (0.04 + 0.03 * tr(ji,jj,1,jqnch,Kbb) * 1e6_wp) * gdept_n(ji,jj,jk) ) )
             !
             ! O Riche Sept 13th 2022
             ! use trc_opt_1band; can have a variable PAR/SW ratio (ln_varpar switch set in namelist_top_*).
@@ -130,7 +132,7 @@ CONTAINS
               ! 
               ! original CMOC condition for PAR
               IF( zetot(ji,jj,jk) > 1.E-3 ) THEN
-                ztn    = tsn(ji,jj,jk,jp_tem) + 273.15_wp
+                ztn    = ts(ji,jj,jk,jp_tem,Kmm) + 273.15_wp
                 ! ep_cmoc is in kJ mol^-1 and 8.31 is the ideal gas constant in J mol^-1 K^-1
                 zadap  = ep_cmoc * 1.e3_wp / 8.31_wp * ( 1._wp / ( ztn + rtrn ) - 1._wp / ( tvm_cmoc + 273.15_wp) )
                 zfact  = EXP ( -zadap )
@@ -139,10 +141,11 @@ CONTAINS
                 zpislopead (ji,jj,jk) = vm_cmoc * r1_rday * zfact
                 !
                 ! phytoplankton photoacclimation used in light limitation
-                ! trn(...,jqnch) / trn(...,jqphy) / 12. is theta in gChl per gC
-                ! ztheta is set to a maximum of thm_cmoc so as to prevent appearance of light-saturation in case zetot is small but trn(ji,jj,jk,jqphy) is 0
-                ztheta = MIN(thm_cmoc,trb(ji,jj,jk,jqnch)/(trb(ji,jj,jk,jqphy)*12._wp+rtrn))
-                zpislopen =  achl_cmoc * ztheta / ( zpislopead(ji,jj,jk) * rday  + rtrn )
+                ! tr(...,jqnch,Kmm) / tr(...,jqphy,Kmm) / 12. is theta in gChl per gC
+                ! ztheta is set to a maximum of thm_cmoc so as to prevent appearance of light-saturation in case zetot is small but
+                ! tr(ji,jj,jk,jqphy,Kmm) is 0
+                ztheta = MIN(thm_cmoc,tr(ji,jj,jk,jqnch,Kbb)/(tr(ji,jj,jk,jqphy,Kbb)*12._wp+rtrn))
+                zpislopen =  MAX(achl_cmoc * ztheta / ( zpislopead(ji,jj,jk) * rday  + rtrn) ,0.)
                 ! zpislopead * rday is growth rate in d^-1 at temperature ToC as achl_cmoc is in d^-1
                 !
                 ! limitation functions
@@ -150,7 +153,9 @@ CONTAINS
                 ! light
                 zliml (ji,jj,jk) = 1.- EXP( -zpislopen  * zetot(ji,jj,jk) )
                 ! DIN
-                zlimn (ji,jj,jk) = trb(ji,jj,jk,jqno3) / ( kn_cmoc * 1e-6_wp * cnrr_cmoc + trb(ji,jj,jk,jqno3)+ rtrn )
+                zlimn (ji,jj,jk) = tr(ji,jj,jk,jqno3,Kbb) / ( kn_cmoc * 1e-6_wp * cnrr_cmoc + tr(ji,jj,jk,jqno3,Kbb)+ rtrn )
+                zlimn(ji,jj,jk) = MAX(zlimn(ji,jj,jk),0.)
+                zlimn(ji,jj,jk) = MIN(zlimn(ji,jj,jk),1.)
                 ! iron is a constant and prescribed mask (xlimnfecmoc) see Zahariev et al 2008
                 ! update growth rate
                 zprbio(ji,jj,jk) = zpislopead(ji,jj,jk) * min ( zliml(ji,jj,jk) , zlimn(ji,jj,jk) , xlimnfecmoc(ji,jj) ) 
@@ -158,7 +163,7 @@ CONTAINS
                 !  see Zahariev et al 2008 and Zahariev Environment Canada report (Canadian Model of Ocean Carbon v1.0)
                 !  balanced is defined as chlorophyll to carbon ratio in steady-state (Geider et al. 1996-1997)
                 !  p.40 Eq. 4.65 (note that in the report phytoplankton currency is N not C).
-                !  12._wp (gC molC^-1) to convert trn(...,jqphy) from moles to grams in the tra(...,jqchn) equations.
+                !  12._wp (gC molC^-1) to convert tr(...,jqphy,Kmm) from moles to grams in the tr(...,jqchn, Krhs) equations.
                 !  zprnch must be in gchl L^-1 per molC L^-1.
                 zprnch(ji,jj,jk) = 12._wp * thm_cmoc  * 2._wp    *  zpislopead(ji,jj,jk)  /  &
                 &                 ( 2._wp * zpislopead(ji,jj,jk) +                           &
@@ -182,12 +187,12 @@ CONTAINS
               !
               ! phytoplankton production term over a time step
               ! zprbio is photosynthetic growth rate in s^-1 (only)
-              zprorca(ji,jj,jk) =  zprbio(ji,jj,jk)  * trb(ji,jj,jk,jqphy) * qfact2
+              zprorca(ji,jj,jk) =  zprbio(ji,jj,jk)  * tr(ji,jj,jk,jqphy,Kbb) * qfact2
               ! chlorophyll production term   over a time step
-              zprod =              zprbio(ji,jj,jk)  * trb(ji,jj,jk,jqnch) * qfact2
+              zprod =              zprbio(ji,jj,jk)  * tr(ji,jj,jk,jqnch,Kbb) * qfact2
               ! nudge chlorophyll back to balanced growth, Zahariev et al 2008
-              zprochln(ji,jj,jk) = zprod + (zprnch (ji,jj,jk) * trb(ji,jj,jk,jqphy) - &
-              &                             trb(ji,jj,jk,jqnch)                       &
+              zprochln(ji,jj,jk) = zprod + (zprnch (ji,jj,jk) * tr(ji,jj,jk,jqphy,Kbb) - &
+              &                             tr(ji,jj,jk,jqnch,Kbb)                       &
               &                            ) * itau_cmoc * r1_rday * qfact2                
               !
             ENDIF
@@ -204,14 +209,14 @@ CONTAINS
            DO ji =1 ,jpi
             !
             IF( zetot(ji,jj,jk) > 1.E-3 ) THEN
-              tra(ji,jj,jk,jqno3) = tra(ji,jj,jk,jqno3) - zprorca(ji,jj,jk)
-              tra(ji,jj,jk,jqphy) = tra(ji,jj,jk,jqphy) + zprorca(ji,jj,jk)
-              tra(ji,jj,jk,jqnch) = tra(ji,jj,jk,jqnch) + zprochln(ji,jj,jk)
-              tra(ji,jj,jk,jqoxy) = tra(ji,jj,jk,jqoxy) + zprorca(ji,jj,jk)
-              tra(ji,jj,jk,jqdic) = tra(ji,jj,jk,jqdic) - zprorca(ji,jj,jk)
-              tra(ji,jj,jk,jqtal) = tra(ji,jj,jk,jqtal) + ncrr_cmoc * zprorca(ji,jj,jk)
+              tr(ji,jj,jk,jqno3, Krhs) = tr(ji,jj,jk,jqno3, Krhs) - zprorca(ji,jj,jk)
+              tr(ji,jj,jk,jqphy, Krhs) = tr(ji,jj,jk,jqphy, Krhs) + zprorca(ji,jj,jk)
+              tr(ji,jj,jk,jqnch, Krhs) = tr(ji,jj,jk,jqnch, Krhs) + zprochln(ji,jj,jk)
+              tr(ji,jj,jk,jqoxy, Krhs) = tr(ji,jj,jk,jqoxy, Krhs) + zprorca(ji,jj,jk)
+              tr(ji,jj,jk,jqdic, Krhs) = tr(ji,jj,jk,jqdic, Krhs) - zprorca(ji,jj,jk)
+              tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) + ncrr_cmoc * zprorca(ji,jj,jk)
               ! O Riche Sept 14th can be uncommented or moved to TOP
-              ! tra(ji,jj,jk,jqdnt) = tra(ji,jj,jk,jqdnt) - zprorca(ji,jj,jk)
+              ! tr(ji,jj,jk,jqdnt, Krhs) = tr(ji,jj,jk,jqdnt, Krhs) - zprorca(ji,jj,jk)
               !
             ENDIF
           END DO
@@ -237,10 +242,10 @@ CONTAINS
        ENDIF
       ENDIF
       
-      IF(ln_ctl)   THEN  ! print mean trends (used for debugging)
+      IF( sn_cfctl%l_prttrc )   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('prod')")
-         CALL prt_ctl_trc_info(charout)
-         CALL prt_ctl_trc(tab4d=tra, mask=tmask_bgc_closea, clinfo=ctrcnm)
+         CALL prt_ctl_info(charout)
+         CALL prt_ctl(tab4d_1=tr(:,:,:,:, Krhs), mask1=tmask_bgc_closea, clinfo=ctrcnm)
       ENDIF
       !
       DEALLOCATE( zpislopead, zprbio, zprnch )

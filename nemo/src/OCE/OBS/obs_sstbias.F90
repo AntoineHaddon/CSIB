@@ -13,8 +13,7 @@ MODULE obs_sstbias
       & sp
    USE par_oce, ONLY : &        ! Domain parameters
       & jpi, &
-      & jpj, &
-      & jpim1
+      & jpj
    USE in_out_manager, ONLY : & ! I/O manager
       & lwp,    &
       & numout 
@@ -27,7 +26,7 @@ MODULE obs_sstbias
       & gphit, &
       & glamt
    USE oce, ONLY : &           ! Model variables
-      & sshn
+      & ssh
    USE obs_inter_h2d
    USE obs_utils               ! Various observation tools
    USE obs_inter_sup
@@ -138,7 +137,7 @@ CONTAINS
                'obs_rea_sstbias : Cannot read bias type from file '// &
                cl_bias_files(jtype) )
             ! Get the SST bias data
-            CALL iom_get( numsstbias, jpdom_data, 'tn', z_sstbias_2d(:,:), 1, lrowattr=ln_use_jattr )
+            CALL iom_get( numsstbias, jpdom_global, 'tn', z_sstbias_2d(:,:), 1 )
             z_sstbias(:,:,jtype) = z_sstbias_2d(:,:)       
             ! Close the file
             CALL iom_close(numsstbias)       

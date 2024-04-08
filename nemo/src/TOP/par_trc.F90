@@ -23,9 +23,10 @@ MODULE par_trc
    INTEGER, PUBLIC,  PARAMETER :: jpmaxtrc = 100  ! Maximum number of tracers
    INTEGER, PUBLIC,  PARAMETER :: jpmaxdia = 100  ! Maximum number of diagnostics
 
-   INTEGER, PUBLIC             :: jptra           !: Total number of passive tracers
    INTEGER, PUBLIC             :: jp_canoe        !: number of passive tracers in CANOE  model
    INTEGER, PUBLIC             :: jp_cmoc         !: number of passive tracers in CMOC   model
+
+   INTEGER, PUBLIC             :: jptra           !: Total number of passive tracers
    INTEGER, PUBLIC             :: jp_pisces       !: number of passive tracers in PISCES model
    INTEGER, PUBLIC             :: jp_cfc          !: number of CFC passive tracers 
    INTEGER, PUBLIC             :: jp_my_trc       !: number of passive tracers in MY_TRC model

@@ -105,22 +105,22 @@
 !> @author J.Paul
 !>
 !> @date November, 2013 - Initial Version
-!> @date September, 2014 
+!> @date September, 2014
 !> - add boundary description
-!> @date November, 2014 
+!> @date November, 2014
 !> - Fix memory leaks bug
-!> @date February, 2015 
+!> @date February, 2015
 !> - Do not change indices read from namelist
-!> - Change string character format of boundary read from namelist, 
+!> - Change string character format of boundary read from namelist,
 !>  see boundary__get_info
-!> 
+!>
 !> @todo add schematic to boundary structure description
-!> 
+!>
 !> @note Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
 !----------------------------------------------------------------------
 MODULE boundary
 
-   USE netcdf                          ! nf90 library                           
+   USE netcdf                          ! nf90 library
    USE global                          ! global parameter
    USE phycst                          ! physical constant
    USE kind                            ! F90 kind parameter
@@ -142,27 +142,27 @@ MODULE boundary
    PUBLIC :: boundary_copy         !< copy boundary structure
    PUBLIC :: boundary_init         !< initialise boundary structure
    PUBLIC :: boundary_print        !< print information about boundary
-   PUBLIC :: boundary_clean        !< clean boundary structure 
+   PUBLIC :: boundary_clean        !< clean boundary structure
    PUBLIC :: boundary_get_indices  !< get indices of each semgent for each boundary.
    PUBLIC :: boundary_check        !< check boundary indices and corner.
    PUBLIC :: boundary_check_corner !< check boundary corner
    PUBLIC :: boundary_set_filename !< set boundary filename
    PUBLIC :: boundary_swap         !< swap array for north and east boundary
 
-   PRIVATE :: boundary__clean_unit      ! clean boundary structure 
-   PRIVATE :: boundary__clean_arr       ! clean array of boundary structure 
+   PRIVATE :: boundary__clean_unit      ! clean boundary structure
+   PRIVATE :: boundary__clean_arr       ! clean array of boundary structure
    PRIVATE :: boundary__init_wrapper    ! initialise a boundary structure
    PRIVATE :: boundary__init            ! initialise basically a boundary structure
    PRIVATE :: boundary__copy_unit       ! copy boundary structure in another
    PRIVATE :: boundary__copy_arr        ! copy boundary structure in another
-   PRIVATE :: boundary__add_seg         ! add one segment structure to a boundary 
+   PRIVATE :: boundary__add_seg         ! add one segment structure to a boundary
    PRIVATE :: boundary__del_seg         ! remove all segments of a boundary
    PRIVATE :: boundary__get_info        ! get boundary information from boundary description string character.
    PRIVATE :: boundary__get_seg_number  ! compute the number of sea segment for one boundary
-   PRIVATE :: boundary__get_seg_indices ! get segment indices for one boundary 
+   PRIVATE :: boundary__get_seg_indices ! get segment indices for one boundary
    PRIVATE :: boundary__print_unit      ! print information about one boundary
    PRIVATE :: boundary__print_arr       ! print information about a array of boundary
-   
+
    PRIVATE :: seg__init       ! initialise segment structure
    PRIVATE :: seg__clean      ! clean segment structure
    PRIVATE :: seg__clean_unit ! clean one segment structure
@@ -174,13 +174,13 @@ MODULE boundary
    TYPE TSEG   !< segment structure
       INTEGER(i4) :: i_index = 0 !< segment index
       INTEGER(i4) :: i_width = 0 !< segment width
-      INTEGER(i4) :: i_first = 0 !< segment first indice 
+      INTEGER(i4) :: i_first = 0 !< segment first indice
       INTEGER(i4) :: i_last  = 0 !< segment last indices
    END TYPE TSEG
 
    TYPE TBDY !< boundary structure
       CHARACTER(LEN=lc) :: c_card = ''          !< boundary cardinal
-      LOGICAL           :: l_use  = .FALSE.     !< boundary use or not 
+      LOGICAL           :: l_use  = .FALSE.     !< boundary use or not
       LOGICAL           :: l_nam  = .FALSE.     !< boundary get from namelist
       INTEGER(i4)       :: i_nseg = 0           !< number of segment in boundary
       TYPE(TSEG), DIMENSION(:), POINTER :: t_seg => NULL() !<  array of segment structure
@@ -190,33 +190,33 @@ MODULE boundary
    INTEGER(i4), PARAMETER :: im_width=10
 
    INTERFACE boundary_init
-      MODULE PROCEDURE boundary__init_wrapper 
+      MODULE PROCEDURE boundary__init_wrapper
    END INTERFACE boundary_init
 
    INTERFACE boundary_print
-      MODULE PROCEDURE boundary__print_unit 
-      MODULE PROCEDURE boundary__print_arr 
+      MODULE PROCEDURE boundary__print_unit
+      MODULE PROCEDURE boundary__print_arr
    END INTERFACE boundary_print
 
    INTERFACE boundary_clean
-      MODULE PROCEDURE boundary__clean_unit   
-      MODULE PROCEDURE boundary__clean_arr    
+      MODULE PROCEDURE boundary__clean_unit
+      MODULE PROCEDURE boundary__clean_arr
    END INTERFACE
 
    INTERFACE seg__clean
-      MODULE PROCEDURE seg__clean_unit   
-      MODULE PROCEDURE seg__clean_arr    
+      MODULE PROCEDURE seg__clean_unit
+      MODULE PROCEDURE seg__clean_arr
    END INTERFACE
 
    INTERFACE boundary_copy
-      MODULE PROCEDURE boundary__copy_unit 
-      MODULE PROCEDURE boundary__copy_arr 
-   END INTERFACE   
+      MODULE PROCEDURE boundary__copy_unit
+      MODULE PROCEDURE boundary__copy_arr
+   END INTERFACE
 
    INTERFACE seg__copy
       MODULE PROCEDURE seg__copy_unit   ! copy segment structure
       MODULE PROCEDURE seg__copy_arr    ! copy array of segment structure
-   END INTERFACE   
+   END INTERFACE
 
 CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -225,22 +225,22 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief
    !> This subroutine copy a array of boundary structure in another one
-   !> @details 
+   !> @details
    !>
    !> @warning do not use on the output of a function who create or read an
    !> attribute (ex: tl_bdy=boundary_copy(boundary_init()) is forbidden).
    !> This will create memory leaks.
-   !> @warning to avoid infinite loop, do not use any function inside 
+   !> @warning to avoid infinite loop, do not use any function inside
    !> this subroutine
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !> @date November, 2014
-   !> - use function instead of overload assignment operator 
+   !> - use function instead of overload assignment operator
    !> (to avoid memory leak)
    !
    !> @param[in] td_bdy   array of boundary structure
-   !> @return copy of input array of boundary structure 
+   !> @return copy of input array of boundary structure
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -267,18 +267,18 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief
    !> This subroutine copy boundary structure in another one
-   !> @details 
+   !> @details
    !>
    !> @warning do not use on the output of a function who create or read an
    !> attribute (ex: tl_bdy=boundary_copy(boundary_init()) is forbidden).
    !> This will create memory leaks.
-   !> @warning to avoid infinite loop, do not use any function inside 
+   !> @warning to avoid infinite loop, do not use any function inside
    !> this subroutine
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !> @date November, 2014
-   !> - use function instead of overload assignment operator 
+   !> - use function instead of overload assignment operator
    !> (to avoid memory leak)
    !
    !> @param[in] td_bdy   boundary structure
@@ -324,7 +324,7 @@ CONTAINS
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !> @date January, 2019
-   !> - nullify segment structure inside boundary structure 
+   !> - nullify segment structure inside boundary structure
    !
    !> @param[inout] td_bdy boundary strucutre
    !-------------------------------------------------------------------
@@ -384,34 +384,34 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION boundary_set_filename(cd_file, cd_card, id_seg, cd_date) &
          &  RESULT (cf_file)
-   !------------------------------------------------------------------- 
+   !-------------------------------------------------------------------
    !> @brief This function put cardinal name and date inside file name.
-   ! 
-   !> @details 
+   !
+   !> @details
    !>    Examples :
    !>       cd_file="boundary.nc"
-   !>       cd_card="west" 
+   !>       cd_card="west"
    !>       id_seg =2
    !>       cd_date=y2015m07d16
-   !> 
+   !>
    !>       function return "boundary_west_2_y2015m07d16.nc"
-   !> 
+   !>
    !>       cd_file="boundary.nc"
-   !>       cd_card="west" 
-   !> 
+   !>       cd_card="west"
+   !>
    !>       function return "boundary_west.nc"
-   !> 
-   !> @author J.Paul 
-   !> @date November, 2013 - Initial Version 
-   ! 
-   !> @param[in] cd_file   file name 
-   !> @param[in] cd_card   cardinal name 
-   !> @param[in] id_seg    segment number 
-   !> @param[in] cd_date   file date (format: y????m??d??) 
+   !>
+   !> @author J.Paul
+   !> @date November, 2013 - Initial Version
+   !
+   !> @param[in] cd_file   file name
+   !> @param[in] cd_card   cardinal name
+   !> @param[in] id_seg    segment number
+   !> @param[in] cd_date   file date (format: y????m??d??)
    !> @return file name with cardinal name inside
-   !------------------------------------------------------------------- 
+   !-------------------------------------------------------------------
 
-      IMPLICIT NONE 
+      IMPLICIT NONE
 
       ! Argument
       CHARACTER(LEN=*), INTENT(IN) :: cd_file
@@ -419,10 +419,10 @@ CONTAINS
       INTEGER(i4)     , INTENT(IN), OPTIONAL :: id_seg
       CHARACTER(LEN=*), INTENT(IN), OPTIONAL :: cd_date
 
-      ! function 
+      ! function
       CHARACTER(LEN=lc)            :: cf_file
 
-      ! local variable 
+      ! local variable
       CHARACTER(LEN=lc) :: cl_dirname
       CHARACTER(LEN=lc) :: cl_basename
       CHARACTER(LEN=lc) :: cl_base
@@ -434,8 +434,8 @@ CONTAINS
       INTEGER(i4)       :: il_ind
       INTEGER(i4)       :: il_indend
 
-      ! loop indices 
-      !---------------------------------------------------------------- 
+      ! loop indices
+      !----------------------------------------------------------------
       ! init
       cf_file=''
 
@@ -448,7 +448,7 @@ CONTAINS
 
          cl_base  =fct_split(TRIM(cl_basename),1,'.')
          cl_suffix=fct_split(TRIM(cl_basename),2,'.')
-         
+
          ! add segment number
          IF( PRESENT(id_seg) )THEN
             cl_segnum="_"//TRIM(fct_str(id_seg))
@@ -482,74 +482,74 @@ CONTAINS
          CALL logger_error("BOUNDARY SET FILENAME: file or cardinal name "//&
          &  " are empty")
       ENDIF
- 
-   END FUNCTION boundary_set_filename 
+
+   END FUNCTION boundary_set_filename
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION boundary__init_wrapper(td_var,                               &
          &                         ld_north, ld_south, ld_east, ld_west, &
          &                         cd_north, cd_south, cd_east, cd_west, &
          &                         ld_oneseg) &
          &  RESULT (tf_bdy)
-   !------------------------------------------------------------------- 
+   !-------------------------------------------------------------------
    !> @brief This function initialise a boundary structure.
-   ! 
-   !> @details 
+   !
+   !> @details
    !>  Boundaries for each cardinal will be compute with variable structure.
-   !>  It means that orthogonal index, first and last indices of each 
+   !>  It means that orthogonal index, first and last indices of each
    !>  sea segment will be compute automatically.
    !>  However you could specify which boundary to use or not with
    !>  arguments ln_north, ln_south, ln_east, ln_west.
    !>  And boundary description could be specify with argument
    !>  cn_north, cn_south, cn_east, cn_west.
-   !>  For each cardinal you could specify orthogonal index, 
+   !>  For each cardinal you could specify orthogonal index,
    !>  first and last indices (in this order) and boundary width (between
    !>  parentheses).
    !> ex : cn_north='index,first,last(width)'
-   !> You could specify more than one segment for each boundary. 
+   !> You could specify more than one segment for each boundary.
    !> However each segment will have the same width. So you do not need to
    !> specify it for each segment.
    !> ex : cn_north='index1,first1,last1(width)|index2,first2,last2'
    !>
    !> @warn Boundaries are compute on T point, but expressed on U,V point.
-   !> change will be done to get data on other point when need be. 
+   !> change will be done to get data on other point when need be.
    !>
-   !> @author J.Paul 
-   !> @date November, 2013 - Initial Version 
+   !> @author J.Paul
+   !> @date November, 2013 - Initial Version
    !> @date September, 2014
    !> - add boolean to use only one segment for each boundary
    !> - check boundary width
-   ! 
-   !> @param[in] td_var    variable structure 
-   !> @param[in] ld_north  use north boundary or not 
-   !> @param[in] ld_south  use south boundary or not 
-   !> @param[in] ld_east   use east  boundary or not 
-   !> @param[in] ld_west   use west  boundary or not 
-   !> @param[in] cd_north  north boundary description 
-   !> @param[in] cd_south  south boundary description 
-   !> @param[in] cd_east   east  boundary description 
-   !> @param[in] cd_west   west  boundary description 
-   !> @param[in] ld_oneseg force to use only one segment for each boundary 
+   !
+   !> @param[in] td_var    variable structure
+   !> @param[in] ld_north  use north boundary or not
+   !> @param[in] ld_south  use south boundary or not
+   !> @param[in] ld_east   use east  boundary or not
+   !> @param[in] ld_west   use west  boundary or not
+   !> @param[in] cd_north  north boundary description
+   !> @param[in] cd_south  south boundary description
+   !> @param[in] cd_east   east  boundary description
+   !> @param[in] cd_west   west  boundary description
+   !> @param[in] ld_oneseg force to use only one segment for each boundary
    !> @return boundary structure
-   !------------------------------------------------------------------- 
+   !-------------------------------------------------------------------
 
-      IMPLICIT NONE 
+      IMPLICIT NONE
 
       ! Argument
       TYPE(TVAR)       , INTENT(IN) :: td_var
       LOGICAL          , INTENT(IN), OPTIONAL :: ld_north
       LOGICAL          , INTENT(IN), OPTIONAL :: ld_south
-      LOGICAL          , INTENT(IN), OPTIONAL :: ld_east 
-      LOGICAL          , INTENT(IN), OPTIONAL :: ld_west 
+      LOGICAL          , INTENT(IN), OPTIONAL :: ld_east
+      LOGICAL          , INTENT(IN), OPTIONAL :: ld_west
       CHARACTER(LEN=lc), INTENT(IN), OPTIONAL :: cd_north
       CHARACTER(LEN=lc), INTENT(IN), OPTIONAL :: cd_south
-      CHARACTER(LEN=lc), INTENT(IN), OPTIONAL :: cd_east 
+      CHARACTER(LEN=lc), INTENT(IN), OPTIONAL :: cd_east
       CHARACTER(LEN=lc), INTENT(IN), OPTIONAL :: cd_west
-      LOGICAL          , INTENT(IN), OPTIONAL :: ld_oneseg 
+      LOGICAL          , INTENT(IN), OPTIONAL :: ld_oneseg
 
-      ! function 
+      ! function
       TYPE(TBDY)       , DIMENSION(ip_ncard)  :: tf_bdy
 
-      ! local variable 
+      ! local variable
       INTEGER(i4)                            :: il_width
       INTEGER(i4)      , DIMENSION(ip_ncard) :: il_max_width
       INTEGER(i4)      , DIMENSION(ip_ncard) :: il_index
@@ -564,10 +564,10 @@ CONTAINS
 
       LOGICAL                                :: ll_oneseg
 
-      ! loop indices 
+      ! loop indices
       INTEGER(i4) :: ji
       INTEGER(i4) :: jk
-      !---------------------------------------------------------------- 
+      !----------------------------------------------------------------
       IF( .NOT. ASSOCIATED(td_var%d_value) )THEN
          CALL logger_error("BOUNDARY INIT: no value associated to variable "//&
          &              TRIM(td_var%c_name) )
@@ -611,7 +611,7 @@ CONTAINS
          il_max(jp_south)=td_var%t_dim(1)%i_len
          il_max(jp_east )=td_var%t_dim(2)%i_len
          il_max(jp_west )=td_var%t_dim(2)%i_len
- 
+
          cl_card=(/'','','',''/)
          IF( PRESENT(cd_north) ) cl_card(jp_north)=TRIM(cd_north)
          IF( PRESENT(cd_south) ) cl_card(jp_south)=TRIM(cd_south)
@@ -662,16 +662,16 @@ CONTAINS
                   CALL boundary__add_seg(tf_bdy(jk),tl_seg)
                ELSE
                   ! fill undefined value
-                  WHERE( tf_bdy(jk)%t_seg(:)%i_index == 0 ) 
+                  WHERE( tf_bdy(jk)%t_seg(:)%i_index == 0 )
                      tf_bdy(jk)%t_seg(:)%i_index = tl_seg%i_index
-                  END WHERE               
-                  WHERE( tf_bdy(jk)%t_seg(:)%i_width == 0 ) 
+                  END WHERE
+                  WHERE( tf_bdy(jk)%t_seg(:)%i_width == 0 )
                      tf_bdy(jk)%t_seg(:)%i_width = tl_seg%i_width
                   END WHERE
-                  WHERE( tf_bdy(jk)%t_seg(:)%i_first == 0 ) 
+                  WHERE( tf_bdy(jk)%t_seg(:)%i_first == 0 )
                      tf_bdy(jk)%t_seg(:)%i_first = tl_seg%i_first
                   END WHERE
-                  WHERE( tf_bdy(jk)%t_seg(:)%i_last == 0 ) 
+                  WHERE( tf_bdy(jk)%t_seg(:)%i_last == 0 )
                      tf_bdy(jk)%t_seg(:)%i_last = tl_seg%i_last
                   END WHERE
                ENDIF
@@ -687,46 +687,46 @@ CONTAINS
          CALL boundary_check(tf_bdy, td_var)
 
       ENDIF
- 
-   END FUNCTION boundary__init_wrapper 
+
+   END FUNCTION boundary__init_wrapper
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION boundary__init(cd_card, ld_use, ld_nam, td_seg) &
          &  RESULT (tf_bdy)
-   !------------------------------------------------------------------- 
+   !-------------------------------------------------------------------
    !> @brief This function initialise basically a boundary structure with
    !> cardinal name.
-   ! 
-   !> @details 
-   !> optionnaly you could specify if this boundary is used or not, 
+   !
+   !> @details
+   !> optionnaly you could specify if this boundary is used or not,
    !> and add one segment structure.
-   ! 
-   !> @author J.Paul 
-   !> @date November, 2013 - Initial Version 
-   ! 
+   !
+   !> @author J.Paul
+   !> @date November, 2013 - Initial Version
+   !
    !> @param[in]  cd_card  cardinal name
    !> @param[in]  ld_use   boundary use or not
    !> @param[in]  td_seg   segment structure
    !> @return boundary structure
-   !------------------------------------------------------------------- 
+   !-------------------------------------------------------------------
 
-      IMPLICIT NONE 
+      IMPLICIT NONE
 
       ! Argument
       CHARACTER(LEN=*), INTENT(IN) :: cd_card
-      LOGICAL         , INTENT(IN), OPTIONAL :: ld_use 
-      LOGICAL         , INTENT(IN), OPTIONAL :: ld_nam 
+      LOGICAL         , INTENT(IN), OPTIONAL :: ld_use
+      LOGICAL         , INTENT(IN), OPTIONAL :: ld_nam
       TYPE(TSEG)      , INTENT(IN), OPTIONAL :: td_seg
 
-      ! function 
+      ! function
       TYPE(TBDY)                   :: tf_bdy
 
-      ! local variable 
-      ! loop indices 
-      !---------------------------------------------------------------- 
+      ! local variable
+      ! loop indices
+      !----------------------------------------------------------------
 
       SELECT CASE(TRIM(cd_card))
          CASE ('north','south','east','west')
-         
+
             tf_bdy%c_card=TRIM(cd_card)
 
             tf_bdy%l_use=.TRUE.
@@ -745,31 +745,31 @@ CONTAINS
 
    END FUNCTION boundary__init
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE boundary__add_seg(td_bdy, td_seg) 
-   !------------------------------------------------------------------- 
-   !> @brief This subroutine add one segment structure to a boundary structure 
-   ! 
-   !> @details 
-   ! 
-   !> @author J.Paul 
-   !> @date November, 2013 - Initial Version 
-   ! 
-   !> @param[inout] td_bdy boundary structure  
-   !> @param[in] td_seg    segment structure  
-   !------------------------------------------------------------------- 
+   SUBROUTINE boundary__add_seg(td_bdy, td_seg)
+   !-------------------------------------------------------------------
+   !> @brief This subroutine add one segment structure to a boundary structure
+   !
+   !> @details
+   !
+   !> @author J.Paul
+   !> @date November, 2013 - Initial Version
+   !
+   !> @param[inout] td_bdy boundary structure
+   !> @param[in] td_seg    segment structure
+   !-------------------------------------------------------------------
 
-      IMPLICIT NONE 
+      IMPLICIT NONE
 
-      ! Argument 
+      ! Argument
       TYPE(TBDY), INTENT(INOUT) :: td_bdy
       TYPE(TSEG), INTENT(IN   ) :: td_seg
 
-      ! local variable 
+      ! local variable
       INTEGER(i4)                            :: il_status
       TYPE(TSEG) , DIMENSION(:), ALLOCATABLE :: tl_seg
 
-      ! loop indices 
-      !---------------------------------------------------------------- 
+      ! loop indices
+      !----------------------------------------------------------------
 
       IF( td_bdy%i_nseg > 0 )THEN
          ! already other segment in boundary structure
@@ -794,8 +794,8 @@ CONTAINS
 
             ! clean
             CALL seg__clean(tl_seg(:))
-            DEALLOCATE(tl_seg)            
-            
+            DEALLOCATE(tl_seg)
+
          ENDIF
       ELSE
          ! no segment in boundary structure
@@ -807,37 +807,37 @@ CONTAINS
          IF(il_status /= 0 )THEN
             CALL logger_error( &
             &  " BOUNDARY ADD SEG: not enough space to put segments ")
-         ENDIF         
+         ENDIF
       ENDIF
- 
+
       ! update number of segment
       td_bdy%i_nseg=td_bdy%i_nseg+1
 
       ! add new segment
       td_bdy%t_seg(td_bdy%i_nseg)=seg__copy(td_seg)
 
-   END SUBROUTINE boundary__add_seg 
+   END SUBROUTINE boundary__add_seg
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE boundary__del_seg(td_bdy) 
-   !------------------------------------------------------------------- 
-   !> @brief This subroutine remove all segments of a boundary structure 
-   ! 
-   !> @details 
-   ! 
-   !> @author J.Paul 
-   !> @date November, 2013 - Initial Version 
-   ! 
+   SUBROUTINE boundary__del_seg(td_bdy)
+   !-------------------------------------------------------------------
+   !> @brief This subroutine remove all segments of a boundary structure
+   !
+   !> @details
+   !
+   !> @author J.Paul
+   !> @date November, 2013 - Initial Version
+   !
    !> @param[inout]  td_bdy   boundary structure
-   !------------------------------------------------------------------- 
+   !-------------------------------------------------------------------
 
-      IMPLICIT NONE 
+      IMPLICIT NONE
 
-      ! Argument 
+      ! Argument
       TYPE(TBDY), INTENT(INOUT) :: td_bdy
 
-      ! local variable 
-      ! loop indices 
-      !---------------------------------------------------------------- 
+      ! local variable
+      ! loop indices
+      !----------------------------------------------------------------
 
       IF( ASSOCIATED(td_bdy%t_seg) )THEN
          CALL seg__clean(td_bdy%t_seg(:))
@@ -846,40 +846,40 @@ CONTAINS
       !update number of segment
       td_bdy%i_nseg=0
 
-   END SUBROUTINE boundary__del_seg 
+   END SUBROUTINE boundary__del_seg
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION boundary__get_info(cd_card, id_jcard) &
          & RESULT (tf_bdy)
-   !------------------------------------------------------------------- 
-   !> @brief This function get information about boundary from string character. 
-   ! 
+   !-------------------------------------------------------------------
+   !> @brief This function get information about boundary from string character.
+   !
    !> @details
    !> This string character that will be passed through namelist could contains
-   !> orthogonal index, first and last indices, of each segment. 
+   !> orthogonal index, first and last indices, of each segment.
    !> And also the width of all segments of this boundary.
    !>   cn_north='index1,first1:last1(width)|index2,first2:last2'
-   !> 
-   !> @author J.Paul 
-   !> @date November, 2013 - Initial Version 
-   !> @date february, 2015 
+   !>
+   !> @author J.Paul
+   !> @date November, 2013 - Initial Version
+   !> @date february, 2015
    !> - do not change indices read from namelist
    !> - change format cn_north
-   ! 
+   !
    !> @param[in] cd_card   boundary description
    !> @param[in] id_jcard  boundary index
    !> @return boundary structure
-   !------------------------------------------------------------------- 
+   !-------------------------------------------------------------------
 
-      IMPLICIT NONE 
+      IMPLICIT NONE
 
-      ! Argument 
+      ! Argument
       CHARACTER(LEN=lc), INTENT(IN) :: cd_card
       INTEGER(i4)      , INTENT(IN) :: id_jcard
 
-      ! function 
+      ! function
       TYPE(TBDY)                    :: tf_bdy
 
-      ! local variable 
+      ! local variable
       INTEGER(i4)       :: il_width
       INTEGER(i4)       :: il_ind1
       INTEGER(i4)       :: il_ind2
@@ -889,19 +889,19 @@ CONTAINS
       CHARACTER(LEN=lc) :: cl_width
       CHARACTER(LEN=lc) :: cl_tmp
       CHARACTER(LEN=lc) :: cl_first
-      CHARACTER(LEN=lc) :: cl_last 
+      CHARACTER(LEN=lc) :: cl_last
 
       TYPE(TSEG)        :: tl_seg
 
-      ! loop indices 
+      ! loop indices
       INTEGER(i4) :: ji
-      !---------------------------------------------------------------- 
- 
+      !----------------------------------------------------------------
+
       ji=1
       cl_seg=fct_split(cd_card,ji)
 
       il_width=0
-      ! look for segment width 
+      ! look for segment width
       ! width should be the same for all segment of one boundary
       IF( TRIM(cl_seg)   /= '' )THEN
 
@@ -923,7 +923,7 @@ CONTAINS
             ENDIF
          ENDIF
 
-      ENDIF 
+      ENDIF
 
       DO WHILE( TRIM(cl_seg) /= '' )
 
@@ -939,8 +939,8 @@ CONTAINS
                &  " check namelist. ")
             ENDIF
          ENDIF
-      
-         
+
+
          cl_tmp=fct_split(cl_seg,2,',')
 
 
@@ -955,8 +955,8 @@ CONTAINS
                CALL logger_error("BOUNDARY INIT: unclosed parentheses."//&
                &  " check namelist. ")
             ENDIF
-         ENDIF         
-         
+         ENDIF
+
          cl_last =fct_split(cl_tmp,2,':')
          ! remove potential width information
          il_ind1=SCAN(fct_lower(cl_last),'(')
@@ -995,46 +995,46 @@ CONTAINS
 
          ! clean
          CALL seg__clean(tl_seg)
-      ENDDO 
+      ENDDO
 
-   END FUNCTION boundary__get_info 
+   END FUNCTION boundary__get_info
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE boundary_get_indices(td_bdy, td_var, ld_oneseg) 
-   !------------------------------------------------------------------- 
+   SUBROUTINE boundary_get_indices(td_bdy, td_var, ld_oneseg)
+   !-------------------------------------------------------------------
    !> @brief This subroutine get indices of each semgent for each boundary.
-   ! 
-   !> @details 
+   !
+   !> @details
    !> indices are compute from variable value, actually variable fill value,
-   !> which is assume to be land mask. 
-   !> Boundary structure should have been initialized before running 
+   !> which is assume to be land mask.
+   !> Boundary structure should have been initialized before running
    !> this subroutine. Segment indices will be search between first and last
    !> indies, at this orthogonal index.
-   !> 
+   !>
    !> Optionnally you could forced to use only one segment for each boundary.
-   !> 
-   !> @warning number of segment (i_nseg) will be change, before the number 
+   !>
+   !> @warning number of segment (i_nseg) will be change, before the number
    !> of segment structure
-   ! 
-   !> @author J.Paul 
-   !> @date November, 2013 - Initial Version 
-   ! 
-   !> @param[inout] td_bdy boundary structure  
-   !> @param[in] td_var    variable structure 
-   !> @param[in] ld_onseg  use only one sgment for each boundary 
-   !------------------------------------------------------------------- 
+   !
+   !> @author J.Paul
+   !> @date November, 2013 - Initial Version
+   !
+   !> @param[inout] td_bdy boundary structure
+   !> @param[in] td_var    variable structure
+   !> @param[in] ld_onseg  use only one sgment for each boundary
+   !-------------------------------------------------------------------
 
-      IMPLICIT NONE 
+      IMPLICIT NONE
 
       ! Argument
       TYPE(TBDY) , DIMENSION(ip_ncard), INTENT(INOUT) :: td_bdy
       TYPE(TVAR)                      , INTENT(IN   ) :: td_var
       LOGICAL                         , INTENT(IN   ), OPTIONAL :: ld_oneseg
 
-      ! local variable 
+      ! local variable
       INTEGER(i4) :: il_index
       INTEGER(i4) :: il_width
       INTEGER(i4) :: il_first
-      INTEGER(i4) :: il_last 
+      INTEGER(i4) :: il_last
 
       LOGICAL     :: ll_oneseg
 
@@ -1042,8 +1042,8 @@ CONTAINS
 
       ! loop indices
       INTEGER(i4) :: jk
-      !---------------------------------------------------------------- 
- 
+      !----------------------------------------------------------------
+
       ll_oneseg=.TRUE.
       IF( PRESENT(ld_oneseg) ) ll_oneseg=ld_oneseg
 
@@ -1062,7 +1062,7 @@ CONTAINS
                il_width=td_bdy(jk)%t_seg(1)%i_width
                il_first=td_bdy(jk)%t_seg(1)%i_first
                il_last =td_bdy(jk)%t_seg(1)%i_last
- 
+
                CALL boundary__get_seg_number( td_bdy(jk), td_var)
 
                CALL boundary__get_seg_indices( td_bdy(jk), td_var, &
@@ -1090,41 +1090,41 @@ CONTAINS
 
       ENDDO
 
-   END SUBROUTINE boundary_get_indices 
+   END SUBROUTINE boundary_get_indices
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE boundary__get_seg_number(td_bdy, td_var) 
-   !------------------------------------------------------------------- 
-   !> @brief This subroutine compute the number of sea segment. 
-   ! 
-   !> @details 
+   SUBROUTINE boundary__get_seg_number(td_bdy, td_var)
+   !-------------------------------------------------------------------
+   !> @brief This subroutine compute the number of sea segment.
+   !
+   !> @details
    !> It use variable value, actually variable fill value
    !> (which is assume to be land mask), to compute the number of segment between
    !> first and last indices at boundary orthogonal index.
-   !> @warning number of segment (i_nseg) will be change, before the number 
+   !> @warning number of segment (i_nseg) will be change, before the number
    !> of segment structure
-   ! 
-   !> @author J.Paul 
-   !> @date November, 2013 - Initial Version 
-   ! 
-   !> @param[inout] td_bdy boundary structure 
-   !> @param[in] td_var    variable structure 
-   !------------------------------------------------------------------- 
+   !
+   !> @author J.Paul
+   !> @date November, 2013 - Initial Version
+   !
+   !> @param[inout] td_bdy boundary structure
+   !> @param[in] td_var    variable structure
+   !-------------------------------------------------------------------
 
-      IMPLICIT NONE 
+      IMPLICIT NONE
 
       ! Argument
       TYPE(TBDY) , INTENT(INOUT) :: td_bdy
       TYPE(TVAR) , INTENT(IN   ) :: td_var
 
-      ! local variable 
+      ! local variable
       REAL(dp)   , DIMENSION(:)        , ALLOCATABLE :: dl_value
       LOGICAL                                        :: ll_sea
       INTEGER(i4)                                    :: il_index
 
       ! loop indices
       INTEGER(i4) :: ji
-      !---------------------------------------------------------------- 
- 
+      !----------------------------------------------------------------
+
       IF( td_bdy%l_use .AND. td_bdy%i_nseg == 1 )THEN
 
          il_index=td_bdy%t_seg(1)%i_index
@@ -1136,7 +1136,7 @@ CONTAINS
                dl_value(:)=td_var%d_value(:,il_index,1,1)
 
                IF( ANY(dl_value(:) /= td_var%d_fill) )THEN
-                  
+
                   td_bdy%l_use=.TRUE.
                   td_bdy%i_nseg=0
 
@@ -1165,7 +1165,7 @@ CONTAINS
                dl_value(:)=td_var%d_value(il_index,:,1,1)
 
                IF( ANY(dl_value(:) /= td_var%d_fill) )THEN
-                  
+
                   td_bdy%l_use=.TRUE.
                   td_bdy%i_nseg=0
 
@@ -1190,28 +1190,28 @@ CONTAINS
 
          END SELECT
       ENDIF
- 
-   END SUBROUTINE boundary__get_seg_number 
+
+   END SUBROUTINE boundary__get_seg_number
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE boundary__get_seg_indices(td_bdy, td_var, &
-         &                              id_index, id_width, id_first, id_last) 
-   !------------------------------------------------------------------- 
+         &                              id_index, id_width, id_first, id_last)
+   !-------------------------------------------------------------------
    !> @brief This subroutine get segment indices for one boundary.
-   ! 
-   !> @details 
-   ! 
-   !> @author J.Paul 
-   !> @date November, 2013 - Initial Version 
-   ! 
-   !> @param[inout] td_bdy boundary structure  
-   !> @param[in] td_var    variable structure  
-   !> @param[in] id_index  boundary orthogonal index  
-   !> @param[in] id_width  bounary width 
+   !
+   !> @details
+   !
+   !> @author J.Paul
+   !> @date November, 2013 - Initial Version
+   !
+   !> @param[inout] td_bdy boundary structure
+   !> @param[in] td_var    variable structure
+   !> @param[in] id_index  boundary orthogonal index
+   !> @param[in] id_width  bounary width
    !> @param[in] id_first  boundary first indice
    !> @param[in] id_last   boundary last  indice
-   !------------------------------------------------------------------- 
+   !-------------------------------------------------------------------
 
-      IMPLICIT NONE 
+      IMPLICIT NONE
 
       ! Argument
       TYPE(TBDY) , INTENT(INOUT) :: td_bdy
@@ -1221,7 +1221,7 @@ CONTAINS
       INTEGER(i4), INTENT(IN   ) :: id_first
       INTEGER(i4), INTENT(IN   ) :: id_last
 
-      ! local variable 
+      ! local variable
       INTEGER(i4)                                    :: il_nseg
       INTEGER(i4), DIMENSION(ip_ncard)               :: il_max
       INTEGER(i4), DIMENSION(ip_ncard)               :: il_min
@@ -1238,12 +1238,12 @@ CONTAINS
       INTEGER(i4) :: ji
       INTEGER(i4) :: jk
       INTEGER(i4) :: jl
-      !---------------------------------------------------------------- 
- 
+      !----------------------------------------------------------------
+
       SELECT CASE(TRIM(td_bdy%c_card))
          CASE('north')
             jk=jp_north
-            
+
             ALLOCATE( dl_value(td_var%t_dim(1)%i_len) )
             dl_value(:)=td_var%d_value(:,id_index,1,1)
 
@@ -1254,13 +1254,13 @@ CONTAINS
             dl_value(:)=td_var%d_value(:,id_index,1,1)
 
          CASE('east ')
-            jk=jp_east 
+            jk=jp_east
 
             ALLOCATE( dl_value(td_var%t_dim(2)%i_len) )
             dl_value(:)=td_var%d_value(id_index,:,1,1)
 
          CASE('west ')
-            jk=jp_west 
+            jk=jp_west
 
             ALLOCATE( dl_value(td_var%t_dim(2)%i_len) )
             dl_value(:)=td_var%d_value(id_index,:,1,1)
@@ -1276,8 +1276,8 @@ CONTAINS
       il_min(jp_south)=1+ip_ghost
       il_min(jp_east )=1+ip_ghost
       il_min(jp_west )=1+ip_ghost
-         
-      ! special case for EW cyclic 
+
+      ! special case for EW cyclic
       IF( td_var%i_ew >= 0 )THEN
          il_min(jp_north)=1
          il_min(jp_south)=1
@@ -1285,7 +1285,7 @@ CONTAINS
          il_max(jp_north)=td_var%t_dim(1)%i_len
          il_max(jp_south)=td_var%t_dim(1)%i_len
       ENDIF
-      
+
       il_nseg=td_bdy%i_nseg
       ! remove all segment from boundary
       CALL boundary__del_seg(td_bdy)
@@ -1332,56 +1332,56 @@ CONTAINS
                ENDIF
                ll_sea=.FALSE.
             ENDIF
-            
+
          ENDDO
 
          CALL boundary__add_seg(td_bdy,tl_seg)
 
          ! clean
          CALL seg__clean(tl_seg)
-         
+
       ENDDO
 
       DEALLOCATE(dl_value)
-      
-   END SUBROUTINE boundary__get_seg_indices 
+
+   END SUBROUTINE boundary__get_seg_indices
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE boundary_check_corner(td_bdy, td_var)
-   !------------------------------------------------------------------- 
-   !> @brief This subroutine check if there is boundary at corner, and 
-   !> adjust boundary indices if necessary. 
-   ! 
-   !> @details 
+   !-------------------------------------------------------------------
+   !> @brief This subroutine check if there is boundary at corner, and
+   !> adjust boundary indices if necessary.
+   !
+   !> @details
    !> If there is a north west corner, first indices of north boundary
-   !> should be the same as the west boundary indices. 
+   !> should be the same as the west boundary indices.
    !> And the last indices of the west boundary should be the same as
    !> the north indices.
    !> More over the width of west and north boundary should be the same.
-   ! 
-   !> @author J.Paul 
-   !> @date November, 2013 - Initial Version 
-   ! 
+   !
+   !> @author J.Paul
+   !> @date November, 2013 - Initial Version
+   !
    !> @param[inout] td_bdy boundary structure
    !> @param[in] td_var    variable structure
-   !------------------------------------------------------------------- 
+   !-------------------------------------------------------------------
 
-      IMPLICIT NONE 
+      IMPLICIT NONE
 
       ! Argument
       TYPE(TBDY) , DIMENSION(ip_ncard), INTENT(INOUT) :: td_bdy
       TYPE(TVAR)                      , INTENT(IN   ) :: td_var
 
-      ! local variable 
+      ! local variable
       TYPE(TSEG)  :: tl_north
       TYPE(TSEG)  :: tl_south
-      TYPE(TSEG)  :: tl_east 
+      TYPE(TSEG)  :: tl_east
       TYPE(TSEG)  :: tl_west
 
       INTEGER(i4) :: il_width
 
       ! loop indices
-      !---------------------------------------------------------------- 
- 
+      !----------------------------------------------------------------
+
       IF( .NOT. ASSOCIATED(td_var%d_value) )THEN
          CALL logger_error("BOUNDARY CHEKC CORNER: no value associated "//&
          &              "to variable "//TRIM(td_var%c_name))
@@ -1405,7 +1405,7 @@ CONTAINS
                &  " width between north and west boundary ")
 
                il_width=MIN(tl_west%i_width,tl_north%i_width)
-               
+
                tl_west%i_width =il_width
                tl_north%i_width=il_width
 
@@ -1448,7 +1448,7 @@ CONTAINS
                &  " width between north and east boundary ")
 
                il_width=MIN(tl_east%i_width,tl_north%i_width)
-               
+
                tl_east%i_width =il_width
                tl_north%i_width=il_width
 
@@ -1490,7 +1490,7 @@ CONTAINS
                &  " width between south and east boundary ")
 
                il_width=MIN(tl_east%i_width,tl_south%i_width)
-               
+
                tl_east%i_width =il_width
                tl_south%i_width=il_width
 
@@ -1532,7 +1532,7 @@ CONTAINS
                &  " width between south and west boundary ")
 
                il_width=MIN(tl_west%i_width,tl_south%i_width)
-               
+
                tl_west%i_width =il_width
                tl_south%i_width=il_width
 
@@ -1562,45 +1562,45 @@ CONTAINS
       CALL seg__clean(tl_east )
       CALL seg__clean(tl_west )
 
-   END SUBROUTINE boundary_check_corner 
+   END SUBROUTINE boundary_check_corner
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE boundary_check(td_bdy, td_var) 
-   !------------------------------------------------------------------- 
+   SUBROUTINE boundary_check(td_bdy, td_var)
+   !-------------------------------------------------------------------
    !> @brief This subroutine check boundary.
-   ! 
-   !> @details 
+   !
+   !> @details
    !> It checks that first and last indices as well as orthogonal index are
    !> inside domain, and check corner (see boundary_check_corner).
-   ! 
-   !> @author J.Paul 
-   !> @date November, 2013 - Initial Version 
+   !
+   !> @author J.Paul
+   !> @date November, 2013 - Initial Version
    !> @date June, 2016
    !> - Bug fix: take into account that boundaries are compute on T point,
    !>   but expressed on U,V point
    !>
-   !> @param[inout] td_bdy boundary structure 
-   !> @param[in] td_var    variable structure 
-   !------------------------------------------------------------------- 
+   !> @param[inout] td_bdy boundary structure
+   !> @param[in] td_var    variable structure
+   !-------------------------------------------------------------------
 
-      IMPLICIT NONE 
+      IMPLICIT NONE
 
       ! Argument
       TYPE(TBDY) , DIMENSION(ip_ncard), INTENT(INOUT) :: td_bdy
       TYPE(TVAR)                      , INTENT(IN   ) :: td_var
 
-      ! local variable 
+      ! local variable
       INTEGER(i4)      , DIMENSION(ip_ncard) :: il_max
       INTEGER(i4)      , DIMENSION(ip_ncard) :: il_maxindex
 
-      ! loop indices 
+      ! loop indices
       INTEGER(i4) :: jk
-      !---------------------------------------------------------------- 
- 
+      !----------------------------------------------------------------
+
       il_max(jp_north)=td_var%t_dim(1)%i_len
       il_max(jp_south)=td_var%t_dim(1)%i_len
       il_max(jp_east )=td_var%t_dim(2)%i_len
       il_max(jp_west )=td_var%t_dim(2)%i_len
- 
+
       ! index expressed on U,V point, move on T point.
       il_maxindex(jp_north)=td_var%t_dim(2)%i_len-ip_ghost+1
       il_maxindex(jp_south)=td_var%t_dim(2)%i_len-ip_ghost
@@ -1636,7 +1636,7 @@ CONTAINS
             ENDIF
          ENDIF
       ENDDO
- 
+
       CALL boundary_check_corner(td_bdy, td_var)
 
    END SUBROUTINE boundary_check
@@ -1646,7 +1646,7 @@ CONTAINS
    !> @brief This subroutine swap array for east and north boundary.
    !
    !> @detail
-   !> 
+   !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !
@@ -1671,7 +1671,7 @@ CONTAINS
       IF( .NOT. ASSOCIATED(td_var%d_value) )THEN
          CALL logger_error("BOUNDARY SWAP: no array of value "//&
          &  "associted to variable "//TRIM(td_var%c_name) )
-      ELSE      
+      ELSE
 
          SELECT CASE(TRIM(td_bdy%c_card))
          CASE('north')
@@ -1687,7 +1687,7 @@ CONTAINS
                &  dl_value(:,td_var%t_dim(2)%i_len-jj+1,:,:)
             ENDDO
 
-            DEALLOCATE( dl_value )         
+            DEALLOCATE( dl_value )
          CASE('east')
             ALLOCATE( dl_value(td_var%t_dim(1)%i_len, &
             &                  td_var%t_dim(2)%i_len, &
@@ -1709,25 +1709,25 @@ CONTAINS
       ENDIF
    END SUBROUTINE boundary_swap
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE boundary__print_unit(td_bdy) 
-   !------------------------------------------------------------------- 
-   !> @brief This subroutine print information about one boundary. 
-   ! 
-   !> @author J.Paul 
-   !> @date November, 2013 - Initial Version 
-   ! 
-   !> @param[in] td_bdy boundary structure 
-   !------------------------------------------------------------------- 
+   SUBROUTINE boundary__print_unit(td_bdy)
+   !-------------------------------------------------------------------
+   !> @brief This subroutine print information about one boundary.
+   !
+   !> @author J.Paul
+   !> @date November, 2013 - Initial Version
+   !
+   !> @param[in] td_bdy boundary structure
+   !-------------------------------------------------------------------
 
-      IMPLICIT NONE 
+      IMPLICIT NONE
 
       ! Argument
       TYPE(TBDY), INTENT(IN) :: td_bdy
 
-      ! local variable 
-      ! loop indices 
+      ! local variable
+      ! loop indices
       INTEGER(i4) :: ji
-      !---------------------------------------------------------------- 
+      !----------------------------------------------------------------
 
       WRITE(*,'(a,/1x,a,/1x,a)') "Boundary "//TRIM(td_bdy%c_card), &
       &  " use  "//TRIM(fct_str(td_bdy%l_use)), &
@@ -1739,35 +1739,35 @@ CONTAINS
          &  " first "//TRIM(fct_str(td_bdy%t_seg(ji)%i_first)), &
          &  " last  "//TRIM(fct_str(td_bdy%t_seg(ji)%i_last))
       ENDDO
- 
+
    END SUBROUTINE boundary__print_unit
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE boundary__print_arr(td_bdy) 
-   !------------------------------------------------------------------- 
-   !> @brief This subroutine print information about a array of boundary 
-   ! 
-   !> @details 
-   ! 
-   !> @author J.Paul 
-   !> @date November, 2013 - Initial Version 
-   ! 
-   !> @param[in] td_bdy boundary structure 
-   !------------------------------------------------------------------- 
+   SUBROUTINE boundary__print_arr(td_bdy)
+   !-------------------------------------------------------------------
+   !> @brief This subroutine print information about a array of boundary
+   !
+   !> @details
+   !
+   !> @author J.Paul
+   !> @date November, 2013 - Initial Version
+   !
+   !> @param[in] td_bdy boundary structure
+   !-------------------------------------------------------------------
 
-      IMPLICIT NONE 
+      IMPLICIT NONE
 
       ! Argument
       TYPE(TBDY), DIMENSION(:), INTENT(IN) :: td_bdy
 
-      ! local variable 
-      ! loop indices 
+      ! local variable
+      ! loop indices
       INTEGER(i4) :: ji
-      !---------------------------------------------------------------- 
+      !----------------------------------------------------------------
 
       DO ji=1,SIZE(td_bdy(:))
          CALL boundary_print(td_bdy(ji))
       ENDDO
- 
+
    END SUBROUTINE boundary__print_arr
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION seg__copy_unit(td_seg) &
@@ -1779,13 +1779,13 @@ CONTAINS
    !> @warning do not use on the output of a function who create or read a
    !> structure (ex: tl_seg=seg__copy(seg__init()) is forbidden).
    !> This will create memory leaks.
-   !> @warning to avoid infinite loop, do not use any function inside 
+   !> @warning to avoid infinite loop, do not use any function inside
    !> this subroutine
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !> @date November, 2014
-   !> - use function instead of overload assignment operator 
+   !> - use function instead of overload assignment operator
    !> (to avoid memory leak)
    !
    !> @param[in] td_seg   segment structure
@@ -1808,7 +1808,7 @@ CONTAINS
       tf_seg%i_index    = td_seg%i_index
       tf_seg%i_width    = td_seg%i_width
       tf_seg%i_first    = td_seg%i_first
-      tf_seg%i_last     = td_seg%i_last 
+      tf_seg%i_last     = td_seg%i_last
 
    END FUNCTION seg__copy_unit
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1820,14 +1820,14 @@ CONTAINS
    !>
    !> @warning do not use on the output of a function who create or read a
    !> structure (ex: tl_seg=seg__copy(seg__init()) is forbidden).
-   !> This will create memory leaks.   
-   !> @warning to avoid infinite loop, do not use any function inside 
+   !> This will create memory leaks.
+   !> @warning to avoid infinite loop, do not use any function inside
    !> this subroutine
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !> @date November, 2014
-   !> - use function instead of overload assignment operator 
+   !> - use function instead of overload assignment operator
    !> (to avoid memory leak)
    !
    !> @param[in] td_seg   segment structure
@@ -1855,38 +1855,38 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION seg__init(id_index, id_width, id_first, id_last) &
          &  RESULT(tf_seg)
-   !------------------------------------------------------------------- 
+   !-------------------------------------------------------------------
    !> @brief This function  initialise segment structure.
-   ! 
-   !> @details 
+   !
+   !> @details
    !> It simply add orthogonal index, and optionnaly width, first
-   !> and last indices of the segment. 
-   ! 
-   !> @author J.Paul 
-   !> @date November, 2013 - Initial Version 
-   ! 
+   !> and last indices of the segment.
+   !
+   !> @author J.Paul
+   !> @date November, 2013 - Initial Version
+   !
    !> @param[in] id_index  orthogonal index
-   !> @param[in] id_width  width of the segment 
-   !> @param[in] id_first  first indices 
+   !> @param[in] id_width  width of the segment
+   !> @param[in] id_first  first indices
    !> @param[in] id_last   last  indices
    !> @return segment structure
-   !------------------------------------------------------------------- 
+   !-------------------------------------------------------------------
 
-      IMPLICIT NONE 
+      IMPLICIT NONE
 
       ! Argument
       INTEGER(i4), INTENT(IN) :: id_index
       INTEGER(i4), INTENT(IN), OPTIONAL :: id_width
       INTEGER(i4), INTENT(IN), OPTIONAL :: id_first
-      INTEGER(i4), INTENT(IN), OPTIONAL :: id_last 
+      INTEGER(i4), INTENT(IN), OPTIONAL :: id_last
 
-      ! function 
+      ! function
       TYPE(TSEG)              :: tf_seg
 
-      ! local variable 
-      
-      ! loop indices 
-      !---------------------------------------------------------------- 
+      ! local variable
+
+      ! loop indices
+      !----------------------------------------------------------------
 
       tf_seg%i_index=id_index
 
@@ -1894,56 +1894,56 @@ CONTAINS
       IF( PRESENT(id_first) ) tf_seg%i_first=id_first
       IF( PRESENT(id_last ) ) tf_seg%i_last =id_last
 
-   END FUNCTION seg__init 
+   END FUNCTION seg__init
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE seg__clean_unit(td_seg) 
-   !------------------------------------------------------------------- 
-   !> @brief This subroutine clean segment structure. 
-   ! 
-   !> @author J.Paul 
-   !> @date November, 2013 - Initial Version 
-   ! 
+   SUBROUTINE seg__clean_unit(td_seg)
+   !-------------------------------------------------------------------
+   !> @brief This subroutine clean segment structure.
+   !
+   !> @author J.Paul
+   !> @date November, 2013 - Initial Version
+   !
    !> @param[inout] td_seg segment structure
-   !------------------------------------------------------------------- 
+   !-------------------------------------------------------------------
 
-      IMPLICIT NONE 
+      IMPLICIT NONE
 
-      ! Argument       
+      ! Argument
       TYPE(TSEG), INTENT(INOUT) :: td_seg
 
-      ! local variable 
+      ! local variable
       TYPE(TSEG) :: tl_seg
-      ! loop indices 
-      !---------------------------------------------------------------- 
+      ! loop indices
+      !----------------------------------------------------------------
 
       td_seg=seg__copy(tl_seg)
- 
+
    END SUBROUTINE seg__clean_unit
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE seg__clean_arr(td_seg) 
-   !------------------------------------------------------------------- 
-   !> @brief This subroutine clean segment structure. 
-   ! 
-   !> @author J.Paul 
-   !> @date November, 2013 - Initial Version 
-   ! 
+   SUBROUTINE seg__clean_arr(td_seg)
+   !-------------------------------------------------------------------
+   !> @brief This subroutine clean segment structure.
+   !
+   !> @author J.Paul
+   !> @date November, 2013 - Initial Version
+   !
    !> @param[inout] td_seg array of segment structure
-   !------------------------------------------------------------------- 
+   !-------------------------------------------------------------------
 
-      IMPLICIT NONE 
+      IMPLICIT NONE
 
-      ! Argument       
+      ! Argument
       TYPE(TSEG), DIMENSION(:), INTENT(INOUT) :: td_seg
 
-      ! local variable 
-      ! loop indices 
+      ! local variable
+      ! loop indices
       INTEGER(i4) :: ji
-      !---------------------------------------------------------------- 
+      !----------------------------------------------------------------
 
       DO ji=SIZE(td_seg(:)),1,-1
          CALL seg__clean(td_seg(ji))
       ENDDO
- 
-   END SUBROUTINE seg__clean_arr 
+
+   END SUBROUTINE seg__clean_arr
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 END MODULE boundary

@@ -3,7 +3,7 @@
 !----------------------------------------------------------------------
 !
 ! DESCRIPTION:
-!> @brief 
+!> @brief
 !> This module manage linear interpolation on regular grid.
 !>
 !> @details
@@ -11,11 +11,11 @@
 !> @code
 !> CALL interp_linear_fill(dd_value, dd_fill, id_detect, id_rho, ld_even [,ld_discont] )
 !> @endcode
-!>    - dd_value is 2D array of variable value 
+!>    - dd_value is 2D array of variable value
 !>    - dd_fill is the FillValue of variable
-!>    - id_detect is 2D array of point to be interpolated (see interp module) 
+!>    - id_detect is 2D array of point to be interpolated (see interp module)
 !>    - id_rho  is array of refinment factor
-!>    - ld_even indicates even refinment or not 
+!>    - ld_even indicates even refinment or not
 !>    - ld_discont indicates longitudinal discontinuity (-180°/180°, 0°/360°) or not
 !>
 !> @author
@@ -57,27 +57,27 @@ CONTAINS
          &                       id_rho, ld_even, ld_discont)
    !-------------------------------------------------------------------
    !> @brief
-   !> This subroutine compute horizontal linear interpolation on 4D array of value. 
-   !> 
-   !> @details 
+   !> This subroutine compute horizontal linear interpolation on 4D array of value.
+   !>
+   !> @details
    !>
    !> @author J.Paul
    !> @date September, 2014 - Initial Version
    !> @date July, 2015 - reinitialise detect array for each level
    !>
-   !> @param[inout] dd_value  2D array of variable value 
+   !> @param[inout] dd_value  2D array of variable value
    !> @param[in] dd_fill      FillValue of variable
-   !> @param[inout] id_detect 2D array of point to be interpolated 
+   !> @param[inout] id_detect 2D array of point to be interpolated
    !> @param[in] id_rho       array of refinment factor
-   !> @param[in] ld_even      even refinment or not 
+   !> @param[in] ld_even      even refinment or not
    !> @param[in] ld_discont   longitudinal discontinuity (-180°/180°, 0°/360°) or not
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
       ! Argument
-      REAL(dp)        , DIMENSION(:,:,:,:), INTENT(INOUT) :: dd_value 
-      REAL(dp)                            , INTENT(IN   ) :: dd_fill 
+      REAL(dp)        , DIMENSION(:,:,:,:), INTENT(INOUT) :: dd_value
+      REAL(dp)                            , INTENT(IN   ) :: dd_fill
       INTEGER(I4)     , DIMENSION(:,:,:)  , INTENT(INOUT) :: id_detect
       INTEGER(I4)     , DIMENSION(:)      , INTENT(IN   ) :: id_rho
       LOGICAL         , DIMENSION(:)      , INTENT(IN   ) :: ld_even
@@ -89,11 +89,11 @@ CONTAINS
       INTEGER(I4), DIMENSION(:,:,:), ALLOCATABLE :: il_detect
 
       LOGICAL                                    :: ll_discont
- 
+
       REAL(dp)   , DIMENSION(:,:)  , ALLOCATABLE :: dl_weight_IJ
       REAL(dp)   , DIMENSION(:,:)  , ALLOCATABLE :: dl_weight_I
       REAL(dp)   , DIMENSION(:,:)  , ALLOCATABLE :: dl_weight_J
-      
+
       ! loop indices
       INTEGER(i4) :: ji
       INTEGER(i4) :: jj
@@ -129,7 +129,7 @@ CONTAINS
             &                     il_detect(:,:,jk),            &
             &                     dl_weight_IJ(:,:),            &
             &                     id_rho(jp_I), id_rho(jp_J),   &
-            &                     ll_discont)            
+            &                     ll_discont)
             IF( ANY(il_detect(:,:,jk)==1) )THEN
                ! I direction
                DO jj=1,il_shape(2)
@@ -160,7 +160,7 @@ CONTAINS
       DEALLOCATE(dl_weight_IJ)
       DEALLOCATE(dl_weight_I)
       DEALLOCATE(dl_weight_J)
- 
+
    END SUBROUTINE interp_linear_fill
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE interp_linear__2D(dd_value,  dd_fill,   &
@@ -170,28 +170,28 @@ CONTAINS
          &                      ld_discont)
    !-------------------------------------------------------------------
    !> @brief
-   !> This subroutine compute linear interpolation on 2D array of value. 
-   !> 
-   !> @details 
+   !> This subroutine compute linear interpolation on 2D array of value.
+   !>
+   !> @details
    !>
    !> @author J.Paul
    !> @date September, 2014 - Initial Version
    !>
-   !> @param[inout] dd_value  2D array of variable value 
+   !> @param[inout] dd_value  2D array of variable value
    !> @param[in] dd_fill      FillValue of variable
-   !> @param[inout] id_detect 2D array of point to be interpolated 
+   !> @param[inout] id_detect 2D array of point to be interpolated
    !> @param[in] id_rhoi      refinment factor in i-direction
    !> @param[in] id_rhoj      refinment factor in j-direction
    !> @param[in] id_rhok      refinment factor in k-direction
-   !> @param[in] ld_even      even refinment or not 
+   !> @param[in] ld_even      even refinment or not
    !> @param[in] ld_discont   longitudinal discontinuity (-180°/180°, 0°/360°) or not
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
       ! Argument
-      REAL(dp)        , DIMENSION(:,:), INTENT(INOUT) :: dd_value 
-      REAL(dp)                        , INTENT(IN   ) :: dd_fill 
+      REAL(dp)        , DIMENSION(:,:), INTENT(INOUT) :: dd_value
+      REAL(dp)                        , INTENT(IN   ) :: dd_fill
       INTEGER(I4)     , DIMENSION(:,:), INTENT(INOUT) :: id_detect
       REAL(dp)        , DIMENSION(:,:), INTENT(IN   ) :: dd_weight
       INTEGER(I4)                     , INTENT(IN   ) :: id_rhoi
@@ -204,8 +204,8 @@ CONTAINS
       INTEGER(i4), DIMENSION(2)                :: il_shape
       INTEGER(i4), DIMENSION(2)                :: il_dim
 
-      REAL(dp)                                 :: dl_min 
-      REAL(dp)                                 :: dl_max 
+      REAL(dp)                                 :: dl_min
+      REAL(dp)                                 :: dl_max
       REAL(dp)   , DIMENSION(:)  , ALLOCATABLE :: dl_coef
       REAL(dp)   , DIMENSION(:,:), ALLOCATABLE :: dl_coarse
       REAL(dp)   , DIMENSION(:,:), ALLOCATABLE :: dl_tmp
@@ -241,7 +241,7 @@ CONTAINS
             ij=((jj-1)/id_rhoj)+1
             DO ji=1,il_shape(1)-1,id_rhoi
                ii=((ji-1)/id_rhoi)+1
-         
+
                ! check if point to be interpolated
                IF( ALL(id_detect(ji:ji+id_rhoi,   &
                &                 jj:jj+id_rhoj)==0) ) CYCLE
@@ -254,11 +254,11 @@ CONTAINS
                   dl_min=MINVAL( dl_tmp(:,:), dl_tmp(:,:)/=dd_fill )
                   dl_max=MAXVAL( dl_tmp(:,:), dl_tmp(:,:)/=dd_fill )
                   IF( dl_min < -170_dp .AND. dl_max > 170_dp )THEN
-                     WHERE( dl_tmp(:,:) < 0_dp ) 
+                     WHERE( dl_tmp(:,:) < 0_dp )
                         dl_tmp(:,:) = dl_tmp(:,:)+360._dp
                      END WHERE
                   ELSEIF( dl_min < 10_dp .AND. dl_max > 350_dp )THEN
-                     WHERE( dl_tmp(:,:) > 180_dp ) 
+                     WHERE( dl_tmp(:,:) > 180_dp )
                         dl_tmp(:,:) = dl_tmp(:,:)-180._dp
                      END WHERE
                   ENDIF
@@ -307,26 +307,26 @@ CONTAINS
          &                      ld_discont)
    !-------------------------------------------------------------------
    !> @brief
-   !> This subroutine compute linear interpolation on 1D array of value. 
-   !> 
-   !> @details 
+   !> This subroutine compute linear interpolation on 1D array of value.
+   !>
+   !> @details
    !>
    !> @author J.Paul
    !> @date September, 2014 - Initial Version
    !>
-   !> @param[inout] dd_value  1D array of variable value 
+   !> @param[inout] dd_value  1D array of variable value
    !> @param[in] dd_fill      FillValue of variable
-   !> @param[inout] id_detect 1D array of point to be interpolated 
+   !> @param[inout] id_detect 1D array of point to be interpolated
    !> @param[in] id_rhoi      refinment factor
-   !> @param[in] ld_even      even refinment or not 
+   !> @param[in] ld_even      even refinment or not
    !> @param[in] ld_discont   longitudinal discontinuity (-180°/180°, 0°/360°) or not
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
       ! Argument
-      REAL(dp)        , DIMENSION(:)  , INTENT(INOUT) :: dd_value 
-      REAL(dp)                        , INTENT(IN   ) :: dd_fill 
+      REAL(dp)        , DIMENSION(:)  , INTENT(INOUT) :: dd_value
+      REAL(dp)                        , INTENT(IN   ) :: dd_fill
       INTEGER(I4)     , DIMENSION(:)  , INTENT(INOUT) :: id_detect
       REAL(dp)        , DIMENSION(:,:), INTENT(IN   ) :: dd_weight
       INTEGER(I4)                     , INTENT(IN   ) :: id_rhoi
@@ -337,8 +337,8 @@ CONTAINS
       INTEGER(i4), DIMENSION(1)              :: il_shape
       INTEGER(i4), DIMENSION(1)              :: il_dim
 
-      REAL(dp)                               :: dl_min 
-      REAL(dp)                               :: dl_max 
+      REAL(dp)                               :: dl_min
+      REAL(dp)                               :: dl_max
       REAL(dp)   , DIMENSION(:), ALLOCATABLE :: dl_coef
       REAL(dp)   , DIMENSION(:), ALLOCATABLE :: dl_coarse
       REAL(dp)   , DIMENSION(:), ALLOCATABLE :: dl_tmp
@@ -366,7 +366,7 @@ CONTAINS
 
          DO ji=1,il_shape(1)-1,id_rhoi
             ii=((ji-1)/id_rhoi)+1
-         
+
             ! check if point to be interpolated
             IF( ALL(id_detect(ji:ji+id_rhoi)==0) ) CYCLE
             ! check data needed to interpolate
@@ -378,11 +378,11 @@ CONTAINS
                dl_min=MINVAL( dl_tmp(:), dl_tmp(:)/=dd_fill )
                dl_max=MAXVAL( dl_tmp(:), dl_tmp(:)/=dd_fill )
                IF( dl_min < -170_dp .AND. dl_max > 170_dp )THEN
-                  WHERE( dl_tmp(:) < 0_dp ) 
+                  WHERE( dl_tmp(:) < 0_dp )
                      dl_tmp(:) = dl_tmp(:)+360._dp
                   END WHERE
                ELSEIF( dl_min < 10_dp .AND. dl_max > 350_dp )THEN
-                  WHERE( dl_tmp(:) > 180_dp ) 
+                  WHERE( dl_tmp(:) > 180_dp )
                      dl_tmp(:) = dl_tmp(:)-180._dp
                   END WHERE
                ENDIF
@@ -420,8 +420,8 @@ CONTAINS
          & RESULT (df_coef)
    !-------------------------------------------------------------------
    !> @brief
-   !> This subroutine compute 2D array of coefficient for linear interpolation. 
-   !> 
+   !> This subroutine compute 2D array of coefficient for linear interpolation.
+   !>
    !> @author J.Paul
    !> @date September, 2014 - Initial Version
    !>
@@ -432,17 +432,17 @@ CONTAINS
       IMPLICIT NONE
 
       ! Argument
-      REAL(dp), DIMENSION(:,:)  , INTENT(IN) :: dd_value 
-      REAL(dp)                  , INTENT(IN) :: dd_fill 
+      REAL(dp), DIMENSION(:,:)  , INTENT(IN) :: dd_value
+      REAL(dp)                  , INTENT(IN) :: dd_fill
 
       ! function
       REAL(dp), DIMENSION(4)                 :: df_coef
 
       ! local variable
       REAL(dp), DIMENSION(4,4), PARAMETER :: dl_matrix = RESHAPE( &
-      & (/  1 ,-1 ,-1 , 1 ,& 
-            0 , 1 , 0 ,-1 ,& 
-            0 , 0 , 1 ,-1 ,& 
+      & (/  1 ,-1 ,-1 , 1 ,&
+            0 , 1 , 0 ,-1 ,&
+            0 , 0 , 1 ,-1 ,&
             0 , 0 , 0 , 1 /), &
       & (/ 4, 4 /) )
 
@@ -462,8 +462,8 @@ CONTAINS
          &                           dd_fill, id_rhoi, id_rhoj)
    !-------------------------------------------------------------------
    !> @brief
-   !> This subroutine compute linear interpolation of a 2D array of value. 
-   !> 
+   !> This subroutine compute linear interpolation of a 2D array of value.
+   !>
    !> @author J.Paul
    !> @date September, 2014 - Initial Version
    !>
@@ -472,18 +472,18 @@ CONTAINS
    !> @param[in] dd_coef      2D array of coefficient
    !> @param[in] dd_fill      FillValue of variable
    !> @param[in] ld_even      even refinment or not
-   !> @param[in] id_rhoi      refinement factor in i-direction 
+   !> @param[in] id_rhoi      refinement factor in i-direction
    !> @param[in] id_rhoj      refinement factor in j-direction
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
       ! Argument
-      REAL(dp)        , DIMENSION(:,:), INTENT(INOUT) :: dd_value 
+      REAL(dp)        , DIMENSION(:,:), INTENT(INOUT) :: dd_value
       INTEGER(i4)     , DIMENSION(:,:), INTENT(INOUT) :: id_detect
       REAL(dp)        , DIMENSION(:,:), INTENT(IN   ) :: dd_weight
-      REAL(dp)        , DIMENSION(:)  , INTENT(IN   ) :: dd_coef 
-      REAL(dp)                        , INTENT(IN   ) :: dd_fill 
+      REAL(dp)        , DIMENSION(:)  , INTENT(IN   ) :: dd_coef
+      REAL(dp)                        , INTENT(IN   ) :: dd_fill
       INTEGER(I4)     ,                 INTENT(IN   ) :: id_rhoi
       INTEGER(I4)     ,                 INTENT(IN   ) :: id_rhoj
 
@@ -524,8 +524,8 @@ CONTAINS
          & RESULT (df_coef)
    !-------------------------------------------------------------------
    !> @brief
-   !> This subroutine compute 1D array of coefficient for linear interpolation. 
-   !> 
+   !> This subroutine compute 1D array of coefficient for linear interpolation.
+   !>
    !> @author J.Paul
    !> @date September, 2014 - Initial Version
    !>
@@ -536,15 +536,15 @@ CONTAINS
       IMPLICIT NONE
 
       ! Argument
-      REAL(dp), DIMENSION(:)  , INTENT(IN) :: dd_value 
-      REAL(dp)                , INTENT(IN) :: dd_fill  
+      REAL(dp), DIMENSION(:)  , INTENT(IN) :: dd_value
+      REAL(dp)                , INTENT(IN) :: dd_fill
 
       ! function
       REAL(dp), DIMENSION(2)               :: df_coef
 
       ! local variable
       REAL(dp), DIMENSION(2,2), PARAMETER :: dl_matrix = RESHAPE( &
-      & (/  1 ,-1 ,& 
+      & (/  1 ,-1 ,&
             0 , 1  /), &
       &  (/ 2, 2 /) )
 
@@ -564,11 +564,11 @@ CONTAINS
          &                           dd_fill, id_rho)
    !-------------------------------------------------------------------
    !> @brief
-   !> This subroutine compute linear interpolation of a 1D array of value. 
-   !> 
+   !> This subroutine compute linear interpolation of a 1D array of value.
+   !>
    !> @author J.Paul
    !> @date September, 2014 - Initial Version
-   !> 
+   !>
    !> @param[inout] dd_value  1D array of mixed grid value
    !> @param[inout] id_detect 1D array of point to be interpolated
    !> @param[in] dd_coef      1D array of coefficient
@@ -580,12 +580,12 @@ CONTAINS
       IMPLICIT NONE
 
       ! Argument
-      REAL(dp)        , DIMENSION(:)  , INTENT(INOUT) :: dd_value 
+      REAL(dp)        , DIMENSION(:)  , INTENT(INOUT) :: dd_value
       INTEGER(i4)     , DIMENSION(:)  , INTENT(INOUT) :: id_detect
       REAL(dp)        , DIMENSION(:,:), INTENT(IN   ) :: dd_weight
-      REAL(dp)        , DIMENSION(:)  , INTENT(IN   ) :: dd_coef 
-      REAL(dp)                        , INTENT(IN   ) :: dd_fill 
-      INTEGER(I4)                     , INTENT(IN   ) :: id_rho      
+      REAL(dp)        , DIMENSION(:)  , INTENT(IN   ) :: dd_coef
+      REAL(dp)                        , INTENT(IN   ) :: dd_fill
+      INTEGER(I4)                     , INTENT(IN   ) :: id_rho
 
       ! local variable
 
@@ -599,7 +599,7 @@ CONTAINS
       ELSE
 
          DO ji=1,id_rho+1
-            
+
             IF(id_detect(ji)==1)THEN
 
                dd_value(ji)=DOT_PRODUCT(dd_coef(:),dd_weight(:,ji))
@@ -616,14 +616,14 @@ CONTAINS
    SUBROUTINE interp_linear__get_weight2D(dd_weight, id_rho, ld_even)
    !-------------------------------------------------------------------
    !> @brief
-   !> This subroutine compute interpoaltion weight for 2D array. 
-   !> 
+   !> This subroutine compute interpoaltion weight for 2D array.
+   !>
    !> @author J.Paul
    !> @date September, 2014 - Initial Version
    !>
    !> @param[in] dd_weight interpolation weight of 2D array
    !> @param[in] ld_even   even refinment or not
-   !> @param[in] id_rho    refinement factor 
+   !> @param[in] id_rho    refinement factor
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -636,17 +636,17 @@ CONTAINS
 
       ! local variable
       REAL(dp)                  :: dl_dx
-      REAL(dp)                  :: dl_x      
+      REAL(dp)                  :: dl_x
       REAL(dp)                  :: dl_dy
-      REAL(dp)                  :: dl_y      
-      
-      ! loop indices
-      INTEGER(i4) :: ii 
+      REAL(dp)                  :: dl_y
 
-      INTEGER(i4) :: ji 
+      ! loop indices
+      INTEGER(i4) :: ii
+
+      INTEGER(i4) :: ji
       INTEGER(i4) :: jj
       !----------------------------------------------------------------
-      
+
       IF( ld_even(jp_I) )THEN
          dl_dx=1._dp/REAL(id_rho(jp_I)-1,dp)
       ELSE ! odd refinement
@@ -665,7 +665,7 @@ CONTAINS
          IF( ld_even(jp_J) )THEN
             dl_y=REAL(jj-1,dp)*dl_dy - dl_dy*0.5_dp
          ELSE ! odd refinement
-            dl_y=REAL(jj-1,dp)*dl_dy 
+            dl_y=REAL(jj-1,dp)*dl_dy
          ENDIF
 
          DO ji=1,id_rho(jp_I)+1
@@ -674,9 +674,9 @@ CONTAINS
             ii=ii+1
 
             IF( ld_even(jp_I) )THEN
-               dl_x=REAL(ji-1,dp)*dl_dx - dl_dx*0.5_dp 
+               dl_x=REAL(ji-1,dp)*dl_dx - dl_dx*0.5_dp
             ELSE ! odd refinement
-               dl_x=REAL(ji-1,dp)*dl_dx 
+               dl_x=REAL(ji-1,dp)*dl_dx
             ENDIF
 
             dd_weight(:,ii)=(/1._dp, dl_x, dl_y, dl_x*dl_y /)
@@ -689,14 +689,14 @@ CONTAINS
    SUBROUTINE interp_linear__get_weight1D(dd_weight, id_rho, ld_even)
    !-------------------------------------------------------------------
    !> @brief
-   !> This subroutine compute interpoaltion weight for 1D array. 
-   !> 
+   !> This subroutine compute interpoaltion weight for 1D array.
+   !>
    !> @author J.Paul
    !> @date September, 2014 - Initial Version
    !>
    !> @param[in] dd_weight interpolation weight of 1D array
    !> @param[in] ld_even   even refinment or not
-   !> @param[in] id_rho    refinement factor 
+   !> @param[in] id_rho    refinement factor
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -708,12 +708,12 @@ CONTAINS
 
       ! local variable
       REAL(dp)                  :: dl_dx
-      REAL(dp)                  :: dl_x      
+      REAL(dp)                  :: dl_x
 
       ! loop indices
-      INTEGER(i4) :: ji   
+      INTEGER(i4) :: ji
       !----------------------------------------------------------------
-      
+
       IF( ld_even )THEN
          dl_dx=1._dp/REAL(id_rho-1,dp)
       ELSE ! odd refinement
@@ -722,9 +722,9 @@ CONTAINS
 
       DO ji=1,id_rho+1
          IF( ld_even )THEN
-            dl_x=REAL(ji-1,dp)*dl_dx - dl_dx*0.5_dp 
+            dl_x=REAL(ji-1,dp)*dl_dx - dl_dx*0.5_dp
          ELSE ! odd refinement
-            dl_x=REAL(ji-1,dp)*dl_dx 
+            dl_x=REAL(ji-1,dp)*dl_dx
          ENDIF
 
          dd_weight(:,ji)=(/1._dp, dl_x /)

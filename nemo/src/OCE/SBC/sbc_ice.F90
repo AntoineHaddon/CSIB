@@ -94,12 +94,9 @@ MODULE sbc_ice
    ! already defined in ice.F90 for SI3
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::  a_i
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::  h_i, h_s
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::  a_i_last_couple   !: Sea ice fraction on categories at the last coupling point
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   tatm_ice       !: air temperature [K]
 #endif
-
-   REAL(wp), PUBLIC, SAVE ::   pp_cldf = 0.81    !: cloud fraction over sea ice, summer CLIO value   [-]
 
    !! arrays relating to embedding ice in the ocean
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   snwice_mass        !: mass of snow and ice at current  ice time step   [Kg/m2]
@@ -108,7 +105,7 @@ MODULE sbc_ice
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: sbc_ice.F90 13284 2020-07-09 15:12:23Z smasson $
+   !! $Id: sbc_ice.F90 14072 2020-12-04 07:48:38Z laurent $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -168,7 +165,7 @@ CONTAINS
 
    LOGICAL         , PUBLIC, PARAMETER ::   lk_si3     = .FALSE.  !: no SI3 ice model
    LOGICAL         , PUBLIC, PARAMETER ::   lk_cice    = .FALSE.  !: no CICE ice model
-   REAL(wp)        , PUBLIC, PARAMETER ::   pp_cldf    = 0.81     !: cloud fraction over sea ice, summer CLIO value   [-]
+
    INTEGER         , PUBLIC, PARAMETER ::   jpl = 1
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   u_ice, v_ice                        ! jpi, jpj
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   tn_ice, alb_ice, qns_ice, dqns_ice  ! (jpi,jpj,jpl)

@@ -30,16 +30,14 @@ MODULE usrdef_sbc
    PUBLIC   usrdef_sbc_ice_tau  ! routine called by icestp.F90 for ice dynamics
    PUBLIC   usrdef_sbc_ice_flx  ! routine called by icestp.F90 for ice thermo
 
-   !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: usrdef_sbc.F90 13284 2020-07-09 15:12:23Z smasson $
+   !! $Id: usrdef_sbc.F90 13472 2020-09-16 13:05:19Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE usrdef_sbc_oce( kt )
+   SUBROUTINE usrdef_sbc_oce( kt, Kbb )
       !!---------------------------------------------------------------------
       !!                    ***  ROUTINE usr_def_sbc  ***
       !!              
@@ -53,8 +51,8 @@ CONTAINS
       !!                   utau, vtau, taum, wndm, qns, qsr, emp, sfx
       !!
       !!----------------------------------------------------------------------
-      INTEGER, INTENT(in) ::   kt   ! ocean time step
-      
+      INTEGER, INTENT(in) ::   kt        ! ocean time step
+      INTEGER, INTENT(in) ::   Kbb       ! ocean time index
       INTEGER  ::   ji, jj               ! dummy loop indices
       REAL(wp) :: zrhoair = 1.22     ! approximate air density [Kg/m3]
       REAL(wp) :: zcd = 1.13e-3      ! approximate drag coefficient
@@ -92,13 +90,13 @@ CONTAINS
       IF( rn_uofac /= 0. ) THEN
          
          WHERE( ABS(gphit) <= rn_windszy/2. )
-            zwndrel(:,:) = rn_u10 - rn_uofac * un(:,:,1)
+            zwndrel(:,:) = rn_u10 - rn_uofac * uu(:,:,1,Kbb)
          ELSEWHERE
-            zwndrel(:,:) =        - rn_uofac * un(:,:,1)
+            zwndrel(:,:) =        - rn_uofac * uu(:,:,1,Kbb)
          END WHERE
          utau(:,:) = zrhocd * zwndrel(:,:) * zwndrel(:,:)
 
-         zwndrel(:,:) = - rn_uofac * vn(:,:,1)
+         zwndrel(:,:) = - rn_uofac * vv(:,:,1,Kbb)
          vtau(:,:) = zrhocd * zwndrel(:,:) * zwndrel(:,:)
 
       ENDIF
@@ -109,8 +107,11 @@ CONTAINS
       INTEGER, INTENT(in) ::   kt   ! ocean time step
    END SUBROUTINE usrdef_sbc_ice_tau
 
-   SUBROUTINE usrdef_sbc_ice_flx( kt )
+
+   SUBROUTINE usrdef_sbc_ice_flx( kt, phs, phi )
       INTEGER, INTENT(in) ::   kt   ! ocean time step
+      REAL(wp), DIMENSION(:,:,:), INTENT(in)  ::   phs    ! snow thickness
+      REAL(wp), DIMENSION(:,:,:), INTENT(in)  ::   phi    ! ice thickness
    END SUBROUTINE usrdef_sbc_ice_flx
 
    !!======================================================================

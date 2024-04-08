@@ -140,7 +140,7 @@ void RemoveWordSET_0(FILE * filout, long int position, int sizetoremove)
 
     fseek(filout, position, SEEK_SET);
     tofich_blanc(filout, sizetoremove);
-    fseek(filout, position, SEEK_SET);
+
 }
 
 /******************************************************************************/

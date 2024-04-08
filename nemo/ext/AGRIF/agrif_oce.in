@@ -3,6 +3,10 @@
 % Name of the common file : an include file (paramfile) OR a module (parammodule) %  
  parammodule par_oce ;
 
+% simple or double precision %
+ KIND sp = 4 ;
+ KIND dp = 8 ;
+
 USE ONLY_FIXED_GRIDS;
 
 % Variables which are not grid dependent %

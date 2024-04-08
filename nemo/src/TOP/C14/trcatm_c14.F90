@@ -20,9 +20,11 @@ MODULE trcatm_c14
    PUBLIC   trc_atm_c14         ! called in trcsms_c14.F90
    PUBLIC   trc_atm_c14_ini     ! called in trcini_c14.F90
    !
+   !! * Substitutions
+#  include "do_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
-   !! $Id: trcatm_c14.F90 10069 2018-08-28 14:12:24Z nicolasmartin $ 
+   !! $Id: trcatm_c14.F90 13497 2020-09-21 12:37:46Z techene $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -117,31 +119,29 @@ CONTAINS
             ALLOCATE( fareaz  (jpi,jpj ,nc14zon) , STAT=ierr3 )
             IF( ierr3 /= 0 )   CALL ctl_stop( 'STOP', 'trc_atm_c14_ini: unable to allocate fareaz' )
       !
-            DO jj = 1 , jpj                       ! from C14b package
-              DO ji = 1 , jpi
-                 IF( gphit(ji,jj) >= yn40 ) THEN
-                    fareaz(ji,jj,1) = 0.
-                    fareaz(ji,jj,2) = 0.
-                    fareaz(ji,jj,3) = 1.
-                 ELSE IF( gphit(ji,jj ) <= ys40) THEN
-                    fareaz(ji,jj,1) = 1.
-                    fareaz(ji,jj,2) = 0.
-                    fareaz(ji,jj,3) = 0.
-                 ELSE IF( gphit(ji,jj) >= yn20 ) THEN
-                    fareaz(ji,jj,1) = 0.
-                    fareaz(ji,jj,2) = 2. * ( 1. - gphit(ji,jj) / yn40 )
-                    fareaz(ji,jj,3) = 2. * gphit(ji,jj) / yn40 - 1.
-                 ELSE IF( gphit(ji,jj) <= ys20 ) THEN
-                    fareaz(ji,jj,1) = 2. * gphit(ji,jj) / ys40 - 1.
-                    fareaz(ji,jj,2) = 2. * ( 1. - gphit(ji,jj) / ys40 )
-                    fareaz(ji,jj,3) = 0.
-                 ELSE
-                    fareaz(ji,jj,1) = 0.
-                    fareaz(ji,jj,2) = 1.
-                    fareaz(ji,jj,3) = 0.
-                 ENDIF
-              END DO
-           END DO
+            DO_2D( 1, 1, 1, 1 )                 ! from C14b package
+              IF( gphit(ji,jj) >= yn40 ) THEN
+                 fareaz(ji,jj,1) = 0.
+                 fareaz(ji,jj,2) = 0.
+                 fareaz(ji,jj,3) = 1.
+              ELSE IF( gphit(ji,jj ) <= ys40) THEN
+                 fareaz(ji,jj,1) = 1.
+                 fareaz(ji,jj,2) = 0.
+                 fareaz(ji,jj,3) = 0.
+              ELSE IF( gphit(ji,jj) >= yn20 ) THEN
+                 fareaz(ji,jj,1) = 0.
+                 fareaz(ji,jj,2) = 2. * ( 1. - gphit(ji,jj) / yn40 )
+                 fareaz(ji,jj,3) = 2. * gphit(ji,jj) / yn40 - 1.
+              ELSE IF( gphit(ji,jj) <= ys20 ) THEN
+                 fareaz(ji,jj,1) = 2. * gphit(ji,jj) / ys40 - 1.
+                 fareaz(ji,jj,2) = 2. * ( 1. - gphit(ji,jj) / ys40 )
+                 fareaz(ji,jj,3) = 0.
+              ELSE
+                 fareaz(ji,jj,1) = 0.
+                 fareaz(ji,jj,2) = 1.
+                 fareaz(ji,jj,3) = 0.
+              ENDIF
+            END_2D
       !
          ENDIF
       !
@@ -222,7 +222,7 @@ CONTAINS
       !
       IF(kc14typ >= 1) THEN  ! Transient C14 & CO2
       !
-         tyrc14_now = tyrc14_now + ( rdt / ( rday * nyear_len(1)) )    !  current time step in yr relative to tyrc14_beg
+         tyrc14_now = tyrc14_now + ( rn_Dt / ( rday * nyear_len(1)) )    !  current time step in yr relative to tyrc14_beg
       !
       ! CO2 --------------------------------------------------------
       !

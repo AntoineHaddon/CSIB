@@ -20,7 +20,7 @@ MODULE trcdmp_sed
    USE sed , ONLY : dtsed => dtsed      ! ocean dynamics and tracers variables
    USE trc             ! ocean passive tracers variables
    USE trcdta
-   USE prtctl_trc      ! Print control for debbuging
+   USE prtctl          ! Print control for debbuging
    USE iom
 
 
@@ -34,7 +34,7 @@ MODULE trcdmp_sed
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   restosed   ! restoring coeff. on tracers (s-1)
 
    !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
+#  include "do_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 3.3 , NEMO Consortium (2010)
    !! $Id: trcdmp.F90 7646 2017-02-06 09:25:03Z timgraham $ 
@@ -53,7 +53,7 @@ CONTAINS
    END FUNCTION trc_dmp_sed_alloc
 
 
-   SUBROUTINE trc_dmp_sed( kt )
+   SUBROUTINE trc_dmp_sed( kt, Kbb, Kmm, Krhs )
       !!----------------------------------------------------------------------
       !!                   ***  ROUTINE trc_dmp_sed  ***
       !!                  
@@ -63,16 +63,17 @@ CONTAINS
       !!
       !! ** Method  :   Newtonian damping towards trdta computed 
       !!      and add to the general tracer trends:
-      !!                     trn = tra + restotr * (trdta - trb)
+      !!                     tr(Kmm) = tr(Krhs) + restotr * (trdta - tr(Kbb))
       !!         The trend is computed either throughout the water column
       !!      (nlmdmptr=0) or in area of weak vertical mixing (nlmdmptr=1) or
       !!      below the well mixed layer (nlmdmptr=2)
       !!
-      !! ** Action  : - update the tracer trends tra with the newtonian 
+      !! ** Action  : - update the tracer trends tr(Krhs) with the newtonian 
       !!                damping trends.
       !!              - save the trends ('key_trdmxl_trc')
       !!----------------------------------------------------------------------
-      INTEGER, INTENT(in) ::   kt   ! ocean time-step index
+      INTEGER, INTENT(in) ::   kt              ! ocean time-step index
+      INTEGER, INTENT(in) ::   Kbb, Kmm, Krhs  ! time level index
       !
       INTEGER ::   ji, jj, jk, jn, jl, ikt   ! dummy loop indices
       CHARACTER (len=22) ::   charout
@@ -89,15 +90,13 @@ CONTAINS
             IF( ln_trc_ini(jn) ) THEN      ! update passive tracers arrays with input data read from file
                !
                jl = n_trc_index(jn) 
-               CALL trc_dta( kt, sf_trcdta(jl), rf_trfac(jl), ztrcdta )   ! read tracer data at nit000
+               CALL trc_dta( kt, jl, ztrcdta )   ! read tracer data at nit000
                !
-               DO jj = 1, jpj
-                  DO ji = 1, jpi   ! vector opt.
-                     ikt = mbkt(ji,jj)
-                     trb(ji,jj,ikt,jn) = ztrcdta(ji,jj,ikt) + ( trb(ji,jj,ikt,jn) -  ztrcdta(ji,jj,ikt) )     &
-                     &                  * exp( -restosed(ji,jj,ikt) * dtsed )
-                  END DO
-               END DO
+               DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
+                  ikt = mbkt(ji,jj)
+                  tr(ji,jj,ikt,jn,Kbb) = ztrcdta(ji,jj,ikt) + ( tr(ji,jj,ikt,jn,Kbb) -  ztrcdta(ji,jj,ikt) )     &
+                  &                  * exp( -restosed(ji,jj,ikt) * dtsed )
+               END_2D
                ! 
             ENDIF
          END DO                                                     ! tracer loop
@@ -105,10 +104,10 @@ CONTAINS
       ENDIF
       !
       !                                          ! print mean trends (used for debugging)
-      IF( ln_ctl ) THEN
+      IF( sn_cfctl%l_prttrc ) THEN
          WRITE(charout, FMT="('dmp ')")
-         CALL prt_ctl_trc_info(charout)
-         CALL prt_ctl_trc( tab4d=tra, mask=tmask, clinfo=ctrcnm, clinfo2='trd' )
+         CALL prt_ctl_info( charout, cdcomp = 'top' )
+         CALL prt_ctl( tab4d_1=tr(:,:,:,:,Krhs), mask1=tmask, clinfo=ctrcnm,clinfo3='trd' )
       ENDIF
       !
       IF( ln_timing )  CALL timing_stop('trc_dmp_sed')
@@ -133,7 +132,7 @@ CONTAINS
       !
       IF( trc_dmp_sed_alloc() /= 0 )   CALL ctl_stop( 'STOP', 'trc_dmp_sed_ini: unable to allocate arrays' )
       !
-      IF( .NOT.lk_c1d ) THEN
+      IF( .NOT.ln_c1d ) THEN
          !Read in mask from file
           restosed(:,:,:) = 0.5 / rday
          !
@@ -147,8 +146,9 @@ CONTAINS
    !!  Dummy module :                                     No passive tracer
    !!----------------------------------------------------------------------
 CONTAINS
-   SUBROUTINE trc_dmp_sed( kt )        ! Empty routine
+   SUBROUTINE trc_dmp_sed( kt, Kbb, Kmm, Krhs )   ! Empty routine
       INTEGER, INTENT(in) :: kt
+      INTEGER, INTENT(in) :: Kbb, Kmm, Krhs
       WRITE(*,*) 'trc_dmp_sed: You should not have seen this print! error?', kt
    END SUBROUTINE trc_dmp_sed
 #endif

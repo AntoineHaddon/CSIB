@@ -14,14 +14,14 @@
 !>
 !>    to initialise a mpp structure:<br/>
 !> @code
-!>    tl_mpp=mpp_init( cd_file, id_mask, 
+!>    tl_mpp=mpp_init( cd_file, id_mask,
 !>                       [id_niproc,] [id_njproc,] [id_nproc,]
-!>                       [id_preci,] [id_precj,] 
+!>                       [id_preci,] [id_precj,]
 !>                       [cd_type,] [id_ew])
 !> @endcode
 !> or
 !> @code
-!>    tl_mpp=mpp_init( cd_file, td_var, 
+!>    tl_mpp=mpp_init( cd_file, td_var,
 !>                      [id_niproc,] [id_njproc,] [id_nproc,]
 !>                      [id_preci,] [id_precj,]
 !>                      [cd_type] )
@@ -30,22 +30,22 @@
 !> @code
 !>    tl_mpp=mpp_init( td_file [,id_ew] )
 !> @endcode
-!>       - cd_file is the filename of the global domain file, in which 
-!>         MPP will be done (example: Bathymetry) 
+!>       - cd_file is the filename of the global domain file, in which
+!>         MPP will be done (example: Bathymetry)
 !>       - td_file is the file structure of one processor file composing an MPP
 !>       - id_mask is the 2D mask of global domain [optional]
 !>       - td_var is a variable structure (on T-point) from global domain file.
 !>         mask of the domain will be computed using FillValue [optional]
 !>       - id_niproc is the number of processor following I-direction to be used
 !>         [optional]
-!>       - id_njproc is the number of processor following J-direction to be used 
+!>       - id_njproc is the number of processor following J-direction to be used
 !>         [optional]
 !>       - id_nproc is the total number of processor to be used [optional]
 !>       - id_preci is the size of the overlap region following I-direction [optional]
 !>       - id_precj is the size of the overlap region following J-direction [optional]
 !>       - cd_type is the type of files composing MPP [optional]
-!>       - id_ew is east-west overlap [optional]<br/> 
-!>  
+!>       - id_ew is east-west overlap [optional]<br/>
+!>
 !>    to get mpp name:<br/>
 !>    - tl_mpp\%c_name
 !>
@@ -162,17 +162,17 @@
 !>
 !>    to get processors to be used:<br/>
 !> @code
-!>    CALL mpp_get_use( td_mpp, id_imin, id_imax, & 
+!>    CALL mpp_get_use( td_mpp, id_imin, id_imax, &
 !>    &                         id_jmin, id_jmax )
 !> @endcode
-!>       - id_imin 
-!>       - id_imax 
-!>       - id_jmin 
-!>       - id_jmax 
+!>       - id_imin
+!>       - id_imax
+!>       - id_jmin
+!>       - id_jmax
 !>
 !>    to get sub domains which form global domain contour:<br/>
 !> @code
-!>    CALL mpp_get_contour( td_mpp ) 
+!>    CALL mpp_get_contour( td_mpp )
 !> @endcode
 !>
 !>    to get global domain indices of one processor:<br/>
@@ -193,7 +193,7 @@
 !>  J.Paul
 !>
 !> @date November, 2013 - Initial Version
-!> @date November, 2014 
+!> @date November, 2014
 !> - Fix memory leaks bug
 !> @date October, 2015
 !> - improve way to compute domain layout
@@ -216,7 +216,7 @@ MODULE mpp
    USE att                             ! attribute manager
    USE var                             ! variable manager
    USE file                            ! file manager
-   USE iom                             ! I/O manager 
+   USE iom                             ! I/O manager
 
    IMPLICIT NONE
    ! NOTE_avoid_public_variables_if_possible
@@ -240,7 +240,7 @@ MODULE mpp
    PUBLIC :: mpp_move_dim       !< overwrite one dimension strucutre in mpp structure
    PUBLIC :: mpp_move_att       !< overwrite one attribute strucutre in mpp structure
    PUBLIC :: mpp_recombine_var  !< recombine variable from mpp structure
-   PUBLIC :: mpp_get_index      !< return index of mpp 
+   PUBLIC :: mpp_get_index      !< return index of mpp
 
    PUBLIC :: mpp_get_dom        !< determine domain decomposition type (full, overlap, noverlap)
    PUBLIC :: mpp_get_use        !< get sub domains to be used (which cover "zoom domain")
@@ -253,7 +253,7 @@ MODULE mpp
    PRIVATE :: mpp__add_proc_arr        ! add array of proc strucutre in mpp structure
    PRIVATE :: mpp__del_proc            ! delete one proc strucutre in mpp structure
    PRIVATE :: mpp__del_proc_id         ! delete one proc strucutre in mpp structure, given procesor id
-   PRIVATE :: mpp__del_proc_str        ! delete one proc strucutre in mpp structure, given procesor file structure 
+   PRIVATE :: mpp__del_proc_str        ! delete one proc strucutre in mpp structure, given procesor file structure
    PRIVATE :: mpp__move_proc           ! overwrite proc strucutre in mpp structure
    PRIVATE :: mpp__create_layout       ! create mpp structure using domain layout
    PRIVATE :: mpp__optimiz             ! compute optimum domain decomposition
@@ -265,18 +265,18 @@ MODULE mpp
    PRIVATE :: mpp__del_var_str         ! delete variable in mpp structure, given variable structure
    PRIVATE :: mpp__del_att_name        ! delete variable in mpp structure, given variable name
    PRIVATE :: mpp__del_att_str         ! delete variable in mpp structure, given variable structure
-   PRIVATE :: mpp__split_var           ! extract variable part that will be written in processor 
+   PRIVATE :: mpp__split_var           ! extract variable part that will be written in processor
    PRIVATE :: mpp__copy_unit           ! copy mpp structure
    PRIVATE :: mpp__copy_arr            ! copy array of mpp structure
    PRIVATE :: mpp__get_use_unit        ! get sub domains to be used (which cover "zoom domain")
    PRIVATE :: mpp__init_mask           ! initialise mpp structure, given mask array
    PRIVATE :: mpp__init_var            ! initialise mpp structure, given variable strcuture
-   PRIVATE :: mpp__init_file           ! initialise a mpp structure, given file structure 
+   PRIVATE :: mpp__init_file           ! initialise a mpp structure, given file structure
    PRIVATE :: mpp__init_file_cdf       ! initialise a mpp structure with cdf file
    PRIVATE :: mpp__init_file_rstdimg   ! initialise a mpp structure with rstdimg file
    PRIVATE :: mpp__clean_unit          ! clean mpp strcuture
    PRIVATE :: mpp__clean_arr           ! clean array of mpp strcuture
-   PRIVATE :: mpp__compute_halo        ! compute subdomain indices defined with halo 
+   PRIVATE :: mpp__compute_halo        ! compute subdomain indices defined with halo
    PRIVATE :: mpp__read_halo           ! read subdomain indices defined with halo
 
    PRIVATE :: layout__init             ! initialise domain layout structure
@@ -284,8 +284,8 @@ MODULE mpp
    PRIVATE :: layout__clean            ! copy  domain layout structure
 
    TYPE TMPP !< mpp structure
-      ! general 
-      CHARACTER(LEN=lc)                  :: c_name = ''   !< base name 
+      ! general
+      CHARACTER(LEN=lc)                  :: c_name = ''   !< base name
       INTEGER(i4)                        :: i_id   = 0    !< mpp id
 
       INTEGER(i4)                        :: i_niproc = 0  !< number of processors following i
@@ -316,30 +316,30 @@ MODULE mpp
       INTEGER(i4)                          :: i_mean   = 0       !< mean sea point per proc
       INTEGER(i4)                          :: i_min    = 0       !< min  sea point per proc
       INTEGER(i4)                          :: i_max    = 0       !< max  sea point per proc
-      INTEGER(i4), DIMENSION(:,:), POINTER :: i_msk   => NULL()  !< sea/land processor mask 
-      INTEGER(i4), DIMENSION(:,:), POINTER :: i_impp  => NULL()  !< i-indexes for mpp-subdomain left bottom 
-      INTEGER(i4), DIMENSION(:,:), POINTER :: i_jmpp  => NULL()  !< j-indexes for mpp-subdomain left bottom 
-      INTEGER(i4), DIMENSION(:,:), POINTER :: i_lci   => NULL()  !< i-dimensions of subdomain 
-      INTEGER(i4), DIMENSION(:,:), POINTER :: i_lcj   => NULL()  !< j-dimensions of subdomain 
+      INTEGER(i4), DIMENSION(:,:), POINTER :: i_msk   => NULL()  !< sea/land processor mask
+      INTEGER(i4), DIMENSION(:,:), POINTER :: i_impp  => NULL()  !< i-indexes for mpp-subdomain left bottom
+      INTEGER(i4), DIMENSION(:,:), POINTER :: i_jmpp  => NULL()  !< j-indexes for mpp-subdomain left bottom
+      INTEGER(i4), DIMENSION(:,:), POINTER :: i_lci   => NULL()  !< i-dimensions of subdomain
+      INTEGER(i4), DIMENSION(:,:), POINTER :: i_lcj   => NULL()  !< j-dimensions of subdomain
    END TYPE
 
    ! module variable
-   INTEGER(i4) :: im_psize  = 2000        !< processor dimension length for huge file 
+   INTEGER(i4) :: im_psize  = 2000        !< processor dimension length for huge file
 
    INTEGER(i4) :: im_iumout = 44
    LOGICAL     :: lm_layout =.FALSE.
 
    INTERFACE mpp_get_use
-      MODULE PROCEDURE mpp__get_use_unit 
+      MODULE PROCEDURE mpp__get_use_unit
    END INTERFACE mpp_get_use
 
    INTERFACE mpp__add_proc
-      MODULE PROCEDURE mpp__add_proc_unit 
+      MODULE PROCEDURE mpp__add_proc_unit
       MODULE PROCEDURE mpp__add_proc_arr
    END INTERFACE mpp__add_proc
 
    INTERFACE mpp_clean
-      MODULE PROCEDURE mpp__clean_unit 
+      MODULE PROCEDURE mpp__clean_unit
       MODULE PROCEDURE mpp__clean_arr
    END INTERFACE mpp_clean
 
@@ -378,25 +378,25 @@ MODULE mpp
 CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION mpp__copy_unit(td_mpp) &
-         &  RESULT(tf_mpp)      
+         &  RESULT(tf_mpp)
    !-------------------------------------------------------------------
    !> @brief
    !> This subroutine copy mpp structure in another one
-   !> @details 
-   !> mpp file are copied in a temporary array, 
-   !> so input and output mpp structure do not point on the same 
-   !> "memory cell", and so on are independant. 
+   !> @details
+   !> mpp file are copied in a temporary array,
+   !> so input and output mpp structure do not point on the same
+   !> "memory cell", and so on are independant.
    !>
    !> @warning do not use on the output of a function who create or read an
    !> structure (ex: tl_file=file_copy(file_init()) is forbidden).
    !> This will create memory leaks.
-   !> @warning to avoid infinite loop, do not use any function inside 
+   !> @warning to avoid infinite loop, do not use any function inside
    !> this subroutine
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !> @date November, 2014
-   !> - use function instead of overload assignment operator 
+   !> - use function instead of overload assignment operator
    !> (to avoid memory leak)
    !> @date January, 2019
    !> - clean file structure
@@ -441,7 +441,7 @@ CONTAINS
 
       ! copy dimension
       tf_mpp%t_dim(:) = dim_copy(td_mpp%t_dim(:))
-      
+
       ! copy file structure
       IF( ASSOCIATED(tf_mpp%t_proc) )THEN
          CALL file_clean(tf_mpp%t_proc(:))
@@ -464,21 +464,21 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief
    !> This subroutine copy an array of mpp structure in another one
-   !> @details 
-   !> mpp file are copied in a temporary array, 
-   !> so input and output mpp structure do not point on the same 
-   !> "memory cell", and so on are independant. 
+   !> @details
+   !> mpp file are copied in a temporary array,
+   !> so input and output mpp structure do not point on the same
+   !> "memory cell", and so on are independant.
    !>
    !> @warning do not use on the output of a function who create or read an
    !> structure (ex: tl_file=file_copy(file_init()) is forbidden).
    !> This will create memory leaks.
-   !> @warning to avoid infinite loop, do not use any function inside 
+   !> @warning to avoid infinite loop, do not use any function inside
    !> this subroutine
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
    !> @date November, 2014
-   !>    - use function instead of overload assignment operator 
+   !>    - use function instead of overload assignment operator
    !> (to avoid memory leak)
    !>
    !> @param[in] td_mpp   mpp structure
@@ -516,7 +516,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TMPP), INTENT(IN) :: td_mpp
 
       ! local variable
@@ -584,13 +584,13 @@ CONTAINS
 
             ENDDO
             IF( td_mpp%i_nproc > ip_min )THEN
-               WRITE(*,'(a)') "...etc" 
+               WRITE(*,'(a)') "...etc"
             ENDIF
 
             IF( td_mpp%t_proc(1)%i_nvar > 0 )THEN
                WRITE(*,'(/a)') " Variable(s) used : "
                DO ji=1,td_mpp%t_proc(1)%i_nvar
-                  WRITE(*,'(3x,a)') TRIM(td_mpp%t_proc(1)%t_var(ji)%c_name) 
+                  WRITE(*,'(3x,a)') TRIM(td_mpp%t_proc(1)%t_var(ji)%c_name)
                ENDDO
             ENDIF
 
@@ -614,9 +614,9 @@ CONTAINS
 
             ENDDO
             IF( td_mpp%i_nproc > ip_min )THEN
-               WRITE(*,'(a)') "...etc" 
+               WRITE(*,'(a)') "...etc"
             ENDIF
-            
+
             IF( td_mpp%t_proc(1)%i_nvar > 0 )THEN
                WRITE(*,'(/a)') " Variable(s) used : "
                DO ji=1,td_mpp%t_proc(1)%i_nvar
@@ -655,7 +655,7 @@ CONTAINS
                   ENDDO
                   jl = jl+ip_freq
                ENDDO
-         
+
                DEALLOCATE( il_proc )
                DEALLOCATE( il_lci )
                DEALLOCATE( il_lcj )
@@ -682,11 +682,11 @@ CONTAINS
          & RESULT(tf_mpp)
    !-------------------------------------------------------------------
    !> @brief
-   !> This function initialise mpp structure, given file name, 
+   !> This function initialise mpp structure, given file name,
    !> and optionaly mask and number of processor following I and J
    !> @detail
-   !> - If no total number of processor is defined (id_nproc), optimize 
-   !> the domain decomposition (look for the domain decomposition with 
+   !> - If no total number of processor is defined (id_nproc), optimize
+   !> the domain decomposition (look for the domain decomposition with
    !> the most land processor to remove)
    !> - length of the overlap region (id_preci, id_precj) could be specify
    !> in I and J direction (default value is 1)
@@ -698,6 +698,8 @@ CONTAINS
    !> @date January, 2016
    !> - use RESULT to rename output
    !> - mismatch with "halo" indices
+   !> @date July, 2020
+   !> - call  dim_reorder for each proc file
    !>
    !> @param[in] cd_file   file name of one file composing mpp domain
    !> @param[in] id_mask   domain mask
@@ -713,7 +715,7 @@ CONTAINS
    !> @param[in] td_dim    array of dimension structure
    !> @return mpp structure
    !-------------------------------------------------------------------
-      
+
       IMPLICIT NONE
 
       ! Argument
@@ -866,7 +868,7 @@ CONTAINS
             ! number of proc to get proc size close to im_psize
             il_niproc=INT(il_shape(jp_I)/im_psize)+1
             il_njproc=INT(il_shape(jp_J)/im_psize)+1
-         
+
             tf_mpp%l_usempp=.FALSE.
             tl_lay=layout__init( tf_mpp, id_mask,  &
                                & il_niproc, il_njproc )
@@ -896,7 +898,7 @@ CONTAINS
             CALL file_move_dim(tf_mpp%t_proc(ji), tl_dim)
 
             tl_dim=dim_init('Y',il_shape(2))
-            CALL file_move_dim(tf_mpp%t_proc(ji), tl_dim)            
+            CALL file_move_dim(tf_mpp%t_proc(ji), tl_dim)
 
             IF( PRESENT(td_dim) )THEN
                IF( td_dim(jp_K)%l_use )THEN
@@ -908,6 +910,9 @@ CONTAINS
             ENDIF
             ! add type
             tf_mpp%t_proc(ji)%c_type=TRIM(tf_mpp%c_type)
+
+            ! reorder dimension
+            CALL dim_reorder(tf_mpp%t_proc(ji)%t_dim(:))
 
             ! clean
             CALL dim_clean(tl_dim)
@@ -930,7 +935,7 @@ CONTAINS
          tl_att=att_init("DOMAIN_size_global",tf_mpp%t_dim(1:2)%i_len)
          CALL mpp_add_att(tf_mpp, tl_att)
 
-         CALL mpp__compute_halo(tf_mpp) 
+         CALL mpp__compute_halo(tf_mpp)
       ENDIF
 
    END FUNCTION mpp__init_mask
@@ -942,17 +947,19 @@ CONTAINS
          &  RESULT(tf_mpp)
    !-------------------------------------------------------------------
    !> @brief
-   !> This function initialise mpp structure, given variable strcuture 
+   !> This function initialise mpp structure, given variable strcuture
    !> and optionaly number of processor following I and J
    !> @detail
-   !> - If no total number of processor is defined (id_nproc), optimize 
-   !> the domain decomposition (look for the domain decomposition with 
+   !> - If no total number of processor is defined (id_nproc), optimize
+   !> the domain decomposition (look for the domain decomposition with
    !> the most land processor to remove)
    !> - length of the overlap region (id_preci, id_precj) could be specify
    !> in I and J direction (default value is 1)
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial version
+   !> @date July, 2020
+   !> - add variable dimension argument to set up mpp structure
    !>
    !> @param[in] cd_file   file name of one file composing mpp domain
    !> @param[in] td_var    variable structure
@@ -981,7 +988,7 @@ CONTAINS
       INTEGER(i4),      INTENT(IN), OPTIONAL :: id_perio
       INTEGER(i4),      INTENT(IN), OPTIONAL :: id_pivot
       LOGICAL,          INTENT(IN), OPTIONAL :: ld_usempp
-     
+
       ! function
       TYPE(TMPP)                   :: tf_mpp
 
@@ -994,7 +1001,7 @@ CONTAINS
          &                 td_var%t_dim(2)%i_len, &
          &                 td_var%t_dim(3)%i_len) )
          il_mask(:,:,:)=var_get_mask(td_var)
-         
+
          CALL logger_info("MPP INIT: mask compute from variable "//&
             &             TRIM(td_var%c_name))
          tf_mpp = mpp_init( cd_file, il_mask(:,:,1),       &
@@ -1002,6 +1009,7 @@ CONTAINS
             &               id_preci, id_precj, cd_type,   &
             &               id_ew=td_var%i_ew,             &
             &               id_perio=id_perio, id_pivot=id_pivot,&
+            &               td_dim=td_var%t_dim(:),        &
             &               ld_usempp=ld_usempp)
 
          DEALLOCATE(il_mask)
@@ -1014,13 +1022,13 @@ CONTAINS
    FUNCTION mpp__init_file(td_file, id_ew, id_perio, id_pivot) &
          & RESULT(tf_mpp)
    !-------------------------------------------------------------------
-   !> @brief This function initalise a mpp structure given file structure. 
-   !> @details 
+   !> @brief This function initalise a mpp structure given file structure.
+   !> @details
    !> It reads restart dimg files, or some netcdf files.
    !>
-   !> @warning 
+   !> @warning
    !>  netcdf file must contains some attributes:
-   !>    - DOMAIN_number_total 
+   !>    - DOMAIN_number_total
    !>    - DOMAIN_size_global
    !>    - DOMAIN_number
    !>    - DOMAIN_position_first
@@ -1035,7 +1043,7 @@ CONTAINS
    !> - mismatch with "halo" indices, use mpp__compute_halo
    !> @date Marsh, 2017
    !> - netcdf proc indices from zero to N-1
-   !> - copy file periodicity to mpp structure 
+   !> - copy file periodicity to mpp structure
    !> @date August, 2017
    !> - force to use domain decomposition to enhance read of monoproc file
    !>
@@ -1109,14 +1117,15 @@ CONTAINS
             CALL iom_close(tl_file)
 
             IF( il_nproc /= 1 )THEN
+
                DO ji=1,il_nproc
 
                   ! clean mpp strcuture
                   CALL mpp_clean(tl_mpp)
- 
-                  ! get filename (from 0 to n-1) 
+
+                  ! get filename (from 0 to n-1)
                   tl_file=file_rename(td_file,ji-1)
- 
+
                   ! open file
                   CALL iom_open(tl_file)
 
@@ -1153,7 +1162,7 @@ CONTAINS
 
                ! force to use domain decomposition to enhance read of input
 
-               ! create pseudo mask 
+               ! create pseudo mask
                il_dim(:)=tl_mpp%t_dim(:)%i_len
                ALLOCATE(il_mask(il_dim(jp_I),il_dim(jp_J)))
                il_mask(:,:)=1
@@ -1165,7 +1174,7 @@ CONTAINS
                ! compute domain layout
                ! output will be written on one file
                tf_mpp=mpp_init(tl_mpp%c_name, il_mask, il_niproc, il_njproc,&
-                  &            id_perio=tl_file%i_perio, &   
+                  &            id_perio=tl_file%i_perio, &
                   &            ld_usempp=.FALSE. )
 
                ! add var
@@ -1186,7 +1195,7 @@ CONTAINS
             CALL mpp_move_att(tf_mpp, tl_att)
 
             CALL mpp__compute_halo(tf_mpp)
- 
+
             ! clean
             CALL mpp_clean(tl_mpp)
             CALL att_clean(tl_att)
@@ -1220,7 +1229,7 @@ CONTAINS
                CALL file_add_dim(tf_mpp%t_proc(ji), tl_dim)
 
                tl_dim=dim_init('Y',il_shape(2))
-               CALL file_add_dim(tf_mpp%t_proc(ji), tl_dim)            
+               CALL file_add_dim(tf_mpp%t_proc(ji), tl_dim)
 
                ! clean
                CALL dim_clean(tl_dim)
@@ -1252,7 +1261,7 @@ CONTAINS
 
       IF( PRESENT(id_pivot) ) tf_mpp%i_pivot= id_pivot
 
-      ! clean 
+      ! clean
       CALL file_clean(tl_file)
 
    END FUNCTION mpp__init_file
@@ -1260,14 +1269,14 @@ CONTAINS
    FUNCTION mpp__init_file_cdf(td_file) &
          &  RESULT(tf_mpp)
    !-------------------------------------------------------------------
-   !> @brief This function initalise a mpp structure, 
+   !> @brief This function initalise a mpp structure,
    !> reading some netcdf files.
    !>
-   !> @details 
+   !> @details
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
-   !> @date July, 2015 
+   !> @date July, 2015
    !> - add only use dimension in MPP structure
    !> @date January, 2016
    !> - mismatch with "halo" indices, use mpp__read_halo
@@ -1286,14 +1295,14 @@ CONTAINS
 
       ! local variable
       INTEGER(i4) :: il_attid  ! attribute id
-      
+
       LOGICAL     :: ll_exist
       LOGICAL     :: ll_open
 
       TYPE(TATT)  :: tl_att
 
       TYPE(TDIM)  :: tl_dim
-      
+
       TYPE(TFILE) :: tl_proc
       !----------------------------------------------------------------
 
@@ -1304,7 +1313,7 @@ CONTAINS
       IF( ll_exist )THEN
 
          IF( td_file%i_id == 0 )THEN
-            CALL logger_info(" id "//TRIM(fct_str(td_file%i_id))) 
+            CALL logger_info(" id "//TRIM(fct_str(td_file%i_id)))
             CALL logger_error("MPP INIT READ: netcdf file "//&
                &  TRIM(td_file%c_name)//" not opened")
          ELSE
@@ -1373,7 +1382,7 @@ CONTAINS
             ! add processor to mpp structure
             CALL mpp__add_proc(tf_mpp, tl_proc)
 
-            ! clean 
+            ! clean
             CALL file_clean(tl_proc)
             CALL dim_clean(tl_dim)
             CALL att_clean(tl_att)
@@ -1391,10 +1400,10 @@ CONTAINS
    FUNCTION mpp__init_file_rstdimg(td_file) &
          &  RESULT(tf_mpp)
    !-------------------------------------------------------------------
-   !> @brief This function initalise a mpp structure, 
+   !> @brief This function initalise a mpp structure,
    !> reading one dimg restart file.
    !>
-   !> @details 
+   !> @details
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -1417,9 +1426,9 @@ CONTAINS
 
       ! local variable
       INTEGER(i4)       :: il_status
-      INTEGER(i4)       :: il_recl                          ! record length 
-      INTEGER(i4)       :: il_nx, il_ny, il_nz              ! x,y,z dimension 
-      INTEGER(i4)       :: il_n0d, il_n1d, il_n2d, il_n3d   ! number of 0/1/2/3D variables 
+      INTEGER(i4)       :: il_recl                          ! record length
+      INTEGER(i4)       :: il_nx, il_ny, il_nz              ! x,y,z dimension
+      INTEGER(i4)       :: il_n0d, il_n1d, il_n2d, il_n3d   ! number of 0/1/2/3D variables
       INTEGER(i4)       :: il_iglo, il_jglo                 ! domain global size
       INTEGER(i4)       :: il_rhd                           ! record of the header infos
       INTEGER(i4)       :: il_pni, il_pnj, il_pnij          ! domain decomposition
@@ -1455,8 +1464,8 @@ CONTAINS
             &  " not opened")
          ELSE
 
-            ! read first record 
-            READ( td_file%i_id, IOSTAT=il_status, REC=1 )& 
+            ! read first record
+            READ( td_file%i_id, IOSTAT=il_status, REC=1 )&
                &  il_recl,                         &
                &  il_nx, il_ny, il_nz,             &
                &  il_n0d, il_n1d, il_n2d, il_n3d,  &
@@ -1508,8 +1517,8 @@ CONTAINS
                &              decomposition in file "//TRIM(td_file%c_name))
             ENDIF
 
-            ! read first record 
-            READ( td_file%i_id, IOSTAT=il_status, REC=1 )& 
+            ! read first record
+            READ( td_file%i_id, IOSTAT=il_status, REC=1 )&
                &  il_recl,                         &
                &  il_nx, il_ny, il_nz,             &
                &  il_n0d, il_n1d, il_n2d, il_n3d,  &
@@ -1532,20 +1541,20 @@ CONTAINS
             ENDIF
 
             tf_mpp%t_proc(1:il_pnij)%i_lci = il_lci (1:il_pnij)
-            tf_mpp%t_proc(1:il_pnij)%i_lcj = il_lcj (1:il_pnij) 
-            tf_mpp%t_proc(1:il_pnij)%i_ldi = il_ldi (1:il_pnij) 
-            tf_mpp%t_proc(1:il_pnij)%i_ldj = il_ldj (1:il_pnij) 
-            tf_mpp%t_proc(1:il_pnij)%i_lei = il_lei (1:il_pnij) 
-            tf_mpp%t_proc(1:il_pnij)%i_lej = il_lej (1:il_pnij) 
+            tf_mpp%t_proc(1:il_pnij)%i_lcj = il_lcj (1:il_pnij)
+            tf_mpp%t_proc(1:il_pnij)%i_ldi = il_ldi (1:il_pnij)
+            tf_mpp%t_proc(1:il_pnij)%i_ldj = il_ldj (1:il_pnij)
+            tf_mpp%t_proc(1:il_pnij)%i_lei = il_lei (1:il_pnij)
+            tf_mpp%t_proc(1:il_pnij)%i_lej = il_lej (1:il_pnij)
             tf_mpp%t_proc(1:il_pnij)%i_impp= il_impp(1:il_pnij)
             tf_mpp%t_proc(1:il_pnij)%i_jmpp= il_jmpp(1:il_pnij)
 
-            DEALLOCATE(il_lci) 
-            DEALLOCATE(il_lcj) 
-            DEALLOCATE(il_ldi) 
-            DEALLOCATE(il_ldj) 
-            DEALLOCATE(il_lei) 
-            DEALLOCATE(il_lej) 
+            DEALLOCATE(il_lci)
+            DEALLOCATE(il_lcj)
+            DEALLOCATE(il_ldi)
+            DEALLOCATE(il_ldj)
+            DEALLOCATE(il_lei)
+            DEALLOCATE(il_lej)
             DEALLOCATE(il_impp)
             DEALLOCATE(il_jmpp)
 
@@ -1568,10 +1577,10 @@ CONTAINS
 
                ! add attributes
                tl_att=att_init( "DOMAIN_number", ji )
-               CALL file_move_att(tf_mpp%t_proc(ji), tl_att) 
+               CALL file_move_att(tf_mpp%t_proc(ji), tl_att)
 
             ENDDO
- 
+
             ! add type
             tf_mpp%t_proc(:)%c_type="dimg"
 
@@ -1623,7 +1632,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TMPP),  INTENT(IN) :: td_mpp
       TYPE(TFILE), INTENT(IN) :: td_proc
 
@@ -1631,12 +1640,12 @@ CONTAINS
       LOGICAL                 :: lf_check
 
       ! local variable
-      INTEGER(i4) :: il_isize !< i-direction maximum sub domain size 
+      INTEGER(i4) :: il_isize !< i-direction maximum sub domain size
       INTEGER(i4) :: il_jsize !< j-direction maximum sub domain size
       !----------------------------------------------------------------
 
       lf_check=.TRUE.
-      ! check used dimension 
+      ! check used dimension
       IF( td_mpp%i_niproc /= 0 .AND. td_mpp%i_njproc /= 0 )THEN
          ! check with maximum size of sub domain
          il_isize = ( td_mpp%t_dim(1)%i_len - 2*td_mpp%i_preci + &
@@ -1675,7 +1684,7 @@ CONTAINS
    !> @author J.Paul
    !> @date November, 2013 - Initial version
    !> @date January, 2019
-   !> - do not split variable on domain decomposition, if only one procesor 
+   !> - do not split variable on domain decomposition, if only one procesor
    !>
    !> @param[inout] td_mpp mpp strcuture
    !> @param[in]    td_var variable strcuture
@@ -1727,14 +1736,14 @@ CONTAINS
                &  ", already in mpp "//TRIM(td_mpp%c_name) )
 
             ELSE
- 
+
                CALL logger_info( &
                &  " MPP ADD VAR: add variable "//TRIM(td_var%c_name)//&
                &  ", standard name "//TRIM(td_var%c_stdname)//&
                &  ", in mpp "//TRIM(td_mpp%c_name) )
-               ! check used dimension 
+               ! check used dimension
                IF( mpp__check_dim(td_mpp, td_var) )THEN
- 
+
                   ! check variable dimension expected
                   CALL var_check_dim(td_var)
 
@@ -1771,7 +1780,7 @@ CONTAINS
    FUNCTION mpp__split_var(td_mpp, td_var, id_procid) &
          & RESULT(tf_var)
    !-------------------------------------------------------------------
-   !> @brief This function extract, from variable structure, part that will 
+   !> @brief This function extract, from variable structure, part that will
    !> be written in processor id_procid.<br/>
    !>
    !> @author J.Paul
@@ -1792,7 +1801,7 @@ CONTAINS
 
       ! function
       TYPE(TVAR)              :: tf_var
-   
+
       ! local variable
       TYPE(TDIM)  :: tl_dim
 
@@ -1815,14 +1824,14 @@ CONTAINS
       il_j2 = il_ind(4)
 
       IF( .NOT. td_var%t_dim(1)%l_use )THEN
-         il_i1=1 
-         il_i2=1 
+         il_i1=1
+         il_i2=1
       ENDIF
 
       IF( .NOT. td_var%t_dim(2)%l_use )THEN
-         il_j1=1 
-         il_j2=1 
-      ENDIF      
+         il_j1=1
+         il_j2=1
+      ENDIF
 
       IF( ASSOCIATED(td_var%d_value) )THEN
          ! remove value over global domain from pointer
@@ -1831,20 +1840,20 @@ CONTAINS
          ! get processor dimension
          il_size(:)=mpp_get_proc_size( td_mpp, id_procid )
 
-         ! define new dimension in variable structure 
+         ! define new dimension in variable structure
          IF( td_var%t_dim(1)%l_use )THEN
             tl_dim=dim_init( TRIM(td_var%t_dim(1)%c_name), il_size(1) )
             CALL var_move_dim( tf_var, tl_dim )
          ENDIF
          IF( td_var%t_dim(2)%l_use )THEN
             tl_dim=dim_init( TRIM(td_var%t_dim(2)%c_name), il_size(2) )
-            CALL var_move_dim( tf_var, tl_dim )      
+            CALL var_move_dim( tf_var, tl_dim )
          ENDIF
 
          ! add variable value on processor
          CALL var_add_value( tf_var, &
             &                td_var%d_value(il_i1:il_i2, il_j1:il_j2, :, :) )
-   
+
       ELSE
 
          tf_var%t_dim(jp_I)%i_len=il_i2-il_i1+1
@@ -1856,7 +1865,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE mpp__del_var_mpp(td_mpp)
    !-------------------------------------------------------------------
-   !> @brief 
+   !> @brief
    !>  This subroutine delete all variable in mpp strcuture.
    !>
    !> @author J.Paul
@@ -1864,7 +1873,7 @@ CONTAINS
    !>
    !> @param[inout] td_mpp mpp strcuture
    !-------------------------------------------------------------------
-      
+
       IMPLICIT NONE
 
       ! Argument
@@ -1899,7 +1908,7 @@ CONTAINS
    !> @param[inout] td_mpp mpp strcuture
    !> @param[in]    td_var variable strcuture
    !-------------------------------------------------------------------
-      
+
       IMPLICIT NONE
 
       ! Argument
@@ -1944,7 +1953,7 @@ CONTAINS
 
             cl_name=TRIM(td_var%c_name)
             DO ji=1,td_mpp%i_nproc
-               CALL file_del_var(td_mpp%t_proc(ji), TRIM(cl_name)) 
+               CALL file_del_var(td_mpp%t_proc(ji), TRIM(cl_name))
             ENDDO
 
          ENDIF
@@ -1959,7 +1968,7 @@ CONTAINS
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial version
-   !> @date February, 2015 
+   !> @date February, 2015
    !> - define local variable structure to avoid mistake with pointer
    !> @date January, 2019
    !> - clean variable strcuture
@@ -1967,7 +1976,7 @@ CONTAINS
    !> @param[inout] td_mpp    mpp strcuture
    !> @param[in]    cd_name   variable name
    !-------------------------------------------------------------------
-      
+
       IMPLICIT NONE
 
       ! Argument
@@ -2049,7 +2058,7 @@ CONTAINS
       ! add processor
       CALL mpp_add_var(td_mpp, tl_var)
 
-      ! clean 
+      ! clean
       CALL var_clean(tl_var)
 
    END SUBROUTINE mpp_move_var
@@ -2062,8 +2071,10 @@ CONTAINS
    !> @author J.Paul
    !> @date November, 2013 - Initial version
    !> @date January, 2019
-   !> - deallocate file structure whatever happens 
-   !
+   !> - deallocate file structure whatever happens
+   !> @date July, 2020
+   !> - look for array index of proc id, only if proc id contains in array
+   !>
    !> @param[inout] td_mpp    mpp strcuture
    !> @param[in]    td_proc   processor strcuture
    !-------------------------------------------------------------------
@@ -2081,6 +2092,8 @@ CONTAINS
 
       TYPE(TFILE)      , DIMENSION(:), ALLOCATABLE :: tl_proc
 
+      LOGICAL          , DIMENSION(:), ALLOCATABLE :: ll_mask
+
       CHARACTER(LEN=lc)                            :: cl_name
       !----------------------------------------------------------------
 
@@ -2093,9 +2106,13 @@ CONTAINS
       il_procid=0
       IF( ASSOCIATED(td_mpp%t_proc) )THEN
          ! check if processor already in mpp structure
-         il_ind(:)=MINLOC( td_mpp%t_proc(:)%i_pid, &
-                     mask=(td_mpp%t_proc(:)%i_pid==td_proc%i_pid) )
-         il_procid=il_ind(1)
+         ALLOCATE(ll_mask(SIZE(td_mpp%t_proc(:))))
+         ll_mask(:)=(td_mpp%t_proc(:)%i_pid==td_proc%i_pid)
+         IF( ANY(ll_mask(:)) )THEN
+            il_ind(:)=MINLOC( td_mpp%t_proc(:)%i_pid, mask=ll_mask(:) )
+            il_procid=il_ind(1)
+         ENDIF
+         DEALLOCATE(ll_mask)
       ENDIF
 
       IF( il_procid /= 0 )THEN
@@ -2105,12 +2122,12 @@ CONTAINS
             &  ", already in mpp structure " )
 
       ELSE
- 
+
          CALL logger_trace("MPP ADD PROC: add processor "//&
          &               TRIM(fct_str(td_mpp%i_nproc+1))//" in mpp structure")
 
          IF( td_mpp%i_nproc > 0 )THEN
-            ! 
+            !
             il_ind(:)=MAXLOC( td_mpp%t_proc(:)%i_pid, &
                         mask=(td_mpp%t_proc(:)%i_pid < td_proc%i_pid) )
             il_procid=il_ind(1)
@@ -2150,7 +2167,7 @@ CONTAINS
             DEALLOCATE(tl_proc)
 
          ELSE
-            
+
             ! no processor in mpp structure
             IF( ASSOCIATED(td_mpp%t_proc) )THEN
                CALL file_clean(td_mpp%t_proc(:))
@@ -2223,7 +2240,7 @@ CONTAINS
             &  "MPP ADD PROC: some processor(s) already in mpp structure " )
 
       ELSE
- 
+
          CALL logger_trace("MPP ADD PROC: add array of processor "//&
          &                 " in mpp structure")
 
@@ -2253,7 +2270,7 @@ CONTAINS
 
       ENDIF
 
-   END SUBROUTINE mpp__add_proc_arr   
+   END SUBROUTINE mpp__add_proc_arr
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE mpp__del_proc_id(td_mpp, id_procid)
    !-------------------------------------------------------------------
@@ -2406,13 +2423,13 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE mpp_add_dim(td_mpp, td_dim)
    !-------------------------------------------------------------------
-   !> @brief This subroutine add a dimension structure in a mpp 
+   !> @brief This subroutine add a dimension structure in a mpp
    !> structure.
    !> Do not overwrite, if dimension already in mpp structure.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
-   !> @date July, 2015 
+   !> @date July, 2015
    !> - rewrite the same as way var_add_dim
    !>
    !> @param[inout] td_mpp mpp structure
@@ -2421,7 +2438,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TMPP), INTENT(INOUT) :: td_mpp
       TYPE(TDIM), INTENT(IN)    :: td_dim
 
@@ -2447,7 +2464,7 @@ CONTAINS
             &  ", already used in mpp "//TRIM(td_mpp%c_name) )
          ELSE
 
-            ! back to disorder dimension array 
+            ! back to disorder dimension array
             CALL dim_disorder(td_mpp%t_dim(:))
 
             ! add new dimension
@@ -2470,12 +2487,12 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE mpp_del_dim(td_mpp, td_dim)
    !-------------------------------------------------------------------
-   !> @brief This subroutine delete a dimension structure in a mpp 
+   !> @brief This subroutine delete a dimension structure in a mpp
    !> structure.<br/>
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
-   !> @date July, 2015 
+   !> @date July, 2015
    !> - rewrite the same as way var_del_dim
    !>
    !> @param[inout] td_mpp mpp structure
@@ -2484,7 +2501,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TMPP), INTENT(INOUT) :: td_mpp
       TYPE(TDIM), INTENT(IN)    :: td_dim
 
@@ -2501,7 +2518,7 @@ CONTAINS
          &  " MPP DEL DIM: delete dimension "//TRIM(td_dim%c_name)//&
          &  ", short name "//TRIM(td_dim%c_sname)//&
          &  ", in mpp "//TRIM(td_mpp%c_name) )
-         
+
          ! check if dimension already in variable structure
          il_ind=SCAN(TRIM(cp_dimorder),TRIM(td_dim%c_sname))
 
@@ -2524,7 +2541,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE mpp_move_dim(td_mpp, td_dim)
    !-------------------------------------------------------------------
-   !> @brief This subroutine move a dimension structure 
+   !> @brief This subroutine move a dimension structure
    !> in mpp structure.
    !> @warning dimension order may have changed
    !>
@@ -2537,7 +2554,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TMPP), INTENT(INOUT) :: td_mpp
       TYPE(TDIM), INTENT(IN)    :: td_dim
 
@@ -2624,7 +2641,7 @@ CONTAINS
                ENDDO
 
             ELSE
-            
+
                CALL logger_info( &
                &  " MPP ADD ATT: add attribute "//TRIM(td_att%c_name)//&
                &  ", in mpp "//TRIM(td_mpp%c_name) )
@@ -2701,7 +2718,7 @@ CONTAINS
             CALL logger_debug( "MPP DEL ATT: delete in mpp structure : &
             &  attribute : "//TRIM(cl_name) )
             DO ji=1,td_mpp%i_nproc
-               CALL file_del_att(td_mpp%t_proc(ji), TRIM(cl_name)) 
+               CALL file_del_att(td_mpp%t_proc(ji), TRIM(cl_name))
             ENDDO
 
          ENDIF
@@ -2718,7 +2735,7 @@ CONTAINS
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial version
-   !> @date February, 2015 
+   !> @date February, 2015
    !> - define local attribute structure to avoid mistake with pointer
    !> @date January, 2019
    !> - clean attributes structure
@@ -2768,7 +2785,7 @@ CONTAINS
             ELSE
 
                tl_att=att_copy(td_mpp%t_proc(1)%t_att(il_attid))
-               CALL mpp_del_att(td_mpp, tl_att) 
+               CALL mpp_del_att(td_mpp, tl_att)
                ! clean
                CALL att_clean(tl_att)
             ENDIF
@@ -2818,7 +2835,7 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief
    !>    This function initialise domain layout
-   !> 
+   !>
    !> @detail
    !> Domain layout is first computed, with domain dimension, overlap between subdomain,
    !> and the number of processors following I and J.
@@ -2856,10 +2873,10 @@ CONTAINS
       INTEGER(i4) :: il_lei
       INTEGER(i4) :: il_lej
 
-      INTEGER(i4) :: il_isize !< i-direction maximum sub domain size 
+      INTEGER(i4) :: il_isize !< i-direction maximum sub domain size
       INTEGER(i4) :: il_jsize !< j-direction maximum sub domain size
-      INTEGER(i4) :: il_resti !<  
-      INTEGER(i4) :: il_restj !<  
+      INTEGER(i4) :: il_resti !<
+      INTEGER(i4) :: il_restj !<
 
       ! loop indices
       INTEGER(i4) :: ji
@@ -2917,7 +2934,7 @@ CONTAINS
                tf_lay%i_jmpp(ji,jj) = tf_lay%i_jmpp(ji,jj-1) + &
                   &                   tf_lay%i_lcj (ji,jj-1) - 2*td_mpp%i_precj
             ENDDO
-         ENDDO 
+         ENDDO
       ENDIF
 
       ALLOCATE( tf_lay%i_msk(tf_lay%i_niproc,tf_lay%i_njproc) )
@@ -2933,14 +2950,14 @@ CONTAINS
             ! compute first and last indoor indices
             ! west boundary
             IF( ji == 1 )THEN
-               il_ldi = 1 
+               il_ldi = 1
             ELSE
                il_ldi = 1 + td_mpp%i_preci
             ENDIF
 
             ! south boundary
             IF( jj == 1 )THEN
-               il_ldj = 1 
+               il_ldj = 1
             ELSE
                il_ldj = 1 + td_mpp%i_precj
             ENDIF
@@ -2983,7 +3000,7 @@ CONTAINS
       tf_lay%i_max = MAXVAL(tf_lay%i_msk(:,:))
 
       IF( lm_layout )THEN
-         ! print info 
+         ! print info
          WRITE(im_iumout,*) ' '
          WRITE(im_iumout,*) " jpni=",tf_lay%i_niproc ," jpnj=",tf_lay%i_njproc
          WRITE(im_iumout,*) " jpi= ",il_isize," jpj= ",il_jsize
@@ -3002,7 +3019,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE layout__clean(td_lay)
    !-------------------------------------------------------------------
-   !> @brief 
+   !> @brief
    !>  This subroutine clean domain layout strcuture.
    !>
    !> @author J.Paul
@@ -3060,7 +3077,7 @@ CONTAINS
    !> @warning do not use on the output of a function who create or read a
    !> structure (ex: tl_seg=seg__copy(seg__init()) is forbidden).
    !> This will create memory leaks.
-   !> @warning to avoid infinite loop, do not use any function inside 
+   !> @warning to avoid infinite loop, do not use any function inside
    !> this subroutine
    !>
    !> @author J.Paul
@@ -3083,14 +3100,14 @@ CONTAINS
       ! loop indices
       !----------------------------------------------------------------
 
-      ! copy scalar 
+      ! copy scalar
       tf_lay%i_niproc   = td_lay%i_niproc
       tf_lay%i_njproc   = td_lay%i_njproc
-      tf_lay%i_nland    = td_lay%i_nland 
-      tf_lay%i_nsea     = td_lay%i_nsea  
-      tf_lay%i_mean     = td_lay%i_mean  
-      tf_lay%i_min      = td_lay%i_min   
-      tf_lay%i_max      = td_lay%i_max   
+      tf_lay%i_nland    = td_lay%i_nland
+      tf_lay%i_nsea     = td_lay%i_nsea
+      tf_lay%i_mean     = td_lay%i_mean
+      tf_lay%i_min      = td_lay%i_min
+      tf_lay%i_max      = td_lay%i_max
 
       ! copy pointers
       IF( ASSOCIATED(tf_lay%i_msk) )THEN
@@ -3173,7 +3190,7 @@ CONTAINS
    !>
    !> @author J.Paul
    !> @date October, 2015 - Initial version
-   !> @date August, 2017 
+   !> @date August, 2017
    !> - handle use of domain decomposition for monoproc file
    !>
    !> @param[inout] td_mpp mpp strcuture
@@ -3210,7 +3227,7 @@ CONTAINS
          WRITE(im_iumout,*) ' choix optimum'
          WRITE(im_iumout,*) ' ============='
          WRITE(im_iumout,*)
-         ! print info 
+         ! print info
          WRITE(im_iumout,*) ' '
          WRITE(im_iumout,*) " jpni=",td_lay%i_niproc ," jpnj=",td_lay%i_njproc
          WRITE(im_iumout,*) " iresti=",td_mpp%i_preci," irestj=",td_mpp%i_precj
@@ -3237,7 +3254,7 @@ CONTAINS
       ELSE
             td_mpp%c_dom='noextra'
       ENDIF
-      
+
       ALLOCATE(tl_proc(td_lay%i_nsea))
       jk=1
       DO jj=1,td_lay%i_njproc
@@ -3272,10 +3289,10 @@ CONTAINS
                tl_proc(jk)%i_lcj  = td_lay%i_lcj(ji,jj)
 
                ! compute first and last indoor indices
- 
+
                ! west boundary
                IF( ji == 1 )THEN
-                  tl_proc(jk)%i_ldi = 1 
+                  tl_proc(jk)%i_ldi = 1
                   tl_proc(jk)%l_ctr = .TRUE.
                ELSE
                   tl_proc(jk)%i_ldi = 1 + td_mpp%i_preci
@@ -3283,7 +3300,7 @@ CONTAINS
 
                ! south boundary
                IF( jj == 1 )THEN
-                  tl_proc(jk)%i_ldj = 1 
+                  tl_proc(jk)%i_ldj = 1
                   tl_proc(jk)%l_ctr = .TRUE.
                ELSE
                   tl_proc(jk)%i_ldj = 1 + td_mpp%i_precj
@@ -3309,7 +3326,7 @@ CONTAINS
                CALL att_clean(tl_att)
 
                ! update proc number
-               jk=jk+1 
+               jk=jk+1
 
             ENDIF
          ENDDO
@@ -3322,10 +3339,10 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE mpp__optimiz(td_mpp, id_mask, id_nproc)
    !-------------------------------------------------------------------
-   !> @brief 
+   !> @brief
    !>  This subroutine optimize the number of sub domain to be used, given mask.
    !> @details
-   !>  Actually it get the domain decomposition with the most land 
+   !>  Actually it get the domain decomposition with the most land
    !>  processors removed.
    !>  If no land processor could be removed, it get the decomposition with the
    !>  most sea processors.
@@ -3333,15 +3350,15 @@ CONTAINS
    !> @author J.Paul
    !> @date November, 2013 - Initial version
    !> @date October, 2015
-   !> - improve way to compute domain layout 
+   !> - improve way to compute domain layout
    !> @date February, 2016
    !> - new criteria for domain layout in case no land proc
    !>
    !> @param[inout] td_mpp mpp strcuture
-   !> @param[in] id_mask   sub domain mask (sea=1, land=0) 
+   !> @param[in] id_mask   sub domain mask (sea=1, land=0)
    !> @pram[in] id_nproc maximum number of processor to be used
    !-------------------------------------------------------------------
-      
+
       IMPLICIT NONE
 
       ! Argument
@@ -3365,7 +3382,7 @@ CONTAINS
 
       CALL logger_trace("MPP OPTIMIZ: look for best domain decomposition")
       dl_sav=0
-      ! 
+      !
       DO ji=1,id_nproc
          DO jj=1,id_nproc
 
@@ -3387,8 +3404,8 @@ CONTAINS
                         tl_sav=layout__copy(tl_lay)
                      ENDIF
                   ELSE ! tl_sav%i_nland == 0
-                     ! look for layout with most sea proc 
-                     ! and "square" cell 
+                     ! look for layout with most sea proc
+                     ! and "square" cell
                      dl_min=MIN(tl_lay%i_lci(1,1),tl_lay%i_lcj(1,1))
                      dl_max=MAX(tl_lay%i_lci(1,1),tl_lay%i_lcj(1,1))
                      dl_ratio=dl_min/dl_max
@@ -3431,7 +3448,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE mpp__clean_unit(td_mpp)
    !-------------------------------------------------------------------
-   !> @brief 
+   !> @brief
    !>  This subroutine clean mpp strcuture.
    !>
    !> @author J.Paul
@@ -3474,7 +3491,7 @@ CONTAINS
    END SUBROUTINE mpp__clean_unit
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    !-------------------------------------------------------------------
-   !> @brief 
+   !> @brief
    !>  This subroutine clean mpp strcuture.
    !>
    !> @author J.Paul
@@ -3501,9 +3518,9 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE mpp__get_use_unit(td_mpp, id_imin, id_imax, id_jmin, id_jmax)
    !-------------------------------------------------------------------
-   !> @brief 
+   !> @brief
    !>  This subroutine get sub domains which cover "zoom domain".
-   !>                      proc use in "zoom domain" 
+   !>                      proc use in "zoom domain"
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial version
@@ -3538,7 +3555,7 @@ CONTAINS
       !----------------------------------------------------------------
 
       IF( ASSOCIATED(td_mpp%t_proc) )THEN
-   
+
          il_imin=1
          il_imax=td_mpp%t_dim(1)%i_len
          IF( PRESENT(id_imin) ) il_imin=id_imin
@@ -3626,7 +3643,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE mpp_get_contour(td_mpp)
    !-------------------------------------------------------------------
-   !> @brief 
+   !> @brief
    !>  This subroutine get sub domains which form global domain border.
    !>
    !> @author J.Paul
@@ -3634,7 +3651,7 @@ CONTAINS
    !>
    !> @param[inout] td_mpp mpp strcuture
    !-------------------------------------------------------------------
-      
+
       IMPLICIT NONE
 
       ! Argument
@@ -3654,10 +3671,10 @@ CONTAINS
             &   td_mpp%t_proc(jk)%i_lej == td_mpp%t_proc(jk)%i_lcj )THEN
 
                td_mpp%t_proc(jk)%l_use = .TRUE.
- 
+
             ENDIF
          ENDDO
-   
+
       ELSE
          CALL logger_error("MPP GET CONTOUR: domain decomposition not define.")
       ENDIF
@@ -3669,7 +3686,7 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief
    !> This function return processor indices, without overlap boundary,
-   !> given processor id. 
+   !> given processor id.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial version
@@ -3702,8 +3719,8 @@ CONTAINS
 
          SELECT CASE(TRIM(td_mpp%c_dom))
             CASE('full')
-               il_i1 = 1 
-               il_j1 = 1 
+               il_i1 = 1
+               il_j1 = 1
 
                il_i2 = td_mpp%t_dim(1)%i_len
                il_j2 = td_mpp%t_dim(2)%i_len
@@ -3711,8 +3728,8 @@ CONTAINS
                il_i1 = td_mpp%t_proc(id_procid)%i_impp
                il_j1 = td_mpp%t_proc(id_procid)%i_jmpp
 
-               il_i2 = il_i1 + td_mpp%t_proc(id_procid)%i_lci - 1 
-               il_j2 = il_j1 + td_mpp%t_proc(id_procid)%i_lcj - 1 
+               il_i2 = il_i1 + td_mpp%t_proc(id_procid)%i_lci - 1
+               il_j2 = il_j1 + td_mpp%t_proc(id_procid)%i_lcj - 1
             CASE('nooverlap')
                il_i1 = td_mpp%t_proc(id_procid)%i_impp + &
                &        td_mpp%t_proc(id_procid)%i_ldi - 1
@@ -3740,8 +3757,8 @@ CONTAINS
          & RESULT(if_size)
    !-------------------------------------------------------------------
    !> @brief
-   !> This function return processor domain size, depending of domain 
-   !> decompisition type, given sub domain id. 
+   !> This function return processor domain size, depending of domain
+   !> decompisition type, given sub domain id.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial version
@@ -3774,7 +3791,7 @@ CONTAINS
 
          SELECT CASE(TRIM(td_mpp%c_dom))
             CASE('full')
-               
+
                il_isize = td_mpp%t_dim(1)%i_len
                il_jsize = td_mpp%t_dim(2)%i_len
 
@@ -3803,7 +3820,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE mpp_get_dom(td_mpp)
    !-------------------------------------------------------------------
-   !> @brief 
+   !> @brief
    !>  This subroutine determine domain decomposition type.
    !>  (full, overlap, noverlap)
    !>
@@ -3812,7 +3829,7 @@ CONTAINS
    !>
    !> @param[inout] td_mpp mpp strcuture
    !-------------------------------------------------------------------
-      
+
       IMPLICIT NONE
 
       ! Argument
@@ -3916,7 +3933,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TMPP), INTENT(IN) :: td_mpp
       TYPE(TVAR), INTENT(IN) :: td_var
 
@@ -3936,7 +3953,7 @@ CONTAINS
 
       lf_check=.TRUE.
 
-      ! check used dimension 
+      ! check used dimension
       ll_error=.FALSE.
       ll_warn=.FALSE.
       DO ji=1,ip_maxdim
@@ -4010,7 +4027,7 @@ CONTAINS
          & RESULT(if_idx)
    !-------------------------------------------------------------------
    !> @brief This function return the mpp id, in a array of mpp
-   !> structure,  given mpp base name. 
+   !> structure,  given mpp base name.
    !>
    !> @author J.Paul
    !> @date November, 2013 - Initial Version
@@ -4022,7 +4039,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TMPP)      , DIMENSION(:), INTENT(IN) :: td_mpp
       CHARACTER(LEN=*),               INTENT(IN) :: cd_name
 
@@ -4045,7 +4062,7 @@ CONTAINS
       DO ji=1,il_size
          ! look for file name
          IF( TRIM(fct_lower(td_mpp(ji)%c_name)) == TRIM(fct_lower(cd_name)) )THEN
- 
+
             if_idx=ji
             EXIT
 
@@ -4057,7 +4074,7 @@ CONTAINS
    FUNCTION mpp_recombine_var(td_mpp, cd_name) &
          & RESULT(tf_var)
    !-------------------------------------------------------------------
-   !> @brief This function recombine variable splitted in mpp structure. 
+   !> @brief This function recombine variable splitted in mpp structure.
    !>
    !> @author J.Paul
    !> @date October, 2014 - Initial Version
@@ -4069,7 +4086,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TMPP)      , INTENT(IN) :: td_mpp
       CHARACTER(LEN=*), INTENT(IN) :: cd_name
       ! function
@@ -4096,13 +4113,13 @@ CONTAINS
 
       il_varid=var_get_index( td_mpp%t_proc(1)%t_var(:), cd_name)
       IF( il_varid /= 0 )THEN
-      
+
          tf_var=var_copy(td_mpp%t_proc(1)%t_var(il_varid))
-         ! Allocate space to hold variable value in structure 
+         ! Allocate space to hold variable value in structure
          IF( ASSOCIATED(tf_var%d_value) )THEN
-            DEALLOCATE(tf_var%d_value)   
+            DEALLOCATE(tf_var%d_value)
          ENDIF
-         ! 
+         !
          DO ji=1,ip_maxdim
             IF( tf_var%t_dim(ji)%l_use )THEN
                tf_var%t_dim(ji)%i_len=td_mpp%t_dim(ji)%i_len
@@ -4125,7 +4142,7 @@ CONTAINS
          ! FillValue by default
          tf_var%d_value(:,:,:,:)=tf_var%d_fill
 
-         ! read processor 
+         ! read processor
          DO jk=1,td_mpp%i_nproc
             IF( td_mpp%t_proc(jk)%l_use )THEN
                ! get processor indices
@@ -4134,7 +4151,7 @@ CONTAINS
                il_i2p = il_ind(2)
                il_j1p = il_ind(3)
                il_j2p = il_ind(4)
- 
+
                il_strt(:)=(/ 1,1,1,1 /)
 
                il_cnt(:)=(/ il_i2p-il_i1p+1,         &
@@ -4144,7 +4161,7 @@ CONTAINS
 
                tl_tmp=iom_read_var( td_mpp%t_proc(jk), tf_var%c_name,&
                   &                 il_strt(:), il_cnt(:) )
-               
+
                ! replace value in output variable structure
                tf_var%d_value( il_i1p : il_i2p,  &
                   &            il_j1p : il_j2p,  &
@@ -4166,7 +4183,7 @@ CONTAINS
 
    END FUNCTION mpp_recombine_var
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE mpp__read_halo(td_file, td_dimglo) 
+   SUBROUTINE mpp__read_halo(td_file, td_dimglo)
    !-------------------------------------------------------------------
    !> @brief This subroutine read subdomain indices defined with halo
    !> (NEMO netcdf way)
@@ -4176,10 +4193,10 @@ CONTAINS
    !>
    !> @param[inout] td_file   mpp structure
    !-------------------------------------------------------------------
-   
+
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TFILE)              , INTENT(INOUT) :: td_file
       TYPE(TDIM) , DIMENSION(:), INTENT(IN   ) :: td_dimglo
 
@@ -4261,9 +4278,9 @@ CONTAINS
 
       SELECT CASE(TRIM(cl_dom))
          CASE('full')
-            td_file%i_impp = il_ifirst 
+            td_file%i_impp = il_ifirst
             td_file%i_jmpp = il_jfirst
-            td_file%i_lci  = td_file%t_dim(jp_I)%i_len 
+            td_file%i_lci  = td_file%t_dim(jp_I)%i_len
             td_file%i_lcj  = td_file%t_dim(jp_J)%i_len
             td_file%i_ldi  = il_ihalostart + 1
             td_file%i_ldj  = il_jhalostart + 1
@@ -4284,14 +4301,14 @@ CONTAINS
             td_file%i_lci  = td_file%t_dim(jp_I)%i_len
             td_file%i_lcj  = td_file%t_dim(jp_J)%i_len
             td_file%i_ldi  = 1
-            td_file%i_ldj  = 1 
+            td_file%i_ldj  = 1
             td_file%i_lei  = td_file%t_dim(jp_I)%i_len
             td_file%i_lej  = td_file%t_dim(jp_J)%i_len
       END SELECT
 
    END SUBROUTINE mpp__read_halo
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE mpp__compute_halo(td_mpp) 
+   SUBROUTINE mpp__compute_halo(td_mpp)
    !-------------------------------------------------------------------
    !> @brief This subroutine compute subdomain indices defined with halo
    !> (NEMO netcdf way)
@@ -4301,10 +4318,10 @@ CONTAINS
    !>
    !> @param[inout] td_mpp   mpp structure
    !-------------------------------------------------------------------
-   
+
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TMPP)      , INTENT(INOUT) :: td_mpp
 
       ! local variable
@@ -4337,30 +4354,30 @@ CONTAINS
 
       SELECT CASE(TRIM(td_mpp%c_dom))
          CASE('full')
-            
+
             il_ifirst(:)=td_mpp%t_proc(:)%i_impp
             il_jfirst(:)=td_mpp%t_proc(:)%i_jmpp
-            
+
             il_ilast(:)=td_mpp%t_proc(:)%i_impp + td_mpp%t_proc(:)%t_dim(jp_I)%i_len - 1
             il_jlast(:)=td_mpp%t_proc(:)%i_jmpp + td_mpp%t_proc(:)%t_dim(jp_J)%i_len - 1
 
             il_ihalostart(:)=td_mpp%t_proc(:)%i_ldi-1
             il_jhalostart(:)=td_mpp%t_proc(:)%i_ldj-1
-            
+
             il_ihaloend(:)=td_mpp%t_proc(:)%t_dim(jp_I)%i_len - td_mpp%t_proc(:)%i_lei
             il_jhaloend(:)=td_mpp%t_proc(:)%t_dim(jp_J)%i_len - td_mpp%t_proc(:)%i_lej
 
          CASE('noextra')
-            
+
             il_ifirst(:)=td_mpp%t_proc(:)%i_impp
             il_jfirst(:)=td_mpp%t_proc(:)%i_jmpp
 
             il_ilast(:) =td_mpp%t_proc(:)%i_impp + td_mpp%t_proc(:)%i_lci - 1
             il_jlast(:) =td_mpp%t_proc(:)%i_jmpp + td_mpp%t_proc(:)%i_lcj - 1
-            
+
             il_ihalostart(:)=td_mpp%t_proc(:)%i_ldi-1
             il_jhalostart(:)=td_mpp%t_proc(:)%i_ldj-1
-            
+
             il_ihaloend(:)=td_mpp%t_proc(:)%i_lci - td_mpp%t_proc(:)%i_lei
             il_jhaloend(:)=td_mpp%t_proc(:)%i_lcj - td_mpp%t_proc(:)%i_lej
 
@@ -4380,13 +4397,13 @@ CONTAINS
 
          CASE DEFAULT
             CALL logger_fatal("MPP INIT: invalid "//&
-            &              "decomposition type.")                     
+            &              "decomposition type.")
       END SELECT
 
       DO ji=1,td_mpp%i_nproc
          tl_att=att_init( "DOMAIN_position_first", &
          &                (/ il_ifirst(ji), il_jfirst(ji) /) )
-         CALL file_move_att(td_mpp%t_proc(ji), tl_att)      
+         CALL file_move_att(td_mpp%t_proc(ji), tl_att)
 
          tl_att=att_init( "DOMAIN_position_last", &
          &                (/ il_ilast(ji), il_jlast(ji) /) )
@@ -4394,7 +4411,7 @@ CONTAINS
 
          tl_att=att_init( "DOMAIN_halo_size_start", &
          &                (/ il_ihalostart(ji), il_jhalostart(ji) /) )
-         CALL file_move_att( td_mpp%t_proc(ji), tl_att)               
+         CALL file_move_att( td_mpp%t_proc(ji), tl_att)
 
          tl_att=att_init( "DOMAIN_halo_size_end", &
          &                (/ il_ihaloend(ji), il_jhaloend(ji) /) )
@@ -4403,10 +4420,10 @@ CONTAINS
 
       DEALLOCATE( il_ifirst    )
       DEALLOCATE( il_jfirst    )
- 
+
       DEALLOCATE( il_ilast     )
       DEALLOCATE( il_jlast     )
- 
+
       DEALLOCATE( il_ihalostart)
       DEALLOCATE( il_jhalostart)
 
@@ -4439,7 +4456,7 @@ CONTAINS
       CALL mpp_move_att(td_mpp, tl_att)
 
       tl_att=att_init( "SUBDOMAIN_J_last_indoor_indices", td_mpp%t_proc(:)%i_lej)
-      CALL mpp_move_att(td_mpp, tl_att)         
+      CALL mpp_move_att(td_mpp, tl_att)
 
       ! clean
       CALL att_clean(tl_att)

@@ -2,7 +2,7 @@
 ! MERCATOR OCEAN, System and Interface for oceanic RElocable Nesting
 !----------------------------------------------------------------------
 !> @file
-!> @brief 
+!> @brief
 !> This program add line to all variables of the input file.
 !>
 !> @details
@@ -24,7 +24,7 @@
 !>       - **namout** to set output parameters
 !>
 !>    here after, each sub-namelist parameters is detailed.
-!>    @note 
+!>    @note
 !>       default values are specified between brackets
 !>
 !> @subsection sublog namlog
@@ -43,7 +43,7 @@
 !>          - fatal
 !>          - none
 !>
-!>    - **in_maxerror** [@a 5]<br/> 
+!>    - **in_maxerror** [@a 5]<br/>
 !>       maximum number of error allowed
 !>
 !> @subsection subcfg namcfg
@@ -51,28 +51,28 @@
 !>
 !>    - **cn_varcfg** [@a ./cfg/variable.cfg]<br/>
 !>       path to the variable configuration file.<br/>
-!>       the variable configuration file defines standard name, 
-!>       default interpolation method, axis,... 
-!>       to be used for some known variables.<br/> 
+!>       the variable configuration file defines standard name,
+!>       default interpolation method, axis,...
+!>       to be used for some known variables.<br/>
 !>
-!>    - **cn_dimcfg** [@a ./cfg/dimension.cfg]<br/> 
-!>       path to the dimension configuration file.<br/> 
-!>       the dimension configuration file defines dimensions allowed.<br/> 
+!>    - **cn_dimcfg** [@a ./cfg/dimension.cfg]<br/>
+!>       path to the dimension configuration file.<br/>
+!>       the dimension configuration file defines dimensions allowed.<br/>
 !>
-!>    - **cn_dumcfg** [@a ./cfg/dummy.cfg]<br/> 
+!>    - **cn_dumcfg** [@a ./cfg/dummy.cfg]<br/>
 !>       path to the useless (dummy) configuration file.<br/>
-!>       the dummy configuration file defines useless 
+!>       the dummy configuration file defines useless
 !>       dimension or variable. these dimension(s) or variable(s) will not be
 !>       processed.<br/>
 !>
-!> @subsection subsrc namsrc 
+!> @subsection subsrc namsrc
 !>    the source/coarse grid sub-namelist parameters are :
 !>
-!>    - **cn_coord0** [@a ]<br/> 
+!>    - **cn_coord0** [@a ]<br/>
 !>       path to the coordinate file
 !>
-!>    - **in_perio0** [@a ]<br/> 
-!>       NEMO periodicity index<br/> 
+!>    - **in_perio0** [@a ]<br/>
+!>       NEMO periodicity index<br/>
 !>       the NEMO periodicity could be choose between 0 to 6:
 !>       <dl>
 !>          <dt>in_perio=0</dt>
@@ -94,23 +94,23 @@
 !>          </dd>
 !>       </dl>
 !>       @sa For more information see @ref md_src_docsrc_6_perio
-!>       and Model Boundary Condition paragraph in the 
+!>       and Model Boundary Condition paragraph in the
 !>       [NEMO documentation](https://forge.ipsl.jussieu.fr/nemo/chrome/site/doc/NEMO/manual/pdf/NEMO_manual.pdf)
 !>
-!> @subsection subvar namvar 
+!> @subsection subvar namvar
 !>    the variable sub-namelist parameters are :
 !>
-!>    - **cn_varfile** [@a ]<br/> 
-!>       list of variable, and associated file 
+!>    - **cn_varfile** [@a ]<br/>
+!>       list of variable, and associated file
 !>
 !>       *cn_varfile* is the path and filename of the file where find
 !>       variable.
-!>       @note 
+!>       @note
 !>          *cn_varfile* could be a matrix of value, if you want to handwrite
 !>          variable value.<br/>
 !>          the variable array of value is split into equal subdomain.<br/>
-!>          each subdomain is filled with the corresponding value 
-!>          of the matrix.<br/>          
+!>          each subdomain is filled with the corresponding value
+!>          of the matrix.<br/>
 !>          separators used to defined matrix are:
 !>             - ',' for line
 !>             - '/' for row
@@ -119,22 +119,22 @@
 !>                                      3 & 2 & 3 \\
 !>                                      1 & 4 & 5 \end{array} \right) @f$
 !>
-!>       Examples: 
+!>       Examples:
 !>          - 'Bathymetry:gridT.nc'
 !>
-!>       @note 
+!>       @note
 !>          Optionnaly, NEMO periodicity could be added following the filename.
 !>          the periodicity must be separated by ';'
 !>
 !>       Example:
 !>          - 'Bathymetry:gridT.nc ; perio=4'<br/>
 !>
-!>    - **cn_varinfo** [@a ]<br/> 
+!>    - **cn_varinfo** [@a ]<br/>
 !>       list of variable and extra information about request(s) to be used<br/>
 !>
 !>       each elements of *cn_varinfo* is a string character (separated by ',').<br/>
-!>       it is composed of the variable name follow by ':', 
-!>       then request(s) to be used on this variable.<br/> 
+!>       it is composed of the variable name follow by ':',
+!>       then request(s) to be used on this variable.<br/>
 !>       request could be:
 !>          - int = interpolation method
 !>          - ext = extrapolation method
@@ -149,20 +149,20 @@
 !>
 !>       informations about available method could be find in @ref interp,
 !>       @ref extrap and @ref filter modules.<br/>
-!>       Example: 
+!>       Example:
 !>          - 'Bathymetry: flt=2*hamming(2,3); min=0'
 !>
-!>       @note 
-!>          If you do not specify a method which is required, 
+!>       @note
+!>          If you do not specify a method which is required,
 !>          default one is apply.
 !>
-!> @subsection subout namout 
+!> @subsection subout namout
 !>    the output sub-namelist parameter is :
 !>
 !>    - **cn_fileout** [@a addline_deg.nc]<br/>
 !>       output filename
 !>    - @b ln_extrap [@a .FALSE.]<br/>
-!>       extrapolate extra line 
+!>       extrapolate extra line
 !>    - @b ln_copy [@a .FALSE.]<br/>
 !>       copy extra line from above
 !>    - **in_nproc** [@a 1]<br/>
@@ -219,7 +219,7 @@ PROGRAM addline_deg
    TYPE(TMPP)                                         :: tl_mppout
 
    TYPE(TATT)                                         :: tl_att
-   
+
    TYPE(TVAR)                                         :: tl_lon
    TYPE(TVAR)                                         :: tl_lat
    TYPE(TVAR)                                         :: tl_depth
@@ -227,7 +227,7 @@ PROGRAM addline_deg
 
    TYPE(TVAR)                                         :: tl_tmp
    TYPE(TVAR)       , DIMENSION(:), ALLOCATABLE       :: tl_var
-   
+
    TYPE(TDIM)       , DIMENSION(ip_maxdim)            :: tl_dim
 
    TYPE(TMULTI)                                       :: tl_multi
@@ -240,17 +240,17 @@ PROGRAM addline_deg
 
    ! namelist variable
    ! namlog
-   CHARACTER(LEN=lc)                       :: cn_logfile = 'addline.log' 
-   CHARACTER(LEN=lc)                       :: cn_verbosity = 'warning' 
+   CHARACTER(LEN=lc)                       :: cn_logfile = 'addline.log'
+   CHARACTER(LEN=lc)                       :: cn_verbosity = 'warning'
    INTEGER(i4)                             :: in_maxerror = 5
 
    ! namcfg
-   CHARACTER(LEN=lc)                       :: cn_varcfg = 'variable.cfg' 
-   CHARACTER(LEN=lc)                       :: cn_dimcfg = 'dimension.cfg' 
-   CHARACTER(LEN=lc)                       :: cn_dumcfg = 'dummy.cfg' 
+   CHARACTER(LEN=lc)                       :: cn_varcfg = 'variable.cfg'
+   CHARACTER(LEN=lc)                       :: cn_dimcfg = 'dimension.cfg'
+   CHARACTER(LEN=lc)                       :: cn_dumcfg = 'dummy.cfg'
 
    ! namsrc
-   CHARACTER(LEN=lc)                       :: cn_coord0 = '' 
+   CHARACTER(LEN=lc)                       :: cn_coord0 = ''
    INTEGER(i4)                             :: in_perio0 = -1
 
    ! namvar
@@ -258,7 +258,7 @@ PROGRAM addline_deg
    CHARACTER(LEN=lc), DIMENSION(ip_maxvar) :: cn_varfile = ''
 
    ! namout
-   CHARACTER(LEN=lc)                       :: cn_fileout = 'addline_deg.nc' 
+   CHARACTER(LEN=lc)                       :: cn_fileout = 'addline_deg.nc'
    LOGICAL                                 :: ln_extrap  = .FALSE.
    LOGICAL                                 :: ln_copy    = .FALSE.
    INTEGER(i4)                             :: in_nproc   = 0
@@ -280,7 +280,7 @@ PROGRAM addline_deg
    NAMELIST /namsrc/ &   !< source/coarse grid namelist
    &  cn_coord0,  &      !< coordinate file
    &  in_perio0          !< periodicity index
-   
+
    NAMELIST /namvar/ &   !< variable namelist
    &  cn_varinfo, &      !< list of variable and interpolation method to be used. (ex: 'votemper:linear','vosaline:cubic' )
    &  cn_varfile         !< list of variable file
@@ -304,11 +304,11 @@ PROGRAM addline_deg
    ELSE
       CALL GET_COMMAND_ARGUMENT(1,cl_namelist) !f03 intrinsec
    ENDIF
- 
+
    ! read namelist
    INQUIRE(FILE=TRIM(cl_namelist), EXIST=ll_exist)
    IF( ll_exist )THEN
- 
+
       il_fileid=fct_getunit()
 
       OPEN( il_fileid, FILE=TRIM(cl_namelist), &
@@ -348,7 +348,7 @@ PROGRAM addline_deg
       CALL var_chg_extra( cn_varinfo )
       ! match variable with file
       tl_multi=multi_init(cn_varfile)
-      
+
       READ( il_fileid, NML = namout )
 
       CLOSE( il_fileid, IOSTAT=il_status )
@@ -372,7 +372,7 @@ PROGRAM addline_deg
       CALL grid_get_info(tl_coord0)
    ELSE
       CALL logger_fatal("ADD LINE: no coarse grid coordinate found. "//&
-      &     "check namelist")      
+      &     "check namelist")
    ENDIF
 
    ! check
@@ -392,7 +392,7 @@ PROGRAM addline_deg
       ALLOCATE( tl_var( tl_multi%i_nvar ) )
       jk=0
       DO ji=1,tl_multi%i_nmpp
-      
+
          IF( .NOT. ASSOCIATED(tl_multi%t_mpp(ji)%t_proc(1)%t_var) )THEN
 
             CALL logger_fatal("ADD LINE: no variable to work on for "//&
@@ -444,12 +444,12 @@ PROGRAM addline_deg
             ! close mpp file
             CALL iom_mpp_close(tl_mpp)
 
-            !- add line to input file variable 
+            !- add line to input file variable
             DO jj=1,tl_multi%t_mpp(ji)%t_proc(1)%i_nvar
                jk=jk+1
                tl_tmp=var_copy(tl_multi%t_mpp(ji)%t_proc(1)%t_var(jj))
                WRITE(*,'(2x,a)') "work on variable "//TRIM(tl_tmp%c_name)
-            
+
                tl_var(jk)=add_line( tl_tmp, tl_mpp, &
                &                    tl_coord0 )
 
@@ -499,14 +499,14 @@ PROGRAM addline_deg
 
    DO ji=1,ip_maxdim
 
-      IF( tl_dim(ji)%l_use )THEN
+      IF( tl_dim(ji)%l_use .AND. .NOT. tl_mppout%t_dim(ji)%l_use )THEN
          CALL mpp_move_dim(tl_mppout, tl_dim(ji))
          SELECT CASE(TRIM(tl_dim(ji)%c_sname))
          CASE('z','t')
             DO jj=1,tl_mppout%i_nproc
                CALL file_add_dim(tl_mppout%t_proc(jj), tl_dim(ji))
             ENDDO
-         END SELECT 
+         END SELECT
       ENDIF
 
    ENDDO
@@ -588,7 +588,7 @@ PROGRAM addline_deg
       tl_att=att_init('ew_overlap',tl_coord0%i_ew)
       CALL mpp_add_att(tl_mppout,tl_att)
    ENDIF
-   
+
    ! print
    CALL mpp_print(tl_mppout)
 
@@ -619,20 +619,20 @@ CONTAINS
    !-------------------------------------------------------------------
    !> @brief
    !> This function add line to variable and return variable structure
-   !> 
+   !>
    !> @author J.Paul
    !> @date October, 2015 - Initial Version
    !>
-   !> @param[in] td_var    variable structure 
+   !> @param[in] td_var    variable structure
    !> @param[in] td_mpp    mpp file structure
    !> @param[in] td_coord  coordinate file structure
    !> @return variable structure
    !-------------------------------------------------------------------
-      
+
       IMPLICIT NONE
 
       ! Argument
-      TYPE(TVAR), INTENT(IN) :: td_var  
+      TYPE(TVAR), INTENT(IN) :: td_var
       TYPE(TMPP), INTENT(IN) :: td_mpp
       TYPE(TMPP), INTENT(IN) :: td_coord
 
@@ -679,7 +679,7 @@ CONTAINS
 
          ! add attribute to variable
          tl_att=att_init('src_file',TRIM(fct_basename(tl_mpp%c_name)))
-         CALL var_move_att(tf_var, tl_att)         
+         CALL var_move_att(tf_var, tl_att)
 
          tl_att=att_init('add_i_line',(/il_ghost(jp_I,1), il_ghost(jp_I,2)/))
          CALL var_move_att(tf_var, tl_att)
@@ -694,4 +694,4 @@ CONTAINS
 
    END FUNCTION add_line
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-END PROGRAM 
+END PROGRAM

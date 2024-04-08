@@ -1,9 +1,9 @@
 /*!
- @mainpage About 
+ @mainpage About
 
- SIREN is a software to set up regional configuration with [NEMO](http://www.nemo-ocean.eu).<br/> 
+ SIREN is a software to set up regional configuration with [NEMO](http://www.nemo-ocean.eu).<br/>
  Actually SIREN creates the input files you need to run a NEMO regional configuration.<br/>
- 
+
  SIREN allows you to create your own regional configuration embedded in a wider one.<br/>
 
  To know how to install SIREN see @ref md_src_docsrc_1_install.

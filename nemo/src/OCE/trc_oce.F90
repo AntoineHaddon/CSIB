@@ -25,11 +25,12 @@ MODULE trc_oce
 
    LOGICAL , PUBLIC ::   l_co2cpl  = .false.   !: atmospheric pco2 recieved from oasis
    LOGICAL , PUBLIC ::   l_offline = .false.   !: offline passive tracers flag
-   INTEGER , PUBLIC ::   nn_dttrc              !: frequency of step on passive tracers
    REAL(wp), PUBLIC ::   r_si2                 !: largest depth of extinction (blue & 0.01 mg.m-3)  (RGB)
+   LOGICAL , PUBLIC ::   ln_trcdc2dm           !: Diurnal cycle for TOP
    !
    REAL(wp), PUBLIC, SAVE, ALLOCATABLE, DIMENSION(:,:,:) ::   etot3     !: light absortion coefficient
    REAL(wp), PUBLIC, SAVE, ALLOCATABLE, DIMENSION(:,:)   ::   oce_co2   !: ocean carbon flux
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   qsr_mean  !: daily mean qsr
 
 #if defined key_top 
    !!----------------------------------------------------------------------
@@ -44,7 +45,7 @@ MODULE trc_oce
 #endif
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: trc_oce.F90 10068 2018-08-28 14:09:04Z nicolasmartin $ 
+   !! $Id: trc_oce.F90 13286 2020-07-09 15:48:29Z smasson $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -53,7 +54,9 @@ CONTAINS
       !!----------------------------------------------------------------------
       !!                  ***  trc_oce_alloc  ***
       !!----------------------------------------------------------------------
-      ALLOCATE( etot3(jpi,jpj,jpk), oce_co2(jpi,jpj), STAT=trc_oce_alloc )
+      ALLOCATE( etot3(jpi,jpj,jpk), oce_co2(jpi,jpj), qsr_mean(jpi,jpj), STAT=trc_oce_alloc )
+      oce_co2(:,:)=0.
+
       IF( trc_oce_alloc /= 0 )   CALL ctl_warn('trc_oce_alloc: failed to allocate etot3 array')
       !
    END FUNCTION trc_oce_alloc
@@ -158,7 +161,6 @@ CONTAINS
       DO jc = 1, 61                         ! check
          zchl = zrgb(1,jc)
          irgb = NINT( 41 + 20.* LOG10( zchl ) + 1.e-15 )
-         IF(lwp .AND. nn_print >= 1 ) WRITE(numout,*) '    jc =', jc, '  Chl = ', zchl, '  irgb = ', irgb
          IF( irgb /= jc ) THEN
             IF(lwp) WRITE(numout,*) '    jc =', jc, '  Chl = ', zchl, '  Chl class = ', irgb
             CALL ctl_stop( 'trc_oce_rgb : inconsistency in Chl tabulated attenuation coeff.' )

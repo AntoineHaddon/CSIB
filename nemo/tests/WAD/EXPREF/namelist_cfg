@@ -11,9 +11,9 @@
 !!   namwad       Wetting and drying                                    (default: OFF)
 !!   namtsd       data: temperature & salinity                          (default: OFF)
 !!   namcrs       coarsened grid (for outputs and/or TOP)               (ln_crs =T)
-!!   namc1d       1D configuration options                              ("key_c1d")
-!!   namc1d_dyndmp 1D newtonian damping applied on currents             ("key_c1d")
-!!   namc1d_uvd   1D data (currents)                                    ("key_c1d")
+!!   namc1d       1D configuration options                              (ln_c1d =T)
+!!   namc1d_dyndmp 1D newtonian damping applied on currents             (ln_c1d =T)
+!!   namc1d_uvd   1D data (currents)                                    (ln_c1d =T)
 !!======================================================================
 !
 !-----------------------------------------------------------------------
@@ -42,7 +42,7 @@
    ln_linssh   = .false.   !  =T  linear free surface  ==>>  model level are fixed in time
    !
    ln_meshmask = .true.    !  create (>0) a mesh file or not (=0)
-   rn_rdt      =    18.    !  time step for the dynamics 
+   rn_Dt      =    18.    !  time step for the dynamics 
 /
 !-----------------------------------------------------------------------
 &namcfg        !   parameters of the configuration                      (default: user defined GYRE)
@@ -52,9 +52,12 @@
    ln_write_cfg = .true.    !  (=T) create the domain configuration file
 /
 !-----------------------------------------------------------------------
+&namtile        !   parameters of the tiling
+!-----------------------------------------------------------------------
+/
+!-----------------------------------------------------------------------
 &namwad        !   Wetting and Drying (WaD)                             (default: OFF)
 !-----------------------------------------------------------------------
-   ln_wd_il    = .false    ! T/F activation of iterative   limiter
    ln_wd_dl    = .true.    ! T/F activation of directional limiter
    ln_wd_dl_bc = .true.    ! T/F Directional limiteer Baroclinic option
    ln_wd_dl_rmp = .true.    ! T/F Turn on directional limiter ramp
@@ -62,7 +65,6 @@
    rn_wdmin1   =  0.2      ! Minimum wet depth on dried cells
    rn_wdmin2   =  0.0001   ! Tolerance of min wet depth on dried cells
    rn_wdld     =  2.5      ! Land elevation below which WaD is allowed
-   nn_wdit     =   20      ! Max iterations for WaD limiter
 /
 !!======================================================================
 !!            ***  Surface Boundary Condition namelists  ***          !!
@@ -152,10 +154,7 @@
     cn_ice        =  'none'               !
     nn_ice_dta    =  0                    !  = 0, bdy data are equal to the initial state
                                           !  = 1, bdy data are read in 'bdydata   .nc' files
-    rn_ice_tem    = 270.                  !  si3 only: arbitrary temperature of incoming sea ice
-    rn_ice_sal    = 10.                   !  si3 only:      --   salinity           --
-    rn_ice_age    = 30.                   !  si3 only:      --   age                --
-
+   !
     ln_tra_dmp    =.false.                !  open boudaries conditions for tracers
     ln_dyn3d_dmp  =.false.                !  open boundary condition for baroclinic velocities
     rn_time_dmp   =  1.                   ! Damping time scale in days
@@ -168,9 +167,9 @@
 &nambdy_index
 !-----------------------------------------------------------------------
     ctypebdy = 'E'
-    nbdyind  = 50
+    nbdyind  = 33
     nbdybeg  = 1
-    nbdyend  = 34
+    nbdyend  = 23
     !ctypebdy = 'W'
     !nbdyind  = 2
     !nbdybeg  = 1
@@ -252,7 +251,7 @@
    ln_seos     = .true.          !  = Use simplified equation of state (S-EOS)
                                  !
    !                     ! S-EOS coefficients (ln_seos=T):
-   !                             !  rd(T,S,Z)*rau0 = -a0*(1+.5*lambda*dT+mu*Z+nu*dS)*dT+b0*dS
+   !                             !  rd(T,S,Z)*rho0 = -a0*(1+.5*lambda*dT+mu*Z+nu*dS)*dT+b0*dS
    rn_a0       =  1.6550e-1      !  thermal expension coefficient (nn_eos= 1)
    rn_b0       =  7.6554e-1      !  saline  expension coefficient (nn_eos= 1)
    rn_lambda1  =  5.9520e-2      !  cabbeling coeff in T^2  (=0 for linear eos)
@@ -262,7 +261,7 @@
    rn_nu       =  2.4341e-3      !  cabbeling coeff in T*S  (=0 for linear eos)
 !!org GYRE   rn_alpha    =   2.0e-4  !  thermal expension coefficient (nn_eos= 1 or 2)
 !!org GYRE   rn_beta     =   7.7e-4  !  saline  expension coefficient (nn_eos= 2)
-!!org  caution  now a0 = alpha / rau0   with rau0 = 1026
+!!org  caution  now a0 = alpha / rho0   with rho0 = 1026
 /
 !-----------------------------------------------------------------------
 &namtra_adv    !   advection scheme for tracer                          (default: NO selection)
@@ -329,7 +328,6 @@
    ln_dynvor_ens = .false. !  energy conserving scheme
    ln_dynvor_mix = .false. !  mixed scheme
    ln_dynvor_een = .true.  !  energy & enstrophy scheme
-      nn_een_e3f = 0             !  e3f = masked averaging of e3t divided by 4 (=0) or by the sum of mask (=1)
 /
 !-----------------------------------------------------------------------
 &namdyn_hpg    !   Hydrostatic pressure gradient option                 (default: NO selection)
@@ -343,7 +341,7 @@
 !-----------------------------------------------------------------------
    ln_dynspg_ts  = .true.  !  split-explicit free surface
    ln_bt_auto    = .false. ! Number of sub-step defined from:
-   nn_baro       =  12     ! =F : the number of sub-step in rn_rdt seconds
+   nn_e       =  12     ! =F : the number of sub-step in rn_Dt seconds
 /
 !-----------------------------------------------------------------------
 &namdyn_ldf    !   lateral diffusion on momentum                        (default: NO selection)
@@ -416,12 +414,10 @@
 !!                  ***  Diagnostics namelists  ***                   !!
 !!                                                                    !!
 !!   namtrd       dynamics and/or tracer trends                         (default: OFF)
-!!   namptr       Poleward Transport Diagnostics                        (default: OFF)
 !!   namhsb       Heat and salt budgets                                 (default: OFF)
 !!   namdiu       Cool skin and warm layer models                       (default: OFF)
 !!   namdiu       Cool skin and warm layer models                       (default: OFF)
 !!   namflo       float parameters                                      (default: OFF)
-!!   nam_diaharm  Harmonic analysis of tidal constituents               (default: OFF)
 !!   nam_diadct   transports through some sections                      (default: OFF)
 !!   nam_dia25h   25h Mean Output                                       (default: OFF)
 !!   namnc4       netcdf4 chunking and compression settings             ("key_netcdf4")
@@ -458,13 +454,13 @@
 !!======================================================================
 !!                  ***  Miscellaneous namelists  ***                 !!
 !!                                                                    !!
-!!   nammpp            Massively Parallel Processing                    ("key_mpp_mpi")
+!!   nammpp            Massively Parallel Processing
 !!   namctl            Control prints                                   (default: OFF)
 !!   namsto            Stochastic parametrization of EOS                (default: OFF)
 !!======================================================================
 !
 !-----------------------------------------------------------------------
-&nammpp        !   Massively Parallel Processing                        ("key_mpp_mpi")
+&nammpp        !   Massively Parallel Processing
 !-----------------------------------------------------------------------
 /
 !-----------------------------------------------------------------------

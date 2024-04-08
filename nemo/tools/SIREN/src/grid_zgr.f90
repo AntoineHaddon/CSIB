@@ -6,16 +6,16 @@
 !> @brief This module manage Vertical grid.
 !>
 !> @details
-!> ** Purpose :   set the depth of model levels and the resulting 
+!> ** Purpose :   set the depth of model levels and the resulting
 !>              vertical scale factors.
 !>
-!> ** Method  : 
+!> ** Method  :
 !>    - reference 1D vertical coordinate (gdep._1d, e3._1d)
 !>    - read/set ocean depth and ocean levels (bathy, mbathy)
 !>    - vertical coordinate (gdep., e3.) depending on the coordinate chosen :
-!>       - ln_zco=T   z-coordinate   
+!>       - ln_zco=T   z-coordinate
 !>       - ln_zps=T   z-coordinate with partial steps
-!>       - ln_zco=T   s-coordinate 
+!>       - ln_zco=T   s-coordinate
 !>
 !> ** Action  :   define gdep., e3., mbathy and bathy
 !>
@@ -85,15 +85,15 @@ MODULE grid_zgr
    PUBLIC :: tg_gdept_1d
    PUBLIC :: tg_e3w_1d
    PUBLIC :: tg_e3t_1d
-   PUBLIC :: tg_e3tp 
-   PUBLIC :: tg_e3wp 
+   PUBLIC :: tg_e3tp
+   PUBLIC :: tg_e3wp
 
-   PUBLIC :: tg_rx1 
-   
+   PUBLIC :: tg_rx1
+
    PUBLIC :: tg_mbathy
    PUBLIC :: tg_misfdep
 
-   PUBLIC :: tg_gdept_0 
+   PUBLIC :: tg_gdept_0
    PUBLIC :: tg_gdepw_0
 !   PUBLIC :: tg_gdep3w_0  !useless to create meshmask
    PUBLIC :: tg_e3t_0
@@ -103,7 +103,7 @@ MODULE grid_zgr
    PUBLIC :: tg_e3f_0     !useless to create meshmask
    PUBLIC :: tg_e3uw_0    !useless to create meshmask
    PUBLIC :: tg_e3vw_0    !useless to create meshmask
-   
+
    PUBLIC :: tg_mbkt
 !   PUBLIC :: tg_mbku      !useless to create meshmask
 !   PUBLIC :: tg_mbkv      !useless to create meshmask
@@ -124,20 +124,20 @@ MODULE grid_zgr
    PUBLIC :: tg_esigw     !            sco(tanh)
 
    ! function and subroutine
-   PUBLIC :: grid_zgr_init 
+   PUBLIC :: grid_zgr_init
    PUBLIC :: grid_zgr_nam
    PUBLIC :: grid_zgr_fill
    PUBLIC :: grid_zgr_clean
 
-   PUBLIC :: grid_zgr_zps_init 
+   PUBLIC :: grid_zgr_zps_init
    PUBLIC :: grid_zgr_zps_clean
    PUBLIC :: grid_zgr_sco_init
    PUBLIC :: grid_zgr_sco_clean
-   PUBLIC :: grid_zgr_sco_stiff 
+   PUBLIC :: grid_zgr_sco_stiff
 
    PRIVATE :: grid_zgr__z
-   PRIVATE :: grid_zgr__bat 
-   PRIVATE :: grid_zgr__zco 
+   PRIVATE :: grid_zgr__bat
+   PRIVATE :: grid_zgr__zco
 !   PRIVATE :: grid_zgr__bat_zoom
    PRIVATE :: grid_zgr__bat_ctl
    PRIVATE :: grid_zgr__bot_level
@@ -148,82 +148,82 @@ MODULE grid_zgr
    PRIVATE :: grid_zgr__isf_fill_e3uw
 !   PRIVATE :: grid_zgr__isf_fill_gdep3w_0
    PRIVATE :: grid_zgr__sco_fill
-   PRIVATE :: grid_zgr__sco_s_sh94 
+   PRIVATE :: grid_zgr__sco_s_sh94
    PRIVATE :: grid_zgr__sco_s_sf12
    PRIVATE :: grid_zgr__sco_s_tanh
    PRIVATE :: grid_zgr__sco_fssig      !: tanh stretch function
    PRIVATE :: grid_zgr__sco_fssig1     !: Song and Haidvogel 1994 stretch function
-   PRIVATE :: grid_zgr__sco_fgamma     !: Siddorn and Furner 2012 stretching function 
+   PRIVATE :: grid_zgr__sco_fgamma     !: Siddorn and Furner 2012 stretching function
 
    TYPE TNAMZ
 
-      CHARACTER(LEN=lc) :: c_coord   
-      INTEGER(i4)       :: i_perio   
-                
-      LOGICAL           :: l_zco               
-      LOGICAL           :: l_zps      
-      LOGICAL           :: l_sco      
-      LOGICAL           :: l_isfcav   
-      LOGICAL           :: l_iscpl   
-      LOGICAL           :: l_wd   
-      INTEGER(i4)       :: i_nlevel   
-                  
-      REAL(dp)          :: d_ppsur    
-      REAL(dp)          :: d_ppa0     
-      REAL(dp)          :: d_ppa1     
-      REAL(dp)          :: d_ppkth    
-      REAL(dp)          :: d_ppacr    
-      REAL(dp)          :: d_ppdzmin  
-      REAL(dp)          :: d_pphmax   
-      LOGICAL           :: l_dbletanh 
-      REAL(dp)          :: d_ppa2     
-      REAL(dp)          :: d_ppkth2   
-      REAL(dp)          :: d_ppacr2   
-                  
-      REAL(dp)          :: d_hmin     
+      CHARACTER(LEN=lc) :: c_coord
+      INTEGER(i4)       :: i_perio
+
+      LOGICAL           :: l_zco
+      LOGICAL           :: l_zps
+      LOGICAL           :: l_sco
+      LOGICAL           :: l_isfcav
+      LOGICAL           :: l_iscpl
+      LOGICAL           :: l_wd
+      INTEGER(i4)       :: i_nlevel
+
+      REAL(dp)          :: d_ppsur
+      REAL(dp)          :: d_ppa0
+      REAL(dp)          :: d_ppa1
+      REAL(dp)          :: d_ppkth
+      REAL(dp)          :: d_ppacr
+      REAL(dp)          :: d_ppdzmin
+      REAL(dp)          :: d_pphmax
+      LOGICAL           :: l_dbletanh
+      REAL(dp)          :: d_ppa2
+      REAL(dp)          :: d_ppkth2
+      REAL(dp)          :: d_ppacr2
+
+      REAL(dp)          :: d_hmin
       REAL(dp)          :: d_isfhmin
 
       REAL(dp)          :: d_e3zps_min
       REAL(dp)          :: d_e3zps_rat
-!      INTEGER(i4)       :: i_msh      
-                  
-      LOGICAL           :: l_s_sh94   
-      LOGICAL           :: l_s_sf12   
-      REAL(dp)          :: d_sbot_min 
-      REAL(dp)          :: d_sbot_max 
+!      INTEGER(i4)       :: i_msh
+
+      LOGICAL           :: l_s_sh94
+      LOGICAL           :: l_s_sf12
+      REAL(dp)          :: d_sbot_min
+      REAL(dp)          :: d_sbot_max
       ! Song and Haidvogel 1994 stretching additional parameters
-      REAL(dp)          :: d_rmax     
-      REAL(dp)          :: d_hc       
-      REAL(dp)          :: d_theta    
-      REAL(dp)          :: d_thetb    
-      REAL(dp)          :: d_bb       
-      ! Siddorn and Furner stretching additional parameters 
-      LOGICAL           :: l_sigcrit  
-      REAL(dp)          :: d_alpha    
-      REAL(dp)          :: d_efold    
-      REAL(dp)          :: d_zs       
-      REAL(dp)          :: d_zb_a     
-      REAL(dp)          :: d_zb_b     
-                  
-      INTEGER(i4)       :: i_cla     
+      REAL(dp)          :: d_rmax
+      REAL(dp)          :: d_hc
+      REAL(dp)          :: d_theta
+      REAL(dp)          :: d_thetb
+      REAL(dp)          :: d_bb
+      ! Siddorn and Furner stretching additional parameters
+      LOGICAL           :: l_sigcrit
+      REAL(dp)          :: d_alpha
+      REAL(dp)          :: d_efold
+      REAL(dp)          :: d_zs
+      REAL(dp)          :: d_zb_a
+      REAL(dp)          :: d_zb_b
 
-      REAL(dp)          :: d_wdmin1 
-      REAL(dp)          :: d_wdmin2 
-      REAL(dp)          :: d_wdld 
+      INTEGER(i4)       :: i_cla
 
-!      CHARACTER(LEN=lc) :: c_cfg     
-!      INTEGER(i4)       :: i_cfg     
-!      INTEGER(i4)       :: i_bench   
+      REAL(dp)          :: d_wdmin1
+      REAL(dp)          :: d_wdmin2
+      REAL(dp)          :: d_wdld
+
+!      CHARACTER(LEN=lc) :: c_cfg
+!      INTEGER(i4)       :: i_cfg
+!      INTEGER(i4)       :: i_bench
 !      LOGICAL           :: l_zoom
       LOGICAL           :: l_c1d
       LOGICAL           :: l_e3_dep
-                
-!      CHARACTER(LEN=lc) :: c_cfz      
-!      INTEGER(i4)       :: i_izoom    
-!      INTEGER(i4)       :: i_jzoom    
-!      LOGICAL           :: l_zoom_s   
-!      LOGICAL           :: l_zoom_e   
-!      LOGICAL           :: l_zoom_w   
+
+!      CHARACTER(LEN=lc) :: c_cfz
+!      INTEGER(i4)       :: i_izoom
+!      INTEGER(i4)       :: i_jzoom
+!      LOGICAL           :: l_zoom_s
+!      LOGICAL           :: l_zoom_e
+!      LOGICAL           :: l_zoom_w
 !      LOGICAL           :: l_zoom_n
 
    END TYPE
@@ -234,9 +234,9 @@ MODULE grid_zgr
    TYPE(TVAR), SAVE :: tg_e3t_1d    !zco & zps
    TYPE(TVAR), SAVE :: tg_e3tp      !      zps
    TYPE(TVAR), SAVE :: tg_e3wp      !      zps
-   
+
    TYPE(TVAR), SAVE :: tg_rx1       !            sco
-   
+
    TYPE(TVAR), SAVE :: tg_mbathy    !zco & zps & sco
    TYPE(TVAR), SAVE :: tg_misfdep
 
@@ -250,7 +250,7 @@ MODULE grid_zgr
    TYPE(TVAR), SAVE :: tg_e3f_0
    TYPE(TVAR), SAVE :: tg_e3uw_0
    TYPE(TVAR), SAVE :: tg_e3vw_0
-   
+
    TYPE(TVAR), SAVE :: tg_mbkt      !zco & zps & sco
    !TYPE(TVAR), SAVE :: tg_mbku
    !TYPE(TVAR), SAVE :: tg_mbkv
@@ -272,7 +272,7 @@ MODULE grid_zgr
 
 CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE grid_zgr_init(jpi, jpj, jpk, ld_sco) 
+   SUBROUTINE grid_zgr_init(jpi, jpj, jpk, ld_sco)
    !-------------------------------------------------------------------
    !> @brief This subroutine initialise global variable needed to compute vertical
    !>        mesh
@@ -288,7 +288,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       INTEGER(i4), INTENT(IN) :: jpi
       INTEGER(i4), INTENT(IN) :: jpj
       INTEGER(i4), INTENT(IN) :: jpk
@@ -361,7 +361,7 @@ CONTAINS
 
    END SUBROUTINE grid_zgr_init
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE grid_zgr_clean(ld_sco) 
+   SUBROUTINE grid_zgr_clean(ld_sco)
    !-------------------------------------------------------------------
    !> @brief This subroutine clean hgr structure
    !>
@@ -373,7 +373,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       LOGICAL    , INTENT(IN) :: ld_sco
 
       ! local variable
@@ -392,7 +392,7 @@ CONTAINS
          CALL var_clean(tg_esigt   )
          CALL var_clean(tg_esigw   )
       ENDIF
-      
+
       CALL var_clean(tg_mbathy  )
       CALL var_clean(tg_misfdep )
 
@@ -421,7 +421,7 @@ CONTAINS
       CALL var_clean(tg_e3f_0   )
       CALL var_clean(tg_e3uw_0  )
       CALL var_clean(tg_e3vw_0  )
-      
+
    END SUBROUTINE grid_zgr_clean
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    FUNCTION grid_zgr_nam(cd_coord, id_perio, cd_namelist) &
@@ -432,20 +432,20 @@ CONTAINS
    !> @author J.Paul
    !> @date September, 2015 - Initial version
    !>
-   !> @param[in] cd_coord   
-   !> @param[in] id_perio  
+   !> @param[in] cd_coord
+   !> @param[in] id_perio
    !> @param[in] cd_namelist
    !> @return hgr namelist structure
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       CHARACTER(LEN=*), INTENT(IN) :: cd_coord
-      INTEGER(i4)     , INTENT(IN) :: id_perio   
+      INTEGER(i4)     , INTENT(IN) :: id_perio
 
       CHARACTER(LEN=*), INTENT(IN) :: cd_namelist
-      
+
       ! function
       TYPE(TNAMZ)                  :: tf_namz
 
@@ -498,7 +498,7 @@ CONTAINS
       REAL(dp)          :: dn_theta    = NF90_FILL_DOUBLE
       REAL(dp)          :: dn_thetb    = NF90_FILL_DOUBLE
       REAL(dp)          :: dn_bb       = NF90_FILL_DOUBLE
-      !                               
+      !
       LOGICAL           :: ln_sigcrit  = .FALSE.
       REAL(dp)          :: dn_alpha    = NF90_FILL_DOUBLE
       REAL(dp)          :: dn_efold    = NF90_FILL_DOUBLE
@@ -535,9 +535,9 @@ CONTAINS
       &  ln_zco,        &  !< z-coordinate
       &  ln_zps,        &  !< z-coordinate with partial steps
       &  ln_sco,        &  !< s-coordinate
-      &  ln_isfcav,     &  !< presence of ISF 
+      &  ln_isfcav,     &  !< presence of ISF
       &  ln_iscpl,      &  !< coupling with ice sheet
-      &  ln_wd,         &  !< Wetting/drying activation      
+      &  ln_wd,         &  !< Wetting/drying activation
       &  in_nlevel         !< number of vertical level
 
       NAMELIST /namdmin/ &
@@ -560,7 +560,7 @@ CONTAINS
       NAMELIST /namzps/ &
       &  dn_e3zps_min,  &
       &  dn_e3zps_rat!,  &
-!      &  in_msh          
+!      &  in_msh
 
       NAMELIST /namsco/ &
       &   ln_s_sh94,    & !< use hybrid s-sig Song and Haidvogel 1994 stretching function fssig1
@@ -610,7 +610,7 @@ CONTAINS
    !1-2 read namelist
    INQUIRE(FILE=TRIM(cd_namelist), EXIST=ll_exist)
    IF( ll_exist )THEN
-      
+
       il_fileid=fct_getunit()
 
       OPEN( il_fileid, FILE=TRIM(cd_namelist), &
@@ -641,61 +641,61 @@ CONTAINS
       IF( il_status /= 0 )THEN
          CALL logger_error("GRID ZGR NAM: closing "//TRIM(cd_namelist))
       ENDIF
-     
+
       tf_namz%c_coord    = TRIM(cd_coord)
       tf_namz%i_perio    = id_perio
 
-      tf_namz%l_zco      = ln_zco    
-      tf_namz%l_zps      = ln_zps    
-      tf_namz%l_sco      = ln_sco    
-      tf_namz%l_isfcav   = ln_isfcav 
-      tf_namz%l_iscpl    = ln_iscpl 
-      tf_namz%l_wd       = ln_wd 
+      tf_namz%l_zco      = ln_zco
+      tf_namz%l_zps      = ln_zps
+      tf_namz%l_sco      = ln_sco
+      tf_namz%l_isfcav   = ln_isfcav
+      tf_namz%l_iscpl    = ln_iscpl
+      tf_namz%l_wd       = ln_wd
       tf_namz%i_nlevel   = in_nlevel
 
-      tf_namz%d_hmin     = dn_hmin  
-      tf_namz%d_isfhmin  = dn_isfhmin  
+      tf_namz%d_hmin     = dn_hmin
+      tf_namz%d_isfhmin  = dn_isfhmin
 
-      tf_namz%d_ppsur    = dn_ppsur  
-      tf_namz%d_ppa0     = dn_ppa0   
-      tf_namz%d_ppa1     = dn_ppa1   
-      tf_namz%d_ppkth    = dn_ppkth  
-      tf_namz%d_ppacr    = dn_ppacr  
+      tf_namz%d_ppsur    = dn_ppsur
+      tf_namz%d_ppa0     = dn_ppa0
+      tf_namz%d_ppa1     = dn_ppa1
+      tf_namz%d_ppkth    = dn_ppkth
+      tf_namz%d_ppacr    = dn_ppacr
       tf_namz%d_ppdzmin  = dn_ppdzmin
-      tf_namz%d_pphmax   = dn_pphmax 
-                             
+      tf_namz%d_pphmax   = dn_pphmax
+
       tf_namz%l_dbletanh = ln_dbletanh
-      tf_namz%d_ppa2     = dn_ppa2    
-      tf_namz%d_ppkth2   = dn_ppkth2  
-      tf_namz%d_ppacr2   = dn_ppacr2  
+      tf_namz%d_ppa2     = dn_ppa2
+      tf_namz%d_ppkth2   = dn_ppkth2
+      tf_namz%d_ppacr2   = dn_ppacr2
 
       tf_namz%d_e3zps_min= dn_e3zps_min
       tf_namz%d_e3zps_rat= dn_e3zps_rat
-!      tf_namz%i_msh      = in_msh      
+!      tf_namz%i_msh      = in_msh
 
-      tf_namz%l_s_sh94   = ln_s_sh94  
-      tf_namz%l_s_sf12   = ln_s_sf12  
+      tf_namz%l_s_sh94   = ln_s_sh94
+      tf_namz%l_s_sf12   = ln_s_sf12
       tf_namz%d_sbot_min = dn_sbot_min
       tf_namz%d_sbot_max = dn_sbot_max
-      tf_namz%d_rmax     = dn_rmax    
-      tf_namz%d_hc       = dn_hc      
+      tf_namz%d_rmax     = dn_rmax
+      tf_namz%d_hc       = dn_hc
       !
-      tf_namz%d_theta    = dn_theta   
-      tf_namz%d_thetb    = dn_thetb   
-      tf_namz%d_bb       = dn_bb      
+      tf_namz%d_theta    = dn_theta
+      tf_namz%d_thetb    = dn_thetb
+      tf_namz%d_bb       = dn_bb
       !
       tf_namz%l_sigcrit  = ln_sigcrit
-      tf_namz%d_alpha    = dn_alpha  
-      tf_namz%d_efold    = dn_efold  
-      tf_namz%d_zs       = dn_zs     
+      tf_namz%d_alpha    = dn_alpha
+      tf_namz%d_efold    = dn_efold
+      tf_namz%d_zs       = dn_zs
       tf_namz%d_zb_a     = dn_zb_a
       tf_namz%d_zb_b     = dn_zb_b
 
 !      tf_namz%i_cla      = in_cla
 
-      tf_namz%d_wdmin1   = dn_wdmin1  
-      tf_namz%d_wdmin2   = dn_wdmin2  
-      tf_namz%d_wdld     = dn_wdld  
+      tf_namz%d_wdmin1   = dn_wdmin1
+      tf_namz%d_wdmin2   = dn_wdmin2
+      tf_namz%d_wdld     = dn_wdld
 
 !      tf_namz%c_cfg      = TRIM(cn_cfg)
 !      tf_namz%i_cfg      = in_cfg
@@ -704,9 +704,9 @@ CONTAINS
       tf_namz%l_c1d      = ln_c1d
       tf_namz%l_e3_dep   = ln_e3_dep
 
-!      tf_namz%c_cfz      = cn_cfz   
-!      tf_namz%i_izoom    = in_izoom 
-!      tf_namz%i_jzoom    = in_jzoom 
+!      tf_namz%c_cfz      = cn_cfz
+!      tf_namz%i_izoom    = in_izoom
+!      tf_namz%i_jzoom    = in_jzoom
 !      tf_namz%l_zoom_s   = ln_zoom_s
 !      tf_namz%l_zoom_e   = ln_zoom_e
 !      tf_namz%l_zoom_w   = ln_zoom_w
@@ -720,7 +720,7 @@ CONTAINS
 
    END FUNCTION grid_zgr_nam
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE grid_zgr_fill(td_nam, jpi, jpj, jpk, td_bathy, td_risfdep) 
+   SUBROUTINE grid_zgr_fill(td_nam, jpi, jpj, jpk, td_bathy, td_risfdep)
    !-------------------------------------------------------------------
    !> @brief This subroutine fill vertical mesh
    !>
@@ -739,7 +739,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TNAMZ), INTENT(IN   ) :: td_nam
       INTEGER(i4), INTENT(IN   ) :: jpi
       INTEGER(i4), INTENT(IN   ) :: jpj
@@ -803,7 +803,7 @@ CONTAINS
       ! s-coordinate or hybrid z-s coordinate
       IF( td_nam%l_sco ) CALL grid_zgr__sco_fill( td_nam,jpi,jpj,jpk,td_bathy )
 
-      ! final adjustment of mbathy & check 
+      ! final adjustment of mbathy & check
       ! ----------------------------------
 
 !      ! correct mbathy in case of zoom subdomain
@@ -822,7 +822,7 @@ CONTAINS
       IF( td_nam%l_c1d ) THEN
          dl_bat = tg_mbathy%d_value(2,2,1,1)
          tg_mbathy%d_value(:,:,1,1) = dl_bat
-      END IF      
+      END IF
 
       CALL logger_info(' MIN val mbathy '//TRIM(fct_str(MINVAL( tg_mbathy%d_value(:,:,1,1) )))//&
          &   ' MAX '//TRIM(fct_str(MAXVAL( tg_mbathy%d_value(:,:,1,1) ))) )
@@ -849,9 +849,9 @@ CONTAINS
 
    END SUBROUTINE grid_zgr_fill
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE grid_zgr__z(td_nam, jpk) 
+   SUBROUTINE grid_zgr__z(td_nam, jpk)
    !-------------------------------------------------------------------
-   !> @brief This subroutine set the depth of model levels and the resulting 
+   !> @brief This subroutine set the depth of model levels and the resulting
    !>        vertical scale factors.
    !>
    !> @details
@@ -860,10 +860,10 @@ CONTAINS
    !>        The depth of model levels is defined from an analytical
    !>      function the derivative of which gives the scale factors.
    !>        both depth and scale factors only depend on k (1d arrays).<br/>
-   !>              w-level: 
+   !>              w-level:
    !>                       - gdepw_1d  = gdep(k)<br/>
    !>                       - e3w_1d(k) = dk(gdep)(k)     = e3(k)<br/>
-   !>              t-level: 
+   !>              t-level:
    !>                       - gdept_1d  = gdep(k+0.5)<br/>
    !>                       - e3t_1d(k) = dk(gdep)(k+0.5) = e3(k+0.5)<br/>
    !>
@@ -882,7 +882,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TNAMZ), INTENT(IN   ) :: td_nam
       INTEGER(i4), INTENT(IN   ) :: jpk
 
@@ -902,11 +902,11 @@ CONTAINS
 
       ! Set variables from parameters
       ! ------------------------------
-      zkth   = td_nam%d_ppkth       
+      zkth   = td_nam%d_ppkth
       zacr   = td_nam%d_ppacr
-      zdzmin = td_nam%d_ppdzmin   
+      zdzmin = td_nam%d_ppdzmin
       zhmax  = td_nam%d_pphmax
-      zkth2  = td_nam%d_ppkth2     
+      zkth2  = td_nam%d_ppkth2
       zacr2  = td_nam%d_ppacr2
 
       ! If ppa1 and ppa0 and ppsur are set to pp_to_be_computed
@@ -922,23 +922,23 @@ CONTAINS
          zsur =   - za0 - za1 * zacr * LOG( COSH( (1-zkth) / zacr )  )
          ! za2 ???
       ELSE
-         za1  = td_nam%d_ppa1 
+         za1  = td_nam%d_ppa1
          za0  = td_nam%d_ppa0
          zsur = td_nam%d_ppsur
          za2  = td_nam%d_ppa2                            ! optional (ldbletanh=T) double tanh parameter
-      ENDIF      
+      ENDIF
 
       CALL logger_info(' GRID ZGR Z : Reference vertical z-coordinates')
       CALL logger_info('~~~~~~~~~~~')
-      IF( zkth == 0._dp ) THEN 
+      IF( zkth == 0._dp ) THEN
          CALL logger_info('Uniform grid with '//TRIM(fct_str(jpk-1))//' layers')
          CALL logger_info('Total depth    :'//TRIM(fct_str(zhmax)))
-         CALL logger_info('Layer thickness:'//TRIM(fct_str(zhmax/(jpk-1))))         
+         CALL logger_info('Layer thickness:'//TRIM(fct_str(zhmax/(jpk-1))))
       ELSE
          IF( za1 == 0._dp .AND. za0 == 0._dp .AND. zsur == 0._dp ) THEN
             CALL logger_info('zsur, za0, za1 computed from ')
             CALL logger_info('        zdzmin = '//TRIM(fct_str(zdzmin)))
-            CALL logger_info('        zhmax  = '//TRIM(fct_str(zhmax)))            
+            CALL logger_info('        zhmax  = '//TRIM(fct_str(zhmax)))
          ENDIF
             CALL logger_info('Value of coefficients for vertical mesh:')
             CALL logger_info('      zsur = '//TRIM(fct_str(zsur)))
@@ -956,8 +956,8 @@ CONTAINS
       ! Reference z-coordinate (depth - scale factor at T- and W-points)
       ! ======================
       ! init
-      IF( zkth == 0._dp ) THEN            !  uniform vertical grid       
-         za1 = zhmax / REAL(jpk-1,dp) 
+      IF( zkth == 0._dp ) THEN            !  uniform vertical grid
+         za1 = zhmax / REAL(jpk-1,dp)
          DO jk = 1, jpk
             zw = REAL( jk, dp )
             zt = REAL( jk, dp ) + 0.5_dp
@@ -992,34 +992,34 @@ CONTAINS
             END DO
          ENDIF
          tg_gdepw_1d%d_value(1,1,1,1) = 0._dp                    ! force first w-level to be exactly at zero
-      ENDIF      
+      ENDIF
 
       IF ( td_nam%l_isfcav .OR. td_nam%l_e3_dep ) THEN
-         ! need to be like this to compute the pressure gradient with ISF. 
+         ! need to be like this to compute the pressure gradient with ISF.
          ! If not, level beneath the ISF are not aligned (sum(e3t) /= depth)
          ! define e3t_0 and e3w_0 as the differences between gdept and gdepw respectively
          DO jk = 1, jpk-1
-            tg_e3t_1d%d_value(1,1,jk,1) = tg_gdepw_1d%d_value(1,1,jk+1,1)-tg_gdepw_1d%d_value(1,1,jk,1) 
+            tg_e3t_1d%d_value(1,1,jk,1) = tg_gdepw_1d%d_value(1,1,jk+1,1)-tg_gdepw_1d%d_value(1,1,jk,1)
          END DO
          ! we don't care because this level is masked in NEMO
          tg_e3t_1d%d_value(1,1,jpk,1) = tg_e3t_1d%d_value(1,1,jpk-1,1)
 
          DO jk = 2, jpk
-            tg_e3w_1d%d_value(1,1,jk,1) = tg_gdept_1d%d_value(1,1,jk,1) - tg_gdept_1d%d_value(1,1,jk-1,1) 
+            tg_e3w_1d%d_value(1,1,jk,1) = tg_gdept_1d%d_value(1,1,jk,1) - tg_gdept_1d%d_value(1,1,jk-1,1)
          END DO
-         tg_e3w_1d%d_value(1,1,1,1) = 2._dp * (tg_gdept_1d%d_value(1,1,1,1) - tg_gdepw_1d%d_value(1,1,1,1)) 
-      END IF 
+         tg_e3w_1d%d_value(1,1,1,1) = 2._dp * (tg_gdept_1d%d_value(1,1,1,1) - tg_gdepw_1d%d_value(1,1,1,1))
+      END IF
 
 ! unused ?
 !!!!gm BUG in s-coordinate this does not work!
 !      ! deepest/shallowest W level Above/Below ~10m
-!      
+!
 !      ! ref. depth with tolerance (10% of minimum layer thickness)
 !      zrefdep = 10._dp - 0.1_dp * MINVAL( tg_e3w_1d%d_value(1,1,:,1) )
-!      
+!
 !      ! shallowest W level Below ~10m
 !      nlb10 = MINLOC( tg_gdepw_1d%d_value(1,1,:,1), mask = tg_gdepw_1d%d_value(1,1,:,1) > zrefdep, dim = 1 )
-!      
+!
 !      ! deepest    W level Above ~10m
 !      nla10 = nlb10 - 1
 !!!!gm end bug
@@ -1036,7 +1036,7 @@ CONTAINS
       ENDDO
 
       ! control positivity
-      DO jk = 1, jpk                      
+      DO jk = 1, jpk
          IF( tg_e3w_1d%d_value  (1,1,jk,1) <= 0._dp .OR. tg_e3t_1d%d_value  (1,1,jk,1) <= 0._dp )THEN
             CALL logger_fatal( 'GRID ZGR Z: e3w_1d or e3t_1d =< 0 '    )
          ENDIF
@@ -1047,7 +1047,7 @@ CONTAINS
 
    END SUBROUTINE grid_zgr__z
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE grid_zgr__bat(td_nam, td_bathy, td_risfdep) !jpi,jpj,td_bathy,td_risfdep ) 
+   SUBROUTINE grid_zgr__bat(td_nam, td_bathy, td_risfdep) !jpi,jpj,td_bathy,td_risfdep )
    !-------------------------------------------------------------------
    !> @brief This subroutine set bathymetry both in levels and meters
    !>
@@ -1069,13 +1069,13 @@ CONTAINS
    !>            isolated ocean grid points are suppressed from mbathy
    !>                  since they are only connected to remaining
    !>                  ocean through vertical diffusion.
-   !>      ntopo=-1 :   rectangular channel or bassin with a bump 
-   !>      ntopo= 0 :   flat rectangular channel or basin 
+   !>      ntopo=-1 :   rectangular channel or bassin with a bump
+   !>      ntopo= 0 :   flat rectangular channel or basin
    !>      ntopo= 1 :   mbathy is read in 'bathy_level.nc' NetCDF file
    !>                   bathy  is read in 'bathy_meter.nc' NetCDF file
    !>
    !> ** Action  : - mbathy: level bathymetry (in level index)
-   !>              - bathy : meter bathymetry (in meters)   
+   !>              - bathy : meter bathymetry (in meters)
    !>
    !> @warning do not manage case ntopo=-1 or 0
    !>
@@ -1093,7 +1093,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TNAMZ), INTENT(IN   ) :: td_nam
 !      INTEGER(i4), INTENT(IN   ) :: jpi
 !      INTEGER(i4), INTENT(IN   ) :: jpj
@@ -1124,7 +1124,7 @@ CONTAINS
 !         IF( TRIM(td_nam%c_cfg) == "orca" .AND. td_nam%i_cfg == 2 ) THEN    ! ORCA R2 configuration
 !            !                                             ! =====================
 !            IF( td_nam%i_cla == 0 ) THEN
-!               ii0 = 140   ;   ii1 = 140                  ! Gibraltar Strait open 
+!               ii0 = 140   ;   ii1 = 140                  ! Gibraltar Strait open
 !               ij0 = 102   ;   ij1 = 102                  ! (Thomson, Ocean Modelling, 1995)
 !               tg_mbathy%d_value(ii0:ii1,ij0:ij1,1,1) = 15
 !               CALL logger_info('orca_r2: Gibraltar strait open at i='//&
@@ -1160,13 +1160,13 @@ CONTAINS
                td_bathy%d_value  (:,:,1,1) = 0._dp
             END WHERE
          END IF
-         !       
+         !
 !         IF( TRIM(td_nam%c_cfg) == "orca" .AND. td_nam%i_cfg == 2 ) THEN    ! ORCA R2 configuration
 !            !
 !           IF( td_nam%i_cla == 0 ) THEN
-!              ii0 = 140   ;   ii1 = 140                   ! Gibraltar Strait open 
+!              ii0 = 140   ;   ii1 = 140                   ! Gibraltar Strait open
 !              ij0 = 102   ;   ij1 = 102                   ! (Thomson, Ocean Modelling, 1995)
-!              td_bathy%d_value(ii0:ii1,ij0:ij1,1,1) = 284._dp 
+!              td_bathy%d_value(ii0:ii1,ij0:ij1,1,1) = 284._dp
 !              CALL logger_info('orca_r2: Gibraltar strait open at i='//&
 !                 &   TRIM(fct_str(ii0))//' j='//TRIM(fct_str(ij0)) )
 !              !
@@ -1179,14 +1179,14 @@ CONTAINS
 !           !
 !        ENDIF
          !
-      ENDIF      
+      ENDIF
 
       !==  NO closed seas or lakes  ==!
       ! already done
 
       IF ( .NOT. td_nam%l_sco ) THEN
          !==  set a minimum depth  ==!
-         
+
          IF( td_nam%d_hmin < 0._dp ) THEN
             ! from a nb of level
             jk = - INT(td_nam%d_hmin, i4)
@@ -1213,7 +1213,7 @@ CONTAINS
 
    END SUBROUTINE grid_zgr__bat
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE grid_zgr__zco(jpk) 
+   SUBROUTINE grid_zgr__zco(jpk)
    !-------------------------------------------------------------------
    !> @brief This subroutine define the z-coordinate system
    !>
@@ -1228,7 +1228,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       INTEGER(i4), INTENT(IN   ) :: jpk
 
       ! local variable
@@ -1251,12 +1251,12 @@ CONTAINS
 
    END SUBROUTINE grid_zgr__zco
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-!   SUBROUTINE grid_zgr__bat_zoom(td_nam,jpi,jpj) 
+!   SUBROUTINE grid_zgr__bat_zoom(td_nam,jpi,jpj)
 !   !-------------------------------------------------------------------
-!   !> @brief This subroutine : 
+!   !> @brief This subroutine :
 !   !> - close zoom domain boundary if necessary
 !   !> - suppress Med Sea from ORCA R2 and R05 arctic zoom
-!   !> 
+!   !>
 !   !> @author J.Paul
 !   !> @date September, 2015 - Initial version
 !   !>
@@ -1267,7 +1267,7 @@ CONTAINS
 !
 !      IMPLICIT NONE
 !
-!      ! Argument      
+!      ! Argument
 !      TYPE(TNAMZ), INTENT(IN   ) :: td_nam
 !      INTEGER(i4), INTENT(IN   ) :: jpi
 !      INTEGER(i4), INTENT(IN   ) :: jpj
@@ -1309,7 +1309,7 @@ CONTAINS
 !            !                                     ! =======================
 !            CALL logger_info('ORCA R05 arctic zoom: suppress the Med Sea')
 !            ii0 = 563   ;   ii1 = 642      ! zero over the Med Sea boxe
-!            ij0 = 314   ;   ij1 = 370 
+!            ij0 = 314   ;   ij1 = 370
 !         END SELECT
 !         !
 !         tg_mbathy%d_value( ii0:ii1, ij0:ij1, 1, 1) = 0   ! zero over the Med Sea boxe
@@ -1318,13 +1318,13 @@ CONTAINS
 !
 !   END SUBROUTINE grid_zgr__bat_zoom
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE grid_zgr__bat_ctl(td_nam, jpi, jpj, jpk) 
+   SUBROUTINE grid_zgr__bat_ctl(td_nam, jpi, jpj, jpk)
    !-------------------------------------------------------------------
    !> @brief This subroutine check the bathymetry in levels
    !>
    !> @details
    !>
-   !> 
+   !>
    !> ** Method  :   The array mbathy is checked to verified its consistency
    !>      with the model options. in particular:
    !>            mbathy must have at least 1 land grid-points (mbathy<=0)
@@ -1352,7 +1352,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TNAMZ), INTENT(IN   ) :: td_nam
       INTEGER(i4), INTENT(IN   ) :: jpi
       INTEGER(i4), INTENT(IN   ) :: jpj
@@ -1449,7 +1449,7 @@ CONTAINS
          DO ji = 1, jpi
             ikmax = MAX( ikmax, INT(tg_mbathy%d_value(ji,jj,1,1),i4) )
          END DO
-      END DO      
+      END DO
 !!gm  !!! test to do:   ikmax = MAX( mbathy(:,:) )   ???
       IF( ikmax > jpk-1 ) THEN
          CALL logger_info(' maximum number of ocean level = '//TRIM(fct_str(ikmax))//' >  jpk-1')
@@ -1457,11 +1457,11 @@ CONTAINS
       ELSE IF( ikmax < jpk-1 ) THEN
          CALL logger_info(' maximum number of ocean level = '//TRIM(fct_str(ikmax))//' < jpk-1')
          CALL logger_info(' you can decrease jpk to '//TRIM(fct_str(ikmax+1)))
-      ENDIF      
+      ENDIF
 
    END SUBROUTINE grid_zgr__bat_ctl
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE grid_zgr__bot_level()!td_nam,jpi,jpj) 
+   SUBROUTINE grid_zgr__bot_level()!td_nam,jpi,jpj)
    !-------------------------------------------------------------------
    !> @brief This subroutine defines the vertical index of ocean bottom (mbk. arrays)
    !>
@@ -1469,11 +1469,11 @@ CONTAINS
    !>
    !> ** Method  :   computes from mbathy with a minimum value of 1 over land
    !>
-   !> ** Action  :   mbkt, mbku, mbkv :   vertical indices of the deeptest 
+   !> ** Action  :   mbkt, mbku, mbkv :   vertical indices of the deeptest
    !>                                     ocean level at t-, u- & v-points
    !>                                     (min value = 1 over land)
-   !> 
-   !> 
+   !>
+   !>
    !> @author J.Paul
    !> @date September, 2015 - rewrite from zgr_bot_level
    !>
@@ -1484,7 +1484,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
 !      TYPE(TNAMZ), INTENT(IN   ) :: td_nam
 !      INTEGER(i4), INTENT(IN   ) :: jpi
 !      INTEGER(i4), INTENT(IN   ) :: jpj
@@ -1519,7 +1519,7 @@ CONTAINS
 
    END SUBROUTINE grid_zgr__bot_level
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE grid_zgr__top_level()!td_nam,jpi,jpj) 
+   SUBROUTINE grid_zgr__top_level()!td_nam,jpi,jpj)
    !-------------------------------------------------------------------
    !> @brief This subroutine defines the vertical index of ocean top (mik. arrays)
    !>
@@ -1527,10 +1527,10 @@ CONTAINS
    !>
    !> ** Method  :   computes from misfdep with a minimum value of 1
    !>
-   !> ** Action  :   mikt, miku, mikv :   vertical indices of the shallowest 
+   !> ** Action  :   mikt, miku, mikv :   vertical indices of the shallowest
    !>                                     ocean level at t-, u- & v-points
    !>                                     (min value = 1)
-   !> 
+   !>
    !> @author J.Paul
    !> @date September, 2015 - rewrite from zgr_top_level
    !>
@@ -1541,7 +1541,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
 !      TYPE(TNAMZ), INTENT(IN   ) :: td_nam
 !      INTEGER(i4), INTENT(IN   ) :: jpi
 !      INTEGER(i4), INTENT(IN   ) :: jpj
@@ -1581,7 +1581,7 @@ CONTAINS
 
    END SUBROUTINE grid_zgr__top_level
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE grid_zgr_zps_init(jpi, jpj) 
+   SUBROUTINE grid_zgr_zps_init(jpi, jpj)
    !-------------------------------------------------------------------
    !> @brief This subroutine initialise global variable needed to compute vertical
    !>        mesh
@@ -1595,7 +1595,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       INTEGER(i4), INTENT(IN) :: jpi
       INTEGER(i4), INTENT(IN) :: jpj
 
@@ -1612,7 +1612,7 @@ CONTAINS
 
    END SUBROUTINE grid_zgr_zps_init
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE grid_zgr_zps_clean() 
+   SUBROUTINE grid_zgr_zps_clean()
    !-------------------------------------------------------------------
    !> @brief This subroutine clean hgr structure
    !>
@@ -1623,17 +1623,17 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       ! local variable
       ! loop indices
       !----------------------------------------------------------------
 
       CALL var_clean(tg_e3tp     )
       CALL var_clean(tg_e3wp     )
-      
+
    END SUBROUTINE grid_zgr_zps_clean
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE grid_zgr__zps_fill(td_nam, jpi, jpj, jpk, td_bathy, td_risfdep) 
+   SUBROUTINE grid_zgr__zps_fill(td_nam, jpi, jpj, jpk, td_bathy, td_risfdep)
    !-------------------------------------------------------------------
    !> @brief This subroutine define the depth and vertical scale factor in partial step
    !>      z-coordinate case
@@ -1659,13 +1659,13 @@ CONTAINS
    !>      This leads us to three cases:
    !>
    !>              - bathy = 0 => mbathy = 0
-   !>              - 1 < mbathy < jpkm1    
-   !>              - bathy > gdepw_0(jpk) => mbathy = jpkm1  
+   !>              - 1 < mbathy < jpkm1
+   !>              - bathy > gdepw_0(jpk) => mbathy = jpkm1
    !>
    !>        Then, for each case, we find the new depth at t- and w- levels
-   !>      and the new vertical scale factors at t-, u-, v-, w-, uw-, vw- 
+   !>      and the new vertical scale factors at t-, u-, v-, w-, uw-, vw-
    !>      and f-points.
-   !> 
+   !>
    !>        This routine is given as an example, it must be modified
    !>      following the user s desiderata. nevertheless, the output as
    !>      well as the way to compute the model levels and scale factors
@@ -1674,7 +1674,7 @@ CONTAINS
    !>
    !>  @warrning gdept_1d, gdepw_1d and e3._1d are positives
    !>            gdept_0, gdepw_0 and e3. are positives
-   !>      
+   !>
    !>  Reference :   Pacanowsky & Gnanadesikan 1997, Mon. Wea. Rev., 126, 3248-3270.
    !> set 3D coord. arrays to reference 1D array
    !>
@@ -1691,7 +1691,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TNAMZ), INTENT(IN   ) :: td_nam
       INTEGER(i4), INTENT(IN   ) :: jpi
       INTEGER(i4), INTENT(IN   ) :: jpj
@@ -1748,7 +1748,7 @@ CONTAINS
       END DO
 
       ! Scale factors and depth at T- and W-points
-      DO jk = 1, jpk                        
+      DO jk = 1, jpk
          ! intitialization to the reference z-coordinate
          tg_gdept_0%d_value(:,:,jk,1) = tg_gdept_1d%d_value(1,1,jk,1)
          tg_gdepw_0%d_value(:,:,jk,1) = tg_gdepw_1d%d_value(1,1,jk,1)
@@ -1765,7 +1765,7 @@ CONTAINS
          DO jj = 1, jpj
             DO ji = 1, jpi
                ik = tg_mbathy%d_value(ji,jj,1,1)
-               IF( ik > 0 ) THEN               
+               IF( ik > 0 ) THEN
                   ! ocean point only
                   IF( ik == jpk-1 ) THEN
                      ! max ocean level case
@@ -1798,7 +1798,7 @@ CONTAINS
 
                      tg_e3t_0%d_value  (ji,jj,ik,1) = tg_e3t_1d%d_value  ( 1, 1,ik  ,1)            &
                      &     * ( tg_gdepw_0%d_value (ji,jj,ik+1,1) - tg_gdepw_1d%d_value(1,1,ik,1) ) &
-                     &     / ( tg_gdepw_1d%d_value( 1, 1,ik+1,1) - tg_gdepw_1d%d_value(1,1,ik,1) ) 
+                     &     / ( tg_gdepw_1d%d_value( 1, 1,ik+1,1) - tg_gdepw_1d%d_value(1,1,ik,1) )
 
                      tg_e3w_0%d_value  (ji,jj,ik,1) = 0.5_dp   &
                      &                               * ( tg_gdepw_0%d_value(ji,jj,ik+1,1) &
@@ -1825,7 +1825,7 @@ CONTAINS
                   tg_e3wp%d_value (ji,jj,1,1) = tg_e3w_0%d_value(ji,jj,ik,1)
                   ! test
                   zdiff= tg_gdepw_0%d_value(ji,jj,ik+1,1) - tg_gdept_0%d_value(ji,jj,ik,1)
-                  IF( zdiff <= 0._dp ) THEN 
+                  IF( zdiff <= 0._dp ) THEN
                      it = it + 1
                      CALL logger_info(' it      = '//TRIM(fct_str(it))//&
                         &             ' ik      = '//TRIM(fct_str(ik))//&
@@ -1860,7 +1860,7 @@ CONTAINS
       ! Computed as the minimum of neighbooring scale factors
       DO jk = 1,jpk
          DO jj = 1, jpj - 1
-            DO ji = 1, jpi - 1 
+            DO ji = 1, jpi - 1
                tg_e3u_0%d_value (ji,jj,jk,1) = MIN( tg_e3t_0%d_value(ji,jj,jk,1), tg_e3t_0%d_value(ji+1,jj  ,jk,1) )
                tg_e3v_0%d_value (ji,jj,jk,1) = MIN( tg_e3t_0%d_value(ji,jj,jk,1), tg_e3t_0%d_value(ji  ,jj+1,jk,1) )
                tg_e3uw_0%d_value(ji,jj,jk,1) = MIN( tg_e3w_0%d_value(ji,jj,jk,1), tg_e3w_0%d_value(ji+1,jj  ,jk,1) )
@@ -1889,7 +1889,7 @@ CONTAINS
       END DO
 
       !! Scale factor at F-point
-      !DO jk = 1, jpk                        
+      !DO jk = 1, jpk
       !   ! initialisation to z-scale factors
       !   tg_e3f_0%d_value(:,:,jk,1) = tg_e3t_1d%d_value(1,1,jk,1)
       !END DO
@@ -1914,9 +1914,9 @@ CONTAINS
 
       ! we duplicate factor scales for jj = 1 and jj = 2
       tg_e3t_0%d_value(:,1,:,1) = tg_e3t_0%d_value(:,2,:,1)
-      tg_e3w_0%d_value(:,1,:,1) = tg_e3w_0%d_value(:,2,:,1) 
-      tg_e3u_0%d_value(:,1,:,1) = tg_e3u_0%d_value(:,2,:,1) 
-      tg_e3v_0%d_value(:,1,:,1) = tg_e3v_0%d_value(:,2,:,1) 
+      tg_e3w_0%d_value(:,1,:,1) = tg_e3w_0%d_value(:,2,:,1)
+      tg_e3u_0%d_value(:,1,:,1) = tg_e3u_0%d_value(:,2,:,1)
+      tg_e3v_0%d_value(:,1,:,1) = tg_e3v_0%d_value(:,2,:,1)
       !tg_e3f_0%d_value(:,1,:,1) = tg_e3f_0%d_value(:,2,:,1)
 
       ! Control of the sign
@@ -1926,10 +1926,10 @@ CONTAINS
       IF( MINVAL( tg_gdepw_0%d_value(:,:,:,:) ) <  0._dp )   CALL logger_fatal( ' GRID ZGR ZPS:   e r r o r   gdepw_0 <  0' )
 
       !! Compute gdep3w_0 (vertical sum of e3w)
-      !IF ( td_nam%l_isfcav ) THEN 
+      !IF ( td_nam%l_isfcav ) THEN
       !   ! if cavity
       !   CALL grid_zgr__isf_fill_gdep3w_0(jpi, jpj, jpk, td_risfdep)
-      !ELSE 
+      !ELSE
       !   ! no cavity
       !   tg_gdep3w_0%d_value(:,:,1,1) = 0.5_dp * tg_e3w_0%d_value(:,:,1,1)
       !   DO jk = 2, jpk
@@ -1939,7 +1939,7 @@ CONTAINS
 
    END SUBROUTINE grid_zgr__zps_fill
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE grid_zgr__isf_fill(td_nam, jpi,jpj,jpk, td_bathy, td_risfdep) 
+   SUBROUTINE grid_zgr__isf_fill(td_nam, jpi,jpj,jpk, td_bathy, td_risfdep)
    !-------------------------------------------------------------------
    !> @brief This subroutine check the bathymetry in levels
    !>
@@ -1947,11 +1947,11 @@ CONTAINS
    !> ** Method  :   THe water column have to contained at least 2 cells
    !>                Bathymetry and isfdraft are modified (dig/close) to respect
    !>                this criterion.
-   !>                 
-   !>   
-   !> ** Action  : - test compatibility between isfdraft and bathy 
-   !>              - bathy and isfdraft are modified   
-   !> 
+   !>
+   !>
+   !> ** Action  : - test compatibility between isfdraft and bathy
+   !>              - bathy and isfdraft are modified
+   !>
    !> @author J.Paul
    !> @date September, 2015 - rewrite from zgr_isf
    !> @date October, 2016
@@ -1967,7 +1967,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TNAMZ), INTENT(IN   ) :: td_nam
       INTEGER(i4), INTENT(IN   ) :: jpi
       INTEGER(i4), INTENT(IN   ) :: jpj
@@ -2011,18 +2011,18 @@ CONTAINS
       ALLOCATE(zrisfdep(jpi,jpj))
       ALLOCATE(zmisfdep(jpi,jpj))
 
-      ! Compute misfdep for ocean points (i.e. first wet level) 
-      ! find the first ocean level such that the first level thickness 
-      ! is larger than the bot_level of e3zps_min and e3zps_rat * e3t_0 (where 
+      ! Compute misfdep for ocean points (i.e. first wet level)
+      ! find the first ocean level such that the first level thickness
+      ! is larger than the bot_level of e3zps_min and e3zps_rat * e3t_0 (where
       ! e3t_0 is the reference level thickness
-      DO jk = 2, jpk-1 
+      DO jk = 2, jpk-1
          zdepth = tg_gdepw_1d%d_value(1,1,jk+1,1) - MIN( td_nam%d_e3zps_min, &
-            &                                            td_nam%d_e3zps_rat*tg_e3t_1d%d_value(1,1,jk,1) ) 
+            &                                            td_nam%d_e3zps_rat*tg_e3t_1d%d_value(1,1,jk,1) )
          WHERE( 0._dp < td_risfdep%d_value(:,:,1,1) .AND. &
          &              td_risfdep%d_value(:,:,1,1) >= zdepth )
-            tg_misfdep%d_value(:,:,1,1) = jk+1 
+            tg_misfdep%d_value(:,:,1,1) = jk+1
          END WHERE
-      END DO 
+      END DO
 
       WHERE( 0._dp < td_risfdep%d_value(:,:,1,1) .AND. &
            &         td_risfdep%d_value(:,:,1,1) <= tg_e3t_1d%d_value(1,1,1,1) )
@@ -2046,7 +2046,7 @@ CONTAINS
          td_bathy%d_value  (:,:,1,1) = 0.0_dp
       END WHERE
 
-      ! basic check for the compatibility of bathy and risfdep. 
+      ! basic check for the compatibility of bathy and risfdep.
       ! I think it should be offline because it is not perfect and cannot solved all the situation
       ! run the bathy check 10 times to be sure all the modif in the bathy or iceshelf draft are compatible together
       DO jl = 1, 10
@@ -2059,7 +2059,7 @@ CONTAINS
          END WHERE
 
          WHERE( tg_mbathy%d_value(:,:,1,1) <= 0 )
-            tg_misfdep%d_value(:,:,1,1) = 0 
+            tg_misfdep%d_value(:,:,1,1) = 0
             td_risfdep%d_value(:,:,1,1) = 0._dp
             tg_mbathy%d_value (:,:,1,1) = 0
             td_bathy%d_value  (:,:,1,1) = 0._dp
@@ -2069,10 +2069,10 @@ CONTAINS
 
          IF( td_nam%i_perio == 1 .OR. &
            & td_nam%i_perio == 4 .OR. &
-           & td_nam%i_perio == 6 )THEN 
+           & td_nam%i_perio == 6 )THEN
             ! local domain is cyclic east-west
             tg_misfdep%d_value( 1 ,:,1,1) = tg_misfdep%d_value(jpi-1,:,1,1)
-            tg_misfdep%d_value(jpi,:,1,1) = tg_misfdep%d_value(  2  ,:,1,1) 
+            tg_misfdep%d_value(jpi,:,1,1) = tg_misfdep%d_value(  2  ,:,1,1)
 
             tg_mbathy%d_value( 1 ,:,1,1) = tg_mbathy%d_value(jpi-1,:,1,1)
             tg_mbathy%d_value(jpi,:,1,1) = tg_mbathy%d_value(  2  ,:,1,1)
@@ -2113,7 +2113,7 @@ CONTAINS
             END WHERE
          END DO
 
-         ! Case where bathy and risfdep compatible but not the level 
+         ! Case where bathy and risfdep compatible but not the level
          ! variable mbathy/misfdep because of partial cell condition
          DO jj = 1, jpj
             DO ji = 1, jpi
@@ -2131,7 +2131,7 @@ CONTAINS
                      zrisfdepdiff = ABS( td_risfdep%d_value(ji,jj,1,1) - ( tg_gdepw_1d%d_value(1,1,ik,1) &
                         &                - MIN( td_nam%d_e3zps_min,                                      &
                         &                       td_nam%d_e3zps_rat * tg_e3t_1d%d_value(1,1,ik-1,1)) ))
- 
+
                      IF( td_bathy%d_value (ji,jj,1,1) > td_risfdep%d_value (ji,jj,1,1) .AND. &
                       &  tg_mbathy%d_value(ji,jj,1,1) < tg_misfdep%d_value(ji,jj,1,1) )THEN
 
@@ -2161,7 +2161,7 @@ CONTAINS
                        & tg_mbathy%d_value(ji,jj,1,1) < tg_misfdep%d_value(ji,jj,1,1) )THEN
 
                         tg_misfdep%d_value(ji,jj,1,1) = tg_misfdep%d_value(ji,jj,1,1) - 1
-                    
+
                         ik=tg_misfdep%d_value(ji,jj,1,1)
                         td_risfdep%d_value(ji,jj,1,1) = tg_gdepw_1d%d_value(1,1,ik,1) - &
                            &                            MIN( td_nam%d_e3zps_min, &
@@ -2227,7 +2227,7 @@ CONTAINS
             ENDDO
          ENDDO
 
-         ! point V mbathy(ji,jj  ) == misfdep(ji,jj+1) 
+         ! point V mbathy(ji,jj  ) == misfdep(ji,jj+1)
          DO jj = 1, jpj-1
             DO ji = 1, jpi-1
 
@@ -2279,7 +2279,7 @@ CONTAINS
 
          !! lk_mpp not added
 
-         ! point V mbathy(ji,jj+1) == misfdep(ji,jj  ) 
+         ! point V mbathy(ji,jj+1) == misfdep(ji,jj  )
          DO jj = 1, jpj-1
             DO ji = 1, jpi-1
 
@@ -2325,11 +2325,11 @@ CONTAINS
                         &                                td_nam%d_e3zps_rat*tg_e3t_1d%d_value(1,1,ik,1) )
 
                   ENDIF
-               
+
                ENDIF
 
             ENDDO
-         ENDDO         
+         ENDDO
 
          !! lk_mpp not added
 
@@ -2383,7 +2383,7 @@ CONTAINS
 
          !! lk_mpp not added
 
-         ! point U mbathy(ji+1,jj) == misfdep(ji  ,jj) 
+         ! point U mbathy(ji+1,jj) == misfdep(ji  ,jj)
          DO jj = 1, jpj-1
             DO ji = 1, jpi-1
 
@@ -2434,7 +2434,7 @@ CONTAINS
             ENDDO
          ENDDO
 
-      END DO ! jl 
+      END DO ! jl
       ! end dig bathy/ice shelf to be compatible
 
       ! now fill single point in "coastline" of ice shelf, bathy, hole, and test again one cell tickness
@@ -2448,7 +2448,7 @@ CONTAINS
 
             zmask(:,:)=0
             WHERE( tg_misfdep%d_value(:,:,1,1) <= jk ) zmask(:,:)=1
-            
+
             DO jj = 2, jpj-1
                DO ji = 2, jpi-1
                   IF( tg_misfdep%d_value(ji,jj,1,1) == jk )THEN
@@ -2526,7 +2526,7 @@ CONTAINS
 
                ibtestim1 = zmisfdep(ji-1,jj  )
                ibtestip1 = zmisfdep(ji+1,jj  )
-               
+
                ibtestjm1 = zmisfdep(ji  ,jj-1)
                ibtestjp1 = zmisfdep(ji  ,jj+1)
 
@@ -2551,7 +2551,7 @@ CONTAINS
                ENDIF
 
             ENDDO
-         ENDDO         
+         ENDDO
 
          !! lk_mpp not added
 
@@ -2582,7 +2582,7 @@ CONTAINS
                IF( ibtest < zmbathy(ji,jj) .AND. &
                &   tg_misfdep%d_value(ji,jj,1,1) >= 2) THEN
                   tg_mbathy%d_value(ji,jj,1,1) = ibtest
-                  td_bathy%d_value (ji,jj,1,1) = tg_gdepw_1d%d_value(1,1,ibtest+1,1) 
+                  td_bathy%d_value (ji,jj,1,1) = tg_gdepw_1d%d_value(1,1,ibtest+1,1)
                ENDIF
 
             ENDDO
@@ -2597,7 +2597,7 @@ CONTAINS
                  & tg_mbathy%d_value(ji  ,jj,1,1) >= 1   .AND. &
                  & tg_mbathy%d_value(ji+1,jj,1,1) >= 1   )THEN
 
-                  tg_mbathy%d_value(ji,jj,1,1)  = tg_mbathy%d_value(ji,jj,1,1) - 1 
+                  tg_mbathy%d_value(ji,jj,1,1)  = tg_mbathy%d_value(ji,jj,1,1) - 1
 
                   ik=tg_mbathy%d_value(ji,jj,1,1)
                   td_bathy%d_value (ji,jj,1,1)  = tg_gdepw_1d%d_value(1,1,ik+1,1)
@@ -2620,7 +2620,7 @@ CONTAINS
                   td_bathy%d_value(ji+1,jj,1,1)   = tg_gdepw_1d%d_value(1,1,ik+1,1)
                ENDIF
             ENDDO
-         ENDDO         
+         ENDDO
 
          !! lk_mpp not added
 
@@ -2670,7 +2670,7 @@ CONTAINS
                ENDIF
             ENDDO
          ENDDO
- 
+
          WHERE( tg_mbathy%d_value(:,:,1,1) == 1 )
             tg_mbathy%d_value (:,:,1,1) = 0
             td_bathy%d_value  (:,:,1,1) = 0.0_dp
@@ -2694,7 +2694,7 @@ CONTAINS
       DO jj = 1, jpj
          DO ji = 1, jpi
             ik = tg_mbathy%d_value(ji,jj,1,1)
-            IF( ik > 0 ) THEN               ! ocean point only      
+            IF( ik > 0 ) THEN               ! ocean point only
                ! max ocean level case
                IF( ik == jpk-1 ) THEN
 
@@ -2717,7 +2717,7 @@ CONTAINS
                      tg_gdepw_0%d_value(ji,jj,ik+1,1) = td_bathy%d_value(ji,jj,1,1)
                   ELSE
                      tg_gdepw_0%d_value(ji,jj,ik+1,1) = tg_gdepw_1d%d_value(1,1,ik+1,1)
-                  ENDIF      
+                  ENDIF
                   !
                   !gm Bug?  check the gdepw_1d
                   ! ... on ik
@@ -2746,7 +2746,7 @@ CONTAINS
                tg_e3wp%d_value(ji,jj,1,1) = tg_e3w_0%d_value(ji,jj,ik,1)
                ! test
                zdiff= tg_gdepw_0%d_value(ji,jj,ik+1,1) - tg_gdept_0%d_value(ji,jj,ik,1)
-               IF( zdiff <= 0._dp ) THEN 
+               IF( zdiff <= 0._dp ) THEN
                   it = it + 1
                   CALL logger_info(' it    = '//TRIM(fct_str(it))//&
                      &             ' ik    = '//TRIM(fct_str(ik))//&
@@ -2763,70 +2763,70 @@ CONTAINS
       END DO
       !
       ! (ISF) Definition of e3t, u, v, w for ISF case
-      DO jj = 1, jpj 
-         DO ji = 1, jpi 
-            ik = tg_misfdep%d_value(ji,jj,1,1) 
-            IF( ik > 1 ) THEN               ! ice shelf point only 
+      DO jj = 1, jpj
+         DO ji = 1, jpi
+            ik = tg_misfdep%d_value(ji,jj,1,1)
+            IF( ik > 1 ) THEN               ! ice shelf point only
 
                IF( td_risfdep%d_value(ji,jj,1,1) < tg_gdepw_1d%d_value(1,1,ik,1) )THEN
-                   td_risfdep%d_value(ji,jj,1,1) = tg_gdepw_1d%d_value(1,1,ik,1) 
+                   td_risfdep%d_value(ji,jj,1,1) = tg_gdepw_1d%d_value(1,1,ik,1)
                ENDIF
-               tg_gdepw_0%d_value(ji,jj,ik,1) = td_risfdep%d_value(ji,jj,1,1) 
-!gm Bug?  check the gdepw_0 
-            !       ... on ik 
+               tg_gdepw_0%d_value(ji,jj,ik,1) = td_risfdep%d_value(ji,jj,1,1)
+!gm Bug?  check the gdepw_0
+            !       ... on ik
                tg_gdept_0%d_value(ji,jj,ik,1) = tg_gdepw_1d%d_value(1,1,ik+1,1) &
-                  &        - ( tg_gdepw_1d%d_value(1,1,ik+1,1) - tg_gdepw_0%d_value(ji,jj,ik,1) )   & 
-                  &        * ( tg_gdepw_1d%d_value(1,1,ik+1,1) - tg_gdept_1d%d_value(1,1, ik,1) )   & 
-                  &        / ( tg_gdepw_1d%d_value(1,1,ik+1,1) - tg_gdepw_1d%d_value(1,1, ik,1) ) 
+                  &        - ( tg_gdepw_1d%d_value(1,1,ik+1,1) - tg_gdepw_0%d_value(ji,jj,ik,1) )   &
+                  &        * ( tg_gdepw_1d%d_value(1,1,ik+1,1) - tg_gdept_1d%d_value(1,1, ik,1) )   &
+                  &        / ( tg_gdepw_1d%d_value(1,1,ik+1,1) - tg_gdepw_1d%d_value(1,1, ik,1) )
 
-               tg_e3t_0%d_value(ji,jj,ik  ,1) = tg_gdepw_1d%d_value(1,1,ik+1,1) - tg_gdepw_0%d_value(ji,jj,ik,1) 
+               tg_e3t_0%d_value(ji,jj,ik  ,1) = tg_gdepw_1d%d_value(1,1,ik+1,1) - tg_gdepw_0%d_value(ji,jj,ik,1)
                tg_e3w_0%d_value(ji,jj,ik+1,1) = tg_gdept_1d%d_value(1,1,ik+1,1) - tg_gdept_0%d_value(ji,jj,ik,1)
 
-               IF( ik + 1 == tg_mbathy%d_value(ji,jj,1,1) )THEN    ! ice shelf point only (2 cell water column) 
-                  tg_e3w_0%d_value(ji,jj,ik+1,1) = tg_gdept_0%d_value(ji,jj,ik+1,1) - tg_gdept_0%d_value(ji,jj,ik,1) 
-               ENDIF 
-            !       ... on ik / ik-1 
-               tg_e3w_0%d_value  (ji,jj,ik  ,1) = tg_e3t_0%d_value  (ji,jj,ik,1) 
+               IF( ik + 1 == tg_mbathy%d_value(ji,jj,1,1) )THEN    ! ice shelf point only (2 cell water column)
+                  tg_e3w_0%d_value(ji,jj,ik+1,1) = tg_gdept_0%d_value(ji,jj,ik+1,1) - tg_gdept_0%d_value(ji,jj,ik,1)
+               ENDIF
+            !       ... on ik / ik-1
+               tg_e3w_0%d_value  (ji,jj,ik  ,1) = tg_e3t_0%d_value  (ji,jj,ik,1)
                tg_e3t_0%d_value  (ji,jj,ik-1,1) = tg_gdepw_0%d_value(ji,jj,ik,1) - tg_gdepw_1d%d_value(1,1,ik-1,1)
-! The next line isn't required and doesn't affect results - included for consistency with bathymetry code 
+! The next line isn't required and doesn't affect results - included for consistency with bathymetry code
                tg_gdept_0%d_value(ji,jj,ik-1,1) = tg_gdept_1d%d_value(1,1,ik-1,1)
 
-            ENDIF 
-         END DO 
+            ENDIF
+         END DO
       END DO
 
-      it = 0 
-      DO jj = 1, jpj 
-         DO ji = 1, jpi 
-            ik = tg_misfdep%d_value(ji,jj,1,1) 
-            IF( ik > 1 ) THEN               ! ice shelf point only 
-               tg_e3tp%d_value(ji,jj,1,1) = tg_e3t_0%d_value(ji,jj,ik  ,1) 
-               tg_e3wp%d_value(ji,jj,1,1) = tg_e3w_0%d_value(ji,jj,ik+1,1) 
-            ! test 
-               zdiff= tg_gdept_0%d_value(ji,jj,ik,1) - tg_gdepw_0%d_value(ji,jj,ik,1) 
-               IF( zdiff <= 0. ) THEN  
-                  it = it + 1 
+      it = 0
+      DO jj = 1, jpj
+         DO ji = 1, jpi
+            ik = tg_misfdep%d_value(ji,jj,1,1)
+            IF( ik > 1 ) THEN               ! ice shelf point only
+               tg_e3tp%d_value(ji,jj,1,1) = tg_e3t_0%d_value(ji,jj,ik  ,1)
+               tg_e3wp%d_value(ji,jj,1,1) = tg_e3w_0%d_value(ji,jj,ik+1,1)
+            ! test
+               zdiff= tg_gdept_0%d_value(ji,jj,ik,1) - tg_gdepw_0%d_value(ji,jj,ik,1)
+               IF( zdiff <= 0. ) THEN
+                  it = it + 1
                   CALL logger_info(' it    = '//TRIM(fct_str(it))//&
                   &                ' ik    = '//TRIM(fct_str(ik))//&
                   &                ' (i,j) = '//trim(fct_str(ji))//' '//TRIM(fct_str(jj)))
 
-                  CALL logger_info(' risfdep = '//TRIM(fct_str(td_risfdep%d_value(ji,jj,1,1)))) 
+                  CALL logger_info(' risfdep = '//TRIM(fct_str(td_risfdep%d_value(ji,jj,1,1))))
                   CALL logger_info(' gdept = '//TRIM(fct_str(tg_gdept_0%d_value(ji,jj,ik,1)))//&
                   &                ' gdepw = '//TRIM(fct_str(tg_gdepw_0%d_value(ji,jj,ik+1,1)))//&
                   &                ' zdiff = '//TRIM(fct_str(zdiff)))
                   CALL logger_info(' e3tp  = '//TRIM(fct_str(tg_e3t_0%d_value(ji,jj,ik  ,1)))//&
                   &                ' e3wp  = '//TRIM(fct_str(tg_e3w_0%d_value(ji,jj,ik+1,1))))
-               ENDIF 
-            ENDIF 
-         END DO 
+               ENDIF
+            ENDIF
+         END DO
       END DO
 
    END SUBROUTINE grid_zgr__isf_fill
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !   SUBROUTINE grid_zgr__isf_fill_e3x( jpi,jpj, &
-!         &                            td_risfdep) 
+!         &                            td_risfdep)
 !   !-------------------------------------------------------------------
-!   !> @brief This subroutine define e3t, u, v, w for ISF case 
+!   !> @brief This subroutine define e3t, u, v, w for ISF case
 !   !>
 !   !> @details
 !   !>
@@ -2840,7 +2840,7 @@ CONTAINS
 !
 !      IMPLICIT NONE
 !
-!      ! Argument      
+!      ! Argument
 !      INTEGER(i4), INTENT(IN   ) :: jpi
 !      INTEGER(i4), INTENT(IN   ) :: jpj
 !      TYPE(TVAR) , INTENT(INOUT) :: td_risfdep
@@ -2856,25 +2856,25 @@ CONTAINS
 !      !----------------------------------------------------------------
 !
 !      ! (ISF) Definition of e3t, u, v, w for ISF case
-!      DO jj = 1, jpj 
-!         DO ji = 1, jpi 
-!            ik = tg_misfdep%d_value(ji,jj,1,1) 
+!      DO jj = 1, jpj
+!         DO ji = 1, jpi
+!            ik = tg_misfdep%d_value(ji,jj,1,1)
 !
 !            IF( ik > 1 ) THEN
 !               ! ice shelf point only
 !               IF( td_risfdep%d_value(ji,jj,1,1) < tg_gdepw_1d%d_value(1,1,ik,1) )THEN
-!                   td_risfdep%d_value(ji,jj,1,1) = tg_gdepw_1d%d_value(1,1,ik,1) 
+!                   td_risfdep%d_value(ji,jj,1,1) = tg_gdepw_1d%d_value(1,1,ik,1)
 !               ENDIF
-!               tg_gdepw_0%d_value(ji,jj,ik,1) = td_risfdep%d_value(ji,jj,1,1) 
-!            !gm Bug?  check the gdepw_0 
-!            !       ... on ik 
-!               tg_gdept_0%d_value(ji,jj,ik  ,1) = tg_gdepw_1d%d_value(1,1,ik+1,1) - & 
+!               tg_gdepw_0%d_value(ji,jj,ik,1) = td_risfdep%d_value(ji,jj,1,1)
+!            !gm Bug?  check the gdepw_0
+!            !       ... on ik
+!               tg_gdept_0%d_value(ji,jj,ik  ,1) = tg_gdepw_1d%d_value(1,1,ik+1,1) - &
 !                  &                               (tg_gdepw_1d%d_value(1,1,ik+1,1) - tg_gdepw_0%d_value (ji,jj,ik,1)) * &
-!                  &                               (tg_gdepw_1d%d_value(1,1,ik+1,1) - tg_gdept_1d%d_value( 1, 1,ik,1)) / & 
-!                  &                               (tg_gdepw_1d%d_value(1,1,ik+1,1) - tg_gdepw_1d%d_value( 1, 1,ik,1)) 
+!                  &                               (tg_gdepw_1d%d_value(1,1,ik+1,1) - tg_gdept_1d%d_value( 1, 1,ik,1)) / &
+!                  &                               (tg_gdepw_1d%d_value(1,1,ik+1,1) - tg_gdepw_1d%d_value( 1, 1,ik,1))
 !
 !               tg_e3t_0%d_value  (ji,jj,ik  ,1) = tg_gdepw_1d%d_value( 1, 1,ik+1,1) - &
-!                  &                               tg_gdepw_0%d_value (ji,jj,ik  ,1) 
+!                  &                               tg_gdepw_0%d_value (ji,jj,ik  ,1)
 !
 !               tg_e3w_0%d_value  (ji,jj,ik+1,1) = tg_gdept_1d%d_value( 1, 1,ik+1,1) - &
 !                  &                               tg_gdept_0%d_value (ji,jj,ik  ,1)
@@ -2883,57 +2883,57 @@ CONTAINS
 !
 !                  ! ice shelf point only (2 cell water column)
 !                  tg_e3w_0%d_value(ji,jj,ik+1,1) = tg_gdept_0%d_value(ji,jj,ik+1,1) - &
-!                     &                             tg_gdept_0%d_value(ji,jj,ik  ,1) 
+!                     &                             tg_gdept_0%d_value(ji,jj,ik  ,1)
 !
-!               ENDIF 
-!            !       ... on ik / ik-1 
+!               ENDIF
+!            !       ... on ik / ik-1
 !               tg_e3w_0%d_value  (ji,jj,ik  ,1) = 2._dp * (tg_gdept_0%d_value(ji,jj,ik,1) - &
-!                  &                                        tg_gdepw_0%d_value(ji,jj,ik,1)) 
+!                  &                                        tg_gdepw_0%d_value(ji,jj,ik,1))
 !
 !               tg_e3t_0%d_value  (ji,jj,ik-1,1) = tg_gdepw_0%d_value (ji,jj,ik  ,1) - &
 !                  &                               tg_gdepw_1d%d_value( 1, 1,ik-1,1)
 !
-!               ! The next line isn't required and doesn't affect results - included for consistency with bathymetry code 
+!               ! The next line isn't required and doesn't affect results - included for consistency with bathymetry code
 !               tg_gdept_0%d_value(ji,jj,ik-1,1) = tg_gdept_1d%d_value(1,1,ik-1,1)
-!            ENDIF 
+!            ENDIF
 !
-!         END DO 
-!      END DO 
-!      
-!      it = 0 
-!      DO jj = 1, jpj 
-!         DO ji = 1, jpi 
-!            ik = tg_misfdep%d_value(ji,jj,1,1) 
-!            IF( ik > 1 ) THEN               ! ice shelf point only 
-!               tg_e3tp%d_value(ji,jj,1,1) = tg_e3t_0%d_value(ji,jj,ik  ,1) 
-!               tg_e3wp%d_value(ji,jj,1,1) = tg_e3w_0%d_value(ji,jj,ik+1,1) 
-!            ! test 
+!         END DO
+!      END DO
+!
+!      it = 0
+!      DO jj = 1, jpj
+!         DO ji = 1, jpi
+!            ik = tg_misfdep%d_value(ji,jj,1,1)
+!            IF( ik > 1 ) THEN               ! ice shelf point only
+!               tg_e3tp%d_value(ji,jj,1,1) = tg_e3t_0%d_value(ji,jj,ik  ,1)
+!               tg_e3wp%d_value(ji,jj,1,1) = tg_e3w_0%d_value(ji,jj,ik+1,1)
+!            ! test
 !               zdiff= tg_gdept_0%d_value(ji,jj,ik,1) - &
-!                  &   tg_gdepw_0%d_value(ji,jj,ik,1) 
+!                  &   tg_gdepw_0%d_value(ji,jj,ik,1)
 !
-!               IF( zdiff <= 0. ) THEN  
-!                  it = it + 1 
+!               IF( zdiff <= 0. ) THEN
+!                  it = it + 1
 !                  CALL logger_info(' it      = '//TRIM(fct_str(it))//&
 !                     &             ' ik      = '//TRIM(fct_str(ik))//&
-!                     &             ' (i,j)   =('//TRIM(fct_str(ji))//','//TRIM(fct_str(jj))//')')  
+!                     &             ' (i,j)   =('//TRIM(fct_str(ji))//','//TRIM(fct_str(jj))//')')
 !                  CALL logger_info(' risfdep = '//TRIM(fct_str(td_risfdep%d_value(ji,jj,1,1))) )
 !                  CALL logger_info(' gdept = '//TRIM(fct_str(tg_gdept_0%d_value(ji,jj,ik  ,1)))//&
 !                     &             ' gdepw = '//TRIM(fct_str(tg_gdepw_0%d_value(ji,jj,ik+1,1)))//&
-!                     &             ' zdiff = '//TRIM(fct_str(zdiff)) ) 
+!                     &             ' zdiff = '//TRIM(fct_str(zdiff)) )
 !                  CALL logger_info(' e3tp  = '//TRIM(fct_str( tg_e3tp%d_value(ji,jj,1,1)))//&
-!                     &             ' e3wp  = '//TRIM(fct_str( tg_e3wp%d_value(ji,jj,1,1))) ) 
-!               ENDIF 
-!            ENDIF 
-!         END DO 
-!      END DO 
+!                     &             ' e3wp  = '//TRIM(fct_str( tg_e3wp%d_value(ji,jj,1,1))) )
+!               ENDIF
+!            ENDIF
+!         END DO
+!      END DO
 !      ! END (ISF)
 !
 !   END SUBROUTINE grid_zgr__isf_fill_e3x
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE grid_zgr__isf_fill_e3uw(jpi, jpj) 
+   SUBROUTINE grid_zgr__isf_fill_e3uw(jpi, jpj)
    !-------------------------------------------------------------------
-   !> @brief This subroutine define e3uw 
-   !>    (adapted for 2 cells in the water column) for ISF case 
+   !> @brief This subroutine define e3uw
+   !>    (adapted for 2 cells in the water column) for ISF case
    !>
    !> @details
    !>
@@ -2946,7 +2946,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       INTEGER(i4)   , INTENT(IN   ) :: jpi
       INTEGER(i4)   , INTENT(IN   ) :: jpj
 
@@ -2958,8 +2958,8 @@ CONTAINS
       INTEGER(i4) :: jj
       !----------------------------------------------------------------
 
-      DO jj = 2, jpj - 1 
-         DO ji = 2, jpi - 1 
+      DO jj = 2, jpj - 1
+         DO ji = 2, jpi - 1
 
             ikb = MAX(tg_mbathy%d_value (ji,jj,1,1), tg_mbathy%d_value (ji+1,jj,1,1))
             ikt = MAX(tg_misfdep%d_value(ji,jj,1,1), tg_misfdep%d_value(ji+1,jj,1,1))
@@ -2967,7 +2967,7 @@ CONTAINS
                tg_e3uw_0%d_value(ji,jj,ikb,1) = MIN( tg_gdept_0%d_value(ji,jj,ikb  ,1), tg_gdept_0%d_value(ji+1,jj  ,ikb  ,1) ) - &
                &                                MAX( tg_gdept_0%d_value(ji,jj,ikb-1,1), tg_gdept_0%d_value(ji+1,jj  ,ikb-1,1) )
             ENDIF
-            
+
             ikb = MAX( tg_mbathy%d_value (ji,jj,1,1), tg_mbathy%d_value (ji,jj+1,1,1))
             ikt = MAX( tg_misfdep%d_value(ji,jj,1,1), tg_misfdep%d_value(ji,jj+1,1,1))
             IF( ikb == ikt+1 )THEN
@@ -2981,7 +2981,7 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !   SUBROUTINE grid_zgr__isf_fill_gdep3w_0( jpi,jpj,jpk,td_risfdep )
 !   !-------------------------------------------------------------------
-!   !> @brief This subroutine compute gdep3w_0 (vertical sum of e3w) 
+!   !> @brief This subroutine compute gdep3w_0 (vertical sum of e3w)
 !   !>
 !   !> @details
 !   !>
@@ -2996,7 +2996,7 @@ CONTAINS
 !
 !      IMPLICIT NONE
 !
-!      ! Argument      
+!      ! Argument
 !      INTEGER(i4), INTENT(IN   ) :: jpi
 !      INTEGER(i4), INTENT(IN   ) :: jpj
 !      INTEGER(i4), INTENT(IN   ) :: jpk
@@ -3012,14 +3012,14 @@ CONTAINS
 !      !----------------------------------------------------------------
 !
 !      WHERE( tg_misfdep%d_value(:,:,:,:) == 0 ) tg_misfdep%d_value(:,:,:,:) = 1
-!      
+!
 !      DO jj = 1,jpj
 !         DO ji = 1,jpi
 !
 !            tg_gdep3w_0%d_value(ji,jj,1,1) = 0.5_dp * tg_e3w_0%d_value(ji,jj,1,1)
 !            DO jk = 2, INT(tg_misfdep%d_value(ji,jj,1,1),i4)
 !               tg_gdep3w_0%d_value(ji,jj,jk,1) = tg_gdep3w_0%d_value(ji,jj,jk-1,1) + &
-!                  &                              tg_e3w_0%d_value   (ji,jj,jk  ,1) 
+!                  &                              tg_e3w_0%d_value   (ji,jj,jk  ,1)
 !            END DO
 !
 !            ik=tg_misfdep%d_value(ji,jj,1,1)
@@ -3030,7 +3030,7 @@ CONTAINS
 !
 !            DO jk = ik + 1, jpk
 !               tg_gdep3w_0%d_value(ji,jj,jk,1) = tg_gdep3w_0%d_value(ji,jj,jk-1,1) + &
-!                  &                              tg_e3w_0%d_value   (ji,jj,jk  ,1) 
+!                  &                              tg_e3w_0%d_value   (ji,jj,jk  ,1)
 !            END DO
 !
 !         END DO
@@ -3038,7 +3038,7 @@ CONTAINS
 !
 !   END SUBROUTINE grid_zgr__isf_fill_gdep3w_0
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE grid_zgr_sco_init(jpi, jpj) 
+   SUBROUTINE grid_zgr_sco_init(jpi, jpj)
    !-------------------------------------------------------------------
    !> @brief This subroutine initialise global variable needed to compute vertical
    !>        mesh
@@ -3052,7 +3052,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       INTEGER(i4), INTENT(IN) :: jpi
       INTEGER(i4), INTENT(IN) :: jpj
 
@@ -3068,7 +3068,7 @@ CONTAINS
 
    END SUBROUTINE grid_zgr_sco_init
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE grid_zgr_sco_clean() 
+   SUBROUTINE grid_zgr_sco_clean()
    !-------------------------------------------------------------------
    !> @brief This subroutine clean structure
    !>
@@ -3079,16 +3079,16 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       ! local variable
       ! loop indices
       !----------------------------------------------------------------
 
       CALL var_clean(tg_rx1      )
-      
+
    END SUBROUTINE grid_zgr_sco_clean
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE grid_zgr__sco_fill(td_nam, jpi, jpj, jpk, td_bathy) 
+   SUBROUTINE grid_zgr__sco_fill(td_nam, jpi, jpj, jpk, td_bathy)
    !-------------------------------------------------------------------
    !> @brief This subroutine define the s-coordinate system
    !>
@@ -3119,15 +3119,15 @@ CONTAINS
    !>      schemes.
    !>
    !>      The three methods for stretching available are:
-   !> 
+   !>
    !>           s_sh94 (Song and Haidvogel 1994)
    !>                a sinh/tanh function that allows sigma and stretched sigma
    !>
    !>           s_sf12 (Siddorn and Furner 2012?)
    !>                allows the maintenance of fixed surface and or
-   !>                bottom cell resolutions (cf. geopotential coordinates) 
+   !>                bottom cell resolutions (cf. geopotential coordinates)
    !>                within an analytically derived stretched S-coordinate framework.
-   !> 
+   !>
    !>          s_tanh  (Madec et al 1996)
    !>                a cosh/tanh function that gives stretched coordinates
    !>
@@ -3140,7 +3140,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TNAMZ), INTENT(IN   ) :: td_nam
       INTEGER(i4), INTENT(IN   ) :: jpi
       INTEGER(i4), INTENT(IN   ) :: jpj
@@ -3260,7 +3260,7 @@ CONTAINS
 
       ! apply lateral boundary condition   CAUTION: keep the value when the lbc field is zero
       ! this is only in mpp case, so here just do nothing
-      !! CALL lbc_lnk( zenv(:,:), 'T', td_nam%i_perio, 1._dp, 'no0' ) 
+      !! CALL lbc_lnk( zenv(:,:), 'T', td_nam%i_perio, 1._dp, 'no0' )
 
       ! smooth the bathymetry (if required)
       ALLOCATE(dl_scosrf(jpi,jpj))
@@ -3272,7 +3272,7 @@ CONTAINS
       zrmax = 1._dp
 
       ! set scaling factor used in reducing vertical gradients
-      zrfact = ( 1._dp - td_nam%d_rmax ) / ( 1._dp + td_nam%d_rmax )      
+      zrfact = ( 1._dp - td_nam%d_rmax ) / ( 1._dp + td_nam%d_rmax )
 
       ! initialise temporary envelope depth arrays
       ALLOCATE(ztmpi1(jpi,jpj))
@@ -3326,7 +3326,7 @@ CONTAINS
                IF( zrj(ji,jj) < -td_nam%d_rmax ) ztmpj2(ji  ,ijp1) = zenv(ji  ,jj  ) * zrfact
             END DO
          END DO
-         !! 
+         !!
          !
          CALL logger_info('zgr_sco :   iter= '//TRIM(fct_str(jl))//&
             &             ' rmax= '//TRIM(fct_str(zrmax)) )
@@ -3369,7 +3369,7 @@ CONTAINS
 !      ALLOCATE(dl_hbatv(jpi,jpj))
 !      ALLOCATE(dl_hbatf(jpi,jpj))
 
-      tg_hbatt%d_value(:,:,1,1) = zenv(:,:) 
+      tg_hbatt%d_value(:,:,1,1) = zenv(:,:)
       IF( MINVAL( tg_gphit%d_value(:,:,1,1) ) * &
         & MAXVAL( tg_gphit%d_value(:,:,1,1) ) <= 0._dp ) THEN
          CALL logger_warn( ' s-coordinates are tapered in vicinity of the Equator' )
@@ -3502,15 +3502,15 @@ CONTAINS
 !========================================================================
 ! Song and Haidvogel  1994 (ln_s_sh94=T)
 ! Siddorn and Furner  2012 (ln_sf12=T)
-! or  tanh function        (both false)                    
+! or  tanh function        (both false)
 !========================================================================
-      IF( td_nam%l_s_sh94 ) THEN 
+      IF( td_nam%l_s_sh94 ) THEN
          CALL grid_zgr__sco_s_sh94( td_nam,jpi,jpj,jpk, &
          &                          dl_scosrf )
       ELSEIF( td_nam%l_s_sf12 ) THEN
          CALL grid_zgr__sco_s_sf12( td_nam,jpi,jpj,jpk, &
          &                          dl_scosrf )
-      ELSE                 
+      ELSE
          CALL grid_zgr__sco_s_tanh( td_nam,jpi,jpj,jpk, &
          &                          dl_scosrf, &
          &                          dl_hift, dl_hifu, dl_hifv, dl_hiff )
@@ -3541,7 +3541,7 @@ CONTAINS
          WHERE( tg_e3vw_0%d_value(:,:,:,1)== 0_dp )  tg_e3vw_0%d_value(:,:,:,1)= 1._dp
       ENDIF
 
-      ! HYBRID : 
+      ! HYBRID :
       DO jj = 1, jpj
          DO ji = 1, jpi
             DO jk = 1, jpk-1
@@ -3652,7 +3652,7 @@ CONTAINS
 
    END SUBROUTINE grid_zgr__sco_fill
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE grid_zgr__sco_s_sh94(td_nam, jpi, jpj, jpk, dd_scosrf) 
+   SUBROUTINE grid_zgr__sco_s_sh94(td_nam, jpi, jpj, jpk, dd_scosrf)
    !-------------------------------------------------------------------
    !> @brief This subroutine stretch the s-coordinate system
    !>
@@ -3660,10 +3660,10 @@ CONTAINS
    !> ** Method  :   s-coordinate stretch using the Song and Haidvogel 1994
    !>                mixed S/sigma coordinate
    !>
-   !> Reference : Song and Haidvogel 1994.   
+   !> Reference : Song and Haidvogel 1994.
    !>
    !> @author J.Paul
-   !> @date September, 2015 - rewrite from domzgr 
+   !> @date September, 2015 - rewrite from domzgr
    !> @date October, 2016
    !> - add wetting and drying option
    !>
@@ -3676,7 +3676,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TNAMZ),                 INTENT(IN   ) :: td_nam
       INTEGER(i4),                 INTENT(IN   ) :: jpi
       INTEGER(i4),                 INTENT(IN   ) :: jpj
@@ -3723,12 +3723,12 @@ CONTAINS
       ALLOCATE( z_esigwv3(jpi,jpj,jpk))
 
       z_gsigw3(:,:,:) =0._dp
-      z_gsigt3(:,:,:) =0._dp  
-      z_gsi3w3(:,:,:) =0._dp  
-      z_esigt3(:,:,:) =0._dp  
-      z_esigw3(:,:,:) =0._dp  
+      z_gsigt3(:,:,:) =0._dp
+      z_gsi3w3(:,:,:) =0._dp
+      z_esigt3(:,:,:) =0._dp
+      z_esigw3(:,:,:) =0._dp
 
-      z_esigtu3(:,:,:)=0._dp 
+      z_esigtu3(:,:,:)=0._dp
       z_esigtv3(:,:,:)=0._dp
       z_esigtf3(:,:,:)=0._dp
       z_esigwu3(:,:,:)=0._dp
@@ -3736,7 +3736,7 @@ CONTAINS
 
       DO ji = 1, jpi
          DO jj = 1, jpj
-   
+
             IF( tg_hbatt%d_value(ji,jj,1,1) > td_nam%d_hc ) THEN    !deep water, stretched sigma
                DO jk = 1, jpk
                   z_gsigw3(ji,jj,jk) = -grid_zgr__sco_fssig1( td_nam, jpk, REAL(jk,dp)-0.5_dp, td_nam%d_bb )
@@ -3747,12 +3747,12 @@ CONTAINS
                   z_gsigw3(ji,jj,jk) =   REAL(jk-1,dp)            / REAL(jpk-1,dp)
                   z_gsigt3(ji,jj,jk) = ( REAL(jk-1,dp) + 0.5_dp ) / REAL(jpk-1,dp)
                END DO
-            ENDIF         
+            ENDIF
 
             DO jk = 1, jpk-1
                z_esigt3(ji,jj,jk  ) = z_gsigw3(ji,jj,jk+1) - z_gsigw3(ji,jj,jk)
                z_esigw3(ji,jj,jk+1) = z_gsigt3(ji,jj,jk+1) - z_gsigt3(ji,jj,jk)
-            END DO            
+            END DO
             z_esigw3(ji,jj,1  ) = 2._dp * ( z_gsigt3(ji,jj,1  ) - z_gsigw3(ji,jj,1  ) )
             z_esigt3(ji,jj,jpk) = 2._dp * ( z_gsigt3(ji,jj,jpk) - z_gsigw3(ji,jj,jpk) )
 
@@ -3839,7 +3839,7 @@ CONTAINS
                   &                            + td_nam%d_hc / REAL(jpk-1,dp) )
                tg_e3f_0%d_value(ji,jj,jk,1) = ( ( tg_hbatf%d_value(ji,jj,1,1) - td_nam%d_hc ) *z_esigtf3(ji,jj,jk) &
                   &                            + td_nam%d_hc/REAL(jpk-1,dp) )
-               
+
                tg_e3w_0%d_value (ji,jj,jk,1)= ( ( tg_hbatt%d_value(ji,jj,1,1) - td_nam%d_hc )*z_esigw3 (ji,jj,jk) &
                   &                            + td_nam%d_hc / REAL(jpk-1,dp) )
                tg_e3uw_0%d_value(ji,jj,jk,1)= ( ( tg_hbatu%d_value(ji,jj,1,1) - td_nam%d_hc)*z_esigwu3(ji,jj,jk) &
@@ -3863,7 +3863,7 @@ CONTAINS
 
    END SUBROUTINE grid_zgr__sco_s_sh94
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   SUBROUTINE grid_zgr__sco_s_sf12(td_nam, jpi, jpj, jpk, dd_scosrf) 
+   SUBROUTINE grid_zgr__sco_s_sf12(td_nam, jpi, jpj, jpk, dd_scosrf)
    !-------------------------------------------------------------------
    !> @brief This subroutine stretch the s-coordinate system
    !>
@@ -3871,14 +3871,14 @@ CONTAINS
    !>                mixed S/sigma/Z coordinate
    !>
    !>                This method allows the maintenance of fixed surface and or
-   !>                bottom cell resolutions (cf. geopotential coordinates) 
+   !>                bottom cell resolutions (cf. geopotential coordinates)
    !>                within an analytically derived stretched S-coordinate framework.
    !>
    !>
-   !> Reference : Siddorn and Furner 2012 (submitted Ocean modelling).   
+   !> Reference : Siddorn and Furner 2012 (submitted Ocean modelling).
    !>
    !> @author J.Paul
-   !> @date September, 2015 - rewrite from domzgr 
+   !> @date September, 2015 - rewrite from domzgr
    !> @date October, 2016
    !> - add wetting and drying option
    !>
@@ -3891,7 +3891,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TNAMZ),                 INTENT(IN   ) :: td_nam
       INTEGER(i4),                 INTENT(IN   ) :: jpi
       INTEGER(i4),                 INTENT(IN   ) :: jpj
@@ -3937,11 +3937,11 @@ CONTAINS
       ALLOCATE( z_esigwv3(jpi,jpj,jpk))
 
       z_gsigw3(:,:,:) =0._dp
-      z_gsigt3(:,:,:) =0._dp  
-      z_gsi3w3(:,:,:) =0._dp  
-      z_esigt3(:,:,:) =0._dp  
-      z_esigw3(:,:,:) =0._dp  
-      z_esigtu3(:,:,:)=0._dp 
+      z_gsigt3(:,:,:) =0._dp
+      z_gsi3w3(:,:,:) =0._dp
+      z_esigt3(:,:,:) =0._dp
+      z_esigw3(:,:,:) =0._dp
+      z_esigtu3(:,:,:)=0._dp
       z_esigtv3(:,:,:)=0._dp
       z_esigtf3(:,:,:)=0._dp
       z_esigwu3(:,:,:)=0._dp
@@ -3951,28 +3951,28 @@ CONTAINS
          DO jj = 1, jpj
 
           IF( tg_hbatt%d_value(ji,jj,1,1) > td_nam%d_hc )THEN !deep water, stretched sigma
-              
+
              ! this forces a linear bottom cell depth relationship with H,.
              ! could be changed by users but care must be taken to do so carefully
               zzb = tg_hbatt%d_value(ji,jj,1,1)*td_nam%d_zb_a + td_nam%d_zb_b
 
               zzb = 1.0_dp-(zzb/tg_hbatt%d_value(ji,jj,1,1))
-            
-              zzs = td_nam%d_zs / tg_hbatt%d_value(ji,jj,1,1) 
-              
+
+              zzs = td_nam%d_zs / tg_hbatt%d_value(ji,jj,1,1)
+
               IF( td_nam%d_efold /= 0.0_dp )THEN
                 zsmth = TANH( (tg_hbatt%d_value(ji,jj,1,1)-td_nam%d_hc ) / td_nam%d_efold )
               ELSE
-                zsmth = 1.0_dp 
+                zsmth = 1.0_dp
               ENDIF
-               
+
               DO jk = 1, jpk
                 z_gsigw3(ji,jj,jk) =  REAL(jk-1,dp)        /REAL(jpk-1,dp)
                 z_gsigt3(ji,jj,jk) = (REAL(jk-1,dp)+0.5_dp)/REAL(jpk-1,dp)
               ENDDO
               z_gsigw3(ji,jj,:) = grid_zgr__sco_fgamma( td_nam, jpk, z_gsigw3(ji,jj,:), zzb, zzs, zsmth  )
               z_gsigt3(ji,jj,:) = grid_zgr__sco_fgamma( td_nam, jpk, z_gsigt3(ji,jj,:), zzb, zzs, zsmth  )
- 
+
           ELSE IF( td_nam%l_sigcrit )THEN ! shallow water, uniform sigma
 
             DO jk = 1, jpk
@@ -4023,7 +4023,7 @@ CONTAINS
            ztmpu1 = tg_hbatt%d_value(ji  ,jj  ,1,1) * tg_hbatt%d_value(ji+1,jj  ,1,1)
            ztmpv1 = tg_hbatt%d_value(ji  ,jj  ,1,1) * tg_hbatt%d_value(ji  ,jj+1,1,1)
            ztmpf1 =    MIN(tg_hbatt%d_value(ji  ,jj  ,1,1), tg_hbatt%d_value(ji+1,jj  ,1,1), &
-                  &        tg_hbatt%d_value(ji  ,jj+1,1,1), tg_hbatt%d_value(ji+1,jj+1,1,1)) & 
+                  &        tg_hbatt%d_value(ji  ,jj+1,1,1), tg_hbatt%d_value(ji+1,jj+1,1,1)) &
                   &  * MAX(tg_hbatt%d_value(ji  ,jj  ,1,1), tg_hbatt%d_value(ji+1,jj  ,1,1), &
                   &        tg_hbatt%d_value(ji  ,jj+1,1,1), tg_hbatt%d_value(ji+1,jj+1,1,1))
 
@@ -4077,12 +4077,12 @@ CONTAINS
         ENDDO
       ENDDO
 
-      CALL lbc_lnk(tg_e3t_0 %d_value(:,:,:,1),'T', td_nam%i_perio, 1._dp) 
+      CALL lbc_lnk(tg_e3t_0 %d_value(:,:,:,1),'T', td_nam%i_perio, 1._dp)
       CALL lbc_lnk(tg_e3u_0 %d_value(:,:,:,1),'T', td_nam%i_perio, 1._dp)
-      CALL lbc_lnk(tg_e3v_0 %d_value(:,:,:,1),'T', td_nam%i_perio, 1._dp) 
+      CALL lbc_lnk(tg_e3v_0 %d_value(:,:,:,1),'T', td_nam%i_perio, 1._dp)
       CALL lbc_lnk(tg_e3f_0 %d_value(:,:,:,1),'T', td_nam%i_perio, 1._dp)
       CALL lbc_lnk(tg_e3w_0 %d_value(:,:,:,1),'T', td_nam%i_perio, 1._dp)
-      CALL lbc_lnk(tg_e3uw_0%d_value(:,:,:,1),'T', td_nam%i_perio, 1._dp) 
+      CALL lbc_lnk(tg_e3uw_0%d_value(:,:,:,1),'T', td_nam%i_perio, 1._dp)
       CALL lbc_lnk(tg_e3vw_0%d_value(:,:,:,1),'T', td_nam%i_perio, 1._dp)
 
       DEALLOCATE( z_gsigw3  )
@@ -4100,14 +4100,14 @@ CONTAINS
    !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    SUBROUTINE grid_zgr__sco_s_tanh(td_nam, jpi, jpj, jpk, &
          &                         dd_scosrf,             &
-         &                         dd_hift, dd_hifu, dd_hifv, dd_hiff) 
+         &                         dd_hift, dd_hifu, dd_hifv, dd_hiff)
    !-------------------------------------------------------------------
    !> @brief This subroutine stretch the s-coordinate system
    !>
    !>
-   !> ** Method  :   s-coordinate stretch 
+   !> ** Method  :   s-coordinate stretch
    !>
-   !> Reference : Madec, Lott, Delecluse and Crepon, 1996. JPO, 26, 1393-1408.   
+   !> Reference : Madec, Lott, Delecluse and Crepon, 1996. JPO, 26, 1393-1408.
    !>
    !> @author J.Paul
    !> @date September, 2015 - rewrite from domzgr
@@ -4117,15 +4117,15 @@ CONTAINS
    !> @param[in] jpj
    !> @param[in] jpk
    !> @param[in] dd_scosrf
-   !> @param[in] dd_hift 
-   !> @param[in] dd_hifu 
-   !> @param[in] dd_hifv 
-   ! @param[in] dd_hiff 
+   !> @param[in] dd_hift
+   !> @param[in] dd_hifu
+   !> @param[in] dd_hifv
+   ! @param[in] dd_hiff
    !-------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TNAMZ),                 INTENT(IN   ) :: td_nam
       INTEGER(i4),                 INTENT(IN   ) :: jpi
       INTEGER(i4),                 INTENT(IN   ) :: jpj
@@ -4146,10 +4146,10 @@ CONTAINS
       INTEGER(i4) :: jk
       !----------------------------------------------------------------
 
-      tg_gsigt%d_value(1,1,:,1) =0._dp  
+      tg_gsigt%d_value(1,1,:,1) =0._dp
       tg_gsigw%d_value(1,1,:,1) =0._dp
-      tg_gsi3w%d_value(1,1,:,1) =0._dp  
-      tg_esigt%d_value(1,1,:,1) =0._dp  
+      tg_gsi3w%d_value(1,1,:,1) =0._dp
+      tg_esigt%d_value(1,1,:,1) =0._dp
       tg_esigw%d_value(1,1,:,1) =0._dp
 
       DO jk = 1, jpk
@@ -4166,7 +4166,7 @@ CONTAINS
          tg_esigt%d_value(1,1,jk  ,1) = tg_gsigw%d_value(1,1,jk+1,1) - tg_gsigw%d_value(1,1,jk,1)
          tg_esigw%d_value(1,1,jk+1,1) = tg_gsigt%d_value(1,1,jk+1,1) - tg_gsigt%d_value(1,1,jk,1)
       END DO
-      tg_esigw%d_value(1,1, 1 ,1) = 2._dp * ( tg_gsigt%d_value(1,1,1  ,1) - tg_gsigw%d_value(1,1,1  ,1) ) 
+      tg_esigw%d_value(1,1, 1 ,1) = 2._dp * ( tg_gsigt%d_value(1,1,1  ,1) - tg_gsigw%d_value(1,1,1  ,1) )
       tg_esigt%d_value(1,1,jpk,1) = 2._dp * ( tg_gsigt%d_value(1,1,jpk,1) - tg_gsigw%d_value(1,1,jpk,1) )
 
       ! Coefficients for vertical depth as the sum of e3w scale factors
@@ -4197,7 +4197,7 @@ CONTAINS
                  &                            * tg_esigt%d_value(1 ,1 ,jk,1) + dd_hifv(ji,jj)/REAL(jpk-1,dp) )
               tg_e3f_0%d_value(ji,jj,jk,1) = ( (tg_hbatf%d_value(ji,jj,1 ,1) - dd_hiff(ji,jj)) &
                  &                            * tg_esigt%d_value(1 ,1, jk,1) + dd_hiff(ji,jj)/REAL(jpk-1,dp) )
-               
+
               tg_e3w_0%d_value (ji,jj,jk,1)= ( (tg_hbatt%d_value(ji,jj,1 ,1) - dd_hift(ji,jj)) &
                  &                            * tg_esigw%d_value(1 ,1 ,jk,1) + dd_hift(ji,jj)/REAL(jpk-1,dp) )
               tg_e3uw_0%d_value(ji,jj,jk,1)= ( (tg_hbatu%d_value(ji,jj,1 ,1) - dd_hifu(ji,jj)) &
@@ -4214,7 +4214,7 @@ CONTAINS
          &  RESULT( pf )
    !!----------------------------------------------------------------------
    !> @brief This function provide the analytical function in s-coordinate
-   !>        
+   !>
    !> @details
    !> ** Method  :   the function provide the non-dimensional position of
    !>                T and W (i.e. between 0 and 1)
@@ -4224,7 +4224,7 @@ CONTAINS
    !> @author J.Paul
    !> @date September, 2015 - rewrite from domzgr
    !>
-   !> @param[in] td_nam 
+   !> @param[in] td_nam
    !> @param[in] jpk
    !> @param[in] pk
    !!----------------------------------------------------------------------
@@ -4263,7 +4263,7 @@ CONTAINS
    !> @param[in] td_nam
    !> @param[in] jpi
    !> @param[in] jpj
-   !> @param[in] pk1 
+   !> @param[in] pk1
    !> @param[in] pbb
    !!----------------------------------------------------------------------
 
@@ -4299,17 +4299,17 @@ CONTAINS
    !>                W-points at integer values - 1/2 (between 0.5 and jpk-0.5)
    !>
    !>                This method allows the maintenance of fixed surface and or
-   !>                bottom cell resolutions (cf. geopotential coordinates) 
+   !>                bottom cell resolutions (cf. geopotential coordinates)
    !>                within an analytically derived stretched S-coordinate framework.
    !>
    !> Reference  :   Siddorn and Furner, in prep
    !>
    !> @author J.Paul
-   !> @date September, 2015 - rewrite from domzgr 
+   !> @date September, 2015 - rewrite from domzgr
    !>
    !> @param[in] td_nam
    !> @param[in] jpk
-   !> @param[in] pk1 
+   !> @param[in] pk1
    !> @param[in] pzb
    !> @param[in] pzs
    !> @param[in] pzsmth
@@ -4340,21 +4340,21 @@ CONTAINS
       zn1  =  1._dp / REAL(jpk-1,dp)
       zn2  =  1._dp -  zn1
 
-      za1 = (td_nam%d_alpha+2.0_dp)*zn1**(td_nam%d_alpha+1.0_dp)-(td_nam%d_alpha+1.0_dp)*zn1**(td_nam%d_alpha+2.0_dp) 
+      za1 = (td_nam%d_alpha+2.0_dp)*zn1**(td_nam%d_alpha+1.0_dp)-(td_nam%d_alpha+1.0_dp)*zn1**(td_nam%d_alpha+2.0_dp)
       za2 = (td_nam%d_alpha+2.0_dp)*zn2**(td_nam%d_alpha+1.0_dp)-(td_nam%d_alpha+1.0_dp)*zn2**(td_nam%d_alpha+2.0_dp)
       za3 = (zn2**3.0_dp - za2)/( zn1**3.0_dp - za1)
-     
+
       za = pzb - za3*(pzs-za1)-za2
       za = za/( zn2-0.5_dp*(za2+zn2**2.0_dp) - za3*(zn1-0.5_dp*(za1+zn1**2.0_dp) ) )
       zb = (pzs - za1 - za*( zn1-0.5_dp*(za1+zn1**2.0_dp ) ) ) / (zn1**3.0_dp - za1)
       zx = 1.0_dp-za/2.0_dp-zb
- 
+
       DO jk = 1, jpk
         p_gamma(jk) = za*(pk1(jk)*(1.0_dp-pk1(jk)/2.0_dp))+zb*pk1(jk)**3.0_dp +  &
                     & zx*( (td_nam%d_alpha+2.0_dp)*pk1(jk)**(td_nam%d_alpha+1.0_dp)- &
                     &      (td_nam%d_alpha+1.0_dp)*pk1(jk)**(td_nam%d_alpha+2.0_dp) )
         p_gamma(jk) = p_gamma(jk)*psmth+pk1(jk)*(1.0_dp-psmth)
-      ENDDO 
+      ENDDO
 
       !
    END FUNCTION grid_zgr__sco_fgamma
@@ -4364,12 +4364,12 @@ CONTAINS
    !> @brief This subroutine stretch the s-coordinate system
    !>
    !>
-   !> ** Method  :   s-coordinate stretch 
+   !> ** Method  :   s-coordinate stretch
    !>
-   !> Reference : Madec, Lott, Delecluse and Crepon, 1996. JPO, 26, 1393-1408.   
+   !> Reference : Madec, Lott, Delecluse and Crepon, 1996. JPO, 26, 1393-1408.
    !>
    !> @author J.Paul
-   !> @date September, 2015 - rewrite from domain (dom_stiff) 
+   !> @date September, 2015 - rewrite from domain (dom_stiff)
    !>
    !> @param[in] td_nam
    !> @param[in] jpi
@@ -4379,7 +4379,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      ! Argument      
+      ! Argument
       TYPE(TNAMZ), INTENT(IN   ) :: td_nam
       INTEGER(i4), INTENT(IN   ) :: jpi
       INTEGER(i4), INTENT(IN   ) :: jpj
@@ -4404,7 +4404,7 @@ CONTAINS
             DO jk = 1, jpk-1
                zr1(1) = tg_umask%d_value(ji-1,jj  ,jk,1) &
                   &            * ABS( ( tg_gdepw_0%d_value(ji  ,jj  ,jk  ,1) &
-                  &                   - tg_gdepw_0%d_value(ji-1,jj  ,jk  ,1) & 
+                  &                   - tg_gdepw_0%d_value(ji-1,jj  ,jk  ,1) &
                   &                   + tg_gdepw_0%d_value(ji  ,jj  ,jk+1,1) &
                   &                   - tg_gdepw_0%d_value(ji-1,jj  ,jk+1,1) ) &
                   &                 / ( tg_gdepw_0%d_value(ji  ,jj  ,jk  ,1) &

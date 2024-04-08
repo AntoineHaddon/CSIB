@@ -30,7 +30,7 @@ MODULE sedarr
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 3.3 , NEMO Consortium (2010)
-   !! $Id: sedarr.F90 10222 2018-10-25 09:42:23Z aumont $ 
+   !! $Id: sedarr.F90 15450 2021-10-27 14:32:08Z cetlod $ 
    !! Software governed by the CeCILL licence (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -50,6 +50,7 @@ CONTAINS
          jid        = MOD( tab_ind(jn) - 1, jpi ) + 1
          jjd        = ( tab_ind(jn) - 1 ) / jpi + 1
          tab1d(jn)  = tab2d(jid, jjd)
+!         IF (mig(jid) == 150 .and. mjg(jjd) == 136) write(0,*) 'plante indices ',jn,ndim1d,slatit(jn),slongit(jn) 
       END DO 
 
       IF( ln_timing )   CALL timing_stop('pack_arr_2d_1d')

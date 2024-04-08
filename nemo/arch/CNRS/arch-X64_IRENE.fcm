@@ -7,8 +7,8 @@
 #
 # NCDF_INC    netcdf4 include file
 # NCDF_LIB    netcdf4 library
-# XIOS_INC    xios include file    (taken into accound only if key_iomput is activated)
-# XIOS_LIB    xios library         (taken into accound only if key_iomput is activated)
+# XIOS_INC    xios include file    (taken into accound only if key_xios is activated)
+# XIOS_LIB    xios library         (taken into accound only if key_xios is activated)
 # OASIS_INC   oasis include file   (taken into accound only if key_oasis3 is activated)
 # OASIS_LIB   oasis library        (taken into accound only if key_oasis3 is activated)
 #
@@ -30,7 +30,7 @@
 #  - unix variables "$..." are accpeted and will be evaluated before calling fcm.
 #  - fcm variables are starting with a % (and not a $)
 #
-%XIOS_HOME           $CCCWORKDIR/xios-2.5
+%XIOS_HOME           $CCCWORKDIR/xios-trunk
 %OASIS_HOME          $CCCWORKDIR/now/models/oa3mct
 
 %NCDF_INC            -I$NETCDFFORTRAN_INCDIR -I$NETCDF_INCDIR
@@ -54,5 +54,5 @@
 %USER_INC            %XIOS_INC %OASIS_INC %NCDF_INC
 %USER_LIB            %XIOS_LIB %OASIS_LIB %NCDF_LIB
 
-%CC                  cc
+%CC                  icc
 %CFLAGS              -O0

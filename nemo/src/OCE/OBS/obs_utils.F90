@@ -35,7 +35,7 @@ MODULE obs_utils
          
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: obs_utils.F90 10068 2018-08-28 14:09:04Z nicolasmartin $
+   !! $Id: obs_utils.F90 14275 2021-01-07 12:13:16Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 
@@ -65,13 +65,11 @@ CONTAINS
       !!----------------------------------------------------------------------
       !! * Modules used
       USE netcdf             ! NetCDF library
-      USE dom_oce, ONLY : &  ! Ocean space and time domain variables
-         & nproc
 
       !! * Arguments
-      INTEGER :: kstatus
-      INTEGER :: klineno
-      CHARACTER(LEN=*) :: cd_name
+      INTEGER, INTENT(IN) :: kstatus
+      INTEGER, INTENT(IN) :: klineno
+      CHARACTER(LEN=*), INTENT(IN) :: cd_name
       
       !! * Local declarations
       CHARACTER(len=200) :: clineno
@@ -101,8 +99,6 @@ CONTAINS
       !!----------------------------------------------------------------------
       !! * Modules used
       USE netcdf             ! NetCDF library
-      USE dom_oce, ONLY : &  ! Ocean space and time domain variables
-         & nproc
 
       !! * Arguments
       INTEGER :: kfileid       ! NetCDF file id   
@@ -170,7 +166,7 @@ CONTAINS
       !! * Modules used
 
       !! * Arguments
-      INTEGER :: klineno
+      INTEGER, INTENT(IN) :: klineno
       CHARACTER(LEN=*) :: cd_name
       !! * Local declarations
       CHARACTER(len=200) :: clineno
@@ -197,7 +193,7 @@ CONTAINS
       !! * Modules used
 
       !! * Arguments
-      INTEGER :: klineno
+      INTEGER, INTENT(IN) :: klineno
       CHARACTER(LEN=*) :: cd_name
       !! * Local declarations
       CHARACTER(len=200) :: clineno

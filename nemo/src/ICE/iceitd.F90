@@ -17,7 +17,7 @@ MODULE iceitd
    !!   ice_itd_init  : read ice thicknesses mean and min from namelist
    !!----------------------------------------------------------------------
    USE dom_oce        ! ocean domain
-   USE phycst         ! physical constants 
+   USE phycst         ! physical constants
    USE ice1D          ! sea-ice: thermodynamic variables
    USE ice            ! sea-ice: variables
    USE icevar         ! sea-ice: operations
@@ -28,6 +28,7 @@ MODULE iceitd
    USE lib_mpp        ! MPP library
    USE lib_fortran    ! fortran utilities (glob_sum + no signed zero)
    USE prtctl         ! Print control
+   USE timing         ! Timing
 
    IMPLICIT NONE
    PRIVATE
@@ -48,9 +49,11 @@ MODULE iceitd
    REAL(wp), DIMENSION(0:100) ::   rn_catbnd    ! ice categories bounds
    REAL(wp)                   ::   rn_himax     ! maximum ice thickness allowed
    !
+   !! * Substitutions
+#  include "do_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: iceitd.F90 13284 2020-07-09 15:12:23Z smasson $
+   !! $Id: iceitd.F90 15046 2021-06-23 10:46:01Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -62,17 +65,17 @@ CONTAINS
       !! ** Purpose :   computes the redistribution of ice thickness
       !!                after thermodynamic growth of ice thickness
       !!
-      !! ** Method  :   Linear remapping 
+      !! ** Method  :   Linear remapping
       !!
       !! References :   W.H. Lipscomb, JGR 2001
       !!------------------------------------------------------------------
-      INTEGER , INTENT (in) ::   kt      ! Ocean time step 
+      INTEGER , INTENT (in) ::   kt      ! Ocean time step
       !
       INTEGER  ::   ji, jj, jl, jcat     ! dummy loop index
       INTEGER  ::   ipti                 ! local integer
       REAL(wp) ::   zx1, zwk1, zdh0, zetamin, zdamax   ! local scalars
       REAL(wp) ::   zx2, zwk2, zda0, zetamax           !   -      -
-      REAL(wp) ::   zx3        
+      REAL(wp) ::   zx3
       REAL(wp) ::   zslope          ! used to compute local thermodynamic "speeds"
       !
       INTEGER , DIMENSION(jpij)       ::   iptidx          ! compute remapping or not
@@ -84,8 +87,9 @@ CONTAINS
       REAL(wp), DIMENSION(jpij)       ::   zhb0, zhb1      ! category boundaries for thinnes categories
       REAL(wp), DIMENSION(jpij,0:jpl) ::   zhbnew          ! new boundaries of ice categories
       !!------------------------------------------------------------------
+      IF( ln_timing )   CALL timing_start('iceitd_rem')
 
-      IF( kt == nit000 .AND. lwp )   WRITE(numout,*) '-- ice_itd_rem: remapping ice thickness distribution' 
+      IF( kt == nit000 .AND. lwp )   WRITE(numout,*) '-- ice_itd_rem: remapping ice thickness distribution'
 
       IF( ln_icediachk )   CALL ice_cons_hsm(0, 'iceitd_rem', rdiag_v, rdiag_s, rdiag_t, rdiag_fv, rdiag_fs, rdiag_ft)
       IF( ln_icediachk )   CALL ice_cons2D  (0, 'iceitd_rem',  diag_v,  diag_s,  diag_t,  diag_fv,  diag_fs,  diag_ft)
@@ -96,15 +100,13 @@ CONTAINS
       at_i(:,:) = SUM( a_i, dim=3 )
       !
       npti = 0   ;   nptidx(:) = 0
-      DO jj = 1, jpj
-         DO ji = 1, jpi
-            IF ( at_i(ji,jj) > epsi10 ) THEN
-               npti = npti + 1
-               nptidx( npti ) = (jj - 1) * jpi + ji
-            ENDIF
-         END DO
-      END DO
-      
+      DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
+         IF ( at_i(ji,jj) > epsi10 ) THEN
+            npti = npti + 1
+            nptidx( npti ) = (jj - 1) * jpi + ji
+         ENDIF
+      END_2D
+
       !-----------------------------------------------------------------------------------------------
       !  2) Compute new category boundaries
       !-----------------------------------------------------------------------------------------------
@@ -140,18 +142,23 @@ CONTAINS
                   zhbnew(ji,jl) = hi_max(jl) + zdhice(ji,jl)
                ELSEIF( a_ib_2d(ji,jl) <= epsi10 .AND. a_ib_2d(ji,jl+1) >  epsi10 ) THEN   ! a(jl)=0 => Hn* = Hn + fn+1*dt
                   zhbnew(ji,jl) = hi_max(jl) + zdhice(ji,jl+1)
-               ELSE                                                                       ! a(jl+1) & a(jl) = 0 
+               ELSE                                                                       ! a(jl+1) & a(jl) = 0
                   zhbnew(ji,jl) = hi_max(jl)
                ENDIF
                !
                ! --- 2 conditions for remapping --- !
-               ! 1) hn(t+1)+espi < Hn* < hn+1(t+1)-epsi               
-               !    Note: hn(t+1) must not be too close to either HR or HL otherwise a division by nearly 0 is possible 
+               ! 1) hn(t+1)+espi < Hn* < hn+1(t+1)-epsi
+               !    Note: hn(t+1) must not be too close to either HR or HL otherwise a division by nearly 0 is possible
                !          in itd_glinear in the case (HR-HL) = 3(Hice - HL) or = 3(HR - Hice)
+# if defined key_single
+               IF( a_i_2d(ji,jl  ) > epsi10 .AND. h_i_2d(ji,jl  ) > ( zhbnew(ji,jl) - epsi06 ) )   nptidx(ji) = 0
+               IF( a_i_2d(ji,jl+1) > epsi10 .AND. h_i_2d(ji,jl+1) < ( zhbnew(ji,jl) + epsi06 ) )   nptidx(ji) = 0
+# else
                IF( a_i_2d(ji,jl  ) > epsi10 .AND. h_i_2d(ji,jl  ) > ( zhbnew(ji,jl) - epsi10 ) )   nptidx(ji) = 0
                IF( a_i_2d(ji,jl+1) > epsi10 .AND. h_i_2d(ji,jl+1) < ( zhbnew(ji,jl) + epsi10 ) )   nptidx(ji) = 0
+# endif
                !
-               ! 2) Hn-1 < Hn* < Hn+1  
+               ! 2) Hn-1 < Hn* < Hn+1
                IF( zhbnew(ji,jl) < hi_max(jl-1) )   nptidx(ji) = 0
                IF( zhbnew(ji,jl) > hi_max(jl+1) )   nptidx(ji) = 0
                !
@@ -163,15 +170,20 @@ CONTAINS
             IF( a_i_2d(ji,jpl) > epsi10 ) THEN
                zhbnew(ji,jpl) = MAX( hi_max(jpl-1), 3._wp * h_i_2d(ji,jpl) - 2._wp * zhbnew(ji,jpl-1) )
             ELSE
-               zhbnew(ji,jpl) = hi_max(jpl)  
+               zhbnew(ji,jpl) = hi_max(jpl)
             ENDIF
             !
             ! --- 1 additional condition for remapping (1st category) --- !
-            ! H0+epsi < h1(t) < H1-epsi 
-            !    h1(t) must not be too close to either HR or HL otherwise a division by nearly 0 is possible 
+            ! H0+epsi < h1(t) < H1-epsi
+            !    h1(t) must not be too close to either HR or HL otherwise a division by nearly 0 is possible
             !    in itd_glinear in the case (HR-HL) = 3(Hice - HL) or = 3(HR - Hice)
+# if defined key_single
+            IF( h_ib_2d(ji,1) < ( hi_max(0) + epsi06 ) )   nptidx(ji) = 0
+            IF( h_ib_2d(ji,1) > ( hi_max(1) - epsi06 ) )   nptidx(ji) = 0
+# else
             IF( h_ib_2d(ji,1) < ( hi_max(0) + epsi10 ) )   nptidx(ji) = 0
             IF( h_ib_2d(ji,1) > ( hi_max(1) - epsi10 ) )   nptidx(ji) = 0
+# endif
          END DO
          !
          !-----------------------------------------------------------------------------------------------
@@ -189,15 +201,15 @@ CONTAINS
          npti      = ipti
          !
       ENDIF
-   
+
       !-----------------------------------------------------------------------------------------------
-      !  4) Compute g(h) 
+      !  4) Compute g(h)
       !-----------------------------------------------------------------------------------------------
       IF( npti > 0 ) THEN
          !
          zhb0(:) = hi_max(0)   ;   zhb1(:) = hi_max(1)
-         g0(:,:) = 0._wp       ;   g1(:,:) = 0._wp 
-         hL(:,:) = 0._wp       ;   hR(:,:) = 0._wp 
+         g0(:,:) = 0._wp       ;   g1(:,:) = 0._wp
+         hL(:,:) = 0._wp       ;   hR(:,:) = 0._wp
          !
          DO jl = 1, jpl
             !
@@ -207,7 +219,7 @@ CONTAINS
             CALL tab_2d_1d( npti, nptidx(1:npti), v_i_1d (1:npti), v_i  (:,:,jl) )
             !
             IF( jl == 1 ) THEN
-               !  
+               !
                ! --- g(h) for category 1 --- !
                CALL itd_glinear( zhb0(1:npti)  , zhb1(1:npti)  , h_ib_1d(1:npti)  , a_i_1d(1:npti)  ,  &   ! in
                   &              g0  (1:npti,1), g1  (1:npti,1), hL     (1:npti,1), hR    (1:npti,1)   )   ! out
@@ -217,7 +229,7 @@ CONTAINS
                   !
                   IF( a_i_1d(ji) > epsi10 ) THEN
                      !
-                     zdh0 =  h_i_1d(ji) - h_ib_1d(ji)                
+                     zdh0 =  h_i_1d(ji) - h_ib_1d(ji)
                      IF( zdh0 < 0.0 ) THEN      ! remove area from category 1
                         zdh0 = MIN( -zdh0, hi_max(1) )
                         !Integrate g(1) from 0 to dh0 to estimate area melted
@@ -225,9 +237,9 @@ CONTAINS
                         !
                         IF( zetamax > 0.0 ) THEN
                            zx1    = zetamax
-                           zx2    = 0.5 * zetamax * zetamax 
+                           zx2    = 0.5 * zetamax * zetamax
                            zda0   = g1(ji,1) * zx2 + g0(ji,1) * zx1                ! ice area removed
-                           zdamax = a_i_1d(ji) * (1.0 - h_i_1d(ji) / h_ib_1d(ji) ) ! Constrain new thickness <= h_i                
+                           zdamax = a_i_1d(ji) * (1.0 - h_i_1d(ji) / h_ib_1d(ji) ) ! Constrain new thickness <= h_i
                            zda0   = MIN( zda0, zdamax )                            ! ice area lost due to melting of thin ice (zdamax > 0)
                            ! Remove area, conserving volume
                            h_i_1d(ji) = h_i_1d(ji) * a_i_1d(ji) / ( a_i_1d(ji) - zda0 )
@@ -237,7 +249,7 @@ CONTAINS
                         !
                      ELSE ! if ice accretion zdh0 > 0
                         ! zhbnew was 0, and is shifted to the right to account for thin ice growth in openwater (F0 = f1)
-                        zhbnew(ji,0) = MIN( zdh0, hi_max(1) ) 
+                        zhbnew(ji,0) = MIN( zdh0, hi_max(1) )
                      ENDIF
                      !
                   ENDIF
@@ -250,12 +262,12 @@ CONTAINS
                !
             ENDIF ! jl=1
             !
-            ! --- g(h) for each thickness category --- !  
+            ! --- g(h) for each thickness category --- !
             CALL itd_glinear( zhbnew(1:npti,jl-1), zhbnew(1:npti,jl), h_i_1d(1:npti)   , a_i_1d(1:npti)   ,  &   ! in
                &              g0    (1:npti,jl  ), g1    (1:npti,jl), hL    (1:npti,jl), hR    (1:npti,jl)   )   ! out
             !
          END DO
-         
+
          !-----------------------------------------------------------------------------------------------
          !  5) Compute area and volume to be shifted across each boundary (Eq. 18)
          !-----------------------------------------------------------------------------------------------
@@ -265,7 +277,7 @@ CONTAINS
                !
                ! left and right integration limits in eta space
                IF (zhbnew(ji,jl) > hi_max(jl)) THEN ! Hn* > Hn => transfer from jl to jl+1
-                  zetamin = MAX( hi_max(jl)   , hL(ji,jl) ) - hL(ji,jl)   ! hi_max(jl) - hL 
+                  zetamin = MAX( hi_max(jl)   , hL(ji,jl) ) - hL(ji,jl)   ! hi_max(jl) - hL
                   zetamax = MIN( zhbnew(ji,jl), hR(ji,jl) ) - hL(ji,jl)   ! hR - hL
                   jdonor(ji,jl) = jl
                ELSE                                 ! Hn* <= Hn => transfer from jl+1 to jl
@@ -288,12 +300,12 @@ CONTAINS
                !
             END DO
          END DO
-         
+
          !----------------------------------------------------------------------------------------------
          ! 6) Shift ice between categories
          !----------------------------------------------------------------------------------------------
          CALL itd_shiftice ( jdonor(1:npti,:), zdaice(1:npti,:), zdvice(1:npti,:) )
-         
+
          !----------------------------------------------------------------------------------------------
          ! 7) Make sure h_i >= minimum ice thickness hi_min
          !----------------------------------------------------------------------------------------------
@@ -303,8 +315,8 @@ CONTAINS
          !
          DO ji = 1, npti
             IF ( a_i_1d(ji) > epsi10 .AND. h_i_1d(ji) < rn_himin ) THEN
-               a_i_1d(ji) = a_i_1d(ji) * h_i_1d(ji) / rn_himin 
-               IF( ln_pnd_LEV )   a_ip_1d(ji) = a_ip_1d(ji) * h_i_1d(ji) / rn_himin
+               a_i_1d(ji) = a_i_1d(ji) * h_i_1d(ji) / rn_himin
+               IF( ln_pnd_LEV .OR. ln_pnd_TOPO )   a_ip_1d(ji) = a_ip_1d(ji) * h_i_1d(ji) / rn_himin
                h_i_1d(ji) = rn_himin
             ENDIF
          END DO
@@ -317,6 +329,7 @@ CONTAINS
       !
       IF( ln_icediachk )   CALL ice_cons_hsm(1, 'iceitd_rem', rdiag_v, rdiag_s, rdiag_t, rdiag_fv, rdiag_fs, rdiag_ft)
       IF( ln_icediachk )   CALL ice_cons2D  (1, 'iceitd_rem',  diag_v,  diag_s,  diag_t,  diag_fv,  diag_fs,  diag_ft)
+      IF( ln_timing    )   CALL timing_stop ('iceitd_rem')
       !
    END SUBROUTINE ice_itd_rem
 
@@ -364,13 +377,16 @@ CONTAINS
             ENDIF
             !
             ! Compute coefficients of g(eta) = g0 + g1*eta
-            zdhr = 1._wp / (phR(ji) - phL(ji))
+            IF( phR(ji) > phL(ji) ) THEN   ;   zdhr = 1._wp / (phR(ji) - phL(ji))
+            ELSE                           ;   zdhr = 0._wp ! if hR=hL=hice => no remapping
+            ENDIF
+            !!zdhr = 1._wp / (phR(ji) - phL(ji))
             zwk1 = 6._wp * paice(ji) * zdhr
             zwk2 = ( phice(ji) - phL(ji) ) * zdhr
             pg0(ji) = zwk1 * ( z2_3 - zwk2 )                    ! Eq. 14
             pg1(ji) = 2._wp * zdhr * zwk1 * ( zwk2 - 0.5_wp )   ! Eq. 14
             !
-         ELSE  ! remap_flag = .false. or a_i < epsi10 
+         ELSE  ! remap_flag = .false. or a_i < epsi10
             phL(ji) = 0._wp
             phR(ji) = 0._wp
             pg0(ji) = 0._wp
@@ -401,7 +417,7 @@ CONTAINS
       REAL(wp), DIMENSION(jpij,nlay_i,jpl) ::   ze_i_2d
       REAL(wp), DIMENSION(jpij,nlay_s,jpl) ::   ze_s_2d
       !!------------------------------------------------------------------
-         
+
       CALL tab_3d_2d( npti, nptidx(1:npti), h_i_2d (1:npti,1:jpl), h_i  )
       CALL tab_3d_2d( npti, nptidx(1:npti), a_i_2d (1:npti,1:jpl), a_i  )
       CALL tab_3d_2d( npti, nptidx(1:npti), v_i_2d (1:npti,1:jpl), v_i  )
@@ -431,7 +447,7 @@ CONTAINS
             zaTsfn(ji,jl) = a_i_2d(ji,jl) * t_su_2d(ji,jl)
          END DO
       END DO
-      
+
       !-------------------------------------------------------------------------------
       ! 2) Transfer volume and energy between categories
       !-------------------------------------------------------------------------------
@@ -443,7 +459,7 @@ CONTAINS
             IF( jl1 > 0 ) THEN
                !
                IF ( jl1 == jl  ) THEN   ;   jl2 = jl1+1
-               ELSE                     ;   jl2 = jl 
+               ELSE                     ;   jl2 = jl
                ENDIF
                !
                IF( v_i_2d(ji,jl1) >= epsi10 ) THEN   ;   zworkv(ji) = pdvice(ji,jl) / v_i_2d(ji,jl1)
@@ -461,7 +477,7 @@ CONTAINS
                !
                ztrans         = v_s_2d(ji,jl1) * zworkv(ji)          ! Snow volumes
                v_s_2d(ji,jl1) = v_s_2d(ji,jl1) - ztrans
-               v_s_2d(ji,jl2) = v_s_2d(ji,jl2) + ztrans 
+               v_s_2d(ji,jl2) = v_s_2d(ji,jl2) + ztrans
                !
                ztrans          = oa_i_2d(ji,jl1) * zworka(ji)        ! Ice age
                oa_i_2d(ji,jl1) = oa_i_2d(ji,jl1) - ztrans
@@ -474,18 +490,18 @@ CONTAINS
                ztrans          = zaTsfn(ji,jl1) * zworka(ji)         ! Surface temperature
                zaTsfn(ji,jl1)  = zaTsfn(ji,jl1) - ztrans
                zaTsfn(ji,jl2)  = zaTsfn(ji,jl2) + ztrans
-               !  
-               IF ( ln_pnd_LEV ) THEN
+               !
+               IF ( ln_pnd_LEV .OR. ln_pnd_TOPO ) THEN
                   ztrans          = a_ip_2d(ji,jl1) * zworka(ji)     ! Pond fraction
                   a_ip_2d(ji,jl1) = a_ip_2d(ji,jl1) - ztrans
                   a_ip_2d(ji,jl2) = a_ip_2d(ji,jl2) + ztrans
-                  !                                              
-                  ztrans          = v_ip_2d(ji,jl1) * zworka(ji)     ! Pond volume (also proportional to da/a)
+                  !
+                  ztrans          = v_ip_2d(ji,jl1) * zworkv(ji)     ! Pond volume
                   v_ip_2d(ji,jl1) = v_ip_2d(ji,jl1) - ztrans
                   v_ip_2d(ji,jl2) = v_ip_2d(ji,jl2) + ztrans
                   !
                   IF ( ln_pnd_lids ) THEN                            ! Pond lid volume
-                     ztrans          = v_il_2d(ji,jl1) * zworka(ji)
+                     ztrans          = v_il_2d(ji,jl1) * zworkv(ji)
                      v_il_2d(ji,jl1) = v_il_2d(ji,jl1) - ztrans
                      v_il_2d(ji,jl2) = v_il_2d(ji,jl2) + ztrans
                   ENDIF
@@ -541,13 +557,17 @@ CONTAINS
          WHERE( zworka(1:npti) > rn_amax_1d(1:npti) )   &
             &   a_i_2d(1:npti,jl) = a_i_2d(1:npti,jl) * rn_amax_1d(1:npti) / zworka(1:npti)
       END DO
-      
+
       !-------------------------------------------------------------------------------
       ! 4) Update ice thickness and temperature
       !-------------------------------------------------------------------------------
+# if defined key_single
+      WHERE( a_i_2d(1:npti,:) >= epsi06 )
+# else
       WHERE( a_i_2d(1:npti,:) >= epsi20 )
-         h_i_2d (1:npti,:)  =  v_i_2d(1:npti,:) / a_i_2d(1:npti,:) 
-         t_su_2d(1:npti,:)  =  zaTsfn(1:npti,:) / a_i_2d(1:npti,:) 
+# endif
+         h_i_2d (1:npti,:)  =  v_i_2d(1:npti,:) / a_i_2d(1:npti,:)
+         t_su_2d(1:npti,:)  =  zaTsfn(1:npti,:) / a_i_2d(1:npti,:)
       ELSEWHERE
          h_i_2d (1:npti,:)  = 0._wp
          t_su_2d(1:npti,:)  = rt0
@@ -573,7 +593,7 @@ CONTAINS
       END DO
       !
    END SUBROUTINE itd_shiftice
-   
+
 
    SUBROUTINE ice_itd_reb( kt )
       !!------------------------------------------------------------------
@@ -585,14 +605,15 @@ CONTAINS
       !!              or entire (for top to down) area, volume, and energy
       !!              to the neighboring category
       !!------------------------------------------------------------------
-      INTEGER , INTENT (in) ::   kt      ! Ocean time step 
+      INTEGER , INTENT (in) ::   kt      ! Ocean time step
       INTEGER ::   ji, jj, jl   ! dummy loop indices
       !
       INTEGER , DIMENSION(jpij,jpl-1) ::   jdonor           ! donor category index
       REAL(wp), DIMENSION(jpij,jpl-1) ::   zdaice, zdvice   ! ice area and volume transferred
       !!------------------------------------------------------------------
+      IF( ln_timing )   CALL timing_start('iceitd_reb')
       !
-      IF( kt == nit000 .AND. lwp )   WRITE(numout,*) '-- ice_itd_reb: rebining ice thickness distribution' 
+      IF( kt == nit000 .AND. lwp )   WRITE(numout,*) '-- ice_itd_reb: rebining ice thickness distribution'
       !
       IF( ln_icediachk )   CALL ice_cons_hsm(0, 'iceitd_reb', rdiag_v, rdiag_s, rdiag_t, rdiag_fv, rdiag_fs, rdiag_ft)
       IF( ln_icediachk )   CALL ice_cons2D  (0, 'iceitd_reb',  diag_v,  diag_s,  diag_t,  diag_fv,  diag_fs,  diag_ft)
@@ -605,34 +626,29 @@ CONTAINS
       DO jl = 1, jpl-1        ! identify thicknesses that are too big
          !                    !---------------------------------------
          npti = 0   ;   nptidx(:) = 0
-         DO jj = 1, jpj
-            DO ji = 1, jpi
-               IF( a_i(ji,jj,jl) > 0._wp .AND. v_i(ji,jj,jl) > (a_i(ji,jj,jl) * hi_max(jl)) ) THEN
-                  npti = npti + 1
-                  nptidx( npti ) = (jj - 1) * jpi + ji                  
-               ENDIF
-            END DO
-         END DO
-         !
-!!clem   CALL tab_2d_1d( npti, nptidx(1:npti), h_i_1d(1:npti), h_i(:,:,jl) )
-         CALL tab_2d_1d( npti, nptidx(1:npti), a_i_1d(1:npti), a_i(:,:,jl) )
-         CALL tab_2d_1d( npti, nptidx(1:npti), v_i_1d(1:npti), v_i(:,:,jl) )
-         !
-         DO ji = 1, npti
-            jdonor(ji,jl)  = jl 
-            ! how much of a_i you send in cat sup is somewhat arbitrary
-!!clem: these do not work properly after a restart (I do not know why) => not sure it is still true
-!!          zdaice(ji,jl)  = a_i_1d(ji) * ( h_i_1d(ji) - hi_max(jl) + epsi10 ) / h_i_1d(ji)  
-!!          zdvice(ji,jl)  = v_i_1d(ji) - ( a_i_1d(ji) - zdaice(ji,jl) ) * ( hi_max(jl) - epsi10 )
-!!clem: these do not work properly after a restart (I do not know why) => not sure it is still true
-!!          zdaice(ji,jl)  = a_i_1d(ji)
-!!          zdvice(ji,jl)  = v_i_1d(ji)
-!!clem: these are from UCL and work ok
-            zdaice(ji,jl)  = a_i_1d(ji) * 0.5_wp
-            zdvice(ji,jl)  = v_i_1d(ji) - zdaice(ji,jl) * ( hi_max(jl) + hi_max(jl-1) ) * 0.5_wp
-         END DO
+         DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
+            IF( a_i(ji,jj,jl) > 0._wp .AND. v_i(ji,jj,jl) > (a_i(ji,jj,jl) * hi_max(jl)) ) THEN
+               npti = npti + 1
+               nptidx( npti ) = (jj - 1) * jpi + ji
+            ENDIF
+         END_2D
          !
          IF( npti > 0 ) THEN
+            !!clem   CALL tab_2d_1d( npti, nptidx(1:npti), h_i_1d(1:npti), h_i(:,:,jl) )
+            CALL tab_2d_1d( npti, nptidx(1:npti), a_i_1d(1:npti), a_i(:,:,jl) )
+            CALL tab_2d_1d( npti, nptidx(1:npti), v_i_1d(1:npti), v_i(:,:,jl) )
+            !
+            DO ji = 1, npti
+               jdonor(ji,jl)  = jl
+               ! how much of a_i you send in cat sup is somewhat arbitrary
+               ! these are from CICE => transfer everything
+               !!zdaice(ji,jl)  = a_i_1d(ji)
+               !!zdvice(ji,jl)  = v_i_1d(ji)
+               ! these are from LLN => transfer only half of the category
+               zdaice(ji,jl)  =                       0.5_wp  * a_i_1d(ji)
+               zdvice(ji,jl)  = v_i_1d(ji) - (1._wp - 0.5_wp) * a_i_1d(ji) * hi_mean(jl)
+            END DO
+            !
             CALL itd_shiftice( jdonor(1:npti,:), zdaice(1:npti,:), zdvice(1:npti,:) )  ! Shift jl=>jl+1
             ! Reset shift parameters
             jdonor(1:npti,jl) = 0
@@ -646,24 +662,22 @@ CONTAINS
       DO jl = jpl-1, 1, -1    ! Identify thicknesses that are too small
          !                    !-----------------------------------------
          npti = 0 ; nptidx(:) = 0
-         DO jj = 1, jpj
-            DO ji = 1, jpi
-               IF( a_i(ji,jj,jl+1) > 0._wp .AND. v_i(ji,jj,jl+1) <= (a_i(ji,jj,jl+1) * hi_max(jl)) ) THEN
-                  npti = npti + 1
-                  nptidx( npti ) = (jj - 1) * jpi + ji                  
-               ENDIF
-            END DO
-         END DO
-         !
-         CALL tab_2d_1d( npti, nptidx(1:npti), a_i_1d(1:npti), a_i(:,:,jl+1) ) ! jl+1 is ok
-         CALL tab_2d_1d( npti, nptidx(1:npti), v_i_1d(1:npti), v_i(:,:,jl+1) ) ! jl+1 is ok
-         DO ji = 1, npti
-            jdonor(ji,jl) = jl + 1
-            zdaice(ji,jl) = a_i_1d(ji) 
-            zdvice(ji,jl) = v_i_1d(ji)
-         END DO
+         DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
+            IF( a_i(ji,jj,jl+1) > 0._wp .AND. v_i(ji,jj,jl+1) <= (a_i(ji,jj,jl+1) * hi_max(jl)) ) THEN
+               npti = npti + 1
+               nptidx( npti ) = (jj - 1) * jpi + ji
+            ENDIF
+         END_2D
          !
          IF( npti > 0 ) THEN
+            CALL tab_2d_1d( npti, nptidx(1:npti), a_i_1d(1:npti), a_i(:,:,jl+1) ) ! jl+1 is ok
+            CALL tab_2d_1d( npti, nptidx(1:npti), v_i_1d(1:npti), v_i(:,:,jl+1) ) ! jl+1 is ok
+            DO ji = 1, npti
+               jdonor(ji,jl) = jl + 1
+               zdaice(ji,jl) = a_i_1d(ji)
+               zdvice(ji,jl) = v_i_1d(ji)
+            END DO
+            !
             CALL itd_shiftice( jdonor(1:npti,:), zdaice(1:npti,:), zdvice(1:npti,:) )  ! Shift jl+1=>jl
             ! Reset shift parameters
             jdonor(1:npti,jl) = 0
@@ -675,6 +689,7 @@ CONTAINS
       !
       IF( ln_icediachk )   CALL ice_cons_hsm(1, 'iceitd_reb', rdiag_v, rdiag_s, rdiag_t, rdiag_fv, rdiag_fs, rdiag_ft)
       IF( ln_icediachk )   CALL ice_cons2D  (1, 'iceitd_reb',  diag_v,  diag_s,  diag_t,  diag_fv,  diag_fs,  diag_ft)
+      IF( ln_timing    )   CALL timing_stop ('iceitd_reb')
       !
    END SUBROUTINE ice_itd_reb
 
@@ -694,10 +709,10 @@ CONTAINS
       NAMELIST/namitd/ ln_cat_hfn, rn_himean, ln_cat_usr, rn_catbnd, rn_himin, rn_himax
       !!------------------------------------------------------------------
       !
-      REWIND( numnam_ice_ref )      ! Namelist namitd in reference namelist : Parameters for ice
+      rn_catbnd(:) =  0._wp ! Circumvent possible initialization by compiler
+                            ! to prevent from errors when writing output
       READ  ( numnam_ice_ref, namitd, IOSTAT = ios, ERR = 901)
 901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namitd in reference namelist' )
-      REWIND( numnam_ice_cfg )      ! Namelist namitd in configuration namelist : Parameters for ice
       READ  ( numnam_ice_cfg, namitd, IOSTAT = ios, ERR = 902 )
 902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namitd in configuration namelist' )
       IF(lwm) WRITE( numoni, namitd )
@@ -710,15 +725,15 @@ CONTAINS
          WRITE(numout,*) '      Ice categories are defined by a function of rn_himean**(-0.05)    ln_cat_hfn = ', ln_cat_hfn
          WRITE(numout,*) '         mean ice thickness in the domain                               rn_himean  = ', rn_himean
          WRITE(numout,*) '      Ice categories are defined by rn_catbnd                           ln_cat_usr = ', ln_cat_usr
-         WRITE(numout,*) '      minimum ice thickness allowed                                     rn_himin   = ', rn_himin 
-         WRITE(numout,*) '      maximum ice thickness allowed                                     rn_himax   = ', rn_himax 
+         WRITE(numout,*) '      minimum ice thickness allowed                                     rn_himin   = ', rn_himin
+         WRITE(numout,*) '      maximum ice thickness allowed                                     rn_himax   = ', rn_himax
       ENDIF
       !
       !-----------------------------------!
       !  Thickness categories boundaries  !
       !-----------------------------------!
       !                             !== set the choice of ice categories ==!
-      ioptio = 0 
+      ioptio = 0
       IF( ln_cat_hfn ) THEN   ;   ioptio = ioptio + 1   ;   nice_catbnd = np_cathfn    ;   ENDIF
       IF( ln_cat_usr ) THEN   ;   ioptio = ioptio + 1   ;   nice_catbnd = np_catusr    ;   ENDIF
       IF( ioptio /= 1 )   CALL ctl_stop( 'ice_itd_init: choose one and only one ice categories boundaries' )

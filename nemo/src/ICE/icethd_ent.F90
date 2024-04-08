@@ -32,7 +32,7 @@ MODULE icethd_ent
 
    !!----------------------------------------------------------------------
    !! NEMO/ICE 4.0 , NEMO Consortium (2018)
-   !! $Id: icethd_ent.F90 13284 2020-07-09 15:12:23Z smasson $
+   !! $Id: icethd_ent.F90 14778 2021-05-03 08:58:22Z clem $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -120,7 +120,7 @@ CONTAINS
       DO jk1 = 1, nlay_i
          DO ji = 1, npti
             rswitch      = MAX( 0._wp , SIGN( 1._wp , zhnew(ji) - epsi20 ) ) 
-            qnew(ji,jk1) = rswitch * ( zeh_cum1(ji,jk1) - zeh_cum1(ji,jk1-1) ) / MAX( zhnew(ji), epsi20 )
+            qnew(ji,jk1) = rswitch * MAX( 0._wp, zeh_cum1(ji,jk1) - zeh_cum1(ji,jk1-1) ) / MAX( zhnew(ji), epsi20 ) ! max for roundoff error
          END DO
       END DO
 
@@ -128,7 +128,7 @@ CONTAINS
       ! comment: if input h_i_old and eh_i_old are already multiplied by a_i (as in icethd_do), 
       ! then we should not (* a_i) again but not important since this is just to check that remap error is ~0
       !DO ji = 1, npti
-      !   hfx_err_rem_1d(ji) = hfx_err_rem_1d(ji) + a_i_1d(ji) * r1_rdtice *  &
+      !   hfx_err_rem_1d(ji) = hfx_err_rem_1d(ji) + a_i_1d(ji) * r1_Dt_ice *  &
       !      &               ( SUM( qnew(ji,1:nlay_i) ) * zhnew(ji) - SUM( eh_i_old(ji,0:nlay_i+1) ) ) 
       !END DO
       

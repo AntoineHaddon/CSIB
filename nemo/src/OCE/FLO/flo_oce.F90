@@ -18,7 +18,7 @@ MODULE flo_oce
    !! float parameters
    !! ----------------
    LOGICAL, PUBLIC ::   ln_floats   !: Activate floats or not
-   INTEGER, PUBLIC ::   jpnfl       !: total number of floats during the run
+   INTEGER, PUBLIC ::   jpnfl = 0   !: total number of floats during the run
    INTEGER, PUBLIC ::   jpnnewflo   !: number of floats added in a new run
    INTEGER, PUBLIC ::   jpnrstflo   !: number of floats for the restart
 
@@ -45,7 +45,7 @@ MODULE flo_oce
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: flo_oce.F90 11536 2019-09-11 13:54:18Z smasson $ 
+   !! $Id: flo_oce.F90 13558 2020-10-02 15:30:22Z smasson $ 
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS

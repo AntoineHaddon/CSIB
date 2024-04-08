@@ -24,11 +24,9 @@ MODULE usrdef_zgr
 
    PUBLIC   usr_def_zgr   ! called by domzgr.F90
 
-  !! * Substitutions
-#  include "vectopt_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: usrdef_zgr.F90 12598 2020-03-25 09:02:31Z smasson $
+   !! $Id: usrdef_zgr.F90 12597 2020-03-25 08:57:21Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS             

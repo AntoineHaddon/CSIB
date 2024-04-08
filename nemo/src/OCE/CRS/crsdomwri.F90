@@ -26,7 +26,7 @@ MODULE crsdomwri
 
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: crsdomwri.F90 10425 2018-12-19 21:54:16Z smasson $
+   !! $Id: crsdomwri.F90 13286 2020-07-09 15:48:29Z smasson $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 CONTAINS
@@ -49,7 +49,6 @@ CONTAINS
       !!----------------------------------------------------------------------
       INTEGER           ::   ji, jj, jk   ! dummy loop indices
       INTEGER           ::   inum         ! local units for 'mesh_mask.nc' file
-      INTEGER           ::   iif, iil, ijf, ijl
       CHARACTER(len=21) ::   clnam        ! filename (mesh and mask informations)
       !                                   !  workspace
       REAL(wp), DIMENSION(jpi_crs,jpj_crs    ) ::   zprt, zprw 
@@ -75,38 +74,9 @@ CONTAINS
       CALL iom_rstput( 0, 0, inum, 'vmask', vmask_crs, ktype = jp_i1 )
       CALL iom_rstput( 0, 0, inum, 'fmask', fmask_crs, ktype = jp_i1 )
       
-      
-      tmask_i_crs(:,:) = tmask_crs(:,:,1)
-      iif = nn_hls
-      iil = nlci_crs - nn_hls + 1
-      ijf = nn_hls
-      ijl = nlcj_crs - nn_hls + 1
-     
-      tmask_i_crs( 1:iif ,    :  ) = 0._wp
-      tmask_i_crs(iil:jpi_crs,    :  ) = 0._wp
-      tmask_i_crs(   :   , 1:ijf ) = 0._wp
-      tmask_i_crs(   :   ,ijl:jpj_crs) = 0._wp
-      
-      
-      tpol_crs(1:jpiglo_crs,:) = 1._wp
-      fpol_crs(1:jpiglo_crs,:) = 1._wp
-      IF( jperio == 3 .OR. jperio == 4 ) THEN
-         tpol_crs(jpiglo_crs/2+1:jpiglo_crs,:) = 0._wp
-         fpol_crs(       1      :jpiglo_crs,:) = 0._wp
-         IF( mjg_crs(nlej_crs) == jpiglo_crs ) THEN
-            DO ji = iif+1, iil-1
-               tmask_i_crs(ji,nlej_crs-1) = tmask_i_crs(ji,nlej_crs-1) &
-               & * tpol_crs(mig_crs(ji),1)
-            ENDDO
-         ENDIF
-      ENDIF
-      IF( jperio == 5 .OR. jperio == 6 ) THEN
-         tpol_crs(      1       :jpiglo_crs,:)=0._wp
-         fpol_crs(jpiglo_crs/2+1:jpiglo_crs,:)=0._wp
-      ENDIF
-      
-      CALL iom_rstput( 0, 0, inum, 'tmaskutil', tmask_i_crs, ktype = jp_i1 )
-                                   !    ! unique point mask
+      CALL dom_uniq_crs( zprw, 'T' )
+      zprt = tmask_crs(:,:,1) * zprw
+      CALL iom_rstput( 0, 0, inum, 'tmaskutil', zprt, ktype = jp_i1 )
       CALL dom_uniq_crs( zprw, 'U' )
       zprt = umask_crs(:,:,1) * zprw
       CALL iom_rstput( 0, 0, inum, 'umaskutil', zprt, ktype = jp_i1 )  
@@ -154,13 +124,13 @@ CONTAINS
       CALL iom_rstput( 0, 0, inum, 'gdept', gdept_crs, ktype = jp_r4 ) 
       DO jk = 1,jpk   
          DO jj = 1, jpj_crsm1   
-            DO ji = 1, jpi_crsm1  ! jes what to do for fs_jpim1??vector opt.
+            DO ji = 1, jpi_crsm1  ! jes what to do for jpim1??vector opt.
                zdepu(ji,jj,jk) = MIN( gdept_crs(ji,jj,jk) , gdept_crs(ji+1,jj  ,jk) ) * umask_crs(ji,jj,jk)
                zdepv(ji,jj,jk) = MIN( gdept_crs(ji,jj,jk) , gdept_crs(ji  ,jj+1,jk) ) * vmask_crs(ji,jj,jk)
             END DO   
          END DO   
       END DO
-      CALL crs_lbc_lnk( zdepu,'U', 1. )   ;   CALL crs_lbc_lnk( zdepv,'V', 1. ) 
+      CALL crs_lbc_lnk( zdepu,'U', 1.0_wp )   ;   CALL crs_lbc_lnk( zdepv,'V', 1.0_wp ) 
       !
       CALL iom_rstput( 0, 0, inum, 'gdepu', zdepu, ktype = jp_r4 )
       CALL iom_rstput( 0, 0, inum, 'gdepv', zdepv, ktype = jp_r4 )
@@ -210,28 +180,24 @@ CONTAINS
       !
       REAL(wp) ::  zshift   ! shift value link to the process number
       INTEGER  ::  ji       ! dummy loop indices
-      LOGICAL, DIMENSION(SIZE(puniq,1),SIZE(puniq,2),1) ::  lldbl  ! store whether each point is unique or not
-      REAL(wp), DIMENSION(jpi_crs,jpj_crs) :: ztstref
+      LOGICAL , DIMENSION(jpi_crs,jpj_crs,1) ::   lluniq  ! store whether each point is unique or not
+      REAL(wp), DIMENSION(jpi_crs,jpj_crs  ) ::   ztstref
       !!----------------------------------------------------------------------
       !
       ! build an array with different values for each element 
       ! in mpp: make sure that these values are different even between process
       ! -> apply a shift value according to the process number
-      zshift = jpi_crs * jpj_crs * ( narea - 1 )
+      zshift = (jpi_crs+1.) * (jpj_crs+1.) * ( narea - 1 )   ! we should use jpimax_crs but not existing
       ztstref(:,:) = RESHAPE( (/ (zshift + REAL(ji,wp), ji = 1, jpi_crs*jpj_crs) /), (/ jpi_crs, jpj_crs /) )
       !
       puniq(:,:) = ztstref(:,:)                   ! default definition
-      CALL crs_lbc_lnk( puniq,cdgrd, 1. )            ! apply boundary conditions
-      lldbl(:,:,1) = puniq(:,:) == ztstref(:,:)   ! check which values have been changed 
+      CALL crs_lbc_lnk( puniq,cdgrd, 1.0_wp )            ! apply boundary conditions
+      lluniq(:,:,1) = puniq(:,:) == ztstref(:,:)   ! check which values have been changed 
       !
-      puniq(:,:) = 1.                             ! default definition
-      ! fill only the inner part of the cpu with llbl converted into real 
-      puniq(nldi_crs:nlei_crs,nldj_crs:nlej_crs) = REAL( COUNT( lldbl(nldi_crs:nlei_crs,nldj_crs:nlej_crs,:), dim = 3 ) , wp )
+      puniq(:,:) = REAL( COUNT( lluniq(:,:,:), dim = 3 ), wp )
       !
    END SUBROUTINE dom_uniq_crs
 
    !!======================================================================
 
 END MODULE crsdomwri
-
-

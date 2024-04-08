@@ -28,7 +28,7 @@ MODULE usrdef_nam
    !!----------------------------------------------------------------------
 CONTAINS
 
-   SUBROUTINE usr_def_nam( cd_cfg, kk_cfg, kpi, kpj, kpk, kperio )
+   SUBROUTINE usr_def_nam( cd_cfg, kk_cfg, kpi, kpj, kpk, ldIperio, ldJperio, ldNFold, cdNFtype )
       !!----------------------------------------------------------------------
       !!                     ***  ROUTINE dom_nam  ***
       !!                    
@@ -40,27 +40,29 @@ CONTAINS
       !!
       !! ** input   : - namusr_def namelist found in namelist_cfg
       !!----------------------------------------------------------------------
-      CHARACTER(len=*)              , INTENT(out) ::   cd_cfg          ! configuration name
-      INTEGER                       , INTENT(out) ::   kk_cfg          ! configuration resolution
-      INTEGER                       , INTENT(out) ::   kpi, kpj, kpk   ! global domain sizes 
-      INTEGER                       , INTENT(out) ::   kperio          ! lateral global domain b.c. 
-      !
+      CHARACTER(len=*), INTENT(out) ::   cd_cfg               ! configuration name
+      INTEGER         , INTENT(out) ::   kk_cfg               ! configuration resolution
+      INTEGER         , INTENT(out) ::   kpi, kpj, kpk        ! global domain sizes 
+      LOGICAL         , INTENT(out) ::   ldIperio, ldJperio   ! i- and j- periodicity
+      LOGICAL         , INTENT(out) ::   ldNFold              ! North pole folding
+      CHARACTER(len=1), INTENT(out) ::   cdNFtype             ! Folding type: T or F
       !
       INTEGER ::   ios         ! Local integer
       !                              !!* namusr_def namelist *!!
       INTEGER ::   nn_isize    ! number of point in i-direction of global(local) domain if >0 (<0)  
       INTEGER ::   nn_jsize    ! number of point in j-direction of global(local) domain if >0 (<0)  
       INTEGER ::   nn_ksize    ! total number of point in k-direction
-      INTEGER ::   nn_perio    ! periodicity
       !                              !!* nammpp namelist *!!
       INTEGER          ::   jpni, jpnj
-      LOGICAL          ::   ln_nnogather, ln_listonly
+      LOGICAL          ::   ln_listonly
+      LOGICAL          ::   ln_Iperio, ln_Jperio
+      LOGICAL          ::   ln_NFold
+      character(len=1) ::   cn_NFtype
       !!
-      NAMELIST/namusr_def/ nn_isize, nn_jsize, nn_ksize, nn_perio
-      NAMELIST/nammpp/ jpni, jpnj, ln_nnogather, ln_listonly
+      NAMELIST/namusr_def/ nn_isize, nn_jsize, nn_ksize, ln_Iperio, ln_Jperio, ln_NFold, cn_NFtype
+      NAMELIST/nammpp/ jpni, jpnj, nn_hls, ln_nnogather, ln_listonly, nn_comm
       !!----------------------------------------------------------------------     
       !
-      REWIND( numnam_cfg )          ! Namelist namusr_def (exist in namelist_cfg only)
       READ  ( numnam_cfg, namusr_def, IOSTAT = ios, ERR = 903 )
 903   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namusr_def in configuration namelist' )
       !
@@ -71,23 +73,23 @@ CONTAINS
       !
       IF( nn_isize < 0 .AND. nn_jsize < 0 ) THEN
       !
-         REWIND( numnam_ref )              ! Namelist nammpp in reference namelist: mpi variables
          READ  ( numnam_ref, nammpp, IOSTAT = ios, ERR = 901)
 901      IF( ios /= 0 )   CALL ctl_nam ( ios , 'nammpp in reference namelist' )
          !
-         REWIND( numnam_cfg )              ! Namelist nammpp in configuration namelist: mpi variables
          READ  ( numnam_cfg, nammpp, IOSTAT = ios, ERR = 902 )
 902      IF( ios >  0 )   CALL ctl_nam ( ios , 'nammpp in configuration namelist' )
 
-         kpi = ( -nn_isize - 2*nn_hls ) * jpni + 2*nn_hls
-         kpj = ( -nn_jsize - 2*nn_hls ) * jpnj + 2*nn_hls
+         kpi = -nn_isize * jpni
+         kpj = -nn_jsize * jpnj
       ELSE
          kpi = nn_isize
          kpj = nn_jsize
       ENDIF
-      !
       kpk = nn_ksize
-      kperio = nn_perio
+      !
+      ldIperio = ln_Iperio   ;   ldJperio = ln_Jperio
+      ldNFold  = ln_NFold    ;   cdNFtype = cn_NFtype
+      !
       !                             ! control print
       IF(lwp) THEN
          WRITE(numout,*) '   '
@@ -109,7 +111,7 @@ CONTAINS
             WRITE(numout,*) '      global domain size-y                 kpj = ', kpj
          ENDIF
          WRITE(numout,*) '      global domain size-z            nn_ksize = ', nn_ksize
-         WRITE(numout,*) '      LBC of the global domain          kperio = ', kperio
+         WRITE(numout,*) '   '
       ENDIF
       !
    END SUBROUTINE usr_def_nam

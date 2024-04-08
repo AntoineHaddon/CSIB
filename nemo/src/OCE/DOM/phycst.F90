@@ -6,9 +6,9 @@ MODULE phycst
    !! History :   OPA  !  1990-10  (C. Levy - G. Madec)  Original code
    !!             8.1  !  1991-11  (G. Madec, M. Imbard)  cosmetic changes
    !!   NEMO      1.0  !  2002-08  (G. Madec, C. Ethe)  F90, add ice constants
-   !!              -   !  2006-08  (G. Madec)  style 
-   !!             3.2  !  2006-08  (S. Masson, G. Madec)  suppress useless variables + style 
-   !!             3.4  !  2011-11  (C. Harris)  minor changes for CICE constants 
+   !!              -   !  2006-08  (G. Madec)  style
+   !!             3.2  !  2006-08  (S. Masson, G. Madec)  suppress useless variables + style
+   !!             3.4  !  2011-11  (C. Harris)  minor changes for CICE constants
    !!----------------------------------------------------------------------
 
    !!----------------------------------------------------------------------
@@ -25,7 +25,7 @@ MODULE phycst
    REAL(wp), PUBLIC ::   rpi      = 3.141592653589793_wp             !: pi
    REAL(wp), PUBLIC ::   rad      = 3.141592653589793_wp / 180._wp   !: conversion from degre into radian
    REAL(wp), PUBLIC ::   rsmall   = 0.5 * EPSILON( 1.e0 )            !: smallest real computer value
-   
+
    REAL(wp), PUBLIC ::   rday     = 24.*60.*60.      !: day                                [s]
    REAL(wp), PUBLIC ::   rsiyea                      !: sideral year                       [s]
    REAL(wp), PUBLIC ::   rsiday                      !: sideral day                        [s]
@@ -35,15 +35,15 @@ MODULE phycst
    REAL(wp), PUBLIC ::   rmmss    =  60._wp          !: number of seconds in one minute
    REAL(wp), PUBLIC ::   omega                       !: earth rotation parameter           [s-1]
    REAL(wp), PUBLIC ::   ra       = 6371229._wp      !: earth radius                       [m]
-   REAL(wp), PUBLIC ::   grav     = 9.80665_wp       !: gravity                            [m/s2]   
+   REAL(wp), PUBLIC ::   grav     = 9.80665_wp       !: gravity                            [m/s2]
    REAL(wp), PUBLIC ::   rt0      = 273.15_wp        !: freezing point of fresh water [Kelvin]
 
-   REAL(wp), PUBLIC ::   rau0                        !: volumic mass of reference     [kg/m3]
-   REAL(wp), PUBLIC ::   r1_rau0                     !: = 1. / rau0                   [m3/kg]
+   REAL(wp), PUBLIC ::   rho0                        !: volumic mass of reference     [kg/m3]
+   REAL(wp), PUBLIC ::   r1_rho0                     !: = 1. / rho0                   [m3/kg]
    REAL(wp), PUBLIC ::   rcp                         !: ocean specific heat           [J/Kelvin]
    REAL(wp), PUBLIC ::   r1_rcp                      !: = 1. / rcp                    [Kelvin/J]
-   REAL(wp), PUBLIC ::   rau0_rcp                    !: = rau0 * rcp 
-   REAL(wp), PUBLIC ::   r1_rau0_rcp                 !: = 1. / ( rau0 * rcp )
+   REAL(wp), PUBLIC ::   rho0_rcp                    !: = rho0 * rcp
+   REAL(wp), PUBLIC ::   r1_rho0_rcp                 !: = 1. / ( rho0 * rcp )
 
    REAL(wp), PUBLIC ::   emic     =    0.97_wp       !: emissivity of snow or ice (not used?)
 
@@ -51,7 +51,8 @@ MODULE phycst
    REAL(wp), PUBLIC ::   soce     =   34.7_wp        !: salinity of sea (for pisces and isf)  [psu]
    REAL(wp), PUBLIC ::   rLevap   =    2.5e+6_wp     !: latent heat of evaporation (water)
    REAL(wp), PUBLIC ::   vkarmn   =    0.4_wp        !: von Karman constant
-   REAL(wp), PUBLIC ::   stefan   =    5.67e-8_wp    !: Stefan-Boltzmann constant 
+   REAL(wp), PUBLIC ::   vkarmn2  =    0.4_wp*0.4_wp !: square of von Karman constant
+   REAL(wp), PUBLIC ::   stefan   =    5.67e-8_wp    !: Stefan-Boltzmann constant
 
    REAL(wp), PUBLIC ::   rhos     =  330._wp         !: volumic mass of snow                                  [kg/m3]
    REAL(wp), PUBLIC ::   rhoi     =  917._wp         !: volumic mass of sea ice                               [kg/m3]
@@ -65,14 +66,15 @@ MODULE phycst
    REAL(wp), PUBLIC ::   r1_rhoi                     !: 1 / rhoi
    REAL(wp), PUBLIC ::   r1_rhos                     !: 1 / rhos
    REAL(wp), PUBLIC ::   r1_rcpi                     !: 1 / rcpi
+
    !!----------------------------------------------------------------------
    !! NEMO/OCE 4.0 , NEMO Consortium (2018)
-   !! $Id: phycst.F90 10068 2018-08-28 14:09:04Z nicolasmartin $ 
+   !! $Id: phycst.F90 14072 2020-12-04 07:48:38Z laurent $
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
-   
+
 CONTAINS
-   
+
    SUBROUTINE phy_cst
       !!----------------------------------------------------------------------
       !!                       ***  ROUTINE phy_cst  ***
@@ -85,7 +87,7 @@ CONTAINS
 #if defined key_cice
       omega  = 7.292116e-05
 #else
-      omega  = 2._wp * rpi / rsiday 
+      omega  = 2._wp * rpi / rsiday
 #endif
 
       r1_rhoi = 1._wp / rhoi
@@ -124,8 +126,8 @@ CONTAINS
          WRITE(numout,*) '      density of freshwater (in melt ponds)     = ', rhow    , ' kg/m^3'
          WRITE(numout,*) '      salinity of ice (for pisces)              = ', sice    , ' psu'
          WRITE(numout,*) '      salinity of sea (for pisces and isf)      = ', soce    , ' psu'
-         WRITE(numout,*) '      latent heat of evaporation (water)        = ', rLevap  , ' J/m^3' 
-         WRITE(numout,*) '      von Karman constant                       = ', vkarmn 
+         WRITE(numout,*) '      latent heat of evaporation (water)        = ', rLevap  , ' J/m^3'
+         WRITE(numout,*) '      von Karman constant                       = ', vkarmn
          WRITE(numout,*) '      Stefan-Boltzmann constant                 = ', stefan  , ' J/s/m^2/K^4'
          WRITE(numout,*)
          WRITE(numout,*) '      conversion: degre ==> radian          rad = ', rad
