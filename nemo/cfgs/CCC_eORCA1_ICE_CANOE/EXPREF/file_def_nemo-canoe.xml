@@ -61,7 +61,6 @@
           <field field_ref="Cflx"        level="0" />
           <field field_ref="Oflx"        level="0" />
           
-          <field field_ref="Kg"          level="0" />
           <field field_ref="KgCO2"       level="0" />
           <field field_ref="KgO2"        level="0" />
           
