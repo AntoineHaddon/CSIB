@@ -492,6 +492,43 @@ echo "#################### Start NEMO pre-processing #################"
         acc_cp precip_y${yearc}.nc           ${nemo_precip}_y${forcing_year}.nc
         acc_cp snow_y${yearc}.nc             ${nemo_snow}_y${forcing_year}.nc
         acc_cp runoff_y${yearc}.nc           ${nemo_runoff}_y${forcing_year}.nc
+        acc_cp sst_data.nc            $nemo_sst_data
+        acc_cp sss_data.nc            $nemo_sss_data
+      elif [[ "$runmode" == "OCN-CanESM5-piControl" ]]; then
+        # Forcing files to be accessed
+        # In the case of interannual forcing, just give the file prefix. The ${prefix}_yYYYY.nc will be added.
+        nemo_t=urdy_tas_pi
+        nemo_u=urdy_uas_pi
+        nemo_v=urdy_vas_pi
+        nemo_q=urdy_huss_pi
+        nemo_qsw=urdy_rsds_pi
+        nemo_qlw=urdy_rlds_pi
+        nemo_precip=urdy_pr_pi
+        nemo_snow=urdy_prsn_pi
+        nemo_runoff=friver_1m_canesm5-orca1_pi_r1i1p2f1_gn
+        nemo_sss_data=sos_1m_canesm5-orca1_pi_r1i1p2f1_gn
+        # WEIGHTS file for this resolution
+        nemo_weights_bicubic2=uncs_orca1_canesm2_weights_bicubic.nc
+        nemo_weights_bilinear2=uncs_orca1_canesm2_weights_bilin.nc
+
+        yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
+        yearca=`expr ${current_year} - ${year_run_start} + 1 | awk  '{printf "%04d",$1}'`
+        fy=`expr ${yearca} + ${iaf_year_offset} | awk  '{printf "%04d",$1}'`
+        yd=`expr ${iaf_loop_year} - ${iaf_year_offset}`
+        fyl=`expr ${fy} - '(' '(' ${yearca} - 1 ')' / ${yd} ')' \* ${yd}`
+        forcing_year=`expr ${fyl} | awk  '{printf "%04d",$1}'`
+
+        # link to the interranual forcing
+        acc_cp tas_pi_y${yearc}.nc          ${nemo_t}_y${forcing_year}.nc
+        acc_cp uas_pi_y${yearc}.nc          ${nemo_u}_y${forcing_year}.nc
+        acc_cp vas_pi_y${yearc}.nc          ${nemo_v}_y${forcing_year}.nc
+        acc_cp huss_pi_y${yearc}.nc          ${nemo_q}_y${forcing_year}.nc
+        acc_cp rsds_pi_y${yearc}.nc              ${nemo_qsw}_y${forcing_year}.nc
+        acc_cp rlds_pi_y${yearc}.nc              ${nemo_qlw}_y${forcing_year}.nc
+        acc_cp pr_pi_y${yearc}.nc           ${nemo_precip}_y${forcing_year}.nc
+        acc_cp prsn_pi_y${yearc}.nc             ${nemo_snow}_y${forcing_year}.nc
+        acc_cp runoff_y${yearc}.nc           ${nemo_runoff}_y${forcing_year}.nc
+        acc_cp sss_data_y${yearc}.nc            ${nemo_sss_data}_y${forcing_year}.nc
       elif  [[ "$runmode" == "CORE-NY" ]]; then
         nemo_t=uncs_corev2-ny_t_10.15JUNE2009.nc
         nemo_u=uncs_corev2-ny_u_10.15JUNE2009.nc
