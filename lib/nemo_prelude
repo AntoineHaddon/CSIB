@@ -123,9 +123,6 @@ echo "#################### Start NEMO pre-processing #################"
   nemo_K1rowdrg=${nemo_K1rowdrg:=nemo_3.4_orca1_k1rowdrg_r1_modif.nc}
   nemo_Eddyengf=${nemo_Eddyengf:=nemo_3.4_orca1_eddy_mix.nc}
 #  nemo_geothermal_heating=${nemo_geothermal_heating:=nemo_3.3_orca2_geothermal_heating.nc}
-  nemo_runoff_core_monthly=${nemo_runoff_core_monthly:=nemo_3.4_orca1_runoff_1m_orca1.nc}
-  nemo_sst_data=${nemo_sst_data:=nemo_3.4_orca1_sst_1m_orca1.nc}
-  nemo_sss_data=${nemo_sss_data:=omip6_orca1_data_sss_nomask.nc}
   nemo_chlorophyll=${nemo_chlorophyll:=nemo_3.4_orca1_chlorophyll-orca1_1m.nc}
   nemo_subbasins=${nemo_subbasins:=nemo_3.4_orca1_basinmask_050308_ukmo_modified.nc}
   nemo_o2=${nemo_o2:=urdy_fafmip_hfds_orca1_record.nc}
@@ -427,9 +424,6 @@ echo "#################### Start NEMO pre-processing #################"
   is_zero_size K1rowdrg.nc            && acc_cp K1rowdrg.nc            $nemo_K1rowdrg
   is_zero_size Eddyengf.nc            && acc_cp Eddyengf.nc            $nemo_Eddyengf
 #  is_zero_size geothermal_heating.nc  && acc_cp geothermal_heating.nc  $nemo_geothermal_heating
-  is_zero_size runoff_core_monthly.nc && acc_cp runoff_core_monthly.nc $nemo_runoff_core_monthly
-  is_zero_size sss_data.nc            && acc_cp sss_data.nc            $nemo_sss_data
-  is_zero_size sst_data.nc            && acc_cp sst_data.nc            $nemo_sst_data
   is_zero_size chlorophyll.nc         && acc_cp chlorophyll.nc         $nemo_chlorophyll
   is_zero_size subbasins.nc           && acc_cp subbasins.nc           $nemo_subbasins
 
@@ -475,6 +469,8 @@ echo "#################### Start NEMO pre-processing #################"
         nemo_precip=omip6_orca1_corev2_ncar_precip
         nemo_snow=omip6_orca1_corev2_ncar_precip
         nemo_runoff=omip6_orca1_corev2_runoff
+        nemo_sst_data=nemo_3.4_orca1_sst_1m_orca1.nc
+        nemo_sss_data=omip6_orca1_data_sss_nomask.nc
         # WEIGHTS file for this resolution (leave empty when not used)
         nemo_weights_bicubic2=
         nemo_weights_bilinear2=
@@ -505,7 +501,9 @@ echo "#################### Start NEMO pre-processing #################"
         nemo_qlw=uncs_corev2-ny_ncar_rad.15JUNE2009.nc
         nemo_precip=uncs_corev2-ny_ncar_precip.15JUNE2009.nc
         nemo_snow=uncs_corev2-ny_ncar_precip.15JUNE2009.nc
-        nemo_runoff=nemo_3.4_orca1_runoff_1m_orca1.nc
+        nemo_runoff_core_monthly=nemo_3.4_orca1_runoff_1m_orca1.nc
+        nemo_sst_data=nemo_3.4_orca1_sst_1m_orca1.nc
+        nemo_sss_data=omip6_orca1_data_sss_nomask.nc
         # WEIGHTS file for this resolution 
         nemo_weights_bicubic2=uncs_orca1_corev2_weights_bicubic.nc
         nemo_weights_bilinear2=uncs_orca1_corev2_weights_bilin.nc
@@ -519,12 +517,17 @@ echo "#################### Start NEMO pre-processing #################"
         acc_cp qlw.nc              ${nemo_qlw}
         acc_cp precip.nc           ${nemo_precip}
         acc_cp snow.nc             ${nemo_snow}
-        acc_cp runoff.nc           ${nemo_runoff}
+        acc_cp runoff_core_monthly.nc $nemo_runoff_core_monthly
+        acc_cp sst_data.nc            $nemo_sst_data
+        acc_cp sss_data.nc            $nemo_sss_data
 
       fi
       is_defined $nemo_weights_bicubic2 && acc_cp weights_bic2.nc $nemo_weights_bicubic2
       is_defined $nemo_weights_bilinear2 && acc_cp weights_bil2.nc $nemo_weights_bilinear2
 
+  else
+        nemo_runoff_core_monthly=nemo_3.4_orca1_runoff_1m_orca1.nc
+        acc_cp runoff_core_monthly.nc $nemo_runoff_core_monthly
   fi
 
   if (( nemo_carbon == 1 )); then
