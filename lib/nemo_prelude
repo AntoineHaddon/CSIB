@@ -538,7 +538,7 @@ echo "#################### Start NEMO pre-processing #################"
         nemo_qlw=uncs_corev2-ny_ncar_rad.15JUNE2009.nc
         nemo_precip=uncs_corev2-ny_ncar_precip.15JUNE2009.nc
         nemo_snow=uncs_corev2-ny_ncar_precip.15JUNE2009.nc
-        nemo_runoff_core_monthly=nemo_3.4_orca1_runoff_1m_orca1.nc
+        nemo_runoff_core_monthly=uncs_corev2-ny_runoff.15june2009.nc
         nemo_sst_data=nemo_3.4_orca1_sst_1m_orca1.nc
         nemo_sss_data=omip6_orca1_data_sss_nomask.nc
         # WEIGHTS file for this resolution 
