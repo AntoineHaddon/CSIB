@@ -106,7 +106,7 @@
                      ! Type of air-sea fluxes
                      !   ln_blk or ln_cpl will be set to true by config-canesm
    ln_flx      = .false.   !  flux formulation                          (T => fill namsbc_flx )
-   ln_blk      = .false.    !  Bulk formulation                          (T => fill namsbc_blk )
+   ln_blk      = .true.    !  Bulk formulation                          (T => fill namsbc_blk )
       !              ! Type of coupling (Ocean/Ice/Atmosphere) :
    ln_cpl      = .false.   !  atmosphere coupled   formulation          ( requires key_oasis3 )
      lk_cancpl   = .false.    !  CanCPL coupler 
