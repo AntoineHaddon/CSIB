@@ -22,8 +22,8 @@ MODULE ice_2
    REAL(wp), PUBLIC ::   rdt_ice   !: ice time step
 
    !                                                                     !!* namicerun read in iceini  *
-   CHARACTER(len=32)     , PUBLIC ::   cn_icerst_in  = "restart_ice_in"   !: suffix of ice restart name (input)
-   CHARACTER(len=32)     , PUBLIC ::   cn_icerst_out = "restart_ice"      !: suffix of ice restart name (output)
+   CHARACTER(len=lc)     , PUBLIC ::   cn_icerst_in  = "restart_ice_in"   !: suffix of ice restart name (input)
+   CHARACTER(len=lc)     , PUBLIC ::   cn_icerst_out = "restart_ice"      !: suffix of ice restart name (output)
    LOGICAL               , PUBLIC ::   ln_limdyn     = .TRUE.             !: flag for ice dynamics (T) or not (F)
    LOGICAL               , PUBLIC ::   ln_limdmp     = .FALSE.            !: Ice damping
    LOGICAL               , PUBLIC ::   ln_nicep      = .TRUE.             !: flag grid points output (T) or not (F)
