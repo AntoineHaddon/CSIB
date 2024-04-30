@@ -74,7 +74,7 @@ CONTAINS
       IF ( lwp )  WRITE(numout,*) 'trc_closea_init: prepping closed sea mask for BGCMs'
       IF ( lwp )  WRITE(numout,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
       IF ( lwp )  WRITE(numout,*)
-      CALL iom_open('domain_cfg.nc', inum)
+      CALL iom_open(cn_domcfg, inum)
       varid = iom_varid(inum, 'closea_bgc_mask', ldstop = .false.)
       IF( varid > 0 ) THEN  ! the mask exists
         CALL iom_get(inum, jpdom_global,'closea_bgc_mask',zdata_in(:,:))

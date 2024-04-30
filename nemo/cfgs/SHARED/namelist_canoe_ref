@@ -2,19 +2,23 @@
 !! CANOE reference namelist 
 !-----------------------------------------------------------------------
 !!>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-!! CANOE   :    1  - air-sea exchange                         (namcanext)
-!! namelists    2  - biological parameters                    (namcanbio)
-!!              3  - parameters for nutrient limitations      (namcanlim)    
-!!              4  - parameters for phytoplankton             (namcanprod,namcanmort)
-!!              5  - parameters for zooplankton               (namcanmes,namcanzoo)
-!!              6  - parameters for remineralization          (namcanrem)
-!!              7  - parameters for calcite chemistry         (namcancal)
-!!              8  - parameters for inputs deposition         (namcansed)
-!!              9  - parameters for Kriest parameterization   (namcankrp, namcankrs)
-!!              10 - additional 2D/3D  diagnostics            (namcandia)
-!!              11 - Damping                                  (namcandmp)
+!! CANOE namelists:   
+!!              &namcanoemass    !   mass conservation
+!!              &namcanext       !   air-sea exchange
+!!              &namcanatm       !   atmospheric pressure 
+!!              &namcanws        !   particle sinking parameters
+!!              &namcanoetf      !   parameters for temperature-dependence of various rates
+!!              &namcanoeprod    !   parameters for phytoplankton growth
+!!              &namcanmort      !   parameters for phytoplankton sinks
+!!              &namcanmes       !   parameters for mesozooplankton
+!!              &namcanzoo       !   parameters for microzooplankton
+!!              &namcanrem       !   parameters for remineralization
+!!              &namcanoenfx     !   parameters for N2 fixation
+!!              &namcancal       !   parameters for CaCO3 dissolution
+!!              &namcansed       !   parameters for external nutrient inputs
+!!              &namcanoenegtr   !   switch on/off the negative tracer check
 !-----------------------------------------------------------------------
-&namcanoemass    !   Mass conservation
+&namcanoemass    !   mass conservation
 !-----------------------------------------------------------------------
    ln_check_mass =  .true.     !  Check mass conservation
 /
@@ -24,8 +28,8 @@
    nn_offset  =  0       ! Offset model-data start year - ln_co2int = T
 !                        ! If your model year is iyy, nn_offset=(years(1)-iyy) 
 !                        ! then the first atmospheric CO2 record read is at years(1)
-   ln_co2int   = .true.  ! read atm pco2 from a file (T) or constant (F)
-   atmco2     =  284.317e-6     ! Constant value atmospheric pCO2 - ln_co2int = F
+   ln_co2int   = .false.  ! read atm pco2 from a file (T) or constant (F)
+   atmco2     =  568.634e-6     ! Constant value atmospheric pCO2 - ln_co2int = F
    clname      = 'omip6_co2atm.nc'     ! Name of atm pCO2 file - ln_co2int = T
    clvarname   = 'mole_fraction_of_carbon_dioxide_in_air' ! CO2 variable name in clname
    nn_readoffset_co2 = 0 ! Reference year in cl14name
@@ -37,7 +41,7 @@
    
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-&namcanatm     !  Atmospheric prrssure 
+&namcanatm     !  atmospheric pressure 
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 !              !  file name   ! frequency (hours) ! variable   ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation !
 !              !              !  (if <0  months)  !   name     !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  !
@@ -47,14 +51,14 @@
    ln_presatm  = .true.   ! constant atmopsheric pressure (F) or from a file (T)
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-&namcanws     !   particule sinking parameters
+&namcanws     !   particle sinking parameters
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
    ws_canoe   =  2.       ! POC sinking speed
    ws_canoe2  =  30.      ! Big particles sinking speed
    ws_canoec  =  20.      ! CaCO3 sinking speed
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-&namcantf     !   parameters for temperature-dependence of various rates
+&namcanoetf     !   parameters for temperature-dependence of various rates
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
    AEP        = -4500.    ! Activation energy for phytoplankton
    AEZ        = -4500.    ! Activation energy for microzooplankton
@@ -62,7 +66,7 @@
    AER        = -6500.    ! Activation energy for remineralization
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-&namcanprod     !   parameters for phytoplankton growth
+&namcanoeprod     !   parameters for phytoplankton growth
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
    QNmax1     = 0.172     ! Small phytoplankton max N quota
    QNmin1     = 0.04      ! Small phytoplankton min N quota
@@ -131,13 +135,22 @@
    oxymin     = 1.        ! half saturation constant for anoxia 
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-&namcancal     !   parameters for Calcite chemistry
+&namcanoenfx     !   parameters for N2 fixation
+!'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+   nitrfix     =  2.25E-2  ! Nitrogen fixation rate
+   diazolight  =  50.      ! Diazotrophs sensitivity to light (W/m2)
+   concfediaz  =  100.     ! Diazotrophs half-saturation constant for iron
+   kni         =  0.1      ! Diazotrophs half-saturation constant for N-inhibition
+   jk_max_dnf  =  25       ! layer index for max depth of nitrogen fixation
+/
+!'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+&namcancal     !  parameters for CaCO3 dissolution
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
    kdca       = 7.4E-3    ! calcite dissolution rate constant in d^-1 (2700 m e-folding scale for w=20 m/d)
    nca        = 1.        ! order of dissolution reaction (not used)
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-&namcansed     !   parameters for inputs deposition
+&namcansed     !  parameters for external nutrient inputs
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 !              !  file name        ! frequency (hours) ! variable   ! time interp. !  clim  ! 'yearly'/ ! weights  ! rotation !
 !              !                   !  (if <0  months)  !   name     !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  !
@@ -155,54 +168,9 @@
    sedfeinput  =  1000.    ! Coastal release of Iron
    dustsolub   =  0.01     ! Solubility of the dust
    wdust       =  2.0      ! Dust sinking speed
-   nitrfix     =  2.25E-2  ! Nitrogen fixation rate
-   diazolight  =  50.      ! Diazotrophs sensitivity to light (W/m2)
-   concfediaz  =  100.     ! Diazotrophs half-saturation Cste for Iron
 /
-! OR Feb 6th 2023 Not needed in this version of NEMO
-! Diagnostics are defined in field/file_def_nemo-canoe.xml
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-! &namcandia     !   additional 2D/3D tracers diagnostics 
-! !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-! !              !    name   !           title of the field          !     units      !
-! !              !           !                                       !                !  
-   ! candia2d(1)  = 'Cflx     ' , 'DIC flux                          ',  'molC/m2/s    '
-   ! candia2d(2)  = 'Oflx     ' , 'Oxygen flux                       ',  'molC/m2/s    '
-   ! candia2d(3)  = 'Kg       ' , 'Gas transfer                      ',  'mol/m2/s/uatm'
-   ! candia2d(4)  = 'Delc     ' , 'Delta CO2                         ',  'uatm         '
-   ! candia2d(5)  = 'PMO      ' , 'POC export                        ',  'molC/m2/s    '
-   ! candia2d(6)  = 'PMO2     ' , 'GOC export                        ',  'molC/m2/s    '
-   ! candia2d(7)  = 'ExpFe1   ' , 'Nano iron export                  ',  'molFe/m2/s   '
-   ! candia2d(8)  = 'ExpFe2   ' , 'Diatoms iron export               ',  'molFe/m2/s   '
-   ! candia2d(9)  = 'ExpSi    ' , 'Silicate export                   ',  'molSi/m2/s   '
-   ! candia2d(10) = 'ExpCaCO3 ' , 'Calcite export                    ',  'molC/m2/s    '
-   ! candia2d(11) = 'heup     ' , 'euphotic layer depth              ',  'm            '
-   ! candia2d(12) = 'Fedep    ' , 'Iron dep                          ',  'molFe/m2/s   '
-   ! candia2d(13) = 'Nfix     ' , 'Nitrogen Fixation                 ',  'molN/m2/s    '
-   ! candia3d(1)  = 'PH       ' , 'PH                                ',  '-            '
-   ! candia3d(2)  = 'CO3      ' , 'Bicarbonates                      ',  'mol/l        '
-   ! candia3d(3)  = 'CO3sat   ' , 'CO3 saturation                    ',  'mol/l        '
-   ! candia3d(4)  = 'PAR      ' , 'light penetration                 ',  'W/m2         '
-   ! candia3d(5)  = 'PPPHY    ' , 'Primary production of nanophyto   ',  'molC/m3/s    '
-   ! candia3d(6)  = 'PPPHY2   ' , 'Primary production of diatoms     ',  'molC/m3/s    '
-   ! candia3d(7)  = 'PPNEWN   ' , 'New Primary production of nano    ',  'molC/m3/s    '
-   ! candia3d(8)  = 'PPNEWD   ' , 'New Primary production of diat    ',  'molC/m3/s    '
-   ! candia3d(9)  = 'PBSi     ' , 'Primary production of Si diatoms  ',  'molSi/m3/s   '
-   ! candia3d(10) = 'PFeN     ' , 'Primary production of nano iron   ',  'molFe/m3/s   '
-   ! candia3d(11) = 'PFeD     ' , 'Primary production of diatoms iron',  'molFe/m3/s   '
-! /
+&namcanoenegtr   !   switch on/off the negative tracer check
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-&namcandmp     !  Damping 
-!,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-   ln_candmp    =  .true.     !  Relaxation of some tracers to a mean value
-   nn_candmp    =   225       !  Frequency of Relaxation 
-/
-&namcanoenegtr   !   Switch on/off the negatrive tracer block
-!-----------------------------------------------------------------------
    ln_canoenegtr = .false.    !  .false. means it will be skipped
-/
-!'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-&namcanmass     !  Mass conservation
-!,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-   ln_check_mass =  .false.    !  Check mass conservation
 /

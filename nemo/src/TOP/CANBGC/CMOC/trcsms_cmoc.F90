@@ -213,11 +213,12 @@ CONTAINS
         ! POC bottom instant. rem
         !! OR Jan 24th 2023 ! CALL trc_bott_cmoc( Kmm, Krhs)
         ! n2 fixation/denitrification
-        !! OR Jan19 23 ! CALL cmoc_rem_denit( Kmm )
-        !! OR Jan19 23 ! CALL trc_n2fx_denit_cmoc( par_1band ,Kmm, Krhs)
+        !! OR Jan19 23 ! CALL cmoc_rem_denit
+        CALL cmoc_rem_denit( Kmm )
+        CALL trc_n2fx_denit_cmoc( par_1band, kt, jnt, Kmm, Krhs )
         !
         ! Move here to be consistent with NEMO4 and sidestepping from CanESM5 CMOC NEMO
-        CALL trc_flx(kt, Kmm, Krhs)               ! compute air-sea gas exchange
+        CALL trc_flx(kt, Kbb, Kmm, Krhs)               ! compute air-sea gas exchange
         ! IF the radioactive tracer was added there would be also a call to p4z_dcy( kt ) equivalent (trc_dcy?) here. 
         !       
         !!!!!! O Riche Nov 8th 2022

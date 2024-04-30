@@ -51,13 +51,13 @@
 !  apar_cmoc  =  0.45          ! PAR fraction of irradiance
 !  kw_cmoc    =  0.04          ! PAR attenuation coefficient for seawater (m^-1)
 !  kchl_cmoc  =  0.03          ! PAR attenuation for chlorophyll          (m^-1) (mgChl m^-3)^-1
-   achl_cmoc  =  0. ! OR March 22nd 2023 ! 5.0           ! Initial slope of P-I curve               (mgC mgChl^-1 (Wm^-2)^-1 d^-1
+   achl_cmoc  =  5. !          ! Initial slope of P-I curve               (mgC mgChl^-1 (Wm^-2)^-1 d^-1
    thm_cmoc   =  0.03          ! Maximum chlorophyll:carbon ratio         (mgChl mgC^-1)
    tau_cmoc   =  2.0           ! Chlorophyll relaxation time              (d)
-   itau_cmoc  =  0. ! OR March 22nd 2023 ! 0.5           ! Inverse of the relaxation time           (d^-1)
+   itau_cmoc  =  0.5           ! Inverse of the relaxation time           (d^-1)
    ep_cmoc    =  33.26         ! Activation energy for growth             (kJ mol^-1)
    tvm_cmoc   =  30.0          ! Reference ocean temperature              (oC)
-   vm_cmoc    =  0. ! OR March 22nd 2023 ! 3.0           ! Reference maximum photosynthesis rate    (d^-1 at Tvm_cmoc oC)
+   vm_cmoc    =  3.            ! Reference maximum photosynthesis rate    (d^-1 at Tvm_cmoc oC)
    kn_cmoc    =  0.1           ! Half-saturation constant                 (mmolN m^-3)
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -65,30 +65,30 @@
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 !  Mortality
 !
-   mpd_cmoc   =  0. ! OR March 22nd 2023 ! 0.05          ! Phytoplankton mortality to detritus      (d^-1)
-   mpd2_cmoc  =  0. ! OR March 22nd 2023 ! 0.1           ! Phytoplankton quadratic mortality        (d^-1) (molN m^-3)^-1
+   mpd_cmoc   =  0.05          ! Phytoplankton mortality to detritus      (d^-1)
+   mpd2_cmoc  =  1000.         ! Phytoplankton quadratic mortality        (d^-1) (molN m^-3)^-1
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &namcmoczoo    !  Zooplankton
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-   rm_cmoc    =  0. ! OR March 22nd 2023 ! 0.875         ! Zooplankton maximum grazing rate         (d^-1)
+   rm_cmoc    =  0.875         ! Zooplankton maximum grazing rate         (d^-1)
    kp_cmoc    =  0.2           ! Zooplankton grazing half-sat. constant   (mmolN m^-3)
    ga_cmoc    =  0.7           ! Zooplankton grazing efficiency
-   mzn_cmoc   =  0. ! OR March 22nd 2023 ! 0.2           ! Zooplankton loss to nitrogen             (d^-1)
-   mzd_cmoc   =  0. ! OR March 22nd 2023 ! 0.05          ! Zooplankton loss to detritus             (d^-1)
-   mz2_cmoc   =  0. ! OR March 22nd 2023 ! 0.1           ! Zooplankton quadratic mortality          (d^-1) (molN m^-3)^-1
+   mzn_cmoc   =  0.2           ! Zooplankton loss to nitrogen             (d^-1)
+   mzd_cmoc   =  0.05          ! Zooplankton loss to detritus             (d^-1)
+   mz2_cmoc   =  1000.         ! Zooplankton quadratic mortality          (d^-1) (molN m^-3)^-1
    xthreshphy =  1.e-8         ! Phyto biomass threshold on zooplankton feeding  (mmolC m^-3) 
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &namcmocpoc    !   Detritus remineralization
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
    ed_cmoc    =  45.73         ! Activation energy for remineralization   (kJ mol^-1)
-   reref_cmoc =  0. ! OR March 22nd 2023 ! 0.15          ! Reference detritus remineralization rate (d^-1)
+   reref_cmoc =  0.15          ! Reference detritus remineralization rate (d^-1)
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &namcmocws     !   Detritus sinking speed
 !,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-   ws_cmoc    =  0. ! OR March 22nd 2023 ! 8.0           ! Detritus sinking rate                    (m d^-1)
+   ws_cmoc    =  8.            ! Detritus sinking rate                    (m d^-1)
 /
 !'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 &namcmoccal    !   Calcite parametrization
@@ -104,7 +104,7 @@
    phinf_cmoc =  500.0         ! Maximum reference diazotroph concentration        (trichomes L^-1)
    phi0_cmoc  =  50.0          ! Surface reference diazotroph concentration        (trichomes L^-1)
    anf_cmoc   =  0.1           ! Inverse depth of diazotroph concentration maximum (m^-1)
-   pnf_cmoc   =  0. ! OR March 22nd 2023 ! 3.0           ! Maximum reference rate of dinitrogen fixation     (pmol N trichomes^-1 h^-1)
+   pnf_cmoc   =  3.            ! Maximum reference rate of dinitrogen fixation     (pmol N trichomes^-1 h^-1)
    inf_cmoc   =  350.0         ! Maximum reference N fix surface irradiance        (W m^-2)
    tnfMa_cmoc =  30.0          ! Maximum reference N fix sea-surface temperature   (oC)
    tnfmi_cmoc =  20.0          ! Minimum reference N fix sea-surface temperature   (oC)
