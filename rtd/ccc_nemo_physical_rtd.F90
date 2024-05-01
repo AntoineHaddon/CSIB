@@ -500,7 +500,7 @@ PROGRAM nemo_ocean_diag
           CALL getvara ('sndmasssnf', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), snow_ai_cea, 1., 0.)
           CALL getvara ('prsn', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), snow_ao_cea, 1., 0.)
           CALL getvara ('hfrainds', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_rain_cea, 1., 0.)
-          CALL getvara ('hfsnthermds', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_snow_ao_cea, 1., 0.)
+          CALL getvara ('hflx_snow_ao_cea', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_snow_ao_cea, 1., 0.)
           CALL getvara ('hflx_snow_ai_cea', iou6, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_snow_ai_cea, 1., 0.)
           CALL getvara ('hfxsensib', iou6, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_ice_cea, 1., 0.)
           CALL getvara ('hfrunoffds2d', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_rnf_cea, 1., 0.)

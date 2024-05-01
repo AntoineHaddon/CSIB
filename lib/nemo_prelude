@@ -126,7 +126,7 @@ echo "#################### Start NEMO pre-processing #################"
     is_defined $nemo_runoff_core_monthly  || bail "The variables nemo_runoff_core_monthly must be defined in the configuration file"
     # first try with climatology, if file don't exist in the database, try the yearly vervion (with _yYYYY.nc).
     acc_cp runoff.nc    $nemo_runoff_core_monthly na
-    if [[ -z "$nemo_runoff" ]]; then
+    if [[ -n "$nemo_runoff" ]]; then # empty nemo_runoff means yearly files are not used. 
       for current_year in `seq $(( $chunk_start_year -1 )) $(( $chunk_stop_year +1 )) `; do
         ## first and last year won't find the yyyy-1 and yyyy+1 (respectivelly).
         [[ $current_year -lt run_start_year || $current_year -gt run_stop_year ]] && continue
