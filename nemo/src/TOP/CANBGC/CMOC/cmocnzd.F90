@@ -118,7 +118,8 @@ CONTAINS
                &                 * exp ( -ed_cmoc * 1e3_wp / 8.31_wp *         &
                &                 ( 1._wp / ( ts(ji,jj,jk,jp_tem,Kmm) + 273.15_wp  &
                &                 + rtrn ) - 1._wp / ( tvm_cmoc + 273.15_wp )   &
-               &                 )      ) * tr(ji,jj,jk,jqpoc, Kbb) * tmask_bgc_closea(ji,jj,jk)
+               &                 )      ) * MAX(tr(ji,jj,jk,jqpoc, Kbb),0.)        &
+               &                 * tmask_bgc_closea(ji,jj,jk)
                rnresult(ji,jj,jk) = redet(ji,jj,jk)
             END DO
          END DO 
@@ -148,7 +149,7 @@ CONTAINS
       ! print mean trends (used for debugging)
       IF( sn_cfctl%l_prttrc )   THEN
        WRITE(charout, FMT="('rem')")
-       CALL prt_ctl_info(charout)
+       CALL prt_ctl_info(charout, cdcomp = 'top')
        CALL prt_ctl(tab4d_1=tr(:,:,:,:,Krhs), mask1=tmask_bgc_closea, clinfo=ctrcnm)
       ENDIF
       !
@@ -275,7 +276,7 @@ CONTAINS
       INTEGER, INTENT(in) ::   Kbb, Kmm, Krhs  ! time level indices
       !!---------------------------------------------------------------------
       INTEGER  :: ji, jj, jk
-      REAL(wp) :: zcompaph
+      REAL(wp) :: zcompaph, zcompazo, zcompach
       REAL(wp) :: zgrapoc
       REAL(wp) :: zgrazpcmoc
       CHARACTER (len=25) :: charout
@@ -310,17 +311,18 @@ CONTAINS
          DO jj = 1, jpj
             DO ji = 1, jpi
 
-               ! Conserve the PISCES code principle of a minimum phytoplankton biomass
+               ! set upper and lower limits to phytoplankton biomass
                zcompaph = MAX( tr(ji,jj,jk,jqphy, Kbb) , 1.e-8 )
                zcompaph = MIN( zcompaph , 1.e-5 )              ! upper limit of 1e-5 molC/L or ~1.5 mmolN/m^3, 98.3% saturation for kp_cmoc = 0.2 mmolN m^-3
+               zcompazo = MAX( tr(ji,jj,jk,jqzoo, Kbb), 0.)
                !
                ! Convert kp_cmoc from uM N (mmol N m^-3) to mol C L^-1 with 1e-6_wp * cnrr_cmoc
                ! lambda formula in Zahariev et al 2008
                ! grazing tendency
-               zgrazpcmoc = xstepb  * rm_cmoc * zcompaph  * tr(ji,jj,jk,jqphy, Kbb)  /       &
+               zgrazpcmoc = xstepb  * rm_cmoc * zcompaph  * zcompaph  /       &
                &            ( kp_cmoc * 1e-6_wp * cnrr_cmoc * kp_cmoc * 1e-6_wp *        &
-               &             cnrr_cmoc + tr(ji,jj,jk,jqphy, Kbb)                             &
-               &            * tr(ji,jj,jk,jqphy, Kbb) + rtrn ) * tr(ji,jj,jk,jqzoo, Kbb)
+               &             cnrr_cmoc + zcompaph                             &
+               &            * zcompaph + rtrn ) * zcompazo
                ! POC tendency due to detritus fraction of grazed phytoplankton
                zgrapoc   = ( 1._wp - ga_cmoc ) * zgrazpcmoc
 
@@ -329,23 +331,25 @@ CONTAINS
                ! grazing
                &                     +  ga_cmoc * zgrazpcmoc &
                ! linear mortality and loss to POC
-               &                     - ( mzn_cmoc + mzd_cmoc ) * xstepb * tr(ji,jj,jk,jqzoo, Kbb) &
+               &                     - ( mzn_cmoc + mzd_cmoc ) * xstepb * zcompazo &
                ! quadratic mortality ( convert mz2_cmoc from (molN m^-3)^-1 to (molC L^-1)^-1 )
-               &                     - mz2_cmoc * ncrr_cmoc * 1e3_wp                          &
-               &                      * xstepb * tr(ji,jj,jk,jqzoo, Kbb) * tr(ji,jj,jk,jqzoo, Kbb)
+               &                     - mz2_cmoc * ncrr_cmoc * 1.e3_wp                          &
+               &                      * xstepb * zcompazo * zcompazo
 
                ! contribution to phytoplankton and POC 
+               zcompaph = MAX( tr(ji,jj,jk,jqphy, Kbb), 0.)
+               zcompach = MAX( tr(ji,jj,jk,jqnch, Kbb), 0.)
                tr(ji,jj,jk,jqphy, Krhs) = tr(ji,jj,jk,jqphy, Krhs) - zgrazpcmoc
-               tr(ji,jj,jk,jqnch, Krhs) = tr(ji,jj,jk,jqnch, Krhs) - zgrazpcmoc * tr(ji,jj,jk,jqnch, Kbb)/(tr(ji,jj,jk,jqphy, Kbb)+rtrn)
+               tr(ji,jj,jk,jqnch, Krhs) = tr(ji,jj,jk,jqnch, Krhs) - zgrazpcmoc * zcompach/(zcompaph+rtrn)
                tr(ji,jj,jk,jqpoc, Krhs) = tr(ji,jj,jk,jqpoc, Krhs) + zgrapoc
 
                ! mortality contribution to nutrients, carbon and oxygen cycle
-               tr(ji,jj,jk,jqno3, Krhs) = tr(ji,jj,jk,jqno3, Krhs) + mzn_cmoc * xstepb * tr(ji,jj,jk,jqzoo, Kbb)
-               tr(ji,jj,jk,jqoxy, Krhs) = tr(ji,jj,jk,jqoxy, Krhs) - mzn_cmoc * xstepb * tr(ji,jj,jk,jqzoo, Kbb)
-               tr(ji,jj,jk,jqdic, Krhs) = tr(ji,jj,jk,jqdic, Krhs) + mzn_cmoc * xstepb * tr(ji,jj,jk,jqzoo, Kbb)
-               tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) - mzn_cmoc * xstepb * tr(ji,jj,jk,jqzoo, Kbb) * ncrr_cmoc               
-               tr(ji,jj,jk,jqpoc, Krhs) = tr(ji,jj,jk,jqpoc, Krhs) + mzd_cmoc * xstepb * tr(ji,jj,jk,jqzoo, Kbb) &
-               &                    + ncrr_cmoc * 1e3_wp * mz2_cmoc * xstepb * tr(ji,jj,jk,jqzoo, Kbb) * tr(ji,jj,jk,jqzoo, Kbb)
+               tr(ji,jj,jk,jqno3, Krhs) = tr(ji,jj,jk,jqno3, Krhs) + mzn_cmoc * xstepb * zcompazo
+               tr(ji,jj,jk,jqoxy, Krhs) = tr(ji,jj,jk,jqoxy, Krhs) - mzn_cmoc * xstepb * zcompazo
+               tr(ji,jj,jk,jqdic, Krhs) = tr(ji,jj,jk,jqdic, Krhs) + mzn_cmoc * xstepb * zcompazo
+               tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) - mzn_cmoc * xstepb * zcompazo * ncrr_cmoc               
+               tr(ji,jj,jk,jqpoc, Krhs) = tr(ji,jj,jk,jqpoc, Krhs) + mzd_cmoc * xstepb * zcompazo &
+               &                    + ncrr_cmoc * 1.e3_wp * mz2_cmoc * xstepb * zcompazo * zcompazo
                ! O Riche Oct 28th 2022 ! This is not yet implemented.
                ! tr(ji,jj,jk,jqdnt, Krhs) = tr(ji,jj,jk,jqdnt, Krhs) + mzn_cmoc * xstepb * tr(ji,jj,jk,jqzoo, Kbb)
                !
@@ -380,7 +384,7 @@ CONTAINS
       !
       IF( sn_cfctl%l_prttrc )   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('zoo')")
-         CALL prt_ctl_info(charout)
+         CALL prt_ctl_info(charout, cdcomp = 'top')
          CALL prt_ctl(tab4d_1=tr(:,:,:,:,Krhs), mask1=tmask_bgc_closea, clinfo=ctrcnm)
       ENDIF
       !
@@ -454,7 +458,7 @@ CONTAINS
       INTEGER, INTENT(in) ::   Kbb, Kmm, Krhs  ! time level indices
       !!---------------------------------------------------------------------
       INTEGER  :: ji, jj, jk                                      ! loop indices
-      REAL(wp) :: zcompaph , ztortp , zrespp , zmortp , zfactch   ! working variables
+      REAL(wp) :: zcompaph, ztortp, zrespp, zmortp, zfactch   ! working variables
       ! O Riche Feb 8th 2023
       INTEGER  :: ierr    ! allocate error integer flag
       REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: mpresult         ! diag array
@@ -486,7 +490,9 @@ CONTAINS
                
                ! Quadratic mortality
                ! <CMOC code OR 10/19/2015> 1e.3_wp convert (umol? OR Nov 2022) L^-1 to (mol ? OR Nov 2022) m^-3 ; use xstepb the global constant to convert to d^-1
-               zrespp = mpd2_cmoc * ncrr_cmoc * 1.e3_wp * xstepb * zcompaph * tr(ji,jj,jk,jqphy, Kbb)
+               ! this is not strictly correct as the threshold should really only be applied to linear mortality
+               ! but zcompaph * tr(...jqphy,Kbb) can be negative
+               zrespp = mpd2_cmoc * ncrr_cmoc * 1.e3_wp * xstepb * zcompaph * zcompaph
 
                !  Linear mortality
                ztortp = mpd_cmoc * xstepb * zcompaph
@@ -496,7 +502,7 @@ CONTAINS
 
                !   Update the arrays TRA which contains the biological sources and sinks
                !   Calculate the chlorophyll to phytoplankton ratio
-               zfactch = tr(ji,jj,jk,jqnch, Kbb)/(tr(ji,jj,jk,jqphy,Kbb)+rtrn)
+               zfactch = MAX(tr(ji,jj,jk,jqnch, Kbb),0.)/(MAX(tr(ji,jj,jk,jqphy, Kbb),0.)+rtrn)
 
                tr(ji,jj,jk,jqphy, Krhs) = tr(ji,jj,jk,jqphy, Krhs) - zmortp
                tr(ji,jj,jk,jqnch, Krhs) = tr(ji,jj,jk,jqnch, Krhs) - zmortp * zfactch
@@ -519,7 +525,7 @@ CONTAINS
       ! print mean trends (used for debugging)
       IF( sn_cfctl%l_prttrc )   THEN
        WRITE(charout, FMT="('mort')")
-       CALL prt_ctl_info(charout)
+       CALL prt_ctl_info(charout, cdcomp = 'top')
        CALL prt_ctl(tab4d_1=tr(:,:,:,:,Krhs), mask1=tmask_bgc_closea, clinfo=ctrcnm)
       ENDIF
       !
@@ -574,3 +580,4 @@ CONTAINS
 
 
 END MODULE cmocnzd
+

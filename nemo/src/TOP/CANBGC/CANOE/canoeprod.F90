@@ -45,6 +45,8 @@ MODULE canoeprod
 
    PUBLIC   canoe_prod         ! called in trcsms_canoe.F90
    PUBLIC   canoe_prod_init    ! called in trcini_canoe.F90
+   PUBLIC   trc_n2fx_canoe
+   PUBLIC   trc_n2fx_init_canoe
 
    ! CanOE PP parameters
    ! these are hardwired parameters
@@ -73,6 +75,12 @@ MODULE canoeprod
    REAL(wp), SAVE, PUBLIC ::  thetamax   = 0.18_wp           !: Maximum chlorophyll/nitrogen ratio
    REAL(wp), SAVE, PUBLIC ::  eta        = 2._wp             !: Metabolic cost of biosynthesis
    REAL(wp), SAVE, PUBLIC ::  kexh       = 1.7_wp            !: exhudation of excess intracellular C
+   ! CanOE N2-fixation parameters (namelist namcanoenfx)
+   REAL(wp), SAVE, PUBLIC ::  nitrfix    = 2.25E-2_wp        !: Reference rate of dinitrogen fixation
+   REAL(wp), SAVE, PUBLIC ::  kni        = 0.1_wp            !: DNF N inhibition parameter
+   REAL(wp), SAVE, PUBLIC ::  diazolight = 50._wp            !: DNF irradiance dependence parameter
+   REAL(wp), SAVE, PUBLIC ::  concfediaz = 100._wp           !: DNF iron concentration dependence parameter
+   INTEGER, SAVE, PUBLIC ::   jk_max_dnf = 25                !: layer index for max depth of nitrogen fixation
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   prmax    !: optimal production = f(temperature)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   quotan   !: proxy of N quota in Nanophyto
@@ -81,8 +89,8 @@ MODULE canoeprod
    REAL(wp) :: tpp                    !: Total primary production
 
    !!* Substitution
-!#  include "top_substitute.h90"
-!#  include "vectopt_loop_substitute.h90"
+#  include "do_loop_substitute.h90"
+#  include "domzgr_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/TOP 3.3 , NEMO Consortium (2010)
    !! $Id: canoeprod.F90 3773 2013-02-07 11:06:58Z cbricaud $ 
@@ -164,8 +172,7 @@ CONTAINS
       DO jk = 1, jpkm1
          DO jj = 1, jpj
             DO ji = 1, jpi
-               ! IF( par_3bands(ji,jj,jk) > 1.E-3 ) THEN
-               IF( par_stairs(ji,jj,jk) > 1.E-3 ) THEN
+               IF( par_3bands(ji,jj,jk) > 1.E-3 ) THEN
                       ztn  = ts(ji,jj,jk,jp_tem,Kmm)
                       phyc  = MAX(tr(ji,jj,jk,jrphy, Kbb),0.)*mw_c
                       phyn  = MAX(tr(ji,jj,jk,jrnn, Kbb) ,0.)*mw_n
@@ -174,8 +181,7 @@ CONTAINS
                       Ni    = MAX(tr(ji,jj,jk,jqno3, Kbb),0.)
                       Na    = MAX(tr(ji,jj,jk,jrnh4, Kbb),0.)
                       Fe    = MAX(tr(ji,jj,jk,jrfer, Kbb),0.)                        ! Fe variables are in nmol m^-3, others in mmol m^-3
-                      ! ei    = par_3bands(ji,jj,jk)*4.15                        ! convert to umol m^-2 s^-1
-                      ei    = par_stairs(ji,jj,jk)*4.15                        ! convert to umol m^-2 s^-1
+                      ei    = par_3bands(ji,jj,jk)*4.15                        ! convert to umol m^-2 s^-1
 
 ! this is modified from ~/mexfiles/vrm/fwd/bsource_vrm.f via chemo_2P2Z_gmk.F
 ! small phytoplankton
@@ -265,30 +271,30 @@ CONTAINS
               zproreg  = zpronn(ji,jj,jk) - zpronew(ji,jj,jk)
               zproreg2 = zprond(ji,jj,jk) - zpronewd(ji,jj,jk)
               tr(ji,jj,jk,jqno3, Krhs) = tr(ji,jj,jk,jqno3, Krhs) - zpronew(ji,jj,jk) 
-              tr(ji,jj,jk,jqno3, Krhs) = tr(ji,jj,jk,jqno3, Krhs) !                       - zpronewd(ji,jj,jk)
+              tr(ji,jj,jk,jqno3, Krhs) = tr(ji,jj,jk,jqno3, Krhs) - zpronewd(ji,jj,jk)
               tr(ji,jj,jk,jrnh4, Krhs) = tr(ji,jj,jk,jrnh4, Krhs) - zproreg                       
-              tr(ji,jj,jk,jrnh4, Krhs) = tr(ji,jj,jk,jrnh4, Krhs) !                       - zproreg2
+              tr(ji,jj,jk,jrnh4, Krhs) = tr(ji,jj,jk,jrnh4, Krhs) - zproreg2
               tr(ji,jj,jk,jrphy, Krhs) = tr(ji,jj,jk,jrphy, Krhs) + zprocn(ji,jj,jk)
               tr(ji,jj,jk,jrnn, Krhs)  = tr(ji,jj,jk,jrnn, Krhs)  + zpronn(ji,jj,jk)
               tr(ji,jj,jk,jrnch, Krhs) = tr(ji,jj,jk,jrnch, Krhs) + zprochln(ji,jj,jk) 
               tr(ji,jj,jk,jrnfe, Krhs) = tr(ji,jj,jk,jrnfe, Krhs) + zprofen(ji,jj,jk)
-              tr(ji,jj,jk,jrdia, Krhs) = tr(ji,jj,jk,jrdia, Krhs) ! + zprocd(ji,jj,jk) 
-              tr(ji,jj,jk,jrdn, Krhs)  = tr(ji,jj,jk,jrdn, Krhs)  ! + zprond(ji,jj,jk) 
-              tr(ji,jj,jk,jrdch, Krhs) = tr(ji,jj,jk,jrdch, Krhs) ! + zprochld(ji,jj,jk) 
-              tr(ji,jj,jk,jrdfe, Krhs) = tr(ji,jj,jk,jrdfe, Krhs) ! + zprofed(ji,jj,jk) 
+              tr(ji,jj,jk,jrdia, Krhs) = tr(ji,jj,jk,jrdia, Krhs) + zprocd(ji,jj,jk) 
+              tr(ji,jj,jk,jrdn, Krhs)  = tr(ji,jj,jk,jrdn, Krhs)  + zprond(ji,jj,jk) 
+              tr(ji,jj,jk,jrdch, Krhs) = tr(ji,jj,jk,jrdch, Krhs) + zprochld(ji,jj,jk) 
+              tr(ji,jj,jk,jrdfe, Krhs) = tr(ji,jj,jk,jrdfe, Krhs) + zprofed(ji,jj,jk) 
 ! O2 production equals DIC reduction + an additional nitrate term based on Laws 1991; this term is set to conserve O2 globally at steady state, i.e. 0.301887 = 2/rr_c2n where 2 mol O2 / mol N is the O2 sink to nitrification
-              tr(ji,jj,jk,jqoxy, Krhs) = tr(ji,jj,jk,jqoxy, Krhs) ! +  zprocn(ji,jj,jk)                       
-              tr(ji,jj,jk,jqoxy, Krhs) = tr(ji,jj,jk,jqoxy, Krhs) !                       + zprocd(ji,jj,jk)  
-              tr(ji,jj,jk,jqoxy, Krhs) = tr(ji,jj,jk,jqoxy, Krhs) ! + 0.301887 *  zpronew(ji,jj,jk)                            * rr_c2n 
-              tr(ji,jj,jk,jqoxy, Krhs) = tr(ji,jj,jk,jqoxy, Krhs) ! + 0.301887 *                      zpronewd(ji,jj,jk)       * rr_c2n   
-              tr(ji,jj,jk,jrfer, Krhs) = tr(ji,jj,jk,jrfer, Krhs) ! - zprofen(ji,jj,jk) 
-              tr(ji,jj,jk,jrfer, Krhs) = tr(ji,jj,jk,jrfer, Krhs) !                       - zprofed(ji,jj,jk)
-              tr(ji,jj,jk,jqdic, Krhs) = tr(ji,jj,jk,jqdic, Krhs) ! -  zprocn(ji,jj,jk)                        *1.E-6
-              tr(ji,jj,jk,jqdic, Krhs) = tr(ji,jj,jk,jqdic, Krhs) !                       - zprocd(ji,jj,jk)   *1.E-6
-              tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) ! +  zpronew(ji,jj,jk)                       *1.E-6 
-              tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) ! +                       zpronewd(ji,jj,jk) *1.E-6 
-              tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) ! -  zproreg                      * 1.E-6 
-              tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) ! -                   + zproreg2  * 1.E-6
+              tr(ji,jj,jk,jqoxy, Krhs) = tr(ji,jj,jk,jqoxy, Krhs) + zprocn(ji,jj,jk)                       
+              tr(ji,jj,jk,jqoxy, Krhs) = tr(ji,jj,jk,jqoxy, Krhs) + zprocd(ji,jj,jk)  
+              tr(ji,jj,jk,jqoxy, Krhs) = tr(ji,jj,jk,jqoxy, Krhs) + 0.301887 * zpronew(ji,jj,jk) * rr_c2n 
+              tr(ji,jj,jk,jqoxy, Krhs) = tr(ji,jj,jk,jqoxy, Krhs) + 0.301887 * zpronewd(ji,jj,jk) * rr_c2n   
+              tr(ji,jj,jk,jrfer, Krhs) = tr(ji,jj,jk,jrfer, Krhs) - zprofen(ji,jj,jk) 
+              tr(ji,jj,jk,jrfer, Krhs) = tr(ji,jj,jk,jrfer, Krhs) - zprofed(ji,jj,jk)
+              tr(ji,jj,jk,jqdic, Krhs) = tr(ji,jj,jk,jqdic, Krhs) - zprocn(ji,jj,jk)*1.E-6
+              tr(ji,jj,jk,jqdic, Krhs) = tr(ji,jj,jk,jqdic, Krhs) - zprocd(ji,jj,jk)*1.E-6
+              tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) + zpronew(ji,jj,jk)*1.E-6 
+              tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) + zpronewd(ji,jj,jk)*1.E-6 
+              tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) - zproreg*1.E-6 
+              tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) - zproreg2*1.E-6
           END DO
         END DO
      END DO
@@ -320,7 +326,7 @@ CONTAINS
 
      IF( sn_cfctl%l_prttrc )   THEN  ! print mean trends (used for debugging)
         WRITE(charout, FMT="('prod')")
-        CALL prt_ctl_info(charout)
+        CALL prt_ctl_info(charout, cdcomp = 'top')
         CALL prt_ctl(tab4d_1=tr(:,:,:,:, Krhs), mask1=tmask, clinfo=ctrcnm)
      ENDIF
      !
@@ -404,4 +410,105 @@ CONTAINS
       !
    END SUBROUTINE canoe_prod_init
 
+   SUBROUTINE trc_n2fx_canoe( kt, jnt, Kbb, Kmm, Krhs )
+      ! compute N2 fixation 
+      !REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(in) :: zpar  ! any PAR array
+      !
+      !LOGICAL, OPTIONAL, INTENT(in) :: write_rhs_flag   ! 
+      !LOGICAL                       :: write_rhs_flag0  ! 
+      !
+      INTEGER                       :: ji, jj, jk      ! nested loop indices
+      INTEGER, INTENT(in)           :: kt, jnt ! ocean time step
+      INTEGER, INTENT(in) ::   Kbb, Kmm, Krhs  ! time level indices
+
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:  ) :: zn2fixtot
+      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zn2fix, znitrpot, zwork
+      REAL(wp)   :: zrtn, zlim, zfact 
+      !
+      ALLOCATE( zn2fix(jpi, jpj, jpk), znitrpot(jpi, jpj, jpk), zwork(jpi, jpj, jpk) )
+      ALLOCATE( zn2fixtot(jpi, jpj  ) )
+      ! Nitrogen fixation and denitrification
+      ! ----------------------------------------------------------
+
+      ! <CMOC code OR 10/15/2015> Initialization of CMOC arrays
+      zn2fix   (:,:,:) = 0._wp
+      zn2fixtot(:,:)   = 0._wp
+      !
+      ! hardwiring index for now because jk_eud_cmoc is in a namelist only read in CMOC runs
+      DO jk = 1, jk_max_dnf
+         DO jj = 1, jpj
+            DO ji = 1, jpi
+                   ! this is copied from CanESM5 p4z_sed
+                   zlim = kni / (kni + tr(ji,jj,jk,jqno3, Kbb) + tr(ji,jj,jk,jrnh4, Kbb))        ! CMOC function for NO3-inhibition
+                   znitrpot(ji,jj,jk) =  MAX( 0.e0, ( tgfuncp0(ji,jj,jk) - 0.773 ) ) * 1.962   &
+                   &                 *  zlim * tr(ji,jj,jk,jrfer, Kbb) / ( concfediaz + tr(ji,jj,jk,jrfer, Kbb) ) &
+                   &                 * ( 1.- EXP( -par_3bands(ji,jj,jk) / diazolight ) ) &
+                   &                 * tmask_bgc_closea(ji,jj,jk)        ! open ocean / land mask
+                   !&                 * oomask(ji,jj) * tmask_bgc_closea(ji,jj,jk)        ! open ocean / land mask
+                   !
+                   ! diagnostic output
+                   zn2fix(ji,jj,jk) = znitrpot(ji,jj,jk) * nitrfix
+                   ! column integral in mmol m^-2 d^-1
+                   zn2fixtot(ji,jj) = zn2fixtot(ji,jj) + znitrpot(ji,jj,jk) * nitrfix * e3t(ji,jj,jk, Kmm)     
+            END DO
+         END DO
+      END DO
+      !     --------------------------------------------------------------------
+      !     Update the arrays TRA which contain the biological sources and sinks
+      !     --------------------------------------------------------------------
+      !
+      DO jk = 1, jk_max_dnf
+         DO jj = 1, jpj
+            DO ji = 1, jpi
+                   zfact = znitrpot(ji,jj,jk) * nitrfix * xstepb
+                   tr(ji,jj,jk,jrnh4, Krhs) = tr(ji,jj,jk,jrnh4, Krhs) + zfact
+                   tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) + 1.e-6 * zfact
+            END DO
+         END DO
+      END DO
+
+      !
+      WRITE(numout,*) 'DNF sum:', SUM(zn2fixtot(:,:)) 
+
+      IF( lk_iomput ) THEN
+         IF( jnt == qnrdttrc ) THEN
+            ! nitrogen fixation in molN m^-2 s^-1 
+            zwork(:,:,:)  =  zn2fix(:,:,:) * 0.001/rday * tmask_bgc_closea(:,:,:)
+            CALL iom_put( "Nfix"   , zwork )
+       ENDIF
+      ENDIF
+      !
+      DEALLOCATE(zn2fix, znitrpot, zn2fixtot, zwork)
+      !
+   END SUBROUTINE trc_n2fx_canoe
+
+   SUBROUTINE trc_n2fx_init_canoe
+      !
+      INTEGER ::   ios  
+      ! 
+      NAMELIST/namcanoenfx/ kni, concfediaz, nitrfix, diazolight, jk_max_dnf
+      REWIND( numnatp_refb )              ! Namelist namcanoenfx in reference namelist : Passive tracer variables
+      READ  ( numnatp_refb, namcanoenfx, IOSTAT = ios, ERR = 901)
+901   IF( ios /= 0 )   CALL ctl_nam ( ios , 'namcanoenfx in reference namelist_cmoc' )
+      REWIND( numnatp_cfgb )              ! Namelist namcanoenfx in configuration namelist : Passive tracer variables
+      READ  ( numnatp_cfgb, namcanoenfx, IOSTAT = ios, ERR = 902 )
+902   IF( ios >  0 )   CALL ctl_nam ( ios , 'namcanoenfx in configuration namelist_cmoc' )
+      !
+      IF(lwm) WRITE( numonpb, namcanoenfx )      
+      !
+      IF(lwp) THEN
+         WRITE(numout,*) ' '
+         WRITE(numout,*) ' Namelist parameters for dinitrogen fixation , namcanoenfx'
+         WRITE(numout,*) ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+         WRITE(numout,*) '    Reference rate of dinitrogen fixation          nitrfix =',    nitrfix
+         WRITE(numout,*) '    DNF N inhibition parameter                     kni =', kni
+         WRITE(numout,*) '    DNF irradiance dependence parameter            diazolight =', diazolight
+         WRITE(numout,*) '    DNF iron concentration dependence parameter    concfediaz =', concfediaz
+         WRITE(numout,*) '    layer index for max depth of nitrogen fixation jk_max_dnf =', jk_max_dnf
+         WRITE(numout,*) ' '
+      END IF   
+      !
+   END SUBROUTINE trc_n2fx_init_canoe
+
 END MODULE  canoeprod
+

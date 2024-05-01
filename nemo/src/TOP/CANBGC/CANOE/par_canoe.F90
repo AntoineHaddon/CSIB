@@ -13,12 +13,11 @@ MODULE par_canoe
 
    IMPLICIT NONE
 
-   ! The commented indices are common to both CMOC and CanOE
-   ! and are already declared in par_trc
-   ! INTEGER, PUBLIC :: jrpoc  ! small sized POC
-   ! INTEGER, PUBLIC :: jrphy  ! small sized phyto C biomass
-   ! INTEGER, PUBLIC :: jrnch  ! small sized phyto chl-a
-   ! INTEGER, PUBLIC :: jrzoo  ! small sized zoo C biomass
+   ! first four are declared in par_trc
+   !INTEGER, PUBLIC :: jrpoc  ! small sized POC
+   !INTEGER, PUBLIC :: jrphy  ! small sized phyto C biomass
+   !INTEGER, PUBLIC :: jrnch  ! small sized phyto chl-a
+   !INTEGER, PUBLIC :: jrzoo  ! small sized zoo C biomass
    INTEGER, PUBLIC :: jrnh4  ! Ammonium Concentration
    INTEGER, PUBLIC :: jrfer  ! Dissolved Iron Concentration
    INTEGER, PUBLIC :: jrcal  ! calcite particules

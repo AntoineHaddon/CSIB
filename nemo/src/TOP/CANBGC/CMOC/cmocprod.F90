@@ -119,7 +119,7 @@ CONTAINS
             ! <CMOC code OR 10/30/2015> etot is replaced by zetot = qsr * 0.43 and CMOC light attenuation
             ! zetot(ji,jj,jk) = qsr(ji,jj) * 0.43_wp & 
             ! !
-            ! &               * exp ( - ( (0.04 + 0.03 * tr(ji,jj,1,jqnch,Kbb) * 1e6_wp) * gdept_n(ji,jj,jk) ) )
+            ! &               * exp ( - ( (0.04 + 0.03 * tr(ji,jj,1,jqnch,Kbb) * 1e6_wp) * gdept(ji,jj,jk,Kmm) ) )
             !
             ! O Riche Sept 13th 2022
             ! use trc_opt_1band; can have a variable PAR/SW ratio (ln_varpar switch set in namelist_top_*).
@@ -142,10 +142,10 @@ CONTAINS
                 !
                 ! phytoplankton photoacclimation used in light limitation
                 ! tr(...,jqnch,Kmm) / tr(...,jqphy,Kmm) / 12. is theta in gChl per gC
-                ! ztheta is set to a maximum of thm_cmoc so as to prevent appearance of light-saturation in case zetot is small but
+                ! ztheta is set to a maximum of thm_cmoc so as to prevent appearance of light-saturation in case zetot is small but trn(ji,jj,jk,jqphy) is 0
                 ! tr(ji,jj,jk,jqphy,Kmm) is 0
                 ztheta = MIN(thm_cmoc,tr(ji,jj,jk,jqnch,Kbb)/(tr(ji,jj,jk,jqphy,Kbb)*12._wp+rtrn))
-                zpislopen =  MAX(achl_cmoc * ztheta / ( zpislopead(ji,jj,jk) * rday  + rtrn) ,0.)
+                zpislopen =  MAX( achl_cmoc * ztheta / ( zpislopead(ji,jj,jk) * rday  + rtrn ), 0.)
                 ! zpislopead * rday is growth rate in d^-1 at temperature ToC as achl_cmoc is in d^-1
                 !
                 ! limitation functions
@@ -191,8 +191,8 @@ CONTAINS
               ! chlorophyll production term   over a time step
               zprod =              zprbio(ji,jj,jk)  * tr(ji,jj,jk,jqnch,Kbb) * qfact2
               ! nudge chlorophyll back to balanced growth, Zahariev et al 2008
-              zprochln(ji,jj,jk) = zprod + (zprnch (ji,jj,jk) * tr(ji,jj,jk,jqphy,Kbb) - &
-              &                             tr(ji,jj,jk,jqnch,Kbb)                       &
+              zprochln(ji,jj,jk) = zprod + (MAX(zprnch(ji,jj,jk)*tr(ji,jj,jk,jqphy,Kbb),0.) - &
+              &                             MAX(tr(ji,jj,jk,jqnch,Kbb),0.)                       &
               &                            ) * itau_cmoc * r1_rday * qfact2                
               !
             ENDIF
@@ -244,7 +244,7 @@ CONTAINS
       
       IF( sn_cfctl%l_prttrc )   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('prod')")
-         CALL prt_ctl_info(charout)
+         CALL prt_ctl_info(charout, cdcomp = 'top')
          CALL prt_ctl(tab4d_1=tr(:,:,:,:, Krhs), mask1=tmask_bgc_closea, clinfo=ctrcnm)
       ENDIF
       !

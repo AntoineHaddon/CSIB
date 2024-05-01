@@ -23,7 +23,7 @@ MODULE trcsrc_canbgc
    USE sms_cmoc          ! shared variables
    USE sms_top_canbgc    ! access index/array definitions for ext. sources
    USE trc_closea_canbgc ! tmask_bgc_closea
-      
+   
    IMPLICIT NONE
    PRIVATE
 
@@ -242,7 +242,7 @@ CONTAINS
       ! These are used only to store values of the rivers sources. See trc_src_criver
       ALLOCATE( cotdep_cmoc(jpi,jpj),rivinp_cmoc(jpi,jpj), STAT=ierr0 )
       IF( ierr0 /= 0 )   CALL ctl_stop( 'STOP', 'trc_src_init: failed to allocate trc_src_criver arrays for trc_src' ) 
-      ! These are used only to store values of N2 fixation and denitrication. See trc_n2fx_denit_cmoc
+      ! These are used only to store values of N2 fixation and denitrification. See trc_n2fx_denit_cmoc
       ALLOCATE( n2fix_cmoc(jpi,jpj,jpk),denit_cmoc(jpi,jpj,jpk), STAT=ierr0 )
       IF( ierr0 /= 0 )   CALL ctl_stop( 'STOP', 'trc_src_init: failed to allocate trc_n2fx_denit_cmoc arrays for trc_src' ) 
       !
@@ -331,11 +331,11 @@ CONTAINS
   END SUBROUTINE trc_src2d
    !!======================================================================
 
-  SUBROUTINE trc_src_fedep( kt, Kmm )
+  SUBROUTINE trc_src_fedep( kt, Kbb, Kmm, Krhs )
       ! compute iron sources: surface deposition from the atm. 
       !                       based on CanESM5/CanOE code.
       !
-      INTEGER, INTENT(in) :: kt, Kmm
+      INTEGER, INTENT(in) :: kt, Kbb, Kmm, Krhs 
       !
       INTEGER  :: jk                          !: loop variables
       INTEGER  :: ierr, ios                   !: working variables
@@ -386,6 +386,10 @@ CONTAINS
          zirondep(:,:,jk) = src2d_dta(:,:,js2d_dust) / ( wdust0 * 55.85 * rmtssb ) * 1.e-4 * EXP( -gdept(:,:,jk,Kmm) / 1000. ) * 1.E+12
       END DO
 
+      DO jk = 1, jpkm1
+         tr(:,:,jk,jrfer, Krhs) = tr(:,:,jk,jrfer, Krhs) + zirondep(:,:,jk) * qfact2
+      END DO
+
       ! Diagnostics
       IF( lk_iomput ) THEN
         zafe(:,:,:) = zirondep(:,:,:) * 1.E-9 * tmask_bgc_closea(:,:,:)      ! zirondep and ironsed are in nmol m^-3 s^-1
@@ -397,10 +401,10 @@ CONTAINS
   
   END SUBROUTINE trc_src_fedep
 
-  SUBROUTINE trc_src_fesed ( Kmm ) 
+  SUBROUTINE trc_src_fesed ( Kbb, Kmm, Krhs ) 
       ! compute iron sources: bottom flux from sediments
       !                       based on CanESM5/CanOE code.
-      INTEGER, INTENT(in) :: Kmm
+      INTEGER, INTENT(in) :: Kbb, Kmm, Krhs
       INTEGER  :: ji, jj, jk                  !: loop variables
       INTEGER  :: ierr, inum, ios             !: working variables
       !
@@ -439,29 +443,31 @@ CONTAINS
          CALL FLUSH(numout)
       ENDIF
       !     
-      CALL iom_open('bathy.orca.nc', inum)
-      CALL iom_get(inum, jpdom_global,'bathy',zcmask(:,:,:))
-      CALL iom_close(inum)
+!      CALL iom_open('bathy.orca.nc', inum)
+!      CALL iom_get(inum, jpdom_data,'bathy',zcmask(:,:,:), lrowattr=ln_use_jattr)
+!      CALL iom_close(inum)
       !
-      DO jk = 1, 5
-        DO jj = 2, jpj
-           DO ji = 2, jpi
-              IF( tmask_bgc_closea(ji,jj,jk) /= 0. ) THEN
-                 zmaskt = tmask_bgc_closea(ji+1,jj,jk) * tmask_bgc_closea(ji-1,jj,jk) & 
-                    &   * tmask_bgc_closea(ji,jj+1,jk) * tmask_bgc_closea(ji,jj-1,jk) &
-                    &   * tmask_bgc_closea(ji,jj,jk+1)
-                 IF( zmaskt == 0. )  zcmask(ji,jj,jk ) = MAX( 0.1, zcmask(ji,jj,jk) ) 
-              END IF
-           END DO
-        END DO
-      END DO
-      CALL lbc_lnk('trc_src_fesed', zcmask(:,:,:) , 'T', 1. )      ! lateral boundary conditions on cmask   (sign unchanged)
+!      DO jk = 1, 5
+!        DO jj = 2, jpjm1
+!           DO ji = fs_2, fs_jpim1     ! These if required are added with the include statement just above the CONTAINS statement
+!              IF( tmask_bgc_closea(ji,jj,jk) /= 0. ) THEN
+!                 zmaskt = tmask_bgc_closea(ji+1,jj,jk) * tmask_bgc_closea(ji-1,jj,jk) & 
+!                    &   * tmask_bgc_closea(ji,jj+1,jk) * tmask_bgc_closea(ji,jj-1,jk) &
+!                    &   * tmask_bgc_closea(ji,jj,jk+1)
+!                 IF( zmaskt == 0. )  zcmask(ji,jj,jk ) = MAX( 0.1, zcmask(ji,jj,jk) ) 
+!              END IF
+!           END DO
+!        END DO
+!      END DO
+!      CALL lbc_lnk('trc_src_fesed', zcmask(:,:,:) , 'T', 1. )      ! lateral boundary conditions on cmask   (sign unchanged)
+      zcmask(:,:,:) = 1.
       DO jk = 1, jpk
         DO jj = 1, jpj
            DO ji = 1, jpi
               zexpide   = MIN( 8.,( gdept(ji,jj,jk,Kmm) / 500. )**(-1.5) )
               zdenitide = -0.9543 + 0.7662 * LOG( zexpide ) - 0.235 * LOG( zexpide )**2
-              zcmask(ji,jj,jk) = zcmask(ji,jj,jk) * MIN( 1., EXP( zdenitide ) / 0.5 )
+              zcmask(ji,jj,jk) = MIN( 1., EXP( zdenitide ) / 0.5 )
+              !zcmask(ji,jj,jk) = zcmask(ji,jj,jk) * MIN( 1., EXP( zdenitide ) / 0.5 )
            END DO
         END DO
       END DO
@@ -473,6 +479,13 @@ CONTAINS
         zironsed(:,:,jk) = sedfeinput0 * zcmask(:,:,jk) / ( e3t(:,:,jk,Kmm) * rday )
       END DO
 
+      DO jj = 1, jpj
+       DO ji = 1, jpi
+        jk  = mbkt(ji,jj)
+        tr(ji,jj,jk,jrfer, Krhs) = tr(ji,jj,jk,jrfer, Krhs) + zironsed(ji,jj,jk) * qfact2
+       END DO
+      END DO
+      
       ! Diagnostics
       IF( lk_iomput ) THEN
         zbfe(:,:,:) = zironsed(:,:,:) * 1.E-9 * tmask_bgc_closea(:,:,:)
@@ -480,7 +493,7 @@ CONTAINS
       ENDIF  
       ironsed_cmoc(:,:,:) = zironsed(:,:,:)
       !
-      DEALLOCATE( zcmask )
+      DEALLOCATE( zironsed, zbfe, zcmask )
 
       IF( ln_timing )   CALL timing_stop('trc_src_fesed')
       
@@ -616,7 +629,7 @@ CONTAINS
   END SUBROUTINE trc_bott_cmoc
 
 
-  SUBROUTINE trc_n2fx_denit_cmoc( zpar,Kmm, Krhs, write_rhs_flag )
+  SUBROUTINE trc_n2fx_denit_cmoc( zpar, kt, jnt ,Kmm, Krhs,write_rhs_flag )
       ! compute N2 fixation and denitrification
       ! as prescribed in CanESM5/CMOC
       REAL(wp), DIMENSION(jpi,jpj,jpk), INTENT(in) :: zpar  ! any PAR array
@@ -626,6 +639,7 @@ CONTAINS
       LOGICAL                       :: write_rhs_flag0  ! 
       !
       INTEGER                       :: ji, jj, jk      ! nested loop indices
+      INTEGER, INTENT(in)           :: kt, jnt ! ocean time step
       ! <CMOC code OR 10/15/2015> arrays for total water column remineralisation, 
       ! total euphotic zone nitrogen fixation, temporary array for DNF diagnostics, 
       ! pon flux (euphotic zone bottom) for PIC burial diagnostics, PIC flux at the 
@@ -636,6 +650,7 @@ CONTAINS
       !compute the balance between denitrification and nitrogen fixation
       REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: zn2fix,   zJNd
       REAL(wp)   :: zrtn
+      CHARACTER (len=25) :: charout
       !
       ALLOCATE( zn2fix(jpi, jpj, jpk), zJNd (jpi, jpj, jpk) )
       ALLOCATE( zn2fixtot(jpi, jpj  ), zdenittot(jpi, jpj ), zwork(jpi, jpj ) )
@@ -668,7 +683,7 @@ CONTAINS
                    &                 * oomask(ji,jj) * tmask_bgc_closea(ji,jj,jk)                             ! open ocean / land mask
                    !
                    ! total nitrogen fixation on the current 1/4 time step, is this still true, depends on qnrdttrc
-                   zn2fixtot(ji,jj) = zn2fixtot(ji,jj) + zn2fix(ji,jj,jk) * e3t(ji,jj,jk,Kmm)     
+                   zn2fixtot(ji,jj) = zn2fixtot(ji,jj) + zn2fix(ji,jj,jk) * e3t(ji,jj,jk,Kmm)
                    zJNd(ji,jj,jk)   = zn2fix(ji,jj,jk)
                END DO
           END DO
@@ -691,9 +706,9 @@ CONTAINS
       END DO
       !
       ! Store 3D denitrication rate
-      denit_cmoc(:,:,:) = zJNd(:,:,:)
+      denit_cmoc(:,:,:) = zJNd(:,:,:) - n2fix_cmoc(:,:,:)
       !
-      ! WRITE(numout,*) 'DNF sum:', SUM(zn2fixtot(:,:)) + SUM(zdenittot(:,:))
+       WRITE(numout,*) 'DNF sum:', SUM(zn2fixtot(:,:)) , SUM(zdenittot(:,:))
 
       !     --------------------------------------------------------------------
       !     Update the arrays TRA which contain the biological sources and sinks
@@ -711,29 +726,29 @@ CONTAINS
         END IF
       END DO
       !
-      ! ! print mean trends (used for debugging)
-      ! IF( sn_cfctl%l_prttrc )   THEN
-         ! WRITE(charout, FMT="('rem6')")
-         ! CALL prt_ctl_info(charout)
-         ! CALL prt_ctl(tab4d_1=tr(:,:,:,:, Krhs), mask1=tmask_bgc_closea, clinfo=ctrcnm)
-      ! ENDIF
+      ! print mean trends (used for debugging)
+      IF( sn_cfctl%l_prttrc )   THEN
+         WRITE(charout, FMT="('rem6')")
+         CALL prt_ctl_info(charout, cdcomp = 'top')
+         CALL prt_ctl(tab4d_1=tr(:,:,:,:, Krhs), mask1=tmask_bgc_closea, clinfo=ctrcnm)
+      ENDIF
       !
-      ! IF( lk_iomput ) THEN
-         ! IF( jnt == qnrdttrc ) THEN
-            ! ! <CMOC code OR 10/15/2015> 1.e+3_wp is to convert from L^-1 to m^-3
-            ! !  (left in the sum line #119); the diagnostics has to be rescaled 
-            ! ! to per second by dividing by rfact2.
-            ! zwork(:,:)  =  zn2fixtot(:,:) * ncrr_cmoc * 1.e+3_wp * qfact2r * tmask_bgc_closea(:,:,1)
-            ! ! nitrogen fixation in molN m^-2 s^-1 
-            ! CALL iom_put( "Nfix"   , zwork )
-            ! ! <CMOC code OR 12/11/2015> 1.e+3_wp is to convert from L^-1 to 
-            ! ! m^-3 (left in the sum line #119); the diagnostics has to be 
-            ! ! rescaled to per second by dividing by rfact2; NOTE: land mask 
-            ! ! already taken into account
-            ! zwork(:,:)  = -zdenittot(:,:) * ncrr_cmoc * 1.e+3_wp * qfact2r
-            ! CALL iom_put( "Denit"  , zwork ) ! denitrification in molN m^-2 s^-1 
-       ! ENDIF
-      ! ENDIF
+      IF( lk_iomput ) THEN
+         IF( jnt == qnrdttrc ) THEN
+            ! <CMOC code OR 10/15/2015> 1.e+3_wp is to convert from L^-1 to m^-3
+            !  (left in the sum line #119); the diagnostics has to be rescaled 
+            ! to per second by dividing by rfact2.
+            zwork(:,:)  =  zn2fixtot(:,:) * ncrr_cmoc * 1.e+3_wp * qfact2r * tmask_bgc_closea(:,:,1)
+            ! nitrogen fixation in molN m^-2 s^-1 
+            CALL iom_put( "Nfix"   , zwork )
+            ! <CMOC code OR 12/11/2015> 1.e+3_wp is to convert from L^-1 to 
+            ! m^-3 (left in the sum line #119); the diagnostics has to be 
+            ! rescaled to per second by dividing by rfact2; NOTE: land mask 
+            ! already taken into account
+            zwork(:,:)  = -zdenittot(:,:) * ncrr_cmoc * 1.e+3_wp * qfact2r
+            CALL iom_put( "Denit"  , zwork ) ! denitrification in molN m^-2 s^-1 
+       ENDIF
+      ENDIF
       !
       DEALLOCATE(zJNd, zdenittot, zn2fix, zn2fixtot, zwork)
       !

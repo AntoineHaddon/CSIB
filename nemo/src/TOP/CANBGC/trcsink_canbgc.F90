@@ -348,7 +348,7 @@ CONTAINS
       !
       IF( sn_cfctl%l_prttrc )   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('cmocsink')")
-         CALL prt_ctl_info(charout)
+         CALL prt_ctl_info(charout, cdcomp = 'top')
          CALL prt_ctl(tab4d_1=tr(:,:,:,:, Krhs), mask1=tmask_bgc_closea, clinfo=ctrcnm)
       ENDIF
       !
@@ -472,8 +472,10 @@ CONTAINS
       !
       IF( sn_cfctl%l_prttrc )   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('sink')")
-         CALL prt_ctl_info(charout)
-         CALL prt_ctl(tab4d_1=tr(:,:,:,:, Krhs), mask1=tmask, clinfo=ctrcnm)
+         write(*,*) 'shapes tr=',shape(tr)
+         write(*,*) 'shapes ctrcnm=',shape(ctrcnm)
+         CALL prt_ctl_info(charout, cdcomp = 'top')
+         CALL prt_ctl(tab4d_1=tr(:,:,:,:, Krhs), mask1=tmask_bgc_closea, clinfo=ctrcnm)
       ENDIF
       !
       IF( ln_timing )  CALL timing_stop('canoe_sink')

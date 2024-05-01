@@ -290,4 +290,5 @@ wdust0       =  2.0      ! Dust sinking speed
 !-----------------------------------------------------------------------
    nn_patmint  =  0 ! =0, air pressure constant (nn_patm) 
    nn_patm     =  101325. ! Constant atmospheric pressure in Pa (nn_patmint=0)
+   nn_no3_sf  = 1.e-6          ! scaling factor for NO3 (for estimation of PO4)
 /

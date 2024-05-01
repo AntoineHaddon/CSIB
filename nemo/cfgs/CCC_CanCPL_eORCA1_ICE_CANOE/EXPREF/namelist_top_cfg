@@ -287,4 +287,5 @@ wdust0       =  2.0      ! Dust sinking speed
 !-----------------------------------------------------------------------
    nn_co2int  =  3  ! =3, get the fields from the coupler (sn_rcv_co2 must be 'coupled')
    nn_patmint  =  3 ! =3, get the fields from the coupler (sn_rcv_mslp must be 'coupled')
+   nn_no3_sf  = 1.e-6          ! scaling factor for NO3 (for estimation of PO4)
 /
