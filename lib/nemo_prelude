@@ -99,9 +99,6 @@ echo "#################### Start NEMO pre-processing #################"
   # nemo_carbon = 1 means include PISCES
   nemo_carbon=${nemo_carbon:=0}
 
-  # Forcing method (coupled or bulk_iaf is supported)
-  nemo_forcing=${nemo_forcing:-coupled}
-
   # IO specification files
   #     If not defined a default version will be pulled for the given nemo_config
   nemo_iodef=${nemo_iodef:=''}
@@ -126,9 +123,6 @@ echo "#################### Start NEMO pre-processing #################"
   nemo_K1rowdrg=${nemo_K1rowdrg:=nemo_3.4_orca1_k1rowdrg_r1_modif.nc}
   nemo_Eddyengf=${nemo_Eddyengf:=nemo_3.4_orca1_eddy_mix.nc}
 #  nemo_geothermal_heating=${nemo_geothermal_heating:=nemo_3.3_orca2_geothermal_heating.nc}
-  nemo_runoff_core_monthly=${nemo_runoff_core_monthly:=nemo_3.4_orca1_runoff_1m_orca1.nc}
-  nemo_sst_data=${nemo_sst_data:=nemo_3.4_orca1_sst_1m_orca1.nc}
-  nemo_sss_data=${nemo_sss_data:=omip6_orca1_data_sss_nomask.nc}
   nemo_chlorophyll=${nemo_chlorophyll:=nemo_3.4_orca1_chlorophyll-orca1_1m.nc}
   nemo_subbasins=${nemo_subbasins:=nemo_3.4_orca1_basinmask_050308_ukmo_modified.nc}
   nemo_o2=${nemo_o2:=urdy_fafmip_hfds_orca1_record.nc}
@@ -151,13 +145,6 @@ echo "#################### Start NEMO pre-processing #################"
   if [[ "$chunk_start_date" != "$run_start_date" ]] && (( nemo_from_rest == 1 )); then
     nemo_from_rest=0
   fi
-
-  # make sure we got a valid forcing setting
-  case $nemo_forcing in
-    coupled) ;; # These are valid values
-    bulk_iaf) ;;
-    *) bail "Invalid value for nemo_forcing = $nemo_forcing" ;;
-  esac
 
   # confirm a valid ice settings
   case $nn_ice in
@@ -444,9 +431,6 @@ echo "#################### Start NEMO pre-processing #################"
   is_zero_size K1rowdrg.nc            && acc_cp K1rowdrg.nc            $nemo_K1rowdrg
   is_zero_size Eddyengf.nc            && acc_cp Eddyengf.nc            $nemo_Eddyengf
 #  is_zero_size geothermal_heating.nc  && acc_cp geothermal_heating.nc  $nemo_geothermal_heating
-  is_zero_size runoff_core_monthly.nc && acc_cp runoff_core_monthly.nc $nemo_runoff_core_monthly
-  is_zero_size sss_data.nc            && acc_cp sss_data.nc            $nemo_sss_data
-  is_zero_size sst_data.nc            && acc_cp sst_data.nc            $nemo_sst_data
   is_zero_size chlorophyll.nc         && acc_cp chlorophyll.nc         $nemo_chlorophyll
   is_zero_size subbasins.nc           && acc_cp subbasins.nc           $nemo_subbasins
 
@@ -479,43 +463,115 @@ echo "#################### Start NEMO pre-processing #################"
   fi
   is_zero_size o2.nc && acc_cp o2.nc $nemo_o2
 
-  if [[ "$nemo_forcing" == "bulk_iaf" ]]; then
-      # Forcing files to be accessed
-      # In the case of interannual forcing, just give the file prefix. The ${prefix}_yYYYY.nc will be added
-      # by xnemo.
-      # NOTE: we need to define these defaults some where else
-      nemo_t=omip6_orca1_corev2_t_10
-      nemo_u=omip6_orca1_corev2_u_10
-      nemo_v=omip6_orca1_corev2_v_10
-      nemo_q=omip6_orca1_corev2_q_10
-      nemo_qsw=omip6_orca1_corev2_ncar_rad
-      nemo_qlw=omip6_orca1_corev2_ncar_rad
-      nemo_precip=omip6_orca1_corev2_ncar_precip
-      nemo_snow=omip6_orca1_corev2_ncar_precip
-      nemo_runoff=omip6_orca1_corev2_runoff
+  if [[ $config == "OMIP" ]]; then
+      if [[ "$runmode" == "OMIP1" || "$runmode" == "OMIP1-spinup" || "$runmode" == "OMIP1-spunup" ]]; then
+        # Forcing files to be accessed
+        # In the case of interannual forcing, just give the file prefix. The ${prefix}_yYYYY.nc will be added.
+        nemo_t=omip6_orca1_corev2_t_10
+        nemo_u=omip6_orca1_corev2_u_10
+        nemo_v=omip6_orca1_corev2_v_10
+        nemo_q=omip6_orca1_corev2_q_10
+        nemo_qsw=omip6_orca1_corev2_ncar_rad
+        nemo_qlw=omip6_orca1_corev2_ncar_rad
+        nemo_precip=omip6_orca1_corev2_ncar_precip
+        nemo_snow=omip6_orca1_corev2_ncar_precip
+        nemo_runoff=omip6_orca1_corev2_runoff
+        nemo_sst_data=nemo_3.4_orca1_sst_1m_orca1.nc
+        nemo_sss_data=omip6_orca1_data_sss_nomask.nc
+        # WEIGHTS file for this resolution (leave empty when not used)
+        nemo_weights_bicubic2=
+        nemo_weights_bilinear2=
 
-      # WEIGHTS file for this resolution
-      nemo_weights_bicubic2=
-      nemo_weights_bilinear2=
+        yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
+        yearca=`expr ${current_year} - ${year_run_start} + 1 | awk  '{printf "%04d",$1}'`
+        fy=`expr ${yearca} + ${iaf_year_offset} | awk  '{printf "%04d",$1}'`
+        yd=`expr ${iaf_loop_year} - ${iaf_year_offset}`
+        fyl=`expr ${fy} - '(' '(' ${yearca} - 1 ')' / ${yd} ')' \* ${yd}`
+        forcing_year=`expr ${fyl} | awk  '{printf "%04d",$1}'`
 
-      yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
-      yearca=`expr ${current_year} - ${year_run_start} + 1 | awk  '{printf "%04d",$1}'`
-      fy=`expr ${yearca} + ${iaf_year_offset} | awk  '{printf "%04d",$1}'`
-      yd=`expr ${iaf_loop_year} - ${iaf_year_offset}`
-      fyl=`expr ${fy} - '(' '(' ${yearca} - 1 ')' / ${yd} ')' \* ${yd}`
-      forcing_year=`expr ${fyl} | awk  '{printf "%04d",$1}'`
+        # link to the interranual forcing
+        acc_cp tair10m_y${yearc}.nc          ${nemo_t}_y${forcing_year}.nc
+        acc_cp uwnd10m_y${yearc}.nc          ${nemo_u}_y${forcing_year}.nc
+        acc_cp vwnd10m_y${yearc}.nc          ${nemo_v}_y${forcing_year}.nc
+        acc_cp humi10m_y${yearc}.nc          ${nemo_q}_y${forcing_year}.nc
+        acc_cp qsw_y${yearc}.nc              ${nemo_qsw}_y${forcing_year}.nc
+        acc_cp qlw_y${yearc}.nc              ${nemo_qlw}_y${forcing_year}.nc
+        acc_cp precip_y${yearc}.nc           ${nemo_precip}_y${forcing_year}.nc
+        acc_cp snow_y${yearc}.nc             ${nemo_snow}_y${forcing_year}.nc
+        acc_cp runoff_y${yearc}.nc           ${nemo_runoff}_y${forcing_year}.nc
+        acc_cp sst_data.nc            $nemo_sst_data
+        acc_cp sss_data.nc            $nemo_sss_data
+      elif [[ "$runmode" == "OCN-CanESM5-piControl" ]]; then
+        # Forcing files to be accessed
+        # In the case of interannual forcing, just give the file prefix. The ${prefix}_yYYYY.nc will be added.
+        nemo_t=urdy_tas_pi
+        nemo_u=urdy_uas_pi
+        nemo_v=urdy_vas_pi
+        nemo_q=urdy_huss_pi
+        nemo_qsw=urdy_rsds_pi
+        nemo_qlw=urdy_rlds_pi
+        nemo_precip=urdy_pr_pi
+        nemo_snow=urdy_prsn_pi
+        nemo_runoff=friver_1m_canesm5-orca1_pi_r1i1p2f1_gn
+        nemo_sss_data=sos_1m_canesm5-orca1_pi_r1i1p2f1_gn
+        # WEIGHTS file for this resolution
+        nemo_weights_bicubic2=uncs_orca1_canesm2_weights_bicubic.nc
+        nemo_weights_bilinear2=uncs_orca1_canesm2_weights_bilin.nc
 
-      acc_cp tair10m_y${yearc}.nc          ${nemo_t}_y${forcing_year}.nc
-      acc_cp uwnd10m_y${yearc}.nc          ${nemo_u}_y${forcing_year}.nc
-      acc_cp vwnd10m_y${yearc}.nc          ${nemo_v}_y${forcing_year}.nc
-      acc_cp humi10m_y${yearc}.nc          ${nemo_q}_y${forcing_year}.nc
-      acc_cp qsw_y${yearc}.nc              ${nemo_qsw}_y${forcing_year}.nc
-      acc_cp qlw_y${yearc}.nc              ${nemo_qlw}_y${forcing_year}.nc
-      acc_cp precip_y${yearc}.nc           ${nemo_precip}_y${forcing_year}.nc
-      acc_cp snow_y${yearc}.nc             ${nemo_snow}_y${forcing_year}.nc
-      acc_cp runoff_y${yearc}.nc           ${nemo_runoff}_y${forcing_year}.nc
+        yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
+        yearca=`expr ${current_year} - ${year_run_start} + 1 | awk  '{printf "%04d",$1}'`
+        fy=`expr ${yearca} + ${iaf_year_offset} | awk  '{printf "%04d",$1}'`
+        yd=`expr ${iaf_loop_year} - ${iaf_year_offset}`
+        fyl=`expr ${fy} - '(' '(' ${yearca} - 1 ')' / ${yd} ')' \* ${yd}`
+        forcing_year=`expr ${fyl} | awk  '{printf "%04d",$1}'`
+
+        # link to the interranual forcing
+        acc_cp tas_pi_y${yearc}.nc          ${nemo_t}_y${forcing_year}.nc
+        acc_cp uas_pi_y${yearc}.nc          ${nemo_u}_y${forcing_year}.nc
+        acc_cp vas_pi_y${yearc}.nc          ${nemo_v}_y${forcing_year}.nc
+        acc_cp huss_pi_y${yearc}.nc          ${nemo_q}_y${forcing_year}.nc
+        acc_cp rsds_pi_y${yearc}.nc              ${nemo_qsw}_y${forcing_year}.nc
+        acc_cp rlds_pi_y${yearc}.nc              ${nemo_qlw}_y${forcing_year}.nc
+        acc_cp pr_pi_y${yearc}.nc           ${nemo_precip}_y${forcing_year}.nc
+        acc_cp prsn_pi_y${yearc}.nc             ${nemo_snow}_y${forcing_year}.nc
+        acc_cp runoff_y${yearc}.nc           ${nemo_runoff}_y${forcing_year}.nc
+        acc_cp sss_data_y${yearc}.nc            ${nemo_sss_data}_y${forcing_year}.nc
+      elif  [[ "$runmode" == "CORE-NY" ]]; then
+        nemo_t=uncs_corev2-ny_t_10.15JUNE2009.nc
+        nemo_u=uncs_corev2-ny_u_10.15JUNE2009.nc
+        nemo_v=uncs_corev2-ny_v_10.15JUNE2009.nc
+        nemo_q=uncs_corev2-ny_q_10.15JUNE2009.nc
+        nemo_qsw=uncs_corev2-ny_ncar_rad.15JUNE2009.nc
+        nemo_qlw=uncs_corev2-ny_ncar_rad.15JUNE2009.nc
+        nemo_precip=uncs_corev2-ny_ncar_precip.15JUNE2009.nc
+        nemo_snow=uncs_corev2-ny_ncar_precip.15JUNE2009.nc
+        nemo_runoff_core_monthly=uncs_corev2-ny_runoff.15june2009.nc
+        nemo_sst_data=nemo_3.4_orca1_sst_1m_orca1.nc
+        nemo_sss_data=omip6_orca1_data_sss_nomask.nc
+        # WEIGHTS file for this resolution 
+        nemo_weights_bicubic2=uncs_orca1_corev2_weights_bicubic.nc
+        nemo_weights_bilinear2=uncs_orca1_corev2_weights_bilin.nc
+
+        # link to the CORE forcing files 
+        acc_cp tair10m.nc          ${nemo_t}
+        acc_cp uwnd10m.nc          ${nemo_u}
+        acc_cp vwnd10m.nc          ${nemo_v}
+        acc_cp humi10m.nc          ${nemo_q}
+        acc_cp qsw.nc              ${nemo_qsw}
+        acc_cp qlw.nc              ${nemo_qlw}
+        acc_cp precip.nc           ${nemo_precip}
+        acc_cp snow.nc             ${nemo_snow}
+        acc_cp runoff_core_monthly.nc $nemo_runoff_core_monthly
+        acc_cp sst_data.nc            $nemo_sst_data
+        acc_cp sss_data.nc            $nemo_sss_data
+
+      fi
       is_defined $nemo_weights_bicubic2 && acc_cp weights_bic2.nc $nemo_weights_bicubic2
       is_defined $nemo_weights_bilinear2 && acc_cp weights_bil2.nc $nemo_weights_bilinear2
+
+  else
+        nemo_runoff_core_monthly=nemo_3.4_orca1_runoff_1m_orca1.nc
+        acc_cp runoff_core_monthly.nc $nemo_runoff_core_monthly
   fi
 
   if (( nemo_carbon == 1 )); then
@@ -538,7 +594,7 @@ echo "#################### Start NEMO pre-processing #################"
       is_zero_size fermask.orca.nc && acc_cp fermask.orca.nc $nemo_fermask_orca
     fi
 
-    if [[ "$nemo_forcing" == "bulk_iaf" ]]; then
+    if [[ "$runmode" == "OMIP1" || "$runmode" == "OMIP1-spinup" || "$runmode" == "OMIP1-spunup" ]]; then
         nemo_data_si_nomask=${nemo_data_si_nomask:=omip6_orca1_data_si_nomask.nc}
     else
         nemo_data_si_nomask=${nemo_data_si_nomask:=uncs_orca1_data_si_nomask.nc}
