@@ -277,9 +277,13 @@ echo "#################### Start NEMO pre-processing #################"
     cn_trcrst_in="restart_trc_in"   # pisces input
     cn_trcrst_out="restart_trc"     # pisces output
 
+    # default values from the DECK+ test
+    fwb_year=1979; a_fwb_b=7.4302162498195736E-07; a_fwb=7.4302162498195736E-07
     if [[ "$runmode" == NEMO-AGCM-dcpp-assim* ]] ; then
       if [ -s "rs_EMPave.dat" ] ; then
         cp rs_EMPave.dat EMPave_old.dat
+      else
+        echo $fwb_year $a_fwb_b $a_fwb  > EMPave_old.dat
       fi
     fi
 
