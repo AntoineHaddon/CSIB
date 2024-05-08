@@ -169,19 +169,18 @@ CONTAINS
        !
         CALL canoe_sink( kt , jnt, Kbb, Kmm, Krhs )     ! particle sinking 
        !
-        !!!!!!!!!!! CALL trc_opt_stairs( kt, jnt )       ! test PAR vert profile.
-         CALL trc_opt( kt, jnt, Kmm )       ! 3-band PAR attenuation
+        CALL trc_opt( kt, jnt, Kmm )       ! 3-band PAR attenuation
        !
        ! call CanOE production S/R
-         CALL canoe_prod( kt, jnt, Kbb, Kmm, Krhs  )
-         CALL canoe_meso( kt, jnt, Kbb, Kmm, Krhs )
-         CALL canoe_mzoo( kt, jnt, Kbb, Kmm, Krhs )
-         CALL canoe_mort1( kt, jnt, Kbb, Kmm, Krhs  )
-         CALL canoe_mort2( kt, jnt, Kbb, Kmm, Krhs  )
-         CALL canoe_rem( kt, jnt, Kbb, Kmm, Krhs  )
-         CALL trc_src_fedep( kt, Kbb, Kmm, Krhs )
-         CALL trc_src_fesed( Kbb, Kmm, Krhs )
-         CALL trc_n2fx_canoe( kt, jnt, Kbb, Kmm, Krhs )
+        CALL canoe_prod( kt, jnt, Kbb, Kmm, Krhs  )
+        CALL canoe_meso( kt, jnt, Kbb, Kmm, Krhs )
+        CALL canoe_mzoo( kt, jnt, Kbb, Kmm, Krhs )
+        CALL canoe_mort1( kt, jnt, Kbb, Kmm, Krhs  )
+        CALL canoe_mort2( kt, jnt, Kbb, Kmm, Krhs  )
+        CALL canoe_rem( kt, jnt, Kbb, Kmm, Krhs  )
+        CALL trc_src_fedep( kt, Kbb, Kmm, Krhs )
+        CALL trc_src_fesed( Kbb, Kmm, Krhs )
+        CALL trc_n2fx_canoe( kt, jnt, Kbb, Kmm, Krhs )
         !
         ! Initialize rnegtr2, if no call to trc_xnegtr tra used w/o correction
         rnegtr2(:,:,:) = 1._wp
