@@ -515,8 +515,8 @@ echo "#################### Start NEMO pre-processing #################"
         nemo_runoff=friver_1m_canesm5-orca1_pi_r1i1p2f1_gn
         nemo_sss_data=sos_1m_canesm5-orca1_pi_r1i1p2f1_gn
         # WEIGHTS file for this resolution
-        nemo_weights_bicubic2=uncs_orca1_canesm2_weights_bicubic.nc
-        nemo_weights_bilinear2=uncs_orca1_canesm2_weights_bilin.nc
+        nemo_weights_bicubic2=weights_t63_bicubic_orca1.nc
+        nemo_weights_bilinear2=weights_t63_bilinear_orca1.nc
 
         yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
         yearca=`expr ${current_year} - ${year_run_start} + 1 | awk  '{printf "%04d",$1}'`
