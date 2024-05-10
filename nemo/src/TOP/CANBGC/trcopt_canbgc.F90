@@ -252,10 +252,10 @@ CONTAINS
       ENDIF
       !
       ! O Riche Aug 16th 2022, time splitting not implemented at least for now.
-      IF( lk_iomput .AND. knt == qnrdttrc ) THEN
-         CALL iom_put( "PAR3" , etot3(:,:,:) * tmask_bgc_closea(:,:,:) )  ! Photosynthetically Available Radiation (no band att.)
-         CALL iom_put( "PAR2BIO", par_3bands(:,:,:) * tmask_bgc_closea(:,:,:) ) ! PAR w/o the mxl averaging and w/ the diurnal cycle if any
-      ENDIF
+!      IF( lk_iomput .AND. knt == qnrdttrc ) THEN
+!         CALL iom_put( "PAR3" , etot3(:,:,:) * tmask_bgc_closea(:,:,:) )  ! Photosynthetically Available Radiation (no band att.)
+!         CALL iom_put( "PAR2BIO", par_3bands(:,:,:) * tmask_bgc_closea(:,:,:) ) ! PAR w/o the mxl averaging and w/ the diurnal cycle if any
+!      ENDIF
       !
       IF( ln_timing )   CALL timing_stop('trc_opt')
       !
@@ -381,14 +381,13 @@ CONTAINS
       !
       DEALLOCATE(zetot, zparsw)
       !
-      IF( lk_iomput .AND.  knt == qnrdttrc ) THEN
-        CALL iom_put( "Heup" ,                     tmask_bgc_closea(:,:,1) )  ! euphotic layer depth
-        CALL iom_put( "PARDM",                     tmask_bgc_closea(:,:,:) )  ! diagnostic : PAR with no diurnal cycle (mixed layer mean within the mxl)
-        CALL iom_put( "PAR"  ,                     tmask_bgc_closea(:,:,:) )  ! Photosynthetically Available Radiation (3-band att., mxl meam within the mxl)
-        CALL iom_put( "PAR3" ,                     tmask_bgc_closea(:,:,:) )  ! Photosynthetically Available Radiation (no band att.)
+!      IF( lk_iomput .AND.  knt == qnrdttrc ) THEN
+!        CALL iom_put( "PARDM",                     tmask_bgc_closea(:,:,:) )  ! diagnostic : PAR with no diurnal cycle (mixed layer mean within the mxl)
+!        CALL iom_put( "PAR"  ,                     tmask_bgc_closea(:,:,:) )  ! Photosynthetically Available Radiation (3-band att., mxl meam within the mxl)
+!        CALL iom_put( "PAR3" ,                     tmask_bgc_closea(:,:,:) )  ! Photosynthetically Available Radiation (no band att.)
 
-        CALL iom_put("PAR2BIO", par_1band(:,:,:) * tmask_bgc_closea(:,:,:) ) ! PAR to use for CMOC (or CanOE)
-      ENDIF
+!        CALL iom_put("PAR2BIO", par_1band(:,:,:) * tmask_bgc_closea(:,:,:) ) ! PAR to use for CMOC (or CanOE)
+!      ENDIF
       !
       IF( ln_timing )  CALL timing_stop('trc_opt_1band')      
          
