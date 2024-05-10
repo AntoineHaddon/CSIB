@@ -50,6 +50,7 @@ PROGRAM nemo_diag
    INTEGER   :: ntrec, id_time, id_tbnds, id_l, id_s, id_x, id_y, id_z
    INTEGER   :: ntbnds, ndim, ntdim
    INTEGER   :: i, l
+   INTEGER   :: tnsn_flag = 1     ! flag to indicate tn & sn files exist
    LOGICAL   :: exists
    !INTEGER   :: strlen
    INTEGER, DIMENSION(10)            :: ierr
@@ -130,10 +131,17 @@ PROGRAM nemo_diag
    CALL openfile (fname02,iou2)
    CALL openfile (fname03,iou3)
    CALL openfile (fname04,iou4)
-   CALL openfile (fname05,iou5)
-   CALL openfile (fname06,iou6)
-   CALL openfile (fname07,iou7)
-   CALL openfile (fname08,iou8)
+   INQUIRE (file="tnp.nc", exist=exists)
+   IF (exists) THEN
+     CALL openfile (fname05,iou5)
+     CALL openfile (fname06,iou6)
+     CALL openfile (fname07,iou7)
+     CALL openfile (fname08,iou8)
+   ELSE
+     tnsn_flag = 0       ! tnp.nc does not exist
+   ENDIF
+     
+    
 
    !!-------------------
    !! Get grid/mask data   
@@ -200,26 +208,31 @@ PROGRAM nemo_diag
    ! WRITE(*,*) 'sossheig'
    ! ssh(144,45,1,1)=-1.77589 m
    ! WRITE(*,*) ssh(144,45,1)
-   ! tn from last time step of previous year
-   CALL getvara ('tn', iou5, imt*jmt*km*1, (/1,1,1,1/), (/imt,jmt,km,1/), tnp, 1., 0.)
-   !WRITE(*,*) 'tnp'
-   ! tnp(144,45,1)=-0.0207554732464
-   !WRITE(*,*) tnp(144,45,1)
-   ! sn from last time step of previous year
-   CALL getvara ('sn', iou6, imt*jmt*km*1, (/1,1,1,1/), (/imt,jmt,km,1/), snp, 1., 0.)
-   !WRITE(*,*) 'snp'
-   ! snp(144,45,1)=34.0309282726
-   !WRITE(*,*) snp(144,45,1)
-   ! tn from last time step of current year
-   CALL getvara ('tn', iou7, imt*jmt*km*1, (/1,1,1,1/), (/imt,jmt,km,1/), tnc, 1., 0.)
-   !WRITE(*,*) 'tnc'
-   ! tnc(144,45,1)=2.14057999538
-   !WRITE(*,*) tnc(144,45,1)
-   ! sn from last time step of current year
-   CALL getvara ('sn', iou8, imt*jmt*km*1, (/1,1,1,1/), (/imt,jmt,km,1/), snc, 1., 0.)
-   !WRITE(*,*) 'snc'
-   ! snc(144,45,1)=34.1197096452
-   !WRITE(*,*) snc(144,45,1)
+   IF (tnsn_flag .eq. 1) THEN
+     ! tn from last time step of previous year
+     CALL getvara ('tn', iou5, imt*jmt*km*1, (/1,1,1,1/), (/imt,jmt,km,1/), tnp, 1., 0.)
+     !WRITE(*,*) 'tnp'
+     ! tnp(144,45,1)=-0.0207554732464
+     !WRITE(*,*) tnp(144,45,1)
+     ! sn from last time step of previous year
+     CALL getvara ('sn', iou6, imt*jmt*km*1, (/1,1,1,1/), (/imt,jmt,km,1/), snp, 1., 0.)
+     !WRITE(*,*) 'snp'
+     ! snp(144,45,1)=34.0309282726
+     !WRITE(*,*) snp(144,45,1)
+     ! tn from last time step of current year
+     CALL getvara ('tn', iou7, imt*jmt*km*1, (/1,1,1,1/), (/imt,jmt,km,1/), tnc, 1., 0.)
+     !WRITE(*,*) 'tnc'
+     ! tnc(144,45,1)=2.14057999538
+     !WRITE(*,*) tnc(144,45,1)
+     ! sn from last time step of current year
+     CALL getvara ('sn', iou8, imt*jmt*km*1, (/1,1,1,1/), (/imt,jmt,km,1/), snc, 1., 0.)
+     !WRITE(*,*) 'snc'
+     ! snc(144,45,1)=34.1197096452
+     !WRITE(*,*) snc(144,45,1)
+   ELSE
+     tnp = 0.0; snp = 0.0; tnc = 0.0; snc = 0.0
+   ENDIF
+
    print*, '-------------------'
    print*, 'Input data read OK!'
    print*, '-------------------'
