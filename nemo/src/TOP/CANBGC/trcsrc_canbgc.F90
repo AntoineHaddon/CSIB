@@ -379,7 +379,7 @@ CONTAINS
          CALL FLUSH(numout)
       ENDIF
       
-      ! iron aeolian depostion
+      ! iron aeolian deposition
       CALL trc_src2d( kt, js2d_dust )
       !
       zirondep(:,:,:) = 0.e0          ! Initialisation of variables USEd to compute deposition
