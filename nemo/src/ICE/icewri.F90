@@ -52,9 +52,10 @@ CONTAINS
       INTEGER  ::   ji, jj, jk, jl  ! dummy loop indices
       REAL(wp) ::   z2da, z2db, zrho1, zrho2
       REAL(wp) ::   zmiss_val       ! missing value retrieved from xios 
+      REAL(wp), DIMENSION(jpi,jpj)     ::   z2d                            ! 2D workspace
       REAL(wp), DIMENSION(jpi,jpj)     ::   zmsk00, zmsk05, zmsk15, zmsksn ! O%, 5% and 15% concentration mask and snow mask
       REAL(wp), DIMENSION(jpi,jpj,jpl) ::   zmsk00l, zmsksnl               ! cat masks
-      REAL(wp), DIMENSION(:,:), ALLOCATABLE ::   z2d,zfast, zalb, zmskalb      ! 2D workspace
+      REAL(wp), DIMENSION(:,:), ALLOCATABLE ::   zfast, zalb, zmskalb      ! 2D workspace
       !
       ! Global ice diagnostics (SIMIP)
       REAL(wp) ::   zdiag_area_nh, zdiag_extt_nh, zdiag_volu_nh   ! area, extent, volume

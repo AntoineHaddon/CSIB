@@ -156,14 +156,12 @@ CONTAINS
          END DO
       END DO
       !
-!      IF( ln_diatrc .AND. lk_iomput ) THEN
-!         zrfact2 = 1.e-3 * rfact2r
-!!         grazing(:,:,:) = grazing(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:)   ! Total grazing of phyto by zoo
-!         prodcal(:,:,:) = prodcal(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:)   ! Calcite production
-!         IF( jnt == nrdttrc ) THEN
+!      IF( lk_iomput ) THEN
+!         zrfact2 = 1.e-3 * qfact2r
+!         grazing(:,:,:) = grazing(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:)   ! Total grazing of phyto by zoo
+!         IF( jnt == qnrdttrc ) THEN
 !            CALL iom_put( "GRAZ2" , grazing2 * zrfact2 * tmask_bgc_closea(:,:,:) )  ! Grazing of large phytoplankton
 !            CALL iom_put( "GRAZ3" , grazing3 * zrfact2 * tmask_bgc_closea(:,:,:) )  ! Grazing of microzooplankton
-!            CALL iom_put( "PCAL" , prodcal  )  ! Calcite production
 !         ENDIF
 !      ENDIF
 !      !
@@ -268,9 +266,9 @@ CONTAINS
          END DO
       END DO
       !
-!      IF( ln_diatrc ) THEN
+!      IF( lk_iomput ) THEN
 !         zrfact2 = 1.e-3 * rfact2r  ! conversion from umol/L/timestep into mol/m3/s
-!         IF( jnt == nrdttrc ) THEN
+!         IF( jnt == qnrdttrc ) THEN
 !          CALL iom_put( "GRAZ1"   , grazing1(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )  ! microzooplankton grazing on nanophytoplankton
 !         ENDIF
 !      ENDIF
@@ -301,10 +299,12 @@ CONTAINS
       REAL(wp) :: c2n,n2c,c2fe,fe2c,n2fe,fe2n,thetac
       REAL(wp) :: cxs,nxs1,nxs2,fexs1,fexs2
       REAL(wp) :: csw1,csw2
+      REAL(wp) :: zrfact2
       REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   zmortpn
+      REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   prodcal
       CHARACTER (len=25) :: charout
 
-      ALLOCATE( zmortpn(  jpi, jpj, jpk ) )
+      ALLOCATE( zmortpn(  jpi, jpj, jpk ), prodcal(  jpi, jpj, jpk ) )
       zmortpn(:,:,:) = 0._wp
 
       !!---------------------------------------------------------------------
@@ -312,7 +312,7 @@ CONTAINS
       !IF( nn_timing == 1 )  CALL timing_start('canoe_mort1')
       !
 
-      !prodcal(:,:,:) = 0.  !: calcite production variable set to zero
+      prodcal(:,:,:) = 0.  !: calcite production variable set to zero
 
       DO jk = 1, jpkm1
          DO jj = 1, jpj
@@ -378,12 +378,20 @@ CONTAINS
                tr(ji,jj,jk,jqdic, Krhs) = tr(ji,jj,jk,jqdic, Krhs) - picfrx*(zmortp + zmortz)*1.E-6
                tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) - 2.*picfrx*(zmortp + zmortz)*1.E-6
                tr(ji,jj,jk,jrcal, Krhs) = tr(ji,jj,jk,jrcal, Krhs) + picfrx*(zmortp + zmortz)
-               !prodcal(ji,jj,jk) = picfrx*(zmortp + zmortz)         ! diagnostic array should be in mmol/m^-3/s but conversion is in p4zmeso for now
+               prodcal(ji,jj,jk) = picfrx*(zmortp + zmortz)         ! diagnostic array should be in mmol/m^-3/s but conversion is in p4zmeso for now
             END DO
          END DO
       END DO
       !
-      DEALLOCATE( zmortpn )
+      IF( lk_iomput ) THEN
+         zrfact2 = 1.e-3 * qfact2r
+         prodcal(:,:,:) = prodcal(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:)   ! Calcite production
+         IF( jnt == qnrdttrc ) THEN
+            CALL iom_put( "PCAL" , prodcal  )  ! Calcite production
+         ENDIF
+      ENDIF
+!      !
+      DEALLOCATE( zmortpn, prodcal )
       !
       IF( sn_cfctl%l_prttrc )   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('nano')")
@@ -516,13 +524,16 @@ CONTAINS
       REAL(wp) ::   zscave, zscavex, fexs, zcoag
       REAL(wp) ::   zlamfac, zonitr, zstep, znitro2dep
       REAL(wp) ::   zrfact2
+      REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: nh4ox, denitr
       CHARACTER (len=25) :: charout
+
+      ALLOCATE( nh4ox(  jpi, jpj, jpk ), denitr(  jpi, jpj, jpk ) )
       !REAL(wp), POINTER, DIMENSION(:,:,:) :: zolimi, zolimi2, zwork
       !!---------------------------------------------------------------------
       !
       !IF( nn_timing == 1 )  CALL timing_start('canoe_rem')
       !
-      !nh4ox(:,:,:)=0.
+      nh4ox(:,:,:)=0.
       DO jk = 1, jpkm1
          DO jj = 1, jpj
             DO ji = 1, jpi
@@ -541,7 +552,7 @@ CONTAINS
                tr(ji,jj,jk,jqno3, Krhs) = tr(ji,jj,jk,jqno3, Krhs) + zonitr
                tr(ji,jj,jk,jqoxy, Krhs) = tr(ji,jj,jk,jqoxy, Krhs) - 2. * zonitr
                tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) - 2.e-6 * zonitr
-               !nh4ox(ji,jj,jk) = zonitr
+               nh4ox(ji,jj,jk) = zonitr
             END DO
          END DO
       END DO
@@ -558,7 +569,7 @@ CONTAINS
          CALL prt_ctl(tab4d_1=tr(:,:,:,:, Krhs), mask1=tmask, clinfo=ctrcnm)
       ENDIF
 
-      !denitr(:,:,:)=0.
+      denitr(:,:,:)=0.
       DO jk = 1, jpkm1
          DO jj = 1, jpj
             DO ji = 1, jpi
@@ -581,7 +592,7 @@ CONTAINS
                tr(ji,jj,jk,jrgoc, Krhs) = tr(ji,jj,jk,jrgoc, Krhs) - zorem2
                tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) + 1.e-6 * (zorem + zorem2)*rr_n2c                         ! 1 mol of alkalinity per mol of N
                tr(ji,jj,jk,jqtal, Krhs) = tr(ji,jj,jk,jqtal, Krhs) + 1.e-6 * (zorem + zorem2)*nyld*zonitr*(1.-nh4frx)        ! +1 mol if denitrification, 0 if anammox
-               !denitr(ji,jj,jk) = (zorem + zorem2)*zonitr*nyld
+               denitr(ji,jj,jk) = (zorem + zorem2)*zonitr*nyld
 
             END DO
          END DO
@@ -623,15 +634,17 @@ CONTAINS
       !     Update the arrays TRA which contain the biological sources and sinks
       !     --------------------------------------------------------------------
 
-!      IF( ln_diatrc ) THEN
-!         zrfact2 = 1.e-3 * rfact2r  ! conversion from umol/L/timestep into mol/m3/s
-!         denitr(:,:,:) = denitr(:,:,:) * zrfact2
-!         nh4ox(:,:,:) = nh4ox(:,:,:) * zrfact2
-!         IF( jnt == nrdttrc ) THEN
-!       !   CALL iom_put( "Denitr"   , denitr(:,:,:) * tmask_bgc_closea(:,:,:) )  ! rate of denitrification
-!          CALL iom_put( "Nitrif"   , nh4ox(:,:,:) * tmask_bgc_closea(:,:,:) )  ! rate of nitrification
-!         ENDIF
-!      ENDIF
+      IF( lk_iomput ) THEN
+         zrfact2 = 1.e-3 * qfact2r  ! conversion from umol/L/timestep into mol/m3/s
+         denitr(:,:,:) = denitr(:,:,:) * zrfact2
+         nh4ox(:,:,:) = nh4ox(:,:,:) * zrfact2
+         IF( jnt == qnrdttrc ) THEN
+           CALL iom_put( "Denitr"   , denitr(:,:,:) * tmask_bgc_closea(:,:,:) )  ! rate of denitrification
+           CALL iom_put( "Nitrif"   , nh4ox(:,:,:) * tmask_bgc_closea(:,:,:) )  ! rate of nitrification
+         ENDIF
+      ENDIF
+
+      DEALLOCATE( nh4ox, denitr )
 
       IF( sn_cfctl%l_prttrc )   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('rem6')")

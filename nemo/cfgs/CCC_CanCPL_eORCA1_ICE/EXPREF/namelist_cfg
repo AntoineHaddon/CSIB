@@ -285,7 +285,7 @@ sn_rcv_mslp   =       'coupled'              ,    'no'    ,     ''      ,       
    !___________!_________________________!___________________!___________!_____________!________!___________!__________________!__________!_______________!
    !           !  file name              ! frequency (hours) ! variable  ! time interp.!  clim  ! 'yearly'/ ! weights filename ! rotation ! land/sea mask !
    !           !                         !  (if <0  months)  !   name    !   (logical) !  (T/F) ! 'monthly' !                  ! pairing  !    filename   !
-   sn_qgh      ='geothermal_heating.nc'  ,       -12.        , 'heatflow',   .false.   , .true. , 'yearly'  ,   ''             ,   ''     ,   ''
+   sn_qgh      ='geothermal_heating.nc'  ,       -12.        , 'gh_flux',   .false.   , .true. , 'yearly'  ,   ''             ,   ''     ,   ''
 /
 !-----------------------------------------------------------------------
 &nambbl        !   bottom boundary layer scheme                         (default: OFF)

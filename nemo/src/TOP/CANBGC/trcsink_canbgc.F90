@@ -456,18 +456,14 @@ CONTAINS
       CALL trc_sink0( wsbio4, sinking2, Kbb, Kmm, jrgoc )
       CALL trc_sink0( wscal , sinkcal, Kbb, Kmm , jrcal )
       !
-      ! zrfact2 = 1.e-3 * qfact2r
-      ! ik1  = iksed + 1
-      ! IF( lk_iomput ) THEN
-       ! IF( jnt == qnrdttrc ) THEN
-          ! CALL iom_put( "EPC100"  , ( sinking(:,:,ik1) + sinking2(:,:,ik1) ) * zrfact2 * tmask_bgc_closea(:,:,1) ) ! Export of carbon at 100m
-          ! CALL iom_put( "EPCALC100",  sinkcal(:,:,ik1)                       * zrfact2 * tmask_bgc_closea(:,:,1) ) ! Export of calcite  at 100m
-       ! ENDIF
-      ! ELSE
-       ! trc2d(:,:,jp_pcs0_2d + 4) = sinking (:,:,ik1) * zrfact2 * tmask_bgc_closea(:,:,1)
-       ! trc2d(:,:,jp_pcs0_2d + 5) = sinking2(:,:,ik1) * zrfact2 * tmask_bgc_closea(:,:,1)
-       ! trc2d(:,:,jp_pcs0_2d + 9) = sinkcal (:,:,ik1) * zrfact2 * tmask_bgc_closea(:,:,1)
-      ! ENDIF
+      zrfact2 = 1.e-3 * qfact2r
+      ik1  = iksed + 1
+      IF( lk_iomput ) THEN
+       IF( jnt == qnrdttrc ) THEN
+        CALL iom_put( "EPC100"  , ( sinking(:,:,ik1) + sinking2(:,:,ik1) ) * zrfact2 * tmask_bgc_closea(:,:,1) ) ! Export of carbon at 100m
+        CALL iom_put( "EPCALC100",  sinkcal(:,:,ik1)                       * zrfact2 * tmask_bgc_closea(:,:,1) ) ! Export of calcite  at 100m
+       ENDIF
+      ENDIF
       !
       !
       IF( sn_cfctl%l_prttrc )   THEN  ! print mean trends (used for debugging)

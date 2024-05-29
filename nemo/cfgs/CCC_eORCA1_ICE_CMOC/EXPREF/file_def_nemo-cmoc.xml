@@ -37,11 +37,6 @@
           <!-- <field field_ref="CO3sat"  name="CO3sat"    level="0" /> -->
           <!-- <field field_ref="HCO3"    name="HCO3"      level="0" /> -->
 
-          <field field_ref="PAR"      name="PAR"     level="0" />
-          <field field_ref="PARDM"    name="PARDM"   level="0" />
-          <field field_ref="PAR3"     name="PAR3"    level="0" />
-
-          <field field_ref="PAR2BIO"  name="PAR2BIO"   level="0" />
           <!-- PAR that we want to use in CanOE or CMOC production (1 or 3 bands) -->
 
           <field field_ref="tmask"    name="tmask"     level="0" />
@@ -63,7 +58,6 @@
           <field field_ref="pCO2"     name="pCO2"   level="0" />
           <field field_ref="pO2"      name="pO2"    level="0" />
 
-          <field field_ref="Heup"      name="Heup"       level="0" />
           <field field_ref="surf_chla" name="surf_chla"  level="0" />
 
           <!-- CMOC PP diagnostics -->

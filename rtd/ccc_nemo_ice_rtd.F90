@@ -206,7 +206,7 @@ SUBROUTINE calc (imt, jmt, lm)
       call getvara ('qtr_ice_bot', iou1, imt*jmt*lm                       &
           & ,(/1,1,1/), (/imt,jmt,lm/), iicesflx, 1., 0.)
 ! Heat flux from the snow precipitation of ice
-      call getvara ('hfsnthermds2d', iou1, imt*jmt*lm,                   &
+      call getvara ('hflx_snow_ai_cea', iou1, imt*jmt*lm,                   &
           & (/1,1,1/), (/imt,jmt,lm/), hflx_snow_ai_cea, 1., 0.)
 ! Heat flux error
       call getvara ('hfxerr', iou1, imt*jmt*lm,                   &

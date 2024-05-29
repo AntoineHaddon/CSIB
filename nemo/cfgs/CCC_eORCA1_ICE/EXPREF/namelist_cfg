@@ -106,7 +106,7 @@
                      ! Type of air-sea fluxes
                      !   ln_blk or ln_cpl will be set to true by config-canesm
    ln_flx      = .false.   !  flux formulation                          (T => fill namsbc_flx )
-   ln_blk      = .false.    !  Bulk formulation                          (T => fill namsbc_blk )
+   ln_blk      = .true.    !  Bulk formulation                          (T => fill namsbc_blk )
       !              ! Type of coupling (Ocean/Ice/Atmosphere) :
    ln_cpl      = .false.   !  atmosphere coupled   formulation          ( requires key_oasis3 )
      lk_cancpl   = .false.    !  CanCPL coupler 
@@ -286,7 +286,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
    !___________!_________________________!___________________!___________!_____________!________!___________!__________________!__________!_______________!
    !           !  file name              ! frequency (hours) ! variable  ! time interp.!  clim  ! 'yearly'/ ! weights filename ! rotation ! land/sea mask !
    !           !                         !  (if <0  months)  !   name    !   (logical) !  (T/F) ! 'monthly' !                  ! pairing  !    filename   !
-   sn_qgh      ='geothermal_heating.nc'  ,       -12.        , 'heatflow',   .false.   , .true. , 'yearly'  ,   ''             ,   ''     ,   ''
+   sn_qgh      ='geothermal_heating.nc'  ,       -12.        , 'gh_flux',   .false.   , .true. , 'yearly'  ,   ''             ,   ''     ,   ''
 /
 !-----------------------------------------------------------------------
 &nambbl        !   bottom boundary layer scheme                         (default: OFF)

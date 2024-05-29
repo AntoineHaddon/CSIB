@@ -256,7 +256,6 @@ wdust0       =  2.0      ! Dust sinking speed
 !              !                  !  (if <0  months)  !   name    !   (logical)  !  (T/F) ! 'monthly' ! filename ! pairing  ! filename      !
    sn_par      = 'par.orca'       ,     24.           , 'fr_par'  ,  .true.      , .true. , 'yearly'  , ''       , ''       , ''
    cn_dir      = './'      !  root directory for the location of the dynamical files
-   ln_varpar   =  .false.  ! boolean for PAR variable
    parlux      =  0.43     ! Fraction of shortwave as PAR
 ! 1-band PAR
    kw_cmoc     =  0.04          ! PAR attenuation coefficient for seawater (m^-1)
