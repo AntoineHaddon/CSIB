@@ -48,8 +48,8 @@ MODULE trc
    INTEGER             , PUBLIC                                    ::  nutwrs         !: output FILE for passive tracers restart
    INTEGER             , PUBLIC                                    ::  nutrst         !: logical unit for restart FILE for passive tracers
    INTEGER             , PUBLIC                                    ::  nn_rsttr       !: control of the time step ( 0 or 1 ) for pass. tr.
-   CHARACTER(len = 80) , PUBLIC                                    ::  cn_trcrst_in   !: suffix of pass. tracer restart name (input)
-   CHARACTER(len = 80) , PUBLIC                                    ::  cn_trcrst_out  !: suffix of pass. tracer restart name (output)
+   CHARACTER(len = lc) , PUBLIC                                    ::  cn_trcrst_in   !: suffix of pass. tracer restart name (input)
+   CHARACTER(len = lc) , PUBLIC                                    ::  cn_trcrst_out  !: suffix of pass. tracer restart name (output)
    REAL(wp)            , PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:)   ::  rdttrc         !: vertical profile of passive tracer time step
    LOGICAL             , PUBLIC                                    ::  ln_trcdta      !: Read inputs data from files
    LOGICAL             , PUBLIC                                    ::  ln_trcdmp      !: internal damping flag
