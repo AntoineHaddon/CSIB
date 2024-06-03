@@ -174,6 +174,7 @@ that are available in the tidal-forcing implementation (see
 
     <field id="mldkz5"       long_name="Turbocline depth (Kz = 5e-4)"                       standard_name="ocean_mixed_layer_thickness_defined_by_vertical_tracer_diffusivity"                unit="m"          />
     <field id="mldr10_1"     long_name="Mixed Layer Depth (dsigma = 0.01 wrt 10m)"          standard_name="ocean_mixed_layer_thickness_defined_by_sigma_theta"                                unit="m"          />
+    <field id="mldr10_1_sq"  long_name="Mixed Layer Depth (dsigma = 0.01 wrt 10m)"          standard_name="ocean_mixed_layer_thickness_defined_by_sigma_theta"                                unit="m"          > mldr10_1 * mldr10_1 </field >
     <field id="mldr10_1max"  long_name="Max of Mixed Layer Depth (dsigma = 0.01 wrt 10m)"   field_ref="mldr10_1"   operation="maximum"                                                                          />
     <field id="mldr10_1min"  long_name="Min of Mixed Layer Depth (dsigma = 0.01 wrt 10m)"   field_ref="mldr10_1"   operation="minimum"                                                                          />
     <field id="heatc"        long_name="Heat content vertically integrated"                 standard_name="integral_of_sea_water_potential_temperature_wrt_depth_expressed_as_heat_content"   unit="J/m2"      grid_ref="grid_T_2D_inner" />

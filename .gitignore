@@ -8,6 +8,8 @@ tmp/
 deploy.git/
 core.git.*
 #.gitignore
+nemo/mk/tools.txt
+nemo/mk/cpp_tools.fcm
 
 # ignore everything in the build directories except Makefiles and environment files
 diag/build/*
