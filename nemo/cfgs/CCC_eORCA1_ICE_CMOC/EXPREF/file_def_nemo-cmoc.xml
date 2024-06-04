@@ -42,9 +42,6 @@
           <field field_ref="tmask"    name="tmask"     level="0" />
           <field field_ref="closea"   name="closea"    level="0" />
                                           
-          <field field_ref="Irondep"  name="Irondep"   level="0" />    
-          <field field_ref="Ironsed"  name="Ironsed"   level="0" />    
-
          <!-- 2D fields here -->
           <field field_ref="Cflx"     name="Cflx"   level="0" />
           <field field_ref="Oflx"     name="Oflx"   level="0" />
