@@ -360,6 +360,7 @@ CONTAINS
 
       ELSEIF( nn_ice == 2 ) THEN
                           CALL ice_init( Kbb, Kmm, Kaa )         ! ICE initialization
+                          CALL sbc_ssm_ice_init ( Kbb, Kmm ) ! Sea-surface mean ice fields initialization
       ENDIF
 #endif
       IF( nn_ice == 3 )   CALL cice_sbc_init( nsbc, Kbb, Kmm )   ! CICE initialization
@@ -446,6 +447,9 @@ CONTAINS
       ENDIF
       !
       IF( .NOT.ll_sas )   CALL sbc_ssm ( kt, Kbb, Kmm )  ! mean ocean sea surface variables (sst_m, sss_m, ssu_m, ssv_m)
+#if defined key_si3
+      IF( .NOT.ll_sas )   CALL sbc_ssm_ice ( kt, Kbb, Kmm )  ! mean sea-ice surface variables (a_i, t_su)
+#endif
       !
       !                                            !==  sbc formulation  ==!
       !
