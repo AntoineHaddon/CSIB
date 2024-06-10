@@ -21,6 +21,9 @@
 !------------------------------------------------------------------------------
 &nampar         !   Generic parameters
 !------------------------------------------------------------------------------
+   jpl              =   1             !  number of ice  categories
+   ln_virtual_itd   =   .false.       !  virtual ITD mono-category parameterization (jpl=1 only)
+                                      !     i.e. enhanced thermal conductivity & virtual thin ice melting
    cn_icerst_in     = "restart_ice"   !  suffix of ice restart name (input)
    cn_icerst_out    = "restart_ice"   !  suffix of ice restart name (output)
    ln_icedyn        = .false.          !  ice dynamics (T) or not (F)
