@@ -21,6 +21,6 @@
 <!-- NEMO  CONTEXT add and suppress the components you need                                       -->
 <!-- ============================================================================================ -->
 
-  <context id="nemo" src="./context_nemo.xml"/>       <!--  NEMO       -->
+  <context id="sas" src="./context_nemo.xml"/>       <!--  NEMO       -->
 
 </simulation>

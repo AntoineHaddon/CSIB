@@ -3,7 +3,7 @@
     NEMO context
 ============================================================================================== 
 -->
-<context id="nemo">
+<context id="sas">
     <!-- $id$ -->
     <variable_definition>
        <!-- Year/Month/Day of time origin for NetCDF files; defaults to 1800-01-01 -->
