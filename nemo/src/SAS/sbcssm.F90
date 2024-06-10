@@ -134,7 +134,7 @@ CONTAINS
          ssh  (:,:,Kmm) = 0._wp                          !              - -
       ENDIF
 
-      IF ( nn_ice == 1 ) THEN
+      IF ( nn_ice == 1.or.ln_cpl ) THEN
          ts(:,:,1,jp_tem,Kmm) = sst_m(:,:)
          ts(:,:,1,jp_sal,Kmm) = sss_m(:,:)
          ts(:,:,1,jp_tem,Kbb) = sst_m(:,:)

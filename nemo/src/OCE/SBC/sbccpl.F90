@@ -1369,7 +1369,7 @@ CONTAINS
       !                                                      ! ========================= !
       !                                                      ! Mean Sea Level Pressure   !   (Pa)
       !                                                      ! ========================= !
-      IF( srcv(jpr_mslp)%laction ) THEN                    ! UKMO SHELF effect of atmospheric pressure on SSH
+      IF( srcv(jpr_mslp)%laction.and.ln_apr_dyn ) THEN                    ! UKMO SHELF effect of atmospheric pressure on SSH
           IF( kt /= nit000 )   ssh_ibb(:,:) = ssh_ib(:,:)    !* Swap of ssh_ib fields
 
           r1_grau = 1.e0 / (grav * rho0)               !* constant for optimization

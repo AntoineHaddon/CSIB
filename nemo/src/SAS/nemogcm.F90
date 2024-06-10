@@ -25,8 +25,9 @@ MODULE nemogcm
    USE daymod         ! calendar
    USE restart        ! open  restart file
    USE step           ! NEMO time-stepping                 (stp     routine)
-   USE cpl_oasis3     !
+   USE cpl_interface, only : cpl_init, cpl_finalize
    USE sbcssm         !
+   USE sbc_oce , ONLY : ln_cpl
    USE icbini         ! handle bergs, initialisation
    USE icbstp         ! handle bergs, calving, themodynamics and transport
    USE bdyini         ! open boundary cond. setting       (bdy_init routine). mandatory for sea-ice
@@ -185,9 +186,9 @@ CONTAINS
       !
 #if defined key_xios
                                     CALL xios_finalize  ! end mpp communications with xios
-      IF( lk_oasis     )            CALL cpl_finalize   ! end coupling and mpp communications with OASIS
+      IF( ln_cpl     )            CALL cpl_finalize   ! end coupling and mpp communications with the coupler
 #else
-      IF    ( lk_oasis ) THEN   ;   CALL cpl_finalize   ! end coupling and mpp communications with OASIS
+      IF    ( ln_cpl ) THEN   ;   CALL cpl_finalize   ! end coupling and mpp communications with the coupler
       ELSEIF( lk_mpp   ) THEN   ;   CALL mppstop        ! end mpp communications
       ENDIF
 #endif
@@ -214,7 +215,7 @@ CONTAINS
       NAMELIST/namcfg/ ln_read_cfg, cn_domcfg, ln_closea, ln_write_cfg, cn_domcfg_out, ln_use_jattr
       !!----------------------------------------------------------------------
       !
-      IF( lk_oasis ) THEN   ;   cxios_context = 'sas'    ! when coupling SAS to OCE
+      IF( ln_cpl ) THEN   ;   cxios_context = 'sas'    ! when coupling SAS to OCE
       ELSE                  ;   cxios_context = 'nemo'   ! 
       ENDIF
       nn_hls = 1
@@ -228,8 +229,8 @@ CONTAINS
       !
 #if defined key_xios
       IF( Agrif_Root() ) THEN
-         IF( lk_oasis ) THEN
-            CALL cpl_init( "sas", ilocal_comm )                                  ! nemo local communicator given by oasis 
+         IF( ln_cpl ) THEN
+            CALL cpl_init( "sas", ilocal_comm )                                  ! nemo local communicator given by the coupler 
             CALL xios_initialize( "not used",local_comm=ilocal_comm )            ! send nemo communicator to xios
          ELSE
             CALL xios_initialize( "for_xios_mpi_id",return_comm=ilocal_comm )    ! nemo local communicator given by xios
@@ -237,9 +238,9 @@ CONTAINS
       ENDIF
       CALL mpp_start( ilocal_comm )
 #else
-      IF( lk_oasis ) THEN
+      IF( ln_cpl ) THEN
          IF( Agrif_Root() ) THEN
-            CALL cpl_init( "sas", ilocal_comm )             ! nemo local communicator given by oasis
+            CALL cpl_init( "sas", ilocal_comm )             ! nemo local communicator given by the coupler
          ENDIF
          CALL mpp_start( ilocal_comm )
       ELSE
@@ -255,7 +256,7 @@ CONTAINS
       !                             !---------------------------------------------------------------!
       !
       ! open ocean.output as soon as possible to get all output prints (including errors messages)
-      IF( lk_oasis ) THEN
+      IF( ln_cpl ) THEN
          IF( lwm )   CALL ctl_opn(     numout,               'sas.output', 'REPLACE', 'FORMATTED', 'SEQUENTIAL', -1, -1, .FALSE. )
          ! open reference and configuration namelist files
                      CALL load_nml( numnam_ref,        'namelist_sas_ref',                                           -1, lwm )
@@ -295,7 +296,7 @@ CONTAINS
       IF(lwp) THEN                      ! open listing units
          !
          IF( .NOT. lwm ) THEN           ! alreay opened for narea == 1
-            IF(lk_oasis) THEN   ;   CALL ctl_opn( numout,   'sas.output','REPLACE','FORMATTED','SEQUENTIAL',-1,-1, .FALSE., narea )
+            IF(ln_cpl) THEN   ;   CALL ctl_opn( numout,   'sas.output','REPLACE','FORMATTED','SEQUENTIAL',-1,-1, .FALSE., narea )
             ELSE                ;   CALL ctl_opn( numout, 'ocean.output','REPLACE','FORMATTED','SEQUENTIAL',-1,-1, .FALSE., narea )
             ENDIF
          ENDIF
@@ -501,6 +502,7 @@ CONTAINS
       !!----------------------------------------------------------------------
       USE diawri    , ONLY : dia_wri_alloc
       USE dom_oce   , ONLY : dom_oce_alloc
+      USE trc_oce   , ONLY : trc_oce_alloc
       USE bdy_oce   , ONLY : ln_bdy, bdy_oce_alloc
       USE oce       ! mandatory for sea-ice because needed for bdy arrays
       !
@@ -510,6 +512,7 @@ CONTAINS
       ierr =        dia_wri_alloc()
       ierr = ierr + dom_oce_alloc()          ! ocean domain
       ierr = ierr + oce_alloc    ()          ! (ts...) needed for agrif and/or SI3 and bdy
+      ierr = ierr + trc_oce_alloc()          ! shared TRC / TRA arrays
       ierr = ierr + bdy_oce_alloc()          ! bdy masks (incl. initialization)
       !
       CALL mpp_sum( 'nemogcm', ierr )
