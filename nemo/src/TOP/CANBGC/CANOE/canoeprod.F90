@@ -155,6 +155,8 @@ CONTAINS
       zprochld(:,:,:) = 0._wp
       zpronew (:,:,:) = 0._wp
       zpronewd(:,:,:) = 0._wp
+      xlimdn  (:,:,:) = 0._wp
+      xlimdfe0(:,:,:) = 0._wp
       zprdia  (:,:,:) = 0._wp
       zprbio  (:,:,:) = 0._wp
       zprdch  (:,:,:) = 0._wp

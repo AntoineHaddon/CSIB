@@ -214,7 +214,7 @@ CONTAINS
          !
          CALL trc_opt_par( kt, Kmm, zqsr_corr, ze1, ze2, ze3, pqsr100 = zqsr100 ) 
          !
-         zqsr_corr(:,:) = qsr(:,:) / ( 1.-fr_i(:,:) + rtrn )
+         zqsr_corr(:,:) = max(0.,qsr(:,:)) / ( 1.-fr_i(:,:) + rtrn )
          !
          CALL trc_opt_par( kt, Kmm, zqsr_corr, ze1, ze2, ze3 ) 
          !
@@ -224,7 +224,7 @@ CONTAINS
          !
       ELSE
          !
-         zqsr_corr(:,:) = qsr(:,:) / ( 1.-fr_i(:,:) + rtrn )
+         zqsr_corr(:,:) = max(0.,qsr(:,:)) / ( 1.-fr_i(:,:) + rtrn )
          !
          CALL trc_opt_par( kt, Kmm, zqsr_corr, ze1, ze2, ze3, pqsr100 = zqsr100  ) 
          !
@@ -242,9 +242,10 @@ CONTAINS
       !
       IF( ln_qsr_bio ) THEN                    !* heat flux accros w-level (used in the dynamics)
          !                                     !  ------------------------
-         CALL trc_opt_par( kt, Kmm, qsr, ze1, ze2, ze3, pe0=ze0 )
+         zqsr_corr(:,:) = max(0.,qsr(:,:))
+         CALL trc_opt_par( kt, Kmm, zqsr_corr, ze1, ze2, ze3, pe0=ze0 )
          !
-         etot3(:,:,1) =  qsr(:,:) * tmask_bgc_closea(:,:,1)
+         etot3(:,:,1) =  zqsr_corr(:,:) * tmask_bgc_closea(:,:,1)
          DO jk = 2, nksr + 1
             etot3(:,:,jk) =  ( ze0(:,:,jk) + ze1(:,:,jk) + ze2(:,:,jk) + ze3(:,:,jk) ) * tmask_bgc_closea(:,:,jk)
          END DO
@@ -370,7 +371,7 @@ CONTAINS
             zchl = ztotchla(ji,jj)  !!! OR Jan 23rd 2023 ! Only use the surface ztotchla values
             zchl = zchl + rtrn
             zchl = zchl * tmask(ji,jj,jk)
-            zetot(ji,jj,jk) = qsr(ji,jj) * zparsw(ji,jj)     & 
+            zetot(ji,jj,jk) = max(0.,qsr(ji,jj)) * zparsw(ji,jj)     & 
             &               * exp ( - ( (kw_cmoc + kchl_cmoc * zchl * 1e6_wp) * gdept(ji,jj,jk,Kmm) ) ) 
             !        
           ENDDO

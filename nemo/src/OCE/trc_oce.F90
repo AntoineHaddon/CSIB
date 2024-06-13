@@ -23,7 +23,7 @@ MODULE trc_oce
    PUBLIC   trc_oce_ext_lev    ! function called by traqsr.F90 at least
    PUBLIC   trc_oce_alloc      ! function called by nemogcm.F90
 
-   LOGICAL , PUBLIC ::   l_co2cpl  = .false.   !: atmospheric pco2 recieved from oasis
+   LOGICAL , PUBLIC ::   l_co2cpl  = .false.   !: atmospheric pco2 recieved from the coupler
    LOGICAL , PUBLIC ::   l_offline = .false.   !: offline passive tracers flag
    REAL(wp), PUBLIC ::   r_si2                 !: largest depth of extinction (blue & 0.01 mg.m-3)  (RGB)
    LOGICAL , PUBLIC ::   ln_trcdc2dm           !: Diurnal cycle for TOP

@@ -45,6 +45,7 @@ MODULE trcche_canbgc
 ! Constants and conversion factors
    REAL(wp), PUBLIC ::     xconv0   = 0.01_wp / 3600._wp !: coefficients for conversion 
    REAL(wp), PUBLIC ::     atcoxy   = 0.20946_wp         !: O2 fraction of air partial pressure (atm / atm)
+   REAL(wp), PUBLIC :: no3_sf         ! scaling factor for NO3 (for estimation of PO4)
 
    REAL(wp) ::   salchl = 1. / 1.80655    ! conversion factor for salinity --> chlorinity (Wooster et al. 1969)
    REAL(wp) ::   o2atm  = 1. / ( 1000. * 0.20946 )  
