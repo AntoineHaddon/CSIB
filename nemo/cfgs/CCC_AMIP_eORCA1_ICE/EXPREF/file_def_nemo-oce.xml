@@ -17,7 +17,6 @@
       <file_group id="1d"  output_freq="1d"  enabled=".TRUE."> <!-- real yearly files -->
         <file id="file21" name_suffix="_grid_T" description="ocean T grid variables">
             <field field_ref="sst"           name='tos'             level="0" /> <!-- (Oday*) -->
-            <field field_ref="sss"           name='sos'             level="0" /> <!-- (Oday*) -->
         </file>
       </file_group>
 

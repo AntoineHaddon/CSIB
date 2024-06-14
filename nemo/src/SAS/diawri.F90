@@ -101,7 +101,14 @@ CONTAINS
          CALL dia_wri_state( Kmm, 'output.init' )
          ninist = 0
       ENDIF
-      !
+      
+      ! Output some surface ocean variables
+       Call iom_put('sss',sss_m(:,:))
+       Call iom_put('sst',sst_m(:,:))
+       Call iom_put('ssu',ssu_m(:,:))
+       Call iom_put('ssv',ssv_m(:,:))
+       Call iom_put('ssh',ssh_m(:,:))
+
    END SUBROUTINE dia_wri
 
 #else
