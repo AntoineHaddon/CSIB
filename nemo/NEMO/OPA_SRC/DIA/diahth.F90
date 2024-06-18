@@ -263,11 +263,11 @@ CONTAINS
       ! ----------------------------------- !
       ! search deepest level above 20C/28C  !
       ! ----------------------------------- !
-      ik20(:,:) = 1
-      ik28(:,:) = 1
-      ik14(:,:) = 1
-      ik17(:,:) = 1
-      ik26(:,:) = 1
+      ik20(:,:) = 0
+      ik28(:,:) = 0
+      ik14(:,:) = 0
+      ik17(:,:) = 0
+      ik26(:,:) = 0
       DO jk = 1, jpkm1   ! beware temperature is not always decreasing with depth => loop from top to bottom
          DO jj = 1, jpj
             DO ji = 1, jpi
@@ -290,9 +290,9 @@ CONTAINS
             zzdep = fsdepw(ji,jj,mbkt(ji,jj)+1)       ! depth of the oean bottom
             !
             iid = ik20(ji,jj)
-            IF( iid /= 1 ) THEN 
+            IF( iid /= 0 ) THEN 
                zztmp =      fsdept(ji,jj,iid  )   &                     ! linear interpolation
-                  &  + ( fsdept(ji,jj,iid+1) * tmask(ji,jj,iid+1) - fsdept(ji,jj,iid) )   &
+                  &  + ( fsdept(ji,jj,iid+1) - fsdept(ji,jj,iid) )   &
                   &  * ( 20.*tmask(ji,jj,iid+1) - tsn(ji,jj,iid,jp_tem) )   & 
                   &  / ( tsn(ji,jj,iid+1,jp_tem) - tsn(ji,jj,iid,jp_tem) + (1.-tmask(ji,jj,1)) )
                hd20(ji,jj) = MIN( zztmp , zzdep) * tmask(ji,jj,1)       ! bound by the ocean depth
@@ -301,9 +301,9 @@ CONTAINS
             ENDIF
             !
             iid = ik28(ji,jj)
-            IF( iid /= 1 ) THEN 
+            IF( iid /= 0 ) THEN 
                zztmp =      fsdept(ji,jj,iid  )   &                     ! linear interpolation
-                  &  + ( fsdept(ji,jj,iid+1) * tmask(ji,jj,iid+1) - fsdept(ji,jj,iid) )   &
+                  &  + ( fsdept(ji,jj,iid+1) - fsdept(ji,jj,iid) )   &
                   &  * ( 28.*tmask(ji,jj,iid+1) - tsn(ji,jj,iid,jp_tem) )   &
                   &  / (  tsn(ji,jj,iid+1,jp_tem) - tsn(ji,jj,iid,jp_tem) + (1.-tmask(ji,jj,1)) )
                hd28(ji,jj) = MIN( zztmp , zzdep ) * tmask(ji,jj,1)      ! bound by the ocean depth
@@ -312,9 +312,9 @@ CONTAINS
             ENDIF
             !
             iid = ik14(ji,jj)
-            IF( iid /= 1 ) THEN
+            IF( iid /= 0 ) THEN
                zztmp =      fsdept(ji,jj,iid  )   &                     ! linear interpolation
-                  &  + ( fsdept(ji,jj,iid+1) * tmask(ji,jj,iid+1) - fsdept(ji,jj,iid) )   &
+                  &  + ( fsdept(ji,jj,iid+1) - fsdept(ji,jj,iid) )   &
                   &  * ( 14.*tmask(ji,jj,iid+1) - tsn(ji,jj,iid,jp_tem) )   &
                   &  / (  tsn(ji,jj,iid+1,jp_tem) - tsn(ji,jj,iid,jp_tem) + (1.-tmask(ji,jj,1)) )
                hd14(ji,jj) = MIN( zztmp , zzdep ) * tmask(ji,jj,1)      ! bound by the ocean depth
@@ -323,9 +323,9 @@ CONTAINS
             ENDIF
             !  
             iid = ik17(ji,jj)
-            IF( iid /= 1 ) THEN
+            IF( iid /= 0 ) THEN
                zztmp =      fsdept(ji,jj,iid  )   &                     ! linear interpolation
-                  &  + ( fsdept(ji,jj,iid+1) * tmask(ji,jj,iid+1) - fsdept(ji,jj,iid) )   &
+                  &  + ( fsdept(ji,jj,iid+1) - fsdept(ji,jj,iid) )   &
                   &  * ( 17.*tmask(ji,jj,iid+1) - tsn(ji,jj,iid,jp_tem)                       )   &
                   &  / (  tsn(ji,jj,iid+1,jp_tem) - tsn(ji,jj,iid,jp_tem) + (1.-tmask(ji,jj,1)) )
                hd17(ji,jj) = MIN( zztmp , zzdep ) * tmask(ji,jj,1)      ! bound by the ocean depth 
@@ -334,9 +334,9 @@ CONTAINS
             ENDIF
             !
             iid = ik26(ji,jj)
-            IF( iid /= 1 ) THEN
+            IF( iid /= 0 ) THEN
                zztmp =      fsdept(ji,jj,iid  )   &                     ! linear interpolation
-                  &  + ( fsdept(ji,jj,iid+1) * tmask(ji,jj,iid+1) - fsdept(ji,jj,iid) )   &
+                  &  + ( fsdept(ji,jj,iid+1) - fsdept(ji,jj,iid) )   &
                   &  * ( 26.*tmask(ji,jj,iid+1) - tsn(ji,jj,iid,jp_tem) )   & 
                   &  / (  tsn(ji,jj,iid+1,jp_tem) - tsn(ji,jj,iid,jp_tem) + (1.-tmask(ji,jj,1)) )
                hd26(ji,jj) = MIN( zztmp , zzdep ) * tmask(ji,jj,1)      ! bound by the ocean depth
