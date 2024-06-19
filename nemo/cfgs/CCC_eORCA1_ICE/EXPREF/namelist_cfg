@@ -465,7 +465,7 @@ sn_rcv_co2    =       'coupled'              ,    'no'    ,     ''      ,       
    ln_s2004    = .false.   !  Compute zav_tide following Simmons et al (2004)
    ln_sm2005   = .true.    !  Compute zav_tide following Saenko and Merryfield (2005)
    ln_leewmx   = .true.    !  addition of Lee Wave mixing (.true.) or not (.false.)
-   rn_lwm      = 0.10      !  lee wave mixing scaling
+   rn_lwm      =  0.0999   !  lee wave mixing scaling
 /
 !!======================================================================
 !!                  ***  Diagnostics namelists  ***                   !!
