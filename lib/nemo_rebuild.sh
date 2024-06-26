@@ -87,7 +87,6 @@ export OMP_NUM_THREADS=2
 wrkdir=$(pwd)
 
 # A list of directories to delete from RUNPATH at the end
-dir_del_list=""
 if (( canesm_nemo_rbld_save_hist == 1 )) ; then
    # Loop over the list of history files/freqs to rebuild
    for i in $(seq 0 $(($n_suffix-1))); do
@@ -98,7 +97,6 @@ if (( canesm_nemo_rbld_save_hist == 1 )) ; then
       lsfx=$(echo "$sfx" | tr '[:upper:]' '[:lower:]')
       indir=${model1}_${freq}_${lsfx}
       access $indir $indir nocp=off
-      dir_del_list+=" $indir"
       cd $indir
 
       # Define the pattern, get the exe, do the rbld, and save.
@@ -120,7 +118,6 @@ indir=${model1}_mesh_mask
 access $indir $indir nocp=off na
 if [ -s "$indir" ] ; then
    cd $indir
-   dir_del_list+=" $indir"
 
    # Define the pattern and do the rebld
    pfx=mesh_mask
@@ -251,9 +248,8 @@ cd $wrkdir
 #   removing the input restart (inrs) if inrs==outrs (which should only happen
 #   for the initial restart)
 if [[ ${inrs} == ${outrs} ]]; then
-    dir_del_list+=" ${inrs}"
+   fdb mdelete $inrs
 fi
-fdb mdelete $dir_del_list
 
 # Finally, save new directory with the rebuilt files
 mkdir out_${outrs}
