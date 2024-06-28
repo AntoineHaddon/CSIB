@@ -41,5 +41,8 @@ MODULE sms_canoe
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   zprochln  ! nanophytoplankton  chl production 
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   zprochld  ! microphytoplankton chl production    
 
+   ! Nitrogen fixation and denitrification
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   zn2fix
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   denitr
    
 END MODULE sms_canoe
