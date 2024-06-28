@@ -57,17 +57,23 @@ stop_day=$( days_in_month $monlast )
 start_date=$(echo $year $mon $start_day|awk '{printf "%04d%02d%02d",$1,$2,$3}' -)
 stop_date=$(echo $yearlast $monlast $stop_day|awk '{printf "%04d%02d%02d",$1,$2,$3}' -)
 
-# History file suffix and frequency lists. Must be the same lengths. I.E. repeat filenames for multiple freq.
+# History file suffix and frequency lists
 # Get bash arrays with the freq and suffix list
 nemo_hist_file_suffix_list_array=($nemo_rbld_hist_file_suffix_list)
-nemo_hist_file_freq_list_array=($nemo_rbld_hist_file_freq_list)
-
-# Check that the lists are the same length. Use this number to loop below..
 n_suffix=${#nemo_hist_file_suffix_list_array[@]}
-n_freq=${#nemo_hist_file_freq_list_array[@]}
-if [ "$n_suffix" -ne "$n_freq" ]; then
-   bail "ERROR: nemo_hist_file_suffix_list_array and nemo_hist_file_freq_list_array MUST have the same number of elements."
-fi
+
+nemo_file_suffixes_array=()
+nemo_file_freqs_array=()
+for i in $(seq 0 $((n_suffix-1))); do
+    fs=${nemo_hist_file_suffix_list_array[$i]}
+    IFS='_' read -r freq param <<< $fs
+    if [[ $freq =~ ^[0-9]+[hdmy]$ ]]; then
+        nemo_file_suffixes_array+=("$param")
+        nemo_file_freqs_array+=("$freq")
+    else
+        echo "file list entry does not match required format {\$freq_\$suffix}; skipping: $a"
+    fi
+done
 
 # The rebuild executable must be accessable at run time and namelist files present in cwd
 if [[ ! -f rebuild_nemo.exe ]]; then
@@ -87,8 +93,8 @@ if (( canesm_nemo_rbld_save_hist == 1 )) ; then
    for i in $(seq 0 $(($n_suffix-1))); do
       cd $wrkdir
       # Get the directory with the tiles, and extract them
-      sfx=${nemo_hist_file_suffix_list_array[$i]}
-      freq=${nemo_hist_file_freq_list_array[$i]}
+      sfx=${nemo_file_suffixes_array[$i]}
+      freq=${nemo_file_freqs_array[$i]}
       lsfx=$(echo "$sfx" | tr '[:upper:]' '[:lower:]')
       indir=${model1}_${freq}_${lsfx}
       access $indir $indir nocp=off

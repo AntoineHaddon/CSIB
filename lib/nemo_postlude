@@ -14,7 +14,6 @@
   # Make sure we have necessary variables from parent code
   # ======================================================
   is_defined $nemo_hist_file_suffix_list_save   || bail "nemo_postlude: nemo_hist_file_suffix_list_save must be defined!"
-  is_defined $nemo_hist_file_freq_list_save     || bail "nemo_postlude: nemo_hist_file_freq_list_save must be defined!"
   is_defined $runid                             || bail "nemo_postlude: runid must be defined!"
   is_defined $chunk_start_year                  || bail "nemo_postlude: chunk_start_year must be defined!"
   is_defined $chunk_start_month                 || bail "nemo_postlude: chunk_start_month must be defined!"
@@ -78,14 +77,22 @@
     rm -f saved_history_FILE_NAMES
     touch saved_history_FILE_NAMES
 
-    # Translate history file suffix/freq lists into arrays and compare lengths
-    nemo_hist_file_suffix_list_array_save=($nemo_hist_file_suffix_list_save)
-    nemo_hist_file_freq_list_array_save=($nemo_hist_file_freq_list_save)
-    n_suffix=${#nemo_hist_file_suffix_list_array_save[@]}
-    n_freq=${#nemo_hist_file_freq_list_array_save[@]}
-    if [ "$n_suffix" -ne "$n_freq" ]; then
-      bail "ERROR: nemo_hist_file_suffix_list_array_save and nemo_hist_file_freq_list_array_save MUST have the same number of elements."
-    fi
+    # Separate the history file freq_suffix list into arrays
+    nemo_hist_file_suffix_list_save_array=($nemo_hist_file_suffix_list_save)
+    n_suffix=${#nemo_hist_file_suffix_list_save_array[@]}
+
+    nemo_file_suffixes_array=()
+    nemo_file_freqs_array=()
+    for i in $(seq 0 $((n_suffix-1))); do
+        fs=${nemo_hist_file_suffix_list_save_array[$i]}
+        IFS='_' read -r freq param <<< $fs
+        if [[ $freq =~ ^[0-9]+[hdmy]$ ]]; then
+            nemo_file_suffixes_array+=("$param")
+            nemo_file_freqs_array+=("$freq")
+        else
+            echo "file list entry does not match required format with {\$freq_\$suffix}; skipping: $a"
+        fi
+    done
 
     # ====================
     # Save History Files
@@ -97,8 +104,8 @@
     nemo_stop_date=$(printf "%04d%02d%02d" $chunk_stop_year $chunk_stop_month $chunk_stop_day)
     if [ $nemo_save_hist -eq 1 ] ; then
       for i in $(seq 0 $(($n_suffix-1))); do
-          sfx=${nemo_hist_file_suffix_list_array_save[$i]}
-          freq=${nemo_hist_file_freq_list_array_save[$i]}
+          sfx=${nemo_file_suffixes_array[$i]}
+          freq=${nemo_file_freqs_array[$i]}
           pfx=${cn_exp}_${freq}_${nemo_start_date}_${nemo_stop_date}_$sfx
           echo $pfx
           fnpatt=${pfx}_0000.nc
