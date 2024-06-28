@@ -27,6 +27,7 @@
           <field field_ref="ssh"              name="zos"            level="0" /> <!-- (Omon*) level = 1 in CMIP6  -->
           <field field_ref="empmr"            name="wfo"            level="0" /> <!-- (Omon*) level = 1 in CMIP6 -->
           <field field_ref="mldr10_1"         name="mlotst"         level="0" /> <!-- (Omon*) level = 1 in CMIP6 -->
+          <field field_ref="mldr10_3"         name="mldr10_3"       level="0" /> <!-- (Omon*) with add_cccma_vars=1 -->
           <field field_ref="snow_ai_cea"      name="sndmasssnf"     level="0" /> <!-- (SImon*) -->
           <field field_ref="dmsmel"           name="sndmassmelt"    level="0" /> <!-- (SImon*) -->
           <field field_ref="snow_ao_cea"      name="prsn"           level="0" /> <!-- (Omon*) level = 2 in CMIP6 -->
@@ -121,7 +122,7 @@
           <field field_ref="saltot"           name="soga"        level="1" /> <!-- (Omon*) -->
         </file>
 
-        <file id="file41" name_suffix="_diaptr" description="zonal mean variables" >
+        <file id="file41" name_suffix="_diaptr" description="zonal mean variables" enabled=".TRUE."  >
           <field field_ref="sophtove"    name="htovovrt"      grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (Omon*) level = 2 in CMIP6 -->
           <field field_ref="sopstove"    name="sltovovrt"     grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (Omon*) level = 2 in CMIP6 -->
           <field field_ref="sophtgyre"   name="htovgyre"      grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (Omon*) level = 2 in CMIP6 -->
@@ -136,7 +137,7 @@
           <field field_ref="sopstvtr"    name="sltbasin"      grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- for analysis -->
           <field field_ref="sophteiv"    name="hfbasinpmadv"  grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- (Omon*) level = 2 in CMIP6 -->
           <field field_ref="sopsteiv"    name="sltbasinpmadv" grid_ref="grid_ptr_T_2D"  level="0"  /> <!-- for analysis -->
-          <field field_ref="zomsf"       name="msftyz"        grid_ref="grid_znl_W_3D"  level="0"  /> <!-- (Omon*) level = 2 in CMIP6 -->
+          <field field_ref="zomsf"       name="msftyz"        grid_ref="grid_ptr_W_3D"  level="0"  /> <!-- (Omon*) level = 2 in CMIP6 -->
           <field field_ref="zotem"       name="znltem"        grid_ref="grid_ptr_T_3D"  level="0"  /> <!-- for analysis -->
           <field field_ref="zosal"       name="znlsal"        grid_ref="grid_ptr_T_3D"  level="0"  /> <!-- for analysis -->
           <field field_ref="zosrf"       name="znlsrf"        grid_ref="grid_ptr_T_3D"  level="0"  /> <!-- for analysis -->
