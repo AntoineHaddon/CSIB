@@ -17,6 +17,7 @@ MODULE trcsms
 
    USE trcsms_canoe       ! CANOE  biogeo-model
    USE trcsms_cmoc        ! CMOC   biogeo-model
+   USE trcsms_csib        ! CSIB  tracers
    USE trcsms_pisces      ! PISCES biogeo-model
    USE trcsms_cfc         ! CFC 11 &/or 12
    USE trcsms_c14         ! C14 
@@ -104,6 +105,7 @@ CONTAINS
       !
       IF( ln_canoe   )   CALL trc_sms_canoe  ( kt, Kbb, Kmm, Krhs )    ! main program of CANOE  
       IF( ln_cmoc    )   CALL trc_sms_cmoc   ( kt, Kbb, Kmm, Krhs )    ! main program of CMOC   
+      IF( ln_csib    )   CALL trc_sms_csib   ( kt, Kbb, Kmm, Krhs )    ! CSIB  tracers
       IF( ln_pisces  )   CALL trc_sms_pisces ( kt, Kbb, Kmm, Krhs )    ! main program of PISCES 
       IF( ll_cfc     )   CALL trc_sms_cfc    ( kt, Kbb, Kmm, Krhs )    ! surface fluxes of CFC
       IF( ln_c14     )   CALL trc_sms_c14    ( kt, Kbb, Kmm, Krhs )    ! surface fluxes of C14

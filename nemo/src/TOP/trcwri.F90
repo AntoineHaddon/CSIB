@@ -18,6 +18,7 @@ MODULE trcwri
    USE dianam      ! Output file name
    USE trcwri_pisces
    USE trcwri_canoe 
+   USE trcwri_csib
    USE trcwri_cmoc 
    USE trcwri_cfc
    USE trcwri_c14
@@ -93,6 +94,7 @@ CONTAINS
       ! ---------------------------------------
       IF( ln_canoe   )   CALL trc_wri_canoe ( Kmm )     ! CANOE  
       IF( ln_cmoc    )   CALL trc_wri_cmoc  ( Kmm )     ! CMOC   
+      IF( ln_csib    )   CALL trc_wri_csib  ( Kmm )     ! CSIB  tracers
       IF( ln_pisces  )   CALL trc_wri_pisces( Kmm )     ! PISCES 
       IF( ll_cfc     )   CALL trc_wri_cfc   ( Kmm )     ! surface fluxes of CFC
       IF( ln_c14     )   CALL trc_wri_c14   ( Kmm )     ! surface fluxes of C14
