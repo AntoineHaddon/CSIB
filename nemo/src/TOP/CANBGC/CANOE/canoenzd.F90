@@ -5,12 +5,13 @@ MODULE canoenzd
 
    USE sms_top_canbgc     ! TOP Source Minus Sink variables
    USE sms_canoe          ! CanOE specific parameters declaration
-   USE canoetemp          ! CanOE temperature dependencies module
-   USE trcopt_canbgc      ! PAR attenuation
-
    USE trc_closea_canbgc  !  tmask_bgc_closea
+   USE trcopt_canbgc      ! PAR attenuation
+   USE canoetemp          ! CanOE temperature dependencies module
 
    USE prtctl          !  print control for debugging
+   USE lib_mpp         !  ctl_stop on failed mem allocate check
+   USE lib_fortran     !  access glob_sum function
    USE iom             !  I/O manager
 
    ! timing modules
@@ -27,6 +28,7 @@ MODULE canoenzd
    PUBLIC canoe_mort2
    PUBLIC canoe_rem
    PUBLIC canoe_nzd_init
+   PUBLIC canoe_nzd_alloc
  
    REAL(wp), PUBLIC :: mprat   = 5.E-2_wp   !: phytoplankton mortality rate 
    REAL(wp), PUBLIC :: mprat2  = 2.E-1_wp   !: Diatoms mortality rate
@@ -55,8 +57,10 @@ MODULE canoenzd
    REAL(wp), PUBLIC :: pocfctr= 0.65574_wp  !: multiplier for POC-dependent scavenging
    REAL(wp), PUBLIC :: o2thresh  = 6._wp    !: O2 threshold for denitrification
    REAL(wp), PUBLIC :: nh4frx = 0.25_wp     !: anammox fraction of denitrification
-   REAL(wp), PUBLIC :: oxymin = 1._wp       !: half saturation constant for anoxia 
+   REAL(wp), PUBLIC :: oxymin = 1._wp       !: half saturation constant for O2 inhibition of nitrification
    REAL(wp), PUBLIC :: nyld   = 0.8_wp      !: denitrification stoichiometric coefficient
+
+   !REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   denitr
 
 #  include "vectopt_loop_substitute.h90"
 
@@ -512,7 +516,7 @@ CONTAINS
       !!
       !! ** Method  : - ???
       !!---------------------------------------------------------------------
-      !
+
       INTEGER, INTENT(in) ::   kt, jnt ! ocean time step
       INTEGER, INTENT(in) ::   Kbb, Kmm, Krhs  ! time level indices
       !
@@ -524,15 +528,16 @@ CONTAINS
       REAL(wp) ::   zscave, zscavex, fexs, zcoag
       REAL(wp) ::   zlamfac, zonitr, zstep, znitro2dep
       REAL(wp) ::   zrfact2
-      REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: nh4ox, denitr
+      REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: nh4ox
       CHARACTER (len=25) :: charout
 
-      ALLOCATE( nh4ox(  jpi, jpj, jpk ), denitr(  jpi, jpj, jpk ) )
+      ALLOCATE( nh4ox(  jpi, jpj, jpk ) )
       !REAL(wp), POINTER, DIMENSION(:,:,:) :: zolimi, zolimi2, zwork
       !!---------------------------------------------------------------------
       !
       !IF( nn_timing == 1 )  CALL timing_start('canoe_rem')
       !
+
       nh4ox(:,:,:)=0.
       DO jk = 1, jpkm1
          DO jj = 1, jpj
@@ -580,7 +585,7 @@ CONTAINS
                zorem2 = xremik * xstepb * Tf * tr(ji,jj,jk,jrgoc,Kmm)
                zofer2 = zorem2 * rr_fe2c
 
-! denitrification is assumed to remove NO3 as a fraction of remineralization increasing linearly from 0 to 1 with declining [O2] for [O2]<10 uM
+! denitrification is assumed to remove NO3 as a fraction of remineralization increasing linearly from 0 to 1 with declining [O2] for [O2]<6 uM
 ! NO3 fraction is then divided between NO3 and NH4 according to the parameter nh4frx (for anammox 50% of N comes from NO3 and 50% from NH4)
                zonitr=1.-MIN(tr(ji,jj,jk,jqoxy,Kmm),o2thresh)/o2thresh
                tr(ji,jj,jk,jrnh4, Krhs) = tr(ji,jj,jk,jrnh4, Krhs) + (zorem + zorem2)*rr_n2c - (zorem + zorem2)*nyld*zonitr*0.5*nh4frx
@@ -636,15 +641,13 @@ CONTAINS
 
       IF( lk_iomput ) THEN
          zrfact2 = 1.e-3 * qfact2r  ! conversion from umol/L/timestep into mol/m3/s
-         denitr(:,:,:) = denitr(:,:,:) * zrfact2
-         nh4ox(:,:,:) = nh4ox(:,:,:) * zrfact2
          IF( jnt == qnrdttrc ) THEN
-           CALL iom_put( "Denitr"   , denitr(:,:,:) * tmask_bgc_closea(:,:,:) )  ! rate of denitrification
-           CALL iom_put( "Nitrif"   , nh4ox(:,:,:) * tmask_bgc_closea(:,:,:) )  ! rate of nitrification
+           CALL iom_put( "Denitr"   , denitr(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )  ! rate of denitrification
+           CALL iom_put( "Nitrif"   , nh4ox(:,:,:) * zrfact2 * tmask_bgc_closea(:,:,:) )  ! rate of nitrification
          ENDIF
       ENDIF
 
-      DEALLOCATE( nh4ox, denitr )
+      DEALLOCATE( nh4ox )
 
       IF( sn_cfctl%l_prttrc )   THEN  ! print mean trends (used for debugging)
          WRITE(charout, FMT="('rem6')")
@@ -666,7 +669,7 @@ CONTAINS
       !!                called at the first timestep
       !!
       !!----------------------------------------------------------------------
-      INTEGER ::   ios       ! Local integer
+      INTEGER ::   ios, ierr ! Local integers
       NAMELIST/namcanmort/ mpqua, mpquad, mprat, mprat2, mpratm, chldegr, picfrx, xminp
       NAMELIST/namcanzoo/ part, gmax1, aps, zsr1, lambda1
       NAMELIST/namcanmes/ part2, gmax2, apl, zsr2, lambda2
@@ -754,6 +757,19 @@ CONTAINS
       ENDIF
 
    END SUBROUTINE canoe_nzd_init
+
+   INTEGER FUNCTION canoe_nzd_alloc()
+      !!----------------------------------------------------------------------
+      !!              ***  ROUTINE trc_sms_canoe_alloc  ***
+      !!----------------------------------------------------------------------
+      !
+      ! ALLOCATE here the arrays specific to CANOE
+      ! ALLOCATE( tab(...) , STAT=trc_sms_canoe_alloc )
+      !
+      ALLOCATE( denitr(  jpi, jpj, jpk ) , STAT=canoe_nzd_alloc )
+      IF( canoe_nzd_alloc /= 0 ) CALL ctl_stop( 'STOP', 'canoe_nzd_alloc : failed to allocate denitr array' )
+
+   END FUNCTION canoe_nzd_alloc
 
 END MODULE canoenzd
 
