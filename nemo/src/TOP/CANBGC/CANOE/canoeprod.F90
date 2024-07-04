@@ -157,6 +157,8 @@ CONTAINS
       zpronewd(:,:,:) = 0._wp
       xlimdn  (:,:,:) = 0._wp
       xlimdfe0(:,:,:) = 0._wp
+      xlimnn  (:,:,:) = 0._wp
+      xlimdn  (:,:,:) = 0._wp
       zprdia  (:,:,:) = 0._wp
       zprbio  (:,:,:) = 0._wp
       zprdch  (:,:,:) = 0._wp
