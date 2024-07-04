@@ -303,6 +303,10 @@ echo "#################### Start NEMO pre-processing #################"
     fi
   done
 
+  # disabled the ptr file if nemo_ln_diaptr="off"
+  if [[ $nemo_ln_diaptr == "off" ]]; then
+    sed -i '/diaptr/s/enabled=".TRUE."/enabled=".FALSE."/' file_def_nemo-oce.xml
+  fi 
   # =====================
   # Set Inherited params
   # =====================
