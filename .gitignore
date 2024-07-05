@@ -18,3 +18,5 @@ nemo/TOOLS/REBUILD_NEMO/src/build/*
 !rtd/build/compile.*
 !nemo/TOOLS/REBUILD_NEMO/src/build/Makefile
 !nemo/TOOLS/REBUILD_NEMO/src/build/compile.*
+
+nemo/ARCH/arch-imsi.fcm
