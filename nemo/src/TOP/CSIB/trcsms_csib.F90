@@ -15,6 +15,8 @@ MODULE trcsms_csib
    USE trd_oce
    USE trdtrc
 
+   USE ice , ONLY : jpl       ! number of ice thickness categories
+
    IMPLICIT NONE
    PRIVATE
 
@@ -22,7 +24,7 @@ MODULE trcsms_csib
    PUBLIC   trc_sms_csib_alloc ! called by trcini_csib.F90 module
 
    ! Defined HERE the arrays specific to CSIB sms and ALLOCATE them in trc_sms_csib_alloc
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) :: icedia     !  Ice algae concentration
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: icedia     !  Ice algae concentration
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
@@ -79,7 +81,7 @@ CONTAINS
       ! ALLOCATE( tab(...) , STAT=trc_sms_csib_alloc )
       trc_sms_csib_alloc = 0      ! set to zero if no array to be allocated
       
-      ALLOCATE(icedia(jpi,jpj), STAT=trc_sms_csib_alloc)
+      ALLOCATE(icedia(jpi,jpj,jpl), STAT=trc_sms_csib_alloc)
 
       IF( trc_sms_csib_alloc /= 0 ) CALL ctl_stop( 'STOP', 'trc_sms_csib_alloc : failed to allocate arrays' )
       !

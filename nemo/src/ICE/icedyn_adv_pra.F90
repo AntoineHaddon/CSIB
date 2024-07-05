@@ -21,6 +21,9 @@ MODULE icedyn_adv_pra
    USE sbc_oce , ONLY : nn_fsbc   ! frequency of sea-ice call
    USE icevar         ! sea-ice: operations
    !
+   USE par_trc , ONLY : ln_csib   ! use of sea ice biogeochemistry model CSIB
+   USE par_csib , ONLY : z_ia    ! CSIB parameters
+   !
    USE in_out_manager ! I/O manager
    USE iom            ! I/O manager library
    USE lib_mpp        ! MPP library
@@ -44,6 +47,7 @@ MODULE icedyn_adv_pra
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   sxap , syap , sxxap , syyap , sxyap    ! melt pond fraction
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   sxvp , syvp , sxxvp , syyvp , sxyvp    ! melt pond volume
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   sxvl , syvl , sxxvl , syyvl , sxyvl    ! melt pond lid volume
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   sxicedia , syicedia , sxxicedia , syyicedia , sxyicedia    ! ice algae
 
    !! * Substitutions
 #  include "do_loop_substitute.h90"
@@ -55,7 +59,7 @@ MODULE icedyn_adv_pra
 CONTAINS
 
    SUBROUTINE ice_dyn_adv_pra(         kt, pu_ice, pv_ice, ph_i, ph_s, ph_ip,  &
-      &                        pato_i, pv_i, pv_s, psv_i, poa_i, pa_i, pa_ip, pv_ip, pv_il, pe_s, pe_i )
+      &                        pato_i, pv_i, pv_s, psv_i, poa_i, pa_i, pa_ip, pv_ip, pv_il, pe_s, pe_i, picedia )
       !!----------------------------------------------------------------------
       !!                **  routine ice_dyn_adv_pra  **
       !!
@@ -84,6 +88,8 @@ CONTAINS
       REAL(wp), DIMENSION(:,:,:)  , INTENT(inout) ::   pv_il      ! melt pond lid thickness
       REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   pe_s       ! snw heat content
       REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   pe_i       ! ice heat content
+      ! ice BGC variables
+      REAL(wp), DIMENSION(:,:,:)  , INTENT(inout) ::   picedia    ! ice algae concentration
       !
       INTEGER  ::   ji, jj, jk, jl, jt      ! dummy loop indices
       INTEGER  ::   icycle                  ! number of sub-timestep for the advection
@@ -99,6 +105,8 @@ CONTAINS
       REAL(wp), DIMENSION(jpi,jpj,jpl)        ::   z0ap , z0vp, z0vl
       REAL(wp), DIMENSION(jpi,jpj,nlay_s,jpl) ::   z0es
       REAL(wp), DIMENSION(jpi,jpj,nlay_i,jpl) ::   z0ei
+      REAL(wp), DIMENSION(jpi,jpj,jpl)        ::   z0icedia
+
       !! diagnostics
       REAL(wp), DIMENSION(jpi,jpj)            ::   zdiag_adv_mass, zdiag_adv_salt, zdiag_adv_heat
       !!----------------------------------------------------------------------
@@ -185,6 +193,9 @@ CONTAINS
                   z0vl(:,:,jl) = pv_il(:,:,jl) * e1e2t(:,:)   ! Melt pond lid volume
                ENDIF
             ENDIF
+            IF ( ln_csib ) THEN
+               z0icedia(:,:,jl) = picedia(:,:,jl)*z_ia * e1e2t(:,:)     ! Ice algal mass 
+            ENDIF
          END DO
          !
          !                                                                  !--------------------------------------------!
@@ -224,6 +235,11 @@ CONTAINS
                   CALL adv_y( zdt , zvdx , 0._wp , zarea , z0vl , sxvl , sxxvl , syvl , syyvl , sxyvl )
                ENDIF
             ENDIF
+            !
+            IF ( ln_csib ) THEN
+               CALL adv_x( zdt , zudy , 1._wp , zarea , z0icedia , sxicedia , sxxicedia , syicedia , syyicedia , sxyicedia )    !--- ice algae 
+               CALL adv_y( zdt , zvdx , 0._wp , zarea , z0icedia , sxicedia , sxxicedia , syicedia , syyicedia , sxyicedia )
+            ENDIF
             !                                                               !--------------------------------------------!
          ELSE                                                               !== even ice time step:  adv_y then adv_x  ==!
             !                                                               !--------------------------------------------!
@@ -258,6 +274,11 @@ CONTAINS
                   CALL adv_y( zdt , zvdx , 1._wp , zarea , z0vl , sxvl , sxxvl , syvl , syyvl , sxyvl ) !--- melt pond lid volume
                   CALL adv_x( zdt , zudy , 0._wp , zarea , z0vl , sxvl , sxxvl , syvl , syyvl , sxyvl )
                ENDIF
+            ENDIF
+            !
+            IF ( ln_csib ) THEN
+               CALL adv_y( zdt , zvdx , 0._wp , zarea , z0icedia , sxicedia , sxxicedia , syicedia , syyicedia , sxyicedia )     !--- ice algae 
+               CALL adv_x( zdt , zudy , 1._wp , zarea , z0icedia , sxicedia , sxxicedia , syicedia , syyicedia , sxyicedia )
             ENDIF
             !
          ENDIF
@@ -313,6 +334,9 @@ CONTAINS
                IF ( ln_pnd_lids ) THEN
                   pv_il(:,:,jl) = z0vl(:,:,jl) * r1_e1e2t(:,:) * tmask(:,:,1)
                ENDIF
+            ENDIF
+            IF ( ln_csib ) THEN
+               picedia(:,:,jl) = z0icedia(:,:,jl)/z_ia * r1_e1e2t(:,:) * tmask(:,:,1)
             ENDIF
          END DO
          !
@@ -917,6 +941,7 @@ CONTAINS
          &      sxap (jpi,jpj,jpl) , syap (jpi,jpj,jpl) , sxxap (jpi,jpj,jpl) , syyap (jpi,jpj,jpl) , sxyap (jpi,jpj,jpl) ,   &
          &      sxvp (jpi,jpj,jpl) , syvp (jpi,jpj,jpl) , sxxvp (jpi,jpj,jpl) , syyvp (jpi,jpj,jpl) , sxyvp (jpi,jpj,jpl) ,   &
          &      sxvl (jpi,jpj,jpl) , syvl (jpi,jpj,jpl) , sxxvl (jpi,jpj,jpl) , syyvl (jpi,jpj,jpl) , sxyvl (jpi,jpj,jpl) ,   &
+         &      sxicedia(jpi,jpj,jpl) , syicedia(jpi,jpj,jpl) , sxxicedia(jpi,jpj,jpl) , syyicedia(jpi,jpj,jpl) , sxyicedia(jpi,jpj,jpl) ,   &
          !
          &      sxc0 (jpi,jpj,nlay_s,jpl) , syc0 (jpi,jpj,nlay_s,jpl) , sxxc0(jpi,jpj,nlay_s,jpl) , &
          &      syyc0(jpi,jpj,nlay_s,jpl) , sxyc0(jpi,jpj,nlay_s,jpl)                             , &
@@ -1069,6 +1094,9 @@ CONTAINS
                IF ( ln_pnd_lids ) THEN
                   sxvl = 0._wp; syvl = 0._wp    ;   sxxvl = 0._wp    ;   syyvl = 0._wp    ;   sxyvl = 0._wp       ! melt pond lid volume
                ENDIF
+            ENDIF
+            IF ( ln_csib ) THEN
+               sxicedia = 0._wp   ;   syicedia = 0._wp   ;   sxxicedia = 0._wp   ;   syyicedia = 0._wp   ;   sxyicedia = 0._wp      ! ice algae
             ENDIF
          ENDIF
          !

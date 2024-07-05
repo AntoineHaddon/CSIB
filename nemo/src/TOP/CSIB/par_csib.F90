@@ -10,7 +10,12 @@ MODULE par_csib
    !! Software governed by the CeCILL license (see ./LICENSE)
    !!----------------------------------------------------------------------
 
+   USE par_kind   !: access wp kind
+
    IMPLICIT NONE
+   PUBLIC
+   
+   REAL(wp), SAVE :: z_ia=0.03_wp               ! height of skeletal layer
 
    !!======================================================================
 END MODULE par_csib

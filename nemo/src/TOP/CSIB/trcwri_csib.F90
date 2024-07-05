@@ -38,7 +38,7 @@ CONTAINS
  
       ! write the tracer concentrations in the file
       ! ---------------------------------------
-      CALL iom_put( 'icedia', icedia(:,:) )
+      CALL iom_put( 'icedia', icedia(:,:,:) )
 
       ! DO jn = jp_myt0, jp_myt1
       !    cltra = TRIM( ctrcnm(jn) )                  ! short title for tracer

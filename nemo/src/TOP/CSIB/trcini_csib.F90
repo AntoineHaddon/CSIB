@@ -8,12 +8,15 @@ MODULE trcini_csib
    !!----------------------------------------------------------------------
    !! trc_ini_csib   : CSIB model initialisation
    !!----------------------------------------------------------------------
+   USE par_kind   !: access wp kind
    USE par_trc         ! TOP parameters
    USE oce_trc
    USE trc
    USE par_csib
    USE trcnam_csib     ! csib SMS namelist
    USE trcsms_csib
+
+   USE dom_oce, ONLY: glamt, gphit               ! latitude/longitude for funky initiation
 
    IMPLICIT NONE
    PRIVATE
@@ -35,7 +38,8 @@ CONTAINS
       !!
       !! ** Method  : - Read the namcfc namelist and check the parameter values
       !!----------------------------------------------------------------------
-      INTEGER, INTENT(in) ::   Kmm  ! time level indices
+      INTEGER, INTENT(in) ::   Kmm     ! time level indices
+      INTEGER  ::   ji, jj             ! dummy loop indices
       !
       CALL trc_nam_csib
       !
@@ -47,8 +51,12 @@ CONTAINS
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~'
       
       IF( .NOT. ln_rsttr ) THEN
-         ! icedia(:,:)=0._wp
-         icedia(:,:) = tr(:,:,1,jrdia,Kmm)
+         icedia(:,:,:)=0._wp
+         ! icedia(:,:,:) = tr(:,:,1,jrdia,Kmm)
+         WHERE( gphit(:,:) > 80._wp )   ;   icedia(:,:,1)=1._wp
+         ELSEWHERE                     ;   icedia(:,:,1)=0._wp
+         END WHERE
+         
       ENDIF
       !
    END SUBROUTINE trc_ini_csib
