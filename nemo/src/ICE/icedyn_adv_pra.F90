@@ -276,8 +276,8 @@ CONTAINS
             ENDIF
             !
             IF ( ln_csib ) THEN
-               CALL adv_y( zdt , zvdx , 0._wp , zarea , z0icedia , sxicedia , sxxicedia , syicedia , syyicedia , sxyicedia )     !--- ice algae 
-               CALL adv_x( zdt , zudy , 1._wp , zarea , z0icedia , sxicedia , sxxicedia , syicedia , syyicedia , sxyicedia )
+               CALL adv_y( zdt , zvdx , 1._wp , zarea , z0icedia , sxicedia , sxxicedia , syicedia , syyicedia , sxyicedia )     !--- ice algae 
+               CALL adv_x( zdt , zudy , 0._wp , zarea , z0icedia , sxicedia , sxxicedia , syicedia , syyicedia , sxyicedia )
             ENDIF
             !
          ENDIF
