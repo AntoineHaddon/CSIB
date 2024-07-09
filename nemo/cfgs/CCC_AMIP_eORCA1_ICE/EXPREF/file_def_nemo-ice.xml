@@ -29,9 +29,8 @@
           <field field_ref="icethic_cmip"     name="sithick"     level="0" />  <!-- (SIday*) -->
           <field field_ref="snwthic_cmip"     name="sisnthick"   level="0" /> <!-- (SIday*) -->
           <field field_ref="icettop_cmip"     name="sitemptop"   level="0" /> <!-- (SIday*) -->
-          <field field_ref="uice_cmip"        name="siu"         level="0" /> <!-- (SIday*) <!-- move from 1d_grid_U_ar6 to here-->
-          <field field_ref="vice_cmip"        name="siv"         level="0" /> <!-- (SIday*) <!-- move from 1d_grid_V_ar6 to here-->
-          <field field_ref="icevel_cmip"      name="sispeed"     level="0" /> <!-- (SIday*) -->
+          <field field_ref="icethic_created"        name="sithick_created"         level="0" /> <!-- (SIday*) <!-- move from 1d_grid_U_ar6 to here-->
+          <field field_ref="icethic_lost"        name="sithick_lost"         level="0" /> <!-- (SIday*) <!-- move from 1d_grid_V_ar6 to here-->
      </file>
    </file_group>
 

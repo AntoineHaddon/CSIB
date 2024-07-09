@@ -195,9 +195,12 @@ CONTAINS
       INTEGER  ::   ji, jj     ! dummy loop indices
       REAL(wp) ::   ztinta     ! ratio applied to after  records when doing time interpolation
       REAL(wp) ::   ztintb     ! ratio applied to before records when doing time interpolation
+      REAL(wp), DIMENSION(jpi,jpj)     ::  seaice_lost, seaice_created 
       !!----------------------------------------------------------------------
       !
       IF( ln_timing )   CALL timing_start( 'sbc_ssm_ice')
+      seaice_created=0.
+      seaice_lost=0.
 
       IF ( l_sasread ) THEN
          IF( nfld_ice > 0 ) CALL fld_read( kt, 1, sf_ssm_ice )      !==   read data at kt time step   ==!
@@ -206,9 +209,15 @@ CONTAINS
          IF( TRIM(sf_ssm_ice(jf_ifr)%clrootname) /= 'NOT USED' ) THEN 
              a_i (:,:,:) = sf_ssm_ice(jf_ifr)%fnow(:,:,:)
              WHERE(a_i.le.0.)  ! Thickness is zero where there is no ice 
+                 WHERE(h_i.ne.0.)
+                     seaice_lost=h_i
+                 ENDWHERE
                  h_i(:,:,:) = 0.
                  h_s(:,:,:) = 0.
              ELSEWHERE ! minimum thickness of 0.1m when there is ice
+                 WHERE(h_i.le.0.1)
+                     seaice_created=0.1-h_i
+                 ENDWHERE
                  h_i(:,:,:) = max(h_i(:,:,:),0.1)
                  h_s(:,:,:) = max(h_s(:,:,:),0.1)
              ENDWHERE
@@ -225,6 +234,8 @@ CONTAINS
          CALL prt_ctl(tab3d_1=a_i , clinfo1=' a_i     - : ', mask1=tmask   )
          CALL prt_ctl(tab3d_1=t_su, clinfo1=' t_su    - : ', mask1=tmask   )
       ENDIF
+      CALL iom_put('icethic_created',seaice_created)
+      CALL iom_put('icethic_lost',seaice_lost)
       !
       IF( ln_timing )   CALL timing_stop( 'sbc_ssm_ice')
       !
