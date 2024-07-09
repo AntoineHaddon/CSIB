@@ -22,7 +22,6 @@ MODULE icedyn_adv_pra
    USE icevar         ! sea-ice: operations
    !
    USE par_trc , ONLY : ln_csib   ! use of sea ice biogeochemistry model CSIB
-   USE par_csib , ONLY : z_ia    ! CSIB parameters
    !
    USE in_out_manager ! I/O manager
    USE iom            ! I/O manager library
@@ -59,7 +58,7 @@ MODULE icedyn_adv_pra
 CONTAINS
 
    SUBROUTINE ice_dyn_adv_pra(         kt, pu_ice, pv_ice, ph_i, ph_s, ph_ip,  &
-      &                        pato_i, pv_i, pv_s, psv_i, poa_i, pa_i, pa_ip, pv_ip, pv_il, pe_s, pe_i, picedia )
+      &                        pato_i, pv_i, pv_s, psv_i, poa_i, pa_i, pa_ip, pv_ip, pv_il, pe_s, pe_i, picedia_gca )
       !!----------------------------------------------------------------------
       !!                **  routine ice_dyn_adv_pra  **
       !!
@@ -89,7 +88,7 @@ CONTAINS
       REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   pe_s       ! snw heat content
       REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   pe_i       ! ice heat content
       ! ice BGC variables
-      REAL(wp), DIMENSION(:,:,:)  , INTENT(inout) ::   picedia    ! ice algae concentration
+      REAL(wp), DIMENSION(:,:,:)  , INTENT(inout) ::   picedia_gca    ! ice algae grid cell average
       !
       INTEGER  ::   ji, jj, jk, jl, jt      ! dummy loop indices
       INTEGER  ::   icycle                  ! number of sub-timestep for the advection
@@ -194,7 +193,7 @@ CONTAINS
                ENDIF
             ENDIF
             IF ( ln_csib ) THEN
-               z0icedia(:,:,jl) = picedia(:,:,jl)*z_ia * e1e2t(:,:)     ! Ice algal mass 
+               z0icedia(:,:,jl) = picedia_gca(:,:,jl) * e1e2t(:,:)     ! Ice algal content 
             ENDIF
          END DO
          !
@@ -314,6 +313,10 @@ CONTAINS
                   &                          , sxxvp, 'T', 1._wp, syyvp, 'T',  1._wp, sxyvp, 'T',  1._wp  )
             ENDIF
          ENDIF
+         IF ( ln_csib ) THEN
+            CALL lbc_lnk( 'icedyn_adv_pra', z0icedia , 'T', 1._wp, sxicedia , 'T', -1._wp, syicedia , 'T', -1._wp  & ! ice algae
+               &                          , sxxicedia, 'T', 1._wp, syyicedia, 'T',  1._wp, sxyicedia, 'T',  1._wp  )
+         ENDIF
 
          ! --- Recover the properties from their contents --- !
          DO jl = 1, jpl
@@ -336,7 +339,7 @@ CONTAINS
                ENDIF
             ENDIF
             IF ( ln_csib ) THEN
-               picedia(:,:,jl) = z0icedia(:,:,jl)/z_ia * r1_e1e2t(:,:) * tmask(:,:,1)
+               picedia_gca(:,:,jl) = z0icedia(:,:,jl) * r1_e1e2t(:,:) * tmask(:,:,1)
             ENDIF
          END DO
          !

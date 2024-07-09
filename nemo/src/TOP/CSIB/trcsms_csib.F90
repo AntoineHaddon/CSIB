@@ -15,7 +15,7 @@ MODULE trcsms_csib
    USE trd_oce
    USE trdtrc
 
-   USE ice , ONLY : jpl       ! number of ice thickness categories
+   USE ice , ONLY : jpl, a_i   ! number of ice thickness categories, ice concentration
 
    IMPLICIT NONE
    PRIVATE
@@ -24,7 +24,30 @@ MODULE trcsms_csib
    PUBLIC   trc_sms_csib_alloc ! called by trcini_csib.F90 module
 
    ! Defined HERE the arrays specific to CSIB sms and ALLOCATE them in trc_sms_csib_alloc
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: icedia     !  Ice algae concentration
+   REAL(wp), PUBLIC, PARAMETER ::   epsi10 = 1.e-10_wp  !: small number
+
+   !! Sea ice tracers are like ice model variables and have 2 equivalent variables: 
+   !!    - one extenisve for dynamics
+   !!    - one intensive for thermodynanics and biogeochemistry
+   !!
+   !! **********************************************************************|
+   !! ***         Category dependent state variables (prognostic)        ***|
+   !! **********************************************************************|
+   !!                                                                       |
+   !! ** Global variables                                                   |
+   !!-------------|-------------|---------------------------------|---------|
+   !! icedia_gca  |      -      |    Ice algae grid cell average  | mmol/m3 |
+   !!                                                                       |
+   !!-------------|-------------|---------------------------------|---------|
+   !!                                                                       |
+   !! ** Equivalent variables                                               |
+   !!-------------|-------------|---------------------------------|---------|
+   !! icedia      | -           |    Ice algae per ice area       | mmol/m3 |
+
+
+
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: icedia     !  Ice algae per ice area
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: icedia_gca !  Ice algae grid cell average
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
@@ -58,6 +81,11 @@ CONTAINS
 
       ! add here the call to BGC model
 
+      ! Conversion from global to equivalent variables
+      icedia(:,:,:) = icedia_gca(:,:,:) / MAX( epsi10, a_i(:,:,:) )
+
+
+
       ! Save the trends in the mixed layer
       ! IF( l_trdtrc ) THEN
       !     DO jn = jp_myt0, jp_myt1
@@ -67,6 +95,11 @@ CONTAINS
       !     DEALLOCATE( ztrmyt )
       ! END IF
       !
+
+      ! Conversion from equivalent to global variables
+      icedia_gca(:,:,:) = icedia(:,:,:) * a_i(:,:,:)
+
+
       IF( ln_timing )   CALL timing_stop('trc_sms_csib')
       !
    END SUBROUTINE trc_sms_csib
@@ -81,7 +114,7 @@ CONTAINS
       ! ALLOCATE( tab(...) , STAT=trc_sms_csib_alloc )
       trc_sms_csib_alloc = 0      ! set to zero if no array to be allocated
       
-      ALLOCATE(icedia(jpi,jpj,jpl), STAT=trc_sms_csib_alloc)
+      ALLOCATE(icedia(jpi,jpj,jpl), icedia_gca(jpi,jpj,jpl), STAT=trc_sms_csib_alloc)
 
       IF( trc_sms_csib_alloc /= 0 ) CALL ctl_stop( 'STOP', 'trc_sms_csib_alloc : failed to allocate arrays' )
       !

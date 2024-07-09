@@ -613,6 +613,10 @@ CONTAINS
                      vlrft (ji) = v_il_2d(ji,jl1) * afrft
                   ENDIF
                ENDIF
+               ! IF ( ln_csib ) THEN
+               !    icedia_rdg() = icedia..() *a_i.. * afrdg
+               !    icedia_rft() = icedia..() *a_i.. * afrft
+               ! ENDIF
 
                ! Ice-ocean exchanges associated with ice porosity
                wfx_dyn_1d(ji) = wfx_dyn_1d(ji) - vsw * rhoi * r1_Dt_ice   ! increase in ice volume due to seawater frozen in voids
@@ -645,6 +649,9 @@ CONTAINS
                      v_il_2d(ji,jl1) = v_il_2d(ji,jl1) - vlrdg(ji) - vlrft(ji)
                   ENDIF
                ENDIF
+               ! IF ( ln_csib ) THEN
+               !    icedia..() = icedia..() - 
+               ! ENDIF
             ENDIF
 
          END DO ! ji
@@ -745,6 +752,8 @@ CONTAINS
                            &                                   + vlrft(ji) * rn_fpndrft * zswitch(ji) )
                      ENDIF
                   ENDIF
+                  ! IF ( ln_csib ) THEN
+                  !    icedia_2d(ji,jl2) = icedia_2d(ji,jl2) ...
 
                ENDIF
 

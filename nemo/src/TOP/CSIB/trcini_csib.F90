@@ -17,7 +17,8 @@ MODULE trcini_csib
    USE trcsms_csib
 
    USE dom_oce, ONLY: glamt, gphit               ! latitude/longitude for funky initiation
-
+   USE ice , ONLY: a_i
+   
    IMPLICIT NONE
    PRIVATE
 
@@ -53,9 +54,10 @@ CONTAINS
       IF( .NOT. ln_rsttr ) THEN
          icedia(:,:,:)=0._wp
          ! icedia(:,:,:) = tr(:,:,1,jrdia,Kmm)
-         WHERE( gphit(:,:) > 80._wp )   ;   icedia(:,:,1)=1._wp
-         ELSEWHERE                     ;   icedia(:,:,1)=0._wp
+         WHERE( gphit(:,:) > 85._wp )   ;   icedia(:,:,3)=1._wp
+         ELSEWHERE                     ;   icedia(:,:,3)=0._wp
          END WHERE
+         icedia_gca(:,:,:) = icedia(:,:,:) * a_i(:,:,:)
          
       ENDIF
       !
