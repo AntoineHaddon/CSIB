@@ -30,6 +30,9 @@ MODULE icedyn_rdgrft
    USE lbclnk         ! lateral boundary conditions (or mpp links)
    USE timing         ! Timing
 
+   USE par_trc , ONLY : ln_csib                          ! flag to use ice BGC
+   USE trcsms_csib , ONLY : icedia_gca, icediagca_2d     ! ice BGC variables
+
    IMPLICIT NONE
    PRIVATE
 
@@ -523,7 +526,9 @@ CONTAINS
       REAL(wp)                  ::   airdg1, oirdg1, aprdg1, virdg1, sirdg1
       REAL(wp)                  ::   airft1, oirft1, aprft1
       REAL(wp), DIMENSION(jpij) ::   airdg2, oirdg2, aprdg2, virdg2, sirdg2, vsrdg, vprdg, vlrdg  ! area etc of new ridges
+      REAL(wp), DIMENSION(jpij) ::   icedia_rdg  ! iBGC content of riging ice/ going to new ridges
       REAL(wp), DIMENSION(jpij) ::   airft2, oirft2, aprft2, virft , sirft , vsrft, vprft, vlrft  ! area etc of rafted ice
+      REAL(wp), DIMENSION(jpij) ::   icedia_rft  ! iBGC content of rafted ice
       !
       REAL(wp), DIMENSION(jpij) ::   ersw             ! enth of water trapped into ridges
       REAL(wp), DIMENSION(jpij) ::   zswitch, fvol    ! new ridge volume going to jl2
@@ -613,10 +618,10 @@ CONTAINS
                      vlrft (ji) = v_il_2d(ji,jl1) * afrft
                   ENDIF
                ENDIF
-               ! IF ( ln_csib ) THEN
-               !    icedia_rdg() = icedia..() *a_i.. * afrdg
-               !    icedia_rft() = icedia..() *a_i.. * afrft
-               ! ENDIF
+               IF ( ln_csib ) THEN
+                  icedia_rdg(ji) = icediagca_2d(ji,jl1) * afrdg     ! ice algae content in ridging ice/ going to new ridge
+                  icedia_rft(ji) = icediagca_2d(ji,jl1) * afrft     ! ice alage content in rafting ice
+               ENDIF
 
                ! Ice-ocean exchanges associated with ice porosity
                wfx_dyn_1d(ji) = wfx_dyn_1d(ji) - vsw * rhoi * r1_Dt_ice   ! increase in ice volume due to seawater frozen in voids
@@ -649,9 +654,9 @@ CONTAINS
                      v_il_2d(ji,jl1) = v_il_2d(ji,jl1) - vlrdg(ji) - vlrft(ji)
                   ENDIF
                ENDIF
-               ! IF ( ln_csib ) THEN
-               !    icedia..() = icedia..() - 
-               ! ENDIF
+               IF ( ln_csib ) THEN
+                  icediagca_2d(ji,jl1) = icediagca_2d(ji,jl1) - icedia_rdg(ji) - icedia_rft(ji)
+               ENDIF
             ENDIF
 
          END DO ! ji
@@ -752,8 +757,9 @@ CONTAINS
                            &                                   + vlrft(ji) * rn_fpndrft * zswitch(ji) )
                      ENDIF
                   ENDIF
-                  ! IF ( ln_csib ) THEN
-                  !    icedia_2d(ji,jl2) = icedia_2d(ji,jl2) ...
+                  IF ( ln_csib ) THEN
+                     icediagca_2d(ji,jl2) = icediagca_2d(ji,jl2) + ( icedia_rdg(ji) * farea + icedia_rft(ji) * zswitch(ji) )
+                  ENDIF
 
                ENDIF
 
@@ -784,6 +790,9 @@ CONTAINS
       !----------------
       ! In case ridging/rafting lead to very small negative values (sometimes it happens)
       CALL ice_var_roundoff( a_i_2d, v_i_2d, v_s_2d, sv_i_2d, oa_i_2d, a_ip_2d, v_ip_2d, v_il_2d, ze_s_2d, ze_i_2d )
+      IF( ln_csib ) THEN
+         WHERE( icediagca_2d(1:npti,:) < 0._wp )    icediagca_2d(1:npti,:)   = 0._wp   ! ice algae must be >= 0
+      ENDIF
       !
    END SUBROUTINE rdgrft_shift
 
@@ -948,6 +957,9 @@ CONTAINS
          CALL tab_2d_1d( npti, nptidx(1:npti), hfx_dyn_1d    (1:npti), hfx_dyn    (:,:) )
          CALL tab_2d_1d( npti, nptidx(1:npti), wfx_snw_dyn_1d(1:npti), wfx_snw_dyn(:,:) )
          CALL tab_2d_1d( npti, nptidx(1:npti), wfx_pnd_1d    (1:npti), wfx_pnd    (:,:) )
+         IF ( ln_csib ) THEN
+            CALL tab_3d_2d( npti, nptidx(1:npti), icediagca_2d(1:npti,1:jpl), icedia_gca(:,:,:) )
+         ENDIF
          !
          !                 !---------------------!
       CASE( 2 )            !==  from 1D to 2D  ==!
@@ -975,6 +987,9 @@ CONTAINS
          CALL tab_1d_2d( npti, nptidx(1:npti), hfx_dyn_1d    (1:npti), hfx_dyn    (:,:) )
          CALL tab_1d_2d( npti, nptidx(1:npti), wfx_snw_dyn_1d(1:npti), wfx_snw_dyn(:,:) )
          CALL tab_1d_2d( npti, nptidx(1:npti), wfx_pnd_1d    (1:npti), wfx_pnd    (:,:) )
+         IF ( ln_csib ) THEN
+            CALL tab_2d_3d( npti, nptidx(1:npti), icediagca_2d(1:npti,1:jpl), icedia_gca(:,:,:) )
+         ENDIF
          !
       END SELECT
       !

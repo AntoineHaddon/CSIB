@@ -15,7 +15,7 @@ MODULE trcsms_csib
    USE trd_oce
    USE trdtrc
 
-   USE ice , ONLY : jpl, a_i   ! number of ice thickness categories, ice concentration
+   USE ice              ! ice variables
 
    IMPLICIT NONE
    PRIVATE
@@ -46,8 +46,9 @@ MODULE trcsms_csib
 
 
 
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: icedia     !  Ice algae per ice area
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: icedia_gca !  Ice algae grid cell average
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: icedia            !  Ice algae per ice area
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: icedia_gca        !  Ice algae grid cell average
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   :: icediagca_2d      !  Ice algae grid cell average, 2d version for ice model
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
@@ -68,7 +69,6 @@ CONTAINS
       INTEGER, INTENT(in) ::   kt   ! ocean time-step index
       INTEGER, INTENT(in) ::   Kbb, Kmm, Krhs  ! time level indices
       INTEGER ::   jn   ! dummy loop index
-      REAL(wp), ALLOCATABLE, DIMENSION(:,:,:) :: ztrmyt
       !!----------------------------------------------------------------------
       !
       IF( ln_timing )   CALL timing_start('trc_sms_csib')
@@ -77,24 +77,17 @@ CONTAINS
       IF(lwp) WRITE(numout,*) ' trc_sms_csib:  CSIB model'
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~'
 
-      ! IF( l_trdtrc )  ALLOCATE( ztrmyt(jpi,jpj,jpk) )
 
-      ! add here the call to BGC model
 
       ! Conversion from global to equivalent variables
-      icedia(:,:,:) = icedia_gca(:,:,:) / MAX( epsi10, a_i(:,:,:) )
+      WHERE( a_i(:,:,:) < epsi10 .OR. v_i(:,:,:) < epsi10 .OR. h_i(:,:,:) < epsi10 )
+         icedia(:,:,:)=0._wp
+      ELSEWHERE
+         icedia(:,:,:) = icedia_gca(:,:,:) / a_i(:,:,:)
+      END WHERE
 
 
-
-      ! Save the trends in the mixed layer
-      ! IF( l_trdtrc ) THEN
-      !     DO jn = jp_myt0, jp_myt1
-      !       ztrmyt(:,:,:) = tr(:,:,:,jn,Krhs)
-      !       CALL trd_trc( ztrmyt, jn, jptra_sms, kt, Kmm )   ! save trends
-      !     END DO
-      !     DEALLOCATE( ztrmyt )
-      ! END IF
-      !
+      
 
       ! Conversion from equivalent to global variables
       icedia_gca(:,:,:) = icedia(:,:,:) * a_i(:,:,:)
@@ -114,7 +107,8 @@ CONTAINS
       ! ALLOCATE( tab(...) , STAT=trc_sms_csib_alloc )
       trc_sms_csib_alloc = 0      ! set to zero if no array to be allocated
       
-      ALLOCATE(icedia(jpi,jpj,jpl), icedia_gca(jpi,jpj,jpl), STAT=trc_sms_csib_alloc)
+      ALLOCATE(icedia(jpi,jpj,jpl), icedia_gca(jpi,jpj,jpl), icediagca_2d(jpij,jpl), &
+         &     STAT=trc_sms_csib_alloc)
 
       IF( trc_sms_csib_alloc /= 0 ) CALL ctl_stop( 'STOP', 'trc_sms_csib_alloc : failed to allocate arrays' )
       !

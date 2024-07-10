@@ -30,6 +30,9 @@ MODULE iceitd
    USE prtctl         ! Print control
    USE timing         ! Timing
 
+   USE par_trc , ONLY : ln_csib                          ! flag to use ice BGC
+   USE trcsms_csib , ONLY : icedia_gca, icediagca_2d     ! ice BGC variables
+
    IMPLICIT NONE
    PRIVATE
 
@@ -438,6 +441,9 @@ CONTAINS
       END DO
       ! to correct roundoff errors on a_i
       CALL tab_2d_1d( npti, nptidx(1:npti), rn_amax_1d(1:npti), rn_amax_2d )
+      IF ( ln_csib ) THEN
+         CALL tab_3d_2d( npti, nptidx(1:npti), icediagca_2d(1:npti,1:jpl), icedia_gca(:,:,:) )
+      ENDIF
 
       !----------------------------------------------------------------------------------------------
       ! 1) Define a variable equal to a_i*T_su
@@ -507,6 +513,12 @@ CONTAINS
                   ENDIF
                ENDIF
                !
+               IF ( ln_csib ) THEN
+                  ztrans               = icediagca_2d(ji,jl1) * zworka(ji)     ! Ice algae
+                  icediagca_2d(ji,jl1) = icediagca_2d(ji,jl1) - ztrans
+                  icediagca_2d(ji,jl2) = icediagca_2d(ji,jl2) + ztrans
+               ENDIF
+               !
             ENDIF   ! jl1 >0
          END DO
          !
@@ -550,6 +562,9 @@ CONTAINS
       ! clem: The transfer between one category to another can lead to very small negative values (-1.e-20)
       !       because of truncation error ( i.e. 1. - 1. /= 0 )
       CALL ice_var_roundoff( a_i_2d, v_i_2d, v_s_2d, sv_i_2d, oa_i_2d, a_ip_2d, v_ip_2d, v_il_2d, ze_s_2d, ze_i_2d )
+      IF( ln_csib ) THEN
+         WHERE( icediagca_2d(1:npti,:) < 0._wp )    icediagca_2d(1:npti,:)   = 0._wp   ! ice algae must be >= 0
+      ENDIF
 
       ! at_i must be <= rn_amax
       zworka(1:npti) = SUM( a_i_2d(1:npti,:), dim=2 )
@@ -591,6 +606,10 @@ CONTAINS
             CALL tab_1d_2d( npti, nptidx(1:npti), ze_i_2d(1:npti,jk,jl), e_i(:,:,jk,jl) )
          END DO
       END DO
+      IF ( ln_csib ) THEN
+         CALL tab_2d_3d( npti, nptidx(1:npti), icediagca_2d(1:npti,1:jpl), icedia_gca(:,:,:) )
+      ENDIF
+
       !
    END SUBROUTINE itd_shiftice
 
