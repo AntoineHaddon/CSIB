@@ -58,8 +58,11 @@ CONTAINS
          ELSEWHERE                     ;   icedia(:,:,3)=0._wp
          END WHERE
          icedia_gca(:,:,:) = icedia(:,:,:) * a_i(:,:,:)
-         
       ENDIF
+
+      flushrate(:,:,:)=0._wp
+      flushdia(:,:,:)=0._wp
+      
       !
    END SUBROUTINE trc_ini_csib
 
