@@ -15,6 +15,8 @@ MODULE ice1D
    USE in_out_manager ! I/O manager
    USE lib_mpp        ! MPP library
 
+   USE par_trc , ONLY : ln_csib            ! flag to use ice BGC
+
    IMPLICIT NONE
    PRIVATE
 
@@ -79,6 +81,10 @@ MODULE ice1D
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   wfx_spr_1d
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   wfx_dyn_1d
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   wfx_pnd_1d
+
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   wfx_bom_cat_1d   
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   wfx_sum_cat_1d
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   wfx_lam_cat_1d
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   sfx_bri_1d
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   sfx_bog_1d    
@@ -206,6 +212,9 @@ CONTAINS
          &      sfx_bri_1d    (jpij) , sfx_bog_1d (jpij) , sfx_bom_1d (jpij) , sfx_sum_1d (jpij),  &
          &      sfx_sni_1d    (jpij) , sfx_opw_1d (jpij) , sfx_res_1d (jpij) , sfx_sub_1d (jpij),  &
          &      sfx_lam_1d    (jpij) , sfx_dyn_1d(jpij)  , STAT=ierr(ii) )
+      IF( ln_csib ) THEN
+         ALLOCATE(wfx_bom_cat_1d(jpij), wfx_sum_cat_1d(jpij), wfx_lam_cat_1d(jpij))
+      ENDIF
       !
       ii = ii + 1
       ALLOCATE( t_su_1d (jpij) , t_si_1d (jpij) , a_i_1d    (jpij) , a_ib_1d (jpij) ,                   &

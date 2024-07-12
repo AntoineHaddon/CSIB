@@ -17,6 +17,8 @@ MODULE icethd_da
    USE phycst         ! physical constants (ocean directory)
    USE ice            ! sea-ice: variables
    USE ice1D          ! sea-ice: thermodynamic 1D variables
+   USE par_trc , ONLY : ln_csib            ! flag to use ice BGC
+
    !
    USE in_out_manager ! I/O manager
    USE lib_mpp        ! MPP library
@@ -142,7 +144,10 @@ CONTAINS
             
             ! Contribution to mass flux
             wfx_lam_1d(ji) =  wfx_lam_1d(ji) + zda * r1_Dt_ice * ( rhoi * h_i_1d(ji) + rhos * h_s_1d(ji) )
-            
+            IF( ln_csib ) THEN
+               wfx_lam_cat_1d(ji) = zda * r1_Dt_ice * ( rhoi * h_i_1d(ji) + rhos * h_s_1d(ji) )
+            ENDIF
+
             ! new concentration
             a_i_1d(ji) = a_i_1d(ji) - zda
 

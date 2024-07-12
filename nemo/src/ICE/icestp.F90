@@ -64,6 +64,9 @@ MODULE icestp
    USE iceistate      ! sea-ice: initial state
    USE iceitd         ! sea-ice: remapping thickness distribution
    USE icealb         ! sea-ice: albedo
+
+   USE par_trc , ONLY : ln_csib            ! flag to use ice BGC
+
    !
    USE bdy_oce , ONLY : ln_bdy   ! flag for bdy
    USE bdyice         ! unstructured open boundary data for sea-ice
@@ -470,8 +473,19 @@ CONTAINS
             ! Melt pond surface melt diagnostics (mv - more efficient: grouped into one water volume flux)
             dh_i_sum_2d(ji,jj,jl) = 0._wp
             dh_s_mlt_2d(ji,jj,jl) = 0._wp
-         END_2D
-      ENDDO
+            END_2D
+         ENDDO
+
+         ! Per category mass fluxes for ice BGC model CSIB
+         IF ( ln_csib ) THEN
+            DO jl = 1, jpl
+               DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
+               wfx_bom_cat(ji,jj,jl) = 0._wp
+               wfx_sum_cat(ji,jj,jl) = 0._wp
+               wfx_lam_cat(ji,jj,jl) = 0._wp
+               END_2D
+            ENDDO
+         ENDIF
 
    END SUBROUTINE diag_set0
 

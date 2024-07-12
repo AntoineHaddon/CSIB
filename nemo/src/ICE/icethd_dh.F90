@@ -24,6 +24,8 @@ MODULE icethd_dh
    USE lib_mpp        ! MPP library
    USE lib_fortran    ! fortran utilities (glob_sum + no signed zero)
 
+   USE par_trc , ONLY : ln_csib            ! flag to use ice BGC
+
    IMPLICIT NONE
    PRIVATE
 
@@ -296,6 +298,9 @@ CONTAINS
                wfx_sum_1d(ji) = wfx_sum_1d(ji) - rhoi * zdum              * a_i_1d(ji) * r1_Dt_ice    ! Mass flux
                sfx_sum_1d(ji) = sfx_sum_1d(ji) - rhoi * zdum * s_i_1d(ji) * a_i_1d(ji) * r1_Dt_ice    ! Salt flux >0
                !                                                                                          using s_i_1d and not sz_i_1d(jk) is ok)
+               IF ( ln_csib ) THEN !for per category recording of mass flux
+                  wfx_sum_cat_1d(ji) = - rhoi * zdum * a_i_1d(ji) * r1_Dt_ice
+               ENDIF
             END IF
             ! update thickness
             zh_i(ji,jk) = MAX( 0._wp, zh_i(ji,jk) + zdum )
@@ -457,6 +462,9 @@ CONTAINS
                   wfx_bom_1d(ji) = wfx_bom_1d(ji) - rhoi * zdum              * a_i_1d(ji) * r1_Dt_ice   ! Mass flux
                   sfx_bom_1d(ji) = sfx_bom_1d(ji) - rhoi * zdum * s_i_1d(ji) * a_i_1d(ji) * r1_Dt_ice   ! Salt flux
                   !                                                                                         using s_i_1d and not sz_i_1d(jk) is ok
+                  IF ( ln_csib ) THEN !for per category recording of mass flux
+                     wfx_bom_cat_1d(ji) = - rhoi * zdum * a_i_1d(ji) * r1_Dt_ice
+                  ENDIF
                ENDIF
                ! update thickness
                zh_i(ji,jk) = MAX( 0._wp, zh_i(ji,jk) + zdum )
