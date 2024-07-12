@@ -16,6 +16,7 @@ MODULE trcsms_csib
    USE trdtrc
 
    USE ice              ! ice variables
+   USE phycst         ! physical constants: rhoi, rhos
 
    IMPLICIT NONE
    PRIVATE
@@ -50,6 +51,9 @@ MODULE trcsms_csib
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: icedia_gca        !  Ice algae grid cell average
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   :: icediagca_2d      !  Ice algae grid cell average, 2d version for ice model
 
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: flushrate        !  Flusrate per ice category (m/s)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: flushdia         !  Flusrate per ice category (mmol/m3/s)
+
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
    !! $Id: trcsms_my_trc.F90 12377 2020-02-12 14:39:06Z acc $
@@ -68,7 +72,9 @@ CONTAINS
       !
       INTEGER, INTENT(in) ::   kt   ! ocean time-step index
       INTEGER, INTENT(in) ::   Kbb, Kmm, Krhs  ! time level indices
-      INTEGER ::   jn   ! dummy loop index
+      
+      INTEGER ::   ji,jj,jl   ! dummy loop index
+
       !!----------------------------------------------------------------------
       !
       IF( ln_timing )   CALL timing_start('trc_sms_csib')
@@ -80,14 +86,28 @@ CONTAINS
 
 
       ! Conversion from global to equivalent variables
-      WHERE( a_i(:,:,:) < epsi10 .OR. v_i(:,:,:) < epsi10 .OR. h_i(:,:,:) < epsi10 )
+      WHERE( a_i(:,:,:) < epsi10 )
          icedia(:,:,:)=0._wp
       ELSEWHERE
          icedia(:,:,:) = icedia_gca(:,:,:) / a_i(:,:,:)
       END WHERE
 
 
-      
+      !BGC computations
+      DO jl = 1, jpl
+         DO ji = 1, jpi
+            DO jj = 1, jpj
+         
+               flushrate(ji,jj,jl) = ( wfx_bom_cat(ji,jj,jl) + wfx_sum_cat(ji,jj,jl) ) * r1_rhoi    ! bottom and surface ice melt [kg.m-2.s-1] / ice denisty [kg/m3] = m/s
+               flushdia(ji,jj,jl) =  icedia(ji,jj,jl)/z_ia * flushrate(ji,jj,jl)     ! mmol/m3 /m * m/s = mmol/m3/s
+
+               icedia(ji,jj,jl) = icedia(ji,jj,jl) - flushdia(ji,jj,jl) * rDt_trc
+         
+            ENDDO
+         ENDDO
+      ENDDO
+
+
 
       ! Conversion from equivalent to global variables
       icedia_gca(:,:,:) = icedia(:,:,:) * a_i(:,:,:)
@@ -108,6 +128,7 @@ CONTAINS
       trc_sms_csib_alloc = 0      ! set to zero if no array to be allocated
       
       ALLOCATE(icedia(jpi,jpj,jpl), icedia_gca(jpi,jpj,jpl), icediagca_2d(jpij,jpl), &
+         &     flushrate(jpi,jpj,jpl), flushdia(jpi,jpj,jpl), &
          &     STAT=trc_sms_csib_alloc)
 
       IF( trc_sms_csib_alloc /= 0 ) CALL ctl_stop( 'STOP', 'trc_sms_csib_alloc : failed to allocate arrays' )

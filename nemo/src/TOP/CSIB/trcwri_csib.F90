@@ -41,6 +41,9 @@ CONTAINS
       CALL iom_put( 'icedia', icedia(:,:,:) )
       CALL iom_put( 'icedia_gca', icedia_gca(:,:,:) )
 
+      CALL iom_put( 'flushrate', flushrate(:,:,:) )
+      CALL iom_put( 'flushdia', flushdia(:,:,:) )
+
       ! DO jn = jp_myt0, jp_myt1
       !    cltra = TRIM( ctrcnm(jn) )                  ! short title for tracer
       !    CALL iom_put( cltra, tr(:,:,:,jn,Kmm) )
