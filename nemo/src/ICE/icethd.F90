@@ -314,9 +314,9 @@ CONTAINS
          CALL tab_2d_1d( npti, nptidx(1:npti), wfx_spr_1d (1:npti), wfx_spr          )
          CALL tab_2d_1d( npti, nptidx(1:npti), wfx_lam_1d (1:npti), wfx_lam          )
          IF( ln_csib) THEN
-            CALL tab_2d_1d( npti, nptidx(1:npti), wfx_sum_cat_1d(1:npti), wfx_sum_cat(:,:,kl)   )
-            CALL tab_2d_1d( npti, nptidx(1:npti), wfx_bom_cat_1d(1:npti), wfx_bom_cat(:,:,kl)   )
-            CALL tab_2d_1d( npti, nptidx(1:npti), wfx_lam_cat_1d(1:npti), wfx_bom_cat(:,:,kl)   )
+            CALL tab_2d_1d( npti, nptidx(1:npti), dh_sum_cat_1d(1:npti), dh_sum_cat(:,:,kl)   )
+            CALL tab_2d_1d( npti, nptidx(1:npti), dh_bom_cat_1d(1:npti), dh_bom_cat(:,:,kl)   )
+            CALL tab_2d_1d( npti, nptidx(1:npti), fa_lam_cat_1d(1:npti), fa_lam_cat(:,:,kl)   )
          ENDIF
          !
          CALL tab_2d_1d( npti, nptidx(1:npti), sfx_bog_1d (1:npti), sfx_bog          )
@@ -416,9 +416,9 @@ CONTAINS
          CALL tab_1d_2d( npti, nptidx(1:npti), wfx_spr_1d (1:npti), wfx_spr        )
          CALL tab_1d_2d( npti, nptidx(1:npti), wfx_lam_1d (1:npti), wfx_lam        )
          IF( ln_csib) THEN
-            CALL tab_1d_2d( npti, nptidx(1:npti), wfx_sum_cat_1d(1:npti), wfx_sum_cat(:,:,kl)   )
-            CALL tab_1d_2d( npti, nptidx(1:npti), wfx_bom_cat_1d(1:npti), wfx_bom_cat(:,:,kl)   )
-            CALL tab_1d_2d( npti, nptidx(1:npti), wfx_lam_cat_1d(1:npti), wfx_bom_cat(:,:,kl)   )
+            CALL tab_1d_2d( npti, nptidx(1:npti), dh_sum_cat_1d(1:npti), dh_sum_cat(:,:,kl)   )
+            CALL tab_1d_2d( npti, nptidx(1:npti), dh_bom_cat_1d(1:npti), dh_bom_cat(:,:,kl)   )
+            CALL tab_1d_2d( npti, nptidx(1:npti), fa_lam_cat_1d(1:npti), fa_lam_cat(:,:,kl)   )
          ENDIF
          !
          CALL tab_1d_2d( npti, nptidx(1:npti), sfx_bog_1d (1:npti), sfx_bog        )

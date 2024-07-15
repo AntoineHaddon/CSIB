@@ -298,8 +298,8 @@ CONTAINS
                wfx_sum_1d(ji) = wfx_sum_1d(ji) - rhoi * zdum              * a_i_1d(ji) * r1_Dt_ice    ! Mass flux
                sfx_sum_1d(ji) = sfx_sum_1d(ji) - rhoi * zdum * s_i_1d(ji) * a_i_1d(ji) * r1_Dt_ice    ! Salt flux >0
                !                                                                                          using s_i_1d and not sz_i_1d(jk) is ok)
-               IF ( ln_csib ) THEN !for per category recording of mass flux
-                  wfx_sum_cat_1d(ji) = - rhoi * zdum * a_i_1d(ji) * r1_Dt_ice
+               IF ( ln_csib ) THEN ! per category recording of thickness change, for ice BGC model
+                  dh_sum_cat_1d(ji) = dh_sum_cat_1d(ji) - zdum * r1_Dt_ice
                ENDIF
             END IF
             ! update thickness
@@ -462,8 +462,8 @@ CONTAINS
                   wfx_bom_1d(ji) = wfx_bom_1d(ji) - rhoi * zdum              * a_i_1d(ji) * r1_Dt_ice   ! Mass flux
                   sfx_bom_1d(ji) = sfx_bom_1d(ji) - rhoi * zdum * s_i_1d(ji) * a_i_1d(ji) * r1_Dt_ice   ! Salt flux
                   !                                                                                         using s_i_1d and not sz_i_1d(jk) is ok
-                  IF ( ln_csib ) THEN !for per category recording of mass flux
-                     wfx_bom_cat_1d(ji) = - rhoi * zdum * a_i_1d(ji) * r1_Dt_ice
+                  IF ( ln_csib ) THEN ! per category recording of thickness change, for ice BGC model
+                     dh_bom_cat_1d(ji) = dh_bom_cat_1d(ji) - zdum * r1_Dt_ice
                   ENDIF
                ENDIF
                ! update thickness

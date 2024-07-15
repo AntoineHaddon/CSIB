@@ -82,9 +82,9 @@ MODULE ice1D
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   wfx_dyn_1d
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   wfx_pnd_1d
 
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   wfx_bom_cat_1d   
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   wfx_sum_cat_1d
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   wfx_lam_cat_1d
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   dh_bom_cat_1d   
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   dh_sum_cat_1d
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   fa_lam_cat_1d
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   sfx_bri_1d
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   sfx_bog_1d    
@@ -213,7 +213,7 @@ CONTAINS
          &      sfx_sni_1d    (jpij) , sfx_opw_1d (jpij) , sfx_res_1d (jpij) , sfx_sub_1d (jpij),  &
          &      sfx_lam_1d    (jpij) , sfx_dyn_1d(jpij)  , STAT=ierr(ii) )
       IF( ln_csib ) THEN
-         ALLOCATE(wfx_bom_cat_1d(jpij), wfx_sum_cat_1d(jpij), wfx_lam_cat_1d(jpij))
+         ALLOCATE(dh_bom_cat_1d(jpij), dh_sum_cat_1d(jpij), fa_lam_cat_1d(jpij))
       ENDIF
       !
       ii = ii + 1

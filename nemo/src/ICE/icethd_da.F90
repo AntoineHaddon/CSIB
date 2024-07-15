@@ -144,8 +144,9 @@ CONTAINS
             
             ! Contribution to mass flux
             wfx_lam_1d(ji) =  wfx_lam_1d(ji) + zda * r1_Dt_ice * ( rhoi * h_i_1d(ji) + rhos * h_s_1d(ji) )
-            IF( ln_csib ) THEN
-               wfx_lam_cat_1d(ji) = zda * r1_Dt_ice * ( rhoi * h_i_1d(ji) + rhos * h_s_1d(ji) )
+            
+            IF( ln_csib ) THEN ! record fraction of ice concentration lost, for ice BGC model
+               fa_lam_cat_1d(ji) = MIN( 1.0_wp, zda_tot / at_i_1d(ji) ) * r1_Dt_ice
             ENDIF
 
             ! new concentration

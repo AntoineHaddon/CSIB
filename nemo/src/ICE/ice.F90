@@ -304,10 +304,10 @@ MODULE ice
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   wfx_res         !: mass flux from residual component of wfx_ice             [kg.m-2.s-1]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   wfx_err_sub     !: mass flux error after sublimation                        [kg.m-2.s-1]
 
-   ! Per-category ice-ocean mass fluxes, for use by sea ice BGC model CSIB
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   wfx_bom_cat     !: mass flux from bottom melt per category                  [kg.m-2.s-1]
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   wfx_sum_cat     !: mass flux from surface melt per category                 [kg.m-2.s-1]
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   wfx_lam_cat     !: mass flux from lateral melt per category                 [kg.m-2.s-1]
+   ! Per-category ice-ocean fluxes, for use by sea ice BGC model CSIB
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   dh_bom_cat      !: thickness change from bottom melt per category           [m.s-1]
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   dh_sum_cat      !: thickness change from surface melt per category          [m.s-1]
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   fa_lam_cat      !: fraction of area lost from lateral melt per category     [s-1]
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   sfx_bog         !: salt flux due to ice bottom growth                   [pss.kg.m-2.s-1 => g.m-2.s-1]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   sfx_bom         !: salt flux due to ice bottom melt                     [pss.kg.m-2.s-1 => g.m-2.s-1]
@@ -471,7 +471,7 @@ CONTAINS
       !!-----------------------------------------------------------------
       INTEGER :: ice_alloc
       !
-      INTEGER :: ierr(16), ii
+      INTEGER :: ierr(17), ii
       !!-----------------------------------------------------------------
       ierr(:) = 0
 
@@ -499,7 +499,8 @@ CONTAINS
          &      hfx_err_dif(jpi,jpj) , wfx_err_sub(jpi,jpj)                   , STAT=ierr(ii) )
 
       IF ( ln_csib ) THEN
-         ALLOCATE(wfx_bom_cat(jpi,jpj,jpl) , wfx_sum_cat(jpi,jpj,jpl), wfx_lam_cat(jpi,jpj,jpl), &
+         ii = ii + 1
+         ALLOCATE(dh_bom_cat(jpi,jpj,jpl) , dh_sum_cat(jpi,jpj,jpl), fa_lam_cat(jpi,jpj,jpl), &
             &     STAT=ierr(ii) )
       ENDIF
 
