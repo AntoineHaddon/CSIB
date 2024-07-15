@@ -60,8 +60,10 @@ CONTAINS
          icedia_gca(:,:,:) = icedia(:,:,:) * a_i(:,:,:)
       ENDIF
 
+      ! initialize fluxes
       flushrate(:,:,:)=0._wp
       flushdia(:,:,:)=0._wp
+      lamloss(:,:,:)=0._wp
       
       !
    END SUBROUTINE trc_ini_csib

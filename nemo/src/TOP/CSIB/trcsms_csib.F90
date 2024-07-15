@@ -51,8 +51,9 @@ MODULE trcsms_csib
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: icedia_gca        !  Ice algae grid cell average
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   :: icediagca_2d      !  Ice algae grid cell average, 2d version for ice model
 
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: flushrate        !  Flusrate per ice category (m/s)
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: flushdia         !  Flusrate per ice category (mmol/m3/s)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: flushrate        !  Flushrate per ice category (m/s)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: flushdia         !  Loss rate of ice algae from flushing per ice category (mmol/m3/s)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: lamloss          !  Loss rate from lateral melt per ice category (mmol/m3/s)
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
@@ -93,19 +94,39 @@ CONTAINS
       END WHERE
 
 
-      !BGC computations
+      
+
       DO jl = 1, jpl
          DO ji = 1, jpi
             DO jj = 1, jpj
          
-               flushrate(ji,jj,jl) = ( wfx_bom_cat(ji,jj,jl) + wfx_sum_cat(ji,jj,jl) ) * r1_rhoi    ! bottom and surface ice melt [kg.m-2.s-1] / ice denisty [kg/m3] = m/s
-               flushdia(ji,jj,jl) =  icedia(ji,jj,jl)/z_ia * flushrate(ji,jj,jl)     ! mmol/m3 /m * m/s = mmol/m3/s
-
-               icedia(ji,jj,jl) = icedia(ji,jj,jl) - flushdia(ji,jj,jl) * rDt_trc
+               IF( a_i(ji,jj,jl) > epsi10 ) THEN ! precence of ice
          
-            ENDDO
-         ENDDO
-      ENDDO
+                  ! Flushing of ice tracers from ice-ocean exchanges: bottom and surface ice melt
+                  flushrate(ji,jj,jl) =  dh_bom_cat(ji,jj,jl) + dh_sum_cat(ji,jj,jl)   ! change of ice thickness from bottom+surface melt (m/s)
+
+                  ! flushing of ice algea: flushrate * ice algae concentration / height of skeletal layer = content flux (mmol/m3/s)
+                  flushdia(ji,jj,jl) = flushrate(ji,jj,jl) * icedia(ji,jj,jl) /z_ia     
+
+                  ! loss of ice algae from lateral melt : fraction of ice area lost (1/s) * ice algae concentration (mmol/m3)
+                  lamloss(ji,jj,jl) = fa_lam_cat(ji,jj,jl) * icedia(ji,jj,jl)
+
+                  ! ice algae dynamics
+                  icedia(ji,jj,jl) = icedia(ji,jj,jl) + rDt_trc * (  &
+                              &     - flushdia(ji,jj,jl)             & ! sink: flushing from bottom and surface ice melt
+                              &     - lamloss(ji,jj,jl)              & ! sink: loss from lateral melting of ice
+                              )
+               ELSE ! no ice
+                  flushrate(ji,jj,jl) = 0._wp
+                  flushdia(ji,jj,jl)  = 0._wp
+                  lamloss(ji,jj,jl)   = 0._wp
+               ENDIF
+
+            ENDDO ! loop jpj
+         ENDDO ! loop jpi
+      ENDDO ! loop jpl ice categories
+
+
 
 
 
@@ -128,7 +149,7 @@ CONTAINS
       trc_sms_csib_alloc = 0      ! set to zero if no array to be allocated
       
       ALLOCATE(icedia(jpi,jpj,jpl), icedia_gca(jpi,jpj,jpl), icediagca_2d(jpij,jpl), &
-         &     flushrate(jpi,jpj,jpl), flushdia(jpi,jpj,jpl), &
+         &     flushrate(jpi,jpj,jpl), flushdia(jpi,jpj,jpl), lamloss(jpi,jpj,jpl),  &
          &     STAT=trc_sms_csib_alloc)
 
       IF( trc_sms_csib_alloc /= 0 ) CALL ctl_stop( 'STOP', 'trc_sms_csib_alloc : failed to allocate arrays' )

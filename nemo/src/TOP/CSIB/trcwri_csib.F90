@@ -12,6 +12,7 @@ MODULE trcwri_csib
    USE trc         ! passive tracers common variables 
    USE iom         ! I/O manager
    USE trcsms_csib  !CSIB variables
+   USE ice              ! ice variables
 
    IMPLICIT NONE
    PRIVATE
@@ -43,6 +44,10 @@ CONTAINS
 
       CALL iom_put( 'flushrate', flushrate(:,:,:) )
       CALL iom_put( 'flushdia', flushdia(:,:,:) )
+      CALL iom_put( 'lamloss', lamloss(:,:,:) )
+      CALL iom_put( 'dh_bom_cat', dh_bom_cat(:,:,:) )
+      CALL iom_put( 'dh_sum_cat', dh_sum_cat(:,:,:) )
+      CALL iom_put( 'fa_lam_cat', fa_lam_cat(:,:,:) )
 
       ! DO jn = jp_myt0, jp_myt1
       !    cltra = TRIM( ctrcnm(jn) )                  ! short title for tracer
