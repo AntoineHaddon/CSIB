@@ -18,6 +18,7 @@ MODULE trcsms_csib
    USE ice              ! ice variables
    USE phycst           ! physical constants: rhoi, rhos
    USE sbc_oce , ONLY :  tprecip, sprecip    ! total and solid precipitation
+   USE par_canoe        ! indices of CanOE model variables, e.g. jrdia: diatoms
 
    IMPLICIT NONE
    PRIVATE
@@ -38,22 +39,26 @@ MODULE trcsms_csib
    !!                                                                       |
    !! ** Global variables                                                   |
    !!-------------|-------------|---------------------------------|---------|
-   !! icedia_gca  |      -      |    Ice algae grid cell average  | mmol/m3 |
+   !! icedia_gca  |      -      |    Ice diatonms grid cell average  | mmol/m3 |
    !!                                                                       |
    !!-------------|-------------|---------------------------------|---------|
    !!                                                                       |
    !! ** Equivalent variables                                               |
    !!-------------|-------------|---------------------------------|---------|
-   !! icedia      | -           |    Ice algae per ice area       | mmol/m3 |
+   !! icedia      | -           |    Ice diatonms per ice area       | mmol/m3 |
 
 
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: icedia            !  Ice algae per ice area
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: icedia_gca        !  Ice algae grid cell average
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   :: icediagca_2d      !  Ice algae grid cell average, 2d version for ice model
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: icedia            !  Ice diatonms per ice area
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: icedia_gca        !  Ice diatonms grid cell average
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   :: icediagca_2d      !  Ice diatonms grid cell average, 2d version for ice model
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: flushrate        !  Flushrate per ice category (m/s)
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: flushdia         !  Loss rate of ice algae from flushing per ice category (mmol/m3/s)
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: lamloss          !  Loss rate from lateral melt per ice category (mmol/m3/s)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: flush_dia        !  Loss rate of ice diatonms from flushing per ice category (mmol/m3/s)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: lamloss_dia      !  Loss rate from lateral melt per ice category (mmol/m3/s)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: bogup            !  Flowrate of water uptake from bottom ice growth per ice category (m/s)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: bogup_dia        !  Diatoms uptake rate from bottom ice growth per ice category (mmol/m3/s)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: lagup_dia        !  Diatoms uptake rate from lateral ice growth  per ice category (mmol/m3/s)
+
 
    !!----------------------------------------------------------------------
    !! NEMO/TOP 4.0 , NEMO Consortium (2018)
@@ -114,24 +119,39 @@ CONTAINS
                            ! flowrate of melt pond drainage volume per ice area (m/s)
                      &     + dh_mpdrn_cat(ji,jj,jl)
 
-                  ! flushing of ice algea: flushrate/ height of skeletal layer * ice algae concentration  = biomass flux (mmol/m3/s)
-                  flushdia(ji,jj,jl) = flushrate(ji,jj,jl)/z_ia  * icedia(ji,jj,jl)     
+                  ! flushing of ice algea: flushrate * ice algae concentration/ height of skeletal layer  = biomass flux (mmol/m3/s)
+                  flush_dia(ji,jj,jl) = flushrate(ji,jj,jl)/z_ia  * icedia(ji,jj,jl)     
 
                   ! loss of ice algae from lateral melt : fraction of ice area lost (1/s) * ice algae concentration (mmol/m3)
-                  lamloss(ji,jj,jl) = da_lam_cat(ji,jj,jl) * icedia(ji,jj,jl)
+                  lamloss_dia(ji,jj,jl) = da_lam_cat(ji,jj,jl) * icedia(ji,jj,jl)
+
+
+                  ! Uptake of ice algae from ice growth
+                  ! bogup: water uptake flowrate per ice area from bottom ice growth (m/s) 
+                  ! = rate of ice thickness change (m/s) * ice density (kg/m3) / freshwater density (kg/m3)
+                  bogup(ji,jj,jl) = dh_bog_cat(ji,jj,jl) * rhoi / rhow
+
+                  ! Uptake of ice algae from bottom ice growth : flowrate per ice area (m/s) * ocean surface concentration (mmol/m3) /skeletal layer (m)
+                  bogup_dia(ji,jj,jl) = bogup(ji,jj,jl) * tr(ji,jj,1,jrdia,Kmm) /z_ia
+
 
                   ! ice algae dynamics
-                  icedia(ji,jj,jl) = icedia(ji,jj,jl) + rDt_trc * (     &
+                  icedia(ji,jj,jl) = icedia(ji,jj,jl) + rDt_trc * (           &
                                        ! sink: flushing from bottom and surface ice melt, snow melt, rain on ice, melt pond drainage
-                              &        - flushdia(ji,jj,jl)             & 
+                              ! &        - flush_dia(ji,jj,jl)                  & 
                                        ! sink: loss from lateral melting of ice
-                              &        - lamloss(ji,jj,jl)              & 
+                              ! &        - lamloss_dia(ji,jj,jl)                & 
+                                       ! source: Uptake from bottom ice growth
+                              &        + bogup_dia(ji,jj,jl)                  &
                               )
 
                ELSE ! no ice
                   flushrate(ji,jj,jl) = 0._wp
-                  flushdia(ji,jj,jl)  = 0._wp
-                  lamloss(ji,jj,jl)   = 0._wp
+                  flush_dia(ji,jj,jl)  = 0._wp
+                  lamloss_dia(ji,jj,jl)   = 0._wp
+                  bogup(ji,jj,jl) = 0._wp
+                  bogup_dia(ji,jj,jl) = 0._wp
+                  lagup_dia(ji,jj,jl) = 0._wp
                ENDIF
 
             ENDDO ! loop jpj
@@ -160,8 +180,9 @@ CONTAINS
       ! ALLOCATE( tab(...) , STAT=trc_sms_csib_alloc )
       trc_sms_csib_alloc = 0      ! set to zero if no array to be allocated
       
-      ALLOCATE(icedia(jpi,jpj,jpl), icedia_gca(jpi,jpj,jpl), icediagca_2d(jpij,jpl), &
-         &     flushrate(jpi,jpj,jpl), flushdia(jpi,jpj,jpl), lamloss(jpi,jpj,jpl),  &
+      ALLOCATE(icedia   (jpi,jpj,jpl) , icedia_gca(jpi,jpj,jpl) , icediagca_2d(jpij,jpl)    , &
+         &     flushrate(jpi,jpj,jpl) , flush_dia (jpi,jpj,jpl) , lamloss_dia (jpi,jpj,jpl) , &
+         &     bogup    (jpi,jpj,jpl) , bogup_dia (jpi,jpj,jpl) , lagup_dia   (jpi,jpj,jpl) , &
          &     STAT=trc_sms_csib_alloc)
 
       IF( trc_sms_csib_alloc /= 0 ) CALL ctl_stop( 'STOP', 'trc_sms_csib_alloc : failed to allocate arrays' )

@@ -310,6 +310,7 @@ MODULE ice
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   da_lam_cat      !: fraction of area lost from lateral melt per category     [s-1]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   dh_snw_sum_cat  !: snow thickness change from surface melt per ice category [m.s-1]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   dh_mpdrn_cat    !: melt pond drainge volume per ice area per ice category   [m.s-1]
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   dh_bog_cat      !: ice thickness change from bottom growth per category     [m.s-1]
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   sfx_bog         !: salt flux due to ice bottom growth                   [pss.kg.m-2.s-1 => g.m-2.s-1]
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   sfx_bom         !: salt flux due to ice bottom melt                     [pss.kg.m-2.s-1 => g.m-2.s-1]
@@ -503,7 +504,8 @@ CONTAINS
       IF ( ln_csib ) THEN
          ii = ii + 1
          ALLOCATE(dh_bom_cat    (jpi,jpj,jpl) , dh_sum_cat  (jpi,jpj,jpl) , da_lam_cat(jpi,jpj,jpl) , &
-            &     dh_snw_sum_cat(jpi,jpj,jpl) , dh_mpdrn_cat(jpi,jpj,jpl) , STAT=ierr(ii) )
+            &     dh_snw_sum_cat(jpi,jpj,jpl) , dh_mpdrn_cat(jpi,jpj,jpl) , dh_bog_cat(jpi,jpj,jpl) , & 
+            &     STAT=ierr(ii) )
       ENDIF
 
       ! * Ice global state variables

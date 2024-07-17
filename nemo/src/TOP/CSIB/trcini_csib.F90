@@ -53,17 +53,25 @@ CONTAINS
       
       IF( .NOT. ln_rsttr ) THEN
          icedia(:,:,:)=0._wp
+         
+         ! init from ocean surface diatoms
          ! icedia(:,:,:) = tr(:,:,1,jrdia,Kmm)
-         WHERE( gphit(:,:) > 85._wp )   ;   icedia(:,:,3)=1._wp
-         ELSEWHERE                     ;   icedia(:,:,3)=0._wp
-         END WHERE
+         
+         ! init with constant value where latitude > 85
+         ! WHERE( gphit(:,:) > 85._wp )   ;   icedia(:,:,3)=1._wp
+         ! ELSEWHERE                     ;   icedia(:,:,3)=0._wp
+         ! END WHERE
+
          icedia_gca(:,:,:) = icedia(:,:,:) * a_i(:,:,:)
       ENDIF
 
       ! initialize fluxes
       flushrate(:,:,:)=0._wp
-      flushdia(:,:,:)=0._wp
-      lamloss(:,:,:)=0._wp
+      flush_dia(:,:,:)=0._wp
+      lamloss_dia(:,:,:)=0._wp
+      bogup(:,:,:)=0._wp
+      bogup_dia(:,:,:)=0._wp
+      lagup_dia(:,:,:)=0._wp
       
       !
    END SUBROUTINE trc_ini_csib

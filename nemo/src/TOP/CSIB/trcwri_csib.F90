@@ -43,13 +43,17 @@ CONTAINS
       CALL iom_put( 'icedia_gca', icedia_gca(:,:,:) )
 
       CALL iom_put( 'flushrate'        , flushrate(:,:,:) )
-      CALL iom_put( 'flushdia'         , flushdia(:,:,:) )
-      CALL iom_put( 'lamloss'          , lamloss(:,:,:) )
+      CALL iom_put( 'flush_dia'        , flush_dia(:,:,:) )
+      CALL iom_put( 'lamloss_dia'      , lamloss_dia(:,:,:) )
       CALL iom_put( 'dh_bom_cat'       , dh_bom_cat(:,:,:) )
       CALL iom_put( 'dh_sum_cat'       , dh_sum_cat(:,:,:) )
       CALL iom_put( 'da_lam_cat'       , da_lam_cat(:,:,:) )
       CALL iom_put( 'dh_snw_sum_cat'   , dh_snw_sum_cat(:,:,:) )
       CALL iom_put( 'dh_mpdrn_cat'     , dh_mpdrn_cat(:,:,:) )
+      
+      CALL iom_put( 'dh_bog_cat'       , dh_bog_cat(:,:,:) )
+      CALL iom_put( 'bogup'            , bogup(:,:,:) )
+      CALL iom_put( 'bogup_dia'        , bogup_dia(:,:,:) )
 
       ! DO jn = jp_myt0, jp_myt1
       !    cltra = TRIM( ctrcnm(jn) )                  ! short title for tracer

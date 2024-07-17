@@ -481,6 +481,7 @@ CONTAINS
             DO jl = 1, jpl
                DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
                   dh_bom_cat    (ji,jj,jl) = 0._wp
+                  dh_bog_cat    (ji,jj,jl) = 0._wp
                   dh_sum_cat    (ji,jj,jl) = 0._wp
                   da_lam_cat    (ji,jj,jl) = 0._wp
                   dh_snw_sum_cat(ji,jj,jl) = 0._wp

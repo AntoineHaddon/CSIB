@@ -406,7 +406,10 @@ CONTAINS
             hfx_bog_1d(ji) = hfx_bog_1d(ji) - zdE  * zfmdt                      * a_i_1d(ji) * r1_Dt_ice   ! Heat flux used in this process [W.m-2], <0
             wfx_bog_1d(ji) = wfx_bog_1d(ji) - rhoi * dh_i_bog(ji)               * a_i_1d(ji) * r1_Dt_ice   ! Mass flux, <0
             sfx_bog_1d(ji) = sfx_bog_1d(ji) - rhoi * dh_i_bog(ji) * s_i_new(ji) * a_i_1d(ji) * r1_Dt_ice   ! Salt flux, <0
-
+            IF ( ln_csib ) THEN ! per category recording of thickness change, for ice BGC model
+               dh_bog_cat_1d(ji) = dh_bog_cat_1d(ji) + dh_i_bog(ji) * r1_Dt_ice
+            ENDIF
+            
             ! update thickness
             zh_i(ji,nlay_i+1) = zh_i(ji,nlay_i+1) + dh_i_bog(ji)
             h_i_1d(ji)        = h_i_1d(ji)        + dh_i_bog(ji)
