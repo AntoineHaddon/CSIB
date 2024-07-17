@@ -27,6 +27,8 @@ MODULE icethd_pnd
    USE lib_fortran    ! fortran utilities (glob_sum + no signed zero)
    USE timing         ! Timing
 
+   USE par_trc , ONLY : ln_csib            ! flag to use ice BGC
+
    IMPLICIT NONE
    PRIVATE
 
@@ -92,6 +94,9 @@ CONTAINS
       diag_dvpn_mlt_1d(:) = 0._wp   ;   diag_dvpn_drn_1d(:) = 0._wp
       diag_dvpn_lid_1d(:) = 0._wp   ;   diag_dvpn_rnf_1d(:) = 0._wp
 
+      IF ( ln_csib ) THEN ! reset diagnostics for ice BGC model
+         dh_mpdrn_cat(:,:,:) = 0._wp
+      ENDIF
       !-------------------------------------
       !  Remove ponds where ice has vanished
       !-------------------------------------
@@ -315,6 +320,10 @@ CONTAINS
             CALL tab_2d_1d( npti, nptidx(1:npti), t_i_1d (1:npti,jk), t_i (:,:,jk,jl) )
          END DO
 
+         IF( ln_csib ) THEN 
+            CALL tab_2d_1d( npti, nptidx(1:npti), dh_mpdrn_cat_1d(1:npti), dh_mpdrn_cat(:,:,jl) )
+         ENDIF
+
          !-----------------------
          ! Melt pond calculations
          !-----------------------
@@ -446,6 +455,10 @@ CONTAINS
                diag_dvpn_lid_1d(ji) = diag_dvpn_lid_1d(ji) + rhow *   zdv_frz               * r1_Dt_ice   ! < 0, shrinking
                diag_dvpn_drn_1d(ji) = diag_dvpn_drn_1d(ji) + rhow *   zdv_flush             * r1_Dt_ice   ! < 0, drainage
                !
+               IF ( ln_csib ) THEN ! recording of melt pond drainage per ice category for ice BGC model CSIB
+                  ! flowrate of drainage volume per ice area (m/s) (positive: flow to ocean)
+                  dh_mpdrn_cat_1d(ji) = - zdv_flush / a_i_1d(ji) * r1_Dt_ice 
+               ENDIF
             ENDIF
             !
             v_ip_1d(ji) = h_ip_1d(ji) * a_ip_1d(ji)
@@ -464,6 +477,10 @@ CONTAINS
          CALL tab_1d_2d( npti, nptidx(1:npti), h_il_1d(1:npti), h_il(:,:,jl) )
          CALL tab_1d_2d( npti, nptidx(1:npti), v_ip_1d(1:npti), v_ip(:,:,jl) )
          CALL tab_1d_2d( npti, nptidx(1:npti), v_il_1d(1:npti), v_il(:,:,jl) )
+
+         IF( ln_csib ) THEN 
+            CALL tab_1d_2d( npti, nptidx(1:npti), dh_mpdrn_cat_1d(1:npti), dh_mpdrn_cat(:,:,jl) )
+         ENDIF
          !
       END DO
       !

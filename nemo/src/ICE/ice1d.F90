@@ -84,7 +84,9 @@ MODULE ice1D
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   dh_bom_cat_1d   
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   dh_sum_cat_1d
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   fa_lam_cat_1d
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   da_lam_cat_1d
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   dh_snw_sum_cat_1d
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   dh_mpdrn_cat_1d
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   sfx_bri_1d
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   sfx_bog_1d    
@@ -185,7 +187,7 @@ CONTAINS
       !!                ***  ROUTINE ice1D_alloc ***
       !!---------------------------------------------------------------------!
       INTEGER ::   ice1D_alloc   ! return value
-      INTEGER ::   ierr(8), ii
+      INTEGER ::   ierr(9), ii
       !!---------------------------------------------------------------------!
       ierr(:) = 0
 
@@ -213,7 +215,9 @@ CONTAINS
          &      sfx_sni_1d    (jpij) , sfx_opw_1d (jpij) , sfx_res_1d (jpij) , sfx_sub_1d (jpij),  &
          &      sfx_lam_1d    (jpij) , sfx_dyn_1d(jpij)  , STAT=ierr(ii) )
       IF( ln_csib ) THEN
-         ALLOCATE(dh_bom_cat_1d(jpij), dh_sum_cat_1d(jpij), fa_lam_cat_1d(jpij))
+         ii = ii + 1
+         ALLOCATE(dh_bom_cat_1d  (jpij) , dh_sum_cat_1d(jpij) , da_lam_cat_1d(jpij) , dh_snw_sum_cat_1d(jpij), & 
+            &     dh_mpdrn_cat_1d(jpij) , STAT=ierr(ii))
       ENDIF
       !
       ii = ii + 1

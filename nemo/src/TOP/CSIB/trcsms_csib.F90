@@ -16,7 +16,8 @@ MODULE trcsms_csib
    USE trdtrc
 
    USE ice              ! ice variables
-   USE phycst         ! physical constants: rhoi, rhos
+   USE phycst           ! physical constants: rhoi, rhos
+   USE sbc_oce , ONLY :  tprecip, sprecip    ! total and solid precipitation
 
    IMPLICIT NONE
    PRIVATE
@@ -44,7 +45,6 @@ MODULE trcsms_csib
    !! ** Equivalent variables                                               |
    !!-------------|-------------|---------------------------------|---------|
    !! icedia      | -           |    Ice algae per ice area       | mmol/m3 |
-
 
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: icedia            !  Ice algae per ice area
@@ -87,10 +87,10 @@ CONTAINS
 
 
       ! Conversion from global to equivalent variables
-      WHERE( a_i(:,:,:) < epsi10 )
-         icedia(:,:,:)=0._wp
-      ELSEWHERE
+      WHERE( a_i(:,:,:) > epsi10 )
          icedia(:,:,:) = icedia_gca(:,:,:) / a_i(:,:,:)
+      ELSEWHERE
+         icedia(:,:,:)=0._wp
       END WHERE
 
 
@@ -102,20 +102,32 @@ CONTAINS
          
                IF( a_i(ji,jj,jl) > epsi10 ) THEN ! precence of ice
          
-                  ! Flushing of ice tracers from ice-ocean exchanges: bottom and surface ice melt
-                  flushrate(ji,jj,jl) =  dh_bom_cat(ji,jj,jl) + dh_sum_cat(ji,jj,jl)   ! change of ice thickness from bottom+surface melt (m/s)
+                  ! Flushing of ice tracers from ice-ocean exchanges
+                  ! flushrate: water flowrate per ice area (m/s) 
+                  flushrate(ji,jj,jl) = &
+                           ! change of ice thickness from bottom+surface melt (m/s) * ice density (kg/m3) / freshwater density (kg/m3)
+                     &     ( dh_bom_cat(ji,jj,jl) + dh_sum_cat(ji,jj,jl) ) * rhoi / rhow    &
+                           ! change of snow thickness from surface melt (m/s) * snow density (kg/m3) / freshwater density (kg/m3)
+                     &     + dh_snw_sum_cat(ji,jj,jl) * rhos / rhow     &
+                           ! SIC * (total precipation (Kg/m2/s) - solid precipitation (Kg/m2/s) ) / freshwater density (kg/m3)
+                     &     + a_i(ji,jj,jl) * MAX( 0._wp, tprecip(ji,jj) - sprecip(ji,jj) ) / rhow     &
+                           ! flowrate of melt pond drainage volume per ice area (m/s)
+                     &     + dh_mpdrn_cat(ji,jj,jl)
 
-                  ! flushing of ice algea: flushrate * ice algae concentration / height of skeletal layer = content flux (mmol/m3/s)
-                  flushdia(ji,jj,jl) = flushrate(ji,jj,jl) * icedia(ji,jj,jl) /z_ia     
+                  ! flushing of ice algea: flushrate/ height of skeletal layer * ice algae concentration  = biomass flux (mmol/m3/s)
+                  flushdia(ji,jj,jl) = flushrate(ji,jj,jl)/z_ia  * icedia(ji,jj,jl)     
 
                   ! loss of ice algae from lateral melt : fraction of ice area lost (1/s) * ice algae concentration (mmol/m3)
-                  lamloss(ji,jj,jl) = fa_lam_cat(ji,jj,jl) * icedia(ji,jj,jl)
+                  lamloss(ji,jj,jl) = da_lam_cat(ji,jj,jl) * icedia(ji,jj,jl)
 
                   ! ice algae dynamics
-                  icedia(ji,jj,jl) = icedia(ji,jj,jl) + rDt_trc * (  &
-                              &     - flushdia(ji,jj,jl)             & ! sink: flushing from bottom and surface ice melt
-                              &     - lamloss(ji,jj,jl)              & ! sink: loss from lateral melting of ice
+                  icedia(ji,jj,jl) = icedia(ji,jj,jl) + rDt_trc * (     &
+                                       ! sink: flushing from bottom and surface ice melt, snow melt, rain on ice, melt pond drainage
+                              &        - flushdia(ji,jj,jl)             & 
+                                       ! sink: loss from lateral melting of ice
+                              &        - lamloss(ji,jj,jl)              & 
                               )
+
                ELSE ! no ice
                   flushrate(ji,jj,jl) = 0._wp
                   flushdia(ji,jj,jl)  = 0._wp

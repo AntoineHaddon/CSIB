@@ -168,6 +168,9 @@ CONTAINS
                wfx_snw_sum_1d(ji) = wfx_snw_sum_1d(ji) + rhos        * zh_s(ji,jk) * a_i_1d(ji) * r1_Dt_ice   ! mass flux
                ! updates
                dh_s_mlt(ji)    =             dh_s_mlt(ji) - zh_s(ji,jk)
+               IF ( ln_csib ) THEN ! per category recording of thickness change, for ice BGC model
+                  dh_snw_sum_cat_1d(ji) = dh_snw_sum_cat_1d(ji) + zh_s(ji,jk) * r1_Dt_ice
+               ENDIF
                h_s_1d  (ji)    = MAX( 0._wp, h_s_1d  (ji) - zh_s(ji,jk) )
                zh_s    (ji,jk) = 0._wp
                ze_s    (ji,jk) = 0._wp
@@ -214,6 +217,9 @@ CONTAINS
                zh_s    (ji,jk) = MAX( 0._wp , zh_s    (ji,jk) + zdum )
 !!$               IF( zh_s(ji,jk) == 0._wp )   ze_s(ji,jk) = 0._wp
                !
+               IF ( ln_csib ) THEN ! per category recording of thickness change, for ice BGC model
+                  dh_snw_sum_cat_1d(ji) = dh_snw_sum_cat_1d(ji) - zdum * r1_Dt_ice
+               ENDIF
             ENDIF
          END DO
       END DO
