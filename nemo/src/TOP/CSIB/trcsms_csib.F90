@@ -107,17 +107,20 @@ CONTAINS
          
                IF( a_i(ji,jj,jl) > epsi10 ) THEN ! precence of ice
          
+
                   ! Flushing of ice tracers from ice-ocean exchanges
+
                   ! flushrate: water flowrate per ice area (m/s) 
                   flushrate(ji,jj,jl) = &
                            ! change of ice thickness from bottom+surface melt (m/s) * ice density (kg/m3) / freshwater density (kg/m3)
                      &     ( dh_bom_cat(ji,jj,jl) + dh_sum_cat(ji,jj,jl) ) * rhoi / rhow    &
                            ! change of snow thickness from surface melt (m/s) * snow density (kg/m3) / freshwater density (kg/m3)
                      &     + dh_snw_sum_cat(ji,jj,jl) * rhos / rhow     &
-                           ! SIC * (total precipation (Kg/m2/s) - solid precipitation (Kg/m2/s) ) / freshwater density (kg/m3)
-                     &     + a_i(ji,jj,jl) * MAX( 0._wp, tprecip(ji,jj) - sprecip(ji,jj) ) / rhow     &
                            ! flowrate of melt pond drainage volume per ice area (m/s)
-                     &     + dh_mpdrn_cat(ji,jj,jl)
+                     &     + dh_mpdrn_cat(ji,jj,jl)      &
+                           ! SIC * (total precipation (Kg/m2/s) - solid precipitation (Kg/m2/s) ) / freshwater density (kg/m3)
+                     ! &     + a_i(ji,jj,jl) * MAX( 0._wp, tprecip(ji,jj) - sprecip(ji,jj) ) / rhow
+                     &     + a_i(ji,jj,jl) * tprecip(ji,jj) / rhow ! dev run : tprecip seems to be only rain
 
                   ! flushing of ice algea: flushrate * ice algae concentration/ height of skeletal layer  = biomass flux (mmol/m3/s)
                   flush_dia(ji,jj,jl) = flushrate(ji,jj,jl)/z_ia  * icedia(ji,jj,jl)     
@@ -126,7 +129,8 @@ CONTAINS
                   lamloss_dia(ji,jj,jl) = da_lam_cat(ji,jj,jl) * icedia(ji,jj,jl)
 
 
-                  ! Uptake of ice algae from ice growth
+                  ! Uptake of ice tracers from ice growth
+
                   ! bogup: water uptake flowrate per ice area from bottom ice growth (m/s) 
                   ! = rate of ice thickness change (m/s) * ice density (kg/m3) / freshwater density (kg/m3)
                   bogup(ji,jj,jl) = dh_bog_cat(ji,jj,jl) * rhoi / rhow
@@ -134,15 +138,25 @@ CONTAINS
                   ! Uptake of ice algae from bottom ice growth : flowrate per ice area (m/s) * ocean surface concentration (mmol/m3) /skeletal layer (m)
                   bogup_dia(ji,jj,jl) = bogup(ji,jj,jl) * tr(ji,jj,1,jrdia,Kmm) /z_ia
 
+                  ! Uptake of ice algae from lateral ice growth  
+                  lagup_dia(ji,jj,jl) = &
+                        ! (sic increase rate / sic) * (height new ice / skeletal layer) * ocean surface diatoms concentration     
+                        & da_lag_cat(ji,jj,jl) * (ht_i_new(ji,jl) / z_ia) * tr(ji,jj,1,jrdia,Kmm)     &
+                        ! - ice tracer conc * (sic increase rate / sic)
+                        & - icedia(ji,jj,jl) * da_lag_cat(ji,jj,jl)
+
+
 
                   ! ice algae dynamics
                   icedia(ji,jj,jl) = icedia(ji,jj,jl) + rDt_trc * (           &
                                        ! sink: flushing from bottom and surface ice melt, snow melt, rain on ice, melt pond drainage
-                              ! &        - flush_dia(ji,jj,jl)                  & 
+                              &        - flush_dia(ji,jj,jl)                  & 
                                        ! sink: loss from lateral melting of ice
-                              ! &        - lamloss_dia(ji,jj,jl)                & 
+                              &        - lamloss_dia(ji,jj,jl)                & 
                                        ! source: Uptake from bottom ice growth
                               &        + bogup_dia(ji,jj,jl)                  &
+                                       ! source: Uptake from lateral ice growth
+                              &        + lagup_dia(ji,jj,jl)                  &
                               )
 
                ELSE ! no ice

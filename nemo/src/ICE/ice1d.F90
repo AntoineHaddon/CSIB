@@ -82,12 +82,14 @@ MODULE ice1D
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   wfx_dyn_1d
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   wfx_pnd_1d
 
+   ! extra diagnostics added for ice BGC model
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   dh_bom_cat_1d   
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   dh_sum_cat_1d
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   da_lam_cat_1d
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   dh_snw_sum_cat_1d
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   dh_mpdrn_cat_1d
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   dh_bog_cat_1d   
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:) :: da_lag_cat_2d
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   sfx_bri_1d
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:) ::   sfx_bog_1d    
@@ -218,7 +220,8 @@ CONTAINS
       IF( ln_csib ) THEN
          ii = ii + 1
          ALLOCATE(dh_bom_cat_1d  (jpij) , dh_sum_cat_1d(jpij) , da_lam_cat_1d(jpij) , dh_snw_sum_cat_1d(jpij), & 
-            &     dh_mpdrn_cat_1d(jpij) , dh_bog_cat_1d(jpij) , STAT=ierr(ii))
+            &     dh_mpdrn_cat_1d(jpij) , dh_bog_cat_1d(jpij) ,  da_lag_cat_2d(jpij,jpl) , &
+            &     STAT=ierr(ii))
       ENDIF
       !
       ii = ii + 1

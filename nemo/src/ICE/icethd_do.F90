@@ -30,6 +30,8 @@ MODULE icethd_do
    USE lib_fortran    ! fortran utilities (glob_sum + no signed zero)
    USE lbclnk         ! lateral boundary conditions (or mpp links)
 
+   USE par_trc , ONLY : ln_csib            ! flag to use ice BGC
+
    IMPLICIT NONE
    PRIVATE
 
@@ -144,6 +146,10 @@ CONTAINS
          CALL tab_2d_1d( npti, nptidx(1:npti), rn_amax_1d(1:npti) , rn_amax_2d )
          CALL tab_2d_1d( npti, nptidx(1:npti), sss_1d    (1:npti) , sss_m      )
 
+         IF ( ln_csib ) THEN ! for ice BGC model (uptake of tracers)
+            CALL tab_3d_2d( npti, nptidx(1:npti), da_lag_cat_2d(1:npti,1:jpl), da_lag_cat(:,:,:) )
+         ENDIF
+
          ! Convert units for ice internal energy
          DO jl = 1, jpl
             DO jk = 1, nlay_i               
@@ -247,6 +253,9 @@ CONTAINS
                   a_i_2d(ji,jl) = a_i_2d(ji,jl) + za_newice(ji)
                   v_i_2d(ji,jl) = v_i_2d(ji,jl) + zv_newice(ji)
                   jcat(ji) = jl
+                  IF ( ln_csib ) THEN ! record fraction of ice area increase per category, for ice BGC model (uptake of tracers)
+                     da_lag_cat_2d(ji,jl) = za_newice(ji) / a_i_2d(ji,jl) * r1_Dt_ice
+                  ENDIF
                ENDIF
             END DO
          END DO
@@ -322,6 +331,11 @@ CONTAINS
          CALL tab_1d_2d( npti, nptidx(1:npti), wfx_opw_1d(1:npti), wfx_opw )
          CALL tab_1d_2d( npti, nptidx(1:npti), hfx_thd_1d(1:npti), hfx_thd )
          CALL tab_1d_2d( npti, nptidx(1:npti), hfx_opw_1d(1:npti), hfx_opw )
+
+         IF ( ln_csib ) THEN ! for ice BGC model (uptake of tracers)
+            CALL tab_2d_3d( npti, nptidx(1:npti), da_lag_cat_2d(1:npti,1:jpl), da_lag_cat(:,:,:) )
+         ENDIF
+
          !
       ENDIF ! npti > 0
       !

@@ -484,6 +484,7 @@ CONTAINS
                   dh_bog_cat    (ji,jj,jl) = 0._wp
                   dh_sum_cat    (ji,jj,jl) = 0._wp
                   da_lam_cat    (ji,jj,jl) = 0._wp
+                  da_lag_cat    (ji,jj,jl) = 0._wp
                   dh_snw_sum_cat(ji,jj,jl) = 0._wp
                END_2D
             ENDDO

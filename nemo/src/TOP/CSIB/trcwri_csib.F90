@@ -54,6 +54,8 @@ CONTAINS
       CALL iom_put( 'dh_bog_cat'       , dh_bog_cat(:,:,:) )
       CALL iom_put( 'bogup'            , bogup(:,:,:) )
       CALL iom_put( 'bogup_dia'        , bogup_dia(:,:,:) )
+      CALL iom_put( 'da_lag_cat'       , da_lag_cat(:,:,:) )
+      CALL iom_put( 'lagup_dia'        , lagup_dia(:,:,:) )
 
       ! DO jn = jp_myt0, jp_myt1
       !    cltra = TRIM( ctrcnm(jn) )                  ! short title for tracer
