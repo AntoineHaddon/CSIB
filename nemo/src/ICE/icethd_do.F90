@@ -254,7 +254,7 @@ CONTAINS
                   v_i_2d(ji,jl) = v_i_2d(ji,jl) + zv_newice(ji)
                   jcat(ji) = jl
                   IF ( ln_csib ) THEN ! record fraction of ice area increase per category, for ice BGC model (uptake of tracers)
-                     da_lag_cat_2d(ji,jl) = za_newice(ji) / a_i_2d(ji,jl) * r1_Dt_ice
+                     da_lag_cat_2d(ji,jl) = za_newice(ji) / MAX( epsi10 , a_i_2d(ji,jl) ) * r1_Dt_ice
                   ENDIF
                ENDIF
             END DO

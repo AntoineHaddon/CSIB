@@ -80,6 +80,7 @@ CONTAINS
       INTEGER, INTENT(in) ::   Kbb, Kmm, Krhs  ! time level indices
       
       INTEGER ::   ji,jj,jl   ! dummy loop index
+      REAL(wp) :: zmaxia !for diagnostics
 
       !!----------------------------------------------------------------------
       !
@@ -92,14 +93,35 @@ CONTAINS
 
 
       ! Conversion from global to equivalent variables
-      WHERE( a_i(:,:,:) > epsi10 )
+      !  and set to 0 if low ice concentration 
+      WHERE( a_i(:,:,:) > 1.e-4_wp )
          icedia(:,:,:) = icedia_gca(:,:,:) / a_i(:,:,:)
       ELSEWHERE
+         ! low ice: set tracers to 0 and send what was there to the ocean
          icedia(:,:,:)=0._wp
       END WHERE
 
+      ! DO jl = 1, jpl
+      !    DO ji = 1, jpi
+      !       DO jj = 1, jpj
+      !          IF( a_i(ji,jj,jl) < 1.e-3_wp ) THEN ! low ice
+      !             icedia(ji,jj,jl)=0._wp
+      !             !should be put in ocean to conserve?
+      !          ENDIF ! if low ice
+      !       ENDDO ! loop jpj
+      !    ENDDO ! loop jpi
+      ! ENDDO ! loop jpl ice categories
 
-      
+
+      ! reset fluxes
+      flushrate(:,:,:) = 0._wp
+      flush_dia(:,:,:)  = 0._wp
+      lamloss_dia(:,:,:)   = 0._wp
+      bogup(:,:,:) = 0._wp
+      bogup_dia(:,:,:) = 0._wp
+      lagup_dia(:,:,:) = 0._wp
+
+
 
       DO jl = 1, jpl
          DO ji = 1, jpi
@@ -107,7 +129,6 @@ CONTAINS
          
                IF( a_i(ji,jj,jl) > epsi10 ) THEN ! precence of ice
          
-
                   ! Flushing of ice tracers from ice-ocean exchanges
 
                   ! flushrate: water flowrate per ice area (m/s) 
@@ -125,7 +146,7 @@ CONTAINS
                   ! flushing of ice algea: flushrate * ice algae concentration/ height of skeletal layer  = biomass flux (mmol/m3/s)
                   flush_dia(ji,jj,jl) = flushrate(ji,jj,jl)/z_ia  * icedia(ji,jj,jl)     
 
-                  ! loss of ice algae from lateral melt : fraction of ice area lost (1/s) * ice algae concentration (mmol/m3)
+                  ! loss of ice algae from lateral melt : fraction of ice concentration lost (1/s) * ice algae concentration (mmol/m3)
                   lamloss_dia(ji,jj,jl) = da_lam_cat(ji,jj,jl) * icedia(ji,jj,jl)
 
 
@@ -158,25 +179,29 @@ CONTAINS
                                        ! source: Uptake from lateral ice growth
                               &        + lagup_dia(ji,jj,jl)                  &
                               )
+                  ! guarantee positive concentration
+                  icedia(ji,jj,jl) = MAX(0._wp, icedia(ji,jj,jl) )
 
-               ELSE ! no ice
-                  flushrate(ji,jj,jl) = 0._wp
-                  flush_dia(ji,jj,jl)  = 0._wp
-                  lamloss_dia(ji,jj,jl)   = 0._wp
-                  bogup(ji,jj,jl) = 0._wp
-                  bogup_dia(ji,jj,jl) = 0._wp
-                  lagup_dia(ji,jj,jl) = 0._wp
-               ENDIF
+
+               
+               ENDIF ! if ice
 
             ENDDO ! loop jpj
          ENDDO ! loop jpi
       ENDDO ! loop jpl ice categories
 
 
+      IF(lwp) WRITE(numout,*) 
+      IF(lwp) WRITE(numout,*) 'max ice algae N hemisphere : '
+      DO jl = 1, jpl
+         zmaxia = MAXVAL( icedia(:,:,jl), MASK= gphit(:,:) > 0._wp )
+         CALL mpp_max( "trc_sms_csib", zmaxia )
+         IF(lwp) WRITE(numout,*) 'ice category ', jl , ' : ' , zmaxia
+      ENDDO
 
 
 
-      ! Conversion from equivalent to global variables
+      ! Conversion from intensive/equivalent to extensive/global variables
       icedia_gca(:,:,:) = icedia(:,:,:) * a_i(:,:,:)
 
 

@@ -57,6 +57,9 @@ CONTAINS
       CALL iom_put( 'da_lag_cat'       , da_lag_cat(:,:,:) )
       CALL iom_put( 'lagup_dia'        , lagup_dia(:,:,:) )
 
+      ! ocean surface diatoms
+      CALL iom_put( 'PHY2c_os'        , tr(:,:,1,jrdia,Kmm) )
+
       ! DO jn = jp_myt0, jp_myt1
       !    cltra = TRIM( ctrcnm(jn) )                  ! short title for tracer
       !    CALL iom_put( cltra, tr(:,:,:,jn,Kmm) )
