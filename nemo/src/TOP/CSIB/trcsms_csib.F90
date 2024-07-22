@@ -10,7 +10,8 @@ MODULE trcsms_csib
    !! trc_sms_csib_alloc : allocate arrays specific to CSIB sms
    !!----------------------------------------------------------------------
    USE par_trc         ! TOP parameters
-   USE oce_trc         ! Ocean variables
+   USE oce_trc         ! Ocean variables   
+   USE dom_oce         ! ocean domain
    USE trc             ! TOP variables
    USE trd_oce
    USE trdtrc
@@ -57,6 +58,7 @@ MODULE trcsms_csib
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: lamloss_dia      !  Loss rate from lateral melt per ice category (mmol/m3/s)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: bogup            !  Flowrate of water uptake from bottom ice growth per ice category (m/s)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: bogup_dia        !  Diatoms uptake rate from bottom ice growth per ice category (mmol/m3/s)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: lagup            !  Flowrate uptake from lateral ice growth  per ice category (mmol/m3/s)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: lagup_dia        !  Diatoms uptake rate from lateral ice growth  per ice category (mmol/m3/s)
 
 
@@ -80,8 +82,8 @@ CONTAINS
       INTEGER, INTENT(in) ::   Kbb, Kmm, Krhs  ! time level indices
       
       INTEGER ::   ji,jj,jl   ! dummy loop index
-      REAL(wp) :: zmaxia !for diagnostics
-
+      REAL(wp) :: zscale ! scale factor between sea ice skeletal layer and ocean surface layer
+      REAL(wp) :: zmaxia !for diagnostics/debug
       !!----------------------------------------------------------------------
       !
       IF( ln_timing )   CALL timing_start('trc_sms_csib')
@@ -93,24 +95,27 @@ CONTAINS
 
 
       ! Conversion from global to equivalent variables
-      !  and set to 0 if low ice concentration 
-      WHERE( a_i(:,:,:) > 1.e-4_wp )
-         icedia(:,:,:) = icedia_gca(:,:,:) / a_i(:,:,:)
-      ELSEWHERE
-         ! low ice: set tracers to 0 and send what was there to the ocean
-         icedia(:,:,:)=0._wp
-      END WHERE
+      ! and set to 0 if low ice concentration 
+      DO jl = 1, jpl ! loop ice categories
+         DO jj = 1, jpj
+            DO ji = 1, jpi
+               
+               IF( a_i(ji,jj,jl) > 1.e-4_wp ) THEN ! if ice
+                  icedia(ji,jj,jl) = icedia_gca(ji,jj,jl) / a_i(ji,jj,jl)
 
-      ! DO jl = 1, jpl
-      !    DO ji = 1, jpi
-      !       DO jj = 1, jpj
-      !          IF( a_i(ji,jj,jl) < 1.e-3_wp ) THEN ! low ice
-      !             icedia(ji,jj,jl)=0._wp
-      !             !should be put in ocean to conserve?
-      !          ENDIF ! if low ice
-      !       ENDDO ! loop jpj
-      !    ENDDO ! loop jpi
-      ! ENDDO ! loop jpl ice categories
+               ELSE ! low ice
+                  ! set tracers to 0 
+                  icedia(ji,jj,jl)=0._wp
+                  
+                  ! send what was there to the ocean
+                  zscale = z_ia / e3t_0(ji,jj,1)
+                  tr(ji,jj,1,jrdia,Kmm) = tr(ji,jj,1,jrdia,Kmm) + icedia_gca(ji,jj,jl) * zscale
+
+               ENDIF ! if  ice
+           
+            ENDDO ! loop jpi
+         ENDDO ! loop jpj
+      ENDDO ! loop jpl ice categories
 
 
       ! reset fluxes
@@ -119,13 +124,14 @@ CONTAINS
       lamloss_dia(:,:,:)   = 0._wp
       bogup(:,:,:) = 0._wp
       bogup_dia(:,:,:) = 0._wp
+      lagup(:,:,:) = 0._wp
       lagup_dia(:,:,:) = 0._wp
 
 
 
       DO jl = 1, jpl
-         DO ji = 1, jpi
-            DO jj = 1, jpj
+         DO jj = 1, jpj
+            DO ji = 1, jpi
          
                IF( a_i(ji,jj,jl) > epsi10 ) THEN ! precence of ice
          
@@ -140,13 +146,13 @@ CONTAINS
                            ! flowrate of melt pond drainage volume per ice area (m/s)
                      &     + dh_mpdrn_cat(ji,jj,jl)      &
                            ! SIC * (total precipation (Kg/m2/s) - solid precipitation (Kg/m2/s) ) / freshwater density (kg/m3)
-                     ! &     + a_i(ji,jj,jl) * MAX( 0._wp, tprecip(ji,jj) - sprecip(ji,jj) ) / rhow
+                   ! &     + a_i(ji,jj,jl) * MAX( 0._wp, tprecip(ji,jj) - sprecip(ji,jj) ) / rhow
                      &     + a_i(ji,jj,jl) * tprecip(ji,jj) / rhow ! dev run : tprecip seems to be only rain
 
-                  ! flushing of ice algea: flushrate * ice algae concentration/ height of skeletal layer  = biomass flux (mmol/m3/s)
+                  ! flushing of ice diatoms: flushrate * ice diatoms concentration/ height of skeletal layer  = biomass flux (mmol/m3/s)
                   flush_dia(ji,jj,jl) = flushrate(ji,jj,jl)/z_ia  * icedia(ji,jj,jl)     
 
-                  ! loss of ice algae from lateral melt : fraction of ice concentration lost (1/s) * ice algae concentration (mmol/m3)
+                  ! loss of ice diatoms from lateral melt : fraction of ice concentration lost (1/s) * ice diatoms concentration (mmol/m3)
                   lamloss_dia(ji,jj,jl) = da_lam_cat(ji,jj,jl) * icedia(ji,jj,jl)
 
 
@@ -156,19 +162,23 @@ CONTAINS
                   ! = rate of ice thickness change (m/s) * ice density (kg/m3) / freshwater density (kg/m3)
                   bogup(ji,jj,jl) = dh_bog_cat(ji,jj,jl) * rhoi / rhow
 
-                  ! Uptake of ice algae from bottom ice growth : flowrate per ice area (m/s) * ocean surface concentration (mmol/m3) /skeletal layer (m)
+                  ! Uptake of ice diatoms from bottom ice growth : flowrate per ice area (m/s) * ocean surface concentration (mmol/m3) /skeletal layer (m)
                   bogup_dia(ji,jj,jl) = bogup(ji,jj,jl) * tr(ji,jj,1,jrdia,Kmm) /z_ia
 
-                  ! Uptake of ice algae from lateral ice growth  
+                  ! lagup: water uptake flowrate per ice area from lateral ice growth (m/s) 
+                  ! = (sic increase rate / sic) (1/s) * (height new ice) (s) * ice density (kg/m3) / freshwater density (kg/m3)
+                  lagup(ji,jj,jl) = da_lag_cat(ji,jj,jl) * ht_i_new(ji,jl) * rhoi / rhow
+
+                  ! Uptake of ice diatoms from lateral ice growth  
                   lagup_dia(ji,jj,jl) = &
-                        ! (sic increase rate / sic) * (height new ice / skeletal layer) * ocean surface diatoms concentration     
-                        & da_lag_cat(ji,jj,jl) * (ht_i_new(ji,jl) / z_ia) * tr(ji,jj,1,jrdia,Kmm)     &
+                        ! water uptake flowrate per ice area * skeletal layer * ocean surface diatoms concentration     
+                        & lagup(ji,jj,jl) / z_ia * tr(ji,jj,1,jrdia,Kmm)     &
                         ! - ice tracer conc * (sic increase rate / sic)
                         & - icedia(ji,jj,jl) * da_lag_cat(ji,jj,jl)
 
 
 
-                  ! ice algae dynamics
+                  ! Ice diatoms dynamics
                   icedia(ji,jj,jl) = icedia(ji,jj,jl) + rDt_trc * (           &
                                        ! sink: flushing from bottom and surface ice melt, snow melt, rain on ice, melt pond drainage
                               &        - flush_dia(ji,jj,jl)                  & 
@@ -183,21 +193,43 @@ CONTAINS
                   icedia(ji,jj,jl) = MAX(0._wp, icedia(ji,jj,jl) )
 
 
+                  ! Ocean surface phytoplankton seeding and removal
+                  
+                  ! scaling factor: conversion of flowrate per sea ice area to flowrate per unit volume
+                  ! = sea ice concentration / ocean surface layer height
+                  ! = sea ice area / (cell area * ocean surface layer height)
+                  zscale = a_i(ji,jj,jl) / e3t_0(ji,jj,1)
+                  ! zscale = a_i(ji,jj,jl)  / e3t(ji,jj,1,Kmm) ! (time dependent scale factor) compilation fails: e3t  only defined if not using key_qco
+
+                  ! ocean surface phytoplankton dynamics
+                  tr(ji,jj,1,jrdia,Kmm) = tr(ji,jj,1,jrdia,Kmm) + rDt_trc * (             &
+                           ! source: flushing of ice diatoms from bottom and surface ice melt, snow melt, rain on ice, melt pond drainage
+                  &        + flushrate(ji,jj,jl) * zscale * icedia(ji,jj,jl)              & 
+                           ! source: ice diatoms from lateral melting of ice
+                  &        + da_lam_cat(ji,jj,jl) * z_ia * zscale * icedia(ji,jj,jl)      & 
+                           ! sink: Uptake from bottom ice growth
+                  &        - bogup(ji,jj,jl) * zscale * tr(ji,jj,1,jrdia,Kmm)             &
+                           ! sink: Uptake from lateral ice growth
+                  &        - lagup(ji,jj,jl) * zscale * tr(ji,jj,1,jrdia,Kmm)             &
+                  )
+                  ! guarantee positive concentration
+                  tr(ji,jj,1,jrdia,Kmm) = MAX(0._wp, tr(ji,jj,1,jrdia,Kmm) )
                
                ENDIF ! if ice
 
-            ENDDO ! loop jpj
-         ENDDO ! loop jpi
+            ENDDO ! loop jpi
+         ENDDO ! loop jpj
       ENDDO ! loop jpl ice categories
 
 
-      IF(lwp) WRITE(numout,*) 
-      IF(lwp) WRITE(numout,*) 'max ice algae N hemisphere : '
-      DO jl = 1, jpl
-         zmaxia = MAXVAL( icedia(:,:,jl), MASK= gphit(:,:) > 0._wp )
-         CALL mpp_max( "trc_sms_csib", zmaxia )
-         IF(lwp) WRITE(numout,*) 'ice category ', jl , ' : ' , zmaxia
-      ENDDO
+      ! For debug/diagnostics: print max ice diatoms
+      ! IF(lwp) WRITE(numout,*) 
+      ! IF(lwp) WRITE(numout,*) 'max ice diatoms N hemisphere : '
+      ! DO jl = 1, jpl
+      !    zmaxia = MAXVAL( icedia(:,:,jl), MASK= gphit(:,:) > 0._wp )
+      !    CALL mpp_max( "trc_sms_csib", zmaxia )
+      !    IF(lwp) WRITE(numout,*) 'ice category ', jl , ' : ' , zmaxia
+      ! ENDDO
 
 
 
@@ -221,8 +253,8 @@ CONTAINS
       
       ALLOCATE(icedia   (jpi,jpj,jpl) , icedia_gca(jpi,jpj,jpl) , icediagca_2d(jpij,jpl)    , &
          &     flushrate(jpi,jpj,jpl) , flush_dia (jpi,jpj,jpl) , lamloss_dia (jpi,jpj,jpl) , &
-         &     bogup    (jpi,jpj,jpl) , bogup_dia (jpi,jpj,jpl) , lagup_dia   (jpi,jpj,jpl) , &
-         &     STAT=trc_sms_csib_alloc)
+         &     bogup    (jpi,jpj,jpl) , bogup_dia (jpi,jpj,jpl) , lagup       (jpi,jpj,jpl) , &
+         &     lagup_dia(jpi,jpj,jpl) , STAT=trc_sms_csib_alloc)
 
       IF( trc_sms_csib_alloc /= 0 ) CALL ctl_stop( 'STOP', 'trc_sms_csib_alloc : failed to allocate arrays' )
       !
