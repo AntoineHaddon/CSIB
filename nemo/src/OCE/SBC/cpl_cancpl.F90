@@ -1159,14 +1159,16 @@ contains
      kl_comm = 0
      WRITE(numout,*) 'cpl_cancpl_init: Error you sould not be there...'
   end subroutine cpl_cancpl_init
-  subroutine cpl_cancpl_define( krcv, ksnd, kcplmodel )
+  subroutine cpl_cancpl_define( krcv, ksnd, kcplmodel, potential_snd_order )
      !!-------------------------------------------------------------------
      !!             ***  ROUTINE cpl_cancpl_define  ***
      !!
-     !!--------------------------------------------------------------------
-     integer, intent(in) :: krcv   ! Number of all possible fields received
-     integer, intent(in) :: ksnd   ! Number of all possible fields sent
-     integer, intent(in) :: kcplmodel ! Number of models to send too. Note this is a dummy argument for now
+     integer, intent(in) :: krcv                ! Number of all possible fields received
+     integer, intent(in) :: ksnd                ! Number of all possible fields sent
+     integer, intent(in) :: kcplmodel           ! Number of models to send too. Note this is a dummy argument for now
+                                                ! so that the interface matches the oasis equivalent
+     integer, dimension(ksnd), intent(in) :: potential_snd_order ! the hardcoded possible send order from nemo
+                                                                 !  (see sbc_cpl_snd)
      WRITE(numout,*) 'cpl_cancpl_define: Error you sould not be there...'
   end subroutine cpl_cancpl_define
   subroutine cpl_cancpl_snd( kid, kstep, pdata, kinfo )
