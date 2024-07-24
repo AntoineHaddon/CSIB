@@ -161,6 +161,11 @@ echo "#################### Start NEMO pre-processing #################"
     acc_cp decay_scale_bot.nc        $nemo_decay_scale_bot 
     acc_cp decay_scale_cri.nc        $nemo_decay_scale_cri 
   fi 
+
+  if [[ $nemo_nn_aei_ijk_t == -20 ]]; then
+    is_defined $nemo_eddy_induced_velocity_2D || bail "The variable nemo_eddy_induced_velocity_2D must be defined in the configuration file."
+    acc_cp eddy_induced_velocity_2D.nc $nemo_eddy_induced_velocity_2D
+  fi
  
   if [[ $nemo_nn_ahm_ijk_t == -30 ]]; then
     is_defined $nemo_eddy_viscosity_3D || bail "The variable nemo_eddy_viscosity_3D must be defined in the configuration file."
