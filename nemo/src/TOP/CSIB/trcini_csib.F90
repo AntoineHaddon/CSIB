@@ -52,12 +52,12 @@ CONTAINS
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~'
       
       IF( .NOT. ln_rsttr ) THEN
-         icedia(:,:,:)=0._wp
+         icedia(:,:,:)=1._wp
          
          ! init from ocean surface diatoms
          ! icedia(:,:,:) = tr(:,:,1,jrdia,Kmm)
          
-         ! init with constant value where latitude > 85
+         ! ! init with constant value where latitude > 85
          ! WHERE( gphit(:,:) > 85._wp )   ;   icedia(:,:,3)=1._wp
          ! ELSEWHERE                     ;   icedia(:,:,3)=0._wp
          ! END WHERE
@@ -71,7 +71,12 @@ CONTAINS
       lamloss_dia(:,:,:)=0._wp
       bogup(:,:,:)=0._wp
       bogup_dia(:,:,:)=0._wp
+      lagup(:,:,:) = 0._wp
       lagup_dia(:,:,:)=0._wp
+
+      ! initialize BGC process
+      growth_dia(:,:,:)=0._wp
+      lim_lig(:,:,:)=0._wp
       
       !
    END SUBROUTINE trc_ini_csib

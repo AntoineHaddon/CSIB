@@ -39,26 +39,35 @@ CONTAINS
  
       ! write the tracer concentrations in the file
       ! ---------------------------------------
-      CALL iom_put( 'icedia', icedia(:,:,:) )
-      CALL iom_put( 'icedia_gca', icedia_gca(:,:,:) )
+      ! CALL iom_put( 'icedia'           , icedia(:,:,:) )
+      ! CALL iom_put( 'icedia_gca'       , icedia_gca(:,:,:) )
 
-      CALL iom_put( 'flushrate'        , flushrate(:,:,:) )
-      CALL iom_put( 'flush_dia'        , flush_dia(:,:,:) )
-      CALL iom_put( 'lamloss_dia'      , lamloss_dia(:,:,:) )
-      CALL iom_put( 'dh_bom_cat'       , dh_bom_cat(:,:,:) )
-      CALL iom_put( 'dh_sum_cat'       , dh_sum_cat(:,:,:) )
-      CALL iom_put( 'da_lam_cat'       , da_lam_cat(:,:,:) )
-      CALL iom_put( 'dh_snw_sum_cat'   , dh_snw_sum_cat(:,:,:) )
-      CALL iom_put( 'dh_mpdrn_cat'     , dh_mpdrn_cat(:,:,:) )
-      
-      CALL iom_put( 'dh_bog_cat'       , dh_bog_cat(:,:,:) )
-      CALL iom_put( 'bogup'            , bogup(:,:,:) )
-      CALL iom_put( 'bogup_dia'        , bogup_dia(:,:,:) )
-      CALL iom_put( 'da_lag_cat'       , da_lag_cat(:,:,:) )
-      CALL iom_put( 'lagup_dia'        , lagup_dia(:,:,:) )
+      ! ! ocean surface diatoms
+      ! ! CALL iom_put( 'PHY2c_os'         , tr(:,:,1,jrdia,Kmm) )
+      ! CALL iom_put( 'PHY2c_os'         , icedia(:,:,1) )
 
-      ! ocean surface diatoms
-      CALL iom_put( 'PHY2c_os'        , tr(:,:,1,jrdia,Kmm) )
+      ! ! sea ice ocean exchanges
+      ! CALL iom_put( 'flushrate'        , flushrate(:,:,:) )
+      ! CALL iom_put( 'flush_dia'        , flush_dia(:,:,:) )
+      ! CALL iom_put( 'lamloss_dia'      , lamloss_dia(:,:,:) )
+      ! CALL iom_put( 'dh_bom_cat'       , dh_bom_cat(:,:,:) )
+      ! CALL iom_put( 'dh_sum_cat'       , dh_sum_cat(:,:,:) )
+      ! CALL iom_put( 'da_lam_cat'       , da_lam_cat(:,:,:) )
+      ! CALL iom_put( 'dh_snw_sum_cat'   , dh_snw_sum_cat(:,:,:) )
+      ! CALL iom_put( 'dh_mpdrn_cat'     , dh_mpdrn_cat(:,:,:) )
+      ! CALL iom_put( 'dh_bog_cat'       , dh_bog_cat(:,:,:) )
+      ! CALL iom_put( 'bogup'            , bogup(:,:,:) )
+      ! CALL iom_put( 'bogup_dia'        , bogup_dia(:,:,:) )
+      ! CALL iom_put( 'da_lag_cat'       , da_lag_cat(:,:,:) )
+      ! CALL iom_put( 'lagup_dia'        , lagup_dia(:,:,:) )
+
+      ! ! BGC process
+      ! ! CALL iom_put( 'growth_dia'       , growth_dia(:,:,:) )
+      ! CALL iom_put( 'growth_dia'       , icedia(:,:,:) )
+      ! ! CALL iom_put( 'lim_lig'          , lim_lig(:,:,:) )
+      ! CALL iom_put( 'lim_lig'          , icedia(:,:,:) )
+      ! ! CALL iom_put( 'qtr_ice_bot_cat'  , qtr_ice_bot(:,:,:) )
+      ! CALL iom_put( 'qtr_ice_bot_cat'  , icedia(:,:,:) )
 
       ! DO jn = jp_myt0, jp_myt1
       !    cltra = TRIM( ctrcnm(jn) )                  ! short title for tracer

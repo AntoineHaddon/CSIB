@@ -1079,6 +1079,15 @@ CONTAINS
                   ENDIF
                ENDIF
             ENDIF
+
+            IF ( ln_csib ) THEN ! ice BGC 
+               ! ice diatoms
+               CALL iom_get( numrir, jpdom_auto, 'sxicedia' , sxicedia , psgn = -1._wp )
+               CALL iom_get( numrir, jpdom_auto, 'syicedia' , syicedia , psgn = -1._wp )
+               CALL iom_get( numrir, jpdom_auto, 'sxxicedia', sxxicedia )
+               CALL iom_get( numrir, jpdom_auto, 'syyicedia', syyicedia )
+               CALL iom_get( numrir, jpdom_auto, 'sxyicedia', sxyicedia )
+            ENDIF
             !
          ELSE                                   !**  start rheology from rest  **!
             !
@@ -1099,7 +1108,7 @@ CONTAINS
                ENDIF
             ENDIF
             IF ( ln_csib ) THEN
-               sxicedia = 0._wp   ;   syicedia = 0._wp   ;   sxxicedia = 0._wp   ;   syyicedia = 0._wp   ;   sxyicedia = 0._wp      ! ice algae
+               sxicedia = 0._wp   ;   syicedia = 0._wp   ;   sxxicedia = 0._wp   ;   syyicedia = 0._wp   ;   sxyicedia = 0._wp      ! ice diatoms
             ENDIF
          ENDIF
          !
@@ -1192,6 +1201,14 @@ CONTAINS
                CALL iom_rstput( iter, nitrst, numriw, 'syyvl', syyvl )
                CALL iom_rstput( iter, nitrst, numriw, 'sxyvl', sxyvl )
             ENDIF
+         ENDIF
+
+         IF( ln_csib ) THEN
+            CALL iom_rstput( iter, nitrst, numriw, 'sxicedia' , sxicedia  )
+            CALL iom_rstput( iter, nitrst, numriw, 'syicedia' , syicedia  )
+            CALL iom_rstput( iter, nitrst, numriw, 'sxxicedia', sxxicedia )
+            CALL iom_rstput( iter, nitrst, numriw, 'syyicedia', syyicedia )
+            CALL iom_rstput( iter, nitrst, numriw, 'sxyicedia', sxyicedia )
          ENDIF
          !
       ENDIF

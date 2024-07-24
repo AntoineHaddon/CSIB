@@ -25,6 +25,9 @@ MODULE trcrst
    USE daymod
    USE lib_mpp
    
+   USE trcsms_csib      ! ice BGC tracers
+   USE ice , ONLY: a_i  ! for ice BGC tracers
+
    IMPLICIT NONE
    PRIVATE
 
@@ -141,6 +144,11 @@ CONTAINS
             CALL iom_get( numrtr, jpdom_auto, 'TRB'//ctrcnm(jn), tr(:,:,:,jn,Kbb) )
          END DO
       END IF
+
+      IF ( ln_csib ) THEN ! ice BC tracers
+         CALL iom_get( numrtr, jpdom_auto, 'icedia', icedia(:,:,:) )
+         icedia_gca(:,:,:) = icedia(:,:,:) * a_i(:,:,:)
+      ENDIF
       !
       IF(.NOT.lrxios) CALL iom_delay_rst( 'READ', 'TOP', numrtr )   ! read only TOP delayed global communication variables
    END SUBROUTINE trc_rst_read
@@ -167,6 +175,10 @@ CONTAINS
       DO jn = 1, jptra
          CALL iom_rstput( kt, nitrst, numrtw, 'TRB'//ctrcnm(jn), tr(:,:,:,jn,Kbb) )
       END DO
+      
+      IF ( ln_csib ) THEN ! ice BC tracers
+         CALL iom_rstput( kt, nitrst, numrtw, 'icedia', icedia(:,:,:) )
+      ENDIF
 
       IF( .NOT. lwxios ) CALL iom_delay_rst( 'WRITE', 'TOP', numrtw )   ! save only TOP delayed global communication variables
     
