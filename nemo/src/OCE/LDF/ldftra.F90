@@ -598,6 +598,8 @@ CONTAINS
             CALL iom_get  ( inum, jpdom_global, 'aeiu', aeiu(:,:,1), cd_type = 'U', psgn = 1._wp )
             CALL iom_get  ( inum, jpdom_global, 'aeiv', aeiv(:,:,1), cd_type = 'V', psgn = 1._wp )
             CALL iom_close( inum )
+            CALL iom_put( "aeiu_2d", aeiu(:,:,1) )   ! surface u-EIV coeff.
+            CALL iom_put( "aeiv_2d", aeiv(:,:,1) )   ! surface v-EIV coeff.
             DO jk = 2, jpkm1
                aeiu(:,:,jk) = aeiu(:,:,1)
                aeiv(:,:,jk) = aeiv(:,:,1)
