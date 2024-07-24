@@ -129,15 +129,15 @@ CONTAINS
       ! bogup_dia(:,:,:) = 0._wp
       ! lagup(:,:,:) = 0._wp
       ! lagup_dia(:,:,:) = 0._wp
-      ! ! reset BGC processesd
-      ! growth_dia(:,:,:)=0._wp
-      ! lim_lig(:,:,:)=0._wp
+      ! reset BGC processesd
+      growth_dia(:,:,:)=0._wp
+      lim_lig(:,:,:)=0._wp
 
-      ! DO jl = 1, jpl
-      !    DO jj = 1, jpj
-      !       DO ji = 1, jpi
+      DO jl = 1, jpl
+         DO jj = 1, jpj
+            DO ji = 1, jpi
          
-      !          IF( a_i(ji,jj,jl) > epsi10 ) THEN ! precence of ice
+               IF( a_i(ji,jj,jl) > epsi10 ) THEN ! precence of ice
          
                   ! ! Flushing of ice tracers from ice-ocean exchanges
 
@@ -184,14 +184,14 @@ CONTAINS
                   ! Ice diatom growth
 
                   ! Light limitation factor, from qtr_ice_bot: shortwave radiation transmitted through ice (W/m2)
-                  ! lim_lig(ji,jj,jl)  = 0._wp !tanh( r_pp * qtr_ice_bot(ji,jj,jl) ) 
+                  lim_lig(ji,jj,jl)  = tanh( r_pp * qtr_ice_bot(ji,jj,jl) ) 
 
                   ! Ice diatom growth rate 
-                  ! growth_dia(ji,jj,jl) = 0._wp ! lim_lig(ji,jj,jl) * icedia(ji,jj,jl)
+                  growth_dia(ji,jj,jl) = lim_lig(ji,jj,jl) * icedia(ji,jj,jl)
 
 
                   ! Ice diatoms dynamics
-                  ! icedia(ji,jj,jl) = icedia(ji,jj,jl) + rDt_trc * (      1.0_wp     &
+                  icedia(ji,jj,jl) = icedia(ji,jj,jl) + rDt_trc * (         &
                               !          ! sink: flushing from bottom and surface ice melt, snow melt, rain on ice, melt pond drainage
                               ! &        - flush_dia(ji,jj,jl)                  & 
                               !          ! sink: loss from lateral melting of ice
@@ -201,10 +201,10 @@ CONTAINS
                               !          ! source: Uptake from lateral ice growth
                               ! &        + lagup_dia(ji,jj,jl)                  &
                                        ! source: growth
-                              ! &        growth_dia(ji,jj,jl)                  &
-                              ! )
+                              &        growth_dia(ji,jj,jl)                  &
+                              )
                   ! guarantee positive concentration
-                  ! icedia(ji,jj,jl) = MAX(0._wp, icedia(ji,jj,jl) )
+                  icedia(ji,jj,jl) = MAX(0._wp, icedia(ji,jj,jl) )
 
 
                   ! ! Ocean surface phytoplankton seeding and removal
@@ -229,11 +229,11 @@ CONTAINS
                   ! ! guarantee positive concentration
                   ! tr(ji,jj,1,jrdia,Kmm) = MAX(0._wp, tr(ji,jj,1,jrdia,Kmm) )
                
-      !          ENDIF ! if ice
+               ENDIF ! if ice
 
-      !       ENDDO ! loop jpi
-      !    ENDDO ! loop jpj
-      ! ENDDO ! loop jpl ice categories
+            ENDDO ! loop jpi
+         ENDDO ! loop jpj
+      ENDDO ! loop jpl ice categories
 
 
       ! For debug/diagnostics: print max ice diatoms
