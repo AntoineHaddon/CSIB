@@ -58,9 +58,6 @@ MODULE icevar
    USE sbc_oce , ONLY : sss_m, ln_ice_embd, nn_fsbc
    USE ice            ! sea-ice: variables
    USE ice1D          ! sea-ice: thermodynamics variables
-   
-   USE par_trc , ONLY : ln_csib            ! flag to use ice BGC
-   USE trcsms_csib , ONLY : icedia_gca     ! ice BGC variables
    !
    USE in_out_manager ! I/O manager
    USE lib_mpp        ! MPP library
@@ -559,9 +556,6 @@ CONTAINS
             h_ip (ji,jj,jl) = h_ip (ji,jj,jl) * zswitch(ji,jj)
             h_il (ji,jj,jl) = h_il (ji,jj,jl) * zswitch(ji,jj)
             !
-            IF ( ln_csib ) THEN
-               icedia_gca(ji,jj,jl) = icedia_gca(ji,jj,jl) * zswitch(ji,jj)
-            ENDIF
          END_2D
          !
       END DO

@@ -40,21 +40,21 @@ MODULE trcsms_csib
    !!                                                                       |
    !! ** Global variables                                                   |
    !!-------------|-------------|---------------------------------|---------|
-   !! icedia_gca  |      -      |    Ice diatonms grid cell average  | mmol/m3 |
+   !! icedia_gca  |      -      | Ice diatoms grid cell average   | mmol/m3 |
    !!                                                                       |
    !!-------------|-------------|---------------------------------|---------|
    !!                                                                       |
    !! ** Equivalent variables                                               |
    !!-------------|-------------|---------------------------------|---------|
-   !! icedia      | -           |    Ice diatonms per ice area       | mmol/m3 |
+   !! icedia      | -           | Ice diatoms per ice area       | mmol/m3 |
 
 
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: icedia            !  Ice diatonms per ice area
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: icedia_gca        !  Ice diatonms grid cell average
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   :: icediagca_2d      !  Ice diatonms grid cell average, 2d version for ice model
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: icedia            !  Ice diatoms per ice area
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: icedia_gca        !  Ice diatoms grid cell average
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   :: icediagca_2d      !  Ice diatoms grid cell average, 2d version for ice model
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: flushrate        !  Flushrate per ice category (m/s)
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: flush_dia        !  Loss rate of ice diatonms from flushing per ice category (mmol/m3/s)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: flush_dia        !  Loss rate of ice diatoms from flushing per ice category (mmol/m3/s)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: lamloss_dia      !  Loss rate from lateral melt per ice category (mmol/m3/s)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: bogup            !  Flowrate of water uptake from bottom ice growth per ice category (m/s)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: bogup_dia        !  Diatoms uptake rate from bottom ice growth per ice category (mmol/m3/s)
@@ -85,8 +85,8 @@ CONTAINS
       INTEGER, INTENT(in) ::   Kbb, Kmm, Krhs  ! time level indices
       
       INTEGER ::   ji,jj,jl   ! dummy loop index
-      ! REAL(wp) :: zscale ! scale factor between sea ice skeletal layer and ocean surface layer
-      ! REAL(wp) :: zmaxia !for diagnostics/debug
+      REAL(wp) :: zscale ! scale factor between sea ice skeletal layer and ocean surface layer
+      REAL(wp) :: zmaxia !for diagnostics/debug
       !!----------------------------------------------------------------------
       !
       IF( ln_timing )   CALL timing_start('trc_sms_csib')
@@ -129,7 +129,7 @@ CONTAINS
       ! bogup_dia(:,:,:) = 0._wp
       ! lagup(:,:,:) = 0._wp
       ! lagup_dia(:,:,:) = 0._wp
-      ! reset BGC processesd
+      ! reset BGC processes
       growth_dia(:,:,:)=0._wp
       lim_lig(:,:,:)=0._wp
 
@@ -187,7 +187,7 @@ CONTAINS
                   lim_lig(ji,jj,jl)  = tanh( r_pp * qtr_ice_bot(ji,jj,jl) ) 
 
                   ! Ice diatom growth rate 
-                  growth_dia(ji,jj,jl) = lim_lig(ji,jj,jl) * icedia(ji,jj,jl)
+                  growth_dia(ji,jj,jl) =mu_max * lim_lig(ji,jj,jl) * icedia(ji,jj,jl)
 
 
                   ! Ice diatoms dynamics
@@ -205,6 +205,7 @@ CONTAINS
                               )
                   ! guarantee positive concentration
                   icedia(ji,jj,jl) = MAX(0._wp, icedia(ji,jj,jl) )
+                  icedia(ji,jj,jl) = MIN(1000._wp, icedia(ji,jj,jl) )
 
 
                   ! ! Ocean surface phytoplankton seeding and removal
@@ -237,13 +238,13 @@ CONTAINS
 
 
       ! For debug/diagnostics: print max ice diatoms
-      ! IF(lwp) WRITE(numout,*) 
-      ! IF(lwp) WRITE(numout,*) 'max ice diatoms N hemisphere : '
-      ! DO jl = 1, jpl
-      !    zmaxia = MAXVAL( icedia(:,:,jl), MASK= gphit(:,:) > 0._wp )
-      !    CALL mpp_max( "trc_sms_csib", zmaxia )
-      !    IF(lwp) WRITE(numout,*) 'ice category ', jl , ' : ' , zmaxia
-      ! ENDDO
+      IF(lwp) WRITE(numout,*) 
+      IF(lwp) WRITE(numout,*) 'max ice diatoms N hemisphere : '
+      DO jl = 1, jpl
+         zmaxia = MAXVAL( icedia(:,:,jl), MASK= gphit(:,:) > 0._wp )
+         CALL mpp_max( "trc_sms_csib", zmaxia )
+         IF(lwp) WRITE(numout,*) 'ice category ', jl , ' : ' , zmaxia
+      ENDDO
 
 
 
