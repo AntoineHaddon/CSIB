@@ -47,6 +47,8 @@ MODULE icedyn_adv_pra
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   sxvp , syvp , sxxvp , syyvp , sxyvp    ! melt pond volume
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   sxvl , syvl , sxxvl , syyvl , sxyvl    ! melt pond lid volume
    REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   sxicedia , syicedia , sxxicedia , syyicedia , sxyicedia    ! ice algae
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   sxiceno3 , syiceno3 , sxxiceno3 , syyiceno3 , sxyiceno3    ! ice NO3
+   REAL(wp), ALLOCATABLE, SAVE, DIMENSION(:,:,:)   ::   sxicenh4 , syicenh4 , sxxicenh4 , syyicenh4 , sxyicenh4    ! ice NH4
 
    !! * Substitutions
 #  include "do_loop_substitute.h90"
@@ -58,7 +60,7 @@ MODULE icedyn_adv_pra
 CONTAINS
 
    SUBROUTINE ice_dyn_adv_pra(         kt, pu_ice, pv_ice, ph_i, ph_s, ph_ip,  &
-      &                        pato_i, pv_i, pv_s, psv_i, poa_i, pa_i, pa_ip, pv_ip, pv_il, pe_s, pe_i, picedia_gca )
+      &                        pato_i, pv_i, pv_s, psv_i, poa_i, pa_i, pa_ip, pv_ip, pv_il, pe_s, pe_i, picedia_gca, piceno3_gca, picenh4_gca )
       !!----------------------------------------------------------------------
       !!                **  routine ice_dyn_adv_pra  **
       !!
@@ -89,6 +91,8 @@ CONTAINS
       REAL(wp), DIMENSION(:,:,:,:), INTENT(inout) ::   pe_i       ! ice heat content
       ! ice BGC variables
       REAL(wp), DIMENSION(:,:,:)  , INTENT(inout) ::   picedia_gca    ! ice algae grid cell average
+      REAL(wp), DIMENSION(:,:,:)  , INTENT(inout) ::   piceno3_gca    ! ice no3 grid cell average
+      REAL(wp), DIMENSION(:,:,:)  , INTENT(inout) ::   picenh4_gca    ! ice nh4 grid cell average
       !
       INTEGER  ::   ji, jj, jk, jl, jt      ! dummy loop indices
       INTEGER  ::   icycle                  ! number of sub-timestep for the advection
@@ -104,7 +108,7 @@ CONTAINS
       REAL(wp), DIMENSION(jpi,jpj,jpl)        ::   z0ap , z0vp, z0vl
       REAL(wp), DIMENSION(jpi,jpj,nlay_s,jpl) ::   z0es
       REAL(wp), DIMENSION(jpi,jpj,nlay_i,jpl) ::   z0ei
-      REAL(wp), DIMENSION(jpi,jpj,jpl)        ::   z0icedia
+      REAL(wp), DIMENSION(jpi,jpj,jpl)        ::   z0icedia, z0iceno3, z0icenh4
 
       !! diagnostics
       REAL(wp), DIMENSION(jpi,jpj)            ::   zdiag_adv_mass, zdiag_adv_salt, zdiag_adv_heat
@@ -194,6 +198,8 @@ CONTAINS
             ENDIF
             IF ( ln_csib ) THEN
                z0icedia(:,:,jl) = picedia_gca(:,:,jl) * e1e2t(:,:)     ! Ice algal content 
+               z0iceno3(:,:,jl) = piceno3_gca(:,:,jl) * e1e2t(:,:)     ! Ice NO3 content 
+               z0icenh4(:,:,jl) = picenh4_gca(:,:,jl) * e1e2t(:,:)     ! Ice NH4 content 
             ENDIF
          END DO
          !
@@ -238,6 +244,10 @@ CONTAINS
             IF ( ln_csib ) THEN
                CALL adv_x( zdt , zudy , 1._wp , zarea , z0icedia , sxicedia , sxxicedia , syicedia , syyicedia , sxyicedia )    !--- ice algae 
                CALL adv_y( zdt , zvdx , 0._wp , zarea , z0icedia , sxicedia , sxxicedia , syicedia , syyicedia , sxyicedia )
+               CALL adv_x( zdt , zudy , 1._wp , zarea , z0iceno3 , sxiceno3 , sxxiceno3 , syiceno3 , syyiceno3 , sxyiceno3 )    !--- ice NO3 
+               CALL adv_y( zdt , zvdx , 0._wp , zarea , z0iceno3 , sxiceno3 , sxxiceno3 , syiceno3 , syyiceno3 , sxyiceno3 )
+               CALL adv_x( zdt , zudy , 1._wp , zarea , z0icenh4 , sxicenh4 , sxxicenh4 , syicenh4 , syyicenh4 , sxyicenh4 )    !--- ice NH4 
+               CALL adv_y( zdt , zvdx , 0._wp , zarea , z0icenh4 , sxicenh4 , sxxicenh4 , syicenh4 , syyicenh4 , sxyicenh4 )
             ENDIF
             !                                                               !--------------------------------------------!
          ELSE                                                               !== even ice time step:  adv_y then adv_x  ==!
@@ -278,6 +288,10 @@ CONTAINS
             IF ( ln_csib ) THEN
                CALL adv_y( zdt , zvdx , 1._wp , zarea , z0icedia , sxicedia , sxxicedia , syicedia , syyicedia , sxyicedia )     !--- ice algae 
                CALL adv_x( zdt , zudy , 0._wp , zarea , z0icedia , sxicedia , sxxicedia , syicedia , syyicedia , sxyicedia )
+               CALL adv_y( zdt , zvdx , 1._wp , zarea , z0iceno3 , sxiceno3 , sxxiceno3 , syiceno3 , syyiceno3 , sxyiceno3 )     !--- ice NO3 
+               CALL adv_x( zdt , zudy , 0._wp , zarea , z0iceno3 , sxiceno3 , sxxiceno3 , syiceno3 , syyiceno3 , sxyiceno3 )
+               CALL adv_y( zdt , zvdx , 1._wp , zarea , z0icenh4 , sxicenh4 , sxxicenh4 , syicenh4 , syyicenh4 , sxyicenh4 )     !--- ice NH4 
+               CALL adv_x( zdt , zudy , 0._wp , zarea , z0icenh4 , sxicenh4 , sxxicenh4 , syicenh4 , syyicenh4 , sxyicenh4 )
             ENDIF
             !
          ENDIF
@@ -316,6 +330,10 @@ CONTAINS
          IF ( ln_csib ) THEN
             CALL lbc_lnk( 'icedyn_adv_pra', z0icedia , 'T', 1._wp, sxicedia , 'T', -1._wp, syicedia , 'T', -1._wp  & ! ice algae
                &                          , sxxicedia, 'T', 1._wp, syyicedia, 'T',  1._wp, sxyicedia, 'T',  1._wp  )
+            CALL lbc_lnk( 'icedyn_adv_pra', z0iceno3 , 'T', 1._wp, sxiceno3 , 'T', -1._wp, syiceno3 , 'T', -1._wp  & ! ice NO3
+               &                          , sxxiceno3, 'T', 1._wp, syyiceno3, 'T',  1._wp, sxyiceno3, 'T',  1._wp  )
+            CALL lbc_lnk( 'icedyn_adv_pra', z0icenh4 , 'T', 1._wp, sxicenh4 , 'T', -1._wp, syicenh4 , 'T', -1._wp  & ! ice NH4
+               &                          , sxxicenh4, 'T', 1._wp, syyicenh4, 'T',  1._wp, sxyicenh4, 'T',  1._wp  )
          ENDIF
 
          ! --- Recover the properties from their contents --- !
@@ -340,6 +358,8 @@ CONTAINS
             ENDIF
             IF ( ln_csib ) THEN
                picedia_gca(:,:,jl) = z0icedia(:,:,jl) * r1_e1e2t(:,:) * tmask(:,:,1)
+               piceno3_gca(:,:,jl) = z0iceno3(:,:,jl) * r1_e1e2t(:,:) * tmask(:,:,1)
+               picenh4_gca(:,:,jl) = z0icenh4(:,:,jl) * r1_e1e2t(:,:) * tmask(:,:,1)
             ENDIF
          END DO
          !
@@ -944,7 +964,10 @@ CONTAINS
          &      sxap (jpi,jpj,jpl) , syap (jpi,jpj,jpl) , sxxap (jpi,jpj,jpl) , syyap (jpi,jpj,jpl) , sxyap (jpi,jpj,jpl) ,   &
          &      sxvp (jpi,jpj,jpl) , syvp (jpi,jpj,jpl) , sxxvp (jpi,jpj,jpl) , syyvp (jpi,jpj,jpl) , sxyvp (jpi,jpj,jpl) ,   &
          &      sxvl (jpi,jpj,jpl) , syvl (jpi,jpj,jpl) , sxxvl (jpi,jpj,jpl) , syyvl (jpi,jpj,jpl) , sxyvl (jpi,jpj,jpl) ,   &
+         !
          &      sxicedia(jpi,jpj,jpl) , syicedia(jpi,jpj,jpl) , sxxicedia(jpi,jpj,jpl) , syyicedia(jpi,jpj,jpl) , sxyicedia(jpi,jpj,jpl) ,   &
+         &      sxiceno3(jpi,jpj,jpl) , syiceno3(jpi,jpj,jpl) , sxxiceno3(jpi,jpj,jpl) , syyiceno3(jpi,jpj,jpl) , sxyiceno3(jpi,jpj,jpl) ,   &
+         &      sxicenh4(jpi,jpj,jpl) , syicenh4(jpi,jpj,jpl) , sxxicenh4(jpi,jpj,jpl) , syyicenh4(jpi,jpj,jpl) , sxyicenh4(jpi,jpj,jpl) ,   &
          !
          &      sxc0 (jpi,jpj,nlay_s,jpl) , syc0 (jpi,jpj,nlay_s,jpl) , sxxc0(jpi,jpj,nlay_s,jpl) , &
          &      syyc0(jpi,jpj,nlay_s,jpl) , sxyc0(jpi,jpj,nlay_s,jpl)                             , &
@@ -1087,6 +1110,18 @@ CONTAINS
                CALL iom_get( numrir, jpdom_auto, 'sxxicedia', sxxicedia )
                CALL iom_get( numrir, jpdom_auto, 'syyicedia', syyicedia )
                CALL iom_get( numrir, jpdom_auto, 'sxyicedia', sxyicedia )
+               ! ice no3
+               CALL iom_get( numrir, jpdom_auto, 'sxiceno3' , sxiceno3 , psgn = -1._wp )
+               CALL iom_get( numrir, jpdom_auto, 'syiceno3' , syiceno3 , psgn = -1._wp )
+               CALL iom_get( numrir, jpdom_auto, 'sxxiceno3', sxxiceno3 )
+               CALL iom_get( numrir, jpdom_auto, 'syyiceno3', syyiceno3 )
+               CALL iom_get( numrir, jpdom_auto, 'sxyiceno3', sxyiceno3 )
+               ! ice nh4
+               CALL iom_get( numrir, jpdom_auto, 'sxicenh4' , sxicenh4 , psgn = -1._wp )
+               CALL iom_get( numrir, jpdom_auto, 'syicenh4' , syicenh4 , psgn = -1._wp )
+               CALL iom_get( numrir, jpdom_auto, 'sxxicenh4', sxxicenh4 )
+               CALL iom_get( numrir, jpdom_auto, 'syyicenh4', syyicenh4 )
+               CALL iom_get( numrir, jpdom_auto, 'sxyicenh4', sxyicenh4 )
             ENDIF
             !
          ELSE                                   !**  start rheology from rest  **!
@@ -1109,6 +1144,8 @@ CONTAINS
             ENDIF
             IF ( ln_csib ) THEN
                sxicedia = 0._wp   ;   syicedia = 0._wp   ;   sxxicedia = 0._wp   ;   syyicedia = 0._wp   ;   sxyicedia = 0._wp      ! ice diatoms
+               sxiceno3 = 0._wp   ;   syiceno3 = 0._wp   ;   sxxiceno3 = 0._wp   ;   syyiceno3 = 0._wp   ;   sxyiceno3 = 0._wp      ! ice no3
+               sxicenh4 = 0._wp   ;   syicenh4 = 0._wp   ;   sxxicenh4 = 0._wp   ;   syyicenh4 = 0._wp   ;   sxyicenh4 = 0._wp      ! ice nh4
             ENDIF
          ENDIF
          !
@@ -1204,11 +1241,24 @@ CONTAINS
          ENDIF
 
          IF( ln_csib ) THEN
+            ! ice diatoms
             CALL iom_rstput( iter, nitrst, numriw, 'sxicedia' , sxicedia  )
             CALL iom_rstput( iter, nitrst, numriw, 'syicedia' , syicedia  )
             CALL iom_rstput( iter, nitrst, numriw, 'sxxicedia', sxxicedia )
             CALL iom_rstput( iter, nitrst, numriw, 'syyicedia', syyicedia )
             CALL iom_rstput( iter, nitrst, numriw, 'sxyicedia', sxyicedia )
+            ! ice no3
+            CALL iom_rstput( iter, nitrst, numriw, 'sxiceno3' , sxiceno3  )
+            CALL iom_rstput( iter, nitrst, numriw, 'syiceno3' , syiceno3  )
+            CALL iom_rstput( iter, nitrst, numriw, 'sxxiceno3', sxxiceno3 )
+            CALL iom_rstput( iter, nitrst, numriw, 'syyiceno3', syyiceno3 )
+            CALL iom_rstput( iter, nitrst, numriw, 'sxyiceno3', sxyiceno3 )
+            ! ice nh4
+            CALL iom_rstput( iter, nitrst, numriw, 'sxicenh4' , sxicenh4  )
+            CALL iom_rstput( iter, nitrst, numriw, 'syicenh4' , syicenh4  )
+            CALL iom_rstput( iter, nitrst, numriw, 'sxxicenh4', sxxicenh4 )
+            CALL iom_rstput( iter, nitrst, numriw, 'syyicenh4', syyicenh4 )
+            CALL iom_rstput( iter, nitrst, numriw, 'sxyicenh4', sxyicenh4 )
          ENDIF
          !
       ENDIF

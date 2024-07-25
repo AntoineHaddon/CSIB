@@ -31,7 +31,7 @@ MODULE iceitd
    USE timing         ! Timing
 
    USE par_trc , ONLY : ln_csib                          ! flag to use ice BGC
-   USE trcsms_csib , ONLY : icedia_gca, icediagca_2d     ! ice BGC variables
+   USE trcsms_csib , ONLY : icedia_gca, icediagca_2d, iceno3_gca, iceno3gca_2d, icenh4_gca, icenh4gca_2d     ! ice BGC variables
 
    IMPLICIT NONE
    PRIVATE
@@ -443,6 +443,8 @@ CONTAINS
       CALL tab_2d_1d( npti, nptidx(1:npti), rn_amax_1d(1:npti), rn_amax_2d )
       IF ( ln_csib ) THEN
          CALL tab_3d_2d( npti, nptidx(1:npti), icediagca_2d(1:npti,1:jpl), icedia_gca(:,:,:) )
+         CALL tab_3d_2d( npti, nptidx(1:npti), iceno3gca_2d(1:npti,1:jpl), iceno3_gca(:,:,:) )
+         CALL tab_3d_2d( npti, nptidx(1:npti), icenh4gca_2d(1:npti,1:jpl), icenh4_gca(:,:,:) )
       ENDIF
 
       !----------------------------------------------------------------------------------------------
@@ -517,6 +519,14 @@ CONTAINS
                   ztrans               = icediagca_2d(ji,jl1) * zworka(ji)     ! Ice algae
                   icediagca_2d(ji,jl1) = icediagca_2d(ji,jl1) - ztrans
                   icediagca_2d(ji,jl2) = icediagca_2d(ji,jl2) + ztrans
+                  !
+                  ztrans               = iceno3gca_2d(ji,jl1) * zworka(ji)     ! Ice no3
+                  iceno3gca_2d(ji,jl1) = iceno3gca_2d(ji,jl1) - ztrans
+                  iceno3gca_2d(ji,jl2) = iceno3gca_2d(ji,jl2) + ztrans
+                  !
+                  ztrans               = icenh4gca_2d(ji,jl1) * zworka(ji)     ! Ice nh4
+                  icenh4gca_2d(ji,jl1) = icenh4gca_2d(ji,jl1) - ztrans
+                  icenh4gca_2d(ji,jl2) = icenh4gca_2d(ji,jl2) + ztrans
                ENDIF
                !
             ENDIF   ! jl1 >0
@@ -564,6 +574,8 @@ CONTAINS
       CALL ice_var_roundoff( a_i_2d, v_i_2d, v_s_2d, sv_i_2d, oa_i_2d, a_ip_2d, v_ip_2d, v_il_2d, ze_s_2d, ze_i_2d )
       IF( ln_csib ) THEN
          WHERE( icediagca_2d(1:npti,:) < 0._wp )    icediagca_2d(1:npti,:)   = 0._wp   ! ice algae must be >= 0
+         WHERE( iceno3gca_2d(1:npti,:) < 0._wp )    iceno3gca_2d(1:npti,:)   = 0._wp   ! ice no3 must be >= 0
+         WHERE( icenh4gca_2d(1:npti,:) < 0._wp )    icenh4gca_2d(1:npti,:)   = 0._wp   ! ice nh4 must be >= 0
       ENDIF
 
       ! at_i must be <= rn_amax
@@ -608,6 +620,8 @@ CONTAINS
       END DO
       IF ( ln_csib ) THEN
          CALL tab_2d_3d( npti, nptidx(1:npti), icediagca_2d(1:npti,1:jpl), icedia_gca(:,:,:) )
+         CALL tab_2d_3d( npti, nptidx(1:npti), iceno3gca_2d(1:npti,1:jpl), iceno3_gca(:,:,:) )
+         CALL tab_2d_3d( npti, nptidx(1:npti), icenh4gca_2d(1:npti,1:jpl), icenh4_gca(:,:,:) )
       ENDIF
 
       !

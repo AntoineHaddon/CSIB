@@ -52,32 +52,55 @@ CONTAINS
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~'
       
       IF( .NOT. ln_rsttr ) THEN
-         icedia(:,:,:)=1._wp
+         icedia(:,:,:)=0._wp
+         iceno3(:,:,:)=0._wp
+         icenh4(:,:,:)=0._wp
          
          ! init from ocean surface diatoms
          ! icedia(:,:,:) = tr(:,:,1,jrdia,Kmm)
          
-         ! ! init with constant value where latitude > 85
+         ! init with constant value where latitude > ...
          ! WHERE( gphit(:,:) > 85._wp )   ;   icedia(:,:,3)=1._wp
          ! ELSEWHERE                     ;   icedia(:,:,3)=0._wp
          ! END WHERE
 
+         ! WHERE( gphit(:,:)>75._wp .AND. gphit(:,:)<80._wp .AND. glamt(:,:)>100._wp .AND. glamt(:,:)<150._wp )  
+         !    iceno3(:,:,2)=1._wp
+         ! END WHERE
+         ! WHERE( gphit(:,:)>70._wp .AND. gphit(:,:)<75._wp .AND. glamt(:,:)>-160._wp .AND. glamt(:,:)<-130._wp )  
+         !    icenh4(:,:,2)=1._wp
+         ! END WHERE
+
          icedia_gca(:,:,:) = icedia(:,:,:) * a_i(:,:,:)
+         iceno3_gca(:,:,:) = iceno3(:,:,:) * a_i(:,:,:)
+         icenh4_gca(:,:,:) = icenh4(:,:,:) * a_i(:,:,:)
       ENDIF
 
-      ! initialize fluxes
-      flushrate(:,:,:)=0._wp
-      flush_dia(:,:,:)=0._wp
-      lamloss_dia(:,:,:)=0._wp
-      bogup(:,:,:)=0._wp
-      bogup_dia(:,:,:)=0._wp
+      ! initialize fluxes and process rates
+      flushrate(:,:,:) = 0._wp
+      bogup(:,:,:) = 0._wp
       lagup(:,:,:) = 0._wp
-      lagup_dia(:,:,:)=0._wp
 
-      ! initialize BGC process
-      growth_dia(:,:,:)=0._wp
-      lim_lig(:,:,:)=0._wp
+      flush_dia(:,:,:) = 0._wp
+      lamloss_dia(:,:,:) = 0._wp
+      bogup_dia(:,:,:) = 0._wp
+      lagup_dia(:,:,:) = 0._wp
       
+      growth_dia(:,:,:) = 0._wp
+      lim_lig(:,:,:) = 0._wp
+
+      flush_no3(:,:,:) = 0._wp
+      lamloss_no3(:,:,:) = 0._wp
+      moldif_no3(:,:,:) = 0._wp
+      lagup_no3(:,:,:) = 0._wp
+
+      flush_nh4(:,:,:) = 0._wp
+      lamloss_nh4(:,:,:) = 0._wp
+      moldif_nh4(:,:,:) = 0._wp
+      lagup_nh4(:,:,:) = 0._wp
+      
+      fric_vel(:,:) = 0._wp
+
       !
    END SUBROUTINE trc_ini_csib
 

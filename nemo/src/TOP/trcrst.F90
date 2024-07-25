@@ -148,6 +148,10 @@ CONTAINS
       IF ( ln_csib ) THEN ! ice BC tracers
          CALL iom_get( numrtr, jpdom_auto, 'icedia', icedia(:,:,:) )
          icedia_gca(:,:,:) = icedia(:,:,:) * a_i(:,:,:)
+         CALL iom_get( numrtr, jpdom_auto, 'iceno3', iceno3(:,:,:) )
+         iceno3_gca(:,:,:) = iceno3(:,:,:) * a_i(:,:,:)
+         CALL iom_get( numrtr, jpdom_auto, 'icenh4', icenh4(:,:,:) )
+         icenh4_gca(:,:,:) = icenh4(:,:,:) * a_i(:,:,:)
       ENDIF
       !
       IF(.NOT.lrxios) CALL iom_delay_rst( 'READ', 'TOP', numrtr )   ! read only TOP delayed global communication variables
@@ -178,6 +182,8 @@ CONTAINS
       
       IF ( ln_csib ) THEN ! ice BC tracers
          CALL iom_rstput( kt, nitrst, numrtw, 'icedia', icedia(:,:,:) )
+         CALL iom_rstput( kt, nitrst, numrtw, 'iceno3', iceno3(:,:,:) )
+         CALL iom_rstput( kt, nitrst, numrtw, 'icenh4', icenh4(:,:,:) )
       ENDIF
 
       IF( .NOT. lwxios ) CALL iom_delay_rst( 'WRITE', 'TOP', numrtw )   ! save only TOP delayed global communication variables

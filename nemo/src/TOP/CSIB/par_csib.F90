@@ -15,10 +15,7 @@ MODULE par_csib
    IMPLICIT NONE
    PUBLIC
    
-   REAL(wp), SAVE ::   z_ia = 0.03_wp                    ! height of skeletal layer
-   REAL(wp), SAVE ::   r_pp = 2.0_wp                     ! ratio of photosynthetic parameters (W m-2)-1
-   REAL(wp), SAVE ::   mu_max = 0.85_wp / 86400._wp      ! Maximum specific growth rate  (d)-1
-
+   
 
    !!======================================================================
 END MODULE par_csib
