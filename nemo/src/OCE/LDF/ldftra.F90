@@ -598,8 +598,6 @@ CONTAINS
             CALL iom_get  ( inum, jpdom_global, 'aeiu', aeiu(:,:,1), cd_type = 'U', psgn = 1._wp )
             CALL iom_get  ( inum, jpdom_global, 'aeiv', aeiv(:,:,1), cd_type = 'V', psgn = 1._wp )
             CALL iom_close( inum )
-            CALL iom_put( "aeiu_2d", aeiu(:,:,1) )   ! surface u-EIV coeff.
-            CALL iom_put( "aeiv_2d", aeiv(:,:,1) )   ! surface v-EIV coeff.
             DO jk = 2, jpkm1
                aeiu(:,:,jk) = aeiu(:,:,1)
                aeiv(:,:,jk) = aeiv(:,:,1)
@@ -825,6 +823,10 @@ CONTAINS
          pw(ji,jj,jk) = pw(ji,jj,jk) + (  zpsi_uw(ji,jj,jk) - zpsi_uw(ji-1,jj  ,jk)   &
             &                           + zpsi_vw(ji,jj,jk) - zpsi_vw(ji  ,jj-1,jk) )
       END_3D
+      IF( .NOT.l_ldfeiv_time ) THEN
+         CALL iom_put( "aeiu_2d", aeiu(:,:,1) )   ! surface u-EIV coeff.
+         CALL iom_put( "aeiv_2d", aeiv(:,:,1) )   ! surface v-EIV coeff.
+      ENDIF
       !
       !                              ! diagnose the eddy induced velocity and associated heat transport
       IF( ln_ldfeiv_dia .AND. cdtype == 'TRA' )   CALL ldf_eiv_dia( zpsi_uw, zpsi_vw, Kmm )
