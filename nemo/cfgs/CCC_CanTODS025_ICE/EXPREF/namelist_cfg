@@ -146,7 +146,7 @@
    !                    !  bulk algorithm :
    ln_NCAR    = .true.     ! "NCAR"      algorithm   (Large and Yeager 2008)
 
-   cn_dir = './forcing/atmforcing/'  !  root directory for the bulk data location
+   cn_dir = './'  !  root directory for the bulk data location
    !___________!_________________________!___________________!___________!_____________!________!___________!______________________________________!__________!_______________!
    !           !  file name              ! frequency (hours) ! variable  ! time interp.!  clim  ! 'yearly'/ !          weights filename            ! rotation ! land/sea mask !
    !           !                         !  (if <0  months)  !   name    !   (logical) !  (T/F) ! 'monthly' !                                      ! pairing  !    filename   !
@@ -219,7 +219,7 @@
    !           !                         !  (if <0  months)  !   name    !   (logical) !  (T/F) ! 'monthly' !                  ! pairing  !    filename   !
    sn_sst      = 'sst_data'              ,        -1.        , 'temperature', .true.   , .true. , 'yearly'  ,    ''            ,    ''    ,     ''
    sn_sss      = 'sss_data'              ,        -1.        , 'salinity',    .true.   , .true. , 'yearly'  ,    ''            ,    ''    ,     ''
-
+/
 !-----------------------------------------------------------------------
 &namsbc_rnf    !   runoffs                                              (ln_rnf =T)
 !-----------------------------------------------------------------------
@@ -254,7 +254,7 @@
 !-----------------------------------------------------------------------
 &namberg       !   iceberg parameters                                   (default: OFF)
 !-----------------------------------------------------------------------
-  ln_icebergs = false.
+  ln_icebergs = .false.
   ln_use_calving = .false.
 
    cn_dir = './'  !  root directory for the location of drag coefficient files
@@ -330,7 +330,7 @@
     rn_time_dmp   =  1.0, 1.0             ! Damping time scale in days
     rn_time_dmp_out =  10.0, 10.0         ! Outflow damping time scale
     nn_rimwidth = 10, 10                  !  width of the relaxation zone
-    ln_vol        = .false.                !  total volume correction (see nn_volctl parameter)
+    ln_vol        = .true.                !  total volume correction (see nn_volctl parameter)
     nn_volctl     = 0                     !  = 0, the total water flux across open boundaries is zero
 /
 !-----------------------------------------------------------------------
@@ -413,7 +413,7 @@
 !-----------------------------------------------------------------------
 &namdrg_top    !   TOP friction                                         (ln_drg_OFF =F & ln_isfcav=T)
 !-----------------------------------------------------------------------
-   rn_Cd0      =  1.e-3    !  drag coefficient [-]
+   rn_Cd0      =  4.e-4    !  drag coefficient [-]
    rn_Uc0      =  0.4      !  ref. velocity [m/s] (linear drag=Cd0*Uc0)
    rn_Cdmax    =  0.1      !  drag value maximum [-] (logarithmic drag)
    rn_ke0      =  2.5e-3   !  background kinetic energy  [m2/s2] (non-linear cases)
@@ -424,11 +424,11 @@
 !-----------------------------------------------------------------------
 &namdrg_bot    !   BOTTOM friction                                      (ln_drg_OFF =F)
 !-----------------------------------------------------------------------
-   rn_Cd0      =  7.5e-3    !  drag coefficient [-]
+   rn_Cd0      =  4.e-4    !  drag coefficient [-]
    rn_Uc0      =  0.4      !  ref. velocity [m/s] (linear drag=Cd0*Uc0)
    rn_Cdmax    =  1.e-1      !  drag value maximum [-] (logarithmic drag)
    rn_ke0      =  2.5e-3   !  background kinetic energy  [m2/s2] (non-linear cases)
-   rn_z0       =  0.07    !  roughness [m] (ln_loglayer=T)
+   rn_z0       =  0.003    !  roughness [m] (ln_loglayer=T)
    ln_boost    = .false.   !  =T regional boost of Cd0 ; =F constant
       rn_boost =  50.         !  local boost factor  [-]
 /
@@ -570,10 +570,10 @@
 !-----------------------------------------------------------------------
 &namdyn_ldf    !   lateral diffusion on momentum                        (default: NO selection)
 !-----------------------------------------------------------------------
-   ln_dynldf_lap =  .true.     !    laplacian operator
-   ln_dynldf_blp  =  .false.   !  bilaplacian operator
-   ln_dynldf_lev =  .true.     !  iso-level
-   ln_dynldf_hor = .false.     !  horizontal  (geopotential)
+   ln_dynldf_lap =  .false.     !    laplacian operator
+   ln_dynldf_blp  =  .true.   !  bilaplacian operator
+   ln_dynldf_lev =  .false.     !  iso-level
+   ln_dynldf_hor = .true.     !  horizontal  (geopotential)
    nn_ahm_ijk_t  =  20         !  =-30  3D coeff. read in eddy_diffusivity_3D.nc
                                !  = 20  F(i,j)=F(grid spacing)=c2d
 /
@@ -626,10 +626,11 @@
       !                       !                 = 1 bounded by the local vertical scale factor
       !                       !                 = 2 first vertical derivative of mixing length bounded by 1
       !                       !                 = 3 as =2 with distinct dissipative an mixing length scale
-      nn_etau     =   0       !  penetration of tke below the mixed layer (ML) due to NIWs
+      nn_etau     =   1       !  penetration of tke below the mixed layer (ML) due to NIWs
                                !        = 0 none ; = 1 add a tke source below the ML
                                !        = 2 add a tke source just at the base of the ML
                                !        = 3 as = 1 applied on HF part of the stress           (ln_cpl=T)
+      nn_htau     =   0       !  type of exponential decrease of tke
 /
 !-----------------------------------------------------------------------
 &namzdf_iwm    !    internal wave-driven mixing parameterization        (ln_zdfiwm =T)
@@ -641,7 +642,7 @@
 &namzdf_tmx    !   tidal mixing parameterization                        ("ln_zdftmx = T")
 !-----------------------------------------------------------------------
    rn_htmx     = 500.      !  vertical decay scale for turbulence (meters)
-   rn_n2min    = 1.e-20    !  threshold of the Brunt-Vaisala frequency (s-1)
+   rn_n2min    = 1.e-8     !  threshold of the Brunt-Vaisala frequency (s-1)
    rn_tfe      = 0.333     !  tidal dissipation efficiency
    rn_me       = 0.2       !  mixing efficiency
    ln_tmx_itf  = .false.    !  ITF specific parameterisation
