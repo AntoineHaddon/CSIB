@@ -91,6 +91,9 @@ echo "#################### Start NEMO pre-processing #################"
     acc_cp snow.nc             ${nemo_snow}
 	acc_cp slp.nc              ${nemo_slp}
 	acc_cp apr.nc              ${nemo_apr}
+  elif [[ $config == "OMIP" ]] && [[ $runmode == "CanTODS" ]]; then
+# JGI - need to modify
+      # CanTODS setup
 
   else # all the OMIP runmode (e.g. omip1 ) 
       # loop the forching for yyyy-1  to  yyyy+1  to do the interpolation with dec 31st of yyyy-1 and Jan 1st yyyy+1
