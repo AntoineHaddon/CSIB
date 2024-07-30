@@ -355,12 +355,12 @@
 !-----------------------------------------------------------------------
 !              !  file name                    ! frequency (hours) ! variable   ! time interp.   !  clim   ! 'yearly'/ ! weights  ! rotation ! land/sea mask !
 !              !                               !  (if <0  months)  !   name     !   (logical)    !  (T/F ) ! 'monthly' ! filename ! pairing  ! filename      !
-   bn_ssh  =    'CREG025_GLORYS2V4_north'  ,  -1.0             , 'sossheig' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
-   bn_u3d  =    'CREG025_GLORYS2V4_north'    ,  -1.0             , 'vozocrtx' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
-   bn_v3d  =    'CREG025_GLORYS2V4_north'    ,  -1.0             , 'vomecrty' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
-   bn_tem  =    'CREG025_GLORYS2V4_north'   ,  -1.0             , 'votemper' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
-   bn_sal  =    'CREG025_GLORYS2V4_north'   ,  -1.0             , 'vosaline' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
-   cn_dir  =    'forcing/'
+   bn_ssh  =    'glorys2v4_north'   ,  -1.0             , 'sossheig' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
+   bn_u3d  =    'glorys2v4_north'   ,  -1.0             , 'vozocrtx' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
+   bn_v3d  =    'glorys2v4_north'   ,  -1.0             , 'vomecrty' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
+   bn_tem  =    'glorys2v4_north'   ,  -1.0             , 'votemper' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
+   bn_sal  =    'glorys2v4_north'   ,  -1.0             , 'vosaline' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
+   cn_dir  =    './'
    ln_full_vel = .true.
 /
 !-----------------------------------------------------------------------
@@ -368,24 +368,24 @@
 !-----------------------------------------------------------------------
 !              !  file name                    ! frequency (hours) ! variable   ! time interp.   !  clim   ! 'yearly'/ ! weights  ! rotation ! land/sea mask !
 !              !                               !  (if <0  months)  !   name     !   (logical)    !  (T/F ) ! 'monthly' ! filename ! pairing  ! filename      !
-   bn_ssh  =    'CREG025_GLORYS2V4_south'  ,   -1.0            , 'sossheig' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
-   bn_u3d  =    'CREG025_GLORYS2V4_south'    ,   -1.0            , 'vozocrtx' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
-   bn_v3d  =    'CREG025_GLORYS2V4_south'    ,   -1.0            , 'vomecrty' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
-   bn_tem  =    'CREG025_GLORYS2V4_south'   ,   -1.0            , 'votemper' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
-   bn_sal  =    'CREG025_GLORYS2V4_south'   ,   -1.0            , 'vosaline' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
-   cn_dir  =    'forcing/'
+   bn_ssh  =    'glorys2v4_south'   ,   -1.0            , 'sossheig' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
+   bn_u3d  =    'glorys2v4_south'   ,   -1.0            , 'vozocrtx' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
+   bn_v3d  =    'glorys2v4_south'   ,   -1.0            , 'vomecrty' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
+   bn_tem  =    'glorys2v4_south'   ,   -1.0            , 'votemper' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
+   bn_sal  =    'glorys2v4_south'   ,   -1.0            , 'vosaline' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
+   cn_dir  =    './'
    ln_full_vel = .true.
 /
 !-----------------------------------------------------------------------
 &nambdy_tide     ! tidal forcing at open boundaries
 !-----------------------------------------------------------------------
-   filtide          = 'forcing/OSUtide'  !  file name root of tidal forcing files
+   filtide          = 'osutide_north'  !  file name root of tidal forcing files
    ln_bdytide_2ddta = .true.
 /
 !-----------------------------------------------------------------------
 &nambdy_tide     ! tidal forcing at open boundaries
 !-----------------------------------------------------------------------
-   filtide          = 'forcing/OSUtide'  !  file name root of tidal forcing files
+   filtide          = 'osutide_south'  !  file name root of tidal forcing files
    ln_bdytide_2ddta = .true.
 /
 
