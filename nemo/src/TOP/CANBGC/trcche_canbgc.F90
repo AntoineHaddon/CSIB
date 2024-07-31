@@ -40,6 +40,7 @@ MODULE trcche_canbgc
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   K0O2
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   ::   qh2co3
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qco3
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qomegac
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) ::   qaksp
 
 ! Constants and conversion factors
@@ -63,8 +64,10 @@ MODULE trcche_canbgc
    REAL(wp) ::   rgas   = 83.143         ! universal gas constants
    REAL(wp) ::   oxyco  = 1. / 22.4144   ! converts from liters of an ideal gas to moles
 
-   REAL(wp) ::   bor1   = 0.000232       ! qborat constants
+   REAL(wp) ::   bor1   = 0.000232       ! constants for calculating borate concentration
    REAL(wp) ::   bor2   = 1. / 10.811
+
+   REAL(wp) ::   calcium = 1.03e-2       ! calcium fraction of sea salt
 
    REAL(wp) ::   ca0    = -160.7333   ! WEISS & PRICE 1980, units mol/(kg atm)
    REAL(wp) ::   ca1    =  215.4152
@@ -372,7 +375,7 @@ CONTAINS
       INTEGER, INTENT( in ) ::   kt      ! ocean time-step index
       INTEGER, INTENT(in) ::   Kmm  ! time level indices
       INTEGER  ::   ji, jj, jk, jm
-      REAL(wp) ::   zph, zah2, zbot, zdic, zcalk, ztalk, zfact
+      REAL(wp) ::   zph, zah2, zbot, zdic, zcalk, ztalk, zfact, zcalcon
       REAL(wp) ::   zpo4, zsi
       REAL(wp) ::   zak1, zak2, zakb, zakw, zakp1, zakp2, zakp3, zaksi
       REAL(wp) ::   ztmas, ztmas1
@@ -427,6 +430,9 @@ CONTAINS
                   hi(ji,jj,jk) = zah2 * zfact
                ! calculate [CO3--] and [H+] for export to other SR's
                   qco3(ji,jj,jk) = zcalk / ( 2. + zah2 / zak2 )     ! no conversion to mol L^-1 as it is not applied to Ksp
+                  zcalcon  = calcium * ( ts(ji,jj,jk,jp_sal,Kmm) / 35._wp )
+                  zfact    = rhop(ji,jj,jk) / 1000._wp
+                  qomegac(ji,jj,jk) = ( zcalcon * qco3(ji,jj,jk) * zfact ) / qaksp(ji,jj,jk)
                   qhi(ji,jj,jk) = hi(ji,jj,jk)     ! OR Jan 19th 2023
 
                END DO
@@ -713,14 +719,14 @@ CONTAINS
       !!----------------------------------------------------------------------
       !!                     ***  ROUTINE trc_che_alloc  ***
       !!----------------------------------------------------------------------
-      INTEGER ::   ierr(5)        ! Local variables
+      INTEGER ::   ierr(6)        ! Local variables
       !!----------------------------------------------------------------------
 
       ierr(:)=0
 
       ALLOCATE( K0CO2 (jpi,jpj),    K0O2 (jpi,jpj),    & 
               & qh2co3(jpi,jpj),    qco3(jpi,jpj,jpk), & 
-              & qaksp(jpi,jpj,jpk),     STAT=ierr(1) )
+              & qaksp(jpi,jpj,jpk), qomegac(jpi,jpj,jpk),    STAT=ierr(1) )
       !
       trc_che_alloc = MAXVAL( ierr )
 
