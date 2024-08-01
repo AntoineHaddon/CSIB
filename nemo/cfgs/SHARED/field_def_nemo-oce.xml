@@ -626,7 +626,7 @@ that are available in the tidal-forcing implementation (see
     <field id="ahtu_3d"      long_name="time-varying 3D u-eddy diffusivity coefficient"        unit="m2/s or m4/s"      grid_ref="grid_U_3D"/>
     <!-- u-eddy diffusivity coefficients (invariant, available if l_ldftra_time = .FALSE.) -->
     <field id="ahtuc_2d"     long_name="invariant surface u-eddy diffusivity coefficient"      unit="m2/s or m4/s" />
-    <field id="ahtuc_3d"     long_name="invariant 3D u-EIV coefficient"                        unit="m2/s or m4/s"      grid_ref="grid_U_3D"/>    
+    <field id="ahtuc_3d"     long_name="invariant 3D u-eddy diffusivity coefficient"           unit="m2/s or m4/s"      grid_ref="grid_U_3D"/>    
     <!-- u-eiv diffusivity coefficients (time-verying, available if ln_ldfeiv=T) -->
     <field id="aeiu_2d"      long_name=" time-verying surface u-EIV coefficient"   unit="m2/s" />
     <field id="aeiu_3d"      long_name=" time-verying 3D u-EIV coefficient"        unit="m2/s"              grid_ref="grid_U_3D"/>
