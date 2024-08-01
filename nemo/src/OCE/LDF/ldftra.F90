@@ -824,8 +824,8 @@ CONTAINS
             &                           + zpsi_vw(ji,jj,jk) - zpsi_vw(ji  ,jj-1,jk) )
       END_3D
       IF( .NOT.l_ldfeiv_time ) THEN
-         CALL iom_put( "aeiu_2d", aeiu(:,:,1) )   ! surface u-EIV coeff.
-         CALL iom_put( "aeiv_2d", aeiv(:,:,1) )   ! surface v-EIV coeff.
+         CALL iom_put( "aeiuc_2d", aeiu(:,:,1) )   ! surface u-EIV coeff.
+         CALL iom_put( "aeivc_2d", aeiv(:,:,1) )   ! surface v-EIV coeff.
       ENDIF
       !
       !                              ! diagnose the eddy induced velocity and associated heat transport
