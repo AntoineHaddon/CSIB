@@ -77,10 +77,10 @@ CONTAINS
 
       ! Output invariant ahmt & ahmf
       IF( .NOT. l_ldfdyn_time ) THEN
-         CALL iom_put("ahmt_2d", ahmt(:,:,1) )   ! surface u-eddy diffusivity coeff.
-         CALL iom_put("ahmt_3d", ahmt(:,:,:) )   ! 3D      u-eddy diffusivity coeff.
-         CALL iom_put("ahmf_2d", ahmf(:,:,1) )   ! surface v-eddy diffusivity coeff.
-         CALL iom_put("ahmf_3d", ahmf(:,:,:) )   ! 3D      v-eddy diffusivity coeff.
+         CALL iom_put("ahmtc_2d", ahmt(:,:,1) )   ! surface u-eddy diffusivity coeff.
+         CALL iom_put("ahmtc_3d", ahmt(:,:,:) )   ! 3D      u-eddy diffusivity coeff.
+         CALL iom_put("ahmfc_2d", ahmf(:,:,1) )   ! surface v-eddy diffusivity coeff.
+         CALL iom_put("ahmfc_3d", ahmf(:,:,:) )   ! 3D      v-eddy diffusivity coeff.
       ENDIF
 
       IF( l_trddyn ) THEN                        ! save the horizontal diffusive trends for further diagnostics
