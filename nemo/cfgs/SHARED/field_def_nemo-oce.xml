@@ -135,9 +135,13 @@ that are available in the tidal-forcing implementation (see
     <field id="ke"          long_name="kinetic energy"          standard_name="specific_kinetic_energy_of_sea_water"   unit="m2/s2"  grid_ref="grid_T_3D" />
     <field id="ke_int"      long_name="vertical integration of kinetic energy"   unit="m3/s2"  grid_ref="grid_T_2D_inner" />
 
-    <!-- t-eddy viscosity coefficients (ldfdyn) -->
-    <field id="ahmt_2d"      long_name=" surface t-eddy viscosity coefficient"   unit="m2/s or m4/s"                      />
-    <field id="ahmt_3d"      long_name=" 3D      t-eddy viscosity coefficient"   unit="m2/s or m4/s"  grid_ref="grid_T_3D"/>
+    <!-- t-eddy viscosity coefficients (ldfdyn, time-varying, available if l_ldfdyn_time = .TRUE.) -->
+    <field id="ahmt_2d"      long_name="time-varying surface t-eddy viscosity coefficient" unit="m2/s or m4/s"                      />
+    <field id="ahmt_3d"      long_name="time-varying      3D t-eddy viscosity coefficient" unit="m2/s or m4/s"  grid_ref="grid_T_3D"/>
+    <!-- t-eddy viscosity coefficients (ldfdyn, invariant, available if l_ldfdyn_time = .FALSE.) ) -->
+    <field id="ahmtc_2d"     long_name="invariant surface t-eddy viscosity coefficient"  unit="m2/s or m4/s"                      />
+    <field id="ahmtc_3d"     long_name="invariant, 3D     t-eddy viscosity coefficient"  unit="m2/s or m4/s"  grid_ref="grid_T_3D"/>
+    
 
     <field id="sst"          long_name="Bulk sea surface temperature"                       standard_name="bulk_sea_surface_temperature"        unit="degC"     />
     <field id="t_skin"       long_name="Skin temperature aka SSST"                          standard_name="skin_temperature"                    unit="degC"     />
@@ -617,12 +621,18 @@ that are available in the tidal-forcing implementation (see
     <field id="ssuww"        long_name="ocean surface wind work along i-axis"                   standard_name="surface_x_wind_work"         unit="N/m*s"                            > utau * ssu </field>
     <!-- AGRIF sponge -->
     <field id="agrif_spu"    long_name=" AGRIF u-sponge coefficient"   unit=" " />
-    <!-- u-eddy diffusivity coefficients (available if ln_traldf_OFF=F) -->
-    <field id="ahtu_2d"      long_name=" surface u-eddy diffusivity coefficient"   unit="m2/s or m4/s" />
-    <field id="ahtu_3d"      long_name=" 3D u-EIV coefficient"                     unit="m2/s or m4/s"      grid_ref="grid_U_3D"/>
-    <!-- u-eiv diffusivity coefficients (available if ln_ldfeiv=F) -->
-    <field id="aeiu_2d"      long_name=" surface u-EIV coefficient"                unit="m2/s" />
-    <field id="aeiu_3d"      long_name=" 3D u-EIV coefficient"                     unit="m2/s"              grid_ref="grid_U_3D"/>
+    <!-- u-eddy diffusivity coefficients (time-varying, available if l_ldftra_time = .TRUE.) -->
+    <field id="ahtu_2d"      long_name="time-varying surface u-eddy diffusivity coefficient"   unit="m2/s or m4/s" />
+    <field id="ahtu_3d"      long_name="time-varying 3D u-EIV coefficient"                     unit="m2/s or m4/s"      grid_ref="grid_U_3D"/>
+    <!-- u-eddy diffusivity coefficients (invariant, available if l_ldftra_time = .FALSE.) -->
+    <field id="ahtuc_2d"     long_name="invariant surface u-eddy diffusivity coefficient"      unit="m2/s or m4/s" />
+    <field id="ahtuc_3d"     long_name="invariant 3D u-EIV coefficient"                        unit="m2/s or m4/s"      grid_ref="grid_U_3D"/>    
+    <!-- u-eiv diffusivity coefficients (time-verying, available if ln_ldfeiv=T) -->
+    <field id="aeiu_2d"      long_name=" time-verying surface u-EIV coefficient"   unit="m2/s" />
+    <field id="aeiu_3d"      long_name=" time-verying 3D u-EIV coefficient"        unit="m2/s"              grid_ref="grid_U_3D"/>
+    <!-- u-eiv diffusivity coefficients (invariant, available if .NOT. l_ldfeiv_time) -->
+    <field id="aeiuc_2d"     long_name=" invariant surface u-EIV coefficient"      unit="m2/s" />
+    <field id="aeiuc_3d"     long_name=" invariant 3D u-EIV coefficient"           unit="m2/s"              grid_ref="grid_U_3D"/>    
 
     <!-- variables available with MLE (ln_mle=T) -->
     <field id="psiu_mle"     long_name="MLE streamfunction along i-axis"   unit="m3/s"   grid_ref="grid_U_3D" />
@@ -677,12 +687,18 @@ that are available in the tidal-forcing implementation (see
     <field id="ssvww"        long_name="ocean surface wind work along j-axis"                   standard_name="surface_y_wind_work"         unit="N/m*s"                            > vtau * ssv </field>
     <!-- AGRIF sponge -->
     <field id="agrif_spv"    long_name=" AGRIF v-sponge coefficient"   unit=" " />
-    <!-- v-eddy diffusivity coefficients (available if ln_traldf_OFF=F) -->
-    <field id="ahtv_2d"      long_name=" surface v-eddy diffusivity coefficient"     unit="m2/s or (m4/s)^1/2" />
-    <field id="ahtv_3d"      long_name=" 3D v-eddy diffusivity coefficient"          unit="m2/s or (m4/s)^1/2"           grid_ref="grid_V_3D"/>
-    <!-- v-eiv diffusivity coefficients (available if ln_ldfeiv=F) -->
-    <field id="aeiv_2d"      long_name=" surface v-EIV coefficient"                  unit="m2/s" />
-    <field id="aeiv_3d"      long_name=" 3D v-EIV coefficient"                       unit="m2/s"                         grid_ref="grid_V_3D" />
+    <!-- v-eddy diffusivity coefficients (time-varying, available if l_ldftra_time = .TRUE.) -->
+    <field id="ahtv_2d"      long_name="time-varying surface v-eddy diffusivity coefficient"  unit="m2/s or (m4/s)^1/2" />
+    <field id="ahtv_3d"      long_name="time-varying 3D v-eddy diffusivity coefficient"       unit="m2/s or (m4/s)^1/2"           grid_ref="grid_V_3D"/>
+    <!-- v-eddy diffusivity coefficients (invariant, available if l_ldftra_time = .FALSE.) -->
+    <field id="ahtvc_2d"     long_name="invariant surface v-eddy diffusivity coefficient"     unit="m2/s or (m4/s)^1/2" />
+    <field id="ahtvc_3d"     long_name="invariant 3D v-eddy diffusivity coefficient"          unit="m2/s or (m4/s)^1/2"           grid_ref="grid_V_3D"/>
+    <!-- v-eiv diffusivity coefficients (time-varying, available if ln_ldfeiv=T) -->
+    <field id="aeiv_2d"      long_name="time-varying surface v-EIV coefficient"      unit="m2/s" />
+    <field id="aeiv_3d"      long_name="time-varying 3D v-EIV coefficient"           unit="m2/s"                         grid_ref="grid_V_3D" />
+    <!-- v-eiv diffusivity coefficients (invariant, available if .NOT. l_ldfeiv_time) -->
+    <field id="aeivc_2d"     long_name="invariant surface v-EIV coefficient"         unit="m2/s" />
+    <field id="aeivc_3d"     long_name="invariant 3D v-EIV coefficient"              unit="m2/s"                         grid_ref="grid_V_3D" />    
 
     <!-- variables available with MLE (ln_mle=T) -->
     <field id="psiv_mle"     long_name="MLE streamfunction along j-axis"   unit="m3/s"   grid_ref="grid_V_3D" />
@@ -796,9 +812,12 @@ that are available in the tidal-forcing implementation (see
 
   <!-- AGRIF sponge -->
   <field id="agrif_spf"    long_name=" AGRIF f-sponge coefficient"   unit=" " />
-  <!-- f-eddy viscosity coefficients (ldfdyn) -->
-  <field id="ahmf_2d"      long_name=" surface f-eddy viscosity coefficient"   unit="m2/s or m4/s" />
-  <field id="ahmf_3d"      long_name=" 3D      f-eddy viscosity coefficient"   unit="m2/s or m4/s"  grid_ref="grid_T_3D"/>
+  <!-- f-eddy viscosity coefficients (ldfdyn, time-varying, available if l_ldfdyn_time = .TRUE.) -->
+  <field id="ahmf_2d"      long_name="time-varying surface f-eddy viscosity coefficient"   unit="m2/s or m4/s" />
+  <field id="ahmf_3d"      long_name="time-varying 3D      f-eddy viscosity coefficient"   unit="m2/s or m4/s"  grid_ref="grid_T_3D"/>
+  <!-- f-eddy viscosity coefficients (ldfdyn, invariant, available if l_ldfdyn_time = .FALSE.) ) -->
+  <field id="ahmfc_2d"     long_name="invariant surface f-eddy viscosity coefficient"   unit="m2/s or m4/s" />
+  <field id="ahmfc_3d"     long_name="invariant 3D      f-eddy viscosity coefficient"   unit="m2/s or m4/s"  grid_ref="grid_T_3D"/>  
 
   <field_group id="scalar"  grid_ref="grid_scalar"  >
     <!-- Need to have a salinity reference climatological file : sali_ref_clim_monthly -->
