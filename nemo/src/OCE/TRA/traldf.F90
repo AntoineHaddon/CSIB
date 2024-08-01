@@ -79,10 +79,10 @@ CONTAINS
 
       ! Output invariant ahtu & ahtv
       IF ( .NOT. l_ldftra_time) THEN
-         CALL iom_put( "ahtu_2d", ahtu(:,:,1) )   ! surface u-eddy diffusivity coeff.
-         CALL iom_put( "ahtv_2d", ahtv(:,:,1) )   ! surface v-eddy diffusivity coeff.
-         CALL iom_put( "ahtu_3d", ahtu(:,:,:) )   ! 3D      u-eddy diffusivity coeff.
-         CALL iom_put( "ahtv_3d", ahtv(:,:,:) )   ! 3D      v-eddy diffusivity coeff.
+         CALL iom_put( "ahtuc_2d", ahtu(:,:,1) )   ! surface u-eddy diffusivity coeff.
+         CALL iom_put( "ahtvc_2d", ahtv(:,:,1) )   ! surface v-eddy diffusivity coeff.
+         CALL iom_put( "ahtuc_3d", ahtu(:,:,:) )   ! 3D      u-eddy diffusivity coeff.
+         CALL iom_put( "ahtvc_3d", ahtv(:,:,:) )   ! 3D      v-eddy diffusivity coeff.
       ENDIF
 
       !
