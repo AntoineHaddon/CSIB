@@ -623,7 +623,7 @@ that are available in the tidal-forcing implementation (see
     <field id="agrif_spu"    long_name=" AGRIF u-sponge coefficient"   unit=" " />
     <!-- u-eddy diffusivity coefficients (time-varying, available if l_ldftra_time = .TRUE.) -->
     <field id="ahtu_2d"      long_name="time-varying surface u-eddy diffusivity coefficient"   unit="m2/s or m4/s" />
-    <field id="ahtu_3d"      long_name="time-varying 3D u-EIV coefficient"                     unit="m2/s or m4/s"      grid_ref="grid_U_3D"/>
+    <field id="ahtu_3d"      long_name="time-varying 3D u-eddy diffusivity coefficient"        unit="m2/s or m4/s"      grid_ref="grid_U_3D"/>
     <!-- u-eddy diffusivity coefficients (invariant, available if l_ldftra_time = .FALSE.) -->
     <field id="ahtuc_2d"     long_name="invariant surface u-eddy diffusivity coefficient"      unit="m2/s or m4/s" />
     <field id="ahtuc_3d"     long_name="invariant 3D u-EIV coefficient"                        unit="m2/s or m4/s"      grid_ref="grid_U_3D"/>    
