@@ -70,7 +70,6 @@
 	      <field field_ref="woce_eiv"    name="woce_eiv" level="0" />  <!-- only rtd -->
 	      <field field_ref="avt"         name="avt"      level="0" />
 	      <field field_ref="av_tmx"         name="av_tmx"      level="0" />
-	      <field field_ref="kgm"         name="kgm"      level="0" />
         </file>
           <!-- CMIP6 variables, started by NL, to be completed -->
         <file id="file15" name_suffix="_grid_T_ar6" description="ocean T grid variables">
