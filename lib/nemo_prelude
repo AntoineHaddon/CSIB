@@ -99,10 +99,7 @@ echo "#################### Start NEMO pre-processing #################"
         [[ $current_year -lt run_start_year || $current_year -gt run_stop_year ]] && continue
 
         yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
-        fy=`expr ${yearc} + ${iaf_year_offset} | awk  '{printf "%04d",$1}'`
-        yd=`expr ${iaf_loop_year} - ${iaf_year_offset}`
-        fyl=`expr ${fy} - '(' '(' ${yearc} - 1 ')' / ${yd} ')' \* ${yd}`           
-        forcing_year=`expr ${fyl} | awk  '{printf "%04d",$1}'`
+        forcing_year=`expr ${current_year} | awk  '{printf "%04d",$1}'`
         acc_cp temp_jra55-do_${yearc}.nc       ${nemo_t}_y${forcing_year}.nc
         acc_cp u_jra55-do_${yearc}.nc          ${nemo_u}_y${forcing_year}.nc
         acc_cp v_jra55-do_${yearc}.nc          ${nemo_v}_y${forcing_year}.nc
