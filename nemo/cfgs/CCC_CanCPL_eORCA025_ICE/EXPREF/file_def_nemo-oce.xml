@@ -48,7 +48,7 @@
           <field field_ref="uoce_eiv"    name="uoce_eiv" level="0" /> <!-- only rtd -->
           <field field_ref="utau"        name="tauuo"    level="0" /> <!-- (Omon*) level = 1 in CMIP6  -->
 	  <field field_ref="e3u"         name="e3u"      level="0" /> <!-- only rtd -->
-	  <field field_ref="aeiu_2d"     name="aeiu2d"   level="0" />
+	  <!-- field field_ref="aeiu_2d"     name="aeiu2d"   level="0" -->
           <field field_ref="ahtuc_2d"    name="ahtuc2d"  level="0" operation="once" />
           <!-- <field field_ref="xatrp"            name="xatrp"         level="2"  /> <!-- (SImon*) <!-- Used for siareaacrossline in diag -->
           <!-- <field field_ref="xmtrpice"         name="xmtrpice"      level="2"  /> <!-- (SImon*) <!-- Used for simassacrossline in diag (i-direction not needed)-->
@@ -59,7 +59,7 @@
           <field field_ref="voce_eiv"    name="voce_eiv" level="0" /> <!-- only rtd -->
           <field field_ref="vtau"        name="tauvo"    level="0" /> <!-- (Omon*) level = 1 in CMIP6  -->
 	  <field field_ref="e3v"         name="e3v"      level="0" /> <!-- only rtd -->
-	  <field field_ref="aeiv_2d"     name="aeiv2d"   level="0" />
+	  <!-- field field_ref="aeiv_2d"     name="aeiv2d"   level="0" -->
           <field field_ref="ahtvc_2d"    name="ahtvc2d"  level="0" operation="once" />
           <field field_ref="yatrp"            name="yatrp"         level="2"  /> <!-- (SImon*) <!-- Used for siareaacrossline in diag -->
           <field field_ref="ymtrpice"         name="ymtrpice"      level="2"  /> <!-- (SImon*) <!-- Used for simassacrossline in diag -->
