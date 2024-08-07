@@ -52,6 +52,7 @@ CONTAINS
       CALL iom_put( 'PHY2c_os'         , tr(:,:,1,jrdia,Kmm) )
       CALL iom_put( 'NO3_os'           , tr(:,:,1,jqno3,Kmm) )
       CALL iom_put( 'NH4_os'           , tr(:,:,1,jrnh4,Kmm) )
+      CALL iom_put( 'NO3_i-NO3_os-cat1'     , iceno3(:,:,1)-tr(:,:,1,jqno3,Kmm) )
 
       ! ! sea ice ocean exchanges
       CALL iom_put( 'flushrate'        , flushrate(:,:,:) )
@@ -80,6 +81,8 @@ CONTAINS
       CALL iom_put( 'moldif_nh4'       , moldif_nh4(:,:,:) )
       CALL iom_put( 'lagup_nh4'        , lagup_nh4(:,:,:) )
       
+      CALL iom_put( 'fric_vel'         , fric_vel(:,:) )
+
 
       ! ! BGC process
       CALL iom_put( 'growth_dia'       , growth_dia(:,:,:) )
