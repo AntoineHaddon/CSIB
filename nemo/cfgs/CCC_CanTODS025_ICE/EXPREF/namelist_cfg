@@ -20,7 +20,7 @@
 &namrun        !   parameters of the run
 !-----------------------------------------------------------------------
   nn_no       =       0   !  Assimilation cycle index
-  cn_exp = "CREG"
+  cn_exp = "CanTODS"
   nn_it000    =    0  !  first time step
   nn_itend    =    52560   !  last  time step (std 5475)
   nn_istate = 0
@@ -64,7 +64,7 @@
 &namcfg        !   parameters of the configuration                      (default: use namusr_def in namelist_cfg)
 !-----------------------------------------------------------------------
    ln_read_cfg = .true.    !  (=T) read the domain configuration file
-   cn_domcfg = "CREG_nemo4_domain"  ! domain configuration filename
+   cn_domcfg = "domain_cfg"  ! domain configuration filename
       !
   ln_closea = .false.
       !                      !  (=T => fill namclo) 
@@ -94,8 +94,8 @@
    !___________!_________________________!___________________!___________!_____________!________!___________!__________________!__________!_______________!
    !           !  file name              ! frequency (hours) ! variable  ! time interp.!  clim  ! 'yearly'/ ! weights filename ! rotation ! land/sea mask !
    !           !                         !  (if <0  months)  !   name    !   (logical) !  (T/F) ! 'monthly' !                  ! pairing  !    filename   !
-  sn_tem =  'glorys2v4-creg025-y2016m01',     -12            ,'votemper',   .false.    , .true. , 'yearly'  ,    ''            ,    ''    ,    '' 
-  sn_sal =  'glorys2v4-creg025-y2016m01',     -12            ,'vosaline',   .false.    , .true. , 'yearly'  ,    ''            ,    ''    ,    '' 
+  sn_tem =  'cantods025_potential_temp',     -12            ,'votemper',   .false.    , .true. , 'yearly'  ,    ''            ,    ''    ,    '' 
+  sn_sal =  'cantods025_salinity',           -12            ,'vosaline',   .false.    , .true. , 'yearly'  ,    ''            ,    ''    ,    '' 
 /
 !!======================================================================
 !!            ***  Surface Boundary Condition namelists  ***          !!
@@ -150,15 +150,15 @@
    !___________!_________________________!___________________!___________!_____________!________!___________!______________________________________!__________!_______________!
    !           !  file name              ! frequency (hours) ! variable  ! time interp.!  clim  ! 'yearly'/ !          weights filename            ! rotation ! land/sea mask !
    !           !                         !  (if <0  months)  !   name    !   (logical) !  (T/F) ! 'monthly' !                                      ! pairing  !    filename   !
-  sn_wndi =  'u10_jra55-do',                    3        ,   'uas',       .true.    ,   .false. , 'yearly'  , 'weights_bilinear_JRA_CREG025.nc', 'U' , '' 
-  sn_wndj =  'v10_jra55-do',                    3        ,   'vas',       .true.    ,   .false. , 'yearly'  , 'weights_bilinear_JRA_CREG025.nc', 'V'       , '' 
-  sn_qsr =   'solar_jra55-do',                  3        ,   'rsds',      .true.    ,   .false. , 'yearly'  , 'weights_bilinear_JRA_CREG025.nc', ''        , '' 
-  sn_qlw =   'therm_jra55-do',                  3        ,   'rlds',      .true.    ,   .false. , 'yearly'  , 'weights_bilinear_JRA_CREG025.nc', ''        , '' 
-  sn_tair =  't10_jra55-do',                    3        ,   'tas',       .true.    ,   .false. , 'yearly'  , 'weights_bilinear_JRA_CREG025.nc', ''        , '' 
-  sn_humi =  'q10_jra55-do',                    3        ,   'huss',      .true.    ,   .false. , 'yearly'  , 'weights_bilinear_JRA_CREG025.nc', ''        , '' 
-  sn_prec =  'precip_jra55-do',                 3        ,   'prra',      .true.    ,   .false. , 'yearly'  , 'weights_bilinear_JRA_CREG025.nc', ''        , '' 
-  sn_snow =  'snow_jra55-do',                   3        ,   'prsn',      .true.    ,   .false. , 'yearly'  , 'weights_bilinear_JRA_CREG025.nc', ''        , '' 
-  sn_slp =   'mslp_jra55-do',                   3        ,   'psl',       .true.    ,   .false.  , 'yearly'  , 'weights_bilinear_JRA_CREG025.nc', ''       , '' 
+  sn_wndi =  'u_cantods025',                    3        ,   'uas',       .true.    ,   .false. , 'yearly'  , 'weights_bilinear_cantods025', 'U'       , '' 
+  sn_wndj =  'v_cantods025',                    3        ,   'vas',       .true.    ,   .false. , 'yearly'  , 'weights_bilinear_cantods025', 'V'       , '' 
+  sn_qsr =   'qsr_cantods025',                  3        ,   'rsds',      .true.    ,   .false. , 'yearly'  , 'weights_bilinear_cantods025', ''        , '' 
+  sn_qlw =   'qlw_cantods025',                  3        ,   'rlds',      .true.    ,   .false. , 'yearly'  , 'weights_bilinear_cantods025', ''        , '' 
+  sn_tair =  'tair_cantods025',                 3        ,   'tas',       .true.    ,   .false. , 'yearly'  , 'weights_bilinear_cantods025', ''        , '' 
+  sn_humi =  'humi_cantods025',                 3        ,   'huss',      .true.    ,   .false. , 'yearly'  , 'weights_bilinear_cantods025', ''        , '' 
+  sn_prec =  'prec_cantods025',                 3        ,   'prra',      .true.    ,   .false. , 'yearly'  , 'weights_bilinear_cantods025', ''        , '' 
+  sn_snow =  'snow_cantods025',                 3        ,   'prsn',      .true.    ,   .false. , 'yearly'  , 'weights_bilinear_cantods025', ''        , '' 
+  sn_slp =   'slp_cantods025',                  3        ,   'psl',       .true.    ,   .false. , 'yearly'  , 'weights_bilinear_cantods025', ''        , '' 
 /
 !-----------------------------------------------------------------------
 &namsbc_cpl        ! Stochastic parametrization of EOS                      (default: OFF)
@@ -245,7 +245,7 @@
    !___________!_________________________!___________________!___________!_____________!________!___________!__________________!__________!_______________!
    !           !  file name              ! frequency (hours) ! variable  ! time interp.!  clim  ! 'yearly'/ ! weights filename ! rotation ! land/sea mask !
    !           !                         !  (if <0  months)  !   name    !   (logical) !  (T/F) ! 'monthly' !                  ! pairing  !    filename   !
-  sn_apr =  'mslp_jra55-do'              ,          3        ,    'psl',    .true.    , .false. , 'yearly'  , 'weights_bilinear_jra_creg025.nc', ''       , '' 
+  sn_apr =   'apr_cantods025',                  3        ,    'psl',      .true.    ,   .false. , 'yearly'  , 'weights_bilinear_cantods025', ''        , '' 
 /
 !-----------------------------------------------------------------------
 &namsbc_wave   ! External fields from wave model                        (ln_wave=T)
@@ -330,7 +330,7 @@
     rn_time_dmp   =  1.0, 1.0             ! Damping time scale in days
     rn_time_dmp_out =  10.0, 10.0         ! Outflow damping time scale
     nn_rimwidth = 10, 10                  !  width of the relaxation zone
-    ln_vol        = .true.                !  total volume correction (see nn_volctl parameter)
+    ln_vol        = .false.                !  total volume correction (see nn_volctl parameter)
     nn_volctl     = 0                     !  = 0, the total water flux across open boundaries is zero
 /
 !-----------------------------------------------------------------------
@@ -355,11 +355,11 @@
 !-----------------------------------------------------------------------
 !              !  file name                    ! frequency (hours) ! variable   ! time interp.   !  clim   ! 'yearly'/ ! weights  ! rotation ! land/sea mask !
 !              !                               !  (if <0  months)  !   name     !   (logical)    !  (T/F ) ! 'monthly' ! filename ! pairing  ! filename      !
-   bn_ssh  =    'glorys2v4_north'   ,  -1.0             , 'sossheig' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
-   bn_u3d  =    'glorys2v4_north'   ,  -1.0             , 'vozocrtx' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
-   bn_v3d  =    'glorys2v4_north'   ,  -1.0             , 'vomecrty' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
-   bn_tem  =    'glorys2v4_north'   ,  -1.0             , 'votemper' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
-   bn_sal  =    'glorys2v4_north'   ,  -1.0             , 'vosaline' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
+   bn_ssh  =    'obc_north_cantods025'   ,  -1.0             , 'sossheig' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
+   bn_u3d  =    'obc_north_cantods025'   ,  -1.0             , 'vozocrtx' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
+   bn_v3d  =    'obc_north_cantods025'   ,  -1.0             , 'vomecrty' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
+   bn_tem  =    'obc_north_cantods025'   ,  -1.0             , 'votemper' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
+   bn_sal  =    'obc_north_cantods025'   ,  -1.0             , 'vosaline' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
    cn_dir  =    './'
    ln_full_vel = .true.
 /
@@ -368,24 +368,24 @@
 !-----------------------------------------------------------------------
 !              !  file name                    ! frequency (hours) ! variable   ! time interp.   !  clim   ! 'yearly'/ ! weights  ! rotation ! land/sea mask !
 !              !                               !  (if <0  months)  !   name     !   (logical)    !  (T/F ) ! 'monthly' ! filename ! pairing  ! filename      !
-   bn_ssh  =    'glorys2v4_south'   ,   -1.0            , 'sossheig' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
-   bn_u3d  =    'glorys2v4_south'   ,   -1.0            , 'vozocrtx' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
-   bn_v3d  =    'glorys2v4_south'   ,   -1.0            , 'vomecrty' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
-   bn_tem  =    'glorys2v4_south'   ,   -1.0            , 'votemper' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
-   bn_sal  =    'glorys2v4_south'   ,   -1.0            , 'vosaline' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
+   bn_ssh  =    'obc_south_cantods025'   ,   -1.0            , 'sossheig' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
+   bn_u3d  =    'obc_south_cantods025'   ,   -1.0            , 'vozocrtx' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
+   bn_v3d  =    'obc_south_cantods025'   ,   -1.0            , 'vomecrty' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
+   bn_tem  =    'obc_south_cantods025'   ,   -1.0            , 'votemper' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
+   bn_sal  =    'obc_south_cantods025'   ,   -1.0            , 'vosaline' ,     .true.     , .false. ,  'yearly'  ,    ''    ,   ''     , ''
    cn_dir  =    './'
    ln_full_vel = .true.
 /
 !-----------------------------------------------------------------------
 &nambdy_tide     ! tidal forcing at open boundaries
 !-----------------------------------------------------------------------
-   filtide          = 'osutide_north'  !  file name root of tidal forcing files
+   filtide          = 'tide_north_cantods025'  !  file name root of tidal forcing files
    ln_bdytide_2ddta = .true.
 /
 !-----------------------------------------------------------------------
 &nambdy_tide     ! tidal forcing at open boundaries
 !-----------------------------------------------------------------------
-   filtide          = 'osutide_south'  !  file name root of tidal forcing files
+   filtide          = 'tide_south_cantods025'  !  file name root of tidal forcing files
    ln_bdytide_2ddta = .true.
 /
 
@@ -413,7 +413,7 @@
 !-----------------------------------------------------------------------
 &namdrg_top    !   TOP friction                                         (ln_drg_OFF =F & ln_isfcav=T)
 !-----------------------------------------------------------------------
-   rn_Cd0      =  4.e-4    !  drag coefficient [-]
+   rn_Cd0      =  1.e-3    !  drag coefficient [-]
    rn_Uc0      =  0.4      !  ref. velocity [m/s] (linear drag=Cd0*Uc0)
    rn_Cdmax    =  0.1      !  drag value maximum [-] (logarithmic drag)
    rn_ke0      =  2.5e-3   !  background kinetic energy  [m2/s2] (non-linear cases)
@@ -424,11 +424,11 @@
 !-----------------------------------------------------------------------
 &namdrg_bot    !   BOTTOM friction                                      (ln_drg_OFF =F)
 !-----------------------------------------------------------------------
-   rn_Cd0      =  4.e-4    !  drag coefficient [-]
+   rn_Cd0      =  7.5e-3    !  drag coefficient [-]
    rn_Uc0      =  0.4      !  ref. velocity [m/s] (linear drag=Cd0*Uc0)
    rn_Cdmax    =  1.e-1      !  drag value maximum [-] (logarithmic drag)
    rn_ke0      =  2.5e-3   !  background kinetic energy  [m2/s2] (non-linear cases)
-   rn_z0       =  0.003    !  roughness [m] (ln_loglayer=T)
+   rn_z0       =  0.07    !  roughness [m] (ln_loglayer=T)
    ln_boost    = .false.   !  =T regional boost of Cd0 ; =F constant
       rn_boost =  50.         !  local boost factor  [-]
 /

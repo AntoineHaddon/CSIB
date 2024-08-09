@@ -100,21 +100,26 @@ echo "#################### Start NEMO pre-processing #################"
 
         yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
         forcing_year=`expr ${current_year} | awk  '{printf "%04d",$1}'`
-        acc_cp temp_jra55-do_${yearc}.nc       ${nemo_t}_y${forcing_year}.nc
-        acc_cp u_jra55-do_${yearc}.nc          ${nemo_u}_y${forcing_year}.nc
-        acc_cp v_jra55-do_${yearc}.nc          ${nemo_v}_y${forcing_year}.nc
-        acc_cp hum_jra55-do_${yearc}.nc        ${nemo_q}_y${forcing_year}.nc
-        acc_cp qsr_jra55-do_${yearc}.nc        ${nemo_qsr}_y${forcing_year}.nc
-        acc_cp qlw_jra55-do_${yearc}.nc        ${nemo_qlw}_y${forcing_year}.nc
-        acc_cp pcp_jra55-do_${yearc}.nc        ${nemo_precip}_y${forcing_year}.nc
-        acc_cp snw_jra55-do_${yearc}.nc        ${nemo_snow}_y${forcing_year}.nc
-        acc_cp slp_jra55-do_${yearc}.nc        ${nemo_slp}_y${forcing_year}.nc
-        acc_cp apr_jra55-do_${yearc}.nc        ${nemo_apr}_y${forcing_year}.nc
-        acc_cp glorys2v4_north_${yearc}.nc     ${nemo_bn_north}_y${forcing_year}.nc
-        acc_cp glorys2v4_south_${yearc}.nc     ${nemo_bn_south}_y${forcing_year}.nc
+        acc_cp tair_cantods025_${yearc}.nc       ${nemo_t}_y${forcing_year}.nc
+        acc_cp u_cantods025_y${yearc}.nc          ${nemo_u}_y${forcing_year}.nc
+        acc_cp v_cantods025_y${yearc}.nc          ${nemo_v}_y${forcing_year}.nc
+        acc_cp humi_cantods025_y${yearc}.nc        ${nemo_q}_y${forcing_year}.nc
+        acc_cp qsr_cantods025_y${yearc}.nc        ${nemo_qsr}_y${forcing_year}.nc
+        acc_cp qlw_cantods025_y${yearc}.nc       ${nemo_qlw}_y${forcing_year}.nc
+        acc_cp prec_cantods025_y${yearc}.nc        ${nemo_precip}_y${forcing_year}.nc
+        acc_cp snow_cantods025_y${yearc}.nc        ${nemo_snow}_y${forcing_year}.nc
+        acc_cp slp_cantods025_y${yearc}.nc        ${nemo_slp}_y${forcing_year}.nc
+        acc_cp apr_cantods025_y${yearc}.nc        ${nemo_apr}_y${forcing_year}.nc
+        # boundaries
+        acc_cp obc_north_cantods025_y${yearc}.nc     ${nemo_bn_north}_y${forcing_year}.nc
+        acc_cp obc_south_cantods025_y${yearc}.nc     ${nemo_bn_south}_y${forcing_year}.nc
       done
-      # Copy BC files
-      # What other files needed??
+      # tides
+      for tidebound in {north,south}; do
+        acc_cp tide_${tidebound}_cantods025_grid_T.nc ${nemo_tide_elev}.nc 
+        acc_cp tide_osutide_${tidebound}_cantods025_grid_U.nc ${nemo_tide_uvel}.nc
+        acc_cp tide_osutide_${tidebound}_cantods025_grid_V.nc ${nemo_tide_vvel}.nc
+      done
 
   else # all the OMIP runmode (e.g. omip1 ) 
       # loop the forching for yyyy-1  to  yyyy+1  to do the interpolation with dec 31st of yyyy-1 and Jan 1st yyyy+1
@@ -149,7 +154,11 @@ echo "#################### Start NEMO pre-processing #################"
   if [[ $nemo_ln_rnf == "on" ]]; then
     is_defined $nemo_runoff_core_monthly  || bail "The variables nemo_runoff_core_monthly must be defined in the configuration file"
     # first try with climatology, if file don't exist in the database, try the yearly vervion (with _yYYYY.nc).
-    acc_cp runoff.nc    $nemo_runoff_core_monthly na
+    if [[ $config == "OMIP" ]] && [[ $runmode == "CanTODS" ]]; then
+      acc_cp runoff_1m_nomask.nc    $nemo_runoff_core_monthly na
+    else
+      acc_cp runoff.nc    $nemo_runoff_core_monthly na
+    fi
     if [[ -n "$nemo_runoff" ]]; then # empty nemo_runoff means yearly files are not used. 
       for current_year in `seq $(( $chunk_start_year -1 )) $(( $chunk_stop_year +1 )) `; do
         ## first and last year won't find the yyyy-1 and yyyy+1 (respectivelly).
@@ -170,10 +179,10 @@ echo "#################### Start NEMO pre-processing #################"
     acc_cp mask_itf.nc               $nemo_mask_itf
     acc_cp M2rowdrg.nc               $nemo_M2rowdrg
     acc_cp K1rowdrg.nc               $nemo_K1rowdrg
-  fi
-  if [[ $nemo_ln_leewmx == "on" ]]; then
-    is_defined $nemo_Eddyengf || bail "The file for lee wave mixing scheme must be defined in the configuration file."
-    acc_cp Eddyengf.nc               $nemo_Eddyengf
+    if [[ $nemo_ln_leewmx == "on" ]]; then
+        is_defined $nemo_Eddyengf || bail "The file for lee wave mixing scheme must be defined in the configuration file."
+      acc_cp Eddyengf.nc               $nemo_Eddyengf
+    fi
   fi
   if [[ $nemo_ln_zdfiwm == "on" ]]; then
     is_defined $nemo_mixing_power_bot && is_defined $nemo_mixing_power_pyc && is_defined $nemo_mixing_power_cri &&
