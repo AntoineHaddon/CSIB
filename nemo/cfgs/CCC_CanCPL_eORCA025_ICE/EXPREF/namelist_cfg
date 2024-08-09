@@ -310,7 +310,7 @@ sn_rcv_mslp   =       'none'                 ,    'no'    ,     ''      ,       
 !-----------------------------------------------------------------------
 &nameos        !   ocean Equation Of Seawater                           (default: NO selection)
 !-----------------------------------------------------------------------
-   ln_eos80    = .true.          !  = Use EOS80
+   ln_teos10   = .false.         !  = Use TEOS-10
 /
 !-----------------------------------------------------------------------
 &namtra_adv    !   advection scheme for tracer                          (default: NO selection)
