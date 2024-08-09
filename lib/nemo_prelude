@@ -100,7 +100,7 @@ echo "#################### Start NEMO pre-processing #################"
 
         yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
         forcing_year=`expr ${current_year} | awk  '{printf "%04d",$1}'`
-        acc_cp tair_cantods025_${yearc}.nc       ${nemo_t}_y${forcing_year}.nc
+        acc_cp tair_cantods025_y${yearc}.nc       ${nemo_t}_y${forcing_year}.nc
         acc_cp u_cantods025_y${yearc}.nc          ${nemo_u}_y${forcing_year}.nc
         acc_cp v_cantods025_y${yearc}.nc          ${nemo_v}_y${forcing_year}.nc
         acc_cp humi_cantods025_y${yearc}.nc        ${nemo_q}_y${forcing_year}.nc
@@ -117,8 +117,8 @@ echo "#################### Start NEMO pre-processing #################"
       # tides
       for tidebound in {north,south}; do
         acc_cp tide_${tidebound}_cantods025_grid_T.nc ${nemo_tide_elev}.nc 
-        acc_cp tide_osutide_${tidebound}_cantods025_grid_U.nc ${nemo_tide_uvel}.nc
-        acc_cp tide_osutide_${tidebound}_cantods025_grid_V.nc ${nemo_tide_vvel}.nc
+        acc_cp tide_${tidebound}_cantods025_grid_U.nc ${nemo_tide_uvel}.nc
+        acc_cp tide_${tidebound}_cantods025_grid_V.nc ${nemo_tide_vvel}.nc
       done
 
   else # all the OMIP runmode (e.g. omip1 ) 
