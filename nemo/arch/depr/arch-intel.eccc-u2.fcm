@@ -1,0 +1,14 @@
+# CCCma U2 Intel compiler arch file
+%NCDF_INC           -I/fs/ssm/main/opt/hdf5-netcdf4/master/netcdf-fortran_4.4.5-inteloneapi-2022.1.2-serial-static_rhel-8-amd64-64/include
+%NCDF_LIB           -L/fs/ssm/main/opt/hdf5-netcdf4/master/netcdf-fortran_4.4.5-inteloneapi-2022.1.2-serial-static_rhel-8-amd64-64/lib -lnetcdff -lnetcdf -lnetcdf -lhdf5_hl -lhdf5 -lsz -lz -lcurl -lm
+%FC                 mpif90
+%FCFLAGS            -free -traceback -fpp -Qoption,link,--noinhibit-exec -list -convert big_endian -threads -DIntelFTN -qmkl -r8 -O2 -mp1 -align array64byte
+%FFLAGS             -fixed -traceback -fpp -Qoption,link,--noinhibit-exec -list -convert big_endian -threads -DIntelFTN -qmkl -r8 -O2 -mp1 -align array64byte
+%LD                 mpif90
+%LDFLAGS            -qmkl
+%FPPFLAGS           -P -C
+%AR                 ar  
+%ARFLAGS            rs
+%MK                 make 
+%USER_INC           %NCDF_INC
+%USER_LIB           %NCDF_LIB    

@@ -217,6 +217,10 @@ that are available in the tidal-forcing implementation (see
     <field id="20d"          long_name="Depth of 20C isotherm"                          standard_name="depth_of_isosurface_of_sea_water_potential_temperature"                            unit="m"   axis_ref="iax_20C" />
     <field id="26d"          long_name="Depth of 26C isotherm"                          standard_name="depth_of_isosurface_of_sea_water_potential_temperature"                            unit="m"   axis_ref="iax_26C"   />
     <field id="28d"          long_name="Depth of 28C isotherm"                          standard_name="depth_of_isosurface_of_sea_water_potential_temperature"                            unit="m"   axis_ref="iax_28C" />
+    <field id="14d"          description="Depth of 14C isotherm"                     unit="m"                        />
+    <field id="17d"          description="Depth of 17C isotherm"                     unit="m"                        />
+    <field id="t300"         description="Mean sea water potential temperature in upper 300 m"   unit="degC"         />
+    <field id="s300"         description="Mean salinity in upper 300 m"              unit="psu"                      /> 
     <field id="hc300"        long_name="Heat content 0-300m"                            standard_name="integral_of_sea_water_potential_temperature_wrt_depth_expressed_as_heat_content"   unit="J/m2"                      />
     <field id="hc700"        long_name="Heat content 0-700m"                            standard_name="integral_of_sea_water_potential_temperature_wrt_depth_expressed_as_heat_content"   unit="J/m2"                      />
     <field id="hc2000"       long_name="Heat content 0-2000m"                           standard_name="integral_of_sea_water_potential_temperature_wrt_depth_expressed_as_heat_content"   unit="J/m2"                      />
