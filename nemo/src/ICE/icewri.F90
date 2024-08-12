@@ -187,6 +187,8 @@ CONTAINS
       IF( iom_use('iceafpnd_cat') )   CALL iom_put( 'iceafpnd_cat',   a_ip_frac    * zmsk00l                                   ) ! melt pond frac per ice area for categories
       IF( iom_use('iceaepnd_cat') )   CALL iom_put( 'iceaepnd_cat',   a_ip_eff     * zmsk00l                                   ) ! melt pond effective frac for categories
       IF( iom_use('icealb_cat'  ) )   CALL iom_put( 'icealb_cat'  ,   alb_ice      * zmsk00l + zmiss_val * ( 1._wp - zmsk00l ) ) ! ice albedo for categories
+      IF( iom_use('icehc_cat'   ) )   CALL iom_put( 'icehc_cat'  ,  -sum(e_i, dim=3 ) * r1_nlay_i * zmsk00l )                    ! ice heat content for categories
+      IF( iom_use('snwhc_cat'   ) )   CALL iom_put( 'snwhc_cat'  ,  -sum(e_s, dim=3 ) * r1_nlay_s * zmsksnl )                    ! snow heat content for categories
 
       !------------------
       ! Add-ons for SIMIP

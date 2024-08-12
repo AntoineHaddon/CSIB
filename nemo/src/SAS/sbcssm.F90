@@ -22,7 +22,9 @@ MODULE sbcssm
    USE closea         ! for ln_closea
    USE icb_oce        ! for icebergs
 #if defined key_si3
-   USE ice            , ONLY :   a_i, t_su, h_i, h_s
+   USE ice             ! sea-ice: variables
+   USE icevar          ! sea-ice: operations
+   USE icecor          ! sea-ice: corrections
 #endif
    !
    USE in_out_manager ! I/O manager
@@ -66,6 +68,8 @@ MODULE sbcssm
    TYPE(FLD), ALLOCATABLE, DIMENSION(:) :: sf_ssm_2d  ! structure of input fields (file information, fields read)
    TYPE(FLD), ALLOCATABLE, DIMENSION(:) :: sf_ssm_ice  ! structure of input fields (file information, fields read)
 
+   !! * Substitutions
+#  include "do_loop_substitute.h90"
    !!----------------------------------------------------------------------
    !! NEMO/SAS 4.0 , NEMO Consortium (2018)
    !! $Id: sbcssm.F90 15023 2021-06-18 14:35:25Z gsamson $
@@ -192,10 +196,11 @@ CONTAINS
       INTEGER, INTENT(in) ::   Kbb, Kmm   ! ocean time level indices
       ! (not needed for SAS but needed to keep a consistent interface in sbcmod.F90)
       !
-      INTEGER  ::   ji, jj     ! dummy loop indices
+      INTEGER  ::   ji, jj, jk, jl     ! dummy loop indices
       REAL(wp) ::   ztinta     ! ratio applied to after  records when doing time interpolation
       REAL(wp) ::   ztintb     ! ratio applied to before records when doing time interpolation
-      REAL(wp), DIMENSION(jpi,jpj)     ::  seaice_lost, seaice_created 
+      REAL(wp) ::   ztmelts
+      REAL(wp), DIMENSION(jpi,jpj)     ::  seaice_lost, seaice_created,at_i_read
       !!----------------------------------------------------------------------
       !
       IF( ln_timing )   CALL timing_start( 'sbc_ssm_ice')
@@ -206,27 +211,56 @@ CONTAINS
          IF( nfld_ice > 0 ) CALL fld_read( kt, 1, sf_ssm_ice )      !==   read data at kt time step   ==!
          !
 
-         IF( TRIM(sf_ssm_ice(jf_ifr)%clrootname) /= 'NOT USED' ) THEN 
-             a_i (:,:,:) = sf_ssm_ice(jf_ifr)%fnow(:,:,:)
-             WHERE(a_i.le.0.)  ! Thickness is zero where there is no ice 
-                 WHERE(h_i.ne.0.)
-                     seaice_lost=h_i
-                 ENDWHERE
-                 h_i(:,:,:) = 0.
-                 h_s(:,:,:) = 0.
-             ELSEWHERE ! minimum thickness of 0.1m when there is ice
-                 WHERE(h_i.le.0.1)
-                     seaice_created=0.1-h_i
-                 ENDWHERE
-                 h_i(:,:,:) = max(h_i(:,:,:),0.1)
-                 h_s(:,:,:) = max(h_s(:,:,:),0.1)
-             ENDWHERE
+         IF( TRIM(sf_ssm_ice(jf_tic)%clrootname) /= 'NOT USED' ) THEN
+            t_su(:,:,:) = 0.
+            t_su (:,:,1) = sf_ssm_ice(jf_tic)%fnow(:,:,1)
          ENDIF
-         IF( TRIM(sf_ssm_ice(jf_tic)%clrootname) /= 'NOT USED' ) &
-            &     t_su (:,:,:) = sf_ssm_ice(jf_tic)%fnow(:,:,:)
+         IF( TRIM(sf_ssm_ice(jf_ifr)%clrootname) /= 'NOT USED' ) THEN 
+             ! ===== Work on the total concentration and thinkness on single category
+                                         ! 2. -- Change the cathegory concentrations according to the input (will be rebin later)
+             at_i_read(:,:) = sf_ssm_ice(jf_ifr)%fnow(:,:,1)
+             WHERE(sum(a_i(:,:,:), dim=3).lt.at_i_read(:,:) ) seaice_created = seaice_created + (sum(h_i(:,:,:) * a_i(:,:,:), dim=3) - sum(v_i(:,:,:), dim=3  ))
+             WHERE(sum(a_i(:,:,:), dim=3).gt.at_i_read(:,:) ) seaice_lost    = seaice_lost    + (sum(h_i(:,:,:) * a_i(:,:,:), dim=3) - sum(v_i(:,:,:), dim=3  ))
+             DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
+                IF (at_i(ji,jj).gt.0.) THEN
+                      a_i(ji,jj,:)=a_i(ji,jj,:)*at_i_read(ji,jj)/at_i(ji,jj)
+                ELSE
+                      a_i(ji,jj,1)=at_i_read(ji,jj)
+                ENDIF
+             END_2D
+
+             CALL ice_cor( kt , 0 )      ! 2. -- Check for thickness <rn_himin  and >rn_amax
+                                         ! 3. -- Rebin categories with thickness out of bounds     
+                                         ! 4. -- Check for salinity in bounds [Simin,Simax] 
+             DO jl  = 1, jpl             ! 5. -- Re-calculate the enthalpy (snow & ice)
+               DO jk = 1, nlay_s           
+                 DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
+                    t_s(ji,jj,jk,jl) = MIN( t_s(ji,jj,jk,jl), -0.15_wp + rt0 )           ! Force t_s to be lower than -0.15deg (arbitrary) => likely conservation issue
+                    !                                                                    !       otherwise instant melting can occur
+                    e_s(ji,jj,jk,jl) = rhos * ( rcpi * ( rt0 - t_s(ji,jj,jk,jl) ) + rLfus )   ! enthalpy in J/m3
+                    e_s(ji,jj,jk,jl) = e_s(ji,jj,jk,jl) * v_s(ji,jj,jl) * r1_nlay_s           ! enthalpy in J/m2
+                 END_2D
+               END DO               
+               t_su(ji,jj,jl) = MIN( t_su(ji,jj,jl), -0.15_wp + rt0 )                  ! Force t_su to be lower than -0.15deg (arbitrary)
+               DO jk = 1, nlay_i
+                 DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
+                    ztmelts          = - rTmlt  * sz_i(ji,jj,jk,jl)             ! Melting temperature in C
+                    t_i(ji,jj,jk,jl) = MIN( t_i(ji,jj,jk,jl), (ztmelts-0.15_wp) + rt0 )  ! Force t_i to be lower than melting point (-0.15) => likely conservation issue
+                    !
+                    e_i(ji,jj,jk,jl) = rhoi * ( rcpi  * ( ztmelts - ( t_i(ji,jj,jk,jl) - rt0 ) )           &   ! enthalpy in J/m3
+                       &                      + rLfus * ( 1._wp - ztmelts / ( t_i(ji,jj,jk,jl) - rt0 ) )   &
+                       &                      - rcp   *   ztmelts )                  
+                    e_i(ji,jj,jk,jl) = e_i(ji,jj,jk,jl) * v_i(ji,jj,jl) * r1_nlay_i                            ! enthalpy in J/m2
+                 END_2D
+               END DO
+             END DO               
+             CALL ice_var_agg(1)         ! 6. -- integrate variables over layers and categories post inputs
+
+
+         ENDIF
          ! Albedo not implemented (will be replaced by ice_stp is defind here).
          !IF( TRIM(sf_ssm_ice(jf_ial)%clrootname) /= 'NOT USED' ) &
-         !   &     alb_ice (:,:,:) = sf_ssm_ice(jf_ial)%fnow(:,:,:)
+         !   &     alb_ice (:,:,:) = sf_ssm_ice(jf_ial)%fnow(:,:,1)
       ENDIF
 
 
@@ -457,7 +491,7 @@ CONTAINS
 
          IF( nfld_ice > 0 ) THEN 
             DO ifpr = 1, nfld_ice
-               ALLOCATE( sf_ssm_ice(ifpr)%fnow(jpi,jpj,jpl)    , STAT=ierr0 )
+               ALLOCATE( sf_ssm_ice(ifpr)%fnow(jpi,jpj,1)    , STAT=ierr0 )
                IF( sf_ssm_ice(ifpr)%ln_tint )   ALLOCATE( sf_ssm_ice(ifpr)%fdta(jpi,jpj,jpl,2)  , STAT=ierr1 )
                IF( ierr0 + ierr1 > 0 ) THEN
                   CALL ctl_stop( 'sbc_ssm_ice_init : unable to allocate sf_ssm_ice array structure' )   ;   RETURN
