@@ -271,21 +271,6 @@ if [[ $config != "AMIP" ]]; then
       acc_cp data_NO3_nomask.nc        $nemo_data_no3_nomask
   fi
 
-else
-    echo "config == \"AMIP\" : surface condition for Stand alone surface module (SAS) forcing fields from CanCPL"
-    # GT and SICN specified in SAS
-    # loop the forching for yyyy-1  to  yyyy+1  to do the interpolation with dec 31st of yyyy-1 and Jan 1st yyyy+1
-    for current_year in `seq $(( $chunk_start_year -1 )) $(( $chunk_stop_year +1 )) `; do
-      ## first and last year won't find the yyyy-1 and yyyy+1 (respectivelly).
-      [[ $current_year -lt run_start_year || $current_year -gt run_stop_year ]] && continue
-      yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
-      acc_cp sst_data_y${yearc}.nc               ${sas_sst_data}_y${yearc}.nc
-      acc_cp siconc_data_y${yearc}.nc            ${sas_siconc_data}_y${yearc}.nc
-    done
-        
-
-fi  # config != AMIP
-
   # Access files required to run NEMO
   xios_files=( axis_def_nemo.xml \
                context_nemo.xml \
@@ -304,6 +289,31 @@ fi  # config != AMIP
   elif [[ $nemo_config == *"PISCES" ]] ; then
 	xios_files=( "${xios_files[@]}"  field_def_nemo-pisces.xml file_def_nemo-pisces.xml )
   fi
+
+else
+    echo "config == \"AMIP\" : surface condition for Stand alone surface module (SAS) forcing fields from CanCPL"
+    # GT and SICN specified in SAS
+    # loop the forching for yyyy-1  to  yyyy+1  to do the interpolation with dec 31st of yyyy-1 and Jan 1st yyyy+1
+    for current_year in `seq $(( $chunk_start_year -1 )) $(( $chunk_stop_year +1 )) `; do
+      ## first and last year won't find the yyyy-1 and yyyy+1 (respectivelly).
+      [[ $current_year -lt run_start_year || $current_year -gt run_stop_year ]] && continue
+      yearc=`expr ${current_year} | awk  '{printf "%04d",$1}'`
+      acc_cp sst_data_y${yearc}.nc               ${sas_sst_data}_y${yearc}.nc
+      acc_cp siconc_data_y${yearc}.nc            ${sas_siconc_data}_y${yearc}.nc
+    done
+        
+  # Access files required to run NEMO
+  xios_files=( axis_def_nemo.xml \
+               context_nemo.xml \
+               domain_def_nemo.xml \
+               field_def_nemo-ice.xml \
+               field_def_nemo-oce.xml \
+               file_def_nemo-sas.xml \
+               grid_def_nemo.xml \
+               iodef.xml )
+
+fi  # config != AMIP
+
 
   for file in "${xios_files[@]}"; do
     echo $file
