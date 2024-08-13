@@ -48,6 +48,17 @@ set -x
   orca_grid_info=mc_${runid}_${fyear}_m${mask_mon}_mesh_mask.nc
   [ -s orca_mesh_mask ] || access orca_mesh_mask $orca_grid_info
 
+# Access fiels for BGCM diag 
+  sfx='1m_grid_t'
+  diag_hist="mc_${runid}_${fyear}_m${mask_mon}_${sfx}.nc"
+  access ${sfx}_${mask_mon} $diag_hist na
+  sfx='1m_diad_t'
+  diag_hist="mc_${runid}_${fyear}_m${mask_mon}_${sfx}.nc"
+  access ${sfx}_${mask_mon} $diag_hist na
+  sfx='1m_btrc_t'
+  diag_hist="mc_${runid}_${fyear}_m${mask_mon}_${sfx}.nc"
+  access ${sfx}_${mask_mon} $diag_hist na
+
 
 ##########################
 # CMIP6 nemo diagnostics #
