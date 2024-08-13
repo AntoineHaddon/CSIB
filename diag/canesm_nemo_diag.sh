@@ -166,10 +166,24 @@ set -x
     cdo splitname ${sfx}_${fmon} xxx-${sfx}_ || true
     # UGLY PATCH : Spetial treatments for diaptr (5D-variables not suported) || true to not cause error if no variable with that name (nil001, july 2023)
     if [ "${sfx}_${fmon}" == "1m_diaptr_01" ]; then
-      ncks -v znltem  ${sfx}_${fmon} xxx-${sfx}_znltem.nc && ncrename -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_znltem.nc xxx-${sfx}_znltem.nc || true
-      ncks -v znlsal  ${sfx}_${fmon} xxx-${sfx}_znlsal.nc && ncrename -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_znlsal.nc xxx-${sfx}_znlsal.nc || true
-      ncks -v znlsrf  ${sfx}_${fmon} xxx-${sfx}_znlsrf.nc && ncrename -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_znlsrf.nc xxx-${sfx}_znlsrf.nc || true
-      ncks -v msftyz  ${sfx}_${fmon} xxx-${sfx}_msftyz.nc && ncrename -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_msftyz.nc xxx-${sfx}_msftyz.nc || true
+      ncks -v znltem  ${sfx}_${fmon} xxx-${sfx}_znltem.nc && ncrename  -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_znltem.nc xxx-${sfx}_znltem.nc
+      ncks -v znlsal  ${sfx}_${fmon} xxx-${sfx}_znlsal.nc && ncrename  -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_znlsal.nc xxx-${sfx}_znlsal.nc
+      ncks -v znlsrf  ${sfx}_${fmon} xxx-${sfx}_znlsrf.nc && ncrename  -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_znlsrf.nc xxx-${sfx}_znlsrf.nc
+      ncks -v msftyz  ${sfx}_${fmon} xxx-${sfx}_msftyz.nc && ncrename  -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_msftyz.nc xxx-${sfx}_msftyz.nc
+      ncks -v htovovrt      ${sfx}_${fmon} xxx-${sfx}_htovovrt.nc && ncrename  -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_htovovrt.nc xxx-${sfx}_htovovrt.nc
+      ncks -v sltovovrt     ${sfx}_${fmon} xxx-${sfx}_sltovovrt.nc && ncrename  -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_sltovovrt.nc xxx-${sfx}_sltovovrt.nc
+      ncks -v htovgyre      ${sfx}_${fmon} xxx-${sfx}_htovgyre.nc && ncrename  -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_htovgyre.nc xxx-${sfx}_htovgyre.nc
+      ncks -v sltovgyre     ${sfx}_${fmon} xxx-${sfx}_sltovgyre.nc && ncrename  -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_sltovgyre.nc xxx-${sfx}_sltovgyre.nc
+      ncks -v htbtr         ${sfx}_${fmon} xxx-${sfx}_htbtr.nc && ncrename  -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_htbtr.nc xxx-${sfx}_htbtr.nc
+      ncks -v sltbtr        ${sfx}_${fmon} xxx-${sfx}_sltbtr.nc && ncrename  -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_sltbtr.nc xxx-${sfx}_sltbtr.nc
+      ncks -v htadv         ${sfx}_${fmon} xxx-${sfx}_htadv.nc && ncrename  -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_htadv.nc xxx-${sfx}_htadv.nc
+      ncks -v sltadv        ${sfx}_${fmon} xxx-${sfx}_sltadv.nc && ncrename  -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_sltadv.nc xxx-${sfx}_sltadv.nc
+      ncks -v hfbasinpmdiff ${sfx}_${fmon} xxx-${sfx}_hfbasinpmdiff.nc && ncrename  -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_hfbasinpmdiff.nc xxx-${sfx}_hfbasinpmdiff.nc
+      ncks -v sltldf        ${sfx}_${fmon} xxx-${sfx}_sltldf.nc && ncrename  -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_sltldf.nc xxx-${sfx}_sltldf.nc
+      ncks -v hfbasin       ${sfx}_${fmon} xxx-${sfx}_hfbasin.nc && ncrename  -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_hfbasin.nc xxx-${sfx}_hfbasin.nc
+      ncks -v sltbasin      ${sfx}_${fmon} xxx-${sfx}_sltbasin.nc && ncrename  -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_sltbasin.nc xxx-${sfx}_sltbasin.nc
+      ncks -v hfbasinpmadv  ${sfx}_${fmon} xxx-${sfx}_hfbasinpmadv.nc && ncrename  -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_hfbasinpmadv.nc xxx-${sfx}_hfbasinpmadv.nc
+      ncks -v sltbasinpmadv ${sfx}_${fmon} xxx-${sfx}_sltbasinpmadv.nc && ncrename  -O -v time_counter_bounds,time_counter_bnds xxx-${sfx}_sltbasinpmadv.nc xxx-${sfx}_sltbasinpmadv.nc
 
     fi
     rm  ${sfx}_${fmon}
