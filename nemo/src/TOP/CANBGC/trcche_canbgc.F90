@@ -219,21 +219,7 @@ MODULE trcche_canbgc
 
    !!* Substitution
 #  include "domzgr_substitute.h90"
-! #include "top_substitute.h90" !!! O Riche June 23rd 2022
-!                               !!! This call other F90 headers
-! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! #  include "domzgr_substitute.h90"
-! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! #  include "ldfeiv_substitute.h90"
-! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! #  include "ldftra_substitute.h90"
-! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! #  include "vectopt_loop_substitute.h90"
-								!!! which use old variables for the grid/z-levels
-								!!! e.g. fse3t instead of e3t, optimization,
-								!!! scaling of lateral diffusion terms, etc.
 
-   !!----------------------------------------------------------------------
-   !! NEMO/TOP 3.3 , NEMO Consortium (2010)
-   !! $Id: trcche.F90 3294 2012-01-28 16:44:18Z rblod $ 
-   !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
-   !!----------------------------------------------------------------------
 CONTAINS
 
    SUBROUTINE trc_che_2D( kt, Kmm )
