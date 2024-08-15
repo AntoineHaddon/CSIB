@@ -24,31 +24,30 @@
    <file_group id="6h"  output_freq="6h"  enabled=".TRUE."/> <!-- 6h files -->        
    <file_group id="1d"  output_freq="1d"  enabled=".TRUE."> <!-- 1d files -->        
      <file id="file53" name_suffix="_sas" description="ice variables" >
-          <field field_ref="sst"           name='tos'             level="0" /> <!-- (Oday*) -->
-          <field field_ref="icepres"          name="sitimefrac"  level="0" /> <!-- (SIday*) -->
-          <field field_ref="iceconc_pct"      name="siconc"      level="0" /> <!-- (SIday*) -->
-          <field field_ref="icethic_cmip"     name="sithick"     level="0" />  <!-- (SIday*) -->
-          <field field_ref="snwthic_cmip"     name="sisnthick"   level="0" /> <!-- (SIday*) -->
-          <field field_ref="icettop_cmip"     name="sitemptop"   level="0" /> <!-- (SIday*) -->
-          <field field_ref="icettop_cmip"     name="sitemptop"   level="0" /> <!-- (SIday*) -->
-          <field field_ref="icetemp"          name="sitemp"    level="0"/>
-          <field field_ref="snwtemp"          name="sntemp"    level="0"/>
-          <field field_ref="icesalt"          name="sisali"    level="0"/>
-          <field field_ref="icehc"         name="icehc"   level="0" />
-          <field field_ref="snwhc"         name="snwhc"   level="0" />
-          <field field_ref="icemask_cat"      name="sitimefrac"  level="0" /> <!-- (SIday*) -->
-          <field field_ref="iceconc_cat"      name="siconc"      level="0" /> <!-- (SIday*) -->
-          <field field_ref="icethic_cat"      name="sithick"     level="0" />  <!-- (SIday*) -->
-          <field field_ref="snwthic_cat"      name="sisnthick"   level="0" /> <!-- (SIday*) -->
-          <field field_ref="icettop_cat"     name="sitemptop"   level="0" /> <!-- (SIday*) -->
-          <field field_ref="icetemp_cat"      name="sitemcat"   level="0"/>
-          <field field_ref="snwtemp_cat"      name="sntemcat"   level="0"/>
-          <field field_ref="icesalt_cat"      name="sisalcat"   level="0"/>
-          <field field_ref="icehc_cat"         name="icehc_cat"   level="0" />
-          <field field_ref="snwhc_cat"         name="snwhc_cat"   level="0" />
-          <field field_ref="icethic_created"        name="sithick_created"   level="0" operation="accumulate" /> 
-          <field field_ref="icethic_lost"        name="sithick_lost"         level="0" operation="accumulate" /> 
-          <field field_ref="vfxice"        name="vfxice"         level="0" operation="accumulate" /> 
+          <field field_ref="sst"           name='tos'        level="0"  /> 
+          <field field_ref="iceconc_pct"   name="siconc"     level="0"  /> 
+          <field field_ref="icepres"       name="sitimefrac"  level="1" /> 
+          <field field_ref="icethic_cmip"  name="sithick"     level="1" /> 
+          <field field_ref="snwthic_cmip"  name="sisnthick"   level="1" /> 
+          <field field_ref="icettop_cmip"  name="sitemptop"   level="1" /> 
+          <field field_ref="icetemp"       name="sitemp"      level="1" />
+          <field field_ref="snwtemp"       name="sntemp"      level="1" />
+          <field field_ref="icesalt"       name="sisali"      level="1" />
+          <field field_ref="icehc"         name="icehc"       level="1" />
+          <field field_ref="snwhc"         name="snwhc"       level="1" />
+          <field field_ref="icemask_cat"   name="sitimefrac_cat" level="3" /> 
+          <field field_ref="iceconc_cat"   name="siconc_cat"     level="3" /> 
+          <field field_ref="icethic_cat"   name="sithick_cat"    level="3" />
+          <field field_ref="snwthic_cat"   name="sisnthick_cat"  level="3" />
+          <field field_ref="icettop_cat"   name="sitemptop_cat"  level="3" />
+          <field field_ref="icetemp_cat"   name="sitem_cat"      level="3" />
+          <field field_ref="snwtemp_cat"   name="sntem_cat"      level="3" />
+          <field field_ref="icesalt_cat"   name="sisali_cat"     level="3" />
+          <field field_ref="icehc_cat"     name="icehc_cat"      level="3" />
+          <field field_ref="snwhc_cat"     name="snwhc_cat"      level="3" />
+          <field field_ref="icethic_created" name="sithick_created" level="4" operation="accumulate" /> 
+          <field field_ref="icethic_lost"    name="sithick_lost"    level="4" operation="accumulate" /> 
+          <field field_ref="vfxice"          name="vfxice"          level="4" operation="accumulate" /> 
      </file>
    </file_group>
 
