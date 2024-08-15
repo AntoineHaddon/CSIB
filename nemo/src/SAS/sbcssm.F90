@@ -222,28 +222,37 @@ CONTAINS
              WHERE(sum(a_i(:,:,:), dim=3).lt.at_i_read(:,:) ) seaice_created = seaice_created + (sum(h_i(:,:,:) * a_i(:,:,:), dim=3) - sum(v_i(:,:,:), dim=3  ))
              WHERE(sum(a_i(:,:,:), dim=3).gt.at_i_read(:,:) ) seaice_lost    = seaice_lost    + (sum(h_i(:,:,:) * a_i(:,:,:), dim=3) - sum(v_i(:,:,:), dim=3  ))
              DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
-                IF (at_i(ji,jj).gt.0.) THEN
+                IF (at_i(ji,jj).gt.epsi20) THEN
                       a_i(ji,jj,:)=a_i(ji,jj,:)*at_i_read(ji,jj)/at_i(ji,jj)
-                ELSE
-                      a_i(ji,jj,1)=at_i_read(ji,jj)
+                ELSEIF (at_i_read(ji,jj).gt.epsi20) THEN !new ice 
+                      a_i(ji,jj  ,:) = 0._wp ; a_i(ji,jj  ,1) = at_i_read(ji,jj)
+                      h_i(ji,jj  ,:) = 0._wp ; h_i(ji,jj  ,1) = rn_himin
+                      t_s(ji,jj,:,:) = rt0 
+                      t_i(ji,jj,:,:) = rt0 
+                      t_su(ji,jj ,:) = rt0 
+                      s_i (ji,jj ,:) = rn_simin 
+                      o_i (ji,jj ,:) = 0._wp
                 ENDIF
+                v_i (ji,jj ,:) = h_i(ji,jj,:) * a_i(ji,jj,:)
+                v_s (ji,jj ,:) = h_s(ji,jj,:) * a_i(ji,jj,:)
+                sv_i(ji,jj ,:) = s_i(ji,jj,:) * v_i(ji,jj,:)
              END_2D
 
              CALL ice_cor( kt , 0 )      ! 2. -- Check for thickness <rn_himin  and >rn_amax
                                          ! 3. -- Rebin categories with thickness out of bounds     
                                          ! 4. -- Check for salinity in bounds [Simin,Simax] 
              DO jl  = 1, jpl             ! 5. -- Re-calculate the enthalpy (snow & ice)
-               DO jk = 1, nlay_s           
-                 DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
+               DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
+                 DO jk = 1, nlay_s           
                     t_s(ji,jj,jk,jl) = MIN( t_s(ji,jj,jk,jl), -0.15_wp + rt0 )           ! Force t_s to be lower than -0.15deg (arbitrary) => likely conservation issue
                     !                                                                    !       otherwise instant melting can occur
                     e_s(ji,jj,jk,jl) = rhos * ( rcpi * ( rt0 - t_s(ji,jj,jk,jl) ) + rLfus )   ! enthalpy in J/m3
                     e_s(ji,jj,jk,jl) = e_s(ji,jj,jk,jl) * v_s(ji,jj,jl) * r1_nlay_s           ! enthalpy in J/m2
-                 END_2D
-               END DO               
-               t_su(ji,jj,jl) = MIN( t_su(ji,jj,jl), -0.15_wp + rt0 )                  ! Force t_su to be lower than -0.15deg (arbitrary)
-               DO jk = 1, nlay_i
-                 DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
+                  END DO               
+               END_2D
+               DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
+                 t_su(ji,jj,jl) = MIN( t_su(ji,jj,jl), -0.15_wp + rt0 )                  ! Force t_su to be lower than -0.15deg (arbitrary)
+                 DO jk = 1, nlay_i
                     ztmelts          = - rTmlt  * sz_i(ji,jj,jk,jl)             ! Melting temperature in C
                     t_i(ji,jj,jk,jl) = MIN( t_i(ji,jj,jk,jl), (ztmelts-0.15_wp) + rt0 )  ! Force t_i to be lower than melting point (-0.15) => likely conservation issue
                     !
@@ -251,8 +260,8 @@ CONTAINS
                        &                      + rLfus * ( 1._wp - ztmelts / ( t_i(ji,jj,jk,jl) - rt0 ) )   &
                        &                      - rcp   *   ztmelts )                  
                     e_i(ji,jj,jk,jl) = e_i(ji,jj,jk,jl) * v_i(ji,jj,jl) * r1_nlay_i                            ! enthalpy in J/m2
-                 END_2D
-               END DO
+                 END DO
+               END_2D
              END DO               
              CALL ice_var_agg(1)         ! 6. -- integrate variables over layers and categories post inputs
 
@@ -265,8 +274,8 @@ CONTAINS
 
 
       IF(sn_cfctl%l_prtctl) THEN            ! print control
-         CALL prt_ctl(tab3d_1=a_i , clinfo1=' a_i     - : ', mask1=tmask   )
-         CALL prt_ctl(tab3d_1=t_su, clinfo1=' t_su    - : ', mask1=tmask   )
+         CALL prt_ctl(tab3d_1=a_i , clinfo1=' a_i     - : ', kdim=jpl      )
+         CALL prt_ctl(tab3d_1=t_su, clinfo1=' t_su    - : ', kdim=jpl      )
       ENDIF
       CALL iom_put('icethic_created',seaice_created)
       CALL iom_put('icethic_lost',seaice_lost)
@@ -492,7 +501,7 @@ CONTAINS
          IF( nfld_ice > 0 ) THEN 
             DO ifpr = 1, nfld_ice
                ALLOCATE( sf_ssm_ice(ifpr)%fnow(jpi,jpj,1)    , STAT=ierr0 )
-               IF( sf_ssm_ice(ifpr)%ln_tint )   ALLOCATE( sf_ssm_ice(ifpr)%fdta(jpi,jpj,jpl,2)  , STAT=ierr1 )
+               IF( sf_ssm_ice(ifpr)%ln_tint )   ALLOCATE( sf_ssm_ice(ifpr)%fdta(jpi,jpj,1,2)  , STAT=ierr1 )
                IF( ierr0 + ierr1 > 0 ) THEN
                   CALL ctl_stop( 'sbc_ssm_ice_init : unable to allocate sf_ssm_ice array structure' )   ;   RETURN
                ENDIF
