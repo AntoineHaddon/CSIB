@@ -8,9 +8,9 @@
 ============================================================================================================
     -->
 
-    <file_definition type="one_file" name="@expname@_@freq@" sync_freq="5d" min_digits="4">
+    <file_definition type="one_file" name="@expname@_@freq@_@startdate@_@enddate@" min_digits="4">
 
-      <file_group id="5d" output_freq="5d" enabled=".TRUE." split_freq='5d'> <!-- real monthly files -->
+      <file_group id="5d" output_freq="5d" enabled=".TRUE."> <!-- real monthly files -->
       
         <file id="file11" name_suffix="_grid_T" description="ocean T grid variables">
           <field field_ref="toce"             name="thetao"         level="0" /> <!-- (Omon*) level = 1 in CMIP6 -->

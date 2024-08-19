@@ -545,6 +545,14 @@ echo "#################### Start NEMO pre-processing #################"
     mod_nl namelist_cfg ln_rstart 
     [ "$nemo_trc" = "on" ] && mod_nl namelist_top_cfg ln_rsttr
 
+  # in case of CanTODS (which has open boundaries), turn off tide ramp
+  # on restart
+  if [[ $config == "OMIP" ]] && [[ $runmode == "CanTODS" ]] && [[ $ln_restart ]]; then
+    ln_tide_ramp=.false.
+    mod_nl namelist_cfg ln_tide_ramp
+  fi
+
+
   # force nn_istate=1 when  $output_level -ge 1  and $with_nemo_diag -eq 1 because 
   # ocean_diag needs the init.nc of the current year (1st Jan).
   # init.nc keep only if nemo_nn_istate
