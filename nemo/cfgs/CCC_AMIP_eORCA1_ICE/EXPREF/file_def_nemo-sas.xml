@@ -12,18 +12,17 @@
  <file_definition type="one_file" name="@expname@_@freq@_@startdate@_@enddate@" min_digits="4">
    
    <file_group id="1m" output_freq="1mo"  enabled=".TRUE.">  <!-- real monthly files -->   	
-     
    </file_group>
 
    <file_group id="1ts" output_freq="1ts" enabled=".TRUE."/> <!-- 1 time step files -->
-   <file_group id="1h"  output_freq="1h"  enabled=".TRUE."> <!-- 1h files -->
+   <file_eroup id="1h"  output_freq="1h"  enabled=".TRUE."> <!-- 1h files -->
    </file_group>
    <file_group id="2h"  output_freq="2h"  enabled=".TRUE."/> <!-- 2h files -->
    <file_group id="3h"  output_freq="3h"  enabled=".TRUE."/> <!-- 3h files -->     
    <file_group id="4h"  output_freq="4h"  enabled=".TRUE."/> <!-- 4h files -->
    <file_group id="6h"  output_freq="6h"  enabled=".TRUE."/> <!-- 6h files -->        
    <file_group id="1d"  output_freq="1d"  enabled=".TRUE."> <!-- 1d files -->        
-     <file id="file53" name_suffix="_sas" description="ice variables" >
+     <file id="file53" name_suffix="_sas" description="ice variables" sync_freq="1d"  >
           <field field_ref="sst"           name='tos'        level="0"  /> 
           <field field_ref="iceconc_pct"   name="siconc"     level="0"  /> 
           <field field_ref="icepres"       name="sitimefrac"  level="1" /> 

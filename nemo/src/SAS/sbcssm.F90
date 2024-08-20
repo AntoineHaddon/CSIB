@@ -148,6 +148,8 @@ CONTAINS
          frq_m(:,:) = 1._wp                              !              - -
          ssh  (:,:,Kmm) = 0._wp                          !              - -
       ENDIF
+      CALL eos_fzp( sss_m(:,:), sstfrz(:,:) )          ! set min sst_m to the freezing point
+      WHERE(sst_m(:,:).le. sstfrz(:,:) ) sst_m(:,:)=sstfrz(:,:)
 
       IF ( nn_ice == 1.or.ln_cpl ) THEN
          ts(:,:,1,jp_tem,Kmm) = sst_m(:,:)
@@ -217,20 +219,28 @@ CONTAINS
          ENDIF
          IF( TRIM(sf_ssm_ice(jf_ifr)%clrootname) /= 'NOT USED' ) THEN 
              ! ===== Work on the total concentration and thinkness on single category
-                                         ! 2. -- Change the cathegory concentrations according to the input (will be rebin later)
+                                         ! 1. -- Change the cathegory concentrations according to the input (will be rebin later)
              at_i_read(:,:) = sf_ssm_ice(jf_ifr)%fnow(:,:,1)
              WHERE(sum(a_i(:,:,:), dim=3).lt.at_i_read(:,:) ) seaice_created = seaice_created + (sum(h_i(:,:,:) * a_i(:,:,:), dim=3) - sum(v_i(:,:,:), dim=3  ))
              WHERE(sum(a_i(:,:,:), dim=3).gt.at_i_read(:,:) ) seaice_lost    = seaice_lost    + (sum(h_i(:,:,:) * a_i(:,:,:), dim=3) - sum(v_i(:,:,:), dim=3  ))
+             ! limit the input sea-ice concentration to the rn_max
+             WHERE(at_i_read(:,:).gt. rn_amax_2d(:,:) ) at_i_read(:,:)=rn_amax_2d(:,:)
              DO_2D( nn_hls, nn_hls, nn_hls, nn_hls )
                 IF (at_i(ji,jj).gt.epsi20) THEN
                       a_i(ji,jj,:)=a_i(ji,jj,:)*at_i_read(ji,jj)/at_i(ji,jj)
                 ELSEIF (at_i_read(ji,jj).gt.epsi20) THEN !new ice 
                       a_i(ji,jj  ,:) = 0._wp ; a_i(ji,jj  ,1) = at_i_read(ji,jj)
-                      h_i(ji,jj  ,:) = 0._wp ; h_i(ji,jj  ,1) = rn_himin
+                      h_i(ji,jj  ,:) = 0._wp ; h_i(ji,jj  ,1) = ht_i_new(ji,jj)
+                      h_s(ji,jj,:)   = 0._wp
                       t_s(ji,jj,:,:) = rt0 
                       t_i(ji,jj,:,:) = rt0 
                       t_su(ji,jj ,:) = rt0 
                       s_i (ji,jj ,:) = rn_simin 
+                      o_i (ji,jj ,:) = 0._wp
+                ELSE
+                      a_i(ji,jj  ,:) = 0._wp 
+                      h_i(ji,jj  ,:) = 0._wp
+                      h_s(ji,jj,:)   = 0._wp
                       o_i (ji,jj ,:) = 0._wp
                 ENDIF
                 v_i (ji,jj ,:) = h_i(ji,jj,:) * a_i(ji,jj,:)
