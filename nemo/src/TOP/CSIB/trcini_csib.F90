@@ -61,12 +61,12 @@ CONTAINS
          
          ! init from ocean surface concentration
          ! icedia(:,:,:) = tr(:,:,1,jrdia,Kmm)
-         DO jl = 1, jpl
-            WHERE( a_i(:,:,jl) > 1e-4 )
-               iceno3(:,:,jl) = tr(:,:,1,jqno3,Kmm)
-               icenh4(:,:,jl) = tr(:,:,1,jrnh4,Kmm)
-            END WHERE
-         ENDDO
+         ! DO jl = 1, jpl
+         !    WHERE( a_i(:,:,jl) > 1e-4 )
+         !       iceno3(:,:,jl) = tr(:,:,1,jqno3,Kmm)
+         !       icenh4(:,:,jl) = tr(:,:,1,jrnh4,Kmm)
+         !    END WHERE
+         ! ENDDO
 
          ! init with constant value where latitude > ...
          ! WHERE( gphit(:,:) > 85._wp )   ;   icedia(:,:,3)=1._wp
@@ -112,20 +112,20 @@ CONTAINS
 
 
        ! For debug/diagnostics: print max 
-      IF(lwp) WRITE(numout,*) 
-      IF(lwp) WRITE(numout,*) 'init, max N hemisphere : '
-      DO jl = 1, jpl
-         zmax = MAXVAL( iceno3(:,:,jl), MASK= gphit(:,:) > 0._wp .AND. a_i(:,:,jl) > 1e-4 )
-         CALL mpp_max( "trc_sms_csib", zmax )
-         IF(lwp) WRITE(numout,*) 'ice category ', jl , ' no3_i : ' , zmax
+      ! IF(lwp) WRITE(numout,*) 
+      ! IF(lwp) WRITE(numout,*) 'init, max N hemisphere : '
+      ! DO jl = 1, jpl
+      !    zmax = MAXVAL( iceno3(:,:,jl), MASK= gphit(:,:) > 0._wp .AND. a_i(:,:,jl) > 1e-4 )
+      !    CALL mpp_max( "trc_sms_csib", zmax )
+      !    IF(lwp) WRITE(numout,*) 'ice category ', jl , ' no3_i : ' , zmax
 
-         zmax = MAXVAL( tr(:,:,1,jqno3,Kmm) - iceno3(:,:,jl), MASK= gphit(:,:) > 0._wp .AND. a_i(:,:,jl) > 1e-4 )
-         CALL mpp_max( "trc_sms_csib", zmax )
-         IF(lwp) WRITE(numout,*) 'no3_o(Kmm) - no3_i : ' , zmax
-      ENDDO
-      zmax = MAXVAL( tr(:,:,1,jqno3,Kmm) , MASK= gphit(:,:) > 0._wp .AND. a_i(:,:,jl) > 1e-4 )
-      CALL mpp_max( "trc_sms_csib", zmax )
-      IF(lwp) WRITE(numout,*) 'no3_o(Kmm): ' , zmax
+      !    zmax = MAXVAL( tr(:,:,1,jqno3,Kmm) - iceno3(:,:,jl), MASK= gphit(:,:) > 0._wp .AND. a_i(:,:,jl) > 1e-4 )
+      !    CALL mpp_max( "trc_sms_csib", zmax )
+      !    IF(lwp) WRITE(numout,*) 'no3_o(Kmm) - no3_i : ' , zmax
+      ! ENDDO
+      ! zmax = MAXVAL( tr(:,:,1,jqno3,Kmm) , MASK= gphit(:,:) > 0._wp .AND. a_i(:,:,jl) > 1e-4 )
+      ! CALL mpp_max( "trc_sms_csib", zmax )
+      ! IF(lwp) WRITE(numout,*) 'no3_o(Kmm): ' , zmax
 
       !
    END SUBROUTINE trc_ini_csib

@@ -22,6 +22,8 @@ MODULE trcsms_csib
    USE sbc_oce , ONLY :  tprecip, sprecip    ! total and solid precipitation
    USE par_canoe        ! indices of CanOE model variables, e.g. jrdia: diatoms
 
+   USE lbclnk         ! lateral boundary conditions (or mpp links)
+
    IMPLICIT NONE
    PRIVATE
 
@@ -108,7 +110,8 @@ MODULE trcsms_csib
    REAL(wp), SAVE ::   z_ia = 0.03_wp                    ! height of skeletal layer
    REAL(wp), SAVE ::   r_pp = 2.0_wp                     ! ratio of photosynthetic parameters (W m-2)-1
    REAL(wp), SAVE ::   mu_max = 0.85_wp / 86400._wp      ! Maximum specific growth rate  (d)-1
-   REAL(wp), SAVE ::   c_di = 4.7e-8_wp                  ! Molecular diffusion coefficient for dissolved nutrients at the ice-water interface (m/s2)
+   ! REAL(wp), SAVE ::   c_di = 4.7e-8_wp                  ! Molecular diffusion coefficient for dissolved nutrients at the ice-water interface (m/s2)
+   REAL(wp), SAVE ::   c_di = 4.7e-11_wp                  ! Molecular diffusion coefficient for dissolved nutrients at the ice-water interface (m/s2) [reduced for large time steps, otherwise numerical problems]
    REAL(wp), SAVE ::   c_nu = 1.85e-6_wp                 ! Kinematic viscosity of seawater (m2/s)
 
    !!----------------------------------------------------------------------
@@ -187,7 +190,7 @@ CONTAINS
                   iceno3(ji,jj,jl) = iceno3_gca(ji,jj,jl) / a_i(ji,jj,jl)
                   icenh4(ji,jj,jl) = icenh4_gca(ji,jj,jl) / a_i(ji,jj,jl)
 
-               ELSE ! low ice
+               ELSE ! very low ice
                   ! set tracers to 0 
                   icedia(ji,jj,jl)=0._wp
                   iceno3(ji,jj,jl)=0._wp
@@ -196,8 +199,8 @@ CONTAINS
                   ! send what was in the ice to the ocean
                   zscale = z_ia / e3t_0(ji,jj,1)
                   tr(ji,jj,1,jrdia,Kmm) = tr(ji,jj,1,jrdia,Kmm) + icedia_gca(ji,jj,jl) * zscale
-                  tr(ji,jj,1,jqno3,Kmm) = tr(ji,jj,1,jqno3,Kmm) + iceno3_gca(ji,jj,jl) * zscale
-                  tr(ji,jj,1,jrnh4,Kmm) = tr(ji,jj,1,jrnh4,Kmm) + icenh4_gca(ji,jj,jl) * zscale
+                  ! tr(ji,jj,1,jqno3,Kmm) = tr(ji,jj,1,jqno3,Kmm) + iceno3_gca(ji,jj,jl) * zscale
+                  ! tr(ji,jj,1,jrnh4,Kmm) = tr(ji,jj,1,jrnh4,Kmm) + icenh4_gca(ji,jj,jl) * zscale
 
                ENDIF ! if ice
            
@@ -234,21 +237,22 @@ CONTAINS
 
 
       ! For debug/diagnostics: print max 
-      IF(lwp) WRITE(numout,*) 
-      IF(lwp) WRITE(numout,*) 'before computations, max N hemisphere, time step : ' , kt
-      IF(lwp) WRITE(numout,*) 'ice category ', 1
+      ! IF(lwp) WRITE(numout,*) 
+      ! IF(lwp) WRITE(numout,*) 'before computations, max N hemisphere, time step number : ' , kt
+      ! IF(lwp) WRITE(numout,*) 'tracer time step : ' , rDt_trc
+      ! IF(lwp) WRITE(numout,*) 'ice category ', 1
 
-      zmax = MAXVAL( iceno3(:,:,1), MASK= gphit(:,:) > 0._wp .AND. a_i(:,:,1) > 1e-4 )
-      CALL mpp_max( "trc_sms_csib", zmax )
-      IF(lwp) WRITE(numout,*) '   no3_i : ' , zmax
+      ! zmax = MAXVAL( iceno3(:,:,1), MASK= gphit(:,:) > 0._wp .AND. a_i(:,:,1) > 1e-4 )
+      ! CALL mpp_max( "trc_sms_csib", zmax )
+      ! IF(lwp) WRITE(numout,*) '   no3_i : ' , zmax
 
-      zmax = MAXVAL( tr(:,:,1,jqno3,Kmm) - iceno3(:,:,1), MASK= gphit(:,:) > 0._wp .AND. a_i(:,:,1) > 1e-4 )
-      CALL mpp_max( "trc_sms_csib", zmax )
-      IF(lwp) WRITE(numout,*) '   no3_o(Kmm) - no3_i : ' , zmax
+      ! zmax = MAXVAL( tr(:,:,1,jqno3,Kmm) - iceno3(:,:,1), MASK= gphit(:,:) > 0._wp .AND. a_i(:,:,1) > 1e-4 )
+      ! CALL mpp_max( "trc_sms_csib", zmax )
+      ! IF(lwp) WRITE(numout,*) '   no3_o(Kmm) - no3_i : ' , zmax
       
-      zmax = MAXVAL( tr(:,:,1,jqno3,Kmm) , MASK= gphit(:,:) > 0._wp .AND. a_i(:,:,1) > 1e-4 )
-      CALL mpp_max( "trc_sms_csib", zmax )
-      IF(lwp) WRITE(numout,*) 'no3_o(Kmm): ' , zmax
+      ! zmax = MAXVAL( tr(:,:,1,jqno3,Kmm) , MASK= gphit(:,:) > 0._wp .AND. a_i(:,:,1) > 1e-4 )
+      ! CALL mpp_max( "trc_sms_csib", zmax )
+      ! IF(lwp) WRITE(numout,*) 'no3_o(Kmm): ' , zmax
 
 
       
@@ -311,8 +315,8 @@ CONTAINS
                   ! Diffusion of N at ice ocean interface
                   ! = D / (nu / |friction velocity|) * ( N_ocean - N_ice ) / skeletal layer
                   IF( a_i(ji,jj,jl) > 1e-4 ) THEN
-                     moldif_no3(ji,jj,jl) = c_di / c_nu * abs(fric_vel(ji,jj)) * ( tr(ji,jj,1,jqno3,Kmm) - iceno3(ji,jj,jl) ) /z_ia
-                     moldif_nh4(ji,jj,jl) = c_di / c_nu * abs(fric_vel(ji,jj)) * ( tr(ji,jj,1,jrnh4,Kmm) - icenh4(ji,jj,jl) ) /z_ia
+                     moldif_no3(ji,jj,jl) = 0._wp !c_di / c_nu * abs(fric_vel(ji,jj)) * ( tr(ji,jj,1,jqno3,Kmm) - iceno3(ji,jj,jl) ) /z_ia
+                     moldif_nh4(ji,jj,jl) = 0._wp !c_di / c_nu * abs(fric_vel(ji,jj)) * ( tr(ji,jj,1,jrnh4,Kmm) - icenh4(ji,jj,jl) ) /z_ia
                      ! limit molecular diffusion to +/- 10%  per timestep
                      ! moldif_no3(ji,jj,jl) = MAX( MIN( moldif_no3(ji,jj,jl), iceno3(ji,jj,jl)*0.1_wp/rDt_trc ), -iceno3(ji,jj,jl)*0.1_wp/rDt_trc)
                      ! moldif_nh4(ji,jj,jl) = MAX( MIN( moldif_nh4(ji,jj,jl), icenh4(ji,jj,jl)*0.1_wp/rDt_trc ), -icenh4(ji,jj,jl)*0.1_wp/rDt_trc)
@@ -369,35 +373,35 @@ CONTAINS
 
 
             ! Ice NO3 dynamics
-                  iceno3(ji,jj,jl) = iceno3(ji,jj,jl) + rDt_trc * (           &
+                  ! iceno3(ji,jj,jl) = iceno3(ji,jj,jl) + rDt_trc * (           &
                                        ! sink: flushing from bottom and surface ice melt, snow melt, rain on ice, melt pond drainage
-                              &        - flush_no3(ji,jj,jl)                  & 
+                              ! &        - flush_no3(ji,jj,jl)                  & 
                                        ! sink: loss from lateral melting of ice
-                              &        - lamloss_no3(ji,jj,jl)                &           
+                              ! &        - lamloss_no3(ji,jj,jl)                &           
                                        ! source: Uptake from lateral ice growth
-                              &        + lagup_no3(ji,jj,jl)                  &
+                              ! &        + lagup_no3(ji,jj,jl)                  &
                                        ! source/sink: diffusion at ocean interface
-                              &        + moldif_no3(ji,jj,jl)                 &
-                              )
+                              ! &        + moldif_no3(ji,jj,jl)                 &
+                              ! )
                   ! guarantee positive concentration
                   iceno3(ji,jj,jl) = MAX(0._wp, iceno3(ji,jj,jl) )
                   iceno3(ji,jj,jl) = MIN(1000._wp, iceno3(ji,jj,jl) )
 
  
             ! Ocean surface NO3 dynamics
-                  tr(ji,jj,1,jqno3,Kmm) = tr(ji,jj,1,jqno3,Kmm) + rDt_trc * (             &
+                  ! tr(ji,jj,1,jqno3,Kmm) = tr(ji,jj,1,jqno3,Kmm) + rDt_trc * (             &
                            ! source: flushing of ice NO3 from bottom and surface ice melt, snow melt, rain on ice, melt pond drainage
-                  &        + flushrate(ji,jj,jl) * zscale * iceno3(ji,jj,jl)              & 
+                  ! &        + flushrate(ji,jj,jl) * zscale * iceno3(ji,jj,jl)              & 
                            ! source: ice NO3 from lateral melting of ice
-                  &        + da_lam_cat(ji,jj,jl) * z_ia * zscale * iceno3(ji,jj,jl)      &
+                  ! &        + da_lam_cat(ji,jj,jl) * z_ia * zscale * iceno3(ji,jj,jl)      &
                            ! sink: Uptake from lateral ice growth
-                  &        - lagup(ji,jj,jl) * zscale * tr(ji,jj,1,jqno3,Kmm)             &
+                  ! &        - lagup(ji,jj,jl) * zscale * tr(ji,jj,1,jqno3,Kmm)             &
                            ! sink/source: diffusion at ocean interface
-                  &        - moldif_no3(ji,jj,jl) * z_ia * zscale                         &
-                  )
+                  ! &        - moldif_no3(ji,jj,jl) * z_ia * zscale                         &
+                  ! )
                   ! guarantee positive concentration
-                  tr(ji,jj,1,jqno3,Kmm) = MAX(0._wp, tr(ji,jj,1,jqno3,Kmm) )
-                  tr(ji,jj,1,jqno3,Kmm) = MIN(1000._wp, tr(ji,jj,1,jqno3,Kmm) )
+                  ! tr(ji,jj,1,jqno3,Kmm) = MAX(0._wp, tr(ji,jj,1,jqno3,Kmm) )
+                  ! tr(ji,jj,1,jqno3,Kmm) = MIN(1000._wp, tr(ji,jj,1,jqno3,Kmm) )
 
 
             ! Ice NH4 dynamics
@@ -438,6 +442,10 @@ CONTAINS
          ENDDO ! loop jpj
       ENDDO ! loop jpl ice categories
 
+      ! lateral boundary conditions (or mpp links) needed??
+      ! CALL lbc_lnk( 'trc_sms_csib', icedia , 'T',  1._wp)
+      ! CALL lbc_lnk( 'trc_sms_csib', iceno3 , 'T',  1._wp)
+      ! CALL lbc_lnk( 'trc_sms_csib', icenh4 , 'T',  1._wp)
 
       ! For debug/diagnostics: print max 
       IF(lwp) WRITE(numout,*) 
@@ -449,25 +457,25 @@ CONTAINS
          ! IF(lwp) WRITE(numout,*) ' icedia : ' , zmax
       ! ENDDO
 
-      zmax = MAXVAL( iceno3(:,:,1), MASK= gphit(:,:) > 0._wp .AND. a_i(:,:,1) > 1e-4 )
-      CALL mpp_max( "trc_sms_csib", zmax )
-      IF(lwp) WRITE(numout,*) '   no3 : ' , zmax
+      ! zmax = MAXVAL( iceno3(:,:,1), MASK= gphit(:,:) > 0._wp .AND. a_i(:,:,1) > 1e-4 )
+      ! CALL mpp_max( "trc_sms_csib", zmax )
+      ! IF(lwp) WRITE(numout,*) '   no3 : ' , zmax
 
-      zmax = MAXVAL( moldif_no3(:,:,1), MASK= gphit(:,:) > 0._wp .AND. a_i(:,:,1) > 1e-4 )
-      CALL mpp_max( "trc_sms_csib", zmax )
-      IF(lwp) WRITE(numout,*) '   moldif_no3 : ' , zmax
+      ! zmax = MAXVAL( moldif_no3(:,:,1), MASK= gphit(:,:) > 0._wp .AND. a_i(:,:,1) > 1e-4 )
+      ! CALL mpp_max( "trc_sms_csib", zmax )
+      ! IF(lwp) WRITE(numout,*) '   moldif_no3 : ' , zmax
       
-      zmax = MAXVAL( tr(:,:,1,jqno3,Kmm) - iceno3(:,:,1), MASK= gphit(:,:) > 0._wp .AND. a_i(:,:,1) > 1e-4 )
-      CALL mpp_max( "trc_sms_csib", zmax )
-      IF(lwp) WRITE(numout,*) '   no3_o(Kmm) - no3_i : ' , zmax
+      ! zmax = MAXVAL( tr(:,:,1,jqno3,Kmm) - iceno3(:,:,1), MASK= gphit(:,:) > 0._wp .AND. a_i(:,:,1) > 1e-4 )
+      ! CALL mpp_max( "trc_sms_csib", zmax )
+      ! IF(lwp) WRITE(numout,*) '   no3_o(Kmm) - no3_i : ' , zmax
       
-      zmax = MAXVAL( tr(:,:,1,jqno3,Kmm) , MASK= gphit(:,:) > 0._wp .AND. a_i(:,:,1) > 1e-4 )
-      CALL mpp_max( "trc_sms_csib", zmax )
-      IF(lwp) WRITE(numout,*) 'no3_o(Kmm): ' , zmax
+      ! zmax = MAXVAL( tr(:,:,1,jqno3,Kmm) , MASK= gphit(:,:) > 0._wp .AND. a_i(:,:,1) > 1e-4 )
+      ! CALL mpp_max( "trc_sms_csib", zmax )
+      ! IF(lwp) WRITE(numout,*) 'no3_o(Kmm): ' , zmax
 
-      zmax = MAXVAL( fric_vel(:,:), MASK= gphit(:,:) > 0._wp .AND. a_i(:,:,1) > 1e-4 )
-      CALL mpp_max( "trc_sms_csib", zmax )
-      IF(lwp) WRITE(numout,*) 'fric_vel : ' , zmax
+      ! zmax = MAXVAL( fric_vel(:,:), MASK= gphit(:,:) > 0._wp .AND. a_i(:,:,1) > 1e-4 )
+      ! CALL mpp_max( "trc_sms_csib", zmax )
+      ! IF(lwp) WRITE(numout,*) 'fric_vel : ' , zmax
 
 
       ! Conversion from intensive/equivalent to extensive/global variables
@@ -498,11 +506,12 @@ CONTAINS
       DO_2D( 0, 0, 0, 0 )
          IF( at_i(ji,jj) > epsi10 ) THEN ! precence of ice
             zu_io   = u_ice(ji  ,jj  ) - ssu_m(ji  ,jj  )
-            zu_iom1 = u_ice(ji-1,jj  ) - ssu_m(ji-1,jj  )
             zv_io   = v_ice(ji  ,jj  ) - ssv_m(ji  ,jj  )
-            zv_iom1 = v_ice(ji  ,jj-1) - ssv_m(ji  ,jj-1)
+            ! zu_iom1 = u_ice(ji-1,jj  ) - ssu_m(ji-1,jj  )
+            ! zv_iom1 = v_ice(ji  ,jj-1) - ssv_m(ji  ,jj-1)
             !
-            fric_vel(ji,jj) = SQRT( rn_cio * 0.5_wp * ( zu_io*zu_io + zu_iom1*zu_iom1 + zv_io*zv_io + zv_iom1*zv_iom1 ) ) 
+            ! fric_vel(ji,jj) = SQRT( rn_cio * 0.5_wp * ( zu_io*zu_io + zu_iom1*zu_iom1 + zv_io*zv_io + zv_iom1*zv_iom1 ) ) 
+            fric_vel(ji,jj) = SQRT( rn_cio * 0.5_wp * ( zu_io*zu_io + zv_io*zv_io ) ) 
          ELSE ! no ice
             fric_vel(ji,jj) = 0.0_wp
          ENDIF
