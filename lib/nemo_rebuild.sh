@@ -76,9 +76,7 @@ for i in $(seq 0 $((n_suffix-1))); do
 done
 
 # The rebuild executable must be accessable at run time and namelist files present in cwd
-if [[ ! -f rebuild_nemo.exe ]]; then
-  cp ${EXEC_STORAGE_DIR}/rebuild_nemo.exe . || bail "Unable to get rebuild_nemo.exe"
-fi
+cp ${EXEC_STORAGE_DIR}/rebuild_nemo.exe . || bail "Unable to get rebuild_nemo.exe"
 
 # Can use Open MP. But probably only running on one processor.
 export OMP_NUM_THREADS=2
@@ -168,7 +166,7 @@ outrs=${modellast}_nemors
 #       which would result in $inrs=$outrs
 access in_${inrs} $inrs nocp=off
 cd in_${inrs}
-ln -s ../rebuild_nemo.exe .
+ln -sf ../rebuild_nemo.exe .
 # Figure out the last time step, which is needed for the rs tile names.
 nn_itend=$(cat rs_time.step)
 end_step=$(echo $nn_itend | awk '{printf "%8.8d",$1}')
