@@ -17,9 +17,8 @@ MODULE trcini_csib
    USE trcsms_csib
 
    USE dom_oce, ONLY: glamt, gphit               ! latitude/longitude for funky initiation
-   USE ice , ONLY: a_i, jpl
-   USE par_canoe        ! indices of CanOE model variables, e.g. jrdia: diatoms
-
+   USE ice , ONLY: a_i
+   
    IMPLICIT NONE
    PRIVATE
 
@@ -41,9 +40,7 @@ CONTAINS
       !! ** Method  : - Read the namcfc namelist and check the parameter values
       !!----------------------------------------------------------------------
       INTEGER, INTENT(in) ::   Kmm     ! time level indices
-      INTEGER  ::   ji, jj , jl        ! dummy loop indices
-      
-      REAL(wp) :: zmax !for diagnostics/debug
+      INTEGER  ::   ji, jj             ! dummy loop indices
       !
       CALL trc_nam_csib
       !
@@ -59,15 +56,9 @@ CONTAINS
          iceno3(:,:,:)=0._wp
          icenh4(:,:,:)=0._wp
          
-         ! init from ocean surface concentration
+         ! init from ocean surface diatoms
          ! icedia(:,:,:) = tr(:,:,1,jrdia,Kmm)
-         ! DO jl = 1, jpl
-         !    WHERE( a_i(:,:,jl) > 1e-4 )
-         !       iceno3(:,:,jl) = tr(:,:,1,jqno3,Kmm)
-         !       icenh4(:,:,jl) = tr(:,:,1,jrnh4,Kmm)
-         !    END WHERE
-         ! ENDDO
-
+         
          ! init with constant value where latitude > ...
          ! WHERE( gphit(:,:) > 85._wp )   ;   icedia(:,:,3)=1._wp
          ! ELSEWHERE                     ;   icedia(:,:,3)=0._wp
@@ -109,23 +100,6 @@ CONTAINS
       lagup_nh4(:,:,:) = 0._wp
       
       fric_vel(:,:) = 0._wp
-
-
-       ! For debug/diagnostics: print max 
-      ! IF(lwp) WRITE(numout,*) 
-      ! IF(lwp) WRITE(numout,*) 'init, max N hemisphere : '
-      ! DO jl = 1, jpl
-      !    zmax = MAXVAL( iceno3(:,:,jl), MASK= gphit(:,:) > 0._wp .AND. a_i(:,:,jl) > 1e-4 )
-      !    CALL mpp_max( "trc_sms_csib", zmax )
-      !    IF(lwp) WRITE(numout,*) 'ice category ', jl , ' no3_i : ' , zmax
-
-      !    zmax = MAXVAL( tr(:,:,1,jqno3,Kmm) - iceno3(:,:,jl), MASK= gphit(:,:) > 0._wp .AND. a_i(:,:,jl) > 1e-4 )
-      !    CALL mpp_max( "trc_sms_csib", zmax )
-      !    IF(lwp) WRITE(numout,*) 'no3_o(Kmm) - no3_i : ' , zmax
-      ! ENDDO
-      ! zmax = MAXVAL( tr(:,:,1,jqno3,Kmm) , MASK= gphit(:,:) > 0._wp .AND. a_i(:,:,jl) > 1e-4 )
-      ! CALL mpp_max( "trc_sms_csib", zmax )
-      ! IF(lwp) WRITE(numout,*) 'no3_o(Kmm): ' , zmax
 
       !
    END SUBROUTINE trc_ini_csib
