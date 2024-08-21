@@ -191,49 +191,49 @@
     fi
 
     # ADD ADDITIONAL FILES
-    tarlist=''
+    filelist=''
 
     # Copy init files if exist
     [ -n "$(ls output.init_[0-9][0-9][0-9][0-9].nc 2>/dev/null)" ] && mv output.init_[0-9][0-9][0-9][0-9].nc NEXT_RESTART_ARC
 
     # Create copies of the namelists used and include them in the tar file
     cp -f namelist_cfg rs_namelist_cfg || :
-    [ -s rs_namelist_cfg ] && tarlist="$tarlist rs_namelist_cfg"
+    [ -s rs_namelist_cfg ] && filelist="$filelist rs_namelist_cfg"
     cp -f namelist_ref rs_namelist_ref || :
-    [ -s rs_namelist_ref ] && tarlist="$tarlist rs_namelist_ref"
+    [ -s rs_namelist_ref ] && filelist="$filelist rs_namelist_ref"
 
     case $nn_ice in
         0) ;; # no ice boundary condition
         1) ;; # use observed ice cover
         2) # SI3  ice-model
            cp -f namelist_ice_cfg rs_namelist_ice_cfg || :
-           [ -s rs_namelist_ice_cfg ] && tarlist="$tarlist rs_namelist_ice_cfg"
+           [ -s rs_namelist_ice_cfg ] && filelist="$filelist rs_namelist_ice_cfg"
            cp -f namelist_ice_ref rs_namelist_ice_ref || :
-           [ -s rs_namelist_ice_ref ] && tarlist="$tarlist rs_namelist_ice_ref"
+           [ -s rs_namelist_ice_ref ] && filelist="$filelist rs_namelist_ice_ref"
            ;;
         3) # CICE ice-model (_cfg and _ref namelist for CICE ? )
            cp -f ice_in rs_ice_in || :
-           [ -s rs_ice_in ] && tarlist="$tarlist rs_ice_in"
+           [ -s rs_ice_in ] && filelist="$filelist rs_ice_in"
            ;;
         *) bail "Invalid value for nn_ice = $nn_ice" ;;
     esac
 
     if [ "$nemo_trc" = "on" ]; then
         cp -f namelist_top_cfg    rs_namelist_top_cfg    || :
-        [ -s rs_namelist_top_cfg ]     && tarlist="$tarlist rs_namelist_top_cfg"
+        [ -s rs_namelist_top_cfg ]     && filelist="$filelist rs_namelist_top_cfg"
         cp -f namelist_top_ref    rs_namelist_top_ref    || :
-        [ -s rs_namelist_top_ref ]     && tarlist="$tarlist rs_namelist_top_ref"
+        [ -s rs_namelist_top_ref ]     && filelist="$filelist rs_namelist_top_ref"
     fi
 
     if [ "$nemo_carbon" = "on" ]; then 
         cp -f namelist_cmoc_cfg rs_namelist_cmoc_cfg || : 
-        [ -s rs_namelist_cmoc_cfg ]  && tarlist="$tarlist rs_namelist_cmoc_cfg" 
+        [ -s rs_namelist_cmoc_cfg ]  && filelist="$filelist rs_namelist_cmoc_cfg" 
         cp -f namelist_cmoc_ref rs_namelist_cmoc_ref || : 
-        [ -s rs_namelist_cmoc_ref ]  && tarlist="$tarlist rs_namelist_cmoc_ref" 
+        [ -s rs_namelist_cmoc_ref ]  && filelist="$filelist rs_namelist_cmoc_ref" 
         cp -f namelist_canoe_cfg rs_namelist_canoe_cfg || : 
-        [ -s rs_namelist_canoe_cfg ]  && tarlist="$tarlist rs_namelist_canoe_cfg" 
+        [ -s rs_namelist_canoe_cfg ]  && filelist="$filelist rs_namelist_canoe_cfg" 
         cp -f namelist_canoe_ref rs_namelist_canoe_ref || : 
-        [ -s rs_namelist_canoe_ref ]  && tarlist="$tarlist rs_namelist_canoe_ref" 
+        [ -s rs_namelist_canoe_ref ]  && filelist="$filelist rs_namelist_canoe_ref" 
     fi 
     # current executable
     rm -f rs_${nemo_exec}
@@ -251,7 +251,7 @@
 
     # checksum file of ocean prognostic state (for bit identity checks)
     #cp -f final.state rs_final.state || :
-    #[ -s rs_final.state ] && tarlist="$tarlist rs_final.state"
+    #[ -s rs_final.state ] && filelist="$filelist rs_final.state"
 
     # ocean timing stats
     cp -f timing.output rs_timing.output || :
