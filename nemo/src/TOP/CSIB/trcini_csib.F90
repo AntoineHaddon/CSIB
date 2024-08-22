@@ -103,11 +103,13 @@ CONTAINS
       lamloss_no3(:,:,:) = 0._wp
       moldif_no3(:,:,:) = 0._wp
       lagup_no3(:,:,:) = 0._wp
+      bogup_no3(:,:,:) = 0._wp
 
       flush_nh4(:,:,:) = 0._wp
       lamloss_nh4(:,:,:) = 0._wp
       moldif_nh4(:,:,:) = 0._wp
       lagup_nh4(:,:,:) = 0._wp
+      bogup_nh4(:,:,:) = 0._wp
       
       fric_vel(:,:) = 0._wp
 

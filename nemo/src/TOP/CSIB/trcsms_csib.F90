@@ -93,11 +93,13 @@ MODULE trcsms_csib
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: lim_lig          !  Diatoms light limitation factor per ice category (-)
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: flush_no3        !  Loss rate of ice no3 from flushing per ice category (mmol/m3/s)
-   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: lamloss_no3      !  Loss rate from lateral melt per ice category (mmol/m3/s)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: flush_nh4        !  Loss rate of ice nh4 from flushing per ice category (mmol/m3/s)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: lamloss_no3      !  Loss rate from lateral melt per ice category (mmol/m3/s)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: lamloss_nh4      !  Loss rate from lateral melt per ice category (mmol/m3/s)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: lagup_no3        !  NO3 uptake rate from lateral ice growth  per ice category (mmol/m3/s)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: lagup_nh4        !  NH4 uptake rate from lateral ice growth  per ice category (mmol/m3/s)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: bogup_no3        !  No3 uptake rate from bottom ice growth per ice category (mmol/m3/s)
+   REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: bogup_nh4        !  Nh4 uptake rate from bottom ice growth per ice category (mmol/m3/s)
 
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:)   :: fric_vel         ! Ice frictional velocity (m/s)
    REAL(wp), PUBLIC, ALLOCATABLE, SAVE, DIMENSION(:,:,:) :: moldif_no3       ! Molecular diffusion ratea at ice ocean interface for NO3 per ice category (mmol/m3/s)
@@ -206,11 +208,13 @@ CONTAINS
       lamloss_no3(:,:,:) = 0._wp
       moldif_no3(:,:,:) = 0._wp
       lagup_no3(:,:,:) = 0._wp
+      bogup_no3(:,:,:) = 0._wp
 
       flush_nh4(:,:,:) = 0._wp
       lamloss_nh4(:,:,:) = 0._wp
       moldif_nh4(:,:,:) = 0._wp
       lagup_nh4(:,:,:) = 0._wp
+      bogup_nh4(:,:,:) = 0._wp
 
       ! Compute friction velocity, for molecular diffusion at sea ice ocean interface
       CALL ice_friction_velocity
@@ -254,8 +258,10 @@ CONTAINS
                   ! = rate of ice thickness change (m/s) * ice density (kg/m3) / freshwater density (kg/m3)
                   bogup(ji,jj,jl) = dh_bog_cat(ji,jj,jl) * rhoi / rhow
 
-                  ! Uptake of ice diatoms from bottom ice growth : flowrate per ice area (m/s) * ocean surface concentration (mmol/m3) /skeletal layer (m)
+                  ! Uptake of ice tracers from bottom ice growth : flowrate per ice area (m/s) * ocean surface concentration (mmol/m3) /skeletal layer (m)
                   bogup_dia(ji,jj,jl) = bogup(ji,jj,jl) * tr(ji,jj,1,jrdia,Kmm) /z_ia
+                  bogup_no3(ji,jj,jl) = bogup(ji,jj,jl) * tr(ji,jj,1,jqno3,Kmm) /z_ia
+                  bogup_nh4(ji,jj,jl) = bogup(ji,jj,jl) * tr(ji,jj,1,jrnh4,Kmm) /z_ia
 
                   ! lagup: water uptake flowrate per ice area from lateral ice growth (m/s) 
                   ! = (sic increase rate / sic) (1/s) * (height new ice) (s) * ice density (kg/m3) / freshwater density (kg/m3)
@@ -267,7 +273,6 @@ CONTAINS
                         & lagup(ji,jj,jl) / z_ia * tr(ji,jj,1,jrdia,Kmm)     &
                         ! - ice tracer conc * (sic increase rate / sic)
                         & - icedia(ji,jj,jl) * da_lag_cat(ji,jj,jl)
-                  
                   ! Uptake of ice N from lateral ice growth  
                   lagup_no3(ji,jj,jl) = lagup(ji,jj,jl) / z_ia * tr(ji,jj,1,jqno3,Kmm) - iceno3(ji,jj,jl) * da_lag_cat(ji,jj,jl)
                   lagup_nh4(ji,jj,jl) = lagup(ji,jj,jl) / z_ia * tr(ji,jj,1,jrnh4,Kmm) - icenh4(ji,jj,jl) * da_lag_cat(ji,jj,jl)
@@ -340,8 +345,10 @@ CONTAINS
                               &        - lamloss_no3(ji,jj,jl)                &           
                                        ! source: Uptake from lateral ice growth
                               &        + lagup_no3(ji,jj,jl)                  &
+                                       ! source: Uptake from bottom ice growth
+                              &        + bogup_no3(ji,jj,jl)                  &
                                        ! source/sink: diffusion at ocean interface
-                              &        + moldif_no3(ji,jj,jl)                  &
+                              &        + moldif_no3(ji,jj,jl)                 &
                               )
                   ! guarantee positive concentration
                   iceno3(ji,jj,jl) = MAX(0._wp, iceno3(ji,jj,jl) )
@@ -355,6 +362,8 @@ CONTAINS
                   &        + da_lam_cat(ji,jj,jl) * z_ia * zscale * iceno3(ji,jj,jl)      &
                            ! sink: Uptake from lateral ice growth
                   &        - lagup(ji,jj,jl) * zscale * tr(ji,jj,1,jqno3,Kmm)             &
+                           ! sink: Uptake from bottom ice growth
+                  &        - bogup(ji,jj,jl) * zscale * tr(ji,jj,1,jqno3,Kmm)             &
                            ! sink/source: diffusion at ocean interface
                   &        - moldif_no3(ji,jj,jl) * z_ia * zscale                         &
                   )
@@ -370,6 +379,8 @@ CONTAINS
                               &        - lamloss_nh4(ji,jj,jl)                &
                                        ! source: Uptake from lateral ice growth
                               &        + lagup_nh4(ji,jj,jl)                  & 
+                                       ! source: Uptake from bottom ice growth
+                              &        + bogup_nh4(ji,jj,jl)                  & 
                                        ! source/sink: diffusion at ocean interface
                               &        + moldif_nh4(ji,jj,jl)                 &
                               )
@@ -385,6 +396,8 @@ CONTAINS
                   &        + da_lam_cat(ji,jj,jl) * z_ia * zscale * icenh4(ji,jj,jl)      & 
                            ! sink: Uptake from lateral ice growth
                   &        - lagup(ji,jj,jl) * zscale * tr(ji,jj,1,jrnh4,Kmm)             &
+                           ! sink: Uptake from bottom ice growth
+                  &        - bogup(ji,jj,jl) * zscale * tr(ji,jj,1,jrnh4,Kmm)             &
                            ! sink/source: diffusion at ocean interface
                   &        - moldif_nh4(ji,jj,jl) * z_ia * zscale                         &
                   )
@@ -464,6 +477,7 @@ CONTAINS
          &     lim_lig  (jpi,jpj,jpl) , growth_dia (jpi,jpj,jpl) ,                             &
          &     flush_no3(jpi,jpj,jpl) , lamloss_no3(jpi,jpj,jpl) , moldif_no3(jpi,jpj,jpl)   , &
          &     flush_nh4(jpi,jpj,jpl) , lamloss_nh4(jpi,jpj,jpl) , moldif_nh4(jpi,jpj,jpl)   , &
+         &     bogup_no3(jpi,jpj,jpl) , bogup_nh4  (jpi,jpj,jpl) ,                             &
          &     fric_vel (jpi,jpj)     ,                                                        &
          &     STAT=trc_sms_csib_alloc)
 
