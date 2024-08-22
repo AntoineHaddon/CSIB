@@ -17,7 +17,7 @@ MODULE trcini_csib
    USE trcsms_csib
 
    USE dom_oce, ONLY: glamt, gphit               ! latitude/longitude for funky initiation
-   USE ice , ONLY: a_i
+   USE ice , ONLY: a_i, jpl
    
    IMPLICIT NONE
    PRIVATE
@@ -39,8 +39,8 @@ CONTAINS
       !!
       !! ** Method  : - Read the namcfc namelist and check the parameter values
       !!----------------------------------------------------------------------
-      INTEGER, INTENT(in) ::   Kmm     ! time level indices
-      INTEGER  ::   ji, jj             ! dummy loop indices
+      INTEGER, INTENT(in) ::   Kmm         ! time level indices
+      INTEGER  ::   ji, jj, jl             ! dummy loop indices
       !
       CALL trc_nam_csib
       !
@@ -58,6 +58,16 @@ CONTAINS
          
          ! init from ocean surface diatoms
          ! icedia(:,:,:) = tr(:,:,1,jrdia,Kmm)
+         ! DO jl = 1, jpl ! loop ice categories
+         !    DO jj = 1, jpj
+         !       DO ji = 1, jpi
+         !          IF( a_i(ji,jj,jl) > 1.e-4_wp ) THEN ! if ice
+         !             iceno3(ji,jj,jl) = tr(ji,jj,1,jqno3,Kmm)
+         !             icenh4(ji,jj,jl) = tr(ji,jj,1,jrnh4,Kmm)
+         !          END IF
+         !       ENDDO
+         !    ENDDO
+         ! ENDDO
          
          ! init with constant value where latitude > ...
          ! WHERE( gphit(:,:) > 85._wp )   ;   icedia(:,:,3)=1._wp

@@ -108,7 +108,8 @@ MODULE trcsms_csib
    REAL(wp), SAVE ::   z_ia = 0.03_wp                    ! height of skeletal layer
    REAL(wp), SAVE ::   r_pp = 2.0_wp                     ! ratio of photosynthetic parameters (W m-2)-1
    REAL(wp), SAVE ::   mu_max = 0.85_wp / 86400._wp      ! Maximum specific growth rate  (d)-1
-   REAL(wp), SAVE ::   c_di = 4.7e-8_wp                  ! Molecular diffusion coefficient for dissolved nutrients at the ice-water interface (m/s2)
+   ! REAL(wp), SAVE ::   c_di = 4.7e-8_wp                  ! Molecular diffusion coefficient for dissolved nutrients at the ice-water interface (m/s2)
+   REAL(wp), SAVE ::   c_di = 4.7e-10_wp                  ! Molecular diffusion coefficient for dissolved nutrients at the ice-water interface (m/s2)
    REAL(wp), SAVE ::   c_nu = 1.85e-6_wp                 ! Kinematic viscosity of seawater (m2/s)
 
    !!----------------------------------------------------------------------
@@ -141,7 +142,22 @@ CONTAINS
       IF(lwp) WRITE(numout,*) ' trc_sms_csib:  CSIB model'
       IF(lwp) WRITE(numout,*) ' ~~~~~~~~~~~~~~'
 
-
+      ! Initiation from ocean surface concentrations (need to do it here and not in trcini_csib because CanOE initiation occurs after?)
+      IF ( (kt == 1) .AND. (.NOT. ln_rsttr) ) THEN
+         IF(lwp) WRITE(numout,*) 'Init from ocean surface'
+         DO jl = 1, jpl ! loop ice categories
+            DO jj = 1, jpj
+               DO ji = 1, jpi
+                  IF( a_i(ji,jj,jl) > 1.e-4_wp ) THEN ! if ice
+                     iceno3(ji,jj,jl) = tr(ji,jj,1,jqno3,Kmm)
+                     icenh4(ji,jj,jl) = tr(ji,jj,1,jrnh4,Kmm)
+                  END IF
+               ENDDO
+            ENDDO
+         ENDDO
+         iceno3_gca(:,:,:) = iceno3(:,:,:) * a_i(:,:,:)
+         icenh4_gca(:,:,:) = icenh4(:,:,:) * a_i(:,:,:)
+      END IF
 
       ! Conversion from global to equivalent variables
       ! and set to 0 if low ice concentration 
@@ -259,9 +275,10 @@ CONTAINS
 
                   ! Diffusion of N at ice ocean interface
                   ! = D / (nu / |friction velocty|) * ( N_ocean - N_ice ) / skeletal layer
-                  moldif_no3(ji,jj,jl) = c_di / c_nu * abs(fric_vel(ji,jj)) * ( tr(ji,jj,1,jqno3,Kmm) - iceno3(ji,jj,jl) ) /z_ia
-                  moldif_nh4(ji,jj,jl) = c_di / c_nu * abs(fric_vel(ji,jj)) * ( tr(ji,jj,1,jrnh4,Kmm) - icenh4(ji,jj,jl) ) /z_ia
-
+                  IF( a_i(ji,jj,jl) > 1.e-4_wp ) THEN ! if ice
+                     moldif_no3(ji,jj,jl) = c_di / c_nu * abs(fric_vel(ji,jj)) * ( tr(ji,jj,1,jqno3,Kmm) - iceno3(ji,jj,jl) ) /z_ia
+                     moldif_nh4(ji,jj,jl) = c_di / c_nu * abs(fric_vel(ji,jj)) * ( tr(ji,jj,1,jrnh4,Kmm) - icenh4(ji,jj,jl) ) /z_ia
+                  ENDIF
 
                   ! Ice diatom growth
 
@@ -270,6 +287,16 @@ CONTAINS
 
                   ! Ice diatom growth rate 
                   growth_dia(ji,jj,jl) =mu_max * lim_lig(ji,jj,jl) * icedia(ji,jj,jl)
+
+
+
+                  ! scaling factor: conversion of flowrate per sea ice area to flowrate per unit volume
+                  ! = sea ice concentration / ocean surface layer height
+                  ! = sea ice area / (cell area * ocean surface layer height)
+                  zscale = a_i(ji,jj,jl) / e3t_0(ji,jj,1)
+                  ! zscale = a_i(ji,jj,jl)  / e3t(ji,jj,1,Kmm) ! (time dependent scale factor) compilation fails: e3t  only defined if not using key_qco
+
+
 
 
                   ! Ice diatoms dynamics
@@ -291,14 +318,6 @@ CONTAINS
 
 
                   ! Ocean surface phytoplankton seeding and removal
-                  
-                  ! scaling factor: conversion of flowrate per sea ice area to flowrate per unit volume
-                  ! = sea ice concentration / ocean surface layer height
-                  ! = sea ice area / (cell area * ocean surface layer height)
-                  zscale = a_i(ji,jj,jl) / e3t_0(ji,jj,1)
-                  ! zscale = a_i(ji,jj,jl)  / e3t(ji,jj,1,Kmm) ! (time dependent scale factor) compilation fails: e3t  only defined if not using key_qco
-
-                  ! ocean surface phytoplankton dynamics
                   tr(ji,jj,1,jrdia,Kmm) = tr(ji,jj,1,jrdia,Kmm) + rDt_trc * (             &
                            ! source: flushing of ice diatoms from bottom and surface ice melt, snow melt, rain on ice, melt pond drainage
                   &        + flushrate(ji,jj,jl) * zscale * icedia(ji,jj,jl)              & 
@@ -422,7 +441,7 @@ CONTAINS
          zv_io   = v_ice(ji  ,jj  ) - ssv_m(ji  ,jj  )
          zv_iom1 = v_ice(ji  ,jj-1) - ssv_m(ji  ,jj-1)
          !
-         fric_vel(ji,jj) = rn_cio * SQRT( 0.5_wp * ( zu_io*zu_io + zu_iom1*zu_iom1 + zv_io*zv_io + zv_iom1*zv_iom1 ) ) * tmask(ji,jj,1)
+         fric_vel(ji,jj) = SQRT( rn_cio * 0.5_wp * ( zu_io*zu_io + zu_iom1*zu_iom1 + zv_io*zv_io + zv_iom1*zv_iom1 ) ) * tmask(ji,jj,1)
       END_2D
    END SUBROUTINE ice_friction_velocity
 

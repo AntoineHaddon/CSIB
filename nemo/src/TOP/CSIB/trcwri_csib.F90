@@ -72,8 +72,9 @@ CONTAINS
       
       CALL iom_put( 'flush_no3'        , flush_no3(:,:,:) )
       CALL iom_put( 'lamloss_no3'      , lamloss_no3(:,:,:) )
-      CALL iom_put( 'moldif_no3'       , moldif_no3(:,:,:) )
       CALL iom_put( 'lagup_no3'        , lagup_no3(:,:,:) )
+      CALL iom_put( 'moldif_no3'       , moldif_no3(:,:,:) )
+      CALL iom_put( 'fric_vel'         , fric_vel(:,:) )
 
       CALL iom_put( 'flush_nh4'        , flush_nh4(:,:,:) )
       CALL iom_put( 'lamloss_nh4'      , lamloss_nh4(:,:,:) )
