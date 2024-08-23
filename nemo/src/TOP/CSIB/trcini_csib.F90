@@ -56,19 +56,6 @@ CONTAINS
          iceno3(:,:,:)=0._wp
          icenh4(:,:,:)=0._wp
          
-         ! init from ocean surface diatoms
-         ! icedia(:,:,:) = tr(:,:,1,jrdia,Kmm)
-         ! DO jl = 1, jpl ! loop ice categories
-         !    DO jj = 1, jpj
-         !       DO ji = 1, jpi
-         !          IF( a_i(ji,jj,jl) > 1.e-4_wp ) THEN ! if ice
-         !             iceno3(ji,jj,jl) = tr(ji,jj,1,jqno3,Kmm)
-         !             icenh4(ji,jj,jl) = tr(ji,jj,1,jrnh4,Kmm)
-         !          END IF
-         !       ENDDO
-         !    ENDDO
-         ! ENDDO
-         
          ! init with constant value where latitude > ...
          ! WHERE( gphit(:,:) > 85._wp )   ;   icedia(:,:,3)=1._wp
          ! ELSEWHERE                     ;   icedia(:,:,3)=0._wp
@@ -96,15 +83,12 @@ CONTAINS
       bogup_dia(:,:,:) = 0._wp
       lagup_dia(:,:,:) = 0._wp
       
-      growth_dia(:,:,:) = 0._wp
-      lim_lig(:,:,:) = 0._wp
-
       flush_no3(:,:,:) = 0._wp
       lamloss_no3(:,:,:) = 0._wp
       moldif_no3(:,:,:) = 0._wp
       lagup_no3(:,:,:) = 0._wp
       bogup_no3(:,:,:) = 0._wp
-
+      
       flush_nh4(:,:,:) = 0._wp
       lamloss_nh4(:,:,:) = 0._wp
       moldif_nh4(:,:,:) = 0._wp
@@ -112,7 +96,16 @@ CONTAINS
       bogup_nh4(:,:,:) = 0._wp
       
       fric_vel(:,:) = 0._wp
-
+      
+      growth_dia(:,:,:) = 0._wp
+      lim_lig(:,:,:) = 0._wp
+      lim_nut_ice(:,:,:) = 0._wp
+      diaup_no3(:,:,:) = 0._wp
+      diaup_nh4(:,:,:) = 0._wp
+      mortlin_dia(:,:,:) = 0._wp
+      mortquad_dia(:,:,:) = 0._wp
+      remin_dia(:,:,:) = 0._wp
+      nitri(:,:,:) = 0._wp
       !
    END SUBROUTINE trc_ini_csib
 
