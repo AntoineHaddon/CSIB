@@ -511,11 +511,19 @@ PROGRAM nemo_ocean_diag
           CALL getvara ('sndmassmelt', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), snowmel_cea, 1., 0.)
           isnwmlt_cea = snowmel_cea*sitimefrac*t_mask(:,:,1)
 
-          CALL getvara ('O_QsrMix', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qsr_tot, 1., 0.)
-          CALL getvara ('O_QnsMix', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qns_tot, 1., 0.)
-          CALL getvara ('O_QsrIce', iou6, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qsr_ice, 1., 0.)
-          CALL getvara ('O_QnsIce', iou6, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qns_ice, 1., 0.)
-          hflx_qns_tot=hflx_qns_tot - hflx_evap_cea + hflx_rain_cea
+          hflx_qsr_tot =0. ; hflx_qns_tot =0. ; hflx_qsr_ice =0. ; hflx_qns_ice =0. 
+          status = nf_inq_varid(iou1, "O_QnsMix", varid)
+          IF (status.eq.nf90_noerr) THEN 
+              CALL getvara ('O_QnsMix', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qns_tot, 1., 0.)
+              hflx_qns_tot=hflx_qns_tot - hflx_evap_cea + hflx_rain_cea
+          ELSE; print*,'WARNING: Coupler fluxes not found (normal if forcing from blk)'
+          ENDIF
+          status = nf_inq_varid(iou1, "O_QsrMix", varid)
+          IF (status.eq.nf90_noerr) CALL getvara ('O_QsrMix', iou1, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qsr_tot, 1., 0.)
+          status = nf_inq_varid(iou6, "O_QsrIce", varid)
+          IF (status.eq.nf90_noerr) CALL getvara ('O_QsrIce', iou6, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qsr_ice, 1., 0.)
+          status = nf_inq_varid(iou6, "O_QnsIce", varid)
+          IF (status.eq.nf90_noerr) CALL getvara ('O_QnsIce', iou6, imt*jmt, (/1,1,l/), (/imt,jmt,1/), hflx_qns_ice, 1., 0.)
 
           CALL getvara ('volo', iou7, 1, (/l/), (/1/), vol(l), 1., 0.)
           CALL getvara ('thetaoga', iou7, 1, (/l/), (/1/), tvol(l), 1., 0.)
