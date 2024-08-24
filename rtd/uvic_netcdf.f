@@ -29,7 +29,7 @@
       name = fname
       inquire (file=trim(name), exist=exists)
       if (.not. exists) then
-        print*, 'error in opentime => file ',trim(name),'does not exist'
+        print*,'error in opentime => file ',trim(name),' does not exist'
         error stop 
       endif
       ntrec = 0
@@ -157,7 +157,7 @@
       name = fname
       inquire (file=trim(name), exist=exists)
       if (.not. exists) then
-        print*, 'error in openfile => file ',trim(name),'does not exist'
+        print*,'error in openfile => file ',trim(name),' does not exist'
         error stop 
       endif
 

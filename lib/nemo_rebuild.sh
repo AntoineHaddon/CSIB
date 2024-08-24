@@ -185,7 +185,7 @@ if [ ! -s "${pfx}_0000.nc" ]; then
     done
    # an already rebuilt rs with a different name
    found_rs=`(ls -1 *_restart.nc || : ) 2>/dev/null`
-   [ -z "$found_rs" ] || mv $found_rs $pfx.nc
+   [ -z "$found_rs" ] || mv -n $found_rs $pfx.nc
 fi
 
 # Check if the RS is already rebuilt, in which case do nothing.
@@ -207,7 +207,7 @@ if [ ! -s "${pfx}_0000.nc" ]; then
     done
    # an already rebuilt rs with a different name
    found_rs=`(ls -1 *_restart_ice.nc || : ) 2>/dev/null`
-   [ -z "$found_rs" ] || mv $found_rs $pfx.nc
+   [ -z "$found_rs" ] || mv -n $found_rs $pfx.nc
 fi
 
 fnpatt=${pfx}_0000.nc
@@ -228,7 +228,7 @@ if [ ! -s "${pfx}_0000.nc" ]; then
     done
    # an already rebuilt rs with a different name
    found_rs=`(ls -1 *_restart_trc.nc || : ) 2>/dev/null`
-   [ -z "$found_rs" ] || mv $found_rs $pfx.nc
+   [ -z "$found_rs" ] || mv -n $found_rs $pfx.nc
 fi
 
 fnpatt=${pfx}_0000.nc
