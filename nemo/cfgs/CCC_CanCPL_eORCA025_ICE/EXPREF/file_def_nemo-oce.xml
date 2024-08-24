@@ -45,7 +45,7 @@
         </file>
         <file id="file12" name_suffix="_grid_U" description="ocean U grid variables">
           <field field_ref="uoce"        name="uo"       level="0" /> <!-- (Omon*) level = 1 in CMIP6  -->
-          <field field_ref="uoce_eiv"    name="uoce_eiv" level="0" /> <!-- only rtd -->
+          <!-- <field field_ref="uoce_eiv"    name="uoce_eiv" level="0" /> -->
           <field field_ref="utau"        name="tauuo"    level="0" /> <!-- (Omon*) level = 1 in CMIP6  -->
 	  <field field_ref="e3u"         name="e3u"      level="0" /> <!-- only rtd -->
 	  <!-- field field_ref="aeiu_2d"     name="aeiu2d"   level="0" -->
@@ -56,7 +56,7 @@
         </file>
         <file id="file13" name_suffix="_grid_V" description="ocean V grid variables">
           <field field_ref="voce"        name="vo"       level="0" /> <!-- (Omon*) level = 1 in CMIP6  -->
-          <field field_ref="voce_eiv"    name="voce_eiv" level="0" /> <!-- only rtd -->
+          <!-- <field field_ref="voce_eiv"    name="voce_eiv" level="0" /> -->
           <field field_ref="vtau"        name="tauvo"    level="0" /> <!-- (Omon*) level = 1 in CMIP6  -->
 	  <field field_ref="e3v"         name="e3v"      level="0" /> <!-- only rtd -->
 	  <!-- field field_ref="aeiv_2d"     name="aeiv2d"   level="0" -->
@@ -67,7 +67,7 @@
         </file>
         <file id="file14" name_suffix="_grid_W" description="ocean W grid variables">
           <field field_ref="woce"        name="wo"       level="0" /> <!-- (Omon) -->
-	      <field field_ref="woce_eiv"    name="woce_eiv" level="0" />  <!-- only rtd -->
+          <!-- <field field_ref="woce_eiv"    name="woce_eiv" level="0" />  -->
 	      <field field_ref="avt"         name="avt"      level="0" />
           <field field_ref="av_tmx"         name="av_tmx"      level="0" />
         </file>

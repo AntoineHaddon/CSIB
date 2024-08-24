@@ -80,6 +80,7 @@ PROGRAM nemo_ocean_diag
 ! 2. xlf90_r -o nemo_physical_rtd.exe ccc_nemo_rtd_utils.F90 ccc_nemo_physical_rtd.F90 uvic_netcdf.f `nf-config --fflags --flibs`
 ! ======================================================================
       USE ccc_nemo_rtd_utils, only: area_ave, area_ave_flx, moc, noleap_days
+      USE netcdf
       IMPLICIT NONE
       integer, parameter:: dp=kind(0.d0) ! double precision
       INTEGER :: i, j, k, l, imt, jmt, km, lm, year, mon, nrecon
@@ -87,7 +88,7 @@ PROGRAM nemo_ocean_diag
       INTEGER :: j_20N, j_20S, j_eq, k60, k500, k2000, i_DP, j_DP_S 
       INTEGER :: j_DP_N, i_IN_E1, i_IN_W1, i_IN_E2, i_IN_W2
       INTEGER :: i_AN_E, i_AN_W, i_AS_E, i_AS_W, i_PN_E, i_PN_W
-      INTEGER :: eivid, status, nf_inq_varid, nf_get_att
+      INTEGER :: varid, status, nf_inq_varid, nf_get_att
       REAL    :: recn, cp, tz, sz, w_meanx, w_meany, area1, area2
       REAL    :: area, arc, arcn, arcs
       REAL(kind=4) :: fill_value
@@ -476,18 +477,19 @@ PROGRAM nemo_ocean_diag
           CALL getvara ('vo', iou3, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), v, 1., 0.)
          ! w-velocity 
           CALL getvara ('wo', iou4, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), w, 1., 0.)
-         ! EI u-velocity 
-          CALL getvara ('uoce_eiv', iou2, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmu, 1., 0.)
-         ! EI v-velocity 
-          CALL getvara ('voce_eiv', iou3, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmv, 1., 0.)
-         ! EI w-velocity 
-          CALL getvara ('woce_eiv', iou4, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmw, 1., 0.)
-         ! If eddy fields contain NaNs, set them to zeros.
-          status = nf_inq_varid(iou3, "voce_eiv", eivid)
-          status = nf_get_att(iou3, eivid, '_FillValue', fill_value)
-          WHERE (gmv == fill_value)
-            gmu = 0.0_dp; gmv = 0.0_dp; gmw = 0.0_dp
-          ENDWHERE
+          gmu = 0.0_dp; gmv = 0.0_dp; gmw = 0.0_dp
+          ! EI u-velocity (only if present in the file)
+          status = nf_inq_varid(iou3, "uoce_eiv", varid)
+          IF (status.eq.nf90_noerr) THEN 
+              CALL getvara ('uoce_eiv', iou2, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmu, 1., 0.)
+          ELSE; print*,'WARNING: Eddy induced velovity n ot found (normal if ln_ldfeiv = .FALSE.)'
+          ENDIF
+          ! EI v-velocity (only if present in the file)
+          status = nf_inq_varid(iou3, "voce_eiv", varid)
+          IF (status.eq.nf90_noerr) CALL getvara ('voce_eiv', iou3, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmv, 1., 0.)
+          ! EI w-velocity (only if present in the file)
+          status = nf_inq_varid(iou3, "woce_eiv", varid)
+          IF (status.eq.nf90_noerr) CALL getvara ('woce_eiv', iou4, imt*jmt*km, (/1,1,1,l/), (/imt,jmt,km,1/), gmw, 1., 0.)
          ! Wind Stress along i-axis
           CALL getvara ('tauuo', iou2, imt*jmt, (/1,1,l/), (/imt,jmt,1/), tau_x, 1., 0.)
          ! Wind Stress along j-axis
