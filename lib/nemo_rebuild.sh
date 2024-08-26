@@ -117,6 +117,33 @@ if (( with_rbld_nemo == 1 )) ; then
          cd $wrkdir
          rm -rf $indir
       fi
+               # Replace the lat/lon to remove the hold made by the land processors elimination
+      ncsave=${freq}_${lsfx}
+      access  $ncsave.nc $indir.nc na 
+      if [ -e "$ncsave.nc" ] ; then
+        chmod u+w $(readlink -f "$ncsave.nc")
+        # detect the grid (U/V/F/T) with the suffix
+        if [[ ${sfx,,} == *"grid_u"*  ]];then
+                  ( ncks -A -h -v glamu,gphiu coor.nc $ncsave.nc && 
+                    ncap2 -h -O -s "nav_lon=glamu;nav_lat=gphiu"  $ncsave.nc  $ncsave.nc )
+        elif [[ ${sfx,,} == *"grid_v"*  ]];then
+                  ( ncks -A -h -v glamv,gphiv coor.nc $ncsave.nc && 
+                    ncap2 -h -O -s "nav_lon=glamv;nav_lat=gphiv"  $ncsave.nc  $ncsave.nc )
+        elif [[ ${sfx,,} == *"grid_f"*  ]];then
+                  ( ncks -A -h -v glamf,gphif coor.nc $ncsave.nc && 
+                    ncap2 -h -O -s "nav_lon=glamf;nav_lat=gphif"  $ncsave.nc  $ncsave.nc )
+        elif [[ ${sfx,,} == *"diaptr"*  ]];then
+                  (  release $ncsave.nc &&
+                   continue )
+        else # grid T is the default 
+                  ( ncks -A -h -v glamt,gphit coor.nc $ncsave.nc && 
+                    ncap2 -h -O -s "nav_lon=glamt;nav_lat=gphit"  $ncsave.nc  $ncsave.nc )
+        fi
+        ncks -h -O -x -v gphi.,glam.  $ncsave.nc  $ncsave.nc
+        chmod u-w $(readlink -f "$ncsave.nc")
+        release $ncsave.nc
+      fi
+
    done
 fi
 

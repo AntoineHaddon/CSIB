@@ -392,8 +392,8 @@ PROGRAM nemo_ocean_diag
           do j = 1, jmt
 ! Mask for tropical Pacific upwelling
               trop_up_mask(i,j) = 0. 
-              if (lon2d(i,10).ge.150..or.lon2d(i,10).le.-75.) then 
-                  if (lat2d(10,j).gt.-2..and.lat2d(10,j).lt.2.) then 
+              if (lon2d(i,j).ge.150..or.lon2d(i,j).le.-75.) then 
+                  if (lat2d(i,j).gt.-2..and.lat2d(i,j).lt.2.) then 
                       if (t_mask(i,j,k60).eq.1.) then ! ~ 60m
                           trop_up_mask(i,j) = 1. 
                       endif
@@ -405,17 +405,17 @@ PROGRAM nemo_ocean_diag
              nino34_mask(i,j)= 0. 
              nino4_mask(i,j) = 0.
              if (t_mask(i,j,1).eq.1.) then ! sst 
-               if (lat2d(10,j).ge.-5..and.lat2d(10,j).le.5.) then 
+               if (lat2d(i,j).ge.-5..and.lat2d(i,j).le.5.) then 
 ! Nino3
-                 if (lon2d(i,10).ge.-150..and.lon2d(i,10).le.-90.) then
+                 if (lon2d(i,j).ge.-150..and.lon2d(i,j).le.-90.) then
                    nino3_mask(i,j) =  1. 
                  endif
 ! Nino3.4
-                 if (lon2d(i,10).ge.-170..and.lon2d(i,10).le.-120.) then
+                 if (lon2d(i,j).ge.-170..and.lon2d(i,j).le.-120.) then
                    nino34_mask(i,j) = 1. 
                  endif
 ! Nino4
-                 if (lon2d(i,10).ge.160..or.lon2d(i,10).le.-150.) then 
+                 if (lon2d(i,j).ge.160..or.lon2d(i,j).le.-150.) then 
                    nino4_mask(i,j) = 1. 
                  endif
                endif           
@@ -639,7 +639,7 @@ PROGRAM nemo_ocean_diag
             &           , km, t_nino4(l), dvol, 1) 
 
           do i = 1, imt
-               if (lon2d(i,10).ge.150..or.lon2d(i,10).le.-75.) then
+               if (lon2d(i,j_eq).ge.150..or.lon2d(i,j_eq).le.-75.) then
                    do k = 1, k500 
                      if (u_mask(i,j_eq,k).gt.0.5) then
                        if (u(i, j_eq, k).gt. euc_max(l)) then
@@ -770,8 +770,8 @@ PROGRAM nemo_ocean_diag
     ! Upper Southern Ocean MOC
           do k = 1, km 
               do j =1, jmt   
-                  if (lat2d(10,j).le.-40.) then ! south of 40S 
-                    if (v_mask(10,j,k).gt.0.5) then      
+                  if (lat2d(i,j).le.-40.) then ! south of 40S 
+                    if (v_mask(i,j,k).gt.0.5) then      
                       if (over_psi(j, k).gt.over_max_SO_net(l)) then      
                           over_max_SO_net(l) = over_psi(j, k) 
                       endif
